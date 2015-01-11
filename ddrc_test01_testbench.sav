@@ -2,10 +2,10 @@
 [*] GTKWave Analyzer v3.3.49 (w)1999-2013 BSI
 [*] Sat Jun 14 07:10:23 2014
 [*]
-[dumpfile] "/data/vdt/vdt-projects/eddr3/simulation/ddrc_test01_testbench-20140610175433027.lxt"
+[dumpfile] "simulation/ddrc_test01_testbench-20140610175433027.lxt"
 [dumpfile_mtime] "Tue Jun 10 23:58:40 2014"
 [dumpfile_size] 75451369
-[savefile] "/data/vdt/vdt-projects/eddr3/ddrc_test01_testbench.sav"
+[savefile] "ddrc_test01_testbench.sav"
 [timestart] 137507870
 [size] 1920 1180
 [pos] -1 -1

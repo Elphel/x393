@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <projectDescription>
-	<name>eddr3</name>
+	<name>x393</name>
 	<comment></comment>
 	<projects>
 	</projects>
@@ -52,87 +52,87 @@
 		<link>
 			<name>ise_logs/ISExst.log</name>
 			<type>1</type>
-			<location>/data/vdt/vdt-projects/eddr3/ise_logs/ISExst-20140607155721361.log</location>
+			<location>ise_logs/ISExst-20140607155721361.log</location>
 		</link>
 		<link>
-			<name>ise_state/eddr3-synth.tgz</name>
+			<name>ise_state/x393-synth.tgz</name>
 			<type>1</type>
-			<location>/data/vdt/vdt-projects/eddr3/ise_state/eddr3-synth-20140607155721361.tgz</location>
+			<location>ise_state/x393-synth-20140607155721361.tgz</location>
 		</link>
 		<link>
 			<name>vivado_logs/VivadoBitstream.log</name>
 			<type>1</type>
-			<location>/data/vdt/vdt-projects/eddr3/vivado_logs/VivadoBitstream-20140611174132808.log</location>
+			<location>vivado_logs/VivadoBitstream-20140611174132808.log</location>
 		</link>
 		<link>
 			<name>vivado_logs/VivadoOpt.log</name>
 			<type>1</type>
-			<location>/data/vdt/vdt-projects/eddr3/vivado_logs/VivadoOpt-20140611174132808.log</location>
+			<location>vivado_logs/VivadoOpt-20140611174132808.log</location>
 		</link>
 		<link>
 			<name>vivado_logs/VivadoOptPhys.log</name>
 			<type>1</type>
-			<location>/data/vdt/vdt-projects/eddr3/vivado_logs/VivadoOptPhys-20140611174132808.log</location>
+			<location>vivado_logs/VivadoOptPhys-20140611174132808.log</location>
 		</link>
 		<link>
 			<name>vivado_logs/VivadoOptPower.log</name>
 			<type>1</type>
-			<location>/data/vdt/vdt-projects/eddr3/vivado_logs/VivadoOptPower-20140611174132808.log</location>
+			<location>vivado_logs/VivadoOptPower-20140611174132808.log</location>
 		</link>
 		<link>
 			<name>vivado_logs/VivadoPlace.log</name>
 			<type>1</type>
-			<location>/data/vdt/vdt-projects/eddr3/vivado_logs/VivadoPlace-20140611174132808.log</location>
+			<location>vivado_logs/VivadoPlace-20140611174132808.log</location>
 		</link>
 		<link>
 			<name>vivado_logs/VivadoRoute.log</name>
 			<type>1</type>
-			<location>/data/vdt/vdt-projects/eddr3/vivado_logs/VivadoRoute-20140611174132808.log</location>
+			<location>vivado_logs/VivadoRoute-20140611174132808.log</location>
 		</link>
 		<link>
 			<name>vivado_logs/VivadoSynthesis.log</name>
 			<type>1</type>
-			<location>/data/vdt/vdt-projects/eddr3/vivado_logs/VivadoSynthesis-20140611174056482.log</location>
+			<location>vivado_logs/VivadoSynthesis-20140611174056482.log</location>
 		</link>
 		<link>
 			<name>vivado_logs/VivadoTimimgSummaryReportImplemented.log</name>
 			<type>1</type>
-			<location>/data/vdt/vdt-projects/eddr3/vivado_logs/VivadoTimimgSummaryReportImplemented-20140611174132808.log</location>
+			<location>vivado_logs/VivadoTimimgSummaryReportImplemented-20140611174132808.log</location>
 		</link>
 		<link>
 			<name>vivado_logs/VivadoTimimgSummaryReportSynthesis.log</name>
 			<type>1</type>
-			<location>/data/vdt/vdt-projects/eddr3/vivado_logs/VivadoTimimgSummaryReportSynthesis-20140611174132808.log</location>
+			<location>vivado_logs/VivadoTimimgSummaryReportSynthesis-20140611174132808.log</location>
 		</link>
 		<link>
 			<name>vivado_logs/VivadoTimingReportImplemented.log</name>
 			<type>1</type>
-			<location>/data/vdt/vdt-projects/eddr3/vivado_logs/VivadoTimingReportImplemented-20140611174132808.log</location>
+			<location>vivado_logs/VivadoTimingReportImplemented-20140611174132808.log</location>
 		</link>
 		<link>
 			<name>vivado_logs/VivadoTimingReportSynthesis.log</name>
 			<type>1</type>
-			<location>/data/vdt/vdt-projects/eddr3/vivado_logs/VivadoTimingReportSynthesis-20140611174132808.log</location>
+			<location>vivado_logs/VivadoTimingReportSynthesis-20140611174132808.log</location>
 		</link>
 		<link>
-			<name>vivado_state/eddr3-opt-phys.dcp</name>
+			<name>vivado_state/x393-opt-phys.dcp</name>
 			<type>1</type>
-			<location>/data/vdt/vdt-projects/eddr3/vivado_state/eddr3-opt-phys-20140611174132808.dcp</location>
+			<location>vivado_state/x393-opt-phys-20140611174132808.dcp</location>
 		</link>
 		<link>
-			<name>vivado_state/eddr3-place.dcp</name>
+			<name>vivado_state/x393-place.dcp</name>
 			<type>1</type>
-			<location>/data/vdt/vdt-projects/eddr3/vivado_state/eddr3-place-20140611174132808.dcp</location>
+			<location>vivado_state/x393-place-20140611174132808.dcp</location>
 		</link>
 		<link>
-			<name>vivado_state/eddr3-route.dcp</name>
+			<name>vivado_state/x393-route.dcp</name>
 			<type>1</type>
-			<location>/data/vdt/vdt-projects/eddr3/vivado_state/eddr3-route-20140611174132808.dcp</location>
+			<location>vivado_state/x393-route-20140611174132808.dcp</location>
 		</link>
 		<link>
-			<name>vivado_state/eddr3-synth.dcp</name>
+			<name>vivado_state/x393-synth.dcp</name>
 			<type>1</type>
-			<location>/data/vdt/vdt-projects/eddr3/vivado_state/eddr3-synth-20140610113942407.dcp</location>
+			<location>vivado_state/x393-synth-20140610113942407.dcp</location>
 		</link>
 	</linkedResources>
 </projectDescription>

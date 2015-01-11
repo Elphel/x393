@@ -4,6 +4,6 @@ iverilog_77_Param_Exe=/usr/local/bin/iverilog
 iverilog_78_VVP_Exe=/usr/local/bin/vvp
 iverilog_81_TopModulesOther=glbl<-@\#\#@->
 iverilog_83_ExtraFiles=glbl.v<-@\#\#@->
-iverilog_84_IncludeDir=/data/vdt/vdt-projects/eddr3/ddr3<-@\#\#@->
+iverilog_84_IncludeDir=/home/andrey/git/x393/ddr3<-@\#\#@->
 iverilog_88_ShowNoProblem=true
 iverilog_99_GrepFindErrWarn=error|warning|sorry
