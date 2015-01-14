@@ -24,14 +24,25 @@ module  cmd_mux #(
     parameter AXI_WR_ADDR_BITS=    13,
     parameter CONTROL_ADDR =        'h1000, // AXI write address of control write registers
     parameter CONTROL_ADDR_MASK =   'h1400, // AXI write address of control registers
-//    parameter CONTROL_SS_ADDR=      'h0200, // single-cycle command (2-6 cycles decoded by ROM form some address bits)
-//    parameter CONTROL_SS_MASK=      'h0200,
-    parameter NUM_CYCLES_LOW_BIT=   6 // decode addresses [NUM_CYCLES_LOW_BIT+:4] into command a/d length 
-    // now all control addresses may generate busy, but only for command sequencer and multy-byte commands
-//    parameter BUSY_WR_ADDR =        'h1800, // AXI write address to generate busy
-//    parameter BUSY_WR_ADDR_MASK =   'h1c00 // AXI write address mask to generate busy
+    parameter NUM_CYCLES_LOW_BIT=   6, // decode addresses [NUM_CYCLES_LOW_BIT+:4] into command a/d length
+    parameter NUM_CYCLES_00 =       9, // single-cycle
+    parameter NUM_CYCLES_01 =       2, // 2-cycle
+    parameter NUM_CYCLES_02 =       3, // 3-cycle
+    parameter NUM_CYCLES_03 =       4, // 4-cycle
+    parameter NUM_CYCLES_04 =       5, // 5-cycle
+    parameter NUM_CYCLES_05 =       6, // 6-cycle
+    parameter NUM_CYCLES_06 =       6, //
+    parameter NUM_CYCLES_07 =       6, //
+    parameter NUM_CYCLES_08 =       6, //
+    parameter NUM_CYCLES_09 =       6, //
+    parameter NUM_CYCLES_10 =       6, //
+    parameter NUM_CYCLES_11 =       6, //
+    parameter NUM_CYCLES_12 =       6, //
+    parameter NUM_CYCLES_13 =       6, //
+    parameter NUM_CYCLES_14 =       6, //
+    parameter NUM_CYCLES_15 =       6 //
 ) (
-    input                         clk,
+    input                         axi_clk,
     input                         mclk,
     input                         rst,
     // direct commands from AXI. No wait but for multi-cycle output and command sequencer (having higher priority)
@@ -86,7 +97,7 @@ module  cmd_mux #(
     assign seq_length_rom_a=par_ad[NUM_CYCLES_LOW_BIT+:4];
     assign ss= seq_length[3];
 
-    always @ (posedge clk or posedge rst) begin
+    always @ (posedge axi_clk or posedge rst) begin
         if (rst)               selected <= 1'b0;
         else if (start_wburst) selected <= selected_w;
         if (rst)               busy_r <= 1'b0;
@@ -97,22 +108,22 @@ module  cmd_mux #(
 //    always @ (seq_length_rom_a) begin
     always @*
         case (seq_length_rom_a)  // just temporary - fill out later
-            4'h00:seq_length<=9; // single-cycle
-            4'h01:seq_length<=2; // 2-cycle
-            4'h02:seq_length<=3;
-            4'h03:seq_length<=4;
-            4'h04:seq_length<=5;
-            4'h05:seq_length<=6; // 6-cycle (full)
-            4'h06:seq_length<=6;
-            4'h07:seq_length<=6;
-            4'h08:seq_length<=6;
-            4'h09:seq_length<=6;
-            4'h0a:seq_length<=6;
-            4'h0b:seq_length<=6;
-            4'h0c:seq_length<=6;
-            4'h0d:seq_length<=6;
-            4'h0e:seq_length<=6;
-            4'h0f:seq_length<=6;
+            4'h00:seq_length <= NUM_CYCLES_00;
+            4'h01:seq_length <= NUM_CYCLES_01;
+            4'h02:seq_length <= NUM_CYCLES_02;
+            4'h03:seq_length <= NUM_CYCLES_03;
+            4'h04:seq_length <= NUM_CYCLES_04;
+            4'h05:seq_length <= NUM_CYCLES_05;
+            4'h06:seq_length <= NUM_CYCLES_06;
+            4'h07:seq_length <= NUM_CYCLES_07;
+            4'h08:seq_length <= NUM_CYCLES_08;
+            4'h09:seq_length <= NUM_CYCLES_09;
+            4'h0a:seq_length <= NUM_CYCLES_10;
+            4'h0b:seq_length <= NUM_CYCLES_11;
+            4'h0c:seq_length <= NUM_CYCLES_12;
+            4'h0d:seq_length <= NUM_CYCLES_13;
+            4'h0e:seq_length <= NUM_CYCLES_14;
+            4'h0f:seq_length <= NUM_CYCLES_15;
         endcase
     always @ (posedge rst or posedge mclk) begin
         if (rst) seq_busy_r<=0;

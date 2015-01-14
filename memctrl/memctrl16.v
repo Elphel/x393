@@ -104,14 +104,14 @@ module  memctrl16 #(
     parameter REFRESH_ADDR_REL =      'h033,  // address to set sequencer start address for DDR refresh
     parameter REFRESH_ADDR_REL_MASK = 'h3ff   // address mask set refresh sequencer address
     ) (
-    input             rst,
-    input             clk,
-    input      [15:0] want_rq,   // both want_rq and need_rq should go inactive after being granted  
-    input      [15:0] need_rq,
-    output     [15:0] channel_pgm_en, // channel can program sequence data
-    input     [511:0] seq_data,  //16x32 data to be written to the sequencer (and start address for software-based sequencer)
-    input      [15:0] seq_wr,    // strobe for writing sequencer data (address is autoincremented)
-    input      [15:0] seq_done,  // channel sequencer data is written. If no seq_wr pulses before seq_done, seq_data contains software sequencer start address
+    input                        rst,
+    input                        clk,
+    input                 [15:0] want_rq,   // both want_rq and need_rq should go inactive after being granted  
+    input                 [15:0] need_rq,
+    output                [15:0] channel_pgm_en, // channel can program sequence data
+    input                [511:0] seq_data,  //16x32 data to be written to the sequencer (and start address for software-based sequencer)
+    input                 [15:0] seq_wr,    // strobe for writing sequencer data (address is autoincremented)
+    input                 [15:0] seq_done,  // channel sequencer data is written. If no seq_wr pulses before seq_done, seq_data contains software sequencer start address
     
     // priority programming
     // TODO: Move to ps7 instance in this module
@@ -136,8 +136,8 @@ module  memctrl16 #(
     inout                        NDQSL, // ~LDQS I/O pad
     output                       SDDMU, // UDM  I/O pad (actually only output)
     inout                        DQSU,  // UDQS I/O pad
-    inout                        NDQSU,
-    output                       DUMMY_TO_KEEP  // to keep PS7 signals from "optimization"
+    inout                        NDQSU //,
+//    output                       DUMMY_TO_KEEP  // to keep PS7 signals from "optimization"
 //    input                        MEMCLK
 );
 // TODO: copy from ddrc_test01.v    
