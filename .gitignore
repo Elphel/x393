@@ -5,4 +5,5 @@ simulation/*
 ise_*
 attic/*
 IVERILOG_INCLUDE.v
-eddr3.prj
+x393.prj
+*DEBUG_VDT*
