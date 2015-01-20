@@ -20,7 +20,8 @@
  *******************************************************************************/
 `timescale 1ns/1ps
 `define use200Mhz 1
-`define DEBUG_FIFO 1 
+`define DEBUG_FIFO 1
+`include ".editor_defines" 
 module  x393 #(
     parameter PHASE_WIDTH =     8,
     parameter SLEW_DQ =         "SLOW",
@@ -55,6 +56,11 @@ module  x393 #(
     parameter SS_MOD_PERIOD =       10000,
     parameter CMD_PAUSE_BITS=       10,
     parameter CMD_DONE_BIT=         10,
+    
+    parameter STATUS_ADDR =         'h1400, // AXI write address of status read registers
+    parameter STATUS_ADDR_MASK =    'h1400, // AXI write address of status registers
+    parameter STATUS_DEPTH=         8,  // 256 cells, maybe just 16..64 are enough?
+    
     parameter AXI_WR_ADDR_BITS =    13,
     parameter AXI_RD_ADDR_BITS =    13,
     parameter CONTROL_ADDR =        'h1000, // AXI write address of control write registers
@@ -78,10 +84,10 @@ module  x393 #(
     parameter NUM_CYCLES_14 =       6, //
     parameter NUM_CYCLES_15 =       6, //
     
-    parameter STATUS_ADDR =         'h1400, // AXI write address of status read registers
-    parameter STATUS_ADDR_MASK =    'h1400, // AXI write address of status registers
-    parameter BUSY_WR_ADDR =        'h1800, // AXI write address to generate busy
-    parameter BUSY_WR_ADDR_MASK =   'h1c00, // AXI write address mask to generate busy
+//    parameter STATUS_ADDR =         'h1400, // AXI write address of status read registers
+//    parameter STATUS_ADDR_MASK =    'h1400, // AXI write address of status registers
+//    parameter BUSY_WR_ADDR =        'h1800, // AXI write address to generate busy
+//    parameter BUSY_WR_ADDR_MASK =   'h1c00, // AXI write address mask to generate busy
     parameter CMD0_ADDR =           'h0800, // AXI write to command sequence memory
     parameter CMD0_ADDR_MASK =      'h1800, // AXI read address mask for the command sequence memory
     parameter PORT0_RD_ADDR =       'h0000, // AXI read address to generate busy
@@ -228,6 +234,7 @@ module  x393 #(
    wire  [31:0]   axird_bram_rdata;  //      .data_out(rdata[31:0]),       // data out
    wire  [31:0]   port0_rdata;  //
    wire  [31:0]   status_rdata;  //
+   wire           status_valid;
 
    wire        mclk;
    wire        en_cmd0_wr;
@@ -382,14 +389,26 @@ end
 //   ddrc_status () was here
 // ddrc_sequencer() was here - move to  module  memctrl16
 
-    wire [AXI_WR_ADDR_BITS-1:0] cseq_waddr; // command sequencer write address (output to command multiplexer)
-    wire                        cseq_wr_en; // command sequencer write enable (output to command multiplexer) - keep until cseq_ackn received
-    wire                 [31:0] cseq_wdata; // command sequencer write data (output to command multiplexer) 
-    wire                        cseq_ackn;  // ackn to command sequencer, command sequencer should de-assert cseq_wr_en
-    wire [AXI_WR_ADDR_BITS-1:0] par_waddr;  // multiplexed address (full, parallel) to slave devices 
-    wire                 [31:0] par_data;   // multiplexed data (full, parallel) to slave devices 
-    wire                  [7:0] byte_ad;    // multiplexed byte-wide serialized address/data to salve devices (AL-AH-D0-D1-D2-D3), may contain less cycles 
-    wire                        ad_stb;     // strobe marking the first of 1-6 a/d bytes and also data valid for par_waddr and par_data
+    wire [AXI_WR_ADDR_BITS-1:0] cseq_waddr;   // command sequencer write address (output to command multiplexer)
+    wire                        cseq_wr_en;   // command sequencer write enable (output to command multiplexer) - keep until cseq_ackn received
+    wire                 [31:0] cseq_wdata;   // command sequencer write data (output to command multiplexer) 
+    wire                        cseq_ackn;    // ackn to command sequencer, command sequencer should de-assert cseq_wr_en
+    wire [AXI_WR_ADDR_BITS-1:0] par_waddr;    // multiplexed address (full, parallel) to slave devices 
+    wire                 [31:0] par_data;     // multiplexed data (full, parallel) to slave devices 
+    wire                  [7:0] cmd_root_ad;       // multiplexed byte-wide serialized address/data to salve devices (AL-AH-D0-D1-D2-D3), may contain less cycles 
+    wire                        cmd_root_stb;      // strobe marking the first of 1-6 a/d bytes and also data valid for par_waddr and par_data
+
+    wire                  [7:0] status_root_ad;    // Root status byte-wide address/data 
+    wire                        status_root_rq;    // Root status request  
+    wire                        status_root_start; // Root status packet transfer start (currently with 0 latency from status_root_rq)
+
+    wire                  [7:0] status_mcontr_ad;    // Memory contyroller status byte-wide address/data 
+    wire                        status_mcontr_rq;    // Memory contyroller status request  
+    wire                        status_mcontr_start; // Memory contyroller status packet transfer start (currently with 0 latency from status_root_rq)
+
+    wire                  [7:0] status_other_ad;    // Other status byte-wide address/data 
+    wire                        status_other_rq;    // Other status request  
+    wire                        status_other_start; // Other status packet transfer start (currently with 0 latency from status_root_rq)
 
     cmd_mux #(
         .AXI_WR_ADDR_BITS  (AXI_WR_ADDR_BITS),
@@ -429,10 +448,150 @@ end
         .par_waddr    (par_waddr), // output[12:0] 
         .par_data     (par_data), // output[31:0]
         // registers may be inserted before byte_ad and ad_stb  
-        .byte_ad      (byte_ad), // output[7:0] 
-        .ad_stb       (ad_stb) // output
+        .byte_ad      (cmd_root_ad), // output[7:0] 
+        .ad_stb       (cmd_root_stb) // output
     );
 
+    status_read #(
+        .STATUS_ADDR(STATUS_ADDR),
+        .STATUS_ADDR_MASK(STATUS_ADDR_MASK),
+        .AXI_RD_ADDR_BITS(AXI_RD_ADDR_BITS),
+        .STATUS_DEPTH(STATUS_DEPTH)
+    ) status_read_i (
+        .rst              (axi_rst), // input
+        .clk              (mclk), // input
+        .axi_pre_addr     (axird_pre_araddr), // input[12:0] 
+        .pre_stb          (axird_start_burst), // input
+        .axi_status_rdata (status_rdata[31:0]), // output[31:0] reg 
+        .data_valid       (status_valid), // output reg 
+        .ad               (status_root_ad), // input[7:0] 
+        .rq               (status_root_rq), // input
+        .start            (status_root_start) // output
+    );
+    
+
+    // Insert register layer if needed
+    wire [7:0] cmd_mcontr_ad;
+    wire       cmd_mcontr_stb;
+    assign cmd_mcontr_ad= cmd_root_ad;
+    assign cmd_mcontr_stb=cmd_root_stb;
+
+
+// mux status info from the memory controller and other modules    
+    status_router2 status_router2_top_i (
+        .rst       (axi_rst), // input
+        .clk       (mclk), // input
+        .db_in0    (status_mcontr_ad), // input[7:0] 
+        .rq_in0    (status_mcontr_rq), // input
+        .start_in0 (status_mcontr_start), // output
+        .db_in1    (status_other_ad), // input[7:0] 
+        .rq_in1    (status_other_rq), // input
+        .start_in1 (status_other_start), // output
+        .db_out    (status_root_ad), // output[7:0] 
+        .rq_out    (status_root_rq), // output
+        .start_out (status_root_start) // input
+    );
+    
+    // Memory controller signals
+    wire  [15:0] mem_want; // to mcontr 
+    wire  [15:0] mem_need; // to mcontr 
+    wire  [15:0] mem_pgm_chn; // from mcontr 
+    wire [511:0] mem_seq_data; //  to mcontr 
+    wire  [15:0] mem_seq_wr; //  to mcontr 
+    wire  [15:0] mem_seq_done; //  to mcontr 
+
+    memctrl16 #(
+        .ADDRESS_NUMBER        (ADDRESS_NUMBER),
+        .PHASE_WIDTH           (PHASE_WIDTH),
+        .SLEW_DQ               (SLEW_DQ),
+        .SLEW_DQS              (SLEW_DQS),
+        .SLEW_CMDA             (SLEW_CMDA),
+        .SLEW_CLK              (SLEW_CLK),
+        .IBUF_LOW_PWR          (IBUF_LOW_PWR),
+        .REFCLK_FREQUENCY      (REFCLK_FREQUENCY),
+        .HIGH_PERFORMANCE_MODE (HIGH_PERFORMANCE_MODE),
+        .CLKIN_PERIOD          (CLKIN_PERIOD),
+        .CLKFBOUT_MULT         (CLKFBOUT_MULT),
+        .CLKFBOUT_MULT_REF     (CLKFBOUT_MULT_REF),
+        .CLKFBOUT_DIV_REF      (CLKFBOUT_DIV_REF),
+        .DIVCLK_DIVIDE         (DIVCLK_DIVIDE),
+        .CLKFBOUT_PHASE        (CLKFBOUT_PHASE),
+        .SDCLK_PHASE           (SDCLK_PHASE),
+        .CLK_PHASE             (CLK_PHASE),
+        .CLK_DIV_PHASE         (CLK_DIV_PHASE),
+        .MCLK_PHASE            (MCLK_PHASE),
+        .REF_JITTER1           (REF_JITTER1),
+        .SS_EN                 (SS_EN),
+        .SS_MODE               (SS_MODE),
+        .SS_MOD_PERIOD         (SS_MOD_PERIOD),
+        .CMD_PAUSE_BITS        (CMD_PAUSE_BITS),
+        .CMD_DONE_BIT          (CMD_DONE_BIT),
+
+        .DLY_LD_REL            (DLY_LD_REL),
+        .DLY_LD_REL_MASK       (DLY_LD_REL_MASK),
+        .DLY_SET_REL           (DLY_SET_REL),
+        .DLY_SET_REL_MASK      (DLY_SET_REL_MASK),
+        .RUN_CHN_REL           (RUN_CHN_REL),
+        .RUN_CHN_REL_MASK      (RUN_CHN_REL_MASK),
+        .PATTERNS_REL          (PATTERNS_REL),
+        .PATTERNS_REL_MASK     (PATTERNS_REL_MASK),
+        .PATTERNS_TRI_REL      (PATTERNS_TRI_REL),
+        .PATTERNS_TRI_REL_MASK (PATTERNS_TRI_REL_MASK),
+        .WBUF_DELAY_REL        (WBUF_DELAY_REL),
+        .WBUF_DELAY_REL_MASK   (WBUF_DELAY_REL_MASK),
+        .PAGES_REL             (PAGES_REL),
+        .PAGES_REL_MASK        (PAGES_REL_MASK),
+        .CMDA_EN_REL           (CMDA_EN_REL),
+        .CMDA_EN_REL_MASK      (CMDA_EN_REL_MASK),
+        .SDRST_ACT_REL         (SDRST_ACT_REL),
+        .SDRST_ACT_REL_MASK    (SDRST_ACT_REL_MASK),
+        .CKE_EN_REL            (CKE_EN_REL),
+        .CKE_EN_REL_MASK       (CKE_EN_REL_MASK),
+        .DCI_RST_REL           (DCI_RST_REL),
+        .DCI_RST_REL_MASK      (DCI_RST_REL_MASK),
+        .DLY_RST_REL           (DLY_RST_REL),
+        .DLY_RST_REL_MASK      (DLY_RST_REL_MASK),
+        .EXTRA_REL             (EXTRA_REL),
+        .EXTRA_REL_MASK        (EXTRA_REL_MASK),
+        .REFRESH_EN_REL        (REFRESH_EN_REL),
+        .REFRESH_EN_REL_MASK   (REFRESH_EN_REL_MASK),
+        .REFRESH_PER_REL       (REFRESH_PER_REL),
+        .REFRESH_PER_REL_MASK  (REFRESH_PER_REL_MASK),
+        .REFRESH_ADDR_REL      (REFRESH_ADDR_REL),
+        .REFRESH_ADDR_REL_MASK (REFRESH_ADDR_REL_MASK)
+    ) memctrl16_i (
+    // TODO: Add some other clock i/o?
+        .rst            (axi_rst), // input
+        .clk            (mclk), // input
+        .want_rq        (mem_want[15:0]), // input[15:0] 
+        .need_rq        (mem_need[15:0]), // input[15:0] 
+        .channel_pgm_en (mem_pgm_chn[15:0]), // output[15:0] 
+        .seq_data       (mem_seq_data[511:0]), // input[511:0] 
+        .seq_wr         (mem_seq_wr[15:0]), // input[15:0] 
+        .seq_done       (mem_seq_done), // input[15:0] 
+        .cmd_ad         (cmd_mcontr_ad[7:0]), // input[7:0] 
+        .cmd_stb        (cmd_mcontr_stb), // input
+        .status_ad      (status_mcontr_ad[7:0]), // output[7:0]
+        .status_rq      (status_mcontr_rq),   // input request to send status downstream
+        .status_start   (status_mcontr_start), // Acknowledge of the first status packet byte (address)
+        .SDRST          (SDRST), // output
+        .SDCLK          (SDCLK), // output
+        .SDNCLK         (SDNCLK), // output
+        .SDA            (SDA), // output[14:0] 
+        .SDBA           (SDBA), // output[2:0] 
+        .SDWE           (SDWE), // output
+        .SDRAS          (SDRAS), // output
+        .SDCAS          (SDCAS), // output
+        .SDCKE          (SDCKE), // output
+        .SDODT          (SDODT), // output
+        .SDD            (SDD), // inout[15:0] 
+        .SDDML          (SDDML), // output
+        .DQSL           (DQSL), // inout
+        .NDQSL          (NDQSL), // inout
+        .SDDMU          (SDDMU), // output
+        .DQSU           (DQSU), // inout
+        .NDQSU          (NDQSU) // inout
+    );
 
 
 //MEMCLK

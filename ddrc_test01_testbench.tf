@@ -1689,7 +1689,6 @@ simul_axi_read simul_axi_read_i(
                 @(posedge CLK)
                 axi_write_single(cmd_addr, data);
                 cmd_addr <= cmd_addr + 4;
-
              end
              
 // nop

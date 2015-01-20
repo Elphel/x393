@@ -1,0 +1,82 @@
+0x1000..103f - 0- bit data (set/reset)
+    parameter MCONTR_PHY_0BIT_ADDR =           'h020,  // address to set sequnecer channel and  run (4 LSB-s - channel)
+    parameter MCONTR_PHY_0BIT_ADDR_MASK =      'h3f0,  // address mask to generate sequencer channel/run
+  0x1020       - DLY_SET      // 0 bits -set pre-programmed delays 
+  0x1024..1025 - CMDA_EN      // 0 bits - enable/disable command/address outputs 
+  0x1026..1027 - SDRST_ACT    // 0 bits - enable/disable active-low reset signal to DDR3 memory
+  0x1028..1029 - CKE_EN       // 0 bits - enable/disable CKE signal to memory 
+  0x102a..102b - DCI_RST      // 0 bits - enable/disable CKE signal to memory 
+  0x102c..102d - DLY_RST      // 0 bits - enable/disable CKE signal to memory
+    parameter MCONTR_PHY_0BIT_DLY_SET =        'h0,    // set pre-programmed delays 
+    parameter MCONTR_PHY_0BIT_CMDA_EN =        'h4,    // enable/disable command/address outputs 
+    parameter MCONTR_PHY_0BIT_SDRST_ACT =      'h6,    // enable/disable active-low reset signal to DDR3 memory
+    parameter MCONTR_PHY_0BIT_CKE_EN =         'h8,    // enable/disable CKE signal to memory 
+    parameter MCONTR_PHY_0BIT_DCI_RST =        'ha,    // enable/disable CKE signal to memory 
+    parameter MCONTR_PHY_0BIT_DLY_RST =        'hc,    // enable/disable CKE signal to memory 
+
+0x1040..107f - 16-bit data
+  0x1050..1057: MCONTR_PHY16
+    parameter MCONTR_PHY_16BIT_ADDR =           'h050,  // address to set sequnecer channel and  run (4 LSB-s - channel)
+    parameter MCONTR_PHY_16BIT_ADDR_MASK =      'h3f8,  // address mask to generate sequencer channel/run
+  0x1050       - PATTERNS     // 16 bits
+  0x1051       - PATTERNS_TRI // 16-bit address to set DQM and DQS tristate on/off patterns {dqs_off,dqs_on, dq_off,dq_on} - 4 bits each 
+  0x1052       - WBUF_DELAY   // 4 bits - extra delay (in mclk cycles) to add to write buffer enable (DDR3 read data)
+  0x1053       - EXTRA_REL    // 1 bit - set extra parameters (currently just inv_clk_div)
+  0x1054       - STATUS_CNTRL // 8 bits - write to status control
+    parameter MCONTR_PHY_16BIT_PATTERNS =       'h0,    // set DQM and DQS patterns (16'h0055)
+    parameter MCONTR_PHY_16BIT_PATTERNS_TRI =   'h1,    // 16-bit address to set DQM and DQS tristate on/off patterns {dqs_off,dqs_on, dq_off,dq_on} - 4 bits each 
+    parameter MCONTR_PHY_16BIT_WBUF_DELAY =     'h2,    // 4 bits - extra delay (in mclk cycles) to add to write buffer enable (DDR3 read data)
+    parameter MCONTR_PHY_16BIT_EXTRA_REL =      'h3,    // 1 bit - set extra parameters (currently just inv_clk_div)
+    parameter MCONTR_PHY_STATUS_CNTRL =         'h4,    // 8 bits - write to status control
+// Status read address
+    parameter STATUS_ADDR =         'h1400, // AXI write address of status read registers
+    parameter STATUS_ADDR_MASK =    'h1400, // AXI write address of status registers
+    parameter STATUS_DEPTH=         8,  // 256 cells, maybe just 16..64 are enough?
+    parameter MCONTR_PHY_STATUS_REG_ADDR=      'h0,    // 8 or less bits: status register address to use for memory controller phy
+
+================================ OLD =======================================================
+ Control addresses (in original ddrc_test01)
+0x1000..100f - RUN_CHN      // address to set sequnecer channel and  run (4 LSB-s - channel) - bits? 
+0x1020       - PATTERNS     // 16 bits
+0x1021       - PATTERNS_TRI // 16-bit address to set DQM and DQS tristate on/off patterns {dqs_off,dqs_on, dq_off,dq_on} - 4 bits each 
+0x1022       - WBUF_DELAY   // 4? bits - extra delay (in mclk cycles) to add to write buffer enable (DDR3 read data)
+0x1023       - PAGES        // will be removed! 8 bits - address to set buffer pages {port1_page[1:0], port1_int_page[1:0], port0_page[1:0], port0_int_page[1:0]}
+0x1024..1025 - CMDA_EN      // 0 bits - enable/disable command/address outputs 
+0x1026..1027 - SDRST_ACT    // 0 bits - enable/disable active-low reset signal to DDR3 memory
+0x1028..1029 - CKE_EN       // 0 bits - enable/disable CKE signal to memory 
+0x102a..102b - DCI_RST      // 0 bits - enable/disable CKE signal to memory 
+0x102c..102d - DLY_RST      // 0 bits - enable/disable CKE signal to memory 
+0x102e       - EXTRA_REL    // ? bits - set extra parameters (currently just inv_clk_div)
+0x102f - X
+0x1030..1031 - REFRESH_EN   // 0 bits - enable/disable DDR refresh
+0x1032       - REFRESH_PER  // 16? bits - refresh period in 32 x tCK
+0x1033       - REFRESH_ADDR // 16? bits - sequencer start address for DDR refresh
+0x1070       - DLY_SET  // 0 bits (set bit delays)
+0x1080..10ff - DLY_LD   // 8 bits :
+  0x1080..109f - set delay for SDD0-SDD7
+  0x10a0..10bf - set delay for SDD8-SDD15
+  0x10c0..10df - set delay for SD_CMDA
+  0x10e0       - set delay for MMCM
+ 
+ 
+    parameter WBUF_DELAY_REL_MASK =   'h3ff,  // address mask to set extra delay
+    parameter PAGES_REL =             'h023,  // address to set buffer pages {port1_page[1:0],port1_int_page[1:0],port0_page[1:0],port0_int_page[1:0]}
+    parameter PAGES_REL_MASK =        'h3ff,  // address mask to set DQM and DQS patterns
+    parameter CMDA_EN_REL =           'h024,  // address to enable('h825)/disable('h824) command/address outputs  
+    parameter CMDA_EN_REL_MASK =      'h3fe,  // address mask for command/address outputs
+    parameter SDRST_ACT_REL =         'h026,  // address to activate('h827)/deactivate('h826) active-low reset signal to DDR3 memory  
+    parameter SDRST_ACT_REL_MASK =    'h3fe,  // address mask for reset DDR3
+    parameter CKE_EN_REL =            'h028,  // address to enable('h829)/disable('h828) CKE signal to memory   
+    parameter CKE_EN_REL_MASK =       'h3fe,  // address mask for command/address outputs
+    parameter DCI_RST_REL =           'h02a,  // address to activate('h82b)/deactivate('h82a) Zynq DCI calibrate circuitry  
+    parameter DCI_RST_REL_MASK =      'h3fe,  // address mask for DCI calibrate circuitry
+    parameter DLY_RST_REL =           'h02c,  // address to activate('h82d)/deactivate('h82c) delay calibration circuitry  
+    parameter DLY_RST_REL_MASK =      'h3fe,  // address mask for delay calibration circuitry
+    parameter EXTRA_REL =             'h02e,  // address to set extra parameters (currently just inv_clk_div)
+    parameter EXTRA_REL_MASK =        'h3ff,  // address mask for extra parameters
+    parameter REFRESH_EN_REL =        'h030,  // address to enable('h31) and disable ('h30) DDR refresh
+    parameter REFRESH_EN_REL_MASK =   'h3fe,  // address mask to enable/disable DDR refresh
+    parameter REFRESH_PER_REL =       'h032,  // address to set refresh period in 32 x tCK
+    parameter REFRESH_PER_REL_MASK =  'h3ff,  // address mask set refresh period
+    parameter REFRESH_ADDR_REL =      'h033,  // address to set sequencer start address for DDR refresh
+    parameter REFRESH_ADDR_REL_MASK = 'h3ff   // address mask set refresh sequencer address

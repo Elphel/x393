@@ -32,7 +32,7 @@ module  status_read#(
     parameter STATUS_ADDR =         'h1400, // AXI write address of status read registers
     parameter STATUS_ADDR_MASK =    'h1400, // AXI write address of status registers
     parameter AXI_RD_ADDR_BITS =    13,
-    parameter integer DATA_DEPTH=   8 // 256 cells, maybe just 16..64 are enough?
+    parameter integer STATUS_DEPTH=   8 // 256 cells, maybe just 16..64 are enough?
 )(
     input rst,
     input clk,
@@ -44,10 +44,10 @@ module  status_read#(
     input                        rq,               // request from sources to transfer status data
     output                       start             // acknowledge receiving of first byte (address), currently always ready
 );
-    localparam integer DATA_2DEPTH=(1<<DATA_DEPTH)-1;
+    localparam integer DATA_2DEPTH=(1<<STATUS_DEPTH)-1;
     reg  [31:0] ram [0:DATA_2DEPTH];
-    reg         [DATA_DEPTH-1:0] waddr;
-    wire        [DATA_DEPTH-1:0] raddr;
+    reg         [STATUS_DEPTH-1:0] waddr;
+    wire        [STATUS_DEPTH-1:0] raddr;
     reg                          we;
     wire                         re;
     reg                  [31: 0] wdata;
@@ -55,7 +55,7 @@ module  status_read#(
     reg                   [3:0]  dstb;
     
     assign re= pre_stb && (((axi_pre_addr ^ STATUS_ADDR) & STATUS_ADDR_MASK) == 0);
-    assign raddr=axi_pre_addr[DATA_DEPTH-1:0];
+    assign raddr=axi_pre_addr[STATUS_DEPTH-1:0];
     assign start=rq && !rq_r;
     
     always @ (posedge rst or posedge clk) begin
@@ -70,7 +70,7 @@ module  status_read#(
         else            dstb <= {dstb[2:0],~rq_r};
         // byte 0 - address
         if (rst)        waddr <= 0;
-        else if (start) waddr <= ad[DATA_DEPTH-1:0];
+        else if (start) waddr <= ad[STATUS_DEPTH-1:0];
         
         // byte 1 - 2 payload bits and sequence number
         // 6 bits of the sequence number will go to bits 26.. 31

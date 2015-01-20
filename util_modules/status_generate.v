@@ -39,7 +39,7 @@ module  status_generate #(
 */
     localparam NUM_BYTES=(PAYLOAD_BITS+21)>>3;
     localparam ALIGNED_STATUS_WIDTH=((NUM_BYTES-2)<<3)+2; // 2 ->2,
-    // ugly solution to avoid warnings in unused branch
+    // ugly solution to avoid warnings in unused "if" branch
     localparam ALIGNED_STATUS_BIT_2=(ALIGNED_STATUS_WIDTH>2)?2:0;
     reg                 [1:0] mode;
     reg                 [5:0] seq;
