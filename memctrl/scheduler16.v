@@ -27,10 +27,10 @@ module  scheduler16 #(
     input             clk,
     input      [15:0] want_rq,   // both want_rq and need_rq should go inactive after being granted  
     input      [15:0] need_rq,
-    input             en_sch,    // needs to be disabled before next access can be scheduled
+    input             en_schedul,    // needs to be disabled before next access can be scheduled
     output            need,      // granted access is "needed" one, not just "wanted"
     output            grant,     // single-cycle granted channel access
-    output      [3:0] grant_chn, // granted  channel number, valid with grant, stays valid until en_sch is deasserted
+    output      [3:0] grant_chn, // granted  channel number, valid with grant, stays valid until en_schedul is deasserted
     // todo: add programming  sequencer address for software sequencer program? Or should it come from the channel?
     input       [3:0] pgm_addr,  // channel address to program priority
     input [width-1:0] pgm_data,  // priority data for the channel
@@ -52,7 +52,7 @@ module  scheduler16 #(
     wire [3:0] index; // channel index to select
     wire index_valid; // selected index valid ("needed" or "wanted")
     reg grant_r;      // 1 cycle long
-    reg grant_sent; // turns on after grant, until en_sch is de-asserted
+    reg grant_sent; // turns on after grant, until en_schedul is de-asserted
     reg [3:0] grant_chn_r;
     wire grant_w;
 //    assign event_w=new_want | new_need;
@@ -60,7 +60,7 @@ module  scheduler16 #(
     assign next_need_conf=(need_conf &  need_rq) | need_set;
     assign grant=grant_r;
     assign grant_chn=grant_chn_r;
-    assign grant_w=en_sch && index_valid && !grant_sent;
+    assign grant_w=en_schedul && index_valid && !grant_sent;
     generate
         genvar i;
         for (i=0;i<16;i=i+1) begin: pri_reg_block
@@ -129,8 +129,8 @@ module  scheduler16 #(
             grant_sent <=0;
             grant_chn_r <=0;
         end else begin
-            grant_r    <= grant_w; // en_sch && index_valid && !grant_sent;
-            grant_sent <= (grant_sent && en_sch) || grant_r;
+            grant_r    <= grant_w; // en_schedul && index_valid && !grant_sent;
+            grant_sent <= (grant_sent && en_schedul) || grant_r;
             if (grant_w) grant_chn_r <= index[3:0];   
         end
     end

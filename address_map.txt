@@ -28,6 +28,10 @@
     parameter MCONTR_PHY_16BIT_WBUF_DELAY =     'h2,    // 4 bits - extra delay (in mclk cycles) to add to write buffer enable (DDR3 read data)
     parameter MCONTR_PHY_16BIT_EXTRA_REL =      'h3,    // 1 bit - set extra parameters (currently just inv_clk_div)
     parameter MCONTR_PHY_STATUS_CNTRL =         'h4,    // 8 bits - write to status control
+0x1060..106f: arbiter priority data
+    parameter MCONTR_ARBIT_ADDR =              'h060,   // Address to set channel priorities
+    parameter MCONTR_ARBIT_ADDR_MASK =         'h3f0,   // Address mask to set channel priorities
+    
 // Status read address
     parameter STATUS_ADDR =         'h1400, // AXI write address of status read registers
     parameter STATUS_ADDR_MASK =    'h1400, // AXI write address of status registers

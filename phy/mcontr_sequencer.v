@@ -324,7 +324,7 @@ module  mcontr_sequencer   #(
         .NUM_CYCLES (4),
         .ADDR_WIDTH (3),
         .DATA_WIDTH (16)
-    ) cmd_deser_0bit_i (
+    ) cmd_deser_16bit_i (
         .rst        (rst), // input
         .clk        (mclk), // input
         .ad         (cmd_ad), // input[7:0] 

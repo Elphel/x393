@@ -315,6 +315,26 @@ module  x393 #(
    wire [10:0] refresh_address;
    wire       refresh_en;
    wire       refresh_set;
+   
+   reg  [AXI_WR_ADDR_BITS-1:0] axiwr_bram_waddr_d;
+   reg                  [31:0] axiwr_bram_wdata_d; 
+   reg                         mcontr_cmdseq_we;                         
+   
+//           .cmd0_clk       (axi_aclk), // input
+//        .cmd0_we        (en_cmd0_wr), // input
+//        .cmd0_addr      (axiwr_bram_waddr[9:0]), // input[9:0] 
+//        .cmd0_data      (axiwr_bram_wdata[31:0]), // input[31:0] 
+
+// register address/data to write copmmand sequencer port 0 (PS)   
+  always @ (posedge axi_rst or posedge axi_aclk) begin
+    if (axi_rst) mcontr_cmdseq_we <= 1'b0;
+    else         mcontr_cmdseq_we <= axiwr_bram_wen   && (((axiwr_bram_waddr ^ CMD0_ADDR) & CMD0_ADDR_MASK)==0);
+  end
+  always @ (posedge axi_aclk) if (axiwr_bram_wen) begin
+    axiwr_bram_waddr_d <= axiwr_bram_waddr;
+    axiwr_bram_wdata_d <= axiwr_bram_wdata;
+  end
+   
 
    assign      port0_rd_match=(((axird_bram_raddr ^ PORT0_RD_ADDR) & PORT0_RD_ADDR_MASK)==0);  
    assign en_cmd0_wr=     axiwr_bram_wen   && (((axiwr_bram_waddr ^ CMD0_ADDR) & CMD0_ADDR_MASK)==0);

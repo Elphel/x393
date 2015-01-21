@@ -57,6 +57,11 @@ module  memctrl16 #(
     parameter MCONTR_PHY_16BIT_WBUF_DELAY =     'h2,    // 4? bits - extra delay (in mclk cycles) to add to write buffer enable (DDR3 read data)
     parameter MCONTR_PHY_16BIT_EXTRA =          'h3,    // ? bits - set extra parameters (currently just inv_clk_div)
     parameter MCONTR_PHY_STATUS_CNTRL =         'h4,    // write to status control (8-bit)
+   
+//0x1060..106f: arbiter priority data
+    parameter MCONTR_ARBIT_ADDR =              'h060,   // Address to set channel priorities
+    parameter MCONTR_ARBIT_ADDR_MASK =         'h3f0,   // Address mask to set channel priorities
+    
 // Status read address
     parameter MCONTR_PHY_STATUS_REG_ADDR=      'h0,    // 8 or less bits: status register address to use for memory controller phy
     parameter CHNBUF_READ_LATENCY =             0,     // external channel buffer extra read latency ( 0 - data available next cycle after re (but prev. data))
@@ -109,14 +114,6 @@ module  memctrl16 #(
     input                        clk_in,
     input                        rst_in,
     output                       mclk,     // global clock, half DDR3 clock, synchronizes all I/O thorough the command port
-/*
-    input                 [15:0] want_rq,   // both want_rq and need_rq should go inactive after being granted  
-    input                 [15:0] need_rq,
-    output                [15:0] channel_pgm_en, // channel can program sequence data
-    input                [511:0] seq_data,  //16x32 data to be written to the sequencer (and start address for software-based sequencer)
-    input                 [15:0] seq_wr,    // strobe for writing sequencer data (address is autoincremented)
-    input                 [15:0] seq_done,  // channel sequencer data is written. If no seq_wr pulses before seq_done, seq_data contains software sequencer start address
-*/    
     // programming interface
     input                  [7:0] cmd_ad,      // byte-serial command address/data (up to 6 bytes: AL-AH-D0-D1-D2-D3 
     input                        cmd_stb,     // strobe (with first byte) for the command a/d
@@ -124,12 +121,18 @@ module  memctrl16 #(
     output                       status_rq,   // input request to send status downstream
     input                        status_start, // Acknowledge of the first status packet byte (address)
     
+// command port 0 (filled by software - 32w->32r) - used for mode set, refresh, write levelling, ...
+    input                        cmd0_clk,    // clock to write commend sequencer from PS
+    input                        cmd0_we,     // write enble to write commend sequencer from PS
+    input                [9:0]   cmd0_addr,   // address write commend sequencer from PS
+    input               [31:0]   cmd0_data,   // data to write commend sequencer from PS
+    
 // channel interfaces TODO: move request/grant here, add "done"
 // channel 0 interface 
 `ifdef def_enable_mem_chn0
     input                        want_rq0,   // both want_rq and need_rq should go inactive after being granted  
     input                        need_rq0,
-    output                       channel_pgm_en0, // channel can program sequence data
+    output reg                   channel_pgm_en0, // channel can program sequence data
     input                 [31:0] seq_data0,  //16x32 data to be written to the sequencer (and start address for software-based sequencer)
     input                        seq_wr0,    // strobe for writing sequencer data (address is autoincremented)
     input                        seq_done0,  // channel sequencer data is written. If no seq_wr pulses before seq_done, seq_data contains software sequencer start address
@@ -148,7 +151,7 @@ module  memctrl16 #(
 `ifdef def_enable_mem_chn1
     input                        want_rq1,   // both want_rq and need_rq should go inactive after being granted  
     input                        need_rq1,
-    output                       channel_pgm_en1, // channel can program sequence data
+    output reg                   channel_pgm_en1, // channel can program sequence data
     input                 [31:0] seq_data1,  //16x32 data to be written to the sequencer (and start address for software-based sequencer)
     input                        seq_wr1,    // strobe for writing sequencer data (address is autoincremented)
     input                        seq_done1,  // channel sequencer data is written. If no seq_wr pulses before seq_done, seq_data contains software sequencer start address
@@ -167,7 +170,7 @@ module  memctrl16 #(
 `ifdef def_enable_mem_chn2
     input                        want_rq2,   // both want_rq and need_rq should go inactive after being granted  
     input                        need_rq2,
-    output                       channel_pgm_en2, // channel can program sequence data
+    output reg                   channel_pgm_en2, // channel can program sequence data
     input                 [31:0] seq_data2,  //16x32 data to be written to the sequencer (and start address for software-based sequencer)
     input                        seq_wr2,    // strobe for writing sequencer data (address is autoincremented)
     input                        seq_done2,  // channel sequencer data is written. If no seq_wr pulses before seq_done, seq_data contains software sequencer start address
@@ -186,7 +189,7 @@ module  memctrl16 #(
 `ifdef def_enable_mem_chn3
     input                        want_rq3,   // both want_rq and need_rq should go inactive after being granted  
     input                        need_rq3,
-    output                       channel_pgm_en3, // channel can program sequence data
+    output reg                   channel_pgm_en3, // channel can program sequence data
     input                 [31:0] seq_data3,  //16x32 data to be written to the sequencer (and start address for software-based sequencer)
     input                        seq_wr3,    // strobe for writing sequencer data (address is autoincremented)
     input                        seq_done3,  // channel sequencer data is written. If no seq_wr pulses before seq_done, seq_data contains software sequencer start address
@@ -205,7 +208,7 @@ module  memctrl16 #(
 `ifdef def_enable_mem_chn4
     input                        want_rq4,   // both want_rq and need_rq should go inactive after being granted  
     input                        need_rq4,
-    output                       channel_pgm_en4, // channel can program sequence data
+    output reg                   channel_pgm_en4, // channel can program sequence data
     input                 [31:0] seq_data4,  //16x32 data to be written to the sequencer (and start address for software-based sequencer)
     input                        seq_wr4,    // strobe for writing sequencer data (address is autoincremented)
     input                        seq_done4,  // channel sequencer data is written. If no seq_wr pulses before seq_done, seq_data contains software sequencer start address
@@ -224,7 +227,7 @@ module  memctrl16 #(
 `ifdef def_enable_mem_chn5
     input                        want_rq5,   // both want_rq and need_rq should go inactive after being granted  
     input                        need_rq5,
-    output                       channel_pgm_en5, // channel can program sequence data
+    output reg                   channel_pgm_en5, // channel can program sequence data
     input                 [31:0] seq_data5,  //16x32 data to be written to the sequencer (and start address for software-based sequencer)
     input                        seq_wr5,    // strobe for writing sequencer data (address is autoincremented)
     input                        seq_done5,  // channel sequencer data is written. If no seq_wr pulses before seq_done, seq_data contains software sequencer start address
@@ -243,7 +246,7 @@ module  memctrl16 #(
 `ifdef def_enable_mem_chn6
     input                        want_rq6,   // both want_rq and need_rq should go inactive after being granted  
     input                        need_rq6,
-    output                       channel_pgm_en6, // channel can program sequence data
+    output reg                   channel_pgm_en6, // channel can program sequence data
     input                 [31:0] seq_data6,  //16x32 data to be written to the sequencer (and start address for software-based sequencer)
     input                        seq_wr6,    // strobe for writing sequencer data (address is autoincremented)
     input                        seq_done6,  // channel sequencer data is written. If no seq_wr pulses before seq_done, seq_data contains software sequencer start address
@@ -262,7 +265,7 @@ module  memctrl16 #(
 `ifdef def_enable_mem_chn7
     input                        want_rq7,   // both want_rq and need_rq should go inactive after being granted  
     input                        need_rq7,
-    output                       channel_pgm_en7, // channel can program sequence data
+    output reg                   channel_pgm_en7, // channel can program sequence data
     input                 [31:0] seq_data7,  //16x32 data to be written to the sequencer (and start address for software-based sequencer)
     input                        seq_wr7,    // strobe for writing sequencer data (address is autoincremented)
     input                        seq_done7,  // channel sequencer data is written. If no seq_wr pulses before seq_done, seq_data contains software sequencer start address
@@ -281,7 +284,7 @@ module  memctrl16 #(
 `ifdef def_enable_mem_chn8
     input                        want_rq8,   // both want_rq and need_rq should go inactive after being granted  
     input                        need_rq8,
-    output                       channel_pgm_en8, // channel can program sequence data
+    output reg                   channel_pgm_en8, // channel can program sequence data
     input                 [31:0] seq_data8,  //16x32 data to be written to the sequencer (and start address for software-based sequencer)
     input                        seq_wr8,    // strobe for writing sequencer data (address is autoincremented)
     input                        seq_done8,  // channel sequencer data is written. If no seq_wr pulses before seq_done, seq_data contains software sequencer start address
@@ -300,7 +303,7 @@ module  memctrl16 #(
 `ifdef def_enable_mem_chn9
     input                        want_rq9,   // both want_rq and need_rq should go inactive after being granted  
     input                        need_rq9,
-    output                       channel_pgm_en9, // channel can program sequence data
+    output reg                   channel_pgm_en9, // channel can program sequence data
     input                 [31:0] seq_data9,  //16x32 data to be written to the sequencer (and start address for software-based sequencer)
     input                        seq_wr9,    // strobe for writing sequencer data (address is autoincremented)
     input                        seq_done9,  // channel sequencer data is written. If no seq_wr pulses before seq_done, seq_data contains software sequencer start address
@@ -319,7 +322,7 @@ module  memctrl16 #(
 `ifdef def_enable_mem_chn10
     input                        want_rq10,   // both want_rq and need_rq should go inactive after being granted  
     input                        need_rq10,
-    output                       channel_pgm_en10, // channel can program sequence data
+    output reg                   channel_pgm_en10, // channel can program sequence data
     input                 [31:0] seq_data10,  //16x32 data to be written to the sequencer (and start address for software-based sequencer)
     input                        seq_wr10,    // strobe for writing sequencer data (address is autoincremented)
     input                        seq_done10,  // channel sequencer data is written. If no seq_wr pulses before seq_done, seq_data contains software sequencer start address
@@ -338,7 +341,7 @@ module  memctrl16 #(
 `ifdef def_enable_mem_chn11
     input                        want_rq11,   // both want_rq and need_rq should go inactive after being granted  
     input                        need_rq11,
-    output                       channel_pgm_en11, // channel can program sequence data
+    output reg                   channel_pgm_en11, // channel can program sequence data
     input                 [31:0] seq_data11,  //16x32 data to be written to the sequencer (and start address for software-based sequencer)
     input                        seq_wr11,    // strobe for writing sequencer data (address is autoincremented)
     input                        seq_done11,  // channel sequencer data is written. If no seq_wr pulses before seq_done, seq_data contains software sequencer start address
@@ -357,7 +360,7 @@ module  memctrl16 #(
 `ifdef def_enable_mem_chn12
     input                        want_rq12,   // both want_rq and need_rq should go inactive after being granted  
     input                        need_rq12,
-    output                       channel_pgm_en12, // channel can program sequence data
+    output reg                   channel_pgm_en12, // channel can program sequence data
     input                 [31:0] seq_data12,  //16x32 data to be written to the sequencer (and start address for software-based sequencer)
     input                        seq_wr12,    // strobe for writing sequencer data (address is autoincremented)
     input                        seq_done12,  // channel sequencer data is written. If no seq_wr pulses before seq_done, seq_data contains software sequencer start address
@@ -376,7 +379,7 @@ module  memctrl16 #(
 `ifdef def_enable_mem_chn13
     input                        want_rq13,   // both want_rq and need_rq should go inactive after being granted  
     input                        need_rq13,
-    output                       channel_pgm_en13, // channel can program sequence data
+    output reg                   channel_pgm_en13, // channel can program sequence data
     input                 [31:0] seq_data13,  //16x32 data to be written to the sequencer (and start address for software-based sequencer)
     input                        seq_wr13,    // strobe for writing sequencer data (address is autoincremented)
     input                        seq_done13,  // channel sequencer data is written. If no seq_wr pulses before seq_done, seq_data contains software sequencer start address
@@ -395,7 +398,7 @@ module  memctrl16 #(
 `ifdef def_enable_mem_chn14
     input                        want_rq14,   // both want_rq and need_rq should go inactive after being granted  
     input                        need_rq14,
-    output                       channel_pgm_en14, // channel can program sequence data
+    output reg                   channel_pgm_en14, // channel can program sequence data
     input                 [31:0] seq_data14,  //16x32 data to be written to the sequencer (and start address for software-based sequencer)
     input                        seq_wr14,    // strobe for writing sequencer data (address is autoincremented)
     input                        seq_done14,  // channel sequencer data is written. If no seq_wr pulses before seq_done, seq_data contains software sequencer start address
@@ -414,7 +417,7 @@ module  memctrl16 #(
 `ifdef def_enable_mem_chn15
     input                        want_rq15,   // both want_rq and need_rq should go inactive after being granted  
     input                        need_rq15,
-    output                       channel_pgm_en15, // channel can program sequence data
+    output reg                   channel_pgm_en15, // channel can program sequence data
     input                 [31:0] seq_data15,  //16x32 data to be written to the sequencer (and start address for software-based sequencer)
     input                        seq_wr15,    // strobe for writing sequencer data (address is autoincremented)
     input                        seq_done15,  // channel sequencer data is written. If no seq_wr pulses before seq_done, seq_data contains software sequencer start address
@@ -471,19 +474,11 @@ wire rst=rst_in; // TODO: decide where toi generate
 
     wire                  [15:0] want_rq;   // both want_rq and need_rq should go inactive after being granted  
     wire                  [15:0] need_rq;
-    wire                  [15:0] channel_pgm_en; // channel can program sequence data
-    wire                 [511:0] seq_data;  //16x32 data to be written to the sequencer (and start address for software-based sequencer)
-    wire                  [15:0] seq_wr;    // strobe for writing sequencer data (address is autoincremented)
-    wire                  [15:0] seq_done;  // channel sequencer data is written. If no seq_wr pulses before seq_done, seq_data contains software sequencer start address
 
-/*
-    input                 [15:0] want_rq,   // both want_rq and need_rq should go inactive after being granted  
-    input                 [15:0] need_rq,
-    output                [15:0] channel_pgm_en, // channel can program sequence data
-    input                [511:0] seq_data,  //16x32 data to be written to the sequencer (and start address for software-based sequencer)
-    input                 [15:0] seq_wr,    // strobe for writing sequencer data (address is autoincremented)
-    input                 [15:0] seq_done,  // channel sequencer data is written. If no seq_wr pulses before seq_done, seq_data contains software sequencer start address
-*/    
+    reg                   [31:0] seq_data;  //16x32 data to be written to the sequencer (and start address for software-based sequencer)
+    reg                          seq_wr;    // strobe for writing sequencer data (address is autoincremented)
+    reg                          seq_done;  // channel sequencer data is written. If no seq_wr pulses before seq_done, seq_data contains software sequencer start address
+
 
 // status data from phy (sequencer)
     wire [7:0] status_ad_phy;
@@ -494,6 +489,14 @@ wire rst=rst_in; // TODO: decide where toi generate
     wire [7:0] status_ad_mcontr;
     wire       status_rq_mcontr;
     wire       status_start_mcontr;
+
+    wire        en_schedul; // enable channel arbitration, needs to be disabled before next access can be scheduled
+    wire        need;       // granted access is "needed" one, not just "wanted"
+    wire        grant;      // single-cycle granted channel access
+    wire  [3:0] grant_chn; // granted  channel number, valid with grant, stays valid until en_schedul is deasserted
+    wire  [3:0] priority_addr;  // channel address to program priority
+    wire [15:0] priority_data;  // priority data for the channel
+    wire        priority_en;    // enable programming priority data (use different clock?) 
 // TODO: implement    
     assign status_ad_mcontr=0;
     assign status_rq_mcontr=0;
@@ -511,10 +514,94 @@ wire rst=rst_in; // TODO: decide where toi generate
         .rq_out    (status_rq), // output
         .start_out (status_start) // input
     );
+// generate 16-bit data commands (and set defaults to registers)
+    cmd_deser #(
+        .ADDR       (MCONTR_ARBIT_ADDR),
+        .ADDR_MASK  (MCONTR_ARBIT_ADDR_MASK),
+        .NUM_CYCLES (4),
+        .ADDR_WIDTH (4),
+        .DATA_WIDTH (16)
+    ) cmd_deser_mcontr_16bit_i (
+        .rst        (rst), // input
+        .clk        (mclk), // input
+        .ad         (cmd_ad), // input[7:0] 
+        .stb        (cmd_stb), // input
+        .addr       (priority_addr), // output[15:0] 
+        .data       (priority_data), // output[31:0] 
+        .we         (priority_en) // output
+    );
   
- 
 
-    /* Instance template for module mcontr_sequencer */
+    scheduler16 #(
+        .width      (16)
+    ) scheduler16_i (
+        .rst        (rst), // input
+        .clk        (mclk), // input
+        .want_rq    (want_rq), // input[15:0] 
+        .need_rq    (need_rq), // input[15:0] 
+        .en_schedul (en_schedul), // input
+        .need       (need), // output
+        .grant      (grant), // output
+        .grant_chn  (grant_chn), // output[3:0] 
+        .pgm_addr   (priority_addr), // input[3:0] 
+        .pgm_data   (priority_data), // input[15:0] 
+        .pgm_en     (priority_en) // input
+    );
+reg     [3:0]   cnm_wr_chn;     // channel granted write access to command sequencer memory
+reg     [9:0]   cmd_addr_cur;   // current address in the command sequencer memory bank1 (PL)
+reg    [10:0]   cmd_addr_start; // sequencer start address (including bank 0/1)
+reg             grant_r;
+reg             cmd_seq_set;    // some command sequencer data was set (so use it)
+always @ (posedge rst or posedge mclk) begin
+    if (rst) grant_r <= 0;
+    else     grant_r <= grant;
+    
+    if (rst)           cmd_seq_set <= 0;
+    else if (grant_r)  cmd_seq_set <= 0;
+    else if (seq_wr)   cmd_seq_set <= 1;
+    
+    
+    if (rst)        cnm_wr_chn <= 0;
+    else if (grant) cnm_wr_chn <= grant_chn;
+
+    if (rst)         cmd_addr_cur <= 0;
+    else if (seq_wr) cmd_addr_cur <= cmd_addr_cur+1;
+    
+    if (rst)                           cmd_addr_start <= 0;
+    else if (grant_r)                  cmd_addr_start <= {1'b1,cmd_addr_cur}; // address in PL bank
+    else if (!cmd_seq_set && seq_done) cmd_addr_start <= {1'b0,seq_data[9:0]}; // address in PL bank
+// add refresh address here?    
+end   
+
+// Add a few 16-bit write registers - refresh, separate refresh enable,
+// refresh sequnecer address
+// something else?
+// TODO: command/refresh arbiter
+//Manual channels (i.e. setap/recalibrate comands) - outside, through channels
+
+
+    wire       refresh_want;
+    wire       refresh_need;
+    reg        refresh_grant;
+
+//   assign run_seq_rq_in = refresh_en && refresh_need; // higher priority request input
+
+    
+    ddr_refresh ddr_refresh_i (
+        .rst              (rst), // input
+        .clk              (mclk), // input
+        .refresh_period   (refresh_period[7:0]), // input[7:0] 
+        .set              (refresh_set), // input
+        .want             (refresh_want), // output
+        .need             (refresh_need), // output
+        .grant            (refresh_grant) // input
+    );
+    always @(posedge rst or  posedge mclk) begin
+         if (rst) refresh_grant <= 0; 
+         else refresh_grant <= !refresh_grant && refresh_en && !run_busy && !axi_run_seq && (refresh_need || (refresh_want && !run_seq_rq_gen)); 
+    end
+
+
     mcontr_sequencer #(
         .DLY_LD                        (DLY_LD),
         .DLY_LD_MASK                   (DLY_LD_MASK),
@@ -589,15 +676,15 @@ wire rst=rst_in; // TODO: decide where toi generate
         .rst_in         (rst_in), // axi_rst), // input TODO: move buffer outside?
         .mclk           (mclk), // output
         
-        .cmd0_clk       (axi_aclk), // input
-        .cmd0_we        (en_cmd0_wr), // input
-        .cmd0_addr      (axiwr_bram_waddr[9:0]), // input[9:0] 
-        .cmd0_data      (axiwr_bram_wdata[31:0]), // input[31:0] 
+        .cmd0_clk       (cmd0_clk), // input
+        .cmd0_we        (cmd0_we), // input
+        .cmd0_addr      (cmd0_addr[9:0]), // input[9:0] 
+        .cmd0_data      (cmd0_data[31:0]), // input[31:0] 
+
         .cmd1_clk       (mclk), // input
-        // TODO: add - from PL generation of the command sequences
-        .cmd1_we          (1'b0), // input
-        .cmd1_addr        (10'b0), // input[9:0] 
-        .cmd1_data        (32'b0), // input[31:0]
+        .cmd1_we        (seq_wr), // input
+        .cmd1_addr      (cmd_addr_cur), // input[9:0] 
+        .cmd1_data      (seq_data), // input[31:0]
          
         .run_addr       (run_addr[10:0]), // input[10:0] 
         .run_chn        (run_chn[3:0]), // input[3:0] 
@@ -799,128 +886,164 @@ wire rst=rst_in; // TODO: decide where toi generate
 
 // combining channel control signals to buses
 `ifndef def_enable_mem_chn0
-    wire   want_rq0=0, need_rq0=0, seq_wr0=0, seq_done0=0;
-    wire   [31:0] seq_data0=0;
+    wire   want_rq0=0, need_rq0=0;
 `endif
 `ifndef def_enable_mem_chn1
-    wire   want_rq1=0, need_rq1=0, seq_wr1=0, seq_done1=0;
-    wire   [31:0] seq_data1=0;
+    wire   want_rq1=0, need_rq1=0;
 `endif  
 `ifndef def_enable_mem_chn2
-    wire   want_rq2=0, need_rq2=0, seq_wr2=0, seq_done2=0;
-    wire   [31:0] seq_data2=0;
+    wire   want_rq2=0, need_rq2=0;
 `endif  
 `ifndef def_enable_mem_chn3
-    wire   want_rq3=0, need_rq3=0, seq_wr3=0, seq_done3=0;
-    wire   [31:0] seq_data3=0;
+    wire   want_rq3=0, need_rq3=0;
 `endif  
 `ifndef def_enable_mem_chn4
-    wire   want_rq4=0, need_rq4=0, seq_wr4=0, seq_done4=0;
-    wire   [31:0] seq_data4=0;
+    wire   want_rq4=0, need_rq4=0;
 `endif  
 `ifndef def_enable_mem_chn5
-    wire   want_rq5=0, need_rq5=0, seq_wr5=0, seq_done5=0;
-    wire   [31:0] seq_data5=0;
+    wire   want_rq5=0, need_rq5=0;
 `endif  
 `ifndef def_enable_mem_chn6
-    wire   want_rq6=0, need_rq6=0, seq_wr6=0, seq_done6=0;
-    wire   [31:0] seq_data6=0;
+    wire   want_rq6=0, need_rq6=0;
 `endif  
 `ifndef def_enable_mem_chn7
-    wire   want_rq7=0, need_rq7=0, seq_wr7=0, seq_done7=0;
-    wire   [31:0] seq_data7=0;
+    wire   want_rq7=0, need_rq7=0;
 `endif  
 `ifndef def_enable_mem_chn8
-    wire   want_rq8=0, need_rq8=0, seq_wr8=0, seq_done8=0;
-    wire   [31:0] seq_data8=0;
+    wire   want_rq8=0, need_rq8=0;
 `endif  
 `ifndef def_enable_mem_chn9
-    wire   want_rq9=0, need_rq9=0, seq_wr9=0, seq_done9=0;
-    wire   [31:0] seq_data9=0;
+    wire   want_rq9=0, need_rq9=0;
 `endif  
 `ifndef def_enable_mem_chn10
-    wire   want_rq10=0, need_rq10=0, seq_wr10=0, seq_done10=0;
-    wire   [31:0] seq_data10=0;
+    wire   want_rq10=0, need_rq10=0;
 `endif  
 `ifndef def_enable_mem_chn11
-    wire   want_rq11=0, need_rq11=0, seq_wr11=0, seq_done11=0;
-    wire   [31:0] seq_data11=0;
+    wire   want_rq11=0, need_rq11=0;
 `endif  
 `ifndef def_enable_mem_chn12
-    wire   want_rq12=0, need_rq12=0, seq_wr12=0, seq_done12=0;
-    wire   [31:0] seq_data12=0;
+    wire   want_rq12=0, need_rq12=0;
 `endif  
 `ifndef def_enable_mem_chn13
-    wire   want_rq13=0, need_rq13=0, seq_wr13=0, seq_done13=0;
-    wire   [31:0] seq_data13=0;
+    wire   want_rq13=0, need_rq13=0;
 `endif  
 `ifndef def_enable_mem_chn14
-    wire   want_rq14=0, need_rq14=0, seq_wr14=0, seq_done14=0;
-    wire   [31:0] seq_data14=0;
+    wire   want_rq14=0, need_rq14=0;
 `endif  
 `ifndef def_enable_mem_chn15
-    wire   want_rq15=0, need_rq15=0, seq_wr15=0, seq_done15=0;
-    wire   [31:0] seq_data15=0;
+    wire   want_rq15=0, need_rq15=0;
 `endif  
 
 assign want_rq[15:0]=   {want_rq15,want_rq14,want_rq13,want_rq12,want_rq11,want_rq10,want_rq9,want_rq8,
                          want_rq7,want_rq6,want_rq5,want_rq4,want_rq3,want_rq2,want_rq1,want_rq0};  
 assign need_rq[15:0]=   {need_rq15,need_rq14,need_rq13,need_rq12,need_rq11,need_rq10,need_rq9,need_rq8,
-                         need_rq7,need_rq6,need_rq5,need_rq4,need_rq3,need_rq2,need_rq1,need_rq0};  
-assign seq_wr[15:0]=    {seq_wr15,seq_wr14,seq_wr13,seq_wr12,seq_wr11,seq_wr10,seq_wr9,seq_wr8,
-                         seq_wr7,seq_wr6,seq_wr5,seq_wr4,seq_wr3,seq_wr2,seq_wr1,seq_wr0};  
-assign seq_done[15:0]=  {seq_done15,seq_done14,seq_done13,seq_done12,seq_done11,seq_done10,seq_done9,seq_done8,
-                         seq_done7,seq_done6,seq_done5,seq_done4,seq_done3,seq_done2,seq_done1,seq_done0};
-assign seq_data[511:0]= {seq_data15,seq_data14,seq_data13,seq_data12,seq_data11,seq_data10,seq_data9,seq_data8,
-                         seq_data7,seq_data6,seq_data5,seq_data4,seq_data3,seq_data2,seq_data1,seq_data0};  
+                         need_rq7,need_rq6,need_rq5,need_rq4,need_rq3,need_rq2,need_rq1,need_rq0};
 
+always @ (posedge rst or posedge mclk) begin
+    if (rst) begin seq_data <= 0; seq_wr <=0; seq_done <=0; end
+    else begin
+        case (cnm_wr_chn)
 `ifdef def_enable_mem_chn0
-    assign channel_pgm_en0=channel_pgm_en[0];
+            4'h0:begin seq_data <= seq_data0; seq_wr <= seq_wr0; seq_done <= seq_done0; end
 `endif
 `ifdef def_enable_mem_chn1
-    assign channel_pgm_en1=channel_pgm_en[1];
+            4'd1:begin seq_data <= seq_data1; seq_wr <= seq_wr1; seq_done <= seq_done1; end
 `endif
 `ifdef def_enable_mem_chn2
-    assign channel_pgm_en2=channel_pgm_en[2];
+            4'd2:begin seq_data <= seq_data2; seq_wr <= seq_wr2; seq_done <= seq_done2; end
 `endif
 `ifdef def_enable_mem_chn3
-    assign channel_pgm_en3=channel_pgm_en[3];
+            4'd3:begin seq_data <= seq_data3; seq_wr <= seq_wr3; seq_done <= seq_done3; end
 `endif
 `ifdef def_enable_mem_chn4
-    assign channel_pgm_en4=channel_pgm_en[4];
+            4'd4:begin seq_data <= seq_data4; seq_wr <= seq_wr4; seq_done <= seq_done4; end
 `endif
 `ifdef def_enable_mem_chn5
-    assign channel_pgm_en5=channel_pgm_en[5];
+            4'd5:begin seq_data <= seq_data5; seq_wr <= seq_wr5; seq_done <= seq_done5; end
 `endif
 `ifdef def_enable_mem_chn6
-    assign channel_pgm_en6=channel_pgm_en[6];
+            4'd6:begin seq_data <= seq_data6; seq_wr <= seq_wr6; seq_done <= seq_done6; end
 `endif
 `ifdef def_enable_mem_chn7
-    assign channel_pgm_en7=channel_pgm_en[7];
+            4'd7:begin seq_data <= seq_data7; seq_wr <= seq_wr7; seq_done <= seq_done7; end
 `endif
 `ifdef def_enable_mem_chn8
-    assign channel_pgm_en8=channel_pgm_en[8];
+            4'd8:begin seq_data <= seq_data8; seq_wr <= seq_wr8; seq_done <= seq_done8; end
 `endif
 `ifdef def_enable_mem_chn9
-    assign channel_pgm_en9=channel_pgm_en[9];
+            4'd9:begin seq_data <= seq_data9; seq_wr <= seq_wr9; seq_done <= seq_done9; end
 `endif
 `ifdef def_enable_mem_chn10
-    assign channel_pgm_en10=channel_pgm_en[10];
+            4'd10:begin seq_data <= seq_data10; seq_wr <= seq_wr10; seq_done <= seq_done10; end
 `endif
 `ifdef def_enable_mem_chn11
-    assign channel_pgm_en11=channel_pgm_en[11];
+            4'd11:begin seq_data <= seq_data11; seq_wr <= seq_wr11; seq_done <= seq_done11; end
 `endif
 `ifdef def_enable_mem_chn12
-    assign channel_pgm_en12=channel_pgm_en[12];
+            4'd12:begin seq_data <= seq_data12; seq_wr <= seq_wr12; seq_done <= seq_done12; end
 `endif
 `ifdef def_enable_mem_chn13
-    assign channel_pgm_en13=channel_pgm_en[13];
+            4'd13:begin seq_data <= seq_data13; seq_wr <= seq_wr13; seq_done <= seq_done13; end
 `endif
 `ifdef def_enable_mem_chn14
-    assign channel_pgm_en14=channel_pgm_en[14];
+            4'd14:begin seq_data <= seq_data14; seq_wr <= seq_wr14; seq_done <= seq_done14; end
 `endif
 `ifdef def_enable_mem_chn15
-    assign channel_pgm_en15=channel_pgm_en[15];
+            4'd15:begin seq_data <= seq_data15; seq_wr <= seq_wr15; seq_done <= seq_done15; end
+`endif
+        endcase
+    end
+end   
+
+
+
+`ifdef def_enable_mem_chn0
+    always @ (posedge mclk) channel_pgm_en0 <= grant && (grant_chn == 0);
+`endif
+`ifdef def_enable_mem_chn1
+    always @ (posedge mclk) channel_pgm_en1 <= grant && (grant_chn == 1);
+`endif
+`ifdef def_enable_mem_chn2
+    always @ (posedge mclk) channel_pgm_en2 <= grant && (grant_chn == 2);
+`endif
+`ifdef def_enable_mem_chn3
+    always @ (posedge mclk) channel_pgm_en3 <= grant && (grant_chn == 3);
+`endif
+`ifdef def_enable_mem_chn4
+    always @ (posedge mclk) channel_pgm_en4 <= grant && (grant_chn == 4);
+`endif
+`ifdef def_enable_mem_chn5
+    always @ (posedge mclk) channel_pgm_en5 <= grant && (grant_chn == 5);
+`endif
+`ifdef def_enable_mem_chn6
+    always @ (posedge mclk) channel_pgm_en6 <= grant && (grant_chn == 6);
+`endif
+`ifdef def_enable_mem_chn7
+    always @ (posedge mclk) channel_pgm_en7 <= grant && (grant_chn == 7);
+`endif
+`ifdef def_enable_mem_chn8
+    always @ (posedge mclk) channel_pgm_en8 <= grant && (grant_chn == 8);
+`endif
+`ifdef def_enable_mem_chn9
+    always @ (posedge mclk) channel_pgm_en9 <= grant && (grant_chn == 9);
+`endif
+`ifdef def_enable_mem_chn10
+    always @ (posedge mclk) channel_pgm_en10 <= grant && (grant_chn == 10);
+`endif
+`ifdef def_enable_mem_chn11
+    always @ (posedge mclk) channel_pgm_en11 <= grant && (grant_chn == 11);
+`endif
+`ifdef def_enable_mem_chn12
+    always @ (posedge mclk) channel_pgm_en12 <= grant && (grant_chn == 12);
+`endif
+`ifdef def_enable_mem_chn13
+    always @ (posedge mclk) channel_pgm_en13 <= grant && (grant_chn == 13);
+`endif
+`ifdef def_enable_mem_chn14
+    always @ (posedge mclk) channel_pgm_en14 <= grant && (grant_chn == 14);
+`endif
+`ifdef def_enable_mem_chn15
+    always @ (posedge mclk) channel_pgm_en15 <= grant && (grant_chn == 15);
 `endif
 
 endmodule
