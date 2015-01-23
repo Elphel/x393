@@ -273,14 +273,14 @@ module  x393 #(
 // External memory interface   
 // SuppressWarnings VEditor unused (yet?) - use mclk 
    wire           axird_bram_rclk;  //      .rclk(aclk),                  // clock for read port
+   // while only status provides read data, the next signals are not used (relies on axird_pre_araddr, axird_start_burst)
    wire  [AXI_RD_ADDR_BITS-1:0] axird_bram_raddr; //   .raddr(read_in_progress?read_address[9:0]:10'h3ff),    // read address
    wire           axird_bram_ren;   //      .ren(bram_reg_re_w) ,      // read port enable
    wire           axird_bram_regen; //   .regen(bram_reg_re_w),        // output register enable
    wire  [31:0]   axird_bram_rdata;  //      .data_out(rdata[31:0]),       // data out
 //   wire  [31:0]   port0_rdata;  //
-//????? - why not used - should go to AXI?
    wire  [31:0]   status_rdata;  //
-   wire           status_valid;
+   wire           status_valid; // never used - supposed to be always valid?
 
    wire        mclk;
    wire        en_cmd0_wr;
@@ -344,9 +344,9 @@ module  x393 #(
 //   wire [ 7:0] dqm_pattern; // input[7:0] 8'h00
 
 //   reg    select_port0; // May be used later!
-   reg    select_status;
+   reg  select_status;
    wire axiwr_dev_busy;
-//   wire axird_dev_busy;
+   wire axird_dev_busy;
    
 //   wire [ 3:0] dq_tri_on_pattern;
 //   wire [ 3:0] dq_tri_off_pattern;
@@ -398,7 +398,11 @@ module  x393 #(
    assign locked=locked_mmcm && locked_pll;
 */
    assign en_cmd0_wr=     axiwr_bram_wen   && (((axiwr_bram_waddr ^ CMD0_ADDR) & CMD0_ADDR_MASK)==0);
-   assign axird_dev_ready = 1'b1;
+   assign axird_dev_ready = ~axird_dev_busy; //may combine (AND) multiple sources if needed
+   assign axird_dev_busy = 1'b0; // always for now
+//   assign axird_bram_rdata= select_port0? port0_rdata[31:0]:(select_status?status_rdata[31:0]:32'bx);
+   assign axird_bram_rdata= select_status?status_rdata[31:0]:32'bx;
+   assign axiwr_dev_ready = ~axiwr_dev_busy; //may combine (AND) multiple sources if needed
 
 // Clock and reset from PS
     wire comb_rst=~frst[0] | frst[1];
@@ -473,7 +477,7 @@ end
     wire                  [7:0] status_mcontr_ad;    // Memory controller status byte-wide address/data 
     wire                        status_mcontr_rq;    // Memory controller status request  
     wire                        status_mcontr_start; // Memory controller status packet transfer start (currently with 0 latency from status_root_rq)
-
+// Not yet connected
     wire                  [7:0] status_other_ad;    // Other status byte-wide address/data 
     wire                        status_other_rq;    // Other status request  
     wire                        status_other_start; // Other status packet transfer start (currently with 0 latency from status_root_rq)
@@ -771,7 +775,7 @@ frst[3]?{
 
     4'b0,              // 4'b0
     
-    4'b0,              // 4'b0
+    tmp_debug[11:8],   // 4'b0
     
     tmp_debug[7:4],    // 4'b0111 -> 4'bx00x
                        //    dly_addr[1],        0
@@ -783,15 +787,17 @@ frst[3]?{
                        //    rst_in,  0 0
                        //    dci_rst, 0 1
                        //    dly_rst  0 1
-    phy_locked_mmcm,   //  1 1
-    phy_locked_pll,    //  1 1
-    phy_dci_ready,     //  1 0
-    phy_dly_ready,     //  1 0
+    4'h0,                   
+//    phy_locked_mmcm,   //  1 1
+//    phy_locked_pll,    //  1 1
+//    phy_dci_ready,     //  1 0
+//    phy_dly_ready,     //  1 0
     
-    locked_mmcm,       //  1 1
-    locked_pll,        //  1 1
-    dci_ready,         //  1 0
-    dly_ready         //  1 0
+    4'h0                   
+//    locked_mmcm,       //  1 1
+//    locked_pll,        //  1 1
+//    dci_ready,         //  1 0
+//    dly_ready         //  1 0
                        
     }:{
         waddr_wcount[3:0], 
@@ -824,9 +830,9 @@ frst[3]?{
     wdata_over_r,
     wresp_over_r, // ???
      
-    run_busy, // input // 0 
-    locked, // input   // 1
-    ps_rdy, // input   // 1
+    1'b0, // run_busy, // input // 0 
+    1'b0, //locked, // input   // 1
+    1'b0, // ps_rdy, // input   // 1
     axi_arready,       // 1
     
     axi_awready,       // 1
