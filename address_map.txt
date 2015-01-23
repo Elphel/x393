@@ -2,18 +2,28 @@
     parameter MCONTR_PHY_0BIT_ADDR =           'h020,  // address to set sequnecer channel and  run (4 LSB-s - channel)
     parameter MCONTR_PHY_0BIT_ADDR_MASK =      'h3f0,  // address mask to generate sequencer channel/run
   0x1020       - DLY_SET      // 0 bits -set pre-programmed delays 
-  0x1024..1025 - CMDA_EN      // 0 bits - enable/disable command/address outputs 
-  0x1026..1027 - SDRST_ACT    // 0 bits - enable/disable active-low reset signal to DDR3 memory
-  0x1028..1029 - CKE_EN       // 0 bits - enable/disable CKE signal to memory 
-  0x102a..102b - DCI_RST      // 0 bits - enable/disable CKE signal to memory 
-  0x102c..102d - DLY_RST      // 0 bits - enable/disable CKE signal to memory
+  0x1024..1025 - CMDA_EN      // 0 bits - disable/enable command/address outputs 
+  0x1026..1027 - SDRST_ACT    // 0 bits - disable/enable active-low reset signal to DDR3 memory
+  0x1028..1029 - CKE_EN       // 0 bits - disable/enable CKE signal to memory 
+  0x102a..102b - DCI_RST      // 0 bits - disable/enable CKE signal to memory 
+  0x102c..102d - DLY_RST      // 0 bits - disable/enable CKE signal to memory
     parameter MCONTR_PHY_0BIT_DLY_SET =        'h0,    // set pre-programmed delays 
-    parameter MCONTR_PHY_0BIT_CMDA_EN =        'h4,    // enable/disable command/address outputs 
-    parameter MCONTR_PHY_0BIT_SDRST_ACT =      'h6,    // enable/disable active-low reset signal to DDR3 memory
-    parameter MCONTR_PHY_0BIT_CKE_EN =         'h8,    // enable/disable CKE signal to memory 
-    parameter MCONTR_PHY_0BIT_DCI_RST =        'ha,    // enable/disable CKE signal to memory 
-    parameter MCONTR_PHY_0BIT_DLY_RST =        'hc,    // enable/disable CKE signal to memory 
+    parameter MCONTR_PHY_0BIT_CMDA_EN =        'h4,    // disable/enable command/address outputs 
+    parameter MCONTR_PHY_0BIT_SDRST_ACT =      'h6,    // disable/enable active-low reset signal to DDR3 memory
+    parameter MCONTR_PHY_0BIT_CKE_EN =         'h8,    // disable/enable CKE signal to memory 
+    parameter MCONTR_PHY_0BIT_DCI_RST =        'ha,    // disable/enable CKE signal to memory 
+    parameter MCONTR_PHY_0BIT_DLY_RST =        'hc,    // disable/enable CKE signal to memory 
 
+0x1030..1037 - 0-bit memory cotroller (set/reset)
+    parameter MCONTR_TOP_0BIT_ADDR =           'h030,  // address to turn on/off memory controller features
+    parameter MCONTR_TOP_0BIT_ADDR_MASK =      'h3f8,  // address mask to generate sequencer channel/run
+  0x1030..1031 - MCONTR_EN  // 0 bits, disable/enable memory controller
+  0x1032..1033 - REFRESH_EN // 0 bits, disable/enable memory refresh
+  0x1034..1037 - reserved
+    parameter MCONTR_TOP_0BIT_MCONTR_EN =      'h0,    // set pre-programmed delays 
+    parameter MCONTR_TOP_0BIT_REFRESH_EN =     'h2,    // disable/enable command/address outputs 
+  
+    
 0x1040..107f - 16-bit data
   0x1050..1057: MCONTR_PHY16
     parameter MCONTR_PHY_16BIT_ADDR =           'h050,  // address to set sequnecer channel and  run (4 LSB-s - channel)
@@ -31,12 +41,25 @@
 0x1060..106f: arbiter priority data
     parameter MCONTR_ARBIT_ADDR =              'h060,   // Address to set channel priorities
     parameter MCONTR_ARBIT_ADDR_MASK =         'h3f0,   // Address mask to set channel priorities
-    
+0x1070..1077 - 16-bit top memory controller:
+    parameter MCONTR_TOP_16BIT_ADDR =           'h070,  // address to set mcontr top control registers
+    parameter MCONTR_TOP_16BIT_ADDR_MASK =      'h3f8,  // address mask to set mcontr top control registers
+  0x1070       - MCONTR_CHN_EN     // 16 bits per-channel enable (want/need requests)
+  0x1071       - REFRESH_PERIOD    // 8-bit refresh period
+  0x1072       - REFRESH_ADDRESS   // 10 bits
+  0x1073       - STATUS_CNTRL      // 8 bits - write to status control (and debug?)
+    parameter MCONTR_TOP_16BIT_CHN_EN =         'h0,    // 16 bits per-channel enable (want/need requests)
+    parameter MCONTR_TOP_16BIT_REFRESH_PERIOD = 'h1,    // 8-bit refresh period
+    parameter MCONTR_TOP_16BIT_REFRESH_ADDRESS= 'h2,    // 10 bits refresh address in the sequencer (PL) memory
+    parameter MCONTR_TOP_16BIT_STATUS_CNTRL=    'h3,    // 8 bits - write to status control (and debug?)
+  
+
 // Status read address
     parameter STATUS_ADDR =         'h1400, // AXI write address of status read registers
     parameter STATUS_ADDR_MASK =    'h1400, // AXI write address of status registers
     parameter STATUS_DEPTH=         8,  // 256 cells, maybe just 16..64 are enough?
     parameter MCONTR_PHY_STATUS_REG_ADDR=      'h0,    // 8 or less bits: status register address to use for memory controller phy
+    parameter MCONTR_TOP_STATUS_REG_ADDR=      'h1,    // 8 or less bits: status register address to use for memory controller
 
 ================================ OLD =======================================================
  Control addresses (in original ddrc_test01)

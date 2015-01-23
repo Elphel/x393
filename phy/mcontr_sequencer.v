@@ -22,8 +22,13 @@
 
 module  mcontr_sequencer   #(
 //command interface parameters
-    parameter DLY_LD =            'h080,  // address to generate delay load
+//0x1080..10ff - 8- bit data - to set various delay values
+    parameter DLY_LD =            'h080,  // address to generate delay load 
     parameter DLY_LD_MASK =       'h380,  // address mask to generate delay load
+//  0x1080..109f - set delay for SDD0-SDD7
+//  0x10a0..10bf - set delay for SDD8-SDD15
+//  0x10c0..10df - set delay for SD_CMDA
+//  0x10e0       - set delay for MMCM
 //0x1000..103f - 0- bit data (set/reset)
     parameter MCONTR_PHY_0BIT_ADDR =           'h020,  // address to set sequnecer channel and  run (4 LSB-s - channel)
     parameter MCONTR_PHY_0BIT_ADDR_MASK =      'h3f0,  // address mask to generate sequencer channel/run
@@ -126,7 +131,7 @@ module  mcontr_sequencer   #(
     input                        run_seq,  // start controller sequence (will and with !ddr_rst for stable mclk)
     output                       run_done, // controller sequence finished
     output                       run_busy, // controller sequence in progress
-      
+    output                       mcontr_reset, // == ddr_reset that also resets sequencer  
     // programming interface
     input                  [7:0] cmd_ad,      // byte-serial command address/data (up to 6 bytes: AL-AH-D0-D1-D2-D3 
     input                        cmd_stb,     // strobe (with first byte) for the command a/d
@@ -146,7 +151,7 @@ module  mcontr_sequencer   #(
 // Address/data sync to negedge mclk!, any latency OK - just generate DONE appropriately (through the sequencer with delay?
     output                       ext_buf_wr,
     output                 [6:0] ext_buf_waddr,  // valid with ext_buf_wr
-    output                 [3:0] ext_buf_wchn,   // ==run_chn_d valid 1 cycle ahead opf ext_buf_wr!, maybe not needed - will be generated externally
+    output                 [3:0] ext_buf_wchn,   // ==run_chn_d valid 1 cycle ahead of ext_buf_wr!, maybe not needed - will be generated externally
     output                [63:0] ext_buf_wdata,   // valid with ext_buf_wr
 // temporary debug data    
     output                [11:0] tmp_debug
@@ -244,6 +249,7 @@ module  mcontr_sequencer   #(
       phy_dci_ready,
       tmp_debug_a[7:0]};
     
+    assign mcontr_reset=ddr_rst; // to reset controller
     assign run_done=sequence_done;
     assign run_busy=cmd_busy[0]; //earliest
     assign  pause=cmd_fetch? (phy_cmd_add_pause || (phy_cmd_nop && (pause_len != 0))): (cmd_busy[2] && (pause_cntr[CMD_PAUSE_BITS-1:1]!=0));
@@ -296,7 +302,7 @@ module  mcontr_sequencer   #(
         .stb        (cmd_stb), // input
         .addr       (phy_0bit_addr), // output[15:0] 
         .data       (), // output[31:0] 
-        .we(        phy_0bit_we) // output
+        .we         (phy_0bit_we) // output
     );
 
     assign   set= phy_0bit_we && (phy_0bit_addr==MCONTR_PHY_0BIT_DLY_SET);
@@ -331,7 +337,7 @@ module  mcontr_sequencer   #(
         .stb        (cmd_stb), // input
         .addr       (phy_16bit_addr), // output[15:0] 
         .data       (phy_16bit_data), // output[31:0] 
-        .we(        phy_16bit_we) // output
+        .we         (phy_16bit_we) // output
     );
     wire set_patterns;
     wire set_patterns_tri;

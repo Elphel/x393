@@ -23,6 +23,84 @@
 `define DEBUG_FIFO 1
 `include ".editor_defines" 
 module  x393 #(
+//command interface parameters
+    parameter DLY_LD =            'h080,  // address to generate delay load
+    parameter DLY_LD_MASK =       'h380,  // address mask to generate delay load
+//0x1000..103f - 0- bit data (set/reset)
+    parameter MCONTR_PHY_0BIT_ADDR =           'h020,  // address to set sequnecer channel and  run (4 LSB-s - channel)
+    parameter MCONTR_PHY_0BIT_ADDR_MASK =      'h3f0,  // address mask to generate sequencer channel/run
+//  0x1020       - DLY_SET      // 0 bits -set pre-programmed delays 
+//  0x1024..1025 - CMDA_EN      // 0 bits - enable/disable command/address outputs 
+//  0x1026..1027 - SDRST_ACT    // 0 bits - enable/disable active-low reset signal to DDR3 memory
+//  0x1028..1029 - CKE_EN       // 0 bits - enable/disable CKE signal to memory 
+//  0x102a..102b - DCI_RST      // 0 bits - enable/disable CKE signal to memory 
+//  0x102c..102d - DLY_RST      // 0 bits - enable/disable CKE signal to memory 
+    parameter MCONTR_PHY_0BIT_DLY_SET =        'h0,    // set pre-programmed delays 
+    parameter MCONTR_PHY_0BIT_CMDA_EN =        'h4,    // enable/disable command/address outputs 
+    parameter MCONTR_PHY_0BIT_SDRST_ACT =      'h6,    // enable/disable active-low reset signal to DDR3 memory
+    parameter MCONTR_PHY_0BIT_CKE_EN =         'h8,    // enable/disable CKE signal to memory 
+    parameter MCONTR_PHY_0BIT_DCI_RST =        'ha,    // enable/disable CKE signal to memory 
+    parameter MCONTR_PHY_0BIT_DLY_RST =        'hc,    // enable/disable CKE signal to memory
+//0x1030..1037 - 0-bit memory cotroller (set/reset)
+    parameter MCONTR_TOP_0BIT_ADDR =           'h030,  // address to turn on/off memory controller features
+    parameter MCONTR_TOP_0BIT_ADDR_MASK =      'h3f8,  // address mask to generate sequencer channel/run
+//  0x1030..1031 - MCONTR_EN  // 0 bits, disable/enable memory controller
+//  0x1032..1033 - REFRESH_EN // 0 bits, disable/enable memory refresh
+//  0x1034..1037 - reserved
+    parameter MCONTR_TOP_0BIT_MCONTR_EN =      'h0,    // set pre-programmed delays 
+    parameter MCONTR_TOP_0BIT_REFRESH_EN =     'h2,    // disable/enable command/address outputs 
+//0x1040..107f - 16-bit data
+//  0x1040..104f - RUN_CHN      // address to set sequncer channel and  run (4 LSB-s - channel) - bits? 
+//    parameter RUN_CHN_REL =           'h040,  // address to set sequnecer channel and  run (4 LSB-s - channel)
+//   parameter RUN_CHN_REL_MASK =      'h3f0,  // address mask to generate sequencer channel/run
+//  0x1050..1057: MCONTR_PHY16
+    parameter MCONTR_PHY_16BIT_ADDR =           'h050,  // address to set sequnecer channel and  run (4 LSB-s - channel)
+    parameter MCONTR_PHY_16BIT_ADDR_MASK =      'h3f8,  // address mask to generate sequencer channel/run
+//  0x1050       - PATTERNS     // 16 bits
+//  0x1051       - PATTERNS_TRI // 16-bit address to set DQM and DQS tristate on/off patterns {dqs_off,dqs_on, dq_off,dq_on} - 4 bits each 
+//  0x1052       - WBUF_DELAY   // 4 bits - extra delay (in mclk cycles) to add to write buffer enable (DDR3 read data)
+//  0x1053       - EXTRA_REL    // 1 bit - set extra parameters (currently just inv_clk_div)
+//  0x1054       - STATUS_CNTRL // 8 bits - write to status control
+    parameter MCONTR_PHY_16BIT_PATTERNS =       'h0,    // set DQM and DQS patterns (16'h0055)
+    parameter MCONTR_PHY_16BIT_PATTERNS_TRI =   'h1,    // 16-bit address to set DQM and DQS tristate on/off patterns {dqs_off,dqs_on, dq_off,dq_on} - 4 bits each 
+    parameter MCONTR_PHY_16BIT_WBUF_DELAY =     'h2,    // 4? bits - extra delay (in mclk cycles) to add to write buffer enable (DDR3 read data)
+    parameter MCONTR_PHY_16BIT_EXTRA =          'h3,    // ? bits - set extra parameters (currently just inv_clk_div)
+    parameter MCONTR_PHY_STATUS_CNTRL =         'h4,    // write to status control (8-bit)
+   
+//0x1060..106f: arbiter priority data
+    parameter MCONTR_ARBIT_ADDR =               'h060,   // Address to set channel priorities
+    parameter MCONTR_ARBIT_ADDR_MASK =          'h3f0,   // Address mask to set channel priorities
+//0x1070..1077 - 16-bit top memory controller:
+    parameter MCONTR_TOP_16BIT_ADDR =           'h070,  // address to set mcontr top control registers
+    parameter MCONTR_TOP_16BIT_ADDR_MASK =      'h3f8,  // address mask to set mcontr top control registers
+//  0x1070       - MCONTR_CHN_EN     // 16 bits per-channel enable (want/need requests)
+//  0x1071       - REFRESH_PERIOD    // 8-bit refresh period
+//  0x1072       - REFRESH_ADDRESS   // 10 bits
+//  0x1073       - STATUS_CNTRL      // 8 bits - write to status control (and debug?)
+    parameter MCONTR_TOP_16BIT_CHN_EN =         'h0,    // 16 bits per-channel enable (want/need requests)
+    parameter MCONTR_TOP_16BIT_REFRESH_PERIOD = 'h1,    // 8-bit refresh period
+    parameter MCONTR_TOP_16BIT_REFRESH_ADDRESS= 'h2,    // 10 bits refresh address in the sequencer (PL) memory
+    parameter MCONTR_TOP_16BIT_STATUS_CNTRL=    'h3,    // 8 bits - write to status control (and debug?)
+    
+// Status read address
+    parameter MCONTR_PHY_STATUS_REG_ADDR=      'h0,    // 8 or less bits: status register address to use for memory controller phy
+    parameter MCONTR_TOP_STATUS_REG_ADDR=      'h1,    // 8 or less bits: status register address to use for memory controller
+    
+    
+    parameter CHNBUF_READ_LATENCY =             0,     // external channel buffer extra read latency ( 0 - data available next cycle after re (but prev. data))
+    
+    parameter DFLT_DQS_PATTERN=        8'h55,
+    parameter DFLT_DQM_PATTERN=        8'h00, // 8'h00
+    parameter DFLT_DQ_TRI_ON_PATTERN=  4'h7,  // DQ tri-state control word, first when enabling output
+    parameter DFLT_DQ_TRI_OFF_PATTERN= 4'he,  // DQ tri-state control word, first after disabling output
+    parameter DFLT_DQS_TRI_ON_PATTERN= 4'h3,  // DQS tri-state control word, first when enabling output
+    parameter DFLT_DQS_TRI_OFF_PATTERN=4'hc,  // DQS tri-state control word, first after disabling output
+    parameter DFLT_WBUF_DELAY=         4'h6,  // write levelling - 7!
+    parameter DFLT_INV_CLK_DIV=        1'b0,
+    
+    parameter DFLT_CHN_EN=            16'h0,  // channel mask to be enabled at reset
+    parameter DFLT_REFRESH_ADDR=      10'h0,  // refresh sequence address in command memory
+    parameter DFLT_REFRESH_PERIOD=     8'h0,  // default 8-bit refresh period (scale?)
     parameter PHASE_WIDTH =     8,
     parameter SLEW_DQ =         "SLOW",
     parameter SLEW_DQS =        "SLOW",
@@ -67,12 +145,12 @@ module  x393 #(
     parameter CONTROL_ADDR_MASK =   'h1400, // AXI write address of control registers
     parameter NUM_CYCLES_LOW_BIT=   'h6,    // decode addresses [NUM_CYCLES_LOW_BIT+:4] into command a/d length
 // TODO: put actual data    
-    parameter NUM_CYCLES_00 =       9, // single-cycle
-    parameter NUM_CYCLES_01 =       2, // 2-cycle
-    parameter NUM_CYCLES_02 =       3, // 3-cycle
-    parameter NUM_CYCLES_03 =       4, // 4-cycle
-    parameter NUM_CYCLES_04 =       5, // 5-cycle
-    parameter NUM_CYCLES_05 =       6, // 6-cycle
+    parameter NUM_CYCLES_00 =       2, // 2-cycle 000.003f
+    parameter NUM_CYCLES_01 =       4, // 4-cycle 040.007f
+    parameter NUM_CYCLES_02 =       3, // 3-cycle 080.00bf
+    parameter NUM_CYCLES_03 =       3, // 3-cycle 0c0.00ff
+    parameter NUM_CYCLES_04 =       5, // 5-cycle - not yet used
+    parameter NUM_CYCLES_05 =       6, // 6-cycle - not yet used
     parameter NUM_CYCLES_06 =       6, //
     parameter NUM_CYCLES_07 =       6, //
     parameter NUM_CYCLES_08 =       6, //
@@ -82,51 +160,18 @@ module  x393 #(
     parameter NUM_CYCLES_12 =       6, //
     parameter NUM_CYCLES_13 =       6, //
     parameter NUM_CYCLES_14 =       6, //
-    parameter NUM_CYCLES_15 =       6, //
+    parameter NUM_CYCLES_15 =       9, // single-cycle
     
 //    parameter STATUS_ADDR =         'h1400, // AXI write address of status read registers
 //    parameter STATUS_ADDR_MASK =    'h1400, // AXI write address of status registers
 //    parameter BUSY_WR_ADDR =        'h1800, // AXI write address to generate busy
 //    parameter BUSY_WR_ADDR_MASK =   'h1c00, // AXI write address mask to generate busy
     parameter CMD0_ADDR =           'h0800, // AXI write to command sequence memory
-    parameter CMD0_ADDR_MASK =      'h1800, // AXI read address mask for the command sequence memory
-    parameter PORT0_RD_ADDR =       'h0000, // AXI read address to generate busy
-    parameter PORT0_RD_ADDR_MASK =  'h1c00, // AXI read address mask to generate busy
-    parameter PORT1_WR_ADDR =       'h0400, // AXI read address to generate busy
-    parameter PORT1_WR_ADDR_MASK =  'h1c00,  // AXI read address mask to generate busy
-    // parameters below to be ORed with CONTROL_ADDR and CONTROL_ADDR_MASK respectively
-    parameter DLY_LD_REL =            'h080,  // address to generate delay load
-    parameter DLY_LD_REL_MASK =       'h380,  // address mask to generate delay load
-    parameter DLY_SET_REL =           'h070,  // address to generate delay set
-    parameter DLY_SET_REL_MASK =      'h3ff,  // address mask to generate delay set
-    parameter RUN_CHN_REL =           'h000,  // address to set sequnecer channel and  run (4 LSB-s - channel)
-    parameter RUN_CHN_REL_MASK =      'h3f0,  // address mask to generate sequencer channel/run
-    parameter PATTERNS_REL =          'h020,  // address to set DQM and DQS patterns (16'h0055)
-    parameter PATTERNS_REL_MASK =     'h3ff,  // address mask to set DQM and DQS patterns
-    parameter PATTERNS_TRI_REL =      'h021,  // address to set DQM and DQS tristate on/off patterns {dqs_off,dqs_on, dq_off,dq_on} - 4 bits each
-    parameter PATTERNS_TRI_REL_MASK = 'h3ff,  // address mask to set DQM and DQS tristate patterns
-    parameter WBUF_DELAY_REL =        'h022,  // extra delay (in mclk cycles) to add to write buffer enable (DDR3 read data)
-    parameter WBUF_DELAY_REL_MASK =   'h3ff,  // address mask to set extra delay
-    parameter PAGES_REL =             'h023,  // address to set buffer pages {port1_page[1:0],port1_int_page[1:0],port0_page[1:0],port0_int_page[1:0]}
-    parameter PAGES_REL_MASK =        'h3ff,  // address mask to set DQM and DQS patterns
-    parameter CMDA_EN_REL =           'h024,  // address to enable('h825)/disable('h824) command/address outputs  
-    parameter CMDA_EN_REL_MASK =      'h3fe,  // address mask for command/address outputs
-    parameter SDRST_ACT_REL =         'h026,  // address to activate('h827)/deactivate('h826) active-low reset signal to DDR3 memory  
-    parameter SDRST_ACT_REL_MASK =    'h3fe,  // address mask for reset DDR3
-    parameter CKE_EN_REL =            'h028,  // address to enable('h829)/disable('h828) CKE signal to memory   
-    parameter CKE_EN_REL_MASK =       'h3fe,  // address mask for command/address outputs
-    parameter DCI_RST_REL =           'h02a,  // address to activate('h82b)/deactivate('h82a) Zynq DCI calibrate circuitry  
-    parameter DCI_RST_REL_MASK =      'h3fe,  // address mask for DCI calibrate circuitry
-    parameter DLY_RST_REL =           'h02c,  // address to activate('h82d)/deactivate('h82c) delay calibration circuitry  
-    parameter DLY_RST_REL_MASK =      'h3fe,  // address mask for delay calibration circuitry
-    parameter EXTRA_REL =             'h02e,  // address to set extra parameters (currently just inv_clk_div)
-    parameter EXTRA_REL_MASK =        'h3ff,  // address mask for extra parameters
-    parameter REFRESH_EN_REL =        'h030,  // address to enable('h31) and disable ('h30) DDR refresh
-    parameter REFRESH_EN_REL_MASK =   'h3fe,  // address mask to enable/disable DDR refresh
-    parameter REFRESH_PER_REL =       'h032,  // address to set refresh period in 32 x tCK
-    parameter REFRESH_PER_REL_MASK =  'h3ff,  // address mask set refresh period
-    parameter REFRESH_ADDR_REL =      'h033,  // address to set sequencer start address for DDR refresh
-    parameter REFRESH_ADDR_REL_MASK = 'h3ff   // address mask set refresh sequencer address
+    parameter CMD0_ADDR_MASK =      'h1800 // AXI read address mask for the command sequence memory
+//    ,parameter PORT0_RD_ADDR =       'h0000, // AXI read address to generate busy
+//    parameter PORT0_RD_ADDR_MASK =  'h1c00  // AXI read address mask to generate busy
+//    ,parameter PORT1_WR_ADDR =       'h0400, // AXI read address to generate busy
+//    parameter PORT1_WR_ADDR_MASK =  'h1c00  // AXI read address mask to generate busy
 )(
     // DDR3 interface
     output                       SDRST, // DDR3 reset (active low)
@@ -232,100 +277,102 @@ module  x393 #(
    wire           axird_bram_ren;   //      .ren(bram_reg_re_w) ,      // read port enable
    wire           axird_bram_regen; //   .regen(bram_reg_re_w),        // output register enable
    wire  [31:0]   axird_bram_rdata;  //      .data_out(rdata[31:0]),       // data out
-   wire  [31:0]   port0_rdata;  //
+//   wire  [31:0]   port0_rdata;  //
+//????? - why not used - should go to AXI?
    wire  [31:0]   status_rdata;  //
    wire           status_valid;
 
    wire        mclk;
    wire        en_cmd0_wr;
-   wire [10:0] axi_run_addr; 
-   wire [ 3:0] axi_run_chn;  
-   wire        axi_run_seq; 
-   wire [10:0] run_addr; // multiplexed - from refresh or axi 
-   wire [ 3:0] run_chn;   // multiplexed - from refresh or axi
-   wire        run_seq; 
+//   wire [10:0] axi_run_addr; 
+//   wire [ 3:0] axi_run_chn;  
+//   wire        axi_run_seq; 
+//   wire [10:0] run_addr; // multiplexed - from refresh or axi 
+//   wire [ 3:0] run_chn;   // multiplexed - from refresh or axi
+//   wire        run_seq; 
    
-   wire        run_seq_rq_in; // higher priority request to run sequence
-   wire        run_seq_rq_gen;// SuppressThisWarning VEditor : unused this wants to run sequencer 
+//   wire        run_seq_rq_in; // higher priority request to run sequence
+//   wire        run_seq_rq_gen;// SuppressThisWarning VEditor : unused this wants to run sequencer 
 //   wire        run_seq_busy;  // sequencer is busy or access granted to other master
    
    
 //   wire        run_done; // output
-   wire        run_busy; // TODO: add to ddrc_sequencer 
-   wire [ 7:0] dly_data; // input[7:0] 
-   wire [ 6:0] dly_addr; // input[6:0] 
-   wire        ld_delay; // input
-   wire        set; // input
+//   wire        run_busy; // TODO: add to ddrc_sequencer 
+//   wire [ 7:0] dly_data; // input[7:0] 
+//   wire [ 6:0] dly_addr; // input[6:0] 
+//   wire        ld_delay; // input
+//   wire        set; // input
 
-   wire        locked; // output
-   wire        locked_mmcm;
-   wire        locked_pll;
-   wire        dly_ready;
-   wire        dci_ready;
+//   wire        locked; // output
+//   wire        locked_mmcm;
+//   wire        locked_pll;
+//   wire        dly_ready;
+//   wire        dci_ready;
 
-   wire        phy_locked_mmcm;
-   wire        phy_locked_pll;
-   wire        phy_dly_ready;
-   wire        phy_dci_ready;
+//   wire        phy_locked_mmcm;
+//   wire        phy_locked_pll;
+//   wire        phy_dly_ready;
+//   wire        phy_dci_ready;
 
-   wire [ 7:0] tmp_debug; 
+   wire [11:0] tmp_debug; 
    
-   wire        ps_rdy; // output
-   wire [ 7:0] ps_out; // output[7:0] 
+//   wire        ps_rdy; // output
+//   wire [ 7:0] ps_out; // output[7:0] 
 
-   wire        en_port0_rd;
-   wire        en_port0_regen;
-   wire        en_port1_wr;
+//   wire        en_port0_rd;
+//   wire        en_port0_regen;
+//   wire        en_port1_wr;
 
-   wire [ 1:0] port0_page; // input[1:0] 
-   wire [ 1:0] port0_int_page; // input[1:0] 
+//   wire [ 1:0] port0_page; // input[1:0] 
+//   wire [ 1:0] port0_int_page; // input[1:0] 
 
-   wire [ 1:0] port1_page; // input[1:0] 
-   wire [ 1:0] port1_int_page;// input[1:0] 
+//   wire [ 1:0] port1_page; // input[1:0] 
+//   wire [ 1:0] port1_int_page;// input[1:0] 
 
 // additional control signals
-   wire        cmda_en; // enable DDR3 memory control and addreee outputs
-   wire        ddr_rst; // generate DDR3 memory reset (active hight)
-   wire        dci_rst;  // active high - reset DCI circuitry
-   wire        dly_rst;  // active high - reset delay calibration circuitry
+//   wire        cmda_en; // enable DDR3 memory control and addreee outputs
+//   wire        ddr_rst; // generate DDR3 memory reset (active hight)
+//   wire        dci_rst;  // active high - reset DCI circuitry
+//   wire        dly_rst;  // active high - reset delay calibration circuitry
    
    
    
-   wire        ddr_cke; // control of the DDR3 memory CKE signal
+//   wire        ddr_cke; // control of the DDR3 memory CKE signal
    
-   wire        inv_clk_div; // input
-   wire [ 7:0] dqs_pattern; // input[7:0] 8'h55 
-   wire [ 7:0] dqm_pattern; // input[7:0] 8'h00
+//   wire        inv_clk_div; // input
+//   wire [ 7:0] dqs_pattern; // input[7:0] 8'h55 
+//   wire [ 7:0] dqm_pattern; // input[7:0] 8'h00
 
-   reg    select_port0;
+//   reg    select_port0; // May be used later!
    reg    select_status;
    wire axiwr_dev_busy;
-   wire axird_dev_busy;
+//   wire axird_dev_busy;
    
-   wire [ 3:0] dq_tri_on_pattern;
-   wire [ 3:0] dq_tri_off_pattern;
-   wire [ 3:0] dqs_tri_on_pattern;
-   wire [ 3:0] dqs_tri_off_pattern;
-   wire [ 3:0] wbuf_delay;
+//   wire [ 3:0] dq_tri_on_pattern;
+//   wire [ 3:0] dq_tri_off_pattern;
+//   wire [ 3:0] dqs_tri_on_pattern;
+//   wire [ 3:0] dqs_tri_off_pattern;
+//   wire [ 3:0] wbuf_delay;
    
-   wire        port0_rd_match;
-   reg         port0_rd_match_r; // rd address matched in previous cycle
+//   wire        port0_rd_match;
+//   reg         port0_rd_match_r; // rd address matched in previous cycle
 
-   wire [7:0] refresh_period;
-   wire [10:0] refresh_address;
-   wire       refresh_en;
-   wire       refresh_set;
+//   wire [7:0] refresh_period;
+//   wire [10:0] refresh_address;
+//   wire       refresh_en;
+//   wire       refresh_set;
    
-   reg  [AXI_WR_ADDR_BITS-1:0] axiwr_bram_waddr_d;
-   reg                  [31:0] axiwr_bram_wdata_d; 
-   reg                         mcontr_cmdseq_we;                         
+//   reg  [AXI_WR_ADDR_BITS-1:0] axiwr_bram_waddr_d;
+//   reg                  [31:0] axiwr_bram_wdata_d; 
+//   reg                         mcontr_cmdseq_we;                         
    
 //           .cmd0_clk       (axi_aclk), // input
 //        .cmd0_we        (en_cmd0_wr), // input
 //        .cmd0_addr      (axiwr_bram_waddr[9:0]), // input[9:0] 
 //        .cmd0_data      (axiwr_bram_wdata[31:0]), // input[31:0] 
 
-// register address/data to write copmmand sequencer port 0 (PS)   
+// register address/data to write copmmand sequencer port 0 (PS)
+/*   
   always @ (posedge axi_rst or posedge axi_aclk) begin
     if (axi_rst) mcontr_cmdseq_we <= 1'b0;
     else         mcontr_cmdseq_we <= axiwr_bram_wen   && (((axiwr_bram_waddr ^ CMD0_ADDR) & CMD0_ADDR_MASK)==0);
@@ -337,7 +384,7 @@ module  x393 #(
    
 
    assign      port0_rd_match=(((axird_bram_raddr ^ PORT0_RD_ADDR) & PORT0_RD_ADDR_MASK)==0);  
-   assign en_cmd0_wr=     axiwr_bram_wen   && (((axiwr_bram_waddr ^ CMD0_ADDR) & CMD0_ADDR_MASK)==0);
+//   assign en_cmd0_wr=     axiwr_bram_wen   && (((axiwr_bram_waddr ^ CMD0_ADDR) & CMD0_ADDR_MASK)==0);
    assign en_port0_rd=    axird_bram_ren   && port0_rd_match;
    assign en_port0_regen= axird_bram_regen && port0_rd_match_r;
 
@@ -349,6 +396,9 @@ module  x393 #(
    assign axird_dev_ready = ~axird_dev_busy; //may combine (AND) multiple sources if needed
    
    assign locked=locked_mmcm && locked_pll;
+*/
+   assign en_cmd0_wr=     axiwr_bram_wen   && (((axiwr_bram_waddr ^ CMD0_ADDR) & CMD0_ADDR_MASK)==0);
+   assign axird_dev_ready = 1'b1;
 
 // Clock and reset from PS
     wire comb_rst=~frst[0] | frst[1];
@@ -362,13 +412,13 @@ module  x393 #(
 BUFG bufg_axi_rst_i   (.O(axi_rst),.I(axi_rst_pre));
 BUFG bufg_axi_aclk_i  (.O(axi_aclk),.I(fclk[0]));
    
-always @ (posedge axi_aclk) begin
-   port0_rd_match_r <= port0_rd_match; // rd address matched in previous cycle
-end
+//always @ (posedge axi_aclk) begin
+//   port0_rd_match_r <= port0_rd_match; // rd address matched in previous cycle
+//end
 
 always @ (posedge axi_rst or posedge axi_aclk) begin
-    if (axi_rst) select_port0 <= 1'b0;
-    else if (axird_start_burst) select_port0 <= (((axird_pre_araddr^ PORT0_RD_ADDR) & PORT0_RD_ADDR_MASK)==0);
+ //   if (axi_rst) select_port0 <= 1'b0;
+ //   else if (axird_start_burst) select_port0 <= (((axird_pre_araddr^ PORT0_RD_ADDR) & PORT0_RD_ADDR_MASK)==0);
     if (axi_rst) select_status <= 1'b0;
     else if (axird_start_burst) select_status <= (((axird_pre_araddr^ STATUS_ADDR) & STATUS_ADDR_MASK)==0);
     
@@ -404,17 +454,15 @@ end
     end         
 `endif
 
-//    ddrc_control #() was here
-//   ddr_refresh () was here
-//   ddrc_status () was here
-// ddrc_sequencer() was here - move to  module  memctrl16
-
+//TODO: The following is the interface to the command sequencer (not yet implemnted)        
     wire [AXI_WR_ADDR_BITS-1:0] cseq_waddr;   // command sequencer write address (output to command multiplexer)
     wire                        cseq_wr_en;   // command sequencer write enable (output to command multiplexer) - keep until cseq_ackn received
     wire                 [31:0] cseq_wdata;   // command sequencer write data (output to command multiplexer) 
     wire                        cseq_ackn;    // ackn to command sequencer, command sequencer should de-assert cseq_wr_en
+// parallel address/data - where higher bandwidth (single-cycle) is needed        
     wire [AXI_WR_ADDR_BITS-1:0] par_waddr;    // multiplexed address (full, parallel) to slave devices 
     wire                 [31:0] par_data;     // multiplexed data (full, parallel) to slave devices 
+
     wire                  [7:0] cmd_root_ad;       // multiplexed byte-wide serialized address/data to salve devices (AL-AH-D0-D1-D2-D3), may contain less cycles 
     wire                        cmd_root_stb;      // strobe marking the first of 1-6 a/d bytes and also data valid for par_waddr and par_data
 
@@ -422,18 +470,63 @@ end
     wire                        status_root_rq;    // Root status request  
     wire                        status_root_start; // Root status packet transfer start (currently with 0 latency from status_root_rq)
 
-    wire                  [7:0] status_mcontr_ad;    // Memory contyroller status byte-wide address/data 
-    wire                        status_mcontr_rq;    // Memory contyroller status request  
-    wire                        status_mcontr_start; // Memory contyroller status packet transfer start (currently with 0 latency from status_root_rq)
+    wire                  [7:0] status_mcontr_ad;    // Memory controller status byte-wide address/data 
+    wire                        status_mcontr_rq;    // Memory controller status request  
+    wire                        status_mcontr_start; // Memory controller status packet transfer start (currently with 0 latency from status_root_rq)
 
     wire                  [7:0] status_other_ad;    // Other status byte-wide address/data 
     wire                        status_other_rq;    // Other status request  
     wire                        status_other_start; // Other status packet transfer start (currently with 0 latency from status_root_rq)
 
+
+
+// Interface to channels to read/write memory (including 4 page BRAM buffers)
+
+    wire        want_rq0;
+    wire        need_rq0;
+    wire        channel_pgm_en0; 
+    wire [31:0] seq_data0; 
+    wire        seq_wr0;
+    wire        seq_done0;
+    wire        buf_wr_chn0;
+    wire  [6:0] buf_waddr_chn0; 
+    wire [63:0] buf_wdata_chn0;
+     
+    wire        want_rq1;
+    wire        need_rq1;
+    wire        channel_pgm_en1; 
+    wire [31:0] seq_data1; 
+    wire        seq_wr1;
+    wire        seq_done1;
+    wire        buf_rd_chn1;
+    wire  [6:0] buf_raddr_chn1; 
+    wire [63:0] buf_rdata_chn1;
+
+    wire        want_rq2;
+    wire        need_rq2;
+    wire        channel_pgm_en2; 
+    wire [31:0] seq_data2; 
+    wire        seq_wr2;
+    wire        seq_done2;
+    wire        buf_wr_chn2;
+    wire  [6:0] buf_waddr_chn2; 
+    wire [63:0] buf_wdata_chn2;
+     
+    wire        want_rq3;
+    wire        need_rq3;
+    wire        channel_pgm_en3; 
+    wire [31:0] seq_data3; 
+    wire        seq_wr3;
+    wire        seq_done3;
+    wire        buf_rd_chn3;
+    wire  [6:0] buf_raddr_chn3; 
+    wire [63:0] buf_rdata_chn3;
+
     cmd_mux #(
         .AXI_WR_ADDR_BITS  (AXI_WR_ADDR_BITS),
         .CONTROL_ADDR      (CONTROL_ADDR),
         .CONTROL_ADDR_MASK (CONTROL_ADDR_MASK),
+// TODO: Put correct numcycles!        
         .NUM_CYCLES_LOW_BIT(NUM_CYCLES_LOW_BIT),
         .NUM_CYCLES_00     (NUM_CYCLES_00),
         .NUM_CYCLES_01     (NUM_CYCLES_01),
@@ -461,10 +554,12 @@ end
         .wr_en        (axiwr_bram_wen), // input
         .wdata        (axiwr_bram_wdata[31:0]), // input[31:0] 
         .busy         (axiwr_dev_busy), // output // assign axiwr_dev_ready = ~axiwr_dev_busy; //may combine (AND) multiple sources if needed
+//TODO: The following is the interface to the command sequencer (not yet implemnted)        
         .cseq_waddr   (cseq_waddr), // input[12:0] 
         .cseq_wr_en   (cseq_wr_en), // input
         .cseq_wdata   (cseq_wdata), // input[31:0] 
         .cseq_ackn    (cseq_ackn), // output
+// parallel address/data - where higher bandwidth (single-cycle) is needed        
         .par_waddr    (par_waddr), // output[12:0] 
         .par_data     (par_data), // output[31:0]
         // registers may be inserted before byte_ad and ad_stb  
@@ -512,15 +607,52 @@ end
         .start_out (status_root_start) // input
     );
     
-    // Memory controller signals
-    wire  [15:0] mem_want; // to mcontr 
-    wire  [15:0] mem_need; // to mcontr 
-    wire  [15:0] mem_pgm_chn; // from mcontr 
-    wire [511:0] mem_seq_data; //  to mcontr 
-    wire  [15:0] mem_seq_wr; //  to mcontr 
-    wire  [15:0] mem_seq_done; //  to mcontr 
-
+    /* Instance template for module memctrl16 */
     memctrl16 #(
+        .DLY_LD                           (DLY_LD),
+        .DLY_LD_MASK                      (DLY_LD_MASK),
+        .MCONTR_PHY_0BIT_ADDR             (MCONTR_PHY_0BIT_ADDR),
+        .MCONTR_PHY_0BIT_ADDR_MASK        (MCONTR_PHY_0BIT_ADDR_MASK),
+        .MCONTR_PHY_0BIT_DLY_SET          (MCONTR_PHY_0BIT_DLY_SET),
+        .MCONTR_PHY_0BIT_CMDA_EN          (MCONTR_PHY_0BIT_CMDA_EN),
+        .MCONTR_PHY_0BIT_SDRST_ACT        (MCONTR_PHY_0BIT_SDRST_ACT),
+        .MCONTR_PHY_0BIT_CKE_EN           (MCONTR_PHY_0BIT_CKE_EN),
+        .MCONTR_PHY_0BIT_DCI_RST          (MCONTR_PHY_0BIT_DCI_RST),
+        .MCONTR_PHY_0BIT_DLY_RST(MCONTR_PHY_0BIT_DLY_RST),
+        .MCONTR_TOP_0BIT_ADDR(MCONTR_TOP_0BIT_ADDR),
+        .MCONTR_TOP_0BIT_ADDR_MASK(MCONTR_TOP_0BIT_ADDR_MASK),
+        .MCONTR_TOP_0BIT_MCONTR_EN(MCONTR_TOP_0BIT_MCONTR_EN),
+        .MCONTR_TOP_0BIT_REFRESH_EN(MCONTR_TOP_0BIT_REFRESH_EN),
+        .MCONTR_PHY_16BIT_ADDR(MCONTR_PHY_16BIT_ADDR),
+        .MCONTR_PHY_16BIT_ADDR_MASK(MCONTR_PHY_16BIT_ADDR_MASK),
+        .MCONTR_PHY_16BIT_PATTERNS(MCONTR_PHY_16BIT_PATTERNS),
+        .MCONTR_PHY_16BIT_PATTERNS_TRI(MCONTR_PHY_16BIT_PATTERNS_TRI),
+        .MCONTR_PHY_16BIT_WBUF_DELAY(MCONTR_PHY_16BIT_WBUF_DELAY),
+        .MCONTR_PHY_16BIT_EXTRA(MCONTR_PHY_16BIT_EXTRA),
+        .MCONTR_PHY_STATUS_CNTRL(MCONTR_PHY_STATUS_CNTRL),
+        .MCONTR_ARBIT_ADDR(MCONTR_ARBIT_ADDR),
+        .MCONTR_ARBIT_ADDR_MASK(MCONTR_ARBIT_ADDR_MASK),
+        .MCONTR_TOP_16BIT_ADDR(MCONTR_TOP_16BIT_ADDR),
+        .MCONTR_TOP_16BIT_ADDR_MASK(MCONTR_TOP_16BIT_ADDR_MASK),
+        .MCONTR_TOP_16BIT_CHN_EN(MCONTR_TOP_16BIT_CHN_EN),
+        .MCONTR_TOP_16BIT_REFRESH_PERIOD(MCONTR_TOP_16BIT_REFRESH_PERIOD),
+        .MCONTR_TOP_16BIT_REFRESH_ADDRESS(MCONTR_TOP_16BIT_REFRESH_ADDRESS),
+        .MCONTR_TOP_16BIT_STATUS_CNTRL(MCONTR_TOP_16BIT_STATUS_CNTRL),
+        .MCONTR_PHY_STATUS_REG_ADDR(MCONTR_PHY_STATUS_REG_ADDR),
+        .MCONTR_TOP_STATUS_REG_ADDR(MCONTR_TOP_STATUS_REG_ADDR),
+        .CHNBUF_READ_LATENCY(CHNBUF_READ_LATENCY),
+        .DFLT_DQS_PATTERN(DFLT_DQS_PATTERN),
+        .DFLT_DQM_PATTERN(DFLT_DQM_PATTERN),
+        .DFLT_DQ_TRI_ON_PATTERN(DFLT_DQ_TRI_ON_PATTERN),
+        .DFLT_DQ_TRI_OFF_PATTERN(DFLT_DQ_TRI_OFF_PATTERN),
+        .DFLT_DQS_TRI_ON_PATTERN(DFLT_DQS_TRI_ON_PATTERN),
+        .DFLT_DQS_TRI_OFF_PATTERN(DFLT_DQS_TRI_OFF_PATTERN),
+        .DFLT_WBUF_DELAY(DFLT_WBUF_DELAY),
+        .DFLT_INV_CLK_DIV(DFLT_INV_CLK_DIV),
+        .DFLT_CHN_EN(DFLT_CHN_EN),
+        .DFLT_REFRESH_ADDR(DFLT_REFRESH_ADDR),
+        .DFLT_REFRESH_PERIOD(DFLT_REFRESH_PERIOD),
+        
         .ADDRESS_NUMBER        (ADDRESS_NUMBER),
         .PHASE_WIDTH           (PHASE_WIDTH),
         .SLEW_DQ               (SLEW_DQ),
@@ -545,74 +677,83 @@ end
         .SS_MODE               (SS_MODE),
         .SS_MOD_PERIOD         (SS_MOD_PERIOD),
         .CMD_PAUSE_BITS        (CMD_PAUSE_BITS),
-        .CMD_DONE_BIT          (CMD_DONE_BIT),
-
-        .DLY_LD_REL            (DLY_LD_REL),
-        .DLY_LD_REL_MASK       (DLY_LD_REL_MASK),
-        .DLY_SET_REL           (DLY_SET_REL),
-        .DLY_SET_REL_MASK      (DLY_SET_REL_MASK),
-        .RUN_CHN_REL           (RUN_CHN_REL),
-        .RUN_CHN_REL_MASK      (RUN_CHN_REL_MASK),
-        .PATTERNS_REL          (PATTERNS_REL),
-        .PATTERNS_REL_MASK     (PATTERNS_REL_MASK),
-        .PATTERNS_TRI_REL      (PATTERNS_TRI_REL),
-        .PATTERNS_TRI_REL_MASK (PATTERNS_TRI_REL_MASK),
-        .WBUF_DELAY_REL        (WBUF_DELAY_REL),
-        .WBUF_DELAY_REL_MASK   (WBUF_DELAY_REL_MASK),
-        .PAGES_REL             (PAGES_REL),
-        .PAGES_REL_MASK        (PAGES_REL_MASK),
-        .CMDA_EN_REL           (CMDA_EN_REL),
-        .CMDA_EN_REL_MASK      (CMDA_EN_REL_MASK),
-        .SDRST_ACT_REL         (SDRST_ACT_REL),
-        .SDRST_ACT_REL_MASK    (SDRST_ACT_REL_MASK),
-        .CKE_EN_REL            (CKE_EN_REL),
-        .CKE_EN_REL_MASK       (CKE_EN_REL_MASK),
-        .DCI_RST_REL           (DCI_RST_REL),
-        .DCI_RST_REL_MASK      (DCI_RST_REL_MASK),
-        .DLY_RST_REL           (DLY_RST_REL),
-        .DLY_RST_REL_MASK      (DLY_RST_REL_MASK),
-        .EXTRA_REL             (EXTRA_REL),
-        .EXTRA_REL_MASK        (EXTRA_REL_MASK),
-        .REFRESH_EN_REL        (REFRESH_EN_REL),
-        .REFRESH_EN_REL_MASK   (REFRESH_EN_REL_MASK),
-        .REFRESH_PER_REL       (REFRESH_PER_REL),
-        .REFRESH_PER_REL_MASK  (REFRESH_PER_REL_MASK),
-        .REFRESH_ADDR_REL      (REFRESH_ADDR_REL),
-        .REFRESH_ADDR_REL_MASK (REFRESH_ADDR_REL_MASK)
+        .CMD_DONE_BIT          (CMD_DONE_BIT)
     ) memctrl16_i (
-    // TODO: Add some other clock i/o?
-        .rst            (axi_rst), // input
-        .clk            (mclk), // input
-        .want_rq        (mem_want[15:0]), // input[15:0] 
-        .need_rq        (mem_need[15:0]), // input[15:0] 
-        .channel_pgm_en (mem_pgm_chn[15:0]), // output[15:0] 
-        .seq_data       (mem_seq_data[511:0]), // input[511:0] 
-        .seq_wr         (mem_seq_wr[15:0]), // input[15:0] 
-        .seq_done       (mem_seq_done), // input[15:0] 
-        .cmd_ad         (cmd_mcontr_ad[7:0]), // input[7:0] 
-        .cmd_stb        (cmd_mcontr_stb), // input
-        .status_ad      (status_mcontr_ad[7:0]), // output[7:0]
-        .status_rq      (status_mcontr_rq),   // input request to send status downstream
-        .status_start   (status_mcontr_start), // Acknowledge of the first status packet byte (address)
-        .SDRST          (SDRST), // output
-        .SDCLK          (SDCLK), // output
-        .SDNCLK         (SDNCLK), // output
-        .SDA            (SDA), // output[14:0] 
-        .SDBA           (SDBA), // output[2:0] 
-        .SDWE           (SDWE), // output
-        .SDRAS          (SDRAS), // output
-        .SDCAS          (SDCAS), // output
-        .SDCKE          (SDCKE), // output
-        .SDODT          (SDODT), // output
-        .SDD            (SDD), // inout[15:0] 
-        .SDDML          (SDDML), // output
-        .DQSL           (DQSL), // inout
-        .NDQSL          (NDQSL), // inout
-        .SDDMU          (SDDMU), // output
-        .DQSU           (DQSU), // inout
-        .NDQSU          (NDQSU) // inout
+        .rst_in             (axi_rst), // input
+        .clk_in             (axi_aclk), // input
+        .mclk               (mclk), // output
+        .cmd_ad             (cmd_mcontr_ad), // input[7:0] 
+        .cmd_stb            (cmd_mcontr_stb), // input
+        .status_ad          (status_mcontr_ad[7:0]), // output[7:0]
+        .status_rq          (status_mcontr_rq),   // input request to send status downstream
+        .status_start       (status_mcontr_start), // Acknowledge of the first status packet byte (address)
+        
+        .cmd0_clk           (axi_aclk), // input
+        .cmd0_we            (en_cmd0_wr), // input
+        .cmd0_addr          (axiwr_bram_waddr[9:0]), // input[9:0] 
+        .cmd0_data          (axiwr_bram_wdata[31:0]), // input[31:0] 
+         
+        .want_rq0           (want_rq0), // input
+        .need_rq0           (need_rq0), // input
+        .channel_pgm_en0    (channel_pgm_en0), // output reg 
+        .seq_data0          (seq_data0), // input[31:0] 
+        .seq_wr0            (seq_wr0), // input
+        .seq_done0          (seq_done0), // input
+        .buf_wr_chn0        (buf_wr_chn0), // output
+        .buf_waddr_chn0     (buf_waddr_chn0), // output[6:0] 
+        .buf_wdata_chn0     (buf_wdata_chn0), // output[63:0]
+
+        .want_rq1           (want_rq1), // input
+        .need_rq1           (need_rq1), // input
+        .channel_pgm_en1    (channel_pgm_en1), // output reg 
+        .seq_data1          (seq_data1), // input[31:0] 
+        .seq_wr1            (seq_wr1), // input
+        .seq_done1          (seq_done1), // input
+        .buf_rd_chn1        (buf_rd_chn1), // output
+        .buf_raddr_chn1     (buf_raddr_chn1), // output[6:0] 
+        .buf_rdata_chn1     (buf_rdata_chn1), // input[63:0] 
+
+        .want_rq2           (want_rq2), // input
+        .need_rq2           (need_rq2), // input
+        .channel_pgm_en2    (channel_pgm_en2), // output reg 
+        .seq_data2          (seq_data2), // input[31:0] 
+        .seq_wr2            (seq_wr2), // input
+        .seq_done2          (seq_done2), // input
+        .buf_wr_chn2        (buf_wr_chn2), // output
+        .buf_waddr_chn2     (buf_waddr_chn2), // output[6:0] 
+        .buf_wdata_chn2     (buf_wdata_chn2), // output[63:0]
+
+        .want_rq3           (want_rq3), // input
+        .need_rq3           (need_rq3), // input
+        .channel_pgm_en3    (channel_pgm_en3), // output reg 
+        .seq_data3          (seq_data3), // input[31:0] 
+        .seq_wr3            (seq_wr3), // input
+        .seq_done3          (seq_done3), // input
+        .buf_rd_chn3        (buf_rd_chn3), // output
+        .buf_raddr_chn3     (buf_raddr_chn3), // output[6:0] 
+        .buf_rdata_chn3     (buf_rdata_chn3), // input[63:0] 
+
+        .SDRST              (SDRST), // output
+        .SDCLK              (SDCLK), // output
+        .SDNCLK             (SDNCLK), // output
+        .SDA                (SDA), // output[14:0] 
+        .SDBA               (SDBA), // output[2:0] 
+        .SDWE               (SDWE), // output
+        .SDRAS              (SDRAS), // output
+        .SDCAS              (SDCAS), // output
+        .SDCKE              (SDCKE), // output
+        .SDODT              (SDODT), // output
+        .SDD                (SDD), // inout[15:0] 
+        .SDDML              (SDDML), // output
+        .DQSL               (DQSL), // inout
+        .NDQSL              (NDQSL), // inout
+        .SDDMU              (SDDMU), // output
+        .DQSU               (DQSU), // inout
+        .NDQSU              (NDQSU), // inout
+        .tmp_debug          (tmp_debug) // output[11:0] 
     );
 
+ 
 
 //MEMCLK
 wire [63:0] gpio_in;

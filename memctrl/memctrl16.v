@@ -40,6 +40,14 @@ module  memctrl16 #(
     parameter MCONTR_PHY_0BIT_CKE_EN =         'h8,    // enable/disable CKE signal to memory 
     parameter MCONTR_PHY_0BIT_DCI_RST =        'ha,    // enable/disable CKE signal to memory 
     parameter MCONTR_PHY_0BIT_DLY_RST =        'hc,    // enable/disable CKE signal to memory
+//0x1030..1037 - 0-bit memory cotroller (set/reset)
+    parameter MCONTR_TOP_0BIT_ADDR =           'h030,  // address to turn on/off memory controller features
+    parameter MCONTR_TOP_0BIT_ADDR_MASK =      'h3f8,  // address mask to generate sequencer channel/run
+//  0x1030..1031 - MCONTR_EN  // 0 bits, disable/enable memory controller
+//  0x1032..1033 - REFRESH_EN // 0 bits, disable/enable memory refresh
+//  0x1034..1037 - reserved
+    parameter MCONTR_TOP_0BIT_MCONTR_EN =      'h0,    // set pre-programmed delays 
+    parameter MCONTR_TOP_0BIT_REFRESH_EN =     'h2,    // disable/enable command/address outputs 
 //0x1040..107f - 16-bit data
 //  0x1040..104f - RUN_CHN      // address to set sequncer channel and  run (4 LSB-s - channel) - bits? 
 //    parameter RUN_CHN_REL =           'h040,  // address to set sequnecer channel and  run (4 LSB-s - channel)
@@ -59,24 +67,42 @@ module  memctrl16 #(
     parameter MCONTR_PHY_STATUS_CNTRL =         'h4,    // write to status control (8-bit)
    
 //0x1060..106f: arbiter priority data
-    parameter MCONTR_ARBIT_ADDR =              'h060,   // Address to set channel priorities
-    parameter MCONTR_ARBIT_ADDR_MASK =         'h3f0,   // Address mask to set channel priorities
+    parameter MCONTR_ARBIT_ADDR =               'h060,   // Address to set channel priorities
+    parameter MCONTR_ARBIT_ADDR_MASK =          'h3f0,   // Address mask to set channel priorities
+//0x1070..1077 - 16-bit top memory controller:
+    parameter MCONTR_TOP_16BIT_ADDR =           'h070,  // address to set mcontr top control registers
+    parameter MCONTR_TOP_16BIT_ADDR_MASK =      'h3f8,  // address mask to set mcontr top control registers
+//  0x1070       - MCONTR_CHN_EN     // 16 bits per-channel enable (want/need requests)
+//  0x1071       - REFRESH_PERIOD    // 8-bit refresh period
+//  0x1072       - REFRESH_ADDRESS   // 10 bits
+//  0x1073       - STATUS_CNTRL      // 8 bits - write to status control (and debug?)
+    parameter MCONTR_TOP_16BIT_CHN_EN =         'h0,    // 16 bits per-channel enable (want/need requests)
+    parameter MCONTR_TOP_16BIT_REFRESH_PERIOD = 'h1,    // 8-bit refresh period
+    parameter MCONTR_TOP_16BIT_REFRESH_ADDRESS= 'h2,    // 10 bits refresh address in the sequencer (PL) memory
+    parameter MCONTR_TOP_16BIT_STATUS_CNTRL=    'h3,    // 8 bits - write to status control (and debug?)
     
 // Status read address
     parameter MCONTR_PHY_STATUS_REG_ADDR=      'h0,    // 8 or less bits: status register address to use for memory controller phy
+    parameter MCONTR_TOP_STATUS_REG_ADDR=      'h1,    // 8 or less bits: status register address to use for memory controller
+    
+    
     parameter CHNBUF_READ_LATENCY =             0,     // external channel buffer extra read latency ( 0 - data available next cycle after re (but prev. data))
     
     parameter DFLT_DQS_PATTERN=        8'h55,
-    parameter DFLT_DQM_PATTERN=        8'h00,  // 8'h00
+    parameter DFLT_DQM_PATTERN=        8'h00, // 8'h00
     parameter DFLT_DQ_TRI_ON_PATTERN=  4'h7,  // DQ tri-state control word, first when enabling output
-    parameter DFLT_DQ_TRI_OFF_PATTERN= 4'he, // DQ tri-state control word, first after disabling output
-    parameter DFLT_DQS_TRI_ON_PATTERN= 4'h3, // DQS tri-state control word, first when enabling output
-    parameter DFLT_DQS_TRI_OFF_PATTERN=4'hc,// DQS tri-state control word, first after disabling output
-    parameter DFLT_WBUF_DELAY=         4'h6, // write levelling - 7!
+    parameter DFLT_DQ_TRI_OFF_PATTERN= 4'he,  // DQ tri-state control word, first after disabling output
+    parameter DFLT_DQS_TRI_ON_PATTERN= 4'h3,  // DQS tri-state control word, first when enabling output
+    parameter DFLT_DQS_TRI_OFF_PATTERN=4'hc,  // DQS tri-state control word, first after disabling output
+    parameter DFLT_WBUF_DELAY=         4'h6,  // write levelling - 7!
     parameter DFLT_INV_CLK_DIV=        1'b0,
+    
+    parameter DFLT_CHN_EN=            16'h0,  // channel mask to be enabled at reset
+    parameter DFLT_REFRESH_ADDR=      10'h0,  // refresh sequence address in command memory
+    parameter DFLT_REFRESH_PERIOD=     8'h0,  // default 8-bit refresh period (scale?)
+
 
     parameter integer ADDRESS_NUMBER=15, 
-//    parameter pri_width=16,
     parameter PHASE_WIDTH =     8,
     parameter SLEW_DQ =         "SLOW",
     parameter SLEW_DQS =        "SLOW",
@@ -111,8 +137,8 @@ module  memctrl16 #(
     parameter CMD_PAUSE_BITS=       10,
     parameter CMD_DONE_BIT=         10
     ) (
-    input                        clk_in,
     input                        rst_in,
+    input                        clk_in,
     output                       mclk,     // global clock, half DDR3 clock, synchronizes all I/O thorough the command port
     // programming interface
     input                  [7:0] cmd_ad,      // byte-serial command address/data (up to 6 bytes: AL-AH-D0-D1-D2-D3 
@@ -131,7 +157,7 @@ module  memctrl16 #(
 // channel 0 interface 
 `ifdef def_enable_mem_chn0
     input                        want_rq0,   // both want_rq and need_rq should go inactive after being granted  
-    input                        need_rq0,
+    input                        need_rq0,   // want_rq should be active when need_rq is.
     output reg                   channel_pgm_en0, // channel can program sequence data
     input                 [31:0] seq_data0,  //16x32 data to be written to the sequencer (and start address for software-based sequencer)
     input                        seq_wr0,    // strobe for writing sequencer data (address is autoincremented)
@@ -459,6 +485,8 @@ module  memctrl16 #(
     inout                        NDQSU //,
 //    output                       DUMMY_TO_KEEP  // to keep PS7 signals from "optimization"
 //    input                        MEMCLK
+// temporary debug data    
+    ,output                [11:0] tmp_debug // add some signals generated here?
 );
 wire rst=rst_in; // TODO: decide where toi generate
 
@@ -470,7 +498,6 @@ wire rst=rst_in; // TODO: decide where toi generate
     wire  [6:0] ext_buf_waddr; 
     wire  [3:0] ext_buf_wchn; 
     wire [63:0] ext_buf_wdata; 
-    wire [11:0] tmp_debug; 
 
     wire                  [15:0] want_rq;   // both want_rq and need_rq should go inactive after being granted  
     wire                  [15:0] need_rq;
@@ -478,7 +505,6 @@ wire rst=rst_in; // TODO: decide where toi generate
     reg                   [31:0] seq_data;  //16x32 data to be written to the sequencer (and start address for software-based sequencer)
     reg                          seq_wr;    // strobe for writing sequencer data (address is autoincremented)
     reg                          seq_done;  // channel sequencer data is written. If no seq_wr pulses before seq_done, seq_data contains software sequencer start address
-
 
 // status data from phy (sequencer)
     wire [7:0] status_ad_phy;
@@ -489,6 +515,7 @@ wire rst=rst_in; // TODO: decide where toi generate
     wire [7:0] status_ad_mcontr;
     wire       status_rq_mcontr;
     wire       status_start_mcontr;
+    wire       set_status_w;
 
     wire        en_schedul; // enable channel arbitration, needs to be disabled before next access can be scheduled
     wire        need;       // granted access is "needed" one, not just "wanted"
@@ -497,9 +524,46 @@ wire rst=rst_in; // TODO: decide where toi generate
     wire  [3:0] priority_addr;  // channel address to program priority
     wire [15:0] priority_data;  // priority data for the channel
     wire        priority_en;    // enable programming priority data (use different clock?) 
-// TODO: implement    
-    assign status_ad_mcontr=0;
-    assign status_rq_mcontr=0;
+    
+    reg     [3:0]   cmd_wr_chn;     // channel granted write access to command sequencer memory
+    reg     [9:0]   cmd_addr_cur;   // current address in the command sequencer memory bank1 (PL)
+    reg    [10:0]   cmd_addr_start; // sequencer start address (including bank 0/1)
+    reg             grant_r;
+    reg             cmd_seq_set;    // some command sequencer data was set (so use it)
+
+    reg             cmd_seq_fill;   // command sequencer is in the process of filling by a channel
+    reg             cmd_seq_full;   // command sequencer is filled (if using PL sequencer bank)
+    reg             cmd_seq_need;   // memory request by a cnannel in the sequencer is urgent (valid with cmd_seq_full)
+
+    reg             cmd_seq_run;    // run command sequencer - single cycle
+    reg     [3:0]   cmd_seq_chn;    // channel number corresponding to the pending memory request:  valid with cmd_seq_run
+    reg    [10:0]   cmd_seq_addr;   // start address of the command sequencer (MSB - bank: 0 - PS, 1:PL): valid with cmd_seq_run
+
+    wire            sel_refresh_w;  // select refresh over channel
+    wire            pre_run_seq_w;  // initiate run sequence next cycle
+    wire            pre_run_chn_w;  // initiate run sequence next cycle for a channel (not refresh)
+    wire            mcontr_reset;   // reset controller, generated with ddr_rst in the sequencer
+    wire            mcontr_enabled; // enabled and not reset
+
+    wire            sequencer_run_busy; // sequencer is busy
+
+    wire            refresh_want;
+    wire            refresh_need;
+    reg             refresh_grant;
+
+    reg             refresh_en;
+    reg     [7:0]   refresh_period; // remove 
+    reg     [9:0]   refresh_addr;   // TODO: set command
+    reg             mcontr_en;      // enable controller
+    reg    [15:0]   mcontr_chn_en;  // per-channel request enable (will not reset transaction in progress)
+
+    reg             chn_want_some;
+    reg             chn_need_some;
+    reg    [15:0]   chn_want_r;
+    wire   [17:0]   status_data;
+    
+    assign status_data={chn_want_r,chn_need_some,chn_want_some};
+    
 // mux status info from the memory controller and other modules    
     status_router2 status_router2_top_i (
         .rst       (rst), // input
@@ -514,6 +578,21 @@ wire rst=rst_in; // TODO: decide where toi generate
         .rq_out    (status_rq), // output
         .start_out (status_start) // input
     );
+    
+    status_generate #(
+        .STATUS_REG_ADDR  (MCONTR_TOP_STATUS_REG_ADDR),
+        .PAYLOAD_BITS     (18)
+    ) status_generate_i (
+        .rst              (rst), // input
+        .clk              (mclk), // input
+        .we               (set_status_w), // input
+        .wd               (mcontr_16bit_data[7:0]), // input[7:0] 
+        .status           (status_data), // input[25:0] 
+        .ad               (status_ad_mcontr), // output[7:0] 
+        .rq               (status_rq_mcontr), // output
+        .start            (status_start_mcontr) // input
+    );
+    
 // generate 16-bit data commands (and set defaults to registers)
     cmd_deser #(
         .ADDR       (MCONTR_ARBIT_ADDR),
@@ -531,12 +610,106 @@ wire rst=rst_in; // TODO: decide where toi generate
         .we         (priority_en) // output
     );
   
+/*
+reg             refresh_en;
+reg     [7:0]   refresh_period; // remove 
+reg     [9:0]   refresh_addr=0; // TODO: set command
+wire            refresh_set;
+reg             mcontr_en;      // enable controller
+reg    [15:0]   mcontr_chn_en;  // per-channel request enable (will not reset transaction in progress)
+*/  
+// generate on/off dependent on lsb and 0-bit commands
+    wire [2:0] mcontr_0bit_addr;
+    wire       mcontr_0bit_we;
+    cmd_deser #(
+        .ADDR       (MCONTR_TOP_0BIT_ADDR),
+        .ADDR_MASK  (MCONTR_TOP_0BIT_ADDR_MASK),
+        .NUM_CYCLES (2),
+        .ADDR_WIDTH (3),
+        .DATA_WIDTH (0)
+    ) cmd_deser_0bit_i (
+        .rst        (rst), // input
+        .clk        (mclk), // input
+        .ad         (cmd_ad), // input[7:0] 
+        .stb        (cmd_stb), // input
+        .addr       (mcontr_0bit_addr), // output[15:0] 
+        .data       (), // output[31:0] 
+        .we         (mcontr_0bit_we) // output
+    );
+    always @ (posedge rst or posedge mclk) begin
+        if (rst)                                                                             mcontr_en <= 0;
+        else if (mcontr_0bit_we && (mcontr_0bit_addr[2:1]==(MCONTR_TOP_0BIT_MCONTR_EN>>1)))  mcontr_en <= mcontr_0bit_addr[0];
+        
+        if (rst)                                                                             refresh_en <= 1;
+        else if (mcontr_0bit_we && (mcontr_0bit_addr[2:1]==(MCONTR_TOP_0BIT_REFRESH_EN>>1))) refresh_en <= mcontr_0bit_addr[0];
+        
+    end
+  
+// generate 16-bit data commands (and set defaults to registers)
+    wire  [2:0] mcontr_16bit_addr;
+    wire [15:0] mcontr_16bit_data;
+    wire        mcontr_16bit_we;
+
+    cmd_deser #(
+        .ADDR       (MCONTR_TOP_16BIT_ADDR),
+        .ADDR_MASK  (MCONTR_TOP_16BIT_ADDR_MASK),
+        .NUM_CYCLES (4),
+        .ADDR_WIDTH (3),
+        .DATA_WIDTH (16)
+    ) cmd_deser_16bit_i (
+        .rst        (rst), // input
+        .clk        (mclk), // input
+        .ad         (cmd_ad), // input[7:0] 
+        .stb        (cmd_stb), // input
+        .addr       (mcontr_16bit_addr), // output[15:0] 
+        .data       (mcontr_16bit_data), // output[31:0] 
+        .we         (mcontr_16bit_we) // output
+    );
+    wire set_chn_en_w;
+    wire set_refresh_period_w;
+    wire set_refresh_address_w;
+    reg  set_refresh_period;
+    
+//    wire                control_status_we; // share with write delay (8-but)?
+//    wire          [7:0] contral_status_data;
+    
+    assign set_chn_en_w=           mcontr_16bit_we && (mcontr_16bit_addr[2:0]==MCONTR_TOP_16BIT_CHN_EN);
+    assign set_refresh_period_w=   mcontr_16bit_we && (mcontr_16bit_addr[2:0]==MCONTR_TOP_16BIT_REFRESH_PERIOD);
+    assign set_refresh_address_w=  mcontr_16bit_we && (mcontr_16bit_addr[2:0]==MCONTR_TOP_16BIT_REFRESH_ADDRESS);
+    assign set_status_w=           mcontr_16bit_we && (mcontr_16bit_addr[2:0]==MCONTR_TOP_16BIT_STATUS_CNTRL);
+
+    always @ (posedge rst or posedge mclk) begin
+        if (rst) set_refresh_period  <= 0;
+        else     set_refresh_period <= set_refresh_period_w;
+
+        if (rst)                        mcontr_chn_en <= DFLT_CHN_EN;
+        else if (set_chn_en_w)          mcontr_chn_en <= mcontr_16bit_data[15:0];
+        
+        if (rst)                        refresh_addr  <= DFLT_REFRESH_ADDR;
+        else if (set_refresh_address_w) refresh_addr <= mcontr_16bit_data[9:0];
+
+        if (rst)                        refresh_period <= DFLT_REFRESH_PERIOD;
+        else if (set_refresh_period_w)  refresh_period <= mcontr_16bit_data[7:0];
+        
+        if (rst) chn_want_some <= 0;
+        else     chn_want_some <= |want_rq;
+
+        if (rst) chn_need_some <= 0;
+        else     chn_need_some <= |need_rq;
+        
+        if (rst) chn_want_r <= 0;
+        else     chn_want_r <= want_rq ; // unmasked channel requests
+        
+    end
+        
+  
 
     scheduler16 #(
         .width      (16)
     ) scheduler16_i (
         .rst        (rst), // input
         .clk        (mclk), // input
+        .chn_en     (mcontr_chn_en), // input[15:0]
         .want_rq    (want_rq), // input[15:0] 
         .need_rq    (need_rq), // input[15:0] 
         .en_schedul (en_schedul), // input
@@ -547,11 +720,17 @@ wire rst=rst_in; // TODO: decide where toi generate
         .pgm_data   (priority_data), // input[15:0] 
         .pgm_en     (priority_en) // input
     );
-reg     [3:0]   cnm_wr_chn;     // channel granted write access to command sequencer memory
-reg     [9:0]   cmd_addr_cur;   // current address in the command sequencer memory bank1 (PL)
-reg    [10:0]   cmd_addr_start; // sequencer start address (including bank 0/1)
-reg             grant_r;
-reg             cmd_seq_set;    // some command sequencer data was set (so use it)
+
+
+        
+assign mcontr_enabled=mcontr_en && !mcontr_reset; 
+//assign sel_refresh_w= refresh_need || (refresh_want && (!cmd_seq_need || !(cmd_seq_full || (cmd_seq_fill && seq_done ))));  
+assign sel_refresh_w= refresh_need || (refresh_want && !(cmd_seq_need && cmd_seq_full));
+assign pre_run_seq_w= mcontr_enabled && !sequencer_run_busy &&  (cmd_seq_full || refresh_need || refresh_want);
+assign pre_run_chn_w= pre_run_seq_w && !sel_refresh_w;
+assign en_schedul= mcontr_enabled && !cmd_seq_fill && !cmd_seq_full;
+
+// sequential logic for commands transfer to the sequencer 
 always @ (posedge rst or posedge mclk) begin
     if (rst) grant_r <= 0;
     else     grant_r <= grant;
@@ -560,29 +739,44 @@ always @ (posedge rst or posedge mclk) begin
     else if (grant_r)  cmd_seq_set <= 0;
     else if (seq_wr)   cmd_seq_set <= 1;
     
-    
-    if (rst)        cnm_wr_chn <= 0;
-    else if (grant) cnm_wr_chn <= grant_chn;
+    if (rst)        cmd_wr_chn <= 0;
+    else if (grant) cmd_wr_chn <= grant_chn;
+
+//    if (rst)                                    cmd_seq_fill <= 0;
+//    else if (!mcontr_enabled || pre_run_chn_w ) cmd_seq_fill <= 0;
+//    else if (grant)                             cmd_seq_fill <= 1;
+
+    if (rst)                                    cmd_seq_fill <= 0;
+    else if (!mcontr_enabled || seq_wr )        cmd_seq_fill <= 0;
+    else if (grant)                             cmd_seq_fill <= 1;
+
+    if (rst)                                    cmd_seq_full <= 0;
+    else if (!mcontr_enabled || pre_run_chn_w ) cmd_seq_full <= 0;
+    else if (seq_wr)                            cmd_seq_full <= 1;
+
+
+    if (rst)                                    cmd_seq_need <= 0;
+    else if (grant)                             cmd_seq_need <= need;
+
 
     if (rst)         cmd_addr_cur <= 0;
     else if (seq_wr) cmd_addr_cur <= cmd_addr_cur+1;
     
     if (rst)                           cmd_addr_start <= 0;
-    else if (grant_r)                  cmd_addr_start <= {1'b1,cmd_addr_cur}; // address in PL bank
+    else if (grant_r)                  cmd_addr_start <= {1'b1,cmd_addr_cur};  // address in PL bank
     else if (!cmd_seq_set && seq_done) cmd_addr_start <= {1'b0,seq_data[9:0]}; // address in PL bank
+    
+    
+    if (rst) cmd_seq_run <= 0;
+    else cmd_seq_run <= pre_run_seq_w;
+    
 // add refresh address here?    
 end   
+always @ (posedge mclk) begin
+    if (pre_run_seq_w) cmd_seq_addr <= sel_refresh_w ? {1'b0,refresh_addr} : cmd_addr_start;
+    if (pre_run_seq_w) cmd_seq_chn <= cmd_wr_chn;
+end
 
-// Add a few 16-bit write registers - refresh, separate refresh enable,
-// refresh sequnecer address
-// something else?
-// TODO: command/refresh arbiter
-//Manual channels (i.e. setap/recalibrate comands) - outside, through channels
-
-
-    wire       refresh_want;
-    wire       refresh_need;
-    reg        refresh_grant;
 
 //   assign run_seq_rq_in = refresh_en && refresh_need; // higher priority request input
 
@@ -590,15 +784,16 @@ end
     ddr_refresh ddr_refresh_i (
         .rst              (rst), // input
         .clk              (mclk), // input
-        .refresh_period   (refresh_period[7:0]), // input[7:0] 
-        .set              (refresh_set), // input
+        .en               (refresh_en),
+        .refresh_period   (refresh_period), // input[7:0] 
+        .set              (set_refresh_period), // input
         .want             (refresh_want), // output
         .need             (refresh_need), // output
         .grant            (refresh_grant) // input
     );
     always @(posedge rst or  posedge mclk) begin
          if (rst) refresh_grant <= 0; 
-         else refresh_grant <= !refresh_grant && refresh_en && !run_busy && !axi_run_seq && (refresh_need || (refresh_want && !run_seq_rq_gen)); 
+         else refresh_grant <= pre_run_seq_w && sel_refresh_w;; 
     end
 
 
@@ -685,12 +880,13 @@ end
         .cmd1_we        (seq_wr), // input
         .cmd1_addr      (cmd_addr_cur), // input[9:0] 
         .cmd1_data      (seq_data), // input[31:0]
-         
-        .run_addr       (run_addr[10:0]), // input[10:0] 
-        .run_chn        (run_chn[3:0]), // input[3:0] 
-        .run_seq        (run_seq), // input #################### DISABLED ####################
+
+        .run_addr       (cmd_seq_addr[10:0]), // input[10:0] 
+        .run_chn        (cmd_seq_chn[3:0]), // input[3:0] 
+        .run_seq        (cmd_seq_run), // input #################### DISABLED ####################
         .run_done       (), // output
-        .run_busy       (run_busy), // output
+        .run_busy       (sequencer_run_busy), // output ASSUMING it is high next cycle after run_seq - TODO: verify - yes, if not mcontr_reset
+        .mcontr_reset   (mcontr_reset), // output == ddr_reset that also resets sequencer  
         .cmd_ad         (cmd_ad), // input[7:0] 
         .cmd_stb        (cmd_stb), // input
         .status_ad      (status_ad_phy), // output[7:0] 
@@ -942,7 +1138,7 @@ assign need_rq[15:0]=   {need_rq15,need_rq14,need_rq13,need_rq12,need_rq11,need_
 always @ (posedge rst or posedge mclk) begin
     if (rst) begin seq_data <= 0; seq_wr <=0; seq_done <=0; end
     else begin
-        case (cnm_wr_chn)
+        case (cmd_wr_chn)
 `ifdef def_enable_mem_chn0
             4'h0:begin seq_data <= seq_data0; seq_wr <= seq_wr0; seq_done <= seq_done0; end
 `endif

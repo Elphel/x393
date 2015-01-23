@@ -25,8 +25,9 @@ module  scheduler16 #(
 )(
     input             rst,
     input             clk,
-    input      [15:0] want_rq,   // both want_rq and need_rq should go inactive after being granted  
-    input      [15:0] need_rq,
+    input [width-1:0] chn_en,    // channel enable mask  
+    input [width-1:0] want_rq,   // both want_rq and need_rq should go inactive after being granted  
+    input [width-1:0] need_rq,
     input             en_schedul,    // needs to be disabled before next access can be scheduled
     output            need,      // granted access is "needed" one, not just "wanted"
     output            grant,     // single-cycle granted channel access
@@ -36,18 +37,13 @@ module  scheduler16 #(
     input [width-1:0] pgm_data,  // priority data for the channel
     input             pgm_en     // enable programming priority data (use different clock?)
 );
-//    reg [width-1:0] pri00,pri01,pri02,pri03,pri04,pri05,pri06,pri07,pri08,pri09,pri10,pri11,pri12,pri13,pri14,pri15;
     reg [width*16-1:0] pri_reg;
     reg [15:0] want_conf, need_conf,need_want_conf;
-//    wire new_want,new_need;
-//    wire event_w;
     wire [15:0] want_set,need_set;
     reg [15:0] want_set_r,need_set_r;
-//    reg event_r, want_r;
     reg need_r;
     reg [width*16-1:0] sched_state;
-    wire need_some=| need_rq;
-//    wire want_some=| want_rq;
+    wire need_some=|(need_rq & & chn_en);
     wire [15:0] next_want_conf,next_need_conf;
     wire [3:0] index; // channel index to select
     wire index_valid; // selected index valid ("needed" or "wanted")
@@ -55,9 +51,8 @@ module  scheduler16 #(
     reg grant_sent; // turns on after grant, until en_schedul is de-asserted
     reg [3:0] grant_chn_r;
     wire grant_w;
-//    assign event_w=new_want | new_need;
-    assign next_want_conf=(want_conf &  want_rq) | want_set;
-    assign next_need_conf=(need_conf &  need_rq) | need_set;
+    assign next_want_conf=(want_conf &  want_rq & chn_en) | want_set;
+    assign next_need_conf=(need_conf &  need_rq & chn_en) | need_set;
     assign grant=grant_r;
     assign grant_chn=grant_chn_r;
     assign grant_w=en_schedul && index_valid && !grant_sent;
@@ -72,15 +67,13 @@ module  scheduler16 #(
     endgenerate        
 
     pri1hot16 i_pri1hot16_want(
-        .in(want_rq & ~want_conf ),
+        .in(want_rq & ~want_conf & chn_en),
         .out(want_set),
         .some());
-//        .some(new_want));
     pri1hot16 i_pri1hot16_need(
-        .in(need_rq & ~need_conf ),
+        .in(need_rq & ~need_conf & chn_en),
         .out(need_set),
         .some());
-//        .some(new_need));
         
     always @(posedge rst or posedge clk) begin
         if (rst) begin
@@ -95,12 +88,10 @@ module  scheduler16 #(
     always @ (posedge clk) begin
         want_set_r<=want_set;
         need_set_r<=need_set;
-        //event_r <= event_w;
-        //want_r<= want_some;
         need_r<= need_some;
     end
     // TODO: want remains, need is removed (both need and want should be deactivated on grant!)
-    // Block that sets initila process state and increments it on every change of the requests
+    // Block that sets initial process state and increments it on every change of the requests
     generate
         genvar i1;
         for (i1=0;i1<16;i1=i1+1) begin: sched_state_block

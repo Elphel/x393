@@ -23,6 +23,7 @@
 module  ddr_refresh(
     input       rst,
     input       clk,
+    input       en,
     input [7:0] refresh_period, // in 16*clk, 0 - disable refresh, turn off requests
     input       set, // and reset counters
     output reg  want, // turns off next cycle after grant (or stays on if more are needed)
@@ -36,8 +37,12 @@ module  ddr_refresh(
     wire        over=(period_cntr == 0) && cry;
     reg         refresh_due;
     reg         en_refresh;
+    reg         en_r;
     
     always @ (posedge rst or posedge clk) begin
+        if (rst)       en_r <= 0;
+        else           en_r <= en;
+
         if (rst)       en_refresh <= 0;
         else if (set)  en_refresh <= (refresh_period != 0);
         
@@ -63,10 +68,10 @@ module  ddr_refresh(
         else if (!refresh_due &&  grant) pending_rq <= pending_rq-1;
         
         if (rst) want <= 0;
-        else     want<= en_refresh && (pending_rq != 0);
+        else     want<= en_refresh && en_r && (pending_rq != 0);
 
         if (rst) need <= 0;
-        else     need <= en_refresh && (pending_rq[4:3] != 0);
+        else     need <= en_refresh && en_r && (pending_rq[4:3] != 0);
     end
 endmodule
 
