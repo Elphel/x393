@@ -7,3 +7,4 @@ attic/*
 IVERILOG_INCLUDE.v
 x393.prj
 *DEBUG_VDT*
+*.kate-swp
