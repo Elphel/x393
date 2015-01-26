@@ -1,17 +1,17 @@
 /*******************************************************************************
- * Module: cmd_encod_linear_wr
+ * Module: cmd_encod_linear_rd
  * Date:2015-01-23  
  * Author: andrey     
  * Description: Command sequencer generator for writing a sequential  up to 1KB page
  * single page access, bank and row will not be changed
  *
  * Copyright (c) 2015 <set up in Preferences-Verilog/VHDL Editor-Templates> .
- * cmd_encod_linear_wr.v is free software; you can redistribute it and/or modify
+ * cmd_encod_linear_rd.v is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- *  cmd_encod_linear_wr.v is distributed in the hope that it will be useful,
+ *  cmd_encod_linear_rd.v is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
@@ -21,7 +21,7 @@
  *******************************************************************************/
 `timescale 1ns/1ps
 
-module  cmd_encod_linear_wr #(
+module  cmd_encod_linear_rd #(
 //    parameter BASEADDR = 0,
     parameter ADDRESS_NUMBER=15,
     parameter COLADDR_NUMBER=10,
@@ -42,27 +42,25 @@ module  cmd_encod_linear_wr #(
     output reg                   enc_wr,      // write encoded command
     output reg                   enc_done     // encoding finished
 );
-    localparam ROM_WIDTH=11;
+    localparam ROM_WIDTH=9;
     localparam ROM_DEPTH=4;
     
     localparam ENC_NOP=        0;
-    localparam ENC_BUF_RD=     1;
-    localparam ENC_DQS_TOGGLE= 2;
-    localparam ENC_DQ_DQS_EN=  3;
-    localparam ENC_SEL=        4;
-    localparam ENC_ODT=        5;
-    localparam ENC_CMD_SHIFT=  6; // [7:6] - command: 0 -= NOP, 1 - WRITE, 2 - PRECHARGE, 3 - ACTIVATE
-    localparam ENC_PAUSE_SHIFT=8; // [9:8] - 2- bit pause (for NOP commandes)
-    localparam ENC_PRE_DONE=  10;
+    localparam ENC_BUF_WR=     1;
+    localparam ENC_DCI=        2;
+    localparam ENC_SEL=        3;
+    localparam ENC_CMD_SHIFT=  4; // [5:4] - command: 0 -= NOP, 1 - READ, 2 - PRECHARGE, 3 - ACTIVATE
+    localparam ENC_PAUSE_SHIFT=6; // [7:6] - 2- bit pause (for NOP commandes)
+    localparam ENC_PRE_DONE=   8;
     
     localparam ENC_CMD_NOP=      0; // 2-bit locally encoded commands
-    localparam ENC_CMD_WRITE=    1;
+    localparam ENC_CMD_READ=     1;
     localparam ENC_CMD_PRECHARGE=2;
     localparam ENC_CMD_ACTIVATE= 3;
-    localparam REPEAT_ADDR=4;
+    localparam REPEAT_ADDR=3;
     
     localparam CMD_NOP=      0; // 3-bit normal memory RCW commands (positive logic)
-    localparam CMD_WRITE=    3;
+    localparam CMD_READ=    3;
     localparam CMD_PRECHARGE=5;
     localparam CMD_ACTIVATE= 4;
     
@@ -85,7 +83,7 @@ module  cmd_encod_linear_wr #(
     assign     pre_done=rom_r[ENC_PRE_DONE] && gen_run;
     assign     rom_cmd=  rom_r[ENC_CMD_SHIFT+:2];
     assign     rom_skip= rom_r[ENC_PAUSE_SHIFT+:2];
-    assign     full_cmd= rom_cmd[1]?(rom_cmd[0]?CMD_ACTIVATE:CMD_PRECHARGE):(rom_cmd[0]?CMD_WRITE:CMD_NOP);
+    assign     full_cmd= rom_cmd[1]?(rom_cmd[0]?CMD_ACTIVATE:CMD_PRECHARGE):(rom_cmd[0]?CMD_READ:CMD_NOP);
     
     always @ (posedge rst or posedge clk) begin
         if (rst)           gen_run <= 0;
@@ -116,16 +114,15 @@ module  cmd_encod_linear_wr #(
     always @ (posedge rst or posedge clk) begin
         if (rst)           rom_r <= 0;
         else case (gen_addr)
-            4'h0: rom_r <= (ENC_CMD_ACTIVATE <<  ENC_CMD_SHIFT) | (1 << ENC_NOP); 
-            4'h1: rom_r <= (ENC_CMD_NOP <<       ENC_CMD_SHIFT) | (1 << ENC_BUF_RD); 
-            4'h2: rom_r <= (ENC_CMD_WRITE <<     ENC_CMD_SHIFT) | (1 << ENC_BUF_RD) |(1 << ENC_SEL)         | (1 << ENC_ODT); 
-            4'h3: rom_r <= (ENC_CMD_NOP <<       ENC_CMD_SHIFT) | (1 << ENC_BUF_RD) |(1 << ENC_DQ_DQS_EN)   | (1 << ENC_ODT);
-            4'h4: rom_r <= (ENC_CMD_WRITE <<     ENC_CMD_SHIFT) | (1 << ENC_NOP) | (1 << ENC_BUF_RD) | (1 << ENC_DQS_TOGGLE)  | (1 << ENC_DQ_DQS_EN)  | (1 << ENC_ODT); // will repeet 
-            4'h5: rom_r <= (ENC_CMD_NOP <<       ENC_CMD_SHIFT) | (2 << ENC_PAUSE_SHIFT) | (1 << ENC_DQS_TOGGLE) | (1 << ENC_DQ_DQS_EN) | (1 << ENC_ODT);
-            4'h6: rom_r <= (ENC_CMD_NOP <<       ENC_CMD_SHIFT) | (2 << ENC_PAUSE_SHIFT);
-            4'h7: rom_r <= (ENC_CMD_PRECHARGE << ENC_CMD_SHIFT);
-            4'h8: rom_r <= (ENC_CMD_NOP <<       ENC_CMD_SHIFT) | (2 << ENC_PAUSE_SHIFT);
-            4'h9: rom_r <= (ENC_CMD_NOP <<       ENC_CMD_SHIFT) | (1 << ENC_PRE_DONE);
+            4'h0: rom_r <= (ENC_CMD_ACTIVATE <<  ENC_CMD_SHIFT); 
+            4'h1: rom_r <= (ENC_CMD_NOP <<       ENC_CMD_SHIFT) | (1 << ENC_PAUSE_SHIFT); 
+            4'h2: rom_r <= (ENC_CMD_READ <<      ENC_CMD_SHIFT) | (1 << ENC_NOP)                             | (1 << ENC_DCI) | (1 << ENC_SEL); 
+            4'h3: rom_r <= (ENC_CMD_READ <<      ENC_CMD_SHIFT) | (1 << ENC_NOP)         | (1 << ENC_BUF_WR) | (1 << ENC_DCI) | (1 << ENC_SEL);
+            4'h4: rom_r <= (ENC_CMD_NOP <<       ENC_CMD_SHIFT) | (1 << ENC_PAUSE_SHIFT) | (1 << ENC_BUF_WR) | (1 << ENC_DCI) | (1 << ENC_SEL);
+            4'h5: rom_r <= (ENC_CMD_NOP <<       ENC_CMD_SHIFT)                                              | (1 << ENC_DCI) | (1 << ENC_SEL);
+            4'h6: rom_r <= (ENC_CMD_PRECHARGE << ENC_CMD_SHIFT)                                              | (1 << ENC_DCI);
+            4'h7: rom_r <= (ENC_CMD_NOP <<       ENC_CMD_SHIFT) | (2 << ENC_PAUSE_SHIFT)                     | (1 << ENC_DCI);
+            4'h8: rom_r <= (ENC_CMD_NOP <<       ENC_CMD_SHIFT) | (1 << ENC_PRE_DONE);
             default:rom_r <= 0;
        endcase
     end
@@ -144,32 +141,31 @@ module  cmd_encod_linear_wr #(
             {{CMD_PAUSE_BITS-2{1'b0}},rom_skip[1:0]}, // skip;   // number of extra cycles to skip (and keep all the other outputs)
             done,                                     // end of sequence 
             bank[2:0],                                // bank (here OK to be any)
-            rom_r[ENC_ODT],          //   odt_en;     // enable ODT
+            1'b0,                    //   odt_en;     // enable ODT
             1'b0,                    //   cke;        // disable CKE
             rom_r[ENC_SEL],          //   sel;        // first/second half-cycle, other will be nop (cke+odt applicable to both)
-            rom_r[ENC_DQ_DQS_EN],    //   dq_en;      // enable (not tristate) DQ  lines (internal timing sequencer for 0->1 and 1->0)
-            rom_r[ENC_DQ_DQS_EN],    //   dqs_en;     // enable (not tristate) DQS lines (internal timing sequencer for 0->1 and 1->0)
-            rom_r[ENC_DQS_TOGGLE],   //   dqs_toggle; // enable toggle DQS according to the pattern
-            1'b0,                    //   dci;        // DCI disable, both DQ and DQS lines (internal logic and timing sequencer for 0->1 and 1->0)
-            1'b0,                    //   buf_wr;     // connect to external buffer (but only if not paused)
-            rom_r[ENC_BUF_RD]);      //   buf_rd;     // connect to external buffer (but only if not paused)
+            1'b0,                    //   dq_en;      // enable (not tristate) DQ  lines (internal timing sequencer for 0->1 and 1->0)
+            1'b0,                    //   dqs_en;     // enable (not tristate) DQS lines (internal timing sequencer for 0->1 and 1->0)
+            1'b0,                    //   dqs_toggle; // enable toggle DQS according to the pattern
+            rom_r[ENC_DCI],          //   dci;        // DCI disable, both DQ and DQS lines (internal logic and timing sequencer for 0->1 and 1->0)
+            rom_r[ENC_BUF_WR],       //   buf_wr;     // connect to external buffer (but only if not paused)
+            1'b0);                   //   buf_rd;     // connect to external buffer (but only if not paused)
        else  enc_cmd <= func_encode_cmd ( // encode non-NOP command
             rom_cmd[1]?
                     row:
                     {{ADDRESS_NUMBER-COLADDR_NUMBER{1'b0}},col[COLADDR_NUMBER-1:0]}, //  [14:0] addr;       // 15-bit row/column adderss
             bank[2:0],                                // bank (here OK to be any)
             full_cmd[2:0],           //   rcw;        // RAS/CAS/WE, positive logic
-            rom_r[ENC_ODT],          //   odt_en;     // enable ODT
+            1'b0,                    //   odt_en;     // enable ODT
             1'b0,                    //   cke;        // disable CKE
             rom_r[ENC_SEL],          //   sel;        // first/second half-cycle, other will be nop (cke+odt applicable to both)
-            rom_r[ENC_DQ_DQS_EN],    //   dq_en;      // enable (not tristate) DQ  lines (internal timing sequencer for 0->1 and 1->0)
-            rom_r[ENC_DQ_DQS_EN],    //   dqs_en;     // enable (not tristate) DQS lines (internal timing sequencer for 0->1 and 1->0)
-            rom_r[ENC_DQS_TOGGLE],   //   dqs_toggle; // enable toggle DQS according to the pattern
-            1'b0,                    //   dci;        // DCI disable, both DQ and DQS lines (internal logic and timing sequencer for 0->1 and 1->0)
-            1'b0,                    //   buf_wr;     // connect to external buffer (but only if not paused)
-            rom_r[ENC_BUF_RD],       //   buf_rd;     // connect to external buffer (but only if not paused)     
+            1'b0,                    //   dq_en;      // enable (not tristate) DQ  lines (internal timing sequencer for 0->1 and 1->0)
+            1'b0,                    //   dqs_en;     // enable (not tristate) DQS lines (internal timing sequencer for 0->1 and 1->0)
+            1'b0,                    //   dqs_toggle; // enable toggle DQS according to the pattern
+            rom_r[ENC_DCI],          //   dci;        // DCI disable, both DQ and DQS lines (internal logic and timing sequencer for 0->1 and 1->0)
+            rom_r[ENC_BUF_WR],       //   buf_wr;     // connect to external buffer (but only if not paused)
+            1'b0,                    //   buf_rd;     // connect to external buffer (but only if not paused)     
             rom_r[ENC_NOP]);         //   nop;        // add NOP after the current command, keep other data
-        
     end    
     
 
