@@ -197,6 +197,7 @@ module  x393 #(
 );
 
     localparam ADDRESS_NUMBER=15;
+    localparam COLADDR_NUMBER=10;
 // Source for reset and clock
    wire    [3:0]     fclk;      // PL Clocks [3:0], output
    wire    [3:0]     frst;      // PL Clocks [3:0], output
@@ -525,6 +526,26 @@ end
     wire        buf_rd_chn3;
     wire  [6:0] buf_raddr_chn3; 
     wire [63:0] buf_rdata_chn3;
+    
+    // memory controller comamnd encoders interface
+    wire                [2:0] encod_linear_rd_bank;
+    wire [ADDRESS_NUMBER-1:0] encod_linear_rd_row;
+    wire [COLADDR_NUMBER-4:0] encod_linear_rd_col;
+    wire                [5:0] encod_linear_rd_bursts;
+    wire                      encod_linear_rd_start;
+    wire               [31:0] encod_linear_rd_cmd;
+    wire                      encod_linear_rd_wr;
+    wire                      encod_linear_rd_done;
+
+    wire                [2:0] encod_linear_wr_bank;
+    wire [ADDRESS_NUMBER-1:0] encod_linear_wr_row;
+    wire [COLADDR_NUMBER-4:0] encod_linear_wr_col;
+    wire                [5:0] encod_linear_wr_bursts;
+    wire                      encod_linear_wr_start;
+    wire               [31:0] encod_linear_wr_cmd;
+    wire                      encod_linear_wr_wr;
+    wire                      encod_linear_wr_done;
+    
 
     cmd_mux #(
         .AXI_WR_ADDR_BITS  (AXI_WR_ADDR_BITS),
@@ -610,8 +631,44 @@ end
         .rq_out    (status_root_rq), // output
         .start_out (status_root_start) // input
     );
-    
-    /* Instance template for module memctrl16 */
+
+    cmd_encod_linear_rd #(
+        .ADDRESS_NUMBER  (ADDRESS_NUMBER),
+        .COLADDR_NUMBER  (COLADDR_NUMBER),
+        .CMD_PAUSE_BITS  (CMD_PAUSE_BITS),
+        .CMD_DONE_BIT    (CMD_DONE_BIT)
+    ) cmd_encod_linear_rd_i (
+        .rst             (axi_rst), // input
+        .clk             (mclk), // input
+        .bank_in         (encod_linear_rd_bank), // input[2:0] 
+        .row_in          (encod_linear_rd_row), // input[14:0] 
+        .start_col       (encod_linear_rd_col), // input[6:0] 
+        .num128_in       (encod_linear_rd_bursts), // input[5:0] 
+        .start           (encod_linear_rd_start), // input
+        .enc_cmd         (encod_linear_rd_cmd), // output[31:0] reg 
+        .enc_wr          (encod_linear_rd_wr), // output reg 
+        .enc_done        (encod_linear_rd_done) // output reg 
+    );
+
+    cmd_encod_linear_wr #(
+        .ADDRESS_NUMBER  (ADDRESS_NUMBER),
+        .COLADDR_NUMBER  (COLADDR_NUMBER),
+        .CMD_PAUSE_BITS  (CMD_PAUSE_BITS),
+        .CMD_DONE_BIT    (CMD_DONE_BIT)
+    ) cmd_encod_linear_wr_i (
+        .rst             (axi_rst), // input
+        .clk             (mclk), // input
+        .bank_in         (encod_linear_wr_bank), // input[2:0] 
+        .row_in          (encod_linear_wr_row), // input[14:0] 
+        .start_col       (encod_linear_wr_col), // input[6:0] 
+        .num128_in       (encod_linear_wr_bursts), // input[5:0] 
+        .start           (encod_linear_wr_start), // input
+        .enc_cmd         (encod_linear_wr_cmd), // output[31:0] reg 
+        .enc_wr          (encod_linear_wr_wr), // output reg 
+        .enc_done        (encod_linear_wr_done) // output reg 
+    );
+
+
     memctrl16 #(
         .DLY_LD                           (DLY_LD),
         .DLY_LD_MASK                      (DLY_LD_MASK),
