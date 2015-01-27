@@ -2,7 +2,7 @@
  * Module: cmd_encod_linear_rd
  * Date:2015-01-23  
  * Author: andrey     
- * Description: Command sequencer generator for writing a sequential  up to 1KB page
+ * Description: Command sequencer generator for reading a sequential up to 1KB page
  * single page access, bank and row will not be changed
  *
  * Copyright (c) 2015 <set up in Preferences-Verilog/VHDL Editor-Templates> .
@@ -20,11 +20,20 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/> .
  *******************************************************************************/
 `timescale 1ns/1ps
-
+/*
+Minimal ACTIVATE period =4 Tcm or 10ns, so maksimal no-miss rate is Tck=1.25 ns (800 MHz)
+Minimal window of 4 ACTIVATE pulses - 16 Tck or 40 (40 ns), so one ACTIVATE per 8 Tck is still OK down to 1.25 ns
+Reads are in 16-byte colums: 1 8-burst (16 bytes) in a row, then next row, bank inc first. Then (if needed) - next column
+Number of rows should be >=5 (4 now for tCK=2.5ns to meet tRP (precharge to activate) of the same bank (tRP=13ns)
+Can read less if just one column
+ TODO: Maybe allow less rows with different sequence (no autoprecharge/no activate?) Will not work if row crosses page boundary
+ 
+ 
+*/
 module  cmd_encod_linear_rd #(
 //    parameter BASEADDR = 0,
-    parameter ADDRESS_NUMBER=15,
-    parameter COLADDR_NUMBER=10,
+    parameter ADDRESS_NUMBER=       15,
+    parameter COLADDR_NUMBER=       10,
     parameter CMD_PAUSE_BITS=       10,
     parameter CMD_DONE_BIT=         10 // VDT BUG: CMD_DONE_BIT is used in a function call parameter!
 ) (
@@ -35,7 +44,7 @@ module  cmd_encod_linear_rd #(
 //    input                        cmd_stb,     // strobe (with first byte) for the command a/d
     input                  [2:0] bank_in,     // bank address
     input   [ADDRESS_NUMBER-1:0] row_in,      // memory row
-    input   [COLADDR_NUMBER-1:0] start_col,   // start memory column (3 LSBs should be 0?)
+    input   [COLADDR_NUMBER-4:0] start_col,   // start memory column in 8-bursts
     input                  [5:0] num128_in,   // number of 128-bit words to transfer (8*16 bits) - full burst of 8
     input                        start,       // start generating commands
     output reg            [31:0] enc_cmd,     // encoded commnad
@@ -65,7 +74,7 @@ module  cmd_encod_linear_rd #(
     localparam CMD_ACTIVATE= 4;
     
     reg   [ADDRESS_NUMBER-1:0] row;     // memory row
-    reg   [COLADDR_NUMBER-1:0] col;     // start memory column (3 LSBs should be 0?) // VDT BUG: col is used as a function call parameter!
+    reg   [COLADDR_NUMBER-4:0] col;     // start memory column (3 LSBs should be 0?) // VDT BUG: col is used as a function call parameter!
     reg                  [2:0] bank;    // memory bank;
     reg                  [5:0] num128;  // number of 128-bit words to transfer
     
@@ -97,10 +106,10 @@ module  cmd_encod_linear_rd #(
         else if (!start && !gen_run) gen_addr <= 0;
         else if ((gen_addr==(REPEAT_ADDR-1)) && (num128[5:1]==0)) gen_addr <= REPEAT_ADDR+1; // skip loop alltogeter
         else if ((gen_addr !=REPEAT_ADDR) || (num128[5:1]==0)) gen_addr <= gen_addr+1; // not in a loop
-        
-        if (rst)        num128 <= 0;
-        else if (start) num128 <= num128_in;
-        else if (!gen_run) gen_addr <= 0; //
+//counting loops?        
+        if      (rst)          num128 <= 0;
+        else if (start)        num128 <= num128_in;
+        else if (!gen_run)     num128 <= 0; //
         else if ((gen_addr == (REPEAT_ADDR-1)) || (gen_addr == REPEAT_ADDR))  num128 <= num128 -1;
     end
     
@@ -153,7 +162,7 @@ module  cmd_encod_linear_rd #(
        else  enc_cmd <= func_encode_cmd ( // encode non-NOP command
             rom_cmd[1]?
                     row:
-                    {{ADDRESS_NUMBER-COLADDR_NUMBER{1'b0}},col[COLADDR_NUMBER-1:0]}, //  [14:0] addr;       // 15-bit row/column adderss
+                    {{ADDRESS_NUMBER-COLADDR_NUMBER{1'b0}},col[COLADDR_NUMBER-4:0],3'b0}, //  [14:0] addr;       // 15-bit row/column adderss
             bank[2:0],                                // bank (here OK to be any)
             full_cmd[2:0],           //   rcw;        // RAS/CAS/WE, positive logic
             1'b0,                    //   odt_en;     // enable ODT

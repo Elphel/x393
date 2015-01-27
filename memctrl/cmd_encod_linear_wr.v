@@ -23,8 +23,8 @@
 
 module  cmd_encod_linear_wr #(
 //    parameter BASEADDR = 0,
-    parameter ADDRESS_NUMBER=15,
-    parameter COLADDR_NUMBER=10,
+    parameter ADDRESS_NUMBER=       15,
+    parameter COLADDR_NUMBER=       10,
     parameter CMD_PAUSE_BITS=       10,
     parameter CMD_DONE_BIT=         10 // VDT BUG: CMD_DONE_BIT is used in a function call parameter!
 ) (
@@ -35,7 +35,7 @@ module  cmd_encod_linear_wr #(
 //    input                        cmd_stb,     // strobe (with first byte) for the command a/d
     input                  [2:0] bank_in,     // bank address
     input   [ADDRESS_NUMBER-1:0] row_in,      // memory row
-    input   [COLADDR_NUMBER-1:0] start_col,   // start memory column (3 LSBs should be 0?)
+    input   [COLADDR_NUMBER-4:0] start_col,   // start memory column (3 LSBs should be 0?)
     input                  [5:0] num128_in,   // number of 128-bit words to transfer (8*16 bits) - full burst of 8
     input                        start,       // start generating commands
     output reg            [31:0] enc_cmd,     // encoded commnad
@@ -67,7 +67,7 @@ module  cmd_encod_linear_wr #(
     localparam CMD_ACTIVATE= 4;
     
     reg   [ADDRESS_NUMBER-1:0] row;     // memory row
-    reg   [COLADDR_NUMBER-1:0] col;     // start memory column (3 LSBs should be 0?) // VDT BUG: col is used as a function call parameter!
+    reg   [COLADDR_NUMBER-4:0] col;     // start memory column (3 LSBs should be 0?) // VDT BUG: col is used as a function call parameter!
     reg                  [2:0] bank;    // memory bank;
     reg                  [5:0] num128;  // number of 128-bit words to transfer
     
@@ -99,10 +99,11 @@ module  cmd_encod_linear_wr #(
         else if (!start && !gen_run) gen_addr <= 0;
         else if ((gen_addr==(REPEAT_ADDR-1)) && (num128[5:1]==0)) gen_addr <= REPEAT_ADDR+1; // skip loop alltogeter
         else if ((gen_addr !=REPEAT_ADDR) || (num128[5:1]==0)) gen_addr <= gen_addr+1; // not in a loop
-        
-        if (rst)        num128 <= 0;
-        else if (start) num128 <= num128_in;
-        else if (!gen_run) gen_addr <= 0; //
+
+//counting loops        
+        if      (rst)        num128 <= 0;
+        else if (start)      num128 <= num128_in;
+        else if (!gen_run)   num128 <= 0; //
         else if ((gen_addr == (REPEAT_ADDR-1)) || (gen_addr == REPEAT_ADDR))  num128 <= num128 -1;
     end
     
@@ -156,7 +157,7 @@ module  cmd_encod_linear_wr #(
        else  enc_cmd <= func_encode_cmd ( // encode non-NOP command
             rom_cmd[1]?
                     row:
-                    {{ADDRESS_NUMBER-COLADDR_NUMBER{1'b0}},col[COLADDR_NUMBER-1:0]}, //  [14:0] addr;       // 15-bit row/column adderss
+                    {{ADDRESS_NUMBER-COLADDR_NUMBER{1'b0}},col[COLADDR_NUMBER-4:0],3'b0}, //  [14:0] addr;       // 15-bit row/column adderss
             bank[2:0],                                // bank (here OK to be any)
             full_cmd[2:0],           //   rcw;        // RAS/CAS/WE, positive logic
             rom_r[ENC_ODT],          //   odt_en;     // enable ODT
