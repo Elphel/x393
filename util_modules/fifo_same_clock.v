@@ -19,7 +19,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/> .
  *******************************************************************************/
 `timescale 1ns/1ps
-`define DEBUG_FIFO 1 
+//`define DEBUG_FIFO 1 
 module fifo_same_clock
 #(
   parameter integer DATA_WIDTH=16,
@@ -28,6 +28,7 @@ module fifo_same_clock
     (
   input                   rst,      // reset, active high
   input                   clk,      // clock - positive edge
+  input                   sync_rst, // synchronously reset fifo;
   input                   we,       // write enable
   input                   re,       // read enable
   input  [DATA_WIDTH-1:0] data_in,  // input data
@@ -71,29 +72,40 @@ module fifo_same_clock
 `endif
     
     always @ (posedge  clk or posedge  rst) begin
-      if   (rst) fill <= 0;
-      else fill <= next_fill;
-      if (rst) wem <= 0;
-      else     wem <= we;
-      if   (rst) ram_nempty <= 0;
-      else ram_nempty <= (next_fill != 0);
+      if      (rst)      fill <= 0;
+      else if (sync_rst) fill <= 0;
+      else               fill <= next_fill;
+      
+      if (rst)           wem <= 0;
+      else if (sync_rst) wem <= 0;
+      else               wem <= we;
+      
+      if   (rst)         ram_nempty <= 0;
+      else if (sync_rst) ram_nempty <= 0;
+      else               ram_nempty <= (next_fill != 0);
      
-      if (rst)      wa <= 0;
-      else if (wem) wa <= wa+1;
-      if (rst)      ra <=  0;
-      else if (rem) ra <= ra+1;
+      if (rst)           wa <= 0;
+      else if (sync_rst) wa <= 0;
+      else if (wem)      wa <= wa+1;
+      
+      if (rst)              ra <=  0;
+      else if (sync_rst)    ra <= 0;
+      else if (rem)         ra <= ra+1;
       else if (!ram_nempty) ra <= wa; // Just recover from bit errors
 
       if (rst)             out_full <= 0;
+      else if (sync_rst)   out_full <= 0;
       else if (rem && ~re) out_full <= 1;
       else if (re && ~rem) out_full <= 0;
 
 `ifdef DEBUG_FIFO
-      if (rst)     wcount <= 0;
-      else if (we) wcount <= wcount + 1;
+      if (rst)            wcount <= 0;
+      else if (sync_rst)  wcount <= 0;
+      else if (we)        wcount <= wcount + 1;
 
-      if (rst)     rcount <= 0;
-      else if (re) rcount <= rcount + 1;
+      if (rst)           rcount <= 0;
+      else if (sync_rst) rcount <= 0;
+      else if (re)       rcount <= rcount + 1;
 `endif      
     end
 

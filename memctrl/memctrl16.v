@@ -161,7 +161,8 @@ module  memctrl16 #(
     output reg                   channel_pgm_en0, // channel can program sequence data
     input                 [31:0] seq_data0,  //16x32 data to be written to the sequencer (and start address for software-based sequencer)
     input                        seq_wr0,    // strobe for writing sequencer data (address is autoincremented)
-    input                        seq_done0,  // channel sequencer data is written. If no seq_wr pulses before seq_done, seq_data contains software sequencer start address
+    input                        seq_set0,   // channel sequencer data is written. If no seq_wr pulses before seq_set, seq_data contains software sequencer start address
+    output                       seq_done0,  // sequencer finished executing sequence for this channel 
   `ifdef def_read_mem_chn0
     output                       buf_wr_chn0,
     output                 [6:0] buf_waddr_chn0,
@@ -180,7 +181,8 @@ module  memctrl16 #(
     output reg                   channel_pgm_en1, // channel can program sequence data
     input                 [31:0] seq_data1,  //16x32 data to be written to the sequencer (and start address for software-based sequencer)
     input                        seq_wr1,    // strobe for writing sequencer data (address is autoincremented)
-    input                        seq_done1,  // channel sequencer data is written. If no seq_wr pulses before seq_done, seq_data contains software sequencer start address
+    input                        seq_set1,   // channel sequencer data is written. If no seq_wr pulses before seq_set, seq_data contains software sequencer start address
+    output                       seq_done1,  // sequencer finished executing sequence for this channel 
   `ifdef def_read_mem_chn1
     output                       buf_wr_chn1,
     output                 [6:0] buf_waddr_chn1,
@@ -199,7 +201,8 @@ module  memctrl16 #(
     output reg                   channel_pgm_en2, // channel can program sequence data
     input                 [31:0] seq_data2,  //16x32 data to be written to the sequencer (and start address for software-based sequencer)
     input                        seq_wr2,    // strobe for writing sequencer data (address is autoincremented)
-    input                        seq_done2,  // channel sequencer data is written. If no seq_wr pulses before seq_done, seq_data contains software sequencer start address
+    input                        seq_set2,  // channel sequencer data is written. If no seq_wr pulses before seq_set, seq_data contains software sequencer start address
+    output                       seq_done2,  // sequencer finished executing sequence for this channel 
   `ifdef def_read_mem_chn2
     output                       buf_wr_chn2,
     output                 [6:0] buf_waddr_chn2,
@@ -218,7 +221,8 @@ module  memctrl16 #(
     output reg                   channel_pgm_en3, // channel can program sequence data
     input                 [31:0] seq_data3,  //16x32 data to be written to the sequencer (and start address for software-based sequencer)
     input                        seq_wr3,    // strobe for writing sequencer data (address is autoincremented)
-    input                        seq_done3,  // channel sequencer data is written. If no seq_wr pulses before seq_done, seq_data contains software sequencer start address
+    input                        seq_set3,  // channel sequencer data is written. If no seq_wr pulses before seq_set, seq_data contains software sequencer start address
+    output                       seq_done3,  // sequencer finished executing sequence for this channel 
   `ifdef def_read_mem_chn3
     output                       buf_wr_chn3,
     output                 [6:0] buf_waddr_chn3,
@@ -237,7 +241,8 @@ module  memctrl16 #(
     output reg                   channel_pgm_en4, // channel can program sequence data
     input                 [31:0] seq_data4,  //16x32 data to be written to the sequencer (and start address for software-based sequencer)
     input                        seq_wr4,    // strobe for writing sequencer data (address is autoincremented)
-    input                        seq_done4,  // channel sequencer data is written. If no seq_wr pulses before seq_done, seq_data contains software sequencer start address
+    input                        seq_set4,  // channel sequencer data is written. If no seq_wr pulses before seq_set, seq_data contains software sequencer start address
+    output                       seq_done4,  // sequencer finished executing sequence for this channel 
   `ifdef def_read_mem_chn4
     output                       buf_wr_chn4,
     output                 [6:0] buf_waddr_chn4,
@@ -256,7 +261,8 @@ module  memctrl16 #(
     output reg                   channel_pgm_en5, // channel can program sequence data
     input                 [31:0] seq_data5,  //16x32 data to be written to the sequencer (and start address for software-based sequencer)
     input                        seq_wr5,    // strobe for writing sequencer data (address is autoincremented)
-    input                        seq_done5,  // channel sequencer data is written. If no seq_wr pulses before seq_done, seq_data contains software sequencer start address
+    input                        seq_set5,  // channel sequencer data is written. If no seq_wr pulses before seq_set, seq_data contains software sequencer start address
+    output                       seq_done5,  // sequencer finished executing sequence for this channel 
   `ifdef def_read_mem_chn5
     output                       buf_wr_chn5,
     output                 [6:0] buf_waddr_chn5,
@@ -275,7 +281,8 @@ module  memctrl16 #(
     output reg                   channel_pgm_en6, // channel can program sequence data
     input                 [31:0] seq_data6,  //16x32 data to be written to the sequencer (and start address for software-based sequencer)
     input                        seq_wr6,    // strobe for writing sequencer data (address is autoincremented)
-    input                        seq_done6,  // channel sequencer data is written. If no seq_wr pulses before seq_done, seq_data contains software sequencer start address
+    input                        seq_set6,  // channel sequencer data is written. If no seq_wr pulses before seq_set, seq_data contains software sequencer start address
+    output                       seq_done6,  // sequencer finished executing sequence for this channel 
   `ifdef def_read_mem_chn6
     output                       buf_wr_chn6,
     output                 [6:0] buf_waddr_chn6,
@@ -294,7 +301,8 @@ module  memctrl16 #(
     output reg                   channel_pgm_en7, // channel can program sequence data
     input                 [31:0] seq_data7,  //16x32 data to be written to the sequencer (and start address for software-based sequencer)
     input                        seq_wr7,    // strobe for writing sequencer data (address is autoincremented)
-    input                        seq_done7,  // channel sequencer data is written. If no seq_wr pulses before seq_done, seq_data contains software sequencer start address
+    input                        seq_set7,  // channel sequencer data is written. If no seq_wr pulses before seq_set, seq_data contains software sequencer start address
+    output                       seq_done7,  // sequencer finished executing sequence for this channel 
   `ifdef def_read_mem_chn7
     output                       buf_wr_chn7,
     output                 [6:0] buf_waddr_chn7,
@@ -313,7 +321,8 @@ module  memctrl16 #(
     output reg                   channel_pgm_en8, // channel can program sequence data
     input                 [31:0] seq_data8,  //16x32 data to be written to the sequencer (and start address for software-based sequencer)
     input                        seq_wr8,    // strobe for writing sequencer data (address is autoincremented)
-    input                        seq_done8,  // channel sequencer data is written. If no seq_wr pulses before seq_done, seq_data contains software sequencer start address
+    input                        seq_set8,  // channel sequencer data is written. If no seq_wr pulses before seq_set, seq_data contains software sequencer start address
+    output                       seq_done8,  // sequencer finished executing sequence for this channel 
   `ifdef def_read_mem_chn8
     output                       buf_wr_chn8,
     output                 [6:0] buf_waddr_chn8,
@@ -332,7 +341,8 @@ module  memctrl16 #(
     output reg                   channel_pgm_en9, // channel can program sequence data
     input                 [31:0] seq_data9,  //16x32 data to be written to the sequencer (and start address for software-based sequencer)
     input                        seq_wr9,    // strobe for writing sequencer data (address is autoincremented)
-    input                        seq_done9,  // channel sequencer data is written. If no seq_wr pulses before seq_done, seq_data contains software sequencer start address
+    input                        seq_set9,  // channel sequencer data is written. If no seq_wr pulses before seq_set, seq_data contains software sequencer start address
+    output                       seq_done9,  // sequencer finished executing sequence for this channel 
   `ifdef def_read_mem_chn9
     output                       buf_wr_chn9,
     output                 [6:0] buf_waddr_chn9,
@@ -351,7 +361,8 @@ module  memctrl16 #(
     output reg                   channel_pgm_en10, // channel can program sequence data
     input                 [31:0] seq_data10,  //16x32 data to be written to the sequencer (and start address for software-based sequencer)
     input                        seq_wr10,    // strobe for writing sequencer data (address is autoincremented)
-    input                        seq_done10,  // channel sequencer data is written. If no seq_wr pulses before seq_done, seq_data contains software sequencer start address
+    input                        seq_set10,  // channel sequencer data is written. If no seq_wr pulses before seq_set, seq_data contains software sequencer start address
+    output                       seq_done10,  // sequencer finished executing sequence for this channel 
   `ifdef def_read_mem_chn10
     output                       buf_wr_chn10,
     output                 [6:0] buf_waddr_chn10,
@@ -370,7 +381,8 @@ module  memctrl16 #(
     output reg                   channel_pgm_en11, // channel can program sequence data
     input                 [31:0] seq_data11,  //16x32 data to be written to the sequencer (and start address for software-based sequencer)
     input                        seq_wr11,    // strobe for writing sequencer data (address is autoincremented)
-    input                        seq_done11,  // channel sequencer data is written. If no seq_wr pulses before seq_done, seq_data contains software sequencer start address
+    input                        seq_set11,  // channel sequencer data is written. If no seq_wr pulses before seq_set, seq_data contains software sequencer start address
+    output                       seq_done11,  // sequencer finished executing sequence for this channel 
   `ifdef def_read_mem_chn11
     output                       buf_wr_chn11,
     output                 [6:0] buf_waddr_chn11,
@@ -389,7 +401,8 @@ module  memctrl16 #(
     output reg                   channel_pgm_en12, // channel can program sequence data
     input                 [31:0] seq_data12,  //16x32 data to be written to the sequencer (and start address for software-based sequencer)
     input                        seq_wr12,    // strobe for writing sequencer data (address is autoincremented)
-    input                        seq_done12,  // channel sequencer data is written. If no seq_wr pulses before seq_done, seq_data contains software sequencer start address
+    input                        seq_set12,  // channel sequencer data is written. If no seq_wr pulses before seq_set, seq_data contains software sequencer start address
+    output                       seq_done12,  // sequencer finished executing sequence for this channel 
   `ifdef def_read_mem_chn12
     output                       buf_wr_chn12,
     output                 [6:0] buf_waddr_chn12,
@@ -408,7 +421,8 @@ module  memctrl16 #(
     output reg                   channel_pgm_en13, // channel can program sequence data
     input                 [31:0] seq_data13,  //16x32 data to be written to the sequencer (and start address for software-based sequencer)
     input                        seq_wr13,    // strobe for writing sequencer data (address is autoincremented)
-    input                        seq_done13,  // channel sequencer data is written. If no seq_wr pulses before seq_done, seq_data contains software sequencer start address
+    input                        seq_set13,  // channel sequencer data is written. If no seq_wr pulses before seq_set, seq_data contains software sequencer start address
+    output                       seq_done13,  // sequencer finished executing sequence for this channel 
   `ifdef def_read_mem_chn13
     output                       buf_wr_chn13,
     output                 [6:0] buf_waddr_chn13,
@@ -427,7 +441,8 @@ module  memctrl16 #(
     output reg                   channel_pgm_en14, // channel can program sequence data
     input                 [31:0] seq_data14,  //16x32 data to be written to the sequencer (and start address for software-based sequencer)
     input                        seq_wr14,    // strobe for writing sequencer data (address is autoincremented)
-    input                        seq_done14,  // channel sequencer data is written. If no seq_wr pulses before seq_done, seq_data contains software sequencer start address
+    input                        seq_set14,  // channel sequencer data is written. If no seq_wr pulses before seq_set, seq_data contains software sequencer start address
+    output                       seq_done14,  // sequencer finished executing sequence for this channel 
   `ifdef def_read_mem_chn14
     output                       buf_wr_chn14,
     output                 [6:0] buf_waddr_chn14,
@@ -446,7 +461,8 @@ module  memctrl16 #(
     output reg                   channel_pgm_en15, // channel can program sequence data
     input                 [31:0] seq_data15,  //16x32 data to be written to the sequencer (and start address for software-based sequencer)
     input                        seq_wr15,    // strobe for writing sequencer data (address is autoincremented)
-    input                        seq_done15,  // channel sequencer data is written. If no seq_wr pulses before seq_done, seq_data contains software sequencer start address
+    input                        seq_set15,  // channel sequencer data is written. If no seq_wr pulses before seq_set, seq_data contains software sequencer start address
+    output                       seq_done15,  // sequencer finished executing sequence for this channel 
   `ifdef def_read_mem_chn15
     output                       buf_wr_chn15,
     output                 [6:0] buf_waddr_chn15,
@@ -504,7 +520,7 @@ wire rst=rst_in; // TODO: decide where toi generate
 
     reg                   [31:0] seq_data;  //16x32 data to be written to the sequencer (and start address for software-based sequencer)
     reg                          seq_wr;    // strobe for writing sequencer data (address is autoincremented)
-    reg                          seq_done;  // channel sequencer data is written. If no seq_wr pulses before seq_done, seq_data contains software sequencer start address
+    reg                          seq_set;  // channel sequencer data is written. If no seq_wr pulses before seq_set, seq_data contains software sequencer start address
 
 // status data from phy (sequencer)
     wire [7:0] status_ad_phy;
@@ -546,6 +562,7 @@ wire rst=rst_in; // TODO: decide where toi generate
     wire            mcontr_enabled; // enabled and not reset
 
     wire            sequencer_run_busy; // sequencer is busy
+    wire            sequencer_run_done; // to notify channels
 
     wire            refresh_want;
     wire            refresh_need;
@@ -724,7 +741,7 @@ reg    [15:0]   mcontr_chn_en;  // per-channel request enable (will not reset tr
 
         
 assign mcontr_enabled=mcontr_en && !mcontr_reset; 
-//assign sel_refresh_w= refresh_need || (refresh_want && (!cmd_seq_need || !(cmd_seq_full || (cmd_seq_fill && seq_done ))));  
+//assign sel_refresh_w= refresh_need || (refresh_want && (!cmd_seq_need || !(cmd_seq_full || (cmd_seq_fill && seq_set ))));  
 assign sel_refresh_w= refresh_need || (refresh_want && !(cmd_seq_need && cmd_seq_full));
 assign pre_run_seq_w= mcontr_enabled && !sequencer_run_busy &&  (cmd_seq_full || refresh_need || refresh_want);
 assign pre_run_chn_w= pre_run_seq_w && !sel_refresh_w;
@@ -764,7 +781,7 @@ always @ (posedge rst or posedge mclk) begin
     
     if (rst)                           cmd_addr_start <= 0;
     else if (grant_r)                  cmd_addr_start <= {1'b1,cmd_addr_cur};  // address in PL bank
-    else if (!cmd_seq_set && seq_done) cmd_addr_start <= {1'b0,seq_data[9:0]}; // address in PL bank
+    else if (!cmd_seq_set && seq_set) cmd_addr_start <= {1'b0,seq_data[9:0]}; // address in PL bank
     
     
     if (rst) cmd_seq_run <= 0;
@@ -884,7 +901,7 @@ end
         .run_addr       (cmd_seq_addr[10:0]), // input[10:0] 
         .run_chn        (cmd_seq_chn[3:0]), // input[3:0] 
         .run_seq        (cmd_seq_run), // input #################### DISABLED ####################
-        .run_done       (), // output
+        .run_done       (sequencer_run_done), // output
         .run_busy       (sequencer_run_busy), // output ASSUMING it is high next cycle after run_seq - TODO: verify - yes, if not mcontr_reset
         .mcontr_reset   (mcontr_reset), // output == ddr_reset that also resets sequencer  
         .cmd_ad         (cmd_ad), // input[7:0] 
@@ -907,10 +924,10 @@ end
  `ifdef def_enable_mem_chn0
   `ifdef def_read_mem_chn0
     mcont_to_chnbuf_reg #(.CHN_NUMBER( 0)) mcont_to_chnbuf_reg0_i(.rst(rst),.clk(mclk),.ext_buf_wr(ext_buf_wr),.ext_buf_waddr(ext_buf_waddr),
-        .ext_buf_wchn(ext_buf_wchn),.ext_buf_wdata(ext_buf_wdata),.buf_wr_chn(buf_wr_chn0),.buf_waddr_chn(buf_waddr_chn0),.buf_wdata_chn(buf_wdata_chn0));
+        .ext_buf_wchn(ext_buf_wchn),.ext_buf_wdata(ext_buf_wdata),.seq_done(sequencer_run_done),.buf_done(seq_done0),.buf_wr_chn(buf_wr_chn0),.buf_waddr_chn(buf_waddr_chn0),.buf_wdata_chn(buf_wdata_chn0));
   `else
     mcont_from_chnbuf_reg #(.CHN_NUMBER( 0),.CHN_LATENCY(CHNBUF_READ_LATENCY)) mcont_from_chnbuf_reg0_i (.rst(rst),.clk(mclk),.ext_buf_rd(ext_buf_rd),
-        .ext_buf_raddr(ext_buf_raddr),.ext_buf_rchn(ext_buf_rchn),.ext_buf_rdata(ext_buf_rdata),.buf_rd_chn(buf_rd_chn0),.buf_raddr_chn(buf_raddr_chn0), 
+        .ext_buf_raddr(ext_buf_raddr),.ext_buf_rchn(ext_buf_rchn),.ext_buf_rdata(ext_buf_rdata),.seq_done(sequencer_run_done),.buf_done(seq_done0),.buf_rd_chn(buf_rd_chn0),.buf_raddr_chn(buf_raddr_chn0), 
         .buf_rdata_chn (buf_rdata_chn0));
   `endif
 `endif    
@@ -918,10 +935,10 @@ end
  `ifdef def_enable_mem_chn1
   `ifdef def_read_mem_chn1
     mcont_to_chnbuf_reg #(.CHN_NUMBER( 1)) mcont_to_chnbuf_reg1_i(.rst(rst),.clk(mclk),.ext_buf_wr(ext_buf_wr),.ext_buf_waddr(ext_buf_waddr),
-        .ext_buf_wchn(ext_buf_wchn),.ext_buf_wdata(ext_buf_wdata),.buf_wr_chn(buf_wr_chn1),.buf_waddr_chn(buf_waddr_chn1),.buf_wdata_chn(buf_wdata_chn1));
+        .ext_buf_wchn(ext_buf_wchn),.ext_buf_wdata(ext_buf_wdata),.seq_done(sequencer_run_done),.buf_done(seq_done1),.buf_wr_chn(buf_wr_chn1),.buf_waddr_chn(buf_waddr_chn1),.buf_wdata_chn(buf_wdata_chn1));
   `else
     mcont_from_chnbuf_reg #(.CHN_NUMBER( 1),.CHN_LATENCY(CHNBUF_READ_LATENCY)) mcont_from_chnbuf_reg1_i (.rst(rst),.clk(mclk),.ext_buf_rd(ext_buf_rd),
-        .ext_buf_raddr(ext_buf_raddr),.ext_buf_rchn(ext_buf_rchn),.ext_buf_rdata(ext_buf_rdata),.buf_rd_chn(buf_rd_chn1),.buf_raddr_chn(buf_raddr_chn1), 
+        .ext_buf_raddr(ext_buf_raddr),.ext_buf_rchn(ext_buf_rchn),.ext_buf_rdata(ext_buf_rdata),.seq_done(sequencer_run_done),.buf_done(seq_done1),.buf_rd_chn(buf_rd_chn1),.buf_raddr_chn(buf_raddr_chn1), 
         .buf_rdata_chn (buf_rdata_chn1));
   `endif
 `endif    
@@ -929,10 +946,10 @@ end
  `ifdef def_enable_mem_chn2
   `ifdef def_read_mem_chn2
     mcont_to_chnbuf_reg #(.CHN_NUMBER( 2)) mcont_to_chnbuf_reg2_i(.rst(rst),.clk(mclk),.ext_buf_wr(ext_buf_wr),.ext_buf_waddr(ext_buf_waddr),
-        .ext_buf_wchn(ext_buf_wchn),.ext_buf_wdata(ext_buf_wdata),.buf_wr_chn(buf_wr_chn2),.buf_waddr_chn(buf_waddr_chn2),.buf_wdata_chn(buf_wdata_chn2));
+        .ext_buf_wchn(ext_buf_wchn),.ext_buf_wdata(ext_buf_wdata),.seq_done(sequencer_run_done),.buf_done(seq_done2),.buf_wr_chn(buf_wr_chn2),.buf_waddr_chn(buf_waddr_chn2),.buf_wdata_chn(buf_wdata_chn2));
   `else
     mcont_from_chnbuf_reg #(.CHN_NUMBER( 2),.CHN_LATENCY(CHNBUF_READ_LATENCY)) mcont_from_chnbuf_reg2_i (.rst(rst),.clk(mclk),.ext_buf_rd(ext_buf_rd),
-        .ext_buf_raddr(ext_buf_raddr),.ext_buf_rchn(ext_buf_rchn),.ext_buf_rdata(ext_buf_rdata),.buf_rd_chn(buf_rd_chn2),.buf_raddr_chn(buf_raddr_chn2), 
+        .ext_buf_raddr(ext_buf_raddr),.ext_buf_rchn(ext_buf_rchn),.ext_buf_rdata(ext_buf_rdata),.seq_done(sequencer_run_done),.buf_done(seq_done2),.buf_rd_chn(buf_rd_chn2),.buf_raddr_chn(buf_raddr_chn2), 
         .buf_rdata_chn (buf_rdata_chn2));
   `endif
 `endif    
@@ -940,10 +957,10 @@ end
  `ifdef def_enable_mem_chn3
   `ifdef def_read_mem_chn3
     mcont_to_chnbuf_reg #(.CHN_NUMBER( 3)) mcont_to_chnbuf_reg3_i(.rst(rst),.clk(mclk),.ext_buf_wr(ext_buf_wr),.ext_buf_waddr(ext_buf_waddr),
-        .ext_buf_wchn(ext_buf_wchn),.ext_buf_wdata(ext_buf_wdata),.buf_wr_chn(buf_wr_chn3),.buf_waddr_chn(buf_waddr_chn3),.buf_wdata_chn(buf_wdata_chn3));
+        .ext_buf_wchn(ext_buf_wchn),.ext_buf_wdata(ext_buf_wdata),.seq_done(sequencer_run_done),.buf_done(seq_done3),.buf_wr_chn(buf_wr_chn3),.buf_waddr_chn(buf_waddr_chn3),.buf_wdata_chn(buf_wdata_chn3));
   `else
     mcont_from_chnbuf_reg #(.CHN_NUMBER( 3),.CHN_LATENCY(CHNBUF_READ_LATENCY)) mcont_from_chnbuf_reg3_i (.rst(rst),.clk(mclk),.ext_buf_rd(ext_buf_rd),
-        .ext_buf_raddr(ext_buf_raddr),.ext_buf_rchn(ext_buf_rchn),.ext_buf_rdata(ext_buf_rdata),.buf_rd_chn(buf_rd_chn3),.buf_raddr_chn(buf_raddr_chn3), 
+        .ext_buf_raddr(ext_buf_raddr),.ext_buf_rchn(ext_buf_rchn),.ext_buf_rdata(ext_buf_rdata),.seq_done(sequencer_run_done),.buf_done(seq_done3),.buf_rd_chn(buf_rd_chn3),.buf_raddr_chn(buf_raddr_chn3), 
         .buf_rdata_chn (buf_rdata_chn3));
   `endif
 `endif    
@@ -951,10 +968,10 @@ end
  `ifdef def_enable_mem_chn4
   `ifdef def_read_mem_chn4
     mcont_to_chnbuf_reg #(.CHN_NUMBER( 4)) mcont_to_chnbuf_reg4_i(.rst(rst),.clk(mclk),.ext_buf_wr(ext_buf_wr),.ext_buf_waddr(ext_buf_waddr),
-        .ext_buf_wchn(ext_buf_wchn),.ext_buf_wdata(ext_buf_wdata),.buf_wr_chn(buf_wr_chn4),.buf_waddr_chn(buf_waddr_chn4),.buf_wdata_chn(buf_wdata_chn4));
+        .ext_buf_wchn(ext_buf_wchn),.ext_buf_wdata(ext_buf_wdata),.seq_done(sequencer_run_done),.buf_done(seq_done4),.buf_wr_chn(buf_wr_chn4),.buf_waddr_chn(buf_waddr_chn4),.buf_wdata_chn(buf_wdata_chn4));
   `else
     mcont_from_chnbuf_reg #(.CHN_NUMBER( 4),.CHN_LATENCY(CHNBUF_READ_LATENCY)) mcont_from_chnbuf_reg4_i (.rst(rst),.clk(mclk),.ext_buf_rd(ext_buf_rd),
-        .ext_buf_raddr(ext_buf_raddr),.ext_buf_rchn(ext_buf_rchn),.ext_buf_rdata(ext_buf_rdata),.buf_rd_chn(buf_rd_chn4),.buf_raddr_chn(buf_raddr_chn4), 
+        .ext_buf_raddr(ext_buf_raddr),.ext_buf_rchn(ext_buf_rchn),.ext_buf_rdata(ext_buf_rdata),.seq_done(sequencer_run_done),.buf_done(seq_done4),.buf_rd_chn(buf_rd_chn4),.buf_raddr_chn(buf_raddr_chn4), 
         .buf_rdata_chn (buf_rdata_chn4));
   `endif
 `endif    
@@ -962,10 +979,10 @@ end
  `ifdef def_enable_mem_chn5
   `ifdef def_read_mem_chn5
     mcont_to_chnbuf_reg #(.CHN_NUMBER( 5)) mcont_to_chnbuf_reg5_i(.rst(rst),.clk(mclk),.ext_buf_wr(ext_buf_wr),.ext_buf_waddr(ext_buf_waddr),
-        .ext_buf_wchn(ext_buf_wchn),.ext_buf_wdata(ext_buf_wdata),.buf_wr_chn(buf_wr_chn5),.buf_waddr_chn(buf_waddr_chn5),.buf_wdata_chn(buf_wdata_chn5));
+        .ext_buf_wchn(ext_buf_wchn),.ext_buf_wdata(ext_buf_wdata),.seq_done(sequencer_run_done),.buf_done(seq_done5),.buf_wr_chn(buf_wr_chn5),.buf_waddr_chn(buf_waddr_chn5),.buf_wdata_chn(buf_wdata_chn5));
   `else
     mcont_from_chnbuf_reg #(.CHN_NUMBER( 5),.CHN_LATENCY(CHNBUF_READ_LATENCY)) mcont_from_chnbuf_reg5_i (.rst(rst),.clk(mclk),.ext_buf_rd(ext_buf_rd),
-        .ext_buf_raddr(ext_buf_raddr),.ext_buf_rchn(ext_buf_rchn),.ext_buf_rdata(ext_buf_rdata),.buf_rd_chn(buf_rd_chn5),.buf_raddr_chn(buf_raddr_chn5), 
+        .ext_buf_raddr(ext_buf_raddr),.ext_buf_rchn(ext_buf_rchn),.ext_buf_rdata(ext_buf_rdata),.seq_done(sequencer_run_done),.buf_done(seq_done5),.buf_rd_chn(buf_rd_chn5),.buf_raddr_chn(buf_raddr_chn5), 
         .buf_rdata_chn (buf_rdata_chn5));
   `endif
 `endif    
@@ -973,10 +990,10 @@ end
  `ifdef def_enable_mem_chn6
   `ifdef def_read_mem_chn6
     mcont_to_chnbuf_reg #(.CHN_NUMBER( 6)) mcont_to_chnbuf_reg6_i(.rst(rst),.clk(mclk),.ext_buf_wr(ext_buf_wr),.ext_buf_waddr(ext_buf_waddr),
-        .ext_buf_wchn(ext_buf_wchn),.ext_buf_wdata(ext_buf_wdata),.buf_wr_chn(buf_wr_chn6),.buf_waddr_chn(buf_waddr_chn6),.buf_wdata_chn(buf_wdata_chn6));
+        .ext_buf_wchn(ext_buf_wchn),.ext_buf_wdata(ext_buf_wdata),.seq_done(sequencer_run_done),.buf_done(seq_done6),.buf_wr_chn(buf_wr_chn6),.buf_waddr_chn(buf_waddr_chn6),.buf_wdata_chn(buf_wdata_chn6));
   `else
     mcont_from_chnbuf_reg #(.CHN_NUMBER( 6),.CHN_LATENCY(CHNBUF_READ_LATENCY)) mcont_from_chnbuf_reg6_i (.rst(rst),.clk(mclk),.ext_buf_rd(ext_buf_rd),
-        .ext_buf_raddr(ext_buf_raddr),.ext_buf_rchn(ext_buf_rchn),.ext_buf_rdata(ext_buf_rdata),.buf_rd_chn(buf_rd_chn6),.buf_raddr_chn(buf_raddr_chn6), 
+        .ext_buf_raddr(ext_buf_raddr),.ext_buf_rchn(ext_buf_rchn),.ext_buf_rdata(ext_buf_rdata),.seq_done(sequencer_run_done),.buf_done(seq_done6),.buf_rd_chn(buf_rd_chn6),.buf_raddr_chn(buf_raddr_chn6), 
         .buf_rdata_chn (buf_rdata_chn6));
   `endif
 `endif    
@@ -984,10 +1001,10 @@ end
  `ifdef def_enable_mem_chn7
   `ifdef def_read_mem_chn7
     mcont_to_chnbuf_reg #(.CHN_NUMBER( 7)) mcont_to_chnbuf_reg7_i(.rst(rst),.clk(mclk),.ext_buf_wr(ext_buf_wr),.ext_buf_waddr(ext_buf_waddr),
-        .ext_buf_wchn(ext_buf_wchn),.ext_buf_wdata(ext_buf_wdata),.buf_wr_chn(buf_wr_chn7),.buf_waddr_chn(buf_waddr_chn7),.buf_wdata_chn(buf_wdata_chn7));
+        .ext_buf_wchn(ext_buf_wchn),.ext_buf_wdata(ext_buf_wdata),.seq_done(sequencer_run_done),.buf_done(seq_done7),.buf_wr_chn(buf_wr_chn7),.buf_waddr_chn(buf_waddr_chn7),.buf_wdata_chn(buf_wdata_chn7));
   `else
     mcont_from_chnbuf_reg #(.CHN_NUMBER( 7),.CHN_LATENCY(CHNBUF_READ_LATENCY)) mcont_from_chnbuf_reg7_i (.rst(rst),.clk(mclk),.ext_buf_rd(ext_buf_rd),
-        .ext_buf_raddr(ext_buf_raddr),.ext_buf_rchn(ext_buf_rchn),.ext_buf_rdata(ext_buf_rdata),.buf_rd_chn(buf_rd_chn7),.buf_raddr_chn(buf_raddr_chn7), 
+        .ext_buf_raddr(ext_buf_raddr),.ext_buf_rchn(ext_buf_rchn),.ext_buf_rdata(ext_buf_rdata),.seq_done(sequencer_run_done),.buf_done(seq_done7),.buf_rd_chn(buf_rd_chn7),.buf_raddr_chn(buf_raddr_chn7), 
         .buf_rdata_chn (buf_rdata_chn7));
   `endif
 `endif    
@@ -995,10 +1012,10 @@ end
  `ifdef def_enable_mem_chn8
   `ifdef def_read_mem_chn8
     mcont_to_chnbuf_reg #(.CHN_NUMBER( 8)) mcont_to_chnbuf_reg8_i(.rst(rst),.clk(mclk),.ext_buf_wr(ext_buf_wr),.ext_buf_waddr(ext_buf_waddr),
-        .ext_buf_wchn(ext_buf_wchn),.ext_buf_wdata(ext_buf_wdata),.buf_wr_chn(buf_wr_chn8),.buf_waddr_chn(buf_waddr_chn8),.buf_wdata_chn(buf_wdata_chn8));
+        .ext_buf_wchn(ext_buf_wchn),.ext_buf_wdata(ext_buf_wdata),.seq_done(sequencer_run_done),.buf_done(seq_done8),.buf_wr_chn(buf_wr_chn8),.buf_waddr_chn(buf_waddr_chn8),.buf_wdata_chn(buf_wdata_chn8));
   `else
     mcont_from_chnbuf_reg #(.CHN_NUMBER( 8),.CHN_LATENCY(CHNBUF_READ_LATENCY)) mcont_from_chnbuf_reg8_i (.rst(rst),.clk(mclk),.ext_buf_rd(ext_buf_rd),
-        .ext_buf_raddr(ext_buf_raddr),.ext_buf_rchn(ext_buf_rchn),.ext_buf_rdata(ext_buf_rdata),.buf_rd_chn(buf_rd_chn8),.buf_raddr_chn(buf_raddr_chn8), 
+        .ext_buf_raddr(ext_buf_raddr),.ext_buf_rchn(ext_buf_rchn),.ext_buf_rdata(ext_buf_rdata),.seq_done(sequencer_run_done),.buf_done(seq_done8),.buf_rd_chn(buf_rd_chn8),.buf_raddr_chn(buf_raddr_chn8), 
         .buf_rdata_chn (buf_rdata_chn8));
   `endif
 `endif    
@@ -1006,10 +1023,10 @@ end
  `ifdef def_enable_mem_chn9
   `ifdef def_read_mem_chn9
     mcont_to_chnbuf_reg #(.CHN_NUMBER( 9)) mcont_to_chnbuf_reg9_i(.rst(rst),.clk(mclk),.ext_buf_wr(ext_buf_wr),.ext_buf_waddr(ext_buf_waddr),
-        .ext_buf_wchn(ext_buf_wchn),.ext_buf_wdata(ext_buf_wdata),.buf_wr_chn(buf_wr_chn9),.buf_waddr_chn(buf_waddr_chn9),.buf_wdata_chn(buf_wdata_chn9));
+        .ext_buf_wchn(ext_buf_wchn),.ext_buf_wdata(ext_buf_wdata),.seq_done(sequencer_run_done),.buf_done(seq_done9),.buf_wr_chn(buf_wr_chn9),.buf_waddr_chn(buf_waddr_chn9),.buf_wdata_chn(buf_wdata_chn9));
   `else
     mcont_from_chnbuf_reg #(.CHN_NUMBER( 9),.CHN_LATENCY(CHNBUF_READ_LATENCY)) mcont_from_chnbuf_reg9_i (.rst(rst),.clk(mclk),.ext_buf_rd(ext_buf_rd),
-        .ext_buf_raddr(ext_buf_raddr),.ext_buf_rchn(ext_buf_rchn),.ext_buf_rdata(ext_buf_rdata),.buf_rd_chn(buf_rd_chn9),.buf_raddr_chn(buf_raddr_chn9), 
+        .ext_buf_raddr(ext_buf_raddr),.ext_buf_rchn(ext_buf_rchn),.ext_buf_rdata(ext_buf_rdata),.seq_done(sequencer_run_done),.buf_done(seq_done9),.buf_rd_chn(buf_rd_chn9),.buf_raddr_chn(buf_raddr_chn9), 
         .buf_rdata_chn (buf_rdata_chn9));
   `endif
 `endif    
@@ -1017,10 +1034,10 @@ end
  `ifdef def_enable_mem_chn10
   `ifdef def_read_mem_chn10
     mcont_to_chnbuf_reg #(.CHN_NUMBER( 10)) mcont_to_chnbuf_reg10_i(.rst(rst),.clk(mclk),.ext_buf_wr(ext_buf_wr),.ext_buf_waddr(ext_buf_waddr),
-        .ext_buf_wchn(ext_buf_wchn),.ext_buf_wdata(ext_buf_wdata),.buf_wr_chn(buf_wr_chn10),.buf_waddr_chn(buf_waddr_chn10),.buf_wdata_chn(buf_wdata_chn10));
+        .ext_buf_wchn(ext_buf_wchn),.ext_buf_wdata(ext_buf_wdata),.seq_done(sequencer_run_done),.buf_done(seq_done10),.buf_wr_chn(buf_wr_chn10),.buf_waddr_chn(buf_waddr_chn10),.buf_wdata_chn(buf_wdata_chn10));
   `else
     mcont_from_chnbuf_reg #(.CHN_NUMBER( 10),.CHN_LATENCY(CHNBUF_READ_LATENCY)) mcont_from_chnbuf_reg10_i (.rst(rst),.clk(mclk),.ext_buf_rd(ext_buf_rd),
-        .ext_buf_raddr(ext_buf_raddr),.ext_buf_rchn(ext_buf_rchn),.ext_buf_rdata(ext_buf_rdata),.buf_rd_chn(buf_rd_chn10),.buf_raddr_chn(buf_raddr_chn10), 
+        .ext_buf_raddr(ext_buf_raddr),.ext_buf_rchn(ext_buf_rchn),.ext_buf_rdata(ext_buf_rdata),.seq_done(sequencer_run_done),.buf_done(seq_done10),.buf_rd_chn(buf_rd_chn10),.buf_raddr_chn(buf_raddr_chn10), 
         .buf_rdata_chn (buf_rdata_chn10));
   `endif
 `endif    
@@ -1028,10 +1045,10 @@ end
  `ifdef def_enable_mem_chn11
   `ifdef def_read_mem_chn11
     mcont_to_chnbuf_reg #(.CHN_NUMBER( 11)) mcont_to_chnbuf_reg11_i(.rst(rst),.clk(mclk),.ext_buf_wr(ext_buf_wr),.ext_buf_waddr(ext_buf_waddr),
-        .ext_buf_wchn(ext_buf_wchn),.ext_buf_wdata(ext_buf_wdata),.buf_wr_chn(buf_wr_chn11),.buf_waddr_chn(buf_waddr_chn11),.buf_wdata_chn(buf_wdata_chn11));
+        .ext_buf_wchn(ext_buf_wchn),.ext_buf_wdata(ext_buf_wdata),.seq_done(sequencer_run_done),.buf_done(seq_done11),.buf_wr_chn(buf_wr_chn11),.buf_waddr_chn(buf_waddr_chn11),.buf_wdata_chn(buf_wdata_chn11));
   `else
     mcont_from_chnbuf_reg #(.CHN_NUMBER( 11),.CHN_LATENCY(CHNBUF_READ_LATENCY)) mcont_from_chnbuf_reg11_i (.rst(rst),.clk(mclk),.ext_buf_rd(ext_buf_rd),
-        .ext_buf_raddr(ext_buf_raddr),.ext_buf_rchn(ext_buf_rchn),.ext_buf_rdata(ext_buf_rdata),.buf_rd_chn(buf_rd_chn11),.buf_raddr_chn(buf_raddr_chn11), 
+        .ext_buf_raddr(ext_buf_raddr),.ext_buf_rchn(ext_buf_rchn),.ext_buf_rdata(ext_buf_rdata),.seq_done(sequencer_run_done),.buf_done(seq_done11),.buf_rd_chn(buf_rd_chn11),.buf_raddr_chn(buf_raddr_chn11), 
         .buf_rdata_chn (buf_rdata_chn11));
   `endif
 `endif    
@@ -1039,10 +1056,10 @@ end
  `ifdef def_enable_mem_chn12
   `ifdef def_read_mem_chn12
     mcont_to_chnbuf_reg #(.CHN_NUMBER( 12)) mcont_to_chnbuf_reg12_i(.rst(rst),.clk(mclk),.ext_buf_wr(ext_buf_wr),.ext_buf_waddr(ext_buf_waddr),
-        .ext_buf_wchn(ext_buf_wchn),.ext_buf_wdata(ext_buf_wdata),.buf_wr_chn(buf_wr_chn12),.buf_waddr_chn(buf_waddr_chn12),.buf_wdata_chn(buf_wdata_chn12));
+        .ext_buf_wchn(ext_buf_wchn),.ext_buf_wdata(ext_buf_wdata),.seq_done(sequencer_run_done),.buf_done(seq_done12),.buf_wr_chn(buf_wr_chn12),.buf_waddr_chn(buf_waddr_chn12),.buf_wdata_chn(buf_wdata_chn12));
   `else
     mcont_from_chnbuf_reg #(.CHN_NUMBER( 12),.CHN_LATENCY(CHNBUF_READ_LATENCY)) mcont_from_chnbuf_reg12_i (.rst(rst),.clk(mclk),.ext_buf_rd(ext_buf_rd),
-        .ext_buf_raddr(ext_buf_raddr),.ext_buf_rchn(ext_buf_rchn),.ext_buf_rdata(ext_buf_rdata),.buf_rd_chn(buf_rd_chn12),.buf_raddr_chn(buf_raddr_chn12), 
+        .ext_buf_raddr(ext_buf_raddr),.ext_buf_rchn(ext_buf_rchn),.ext_buf_rdata(ext_buf_rdata),.seq_done(sequencer_run_done),.buf_done(seq_done12),.buf_rd_chn(buf_rd_chn12),.buf_raddr_chn(buf_raddr_chn12), 
         .buf_rdata_chn (buf_rdata_chn12));
   `endif
 `endif    
@@ -1050,10 +1067,10 @@ end
  `ifdef def_enable_mem_chn13
   `ifdef def_read_mem_chn13
     mcont_to_chnbuf_reg #(.CHN_NUMBER( 13)) mcont_to_chnbuf_reg13_i(.rst(rst),.clk(mclk),.ext_buf_wr(ext_buf_wr),.ext_buf_waddr(ext_buf_waddr),
-        .ext_buf_wchn(ext_buf_wchn),.ext_buf_wdata(ext_buf_wdata),.buf_wr_chn(buf_wr_chn13),.buf_waddr_chn(buf_waddr_chn13),.buf_wdata_chn(buf_wdata_chn13));
+        .ext_buf_wchn(ext_buf_wchn),.ext_buf_wdata(ext_buf_wdata),.seq_done(sequencer_run_done),.buf_done(seq_done13),.buf_wr_chn(buf_wr_chn13),.buf_waddr_chn(buf_waddr_chn13),.buf_wdata_chn(buf_wdata_chn13));
   `else
     mcont_from_chnbuf_reg #(.CHN_NUMBER( 13),.CHN_LATENCY(CHNBUF_READ_LATENCY)) mcont_from_chnbuf_reg13_i (.rst(rst),.clk(mclk),.ext_buf_rd(ext_buf_rd),
-        .ext_buf_raddr(ext_buf_raddr),.ext_buf_rchn(ext_buf_rchn),.ext_buf_rdata(ext_buf_rdata),.buf_rd_chn(buf_rd_chn13),.buf_raddr_chn(buf_raddr_chn13), 
+        .ext_buf_raddr(ext_buf_raddr),.ext_buf_rchn(ext_buf_rchn),.ext_buf_rdata(ext_buf_rdata),.seq_done(sequencer_run_done),.buf_done(seq_done13),.buf_rd_chn(buf_rd_chn13),.buf_raddr_chn(buf_raddr_chn13), 
         .buf_rdata_chn (buf_rdata_chn13));
   `endif
 `endif    
@@ -1061,10 +1078,10 @@ end
  `ifdef def_enable_mem_chn14
   `ifdef def_read_mem_chn14
     mcont_to_chnbuf_reg #(.CHN_NUMBER( 14)) mcont_to_chnbuf_reg14_i(.rst(rst),.clk(mclk),.ext_buf_wr(ext_buf_wr),.ext_buf_waddr(ext_buf_waddr),
-        .ext_buf_wchn(ext_buf_wchn),.ext_buf_wdata(ext_buf_wdata),.buf_wr_chn(buf_wr_chn14),.buf_waddr_chn(buf_waddr_chn14),.buf_wdata_chn(buf_wdata_chn14));
+        .ext_buf_wchn(ext_buf_wchn),.ext_buf_wdata(ext_buf_wdata),.seq_done(sequencer_run_done),.buf_done(seq_done14),.buf_wr_chn(buf_wr_chn14),.buf_waddr_chn(buf_waddr_chn14),.buf_wdata_chn(buf_wdata_chn14));
   `else
     mcont_from_chnbuf_reg #(.CHN_NUMBER( 14),.CHN_LATENCY(CHNBUF_READ_LATENCY)) mcont_from_chnbuf_reg14_i (.rst(rst),.clk(mclk),.ext_buf_rd(ext_buf_rd),
-        .ext_buf_raddr(ext_buf_raddr),.ext_buf_rchn(ext_buf_rchn),.ext_buf_rdata(ext_buf_rdata),.buf_rd_chn(buf_rd_chn14),.buf_raddr_chn(buf_raddr_chn14), 
+        .ext_buf_raddr(ext_buf_raddr),.ext_buf_rchn(ext_buf_rchn),.ext_buf_rdata(ext_buf_rdata),.seq_done(sequencer_run_done),.buf_done(seq_done14),.buf_rd_chn(buf_rd_chn14),.buf_raddr_chn(buf_raddr_chn14), 
         .buf_rdata_chn (buf_rdata_chn14));
   `endif
 `endif    
@@ -1072,10 +1089,10 @@ end
  `ifdef def_enable_mem_chn15
   `ifdef def_read_mem_chn15
     mcont_to_chnbuf_reg #(.CHN_NUMBER( 15)) mcont_to_chnbuf_reg15_i(.rst(rst),.clk(mclk),.ext_buf_wr(ext_buf_wr),.ext_buf_waddr(ext_buf_waddr),
-        .ext_buf_wchn(ext_buf_wchn),.ext_buf_wdata(ext_buf_wdata),.buf_wr_chn(buf_wr_chn15),.buf_waddr_chn(buf_waddr_chn15),.buf_wdata_chn(buf_wdata_chn15));
+        .ext_buf_wchn(ext_buf_wchn),.ext_buf_wdata(ext_buf_wdata),.seq_done(sequencer_run_done),.buf_done(seq_done15),.buf_wr_chn(buf_wr_chn15),.buf_waddr_chn(buf_waddr_chn15),.buf_wdata_chn(buf_wdata_chn15));
   `else
     mcont_from_chnbuf_reg #(.CHN_NUMBER( 15),.CHN_LATENCY(CHNBUF_READ_LATENCY)) mcont_from_chnbuf_reg15_i (.rst(rst),.clk(mclk),.ext_buf_rd(ext_buf_rd),
-        .ext_buf_raddr(ext_buf_raddr),.ext_buf_rchn(ext_buf_rchn),.ext_buf_rdata(ext_buf_rdata),.buf_rd_chn(buf_rd_chn15),.buf_raddr_chn(buf_raddr_chn15), 
+        .ext_buf_raddr(ext_buf_raddr),.ext_buf_rchn(ext_buf_rchn),.ext_buf_rdata(ext_buf_rdata),.seq_done(sequencer_run_done),.buf_done(seq_done15),.buf_rd_chn(buf_rd_chn15),.buf_raddr_chn(buf_raddr_chn15), 
         .buf_rdata_chn (buf_rdata_chn15));
   `endif
 `endif    
@@ -1136,56 +1153,56 @@ assign need_rq[15:0]=   {need_rq15,need_rq14,need_rq13,need_rq12,need_rq11,need_
                          need_rq7,need_rq6,need_rq5,need_rq4,need_rq3,need_rq2,need_rq1,need_rq0};
 
 always @ (posedge rst or posedge mclk) begin
-    if (rst) begin seq_data <= 0; seq_wr <=0; seq_done <=0; end
+    if (rst) begin seq_data <= 0; seq_wr <=0; seq_set <=0; end
     else begin
         case (cmd_wr_chn)
 `ifdef def_enable_mem_chn0
-            4'h0:begin seq_data <= seq_data0; seq_wr <= seq_wr0; seq_done <= seq_done0; end
+            4'h0:begin seq_data <= seq_data0; seq_wr <= seq_wr0; seq_set <= seq_set0; end
 `endif
 `ifdef def_enable_mem_chn1
-            4'd1:begin seq_data <= seq_data1; seq_wr <= seq_wr1; seq_done <= seq_done1; end
+            4'd1:begin seq_data <= seq_data1; seq_wr <= seq_wr1; seq_set <= seq_set1; end
 `endif
 `ifdef def_enable_mem_chn2
-            4'd2:begin seq_data <= seq_data2; seq_wr <= seq_wr2; seq_done <= seq_done2; end
+            4'd2:begin seq_data <= seq_data2; seq_wr <= seq_wr2; seq_set <= seq_set2; end
 `endif
 `ifdef def_enable_mem_chn3
-            4'd3:begin seq_data <= seq_data3; seq_wr <= seq_wr3; seq_done <= seq_done3; end
+            4'd3:begin seq_data <= seq_data3; seq_wr <= seq_wr3; seq_set <= seq_set3; end
 `endif
 `ifdef def_enable_mem_chn4
-            4'd4:begin seq_data <= seq_data4; seq_wr <= seq_wr4; seq_done <= seq_done4; end
+            4'd4:begin seq_data <= seq_data4; seq_wr <= seq_wr4; seq_set <= seq_set4; end
 `endif
 `ifdef def_enable_mem_chn5
-            4'd5:begin seq_data <= seq_data5; seq_wr <= seq_wr5; seq_done <= seq_done5; end
+            4'd5:begin seq_data <= seq_data5; seq_wr <= seq_wr5; seq_set <= seq_set5; end
 `endif
 `ifdef def_enable_mem_chn6
-            4'd6:begin seq_data <= seq_data6; seq_wr <= seq_wr6; seq_done <= seq_done6; end
+            4'd6:begin seq_data <= seq_data6; seq_wr <= seq_wr6; seq_set <= seq_set6; end
 `endif
 `ifdef def_enable_mem_chn7
-            4'd7:begin seq_data <= seq_data7; seq_wr <= seq_wr7; seq_done <= seq_done7; end
+            4'd7:begin seq_data <= seq_data7; seq_wr <= seq_wr7; seq_set <= seq_set7; end
 `endif
 `ifdef def_enable_mem_chn8
-            4'd8:begin seq_data <= seq_data8; seq_wr <= seq_wr8; seq_done <= seq_done8; end
+            4'd8:begin seq_data <= seq_data8; seq_wr <= seq_wr8; seq_set <= seq_set8; end
 `endif
 `ifdef def_enable_mem_chn9
-            4'd9:begin seq_data <= seq_data9; seq_wr <= seq_wr9; seq_done <= seq_done9; end
+            4'd9:begin seq_data <= seq_data9; seq_wr <= seq_wr9; seq_set <= seq_set9; end
 `endif
 `ifdef def_enable_mem_chn10
-            4'd10:begin seq_data <= seq_data10; seq_wr <= seq_wr10; seq_done <= seq_done10; end
+            4'd10:begin seq_data <= seq_data10; seq_wr <= seq_wr10; seq_set <= seq_set10; end
 `endif
 `ifdef def_enable_mem_chn11
-            4'd11:begin seq_data <= seq_data11; seq_wr <= seq_wr11; seq_done <= seq_done11; end
+            4'd11:begin seq_data <= seq_data11; seq_wr <= seq_wr11; seq_set <= seq_set11; end
 `endif
 `ifdef def_enable_mem_chn12
-            4'd12:begin seq_data <= seq_data12; seq_wr <= seq_wr12; seq_done <= seq_done12; end
+            4'd12:begin seq_data <= seq_data12; seq_wr <= seq_wr12; seq_set <= seq_set12; end
 `endif
 `ifdef def_enable_mem_chn13
-            4'd13:begin seq_data <= seq_data13; seq_wr <= seq_wr13; seq_done <= seq_done13; end
+            4'd13:begin seq_data <= seq_data13; seq_wr <= seq_wr13; seq_set <= seq_set13; end
 `endif
 `ifdef def_enable_mem_chn14
-            4'd14:begin seq_data <= seq_data14; seq_wr <= seq_wr14; seq_done <= seq_done14; end
+            4'd14:begin seq_data <= seq_data14; seq_wr <= seq_wr14; seq_set <= seq_set14; end
 `endif
 `ifdef def_enable_mem_chn15
-            4'd15:begin seq_data <= seq_data15; seq_wr <= seq_wr15; seq_done <= seq_done15; end
+            4'd15:begin seq_data <= seq_data15; seq_wr <= seq_wr15; seq_set <= seq_set15; end
 `endif
         endcase
     end

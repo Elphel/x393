@@ -1,3 +1,7 @@
+//0x1080..10ff - 8- bit data - to set various delay values
+    parameter DLY_LD =            'h080,  // address to generate delay load 
+    parameter DLY_LD_MASK =       'h380,  // address mask to generate delay load
+
 0x1000..103f - 0- bit data (set/reset)
     parameter MCONTR_PHY_0BIT_ADDR =           'h020,  // address to set sequnecer channel and  run (4 LSB-s - channel)
     parameter MCONTR_PHY_0BIT_ADDR_MASK =      'h3f0,  // address mask to generate sequencer channel/run
@@ -52,14 +56,26 @@
     parameter MCONTR_TOP_16BIT_REFRESH_PERIOD = 'h1,    // 8-bit refresh period
     parameter MCONTR_TOP_16BIT_REFRESH_ADDRESS= 'h2,    // 10 bits refresh address in the sequencer (PL) memory
     parameter MCONTR_TOP_16BIT_STATUS_CNTRL=    'h3,    // 8 bits - write to status control (and debug?)
-  
 
+0x1100..11ff - 16-bit per-channel memory control    
+0x1100..110f - control of memory channels 0,1 - PS-controlled sequences
+    parameter MCNTRL_PS_ADDR=            'h100,
+    parameter MCNTRL_PS_MASK=            'h3e0, // both channels 0 and 1
+0x1100          - MCNTRL_PS_EN_RST
+0x1101          - MCNTRL_PS_CMD
+0x1102          - MCNTRL_PS_STATUS_CNTRL
+    parameter MCNTRL_PS_EN_RST=                  'h0,
+    parameter MCNTRL_PS_CMD=                     'h1,
+    parameter MCNTRL_PS_STATUS_CNTRL=            'h2,
+
+    
 // Status read address
     parameter STATUS_ADDR =         'h1400, // AXI write address of status read registers
     parameter STATUS_ADDR_MASK =    'h1400, // AXI write address of status registers
     parameter STATUS_DEPTH=         8,  // 256 cells, maybe just 16..64 are enough?
     parameter MCONTR_PHY_STATUS_REG_ADDR=      'h0,    // 8 or less bits: status register address to use for memory controller phy
     parameter MCONTR_TOP_STATUS_REG_ADDR=      'h1,    // 8 or less bits: status register address to use for memory controller
+    parameter MCNTRL_PS_STATUS_REG_ADDR= 'h2
 
 ================================ OLD =======================================================
  Control addresses (in original ddrc_test01)

@@ -149,17 +149,17 @@ module  x393 #(
     parameter NUM_CYCLES_01 =       4, // 4-cycle 040.007f
     parameter NUM_CYCLES_02 =       3, // 3-cycle 080.00bf
     parameter NUM_CYCLES_03 =       3, // 3-cycle 0c0.00ff
-    parameter NUM_CYCLES_04 =       5, // 5-cycle - not yet used
-    parameter NUM_CYCLES_05 =       6, // 6-cycle - not yet used
-    parameter NUM_CYCLES_06 =       6, //
-    parameter NUM_CYCLES_07 =       6, //
+    parameter NUM_CYCLES_04 =       4, // 4-cycle 100.013f
+    parameter NUM_CYCLES_05 =       4, // 4-cycle 140.017f
+    parameter NUM_CYCLES_06 =       4, // 4-cycle 180.01bf
+    parameter NUM_CYCLES_07 =       4, // 4-cycle 1c0.01ff
     parameter NUM_CYCLES_08 =       6, //
     parameter NUM_CYCLES_09 =       6, //
     parameter NUM_CYCLES_10 =       6, //
     parameter NUM_CYCLES_11 =       6, //
     parameter NUM_CYCLES_12 =       6, //
-    parameter NUM_CYCLES_13 =       6, //
-    parameter NUM_CYCLES_14 =       6, //
+    parameter NUM_CYCLES_13 =       5, // 5-cycle - not yet used
+    parameter NUM_CYCLES_14 =       6, // 6-cycle - not yet used
     parameter NUM_CYCLES_15 =       9, // single-cycle
     
 //    parameter STATUS_ADDR =         'h1400, // AXI write address of status read registers
@@ -492,6 +492,7 @@ end
     wire        channel_pgm_en0; 
     wire [31:0] seq_data0; 
     wire        seq_wr0;
+    wire        seq_set0;
     wire        seq_done0;
     wire        buf_wr_chn0;
     wire  [6:0] buf_waddr_chn0; 
@@ -502,6 +503,7 @@ end
     wire        channel_pgm_en1; 
     wire [31:0] seq_data1; 
     wire        seq_wr1;
+    wire        seq_set1;
     wire        seq_done1;
     wire        buf_rd_chn1;
     wire  [6:0] buf_raddr_chn1; 
@@ -512,6 +514,7 @@ end
     wire        channel_pgm_en2; 
     wire [31:0] seq_data2; 
     wire        seq_wr2;
+    wire        seq_set2;
     wire        seq_done2;
     wire        buf_wr_chn2;
     wire  [6:0] buf_waddr_chn2; 
@@ -522,6 +525,7 @@ end
     wire        channel_pgm_en3; 
     wire [31:0] seq_data3; 
     wire        seq_wr3;
+    wire        seq_set3;
     wire        seq_done3;
     wire        buf_rd_chn3;
     wire  [6:0] buf_raddr_chn3; 
@@ -759,7 +763,8 @@ end
         .channel_pgm_en0    (channel_pgm_en0), // output reg 
         .seq_data0          (seq_data0), // input[31:0] 
         .seq_wr0            (seq_wr0), // input
-        .seq_done0          (seq_done0), // input
+        .seq_set0           (seq_set0), // input
+        .seq_done0          (seq_done0), // output
         .buf_wr_chn0        (buf_wr_chn0), // output
         .buf_waddr_chn0     (buf_waddr_chn0), // output[6:0] 
         .buf_wdata_chn0     (buf_wdata_chn0), // output[63:0]
@@ -769,7 +774,8 @@ end
         .channel_pgm_en1    (channel_pgm_en1), // output reg 
         .seq_data1          (seq_data1), // input[31:0] 
         .seq_wr1            (seq_wr1), // input
-        .seq_done1          (seq_done1), // input
+        .seq_set1           (seq_set1), // input
+        .seq_done1          (seq_done1), // output
         .buf_rd_chn1        (buf_rd_chn1), // output
         .buf_raddr_chn1     (buf_raddr_chn1), // output[6:0] 
         .buf_rdata_chn1     (buf_rdata_chn1), // input[63:0] 
@@ -779,7 +785,8 @@ end
         .channel_pgm_en2    (channel_pgm_en2), // output reg 
         .seq_data2          (seq_data2), // input[31:0] 
         .seq_wr2            (seq_wr2), // input
-        .seq_done2          (seq_done2), // input
+        .seq_set2           (seq_set2), // input
+        .seq_done2          (seq_done2), // output
         .buf_wr_chn2        (buf_wr_chn2), // output
         .buf_waddr_chn2     (buf_waddr_chn2), // output[6:0] 
         .buf_wdata_chn2     (buf_wdata_chn2), // output[63:0]
@@ -789,7 +796,8 @@ end
         .channel_pgm_en3    (channel_pgm_en3), // output reg 
         .seq_data3          (seq_data3), // input[31:0] 
         .seq_wr3            (seq_wr3), // input
-        .seq_done3          (seq_done3), // input
+        .seq_set3           (seq_set3), // input
+        .seq_done3          (seq_done3), // output
         .buf_rd_chn3        (buf_rd_chn3), // output
         .buf_raddr_chn3     (buf_raddr_chn3), // output[6:0] 
         .buf_rdata_chn3     (buf_rdata_chn3), // input[63:0] 

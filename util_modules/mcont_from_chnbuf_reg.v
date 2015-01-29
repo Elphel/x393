@@ -28,7 +28,9 @@ module  mcont_from_chnbuf_reg #(
     input clk,
     input                       ext_buf_rd,
     input                 [6:0] ext_buf_raddr, // valid with ext_buf_rd, 2 page MSB to be generated externally
-    input                 [3:0] ext_buf_rchn,   // ==run_chn_d valid 1 cycle ahead opf ext_buf_rd!, maybe not needed - will be generated externally
+    input                 [3:0] ext_buf_rchn,  // ==run_chn_d valid 1 cycle ahead opf ext_buf_rd!, maybe not needed - will be generated externally
+    input                       seq_done,      // sequence done
+    output reg                  buf_done,      // sequence done for the specified channel
     output reg           [63:0] ext_buf_rdata, // Latency of ram_1kx32w_512x64r plus 2
     output reg                  buf_rd_chn,
     output reg            [6:0] buf_raddr_chn,
@@ -38,13 +40,16 @@ module  mcont_from_chnbuf_reg #(
     reg [CHN_LATENCY:0] latency_reg=0;
     always @ (posedge rst or posedge clk) begin
         if (rst) buf_chn_sel <= 0;
-        else  buf_chn_sel <= (ext_buf_rchn==CHN_NUMBER);
+        else     buf_chn_sel <= (ext_buf_rchn==CHN_NUMBER);
         
         if (rst) buf_rd_chn <= 0;
-        else buf_rd_chn <= buf_chn_sel && ext_buf_rd;
+        else     buf_rd_chn <= buf_chn_sel && ext_buf_rd;
         
         if (rst) latency_reg<= 0;
-        else     latency_reg <= buf_rd_chn | (latency_reg << 1); 
+        else     latency_reg <= buf_rd_chn | (latency_reg << 1);
+        
+        if (rst) buf_done <= 0;
+        else     buf_done <= buf_chn_sel && seq_done;
     end
     always @ (posedge clk) if (buf_chn_sel && ext_buf_rd) buf_raddr_chn <= ext_buf_raddr;
     always @ (posedge clk) if (latency_reg[CHN_LATENCY])  ext_buf_rdata <= buf_rdata_chn;
