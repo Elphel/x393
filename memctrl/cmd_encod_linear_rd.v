@@ -45,7 +45,7 @@ module  cmd_encod_linear_rd #(
     input                  [2:0] bank_in,     // bank address
     input   [ADDRESS_NUMBER-1:0] row_in,      // memory row
     input   [COLADDR_NUMBER-4:0] start_col,   // start memory column in 8-bursts
-    input                  [5:0] num128_in,   // number of 128-bit words to transfer (8*16 bits) - full burst of 8
+    input                  [5:0] num128_in,   // number of 128-bit words to transfer (8*16 bits) - full bursts of 8 ( 0 - maximal length, 64)
     input                        start,       // start generating commands
     output reg            [31:0] enc_cmd,     // encoded commnad
     output reg                   enc_wr,      // write encoded command

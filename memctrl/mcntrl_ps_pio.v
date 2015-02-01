@@ -85,7 +85,7 @@ module  mcntrl_ps_pio#(
 // Port memory buffer (4 pages each, R/W fixed, port 0 - AXI read from DDR, port 1 - AXI write to DDR
 // generate 16-bit data commands (and set defaults to registers)
  wire               [4:0] cmd_a;
- wire              [15:0] cmd_data;
+ wire              [31:0] cmd_data;
  wire                     cmd_we;
  wire               [1:0] status_data;
  
@@ -98,8 +98,8 @@ module  mcntrl_ps_pio#(
  wire                     set_status_w;
  wire                     set_en_rst; // set enable, reset register
  reg                [1:0] en_reset;//
- wire                     chn_en = en_reset[1];   // enable requests by channle (continue ones in progress)
  wire                     chn_rst = ~en_reset[0]; // resets command, including fifo;
+ wire                     chn_en = &en_reset[1];   // enable requests by channle (continue ones in progress)
  reg                      mem_run;              // sequencere pgm granted and set, waiting/executing memory transfer to/from buffur 0/1
  wire                     busy;
  wire                     start;
@@ -113,7 +113,7 @@ module  mcntrl_ps_pio#(
  reg                      cmd_set;
  
  assign busy= want_rq0 || need_rq0 ||want_rq1 || need_rq1 || mem_run;
- assign start= !chn_rst && chn_en && !busy && cmd_nempty;
+ assign start= chn_en && !busy && cmd_nempty;
  assign seq_data0= cmd_seq_a;
  assign seq_set0=cmd_set;
  assign status_data=   {cmd_half_full,cmd_nempty | busy};
@@ -161,10 +161,10 @@ module  mcntrl_ps_pio#(
     cmd_deser #(
         .ADDR       (MCNTRL_PS_ADDR),
         .ADDR_MASK  (MCNTRL_PS_MASK),
-        .NUM_CYCLES (4),
+        .NUM_CYCLES (6),
         .ADDR_WIDTH (5),
-        .DATA_WIDTH (16)
-    ) cmd_deser_mcontr_16bit_i (
+        .DATA_WIDTH (32)
+    ) cmd_deser_mcontr_32bit_i (
         .rst        (rst), // input
         .clk        (mclk), // input
         .ad         (cmd_ad), // input[7:0] 
