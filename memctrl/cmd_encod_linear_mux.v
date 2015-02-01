@@ -3,7 +3,7 @@
  * Date:2015-01-31  
  * Author: andrey     
  * Description: Multiplex parameters from multiple channels sharing the same
- * linear command encoder (cmd_encod_linear_rd or cmd_encod_linear_wr)
+ * linear command encoders (cmd_encod_linear_rd and cmd_encod_linear_wr)
  * Latency 1 clcok cycle
  *
  * Copyright (c) 2015 <set up in Preferences-Verilog/VHDL Editor-Templates> .
@@ -145,86 +145,173 @@ module  cmd_encod_linear_mux#(
     output   [ADDRESS_NUMBER-1:0] row,        // memory row
     output   [COLADDR_NUMBER-4:0] start_col,  // start memory column in 8-bursts
     output                  [5:0] num128,     // number of 128-bit words to transfer (8*16 bits) - full bursts of 8 ( 0 - maximal length, 64)
-    output                        start       // start generating commands
+    output                        start_rd,   // start generating commands in cmd_encod_linear_rd
+    output                        start_wr    // start generating commands in cmd_encod_linear_wr
 );
     reg                     [2:0] bank_r;     // bank address
     reg      [ADDRESS_NUMBER-1:0] row_r;      // memory row
     reg      [COLADDR_NUMBER-4:0] start_col_r;// start memory column in 8-bursts
     reg                     [5:0] num128_r;   // number of 128-bit words to transfer (8*16 bits) - full bursts of 8 ( 0 - maximal length, 64)
-    reg                           start_r;    // start generating commands
+    reg                           start_rd_r;    // start generating commands
+    reg                           start_wr_r;    // start generating commands
 
     wire                    [2:0] bank_w;     // bank address
     wire     [ADDRESS_NUMBER-1:0] row_w;      // memory row
     wire     [COLADDR_NUMBER-4:0] start_col_w;// start memory column in 8-bursts
     wire                    [5:0] num128_w;   // number of 128-bit words to transfer (8*16 bits) - full bursts of 8 ( 0 - maximal length, 64)
-    wire                          start_w;    // start generating commands
+    wire                          start_rd_w;    // start generating commands
+    wire                          start_wr_w;    // start generating commands
    
-    localparam PAR_WIDTH=3+ADDRESS_NUMBER+COLADDR_NUMBER-3+6+1;
+    localparam PAR_WIDTH=3+ADDRESS_NUMBER+COLADDR_NUMBER-3+6+2;
     localparam [PAR_WIDTH-1:0] PAR_DEFAULT=0;
     assign bank =      bank_r;
     assign row =       row_r;
     assign start_col = start_col_r;
     assign num128 =    num128_r;
-    assign start =     start_r;
-    assign {bank_w, row_w, start_col_w, num128_w, start_w} = 0    
-
+    assign start_rd =     start_rd_r;
+    assign start_wr =     start_wr_r;
+    localparam [15:0]  CHN_RD_MEM={
+`ifdef def_read_mem_chn15
+    1'b1,
+`else 
+    1'b0,           
+`endif    
+`ifdef def_read_mem_chn14
+    1'b1,
+`else 
+    1'b0,           
+`endif    
+`ifdef def_read_mem_chn13
+    1'b1,
+`else 
+    1'b0,           
+`endif    
+`ifdef def_read_mem_chn12
+    1'b1,
+`else 
+    1'b0,           
+`endif    
+`ifdef def_read_mem_chn11
+    1'b1,
+`else 
+    1'b0,           
+`endif    
+`ifdef def_read_mem_chn10
+    1'b1,
+`else 
+    1'b0,           
+`endif    
+`ifdef def_read_mem_chn9
+    1'b1,
+`else 
+    1'b0,           
+`endif    
+`ifdef def_read_mem_chn8
+    1'b1,
+`else 
+    1'b0,           
+`endif    
+`ifdef def_read_mem_chn7
+    1'b1,
+`else 
+    1'b0,           
+`endif    
+`ifdef def_read_mem_chn6
+    1'b1,
+`else 
+    1'b0,           
+`endif    
+`ifdef def_read_mem_chn5
+    1'b1,
+`else 
+    1'b0,           
+`endif    
+`ifdef def_read_mem_chn4
+    1'b1,
+`else 
+    1'b0,           
+`endif    
+`ifdef def_read_mem_chn3
+    1'b1,
+`else 
+    1'b0,           
+`endif    
+`ifdef def_read_mem_chn2
+    1'b1,
+`else 
+    1'b0,           
+`endif    
+`ifdef def_read_mem_chn1
+    1'b1,
+`else 
+    1'b0,           
+`endif    
+`ifdef def_read_mem_chn0
+    1'b1};
+`else 
+    1'b0};           
+`endif    
+    
+    
+    assign {bank_w, row_w, start_col_w, num128_w, start_rd_w, start_wr_w} = 0    
 `ifdef def_scanline_chn0
-            | (start0?{bank0, row0, start_col0, num128_0,1'b1}:PAR_DEFAULT)
+            | (start0?{bank0, row0, start_col0, num128_0,CHN_RD_MEM[0],~CHN_RD_MEM[0]}:PAR_DEFAULT)
 `endif    
 `ifdef def_scanline_chn1
-            | (start1?{bank1, row1, start_col1, num128_1,1'b1}:PAR_DEFAULT)
+            | (start1?{bank1, row1, start_col1, num128_1,CHN_RD_MEM[1],~CHN_RD_MEM[1]}:PAR_DEFAULT)
 `endif    
 `ifdef def_scanline_chn2
-            | (start2?{bank2, row2, start_col2, num128_2,1'b1}:PAR_DEFAULT)
+            | (start2?{bank2, row2, start_col2, num128_2,CHN_RD_MEM[2],~CHN_RD_MEM[2]}:PAR_DEFAULT)
 `endif    
 `ifdef def_scanline_chn3
-            | (start3?{bank3, row3, start_col3, num128_3,1'b1}:PAR_DEFAULT)
+            | (start3?{bank3, row3, start_col3, num128_3,CHN_RD_MEM[3],~CHN_RD_MEM[3]}:PAR_DEFAULT)
 `endif    
 `ifdef def_scanline_chn4
-            | (start4?{bank4, row4, start_col4, num128_4,1'b1}:PAR_DEFAULT)
+            | (start4?{bank4, row4, start_col4, num128_4,CHN_RD_MEM[4],~CHN_RD_MEM[4]}:PAR_DEFAULT)
 `endif    
 `ifdef def_scanline_chn5
-            | (start5?{bank5, row5, start_col5, num128_5,1'b1}:PAR_DEFAULT)
+            | (start5?{bank5, row5, start_col5, num128_5,CHN_RD_MEM[5],~CHN_RD_MEM[5]}:PAR_DEFAULT)
 `endif    
 `ifdef def_scanline_chn6
-            | (start6?{bank6, row6, start_col6, num128_6,1'b1}:PAR_DEFAULT)
+            | (start6?{bank6, row6, start_col6, num128_6,CHN_RD_MEM[6],~CHN_RD_MEM[6]}:PAR_DEFAULT)
 `endif    
 `ifdef def_scanline_chn7
-            | (start7?{bank7, row7, start_col7, num128_7,1'b1}:PAR_DEFAULT)
+            | (start7?{bank7, row7, start_col7, num128_7,CHN_RD_MEM[7],~CHN_RD_MEM[7]}:PAR_DEFAULT)
 `endif    
 `ifdef def_scanline_chn8
-            | (start8?{bank8, row8, start_col8, num128_8,1'b1}:PAR_DEFAULT)
+            | (start8?{bank8, row8, start_col8, num128_8,CHN_RD_MEM[8],~CHN_RD_MEM[8]}:PAR_DEFAULT)
 `endif    
 `ifdef def_scanline_chn9
-            | (start9?{bank9, row9, start_col9, num128_9,1'b1}:PAR_DEFAULT)
+            | (start9?{bank9, row9, start_col9, num128_9,CHN_RD_MEM[9],~CHN_RD_MEM[9]}:PAR_DEFAULT)
 `endif    
 `ifdef def_scanline_chn10
-            | (start10?{bank10, row10, start_col10, num128_10,1'b1}:PAR_DEFAULT)
+            | (start10?{bank10, row10, start_col10, num128_10,CHN_RD_MEM[10],~CHN_RD_MEM[10]}:PAR_DEFAULT)
 `endif    
 `ifdef def_scanline_chn11
-            | (start11?{bank11, row11, start_col11, num128_11,1'b1}:PAR_DEFAULT)
+            | (start11?{bank11, row11, start_col11, num128_11,CHN_RD_MEM[11],~CHN_RD_MEM[11]}:PAR_DEFAULT)
 `endif    
 `ifdef def_scanline_chn12
-            | (start12?{bank12, row12, start_col12, num128_12,1'b1}:PAR_DEFAULT)
+            | (start12?{bank12, row12, start_col12, num128_12,CHN_RD_MEM[12],~CHN_RD_MEM[12]}:PAR_DEFAULT)
 `endif    
 `ifdef def_scanline_chn13
-            | (start13?{bank13, row13, start_col13, num128_13,1'b1}:PAR_DEFAULT)
+            | (start13?{bank13, row13, start_col13, num128_13,CHN_RD_MEM[13],~CHN_RD_MEM[13]}:PAR_DEFAULT)
 `endif    
 `ifdef def_scanline_chn14
-            | (start14?{bank14, row14, start_col14, num128_14,1'b1}:PAR_DEFAULT)
+            | (start14?{bank14, row14, start_col14, num128_14,CHN_RD_MEM[14],~CHN_RD_MEM[14]}:PAR_DEFAULT)
 `endif    
 `ifdef def_scanline_chn15
-            | (start15?{bank15, row15, start_col15, num128_15,1'b1}:PAR_DEFAULT)
+            | (start15?{bank15, row15, start_col15, num128_15,CHN_RD_MEM[15],~CHN_RD_MEM[15]}:PAR_DEFAULT)
 `endif    
 ;
     always @ (posedge clk) begin
-        if (start_w) begin
+        if (start_rd_w || start_wr_w) begin
             bank_r <=      bank_w;
             row_r <=       row_w;
             start_col_r <= start_col_w;
             num128_r <=    num128_w;
         end
-        start_r <=     start_w;
+        start_rd_r <=     start_rd_w;
+        start_wr_r <=     start_wr_w;
     end
     
 

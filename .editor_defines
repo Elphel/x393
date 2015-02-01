@@ -23,8 +23,10 @@
  `undef  def_read_mem_chn3
  `define def_scanline_chn3
 
-  // chn 4 is disabled
- `undef  def_enable_mem_chn4
+  // chn 4 is enabled
+ `define def_enable_mem_chn4
+ `define def_read_mem_chn4
+ `define def_tiled_chn4
 
   // chn 5 is disabled
  `undef  def_enable_mem_chn5

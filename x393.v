@@ -531,6 +531,17 @@ end
     wire  [6:0] buf_raddr_chn3; 
     wire [63:0] buf_rdata_chn3;
     
+    wire        want_rq4;
+    wire        need_rq4;
+    wire        channel_pgm_en4; 
+    wire [31:0] seq_data4; 
+    wire        seq_wr4;
+    wire        seq_set4;
+    wire        seq_done4;
+    wire        buf_wr_chn4;
+    wire  [6:0] buf_waddr_chn4; 
+    wire [63:0] buf_wdata_chn4;
+
     // memory controller comamnd encoders interface
     wire                [2:0] encod_linear_rd_bank;
     wire [ADDRESS_NUMBER-1:0] encod_linear_rd_row;
@@ -672,6 +683,191 @@ end
         .enc_done        (encod_linear_wr_done) // output reg 
     );
 
+// TODO: Create module mcntrl393, incuding all of the mcntrl* modules and related buffers (will; need optional cross-clock  (or they can be external?
+// TODO: program inter-chennel synchronization (a separate module inside mcntrl393
+// All cross-clock - external, buffer I/O sync to external clock
+
+// *********************************** Move to mcntrl393 *********************************************
+
+    /* Instance template for module mcntrl_linear_rw */
+    mcntrl_linear_rw #(
+        .ADDRESS_NUMBER(15),
+        .COLADDR_NUMBER(10),
+        .NUM_XFER_BITS(6),
+        .FRAME_WIDTH_BITS(13),
+        .FRAME_HEIGHT_BITS(16),
+        .MCNTRL_SCANLINE_ADDR('h120),
+        .MCNTRL_SCANLINE_MASK('h3f0),
+        .MCNTRL_SCANLINE_MODE('h0),
+        .MCNTRL_SCANLINE_STATUS_CNTRL('h1),
+        .MCNTRL_SCANLINE_STARTADDR('h2),
+        .MCNTRL_SCANLINE_FRAME_FULL_WIDTH('h3),
+        .MCNTRL_SCANLINE_WINDOW_WH('h4),
+        .MCNTRL_SCANLINE_WINDOW_X0Y0('h5),
+        .MCNTRL_SCANLINE_WINDOW_STARTXY('h6),
+        .MCNTRL_SCANLINE_STATUS_REG_ADDR('h4),
+        .MCNTRL_SCANLINE_PENDING_CNTR_BITS(2)
+    ) mcntrl_linear_rw_chn2_i (
+        .rst(), // input
+        .mclk(), // input
+        .cmd_ad(), // input[7:0] 
+        .cmd_stb(), // input
+        .status_ad(), // output[7:0] 
+        .status_rq(), // output
+        .status_start(), // input
+        .frame_start(), // input
+        .next_page(), // input
+        .frame_done(), // output
+        .line_unfinished(), // output[15:0] 
+        .suspend(), // input
+        .xfer_want(), // output
+        .xfer_need(), // output
+        .xfer_grant(), // input
+        .xfer_start(), // output
+        .xfer_bank(), // output[2:0] 
+        .xfer_row(), // output[14:0] 
+        .xfer_col(), // output[6:0] 
+        .xfer_num128(), // output[5:0] 
+        .xfer_done(), // input
+        .xfer_page() // output[1:0] 
+    );
+
+    /* Instance template for module mcntrl_linear_rw */
+    mcntrl_linear_rw #(
+        .ADDRESS_NUMBER(15),
+        .COLADDR_NUMBER(10),
+        .NUM_XFER_BITS(6),
+        .FRAME_WIDTH_BITS(13),
+        .FRAME_HEIGHT_BITS(16),
+        .MCNTRL_SCANLINE_ADDR('h120),
+        .MCNTRL_SCANLINE_MASK('h3f0),
+        .MCNTRL_SCANLINE_MODE('h0),
+        .MCNTRL_SCANLINE_STATUS_CNTRL('h1),
+        .MCNTRL_SCANLINE_STARTADDR('h2),
+        .MCNTRL_SCANLINE_FRAME_FULL_WIDTH('h3),
+        .MCNTRL_SCANLINE_WINDOW_WH('h4),
+        .MCNTRL_SCANLINE_WINDOW_X0Y0('h5),
+        .MCNTRL_SCANLINE_WINDOW_STARTXY('h6),
+        .MCNTRL_SCANLINE_STATUS_REG_ADDR('h4),
+        .MCNTRL_SCANLINE_PENDING_CNTR_BITS(2)
+    ) mcntrl_linear_rw_chn3_i (
+        .rst(), // input
+        .mclk(), // input
+        .cmd_ad(), // input[7:0] 
+        .cmd_stb(), // input
+        .status_ad(), // output[7:0] 
+        .status_rq(), // output
+        .status_start(), // input
+        .frame_start(), // input
+        .next_page(), // input
+        .frame_done(), // output
+        .line_unfinished(), // output[15:0] 
+        .suspend(), // input
+        .xfer_want(), // output
+        .xfer_need(), // output
+        .xfer_grant(), // input
+        .xfer_start(), // output
+        .xfer_bank(), // output[2:0] 
+        .xfer_row(), // output[14:0] 
+        .xfer_col(), // output[6:0] 
+        .xfer_num128(), // output[5:0] 
+        .xfer_done(), // input
+        .xfer_page() // output[1:0] 
+    );
+
+     /* Instance template for module mcntrl_ps_pio */
+    mcntrl_ps_pio #(
+        .MCNTRL_PS_ADDR('h100),
+        .MCNTRL_PS_MASK('h3e0),
+        .MCNTRL_PS_STATUS_REG_ADDR('h2),
+        .MCNTRL_PS_EN_RST('h0),
+        .MCNTRL_PS_CMD('h1),
+        .MCNTRL_PS_STATUS_CNTRL('h2)
+    ) mcntrl_ps_pio_i (
+        .rst(), // input
+        .mclk(), // input
+        .cmd_ad(), // input[7:0] 
+        .cmd_stb(), // input
+        .status_ad(), // output[7:0] 
+        .status_rq(), // output
+        .status_start(), // input
+        .port0_clk(), // input
+        .port0_re(), // input
+        .port0_regen(), // input
+        .port0_addr(), // input[9:0] 
+        .port0_data(), // output[31:0] 
+        .port1_clk(), // input
+        .port1_we(), // input
+        .port1_addr(), // input[9:0] 
+        .port1_data(), // input[31:0] 
+        .want_rq0(), // output reg 
+        .need_rq0(), // output reg 
+        .channel_pgm_en0(), // input
+        .seq_data0(), // output[9:0] 
+        .seq_set0(), // output
+        .seq_done0(), // input
+        .buf_wr_chn0(), // input
+        .buf_waddr_chn0(), // input[6:0] 
+        .buf_wdata_chn0(), // input[63:0] 
+        .want_rq1(), // output reg 
+        .need_rq1(), // output reg 
+        .channel_pgm_en1(), // input
+        .seq_done1(), // input
+        .buf_rd_chn1(), // input
+        .buf_raddr_chn1(), // input[6:0] 
+        .buf_rdata_chn1() // output[63:0] 
+    );
+    
+    
+    /* Instance template for module cmd_encod_linear_mux */
+    cmd_encod_linear_mux #(
+        .ADDRESS_NUMBER(15),
+        .COLADDR_NUMBER(10)
+    ) cmd_encod_linear_mux_i (
+        .clk(), // input
+        .bank2(), // input[2:0] 
+        .row2(), // input[14:0] 
+        .start_col2(), // input[6:0] 
+        .num128_2(), // input[5:0] 
+        .start2(), // input
+        .bank3(), // input[2:0] 
+        .row3(), // input[14:0] 
+        .start_col3(), // input[6:0] 
+        .num128_3(), // input[5:0] 
+        .start3(), // input
+        .bank(), // output[2:0] 
+        .row(), // output[14:0] 
+        .start_col(), // output[6:0] 
+        .num128(), // output[5:0] 
+        .start_rd(), // output
+        .start_wr() // output
+    );
+    
+    /* Instance template for module cmd_encod_tiled_mux */
+    cmd_encod_tiled_mux #(
+        .ADDRESS_NUMBER(15),
+        .COLADDR_NUMBER(10)
+    ) cmd_encod_tiled_mux_i (
+        .clk(), // input
+        .bank4(), // input[2:0] 
+        .row4(), // input[14:0] 
+        .col4(), // input[6:0] 
+        .rowcol_inc4(), // input[21:0] 
+        .num_rows4(), // input[5:0] 
+        .num_cols4(), // input[5:0] 
+        .keep_open4(), // input
+        .start4(), // input
+        .bank(), // output[2:0] 
+        .row(), // output[14:0] 
+        .col(), // output[6:0] 
+        .rowcol_inc(), // output[21:0] 
+        .num_rows(), // output[5:0] 
+        .num_cols(), // output[5:0] 
+        .keep_open(), // output
+        .start_rd(), // output
+        .start_wr() // output
+    );
+
 
     memctrl16 #(
         .DLY_LD                           (DLY_LD),
@@ -802,6 +998,17 @@ end
         .buf_raddr_chn3     (buf_raddr_chn3), // output[6:0] 
         .buf_rdata_chn3     (buf_rdata_chn3), // input[63:0] 
 
+        .want_rq4           (want_rq4), // input
+        .need_rq4           (need_rq4), // input
+        .channel_pgm_en4    (channel_pgm_en4), // output reg 
+        .seq_data4          (seq_data4), // input[31:0] 
+        .seq_wr4            (seq_wr4), // input
+        .seq_set4           (seq_set4), // input
+        .seq_done4          (seq_done4), // output
+        .buf_wr_chn4        (buf_wr_chn4), // output
+        .buf_waddr_chn4     (buf_waddr_chn4), // output[6:0] 
+        .buf_wdata_chn4     (buf_wdata_chn4), // output[63:0]
+
         .SDRST              (SDRST), // output
         .SDCLK              (SDCLK), // output
         .SDNCLK             (SDNCLK), // output
@@ -822,6 +1029,7 @@ end
         .tmp_debug          (tmp_debug) // output[11:0] 
     );
 
+// *********************************** End of move to mcntrl393 *********************************************
  
 
 //MEMCLK

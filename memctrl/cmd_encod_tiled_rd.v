@@ -48,7 +48,6 @@ module  cmd_encod_tiled_rd #(
     input                  [5:0] num_rows_in_m1,   // number of rows to read minus 1
     input                  [5:0] num_cols_in_m1,   // number of 16-pixel columns to read (rows first, then columns) - 1
     input                        keep_open_in,  // keep banks open (for <=8 banks only    
-    
     input                        start,       // start generating commands
     output reg            [31:0] enc_cmd,     // encoded commnad
     output reg                   enc_wr,      // write encoded command
