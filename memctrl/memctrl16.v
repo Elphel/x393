@@ -164,9 +164,9 @@ module  memctrl16 #(
     input                        seq_set0,   // channel sequencer data is written. If no seq_wr pulses before seq_set, seq_data contains software sequencer start address
     output                       seq_done0,  // sequencer finished executing sequence for this channel 
   `ifdef def_read_mem_chn0
-    output                       buf_wr_chn0,
-    output                 [6:0] buf_waddr_chn0,
-    output                [63:0] buf_wdata_chn0,
+    output                       buf_wr_chn0,   // @ negedge mclk
+    output                 [6:0] buf_waddr_chn0, // @ negedge mclk
+    output                [63:0] buf_wdata_chn0, // @ negedge mclk
   `else
     output                       buf_rd_chn0,
     output                 [6:0] buf_raddr_chn0,
@@ -184,9 +184,9 @@ module  memctrl16 #(
     input                        seq_set1,   // channel sequencer data is written. If no seq_wr pulses before seq_set, seq_data contains software sequencer start address
     output                       seq_done1,  // sequencer finished executing sequence for this channel 
   `ifdef def_read_mem_chn1
-    output                       buf_wr_chn1,
-    output                 [6:0] buf_waddr_chn1,
-    output                [63:0] buf_wdata_chn1,
+    output                       buf_wr_chn1,   // @ negedge mclk
+    output                 [6:0] buf_waddr_chn1,// @ negedge mclk
+    output                [63:0] buf_wdata_chn1,// @ negedge mclk
   `else
     output                       buf_rd_chn1,
     output                 [6:0] buf_raddr_chn1,
@@ -244,9 +244,9 @@ module  memctrl16 #(
     input                        seq_set4,  // channel sequencer data is written. If no seq_wr pulses before seq_set, seq_data contains software sequencer start address
     output                       seq_done4,  // sequencer finished executing sequence for this channel 
   `ifdef def_read_mem_chn4
-    output                       buf_wr_chn4,
-    output                 [6:0] buf_waddr_chn4,
-    output                [63:0] buf_wdata_chn4,
+    output                       buf_wr_chn4,   // @ negedge mclk
+    output                 [6:0] buf_waddr_chn4,   // @ negedge mclk
+    output                [63:0] buf_wdata_chn4,   // @ negedge mclk
   `else
     output                       buf_rd_chn4,
     output                 [6:0] buf_raddr_chn4,
@@ -264,9 +264,9 @@ module  memctrl16 #(
     input                        seq_set5,  // channel sequencer data is written. If no seq_wr pulses before seq_set, seq_data contains software sequencer start address
     output                       seq_done5,  // sequencer finished executing sequence for this channel 
   `ifdef def_read_mem_chn5
-    output                       buf_wr_chn5,
-    output                 [6:0] buf_waddr_chn5,
-    output                [63:0] buf_wdata_chn5,
+    output                       buf_wr_chn5,   // @ negedge mclk
+    output                 [6:0] buf_waddr_chn5,   // @ negedge mclk
+    output                [63:0] buf_wdata_chn5,   // @ negedge mclk
   `else
     output                       buf_rd_chn5,
     output                 [6:0] buf_raddr_chn5,
@@ -284,9 +284,9 @@ module  memctrl16 #(
     input                        seq_set6,  // channel sequencer data is written. If no seq_wr pulses before seq_set, seq_data contains software sequencer start address
     output                       seq_done6,  // sequencer finished executing sequence for this channel 
   `ifdef def_read_mem_chn6
-    output                       buf_wr_chn6,
-    output                 [6:0] buf_waddr_chn6,
-    output                [63:0] buf_wdata_chn6,
+    output                       buf_wr_chn6,   // @ negedge mclk
+    output                 [6:0] buf_waddr_chn6,   // @ negedge mclk
+    output                [63:0] buf_wdata_chn6,   // @ negedge mclk
   `else
     output                       buf_rd_chn6,
     output                 [6:0] buf_raddr_chn6,
@@ -304,9 +304,9 @@ module  memctrl16 #(
     input                        seq_set7,  // channel sequencer data is written. If no seq_wr pulses before seq_set, seq_data contains software sequencer start address
     output                       seq_done7,  // sequencer finished executing sequence for this channel 
   `ifdef def_read_mem_chn7
-    output                       buf_wr_chn7,
-    output                 [6:0] buf_waddr_chn7,
-    output                [63:0] buf_wdata_chn7,
+    output                       buf_wr_chn7,   // @ negedge mclk
+    output                 [6:0] buf_waddr_chn7,   // @ negedge mclk
+    output                [63:0] buf_wdata_chn7,   // @ negedge mclk
   `else
     output                       buf_rd_chn7,
     output                 [6:0] buf_raddr_chn7,
@@ -324,9 +324,9 @@ module  memctrl16 #(
     input                        seq_set8,  // channel sequencer data is written. If no seq_wr pulses before seq_set, seq_data contains software sequencer start address
     output                       seq_done8,  // sequencer finished executing sequence for this channel 
   `ifdef def_read_mem_chn8
-    output                       buf_wr_chn8,
-    output                 [6:0] buf_waddr_chn8,
-    output                [63:0] buf_wdata_chn8,
+    output                       buf_wr_chn8,   // @ negedge mclk
+    output                 [6:0] buf_waddr_chn8,   // @ negedge mclk
+    output                [63:0] buf_wdata_chn8,   // @ negedge mclk
   `else
     output                       buf_rd_chn8,
     output                 [6:0] buf_raddr_chn8,
@@ -344,9 +344,9 @@ module  memctrl16 #(
     input                        seq_set9,  // channel sequencer data is written. If no seq_wr pulses before seq_set, seq_data contains software sequencer start address
     output                       seq_done9,  // sequencer finished executing sequence for this channel 
   `ifdef def_read_mem_chn9
-    output                       buf_wr_chn9,
-    output                 [6:0] buf_waddr_chn9,
-    output                [63:0] buf_wdata_chn9,
+    output                       buf_wr_chn9,   // @ negedge mclk
+    output                 [6:0] buf_waddr_chn9,   // @ negedge mclk
+    output                [63:0] buf_wdata_chn9,   // @ negedge mclk
   `else
     output                       buf_rd_chn9,
     output                 [6:0] buf_raddr_chn9,
@@ -364,9 +364,9 @@ module  memctrl16 #(
     input                        seq_set10,  // channel sequencer data is written. If no seq_wr pulses before seq_set, seq_data contains software sequencer start address
     output                       seq_done10,  // sequencer finished executing sequence for this channel 
   `ifdef def_read_mem_chn10
-    output                       buf_wr_chn10,
-    output                 [6:0] buf_waddr_chn10,
-    output                [63:0] buf_wdata_chn10,
+    output                       buf_wr_chn10,   // @ negedge mclk
+    output                 [6:0] buf_waddr_chn10,   // @ negedge mclk
+    output                [63:0] buf_wdata_chn10,   // @ negedge mclk
   `else
     output                       buf_rd_chn10,
     output                 [6:0] buf_raddr_chn10,
@@ -384,9 +384,9 @@ module  memctrl16 #(
     input                        seq_set11,  // channel sequencer data is written. If no seq_wr pulses before seq_set, seq_data contains software sequencer start address
     output                       seq_done11,  // sequencer finished executing sequence for this channel 
   `ifdef def_read_mem_chn11
-    output                       buf_wr_chn11,
-    output                 [6:0] buf_waddr_chn11,
-    output                [63:0] buf_wdata_chn11,
+    output                       buf_wr_chn11,   // @ negedge mclk
+    output                 [6:0] buf_waddr_chn11,   // @ negedge mclk
+    output                [63:0] buf_wdata_chn11,   // @ negedge mclk
   `else
     output                       buf_rd_chn11,
     output                 [6:0] buf_raddr_chn11,
@@ -404,9 +404,9 @@ module  memctrl16 #(
     input                        seq_set12,  // channel sequencer data is written. If no seq_wr pulses before seq_set, seq_data contains software sequencer start address
     output                       seq_done12,  // sequencer finished executing sequence for this channel 
   `ifdef def_read_mem_chn12
-    output                       buf_wr_chn12,
-    output                 [6:0] buf_waddr_chn12,
-    output                [63:0] buf_wdata_chn12,
+    output                       buf_wr_chn12,   // @ negedge mclk
+    output                 [6:0] buf_waddr_chn12,   // @ negedge mclk
+    output                [63:0] buf_wdata_chn12,   // @ negedge mclk
   `else
     output                       buf_rd_chn12,
     output                 [6:0] buf_raddr_chn12,
@@ -424,9 +424,9 @@ module  memctrl16 #(
     input                        seq_set13,  // channel sequencer data is written. If no seq_wr pulses before seq_set, seq_data contains software sequencer start address
     output                       seq_done13,  // sequencer finished executing sequence for this channel 
   `ifdef def_read_mem_chn13
-    output                       buf_wr_chn13,
-    output                 [6:0] buf_waddr_chn13,
-    output                [63:0] buf_wdata_chn13,
+    output                       buf_wr_chn13,   // @ negedge mclk
+    output                 [6:0] buf_waddr_chn13,   // @ negedge mclk
+    output                [63:0] buf_wdata_chn13,   // @ negedge mclk
   `else
     output                       buf_rd_chn13,
     output                 [6:0] buf_raddr_chn13,
@@ -444,9 +444,9 @@ module  memctrl16 #(
     input                        seq_set14,  // channel sequencer data is written. If no seq_wr pulses before seq_set, seq_data contains software sequencer start address
     output                       seq_done14,  // sequencer finished executing sequence for this channel 
   `ifdef def_read_mem_chn14
-    output                       buf_wr_chn14,
-    output                 [6:0] buf_waddr_chn14,
-    output                [63:0] buf_wdata_chn14,
+    output                       buf_wr_chn14,   // @ negedge mclk
+    output                 [6:0] buf_waddr_chn14,   // @ negedge mclk
+    output                [63:0] buf_wdata_chn14,   // @ negedge mclk
   `else
     output                       buf_rd_chn14,
     output                 [6:0] buf_raddr_chn14,
@@ -464,9 +464,9 @@ module  memctrl16 #(
     input                        seq_set15,  // channel sequencer data is written. If no seq_wr pulses before seq_set, seq_data contains software sequencer start address
     output                       seq_done15,  // sequencer finished executing sequence for this channel 
   `ifdef def_read_mem_chn15
-    output                       buf_wr_chn15,
-    output                 [6:0] buf_waddr_chn15,
-    output                [63:0] buf_wdata_chn15,
+    output                       buf_wr_chn15,   // @ negedge mclk
+    output                 [6:0] buf_waddr_chn15,   // @ negedge mclk
+    output                [63:0] buf_wdata_chn15,   // @ negedge mclk
   `else
     output                       buf_rd_chn15,
     output                 [6:0] buf_raddr_chn15,

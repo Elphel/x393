@@ -22,9 +22,9 @@
 `timescale 1ns/1ps
 
 module  mcntrl_ps_pio#(
-    parameter MCNTRL_PS_ADDR=            'h100,
-    parameter MCNTRL_PS_MASK=            'h3e0, // both channels 0 and 1
-    parameter MCNTRL_PS_STATUS_REG_ADDR= 'h2,
+    parameter MCNTRL_PS_ADDR=                    'h100,
+    parameter MCNTRL_PS_MASK=                    'h3e0, // both channels 0 and 1
+    parameter MCNTRL_PS_STATUS_REG_ADDR=         'h2,
     parameter MCNTRL_PS_EN_RST=                  'h0,
     parameter MCNTRL_PS_CMD=                     'h1,
     parameter MCNTRL_PS_STATUS_CNTRL=            'h2
