@@ -137,6 +137,8 @@ module  cmd_encod_tiled_rd #(
     assign pre_act=        rom_r[ENC_CMD_SHIFT+1]; //1 cycle before optional ACTIVATE
     assign pre_read=       rom_r[ENC_CMD_SHIFT]; //1 cycle before READ command
     
+//TODO:Add AUTOPRECHARGE + ACTIVATE when column crossed - No, caller should make sure there is no row address change in the same line   
+    
     always @ (posedge rst or posedge clk) begin
         if (rst)           gen_run <= 0;
         else if (start)    gen_run<= 1;

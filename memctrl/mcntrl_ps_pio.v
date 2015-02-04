@@ -61,7 +61,8 @@ module  mcntrl_ps_pio#(
     output                       seq_set0,
     input                        seq_done0,
     input                        buf_wr_chn0,
-    input                [6:0]   buf_waddr_chn0, 
+    input                        buf_waddr_rst_chn0, 
+//    input                [6:0]   buf_waddr_chn0, 
     input               [63:0]   buf_wdata_chn0,
 // write port 1
     output reg                   want_rq1,
@@ -72,7 +73,8 @@ module  mcntrl_ps_pio#(
 //    output                       seq_set1, // connect externally to seq_set0
     input                        seq_done1,
     input                        buf_rd_chn1,
-    input                [6:0]   buf_raddr_chn1, 
+    input                        buf_raddr_rst_chn1, 
+//    input                [6:0]   buf_raddr_chn1, 
     output              [63:0]   buf_rdata_chn1 
 );
  localparam CMD_WIDTH=14;
@@ -214,6 +216,7 @@ fifo_same_clock   #(
 
 
 // Port 0 (read DDR to AXI) buffer
+/*
     ram_512x64w_1kx32r #(
         .REGISTERS(1)
     ) port0_buf_i (
@@ -228,8 +231,23 @@ fifo_same_clock   #(
         .web      (8'hff), // input[7:0] 
         .data_in  (buf_wdata_chn0) // input[63:0] 
     );
+*/
+    mcntrl_1kx32r chn0_buf_i (
+        .ext_clk      (port0_clk), // input
+        .ext_raddr    (port0_addr), // input[9:0] 
+        .ext_rd       (port0_re), // input
+        .ext_regen    (port0_regen), // input
+        .ext_data_out (port0_data), // output[31:0] 
+        .wclk         (!mclk), // input
+        .wpage        (page), // input[1:0] 
+        .waddr_reset  (buf_waddr_rst_chn0), // input
+        .skip_reset   (1'b0), // input
+        .we           (buf_wr_chn0), // input
+        .data_in      (buf_wdata_chn0) // input[63:0] 
+    );
     
 // Port 1 (write DDR from AXI) buffer
+/*
     ram_1kx32w_512x64r #(
         .REGISTERS(1)
     ) port1_buf_i (
@@ -244,5 +262,20 @@ fifo_same_clock   #(
         .web      (4'hf), // input[3:0] 
         .data_in  (port1_data) // input[31:0] 
     );
+*/    
+     mcntrl_1kx32w chn1_buf_i (
+        .ext_clk     (port1_clk), // input
+        .ext_waddr   (port1_addr), // input[9:0] 
+        .ext_we      (port1_we), // input
+        .ext_data_in (port1_data), // input[31:0] buf_wdata - from AXI
+        .rclk        (mclk), // input
+        .rpage       (page), // input[1:0] 
+        .raddr_reset (buf_raddr_rst_chn1), // input
+        .skip_reset  (1'b0), // input
+        .rd          (buf_rd_chn1), // input
+        .data_out    (buf_rdata_chn1) // output[63:0] 
+    );
+    
+    
 endmodule
 

@@ -143,14 +143,17 @@ module  mcontr_sequencer   #(
 // There will be =1 cycle external latency in address/re and 1 cycle latency in read data (should match sequence programs)
 // Address data is sync to posedge mclk
     output                       ext_buf_rd,
-    output                 [6:0] ext_buf_raddr, // valid with ext_buf_rd, 2 page MSB to be generated externally
+    output                       ext_buf_raddr_rst, // reset external buffer address to page start
+//    output                 [6:0] ext_buf_raddr, // valid with ext_buf_rd, 2 page MSB to be generated externally
     output                 [3:0] ext_buf_rchn,   // ==run_chn_d valid 1 cycle ahead opf ext_buf_rd!, maybe not needed - will be generated externally
     input                 [63:0] ext_buf_rdata, // Latency of ram_1kx32w_512x64r plus 2
     
 //  Interface to memory read channels (up to 16)   
 // Address/data sync to negedge mclk!, any latency OK - just generate DONE appropriately (through the sequencer with delay?
+// folowing a sync to negedge!
     output                       ext_buf_wr,
-    output                 [6:0] ext_buf_waddr,  // valid with ext_buf_wr
+    output                       ext_buf_waddr_rst, // reset external buffer address to page start
+//    output                 [6:0] ext_buf_waddr,  // valid with ext_buf_wr
     output                 [3:0] ext_buf_wchn,   // ==run_chn_d valid 1 cycle ahead of ext_buf_wr!, maybe not needed - will be generated externally
     output                [63:0] ext_buf_wdata,   // valid with ext_buf_wr
 // temporary debug data    
@@ -208,8 +211,10 @@ module  mcontr_sequencer   #(
     wire                 [31:0]  phy_cmd_word;  // selected output from eithe cmd0 buffer or cmd1 buffer 
     wire                 [31:0]  phy_cmd0_word; // cmd0 buffer output
     wire                 [31:0]  phy_cmd1_word; // cmd1 buffer output
-    reg                  [ 6:0]  buf_raddr;
-    reg                  [ 6:0]  buf_waddr_negedge;
+    wire                          buf_raddr_reset;
+//    reg                  [ 6:0]  buf_raddr;
+    reg                          buf_waddr_reset_negedge;
+//    reg                  [ 6:0]  buf_waddr_negedge;
     reg                          buf_wr_negedge; 
     wire                 [63:0]  buf_wdata; // output[63:0]
     reg                  [63:0]  buf_wdata_negedge; // output[63:0]
@@ -260,13 +265,17 @@ module  mcontr_sequencer   #(
 //    assign buf_rdata[63:0] = ({64{buf_sel_1hot[1]}} & buf1_rdata[63:0]); // ORed with other read channels terms
     
 // External buffers buffer related signals
+
+    assign buf_raddr_reset= run_seq_d;
     assign ext_buf_rd=       buf_rd;
-    assign ext_buf_raddr=    buf_raddr;
+    assign ext_buf_raddr_rst=buf_raddr_reset;
+//    assign ext_buf_raddr=    buf_raddr;
     assign ext_buf_rchn=     run_chn_d;
     assign buf_rdata[63:0] = ext_buf_rdata;
     
     assign ext_buf_wr=       buf_wr_negedge;
-    assign ext_buf_waddr=    buf_waddr_negedge;
+    assign ext_buf_waddr_rst=buf_waddr_reset_negedge;
+//    assign ext_buf_waddr=    buf_waddr_negedge;
     assign ext_buf_wchn=     run_chn_d_negedge;
     assign ext_buf_wdata=    buf_wdata_negedge;
     
@@ -426,9 +435,9 @@ module  mcontr_sequencer   #(
         if (rst)            cmd_sel <= 0;
         else  if (run_seq)  cmd_sel <= run_addr[10];
    
-        if (rst)                   buf_raddr <= 7'h0;
-        else if (run_seq_d)        buf_raddr <= 7'h0;
-        else if (buf_wr || buf_rd) buf_raddr <= buf_raddr +1; // Separate read/write address? read address re-registered @ negedge //SuppressThisWarning ISExst Result of 10-bit expression is truncated to fit in 9-bit target.
+//        if (rst)                   buf_raddr <= 7'h0;
+//        else if (run_seq_d)        buf_raddr <= 7'h0;
+//        else if (buf_wr || buf_rd) buf_raddr <= buf_raddr +1; // Separate read/write address? read address re-registered @ negedge //SuppressThisWarning ISExst Result of 10-bit expression is truncated to fit in 9-bit target.
 
         if (rst)          run_chn_d <= 0;
         else if (run_seq) run_chn_d <= run_chn;
@@ -438,7 +447,8 @@ module  mcontr_sequencer   #(
     end
     // re-register buffer write address to match DDR3 data
     always @ (negedge mclk) begin
-        buf_waddr_negedge <= buf_raddr;
+//        buf_waddr_negedge <= buf_raddr;
+        buf_waddr_reset_negedge <= buf_raddr_reset;
         buf_wr_negedge <= buf_wr;
         buf_wdata_negedge <= buf_wdata;
         run_chn_d_negedge <= run_chn_d;
