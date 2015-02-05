@@ -29,20 +29,23 @@ module  mcntrl_1kx32r(
       output [31:0] ext_data_out, // data out
       
       input         wclk,         // !mclk (inverted)
-      input  [1:0]  wpage,        // will register to wclk, input OK with mclk
-      input         waddr_reset,  // reset write buffer address (to page start), sync to wclk (!mclk)
-      input         skip_reset,   // ignore waddr_reset (resync to wclk)   
+      input   [1:0] wpage_in,     // will register to wclk, input OK with mclk
+      input         wpage_set,    // set internal read page to rpage_in 
+      input         page_next,    // advance to next page (and reset lower bits to 0)
+      output  [1:0] page,         // current inernal page   
       input         we,           // write port enable (also increment write buffer address)
       input  [63:0] data_in       // data in
 );
-    reg  [1:0] wpage_wclk;
-    reg        skip_reset_wclk;
+    reg  [1:0] page_r;
     reg  [6:0] waddr;
+    assign page=page_r;
     always @ (posedge wclk) begin
-        wpage_wclk <= wpage;
-        skip_reset_wclk <= skip_reset;
-        if (waddr_reset && !skip_reset_wclk) waddr <= 0;
-        else if (we)                         waddr <= waddr +1;
+    
+        if      (wpage_set) page_r <= wpage_in;
+        else if (page_next) page_r <= page_r+1;
+
+        if      (page_next) waddr <= 0;
+        else if (we)        waddr <= waddr+1;
     end
     ram_512x64w_1kx32r #(
         .REGISTERS(1)
@@ -53,7 +56,7 @@ module  mcntrl_1kx32r(
         .regen    (ext_regen),            // input
         .data_out (ext_data_out),         // output[31:0] 
         .wclk     (wclk),                 // input - OK, negedge mclk
-        .waddr    ({wpage_wclk,waddr}),   // input[8:0] @negedge mclk
+        .waddr    ({page,waddr}),   // input[8:0] @negedge mclk
         .we       (we),                   // input @negedge mclk
         .web      (8'hff),                // input[7:0]
         .data_in  (data_in)        // input[63:0]  @negedge mclk

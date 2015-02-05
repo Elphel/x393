@@ -25,32 +25,35 @@ module  mcntrl_1kx32w(
       input         ext_clk,
       input  [ 9:0] ext_waddr,    // external write address
       input         ext_we,       // external write enable
-      input [31:0] ext_data_in,  // data input
+      input  [31:0] ext_data_in,  // data input
       
       input         rclk,         // mclk
-      input  [1:0]  rpage,        // will register to wclk, input OK with mclk
-      input         raddr_reset,  // reset buffer read address (to page start)
-      input         skip_reset,   // ignore waddr_reset (resync to wclk)   
+      input   [1:0] rpage_in,     // will register to wclk, input OK with mclk
+      input         rpage_set,    // set internal read page to rpage_in 
+      input         page_next,    // advance to next page (and reset lower bits to 0)
+      output  [1:0] page,         // current inernal page   
       input         rd,           // read buffer tomemory, increment read address (regester enable will be delayed)
       output [63:0] data_out      // data out
 
 );
-    reg        skip_reset_rclk;
+    reg  [1:0] page_r;
     reg  [6:0] raddr;
     reg        regen;
+    assign page=page_r;
     always @ (posedge rclk) begin
         regen <= rd;
         
-        skip_reset_rclk <= skip_reset;
-        
-        if (raddr_reset && !skip_reset_rclk) raddr <= 0;
-        else if (rd)                         raddr <= raddr +1;
+        if      (rpage_set) page_r <= rpage_in;
+        else if (page_next) page_r <= page_r+1;
+
+        if      (page_next) raddr <= 0;
+        else if (rd)        raddr <= raddr+1;
     end
     ram_1kx32w_512x64r #(
         .REGISTERS(1)
     )ram_1kx32w_512x64r_i (
         .rclk     (rclk),                        // input
-        .raddr    ({rpage,raddr}), // input[8:0] 
+        .raddr    ({page_r,raddr}), // input[8:0] 
         .ren      (rd),                 // input
         .regen    (regen),                 // input
         .data_out (data_out),              // output[63:0] 
@@ -60,7 +63,5 @@ module  mcntrl_1kx32w(
         .web      (4'hf),                        // input[3:0] 
         .data_in  (ext_data_in)                    // input[31:0] 
     );
-
-
 endmodule
 

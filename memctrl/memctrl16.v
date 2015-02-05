@@ -163,13 +163,13 @@ module  memctrl16 #(
     input                        seq_wr0,    // strobe for writing sequencer data (address is autoincremented)
     input                        seq_set0,   // channel sequencer data is written. If no seq_wr pulses before seq_set, seq_data contains software sequencer start address
     output                       seq_done0,  // sequencer finished executing sequence for this channel 
+    output                       rpage_nxt_chn0,
   `ifdef def_read_mem_chn0
     output                       buf_wr_chn0,   // @ negedge mclk
-    output                       buf_waddr_rst_chn0, // @ negedge mclk
+    output                       buf_wpage_nxt_chn0, // @ negedge mclk
     output                [63:0] buf_wdata_chn0, // @ negedge mclk
   `else
     output                       buf_rd_chn0,
-    output                       buf_raddr_rst_chn0,
     input                 [63:0] buf_rdata_chn0,
   `endif
 `endif    
@@ -183,13 +183,13 @@ module  memctrl16 #(
     input                        seq_wr1,    // strobe for writing sequencer data (address is autoincremented)
     input                        seq_set1,   // channel sequencer data is written. If no seq_wr pulses before seq_set, seq_data contains software sequencer start address
     output                       seq_done1,  // sequencer finished executing sequence for this channel 
+    output                       rpage_nxt_chn1,
   `ifdef def_read_mem_chn1
     output                       buf_wr_chn1,   // @ negedge mclk
-    output                       buf_waddr_rst_chn1,// @ negedge mclk
+    output                       buf_wpage_nxt_chn1,// @ negedge mclk
     output                [63:0] buf_wdata_chn1,// @ negedge mclk
   `else
     output                       buf_rd_chn1,
-    output                       buf_raddr_rst_chn1,
     input                 [63:0] buf_rdata_chn1,
   `endif
 `endif    
@@ -203,13 +203,13 @@ module  memctrl16 #(
     input                        seq_wr2,    // strobe for writing sequencer data (address is autoincremented)
     input                        seq_set2,  // channel sequencer data is written. If no seq_wr pulses before seq_set, seq_data contains software sequencer start address
     output                       seq_done2,  // sequencer finished executing sequence for this channel 
+    output                       rpage_nxt_chn2,
   `ifdef def_read_mem_chn2
     output                       buf_wr_chn2,
-    output                       buf_waddr_rst_chn2,
+    output                       buf_wpage_nxt_chn2,
     output                [63:0] buf_wdata_chn2,
   `else
     output                       buf_rd_chn2,
-    output                       buf_raddr_rst_chn2,
     input                 [63:0] buf_rdata_chn2,
   `endif
 `endif    
@@ -223,13 +223,13 @@ module  memctrl16 #(
     input                        seq_wr3,    // strobe for writing sequencer data (address is autoincremented)
     input                        seq_set3,  // channel sequencer data is written. If no seq_wr pulses before seq_set, seq_data contains software sequencer start address
     output                       seq_done3,  // sequencer finished executing sequence for this channel 
+    output                       rpage_nxt_chn3,
   `ifdef def_read_mem_chn3
     output                       buf_wr_chn3,
-    output                       buf_waddr_rst_chn3,
+    output                       buf_wpage_nxt_chn3,
     output                [63:0] buf_wdata_chn3,
   `else
     output                       buf_rd_chn3,
-    output                       buf_raddr_rst_chn3,
     input                 [63:0] buf_rdata_chn3,
   `endif
 `endif    
@@ -243,13 +243,13 @@ module  memctrl16 #(
     input                        seq_wr4,    // strobe for writing sequencer data (address is autoincremented)
     input                        seq_set4,  // channel sequencer data is written. If no seq_wr pulses before seq_set, seq_data contains software sequencer start address
     output                       seq_done4,  // sequencer finished executing sequence for this channel 
+    output                       rpage_nxt_chn4,
   `ifdef def_read_mem_chn4
     output                       buf_wr_chn4,   // @ negedge mclk
-    output                       buf_waddr_rst_chn4,   // @ negedge mclk
+    output                       buf_wpage_nxt_chn4,   // @ negedge mclk
     output                [63:0] buf_wdata_chn4,   // @ negedge mclk
   `else
     output                       buf_rd_chn4,
-    output                       buf_raddr_rst_chn4,
     input                 [63:0] buf_rdata_chn4,
   `endif
 `endif    
@@ -263,13 +263,13 @@ module  memctrl16 #(
     input                        seq_wr5,    // strobe for writing sequencer data (address is autoincremented)
     input                        seq_set5,  // channel sequencer data is written. If no seq_wr pulses before seq_set, seq_data contains software sequencer start address
     output                       seq_done5,  // sequencer finished executing sequence for this channel 
+    output                       rpage_nxt_chn5,
   `ifdef def_read_mem_chn5
     output                       buf_wr_chn5,   // @ negedge mclk
-    output                       buf_waddr_rst_chn5,   // @ negedge mclk
+    output                       buf_wpage_nxt_chn5,   // @ negedge mclk
     output                [63:0] buf_wdata_chn5,   // @ negedge mclk
   `else
     output                       buf_rd_chn5,
-    output                       buf_raddr_rst_chn5,
     input                 [63:0] buf_rdata_chn5,
   `endif
 `endif    
@@ -283,13 +283,13 @@ module  memctrl16 #(
     input                        seq_wr6,    // strobe for writing sequencer data (address is autoincremented)
     input                        seq_set6,  // channel sequencer data is written. If no seq_wr pulses before seq_set, seq_data contains software sequencer start address
     output                       seq_done6,  // sequencer finished executing sequence for this channel 
+    output                       rpage_nxt_chn6,
   `ifdef def_read_mem_chn6
     output                       buf_wr_chn6,   // @ negedge mclk
-    output                       buf_waddr_rst_chn6,   // @ negedge mclk
+    output                       buf_wpage_nxt_chn6,   // @ negedge mclk
     output                [63:0] buf_wdata_chn6,   // @ negedge mclk
   `else
     output                       buf_rd_chn6,
-    output                       buf_raddr_rst_chn6,
     input                 [63:0] buf_rdata_chn6,
   `endif
 `endif    
@@ -303,13 +303,13 @@ module  memctrl16 #(
     input                        seq_wr7,    // strobe for writing sequencer data (address is autoincremented)
     input                        seq_set7,  // channel sequencer data is written. If no seq_wr pulses before seq_set, seq_data contains software sequencer start address
     output                       seq_done7,  // sequencer finished executing sequence for this channel 
+    output                       rpage_nxt_chn7,
   `ifdef def_read_mem_chn7
     output                       buf_wr_chn7,   // @ negedge mclk
-    output                       buf_waddr_rst_chn7,   // @ negedge mclk
+    output                       buf_wpage_nxt_chn7,   // @ negedge mclk
     output                [63:0] buf_wdata_chn7,   // @ negedge mclk
   `else
     output                       buf_rd_chn7,
-    output                       buf_raddr_rst_chn7,
     input                 [63:0] buf_rdata_chn7,
   `endif
 `endif    
@@ -323,13 +323,13 @@ module  memctrl16 #(
     input                        seq_wr8,    // strobe for writing sequencer data (address is autoincremented)
     input                        seq_set8,  // channel sequencer data is written. If no seq_wr pulses before seq_set, seq_data contains software sequencer start address
     output                       seq_done8,  // sequencer finished executing sequence for this channel 
+    output                       rpage_nxt_chn8,
   `ifdef def_read_mem_chn8
     output                       buf_wr_chn8,   // @ negedge mclk
-    output                       buf_waddr_rst_chn8,   // @ negedge mclk
+    output                       buf_wpage_nxt_chn8,   // @ negedge mclk
     output                [63:0] buf_wdata_chn8,   // @ negedge mclk
   `else
     output                       buf_rd_chn8,
-    output                       buf_raddr_rst_chn8,
     input                 [63:0] buf_rdata_chn8,
   `endif
 `endif    
@@ -343,13 +343,13 @@ module  memctrl16 #(
     input                        seq_wr9,    // strobe for writing sequencer data (address is autoincremented)
     input                        seq_set9,  // channel sequencer data is written. If no seq_wr pulses before seq_set, seq_data contains software sequencer start address
     output                       seq_done9,  // sequencer finished executing sequence for this channel 
+    output                       rpage_nxt_chn9,
   `ifdef def_read_mem_chn9
     output                       buf_wr_chn9,   // @ negedge mclk
-    output                       buf_waddr_rst_chn9,   // @ negedge mclk
+    output                       buf_wpage_nxt_chn9,   // @ negedge mclk
     output                [63:0] buf_wdata_chn9,   // @ negedge mclk
   `else
     output                       buf_rd_chn9,
-    output                       buf_raddr_rst_chn9,
     input                 [63:0] buf_rdata_chn9,
   `endif
 `endif    
@@ -363,13 +363,13 @@ module  memctrl16 #(
     input                        seq_wr10,    // strobe for writing sequencer data (address is autoincremented)
     input                        seq_set10,  // channel sequencer data is written. If no seq_wr pulses before seq_set, seq_data contains software sequencer start address
     output                       seq_done10,  // sequencer finished executing sequence for this channel 
+    output                       rpage_nxt_chn10,
   `ifdef def_read_mem_chn10
     output                       buf_wr_chn10,   // @ negedge mclk
-    output                       buf_waddr_rst_chn10,   // @ negedge mclk
+    output                       buf_wpage_nxt_chn10,   // @ negedge mclk
     output                [63:0] buf_wdata_chn10,   // @ negedge mclk
   `else
     output                       buf_rd_chn10,
-    output                       buf_raddr_rst_chn10,
     input                 [63:0] buf_rdata_chn10,
   `endif
 `endif    
@@ -383,13 +383,13 @@ module  memctrl16 #(
     input                        seq_wr11,    // strobe for writing sequencer data (address is autoincremented)
     input                        seq_set11,  // channel sequencer data is written. If no seq_wr pulses before seq_set, seq_data contains software sequencer start address
     output                       seq_done11,  // sequencer finished executing sequence for this channel 
+    output                       rpage_nxt_chn11,
   `ifdef def_read_mem_chn11
     output                       buf_wr_chn11,   // @ negedge mclk
-    output                       buf_waddr_rst_chn11,   // @ negedge mclk
+    output                       buf_wpage_nxt_chn11,   // @ negedge mclk
     output                [63:0] buf_wdata_chn11,   // @ negedge mclk
   `else
     output                       buf_rd_chn11,
-    output                       buf_raddr_rst_chn11,
     input                 [63:0] buf_rdata_chn11,
   `endif
 `endif    
@@ -403,13 +403,13 @@ module  memctrl16 #(
     input                        seq_wr12,    // strobe for writing sequencer data (address is autoincremented)
     input                        seq_set12,  // channel sequencer data is written. If no seq_wr pulses before seq_set, seq_data contains software sequencer start address
     output                       seq_done12,  // sequencer finished executing sequence for this channel 
+    output                       rpage_nxt_chn12,
   `ifdef def_read_mem_chn12
     output                       buf_wr_chn12,   // @ negedge mclk
-    output                       buf_waddr_rst_chn12,   // @ negedge mclk
+    output                       buf_wpage_nxt_chn12,   // @ negedge mclk
     output                [63:0] buf_wdata_chn12,   // @ negedge mclk
   `else
     output                       buf_rd_chn12,
-    output                       buf_raddr_rst_chn12,
     input                 [63:0] buf_rdata_chn12,
   `endif
 `endif    
@@ -423,13 +423,13 @@ module  memctrl16 #(
     input                        seq_wr13,    // strobe for writing sequencer data (address is autoincremented)
     input                        seq_set13,  // channel sequencer data is written. If no seq_wr pulses before seq_set, seq_data contains software sequencer start address
     output                       seq_done13,  // sequencer finished executing sequence for this channel 
+    output                       rpage_nxt_chn13,
   `ifdef def_read_mem_chn13
     output                       buf_wr_chn13,   // @ negedge mclk
-    output                       buf_waddr_rst_chn13,   // @ negedge mclk
+    output                       buf_wpage_nxt_chn13,   // @ negedge mclk
     output                [63:0] buf_wdata_chn13,   // @ negedge mclk
   `else
     output                       buf_rd_chn13,
-    output                       buf_raddr_rst_chn13,
     input                 [63:0] buf_rdata_chn13,
   `endif
 `endif    
@@ -443,13 +443,13 @@ module  memctrl16 #(
     input                        seq_wr14,    // strobe for writing sequencer data (address is autoincremented)
     input                        seq_set14,  // channel sequencer data is written. If no seq_wr pulses before seq_set, seq_data contains software sequencer start address
     output                       seq_done14,  // sequencer finished executing sequence for this channel 
+    output                       rpage_nxt_chn14,
   `ifdef def_read_mem_chn14
     output                       buf_wr_chn14,   // @ negedge mclk
-    output                       buf_waddr_rst_chn14,   // @ negedge mclk
+    output                       buf_wpage_nxt_chn14,   // @ negedge mclk
     output                [63:0] buf_wdata_chn14,   // @ negedge mclk
   `else
     output                       buf_rd_chn14,
-    output                       buf_raddr_rst_chn14,
     input                 [63:0] buf_rdata_chn14,
   `endif
 `endif    
@@ -463,13 +463,13 @@ module  memctrl16 #(
     input                        seq_wr15,    // strobe for writing sequencer data (address is autoincremented)
     input                        seq_set15,  // channel sequencer data is written. If no seq_wr pulses before seq_set, seq_data contains software sequencer start address
     output                       seq_done15,  // sequencer finished executing sequence for this channel 
+    output                       rpage_nxt_chn15,
   `ifdef def_read_mem_chn15
     output                       buf_wr_chn15,   // @ negedge mclk
-    output                       buf_waddr_rst_chn15,   // @ negedge mclk
+    output                       buf_wpage_nxt_chn15,   // @ negedge mclk
     output                [63:0] buf_wdata_chn15,   // @ negedge mclk
   `else
     output                       buf_rd_chn15,
-    output                       buf_raddr_rst_chn15,
     input                 [63:0] buf_rdata_chn15,
   `endif
 `endif    
@@ -507,12 +507,12 @@ module  memctrl16 #(
 wire rst=rst_in; // TODO: decide where toi generate
 
     wire        ext_buf_rd;
-    wire        ext_buf_raddr_rst;
+    wire        ext_buf_rpage_nxt;
 //    wire  [6:0] ext_buf_raddr; 
     wire  [3:0] ext_buf_rchn; 
     wire [63:0] ext_buf_rdata; 
     wire        ext_buf_wr;
-    wire        ext_buf_waddr_rst;
+    wire        ext_buf_wpage_nxt;
 //    wire  [6:0] ext_buf_waddr; 
     wire  [3:0] ext_buf_wchn; 
     wire [63:0] ext_buf_wdata; 
@@ -912,12 +912,12 @@ end
         .status_rq      (status_rq_phy), // output
         .status_start   (status_start_phy), // input
         .ext_buf_rd     (ext_buf_rd), // output
-        .ext_buf_raddr_rst  (ext_buf_raddr_rst), // output[6:0] 
+        .ext_buf_rpage_nxt  (ext_buf_rpage_nxt), // output[6:0] 
 //        .ext_buf_raddr  (ext_buf_raddr), // output[6:0] 
         .ext_buf_rchn   (ext_buf_rchn), // output[3:0] 
         .ext_buf_rdata  (ext_buf_rdata), // input[63:0] 
         .ext_buf_wr     (ext_buf_wr), // output
-        .ext_buf_waddr_rst  (ext_buf_waddr_rst), // output[6:0] 
+        .ext_buf_wpage_nxt  (ext_buf_wpage_nxt), // output[6:0] 
 //        .ext_buf_waddr  (ext_buf_waddr), // output[6:0] 
         .ext_buf_wchn   (ext_buf_wchn), // output[3:0] 
         .ext_buf_wdata  (ext_buf_wdata), // output[63:0] 
@@ -925,182 +925,197 @@ end
     );
 
 // Registering existing channel buffers I/Os
- `ifdef def_enable_mem_chn0
+`ifdef def_enable_mem_chn0
+    mcont_common_chnbuf_reg #( .CHN_NUMBER(0)) mcont_common_chnbuf_reg0_i(.rst(rst),.clk(mclk), .ext_buf_rchn(ext_buf_rchn),
+        .ext_buf_rpage_nxt(ext_buf_rpage_nxt),.seq_done(sequencer_run_done),.buf_done(seq_done0),.rpage_nxt(rpage_nxt_chn0));
   `ifdef def_read_mem_chn0
-    mcont_to_chnbuf_reg #(.CHN_NUMBER( 0)) mcont_to_chnbuf_reg0_i(.rst(rst),.clk(mclk),.ext_buf_wr(ext_buf_wr),.ext_buf_waddr_rst(ext_buf_waddr_rst),
-        .ext_buf_wchn(ext_buf_wchn),.ext_buf_wdata(ext_buf_wdata),.seq_done(sequencer_run_done),.buf_done(seq_done0),.buf_wr_chn(buf_wr_chn0),.buf_waddr_rst_chn(buf_waddr_rst_chn0),.buf_wdata_chn(buf_wdata_chn0));
+    mcont_to_chnbuf_reg #(.CHN_NUMBER( 0)) mcont_to_chnbuf_reg0_i(.rst(rst),.clk(mclk),.ext_buf_wr(ext_buf_wr),.ext_buf_wpage_nxt(ext_buf_wpage_nxt),
+        .ext_buf_wchn(ext_buf_wchn),.ext_buf_wdata(ext_buf_wdata),.buf_wr_chn(buf_wr_chn0),.buf_wpage_nxt_chn(buf_wpage_nxt_chn0),.buf_wdata_chn(buf_wdata_chn0));
   `else
     mcont_from_chnbuf_reg #(.CHN_NUMBER( 0),.CHN_LATENCY(CHNBUF_READ_LATENCY)) mcont_from_chnbuf_reg0_i (.rst(rst),.clk(mclk),.ext_buf_rd(ext_buf_rd),
-        .ext_buf_raddr_rst(ext_buf_raddr_rst),.ext_buf_rchn(ext_buf_rchn),.ext_buf_rdata(ext_buf_rdata),.seq_done(sequencer_run_done),.buf_done(seq_done0),.buf_rd_chn(buf_rd_chn0),.buf_raddr_rst_chn(buf_raddr_rst_chn0), 
-        .buf_rdata_chn (buf_rdata_chn0));
+        .ext_buf_rchn(ext_buf_rchn),.ext_buf_rdata(ext_buf_rdata),.buf_rd_chn(buf_rd_chn0),.buf_rdata_chn (buf_rdata_chn0));
   `endif
 `endif    
 
- `ifdef def_enable_mem_chn1
+`ifdef def_enable_mem_chn1
+    mcont_common_chnbuf_reg #( .CHN_NUMBER(1)) mcont_common_chnbuf_reg1_i(.rst(rst),.clk(mclk), .ext_buf_rchn(ext_buf_rchn),
+        .ext_buf_rpage_nxt(ext_buf_rpage_nxt),.seq_done(sequencer_run_done),.buf_done(seq_done1),.rpage_nxt(rpage_nxt_chn1));
   `ifdef def_read_mem_chn1
-    mcont_to_chnbuf_reg #(.CHN_NUMBER( 1)) mcont_to_chnbuf_reg1_i(.rst(rst),.clk(mclk),.ext_buf_wr(ext_buf_wr),.ext_buf_waddr_rst(ext_buf_waddr_rst),
-        .ext_buf_wchn(ext_buf_wchn),.ext_buf_wdata(ext_buf_wdata),.seq_done(sequencer_run_done),.buf_done(seq_done1),.buf_wr_chn(buf_wr_chn1),.buf_waddr_rst_chn(buf_waddr_rst_chn1),.buf_wdata_chn(buf_wdata_chn1));
+    mcont_to_chnbuf_reg #(.CHN_NUMBER( 1)) mcont_to_chnbuf_reg1_i(.rst(rst),.clk(mclk),.ext_buf_wr(ext_buf_wr),.ext_buf_wpage_nxt(ext_buf_wpage_nxt),
+        .ext_buf_wchn(ext_buf_wchn),.ext_buf_wdata(ext_buf_wdata),.buf_wr_chn(buf_wr_chn1),.buf_wpage_nxt_chn(buf_wpage_nxt_chn1),.buf_wdata_chn(buf_wdata_chn1));
   `else
     mcont_from_chnbuf_reg #(.CHN_NUMBER( 1),.CHN_LATENCY(CHNBUF_READ_LATENCY)) mcont_from_chnbuf_reg1_i (.rst(rst),.clk(mclk),.ext_buf_rd(ext_buf_rd),
-        .ext_buf_raddr_rst(ext_buf_raddr_rst),.ext_buf_rchn(ext_buf_rchn),.ext_buf_rdata(ext_buf_rdata),.seq_done(sequencer_run_done),.buf_done(seq_done1),.buf_rd_chn(buf_rd_chn1),.buf_raddr_rst_chn(buf_raddr_rst_chn1), 
-        .buf_rdata_chn (buf_rdata_chn1));
+        .ext_buf_rchn(ext_buf_rchn),.ext_buf_rdata(ext_buf_rdata),.buf_rd_chn(buf_rd_chn1),.buf_rdata_chn(buf_rdata_chn1));
   `endif
 `endif    
 
- `ifdef def_enable_mem_chn2
+`ifdef def_enable_mem_chn2
+    mcont_common_chnbuf_reg #( .CHN_NUMBER(2)) mcont_common_chnbuf_reg2_i(.rst(rst),.clk(mclk), .ext_buf_rchn(ext_buf_rchn),
+        .ext_buf_rpage_nxt(ext_buf_rpage_nxt),.seq_done(sequencer_run_done),.buf_done(seq_done2),.rpage_nxt(rpage_nxt_chn2));
   `ifdef def_read_mem_chn2
-    mcont_to_chnbuf_reg #(.CHN_NUMBER( 2)) mcont_to_chnbuf_reg2_i(.rst(rst),.clk(mclk),.ext_buf_wr(ext_buf_wr),.ext_buf_waddr_rst(ext_buf_waddr_rst),
-        .ext_buf_wchn(ext_buf_wchn),.ext_buf_wdata(ext_buf_wdata),.seq_done(sequencer_run_done),.buf_done(seq_done2),.buf_wr_chn(buf_wr_chn2),.buf_waddr_rst_chn(buf_waddr_rst_chn2),.buf_wdata_chn(buf_wdata_chn2));
+    mcont_to_chnbuf_reg #(.CHN_NUMBER( 2)) mcont_to_chnbuf_reg2_i(.rst(rst),.clk(mclk),.ext_buf_wr(ext_buf_wr),.ext_buf_wpage_nxt(ext_buf_wpage_nxt),
+        .ext_buf_wchn(ext_buf_wchn),.ext_buf_wdata(ext_buf_wdata),.buf_wr_chn(buf_wr_chn2),.buf_wpage_nxt_chn(buf_wpage_nxt_chn2),.buf_wdata_chn(buf_wdata_chn2));
   `else
     mcont_from_chnbuf_reg #(.CHN_NUMBER( 2),.CHN_LATENCY(CHNBUF_READ_LATENCY)) mcont_from_chnbuf_reg2_i (.rst(rst),.clk(mclk),.ext_buf_rd(ext_buf_rd),
-        .ext_buf_raddr_rst(ext_buf_raddr_rst),.ext_buf_rchn(ext_buf_rchn),.ext_buf_rdata(ext_buf_rdata),.seq_done(sequencer_run_done),.buf_done(seq_done2),.buf_rd_chn(buf_rd_chn2),.buf_raddr_rst_chn(buf_raddr_rst_chn2), 
-        .buf_rdata_chn (buf_rdata_chn2));
+        .ext_buf_rchn(ext_buf_rchn),.ext_buf_rdata(ext_buf_rdata),.buf_rd_chn(buf_rd_chn2),.buf_rdata_chn(buf_rdata_chn2));
   `endif
 `endif    
 
- `ifdef def_enable_mem_chn3
+`ifdef def_enable_mem_chn3
+    mcont_common_chnbuf_reg #( .CHN_NUMBER(3)) mcont_common_chnbuf_reg3_i(.rst(rst),.clk(mclk), .ext_buf_rchn(ext_buf_rchn),
+        .ext_buf_rpage_nxt(ext_buf_rpage_nxt),.seq_done(sequencer_run_done),.buf_done(seq_done3),.rpage_nxt(rpage_nxt_chn3));
   `ifdef def_read_mem_chn3
-    mcont_to_chnbuf_reg #(.CHN_NUMBER( 3)) mcont_to_chnbuf_reg3_i(.rst(rst),.clk(mclk),.ext_buf_wr(ext_buf_wr),.ext_buf_waddr_rst(ext_buf_waddr_rst),
-        .ext_buf_wchn(ext_buf_wchn),.ext_buf_wdata(ext_buf_wdata),.seq_done(sequencer_run_done),.buf_done(seq_done3),.buf_wr_chn(buf_wr_chn3),.buf_waddr_rst_chn(buf_waddr_rst_chn3),.buf_wdata_chn(buf_wdata_chn3));
+    mcont_to_chnbuf_reg #(.CHN_NUMBER( 3)) mcont_to_chnbuf_reg3_i(.rst(rst),.clk(mclk),.ext_buf_wr(ext_buf_wr),.ext_buf_wpage_nxt(ext_buf_wpage_nxt),
+        .ext_buf_wchn(ext_buf_wchn),.ext_buf_wdata(ext_buf_wdata),.buf_wr_chn(buf_wr_chn3),.buf_wpage_nxt_chn(buf_wpage_nxt_chn3),.buf_wdata_chn(buf_wdata_chn3));
   `else
     mcont_from_chnbuf_reg #(.CHN_NUMBER( 3),.CHN_LATENCY(CHNBUF_READ_LATENCY)) mcont_from_chnbuf_reg3_i (.rst(rst),.clk(mclk),.ext_buf_rd(ext_buf_rd),
-        .ext_buf_raddr_rst(ext_buf_raddr_rst),.ext_buf_rchn(ext_buf_rchn),.ext_buf_rdata(ext_buf_rdata),.seq_done(sequencer_run_done),.buf_done(seq_done3),.buf_rd_chn(buf_rd_chn3),.buf_raddr_rst_chn(buf_raddr_rst_chn3), 
-        .buf_rdata_chn (buf_rdata_chn3));
+        .ext_buf_rchn(ext_buf_rchn),.ext_buf_rdata(ext_buf_rdata),.buf_rd_chn(buf_rd_chn3),.buf_rdata_chn(buf_rdata_chn3));
   `endif
 `endif    
 
- `ifdef def_enable_mem_chn4
+`ifdef def_enable_mem_chn4
+    mcont_common_chnbuf_reg #( .CHN_NUMBER(4)) mcont_common_chnbuf_reg4_i(.rst(rst),.clk(mclk), .ext_buf_rchn(ext_buf_rchn),
+        .ext_buf_rpage_nxt(ext_buf_rpage_nxt),.seq_done(sequencer_run_done),.buf_done(seq_done4),.rpage_nxt(rpage_nxt_chn4));
   `ifdef def_read_mem_chn4
-    mcont_to_chnbuf_reg #(.CHN_NUMBER( 4)) mcont_to_chnbuf_reg4_i(.rst(rst),.clk(mclk),.ext_buf_wr(ext_buf_wr),.ext_buf_waddr_rst(ext_buf_waddr_rst),
-        .ext_buf_wchn(ext_buf_wchn),.ext_buf_wdata(ext_buf_wdata),.seq_done(sequencer_run_done),.buf_done(seq_done4),.buf_wr_chn(buf_wr_chn4),.buf_waddr_rst_chn(buf_waddr_rst_chn4),.buf_wdata_chn(buf_wdata_chn4));
+    mcont_to_chnbuf_reg #(.CHN_NUMBER( 4)) mcont_to_chnbuf_reg4_i(.rst(rst),.clk(mclk),.ext_buf_wr(ext_buf_wr),.ext_buf_wpage_nxt(ext_buf_wpage_nxt),
+        .ext_buf_wchn(ext_buf_wchn),.ext_buf_wdata(ext_buf_wdata),.buf_wr_chn(buf_wr_chn4),.buf_wpage_nxt_chn(buf_wpage_nxt_chn4),.buf_wdata_chn(buf_wdata_chn4));
   `else
     mcont_from_chnbuf_reg #(.CHN_NUMBER( 4),.CHN_LATENCY(CHNBUF_READ_LATENCY)) mcont_from_chnbuf_reg4_i (.rst(rst),.clk(mclk),.ext_buf_rd(ext_buf_rd),
-        .ext_buf_raddr_rst(ext_buf_raddr_rst),.ext_buf_rchn(ext_buf_rchn),.ext_buf_rdata(ext_buf_rdata),.seq_done(sequencer_run_done),.buf_done(seq_done4),.buf_rd_chn(buf_rd_chn4),.buf_raddr_rst_chn(buf_raddr_rst_chn4), 
-        .buf_rdata_chn (buf_rdata_chn4));
+        .ext_buf_rchn(ext_buf_rchn),.ext_buf_rdata(ext_buf_rdata),.buf_rd_chn(buf_rd_chn4),.buf_rdata_chn(buf_rdata_chn4));
   `endif
 `endif    
 
- `ifdef def_enable_mem_chn5
+`ifdef def_enable_mem_chn5
+    mcont_common_chnbuf_reg #( .CHN_NUMBER(5)) mcont_common_chnbuf_reg5_i(.rst(rst),.clk(mclk), .ext_buf_rchn(ext_buf_rchn),
+        .ext_buf_rpage_nxt(ext_buf_rpage_nxt),.seq_done(sequencer_run_done),.buf_done(seq_done5),.rpage_nxt(rpage_nxt_chn5));
   `ifdef def_read_mem_chn5
-    mcont_to_chnbuf_reg #(.CHN_NUMBER( 5)) mcont_to_chnbuf_reg5_i(.rst(rst),.clk(mclk),.ext_buf_wr(ext_buf_wr),.ext_buf_waddr_rst(ext_buf_waddr_rst),
-        .ext_buf_wchn(ext_buf_wchn),.ext_buf_wdata(ext_buf_wdata),.seq_done(sequencer_run_done),.buf_done(seq_done5),.buf_wr_chn(buf_wr_chn5),.buf_waddr_rst_chn(buf_waddr_rst_chn5),.buf_wdata_chn(buf_wdata_chn5));
+    mcont_to_chnbuf_reg #(.CHN_NUMBER( 5)) mcont_to_chnbuf_reg5_i(.rst(rst),.clk(mclk),.ext_buf_wr(ext_buf_wr),.ext_buf_wpage_nxt(ext_buf_wpage_nxt),
+        .ext_buf_wchn(ext_buf_wchn),.ext_buf_wdata(ext_buf_wdata),.buf_wr_chn(buf_wr_chn5),.buf_wpage_nxt_chn(buf_wpage_nxt_chn5),.buf_wdata_chn(buf_wdata_chn5));
   `else
     mcont_from_chnbuf_reg #(.CHN_NUMBER( 5),.CHN_LATENCY(CHNBUF_READ_LATENCY)) mcont_from_chnbuf_reg5_i (.rst(rst),.clk(mclk),.ext_buf_rd(ext_buf_rd),
-        .ext_buf_raddr_rst(ext_buf_raddr_rst),.ext_buf_rchn(ext_buf_rchn),.ext_buf_rdata(ext_buf_rdata),.seq_done(sequencer_run_done),.buf_done(seq_done5),.buf_rd_chn(buf_rd_chn5),.buf_raddr_rst_chn(buf_raddr_rst_chn5), 
-        .buf_rdata_chn (buf_rdata_chn5));
+        .ext_buf_rchn(ext_buf_rchn),.ext_buf_rdata(ext_buf_rdata),.buf_rd_chn(buf_rd_chn5),.buf_rdata_chn(buf_rdata_chn5));
   `endif
 `endif    
 
- `ifdef def_enable_mem_chn6
+`ifdef def_enable_mem_chn6
+    mcont_common_chnbuf_reg #( .CHN_NUMBER(6)) mcont_common_chnbuf_reg6_i(.rst(rst),.clk(mclk), .ext_buf_rchn(ext_buf_rchn),
+        .ext_buf_rpage_nxt(ext_buf_rpage_nxt),.seq_done(sequencer_run_done),.buf_done(seq_done6),.rpage_nxt(rpage_nxt_chn6));
   `ifdef def_read_mem_chn6
-    mcont_to_chnbuf_reg #(.CHN_NUMBER( 6)) mcont_to_chnbuf_reg6_i(.rst(rst),.clk(mclk),.ext_buf_wr(ext_buf_wr),.ext_buf_waddr_rst(ext_buf_waddr_rst),
-        .ext_buf_wchn(ext_buf_wchn),.ext_buf_wdata(ext_buf_wdata),.seq_done(sequencer_run_done),.buf_done(seq_done6),.buf_wr_chn(buf_wr_chn6),.buf_waddr_rst_chn(buf_waddr_rst_chn6),.buf_wdata_chn(buf_wdata_chn6));
+    mcont_to_chnbuf_reg #(.CHN_NUMBER( 6)) mcont_to_chnbuf_reg6_i(.rst(rst),.clk(mclk),.ext_buf_wr(ext_buf_wr),.ext_buf_wpage_nxt(ext_buf_wpage_nxt),
+        .ext_buf_wchn(ext_buf_wchn),.ext_buf_wdata(ext_buf_wdata),.buf_wr_chn(buf_wr_chn6),.buf_wpage_nxt_chn(buf_wpage_nxt_chn6),.buf_wdata_chn(buf_wdata_chn6));
   `else
     mcont_from_chnbuf_reg #(.CHN_NUMBER( 6),.CHN_LATENCY(CHNBUF_READ_LATENCY)) mcont_from_chnbuf_reg6_i (.rst(rst),.clk(mclk),.ext_buf_rd(ext_buf_rd),
-        .ext_buf_raddr_rst(ext_buf_raddr_rst),.ext_buf_rchn(ext_buf_rchn),.ext_buf_rdata(ext_buf_rdata),.seq_done(sequencer_run_done),.buf_done(seq_done6),.buf_rd_chn(buf_rd_chn6),.buf_raddr_rst_chn(buf_raddr_rst_chn6), 
-        .buf_rdata_chn (buf_rdata_chn6));
+        .ext_buf_rchn(ext_buf_rchn),.ext_buf_rdata(ext_buf_rdata),.buf_rd_chn(buf_rd_chn6),.buf_rdata_chn(buf_rdata_chn6));
   `endif
 `endif    
 
- `ifdef def_enable_mem_chn7
+`ifdef def_enable_mem_chn7
+    mcont_common_chnbuf_reg #( .CHN_NUMBER(7)) mcont_common_chnbuf_reg7_i(.rst(rst),.clk(mclk), .ext_buf_rchn(ext_buf_rchn),
+        .ext_buf_rpage_nxt(ext_buf_rpage_nxt),.seq_done(sequencer_run_done),.buf_done(seq_done7),.rpage_nxt(rpage_nxt_chn7));
   `ifdef def_read_mem_chn7
-    mcont_to_chnbuf_reg #(.CHN_NUMBER( 7)) mcont_to_chnbuf_reg7_i(.rst(rst),.clk(mclk),.ext_buf_wr(ext_buf_wr),.ext_buf_waddr_rst(ext_buf_waddr_rst),
-        .ext_buf_wchn(ext_buf_wchn),.ext_buf_wdata(ext_buf_wdata),.seq_done(sequencer_run_done),.buf_done(seq_done7),.buf_wr_chn(buf_wr_chn7),.buf_waddr_rst_chn(buf_waddr_rst_chn7),.buf_wdata_chn(buf_wdata_chn7));
+    mcont_to_chnbuf_reg #(.CHN_NUMBER( 7)) mcont_to_chnbuf_reg7_i(.rst(rst),.clk(mclk),.ext_buf_wr(ext_buf_wr),.ext_buf_wpage_nxt(ext_buf_wpage_nxt),
+        .ext_buf_wchn(ext_buf_wchn),.ext_buf_wdata(ext_buf_wdata),.buf_wr_chn(buf_wr_chn7),.buf_wpage_nxt_chn(buf_wpage_nxt_chn7),.buf_wdata_chn(buf_wdata_chn7));
   `else
     mcont_from_chnbuf_reg #(.CHN_NUMBER( 7),.CHN_LATENCY(CHNBUF_READ_LATENCY)) mcont_from_chnbuf_reg7_i (.rst(rst),.clk(mclk),.ext_buf_rd(ext_buf_rd),
-        .ext_buf_raddr_rst(ext_buf_raddr_rst),.ext_buf_rchn(ext_buf_rchn),.ext_buf_rdata(ext_buf_rdata),.seq_done(sequencer_run_done),.buf_done(seq_done7),.buf_rd_chn(buf_rd_chn7),.buf_raddr_rst_chn(buf_raddr_rst_chn7), 
-        .buf_rdata_chn (buf_rdata_chn7));
+        .ext_buf_rchn(ext_buf_rchn),.ext_buf_rdata(ext_buf_rdata),.buf_rd_chn(buf_rd_chn7),.buf_rdata_chn(buf_rdata_chn7));
   `endif
 `endif    
 
- `ifdef def_enable_mem_chn8
+`ifdef def_enable_mem_chn8
+    mcont_common_chnbuf_reg #( .CHN_NUMBER(8)) mcont_common_chnbuf_reg8_i(.rst(rst),.clk(mclk), .ext_buf_rchn(ext_buf_rchn),
+        .ext_buf_rpage_nxt(ext_buf_rpage_nxt),.seq_done(sequencer_run_done),.buf_done(seq_done8),.rpage_nxt(rpage_nxt_chn8));
   `ifdef def_read_mem_chn8
-    mcont_to_chnbuf_reg #(.CHN_NUMBER( 8)) mcont_to_chnbuf_reg8_i(.rst(rst),.clk(mclk),.ext_buf_wr(ext_buf_wr),.ext_buf_waddr_rst(ext_buf_waddr_rst),
-        .ext_buf_wchn(ext_buf_wchn),.ext_buf_wdata(ext_buf_wdata),.seq_done(sequencer_run_done),.buf_done(seq_done8),.buf_wr_chn(buf_wr_chn8),.buf_waddr_rst_chn(buf_waddr_rst_chn8),.buf_wdata_chn(buf_wdata_chn8));
+    mcont_to_chnbuf_reg #(.CHN_NUMBER( 8)) mcont_to_chnbuf_reg8_i(.rst(rst),.clk(mclk),.ext_buf_wr(ext_buf_wr),.ext_buf_wpage_nxt(ext_buf_wpage_nxt),
+        .ext_buf_wchn(ext_buf_wchn),.ext_buf_wdata(ext_buf_wdata),.buf_wr_chn(buf_wr_chn8),.buf_wpage_nxt_chn(buf_wpage_nxt_chn8),.buf_wdata_chn(buf_wdata_chn8));
   `else
     mcont_from_chnbuf_reg #(.CHN_NUMBER( 8),.CHN_LATENCY(CHNBUF_READ_LATENCY)) mcont_from_chnbuf_reg8_i (.rst(rst),.clk(mclk),.ext_buf_rd(ext_buf_rd),
-        .ext_buf_raddr_rst(ext_buf_raddr_rst),.ext_buf_rchn(ext_buf_rchn),.ext_buf_rdata(ext_buf_rdata),.seq_done(sequencer_run_done),.buf_done(seq_done8),.buf_rd_chn(buf_rd_chn8),.buf_raddr_rst_chn(buf_raddr_rst_chn8), 
-        .buf_rdata_chn (buf_rdata_chn8));
+        .ext_buf_rchn(ext_buf_rchn),.ext_buf_rdata(ext_buf_rdata),.buf_rd_chn(buf_rd_chn8),.buf_rdata_chn(buf_rdata_chn8));
   `endif
 `endif    
 
- `ifdef def_enable_mem_chn9
+`ifdef def_enable_mem_chn9
+    mcont_common_chnbuf_reg #( .CHN_NUMBER(9)) mcont_common_chnbuf_reg9_i(.rst(rst),.clk(mclk), .ext_buf_rchn(ext_buf_rchn),
+        .ext_buf_rpage_nxt(ext_buf_rpage_nxt),.seq_done(sequencer_run_done),.buf_done(seq_done9),.rpage_nxt(rpage_nxt_chn9));
   `ifdef def_read_mem_chn9
-    mcont_to_chnbuf_reg #(.CHN_NUMBER( 9)) mcont_to_chnbuf_reg9_i(.rst(rst),.clk(mclk),.ext_buf_wr(ext_buf_wr),.ext_buf_waddr_rst(ext_buf_waddr_rst),
-        .ext_buf_wchn(ext_buf_wchn),.ext_buf_wdata(ext_buf_wdata),.seq_done(sequencer_run_done),.buf_done(seq_done9),.buf_wr_chn(buf_wr_chn9),.buf_waddr_rst_chn(buf_waddr_rst_chn9),.buf_wdata_chn(buf_wdata_chn9));
+    mcont_to_chnbuf_reg #(.CHN_NUMBER( 9)) mcont_to_chnbuf_reg9_i(.rst(rst),.clk(mclk),.ext_buf_wr(ext_buf_wr),.ext_buf_wpage_nxt(ext_buf_wpage_nxt),
+        .ext_buf_wchn(ext_buf_wchn),.ext_buf_wdata(ext_buf_wdata),.buf_wr_chn(buf_wr_chn9),.buf_wpage_nxt_chn(buf_wpage_nxt_chn9),.buf_wdata_chn(buf_wdata_chn9));
   `else
     mcont_from_chnbuf_reg #(.CHN_NUMBER( 9),.CHN_LATENCY(CHNBUF_READ_LATENCY)) mcont_from_chnbuf_reg9_i (.rst(rst),.clk(mclk),.ext_buf_rd(ext_buf_rd),
-        .ext_buf_raddr_rst(ext_buf_raddr_rst),.ext_buf_rchn(ext_buf_rchn),.ext_buf_rdata(ext_buf_rdata),.seq_done(sequencer_run_done),.buf_done(seq_done9),.buf_rd_chn(buf_rd_chn9),.buf_raddr_rst_chn(buf_raddr_rst_chn9), 
-        .buf_rdata_chn (buf_rdata_chn9));
+        .ext_buf_rchn(ext_buf_rchn),.ext_buf_rdata(ext_buf_rdata),.buf_rd_chn(buf_rd_chn9),.buf_rdata_chn(buf_rdata_chn9));
   `endif
 `endif    
 
- `ifdef def_enable_mem_chn10
+`ifdef def_enable_mem_chn10
+    mcont_common_chnbuf_reg #( .CHN_NUMBER(10)) mcont_common_chnbuf_reg10_i(.rst(rst),.clk(mclk), .ext_buf_rchn(ext_buf_rchn),
+        .ext_buf_rpage_nxt(ext_buf_rpage_nxt),.seq_done(sequencer_run_done),.buf_done(seq_done10),.rpage_nxt(rpage_nxt_chn10));
   `ifdef def_read_mem_chn10
-    mcont_to_chnbuf_reg #(.CHN_NUMBER( 10)) mcont_to_chnbuf_reg10_i(.rst(rst),.clk(mclk),.ext_buf_wr(ext_buf_wr),.ext_buf_waddr_rst(ext_buf_waddr_rst),
-        .ext_buf_wchn(ext_buf_wchn),.ext_buf_wdata(ext_buf_wdata),.seq_done(sequencer_run_done),.buf_done(seq_done10),.buf_wr_chn(buf_wr_chn10),.buf_waddr_rst_chn(buf_waddr_rst_chn10),.buf_wdata_chn(buf_wdata_chn10));
+    mcont_to_chnbuf_reg #(.CHN_NUMBER( 10)) mcont_to_chnbuf_reg10_i(.rst(rst),.clk(mclk),.ext_buf_wr(ext_buf_wr),.ext_buf_wpage_nxt(ext_buf_wpage_nxt),
+        .ext_buf_wchn(ext_buf_wchn),.ext_buf_wdata(ext_buf_wdata),.buf_wr_chn(buf_wr_chn10),.buf_wpage_nxt_chn(buf_wpage_nxt_chn10),.buf_wdata_chn(buf_wdata_chn10));
   `else
     mcont_from_chnbuf_reg #(.CHN_NUMBER( 10),.CHN_LATENCY(CHNBUF_READ_LATENCY)) mcont_from_chnbuf_reg10_i (.rst(rst),.clk(mclk),.ext_buf_rd(ext_buf_rd),
-        .ext_buf_raddr_rst(ext_buf_raddr_rst),.ext_buf_rchn(ext_buf_rchn),.ext_buf_rdata(ext_buf_rdata),.seq_done(sequencer_run_done),.buf_done(seq_done10),.buf_rd_chn(buf_rd_chn10),.buf_raddr_rst_chn(buf_raddr_rst_chn10), 
-        .buf_rdata_chn (buf_rdata_chn10));
+        .ext_buf_rchn(ext_buf_rchn),.ext_buf_rdata(ext_buf_rdata),.buf_rd_chn(buf_rd_chn10),.buf_rdata_chn(buf_rdata_chn10));
   `endif
 `endif    
 
- `ifdef def_enable_mem_chn11
+`ifdef def_enable_mem_chn11
+    mcont_common_chnbuf_reg #( .CHN_NUMBER(11)) mcont_common_chnbuf_reg11_i(.rst(rst),.clk(mclk), .ext_buf_rchn(ext_buf_rchn),
+        .ext_buf_rpage_nxt(ext_buf_rpage_nxt),.seq_done(sequencer_run_done),.buf_done(seq_done11),.rpage_nxt(rpage_nxt_chn11));
   `ifdef def_read_mem_chn11
-    mcont_to_chnbuf_reg #(.CHN_NUMBER( 11)) mcont_to_chnbuf_reg11_i(.rst(rst),.clk(mclk),.ext_buf_wr(ext_buf_wr),.ext_buf_waddr_rst(ext_buf_waddr_rst),
-        .ext_buf_wchn(ext_buf_wchn),.ext_buf_wdata(ext_buf_wdata),.seq_done(sequencer_run_done),.buf_done(seq_done11),.buf_wr_chn(buf_wr_chn11),.buf_waddr_rst_chn(buf_waddr_rst_chn11),.buf_wdata_chn(buf_wdata_chn11));
+    mcont_to_chnbuf_reg #(.CHN_NUMBER( 11)) mcont_to_chnbuf_reg11_i(.rst(rst),.clk(mclk),.ext_buf_wr(ext_buf_wr),.ext_buf_wpage_nxt(ext_buf_wpage_nxt),
+        .ext_buf_wchn(ext_buf_wchn),.ext_buf_wdata(ext_buf_wdata),.buf_wr_chn(buf_wr_chn11),.buf_wpage_nxt_chn(buf_wpage_nxt_chn11),.buf_wdata_chn(buf_wdata_chn11));
   `else
     mcont_from_chnbuf_reg #(.CHN_NUMBER( 11),.CHN_LATENCY(CHNBUF_READ_LATENCY)) mcont_from_chnbuf_reg11_i (.rst(rst),.clk(mclk),.ext_buf_rd(ext_buf_rd),
-        .ext_buf_raddr_rst(ext_buf_raddr_rst),.ext_buf_rchn(ext_buf_rchn),.ext_buf_rdata(ext_buf_rdata),.seq_done(sequencer_run_done),.buf_done(seq_done11),.buf_rd_chn(buf_rd_chn11),.buf_raddr_rst_chn(buf_raddr_rst_chn11), 
-        .buf_rdata_chn (buf_rdata_chn11));
+        .ext_buf_rchn(ext_buf_rchn),.ext_buf_rdata(ext_buf_rdata),.buf_rd_chn(buf_rd_chn11),.buf_rdata_chn(buf_rdata_chn11));
   `endif
 `endif    
 
- `ifdef def_enable_mem_chn12
+`ifdef def_enable_mem_chn12
+    mcont_common_chnbuf_reg #( .CHN_NUMBER(12)) mcont_common_chnbuf_reg12_i(.rst(rst),.clk(mclk), .ext_buf_rchn(ext_buf_rchn),
+        .ext_buf_rpage_nxt(ext_buf_rpage_nxt),.seq_done(sequencer_run_done),.buf_done(seq_done12),.rpage_nxt(rpage_nxt_chn12));
   `ifdef def_read_mem_chn12
-    mcont_to_chnbuf_reg #(.CHN_NUMBER( 12)) mcont_to_chnbuf_reg12_i(.rst(rst),.clk(mclk),.ext_buf_wr(ext_buf_wr),.ext_buf_waddr_rst(ext_buf_waddr_rst),
-        .ext_buf_wchn(ext_buf_wchn),.ext_buf_wdata(ext_buf_wdata),.seq_done(sequencer_run_done),.buf_done(seq_done12),.buf_wr_chn(buf_wr_chn12),.buf_waddr_rst_chn(buf_waddr_rst_chn12),.buf_wdata_chn(buf_wdata_chn12));
+    mcont_to_chnbuf_reg #(.CHN_NUMBER( 12)) mcont_to_chnbuf_reg12_i(.rst(rst),.clk(mclk),.ext_buf_wr(ext_buf_wr),.ext_buf_wpage_nxt(ext_buf_wpage_nxt),
+        .ext_buf_wchn(ext_buf_wchn),.ext_buf_wdata(ext_buf_wdata),.buf_wr_chn(buf_wr_chn12),.buf_wpage_nxt_chn(buf_wpage_nxt_chn12),.buf_wdata_chn(buf_wdata_chn12));
   `else
     mcont_from_chnbuf_reg #(.CHN_NUMBER( 12),.CHN_LATENCY(CHNBUF_READ_LATENCY)) mcont_from_chnbuf_reg12_i (.rst(rst),.clk(mclk),.ext_buf_rd(ext_buf_rd),
-        .ext_buf_raddr_rst(ext_buf_raddr_rst),.ext_buf_rchn(ext_buf_rchn),.ext_buf_rdata(ext_buf_rdata),.seq_done(sequencer_run_done),.buf_done(seq_done12),.buf_rd_chn(buf_rd_chn12),.buf_raddr_rst_chn(buf_raddr_rst_chn12), 
-        .buf_rdata_chn (buf_rdata_chn12));
+        .ext_buf_rchn(ext_buf_rchn),.ext_buf_rdata(ext_buf_rdata),.buf_rd_chn(buf_rd_chn12),.buf_rdata_chn(buf_rdata_chn12));
   `endif
 `endif    
 
- `ifdef def_enable_mem_chn13
+`ifdef def_enable_mem_chn13
+    mcont_common_chnbuf_reg #( .CHN_NUMBER(13)) mcont_common_chnbuf_reg13_i(.rst(rst),.clk(mclk), .ext_buf_rchn(ext_buf_rchn),
+        .ext_buf_rpage_nxt(ext_buf_rpage_nxt),.seq_done(sequencer_run_done),.buf_done(seq_done13),.rpage_nxt(rpage_nxt_chn13));
   `ifdef def_read_mem_chn13
-    mcont_to_chnbuf_reg #(.CHN_NUMBER( 13)) mcont_to_chnbuf_reg13_i(.rst(rst),.clk(mclk),.ext_buf_wr(ext_buf_wr),.ext_buf_waddr_rst(ext_buf_waddr_rst),
-        .ext_buf_wchn(ext_buf_wchn),.ext_buf_wdata(ext_buf_wdata),.seq_done(sequencer_run_done),.buf_done(seq_done13),.buf_wr_chn(buf_wr_chn13),.buf_waddr_rst_chn(buf_waddr_rst_chn13),.buf_wdata_chn(buf_wdata_chn13));
+    mcont_to_chnbuf_reg #(.CHN_NUMBER( 13)) mcont_to_chnbuf_reg13_i(.rst(rst),.clk(mclk),.ext_buf_wr(ext_buf_wr),.ext_buf_wpage_nxt(ext_buf_wpage_nxt),
+        .ext_buf_wchn(ext_buf_wchn),.ext_buf_wdata(ext_buf_wdata),.buf_wr_chn(buf_wr_chn13),.buf_wpage_nxt_chn(buf_wpage_nxt_chn13),.buf_wdata_chn(buf_wdata_chn13));
   `else
     mcont_from_chnbuf_reg #(.CHN_NUMBER( 13),.CHN_LATENCY(CHNBUF_READ_LATENCY)) mcont_from_chnbuf_reg13_i (.rst(rst),.clk(mclk),.ext_buf_rd(ext_buf_rd),
-        .ext_buf_raddr_rst(ext_buf_raddr_rst),.ext_buf_rchn(ext_buf_rchn),.ext_buf_rdata(ext_buf_rdata),.seq_done(sequencer_run_done),.buf_done(seq_done13),.buf_rd_chn(buf_rd_chn13),.buf_raddr_rst_chn(buf_raddr_rst_chn13), 
-        .buf_rdata_chn (buf_rdata_chn13));
+        .ext_buf_rchn(ext_buf_rchn),.ext_buf_rdata(ext_buf_rdata),.buf_rd_chn(buf_rd_chn13),.buf_rdata_chn(buf_rdata_chn13));
   `endif
 `endif    
 
- `ifdef def_enable_mem_chn14
+`ifdef def_enable_mem_chn14
+    mcont_common_chnbuf_reg #( .CHN_NUMBER(14)) mcont_common_chnbuf_reg14_i(.rst(rst),.clk(mclk), .ext_buf_rchn(ext_buf_rchn),
+        .ext_buf_rpage_nxt(ext_buf_rpage_nxt),.seq_done(sequencer_run_done),.buf_done(seq_done14),.rpage_nxt(rpage_nxt_chn14));
   `ifdef def_read_mem_chn14
-    mcont_to_chnbuf_reg #(.CHN_NUMBER( 14)) mcont_to_chnbuf_reg14_i(.rst(rst),.clk(mclk),.ext_buf_wr(ext_buf_wr),.ext_buf_waddr_rst(ext_buf_waddr_rst),
-        .ext_buf_wchn(ext_buf_wchn),.ext_buf_wdata(ext_buf_wdata),.seq_done(sequencer_run_done),.buf_done(seq_done14),.buf_wr_chn(buf_wr_chn14),.buf_waddr_rst_chn(buf_waddr_rst_chn14),.buf_wdata_chn(buf_wdata_chn14));
+    mcont_to_chnbuf_reg #(.CHN_NUMBER( 14)) mcont_to_chnbuf_reg14_i(.rst(rst),.clk(mclk),.ext_buf_wr(ext_buf_wr),.ext_buf_wpage_nxt(ext_buf_wpage_nxt),
+        .ext_buf_wchn(ext_buf_wchn),.ext_buf_wdata(ext_buf_wdata),.buf_wr_chn(buf_wr_chn14),.buf_wpage_nxt_chn(buf_wpage_nxt_chn14),.buf_wdata_chn(buf_wdata_chn14));
   `else
     mcont_from_chnbuf_reg #(.CHN_NUMBER( 14),.CHN_LATENCY(CHNBUF_READ_LATENCY)) mcont_from_chnbuf_reg14_i (.rst(rst),.clk(mclk),.ext_buf_rd(ext_buf_rd),
-        .ext_buf_raddr_rst(ext_buf_raddr_rst),.ext_buf_rchn(ext_buf_rchn),.ext_buf_rdata(ext_buf_rdata),.seq_done(sequencer_run_done),.buf_done(seq_done14),.buf_rd_chn(buf_rd_chn14),.buf_raddr_rst_chn(buf_raddr_rst_chn14), 
-        .buf_rdata_chn (buf_rdata_chn14));
+        .ext_buf_rchn(ext_buf_rchn),.ext_buf_rdata(ext_buf_rdata),.buf_rd_chn(buf_rd_chn14),.buf_rdata_chn(buf_rdata_chn14));
   `endif
 `endif    
 
- `ifdef def_enable_mem_chn15
+`ifdef def_enable_mem_chn15
+    mcont_common_chnbuf_reg #( .CHN_NUMBER(15)) mcont_common_chnbuf_reg15_i(.rst(rst),.clk(mclk), .ext_buf_rchn(ext_buf_rchn),
+        .ext_buf_rpage_nxt(ext_buf_rpage_nxt),.seq_done(sequencer_run_done),.buf_done(seq_done15),.rpage_nxt(rpage_nxt_chn15));
   `ifdef def_read_mem_chn15
-    mcont_to_chnbuf_reg #(.CHN_NUMBER( 15)) mcont_to_chnbuf_reg15_i(.rst(rst),.clk(mclk),.ext_buf_wr(ext_buf_wr),.ext_buf_waddr_rst(ext_buf_waddr_rst),
-        .ext_buf_wchn(ext_buf_wchn),.ext_buf_wdata(ext_buf_wdata),.seq_done(sequencer_run_done),.buf_done(seq_done15),.buf_wr_chn(buf_wr_chn15),.buf_waddr_rst_chn(buf_waddr_rst_chn15),.buf_wdata_chn(buf_wdata_chn15));
+    mcont_to_chnbuf_reg #(.CHN_NUMBER( 15)) mcont_to_chnbuf_reg15_i(.rst(rst),.clk(mclk),.ext_buf_wr(ext_buf_wr),.ext_buf_wpage_nxt(ext_buf_wpage_nxt),
+        .ext_buf_wchn(ext_buf_wchn),.ext_buf_wdata(ext_buf_wdata),.buf_wr_chn(buf_wr_chn15),.buf_wpage_nxt_chn(buf_wpage_nxt_chn15),.buf_wdata_chn(buf_wdata_chn15));
   `else
     mcont_from_chnbuf_reg #(.CHN_NUMBER( 15),.CHN_LATENCY(CHNBUF_READ_LATENCY)) mcont_from_chnbuf_reg15_i (.rst(rst),.clk(mclk),.ext_buf_rd(ext_buf_rd),
-        .ext_buf_raddr_rst(ext_buf_raddr_rst),.ext_buf_rchn(ext_buf_rchn),.ext_buf_rdata(ext_buf_rdata),.seq_done(sequencer_run_done),.buf_done(seq_done15),.buf_rd_chn(buf_rd_chn15),.buf_raddr_rst_chn(buf_raddr_rst_chn15), 
-        .buf_rdata_chn (buf_rdata_chn15));
+        .ext_buf_rchn(ext_buf_rchn),.ext_buf_rdata(ext_buf_rdata),.buf_rd_chn(buf_rd_chn15),.buf_rdata_chn(buf_rdata_chn15));
   `endif
 `endif    
-
 // combining channel control signals to buses
 `ifndef def_enable_mem_chn0
     wire   want_rq0=0, need_rq0=0;

@@ -143,7 +143,7 @@ module  mcontr_sequencer   #(
 // There will be =1 cycle external latency in address/re and 1 cycle latency in read data (should match sequence programs)
 // Address data is sync to posedge mclk
     output                       ext_buf_rd,
-    output                       ext_buf_raddr_rst, // reset external buffer address to page start
+    output                       ext_buf_rpage_nxt, // increment external buffer read address to next page start
 //    output                 [6:0] ext_buf_raddr, // valid with ext_buf_rd, 2 page MSB to be generated externally
     output                 [3:0] ext_buf_rchn,   // ==run_chn_d valid 1 cycle ahead opf ext_buf_rd!, maybe not needed - will be generated externally
     input                 [63:0] ext_buf_rdata, // Latency of ram_1kx32w_512x64r plus 2
@@ -152,7 +152,7 @@ module  mcontr_sequencer   #(
 // Address/data sync to negedge mclk!, any latency OK - just generate DONE appropriately (through the sequencer with delay?
 // folowing a sync to negedge!
     output                       ext_buf_wr,
-    output                       ext_buf_waddr_rst, // reset external buffer address to page start
+    output                       ext_buf_wpage_nxt, // increment external buffer write address to next page start
 //    output                 [6:0] ext_buf_waddr,  // valid with ext_buf_wr
     output                 [3:0] ext_buf_wchn,   // ==run_chn_d valid 1 cycle ahead of ext_buf_wr!, maybe not needed - will be generated externally
     output                [63:0] ext_buf_wdata,   // valid with ext_buf_wr
@@ -222,8 +222,9 @@ module  mcontr_sequencer   #(
 //    wire                 [63:0]  buf1_rdata;
     wire                         buf_wr; // delayed by specified number of clock cycles
     wire                         buf_wr_ndly; // before dealy
-    wire                         buf_rd; // read next 64 bytes from the buffer, need one extra pre-read
-    
+    wire                         buf_rd; // read next 64 bits from the buffer, need one extra pre-read
+    wire                         buf_rst; // reset buffer address to 
+    wire                         buf_rst_d; //buf_rst delayed to match buf_wr 
     wire                         rst=rst_in;
   
 //    wire                 [ 9:0]  next_cmd_addr;
@@ -241,10 +242,12 @@ module  mcontr_sequencer   #(
     
  //   reg                   [1:0]  buf_page;      // one of 4 pages in the channel buffer to use for R/W
  //   reg                  [15:0]  buf_sel_1hot; // 1 hot channel buffer select
+    wire                  [3:0]  run_chn_w_d; // run chn delayed to match buf_wr delay
     
     reg                   [3:0]  run_chn_d;
-    reg                   [3:0]  run_chn_d_negedge;
-    reg                          run_seq_d; 
+    reg                   [3:0]  run_chn_w_d_negedge;
+    
+//    reg                        run_seq_d; 
     
     wire [7:0] tmp_debug_a;
     assign tmp_debug[11:0] =
@@ -266,17 +269,17 @@ module  mcontr_sequencer   #(
     
 // External buffers buffer related signals
 
-    assign buf_raddr_reset= run_seq_d;
+    assign buf_raddr_reset=  buf_rst; // run_seq_d;
     assign ext_buf_rd=       buf_rd;
-    assign ext_buf_raddr_rst=buf_raddr_reset;
+    assign ext_buf_rpage_nxt=buf_raddr_reset;
 //    assign ext_buf_raddr=    buf_raddr;
     assign ext_buf_rchn=     run_chn_d;
     assign buf_rdata[63:0] = ext_buf_rdata;
     
     assign ext_buf_wr=       buf_wr_negedge;
-    assign ext_buf_waddr_rst=buf_waddr_reset_negedge;
+    assign ext_buf_wpage_nxt=buf_waddr_reset_negedge;
 //    assign ext_buf_waddr=    buf_waddr_negedge;
-    assign ext_buf_wchn=     run_chn_d_negedge;
+    assign ext_buf_wchn=     run_chn_w_d_negedge;
     assign ext_buf_wdata=    buf_wdata_negedge;
     
 // generation of the control signals from byte-serial channel
@@ -441,18 +444,17 @@ module  mcontr_sequencer   #(
 
         if (rst)          run_chn_d <= 0;
         else if (run_seq) run_chn_d <= run_chn;
-        if (rst) run_seq_d <= 0;
-        else run_seq_d <= run_seq;
+//        if (rst) run_seq_d <= 0;
+//        else run_seq_d <= run_seq;
         
     end
     // re-register buffer write address to match DDR3 data
     always @ (negedge mclk) begin
 //        buf_waddr_negedge <= buf_raddr;
-        buf_waddr_reset_negedge <= buf_raddr_reset;
+        buf_waddr_reset_negedge <= buf_rst_d; //buf_raddr_reset;
         buf_wr_negedge <= buf_wr;
         buf_wdata_negedge <= buf_wdata;
-        run_chn_d_negedge <= run_chn_d;
-        //TODO: add write channel number?
+        run_chn_w_d_negedge <= run_chn_w_d; //run_chn_d;
         
     end
 // Command sequence memories:
@@ -567,7 +569,8 @@ module  mcontr_sequencer   #(
         .buf_wdata           (buf_wdata[63:0]), // output[63:0] 
         .buf_rdata           (buf_rdata[63:0]), // input[63:0] 
         .buf_wr              (buf_wr_ndly), // output
-        .buf_rd              (buf_rd), // output
+        .buf_rd              (buf_rd),    // output
+        .buf_rst             (buf_rst),   // reset external buffer address to page start 
         .cmda_en             (cmda_en), // input
         .ddr_rst             (ddr_rst), // input
         .dci_rst             (dci_rst), // input
@@ -582,13 +585,21 @@ module  mcontr_sequencer   #(
         .dqs_tri_off_pattern (dqs_tri_off_pattern[3:0]) // input[3:0] 
     );
     // delay buf_wr by 1-16 cycles to compensate for DDR and HDL code latency (~7 cycles?)
-    dly01_16 buf_wr_dly_i (
+    dly_16 #(2) buf_wr_dly_i (
         .clk(mclk), // input
         .rst(1'b0), // input
         .dly(wbuf_delay[3:0]), // input[3:0] 
-        .din(buf_wr_ndly), // input
-        .dout(buf_wr) // output reg 
+        .din({buf_rst,buf_wr_ndly}), // input
+        .dout({buf_rst_d, buf_wr}) // output reg 
     );
 
+    dly_16 #(4) buf_wchn_dly_i (
+        .clk(mclk), // input
+        .rst(1'b0), // input
+        .dly(wbuf_delay[3:0]-1), // input[3:0] 
+        .din(run_chn_d), // input
+        .dout(run_chn_w_d) // output reg 
+    );
+//run_chn_w_d
 endmodule
 

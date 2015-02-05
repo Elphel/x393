@@ -71,7 +71,8 @@ module  mcntrl_linear_rw #(
     output    [COLADDR_NUMBER-4:0] xfer_col,      // start memory column in 8-bursts
     output     [NUM_XFER_BITS-1:0] xfer_num128,   // number of 128-bit words to transfer (8*16 bits) - full bursts of 8 ( 0 - maximal length, 64)
     input                          xfer_done,     // transfer to/from the buffer finished
-    output                   [1:0] xfer_page      // page number for transfer (goes to channel buffer memory-side adderss)   
+    output                         xfer_reset_page // reset internal buffer page to zero
+//    output                   [1:0] xfer_page      // page number for transfer (goes to channel buffer memory-side adderss)   
 
 );
     localparam NUM_RC_BURST_BITS=ADDRESS_NUMBER+COLADDR_NUMBER-3;  //to spcify row and col8 == 22
@@ -102,7 +103,8 @@ module  mcntrl_linear_rw #(
     wire                          calc_valid;   // calculated registers have valid values   
     wire                          chn_en;   // enable requests by channle (continue ones in progress)
     wire                          chn_rst; // resets command, including fifo;
-    reg                     [1:0] xfer_page_r;
+//    reg                     [1:0] xfer_page_r;
+    reg                           xfer_reset_page_r;
     reg                     [2:0] page_cntr;
     
     wire                          cmd_wrmem; // 0: read from memory, 1:write to memory
@@ -197,7 +199,8 @@ module  mcntrl_linear_rw #(
     assign xfer_num128= xfer_num128_r[NUM_XFER_BITS-1:0];
     assign xfer_start=  xfer_start_r[0];
     assign calc_valid=  par_mod_r[PAR_MOD_LATENCY-1]; // MSB, longest 0
-    assign xfer_page=   xfer_page_r;
+//    assign xfer_page=   xfer_page_r;
+    assign xfer_reset_page = xfer_reset_page_r;
     assign frame_done=  frame_done_r;
     assign pre_want=    chn_en && busy_r && !want_r && !xfer_start_r[0] && calc_valid && !last_block && !suspend;
     assign last_in_row_w=(row_left=={{(FRAME_WIDTH_BITS-NUM_XFER_BITS){1'b0}},xfer_num128_r});
@@ -268,10 +271,15 @@ module  mcntrl_linear_rw #(
         else if ( xfer_start_r[0] && !next_page) page_cntr <= page_cntr + 1;     
         else if (!xfer_start_r[0] &&  next_page) page_cntr <= page_cntr - 1;
         
+/*
         if (rst)                         xfer_page_r <= 0;
 //        else if (chn_rst || frame_start) xfer_page_r <= 0; // TODO: Check if it is better to keep xfer_page_r on frame start?
         else if (chn_rst )               xfer_page_r <= 0; // TODO: Check if it is better to reset xfer_page_r on frame start? to zero?
         else if (xfer_done)              xfer_page_r <= xfer_page_r+1;
+*/
+//        xfer_reset_page_r <= chn_rst || frame_start ; // TODO: Check if it is better to reset page on frame start?
+        xfer_reset_page_r <= chn_rst; // || frame_start ; // TODO: Check if it is better to reset page on frame start?
+
         
 // increment x,y (two cycles)
         if (rst)                                  curr_x <= 0;

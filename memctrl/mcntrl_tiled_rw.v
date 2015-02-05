@@ -27,6 +27,8 @@ module  mcntrl_tiled_rw#(
     parameter NUM_XFER_BITS=                     6,    // number of bits to specify transfer length
     parameter FRAME_WIDTH_BITS=                 13,    // Maximal frame width - 8-word (16 bytes) bursts 
     parameter FRAME_HEIGHT_BITS=                16,    // Maximal frame height 
+    parameter MAX_TILE_WIDTH=                   6,     // number of bits to specify maximal tile (width-1) (6 -> 64)
+    parameter MAX_TILE_HEIGHT=                  6,     // number of bits to specify maximal tile (height-1) (6 -> 64)
     parameter MCNTRL_TILED_ADDR=            'h120,
     parameter MCNTRL_TILED_MASK=            'h3f0, // both channels 0 and 1
     parameter MCNTRL_TILED_MODE=            'h0,   // set mode register: {extra_pages[1:0],write_mode,enable,!reset}
@@ -39,7 +41,7 @@ module  mcntrl_tiled_rw#(
                                                       // Start XY can be used when read command to start from the middle
                                                       // TODO: Add number of blocks to R/W? (blocks can be different) - total length?
                                                       // Read back current address (fro debugging)?
-    parameter MCNTRL_TILED_TILE_WH=         'h7,   // low word - 6-bit tile width in 8-bursts, high - tile height (
+    parameter MCNTRL_TILED_TILE_WH=         'h7,   // low word - 6-bit tile width in 8-bursts, high - tile height (0 - > 64)
     parameter MCNTRL_TILED_STATUS_REG_ADDR= 'h5,
     parameter MCNTRL_TILED_PENDING_CNTR_BITS=2     // Number of bits to count pending trasfers, currently 2 is enough, but may increase
                                                       // if memory controller will allow programming several sequences in advance to
@@ -70,15 +72,18 @@ module  mcntrl_tiled_rw#(
     output                   [2:0] xfer_bank,     // start bank address
     output    [ADDRESS_NUMBER-1:0] xfer_row,      // memory row
     output    [COLADDR_NUMBER-4:0] xfer_col,      // start memory column in 8-bursts
+    output    [FRAME_WIDTH_BITS:0] rowcol_inc,    // increment row+col (after bank) for the new scan line in 8-bursts (externally pad with 0)
 //    output     [NUM_XFER_BITS-1:0] xfer_num128,   // number of 128-bit words to transfer (8*16 bits) - full bursts of 8 ( 0 - maximal length, 64)
-    output                   [5:0] num_rows_m1,   // number of rows to read minus 1
-    output                   [5:0] num_cols_m1,   // number of 16-pixel columns to read (rows first, then columns) - 1
+    output    [MAX_TILE_WIDTH-1:0] num_rows_m1,   // number of rows to read minus 1
+    output  [MAX_TILE_HEIGHT-1:0] num_cols_m1,   // number of 16-pixel columns to read (rows first, then columns) - 1
     output                         keep_open,     // (programmable bit)keep banks open (for <=8 banks only    
-
     input                          xfer_done,     // transfer to/from the buffer finished
-    output                   [1:0] xfer_page      // page number for transfer (goes to channel buffer memory-side adderss)   
+    input                          xfer_buf_rst_negedge,  // @negedge mclk!!! (if heppanes before xfer_done, page done, if not - continues
+    output                   [1:0] xfer_page,      // page number for transfer (goes to channel buffer memory-side address)
+    output                         buf_skip_reset  // do not reset buffer counter (in split tiles)   
 
 );
+//MAX_TILE_WIDTH
     localparam NUM_RC_BURST_BITS=ADDRESS_NUMBER+COLADDR_NUMBER-3;  //to spcify row and col8 == 22
     localparam MPY_WIDTH=        NUM_RC_BURST_BITS; // 22
     localparam PAR_MOD_LATENCY=  7; // TODO: Find actual worst-case latency for:
@@ -99,14 +104,20 @@ module  mcntrl_tiled_rw#(
     reg      [FRAME_WIDTH_BITS:0] row_left;   // number of 8-bursts left in the current row
     reg                           last_in_row;
     reg      [COLADDR_NUMBER-3:0] mem_page_left; // number of 8-bursts left in the pointed memory page
-    reg         [NUM_XFER_BITS:0] lim_by_xfer;   // number of bursts left limited by the longest transfer (currently 64)
-    reg         [NUM_XFER_BITS:0] xfer_num128_r;   // number of 128-bit words to transfer (8*16 bits) - full bursts of 8
+    reg        [MAX_TILE_WIDTH:0] lim_by_tile_width;     // number of bursts left limited by the longest transfer (currently 64)
+//    reg        [MAX_TILE_WIDTH:0] remainder_tile_width;  // number of bursts postponed to the next partial tile (because of the page crossing) 
+    wire     [COLADDR_NUMBER-3:0] remainder_tile_width;  // number of bursts postponed to the next partial tile (because of the page crossing) MSB-sign
+    reg                           continued_tile;        // this is a continued tile (caused by page crossing) - only once
+    reg      [MAX_TILE_WIDTH-1:0] leftower_cols;         // valid with continued_tile, number of columns left
+//    reg         [NUM_XFER_BITS:0] xfer_num128_r;   // number of 128-bit words to transfer (8*16 bits) - full bursts of 8
     wire                          pgm_param_w;  // program one of the parameters, invalidate calculated results for PAR_MOD_LATENCY
     reg                     [2:0] xfer_start_r;
-    reg     [PAR_MOD_LATENCY-1:0] par_mod_r;
+    reg     [PAR_MOD_LATENCY-1:0] par_mod_r; 
+    reg     [PAR_MOD_LATENCY-1:0] recalc_r; // 1-hot CE for re-calculating registers
     wire                          calc_valid;   // calculated registers have valid values   
     wire                          chn_en;   // enable requests by channle (continue ones in progress)
     wire                          chn_rst; // resets command, including fifo;
+    reg                           chn_rst_d; // delayed by 1 cycle do detect turning off  
     reg                     [1:0] xfer_page_r;
     reg                     [2:0] page_cntr;
     
@@ -135,15 +146,26 @@ module  mcntrl_tiled_rw#(
     wire                          set_window_wh_w;
     wire                          set_window_x0y0_w;
     wire                          set_window_start_w;
-    wire                          lsw13_zero=!cmd_data[FRAME_WIDTH_BITS-1:0]; // LSW 13 (FRAME_WIDTH_BITS) low bits are all 0 - set carry bit  
-    wire                          msw13_zero=!cmd_data[FRAME_WIDTH_BITS+15:16]; // MSW 13 (FRAME_WIDTH_BITS) low bits are all 0 - set carry bit
-    wire                          msw_zero=  !cmd_data[31:16]; // MSW all bits are 0 - set carry bit
-      
+    wire                          set_tile_wh_w;
+    wire                          lsw13_zero=!(|cmd_data[FRAME_WIDTH_BITS-1:0]); // LSW 13 (FRAME_WIDTH_BITS) low bits are all 0 - set carry bit  
+    wire                          msw13_zero=!(|cmd_data[FRAME_WIDTH_BITS+15:16]); // MSW 13 (FRAME_WIDTH_BITS) low bits are all 0 - set carry bit
+    wire                          msw_zero=  !(|cmd_data[31:16]); // MSW all bits are 0 - set carry bit
+    wire                          tile_width_zero= !(|cmd_data[MAX_TILE_WIDTH-1:0]);  
+    wire                          tile_height_zero=!(|cmd_data[MAX_TILE_HEIGHT+15:16]);  
+    
+    reg                     [1:0] buf_rst_posedge;  
     
     reg                     [5:0] mode_reg;//mode register: {keep_open,extra_pages[1:0],write_mode,enable,!reset}
     reg   [NUM_RC_BURST_BITS-1:0] start_addr;     // (programmed) Frame start (in {row,col8} in burst8, bank ==0
 //    reg      [FRAME_WIDTH_BITS:0] frame_width;    // (programmed) 0- max
-    
+    reg        [MAX_TILE_WIDTH:0] tile_cols; // full number of columns in a tile
+    reg       [MAX_TILE_HEIGHT:0] tile_rows; // full number of rows in a tile
+
+    reg        [MAX_TILE_WIDTH:0] num_cols_r; // full number of columns to transfer (not minus 1)
+//    reg       [MAX_TILE_HEIGHT:0] num_rows_r; // full number of rows to transfer (not minus 1)
+    wire       [MAX_TILE_WIDTH:0] num_cols_m1_w; // full number of columns to transfer minus 1 with extra bit
+    wire      [MAX_TILE_HEIGHT:0] num_rows_m1_w; // full number of columns to transfer minus 1 with extra bit
+//    reg                           buf_skip_reset_r;
  //FIXME!!!!!!!!   
     reg      [FRAME_WIDTH_BITS:0] frame_full_width;     // (programmed) increment combined row/col when moving to the next line
                                                   // frame_width rounded up to max transfer (half page) if frame_width> max transfer/2,
@@ -163,6 +185,8 @@ module  mcntrl_tiled_rw#(
     assign set_window_wh_w =    cmd_we && (cmd_a== MCNTRL_TILED_WINDOW_WH);
     assign set_window_x0y0_w =  cmd_we && (cmd_a== MCNTRL_TILED_WINDOW_X0Y0);
     assign set_window_start_w = cmd_we && (cmd_a== MCNTRL_TILED_WINDOW_STARTXY);
+    assign set_tile_wh_w =      cmd_we && (cmd_a== MCNTRL_TILED_TILE_WH);
+    //
     // Sett parameter registers
     always @(posedge rst or posedge mclk) begin
         if      (rst)                mode_reg <= 0;
@@ -174,7 +198,7 @@ module  mcntrl_tiled_rw#(
         if      (rst)               frame_full_width <=  0;
         else if (set_frame_width_w) frame_full_width <= {msw13_zero,cmd_data[FRAME_WIDTH_BITS-1:0]};
         
-        if      (rst) begin
+        if (rst) begin
                window_width <= 0; 
                window_height <=  0;
         end else if (set_window_wh_w)  begin
@@ -182,7 +206,15 @@ module  mcntrl_tiled_rw#(
                window_height  <= {msw_zero,cmd_data[FRAME_HEIGHT_BITS+15:16]};
         end
 
-        if      (rst) begin
+        if (rst) begin
+               tile_cols <= 0; 
+               tile_rows <=  0;
+        end else if (set_tile_wh_w)  begin
+               tile_cols <= {tile_width_zero,  cmd_data[MAX_TILE_WIDTH-1:0]};
+               tile_rows <= {tile_height_zero, cmd_data[MAX_TILE_HEIGHT+15:16]};
+        end
+
+        if (rst) begin
                window_x0 <= 0; 
                window_y0 <=  0;
         end else if (set_window_x0y0_w)  begin
@@ -190,23 +222,27 @@ module  mcntrl_tiled_rw#(
                window_y0  <=cmd_data[FRAME_HEIGHT_BITS+15:16];
         end
 
-        if      (rst) begin
+        if (rst) begin
                start_x <= 0; 
                start_y <=  0;
         end else if (set_window_start_w)  begin
                start_x <= cmd_data[FRAME_WIDTH_BITS-1:0];
                start_y  <=cmd_data[FRAME_HEIGHT_BITS+15:16];
         end
+        
+        if (rst) buf_rst_posedge<=0;
+        else     buf_rst_posedge <={buf_rst_posedge[0],xfer_buf_rst_negedge};
+        
     end
     assign mul_rslt_w=  frame_y8_r * frame_full_width_r; // 5 MSBs will be discarded
-    assign xfer_num128= xfer_num128_r[NUM_XFER_BITS-1:0];
+//    assign xfer_num128= xfer_num128_r[NUM_XFER_BITS-1:0];
     assign xfer_start=  xfer_start_r[0];
     assign calc_valid=  par_mod_r[PAR_MOD_LATENCY-1]; // MSB, longest 0
     assign xfer_page=   xfer_page_r;
     assign frame_done=  frame_done_r;
     assign pre_want=    chn_en && busy_r && !want_r && !xfer_start_r[0] && calc_valid && !last_block && !suspend;
-    assign last_in_row_w=(row_left=={{(FRAME_WIDTH_BITS-NUM_XFER_BITS){1'b0}},xfer_num128_r});
-    assign last_row_w=  next_y==window_height;
+    assign last_in_row_w=(row_left=={{(FRAME_WIDTH_BITS-NUM_XFER_BITS){1'b0}},num_cols_r}); // what if it crosses page? OK, num_cols_r & row_left know that
+    assign last_row_w=  next_y>=window_height; // (next_y==window_height) is faster, but will not forgive software errors
     assign xfer_want=   want_r;
     assign xfer_need=   need_r;
     assign xfer_bank=   bank_reg[2]; // TODO: just a single reg layer
@@ -217,29 +253,64 @@ module  mcntrl_tiled_rw#(
     assign chn_rst =        ~mode_reg[0]; // resets command, including fifo;
     assign cmd_wrmem =       mode_reg[2];// 0: read from memory, 1:write to memory
     assign cmd_extra_pages = mode_reg[4:3]; // external module needs more than 1 page
-    assign keep_open=        mode_reg[4:3]; // keep banks open (will be used only if number of rows <= 8 
+    assign keep_open=        mode_reg[5]; // keep banks open (will be used only if number of rows <= 8 
     assign status_data= {1'b0, busy_r};     // TODO: Add second bit?
     assign pgm_param_w=      cmd_we;
+    assign rowcol_inc=       frame_full_width;
+    assign num_cols_m1_w=    num_cols_r-1;
+    assign num_rows_m1_w=    tile_rows-1; // now number of rows == tile height
+    assign num_cols_m1=      num_cols_m1_w[MAX_TILE_WIDTH-1:0];  // remove MSB
+    assign num_rows_m1=      num_rows_m1_w[MAX_TILE_HEIGHT-1:0]; // remove MSB
+    assign remainder_tile_width = {EXTRA_BITS,lim_by_tile_width}-mem_page_left;
     
+    assign buf_skip_reset=   continued_tile; // buf_skip_reset_r;
     integer i;
-    localparam EXTRA_BITS={COLADDR_NUMBER-3-COLADDR_NUMBER-3{1'b0}};
+//    localparam EXTRA_BITS={COLADDR_NUMBER-3-NUM_XFER_BITS{1'b0}};
+    localparam [COLADDR_NUMBER-3-MAX_TILE_WIDTH-1:0] EXTRA_BITS=0;
+    wire xfer_limited_by_mem_page;
+    reg  xfer_limited_by_mem_page_r;
+    assign xfer_limited_by_mem_page= mem_page_left < {EXTRA_BITS,lim_by_tile_width};
     always @(posedge mclk) begin // TODO: Match latencies (is it needed?) Reduce consumption by CE?
-        frame_x <= curr_x + window_x0;
-        frame_y <= curr_y + window_y0;
-        next_y <= curr_y + 1;
-        row_left <= window_width - curr_x; // 14 bits - 13 bits
-        mem_page_left <= (1 << (COLADDR_NUMBER-3)) - frame_x[COLADDR_NUMBER-4:0];
-        lim_by_xfer <= (|row_left[FRAME_WIDTH_BITS:NUM_XFER_BITS])?(1<<NUM_XFER_BITS):row_left[NUM_XFER_BITS:0]; // 7 bits, max 'h40
-        xfer_num128_r<= (mem_page_left> {{EXTRA_BITS{1'b0}},lim_by_xfer})? mem_page_left[NUM_XFER_BITS:0]:lim_by_xfer[NUM_XFER_BITS:0];
+    // cycle 1
+        if (recalc_r[0]) begin
+            frame_x <= curr_x + window_x0;
+            frame_y <= curr_y + window_y0;
+            next_y <= curr_y + tile_rows;
+            row_left <= window_width - curr_x; // 14 bits - 13 bits
+        end    
+   // cycle 2     
+        if (recalc_r[1]) begin
+            mem_page_left <= (1 << (COLADDR_NUMBER-3)) - frame_x[COLADDR_NUMBER-4:0];
+//            lim_by_tile_width <= (|row_left[FRAME_WIDTH_BITS:MAX_TILE_WIDTH])?(1<<MAX_TILE_WIDTH):row_left[MAX_TILE_WIDTH:0]; // 7 bits, max 'h40
+            lim_by_tile_width <= (|row_left[FRAME_WIDTH_BITS:MAX_TILE_WIDTH] || (row_left[MAX_TILE_WIDTH:0]>= tile_cols))?
+                                    tile_cols:
+                                    row_left[MAX_TILE_WIDTH:0]; // 7 bits, max 'h40
+        end
+   // cycle 3
+        if (recalc_r[2]) begin
+            xfer_limited_by_mem_page_r <= xfer_limited_by_mem_page && !continued_tile;     
+            num_cols_r<= continued_tile?
+                {EXTRA_BITS,leftower_cols}:
+                (xfer_limited_by_mem_page? mem_page_left[MAX_TILE_WIDTH:0]:lim_by_tile_width[MAX_TILE_WIDTH:0]);
+                leftower_cols <= remainder_tile_width[MAX_TILE_WIDTH-1:0];
+//            remainder_tile_width <= {EXTRA_BITS,lim_by_tile_width}-mem_page_left;
+        end
 // VDT bug? next line gives a warning        
 //        xfer_num128_r<= (mem_page_left> {{COLADDR_NUMBER-3-COLADDR_NUMBER-3{1'b0}},lim_by_xfer})?mem_page_left[NUM_XFER_BITS-1:0]:lim_by_xfer[NUM_XFER_BITS-1:0];
-        last_in_row <= last_in_row_w;
-        frame_y8_r <= frame_y[FRAME_HEIGHT_BITS-1:3]; // lat=2
-        frame_full_width_r <= frame_full_width;
-        start_addr_r <= start_addr;
-        mul_rslt <= mul_rslt_w[MPY_WIDTH-1:0]; // frame_y8_r * frame_width_r; // 7 bits will be discarded lat=3;
-        line_start_addr <= start_addr_r+mul_rslt; // lat=4
-        row_col_r <= line_start_addr+frame_x;
+   // cycle 4
+        if (recalc_r[3]) begin
+            last_in_row <= last_in_row_w;
+        end
+// registers to be absorbed in DSP block        
+        frame_y8_r <= frame_y[FRAME_HEIGHT_BITS-1:3]; // lat=2 // if (recalc_r[2]) begin
+        frame_full_width_r <= frame_full_width; //(cycle 2) // if (recalc_r[2]) begin
+        start_addr_r <= start_addr; // // if (recalc_r[2]) begin
+        mul_rslt <= mul_rslt_w[MPY_WIDTH-1:0]; // frame_y8_r * frame_width_r; // 7 bits will be discarded lat=3; if (recalc_r[3]) begin
+        line_start_addr <= start_addr_r+mul_rslt; // lat=4 if (recalc_r[4]) begin
+// TODO: Verify MPY/register timing above        
+        if (recalc_r[5]) begin
+            row_col_r <= line_start_addr+frame_x;
+        end
         bank_reg[0]   <= frame_y[2:0]; //TODO: is it needed - a pipeline for the bank? - remove! 
         for (i=0;i<2; i = i+1)
             bank_reg[i+1] <= bank_reg[i];
@@ -252,6 +323,13 @@ module  mcntrl_tiled_rw#(
         if      (rst)                                       par_mod_r<=0;
         else if (pgm_param_w || xfer_start_r[0] || chn_rst) par_mod_r<=0;
         else                                                par_mod_r <= {par_mod_r[PAR_MOD_LATENCY-2:0], 1'b1};
+
+        if      (rst)          chn_rst_d <= 0;
+        else                   chn_rst_d <= chn_rst;
+
+        if      (rst)          recalc_r<=0;
+        else if (chn_rst)      recalc_r<=0;
+        else                   recalc_r <= {recalc_r[PAR_MOD_LATENCY-2:0], (xfer_grant & ~chn_rst) | pgm_param_w | (chn_rst_d & ~chn_rst)};
         
         if      (rst)          busy_r <= 0;
         else if (chn_rst)      busy_r <= 0;
@@ -260,6 +338,11 @@ module  mcntrl_tiled_rw#(
         
         if (rst) xfer_start_r <= 0;
         else     xfer_start_r <= {xfer_start_r[1:0],xfer_grant && !chn_rst};
+        
+        if (rst)                   continued_tile <= 1'b0;
+        else if (chn_rst)          continued_tile <= 1'b0;
+        else if (frame_start)      continued_tile <= 1'b0;
+        else if (xfer_start_r[0])  continued_tile <= xfer_limited_by_mem_page_r; // only set after actual start if it was partial, not after parameter change
         
         if (rst)                             need_r <= 0;
         else if (chn_rst || xfer_grant)      need_r <= 0;
@@ -282,7 +365,7 @@ module  mcntrl_tiled_rw#(
 // increment x,y (two cycles)
         if (rst)                                  curr_x <= 0;
         else if (chn_rst || frame_start)          curr_x <= start_x;
-        else if (xfer_start_r[0])                 curr_x <= last_in_row?0: curr_x + xfer_num128_r;
+        else if (xfer_start_r[0])                 curr_x <= last_in_row?0: curr_x + num_cols_r;
         
         if (rst)                                  curr_y <= 0;
         else if (chn_rst || frame_start)          curr_y <= start_y;

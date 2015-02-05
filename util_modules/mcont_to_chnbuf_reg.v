@@ -26,15 +26,13 @@ parameter CHN_NUMBER=0
     input rst,
     input clk,
     input                       ext_buf_wr,
-    input                       ext_buf_waddr_rst,
-//    input                 [6:0] ext_buf_waddr,  // valid with ext_buf_wr
+    input                       ext_buf_wpage_nxt,
     input                 [3:0] ext_buf_wchn,     // ==run_chn_d valid 1 cycle ahead opf ext_buf_wr!, maybe not needed - will be generated externally
     input                [63:0] ext_buf_wdata,    // valid with ext_buf_wr
-    input                       seq_done,         // sequence done
-    output reg                  buf_done,         // @ posedge mclk sequence done for the specified channel
+//    input                       seq_done,         // sequence done
+//    output reg                  buf_done,         // @ posedge mclk sequence done for the specified channel
     output reg                  buf_wr_chn,       // @ negedge mclk
-    output reg                  buf_waddr_rst_chn,// @ negedge mclk
-//    output reg            [6:0] buf_waddr_chn,  // @ negedge mclk
+    output reg                  buf_wpage_nxt_chn,// @ negedge mclk
     output reg           [63:0] buf_wdata_chn     // @ negedge mclk
 );
     reg buf_chn_sel;
@@ -46,17 +44,16 @@ parameter CHN_NUMBER=0
         else     buf_wr_chn <= buf_chn_sel && ext_buf_wr;
     end
     
-    always @ (posedge rst or posedge clk) begin
-        if (rst) buf_done <= 0;
-        else     buf_done <= buf_chn_sel && seq_done;
-    end
+//    always @ (posedge rst or posedge clk) begin
+//        if (rst) buf_done <= 0;
+//        else     buf_done <= buf_chn_sel && seq_done;
+//    end
     
     always @ (negedge clk)  begin
-        buf_waddr_rst_chn <= ext_buf_waddr_rst && (ext_buf_wchn==CHN_NUMBER);
+        buf_wpage_nxt_chn <= ext_buf_wpage_nxt && (ext_buf_wchn==CHN_NUMBER);
     end
     
     always @ (negedge clk) if (buf_chn_sel && ext_buf_wr) begin
-//        buf_waddr_chn <= ext_buf_waddr;
         buf_wdata_chn <= ext_buf_wdata;
     end
 endmodule

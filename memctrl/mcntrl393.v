@@ -296,21 +296,17 @@ module  mcntrl393 #(
 //    wire        seq_wr0; // not used
     wire        seq_set0;
     wire        seq_done0;
+//    wire        rpage_nxt_chn0;
     wire        buf_wr_chn0;
-    wire        buf_waddr_rst_chn0;
-//    wire  [6:0] buf_waddr_chn0; 
+    wire        buf_wpage_nxt_chn0;
     wire [63:0] buf_wdata_chn0;
      
     wire        want_rq1;
     wire        need_rq1;
     wire        channel_pgm_en1; 
-//    wire  [9:0] seq_data1=seq_data0; // use the same 
-//    wire        seq_wr1;  // not used
-//    wire        seq_set1; // not used
     wire        seq_done1;
+    wire        rpage_nxt_chn1;
     wire        buf_rd_chn1;
-    wire        buf_raddr_rst_chn1;
-//    wire  [6:0] buf_raddr_chn1; 
     wire [63:0] buf_rdata_chn1;
 
     wire        want_rq2;
@@ -320,8 +316,9 @@ module  mcntrl393 #(
     wire        seq_wr2x; // may be shared with other channel
     wire        seq_set2x; // may be shared with other channel
     wire        seq_done2;
+//    wire        rpage_nxt_chn2;
     wire        buf_wr_chn2;
-    wire        buf_waddr_rst_chn2;
+    wire        buf_wpage_nxt_chn2;
 //    wire  [6:0] buf_waddr_chn2; 
     wire [63:0] buf_wdata_chn2;
      
@@ -332,8 +329,8 @@ module  mcntrl393 #(
     wire        seq_wr3x; // may be shared with other channel
     wire        seq_set3x; // may be shared with other channel
     wire        seq_done3;
+    wire        rpage_nxt_chn3;
     wire        buf_rd_chn3;
-    wire        buf_raddr_rst_chn3;
 //    wire  [6:0] buf_raddr_chn3; 
     wire [63:0] buf_rdata_chn3;
     
@@ -344,8 +341,9 @@ module  mcntrl393 #(
     wire        seq_wr4;
     wire        seq_set4;
     wire        seq_done4;
+    wire        rpage_nxt_chn4;
     wire        buf_wr_chn4;
-    wire        buf_waddr_rst_chn4;
+    wire        buf_wpage_nxt_chn4;
 //    wire  [6:0] buf_waddr_chn4; 
     wire [63:0] buf_wdata_chn4;
 
@@ -423,14 +421,18 @@ module  mcntrl393 #(
     wire   [COLADDR_NUMBER-4:0] lin_rd_chn2_col;    // start memory column in 8-bursts
     wire                  [5:0] lin_rd_chn2_num128; // number of 128-bit words to transfer (8*16 bits) - full bursts of 8 ( 0 - maximal length, 64)
     wire                        lin_rd_chn2_start;  // start generating commands
-    wire                  [1:0] xfer_page2;         // "internal" buffer page
+//    wire                  [1:0] xfer_page2;         // "internal" buffer page
+    wire                        xfer_reset_page2_pos;         // "internal" buffer page reset, @posedge mclk
+    reg                         xfer_reset_page2_neg;         // "internal" buffer page reset, @negedge mclk
     
     wire                  [2:0] lin_wr_chn3_bank;   // bank address
     wire   [ADDRESS_NUMBER-1:0] lin_wr_chn3_row;    // memory row
     wire   [COLADDR_NUMBER-4:0] lin_wr_chn3_col;    // start memory column in 8-bursts
     wire                  [5:0] lin_wr_chn3_num128; // number of 128-bit words to transfer (8*16 bits) - full bursts of 8 ( 0 - maximal length, 64)
     wire                        lin_wr_chn3_start;  // start generating commands
-    wire                  [1:0] xfer_page3;         // "internal" buffer page
+//    wire                  [1:0] xfer_page3;       // "internal" buffer page
+    wire                        xfer_reset_page3;   // "internal" buffer page reset, @posedge mclk
+
     
 
     // Command tree - insert register layer(s) if needed, now just direct assignments
@@ -576,23 +578,10 @@ module  mcntrl393 #(
 
 // Port memory buffer (4 pages each, R/W fixed, port 0 - AXI read from DDR, port 1 - AXI write to DDR
 // Port 2 (read DDR to AXI) buffer
-/*
-    ram_512x64w_1kx32r #(
-        .REGISTERS(1)
-    ) chn2_buf_i (
-        .rclk     (axi_clk),                     // input
-        .raddr    (buf_raddr),                   // input[9:0] 
-        .ren      (buf2_rd),                     // input
-        .regen    (buf2_regen),                  // input
-        .data_out (buf2_data),                   // output[31:0] 
-        .wclk     (!mclk),                       // input - OK, negedge mclk
-        .waddr    ({xfer_page2,buf_waddr_chn2}), // input[8:0] @negedge mclk
-        .we       (buf_wr_chn2),                 // input @negedge mclk
-        .web      (8'hff),                       // input[7:0]
-        .data_in  (buf_wdata_chn2)               // input[63:0]  @negedge mclk
-    );
-*/    
-    /* Instance template for module mcntrl_1kx32r */
+    always @ (negedge mclk) begin
+        xfer_reset_page2_neg <= xfer_reset_page2_pos;
+    end
+
     mcntrl_1kx32r chn2_buf_i (
         .ext_clk      (axi_clk), // input
         .ext_raddr    (buf_raddr), // input[9:0] 
@@ -600,46 +589,33 @@ module  mcntrl393 #(
         .ext_regen    (buf2_regen), // input
         .ext_data_out (buf2_data), // output[31:0] 
         .wclk         (!mclk), // input
-        .wpage        (xfer_page2), // input[1:0] 
-        .waddr_reset  (buf_waddr_rst_chn2), // input
-        .skip_reset   (1'b0), // input
+        .wpage_in     (2'b0), // input[1:0] 
+        .wpage_set    (xfer_reset_page2_neg), // input  TODO: Generate @ negedge mclk on frame start
+        .page_next    (buf_wpage_nxt_chn2), // input
+        .page         (), // output[1:0]
         .we           (buf_wr_chn2), // input
         .data_in      (buf_wdata_chn2) // input[63:0] 
     );
 
 
-// Port 3 (write DDR from AXI) buffer
-/*
-    ram_1kx32w_512x64r #(
-        .REGISTERS(1)
-    ) chn3_buf_i (
-        .rclk     (mclk),                        // input
-        .raddr    ({xfer_page3,buf_raddr_chn3}), // input[8:0] 
-        .ren      (buf_rd_chn3),                 // input
-        .regen    (buf_rd_chn3),                 // input
-        .data_out (buf_rdata_chn3),              // output[63:0] 
-        .wclk     (axi_clk),                     // input
-        .waddr    (buf_waddr),                   // input[9:0] 
-        .we       (buf3_we),                     // input
-        .web      (4'hf),                        // input[3:0] 
-        .data_in  (buf_wdata)                    // input[31:0] 
-    );
-*/
-    /* Instance template for module mcntrl_1kx32w */
-    mcntrl_1kx32w chn3_buf_i (
-        .ext_clk(axi_clk), // input
-        .ext_waddr(buf_waddr), // input[9:0] 
-        .ext_we(buf3_we), // input
-        .ext_data_in(buf_wdata), // input[31:0] buf_wdata - from AXI
-        .rclk(mclk), // input
-        .rpage(xfer_page3), // input[1:0] 
-        .raddr_reset(buf_raddr_rst_chn3), // input
-        .skip_reset(1'b0), // input
-        .rd(buf_rd_chn3), // input
-        .data_out(buf_rdata_chn3) // output[63:0] 
-    );
 
-    /* Instance template for module mcntrl_linear_rw */
+// Port 3 (write DDR from AXI) buffer
+
+         mcntrl_1kx32w chn1_buf_i (
+        .ext_clk      (axi_clk), // input
+        .ext_waddr    (buf_waddr), // input[9:0] 
+        .ext_we       (buf3_we), // input
+        .ext_data_in  (buf_wdata), // input[31:0] buf_wdata - from AXI
+        .rclk         (mclk), // input
+        .rpage_in     (2'b0), // input[1:0] 
+        .rpage_set    (xfer_reset_page3), // input   TODO: Generate @ posedge mclk on frame start
+        .page_next    (rpage_nxt_chn3), // input
+        .page         (), // output[1:0]
+        .rd           (buf_rd_chn3), // input
+        .data_out     (buf_rdata_chn3) // output[63:0] 
+    );
+    
+
     mcntrl_linear_rw #(
         .ADDRESS_NUMBER                    (ADDRESS_NUMBER),
         .COLADDR_NUMBER                    (COLADDR_NUMBER),
@@ -679,7 +655,7 @@ module  mcntrl393 #(
         .xfer_col        (lin_rd_chn2_col), // output[6:0] 
         .xfer_num128     (lin_rd_chn2_num128), // output[5:0] 
         .xfer_done       (seq_done2), // input: sequence over
-        .xfer_page       (xfer_page2) // output[1:0] 
+        .xfer_reset_page (xfer_reset_page2_pos) // output
     );
 
     /* Instance template for module mcntrl_linear_rw */
@@ -722,7 +698,8 @@ module  mcntrl393 #(
         .xfer_col        (lin_wr_chn3_col), // output[6:0] 
         .xfer_num128     (lin_wr_chn3_num128), // output[5:0] 
         .xfer_done       (seq_done3), // input : sequence over
-        .xfer_page       (xfer_page3) // output[1:0] 
+//        .xfer_page       (xfer_page3) // output[1:0]
+        .xfer_reset_page (xfer_reset_page3) // output
     );
     
     /* Instance template for module cmd_encod_linear_mux */
@@ -827,15 +804,15 @@ module  mcntrl393 #(
         .seq_set0                  (seq_set0), // output
         .seq_done0                 (seq_done0), // input
         .buf_wr_chn0               (buf_wr_chn0), // input         @negedge mclk
-        .buf_waddr_rst_chn0        (buf_waddr_rst_chn0), // input @negedge mclk
+        .buf_wpage_nxt_chn0        (buf_wpage_nxt_chn0), // input @negedge mclk
         .buf_wdata_chn0            (buf_wdata_chn0), // input[63:0]@negedge mclk
          
         .want_rq1                  (want_rq1), // output reg 
         .need_rq1                  (need_rq1), // output reg 
         .channel_pgm_en1           (channel_pgm_en1), // input
         .seq_done1                 (seq_done1), // input
+        .rpage_nxt_chn1            (rpage_nxt_chn1), // input 
         .buf_rd_chn1               (buf_rd_chn1), // input
-        .buf_raddr_rst_chn1        (buf_raddr_rst_chn1), // input 
         .buf_rdata_chn1            (buf_rdata_chn1) // output[63:0] 
     );
 
@@ -932,8 +909,9 @@ module  mcntrl393 #(
         .seq_wr0            (1'b0), // not used: seq_wr0), // input
         .seq_set0           (seq_set0), // input
         .seq_done0          (seq_done0), // output
+        .rpage_nxt_chn0     (), //rpage_nxt_chn0), not used
         .buf_wr_chn0        (buf_wr_chn0), // output
-        .buf_waddr_rst_chn0 (buf_waddr_rst_chn0), // output
+        .buf_wpage_nxt_chn0 (buf_wpage_nxt_chn0), // output
 //        .buf_waddr_chn0     (buf_waddr_chn0), // output[6:0] 
         .buf_wdata_chn0     (buf_wdata_chn0), // output[63:0]
 
@@ -944,9 +922,8 @@ module  mcntrl393 #(
         .seq_wr1            (1'b0), // not used: seq_wr1), // input
         .seq_set1           (1'b0), // not used: seq_set1), // input
         .seq_done1          (seq_done1), // output
+        .rpage_nxt_chn1 (rpage_nxt_chn1), // output
         .buf_rd_chn1        (buf_rd_chn1), // output
-        .buf_raddr_rst_chn1 (buf_raddr_rst_chn1), // output
-//        .buf_raddr_chn1     (buf_raddr_chn1), // output[6:0] 
         .buf_rdata_chn1     (buf_rdata_chn1), // input[63:0] 
 
         .want_rq2           (want_rq2), // input
@@ -956,9 +933,9 @@ module  mcntrl393 #(
         .seq_wr2            (seq_wr2x), // input
         .seq_set2           (seq_set2x), // input
         .seq_done2          (seq_done2), // output
+        .rpage_nxt_chn2     (), // not used rpage_nxt_chn2), // output
         .buf_wr_chn2        (buf_wr_chn2), // output
-        .buf_waddr_rst_chn2 (buf_waddr_rst_chn2), // output
-//        .buf_waddr_chn2     (buf_waddr_chn2), // output[6:0] 
+        .buf_wpage_nxt_chn2 (buf_wpage_nxt_chn2), // output
         .buf_wdata_chn2     (buf_wdata_chn2), // output[63:0]
 
         .want_rq3           (want_rq3), // input
@@ -968,9 +945,8 @@ module  mcntrl393 #(
         .seq_wr3            (seq_wr3x), // input
         .seq_set3           (seq_set3x), // input
         .seq_done3          (seq_done3), // output
+        .rpage_nxt_chn3     (rpage_nxt_chn3), // output 
         .buf_rd_chn3        (buf_rd_chn3), // output
-        .buf_raddr_rst_chn3 (buf_raddr_rst_chn3), // output 
-//        .buf_raddr_chn3     (buf_raddr_chn3), // output[6:0] 
         .buf_rdata_chn3     (buf_rdata_chn3), // input[63:0] 
 
         .want_rq4           (want_rq4), // input
@@ -980,9 +956,9 @@ module  mcntrl393 #(
         .seq_wr4            (seq_wr4), // input
         .seq_set4           (seq_set4), // input
         .seq_done4          (seq_done4), // output
+        .rpage_nxt_chn4     (rpage_nxt_chn4), // output 
         .buf_wr_chn4        (buf_wr_chn4), // output
-        .buf_waddr_rst_chn4 (buf_waddr_rst_chn4), // output 
-//        .buf_waddr_chn4     (buf_waddr_chn4), // output[6:0] 
+        .buf_wpage_nxt_chn4 (buf_wpage_nxt_chn4), // output 
         .buf_wdata_chn4     (buf_wdata_chn4), // output[63:0]
 
         .SDRST              (SDRST), // output

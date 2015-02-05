@@ -104,7 +104,8 @@ module  phy_cmd#(
     output                [63:0] buf_wdata, // data to be written to the buffer (from DDR3), valid @ negedge mclk
     input                 [63:0] buf_rdata, // data read from the buffer (to DDR3)
     output                       buf_wr,    // write buffer (next cycle!)
-    output                       buf_rd,     // read buffer  (ready next cycle)
+    output                       buf_rd,    // read buffer  (ready next cycle)
+    output                       buf_rst,   // reset external buffer address to page start 
     // extras
 //    input                        cmda_tri, // tristate command and address lines // not likely to be used
     input                        cmda_en, // tristate command and address lines // not likely to be used
@@ -140,6 +141,7 @@ module  phy_cmd#(
     wire                         phy_dqs_toggle_en;  //enable toggle DQS according to the pattern
     wire                         phy_buf_wr;   // connect to extrenal buffer
     wire                         phy_buf_rd;   // connect to extrenal buffer
+    wire                         phy_buf_rst;  // reset buffers to page start
     wire                         cmda_tri;
  
     wire                  [2:0]  phy_rcw_cur; // {ras,cas,we}
@@ -152,7 +154,7 @@ module  phy_cmd#(
     wire                         phy_dci_en_cur;    //phy_dci_in,      // DCI disable, both DQ and DQS lines (internal logic and timing sequencer for 0->1 and 1->0)
     wire                         phy_buf_wr_cur;       // connect to external buffer (but only if not paused)
     wire                         phy_buf_rd_cur;        // connect to external buffer (but only if not paused)
- 
+    wire                         phy_buf_rst_cur;
     
 //    wire                         clk;
     wire                         clk_div;
@@ -192,7 +194,8 @@ module  phy_cmd#(
     reg                  [ 2:0] phy_bank_prev;
     wire   [ADDRESS_NUMBER-1:0] phy_addr_calm;
     wire                 [ 2:0] phy_bank_calm;
-    reg                  [ 8:0] extra_prev;
+//    reg                  [ 8:0] extra_prev;
+    reg                  [ 9:0] extra_prev;
     
 //    assign     phy_locked= phy_locked_mmcm && phy_locked_pll; // no dci and dly here
     
@@ -200,7 +203,7 @@ module  phy_cmd#(
     
 //    output                [63:0] buf_wdata, // data to be written to the buffer (from DDR3)
     // SuppressWarnings VEditor 
-  (* keep = "true" *)  wire  phy_spare;
+//  (* keep = "true" *)  wire  phy_spare;
     assign {
         phy_addr_in,
         phy_bank_in,
@@ -216,20 +219,21 @@ module  phy_cmd#(
         phy_buf_wr,   // connect to external buffer (but only if not paused)
         phy_buf_rd,    // connect to external buffer (but only if not paused)
         phy_cmd_add_pause, // add nop to current command
-        phy_spare      // Reserved for future use
+        phy_buf_rst // phy_spare      // Reserved for future use
     } =  phy_cmd_word;
     
     assign {
         phy_rcw_cur[2:0],  // all set to 0 
-        phy_odt_cur,       // 8 ODT
-        phy_cke_dis_cur,   // 7 disable cke (0 - enable), also controlled by a command bit ddr_cke (XOR-ed)
-        phy_sel_cur,       // 6 first/second half-cycle, other will be nop (cke+odt applicable to both) - NOT USED?
-        phy_dq_en_cur,     // 5 phy_dq_tri_in,   // tristate DQ  lines (internal timing sequencer for 0->1 and 1->0)
-        phy_dqs_en_cur,    // 4 phy_dqs_tri_in,  // tristate DQS lines (internal timing sequencer for 0->1 and 1->0)
-        phy_dqs_toggle_cur,// 3 enable toggle DQS according to the pattern
-        phy_dci_en_cur,    // 2 phy_dci_in,      // DCI disable, both DQ and DQS lines (internal logic and timing sequencer for 0->1 and 1->0)
-        phy_buf_wr_cur,    // 1 connect to external buffer (but only if not paused)
-        phy_buf_rd_cur     // 0 connect to external buffer (but only if not paused)
+        phy_odt_cur,       // 9 8 ODT
+        phy_cke_dis_cur,   // 8 7 disable cke (0 - enable), also controlled by a command bit ddr_cke (XOR-ed)
+        phy_sel_cur,       // 7 6 first/second half-cycle, other will be nop (cke+odt applicable to both) - NOT USED?
+        phy_dq_en_cur,     // 6 5 phy_dq_tri_in,   // tristate DQ  lines (internal timing sequencer for 0->1 and 1->0)
+        phy_dqs_en_cur,    // 5 4 phy_dqs_tri_in,  // tristate DQS lines (internal timing sequencer for 0->1 and 1->0)
+        phy_dqs_toggle_cur,// 4 3 enable toggle DQS according to the pattern
+        phy_dci_en_cur,    // 3 2 phy_dci_in,      // DCI disable, both DQ and DQS lines (internal logic and timing sequencer for 0->1 and 1->0)
+        phy_buf_wr_cur,    // 2 1 connect to external buffer (but only if not paused)
+        phy_buf_rd_cur,    // 1 0 connect to external buffer (but only if not paused)
+        phy_buf_rst_cur    // 0
     } =  add_pause ? {3'b0, extra_prev} : // 3'b0 for rcw (nop)
     {
         phy_rcw_pos[2:0],      // {ras,cas,we}
@@ -241,7 +245,8 @@ module  phy_cmd#(
         phy_dqs_toggle_en,   //enable toggle DQS according to the pattern
         phy_dci_en_in, //phy_dci_in,      // DCI disable, both DQ and DQS lines (internal logic and timing sequencer for 0->1 and 1->0)
         phy_buf_wr,   // connect to external buffer (but only if not paused)
-        phy_buf_rd    // connect to external buffer (but only if not paused)
+        phy_buf_rd,    // connect to external buffer (but only if not paused)
+        phy_buf_rst
     };
     assign phy_cke_in=     phy_cke_dis_cur ^ ddr_cke;
     assign phy_dq_tri_in= ~phy_dq_en_cur;
@@ -257,6 +262,7 @@ module  phy_cmd#(
 //    assign buf_addr = phy_buf_addr;
     assign buf_wr =   phy_buf_wr_cur;
     assign buf_rd =   phy_buf_rd_cur;
+    assign buf_rst=   phy_buf_rst_cur;
     
 //    assign  phy_addr=   {phy_addr_in,phy_addr_in};       // also provides pause length when the command is NOP
 //    assign  phy_bank=   {phy_bank_in,phy_bank_in};
@@ -302,15 +308,16 @@ module  phy_cmd#(
             phy_addr_prev <= phy_addr_in;
             phy_bank_prev <= phy_bank_in;
             extra_prev <=  {
-                   phy_odt_in,       // 8 may be optimized?
-                   phy_cke_dis,      // 7 disable cke (0 - enable), also controlled by a command bit ddr_cke (XOR-ed)
-                   phy_sel_in,       // 6 first/second half-cycle, other will be nop (cke+odt applicable to both)
-                   phy_dq_en_in,     // 5 phy_dq_tri_in,   // tristate DQ  lines (internal timing sequencer for 0->1 and 1->0)
-                   phy_dqs_en_in,    // 4 phy_dqs_tri_in,  // tristate DQS lines (internal timing sequencer for 0->1 and 1->0)
-                   phy_dqs_toggle_en,// 3 enable toggle DQS according to the pattern
-                   phy_dci_en_in,    // 2 phy_dci_in,      // DCI disable, both DQ and DQS lines (internal logic and timing sequencer for 0->1 and 1->0)
-                   phy_buf_wr,       // 1 connect to external buffer (but only if not paused)
-                   phy_buf_rd        // 0 connect to external buffer (but only if not paused)
+                   phy_odt_in,       // 9 8 may be optimized?
+                   phy_cke_dis,      // 8 7 disable cke (0 - enable), also controlled by a command bit ddr_cke (XOR-ed)
+                   phy_sel_in,       // 7 6 first/second half-cycle, other will be nop (cke+odt applicable to both)
+                   phy_dq_en_in,     // 6 5 phy_dq_tri_in,   // tristate DQ  lines (internal timing sequencer for 0->1 and 1->0)
+                   phy_dqs_en_in,    // 5 4 phy_dqs_tri_in,  // tristate DQS lines (internal timing sequencer for 0->1 and 1->0)
+                   phy_dqs_toggle_en,// 4 3 enable toggle DQS according to the pattern
+                   phy_dci_en_in,    // 3 2 phy_dci_in,      // DCI disable, both DQ and DQS lines (internal logic and timing sequencer for 0->1 and 1->0)
+                   phy_buf_wr,       // 2 1 connect to external buffer (but only if not paused)
+                   phy_buf_rd,       // 1 0 connect to external buffer (but only if not paused)
+                   phy_buf_rst       // 0 connect to external buffer (but only if not paused)
             };
             
         end

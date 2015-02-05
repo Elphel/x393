@@ -61,8 +61,8 @@ module  mcntrl_ps_pio#(
     output                       seq_set0,
     input                        seq_done0,
     input                        buf_wr_chn0,
-    input                        buf_waddr_rst_chn0, 
-//    input                [6:0]   buf_waddr_chn0, 
+    input                        buf_wpage_nxt_chn0,
+//    input                        buf_waddr_rst_chn0, 
     input               [63:0]   buf_wdata_chn0,
 // write port 1
     output reg                   want_rq1,
@@ -72,9 +72,9 @@ module  mcntrl_ps_pio#(
 //    output                       seq_wr1, // never generated
 //    output                       seq_set1, // connect externally to seq_set0
     input                        seq_done1,
+    input                        rpage_nxt_chn1,
     input                        buf_rd_chn1,
-    input                        buf_raddr_rst_chn1, 
-//    input                [6:0]   buf_raddr_chn1, 
+//    input                        buf_raddr_rst_chn1, 
     output              [63:0]   buf_rdata_chn1 
 );
  localparam CMD_WIDTH=14;
@@ -106,6 +106,9 @@ module  mcntrl_ps_pio#(
  wire                     busy;
  wire                     start;
  reg                [1:0] page;
+ reg                [1:0] page_neg;
+ reg                [1:0] cmd_set_d;
+ reg                      cmd_set_d_neg;
 // reg                      chn_run; // running memory access to channel 0/1
 // command bit fields
  wire               [9:0] cmd_seq_a= cmd_out[9:0];
@@ -157,9 +160,18 @@ module  mcntrl_ps_pio#(
         if (rst)          page <= 0;
         else if (cmd_set) page <= cmd_page;
         
+        if (rst)          cmd_set_d <= 0;
+        else              cmd_set_d <= {cmd_set_d[0],cmd_set};
     end
     
- 
+    always @ (posedge rst or negedge mclk) begin
+        if (rst)          page_neg <= 0;
+        else if (cmd_set) page_neg <= page;
+        
+        if (rst)          cmd_set_d_neg <= 0;
+        else              cmd_set_d_neg <= cmd_set_d[1];
+    end 
+    
     cmd_deser #(
         .ADDR       (MCNTRL_PS_ADDR),
         .ADDR_MASK  (MCNTRL_PS_MASK),
@@ -214,24 +226,7 @@ fifo_same_clock   #(
     );
 
 
-
 // Port 0 (read DDR to AXI) buffer
-/*
-    ram_512x64w_1kx32r #(
-        .REGISTERS(1)
-    ) port0_buf_i (
-        .rclk     (port0_clk), // input
-        .raddr    (port0_addr), // input[9:0] 
-        .ren      (port0_re), // input
-        .regen    (port0_regen), // input
-        .data_out (port0_data), // output[31:0] 
-        .wclk     (!mclk), // input
-        .waddr    ({page,buf_waddr_chn0}), // input[8:0] 
-        .we       (buf_wr_chn0), // input
-        .web      (8'hff), // input[7:0] 
-        .data_in  (buf_wdata_chn0) // input[63:0] 
-    );
-*/
     mcntrl_1kx32r chn0_buf_i (
         .ext_clk      (port0_clk), // input
         .ext_raddr    (port0_addr), // input[9:0] 
@@ -239,41 +234,27 @@ fifo_same_clock   #(
         .ext_regen    (port0_regen), // input
         .ext_data_out (port0_data), // output[31:0] 
         .wclk         (!mclk), // input
-        .wpage        (page), // input[1:0] 
-        .waddr_reset  (buf_waddr_rst_chn0), // input
-        .skip_reset   (1'b0), // input
+        .wpage_in     (page_neg), // input[1:0] 
+        .wpage_set    (cmd_set_d_neg), // input 
+        .page_next    (buf_wpage_nxt_chn0), // input
+        .page         (), // output[1:0]
         .we           (buf_wr_chn0), // input
         .data_in      (buf_wdata_chn0) // input[63:0] 
     );
     
 // Port 1 (write DDR from AXI) buffer
-/*
-    ram_1kx32w_512x64r #(
-        .REGISTERS(1)
-    ) port1_buf_i (
-        .rclk     (mclk), // input
-        .raddr    ({page,buf_raddr_chn1}), // input[8:0] 
-        .ren      (buf_rd_chn1), // input
-        .regen    (buf_rd_chn1), // input
-        .data_out (buf_rdata_chn1), // output[63:0] 
-        .wclk     (port1_clk), // input
-        .waddr    (port1_addr), // input[9:0] 
-        .we       (port1_we), // input
-        .web      (4'hf), // input[3:0] 
-        .data_in  (port1_data) // input[31:0] 
-    );
-*/    
      mcntrl_1kx32w chn1_buf_i (
-        .ext_clk     (port1_clk), // input
-        .ext_waddr   (port1_addr), // input[9:0] 
-        .ext_we      (port1_we), // input
-        .ext_data_in (port1_data), // input[31:0] buf_wdata - from AXI
-        .rclk        (mclk), // input
-        .rpage       (page), // input[1:0] 
-        .raddr_reset (buf_raddr_rst_chn1), // input
-        .skip_reset  (1'b0), // input
-        .rd          (buf_rd_chn1), // input
-        .data_out    (buf_rdata_chn1) // output[63:0] 
+        .ext_clk      (port1_clk), // input
+        .ext_waddr    (port1_addr), // input[9:0] 
+        .ext_we       (port1_we), // input
+        .ext_data_in  (port1_data), // input[31:0] buf_wdata - from AXI
+        .rclk         (mclk), // input
+        .rpage_in     (page), // input[1:0] 
+        .rpage_set    (cmd_set_d[0]), // input 
+        .page_next    (rpage_nxt_chn1), // input
+        .page         (), // output[1:0]
+        .rd           (buf_rd_chn1), // input
+        .data_out     (buf_rdata_chn1) // output[63:0] 
     );
     
     

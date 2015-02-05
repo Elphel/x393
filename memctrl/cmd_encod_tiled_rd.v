@@ -47,14 +47,15 @@ module  cmd_encod_tiled_rd #(
     input [ADDRESS_NUMBER+COLADDR_NUMBER-4:0] rowcol_inc_in, // increment {row.col} when bank rolls over, removed 3 LSBs (in 8-bursts)
     input                  [5:0] num_rows_in_m1,   // number of rows to read minus 1
     input                  [5:0] num_cols_in_m1,   // number of 16-pixel columns to read (rows first, then columns) - 1
-    input                        keep_open_in,  // keep banks open (for <=8 banks only    
+    input                        keep_open_in,  // keep banks open (for <=8 banks only
+    input                        skip_next_page_in, // do not reset external buffer (continue)    
     input                        start,       // start generating commands
     output reg            [31:0] enc_cmd,     // encoded commnad
     output reg                   enc_wr,      // write encoded command
     output reg                   enc_done     // encoding finished
 );
     localparam FULL_ADDR_NUMBER=ADDRESS_NUMBER+COLADDR_NUMBER; // excluding 3 CA lsb, but adding 3 bank
-    localparam ROM_WIDTH=9;
+    localparam ROM_WIDTH=10;
     localparam ROM_DEPTH=4;
     
     localparam ENC_NOP=        0;
@@ -64,6 +65,7 @@ module  cmd_encod_tiled_rd #(
     localparam ENC_CMD_SHIFT=  4; // [5:4] - command: 0 -= NOP, 1 - READ, 2 - PRECHARGE, 3 - ACTIVATE
     localparam ENC_PAUSE_SHIFT=6; // [7:6] - 2- bit pause (for NOP commandes)
     localparam ENC_PRE_DONE=   8;
+    localparam ENC_BUF_PGNEXT=    9;
     
     localparam ENC_CMD_NOP=      0; // 2-bit locally encoded commands
     localparam ENC_CMD_READ=     1;
@@ -86,7 +88,7 @@ module  cmd_encod_tiled_rd #(
     reg  [FULL_ADDR_NUMBER-4:0] rowcol_inc; // increment {row.col} when bank rolls over, remove 3 LSBs (in 8-bursts)
     
     reg                        keep_open;                        
-    
+    reg                        skip_next_page;
     reg                        gen_run;
     reg                        gen_run_d;
     reg        [ROM_DEPTH-1:0] gen_addr; // will overrun as stop comes from ROM
@@ -219,13 +221,14 @@ module  cmd_encod_tiled_rd #(
         bank <= start_bank;
         rowcol_inc <= rowcol_inc_in;
         keep_open <= keep_open_in && (|num_cols_in_m1[5:3]!=0);
+        skip_next_page <= skip_next_page_in;
     end
     
     // ROM-based (registered output) encoded sequence
     always @ (posedge rst or posedge clk) begin
         if (rst)           rom_r <= 0;
         else case (gen_addr)
-            4'h0:  rom_r <= (ENC_CMD_ACTIVATE <<  ENC_CMD_SHIFT) | (1 << ENC_NOP); 
+            4'h0:  rom_r <= (ENC_CMD_ACTIVATE <<  ENC_CMD_SHIFT)  | (1 << ENC_NOP);
             4'h1:  rom_r <= (ENC_CMD_ACTIVATE <<  ENC_CMD_SHIFT); 
             4'h2:  rom_r <= (ENC_CMD_READ <<      ENC_CMD_SHIFT)                                              | (1 << ENC_DCI) | (1 << ENC_SEL); 
             4'h3:  rom_r <= (ENC_CMD_ACTIVATE <<  ENC_CMD_SHIFT)                                              | (1 << ENC_DCI) | (1 << ENC_SEL); 
@@ -235,7 +238,7 @@ module  cmd_encod_tiled_rd #(
             4'h7:  rom_r <= (ENC_CMD_NOP <<       ENC_CMD_SHIFT)                          | (1 << ENC_BUF_WR) | (1 << ENC_DCI) | (1 << ENC_SEL); 
             4'h8:  rom_r <= (ENC_CMD_READ <<      ENC_CMD_SHIFT)                          | (1 << ENC_BUF_WR) | (1 << ENC_DCI) | (1 << ENC_SEL); 
             4'h9:  rom_r <= (ENC_CMD_NOP <<       ENC_CMD_SHIFT) | (2 << ENC_PAUSE_SHIFT) | (1 << ENC_BUF_WR) | (1 << ENC_DCI) | (1 << ENC_SEL); 
-            4'h10: rom_r <= (ENC_CMD_NOP <<       ENC_CMD_SHIFT)                                              | (1 << ENC_DCI) | (1 << ENC_SEL); 
+            4'h10: rom_r <= (ENC_CMD_NOP <<       ENC_CMD_SHIFT) | (1 << ENC_DCI) | (1 << ENC_SEL) | (skip_next_page? 1'b0:(1 << ENC_BUF_PGNEXT)); 
             4'h11: rom_r <= (ENC_CMD_NOP <<       ENC_CMD_SHIFT) | (3 << ENC_PAUSE_SHIFT)                     | (1 << ENC_DCI);
             4'h12: rom_r <= (ENC_CMD_NOP <<       ENC_CMD_SHIFT) | (1 << ENC_PRE_DONE);
             default:rom_r <= 0;
@@ -264,7 +267,8 @@ module  cmd_encod_tiled_rd #(
             1'b0,                    //   dqs_toggle; // enable toggle DQS according to the pattern
             rom_r[ENC_DCI],          //   dci;        // DCI disable, both DQ and DQS lines (internal logic and timing sequencer for 0->1 and 1->0)
             rom_r[ENC_BUF_WR],       //   buf_wr;     // connect to external buffer (but only if not paused)
-            1'b0);                   //   buf_rd;     // connect to external buffer (but only if not paused)
+            1'b0,                    //   buf_rd;     // connect to external buffer (but only if not paused)
+            rom_r[ENC_BUF_PGNEXT]);     //   buf_rst;    // connect to external buffer (but only if not paused)
        else  enc_cmd <= func_encode_cmd ( // encode non-NOP command
             rom_cmd[1]? // activate
             row_col_bank[FULL_ADDR_NUMBER-1:COLADDR_NUMBER]: // top combined row,column,bank burst address (excludes 3 CA LSBs), valid/modified @pre_act
@@ -285,9 +289,9 @@ module  cmd_encod_tiled_rd #(
             rom_r[ENC_DCI],          //   dci;        // DCI disable, both DQ and DQS lines (internal logic and timing sequencer for 0->1 and 1->0)
             rom_r[ENC_BUF_WR],       //   buf_wr;     // connect to external buffer (but only if not paused)
             1'b0,                    //   buf_rd;     // connect to external buffer (but only if not paused)     
-            rom_r[ENC_NOP]);         //   nop;        // add NOP after the current command, keep other data
+            rom_r[ENC_NOP],          //   nop;        // add NOP after the current command, keep other data
+            rom_r[ENC_BUF_PGNEXT]);     //   buf_rst;    // connect to external buffer (but only if not paused)
     end    
-    
 
 // move to include?
 
@@ -304,6 +308,7 @@ module  cmd_encod_tiled_rd #(
         input                      dci;        // DCI disable, both DQ and DQS lines (internal logic and timing sequencer for 0->1 and 1->0)
         input                      buf_wr;     // connect to external buffer (but only if not paused)
         input                      buf_rd;     // connect to external buffer (but only if not paused)
+        input                      buf_rst;    // connect to external buffer (but only if not paused)
         begin
             func_encode_skip= func_encode_cmd (
                 {{14-CMD_DONE_BIT{1'b0}}, done, skip[CMD_PAUSE_BITS-1:0]},       // 15-bit row/column adderss
@@ -318,7 +323,8 @@ module  cmd_encod_tiled_rd #(
                 dci,        // DCI disable, both DQ and DQS lines (internal logic and timing sequencer for 0->1 and 1->0)
                 buf_wr,     // connect to external buffer (but only if not paused)
                 buf_rd,     // connect to external buffer (but only if not paused)
-                1'b0);
+                1'b0,       // nop
+                buf_rst);
         end
     endfunction
 
@@ -336,6 +342,7 @@ module  cmd_encod_tiled_rd #(
         input                      buf_wr;     // connect to external buffer (but only if not paused)
         input                      buf_rd;     // connect to external buffer (but only if not paused)
         input                      nop;        // add NOP after the current command, keep other data
+        input                      buf_rst;    // connect to external buffer (but only if not paused)
         begin
             func_encode_cmd={
             addr[14:0], // 15-bit row/column adderss
@@ -351,7 +358,7 @@ module  cmd_encod_tiled_rd #(
             buf_wr,     // phy_buf_wr,   // connect to external buffer (but only if not paused)
             buf_rd,     // phy_buf_rd,    // connect to external buffer (but only if not paused)
             nop,        // add NOP after the current command, keep other data
-            1'b0        // Reserved for future use
+            buf_rst     // Reserved for future use
            };
         end
     endfunction

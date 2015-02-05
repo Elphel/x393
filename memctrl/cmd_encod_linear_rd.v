@@ -51,9 +51,10 @@ module  cmd_encod_linear_rd #(
     output reg                   enc_wr,      // write encoded command
     output reg                   enc_done     // encoding finished
 );
-    localparam ROM_WIDTH=9;
+    localparam ROM_WIDTH=10;
     localparam ROM_DEPTH=4;
     
+//    localparam ENC_BUF_PGNEXT=    0;
     localparam ENC_NOP=        0;
     localparam ENC_BUF_WR=     1;
     localparam ENC_DCI=        2;
@@ -61,6 +62,7 @@ module  cmd_encod_linear_rd #(
     localparam ENC_CMD_SHIFT=  4; // [5:4] - command: 0 -= NOP, 1 - READ, 2 - PRECHARGE, 3 - ACTIVATE
     localparam ENC_PAUSE_SHIFT=6; // [7:6] - 2- bit pause (for NOP commandes)
     localparam ENC_PRE_DONE=   8;
+    localparam ENC_BUF_PGNEXT=    9;
     
     localparam ENC_CMD_NOP=      0; // 2-bit locally encoded commands
     localparam ENC_CMD_READ=     1;
@@ -128,7 +130,7 @@ module  cmd_encod_linear_rd #(
             4'h2: rom_r <= (ENC_CMD_READ <<      ENC_CMD_SHIFT) | (1 << ENC_NOP)                             | (1 << ENC_DCI) | (1 << ENC_SEL); 
             4'h3: rom_r <= (ENC_CMD_READ <<      ENC_CMD_SHIFT) | (1 << ENC_NOP)         | (1 << ENC_BUF_WR) | (1 << ENC_DCI) | (1 << ENC_SEL);
             4'h4: rom_r <= (ENC_CMD_NOP <<       ENC_CMD_SHIFT) | (1 << ENC_PAUSE_SHIFT) | (1 << ENC_BUF_WR) | (1 << ENC_DCI) | (1 << ENC_SEL);
-            4'h5: rom_r <= (ENC_CMD_NOP <<       ENC_CMD_SHIFT)                                              | (1 << ENC_DCI) | (1 << ENC_SEL);
+            4'h5: rom_r <= (ENC_CMD_NOP <<       ENC_CMD_SHIFT) | (1 << ENC_BUF_PGNEXT)                      | (1 << ENC_DCI) | (1 << ENC_SEL);
             4'h6: rom_r <= (ENC_CMD_PRECHARGE << ENC_CMD_SHIFT)                                              | (1 << ENC_DCI);
             4'h7: rom_r <= (ENC_CMD_NOP <<       ENC_CMD_SHIFT) | (2 << ENC_PAUSE_SHIFT)                     | (1 << ENC_DCI);
             4'h8: rom_r <= (ENC_CMD_NOP <<       ENC_CMD_SHIFT) | (1 << ENC_PRE_DONE);
@@ -158,7 +160,8 @@ module  cmd_encod_linear_rd #(
             1'b0,                    //   dqs_toggle; // enable toggle DQS according to the pattern
             rom_r[ENC_DCI],          //   dci;        // DCI disable, both DQ and DQS lines (internal logic and timing sequencer for 0->1 and 1->0)
             rom_r[ENC_BUF_WR],       //   buf_wr;     // connect to external buffer (but only if not paused)
-            1'b0);                   //   buf_rd;     // connect to external buffer (but only if not paused)
+            1'b0,                    //   buf_rd;     // connect to external buffer (but only if not paused)
+            rom_r[ENC_BUF_PGNEXT]);     //   buf_rst;    // connect to external buffer (but only if not paused)
        else  enc_cmd <= func_encode_cmd ( // encode non-NOP command
             rom_cmd[1]?
                     row:
@@ -174,7 +177,8 @@ module  cmd_encod_linear_rd #(
             rom_r[ENC_DCI],          //   dci;        // DCI disable, both DQ and DQS lines (internal logic and timing sequencer for 0->1 and 1->0)
             rom_r[ENC_BUF_WR],       //   buf_wr;     // connect to external buffer (but only if not paused)
             1'b0,                    //   buf_rd;     // connect to external buffer (but only if not paused)     
-            rom_r[ENC_NOP]);         //   nop;        // add NOP after the current command, keep other data
+            rom_r[ENC_NOP],          //   nop;        // add NOP after the current command, keep other data
+            rom_r[ENC_BUF_PGNEXT]);  //   buf_rst;    // connect to external buffer (but only if not paused)
     end    
     
 
@@ -193,6 +197,7 @@ module  cmd_encod_linear_rd #(
         input                      dci;        // DCI disable, both DQ and DQS lines (internal logic and timing sequencer for 0->1 and 1->0)
         input                      buf_wr;     // connect to external buffer (but only if not paused)
         input                      buf_rd;     // connect to external buffer (but only if not paused)
+        input                      buf_rst;    // connect to external buffer (but only if not paused)
         begin
             func_encode_skip= func_encode_cmd (
                 {{14-CMD_DONE_BIT{1'b0}}, done, skip[CMD_PAUSE_BITS-1:0]},       // 15-bit row/column adderss
@@ -207,7 +212,8 @@ module  cmd_encod_linear_rd #(
                 dci,        // DCI disable, both DQ and DQS lines (internal logic and timing sequencer for 0->1 and 1->0)
                 buf_wr,     // connect to external buffer (but only if not paused)
                 buf_rd,     // connect to external buffer (but only if not paused)
-                1'b0);
+                1'b0,       // nop
+                buf_rst);
         end
     endfunction
 
@@ -225,6 +231,7 @@ module  cmd_encod_linear_rd #(
         input                      buf_wr;     // connect to external buffer (but only if not paused)
         input                      buf_rd;     // connect to external buffer (but only if not paused)
         input                      nop;        // add NOP after the current command, keep other data
+        input                      buf_rst;    // connect to external buffer (but only if not paused)
         begin
             func_encode_cmd={
             addr[14:0], // 15-bit row/column adderss
@@ -240,7 +247,7 @@ module  cmd_encod_linear_rd #(
             buf_wr,     // phy_buf_wr,   // connect to external buffer (but only if not paused)
             buf_rd,     // phy_buf_rd,    // connect to external buffer (but only if not paused)
             nop,        // add NOP after the current command, keep other data
-            1'b0        // Reserved for future use
+            buf_rst     // Reserved for future use
            };
         end
     endfunction
