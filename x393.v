@@ -158,8 +158,8 @@ module  x393 #(
     parameter NUM_CYCLES_01 =       4, // 4-cycle 040.007f
     parameter NUM_CYCLES_02 =       3, // 3-cycle 080.00bf
     parameter NUM_CYCLES_03 =       3, // 3-cycle 0c0.00ff
-    parameter NUM_CYCLES_04 =       4, // 4-cycle 100.013f
-    parameter NUM_CYCLES_05 =       4, // 4-cycle 140.017f
+    parameter NUM_CYCLES_04 =       6, // 6-cycle 100.013f
+    parameter NUM_CYCLES_05 =       6, // 6-cycle 140.017f
     parameter NUM_CYCLES_06 =       4, // 4-cycle 180.01bf
     parameter NUM_CYCLES_07 =       4, // 4-cycle 1c0.01ff
     parameter NUM_CYCLES_08 =       6, //
@@ -195,8 +195,9 @@ module  x393 #(
     parameter MCNTRL_SCANLINE_WINDOW_STARTXY=    'h6,   // low word - 13-bit start X (relative to window), high word - 16-bit start y
                                                         // Start XY can be used when read command to start from the middle
                                                         // TODO: Add number of blocks to R/W? (blocks can be different) - total length?
-                                                        // Read back current address (fro debugging)?
-    parameter MCNTRL_SCANLINE_STATUS_REG_ADDR=   'h4,
+                                                        // Read back current address (for debugging)?
+    parameter MCNTRL_SCANLINE_STATUS_REG_CHN2_ADDR=   'h4,
+    parameter MCNTRL_SCANLINE_STATUS_REG_CHN3_ADDR=   'h5,
     parameter MCNTRL_SCANLINE_PENDING_CNTR_BITS=   2,    // Number of bits to count pending trasfers, currently 2 is enough, but may increase
                                                         // if memory controller will allow programming several sequences in advance to
                                                         // spread long-programming (tiled) over fast-programming (linear) requests.
@@ -204,7 +205,7 @@ module  x393 #(
     
     parameter MAX_TILE_WIDTH=                   6,     // number of bits to specify maximal tile (width-1) (6 -> 64)
     parameter MAX_TILE_HEIGHT=                  6,     // number of bits to specify maximal tile (height-1) (6 -> 64)
-    parameter MCNTRL_TILED_ADDR=            'h120,
+    parameter MCNTRL_TILED_CHN4_ADDR=       'h140,
     parameter MCNTRL_TILED_MASK=            'h3f0, // both channels 0 and 1
     parameter MCNTRL_TILED_MODE=            'h0,   // set mode register: {extra_pages[1:0],write_mode,enable,!reset}
     parameter MCNTRL_TILED_STATUS_CNTRL=    'h1,   // control status reporting
@@ -215,17 +216,28 @@ module  x393 #(
     parameter MCNTRL_TILED_WINDOW_STARTXY=  'h6,   // low word - 13-bit start X (relative to window), high word - 16-bit start y
                                                       // Start XY can be used when read command to start from the middle
                                                       // TODO: Add number of blocks to R/W? (blocks can be different) - total length?
-                                                      // Read back current address (fro debugging)?
+                                                      // Read back current address (for debugging)?
     parameter MCNTRL_TILED_TILE_WH=         'h7,   // low word - 6-bit tile width in 8-bursts, high - tile height (0 - > 64)
-    parameter MCNTRL_TILED_STATUS_REG_ADDR= 'h5,
+    parameter MCNTRL_TILED_STATUS_REG_CHN4_ADDR= 'h5,
     parameter MCNTRL_TILED_PENDING_CNTR_BITS=2,    // Number of bits to count pending trasfers, currently 2 is enough, but may increase
                                                    // if memory controller will allow programming several sequences in advance to
                                                    // spread long-programming (tiled) over fast-programming (linear) requests.
                                                    // But that should not be too big to maintain 2-level priorities
-    parameter MCNTRL_TILED_FRAME_PAGE_RESET =1'b0,  // reset internal page number to zero at the frame start (false - only when hard/soft reset)
-    parameter BUFFER_DEPTH32=                10    // Block rum buffer depth on a 32-bit port
-                                                         
+    parameter MCNTRL_TILED_FRAME_PAGE_RESET =1'b0, // reset internal page number to zero at the frame start (false - only when hard/soft reset)
+    parameter BUFFER_DEPTH32=                10,   // Block rum buffer depth on a 32-bit port
 
+// Channel test module parameters
+    parameter MCNTRL_TEST01_ADDR=                 'h0f0,
+    parameter MCNTRL_TEST01_MASK=                 'h3f0,
+    parameter MCNTRL_TEST01_CHN2_MODE=            'h4,   // set mode register for channel 2
+    parameter MCNTRL_TEST01_CHN2_STATUS_CNTRL=    'h5,   // control status reporting for channel 2
+    parameter MCNTRL_TEST01_CHN3_MODE=            'h6,   // set mode register for channel 3
+    parameter MCNTRL_TEST01_CHN3_STATUS_CNTRL=    'h7,   // control status reporting for channel 3
+    parameter MCNTRL_TEST01_CHN4_MODE=            'h8,   // set mode register for channel 4
+    parameter MCNTRL_TEST01_CHN4_STATUS_CNTRL=    'h9,   // control status reporting for channel 4
+    parameter MCNTRL_TEST01_STATUS_REG_CHN2_ADDR= 'h3c,  // status/readback register for channel 2
+    parameter MCNTRL_TEST01_STATUS_REG_CHN3_ADDR= 'h3d,  // status/readback register for channel 3
+    parameter MCNTRL_TEST01_STATUS_REG_CHN4_ADDR= 'h3e  // status/readback register for channel 4
 )(
     // DDR3 interface
     output                       SDRST, // DDR3 reset (active low)
@@ -335,7 +347,7 @@ module  x393 #(
    wire  [31:0]   axird_rdata;  //      .data_out(rdata[31:0]),       // data out
 //   wire  [31:0]   port0_rdata;  //
    wire  [31:0]   status_rdata;  //
-   wire           status_valid; // never used - supposed to be always valid?
+   wire           status_valid; /// SuppressThisWarning VEditor ****** never used - supposed to be always valid?
 
    wire        mclk;
 
@@ -407,13 +419,13 @@ end
 `endif
 
 //TODO: The following is the interface to the frame-based command sequencer (not yet implemnted)        
-    wire [AXI_WR_ADDR_BITS-1:0] cseq_waddr;   // command sequencer write address (output to command multiplexer)
-    wire                        cseq_wr_en;   // command sequencer write enable (output to command multiplexer) - keep until cseq_ackn received
-    wire                 [31:0] cseq_wdata;   // command sequencer write data (output to command multiplexer) 
-    wire                        cseq_ackn;    // ackn to command sequencer, command sequencer should de-assert cseq_wr_en
+    wire [AXI_WR_ADDR_BITS-1:0] cseq_waddr;   /// SuppressThisWarning VEditor ******  command sequencer write address (output to command multiplexer)
+    wire                        cseq_wr_en;   /// SuppressThisWarning VEditor ****** command sequencer write enable (output to command multiplexer) - keep until cseq_ackn received
+    wire                 [31:0] cseq_wdata;   /// SuppressThisWarning VEditor ****** command sequencer write data (output to command multiplexer) 
+    wire                        cseq_ackn;    /// SuppressThisWarning VEditor ****** ackn to command sequencer, command sequencer should de-assert cseq_wr_en
 // parallel address/data - where higher bandwidth (single-cycle) is needed        
-    wire [AXI_WR_ADDR_BITS-1:0] par_waddr;    // multiplexed address (full, parallel) to slave devices 
-    wire                 [31:0] par_data;     // multiplexed data (full, parallel) to slave devices 
+    wire [AXI_WR_ADDR_BITS-1:0] par_waddr;    /// SuppressThisWarning VEditor ****** multiplexed address (full, parallel) to slave devices 
+    wire                 [31:0] par_data;     /// SuppressThisWarning VEditor ****** multiplexed data (full, parallel) to slave devices 
 
 
 
@@ -428,14 +440,98 @@ end
     wire                        status_mcontr_rq;    // Memory controller status request  
     wire                        status_mcontr_start; // Memory controller status packet transfer start (currently with 0 latency from status_root_rq)
 // Not yet connected
-    wire                  [7:0] status_other_ad;    // Other status byte-wide address/data 
-    wire                        status_other_rq;    // Other status request  
-    wire                        status_other_start; // Other status packet transfer start (currently with 0 latency from status_root_rq)
+    wire                  [7:0] status_other_ad;    /// S uppressThisWarning VEditor ****** Other status byte-wide address/data 
+    wire                        status_other_rq;    /// S uppressThisWarning VEditor ****** Other status request  
+    wire                        status_other_start; /// S =uppressThisWarning VEditor ****** Other status packet transfer start (currently with 0 latency from status_root_rq)
 
 
+    wire                  [7:0] status_test01_ad;    // Test module status byte-wide address/data 
+    wire                        status_test01_rq;    // Test module status request  
+    wire                        status_test01_start; // Test module status packet transfer start (currently with 0 latency from status_root_rq)
+
+
+    // Insert register layer if needed
+    wire [7:0] cmd_mcontr_ad;
+    wire       cmd_mcontr_stb;
+    wire [7:0] cmd_test01_ad;
+    wire       cmd_test01_stb;
+
+
+//mcntrl393_test01
+
+    wire                        frame_start_chn2;  // input
+    wire                        next_page_chn2;    // input
+    wire                        page_ready_chn2; // output
+    wire                        frame_done_chn2; // output
+    wire[FRAME_HEIGHT_BITS-1:0] line_unfinished_chn2; // output[15:0] 
+    wire                        suspend_chn2; // input
+    wire                        frame_start_chn3; // input
+    wire                        next_page_chn3; // input
+    wire                        page_ready_chn3; // output
+    wire                        frame_done_chn3; // output
+    wire[FRAME_HEIGHT_BITS-1:0] line_unfinished_chn3; // output[15:0] 
+    wire                        suspend_chn3; // input
+    wire                        frame_start_chn4; // input
+    wire                        next_page_chn4; // input
+    wire                        page_ready_chn4; // output
+    wire                        frame_done_chn4; // output
+    wire[FRAME_HEIGHT_BITS-1:0] line_unfinished_chn4; // output[15:0]
+    wire                        suspend_chn4; // input
+
+    assign cmd_mcontr_ad= cmd_root_ad;
+    assign cmd_mcontr_stb=cmd_root_stb;
+    assign cmd_test01_ad= cmd_root_ad;
+    assign cmd_test01_stb=cmd_root_stb;
+
+// For now - connect status_test01 to status_other, if needed - increase number of multiplexer inputs)
+    assign status_other_ad = status_test01_ad;
+    assign status_other_rq = status_test01_rq;
+    assign status_test01_start = status_other_start;
+
+
+// channel test module
+    mcntrl393_test01 #(
+        .MCNTRL_TEST01_ADDR                 (MCNTRL_TEST01_ADDR),
+        .MCNTRL_TEST01_MASK                 (MCNTRL_TEST01_MASK),
+        .FRAME_HEIGHT_BITS                  (FRAME_HEIGHT_BITS),
+        .MCNTRL_TEST01_CHN2_MODE            (MCNTRL_TEST01_CHN2_MODE),
+        .MCNTRL_TEST01_CHN2_STATUS_CNTRL    (MCNTRL_TEST01_CHN2_STATUS_CNTRL),
+        .MCNTRL_TEST01_CHN3_MODE            (MCNTRL_TEST01_CHN3_MODE),
+        .MCNTRL_TEST01_CHN3_STATUS_CNTRL    (MCNTRL_TEST01_CHN3_STATUS_CNTRL),
+        .MCNTRL_TEST01_CHN4_MODE            (MCNTRL_TEST01_CHN4_MODE),
+        .MCNTRL_TEST01_CHN4_STATUS_CNTRL    (MCNTRL_TEST01_CHN4_STATUS_CNTRL),
+        .MCNTRL_TEST01_STATUS_REG_CHN2_ADDR (MCNTRL_TEST01_STATUS_REG_CHN2_ADDR),
+        .MCNTRL_TEST01_STATUS_REG_CHN3_ADDR (MCNTRL_TEST01_STATUS_REG_CHN3_ADDR),
+        .MCNTRL_TEST01_STATUS_REG_CHN4_ADDR (MCNTRL_TEST01_STATUS_REG_CHN4_ADDR)
+    ) mcntrl393_test01_i (
+        .rst(axi_rst), // input
+        .mclk                 (mclk), // input
+        .cmd_ad               (cmd_test01_ad), // input[7:0] 
+        .cmd_stb              (cmd_test01_stb), // input
+        .status_ad            (status_test01_ad), // output[7:0] 
+        .status_rq            (status_test01_rq), // output
+        .status_start         (status_test01_start), // input
+        .frame_start_chn2     (frame_start_chn2), // output
+        .next_page_chn2       (next_page_chn2), // output
+        .page_ready_chn2      (page_ready_chn2), // input
+        .frame_done_chn2      (frame_done_chn2), // input
+        .line_unfinished_chn2 (line_unfinished_chn2), // input[15:0] 
+        .suspend_chn2         (suspend_chn2), // output
+        .frame_start_chn3     (frame_start_chn3), // output
+        .next_page_chn3       (next_page_chn3), // output
+        .page_ready_chn3      (page_ready_chn3), // input
+        .frame_done_chn3      (frame_done_chn3), // input
+        .line_unfinished_chn3 (line_unfinished_chn3), // input[15:0] 
+        .suspend_chn3         (suspend_chn3), // output
+        .frame_start_chn4     (frame_start_chn4), // output
+        .next_page_chn4       (next_page_chn4), // output
+        .page_ready_chn4      (page_ready_chn4), // input
+        .frame_done_chn4      (frame_done_chn4), // input
+        .line_unfinished_chn4 (line_unfinished_chn4), // input[15:0] 
+        .suspend_chn4         (suspend_chn4) // output
+    );
 
 // Interface to channels to read/write memory (including 4 page BRAM buffers)
-
 
     cmd_mux #(
         .AXI_WR_ADDR_BITS  (AXI_WR_ADDR_BITS),
@@ -499,13 +595,6 @@ end
         .start            (status_root_start) // output
     );
     
-
-    // Insert register layer if needed
-    wire [7:0] cmd_mcontr_ad;
-    wire       cmd_mcontr_stb;
-    assign cmd_mcontr_ad= cmd_root_ad;
-    assign cmd_mcontr_stb=cmd_root_stb;
-
 
 // mux status info from the memory controller and other modules    
     status_router2 status_router2_top_i (
@@ -623,11 +712,12 @@ end
         .MCNTRL_SCANLINE_WINDOW_WH         (MCNTRL_SCANLINE_WINDOW_WH),
         .MCNTRL_SCANLINE_WINDOW_X0Y0       (MCNTRL_SCANLINE_WINDOW_X0Y0),
         .MCNTRL_SCANLINE_WINDOW_STARTXY    (MCNTRL_SCANLINE_WINDOW_STARTXY),
-        .MCNTRL_SCANLINE_STATUS_REG_ADDR   (MCNTRL_SCANLINE_STATUS_REG_ADDR),
+        .MCNTRL_SCANLINE_STATUS_REG_CHN2_ADDR   (MCNTRL_SCANLINE_STATUS_REG_CHN2_ADDR),
+        .MCNTRL_SCANLINE_STATUS_REG_CHN3_ADDR   (MCNTRL_SCANLINE_STATUS_REG_CHN3_ADDR),
         .MCNTRL_SCANLINE_PENDING_CNTR_BITS (MCNTRL_SCANLINE_PENDING_CNTR_BITS),
         .MAX_TILE_WIDTH                    (MAX_TILE_WIDTH),
         .MAX_TILE_HEIGHT                   (MAX_TILE_HEIGHT),
-        .MCNTRL_TILED_ADDR                 (MCNTRL_TILED_ADDR),
+        .MCNTRL_TILED_CHN4_ADDR            (MCNTRL_TILED_CHN4_ADDR),
         .MCNTRL_TILED_MASK                 (MCNTRL_TILED_MASK),
         .MCNTRL_TILED_MODE                 (MCNTRL_TILED_MODE),
         .MCNTRL_TILED_STATUS_CNTRL         (MCNTRL_TILED_STATUS_CNTRL),
@@ -637,7 +727,7 @@ end
         .MCNTRL_TILED_WINDOW_X0Y0          (MCNTRL_TILED_WINDOW_X0Y0),
         .MCNTRL_TILED_WINDOW_STARTXY       (MCNTRL_TILED_WINDOW_STARTXY),
         .MCNTRL_TILED_TILE_WH              (MCNTRL_TILED_TILE_WH),
-        .MCNTRL_TILED_STATUS_REG_ADDR      (MCNTRL_TILED_STATUS_REG_ADDR),
+        .MCNTRL_TILED_STATUS_REG_CHN4_ADDR (MCNTRL_TILED_STATUS_REG_CHN4_ADDR),
         .MCNTRL_TILED_PENDING_CNTR_BITS    (MCNTRL_TILED_PENDING_CNTR_BITS),
         .MCNTRL_TILED_FRAME_PAGE_RESET     (MCNTRL_TILED_FRAME_PAGE_RESET)
     ) mcntrl393_i (
@@ -682,8 +772,8 @@ end
         .page_ready_chn4      (page_ready_chn4), // output
         .frame_done_chn4      (frame_done_chn4), // output
         .line_unfinished_chn4 (line_unfinished_chn4), // output[15:0]
-         
         .suspend_chn4         (suspend_chn4), // input
+
         .SDRST                (SDRST), // output
         .SDCLK                (SDCLK), // output
         .SDNCLK               (SDNCLK), // output
@@ -1613,7 +1703,4 @@ assign DUMMY_TO_KEEP = 1'b0; // dbg_toggle[0];
     .PSSRSTB()                  // PS PSSRSTB, inout
   );
 
-
-
 endmodule
-

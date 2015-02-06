@@ -57,6 +57,11 @@
     parameter MCONTR_TOP_16BIT_REFRESH_ADDRESS= 'h2,    // 10 bits refresh address in the sequencer (PL) memory
     parameter MCONTR_TOP_16BIT_STATUS_CNTRL=    'h3,    // 8 bits - write to status control (and debug?)
 
+----
+    parameter MCNTRL_TEST01_ADDR=       'h0f0,
+    parameter MCNTRL_TEST01_MASK=       'h3f0
+
+    
 0x1100..11ff - 32-bit per-channel memory control    
 0x1100..110f - control of memory channels 0,1 - PS-controlled sequences
     parameter MCNTRL_PS_ADDR=            'h100,
@@ -71,13 +76,9 @@
     
     
 ============= Add the following (addresses will vary for individual channels)
-    parameter ADDRESS_NUMBER=                   15,
-    parameter COLADDR_NUMBER=                   10,
-    parameter NUM_XFER_BITS=                     6,    // number of bits to specify transfer length
-    parameter FRAME_WIDTH_BITS=                 13,    // Maximal frame width - 8-word (16 bytes) bursts 
-    parameter FRAME_HEIGHT_BITS=                16,    // Maximal frame height 
-    parameter MCNTRL_SCANLINE_ADDR=            'h120,
-    parameter MCNTRL_SCANLINE_MASK=            'h3f0, // both channels 0 and 1
+    parameter MCNTRL_SCANLINE_CHN2_ADDR=       'h120,
+    parameter MCNTRL_SCANLINE_CHN3_ADDR=       'h130,
+   parameter MCNTRL_SCANLINE_MASK=            'h3f0, // both channels 0 and 1
     parameter MCNTRL_SCANLINE_MODE=            'h0,   // set mode register: {extra_pages[1:0],write_mode,enable,!reset}
     parameter MCNTRL_SCANLINE_STATUS_CNTRL=    'h1,   // control status reporting
     parameter MCNTRL_SCANLINE_STARTADDR=       'h2,   // 22-bit frame start address (3 CA LSBs==0. BA==0)
@@ -88,10 +89,21 @@
                                                       // Start XY can be used when read command to start from the middle
                                                       // TODO: Add number of blocks to R/W? (blocks can be different) - total length?
                                                       // Read back current address (fro debugging)?
-    parameter MCNTRL_SCANLINE_STATUS_REG_ADDR= 'h4,
-
-    
-    
+============= Tiled read access (CHN4)
+    parameter MCNTRL_TILED_CHN4_ADDR=       'h140,
+    parameter MCNTRL_TILED_MASK=            'h3f0, // both channels 0 and 1
+    parameter MCNTRL_TILED_MODE=            'h0,   // set mode register: {extra_pages[1:0],write_mode,enable,!reset}
+    parameter MCNTRL_TILED_STATUS_CNTRL=    'h1,   // control status reporting
+    parameter MCNTRL_TILED_STARTADDR=       'h2,   // 22-bit frame start address (3 CA LSBs==0. BA==0)
+    parameter MCNTRL_TILED_FRAME_FULL_WIDTH='h3,   // Padded line length (8-row increment), in 8-bursts (16 bytes)
+    parameter MCNTRL_TILED_WINDOW_WH=       'h4,   // low word - 13-bit window width (0->'n4000), high word - 16-bit frame height (0->'h10000)
+    parameter MCNTRL_TILED_WINDOW_X0Y0=     'h5,   // low word - 13-bit window left, high word - 16-bit window top
+    parameter MCNTRL_TILED_WINDOW_STARTXY=  'h6,   // low word - 13-bit start X (relative to window), high word - 16-bit start y
+                                                      // Start XY can be used when read command to start from the middle
+                                                      // TODO: Add number of blocks to R/W? (blocks can be different) - total length?
+                                                      // Read back current address (fro debugging)?
+    parameter MCNTRL_TILED_TILE_WH=         'h7,   // low word - 6-bit tile width in 8-bursts, high - tile height (0 - > 64)
+                                                      
     
 // Status read address
     parameter STATUS_ADDR =         'h1400, // AXI write address of status read registers
@@ -100,6 +112,9 @@
     parameter MCONTR_PHY_STATUS_REG_ADDR=      'h0,    // 8 or less bits: status register address to use for memory controller phy
     parameter MCONTR_TOP_STATUS_REG_ADDR=      'h1,    // 8 or less bits: status register address to use for memory controller
     parameter MCNTRL_PS_STATUS_REG_ADDR= 'h2
+    parameter MCNTRL_SCANLINE_STATUS_REG_CHN2_ADDR=   'h4,
+    parameter MCNTRL_SCANLINE_STATUS_REG_CHN3_ADDR=   'h5,
+    parameter MCNTRL_TILED_STATUS_REG_CH4_ADDR= 'h5,
 
 ================================ OLD =======================================================
  Control addresses (in original ddrc_test01)

@@ -38,7 +38,7 @@ module  mcntrl_linear_rw #(
     parameter MCNTRL_SCANLINE_WINDOW_STARTXY=  'h6,   // low word - 13-bit start X (relative to window), high word - 16-bit start y
                                                       // Start XY can be used when read command to start from the middle
                                                       // TODO: Add number of blocks to R/W? (blocks can be different) - total length?
-                                                      // Read back current address (fro debugging)?
+                                                      // Read back current address (for debugging)?
     parameter MCNTRL_SCANLINE_STATUS_REG_ADDR= 'h4,
     parameter MCNTRL_SCANLINE_PENDING_CNTR_BITS=2,     // Number of bits to count pending trasfers, currently 2 is enough, but may increase
                                                       // if memory controller will allow programming several sequences in advance to

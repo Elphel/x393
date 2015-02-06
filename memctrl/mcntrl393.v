@@ -175,8 +175,11 @@ module  mcntrl393 #(
     parameter MCNTRL_SCANLINE_WINDOW_STARTXY=    'h6,   // low word - 13-bit start X (relative to window), high word - 16-bit start y
                                                         // Start XY can be used when read command to start from the middle
                                                         // TODO: Add number of blocks to R/W? (blocks can be different) - total length?
-                                                        // Read back current address (fro debugging)?
-    parameter MCNTRL_SCANLINE_STATUS_REG_ADDR=   'h4,
+                                                        // Read back current address (for debugging)?
+//    parameter MCNTRL_SCANLINE_STATUS_REG_ADDR=   'h4,
+    parameter MCNTRL_SCANLINE_STATUS_REG_CHN2_ADDR=   'h4,
+    parameter MCNTRL_SCANLINE_STATUS_REG_CHN3_ADDR=   'h5,
+
     parameter MCNTRL_SCANLINE_PENDING_CNTR_BITS=   2,    // Number of bits to count pending trasfers, currently 2 is enough, but may increase
                                                         // if memory controller will allow programming several sequences in advance to
                                                         // spread long-programming (tiled) over fast-programming (linear) requests.
@@ -184,7 +187,7 @@ module  mcntrl393 #(
     
     parameter MAX_TILE_WIDTH=                   6,     // number of bits to specify maximal tile (width-1) (6 -> 64)
     parameter MAX_TILE_HEIGHT=                  6,     // number of bits to specify maximal tile (height-1) (6 -> 64)
-    parameter MCNTRL_TILED_ADDR=            'h120,
+    parameter MCNTRL_TILED_CHN4_ADDR=       'h140,
     parameter MCNTRL_TILED_MASK=            'h3f0, // both channels 0 and 1
     parameter MCNTRL_TILED_MODE=            'h0,   // set mode register: {extra_pages[1:0],write_mode,enable,!reset}
     parameter MCNTRL_TILED_STATUS_CNTRL=    'h1,   // control status reporting
@@ -195,9 +198,9 @@ module  mcntrl393 #(
     parameter MCNTRL_TILED_WINDOW_STARTXY=  'h6,   // low word - 13-bit start X (relative to window), high word - 16-bit start y
                                                       // Start XY can be used when read command to start from the middle
                                                       // TODO: Add number of blocks to R/W? (blocks can be different) - total length?
-                                                      // Read back current address (fro debugging)?
+                                                      // Read back current address (for debugging)?
     parameter MCNTRL_TILED_TILE_WH=         'h7,   // low word - 6-bit tile width in 8-bursts, high - tile height (0 - > 64)
-    parameter MCNTRL_TILED_STATUS_REG_ADDR= 'h5,
+    parameter MCNTRL_TILED_STATUS_REG_CHN4_ADDR= 'h5,
     parameter MCNTRL_TILED_PENDING_CNTR_BITS=2,    // Number of bits to count pending trasfers, currently 2 is enough, but may increase
                                                    // if memory controller will allow programming several sequences in advance to
                                                    // spread long-programming (tiled) over fast-programming (linear) requests.
@@ -620,7 +623,7 @@ module  mcntrl393 #(
         .FRAME_HEIGHT_BITS             (FRAME_HEIGHT_BITS),
         .MAX_TILE_WIDTH                (MAX_TILE_WIDTH),
         .MAX_TILE_HEIGHT               (MAX_TILE_HEIGHT),
-        .MCNTRL_TILED_ADDR             (MCNTRL_TILED_ADDR),
+        .MCNTRL_TILED_ADDR             (MCNTRL_TILED_CHN4_ADDR),
         .MCNTRL_TILED_MASK             (MCNTRL_TILED_MASK),
         .MCNTRL_TILED_MODE             (MCNTRL_TILED_MODE),
         .MCNTRL_TILED_STATUS_CNTRL     (MCNTRL_TILED_STATUS_CNTRL),
@@ -630,7 +633,7 @@ module  mcntrl393 #(
         .MCNTRL_TILED_WINDOW_X0Y0      (MCNTRL_TILED_WINDOW_X0Y0),
         .MCNTRL_TILED_WINDOW_STARTXY   (MCNTRL_TILED_WINDOW_STARTXY),
         .MCNTRL_TILED_TILE_WH          (MCNTRL_TILED_TILE_WH),
-        .MCNTRL_TILED_STATUS_REG_ADDR  (MCNTRL_TILED_STATUS_REG_ADDR),
+        .MCNTRL_TILED_STATUS_REG_ADDR  (MCNTRL_TILED_STATUS_REG_CHN4_ADDR),
         .MCNTRL_TILED_PENDING_CNTR_BITS(MCNTRL_TILED_PENDING_CNTR_BITS),
         .MCNTRL_TILED_FRAME_PAGE_RESET (MCNTRL_TILED_FRAME_PAGE_RESET),
         .MCNTRL_TILED_WRITE_MODE       (1'b0)
@@ -788,7 +791,7 @@ module  mcntrl393 #(
         .MCNTRL_SCANLINE_WINDOW_WH         (MCNTRL_SCANLINE_WINDOW_WH),
         .MCNTRL_SCANLINE_WINDOW_X0Y0       (MCNTRL_SCANLINE_WINDOW_X0Y0),
         .MCNTRL_SCANLINE_WINDOW_STARTXY    (MCNTRL_SCANLINE_WINDOW_STARTXY),
-        .MCNTRL_SCANLINE_STATUS_REG_ADDR   (MCNTRL_SCANLINE_STATUS_REG_ADDR),
+        .MCNTRL_SCANLINE_STATUS_REG_ADDR   (MCNTRL_SCANLINE_STATUS_REG_CHN2_ADDR),
         .MCNTRL_SCANLINE_PENDING_CNTR_BITS (MCNTRL_SCANLINE_PENDING_CNTR_BITS),
         .MCNTRL_SCANLINE_WRITE_MODE        (1'b0)
     ) mcntrl_linear_rw_chn2_i (
@@ -832,7 +835,7 @@ module  mcntrl393 #(
         .MCNTRL_SCANLINE_WINDOW_WH         (MCNTRL_SCANLINE_WINDOW_WH),
         .MCNTRL_SCANLINE_WINDOW_X0Y0       (MCNTRL_SCANLINE_WINDOW_X0Y0),
         .MCNTRL_SCANLINE_WINDOW_STARTXY    (MCNTRL_SCANLINE_WINDOW_STARTXY),
-        .MCNTRL_SCANLINE_STATUS_REG_ADDR   (MCNTRL_SCANLINE_STATUS_REG_ADDR),
+        .MCNTRL_SCANLINE_STATUS_REG_ADDR   (MCNTRL_SCANLINE_STATUS_REG_CHN3_ADDR),
         .MCNTRL_SCANLINE_PENDING_CNTR_BITS (MCNTRL_SCANLINE_PENDING_CNTR_BITS),
         .MCNTRL_SCANLINE_WRITE_MODE        (1'b1)
     ) mcntrl_linear_rw_chn3_i (
