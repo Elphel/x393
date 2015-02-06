@@ -177,11 +177,32 @@ module  mcntrl393 #(
                                                         // TODO: Add number of blocks to R/W? (blocks can be different) - total length?
                                                         // Read back current address (fro debugging)?
     parameter MCNTRL_SCANLINE_STATUS_REG_ADDR=   'h4,
-    parameter MCNTRL_SCANLINE_PENDING_CNTR_BITS=   2    // Number of bits to count pending trasfers, currently 2 is enough, but may increase
+    parameter MCNTRL_SCANLINE_PENDING_CNTR_BITS=   2,    // Number of bits to count pending trasfers, currently 2 is enough, but may increase
                                                         // if memory controller will allow programming several sequences in advance to
                                                         // spread long-programming (tiled) over fast-programming (linear) requests.
                                                         // But that should not be too big to maintain 2-level priorities
     
+    parameter MAX_TILE_WIDTH=                   6,     // number of bits to specify maximal tile (width-1) (6 -> 64)
+    parameter MAX_TILE_HEIGHT=                  6,     // number of bits to specify maximal tile (height-1) (6 -> 64)
+    parameter MCNTRL_TILED_ADDR=            'h120,
+    parameter MCNTRL_TILED_MASK=            'h3f0, // both channels 0 and 1
+    parameter MCNTRL_TILED_MODE=            'h0,   // set mode register: {extra_pages[1:0],write_mode,enable,!reset}
+    parameter MCNTRL_TILED_STATUS_CNTRL=    'h1,   // control status reporting
+    parameter MCNTRL_TILED_STARTADDR=       'h2,   // 22-bit frame start address (3 CA LSBs==0. BA==0)
+    parameter MCNTRL_TILED_FRAME_FULL_WIDTH='h3,   // Padded line length (8-row increment), in 8-bursts (16 bytes)
+    parameter MCNTRL_TILED_WINDOW_WH=       'h4,   // low word - 13-bit window width (0->'n4000), high word - 16-bit frame height (0->'h10000)
+    parameter MCNTRL_TILED_WINDOW_X0Y0=     'h5,   // low word - 13-bit window left, high word - 16-bit window top
+    parameter MCNTRL_TILED_WINDOW_STARTXY=  'h6,   // low word - 13-bit start X (relative to window), high word - 16-bit start y
+                                                      // Start XY can be used when read command to start from the middle
+                                                      // TODO: Add number of blocks to R/W? (blocks can be different) - total length?
+                                                      // Read back current address (fro debugging)?
+    parameter MCNTRL_TILED_TILE_WH=         'h7,   // low word - 6-bit tile width in 8-bursts, high - tile height (0 - > 64)
+    parameter MCNTRL_TILED_STATUS_REG_ADDR= 'h5,
+    parameter MCNTRL_TILED_PENDING_CNTR_BITS=2,    // Number of bits to count pending trasfers, currently 2 is enough, but may increase
+                                                   // if memory controller will allow programming several sequences in advance to
+                                                   // spread long-programming (tiled) over fast-programming (linear) requests.
+                                                   // But that should not be too big to maintain 2-level priorities
+    parameter MCNTRL_TILED_FRAME_PAGE_RESET =1'b0  // reset internal page number to zero at the frame start (false - only when hard/soft reset)                                                     
     
     ) (
     input                        rst_in,
@@ -246,6 +267,16 @@ module  mcntrl393 #(
 // optional I/O for channel synchronization
     output [FRAME_HEIGHT_BITS-1:0] line_unfinished_chn3, // number of the current (ufinished ) line, REALATIVE TO FRAME, NOT WINDOW?. 
     input                          suspend_chn3,       // suspend transfers (from external line number comparator)
+// Channel 4 (tiled tes)
+    input                          frame_start_chn4,   // resets page, x,y, and initiates transfer requests (in write mode will wait for next_page)
+    input                          next_page_chn4,     // page was read/written from/to 4*1kB on-chip buffer
+    output                         page_ready_chn4,    // == xfer_done, connect externally | Single-cycle pulse indicating that a page was read/written from/to DDR3 memory
+    output                         frame_done_chn4,    // single-cycle pulse when the full frame (window) was transferred to/from DDR3 memory
+// optional I/O for channel synchronization
+    output [FRAME_HEIGHT_BITS-1:0] line_unfinished_chn4, // number of the current (ufinished ) line, REALATIVE TO FRAME, NOT WINDOW?. 
+    input                          suspend_chn4,       // suspend transfers (from external line number comparator)
+
+
 
     // DDR3 interface
     output                       SDRST, // DDR3 reset (active low)
@@ -319,7 +350,6 @@ module  mcntrl393 #(
 //    wire        rpage_nxt_chn2;
     wire        buf_wr_chn2;
     wire        buf_wpage_nxt_chn2;
-//    wire  [6:0] buf_waddr_chn2; 
     wire [63:0] buf_wdata_chn2;
      
     wire        want_rq3;
@@ -331,20 +361,21 @@ module  mcntrl393 #(
     wire        seq_done3;
     wire        rpage_nxt_chn3;
     wire        buf_rd_chn3;
-//    wire  [6:0] buf_raddr_chn3; 
     wire [63:0] buf_rdata_chn3;
     
     wire        want_rq4;
     wire        need_rq4;
     wire        channel_pgm_en4; 
-    wire [31:0] seq_data4; 
-    wire        seq_wr4;
-    wire        seq_set4;
+    
+//    wire        seq_tiled_start_rd; 
+    wire [31:0] seq_data4x; // may be shared with other channel
+    wire        seq_wr4x;   // may be shared with other channel
+    wire        seq_set4x;  // may be shared with other channel
+    
     wire        seq_done4;
     wire        rpage_nxt_chn4;
     wire        buf_wr_chn4;
     wire        buf_wpage_nxt_chn4;
-//    wire  [6:0] buf_waddr_chn4; 
     wire [63:0] buf_wdata_chn4;
 
     // Command tree - insert register layer if needed
@@ -356,6 +387,8 @@ module  mcntrl393 #(
     wire       cmd_scanline_chn2_stb;
     wire [7:0] cmd_scanline_chn3_ad;
     wire       cmd_scanline_chn3_stb;
+    wire [7:0] cmd_tiled_chn4_ad;
+    wire       cmd_tiled_chn4_stb;
 
 
 // Status tree:
@@ -374,6 +407,10 @@ module  mcntrl393 #(
     wire                  [7:0] status_scanline_chn3_ad;    // PS scanline channel3 (memory read) status byte-wide address/data 
     wire                        status_scanline_chn3_rq;    // PS scanline channel3 (memory read) channels status request  
     wire                        status_scanline_chn3_start; // PS scanline channel3 (memory read) channels status packet transfer start (currently with 0 latency from status_root_rq)
+
+    wire                  [7:0] status_tiled_chn4_ad;    // PS tiled channel4 (memory read) status byte-wide address/data 
+    wire                        status_tiled_chn4_rq;    // PS tiled channel4 (memory read) channels status request  
+    wire                        status_tiled_chn4_start; // PS tiled channel4 (memory read) channels status packet transfer start (currently with 0 latency from status_root_rq)
 
 
     reg                         select_cmd0;
@@ -433,6 +470,30 @@ module  mcntrl393 #(
 //    wire                  [1:0] xfer_page3;       // "internal" buffer page
     wire                        xfer_reset_page3;   // "internal" buffer page reset, @posedge mclk
 
+
+    wire                  [2:0] tiled_rd_bank;   // bank address
+    wire   [ADDRESS_NUMBER-1:0] tiled_rd_row;    // memory row
+    wire   [COLADDR_NUMBER-4:0] tiled_rd_col;    // start memory column in 8-bursts
+    wire   [FRAME_WIDTH_BITS:0] tiled_rd_rowcol_inc; // number of 128-bit words to transfer (8*16 bits) - full bursts of 8 ( 0 - maximal length, 64)
+    wire   [MAX_TILE_WIDTH-1:0] tiled_rd_num_rows_m1; // number of 128-bit words to transfer (8*16 bits) - full bursts of 8 ( 0 - maximal length, 64)
+    wire  [MAX_TILE_HEIGHT-1:0] tiled_rd_num_cols_m1; // number of 128-bit words to transfer (8*16 bits) - full bursts of 8 ( 0 - maximal length, 64)
+    wire                        tiled_rd_keep_open;  // start generating commands
+    wire                        tiled_rd_xfer_partial;  // start generating commands
+    wire                        tiled_rd_start;  // start generating commands
+
+    wire                  [2:0] tiled_rd_chn4_bank;   // bank address
+    wire   [ADDRESS_NUMBER-1:0] tiled_rd_chn4_row;    // memory row
+    wire   [COLADDR_NUMBER-4:0] tiled_rd_chn4_col;    // start memory column in 8-bursts
+    wire   [FRAME_WIDTH_BITS:0] tiled_rd_chn4_rowcol_inc; // number of 128-bit words to transfer (8*16 bits) - full bursts of 8 ( 0 - maximal length, 64)
+    wire   [MAX_TILE_WIDTH-1:0] tiled_rd_chn4_num_rows_m1; // number of 128-bit words to transfer (8*16 bits) - full bursts of 8 ( 0 - maximal length, 64)
+    wire  [MAX_TILE_HEIGHT-1:0] tiled_rd_chn4_num_cols_m1; // number of 128-bit words to transfer (8*16 bits) - full bursts of 8 ( 0 - maximal length, 64)
+    wire                        tiled_rd_chn4_keep_open;  // start generating commands
+    wire                        tiled_rd_chn4_xfer_partial;  // start generating commands
+    wire                        tiled_rd_chn4_start;  // start generating commands
+    wire                        xfer_reset_page4_pos;         // "internal" buffer page reset, @posedge mclk
+    reg                         xfer_reset_page4_neg;         // "internal" buffer page reset, @negedge mclk
+
+
     
 
     // Command tree - insert register layer(s) if needed, now just direct assignments
@@ -444,6 +505,8 @@ module  mcntrl393 #(
     assign cmd_scanline_chn2_stb=cmd_stb;
     assign cmd_scanline_chn3_ad= cmd_ad;
     assign cmd_scanline_chn3_stb=cmd_stb;
+    assign cmd_tiled_chn4_ad=    cmd_ad;
+    assign cmd_tiled_chn4_stb=   cmd_stb;
 
     
     
@@ -460,6 +523,7 @@ module  mcntrl393 #(
     
     assign page_ready_chn2=seq_done2;
     assign page_ready_chn3=seq_done3;
+    assign page_ready_chn4=rpage_nxt_chn4;
 
     always @ (axi_rst or axi_clk) begin
         if      (axi_rst)           select_cmd0 <= 0;
@@ -507,9 +571,9 @@ module  mcntrl393 #(
         .db_in3    (status_scanline_chn3_ad), // input[7:0] 
         .rq_in3    (status_scanline_chn3_rq), // input
         .start_in3 (status_scanline_chn3_start), // output
-        .db_in4    (8'b0), // input[7:0] 
-        .rq_in4    (1'b0), // input
-        .start_in4 (), // output
+        .db_in4    (status_tiled_chn4_ad), // input[7:0] 
+        .rq_in4    (status_tiled_chn4_rq), // input
+        .start_in4 (status_tiled_chn4_start), // output
         .db_in5    (8'b0), // input[7:0] 
         .rq_in5    (1'b0), // input
         .start_in5 (), // output
@@ -548,38 +612,114 @@ module  mcntrl393 #(
         .rq_out    (status_rq), // output
         .start_out (status_start) // input
     );
-//status_ps_pio_start
 
-    
-    /* Instance template for module cmd_encod_tiled_mux */
+    mcntrl_tiled_rw #(
+        .ADDRESS_NUMBER                (ADDRESS_NUMBER),
+        .COLADDR_NUMBER                (COLADDR_NUMBER),
+        .FRAME_WIDTH_BITS              (FRAME_WIDTH_BITS),
+        .FRAME_HEIGHT_BITS             (FRAME_HEIGHT_BITS),
+        .MAX_TILE_WIDTH                (MAX_TILE_WIDTH),
+        .MAX_TILE_HEIGHT               (MAX_TILE_HEIGHT),
+        .MCNTRL_TILED_ADDR             (MCNTRL_TILED_ADDR),
+        .MCNTRL_TILED_MASK             (MCNTRL_TILED_MASK),
+        .MCNTRL_TILED_MODE             (MCNTRL_TILED_MODE),
+        .MCNTRL_TILED_STATUS_CNTRL     (MCNTRL_TILED_STATUS_CNTRL),
+        .MCNTRL_TILED_STARTADDR        (MCNTRL_TILED_STARTADDR),
+        .MCNTRL_TILED_FRAME_FULL_WIDTH (MCNTRL_TILED_FRAME_FULL_WIDTH),
+        .MCNTRL_TILED_WINDOW_WH        (MCNTRL_TILED_WINDOW_WH),
+        .MCNTRL_TILED_WINDOW_X0Y0      (MCNTRL_TILED_WINDOW_X0Y0),
+        .MCNTRL_TILED_WINDOW_STARTXY   (MCNTRL_TILED_WINDOW_STARTXY),
+        .MCNTRL_TILED_TILE_WH          (MCNTRL_TILED_TILE_WH),
+        .MCNTRL_TILED_STATUS_REG_ADDR  (MCNTRL_TILED_STATUS_REG_ADDR),
+        .MCNTRL_TILED_PENDING_CNTR_BITS(MCNTRL_TILED_PENDING_CNTR_BITS),
+        .MCNTRL_TILED_FRAME_PAGE_RESET (MCNTRL_TILED_FRAME_PAGE_RESET),
+        .MCNTRL_TILED_WRITE_MODE       (1'b0)
+    ) mcntrl_tiled_rw_chn4_i (
+        .rst(rst), // input
+        .mclk(mclk), // input
+        .cmd_ad               (cmd_tiled_chn4_ad), // input[7:0] 
+        .cmd_stb              (cmd_tiled_chn4_stb), // input
+        .status_ad            (status_tiled_chn4_ad), // output[7:0] 
+        .status_rq            (status_tiled_chn4_rq), // output
+        .status_start         (status_tiled_chn4_start), // input
+        .frame_start       (frame_start_chn4), // input
+        .next_page         (next_page_chn4), // input
+        .frame_done        (frame_done_chn4), // output
+        .line_unfinished   (line_unfinished_chn4), // output[15:0] 
+        .suspend           (suspend_chn4), // input
+        .xfer_want            (want_rq4), // output
+        .xfer_need            (need_rq4), // output
+        .xfer_grant           (channel_pgm_en4), // input
+        .xfer_start           (tiled_rd_chn4_start), // output
+        .xfer_bank            (tiled_rd_chn4_bank), // output[2:0] 
+        .xfer_row             (tiled_rd_chn4_row), // output[14:0] 
+        .xfer_col             (tiled_rd_chn4_col), // output[6:0] 
+        .rowcol_inc           (tiled_rd_chn4_rowcol_inc), // output[13:0] 
+        .num_rows_m1          (tiled_rd_chn4_num_rows_m1), // output[5:0] 
+        .num_cols_m1          (tiled_rd_chn4_num_cols_m1), // output[5:0] 
+        .keep_open            (tiled_rd_chn4_keep_open), // output
+        .xfer_partial         (tiled_rd_chn4_xfer_partial), // output
+        .xfer_page_done       (seq_done4), // input
+        .xfer_page_rst        (xfer_reset_page4_pos) // output
+    );
+
     cmd_encod_tiled_mux #(
         .ADDRESS_NUMBER          (ADDRESS_NUMBER),
-        .COLADDR_NUMBER          (COLADDR_NUMBER)
+        .COLADDR_NUMBER          (COLADDR_NUMBER),
+        .FRAME_WIDTH_BITS        (FRAME_WIDTH_BITS),
+        .MAX_TILE_WIDTH          (MAX_TILE_WIDTH),
+        .MAX_TILE_HEIGHT         (MAX_TILE_HEIGHT)
     ) cmd_encod_tiled_mux_i (
         .clk                     (mclk), // input
-        .bank4(), // input[2:0] 
-        .row4(), // input[14:0] 
-        .col4(), // input[6:0] 
-        .rowcol_inc4(), // input[21:0] 
-        .num_rows4(), // input[5:0] 
-        .num_cols4(), // input[5:0] 
-        .keep_open4(), // input
-        .start4(), // input
-        .bank(), // output[2:0] 
-        .row(), // output[14:0] 
-        .col(), // output[6:0] 
-        .rowcol_inc(), // output[21:0] 
-        .num_rows(), // output[5:0] 
-        .num_cols(), // output[5:0] 
-        .keep_open(), // output
-        .start_rd(), // output
-        .start_wr() // output
+        .bank4                   (tiled_rd_chn4_bank), // input[2:0] 
+        .row4                    (tiled_rd_chn4_row), // input[14:0] 
+        .col4                    (tiled_rd_chn4_col), // input[6:0] 
+        .rowcol_inc4             (tiled_rd_chn4_rowcol_inc), // input[13:0] 
+        .num_rows4               (tiled_rd_chn4_num_rows_m1), // input[5:0] 
+        .num_cols4               (tiled_rd_chn4_num_cols_m1), // input[5:0] 
+        .keep_open4              (tiled_rd_chn4_keep_open), // input
+        .partial4                (tiled_rd_chn4_xfer_partial), // input
+        .start4                  (tiled_rd_chn4_start), // input
+        .bank                    (tiled_rd_bank), // output[2:0] 
+        .row                     (tiled_rd_row), // output[14:0] 
+        .col                     (tiled_rd_col), // output[6:0] 
+        .rowcol_inc              (tiled_rd_rowcol_inc), // output[13:0] 
+        .num_rows                (tiled_rd_num_rows_m1), // output[5:0] 
+        .num_cols                (tiled_rd_num_cols_m1), // output[5:0] 
+        .keep_open               (tiled_rd_keep_open), // output
+        .partial                 (tiled_rd_xfer_partial), // output
+        .start_rd                (tiled_rd_start), // output
+        .start_wr                () // output
+    );
+    
+    cmd_encod_tiled_rd #(
+        .ADDRESS_NUMBER(15),
+        .COLADDR_NUMBER(10),
+        .CMD_PAUSE_BITS(10),
+        .CMD_DONE_BIT(10)
+    ) cmd_encod_tiled_rd_i (
+        .rst               (rst), // input
+        .clk               (mclk), // input
+        .start_bank        (tiled_rd_bank), // input[2:0] 
+        .start_row         (tiled_rd_row), // input[14:0] 
+        .start_col         (tiled_rd_col), // input[6:0] 
+        .rowcol_inc_in     (tiled_rd_rowcol_inc), // input[13:0] // [21:0] 
+        .num_rows_in_m1    (tiled_rd_num_rows_m1), // input[5:0] 
+        .num_cols_in_m1    (tiled_rd_num_cols_m1), // input[5:0] 
+        .keep_open_in      (tiled_rd_keep_open), // input
+        .skip_next_page_in (tiled_rd_xfer_partial), // input
+        
+        .start             (tiled_rd_start), // input
+        .enc_cmd           (seq_data4x), // output[31:0] reg 
+        .enc_wr            (seq_wr4x), // output reg 
+        .enc_done          (seq_set4x) // output reg 
     );
 
 // Port memory buffer (4 pages each, R/W fixed, port 0 - AXI read from DDR, port 1 - AXI write to DDR
-// Port 2 (read DDR to AXI) buffer
+// Port 2 (read DDR to AXI) buffer, linear
     always @ (negedge mclk) begin
         xfer_reset_page2_neg <= xfer_reset_page2_pos;
+        xfer_reset_page4_neg <= xfer_reset_page4_pos;
     end
 
     mcntrl_1kx32r chn2_buf_i (
@@ -599,9 +739,9 @@ module  mcntrl393 #(
 
 
 
-// Port 3 (write DDR from AXI) buffer
+// Port 3 (write DDR from AXI) buffer, linear
 
-         mcntrl_1kx32w chn1_buf_i (
+         mcntrl_1kx32w chn3_buf_i (
         .ext_clk      (axi_clk), // input
         .ext_waddr    (buf_waddr), // input[9:0] 
         .ext_we       (buf3_we), // input
@@ -614,6 +754,23 @@ module  mcntrl393 #(
         .rd           (buf_rd_chn3), // input
         .data_out     (buf_rdata_chn3) // output[63:0] 
     );
+
+// Port 4 (read DDR to AXI) buffer, tiled
+    mcntrl_1kx32r chn4_buf_i (
+        .ext_clk      (axi_clk), // input
+        .ext_raddr    (buf_raddr), // input[9:0] 
+        .ext_rd       (buf4_rd), // input
+        .ext_regen    (buf4_regen), // input
+        .ext_data_out (buf4_data), // output[31:0] 
+        .wclk         (!mclk), // input
+        .wpage_in     (2'b0), // input[1:0] 
+        .wpage_set    (xfer_reset_page4_neg), // input  TODO: Generate @ negedge mclk on frame start
+        .page_next    (buf_wpage_nxt_chn4), // input
+        .page         (), // output[1:0]
+        .we           (buf_wr_chn4), // input
+        .data_in      (buf_wdata_chn4) // input[63:0] 
+    );
+
     
 
     mcntrl_linear_rw #(
@@ -632,7 +789,8 @@ module  mcntrl393 #(
         .MCNTRL_SCANLINE_WINDOW_X0Y0       (MCNTRL_SCANLINE_WINDOW_X0Y0),
         .MCNTRL_SCANLINE_WINDOW_STARTXY    (MCNTRL_SCANLINE_WINDOW_STARTXY),
         .MCNTRL_SCANLINE_STATUS_REG_ADDR   (MCNTRL_SCANLINE_STATUS_REG_ADDR),
-        .MCNTRL_SCANLINE_PENDING_CNTR_BITS (MCNTRL_SCANLINE_PENDING_CNTR_BITS)
+        .MCNTRL_SCANLINE_PENDING_CNTR_BITS (MCNTRL_SCANLINE_PENDING_CNTR_BITS),
+        .MCNTRL_SCANLINE_WRITE_MODE        (1'b0)
     ) mcntrl_linear_rw_chn2_i (
         .rst             (rst), // input
         .mclk            (mclk), // input
@@ -658,7 +816,7 @@ module  mcntrl393 #(
         .xfer_reset_page (xfer_reset_page2_pos) // output
     );
 
-    /* Instance template for module mcntrl_linear_rw */
+
     mcntrl_linear_rw #(
         .ADDRESS_NUMBER                    (ADDRESS_NUMBER),
         .COLADDR_NUMBER                    (COLADDR_NUMBER),
@@ -675,7 +833,8 @@ module  mcntrl393 #(
         .MCNTRL_SCANLINE_WINDOW_X0Y0       (MCNTRL_SCANLINE_WINDOW_X0Y0),
         .MCNTRL_SCANLINE_WINDOW_STARTXY    (MCNTRL_SCANLINE_WINDOW_STARTXY),
         .MCNTRL_SCANLINE_STATUS_REG_ADDR   (MCNTRL_SCANLINE_STATUS_REG_ADDR),
-        .MCNTRL_SCANLINE_PENDING_CNTR_BITS (MCNTRL_SCANLINE_PENDING_CNTR_BITS)
+        .MCNTRL_SCANLINE_PENDING_CNTR_BITS (MCNTRL_SCANLINE_PENDING_CNTR_BITS),
+        .MCNTRL_SCANLINE_WRITE_MODE        (1'b1)
     ) mcntrl_linear_rw_chn3_i (
         .rst             (rst), // input
         .mclk            (mclk), // input
@@ -702,7 +861,6 @@ module  mcntrl393 #(
         .xfer_reset_page (xfer_reset_page3) // output
     );
     
-    /* Instance template for module cmd_encod_linear_mux */
     cmd_encod_linear_mux #(
         .ADDRESS_NUMBER           (ADDRESS_NUMBER),
         .COLADDR_NUMBER           (COLADDR_NUMBER)
@@ -734,7 +892,7 @@ module  mcntrl393 #(
         .ADDRESS_NUMBER  (ADDRESS_NUMBER),
         .COLADDR_NUMBER  (COLADDR_NUMBER),
         .CMD_PAUSE_BITS  (CMD_PAUSE_BITS),
-        .CMD_DONE_BIT  (CMD_DONE_BIT)
+        .CMD_DONE_BIT    (CMD_DONE_BIT)
     ) cmd_encod_linear_rd_i (
         .rst       (rst), // input
         .clk       (mclk), // input
@@ -952,9 +1110,9 @@ module  mcntrl393 #(
         .want_rq4           (want_rq4), // input
         .need_rq4           (need_rq4), // input
         .channel_pgm_en4    (channel_pgm_en4), // output reg 
-        .seq_data4          (seq_data4), // input[31:0] 
-        .seq_wr4            (seq_wr4), // input
-        .seq_set4           (seq_set4), // input
+        .seq_data4          (seq_data4x), // input[31:0] 
+        .seq_wr4            (seq_wr4x), // input
+        .seq_set4           (seq_set4x), // input
         .seq_done4          (seq_done4), // output
         .rpage_nxt_chn4     (rpage_nxt_chn4), // output 
         .buf_wr_chn4        (buf_wr_chn4), // output

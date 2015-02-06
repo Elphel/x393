@@ -40,10 +40,11 @@ module  mcntrl_linear_rw #(
                                                       // TODO: Add number of blocks to R/W? (blocks can be different) - total length?
                                                       // Read back current address (fro debugging)?
     parameter MCNTRL_SCANLINE_STATUS_REG_ADDR= 'h4,
-    parameter MCNTRL_SCANLINE_PENDING_CNTR_BITS=2     // Number of bits to count pending trasfers, currently 2 is enough, but may increase
+    parameter MCNTRL_SCANLINE_PENDING_CNTR_BITS=2,     // Number of bits to count pending trasfers, currently 2 is enough, but may increase
                                                       // if memory controller will allow programming several sequences in advance to
                                                       // spread long-programming (tiled) over fast-programming (linear) requests.
                                                       // But that should not be too big to maintain 2-level priorities
+    parameter MCNTRL_SCANLINE_WRITE_MODE =    1'b0    // module is configured to write tiles to external memory (false - read tiles)                                                                                                           
 )(
     input                          rst,
     input                          mclk,
@@ -91,7 +92,6 @@ module  mcntrl_linear_rw #(
     reg   [NUM_RC_BURST_BITS-1:0] start_addr_r;   // 22 bit - to be absorbed by DSP
     reg                     [2:0] bank_reg [2:0];
     wire [FRAME_WIDTH_BITS+FRAME_HEIGHT_BITS-3:0] mul_rslt_w;
- //   wire                    [2:0] cur_bank;
     reg      [FRAME_WIDTH_BITS:0] row_left;   // number of 8-bursts left in the current row
     reg                           last_in_row;
     reg      [COLADDR_NUMBER-3:0] mem_page_left; // number of 8-bursts left in the pointed memory page
@@ -103,11 +103,10 @@ module  mcntrl_linear_rw #(
     wire                          calc_valid;   // calculated registers have valid values   
     wire                          chn_en;   // enable requests by channle (continue ones in progress)
     wire                          chn_rst; // resets command, including fifo;
-//    reg                     [1:0] xfer_page_r;
     reg                           xfer_reset_page_r;
     reg                     [2:0] page_cntr;
     
-    wire                          cmd_wrmem; // 0: read from memory, 1:write to memory
+    wire                          cmd_wrmem=MCNTRL_SCANLINE_WRITE_MODE; // 0: read from memory, 1:write to memory
     wire                    [1:0] cmd_extra_pages; // external module needs more than 1 page
     reg                           busy_r;
     reg                           want_r;
@@ -137,7 +136,8 @@ module  mcntrl_linear_rw #(
     wire                          msw_zero=  !cmd_data[31:16]; // MSW all bits are 0 - set carry bit
       
     
-    reg                     [4:0] mode_reg;//mode register: {extra_pages[1:0],write_mode,enable,!reset}
+//    reg                     [4:0] mode_reg;//mode register: {extra_pages[1:0],write_mode,enable,!reset}
+    reg                     [3:0] mode_reg;//mode register: {extra_pages[1:0],write_mode,enable,!reset}
     reg   [NUM_RC_BURST_BITS-1:0] start_addr;     // (programmed) Frame start (in {row,col8} in burst8, bank ==0
 //    reg      [FRAME_WIDTH_BITS:0] frame_width;    // (programmed) 0- max
     
@@ -163,7 +163,7 @@ module  mcntrl_linear_rw #(
     // Sett parameter registers
     always @(posedge rst or posedge mclk) begin
         if      (rst)                mode_reg <= 0;
-        else if (set_mode_w)         mode_reg <= cmd_data[4:0];
+        else if (set_mode_w)         mode_reg <= cmd_data[3:0]; // [4:0];
         
         if      (rst)                start_addr <= 0;
         else if (set_start_addr_w)   start_addr <= cmd_data[NUM_RC_BURST_BITS-1:0];
@@ -213,8 +213,8 @@ module  mcntrl_linear_rw #(
     assign line_unfinished=line_unfinished_r[1];
     assign chn_en =         &mode_reg[1:0];   // enable requests by channle (continue ones in progress)
     assign chn_rst =        ~mode_reg[0]; // resets command, including fifo;
-    assign cmd_wrmem =       mode_reg[2];// 0: read from memory, 1:write to memory
-    assign cmd_extra_pages = mode_reg[4:3]; // external module needs more than 1 page
+    assign cmd_extra_pages = mode_reg[3:2]; // external module needs more than 1 page
+//    assign cmd_wrmem =       mode_reg[4];// 0: read from memory, 1:write to memory
     assign status_data= {1'b0, busy_r};     // TODO: Add second bit?
     assign pgm_param_w=      cmd_we;
     
@@ -266,8 +266,8 @@ module  mcntrl_linear_rw #(
         else if (chn_rst || xfer_grant)                          want_r <= 0;
         else if (pre_want && (page_cntr>{1'b0,cmd_extra_pages})) want_r <= 1;
         
-        if (rst)                               page_cntr <= 0;
-        else if (frame_start)                  page_cntr <= cmd_wrmem?0:4;
+        if (rst)                                 page_cntr <= 0;
+        else if (frame_start)                    page_cntr <= cmd_wrmem?0:4;
         else if ( xfer_start_r[0] && !next_page) page_cntr <= page_cntr + 1;     
         else if (!xfer_start_r[0] &&  next_page) page_cntr <= page_cntr - 1;
         

@@ -24,7 +24,6 @@
 module  mcntrl_tiled_rw#(
    parameter ADDRESS_NUMBER=                   15,
     parameter COLADDR_NUMBER=                   10,
-    parameter NUM_XFER_BITS=                     6,    // number of bits to specify transfer length
     parameter FRAME_WIDTH_BITS=                 13,    // Maximal frame width - 8-word (16 bytes) bursts 
     parameter FRAME_HEIGHT_BITS=                16,    // Maximal frame height 
     parameter MAX_TILE_WIDTH=                   6,     // number of bits to specify maximal tile (width-1) (6 -> 64)
@@ -43,10 +42,12 @@ module  mcntrl_tiled_rw#(
                                                       // Read back current address (fro debugging)?
     parameter MCNTRL_TILED_TILE_WH=         'h7,   // low word - 6-bit tile width in 8-bursts, high - tile height (0 - > 64)
     parameter MCNTRL_TILED_STATUS_REG_ADDR= 'h5,
-    parameter MCNTRL_TILED_PENDING_CNTR_BITS=2     // Number of bits to count pending trasfers, currently 2 is enough, but may increase
-                                                      // if memory controller will allow programming several sequences in advance to
-                                                      // spread long-programming (tiled) over fast-programming (linear) requests.
-                                                      // But that should not be too big to maintain 2-level priorities
+    parameter MCNTRL_TILED_PENDING_CNTR_BITS=2,    // Number of bits to count pending trasfers, currently 2 is enough, but may increase
+                                                   // if memory controller will allow programming several sequences in advance to
+                                                   // spread long-programming (tiled) over fast-programming (linear) requests.
+                                                   // But that should not be too big to maintain 2-level priorities
+    parameter MCNTRL_TILED_FRAME_PAGE_RESET =1'b0, // reset internal page number to zero at the frame start (false - only when hard/soft reset)                                                     
+    parameter MCNTRL_TILED_WRITE_MODE =      1'b0  // module is configured to write tiles to external memory (false - read tiles)                                                     
 )(
     input                          rst,
     input                          mclk,
@@ -68,20 +69,17 @@ module  mcntrl_tiled_rw#(
     output                         xfer_want,     // "want" data transfer
     output                         xfer_need,     // "need" - really need a transfer (only 1 page/ room for 1 page left in a buffer), want should still be set.
     input                          xfer_grant,    // sequencer programming access granted, deassert wait/need 
-    output                         xfer_start,    // initiate a transfer (next cycle after xfer_grant)
+    output                         xfer_start,    // initiate a transfer (next cycle after xfer_grant), following signals (up to xfer_partial) are valid
     output                   [2:0] xfer_bank,     // start bank address
     output    [ADDRESS_NUMBER-1:0] xfer_row,      // memory row
     output    [COLADDR_NUMBER-4:0] xfer_col,      // start memory column in 8-bursts
     output    [FRAME_WIDTH_BITS:0] rowcol_inc,    // increment row+col (after bank) for the new scan line in 8-bursts (externally pad with 0)
-//    output     [NUM_XFER_BITS-1:0] xfer_num128,   // number of 128-bit words to transfer (8*16 bits) - full bursts of 8 ( 0 - maximal length, 64)
     output    [MAX_TILE_WIDTH-1:0] num_rows_m1,   // number of rows to read minus 1
     output  [MAX_TILE_HEIGHT-1:0] num_cols_m1,   // number of 16-pixel columns to read (rows first, then columns) - 1
-    output                         keep_open,     // (programmable bit)keep banks open (for <=8 banks only    
-    input                          xfer_done,     // transfer to/from the buffer finished
-    input                          xfer_buf_rst_negedge,  // @negedge mclk!!! (if heppanes before xfer_done, page done, if not - continues
-    output                   [1:0] xfer_page,      // page number for transfer (goes to channel buffer memory-side address)
-    output                         buf_skip_reset  // do not reset buffer counter (in split tiles)   
-
+    output                         keep_open,     // (programmable bit)keep banks open (for <=8 banks only
+    output                         xfer_partial,  // partial tile (first of 2) , sequencer will not generate page_next at the end of block   
+    input                          xfer_page_done,     // transfer to/from the buffer finished (partial transfers should not generate), use rpage_nxt_chn@mclk
+    output                         xfer_page_rst // reset buffer internal page - at each frame start or when specifically reset
 );
 //MAX_TILE_WIDTH
     localparam NUM_RC_BURST_BITS=ADDRESS_NUMBER+COLADDR_NUMBER-3;  //to spcify row and col8 == 22
@@ -105,11 +103,9 @@ module  mcntrl_tiled_rw#(
     reg                           last_in_row;
     reg      [COLADDR_NUMBER-3:0] mem_page_left; // number of 8-bursts left in the pointed memory page
     reg        [MAX_TILE_WIDTH:0] lim_by_tile_width;     // number of bursts left limited by the longest transfer (currently 64)
-//    reg        [MAX_TILE_WIDTH:0] remainder_tile_width;  // number of bursts postponed to the next partial tile (because of the page crossing) 
     wire     [COLADDR_NUMBER-3:0] remainder_tile_width;  // number of bursts postponed to the next partial tile (because of the page crossing) MSB-sign
     reg                           continued_tile;        // this is a continued tile (caused by page crossing) - only once
     reg      [MAX_TILE_WIDTH-1:0] leftower_cols;         // valid with continued_tile, number of columns left
-//    reg         [NUM_XFER_BITS:0] xfer_num128_r;   // number of 128-bit words to transfer (8*16 bits) - full bursts of 8
     wire                          pgm_param_w;  // program one of the parameters, invalidate calculated results for PAR_MOD_LATENCY
     reg                     [2:0] xfer_start_r;
     reg     [PAR_MOD_LATENCY-1:0] par_mod_r; 
@@ -117,11 +113,12 @@ module  mcntrl_tiled_rw#(
     wire                          calc_valid;   // calculated registers have valid values   
     wire                          chn_en;   // enable requests by channle (continue ones in progress)
     wire                          chn_rst; // resets command, including fifo;
-    reg                           chn_rst_d; // delayed by 1 cycle do detect turning off  
-    reg                     [1:0] xfer_page_r;
-    reg                     [2:0] page_cntr;
+    reg                           chn_rst_d; // delayed by 1 cycle do detect turning off
+    reg                           xfer_page_rst_r=1;  
+    reg                     [2:0] page_cntr; // to maintain requests - difference between client requests and generated requests
+                                             // partial (truncated by memory page) generated requests should not count 
     
-    wire                          cmd_wrmem; // 0: read from memory, 1:write to memory
+    wire                          cmd_wrmem= MCNTRL_TILED_WRITE_MODE; // 0: read from memory, 1:write to memory (change to parameter?)
     wire                    [1:0] cmd_extra_pages; // external module needs more than 1 page
     reg                           busy_r;
     reg                           want_r;
@@ -130,7 +127,7 @@ module  mcntrl_tiled_rw#(
     wire                          last_in_row_w;
     wire                          last_row_w;
     reg                           last_block;
-    reg [MCNTRL_TILED_PENDING_CNTR_BITS-1:0] pending_xfers; // number of requested,. but not finished block transfers      
+    reg [MCNTRL_TILED_PENDING_CNTR_BITS-1:0] pending_xfers; // number of requested,. but not finished block transfers   (to genearate frame done)   
     reg   [NUM_RC_BURST_BITS-1:0] row_col_r;
     reg   [FRAME_HEIGHT_BITS-1:0] line_unfinished_r [1:0];
     wire                          pre_want;
@@ -153,20 +150,15 @@ module  mcntrl_tiled_rw#(
     wire                          tile_width_zero= !(|cmd_data[MAX_TILE_WIDTH-1:0]);  
     wire                          tile_height_zero=!(|cmd_data[MAX_TILE_HEIGHT+15:16]);  
     
-    reg                     [1:0] buf_rst_posedge;  
-    
-    reg                     [5:0] mode_reg;//mode register: {keep_open,extra_pages[1:0],write_mode,enable,!reset}
+//    reg                     [5:0] mode_reg;//mode register: {write_mode,keep_open,extra_pages[1:0],enable,!reset}
+    reg                     [4:0] mode_reg;//mode register: {keep_open,extra_pages[1:0],enable,!reset}
     reg   [NUM_RC_BURST_BITS-1:0] start_addr;     // (programmed) Frame start (in {row,col8} in burst8, bank ==0
-//    reg      [FRAME_WIDTH_BITS:0] frame_width;    // (programmed) 0- max
     reg        [MAX_TILE_WIDTH:0] tile_cols; // full number of columns in a tile
     reg       [MAX_TILE_HEIGHT:0] tile_rows; // full number of rows in a tile
 
     reg        [MAX_TILE_WIDTH:0] num_cols_r; // full number of columns to transfer (not minus 1)
-//    reg       [MAX_TILE_HEIGHT:0] num_rows_r; // full number of rows to transfer (not minus 1)
     wire       [MAX_TILE_WIDTH:0] num_cols_m1_w; // full number of columns to transfer minus 1 with extra bit
     wire      [MAX_TILE_HEIGHT:0] num_rows_m1_w; // full number of columns to transfer minus 1 with extra bit
-//    reg                           buf_skip_reset_r;
- //FIXME!!!!!!!!   
     reg      [FRAME_WIDTH_BITS:0] frame_full_width;     // (programmed) increment combined row/col when moving to the next line
                                                   // frame_width rounded up to max transfer (half page) if frame_width> max transfer/2,
                                                   // otherwise (smaller widths) round up to the nearest power of 2
@@ -187,10 +179,10 @@ module  mcntrl_tiled_rw#(
     assign set_window_start_w = cmd_we && (cmd_a== MCNTRL_TILED_WINDOW_STARTXY);
     assign set_tile_wh_w =      cmd_we && (cmd_a== MCNTRL_TILED_TILE_WH);
     //
-    // Sett parameter registers
+    // Set parameter registers
     always @(posedge rst or posedge mclk) begin
         if      (rst)                mode_reg <= 0;
-        else if (set_mode_w)         mode_reg <= cmd_data[5:0];
+        else if (set_mode_w)         mode_reg <= cmd_data[4:0]; // [5:0];
         
         if      (rst)                start_addr <= 0;
         else if (set_start_addr_w)   start_addr <= cmd_data[NUM_RC_BURST_BITS-1:0];
@@ -230,18 +222,13 @@ module  mcntrl_tiled_rw#(
                start_y  <=cmd_data[FRAME_HEIGHT_BITS+15:16];
         end
         
-        if (rst) buf_rst_posedge<=0;
-        else     buf_rst_posedge <={buf_rst_posedge[0],xfer_buf_rst_negedge};
-        
     end
     assign mul_rslt_w=  frame_y8_r * frame_full_width_r; // 5 MSBs will be discarded
-//    assign xfer_num128= xfer_num128_r[NUM_XFER_BITS-1:0];
     assign xfer_start=  xfer_start_r[0];
     assign calc_valid=  par_mod_r[PAR_MOD_LATENCY-1]; // MSB, longest 0
-    assign xfer_page=   xfer_page_r;
     assign frame_done=  frame_done_r;
     assign pre_want=    chn_en && busy_r && !want_r && !xfer_start_r[0] && calc_valid && !last_block && !suspend;
-    assign last_in_row_w=(row_left=={{(FRAME_WIDTH_BITS-NUM_XFER_BITS){1'b0}},num_cols_r}); // what if it crosses page? OK, num_cols_r & row_left know that
+    assign last_in_row_w=(row_left=={{(FRAME_WIDTH_BITS-MAX_TILE_WIDTH){1'b0}},num_cols_r}); // what if it crosses page? OK, num_cols_r & row_left know that
     assign last_row_w=  next_y>=window_height; // (next_y==window_height) is faster, but will not forgive software errors
     assign xfer_want=   want_r;
     assign xfer_need=   need_r;
@@ -251,9 +238,9 @@ module  mcntrl_tiled_rw#(
     assign line_unfinished=line_unfinished_r[1];
     assign chn_en =         &mode_reg[1:0];   // enable requests by channle (continue ones in progress)
     assign chn_rst =        ~mode_reg[0]; // resets command, including fifo;
-    assign cmd_wrmem =       mode_reg[2];// 0: read from memory, 1:write to memory
-    assign cmd_extra_pages = mode_reg[4:3]; // external module needs more than 1 page
-    assign keep_open=        mode_reg[5]; // keep banks open (will be used only if number of rows <= 8 
+    assign cmd_extra_pages = mode_reg[3:2]; // external module needs more than 1 page
+    assign keep_open=        mode_reg[4]; // keep banks open (will be used only if number of rows <= 8 
+//    assign cmd_wrmem =       mode_reg[5];// 0: read from memory, 1:write to memory
     assign status_data= {1'b0, busy_r};     // TODO: Add second bit?
     assign pgm_param_w=      cmd_we;
     assign rowcol_inc=       frame_full_width;
@@ -263,7 +250,10 @@ module  mcntrl_tiled_rw#(
     assign num_rows_m1=      num_rows_m1_w[MAX_TILE_HEIGHT-1:0]; // remove MSB
     assign remainder_tile_width = {EXTRA_BITS,lim_by_tile_width}-mem_page_left;
     
-    assign buf_skip_reset=   continued_tile; // buf_skip_reset_r;
+//    assign buf_skip_reset=   continued_tile; // buf_skip_reset_r;
+    assign xfer_page_rst=   xfer_page_rst_r;
+    assign xfer_partial=      xfer_limited_by_mem_page_r;
+    
     integer i;
 //    localparam EXTRA_BITS={COLADDR_NUMBER-3-NUM_XFER_BITS{1'b0}};
     localparam [COLADDR_NUMBER-3-MAX_TILE_WIDTH-1:0] EXTRA_BITS=0;
@@ -318,7 +308,8 @@ module  mcntrl_tiled_rw#(
     end
     
 // now have row start address, bank and row_left ;
-// calculate number to read (min of row_left, maximal xfer and what is left in the DDR3 page    
+// calculate number to read (min of row_left, maximal xfer and what is left in the DDR3 page
+wire    start_not_partial= xfer_start_r[0] && !xfer_limited_by_mem_page_r;    
     always @(posedge rst or posedge mclk) begin
         if      (rst)                                       par_mod_r<=0;
         else if (pgm_param_w || xfer_start_r[0] || chn_rst) par_mod_r<=0;
@@ -357,10 +348,8 @@ module  mcntrl_tiled_rw#(
         else if ( xfer_start_r[0] && !next_page) page_cntr <= page_cntr + 1;     
         else if (!xfer_start_r[0] &&  next_page) page_cntr <= page_cntr - 1;
         
-        if (rst)                         xfer_page_r <= 0;
-//        else if (chn_rst || frame_start) xfer_page_r <= 0; // TODO: Check if it is better to keep xfer_page_r on frame start?
-        else if (chn_rst )               xfer_page_r <= 0; // TODO: Check if it is better to reset xfer_page_r on frame start? to zero?
-        else if (xfer_done)              xfer_page_r <= xfer_page_r+1;
+        if (rst) xfer_page_rst_r <= 1;
+        else     xfer_page_rst_r <= chn_rst || (MCNTRL_TILED_FRAME_PAGE_RESET ? frame_start:1'b0);
         
 // increment x,y (two cycles)
         if (rst)                                  curr_x <= 0;
@@ -374,14 +363,15 @@ module  mcntrl_tiled_rw#(
         if      (rst)                         last_block <= 0;
         else if (chn_rst || !busy_r)          last_block <= 0;
         else if (last_row_w && last_in_row_w) last_block <= 1;
-        
-        if      (rst)                            pending_xfers <= 0;
-        else if (chn_rst || !busy_r)             pending_xfers <= 0;
-        else if ( xfer_start_r[0] && !xfer_done) pending_xfers <= pending_xfers + 1;     
-        else if (!xfer_start_r[0] &&  xfer_done) pending_xfers <= pending_xfers - 1;
+ 
+ // start_not_partial is not generated when partial (first of 2, caused by a tile crossing memory page) transfer is requested       
+        if      (rst)                                   pending_xfers <= 0;
+        else if (chn_rst || !busy_r)                    pending_xfers <= 0;
+        else if ( start_not_partial && !xfer_page_done) pending_xfers <= pending_xfers + 1;     
+        else if (!start_not_partial &&  xfer_page_done) pending_xfers <= pending_xfers - 1; // page done is not generated on partial (first) pages
         
         if (rst)          frame_done_r <= 0;
-        else              frame_done_r <= busy_r && last_block && xfer_done && (pending_xfers==0);
+        else              frame_done_r <= busy_r && last_block && xfer_page_done && (pending_xfers==0);
         
         //line_unfinished_r cmd_wrmem
         if (rst)                         line_unfinished_r[0] <= 0; //{FRAME_HEIGHT_BITS{1'b0}};
@@ -392,7 +382,7 @@ module  mcntrl_tiled_rw#(
         else if (chn_rst || frame_start)        line_unfinished_r[1] <= window_y0+start_y;
         // in read mode advance line number ASAP
         else if (xfer_start_r[2] && !cmd_wrmem) line_unfinished_r[1] <= window_y0+next_y[FRAME_HEIGHT_BITS-1:0]; // latency 2 from xfer_start
-        // in write mode advance line number only when it is guaranteed it will be the first to acyually access memory
+        // in write mode advance line number only when it is guaranteed it will be the first to actually access memory
         else if (xfer_grant      && cmd_wrmem)  line_unfinished_r[1] <=  line_unfinished_r[0];
         
     end

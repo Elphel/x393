@@ -34,7 +34,9 @@ module  cmd_encod_tiled_rd #(
     parameter COLADDR_NUMBER=       10,
 //    parameter MIN_COL_INC=           3, // minimal number of zero column bits when incrementing row (after bank)  
     parameter CMD_PAUSE_BITS=       10,
-    parameter CMD_DONE_BIT=         10 // VDT BUG: CMD_DONE_BIT is used in a function call parameter!
+    parameter CMD_DONE_BIT=         10,  // VDT BUG: CMD_DONE_BIT is used in a function call parameter!
+    parameter FRAME_WIDTH_BITS=     13  // Maximal frame width - 8-word (16 bytes) bursts 
+    
 ) (
     input                        rst,
     input                        clk,
@@ -44,7 +46,8 @@ module  cmd_encod_tiled_rd #(
     input                  [2:0] start_bank,    // bank address
     input   [ADDRESS_NUMBER-1:0] start_row,     // memory row
     input   [COLADDR_NUMBER-4:0] start_col,     // start memory column in 8-bit bursts 
-    input [ADDRESS_NUMBER+COLADDR_NUMBER-4:0] rowcol_inc_in, // increment {row.col} when bank rolls over, removed 3 LSBs (in 8-bursts)
+//    input [ADDRESS_NUMBER+COLADDR_NUMBER-4:0] rowcol_inc_in, // increment {row.col} when bank rolls over, removed 3 LSBs (in 8-bursts)
+    input [FRAME_WIDTH_BITS:0] rowcol_inc_in, // increment {row.col} when bank rolls over, removed 3 LSBs (in 8-bursts)
     input                  [5:0] num_rows_in_m1,   // number of rows to read minus 1
     input                  [5:0] num_cols_in_m1,   // number of 16-pixel columns to read (rows first, then columns) - 1
     input                        keep_open_in,  // keep banks open (for <=8 banks only
@@ -85,7 +88,8 @@ module  cmd_encod_tiled_rd #(
     reg                  [2:0] bank;    // memory bank;
     reg                  [5:0] num_rows_m1;  // number of rows in a tile minus 1
     reg                  [5:0] num_cols128_m1;  // number of r16-byte columns in a tile  -1
-    reg  [FULL_ADDR_NUMBER-4:0] rowcol_inc; // increment {row.col} when bank rolls over, remove 3 LSBs (in 8-bursts)
+//    reg  [FULL_ADDR_NUMBER-4:0] rowcol_inc; // increment {row.col} when bank rolls over, remove 3 LSBs (in 8-bursts)
+    reg   [FRAME_WIDTH_BITS:0] rowcol_inc; // increment {row.col} when bank rolls over, remove 3 LSBs (in 8-bursts)
     
     reg                        keep_open;                        
     reg                        skip_next_page;
