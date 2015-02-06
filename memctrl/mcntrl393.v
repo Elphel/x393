@@ -202,7 +202,8 @@ module  mcntrl393 #(
                                                    // if memory controller will allow programming several sequences in advance to
                                                    // spread long-programming (tiled) over fast-programming (linear) requests.
                                                    // But that should not be too big to maintain 2-level priorities
-    parameter MCNTRL_TILED_FRAME_PAGE_RESET =1'b0  // reset internal page number to zero at the frame start (false - only when hard/soft reset)                                                     
+    parameter MCNTRL_TILED_FRAME_PAGE_RESET =1'b0,  // reset internal page number to zero at the frame start (false - only when hard/soft reset)                                                     
+    parameter BUFFER_DEPTH32=                10    // Block rum buffer depth on a 32-bit port
     
     ) (
     input                        rst_in,
@@ -224,7 +225,7 @@ module  mcntrl393 #(
 //   wire           axiwr_dev_ready;   // extrernal combinatorial ready signal, multiplexed from different sources according to pre_awaddr@start_burst
 //   wire           axiwr_bram_wclk;
 //   wire  [AXI_WR_ADDR_BITS-1:0] axiwr_bram_waddr;
-    input     [BUFFER_DEPTH-1:0] axiwr_waddr,
+    input   [BUFFER_DEPTH32-1:0] axiwr_waddr,
 //    wire                         axiwr_bram_wen;    // external memory write enable, (internally combined with registered dev_ready
     input                        axiwr_wen,    // external memory write enable, (internally combined with registered dev_ready
 // SuppressWarnings VEditor unused (yet?) 
@@ -240,7 +241,7 @@ module  mcntrl393 #(
 // SuppressWarnings VEditor unused (yet?) - use mclk 
 //   wire           axird_bram_rclk;  //      .rclk(aclk),                  // clock for read port
 //    wire [AXI_RD_ADDR_BITS-1:0] axird_bram_raddr, //   .raddr(read_in_progress?read_address[9:0]:10'h3ff),    // read address
-    input     [BUFFER_DEPTH-1:0] axird_raddr, //   .raddr(read_in_progress?read_address[9:0]:10'h3ff),    // read address
+    input   [BUFFER_DEPTH32-1:0] axird_raddr, //   .raddr(read_in_progress?read_address[9:0]:10'h3ff),    // read address
 //    wire                        axird_bram_ren,   //      .ren(bram_reg_re_w) ,      // read port enable
     input                        axird_ren,   //      .ren(bram_reg_re_w) ,      // read port enable
 //   wire           axird_bram_regen; //   .regen(bram_reg_re_w),        // output register enable
@@ -303,7 +304,6 @@ module  mcntrl393 #(
 // temporary debug data    
     ,output                [11:0] tmp_debug // add some signals generated here?
 );
-    localparam BUFFER_DEPTH=    10;
     
     wire rst=rst_in;
     wire axi_rst=rst_in; 
@@ -427,12 +427,12 @@ module  mcntrl393 #(
     
     
 // Buffers R/W from AXI
-    reg     [BUFFER_DEPTH-1:0]  buf_waddr;
+    reg   [BUFFER_DEPTH32-1:0]  buf_waddr;
     reg                 [31:0]  buf_wdata;
     reg                         cmd_we;
     reg                         buf1_we;
     reg                         buf3_we;
-    wire    [BUFFER_DEPTH-1:0]  buf_raddr;
+    wire  [BUFFER_DEPTH32-1:0]  buf_raddr;
     
     wire                [31:0]  buf0_data;
     wire                [31:0]  buf2_data;

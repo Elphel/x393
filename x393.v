@@ -23,6 +23,15 @@
 `define DEBUG_FIFO 1
 `include ".editor_defines" 
 module  x393 #(
+    parameter MCONTR_WR_MASK =       'h1c00, // AXI write address mask for the 1Kx32 buffers command sequence memory
+    parameter MCONTR_RD_MASK =       'h1c00, // AXI read address mask to generate busy
+
+    parameter MCONTR_CMD_WR_ADDR =   'h0000, // AXI write to command sequence memory
+    parameter MCONTR_BUF0_RD_ADDR =  'h0400, // AXI read address from buffer 0 (PS sequence, memory read) 
+    parameter MCONTR_BUF1_WR_ADDR =  'h0400, // AXI write address to buffer 1 (PS sequence, memory write)
+    parameter MCONTR_BUF2_RD_ADDR =  'h0800, // AXI read address from buffer 2 (PL sequence, scanline, memory read)
+    parameter MCONTR_BUF3_WR_ADDR =  'h0800, // AXI write address to buffer 3 (PL sequence, scanline, memory write)
+    parameter MCONTR_BUF4_RD_ADDR =  'h0c00, // AXI read address from buffer 4 (PL sequence, tiles, memory read)
 //command interface parameters
     parameter DLY_LD =            'h080,  // address to generate delay load
     parameter DLY_LD_MASK =       'h380,  // address mask to generate delay load
@@ -162,16 +171,61 @@ module  x393 #(
     parameter NUM_CYCLES_14 =       6, // 6-cycle - not yet used
     parameter NUM_CYCLES_15 =       9, // single-cycle
     
-//    parameter STATUS_ADDR =         'h1400, // AXI write address of status read registers
-//    parameter STATUS_ADDR_MASK =    'h1400, // AXI write address of status registers
-//    parameter BUSY_WR_ADDR =        'h1800, // AXI write address to generate busy
-//    parameter BUSY_WR_ADDR_MASK =   'h1c00, // AXI write address mask to generate busy
-    parameter CMD0_ADDR =           'h0800, // AXI write to command sequence memory
-    parameter CMD0_ADDR_MASK =      'h1800 // AXI read address mask for the command sequence memory
-//    ,parameter PORT0_RD_ADDR =       'h0000, // AXI read address to generate busy
-//    parameter PORT0_RD_ADDR_MASK =  'h1c00  // AXI read address mask to generate busy
-//    ,parameter PORT1_WR_ADDR =       'h0400, // AXI read address to generate busy
-//    parameter PORT1_WR_ADDR_MASK =  'h1c00  // AXI read address mask to generate busy
+//    parameter CMD0_ADDR =           'h0800, // AXI write to command sequence memory
+//    parameter CMD0_ADDR_MASK =      'h1800, // AXI read address mask for the command sequence memory
+    parameter MCNTRL_PS_ADDR=                    'h100,
+    parameter MCNTRL_PS_MASK=                    'h3e0, // both channels 0 and 1
+    parameter MCNTRL_PS_STATUS_REG_ADDR=         'h2,
+    parameter MCNTRL_PS_EN_RST=                  'h0,
+    parameter MCNTRL_PS_CMD=                     'h1,
+    parameter MCNTRL_PS_STATUS_CNTRL=            'h2,
+
+    parameter NUM_XFER_BITS=                       6,    // number of bits to specify transfer length
+    parameter FRAME_WIDTH_BITS=                   13,    // Maximal frame width - 8-word (16 bytes) bursts 
+    parameter FRAME_HEIGHT_BITS=                  16,    // Maximal frame height 
+    parameter MCNTRL_SCANLINE_CHN2_ADDR=         'h120,
+    parameter MCNTRL_SCANLINE_CHN3_ADDR=         'h130,
+    parameter MCNTRL_SCANLINE_MASK=              'h3f0, // both channels 0 and 1
+    parameter MCNTRL_SCANLINE_MODE=              'h0,   // set mode register: {extra_pages[1:0],write_mode,enable,!reset}
+    parameter MCNTRL_SCANLINE_STATUS_CNTRL=      'h1,   // control status reporting
+    parameter MCNTRL_SCANLINE_STARTADDR=         'h2,   // 22-bit frame start address (3 CA LSBs==0. BA==0)
+    parameter MCNTRL_SCANLINE_FRAME_FULL_WIDTH=  'h3,   // Padded line length (8-row increment), in 8-bursts (16 bytes)
+    parameter MCNTRL_SCANLINE_WINDOW_WH=         'h4,   // low word - 13-bit window width (0->'n4000), high word - 16-bit frame height (0->'h10000)
+    parameter MCNTRL_SCANLINE_WINDOW_X0Y0=       'h5,   // low word - 13-bit window left, high word - 16-bit window top
+    parameter MCNTRL_SCANLINE_WINDOW_STARTXY=    'h6,   // low word - 13-bit start X (relative to window), high word - 16-bit start y
+                                                        // Start XY can be used when read command to start from the middle
+                                                        // TODO: Add number of blocks to R/W? (blocks can be different) - total length?
+                                                        // Read back current address (fro debugging)?
+    parameter MCNTRL_SCANLINE_STATUS_REG_ADDR=   'h4,
+    parameter MCNTRL_SCANLINE_PENDING_CNTR_BITS=   2,    // Number of bits to count pending trasfers, currently 2 is enough, but may increase
+                                                        // if memory controller will allow programming several sequences in advance to
+                                                        // spread long-programming (tiled) over fast-programming (linear) requests.
+                                                        // But that should not be too big to maintain 2-level priorities
+    
+    parameter MAX_TILE_WIDTH=                   6,     // number of bits to specify maximal tile (width-1) (6 -> 64)
+    parameter MAX_TILE_HEIGHT=                  6,     // number of bits to specify maximal tile (height-1) (6 -> 64)
+    parameter MCNTRL_TILED_ADDR=            'h120,
+    parameter MCNTRL_TILED_MASK=            'h3f0, // both channels 0 and 1
+    parameter MCNTRL_TILED_MODE=            'h0,   // set mode register: {extra_pages[1:0],write_mode,enable,!reset}
+    parameter MCNTRL_TILED_STATUS_CNTRL=    'h1,   // control status reporting
+    parameter MCNTRL_TILED_STARTADDR=       'h2,   // 22-bit frame start address (3 CA LSBs==0. BA==0)
+    parameter MCNTRL_TILED_FRAME_FULL_WIDTH='h3,   // Padded line length (8-row increment), in 8-bursts (16 bytes)
+    parameter MCNTRL_TILED_WINDOW_WH=       'h4,   // low word - 13-bit window width (0->'n4000), high word - 16-bit frame height (0->'h10000)
+    parameter MCNTRL_TILED_WINDOW_X0Y0=     'h5,   // low word - 13-bit window left, high word - 16-bit window top
+    parameter MCNTRL_TILED_WINDOW_STARTXY=  'h6,   // low word - 13-bit start X (relative to window), high word - 16-bit start y
+                                                      // Start XY can be used when read command to start from the middle
+                                                      // TODO: Add number of blocks to R/W? (blocks can be different) - total length?
+                                                      // Read back current address (fro debugging)?
+    parameter MCNTRL_TILED_TILE_WH=         'h7,   // low word - 6-bit tile width in 8-bursts, high - tile height (0 - > 64)
+    parameter MCNTRL_TILED_STATUS_REG_ADDR= 'h5,
+    parameter MCNTRL_TILED_PENDING_CNTR_BITS=2,    // Number of bits to count pending trasfers, currently 2 is enough, but may increase
+                                                   // if memory controller will allow programming several sequences in advance to
+                                                   // spread long-programming (tiled) over fast-programming (linear) requests.
+                                                   // But that should not be too big to maintain 2-level priorities
+    parameter MCNTRL_TILED_FRAME_PAGE_RESET =1'b0,  // reset internal page number to zero at the frame start (false - only when hard/soft reset)
+    parameter BUFFER_DEPTH32=                10    // Block rum buffer depth on a 32-bit port
+                                                         
+
 )(
     // DDR3 interface
     output                       SDRST, // DDR3 reset (active low)
@@ -240,12 +294,12 @@ module  x393 #(
    wire [AXI_WR_ADDR_BITS-1:0] axiwr_pre_awaddr; // same as awaddr_out, early address to decode and return dev_ready
    wire           axiwr_start_burst; // start of write burst, valid pre_awaddr, save externally to control ext. dev_ready multiplexer
    wire           axiwr_dev_ready;   // extrernal combinatorial ready signal, multiplexed from different sources according to pre_awaddr@start_burst
-   wire           axiwr_bram_wclk;
-   wire  [AXI_WR_ADDR_BITS-1:0] axiwr_bram_waddr;
-   wire           axiwr_bram_wen;    // external memory write enable, (internally combined with registered dev_ready
+   wire           axiwr_wclk;
+   wire  [AXI_WR_ADDR_BITS-1:0] axiwr_waddr;
+   wire           axiwr_wen;    // external memory write enable, (internally combined with registered dev_ready
 // SuppressWarnings VEditor unused (yet?) 
    wire    [3:0]  axiwr_bram_wstb; 
-   wire   [31:0]  axiwr_bram_wdata;
+   wire   [31:0]  axiwr_wdata;
 
  // AXI Read Address   
    wire   [31:0]  axi_araddr;  // ARADDR[31:0], input 
@@ -275,134 +329,27 @@ module  x393 #(
 // SuppressWarnings VEditor unused (yet?) - use mclk 
    wire           axird_bram_rclk;  //      .rclk(aclk),                  // clock for read port
    // while only status provides read data, the next signals are not used (relies on axird_pre_araddr, axird_start_burst)
-   wire  [AXI_RD_ADDR_BITS-1:0] axird_bram_raddr; //   .raddr(read_in_progress?read_address[9:0]:10'h3ff),    // read address
-   wire           axird_bram_ren;   //      .ren(bram_reg_re_w) ,      // read port enable
-   wire           axird_bram_regen; //   .regen(bram_reg_re_w),        // output register enable
-   wire  [31:0]   axird_bram_rdata;  //      .data_out(rdata[31:0]),       // data out
+   wire  [AXI_RD_ADDR_BITS-1:0] axird_raddr; //   .raddr(read_in_progress?read_address[9:0]:10'h3ff),    // read address
+   wire           axird_ren;   //      .ren(bram_reg_re_w) ,      // read port enable
+   wire           axird_regen; //   .regen(bram_reg_re_w),        // output register enable
+   wire  [31:0]   axird_rdata;  //      .data_out(rdata[31:0]),       // data out
 //   wire  [31:0]   port0_rdata;  //
    wire  [31:0]   status_rdata;  //
    wire           status_valid; // never used - supposed to be always valid?
 
    wire        mclk;
-   wire        en_cmd0_wr;
-//   wire [10:0] axi_run_addr; 
-//   wire [ 3:0] axi_run_chn;  
-//   wire        axi_run_seq; 
-//   wire [10:0] run_addr; // multiplexed - from refresh or axi 
-//   wire [ 3:0] run_chn;   // multiplexed - from refresh or axi
-//   wire        run_seq; 
-   
-//   wire        run_seq_rq_in; // higher priority request to run sequence
-//   wire        run_seq_rq_gen;// SuppressThisWarning VEditor : unused this wants to run sequencer 
-//   wire        run_seq_busy;  // sequencer is busy or access granted to other master
-   
-   
-//   wire        run_done; // output
-//   wire        run_busy; // TODO: add to ddrc_sequencer 
-//   wire [ 7:0] dly_data; // input[7:0] 
-//   wire [ 6:0] dly_addr; // input[6:0] 
-//   wire        ld_delay; // input
-//   wire        set; // input
-
-//   wire        locked; // output
-//   wire        locked_mmcm;
-//   wire        locked_pll;
-//   wire        dly_ready;
-//   wire        dci_ready;
-
-//   wire        phy_locked_mmcm;
-//   wire        phy_locked_pll;
-//   wire        phy_dly_ready;
-//   wire        phy_dci_ready;
 
    wire [11:0] tmp_debug; 
    
-//   wire        ps_rdy; // output
-//   wire [ 7:0] ps_out; // output[7:0] 
-
-//   wire        en_port0_rd;
-//   wire        en_port0_regen;
-//   wire        en_port1_wr;
-
-//   wire [ 1:0] port0_page; // input[1:0] 
-//   wire [ 1:0] port0_int_page; // input[1:0] 
-
-//   wire [ 1:0] port1_page; // input[1:0] 
-//   wire [ 1:0] port1_int_page;// input[1:0] 
-
-// additional control signals
-//   wire        cmda_en; // enable DDR3 memory control and addreee outputs
-//   wire        ddr_rst; // generate DDR3 memory reset (active hight)
-//   wire        dci_rst;  // active high - reset DCI circuitry
-//   wire        dly_rst;  // active high - reset delay calibration circuitry
-   
-   
-   
-//   wire        ddr_cke; // control of the DDR3 memory CKE signal
-   
-//   wire        inv_clk_div; // input
-//   wire [ 7:0] dqs_pattern; // input[7:0] 8'h55 
-//   wire [ 7:0] dqm_pattern; // input[7:0] 8'h00
-
 //   reg    select_port0; // May be used later!
    reg  select_status;
    wire axiwr_dev_busy;
    wire axird_dev_busy;
    
-//   wire [ 3:0] dq_tri_on_pattern;
-//   wire [ 3:0] dq_tri_off_pattern;
-//   wire [ 3:0] dqs_tri_on_pattern;
-//   wire [ 3:0] dqs_tri_off_pattern;
-//   wire [ 3:0] wbuf_delay;
-   
-//   wire        port0_rd_match;
-//   reg         port0_rd_match_r; // rd address matched in previous cycle
-
-//   wire [7:0] refresh_period;
-//   wire [10:0] refresh_address;
-//   wire       refresh_en;
-//   wire       refresh_set;
-   
-//   reg  [AXI_WR_ADDR_BITS-1:0] axiwr_bram_waddr_d;
-//   reg                  [31:0] axiwr_bram_wdata_d; 
-//   reg                         mcontr_cmdseq_we;                         
-   
-//           .cmd0_clk       (axi_aclk), // input
-//        .cmd0_we        (en_cmd0_wr), // input
-//        .cmd0_addr      (axiwr_bram_waddr[9:0]), // input[9:0] 
-//        .cmd0_data      (axiwr_bram_wdata[31:0]), // input[31:0] 
-
-// register address/data to write copmmand sequencer port 0 (PS)
-/*   
-  always @ (posedge axi_rst or posedge axi_aclk) begin
-    if (axi_rst) mcontr_cmdseq_we <= 1'b0;
-    else         mcontr_cmdseq_we <= axiwr_bram_wen   && (((axiwr_bram_waddr ^ CMD0_ADDR) & CMD0_ADDR_MASK)==0);
-  end
-  always @ (posedge axi_aclk) if (axiwr_bram_wen) begin
-    axiwr_bram_waddr_d <= axiwr_bram_waddr;
-    axiwr_bram_wdata_d <= axiwr_bram_wdata;
-  end
-   
-
-   assign      port0_rd_match=(((axird_bram_raddr ^ PORT0_RD_ADDR) & PORT0_RD_ADDR_MASK)==0);  
-//   assign en_cmd0_wr=     axiwr_bram_wen   && (((axiwr_bram_waddr ^ CMD0_ADDR) & CMD0_ADDR_MASK)==0);
-   assign en_port0_rd=    axird_bram_ren   && port0_rd_match;
-   assign en_port0_regen= axird_bram_regen && port0_rd_match_r;
-
-   assign en_port1_wr=    axiwr_bram_wen   && (((axiwr_bram_waddr ^ PORT1_WR_ADDR) & PORT1_WR_ADDR_MASK)==0);
-   
-   
-   assign axiwr_dev_ready = ~axiwr_dev_busy; //may combine (AND) multiple sources if needed
-   assign axird_bram_rdata= select_port0? port0_rdata[31:0]:(select_status?status_rdata[31:0]:32'bx);
-   assign axird_dev_ready = ~axird_dev_busy; //may combine (AND) multiple sources if needed
-   
-   assign locked=locked_mmcm && locked_pll;
-*/
-   assign en_cmd0_wr=     axiwr_bram_wen   && (((axiwr_bram_waddr ^ CMD0_ADDR) & CMD0_ADDR_MASK)==0);
    assign axird_dev_ready = ~axird_dev_busy; //may combine (AND) multiple sources if needed
    assign axird_dev_busy = 1'b0; // always for now
-//   assign axird_bram_rdata= select_port0? port0_rdata[31:0]:(select_status?status_rdata[31:0]:32'bx);
-   assign axird_bram_rdata= select_status?status_rdata[31:0]:32'bx;
+//   assign axird_rdata= select_port0? port0_rdata[31:0]:(select_status?status_rdata[31:0]:32'bx);
+   assign axird_rdata= select_status?status_rdata[31:0]:32'bx;
    assign axiwr_dev_ready = ~axiwr_dev_busy; //may combine (AND) multiple sources if needed
 
 // Clock and reset from PS
@@ -459,7 +406,7 @@ end
     end         
 `endif
 
-//TODO: The following is the interface to the command sequencer (not yet implemnted)        
+//TODO: The following is the interface to the frame-based command sequencer (not yet implemnted)        
     wire [AXI_WR_ADDR_BITS-1:0] cseq_waddr;   // command sequencer write address (output to command multiplexer)
     wire                        cseq_wr_en;   // command sequencer write enable (output to command multiplexer) - keep until cseq_ackn received
     wire                 [31:0] cseq_wdata;   // command sequencer write data (output to command multiplexer) 
@@ -467,6 +414,8 @@ end
 // parallel address/data - where higher bandwidth (single-cycle) is needed        
     wire [AXI_WR_ADDR_BITS-1:0] par_waddr;    // multiplexed address (full, parallel) to slave devices 
     wire                 [31:0] par_data;     // multiplexed data (full, parallel) to slave devices 
+
+
 
     wire                  [7:0] cmd_root_ad;       // multiplexed byte-wide serialized address/data to salve devices (AL-AH-D0-D1-D2-D3), may contain less cycles 
     wire                        cmd_root_stb;      // strobe marking the first of 1-6 a/d bytes and also data valid for par_waddr and par_data
@@ -487,80 +436,6 @@ end
 
 // Interface to channels to read/write memory (including 4 page BRAM buffers)
 
-    wire        want_rq0;
-    wire        need_rq0;
-    wire        channel_pgm_en0; 
-    wire [31:0] seq_data0; 
-    wire        seq_wr0;
-    wire        seq_set0;
-    wire        seq_done0;
-    wire        buf_wr_chn0;
-    wire  [6:0] buf_waddr_chn0; 
-    wire [63:0] buf_wdata_chn0;
-     
-    wire        want_rq1;
-    wire        need_rq1;
-    wire        channel_pgm_en1; 
-    wire [31:0] seq_data1; 
-    wire        seq_wr1;
-    wire        seq_set1;
-    wire        seq_done1;
-    wire        buf_rd_chn1;
-    wire  [6:0] buf_raddr_chn1; 
-    wire [63:0] buf_rdata_chn1;
-
-    wire        want_rq2;
-    wire        need_rq2;
-    wire        channel_pgm_en2; 
-    wire [31:0] seq_data2; 
-    wire        seq_wr2;
-    wire        seq_set2;
-    wire        seq_done2;
-    wire        buf_wr_chn2;
-    wire  [6:0] buf_waddr_chn2; 
-    wire [63:0] buf_wdata_chn2;
-     
-    wire        want_rq3;
-    wire        need_rq3;
-    wire        channel_pgm_en3; 
-    wire [31:0] seq_data3; 
-    wire        seq_wr3;
-    wire        seq_set3;
-    wire        seq_done3;
-    wire        buf_rd_chn3;
-    wire  [6:0] buf_raddr_chn3; 
-    wire [63:0] buf_rdata_chn3;
-    
-    wire        want_rq4;
-    wire        need_rq4;
-    wire        channel_pgm_en4; 
-    wire [31:0] seq_data4; 
-    wire        seq_wr4;
-    wire        seq_set4;
-    wire        seq_done4;
-    wire        buf_wr_chn4;
-    wire  [6:0] buf_waddr_chn4; 
-    wire [63:0] buf_wdata_chn4;
-
-    // memory controller comamnd encoders interface
-    wire                [2:0] encod_linear_rd_bank;
-    wire [ADDRESS_NUMBER-1:0] encod_linear_rd_row;
-    wire [COLADDR_NUMBER-4:0] encod_linear_rd_col;
-    wire                [5:0] encod_linear_rd_bursts;
-    wire                      encod_linear_rd_start;
-    wire               [31:0] encod_linear_rd_cmd;
-    wire                      encod_linear_rd_wr;
-    wire                      encod_linear_rd_done;
-
-    wire                [2:0] encod_linear_wr_bank;
-    wire [ADDRESS_NUMBER-1:0] encod_linear_wr_row;
-    wire [COLADDR_NUMBER-4:0] encod_linear_wr_col;
-    wire                [5:0] encod_linear_wr_bursts;
-    wire                      encod_linear_wr_start;
-    wire               [31:0] encod_linear_wr_cmd;
-    wire                      encod_linear_wr_wr;
-    wire                      encod_linear_wr_done;
-    
 
     cmd_mux #(
         .AXI_WR_ADDR_BITS  (AXI_WR_ADDR_BITS),
@@ -585,14 +460,14 @@ end
         .NUM_CYCLES_14     (NUM_CYCLES_14),
         .NUM_CYCLES_15     (NUM_CYCLES_15)
     ) cmd_mux_i (
-        .axi_clk      (axiwr_bram_wclk), // input
+        .axi_clk      (axiwr_wclk), // input
         .mclk         (mclk), // input
         .rst          (axi_rst), // input
         .pre_waddr    (axiwr_pre_awaddr[AXI_WR_ADDR_BITS-1:0]), // input[12:0] 
         .start_wburst (axiwr_start_burst), // input
-        .waddr        (axiwr_bram_waddr[AXI_WR_ADDR_BITS-1:0]), // input[12:0] 
-        .wr_en        (axiwr_bram_wen), // input
-        .wdata        (axiwr_bram_wdata[31:0]), // input[31:0] 
+        .waddr        (axiwr_waddr[AXI_WR_ADDR_BITS-1:0]), // input[12:0] 
+        .wr_en        (axiwr_wen), // input
+        .wdata        (axiwr_wdata[31:0]), // input[31:0] 
         .busy         (axiwr_dev_busy), // output // assign axiwr_dev_ready = ~axiwr_dev_busy; //may combine (AND) multiple sources if needed
 //TODO: The following is the interface to the command sequencer (not yet implemnted)        
         .cseq_waddr   (cseq_waddr), // input[12:0] 
@@ -647,390 +522,187 @@ end
         .start_out (status_root_start) // input
     );
 
-    cmd_encod_linear_rd #(
-        .ADDRESS_NUMBER  (ADDRESS_NUMBER),
-        .COLADDR_NUMBER  (COLADDR_NUMBER),
-        .CMD_PAUSE_BITS  (CMD_PAUSE_BITS),
-        .CMD_DONE_BIT    (CMD_DONE_BIT)
-    ) cmd_encod_linear_rd_i (
-        .rst             (axi_rst), // input
-        .clk             (mclk), // input
-        .bank_in         (encod_linear_rd_bank), // input[2:0] 
-        .row_in          (encod_linear_rd_row), // input[14:0] 
-        .start_col       (encod_linear_rd_col), // input[6:0] 
-        .num128_in       (encod_linear_rd_bursts), // input[5:0] 
-        .start           (encod_linear_rd_start), // input
-        .enc_cmd         (encod_linear_rd_cmd), // output[31:0] reg 
-        .enc_wr          (encod_linear_rd_wr), // output reg 
-        .enc_done        (encod_linear_rd_done) // output reg 
-    );
-
-    cmd_encod_linear_wr #(
-        .ADDRESS_NUMBER  (ADDRESS_NUMBER),
-        .COLADDR_NUMBER  (COLADDR_NUMBER),
-        .CMD_PAUSE_BITS  (CMD_PAUSE_BITS),
-        .CMD_DONE_BIT    (CMD_DONE_BIT)
-    ) cmd_encod_linear_wr_i (
-        .rst             (axi_rst), // input
-        .clk             (mclk), // input
-        .bank_in         (encod_linear_wr_bank), // input[2:0] 
-        .row_in          (encod_linear_wr_row), // input[14:0] 
-        .start_col       (encod_linear_wr_col), // input[6:0] 
-        .num128_in       (encod_linear_wr_bursts), // input[5:0] 
-        .start           (encod_linear_wr_start), // input
-        .enc_cmd         (encod_linear_wr_cmd), // output[31:0] reg 
-        .enc_wr          (encod_linear_wr_wr), // output reg 
-        .enc_done        (encod_linear_wr_done) // output reg 
-    );
-
-// TODO: Create module mcntrl393, incuding all of the mcntrl* modules and related buffers (will; need optional cross-clock  (or they can be external?
-// TODO: program inter-chennel synchronization (a separate module inside mcntrl393
-// All cross-clock - external, buffer I/O sync to external clock
-
-// *********************************** Move to mcntrl393 *********************************************
-
-    /* Instance template for module mcntrl_linear_rw */
-    mcntrl_linear_rw #(
-        .ADDRESS_NUMBER(15),
-        .COLADDR_NUMBER(10),
-        .NUM_XFER_BITS(6),
-        .FRAME_WIDTH_BITS(13),
-        .FRAME_HEIGHT_BITS(16),
-        .MCNTRL_SCANLINE_ADDR('h120),
-        .MCNTRL_SCANLINE_MASK('h3f0),
-        .MCNTRL_SCANLINE_MODE('h0),
-        .MCNTRL_SCANLINE_STATUS_CNTRL('h1),
-        .MCNTRL_SCANLINE_STARTADDR('h2),
-        .MCNTRL_SCANLINE_FRAME_FULL_WIDTH('h3),
-        .MCNTRL_SCANLINE_WINDOW_WH('h4),
-        .MCNTRL_SCANLINE_WINDOW_X0Y0('h5),
-        .MCNTRL_SCANLINE_WINDOW_STARTXY('h6),
-        .MCNTRL_SCANLINE_STATUS_REG_ADDR('h4),
-        .MCNTRL_SCANLINE_PENDING_CNTR_BITS(2)
-    ) mcntrl_linear_rw_chn2_i (
-        .rst(), // input
-        .mclk(), // input
-        .cmd_ad(), // input[7:0] 
-        .cmd_stb(), // input
-        .status_ad(), // output[7:0] 
-        .status_rq(), // output
-        .status_start(), // input
-        .frame_start(), // input
-        .next_page(), // input
-        .frame_done(), // output
-        .line_unfinished(), // output[15:0] 
-        .suspend(), // input
-        .xfer_want(), // output
-        .xfer_need(), // output
-        .xfer_grant(), // input
-        .xfer_start(), // output
-        .xfer_bank(), // output[2:0] 
-        .xfer_row(), // output[14:0] 
-        .xfer_col(), // output[6:0] 
-        .xfer_num128(), // output[5:0] 
-        .xfer_done(), // input
-        .xfer_page() // output[1:0] 
-    );
-
-    /* Instance template for module mcntrl_linear_rw */
-    mcntrl_linear_rw #(
-        .ADDRESS_NUMBER(15),
-        .COLADDR_NUMBER(10),
-        .NUM_XFER_BITS(6),
-        .FRAME_WIDTH_BITS(13),
-        .FRAME_HEIGHT_BITS(16),
-        .MCNTRL_SCANLINE_ADDR('h120),
-        .MCNTRL_SCANLINE_MASK('h3f0),
-        .MCNTRL_SCANLINE_MODE('h0),
-        .MCNTRL_SCANLINE_STATUS_CNTRL('h1),
-        .MCNTRL_SCANLINE_STARTADDR('h2),
-        .MCNTRL_SCANLINE_FRAME_FULL_WIDTH('h3),
-        .MCNTRL_SCANLINE_WINDOW_WH('h4),
-        .MCNTRL_SCANLINE_WINDOW_X0Y0('h5),
-        .MCNTRL_SCANLINE_WINDOW_STARTXY('h6),
-        .MCNTRL_SCANLINE_STATUS_REG_ADDR('h4),
-        .MCNTRL_SCANLINE_PENDING_CNTR_BITS(2)
-    ) mcntrl_linear_rw_chn3_i (
-        .rst(), // input
-        .mclk(), // input
-        .cmd_ad(), // input[7:0] 
-        .cmd_stb(), // input
-        .status_ad(), // output[7:0] 
-        .status_rq(), // output
-        .status_start(), // input
-        .frame_start(), // input
-        .next_page(), // input
-        .frame_done(), // output
-        .line_unfinished(), // output[15:0] 
-        .suspend(), // input
-        .xfer_want(), // output
-        .xfer_need(), // output
-        .xfer_grant(), // input
-        .xfer_start(), // output
-        .xfer_bank(), // output[2:0] 
-        .xfer_row(), // output[14:0] 
-        .xfer_col(), // output[6:0] 
-        .xfer_num128(), // output[5:0] 
-        .xfer_done(), // input
-        .xfer_page() // output[1:0] 
-    );
-
-     /* Instance template for module mcntrl_ps_pio */
-    mcntrl_ps_pio #(
-        .MCNTRL_PS_ADDR('h100),
-        .MCNTRL_PS_MASK('h3e0),
-        .MCNTRL_PS_STATUS_REG_ADDR('h2),
-        .MCNTRL_PS_EN_RST('h0),
-        .MCNTRL_PS_CMD('h1),
-        .MCNTRL_PS_STATUS_CNTRL('h2)
-    ) mcntrl_ps_pio_i (
-        .rst(), // input
-        .mclk(), // input
-        .cmd_ad(), // input[7:0] 
-        .cmd_stb(), // input
-        .status_ad(), // output[7:0] 
-        .status_rq(), // output
-        .status_start(), // input
-        .port0_clk(), // input
-        .port0_re(), // input
-        .port0_regen(), // input
-        .port0_addr(), // input[9:0] 
-        .port0_data(), // output[31:0] 
-        .port1_clk(), // input
-        .port1_we(), // input
-        .port1_addr(), // input[9:0] 
-        .port1_data(), // input[31:0] 
-        .want_rq0(), // output reg 
-        .need_rq0(), // output reg 
-        .channel_pgm_en0(), // input
-        .seq_data0(), // output[9:0] 
-        .seq_set0(), // output
-        .seq_done0(), // input
-        .buf_wr_chn0(), // input
-        .buf_waddr_chn0(), // input[6:0] 
-        .buf_wdata_chn0(), // input[63:0] 
-        .want_rq1(), // output reg 
-        .need_rq1(), // output reg 
-        .channel_pgm_en1(), // input
-        .seq_done1(), // input
-        .buf_rd_chn1(), // input
-        .buf_raddr_chn1(), // input[6:0] 
-        .buf_rdata_chn1() // output[63:0] 
-    );
-    
-    
-    /* Instance template for module cmd_encod_linear_mux */
-    cmd_encod_linear_mux #(
-        .ADDRESS_NUMBER(15),
-        .COLADDR_NUMBER(10)
-    ) cmd_encod_linear_mux_i (
-        .clk(), // input
-        .bank2(), // input[2:0] 
-        .row2(), // input[14:0] 
-        .start_col2(), // input[6:0] 
-        .num128_2(), // input[5:0] 
-        .start2(), // input
-        .bank3(), // input[2:0] 
-        .row3(), // input[14:0] 
-        .start_col3(), // input[6:0] 
-        .num128_3(), // input[5:0] 
-        .start3(), // input
-        .bank(), // output[2:0] 
-        .row(), // output[14:0] 
-        .start_col(), // output[6:0] 
-        .num128(), // output[5:0] 
-        .start_rd(), // output
-        .start_wr() // output
-    );
-    
-    /* Instance template for module cmd_encod_tiled_mux */
-    cmd_encod_tiled_mux #(
-        .ADDRESS_NUMBER(15),
-        .COLADDR_NUMBER(10)
-    ) cmd_encod_tiled_mux_i (
-        .clk(), // input
-        .bank4(), // input[2:0] 
-        .row4(), // input[14:0] 
-        .col4(), // input[6:0] 
-        .rowcol_inc4(), // input[21:0] 
-        .num_rows4(), // input[5:0] 
-        .num_cols4(), // input[5:0] 
-        .keep_open4(), // input
-        .start4(), // input
-        .bank(), // output[2:0] 
-        .row(), // output[14:0] 
-        .col(), // output[6:0] 
-        .rowcol_inc(), // output[21:0] 
-        .num_rows(), // output[5:0] 
-        .num_cols(), // output[5:0] 
-        .keep_open(), // output
-        .start_rd(), // output
-        .start_wr() // output
-    );
-
-
-    memctrl16 #(
-        .DLY_LD                           (DLY_LD),
-        .DLY_LD_MASK                      (DLY_LD_MASK),
-        .MCONTR_PHY_0BIT_ADDR             (MCONTR_PHY_0BIT_ADDR),
-        .MCONTR_PHY_0BIT_ADDR_MASK        (MCONTR_PHY_0BIT_ADDR_MASK),
-        .MCONTR_PHY_0BIT_DLY_SET          (MCONTR_PHY_0BIT_DLY_SET),
-        .MCONTR_PHY_0BIT_CMDA_EN          (MCONTR_PHY_0BIT_CMDA_EN),
-        .MCONTR_PHY_0BIT_SDRST_ACT        (MCONTR_PHY_0BIT_SDRST_ACT),
-        .MCONTR_PHY_0BIT_CKE_EN           (MCONTR_PHY_0BIT_CKE_EN),
-        .MCONTR_PHY_0BIT_DCI_RST          (MCONTR_PHY_0BIT_DCI_RST),
-        .MCONTR_PHY_0BIT_DLY_RST(MCONTR_PHY_0BIT_DLY_RST),
-        .MCONTR_TOP_0BIT_ADDR(MCONTR_TOP_0BIT_ADDR),
-        .MCONTR_TOP_0BIT_ADDR_MASK(MCONTR_TOP_0BIT_ADDR_MASK),
-        .MCONTR_TOP_0BIT_MCONTR_EN(MCONTR_TOP_0BIT_MCONTR_EN),
-        .MCONTR_TOP_0BIT_REFRESH_EN(MCONTR_TOP_0BIT_REFRESH_EN),
-        .MCONTR_PHY_16BIT_ADDR(MCONTR_PHY_16BIT_ADDR),
-        .MCONTR_PHY_16BIT_ADDR_MASK(MCONTR_PHY_16BIT_ADDR_MASK),
-        .MCONTR_PHY_16BIT_PATTERNS(MCONTR_PHY_16BIT_PATTERNS),
-        .MCONTR_PHY_16BIT_PATTERNS_TRI(MCONTR_PHY_16BIT_PATTERNS_TRI),
-        .MCONTR_PHY_16BIT_WBUF_DELAY(MCONTR_PHY_16BIT_WBUF_DELAY),
-        .MCONTR_PHY_16BIT_EXTRA(MCONTR_PHY_16BIT_EXTRA),
-        .MCONTR_PHY_STATUS_CNTRL(MCONTR_PHY_STATUS_CNTRL),
-        .MCONTR_ARBIT_ADDR(MCONTR_ARBIT_ADDR),
-        .MCONTR_ARBIT_ADDR_MASK(MCONTR_ARBIT_ADDR_MASK),
-        .MCONTR_TOP_16BIT_ADDR(MCONTR_TOP_16BIT_ADDR),
-        .MCONTR_TOP_16BIT_ADDR_MASK(MCONTR_TOP_16BIT_ADDR_MASK),
-        .MCONTR_TOP_16BIT_CHN_EN(MCONTR_TOP_16BIT_CHN_EN),
-        .MCONTR_TOP_16BIT_REFRESH_PERIOD(MCONTR_TOP_16BIT_REFRESH_PERIOD),
-        .MCONTR_TOP_16BIT_REFRESH_ADDRESS(MCONTR_TOP_16BIT_REFRESH_ADDRESS),
-        .MCONTR_TOP_16BIT_STATUS_CNTRL(MCONTR_TOP_16BIT_STATUS_CNTRL),
-        .MCONTR_PHY_STATUS_REG_ADDR(MCONTR_PHY_STATUS_REG_ADDR),
-        .MCONTR_TOP_STATUS_REG_ADDR(MCONTR_TOP_STATUS_REG_ADDR),
-        .CHNBUF_READ_LATENCY(CHNBUF_READ_LATENCY),
-        .DFLT_DQS_PATTERN(DFLT_DQS_PATTERN),
-        .DFLT_DQM_PATTERN(DFLT_DQM_PATTERN),
-        .DFLT_DQ_TRI_ON_PATTERN(DFLT_DQ_TRI_ON_PATTERN),
-        .DFLT_DQ_TRI_OFF_PATTERN(DFLT_DQ_TRI_OFF_PATTERN),
-        .DFLT_DQS_TRI_ON_PATTERN(DFLT_DQS_TRI_ON_PATTERN),
-        .DFLT_DQS_TRI_OFF_PATTERN(DFLT_DQS_TRI_OFF_PATTERN),
-        .DFLT_WBUF_DELAY(DFLT_WBUF_DELAY),
-        .DFLT_INV_CLK_DIV(DFLT_INV_CLK_DIV),
-        .DFLT_CHN_EN(DFLT_CHN_EN),
-        .DFLT_REFRESH_ADDR(DFLT_REFRESH_ADDR),
-        .DFLT_REFRESH_PERIOD(DFLT_REFRESH_PERIOD),
+    /* Instance template for module mcntrl393 */
+    mcntrl393 #(
+        .AXI_WR_ADDR_BITS                  (AXI_WR_ADDR_BITS),
+        .AXI_RD_ADDR_BITS                  (AXI_RD_ADDR_BITS),
+        .MCONTR_WR_MASK                    (MCONTR_WR_MASK),
+        .MCONTR_RD_MASK                    (MCONTR_RD_MASK),
+        .MCONTR_CMD_WR_ADDR                (MCONTR_CMD_WR_ADDR),
+        .MCONTR_BUF0_RD_ADDR               (MCONTR_BUF0_RD_ADDR),
+        .MCONTR_BUF1_WR_ADDR               (MCONTR_BUF1_WR_ADDR),
+        .MCONTR_BUF2_RD_ADDR               (MCONTR_BUF2_RD_ADDR),
+        .MCONTR_BUF3_WR_ADDR               (MCONTR_BUF3_WR_ADDR),
+        .MCONTR_BUF4_RD_ADDR               (MCONTR_BUF4_RD_ADDR),
+        .DLY_LD                            (DLY_LD),
+        .DLY_LD_MASK                       (DLY_LD_MASK),
+        .MCONTR_PHY_0BIT_ADDR              (MCONTR_PHY_0BIT_ADDR),
+        .MCONTR_PHY_0BIT_ADDR_MASK         (MCONTR_PHY_0BIT_ADDR_MASK),
+        .MCONTR_PHY_0BIT_DLY_SET           (MCONTR_PHY_0BIT_DLY_SET),
+        .MCONTR_PHY_0BIT_CMDA_EN           (MCONTR_PHY_0BIT_CMDA_EN),
+        .MCONTR_PHY_0BIT_SDRST_ACT         (MCONTR_PHY_0BIT_SDRST_ACT),
+        .MCONTR_PHY_0BIT_CKE_EN            (MCONTR_PHY_0BIT_CKE_EN),
+        .MCONTR_PHY_0BIT_DCI_RST           (MCONTR_PHY_0BIT_DCI_RST),
+        .MCONTR_PHY_0BIT_DLY_RST           (MCONTR_PHY_0BIT_DLY_RST),
+        .MCONTR_TOP_0BIT_ADDR              (MCONTR_TOP_0BIT_ADDR),
+        .MCONTR_TOP_0BIT_ADDR_MASK         (MCONTR_TOP_0BIT_ADDR_MASK),
+        .MCONTR_TOP_0BIT_MCONTR_EN         (MCONTR_TOP_0BIT_MCONTR_EN),
+        .MCONTR_TOP_0BIT_REFRESH_EN        (MCONTR_TOP_0BIT_REFRESH_EN),
+        .MCONTR_PHY_16BIT_ADDR             (MCONTR_PHY_16BIT_ADDR),
+        .MCONTR_PHY_16BIT_ADDR_MASK        (MCONTR_PHY_16BIT_ADDR_MASK),
+        .MCONTR_PHY_16BIT_PATTERNS         (MCONTR_PHY_16BIT_PATTERNS),
+        .MCONTR_PHY_16BIT_PATTERNS_TRI     (MCONTR_PHY_16BIT_PATTERNS_TRI),
+        .MCONTR_PHY_16BIT_WBUF_DELAY       (MCONTR_PHY_16BIT_WBUF_DELAY),
+        .MCONTR_PHY_16BIT_EXTRA            (MCONTR_PHY_16BIT_EXTRA),
+        .MCONTR_PHY_STATUS_CNTRL           (MCONTR_PHY_STATUS_CNTRL),
+        .MCONTR_ARBIT_ADDR                 (MCONTR_ARBIT_ADDR),
+        .MCONTR_ARBIT_ADDR_MASK            (MCONTR_ARBIT_ADDR_MASK),
+        .MCONTR_TOP_16BIT_ADDR             (MCONTR_TOP_16BIT_ADDR),
+        .MCONTR_TOP_16BIT_ADDR_MASK        (MCONTR_TOP_16BIT_ADDR_MASK),
+        .MCONTR_TOP_16BIT_CHN_EN           (MCONTR_TOP_16BIT_CHN_EN),
+        .MCONTR_TOP_16BIT_REFRESH_PERIOD   (MCONTR_TOP_16BIT_REFRESH_PERIOD),
+        .MCONTR_TOP_16BIT_REFRESH_ADDRESS  (MCONTR_TOP_16BIT_REFRESH_ADDRESS),
+        .MCONTR_TOP_16BIT_STATUS_CNTRL     (MCONTR_TOP_16BIT_STATUS_CNTRL),
+        .MCONTR_PHY_STATUS_REG_ADDR        (MCONTR_PHY_STATUS_REG_ADDR),
+        .MCONTR_TOP_STATUS_REG_ADDR        (MCONTR_TOP_STATUS_REG_ADDR),
+        .CHNBUF_READ_LATENCY               (CHNBUF_READ_LATENCY),
+        .DFLT_DQS_PATTERN                  (DFLT_DQS_PATTERN),
+        .DFLT_DQM_PATTERN                  (DFLT_DQM_PATTERN),
+        .DFLT_DQ_TRI_ON_PATTERN            (DFLT_DQ_TRI_ON_PATTERN),
+        .DFLT_DQ_TRI_OFF_PATTERN           (DFLT_DQ_TRI_OFF_PATTERN),
+        .DFLT_DQS_TRI_ON_PATTERN           (DFLT_DQS_TRI_ON_PATTERN),
+        .DFLT_DQS_TRI_OFF_PATTERN          (DFLT_DQS_TRI_OFF_PATTERN),
+        .DFLT_WBUF_DELAY                   (DFLT_WBUF_DELAY),
+        .DFLT_INV_CLK_DIV                  (DFLT_INV_CLK_DIV),
+        .DFLT_CHN_EN                       (DFLT_CHN_EN),
+        .DFLT_REFRESH_ADDR                 (DFLT_REFRESH_ADDR),
+        .DFLT_REFRESH_PERIOD               (DFLT_REFRESH_PERIOD),
+        .ADDRESS_NUMBER                    (ADDRESS_NUMBER),
+        .COLADDR_NUMBER                    (COLADDR_NUMBER),
+        .PHASE_WIDTH                       (PHASE_WIDTH),
+        .SLEW_DQ                           (SLEW_DQ),
+        .SLEW_DQS                          (SLEW_DQS),
+        .SLEW_CMDA                         (SLEW_CMDA),
+        .SLEW_CLK                          (SLEW_CLK),
+        .IBUF_LOW_PWR                      (IBUF_LOW_PWR),
+        .REFCLK_FREQUENCY                  (REFCLK_FREQUENCY),
+        .HIGH_PERFORMANCE_MODE             (HIGH_PERFORMANCE_MODE),
+        .CLKIN_PERIOD                      (CLKIN_PERIOD),
+        .CLKFBOUT_MULT                     (CLKFBOUT_MULT),
+        .CLKFBOUT_MULT_REF                 (CLKFBOUT_MULT_REF),
+        .CLKFBOUT_DIV_REF                  (CLKFBOUT_DIV_REF),
+        .DIVCLK_DIVIDE                     (DIVCLK_DIVIDE),
+        .CLKFBOUT_PHASE                    (CLKFBOUT_PHASE),
+        .SDCLK_PHASE                       (SDCLK_PHASE),
+        .CLK_PHASE                         (CLK_PHASE),
+        .CLK_DIV_PHASE                     (CLK_DIV_PHASE),
+        .MCLK_PHASE                        (MCLK_PHASE),
+        .REF_JITTER1                       (REF_JITTER1),
+        .SS_EN                             (SS_EN),
+        .SS_MODE                           (SS_MODE),
+        .SS_MOD_PERIOD                     (SS_MOD_PERIOD),
+        .CMD_PAUSE_BITS                    (CMD_PAUSE_BITS),
+        .CMD_DONE_BIT                      (CMD_DONE_BIT),
         
-        .ADDRESS_NUMBER        (ADDRESS_NUMBER),
-        .PHASE_WIDTH           (PHASE_WIDTH),
-        .SLEW_DQ               (SLEW_DQ),
-        .SLEW_DQS              (SLEW_DQS),
-        .SLEW_CMDA             (SLEW_CMDA),
-        .SLEW_CLK              (SLEW_CLK),
-        .IBUF_LOW_PWR          (IBUF_LOW_PWR),
-        .REFCLK_FREQUENCY      (REFCLK_FREQUENCY),
-        .HIGH_PERFORMANCE_MODE (HIGH_PERFORMANCE_MODE),
-        .CLKIN_PERIOD          (CLKIN_PERIOD),
-        .CLKFBOUT_MULT         (CLKFBOUT_MULT),
-        .CLKFBOUT_MULT_REF     (CLKFBOUT_MULT_REF),
-        .CLKFBOUT_DIV_REF      (CLKFBOUT_DIV_REF),
-        .DIVCLK_DIVIDE         (DIVCLK_DIVIDE),
-        .CLKFBOUT_PHASE        (CLKFBOUT_PHASE),
-        .SDCLK_PHASE           (SDCLK_PHASE),
-        .CLK_PHASE             (CLK_PHASE),
-        .CLK_DIV_PHASE         (CLK_DIV_PHASE),
-        .MCLK_PHASE            (MCLK_PHASE),
-        .REF_JITTER1           (REF_JITTER1),
-        .SS_EN                 (SS_EN),
-        .SS_MODE               (SS_MODE),
-        .SS_MOD_PERIOD         (SS_MOD_PERIOD),
-        .CMD_PAUSE_BITS        (CMD_PAUSE_BITS),
-        .CMD_DONE_BIT          (CMD_DONE_BIT)
-    ) memctrl16_i (
-        .rst_in             (axi_rst), // input
-        .clk_in             (axi_aclk), // input
-        .mclk               (mclk), // output
-        .cmd_ad             (cmd_mcontr_ad), // input[7:0] 
-        .cmd_stb            (cmd_mcontr_stb), // input
-        .status_ad          (status_mcontr_ad[7:0]), // output[7:0]
-        .status_rq          (status_mcontr_rq),   // input request to send status downstream
-        .status_start       (status_mcontr_start), // Acknowledge of the first status packet byte (address)
+        .MCNTRL_PS_ADDR                    (MCNTRL_PS_ADDR),
+        .MCNTRL_PS_MASK                    (MCNTRL_PS_MASK),
+        .MCNTRL_PS_STATUS_REG_ADDR         (MCNTRL_PS_STATUS_REG_ADDR),
+        .MCNTRL_PS_EN_RST                  (MCNTRL_PS_EN_RST),
+        .MCNTRL_PS_CMD                     (MCNTRL_PS_CMD),
+        .MCNTRL_PS_STATUS_CNTRL            (MCNTRL_PS_STATUS_CNTRL),
+        .NUM_XFER_BITS                     (NUM_XFER_BITS),
+        .FRAME_WIDTH_BITS                  (FRAME_WIDTH_BITS),
+        .FRAME_HEIGHT_BITS                 (FRAME_HEIGHT_BITS),
+        .MCNTRL_SCANLINE_CHN2_ADDR         (MCNTRL_SCANLINE_CHN2_ADDR),
+        .MCNTRL_SCANLINE_CHN3_ADDR         (MCNTRL_SCANLINE_CHN3_ADDR),
+        .MCNTRL_SCANLINE_MASK              (MCNTRL_SCANLINE_MASK),
+        .MCNTRL_SCANLINE_MODE              (MCNTRL_SCANLINE_MODE),
+        .MCNTRL_SCANLINE_STATUS_CNTRL      (MCNTRL_SCANLINE_STATUS_CNTRL),
+        .MCNTRL_SCANLINE_STARTADDR         (MCNTRL_SCANLINE_STARTADDR),
+        .MCNTRL_SCANLINE_FRAME_FULL_WIDTH  (MCNTRL_SCANLINE_FRAME_FULL_WIDTH),
+        .MCNTRL_SCANLINE_WINDOW_WH         (MCNTRL_SCANLINE_WINDOW_WH),
+        .MCNTRL_SCANLINE_WINDOW_X0Y0       (MCNTRL_SCANLINE_WINDOW_X0Y0),
+        .MCNTRL_SCANLINE_WINDOW_STARTXY    (MCNTRL_SCANLINE_WINDOW_STARTXY),
+        .MCNTRL_SCANLINE_STATUS_REG_ADDR   (MCNTRL_SCANLINE_STATUS_REG_ADDR),
+        .MCNTRL_SCANLINE_PENDING_CNTR_BITS (MCNTRL_SCANLINE_PENDING_CNTR_BITS),
+        .MAX_TILE_WIDTH                    (MAX_TILE_WIDTH),
+        .MAX_TILE_HEIGHT                   (MAX_TILE_HEIGHT),
+        .MCNTRL_TILED_ADDR                 (MCNTRL_TILED_ADDR),
+        .MCNTRL_TILED_MASK                 (MCNTRL_TILED_MASK),
+        .MCNTRL_TILED_MODE                 (MCNTRL_TILED_MODE),
+        .MCNTRL_TILED_STATUS_CNTRL         (MCNTRL_TILED_STATUS_CNTRL),
+        .MCNTRL_TILED_STARTADDR            (MCNTRL_TILED_STARTADDR),
+        .MCNTRL_TILED_FRAME_FULL_WIDTH     (MCNTRL_TILED_FRAME_FULL_WIDTH),
+        .MCNTRL_TILED_WINDOW_WH            (MCNTRL_TILED_WINDOW_WH),
+        .MCNTRL_TILED_WINDOW_X0Y0          (MCNTRL_TILED_WINDOW_X0Y0),
+        .MCNTRL_TILED_WINDOW_STARTXY       (MCNTRL_TILED_WINDOW_STARTXY),
+        .MCNTRL_TILED_TILE_WH              (MCNTRL_TILED_TILE_WH),
+        .MCNTRL_TILED_STATUS_REG_ADDR      (MCNTRL_TILED_STATUS_REG_ADDR),
+        .MCNTRL_TILED_PENDING_CNTR_BITS    (MCNTRL_TILED_PENDING_CNTR_BITS),
+        .MCNTRL_TILED_FRAME_PAGE_RESET     (MCNTRL_TILED_FRAME_PAGE_RESET)
+    ) mcntrl393_i (
+        .rst_in               (axi_rst), // input
+        .clk_in               (axi_aclk), // input
+        .mclk                 (mclk), // output
+        .cmd_ad               (cmd_mcontr_ad), // input[7:0] 
+        .cmd_stb              (cmd_mcontr_stb), // input
+        .status_ad            (status_mcontr_ad[7:0]), // output[7:0]
+        .status_rq            (status_mcontr_rq),   // input request to send status downstream
+        .status_start         (status_mcontr_start), // Acknowledge of the first status packet byte (address)
         
-        .cmd0_clk           (axi_aclk), // input
-        .cmd0_we            (en_cmd0_wr), // input
-        .cmd0_addr          (axiwr_bram_waddr[9:0]), // input[9:0] 
-        .cmd0_data          (axiwr_bram_wdata[31:0]), // input[31:0] 
-         
-        .want_rq0           (want_rq0), // input
-        .need_rq0           (need_rq0), // input
-        .channel_pgm_en0    (channel_pgm_en0), // output reg 
-        .seq_data0          (seq_data0), // input[31:0] 
-        .seq_wr0            (seq_wr0), // input
-        .seq_set0           (seq_set0), // input
-        .seq_done0          (seq_done0), // output
-        .buf_wr_chn0        (buf_wr_chn0), // output
-        .buf_waddr_chn0     (buf_waddr_chn0), // output[6:0] 
-        .buf_wdata_chn0     (buf_wdata_chn0), // output[63:0]
-
-        .want_rq1           (want_rq1), // input
-        .need_rq1           (need_rq1), // input
-        .channel_pgm_en1    (channel_pgm_en1), // output reg 
-        .seq_data1          (seq_data1), // input[31:0] 
-        .seq_wr1            (seq_wr1), // input
-        .seq_set1           (seq_set1), // input
-        .seq_done1          (seq_done1), // output
-        .buf_rd_chn1        (buf_rd_chn1), // output
-        .buf_raddr_chn1     (buf_raddr_chn1), // output[6:0] 
-        .buf_rdata_chn1     (buf_rdata_chn1), // input[63:0] 
-
-        .want_rq2           (want_rq2), // input
-        .need_rq2           (need_rq2), // input
-        .channel_pgm_en2    (channel_pgm_en2), // output reg 
-        .seq_data2          (seq_data2), // input[31:0] 
-        .seq_wr2            (seq_wr2), // input
-        .seq_set2           (seq_set2), // input
-        .seq_done2          (seq_done2), // output
-        .buf_wr_chn2        (buf_wr_chn2), // output
-        .buf_waddr_chn2     (buf_waddr_chn2), // output[6:0] 
-        .buf_wdata_chn2     (buf_wdata_chn2), // output[63:0]
-
-        .want_rq3           (want_rq3), // input
-        .need_rq3           (need_rq3), // input
-        .channel_pgm_en3    (channel_pgm_en3), // output reg 
-        .seq_data3          (seq_data3), // input[31:0] 
-        .seq_wr3            (seq_wr3), // input
-        .seq_set3           (seq_set3), // input
-        .seq_done3          (seq_done3), // output
-        .buf_rd_chn3        (buf_rd_chn3), // output
-        .buf_raddr_chn3     (buf_raddr_chn3), // output[6:0] 
-        .buf_rdata_chn3     (buf_rdata_chn3), // input[63:0] 
-
-        .want_rq4           (want_rq4), // input
-        .need_rq4           (need_rq4), // input
-        .channel_pgm_en4    (channel_pgm_en4), // output reg 
-        .seq_data4          (seq_data4), // input[31:0] 
-        .seq_wr4            (seq_wr4), // input
-        .seq_set4           (seq_set4), // input
-        .seq_done4          (seq_done4), // output
-        .buf_wr_chn4        (buf_wr_chn4), // output
-        .buf_waddr_chn4     (buf_waddr_chn4), // output[6:0] 
-        .buf_wdata_chn4     (buf_wdata_chn4), // output[63:0]
-
-        .SDRST              (SDRST), // output
-        .SDCLK              (SDCLK), // output
-        .SDNCLK             (SDNCLK), // output
-        .SDA                (SDA), // output[14:0] 
-        .SDBA               (SDBA), // output[2:0] 
-        .SDWE               (SDWE), // output
-        .SDRAS              (SDRAS), // output
-        .SDCAS              (SDCAS), // output
-        .SDCKE              (SDCKE), // output
-        .SDODT              (SDODT), // output
-        .SDD                (SDD), // inout[15:0] 
-        .SDDML              (SDDML), // output
-        .DQSL               (DQSL), // inout
-        .NDQSL              (NDQSL), // inout
-        .SDDMU              (SDDMU), // output
-        .DQSU               (DQSU), // inout
-        .NDQSU              (NDQSU), // inout
-        .tmp_debug          (tmp_debug) // output[11:0] 
-    );
-
-// *********************************** End of move to mcntrl393 *********************************************
+        .axi_clk              (axi_aclk), // input - same?
+        .axiwr_pre_awaddr     (axiwr_pre_awaddr), // input[12:0] 
+        .axiwr_start_burst    (axiwr_start_burst), // input
+        .axiwr_waddr          (axiwr_waddr[BUFFER_DEPTH32-1:0]), // input[9:0] 
+        .axiwr_wen            (axiwr_wen), // input
+        .axiwr_data           (axiwr_wdata), // input[31:0] 
+        
+        .axird_pre_araddr     (axird_pre_araddr), // input[12:0] 
+        .axird_start_burst    (axird_start_burst), // input
+        .axird_raddr          (axird_raddr[BUFFER_DEPTH32-1:0]), // input[9:0] 
+        .axird_ren            (axird_ren), // input
+        .axird_regen          (axird_regen), // input
+        .axird_rdata          (axird_rdata), // output[31:0]
  
+ //TODO:        
+        .frame_start_chn2     (frame_start_chn2), // input
+        .next_page_chn2       (next_page_chn2), // input
+        .page_ready_chn2      (page_ready_chn2), // output
+        .frame_done_chn2      (frame_done_chn2), // output
+        .line_unfinished_chn2 (line_unfinished_chn2), // output[15:0] 
+        .suspend_chn2         (suspend_chn2), // input
+        .frame_start_chn3     (frame_start_chn3), // input
+        .next_page_chn3       (next_page_chn3), // input
+        .page_ready_chn3      (page_ready_chn3), // output
+        .frame_done_chn3      (frame_done_chn3), // output
+        .line_unfinished_chn3 (line_unfinished_chn3), // output[15:0] 
+        .suspend_chn3         (suspend_chn3), // input
+        .frame_start_chn4     (frame_start_chn4), // input
+        .next_page_chn4       (next_page_chn4), // input
+        .page_ready_chn4      (page_ready_chn4), // output
+        .frame_done_chn4      (frame_done_chn4), // output
+        .line_unfinished_chn4 (line_unfinished_chn4), // output[15:0]
+         
+        .suspend_chn4         (suspend_chn4), // input
+        .SDRST                (SDRST), // output
+        .SDCLK                (SDCLK), // output
+        .SDNCLK               (SDNCLK), // output
+        .SDA                  (SDA), // output[14:0] 
+        .SDBA                 (SDBA), // output[2:0] 
+        .SDWE                 (SDWE), // output
+        .SDRAS                (SDRAS), // output
+        .SDCAS                (SDCAS), // output
+        .SDCKE                (SDCKE), // output
+        .SDODT                (SDODT), // output
+        .SDD                  (SDD), // inout[15:0] 
+        .SDDML                (SDDML), // output
+        .DQSL                 (DQSL), // inout
+        .NDQSL                (NDQSL), // inout
+        .SDDMU                (SDDMU), // output
+        .DQSU                 (DQSU), // inout
+        .NDQSU                (NDQSU), // inout
+        .tmp_debug            (tmp_debug) // output[11:0] 
+    );
 
 //MEMCLK
 wire [63:0] gpio_in;
@@ -1138,11 +810,11 @@ frst[3]?{
         .pre_awaddr  (axiwr_pre_awaddr[AXI_WR_ADDR_BITS-1:0]), // output[9:0] 
         .start_burst (axiwr_start_burst), // output
         .dev_ready   (axiwr_dev_ready), // input
-        .bram_wclk   (axiwr_bram_wclk), // output
-        .bram_waddr  (axiwr_bram_waddr[AXI_WR_ADDR_BITS-1:0]), // output[9:0] 
-        .bram_wen    (axiwr_bram_wen), // output
+        .bram_wclk   (axiwr_wclk), // output
+        .bram_waddr  (axiwr_waddr[AXI_WR_ADDR_BITS-1:0]), // output[9:0] 
+        .bram_wen    (axiwr_wen), // output
         .bram_wstb   (axiwr_bram_wstb[3:0]), // output[3:0] //SuppressThisWarning ISExst Assignment to axiwr_bram_wstb ignored, since the identifier is never used
-        .bram_wdata  (axiwr_bram_wdata[31:0]) // output[31:0]
+        .bram_wdata  (axiwr_wdata[31:0]) // output[31:0]
 `ifdef DEBUG_FIFO
         ,
         .waddr_under (waddr_under), // output
@@ -1190,10 +862,10 @@ frst[3]?{
         .start_burst (axird_start_burst), // output
         .dev_ready   (axird_dev_ready), // input
         .bram_rclk   (axird_bram_rclk), // output //SuppressThisWarning ISExst Assignment to axird_bram_rclk ignored, since the identifier is never used
-        .bram_raddr  (axird_bram_raddr[AXI_RD_ADDR_BITS-1:0]), // output[9:0] 
-        .bram_ren    (axird_bram_ren), // output
-        .bram_regen  (axird_bram_regen), // output
-        .bram_rdata  (axird_bram_rdata) // input[31:0] 
+        .bram_raddr  (axird_raddr[AXI_RD_ADDR_BITS-1:0]), // output[9:0] 
+        .bram_ren    (axird_ren), // output
+        .bram_regen  (axird_regen), // output
+        .bram_rdata  (axird_rdata) // input[31:0] 
     );
 
 assign DUMMY_TO_KEEP = 1'b0; // dbg_toggle[0];
