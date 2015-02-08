@@ -1,7 +1,8 @@
   // This file may be used to define same pre-processor macros to be included into each parsed file
   // It can be used to check different `ifdef branches
   //`define XIL_TIMING //Simprim 
-  `define IVERILOG
+  `define den4096Mb 1
+//  `define IVERILOG
   // defines for memory channels
   // chn 0 is read from memory
  `define def_enable_mem_chn0

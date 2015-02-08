@@ -108,20 +108,33 @@ module ddr3 (
     tdqs_n,
     odt
 );
-
-
-`ifdef den1024Mb
+// Icarus searces from "current directory"
+`ifdef IVERILOG
+  `ifdef den1024Mb
     `include "ddr3/1024Mb_ddr3_parameters.vh"
-`elsif den2048Mb
+  `elsif den2048Mb
     `include "ddr3/2048Mb_ddr3_parameters.vh"
-`elsif den4096Mb
+  `elsif den4096Mb
     `include "ddr3/4096Mb_ddr3_parameters.vh"
-`else
+  `else
     // NOTE: Intentionally cause a compile fail here to force the users
     //       to select the correct component density before continuing
     ERROR: You must specify component density with +define+den____Mb.
+  `endif
+`else
+// Others search from the source file
+  `ifdef den1024Mb
+    `include "1024Mb_ddr3_parameters.vh"
+  `elsif den2048Mb
+    `include "2048Mb_ddr3_parameters.vh"
+  `elsif den4096Mb
+    `include "4096Mb_ddr3_parameters.vh"
+  `else
+    // NOTE: Intentionally cause a compile fail here to force the users
+    //       to select the correct component density before continuing
+    ERROR: You must specify component density with +define+den____Mb.
+  `endif
 `endif
-
     parameter check_strict_mrbits = 1;
     parameter check_strict_timing = 1;
     parameter feature_pasr = 1;

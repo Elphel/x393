@@ -21,7 +21,7 @@
 `timescale 1ns/1ps
 `define use200Mhz 1
 `define DEBUG_FIFO 1
-`include ".editor_defines" 
+`include ".editor_defines.vh" 
 module  x393 #(
     parameter MCONTR_WR_MASK =       'h1c00, // AXI write address mask for the 1Kx32 buffers command sequence memory
     parameter MCONTR_RD_MASK =       'h1c00, // AXI read address mask to generate busy
@@ -110,6 +110,8 @@ module  x393 #(
     parameter DFLT_CHN_EN=            16'h0,  // channel mask to be enabled at reset
     parameter DFLT_REFRESH_ADDR=      10'h0,  // refresh sequence address in command memory
     parameter DFLT_REFRESH_PERIOD=     8'h0,  // default 8-bit refresh period (scale?)
+    parameter ADDRESS_NUMBER=       15,
+    parameter COLADDR_NUMBER=       10,
     parameter PHASE_WIDTH =     8,
     parameter SLEW_DQ =         "SLOW",
     parameter SLEW_DQS =        "SLOW",
@@ -262,8 +264,8 @@ module  x393 #(
 //    ,input                        MEMCLK
 );
 
-    localparam ADDRESS_NUMBER=15;
-    localparam COLADDR_NUMBER=10;
+//    localparam ADDRESS_NUMBER=15;
+//    localparam COLADDR_NUMBER=10;
 // Source for reset and clock
    wire    [3:0]     fclk;      // PL Clocks [3:0], output
    wire    [3:0]     frst;      // PL Clocks [3:0], output
@@ -729,7 +731,8 @@ end
         .MCNTRL_TILED_TILE_WH              (MCNTRL_TILED_TILE_WH),
         .MCNTRL_TILED_STATUS_REG_CHN4_ADDR (MCNTRL_TILED_STATUS_REG_CHN4_ADDR),
         .MCNTRL_TILED_PENDING_CNTR_BITS    (MCNTRL_TILED_PENDING_CNTR_BITS),
-        .MCNTRL_TILED_FRAME_PAGE_RESET     (MCNTRL_TILED_FRAME_PAGE_RESET)
+        .MCNTRL_TILED_FRAME_PAGE_RESET     (MCNTRL_TILED_FRAME_PAGE_RESET),
+        .BUFFER_DEPTH32                    (BUFFER_DEPTH32)
     ) mcntrl393_i (
         .rst_in               (axi_rst), // input
         .clk_in               (axi_aclk), // input
