@@ -421,9 +421,9 @@ end
 `endif
 
 //TODO: The following is the interface to the frame-based command sequencer (not yet implemnted)        
-    wire [AXI_WR_ADDR_BITS-1:0] cseq_waddr;   /// SuppressThisWarning VEditor ******  command sequencer write address (output to command multiplexer)
-    wire                        cseq_wr_en;   /// SuppressThisWarning VEditor ****** command sequencer write enable (output to command multiplexer) - keep until cseq_ackn received
-    wire                 [31:0] cseq_wdata;   /// SuppressThisWarning VEditor ****** command sequencer write data (output to command multiplexer) 
+    wire [AXI_WR_ADDR_BITS-1:0] cseq_waddr;   /// S uppressThisWarning VEditor ******  command sequencer write address (output to command multiplexer)
+    wire                        cseq_wr_en;   /// S uppressThisWarning VEditor ****** command sequencer write enable (output to command multiplexer) - keep until cseq_ackn received
+    wire                 [31:0] cseq_wdata;   /// S uppressThisWarning VEditor ****** command sequencer write data (output to command multiplexer) 
     wire                        cseq_ackn;    /// SuppressThisWarning VEditor ****** ackn to command sequencer, command sequencer should de-assert cseq_wr_en
 // parallel address/data - where higher bandwidth (single-cycle) is needed        
     wire [AXI_WR_ADDR_BITS-1:0] par_waddr;    /// SuppressThisWarning VEditor ****** multiplexed address (full, parallel) to slave devices 
@@ -489,6 +489,11 @@ end
     assign status_other_ad = status_test01_ad;
     assign status_other_rq = status_test01_rq;
     assign status_test01_start = status_other_start;
+
+// missing command sequencer:
+        assign cseq_waddr='bx;  // command sequencer write address (output to command multiplexer)
+        assign cseq_wr_en= 0;   // command sequencer write enable (output to command multiplexer) - keep until cseq_ackn received
+        assign cseq_wdata='bx;  // command sequencer write data (output to command multiplexer) 
 
 
 // channel test module

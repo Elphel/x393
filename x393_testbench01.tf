@@ -21,7 +21,6 @@
 `timescale 1ns/1ps
 `define use200Mhz 1
 `define DEBUG_FIFO 1
-
 module  x393_testbench01 #(
 `include "includes/x393_parameters.vh"
 `include "includes/x393_simulation_parameters.vh"
@@ -56,7 +55,7 @@ module  x393_testbench01 #(
   wire        DQSU;   // inout
   wire        NDQSU;  // inout
   wire        DUMMY_TO_KEEP;  // output to keep PS7 signals from "optimization"
-  wire        MEMCLK;
+//  wire        MEMCLK;
   
   // Simulation signals
   reg [11:0] ARID_IN_r;
@@ -186,7 +185,7 @@ always #(CLKIN_PERIOD/2) CLK <= ~CLK;
 `endif
     $dumpfile(lxtname);
   // SuppressWarnings VEditor : assigned in $readmem() system task
-    $dumpvars(0,ddrc_test01_testbench);
+    $dumpvars(0,x393_testbench01);
     CLK <=1'b0;
     RST <= 1'bx;
     AR_SET_CMD_r <= 1'b0;
@@ -202,6 +201,7 @@ always #(CLKIN_PERIOD/2) CLK <= ~CLK;
 //set simulation-only parameters   
     axi_set_b_lag(0); //(1);
     axi_set_rd_lag(0);
+    program_status_all(3); // mode auto with sequence number increment 
 //...    
     
 end
@@ -435,8 +435,8 @@ assign bresp=                              x393_i.ps7_i.MAXIGP0BRESP;
         .SDDMU   (SDDMU), // inout
         .DQSU    (DQSU), // inout
         .NDQSU   (NDQSU), // inout
-        .DUMMY_TO_KEEP(DUMMY_TO_KEEP),  // to keep PS7 signals from "optimization"
-        .MEMCLK  (MEMCLK)
+        .DUMMY_TO_KEEP(DUMMY_TO_KEEP)  // to keep PS7 signals from "optimization"
+//      ,.MEMCLK  (MEMCLK)
     );
 // Micron DDR3 memory model
     /* Instance of Micron DDR3 memory model */
@@ -763,6 +763,39 @@ simul_axi_read simul_axi_read_i(
     
 // SuppressWarnings VEditor all - these variables are just for viewing, not used anywhere else
   reg DEBUG1, DEBUG2, DEBUG3;
+  reg [11:0] GLOBAL_WRITE_ID=0;
+  reg [11:0] GLOBAL_READ_ID=0;
+ task program_status_all;
+    input [1:0] mode;
+    begin
+        program_status (MCONTR_PHY_16BIT_ADDR,     MCONTR_PHY_STATUS_CNTRL,        mode,0); //MCONTR_PHY_STATUS_REG_ADDR=          'h0,
+        program_status (MCONTR_TOP_16BIT_ADDR,     MCONTR_TOP_16BIT_STATUS_CNTRL,  mode,0); //MCONTR_TOP_STATUS_REG_ADDR=          'h1,
+        program_status (MCNTRL_PS_ADDR,            MCNTRL_PS_STATUS_CNTRL,         mode,0); //MCNTRL_PS_STATUS_REG_ADDR=           'h2,
+        program_status (MCNTRL_SCANLINE_CHN2_ADDR, MCNTRL_SCANLINE_STATUS_CNTRL,   mode,0); //MCNTRL_SCANLINE_STATUS_REG_CHN2_ADDR='h4,
+        program_status (MCNTRL_SCANLINE_CHN3_ADDR, MCNTRL_SCANLINE_STATUS_CNTRL,   mode,0); //MCNTRL_SCANLINE_STATUS_REG_CHN3_ADDR='h5,
+        program_status (MCNTRL_TILED_CHN4_ADDR,    MCNTRL_TILED_STATUS_CNTRL,      mode,0); //MCNTRL_TILED_STATUS_REG_CHN4_ADDR=   'h6,
+        program_status (MCNTRL_TEST01_ADDR,        MCNTRL_TEST01_CHN2_STATUS_CNTRL,mode,0); //MCNTRL_TEST01_STATUS_REG_CHN2_ADDR=  'h3c,
+        program_status (MCNTRL_TEST01_ADDR,        MCNTRL_TEST01_CHN3_STATUS_CNTRL,mode,0); //MCNTRL_TEST01_STATUS_REG_CHN3_ADDR=  'h3d,
+        program_status (MCNTRL_TEST01_ADDR,        MCNTRL_TEST01_CHN4_STATUS_CNTRL,mode,0); //MCNTRL_TEST01_STATUS_REG_CHN4_ADDR=  'h3e,
+    end
+ endtask
+  
+ task   program_status;
+    input [29:0] base_addr;
+    input  [7:0] reg_addr;
+    input  [1:0] mode;
+ // mode bits:
+ // 0 disable status generation,
+ // 1 single status request,
+ // 2 - auto status, keep specified seq number,
+ // 3 - auto, inc sequence number 
+    input  [5:0] seq_number;
+    begin
+        axi_write_single(((CONTROL_ADDR+{2'b0,base_addr}+reg_addr)<<2), {24'b0,mode,seq_number});
+    end
+ endtask   
+    
+  
 `include "includes/x393_tasks01.vh"
 
 endmodule

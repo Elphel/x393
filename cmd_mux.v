@@ -108,22 +108,22 @@ module  cmd_mux #(
 //    always @ (seq_length_rom_a) begin
     always @*
         case (seq_length_rom_a)  // just temporary - fill out later
-            4'h00:seq_length <= NUM_CYCLES_00;
-            4'h01:seq_length <= NUM_CYCLES_01;
-            4'h02:seq_length <= NUM_CYCLES_02;
-            4'h03:seq_length <= NUM_CYCLES_03;
-            4'h04:seq_length <= NUM_CYCLES_04;
-            4'h05:seq_length <= NUM_CYCLES_05;
-            4'h06:seq_length <= NUM_CYCLES_06;
-            4'h07:seq_length <= NUM_CYCLES_07;
-            4'h08:seq_length <= NUM_CYCLES_08;
-            4'h09:seq_length <= NUM_CYCLES_09;
-            4'h0a:seq_length <= NUM_CYCLES_10;
-            4'h0b:seq_length <= NUM_CYCLES_11;
-            4'h0c:seq_length <= NUM_CYCLES_12;
-            4'h0d:seq_length <= NUM_CYCLES_13;
-            4'h0e:seq_length <= NUM_CYCLES_14;
-            4'h0f:seq_length <= NUM_CYCLES_15;
+            4'h0:seq_length <= NUM_CYCLES_00;
+            4'h1:seq_length <= NUM_CYCLES_01;
+            4'h2:seq_length <= NUM_CYCLES_02;
+            4'h3:seq_length <= NUM_CYCLES_03;
+            4'h4:seq_length <= NUM_CYCLES_04;
+            4'h5:seq_length <= NUM_CYCLES_05;
+            4'h6:seq_length <= NUM_CYCLES_06;
+            4'h7:seq_length <= NUM_CYCLES_07;
+            4'h8:seq_length <= NUM_CYCLES_08;
+            4'h9:seq_length <= NUM_CYCLES_09;
+            4'ha:seq_length <= NUM_CYCLES_10;
+            4'hb:seq_length <= NUM_CYCLES_11;
+            4'hc:seq_length <= NUM_CYCLES_12;
+            4'hd:seq_length <= NUM_CYCLES_13;
+            4'he:seq_length <= NUM_CYCLES_14;
+            4'hf:seq_length <= NUM_CYCLES_15;
         endcase
     always @ (posedge rst or posedge mclk) begin
         if (rst) seq_busy_r<=0;
@@ -137,7 +137,7 @@ module  cmd_mux #(
                     4'h6:    seq_busy_r<=5'h1f;
                     default: seq_busy_r<=5'h00;
                 endcase
-            end else seq_busy_r <= {1'b0,seq_busy_r[3:0]};
+            end else seq_busy_r <= {1'b0,seq_busy_r[4:1]};
         end
     end
     
@@ -150,7 +150,7 @@ module  cmd_mux #(
     end
     always @ (posedge mclk) begin
         if (start_w) par_ad <={cmdseq_full_r?cseq_wdata_r:wdata_fifo_out,{(16-AXI_WR_ADDR_BITS){1'b0}},cmdseq_full_r?cseq_waddr_r:waddr_fifo_out};
-        else par_ad <={8'b0,par_ad[39:0]};
+        else par_ad <={8'b0,par_ad[47:8]};
     end
     
     assign  cseq_ackn= cseq_wr_en && (!cmdseq_full_r || can_start_w); // cmddseq_full has priority over axi, so (can_start_w && cmdseq_full_r)
@@ -173,7 +173,7 @@ module  cmd_mux #(
     ) fifo_cross_clocks_i (
         .rst         (rst), // input
         .rclk        (mclk), // input
-        .wclk        (clk), // input
+        .wclk        (axi_clk), // input
         .we          (wr_en && selected), // input
         .re          (start_axi_w), // input
         .data_in     ({waddr[AXI_WR_ADDR_BITS-1:0],wdata[31:0]}), // input[15:0] 

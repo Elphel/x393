@@ -58,7 +58,7 @@ module  cmd_deser#(
                 .ADDR_MASK(ADDR_MASK),
                 .ADDR_WIDTH(ADDR_WIDTH),
                 .DATA_WIDTH(DATA_WIDTH)
-            ) i_cmd_deser_single (
+            ) i_cmd_deser_dual (
                 .rst(rst),
                 .clk(clk),
                 .ad(ad),
@@ -74,7 +74,7 @@ module  cmd_deser#(
                 .NUM_CYCLES(NUM_CYCLES),
                 .ADDR_WIDTH(ADDR_WIDTH),
                 .DATA_WIDTH(DATA_WIDTH)
-            ) i_cmd_deser_single (
+            ) i_cmd_deser_multi (
                 .rst(rst),
                 .clk(clk),
                 .ad(ad),
@@ -163,7 +163,7 @@ module  cmd_deser_dual#(
     always @ (posedge clk) begin
         if ((match_low && stb) || (match_high && stb_d)) deser_r[15:0] <= {ad,deser_r[15:8]};
     end
-    assign data={DATA_WIDTH{1'b0}};
+    assign data=0; // {DATA_WIDTH{1'b0}};
     assign addr=deser_r[ADDR_WIDTH-1:0];
 endmodule
 
@@ -198,9 +198,10 @@ module  cmd_deser_multi#(
     always @ (posedge rst or posedge clk) begin
         if (rst) stb_d <= 1'b0;
         else stb_d <= match_low && stb;
-        if (rst) sr <= 0;
-        else if (match_high && stb_d) sr <= {NUM_CYCLES-1{1'b1}};
-        else  sr <= {1'b0,sr[NUM_CYCLES-3:0]};
+        if      (rst)                 sr <= 0;
+//        else if (match_high && stb_d) sr <= {NUM_CYCLES-1{1'b1}};
+        else if (match_high && stb_d) sr <= 1 << (NUM_CYCLES-2);
+        else                          sr <= {1'b0,sr[NUM_CYCLES-2:1]};
     end
     always @ (posedge clk) begin
         if ((match_low && stb) || (match_high && stb_d) || (|sr)) deser_r[8*NUM_CYCLES-1:0] <= {ad,deser_r[8*NUM_CYCLES-1:8]};

@@ -19,10 +19,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/> .
  *******************************************************************************/
 `timescale 1ns/1ps
-// mode bits: 0 disable status generation, 1 single status request, 2 - auto status, keep specified seq number, 3 - auto, inc sequence number 
+// mode bits:
+//  0 disable status generation,
+//  1 single status request,
+//  2 - auto status, keep specified seq number,
+//  3 - auto, inc sequence number 
 module  status_generate #(
     parameter STATUS_REG_ADDR=7, // status register address to direct data to
-    parameter PAYLOAD_BITS=26 //6   // >=2! (2..26)
+    parameter PAYLOAD_BITS=15 //6   // >=2! (2..26)
 )(
     input                    rst,
     input                    clk,
@@ -41,6 +45,7 @@ module  status_generate #(
     localparam ALIGNED_STATUS_WIDTH=((NUM_BYTES-2)<<3)+2; // 2 ->2,
     // ugly solution to avoid warnings in unused "if" branch
     localparam ALIGNED_STATUS_BIT_2=(ALIGNED_STATUS_WIDTH>2)?2:0;
+    wire                [1:0] mode_w;
     reg                 [1:0] mode;
     reg                 [5:0] seq;
     reg    [PAYLOAD_BITS-1:0] status_r; // "frozen" status to be sent;
@@ -54,25 +59,28 @@ module  status_generate #(
     reg    [NUM_BYTES-2:0]    rq_r;
     
     assign aligned_status=(ALIGNED_STATUS_WIDTH==PAYLOAD_BITS)?status:{{(ALIGNED_STATUS_WIDTH-PAYLOAD_BITS){1'b0}},status};
-    assign  ad=data[7:0];
+    assign ad=data[7:0];
     assign need_to_send=cmd_pend || (mode[1] && status_changed_r); // latency
     assign rq=rq_r[0]; // NUM_BYTES-2];
     assign snd_rest=rq_r[0] && !rq_r[NUM_BYTES-2];
+    assign mode_w=wd[7:6];
     always @ (posedge rst or posedge clk) begin
         
-        if (rst) status_changed_r <= 0;
-        else     status_changed_r <= (status_changed_r && !start) || (status_r != status);
+        if      (rst)       status_changed_r <= 0;
+//        else     status_changed_r <= (status_changed_r && !start) || (status_r != status);
+        else if (start)     status_changed_r <= 0;
+        else                status_changed_r <= status_changed_r  || (status_r != status);
         
         if     (rst) mode <= 0;
-        else if (we) mode <= wd[7:6];
+        else if (we) mode <= mode_w; // wd[7:6];
         
         if     (rst)                 seq <= 0;
         else if (we)                 seq <= wd[5:0];
         else if ((mode==3) && start) seq <= seq+1;
         
-        if     (rst)       cmd_pend <= 0;
-        else if (we)       cmd_pend <= 1;
-        else if (start) cmd_pend <= 0;
+        if      (rst)               cmd_pend <= 0;
+        else if (we && (mode_w!=0)) cmd_pend <= 1;
+        else if (start)             cmd_pend <= 0;
         
         if      (rst)   status_r<=0;
         else if (start) status_r<=status;

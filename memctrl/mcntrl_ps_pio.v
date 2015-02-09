@@ -20,7 +20,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/> .
  *******************************************************************************/
 `timescale 1ns/1ps
-
+`undef DEBUG_FIFO
 module  mcntrl_ps_pio#(
     parameter MCNTRL_PS_ADDR=                    'h100,
     parameter MCNTRL_PS_MASK=                    'h3e0, // both channels 0 and 1

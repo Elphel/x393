@@ -104,17 +104,34 @@
                                                       // Read back current address (fro debugging)?
     parameter MCNTRL_TILED_TILE_WH=         'h7,   // low word - 6-bit tile width in 8-bursts, high - tile height (0 - > 64)
                                                       
-    
+== test module (8-bit):
+    parameter MCNTRL_TEST01_ADDR=                 'h0f0,
+    parameter MCNTRL_TEST01_MASK=                 'h3f0,
+    parameter FRAME_HEIGHT_BITS=                   16,   // Maximal frame height
+    parameter MCNTRL_TEST01_CHN2_MODE=            'h4,   // set mode register for channel 2
+    parameter MCNTRL_TEST01_CHN2_STATUS_CNTRL=    'h5,   // control status reporting for channel 2
+    parameter MCNTRL_TEST01_CHN3_MODE=            'h6,   // set mode register for channel 3
+    parameter MCNTRL_TEST01_CHN3_STATUS_CNTRL=    'h7,   // control status reporting for channel 3
+    parameter MCNTRL_TEST01_CHN4_MODE=            'h8,   // set mode register for channel 4
+    parameter MCNTRL_TEST01_CHN4_STATUS_CNTRL=    'h9,   // control status reporting for channel 4
+    parameter MCNTRL_TEST01_STATUS_REG_CHN2_ADDR= 'h3c,  // status/readback register for channel 2
+    parameter MCNTRL_TEST01_STATUS_REG_CHN3_ADDR= 'h3d,  // status/readback register for channel 3
+    parameter MCNTRL_TEST01_STATUS_REG_CHN4_ADDR= 'h3e  // status/readback register for channel 4
+
+ 
 // Status read address
     parameter STATUS_ADDR =         'h1400, // AXI write address of status read registers
     parameter STATUS_ADDR_MASK =    'h1400, // AXI write address of status registers
     parameter STATUS_DEPTH=         8,  // 256 cells, maybe just 16..64 are enough?
-    parameter MCONTR_PHY_STATUS_REG_ADDR=      'h0,    // 8 or less bits: status register address to use for memory controller phy
-    parameter MCONTR_TOP_STATUS_REG_ADDR=      'h1,    // 8 or less bits: status register address to use for memory controller
-    parameter MCNTRL_PS_STATUS_REG_ADDR= 'h2
-    parameter MCNTRL_SCANLINE_STATUS_REG_CHN2_ADDR=   'h4,
-    parameter MCNTRL_SCANLINE_STATUS_REG_CHN3_ADDR=   'h5,
-    parameter MCNTRL_TILED_STATUS_REG_CH4_ADDR= 'h5,
+    parameter MCONTR_PHY_STATUS_REG_ADDR=          'h0,//8 or less bits: status register address to use for memory controller phy
+    parameter MCONTR_TOP_STATUS_REG_ADDR=          'h1,//8 or less bits: status register address to use for memory controller
+    parameter MCNTRL_PS_STATUS_REG_ADDR=           'h2
+    parameter MCNTRL_SCANLINE_STATUS_REG_CHN2_ADDR='h4,
+    parameter MCNTRL_SCANLINE_STATUS_REG_CHN3_ADDR='h5,
+    parameter MCNTRL_TILED_STATUS_REG_CHN4_ADDR=   'h6,
+    parameter MCNTRL_TEST01_STATUS_REG_CHN2_ADDR=  'h3c,  // status/readback register for channel 2
+    parameter MCNTRL_TEST01_STATUS_REG_CHN3_ADDR=  'h3d,  // status/readback register for channel 3
+    parameter MCNTRL_TEST01_STATUS_REG_CHN4_ADDR=  'h3e  // status/readback register for channel 4
 
 ================================ OLD =======================================================
  Control addresses (in original ddrc_test01)

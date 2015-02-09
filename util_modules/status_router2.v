@@ -47,8 +47,9 @@ module  status_router2 (
     assign start_rcv=~fifo_half_full & ~rcv_rest_r & rq_in;
     wire   [7:0] fifo0_out;
     wire   [7:0] fifo1_out;
-    wire   [1:0] fifo_last_byte;
-    wire   [1:0] fifo_nempty;
+    wire   [1:0] fifo_last_byte; 
+    wire   [1:0] fifo_nempty_pre; // pure fifo output
+    wire   [1:0] fifo_nempty;  // safe version, zeroed for last byte
     wire   [1:0] fifo_re;
     reg          next_chn;
     reg          current_chn_r;
@@ -57,23 +58,34 @@ module  status_router2 (
     wire         snd_last_byte;
     wire         chn_sel_w;
     wire         early_chn;
+    wire         set_other_only_w; // window to initiate other channel only, same channel must wait
 
-    assign       chn_sel_w=(&fifo_nempty)?next_chn:&fifo_nempty[1];
+    assign       chn_sel_w=(&fifo_nempty)?next_chn : fifo_nempty[1];
     assign       fifo_re=start_out?{chn_sel_w,~chn_sel_w}:(snd_rest_r?{current_chn_r,~current_chn_r}:2'b0);
     
-    assign snd_last_byte=current_chn_r?fifo_last_byte[1]:fifo_last_byte[0];
+//    assign snd_last_byte=current_chn_r?fifo_last_byte[1]:fifo_last_byte[0];
+    assign snd_last_byte=current_chn_r?(fifo_nempty_pre[1] && fifo_last_byte[1]):(fifo_nempty_pre[0] && fifo_last_byte[0]);
+    assign set_other_only_w=snd_last_byte && (current_chn_r? fifo_nempty[0]:fifo_nempty[1]);
     assign snd_pre_start=|fifo_nempty && (!snd_rest_r || snd_last_byte);
-    assign rq_out=(snd_rest_r && !snd_last_byte) || |fifo_nempty;
+///    assign snd_pre_start=|fifo_nempty && !snd_rest_r && !start_out; // no channel change after 
+//    assign rq_out=(snd_rest_r && !snd_last_byte) || |fifo_nempty;
+    assign rq_out=(snd_rest_r || |fifo_nempty) && !snd_last_byte ;
     assign early_chn= (snd_rest_r & ~snd_last_byte)?current_chn_r:chn_sel_w;
     assign db_out=early_chn?fifo1_out:fifo0_out;
+    assign fifo_nempty=fifo_nempty_pre & ~fifo_last_byte;
+    
     always @ (posedge rst or posedge clk) begin
         if (rst) rcv_rest_r<= 0;
         else rcv_rest_r <= (rcv_rest_r & rq_in) | start_rcv;
     
         if (rst) next_chn<= 0;
-        else if (|fifo_re) next_chn <= fifo_re[0];
-        if (rst) current_chn_r<= 0;
-        else if (snd_pre_start) current_chn_r <= chn_sel_w;
+        else if (|fifo_re) next_chn <= fifo_re[0]; // just to be fair
+        
+        if      (rst)                         current_chn_r <= 0;
+        if      (set_other_only_w)            current_chn_r <= ~current_chn_r;
+        else if (snd_pre_start)               current_chn_r <= chn_sel_w;
+///        else if (|fifo_nempty && !snd_rest_r) current_chn_r <= chn_sel_w;
+        //|fifo_nempty && (!snd_rest_r
 
         if (rst) snd_rest_r<= 0;
         else snd_rest_r <= (snd_rest_r & ~snd_last_byte) | start_out;
@@ -90,7 +102,7 @@ module  status_router2 (
         .re        (fifo_re[0]), // input
         .data_in   ({rcv_rest_r[0] & ~rq_in[0], db_in0}), // input[8:0] MSB marks last byte
         .data_out  ({fifo_last_byte[0],fifo0_out}), // output[8:0]
-        .nempty    (fifo_nempty[0]), // output
+        .nempty    (fifo_nempty_pre[0]), // output
         .half_full (fifo_half_full[0]) // output reg 
 `ifdef DEBUG_FIFO
         ,.under(), // output reg 
@@ -111,7 +123,7 @@ module  status_router2 (
         .re        (fifo_re[1]), // input
         .data_in   ({rcv_rest_r[1] & ~rq_in[1], db_in1}), // input[8:0] MSB marks last byte
         .data_out  ({fifo_last_byte[1],fifo1_out}), // output[8:0]
-        .nempty    (fifo_nempty[1]), // output
+        .nempty    (fifo_nempty_pre[1]), // output
         .half_full (fifo_half_full[1]) // output reg 
 `ifdef DEBUG_FIFO
         ,.under(), // output reg 

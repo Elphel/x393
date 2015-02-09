@@ -48,8 +48,8 @@ module  mcont_from_chnbuf_reg #(
         if (rst) latency_reg<= 0;
         else     latency_reg <= buf_rd_chn | (latency_reg << 1);
         
-        if (rst) buf_done <= 0;
-        else     buf_done <= buf_chn_sel && seq_done;
+//        if (rst) buf_done <= 0;
+//        else     buf_done <= buf_chn_sel && seq_done;
     end
 //    always @ (posedge clk)  buf_raddr_rst_chn <= ext_buf_raddr_rst && (ext_buf_rchn==CHN_NUMBER);
 //    always @ (posedge clk) if (buf_chn_sel && ext_buf_rd) buf_raddr_chn <= ext_buf_raddr;

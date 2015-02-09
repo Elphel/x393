@@ -15,9 +15,6 @@
             B_LAG <= lag;
         end
     endtask
-   
-    reg [11:0] GLOBAL_WRITE_ID=0;
-    reg [11:0] GLOBAL_READ_ID=0;
 
     task read_and_wait;
     input [31:0] address;

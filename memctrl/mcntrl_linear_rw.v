@@ -219,7 +219,8 @@ module  mcntrl_linear_rw #(
     assign pgm_param_w=      cmd_we;
     
     integer i;
-    localparam EXTRA_BITS={COLADDR_NUMBER-3-COLADDR_NUMBER-3{1'b0}};
+//    localparam EXTRA_BITS={ADDRESS_NUMBER-3-COLADDR_NUMBER-3{1'b0}};
+//    localparam EXTRA_BITS={COLADDR_NUMBER-3-NUM_XFER_BITS{1'b0}};
     always @(posedge mclk) begin // TODO: Match latencies (is it needed?) Reduce consumption by CE?
         frame_x <= curr_x + window_x0;
         frame_y <= curr_y + window_y0;
@@ -227,7 +228,8 @@ module  mcntrl_linear_rw #(
         row_left <= window_width - curr_x; // 14 bits - 13 bits
         mem_page_left <= (1 << (COLADDR_NUMBER-3)) - frame_x[COLADDR_NUMBER-4:0];
         lim_by_xfer <= (|row_left[FRAME_WIDTH_BITS:NUM_XFER_BITS])?(1<<NUM_XFER_BITS):row_left[NUM_XFER_BITS:0]; // 7 bits, max 'h40
-        xfer_num128_r<= (mem_page_left> {{EXTRA_BITS{1'b0}},lim_by_xfer})? mem_page_left[NUM_XFER_BITS:0]:lim_by_xfer[NUM_XFER_BITS:0];
+        xfer_num128_r<= (mem_page_left> {{COLADDR_NUMBER-3-NUM_XFER_BITS{1'b0}},lim_by_xfer})? mem_page_left[NUM_XFER_BITS:0]:lim_by_xfer[NUM_XFER_BITS:0];
+//        xfer_num128_r<= (mem_page_left> {EXTRA_BITS, lim_by_xfer})? mem_page_left[NUM_XFER_BITS:0]:lim_by_xfer[NUM_XFER_BITS:0];
 // VDT bug? next line gives a warning        
 //        xfer_num128_r<= (mem_page_left> {{COLADDR_NUMBER-3-COLADDR_NUMBER-3{1'b0}},lim_by_xfer})?mem_page_left[NUM_XFER_BITS-1:0]:lim_by_xfer[NUM_XFER_BITS-1:0];
         last_in_row <= last_in_row_w;

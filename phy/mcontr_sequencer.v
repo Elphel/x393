@@ -179,6 +179,7 @@ module  mcontr_sequencer   #(
     reg                   [ 3:0] dqs_tri_on_pattern=DFLT_DQS_TRI_ON_PATTERN; // DQS tri-state control word, first when enabling output
     reg                   [ 3:0] dqs_tri_off_pattern=DFLT_DQS_TRI_OFF_PATTERN;// DQS tri-state control word, first after disabling output
     reg                   [ 3:0] wbuf_delay=DFLT_WBUF_DELAY;
+    wire                  [ 3:0] wbuf_delay_m1;
 
     wire                   [2:0] phy_16bit_addr;
     wire                  [15:0] phy_16bit_data;
@@ -299,7 +300,6 @@ module  mcontr_sequencer   #(
         .data       (dly_data), // output[31:0] 
         .we(        ld_delay) // output
     );
-
 // generate on/off dependent on lsb and 0-bit commands
     cmd_deser #(
         .ADDR       (MCONTR_PHY_0BIT_ADDR),
@@ -592,11 +592,12 @@ module  mcontr_sequencer   #(
         .din({buf_rst,buf_wr_ndly}), // input
         .dout({buf_rst_d, buf_wr}) // output reg 
     );
+    assign wbuf_delay_m1=wbuf_delay-1;
 
     dly_16 #(4) buf_wchn_dly_i (
         .clk(mclk), // input
         .rst(1'b0), // input
-        .dly(wbuf_delay[3:0]-1), // input[3:0] 
+        .dly(wbuf_delay_m1), //wbuf_delay[3:0]-1), // input[3:0] 
         .din(run_chn_d), // input
         .dout(run_chn_w_d) // output reg 
     );

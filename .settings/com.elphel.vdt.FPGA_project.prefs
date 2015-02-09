@@ -1,6 +1,6 @@
-FPGA_project_0_SimulationTopFile=ddrc_test01_testbench.tf
-FPGA_project_1_SimulationTopModule=ddrc_test01_testbench
-FPGA_project_2_ImplementationTopFile=ddrc_test01.v
+FPGA_project_0_SimulationTopFile=x393_testbench01.tf
+FPGA_project_1_SimulationTopModule=x393_testbench01
+FPGA_project_2_ImplementationTopFile=x393.v
 FPGA_project_4_part=xc7z030fbg484-1
 com.elphel.store.context.FPGA_project=FPGA_project_2_ImplementationTopFile<-@\#\#@->FPGA_project_4_part<-@\#\#@->FPGA_project_0_SimulationTopFile<-@\#\#@->FPGA_project_1_SimulationTopModule<-@\#\#@->
 eclipse.preferences.version=1
