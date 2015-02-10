@@ -297,8 +297,10 @@ module  cmd_encod_tiled_rd #(
             rom_r[ENC_BUF_PGNEXT]);     //   buf_rst;    // connect to external buffer (but only if not paused)
     end    
 
+// move to include?, Yes, after fixing problem with paths
 // move to include?
-
+`include "includes/x393_mcontr_encode_cmd.vh" 
+/*
     function [31:0] func_encode_skip;
         input [CMD_PAUSE_BITS-1:0] skip;       // number of extra cycles to skip (and keep all the other outputs)
         input                      done;       // end of sequence 
@@ -366,6 +368,6 @@ module  cmd_encod_tiled_rd #(
            };
         end
     endfunction
-
+*/
 endmodule
 

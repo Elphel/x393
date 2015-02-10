@@ -780,7 +780,7 @@ simul_axi_read simul_axi_read_i(
 // set patterns for DM (always 0) and DQS - always the same (may try different for write lev.)
             axi_set_dqs_dqm_patterns;
 // prepare all sequences
-/*           set_all_sequences; */
+            set_all_sequences;
 // prepare write buffer    
 /*            write_block_buf; // fill block memory */
 // set all delays
@@ -791,7 +791,6 @@ simul_axi_read simul_axi_read_i(
         end
     endtask
 
-/*
 task set_all_sequences;
         begin
             $display("SET MRS @ %t",$time);    
@@ -820,7 +819,6 @@ task set_all_sequences;
             );
         end
 endtask
-*/ 
  
      task axi_set_same_delays;
         input [7:0] dq_idelay;
@@ -1008,6 +1006,6 @@ endtask
  endtask   
   
 `include "includes/x393_tasks01.vh"
-
+`include "includes/x393_mcontr_encode_cmd.vh"
 endmodule
 

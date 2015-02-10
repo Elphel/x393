@@ -178,7 +178,8 @@ module  cmd_encod_linear_wr #(
     
 
 // move to include?
-
+`include "includes/x393_mcontr_encode_cmd.vh" 
+/*
     function [31:0] func_encode_skip;
         input [CMD_PAUSE_BITS-1:0] skip;       // number of extra cycles to skip (and keep all the other outputs)
         input                      done;       // end of sequence 
@@ -246,6 +247,6 @@ module  cmd_encod_linear_wr #(
            };
         end
     endfunction
-
+*/
 endmodule
 

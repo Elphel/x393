@@ -1,3 +1,23 @@
+/*******************************************************************************
+ * File: x393_parameters.vh
+ * Date:2015-02-07  
+ * Author: andrey     
+ * Description: Parameters for the x393 (simulation and implementation)
+ *
+ * Copyright (c) 2015 <set up in Preferences-Verilog/VHDL Editor-Templates> .
+ * x393_parameters.vh is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * x393_parameters.vh is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/> .
+ *******************************************************************************/
     parameter MCONTR_WR_MASK =       'h1c00, // AXI write address mask for the 1Kx32 buffers command sequence memory
     parameter MCONTR_RD_MASK =       'h1c00, // AXI read address mask to generate busy
 
