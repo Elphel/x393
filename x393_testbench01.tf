@@ -87,7 +87,7 @@ module  x393_testbench01 #(
   // SuppressWarnings VEditor
   reg         SIMUL_AXI_FULL; // some data available
 
-  reg  [31:0] registered_rdata;
+  reg  [31:0] registered_rdata; // here read data from tasks goes
 
   reg        CLK;
   reg        RST;
@@ -201,9 +201,15 @@ always #(CLKIN_PERIOD/2) CLK <= ~CLK;
 //set simulation-only parameters   
     axi_set_b_lag(0); //(1);
     axi_set_rd_lag(0);
-    program_status_all(3); // mode auto with sequence number increment 
+    program_status_all(3,'h2a); // mode auto with sequence number increment 
 //...    
+    set_up;
     
+    read_all_status;    
+    repeat (20) @(posedge CLK) ;
+    read_all_status;    
+  #2000;
+  $finish;
 end
 // protect from never end
   initial begin
@@ -765,18 +771,212 @@ simul_axi_read simul_axi_read_i(
   reg DEBUG1, DEBUG2, DEBUG3;
   reg [11:0] GLOBAL_WRITE_ID=0;
   reg [11:0] GLOBAL_READ_ID=0;
+  reg [7:0] target_phase=0; // to compare/wait for phase shifter ready
+  
+   task set_up;
+        begin
+// set dq /dqs tristate on/off patterns
+            axi_set_tristate_patterns;
+// set patterns for DM (always 0) and DQS - always the same (may try different for write lev.)
+            axi_set_dqs_dqm_patterns;
+// prepare all sequences
+/*           set_all_sequences; */
+// prepare write buffer    
+/*            write_block_buf; // fill block memory */
+// set all delays
+//#axi_set_delays - from tables, per-pin
+            axi_set_same_delays(DLY_DQ_IDELAY,DLY_DQ_ODELAY,DLY_DQS_IDELAY,DLY_DQS_ODELAY,DLY_DM_ODELAY,DLY_CMDA_ODELAY);    
+// set clock phase relative to DDR clk
+            axi_set_phase(DLY_PHASE);
+        end
+    endtask
+
+/*
+task set_all_sequences;
+        begin
+            $display("SET MRS @ %t",$time);    
+            set_mrs(1);
+            $display("SET REFRESH @ %t",$time);    
+            set_refresh(
+                50, // input [ 9:0] t_rfc; // =50 for tCK=2.5ns
+                16); //input [ 7:0] t_refi; // 48/97 for normal, 8 - for simulation
+            $display("SET WRITE LEVELING @ %t",$time);    
+            set_write_lev(16); // write leveling, 16 times   (full buffer - 128) 
+            $display("SET READ PATTERN @ %t",$time);    
+            set_read_pattern(8); // 8x2*64 bits, 32x32 bits to read
+
+            $display("SET WRITE BLOCK @ %t",$time);    
+            set_write_block(
+                3'h5,     // bank
+                15'h1234, // row address
+                10'h100   // column address
+            );
+           
+            $display("SET READ BLOCK @ %t",$time);    
+            set_read_block(
+                3'h5,     // bank
+                15'h1234, // row address
+                10'h100   // column address
+            );
+        end
+endtask
+*/ 
+ 
+     task axi_set_same_delays;
+        input [7:0] dq_idelay;
+        input [7:0] dq_odelay;
+        input [7:0] dqs_idelay;
+        input [7:0] dqs_odelay;
+        input [7:0] dm_odelay;
+        input [7:0] cmda_odelay;
+        begin
+           $display("SET DELAYS(0x%x,0x%x,0x%x,0x%x,0x%x,0x%x) @ %t",
+           dq_idelay,dq_odelay,dqs_idelay,dqs_odelay,dm_odelay,cmda_odelay,$time);
+            axi_set_dq_idelay(dq_idelay);
+            axi_set_dq_odelay(dq_odelay);
+            axi_set_dqs_idelay(dqs_idelay);
+            axi_set_dqs_odelay(dqs_odelay);
+            axi_set_dm_odelay(dm_odelay);
+            axi_set_cmda_odelay(cmda_odelay);
+        end
+    endtask
+
+    task axi_set_dq_idelay;
+        input [7:0] delay;
+        begin
+           $display("SET DQ IDELAY=0x%x @ %t",delay,$time);
+           axi_set_multiple_delays(LD_DLY_LANE0_IDELAY, 8, delay);
+           axi_set_multiple_delays(LD_DLY_LANE1_IDELAY, 8, delay);
+           write_contol_register(DLY_SET,0); // set all delays
+        end
+    endtask
+
+    task axi_set_dq_odelay;
+        input [7:0] delay;
+        begin
+           $display("SET DQ ODELAY=0x%x @ %t",delay,$time);
+           axi_set_multiple_delays(LD_DLY_LANE0_ODELAY, 8, delay);
+           axi_set_multiple_delays(LD_DLY_LANE1_ODELAY, 8, delay);
+           write_contol_register(DLY_SET,0); // set all delays
+        end
+    endtask
+
+    task axi_set_dqs_idelay;
+        input [7:0] delay;
+        begin
+           $display("SET DQS IDELAY=0x%x @ %t",delay,$time);
+           axi_set_multiple_delays(LD_DLY_LANE0_IDELAY + 8, 0, delay);
+           axi_set_multiple_delays(LD_DLY_LANE1_IDELAY + 8, 0, delay);
+           write_contol_register(DLY_SET,0); // set all delays
+        end
+    endtask
+
+    task axi_set_dqs_odelay;
+        input [7:0] delay;
+        begin
+           $display("SET DQS ODELAY=0x%x @ %t",delay,$time);
+           axi_set_multiple_delays(LD_DLY_LANE0_ODELAY + 8, 0, delay);
+           axi_set_multiple_delays(LD_DLY_LANE1_ODELAY + 8, 0, delay);
+           write_contol_register(DLY_SET,0); // set all delays
+        end
+    endtask
+
+    task axi_set_dm_odelay;
+        input [7:0] delay;
+        begin
+           $display("SET DQM IDELAY=0x%x @ %t",delay,$time);
+           axi_set_multiple_delays(LD_DLY_LANE0_ODELAY + 9, 0, delay);
+           axi_set_multiple_delays(LD_DLY_LANE1_ODELAY + 9, 0, delay);
+           write_contol_register(DLY_SET,0); // set all delays
+        end
+    endtask
+
+    task axi_set_cmda_odelay;
+        input [7:0] delay;
+        begin
+           $display("SET COMMAND and ADDRESS ODELAY=0x%x @ %t",delay,$time);
+           axi_set_multiple_delays(LD_DLY_CMDA, 32, delay);
+           write_contol_register(DLY_SET,0); // set all delays
+        end
+    endtask
+
+
+    task axi_set_multiple_delays;
+        input [29:0] reg_addr;
+        input integer number;
+        input [7:0]  delay;
+        integer i;
+        begin
+           for (i=0;i<number;i=i+1) begin
+                write_contol_register(reg_addr + i, {24'b0,delay}); // control regiter address
+           end
+        end
+    endtask
+
+    task axi_set_phase;
+        input [PHASE_WIDTH-1:0] phase;
+        begin
+            $display("SET CLOCK PHASE to 0x%x @ %t",phase,$time);
+            write_contol_register(LD_DLY_PHASE, {{(32-PHASE_WIDTH){1'b0}},phase}); // control regiter address
+            write_contol_register(DLY_SET,0);
+            target_phase <= phase;
+        end
+    endtask
+ 
+ 
+// set dq /dqs tristate on/off patterns
+    task axi_set_tristate_patterns;
+        begin
+            $display("SET TRISTATE PATTERNS @ %t",$time);    
+            write_contol_register(MCONTR_PHY_16BIT_ADDR +MCONTR_PHY_16BIT_PATTERNS_TRI,
+                {16'h0, DQSTRI_LAST, DQSTRI_FIRST, DQTRI_LAST, DQTRI_FIRST});
+        end
+    endtask
+
+ task axi_set_dqs_dqm_patterns;
+        begin
+            $display("SET DQS+DQM PATTERNS @ %t",$time);    
+ // set patterns for DM (always 0) and DQS - always the same (may try different for write lev.)        
+            write_contol_register(MCONTR_PHY_16BIT_ADDR + MCONTR_PHY_16BIT_PATTERNS,
+                32'h0055);
+        end
+ endtask
+ 
+ task read_all_status;
+    begin
+        read_and_wait_status (MCONTR_PHY_STATUS_REG_ADDR);
+        read_and_wait_status (MCONTR_TOP_STATUS_REG_ADDR);
+        read_and_wait_status (MCNTRL_PS_STATUS_REG_ADDR);
+        read_and_wait_status (MCNTRL_SCANLINE_STATUS_REG_CHN2_ADDR);
+        read_and_wait_status (MCNTRL_SCANLINE_STATUS_REG_CHN3_ADDR);
+        read_and_wait_status (MCNTRL_TILED_STATUS_REG_CHN4_ADDR);
+        read_and_wait_status (MCNTRL_TEST01_STATUS_REG_CHN2_ADDR);
+        read_and_wait_status (MCNTRL_TEST01_STATUS_REG_CHN3_ADDR);
+        read_and_wait_status (MCNTRL_TEST01_STATUS_REG_CHN4_ADDR);
+    end
+ endtask 
+  
+ task read_and_wait_status;
+    input [STATUS_DEPTH-1:0] address;
+    begin
+        read_and_wait_w(STATUS_ADDR + address ); // Will set:       registered_rdata <= rdata;
+    end
+ endtask
+  
+  
  task program_status_all;
     input [1:0] mode;
+    input [5:0] seq_num;
     begin
-        program_status (MCONTR_PHY_16BIT_ADDR,     MCONTR_PHY_STATUS_CNTRL,        mode,0); //MCONTR_PHY_STATUS_REG_ADDR=          'h0,
-        program_status (MCONTR_TOP_16BIT_ADDR,     MCONTR_TOP_16BIT_STATUS_CNTRL,  mode,0); //MCONTR_TOP_STATUS_REG_ADDR=          'h1,
-        program_status (MCNTRL_PS_ADDR,            MCNTRL_PS_STATUS_CNTRL,         mode,0); //MCNTRL_PS_STATUS_REG_ADDR=           'h2,
-        program_status (MCNTRL_SCANLINE_CHN2_ADDR, MCNTRL_SCANLINE_STATUS_CNTRL,   mode,0); //MCNTRL_SCANLINE_STATUS_REG_CHN2_ADDR='h4,
-        program_status (MCNTRL_SCANLINE_CHN3_ADDR, MCNTRL_SCANLINE_STATUS_CNTRL,   mode,0); //MCNTRL_SCANLINE_STATUS_REG_CHN3_ADDR='h5,
-        program_status (MCNTRL_TILED_CHN4_ADDR,    MCNTRL_TILED_STATUS_CNTRL,      mode,0); //MCNTRL_TILED_STATUS_REG_CHN4_ADDR=   'h6,
-        program_status (MCNTRL_TEST01_ADDR,        MCNTRL_TEST01_CHN2_STATUS_CNTRL,mode,0); //MCNTRL_TEST01_STATUS_REG_CHN2_ADDR=  'h3c,
-        program_status (MCNTRL_TEST01_ADDR,        MCNTRL_TEST01_CHN3_STATUS_CNTRL,mode,0); //MCNTRL_TEST01_STATUS_REG_CHN3_ADDR=  'h3d,
-        program_status (MCNTRL_TEST01_ADDR,        MCNTRL_TEST01_CHN4_STATUS_CNTRL,mode,0); //MCNTRL_TEST01_STATUS_REG_CHN4_ADDR=  'h3e,
+        program_status (MCONTR_PHY_16BIT_ADDR,     MCONTR_PHY_STATUS_CNTRL,        mode,seq_num); //MCONTR_PHY_STATUS_REG_ADDR=          'h0,
+        program_status (MCONTR_TOP_16BIT_ADDR,     MCONTR_TOP_16BIT_STATUS_CNTRL,  mode,seq_num); //MCONTR_TOP_STATUS_REG_ADDR=          'h1,
+        program_status (MCNTRL_PS_ADDR,            MCNTRL_PS_STATUS_CNTRL,         mode,seq_num); //MCNTRL_PS_STATUS_REG_ADDR=           'h2,
+        program_status (MCNTRL_SCANLINE_CHN2_ADDR, MCNTRL_SCANLINE_STATUS_CNTRL,   mode,seq_num); //MCNTRL_SCANLINE_STATUS_REG_CHN2_ADDR='h4,
+        program_status (MCNTRL_SCANLINE_CHN3_ADDR, MCNTRL_SCANLINE_STATUS_CNTRL,   mode,seq_num); //MCNTRL_SCANLINE_STATUS_REG_CHN3_ADDR='h5,
+        program_status (MCNTRL_TILED_CHN4_ADDR,    MCNTRL_TILED_STATUS_CNTRL,      mode,seq_num); //MCNTRL_TILED_STATUS_REG_CHN4_ADDR=   'h6,
+        program_status (MCNTRL_TEST01_ADDR,        MCNTRL_TEST01_CHN2_STATUS_CNTRL,mode,seq_num); //MCNTRL_TEST01_STATUS_REG_CHN2_ADDR=  'h3c,
+        program_status (MCNTRL_TEST01_ADDR,        MCNTRL_TEST01_CHN3_STATUS_CNTRL,mode,seq_num); //MCNTRL_TEST01_STATUS_REG_CHN3_ADDR=  'h3d,
+        program_status (MCNTRL_TEST01_ADDR,        MCNTRL_TEST01_CHN4_STATUS_CNTRL,mode,seq_num); //MCNTRL_TEST01_STATUS_REG_CHN4_ADDR=  'h3e,
     end
  endtask
   
@@ -791,10 +991,21 @@ simul_axi_read simul_axi_read_i(
  // 3 - auto, inc sequence number 
     input  [5:0] seq_number;
     begin
-        axi_write_single(((CONTROL_ADDR+{2'b0,base_addr}+reg_addr)<<2), {24'b0,mode,seq_number});
+//        axi_write_single_w(CONTROL_ADDR+base_addr+reg_addr, {24'b0,mode,seq_number});
+        write_contol_register(base_addr + reg_addr, {24'b0,mode,seq_number});
     end
  endtask   
     
+ task   write_contol_register;
+    input [29:0] reg_addr;
+//    input [29:0] base_addr;
+//    input  [7:0] reg_addr;
+    input [31:0] data;
+    begin
+//        axi_write_single_w(CONTROL_ADDR+base_addr+reg_addr, data);
+        axi_write_single_w(CONTROL_ADDR+reg_addr, data);
+    end
+ endtask   
   
 `include "includes/x393_tasks01.vh"
 

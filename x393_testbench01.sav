@@ -1,29 +1,38 @@
 [*]
 [*] GTKWave Analyzer v3.3.58 (w)1999-2014 BSI
-[*] Mon Feb  9 18:37:25 2015
+[*] Tue Feb 10 02:20:51 2015
 [*]
-[dumpfile] "/home/andrey/git/x393/simulation/x393_testbench01-20150209110942833.lxt"
-[dumpfile_mtime] "Mon Feb  9 18:17:39 2015"
-[dumpfile_size] 144866360
+[dumpfile] "/home/andrey/git/x393/simulation/x393_testbench01-20150209170430851.lxt"
+[dumpfile_mtime] "Tue Feb 10 00:05:13 2015"
+[dumpfile_size] 11536611
 [savefile] "/home/andrey/git/x393/x393_testbench01.sav"
-[timestart] 99878000
-[size] 1823 1180
+[timestart] 100326000
+[size] 1823 1173
 [pos] 1922 0
-*-18.878319 101716250 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-19.878319 102981300 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] x393_testbench01.
 [treeopen] x393_testbench01.x393_i.
-[treeopen] x393_testbench01.x393_i.mcntrl393_i.
 [treeopen] x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.
 [treeopen] x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.
 [treeopen] x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.cmd_deser_16bit_i.
 [treeopen] x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.cmd_deser_16bit_i.genblk4.
 [treeopen] x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.status_router2_top_i.
 [treeopen] x393_testbench01.x393_i.mcntrl393_test01_i.status_router4_i.
-[treeopen] x393_testbench01.x393_i.status_router2_top_i.
 [sst_width] 282
-[signals_width] 342
+[signals_width] 395
 [sst_expanded] 1
 [sst_vpaned_height] 371
+@800200
+-top_simulation
+@22
+x393_testbench01.registered_rdata[31:0]
+x393_testbench01.read_and_wait_status.address[7:0]
+x393_testbench01.x393_i.status_rdata[31:0]
+x393_testbench01.x393_i.axird_rdata[31:0]
+@1000200
+-top_simulation
+@200
+-
 @c00200
 -axi
 @28
@@ -169,49 +178,62 @@ x393_testbench01.x393_i.cmd_mux_i.wdata_fifo_out[31:0]
 x393_testbench01.x393_i.cmd_mux_i.wr_en[0]
 @1401200
 -cmd_mux
-@c00200
+@800200
 -status_read
 @22
 x393_testbench01.x393_i.status_read_i.ad[7:0]
-x393_testbench01.x393_i.status_read_i.axi_pre_addr[12:0]
-x393_testbench01.x393_i.status_read_i.axi_status_rdata[31:0]
 @28
+x393_testbench01.x393_i.status_read_i.axi_clk[0]
+@22
+x393_testbench01.x393_i.status_read_i.axi_status_rdata[31:0]
+x393_testbench01.x393_i.status_read_i.axi_status_rdata_r[31:0]
+x393_testbench01.x393_i.status_read_i.axird_pre_araddr[12:0]
+x393_testbench01.x393_i.status_read_i.axird_raddr[7:0]
+x393_testbench01.x393_i.status_read_i.axird_rdata[31:0]
+@28
+x393_testbench01.x393_i.status_read_i.axird_regen[0]
+x393_testbench01.x393_i.status_read_i.axird_ren[0]
+x393_testbench01.x393_i.status_read_i.axird_selected[0]
+x393_testbench01.x393_i.status_read_i.axird_start_burst[0]
 x393_testbench01.x393_i.status_read_i.clk[0]
-x393_testbench01.x393_i.status_read_i.data_valid[0]
 @22
 x393_testbench01.x393_i.status_read_i.dstb[3:0]
 @28
-x393_testbench01.x393_i.status_read_i.pre_stb[0]
-@22
-x393_testbench01.x393_i.status_read_i.raddr[7:0]
-@28
-x393_testbench01.x393_i.status_read_i.re[0]
+x393_testbench01.x393_i.status_read_i.rd[0]
+x393_testbench01.x393_i.status_read_i.regen[0]
 x393_testbench01.x393_i.status_read_i.rq[0]
 x393_testbench01.x393_i.status_read_i.rq_r[0]
 x393_testbench01.x393_i.status_read_i.rst[0]
+x393_testbench01.x393_i.status_read_i.select_d[0]
+x393_testbench01.x393_i.status_read_i.select_r[0]
+x393_testbench01.x393_i.status_read_i.select_w[0]
 x393_testbench01.x393_i.status_read_i.start[0]
 @22
 x393_testbench01.x393_i.status_read_i.waddr[7:0]
 x393_testbench01.x393_i.status_read_i.wdata[31:0]
 @28
 x393_testbench01.x393_i.status_read_i.we[0]
-@1401200
+@1000200
 -status_read
-@800200
+@c00200
 -status_router_top
 @28
 x393_testbench01.x393_i.status_router2_top_i.chn_sel_w[0]
+x393_testbench01.x393_i.status_router2_top_i.current_chn_r[0]
 x393_testbench01.x393_i.status_router2_top_i.clk[0]
 x393_testbench01.x393_i.status_router2_top_i.rq_in0[0]
 x393_testbench01.x393_i.status_router2_top_i.start_in0[0]
-x393_testbench01.x393_i.status_router2_top_i.rq_in1[0]
-x393_testbench01.x393_i.status_router2_top_i.start_in1[0]
-x393_testbench01.x393_i.status_router2_top_i.rq_out[0]
-x393_testbench01.x393_i.status_router2_top_i.start_out[0]
-x393_testbench01.x393_i.status_router2_top_i.current_chn_r[0]
 @22
 x393_testbench01.x393_i.status_router2_top_i.db_in0[7:0]
+@28
+x393_testbench01.x393_i.status_router2_top_i.rq_in1[0]
+x393_testbench01.x393_i.status_router2_top_i.start_in1[0]
+@22
 x393_testbench01.x393_i.status_router2_top_i.db_in1[7:0]
+@28
+x393_testbench01.x393_i.status_router2_top_i.rq_out[0]
+x393_testbench01.x393_i.status_router2_top_i.start_out[0]
+@22
 x393_testbench01.x393_i.status_router2_top_i.db_out[7:0]
 @28
 x393_testbench01.x393_i.status_router2_top_i.early_chn[0]
@@ -256,7 +278,7 @@ x393_testbench01.x393_i.status_router2_top_i.start_rcv[1:0]
 (1)x393_testbench01.x393_i.status_router2_top_i.start_rcv[1:0]
 @1001200
 -group_end
-@1000200
+@1401200
 -status_router_top
 @c00200
 -status_router16_mctrl_top
@@ -324,23 +346,28 @@ x393_testbench01.x393_i.mcntrl393_i.status_router16_mctrl_top_i.start_out[0]
 -memcntrl16_status_router2_top
 @28
 x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.status_router2_top_i.chn_sel_w[0]
+x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.status_router2_top_i.current_chn_r[0]
+x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.status_router2_top_i.early_chn[0]
 x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.status_router2_top_i.clk[0]
 x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.status_router2_top_i.rq_in0[0]
 x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.status_router2_top_i.start_in0[0]
-x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.status_router2_top_i.rq_in1[0]
-x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.status_router2_top_i.start_in1[0]
-x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.status_router2_top_i.rq_out[0]
-x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.status_router2_top_i.start_out[0]
-x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.status_router2_top_i.current_chn_r[0]
-x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.status_router2_top_i.snd_last_byte[0]
-(1)x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.status_router2_top_i.fifo_nempty_pre[1:0]
-(0)x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.status_router2_top_i.fifo_nempty_pre[1:0]
 @22
 x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.status_router2_top_i.db_in0[7:0]
+@28
+x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.status_router2_top_i.rq_in1[0]
+x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.status_router2_top_i.start_in1[0]
+@22
 x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.status_router2_top_i.db_in1[7:0]
+@28
+x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.status_router2_top_i.rq_out[0]
+x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.status_router2_top_i.start_out[0]
+@22
 x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.status_router2_top_i.db_out[7:0]
 @28
-x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.status_router2_top_i.early_chn[0]
+x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.status_router2_top_i.snd_last_byte[0]
+x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.status_router2_top_i.snd_rest_r[0]
+(1)x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.status_router2_top_i.fifo_nempty_pre[1:0]
+(0)x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.status_router2_top_i.fifo_nempty_pre[1:0]
 @22
 x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.status_router2_top_i.fifo0_out[7:0]
 x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.status_router2_top_i.fifo1_out[7:0]
@@ -371,7 +398,6 @@ x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.status_router2_top_i.rcv_rest_r[
 x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.status_router2_top_i.rq_in[1:0]
 x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.status_router2_top_i.rst[0]
 x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.status_router2_top_i.snd_pre_start[0]
-x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.status_router2_top_i.snd_rest_r[0]
 x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.status_router2_top_i.start_rcv[1:0]
 @1401200
 -memcntrl16_status_router2_top
@@ -385,9 +411,8 @@ x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.locked_pll[0]
 x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.run_busy[0]
 x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.locked[0]
 x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.ps_rdy[0]
-@23
-x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.ps_out[7:0]
 @22
+x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.ps_out[7:0]
 x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.status_generate_i.ad[7:0]
 x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.status_generate_i.aligned_status[17:0]
 @28
@@ -608,7 +633,83 @@ x393_testbench01.x393_i.mcntrl393_test01_i.status_router4_i.status_router2_01_i.
 -group_end
 @1401200
 -test01_status_router2_01
-@200
--
+@800200
+-axibram_read
+@28
+x393_testbench01.x393_i.axibram_read_i.aclk[0]
+x393_testbench01.x393_i.axibram_read_i.ar_half_full[0]
+x393_testbench01.x393_i.axibram_read_i.ar_nempty[0]
+@22
+x393_testbench01.x393_i.axibram_read_i.araddr[31:0]
+x393_testbench01.x393_i.axibram_read_i.araddr_out[12:0]
+@28
+x393_testbench01.x393_i.axibram_read_i.arburst[1:0]
+x393_testbench01.x393_i.axibram_read_i.arburst_out[1:0]
+@22
+x393_testbench01.x393_i.axibram_read_i.arid[11:0]
+x393_testbench01.x393_i.axibram_read_i.arid_out[11:0]
+x393_testbench01.x393_i.axibram_read_i.arlen[3:0]
+x393_testbench01.x393_i.axibram_read_i.arlen_out[3:0]
+@28
+x393_testbench01.x393_i.axibram_read_i.arready[0]
+x393_testbench01.x393_i.axibram_read_i.arsize[1:0]
+x393_testbench01.x393_i.axibram_read_i.arsize_out[1:0]
+x393_testbench01.x393_i.axibram_read_i.arvalid[0]
+@22
+x393_testbench01.x393_i.axibram_read_i.bram_raddr[12:0]
+@28
+x393_testbench01.x393_i.axibram_read_i.bram_rclk[0]
+@22
+x393_testbench01.x393_i.axibram_read_i.bram_rdata[31:0]
+@28
+x393_testbench01.x393_i.axibram_read_i.bram_reg_re_0[0]
+x393_testbench01.x393_i.axibram_read_i.bram_reg_re_w[0]
+x393_testbench01.x393_i.axibram_read_i.bram_regen[0]
+x393_testbench01.x393_i.axibram_read_i.bram_ren[0]
+x393_testbench01.x393_i.axibram_read_i.dev_ready[0]
+x393_testbench01.x393_i.axibram_read_i.last_in_burst_0[0]
+x393_testbench01.x393_i.axibram_read_i.last_in_burst_1[0]
+x393_testbench01.x393_i.axibram_read_i.last_in_burst_d_w[0]
+@29
+x393_testbench01.x393_i.axibram_read_i.last_in_burst_w[0]
+@22
+x393_testbench01.x393_i.axibram_read_i.next_rd_address_w[12:0]
+x393_testbench01.x393_i.axibram_read_i.pre_araddr[12:0]
+@28
+x393_testbench01.x393_i.axibram_read_i.pre_last_in_burst_r[0]
+x393_testbench01.x393_i.axibram_read_i.pre_left_zero_w[0]
+@22
+x393_testbench01.x393_i.axibram_read_i.pre_rid0[11:0]
+x393_testbench01.x393_i.axibram_read_i.pre_rid[11:0]
+@28
+x393_testbench01.x393_i.axibram_read_i.pre_rvalid_w[0]
+x393_testbench01.x393_i.axibram_read_i.rburst[1:0]
+@22
+x393_testbench01.x393_i.axibram_read_i.rdata[31:0]
+x393_testbench01.x393_i.axibram_read_i.read_address[12:0]
+@28
+x393_testbench01.x393_i.axibram_read_i.read_in_progress[0]
+x393_testbench01.x393_i.axibram_read_i.read_in_progress_d[0]
+x393_testbench01.x393_i.axibram_read_i.read_in_progress_d_w[0]
+x393_testbench01.x393_i.axibram_read_i.read_in_progress_or[0]
+x393_testbench01.x393_i.axibram_read_i.read_in_progress_w[0]
+@22
+x393_testbench01.x393_i.axibram_read_i.read_left[3:0]
+x393_testbench01.x393_i.axibram_read_i.rid[11:0]
+@28
+x393_testbench01.x393_i.axibram_read_i.rlast[0]
+@22
+x393_testbench01.x393_i.axibram_read_i.rlen[3:0]
+@28
+x393_testbench01.x393_i.axibram_read_i.rready[0]
+x393_testbench01.x393_i.axibram_read_i.rresp[1:0]
+x393_testbench01.x393_i.axibram_read_i.rst[0]
+x393_testbench01.x393_i.axibram_read_i.rvalid[0]
+x393_testbench01.x393_i.axibram_read_i.start_burst[0]
+x393_testbench01.x393_i.axibram_read_i.start_read_burst_0[0]
+x393_testbench01.x393_i.axibram_read_i.start_read_burst_1[0]
+x393_testbench01.x393_i.axibram_read_i.start_read_burst_w[0]
+@1000200
+-axibram_read
 [pattern_trace] 1
 [pattern_trace] 0

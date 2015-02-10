@@ -18,6 +18,8 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/> .
  *******************************************************************************/
+ // Check that this fix did not break anything:
+`define USE_SHORT_REN_REGEN 
 module  axibram_read #(
     parameter ADDRESS_BITS = 10 // number of memory address bits
 )(
@@ -129,13 +131,24 @@ module  axibram_read #(
 // External memory interface
    assign  bram_rclk =  aclk;  // clock for read port
    assign  bram_raddr = read_in_progress?read_address[ADDRESS_BITS-1:0]:{ADDRESS_BITS{1'b1}};  // read address
+   
+`ifdef USE_SHORT_REN_REGEN   
+   reg bram_regen_r;
+   assign  bram_ren =   bram_reg_re_w && !pre_last_in_burst_r ;     // read port enable
+   assign  bram_regen = bram_regen_r;     // output register enable
+`else
    assign  bram_ren =   bram_reg_re_w;     // read port enable
    assign  bram_regen = bram_reg_re_w;     // output register enable
+`endif   
    
    assign  rdata[31:0] = bram_rdata;    // data out
 
     always @ (posedge  aclk or posedge  rst) begin
-    
+`ifdef USE_SHORT_REN_REGEN   
+      if   (rst)  bram_regen_r <= 0;
+      else        bram_regen_r <=  bram_ren;
+`endif    
+   
       if   (rst)                   pre_last_in_burst_r <= 0;
 //      else if (start_read_burst_w) pre_last_in_burst_r <= (read_left==4'b0);
       else if (bram_reg_re_w)      pre_last_in_burst_r <= (read_left==4'b0);
@@ -227,6 +240,7 @@ fifo_same_clock   #( .DATA_WIDTH(ADDRESS_BITS+20),.DATA_DEPTH(4))
     raddr_i (
         .rst(rst),
         .clk(aclk),
+        .sync_rst(1'b0), // input
         .we(arvalid && arready),
         .re(start_read_burst_w),
         .data_in({arid[11:0], arburst[1:0],arsize[1:0],arlen[3:0],araddr[ADDRESS_BITS+1:2]}),

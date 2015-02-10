@@ -349,21 +349,25 @@ module  x393 #(
    wire  [31:0]   axird_rdata;  //      .data_out(rdata[31:0]),       // data out
 //   wire  [31:0]   port0_rdata;  //
    wire  [31:0]   status_rdata;  //
-   wire           status_valid; /// SuppressThisWarning VEditor ****** never used - supposed to be always valid?
+   wire           status_selected;
+   wire  [31:0]   mcntrl_axird_rdata; // read data from the memory controller 
+   wire           mcntrl_axird_selected; // memory controoler has valid data output on mcntrl_axird_rdata 
 
    wire        mclk;
 
    wire [11:0] tmp_debug; 
    
 //   reg    select_port0; // May be used later!
-   reg  select_status;
    wire axiwr_dev_busy;
    wire axird_dev_busy;
    
    assign axird_dev_ready = ~axird_dev_busy; //may combine (AND) multiple sources if needed
    assign axird_dev_busy = 1'b0; // always for now
-//   assign axird_rdata= select_port0? port0_rdata[31:0]:(select_status?status_rdata[31:0]:32'bx);
-   assign axird_rdata= select_status?status_rdata[31:0]:32'bx;
+// Use this later    
+//   assign axird_rdata= ({32{status_selected}} & status_rdata[31:0]) | ({32{mcntrl_axird_selected}} & mcntrl_axird_rdata[31:0]);
+//Debug with this (to show 'x)   
+   assign axird_rdata= status_selected?status_rdata[31:0] : (mcntrl_axird_selected? mcntrl_axird_rdata[31:0]:'bx);
+   
    assign axiwr_dev_ready = ~axiwr_dev_busy; //may combine (AND) multiple sources if needed
 
 // Clock and reset from PS
@@ -378,17 +382,6 @@ module  x393 #(
 BUFG bufg_axi_rst_i   (.O(axi_rst),.I(axi_rst_pre));
 BUFG bufg_axi_aclk_i  (.O(axi_aclk),.I(fclk[0]));
    
-//always @ (posedge axi_aclk) begin
-//   port0_rd_match_r <= port0_rd_match; // rd address matched in previous cycle
-//end
-
-always @ (posedge axi_rst or posedge axi_aclk) begin
- //   if (axi_rst) select_port0 <= 1'b0;
- //   else if (axird_start_burst) select_port0 <= (((axird_pre_araddr^ PORT0_RD_ADDR) & PORT0_RD_ADDR_MASK)==0);
-    if (axi_rst) select_status <= 1'b0;
-    else if (axird_start_burst) select_status <= (((axird_pre_araddr^ STATUS_ADDR) & STATUS_ADDR_MASK)==0);
-    
-end
 
 `ifdef DEBUG_FIFO
         wire    waddr_under, wdata_under, wresp_under; 
@@ -593,15 +586,18 @@ end
     ) status_read_i (
         .rst              (axi_rst), // input
         .clk              (mclk), // input
-        .axi_pre_addr     (axird_pre_araddr), // input[12:0] 
-        .pre_stb          (axird_start_burst), // input
-        .axi_status_rdata (status_rdata[31:0]), // output[31:0] reg 
-        .data_valid       (status_valid), // output reg 
+        .axi_clk          (axird_bram_rclk), // input == axi_aclk
+        .axird_pre_araddr (axird_pre_araddr), // input[7:0] 
+        .axird_start_burst(axird_start_burst), // input
+        .axird_raddr      (axird_raddr[STATUS_DEPTH-1:0]), // input[7:0] 
+        .axird_ren        (axird_ren), // input
+        .axird_regen      (axird_regen), // input
+        .axird_rdata      (status_rdata), // output[31:0] 
+        .axird_selected   (status_selected), // output
         .ad               (status_root_ad), // input[7:0] 
         .rq               (status_root_rq), // input
         .start            (status_root_start) // output
     );
-    
 
 // mux status info from the memory controller and other modules    
     status_router2 status_router2_top_i (
@@ -748,7 +744,7 @@ end
         .status_rq            (status_mcontr_rq),   // input request to send status downstream
         .status_start         (status_mcontr_start), // Acknowledge of the first status packet byte (address)
         
-        .axi_clk              (axi_aclk), // input - same?
+        .axi_clk              (axird_bram_rclk), // axi_aclk), // input - same?
         .axiwr_pre_awaddr     (axiwr_pre_awaddr), // input[12:0] 
         .axiwr_start_burst    (axiwr_start_burst), // input
         .axiwr_waddr          (axiwr_waddr[BUFFER_DEPTH32-1:0]), // input[9:0] 
@@ -760,8 +756,8 @@ end
         .axird_raddr          (axird_raddr[BUFFER_DEPTH32-1:0]), // input[9:0] 
         .axird_ren            (axird_ren), // input
         .axird_regen          (axird_regen), // input
-        .axird_rdata          (axird_rdata), // output[31:0]
- 
+        .axird_rdata          (mcntrl_axird_rdata), // output[31:0]
+        .axird_selected       (mcntrl_axird_selected), // output 
  //TODO:        
         .frame_start_chn2     (frame_start_chn2), // input
         .next_page_chn2       (next_page_chn2), // input
@@ -959,7 +955,7 @@ frst[3]?{
         .pre_araddr  (axird_pre_araddr[AXI_RD_ADDR_BITS-1:0]), // output[9:0] 
         .start_burst (axird_start_burst), // output
         .dev_ready   (axird_dev_ready), // input
-        .bram_rclk   (axird_bram_rclk), // output //SuppressThisWarning ISExst Assignment to axird_bram_rclk ignored, since the identifier is never used
+        .bram_rclk   (axird_bram_rclk), // output //S uppressThisWarning ISExst Assignment to axird_bram_rclk ignored, since the identifier is never used
         .bram_raddr  (axird_raddr[AXI_RD_ADDR_BITS-1:0]), // output[9:0] 
         .bram_ren    (axird_ren), // output
         .bram_regen  (axird_regen), // output

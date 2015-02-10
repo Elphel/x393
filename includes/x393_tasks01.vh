@@ -16,6 +16,13 @@
         end
     endtask
 
+    task read_and_wait_w;
+    input [29:0] address;
+        begin
+            read_and_wait ({address,2'b0});
+        end
+    endtask
+
     task read_and_wait;
     input [31:0] address;
     begin
@@ -32,6 +39,14 @@
     end
     endtask
     
+    task axi_write_single_w; // address in bytes, not words
+        input [29:0] address;
+        input [31:0] data;
+        begin
+            axi_write_single ({address,2'b0},data);
+        end
+    endtask
+
     task axi_write_single; // address in bytes, not words
         input [31:0] address;
         input [31:0] data;

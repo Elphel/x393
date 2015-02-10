@@ -1,50 +1,12 @@
-// SuppressWarnings VEditor
-/*
-    localparam BASEADDR_PORT0_RD = PORT0_RD_ADDR << 2; // 'h0000  << 2
-// SuppressWarnings VEditor
-    localparam BASEADDR_PORT1_WR = PORT1_WR_ADDR << 2; // 'h0000 << 2 = 'h000
-///    localparam BASEADDR_CMD0 =     CMD0_ADDR << 2;     // 'h0800 << 2 = 'h2000
-//    localparam BASEADDR_CTRL =     CONTROL_ADDR << 2;
-///    localparam BASEADDR_CTRL =     (CONTROL_ADDR | BUSY_WR_ADDR) << 2; // with busy
-    localparam BASEADDR_STATUS =   STATUS_ADDR << 2;   // 'h0800 << 2 = 'h2000
-///    localparam BASEADDR_DLY_LD =  BASEADDR_CTRL | (DLY_LD_REL <<2);  // 'h080, address to generate delay load
-    localparam BASEADDR_DLY_SET = BASEADDR_CTRL | (DLY_SET_REL<<2);  // 'h070, address to generate delay set
-    localparam BASEADDR_RUN_CHN = BASEADDR_CTRL | (RUN_CHN_REL<<2);  // 'h000, address to set sequnecer channel and  run (4 LSB-s - channel)
+// S uppressWarnings VEditor
+  localparam LD_DLY_LANE0_ODELAY = DLY_LD+'h00; // 0x1080
+  localparam LD_DLY_LANE0_IDELAY = DLY_LD+'h10; // 0x1090
+  localparam LD_DLY_LANE1_ODELAY = DLY_LD+'h20; // 0x10a0
+  localparam LD_DLY_LANE1_IDELAY = DLY_LD+'h30; // 0x10b0
+  localparam LD_DLY_CMDA  =        DLY_LD+'h40; // 0x10c0
+  localparam LD_DLY_PHASE =        DLY_LD+'h60; // 0x10e0
+  localparam DLY_SET =             MCONTR_PHY_0BIT_ADDR + MCONTR_PHY_0BIT_DLY_SET; //0x1020
 
-    localparam BASEADDR_PATTERNS =BASEADDR_CTRL | (PATTERNS_REL<<2); // 'h020, address to set DQM and DQS patterns (16'h0055)
-    localparam BASEADDR_PATTERNS_TRI =BASEADDR_CTRL | (PATTERNS_TRI_REL<<2); // 'h021, address to set DQM and DQS tristate on/off patterns {dqs_off,dqs_on, dq_off,dq_on} - 4 bits each
-    localparam BASEADDR_WBUF_DELAY =BASEADDR_CTRL | (WBUF_DELAY_REL<<2); // 'h022, extra delay (in mclk cycles) to add to write buffer enable (DDR3 read data)
-// SuppressWarnings VEditor
-    localparam BASEADDR_PAGES =   BASEADDR_CTRL | (PAGES_REL<<2);    // 'h023, address to set buffer pages {port1_page[1:0],port1_int_page[1:0],port0_page[1:0],port0_int_page[1:0]}
-    localparam BASEADDR_CMDA_EN = BASEADDR_CTRL | (CMDA_EN_REL<<2);  // 'h024, address to enable('h825)/disable('h824) command/address outputs  
-    localparam BASEADDR_SDRST_ACT = BASEADDR_CTRL | (SDRST_ACT_REL<<2); // 'h026 address to activate('h827)/deactivate('h826) active-low reset signal to DDR3 memory     
-///    localparam BASEADDR_CKE_EN =  BASEADDR_CTRL | (CKE_EN_REL<<2);   // 'h028
-    
-// SuppressWarnings VEditor
-    localparam BASEADDR_DCI_RST =  BASEADDR_CTRL | (DCI_RST_REL<<2);   // 'h02a (+1 - enable)
-// SuppressWarnings VEditor
-    localparam BASEADDR_DLY_RST =  BASEADDR_CTRL | (DLY_RST_REL<<2);   // 'h02c (+1 - enable)
-      
-// SuppressWarnings VEditor
-    localparam BASEADDR_EXTRA =   BASEADDR_CTRL | (EXTRA_REL<<2);    // 'h02e, address to set extra parameters (currently just inv_clk_div)
-    
-    localparam BASEADDR_REFRESH_EN =   BASEADDR_CTRL | (REFRESH_EN_REL<<2);    // address to enable('h31) and disable ('h30) DDR refresh
-    localparam BASEADDR_REFRESH_PER =   BASEADDR_CTRL | (REFRESH_PER_REL<<2);    // address ('h32) to set refresh period in 32 x tCK
-    localparam BASEADDR_REFRESH_ADDR =   BASEADDR_CTRL | (REFRESH_ADDR_REL<<2);    // address ('h33)to set sequencer start address for DDR refresh
-    
-    
-    localparam BASEADDRESS_LANE0_ODELAY = BASEADDR_DLY_LD;  
-    localparam BASEADDRESS_LANE0_IDELAY = BASEADDR_DLY_LD+('h10<<2);  
-    localparam BASEADDRESS_LANE1_ODELAY = BASEADDR_DLY_LD+('h20<<2);  
-    localparam BASEADDRESS_LANE1_IDELAY = BASEADDR_DLY_LD+('h30<<2);  
-
-    localparam BASEADDRESS_CMDA  = BASEADDR_DLY_LD+('h40<<2);
-    localparam BASEADDRESS_PHASE = BASEADDR_DLY_LD+('h60<<2);
-    localparam STATUS_PSHIFTER_RDY_MASK = 'h100;
-// SuppressWarnings VEditor - not yet used
-    localparam STATUS_LOCKED_MASK = 'h200;
-    localparam STATUS_SEQ_BUSY_MASK = 'h400;
-*/
 `ifdef use200Mhz
     localparam DLY_LANE0_DQS_WLV_IDELAY = 8'hb0; // idelay dqs
     localparam DLY_LANE1_DQS_WLV_IDELAY = 8'hb0; // idelay dqs

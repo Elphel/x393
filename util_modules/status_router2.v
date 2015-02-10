@@ -70,7 +70,8 @@ module  status_router2 (
 ///    assign snd_pre_start=|fifo_nempty && !snd_rest_r && !start_out; // no channel change after 
 //    assign rq_out=(snd_rest_r && !snd_last_byte) || |fifo_nempty;
     assign rq_out=(snd_rest_r || |fifo_nempty) && !snd_last_byte ;
-    assign early_chn= (snd_rest_r & ~snd_last_byte)?current_chn_r:chn_sel_w;
+//    assign early_chn= (snd_rest_r & ~snd_last_byte)?current_chn_r:chn_sel_w;
+    assign early_chn= snd_rest_r? current_chn_r: chn_sel_w;
     assign db_out=early_chn?fifo1_out:fifo0_out;
     assign fifo_nempty=fifo_nempty_pre & ~fifo_last_byte;
     

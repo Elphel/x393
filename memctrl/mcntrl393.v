@@ -251,6 +251,7 @@ module  mcntrl393 #(
     input                        axird_regen, //==axird_ren?? - remove?   .regen(bram_reg_re_w),        // output register enable
 //   wire  [31:0]   axird_bram_rdata;  //      .data_out(rdata[31:0]),       // data out
     output              [31:0]   axird_rdata,  // combinatorial multiplexed (add external register layer, modify axibram_read?)     .data_out(rdata[31:0]),       // data out
+    output                       axird_selected, // axird_rdata contains cvalid data from this module 
 //   wire  [31:0]   port0_rdata;  //
 //   wire  [31:0]   status_rdata;  //
 
@@ -415,7 +416,14 @@ module  mcntrl393 #(
     wire                        status_tiled_chn4_rq;    // PS tiled channel4 (memory read) channels status request  
     wire                        status_tiled_chn4_start; // PS tiled channel4 (memory read) channels status packet transfer start (currently with 0 latency from status_root_rq)
 
-
+// combinatorial early signals
+    wire                         select_cmd0_w;
+    wire                         select_buf0_w;
+    wire                         select_buf1_w;
+    wire                         select_buf2_w;
+    wire                         select_buf3_w;
+    wire                         select_buf4_w;
+// registered selects
     reg                         select_cmd0;
     reg                         select_buf0;
     reg                         select_buf1;
@@ -427,7 +435,7 @@ module  mcntrl393 #(
     reg                         select_buf2_d;
     reg                         select_buf4_d;
 
-    
+    reg                         axird_selected_r; // this module provides output
     
 // Buffers R/W from AXI
     reg   [BUFFER_DEPTH32-1:0]  buf_waddr;
@@ -513,7 +521,7 @@ module  mcntrl393 #(
 
     
     
-// Ror now - combinatorial, maybe add registers (modify axibram_read)
+// For now - combinatorial, maybe add registers (modify axibram_read)
     assign buf_raddr=axird_raddr;    
     assign axird_rdata = (select_buf0 ? buf0_data : 32'b0) | (select_buf2 ? buf2_data : 32'b0) | (select_buf4 ? buf4_data : 32'b0); 
     
@@ -527,25 +535,37 @@ module  mcntrl393 #(
     assign page_ready_chn2=seq_done2;
     assign page_ready_chn3=seq_done3;
     assign page_ready_chn4=rpage_nxt_chn4;
+    
+    
+    assign axird_selected=axird_selected_r;
+    assign select_cmd0_w = ((axiwr_pre_awaddr ^ MCONTR_CMD_WR_ADDR) & MCONTR_WR_MASK)==0;
+    assign select_buf0_w = ((axird_pre_araddr ^ MCONTR_BUF0_RD_ADDR) & MCONTR_RD_MASK)==0;
+    assign select_buf1_w = ((axiwr_pre_awaddr ^ MCONTR_BUF1_WR_ADDR) & MCONTR_WR_MASK)==0;
+    assign select_buf2_w = ((axird_pre_araddr ^ MCONTR_BUF2_RD_ADDR) & MCONTR_RD_MASK)==0;
+    assign select_buf3_w = ((axiwr_pre_awaddr ^ MCONTR_BUF3_WR_ADDR) & MCONTR_WR_MASK)==0;
+    assign select_buf4_w = ((axird_pre_araddr ^ MCONTR_BUF4_RD_ADDR) & MCONTR_RD_MASK)==0;
 
     always @ (axi_rst or axi_clk) begin
         if      (axi_rst)           select_cmd0 <= 0;
-        else if (axiwr_start_burst) select_cmd0 <= ((axiwr_pre_awaddr ^ MCONTR_CMD_WR_ADDR) & MCONTR_WR_MASK)==0;
+        else if (axiwr_start_burst) select_cmd0 <= select_cmd0_w;
         
         if      (axi_rst)           select_buf0 <= 0;
-        else if (axird_start_burst) select_buf0 <= ((axird_pre_araddr ^ MCONTR_BUF0_RD_ADDR) & MCONTR_RD_MASK)==0;
+        else if (axird_start_burst) select_buf0 <= select_buf0_w;
         
         if      (axi_rst)           select_buf1 <= 0;
-        else if (axiwr_start_burst) select_buf1 <= ((axiwr_pre_awaddr ^ MCONTR_BUF1_WR_ADDR) & MCONTR_WR_MASK)==0;
+        else if (axiwr_start_burst) select_buf1 <= select_buf1_w;
         
         if      (axi_rst)           select_buf2 <= 0;
-        else if (axird_start_burst) select_buf2 <= ((axird_pre_araddr ^ MCONTR_BUF2_RD_ADDR) & MCONTR_RD_MASK)==0;
+        else if (axird_start_burst) select_buf2 <= select_buf2_w;
         
         if      (axi_rst)           select_buf3 <= 0;
-        else if (axiwr_start_burst) select_buf3 <= ((axiwr_pre_awaddr ^ MCONTR_BUF3_WR_ADDR) & MCONTR_WR_MASK)==0;
+        else if (axiwr_start_burst) select_buf3 <= select_buf3_w;
         
         if      (axi_rst)           select_buf4 <= 0;
-        else if (axird_start_burst) select_buf4 <= ((axird_pre_araddr ^ MCONTR_BUF4_RD_ADDR) & MCONTR_RD_MASK)==0;
+        else if (axird_start_burst) select_buf4 <= select_buf4_w;
+
+        if      (axi_rst)           axird_selected_r <= 0;
+        else if (axird_start_burst) axird_selected_r <= select_buf0_w || select_buf1_w ||select_buf2_w;
     end
     always @ (axi_clk) begin
         if (axiwr_wen) buf_wdata  <= axiwr_data;

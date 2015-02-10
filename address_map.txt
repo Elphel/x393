@@ -56,7 +56,23 @@
     parameter MCONTR_TOP_16BIT_REFRESH_PERIOD = 'h1,    // 8-bit refresh period
     parameter MCONTR_TOP_16BIT_REFRESH_ADDRESS= 'h2,    // 10 bits refresh address in the sequencer (PL) memory
     parameter MCONTR_TOP_16BIT_STATUS_CNTRL=    'h3,    // 8 bits - write to status control (and debug?)
+0x1080..10ff
+  0x1080..10ff - DLY_LD   // 8 bits :
+  0x1080..109f - set delay for SDD0-SDD7
+  0x10a0..10bf - set delay for SDD8-SDD15
+  0x10c0..10df - set delay for SD_CMDA
+  0x10e0       - set delay for MMCM
 
+  localparam LD_DLY_LANE0_ODELAY = DLY_LD+'h00; // 0x1080
+  localparam LD_DLY_LANE0_IDELAY = DLY_LD+'h10; // 0x1090
+  localparam LD_DLY_LANE1_ODELAY = DLY_LD+'h20; // 0x10a0
+  localparam LD_DLY_LANE1_IDELAY = DLY_LD+'h30; // 0x10b0
+  localparam LD_DLY_CMDA  =        DLY_LD+'h40; // 0x10c0
+  localparam LD_DLY_PHASE =        DLY_LD+'h60; // 0x10e0
+  localparam DLY_SET =             MCONTR_PHY_0BIT_ADDR + MCONTR_PHY_0BIT_DLY_SET; //0x1020
+  
+  
+  
 ----
     parameter MCNTRL_TEST01_ADDR=       'h0f0,
     parameter MCNTRL_TEST01_MASK=       'h3f0

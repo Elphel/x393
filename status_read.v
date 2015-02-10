@@ -36,10 +36,18 @@ module  status_read#(
 )(
     input rst,
     input clk,
-    input [AXI_RD_ADDR_BITS-1:0] axi_pre_addr,     // status read address, 1 cycle ahead of read data
-    input                        pre_stb,          // read data request, with axi_pre_addr
-    output reg            [31:0] axi_status_rdata, // read data, 1 cycle latency from the address/stb
-    output reg                   data_valid,       // read data valid, 1 cycle latency from pre_stb, decoded address
+    input                        axi_clk,   // common for read and write channels
+    input [AXI_RD_ADDR_BITS-1:0] axird_pre_araddr,     // status read address, 1 cycle ahead of read data
+//    input                        pre_stb,          // read data request, with axi_pre_addr
+//    output reg            [31:0] axi_status_rdata, // read data, 1 cycle latency from the address/stb
+//    output reg                   data_valid,       // read data valid, 1 cycle latency from pre_stb, decoded address
+    input                        axird_start_burst, // start of read burst, valid pre_araddr, save externally to control ext. dev_ready multiplexer
+    input     [STATUS_DEPTH-1:0] axird_raddr, //   .raddr(read_in_progress?read_address[9:0]:10'h3ff),    // read address
+    input                        axird_ren,   //      .ren(bram_reg_re_w) ,      // read port enable
+    input                        axird_regen, //==axird_ren?? - remove?   .regen(bram_reg_re_w),        // output register enable
+    output              [31:0]   axird_rdata,  // combinatorial multiplexed (add external register layer, modify axibram_read?)     .data_out(rdata[31:0]),       // data out
+    output                       axird_selected, // axird_rdata contains cvalid data from this module, vcalid next after axird_start_burst
+                                                 // so with ren/regen it may be delayed 1 more cycle
     input                  [7:0] ad,               // byte-serial status data from the sources
     input                        rq,               // request from sources to transfer status data
     output                       start             // acknowledge receiving of first byte (address), currently always ready
@@ -47,20 +55,61 @@ module  status_read#(
     localparam integer DATA_2DEPTH=(1<<STATUS_DEPTH)-1;
     reg  [31:0] ram [0:DATA_2DEPTH];
     reg         [STATUS_DEPTH-1:0] waddr;
-    wire        [STATUS_DEPTH-1:0] raddr;
+//    wire        [STATUS_DEPTH-1:0] raddr;
     reg                          we;
-    wire                         re;
+//    wire                         re;
     reg                  [31: 0] wdata;
     reg                          rq_r;
     reg                   [3:0]  dstb;
     
-    assign re= pre_stb && (((axi_pre_addr ^ STATUS_ADDR) & STATUS_ADDR_MASK) == 0);
-    assign raddr=axi_pre_addr[STATUS_DEPTH-1:0];
+    wire                         select_w;
+    reg                          select_r;
+    reg                          select_d;
+    
+    wire                         rd;
+    wire                         regen;
+    reg                 [31:0]   axi_status_rdata; 
+    reg                 [31:0]   axi_status_rdata_r;
+    
+// registering to match BRAM timing (so it is possible to instantioate it instead)    
+//    reg       [STATUS_DEPTH-1:0] raddr_r; //   .raddr(read_in_progress?read_address[9:0]:10'h3ff),    // read address
+//    reg                          rd_r;   //      .ren(bram_reg_re_w) ,      // read port enable
+//    reg                          regen_r; //==axird_ren?? - remove?   .regen(bram_reg_re_w),        // output register enable
+   
+    
+    
+    assign select_w = ((axird_pre_araddr ^ STATUS_ADDR) & STATUS_ADDR_MASK)==0;
+    assign rd =        axird_ren   && select_r;
+    assign regen =     axird_regen && select_d;
+    
+    
+    
+    
+//    assign re= pre_stb && (((axi_pre_addr ^ STATUS_ADDR) & STATUS_ADDR_MASK) == 0);
+//    assign raddr=axi_pre_addr[STATUS_DEPTH-1:0];
     assign start=rq && !rq_r;
+    assign axird_rdata=axi_status_rdata_r;
+    assign axird_selected = select_r; 
+    always @ (posedge rst or posedge axi_clk) begin
+        if      (rst)               select_r <= 0;
+        else if (axird_start_burst) select_r <= select_w;
+    end
+    always @ (posedge axi_clk) begin
+//        if (rd_r)     axi_status_rdata <= ram[raddr_r];
+//        if (regen_r)  axi_status_rdata_r <= axi_status_rdata;
+        if (rd)       axi_status_rdata <= ram[axird_raddr];
+        if (regen)    axi_status_rdata_r <= axi_status_rdata;
+        
+        select_d <=   select_r;
+//        raddr_r <=   axird_raddr;
+//        rd_r <=      rd;
+//        regen_r <=   regen;
+    end
     
     always @ (posedge rst or posedge clk) begin
-        if (rst) data_valid <= 0;
-        else     data_valid <= re;
+    
+//        if (rst) data_valid <= 0;
+//        else     data_valid <= re;
         
         if (rst) rq_r <= 0;
         else     rq_r <= rq;
@@ -99,8 +148,7 @@ module  status_read#(
     end
     
     always @ (posedge clk) begin
-        if (we)  ram[waddr]  <= wdata; // shifted data here
-        if (re)  axi_status_rdata<= ram[raddr];
+        if (we)     ram[waddr]  <= wdata; // shifted data here
     end
                              
 
