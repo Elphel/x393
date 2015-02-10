@@ -1,17 +1,16 @@
 [*]
 [*] GTKWave Analyzer v3.3.58 (w)1999-2014 BSI
-[*] Tue Feb 10 02:20:51 2015
+[*] Tue Feb 10 23:41:40 2015
 [*]
-[dumpfile] "/home/andrey/git/x393/simulation/x393_testbench01-20150209170430851.lxt"
-[dumpfile_mtime] "Tue Feb 10 00:05:13 2015"
-[dumpfile_size] 11536611
+[dumpfile] "/home/andrey/git/x393/simulation/x393_testbench01-20150210163649454.lxt"
+[dumpfile_mtime] "Tue Feb 10 23:38:44 2015"
+[dumpfile_size] 33747890
 [savefile] "/home/andrey/git/x393/x393_testbench01.sav"
-[timestart] 100326000
-[size] 1823 1173
+[timestart] 112454000
+[size] 1823 1180
 [pos] 1922 0
-*-19.878319 102981300 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-19.878319 115110000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] x393_testbench01.
-[treeopen] x393_testbench01.x393_i.
 [treeopen] x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.
 [treeopen] x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.
 [treeopen] x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.cmd_deser_16bit_i.
@@ -24,11 +23,51 @@
 [sst_vpaned_height] 371
 @800200
 -top_simulation
-@22
+@28
+x393_testbench01.CLK[0]
+@c00022
 x393_testbench01.registered_rdata[31:0]
+@28
+(0)x393_testbench01.registered_rdata[31:0]
+(1)x393_testbench01.registered_rdata[31:0]
+(2)x393_testbench01.registered_rdata[31:0]
+(3)x393_testbench01.registered_rdata[31:0]
+(4)x393_testbench01.registered_rdata[31:0]
+(5)x393_testbench01.registered_rdata[31:0]
+(6)x393_testbench01.registered_rdata[31:0]
+(7)x393_testbench01.registered_rdata[31:0]
+(8)x393_testbench01.registered_rdata[31:0]
+(9)x393_testbench01.registered_rdata[31:0]
+(10)x393_testbench01.registered_rdata[31:0]
+(11)x393_testbench01.registered_rdata[31:0]
+(12)x393_testbench01.registered_rdata[31:0]
+(13)x393_testbench01.registered_rdata[31:0]
+(14)x393_testbench01.registered_rdata[31:0]
+(15)x393_testbench01.registered_rdata[31:0]
+(16)x393_testbench01.registered_rdata[31:0]
+(17)x393_testbench01.registered_rdata[31:0]
+(18)x393_testbench01.registered_rdata[31:0]
+(19)x393_testbench01.registered_rdata[31:0]
+(20)x393_testbench01.registered_rdata[31:0]
+(21)x393_testbench01.registered_rdata[31:0]
+(22)x393_testbench01.registered_rdata[31:0]
+(23)x393_testbench01.registered_rdata[31:0]
+(24)x393_testbench01.registered_rdata[31:0]
+(25)x393_testbench01.registered_rdata[31:0]
+(26)x393_testbench01.registered_rdata[31:0]
+(27)x393_testbench01.registered_rdata[31:0]
+(28)x393_testbench01.registered_rdata[31:0]
+(29)x393_testbench01.registered_rdata[31:0]
+(30)x393_testbench01.registered_rdata[31:0]
+(31)x393_testbench01.registered_rdata[31:0]
+@1401200
+-group_end
+@22
 x393_testbench01.read_and_wait_status.address[7:0]
 x393_testbench01.x393_i.status_rdata[31:0]
 x393_testbench01.x393_i.axird_rdata[31:0]
+x393_testbench01.target_phase[7:0]
+x393_testbench01.read_and_wait_status.address[7:0]
 @1000200
 -top_simulation
 @200
@@ -670,7 +709,6 @@ x393_testbench01.x393_i.axibram_read_i.dev_ready[0]
 x393_testbench01.x393_i.axibram_read_i.last_in_burst_0[0]
 x393_testbench01.x393_i.axibram_read_i.last_in_burst_1[0]
 x393_testbench01.x393_i.axibram_read_i.last_in_burst_d_w[0]
-@29
 x393_testbench01.x393_i.axibram_read_i.last_in_burst_w[0]
 @22
 x393_testbench01.x393_i.axibram_read_i.next_rd_address_w[12:0]

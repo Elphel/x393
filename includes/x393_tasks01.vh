@@ -56,6 +56,8 @@
         wait (!CLK && rvalid && rready);
         wait (CLK);
         registered_rdata <= rdata;
+        wait (!CLK); // registered_rdata should be valid on exit
+        
     end
     endtask
     

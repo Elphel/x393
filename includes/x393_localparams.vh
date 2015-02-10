@@ -79,3 +79,9 @@
     localparam READ_PATTERN_OFFSET='h40; // read pattern to memory block sequence start address (in words) ..'h053 with 8x2*64 bits (variable)
     localparam WRITE_BLOCK_OFFSET= 'h100; // write block sequence start address (in words) ..'h14c
     localparam READ_BLOCK_OFFSET=  'h180; // read  block sequence start address (in words)
+
+    localparam STATUS_SEQ_SHFT=           26; // bits [31:26] is the sequence number
+    localparam STATUS_2LSB_SHFT=          24; // bits [25:24] get the 2 LSB of the status (transmitted with the sequence number in the second byte)
+    localparam STATUS_MSB_RSHFT=           2; // status bits [25:2] are read through [23:0]
+    
+    localparam STATUS_PSHIFTER_RDY_MASK = 1<<STATUS_2LSB_SHFT;

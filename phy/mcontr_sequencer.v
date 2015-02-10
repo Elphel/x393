@@ -395,7 +395,8 @@ module  mcontr_sequencer   #(
 
 // TODO: status       
     assign locked=locked_mmcm && locked_pll;
-    assign status_data={dly_ready,dci_ready, locked_mmcm, locked_pll, run_busy,locked,ps_rdy,ps_out[7:0]};
+//    assign status_data={dly_ready,dci_ready, locked_mmcm, locked_pll, run_busy,locked,ps_rdy,ps_out[7:0]};
+    assign status_data={dly_ready,dci_ready, locked_mmcm, locked_pll, run_busy,ps_out[7:0],locked,ps_rdy};
     status_generate #(
         .STATUS_REG_ADDR  (MCONTR_PHY_STATUS_REG_ADDR),
         .PAYLOAD_BITS     (15)
