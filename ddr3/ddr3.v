@@ -943,7 +943,7 @@ module ddr3 (
             {1'bx, DIFF_BANK , REFRESH  , PRECHARGE} ,
             {1'bx, DIFF_BANK , REFRESH  , ACTIVATE } ,
             {1'bx, DIFF_BANK , REFRESH  , ZQ       } ,
-            {1'bx, DIFF_BANK , REFRESH  , SELF_REF } : begin if ($time - tm_refresh < TRFC_MIN)                                                                                $display ("%m: at time %t ERROR:  tRFC violation during %s", $time, cmd_string[cmd]);                         end
+            {1'bx, DIFF_BANK , REFRESH  , SELF_REF } : begin if ($time - tm_refresh < TRFC_MIN)                                                                                $display ("%m: at time %t ERROR:  tRFC violation during %s (%t < %t)", $time, cmd_string[cmd],$time - tm_refresh,TRFC_MIN);                         end
             {1'bx, DIFF_BANK , REFRESH  , PWR_DOWN } : begin if (ck_cntr - ck_refresh < TREFPDEN)                                                                              $display ("%m: at time %t ERROR:  tREFPDEN violation during %s", $time, cmd_string[cmd]);                     end
 
             // precharge

@@ -82,11 +82,8 @@ module  mcntrl_ps_pio#(
  wire                     channel_pgm_en=channel_pgm_en0 || channel_pgm_en1;
  wire                     seq_done= seq_done0 || seq_done1;
 
-// TODO: implement logic, move pages to command-based registers,
-// Implement genearation of sequencer address specification, request/grant logic, 
-// Port memory buffer (4 pages each, R/W fixed, port 0 - AXI read from DDR, port 1 - AXI write to DDR
-// generate 16-bit data commands (and set defaults to registers)
- wire               [4:0] cmd_a;
+
+ wire               [4:0] cmd_a; // just to compare
  wire              [31:0] cmd_data;
  wire                     cmd_we;
  wire               [1:0] status_data;
@@ -102,7 +99,7 @@ module  mcntrl_ps_pio#(
  reg                [1:0] en_reset;//
  wire                     chn_rst = ~en_reset[0]; // resets command, including fifo;
  wire                     chn_en = &en_reset[1];   // enable requests by channle (continue ones in progress)
- reg                      mem_run;              // sequencere pgm granted and set, waiting/executing memory transfer to/from buffur 0/1
+ reg                      mem_run;              // sequencer pgm granted and set, waiting/executing memory transfer to/from buffur 0/1
  wire                     busy;
  wire                     start;
  reg                [1:0] page;
@@ -147,7 +144,7 @@ module  mcntrl_ps_pio#(
         end
         
         if (rst)                      mem_run <=0;
-        else if (chn_rst && seq_done) mem_run <=0;
+        else if (chn_rst || seq_done) mem_run <=0;
         else if (channel_pgm_en)      mem_run <=1;
         
         if (rst)          cmd_set <= 0;

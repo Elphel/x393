@@ -202,7 +202,8 @@ always #(CLKIN_PERIOD/2) CLK <= ~CLK;
     axi_set_b_lag(0); //(1);
     axi_set_rd_lag(0);
     program_status_all(3,'h2a); // mode auto with sequence number increment 
-//...    
+
+    enable_memcntrl(1);                 // enable memory controller
 
     set_up;
     wait_phase_shifter_ready;
@@ -217,6 +218,23 @@ always #(CLKIN_PERIOD/2) CLK <= ~CLK;
     repeat (16) @(posedge CLK) ;
     enable_cke(1);
     repeat (16) @(posedge CLK) ;
+    
+//    enable_memcntrl(1);                 // enable memory controller
+    enable_memcntrl_channels(16'h0003); // only channel 0 and 1 are enabled
+    configure_channel_priority(0,0);    // lowest priority channel 0
+    configure_channel_priority(1,0);    // lowest priority channel 1
+    enable_reset_ps_pio(1,0);           // enable, no reset
+
+    
+    schedule_ps_pio ( // shedule software-control memory operation (may need to check FIFO status first)
+                        INITIALIZE_OFFSET, // input [9:0] seq_addr; // sequence start address
+                        0,                 // input [1:0] page;     // buffer page number
+                        0,                 // input       urgent;   // high priority request (only for competion wityh other channels, wiil not pass in this FIFO)
+                        0);                // input       chn;      // channel buffer to use: 0 - memory read, 1 - memory write
+    
+    repeat (32) @(posedge CLK) ;  // what delay is needed to be sure? Add to PS_PIO?
+
+    enable_refresh(1);
         
 /*
     run_mrs;
@@ -231,7 +249,7 @@ always #(CLKIN_PERIOD/2) CLK <= ~CLK;
     
     
         
-  #2000;
+  #20000;
   $finish;
 end
 // protect from never end
@@ -866,10 +884,49 @@ endtask
 task enable_refresh;
     input en;
     begin
-        write_contol_register(MCONTR_PHY_0BIT_ADDR +  MCONTR_TOP_0BIT_REFRESH_EN + en, 0);
+        write_contol_register(MCONTR_TOP_0BIT_ADDR +  MCONTR_TOP_0BIT_REFRESH_EN + en, 0);
     end
 endtask
 
+task enable_memcntrl;
+    input en;
+    begin
+        write_contol_register(MCONTR_TOP_0BIT_ADDR +  MCONTR_TOP_0BIT_MCONTR_EN + en, 0);
+    end
+endtask
+
+task enable_memcntrl_channels;
+    input [15:0] chnen; // bit-per-channel, 1 - enable;
+    begin
+        write_contol_register(MCONTR_TOP_16BIT_ADDR +  MCONTR_TOP_16BIT_CHN_EN, {16'b0,chnen});
+    end
+endtask
+
+task configure_channel_priority;
+    input [ 3:0] chn;
+    input [15:0] priority; // (higher is more important)
+    begin
+        write_contol_register(MCONTR_ARBIT_ADDR + chn, {16'b0,priority});
+    end
+endtask
+
+task enable_reset_ps_pio; // control reset and enable of the PS PIO channel;
+    input en;
+    input rst;
+    begin
+        write_contol_register(MCNTRL_PS_ADDR +  MCNTRL_PS_EN_RST, {30'b0,en,~rst});
+    end
+endtask
+
+task schedule_ps_pio; // shedule software-control memory operation (may need to check FIFO status first)
+    input [9:0] seq_addr; // sequence start address
+    input [1:0] page;     // buffer page number
+    input       urgent;   // high priority request (only for competion wityh other channels, wiil not pass in this FIFO)
+    input       chn;      // channel buffer to use: 0 - memory read, 1 - memory write
+    begin
+        write_contol_register(MCNTRL_PS_ADDR + MCNTRL_PS_CMD, {18'b0,chn,urgent,page,seq_addr});
+    end
+endtask
 
 task write_block_buf;
     integer i, j;
@@ -1219,8 +1276,8 @@ task set_refresh;
         data <=  func_encode_skip(   0,       1,           0,          0,  0,  0,  0,    0,    0,    0,  0,   0,        0);
         @(posedge CLK) axi_write_single_w(cmd_addr, data); cmd_addr <= cmd_addr + 1;
 //            write_contol_register(DLY_SET,0);
-        write_contol_register(MCONTR_PHY_16BIT_ADDR + MCONTR_TOP_16BIT_REFRESH_ADDRESS, REFRESH_OFFSET);
-        write_contol_register(MCONTR_PHY_16BIT_ADDR + MCONTR_TOP_16BIT_REFRESH_PERIOD, {24'h0,t_refi});
+        write_contol_register(MCONTR_TOP_16BIT_ADDR + MCONTR_TOP_16BIT_REFRESH_ADDRESS, REFRESH_OFFSET);
+        write_contol_register(MCONTR_TOP_16BIT_ADDR + MCONTR_TOP_16BIT_REFRESH_PERIOD, {24'h0,t_refi});
         // enable refresh - should it be done here?
 //        write_contol_register(MCONTR_PHY_0BIT_ADDR +  MCONTR_TOP_0BIT_REFRESH_EN + 1, 0);
     end

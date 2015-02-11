@@ -29,16 +29,21 @@ module  masked_max_reg#(
     input  [width-1:0] b,
     input              mask_b,
     output [width-1:0] max,
-    output         s
+    output             s,
+    output             valid // at least one of the inputs was valid (matches outputs)
 );
     reg    [width-1:0] max_r;
     reg                s_r;
+    reg                valid_r;
     assign s=s_r;
     assign max=max_r;
-    wire s_w= mask_b && ((mask_a && (b>a)) || !mask_a);
+    assign valid=valid_r;
+//    wire s_w= mask_b && ((mask_a && (b>a)) || !mask_a);
+    wire s_w= mask_b && (!mask_a || (b>a));
     always @ (posedge clk) begin
         s_r <= s_w;
-        max_r <= (mask_a || mask_b)? (s_w?b:a): 0;
+        max_r <= (mask_a || mask_b)? (s_w?b:a): {width{1'b0}};
+        valid_r <= mask_a || mask_b;
     end 
 endmodule
 

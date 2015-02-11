@@ -128,7 +128,8 @@ module  mcontr_sequencer   #(
 // Controller run interface, posedge mclk
     input               [10:0]   run_addr, // controller sequencer start address (0..11'h3ff - cmd0, 11'h400..11'h7ff - cmd1)
     input                [3:0]   run_chn,  // data channel to use
-    input                        run_seq,  // start controller sequence (will and with !ddr_rst for stable mclk)
+    input                        run_refresh, // command is refresh (invalidates channel)
+    input                        run_seq,  // start controller sequence (will end with !ddr_rst for stable mclk)
     output                       run_done, // controller sequence finished
     output                       run_busy, // controller sequence in progress
     output                       mcontr_reset, // == ddr_reset that also resets sequencer  
@@ -146,6 +147,7 @@ module  mcontr_sequencer   #(
     output                       ext_buf_rpage_nxt, // increment external buffer read address to next page start
 //    output                 [6:0] ext_buf_raddr, // valid with ext_buf_rd, 2 page MSB to be generated externally
     output                 [3:0] ext_buf_rchn,   // ==run_chn_d valid 1 cycle ahead opf ext_buf_rd!, maybe not needed - will be generated externally
+    output                       ext_buf_rrefresh, // was refresh, invalidates ext_buf_rchn
     input                 [63:0] ext_buf_rdata, // Latency of ram_1kx32w_512x64r plus 2
     
 //  Interface to memory read channels (up to 16)   
@@ -154,7 +156,8 @@ module  mcontr_sequencer   #(
     output                       ext_buf_wr,
     output                       ext_buf_wpage_nxt, // increment external buffer write address to next page start
 //    output                 [6:0] ext_buf_waddr,  // valid with ext_buf_wr
-    output                 [3:0] ext_buf_wchn,   // ==run_chn_d valid 1 cycle ahead of ext_buf_wr!, maybe not needed - will be generated externally
+    output                 [3:0] ext_buf_wchn,   // external buffer channel with timing matching buffer writes
+    output                       ext_buf_wrefresh, // was refresh, invalidates ext_buf_wchn
     output                [63:0] ext_buf_wdata,   // valid with ext_buf_wr
 // temporary debug data    
     output                [11:0] tmp_debug
@@ -244,9 +247,14 @@ module  mcontr_sequencer   #(
  //   reg                   [1:0]  buf_page;      // one of 4 pages in the channel buffer to use for R/W
  //   reg                  [15:0]  buf_sel_1hot; // 1 hot channel buffer select
     wire                  [3:0]  run_chn_w_d; // run chn delayed to match buf_wr delay
+    wire                         run_refresh_w_d; // run refresh delayed to match buf_wr delay
+    
     
     reg                   [3:0]  run_chn_d;
+    reg                          run_refresh_d;
+    
     reg                   [3:0]  run_chn_w_d_negedge;
+    reg                          run_refresh_w_d_negedge;
     
 //    reg                        run_seq_d; 
     
@@ -275,12 +283,14 @@ module  mcontr_sequencer   #(
     assign ext_buf_rpage_nxt=buf_raddr_reset;
 //    assign ext_buf_raddr=    buf_raddr;
     assign ext_buf_rchn=     run_chn_d;
+    assign ext_buf_rrefresh= run_refresh_d;
     assign buf_rdata[63:0] = ext_buf_rdata;
     
     assign ext_buf_wr=       buf_wr_negedge;
     assign ext_buf_wpage_nxt=buf_waddr_reset_negedge;
 //    assign ext_buf_waddr=    buf_waddr_negedge;
     assign ext_buf_wchn=     run_chn_w_d_negedge;
+    assign ext_buf_wrefresh= run_refresh_w_d_negedge;
     assign ext_buf_wdata=    buf_wdata_negedge;
     
 // generation of the control signals from byte-serial channel
@@ -445,6 +455,10 @@ module  mcontr_sequencer   #(
 
         if (rst)          run_chn_d <= 0;
         else if (run_seq) run_chn_d <= run_chn;
+        
+        if (rst)          run_refresh_d <= 0;
+        else if (run_seq) run_refresh_d <= run_refresh;
+        
 //        if (rst) run_seq_d <= 0;
 //        else run_seq_d <= run_seq;
         
@@ -456,6 +470,7 @@ module  mcontr_sequencer   #(
         buf_wr_negedge <= buf_wr;
         buf_wdata_negedge <= buf_wdata;
         run_chn_w_d_negedge <= run_chn_w_d; //run_chn_d;
+        run_refresh_w_d_negedge <= run_refresh_w_d;
         
     end
 // Command sequence memories:
@@ -595,12 +610,12 @@ module  mcontr_sequencer   #(
     );
     assign wbuf_delay_m1=wbuf_delay-1;
 
-    dly_16 #(4) buf_wchn_dly_i (
+    dly_16 #(5) buf_wchn_dly_i (
         .clk(mclk), // input
         .rst(1'b0), // input
         .dly(wbuf_delay_m1), //wbuf_delay[3:0]-1), // input[3:0] 
-        .din(run_chn_d), // input
-        .dout(run_chn_w_d) // output reg 
+        .din({run_refresh_d,   run_chn_d}), // input
+        .dout({run_refresh_w_d,run_chn_w_d}) // output reg 
     );
 //run_chn_w_d
 endmodule

@@ -26,6 +26,7 @@ module  mcont_common_chnbuf_reg #(
     input rst,
     input clk,
     input                 [3:0] ext_buf_rchn,  // ==run_chn_d valid 1 cycle ahead opf ext_buf_rd!, maybe not needed - will be generated externally
+    input                       ext_buf_rrefresh,
     input                       ext_buf_rpage_nxt,
     input                       seq_done,      // sequence done
     output reg                  buf_done,      // sequence done for the specified channel
@@ -34,12 +35,12 @@ module  mcont_common_chnbuf_reg #(
     reg                 buf_chn_sel;
     always @ (posedge rst or posedge clk) begin
         if (rst) buf_chn_sel <= 0;
-        else     buf_chn_sel <= (ext_buf_rchn==CHN_NUMBER);
+        else     buf_chn_sel <= (ext_buf_rchn==CHN_NUMBER) && !ext_buf_rrefresh;
         
         if (rst) buf_done <= 0;
         else     buf_done <= buf_chn_sel && seq_done;
        
     end
-    always @ (posedge clk)  rpage_nxt <= ext_buf_rpage_nxt && (ext_buf_rchn==CHN_NUMBER);
+    always @ (posedge clk)  rpage_nxt <= ext_buf_rpage_nxt && (ext_buf_rchn==CHN_NUMBER) && !ext_buf_rrefresh;
 endmodule
 
