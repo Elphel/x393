@@ -21,6 +21,10 @@
 `timescale 1ns/1ps
 `define use200Mhz 1
 `define DEBUG_FIFO 1
+`undef WAIT_MRS
+`define SET_PER_PIN_DEALYS 1 // set individual (including per-DQ pin delays)
+`define TEST_WRITE_LEVELLING 1
+
 module  x393_testbench01 #(
 `include "includes/x393_parameters.vh"
 `include "includes/x393_simulation_parameters.vh"
@@ -77,17 +81,19 @@ module  x393_testbench01 #(
   reg [11:0] LAST_ARID; // last issued ARID
 
   // SuppressWarnings VEditor : assigned in $readmem() system task
-  wire [ 9:0] SIMUL_AXI_ADDR_W; 
+  wire [SIMUL_AXI_READ_WIDTH-1:0] SIMUL_AXI_ADDR_W;
   // SuppressWarnings VEditor
   wire        SIMUL_AXI_MISMATCH;
   // SuppressWarnings VEditor
   reg  [31:0] SIMUL_AXI_READ;
   // SuppressWarnings VEditor
-  reg  [ 9:0] SIMUL_AXI_ADDR;
+  reg  [SIMUL_AXI_READ_WIDTH-1:0] SIMUL_AXI_ADDR;
   // SuppressWarnings VEditor
   reg         SIMUL_AXI_FULL; // some data available
 
   reg  [31:0] registered_rdata; // here read data from tasks goes
+  // SuppressWarnings VEditor
+  reg         WAITING_STATUS;   // tasks are waiting for status
 
   reg        CLK;
   reg        RST;
@@ -169,7 +175,10 @@ module  x393_testbench01 #(
   wire [11:0] bid;
   wire        bvalid;
   wire        bready;
-  
+  integer     NUM_WORDS_READ;
+  integer     NUM_WORDS_EXPECTED;
+  wire AXI_RD_EMPTY=NUM_WORDS_READ==NUM_WORDS_EXPECTED;
+//  integer ii;
 always #(CLKIN_PERIOD/2) CLK <= ~CLK;
   initial begin
 `ifdef IVERILOG              
@@ -195,13 +204,14 @@ always #(CLKIN_PERIOD/2) CLK <= ~CLK;
 //    $display ("x393_i.ddrc_sequencer_i.phy_cmd_i.phy_top_i.rst=%d",x393_i.ddrc_sequencer_i.phy_cmd_i.phy_top_i.rst);
     #500;
     RST <= 1'b1;
+    NUM_WORDS_EXPECTED <=0;
     #99000; // same as glbl
     repeat (20) @(posedge CLK) ;
     RST <=1'b0;
 //set simulation-only parameters   
     axi_set_b_lag(0); //(1);
     axi_set_rd_lag(0);
-    program_status_all(3,'h2a); // mode auto with sequence number increment 
+    program_status_all(DEFAULT_STATUS_MODE,'h2a); // mode auto with sequence number increment 
 
     enable_memcntrl(1);                 // enable memory controller
 
@@ -225,30 +235,50 @@ always #(CLKIN_PERIOD/2) CLK <= ~CLK;
     configure_channel_priority(1,0);    // lowest priority channel 1
     enable_reset_ps_pio(1,0);           // enable, no reset
 
-    
+// set MR registers in DDR3 memory, run DCI calibration (long)
+    wait_ps_pio_ready(DEFAULT_STATUS_MODE); // wait FIFO not half full 
     schedule_ps_pio ( // shedule software-control memory operation (may need to check FIFO status first)
                         INITIALIZE_OFFSET, // input [9:0] seq_addr; // sequence start address
                         0,                 // input [1:0] page;     // buffer page number
-                        0,                 // input       urgent;   // high priority request (only for competion wityh other channels, wiil not pass in this FIFO)
+                        0,                 // input       urgent;   // high priority request (only for competion with other channels, wiil not pass in this FIFO)
                         0);                // input       chn;      // channel buffer to use: 0 - memory read, 1 - memory write
-    
+   
+`ifdef WAIT_MRS 
+    wait_ps_pio_done(DEFAULT_STATUS_MODE);
+`else    
     repeat (32) @(posedge CLK) ;  // what delay is needed to be sure? Add to PS_PIO?
-
+//    first refreshes will be fast (accummulated while waiting)
+`endif    
     enable_refresh(1);
-        
-/*
-    run_mrs;
+`ifdef TEST_WRITE_LEVELLING    
+// Set special values for DQS idelay for write leveling
+        wait_ps_pio_done(DEFAULT_STATUS_MODE); // not no interrupt running cycle - delays are changed immediately
+        axi_set_dqs_idelay_wlv;
+// Set write buffer (from DDR3) WE signal delay for write leveling mode
+        axi_set_wbuf_delay(WBUF_DLY_WLV);
+        axi_set_dqs_odelay('h80); // 'h80 - inverted, 'h60 - not - 'h80 will cause warnings during simulation
+        schedule_ps_pio ( // shedule software-control memory operation (may need to check FIFO status first)
+                        WRITELEV_OFFSET,   // input [9:0] seq_addr; // sequence start address
+                        0,                 // input [1:0] page;     // buffer page number
+                        0,                 // input       urgent;   // high priority request (only for competion with other channels, wiil not pass in this FIFO)
+                        0);                // input       chn;      // channel buffer to use: 0 - memory read, 1 - memory write
+        wait_ps_pio_done(DEFAULT_STATUS_MODE); // wait previous memory transaction finished before changing delays (effective immediately)
+        read_block_buf_chn (0, 0, 32, 1 ); // chn=0, page=0, number of 32-bit words=32, wait_done
+//        @ (negedge rstb);
+        axi_set_dqs_odelay(DLY_DQS_ODELAY);
+        schedule_ps_pio ( // shedule software-control memory operation (may need to check FIFO status first)
+                        WRITELEV_OFFSET,   // input [9:0] seq_addr; // sequence start address
+                        1,                 // input [1:0] page;     // buffer page number
+                        0,                 // input       urgent;   // high priority request (only for competion with other channels, wiil not pass in this FIFO)
+                        0);                // input       chn;      // channel buffer to use: 0 - memory read, 1 - memory write
+        wait_ps_pio_done(DEFAULT_STATUS_MODE); // wait previous memory transaction finished before changing delays (effective immediately)
+        read_block_buf_chn (0, 1, 32, 1 ); // chn=0, page=1, number of 32-bit words=32, wait_done
+//        @ (negedge rstb);
+        axi_set_dqs_idelay_nominal;
+        axi_set_dqs_odelay_nominal;
+        axi_set_wbuf_delay(WBUF_DLY_DFLT);
+`endif
 
-    repeat (4) @(posedge CLK) ;
-// enable refresh    
-    enable_refresh(1);
-    
-    #100;
-*/    
-    
-    
-    
-        
   #20000;
   $finish;
 end
@@ -780,15 +810,17 @@ simul_axi_slow_ready simul_axi_slow_ready_write_resp_i(
     .ready(bready)  //output        ready
     );
 
-simul_axi_read simul_axi_read_i(
+simul_axi_read #(
+    .ADDRESS_WIDTH(SIMUL_AXI_READ_WIDTH)
+  ) simul_axi_read_i(
   .clk(CLK),
   .reset(RST),
   .last(rlast),
   .data_stb(rstb),
-  .raddr(ARADDR_IN[11:2]), 
+  .raddr(ARADDR_IN[SIMUL_AXI_READ_WIDTH+1:2]), 
   .rlen(ARLEN_IN),
   .rcmd(AR_SET_CMD),
-  .addr_out(SIMUL_AXI_ADDR_W),
+  .addr_out(SIMUL_AXI_ADDR_W[SIMUL_AXI_READ_WIDTH-1:0]),
   .burst(),     // burst in progress - just debug
   .err_out());  // data last does not match predicted or FIFO over/under run - just debug
     
@@ -796,6 +828,12 @@ simul_axi_read simul_axi_read_i(
     always @ (posedge CLK) begin
         if      (RST) SIMUL_AXI_FULL <=0;
         else if (rstb) SIMUL_AXI_FULL <=1;
+        
+        if (RST) begin
+              NUM_WORDS_READ <= 0;
+        end else if (rstb) begin
+            NUM_WORDS_READ <= NUM_WORDS_READ + 1; 
+        end    
         if (rstb) begin
             SIMUL_AXI_ADDR <= SIMUL_AXI_ADDR_W;
             SIMUL_AXI_READ <= rdata;
@@ -826,9 +864,14 @@ simul_axi_read simul_axi_read_i(
             write_block_buf; // fill block memory
 // set all delays
 //#axi_set_delays - from tables, per-pin
-            axi_set_same_delays(DLY_DQ_IDELAY,DLY_DQ_ODELAY,DLY_DQS_IDELAY,DLY_DQS_ODELAY,DLY_DM_ODELAY,DLY_CMDA_ODELAY);    
+`ifdef SET_PER_PIN_DEALYS
+            axi_set_delays; // set all individual delays, aslo runs axi_set_phase()
+`else
+            axi_set_same_delays(DLY_DQ_IDELAY,DLY_DQ_ODELAY,DLY_DQS_IDELAY,DLY_DQS_ODELAY,DLY_DM_ODELAY,DLY_CMDA_ODELAY);
 // set clock phase relative to DDR clk
             axi_set_phase(DLY_PHASE);
+`endif            
+            
         end
     endtask
 
@@ -924,6 +967,7 @@ task schedule_ps_pio; // shedule software-control memory operation (may need to 
     input       urgent;   // high priority request (only for competion wityh other channels, wiil not pass in this FIFO)
     input       chn;      // channel buffer to use: 0 - memory read, 1 - memory write
     begin
+//        wait_ps_pio_ready(DEFAULT_STATUS_MODE); // wait FIFO not half full 
         write_contol_register(MCNTRL_PS_ADDR + MCNTRL_PS_CMD, {18'b0,chn,urgent,page,seq_addr});
     end
 endtask
@@ -960,8 +1004,30 @@ task write_block_buf;
 endtask
    
    // read memory
-task read_block_buf;
+task read_block_buf_chn;  // S uppressThisWarning VEditor : may be unused
+    input integer chn; // buffer channel
+    input   [1:0] page;
     input integer num_read; // number of words to read (will be rounded up to multiple of 16)
+    input wait_done; 
+    reg    [29:0] start_addr;
+    begin
+        case (chn)
+            0:  start_addr=MCONTR_BUF0_RD_ADDR + (page << 8);
+            2:  start_addr=MCONTR_BUF2_RD_ADDR + (page << 8);
+            4:  start_addr=MCONTR_BUF4_RD_ADDR + (page << 8);
+            default: begin
+                $display("**** ERROR: Invalid channel for read buffer = %d @%t", chn, $time);
+                start_addr = 30'b0+ (page << 8);
+            end
+        endcase
+        read_block_buf (start_addr, num_read, wait_done);
+    end
+endtask
+
+task read_block_buf; 
+    input [29:0] start_word_address;
+    input integer num_read; // number of words to read (will be rounded up to multiple of 16)
+    input wait_done; 
     integer i; //,j;
     begin
         $display("**** read_block_buf  @%t", $time);
@@ -971,10 +1037,13 @@ task read_block_buf;
 //                $display ("read_block_buf (0x%x) @%t",i,$time);
             axi_read_addr(
                 i,    // id
-                MCONTR_BUF0_RD_ADDR + (i << 2), // addr
+                {start_word_address,2'b0}+( i << 2), // addr
                 4'hf, // len
                 1     // burst type - increment
                 );
+        end
+        if (wait_done) begin
+            wait (AXI_RD_EMPTY);
         end
     end
 endtask
@@ -1523,7 +1592,7 @@ endtask
         end                            
     endfunction
 
-     task axi_set_same_delays;
+     task axi_set_same_delays;  //SuppressThisWarning VEditor : may be unused
         input [7:0] dq_idelay;
         input [7:0] dq_odelay;
         input [7:0] dqs_idelay;
@@ -1542,7 +1611,57 @@ endtask
         end
     endtask
 
-    task axi_set_dq_idelay;
+    task axi_set_dqs_odelay_nominal; //SuppressThisWarning VEditor : may be unused
+     begin
+//        axi_set_dqs_idelay(
+        write_contol_register(LD_DLY_LANE0_ODELAY + 8,      (DLY_LANE0_ODELAY >> (8<<3)) & 32'hff);
+        write_contol_register(LD_DLY_LANE1_ODELAY + 8,      (DLY_LANE1_ODELAY >> (8<<3)) & 32'hff);
+        write_contol_register(DLY_SET,0);
+     end
+    endtask
+
+    task axi_set_dqs_idelay_nominal;  //SuppressThisWarning VEditor : may be unused
+     begin
+//        axi_set_dqs_idelay(
+        write_contol_register(LD_DLY_LANE0_IDELAY + 8,      (DLY_LANE0_IDELAY >> (8<<3)) & 32'hff);
+        write_contol_register(LD_DLY_LANE1_IDELAY + 8,      (DLY_LANE1_IDELAY >> (8<<3)) & 32'hff);
+        write_contol_register(DLY_SET,0);
+     end
+    endtask
+    
+    task axi_set_dqs_idelay_wlv;  //SuppressThisWarning VEditor : may be unused
+     begin
+        write_contol_register(LD_DLY_LANE0_IDELAY + 8,      DLY_LANE0_DQS_WLV_IDELAY);
+        write_contol_register(LD_DLY_LANE1_IDELAY + 8,      DLY_LANE1_DQS_WLV_IDELAY);
+        write_contol_register(DLY_SET,0);
+     end
+    endtask
+
+    task axi_set_delays; // set all individual delays
+     integer i;
+     begin
+        for (i=0;i<10;i=i+1) begin
+            write_contol_register(LD_DLY_LANE0_ODELAY + i,     (DLY_LANE0_ODELAY >> (i<<3)) & 32'hff);
+        end
+        for (i=0;i<9;i=i+1) begin
+            write_contol_register(LD_DLY_LANE0_IDELAY + i,      (DLY_LANE0_IDELAY >> (i<<3)) & 32'hff);
+        end
+        for (i=0;i<10;i=i+1) begin
+            write_contol_register(LD_DLY_LANE1_ODELAY + i,      (DLY_LANE1_ODELAY >> (i<<3)) & 32'hff);
+        end
+        for (i=0;i<9;i=i+1) begin
+            write_contol_register(LD_DLY_LANE1_IDELAY + i,      (DLY_LANE1_IDELAY >> (i<<3)) & 32'hff);
+        end
+        for (i=0;i<32;i=i+1) begin
+            write_contol_register(LD_DLY_CMDA + i,      (DLY_CMDA >> (i<<3)) & 32'hff);
+        end
+//        write_contol_register(DLY_SET,0);
+        axi_set_phase(DLY_PHASE); // also sets all delays
+     end
+    endtask
+
+
+    task axi_set_dq_idelay; // sets same delay to all dq idelay
         input [7:0] delay;
         begin
            $display("SET DQ IDELAY=0x%x @ %t",delay,$time);
@@ -1566,8 +1685,8 @@ endtask
         input [7:0] delay;
         begin
            $display("SET DQS IDELAY=0x%x @ %t",delay,$time);
-           axi_set_multiple_delays(LD_DLY_LANE0_IDELAY + 8, 0, delay);
-           axi_set_multiple_delays(LD_DLY_LANE1_IDELAY + 8, 0, delay);
+           axi_set_multiple_delays(LD_DLY_LANE0_IDELAY + 8, 1, delay);
+           axi_set_multiple_delays(LD_DLY_LANE1_IDELAY + 8, 1, delay);
            write_contol_register(DLY_SET,0); // set all delays
         end
     endtask
@@ -1576,8 +1695,8 @@ endtask
         input [7:0] delay;
         begin
            $display("SET DQS ODELAY=0x%x @ %t",delay,$time);
-           axi_set_multiple_delays(LD_DLY_LANE0_ODELAY + 8, 0, delay);
-           axi_set_multiple_delays(LD_DLY_LANE1_ODELAY + 8, 0, delay);
+           axi_set_multiple_delays(LD_DLY_LANE0_ODELAY + 8, 1, delay);
+           axi_set_multiple_delays(LD_DLY_LANE1_ODELAY + 8, 1, delay);
            write_contol_register(DLY_SET,0); // set all delays
         end
     endtask
@@ -1586,8 +1705,8 @@ endtask
         input [7:0] delay;
         begin
            $display("SET DQM IDELAY=0x%x @ %t",delay,$time);
-           axi_set_multiple_delays(LD_DLY_LANE0_ODELAY + 9, 0, delay);
-           axi_set_multiple_delays(LD_DLY_LANE1_ODELAY + 9, 0, delay);
+           axi_set_multiple_delays(LD_DLY_LANE0_ODELAY + 9, 1, delay);
+           axi_set_multiple_delays(LD_DLY_LANE1_ODELAY + 9, 1, delay);
            write_contol_register(DLY_SET,0); // set all delays
         end
     endtask
@@ -1624,6 +1743,14 @@ endtask
         end
     endtask
  
+     task axi_set_wbuf_delay;
+        input [3:0] delay;
+        begin
+            $display("SET WBUF DELAY to 0x%x @ %t",delay,$time);
+            write_contol_register(MCONTR_PHY_16BIT_ADDR+MCONTR_PHY_16BIT_WBUF_DELAY, {28'h0, delay});
+        end
+    endtask
+ 
  
 // set dq /dqs tristate on/off patterns
     task axi_set_tristate_patterns;
@@ -1643,12 +1770,79 @@ endtask
         end
  endtask
  
+task wait_ps_pio_ready; // wait PS PIO module can accept comamnds (fifo half empty)
+    input [1:0] mode;
+    begin
+        wait_status_condition (
+            MCNTRL_PS_STATUS_REG_ADDR,
+            MCNTRL_PS_ADDR+MCNTRL_PS_STATUS_CNTRL,
+            mode,
+            0,
+            2 << STATUS_2LSB_SHFT,
+            0);
+    end
+endtask
+task wait_ps_pio_done; // wait PS PIO module has no pending/running memory transaction
+    input [1:0] mode;
+    begin
+        wait_status_condition (
+            MCNTRL_PS_STATUS_REG_ADDR,
+            MCNTRL_PS_ADDR+MCNTRL_PS_STATUS_CNTRL,
+            mode,
+            0,
+            3 << STATUS_2LSB_SHFT,
+            0);
+    end
+endtask
+/*
+    localparam STATUS_SEQ_SHFT=           26; // bits [31:26] is the sequence number
+    localparam STATUS_2LSB_SHFT=          24; // bits [25:24] get the 2 LSB of the status (transmitted with the sequence number in the second byte)
+    localparam STATUS_MSB_RSHFT=           2; // status bits [25:2] are read through [23:0]
+    
+    localparam STATUS_PSHIFTER_RDY_MASK = 1<<STATUS_2LSB_SHFT;
+    parameter MCONTR_PHY_STATUS_REG_ADDR=          'h0,//8 or less bits: status register address to use for memory controller phy
+    parameter MCONTR_TOP_STATUS_REG_ADDR=          'h1,//8 or less bits: status register address to use for memory controller
+    parameter MCNTRL_PS_STATUS_REG_ADDR=           'h2
+    parameter MCNTRL_SCANLINE_STATUS_REG_CHN2_ADDR='h4,
+    parameter MCNTRL_SCANLINE_STATUS_REG_CHN3_ADDR='h5,
+    parameter MCNTRL_TILED_STATUS_REG_CHN4_ADDR=   'h6,
+    parameter MCNTRL_TEST01_STATUS_REG_CHN2_ADDR=  'h3c,  // status/readback register for channel 2
+    parameter MCNTRL_TEST01_STATUS_REG_CHN3_ADDR=  'h3d,  // status/readback register for channel 3
+    parameter MCNTRL_TEST01_STATUS_REG_CHN4_ADDR=  'h3e  // status/readback register for channel 4    
+*/ 
+ 
+task wait_status_condition;
+    input [STATUS_DEPTH-1:0] status_address;
+    input [29:0] status_control_address;
+    input  [1:0] status_mode;
+    input [25:0] pattern;        // bits as in read registers
+    input [25:0] mask;           // which bits to compare
+    input        invert_match;   // 0 - wait until match to pattern (all bits), 1 - wait until no match (any of bits differ)
+    reg          match;
+    reg    [5:0] seq_num;
+    begin
+        WAITING_STATUS = 1;
+        for (match=0; !match; match = invert_match ^ (((registered_rdata ^ {6'h0,pattern}) & {6'h0,mask})==0)) begin
+            read_and_wait_status(status_address);
+            write_contol_register(status_control_address, {24'b0,status_mode,registered_rdata[STATUS_SEQ_SHFT+:6] ^ 6'h20});
+            seq_num <= registered_rdata[STATUS_SEQ_SHFT+:6] ^ 6'h20;
+            read_and_wait_status(status_address);
+            while (((registered_rdata[STATUS_SEQ_SHFT+:6] ^ seq_num) & 6'h30)!=0) begin // match just 2 MSBs
+                read_and_wait_status(status_address);
+            end
+        end
+        WAITING_STATUS = 0;
+    end
+endtask    
+
  task wait_phase_shifter_ready;
     begin
+        WAITING_STATUS = 1;
         read_and_wait_status(MCONTR_PHY_STATUS_REG_ADDR);
         while (((registered_rdata & STATUS_PSHIFTER_RDY_MASK) == 0) || (((registered_rdata ^ {24'h0,target_phase}) & 'hff) != 0)) begin
-            read_and_wait_status(MCONTR_PHY_STATUS_REG_ADDR);
+            read_and_wait_status(MCONTR_PHY_STATUS_REG_ADDR); // exits after negedge CLK
         end
+        WAITING_STATUS = 0;
     end
  endtask
  
@@ -1670,6 +1864,7 @@ endtask
     input [STATUS_DEPTH-1:0] address;
     begin
         read_and_wait_w(STATUS_ADDR + address ); // Will set:       registered_rdata <= rdata;
+        
     end
  endtask
   

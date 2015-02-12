@@ -161,12 +161,9 @@ module  mcntrl_ps_pio#(
         else              cmd_set_d <= {cmd_set_d[0],cmd_set};
     end
     
-    always @ (posedge rst or negedge mclk) begin
-        if (rst)          page_neg <= 0;
-        else if (cmd_set) page_neg <= page;
-        
-        if (rst)          cmd_set_d_neg <= 0;
-        else              cmd_set_d_neg <= cmd_set_d[1];
+    always @ (negedge mclk) begin
+        page_neg <= page;
+        cmd_set_d_neg <= cmd_set_d[1];
     end 
     
     cmd_deser #(

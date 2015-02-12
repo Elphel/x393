@@ -988,7 +988,9 @@ simul_axi_slow_ready simul_axi_slow_ready_write_resp_i(
     .ready(bready)  //output        ready
     );
 
-simul_axi_read simul_axi_read_i(
+simul_axi_read #(
+    .ADDRESS_WIDTH(10)
+ ) simul_axi_read_i(
   .clk(CLK),
   .reset(RST),
   .last(rlast),

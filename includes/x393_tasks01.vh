@@ -207,6 +207,7 @@
             ARBURST_IN_r <= 2'hz;
             AR_SET_CMD_r <= 1'b0;
             LAST_ARID <= id;
+            NUM_WORDS_EXPECTED <= NUM_WORDS_EXPECTED+len+1;
         end
     endtask
 

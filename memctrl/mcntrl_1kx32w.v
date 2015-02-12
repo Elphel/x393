@@ -46,8 +46,8 @@ module  mcntrl_1kx32w(
         if      (rpage_set) page_r <= rpage_in;
         else if (page_next) page_r <= page_r+1;
 
-        if      (page_next) raddr <= 0;
-        else if (rd)        raddr <= raddr+1;
+        if      (page_next || rpage_set) raddr <= 0;
+        else if (rd)                     raddr <= raddr+1;
     end
     ram_1kx32w_512x64r #(
         .REGISTERS(1)

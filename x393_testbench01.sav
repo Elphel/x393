@@ -1,34 +1,55 @@
 [*]
 [*] GTKWave Analyzer v3.3.58 (w)1999-2014 BSI
-[*] Wed Feb 11 07:30:02 2015
+[*] Thu Feb 12 06:17:01 2015
 [*]
-[dumpfile] "/home/andrey/git/x393/simulation/x393_testbench01-20150211001801055.lxt"
-[dumpfile_mtime] "Wed Feb 11 07:21:54 2015"
-[dumpfile_size] 69604970
+[dumpfile] "/home/andrey/git/x393/simulation/x393_testbench01-20150211231241531.lxt"
+[dumpfile_mtime] "Thu Feb 12 06:16:34 2015"
+[dumpfile_size] 89243462
 [savefile] "/home/andrey/git/x393/x393_testbench01.sav"
-[timestart] 106720000
-[size] 1823 1173
+[timestart] 76630000
+[size] 1823 1180
 [pos] 1922 0
-*-22.878319 125301875 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-23.698503 135570000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] x393_testbench01.
-[treeopen] x393_testbench01.x393_i.
 [treeopen] x393_testbench01.x393_i.mcntrl393_i.
+[treeopen] x393_testbench01.x393_i.mcntrl393_i.mcntrl_ps_pio_i.
 [treeopen] x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.
 [treeopen] x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.
 [treeopen] x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.cmd_deser_16bit_i.
 [treeopen] x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.cmd_deser_16bit_i.genblk4.
+[treeopen] x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.
+[treeopen] x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.phy_top_i.
 [treeopen] x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.scheduler16_i.
 [treeopen] x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.scheduler16_i.i_index_max_16.
 [treeopen] x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.status_router2_top_i.
 [treeopen] x393_testbench01.x393_i.mcntrl393_test01_i.status_router4_i.
-[sst_width] 420
-[signals_width] 395
+[sst_width] 202
+[signals_width] 377
 [sst_expanded] 1
 [sst_vpaned_height] 371
 @800200
 -top_simulation
 @28
 x393_testbench01.CLK[0]
+@29
+x393_testbench01.WAITING_STATUS[0]
+@28
+x393_testbench01.AXI_RD_EMPTY[0]
+@22
+x393_testbench01.SIMUL_AXI_ADDR[15:0]
+x393_testbench01.SIMUL_AXI_READ[31:0]
+@c00200
+-top_extra
+@22
+x393_testbench01.NUM_WORDS_READ[31:0]
+x393_testbench01.NUM_WORDS_EXPECTED[31:0]
+@28
+x393_testbench01.rstb[0]
+@22
+x393_testbench01.rdata[31:0]
+x393_testbench01.SIMUL_AXI_ADDR_W[15:0]
+@28
+x393_testbench01.SIMUL_AXI_FULL[0]
 @c00022
 x393_testbench01.registered_rdata[31:0]
 @28
@@ -72,6 +93,61 @@ x393_testbench01.x393_i.status_rdata[31:0]
 x393_testbench01.x393_i.axird_rdata[31:0]
 x393_testbench01.target_phase[7:0]
 x393_testbench01.read_and_wait_status.address[7:0]
+@1401200
+-top_extra
+@c00200
+-read_block_buf_chn
+@22
+x393_testbench01.read_block_buf_chn.chn[31:0]
+x393_testbench01.read_block_buf_chn.num_read[31:0]
+@28
+x393_testbench01.read_block_buf_chn.page[1:0]
+@22
+x393_testbench01.read_block_buf_chn.start_addr[29:0]
+@1401200
+-read_block_buf_chn
+@c00200
+-simul_axi_read
+@28
+x393_testbench01.simul_axi_read_i.burst[0]
+x393_testbench01.simul_axi_read_i.burst_r[0]
+x393_testbench01.simul_axi_read_i.clk[0]
+x393_testbench01.simul_axi_read_i.data_stb[0]
+x393_testbench01.simul_axi_read_i.err_out[0]
+x393_testbench01.simul_axi_read_i.error_w[0]
+x393_testbench01.simul_axi_read_i.fifo_in_rdy[0]
+x393_testbench01.simul_axi_read_i.fifo_valid[0]
+x393_testbench01.simul_axi_read_i.generated_last[0]
+x393_testbench01.simul_axi_read_i.last[0]
+@22
+x393_testbench01.simul_axi_read_i.left_plus_1[3:0]
+@28
+x393_testbench01.simul_axi_read_i.rcmd[0]
+x393_testbench01.simul_axi_read_i.reset[0]
+@22
+x393_testbench01.simul_axi_read_i.rlen[3:0]
+x393_testbench01.simul_axi_read_i.rlen_fifo[3:0]
+@28
+x393_testbench01.simul_axi_read_i.start_burst[0]
+@1401200
+-simul_axi_read
+@c00200
+-WAIT_STATUS_CONDITION
+@28
+x393_testbench01.wait_status_condition.invert_match[0]
+@22
+x393_testbench01.wait_status_condition.mask[25:0]
+@28
+x393_testbench01.wait_status_condition.match[0]
+@22
+x393_testbench01.wait_status_condition.pattern[25:0]
+x393_testbench01.wait_status_condition.seq_num[5:0]
+x393_testbench01.wait_status_condition.status_address[7:0]
+x393_testbench01.wait_status_condition.status_control_address[29:0]
+@28
+x393_testbench01.wait_status_condition.status_mode[1:0]
+@1401200
+-WAIT_STATUS_CONDITION
 @1000200
 -top_simulation
 @200
@@ -781,7 +857,7 @@ x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.ddr_refresh_i.set[0]
 x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.ddr_refresh_i.want[0]
 @1401200
 -refresh
-@c00200
+@800200
 -DDR3
 @28
 x393_testbench01.x393_i.SDRST[0]
@@ -804,7 +880,7 @@ x393_testbench01.x393_i.SDDMU[0]
 x393_testbench01.x393_i.SDD[15:0]
 @28
 x393_testbench01.x393_i.SDODT[0]
-@1401200
+@1000200
 -DDR3
 @c00200
 -scheduler
@@ -1136,6 +1212,61 @@ x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.scheduler16_i.want_rq[15:0]
 x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.scheduler16_i.want_set[15:0]
 @1401200
 -scheduler
+@22
+x393_testbench01.axi_set_dqs_odelay.delay[7:0]
+@200
+-
+@c00200
+-byte_lane_0
+@28
+x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.phy_top_i.byte_lane0_i.clk[0]
+x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.phy_top_i.byte_lane0_i.clk_div[0]
+x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.phy_top_i.byte_lane0_i.dci_disable_dq[0]
+x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.phy_top_i.byte_lane0_i.dci_disable_dq_r[0]
+x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.phy_top_i.byte_lane0_i.dci_disable_dqs[0]
+x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.phy_top_i.byte_lane0_i.dci_disable_dqs_r[0]
+@22
+x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.phy_top_i.byte_lane0_i.decode_sel[9:0]
+x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.phy_top_i.byte_lane0_i.din[31:0]
+x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.phy_top_i.byte_lane0_i.din_dm[3:0]
+x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.phy_top_i.byte_lane0_i.din_dm_r[3:0]
+x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.phy_top_i.byte_lane0_i.din_dqs[3:0]
+x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.phy_top_i.byte_lane0_i.din_dqs_r[3:0]
+x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.phy_top_i.byte_lane0_i.din_r[31:0]
+x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.phy_top_i.byte_lane0_i.dly_addr[4:0]
+x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.phy_top_i.byte_lane0_i.dly_data[7:0]
+x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.phy_top_i.byte_lane0_i.dly_data_r[7:0]
+@28
+x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.phy_top_i.byte_lane0_i.dm[0]
+@22
+x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.phy_top_i.byte_lane0_i.dout[31:0]
+x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.phy_top_i.byte_lane0_i.dq[7:0]
+@28
+x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.phy_top_i.byte_lane0_i.dqs[0]
+x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.phy_top_i.byte_lane0_i.dqs_read[0]
+x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.phy_top_i.byte_lane0_i.iclk[0]
+x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.phy_top_i.byte_lane0_i.inv_clk_div[0]
+x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.phy_top_i.byte_lane0_i.ld_delay[0]
+@22
+x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.phy_top_i.byte_lane0_i.ld_idly[7:0]
+@28
+x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.phy_top_i.byte_lane0_i.ld_idly_dqs[0]
+@22
+x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.phy_top_i.byte_lane0_i.ld_odly[7:0]
+@28
+x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.phy_top_i.byte_lane0_i.ld_odly_dm[0]
+x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.phy_top_i.byte_lane0_i.ld_odly_dqs[0]
+x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.phy_top_i.byte_lane0_i.ndqs[0]
+x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.phy_top_i.byte_lane0_i.rst[0]
+x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.phy_top_i.byte_lane0_i.set[0]
+x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.phy_top_i.byte_lane0_i.set_r[0]
+@22
+x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.phy_top_i.byte_lane0_i.tin_dq[3:0]
+x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.phy_top_i.byte_lane0_i.tin_dq_r[3:0]
+x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.phy_top_i.byte_lane0_i.tin_dqs[3:0]
+x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.phy_top_i.byte_lane0_i.tin_dqs_r[3:0]
+@1401200
+-byte_lane_0
 @c00200
 -index_max16
 @28
@@ -1210,6 +1341,61 @@ x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.scheduler16_i.i_index_max_16.val
 -index_max16
 @800200
 -PS_PIO
+@c00200
+-PS_PIO_STATUS
+@22
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_ps_pio_i.status_generate_i.ad[7:0]
+@28
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_ps_pio_i.status_generate_i.aligned_status[1:0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_ps_pio_i.status_generate_i.clk[0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_ps_pio_i.status_generate_i.cmd_pend[0]
+@22
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_ps_pio_i.status_generate_i.data[7:0]
+@28
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_ps_pio_i.status_generate_i.mode[1:0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_ps_pio_i.status_generate_i.mode_w[1:0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_ps_pio_i.status_generate_i.need_to_send[0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_ps_pio_i.status_generate_i.rq[0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_ps_pio_i.status_generate_i.rq_r[0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_ps_pio_i.status_generate_i.rst[0]
+@22
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_ps_pio_i.status_generate_i.seq[5:0]
+@28
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_ps_pio_i.status_generate_i.snd_rest[0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_ps_pio_i.status_generate_i.start[0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_ps_pio_i.status_generate_i.status[1:0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_ps_pio_i.status_generate_i.status_changed_r[0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_ps_pio_i.status_generate_i.status_r[1:0]
+@22
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_ps_pio_i.status_generate_i.wd[7:0]
+@28
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_ps_pio_i.status_generate_i.we[0]
+@1401200
+-PS_PIO_STATUS
+@800200
+-PS_PIO_CHN0
+@22
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_ps_pio_i.chn0_buf_i.data_in[63:0]
+@28
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_ps_pio_i.chn0_buf_i.ext_clk[0]
+@22
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_ps_pio_i.chn0_buf_i.ext_data_out[31:0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_ps_pio_i.chn0_buf_i.ext_raddr[9:0]
+@28
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_ps_pio_i.chn0_buf_i.ext_rd[0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_ps_pio_i.chn0_buf_i.ext_regen[0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_ps_pio_i.chn0_buf_i.page[1:0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_ps_pio_i.chn0_buf_i.page_next[0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_ps_pio_i.chn0_buf_i.page_r[1:0]
+@22
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_ps_pio_i.chn0_buf_i.waddr[6:0]
+@28
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_ps_pio_i.chn0_buf_i.wclk[0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_ps_pio_i.chn0_buf_i.we[0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_ps_pio_i.chn0_buf_i.wpage_in[1:0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_ps_pio_i.chn0_buf_i.wpage_set[0]
+@1000200
+-PS_PIO_CHN0
 @28
 x393_testbench01.x393_i.mcntrl393_i.mcntrl_ps_pio_i.buf_rd_chn1[0]
 @22
@@ -1285,9 +1471,7 @@ x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.cmd_seq_chn[3:0]
 @28
 x393_testbench01.x393_i.mcntrl393_i.mcntrl_ps_pio_i.seq_done0[0]
 x393_testbench01.x393_i.mcntrl393_i.mcntrl_ps_pio_i.seq_done1[0]
-@29
 x393_testbench01.x393_i.mcntrl393_i.mcntrl_ps_pio_i.seq_done[0]
-@28
 x393_testbench01.x393_i.mcntrl393_i.mcntrl_ps_pio_i.seq_set0[0]
 x393_testbench01.x393_i.mcntrl393_i.mcntrl_ps_pio_i.set_cmd_w[0]
 x393_testbench01.x393_i.mcntrl393_i.mcntrl_ps_pio_i.set_en_rst[0]
@@ -1295,15 +1479,21 @@ x393_testbench01.x393_i.mcntrl393_i.mcntrl_ps_pio_i.set_status_w[0]
 x393_testbench01.x393_i.mcntrl393_i.mcntrl_ps_pio_i.start[0]
 @22
 x393_testbench01.x393_i.mcntrl393_i.mcntrl_ps_pio_i.status_ad[7:0]
-@28
+@800028
 x393_testbench01.x393_i.mcntrl393_i.mcntrl_ps_pio_i.status_data[1:0]
+@28
+(0)x393_testbench01.x393_i.mcntrl393_i.mcntrl_ps_pio_i.status_data[1:0]
+(1)x393_testbench01.x393_i.mcntrl393_i.mcntrl_ps_pio_i.status_data[1:0]
+@1001200
+-group_end
+@28
 x393_testbench01.x393_i.mcntrl393_i.mcntrl_ps_pio_i.status_rq[0]
 x393_testbench01.x393_i.mcntrl393_i.mcntrl_ps_pio_i.status_start[0]
 x393_testbench01.x393_i.mcntrl393_i.mcntrl_ps_pio_i.want_rq0[0]
 x393_testbench01.x393_i.mcntrl393_i.mcntrl_ps_pio_i.want_rq1[0]
 @1000200
 -PS_PIO
-@800200
+@c00200
 -memcntrl16_0
 @28
 x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.mclk[0]
@@ -1359,6 +1549,7 @@ x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.cmd0_buf_i.we
 x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.ext_buf_rrefresh[0]
 @1000200
 -cmd0_buf
+@1401200
 -memcntrl16_0
 @c00200
 -max_0001

@@ -20,32 +20,30 @@
  *******************************************************************************/
 `timescale 1ns/1ps
 
-module  simul_axi_read(
-  input         clk,
-  input         reset,
-  input         last,      // last data word in burst
-  input         data_stb,  // data strobe (RVALID & RREADY) genearted externally
-  input  [ 9:0] raddr,     // read burst address as written by axi master, 10 significant bits [11:2], valid at rcmd 
-  input  [ 3:0] rlen,      // burst length  as written by axi master, valid at rcmd
-  input         rcmd,      // read command (address+length) strobe
-  output [ 9:0] addr_out,  // output address
-  output        burst,     // burst in progress
-  output reg    err_out);  // data last does not match predicted or FIFO over/under run
+module  simul_axi_read #(
+    parameter ADDRESS_WIDTH=10
+    )(
+  input                     clk,
+  input                     reset,
+  input                     last,      // last data word in burst
+  input                     data_stb,  // data strobe (RVALID & RREADY) genearted externally
+  input  [ADDRESS_WIDTH-1:0] raddr,     // read burst address as written by axi master, 10 significant bits [11:2], valid at rcmd 
+  input              [ 3:0] rlen,      // burst length  as written by axi master, valid at rcmd
+  input                     rcmd,      // read command (address+length) strobe
+  output [ADDRESS_WIDTH-1:0] addr_out,  // output address
+  output                    burst,     // burst in progress
+  output reg                err_out);  // data last does not match predicted or FIFO over/under run
 
-  wire   [ 9:0] raddr_fifo; // raddr after fifo
-  wire   [ 3:0] rlen_fifo;  // rlen after fifo
-  wire          fifo_valid; // fifo out valid
-//  wire          fifo_re;    // fifo read strobe
-  reg           burst_r=0;
-  reg    [ 3:0] left_plus_1;
-//  wire          start_burst=fifo_valid && (!burst_r || (last && data_stb));
-//  wire          start_burst=fifo_valid && data_stb && (!burst_r || last );
-  wire          start_burst=fifo_valid && data_stb && !burst_r;
-  wire          generated_last= burst?(left_plus_1==1): ( fifo_valid && (rlen_fifo==0)) ;
-  wire          fifo_in_rdy;
-  wire          error_w= (data_stb && (last != generated_last)) || (rcmd && !fifo_in_rdy) || (start_burst && !fifo_valid);
-  reg    [ 9:0] adr_out_r;
-//  reg           was_last;
+  wire   [ADDRESS_WIDTH-1:0] raddr_fifo; // raddr after fifo
+  wire               [ 3:0] rlen_fifo;  // rlen after fifo
+  wire                      fifo_valid; // fifo out valid
+  reg                       burst_r=0;
+  reg                [ 3:0] left_plus_1;
+  wire                      start_burst=fifo_valid && data_stb && !burst_r;
+  wire                      generated_last= burst?(left_plus_1==1): ( fifo_valid && (rlen_fifo==0)) ;
+  wire                      fifo_in_rdy;
+  wire                      error_w= (data_stb && (last != generated_last)) || (rcmd && !fifo_in_rdy) || (start_burst && !fifo_valid);
+  reg    [ADDRESS_WIDTH-1:0] adr_out_r;
 
   assign  burst=burst_r || start_burst;
   assign  addr_out=start_burst?raddr_fifo:adr_out_r;
@@ -70,7 +68,7 @@ module  simul_axi_read(
   end
 simul_fifo
 #(
-  .WIDTH(14),
+  .WIDTH(ADDRESS_WIDTH+4),
   .DEPTH(64)
 )simmul_fifo_i(
      .clk(clk),
