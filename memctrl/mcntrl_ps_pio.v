@@ -57,30 +57,30 @@ module  mcntrl_ps_pio#(
     output reg                   need_rq0,
     input                        channel_pgm_en0, 
     output               [9:0]   seq_data0, // only address 
-//    output                       seq_wr0, // never generated
     output                       seq_set0,
     input                        seq_done0,
     input                        buf_wr_chn0,
     input                        buf_wpage_nxt_chn0,
-//    input                        buf_waddr_rst_chn0, 
+    input                        buf_run0, // @ negedge, use to force page nimber in the buffer (use fifo)
     input               [63:0]   buf_wdata_chn0,
 // write port 1
     output reg                   want_rq1,
     output reg                   need_rq1,
     input                        channel_pgm_en1, 
-//    output               [9:0]   seq_data1, // only address (with seq_set) connect externally to seq_data0
-//    output                       seq_wr1, // never generated
-//    output                       seq_set1, // connect externally to seq_set0
     input                        seq_done1,
     input                        rpage_nxt_chn1,
+    input                        buf_run1, // @ posedge, use to force page nimber in the buffer (use fifo)
     input                        buf_rd_chn1,
-//    input                        buf_raddr_rst_chn1, 
     output              [63:0]   buf_rdata_chn1 
 );
- localparam CMD_WIDTH=14;
+ localparam CMD_WIDTH=15;
  localparam CMD_FIFO_DEPTH=4;
+ localparam PAGE_FIFO_DEPTH  = 4;// fifo depth to hold page numbers for channels (2 bits should be OK now)
+ localparam PAGE_CNTR_BITS = 4;
+ 
  wire                     channel_pgm_en=channel_pgm_en0 || channel_pgm_en1;
  wire                     seq_done= seq_done0 || seq_done1;
+ reg [PAGE_CNTR_BITS-1:0] pending_pages; 
 
 
  wire               [4:0] cmd_a; // just to compare
@@ -99,30 +99,52 @@ module  mcntrl_ps_pio#(
  reg                [1:0] en_reset;//
  wire                     chn_rst = ~en_reset[0]; // resets command, including fifo;
  wire                     chn_en = &en_reset[1];   // enable requests by channle (continue ones in progress)
- reg                      mem_run;              // sequencer pgm granted and set, waiting/executing memory transfer to/from buffur 0/1
+// reg                      mem_run;              // sequencer pgm granted and set, waiting/executing memory transfer to/from buffur 0/1
  wire                     busy;
+ wire                     short_busy; // does not include memory transaction
  wire                     start;
- reg                [1:0] page;
+ //reg                [1:0] page;
  reg                [1:0] page_neg;
  reg                [1:0] cmd_set_d;
- reg                      cmd_set_d_neg;
-// reg                      chn_run; // running memory access to channel 0/1
 // command bit fields
  wire               [9:0] cmd_seq_a= cmd_out[9:0];
  wire               [1:0] cmd_page=  cmd_out[11:10];
  wire                     cmd_need=  cmd_out[12];
  wire                     cmd_chn=   cmd_out[13];
+ wire                     cmd_wait=  cmd_out[14]; // wait cmd finished before proceeding
  reg                      cmd_set;
+ reg                      cmd_wait_r;
  
- assign busy= want_rq0 || need_rq0 ||want_rq1 || need_rq1 || mem_run;
- assign start= chn_en && !busy && cmd_nempty;
+ reg                      channel_pgm_en0_neg;
+ wire               [1:0] page_out_chn0;
+ wire               [1:0] page_out_chn1;
+ reg                      nreset_page_fifo;
+ reg                      nreset_page_fifo_neg;
+// wire                     page_fifo0_nempty_neg;
+// wire                     page_fifo1_nempty;
+// reg                      page_fifo0_nempty;
+ 
+ assign short_busy= want_rq0 || need_rq0 ||want_rq1 || need_rq1 || cmd_set; // cmd_set - advance FIFO
+ assign busy= short_busy || (pending_pages != 0); //  mem_run;
+ assign start= chn_en && !short_busy && cmd_nempty && ((pending_pages == 0) || !cmd_wait_r); //(!mem_run || !cmd_wait_r); // do not wait memory transaction if wait 
  assign seq_data0= cmd_seq_a;
  assign seq_set0=cmd_set;
  assign status_data=   {cmd_half_full,cmd_nempty | busy};
  assign set_cmd_w =    cmd_we && (cmd_a== MCNTRL_PS_CMD);
  assign set_status_w = cmd_we && (cmd_a== MCNTRL_PS_STATUS_CNTRL);
  assign set_en_rst =   cmd_we && (cmd_a== MCNTRL_PS_EN_RST);
+ //PAGE_CNTR_BITS
     always @ (posedge rst or posedge mclk) begin
+    
+        if      (rst)                   pending_pages <= 0;
+        else if (chn_rst)               pending_pages <= 0;
+        else if ( cmd_set && !seq_done) pending_pages <= pending_pages + 1;
+        else if (!cmd_set &&  seq_done) pending_pages <= pending_pages - 1;
+        
+        if (rst) nreset_page_fifo <= 0;
+        else     nreset_page_fifo <= cmd_nempty | busy;
+        if      (rst)            cmd_wait_r <= 0;
+        else if (channel_pgm_en) cmd_wait_r <= cmd_wait;
         if (rst) en_reset <= 0;
         else if (set_en_rst) en_reset <= cmd_data[1:0];
         
@@ -143,27 +165,28 @@ module  mcntrl_ps_pio#(
             need_rq1 <= cmd_chn && cmd_need;
         end
         
-        if (rst)                      mem_run <=0;
-        else if (chn_rst || seq_done) mem_run <=0;
-        else if (channel_pgm_en)      mem_run <=1;
+//        if (rst)                      mem_run <=0;
+//        else if (chn_rst || seq_done) mem_run <=0;
+//        else if (channel_pgm_en)      mem_run <=1;
         
         if (rst)          cmd_set <= 0;
         else if (chn_rst) cmd_set <= 0;
         else              cmd_set <= channel_pgm_en;
         
- //       if (rst)          chn_run <= 0;
- //       else if (cmd_set) chn_run <= cmd_chn;
-        
-        if (rst)          page <= 0;
-        else if (cmd_set) page <= cmd_page;
         
         if (rst)          cmd_set_d <= 0;
-        else              cmd_set_d <= {cmd_set_d[0],cmd_set};
+        else              cmd_set_d <= {cmd_set_d[0],cmd_set& ~cmd_chn}; // only for channel0 (memory read)
+        
+//        if (rst)          page_fifo0_nempty <= 0;
+//        else              page_fifo0_nempty <=page_fifo0_nempty_neg;
+        
     end
     
     always @ (negedge mclk) begin
-        page_neg <= page;
-        cmd_set_d_neg <= cmd_set_d[1];
+        page_neg <= cmd_page; // page;
+//        wpage_set_chn0_neg <= cmd_set_d[1];
+        nreset_page_fifo_neg <= nreset_page_fifo;
+        channel_pgm_en0_neg <= channel_pgm_en0;
     end 
     
     cmd_deser #(
@@ -228,8 +251,8 @@ fifo_same_clock   #(
         .ext_regen    (port0_regen), // input
         .ext_data_out (port0_data), // output[31:0] 
         .wclk         (!mclk), // input
-        .wpage_in     (page_neg), // input[1:0] 
-        .wpage_set    (cmd_set_d_neg), // input 
+        .wpage_in     (page_out_chn0), // page_neg), // input[1:0] 
+        .wpage_set    (buf_run0), //wpage_set_chn0_neg), // input 
         .page_next    (buf_wpage_nxt_chn0), // input
         .page         (), // output[1:0]
         .we           (buf_wr_chn0), // input
@@ -243,12 +266,41 @@ fifo_same_clock   #(
         .ext_we       (port1_we), // input
         .ext_data_in  (port1_data), // input[31:0] buf_wdata - from AXI
         .rclk         (mclk), // input
-        .rpage_in     (page), // input[1:0] 
-        .rpage_set    (cmd_set_d[0]), // input 
+        .rpage_in     (page_out_chn1), //page), // input[1:0] 
+        .rpage_set    (buf_run1), // rpage_set_chn1), // input 
         .page_next    (rpage_nxt_chn1), // input
         .page         (), // output[1:0]
         .rd           (buf_rd_chn1), // input
         .data_out     (buf_rdata_chn1) // output[63:0] 
+    );
+fifo_same_clock   #(
+    .DATA_WIDTH(2),
+    .DATA_DEPTH(PAGE_FIFO_DEPTH) 
+    ) page_fifo0_i (
+        .rst       (rst),
+        .clk       (!mclk), // negedge
+        .sync_rst  (!nreset_page_fifo_neg), // synchronously reset fifo;
+        .we        (channel_pgm_en0_neg),
+        .re        (buf_run0),
+        .data_in   (page_neg),
+        .data_out  (page_out_chn0),
+        .nempty    (), //page_fifo0_nempty_neg),
+        .half_full ()
+    );
+
+fifo_same_clock   #(
+    .DATA_WIDTH(2),
+    .DATA_DEPTH(PAGE_FIFO_DEPTH) 
+    ) page_fifo1_i (
+        .rst       (rst),
+        .clk       (mclk), // posedge
+        .sync_rst  (!nreset_page_fifo), // synchronously reset fifo;
+        .we        (channel_pgm_en1),
+        .re        (buf_run1),
+        .data_in   (cmd_page), //page),
+        .data_out  (page_out_chn1),
+        .nempty    (), //page_fifo1_nempty),
+        .half_full ()
     );
     
     

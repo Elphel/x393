@@ -27,6 +27,7 @@
 `define TEST_READ_PATTERN 1
 `define TEST_WRITE_BLOCK 1
 `define TEST_READ_BLOCK 1
+`define PS_PIO_WAIT_COMPLETE 0
 
 module  x393_testbench01 #(
 `include "includes/x393_parameters.vh"
@@ -244,7 +245,9 @@ always #(CLKIN_PERIOD/2) CLK <= ~CLK;
                         INITIALIZE_OFFSET, // input [9:0] seq_addr; // sequence start address
                         0,                 // input [1:0] page;     // buffer page number
                         0,                 // input       urgent;   // high priority request (only for competion with other channels, wiil not pass in this FIFO)
-                        0);                // input       chn;      // channel buffer to use: 0 - memory read, 1 - memory write
+                        0,                // input       chn;      // channel buffer to use: 0 - memory read, 1 - memory write
+                        `PS_PIO_WAIT_COMPLETE );//  wait_complete; // Do not request a newe transaction from the scheduler until previous memory transaction is finished
+                        
    
 `ifdef WAIT_MRS 
     wait_ps_pio_done(DEFAULT_STATUS_MODE);
@@ -264,7 +267,9 @@ always #(CLKIN_PERIOD/2) CLK <= ~CLK;
                         WRITELEV_OFFSET,   // input [9:0] seq_addr; // sequence start address
                         0,                 // input [1:0] page;     // buffer page number
                         0,                 // input       urgent;   // high priority request (only for competion with other channels, wiil not pass in this FIFO)
-                        0);                // input       chn;      // channel buffer to use: 0 - memory read, 1 - memory write
+                        0,                // input       chn;      // channel buffer to use: 0 - memory read, 1 - memory write
+                        `PS_PIO_WAIT_COMPLETE );//  wait_complete; // Do not request a newe transaction from the scheduler until previous memory transaction is finished
+                        
         wait_ps_pio_done(DEFAULT_STATUS_MODE); // wait previous memory transaction finished before changing delays (effective immediately)
         read_block_buf_chn (0, 0, 32, 1 ); // chn=0, page=0, number of 32-bit words=32, wait_done
 //        @ (negedge rstb);
@@ -273,7 +278,8 @@ always #(CLKIN_PERIOD/2) CLK <= ~CLK;
                         WRITELEV_OFFSET,   // input [9:0] seq_addr; // sequence start address
                         1,                 // input [1:0] page;     // buffer page number
                         0,                 // input       urgent;   // high priority request (only for competion with other channels, wiil not pass in this FIFO)
-                        0);                // input       chn;      // channel buffer to use: 0 - memory read, 1 - memory write
+                        0,                // input       chn;      // channel buffer to use: 0 - memory read, 1 - memory write
+                        `PS_PIO_WAIT_COMPLETE );//  wait_complete; // Do not request a newe transaction from the scheduler until previous memory transaction is finished
         wait_ps_pio_done(DEFAULT_STATUS_MODE); // wait previous memory transaction finished before changing delays (effective immediately)
         read_block_buf_chn (0, 1, 32, 1 ); // chn=0, page=1, number of 32-bit words=32, wait_done
 //    task wait_read_queue_empty; - alternative way to check fo empty read queue
@@ -289,7 +295,8 @@ always #(CLKIN_PERIOD/2) CLK <= ~CLK;
                         READ_PATTERN_OFFSET,   // input [9:0] seq_addr; // sequence start address
                         2,                     // input [1:0] page;     // buffer page number
                         0,                     // input       urgent;   // high priority request (only for competion with other channels, wiil not pass in this FIFO)
-                        0);                    // input       chn;      // channel buffer to use: 0 - memory read, 1 - memory write
+                        0,                    // input       chn;      // channel buffer to use: 0 - memory read, 1 - memory write
+                        `PS_PIO_WAIT_COMPLETE );//  wait_complete; // Do not request a newe transaction from the scheduler until previous memory transaction is finished
         wait_ps_pio_done(DEFAULT_STATUS_MODE); // wait previous memory transaction finished before changing delays (effective immediately)
         read_block_buf_chn (0, 2, 32, 1 ); // chn=0, page=2, number of 32-bit words=32, wait_done
 `endif
@@ -299,9 +306,10 @@ always #(CLKIN_PERIOD/2) CLK <= ~CLK;
                         WRITE_BLOCK_OFFSET,    // input [9:0] seq_addr; // sequence start address
                         0,                     // input [1:0] page;     // buffer page number
                         0,                     // input       urgent;   // high priority request (only for competion with other channels, wiil not pass in this FIFO)
-                        1);                    // input       chn;      // channel buffer to use: 0 - memory read, 1 - memory write
+                        1,                    // input       chn;      // channel buffer to use: 0 - memory read, 1 - memory write
+                        `PS_PIO_WAIT_COMPLETE );//  wait_complete; // Do not request a newe transaction from the scheduler until previous memory transaction is finished
 // tempoary - for debugging:
-        wait_ps_pio_done(DEFAULT_STATUS_MODE); // wait previous memory transaction finished before changing delays (effective immediately)
+//        wait_ps_pio_done(DEFAULT_STATUS_MODE); // wait previous memory transaction finished before changing delays (effective immediately)
 
 `endif
 `ifdef TEST_READ_BLOCK
@@ -309,7 +317,20 @@ always #(CLKIN_PERIOD/2) CLK <= ~CLK;
                         READ_BLOCK_OFFSET,   // input [9:0] seq_addr; // sequence start address
                         3,                     // input [1:0] page;     // buffer page number
                         0,                     // input       urgent;   // high priority request (only for competion with other channels, wiil not pass in this FIFO)
-                        0);                    // input       chn;      // channel buffer to use: 0 - memory read, 1 - memory write
+                        0,                    // input       chn;      // channel buffer to use: 0 - memory read, 1 - memory write
+                        `PS_PIO_WAIT_COMPLETE );//  wait_complete; // Do not request a newe transaction from the scheduler until previous memory transaction is finished
+        schedule_ps_pio ( // shedule software-control memory operation (may need to check FIFO status first)
+                        READ_BLOCK_OFFSET,   // input [9:0] seq_addr; // sequence start address
+                        2,                     // input [1:0] page;     // buffer page number
+                        0,                     // input       urgent;   // high priority request (only for competion with other channels, wiil not pass in this FIFO)
+                        0,                    // input       chn;      // channel buffer to use: 0 - memory read, 1 - memory write
+                        `PS_PIO_WAIT_COMPLETE );//  wait_complete; // Do not request a newe transaction from the scheduler until previous memory transaction is finished
+        schedule_ps_pio ( // shedule software-control memory operation (may need to check FIFO status first)
+                        READ_BLOCK_OFFSET,   // input [9:0] seq_addr; // sequence start address
+                        1,                     // input [1:0] page;     // buffer page number
+                        0,                     // input       urgent;   // high priority request (only for competion with other channels, wiil not pass in this FIFO)
+                        0,                    // input       chn;      // channel buffer to use: 0 - memory read, 1 - memory write
+                        `PS_PIO_WAIT_COMPLETE );//  wait_complete; // Do not request a newe transaction from the scheduler until previous memory transaction is finished
         wait_ps_pio_done(DEFAULT_STATUS_MODE); // wait previous memory transaction finished before changing delays (effective immediately)
         read_block_buf_chn (0, 3, 256, 1 ); // chn=0, page=3, number of 32-bit words=256, wait_done
 `endif
@@ -1000,9 +1021,10 @@ task schedule_ps_pio; // shedule software-control memory operation (may need to 
     input [1:0] page;     // buffer page number
     input       urgent;   // high priority request (only for competion wityh other channels, wiil not pass in this FIFO)
     input       chn;      // channel buffer to use: 0 - memory read, 1 - memory write
+    input       wait_complete; // Do not request a newe transaction from the scheduler until previous memory transaction is finished
     begin
 //        wait_ps_pio_ready(DEFAULT_STATUS_MODE); // wait FIFO not half full 
-        write_contol_register(MCNTRL_PS_ADDR + MCNTRL_PS_CMD, {18'b0,chn,urgent,page,seq_addr});
+        write_contol_register(MCNTRL_PS_ADDR + MCNTRL_PS_CMD, {17'b0,wait_complete,chn,urgent,page,seq_addr});
     end
 endtask
 //MCONTR_BUF1_WR_ADDR
@@ -1042,7 +1064,7 @@ task write_block_buf;
                 4'hf, // wstrb
                 1'b0 // last
                 );
-            $display("+Write block data (addr:data): 0x%x:0x%x @%t", i, i | (((i + 7) & 'hff) << 8) | (((i + 23) & 'hff) << 16) | (((i + 31) & 'hff) << 24), $time);
+            $display("+Write block data (addr:data): 0x%x:0x%08x @%t", i, i | (((i + 7) & 'hff) << 8) | (((i + 23) & 'hff) << 16) | (((i + 31) & 'hff) << 24), $time);
             for (j = 1; j < 16; j = j + 1) begin
                 axi_write_data(
                     i,        // id
@@ -1050,7 +1072,7 @@ task write_block_buf;
                     4'hf, // wstrb
                     (1 == 15) ? 1 : 0 // last
                     );
-                $display(" Write block data (addr:data): 0x%x:0x%x @%t", (i + j),
+                $display(" Write block data (addr:data): 0x%08x:0x%x @%t", (i + j),
                     (i + j) | ((((i + j) + 7) & 'hff) << 8) | ((((i + j) + 23) & 'hff) << 16) | ((((i + j) + 31) & 'hff) << 24), $time);
             end
         end
@@ -1150,7 +1172,7 @@ task set_read_block;
         @(posedge CLK) axi_write_single_w(cmd_addr, data); cmd_addr <= cmd_addr + 1;
 // nop
         //                          skip     done        bank         ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD      B_RST
-        data <=  func_encode_skip(   0,       0,       ba[2:0],        0,  0,  1,  0,    0,    0,    1,  1,   0,        0);
+        data <=  func_encode_skip(   0,       0,       ba[2:0],        0,  0,  1,  0,    0,    0,    1,  0,   0,        0);
         @(posedge CLK) axi_write_single_w(cmd_addr, data); cmd_addr <= cmd_addr + 1;
 // tRTP = 4*tCK is already satisfied, no skip here
 // precharge, end of a page (B_RST)         

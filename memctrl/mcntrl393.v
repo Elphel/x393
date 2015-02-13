@@ -334,6 +334,7 @@ module  mcntrl393 #(
 //    wire        rpage_nxt_chn0;
     wire        buf_wr_chn0;
     wire        buf_wpage_nxt_chn0;
+    wire        buf_run0;
     wire [63:0] buf_wdata_chn0;
      
     wire        want_rq1;
@@ -341,6 +342,7 @@ module  mcntrl393 #(
     wire        channel_pgm_en1; 
     wire        seq_done1;
     wire        rpage_nxt_chn1;
+    wire        buf_run1;
     wire        buf_rd_chn1;
     wire [63:0] buf_rdata_chn1;
 
@@ -986,6 +988,7 @@ module  mcntrl393 #(
         .seq_done0                 (seq_done0), // input
         .buf_wr_chn0               (buf_wr_chn0), // input         @negedge mclk
         .buf_wpage_nxt_chn0        (buf_wpage_nxt_chn0), // input @negedge mclk
+        .buf_run0                  (buf_run0), // input
         .buf_wdata_chn0            (buf_wdata_chn0), // input[63:0]@negedge mclk
          
         .want_rq1                  (want_rq1), // output reg 
@@ -993,6 +996,7 @@ module  mcntrl393 #(
         .channel_pgm_en1           (channel_pgm_en1), // input
         .seq_done1                 (seq_done1), // input
         .rpage_nxt_chn1            (rpage_nxt_chn1), // input 
+        .buf_run1                  (buf_run1), // input
         .buf_rd_chn1               (buf_rd_chn1), // input
         .buf_rdata_chn1            (buf_rdata_chn1) // output[63:0] 
     );
@@ -1091,6 +1095,7 @@ module  mcntrl393 #(
         .seq_set0           (seq_set0), // input
         .seq_done0          (seq_done0), // output
         .rpage_nxt_chn0     (), //rpage_nxt_chn0), not used
+        .buf_run0           (buf_run0),
         .buf_wr_chn0        (buf_wr_chn0), // output
         .buf_wpage_nxt_chn0 (buf_wpage_nxt_chn0), // output
 //        .buf_waddr_chn0     (buf_waddr_chn0), // output[6:0] 
@@ -1103,7 +1108,8 @@ module  mcntrl393 #(
         .seq_wr1            (1'b0), // not used: seq_wr1), // input
         .seq_set1           (seq_set0), // seq_set0 from channel 0 (shared in ps_pio), // input
         .seq_done1          (seq_done1), // output
-        .rpage_nxt_chn1 (rpage_nxt_chn1), // output
+        .rpage_nxt_chn1     (rpage_nxt_chn1), // output
+        .buf_run1           (buf_run1),
         .buf_rd_chn1        (buf_rd_chn1), // output
         .buf_rdata_chn1     (buf_rdata_chn1), // input[63:0] 
 
@@ -1115,6 +1121,7 @@ module  mcntrl393 #(
         .seq_set2           (seq_set2x), // input
         .seq_done2          (seq_done2), // output
         .rpage_nxt_chn2     (), // not used rpage_nxt_chn2), // output
+        .buf_run2           (),
         .buf_wr_chn2        (buf_wr_chn2), // output
         .buf_wpage_nxt_chn2 (buf_wpage_nxt_chn2), // output
         .buf_wdata_chn2     (buf_wdata_chn2), // output[63:0]
@@ -1127,6 +1134,7 @@ module  mcntrl393 #(
         .seq_set3           (seq_set3x), // input
         .seq_done3          (seq_done3), // output
         .rpage_nxt_chn3     (rpage_nxt_chn3), // output 
+        .buf_run3           (),
         .buf_rd_chn3        (buf_rd_chn3), // output
         .buf_rdata_chn3     (buf_rdata_chn3), // input[63:0] 
 
@@ -1138,6 +1146,7 @@ module  mcntrl393 #(
         .seq_set4           (seq_set4x), // input
         .seq_done4          (seq_done4), // output
         .rpage_nxt_chn4     (rpage_nxt_chn4), // output 
+        .buf_run4           (),
         .buf_wr_chn4        (buf_wr_chn4), // output
         .buf_wpage_nxt_chn4 (buf_wpage_nxt_chn4), // output 
         .buf_wdata_chn4     (buf_wdata_chn4), // output[63:0]

@@ -29,11 +29,11 @@ parameter CHN_NUMBER=0
     input                       ext_buf_wpage_nxt,
     input                 [3:0] ext_buf_wchn,     // 
     input                       ext_buf_wrefresh,
+    input                       ext_buf_wrun,
     input                [63:0] ext_buf_wdata,    // valid with ext_buf_wr
-//    input                       seq_done,         // sequence done
-//    output reg                  buf_done,         // @ posedge mclk sequence done for the specified channel
     output reg                  buf_wr_chn,       // @ negedge mclk
     output reg                  buf_wpage_nxt_chn,// @ negedge mclk
+    output reg                  buf_run,          // @ negedge mclk
     output reg           [63:0] buf_wdata_chn     // @ negedge mclk
 );
     reg buf_chn_sel;
@@ -43,12 +43,10 @@ parameter CHN_NUMBER=0
         
         if (rst) buf_wr_chn <= 0;
         else     buf_wr_chn <= buf_chn_sel && ext_buf_wr;
+
+        if (rst) buf_run <= 0;
+        else     buf_run <= (ext_buf_wchn==CHN_NUMBER) && !ext_buf_wrefresh && ext_buf_wrun;
     end
-    
-//    always @ (posedge rst or posedge clk) begin
-//        if (rst) buf_done <= 0;
-//        else     buf_done <= buf_chn_sel && seq_done;
-//    end
     
     always @ (negedge clk)  begin
         buf_wpage_nxt_chn <= ext_buf_wpage_nxt && (ext_buf_wchn==CHN_NUMBER)  && !ext_buf_wrefresh;

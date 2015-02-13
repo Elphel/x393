@@ -25,7 +25,7 @@ module  mcont_common_chnbuf_reg #(
 )(
     input rst,
     input clk,
-    input                 [3:0] ext_buf_rchn,  // ==run_chn_d valid 1 cycle ahead opf ext_buf_rd!, maybe not needed - will be generated externally
+    input                 [3:0] ext_buf_rchn,  // ==run_chn_d valid 1 cycle ahead of ext_buf_rd!, maybe not needed - will be generated externally
     input                       ext_buf_rrefresh,
     input                       ext_buf_rpage_nxt,
     input                       seq_done,      // sequence done

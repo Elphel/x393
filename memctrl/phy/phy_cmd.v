@@ -255,7 +255,7 @@ module  phy_cmd#(
     assign phy_rcw_in=    ~phy_rcw_cur;
     assign phy_cmd_nop=   (phy_rcw_pos==0) && !add_pause; // ignores inserted NOP
     assign sequence_done= phy_cmd_nop && phy_addr_in[CMD_DONE_BIT];
-    assign pause_len=      phy_addr_in[CMD_PAUSE_BITS-1:0];
+    assign pause_len=      phy_addr_in[CMD_DONE_BIT]? 0: phy_addr_in[CMD_PAUSE_BITS-1:0]; // protect from non-zero length with done bit
     
     assign phy_addr_calm= (phy_cmd_nop || add_pause) ? phy_addr_prev : phy_addr_in;
     assign phy_bank_calm= (phy_cmd_nop || add_pause) ? phy_bank_prev : phy_bank_in;

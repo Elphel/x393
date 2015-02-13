@@ -27,14 +27,12 @@ module  mcont_from_chnbuf_reg #(
     input rst,
     input clk,
     input                       ext_buf_rd,
-//    input                       ext_buf_raddr_rst,
     input                 [3:0] ext_buf_rchn,  // ==run_chn_d valid 1 cycle ahead opf ext_buf_rd!, maybe not needed - will be generated externally
     input                       ext_buf_rrefresh,
-//    input                       seq_done,      // sequence done
-//    output reg                  buf_done,      // sequence done for the specified channel
+    input                       ext_buf_rrun,
     output reg           [63:0] ext_buf_rdata, // Latency of ram_1kx32w_512x64r plus 2
     output reg                  buf_rd_chn,
-//    output reg                  buf_raddr_rst_chn,
+    output reg                  buf_run,
     input                [63:0] buf_rdata_chn
 );
     reg                 buf_chn_sel;
@@ -46,6 +44,9 @@ module  mcont_from_chnbuf_reg #(
         if (rst) buf_rd_chn <= 0;
         else     buf_rd_chn <= buf_chn_sel && ext_buf_rd;
         
+        if (rst) buf_run <= 0;
+        else     buf_run <= (ext_buf_rchn==CHN_NUMBER) && !ext_buf_rrefresh && ext_buf_rrun;
+
         if (rst) latency_reg<= 0;
         else     latency_reg <= buf_rd_chn | (latency_reg << 1);
         
