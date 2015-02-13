@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.3.58 (w)1999-2014 BSI
-[*] Fri Feb 13 18:38:10 2015
+[*] Fri Feb 13 20:24:18 2015
 [*]
-[dumpfile] "/home/andrey/git/x393/simulation/x393_testbench01-20150213111425884.lxt"
-[dumpfile_mtime] "Fri Feb 13 18:19:38 2015"
-[dumpfile_size] 232662775
+[dumpfile] "/home/andrey/git/x393/simulation/x393_testbench01-20150213113832125.lxt"
+[dumpfile_mtime] "Fri Feb 13 18:43:22 2015"
+[dumpfile_size] 233070602
 [savefile] "/home/andrey/git/x393/x393_testbench01.sav"
-[timestart] 138611000
+[timestart] 97060000
 [size] 1823 1173
 [pos] 1922 0
-*-20.698502 143181875 141406879 141780000 142422500 142495000 143137500 143495000 144137500 140756879 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-23.698502 146225000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] x393_testbench01.
 [treeopen] x393_testbench01.x393_i.
 [treeopen] x393_testbench01.x393_i.mcntrl393_i.
@@ -1455,6 +1455,8 @@ x393_testbench01.x393_i.mcntrl393_i.mcntrl_ps_pio_i.chn1_buf_i.rpage_in[1:0]
 x393_testbench01.x393_i.mcntrl393_i.mcntrl_ps_pio_i.chn1_buf_i.rpage_set[0]
 @1000200
 -PS_PIO_CHN1
+@c00201
+-other_modules
 @28
 x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.ext_buf_rrun[0]
 x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.ext_buf_wrun[0]
@@ -1490,6 +1492,8 @@ x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.seq_done1[0]
 x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.seq_done0[0]
 @1001200
 -group_end
+@1401201
+-other_modules
 @200
 -
 @28

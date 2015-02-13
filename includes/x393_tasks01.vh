@@ -2,7 +2,7 @@
  * File: x393_tasks01.vh
  * Date:2015-02-07  
  * Author: andrey     
- * Description: Simulation tasks for the x393
+ * Description: Simulation tasks for the x393 (low level)
  *
  * Copyright (c) 2015 <set up in Preferences-Verilog/VHDL Editor-Templates> .
  * x393_tasks01.vh is free software; you can redistribute it and/or modify
@@ -20,6 +20,14 @@
  *******************************************************************************/
  // Low-level tasks 
 // alternative way to check for empty read queue (without a separate counter)
+     task   write_contol_register;
+        input [29:0] reg_addr;
+        input [31:0] data;
+        begin
+            axi_write_single_w(CONTROL_ADDR+reg_addr, data);
+        end
+    endtask   
+
     task wait_read_queue_empty;
         begin
         wait (~rvalid && rready && (rid==LAST_ARID)); // nothing left in read queue?   
