@@ -269,7 +269,7 @@ module  ddrc_test01_testbench #(
   reg  [ 9:0] SIMUL_AXI_ADDR;
   // SuppressWarnings VEditor
   reg         SIMUL_AXI_FULL; // some data available
-
+  wire        SIMUL_AXI_EMPTY= ~rvalid && rready && (rid==LAST_ARID); // use it to wait for?
   reg  [31:0] registered_rdata;
 
   reg        CLK;
@@ -1069,7 +1069,7 @@ simul_axi_read #(
 
     task run_read_block;
         begin
-            $display("RUN WRITE BLOCK @ %t",$time);
+            $display("RUN READ BLOCK @ %t",$time);
             run_sequence(0,READ_BLOCK_OFFSET);
         end
     endtask

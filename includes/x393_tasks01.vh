@@ -19,7 +19,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/> .
  *******************************************************************************/
  // Low-level tasks 
-
+// alternative way to check for empty read queue (without a separate counter)
+    task wait_read_queue_empty;
+        begin
+        wait (~rvalid && rready && (rid==LAST_ARID)); // nothing left in read queue?   
+        SIMUL_AXI_FULL<=1'b0;
+        end
+    endtask
     task axi_set_rd_lag;
         input [3:0] lag;
         begin

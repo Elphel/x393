@@ -86,7 +86,7 @@ module  memctrl16 #(
     parameter MCONTR_TOP_STATUS_REG_ADDR=      'h1,    // 8 or less bits: status register address to use for memory controller
     
     
-    parameter CHNBUF_READ_LATENCY =             0,     // external channel buffer extra read latency ( 0 - data available next cycle after re (but prev. data))
+    parameter CHNBUF_READ_LATENCY =             1,     // external channel buffer extra read latency ( 0 - data available next cycle after re (but prev. data))
     
     parameter DFLT_DQS_PATTERN=        8'h55,
     parameter DFLT_DQM_PATTERN=        8'h00, // 8'h00
@@ -511,7 +511,7 @@ wire rst=rst_in; // TODO: decide where toi generate
 //    wire  [6:0] ext_buf_raddr; 
     wire  [3:0] ext_buf_rchn; 
     wire        ext_buf_rrefresh; 
-    wire [63:0] ext_buf_rdata; 
+    reg  [63:0] ext_buf_rdata; 
     wire        ext_buf_wr;
     wire        ext_buf_wpage_nxt;
 //    wire  [6:0] ext_buf_waddr; 
@@ -934,8 +934,9 @@ end
     mcont_to_chnbuf_reg #(.CHN_NUMBER( 0)) mcont_to_chnbuf_reg0_i(.rst(rst),.clk(mclk),.ext_buf_wr(ext_buf_wr),.ext_buf_wpage_nxt(ext_buf_wpage_nxt),
         .ext_buf_wchn(ext_buf_wchn), .ext_buf_wrefresh(ext_buf_wrefresh),.ext_buf_wdata(ext_buf_wdata),.buf_wr_chn(buf_wr_chn0),.buf_wpage_nxt_chn(buf_wpage_nxt_chn0),.buf_wdata_chn(buf_wdata_chn0));
   `else
+    wire [63:0] ext_buf_rdata0;
     mcont_from_chnbuf_reg #(.CHN_NUMBER( 0),.CHN_LATENCY(CHNBUF_READ_LATENCY)) mcont_from_chnbuf_reg0_i (.rst(rst),.clk(mclk),.ext_buf_rd(ext_buf_rd),
-        .ext_buf_rchn(ext_buf_rchn), .ext_buf_rrefresh(ext_buf_rrefresh),.ext_buf_rdata(ext_buf_rdata),.buf_rd_chn(buf_rd_chn0),.buf_rdata_chn (buf_rdata_chn0));
+        .ext_buf_rchn(ext_buf_rchn), .ext_buf_rrefresh(ext_buf_rrefresh),.ext_buf_rdata(ext_buf_rdata0),.buf_rd_chn(buf_rd_chn0),.buf_rdata_chn (buf_rdata_chn0));
   `endif
 `endif    
 
@@ -946,8 +947,9 @@ end
     mcont_to_chnbuf_reg #(.CHN_NUMBER( 1)) mcont_to_chnbuf_reg1_i(.rst(rst),.clk(mclk),.ext_buf_wr(ext_buf_wr),.ext_buf_wpage_nxt(ext_buf_wpage_nxt),
         .ext_buf_wchn(ext_buf_wchn), .ext_buf_wrefresh(ext_buf_wrefresh),.ext_buf_wdata(ext_buf_wdata),.buf_wr_chn(buf_wr_chn1),.buf_wpage_nxt_chn(buf_wpage_nxt_chn1),.buf_wdata_chn(buf_wdata_chn1));
   `else
+    wire [63:0] ext_buf_rdata1;
     mcont_from_chnbuf_reg #(.CHN_NUMBER( 1),.CHN_LATENCY(CHNBUF_READ_LATENCY)) mcont_from_chnbuf_reg1_i (.rst(rst),.clk(mclk),.ext_buf_rd(ext_buf_rd),
-        .ext_buf_rchn(ext_buf_rchn), .ext_buf_rrefresh(ext_buf_rrefresh),.ext_buf_rdata(ext_buf_rdata),.buf_rd_chn(buf_rd_chn1),.buf_rdata_chn(buf_rdata_chn1));
+        .ext_buf_rchn(ext_buf_rchn), .ext_buf_rrefresh(ext_buf_rrefresh),.ext_buf_rdata(ext_buf_rdata1),.buf_rd_chn(buf_rd_chn1),.buf_rdata_chn(buf_rdata_chn1));
   `endif
 `endif    
 
@@ -958,8 +960,9 @@ end
     mcont_to_chnbuf_reg #(.CHN_NUMBER( 2)) mcont_to_chnbuf_reg2_i(.rst(rst),.clk(mclk),.ext_buf_wr(ext_buf_wr),.ext_buf_wpage_nxt(ext_buf_wpage_nxt),
         .ext_buf_wchn(ext_buf_wchn), .ext_buf_wrefresh(ext_buf_wrefresh),.ext_buf_wdata(ext_buf_wdata),.buf_wr_chn(buf_wr_chn2),.buf_wpage_nxt_chn(buf_wpage_nxt_chn2),.buf_wdata_chn(buf_wdata_chn2));
   `else
+    wire [63:0] ext_buf_rdata2;
     mcont_from_chnbuf_reg #(.CHN_NUMBER( 2),.CHN_LATENCY(CHNBUF_READ_LATENCY)) mcont_from_chnbuf_reg2_i (.rst(rst),.clk(mclk),.ext_buf_rd(ext_buf_rd),
-        .ext_buf_rchn(ext_buf_rchn), .ext_buf_rrefresh(ext_buf_rrefresh),.ext_buf_rdata(ext_buf_rdata),.buf_rd_chn(buf_rd_chn2),.buf_rdata_chn(buf_rdata_chn2));
+        .ext_buf_rchn(ext_buf_rchn), .ext_buf_rrefresh(ext_buf_rrefresh),.ext_buf_rdata(ext_buf_rdata2),.buf_rd_chn(buf_rd_chn2),.buf_rdata_chn(buf_rdata_chn2));
   `endif
 `endif    
 
@@ -970,8 +973,9 @@ end
     mcont_to_chnbuf_reg #(.CHN_NUMBER( 3)) mcont_to_chnbuf_reg3_i(.rst(rst),.clk(mclk),.ext_buf_wr(ext_buf_wr),.ext_buf_wpage_nxt(ext_buf_wpage_nxt),
         .ext_buf_wchn(ext_buf_wchn), .ext_buf_wrefresh(ext_buf_wrefresh),.ext_buf_wdata(ext_buf_wdata),.buf_wr_chn(buf_wr_chn3),.buf_wpage_nxt_chn(buf_wpage_nxt_chn3),.buf_wdata_chn(buf_wdata_chn3));
   `else
+    wire [63:0] ext_buf_rdata3;
     mcont_from_chnbuf_reg #(.CHN_NUMBER( 3),.CHN_LATENCY(CHNBUF_READ_LATENCY)) mcont_from_chnbuf_reg3_i (.rst(rst),.clk(mclk),.ext_buf_rd(ext_buf_rd),
-        .ext_buf_rchn(ext_buf_rchn), .ext_buf_rrefresh(ext_buf_rrefresh),.ext_buf_rdata(ext_buf_rdata),.buf_rd_chn(buf_rd_chn3),.buf_rdata_chn(buf_rdata_chn3));
+        .ext_buf_rchn(ext_buf_rchn), .ext_buf_rrefresh(ext_buf_rrefresh),.ext_buf_rdata(ext_buf_rdata3),.buf_rd_chn(buf_rd_chn3),.buf_rdata_chn(buf_rdata_chn3));
   `endif
 `endif    
 
@@ -982,8 +986,9 @@ end
     mcont_to_chnbuf_reg #(.CHN_NUMBER( 4)) mcont_to_chnbuf_reg4_i(.rst(rst),.clk(mclk),.ext_buf_wr(ext_buf_wr),.ext_buf_wpage_nxt(ext_buf_wpage_nxt),
         .ext_buf_wchn(ext_buf_wchn), .ext_buf_wrefresh(ext_buf_wrefresh),.ext_buf_wdata(ext_buf_wdata),.buf_wr_chn(buf_wr_chn4),.buf_wpage_nxt_chn(buf_wpage_nxt_chn4),.buf_wdata_chn(buf_wdata_chn4));
   `else
+    wire [63:0] ext_buf_rdata4;
     mcont_from_chnbuf_reg #(.CHN_NUMBER( 4),.CHN_LATENCY(CHNBUF_READ_LATENCY)) mcont_from_chnbuf_reg4_i (.rst(rst),.clk(mclk),.ext_buf_rd(ext_buf_rd),
-        .ext_buf_rchn(ext_buf_rchn), .ext_buf_rrefresh(ext_buf_rrefresh),.ext_buf_rdata(ext_buf_rdata),.buf_rd_chn(buf_rd_chn4),.buf_rdata_chn(buf_rdata_chn4));
+        .ext_buf_rchn(ext_buf_rchn), .ext_buf_rrefresh(ext_buf_rrefresh),.ext_buf_rdata(ext_buf_rdata4),.buf_rd_chn(buf_rd_chn4),.buf_rdata_chn(buf_rdata_chn4));
   `endif
 `endif    
 
@@ -994,8 +999,9 @@ end
     mcont_to_chnbuf_reg #(.CHN_NUMBER( 5)) mcont_to_chnbuf_reg5_i(.rst(rst),.clk(mclk),.ext_buf_wr(ext_buf_wr),.ext_buf_wpage_nxt(ext_buf_wpage_nxt),
         .ext_buf_wchn(ext_buf_wchn), .ext_buf_wrefresh(ext_buf_wrefresh),.ext_buf_wdata(ext_buf_wdata),.buf_wr_chn(buf_wr_chn5),.buf_wpage_nxt_chn(buf_wpage_nxt_chn5),.buf_wdata_chn(buf_wdata_chn5));
   `else
+    wire [63:0] ext_buf_rdata5;
     mcont_from_chnbuf_reg #(.CHN_NUMBER( 5),.CHN_LATENCY(CHNBUF_READ_LATENCY)) mcont_from_chnbuf_reg5_i (.rst(rst),.clk(mclk),.ext_buf_rd(ext_buf_rd),
-        .ext_buf_rchn(ext_buf_rchn), .ext_buf_rrefresh(ext_buf_rrefresh),.ext_buf_rdata(ext_buf_rdata),.buf_rd_chn(buf_rd_chn5),.buf_rdata_chn(buf_rdata_chn5));
+        .ext_buf_rchn(ext_buf_rchn), .ext_buf_rrefresh(ext_buf_rrefresh),.ext_buf_rdata(ext_buf_rdata5),.buf_rd_chn(buf_rd_chn5),.buf_rdata_chn(buf_rdata_chn5));
   `endif
 `endif    
 
@@ -1006,8 +1012,9 @@ end
     mcont_to_chnbuf_reg #(.CHN_NUMBER( 6)) mcont_to_chnbuf_reg6_i(.rst(rst),.clk(mclk),.ext_buf_wr(ext_buf_wr),.ext_buf_wpage_nxt(ext_buf_wpage_nxt),
         .ext_buf_wchn(ext_buf_wchn), .ext_buf_wrefresh(ext_buf_wrefresh),.ext_buf_wdata(ext_buf_wdata),.buf_wr_chn(buf_wr_chn6),.buf_wpage_nxt_chn(buf_wpage_nxt_chn6),.buf_wdata_chn(buf_wdata_chn6));
   `else
+    wire [63:0] ext_buf_rdata6;
     mcont_from_chnbuf_reg #(.CHN_NUMBER( 6),.CHN_LATENCY(CHNBUF_READ_LATENCY)) mcont_from_chnbuf_reg6_i (.rst(rst),.clk(mclk),.ext_buf_rd(ext_buf_rd),
-        .ext_buf_rchn(ext_buf_rchn), .ext_buf_rrefresh(ext_buf_rrefresh),.ext_buf_rdata(ext_buf_rdata),.buf_rd_chn(buf_rd_chn6),.buf_rdata_chn(buf_rdata_chn6));
+        .ext_buf_rchn(ext_buf_rchn), .ext_buf_rrefresh(ext_buf_rrefresh),.ext_buf_rdata(ext_buf_rdata6),.buf_rd_chn(buf_rd_chn6),.buf_rdata_chn(buf_rdata_chn6));
   `endif
 `endif    
 
@@ -1018,8 +1025,9 @@ end
     mcont_to_chnbuf_reg #(.CHN_NUMBER( 7)) mcont_to_chnbuf_reg7_i(.rst(rst),.clk(mclk),.ext_buf_wr(ext_buf_wr),.ext_buf_wpage_nxt(ext_buf_wpage_nxt),
         .ext_buf_wchn(ext_buf_wchn), .ext_buf_wrefresh(ext_buf_wrefresh),.ext_buf_wdata(ext_buf_wdata),.buf_wr_chn(buf_wr_chn7),.buf_wpage_nxt_chn(buf_wpage_nxt_chn7),.buf_wdata_chn(buf_wdata_chn7));
   `else
+    wire [63:0] ext_buf_rdata7;
     mcont_from_chnbuf_reg #(.CHN_NUMBER( 7),.CHN_LATENCY(CHNBUF_READ_LATENCY)) mcont_from_chnbuf_reg7_i (.rst(rst),.clk(mclk),.ext_buf_rd(ext_buf_rd),
-        .ext_buf_rchn(ext_buf_rchn), .ext_buf_rrefresh(ext_buf_rrefresh),.ext_buf_rdata(ext_buf_rdata),.buf_rd_chn(buf_rd_chn7),.buf_rdata_chn(buf_rdata_chn7));
+        .ext_buf_rchn(ext_buf_rchn), .ext_buf_rrefresh(ext_buf_rrefresh),.ext_buf_rdata(ext_buf_rdata7),.buf_rd_chn(buf_rd_chn7),.buf_rdata_chn(buf_rdata_chn7));
   `endif
 `endif    
 
@@ -1030,8 +1038,9 @@ end
     mcont_to_chnbuf_reg #(.CHN_NUMBER( 8)) mcont_to_chnbuf_reg8_i(.rst(rst),.clk(mclk),.ext_buf_wr(ext_buf_wr),.ext_buf_wpage_nxt(ext_buf_wpage_nxt),
         .ext_buf_wchn(ext_buf_wchn), .ext_buf_wrefresh(ext_buf_wrefresh),.ext_buf_wdata(ext_buf_wdata),.buf_wr_chn(buf_wr_chn8),.buf_wpage_nxt_chn(buf_wpage_nxt_chn8),.buf_wdata_chn(buf_wdata_chn8));
   `else
+    wire [63:0] ext_buf_rdata8;
     mcont_from_chnbuf_reg #(.CHN_NUMBER( 8),.CHN_LATENCY(CHNBUF_READ_LATENCY)) mcont_from_chnbuf_reg8_i (.rst(rst),.clk(mclk),.ext_buf_rd(ext_buf_rd),
-        .ext_buf_rchn(ext_buf_rchn), .ext_buf_rrefresh(ext_buf_rrefresh),.ext_buf_rdata(ext_buf_rdata),.buf_rd_chn(buf_rd_chn8),.buf_rdata_chn(buf_rdata_chn8));
+        .ext_buf_rchn(ext_buf_rchn), .ext_buf_rrefresh(ext_buf_rrefresh),.ext_buf_rdata(ext_buf_rdata8),.buf_rd_chn(buf_rd_chn8),.buf_rdata_chn(buf_rdata_chn8));
   `endif
 `endif    
 
@@ -1042,8 +1051,9 @@ end
     mcont_to_chnbuf_reg #(.CHN_NUMBER( 9)) mcont_to_chnbuf_reg9_i(.rst(rst),.clk(mclk),.ext_buf_wr(ext_buf_wr),.ext_buf_wpage_nxt(ext_buf_wpage_nxt),
         .ext_buf_wchn(ext_buf_wchn), .ext_buf_wrefresh(ext_buf_wrefresh),.ext_buf_wdata(ext_buf_wdata),.buf_wr_chn(buf_wr_chn9),.buf_wpage_nxt_chn(buf_wpage_nxt_chn9),.buf_wdata_chn(buf_wdata_chn9));
   `else
+    wire [63:0] ext_buf_rdata9;
     mcont_from_chnbuf_reg #(.CHN_NUMBER( 9),.CHN_LATENCY(CHNBUF_READ_LATENCY)) mcont_from_chnbuf_reg9_i (.rst(rst),.clk(mclk),.ext_buf_rd(ext_buf_rd),
-        .ext_buf_rchn(ext_buf_rchn), .ext_buf_rrefresh(ext_buf_rrefresh),.ext_buf_rdata(ext_buf_rdata),.buf_rd_chn(buf_rd_chn9),.buf_rdata_chn(buf_rdata_chn9));
+        .ext_buf_rchn(ext_buf_rchn), .ext_buf_rrefresh(ext_buf_rrefresh),.ext_buf_rdata(ext_buf_rdata9),.buf_rd_chn(buf_rd_chn9),.buf_rdata_chn(buf_rdata_chn9));
   `endif
 `endif    
 
@@ -1054,8 +1064,9 @@ end
     mcont_to_chnbuf_reg #(.CHN_NUMBER( 10)) mcont_to_chnbuf_reg10_i(.rst(rst),.clk(mclk),.ext_buf_wr(ext_buf_wr),.ext_buf_wpage_nxt(ext_buf_wpage_nxt),
         .ext_buf_wchn(ext_buf_wchn), .ext_buf_wrefresh(ext_buf_wrefresh),.ext_buf_wdata(ext_buf_wdata),.buf_wr_chn(buf_wr_chn10),.buf_wpage_nxt_chn(buf_wpage_nxt_chn10),.buf_wdata_chn(buf_wdata_chn10));
   `else
+    wire [63:0] ext_buf_rdata10;
     mcont_from_chnbuf_reg #(.CHN_NUMBER( 10),.CHN_LATENCY(CHNBUF_READ_LATENCY)) mcont_from_chnbuf_reg10_i (.rst(rst),.clk(mclk),.ext_buf_rd(ext_buf_rd),
-        .ext_buf_rchn(ext_buf_rchn), .ext_buf_rrefresh(ext_buf_rrefresh),.ext_buf_rdata(ext_buf_rdata),.buf_rd_chn(buf_rd_chn10),.buf_rdata_chn(buf_rdata_chn10));
+        .ext_buf_rchn(ext_buf_rchn), .ext_buf_rrefresh(ext_buf_rrefresh),.ext_buf_rdata(ext_buf_rdata10),.buf_rd_chn(buf_rd_chn10),.buf_rdata_chn(buf_rdata_chn10));
   `endif
 `endif    
 
@@ -1066,8 +1077,9 @@ end
     mcont_to_chnbuf_reg #(.CHN_NUMBER( 11)) mcont_to_chnbuf_reg11_i(.rst(rst),.clk(mclk),.ext_buf_wr(ext_buf_wr),.ext_buf_wpage_nxt(ext_buf_wpage_nxt),
         .ext_buf_wchn(ext_buf_wchn), .ext_buf_wrefresh(ext_buf_wrefresh),.ext_buf_wdata(ext_buf_wdata),.buf_wr_chn(buf_wr_chn11),.buf_wpage_nxt_chn(buf_wpage_nxt_chn11),.buf_wdata_chn(buf_wdata_chn11));
   `else
+    wire [63:0] ext_buf_rdata11;
     mcont_from_chnbuf_reg #(.CHN_NUMBER( 11),.CHN_LATENCY(CHNBUF_READ_LATENCY)) mcont_from_chnbuf_reg11_i (.rst(rst),.clk(mclk),.ext_buf_rd(ext_buf_rd),
-        .ext_buf_rchn(ext_buf_rchn), .ext_buf_rrefresh(ext_buf_rrefresh),.ext_buf_rdata(ext_buf_rdata),.buf_rd_chn(buf_rd_chn11),.buf_rdata_chn(buf_rdata_chn11));
+        .ext_buf_rchn(ext_buf_rchn), .ext_buf_rrefresh(ext_buf_rrefresh),.ext_buf_rdata(ext_buf_rdata11),.buf_rd_chn(buf_rd_chn11),.buf_rdata_chn(buf_rdata_chn11));
   `endif
 `endif    
 
@@ -1078,8 +1090,9 @@ end
     mcont_to_chnbuf_reg #(.CHN_NUMBER( 12)) mcont_to_chnbuf_reg12_i(.rst(rst),.clk(mclk),.ext_buf_wr(ext_buf_wr),.ext_buf_wpage_nxt(ext_buf_wpage_nxt),
         .ext_buf_wchn(ext_buf_wchn), .ext_buf_wrefresh(ext_buf_wrefresh),.ext_buf_wdata(ext_buf_wdata),.buf_wr_chn(buf_wr_chn12),.buf_wpage_nxt_chn(buf_wpage_nxt_chn12),.buf_wdata_chn(buf_wdata_chn12));
   `else
+    wire [63:0] ext_buf_rdata12;
     mcont_from_chnbuf_reg #(.CHN_NUMBER( 12),.CHN_LATENCY(CHNBUF_READ_LATENCY)) mcont_from_chnbuf_reg12_i (.rst(rst),.clk(mclk),.ext_buf_rd(ext_buf_rd),
-        .ext_buf_rchn(ext_buf_rchn), .ext_buf_rrefresh(ext_buf_rrefresh),.ext_buf_rdata(ext_buf_rdata),.buf_rd_chn(buf_rd_chn12),.buf_rdata_chn(buf_rdata_chn12));
+        .ext_buf_rchn(ext_buf_rchn), .ext_buf_rrefresh(ext_buf_rrefresh),.ext_buf_rdata(ext_buf_rdata12),.buf_rd_chn(buf_rd_chn12),.buf_rdata_chn(buf_rdata_chn12));
   `endif
 `endif    
 
@@ -1090,8 +1103,9 @@ end
     mcont_to_chnbuf_reg #(.CHN_NUMBER( 13)) mcont_to_chnbuf_reg13_i(.rst(rst),.clk(mclk),.ext_buf_wr(ext_buf_wr),.ext_buf_wpage_nxt(ext_buf_wpage_nxt),
         .ext_buf_wchn(ext_buf_wchn), .ext_buf_wrefresh(ext_buf_wrefresh),.ext_buf_wdata(ext_buf_wdata),.buf_wr_chn(buf_wr_chn13),.buf_wpage_nxt_chn(buf_wpage_nxt_chn13),.buf_wdata_chn(buf_wdata_chn13));
   `else
+    wire [63:0] ext_buf_rdata13;
     mcont_from_chnbuf_reg #(.CHN_NUMBER( 13),.CHN_LATENCY(CHNBUF_READ_LATENCY)) mcont_from_chnbuf_reg13_i (.rst(rst),.clk(mclk),.ext_buf_rd(ext_buf_rd),
-        .ext_buf_rchn(ext_buf_rchn), .ext_buf_rrefresh(ext_buf_rrefresh),.ext_buf_rdata(ext_buf_rdata),.buf_rd_chn(buf_rd_chn13),.buf_rdata_chn(buf_rdata_chn13));
+        .ext_buf_rchn(ext_buf_rchn), .ext_buf_rrefresh(ext_buf_rrefresh),.ext_buf_rdata(ext_buf_rdata13),.buf_rd_chn(buf_rd_chn13),.buf_rdata_chn(buf_rdata_chn13));
   `endif
 `endif    
 
@@ -1102,8 +1116,9 @@ end
     mcont_to_chnbuf_reg #(.CHN_NUMBER( 14)) mcont_to_chnbuf_reg14_i(.rst(rst),.clk(mclk),.ext_buf_wr(ext_buf_wr),.ext_buf_wpage_nxt(ext_buf_wpage_nxt),
         .ext_buf_wchn(ext_buf_wchn), .ext_buf_wrefresh(ext_buf_wrefresh),.ext_buf_wdata(ext_buf_wdata),.buf_wr_chn(buf_wr_chn14),.buf_wpage_nxt_chn(buf_wpage_nxt_chn14),.buf_wdata_chn(buf_wdata_chn14));
   `else
+    wire [63:0] ext_buf_rdata14;
     mcont_from_chnbuf_reg #(.CHN_NUMBER( 14),.CHN_LATENCY(CHNBUF_READ_LATENCY)) mcont_from_chnbuf_reg14_i (.rst(rst),.clk(mclk),.ext_buf_rd(ext_buf_rd),
-        .ext_buf_rchn(ext_buf_rchn), .ext_buf_rrefresh(ext_buf_rrefresh),.ext_buf_rdata(ext_buf_rdata),.buf_rd_chn(buf_rd_chn14),.buf_rdata_chn(buf_rdata_chn14));
+        .ext_buf_rchn(ext_buf_rchn), .ext_buf_rrefresh(ext_buf_rrefresh),.ext_buf_rdata(ext_buf_rdata14),.buf_rd_chn(buf_rd_chn14),.buf_rdata_chn(buf_rdata_chn14));
   `endif
 `endif    
 
@@ -1114,10 +1129,111 @@ end
     mcont_to_chnbuf_reg #(.CHN_NUMBER( 15)) mcont_to_chnbuf_reg15_i(.rst(rst),.clk(mclk),.ext_buf_wr(ext_buf_wr),.ext_buf_wpage_nxt(ext_buf_wpage_nxt),
         .ext_buf_wchn(ext_buf_wchn), .ext_buf_wrefresh(ext_buf_wrefresh),.ext_buf_wdata(ext_buf_wdata),.buf_wr_chn(buf_wr_chn15),.buf_wpage_nxt_chn(buf_wpage_nxt_chn15),.buf_wdata_chn(buf_wdata_chn15));
   `else
+    wire [63:0] ext_buf_rdata15;
     mcont_from_chnbuf_reg #(.CHN_NUMBER( 15),.CHN_LATENCY(CHNBUF_READ_LATENCY)) mcont_from_chnbuf_reg15_i (.rst(rst),.clk(mclk),.ext_buf_rd(ext_buf_rd),
-        .ext_buf_rchn(ext_buf_rchn), .ext_buf_rrefresh(ext_buf_rrefresh),.ext_buf_rdata(ext_buf_rdata),.buf_rd_chn(buf_rd_chn15),.buf_rdata_chn(buf_rdata_chn15));
+        .ext_buf_rchn(ext_buf_rchn), .ext_buf_rrefresh(ext_buf_rrefresh),.ext_buf_rdata(ext_buf_rdata15),.buf_rd_chn(buf_rd_chn15),.buf_rdata_chn(buf_rdata_chn15));
+  `endif
+`endif
+
+/// Combine read data from multiple channel buffers
+wire [3:0] ext_buf_rchn_late;
+wire       ext_buf_rd_late; 
+localparam [3:0] EXT_READ_LATENCY=CHNBUF_READ_LATENCY+1;
+    dly_16 #(
+        .WIDTH(5)
+    ) dly_16_i (
+        .clk(mclk), // input
+        .rst(rst), // input
+        .dly(EXT_READ_LATENCY), // input[3:0] 
+        .din({~ext_buf_rrefresh & ext_buf_rd,ext_buf_rchn}), // input[0:0] 
+        .dout({ext_buf_rd_late,ext_buf_rchn_late}) // output[0:0] 
+    );
+always @ (posedge mclk) if (ext_buf_rd_late) begin
+    case (ext_buf_rchn_late)
+`ifdef def_enable_mem_chn0
+  `ifndef def_read_mem_chn0
+        4'h0:ext_buf_rdata <= ext_buf_rdata0;
   `endif
 `endif    
+`ifdef def_enable_mem_chn1
+  `ifndef def_read_mem_chn1
+        4'h1:ext_buf_rdata <= ext_buf_rdata1;
+  `endif
+`endif    
+`ifdef def_enable_mem_chn2
+  `ifndef def_read_mem_chn2
+        4'h2:ext_buf_rdata <= ext_buf_rdata2;
+  `endif
+`endif    
+`ifdef def_enable_mem_chn3
+  `ifndef def_read_mem_chn3
+        4'h3:ext_buf_rdata <= ext_buf_rdata3;
+  `endif
+`endif    
+`ifdef def_enable_mem_chn4
+  `ifndef def_read_mem_chn4
+        4'h4:ext_buf_rdata <= ext_buf_rdata4;
+  `endif
+`endif    
+`ifdef def_enable_mem_chn5
+  `ifndef def_read_mem_chn5
+        4'h5:ext_buf_rdata <= ext_buf_rdata5;
+  `endif
+`endif    
+`ifdef def_enable_mem_chn6
+  `ifndef def_read_mem_chn6
+        4'h6:ext_buf_rdata <= ext_buf_rdata6;
+  `endif
+`endif    
+`ifdef def_enable_mem_chn7
+  `ifndef def_read_mem_chn7
+        4'h7:ext_buf_rdata <= ext_buf_rdata7;
+  `endif
+`endif    
+`ifdef def_enable_mem_chn8
+  `ifndef def_read_mem_chn8
+        4'h8:ext_buf_rdata <= ext_buf_rdata8;
+  `endif
+`endif    
+`ifdef def_enable_mem_chn9
+  `ifndef def_read_mem_chn9
+        4'h9:ext_buf_rdata <= ext_buf_rdata9;
+  `endif
+`endif    
+`ifdef def_enable_mem_chn10
+  `ifndef def_read_mem_chn10
+        4'h10:ext_buf_rdata <= ext_buf_rdata10;
+  `endif
+`endif    
+`ifdef def_enable_mem_chn11
+  `ifndef def_read_mem_chn11
+        4'h11:ext_buf_rdata <= ext_buf_rdata11;
+  `endif
+`endif    
+`ifdef def_enable_mem_chn12
+  `ifndef def_read_mem_chn12
+        4'h12:ext_buf_rdata <= ext_buf_rdata12;
+  `endif
+`endif    
+`ifdef def_enable_mem_chn13
+  `ifndef def_read_mem_chn13
+        4'h13:ext_buf_rdata <= ext_buf_rdata13;
+  `endif
+`endif    
+`ifdef def_enable_mem_chn14
+  `ifndef def_read_mem_chn14
+        4'h14:ext_buf_rdata <= ext_buf_rdata14;
+  `endif
+`endif    
+`ifdef def_enable_mem_chn15
+  `ifndef def_read_mem_chn15
+        4'h15:ext_buf_rdata <= ext_buf_rdata15;
+  `endif
+`endif    
+        default: ext_buf_rdata <= 'bx;
+    endcase
+end  
+  
 // combining channel control signals to buses
 `ifndef def_enable_mem_chn0
     wire   want_rq0=0, need_rq0=0;

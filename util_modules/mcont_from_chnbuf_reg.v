@@ -22,7 +22,7 @@
 
 module  mcont_from_chnbuf_reg #(
     parameter CHN_NUMBER=0,
-    parameter CHN_LATENCY=0 // 0 - no extra latency in extrenal BRAM - data available next cycle after re (but prev. data)
+    parameter CHN_LATENCY=1 // 0 - no extra latency in extrenal BRAM - data available next cycle after regen (1 extra from ren)
 )(
     input rst,
     input clk,

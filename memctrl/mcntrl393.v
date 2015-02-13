@@ -100,7 +100,7 @@ module  mcntrl393 #(
     parameter MCONTR_TOP_STATUS_REG_ADDR=      'h1,    // 8 or less bits: status register address to use for memory controller
     
     
-    parameter CHNBUF_READ_LATENCY =             0,     // external channel buffer extra read latency ( 0 - data available next cycle after re (but prev. data))
+    parameter CHNBUF_READ_LATENCY =             1,     // external channel buffer extra read latency ( 0 - data available next cycle after re (but prev. data))
     
     parameter DFLT_DQS_PATTERN=        8'h55,
     parameter DFLT_DQM_PATTERN=        8'h00, // 8'h00
@@ -545,7 +545,7 @@ module  mcntrl393 #(
     assign select_buf3_w = ((axiwr_pre_awaddr ^ MCONTR_BUF3_WR_ADDR) & MCONTR_WR_MASK)==0;
     assign select_buf4_w = ((axird_pre_araddr ^ MCONTR_BUF4_RD_ADDR) & MCONTR_RD_MASK)==0;
 
-    always @ (axi_rst or axi_clk) begin
+    always @ (posedge axi_rst or posedge axi_clk) begin
         if      (axi_rst)           select_cmd0 <= 0;
         else if (axiwr_start_burst) select_cmd0 <= select_cmd0_w;
         
@@ -567,7 +567,7 @@ module  mcntrl393 #(
         if      (axi_rst)           axird_selected_r <= 0;
         else if (axird_start_burst) axird_selected_r <= select_buf0_w || select_buf1_w ||select_buf2_w;
     end
-    always @ (axi_clk) begin
+    always @ (posedge axi_clk) begin
         if (axiwr_wen) buf_wdata  <= axiwr_data;
         if (axiwr_wen) buf_waddr <= axiwr_waddr;
         cmd_we <=  axiwr_wen && select_cmd0;
@@ -1101,7 +1101,7 @@ module  mcntrl393 #(
         .channel_pgm_en1    (channel_pgm_en1), // output reg 
         .seq_data1          ({22'b0,seq_data0}), // input[31:0] // same as for channel 0 
         .seq_wr1            (1'b0), // not used: seq_wr1), // input
-        .seq_set1           (1'b0), // not used: seq_set1), // input
+        .seq_set1           (seq_set0), // seq_set0 from channel 0 (shared in ps_pio), // input
         .seq_done1          (seq_done1), // output
         .rpage_nxt_chn1 (rpage_nxt_chn1), // output
         .buf_rd_chn1        (buf_rd_chn1), // output

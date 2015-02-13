@@ -24,6 +24,9 @@
 `undef WAIT_MRS
 `define SET_PER_PIN_DEALYS 1 // set individual (including per-DQ pin delays)
 `define TEST_WRITE_LEVELLING 1
+`define TEST_READ_PATTERN 1
+`define TEST_WRITE_BLOCK 1
+`define TEST_READ_BLOCK 1
 
 module  x393_testbench01 #(
 `include "includes/x393_parameters.vh"
@@ -90,7 +93,7 @@ module  x393_testbench01 #(
   reg  [SIMUL_AXI_READ_WIDTH-1:0] SIMUL_AXI_ADDR;
   // SuppressWarnings VEditor
   reg         SIMUL_AXI_FULL; // some data available
-
+  wire        SIMUL_AXI_EMPTY= ~rvalid && rready && (rid==LAST_ARID); //SuppressThisWarning VEditor : may be unused, just for simulation // use it to wait for?
   reg  [31:0] registered_rdata; // here read data from tasks goes
   // SuppressWarnings VEditor
   reg         WAITING_STATUS;   // tasks are waiting for status
@@ -177,7 +180,7 @@ module  x393_testbench01 #(
   wire        bready;
   integer     NUM_WORDS_READ;
   integer     NUM_WORDS_EXPECTED;
-  wire AXI_RD_EMPTY=NUM_WORDS_READ==NUM_WORDS_EXPECTED;
+  wire AXI_RD_EMPTY=NUM_WORDS_READ==NUM_WORDS_EXPECTED; //SuppressThisWarning VEditor : may be unused, just for simulation
 //  integer ii;
 always #(CLKIN_PERIOD/2) CLK <= ~CLK;
   initial begin
@@ -273,12 +276,43 @@ always #(CLKIN_PERIOD/2) CLK <= ~CLK;
                         0);                // input       chn;      // channel buffer to use: 0 - memory read, 1 - memory write
         wait_ps_pio_done(DEFAULT_STATUS_MODE); // wait previous memory transaction finished before changing delays (effective immediately)
         read_block_buf_chn (0, 1, 32, 1 ); // chn=0, page=1, number of 32-bit words=32, wait_done
+//    task wait_read_queue_empty; - alternative way to check fo empty read queue
+        
 //        @ (negedge rstb);
         axi_set_dqs_idelay_nominal;
-        axi_set_dqs_odelay_nominal;
+//        axi_set_dqs_odelay_nominal;
+        axi_set_dqs_odelay('h78);
         axi_set_wbuf_delay(WBUF_DLY_DFLT);
 `endif
+`ifdef TEST_READ_PATTERN
+        schedule_ps_pio ( // shedule software-control memory operation (may need to check FIFO status first)
+                        READ_PATTERN_OFFSET,   // input [9:0] seq_addr; // sequence start address
+                        2,                     // input [1:0] page;     // buffer page number
+                        0,                     // input       urgent;   // high priority request (only for competion with other channels, wiil not pass in this FIFO)
+                        0);                    // input       chn;      // channel buffer to use: 0 - memory read, 1 - memory write
+        wait_ps_pio_done(DEFAULT_STATUS_MODE); // wait previous memory transaction finished before changing delays (effective immediately)
+        read_block_buf_chn (0, 2, 32, 1 ); // chn=0, page=2, number of 32-bit words=32, wait_done
+`endif
+`ifdef TEST_WRITE_BLOCK
+//    write_block_buf_chn; // fill block memory - already set in set_up task
+        schedule_ps_pio ( // shedule software-control memory operation (may need to check FIFO status first)
+                        WRITE_BLOCK_OFFSET,    // input [9:0] seq_addr; // sequence start address
+                        0,                     // input [1:0] page;     // buffer page number
+                        0,                     // input       urgent;   // high priority request (only for competion with other channels, wiil not pass in this FIFO)
+                        1);                    // input       chn;      // channel buffer to use: 0 - memory read, 1 - memory write
+// tempoary - for debugging:
+        wait_ps_pio_done(DEFAULT_STATUS_MODE); // wait previous memory transaction finished before changing delays (effective immediately)
 
+`endif
+`ifdef TEST_READ_BLOCK
+        schedule_ps_pio ( // shedule software-control memory operation (may need to check FIFO status first)
+                        READ_BLOCK_OFFSET,   // input [9:0] seq_addr; // sequence start address
+                        3,                     // input [1:0] page;     // buffer page number
+                        0,                     // input       urgent;   // high priority request (only for competion with other channels, wiil not pass in this FIFO)
+                        0);                    // input       chn;      // channel buffer to use: 0 - memory read, 1 - memory write
+        wait_ps_pio_done(DEFAULT_STATUS_MODE); // wait previous memory transaction finished before changing delays (effective immediately)
+        read_block_buf_chn (0, 3, 256, 1 ); // chn=0, page=3, number of 32-bit words=256, wait_done
+`endif
   #20000;
   $finish;
 end
@@ -861,7 +895,7 @@ simul_axi_read #(
 // prepare all sequences
             set_all_sequences;
 // prepare write buffer    
-            write_block_buf; // fill block memory
+            write_block_buf_chn(1,0,256); // fill block memory (channel, page, number)
 // set all delays
 //#axi_set_delays - from tables, per-pin
 `ifdef SET_PER_PIN_DEALYS
@@ -971,15 +1005,36 @@ task schedule_ps_pio; // shedule software-control memory operation (may need to 
         write_contol_register(MCNTRL_PS_ADDR + MCNTRL_PS_CMD, {18'b0,chn,urgent,page,seq_addr});
     end
 endtask
+//MCONTR_BUF1_WR_ADDR
+task write_block_buf_chn;  // S uppressThisWarning VEditor : may be unused
+    input integer chn; // buffer channel
+    input   [1:0] page;
+    input integer num_words; // number of words to write (will be rounded up to multiple of 16)
+    reg    [29:0] start_addr;
+    begin
+        case (chn)
+            1:  start_addr=MCONTR_BUF1_WR_ADDR + (page << 8);
+            3:  start_addr=MCONTR_BUF3_WR_ADDR + (page << 8);
+            default: begin
+                $display("**** ERROR: Invalid channel for write buffer = %d @%t", chn, $time);
+                start_addr = MCONTR_BUF1_WR_ADDR+ (page << 8);
+            end
+        endcase
+        write_block_buf (start_addr, num_words);
+    end
+endtask
 
 task write_block_buf;
+    input [29:0] start_word_address;
+    input integer num_words; // number of words to write (will be rounded up to multiple of 16)
     integer i, j;
     begin
         $display("**** write_block_buf  @%t", $time);
-        for (i = 0; i < 256; i = i + 16) begin
+        for (i = 0; i < num_words; i = i + 16) begin
             axi_write_addr_data(
                 i,    // id
-                MCONTR_BUF1_WR_ADDR + (i << 2), // addr
+                {start_word_address,2'b0}+( i << 2),
+//                (MCONTR_BUF1_WR_ADDR + (page <<8)+ i) << 2, // addr
                 i | (((i + 7) & 'hff) << 8) | (((i + 23) & 'hff) << 16) | (((i + 31) & 'hff) << 24),
                 4'hf, // len
                 1,    // burst type - increment
@@ -1030,6 +1085,8 @@ task read_block_buf;
     input wait_done; 
     integer i; //,j;
     begin
+        wait (~rstb);
+        SIMUL_AXI_FULL<=1'b0;
         $display("**** read_block_buf  @%t", $time);
         axi_set_rd_lag(0);
         for (i = 0; i < num_read; i = i + 16) begin
@@ -1043,7 +1100,8 @@ task read_block_buf;
                 );
         end
         if (wait_done) begin
-            wait (AXI_RD_EMPTY);
+//            wait (AXI_RD_EMPTY);
+            wait_read_queue_empty;
         end
     end
 endtask
@@ -1124,27 +1182,33 @@ task set_write_block;
         @(posedge CLK) axi_write_single_w(cmd_addr, data); cmd_addr <= cmd_addr + 1;
 // see if pause is needed . See when buffer read should be started - maybe before WR command
         //                          skip     done        bank         ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD      B_RST
-        data <=  func_encode_skip(   1,       0,           0,          0,  0,  0,  0,    0,    0,    0,  0,   0,        0); // tRCD
+        data <=  func_encode_skip(   1,       0,           0,          0,  0,  0,  0,    0,    0,    0,  0,   1,        0); // tRCD - 2 read bufs
         @(posedge CLK) axi_write_single_w(cmd_addr, data); cmd_addr <= cmd_addr + 1;
-// first write
+// first write, 3 rd_buf
 // write
         //                          addr                 bank     RCW ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD NOP, B_RST
         data <=  func_encode_cmd( {5'b0,ca[9:0]},      ba[2:0],    3,  1,  0,  1,  0,    0,    0,    0,  0,   1,   0,   0); // B_RD moved 1 cycle earlier 
         @(posedge CLK) axi_write_single_w(cmd_addr, data); cmd_addr <= cmd_addr + 1;
-// nop
+// nop 4-th rd_buf
         //                          skip     done        bank         ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD      B_RST
-        data <=  func_encode_skip(   0,       0,       ba[2:0],        1,  0,  1,  1,    1,    0,    1,  0,   1,        0);
+//        data <=  func_encode_skip(   0,       0,       ba[2:0],        1,  0,  1,  1,    1,    0,    1,  0,   1,        0);
+        data <=  func_encode_skip(   0,       0,       ba[2:0],        1,  0,  0,  1,    1,    0,    0,  0,   1,        0);
         @(posedge CLK) axi_write_single_w(cmd_addr, data); cmd_addr <= cmd_addr + 1;
 //repeat remaining writes
-        for (i = 1; i < 64; i = i + 1) begin
+        for (i = 1; i < 63; i = i + 1) begin
 // write
         //                                add            bank     RCW ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD NOP, B_RST
-            data <=  func_encode_cmd( {5'b0,ca[9:0]},  ba[2:0],    3,  1,  0,  1,  1,    1,    1,    0,  0,   1,   1,   0); 
+            data <=  func_encode_cmd( {5'b0,ca[9:0]}+(i<<3),ba[2:0],3, 1,  0,  1,  1,    1,    1,    0,  0,   1,   1,   0); 
             @(posedge CLK) axi_write_single_w(cmd_addr, data); cmd_addr <= cmd_addr + 1;
         end
+// One last write pair w/o buffer
+        //                                add            bank     RCW ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD NOP, B_RST
+            data <=  func_encode_cmd( {5'b0,ca[9:0]}+(63<<3),ba[2:0],3,1,  0,  1,  1,    1,    1,    0,  0,   0,   1,   0); 
+            @(posedge CLK) axi_write_single_w(cmd_addr, data); cmd_addr <= cmd_addr + 1;
+
 // nop
         //                          skip     done        bank         ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD      B_RST
-        data <=  func_encode_skip(   0,       0,       ba[2:0],        1,  0,  0,  1,    1,    1,    0,  0,   1,        0);
+        data <=  func_encode_skip(   0,       0,       ba[2:0],        1,  0,  0,  1,    1,    1,    0,  0,   0,        0);
         @(posedge CLK) axi_write_single_w(cmd_addr, data); cmd_addr <= cmd_addr + 1;
 // nop
         //                          skip     done        bank         ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD      B_RST
@@ -1160,7 +1224,7 @@ task set_write_block;
         @(posedge CLK) axi_write_single_w(cmd_addr, data); cmd_addr <= cmd_addr + 1;
 // precharge, ODT off
         //                          addr                 bank     RCW ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD NOP, B_RST
-        data <=  func_encode_cmd( ra[14:0],            ba[2:0],    5,  0,  0,  0,  0,    0,    0,    1,  0,   0,   0,   0);
+        data <=  func_encode_cmd( ra[14:0],            ba[2:0],    5,  0,  0,  0,  0,    0,    0,    0,  0,   0,   0,   0);
         @(posedge CLK) axi_write_single_w(cmd_addr, data); cmd_addr <= cmd_addr + 1;
         //                          skip     done        bank         ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD      B_RST
         data <=  func_encode_skip(   2,       0,       ba[2:0],        0,  0,  0,  0,    0,    0,    0,  0,   0,        0);
@@ -1193,6 +1257,7 @@ task set_read_pattern;
         mr3_patt <= ddr3_mr3(
             1'h1,     //       mpr;    // MPR mode: 0 - normal, 1 - dataflow from MPR
             2'h0);    // [1:0] mpr_rf; // MPR read function: 2'b00: predefined pattern 0101...
+        @(posedge CLK);
 // Set pattern mode
         //                          addr                 bank     RCW ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD NOP, B_RST
         data <=  func_encode_cmd(mr3_patt[14:0],  mr3_patt[17:15], 7,  0,  0,  0,  0,    0,    0,    0,  0,   0,   0,   0);
