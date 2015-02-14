@@ -778,11 +778,14 @@ always @ (posedge rst or posedge mclk) begin
 //    else if (!mcontr_enabled || pre_run_chn_w ) cmd_seq_fill <= 0;
 //    else if (grant)                             cmd_seq_fill <= 1;
 
-    if (rst)                                    cmd_seq_fill <= 0;
+//TODO: Modify,cmd_seq_fill was initially used to see if any sequaence data was written (or PS is used), now it is cmd_seq_set
+    if (rst)                                              cmd_seq_fill <= 0;
 //    else if (!mcontr_enabled || seq_wr )        cmd_seq_fill <= 0;
 //    else if (grant)                             cmd_seq_fill <= 1;
-    else if (!mcontr_enabled || grant )         cmd_seq_fill <= 0;
-    else if (seq_wr)                            cmd_seq_fill <= 1;
+//    else if (!mcontr_enabled || grant )         cmd_seq_fill <= 0;
+    else if (!mcontr_enabled || seq_set || cmd_seq_full ) cmd_seq_fill <= 0;
+//    else if (seq_wr)                            cmd_seq_fill <= 1;
+    else if (grant)                                       cmd_seq_fill <= 1;
 
     if (rst)                                    cmd_seq_full <= 0;
     else if (!mcontr_enabled || pre_run_chn_w ) cmd_seq_full <= 0;

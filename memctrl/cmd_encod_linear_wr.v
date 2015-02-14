@@ -25,6 +25,7 @@ module  cmd_encod_linear_wr #(
 //    parameter BASEADDR = 0,
     parameter ADDRESS_NUMBER=       15,
     parameter COLADDR_NUMBER=       10,
+    parameter NUM_XFER_BITS=         6,    // number of bits to specify transfer length
     parameter CMD_PAUSE_BITS=       10,
     parameter CMD_DONE_BIT=         10 // VDT BUG: CMD_DONE_BIT is used in a function call parameter!
 ) (
@@ -36,25 +37,26 @@ module  cmd_encod_linear_wr #(
     input                  [2:0] bank_in,     // bank address
     input   [ADDRESS_NUMBER-1:0] row_in,      // memory row
     input   [COLADDR_NUMBER-4:0] start_col,   // start memory column (3 LSBs should be 0?)
-    input                  [5:0] num128_in,   // number of 128-bit words to transfer (8*16 bits) - full burst of 8
+    input    [NUM_XFER_BITS-1:0] num128_in,   // number of 128-bit words to transfer (8*16 bits) - full burst of 8 (0 - full 64)
     input                        start,       // start generating commands
     output reg            [31:0] enc_cmd,     // encoded commnad
     output reg                   enc_wr,      // write encoded command
     output reg                   enc_done     // encoding finished
 );
-    localparam ROM_WIDTH=12;
+    localparam ROM_WIDTH=13;
     localparam ROM_DEPTH=4;
     
-    localparam ENC_NOP=        0;
-    localparam ENC_BUF_RD=     1;
-    localparam ENC_DQS_TOGGLE= 2;
-    localparam ENC_DQ_DQS_EN=  3;
-    localparam ENC_SEL=        4;
-    localparam ENC_ODT=        5;
-    localparam ENC_CMD_SHIFT=  6; // [7:6] - command: 0 -= NOP, 1 - WRITE, 2 - PRECHARGE, 3 - ACTIVATE
-    localparam ENC_PAUSE_SHIFT=8; // [9:8] - 2- bit pause (for NOP commandes)
-    localparam ENC_PRE_DONE=  10;
-    localparam ENC_BUF_PGNEXT=   11;
+    localparam ENC_NOP=         0;
+    localparam ENC_BUF_RD=      1;
+    localparam ENC_DQS_TOGGLE=  2;
+    localparam ENC_DQ_DQS_EN=   3;
+    localparam ENC_SEL=         4;
+    localparam ENC_ODT=         5;
+    localparam ENC_CMD_SHIFT=   6; // [7:6] - command: 0 -= NOP, 1 - WRITE, 2 - PRECHARGE, 3 - ACTIVATE
+    localparam ENC_PAUSE_SHIFT= 8; // [9:8] - 2- bit pause (for NOP commandes)
+    localparam ENC_PRE_DONE=   10;
+    localparam ENC_BUF_PGNEXT= 11;
+    localparam ENC_DUAL_CYC=   12; // 2-cycle command (with nop or skip) to count number of buffer reads (longer pauses are not used  with buffer reads)
     
     localparam ENC_CMD_NOP=      0; // 2-bit locally encoded commands
     localparam ENC_CMD_WRITE=    1;
@@ -70,7 +72,7 @@ module  cmd_encod_linear_wr #(
     reg   [ADDRESS_NUMBER-1:0] row;     // memory row
     reg   [COLADDR_NUMBER-4:0] col;     // start memory column (3 LSBs should be 0?) // VDT BUG: col is used as a function call parameter!
     reg                  [2:0] bank;    // memory bank;
-    reg                  [5:0] num128;  // number of 128-bit words to transfer
+    reg    [NUM_XFER_BITS:0] num128;  // number of 128-bit words to transfer
     
     reg                        gen_run;
     reg                        gen_run_d;
@@ -82,13 +84,30 @@ module  cmd_encod_linear_wr #(
     wire                 [1:0] rom_skip;
     wire                 [2:0] full_cmd;
     reg                        done;
+//    reg                        buf_rd_23; // read buffer at steps 2&3 (0 if only 1 read is required)
+    reg                        start_d;
+//    reg        [ROM_DEPTH-1:0] gen_addr_jump; // next conditonal address
+    reg     [NUM_XFER_BITS:0] num_bufrd_left; //counts number of buffer reads left
+    wire    [NUM_XFER_BITS:0] num_bufrd_left_next_w; //next clock value of the counter
+    wire                      next_zero_w=(num_bufrd_left_next_w==0);
+    reg                       cut_buf_rd;
 
     assign     pre_done=rom_r[ENC_PRE_DONE] && gen_run;
     assign     rom_cmd=  rom_r[ENC_CMD_SHIFT+:2];
     assign     rom_skip= rom_r[ENC_PAUSE_SHIFT+:2];
     assign     full_cmd= rom_cmd[1]?(rom_cmd[0]?CMD_ACTIVATE:CMD_PRECHARGE):(rom_cmd[0]?CMD_WRITE:CMD_NOP);
-    
+    assign     num_bufrd_left_next_w= num_bufrd_left - (rom_r[ENC_DUAL_CYC]?2:1);
+// prepare jump address? and bufrd during 2,3 
+
+// make num128 7-bits to accommodate 64!
+    always @ (posedge clk) begin
+        start_d <= start;
+        if      (start_d)           num_bufrd_left <= {num128[NUM_XFER_BITS-1:0],1'b0};
+        else if (rom_r[ENC_BUF_RD]) num_bufrd_left <= num_bufrd_left_next_w;
+        cut_buf_rd <= rom_r[ENC_BUF_RD] && (cut_buf_rd || next_zero_w);
+    end    
     always @ (posedge rst or posedge clk) begin
+
         if (rst)           gen_run <= 0;
         else if (start)    gen_run<= 1;
         else if (pre_done) gen_run<= 0;
@@ -98,14 +117,14 @@ module  cmd_encod_linear_wr #(
 
         if (rst)                     gen_addr <= 0;
         else if (!start && !gen_run) gen_addr <= 0;
-        else if ((gen_addr==(REPEAT_ADDR-1)) && (num128[5:1]==0)) gen_addr <= REPEAT_ADDR+1; // skip loop alltogeter
-        else if ((gen_addr !=REPEAT_ADDR) || (num128[5:1]==0)) gen_addr <= gen_addr+1; // not in a loop
+        else if ((gen_addr==(REPEAT_ADDR-1)) && (num128[NUM_XFER_BITS:1]==0)) gen_addr <= REPEAT_ADDR+1; // skip loop alltogeter
+        else if ((gen_addr !=REPEAT_ADDR) || (num128[NUM_XFER_BITS:1]==0)) gen_addr <= gen_addr+1; // not in a loop
 
 //counting loops        
         if      (rst)        num128 <= 0;
-        else if (start)      num128 <= num128_in;
+        else if (start)      num128 <= {(num128_in==0)?1'b1:1'b0,num128_in};
         else if (!gen_run)   num128 <= 0; //
-        else if ((gen_addr == (REPEAT_ADDR-1)) || (gen_addr == REPEAT_ADDR))  num128 <= num128 -1;
+        else if ((gen_addr == (REPEAT_ADDR-1)) || (gen_addr == REPEAT_ADDR))  num128 <= num128 -1; // ????? - FIXME
     end
     
     always @ (posedge clk) if (start) begin
@@ -119,11 +138,12 @@ module  cmd_encod_linear_wr #(
     always @ (posedge rst or posedge clk) begin
         if (rst)           rom_r <= 0;
         else case (gen_addr)
-            4'h0: rom_r <= (ENC_CMD_ACTIVATE <<  ENC_CMD_SHIFT) | (1 << ENC_NOP); 
-            4'h1: rom_r <= (ENC_CMD_NOP <<       ENC_CMD_SHIFT) | (1 << ENC_BUF_RD); 
-            4'h2: rom_r <= (ENC_CMD_WRITE <<     ENC_CMD_SHIFT) | (1 << ENC_BUF_RD) |(1 << ENC_SEL)         | (1 << ENC_ODT); 
-            4'h3: rom_r <= (ENC_CMD_NOP <<       ENC_CMD_SHIFT) | (1 << ENC_BUF_RD) |(1 << ENC_DQ_DQS_EN)   | (1 << ENC_ODT);
-            4'h4: rom_r <= (ENC_CMD_WRITE <<     ENC_CMD_SHIFT) | (1 << ENC_NOP) | (1 << ENC_BUF_RD) | (1 << ENC_DQS_TOGGLE)  | (1 << ENC_DQ_DQS_EN)  | (1 << ENC_ODT); // will repeet 
+            4'h0: rom_r <= (ENC_CMD_ACTIVATE <<  ENC_CMD_SHIFT);// | (1 << ENC_NOP); 
+            4'h1: rom_r <= (ENC_CMD_NOP <<       ENC_CMD_SHIFT) | (1 << ENC_BUF_RD) | (1 << ENC_PAUSE_SHIFT)                      | (1 << ENC_DUAL_CYC);  // dual cycle
+            4'h2: rom_r <= (ENC_CMD_WRITE <<     ENC_CMD_SHIFT) | (1 << ENC_BUF_RD) | (1 << ENC_SEL)         | (1 << ENC_ODT);   // single cycle
+            4'h3: rom_r <= (ENC_CMD_NOP <<       ENC_CMD_SHIFT) | (1 << ENC_BUF_RD) | (1 << ENC_DQ_DQS_EN)   | (1 << ENC_ODT);  // single cycle
+// next may loop            
+            4'h4: rom_r <= (ENC_CMD_WRITE <<     ENC_CMD_SHIFT) | (1 << ENC_NOP) | (1 << ENC_BUF_RD) | (1 << ENC_DQS_TOGGLE)  | (1 << ENC_DQ_DQS_EN) | (1 << ENC_SEL)  | (1 << ENC_ODT) | (1 << ENC_DUAL_CYC);  // dual cycle 
             4'h5: rom_r <= (ENC_CMD_NOP <<       ENC_CMD_SHIFT) | (2 << ENC_PAUSE_SHIFT) | (1 << ENC_DQS_TOGGLE) | (1 << ENC_DQ_DQS_EN) | (1 << ENC_ODT);
             4'h6: rom_r <= (ENC_CMD_NOP <<       ENC_CMD_SHIFT) | (2 << ENC_PAUSE_SHIFT);
             4'h7: rom_r <= (ENC_CMD_PRECHARGE << ENC_CMD_SHIFT) |      (1 << ENC_BUF_PGNEXT);
@@ -140,7 +160,8 @@ module  cmd_encod_linear_wr #(
         else               enc_wr <= gen_run || gen_run_d;
         
         if (rst)           enc_done <= 0;
-        else               enc_done <= enc_wr || !gen_run_d;
+//        else               enc_done <= enc_wr || !gen_run_d;
+        else               enc_done <= enc_wr && !gen_run_d;
         
         if (rst)             enc_cmd <= 0;
         else if (rom_cmd==0) enc_cmd <= func_encode_skip ( // encode pause
@@ -155,7 +176,7 @@ module  cmd_encod_linear_wr #(
             rom_r[ENC_DQS_TOGGLE],   //   dqs_toggle; // enable toggle DQS according to the pattern
             1'b0,                    //   dci;        // DCI disable, both DQ and DQS lines (internal logic and timing sequencer for 0->1 and 1->0)
             1'b0,                    //   buf_wr;     // connect to external buffer (but only if not paused)
-            rom_r[ENC_BUF_RD],       //   buf_rd;     // connect to external buffer (but only if not paused)
+            rom_r[ENC_BUF_RD] && !cut_buf_rd, //buf_rd;// connect to external buffer (but only if not paused)
             rom_r[ENC_BUF_PGNEXT]);     //   buf_rst;    // connect to external buffer (but only if not paused)
        else  enc_cmd <= func_encode_cmd ( // encode non-NOP command
             rom_cmd[1]?
@@ -171,7 +192,7 @@ module  cmd_encod_linear_wr #(
             rom_r[ENC_DQS_TOGGLE],   //   dqs_toggle; // enable toggle DQS according to the pattern
             1'b0,                    //   dci;        // DCI disable, both DQ and DQS lines (internal logic and timing sequencer for 0->1 and 1->0)
             1'b0,                    //   buf_wr;     // connect to external buffer (but only if not paused)
-            rom_r[ENC_BUF_RD],       //   buf_rd;     // connect to external buffer (but only if not paused)     
+            rom_r[ENC_BUF_RD] && !cut_buf_rd, //buf_rd;// connect to external buffer (but only if not paused)     
             rom_r[ENC_NOP],          //   nop;        // add NOP after the current command, keep other data
             rom_r[ENC_BUF_PGNEXT]);     //   buf_rst;    // connect to external buffer (but only if not paused)
     end    

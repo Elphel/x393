@@ -214,7 +214,7 @@ module  mcontr_sequencer   #(
      
     
 //    wire                 [35:0]  phy_cmd; // input[35:0] 
-    wire                 [31:0]  phy_cmd_word;  // selected output from eithe cmd0 buffer or cmd1 buffer 
+    wire                 [31:0]  phy_cmd_word;  // selected output from either cmd0 buffer or cmd1 buffer 
     wire                 [31:0]  phy_cmd0_word; // cmd0 buffer output
     wire                 [31:0]  phy_cmd1_word; // cmd1 buffer output
     wire                          buf_raddr_reset;
@@ -274,7 +274,10 @@ module  mcontr_sequencer   #(
     assign run_busy=cmd_busy[0]; //earliest
     assign  pause=cmd_fetch? (phy_cmd_add_pause || (phy_cmd_nop && (pause_len != 0))): (cmd_busy[2] && (pause_cntr[CMD_PAUSE_BITS-1:1]!=0));
 /// debugging
-    assign phy_cmd_word = cmd_sel?phy_cmd1_word:phy_cmd0_word; // TODO: hangs even with 0-s in phy_cmd
+//    assign phy_cmd_word = cmd_sel?phy_cmd1_word:phy_cmd0_word; // TODO: hangs even with 0-s in phy_cmd
+    assign phy_cmd_word = (cmd_sel?phy_cmd1_word:phy_cmd0_word) & {32{cmd_busy[2]}}; // TODO: hangs even with 0-s in phy_cmd
+
+
 ///    assign phy_cmd_word = phy_cmd_word?0:0;
      
 //    assign buf_rdata[63:0] = ({64{buf_sel_1hot[1]}} & buf1_rdata[63:0]); // ORed with other read channels terms

@@ -27,7 +27,8 @@
 `define TEST_READ_PATTERN 1
 `define TEST_WRITE_BLOCK 1
 `define TEST_READ_BLOCK 1
-`define PS_PIO_WAIT_COMPLETE 0
+`define TEST_SCANLINE_WRITE 1
+`define PS_PIO_WAIT_COMPLETE 0 // wait until PS PIO module finished transaction before starting a new one
 
 module  x393_testbench01 #(
 `include "includes/x393_parameters.vh"
@@ -182,6 +183,18 @@ module  x393_testbench01 #(
   integer     NUM_WORDS_READ;
   integer     NUM_WORDS_EXPECTED;
   wire AXI_RD_EMPTY=NUM_WORDS_READ==NUM_WORDS_EXPECTED; //SuppressThisWarning VEditor : may be unused, just for simulation
+  
+  localparam       FRAME_START_ADDRESS= 'h1000; // RA=80, CA=0, BA=0 22-bit frame start address (3 CA LSBs==0. BA==0)
+  localparam       FRAME_FULL_WIDTH=    'h0c0;  // Padded line length (8-row increment), in 8-bursts (16 bytes)
+//  localparam SCANLINE_WINDOW_WH=  `h079000a2;  // 2592*1936: low word - 13-bit window width (0->'h4000), high word - 16-bit frame height (0->'h10000)
+  localparam       SCANLINE_WINDOW_WH=  'h0009000b;  // 176*9: low word - 13-bit window width (0->'h4000), high word - 16-bit frame height (0->'h10000)
+  localparam       SCANLINE_X0Y0=       'h00050003;  // X0=3*16=48, Y0=5: // low word - 13-bit window left, high word - 16-bit window top
+  localparam       SCANLINE_STARTXY=    'h0;         // low word - 13-bit start X (relative to window), high word - 16-bit start y (normally 0)
+  localparam [1:0] SCANLINE_EXTRA_PAGES= 0;          // 0..2 - number of pages in the buffer to keep/not write
+  
+  localparam       TEST01_START_FRAME=   1;         
+  localparam       TEST01_NEXT_PAGE=     2;         
+  localparam       TEST01_SUSPEND=       4;         
 //  integer ii;
 always #(CLKIN_PERIOD/2) CLK <= ~CLK;
   initial begin
@@ -334,7 +347,29 @@ always #(CLKIN_PERIOD/2) CLK <= ~CLK;
         wait_ps_pio_done(DEFAULT_STATUS_MODE); // wait previous memory transaction finished before changing delays (effective immediately)
         read_block_buf_chn (0, 3, 256, 1 ); // chn=0, page=3, number of 32-bit words=256, wait_done
 `endif
-  #20000;
+`ifdef TEST_SCANLINE_WRITE
+    write_contol_register(MCNTRL_SCANLINE_CHN3_ADDR + MCNTRL_SCANLINE_STARTADDR,        FRAME_START_ADDRESS); // RA=80, CA=0, BA=0 22-bit frame start address (3 CA LSBs==0. BA==0) 
+    write_contol_register(MCNTRL_SCANLINE_CHN3_ADDR + MCNTRL_SCANLINE_FRAME_FULL_WIDTH, FRAME_FULL_WIDTH);
+    write_contol_register(MCNTRL_SCANLINE_CHN3_ADDR + MCNTRL_SCANLINE_WINDOW_WH,        SCANLINE_WINDOW_WH);
+    write_contol_register(MCNTRL_SCANLINE_CHN3_ADDR + MCNTRL_SCANLINE_WINDOW_X0Y0,      SCANLINE_X0Y0);
+    write_contol_register(MCNTRL_SCANLINE_CHN3_ADDR + MCNTRL_SCANLINE_WINDOW_STARTXY,   SCANLINE_STARTXY);
+    write_contol_register(MCNTRL_SCANLINE_CHN3_ADDR + MCNTRL_SCANLINE_MODE,             {28'b0,SCANLINE_EXTRA_PAGES,2'b11});// set mode register: {extra_pages[1:0],enable,!reset}
+
+    configure_channel_priority(3,0);    // lowest priority channel 1
+    enable_memcntrl_channels(16'h000b); // channels 0,1,3 are enabled
+//  localparam       TEST01_START_FRAME=   1;         
+//  localparam       TEST01_NEXT_PAGE=     2;         
+//  localparam       TEST01_SUSPEND=       4;         
+    
+    write_contol_register(MCNTRL_TEST01_ADDR + MCNTRL_TEST01_CHN3_MODE,            TEST01_START_FRAME);
+    
+    write_contol_register(MCNTRL_TEST01_ADDR + MCNTRL_TEST01_CHN3_MODE,            TEST01_NEXT_PAGE);
+    write_contol_register(MCNTRL_TEST01_ADDR + MCNTRL_TEST01_CHN3_MODE,            TEST01_NEXT_PAGE);
+    write_contol_register(MCNTRL_TEST01_ADDR + MCNTRL_TEST01_CHN3_MODE,            TEST01_NEXT_PAGE);
+    write_contol_register(MCNTRL_TEST01_ADDR + MCNTRL_TEST01_CHN3_MODE,            TEST01_NEXT_PAGE);
+// now need to repeat - test ready, then next page    
+`endif
+  #40000;
   $finish;
 end
 // protect from never end

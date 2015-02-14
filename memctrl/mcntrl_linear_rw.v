@@ -29,11 +29,11 @@ module  mcntrl_linear_rw #(
     parameter FRAME_HEIGHT_BITS=                16,    // Maximal frame height 
     parameter MCNTRL_SCANLINE_ADDR=            'h120,
     parameter MCNTRL_SCANLINE_MASK=            'h3f0, // both channels 0 and 1
-    parameter MCNTRL_SCANLINE_MODE=            'h0,   // set mode register: {extra_pages[1:0],write_mode,enable,!reset}
+    parameter MCNTRL_SCANLINE_MODE=            'h0,   // set mode register: {extra_pages[1:0],enable,!reset}
     parameter MCNTRL_SCANLINE_STATUS_CNTRL=    'h1,   // control status reporting
     parameter MCNTRL_SCANLINE_STARTADDR=       'h2,   // 22-bit frame start address (3 CA LSBs==0. BA==0)
     parameter MCNTRL_SCANLINE_FRAME_FULL_WIDTH='h3,   // Padded line length (8-row increment), in 8-bursts (16 bytes)
-    parameter MCNTRL_SCANLINE_WINDOW_WH=       'h4,   // low word - 13-bit window width (0->'n4000), high word - 16-bit frame height (0->'h10000)
+    parameter MCNTRL_SCANLINE_WINDOW_WH=       'h4,   // low word - 13-bit window width (0->'h4000), high word - 16-bit frame height (0->'h10000)
     parameter MCNTRL_SCANLINE_WINDOW_X0Y0=     'h5,   // low word - 13-bit window left, high word - 16-bit window top
     parameter MCNTRL_SCANLINE_WINDOW_STARTXY=  'h6,   // low word - 13-bit start X (relative to window), high word - 16-bit start y
                                                       // Start XY can be used when read command to start from the middle
@@ -97,6 +97,7 @@ module  mcntrl_linear_rw #(
     reg      [COLADDR_NUMBER-3:0] mem_page_left; // number of 8-bursts left in the pointed memory page
     reg         [NUM_XFER_BITS:0] lim_by_xfer;   // number of bursts left limited by the longest transfer (currently 64)
     reg         [NUM_XFER_BITS:0] xfer_num128_r;   // number of 128-bit words to transfer (8*16 bits) - full bursts of 8
+//    reg       [NUM_XFER_BITS-1:0] xfer_num128_m1_r;   // number of 128-bit words to transfer minus 1 (8*16 bits) - full bursts of 8
     wire                          pgm_param_w;  // program one of the parameters, invalidate calculated results for PAR_MOD_LATENCY
     reg                     [2:0] xfer_start_r;
     reg     [PAR_MOD_LATENCY-1:0] par_mod_r;
@@ -137,7 +138,7 @@ module  mcntrl_linear_rw #(
       
     
 //    reg                     [4:0] mode_reg;//mode register: {extra_pages[1:0],write_mode,enable,!reset}
-    reg                     [3:0] mode_reg;//mode register: {extra_pages[1:0],write_mode,enable,!reset}
+    reg                     [3:0] mode_reg;//mode register: {extra_pages[1:0],enable,!reset}
     reg   [NUM_RC_BURST_BITS-1:0] start_addr;     // (programmed) Frame start (in {row,col8} in burst8, bank ==0
 //    reg      [FRAME_WIDTH_BITS:0] frame_width;    // (programmed) 0- max
     
@@ -196,6 +197,7 @@ module  mcntrl_linear_rw #(
         end
     end
     assign mul_rslt_w=  frame_y8_r * frame_full_width_r; // 5 MSBs will be discarded
+//    assign xfer_num128= xfer_num128_m1_r[NUM_XFER_BITS-1:0];
     assign xfer_num128= xfer_num128_r[NUM_XFER_BITS-1:0];
     assign xfer_start=  xfer_start_r[0];
     assign calc_valid=  par_mod_r[PAR_MOD_LATENCY-1]; // MSB, longest 0
@@ -221,6 +223,7 @@ module  mcntrl_linear_rw #(
     integer i;
 //    localparam EXTRA_BITS={ADDRESS_NUMBER-3-COLADDR_NUMBER-3{1'b0}};
 //    localparam EXTRA_BITS={COLADDR_NUMBER-3-NUM_XFER_BITS{1'b0}};
+
     always @(posedge mclk) begin // TODO: Match latencies (is it needed?) Reduce consumption by CE?
         frame_x <= curr_x + window_x0;
         frame_y <= curr_y + window_y0;
@@ -228,7 +231,8 @@ module  mcntrl_linear_rw #(
         row_left <= window_width - curr_x; // 14 bits - 13 bits
         mem_page_left <= (1 << (COLADDR_NUMBER-3)) - frame_x[COLADDR_NUMBER-4:0];
         lim_by_xfer <= (|row_left[FRAME_WIDTH_BITS:NUM_XFER_BITS])?(1<<NUM_XFER_BITS):row_left[NUM_XFER_BITS:0]; // 7 bits, max 'h40
-        xfer_num128_r<= (mem_page_left> {{COLADDR_NUMBER-3-NUM_XFER_BITS{1'b0}},lim_by_xfer})? mem_page_left[NUM_XFER_BITS:0]:lim_by_xfer[NUM_XFER_BITS:0];
+        xfer_num128_r<= (mem_page_left < {{COLADDR_NUMBER-3-NUM_XFER_BITS{1'b0}},lim_by_xfer})? mem_page_left[NUM_XFER_BITS:0]:lim_by_xfer[NUM_XFER_BITS:0];
+//        xfer_num128_m1_r <= xfer_num128_r[NUM_XFER_BITS-1:0]-1;
 //        xfer_num128_r<= (mem_page_left> {EXTRA_BITS, lim_by_xfer})? mem_page_left[NUM_XFER_BITS:0]:lim_by_xfer[NUM_XFER_BITS:0];
 // VDT bug? next line gives a warning        
 //        xfer_num128_r<= (mem_page_left> {{COLADDR_NUMBER-3-COLADDR_NUMBER-3{1'b0}},lim_by_xfer})?mem_page_left[NUM_XFER_BITS-1:0]:lim_by_xfer[NUM_XFER_BITS-1:0];
