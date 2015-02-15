@@ -24,6 +24,7 @@
 module  mcntrl_tiled_rw#(
    parameter ADDRESS_NUMBER=                   15,
     parameter COLADDR_NUMBER=                   10,
+    parameter NUM_XFER_BITS=                     6,    // number of bits to specify transfer length
     parameter FRAME_WIDTH_BITS=                 13,    // Maximal frame width - 8-word (16 bytes) bursts 
     parameter FRAME_HEIGHT_BITS=                16,    // Maximal frame height 
     parameter MAX_TILE_WIDTH=                   6,     // number of bits to specify maximal tile (width-1) (6 -> 64)

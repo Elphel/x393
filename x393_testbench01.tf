@@ -23,10 +23,10 @@
 `define DEBUG_FIFO 1
 `undef WAIT_MRS
 `define SET_PER_PIN_DEALYS 1 // set individual (including per-DQ pin delays)
-`define TEST_WRITE_LEVELLING 1
-`define TEST_READ_PATTERN 1
-`define TEST_WRITE_BLOCK 1
-`define TEST_READ_BLOCK 1
+//`define TEST_WRITE_LEVELLING 1
+//`define TEST_READ_PATTERN 1
+//`define TEST_WRITE_BLOCK 1
+//`define TEST_READ_BLOCK 1
 `define TEST_SCANLINE_WRITE 1
 `define PS_PIO_WAIT_COMPLETE 0 // wait until PS PIO module finished transaction before starting a new one
 
@@ -187,15 +187,22 @@ module  x393_testbench01 #(
   localparam       FRAME_START_ADDRESS= 'h1000; // RA=80, CA=0, BA=0 22-bit frame start address (3 CA LSBs==0. BA==0)
   localparam       FRAME_FULL_WIDTH=    'h0c0;  // Padded line length (8-row increment), in 8-bursts (16 bytes)
 //  localparam SCANLINE_WINDOW_WH=  `h079000a2;  // 2592*1936: low word - 13-bit window width (0->'h4000), high word - 16-bit frame height (0->'h10000)
-  localparam       SCANLINE_WINDOW_WH=  'h0009000b;  // 176*9: low word - 13-bit window width (0->'h4000), high word - 16-bit frame height (0->'h10000)
-  localparam       SCANLINE_X0Y0=       'h00050003;  // X0=3*16=48, Y0=5: // low word - 13-bit window left, high word - 16-bit window top
-  localparam       SCANLINE_STARTXY=    'h0;         // low word - 13-bit start X (relative to window), high word - 16-bit start y (normally 0)
+//  localparam       SCANLINE_WINDOW_WH=  'h0009000b;  // 176*9: low word - 13-bit window width (0->'h4000), high word - 16-bit frame height (0->'h10000)
+  localparam       SCANLINE_WINDOW_W=   'h000b;  // 176:  13-bit window width (0->'h4000)
+  localparam       SCANLINE_WINDOW_H=   'h0009;  // 9:    16-bit frame height (0->'h10000)
+//  localparam       SCANLINE_X0Y0=       'h00050003;  // X0=3*16=48, Y0=5: // low word - 13-bit window left, high word - 16-bit window top
+  localparam       SCANLINE_X0=         'h0003;  // X0=3*16=48 - 13-bit window left
+  localparam       SCANLINE_Y0=         'h0005;  // Y0=5: 16-bit window top
+//  localparam       SCANLINE_STARTXY=    'h0;         // low word - 13-bit start X (relative to window), high word - 16-bit start y (normally 0)
+  localparam       SCANLINE_STARTX=     'h0;         // 13-bit start X (relative to window), high word (normally 0)
+  localparam       SCANLINE_STARTY=     'h0;         // 16-bit start y (normally 0)
   localparam [1:0] SCANLINE_EXTRA_PAGES= 0;          // 0..2 - number of pages in the buffer to keep/not write
   
   localparam       TEST01_START_FRAME=   1;         
   localparam       TEST01_NEXT_PAGE=     2;         
   localparam       TEST01_SUSPEND=       4;         
-//  integer ii;
+  integer ii;
+  localparam       TEST_INITIAL_BURST=   4; // 3;
 always #(CLKIN_PERIOD/2) CLK <= ~CLK;
   initial begin
 `ifdef IVERILOG              
@@ -269,6 +276,8 @@ always #(CLKIN_PERIOD/2) CLK <= ~CLK;
 //    first refreshes will be fast (accummulated while waiting)
 `endif    
     enable_refresh(1);
+    axi_set_dqs_odelay('h78); //??? dafaults - wrong?
+    
 `ifdef TEST_WRITE_LEVELLING    
 // Set special values for DQS idelay for write leveling
         wait_ps_pio_done(DEFAULT_STATUS_MODE); // not no interrupt running cycle - delays are changed immediately
@@ -350,9 +359,9 @@ always #(CLKIN_PERIOD/2) CLK <= ~CLK;
 `ifdef TEST_SCANLINE_WRITE
     write_contol_register(MCNTRL_SCANLINE_CHN3_ADDR + MCNTRL_SCANLINE_STARTADDR,        FRAME_START_ADDRESS); // RA=80, CA=0, BA=0 22-bit frame start address (3 CA LSBs==0. BA==0) 
     write_contol_register(MCNTRL_SCANLINE_CHN3_ADDR + MCNTRL_SCANLINE_FRAME_FULL_WIDTH, FRAME_FULL_WIDTH);
-    write_contol_register(MCNTRL_SCANLINE_CHN3_ADDR + MCNTRL_SCANLINE_WINDOW_WH,        SCANLINE_WINDOW_WH);
-    write_contol_register(MCNTRL_SCANLINE_CHN3_ADDR + MCNTRL_SCANLINE_WINDOW_X0Y0,      SCANLINE_X0Y0);
-    write_contol_register(MCNTRL_SCANLINE_CHN3_ADDR + MCNTRL_SCANLINE_WINDOW_STARTXY,   SCANLINE_STARTXY);
+    write_contol_register(MCNTRL_SCANLINE_CHN3_ADDR + MCNTRL_SCANLINE_WINDOW_WH,        SCANLINE_WINDOW_W + (SCANLINE_WINDOW_H<<16));
+    write_contol_register(MCNTRL_SCANLINE_CHN3_ADDR + MCNTRL_SCANLINE_WINDOW_X0Y0,      SCANLINE_X0+ (SCANLINE_Y0<<16));
+    write_contol_register(MCNTRL_SCANLINE_CHN3_ADDR + MCNTRL_SCANLINE_WINDOW_STARTXY,   SCANLINE_STARTX+(SCANLINE_STARTY<<16));
     write_contol_register(MCNTRL_SCANLINE_CHN3_ADDR + MCNTRL_SCANLINE_MODE,             {28'b0,SCANLINE_EXTRA_PAGES,2'b11});// set mode register: {extra_pages[1:0],enable,!reset}
 
     configure_channel_priority(3,0);    // lowest priority channel 1
@@ -362,12 +371,33 @@ always #(CLKIN_PERIOD/2) CLK <= ~CLK;
 //  localparam       TEST01_SUSPEND=       4;         
     
     write_contol_register(MCNTRL_TEST01_ADDR + MCNTRL_TEST01_CHN3_MODE,            TEST01_START_FRAME);
+    for (ii=0;ii<TEST_INITIAL_BURST;ii=ii+1) begin
+        write_block_scanline_chn(3, (ii & 3), SCANLINE_WINDOW_W << 2, SCANLINE_X0,SCANLINE_Y0+ii);  // now assumes that width is <= than maximal xfer
+    end
+//    write_block_scanline_chn(3,0, SCANLINE_WINDOW_W << 2, SCANLINE_X0,SCANLINE_Y0+0);  // now assumes that width is <= than maximal xfer
+//    write_block_scanline_chn(3,1, SCANLINE_WINDOW_W << 2, SCANLINE_X0,SCANLINE_Y0+1);
+//    write_block_scanline_chn(3,2, SCANLINE_WINDOW_W << 2, SCANLINE_X0,SCANLINE_Y0+2);
+
+//    write_block_scanline_chn(3,3, SCANLINE_WINDOW_W << 2, SCANLINE_X0,SCANLINE_Y0+3);
+//    write_contol_register(MCNTRL_TEST01_ADDR + MCNTRL_TEST01_CHN3_MODE,            TEST01_NEXT_PAGE);
+//    write_contol_register(MCNTRL_TEST01_ADDR + MCNTRL_TEST01_CHN3_MODE,            TEST01_NEXT_PAGE);
+//    write_contol_register(MCNTRL_TEST01_ADDR + MCNTRL_TEST01_CHN3_MODE,            TEST01_NEXT_PAGE);
+//    write_contol_register(MCNTRL_TEST01_ADDR + MCNTRL_TEST01_CHN3_MODE,            TEST01_NEXT_PAGE);
+// now need to repeat - test ready, then next page
+    for (ii=0;ii<SCANLINE_WINDOW_H;ii = ii+1) begin
+        if (ii >= TEST_INITIAL_BURST) begin // wait page ready and fill page after first 4 are filled
+            wait_status_condition (
+                MCNTRL_TEST01_STATUS_REG_CHN3_ADDR,
+                MCNTRL_TEST01_ADDR + MCNTRL_TEST01_CHN3_STATUS_CNTRL,
+                DEFAULT_STATUS_MODE,
+                (ii-TEST_INITIAL_BURST)<<16, // 4-bit page number
+                'hf << 16,  // mask for the 4-bit page number
+                1); // not equal to
+            write_block_scanline_chn(3, (ii & 3), SCANLINE_WINDOW_W << 2, SCANLINE_X0,SCANLINE_Y0+ii);
+        end
+        write_contol_register(MCNTRL_TEST01_ADDR + MCNTRL_TEST01_CHN3_MODE,            TEST01_NEXT_PAGE);
+    end
     
-    write_contol_register(MCNTRL_TEST01_ADDR + MCNTRL_TEST01_CHN3_MODE,            TEST01_NEXT_PAGE);
-    write_contol_register(MCNTRL_TEST01_ADDR + MCNTRL_TEST01_CHN3_MODE,            TEST01_NEXT_PAGE);
-    write_contol_register(MCNTRL_TEST01_ADDR + MCNTRL_TEST01_CHN3_MODE,            TEST01_NEXT_PAGE);
-    write_contol_register(MCNTRL_TEST01_ADDR + MCNTRL_TEST01_CHN3_MODE,            TEST01_NEXT_PAGE);
-// now need to repeat - test ready, then next page    
 `endif
   #40000;
   $finish;

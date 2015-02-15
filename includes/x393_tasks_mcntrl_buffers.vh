@@ -19,7 +19,60 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/> .
  *******************************************************************************/
-//MCONTR_BUF1_WR_ADDR
+task write_block_scanline_chn;  // S uppressThisWarning VEditor : may be unused
+    input integer chn; // buffer channel
+    input   [1:0] page;
+    input integer num_words; // number of words to write (will be rounded up to multiple of 16)
+    input integer startX;
+    input integer startY;
+    reg    [29:0] start_addr;
+    begin
+        case (chn)
+            1:  start_addr=MCONTR_BUF1_WR_ADDR + (page << 8);
+            3:  start_addr=MCONTR_BUF3_WR_ADDR + (page << 8);
+            default: begin
+                $display("**** ERROR: Invalid channel for write_block_scanline_chn = %d @%t", chn, $time);
+                start_addr = MCONTR_BUF1_WR_ADDR+ (page << 8);
+            end
+        endcase
+        write_block_incremtal (start_addr, num_words, startX+startY<<16);
+    end
+endtask
+
+
+task write_block_incremtal;
+    input [29:0] start_word_address;
+    input integer num_words; // number of words to write (will be rounded up to multiple of 16)
+    input integer start_value;      
+    integer i, j;
+    begin
+        $display("**** write_block_buf  @%t", $time);
+        for (i = 0; i < num_words; i = i + 16) begin
+            axi_write_addr_data(
+                i,    // id
+                {start_word_address,2'b0}+( i << 2),
+                start_value+i,
+                4'hf, // len
+                1,    // burst type - increment
+                1'b1, // data_en
+                4'hf, // wstrb
+                1'b0 // last
+                );
+//            $display("+Write block data (addr:data): 0x%x:0x%08x @%t", i, i | (((i + 7) & 'hff) << 8) | (((i + 23) & 'hff) << 16) | (((i + 31) & 'hff) << 24), $time);
+            $display("+Write block incremental (addr:data): 0x%x:0x%08x @%t", i, start_value+i, $time);
+            for (j = 1; j < 16; j = j + 1) begin
+                axi_write_data(
+                    i,        // id
+                    start_value+i+j,
+                    4'hf, // wstrb
+                    (1 == 15) ? 1 : 0 // last
+                    );
+                $display(" Write block incremental (addr:data): 0x%08x:0x%x @%t", (i + j), start_value+i+j, $time);
+            end
+        end
+    end
+endtask
+
 task write_block_buf_chn;  // S uppressThisWarning VEditor : may be unused
     input integer chn; // buffer channel
     input   [1:0] page;
@@ -68,7 +121,6 @@ task write_block_buf;
                     (i + j) | ((((i + j) + 7) & 'hff) << 8) | ((((i + j) + 23) & 'hff) << 16) | ((((i + j) + 31) & 'hff) << 24), $time);
             end
         end
-
     end
 endtask
    

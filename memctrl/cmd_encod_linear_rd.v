@@ -34,6 +34,7 @@ module  cmd_encod_linear_rd #(
 //    parameter BASEADDR = 0,
     parameter ADDRESS_NUMBER=       15,
     parameter COLADDR_NUMBER=       10,
+    parameter NUM_XFER_BITS=         6,    // number of bits to specify transfer length
     parameter CMD_PAUSE_BITS=       10,
     parameter CMD_DONE_BIT=         10 // VDT BUG: CMD_DONE_BIT is used in a function call parameter!
 ) (
@@ -45,7 +46,7 @@ module  cmd_encod_linear_rd #(
     input                  [2:0] bank_in,     // bank address
     input   [ADDRESS_NUMBER-1:0] row_in,      // memory row
     input   [COLADDR_NUMBER-4:0] start_col,   // start memory column in 8-bursts
-    input                  [5:0] num128_in,   // number of 128-bit words to transfer (8*16 bits) - full bursts of 8 ( 0 - maximal length, 64)
+    input    [NUM_XFER_BITS-1:0] num128_in,   // number of 128-bit words to transfer (8*16 bits) - full bursts of 8 ( 0 - maximal length, 64)
     input                        start,       // start generating commands
     output reg            [31:0] enc_cmd,     // encoded commnad
     output reg                   enc_wr,      // write encoded command
@@ -78,7 +79,7 @@ module  cmd_encod_linear_rd #(
     reg   [ADDRESS_NUMBER-1:0] row;     // memory row
     reg   [COLADDR_NUMBER-4:0] col;     // start memory column (3 LSBs should be 0?) // VDT BUG: col is used as a function call parameter!
     reg                  [2:0] bank;    // memory bank;
-    reg                  [5:0] num128;  // number of 128-bit words to transfer
+    reg    [NUM_XFER_BITS-1:0] num128;  // number of 128-bit words to transfer
     
     reg                        gen_run;
     reg                        gen_run_d;
@@ -106,8 +107,8 @@ module  cmd_encod_linear_rd #(
 
         if (rst)                     gen_addr <= 0;
         else if (!start && !gen_run) gen_addr <= 0;
-        else if ((gen_addr==(REPEAT_ADDR-1)) && (num128[5:1]==0)) gen_addr <= REPEAT_ADDR+1; // skip loop alltogeter
-        else if ((gen_addr !=REPEAT_ADDR) || (num128[5:1]==0)) gen_addr <= gen_addr+1; // not in a loop
+        else if ((gen_addr==(REPEAT_ADDR-1)) && (num128[NUM_XFER_BITS-1:1]==0)) gen_addr <= REPEAT_ADDR+1; // skip loop alltogeter
+        else if ((gen_addr !=REPEAT_ADDR) || (num128[NUM_XFER_BITS-1:1]==0)) gen_addr <= gen_addr+1; // not in a loop
 //counting loops?        
         if      (rst)          num128 <= 0;
         else if (start)        num128 <= num128_in;

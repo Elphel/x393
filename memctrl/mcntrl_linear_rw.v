@@ -152,8 +152,8 @@ module  mcntrl_linear_rw #(
     reg   [FRAME_HEIGHT_BITS-1:0] window_y0;      // (programmed) window top
     reg    [FRAME_WIDTH_BITS-1:0] start_x;        // (programmed) normally 0, copied to curr_x on frame_start  
     reg   [FRAME_HEIGHT_BITS-1:0] start_y;        // (programmed) normally 0, copied to curr_y on frame_start 
-    
-    
+    reg                           xfer_done_d;    // xfer_done delayed by 1 cycle;
+ //   reg                           no_more_needed; // frame finished, no more requests is needed
     assign set_mode_w =         cmd_we && (cmd_a== MCNTRL_SCANLINE_MODE);
     assign set_status_w =       cmd_we && (cmd_a== MCNTRL_SCANLINE_STATUS_CNTRL);
     assign set_start_addr_w =   cmd_we && (cmd_a== MCNTRL_SCANLINE_STARTADDR);
@@ -205,6 +205,8 @@ module  mcntrl_linear_rw #(
     assign xfer_reset_page = xfer_reset_page_r;
     assign frame_done=  frame_done_r;
     assign pre_want=    chn_en && busy_r && !want_r && !xfer_start_r[0] && calc_valid && !last_block && !suspend;
+//    assign pre_want=    chn_en && busy_r && !want_r && !xfer_start_r[0] && calc_valid && !no_more_needed && !suspend;
+    //
     assign last_in_row_w=(row_left=={{(FRAME_WIDTH_BITS-NUM_XFER_BITS){1'b0}},xfer_num128_r});
     assign last_row_w=  next_y==window_height;
     assign xfer_want=   want_r;
@@ -261,6 +263,19 @@ module  mcntrl_linear_rw #(
         else if (frame_start)  busy_r <= 1;
         else if (frame_done_r) busy_r <= 0;
         
+        if (rst)          xfer_done_d <= 0;
+        else              xfer_done_d <= xfer_done;
+        
+
+        if      (rst)                                                       frame_done_r <= 0;
+        else if (chn_rst || frame_start)                                    frame_done_r <= 0;
+        else if (busy_r && last_block && xfer_done_d && (pending_xfers==0)) frame_done_r <= 1;
+
+//        if (rst)          frame_done_r <= 0;
+//        else              frame_done_r <= busy_r && last_block && xfer_done_d && (pending_xfers==0);
+        
+        
+        
         if (rst) xfer_start_r <= 0;
         else     xfer_start_r <= {xfer_start_r[1:0],xfer_grant && !chn_rst};
         
@@ -273,9 +288,9 @@ module  mcntrl_linear_rw #(
         else if (pre_want && (page_cntr>{1'b0,cmd_extra_pages})) want_r <= 1;
         
         if (rst)                                 page_cntr <= 0;
-        else if (frame_start)                    page_cntr <= cmd_wrmem?0:4;
-        else if ( xfer_start_r[0] && !next_page) page_cntr <= page_cntr + 1;     
-        else if (!xfer_start_r[0] &&  next_page) page_cntr <= page_cntr - 1;
+        else if (frame_start)                    page_cntr <= cmd_wrmem?0:4; // What about last pages (like if only 1 page is needed)? Early frame end?
+        else if ( xfer_start_r[0] && !next_page) page_cntr <= page_cntr - 1;     
+        else if (!xfer_start_r[0] &&  next_page) page_cntr <= page_cntr + 1;
         
 /*
         if (rst)                         xfer_page_r <= 0;
@@ -298,15 +313,20 @@ module  mcntrl_linear_rw #(
                
         if      (rst)                         last_block <= 0;
         else if (chn_rst || !busy_r)          last_block <= 0;
-        else if (last_row_w && last_in_row_w) last_block <= 1;
+//        else if (last_row_w && last_in_row_w) last_block <= 1;
+        else if (xfer_start_r[0])             last_block <= last_row_w && last_in_row_w;
         
         if      (rst)                            pending_xfers <= 0;
         else if (chn_rst || !busy_r)             pending_xfers <= 0;
         else if ( xfer_start_r[0] && !xfer_done) pending_xfers <= pending_xfers + 1;     
         else if (!xfer_start_r[0] &&  xfer_done) pending_xfers <= pending_xfers - 1;
         
-        if (rst)          frame_done_r <= 0;
-        else              frame_done_r <= busy_r && last_block && xfer_done && (pending_xfers==0);
+        
+//        else              frame_done_r <= busy_r && no_more_needed && xfer_done && (pending_xfers==0);
+        
+//       if (rst)                          no_more_needed <= 0;
+//       else if (chn_rst || !busy_r)      no_more_needed <= 0;
+//       else if (xfer_start_r[0])         no_more_needed <= last_block;
         
         //line_unfinished_r cmd_wrmem
         if (rst)                         line_unfinished_r[0] <= 0; //{FRAME_HEIGHT_BITS{1'b0}};

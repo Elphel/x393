@@ -578,7 +578,7 @@ wire rst=rst_in; // TODO: decide where toi generate
     reg             cmd_seq_refresh;     // sequencer is running refresh
     reg    [10:0]   cmd_seq_addr;   // start address of the command sequencer (MSB - bank: 0 - PS, 1:PL): valid with cmd_seq_run
 
-    wire            sel_refresh_w;  // select refresh over channel
+    wire            sel_refresh_w;  // select refresh over channel, only valid @ a single-cycle pre_run_seq_w
     wire            pre_run_seq_w;  // initiate run sequence next cycle
     wire            pre_run_chn_w;  // initiate run sequence next cycle for a channel (not refresh)
     wire            mcontr_reset;   // reset controller, generated with ddr_rst in the sequencer
@@ -758,7 +758,10 @@ wire rst=rst_in; // TODO: decide where toi generate
 assign mcontr_enabled=mcontr_en && !mcontr_reset; 
 //assign sel_refresh_w= refresh_need || (refresh_want && (!cmd_seq_need || !(cmd_seq_full || (cmd_seq_fill && seq_set ))));  
 assign sel_refresh_w= refresh_need || (refresh_want && !(cmd_seq_need && cmd_seq_full));
-assign pre_run_seq_w= mcontr_enabled && !sequencer_run_busy && !refresh_grant && (cmd_seq_full || refresh_need || refresh_want);
+//assign pre_run_seq_w= mcontr_enabled && !sequencer_run_busy && !refresh_grant && (cmd_seq_full || refresh_need || refresh_want);
+//assign pre_run_seq_w= mcontr_enabled && !sequencer_run_busy && !refresh_grant && !cmd_seq_run && (cmd_seq_full || refresh_want);
+assign pre_run_seq_w= mcontr_enabled && !sequencer_run_busy && !cmd_seq_run && (cmd_seq_full || refresh_want);
+
 assign pre_run_chn_w= pre_run_seq_w && !sel_refresh_w;
 assign en_schedul= mcontr_enabled && !cmd_seq_fill && !cmd_seq_full;
 
@@ -1225,7 +1228,7 @@ end
 /// Combine read data from multiple channel buffers
 wire [3:0] ext_buf_rchn_late;
 wire       ext_buf_rd_late; 
-localparam [3:0] EXT_READ_LATENCY=CHNBUF_READ_LATENCY+1;
+localparam [3:0] EXT_READ_LATENCY=CHNBUF_READ_LATENCY+2; // +1;
     dly_16 #(
         .WIDTH(5)
     ) dly_16_i (

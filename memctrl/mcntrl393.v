@@ -916,6 +916,7 @@ module  mcntrl393 #(
     cmd_encod_linear_rd #(
         .ADDRESS_NUMBER  (ADDRESS_NUMBER),
         .COLADDR_NUMBER  (COLADDR_NUMBER),
+        .NUM_XFER_BITS   (NUM_XFER_BITS),
         .CMD_PAUSE_BITS  (CMD_PAUSE_BITS),
         .CMD_DONE_BIT    (CMD_DONE_BIT)
     ) cmd_encod_linear_rd_i (
@@ -935,6 +936,7 @@ module  mcntrl393 #(
     cmd_encod_linear_wr #(
         .ADDRESS_NUMBER  (ADDRESS_NUMBER),
         .COLADDR_NUMBER  (COLADDR_NUMBER),
+        .NUM_XFER_BITS   (NUM_XFER_BITS),
         .CMD_PAUSE_BITS  (CMD_PAUSE_BITS),
         .CMD_DONE_BIT  (CMD_DONE_BIT)
     ) cmd_encod_linear_wr_i (
