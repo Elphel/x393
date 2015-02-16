@@ -134,7 +134,8 @@ module  axibram_read #(
    
 `ifdef USE_SHORT_REN_REGEN   
    reg bram_regen_r;
-   assign  bram_ren =   bram_reg_re_w && !pre_last_in_burst_r ;     // read port enable
+//   assign  bram_ren =   bram_reg_re_w && !pre_last_in_burst_r ;     // read port enable
+   assign  bram_ren = read_in_progress;
    assign  bram_regen = bram_regen_r;     // output register enable
 `else
    assign  bram_ren =   bram_reg_re_w;     // read port enable

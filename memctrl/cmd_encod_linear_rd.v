@@ -119,10 +119,13 @@ module  cmd_encod_linear_rd #(
     
     always @ (posedge clk) if (start) begin
         row<=row_in;
-        col <= start_col;
+//        col <= start_col;
         bank <= bank_in;
         skip_next_page <= skip_next_page_in;
-        
+    end
+    always @ (posedge clk) begin
+        if (start) col <= start_col;
+        else if (rom_cmd==ENC_CMD_READ) col <= col+1;
     end
     
     // ROM-based (registered output) encoded sequence

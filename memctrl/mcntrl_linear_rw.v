@@ -79,11 +79,11 @@ module  mcntrl_linear_rw #(
 );
     localparam NUM_RC_BURST_BITS=ADDRESS_NUMBER+COLADDR_NUMBER-3;  //to spcify row and col8 == 22
     localparam MPY_WIDTH=        NUM_RC_BURST_BITS; // 22
-    localparam PAR_MOD_LATENCY=  7; // TODO: Find actual worst-case latency for:
+    localparam PAR_MOD_LATENCY=  9; // TODO: Find actual worst-case latency for:
     reg    [FRAME_WIDTH_BITS-1:0] curr_x;         // (calculated) start of transfer x (relative to window left)
     reg   [FRAME_HEIGHT_BITS-1:0] curr_y;         // (calculated) start of transfer y (relative to window top)
     reg     [FRAME_HEIGHT_BITS:0] next_y;         // (calculated) next row number
-    reg        [NUM_RC_BURST_BITS-1:0] line_start_addr;// (calculated) Line start (in {row,col8} in burst8
+    reg   [NUM_RC_BURST_BITS-1:0] line_start_addr;// (calculated) Line start (in {row,col8} in burst8
  // calculating full width from the frame width
     reg   [FRAME_HEIGHT_BITS-1:0] frame_y;     // current line number referenced to the frame top
     reg    [FRAME_WIDTH_BITS-1:0] frame_x;     // current column number referenced to the frame left
@@ -96,6 +96,7 @@ module  mcntrl_linear_rw #(
     reg      [FRAME_WIDTH_BITS:0] row_left;   // number of 8-bursts left in the current row
     reg                           last_in_row;
     reg      [COLADDR_NUMBER-3:0] mem_page_left; // number of 8-bursts left in the pointed memory page
+    reg      [COLADDR_NUMBER-4:0] line_start_page_left; // number of 8-burst left in the memory page from the start of the frame line
     reg         [NUM_XFER_BITS:0] lim_by_xfer;   // number of bursts left limited by the longest transfer (currently 64)
 //    reg        [MAX_TILE_WIDTH:0] lim_by_tile_width;     // number of bursts left limited by the longest transfer (currently 64)
     wire     [COLADDR_NUMBER-3:0] remainder_in_xfer ;//remainder_tile_width;  // number of bursts postponed to the next partial tile (because of the page crossing) MSB-sign
@@ -107,7 +108,7 @@ module  mcntrl_linear_rw #(
     reg         [NUM_XFER_BITS:0] xfer_num128_r;   // number of 128-bit words to transfer (8*16 bits) - full bursts of 8
 //    reg       [NUM_XFER_BITS-1:0] xfer_num128_m1_r;   // number of 128-bit words to transfer minus 1 (8*16 bits) - full bursts of 8
     wire                          pgm_param_w;  // program one of the parameters, invalidate calculated results for PAR_MOD_LATENCY
-    reg                     [2:0] xfer_start_r;
+    reg       [2:0] xfer_start_r; // 1 hot started by xfer start only (not by parameter change)
     reg     [PAR_MOD_LATENCY-1:0] par_mod_r;
     reg     [PAR_MOD_LATENCY-1:0] recalc_r; // 1-hot CE for re-calculating registers
     wire                          calc_valid;   // calculated registers have valid values   
@@ -142,9 +143,9 @@ module  mcntrl_linear_rw #(
     wire                          set_window_wh_w;
     wire                          set_window_x0y0_w;
     wire                          set_window_start_w;
-    wire                          lsw13_zero=!cmd_data[FRAME_WIDTH_BITS-1:0]; // LSW 13 (FRAME_WIDTH_BITS) low bits are all 0 - set carry bit  
-    wire                          msw13_zero=!cmd_data[FRAME_WIDTH_BITS+15:16]; // MSW 13 (FRAME_WIDTH_BITS) low bits are all 0 - set carry bit
-    wire                          msw_zero=  !cmd_data[31:16]; // MSW all bits are 0 - set carry bit
+    wire                          lsw13_zero=!(|cmd_data[FRAME_WIDTH_BITS-1:0]); // LSW 13 (FRAME_WIDTH_BITS) low bits are all 0 - set carry bit  
+//    wire                          msw13_zero=!(|cmd_data[FRAME_WIDTH_BITS+15:16]); // MSW 13 (FRAME_WIDTH_BITS) low bits are all 0 - set carry bit
+    wire                          msw_zero=  !(|cmd_data[31:16]); // MSW all bits are 0 - set carry bit
       
     
 //    reg                     [4:0] mode_reg;//mode register: {extra_pages[1:0],write_mode,enable,!reset}
@@ -180,7 +181,7 @@ module  mcntrl_linear_rw #(
         else if (set_start_addr_w)   start_addr <= cmd_data[NUM_RC_BURST_BITS-1:0];
 
         if      (rst)               frame_full_width <=  0;
-        else if (set_frame_width_w) frame_full_width <= {msw13_zero,cmd_data[FRAME_WIDTH_BITS-1:0]};
+        else if (set_frame_width_w) frame_full_width <= {lsw13_zero,cmd_data[FRAME_WIDTH_BITS-1:0]};
         
         if      (rst) begin
                window_width <= 0; 
@@ -250,10 +251,12 @@ module  mcntrl_linear_rw #(
             frame_x <= curr_x + window_x0;
             frame_y <= curr_y + window_y0;
             next_y <= curr_y + 1;
-         row_left <= window_width - curr_x; // 14 bits - 13 bits
+            row_left <= window_width - curr_x; // 14 bits - 13 bits
         end
+/*        
         if (recalc_r[1]) begin // cycle 2
-            mem_page_left <= (1 << (COLADDR_NUMBER-3)) - frame_x[COLADDR_NUMBER-4:0];
+            mem_page_left <= {1'b1,line_start_page_left} - frame_x[COLADDR_NUMBER-4:0];
+            
             lim_by_xfer <= (|row_left[FRAME_WIDTH_BITS:NUM_XFER_BITS])?
                 (1<<NUM_XFER_BITS):
                 row_left[NUM_XFER_BITS:0]; // 7 bits, max 'h40
@@ -266,26 +269,52 @@ module  mcntrl_linear_rw #(
                      mem_page_left[NUM_XFER_BITS:0]:
                      lim_by_xfer[NUM_XFER_BITS:0]);
             leftover <= remainder_in_xfer[NUM_XFER_BITS-1:0];
-//            xfer_num128_r<= (mem_page_left < {{COLADDR_NUMBER-3-NUM_XFER_BITS{1'b0}},lim_by_xfer})?
-//            mem_page_left[NUM_XFER_BITS:0]:
-//            lim_by_xfer[NUM_XFER_BITS:0];
         end
         if (recalc_r[3]) begin // cycle 4
-            last_in_row <= last_in_row_w;
+            last_in_row <= last_in_row_w; //(row_left=={{(FRAME_WIDTH_BITS-NUM_XFER_BITS){1'b0}},xfer_num128_r});
         end
+*/        
 // registers to be absorbed in DSP block        
         frame_y8_r <= frame_y[FRAME_HEIGHT_BITS-1:3]; // lat=2
         frame_full_width_r <= frame_full_width;
         start_addr_r <= start_addr;
         mul_rslt <= mul_rslt_w[MPY_WIDTH-1:0]; // frame_y8_r * frame_width_r; // 7 bits will be discarded lat=3;
         line_start_addr <= start_addr_r+mul_rslt; // lat=4
+        
 // TODO: Verify MPY/register timing above        
         if (recalc_r[5]) begin // cycle 6
             row_col_r <= line_start_addr+frame_x;
+//            line_start_page_left <= {COLADDR_NUMBER-3{1'b0}} - line_start_addr[COLADDR_NUMBER-4:0]; // 7 bits
+            line_start_page_left <=  - line_start_addr[COLADDR_NUMBER-4:0]; // 7 bits
         end
         bank_reg[0]   <= frame_y[2:0]; //TODO: is it needed - a pipeline for the bank? - remove! 
         for (i=0;i<2; i = i+1)
             bank_reg[i+1] <= bank_reg[i];
+            
+            
+        if (recalc_r[6]) begin // cycle 7
+            mem_page_left <= {1'b1,line_start_page_left} - frame_x[COLADDR_NUMBER-4:0];
+            
+            lim_by_xfer <= (|row_left[FRAME_WIDTH_BITS:NUM_XFER_BITS])?
+                (1<<NUM_XFER_BITS):
+                row_left[NUM_XFER_BITS:0]; // 7 bits, max 'h40
+        end
+        if (recalc_r[7]) begin // cycle 8
+            xfer_limited_by_mem_page_r <= xfer_limited_by_mem_page && !continued_xfer;     
+            xfer_num128_r<= continued_xfer?
+                {EXTRA_BITS,leftover}:
+                (xfer_limited_by_mem_page?
+                     mem_page_left[NUM_XFER_BITS:0]:
+                     lim_by_xfer[NUM_XFER_BITS:0]);
+            //xfer_num128_r depends on leftover only if continued_xfer (after first shortened actual xfer and will not change w/o xfers)
+            // and (next) leftover is only set  if continued_xfer==0, so multiple runs without chnge of continued_xfer will not differ       
+            if (!continued_xfer) leftover <= remainder_in_xfer[NUM_XFER_BITS-1:0]; //  {EXTRA_BITS, lim_by_xfer}-mem_page_left;
+        end
+        
+        if (recalc_r[8]) begin // cycle 9
+            last_in_row <= last_in_row_w; //(row_left=={{(FRAME_WIDTH_BITS-NUM_XFER_BITS){1'b0}},xfer_num128_r});
+        end
+            
             
     end
 wire    start_not_partial= xfer_start_r[0] && !xfer_limited_by_mem_page_r;    
@@ -364,10 +393,10 @@ wire    start_not_partial= xfer_start_r[0] && !xfer_limited_by_mem_page_r;
         
         if      (rst)                              pending_xfers <= 0;
         else if (chn_rst || !busy_r)               pending_xfers <= 0;
-//        else if ( xfer_start_r[0] && !xfer_done) pending_xfers <= pending_xfers + 1;     
-//        else if (!xfer_start_r[0] &&  xfer_done) pending_xfers <= pending_xfers - 1;
-        else if ( start_not_partial && !xfer_done) pending_xfers <= pending_xfers + 1;     
-        else if (!start_not_partial &&  xfer_done) pending_xfers <= pending_xfers - 1;
+        else if ( xfer_start_r[0] && !xfer_done) pending_xfers <= pending_xfers + 1;     
+        else if (!xfer_start_r[0] &&  xfer_done) pending_xfers <= pending_xfers - 1;
+//        else if ( start_not_partial && !xfer_done) pending_xfers <= pending_xfers + 1;     
+//        else if (!start_not_partial &&  xfer_done) pending_xfers <= pending_xfers - 1;
         
         
         

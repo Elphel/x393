@@ -27,6 +27,7 @@ task write_block_scanline_chn;  // S uppressThisWarning VEditor : may be unused
     input integer startY;
     reg    [29:0] start_addr;
     begin
+        $display("====== write_block_scanline_chn:%d page: %x X=0x%x Y=0x%x num=%d @%t", chn, page, startX, startY,num_words, $time);
         case (chn)
             1:  start_addr=MCONTR_BUF1_WR_ADDR + (page << 8);
             3:  start_addr=MCONTR_BUF3_WR_ADDR + (page << 8);
@@ -35,7 +36,7 @@ task write_block_scanline_chn;  // S uppressThisWarning VEditor : may be unused
                 start_addr = MCONTR_BUF1_WR_ADDR+ (page << 8);
             end
         endcase
-        write_block_incremtal (start_addr, num_words, startX+startY<<16);
+        write_block_incremtal (start_addr, num_words, (startX<<2) + (startY<<16)); // 1 of startX is 8x16 bit, 16 bytes or 4 32-bit words
     end
 endtask
 

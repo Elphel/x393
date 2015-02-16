@@ -88,7 +88,8 @@ module  mcntrl_tiled_rw#(
     reg    [FRAME_WIDTH_BITS-1:0] curr_x;         // (calculated) start of transfer x (relative to window left)
     reg   [FRAME_HEIGHT_BITS-1:0] curr_y;         // (calculated) start of transfer y (relative to window top)
     reg     [FRAME_HEIGHT_BITS:0] next_y;         // (calculated) next row number
-    reg        [NUM_RC_BURST_BITS-1:0] line_start_addr;// (calculated) Line start (in {row,col8} in burst8
+    reg   [NUM_RC_BURST_BITS-1:0] line_start_addr;// (calculated) Line start (in {row,col8} in burst8
+    reg      [COLADDR_NUMBER-4:0] line_start_page_left; // number of 8-burst left in the memory page from the start of the frame line
  // calculating full width from the frame width
     reg   [FRAME_HEIGHT_BITS-1:0] frame_y;     // current line number referenced to the frame top
     reg    [FRAME_WIDTH_BITS-1:0] frame_x;     // current column number referenced to the frame left
@@ -145,7 +146,7 @@ module  mcntrl_tiled_rw#(
     wire                          set_window_start_w;
     wire                          set_tile_wh_w;
     wire                          lsw13_zero=!(|cmd_data[FRAME_WIDTH_BITS-1:0]); // LSW 13 (FRAME_WIDTH_BITS) low bits are all 0 - set carry bit  
-    wire                          msw13_zero=!(|cmd_data[FRAME_WIDTH_BITS+15:16]); // MSW 13 (FRAME_WIDTH_BITS) low bits are all 0 - set carry bit
+//    wire                          msw13_zero=!(|cmd_data[FRAME_WIDTH_BITS+15:16]); // MSW 13 (FRAME_WIDTH_BITS) low bits are all 0 - set carry bit
     wire                          msw_zero=  !(|cmd_data[31:16]); // MSW all bits are 0 - set carry bit
     wire                          tile_width_zero= !(|cmd_data[MAX_TILE_WIDTH-1:0]);  
     wire                          tile_height_zero=!(|cmd_data[MAX_TILE_HEIGHT+15:16]);  
@@ -188,7 +189,7 @@ module  mcntrl_tiled_rw#(
         else if (set_start_addr_w)   start_addr <= cmd_data[NUM_RC_BURST_BITS-1:0];
 
         if      (rst)               frame_full_width <=  0;
-        else if (set_frame_width_w) frame_full_width <= {msw13_zero,cmd_data[FRAME_WIDTH_BITS-1:0]};
+        else if (set_frame_width_w) frame_full_width <= {lsw13_zero,cmd_data[FRAME_WIDTH_BITS-1:0]};
         
         if (rst) begin
                window_width <= 0; 
@@ -270,7 +271,9 @@ module  mcntrl_tiled_rw#(
         end    
    // cycle 2     
         if (recalc_r[1]) begin
-            mem_page_left <= (1 << (COLADDR_NUMBER-3)) - frame_x[COLADDR_NUMBER-4:0];
+//            mem_page_left <= (1 << (COLADDR_NUMBER-3)) - frame_x[COLADDR_NUMBER-4:0];
+            mem_page_left <= {1'b1,line_start_page_left} - frame_x[COLADDR_NUMBER-4:0];
+            
 //            lim_by_tile_width <= (|row_left[FRAME_WIDTH_BITS:MAX_TILE_WIDTH])?(1<<MAX_TILE_WIDTH):row_left[MAX_TILE_WIDTH:0]; // 7 bits, max 'h40
             lim_by_tile_width <= (|row_left[FRAME_WIDTH_BITS:MAX_TILE_WIDTH] || (row_left[MAX_TILE_WIDTH:0]>= tile_cols))?
                                     tile_cols:
@@ -300,6 +303,8 @@ module  mcntrl_tiled_rw#(
 // TODO: Verify MPY/register timing above        
         if (recalc_r[5]) begin
             row_col_r <= line_start_addr+frame_x;
+//            line_start_page_left <= {COLADDR_NUMBER-3{1'b0}} - line_start_addr[COLADDR_NUMBER-4:0]; // 7 bits
+            line_start_page_left <=  - line_start_addr[COLADDR_NUMBER-4:0]; // 7 bits
         end
         bank_reg[0]   <= frame_y[2:0]; //TODO: is it needed - a pipeline for the bank? - remove! 
         for (i=0;i<2; i = i+1)
@@ -367,10 +372,13 @@ wire    start_not_partial= xfer_start_r[0] && !xfer_limited_by_mem_page_r;
         else if (last_row_w && last_in_row_w) last_block <= 1;
  
  // start_not_partial is not generated when partial (first of 2, caused by a tile crossing memory page) transfer is requested       
+ // here we need to cout all requests - partial or not
         if      (rst)                                   pending_xfers <= 0;
         else if (chn_rst || !busy_r)                    pending_xfers <= 0;
-        else if ( start_not_partial && !xfer_page_done) pending_xfers <= pending_xfers + 1;     
-        else if (!start_not_partial &&  xfer_page_done) pending_xfers <= pending_xfers - 1; // page done is not generated on partial (first) pages
+        else if ( xfer_start_r[0] && !xfer_page_done) pending_xfers <= pending_xfers + 1;     
+        else if (!xfer_start_r[0] &&  xfer_page_done) pending_xfers <= pending_xfers - 1; // page done is not generated on partial (first) pages
+//        else if ( start_not_partial && !xfer_page_done) pending_xfers <= pending_xfers + 1;     
+//        else if (!start_not_partial &&  xfer_page_done) pending_xfers <= pending_xfers - 1; // page done is not generated on partial (first) pages
         
         if (rst)          frame_done_r <= 0;
         else              frame_done_r <= busy_r && last_block && xfer_page_done && (pending_xfers==0);

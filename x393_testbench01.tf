@@ -34,6 +34,7 @@
 `define TEST_SCANLINE_WRITE 1
 `define TEST_SCANLINE_WRITE_WAIT 1 // wait TEST_SCANLINE_WRITE finished (frame_done)
 `define TEST_SCANLINE_READ  1
+`define TEST_SCANLINE_READ_SHOW  1
 
 
 
@@ -395,7 +396,7 @@ always #(CLKIN_PERIOD/2) CLK <= ~CLK;
         end
         write_contol_register(MCNTRL_TEST01_ADDR + MCNTRL_TEST01_CHN3_MODE,            TEST01_NEXT_PAGE);
     end
-    `ifdef TEST_SCANLINE_WRITE_WAIT
+    `ifdef TEST_SCANLINE_WRITE_WAIT // Does it work?
             wait_status_condition ( // may also be read directly from the same bit of mctrl_linear_rw (address=5) status
                 MCNTRL_TEST01_STATUS_REG_CHN3_ADDR,
                 MCNTRL_TEST01_ADDR + MCNTRL_TEST01_CHN3_STATUS_CNTRL,
@@ -426,7 +427,10 @@ always #(CLKIN_PERIOD/2) CLK <= ~CLK;
                 (ii) << 16, // -TEST_INITIAL_BURST)<<16, // 4-bit page number
                 'hf << 16,  // mask for the 4-bit page number
                 1); // not equal to
-// read block (if needed), for now just sikip                
+// read block (if needed), for now just sikip   
+        `ifdef TEST_SCANLINE_READ_SHOW
+            read_block_buf_chn (2, (ii & 3), SCANLINE_WINDOW_W << 2, 1 ); // chn=0, page=3, number of 32-bit words=256, wait_done
+        `endif             
         write_contol_register(MCNTRL_TEST01_ADDR + MCNTRL_TEST01_CHN2_MODE,            TEST01_NEXT_PAGE);
     end
 `endif
