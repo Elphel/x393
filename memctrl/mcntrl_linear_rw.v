@@ -71,6 +71,7 @@ module  mcntrl_linear_rw #(
     output    [ADDRESS_NUMBER-1:0] xfer_row,      // memory row
     output    [COLADDR_NUMBER-4:0] xfer_col,      // start memory column in 8-bursts
     output     [NUM_XFER_BITS-1:0] xfer_num128,   // number of 128-bit words to transfer (8*16 bits) - full bursts of 8 ( 0 - maximal length, 64)
+    output                         xfer_partial,  // partial tile (first of 2) , sequencer will not generate page_next at the end of block   
     input                          xfer_done,     // transfer to/from the buffer finished
     output                         xfer_reset_page // reset internal buffer page to zero
 //    output                   [1:0] xfer_page      // page number for transfer (goes to channel buffer memory-side adderss)   
@@ -96,14 +97,23 @@ module  mcntrl_linear_rw #(
     reg                           last_in_row;
     reg      [COLADDR_NUMBER-3:0] mem_page_left; // number of 8-bursts left in the pointed memory page
     reg         [NUM_XFER_BITS:0] lim_by_xfer;   // number of bursts left limited by the longest transfer (currently 64)
+//    reg        [MAX_TILE_WIDTH:0] lim_by_tile_width;     // number of bursts left limited by the longest transfer (currently 64)
+    wire     [COLADDR_NUMBER-3:0] remainder_in_xfer ;//remainder_tile_width;  // number of bursts postponed to the next partial tile (because of the page crossing) MSB-sign
+    reg                           continued_xfer;   //continued_tile;        // this is a continued tile (caused by page crossing) - only once
+    reg       [NUM_XFER_BITS-1:0] leftover; //[MAX_TILE_WIDTH-1:0] leftover_cols;         // valid with continued_tile, number of columns left
+    
+    
+    
     reg         [NUM_XFER_BITS:0] xfer_num128_r;   // number of 128-bit words to transfer (8*16 bits) - full bursts of 8
 //    reg       [NUM_XFER_BITS-1:0] xfer_num128_m1_r;   // number of 128-bit words to transfer minus 1 (8*16 bits) - full bursts of 8
     wire                          pgm_param_w;  // program one of the parameters, invalidate calculated results for PAR_MOD_LATENCY
     reg                     [2:0] xfer_start_r;
     reg     [PAR_MOD_LATENCY-1:0] par_mod_r;
+    reg     [PAR_MOD_LATENCY-1:0] recalc_r; // 1-hot CE for re-calculating registers
     wire                          calc_valid;   // calculated registers have valid values   
     wire                          chn_en;   // enable requests by channle (continue ones in progress)
     wire                          chn_rst; // resets command, including fifo;
+    reg                           chn_rst_d; // delayed by 1 cycle do detect turning off
     reg                           xfer_reset_page_r;
     reg                     [2:0] page_cntr;
     
@@ -203,6 +213,8 @@ module  mcntrl_linear_rw #(
     assign calc_valid=  par_mod_r[PAR_MOD_LATENCY-1]; // MSB, longest 0
 //    assign xfer_page=   xfer_page_r;
     assign xfer_reset_page = xfer_reset_page_r;
+    assign xfer_partial=      xfer_limited_by_mem_page_r;
+    
     assign frame_done=  frame_done_r;
     assign pre_want=    chn_en && busy_r && !want_r && !xfer_start_r[0] && calc_valid && !last_block && !suspend;
 //    assign pre_want=    chn_en && busy_r && !want_r && !xfer_start_r[0] && calc_valid && !no_more_needed && !suspend;
@@ -219,44 +231,78 @@ module  mcntrl_linear_rw #(
     assign chn_rst =        ~mode_reg[0]; // resets command, including fifo;
     assign cmd_extra_pages = mode_reg[3:2]; // external module needs more than 1 page
 //    assign cmd_wrmem =       mode_reg[4];// 0: read from memory, 1:write to memory
-    assign status_data= {1'b0, busy_r};     // TODO: Add second bit?
+    assign status_data= {frame_done, busy_r};     // TODO: Add second bit?
     assign pgm_param_w=      cmd_we;
+    localparam [COLADDR_NUMBER-3-NUM_XFER_BITS-1:0] EXTRA_BITS=0;
+    assign remainder_in_xfer = {EXTRA_BITS, lim_by_xfer}-mem_page_left;
     
     integer i;
 //    localparam EXTRA_BITS={ADDRESS_NUMBER-3-COLADDR_NUMBER-3{1'b0}};
 //    localparam EXTRA_BITS={COLADDR_NUMBER-3-NUM_XFER_BITS{1'b0}};
+    wire xfer_limited_by_mem_page;
+    reg  xfer_limited_by_mem_page_r;
+    assign xfer_limited_by_mem_page= mem_page_left < {EXTRA_BITS,lim_by_xfer};
 
+/// Recalcualting jusrt after starting request - preparing for the next one. Also happens after parameter change.
+/// Should dpepend only on the parameters updated separately (curr_x, curr_y)
     always @(posedge mclk) begin // TODO: Match latencies (is it needed?) Reduce consumption by CE?
-        frame_x <= curr_x + window_x0;
-        frame_y <= curr_y + window_y0;
-        next_y <= curr_y + 1;
-        row_left <= window_width - curr_x; // 14 bits - 13 bits
-        mem_page_left <= (1 << (COLADDR_NUMBER-3)) - frame_x[COLADDR_NUMBER-4:0];
-        lim_by_xfer <= (|row_left[FRAME_WIDTH_BITS:NUM_XFER_BITS])?(1<<NUM_XFER_BITS):row_left[NUM_XFER_BITS:0]; // 7 bits, max 'h40
-        xfer_num128_r<= (mem_page_left < {{COLADDR_NUMBER-3-NUM_XFER_BITS{1'b0}},lim_by_xfer})? mem_page_left[NUM_XFER_BITS:0]:lim_by_xfer[NUM_XFER_BITS:0];
-//        xfer_num128_m1_r <= xfer_num128_r[NUM_XFER_BITS-1:0]-1;
-//        xfer_num128_r<= (mem_page_left> {EXTRA_BITS, lim_by_xfer})? mem_page_left[NUM_XFER_BITS:0]:lim_by_xfer[NUM_XFER_BITS:0];
-// VDT bug? next line gives a warning        
-//        xfer_num128_r<= (mem_page_left> {{COLADDR_NUMBER-3-COLADDR_NUMBER-3{1'b0}},lim_by_xfer})?mem_page_left[NUM_XFER_BITS-1:0]:lim_by_xfer[NUM_XFER_BITS-1:0];
-        last_in_row <= last_in_row_w;
+        if (recalc_r[0]) begin // cycle 1
+            frame_x <= curr_x + window_x0;
+            frame_y <= curr_y + window_y0;
+            next_y <= curr_y + 1;
+         row_left <= window_width - curr_x; // 14 bits - 13 bits
+        end
+        if (recalc_r[1]) begin // cycle 2
+            mem_page_left <= (1 << (COLADDR_NUMBER-3)) - frame_x[COLADDR_NUMBER-4:0];
+            lim_by_xfer <= (|row_left[FRAME_WIDTH_BITS:NUM_XFER_BITS])?
+                (1<<NUM_XFER_BITS):
+                row_left[NUM_XFER_BITS:0]; // 7 bits, max 'h40
+        end
+        if (recalc_r[2]) begin // cycle 3
+            xfer_limited_by_mem_page_r <= xfer_limited_by_mem_page && !continued_xfer;     
+            xfer_num128_r<= continued_xfer?
+                {EXTRA_BITS,leftover}:
+                (xfer_limited_by_mem_page?
+                     mem_page_left[NUM_XFER_BITS:0]:
+                     lim_by_xfer[NUM_XFER_BITS:0]);
+            leftover <= remainder_in_xfer[NUM_XFER_BITS-1:0];
+//            xfer_num128_r<= (mem_page_left < {{COLADDR_NUMBER-3-NUM_XFER_BITS{1'b0}},lim_by_xfer})?
+//            mem_page_left[NUM_XFER_BITS:0]:
+//            lim_by_xfer[NUM_XFER_BITS:0];
+        end
+        if (recalc_r[3]) begin // cycle 4
+            last_in_row <= last_in_row_w;
+        end
+// registers to be absorbed in DSP block        
         frame_y8_r <= frame_y[FRAME_HEIGHT_BITS-1:3]; // lat=2
         frame_full_width_r <= frame_full_width;
         start_addr_r <= start_addr;
         mul_rslt <= mul_rslt_w[MPY_WIDTH-1:0]; // frame_y8_r * frame_width_r; // 7 bits will be discarded lat=3;
         line_start_addr <= start_addr_r+mul_rslt; // lat=4
-        row_col_r <= line_start_addr+frame_x;
+// TODO: Verify MPY/register timing above        
+        if (recalc_r[5]) begin // cycle 6
+            row_col_r <= line_start_addr+frame_x;
+        end
         bank_reg[0]   <= frame_y[2:0]; //TODO: is it needed - a pipeline for the bank? - remove! 
         for (i=0;i<2; i = i+1)
             bank_reg[i+1] <= bank_reg[i];
             
     end
-    
+wire    start_not_partial= xfer_start_r[0] && !xfer_limited_by_mem_page_r;    
 // now have row start address, bank and row_left ;
 // calculate number to read (min of row_left, maximal xfer and what is left in the DDR3 page    
     always @(posedge rst or posedge mclk) begin
         if      (rst)                                       par_mod_r<=0;
         else if (pgm_param_w || xfer_start_r[0] || chn_rst) par_mod_r<=0;
         else                                                par_mod_r <= {par_mod_r[PAR_MOD_LATENCY-2:0], 1'b1};
+
+        if      (rst)          chn_rst_d <= 0;
+        else                   chn_rst_d <= chn_rst;
+
+        if      (rst)          recalc_r<=0;
+        else if (chn_rst)      recalc_r<=0;
+//        else                   recalc_r <= {recalc_r[PAR_MOD_LATENCY-2:0], (xfer_grant & ~chn_rst) | pgm_param_w | (chn_rst_d & ~chn_rst)};
+        else                   recalc_r <= {recalc_r[PAR_MOD_LATENCY-2:0], (xfer_start_r[0] & ~chn_rst) | pgm_param_w | (chn_rst_d & ~chn_rst)};
         
         if      (rst)          busy_r <= 0;
         else if (chn_rst)      busy_r <= 0;
@@ -266,6 +312,11 @@ module  mcntrl_linear_rw #(
         if (rst)          xfer_done_d <= 0;
         else              xfer_done_d <= xfer_done;
         
+        
+        if (rst)                   continued_xfer <= 1'b0;
+        else if (chn_rst)          continued_xfer <= 1'b0;
+        else if (frame_start)      continued_xfer <= 1'b0;
+        else if (xfer_start_r[0])  continued_xfer <= xfer_limited_by_mem_page_r; // only set after actual start if it was partial, not after parameter change
 
         if      (rst)                                                       frame_done_r <= 0;
         else if (chn_rst || frame_start)                                    frame_done_r <= 0;
@@ -287,18 +338,13 @@ module  mcntrl_linear_rw #(
         else if (chn_rst || xfer_grant)                          want_r <= 0;
         else if (pre_want && (page_cntr>{1'b0,cmd_extra_pages})) want_r <= 1;
         
-        if (rst)                                 page_cntr <= 0;
-        else if (frame_start)                    page_cntr <= cmd_wrmem?0:4; // What about last pages (like if only 1 page is needed)? Early frame end?
-        else if ( xfer_start_r[0] && !next_page) page_cntr <= page_cntr - 1;     
-        else if (!xfer_start_r[0] &&  next_page) page_cntr <= page_cntr + 1;
+        if (rst)                                   page_cntr <= 0;
+        else if (frame_start)                      page_cntr <= cmd_wrmem?0:4; // What about last pages (like if only 1 page is needed)? Early frame end?
+//        else if ( xfer_start_r[0] && !next_page) page_cntr <= page_cntr - 1;     
+//        else if (!xfer_start_r[0] &&  next_page) page_cntr <= page_cntr + 1;
+        else if ( start_not_partial && !next_page) page_cntr <= page_cntr - 1;     
+        else if (!start_not_partial &&  next_page) page_cntr <= page_cntr + 1;
         
-/*
-        if (rst)                         xfer_page_r <= 0;
-//        else if (chn_rst || frame_start) xfer_page_r <= 0; // TODO: Check if it is better to keep xfer_page_r on frame start?
-        else if (chn_rst )               xfer_page_r <= 0; // TODO: Check if it is better to reset xfer_page_r on frame start? to zero?
-        else if (xfer_done)              xfer_page_r <= xfer_page_r+1;
-*/
-//        xfer_reset_page_r <= chn_rst || frame_start ; // TODO: Check if it is better to reset page on frame start?
         xfer_reset_page_r <= chn_rst; // || frame_start ; // TODO: Check if it is better to reset page on frame start?
 
         
@@ -316,17 +362,14 @@ module  mcntrl_linear_rw #(
 //        else if (last_row_w && last_in_row_w) last_block <= 1;
         else if (xfer_start_r[0])             last_block <= last_row_w && last_in_row_w;
         
-        if      (rst)                            pending_xfers <= 0;
-        else if (chn_rst || !busy_r)             pending_xfers <= 0;
-        else if ( xfer_start_r[0] && !xfer_done) pending_xfers <= pending_xfers + 1;     
-        else if (!xfer_start_r[0] &&  xfer_done) pending_xfers <= pending_xfers - 1;
+        if      (rst)                              pending_xfers <= 0;
+        else if (chn_rst || !busy_r)               pending_xfers <= 0;
+//        else if ( xfer_start_r[0] && !xfer_done) pending_xfers <= pending_xfers + 1;     
+//        else if (!xfer_start_r[0] &&  xfer_done) pending_xfers <= pending_xfers - 1;
+        else if ( start_not_partial && !xfer_done) pending_xfers <= pending_xfers + 1;     
+        else if (!start_not_partial &&  xfer_done) pending_xfers <= pending_xfers - 1;
         
         
-//        else              frame_done_r <= busy_r && no_more_needed && xfer_done && (pending_xfers==0);
-        
-//       if (rst)                          no_more_needed <= 0;
-//       else if (chn_rst || !busy_r)      no_more_needed <= 0;
-//       else if (xfer_start_r[0])         no_more_needed <= last_block;
         
         //line_unfinished_r cmd_wrmem
         if (rst)                         line_unfinished_r[0] <= 0; //{FRAME_HEIGHT_BITS{1'b0}};

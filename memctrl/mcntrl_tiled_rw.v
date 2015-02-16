@@ -24,7 +24,6 @@
 module  mcntrl_tiled_rw#(
    parameter ADDRESS_NUMBER=                   15,
     parameter COLADDR_NUMBER=                   10,
-    parameter NUM_XFER_BITS=                     6,    // number of bits to specify transfer length
     parameter FRAME_WIDTH_BITS=                 13,    // Maximal frame width - 8-word (16 bytes) bursts 
     parameter FRAME_HEIGHT_BITS=                16,    // Maximal frame height 
     parameter MAX_TILE_WIDTH=                   6,     // number of bits to specify maximal tile (width-1) (6 -> 64)
@@ -106,7 +105,7 @@ module  mcntrl_tiled_rw#(
     reg        [MAX_TILE_WIDTH:0] lim_by_tile_width;     // number of bursts left limited by the longest transfer (currently 64)
     wire     [COLADDR_NUMBER-3:0] remainder_tile_width;  // number of bursts postponed to the next partial tile (because of the page crossing) MSB-sign
     reg                           continued_tile;        // this is a continued tile (caused by page crossing) - only once
-    reg      [MAX_TILE_WIDTH-1:0] leftower_cols;         // valid with continued_tile, number of columns left
+    reg      [MAX_TILE_WIDTH-1:0] leftover_cols;         // valid with continued_tile, number of columns left
     wire                          pgm_param_w;  // program one of the parameters, invalidate calculated results for PAR_MOD_LATENCY
     reg                     [2:0] xfer_start_r;
     reg     [PAR_MOD_LATENCY-1:0] par_mod_r; 
@@ -242,7 +241,7 @@ module  mcntrl_tiled_rw#(
     assign cmd_extra_pages = mode_reg[3:2]; // external module needs more than 1 page
     assign keep_open=        mode_reg[4]; // keep banks open (will be used only if number of rows <= 8 
 //    assign cmd_wrmem =       mode_reg[5];// 0: read from memory, 1:write to memory
-    assign status_data= {1'b0, busy_r};     // TODO: Add second bit?
+    assign status_data=      {frame_done, busy_r}; 
     assign pgm_param_w=      cmd_we;
     assign rowcol_inc=       frame_full_width;
     assign num_cols_m1_w=    num_cols_r-1;
@@ -281,9 +280,9 @@ module  mcntrl_tiled_rw#(
         if (recalc_r[2]) begin
             xfer_limited_by_mem_page_r <= xfer_limited_by_mem_page && !continued_tile;     
             num_cols_r<= continued_tile?
-                {EXTRA_BITS,leftower_cols}:
+                {EXTRA_BITS,leftover_cols}:
                 (xfer_limited_by_mem_page? mem_page_left[MAX_TILE_WIDTH:0]:lim_by_tile_width[MAX_TILE_WIDTH:0]);
-                leftower_cols <= remainder_tile_width[MAX_TILE_WIDTH-1:0];
+                leftover_cols <= remainder_tile_width[MAX_TILE_WIDTH-1:0];
 //            remainder_tile_width <= {EXTRA_BITS,lim_by_tile_width}-mem_page_left;
         end
 // VDT bug? next line gives a warning        
@@ -344,10 +343,12 @@ wire    start_not_partial= xfer_start_r[0] && !xfer_limited_by_mem_page_r;
         else if (chn_rst || xfer_grant)                          want_r <= 0;
         else if (pre_want && (page_cntr>{1'b0,cmd_extra_pages})) want_r <= 1;
         
-        if (rst)                               page_cntr <= 0;
-        else if (frame_start)                  page_cntr <= cmd_wrmem?0:4;
-        else if ( xfer_start_r[0] && !next_page) page_cntr <= page_cntr + 1;     
-        else if (!xfer_start_r[0] &&  next_page) page_cntr <= page_cntr - 1;
+        if (rst)                                   page_cntr <= 0;
+        else if (frame_start)                      page_cntr <= cmd_wrmem?0:4;
+//        else if ( xfer_start_r[0] && !next_page) page_cntr <= page_cntr + 1;     
+//        else if (!xfer_start_r[0] &&  next_page) page_cntr <= page_cntr - 1;
+        else if ( start_not_partial && !next_page) page_cntr <= page_cntr + 1;     
+        else if (!start_not_partial &&  next_page) page_cntr <= page_cntr - 1;
         
         if (rst) xfer_page_rst_r <= 1;
         else     xfer_page_rst_r <= chn_rst || (MCNTRL_TILED_FRAME_PAGE_RESET ? frame_start:1'b0);

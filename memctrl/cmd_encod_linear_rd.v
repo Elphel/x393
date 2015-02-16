@@ -47,6 +47,7 @@ module  cmd_encod_linear_rd #(
     input   [ADDRESS_NUMBER-1:0] row_in,      // memory row
     input   [COLADDR_NUMBER-4:0] start_col,   // start memory column in 8-bursts
     input    [NUM_XFER_BITS-1:0] num128_in,   // number of 128-bit words to transfer (8*16 bits) - full bursts of 8 ( 0 - maximal length, 64)
+    input                        skip_next_page_in, // do not reset external buffer (continue)    
     input                        start,       // start generating commands
     output reg            [31:0] enc_cmd,     // encoded commnad
     output reg                   enc_wr,      // write encoded command
@@ -72,7 +73,7 @@ module  cmd_encod_linear_rd #(
     localparam REPEAT_ADDR=3;
     
     localparam CMD_NOP=      0; // 3-bit normal memory RCW commands (positive logic)
-    localparam CMD_READ=    3;
+    localparam CMD_READ=     2;
     localparam CMD_PRECHARGE=5;
     localparam CMD_ACTIVATE= 4;
     
@@ -80,7 +81,7 @@ module  cmd_encod_linear_rd #(
     reg   [COLADDR_NUMBER-4:0] col;     // start memory column (3 LSBs should be 0?) // VDT BUG: col is used as a function call parameter!
     reg                  [2:0] bank;    // memory bank;
     reg    [NUM_XFER_BITS-1:0] num128;  // number of 128-bit words to transfer
-    
+    reg                        skip_next_page;
     reg                        gen_run;
     reg                        gen_run_d;
     reg        [ROM_DEPTH-1:0] gen_addr; // will overrun as stop comes from ROM
@@ -120,6 +121,8 @@ module  cmd_encod_linear_rd #(
         row<=row_in;
         col <= start_col;
         bank <= bank_in;
+        skip_next_page <= skip_next_page_in;
+        
     end
     
     // ROM-based (registered output) encoded sequence
@@ -146,7 +149,7 @@ module  cmd_encod_linear_rd #(
         else               enc_wr <= gen_run || gen_run_d;
         
         if (rst)           enc_done <= 0;
-        else               enc_done <= enc_wr || !gen_run_d;
+        else               enc_done <= enc_wr && !gen_run_d;
         
         if (rst)             enc_cmd <= 0;
         else if (rom_cmd==0) enc_cmd <= func_encode_skip ( // encode pause
@@ -162,7 +165,7 @@ module  cmd_encod_linear_rd #(
             rom_r[ENC_DCI],          //   dci;        // DCI disable, both DQ and DQS lines (internal logic and timing sequencer for 0->1 and 1->0)
             rom_r[ENC_BUF_WR],       //   buf_wr;     // connect to external buffer (but only if not paused)
             1'b0,                    //   buf_rd;     // connect to external buffer (but only if not paused)
-            rom_r[ENC_BUF_PGNEXT]);     //   buf_rst;    // connect to external buffer (but only if not paused)
+            rom_r[ENC_BUF_PGNEXT] && !skip_next_page);     //   buf_rst;    // connect to external buffer (but only if not paused)
        else  enc_cmd <= func_encode_cmd ( // encode non-NOP command
             rom_cmd[1]?
                     row:
@@ -179,7 +182,7 @@ module  cmd_encod_linear_rd #(
             rom_r[ENC_BUF_WR],       //   buf_wr;     // connect to external buffer (but only if not paused)
             1'b0,                    //   buf_rd;     // connect to external buffer (but only if not paused)     
             rom_r[ENC_NOP],          //   nop;        // add NOP after the current command, keep other data
-            rom_r[ENC_BUF_PGNEXT]);  //   buf_rst;    // connect to external buffer (but only if not paused)
+            rom_r[ENC_BUF_PGNEXT] && !skip_next_page);  //   buf_rst;    // connect to external buffer (but only if not paused)
     end    
     
 

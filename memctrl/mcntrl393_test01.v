@@ -118,9 +118,9 @@ module  mcntrl393_test01#(
     assign suspend_chn2 = suspend_chn2_r;
     assign suspend_chn3 = suspend_chn3_r;
     assign suspend_chn4 = suspend_chn4_r;
-    assign status_chn2={page_chn2,line_unfinished_chn2,1'b0, frame_busy_chn2};
-    assign status_chn3={page_chn3,line_unfinished_chn3,1'b0, frame_busy_chn3};
-    assign status_chn4={page_chn4,line_unfinished_chn4,1'b0, frame_busy_chn4};
+    assign status_chn2={page_chn2,line_unfinished_chn2,frame_busy_chn2, frame_busy_chn2};
+    assign status_chn3={page_chn3,line_unfinished_chn3,frame_busy_chn3, frame_busy_chn3};
+    assign status_chn4={page_chn4,line_unfinished_chn4,frame_busy_chn4, frame_busy_chn4};
 
     always @ (posedge mclk) begin
         frame_start_chn2_r <= set_chh2_mode && cmd_frame_start_w;

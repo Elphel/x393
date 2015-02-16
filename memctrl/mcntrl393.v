@@ -459,17 +459,19 @@ module  mcntrl393 #(
     wire                        buf4_regen;
 
 // common for channels 2 and 3
-    wire                [2:0] lin_rw_bank;     // memory bank
-    wire [ADDRESS_NUMBER-1:0] lin_rw_row;      // memory row
-    wire [COLADDR_NUMBER-4:0] lin_rw_col;      // start memory column in 8-bursts
-    wire                [5:0] lin_rw_num128;   // number of 128-bit words to transfer (8*16 bits) - full bursts of 8 ( 0 - maximal length, 64)
-    wire                      lin_rd_start;    // start generating commands for read sequence
-    wire                      lin_wr_start;    // start generating commands for write sequence
+    wire                  [2:0] lin_rw_bank;     // memory bank
+    wire   [ADDRESS_NUMBER-1:0] lin_rw_row;      // memory row
+    wire   [COLADDR_NUMBER-4:0] lin_rw_col;      // start memory column in 8-bursts
+    wire                  [5:0] lin_rw_num128;   // number of 128-bit words to transfer (8*16 bits) - full bursts of 8 ( 0 - maximal length, 64)
+    wire                        lin_rw_xfer_partial; // do not increment page in the end, continue current
+    wire                        lin_rd_start;    // start generating commands for read sequence
+    wire                        lin_wr_start;    // start generating commands for write sequence
 
     wire                  [2:0] lin_rd_chn2_bank;   // bank address
     wire   [ADDRESS_NUMBER-1:0] lin_rd_chn2_row;    // memory row
     wire   [COLADDR_NUMBER-4:0] lin_rd_chn2_col;    // start memory column in 8-bursts
     wire                  [5:0] lin_rd_chn2_num128; // number of 128-bit words to transfer (8*16 bits) - full bursts of 8 ( 0 - maximal length, 64)
+    wire                        lin_rd_chn2_partial;  // do not increment page in the end, continue current
     wire                        lin_rd_chn2_start;  // start generating commands
 //    wire                  [1:0] xfer_page2;         // "internal" buffer page
     wire                        xfer_reset_page2_pos;         // "internal" buffer page reset, @posedge mclk
@@ -479,6 +481,7 @@ module  mcntrl393 #(
     wire   [ADDRESS_NUMBER-1:0] lin_wr_chn3_row;    // memory row
     wire   [COLADDR_NUMBER-4:0] lin_wr_chn3_col;    // start memory column in 8-bursts
     wire                  [5:0] lin_wr_chn3_num128; // number of 128-bit words to transfer (8*16 bits) - full bursts of 8 ( 0 - maximal length, 64)
+    wire                        lin_wr_chn3_partial; // do not increment page in the end, continue current
     wire                        lin_wr_chn3_start;  // start generating commands
 //    wire                  [1:0] xfer_page3;       // "internal" buffer page
     wire                        xfer_reset_page3;   // "internal" buffer page reset, @posedge mclk
@@ -667,11 +670,11 @@ module  mcntrl393 #(
         .status_ad            (status_tiled_chn4_ad), // output[7:0] 
         .status_rq            (status_tiled_chn4_rq), // output
         .status_start         (status_tiled_chn4_start), // input
-        .frame_start       (frame_start_chn4), // input
-        .next_page         (next_page_chn4), // input
-        .frame_done        (frame_done_chn4), // output
-        .line_unfinished   (line_unfinished_chn4), // output[15:0] 
-        .suspend           (suspend_chn4), // input
+        .frame_start          (frame_start_chn4), // input
+        .next_page            (next_page_chn4), // input
+        .frame_done           (frame_done_chn4), // output
+        .line_unfinished      (line_unfinished_chn4), // output[15:0] 
+        .suspend              (suspend_chn4), // input
         .xfer_want            (want_rq4), // output
         .xfer_need            (need_rq4), // output
         .xfer_grant           (channel_pgm_en4), // input
@@ -836,11 +839,11 @@ module  mcntrl393 #(
         .xfer_bank       (lin_rd_chn2_bank), // output[2:0] 
         .xfer_row        (lin_rd_chn2_row), // output[14:0] 
         .xfer_col        (lin_rd_chn2_col), // output[6:0] 
-        .xfer_num128     (lin_rd_chn2_num128), // output[5:0] 
+        .xfer_num128     (lin_rd_chn2_num128), // output[5:0]
+        .xfer_partial    (lin_rd_chn2_partial), // output
         .xfer_done       (seq_done2), // input: sequence over
         .xfer_reset_page (xfer_reset_page2_pos) // output
     );
-
 
     mcntrl_linear_rw #(
         .ADDRESS_NUMBER                    (ADDRESS_NUMBER),
@@ -880,7 +883,8 @@ module  mcntrl393 #(
         .xfer_bank       (lin_wr_chn3_bank), // output[2:0] 
         .xfer_row        (lin_wr_chn3_row), // output[14:0] 
         .xfer_col        (lin_wr_chn3_col), // output[6:0] 
-        .xfer_num128     (lin_wr_chn3_num128), // output[5:0] 
+        .xfer_num128     (lin_wr_chn3_num128), // output[5:0]
+        .xfer_partial         (lin_wr_chn3_partial), // output
         .xfer_done       (seq_done3), // input : sequence over
 //        .xfer_page       (xfer_page3) // output[1:0]
         .xfer_reset_page (xfer_reset_page3) // output
@@ -895,24 +899,26 @@ module  mcntrl393 #(
         .row2                     (lin_rd_chn2_row), // input[14:0] 
         .start_col2               (lin_rd_chn2_col), // input[6:0] 
         .num128_2                 (lin_rd_chn2_num128), // input[5:0] 
+        .partial2                 (lin_rd_chn2_partial), // input
         .start2                   (lin_rd_chn2_start), // input
         
         .bank3                    (lin_wr_chn3_bank), // input[2:0] 
         .row3                     (lin_wr_chn3_row), // input[14:0] 
         .start_col3               (lin_wr_chn3_col), // input[6:0] 
         .num128_3                 (lin_wr_chn3_num128), // input[5:0] 
+        .partial3                 (lin_wr_chn3_partial), // input
         .start3                   (lin_wr_chn3_start), // input
 
         .bank                     (lin_rw_bank), // output[2:0] 
         .row                      (lin_rw_row), // output[14:0] 
         .start_col                (lin_rw_col), // output[6:0] 
-        .num128                   (lin_rw_num128), // output[5:0] 
+        .num128                   (lin_rw_num128), // output[5:0]
+        .partial                  (lin_rw_xfer_partial), // output
         .start_rd                 (lin_rd_start), // output
         .start_wr                 (lin_wr_start) // output
     );
 
     
-    /* Instance template for module cmd_encod_linear_rd */
     cmd_encod_linear_rd #(
         .ADDRESS_NUMBER  (ADDRESS_NUMBER),
         .COLADDR_NUMBER  (COLADDR_NUMBER),
@@ -920,40 +926,40 @@ module  mcntrl393 #(
         .CMD_PAUSE_BITS  (CMD_PAUSE_BITS),
         .CMD_DONE_BIT    (CMD_DONE_BIT)
     ) cmd_encod_linear_rd_i (
-        .rst       (rst), // input
-        .clk       (mclk), // input
-        .bank_in   (lin_rw_bank), // input[2:0] 
-        .row_in    (lin_rw_row), // input[14:0] 
-        .start_col (lin_rw_col), // input[6:0] 
-        .num128_in (lin_rw_num128), // input[5:0] 
-        .start     (lin_rd_start), // input
-        .enc_cmd   (seq_data2x), // output[31:0] reg 
-        .enc_wr    (seq_wr2x), // output reg 
-        .enc_done  (seq_set2x) // output reg 
+        .rst               (rst), // input
+        .clk               (mclk), // input
+        .bank_in           (lin_rw_bank), // input[2:0] 
+        .row_in            (lin_rw_row), // input[14:0] 
+        .start_col         (lin_rw_col), // input[6:0] 
+        .num128_in         (lin_rw_num128), // input[5:0] 
+        .skip_next_page_in (lin_rw_xfer_partial), // input
+        .start             (lin_rd_start), // input
+        .enc_cmd           (seq_data2x), // output[31:0] reg 
+        .enc_wr            (seq_wr2x), // output reg 
+        .enc_done          (seq_set2x) // output reg 
     );
 
-    /* Instance template for module cmd_encod_linear_wr */
     cmd_encod_linear_wr #(
         .ADDRESS_NUMBER  (ADDRESS_NUMBER),
         .COLADDR_NUMBER  (COLADDR_NUMBER),
         .NUM_XFER_BITS   (NUM_XFER_BITS),
         .CMD_PAUSE_BITS  (CMD_PAUSE_BITS),
-        .CMD_DONE_BIT  (CMD_DONE_BIT)
+        .CMD_DONE_BIT    (CMD_DONE_BIT)
     ) cmd_encod_linear_wr_i (
-        .rst       (rst), // input
-        .clk       (mclk), // input
-        .bank_in   (lin_rw_bank), // input[2:0] 
-        .row_in    (lin_rw_row), // input[14:0] 
-        .start_col (lin_rw_col), // input[6:0] 
-        .num128_in (lin_rw_num128), // input[5:0] 
-        .start     (lin_wr_start), // input
-        .enc_cmd   (seq_data3x), // output[31:0] reg 
-        .enc_wr    (seq_wr3x), // output reg 
-        .enc_done  (seq_set3x) // output reg 
+        .rst               (rst), // input
+        .clk               (mclk), // input
+        .bank_in           (lin_rw_bank), // input[2:0] 
+        .row_in            (lin_rw_row), // input[14:0] 
+        .start_col         (lin_rw_col), // input[6:0] 
+        .num128_in         (lin_rw_num128), // input[5:0] 
+        .skip_next_page_in (lin_rw_xfer_partial), // input
+        .start             (lin_wr_start), // input
+        .enc_cmd           (seq_data3x), // output[31:0] reg 
+        .enc_wr            (seq_wr3x), // output reg 
+        .enc_done          (seq_set3x) // output reg 
     );
 
 
-     /* Instance template for module mcntrl_ps_pio */
     mcntrl_ps_pio #(
         .MCNTRL_PS_ADDR            (MCNTRL_PS_ADDR), //'h100),
         .MCNTRL_PS_MASK            (MCNTRL_PS_MASK), //'h3e0),
