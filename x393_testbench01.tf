@@ -190,16 +190,18 @@ module  x393_testbench01 #(
   wire        bready;
   integer     NUM_WORDS_READ;
   integer     NUM_WORDS_EXPECTED;
+//  integer     SCANLINE_CUR_X;
+//  integer     SCANLINE_CUR_Y;
   wire AXI_RD_EMPTY=NUM_WORDS_READ==NUM_WORDS_EXPECTED; //SuppressThisWarning VEditor : may be unused, just for simulation
   
   localparam       FRAME_START_ADDRESS= 'h1000; // RA=80, CA=0, BA=0 22-bit frame start address (3 CA LSBs==0. BA==0)
   localparam       FRAME_FULL_WIDTH=    'h0c0;  // Padded line length (8-row increment), in 8-bursts (16 bytes)
 //  localparam SCANLINE_WINDOW_WH=  `h079000a2;  // 2592*1936: low word - 13-bit window width (0->'h4000), high word - 16-bit frame height (0->'h10000)
 //  localparam       SCANLINE_WINDOW_WH=  'h0009000b;  // 176*9: low word - 13-bit window width (0->'h4000), high word - 16-bit frame height (0->'h10000)
-  localparam       SCANLINE_WINDOW_W=   'h000b;  // 176:  13-bit window width (0->'h4000)
+  localparam       SCANLINE_WINDOW_W=   'h005b; //'h000b;  // 176:  13-bit window width (0->'h4000)
   localparam       SCANLINE_WINDOW_H=   'h0009;  // 9:    16-bit frame height (0->'h10000)
 //  localparam       SCANLINE_X0Y0=       'h00050003;  // X0=3*16=48, Y0=5: // low word - 13-bit window left, high word - 16-bit window top
-  localparam       SCANLINE_X0=         'h7c; // 'h0003;  // X0=3*16=48 - 13-bit window left
+  localparam       SCANLINE_X0=         'h005c; // 'h7c; // 'h0003;  // X0=3*16=48 - 13-bit window left
   localparam       SCANLINE_Y0=         'h0005;  // Y0=5: 16-bit window top
 //  localparam       SCANLINE_STARTXY=    'h0;         // low word - 13-bit start X (relative to window), high word - 16-bit start y (normally 0)
   localparam       SCANLINE_STARTX=     'h0;         // 13-bit start X (relative to window), high word (normally 0)
@@ -208,8 +210,15 @@ module  x393_testbench01 #(
   
   localparam       TEST01_START_FRAME=   1;         
   localparam       TEST01_NEXT_PAGE=     2;         
-  localparam       TEST01_SUSPEND=       4;         
+  localparam       TEST01_SUSPEND=       4;
+  
+  //NUM_XFER_BITS=6
+  localparam       SCANLINE_PAGES_PER_ROW= (SCANLINE_WINDOW_W>>NUM_XFER_BITS)+((SCANLINE_WINDOW_W[NUM_XFER_BITS-1:0]==0)?0:1);
+//  localparam  integer     SCANLINE_FULL_XFER= 1<<NUM_XFER_BITS; // 64 - full page transfer in 8-bursts
+//  localparam  integer     SCANLINE_LAST_XFER= SCANLINE_WINDOW_W % (1<<NUM_XFER_BITS); // last page transfer size in a row
+  
   integer ii;
+  integer  SCANLINE_XFER_SIZE;
   localparam       TEST_INITIAL_BURST=   4; // 3;
 always #(CLKIN_PERIOD/2) CLK <= ~CLK;
   initial begin
@@ -227,19 +236,20 @@ always #(CLKIN_PERIOD/2) CLK <= ~CLK;
     $dumpfile(lxtname);
   // SuppressWarnings VEditor : assigned in $readmem() system task
     $dumpvars(0,x393_testbench01);
-    CLK <=1'b0;
-    RST <= 1'bx;
-    AR_SET_CMD_r <= 1'b0;
-    AW_SET_CMD_r <= 1'b0;
-    W_SET_CMD_r <= 1'b0;
+    CLK =1'b0;
+    RST = 1'bx;
+    AR_SET_CMD_r = 1'b0;
+    AW_SET_CMD_r = 1'b0;
+    W_SET_CMD_r = 1'b0;
     #500;
 //    $display ("x393_i.ddrc_sequencer_i.phy_cmd_i.phy_top_i.rst=%d",x393_i.ddrc_sequencer_i.phy_cmd_i.phy_top_i.rst);
     #500;
-    RST <= 1'b1;
-    NUM_WORDS_EXPECTED <=0;
-    #99000; // same as glbl
+    RST = 1'b1;
+    NUM_WORDS_EXPECTED =0;
+//    #99000; // same as glbl
+    #9000; // same as glbl
     repeat (20) @(posedge CLK) ;
-    RST <=1'b0;
+    RST =1'b0;
 //set simulation-only parameters   
     axi_set_b_lag(0); //(1);
     axi_set_rd_lag(0);
@@ -377,13 +387,40 @@ always #(CLKIN_PERIOD/2) CLK <= ~CLK;
 //  localparam       TEST01_START_FRAME=   1;         
 //  localparam       TEST01_NEXT_PAGE=     2;         
 //  localparam       TEST01_SUSPEND=       4;         
-    
+ /*
+   integer     SCANLINE_CUR_X;
+  integer     SCANLINE_CUR_Y;
+//SCANLINE_PAGES_PER_ROW
+ */   
     write_contol_register(MCNTRL_TEST01_ADDR + MCNTRL_TEST01_CHN3_MODE,            TEST01_START_FRAME);
     for (ii=0;ii<TEST_INITIAL_BURST;ii=ii+1) begin
-        write_block_scanline_chn(3, (ii & 3), SCANLINE_WINDOW_W << 2, SCANLINE_X0,SCANLINE_Y0+ii);  // now assumes that width is <= than maximal xfer
+//        SCANLINE_CUR_X = SCANLINE_X0 + ((ii % SCANLINE_PAGES_PER_ROW) << NUM_XFER_BITS);
+//        SCANLINE_CUR_Y = SCANLINE_Y0 + (ii / SCANLINE_PAGES_PER_ROW);
+// VDT bugs: 1:does not propagate undefined width through ?:, 2: - does not allow to connect it to task integer input, 3: shows integer input width as 1  
+        SCANLINE_XFER_SIZE= ((SCANLINE_PAGES_PER_ROW>1)?
+                (
+                    (
+                        ((ii % SCANLINE_PAGES_PER_ROW) < (SCANLINE_PAGES_PER_ROW-1))?
+                        
+                        (1<<NUM_XFER_BITS):
+                        (SCANLINE_WINDOW_W % (1<<NUM_XFER_BITS))
+                    )
+                ):
+                (SCANLINE_WINDOW_W));
+        write_block_scanline_chn(
+            3,
+            (ii & 3),
+            SCANLINE_XFER_SIZE,
+            SCANLINE_X0 + ((ii % SCANLINE_PAGES_PER_ROW)<<NUM_XFER_BITS),  // SCANLINE_CUR_X,
+            SCANLINE_Y0 + (ii / SCANLINE_PAGES_PER_ROW)); // SCANLINE_CUR_Y);\
+            
     end
+/*
+  localparam       SCANLINE_FULL_XFER= 1<<NUM_XFER_BITS; // 64 - full page transfer in 8-bursts
+  localparam       SCANLINE_LAST_XFER= SCANLINE_WINDOW_W % (1<<NUM_XFER_BITS); // last page transfer size in a row
 
-    for (ii=0;ii<SCANLINE_WINDOW_H;ii = ii+1) begin // here assuming 1 page per line
+*/    
+    for (ii=0;ii< (SCANLINE_WINDOW_H * SCANLINE_PAGES_PER_ROW) ;ii = ii+1) begin // here assuming 1 page per line
         if (ii >= TEST_INITIAL_BURST) begin // wait page ready and fill page after first 4 are filled
             wait_status_condition (
                 MCNTRL_TEST01_STATUS_REG_CHN3_ADDR,
@@ -392,7 +429,23 @@ always #(CLKIN_PERIOD/2) CLK <= ~CLK;
                 (ii-TEST_INITIAL_BURST)<<16, // 4-bit page number
                 'hf << 16,  // mask for the 4-bit page number
                 1); // not equal to
-            write_block_scanline_chn(3, (ii & 3), SCANLINE_WINDOW_W << 2, SCANLINE_X0,SCANLINE_Y0+ii);
+//            write_block_scanline_chn(3, (ii & 3), SCANLINE_WINDOW_W, SCANLINE_X0,SCANLINE_Y0+ii);
+        SCANLINE_XFER_SIZE= ((SCANLINE_PAGES_PER_ROW>1)?
+                (
+                    (
+                        ((ii % SCANLINE_PAGES_PER_ROW) < (SCANLINE_PAGES_PER_ROW-1))?
+                        
+                        (1<<NUM_XFER_BITS):
+                        (SCANLINE_WINDOW_W % (1<<NUM_XFER_BITS))
+                    )
+                ):
+                (SCANLINE_WINDOW_W));
+        write_block_scanline_chn(
+            3,
+            (ii & 3),
+            SCANLINE_XFER_SIZE,
+            SCANLINE_X0 + ((ii % SCANLINE_PAGES_PER_ROW)<<NUM_XFER_BITS),  // SCANLINE_CUR_X,
+            SCANLINE_Y0 + (ii / SCANLINE_PAGES_PER_ROW)); // SCANLINE_CUR_Y);
         end
         write_contol_register(MCNTRL_TEST01_ADDR + MCNTRL_TEST01_CHN3_MODE,            TEST01_NEXT_PAGE);
     end
@@ -419,7 +472,18 @@ always #(CLKIN_PERIOD/2) CLK <= ~CLK;
     enable_memcntrl_channels(16'h000f); // channels 0,1,2,3 are enabled
 
     write_contol_register(MCNTRL_TEST01_ADDR + MCNTRL_TEST01_CHN2_MODE,            TEST01_START_FRAME);
-    for (ii=0;ii<SCANLINE_WINDOW_H;ii = ii+1) begin // here assuming 1 page per line
+    for (ii=0;ii<(SCANLINE_WINDOW_H * SCANLINE_PAGES_PER_ROW);ii = ii+1) begin
+        SCANLINE_XFER_SIZE= ((SCANLINE_PAGES_PER_ROW>1)?
+                (
+                    (
+                        ((ii % SCANLINE_PAGES_PER_ROW) < (SCANLINE_PAGES_PER_ROW-1))?
+                        
+                        (1<<NUM_XFER_BITS):
+                        (SCANLINE_WINDOW_W % (1<<NUM_XFER_BITS))
+                    )
+                ):
+                (SCANLINE_WINDOW_W));
+    
             wait_status_condition (
                 MCNTRL_TEST01_STATUS_REG_CHN2_ADDR,
                 MCNTRL_TEST01_ADDR + MCNTRL_TEST01_CHN2_STATUS_CNTRL,
@@ -429,13 +493,17 @@ always #(CLKIN_PERIOD/2) CLK <= ~CLK;
                 1); // not equal to
 // read block (if needed), for now just sikip   
         `ifdef TEST_SCANLINE_READ_SHOW
-            read_block_buf_chn (2, (ii & 3), SCANLINE_WINDOW_W << 2, 1 ); // chn=0, page=3, number of 32-bit words=256, wait_done
+            read_block_buf_chn (
+                2,
+                (ii & 3),
+                SCANLINE_XFER_SIZE <<2,
+                1 ); // chn=0, page=3, number of 32-bit words=256, wait_done
         `endif             
         write_contol_register(MCNTRL_TEST01_ADDR + MCNTRL_TEST01_CHN2_MODE,            TEST01_NEXT_PAGE);
     end
 `endif
 
-  #40000;
+  #20000;
   $finish;
 end
 // protect from never end
@@ -1057,6 +1125,32 @@ task set_all_sequences;
                 10'h100   // column address
             );
         end
+endtask
+
+task write_block_scanline_chn;  // S uppressThisWarning VEditor : may be unused
+    input integer chn; // buffer channel
+    input   [1:0] page;
+//    input integer num_words; // number of words to write (will be rounded up to multiple of 16)
+    input [NUM_XFER_BITS:0] num_bursts; // number of 8-bursts to write (will be rounded up to multiple of 16)
+    input integer startX;
+    input integer startY;
+    reg    [29:0] start_addr;
+    integer num_words;
+    begin
+//        $display("====== write_block_scanline_chn:%d page: %x X=0x%x Y=0x%x num=%d @%t", chn, page, startX, startY,num_words, $time);
+        $display("====== write_block_scanline_chn:%d page: %x X=0x%x Y=0x%x num=%d @%t", chn, page, startX, startY,num_bursts, $time);
+        case (chn)
+            1:  start_addr=MCONTR_BUF1_WR_ADDR + (page << 8);
+            3:  start_addr=MCONTR_BUF3_WR_ADDR + (page << 8);
+            default: begin
+                $display("**** ERROR: Invalid channel for write_block_scanline_chn = %d @%t", chn, $time);
+                start_addr = MCONTR_BUF1_WR_ADDR+ (page << 8);
+            end
+        endcase
+        num_words=num_bursts << 2;
+        write_block_incremtal (start_addr, num_words, (startX<<2) + (startY<<16)); // 1 of startX is 8x16 bit, 16 bytes or 4 32-bit words
+//        write_block_incremtal (start_addr, num_bursts << 2, (startX<<2) + (startY<<16)); // 1 of startX is 8x16 bit, 16 bytes or 4 32-bit words
+    end
 endtask
 
 

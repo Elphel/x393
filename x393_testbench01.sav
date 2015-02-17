@@ -1,15 +1,15 @@
 [*]
-[*] GTKWave Analyzer v3.3.58 (w)1999-2014 BSI
-[*] Mon Feb 16 09:23:49 2015
+[*] GTKWave Analyzer v3.3.64 (w)1999-2014 BSI
+[*] Tue Feb 17 01:52:35 2015
 [*]
-[dumpfile] "/home/andrey/git/x393/simulation/x393_testbench01-20150216011942991.lxt"
-[dumpfile_mtime] "Mon Feb 16 08:28:40 2015"
-[dumpfile_size] 433558175
+[dumpfile] "/home/andrey/git/x393/simulation/x393_testbench01-20150216153037852.lxt"
+[dumpfile_mtime] "Mon Feb 16 22:50:05 2015"
+[dumpfile_size] 1073751632
 [savefile] "/home/andrey/git/x393/x393_testbench01.sav"
-[timestart] 150542000
-[size] 1823 1180
-[pos] 1940 0
-*-19.698502 157370000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[timestart] 52831600
+[size] 1823 1173
+[pos] 1927 0
+*-14.698502 52944323 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] x393_testbench01.
 [treeopen] x393_testbench01.x393_i.
 [treeopen] x393_testbench01.x393_i.mcntrl393_i.
@@ -754,7 +754,7 @@ x393_testbench01.x393_i.mcntrl393_test01_i.status_router4_i.status_router2_01_i.
 -group_end
 @1401200
 -test01_status_router2_01
-@800200
+@c00200
 -axibram_read
 @28
 x393_testbench01.x393_i.axibram_read_i.aclk[0]
@@ -847,11 +847,10 @@ x393_testbench01.x393_i.axibram_read_i.bram_regen[0]
 -
 @28
 x393_testbench01.x393_i.axibram_read_i.read_in_progress[0]
-@29
 x393_testbench01.x393_i.axibram_read_i.bram_ren[0]
 @200
 -
-@1000200
+@1401200
 -axibram_read
 @c00200
 -refresh
@@ -892,7 +891,9 @@ x393_testbench01.x393_i.SDA[14:0]
 x393_testbench01.x393_i.SDBA[2:0]
 @28
 x393_testbench01.x393_i.SDRAS[0]
+@29
 x393_testbench01.x393_i.SDCAS[0]
+@28
 x393_testbench01.x393_i.SDWE[0]
 x393_testbench01.x393_i.DQSL[0]
 x393_testbench01.x393_i.DQSU[0]
@@ -1327,6 +1328,8 @@ x393_testbench01.x393_i.mcntrl393_test01_i.suspend_chn4[0]
 x393_testbench01.x393_i.mcntrl393_test01_i.suspend_chn4_r[0]
 @1401200
 -mcntrl393_test01
+@22
+x393_testbench01.ii[31:0]
 @200
 -
 @c00200
@@ -1459,7 +1462,7 @@ x393_testbench01.x393_i.mcntrl393_i.mcntrl_linear_rw_chn2_i.xfer_start_r[2:0]
 x393_testbench01.x393_i.mcntrl393_i.mcntrl_linear_rw_chn2_i.xfer_want[0]
 @1401200
 -linear_ch2
-@800200
+@c00200
 -read_block_scanline
 @200
 -
@@ -1527,10 +1530,24 @@ x393_testbench01.x393_i.mcntrl393_i.cmd_encod_linear_rd_i.skip_next_page_in[0]
 x393_testbench01.x393_i.mcntrl393_i.cmd_encod_linear_rd_i.start[0]
 @22
 x393_testbench01.x393_i.mcntrl393_i.cmd_encod_linear_rd_i.start_col[6:0]
-@1000200
+@1401200
 -read_block_scanline
-@c00200
+@800200
 -linear_ch3
+@200
+-
+@800200
+-write_scanline_chn
+@22
+x393_testbench01.write_block_scanline_chn.chn[31:0]
+x393_testbench01.write_block_scanline_chn.num_bursts[6:0]
+x393_testbench01.write_block_scanline_chn.num_words[31:0]
+x393_testbench01.write_block_scanline_chn.page[1:0]
+x393_testbench01.write_block_scanline_chn.startX[31:0]
+x393_testbench01.write_block_scanline_chn.startY[31:0]
+x393_testbench01.write_block_scanline_chn.start_addr[29:0]
+@1000200
+-write_scanline_chn
 @28
 x393_testbench01.x393_i.mcntrl393_i.mcntrl_linear_rw_chn3_i.busy_r[0]
 x393_testbench01.x393_i.mcntrl393_i.mcntrl_linear_rw_chn3_i.calc_valid[0]
@@ -1716,7 +1733,7 @@ x393_testbench01.x393_i.mcntrl393_i.mcntrl_linear_rw_chn3_i.xfer_row[14:0]
 x393_testbench01.x393_i.mcntrl393_i.mcntrl_linear_rw_chn3_i.xfer_start[0]
 x393_testbench01.x393_i.mcntrl393_i.mcntrl_linear_rw_chn3_i.xfer_start_r[2:0]
 x393_testbench01.x393_i.mcntrl393_i.mcntrl_linear_rw_chn3_i.xfer_want[0]
-@1401200
+@1000200
 -linear_ch3
 @800200
 -cmd1_buf
@@ -1756,7 +1773,7 @@ x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.cmd1_buf_i.we
 -cmd1_buf
 @200
 -
-@800200
+@c00200
 -encod_linear_wr
 @200
 -
@@ -1958,7 +1975,7 @@ x393_testbench01.x393_i.mcntrl393_i.cmd_encod_linear_wr_i.start_col[6:0]
 x393_testbench01.x393_i.mcntrl393_i.cmd_encod_linear_wr_i.start_d[0]
 @200
 -
-@1000200
+@1401200
 -encod_linear_wr
 @c00200
 -encod_linear_mux
@@ -2466,7 +2483,7 @@ x393_testbench01.x393_i.mcntrl393_i.mcntrl_ps_pio_i.want_rq0[0]
 x393_testbench01.x393_i.mcntrl393_i.mcntrl_ps_pio_i.want_rq1[0]
 @1401200
 -PS_PIO
-@800200
+@c00200
 -memcntrl16_0
 @22
 x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.ext_buf_rchn_late[3:0]
@@ -2575,6 +2592,7 @@ x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.cmd0_buf_i.we
 x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.ext_buf_rrefresh[0]
 @1000200
 -cmd0_buf
+@1401200
 -memcntrl16_0
 @c00200
 -max_0001

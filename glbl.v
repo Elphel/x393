@@ -1,6 +1,6 @@
 `timescale  1 ps / 1 ps
 module glbl ();
-    parameter ROC_WIDTH = 100000;
+    parameter ROC_WIDTH = 10000;// 100000;
     parameter TOC_WIDTH = 0;
 
     //SuppressWarnings VEditor - this value is used in other modules through global reference

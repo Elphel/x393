@@ -19,10 +19,12 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/> .
  *******************************************************************************/
+/* 
 task write_block_scanline_chn;  // S uppressThisWarning VEditor : may be unused
     input integer chn; // buffer channel
     input   [1:0] page;
-    input integer num_words; // number of words to write (will be rounded up to multiple of 16)
+//    input integer num_words; // number of words to write (will be rounded up to multiple of 16)
+    input [NUM_XFER_BITS:0] num_bursts; // number of 8-bursts to write (will be rounded up to multiple of 16)
     input integer startX;
     input integer startY;
     reg    [29:0] start_addr;
@@ -36,10 +38,11 @@ task write_block_scanline_chn;  // S uppressThisWarning VEditor : may be unused
                 start_addr = MCONTR_BUF1_WR_ADDR+ (page << 8);
             end
         endcase
-        write_block_incremtal (start_addr, num_words, (startX<<2) + (startY<<16)); // 1 of startX is 8x16 bit, 16 bytes or 4 32-bit words
+//        write_block_incremtal (start_addr, num_words, (startX<<2) + (startY<<16)); // 1 of startX is 8x16 bit, 16 bytes or 4 32-bit words
+        write_block_incremtal (start_addr, num_bursts << 2, (startX<<2) + (startY<<16)); // 1 of startX is 8x16 bit, 16 bytes or 4 32-bit words
     end
 endtask
-
+*/
 
 task write_block_incremtal;
     input [29:0] start_word_address;
