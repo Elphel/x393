@@ -20,16 +20,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/> .
  *******************************************************************************/
 `timescale 1ns/1ps
-/*
-Minimal ACTIVATE period =4 Tcm or 10ns, so maksimal no-miss rate is Tck=1.25 ns (800 MHz)
-Minimal window of 4 ACTIVATE pulses - 16 Tck or 40 (40 ns), so one ACTIVATE per 8 Tck is still OK down to 1.25 ns
-Reads are in 16-byte colums: 1 8-burst (16 bytes) in a row, then next row, bank inc first. Then (if needed) - next column
-Number of rows should be >=5 (4 now for tCK=2.5ns to meet tRP (precharge to activate) of the same bank (tRP=13ns)
-Can read less if just one column
- TODO: Maybe allow less rows with different sequence (no autoprecharge/no activate?) Will not work if row crosses page boundary
- 
- 
-*/
+
 module  cmd_encod_linear_rd #(
 //    parameter BASEADDR = 0,
     parameter ADDRESS_NUMBER=       15,

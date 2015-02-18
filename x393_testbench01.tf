@@ -33,9 +33,10 @@
 
 `define TEST_SCANLINE_WRITE 1
 `define TEST_SCANLINE_WRITE_WAIT 1 // wait TEST_SCANLINE_WRITE finished (frame_done)
-`define TEST_SCANLINE_READ  1
-`define TEST_SCANLINE_READ_SHOW  1
+//`define TEST_SCANLINE_READ  1
+`define TEST_READ_SHOW  1
 
+`define TEST_TILED_READ  1
 
 
 module  x393_testbench01 #(
@@ -198,24 +199,41 @@ module  x393_testbench01 #(
   localparam       FRAME_FULL_WIDTH=    'h0c0;  // Padded line length (8-row increment), in 8-bursts (16 bytes)
 //  localparam SCANLINE_WINDOW_WH=  `h079000a2;  // 2592*1936: low word - 13-bit window width (0->'h4000), high word - 16-bit frame height (0->'h10000)
 //  localparam       SCANLINE_WINDOW_WH=  'h0009000b;  // 176*9: low word - 13-bit window width (0->'h4000), high word - 16-bit frame height (0->'h10000)
-  localparam       SCANLINE_WINDOW_W=   'h005b; //'h000b;  // 176:  13-bit window width (0->'h4000)
-  localparam       SCANLINE_WINDOW_H=   'h0009;  // 9:    16-bit frame height (0->'h10000)
+  localparam       WINDOW_WIDTH=    'h000b; //'h005b; //'h000b;  // 176:  13-bit window width (0->'h4000)
+  localparam       WINDOW_HEIGHT=   'h000a;  // 9:    16-bit window height (0->'h10000)
 //  localparam       SCANLINE_X0Y0=       'h00050003;  // X0=3*16=48, Y0=5: // low word - 13-bit window left, high word - 16-bit window top
-  localparam       SCANLINE_X0=         'h005c; // 'h7c; // 'h0003;  // X0=3*16=48 - 13-bit window left
-  localparam       SCANLINE_Y0=         'h0005;  // Y0=5: 16-bit window top
+  localparam       WINDOW_X0=         'h005c; // 'h7c; // 'h0003;  // X0=3*16=48 - 13-bit window left
+  localparam       WINDOW_Y0=         'h0005;  // Y0=5: 16-bit window top
 //  localparam       SCANLINE_STARTXY=    'h0;         // low word - 13-bit start X (relative to window), high word - 16-bit start y (normally 0)
   localparam       SCANLINE_STARTX=     'h0;         // 13-bit start X (relative to window), high word (normally 0)
   localparam       SCANLINE_STARTY=     'h0;         // 16-bit start y (normally 0)
   localparam [1:0] SCANLINE_EXTRA_PAGES= 0;          // 0..2 - number of pages in the buffer to keep/not write
   
+  localparam       TILED_STARTX=     'h0;         // 13-bit start X (relative to window), high word (normally 0)
+  localparam       TILED_STARTY=     'h0;         // 16-bit start y (normally 0)
+  localparam [1:0] TILED_EXTRA_PAGES= 0;          // 0..2 - number of pages in the buffer to keep/not write
+  localparam       TILED_KEEP_OPEN=   1'b0;       // Do not close banks between reads (valid only for tiles <=8 rows, needed if less than 3? rows)  
+  localparam       TILE_WIDTH=    'h03; //     6-bit tile width  (1..'h40)
+  localparam       TILE_HEIGHT=   'h06;  //    6-bit tile height (1..'h40)
+  localparam       TILE_VSTEP=    'h04;  //    6-bit tile vertical step, with no overlap it is equal to TILE_HEIGHT (1..'h40)
+  
+  
   localparam       TEST01_START_FRAME=   1;         
   localparam       TEST01_NEXT_PAGE=     2;         
   localparam       TEST01_SUSPEND=       4;
   
+  
+  
   //NUM_XFER_BITS=6
-  localparam       SCANLINE_PAGES_PER_ROW= (SCANLINE_WINDOW_W>>NUM_XFER_BITS)+((SCANLINE_WINDOW_W[NUM_XFER_BITS-1:0]==0)?0:1);
+  localparam       SCANLINE_PAGES_PER_ROW= (WINDOW_WIDTH>>NUM_XFER_BITS)+((WINDOW_WIDTH[NUM_XFER_BITS-1:0]==0)?0:1);
+  localparam       TILES_PER_ROW= (WINDOW_WIDTH/TILE_WIDTH)+  ((WINDOW_WIDTH % TILE_WIDTH==0)?0:1);
+  localparam       TILE_ROWS_PER_WINDOW= ((WINDOW_HEIGHT-TILE_HEIGHT)/TILE_VSTEP) + (((WINDOW_HEIGHT-TILE_HEIGHT)%TILE_VSTEP==0)?0:1) +1;
+  
+  localparam       TILE_SIZE= TILE_WIDTH*TILE_HEIGHT;
+  
+  
 //  localparam  integer     SCANLINE_FULL_XFER= 1<<NUM_XFER_BITS; // 64 - full page transfer in 8-bursts
-//  localparam  integer     SCANLINE_LAST_XFER= SCANLINE_WINDOW_W % (1<<NUM_XFER_BITS); // last page transfer size in a row
+//  localparam  integer     SCANLINE_LAST_XFER= WINDOW_WIDTH % (1<<NUM_XFER_BITS); // last page transfer size in a row
   
   integer ii;
   integer  SCANLINE_XFER_SIZE;
@@ -377,8 +395,8 @@ always #(CLKIN_PERIOD/2) CLK <= ~CLK;
 `ifdef TEST_SCANLINE_WRITE
     write_contol_register(MCNTRL_SCANLINE_CHN3_ADDR + MCNTRL_SCANLINE_STARTADDR,        FRAME_START_ADDRESS); // RA=80, CA=0, BA=0 22-bit frame start address (3 CA LSBs==0. BA==0) 
     write_contol_register(MCNTRL_SCANLINE_CHN3_ADDR + MCNTRL_SCANLINE_FRAME_FULL_WIDTH, FRAME_FULL_WIDTH);
-    write_contol_register(MCNTRL_SCANLINE_CHN3_ADDR + MCNTRL_SCANLINE_WINDOW_WH,        SCANLINE_WINDOW_W + (SCANLINE_WINDOW_H<<16));
-    write_contol_register(MCNTRL_SCANLINE_CHN3_ADDR + MCNTRL_SCANLINE_WINDOW_X0Y0,      SCANLINE_X0+ (SCANLINE_Y0<<16));
+    write_contol_register(MCNTRL_SCANLINE_CHN3_ADDR + MCNTRL_SCANLINE_WINDOW_WH,        WINDOW_WIDTH + (WINDOW_HEIGHT<<16));
+    write_contol_register(MCNTRL_SCANLINE_CHN3_ADDR + MCNTRL_SCANLINE_WINDOW_X0Y0,      WINDOW_X0+ (WINDOW_Y0<<16));
     write_contol_register(MCNTRL_SCANLINE_CHN3_ADDR + MCNTRL_SCANLINE_WINDOW_STARTXY,   SCANLINE_STARTX+(SCANLINE_STARTY<<16));
     write_contol_register(MCNTRL_SCANLINE_CHN3_ADDR + MCNTRL_SCANLINE_MODE,             {28'b0,SCANLINE_EXTRA_PAGES,2'b11});// set mode register: {extra_pages[1:0],enable,!reset}
 
@@ -394,8 +412,8 @@ always #(CLKIN_PERIOD/2) CLK <= ~CLK;
  */   
     write_contol_register(MCNTRL_TEST01_ADDR + MCNTRL_TEST01_CHN3_MODE,            TEST01_START_FRAME);
     for (ii=0;ii<TEST_INITIAL_BURST;ii=ii+1) begin
-//        SCANLINE_CUR_X = SCANLINE_X0 + ((ii % SCANLINE_PAGES_PER_ROW) << NUM_XFER_BITS);
-//        SCANLINE_CUR_Y = SCANLINE_Y0 + (ii / SCANLINE_PAGES_PER_ROW);
+//        SCANLINE_CUR_X = WINDOW_X0 + ((ii % SCANLINE_PAGES_PER_ROW) << NUM_XFER_BITS);
+//        SCANLINE_CUR_Y = WINDOW_Y0 + (ii / SCANLINE_PAGES_PER_ROW);
 // VDT bugs: 1:does not propagate undefined width through ?:, 2: - does not allow to connect it to task integer input, 3: shows integer input width as 1  
         SCANLINE_XFER_SIZE= ((SCANLINE_PAGES_PER_ROW>1)?
                 (
@@ -403,24 +421,24 @@ always #(CLKIN_PERIOD/2) CLK <= ~CLK;
                         ((ii % SCANLINE_PAGES_PER_ROW) < (SCANLINE_PAGES_PER_ROW-1))?
                         
                         (1<<NUM_XFER_BITS):
-                        (SCANLINE_WINDOW_W % (1<<NUM_XFER_BITS))
+                        (WINDOW_WIDTH % (1<<NUM_XFER_BITS))
                     )
                 ):
-                (SCANLINE_WINDOW_W));
+                (WINDOW_WIDTH));
         write_block_scanline_chn(
             3,
             (ii & 3),
             SCANLINE_XFER_SIZE,
-            SCANLINE_X0 + ((ii % SCANLINE_PAGES_PER_ROW)<<NUM_XFER_BITS),  // SCANLINE_CUR_X,
-            SCANLINE_Y0 + (ii / SCANLINE_PAGES_PER_ROW)); // SCANLINE_CUR_Y);\
+            WINDOW_X0 + ((ii % SCANLINE_PAGES_PER_ROW)<<NUM_XFER_BITS),  // SCANLINE_CUR_X,
+            WINDOW_Y0 + (ii / SCANLINE_PAGES_PER_ROW)); // SCANLINE_CUR_Y);\
             
     end
 /*
   localparam       SCANLINE_FULL_XFER= 1<<NUM_XFER_BITS; // 64 - full page transfer in 8-bursts
-  localparam       SCANLINE_LAST_XFER= SCANLINE_WINDOW_W % (1<<NUM_XFER_BITS); // last page transfer size in a row
+  localparam       SCANLINE_LAST_XFER= WINDOW_WIDTH % (1<<NUM_XFER_BITS); // last page transfer size in a row
 
 */    
-    for (ii=0;ii< (SCANLINE_WINDOW_H * SCANLINE_PAGES_PER_ROW) ;ii = ii+1) begin // here assuming 1 page per line
+    for (ii=0;ii< (WINDOW_HEIGHT * SCANLINE_PAGES_PER_ROW) ;ii = ii+1) begin // here assuming 1 page per line
         if (ii >= TEST_INITIAL_BURST) begin // wait page ready and fill page after first 4 are filled
             wait_status_condition (
                 MCNTRL_TEST01_STATUS_REG_CHN3_ADDR,
@@ -429,23 +447,23 @@ always #(CLKIN_PERIOD/2) CLK <= ~CLK;
                 (ii-TEST_INITIAL_BURST)<<16, // 4-bit page number
                 'hf << 16,  // mask for the 4-bit page number
                 1); // not equal to
-//            write_block_scanline_chn(3, (ii & 3), SCANLINE_WINDOW_W, SCANLINE_X0,SCANLINE_Y0+ii);
+//            write_block_scanline_chn(3, (ii & 3), WINDOW_WIDTH, WINDOW_X0,WINDOW_Y0+ii);
         SCANLINE_XFER_SIZE= ((SCANLINE_PAGES_PER_ROW>1)?
                 (
                     (
                         ((ii % SCANLINE_PAGES_PER_ROW) < (SCANLINE_PAGES_PER_ROW-1))?
                         
                         (1<<NUM_XFER_BITS):
-                        (SCANLINE_WINDOW_W % (1<<NUM_XFER_BITS))
+                        (WINDOW_WIDTH % (1<<NUM_XFER_BITS))
                     )
                 ):
-                (SCANLINE_WINDOW_W));
+                (WINDOW_WIDTH));
         write_block_scanline_chn(
             3,
             (ii & 3),
             SCANLINE_XFER_SIZE,
-            SCANLINE_X0 + ((ii % SCANLINE_PAGES_PER_ROW)<<NUM_XFER_BITS),  // SCANLINE_CUR_X,
-            SCANLINE_Y0 + (ii / SCANLINE_PAGES_PER_ROW)); // SCANLINE_CUR_Y);
+            WINDOW_X0 + ((ii % SCANLINE_PAGES_PER_ROW)<<NUM_XFER_BITS),  // SCANLINE_CUR_X,
+            WINDOW_Y0 + (ii / SCANLINE_PAGES_PER_ROW)); // SCANLINE_CUR_Y);
         end
         write_contol_register(MCNTRL_TEST01_ADDR + MCNTRL_TEST01_CHN3_MODE,            TEST01_NEXT_PAGE);
     end
@@ -463,8 +481,8 @@ always #(CLKIN_PERIOD/2) CLK <= ~CLK;
    // program to the
     write_contol_register(MCNTRL_SCANLINE_CHN2_ADDR + MCNTRL_SCANLINE_STARTADDR,        FRAME_START_ADDRESS); // RA=80, CA=0, BA=0 22-bit frame start address (3 CA LSBs==0. BA==0) 
     write_contol_register(MCNTRL_SCANLINE_CHN2_ADDR + MCNTRL_SCANLINE_FRAME_FULL_WIDTH, FRAME_FULL_WIDTH);
-    write_contol_register(MCNTRL_SCANLINE_CHN2_ADDR + MCNTRL_SCANLINE_WINDOW_WH,        SCANLINE_WINDOW_W + (SCANLINE_WINDOW_H<<16));
-    write_contol_register(MCNTRL_SCANLINE_CHN2_ADDR + MCNTRL_SCANLINE_WINDOW_X0Y0,      SCANLINE_X0+ (SCANLINE_Y0<<16));
+    write_contol_register(MCNTRL_SCANLINE_CHN2_ADDR + MCNTRL_SCANLINE_WINDOW_WH,        WINDOW_WIDTH + (WINDOW_HEIGHT<<16));
+    write_contol_register(MCNTRL_SCANLINE_CHN2_ADDR + MCNTRL_SCANLINE_WINDOW_X0Y0,      WINDOW_X0+ (WINDOW_Y0<<16));
     write_contol_register(MCNTRL_SCANLINE_CHN2_ADDR + MCNTRL_SCANLINE_WINDOW_STARTXY,   SCANLINE_STARTX+(SCANLINE_STARTY<<16));
     write_contol_register(MCNTRL_SCANLINE_CHN2_ADDR + MCNTRL_SCANLINE_MODE,             {28'b0,SCANLINE_EXTRA_PAGES,2'b11});// set mode register: {extra_pages[1:0],enable,!reset}
 
@@ -472,17 +490,17 @@ always #(CLKIN_PERIOD/2) CLK <= ~CLK;
     enable_memcntrl_channels(16'h000f); // channels 0,1,2,3 are enabled
 
     write_contol_register(MCNTRL_TEST01_ADDR + MCNTRL_TEST01_CHN2_MODE,            TEST01_START_FRAME);
-    for (ii=0;ii<(SCANLINE_WINDOW_H * SCANLINE_PAGES_PER_ROW);ii = ii+1) begin
+    for (ii=0;ii<(WINDOW_HEIGHT * SCANLINE_PAGES_PER_ROW);ii = ii+1) begin
         SCANLINE_XFER_SIZE= ((SCANLINE_PAGES_PER_ROW>1)?
                 (
                     (
                         ((ii % SCANLINE_PAGES_PER_ROW) < (SCANLINE_PAGES_PER_ROW-1))?
                         
                         (1<<NUM_XFER_BITS):
-                        (SCANLINE_WINDOW_W % (1<<NUM_XFER_BITS))
+                        (WINDOW_WIDTH % (1<<NUM_XFER_BITS))
                     )
                 ):
-                (SCANLINE_WINDOW_W));
+                (WINDOW_WIDTH));
     
             wait_status_condition (
                 MCNTRL_TEST01_STATUS_REG_CHN2_ADDR,
@@ -492,7 +510,7 @@ always #(CLKIN_PERIOD/2) CLK <= ~CLK;
                 'hf << 16,  // mask for the 4-bit page number
                 1); // not equal to
 // read block (if needed), for now just sikip   
-        `ifdef TEST_SCANLINE_READ_SHOW
+        `ifdef TEST_READ_SHOW
             read_block_buf_chn (
                 2,
                 (ii & 3),
@@ -500,6 +518,40 @@ always #(CLKIN_PERIOD/2) CLK <= ~CLK;
                 1 ); // chn=0, page=3, number of 32-bit words=256, wait_done
         `endif             
         write_contol_register(MCNTRL_TEST01_ADDR + MCNTRL_TEST01_CHN2_MODE,            TEST01_NEXT_PAGE);
+    end
+`endif
+
+`ifdef TEST_TILED_READ
+   // program to the
+    write_contol_register(MCNTRL_TILED_CHN4_ADDR + MCNTRL_TILED_STARTADDR,        FRAME_START_ADDRESS); // RA=80, CA=0, BA=0 22-bit frame start address (3 CA LSBs==0. BA==0) 
+    write_contol_register(MCNTRL_TILED_CHN4_ADDR + MCNTRL_TILED_FRAME_FULL_WIDTH, FRAME_FULL_WIDTH);
+    write_contol_register(MCNTRL_TILED_CHN4_ADDR + MCNTRL_TILED_WINDOW_WH,        WINDOW_WIDTH + (WINDOW_HEIGHT<<16));
+    write_contol_register(MCNTRL_TILED_CHN4_ADDR + MCNTRL_TILED_WINDOW_X0Y0,      WINDOW_X0+ (WINDOW_Y0<<16));
+    write_contol_register(MCNTRL_TILED_CHN4_ADDR + MCNTRL_TILED_WINDOW_STARTXY,   TILED_STARTX+(TILED_STARTY<<16));
+    write_contol_register(MCNTRL_TILED_CHN4_ADDR + MCNTRL_TILED_TILE_WHS,         TILE_WIDTH+(TILE_HEIGHT<<8)+(TILE_VSTEP<<16));
+    write_contol_register(MCNTRL_TILED_CHN4_ADDR + MCNTRL_TILED_MODE,             {27'b0,TILED_KEEP_OPEN,TILED_EXTRA_PAGES,2'b11});// set mode register: {extra_pages[1:0],enable,!reset}
+
+    configure_channel_priority(4,0);    // lowest priority channel 2
+    enable_memcntrl_channels(16'h001f); // channels 0,1,2,3,4 are enabled
+
+    write_contol_register(MCNTRL_TEST01_ADDR + MCNTRL_TEST01_CHN4_MODE,            TEST01_START_FRAME);
+    for (ii=0;ii<(TILES_PER_ROW * TILE_ROWS_PER_WINDOW);ii = ii+1) begin
+            wait_status_condition (
+                MCNTRL_TEST01_STATUS_REG_CHN4_ADDR,
+                MCNTRL_TEST01_ADDR + MCNTRL_TEST01_CHN4_STATUS_CNTRL,
+                DEFAULT_STATUS_MODE,
+                ii << 16, // -TEST_INITIAL_BURST)<<16, // 4-bit page number
+                'hf << 16,  // mask for the 4-bit page number
+                1); // not equal to
+// read block (if needed), for now just sikip   
+        `ifdef TEST_READ_SHOW
+            read_block_buf_chn (
+                4,                // channel
+                (ii & 3),         // page
+                TILE_SIZE << 2, // length in 32-bit words
+                1 ); // chn=4, page=?, number of 32-bit words=?, wait_done
+        `endif             
+        write_contol_register(MCNTRL_TEST01_ADDR + MCNTRL_TEST01_CHN4_MODE,            TEST01_NEXT_PAGE);
     end
 `endif
 
@@ -702,7 +754,7 @@ assign bresp=                              x393_i.ps7_i.MAXIGP0BRESP;
         .MCNTRL_TILED_WINDOW_WH            (MCNTRL_TILED_WINDOW_WH),
         .MCNTRL_TILED_WINDOW_X0Y0          (MCNTRL_TILED_WINDOW_X0Y0),
         .MCNTRL_TILED_WINDOW_STARTXY       (MCNTRL_TILED_WINDOW_STARTXY),
-        .MCNTRL_TILED_TILE_WH              (MCNTRL_TILED_TILE_WH),
+        .MCNTRL_TILED_TILE_WHS              (MCNTRL_TILED_TILE_WHS),
         .MCNTRL_TILED_STATUS_REG_CHN4_ADDR (MCNTRL_TILED_STATUS_REG_CHN4_ADDR),
         .MCNTRL_TILED_PENDING_CNTR_BITS    (MCNTRL_TILED_PENDING_CNTR_BITS),
         .MCNTRL_TILED_FRAME_PAGE_RESET     (MCNTRL_TILED_FRAME_PAGE_RESET),

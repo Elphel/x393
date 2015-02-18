@@ -199,7 +199,7 @@ module  mcntrl393 #(
                                                       // Start XY can be used when read command to start from the middle
                                                       // TODO: Add number of blocks to R/W? (blocks can be different) - total length?
                                                       // Read back current address (for debugging)?
-    parameter MCNTRL_TILED_TILE_WH=         'h7,   // low word - 6-bit tile width in 8-bursts, high - tile height (0 - > 64)
+    parameter MCNTRL_TILED_TILE_WHS=         'h7,   // low word - 6-bit tile width in 8-bursts, high - tile height (0 - > 64)
     parameter MCNTRL_TILED_STATUS_REG_CHN4_ADDR= 'h5,
     parameter MCNTRL_TILED_PENDING_CNTR_BITS=2,    // Number of bits to count pending trasfers, currently 2 is enough, but may increase
                                                    // if memory controller will allow programming several sequences in advance to
@@ -570,7 +570,7 @@ module  mcntrl393 #(
         else if (axird_start_burst) select_buf4 <= select_buf4_w;
 
         if      (axi_rst)           axird_selected_r <= 0;
-        else if (axird_start_burst) axird_selected_r <= select_buf0_w || select_buf1_w ||select_buf2_w;
+        else if (axird_start_burst) axird_selected_r <= select_buf0_w || select_buf2_w ||select_buf4_w;
     end
     always @ (posedge axi_clk) begin
         if (axiwr_wen) buf_wdata  <= axiwr_data;
@@ -657,7 +657,7 @@ module  mcntrl393 #(
         .MCNTRL_TILED_WINDOW_WH        (MCNTRL_TILED_WINDOW_WH),
         .MCNTRL_TILED_WINDOW_X0Y0      (MCNTRL_TILED_WINDOW_X0Y0),
         .MCNTRL_TILED_WINDOW_STARTXY   (MCNTRL_TILED_WINDOW_STARTXY),
-        .MCNTRL_TILED_TILE_WH          (MCNTRL_TILED_TILE_WH),
+        .MCNTRL_TILED_TILE_WHS          (MCNTRL_TILED_TILE_WHS),
         .MCNTRL_TILED_STATUS_REG_ADDR  (MCNTRL_TILED_STATUS_REG_CHN4_ADDR),
         .MCNTRL_TILED_PENDING_CNTR_BITS(MCNTRL_TILED_PENDING_CNTR_BITS),
         .MCNTRL_TILED_FRAME_PAGE_RESET (MCNTRL_TILED_FRAME_PAGE_RESET),

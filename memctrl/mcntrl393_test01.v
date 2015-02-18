@@ -142,7 +142,7 @@ module  mcntrl393_test01#(
         
         if      (rst)                page_chn4 <= 0;
         else if (frame_start_chn4_r) page_chn4 <= 0;
-        else if (page_ready_chn4)    page_chn4 <= page_chn2 + 1;
+        else if (page_ready_chn4)    page_chn4 <= page_chn4 + 1;
 
         if      (rst)            suspend_chn2_r <= 0;
         else if (set_chh2_mode)  suspend_chn2_r <= cmd_suspend_w;

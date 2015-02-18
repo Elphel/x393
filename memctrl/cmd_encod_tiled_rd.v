@@ -27,6 +27,17 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/> .
  *******************************************************************************/
 `timescale 1ns/1ps
+/*
+Minimal ACTIVATE period =4 Tcm or 10ns, so maximal no-miss rate is Tck=1.25 ns (800 MHz)
+Minimal window of 4 ACTIVATE pulses - 16 Tck or 40 (40 ns), so one ACTIVATE per 8 Tck is still OK down to 1.25 ns
+Reads are in 16-byte colums: 1 8-burst (16 bytes) in a row, then next row, bank inc first. Then (if needed) - next column
+Number of rows should be >=5 (4 now for tCK=2.5ns to meet tRP (precharge to activate) of the same bank (tRP=13ns)
+Can read less if just one column
+TODO: Maybe allow less rows with different sequence (no autoprecharge/no activate?) Will not work if row crosses page boundary
+
+number fo rows>1!
+
+*/
 
 module  cmd_encod_tiled_rd #(
 //    parameter BASEADDR = 0,
@@ -78,7 +89,7 @@ module  cmd_encod_tiled_rd #(
     localparam LOOP_FIRST=   5; // address of the first word in a loop
     localparam LOOP_LAST=    6; // address of the last word in a loop
     localparam CMD_NOP=      0; // 3-bit normal memory RCW commands (positive logic)
-    localparam CMD_READ=     3;
+    localparam CMD_READ=     2;
 //    localparam CMD_PRECHARGE=5;
     localparam CMD_ACTIVATE= 4;
 //    localparam AUTOPRECHARGE_BIT=COLADDR_NUMBER;
@@ -94,7 +105,7 @@ module  cmd_encod_tiled_rd #(
     reg                        keep_open;                        
     reg                        skip_next_page;
     reg                        gen_run;
-    reg                        gen_run_d;
+    reg                        gen_run_d; // to output "done"?
     reg        [ROM_DEPTH-1:0] gen_addr; // will overrun as stop comes from ROM
     
     reg        [ROM_WIDTH-1:0] rom_r; 
@@ -114,40 +125,52 @@ module  cmd_encod_tiled_rd #(
     reg                        start_d; // start, delayed by 1 clocks
     wire                       last_row;
     reg [FULL_ADDR_NUMBER-1:0] row_col_bank;     // RA,CA, BA - valid @pre_act;
-    reg [FULL_ADDR_NUMBER-1:0] row_col_bank_inc; // incremented RA,CA, BA - valid @pre_act_d;
-    reg   [COLADDR_NUMBER-1:0] col_bank;// CA, BA - valid @ pre_read; 
+///    reg [FULL_ADDR_NUMBER-1:0] row_col_bank_inc; // incremented RA,CA, BA - valid @pre_act_d;
+//    reg   [COLADDR_NUMBER-1:0] col_bank;// CA, BA - valid @ pre_read; 
+    wire   [COLADDR_NUMBER-1:0] col_bank;// CA, BA - valid @ pre_read; 
+//    reg   [COLADDR_NUMBER-1:0] pre_col_bank;// CA, BA - valid @ pre_read; 
     
     wire                       enable_act;
 //    wire                       enable_autopre;
     reg                       enable_autopre;
     
-    reg                        pre_act_d;
-    reg                        other_row; // other than first row (valid/changed @pre_act)
+//    reg                        pre_act_d;
+//    reg                        other_row; // other than first row (valid/changed @pre_act)
     wire                 [2:0] next_bank_w;
     wire [ADDRESS_NUMBER+COLADDR_NUMBER-4:0] next_rowcol_w; // next row/col when bank rolls over (in 8-bursts)
     
     reg                        loop_continue;
     reg                        last_col_d; // delay by 1 pre_act cycles;
-    
+
+    wire [FULL_ADDR_NUMBER-1:0] row_col_bank_next_w;     // RA,CA, BA - valid @pre_act;
+    assign row_col_bank_next_w= last_row?
+                                {top_rc,bank}: // can not work if ACTIVATE is next after ACTIVATE in the last row (single-row tile)
+                                (&row_col_bank[2:0]? // bank==7
+                                      {next_rowcol_w,3'b0}:  
+                                      {row_col_bank[FULL_ADDR_NUMBER-1:3],next_bank_w});
+                                
 
     assign     pre_done=rom_r[ENC_PRE_DONE] && gen_run;
-    assign     rom_cmd=  rom_r[ENC_CMD_SHIFT+:2] & {enable_act,1'b0}; // disable bit 1 if activate is disabled (not the first column)
+    assign     rom_cmd=  rom_r[ENC_CMD_SHIFT+:2] & {enable_act,1'b1}; // disable bit 1 if activate is disabled (not the first column)
     assign     rom_skip= rom_r[ENC_PAUSE_SHIFT+:2];
     assign     full_cmd= rom_cmd[1]?CMD_ACTIVATE:(rom_cmd[0]?CMD_READ:CMD_NOP);
     
     assign last_row=       (scan_row==num_rows_m1);
     assign enable_act=     first_col || !keep_open; // TODO: do not forget to zero addresses too (or they will become pause/done)
-    assign next_bank_w=    bank+1;
+    assign next_bank_w=    row_col_bank[2:0]+1; //bank+1;
     assign next_rowcol_w=row_col_bank[FULL_ADDR_NUMBER-1:3]+rowcol_inc;
     
-    assign pre_act=        rom_r[ENC_CMD_SHIFT+1]; //1 cycle before optional ACTIVATE
+//    assign pre_act=        rom_r[ENC_CMD_SHIFT+1]; //1 cycle before optional ACTIVATE
+//    assign pre_act=        gen_run_d && rom_r[ENC_CMD_SHIFT+1]; //1 cycle before optional ACTIVATE
+    assign pre_act=        gen_run && rom_cmd[1]; //1 cycle before optional ACTIVATE
     assign pre_read=       rom_r[ENC_CMD_SHIFT]; //1 cycle before READ command
     
 //TODO:Add AUTOPRECHARGE + ACTIVATE when column crossed - No, caller should make sure there is no row address change in the same line   
     
     always @ (posedge rst or posedge clk) begin
         if (rst)           gen_run <= 0;
-        else if (start)    gen_run<= 1;
+//        else if (start)    gen_run<= 1;
+        else if (start_d)    gen_run<= 1; // delaying
         else if (pre_done) gen_run<= 0;
         
         if (rst)           gen_run_d <= 0;
@@ -162,25 +185,33 @@ module  cmd_encod_tiled_rd #(
         else             start_d <=  start;
         
         if (rst)                      top_rc <= 0;
-        else if (start_d)             top_rc <= {row,col};
+        else if (start_d)             top_rc <= {row,col}+1;
         else if (pre_act && last_row) top_rc <= top_rc+1; // may increment RA  
-        
+/*        
         if (rst)                      pre_act_d <= 0;
-        else if (start_d)             pre_act_d <= 0;
+///        else if (start_d)             pre_act_d <= 0;
         else                          pre_act_d <= pre_act;
         
         if (rst)                      other_row <= 0;
         else if (pre_act)             other_row <= ~last_row;
-        
+*/        
         if (rst)                          row_col_bank <= 0;
-        else if (start_d)                 row_col_bank <= {row,col,bank};
-        else if (pre_act_d && ~other_row) row_col_bank <= {top_rc,bank};
-        else if (pre_act_d)               row_col_bank <= row_col_bank_inc; 
+        else if (start_d)                 row_col_bank <= {row,col,bank}; // TODO: Use start_col,... and start, not start_d?
+//TODO: maybe better to move 1 cicle later everything?
+//        else if (start)                 row_col_bank <= {start_row,start_col,start_bank}; // TODO: Use start_col,... and start, not start_d?
+//        else if (pre_act_d && ~other_row) row_col_bank <= {top_rc,bank};
+//        else if (pre_act_d && last_row) row_col_bank <= {top_rc,bank};
+//        else if (pre_act_d)               row_col_bank <= row_col_bank_inc; 
+
+//        else if (pre_act && last_row)   row_col_bank <= {top_rc,bank};
+//        else if (pre_act)               row_col_bank <= row_col_bank_inc; 
         
-        if (rst)    row_col_bank_inc<=0;
-        else        row_col_bank_inc<=(&row_col_bank_inc[2:0]!=0)?
-                                      {row_col_bank_inc[FULL_ADDR_NUMBER-1:3],next_bank_w}:
-                                      {next_rowcol_w,row_col_bank_inc[2:0]};  
+        else if (pre_act)               row_col_bank <= row_col_bank_next_w; 
+        
+  ///      if (rst)    row_col_bank_inc<=0;
+  ///      else        row_col_bank_inc<=(&row_col_bank_inc[2:0]!=0)?
+  ///                                    {row_col_bank_inc[FULL_ADDR_NUMBER-1:3],next_bank_w}:
+  ///                                    {next_rowcol_w,row_col_bank_inc[2:0]};  
 
         if (rst)                      scan_row <= 0;
         else if (start_d)             scan_row <= 0;
@@ -206,15 +237,22 @@ module  cmd_encod_tiled_rd #(
         else if (start_d)             enable_autopre <= 0;
         else if (pre_act)             enable_autopre <=  last_col_d || !keep_open; // delayed by 2 pre_act tacts form last_col, OK with a single column
         
+//pre_col_bank   
+/*     
+        if (rst)                      pre_col_bank<=0;
+        else if (start_d)             pre_col_bank<= {col,bank};
+        else if (pre_act)             pre_col_bank<= row_col_bank[COLADDR_NUMBER-1:0];
+        
         if (rst)                      col_bank<=0;
         else if (start_d)             col_bank<= {col,bank};
-        else if (pre_read)            col_bank<= row_col_bank[COLADDR_NUMBER-1:0];
-        
+        else if (pre_read)            col_bank<= pre_col_bank; //row_col_bank[COLADDR_NUMBER-1:0];
+*/        
         if (rst)     loop_continue<=0;
         else loop_continue <=  (scan_col==num_cols128_m1) && last_row;                 
         
         if (rst)                     gen_addr <= 0;
-        else if (!start && !gen_run) gen_addr <= 0;
+//        else if (!start && !gen_run) gen_addr <= 0;
+        else if (!start_d && !gen_run) gen_addr <= 0;
         else if ((gen_addr==LOOP_LAST) && !loop_continue) gen_addr <= LOOP_FIRST; // skip loop alltogeter
         else                         gen_addr <= gen_addr+1; // not in a loop
     end
@@ -232,16 +270,16 @@ module  cmd_encod_tiled_rd #(
     always @ (posedge rst or posedge clk) begin
         if (rst)           rom_r <= 0;
         else case (gen_addr)
-            4'h0:  rom_r <= (ENC_CMD_ACTIVATE <<  ENC_CMD_SHIFT)  | (1 << ENC_NOP);
-            4'h1:  rom_r <= (ENC_CMD_ACTIVATE <<  ENC_CMD_SHIFT); 
-            4'h2:  rom_r <= (ENC_CMD_READ <<      ENC_CMD_SHIFT)                                              | (1 << ENC_DCI) | (1 << ENC_SEL); 
-            4'h3:  rom_r <= (ENC_CMD_ACTIVATE <<  ENC_CMD_SHIFT)                                              | (1 << ENC_DCI) | (1 << ENC_SEL); 
-            4'h4:  rom_r <= (ENC_CMD_READ <<      ENC_CMD_SHIFT)                          | (1 << ENC_BUF_WR) | (1 << ENC_DCI) | (1 << ENC_SEL); 
-            4'h5:  rom_r <= (ENC_CMD_ACTIVATE <<  ENC_CMD_SHIFT)                          | (1 << ENC_BUF_WR) | (1 << ENC_DCI) | (1 << ENC_SEL); 
-            4'h6:  rom_r <= (ENC_CMD_READ <<      ENC_CMD_SHIFT)                          | (1 << ENC_BUF_WR) | (1 << ENC_DCI) | (1 << ENC_SEL); 
-            4'h7:  rom_r <= (ENC_CMD_NOP <<       ENC_CMD_SHIFT)                          | (1 << ENC_BUF_WR) | (1 << ENC_DCI) | (1 << ENC_SEL); 
-            4'h8:  rom_r <= (ENC_CMD_READ <<      ENC_CMD_SHIFT)                          | (1 << ENC_BUF_WR) | (1 << ENC_DCI) | (1 << ENC_SEL); 
-            4'h9:  rom_r <= (ENC_CMD_NOP <<       ENC_CMD_SHIFT) | (2 << ENC_PAUSE_SHIFT) | (1 << ENC_BUF_WR) | (1 << ENC_DCI) | (1 << ENC_SEL); 
+            4'h0: rom_r <= (ENC_CMD_ACTIVATE <<  ENC_CMD_SHIFT)  | (1 << ENC_NOP);
+            4'h1: rom_r <= (ENC_CMD_ACTIVATE <<  ENC_CMD_SHIFT); 
+            4'h2: rom_r <= (ENC_CMD_READ <<      ENC_CMD_SHIFT)                                              | (1 << ENC_DCI) | (1 << ENC_SEL); 
+            4'h3: rom_r <= (ENC_CMD_ACTIVATE <<  ENC_CMD_SHIFT)                                              | (1 << ENC_DCI) | (1 << ENC_SEL); 
+            4'h4: rom_r <= (ENC_CMD_READ <<      ENC_CMD_SHIFT)                          | (1 << ENC_BUF_WR) | (1 << ENC_DCI) | (1 << ENC_SEL); 
+            4'h5: rom_r <= (ENC_CMD_ACTIVATE <<  ENC_CMD_SHIFT)                          | (1 << ENC_BUF_WR) | (1 << ENC_DCI) | (1 << ENC_SEL); 
+            4'h6: rom_r <= (ENC_CMD_READ <<      ENC_CMD_SHIFT)                          | (1 << ENC_BUF_WR) | (1 << ENC_DCI) | (1 << ENC_SEL); 
+            4'h7: rom_r <= (ENC_CMD_NOP <<       ENC_CMD_SHIFT)                          | (1 << ENC_BUF_WR) | (1 << ENC_DCI) | (1 << ENC_SEL); 
+            4'h8: rom_r <= (ENC_CMD_READ <<      ENC_CMD_SHIFT)                          | (1 << ENC_BUF_WR) | (1 << ENC_DCI) | (1 << ENC_SEL); 
+            4'h9: rom_r <= (ENC_CMD_NOP <<       ENC_CMD_SHIFT) | (2 << ENC_PAUSE_SHIFT) | (1 << ENC_BUF_WR) | (1 << ENC_DCI) | (1 << ENC_SEL); 
             4'ha: rom_r <= (ENC_CMD_NOP <<       ENC_CMD_SHIFT) | (1 << ENC_DCI) | (1 << ENC_SEL) | (1 << ENC_BUF_PGNEXT); 
             4'hb: rom_r <= (ENC_CMD_NOP <<       ENC_CMD_SHIFT) | (3 << ENC_PAUSE_SHIFT)                     | (1 << ENC_DCI);
             4'hc: rom_r <= (ENC_CMD_NOP <<       ENC_CMD_SHIFT) | (1 << ENC_PRE_DONE);
@@ -256,7 +294,7 @@ module  cmd_encod_tiled_rd #(
         else               enc_wr <= gen_run || gen_run_d;
         
         if (rst)           enc_done <= 0;
-        else               enc_done <= enc_wr || !gen_run_d;
+        else               enc_done <= enc_wr && !gen_run_d;
         
         if (rst)             enc_cmd <= 0;
         else if (rom_cmd==0) enc_cmd <= func_encode_skip ( // encode pause
@@ -282,7 +320,7 @@ module  cmd_encod_tiled_rd #(
                         3'b0}, //  [14:0] addr;       // 15-bit row/column adderss
             rom_cmd[1]?
                 row_col_bank[2:0]:
-                col_bank[2:0],        // bank (here OK to be any)
+                col_bank[2:0],        //
             full_cmd[2:0],           //   rcw;        // RAS/CAS/WE, positive logic
             1'b0,                    //   odt_en;     // enable ODT
             1'b0,                    //   cke;        // disable CKE
@@ -296,6 +334,17 @@ module  cmd_encod_tiled_rd #(
             rom_r[ENC_NOP],          //   nop;        // add NOP after the current command, keep other data
             rom_r[ENC_BUF_PGNEXT] && !skip_next_page);     //   buf_rst;    // connect to external buffer (but only if not paused)
     end    
+    fifo_2regs #(
+        .WIDTH(COLADDR_NUMBER)
+    ) fifo_2regs_i (
+        .rst (rst), // input
+        .clk (clk), // input
+        .din (row_col_bank[COLADDR_NUMBER-1:0]), // input[15:0] 
+        .wr(pre_act), // input
+        .rd(pre_read), // input
+        .srst(start_d), // input
+        .dout(col_bank) // output[15:0] 
+    );
 
 // move to include?, Yes, after fixing problem with paths
 // move to include?
