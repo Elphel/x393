@@ -202,7 +202,7 @@ module  x393_testbench01 #(
   localparam       WINDOW_WIDTH=    'h000b; //'h005b; //'h000b;  // 176:  13-bit window width (0->'h4000)
   localparam       WINDOW_HEIGHT=   'h000a;  // 9:    16-bit window height (0->'h10000)
 //  localparam       SCANLINE_X0Y0=       'h00050003;  // X0=3*16=48, Y0=5: // low word - 13-bit window left, high word - 16-bit window top
-  localparam       WINDOW_X0=         'h005c; // 'h7c; // 'h0003;  // X0=3*16=48 - 13-bit window left
+  localparam       WINDOW_X0=     'h5c; //'h7f; //     'h005c; // 'h7c; // 'h0003;  // X0=3*16=48 - 13-bit window left
   localparam       WINDOW_Y0=         'h0005;  // Y0=5: 16-bit window top
 //  localparam       SCANLINE_STARTXY=    'h0;         // low word - 13-bit start X (relative to window), high word - 16-bit start y (normally 0)
   localparam       SCANLINE_STARTX=     'h0;         // 13-bit start X (relative to window), high word (normally 0)
@@ -212,9 +212,11 @@ module  x393_testbench01 #(
   localparam       TILED_STARTX=     'h0;         // 13-bit start X (relative to window), high word (normally 0)
   localparam       TILED_STARTY=     'h0;         // 16-bit start y (normally 0)
   localparam [1:0] TILED_EXTRA_PAGES= 0;          // 0..2 - number of pages in the buffer to keep/not write
-  localparam       TILED_KEEP_OPEN=   1'b0;       // Do not close banks between reads (valid only for tiles <=8 rows, needed if less than 3? rows)  
+  
+  localparam       TILED_KEEP_OPEN=   1'b0; //1'b1; // 1'b0;       // Do not close banks between reads (valid only for tiles <=8 rows, needed if less than 3? rows)  
+  
   localparam       TILE_WIDTH=    'h03; //     6-bit tile width  (1..'h40)
-  localparam       TILE_HEIGHT=   'h06;  //    6-bit tile height (1..'h40)
+  localparam       TILE_HEIGHT=   'h05; // 'h04; //'h06;  //    6-bit tile height (1..'h40) // 4 - violation
   localparam       TILE_VSTEP=    'h04;  //    6-bit tile vertical step, with no overlap it is equal to TILE_HEIGHT (1..'h40)
   
   

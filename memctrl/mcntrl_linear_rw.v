@@ -60,6 +60,7 @@ module  mcntrl_linear_rw #(
     input                          next_page,     // page was read/written from/to 4*1kB on-chip buffer
 //    output                         page_ready,    // == xfer_done, connect externally | Single-cycle pulse indicating that a page was read/written from/to DDR3 memory
     output                         frame_done,    // single-cycle pulse when the full frame (window) was transferred to/from DDR3 memory
+    output                         frame_finished,// turns on and stays on after frame_done
 // optional I/O for channel synchronization
     output [FRAME_HEIGHT_BITS-1:0] line_unfinished, // number of the current (ufinished ) line, REALATIVE TO FRAME, NOT WINDOW?. 
     input                          suspend,       // suspend transfers (from external line number comparator)
@@ -124,6 +125,7 @@ module  mcntrl_linear_rw #(
     reg                           want_r;
     reg                           need_r;
     reg                           frame_done_r;
+    reg                           frame_finished_r;    
     wire                          last_in_row_w;
     wire                          last_row_w;
     reg                           last_block;
@@ -172,7 +174,7 @@ module  mcntrl_linear_rw #(
     assign set_window_wh_w =    cmd_we && (cmd_a== MCNTRL_SCANLINE_WINDOW_WH);
     assign set_window_x0y0_w =  cmd_we && (cmd_a== MCNTRL_SCANLINE_WINDOW_X0Y0);
     assign set_window_start_w = cmd_we && (cmd_a== MCNTRL_SCANLINE_WINDOW_STARTXY);
-    // Sett parameter registers
+    // Set parameter registers
     always @(posedge rst or posedge mclk) begin
         if      (rst)                mode_reg <= 0;
         else if (set_mode_w)         mode_reg <= cmd_data[3:0]; // [4:0];
@@ -217,6 +219,8 @@ module  mcntrl_linear_rw #(
     assign xfer_partial=      xfer_limited_by_mem_page_r;
     
     assign frame_done=  frame_done_r;
+    assign frame_finished=  frame_finished_r;
+    
     assign pre_want=    chn_en && busy_r && !want_r && !xfer_start_r[0] && calc_valid && !last_block && !suspend;
 //    assign pre_want=    chn_en && busy_r && !want_r && !xfer_start_r[0] && calc_valid && !no_more_needed && !suspend;
     //
@@ -232,7 +236,7 @@ module  mcntrl_linear_rw #(
     assign chn_rst =        ~mode_reg[0]; // resets command, including fifo;
     assign cmd_extra_pages = mode_reg[3:2]; // external module needs more than 1 page
 //    assign cmd_wrmem =       mode_reg[4];// 0: read from memory, 1:write to memory
-    assign status_data= {frame_done, busy_r};     // TODO: Add second bit?
+    assign status_data= {frame_finished_r, busy_r};     // TODO: Add second bit?
     assign pgm_param_w=      cmd_we;
     localparam [COLADDR_NUMBER-3-NUM_XFER_BITS-1:0] EXTRA_BITS=0;
     assign remainder_in_xfer = {EXTRA_BITS, lim_by_xfer}-mem_page_left;
@@ -347,14 +351,14 @@ wire    start_not_partial= xfer_start_r[0] && !xfer_limited_by_mem_page_r;
         else if (frame_start)      continued_xfer <= 1'b0;
         else if (xfer_start_r[0])  continued_xfer <= xfer_limited_by_mem_page_r; // only set after actual start if it was partial, not after parameter change
 
-        if      (rst)                                                       frame_done_r <= 0;
-        else if (chn_rst || frame_start)                                    frame_done_r <= 0;
-        else if (busy_r && last_block && xfer_done_d && (pending_xfers==0)) frame_done_r <= 1;
+        // single cycle (sent out)
+        if (rst)          frame_done_r <= 0;
+        else              frame_done_r <= busy_r && last_block && xfer_done_d && (pending_xfers==0);
 
-//        if (rst)          frame_done_r <= 0;
-//        else              frame_done_r <= busy_r && last_block && xfer_done_d && (pending_xfers==0);
-        
-        
+        // turns and stays on (used in status)
+        if (rst)                         frame_finished_r <= 0;
+        else if (chn_rst || frame_start) frame_finished_r <= 0;
+        else if (frame_done_r)           frame_finished_r <= 1;
         
         if (rst) xfer_start_r <= 0;
         else     xfer_start_r <= {xfer_start_r[1:0],xfer_grant && !chn_rst};

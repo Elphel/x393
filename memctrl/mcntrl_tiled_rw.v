@@ -64,6 +64,7 @@ module  mcntrl_tiled_rw#(
     input                          next_page,     // page was read/written from/to 4*1kB on-chip buffer
 //    output                         page_ready,    // == xfer_done, connect externally | Single-cycle pulse indicating that a page was read/written from/to DDR3 memory
     output                         frame_done,    // single-cycle pulse when the full frame (window) was transferred to/from DDR3 memory
+    output                         frame_finished,// turns on and stays on after frame_done
 // optional I/O for channel synchronization
     output [FRAME_HEIGHT_BITS-1:0] line_unfinished, // number of the current (ufinished ) line, REALATIVE TO FRAME, NOT WINDOW?. 
     input                          suspend,       // suspend transfers (from external line number comparator)
@@ -82,6 +83,8 @@ module  mcntrl_tiled_rw#(
     input                          xfer_page_done,     // transfer to/from the buffer finished (partial transfers should not generate), use rpage_nxt_chn@mclk
     output                         xfer_page_rst // reset buffer internal page - at each frame start or when specifically reset
 );
+// FIXME: not all tile heights are valid (because of the banks)
+
 //MAX_TILE_WIDTH
     localparam NUM_RC_BURST_BITS=ADDRESS_NUMBER+COLADDR_NUMBER-3;  //to spcify row and col8 == 22
     localparam MPY_WIDTH=        NUM_RC_BURST_BITS; // 22
@@ -126,6 +129,7 @@ module  mcntrl_tiled_rw#(
     reg                           want_r;
     reg                           need_r;
     reg                           frame_done_r;
+    reg                           frame_finished_r;    
     wire                          last_in_row_w;
     wire                          last_row_w;
     reg                           last_block;
@@ -174,6 +178,7 @@ module  mcntrl_tiled_rw#(
     reg   [FRAME_HEIGHT_BITS-1:0] window_y0;      // (programmed) window top
     reg    [FRAME_WIDTH_BITS-1:0] start_x;        // (programmed) normally 0, copied to curr_x on frame_start  
     reg   [FRAME_HEIGHT_BITS-1:0] start_y;        // (programmed) normally 0, copied to curr_y on frame_start 
+    reg                           xfer_page_done_d;   // next cycle after xfer_page_done
     
     
     assign set_mode_w =         cmd_we && (cmd_a== MCNTRL_TILED_MODE);
@@ -234,11 +239,15 @@ module  mcntrl_tiled_rw#(
     assign mul_rslt_w=  frame_y8_r * frame_full_width_r; // 5 MSBs will be discarded
     assign xfer_start=  xfer_start_r[0];
     assign calc_valid=  par_mod_r[PAR_MOD_LATENCY-1]; // MSB, longest 0
-    assign frame_done=  frame_done_r;
+    assign frame_done=      frame_done_r;
+    assign frame_finished=  frame_finished_r;
     assign pre_want=    chn_en && busy_r && !want_r && !xfer_start_r[0] && calc_valid && !last_block && !suspend;
     assign last_in_row_w=(row_left=={{(FRAME_WIDTH_BITS-MAX_TILE_WIDTH){1'b0}},num_cols_r}); // what if it crosses page? OK, num_cols_r & row_left know that
 //    assign last_row_w=  next_y>=window_height; // (next_y==window_height) is faster, but will not forgive software errors
-    assign last_row_w=  next_y > window_m_tile_height; // (next_y==window_height) is faster, but will not forgive software errors
+// tiles must completely fit window
+//    assign last_row_w=  next_y > window_m_tile_height; // (next_y==window_height) is faster, but will not forgive software errors
+// all window should be covered (tiles may extend):    
+    assign last_row_w=  next_y>=window_height;
     //window_m_tile_height
     assign xfer_want=   want_r;
     assign xfer_need=   need_r;
@@ -252,7 +261,7 @@ module  mcntrl_tiled_rw#(
     assign cmd_extra_pages = mode_reg[3:2]; // external module needs more than 1 page
     assign keep_open=        mode_reg[4]; // keep banks open (will be used only if number of rows <= 8 
 //    assign cmd_wrmem =       mode_reg[5];// 0: read from memory, 1:write to memory
-    assign status_data=      {frame_done, busy_r}; 
+    assign status_data=      {frame_finished_r, busy_r}; 
     assign pgm_param_w=      cmd_we;
     assign rowcol_inc=       frame_full_width;
     assign num_cols_m1_w=    num_cols_r-1;
@@ -263,14 +272,14 @@ module  mcntrl_tiled_rw#(
     
 //    assign buf_skip_reset=   continued_tile; // buf_skip_reset_r;
     assign xfer_page_rst=   xfer_page_rst_r;
-    assign xfer_partial=      xfer_limited_by_mem_page_r;
+    assign xfer_partial=    xfer_limited_by_mem_page_r;
     
     integer i;
 //    localparam EXTRA_BITS={COLADDR_NUMBER-3-NUM_XFER_BITS{1'b0}};
     localparam [COLADDR_NUMBER-3-MAX_TILE_WIDTH-1:0] EXTRA_BITS=0;
     wire xfer_limited_by_mem_page;
     reg  xfer_limited_by_mem_page_r;
-    assign xfer_limited_by_mem_page= mem_page_left < {EXTRA_BITS,lim_by_tile_width};
+    assign xfer_limited_by_mem_page= keep_open && (mem_page_left < {EXTRA_BITS,lim_by_tile_width}); // if not keep_open - no need to break
     always @(posedge mclk) begin // TODO: Match latencies (is it needed?) Reduce consumption by CE?
     // cycle 1
         if (recalc_r[0]) begin
@@ -297,10 +306,7 @@ module  mcntrl_tiled_rw#(
             bank_reg[i+1] <= bank_reg[i];
      
         if (recalc_r[6]) begin    // cycle 7
-//            mem_page_left <= (1 << (COLADDR_NUMBER-3)) - frame_x[COLADDR_NUMBER-4:0];
             mem_page_left <= {1'b1,line_start_page_left} - frame_x[COLADDR_NUMBER-4:0];
-            
-//            lim_by_tile_width <= (|row_left[FRAME_WIDTH_BITS:MAX_TILE_WIDTH])?(1<<MAX_TILE_WIDTH):row_left[MAX_TILE_WIDTH:0]; // 7 bits, max 'h40
             lim_by_tile_width <= (|row_left[FRAME_WIDTH_BITS:MAX_TILE_WIDTH] || (row_left[MAX_TILE_WIDTH:0]>= tile_cols))?
                                     tile_cols:
                                     row_left[MAX_TILE_WIDTH:0]; // 7 bits, max 'h40
@@ -312,11 +318,7 @@ module  mcntrl_tiled_rw#(
                 {EXTRA_BITS,leftover_cols}:
                 (xfer_limited_by_mem_page? mem_page_left[MAX_TILE_WIDTH:0]:lim_by_tile_width[MAX_TILE_WIDTH:0]);
                 leftover_cols <= remainder_tile_width[MAX_TILE_WIDTH-1:0];
-//            remainder_tile_width <= {EXTRA_BITS,lim_by_tile_width}-mem_page_left;
         end
-// VDT bug? next line gives a warning        
-//        xfer_num128_r<= (mem_page_left> {{COLADDR_NUMBER-3-COLADDR_NUMBER-3{1'b0}},lim_by_xfer})?mem_page_left[NUM_XFER_BITS-1:0]:lim_by_xfer[NUM_XFER_BITS-1:0];
-   // cycle 4
         if (recalc_r[8]) begin    // cycle 9
             last_in_row <= last_in_row_w;
         end
@@ -345,6 +347,9 @@ wire    start_not_partial= xfer_start_r[0] && !xfer_limited_by_mem_page_r;
         else if (frame_start)  busy_r <= 1;
         else if (frame_done_r) busy_r <= 0;
         
+        if (rst) xfer_page_done_d <= 0;
+        else     xfer_page_done_d <= xfer_page_done;
+        
         if (rst) xfer_start_r <= 0;
         else     xfer_start_r <= {xfer_start_r[1:0],xfer_grant && !chn_rst};
         
@@ -365,8 +370,8 @@ wire    start_not_partial= xfer_start_r[0] && !xfer_limited_by_mem_page_r;
         else if (frame_start)                      page_cntr <= cmd_wrmem?0:4;
 //        else if ( xfer_start_r[0] && !next_page) page_cntr <= page_cntr + 1;     
 //        else if (!xfer_start_r[0] &&  next_page) page_cntr <= page_cntr - 1;
-        else if ( start_not_partial && !next_page) page_cntr <= page_cntr + 1;     
-        else if (!start_not_partial &&  next_page) page_cntr <= page_cntr - 1;
+        else if ( start_not_partial && !next_page) page_cntr <= page_cntr - 1;     
+        else if (!start_not_partial &&  next_page) page_cntr <= page_cntr + 1;
         
         if (rst) xfer_page_rst_r <= 1;
         else     xfer_page_rst_r <= chn_rst || (MCNTRL_TILED_FRAME_PAGE_RESET ? frame_start:1'b0);
@@ -394,8 +399,14 @@ wire    start_not_partial= xfer_start_r[0] && !xfer_limited_by_mem_page_r;
 //        else if ( start_not_partial && !xfer_page_done) pending_xfers <= pending_xfers + 1;     
 //        else if (!start_not_partial &&  xfer_page_done) pending_xfers <= pending_xfers - 1; // page done is not generated on partial (first) pages
         
+        // single cycle (sent out)
         if (rst)          frame_done_r <= 0;
-        else              frame_done_r <= busy_r && last_block && xfer_page_done && (pending_xfers==0);
+        else              frame_done_r <= busy_r && last_block && xfer_page_done_d && (pending_xfers==0);
+
+        // turns and stays on (used in status)
+        if (rst)                         frame_finished_r <= 0;
+        else if (chn_rst || frame_start) frame_finished_r <= 0;
+        else if (frame_done_r)           frame_finished_r <= 1;
         
         //line_unfinished_r cmd_wrmem
 /*

@@ -662,7 +662,7 @@ module  mcntrl393 #(
         .MCNTRL_TILED_PENDING_CNTR_BITS(MCNTRL_TILED_PENDING_CNTR_BITS),
         .MCNTRL_TILED_FRAME_PAGE_RESET (MCNTRL_TILED_FRAME_PAGE_RESET),
         .MCNTRL_TILED_WRITE_MODE       (1'b0)
-    ) mcntrl_tiled_rw_chn4_i (
+    ) mcntrl_tiled_rw_chn4_i ( 
         .rst(rst), // input
         .mclk(mclk), // input
         .cmd_ad               (cmd_tiled_chn4_ad), // input[7:0] 
@@ -673,6 +673,7 @@ module  mcntrl393 #(
         .frame_start          (frame_start_chn4), // input
         .next_page            (next_page_chn4), // input
         .frame_done           (frame_done_chn4), // output
+        .frame_finished       (), // output
         .line_unfinished      (line_unfinished_chn4), // output[15:0] 
         .suspend              (suspend_chn4), // input
         .xfer_want            (want_rq4), // output
@@ -830,6 +831,7 @@ module  mcntrl393 #(
         .frame_start       (frame_start_chn2), // input
         .next_page         (next_page_chn2), // input
         .frame_done        (frame_done_chn2), // output
+        .frame_finished    (), // output
         .line_unfinished   (line_unfinished_chn2), // output[15:0] 
         .suspend           (suspend_chn2), // input
         .xfer_want       (want_rq2), // output
@@ -874,6 +876,7 @@ module  mcntrl393 #(
         .frame_start      (frame_start_chn3), // input
         .next_page        (next_page_chn3), // input
         .frame_done       (frame_done_chn3), // output
+        .frame_finished       (), // output
         .line_unfinished  (line_unfinished_chn3), // output[15:0] 
         .suspend          (suspend_chn3), // input
         .xfer_want       (want_rq3), // output

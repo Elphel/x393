@@ -34,8 +34,9 @@ Reads are in 16-byte colums: 1 8-burst (16 bytes) in a row, then next row, bank 
 Number of rows should be >=5 (4 now for tCK=2.5ns to meet tRP (precharge to activate) of the same bank (tRP=13ns)
 Can read less if just one column
 TODO: Maybe allow less rows with different sequence (no autoprecharge/no activate?) Will not work if row crosses page boundary
-
 number fo rows>1!
+
+Need to insert pauses if activate in the first row and  next column is too early
 
 */
 
@@ -151,9 +152,10 @@ module  cmd_encod_tiled_rd #(
                                 
 
     assign     pre_done=rom_r[ENC_PRE_DONE] && gen_run;
-    assign     rom_cmd=  rom_r[ENC_CMD_SHIFT+:2] & {enable_act,1'b1}; // disable bit 1 if activate is disabled (not the first column)
+//    assign     rom_cmd=  rom_r[ENC_CMD_SHIFT+:2] & {enable_act,1'b1}; // disable bit 1 if activate is disabled (not the first column)
+    assign     rom_cmd=  rom_r[ENC_CMD_SHIFT+:2]; //  & {enable_act,1'b1}; // disable bit 1 if activate is disabled (not the first column)
     assign     rom_skip= rom_r[ENC_PAUSE_SHIFT+:2];
-    assign     full_cmd= rom_cmd[1]?CMD_ACTIVATE:(rom_cmd[0]?CMD_READ:CMD_NOP);
+    assign     full_cmd= (enable_act && rom_cmd[1])?CMD_ACTIVATE:(rom_cmd[0]?CMD_READ:CMD_NOP);
     
     assign last_row=       (scan_row==num_rows_m1);
     assign enable_act=     first_col || !keep_open; // TODO: do not forget to zero addresses too (or they will become pause/done)
@@ -235,7 +237,8 @@ module  cmd_encod_tiled_rd #(
 
         if (rst)                      enable_autopre <= 0;
         else if (start_d)             enable_autopre <= 0;
-        else if (pre_act)             enable_autopre <=  last_col_d || !keep_open; // delayed by 2 pre_act tacts form last_col, OK with a single column
+//        else if (pre_act)             enable_autopre <=  last_col_d || !keep_open; // delayed by 2 pre_act tacts form last_col, OK with a single column
+        else if (pre_act)             enable_autopre <=  last_col || !keep_open; // delayed by 2 pre_act tacts form last_col, OK with a single column
         
 //pre_col_bank   
 /*     
@@ -262,7 +265,7 @@ module  cmd_encod_tiled_rd #(
         col <= start_col;
         bank <= start_bank;
         rowcol_inc <= rowcol_inc_in;
-        keep_open <= keep_open_in && (|num_cols_in_m1[5:3]!=0);
+        keep_open <= keep_open_in && (|num_cols_in_m1[5:3] == 0);
         skip_next_page <= skip_next_page_in;
     end
     
@@ -270,7 +273,7 @@ module  cmd_encod_tiled_rd #(
     always @ (posedge rst or posedge clk) begin
         if (rst)           rom_r <= 0;
         else case (gen_addr)
-            4'h0: rom_r <= (ENC_CMD_ACTIVATE <<  ENC_CMD_SHIFT)  | (1 << ENC_NOP);
+            4'h0: rom_r <= (ENC_CMD_ACTIVATE <<  ENC_CMD_SHIFT)  | (1 << ENC_NOP) | (1 << ENC_PAUSE_SHIFT); // here does not matter, just to work with masked ACTIVATE
             4'h1: rom_r <= (ENC_CMD_ACTIVATE <<  ENC_CMD_SHIFT); 
             4'h2: rom_r <= (ENC_CMD_READ <<      ENC_CMD_SHIFT)                                              | (1 << ENC_DCI) | (1 << ENC_SEL); 
             4'h3: rom_r <= (ENC_CMD_ACTIVATE <<  ENC_CMD_SHIFT)                                              | (1 << ENC_DCI) | (1 << ENC_SEL); 
@@ -297,21 +300,8 @@ module  cmd_encod_tiled_rd #(
         else               enc_done <= enc_wr && !gen_run_d;
         
         if (rst)             enc_cmd <= 0;
-        else if (rom_cmd==0) enc_cmd <= func_encode_skip ( // encode pause
-            {{CMD_PAUSE_BITS-2{1'b0}},rom_skip[1:0]}, // skip;   // number of extra cycles to skip (and keep all the other outputs)
-            done,                                     // end of sequence 
-            3'b0,                    // bank (here OK to be any)
-            1'b0,                    //   odt_en;     // enable ODT
-            1'b0,                    //   cke;        // disable CKE
-            rom_r[ENC_SEL],          //   sel;        // first/second half-cycle, other will be nop (cke+odt applicable to both)
-            1'b0,                    //   dq_en;      // enable (not tristate) DQ  lines (internal timing sequencer for 0->1 and 1->0)
-            1'b0,                    //   dqs_en;     // enable (not tristate) DQS lines (internal timing sequencer for 0->1 and 1->0)
-            1'b0,                    //   dqs_toggle; // enable toggle DQS according to the pattern
-            rom_r[ENC_DCI],          //   dci;        // DCI disable, both DQ and DQS lines (internal logic and timing sequencer for 0->1 and 1->0)
-            rom_r[ENC_BUF_WR],       //   buf_wr;     // connect to external buffer (but only if not paused)
-            1'b0,                    //   buf_rd;     // connect to external buffer (but only if not paused)
-            rom_r[ENC_BUF_PGNEXT] && !skip_next_page);     //   buf_rst;    // connect to external buffer (but only if not paused)
-       else  enc_cmd <= func_encode_cmd ( // encode non-NOP command
+//        else if ((rom_cmd==0) || (rom_cmd[1] && !enable_act)) enc_cmd <= func_encode_skip ( // encode pause
+        else if (rom_cmd[0] || (rom_cmd[1] && enable_act)) enc_cmd <= func_encode_cmd ( // encode non-NOP command
             rom_cmd[1]? // activate
             row_col_bank[FULL_ADDR_NUMBER-1:COLADDR_NUMBER]: // top combined row,column,bank burst address (excludes 3 CA LSBs), valid/modified @pre_act
                     {{ADDRESS_NUMBER-COLADDR_NUMBER-1{1'b0}},
@@ -333,7 +323,21 @@ module  cmd_encod_tiled_rd #(
             1'b0,                    //   buf_rd;     // connect to external buffer (but only if not paused)     
             rom_r[ENC_NOP],          //   nop;        // add NOP after the current command, keep other data
             rom_r[ENC_BUF_PGNEXT] && !skip_next_page);     //   buf_rst;    // connect to external buffer (but only if not paused)
-    end    
+        else enc_cmd <= func_encode_skip ( // encode pause
+            {{CMD_PAUSE_BITS-2{1'b0}},rom_skip[1:0]}, // skip;   // number of extra cycles to skip (and keep all the other outputs)
+            done,                                     // end of sequence 
+            3'b0,                    // bank (here OK to be any)
+            1'b0,                    //   odt_en;     // enable ODT
+            1'b0,                    //   cke;        // disable CKE
+            rom_r[ENC_SEL],          //   sel;        // first/second half-cycle, other will be nop (cke+odt applicable to both)
+            1'b0,                    //   dq_en;      // enable (not tristate) DQ  lines (internal timing sequencer for 0->1 and 1->0)
+            1'b0,                    //   dqs_en;     // enable (not tristate) DQS lines (internal timing sequencer for 0->1 and 1->0)
+            1'b0,                    //   dqs_toggle; // enable toggle DQS according to the pattern
+            rom_r[ENC_DCI],          //   dci;        // DCI disable, both DQ and DQS lines (internal logic and timing sequencer for 0->1 and 1->0)
+            rom_r[ENC_BUF_WR],       //   buf_wr;     // connect to external buffer (but only if not paused)
+            1'b0,                    //   buf_rd;     // connect to external buffer (but only if not paused)
+            rom_r[ENC_BUF_PGNEXT] && !skip_next_page);     //   buf_rst;    // connect to external buffer (but only if not paused)
+          end    
     fifo_2regs #(
         .WIDTH(COLADDR_NUMBER)
     ) fifo_2regs_i (
@@ -346,77 +350,6 @@ module  cmd_encod_tiled_rd #(
         .dout(col_bank) // output[15:0] 
     );
 
-// move to include?, Yes, after fixing problem with paths
-// move to include?
 `include "includes/x393_mcontr_encode_cmd.vh" 
-/*
-    function [31:0] func_encode_skip;
-        input [CMD_PAUSE_BITS-1:0] skip;       // number of extra cycles to skip (and keep all the other outputs)
-        input                      done;       // end of sequence 
-        input [2:0]                bank;       // bank (here OK to be any)
-        input                      odt_en;     // enable ODT
-        input                      cke;        // disable CKE
-        input                      sel;        // first/second half-cycle, other will be nop (cke+odt applicable to both)
-        input                      dq_en;      // enable (not tristate) DQ  lines (internal timing sequencer for 0->1 and 1->0)
-        input                      dqs_en;     // enable (not tristate) DQS lines (internal timing sequencer for 0->1 and 1->0)
-        input                      dqs_toggle; // enable toggle DQS according to the pattern
-        input                      dci;        // DCI disable, both DQ and DQS lines (internal logic and timing sequencer for 0->1 and 1->0)
-        input                      buf_wr;     // connect to external buffer (but only if not paused)
-        input                      buf_rd;     // connect to external buffer (but only if not paused)
-        input                      buf_rst;    // connect to external buffer (but only if not paused)
-        begin
-            func_encode_skip= func_encode_cmd (
-                {{14-CMD_DONE_BIT{1'b0}}, done, skip[CMD_PAUSE_BITS-1:0]},       // 15-bit row/column adderss
-                bank[2:0],  // bank (here OK to be any)
-                3'b0,       // RAS/CAS/WE, positive logic
-                odt_en,     // enable ODT
-                cke,        // disable CKE
-                sel,        // first/second half-cycle, other will be nop (cke+odt applicable to both)
-                dq_en,      // enable (not tristate) DQ  lines (internal timing sequencer for 0->1 and 1->0)
-                dqs_en,     // enable (not tristate) DQS lines (internal timing sequencer for 0->1 and 1->0)
-                dqs_toggle, // enable toggle DQS according to the pattern
-                dci,        // DCI disable, both DQ and DQS lines (internal logic and timing sequencer for 0->1 and 1->0)
-                buf_wr,     // connect to external buffer (but only if not paused)
-                buf_rd,     // connect to external buffer (but only if not paused)
-                1'b0,       // nop
-                buf_rst);
-        end
-    endfunction
-
-    function [31:0] func_encode_cmd;
-        input               [14:0] addr;       // 15-bit row/column adderss
-        input                [2:0] bank;       // bank (here OK to be any)
-        input                [2:0] rcw;        // RAS/CAS/WE, positive logic
-        input                      odt_en;     // enable ODT
-        input                      cke;        // disable CKE
-        input                      sel;        // first/second half-cycle, other will be nop (cke+odt applicable to both)
-        input                      dq_en;      // enable (not tristate) DQ  lines (internal timing sequencer for 0->1 and 1->0)
-        input                      dqs_en;     // enable (not tristate) DQS lines (internal timing sequencer for 0->1 and 1->0)
-        input                      dqs_toggle; // enable toggle DQS according to the pattern
-        input                      dci;        // DCI disable, both DQ and DQS lines (internal logic and timing sequencer for 0->1 and 1->0)
-        input                      buf_wr;     // connect to external buffer (but only if not paused)
-        input                      buf_rd;     // connect to external buffer (but only if not paused)
-        input                      nop;        // add NOP after the current command, keep other data
-        input                      buf_rst;    // connect to external buffer (but only if not paused)
-        begin
-            func_encode_cmd={
-            addr[14:0], // 15-bit row/column adderss
-            bank [2:0], // bank
-            rcw[2:0],   // RAS/CAS/WE
-            odt_en,     // enable ODT
-            cke,        // may be optimized (removed from here)?
-            sel,        // first/second half-cycle, other will be nop (cke+odt applicable to both)
-            dq_en,      // enable (not tristate) DQ  lines (internal timing sequencer for 0->1 and 1->0)
-            dqs_en,     // enable (not tristate) DQS  lines (internal timing sequencer for 0->1 and 1->0)
-            dqs_toggle, // enable toggle DQS according to the pattern
-            dci,        // DCI disable, both DQ and DQS lines (internal logic and timing sequencer for 0->1 and 1->0)
-            buf_wr,     // phy_buf_wr,   // connect to external buffer (but only if not paused)
-            buf_rd,     // phy_buf_rd,    // connect to external buffer (but only if not paused)
-            nop,        // add NOP after the current command, keep other data
-            buf_rst     // Reserved for future use
-           };
-        end
-    endfunction
-*/
 endmodule
 
