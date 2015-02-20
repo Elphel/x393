@@ -1,25 +1,25 @@
 [*]
 [*] GTKWave Analyzer v3.3.64 (w)1999-2014 BSI
-[*] Thu Feb 19 00:22:31 2015
+[*] Fri Feb 20 01:10:48 2015
 [*]
-[dumpfile] "/home/andrey/git/x393/simulation/x393_testbench01-20150218163406252.lxt"
-[dumpfile_mtime] "Wed Feb 18 23:51:24 2015"
-[dumpfile_size] 990238054
+[dumpfile] "/home/andrey/git/x393/simulation/x393_testbench01-20150219175501126.lxt"
+[dumpfile_mtime] "Fri Feb 20 01:04:32 2015"
+[dumpfile_size] 503390527
 [savefile] "/home/andrey/git/x393/x393_testbench01.sav"
-[timestart] 46460000
+[timestart] 0
 [size] 1823 1180
-[pos] 1927 0
-*-21.698502 56251875 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[pos] 2056 0
+*-24.698502 64666875 55877500 55843010 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] x393_testbench01.
 [treeopen] x393_testbench01.x393_i.
 [treeopen] x393_testbench01.x393_i.mcntrl393_i.
 [treeopen] x393_testbench01.x393_i.mcntrl393_i.chn3_buf_i.
 [treeopen] x393_testbench01.x393_i.mcntrl393_i.chn4_buf_i.
 [treeopen] x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_rd_i.
+[treeopen] x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_wr_i.
 [treeopen] x393_testbench01.x393_i.mcntrl393_i.mcntrl_ps_pio_i.chn0_buf_i.
 [treeopen] x393_testbench01.x393_i.mcntrl393_i.mcntrl_ps_pio_i.chn1_buf_i.
 [treeopen] x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn4_i.
-[treeopen] x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.
 [treeopen] x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.cmd_deser_16bit_i.
 [treeopen] x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.cmd_deser_16bit_i.genblk4.
 [treeopen] x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.
@@ -1290,12 +1290,6 @@ x393_testbench01.x393_i.mcntrl393_test01_i.page_ready_chn2[0]
 x393_testbench01.x393_i.mcntrl393_test01_i.page_ready_chn3[0]
 x393_testbench01.x393_i.mcntrl393_test01_i.page_ready_chn4[0]
 x393_testbench01.x393_i.mcntrl393_test01_i.rst[0]
-x393_testbench01.x393_i.mcntrl393_test01_i.set_chh2_mode[0]
-x393_testbench01.x393_i.mcntrl393_test01_i.set_chh2_status[0]
-x393_testbench01.x393_i.mcntrl393_test01_i.set_chh3_mode[0]
-x393_testbench01.x393_i.mcntrl393_test01_i.set_chh3_status[0]
-x393_testbench01.x393_i.mcntrl393_test01_i.set_chh4_mode[0]
-x393_testbench01.x393_i.mcntrl393_test01_i.set_chh4_status[0]
 @22
 x393_testbench01.x393_i.mcntrl393_test01_i.status_ad[7:0]
 x393_testbench01.x393_i.mcntrl393_test01_i.status_chn2[21:0]
@@ -1327,7 +1321,268 @@ x393_testbench01.x393_i.mcntrl393_test01_i.suspend_chn4_r[0]
 -mcntrl393_test01
 @22
 x393_testbench01.ii[31:0]
+@28
+x393_testbench01.x393_i.mcntrl393_test01_i.frame_start_chn5_r[0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.busy_r[0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.frame_done[0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.frame_finished[0]
+@22
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.recalc_r[8:0]
+@28
+x393_testbench01.x393_i.mcntrl393_test01_i.next_page_chn5[0]
+@22
+x393_testbench01.x393_i.mcntrl393_test01_i.page_chn5[3:0]
+@200
+-
+@22
+x393_testbench01.write_block_scanline_chn.chn[31:0]
+x393_testbench01.write_block_scanline_chn.start_addr[29:0]
 @800200
+-tiled_ch5
+@28
+x393_testbench01.x393_i.mcntrl393_i.select_buf5_w[0]
+x393_testbench01.x393_i.mcntrl393_i.select_buf5[0]
+x393_testbench01.x393_i.mcntrl393_i.buf5_we[0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.pending_xfers[1:0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.last_in_row[0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.last_row_w[0]
+@200
+-
+@c00200
+-ch5_buf
+@22
+x393_testbench01.x393_i.mcntrl393_i.chn5_buf_i.data_out[63:0]
+@28
+x393_testbench01.x393_i.mcntrl393_i.chn5_buf_i.ext_clk[0]
+@22
+x393_testbench01.x393_i.mcntrl393_i.chn5_buf_i.ext_data_in[31:0]
+x393_testbench01.x393_i.mcntrl393_i.chn5_buf_i.ext_waddr[9:0]
+@28
+x393_testbench01.x393_i.mcntrl393_i.chn5_buf_i.ext_we[0]
+x393_testbench01.x393_i.mcntrl393_i.chn5_buf_i.page[1:0]
+x393_testbench01.x393_i.mcntrl393_i.chn5_buf_i.page_next[0]
+x393_testbench01.x393_i.mcntrl393_i.chn5_buf_i.page_r[1:0]
+@22
+x393_testbench01.x393_i.mcntrl393_i.chn5_buf_i.raddr[6:0]
+@28
+x393_testbench01.x393_i.mcntrl393_i.chn5_buf_i.rclk[0]
+x393_testbench01.x393_i.mcntrl393_i.chn5_buf_i.rd[0]
+x393_testbench01.x393_i.mcntrl393_i.chn5_buf_i.regen[0]
+x393_testbench01.x393_i.mcntrl393_i.chn5_buf_i.rpage_in[1:0]
+x393_testbench01.x393_i.mcntrl393_i.chn5_buf_i.rpage_set[0]
+@1401200
+-ch5_buf
+@28
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.busy_r[0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.calc_valid[0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.chn_en[0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.chn_rst[0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.chn_rst_d[0]
+@22
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.cmd_a[3:0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.cmd_ad[7:0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.cmd_data[31:0]
+@28
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.cmd_extra_pages[1:0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.cmd_stb[0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.cmd_we[0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.cmd_wrmem[0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.continued_tile[0]
+@22
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.curr_x[12:0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.curr_y[15:0]
+@28
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.frame_done[0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.frame_done_r[0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.frame_finished[0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.frame_finished_r[0]
+@22
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.frame_full_width[13:0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.frame_full_width_r[13:0]
+@28
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.frame_start[0]
+@22
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.frame_x[12:0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.frame_y8_r[12:0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.frame_y[15:0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.i[31:0]
+@28
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.keep_open[0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.last_block[0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.last_in_row[0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.last_in_row_w[0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.last_row_w[0]
+@22
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.leftover_cols[5:0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.lim_by_tile_width[6:0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.line_start_addr[21:0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.line_start_page_left[6:0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.line_unfinished[15:0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.line_unfinished_r0[15:0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.line_unfinished_r1[15:0]
+@28
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.lsw13_zero[0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.mclk[0]
+@22
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.mem_page_left[7:0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.mode_reg[4:0]
+@28
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.msw_zero[0]
+@22
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.mul_rslt[21:0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.mul_rslt_w[26:0]
+@28
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.need_r[0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.next_page[0]
+@22
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.next_y[16:0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.num_cols_m1[5:0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.num_cols_m1_w[6:0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.num_cols_r[6:0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.num_rows_m1[5:0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.num_rows_m1_w[6:0]
+@28
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.page_cntr[2:0]
+@22
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.par_mod_r[8:0]
+@28
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.pending_xfers[1:0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.pgm_param_w[0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.pre_want[0]
+@22
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.recalc_r[8:0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.remainder_tile_width[7:0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.row_col_r[21:0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.row_left[13:0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.rowcol_inc[13:0]
+@28
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.rst[0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.set_frame_width_w[0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.set_mode_w[0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.set_start_addr_w[0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.set_status_w[0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.set_tile_whs_w[0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.set_window_start_w[0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.set_window_wh_w[0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.set_window_x0y0_w[0]
+@22
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.start_addr[21:0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.start_addr_r[21:0]
+@28
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.start_not_partial[0]
+@22
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.start_x[12:0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.start_y[15:0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.status_ad[7:0]
+@28
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.status_data[1:0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.status_rq[0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.status_start[0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.suspend[0]
+@22
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.tile_cols[6:0]
+@28
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.tile_height_zero[0]
+@22
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.tile_rows[6:0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.tile_vstep[6:0]
+@28
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.tile_vstep_zero[0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.tile_width_zero[0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.want_r[0]
+@22
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.window_height[16:0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.window_width[13:0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.window_x0[12:0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.window_y0[15:0]
+@28
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.xfer_bank[2:0]
+@22
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.xfer_col[6:0]
+@28
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.xfer_grant[0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.xfer_limited_by_mem_page[0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.xfer_limited_by_mem_page_r[0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.xfer_need[0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.xfer_page_done[0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.xfer_page_done_d[0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.xfer_page_rst[0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.xfer_page_rst_r[0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.xfer_partial[0]
+@22
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.xfer_row[14:0]
+@28
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.xfer_start[0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.xfer_start_r[2:0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.xfer_want[0]
+@1000200
+-tiled_ch5
+@c00200
+-encod_tiled_wr
+@28
+x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_wr_i.gen_run[0]
+@22
+x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_wr_i.gen_addr[3:0]
+x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_wr_i.full_cmd[2:0]
+@28
+x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_wr_i.pre_act[0]
+x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_wr_i.enable_autopre[0]
+x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_wr_i.pre_read[0]
+@200
+-
+@22
+x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_wr_i.bank[2:0]
+x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_wr_i.clk[0]
+x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_wr_i.col[6:0]
+x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_wr_i.col_bank[9:0]
+x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_wr_i.cut_buf_rd[0]
+x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_wr_i.done[0]
+x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_wr_i.enable_act[0]
+x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_wr_i.enable_autopre[0]
+x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_wr_i.enc_cmd[31:0]
+x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_wr_i.enc_done[0]
+x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_wr_i.enc_wr[0]
+x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_wr_i.first_col[0]
+x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_wr_i.full_cmd[2:0]
+x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_wr_i.gen_addr[3:0]
+x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_wr_i.gen_run[0]
+x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_wr_i.gen_run_d[0]
+x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_wr_i.keep_open[0]
+x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_wr_i.keep_open_in[0]
+x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_wr_i.last_col[0]
+x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_wr_i.last_row[0]
+x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_wr_i.loop_continue[0]
+x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_wr_i.next_bank_w[2:0]
+x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_wr_i.next_rowcol_w[21:0]
+x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_wr_i.num_cols128_m1[5:0]
+x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_wr_i.num_cols_in_m1[5:0]
+x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_wr_i.num_rows_in_m1[5:0]
+x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_wr_i.num_rows_m1[5:0]
+x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_wr_i.pre_act[0]
+x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_wr_i.pre_done[0]
+x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_wr_i.pre_read[0]
+x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_wr_i.rom_cmd[1:0]
+x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_wr_i.rom_r[11:0]
+x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_wr_i.rom_skip[1:0]
+x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_wr_i.row[14:0]
+x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_wr_i.row_col_bank[24:0]
+x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_wr_i.row_col_bank_next_w[24:0]
+x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_wr_i.rowcol_inc[13:0]
+x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_wr_i.rowcol_inc_in[13:0]
+x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_wr_i.rst[0]
+x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_wr_i.scan_col[5:0]
+x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_wr_i.scan_row[5:0]
+x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_wr_i.skip_next_page[0]
+x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_wr_i.skip_next_page_in[0]
+x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_wr_i.start[0]
+x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_wr_i.start_bank[2:0]
+x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_wr_i.start_col[6:0]
+x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_wr_i.start_d[0]
+x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_wr_i.start_row[14:0]
+x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_wr_i.top_rc[21:0]
+@1401200
+-encod_tiled_wr
+@c00200
 -gtiled_ch4
 @28
 x393_testbench01.x393_i.mcntrl393_i.select_buf4[0]
@@ -1375,10 +1630,8 @@ x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn4_i.want_r[0]
 x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn4_i.xfer_start_r[2:0]
 @28
 x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn4_i.last_row_w[0]
-@23
-x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn4_i.next_y[16:0]
 @22
-x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn4_i.window_m_tile_height[16:0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn4_i.next_y[16:0]
 @28
 x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn4_i.last_in_row_w[0]
 x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn4_i.last_block[0]
@@ -1625,10 +1878,15 @@ x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn4_i.xfer_row[14:0]
 x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn4_i.xfer_start[0]
 x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn4_i.xfer_start_r[2:0]
 x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn4_i.xfer_want[0]
-@1000200
+@1401200
 -gtiled_ch4
 @c00200
 -encod_tiled
+@22
+x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_rd_i.num_cols128_m2[5:0]
+x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_rd_i.scan_col[5:0]
+@200
+-
 @22
 x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_rd_i.enc_cmd[31:0]
 @28
@@ -1639,7 +1897,6 @@ x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_rd_i.row[14:0]
 x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_rd_i.col[6:0]
 x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_rd_i.rowcol_inc[13:0]
 x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_rd_i.num_rows_m1[5:0]
-x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_rd_i.num_cols128_m1[5:0]
 @28
 x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_rd_i.keep_open[0]
 x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_rd_i.skip_next_page[0]
@@ -1649,7 +1906,6 @@ x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_rd_i.skip_next_page[0]
 x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_rd_i.start_d[0]
 x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_rd_i.gen_run[0]
 x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_rd_i.last_col[0]
-x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_rd_i.last_col_d[0]
 x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_rd_i.enable_autopre[0]
 x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_rd_i.pre_act[0]
 x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_rd_i.pre_read[0]
@@ -1723,12 +1979,10 @@ x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_rd_i.gen_run_d[0]
 x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_rd_i.keep_open[0]
 x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_rd_i.keep_open_in[0]
 x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_rd_i.last_col[0]
-x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_rd_i.last_col_d[0]
 x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_rd_i.last_row[0]
 x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_rd_i.loop_continue[0]
 x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_rd_i.next_bank_w[2:0]
 x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_rd_i.next_rowcol_w[21:0]
-x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_rd_i.num_cols128_m1[5:0]
 x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_rd_i.num_cols_in_m1[5:0]
 x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_rd_i.num_rows_in_m1[5:0]
 x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_rd_i.num_rows_m1[5:0]

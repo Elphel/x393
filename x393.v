@@ -20,7 +20,7 @@
  *******************************************************************************/
 `timescale 1ns/1ps
 `define use200Mhz 1
-`define DEBUG_FIFO 1
+//`define DEBUG_FIFO 1
 `include ".editor_defines.vh" 
 module  x393 #(
     parameter MCONTR_WR_MASK =       'h1c00, // AXI write address mask for the 1Kx32 buffers command sequence memory
@@ -32,6 +32,7 @@ module  x393 #(
     parameter MCONTR_BUF2_RD_ADDR =  'h0800, // AXI read address from buffer 2 (PL sequence, scanline, memory read)
     parameter MCONTR_BUF3_WR_ADDR =  'h0800, // AXI write address to buffer 3 (PL sequence, scanline, memory write)
     parameter MCONTR_BUF4_RD_ADDR =  'h0c00, // AXI read address from buffer 4 (PL sequence, tiles, memory read)
+    parameter MCONTR_BUF5_WR_ADDR =  'h0c00, // AXI write address to buffer 5 (PL sequence, scanline, memory write)
 //command interface parameters
     parameter DLY_LD =            'h080,  // address to generate delay load
     parameter DLY_LD_MASK =       'h380,  // address mask to generate delay load
@@ -104,7 +105,7 @@ module  x393 #(
     parameter DFLT_DQ_TRI_OFF_PATTERN= 4'he,  // DQ tri-state control word, first after disabling output
     parameter DFLT_DQS_TRI_ON_PATTERN= 4'h3,  // DQS tri-state control word, first when enabling output
     parameter DFLT_DQS_TRI_OFF_PATTERN=4'hc,  // DQS tri-state control word, first after disabling output
-    parameter DFLT_WBUF_DELAY=         4'h6,  // write levelling - 7!
+    parameter DFLT_WBUF_DELAY=         4'h8,  // write levelling - 7!
     parameter DFLT_INV_CLK_DIV=        1'b0,
     
     parameter DFLT_CHN_EN=            16'h0,  // channel mask to be enabled at reset
@@ -208,6 +209,7 @@ module  x393 #(
     parameter MAX_TILE_WIDTH=                   6,     // number of bits to specify maximal tile (width-1) (6 -> 64)
     parameter MAX_TILE_HEIGHT=                  6,     // number of bits to specify maximal tile (height-1) (6 -> 64)
     parameter MCNTRL_TILED_CHN4_ADDR=       'h140,
+    parameter MCNTRL_TILED_CHN5_ADDR=       'h140,
     parameter MCNTRL_TILED_MASK=            'h3f0, // both channels 0 and 1
     parameter MCNTRL_TILED_MODE=            'h0,   // set mode register: {extra_pages[1:0],write_mode,enable,!reset}
     parameter MCNTRL_TILED_STATUS_CNTRL=    'h1,   // control status reporting
@@ -237,9 +239,12 @@ module  x393 #(
     parameter MCNTRL_TEST01_CHN3_STATUS_CNTRL=    'h7,   // control status reporting for channel 3
     parameter MCNTRL_TEST01_CHN4_MODE=            'h8,   // set mode register for channel 4
     parameter MCNTRL_TEST01_CHN4_STATUS_CNTRL=    'h9,   // control status reporting for channel 4
+    parameter MCNTRL_TEST01_CHN5_MODE=            'ha,   // set mode register for channel 5
+    parameter MCNTRL_TEST01_CHN5_STATUS_CNTRL=    'hb,   // control status reporting for channel 5
     parameter MCNTRL_TEST01_STATUS_REG_CHN2_ADDR= 'h3c,  // status/readback register for channel 2
     parameter MCNTRL_TEST01_STATUS_REG_CHN3_ADDR= 'h3d,  // status/readback register for channel 3
-    parameter MCNTRL_TEST01_STATUS_REG_CHN4_ADDR= 'h3e  // status/readback register for channel 4
+    parameter MCNTRL_TEST01_STATUS_REG_CHN4_ADDR= 'h3e,  // status/readback register for channel 4
+    parameter MCNTRL_TEST01_STATUS_REG_CHN5_ADDR= 'h3f  // status/readback register for channel 4
 )(
     // DDR3 interface
     output                       SDRST, // DDR3 reset (active low)
@@ -472,6 +477,12 @@ BUFG bufg_axi_aclk_i  (.O(axi_aclk),.I(fclk[0]));
     wire                        frame_done_chn4; // output
     wire[FRAME_HEIGHT_BITS-1:0] line_unfinished_chn4; // output[15:0]
     wire                        suspend_chn4; // input
+    wire                        frame_start_chn5; // input
+    wire                        next_page_chn5; // input
+    wire                        page_ready_chn5; // output
+    wire                        frame_done_chn5; // output
+    wire[FRAME_HEIGHT_BITS-1:0] line_unfinished_chn5; // output[15:0] 
+    wire                        suspend_chn5; // input
 
     assign cmd_mcontr_ad= cmd_root_ad;
     assign cmd_mcontr_stb=cmd_root_stb;
@@ -500,9 +511,12 @@ BUFG bufg_axi_aclk_i  (.O(axi_aclk),.I(fclk[0]));
         .MCNTRL_TEST01_CHN3_STATUS_CNTRL    (MCNTRL_TEST01_CHN3_STATUS_CNTRL),
         .MCNTRL_TEST01_CHN4_MODE            (MCNTRL_TEST01_CHN4_MODE),
         .MCNTRL_TEST01_CHN4_STATUS_CNTRL    (MCNTRL_TEST01_CHN4_STATUS_CNTRL),
+        .MCNTRL_TEST01_CHN5_MODE            (MCNTRL_TEST01_CHN5_MODE),
+        .MCNTRL_TEST01_CHN5_STATUS_CNTRL    (MCNTRL_TEST01_CHN5_STATUS_CNTRL),
         .MCNTRL_TEST01_STATUS_REG_CHN2_ADDR (MCNTRL_TEST01_STATUS_REG_CHN2_ADDR),
         .MCNTRL_TEST01_STATUS_REG_CHN3_ADDR (MCNTRL_TEST01_STATUS_REG_CHN3_ADDR),
-        .MCNTRL_TEST01_STATUS_REG_CHN4_ADDR (MCNTRL_TEST01_STATUS_REG_CHN4_ADDR)
+        .MCNTRL_TEST01_STATUS_REG_CHN4_ADDR (MCNTRL_TEST01_STATUS_REG_CHN4_ADDR),
+        .MCNTRL_TEST01_STATUS_REG_CHN5_ADDR (MCNTRL_TEST01_STATUS_REG_CHN5_ADDR)
     ) mcntrl393_test01_i (
         .rst(axi_rst), // input
         .mclk                 (mclk), // input
@@ -528,7 +542,13 @@ BUFG bufg_axi_aclk_i  (.O(axi_aclk),.I(fclk[0]));
         .page_ready_chn4      (page_ready_chn4), // input
         .frame_done_chn4      (frame_done_chn4), // input
         .line_unfinished_chn4 (line_unfinished_chn4), // input[15:0] 
-        .suspend_chn4         (suspend_chn4) // output
+        .suspend_chn4         (suspend_chn4), // output
+        .frame_start_chn5     (frame_start_chn5), // output
+        .next_page_chn5       (next_page_chn5), // output
+        .page_ready_chn5      (page_ready_chn5), // input
+        .frame_done_chn5      (frame_done_chn5), // input
+        .line_unfinished_chn5 (line_unfinished_chn5), // input[15:0] 
+        .suspend_chn5         (suspend_chn5) // output
     );
 
 // Interface to channels to read/write memory (including 4 page BRAM buffers)
@@ -626,6 +646,7 @@ BUFG bufg_axi_aclk_i  (.O(axi_aclk),.I(fclk[0]));
         .MCONTR_BUF2_RD_ADDR               (MCONTR_BUF2_RD_ADDR),
         .MCONTR_BUF3_WR_ADDR               (MCONTR_BUF3_WR_ADDR),
         .MCONTR_BUF4_RD_ADDR               (MCONTR_BUF4_RD_ADDR),
+        .MCONTR_BUF5_WR_ADDR               (MCONTR_BUF5_WR_ADDR),
         .DLY_LD                            (DLY_LD),
         .DLY_LD_MASK                       (DLY_LD_MASK),
         .MCONTR_PHY_0BIT_ADDR              (MCONTR_PHY_0BIT_ADDR),
@@ -721,6 +742,7 @@ BUFG bufg_axi_aclk_i  (.O(axi_aclk),.I(fclk[0]));
         .MAX_TILE_WIDTH                    (MAX_TILE_WIDTH),
         .MAX_TILE_HEIGHT                   (MAX_TILE_HEIGHT),
         .MCNTRL_TILED_CHN4_ADDR            (MCNTRL_TILED_CHN4_ADDR),
+        .MCNTRL_TILED_CHN5_ADDR            (MCNTRL_TILED_CHN5_ADDR),
         .MCNTRL_TILED_MASK                 (MCNTRL_TILED_MASK),
         .MCNTRL_TILED_MODE                 (MCNTRL_TILED_MODE),
         .MCNTRL_TILED_STATUS_CNTRL         (MCNTRL_TILED_STATUS_CNTRL),
@@ -777,6 +799,12 @@ BUFG bufg_axi_aclk_i  (.O(axi_aclk),.I(fclk[0]));
         .frame_done_chn4      (frame_done_chn4), // output
         .line_unfinished_chn4 (line_unfinished_chn4), // output[15:0]
         .suspend_chn4         (suspend_chn4), // input
+        .frame_start_chn5     (frame_start_chn5), // input
+        .next_page_chn5       (next_page_chn5), // input
+        .page_ready_chn5      (page_ready_chn5), // output
+        .frame_done_chn5      (frame_done_chn5), // output
+        .line_unfinished_chn5 (line_unfinished_chn5), // output[15:0] 
+        .suspend_chn5         (suspend_chn5), // input
 
         .SDRST                (SDRST), // output
         .SDCLK                (SDCLK), // output
@@ -800,7 +828,9 @@ BUFG bufg_axi_aclk_i  (.O(axi_aclk),.I(fclk[0]));
 
 //MEMCLK
 wire [63:0] gpio_in;
-assign gpio_in={
+assign gpio_in= {52'h0,tmp_debug};
+/*
+{
 frst[3]?{
 16'b0,
     1'b1,              // 1
@@ -839,6 +869,7 @@ frst[3]?{
 //    dly_ready         //  1 0
                        
     }:{
+    
         waddr_wcount[3:0], 
         waddr_rcount[3:0], 
         waddr_num_in_fifo[3:0], 
@@ -853,6 +884,7 @@ frst[3]?{
         wleft[3:0],
         wlength[3:0], 
         wlen_in_dbg[3:0] 
+       
     },
     
     
@@ -879,6 +911,7 @@ frst[3]?{
     fifo_rst,   // fclk[0],          // 0/1 
     axi_rst_pre //axi_rst            // 0
 };
+*/
     axibram_write #(
         .ADDRESS_BITS(AXI_WR_ADDR_BITS)
     ) axibram_write_i (  //SuppressThisWarning ISExst Output port <bram_wstb> of the instance <axibram_write_i> is unconnected or connected to loadless signal.

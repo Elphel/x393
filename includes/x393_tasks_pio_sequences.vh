@@ -47,11 +47,11 @@ task set_read_block;
 // first read
 // read
         //                          addr                 bank     RCW ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD NOP, B_RST
-        data <=  func_encode_cmd( {5'b0,ca[9:0]},      ba[2:0],    2,  0,  0,  1,  0,    0,    0,    1,  0,   0,   0,   0);
+        data <=  func_encode_cmd( {5'b0,ca[9:0]},      ba[2:0],    2,  0,  0,  1,  0,    0,    0,    1,  1,   0,   0,   0);
         @(posedge CLK) axi_write_single_w(cmd_addr, data); cmd_addr <= cmd_addr + 1;
 // nop
         //                          skip     done        bank         ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD      B_RST
-        data <=  func_encode_skip(   0,       0,       ba[2:0],        0,  0,  1,  0,    0,    0,    1,  0,   0,        0);
+        data <=  func_encode_skip(   0,       0,       ba[2:0],        0,  0,  1,  0,    0,    0,    1,  1,   0,        0);
         @(posedge CLK) axi_write_single_w(cmd_addr, data); cmd_addr <= cmd_addr + 1;
 //repeat remaining reads             
         for (i=1;i<64;i=i+1) begin
@@ -62,11 +62,11 @@ task set_read_block;
         end
 // nop - all 3 below are the same? - just repeat?
         //                          skip     done        bank         ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD      B_RST
-        data <=  func_encode_skip(   0,       0,       ba[2:0],        0,  0,  1,  0,    0,    0,    1,  1,   0,        0);
+        data <=  func_encode_skip(   0,       0,       ba[2:0],        0,  0,  1,  0,    0,    0,    1,  0,   0,        0);
         @(posedge CLK) axi_write_single_w(cmd_addr, data); cmd_addr <= cmd_addr + 1;
 // nop
         //                          skip     done        bank         ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD      B_RST
-        data <=  func_encode_skip(   0,       0,       ba[2:0],        0,  0,  1,  0,    0,    0,    1,  1,   0,        0);
+        data <=  func_encode_skip(   0,       0,       ba[2:0],        0,  0,  1,  0,    0,    0,    1,  0,   0,        0);
         @(posedge CLK) axi_write_single_w(cmd_addr, data); cmd_addr <= cmd_addr + 1;
 // nop
         //                          skip     done        bank         ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD      B_RST
@@ -188,11 +188,11 @@ task set_read_pattern;
 // first read
 // read
         //                          addr                 bank     RCW ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD NOP, B_RST
-        data <=  func_encode_cmd(    0,                   0,       2,  0,  0,  1,  0,    0,    0,    1,  0,   0,   0,   0);
+        data <=  func_encode_cmd(    0,                   0,       2,  0,  0,  1,  0,    0,    0,    1,  1,   0,   0,   0);
         @(posedge CLK) axi_write_single_w(cmd_addr, data); cmd_addr <= cmd_addr + 1;
 // nop (combine with previous?)
         //                          skip     done        bank         ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD      B_RST
-        data <=  func_encode_skip(   0,       0,          0,           0,  0,  1,  0,    0,    0,    1,  0,   0,        0);
+        data <=  func_encode_skip(   0,       0,          0,           0,  0,  1,  0,    0,    0,    1,  1,   0,        0);
         @(posedge CLK) axi_write_single_w(cmd_addr, data); cmd_addr <= cmd_addr + 1;
 //repeat remaining reads
         for (i = 1; i < nrep; i = i + 1) begin
@@ -206,11 +206,11 @@ task set_read_pattern;
         @(posedge CLK) axi_write_single_w(cmd_addr, data); cmd_addr <= cmd_addr + 1;
 // nop
         //                          skip     done        bank         ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD      B_RST
-        data <=  func_encode_skip(   0,       0,          0,           0,  0,  1,  0,    0,    0,    1,  1,   0,        0);
+        data <=  func_encode_skip(   0,       0,          0,           0,  0,  1,  0,    0,    0,    1,  0,   0,        0);
         @(posedge CLK) axi_write_single_w(cmd_addr, data); cmd_addr <= cmd_addr + 1;
 // nop
         //                          skip     done        bank         ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD      B_RST
-        data <=  func_encode_skip(   0,       0,          0,           0,  0,  1,  0,    0,    0,    1,  1,   0,        0);
+        data <=  func_encode_skip(   0,       0,          0,           0,  0,  1,  0,    0,    0,    1,  0,   0,        0);
         @(posedge CLK) axi_write_single_w(cmd_addr, data); cmd_addr <= cmd_addr + 1;
 // nop, no write buffer - next page
         //                          skip     done        bank         ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD      B_RST

@@ -19,7 +19,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/> .
  *******************************************************************************/
-`define DEBUG_FIFO 1 
+//`define DEBUG_FIFO 1 
 module  axibram_write #(
     parameter ADDRESS_BITS = 10 // number of memory address bits
 )(
@@ -197,6 +197,7 @@ fifo_same_clock   #( .DATA_WIDTH(20+ADDRESS_BITS),.DATA_DEPTH(4))
     waddr_i (
         .rst       (rst),
         .clk       (aclk),
+        .sync_rst  (1'b0),
         .we        (awvalid && awready),
         .re        (start_write_burst_w),
         .data_in   ({awid[11:0], awburst[1:0],awsize[1:0],awlen[3:0],awaddr[ADDRESS_BITS+1:2]}),
@@ -216,6 +217,7 @@ fifo_same_clock   #( .DATA_WIDTH(49),.DATA_DEPTH(4))
     wdata_i (
         .rst(rst),
         .clk(aclk),
+        .sync_rst  (1'b0),
         .we(wvalid && wready),
         .re(bram_we_w), //start_write_burst_w), // wrong
         .data_in({wid[11:0],wlast,wstb[3:0],wdata[31:0]}),
@@ -244,6 +246,7 @@ fifo_same_clock  #( .DATA_WIDTH(14),.DATA_DEPTH(4))
     wresp_i (
         .rst(rst),
         .clk(aclk),
+        .sync_rst  (1'b0),
         .we(bram_we_w),
 //        .re(bready && bvalid),
         .re(bresp_re), // not allowing RE next cycle after bvalid

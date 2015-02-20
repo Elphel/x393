@@ -27,6 +27,7 @@
     parameter MCONTR_BUF2_RD_ADDR =  'h0800, // AXI read address from buffer 2 (PL sequence, scanline, memory read)
     parameter MCONTR_BUF3_WR_ADDR =  'h0800, // AXI write address to buffer 3 (PL sequence, scanline, memory write)
     parameter MCONTR_BUF4_RD_ADDR =  'h0c00, // AXI read address from buffer 4 (PL sequence, tiles, memory read)
+    parameter MCONTR_BUF5_WR_ADDR =  'h0c00, // AXI write address to buffer 5 (PL sequence, scanline, memory write)
 //command interface parameters
     parameter DLY_LD =            'h080,  // address to generate delay load
     parameter DLY_LD_MASK =       'h380,  // address mask to generate delay load
@@ -99,7 +100,7 @@
     parameter DFLT_DQ_TRI_OFF_PATTERN= 4'he,  // DQ tri-state control word, first after disabling output
     parameter DFLT_DQS_TRI_ON_PATTERN= 4'h3,  // DQS tri-state control word, first when enabling output
     parameter DFLT_DQS_TRI_OFF_PATTERN=4'hc,  // DQS tri-state control word, first after disabling output
-    parameter DFLT_WBUF_DELAY=         4'h6,  // write levelling - 7!
+    parameter DFLT_WBUF_DELAY=         4'h8,  // write levelling - 7!
     parameter DFLT_INV_CLK_DIV=        1'b0,
     
     parameter DFLT_CHN_EN=            16'h0,  // channel mask to be enabled at reset
@@ -203,6 +204,7 @@
     parameter MAX_TILE_WIDTH=                   6,     // number of bits to specify maximal tile (width-1) (6 -> 64)
     parameter MAX_TILE_HEIGHT=                  6,     // number of bits to specify maximal tile (height-1) (6 -> 64)
     parameter MCNTRL_TILED_CHN4_ADDR=       'h140,
+    parameter MCNTRL_TILED_CHN5_ADDR=       'h150,
     parameter MCNTRL_TILED_MASK=            'h3f0, // both channels 0 and 1
     parameter MCNTRL_TILED_MODE=            'h0,   // set mode register: {extra_pages[1:0],write_mode,enable,!reset}
     parameter MCNTRL_TILED_STATUS_CNTRL=    'h1,   // control status reporting
@@ -232,6 +234,10 @@
     parameter MCNTRL_TEST01_CHN3_STATUS_CNTRL=    'h7,   // control status reporting for channel 3
     parameter MCNTRL_TEST01_CHN4_MODE=            'h8,   // set mode register for channel 4
     parameter MCNTRL_TEST01_CHN4_STATUS_CNTRL=    'h9,   // control status reporting for channel 4
+    parameter MCNTRL_TEST01_CHN5_MODE=            'ha,   // set mode register for channel 5
+    parameter MCNTRL_TEST01_CHN5_STATUS_CNTRL=    'hb,   // control status reporting for channel 5
     parameter MCNTRL_TEST01_STATUS_REG_CHN2_ADDR= 'h3c,  // status/readback register for channel 2
     parameter MCNTRL_TEST01_STATUS_REG_CHN3_ADDR= 'h3d,  // status/readback register for channel 3
-    parameter MCNTRL_TEST01_STATUS_REG_CHN4_ADDR= 'h3e  // status/readback register for channel 4
+    parameter MCNTRL_TEST01_STATUS_REG_CHN4_ADDR= 'h3e,  // status/readback register for channel 4
+    parameter MCNTRL_TEST01_STATUS_REG_CHN5_ADDR= 'h3f  // status/readback register for channel 4
+    

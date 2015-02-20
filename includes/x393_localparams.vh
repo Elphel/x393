@@ -68,7 +68,7 @@
     localparam DQSTRI_LAST=     4'hc; // DQS tri-state control word, first after disabling output
     localparam DQTRI_FIRST=     4'h7; // DQ tri-state control word, first when enabling output 
     localparam DQTRI_LAST=      4'he; // DQ tri-state control word, first after disabling output
-    localparam WBUF_DLY_DFLT=   4'h6; // extra delay (in mclk cycles) to add to write buffer enable (DDR3 read data)
+    localparam WBUF_DLY_DFLT=   DFLT_WBUF_DELAY; //4'h8; // 4'h6; // extra delay (in mclk cycles) to add to write buffer enable (DDR3 read data)
     localparam WBUF_DLY_WLV=    4'h7; // write leveling mode: extra delay (in mclk cycles) to add to write buffer enable (DDR3 read data)
     
 //    localparam DLY_PHASE= 8'hdb; // mmcm fine phase shift

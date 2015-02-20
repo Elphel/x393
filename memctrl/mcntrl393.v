@@ -34,6 +34,7 @@ module  mcntrl393 #(
     parameter MCONTR_BUF2_RD_ADDR =  'h0800, // AXI read address from buffer 2 (PL sequence, scanline, memory read)
     parameter MCONTR_BUF3_WR_ADDR =  'h0800, // AXI write address to buffer 3 (PL sequence, scanline, memory write)
     parameter MCONTR_BUF4_RD_ADDR =  'h0c00, // AXI read address from buffer 4 (PL sequence, tiles, memory read)
+    parameter MCONTR_BUF5_WR_ADDR =  'h0c00, // AXI write address to buffer 5 (PL sequence, scanline, memory write)
 
     
 //command interface parameters
@@ -108,7 +109,7 @@ module  mcntrl393 #(
     parameter DFLT_DQ_TRI_OFF_PATTERN= 4'he,  // DQ tri-state control word, first after disabling output
     parameter DFLT_DQS_TRI_ON_PATTERN= 4'h3,  // DQS tri-state control word, first when enabling output
     parameter DFLT_DQS_TRI_OFF_PATTERN=4'hc,  // DQS tri-state control word, first after disabling output
-    parameter DFLT_WBUF_DELAY=         4'h6,  // write levelling - 7!
+    parameter DFLT_WBUF_DELAY=         4'h8,  // write levelling - 7!
     parameter DFLT_INV_CLK_DIV=        1'b0,
     
     parameter DFLT_CHN_EN=            16'h0,  // channel mask to be enabled at reset
@@ -188,6 +189,7 @@ module  mcntrl393 #(
     parameter MAX_TILE_WIDTH=                   6,     // number of bits to specify maximal tile (width-1) (6 -> 64)
     parameter MAX_TILE_HEIGHT=                  6,     // number of bits to specify maximal tile (height-1) (6 -> 64)
     parameter MCNTRL_TILED_CHN4_ADDR=       'h140,
+    parameter MCNTRL_TILED_CHN5_ADDR=       'h150,
     parameter MCNTRL_TILED_MASK=            'h3f0, // both channels 0 and 1
     parameter MCNTRL_TILED_MODE=            'h0,   // set mode register: {extra_pages[1:0],write_mode,enable,!reset}
     parameter MCNTRL_TILED_STATUS_CNTRL=    'h1,   // control status reporting
@@ -272,7 +274,7 @@ module  mcntrl393 #(
 // optional I/O for channel synchronization
     output [FRAME_HEIGHT_BITS-1:0] line_unfinished_chn3, // number of the current (ufinished ) line, REALATIVE TO FRAME, NOT WINDOW?. 
     input                          suspend_chn3,       // suspend transfers (from external line number comparator)
-// Channel 4 (tiled tes)
+// Channel 4 (tiled read)
     input                          frame_start_chn4,   // resets page, x,y, and initiates transfer requests (in write mode will wait for next_page)
     input                          next_page_chn4,     // page was read/written from/to 4*1kB on-chip buffer
     output                         page_ready_chn4,    // == xfer_done, connect externally | Single-cycle pulse indicating that a page was read/written from/to DDR3 memory
@@ -280,7 +282,14 @@ module  mcntrl393 #(
 // optional I/O for channel synchronization
     output [FRAME_HEIGHT_BITS-1:0] line_unfinished_chn4, // number of the current (ufinished ) line, REALATIVE TO FRAME, NOT WINDOW?. 
     input                          suspend_chn4,       // suspend transfers (from external line number comparator)
-
+// Channel 5 (tiled write)
+    input                          frame_start_chn5,   // resets page, x,y, and initiates transfer requests (in write mode will wait for next_page)
+    input                          next_page_chn5,     // page was read/written from/to 4*1kB on-chip buffer
+    output                         page_ready_chn5,    // == xfer_done, connect externally | Single-cycle pulse indicating that a page was read/written from/to DDR3 memory
+    output                         frame_done_chn5,    // single-cycle pulse when the full frame (window) was transferred to/from DDR3 memory
+// optional I/O for channel synchronization
+    output [FRAME_HEIGHT_BITS-1:0] line_unfinished_chn5, // number of the current (ufinished ) line, REALATIVE TO FRAME, NOT WINDOW?. 
+    input                          suspend_chn5,       // suspend transfers (from external line number comparator)
 
 
     // DDR3 interface
@@ -384,6 +393,17 @@ module  mcntrl393 #(
     wire        buf_wpage_nxt_chn4;
     wire [63:0] buf_wdata_chn4;
 
+    wire        want_rq5;
+    wire        need_rq5;
+    wire        channel_pgm_en5; 
+    wire [31:0] seq_data5x; // may be shared with other channel
+    wire        seq_wr5x; // may be shared with other channel
+    wire        seq_set5x; // may be shared with other channel
+    wire        seq_done5;
+    wire        rpage_nxt_chn5;
+    wire        buf_rd_chn5;
+    wire [63:0] buf_rdata_chn5;
+
     // Command tree - insert register layer if needed
     wire [7:0] cmd_mcontr_ad;
     wire       cmd_mcontr_stb;
@@ -395,6 +415,8 @@ module  mcntrl393 #(
     wire       cmd_scanline_chn3_stb;
     wire [7:0] cmd_tiled_chn4_ad;
     wire       cmd_tiled_chn4_stb;
+    wire [7:0] cmd_tiled_chn5_ad;
+    wire       cmd_tiled_chn5_stb;
 
 
 // Status tree:
@@ -406,17 +428,21 @@ module  mcntrl393 #(
     wire                        status_ps_pio_rq;    // PS PIO channels status request  
     wire                        status_ps_pio_start; // PS PIO channels status packet transfer start (currently with 0 latency from status_root_rq)
     
-    wire                  [7:0] status_scanline_chn2_ad;    // PS scanline channel2 (memory read) status byte-wide address/data 
-    wire                        status_scanline_chn2_rq;    // PS scanline channel2 (memory read) channels status request  
-    wire                        status_scanline_chn2_start; // PS scanline channel2 (memory read) channels status packet transfer start (currently with 0 latency from status_root_rq)
+    wire                  [7:0] status_scanline_chn2_ad;    // PL scanline channel2 (memory read) status byte-wide address/data 
+    wire                        status_scanline_chn2_rq;    // PL scanline channel2 (memory read) channels status request  
+    wire                        status_scanline_chn2_start; // PL scanline channel2 (memory read) channels status packet transfer start (currently with 0 latency from status_root_rq)
 
-    wire                  [7:0] status_scanline_chn3_ad;    // PS scanline channel3 (memory read) status byte-wide address/data 
-    wire                        status_scanline_chn3_rq;    // PS scanline channel3 (memory read) channels status request  
-    wire                        status_scanline_chn3_start; // PS scanline channel3 (memory read) channels status packet transfer start (currently with 0 latency from status_root_rq)
+    wire                  [7:0] status_scanline_chn3_ad;    // PL scanline channel3 (memory read) status byte-wide address/data 
+    wire                        status_scanline_chn3_rq;    // PL scanline channel3 (memory read) channels status request  
+    wire                        status_scanline_chn3_start; // PL scanline channel3 (memory read) channels status packet transfer start (currently with 0 latency from status_root_rq)
 
-    wire                  [7:0] status_tiled_chn4_ad;    // PS tiled channel4 (memory read) status byte-wide address/data 
-    wire                        status_tiled_chn4_rq;    // PS tiled channel4 (memory read) channels status request  
-    wire                        status_tiled_chn4_start; // PS tiled channel4 (memory read) channels status packet transfer start (currently with 0 latency from status_root_rq)
+    wire                  [7:0] status_tiled_chn4_ad;    // PL tiled channel4 (memory read) status byte-wide address/data 
+    wire                        status_tiled_chn4_rq;    // PL tiled channel4 (memory read) channels status request  
+    wire                        status_tiled_chn4_start; // PL tiled channel4 (memory read) channels status packet transfer start (currently with 0 latency from status_root_rq)
+
+    wire                  [7:0] status_tiled_chn5_ad;    // PL tiled channel5 (memory read) status byte-wide address/data 
+    wire                        status_tiled_chn5_rq;    // PL tiled channel5 (memory read) channels status request  
+    wire                        status_tiled_chn5_start; // PL tiled channel5 (memory read) channels status packet transfer start (currently with 0 latency from status_root_rq)
 
 // combinatorial early signals
     wire                         select_cmd0_w;
@@ -425,6 +451,7 @@ module  mcntrl393 #(
     wire                         select_buf2_w;
     wire                         select_buf3_w;
     wire                         select_buf4_w;
+    wire                         select_buf5_w;
 // registered selects
     reg                         select_cmd0;
     reg                         select_buf0;
@@ -432,6 +459,7 @@ module  mcntrl393 #(
     reg                         select_buf2;
     reg                         select_buf3;
     reg                         select_buf4;
+    reg                         select_buf5;
 
     reg                         select_buf0_d; // delayed by 1 clock, for combining with regen?
     reg                         select_buf2_d;
@@ -445,6 +473,7 @@ module  mcntrl393 #(
     reg                         cmd_we;
     reg                         buf1_we;
     reg                         buf3_we;
+    reg                         buf5_we;
     wire  [BUFFER_DEPTH32-1:0]  buf_raddr;
     
     wire                [31:0]  buf0_data;
@@ -487,15 +516,16 @@ module  mcntrl393 #(
     wire                        xfer_reset_page3;   // "internal" buffer page reset, @posedge mclk
 
 
-    wire                  [2:0] tiled_rd_bank;   // bank address
-    wire   [ADDRESS_NUMBER-1:0] tiled_rd_row;    // memory row
-    wire   [COLADDR_NUMBER-4:0] tiled_rd_col;    // start memory column in 8-bursts
-    wire   [FRAME_WIDTH_BITS:0] tiled_rd_rowcol_inc; // number of 128-bit words to transfer (8*16 bits) - full bursts of 8 ( 0 - maximal length, 64)
-    wire   [MAX_TILE_WIDTH-1:0] tiled_rd_num_rows_m1; // number of 128-bit words to transfer (8*16 bits) - full bursts of 8 ( 0 - maximal length, 64)
-    wire  [MAX_TILE_HEIGHT-1:0] tiled_rd_num_cols_m1; // number of 128-bit words to transfer (8*16 bits) - full bursts of 8 ( 0 - maximal length, 64)
-    wire                        tiled_rd_keep_open;  // start generating commands
-    wire                        tiled_rd_xfer_partial;  // start generating commands
+    wire                  [2:0] tiled_rw_bank;   // bank address
+    wire   [ADDRESS_NUMBER-1:0] tiled_rw_row;    // memory row
+    wire   [COLADDR_NUMBER-4:0] tiled_rw_col;    // start memory column in 8-bursts
+    wire   [FRAME_WIDTH_BITS:0] tiled_rw_rowcol_inc; // number of 128-bit words to transfer (8*16 bits) - full bursts of 8 ( 0 - maximal length, 64)
+    wire   [MAX_TILE_WIDTH-1:0] tiled_rw_num_rows_m1; // number of 128-bit words to transfer (8*16 bits) - full bursts of 8 ( 0 - maximal length, 64)
+    wire  [MAX_TILE_HEIGHT-1:0] tiled_rw_num_cols_m1; // number of 128-bit words to transfer (8*16 bits) - full bursts of 8 ( 0 - maximal length, 64)
+    wire                        tiled_rw_keep_open;  // start generating commands
+    wire                        tiled_rw_xfer_partial;  // start generating commands
     wire                        tiled_rd_start;  // start generating commands
+    wire                        tiled_wr_start;  // start generating commands
 
     wire                  [2:0] tiled_rd_chn4_bank;   // bank address
     wire   [ADDRESS_NUMBER-1:0] tiled_rd_chn4_row;    // memory row
@@ -509,6 +539,16 @@ module  mcntrl393 #(
     wire                        xfer_reset_page4_pos;         // "internal" buffer page reset, @posedge mclk
     reg                         xfer_reset_page4_neg;         // "internal" buffer page reset, @negedge mclk
 
+    wire                  [2:0] tiled_wr_chn5_bank;   // bank address
+    wire   [ADDRESS_NUMBER-1:0] tiled_wr_chn5_row;    // memory row
+    wire   [COLADDR_NUMBER-4:0] tiled_wr_chn5_col;    // start memory column in 8-bursts
+    wire   [FRAME_WIDTH_BITS:0] tiled_wr_chn5_rowcol_inc; // number of 128-bit words to transfer (8*16 bits) - full bursts of 8 ( 0 - maximal length, 64)
+    wire   [MAX_TILE_WIDTH-1:0] tiled_wr_chn5_num_rows_m1; // number of 128-bit words to transfer (8*16 bits) - full bursts of 8 ( 0 - maximal length, 64)
+    wire  [MAX_TILE_HEIGHT-1:0] tiled_wr_chn5_num_cols_m1; // number of 128-bit words to transfer (8*16 bits) - full bursts of 8 ( 0 - maximal length, 64)
+    wire                        tiled_wr_chn5_keep_open;  // start generating commands
+    wire                        tiled_wr_chn5_xfer_partial;  // start generating commands
+    wire                        tiled_wr_chn5_start;  // start generating commands
+    wire                        xfer_reset_page5;   // "internal" buffer page reset, @posedge mclk
 
     
 
@@ -523,6 +563,8 @@ module  mcntrl393 #(
     assign cmd_scanline_chn3_stb=cmd_stb;
     assign cmd_tiled_chn4_ad=    cmd_ad;
     assign cmd_tiled_chn4_stb=   cmd_stb;
+    assign cmd_tiled_chn5_ad=    cmd_ad;
+    assign cmd_tiled_chn5_stb=   cmd_stb;
 
     
     
@@ -538,8 +580,9 @@ module  mcntrl393 #(
     assign buf4_regen= axird_regen && select_buf4_d;
     
     assign page_ready_chn2=seq_done2;
-    assign page_ready_chn3=seq_done3;
+    assign page_ready_chn3=seq_done3;      // TODO - check if it should not be rpage_next
     assign page_ready_chn4=rpage_nxt_chn4;
+    assign page_ready_chn5=rpage_nxt_chn5; // ??? yes - seq_done is for every page
     
     
     assign axird_selected=axird_selected_r;
@@ -549,6 +592,7 @@ module  mcntrl393 #(
     assign select_buf2_w = ((axird_pre_araddr ^ MCONTR_BUF2_RD_ADDR) & MCONTR_RD_MASK)==0;
     assign select_buf3_w = ((axiwr_pre_awaddr ^ MCONTR_BUF3_WR_ADDR) & MCONTR_WR_MASK)==0;
     assign select_buf4_w = ((axird_pre_araddr ^ MCONTR_BUF4_RD_ADDR) & MCONTR_RD_MASK)==0;
+    assign select_buf5_w = ((axiwr_pre_awaddr ^ MCONTR_BUF5_WR_ADDR) & MCONTR_WR_MASK)==0;
 
     always @ (posedge axi_rst or posedge axi_clk) begin
         if      (axi_rst)           select_cmd0 <= 0;
@@ -569,6 +613,9 @@ module  mcntrl393 #(
         if      (axi_rst)           select_buf4 <= 0;
         else if (axird_start_burst) select_buf4 <= select_buf4_w;
 
+        if      (axi_rst)           select_buf5 <= 0;
+        else if (axiwr_start_burst) select_buf5 <= select_buf5_w;
+
         if      (axi_rst)           axird_selected_r <= 0;
         else if (axird_start_burst) axird_selected_r <= select_buf0_w || select_buf2_w ||select_buf4_w;
     end
@@ -578,6 +625,7 @@ module  mcntrl393 #(
         cmd_we <=  axiwr_wen && select_cmd0;
         buf1_we <= axiwr_wen && select_buf1;
         buf3_we <= axiwr_wen && select_buf3;
+        buf5_we <= axiwr_wen && select_buf5;
         
         select_buf0_d <= select_buf0;
         select_buf2_d <= select_buf2;
@@ -602,9 +650,9 @@ module  mcntrl393 #(
         .db_in4    (status_tiled_chn4_ad), // input[7:0] 
         .rq_in4    (status_tiled_chn4_rq), // input
         .start_in4 (status_tiled_chn4_start), // output
-        .db_in5    (8'b0), // input[7:0] 
-        .rq_in5    (1'b0), // input
-        .start_in5 (), // output
+        .db_in5    (status_tiled_chn5_ad), // input[7:0] 
+        .rq_in5    (status_tiled_chn5_rq), // input
+        .start_in5 (status_tiled_chn5_start), // output
         .db_in6    (8'b0), // input[7:0] 
         .rq_in6    (1'b0), // input
         .start_in6 (), // output
@@ -692,6 +740,57 @@ module  mcntrl393 #(
         .xfer_page_rst        (xfer_reset_page4_pos) // output
     );
 
+    mcntrl_tiled_rw #(
+        .ADDRESS_NUMBER                (ADDRESS_NUMBER),
+        .COLADDR_NUMBER                (COLADDR_NUMBER),
+        .FRAME_WIDTH_BITS              (FRAME_WIDTH_BITS),
+        .FRAME_HEIGHT_BITS             (FRAME_HEIGHT_BITS),
+        .MAX_TILE_WIDTH                (MAX_TILE_WIDTH),
+        .MAX_TILE_HEIGHT               (MAX_TILE_HEIGHT),
+        .MCNTRL_TILED_ADDR             (MCNTRL_TILED_CHN5_ADDR),
+        .MCNTRL_TILED_MASK             (MCNTRL_TILED_MASK),
+        .MCNTRL_TILED_MODE             (MCNTRL_TILED_MODE),
+        .MCNTRL_TILED_STATUS_CNTRL     (MCNTRL_TILED_STATUS_CNTRL),
+        .MCNTRL_TILED_STARTADDR        (MCNTRL_TILED_STARTADDR),
+        .MCNTRL_TILED_FRAME_FULL_WIDTH (MCNTRL_TILED_FRAME_FULL_WIDTH),
+        .MCNTRL_TILED_WINDOW_WH        (MCNTRL_TILED_WINDOW_WH),
+        .MCNTRL_TILED_WINDOW_X0Y0      (MCNTRL_TILED_WINDOW_X0Y0),
+        .MCNTRL_TILED_WINDOW_STARTXY   (MCNTRL_TILED_WINDOW_STARTXY),
+        .MCNTRL_TILED_TILE_WHS          (MCNTRL_TILED_TILE_WHS),
+        .MCNTRL_TILED_STATUS_REG_ADDR  (MCNTRL_TILED_STATUS_REG_CHN4_ADDR),
+        .MCNTRL_TILED_PENDING_CNTR_BITS(MCNTRL_TILED_PENDING_CNTR_BITS),
+        .MCNTRL_TILED_FRAME_PAGE_RESET (MCNTRL_TILED_FRAME_PAGE_RESET),
+        .MCNTRL_TILED_WRITE_MODE       (1'b1)
+    ) mcntrl_tiled_rw_chn5_i ( 
+        .rst(rst), // input
+        .mclk(mclk), // input
+        .cmd_ad               (cmd_tiled_chn5_ad), // input[7:0] 
+        .cmd_stb              (cmd_tiled_chn5_stb), // input
+        .status_ad            (status_tiled_chn5_ad), // output[7:0] 
+        .status_rq            (status_tiled_chn5_rq), // output
+        .status_start         (status_tiled_chn5_start), // input
+        .frame_start          (frame_start_chn5), // input
+        .next_page            (next_page_chn5), // input
+        .frame_done           (frame_done_chn5), // output
+        .frame_finished       (), // output
+        .line_unfinished      (line_unfinished_chn5), // output[15:0] 
+        .suspend              (suspend_chn5), // input
+        .xfer_want            (want_rq5), // output
+        .xfer_need            (need_rq5), // output
+        .xfer_grant           (channel_pgm_en5), // input
+        .xfer_start           (tiled_wr_chn5_start), // output
+        .xfer_bank            (tiled_wr_chn5_bank), // output[2:0] 
+        .xfer_row             (tiled_wr_chn5_row), // output[14:0] 
+        .xfer_col             (tiled_wr_chn5_col), // output[6:0] 
+        .rowcol_inc           (tiled_wr_chn5_rowcol_inc), // output[13:0] 
+        .num_rows_m1          (tiled_wr_chn5_num_rows_m1), // output[5:0] 
+        .num_cols_m1          (tiled_wr_chn5_num_cols_m1), // output[5:0] 
+        .keep_open            (tiled_wr_chn5_keep_open), // output
+        .xfer_partial         (tiled_wr_chn5_xfer_partial), // output
+        .xfer_page_done       (seq_done5), // input
+        .xfer_page_rst        (xfer_reset_page5) // output
+    );
+
     cmd_encod_tiled_mux #(
         .ADDRESS_NUMBER          (ADDRESS_NUMBER),
         .COLADDR_NUMBER          (COLADDR_NUMBER),
@@ -709,18 +808,53 @@ module  mcntrl393 #(
         .keep_open4              (tiled_rd_chn4_keep_open), // input
         .partial4                (tiled_rd_chn4_xfer_partial), // input
         .start4                  (tiled_rd_chn4_start), // input
-        .bank                    (tiled_rd_bank), // output[2:0] 
-        .row                     (tiled_rd_row), // output[14:0] 
-        .col                     (tiled_rd_col), // output[6:0] 
-        .rowcol_inc              (tiled_rd_rowcol_inc), // output[13:0] 
-        .num_rows                (tiled_rd_num_rows_m1), // output[5:0] 
-        .num_cols                (tiled_rd_num_cols_m1), // output[5:0] 
-        .keep_open               (tiled_rd_keep_open), // output
-        .partial                 (tiled_rd_xfer_partial), // output
+        .bank5                   (tiled_wr_chn5_bank), // input[2:0] 
+        .row5                    (tiled_wr_chn5_row), // input[14:0] 
+        .col5                    (tiled_wr_chn5_col), // input[6:0] 
+        .rowcol_inc5             (tiled_wr_chn5_rowcol_inc), // input[13:0] 
+        .num_rows5               (tiled_wr_chn5_num_rows_m1), // input[5:0] 
+        .num_cols5               (tiled_wr_chn5_num_cols_m1), // input[5:0] 
+        .keep_open5              (tiled_wr_chn5_keep_open), // input
+        .partial5                (tiled_wr_chn5_xfer_partial), // input
+        .start5                  (tiled_wr_chn5_start), // input
+        .bank                    (tiled_rw_bank), // output[2:0] 
+        .row                     (tiled_rw_row), // output[14:0] 
+        .col                     (tiled_rw_col), // output[6:0] 
+        .rowcol_inc              (tiled_rw_rowcol_inc), // output[13:0] 
+        .num_rows                (tiled_rw_num_rows_m1), // output[5:0] 
+        .num_cols                (tiled_rw_num_cols_m1), // output[5:0] 
+        .keep_open               (tiled_rw_keep_open), // output
+        .partial                 (tiled_rw_xfer_partial), // output
         .start_rd                (tiled_rd_start), // output
-        .start_wr                () // output
+        .start_wr                (tiled_wr_start) // output
     );
-    
+// with external defines, does not search module definition when creating closure for iverilog
+// TODO: fix
+`define USE_CMD_ENCOD_TILED_32_RD
+`ifdef USE_CMD_ENCOD_TILED_32_RD    
+    cmd_encod_tiled_32_rd #(
+        .ADDRESS_NUMBER(15),
+        .COLADDR_NUMBER(10),
+        .CMD_PAUSE_BITS(10),
+        .CMD_DONE_BIT(10)
+    ) cmd_encod_tiled_rd_i (
+        .rst               (rst), // input
+        .clk               (mclk), // input
+        .start_bank        (tiled_rw_bank), // input[2:0] 
+        .start_row         (tiled_rw_row), // input[14:0] 
+        .start_col         (tiled_rw_col), // input[6:0] 
+        .rowcol_inc_in     (tiled_rw_rowcol_inc), // input[13:0] // [21:0] 
+        .num_rows_in_m1    (tiled_rw_num_rows_m1), // input[5:0] 
+        .num_cols_in_m1    (tiled_rw_num_cols_m1), // input[5:0] 
+        .keep_open_in      (tiled_rw_keep_open), // input
+        .skip_next_page_in (tiled_rw_xfer_partial), // input
+        
+        .start             (tiled_rd_start), // input
+        .enc_cmd           (seq_data4x), // output[31:0] reg 
+        .enc_wr            (seq_wr4x), // output reg 
+        .enc_done          (seq_set4x) // output reg 
+    );
+`else    
     cmd_encod_tiled_rd #(
         .ADDRESS_NUMBER(15),
         .COLADDR_NUMBER(10),
@@ -729,21 +863,73 @@ module  mcntrl393 #(
     ) cmd_encod_tiled_rd_i (
         .rst               (rst), // input
         .clk               (mclk), // input
-        .start_bank        (tiled_rd_bank), // input[2:0] 
-        .start_row         (tiled_rd_row), // input[14:0] 
-        .start_col         (tiled_rd_col), // input[6:0] 
-        .rowcol_inc_in     (tiled_rd_rowcol_inc), // input[13:0] // [21:0] 
-        .num_rows_in_m1    (tiled_rd_num_rows_m1), // input[5:0] 
-        .num_cols_in_m1    (tiled_rd_num_cols_m1), // input[5:0] 
-        .keep_open_in      (tiled_rd_keep_open), // input
-        .skip_next_page_in (tiled_rd_xfer_partial), // input
+        .start_bank        (tiled_rw_bank), // input[2:0] 
+        .start_row         (tiled_rw_row), // input[14:0] 
+        .start_col         (tiled_rw_col), // input[6:0] 
+        .rowcol_inc_in     (tiled_rw_rowcol_inc), // input[13:0] // [21:0] 
+        .num_rows_in_m1    (tiled_rw_num_rows_m1), // input[5:0] 
+        .num_cols_in_m1    (tiled_rw_num_cols_m1), // input[5:0] 
+        .keep_open_in      (tiled_rw_keep_open), // input
+        .skip_next_page_in (tiled_rw_xfer_partial), // input
         
         .start             (tiled_rd_start), // input
         .enc_cmd           (seq_data4x), // output[31:0] reg 
         .enc_wr            (seq_wr4x), // output reg 
         .enc_done          (seq_set4x) // output reg 
     );
+`endif    
 
+`undef USE_CMD_ENCOD_TILED_32_WR
+`ifdef USE_CMD_ENCOD_TILED_32_WR    
+    cmd_encod_tiled_32_wr #(
+        .ADDRESS_NUMBER(15),
+        .COLADDR_NUMBER(10),
+        .CMD_PAUSE_BITS(10),
+        .CMD_DONE_BIT(10)
+    ) cmd_encod_tiled_wr_i (
+        .rst               (rst), // input
+        .clk               (mclk), // input
+        .start_bank        (tiled_rw_bank), // input[2:0] 
+        .start_row         (tiled_rw_row), // input[14:0] 
+        .start_col         (tiled_rw_col), // input[6:0] 
+        .rowcol_inc_in     (tiled_rw_rowcol_inc), // input[13:0] // [21:0] 
+        .num_rows_in_m1    (tiled_rw_num_rows_m1), // input[5:0] 
+        .num_cols_in_m1    (tiled_rw_num_cols_m1), // input[5:0] 
+        .keep_open_in      (tiled_rw_keep_open), // input
+        .skip_next_page_in (tiled_rw_xfer_partial), // input
+        
+        .start             (tiled_wr_start), // input
+        .enc_cmd           (seq_data5x), // output[31:0] reg 
+        .enc_wr            (seq_wr5x), // output reg 
+        .enc_done          (seq_set5x) // output reg 
+    );
+`else    
+    cmd_encod_tiled_wr #(
+        .ADDRESS_NUMBER(15),
+        .COLADDR_NUMBER(10),
+        .CMD_PAUSE_BITS(10),
+        .CMD_DONE_BIT(10)
+    ) cmd_encod_tiled_wr_i (
+        .rst               (rst), // input
+        .clk               (mclk), // input
+        .start_bank        (tiled_rw_bank), // input[2:0] 
+        .start_row         (tiled_rw_row), // input[14:0] 
+        .start_col         (tiled_rw_col), // input[6:0] 
+        .rowcol_inc_in     (tiled_rw_rowcol_inc), // input[13:0] // [21:0] 
+        .num_rows_in_m1    (tiled_rw_num_rows_m1), // input[5:0] 
+        .num_cols_in_m1    (tiled_rw_num_cols_m1), // input[5:0] 
+        .keep_open_in      (tiled_rw_keep_open), // input
+        .skip_next_page_in (tiled_rw_xfer_partial), // input
+        
+        .start             (tiled_wr_start), // input
+        .enc_cmd           (seq_data5x), // output[31:0] reg 
+        .enc_wr            (seq_wr5x), // output reg 
+        .enc_done          (seq_set5x) // output reg 
+    );
+`endif    
+
+
+//
 // Port memory buffer (4 pages each, R/W fixed, port 0 - AXI read from DDR, port 1 - AXI write to DDR
 // Port 2 (read DDR to AXI) buffer, linear
     always @ (negedge mclk) begin
@@ -769,7 +955,6 @@ module  mcntrl393 #(
 
 
 // Port 3 (write DDR from AXI) buffer, linear
-
          mcntrl_1kx32w chn3_buf_i (
         .ext_clk      (axi_clk), // input
         .ext_waddr    (buf_waddr), // input[9:0] 
@@ -800,6 +985,20 @@ module  mcntrl393 #(
         .data_in      (buf_wdata_chn4) // input[63:0] 
     );
 
+// Port 5 (write DDR from AXI) buffer, tiled
+         mcntrl_1kx32w chn5_buf_i (
+        .ext_clk      (axi_clk), // input
+        .ext_waddr    (buf_waddr), // input[9:0] 
+        .ext_we       (buf5_we), // input
+        .ext_data_in  (buf_wdata), // input[31:0] buf_wdata - from AXI
+        .rclk         (mclk), // input
+        .rpage_in     (2'b0), // input[1:0] 
+        .rpage_set    (xfer_reset_page5), // input   TODO: Generate @ posedge mclk on frame start
+        .page_next    (rpage_nxt_chn5), // input
+        .page         (), // output[1:0]
+        .rd           (buf_rd_chn5), // input
+        .data_out     (buf_rdata_chn5) // output[63:0] 
+    );
     
 
     mcntrl_linear_rw #(
@@ -1161,6 +1360,18 @@ module  mcntrl393 #(
         .buf_wr_chn4        (buf_wr_chn4), // output
         .buf_wpage_nxt_chn4 (buf_wpage_nxt_chn4), // output 
         .buf_wdata_chn4     (buf_wdata_chn4), // output[63:0]
+
+        .want_rq5           (want_rq5), // input
+        .need_rq5           (need_rq5), // input
+        .channel_pgm_en5    (channel_pgm_en5), // output reg 
+        .seq_data5          (seq_data5x), // input[31:0] 
+        .seq_wr5            (seq_wr5x), // input
+        .seq_set5           (seq_set5x), // input
+        .seq_done5          (seq_done5), // output
+        .rpage_nxt_chn5     (rpage_nxt_chn5), // output 
+        .buf_run5           (),
+        .buf_rd_chn5        (buf_rd_chn5), // output
+        .buf_rdata_chn5     (buf_rdata_chn5), // input[63:0] 
 
         .SDRST              (SDRST), // output
         .SDCLK              (SDCLK), // output

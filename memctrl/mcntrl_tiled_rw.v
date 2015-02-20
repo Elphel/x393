@@ -173,7 +173,7 @@ module  mcntrl_tiled_rw#(
                                                   // otherwise (smaller widths) round up to the nearest power of 2
     reg      [FRAME_WIDTH_BITS:0] window_width;   // (programmed) 0- max
     reg     [FRAME_HEIGHT_BITS:0] window_height;  // (programmed) 0- max
-    reg     [FRAME_HEIGHT_BITS:0] window_m_tile_height;  // (window height-tile height
+//    reg     [FRAME_HEIGHT_BITS:0] window_m_tile_height;  // (window height-tile height
     reg    [FRAME_WIDTH_BITS-1:0] window_x0;      // (programmed) window left
     reg   [FRAME_HEIGHT_BITS-1:0] window_y0;      // (programmed) window top
     reg    [FRAME_WIDTH_BITS-1:0] start_x;        // (programmed) normally 0, copied to curr_x on frame_start  
@@ -323,7 +323,7 @@ module  mcntrl_tiled_rw#(
             last_in_row <= last_in_row_w;
         end
         
-        window_m_tile_height <= window_height - tile_rows;
+ //       window_m_tile_height <= window_height - tile_rows;
     end
     
 // now have row start address, bank and row_left ;

@@ -125,9 +125,9 @@ module  cmd_encod_linear_rd #(
         else case (gen_addr)
             4'h0: rom_r <= (ENC_CMD_ACTIVATE <<  ENC_CMD_SHIFT); 
             4'h1: rom_r <= (ENC_CMD_NOP <<       ENC_CMD_SHIFT) | (1 << ENC_PAUSE_SHIFT); 
-            4'h2: rom_r <= (ENC_CMD_READ <<      ENC_CMD_SHIFT) | (1 << ENC_NOP)                             | (1 << ENC_DCI) | (1 << ENC_SEL); 
+            4'h2: rom_r <= (ENC_CMD_READ <<      ENC_CMD_SHIFT) | (1 << ENC_NOP)         | (1 << ENC_BUF_WR) | (1 << ENC_DCI) | (1 << ENC_SEL); 
             4'h3: rom_r <= (ENC_CMD_READ <<      ENC_CMD_SHIFT) | (1 << ENC_NOP)         | (1 << ENC_BUF_WR) | (1 << ENC_DCI) | (1 << ENC_SEL);
-            4'h4: rom_r <= (ENC_CMD_NOP <<       ENC_CMD_SHIFT) | (1 << ENC_PAUSE_SHIFT) | (1 << ENC_BUF_WR) | (1 << ENC_DCI) | (1 << ENC_SEL);
+            4'h4: rom_r <= (ENC_CMD_NOP <<       ENC_CMD_SHIFT) | (1 << ENC_PAUSE_SHIFT)                     | (1 << ENC_DCI) | (1 << ENC_SEL);
             4'h5: rom_r <= (ENC_CMD_NOP <<       ENC_CMD_SHIFT) | (1 << ENC_BUF_PGNEXT)                      | (1 << ENC_DCI) | (1 << ENC_SEL);
             4'h6: rom_r <= (ENC_CMD_PRECHARGE << ENC_CMD_SHIFT)                                              | (1 << ENC_DCI);
             4'h7: rom_r <= (ENC_CMD_NOP <<       ENC_CMD_SHIFT) | (2 << ENC_PAUSE_SHIFT)                     | (1 << ENC_DCI);

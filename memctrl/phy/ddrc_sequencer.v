@@ -413,6 +413,7 @@ module  ddrc_sequencer   #(
         .buf_rdata           (buf_rdata[63:0]), // input[63:0] 
         .buf_wr              (buf_wr_ndly), // output
         .buf_rd              (buf_rd), // output
+        .buf_rst             (), // output
         .cmda_en             (cmda_en), // input
         .ddr_rst             (ddr_rst), // input
         .dci_rst             (dci_rst), // input

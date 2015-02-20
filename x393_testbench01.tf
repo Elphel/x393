@@ -31,10 +31,12 @@
 //`define TEST_READ_BLOCK 1
 
 
-`define TEST_SCANLINE_WRITE 1
-`define TEST_SCANLINE_WRITE_WAIT 1 // wait TEST_SCANLINE_WRITE finished (frame_done)
+//`define TEST_SCANLINE_WRITE 1
+    `define TEST_SCANLINE_WRITE_WAIT 1 // wait TEST_SCANLINE_WRITE finished (frame_done)
 //`define TEST_SCANLINE_READ  1
-`define TEST_READ_SHOW  1
+    `define TEST_READ_SHOW  1
+`define TEST_TILED_WRITE  1
+    `define TEST_TILED_WRITE_WAIT 1 // wait TEST_SCANLINE_WRITE finished (frame_done)
 
 `define TEST_TILED_READ  1
 
@@ -213,10 +215,10 @@ module  x393_testbench01 #(
   localparam       TILED_STARTY=     'h0;         // 16-bit start y (normally 0)
   localparam [1:0] TILED_EXTRA_PAGES= 0;          // 0..2 - number of pages in the buffer to keep/not write
   
-  localparam       TILED_KEEP_OPEN=   1'b0; //1'b1; // 1'b0;       // Do not close banks between reads (valid only for tiles <=8 rows, needed if less than 3? rows)  
+  localparam       TILED_KEEP_OPEN=   1'b1; //1'b1; // 1'b0;       // Do not close banks between reads (valid only for tiles <=8 rows, needed if less than 3? rows)  
   
-  localparam       TILE_WIDTH=    'h03; //     6-bit tile width  (1..'h40)
-  localparam       TILE_HEIGHT=   'h05; // 'h04; //'h06;  //    6-bit tile height (1..'h40) // 4 - violation
+  localparam       TILE_WIDTH=    'h04; //     6-bit tile width  (1..'h40)
+  localparam       TILE_HEIGHT=   'h08; //'h05; // 'h04; //'h06;  //    6-bit tile height (1..'h40) // 4 - violation
   localparam       TILE_VSTEP=    'h04;  //    6-bit tile vertical step, with no overlap it is equal to TILE_HEIGHT (1..'h40)
   
   
@@ -229,7 +231,9 @@ module  x393_testbench01 #(
   //NUM_XFER_BITS=6
   localparam       SCANLINE_PAGES_PER_ROW= (WINDOW_WIDTH>>NUM_XFER_BITS)+((WINDOW_WIDTH[NUM_XFER_BITS-1:0]==0)?0:1);
   localparam       TILES_PER_ROW= (WINDOW_WIDTH/TILE_WIDTH)+  ((WINDOW_WIDTH % TILE_WIDTH==0)?0:1);
-  localparam       TILE_ROWS_PER_WINDOW= ((WINDOW_HEIGHT-TILE_HEIGHT)/TILE_VSTEP) + (((WINDOW_HEIGHT-TILE_HEIGHT)%TILE_VSTEP==0)?0:1) +1;
+//  localparam       TILE_ROWS_PER_WINDOW= ((WINDOW_HEIGHT-TILE_HEIGHT)/TILE_VSTEP) + (((WINDOW_HEIGHT-TILE_HEIGHT)%TILE_VSTEP==0)?0:1) +1;
+//  localparam       TILE_ROWS_PER_WINDOW= (WINDOW_HEIGHT/TILE_VSTEP) + ((WINDOW_HEIGHT%TILE_VSTEP==0)?0:1);
+  localparam       TILE_ROWS_PER_WINDOW= ((WINDOW_HEIGHT-1)/TILE_VSTEP) + 1;
   
   localparam       TILE_SIZE= TILE_WIDTH*TILE_HEIGHT;
   
@@ -278,6 +282,8 @@ always #(CLKIN_PERIOD/2) CLK <= ~CLK;
     enable_memcntrl(1);                 // enable memory controller
 
     set_up;
+    axi_set_wbuf_delay(WBUF_DLY_DFLT); //DFLT_WBUF_DELAY - used in synth. code
+    
     wait_phase_shifter_ready;
     read_all_status;
 // enable output for address/commands to DDR chip    
@@ -348,7 +354,7 @@ always #(CLKIN_PERIOD/2) CLK <= ~CLK;
         axi_set_dqs_idelay_nominal;
 //        axi_set_dqs_odelay_nominal;
         axi_set_dqs_odelay('h78);
-        axi_set_wbuf_delay(WBUF_DLY_DFLT);
+        axi_set_wbuf_delay(WBUF_DLY_DFLT); //DFLT_WBUF_DELAY
 `endif
 `ifdef TEST_READ_PATTERN
         schedule_ps_pio ( // shedule software-control memory operation (may need to check FIFO status first)
@@ -404,18 +410,8 @@ always #(CLKIN_PERIOD/2) CLK <= ~CLK;
 
     configure_channel_priority(3,0);    // lowest priority channel 3
     enable_memcntrl_channels(16'h000b); // channels 0,1,3 are enabled
-//  localparam       TEST01_START_FRAME=   1;         
-//  localparam       TEST01_NEXT_PAGE=     2;         
-//  localparam       TEST01_SUSPEND=       4;         
- /*
-   integer     SCANLINE_CUR_X;
-  integer     SCANLINE_CUR_Y;
-//SCANLINE_PAGES_PER_ROW
- */   
     write_contol_register(MCNTRL_TEST01_ADDR + MCNTRL_TEST01_CHN3_MODE,            TEST01_START_FRAME);
     for (ii=0;ii<TEST_INITIAL_BURST;ii=ii+1) begin
-//        SCANLINE_CUR_X = WINDOW_X0 + ((ii % SCANLINE_PAGES_PER_ROW) << NUM_XFER_BITS);
-//        SCANLINE_CUR_Y = WINDOW_Y0 + (ii / SCANLINE_PAGES_PER_ROW);
 // VDT bugs: 1:does not propagate undefined width through ?:, 2: - does not allow to connect it to task integer input, 3: shows integer input width as 1  
         SCANLINE_XFER_SIZE= ((SCANLINE_PAGES_PER_ROW>1)?
                 (
@@ -435,11 +431,6 @@ always #(CLKIN_PERIOD/2) CLK <= ~CLK;
             WINDOW_Y0 + (ii / SCANLINE_PAGES_PER_ROW)); // SCANLINE_CUR_Y);\
             
     end
-/*
-  localparam       SCANLINE_FULL_XFER= 1<<NUM_XFER_BITS; // 64 - full page transfer in 8-bursts
-  localparam       SCANLINE_LAST_XFER= WINDOW_WIDTH % (1<<NUM_XFER_BITS); // last page transfer size in a row
-
-*/    
     for (ii=0;ii< (WINDOW_HEIGHT * SCANLINE_PAGES_PER_ROW) ;ii = ii+1) begin // here assuming 1 page per line
         if (ii >= TEST_INITIAL_BURST) begin // wait page ready and fill page after first 4 are filled
             wait_status_condition (
@@ -469,7 +460,7 @@ always #(CLKIN_PERIOD/2) CLK <= ~CLK;
         end
         write_contol_register(MCNTRL_TEST01_ADDR + MCNTRL_TEST01_CHN3_MODE,            TEST01_NEXT_PAGE);
     end
-    `ifdef TEST_SCANLINE_WRITE_WAIT // Does it work?
+    `ifdef TEST_SCANLINE_WRITE_WAIT
             wait_status_condition ( // may also be read directly from the same bit of mctrl_linear_rw (address=5) status
                 MCNTRL_TEST01_STATUS_REG_CHN3_ADDR,
                 MCNTRL_TEST01_ADDR + MCNTRL_TEST01_CHN3_STATUS_CNTRL,
@@ -523,6 +514,61 @@ always #(CLKIN_PERIOD/2) CLK <= ~CLK;
     end
 `endif
 
+`ifdef TEST_TILED_WRITE
+   // program to the
+    write_contol_register(MCNTRL_TILED_CHN5_ADDR + MCNTRL_TILED_STARTADDR,        FRAME_START_ADDRESS); // RA=80, CA=0, BA=0 22-bit frame start address (3 CA LSBs==0. BA==0) 
+    write_contol_register(MCNTRL_TILED_CHN5_ADDR + MCNTRL_TILED_FRAME_FULL_WIDTH, FRAME_FULL_WIDTH);
+    write_contol_register(MCNTRL_TILED_CHN5_ADDR + MCNTRL_TILED_WINDOW_WH,        WINDOW_WIDTH + (WINDOW_HEIGHT<<16));
+    write_contol_register(MCNTRL_TILED_CHN5_ADDR + MCNTRL_TILED_WINDOW_X0Y0,      WINDOW_X0+ (WINDOW_Y0<<16));
+    write_contol_register(MCNTRL_TILED_CHN5_ADDR + MCNTRL_TILED_WINDOW_STARTXY,   TILED_STARTX+(TILED_STARTY<<16));
+    write_contol_register(MCNTRL_TILED_CHN5_ADDR + MCNTRL_TILED_TILE_WHS,         TILE_WIDTH+(TILE_HEIGHT<<8)+(TILE_VSTEP<<16));
+    write_contol_register(MCNTRL_TILED_CHN5_ADDR + MCNTRL_TILED_MODE,             {27'b0,TILED_KEEP_OPEN,TILED_EXTRA_PAGES,2'b11});// set mode register: {extra_pages[1:0],enable,!reset}
+
+    configure_channel_priority(5,0);    // lowest priority channel 5
+    enable_memcntrl_channels(16'h002f); // channels 0,1,2,3 and 5 are enabled
+
+    write_contol_register(MCNTRL_TEST01_ADDR + MCNTRL_TEST01_CHN5_MODE,            TEST01_START_FRAME);
+    
+    for (ii=0;ii<TEST_INITIAL_BURST;ii=ii+1) begin
+        write_block_scanline_chn( // TODO: Make a different tile buffer data, matching the order
+            5, // channel
+            (ii & 3),
+            TILE_SIZE,
+            WINDOW_X0 + ((ii % TILES_PER_ROW) * TILE_WIDTH),
+            WINDOW_Y0 + (ii / TILE_ROWS_PER_WINDOW)); // SCANLINE_CUR_Y);\
+    end
+    
+    for (ii=0;ii<(TILES_PER_ROW * TILE_ROWS_PER_WINDOW);ii = ii+1) begin
+            if (ii >= TEST_INITIAL_BURST) begin // wait page ready and fill page after first 4 are filled
+                wait_status_condition (
+                    MCNTRL_TEST01_STATUS_REG_CHN5_ADDR,
+                    MCNTRL_TEST01_ADDR + MCNTRL_TEST01_CHN5_STATUS_CNTRL,
+                    DEFAULT_STATUS_MODE,
+                    (ii-TEST_INITIAL_BURST)<<16, // 4-bit page number
+                    'hf << 16,  // mask for the 4-bit page number
+                    1); // not equal to
+                write_block_scanline_chn( // TODO: Make a different tile buffer data, matching the order
+                    5, // channel
+                    (ii & 3),
+                    TILE_SIZE,
+                    WINDOW_X0 + ((ii % TILES_PER_ROW) * TILE_WIDTH),
+                    WINDOW_Y0 + (ii / TILE_ROWS_PER_WINDOW)); // SCANLINE_CUR_Y);\
+            end
+        write_contol_register(MCNTRL_TEST01_ADDR + MCNTRL_TEST01_CHN5_MODE,            TEST01_NEXT_PAGE);
+    end
+    `ifdef TEST_TILED_WRITE_WAIT
+            wait_status_condition ( // may also be read directly from the same bit of mctrl_linear_rw (address=5) status
+                MCNTRL_TEST01_STATUS_REG_CHN5_ADDR,
+                MCNTRL_TEST01_ADDR + MCNTRL_TEST01_CHN5_STATUS_CNTRL,
+                DEFAULT_STATUS_MODE,
+                2 << STATUS_2LSB_SHFT, // bit 24 - busy, bit 25 - frame done
+                2 << STATUS_2LSB_SHFT,  // mask for the 4-bit page number
+                0); // equal to
+    `endif
+`endif
+
+
+
 `ifdef TEST_TILED_READ
    // program to the
     write_contol_register(MCNTRL_TILED_CHN4_ADDR + MCNTRL_TILED_STARTADDR,        FRAME_START_ADDRESS); // RA=80, CA=0, BA=0 22-bit frame start address (3 CA LSBs==0. BA==0) 
@@ -534,7 +580,7 @@ always #(CLKIN_PERIOD/2) CLK <= ~CLK;
     write_contol_register(MCNTRL_TILED_CHN4_ADDR + MCNTRL_TILED_MODE,             {27'b0,TILED_KEEP_OPEN,TILED_EXTRA_PAGES,2'b11});// set mode register: {extra_pages[1:0],enable,!reset}
 
     configure_channel_priority(4,0);    // lowest priority channel 2
-    enable_memcntrl_channels(16'h001f); // channels 0,1,2,3,4 are enabled
+    enable_memcntrl_channels(16'h003f); // channels 0,1,2,3,4 and 5 are enabled
 
     write_contol_register(MCNTRL_TEST01_ADDR + MCNTRL_TEST01_CHN4_MODE,            TEST01_START_FRAME);
     for (ii=0;ii<(TILES_PER_ROW * TILE_ROWS_PER_WINDOW);ii = ii+1) begin
@@ -564,6 +610,7 @@ end
   initial begin
 //  #10000000;
   #200000;
+//  #60000;
     $display("finish testbench 2");
   $finish;
   end
@@ -630,6 +677,7 @@ assign bresp=                              x393_i.ps7_i.MAXIGP0BRESP;
         .MCONTR_BUF2_RD_ADDR               (MCONTR_BUF2_RD_ADDR),
         .MCONTR_BUF3_WR_ADDR               (MCONTR_BUF3_WR_ADDR),
         .MCONTR_BUF4_RD_ADDR               (MCONTR_BUF4_RD_ADDR),
+        .MCONTR_BUF5_WR_ADDR               (MCONTR_BUF5_WR_ADDR),
         .DLY_LD                            (DLY_LD),
         .DLY_LD_MASK                       (DLY_LD_MASK),
         .MCONTR_PHY_0BIT_ADDR              (MCONTR_PHY_0BIT_ADDR),
@@ -748,6 +796,7 @@ assign bresp=                              x393_i.ps7_i.MAXIGP0BRESP;
         .MAX_TILE_WIDTH                    (MAX_TILE_WIDTH),
         .MAX_TILE_HEIGHT                   (MAX_TILE_HEIGHT),
         .MCNTRL_TILED_CHN4_ADDR            (MCNTRL_TILED_CHN4_ADDR),
+        .MCNTRL_TILED_CHN5_ADDR            (MCNTRL_TILED_CHN5_ADDR),
         .MCNTRL_TILED_MASK                 (MCNTRL_TILED_MASK),
         .MCNTRL_TILED_MODE                 (MCNTRL_TILED_MODE),
         .MCNTRL_TILED_STATUS_CNTRL         (MCNTRL_TILED_STATUS_CNTRL),
@@ -769,9 +818,12 @@ assign bresp=                              x393_i.ps7_i.MAXIGP0BRESP;
         .MCNTRL_TEST01_CHN3_STATUS_CNTRL    (MCNTRL_TEST01_CHN3_STATUS_CNTRL),
         .MCNTRL_TEST01_CHN4_MODE            (MCNTRL_TEST01_CHN4_MODE),
         .MCNTRL_TEST01_CHN4_STATUS_CNTRL    (MCNTRL_TEST01_CHN4_STATUS_CNTRL),
+        .MCNTRL_TEST01_CHN5_MODE            (MCNTRL_TEST01_CHN5_MODE),
+        .MCNTRL_TEST01_CHN5_STATUS_CNTRL    (MCNTRL_TEST01_CHN5_STATUS_CNTRL),
         .MCNTRL_TEST01_STATUS_REG_CHN2_ADDR (MCNTRL_TEST01_STATUS_REG_CHN2_ADDR),
         .MCNTRL_TEST01_STATUS_REG_CHN3_ADDR (MCNTRL_TEST01_STATUS_REG_CHN3_ADDR),
-        .MCNTRL_TEST01_STATUS_REG_CHN4_ADDR (MCNTRL_TEST01_STATUS_REG_CHN4_ADDR)
+        .MCNTRL_TEST01_STATUS_REG_CHN4_ADDR (MCNTRL_TEST01_STATUS_REG_CHN4_ADDR),
+        .MCNTRL_TEST01_STATUS_REG_CHN5_ADDR (MCNTRL_TEST01_STATUS_REG_CHN5_ADDR)
     ) x393_i (
         .SDRST   (SDRST), // DDR3 reset (active low)
         .SDCLK   (SDCLK), // output 
@@ -1196,6 +1248,7 @@ task write_block_scanline_chn;  // S uppressThisWarning VEditor : may be unused
         case (chn)
             1:  start_addr=MCONTR_BUF1_WR_ADDR + (page << 8);
             3:  start_addr=MCONTR_BUF3_WR_ADDR + (page << 8);
+            5:  start_addr=MCONTR_BUF5_WR_ADDR + (page << 8); // it is actually tiled, not scanline
             default: begin
                 $display("**** ERROR: Invalid channel for write_block_scanline_chn = %d @%t", chn, $time);
                 start_addr = MCONTR_BUF1_WR_ADDR+ (page << 8);

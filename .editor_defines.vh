@@ -2,7 +2,7 @@
 
 // TODO: Fix VDT - without IVERILOG defined, closure does not include modules needed for Icarus
 `define IVERILOG 1
-  
+`define USE_CMD_ENCOD_TILED_32_RD 1  
   // It can be used to check different `ifdef branches
   //`define XIL_TIMING //Simprim 
   `define den4096Mb 1
@@ -33,8 +33,10 @@
  `define def_read_mem_chn4
  `define def_tiled_chn4
 
-  // chn 5 is disabled
- `undef  def_enable_mem_chn5
+  // chn 5 is enabled
+ `define def_enable_mem_chn5
+ `undef  def_read_mem_chn5
+ `define def_tiled_chn5
 
   // chn 6 is disabled
  `undef  def_enable_mem_chn6

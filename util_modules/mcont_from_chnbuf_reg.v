@@ -48,7 +48,8 @@ module  mcont_from_chnbuf_reg #(
         else     buf_run <= (ext_buf_rchn==CHN_NUMBER) && !ext_buf_rrefresh && ext_buf_rrun;
 
         if (rst) latency_reg<= 0;
-        else     latency_reg <= buf_rd_chn | (latency_reg << 1);
+//        else     latency_reg <= buf_rd_chn | (latency_reg << 1);
+        else     latency_reg <= {latency_reg[CHN_LATENCY-1:0], buf_rd_chn};
         
 //        if (rst) buf_done <= 0;
 //        else     buf_done <= buf_chn_sel && seq_done;

@@ -86,6 +86,7 @@ task write_block_buf_chn;  // S uppressThisWarning VEditor : may be unused
         case (chn)
             1:  start_addr=MCONTR_BUF1_WR_ADDR + (page << 8);
             3:  start_addr=MCONTR_BUF3_WR_ADDR + (page << 8);
+            5:  start_addr=MCONTR_BUF5_WR_ADDR + (page << 8);
             default: begin
                 $display("**** ERROR: Invalid channel for write buffer = %d @%t", chn, $time);
                 start_addr = MCONTR_BUF1_WR_ADDR+ (page << 8);
