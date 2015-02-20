@@ -28,6 +28,7 @@
  *******************************************************************************/
 `timescale 1ns/1ps
 /*
+TODO  Comments from cmd_encod_tiled_rd, update
 Minimal ACTIVATE period =4 Tcm or 10ns, so maximal no-miss rate is Tck=1.25 ns (800 MHz)
 Minimal window of 4 ACTIVATE pulses - 16 Tck or 40 (40 ns), so one ACTIVATE per 8 Tck is still OK down to 1.25 ns
 Reads are in 16-byte colums: 1 8-burst (16 bytes) in a row, then next row, bank inc first. Then (if needed) - next column
@@ -70,28 +71,6 @@ module  cmd_encod_tiled_wr #(
     localparam FULL_ADDR_NUMBER=ADDRESS_NUMBER+COLADDR_NUMBER; // excluding 3 CA lsb, but adding 3 bank
     localparam ROM_WIDTH=12;
     localparam ROM_DEPTH=4;
-/*    
-    localparam ENC_NOP=        0;
-    localparam ENC_BUF_WR=     1;
-    localparam ENC_DCI=        2;
-    localparam ENC_SEL=        3;
-    localparam ENC_CMD_SHIFT=  4; // [5:4] - command: 0 -= NOP, 1 - READ, 2 - PRECHARGE, 3 - ACTIVATE
-    localparam ENC_PAUSE_SHIFT=6; // [7:6] - 2- bit pause (for NOP commandes)
-    localparam ENC_PRE_DONE=   8;
-    localparam ENC_BUF_PGNEXT= 9;
-    
-    localparam ENC_CMD_NOP=      0; // 2-bit locally encoded commands
-    localparam ENC_CMD_READ=     1;
-//    localparam ENC_CMD_PRECHARGE=2;
-    localparam ENC_CMD_ACTIVATE= 2; // using autoprecharge, so no PRECHARGE is needed. When en_act==0, ENC_CMD_ACTIVATE-> ENC_CMD_NOP (delay should be 0)
-//    localparam REPEAT_ADDR=3;
-    localparam LOOP_FIRST=   5; // address of the first word in a loop
-    localparam LOOP_LAST=    6; // address of the last word in a loop
-    localparam CMD_NOP=      0; // 3-bit normal memory RCW commands (positive logic)
-    localparam CMD_READ=     2;
-//    localparam CMD_PRECHARGE=5;
-    localparam CMD_ACTIVATE= 4;
-*/
     localparam ENC_NOP=         0;
     localparam ENC_BUF_RD=      1;
     localparam ENC_DQS_TOGGLE=  2;
@@ -112,18 +91,14 @@ module  cmd_encod_tiled_wr #(
     
     localparam CMD_NOP=      0; // 3-bit normal memory RCW commands (positive logic)
     localparam CMD_WRITE=    3;
-//    localparam CMD_PRECHARGE=5;
     localparam CMD_ACTIVATE= 4;
     
-    
-//    localparam AUTOPRECHARGE_BIT=COLADDR_NUMBER;
     
     reg   [ADDRESS_NUMBER-1:0] row;     // memory row
     reg   [COLADDR_NUMBER-4:0] col;     // start memory column in 8-bursts
     reg                  [2:0] bank;    // memory bank;
     reg                  [5:0] num_rows_m1;  // number of rows in a tile minus 1
     reg                  [5:0] num_cols128_m1;  // number of r16-byte columns in a tile  -1
-//    reg  [FULL_ADDR_NUMBER-4:0] rowcol_inc; // increment {row.col} when bank rolls over, remove 3 LSBs (in 8-bursts)
     reg   [FRAME_WIDTH_BITS:0] rowcol_inc; // increment {row.col} when bank rolls over, remove 3 LSBs (in 8-bursts)
     
     reg                        keep_open;                        
@@ -143,13 +118,13 @@ module  cmd_encod_tiled_wr #(
     reg                        first_col;
     reg                        last_col;
     wire                       pre_act; //1 cycle before optional ACTIVATE
-    wire                       pre_read; //1 cycle before READ command
+    wire                       pre_write; //1 cycle before READ command
     reg                  [5:0] scan_row; // current row in a tile (valid @pre_act)
     reg                  [5:0] scan_col; // current 16-byte column in a tile (valid @pre_act)
     reg                        start_d; // start, delayed by 1 clocks
     wire                       last_row;
     reg [FULL_ADDR_NUMBER-1:0] row_col_bank;     // RA,CA, BA - valid @pre_act;
-    wire   [COLADDR_NUMBER-1:0] col_bank;// CA, BA - valid @ pre_read; 
+    wire   [COLADDR_NUMBER-1:0] col_bank;// CA, BA - valid @ pre_write; 
     
     wire                       enable_act;
     reg                        enable_autopre;
@@ -164,7 +139,6 @@ module  cmd_encod_tiled_wr #(
     reg                       cut_buf_rd;
     
     always @ (posedge clk) begin
-//        else if ((gen_addr==LOOP_LAST) && !loop_continue) gen_addr <= LOOP_FIRST; // skip loop alltogeter
         if (!gen_run)                                         cut_buf_rd <= 0;
         else if ((gen_addr==(LOOP_LAST-1)) && !loop_continue) cut_buf_rd <= 1;
     end    
@@ -187,7 +161,7 @@ module  cmd_encod_tiled_wr #(
     assign next_rowcol_w=row_col_bank[FULL_ADDR_NUMBER-1:3]+rowcol_inc;
     
     assign pre_act=        gen_run && rom_cmd[1]; //1 cycle before optional ACTIVATE
-    assign pre_read=       rom_r[ENC_CMD_SHIFT]; //1 cycle before READ command
+    assign pre_write=       rom_r[ENC_CMD_SHIFT]; //1 cycle before READ command
     
     
     always @ (posedge rst or posedge clk) begin
@@ -198,10 +172,11 @@ module  cmd_encod_tiled_wr #(
         if (rst)           gen_run_d <= 0;
         else               gen_run_d <= gen_run;
 
-        if (rst)        num_rows_m1 <= 0;                    
-        else if (start) num_rows_m1 <= num_rows_in_m1;  // number of rows
-        if (rst)        num_cols128_m1 <= 0;
-        else if (start)         num_cols128_m1 <= num_cols_in_m1;  // number of r16-byte columns
+        if (rst)           num_rows_m1 <= 0;                    
+        else if (start)    num_rows_m1 <= num_rows_in_m1;  // number of rows
+        
+        if (rst)           num_cols128_m1 <= 0;
+        else if (start)    num_cols128_m1 <= num_cols_in_m1;  // number of r16-byte columns
         
         if (rst)         start_d <=0;
         else             start_d <=  start;
@@ -264,11 +239,13 @@ module  cmd_encod_tiled_wr #(
             4'h3: rom_r <= (ENC_CMD_WRITE <<     ENC_CMD_SHIFT)                          | (1 << ENC_BUF_RD) | (1 << ENC_SEL) | (1 << ENC_ODT); 
             4'h4: rom_r <= (ENC_CMD_ACTIVATE <<  ENC_CMD_SHIFT)                          | (1 << ENC_BUF_RD) | (1 << ENC_SEL) | (1 << ENC_ODT) | (1 << ENC_DQ_DQS_EN); 
             4'h5: rom_r <= (ENC_CMD_WRITE <<     ENC_CMD_SHIFT)                          | (1 << ENC_BUF_RD) | (1 << ENC_SEL) | (1 << ENC_ODT) | (1 << ENC_DQ_DQS_EN) | (1 << ENC_DQS_TOGGLE); 
+            // start loop
             4'h6: rom_r <= (ENC_CMD_ACTIVATE <<  ENC_CMD_SHIFT)                          | (1 << ENC_BUF_RD) | (1 << ENC_SEL) | (1 << ENC_ODT) | (1 << ENC_DQ_DQS_EN) | (1 << ENC_DQS_TOGGLE); 
             4'h7: rom_r <= (ENC_CMD_WRITE <<     ENC_CMD_SHIFT)                          | (1 << ENC_BUF_RD) | (1 << ENC_SEL) | (1 << ENC_ODT) | (1 << ENC_DQ_DQS_EN) | (1 << ENC_DQS_TOGGLE); 
-            4'h8: rom_r <= (ENC_CMD_NOP <<       ENC_CMD_SHIFT)                                              | (1 << ENC_SEL) | (1 << ENC_ODT) | (1 << ENC_DQ_DQS_EN) | (1 << ENC_DQS_TOGGLE); 
+            // end loop
+            4'h8: rom_r <= (ENC_CMD_NOP <<       ENC_CMD_SHIFT)                          | (1 << ENC_BUF_RD) | (1 << ENC_SEL) | (1 << ENC_ODT) | (1 << ENC_DQ_DQS_EN) | (1 << ENC_DQS_TOGGLE); 
             4'h9: rom_r <= (ENC_CMD_WRITE <<     ENC_CMD_SHIFT)                      | (1 << ENC_BUF_PGNEXT) | (1 << ENC_SEL) | (1 << ENC_ODT) | (1 << ENC_DQ_DQS_EN) | (1 << ENC_DQS_TOGGLE); 
-            4'ha: rom_r <= (ENC_CMD_NOP <<       ENC_CMD_SHIFT) | (3 << ENC_PAUSE_SHIFT) | (1 << ENC_BUF_RD) | (1 << ENC_SEL) | (1 << ENC_ODT) | (1 << ENC_DQ_DQS_EN) | (1 << ENC_DQS_TOGGLE); 
+            4'ha: rom_r <= (ENC_CMD_NOP <<       ENC_CMD_SHIFT) | (3 << ENC_PAUSE_SHIFT)                     | (1 << ENC_SEL) | (1 << ENC_ODT) | (1 << ENC_DQ_DQS_EN) | (1 << ENC_DQS_TOGGLE); 
             4'hb: rom_r <= (ENC_CMD_NOP <<       ENC_CMD_SHIFT) | (3 << ENC_PAUSE_SHIFT); 
             4'hc: rom_r <= (ENC_CMD_NOP <<       ENC_CMD_SHIFT) | (1 << ENC_PRE_DONE);
             default:rom_r <= 0;
@@ -285,7 +262,6 @@ module  cmd_encod_tiled_wr #(
         else               enc_done <= enc_wr && !gen_run_d;
         
         if (rst)             enc_cmd <= 0;
-//        else if ((rom_cmd==0) || (rom_cmd[1] && !enable_act)) enc_cmd <= func_encode_skip ( // encode pause
         else if (rom_cmd[0] || (rom_cmd[1] && enable_act)) enc_cmd <= func_encode_cmd ( // encode non-NOP command
             rom_cmd[1]? // activate
             row_col_bank[FULL_ADDR_NUMBER-1:COLADDR_NUMBER]: // top combined row,column,bank burst address (excludes 3 CA LSBs), valid/modified @pre_act
@@ -330,11 +306,10 @@ module  cmd_encod_tiled_wr #(
         .clk (clk), // input
         .din (row_col_bank[COLADDR_NUMBER-1:0]), // input[15:0] 
         .wr(pre_act), // input
-        .rd(pre_read), // input
+        .rd(pre_write), // input
         .srst(start_d), // input
         .dout(col_bank) // output[15:0] 
     );
-
 `include "includes/x393_mcontr_encode_cmd.vh" 
 endmodule
 

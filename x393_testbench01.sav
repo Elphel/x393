@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.3.64 (w)1999-2014 BSI
-[*] Fri Feb 20 01:10:48 2015
+[*] Fri Feb 20 06:23:37 2015
 [*]
-[dumpfile] "/home/andrey/git/x393/simulation/x393_testbench01-20150219175501126.lxt"
-[dumpfile_mtime] "Fri Feb 20 01:04:32 2015"
-[dumpfile_size] 503390527
+[dumpfile] "/home/andrey/git/x393/simulation/x393_testbench01-20150219230857315.lxt"
+[dumpfile_mtime] "Fri Feb 20 06:18:19 2015"
+[dumpfile_size] 511941344
 [savefile] "/home/andrey/git/x393/x393_testbench01.sav"
-[timestart] 0
+[timestart] 47202600
 [size] 1823 1180
 [pos] 2056 0
-*-24.698502 64666875 55877500 55843010 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-16.698502 48006875 55877500 55843010 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] x393_testbench01.
 [treeopen] x393_testbench01.x393_i.
 [treeopen] x393_testbench01.x393_i.mcntrl393_i.
@@ -1321,24 +1321,25 @@ x393_testbench01.x393_i.mcntrl393_test01_i.suspend_chn4_r[0]
 -mcntrl393_test01
 @22
 x393_testbench01.ii[31:0]
+@200
+-
+@c00200
+-tiled_ch5
 @28
 x393_testbench01.x393_i.mcntrl393_test01_i.frame_start_chn5_r[0]
-x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.busy_r[0]
 x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.frame_done[0]
 x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.frame_finished[0]
 @22
 x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.recalc_r[8:0]
 @28
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.busy_r[0]
 x393_testbench01.x393_i.mcntrl393_test01_i.next_page_chn5[0]
 @22
+x393_testbench01.write_block_scanline_chn.chn[31:0]
 x393_testbench01.x393_i.mcntrl393_test01_i.page_chn5[3:0]
+x393_testbench01.write_block_scanline_chn.start_addr[29:0]
 @200
 -
-@22
-x393_testbench01.write_block_scanline_chn.chn[31:0]
-x393_testbench01.write_block_scanline_chn.start_addr[29:0]
-@800200
--tiled_ch5
 @28
 x393_testbench01.x393_i.mcntrl393_i.select_buf5_w[0]
 x393_testbench01.x393_i.mcntrl393_i.select_buf5[0]
@@ -1515,9 +1516,9 @@ x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.xfer_row[14:0]
 x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.xfer_start[0]
 x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.xfer_start_r[2:0]
 x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn5_i.xfer_want[0]
-@1000200
+@1401200
 -tiled_ch5
-@c00200
+@800200
 -encod_tiled_wr
 @28
 x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_wr_i.gen_run[0]
@@ -1526,8 +1527,10 @@ x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_wr_i.gen_addr[3:0]
 x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_wr_i.full_cmd[2:0]
 @28
 x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_wr_i.pre_act[0]
+x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_wr_i.pre_write[0]
 x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_wr_i.enable_autopre[0]
-x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_wr_i.pre_read[0]
+@23
+x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_wr_i.rom_r[12:0]
 @200
 -
 @22
@@ -1535,7 +1538,6 @@ x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_wr_i.bank[2:0]
 x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_wr_i.clk[0]
 x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_wr_i.col[6:0]
 x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_wr_i.col_bank[9:0]
-x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_wr_i.cut_buf_rd[0]
 x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_wr_i.done[0]
 x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_wr_i.enable_act[0]
 x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_wr_i.enable_autopre[0]
@@ -1560,9 +1562,7 @@ x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_wr_i.num_rows_in_m1[5:0]
 x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_wr_i.num_rows_m1[5:0]
 x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_wr_i.pre_act[0]
 x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_wr_i.pre_done[0]
-x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_wr_i.pre_read[0]
 x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_wr_i.rom_cmd[1:0]
-x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_wr_i.rom_r[11:0]
 x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_wr_i.rom_skip[1:0]
 x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_wr_i.row[14:0]
 x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_wr_i.row_col_bank[24:0]
@@ -1580,7 +1580,7 @@ x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_wr_i.start_col[6:0]
 x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_wr_i.start_d[0]
 x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_wr_i.start_row[14:0]
 x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_wr_i.top_rc[21:0]
-@1401200
+@1000200
 -encod_tiled_wr
 @c00200
 -gtiled_ch4

@@ -879,7 +879,7 @@ module  mcntrl393 #(
     );
 `endif    
 
-`undef USE_CMD_ENCOD_TILED_32_WR
+`define USE_CMD_ENCOD_TILED_32_WR
 `ifdef USE_CMD_ENCOD_TILED_32_WR    
     cmd_encod_tiled_32_wr #(
         .ADDRESS_NUMBER(15),
