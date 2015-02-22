@@ -28,11 +28,20 @@ module  x393 #(
 
     parameter MCONTR_CMD_WR_ADDR =   'h0000, // AXI write to command sequence memory
     parameter MCONTR_BUF0_RD_ADDR =  'h0400, // AXI read address from buffer 0 (PS sequence, memory read) 
-    parameter MCONTR_BUF1_WR_ADDR =  'h0400, // AXI write address to buffer 1 (PS sequence, memory write)
-    parameter MCONTR_BUF2_RD_ADDR =  'h0800, // AXI read address from buffer 2 (PL sequence, scanline, memory read)
+    parameter MCONTR_BUF0_WR_ADDR =  'h0400, // AXI write address to buffer 0 (PS sequence, memory write)
+//    parameter MCONTR_BUF0_WR_ADDR =  'h0400, // AXI write address to buffer 1 (PS sequence, memory write)
+//    parameter MCONTR_BUF2_RD_ADDR =  'h0800, // AXI read address from buffer 2 (PL sequence, scanline, memory read)
+//    parameter MCONTR_BUF3_WR_ADDR =  'h0800, // AXI write address to buffer 3 (PL sequence, scanline, memory write)
+//    parameter MCONTR_BUF4_RD_ADDR =  'h0c00, // AXI read address from buffer 4 (PL sequence, tiles, memory read)
+//    parameter MCONTR_BUF5_WR_ADDR =  'h0c00, // AXI write address to buffer 5 (PL sequence, scanline, memory write)
+    parameter MCONTR_BUF1_RD_ADDR =  'h0800, // AXI read address from buffer 1 (PL sequence, scanline, memory read)
+    parameter MCONTR_BUF1_WR_ADDR =  'h0800, // AXI write address to buffer 1 (PL sequence, scanline, memory write)
+    parameter MCONTR_BUF2_RD_ADDR =  'h0c00, // AXI read address from buffer 2 (PL sequence, tiles, memory read)
+    parameter MCONTR_BUF2_WR_ADDR =  'h0c00, // AXI write address to buffer 2 (PL sequence, tiles, memory write)
+    parameter MCONTR_BUF3_RD_ADDR =  'h0800, // AXI read address from buffer 3 (PL sequence, scanline, memory read)
     parameter MCONTR_BUF3_WR_ADDR =  'h0800, // AXI write address to buffer 3 (PL sequence, scanline, memory write)
     parameter MCONTR_BUF4_RD_ADDR =  'h0c00, // AXI read address from buffer 4 (PL sequence, tiles, memory read)
-    parameter MCONTR_BUF5_WR_ADDR =  'h0c00, // AXI write address to buffer 5 (PL sequence, scanline, memory write)
+    parameter MCONTR_BUF4_WR_ADDR =  'h0c00, // AXI write address to buffer 4 (PL sequence, tiles, memory write)
 //command interface parameters
     parameter DLY_LD =            'h080,  // address to generate delay load
     parameter DLY_LD_MASK =       'h380,  // address mask to generate delay load
@@ -186,7 +195,7 @@ module  x393 #(
     parameter NUM_XFER_BITS=                       6,    // number of bits to specify transfer length
     parameter FRAME_WIDTH_BITS=                   13,    // Maximal frame width - 8-word (16 bytes) bursts 
     parameter FRAME_HEIGHT_BITS=                  16,    // Maximal frame height 
-    parameter MCNTRL_SCANLINE_CHN2_ADDR=         'h120,
+    parameter MCNTRL_SCANLINE_CHN1_ADDR=         'h120,
     parameter MCNTRL_SCANLINE_CHN3_ADDR=         'h130,
     parameter MCNTRL_SCANLINE_MASK=              'h3f0, // both channels 0 and 1
     parameter MCNTRL_SCANLINE_MODE=              'h0,   // set mode register: {extra_pages[1:0],enable,!reset}
@@ -199,17 +208,18 @@ module  x393 #(
                                                         // Start XY can be used when read command to start from the middle
                                                         // TODO: Add number of blocks to R/W? (blocks can be different) - total length?
                                                         // Read back current address (for debugging)?
-    parameter MCNTRL_SCANLINE_STATUS_REG_CHN2_ADDR=   'h4,
-    parameter MCNTRL_SCANLINE_STATUS_REG_CHN3_ADDR=   'h5,
+    parameter MCNTRL_SCANLINE_STATUS_REG_CHN1_ADDR=   'h4,
+    parameter MCNTRL_SCANLINE_STATUS_REG_CHN3_ADDR=   'h6,
     parameter MCNTRL_SCANLINE_PENDING_CNTR_BITS=   2,    // Number of bits to count pending trasfers, currently 2 is enough, but may increase
                                                         // if memory controller will allow programming several sequences in advance to
                                                         // spread long-programming (tiled) over fast-programming (linear) requests.
                                                         // But that should not be too big to maintain 2-level priorities
     
+    parameter MCNTRL_SCANLINE_FRAME_PAGE_RESET =1'b0, // reset internal page number to zero at the frame start (false - only when hard/soft reset)                                                     
     parameter MAX_TILE_WIDTH=                   6,     // number of bits to specify maximal tile (width-1) (6 -> 64)
     parameter MAX_TILE_HEIGHT=                  6,     // number of bits to specify maximal tile (height-1) (6 -> 64)
+    parameter MCNTRL_TILED_CHN2_ADDR=       'h140,
     parameter MCNTRL_TILED_CHN4_ADDR=       'h140,
-    parameter MCNTRL_TILED_CHN5_ADDR=       'h140,
     parameter MCNTRL_TILED_MASK=            'h3f0, // both channels 0 and 1
     parameter MCNTRL_TILED_MODE=            'h0,   // set mode register: {extra_pages[1:0],write_mode,enable,!reset}
     parameter MCNTRL_TILED_STATUS_CNTRL=    'h1,   // control status reporting
@@ -222,7 +232,8 @@ module  x393 #(
                                                       // TODO: Add number of blocks to R/W? (blocks can be different) - total length?
                                                       // Read back current address (for debugging)?
     parameter MCNTRL_TILED_TILE_WHS=         'h7,   // low word - 6-bit tile width in 8-bursts, high - tile height (0 - > 64)
-    parameter MCNTRL_TILED_STATUS_REG_CHN4_ADDR= 'h5,
+    parameter MCNTRL_TILED_STATUS_REG_CHN2_ADDR= 'h5,
+    parameter MCNTRL_TILED_STATUS_REG_CHN4_ADDR= 'h7,
     parameter MCNTRL_TILED_PENDING_CNTR_BITS=2,    // Number of bits to count pending trasfers, currently 2 is enough, but may increase
                                                    // if memory controller will allow programming several sequences in advance to
                                                    // spread long-programming (tiled) over fast-programming (linear) requests.
@@ -233,18 +244,18 @@ module  x393 #(
 // Channel test module parameters
     parameter MCNTRL_TEST01_ADDR=                 'h0f0,
     parameter MCNTRL_TEST01_MASK=                 'h3f0,
+    parameter MCNTRL_TEST01_CHN1_MODE=            'h2,   // set mode register for channel 5
+    parameter MCNTRL_TEST01_CHN1_STATUS_CNTRL=    'h3,   // control status reporting for channel 5
     parameter MCNTRL_TEST01_CHN2_MODE=            'h4,   // set mode register for channel 2
     parameter MCNTRL_TEST01_CHN2_STATUS_CNTRL=    'h5,   // control status reporting for channel 2
     parameter MCNTRL_TEST01_CHN3_MODE=            'h6,   // set mode register for channel 3
     parameter MCNTRL_TEST01_CHN3_STATUS_CNTRL=    'h7,   // control status reporting for channel 3
     parameter MCNTRL_TEST01_CHN4_MODE=            'h8,   // set mode register for channel 4
     parameter MCNTRL_TEST01_CHN4_STATUS_CNTRL=    'h9,   // control status reporting for channel 4
-    parameter MCNTRL_TEST01_CHN5_MODE=            'ha,   // set mode register for channel 5
-    parameter MCNTRL_TEST01_CHN5_STATUS_CNTRL=    'hb,   // control status reporting for channel 5
-    parameter MCNTRL_TEST01_STATUS_REG_CHN2_ADDR= 'h3c,  // status/readback register for channel 2
-    parameter MCNTRL_TEST01_STATUS_REG_CHN3_ADDR= 'h3d,  // status/readback register for channel 3
-    parameter MCNTRL_TEST01_STATUS_REG_CHN4_ADDR= 'h3e,  // status/readback register for channel 4
-    parameter MCNTRL_TEST01_STATUS_REG_CHN5_ADDR= 'h3f  // status/readback register for channel 4
+    parameter MCNTRL_TEST01_STATUS_REG_CHN1_ADDR= 'h3c,  // status/readback register for channel 2
+    parameter MCNTRL_TEST01_STATUS_REG_CHN2_ADDR= 'h3d,  // status/readback register for channel 3
+    parameter MCNTRL_TEST01_STATUS_REG_CHN3_ADDR= 'h3e,  // status/readback register for channel 4
+    parameter MCNTRL_TEST01_STATUS_REG_CHN4_ADDR= 'h3f  // status/readback register for channel 4
 )(
     // DDR3 interface
     output                       SDRST, // DDR3 reset (active low)
@@ -459,6 +470,12 @@ BUFG bufg_axi_aclk_i  (.O(axi_aclk),.I(fclk[0]));
 
 //mcntrl393_test01
 
+    wire                        frame_start_chn1; // input
+    wire                        next_page_chn1; // input
+    wire                        page_ready_chn1; // output
+    wire                        frame_done_chn1; // output
+    wire[FRAME_HEIGHT_BITS-1:0] line_unfinished_chn1; // output[15:0] 
+    wire                        suspend_chn1; // input
     wire                        frame_start_chn2;  // input
     wire                        next_page_chn2;    // input
     wire                        page_ready_chn2; // output
@@ -477,12 +494,6 @@ BUFG bufg_axi_aclk_i  (.O(axi_aclk),.I(fclk[0]));
     wire                        frame_done_chn4; // output
     wire[FRAME_HEIGHT_BITS-1:0] line_unfinished_chn4; // output[15:0]
     wire                        suspend_chn4; // input
-    wire                        frame_start_chn5; // input
-    wire                        next_page_chn5; // input
-    wire                        page_ready_chn5; // output
-    wire                        frame_done_chn5; // output
-    wire[FRAME_HEIGHT_BITS-1:0] line_unfinished_chn5; // output[15:0] 
-    wire                        suspend_chn5; // input
 
     assign cmd_mcontr_ad= cmd_root_ad;
     assign cmd_mcontr_stb=cmd_root_stb;
@@ -505,18 +516,18 @@ BUFG bufg_axi_aclk_i  (.O(axi_aclk),.I(fclk[0]));
         .MCNTRL_TEST01_ADDR                 (MCNTRL_TEST01_ADDR),
         .MCNTRL_TEST01_MASK                 (MCNTRL_TEST01_MASK),
         .FRAME_HEIGHT_BITS                  (FRAME_HEIGHT_BITS),
+        .MCNTRL_TEST01_CHN1_MODE            (MCNTRL_TEST01_CHN1_MODE),
+        .MCNTRL_TEST01_CHN1_STATUS_CNTRL    (MCNTRL_TEST01_CHN1_STATUS_CNTRL),
         .MCNTRL_TEST01_CHN2_MODE            (MCNTRL_TEST01_CHN2_MODE),
         .MCNTRL_TEST01_CHN2_STATUS_CNTRL    (MCNTRL_TEST01_CHN2_STATUS_CNTRL),
         .MCNTRL_TEST01_CHN3_MODE            (MCNTRL_TEST01_CHN3_MODE),
         .MCNTRL_TEST01_CHN3_STATUS_CNTRL    (MCNTRL_TEST01_CHN3_STATUS_CNTRL),
         .MCNTRL_TEST01_CHN4_MODE            (MCNTRL_TEST01_CHN4_MODE),
         .MCNTRL_TEST01_CHN4_STATUS_CNTRL    (MCNTRL_TEST01_CHN4_STATUS_CNTRL),
-        .MCNTRL_TEST01_CHN5_MODE            (MCNTRL_TEST01_CHN5_MODE),
-        .MCNTRL_TEST01_CHN5_STATUS_CNTRL    (MCNTRL_TEST01_CHN5_STATUS_CNTRL),
+        .MCNTRL_TEST01_STATUS_REG_CHN1_ADDR (MCNTRL_TEST01_STATUS_REG_CHN1_ADDR),
         .MCNTRL_TEST01_STATUS_REG_CHN2_ADDR (MCNTRL_TEST01_STATUS_REG_CHN2_ADDR),
         .MCNTRL_TEST01_STATUS_REG_CHN3_ADDR (MCNTRL_TEST01_STATUS_REG_CHN3_ADDR),
-        .MCNTRL_TEST01_STATUS_REG_CHN4_ADDR (MCNTRL_TEST01_STATUS_REG_CHN4_ADDR),
-        .MCNTRL_TEST01_STATUS_REG_CHN5_ADDR (MCNTRL_TEST01_STATUS_REG_CHN5_ADDR)
+        .MCNTRL_TEST01_STATUS_REG_CHN4_ADDR (MCNTRL_TEST01_STATUS_REG_CHN4_ADDR)
     ) mcntrl393_test01_i (
         .rst(axi_rst), // input
         .mclk                 (mclk), // input
@@ -525,6 +536,12 @@ BUFG bufg_axi_aclk_i  (.O(axi_aclk),.I(fclk[0]));
         .status_ad            (status_test01_ad), // output[7:0] 
         .status_rq            (status_test01_rq), // output
         .status_start         (status_test01_start), // input
+        .frame_start_chn1     (frame_start_chn1), // output
+        .next_page_chn1       (next_page_chn1), // output
+        .page_ready_chn1      (page_ready_chn1), // input
+        .frame_done_chn1      (frame_done_chn1), // input
+        .line_unfinished_chn1 (line_unfinished_chn1), // input[15:0] 
+        .suspend_chn1         (suspend_chn1), // output
         .frame_start_chn2     (frame_start_chn2), // output
         .next_page_chn2       (next_page_chn2), // output
         .page_ready_chn2      (page_ready_chn2), // input
@@ -542,13 +559,7 @@ BUFG bufg_axi_aclk_i  (.O(axi_aclk),.I(fclk[0]));
         .page_ready_chn4      (page_ready_chn4), // input
         .frame_done_chn4      (frame_done_chn4), // input
         .line_unfinished_chn4 (line_unfinished_chn4), // input[15:0] 
-        .suspend_chn4         (suspend_chn4), // output
-        .frame_start_chn5     (frame_start_chn5), // output
-        .next_page_chn5       (next_page_chn5), // output
-        .page_ready_chn5      (page_ready_chn5), // input
-        .frame_done_chn5      (frame_done_chn5), // input
-        .line_unfinished_chn5 (line_unfinished_chn5), // input[15:0] 
-        .suspend_chn5         (suspend_chn5) // output
+        .suspend_chn4         (suspend_chn4) // output
     );
 
 // Interface to channels to read/write memory (including 4 page BRAM buffers)
@@ -642,11 +653,16 @@ BUFG bufg_axi_aclk_i  (.O(axi_aclk),.I(fclk[0]));
         .MCONTR_RD_MASK                    (MCONTR_RD_MASK),
         .MCONTR_CMD_WR_ADDR                (MCONTR_CMD_WR_ADDR),
         .MCONTR_BUF0_RD_ADDR               (MCONTR_BUF0_RD_ADDR),
+        .MCONTR_BUF0_WR_ADDR               (MCONTR_BUF0_WR_ADDR),
+        .MCONTR_BUF1_RD_ADDR               (MCONTR_BUF1_RD_ADDR),
         .MCONTR_BUF1_WR_ADDR               (MCONTR_BUF1_WR_ADDR),
         .MCONTR_BUF2_RD_ADDR               (MCONTR_BUF2_RD_ADDR),
+        .MCONTR_BUF2_WR_ADDR               (MCONTR_BUF2_WR_ADDR),
+        .MCONTR_BUF3_RD_ADDR               (MCONTR_BUF3_RD_ADDR),
         .MCONTR_BUF3_WR_ADDR               (MCONTR_BUF3_WR_ADDR),
         .MCONTR_BUF4_RD_ADDR               (MCONTR_BUF4_RD_ADDR),
-        .MCONTR_BUF5_WR_ADDR               (MCONTR_BUF5_WR_ADDR),
+        .MCONTR_BUF4_WR_ADDR               (MCONTR_BUF4_WR_ADDR),
+       
         .DLY_LD                            (DLY_LD),
         .DLY_LD_MASK                       (DLY_LD_MASK),
         .MCONTR_PHY_0BIT_ADDR              (MCONTR_PHY_0BIT_ADDR),
@@ -726,7 +742,7 @@ BUFG bufg_axi_aclk_i  (.O(axi_aclk),.I(fclk[0]));
         .NUM_XFER_BITS                     (NUM_XFER_BITS),
         .FRAME_WIDTH_BITS                  (FRAME_WIDTH_BITS),
         .FRAME_HEIGHT_BITS                 (FRAME_HEIGHT_BITS),
-        .MCNTRL_SCANLINE_CHN2_ADDR         (MCNTRL_SCANLINE_CHN2_ADDR),
+        .MCNTRL_SCANLINE_CHN1_ADDR         (MCNTRL_SCANLINE_CHN1_ADDR),
         .MCNTRL_SCANLINE_CHN3_ADDR         (MCNTRL_SCANLINE_CHN3_ADDR),
         .MCNTRL_SCANLINE_MASK              (MCNTRL_SCANLINE_MASK),
         .MCNTRL_SCANLINE_MODE              (MCNTRL_SCANLINE_MODE),
@@ -736,13 +752,14 @@ BUFG bufg_axi_aclk_i  (.O(axi_aclk),.I(fclk[0]));
         .MCNTRL_SCANLINE_WINDOW_WH         (MCNTRL_SCANLINE_WINDOW_WH),
         .MCNTRL_SCANLINE_WINDOW_X0Y0       (MCNTRL_SCANLINE_WINDOW_X0Y0),
         .MCNTRL_SCANLINE_WINDOW_STARTXY    (MCNTRL_SCANLINE_WINDOW_STARTXY),
-        .MCNTRL_SCANLINE_STATUS_REG_CHN2_ADDR   (MCNTRL_SCANLINE_STATUS_REG_CHN2_ADDR),
+        .MCNTRL_SCANLINE_STATUS_REG_CHN1_ADDR   (MCNTRL_SCANLINE_STATUS_REG_CHN1_ADDR),
         .MCNTRL_SCANLINE_STATUS_REG_CHN3_ADDR   (MCNTRL_SCANLINE_STATUS_REG_CHN3_ADDR),
         .MCNTRL_SCANLINE_PENDING_CNTR_BITS (MCNTRL_SCANLINE_PENDING_CNTR_BITS),
+        .MCNTRL_SCANLINE_FRAME_PAGE_RESET  (MCNTRL_SCANLINE_FRAME_PAGE_RESET),
         .MAX_TILE_WIDTH                    (MAX_TILE_WIDTH),
         .MAX_TILE_HEIGHT                   (MAX_TILE_HEIGHT),
+        .MCNTRL_TILED_CHN2_ADDR            (MCNTRL_TILED_CHN2_ADDR),
         .MCNTRL_TILED_CHN4_ADDR            (MCNTRL_TILED_CHN4_ADDR),
-        .MCNTRL_TILED_CHN5_ADDR            (MCNTRL_TILED_CHN5_ADDR),
         .MCNTRL_TILED_MASK                 (MCNTRL_TILED_MASK),
         .MCNTRL_TILED_MODE                 (MCNTRL_TILED_MODE),
         .MCNTRL_TILED_STATUS_CNTRL         (MCNTRL_TILED_STATUS_CNTRL),
@@ -752,6 +769,7 @@ BUFG bufg_axi_aclk_i  (.O(axi_aclk),.I(fclk[0]));
         .MCNTRL_TILED_WINDOW_X0Y0          (MCNTRL_TILED_WINDOW_X0Y0),
         .MCNTRL_TILED_WINDOW_STARTXY       (MCNTRL_TILED_WINDOW_STARTXY),
         .MCNTRL_TILED_TILE_WHS             (MCNTRL_TILED_TILE_WHS),
+        .MCNTRL_TILED_STATUS_REG_CHN2_ADDR (MCNTRL_TILED_STATUS_REG_CHN2_ADDR),
         .MCNTRL_TILED_STATUS_REG_CHN4_ADDR (MCNTRL_TILED_STATUS_REG_CHN4_ADDR),
         .MCNTRL_TILED_PENDING_CNTR_BITS    (MCNTRL_TILED_PENDING_CNTR_BITS),
         .MCNTRL_TILED_FRAME_PAGE_RESET     (MCNTRL_TILED_FRAME_PAGE_RESET),
@@ -781,6 +799,12 @@ BUFG bufg_axi_aclk_i  (.O(axi_aclk),.I(fclk[0]));
         .axird_rdata          (mcntrl_axird_rdata), // output[31:0]
         .axird_selected       (mcntrl_axird_selected), // output 
  //TODO:        
+        .frame_start_chn1     (frame_start_chn1), // input
+        .next_page_chn1       (next_page_chn1), // input
+        .page_ready_chn1      (page_ready_chn1), // output
+        .frame_done_chn1      (frame_done_chn1), // output
+        .line_unfinished_chn1 (line_unfinished_chn1), // output[15:0] 
+        .suspend_chn1         (suspend_chn1), // input
         .frame_start_chn2     (frame_start_chn2), // input
         .next_page_chn2       (next_page_chn2), // input
         .page_ready_chn2      (page_ready_chn2), // output
@@ -799,12 +823,6 @@ BUFG bufg_axi_aclk_i  (.O(axi_aclk),.I(fclk[0]));
         .frame_done_chn4      (frame_done_chn4), // output
         .line_unfinished_chn4 (line_unfinished_chn4), // output[15:0]
         .suspend_chn4         (suspend_chn4), // input
-        .frame_start_chn5     (frame_start_chn5), // input
-        .next_page_chn5       (next_page_chn5), // input
-        .page_ready_chn5      (page_ready_chn5), // output
-        .frame_done_chn5      (frame_done_chn5), // output
-        .line_unfinished_chn5 (line_unfinished_chn5), // output[15:0] 
-        .suspend_chn5         (suspend_chn5), // input
 
         .SDRST                (SDRST), // output
         .SDCLK                (SDCLK), // output

@@ -23,11 +23,20 @@
 
     parameter MCONTR_CMD_WR_ADDR =   'h0000, // AXI write to command sequence memory
     parameter MCONTR_BUF0_RD_ADDR =  'h0400, // AXI read address from buffer 0 (PS sequence, memory read) 
-    parameter MCONTR_BUF1_WR_ADDR =  'h0400, // AXI write address to buffer 1 (PS sequence, memory write)
-    parameter MCONTR_BUF2_RD_ADDR =  'h0800, // AXI read address from buffer 2 (PL sequence, scanline, memory read)
+    parameter MCONTR_BUF0_WR_ADDR =  'h0400, // AXI write address to buffer 0 (PS sequence, memory write)
+//    parameter MCONTR_BUF0_WR_ADDR =  'h0400, // AXI write address to buffer 1 (PS sequence, memory write)
+//    parameter MCONTR_BUF2_RD_ADDR =  'h0800, // AXI read address from buffer 2 (PL sequence, scanline, memory read)
+//    parameter MCONTR_BUF3_WR_ADDR =  'h0800, // AXI write address to buffer 3 (PL sequence, scanline, memory write)
+//    parameter MCONTR_BUF4_RD_ADDR =  'h0c00, // AXI read address from buffer 4 (PL sequence, tiles, memory read)
+//    parameter MCONTR_BUF5_WR_ADDR =  'h0c00, // AXI write address to buffer 5 (PL sequence, scanline, memory write)
+    parameter MCONTR_BUF1_RD_ADDR =  'h0800, // AXI read address from buffer 1 (PL sequence, scanline, memory read)
+    parameter MCONTR_BUF1_WR_ADDR =  'h0800, // AXI write address to buffer 1 (PL sequence, scanline, memory write)
+    parameter MCONTR_BUF2_RD_ADDR =  'h0c00, // AXI read address from buffer 2 (PL sequence, tiles, memory read)
+    parameter MCONTR_BUF2_WR_ADDR =  'h0c00, // AXI write address to buffer 2 (PL sequence, tiles, memory write)
+    parameter MCONTR_BUF3_RD_ADDR =  'h0800, // AXI read address from buffer 3 (PL sequence, scanline, memory read)
     parameter MCONTR_BUF3_WR_ADDR =  'h0800, // AXI write address to buffer 3 (PL sequence, scanline, memory write)
     parameter MCONTR_BUF4_RD_ADDR =  'h0c00, // AXI read address from buffer 4 (PL sequence, tiles, memory read)
-    parameter MCONTR_BUF5_WR_ADDR =  'h0c00, // AXI write address to buffer 5 (PL sequence, scanline, memory write)
+    parameter MCONTR_BUF4_WR_ADDR =  'h0c00, // AXI write address to buffer 4 (PL sequence, tiles, memory write)
 //command interface parameters
     parameter DLY_LD =            'h080,  // address to generate delay load
     parameter DLY_LD_MASK =       'h380,  // address mask to generate delay load
@@ -181,7 +190,7 @@
     parameter NUM_XFER_BITS=                       6,    // number of bits to specify transfer length
     parameter FRAME_WIDTH_BITS=                   13,    // Maximal frame width - 8-word (16 bytes) bursts 
     parameter FRAME_HEIGHT_BITS=                  16,    // Maximal frame height 
-    parameter MCNTRL_SCANLINE_CHN2_ADDR=         'h120,
+    parameter MCNTRL_SCANLINE_CHN1_ADDR=         'h120,
     parameter MCNTRL_SCANLINE_CHN3_ADDR=         'h130,
     parameter MCNTRL_SCANLINE_MASK=              'h3f0, // both channels 0 and 1
     parameter MCNTRL_SCANLINE_MODE=              'h0,   // set mode register: {extra_pages[1:0],enable,!reset}
@@ -194,17 +203,18 @@
                                                         // Start XY can be used when read command to start from the middle
                                                         // TODO: Add number of blocks to R/W? (blocks can be different) - total length?
                                                         // Read back current address (for debugging)?
-    parameter MCNTRL_SCANLINE_STATUS_REG_CHN2_ADDR=   'h4,
-    parameter MCNTRL_SCANLINE_STATUS_REG_CHN3_ADDR=   'h5,
+    parameter MCNTRL_SCANLINE_STATUS_REG_CHN1_ADDR=   'h4,
+    parameter MCNTRL_SCANLINE_STATUS_REG_CHN3_ADDR=   'h6,
     parameter MCNTRL_SCANLINE_PENDING_CNTR_BITS=   2,    // Number of bits to count pending trasfers, currently 2 is enough, but may increase
                                                         // if memory controller will allow programming several sequences in advance to
                                                         // spread long-programming (tiled) over fast-programming (linear) requests.
                                                         // But that should not be too big to maintain 2-level priorities
     
+    parameter MCNTRL_SCANLINE_FRAME_PAGE_RESET =1'b0, // reset internal page number to zero at the frame start (false - only when hard/soft reset)                                                     
     parameter MAX_TILE_WIDTH=                   6,     // number of bits to specify maximal tile (width-1) (6 -> 64)
     parameter MAX_TILE_HEIGHT=                  6,     // number of bits to specify maximal tile (height-1) (6 -> 64)
+    parameter MCNTRL_TILED_CHN2_ADDR=       'h140,
     parameter MCNTRL_TILED_CHN4_ADDR=       'h140,
-    parameter MCNTRL_TILED_CHN5_ADDR=       'h150,
     parameter MCNTRL_TILED_MASK=            'h3f0, // both channels 0 and 1
     parameter MCNTRL_TILED_MODE=            'h0,   // set mode register: {extra_pages[1:0],write_mode,enable,!reset}
     parameter MCNTRL_TILED_STATUS_CNTRL=    'h1,   // control status reporting
@@ -217,7 +227,8 @@
                                                       // TODO: Add number of blocks to R/W? (blocks can be different) - total length?
                                                       // Read back current address (for debugging)?
     parameter MCNTRL_TILED_TILE_WHS=         'h7,   // low word - 6-bit tile width in 8-bursts, high - tile height (0 - > 64)
-    parameter MCNTRL_TILED_STATUS_REG_CHN4_ADDR= 'h6,
+    parameter MCNTRL_TILED_STATUS_REG_CHN2_ADDR= 'h5,
+    parameter MCNTRL_TILED_STATUS_REG_CHN4_ADDR= 'h7,
     parameter MCNTRL_TILED_PENDING_CNTR_BITS=2,    // Number of bits to count pending trasfers, currently 2 is enough, but may increase
                                                    // if memory controller will allow programming several sequences in advance to
                                                    // spread long-programming (tiled) over fast-programming (linear) requests.
@@ -228,16 +239,16 @@
 // Channel test module parameters
     parameter MCNTRL_TEST01_ADDR=                 'h0f0,
     parameter MCNTRL_TEST01_MASK=                 'h3f0,
+    parameter MCNTRL_TEST01_CHN1_MODE=            'h2,   // set mode register for channel 5
+    parameter MCNTRL_TEST01_CHN1_STATUS_CNTRL=    'h3,   // control status reporting for channel 5
     parameter MCNTRL_TEST01_CHN2_MODE=            'h4,   // set mode register for channel 2
     parameter MCNTRL_TEST01_CHN2_STATUS_CNTRL=    'h5,   // control status reporting for channel 2
     parameter MCNTRL_TEST01_CHN3_MODE=            'h6,   // set mode register for channel 3
     parameter MCNTRL_TEST01_CHN3_STATUS_CNTRL=    'h7,   // control status reporting for channel 3
     parameter MCNTRL_TEST01_CHN4_MODE=            'h8,   // set mode register for channel 4
     parameter MCNTRL_TEST01_CHN4_STATUS_CNTRL=    'h9,   // control status reporting for channel 4
-    parameter MCNTRL_TEST01_CHN5_MODE=            'ha,   // set mode register for channel 5
-    parameter MCNTRL_TEST01_CHN5_STATUS_CNTRL=    'hb,   // control status reporting for channel 5
-    parameter MCNTRL_TEST01_STATUS_REG_CHN2_ADDR= 'h3c,  // status/readback register for channel 2
-    parameter MCNTRL_TEST01_STATUS_REG_CHN3_ADDR= 'h3d,  // status/readback register for channel 3
-    parameter MCNTRL_TEST01_STATUS_REG_CHN4_ADDR= 'h3e,  // status/readback register for channel 4
-    parameter MCNTRL_TEST01_STATUS_REG_CHN5_ADDR= 'h3f  // status/readback register for channel 4
+    parameter MCNTRL_TEST01_STATUS_REG_CHN1_ADDR= 'h3c,  // status/readback register for channel 2
+    parameter MCNTRL_TEST01_STATUS_REG_CHN2_ADDR= 'h3d,  // status/readback register for channel 3
+    parameter MCNTRL_TEST01_STATUS_REG_CHN3_ADDR= 'h3e,  // status/readback register for channel 4
+    parameter MCNTRL_TEST01_STATUS_REG_CHN4_ADDR= 'h3f  // status/readback register for channel 4
     

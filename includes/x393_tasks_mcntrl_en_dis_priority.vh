@@ -57,9 +57,24 @@ endtask
 task enable_memcntrl_channels;
     input [15:0] chnen; // bit-per-channel, 1 - enable;
     begin
+        ENABLED_CHANNELS = chnen; // currently enabled memory channels
         write_contol_register(MCONTR_TOP_16BIT_ADDR +  MCONTR_TOP_16BIT_CHN_EN, {16'b0,chnen});
     end
 endtask
+
+task enable_memcntrl_en_dis;
+    input [3:0] chn;
+    input       en;
+    begin
+        if (en) begin
+            ENABLED_CHANNELS = ENABLED_CHANNELS | (1<<chn);
+        end else begin
+            ENABLED_CHANNELS = ENABLED_CHANNELS & ~(1<<chn);
+        end
+        write_contol_register(MCONTR_TOP_16BIT_ADDR +  MCONTR_TOP_16BIT_CHN_EN, {16'b0,ENABLED_CHANNELS});
+    end
+endtask
+
 
 task configure_channel_priority;
     input [ 3:0] chn;

@@ -27,18 +27,18 @@
 // Disabled already passed test to speedup simulation
 //`define TEST_WRITE_LEVELLING 1
 //`define TEST_READ_PATTERN 1
-//`define TEST_WRITE_BLOCK 1
-//`define TEST_READ_BLOCK 1
+`define TEST_WRITE_BLOCK 1
+`define TEST_READ_BLOCK 1
 
 
 //`define TEST_SCANLINE_WRITE 1
     `define TEST_SCANLINE_WRITE_WAIT 1 // wait TEST_SCANLINE_WRITE finished (frame_done)
 //`define TEST_SCANLINE_READ  1
     `define TEST_READ_SHOW  1
-`define TEST_TILED_WRITE  1
+//`define TEST_TILED_WRITE  1
     `define TEST_TILED_WRITE_WAIT 1 // wait TEST_SCANLINE_WRITE finished (frame_done)
 
-`define TEST_TILED_READ  1
+//`define TEST_TILED_READ  1
 
 
 module  x393_testbench01 #(
@@ -193,6 +193,7 @@ module  x393_testbench01 #(
   wire        bready;
   integer     NUM_WORDS_READ;
   integer     NUM_WORDS_EXPECTED;
+  reg  [15:0] ENABLED_CHANNELS = 0; // currently enabled memory channels
 //  integer     SCANLINE_CUR_X;
 //  integer     SCANLINE_CUR_Y;
   wire AXI_RD_EMPTY=NUM_WORDS_READ==NUM_WORDS_EXPECTED; //SuppressThisWarning VEditor : may be unused, just for simulation
@@ -322,285 +323,47 @@ always #(CLKIN_PERIOD/2) CLK <= ~CLK;
     enable_refresh(1);
     axi_set_dqs_odelay('h78); //??? dafaults - wrong?
     
-`ifdef TEST_WRITE_LEVELLING    
-// Set special values for DQS idelay for write leveling
-        wait_ps_pio_done(DEFAULT_STATUS_MODE); // not no interrupt running cycle - delays are changed immediately
-        axi_set_dqs_idelay_wlv;
-// Set write buffer (from DDR3) WE signal delay for write leveling mode
-        axi_set_wbuf_delay(WBUF_DLY_WLV);
-        axi_set_dqs_odelay('h80); // 'h80 - inverted, 'h60 - not - 'h80 will cause warnings during simulation
-        schedule_ps_pio ( // shedule software-control memory operation (may need to check FIFO status first)
-                        WRITELEV_OFFSET,   // input [9:0] seq_addr; // sequence start address
-                        0,                 // input [1:0] page;     // buffer page number
-                        0,                 // input       urgent;   // high priority request (only for competion with other channels, wiil not pass in this FIFO)
-                        0,                // input       chn;      // channel buffer to use: 0 - memory read, 1 - memory write
-                        `PS_PIO_WAIT_COMPLETE );//  wait_complete; // Do not request a newe transaction from the scheduler until previous memory transaction is finished
-                        
-        wait_ps_pio_done(DEFAULT_STATUS_MODE); // wait previous memory transaction finished before changing delays (effective immediately)
-        read_block_buf_chn (0, 0, 32, 1 ); // chn=0, page=0, number of 32-bit words=32, wait_done
-//        @ (negedge rstb);
-        axi_set_dqs_odelay(DLY_DQS_ODELAY);
-        schedule_ps_pio ( // shedule software-control memory operation (may need to check FIFO status first)
-                        WRITELEV_OFFSET,   // input [9:0] seq_addr; // sequence start address
-                        1,                 // input [1:0] page;     // buffer page number
-                        0,                 // input       urgent;   // high priority request (only for competion with other channels, wiil not pass in this FIFO)
-                        0,                // input       chn;      // channel buffer to use: 0 - memory read, 1 - memory write
-                        `PS_PIO_WAIT_COMPLETE );//  wait_complete; // Do not request a newe transaction from the scheduler until previous memory transaction is finished
-        wait_ps_pio_done(DEFAULT_STATUS_MODE); // wait previous memory transaction finished before changing delays (effective immediately)
-        read_block_buf_chn (0, 1, 32, 1 ); // chn=0, page=1, number of 32-bit words=32, wait_done
-//    task wait_read_queue_empty; - alternative way to check fo empty read queue
-        
-//        @ (negedge rstb);
-        axi_set_dqs_idelay_nominal;
-//        axi_set_dqs_odelay_nominal;
-        axi_set_dqs_odelay('h78);
-        axi_set_wbuf_delay(WBUF_DLY_DFLT); //DFLT_WBUF_DELAY
+`ifdef TEST_WRITE_LEVELLING 
+    test_write_levelling;
 `endif
 `ifdef TEST_READ_PATTERN
-        schedule_ps_pio ( // shedule software-control memory operation (may need to check FIFO status first)
-                        READ_PATTERN_OFFSET,   // input [9:0] seq_addr; // sequence start address
-                        2,                     // input [1:0] page;     // buffer page number
-                        0,                     // input       urgent;   // high priority request (only for competion with other channels, wiil not pass in this FIFO)
-                        0,                    // input       chn;      // channel buffer to use: 0 - memory read, 1 - memory write
-                        `PS_PIO_WAIT_COMPLETE );//  wait_complete; // Do not request a newe transaction from the scheduler until previous memory transaction is finished
-        wait_ps_pio_done(DEFAULT_STATUS_MODE); // wait previous memory transaction finished before changing delays (effective immediately)
-        read_block_buf_chn (0, 2, 32, 1 ); // chn=0, page=2, number of 32-bit words=32, wait_done
+    test_read_pattern;
 `endif
 `ifdef TEST_WRITE_BLOCK
-//    write_block_buf_chn; // fill block memory - already set in set_up task
-        schedule_ps_pio ( // shedule software-control memory operation (may need to check FIFO status first)
-                        WRITE_BLOCK_OFFSET,    // input [9:0] seq_addr; // sequence start address
-                        0,                     // input [1:0] page;     // buffer page number
-                        0,                     // input       urgent;   // high priority request (only for competion with other channels, wiil not pass in this FIFO)
-                        1,                    // input       chn;      // channel buffer to use: 0 - memory read, 1 - memory write
-                        `PS_PIO_WAIT_COMPLETE );//  wait_complete; // Do not request a newe transaction from the scheduler until previous memory transaction is finished
-// tempoary - for debugging:
-//        wait_ps_pio_done(DEFAULT_STATUS_MODE); // wait previous memory transaction finished before changing delays (effective immediately)
-
+    test_write_block;
 `endif
 `ifdef TEST_READ_BLOCK
-        schedule_ps_pio ( // shedule software-control memory operation (may need to check FIFO status first)
-                        READ_BLOCK_OFFSET,   // input [9:0] seq_addr; // sequence start address
-                        3,                     // input [1:0] page;     // buffer page number
-                        0,                     // input       urgent;   // high priority request (only for competion with other channels, wiil not pass in this FIFO)
-                        0,                    // input       chn;      // channel buffer to use: 0 - memory read, 1 - memory write
-                        `PS_PIO_WAIT_COMPLETE );//  wait_complete; // Do not request a newe transaction from the scheduler until previous memory transaction is finished
-        schedule_ps_pio ( // shedule software-control memory operation (may need to check FIFO status first)
-                        READ_BLOCK_OFFSET,   // input [9:0] seq_addr; // sequence start address
-                        2,                     // input [1:0] page;     // buffer page number
-                        0,                     // input       urgent;   // high priority request (only for competion with other channels, wiil not pass in this FIFO)
-                        0,                    // input       chn;      // channel buffer to use: 0 - memory read, 1 - memory write
-                        `PS_PIO_WAIT_COMPLETE );//  wait_complete; // Do not request a newe transaction from the scheduler until previous memory transaction is finished
-        schedule_ps_pio ( // shedule software-control memory operation (may need to check FIFO status first)
-                        READ_BLOCK_OFFSET,   // input [9:0] seq_addr; // sequence start address
-                        1,                     // input [1:0] page;     // buffer page number
-                        0,                     // input       urgent;   // high priority request (only for competion with other channels, wiil not pass in this FIFO)
-                        0,                    // input       chn;      // channel buffer to use: 0 - memory read, 1 - memory write
-                        `PS_PIO_WAIT_COMPLETE );//  wait_complete; // Do not request a newe transaction from the scheduler until previous memory transaction is finished
-        wait_ps_pio_done(DEFAULT_STATUS_MODE); // wait previous memory transaction finished before changing delays (effective immediately)
-        read_block_buf_chn (0, 3, 256, 1 ); // chn=0, page=3, number of 32-bit words=256, wait_done
+    test_read_block;
 `endif
 `ifdef TEST_SCANLINE_WRITE
-    write_contol_register(MCNTRL_SCANLINE_CHN3_ADDR + MCNTRL_SCANLINE_STARTADDR,        FRAME_START_ADDRESS); // RA=80, CA=0, BA=0 22-bit frame start address (3 CA LSBs==0. BA==0) 
-    write_contol_register(MCNTRL_SCANLINE_CHN3_ADDR + MCNTRL_SCANLINE_FRAME_FULL_WIDTH, FRAME_FULL_WIDTH);
-    write_contol_register(MCNTRL_SCANLINE_CHN3_ADDR + MCNTRL_SCANLINE_WINDOW_WH,        WINDOW_WIDTH + (WINDOW_HEIGHT<<16));
-    write_contol_register(MCNTRL_SCANLINE_CHN3_ADDR + MCNTRL_SCANLINE_WINDOW_X0Y0,      WINDOW_X0+ (WINDOW_Y0<<16));
-    write_contol_register(MCNTRL_SCANLINE_CHN3_ADDR + MCNTRL_SCANLINE_WINDOW_STARTXY,   SCANLINE_STARTX+(SCANLINE_STARTY<<16));
-    write_contol_register(MCNTRL_SCANLINE_CHN3_ADDR + MCNTRL_SCANLINE_MODE,             {28'b0,SCANLINE_EXTRA_PAGES,2'b11});// set mode register: {extra_pages[1:0],enable,!reset}
-
-    configure_channel_priority(3,0);    // lowest priority channel 3
-    enable_memcntrl_channels(16'h000b); // channels 0,1,3 are enabled
-    write_contol_register(MCNTRL_TEST01_ADDR + MCNTRL_TEST01_CHN3_MODE,            TEST01_START_FRAME);
-    for (ii=0;ii<TEST_INITIAL_BURST;ii=ii+1) begin
-// VDT bugs: 1:does not propagate undefined width through ?:, 2: - does not allow to connect it to task integer input, 3: shows integer input width as 1  
-        SCANLINE_XFER_SIZE= ((SCANLINE_PAGES_PER_ROW>1)?
-                (
-                    (
-                        ((ii % SCANLINE_PAGES_PER_ROW) < (SCANLINE_PAGES_PER_ROW-1))?
-                        
-                        (1<<NUM_XFER_BITS):
-                        (WINDOW_WIDTH % (1<<NUM_XFER_BITS))
-                    )
-                ):
-                (WINDOW_WIDTH));
-        write_block_scanline_chn(
-            3,
-            (ii & 3),
-            SCANLINE_XFER_SIZE,
-            WINDOW_X0 + ((ii % SCANLINE_PAGES_PER_ROW)<<NUM_XFER_BITS),  // SCANLINE_CUR_X,
-            WINDOW_Y0 + (ii / SCANLINE_PAGES_PER_ROW)); // SCANLINE_CUR_Y);\
-            
-    end
-    for (ii=0;ii< (WINDOW_HEIGHT * SCANLINE_PAGES_PER_ROW) ;ii = ii+1) begin // here assuming 1 page per line
-        if (ii >= TEST_INITIAL_BURST) begin // wait page ready and fill page after first 4 are filled
-            wait_status_condition (
-                MCNTRL_TEST01_STATUS_REG_CHN3_ADDR,
-                MCNTRL_TEST01_ADDR + MCNTRL_TEST01_CHN3_STATUS_CNTRL,
-                DEFAULT_STATUS_MODE,
-                (ii-TEST_INITIAL_BURST)<<16, // 4-bit page number
-                'hf << 16,  // mask for the 4-bit page number
-                1); // not equal to
-//            write_block_scanline_chn(3, (ii & 3), WINDOW_WIDTH, WINDOW_X0,WINDOW_Y0+ii);
-        SCANLINE_XFER_SIZE= ((SCANLINE_PAGES_PER_ROW>1)?
-                (
-                    (
-                        ((ii % SCANLINE_PAGES_PER_ROW) < (SCANLINE_PAGES_PER_ROW-1))?
-                        
-                        (1<<NUM_XFER_BITS):
-                        (WINDOW_WIDTH % (1<<NUM_XFER_BITS))
-                    )
-                ):
-                (WINDOW_WIDTH));
-        write_block_scanline_chn(
-            3,
-            (ii & 3),
-            SCANLINE_XFER_SIZE,
-            WINDOW_X0 + ((ii % SCANLINE_PAGES_PER_ROW)<<NUM_XFER_BITS),  // SCANLINE_CUR_X,
-            WINDOW_Y0 + (ii / SCANLINE_PAGES_PER_ROW)); // SCANLINE_CUR_Y);
-        end
-        write_contol_register(MCNTRL_TEST01_ADDR + MCNTRL_TEST01_CHN3_MODE,            TEST01_NEXT_PAGE);
-    end
-    `ifdef TEST_SCANLINE_WRITE_WAIT
-            wait_status_condition ( // may also be read directly from the same bit of mctrl_linear_rw (address=5) status
-                MCNTRL_TEST01_STATUS_REG_CHN3_ADDR,
-                MCNTRL_TEST01_ADDR + MCNTRL_TEST01_CHN3_STATUS_CNTRL,
-                DEFAULT_STATUS_MODE,
-                2 << STATUS_2LSB_SHFT, // bit 24 - busy, bit 25 - frame done
-                2 << STATUS_2LSB_SHFT,  // mask for the 4-bit page number
-                0); // equal to
-    `endif
+    test_scanline_write(
+        1, // valid: 1 or 3 input            [3:0] channel;
+        SCANLINE_EXTRA_PAGES, // input            [1:0] extra_pages;
+        1); // input                  wait_done;
 `endif
 `ifdef TEST_SCANLINE_READ
-   // program to the
-    write_contol_register(MCNTRL_SCANLINE_CHN2_ADDR + MCNTRL_SCANLINE_STARTADDR,        FRAME_START_ADDRESS); // RA=80, CA=0, BA=0 22-bit frame start address (3 CA LSBs==0. BA==0) 
-    write_contol_register(MCNTRL_SCANLINE_CHN2_ADDR + MCNTRL_SCANLINE_FRAME_FULL_WIDTH, FRAME_FULL_WIDTH);
-    write_contol_register(MCNTRL_SCANLINE_CHN2_ADDR + MCNTRL_SCANLINE_WINDOW_WH,        WINDOW_WIDTH + (WINDOW_HEIGHT<<16));
-    write_contol_register(MCNTRL_SCANLINE_CHN2_ADDR + MCNTRL_SCANLINE_WINDOW_X0Y0,      WINDOW_X0+ (WINDOW_Y0<<16));
-    write_contol_register(MCNTRL_SCANLINE_CHN2_ADDR + MCNTRL_SCANLINE_WINDOW_STARTXY,   SCANLINE_STARTX+(SCANLINE_STARTY<<16));
-    write_contol_register(MCNTRL_SCANLINE_CHN2_ADDR + MCNTRL_SCANLINE_MODE,             {28'b0,SCANLINE_EXTRA_PAGES,2'b11});// set mode register: {extra_pages[1:0],enable,!reset}
-
-    configure_channel_priority(2,0);    // lowest priority channel 2
-    enable_memcntrl_channels(16'h000f); // channels 0,1,2,3 are enabled
-
-    write_contol_register(MCNTRL_TEST01_ADDR + MCNTRL_TEST01_CHN2_MODE,            TEST01_START_FRAME);
-    for (ii=0;ii<(WINDOW_HEIGHT * SCANLINE_PAGES_PER_ROW);ii = ii+1) begin
-        SCANLINE_XFER_SIZE= ((SCANLINE_PAGES_PER_ROW>1)?
-                (
-                    (
-                        ((ii % SCANLINE_PAGES_PER_ROW) < (SCANLINE_PAGES_PER_ROW-1))?
-                        
-                        (1<<NUM_XFER_BITS):
-                        (WINDOW_WIDTH % (1<<NUM_XFER_BITS))
-                    )
-                ):
-                (WINDOW_WIDTH));
-    
-            wait_status_condition (
-                MCNTRL_TEST01_STATUS_REG_CHN2_ADDR,
-                MCNTRL_TEST01_ADDR + MCNTRL_TEST01_CHN2_STATUS_CNTRL,
-                DEFAULT_STATUS_MODE,
-                (ii) << 16, // -TEST_INITIAL_BURST)<<16, // 4-bit page number
-                'hf << 16,  // mask for the 4-bit page number
-                1); // not equal to
-// read block (if needed), for now just sikip   
-        `ifdef TEST_READ_SHOW
-            read_block_buf_chn (
-                2,
-                (ii & 3),
-                SCANLINE_XFER_SIZE <<2,
-                1 ); // chn=0, page=3, number of 32-bit words=256, wait_done
-        `endif             
-        write_contol_register(MCNTRL_TEST01_ADDR + MCNTRL_TEST01_CHN2_MODE,            TEST01_NEXT_PAGE);
-    end
+    test_scanline_read (
+        1, // valid: 1 or 3 input            [3:0] channel;
+        SCANLINE_EXTRA_PAGES, // input            [1:0] extra_pages;
+        1); // input                  show_data;
 `endif
 
 `ifdef TEST_TILED_WRITE
-   // program to the
-    write_contol_register(MCNTRL_TILED_CHN5_ADDR + MCNTRL_TILED_STARTADDR,        FRAME_START_ADDRESS); // RA=80, CA=0, BA=0 22-bit frame start address (3 CA LSBs==0. BA==0) 
-    write_contol_register(MCNTRL_TILED_CHN5_ADDR + MCNTRL_TILED_FRAME_FULL_WIDTH, FRAME_FULL_WIDTH);
-    write_contol_register(MCNTRL_TILED_CHN5_ADDR + MCNTRL_TILED_WINDOW_WH,        WINDOW_WIDTH + (WINDOW_HEIGHT<<16));
-    write_contol_register(MCNTRL_TILED_CHN5_ADDR + MCNTRL_TILED_WINDOW_X0Y0,      WINDOW_X0+ (WINDOW_Y0<<16));
-    write_contol_register(MCNTRL_TILED_CHN5_ADDR + MCNTRL_TILED_WINDOW_STARTXY,   TILED_STARTX+(TILED_STARTY<<16));
-    write_contol_register(MCNTRL_TILED_CHN5_ADDR + MCNTRL_TILED_TILE_WHS,         TILE_WIDTH+(TILE_HEIGHT<<8)+(TILE_VSTEP<<16));
-    write_contol_register(MCNTRL_TILED_CHN5_ADDR + MCNTRL_TILED_MODE,             {27'b0,TILED_KEEP_OPEN,TILED_EXTRA_PAGES,2'b11});// set mode register: {extra_pages[1:0],enable,!reset}
-
-    configure_channel_priority(5,0);    // lowest priority channel 5
-    enable_memcntrl_channels(16'h002f); // channels 0,1,2,3 and 5 are enabled
-
-    write_contol_register(MCNTRL_TEST01_ADDR + MCNTRL_TEST01_CHN5_MODE,            TEST01_START_FRAME);
-    
-    for (ii=0;ii<TEST_INITIAL_BURST;ii=ii+1) begin
-        write_block_scanline_chn( // TODO: Make a different tile buffer data, matching the order
-            5, // channel
-            (ii & 3),
-            TILE_SIZE,
-            WINDOW_X0 + ((ii % TILES_PER_ROW) * TILE_WIDTH),
-            WINDOW_Y0 + (ii / TILE_ROWS_PER_WINDOW)); // SCANLINE_CUR_Y);\
-    end
-    
-    for (ii=0;ii<(TILES_PER_ROW * TILE_ROWS_PER_WINDOW);ii = ii+1) begin
-            if (ii >= TEST_INITIAL_BURST) begin // wait page ready and fill page after first 4 are filled
-                wait_status_condition (
-                    MCNTRL_TEST01_STATUS_REG_CHN5_ADDR,
-                    MCNTRL_TEST01_ADDR + MCNTRL_TEST01_CHN5_STATUS_CNTRL,
-                    DEFAULT_STATUS_MODE,
-                    (ii-TEST_INITIAL_BURST)<<16, // 4-bit page number
-                    'hf << 16,  // mask for the 4-bit page number
-                    1); // not equal to
-                write_block_scanline_chn( // TODO: Make a different tile buffer data, matching the order
-                    5, // channel
-                    (ii & 3),
-                    TILE_SIZE,
-                    WINDOW_X0 + ((ii % TILES_PER_ROW) * TILE_WIDTH),
-                    WINDOW_Y0 + (ii / TILE_ROWS_PER_WINDOW)); // SCANLINE_CUR_Y);\
-            end
-        write_contol_register(MCNTRL_TEST01_ADDR + MCNTRL_TEST01_CHN5_MODE,            TEST01_NEXT_PAGE);
-    end
-    `ifdef TEST_TILED_WRITE_WAIT
-            wait_status_condition ( // may also be read directly from the same bit of mctrl_linear_rw (address=5) status
-                MCNTRL_TEST01_STATUS_REG_CHN5_ADDR,
-                MCNTRL_TEST01_ADDR + MCNTRL_TEST01_CHN5_STATUS_CNTRL,
-                DEFAULT_STATUS_MODE,
-                2 << STATUS_2LSB_SHFT, // bit 24 - busy, bit 25 - frame done
-                2 << STATUS_2LSB_SHFT,  // mask for the 4-bit page number
-                0); // equal to
-    `endif
+    test_tiled_write (
+         2,                 // [3:0] channel;
+         0,                 //       byte32;
+         TILED_KEEP_OPEN,   //       keep_open;
+         TILED_EXTRA_PAGES, //       extra_pages;
+         1);                //       wait_done;
 `endif
 
-
-
 `ifdef TEST_TILED_READ
-   // program to the
-    write_contol_register(MCNTRL_TILED_CHN4_ADDR + MCNTRL_TILED_STARTADDR,        FRAME_START_ADDRESS); // RA=80, CA=0, BA=0 22-bit frame start address (3 CA LSBs==0. BA==0) 
-    write_contol_register(MCNTRL_TILED_CHN4_ADDR + MCNTRL_TILED_FRAME_FULL_WIDTH, FRAME_FULL_WIDTH);
-    write_contol_register(MCNTRL_TILED_CHN4_ADDR + MCNTRL_TILED_WINDOW_WH,        WINDOW_WIDTH + (WINDOW_HEIGHT<<16));
-    write_contol_register(MCNTRL_TILED_CHN4_ADDR + MCNTRL_TILED_WINDOW_X0Y0,      WINDOW_X0+ (WINDOW_Y0<<16));
-    write_contol_register(MCNTRL_TILED_CHN4_ADDR + MCNTRL_TILED_WINDOW_STARTXY,   TILED_STARTX+(TILED_STARTY<<16));
-    write_contol_register(MCNTRL_TILED_CHN4_ADDR + MCNTRL_TILED_TILE_WHS,         TILE_WIDTH+(TILE_HEIGHT<<8)+(TILE_VSTEP<<16));
-    write_contol_register(MCNTRL_TILED_CHN4_ADDR + MCNTRL_TILED_MODE,             {27'b0,TILED_KEEP_OPEN,TILED_EXTRA_PAGES,2'b11});// set mode register: {extra_pages[1:0],enable,!reset}
-
-    configure_channel_priority(4,0);    // lowest priority channel 2
-    enable_memcntrl_channels(16'h003f); // channels 0,1,2,3,4 and 5 are enabled
-
-    write_contol_register(MCNTRL_TEST01_ADDR + MCNTRL_TEST01_CHN4_MODE,            TEST01_START_FRAME);
-    for (ii=0;ii<(TILES_PER_ROW * TILE_ROWS_PER_WINDOW);ii = ii+1) begin
-            wait_status_condition (
-                MCNTRL_TEST01_STATUS_REG_CHN4_ADDR,
-                MCNTRL_TEST01_ADDR + MCNTRL_TEST01_CHN4_STATUS_CNTRL,
-                DEFAULT_STATUS_MODE,
-                ii << 16, // -TEST_INITIAL_BURST)<<16, // 4-bit page number
-                'hf << 16,  // mask for the 4-bit page number
-                1); // not equal to
-// read block (if needed), for now just sikip   
-        `ifdef TEST_READ_SHOW
-            read_block_buf_chn (
-                4,                // channel
-                (ii & 3),         // page
-                TILE_SIZE << 2, // length in 32-bit words
-                1 ); // chn=4, page=?, number of 32-bit words=?, wait_done
-        `endif             
-        write_contol_register(MCNTRL_TEST01_ADDR + MCNTRL_TEST01_CHN4_MODE,            TEST01_NEXT_PAGE);
-    end
+    test_tiled_read (
+         2,                 // [3:0] channel;
+         0,                 //       byte32;
+         TILED_KEEP_OPEN,   //       keep_open;
+         TILED_EXTRA_PAGES, //       extra_pages;
+         1);                //       show_data;
 `endif
 
   #20000;
@@ -673,11 +436,15 @@ assign bresp=                              x393_i.ps7_i.MAXIGP0BRESP;
         .MCONTR_RD_MASK                    (MCONTR_RD_MASK),
         .MCONTR_CMD_WR_ADDR                (MCONTR_CMD_WR_ADDR),
         .MCONTR_BUF0_RD_ADDR               (MCONTR_BUF0_RD_ADDR),
+        .MCONTR_BUF0_WR_ADDR               (MCONTR_BUF0_WR_ADDR),
+        .MCONTR_BUF1_RD_ADDR               (MCONTR_BUF1_RD_ADDR),
         .MCONTR_BUF1_WR_ADDR               (MCONTR_BUF1_WR_ADDR),
         .MCONTR_BUF2_RD_ADDR               (MCONTR_BUF2_RD_ADDR),
+        .MCONTR_BUF2_WR_ADDR               (MCONTR_BUF2_WR_ADDR),
+        .MCONTR_BUF3_RD_ADDR               (MCONTR_BUF3_RD_ADDR),
         .MCONTR_BUF3_WR_ADDR               (MCONTR_BUF3_WR_ADDR),
         .MCONTR_BUF4_RD_ADDR               (MCONTR_BUF4_RD_ADDR),
-        .MCONTR_BUF5_WR_ADDR               (MCONTR_BUF5_WR_ADDR),
+        .MCONTR_BUF4_WR_ADDR               (MCONTR_BUF4_WR_ADDR),
         .DLY_LD                            (DLY_LD),
         .DLY_LD_MASK                       (DLY_LD_MASK),
         .MCONTR_PHY_0BIT_ADDR              (MCONTR_PHY_0BIT_ADDR),
@@ -780,7 +547,7 @@ assign bresp=                              x393_i.ps7_i.MAXIGP0BRESP;
         .NUM_XFER_BITS                     (NUM_XFER_BITS),
         .FRAME_WIDTH_BITS                  (FRAME_WIDTH_BITS),
         .FRAME_HEIGHT_BITS                 (FRAME_HEIGHT_BITS),
-        .MCNTRL_SCANLINE_CHN2_ADDR         (MCNTRL_SCANLINE_CHN2_ADDR),
+        .MCNTRL_SCANLINE_CHN1_ADDR         (MCNTRL_SCANLINE_CHN1_ADDR),
         .MCNTRL_SCANLINE_CHN3_ADDR         (MCNTRL_SCANLINE_CHN3_ADDR),
         .MCNTRL_SCANLINE_MASK              (MCNTRL_SCANLINE_MASK),
         .MCNTRL_SCANLINE_MODE              (MCNTRL_SCANLINE_MODE),
@@ -790,13 +557,14 @@ assign bresp=                              x393_i.ps7_i.MAXIGP0BRESP;
         .MCNTRL_SCANLINE_WINDOW_WH         (MCNTRL_SCANLINE_WINDOW_WH),
         .MCNTRL_SCANLINE_WINDOW_X0Y0       (MCNTRL_SCANLINE_WINDOW_X0Y0),
         .MCNTRL_SCANLINE_WINDOW_STARTXY    (MCNTRL_SCANLINE_WINDOW_STARTXY),
-        .MCNTRL_SCANLINE_STATUS_REG_CHN2_ADDR   (MCNTRL_SCANLINE_STATUS_REG_CHN2_ADDR),
+        .MCNTRL_SCANLINE_STATUS_REG_CHN1_ADDR   (MCNTRL_SCANLINE_STATUS_REG_CHN1_ADDR),
         .MCNTRL_SCANLINE_STATUS_REG_CHN3_ADDR   (MCNTRL_SCANLINE_STATUS_REG_CHN3_ADDR),
         .MCNTRL_SCANLINE_PENDING_CNTR_BITS (MCNTRL_SCANLINE_PENDING_CNTR_BITS),
+        .MCNTRL_SCANLINE_FRAME_PAGE_RESET  (MCNTRL_SCANLINE_FRAME_PAGE_RESET),
         .MAX_TILE_WIDTH                    (MAX_TILE_WIDTH),
         .MAX_TILE_HEIGHT                   (MAX_TILE_HEIGHT),
+        .MCNTRL_TILED_CHN2_ADDR            (MCNTRL_TILED_CHN2_ADDR),
         .MCNTRL_TILED_CHN4_ADDR            (MCNTRL_TILED_CHN4_ADDR),
-        .MCNTRL_TILED_CHN5_ADDR            (MCNTRL_TILED_CHN5_ADDR),
         .MCNTRL_TILED_MASK                 (MCNTRL_TILED_MASK),
         .MCNTRL_TILED_MODE                 (MCNTRL_TILED_MODE),
         .MCNTRL_TILED_STATUS_CNTRL         (MCNTRL_TILED_STATUS_CNTRL),
@@ -805,25 +573,26 @@ assign bresp=                              x393_i.ps7_i.MAXIGP0BRESP;
         .MCNTRL_TILED_WINDOW_WH            (MCNTRL_TILED_WINDOW_WH),
         .MCNTRL_TILED_WINDOW_X0Y0          (MCNTRL_TILED_WINDOW_X0Y0),
         .MCNTRL_TILED_WINDOW_STARTXY       (MCNTRL_TILED_WINDOW_STARTXY),
-        .MCNTRL_TILED_TILE_WHS              (MCNTRL_TILED_TILE_WHS),
+        .MCNTRL_TILED_TILE_WHS             (MCNTRL_TILED_TILE_WHS),
+        .MCNTRL_TILED_STATUS_REG_CHN2_ADDR (MCNTRL_TILED_STATUS_REG_CHN2_ADDR),
         .MCNTRL_TILED_STATUS_REG_CHN4_ADDR (MCNTRL_TILED_STATUS_REG_CHN4_ADDR),
         .MCNTRL_TILED_PENDING_CNTR_BITS    (MCNTRL_TILED_PENDING_CNTR_BITS),
         .MCNTRL_TILED_FRAME_PAGE_RESET     (MCNTRL_TILED_FRAME_PAGE_RESET),
         .BUFFER_DEPTH32                    (BUFFER_DEPTH32),
         .MCNTRL_TEST01_ADDR                 (MCNTRL_TEST01_ADDR),
         .MCNTRL_TEST01_MASK                 (MCNTRL_TEST01_MASK),
+        .MCNTRL_TEST01_CHN1_MODE            (MCNTRL_TEST01_CHN1_MODE),
+        .MCNTRL_TEST01_CHN1_STATUS_CNTRL    (MCNTRL_TEST01_CHN1_STATUS_CNTRL),
         .MCNTRL_TEST01_CHN2_MODE            (MCNTRL_TEST01_CHN2_MODE),
         .MCNTRL_TEST01_CHN2_STATUS_CNTRL    (MCNTRL_TEST01_CHN2_STATUS_CNTRL),
         .MCNTRL_TEST01_CHN3_MODE            (MCNTRL_TEST01_CHN3_MODE),
         .MCNTRL_TEST01_CHN3_STATUS_CNTRL    (MCNTRL_TEST01_CHN3_STATUS_CNTRL),
         .MCNTRL_TEST01_CHN4_MODE            (MCNTRL_TEST01_CHN4_MODE),
         .MCNTRL_TEST01_CHN4_STATUS_CNTRL    (MCNTRL_TEST01_CHN4_STATUS_CNTRL),
-        .MCNTRL_TEST01_CHN5_MODE            (MCNTRL_TEST01_CHN5_MODE),
-        .MCNTRL_TEST01_CHN5_STATUS_CNTRL    (MCNTRL_TEST01_CHN5_STATUS_CNTRL),
+        .MCNTRL_TEST01_STATUS_REG_CHN1_ADDR (MCNTRL_TEST01_STATUS_REG_CHN1_ADDR),
         .MCNTRL_TEST01_STATUS_REG_CHN2_ADDR (MCNTRL_TEST01_STATUS_REG_CHN2_ADDR),
         .MCNTRL_TEST01_STATUS_REG_CHN3_ADDR (MCNTRL_TEST01_STATUS_REG_CHN3_ADDR),
-        .MCNTRL_TEST01_STATUS_REG_CHN4_ADDR (MCNTRL_TEST01_STATUS_REG_CHN4_ADDR),
-        .MCNTRL_TEST01_STATUS_REG_CHN5_ADDR (MCNTRL_TEST01_STATUS_REG_CHN5_ADDR)
+        .MCNTRL_TEST01_STATUS_REG_CHN4_ADDR (MCNTRL_TEST01_STATUS_REG_CHN4_ADDR)
     ) x393_i (
         .SDRST   (SDRST), // DDR3 reset (active low)
         .SDCLK   (SDCLK), // output 
@@ -1205,6 +974,470 @@ simul_axi_read #(
         end
     endtask
 
+// tasks - when tested - move to includes
+
+task test_write_levelling; // SuppressThisWarning VEditor - may be unused
+  begin
+// Set special values for DQS idelay for write leveling
+        wait_ps_pio_done(DEFAULT_STATUS_MODE); // not no interrupt running cycle - delays are changed immediately
+        axi_set_dqs_idelay_wlv;
+// Set write buffer (from DDR3) WE signal delay for write leveling mode
+        axi_set_wbuf_delay(WBUF_DLY_WLV);
+        axi_set_dqs_odelay('h80); // 'h80 - inverted, 'h60 - not - 'h80 will cause warnings during simulation
+        schedule_ps_pio ( // shedule software-control memory operation (may need to check FIFO status first)
+                        WRITELEV_OFFSET,   // input [9:0] seq_addr; // sequence start address
+                        0,                 // input [1:0] page;     // buffer page number
+                        0,                 // input       urgent;   // high priority request (only for competion with other channels, wiil not pass in this FIFO)
+                        0,                // input       chn;      // channel buffer to use: 0 - memory read, 1 - memory write
+                        `PS_PIO_WAIT_COMPLETE );//  wait_complete; // Do not request a newe transaction from the scheduler until previous memory transaction is finished
+                        
+        wait_ps_pio_done(DEFAULT_STATUS_MODE); // wait previous memory transaction finished before changing delays (effective immediately)
+        read_block_buf_chn (0, 0, 32, 1 ); // chn=0, page=0, number of 32-bit words=32, wait_done
+//        @ (negedge rstb);
+        axi_set_dqs_odelay(DLY_DQS_ODELAY);
+        schedule_ps_pio ( // shedule software-control memory operation (may need to check FIFO status first)
+                        WRITELEV_OFFSET,   // input [9:0] seq_addr; // sequence start address
+                        1,                 // input [1:0] page;     // buffer page number
+                        0,                 // input       urgent;   // high priority request (only for competion with other channels, wiil not pass in this FIFO)
+                        0,                // input       chn;      // channel buffer to use: 0 - memory read, 1 - memory write
+                        `PS_PIO_WAIT_COMPLETE );//  wait_complete; // Do not request a newe transaction from the scheduler until previous memory transaction is finished
+        wait_ps_pio_done(DEFAULT_STATUS_MODE); // wait previous memory transaction finished before changing delays (effective immediately)
+        read_block_buf_chn (0, 1, 32, 1 ); // chn=0, page=1, number of 32-bit words=32, wait_done
+//    task wait_read_queue_empty; - alternative way to check fo empty read queue
+        
+//        @ (negedge rstb);
+        axi_set_dqs_idelay_nominal;
+//        axi_set_dqs_odelay_nominal;
+        axi_set_dqs_odelay('h78);
+        axi_set_wbuf_delay(WBUF_DLY_DFLT); //DFLT_WBUF_DELAY
+   end
+endtask
+
+task test_read_pattern; // SuppressThisWarning VEditor - may be unused
+    begin  
+        schedule_ps_pio ( // shedule software-control memory operation (may need to check FIFO status first)
+                        READ_PATTERN_OFFSET,   // input [9:0] seq_addr; // sequence start address
+                        2,                     // input [1:0] page;     // buffer page number
+                        0,                     // input       urgent;   // high priority request (only for competion with other channels, wiil not pass in this FIFO)
+                        0,                    // input       chn;      // channel buffer to use: 0 - memory read, 1 - memory write
+                        `PS_PIO_WAIT_COMPLETE );//  wait_complete; // Do not request a newe transaction from the scheduler until previous memory transaction is finished
+        wait_ps_pio_done(DEFAULT_STATUS_MODE); // wait previous memory transaction finished before changing delays (effective immediately)
+        read_block_buf_chn (0, 2, 32, 1 ); // chn=0, page=2, number of 32-bit words=32, wait_done
+    end
+endtask
+
+task test_write_block; // SuppressThisWarning VEditor - may be unused
+    begin
+//    write_block_buf_chn; // fill block memory - already set in set_up task
+        schedule_ps_pio ( // shedule software-control memory operation (may need to check FIFO status first)
+                        WRITE_BLOCK_OFFSET,    // input [9:0] seq_addr; // sequence start address
+                        0,                     // input [1:0] page;     // buffer page number
+                        0,                     // input       urgent;   // high priority request (only for competion with other channels, wiil not pass in this FIFO)
+                        1,                    // input       chn;      // channel buffer to use: 0 - memory read, 1 - memory write
+                        `PS_PIO_WAIT_COMPLETE );//  wait_complete; // Do not request a newe transaction from the scheduler until previous memory transaction is finished
+// tempoary - for debugging:
+//        wait_ps_pio_done(DEFAULT_STATUS_MODE); // wait previous memory transaction finished before changing delays (effective immediately)
+    end
+endtask
+
+task test_read_block; // SuppressThisWarning VEditor - may be unused
+    begin
+        schedule_ps_pio ( // shedule software-control memory operation (may need to check FIFO status first)
+                        READ_BLOCK_OFFSET,   // input [9:0] seq_addr; // sequence start address
+                        3,                     // input [1:0] page;     // buffer page number
+                        0,                     // input       urgent;   // high priority request (only for competion with other channels, wiil not pass in this FIFO)
+                        0,                    // input       chn;      // channel buffer to use: 0 - memory read, 1 - memory write
+                        `PS_PIO_WAIT_COMPLETE );//  wait_complete; // Do not request a newe transaction from the scheduler until previous memory transaction is finished
+        schedule_ps_pio ( // shedule software-control memory operation (may need to check FIFO status first)
+                        READ_BLOCK_OFFSET,   // input [9:0] seq_addr; // sequence start address
+                        2,                     // input [1:0] page;     // buffer page number
+                        0,                     // input       urgent;   // high priority request (only for competion with other channels, wiil not pass in this FIFO)
+                        0,                    // input       chn;      // channel buffer to use: 0 - memory read, 1 - memory write
+                        `PS_PIO_WAIT_COMPLETE );//  wait_complete; // Do not request a newe transaction from the scheduler until previous memory transaction is finished
+        schedule_ps_pio ( // shedule software-control memory operation (may need to check FIFO status first)
+                        READ_BLOCK_OFFSET,   // input [9:0] seq_addr; // sequence start address
+                        1,                     // input [1:0] page;     // buffer page number
+                        0,                     // input       urgent;   // high priority request (only for competion with other channels, wiil not pass in this FIFO)
+                        0,                    // input       chn;      // channel buffer to use: 0 - memory read, 1 - memory write
+                        `PS_PIO_WAIT_COMPLETE );//  wait_complete; // Do not request a newe transaction from the scheduler until previous memory transaction is finished
+        wait_ps_pio_done(DEFAULT_STATUS_MODE); // wait previous memory transaction finished before changing delays (effective immediately)
+        read_block_buf_chn (0, 3, 256, 1 ); // chn=0, page=3, number of 32-bit words=256, wait_done
+    end
+endtask
+
+task test_scanline_write; // SuppressThisWarning VEditor - may be unused
+    input            [3:0] channel;
+    input            [1:0] extra_pages;
+    input                  wait_done;
+    
+    reg             [29:0] start_addr;
+    integer                mode;
+    reg [STATUS_DEPTH-1:0] status_address;
+    reg             [29:0] status_control_address;
+    reg             [29:0] test_mode_address;
+    
+    integer       ii;
+    begin
+        $display("====== test_scanline_write: channel=%d, extra_pages=%d,  wait_done=%d @%t",
+                                              channel,    extra_pages,     wait_done,   $time);
+        case (channel)
+            1:  begin
+                    start_addr=             MCNTRL_SCANLINE_CHN1_ADDR;
+                    status_address=         MCNTRL_TEST01_STATUS_REG_CHN1_ADDR;
+                    status_control_address= MCNTRL_TEST01_ADDR + MCNTRL_TEST01_CHN1_STATUS_CNTRL;
+                    test_mode_address=      MCNTRL_TEST01_ADDR + MCNTRL_TEST01_CHN1_MODE;
+                end
+            3:  begin
+                    start_addr=             MCNTRL_SCANLINE_CHN3_ADDR;
+                    status_address=         MCNTRL_TEST01_STATUS_REG_CHN3_ADDR;
+                    status_control_address= MCNTRL_TEST01_ADDR + MCNTRL_TEST01_CHN3_STATUS_CNTRL;
+                    test_mode_address=      MCNTRL_TEST01_ADDR + MCNTRL_TEST01_CHN3_MODE;
+                end
+            default: begin
+                $display("**** ERROR: Invalid channel, only 1 and 3 are valid");
+                start_addr=             MCNTRL_SCANLINE_CHN1_ADDR;
+                status_address=         MCNTRL_TEST01_STATUS_REG_CHN1_ADDR;
+                status_control_address= MCNTRL_TEST01_ADDR + MCNTRL_TEST01_CHN1_STATUS_CNTRL;
+                test_mode_address=      MCNTRL_TEST01_ADDR + MCNTRL_TEST01_CHN1_MODE;
+            end
+        endcase
+        mode=   func_encode_mode_scanline(
+                    extra_pages,
+                    1, // write_mem,
+                    1, // enable
+                    0);  // chn_reset
+                
+        write_contol_register(start_addr+ MCNTRL_SCANLINE_STARTADDR,        FRAME_START_ADDRESS); // RA=80, CA=0, BA=0 22-bit frame start address (3 CA LSBs==0. BA==0) 
+        write_contol_register(start_addr + MCNTRL_SCANLINE_FRAME_FULL_WIDTH, FRAME_FULL_WIDTH);
+        write_contol_register(start_addr + MCNTRL_SCANLINE_WINDOW_WH,        WINDOW_WIDTH + (WINDOW_HEIGHT<<16));
+        write_contol_register(start_addr + MCNTRL_SCANLINE_WINDOW_X0Y0,      WINDOW_X0+ (WINDOW_Y0<<16));
+        write_contol_register(start_addr + MCNTRL_SCANLINE_WINDOW_STARTXY,   SCANLINE_STARTX+(SCANLINE_STARTY<<16));
+        write_contol_register(start_addr + MCNTRL_SCANLINE_MODE,             mode); 
+        configure_channel_priority(channel,0);    // lowest priority channel 3
+//        enable_memcntrl_channels(16'h000b); // channels 0,1,3 are enabled
+        enable_memcntrl_en_dis(channel,1);
+        write_contol_register(test_mode_address,            TEST01_START_FRAME);
+        for (ii=0;ii<TEST_INITIAL_BURST;ii=ii+1) begin
+// VDT bugs: 1:does not propagate undefined width through ?:, 2: - does not allow to connect it to task integer input, 3: shows integer input width as 1  
+            SCANLINE_XFER_SIZE= ((SCANLINE_PAGES_PER_ROW>1)?
+                (
+                    (
+                        ((ii % SCANLINE_PAGES_PER_ROW) < (SCANLINE_PAGES_PER_ROW-1))?
+                        (1<<NUM_XFER_BITS):
+                        (WINDOW_WIDTH % (1<<NUM_XFER_BITS))
+                    )
+                ):
+                (WINDOW_WIDTH));
+           write_block_scanline_chn(
+            channel,
+            (ii & 3),
+            SCANLINE_XFER_SIZE,
+            WINDOW_X0 + ((ii % SCANLINE_PAGES_PER_ROW)<<NUM_XFER_BITS),  // SCANLINE_CUR_X,
+            WINDOW_Y0 + (ii / SCANLINE_PAGES_PER_ROW)); // SCANLINE_CUR_Y);\
+            
+        end
+        for (ii=0;ii< (WINDOW_HEIGHT * SCANLINE_PAGES_PER_ROW) ;ii = ii+1) begin // here assuming 1 page per line
+            if (ii >= TEST_INITIAL_BURST) begin // wait page ready and fill page after first 4 are filled
+                wait_status_condition (
+                    status_address, //MCNTRL_TEST01_STATUS_REG_CHN3_ADDR,
+                    status_control_address, // MCNTRL_TEST01_ADDR + MCNTRL_TEST01_CHN3_STATUS_CNTRL,
+                    DEFAULT_STATUS_MODE,
+                    (ii-TEST_INITIAL_BURST)<<16, // 4-bit page number
+                    'hf << 16,  // mask for the 4-bit page number
+                    1); // not equal to
+                SCANLINE_XFER_SIZE= ((SCANLINE_PAGES_PER_ROW>1)?
+                    (
+                        (
+                            ((ii % SCANLINE_PAGES_PER_ROW) < (SCANLINE_PAGES_PER_ROW-1))?
+                        
+                         (1<<NUM_XFER_BITS):
+                            (WINDOW_WIDTH % (1<<NUM_XFER_BITS))
+                        )
+                    ):
+                    (WINDOW_WIDTH));
+                write_block_scanline_chn(
+                    channel,
+                    (ii & 3),
+                SCANLINE_XFER_SIZE,
+                WINDOW_X0 + ((ii % SCANLINE_PAGES_PER_ROW)<<NUM_XFER_BITS),  // SCANLINE_CUR_X,
+                WINDOW_Y0 + (ii / SCANLINE_PAGES_PER_ROW)); // SCANLINE_CUR_Y);
+            end
+            write_contol_register(test_mode_address,            TEST01_NEXT_PAGE);
+        end
+        if (wait_done) begin
+            wait_status_condition ( // may also be read directly from the same bit of mctrl_linear_rw (address=5) status
+                status_address, // MCNTRL_TEST01_STATUS_REG_CHN3_ADDR,
+                status_control_address, // MCNTRL_TEST01_ADDR + MCNTRL_TEST01_CHN3_STATUS_CNTRL,
+                DEFAULT_STATUS_MODE,
+                2 << STATUS_2LSB_SHFT, // bit 24 - busy, bit 25 - frame done
+                2 << STATUS_2LSB_SHFT,  // mask for the 4-bit page number
+                0); // equal to
+//     enable_memcntrl_en_dis(channel,0); // disable channel
+        end
+    end
+endtask
+
+task test_scanline_read; // SuppressThisWarning VEditor - may be unused
+    input            [3:0] channel;
+    input            [1:0] extra_pages;
+    input                  show_data;
+    
+    reg             [29:0] start_addr;
+    integer                mode;
+    reg [STATUS_DEPTH-1:0] status_address;
+    reg             [29:0] status_control_address;
+    reg             [29:0] test_mode_address;
+    integer       ii;
+    begin
+        $display("====== test_scanline_read: channel=%d, extra_pages=%d,  show_data=%d @%t",
+                                             channel,    extra_pages,     show_data,    $time);
+        case (channel)
+            1:  begin
+                    start_addr=             MCNTRL_SCANLINE_CHN1_ADDR;
+                    status_address=         MCNTRL_TEST01_STATUS_REG_CHN1_ADDR;
+                    status_control_address= MCNTRL_TEST01_ADDR + MCNTRL_TEST01_CHN1_STATUS_CNTRL;
+                    test_mode_address=      MCNTRL_TEST01_ADDR + MCNTRL_TEST01_CHN1_MODE;
+                end
+            3:  begin
+                    start_addr=             MCNTRL_SCANLINE_CHN3_ADDR;
+                    status_address=         MCNTRL_TEST01_STATUS_REG_CHN3_ADDR;
+                    status_control_address= MCNTRL_TEST01_ADDR + MCNTRL_TEST01_CHN3_STATUS_CNTRL;
+                    test_mode_address=      MCNTRL_TEST01_ADDR + MCNTRL_TEST01_CHN3_MODE;
+                end
+            default: begin
+                $display("**** ERROR: Invalid channel, only 1 and 3 are valid");
+                start_addr=             MCNTRL_SCANLINE_CHN1_ADDR;
+                status_address=         MCNTRL_TEST01_STATUS_REG_CHN1_ADDR;
+                status_control_address= MCNTRL_TEST01_ADDR + MCNTRL_TEST01_CHN1_STATUS_CNTRL;
+                test_mode_address=      MCNTRL_TEST01_ADDR + MCNTRL_TEST01_CHN1_MODE;
+            end
+        endcase
+        mode=   func_encode_mode_scanline(
+                    extra_pages,
+                    0, // write_mem,
+                    1, // enable
+                    0);  // chn_reset
+
+   // program to the
+        write_contol_register(start_addr + MCNTRL_SCANLINE_STARTADDR,        FRAME_START_ADDRESS); // RA=80, CA=0, BA=0 22-bit frame start address (3 CA LSBs==0. BA==0) 
+        write_contol_register(start_addr + MCNTRL_SCANLINE_FRAME_FULL_WIDTH, FRAME_FULL_WIDTH);
+        write_contol_register(start_addr + MCNTRL_SCANLINE_WINDOW_WH,        WINDOW_WIDTH + (WINDOW_HEIGHT<<16));
+        write_contol_register(start_addr + MCNTRL_SCANLINE_WINDOW_X0Y0,      WINDOW_X0+ (WINDOW_Y0<<16));
+        write_contol_register(start_addr + MCNTRL_SCANLINE_WINDOW_STARTXY,   SCANLINE_STARTX+(SCANLINE_STARTY<<16));
+        write_contol_register(start_addr + MCNTRL_SCANLINE_MODE,             mode);// set mode register: {extra_pages[1:0],enable,!reset}
+        configure_channel_priority(channel,0);    // lowest priority channel 3
+        enable_memcntrl_en_dis(channel,1);
+        write_contol_register(test_mode_address,            TEST01_START_FRAME);
+        for (ii=0;ii<(WINDOW_HEIGHT * SCANLINE_PAGES_PER_ROW);ii = ii+1) begin
+            SCANLINE_XFER_SIZE= ((SCANLINE_PAGES_PER_ROW>1)?
+                (
+                    (
+                        ((ii % SCANLINE_PAGES_PER_ROW) < (SCANLINE_PAGES_PER_ROW-1))?
+                        (1<<NUM_XFER_BITS):
+                        (WINDOW_WIDTH % (1<<NUM_XFER_BITS))
+                    )
+                ):
+                (WINDOW_WIDTH));
+            wait_status_condition (
+                status_address, //MCNTRL_TEST01_STATUS_REG_CHN2_ADDR,
+                status_control_address, // MCNTRL_TEST01_ADDR + MCNTRL_TEST01_CHN2_STATUS_CNTRL,
+                DEFAULT_STATUS_MODE,
+                (ii) << 16, // -TEST_INITIAL_BURST)<<16, // 4-bit page number
+                'hf << 16,  // mask for the 4-bit page number
+                1); // not equal to
+// read block (if needed), for now just sikip  
+                if (show_data) begin 
+                read_block_buf_chn (
+                    channel,
+                    (ii & 3),
+                    SCANLINE_XFER_SIZE <<2,
+                    1 ); // chn=0, page=3, number of 32-bit words=256, wait_done
+                end
+        write_contol_register(test_mode_address,            TEST01_NEXT_PAGE);
+    end
+  end  
+endtask
+
+task test_tiled_write; // SuppressThisWarning VEditor - may be unused
+    input            [3:0] channel;
+    input                  byte32;
+    input                  keep_open;
+    input            [1:0] extra_pages;
+    input                  wait_done;
+    
+    reg             [29:0] start_addr;
+    integer                mode;
+    reg [STATUS_DEPTH-1:0] status_address;
+    reg             [29:0] status_control_address;
+    reg             [29:0] test_mode_address;
+    
+    integer       ii;
+    begin
+        $display("====== test_tiled_write: channel=%d, byte32=%d, keep_open=%d, extra_pages=%d,  wait_done=%d @%t",
+                                           channel,    byte32,    keep_open,    extra_pages,     wait_done,   $time);
+        case (channel)
+            2:  begin
+                    start_addr=             MCNTRL_TILED_CHN2_ADDR;
+                    status_address=         MCNTRL_TEST01_STATUS_REG_CHN2_ADDR;
+                    status_control_address= MCNTRL_TEST01_ADDR + MCNTRL_TEST01_CHN2_STATUS_CNTRL;
+                    test_mode_address=      MCNTRL_TEST01_ADDR + MCNTRL_TEST01_CHN2_MODE;
+                end
+            4:  begin
+                    start_addr=             MCNTRL_TILED_CHN4_ADDR;
+                    status_address=         MCNTRL_TEST01_STATUS_REG_CHN4_ADDR;
+                    status_control_address= MCNTRL_TEST01_ADDR + MCNTRL_TEST01_CHN4_STATUS_CNTRL;
+                    test_mode_address=      MCNTRL_TEST01_ADDR + MCNTRL_TEST01_CHN4_MODE;
+                end
+            default: begin
+                $display("**** ERROR: Invalid channel, only 2 and 4 are valid");
+                start_addr=             MCNTRL_TILED_CHN2_ADDR;
+                status_address=         MCNTRL_TEST01_STATUS_REG_CHN2_ADDR;
+                status_control_address= MCNTRL_TEST01_ADDR + MCNTRL_TEST01_CHN2_STATUS_CNTRL;
+                test_mode_address=      MCNTRL_TEST01_ADDR + MCNTRL_TEST01_CHN2_MODE;
+            end
+        endcase
+        mode=   func_encode_mode_tiled(
+                    byte32,
+                    keep_open,
+                    extra_pages,
+                    1, // write_mem,
+                    1, // enable
+                    0);  // chn_reset
+        write_contol_register(start_addr + MCNTRL_TILED_STARTADDR,        FRAME_START_ADDRESS); // RA=80, CA=0, BA=0 22-bit frame start address (3 CA LSBs==0. BA==0) 
+        write_contol_register(start_addr + MCNTRL_TILED_FRAME_FULL_WIDTH, FRAME_FULL_WIDTH);
+        write_contol_register(start_addr + MCNTRL_TILED_WINDOW_WH,        WINDOW_WIDTH + (WINDOW_HEIGHT<<16));
+        write_contol_register(start_addr + MCNTRL_TILED_WINDOW_X0Y0,      WINDOW_X0+ (WINDOW_Y0<<16));
+        write_contol_register(start_addr + MCNTRL_TILED_WINDOW_STARTXY,   TILED_STARTX+(TILED_STARTY<<16));
+        write_contol_register(start_addr + MCNTRL_TILED_TILE_WHS,         TILE_WIDTH+(TILE_HEIGHT<<8)+(TILE_VSTEP<<16));
+        write_contol_register(start_addr + MCNTRL_TILED_MODE,             mode);// set mode register: {extra_pages[1:0],enable,!reset}
+        configure_channel_priority(channel,0);    // lowest priority channel 3
+        enable_memcntrl_en_dis(channel,1);
+        write_contol_register(test_mode_address,            TEST01_START_FRAME);
+    
+        for (ii=0;ii<TEST_INITIAL_BURST;ii=ii+1) begin
+            write_block_scanline_chn( // TODO: Make a different tile buffer data, matching the order
+                channel, // channel
+                (ii & 3),
+                TILE_SIZE,
+                WINDOW_X0 + ((ii % TILES_PER_ROW) * TILE_WIDTH),
+                WINDOW_Y0 + (ii / TILE_ROWS_PER_WINDOW)); // SCANLINE_CUR_Y);\
+        end
+    
+        for (ii=0;ii<(TILES_PER_ROW * TILE_ROWS_PER_WINDOW);ii = ii+1) begin
+            if (ii >= TEST_INITIAL_BURST) begin // wait page ready and fill page after first 4 are filled
+                wait_status_condition (
+                    status_address, // MCNTRL_TEST01_STATUS_REG_CHN5_ADDR,
+                    status_control_address, // MCNTRL_TEST01_ADDR + MCNTRL_TEST01_CHN5_STATUS_CNTRL,
+                    DEFAULT_STATUS_MODE,
+                    (ii-TEST_INITIAL_BURST)<<16, // 4-bit page number
+                    'hf << 16,  // mask for the 4-bit page number
+                    1); // not equal to
+                write_block_scanline_chn( // TODO: Make a different tile buffer data, matching the order
+                    channel, // channel
+                    (ii & 3),
+                    TILE_SIZE,
+                    WINDOW_X0 + ((ii % TILES_PER_ROW) * TILE_WIDTH),
+                    WINDOW_Y0 + (ii / TILE_ROWS_PER_WINDOW)); // SCANLINE_CUR_Y);\
+            end
+            write_contol_register(test_mode_address,            TEST01_NEXT_PAGE);
+        end
+        if (wait_done) begin
+            wait_status_condition ( // may also be read directly from the same bit of mctrl_linear_rw (address=5) status
+                status_address, // MCNTRL_TEST01_STATUS_REG_CHN3_ADDR,
+                status_control_address, // MCNTRL_TEST01_ADDR + MCNTRL_TEST01_CHN3_STATUS_CNTRL,
+                DEFAULT_STATUS_MODE,
+                2 << STATUS_2LSB_SHFT, // bit 24 - busy, bit 25 - frame done
+                2 << STATUS_2LSB_SHFT,  // mask for the 4-bit page number
+                0); // equal to
+//     enable_memcntrl_en_dis(channel,0); // disable channel
+        end
+    end  
+endtask
+
+
+
+task test_tiled_read; // SuppressThisWarning VEditor - may be unused
+    input            [3:0] channel;
+    input                  byte32;
+    input                  keep_open;
+    input            [1:0] extra_pages;
+    input                  show_data;
+    
+    reg             [29:0] start_addr;
+    integer                mode;
+    reg [STATUS_DEPTH-1:0] status_address;
+    reg             [29:0] status_control_address;
+    reg             [29:0] test_mode_address;
+    
+    integer       ii;
+    begin
+        $display("====== test_tiled_read: channel=%d, byte32=%d, keep_open=%d, extra_pages=%d,  show_data=%d @%t",
+                                          channel,      byte32,  keep_open,    extra_pages,     show_data,   $time);
+        case (channel)
+            2:  begin
+                    start_addr=             MCNTRL_TILED_CHN2_ADDR;
+                    status_address=         MCNTRL_TEST01_STATUS_REG_CHN2_ADDR;
+                    status_control_address= MCNTRL_TEST01_ADDR + MCNTRL_TEST01_CHN2_STATUS_CNTRL;
+                    test_mode_address=      MCNTRL_TEST01_ADDR + MCNTRL_TEST01_CHN2_MODE;
+                end
+            4:  begin
+                    start_addr=             MCNTRL_TILED_CHN4_ADDR;
+                    status_address=         MCNTRL_TEST01_STATUS_REG_CHN4_ADDR;
+                    status_control_address= MCNTRL_TEST01_ADDR + MCNTRL_TEST01_CHN4_STATUS_CNTRL;
+                    test_mode_address=      MCNTRL_TEST01_ADDR + MCNTRL_TEST01_CHN4_MODE;
+                end
+            default: begin
+                $display("**** ERROR: Invalid channel, only 2 and 4 are valid");
+                start_addr=             MCNTRL_TILED_CHN2_ADDR;
+                status_address=         MCNTRL_TEST01_STATUS_REG_CHN2_ADDR;
+                status_control_address= MCNTRL_TEST01_ADDR + MCNTRL_TEST01_CHN2_STATUS_CNTRL;
+                test_mode_address=      MCNTRL_TEST01_ADDR + MCNTRL_TEST01_CHN2_MODE;
+            end
+        endcase
+        mode=   func_encode_mode_tiled(
+                    byte32,
+                    keep_open,
+                    extra_pages,
+                    0, // write_mem,
+                    1, // enable
+                    0);  // chn_reset
+        write_contol_register(start_addr + MCNTRL_TILED_STARTADDR,        FRAME_START_ADDRESS); // RA=80, CA=0, BA=0 22-bit frame start address (3 CA LSBs==0. BA==0) 
+        write_contol_register(start_addr + MCNTRL_TILED_FRAME_FULL_WIDTH, FRAME_FULL_WIDTH);
+        write_contol_register(start_addr + MCNTRL_TILED_WINDOW_WH,        WINDOW_WIDTH + (WINDOW_HEIGHT<<16));
+        write_contol_register(start_addr + MCNTRL_TILED_WINDOW_X0Y0,      WINDOW_X0+ (WINDOW_Y0<<16));
+        write_contol_register(start_addr + MCNTRL_TILED_WINDOW_STARTXY,   TILED_STARTX+(TILED_STARTY<<16));
+        write_contol_register(start_addr + MCNTRL_TILED_TILE_WHS,         TILE_WIDTH+(TILE_HEIGHT<<8)+(TILE_VSTEP<<16));
+        write_contol_register(start_addr + MCNTRL_TILED_MODE,             mode);// set mode register: {extra_pages[1:0],enable,!reset}
+        configure_channel_priority(channel,0);    // lowest priority channel 3
+        enable_memcntrl_en_dis(channel,1);
+        write_contol_register(test_mode_address,            TEST01_START_FRAME);
+        for (ii=0;ii<(TILES_PER_ROW * TILE_ROWS_PER_WINDOW);ii = ii+1) begin
+            wait_status_condition (
+                status_address, // MCNTRL_TEST01_STATUS_REG_CHN4_ADDR,
+                status_control_address, // MCNTRL_TEST01_ADDR + MCNTRL_TEST01_CHN4_STATUS_CNTRL,
+                DEFAULT_STATUS_MODE,
+                ii << 16, // -TEST_INITIAL_BURST)<<16, // 4-bit page number
+                'hf << 16,  // mask for the 4-bit page number
+                1); // not equal to
+                if (show_data) begin 
+                read_block_buf_chn (
+                    channel,
+                    (ii & 3),
+                    TILE_SIZE <<2,
+                    1 ); // chn=0, page=3, number of 32-bit words=256, wait_done
+                end
+            write_contol_register(test_mode_address,            TEST01_NEXT_PAGE);
+        end
+//     enable_memcntrl_en_dis(channel,0); // disable channel
+    end  
+endtask
+
+
+
+
+
+
+
 task set_all_sequences;
         begin
             $display("SET MRS @ %t",$time);    
@@ -1234,7 +1467,8 @@ task set_all_sequences;
 endtask
 
 task write_block_scanline_chn;  // S uppressThisWarning VEditor : may be unused
-    input integer chn; // buffer channel
+//    input integer chn; // buffer channel
+    input   [3:0] chn; // buffer channel
     input   [1:0] page;
 //    input integer num_words; // number of words to write (will be rounded up to multiple of 16)
     input [NUM_XFER_BITS:0] num_bursts; // number of 8-bursts to write (will be rounded up to multiple of 16)
@@ -1246,12 +1480,14 @@ task write_block_scanline_chn;  // S uppressThisWarning VEditor : may be unused
 //        $display("====== write_block_scanline_chn:%d page: %x X=0x%x Y=0x%x num=%d @%t", chn, page, startX, startY,num_words, $time);
         $display("====== write_block_scanline_chn:%d page: %x X=0x%x Y=0x%x num=%d @%t", chn, page, startX, startY,num_bursts, $time);
         case (chn)
+            0:  start_addr=MCONTR_BUF0_WR_ADDR + (page << 8);
             1:  start_addr=MCONTR_BUF1_WR_ADDR + (page << 8);
+            2:  start_addr=MCONTR_BUF2_WR_ADDR + (page << 8);
             3:  start_addr=MCONTR_BUF3_WR_ADDR + (page << 8);
-            5:  start_addr=MCONTR_BUF5_WR_ADDR + (page << 8); // it is actually tiled, not scanline
+            4:  start_addr=MCONTR_BUF4_WR_ADDR + (page << 8);
             default: begin
                 $display("**** ERROR: Invalid channel for write_block_scanline_chn = %d @%t", chn, $time);
-                start_addr = MCONTR_BUF1_WR_ADDR+ (page << 8);
+                start_addr = MCONTR_BUF0_WR_ADDR+ (page << 8);
             end
         endcase
         num_words=num_bursts << 2;
@@ -1260,11 +1496,47 @@ task write_block_scanline_chn;  // S uppressThisWarning VEditor : may be unused
     end
 endtask
 
+function [6:0] func_encode_mode_tiled;
+    input       byte32; // 32-byte columns (0 - 16-byte columns)
+    input       keep_open; // for 8 or less rows - do not close page between accesses
+    input [1:0] extra_pages; // number of extra pages that need to stay (not to be overwritten) in the buffer
+                             // can be used for overlapping tile read access
+    input       write_mem;   // write to memory mode (0 - read from memory)
+    input       enable;      // enable requests from this channel ( 0 will let current to finish, but not raise want/need)
+    input       chn_reset;       // immediately reset al;l the internal circuitry
+    begin
+        func_encode_mode_tiled={byte32,keep_open,extra_pages,write_mem,enable,~chn_reset};
+    end           
+endfunction
+function [4:0] func_encode_mode_scanline;
+    input [1:0] extra_pages; // number of extra pages that need to stay (not to be overwritten) in the buffer
+                             // can be used for overlapping tile read access
+    input       write_mem;   // write to memory mode (0 - read from memory)
+    input       enable;      // enable requests from this channel ( 0 will let current to finish, but not raise want/need)
+    input       chn_reset;       // immediately reset al;l the internal circuitry
+    begin
+        func_encode_mode_scanline={extra_pages,write_mem,enable,~chn_reset};
+    end           
+endfunction
+/*
+task enable_memcntrl_en_dis;
+    input [3:0] chn;
+    input       en;
+    begin
+        if (en) begin
+            ENABLED_CHANNELS = ENABLED_CHANNELS | (1<<chn);
+        end else begin
+            ENABLED_CHANNELS = ENABLED_CHANNELS & ~(1<<chn);
+        end
+        write_contol_register(MCONTR_TOP_16BIT_ADDR +  MCONTR_TOP_16BIT_CHN_EN, {16'b0,ENABLED_CHANNELS});
+    end
+endtask
+*/
 
 `include "includes/x393_tasks_mcntrl_en_dis_priority.vh"
 `include "includes/x393_tasks_mcntrl_buffers.vh"
 `include "includes/x393_tasks_pio_sequences.vh"
-`include "includes/x393_tasks_mcntrl_timing.vh" 
+`include "includes/x393_tasks_mcntrl_timing.vh"
 `include "includes/x393_tasks_ps_pio.vh"
 `include "includes/x393_tasks_status.vh"
 `include "includes/x393_tasks01.vh"

@@ -143,6 +143,7 @@ module  mcontr_sequencer   #(
 // Interface to write-to-memory buffers (up to 16)
 // There will be =1 cycle external latency in address/re and 1 cycle latency in read data (should match sequence programs)
 // Address data is sync to posedge mclk
+    output                       ext_buf_page_nxt, // Generated for both reads and writes, @posedge mclk
     output                       ext_buf_rd,
     output                       ext_buf_rpage_nxt, // increment external buffer read address to next page start
 //    output                 [6:0] ext_buf_raddr, // valid with ext_buf_rd, 2 page MSB to be generated externally
@@ -217,7 +218,8 @@ module  mcontr_sequencer   #(
     wire                 [31:0]  phy_cmd_word;  // selected output from either cmd0 buffer or cmd1 buffer 
     wire                 [31:0]  phy_cmd0_word; // cmd0 buffer output
     wire                 [31:0]  phy_cmd1_word; // cmd1 buffer output
-    wire                          buf_raddr_reset;
+    reg                          buf_raddr_reset;
+    reg                          buf_addr_reset; // generated regardless of read/write
 //    reg                  [ 6:0]  buf_raddr;
     reg                          buf_waddr_reset_negedge;
 //    reg                  [ 6:0]  buf_waddr_negedge;
@@ -260,6 +262,7 @@ module  mcontr_sequencer   #(
     reg                          run_w_d_negedge;
     
     reg                        run_seq_d; 
+    reg                        mem_read_mode; // last was buf_wr, not buf_rd
     
     wire [7:0] tmp_debug_a;
     assign tmp_debug[11:0] =
@@ -284,9 +287,10 @@ module  mcontr_sequencer   #(
     
 // External buffers buffer related signals
 
-    assign buf_raddr_reset=  buf_rst; // run_seq_d;
+//    assign buf_raddr_reset=  buf_rst & ~mem_read_mode; // run_seq_d;
     assign ext_buf_rd=       buf_rd;
     assign ext_buf_rpage_nxt=buf_raddr_reset;
+    assign ext_buf_page_nxt= buf_addr_reset;
 //    assign ext_buf_raddr=    buf_raddr;
     assign ext_buf_rchn=     run_chn_d;
     assign ext_buf_rrefresh= run_refresh_d;
@@ -468,6 +472,18 @@ module  mcontr_sequencer   #(
         
         if (rst) run_seq_d <= 0;
         else run_seq_d <= run_seq;
+
+        if (rst) buf_raddr_reset <= 0;
+        else     buf_raddr_reset<= buf_rst & ~mem_read_mode;
+
+        if (rst) buf_addr_reset <= 0;
+        else     buf_addr_reset<= buf_rst;
+    end
+    
+    always @ (posedge mclk) begin
+       
+         if      (buf_wr)  mem_read_mode <= 1; // last was buf_wr, not buf_rd
+         else if (buf_rd)  mem_read_mode <= 0;
         
     end
     // re-register buffer write address to match DDR3 data
@@ -613,7 +629,7 @@ module  mcontr_sequencer   #(
         .clk(mclk), // input
         .rst(1'b0), // input
         .dly(wbuf_delay[3:0]), // input[3:0] 
-        .din({buf_rst,buf_wr_ndly}), // input
+        .din({mem_read_mode & buf_rst,buf_wr_ndly}), // input
         .dout({buf_rst_d, buf_wr}) // output reg 
     );
     assign wbuf_delay_m1=wbuf_delay-1;

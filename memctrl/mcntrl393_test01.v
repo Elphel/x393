@@ -24,18 +24,18 @@ module  mcntrl393_test01#(
     parameter MCNTRL_TEST01_ADDR=                 'h0f0,
     parameter MCNTRL_TEST01_MASK=                 'h3f0,
     parameter FRAME_HEIGHT_BITS=                   16,   // Maximal frame height
+    parameter MCNTRL_TEST01_CHN1_MODE=            'h2,   // set mode register for channel 5
+    parameter MCNTRL_TEST01_CHN1_STATUS_CNTRL=    'h3,   // control status reporting for channel 5
     parameter MCNTRL_TEST01_CHN2_MODE=            'h4,   // set mode register for channel 2
     parameter MCNTRL_TEST01_CHN2_STATUS_CNTRL=    'h5,   // control status reporting for channel 2
     parameter MCNTRL_TEST01_CHN3_MODE=            'h6,   // set mode register for channel 3
     parameter MCNTRL_TEST01_CHN3_STATUS_CNTRL=    'h7,   // control status reporting for channel 3
     parameter MCNTRL_TEST01_CHN4_MODE=            'h8,   // set mode register for channel 4
     parameter MCNTRL_TEST01_CHN4_STATUS_CNTRL=    'h9,   // control status reporting for channel 4
-    parameter MCNTRL_TEST01_CHN5_MODE=            'ha,   // set mode register for channel 5
-    parameter MCNTRL_TEST01_CHN5_STATUS_CNTRL=    'hb,   // control status reporting for channel 5
-    parameter MCNTRL_TEST01_STATUS_REG_CHN2_ADDR= 'h3c,  // status/readback register for channel 2
-    parameter MCNTRL_TEST01_STATUS_REG_CHN3_ADDR= 'h3d,  // status/readback register for channel 3
-    parameter MCNTRL_TEST01_STATUS_REG_CHN4_ADDR= 'h3e,  // status/readback register for channel 4
-    parameter MCNTRL_TEST01_STATUS_REG_CHN5_ADDR= 'h3f  // status/readback register for channel 4
+    parameter MCNTRL_TEST01_STATUS_REG_CHN1_ADDR= 'h3c,  // status/readback register for channel 2
+    parameter MCNTRL_TEST01_STATUS_REG_CHN2_ADDR= 'h3d,  // status/readback register for channel 3
+    parameter MCNTRL_TEST01_STATUS_REG_CHN3_ADDR= 'h3e,  // status/readback register for channel 4
+    parameter MCNTRL_TEST01_STATUS_REG_CHN4_ADDR= 'h3f  // status/readback register for channel 4
 )(
     input                         rst,
     input                         mclk,     // global clock, half DDR3 clock, synchronizes all I/O thorough the command port
@@ -46,6 +46,13 @@ module  mcntrl393_test01#(
     output                        status_rq,   // input request to send status downstream
     input                         status_start, // Acknowledge of the first status packet byte (address)
     
+    output                        frame_start_chn1, // input
+    output                        next_page_chn1, // input
+    input                         page_ready_chn1, // output
+    input                         frame_done_chn1, // output
+    input [FRAME_HEIGHT_BITS-1:0] line_unfinished_chn1, // output[15:0]
+    output                        suspend_chn1, // input
+
     output                        frame_start_chn2,  // input
     output                        next_page_chn2,    // input
     input                         page_ready_chn2, // output
@@ -65,14 +72,7 @@ module  mcntrl393_test01#(
     input                         page_ready_chn4, // output
     input                         frame_done_chn4, // output
     input [FRAME_HEIGHT_BITS-1:0] line_unfinished_chn4, // output[15:0]
-    output                        suspend_chn4, // input
-    
-    output                        frame_start_chn5, // input
-    output                        next_page_chn5, // input
-    input                         page_ready_chn5, // output
-    input                         frame_done_chn5, // output
-    input [FRAME_HEIGHT_BITS-1:0] line_unfinished_chn5, // output[15:0]
-    output                        suspend_chn5 // input
+    output                        suspend_chn4 // input
     
 );
     localparam PAGE_BITS=4;       // number of LSB to indicate pages read/written
@@ -80,6 +80,10 @@ module  mcntrl393_test01#(
     wire        cmd_we;
     wire  [3:0] cmd_a;
     wire  [7:0] cmd_data;
+    wire [STATUS_PAYLOAD_BITS-1:0] status_chn1;
+    wire                     [7:0] status_chn1_ad; 
+    wire                           status_chn1_rq;
+    wire                           status_chn1_start; // input
     wire [STATUS_PAYLOAD_BITS-1:0] status_chn2;
     wire                     [7:0] status_chn2_ad; 
     wire                           status_chn2_rq;
@@ -92,78 +96,78 @@ module  mcntrl393_test01#(
     wire                     [7:0] status_chn4_ad; 
     wire                           status_chn4_rq;
     wire                           status_chn4_start; // input
-    wire [STATUS_PAYLOAD_BITS-1:0] status_chn5;
-    wire                     [7:0] status_chn5_ad; 
-    wire                           status_chn5_rq;
-    wire                           status_chn5_start; // input
     
+    reg            [PAGE_BITS-1:0] page_chn1;
     reg            [PAGE_BITS-1:0] page_chn2;
     reg            [PAGE_BITS-1:0] page_chn3;
     reg            [PAGE_BITS-1:0] page_chn4;
-    reg            [PAGE_BITS-1:0] page_chn5;
+    reg                            frame_start_chn1_r;
     reg                            frame_start_chn2_r;
     reg                            frame_start_chn3_r;
     reg                            frame_start_chn4_r;
-    reg                            frame_start_chn5_r;
+    reg                            next_page_chn1_r;
     reg                            next_page_chn2_r;
     reg                            next_page_chn3_r;
     reg                            next_page_chn4_r;
-    reg                            next_page_chn5_r;
+    reg                            suspend_chn1_r;
     reg                            suspend_chn2_r;
     reg                            suspend_chn3_r;
     reg                            suspend_chn4_r;
-    reg                            suspend_chn5_r;
     
     
+    wire        set_chn1_mode=   cmd_we && (cmd_a== MCNTRL_TEST01_CHN1_MODE);          // set mode register for channel 1
+    wire        set_chn1_status= cmd_we && (cmd_a== MCNTRL_TEST01_CHN1_STATUS_CNTRL);  // control status reporting for channel 1
     wire        set_chn2_mode=   cmd_we && (cmd_a== MCNTRL_TEST01_CHN2_MODE);          // set mode register for channel 2
     wire        set_chn2_status= cmd_we && (cmd_a== MCNTRL_TEST01_CHN2_STATUS_CNTRL);  // control status reporting for channel 2
     wire        set_chn3_mode=   cmd_we && (cmd_a== MCNTRL_TEST01_CHN3_MODE);          // set mode register for channel 3
     wire        set_chn3_status= cmd_we && (cmd_a== MCNTRL_TEST01_CHN3_STATUS_CNTRL);  // control status reporting for channel 3
     wire        set_chn4_mode=   cmd_we && (cmd_a== MCNTRL_TEST01_CHN4_MODE);          // set mode register for channel 4
     wire        set_chn4_status= cmd_we && (cmd_a== MCNTRL_TEST01_CHN4_STATUS_CNTRL);  // control status reporting for channel 4
-    wire        set_chn5_mode=   cmd_we && (cmd_a== MCNTRL_TEST01_CHN5_MODE);          // set mode register for channel 5
-    wire        set_chn5_status= cmd_we && (cmd_a== MCNTRL_TEST01_CHN5_STATUS_CNTRL);  // control status reporting for channel 5
     wire        cmd_frame_start_w=cmd_data[0];
     wire        cmd_next_page_w=  cmd_data[1];
     wire        cmd_suspend_w=    cmd_data[2];
+    reg         frame_busy_chn1;
     reg         frame_busy_chn2;
     reg         frame_busy_chn3;
     reg         frame_busy_chn4;
-    reg         frame_busy_chn5;
+    reg         frame_finished_chn1;
     reg         frame_finished_chn2;
     reg         frame_finished_chn3;
     reg         frame_finished_chn4;
-    reg         frame_finished_chn5;
     
+    assign frame_start_chn1 = frame_start_chn1_r;    
     assign frame_start_chn2 = frame_start_chn2_r;    
     assign frame_start_chn3 = frame_start_chn3_r;    
     assign frame_start_chn4 = frame_start_chn4_r;    
-    assign frame_start_chn5 = frame_start_chn5_r;    
+    assign next_page_chn1 =   next_page_chn1_r;    
     assign next_page_chn2 =   next_page_chn2_r;    
     assign next_page_chn3 =   next_page_chn3_r;    
     assign next_page_chn4 =   next_page_chn4_r;    
-    assign next_page_chn5 =   next_page_chn5_r;    
+    assign suspend_chn1 = suspend_chn1_r;
     assign suspend_chn2 = suspend_chn2_r;
     assign suspend_chn3 = suspend_chn3_r;
     assign suspend_chn4 = suspend_chn4_r;
-    assign suspend_chn5 = suspend_chn5_r;
+    assign status_chn1={page_chn1,line_unfinished_chn1,frame_finished_chn1, frame_busy_chn1};
     assign status_chn2={page_chn2,line_unfinished_chn2,frame_finished_chn2, frame_busy_chn2};
     assign status_chn3={page_chn3,line_unfinished_chn3,frame_finished_chn3, frame_busy_chn3};
     assign status_chn4={page_chn4,line_unfinished_chn4,frame_finished_chn4, frame_busy_chn4};
-    assign status_chn5={page_chn5,line_unfinished_chn5,frame_finished_chn5, frame_busy_chn5};
 
     always @ (posedge mclk) begin
+        frame_start_chn1_r <= set_chn1_mode && cmd_frame_start_w;
         frame_start_chn2_r <= set_chn2_mode && cmd_frame_start_w;
         frame_start_chn3_r <= set_chn3_mode && cmd_frame_start_w;
         frame_start_chn4_r <= set_chn4_mode && cmd_frame_start_w;
-        frame_start_chn5_r <= set_chn5_mode && cmd_frame_start_w;
+        next_page_chn1_r <=   set_chn1_mode && cmd_next_page_w;
         next_page_chn2_r <=   set_chn2_mode && cmd_next_page_w;
         next_page_chn3_r <=   set_chn3_mode && cmd_next_page_w;
         next_page_chn4_r <=   set_chn4_mode && cmd_next_page_w;
-        next_page_chn5_r <=   set_chn5_mode && cmd_next_page_w;
     end
 
     always @ (posedge rst or posedge mclk) begin
+        if      (rst)                page_chn1 <= 0;
+        else if (frame_start_chn1_r) page_chn1 <= 0;
+        else if (page_ready_chn1)    page_chn1 <= page_chn1 + 1;
+
         if      (rst)                page_chn2 <= 0;
         else if (frame_start_chn2_r) page_chn2 <= 0;
         else if (page_ready_chn2)    page_chn2 <= page_chn2 + 1;
@@ -176,9 +180,9 @@ module  mcntrl393_test01#(
         else if (frame_start_chn4_r) page_chn4 <= 0;
         else if (page_ready_chn4)    page_chn4 <= page_chn4 + 1;
 
-        if      (rst)                page_chn5 <= 0;
-        else if (frame_start_chn5_r) page_chn5 <= 0;
-        else if (page_ready_chn5)    page_chn5 <= page_chn5 + 1;
+
+        if      (rst)            suspend_chn1_r <= 0;
+        else if (set_chn1_mode)  suspend_chn1_r <= cmd_suspend_w;
 
         if      (rst)            suspend_chn2_r <= 0;
         else if (set_chn2_mode)  suspend_chn2_r <= cmd_suspend_w;
@@ -189,8 +193,9 @@ module  mcntrl393_test01#(
         if      (rst)            suspend_chn4_r <= 0;
         else if (set_chn4_mode)  suspend_chn4_r <= cmd_suspend_w;
 
-        if      (rst)            suspend_chn5_r <= 0;
-        else if (set_chn5_mode)  suspend_chn5_r <= cmd_suspend_w;
+        if      (rst)                                     frame_busy_chn1 <= 0;
+        else if ( frame_start_chn1_r && !frame_done_chn1) frame_busy_chn1 <= 1;
+        else if (!frame_start_chn1_r &&  frame_done_chn1) frame_busy_chn1 <= 0;
 
         if      (rst)                                     frame_busy_chn2 <= 0;
         else if ( frame_start_chn2_r && !frame_done_chn2) frame_busy_chn2 <= 1;
@@ -204,10 +209,10 @@ module  mcntrl393_test01#(
         else if ( frame_start_chn4_r && !frame_done_chn4) frame_busy_chn4 <= 1;
         else if (!frame_start_chn4_r &&  frame_done_chn4) frame_busy_chn4 <= 0;
         
-        if      (rst)                                     frame_busy_chn5 <= 0;
-        else if ( frame_start_chn5_r && !frame_done_chn5) frame_busy_chn5 <= 1;
-        else if (!frame_start_chn5_r &&  frame_done_chn5) frame_busy_chn5 <= 0;
-
+        if      (rst)                                     frame_finished_chn1 <= 0;
+        else if ( frame_start_chn1_r && !frame_done_chn1) frame_finished_chn1 <= 0;
+        else if (!frame_start_chn1_r &&  frame_done_chn1) frame_finished_chn1 <= 1;
+        
         if      (rst)                                     frame_finished_chn2 <= 0;
         else if ( frame_start_chn2_r && !frame_done_chn2) frame_finished_chn2 <= 0;
         else if (!frame_start_chn2_r &&  frame_done_chn2) frame_finished_chn2 <= 1;
@@ -219,21 +224,17 @@ module  mcntrl393_test01#(
         if      (rst)                                     frame_finished_chn4 <= 0;
         else if ( frame_start_chn4_r && !frame_done_chn4) frame_finished_chn4 <= 0;
         else if (!frame_start_chn4_r &&  frame_done_chn4) frame_finished_chn4 <= 1;
-        
-        if      (rst)                                     frame_finished_chn5 <= 0;
-        else if ( frame_start_chn5_r && !frame_done_chn5) frame_finished_chn5 <= 0;
-        else if (!frame_start_chn5_r &&  frame_done_chn5) frame_finished_chn5 <= 1;
     end
     
     always @ (posedge mclk) begin
+        frame_start_chn1_r <= set_chn1_mode && cmd_frame_start_w;
         frame_start_chn2_r <= set_chn2_mode && cmd_frame_start_w;
         frame_start_chn3_r <= set_chn3_mode && cmd_frame_start_w;
         frame_start_chn4_r <= set_chn4_mode && cmd_frame_start_w;
-        frame_start_chn5_r <= set_chn5_mode && cmd_frame_start_w;
+        next_page_chn1_r <=   set_chn1_mode && cmd_next_page_w;
         next_page_chn2_r <=   set_chn2_mode && cmd_next_page_w;
         next_page_chn3_r <=   set_chn3_mode && cmd_next_page_w;
         next_page_chn4_r <=   set_chn4_mode && cmd_next_page_w;
-        next_page_chn5_r <=   set_chn5_mode && cmd_next_page_w;
     end
     
     cmd_deser #(
@@ -256,22 +257,36 @@ module  mcntrl393_test01#(
     status_router4 status_router4_i (
         .rst        (rst), // input
         .clk        (mclk), // input
-        .db_in0     (status_chn2_ad), // input[7:0] 
-        .rq_in0     (status_chn2_rq), // input
-        .start_in0  (status_chn2_start), // output
-        .db_in1     (status_chn3_ad), // input[7:0] 
-        .rq_in1     (status_chn3_rq), // input
-        .start_in1  (status_chn3_start), // output
-        .db_in2     (status_chn4_ad), // input[7:0] 
-        .rq_in2     (status_chn4_rq), // input
-        .start_in2  (status_chn4_start), // output
-        .db_in3     (status_chn5_ad), // input[7:0] 
-        .rq_in3     (status_chn5_rq), // input
-        .start_in3  (status_chn5_start), // output
+        .db_in0     (status_chn1_ad), // input[7:0] 
+        .rq_in0     (status_chn1_rq), // input
+        .start_in0  (status_chn1_start), // output
+        .db_in1     (status_chn2_ad), // input[7:0] 
+        .rq_in1     (status_chn2_rq), // input
+        .start_in1  (status_chn2_start), // output
+        .db_in2     (status_chn3_ad), // input[7:0] 
+        .rq_in2     (status_chn3_rq), // input
+        .start_in2  (status_chn3_start), // output
+        .db_in3     (status_chn4_ad), // input[7:0] 
+        .rq_in3     (status_chn4_rq), // input
+        .start_in3  (status_chn4_start), // output
         
         .db_out     (status_ad), // output[7:0] 
         .rq_out     (status_rq), // output
         .start_out  (status_start) // input
+    );
+    
+    status_generate #(
+        .STATUS_REG_ADDR(MCNTRL_TEST01_STATUS_REG_CHN1_ADDR),
+        .PAYLOAD_BITS(STATUS_PAYLOAD_BITS)
+    ) status_generate_chn1_i (
+        .rst        (rst), // input
+        .clk        (mclk), // input
+        .we         (set_chn1_status), // input
+        .wd         (cmd_data[7:0]), // input[7:0] 
+        .status     (status_chn1), // input[25:0] 
+        .ad         (status_chn1_ad), // output[7:0] 
+        .rq         (status_chn1_rq), // output
+        .start      (status_chn1_start) // input
     );
 
     status_generate #(
@@ -316,18 +331,5 @@ module  mcntrl393_test01#(
         .start      (status_chn4_start) // input
     );
 
-    status_generate #(
-        .STATUS_REG_ADDR(MCNTRL_TEST01_STATUS_REG_CHN5_ADDR),
-        .PAYLOAD_BITS(STATUS_PAYLOAD_BITS)
-    ) status_generate_chn5_i (
-        .rst        (rst), // input
-        .clk        (mclk), // input
-        .we         (set_chn5_status), // input
-        .wd         (cmd_data[7:0]), // input[7:0] 
-        .status     (status_chn5), // input[25:0] 
-        .ad         (status_chn5_ad), // output[7:0] 
-        .rq         (status_chn5_rq), // output
-        .start      (status_chn5_start) // input
-    );
 endmodule
 

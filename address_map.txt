@@ -142,9 +142,10 @@
     parameter MCONTR_PHY_STATUS_REG_ADDR=          'h0,//8 or less bits: status register address to use for memory controller phy
     parameter MCONTR_TOP_STATUS_REG_ADDR=          'h1,//8 or less bits: status register address to use for memory controller
     parameter MCNTRL_PS_STATUS_REG_ADDR=           'h2
-    parameter MCNTRL_SCANLINE_STATUS_REG_CHN2_ADDR='h4,
-    parameter MCNTRL_SCANLINE_STATUS_REG_CHN3_ADDR='h5,
-    parameter MCNTRL_TILED_STATUS_REG_CHN4_ADDR=   'h6,
+    parameter MCNTRL_SCANLINE_STATUS_REG_CHN1_ADDR='h4,
+    parameter MCNTRL_TILED_STATUS_REG_CHN2_ADDR=   'h5,
+    parameter MCNTRL_SCANLINE_STATUS_REG_CHN3_ADDR='h6,
+    parameter MCNTRL_TILED_STATUS_REG_CHN4_ADDR=   'h7,
     parameter MCNTRL_TEST01_STATUS_REG_CHN2_ADDR=  'h3c,  // status/readback register for channel 2
     parameter MCNTRL_TEST01_STATUS_REG_CHN3_ADDR=  'h3d,  // status/readback register for channel 3
     parameter MCNTRL_TEST01_STATUS_REG_CHN4_ADDR=  'h3e  // status/readback register for channel 4

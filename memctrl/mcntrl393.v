@@ -30,11 +30,20 @@ module  mcntrl393 #(
 
     parameter MCONTR_CMD_WR_ADDR =   'h0000, // AXI write to command sequence memory
     parameter MCONTR_BUF0_RD_ADDR =  'h0400, // AXI read address from buffer 0 (PS sequence, memory read) 
-    parameter MCONTR_BUF1_WR_ADDR =  'h0400, // AXI write address to buffer 1 (PS sequence, memory write)
-    parameter MCONTR_BUF2_RD_ADDR =  'h0800, // AXI read address from buffer 2 (PL sequence, scanline, memory read)
+    parameter MCONTR_BUF0_WR_ADDR =  'h0400, // AXI write address to buffer 0 (PS sequence, memory write)
+//    parameter MCONTR_BUF0_WR_ADDR =  'h0400, // AXI write address to buffer 1 (PS sequence, memory write)
+//    parameter MCONTR_BUF2_RD_ADDR =  'h0800, // AXI read address from buffer 2 (PL sequence, scanline, memory read)
+//    parameter MCONTR_BUF3_WR_ADDR =  'h0800, // AXI write address to buffer 3 (PL sequence, scanline, memory write)
+//    parameter MCONTR_BUF4_RD_ADDR =  'h0c00, // AXI read address from buffer 4 (PL sequence, tiles, memory read)
+//    parameter MCONTR_BUF5_WR_ADDR =  'h0c00, // AXI write address to buffer 5 (PL sequence, scanline, memory write)
+    parameter MCONTR_BUF1_RD_ADDR =  'h0800, // AXI read address from buffer 1 (PL sequence, scanline, memory read)
+    parameter MCONTR_BUF1_WR_ADDR =  'h0800, // AXI write address to buffer 1 (PL sequence, scanline, memory write)
+    parameter MCONTR_BUF2_RD_ADDR =  'h0c00, // AXI read address from buffer 2 (PL sequence, tiles, memory read)
+    parameter MCONTR_BUF2_WR_ADDR =  'h0c00, // AXI write address to buffer 2 (PL sequence, tiles, memory write)
+    parameter MCONTR_BUF3_RD_ADDR =  'h0800, // AXI read address from buffer 3 (PL sequence, scanline, memory read)
     parameter MCONTR_BUF3_WR_ADDR =  'h0800, // AXI write address to buffer 3 (PL sequence, scanline, memory write)
     parameter MCONTR_BUF4_RD_ADDR =  'h0c00, // AXI read address from buffer 4 (PL sequence, tiles, memory read)
-    parameter MCONTR_BUF5_WR_ADDR =  'h0c00, // AXI write address to buffer 5 (PL sequence, scanline, memory write)
+    parameter MCONTR_BUF4_WR_ADDR =  'h0c00, // AXI write address to buffer 4 (PL sequence, tiles, memory write)
 
     
 //command interface parameters
@@ -164,7 +173,7 @@ module  mcntrl393 #(
     parameter NUM_XFER_BITS=                       6,    // number of bits to specify transfer length
     parameter FRAME_WIDTH_BITS=                   13,    // Maximal frame width - 8-word (16 bytes) bursts 
     parameter FRAME_HEIGHT_BITS=                  16,    // Maximal frame height 
-    parameter MCNTRL_SCANLINE_CHN2_ADDR=         'h120,
+    parameter MCNTRL_SCANLINE_CHN1_ADDR=         'h120,
     parameter MCNTRL_SCANLINE_CHN3_ADDR=         'h130,
     parameter MCNTRL_SCANLINE_MASK=              'h3f0, // both channels 0 and 1
     parameter MCNTRL_SCANLINE_MODE=              'h0,   // set mode register: {extra_pages[1:0],enable,!reset}
@@ -178,18 +187,19 @@ module  mcntrl393 #(
                                                         // TODO: Add number of blocks to R/W? (blocks can be different) - total length?
                                                         // Read back current address (for debugging)?
 //    parameter MCNTRL_SCANLINE_STATUS_REG_ADDR=   'h4,
-    parameter MCNTRL_SCANLINE_STATUS_REG_CHN2_ADDR=   'h4,
-    parameter MCNTRL_SCANLINE_STATUS_REG_CHN3_ADDR=   'h5,
+    parameter MCNTRL_SCANLINE_STATUS_REG_CHN1_ADDR=   'h4,
+    parameter MCNTRL_SCANLINE_STATUS_REG_CHN3_ADDR=   'h6,
 
     parameter MCNTRL_SCANLINE_PENDING_CNTR_BITS=   2,    // Number of bits to count pending trasfers, currently 2 is enough, but may increase
                                                         // if memory controller will allow programming several sequences in advance to
                                                         // spread long-programming (tiled) over fast-programming (linear) requests.
                                                         // But that should not be too big to maintain 2-level priorities
     
+    parameter MCNTRL_SCANLINE_FRAME_PAGE_RESET =1'b0, // reset internal page number to zero at the frame start (false - only when hard/soft reset)                                                     
     parameter MAX_TILE_WIDTH=                   6,     // number of bits to specify maximal tile (width-1) (6 -> 64)
     parameter MAX_TILE_HEIGHT=                  6,     // number of bits to specify maximal tile (height-1) (6 -> 64)
-    parameter MCNTRL_TILED_CHN4_ADDR=       'h140,
-    parameter MCNTRL_TILED_CHN5_ADDR=       'h150,
+    parameter MCNTRL_TILED_CHN2_ADDR=       'h140,
+    parameter MCNTRL_TILED_CHN4_ADDR=       'h150,
     parameter MCNTRL_TILED_MASK=            'h3f0, // both channels 0 and 1
     parameter MCNTRL_TILED_MODE=            'h0,   // set mode register: {extra_pages[1:0],write_mode,enable,!reset}
     parameter MCNTRL_TILED_STATUS_CNTRL=    'h1,   // control status reporting
@@ -202,7 +212,8 @@ module  mcntrl393 #(
                                                       // TODO: Add number of blocks to R/W? (blocks can be different) - total length?
                                                       // Read back current address (for debugging)?
     parameter MCNTRL_TILED_TILE_WHS=         'h7,   // low word - 6-bit tile width in 8-bursts, high - tile height (0 - > 64)
-    parameter MCNTRL_TILED_STATUS_REG_CHN4_ADDR= 'h5,
+    parameter MCNTRL_TILED_STATUS_REG_CHN2_ADDR= 'h5,
+    parameter MCNTRL_TILED_STATUS_REG_CHN4_ADDR= 'h7,
     parameter MCNTRL_TILED_PENDING_CNTR_BITS=2,    // Number of bits to count pending trasfers, currently 2 is enough, but may increase
                                                    // if memory controller will allow programming several sequences in advance to
                                                    // spread long-programming (tiled) over fast-programming (linear) requests.
@@ -259,6 +270,14 @@ module  mcntrl393 #(
 
 // Channels 2 and 3 control signals
 // TODO: move line_unfinished and suspend to internals of this module (and control comparator modes)
+    input                          frame_start_chn1,   // resets page, x,y, and initiates transfer requests (in write mode will wait for next_page)
+    input                          next_page_chn1,     // page was read/written from/to 4*1kB on-chip buffer
+    output                         page_ready_chn1,    // == xfer_done, connect externally | Single-cycle pulse indicating that a page was read/written from/to DDR3 memory
+    output                         frame_done_chn1,    // single-cycle pulse when the full frame (window) was transferred to/from DDR3 memory
+// optional I/O for channel synchronization
+    output [FRAME_HEIGHT_BITS-1:0] line_unfinished_chn1, // number of the current (ufinished ) line, REALATIVE TO FRAME, NOT WINDOW?. 
+    input                          suspend_chn1,       // suspend transfers (from external line number comparator)
+
     input                          frame_start_chn2,   // resets page, x,y, and initiates transfer requests (in write mode will wait for next_page)
     input                          next_page_chn2,     // page was read/written from/to 4*1kB on-chip buffer
     output                         page_ready_chn2,    // == xfer_done, connect externally | Single-cycle pulse indicating that a page was read/written from/to DDR3 memory
@@ -282,14 +301,6 @@ module  mcntrl393 #(
 // optional I/O for channel synchronization
     output [FRAME_HEIGHT_BITS-1:0] line_unfinished_chn4, // number of the current (ufinished ) line, REALATIVE TO FRAME, NOT WINDOW?. 
     input                          suspend_chn4,       // suspend transfers (from external line number comparator)
-// Channel 5 (tiled write)
-    input                          frame_start_chn5,   // resets page, x,y, and initiates transfer requests (in write mode will wait for next_page)
-    input                          next_page_chn5,     // page was read/written from/to 4*1kB on-chip buffer
-    output                         page_ready_chn5,    // == xfer_done, connect externally | Single-cycle pulse indicating that a page was read/written from/to DDR3 memory
-    output                         frame_done_chn5,    // single-cycle pulse when the full frame (window) was transferred to/from DDR3 memory
-// optional I/O for channel synchronization
-    output [FRAME_HEIGHT_BITS-1:0] line_unfinished_chn5, // number of the current (ufinished ) line, REALATIVE TO FRAME, NOT WINDOW?. 
-    input                          suspend_chn5,       // suspend transfers (from external line number comparator)
 
 
     // DDR3 interface
@@ -340,83 +351,79 @@ module  mcntrl393 #(
 //    wire        seq_wr0; // not used
     wire        seq_set0;
     wire        seq_done0;
-//    wire        rpage_nxt_chn0;
     wire        buf_wr_chn0;
     wire        buf_wpage_nxt_chn0;
     wire        buf_run0;
     wire [63:0] buf_wdata_chn0;
-     
+    wire        buf_wrun0;
+    wire        buf_rd_chn0;
+    wire        buf_rpage_nxt_chn0;
+    wire [63:0] buf_rdata_chn0;
+
     wire        want_rq1;
     wire        need_rq1;
     wire        channel_pgm_en1; 
     wire        seq_done1;
-    wire        rpage_nxt_chn1;
-    wire        buf_run1;
+    wire        page_nxt_chn1;
+    wire        buf_wr_chn1;
+    wire        buf_wpage_nxt_chn1;
+    wire [63:0] buf_wdata_chn1;
     wire        buf_rd_chn1;
+    wire        rpage_nxt_chn1;
     wire [63:0] buf_rdata_chn1;
 
     wire        want_rq2;
     wire        need_rq2;
     wire        channel_pgm_en2; 
-    wire [31:0] seq_data2x;  // may be shared with other channel 
-    wire        seq_wr2x; // may be shared with other channel
-    wire        seq_set2x; // may be shared with other channel
     wire        seq_done2;
-//    wire        rpage_nxt_chn2;
+    wire        page_nxt_chn2;
     wire        buf_wr_chn2;
     wire        buf_wpage_nxt_chn2;
     wire [63:0] buf_wdata_chn2;
-     
+    wire        buf_rd_chn2;
+    wire        rpage_nxt_chn2;
+    wire [63:0] buf_rdata_chn2;
+
     wire        want_rq3;
     wire        need_rq3;
     wire        channel_pgm_en3; 
-    wire [31:0] seq_data3x; // may be shared with other channel
-    wire        seq_wr3x; // may be shared with other channel
-    wire        seq_set3x; // may be shared with other channel
     wire        seq_done3;
-    wire        rpage_nxt_chn3;
+    wire        page_nxt_chn3;
+    wire        buf_wr_chn3;
+    wire        buf_wpage_nxt_chn3;
+    wire [63:0] buf_wdata_chn3;
     wire        buf_rd_chn3;
+    wire        rpage_nxt_chn3;
     wire [63:0] buf_rdata_chn3;
-    
+
     wire        want_rq4;
     wire        need_rq4;
     wire        channel_pgm_en4; 
-    
-//    wire        seq_tiled_start_rd; 
-    wire [31:0] seq_data4x; // may be shared with other channel
-    wire        seq_wr4x;   // may be shared with other channel
-    wire        seq_set4x;  // may be shared with other channel
-    
     wire        seq_done4;
-    wire        rpage_nxt_chn4;
+    wire        page_nxt_chn4;
     wire        buf_wr_chn4;
     wire        buf_wpage_nxt_chn4;
     wire [63:0] buf_wdata_chn4;
+    wire        buf_rd_chn4;
+    wire        rpage_nxt_chn4;
+    wire [63:0] buf_rdata_chn4;
 
-    wire        want_rq5;
-    wire        need_rq5;
-    wire        channel_pgm_en5; 
-    wire [31:0] seq_data5x; // may be shared with other channel
-    wire        seq_wr5x; // may be shared with other channel
-    wire        seq_set5x; // may be shared with other channel
-    wire        seq_done5;
-    wire        rpage_nxt_chn5;
-    wire        buf_rd_chn5;
-    wire [63:0] buf_rdata_chn5;
+
+     
 
     // Command tree - insert register layer if needed
     wire [7:0] cmd_mcontr_ad;
     wire       cmd_mcontr_stb;
     wire [7:0] cmd_ps_pio_ad;
     wire       cmd_ps_pio_stb;
-    wire [7:0] cmd_scanline_chn2_ad;
-    wire       cmd_scanline_chn2_stb;
+    wire [7:0] cmd_scanline_chn1_ad;
+    wire       cmd_scanline_chn1_stb;
     wire [7:0] cmd_scanline_chn3_ad;
     wire       cmd_scanline_chn3_stb;
+    wire [7:0] cmd_tiled_chn2_ad;
+    wire       cmd_tiled_chn2_stb;
     wire [7:0] cmd_tiled_chn4_ad;
     wire       cmd_tiled_chn4_stb;
-    wire [7:0] cmd_tiled_chn5_ad;
-    wire       cmd_tiled_chn5_stb;
 
 
 // Status tree:
@@ -428,42 +435,52 @@ module  mcntrl393 #(
     wire                        status_ps_pio_rq;    // PS PIO channels status request  
     wire                        status_ps_pio_start; // PS PIO channels status packet transfer start (currently with 0 latency from status_root_rq)
     
-    wire                  [7:0] status_scanline_chn2_ad;    // PL scanline channel2 (memory read) status byte-wide address/data 
-    wire                        status_scanline_chn2_rq;    // PL scanline channel2 (memory read) channels status request  
-    wire                        status_scanline_chn2_start; // PL scanline channel2 (memory read) channels status packet transfer start (currently with 0 latency from status_root_rq)
+    wire                  [7:0] status_scanline_chn1_ad;    // PL scanline channel1 (memory read) status byte-wide address/data 
+    wire                        status_scanline_chn1_rq;    // PL scanline channel1 (memory read) channels status request  
+    wire                        status_scanline_chn1_start; // PL scanline channel1 (memory read) channels status packet transfer start (currently with 0 latency from status_root_rq)
 
     wire                  [7:0] status_scanline_chn3_ad;    // PL scanline channel3 (memory read) status byte-wide address/data 
     wire                        status_scanline_chn3_rq;    // PL scanline channel3 (memory read) channels status request  
     wire                        status_scanline_chn3_start; // PL scanline channel3 (memory read) channels status packet transfer start (currently with 0 latency from status_root_rq)
 
+    wire                  [7:0] status_tiled_chn2_ad;    // PL tiled channel2 (memory read) status byte-wide address/data 
+    wire                        status_tiled_chn2_rq;    // PL tiled channel2 (memory read) channels status request  
+    wire                        status_tiled_chn2_start; // PL tiled channel2 (memory read) channels status packet transfer start (currently with 0 latency from status_root_rq)
+
     wire                  [7:0] status_tiled_chn4_ad;    // PL tiled channel4 (memory read) status byte-wide address/data 
     wire                        status_tiled_chn4_rq;    // PL tiled channel4 (memory read) channels status request  
     wire                        status_tiled_chn4_start; // PL tiled channel4 (memory read) channels status packet transfer start (currently with 0 latency from status_root_rq)
 
-    wire                  [7:0] status_tiled_chn5_ad;    // PL tiled channel5 (memory read) status byte-wide address/data 
-    wire                        status_tiled_chn5_rq;    // PL tiled channel5 (memory read) channels status request  
-    wire                        status_tiled_chn5_start; // PL tiled channel5 (memory read) channels status packet transfer start (currently with 0 latency from status_root_rq)
-
 // combinatorial early signals
     wire                         select_cmd0_w;
-    wire                         select_buf0_w;
-    wire                         select_buf1_w;
-    wire                         select_buf2_w;
-    wire                         select_buf3_w;
-    wire                         select_buf4_w;
-    wire                         select_buf5_w;
+    wire                         select_buf0rd_w;
+    wire                         select_buf0wr_w;
+    wire                         select_buf1rd_w;
+    wire                         select_buf1wr_w;
+    wire                         select_buf2rd_w;
+    wire                         select_buf2wr_w;
+    wire                         select_buf3rd_w;
+    wire                         select_buf3wr_w;
+    wire                         select_buf4rd_w;
+    wire                         select_buf4wr_w;
 // registered selects
     reg                         select_cmd0;
-    reg                         select_buf0;
-    reg                         select_buf1;
-    reg                         select_buf2;
-    reg                         select_buf3;
-    reg                         select_buf4;
-    reg                         select_buf5;
+    reg                         select_buf0rd;
+    reg                         select_buf0wr;
+    reg                         select_buf1rd;
+    reg                         select_buf1wr;
+    reg                         select_buf2rd;
+    reg                         select_buf2wr;
+    reg                         select_buf3rd;
+    reg                         select_buf3wr;
+    reg                         select_buf4rd;
+    reg                         select_buf4wr;
 
-    reg                         select_buf0_d; // delayed by 1 clock, for combining with regen?
-    reg                         select_buf2_d;
-    reg                         select_buf4_d;
+    reg                         select_buf0rd_d; // delayed by 1 clock, for combining with regen?
+    reg                         select_buf1rd_d;
+    reg                         select_buf2rd_d;
+    reg                         select_buf3rd_d;
+    reg                         select_buf4rd_d;
 
     reg                         axird_selected_r; // this module provides output
     
@@ -471,51 +488,62 @@ module  mcntrl393 #(
     reg   [BUFFER_DEPTH32-1:0]  buf_waddr;
     reg                 [31:0]  buf_wdata;
     reg                         cmd_we;
-    reg                         buf1_we;
-    reg                         buf3_we;
-    reg                         buf5_we;
+    reg                         buf0wr_we;
+    reg                         buf1wr_we;
+    reg                         buf2wr_we;
+    reg                         buf3wr_we;
+    reg                         buf4wr_we;
     wire  [BUFFER_DEPTH32-1:0]  buf_raddr;
     
     wire                [31:0]  buf0_data;
-    wire                [31:0]  buf2_data;
-    wire                [31:0]  buf4_data;
+    wire                [31:0]  buf1rd_data;
+    wire                [31:0]  buf2rd_data;
+    wire                [31:0]  buf3rd_data;
+    wire                [31:0]  buf4rd_data;
     
     wire                        buf0_rd;
     wire                        buf0_regen;
-    wire                        buf2_rd;
-    wire                        buf2_regen;
-    wire                        buf4_rd;
-    wire                        buf4_regen;
+    wire                        buf1rd_rd;
+    wire                        buf1rd_regen;
+    wire                        buf2rd_rd;
+    wire                        buf2rd_regen;
+    wire                        buf3rd_rd;
+    wire                        buf3rd_regen;
+    wire                        buf4rd_rd;
+    wire                        buf4rd_regen;
 
-// common for channels 2 and 3
+// common for channels 1 and 3
     wire                  [2:0] lin_rw_bank;     // memory bank
     wire   [ADDRESS_NUMBER-1:0] lin_rw_row;      // memory row
     wire   [COLADDR_NUMBER-4:0] lin_rw_col;      // start memory column in 8-bursts
     wire                  [5:0] lin_rw_num128;   // number of 128-bit words to transfer (8*16 bits) - full bursts of 8 ( 0 - maximal length, 64)
     wire                        lin_rw_xfer_partial; // do not increment page in the end, continue current
-    wire                        lin_rd_start;    // start generating commands for read sequence
-    wire                        lin_wr_start;    // start generating commands for write sequence
+    wire                        lin_rw_start_rd;    // start generating commands for read sequence
+    wire                        lin_rw_start_wr;    // start generating commands for write sequence
 
-    wire                  [2:0] lin_rd_chn2_bank;   // bank address
-    wire   [ADDRESS_NUMBER-1:0] lin_rd_chn2_row;    // memory row
-    wire   [COLADDR_NUMBER-4:0] lin_rd_chn2_col;    // start memory column in 8-bursts
-    wire                  [5:0] lin_rd_chn2_num128; // number of 128-bit words to transfer (8*16 bits) - full bursts of 8 ( 0 - maximal length, 64)
-    wire                        lin_rd_chn2_partial;  // do not increment page in the end, continue current
-    wire                        lin_rd_chn2_start;  // start generating commands
+    wire                  [2:0] lin_rw_chn1_bank;   // bank address
+    wire   [ADDRESS_NUMBER-1:0] lin_rw_chn1_row;    // memory row
+    wire   [COLADDR_NUMBER-4:0] lin_rw_chn1_col;    // start memory column in 8-bursts
+    wire                  [5:0] lin_rw_chn1_num128; // number of 128-bit words to transfer (8*16 bits) - full bursts of 8 ( 0 - maximal length, 64)
+    wire                        lin_rw_chn1_partial;  // do not increment page in the end, continue current
+    wire                        lin_rw_chn1_start_rd;  // start generating commands
+    wire                        lin_rw_chn1_start_wr;  // start generating commands
 //    wire                  [1:0] xfer_page2;         // "internal" buffer page
-    wire                        xfer_reset_page2_pos;         // "internal" buffer page reset, @posedge mclk
-    reg                         xfer_reset_page2_neg;         // "internal" buffer page reset, @negedge mclk
+    wire                        xfer_reset_page1_wr;         // "internal" buffer page reset, @posedge mclk
+    wire                        xfer_reset_page1_rd;         // "internal" buffer page reset, @negedge mclk
     
-    wire                  [2:0] lin_wr_chn3_bank;   // bank address
-    wire   [ADDRESS_NUMBER-1:0] lin_wr_chn3_row;    // memory row
-    wire   [COLADDR_NUMBER-4:0] lin_wr_chn3_col;    // start memory column in 8-bursts
-    wire                  [5:0] lin_wr_chn3_num128; // number of 128-bit words to transfer (8*16 bits) - full bursts of 8 ( 0 - maximal length, 64)
-    wire                        lin_wr_chn3_partial; // do not increment page in the end, continue current
-    wire                        lin_wr_chn3_start;  // start generating commands
+    wire                  [2:0] lin_rw_chn3_bank;   // bank address
+    wire   [ADDRESS_NUMBER-1:0] lin_rw_chn3_row;    // memory row
+    wire   [COLADDR_NUMBER-4:0] lin_rw_chn3_col;    // start memory column in 8-bursts
+    wire                  [5:0] lin_rw_chn3_num128; // number of 128-bit words to transfer (8*16 bits) - full bursts of 8 ( 0 - maximal length, 64)
+    wire                        lin_rw_chn3_partial; // do not increment page in the end, continue current
+    wire                        lin_rw_chn3_start_rd;  // start generating commands
+    wire                        lin_rw_chn3_start_wr;  // start generating commands
 //    wire                  [1:0] xfer_page3;       // "internal" buffer page
-    wire                        xfer_reset_page3;   // "internal" buffer page reset, @posedge mclk
+    wire                        xfer_reset_page3_wr;         // "internal" buffer page reset, @posedge mclk
+    wire                        xfer_reset_page3_rd;         // "internal" buffer page reset, @negedge mclk
 
-
+// common for tiled r/w - channels 2 and 4
     wire                  [2:0] tiled_rw_bank;   // bank address
     wire   [ADDRESS_NUMBER-1:0] tiled_rw_row;    // memory row
     wire   [COLADDR_NUMBER-4:0] tiled_rw_col;    // start memory column in 8-bursts
@@ -524,112 +552,172 @@ module  mcntrl393 #(
     wire  [MAX_TILE_HEIGHT-1:0] tiled_rw_num_cols_m1; // number of 128-bit words to transfer (8*16 bits) - full bursts of 8 ( 0 - maximal length, 64)
     wire                        tiled_rw_keep_open;  // start generating commands
     wire                        tiled_rw_xfer_partial;  // start generating commands
-    wire                        tiled_rd_start;  // start generating commands
-    wire                        tiled_wr_start;  // start generating commands
 
-    wire                  [2:0] tiled_rd_chn4_bank;   // bank address
-    wire   [ADDRESS_NUMBER-1:0] tiled_rd_chn4_row;    // memory row
-    wire   [COLADDR_NUMBER-4:0] tiled_rd_chn4_col;    // start memory column in 8-bursts
-    wire   [FRAME_WIDTH_BITS:0] tiled_rd_chn4_rowcol_inc; // number of 128-bit words to transfer (8*16 bits) - full bursts of 8 ( 0 - maximal length, 64)
-    wire   [MAX_TILE_WIDTH-1:0] tiled_rd_chn4_num_rows_m1; // number of 128-bit words to transfer (8*16 bits) - full bursts of 8 ( 0 - maximal length, 64)
-    wire  [MAX_TILE_HEIGHT-1:0] tiled_rd_chn4_num_cols_m1; // number of 128-bit words to transfer (8*16 bits) - full bursts of 8 ( 0 - maximal length, 64)
-    wire                        tiled_rd_chn4_keep_open;  // start generating commands
-    wire                        tiled_rd_chn4_xfer_partial;  // start generating commands
-    wire                        tiled_rd_chn4_start;  // start generating commands
-    wire                        xfer_reset_page4_pos;         // "internal" buffer page reset, @posedge mclk
-    reg                         xfer_reset_page4_neg;         // "internal" buffer page reset, @negedge mclk
+    wire                  [2:0] tiled_rw_chn2_bank;   // bank address
+    wire   [ADDRESS_NUMBER-1:0] tiled_rw_chn2_row;    // memory row
+    wire   [COLADDR_NUMBER-4:0] tiled_rw_chn2_col;    // start memory column in 8-bursts
+    wire   [FRAME_WIDTH_BITS:0] tiled_rw_chn2_rowcol_inc; // number of 128-bit words to transfer (8*16 bits) - full bursts of 8 ( 0 - maximal length, 64)
+    wire   [MAX_TILE_WIDTH-1:0] tiled_rw_chn2_num_rows_m1; // number of 128-bit words to transfer (8*16 bits) - full bursts of 8 ( 0 - maximal length, 64)
+    wire  [MAX_TILE_HEIGHT-1:0] tiled_rw_chn2_num_cols_m1; // number of 128-bit words to transfer (8*16 bits) - full bursts of 8 ( 0 - maximal length, 64)
+    wire                        tiled_rw_chn2_keep_open;  // start generating commands
+    wire                        tiled_rw_chn2_xfer_partial;  // start generating commands
+    wire                        tiled_rw_chn2_start_rd16;  // start generating commands, read,  16-byte column tiles 
+    wire                        tiled_rw_chn2_start_wr16;  // start generating commands, write, 16-byte column tiles
 
-    wire                  [2:0] tiled_wr_chn5_bank;   // bank address
-    wire   [ADDRESS_NUMBER-1:0] tiled_wr_chn5_row;    // memory row
-    wire   [COLADDR_NUMBER-4:0] tiled_wr_chn5_col;    // start memory column in 8-bursts
-    wire   [FRAME_WIDTH_BITS:0] tiled_wr_chn5_rowcol_inc; // number of 128-bit words to transfer (8*16 bits) - full bursts of 8 ( 0 - maximal length, 64)
-    wire   [MAX_TILE_WIDTH-1:0] tiled_wr_chn5_num_rows_m1; // number of 128-bit words to transfer (8*16 bits) - full bursts of 8 ( 0 - maximal length, 64)
-    wire  [MAX_TILE_HEIGHT-1:0] tiled_wr_chn5_num_cols_m1; // number of 128-bit words to transfer (8*16 bits) - full bursts of 8 ( 0 - maximal length, 64)
-    wire                        tiled_wr_chn5_keep_open;  // start generating commands
-    wire                        tiled_wr_chn5_xfer_partial;  // start generating commands
-    wire                        tiled_wr_chn5_start;  // start generating commands
-    wire                        xfer_reset_page5;   // "internal" buffer page reset, @posedge mclk
-
+    wire                        tiled_rw_chn2_start_rd32;  // start generating commands, read,  32-byte column tiles
+    wire                        tiled_rw_chn2_start_wr32;  // start generating commands, write, 32-byte column tiles
     
+    wire                        xfer_reset_page2_wr;         // "internal" buffer page reset, @posedge mclk
+    wire                        xfer_reset_page2_rd;         // "internal" buffer page reset, @negedge mclk
+
+    wire                  [2:0] tiled_rw_chn4_bank;   // bank address
+    wire   [ADDRESS_NUMBER-1:0] tiled_rw_chn4_row;    // memory row
+    wire   [COLADDR_NUMBER-4:0] tiled_rw_chn4_col;    // start memory column in 8-bursts
+    wire   [FRAME_WIDTH_BITS:0] tiled_rw_chn4_rowcol_inc; // number of 128-bit words to transfer (8*16 bits) - full bursts of 8 ( 0 - maximal length, 64)
+    wire   [MAX_TILE_WIDTH-1:0] tiled_rw_chn4_num_rows_m1; // number of 128-bit words to transfer (8*16 bits) - full bursts of 8 ( 0 - maximal length, 64)
+    wire  [MAX_TILE_HEIGHT-1:0] tiled_rw_chn4_num_cols_m1; // number of 128-bit words to transfer (8*16 bits) - full bursts of 8 ( 0 - maximal length, 64)
+    wire                        tiled_rw_chn4_keep_open;  // start generating commands
+    wire                        tiled_rw_chn4_xfer_partial;  // start generating commands
+    wire                        tiled_rw_chn4_start_rd16;  // start generating commands
+    wire                        tiled_rw_chn4_start_wr16;  // start generating commands
+    wire                        tiled_rw_chn4_start_rd32;  // start generating commands
+    wire                        tiled_rw_chn4_start_wr32;  // start generating commands
+    wire                        xfer_reset_page4_wr;         // "internal" buffer page reset, @posedge mclk
+    wire                        xfer_reset_page4_rd;         // "internal" buffer page reset, @negedge mclk
+
+  
+  //====================== new signals ==============================
+    wire                 [31:0] seq_data; // combine data to be written to the memory controller sequencer 
+    wire                        seq_wr;   // strobe to write seq_data
+    wire                        seq_set;  // finalize write to command sequencer (or PS data address if no seq_wr was present
+ 
+        // from encod_linear_rw
+    wire                        encod_linear_start_out; // pulse before encod_linear_rw outputs any data
+    wire                 [31:0] encod_linear_cmd; // command sequencer data
+    wire                        encod_linear_wr;  // command sequencer data strobe
+    wire                        encod_linear_done;// end of command sequnece
+        // from encod_tiled_rw
+    wire                        encod_tiled16_start_out; // pulse before encod_tiled_rw outputs any data
+    wire                 [31:0] encod_tiled16_cmd; 
+    wire                        encod_tiled16_wr;
+    wire                        encod_tiled16_done;
+        // from encod_tiled_32_rw
+    wire                        encod_tiled32_start_out; // pulse before encod_tiled_32_rw outputs any data
+    wire                 [31:0] encod_tiled32_cmd; 
+    wire                        encod_tiled32_wr;
+    wire                        encod_tiled32_done;
+ 
+    wire                        tiled_rw_start_rd16; // start cmd_encod_tiled_32_rw generating command sequence in read mode
+    wire                        tiled_rw_start_wr16; // start cmd_encod_tiled_32_rw generating command sequence in write mode
+    wire                        tiled_rw_start_rd32; // start cmd_encod_tiled_32_rw generating command sequence in read mode
+    wire                        tiled_rw_start_wr32; // start cmd_encod_tiled_32_rw generating command sequence in write mode
+ 
+     
 
     // Command tree - insert register layer(s) if needed, now just direct assignments
     assign cmd_mcontr_ad=        cmd_ad;
     assign cmd_mcontr_stb=       cmd_stb;
     assign cmd_ps_pio_ad=        cmd_ad;
     assign cmd_ps_pio_stb=       cmd_stb;
-    assign cmd_scanline_chn2_ad= cmd_ad;
-    assign cmd_scanline_chn2_stb=cmd_stb;
+    assign cmd_scanline_chn1_ad= cmd_ad;
+    assign cmd_scanline_chn1_stb=cmd_stb;
     assign cmd_scanline_chn3_ad= cmd_ad;
     assign cmd_scanline_chn3_stb=cmd_stb;
+    assign cmd_tiled_chn2_ad=    cmd_ad;
+    assign cmd_tiled_chn2_stb=   cmd_stb;
     assign cmd_tiled_chn4_ad=    cmd_ad;
     assign cmd_tiled_chn4_stb=   cmd_stb;
-    assign cmd_tiled_chn5_ad=    cmd_ad;
-    assign cmd_tiled_chn5_stb=   cmd_stb;
 
     
     
 // For now - combinatorial, maybe add registers (modify axibram_read)
     assign buf_raddr=axird_raddr;    
-    assign axird_rdata = (select_buf0 ? buf0_data : 32'b0) | (select_buf2 ? buf2_data : 32'b0) | (select_buf4 ? buf4_data : 32'b0); 
+    assign axird_rdata = (select_buf0rd ? buf0_data :   32'b0) |
+                         (select_buf1rd ? buf1rd_data : 32'b0) |
+                         (select_buf2rd ? buf2rd_data : 32'b0) |
+                         (select_buf3rd ? buf3rd_data : 32'b0) |
+                         (select_buf4rd ? buf4rd_data : 32'b0); 
     
-    assign buf0_rd=    axird_ren   && select_buf0;
-    assign buf0_regen= axird_regen && select_buf0_d;
-    assign buf2_rd=    axird_ren   && select_buf2;
-    assign buf2_regen= axird_regen && select_buf2_d;
-    assign buf4_rd=    axird_ren   && select_buf4;
-    assign buf4_regen= axird_regen && select_buf4_d;
+    assign buf0_rd=      axird_ren   && select_buf0rd;
+    assign buf0_regen=   axird_regen && select_buf0rd_d;
+    assign buf1rd_rd=    axird_ren   && select_buf1rd;
+    assign buf1rd_regen= axird_regen && select_buf1rd_d;
+    assign buf2rd_rd=    axird_ren   && select_buf2rd;
+    assign buf2rd_regen= axird_regen && select_buf2rd_d;
+    assign buf3rd_rd=    axird_ren   && select_buf3rd;
+    assign buf3rd_regen= axird_regen && select_buf3rd_d;
+    assign buf4rd_rd=    axird_ren   && select_buf4rd;
+    assign buf4rd_regen= axird_regen && select_buf4rd_d;
     
-    assign page_ready_chn2=seq_done2;
-    assign page_ready_chn3=seq_done3;      // TODO - check if it should not be rpage_next
-    assign page_ready_chn4=rpage_nxt_chn4;
-    assign page_ready_chn5=rpage_nxt_chn5; // ??? yes - seq_done is for every page
+    
+    assign page_ready_chn1=page_nxt_chn1; //seq_done2;
+    assign page_ready_chn2=page_nxt_chn2; //seq_done2;
+    assign page_ready_chn3=page_nxt_chn3; //seq_done3;      // TODO - check if it should not be rpage_next
+    assign page_ready_chn4=page_nxt_chn4; //rpage_nxt_chn4;
     
     
     assign axird_selected=axird_selected_r;
     assign select_cmd0_w = ((axiwr_pre_awaddr ^ MCONTR_CMD_WR_ADDR) & MCONTR_WR_MASK)==0;
-    assign select_buf0_w = ((axird_pre_araddr ^ MCONTR_BUF0_RD_ADDR) & MCONTR_RD_MASK)==0;
-    assign select_buf1_w = ((axiwr_pre_awaddr ^ MCONTR_BUF1_WR_ADDR) & MCONTR_WR_MASK)==0;
-    assign select_buf2_w = ((axird_pre_araddr ^ MCONTR_BUF2_RD_ADDR) & MCONTR_RD_MASK)==0;
-    assign select_buf3_w = ((axiwr_pre_awaddr ^ MCONTR_BUF3_WR_ADDR) & MCONTR_WR_MASK)==0;
-    assign select_buf4_w = ((axird_pre_araddr ^ MCONTR_BUF4_RD_ADDR) & MCONTR_RD_MASK)==0;
-    assign select_buf5_w = ((axiwr_pre_awaddr ^ MCONTR_BUF5_WR_ADDR) & MCONTR_WR_MASK)==0;
+    assign select_buf0rd_w = ((axird_pre_araddr ^ MCONTR_BUF0_RD_ADDR) & MCONTR_RD_MASK)==0;
+    assign select_buf0wr_w = ((axiwr_pre_awaddr ^ MCONTR_BUF0_WR_ADDR) & MCONTR_WR_MASK)==0;
+    assign select_buf1rd_w = ((axird_pre_araddr ^ MCONTR_BUF1_RD_ADDR) & MCONTR_RD_MASK)==0;
+    assign select_buf1wr_w = ((axiwr_pre_awaddr ^ MCONTR_BUF1_WR_ADDR) & MCONTR_WR_MASK)==0;
+    assign select_buf2rd_w = ((axird_pre_araddr ^ MCONTR_BUF2_RD_ADDR) & MCONTR_RD_MASK)==0;
+    assign select_buf2wr_w = ((axiwr_pre_awaddr ^ MCONTR_BUF2_WR_ADDR) & MCONTR_WR_MASK)==0;
+    assign select_buf3rd_w = ((axird_pre_araddr ^ MCONTR_BUF3_RD_ADDR) & MCONTR_RD_MASK)==0;
+    assign select_buf3wr_w = ((axiwr_pre_awaddr ^ MCONTR_BUF3_WR_ADDR) & MCONTR_WR_MASK)==0;
+    assign select_buf4rd_w = ((axird_pre_araddr ^ MCONTR_BUF4_RD_ADDR) & MCONTR_RD_MASK)==0;
+    assign select_buf4wr_w = ((axiwr_pre_awaddr ^ MCONTR_BUF4_WR_ADDR) & MCONTR_WR_MASK)==0;
 
     always @ (posedge axi_rst or posedge axi_clk) begin
         if      (axi_rst)           select_cmd0 <= 0;
         else if (axiwr_start_burst) select_cmd0 <= select_cmd0_w;
         
-        if      (axi_rst)           select_buf0 <= 0;
-        else if (axird_start_burst) select_buf0 <= select_buf0_w;
+        if      (axi_rst)           select_buf0rd <= 0;
+        else if (axird_start_burst) select_buf0rd <= select_buf0rd_w;
+        if      (axi_rst)           select_buf0wr <= 0;
+        else if (axird_start_burst) select_buf0wr <= select_buf0wr_w;
         
-        if      (axi_rst)           select_buf1 <= 0;
-        else if (axiwr_start_burst) select_buf1 <= select_buf1_w;
-        
-        if      (axi_rst)           select_buf2 <= 0;
-        else if (axird_start_burst) select_buf2 <= select_buf2_w;
-        
-        if      (axi_rst)           select_buf3 <= 0;
-        else if (axiwr_start_burst) select_buf3 <= select_buf3_w;
-        
-        if      (axi_rst)           select_buf4 <= 0;
-        else if (axird_start_burst) select_buf4 <= select_buf4_w;
+        if      (axi_rst)           select_buf1rd <= 0;
+        else if (axird_start_burst) select_buf1rd <= select_buf1rd_w;
+        if      (axi_rst)           select_buf1wr <= 0;
+        else if (axird_start_burst) select_buf1wr <= select_buf1wr_w;
 
-        if      (axi_rst)           select_buf5 <= 0;
-        else if (axiwr_start_burst) select_buf5 <= select_buf5_w;
+        if      (axi_rst)           select_buf2rd <= 0;
+        else if (axird_start_burst) select_buf2rd <= select_buf2rd_w;
+        if      (axi_rst)           select_buf2wr <= 0;
+        else if (axird_start_burst) select_buf2wr <= select_buf2wr_w;
+
+        if      (axi_rst)           select_buf3rd <= 0;
+        else if (axird_start_burst) select_buf3rd <= select_buf3rd_w;
+        if      (axi_rst)           select_buf3wr <= 0;
+        else if (axird_start_burst) select_buf3wr <= select_buf3wr_w;
+
+        if      (axi_rst)           select_buf4rd <= 0;
+        else if (axird_start_burst) select_buf4rd <= select_buf4rd_w;
+        if      (axi_rst)           select_buf4wr <= 0;
+        else if (axird_start_burst) select_buf4wr <= select_buf4wr_w;
+
 
         if      (axi_rst)           axird_selected_r <= 0;
-        else if (axird_start_burst) axird_selected_r <= select_buf0_w || select_buf2_w ||select_buf4_w;
+        else if (axird_start_burst) axird_selected_r <= select_buf0rd_w || select_buf1rd_w ||
+                                                        select_buf2rd_w  || select_buf3rd_w || select_buf4rd_w;
     end
     always @ (posedge axi_clk) begin
         if (axiwr_wen) buf_wdata  <= axiwr_data;
         if (axiwr_wen) buf_waddr <= axiwr_waddr;
         cmd_we <=  axiwr_wen && select_cmd0;
-        buf1_we <= axiwr_wen && select_buf1;
-        buf3_we <= axiwr_wen && select_buf3;
-        buf5_we <= axiwr_wen && select_buf5;
+        buf0wr_we <= axiwr_wen && select_buf0wr;
+        buf1wr_we <= axiwr_wen && select_buf1wr;
+        buf2wr_we <= axiwr_wen && select_buf2wr;
+        buf3wr_we <= axiwr_wen && select_buf3wr;
+        buf4wr_we <= axiwr_wen && select_buf4wr;
         
-        select_buf0_d <= select_buf0;
-        select_buf2_d <= select_buf2;
-        select_buf4_d <= select_buf4;
+        select_buf0rd_d <= select_buf0rd;
+        select_buf1rd_d <= select_buf1rd;
+        select_buf2rd_d <= select_buf2rd;
+        select_buf3rd_d <= select_buf3rd;
+        select_buf4rd_d <= select_buf4rd;
     end
    //axiwr_waddr 
     status_router16 status_router16_mctrl_top_i (
@@ -641,18 +729,18 @@ module  mcntrl393 #(
         .db_in1    (status_ps_pio_ad), // input[7:0] 
         .rq_in1    (status_ps_pio_rq), // input
         .start_in1 (status_ps_pio_start), // output
-        .db_in2    (status_scanline_chn2_ad), // input[7:0] 
-        .rq_in2    (status_scanline_chn2_rq), // input
-        .start_in2 (status_scanline_chn2_start), // output
+        .db_in2    (status_scanline_chn1_ad), // input[7:0] 
+        .rq_in2    (status_scanline_chn1_rq), // input
+        .start_in2 (status_scanline_chn1_start), // output
         .db_in3    (status_scanline_chn3_ad), // input[7:0] 
         .rq_in3    (status_scanline_chn3_rq), // input
         .start_in3 (status_scanline_chn3_start), // output
-        .db_in4    (status_tiled_chn4_ad), // input[7:0] 
-        .rq_in4    (status_tiled_chn4_rq), // input
-        .start_in4 (status_tiled_chn4_start), // output
-        .db_in5    (status_tiled_chn5_ad), // input[7:0] 
-        .rq_in5    (status_tiled_chn5_rq), // input
-        .start_in5 (status_tiled_chn5_start), // output
+        .db_in4    (status_tiled_chn2_ad), // input[7:0] 
+        .rq_in4    (status_tiled_chn2_rq), // input
+        .start_in4 (status_tiled_chn2_start), // output
+        .db_in5    (status_tiled_chn4_ad), // input[7:0] 
+        .rq_in5    (status_tiled_chn4_rq), // input
+        .start_in5 (status_tiled_chn4_start), // output
         .db_in6    (8'b0), // input[7:0] 
         .rq_in6    (1'b0), // input
         .start_in6 (), // output
@@ -689,317 +777,136 @@ module  mcntrl393 #(
         .start_out (status_start) // input
     );
 
-    mcntrl_tiled_rw #(
-        .ADDRESS_NUMBER                (ADDRESS_NUMBER),
-        .COLADDR_NUMBER                (COLADDR_NUMBER),
-        .FRAME_WIDTH_BITS              (FRAME_WIDTH_BITS),
-        .FRAME_HEIGHT_BITS             (FRAME_HEIGHT_BITS),
-        .MAX_TILE_WIDTH                (MAX_TILE_WIDTH),
-        .MAX_TILE_HEIGHT               (MAX_TILE_HEIGHT),
-        .MCNTRL_TILED_ADDR             (MCNTRL_TILED_CHN4_ADDR),
-        .MCNTRL_TILED_MASK             (MCNTRL_TILED_MASK),
-        .MCNTRL_TILED_MODE             (MCNTRL_TILED_MODE),
-        .MCNTRL_TILED_STATUS_CNTRL     (MCNTRL_TILED_STATUS_CNTRL),
-        .MCNTRL_TILED_STARTADDR        (MCNTRL_TILED_STARTADDR),
-        .MCNTRL_TILED_FRAME_FULL_WIDTH (MCNTRL_TILED_FRAME_FULL_WIDTH),
-        .MCNTRL_TILED_WINDOW_WH        (MCNTRL_TILED_WINDOW_WH),
-        .MCNTRL_TILED_WINDOW_X0Y0      (MCNTRL_TILED_WINDOW_X0Y0),
-        .MCNTRL_TILED_WINDOW_STARTXY   (MCNTRL_TILED_WINDOW_STARTXY),
-        .MCNTRL_TILED_TILE_WHS          (MCNTRL_TILED_TILE_WHS),
-        .MCNTRL_TILED_STATUS_REG_ADDR  (MCNTRL_TILED_STATUS_REG_CHN4_ADDR),
-        .MCNTRL_TILED_PENDING_CNTR_BITS(MCNTRL_TILED_PENDING_CNTR_BITS),
-        .MCNTRL_TILED_FRAME_PAGE_RESET (MCNTRL_TILED_FRAME_PAGE_RESET),
-        .MCNTRL_TILED_WRITE_MODE       (1'b0)
-    ) mcntrl_tiled_rw_chn4_i ( 
-        .rst(rst), // input
-        .mclk(mclk), // input
-        .cmd_ad               (cmd_tiled_chn4_ad), // input[7:0] 
-        .cmd_stb              (cmd_tiled_chn4_stb), // input
-        .status_ad            (status_tiled_chn4_ad), // output[7:0] 
-        .status_rq            (status_tiled_chn4_rq), // output
-        .status_start         (status_tiled_chn4_start), // input
-        .frame_start          (frame_start_chn4), // input
-        .next_page            (next_page_chn4), // input
-        .frame_done           (frame_done_chn4), // output
-        .frame_finished       (), // output
-        .line_unfinished      (line_unfinished_chn4), // output[15:0] 
-        .suspend              (suspend_chn4), // input
-        .xfer_want            (want_rq4), // output
-        .xfer_need            (need_rq4), // output
-        .xfer_grant           (channel_pgm_en4), // input
-        .xfer_start           (tiled_rd_chn4_start), // output
-        .xfer_bank            (tiled_rd_chn4_bank), // output[2:0] 
-        .xfer_row             (tiled_rd_chn4_row), // output[14:0] 
-        .xfer_col             (tiled_rd_chn4_col), // output[6:0] 
-        .rowcol_inc           (tiled_rd_chn4_rowcol_inc), // output[13:0] 
-        .num_rows_m1          (tiled_rd_chn4_num_rows_m1), // output[5:0] 
-        .num_cols_m1          (tiled_rd_chn4_num_cols_m1), // output[5:0] 
-        .keep_open            (tiled_rd_chn4_keep_open), // output
-        .xfer_partial         (tiled_rd_chn4_xfer_partial), // output
-        .xfer_page_done       (seq_done4), // input
-        .xfer_page_rst        (xfer_reset_page4_pos) // output
-    );
 
-    mcntrl_tiled_rw #(
-        .ADDRESS_NUMBER                (ADDRESS_NUMBER),
-        .COLADDR_NUMBER                (COLADDR_NUMBER),
-        .FRAME_WIDTH_BITS              (FRAME_WIDTH_BITS),
-        .FRAME_HEIGHT_BITS             (FRAME_HEIGHT_BITS),
-        .MAX_TILE_WIDTH                (MAX_TILE_WIDTH),
-        .MAX_TILE_HEIGHT               (MAX_TILE_HEIGHT),
-        .MCNTRL_TILED_ADDR             (MCNTRL_TILED_CHN5_ADDR),
-        .MCNTRL_TILED_MASK             (MCNTRL_TILED_MASK),
-        .MCNTRL_TILED_MODE             (MCNTRL_TILED_MODE),
-        .MCNTRL_TILED_STATUS_CNTRL     (MCNTRL_TILED_STATUS_CNTRL),
-        .MCNTRL_TILED_STARTADDR        (MCNTRL_TILED_STARTADDR),
-        .MCNTRL_TILED_FRAME_FULL_WIDTH (MCNTRL_TILED_FRAME_FULL_WIDTH),
-        .MCNTRL_TILED_WINDOW_WH        (MCNTRL_TILED_WINDOW_WH),
-        .MCNTRL_TILED_WINDOW_X0Y0      (MCNTRL_TILED_WINDOW_X0Y0),
-        .MCNTRL_TILED_WINDOW_STARTXY   (MCNTRL_TILED_WINDOW_STARTXY),
-        .MCNTRL_TILED_TILE_WHS          (MCNTRL_TILED_TILE_WHS),
-        .MCNTRL_TILED_STATUS_REG_ADDR  (MCNTRL_TILED_STATUS_REG_CHN4_ADDR),
-        .MCNTRL_TILED_PENDING_CNTR_BITS(MCNTRL_TILED_PENDING_CNTR_BITS),
-        .MCNTRL_TILED_FRAME_PAGE_RESET (MCNTRL_TILED_FRAME_PAGE_RESET),
-        .MCNTRL_TILED_WRITE_MODE       (1'b1)
-    ) mcntrl_tiled_rw_chn5_i ( 
-        .rst(rst), // input
-        .mclk(mclk), // input
-        .cmd_ad               (cmd_tiled_chn5_ad), // input[7:0] 
-        .cmd_stb              (cmd_tiled_chn5_stb), // input
-        .status_ad            (status_tiled_chn5_ad), // output[7:0] 
-        .status_rq            (status_tiled_chn5_rq), // output
-        .status_start         (status_tiled_chn5_start), // input
-        .frame_start          (frame_start_chn5), // input
-        .next_page            (next_page_chn5), // input
-        .frame_done           (frame_done_chn5), // output
-        .frame_finished       (), // output
-        .line_unfinished      (line_unfinished_chn5), // output[15:0] 
-        .suspend              (suspend_chn5), // input
-        .xfer_want            (want_rq5), // output
-        .xfer_need            (need_rq5), // output
-        .xfer_grant           (channel_pgm_en5), // input
-        .xfer_start           (tiled_wr_chn5_start), // output
-        .xfer_bank            (tiled_wr_chn5_bank), // output[2:0] 
-        .xfer_row             (tiled_wr_chn5_row), // output[14:0] 
-        .xfer_col             (tiled_wr_chn5_col), // output[6:0] 
-        .rowcol_inc           (tiled_wr_chn5_rowcol_inc), // output[13:0] 
-        .num_rows_m1          (tiled_wr_chn5_num_rows_m1), // output[5:0] 
-        .num_cols_m1          (tiled_wr_chn5_num_cols_m1), // output[5:0] 
-        .keep_open            (tiled_wr_chn5_keep_open), // output
-        .xfer_partial         (tiled_wr_chn5_xfer_partial), // output
-        .xfer_page_done       (seq_done5), // input
-        .xfer_page_rst        (xfer_reset_page5) // output
-    );
-
-    cmd_encod_tiled_mux #(
-        .ADDRESS_NUMBER          (ADDRESS_NUMBER),
-        .COLADDR_NUMBER          (COLADDR_NUMBER),
-        .FRAME_WIDTH_BITS        (FRAME_WIDTH_BITS),
-        .MAX_TILE_WIDTH          (MAX_TILE_WIDTH),
-        .MAX_TILE_HEIGHT         (MAX_TILE_HEIGHT)
-    ) cmd_encod_tiled_mux_i (
-        .clk                     (mclk), // input
-        .bank4                   (tiled_rd_chn4_bank), // input[2:0] 
-        .row4                    (tiled_rd_chn4_row), // input[14:0] 
-        .col4                    (tiled_rd_chn4_col), // input[6:0] 
-        .rowcol_inc4             (tiled_rd_chn4_rowcol_inc), // input[13:0] 
-        .num_rows4               (tiled_rd_chn4_num_rows_m1), // input[5:0] 
-        .num_cols4               (tiled_rd_chn4_num_cols_m1), // input[5:0] 
-        .keep_open4              (tiled_rd_chn4_keep_open), // input
-        .partial4                (tiled_rd_chn4_xfer_partial), // input
-        .start4                  (tiled_rd_chn4_start), // input
-        .bank5                   (tiled_wr_chn5_bank), // input[2:0] 
-        .row5                    (tiled_wr_chn5_row), // input[14:0] 
-        .col5                    (tiled_wr_chn5_col), // input[6:0] 
-        .rowcol_inc5             (tiled_wr_chn5_rowcol_inc), // input[13:0] 
-        .num_rows5               (tiled_wr_chn5_num_rows_m1), // input[5:0] 
-        .num_cols5               (tiled_wr_chn5_num_cols_m1), // input[5:0] 
-        .keep_open5              (tiled_wr_chn5_keep_open), // input
-        .partial5                (tiled_wr_chn5_xfer_partial), // input
-        .start5                  (tiled_wr_chn5_start), // input
-        .bank                    (tiled_rw_bank), // output[2:0] 
-        .row                     (tiled_rw_row), // output[14:0] 
-        .col                     (tiled_rw_col), // output[6:0] 
-        .rowcol_inc              (tiled_rw_rowcol_inc), // output[13:0] 
-        .num_rows                (tiled_rw_num_rows_m1), // output[5:0] 
-        .num_cols                (tiled_rw_num_cols_m1), // output[5:0] 
-        .keep_open               (tiled_rw_keep_open), // output
-        .partial                 (tiled_rw_xfer_partial), // output
-        .start_rd                (tiled_rd_start), // output
-        .start_wr                (tiled_wr_start) // output
-    );
 // with external defines, does not search module definition when creating closure for iverilog
 // TODO: fix
-`define USE_CMD_ENCOD_TILED_32_RD
-`ifdef USE_CMD_ENCOD_TILED_32_RD    
-    cmd_encod_tiled_32_rd #(
-        .ADDRESS_NUMBER(15),
-        .COLADDR_NUMBER(10),
-        .CMD_PAUSE_BITS(10),
-        .CMD_DONE_BIT(10)
-    ) cmd_encod_tiled_rd_i (
-        .rst               (rst), // input
-        .clk               (mclk), // input
-        .start_bank        (tiled_rw_bank), // input[2:0] 
-        .start_row         (tiled_rw_row), // input[14:0] 
-        .start_col         (tiled_rw_col), // input[6:0] 
-        .rowcol_inc_in     (tiled_rw_rowcol_inc), // input[13:0] // [21:0] 
-        .num_rows_in_m1    (tiled_rw_num_rows_m1), // input[5:0] 
-        .num_cols_in_m1    (tiled_rw_num_cols_m1), // input[5:0] 
-        .keep_open_in      (tiled_rw_keep_open), // input
-        .skip_next_page_in (tiled_rw_xfer_partial), // input
-        
-        .start             (tiled_rd_start), // input
-        .enc_cmd           (seq_data4x), // output[31:0] reg 
-        .enc_wr            (seq_wr4x), // output reg 
-        .enc_done          (seq_set4x) // output reg 
-    );
-`else    
-    cmd_encod_tiled_rd #(
-        .ADDRESS_NUMBER(15),
-        .COLADDR_NUMBER(10),
-        .CMD_PAUSE_BITS(10),
-        .CMD_DONE_BIT(10)
-    ) cmd_encod_tiled_rd_i (
-        .rst               (rst), // input
-        .clk               (mclk), // input
-        .start_bank        (tiled_rw_bank), // input[2:0] 
-        .start_row         (tiled_rw_row), // input[14:0] 
-        .start_col         (tiled_rw_col), // input[6:0] 
-        .rowcol_inc_in     (tiled_rw_rowcol_inc), // input[13:0] // [21:0] 
-        .num_rows_in_m1    (tiled_rw_num_rows_m1), // input[5:0] 
-        .num_cols_in_m1    (tiled_rw_num_cols_m1), // input[5:0] 
-        .keep_open_in      (tiled_rw_keep_open), // input
-        .skip_next_page_in (tiled_rw_xfer_partial), // input
-        
-        .start             (tiled_rd_start), // input
-        .enc_cmd           (seq_data4x), // output[31:0] reg 
-        .enc_wr            (seq_wr4x), // output reg 
-        .enc_done          (seq_set4x) // output reg 
-    );
-`endif    
-
-`define USE_CMD_ENCOD_TILED_32_WR
-`ifdef USE_CMD_ENCOD_TILED_32_WR    
-    cmd_encod_tiled_32_wr #(
-        .ADDRESS_NUMBER(15),
-        .COLADDR_NUMBER(10),
-        .CMD_PAUSE_BITS(10),
-        .CMD_DONE_BIT(10)
-    ) cmd_encod_tiled_wr_i (
-        .rst               (rst), // input
-        .clk               (mclk), // input
-        .start_bank        (tiled_rw_bank), // input[2:0] 
-        .start_row         (tiled_rw_row), // input[14:0] 
-        .start_col         (tiled_rw_col), // input[6:0] 
-        .rowcol_inc_in     (tiled_rw_rowcol_inc), // input[13:0] // [21:0] 
-        .num_rows_in_m1    (tiled_rw_num_rows_m1), // input[5:0] 
-        .num_cols_in_m1    (tiled_rw_num_cols_m1), // input[5:0] 
-        .keep_open_in      (tiled_rw_keep_open), // input
-        .skip_next_page_in (tiled_rw_xfer_partial), // input
-        
-        .start             (tiled_wr_start), // input
-        .enc_cmd           (seq_data5x), // output[31:0] reg 
-        .enc_wr            (seq_wr5x), // output reg 
-        .enc_done          (seq_set5x) // output reg 
-    );
-`else    
-    cmd_encod_tiled_wr #(
-        .ADDRESS_NUMBER(15),
-        .COLADDR_NUMBER(10),
-        .CMD_PAUSE_BITS(10),
-        .CMD_DONE_BIT(10)
-    ) cmd_encod_tiled_wr_i (
-        .rst               (rst), // input
-        .clk               (mclk), // input
-        .start_bank        (tiled_rw_bank), // input[2:0] 
-        .start_row         (tiled_rw_row), // input[14:0] 
-        .start_col         (tiled_rw_col), // input[6:0] 
-        .rowcol_inc_in     (tiled_rw_rowcol_inc), // input[13:0] // [21:0] 
-        .num_rows_in_m1    (tiled_rw_num_rows_m1), // input[5:0] 
-        .num_cols_in_m1    (tiled_rw_num_cols_m1), // input[5:0] 
-        .keep_open_in      (tiled_rw_keep_open), // input
-        .skip_next_page_in (tiled_rw_xfer_partial), // input
-        
-        .start             (tiled_wr_start), // input
-        .enc_cmd           (seq_data5x), // output[31:0] reg 
-        .enc_wr            (seq_wr5x), // output reg 
-        .enc_done          (seq_set5x) // output reg 
-    );
-`endif    
-
 
 //
 // Port memory buffer (4 pages each, R/W fixed, port 0 - AXI read from DDR, port 1 - AXI write to DDR
-// Port 2 (read DDR to AXI) buffer, linear
-    always @ (negedge mclk) begin
-        xfer_reset_page2_neg <= xfer_reset_page2_pos;
-        xfer_reset_page4_neg <= xfer_reset_page4_pos;
-    end
 
-    mcntrl_1kx32r chn2_buf_i (
+// Port 1rd (read DDR to AXI) buffer, linear
+    mcntrl_1kx32r chn1rd_buf_i (
         .ext_clk      (axi_clk), // input
         .ext_raddr    (buf_raddr), // input[9:0] 
-        .ext_rd       (buf2_rd), // input
-        .ext_regen    (buf2_regen), // input
-        .ext_data_out (buf2_data), // output[31:0] 
+        .ext_rd       (buf1rd_rd), // input
+        .ext_regen    (buf1rd_regen), // input
+        .ext_data_out (buf1rd_data), // output[31:0] 
         .wclk         (!mclk), // input
         .wpage_in     (2'b0), // input[1:0] 
-        .wpage_set    (xfer_reset_page2_neg), // input  TODO: Generate @ negedge mclk on frame start
+        .wpage_set    (xfer_reset_page1_rd), // input  TODO: Generate @ negedge mclk on frame start
+        .page_next    (buf_wpage_nxt_chn1), // input
+        .page         (), // output[1:0]
+        .we           (buf_wr_chn1), // input
+        .data_in      (buf_wdata_chn1) // input[63:0] 
+    );
+
+// Port 1wr (write DDR from AXI) buffer, linear
+         mcntrl_1kx32w chn1wr_buf_i (
+        .ext_clk      (axi_clk), // input
+        .ext_waddr    (buf_waddr), // input[9:0] 
+        .ext_we       (buf1wr_we), // input
+        .ext_data_in  (buf_wdata), // input[31:0] buf_wdata - from AXI
+        .rclk         (mclk), // input
+        .rpage_in     (2'b0), // input[1:0] 
+        .rpage_set    (xfer_reset_page1_wr), // input  @ posedge mclk
+        .page_next    (rpage_nxt_chn1), // input
+        .page         (), // output[1:0]
+        .rd           (buf_rd_chn1), // input
+        .data_out     (buf_rdata_chn1) // output[63:0] 
+    );
+
+// Port 2rd (read DDR to AXI) buffer, tiled
+    mcntrl_1kx32r chn2rd_buf_i (
+        .ext_clk      (axi_clk), // input
+        .ext_raddr    (buf_raddr), // input[9:0] 
+        .ext_rd       (buf2rd_rd), // input
+        .ext_regen    (buf2rd_regen), // input
+        .ext_data_out (buf2rd_data), // output[31:0] 
+        .wclk         (!mclk), // input
+        .wpage_in     (2'b0), // input[1:0] 
+        .wpage_set    (xfer_reset_page2_rd), // input  TODO: Generate @ negedge mclk on frame start
         .page_next    (buf_wpage_nxt_chn2), // input
         .page         (), // output[1:0]
         .we           (buf_wr_chn2), // input
         .data_in      (buf_wdata_chn2) // input[63:0] 
     );
 
-
-
-// Port 3 (write DDR from AXI) buffer, linear
-         mcntrl_1kx32w chn3_buf_i (
+// Port 2wr (write DDR from AXI) buffer, tiled
+         mcntrl_1kx32w chn2wr_buf_i (
         .ext_clk      (axi_clk), // input
         .ext_waddr    (buf_waddr), // input[9:0] 
-        .ext_we       (buf3_we), // input
+        .ext_we       (buf2wr_we), // input
         .ext_data_in  (buf_wdata), // input[31:0] buf_wdata - from AXI
         .rclk         (mclk), // input
         .rpage_in     (2'b0), // input[1:0] 
-        .rpage_set    (xfer_reset_page3), // input   TODO: Generate @ posedge mclk on frame start
+        .rpage_set    (xfer_reset_page2_wr), // input @ posedge mclk
+        .page_next    (rpage_nxt_chn2), // input
+        .page         (), // output[1:0]
+        .rd           (buf_rd_chn2), // input
+        .data_out     (buf_rdata_chn2) // output[63:0] 
+    );
+//-----------
+// Port 3rd (read DDR to AXI) buffer, linear
+    mcntrl_1kx32r chn3rd_buf_i (
+        .ext_clk      (axi_clk), // input
+        .ext_raddr    (buf_raddr), // input[9:0] 
+        .ext_rd       (buf3rd_rd), // input
+        .ext_regen    (buf3rd_regen), // input
+        .ext_data_out (buf3rd_data), // output[31:0] 
+        .wclk         (!mclk), // input
+        .wpage_in     (2'b0), // input[1:0] 
+        .wpage_set    (xfer_reset_page3_rd), // input @ negedge mclk
+        .page_next    (buf_wpage_nxt_chn3), // input
+        .page         (), // output[1:0]
+        .we           (buf_wr_chn3), // input
+        .data_in      (buf_wdata_chn3) // input[63:0] 
+    );
+
+// Port 3wr (write DDR from AXI) buffer, linear
+         mcntrl_1kx32w chn3wr_buf_i (
+        .ext_clk      (axi_clk), // input
+        .ext_waddr    (buf_waddr), // input[9:0] 
+        .ext_we       (buf3wr_we), // input
+        .ext_data_in  (buf_wdata), // input[31:0] buf_wdata - from AXI
+        .rclk         (mclk), // input
+        .rpage_in     (2'b0), // input[1:0] 
+        .rpage_set    (xfer_reset_page3_wr), // input  @ posedge mclk
         .page_next    (rpage_nxt_chn3), // input
         .page         (), // output[1:0]
         .rd           (buf_rd_chn3), // input
         .data_out     (buf_rdata_chn3) // output[63:0] 
     );
 
-// Port 4 (read DDR to AXI) buffer, tiled
-    mcntrl_1kx32r chn4_buf_i (
+// Port 4rd (read DDR to AXI) buffer, tiled
+    mcntrl_1kx32r chn4rd_buf_i (
         .ext_clk      (axi_clk), // input
         .ext_raddr    (buf_raddr), // input[9:0] 
-        .ext_rd       (buf4_rd), // input
-        .ext_regen    (buf4_regen), // input
-        .ext_data_out (buf4_data), // output[31:0] 
+        .ext_rd       (buf4rd_rd), // input
+        .ext_regen    (buf4rd_regen), // input
+        .ext_data_out (buf4rd_data), // output[31:0] 
         .wclk         (!mclk), // input
         .wpage_in     (2'b0), // input[1:0] 
-        .wpage_set    (xfer_reset_page4_neg), // input  TODO: Generate @ negedge mclk on frame start
+        .wpage_set    (xfer_reset_page4_rd), // input  @ negedge mclk
         .page_next    (buf_wpage_nxt_chn4), // input
         .page         (), // output[1:0]
         .we           (buf_wr_chn4), // input
         .data_in      (buf_wdata_chn4) // input[63:0] 
     );
 
-// Port 5 (write DDR from AXI) buffer, tiled
-         mcntrl_1kx32w chn5_buf_i (
+// Port 4wr (write DDR from AXI) buffer, tiled
+         mcntrl_1kx32w chn4wr_buf_i (
         .ext_clk      (axi_clk), // input
         .ext_waddr    (buf_waddr), // input[9:0] 
-        .ext_we       (buf5_we), // input
+        .ext_we       (buf4wr_we), // input
         .ext_data_in  (buf_wdata), // input[31:0] buf_wdata - from AXI
         .rclk         (mclk), // input
         .rpage_in     (2'b0), // input[1:0] 
-        .rpage_set    (xfer_reset_page5), // input   TODO: Generate @ posedge mclk on frame start
-        .page_next    (rpage_nxt_chn5), // input
+        .rpage_set    (xfer_reset_page4_wr), // input  @ posedge mclk 
+        .page_next    (rpage_nxt_chn4), // input
         .page         (), // output[1:0]
-        .rd           (buf_rd_chn5), // input
-        .data_out     (buf_rdata_chn5) // output[63:0] 
+        .rd           (buf_rd_chn4), // input
+        .data_out     (buf_rdata_chn4) // output[63:0] 
     );
-    
 
     mcntrl_linear_rw #(
         .ADDRESS_NUMBER                    (ADDRESS_NUMBER),
@@ -1007,7 +914,7 @@ module  mcntrl393 #(
         .NUM_XFER_BITS                     (NUM_XFER_BITS),
         .FRAME_WIDTH_BITS                  (FRAME_WIDTH_BITS),
         .FRAME_HEIGHT_BITS                 (FRAME_HEIGHT_BITS),
-        .MCNTRL_SCANLINE_ADDR              (MCNTRL_SCANLINE_CHN2_ADDR),
+        .MCNTRL_SCANLINE_ADDR              (MCNTRL_SCANLINE_CHN1_ADDR),
         .MCNTRL_SCANLINE_MASK              (MCNTRL_SCANLINE_MASK),
         .MCNTRL_SCANLINE_MODE              (MCNTRL_SCANLINE_MODE),
         .MCNTRL_SCANLINE_STATUS_CNTRL      (MCNTRL_SCANLINE_STATUS_CNTRL),
@@ -1016,34 +923,36 @@ module  mcntrl393 #(
         .MCNTRL_SCANLINE_WINDOW_WH         (MCNTRL_SCANLINE_WINDOW_WH),
         .MCNTRL_SCANLINE_WINDOW_X0Y0       (MCNTRL_SCANLINE_WINDOW_X0Y0),
         .MCNTRL_SCANLINE_WINDOW_STARTXY    (MCNTRL_SCANLINE_WINDOW_STARTXY),
-        .MCNTRL_SCANLINE_STATUS_REG_ADDR   (MCNTRL_SCANLINE_STATUS_REG_CHN2_ADDR),
+        .MCNTRL_SCANLINE_STATUS_REG_ADDR   (MCNTRL_SCANLINE_STATUS_REG_CHN1_ADDR),
         .MCNTRL_SCANLINE_PENDING_CNTR_BITS (MCNTRL_SCANLINE_PENDING_CNTR_BITS),
-        .MCNTRL_SCANLINE_WRITE_MODE        (1'b0)
-    ) mcntrl_linear_rw_chn2_i (
-        .rst             (rst), // input
-        .mclk            (mclk), // input
-        .cmd_ad          (cmd_scanline_chn2_ad), // input[7:0] 
-        .cmd_stb         (cmd_scanline_chn2_stb), // input
-        .status_ad       (status_scanline_chn2_ad), // output[7:0] 
-        .status_rq       (status_scanline_chn2_rq), // output
-        .status_start    (status_scanline_chn2_start), // input
-        .frame_start       (frame_start_chn2), // input
-        .next_page         (next_page_chn2), // input
-        .frame_done        (frame_done_chn2), // output
-        .frame_finished    (), // output
-        .line_unfinished   (line_unfinished_chn2), // output[15:0] 
-        .suspend           (suspend_chn2), // input
-        .xfer_want       (want_rq2), // output
-        .xfer_need       (need_rq2), // output
-        .xfer_grant      (channel_pgm_en2), // input
-        .xfer_start      (lin_rd_chn2_start), // output
-        .xfer_bank       (lin_rd_chn2_bank), // output[2:0] 
-        .xfer_row        (lin_rd_chn2_row), // output[14:0] 
-        .xfer_col        (lin_rd_chn2_col), // output[6:0] 
-        .xfer_num128     (lin_rd_chn2_num128), // output[5:0]
-        .xfer_partial    (lin_rd_chn2_partial), // output
-        .xfer_done       (seq_done2), // input: sequence over
-        .xfer_reset_page (xfer_reset_page2_pos) // output
+        .MCNTRL_SCANLINE_FRAME_PAGE_RESET  (MCNTRL_SCANLINE_FRAME_PAGE_RESET)
+    ) mcntrl_linear_rw_chn1_i (
+        .rst              (rst), // input
+        .mclk             (mclk), // input
+        .cmd_ad           (cmd_scanline_chn1_ad), // input[7:0] 
+        .cmd_stb          (cmd_scanline_chn1_stb), // input
+        .status_ad        (status_scanline_chn1_ad), // output[7:0] 
+        .status_rq        (status_scanline_chn1_rq), // output
+        .status_start     (status_scanline_chn1_start), // input
+        .frame_start      (frame_start_chn1), // input
+        .next_page        (next_page_chn1), // input
+        .frame_done       (frame_done_chn1), // output
+        .frame_finished       (), // output
+        .line_unfinished  (line_unfinished_chn1), // output[15:0] 
+        .suspend          (suspend_chn1), // input
+        .xfer_want        (want_rq1), // output
+        .xfer_need        (need_rq1), // output
+        .xfer_grant       (channel_pgm_en1), // input
+        .xfer_start_rd    (lin_rw_chn1_start_rd), // output
+        .xfer_start_wr    (lin_rw_chn1_start_wr), // output
+        .xfer_bank        (lin_rw_chn1_bank), // output[2:0] 
+        .xfer_row         (lin_rw_chn1_row), // output[14:0] 
+        .xfer_col         (lin_rw_chn1_col), // output[6:0] 
+        .xfer_num128      (lin_rw_chn1_num128), // output[5:0]
+        .xfer_partial     (lin_rw_chn1_partial), // output
+        .xfer_done        (seq_done1), // input : sequence over
+        .xfer_page_rst_wr (xfer_reset_page1_wr), // output
+        .xfer_page_rst_rd (xfer_reset_page1_rd) // output
     );
 
     mcntrl_linear_rw #(
@@ -1063,106 +972,146 @@ module  mcntrl393 #(
         .MCNTRL_SCANLINE_WINDOW_STARTXY    (MCNTRL_SCANLINE_WINDOW_STARTXY),
         .MCNTRL_SCANLINE_STATUS_REG_ADDR   (MCNTRL_SCANLINE_STATUS_REG_CHN3_ADDR),
         .MCNTRL_SCANLINE_PENDING_CNTR_BITS (MCNTRL_SCANLINE_PENDING_CNTR_BITS),
-        .MCNTRL_SCANLINE_WRITE_MODE        (1'b1)
+        .MCNTRL_SCANLINE_FRAME_PAGE_RESET  (MCNTRL_SCANLINE_FRAME_PAGE_RESET)
     ) mcntrl_linear_rw_chn3_i (
-        .rst             (rst), // input
-        .mclk            (mclk), // input
-        .cmd_ad          (cmd_scanline_chn3_ad), // input[7:0] 
-        .cmd_stb         (cmd_scanline_chn3_stb), // input
-        .status_ad       (status_scanline_chn3_ad), // output[7:0] 
-        .status_rq       (status_scanline_chn3_rq), // output
-        .status_start    (status_scanline_chn3_start), // input
+        .rst              (rst), // input
+        .mclk             (mclk), // input
+        .cmd_ad           (cmd_scanline_chn3_ad), // input[7:0] 
+        .cmd_stb          (cmd_scanline_chn3_stb), // input
+        .status_ad        (status_scanline_chn3_ad), // output[7:0] 
+        .status_rq        (status_scanline_chn3_rq), // output
+        .status_start     (status_scanline_chn3_start), // input
         .frame_start      (frame_start_chn3), // input
         .next_page        (next_page_chn3), // input
         .frame_done       (frame_done_chn3), // output
         .frame_finished       (), // output
         .line_unfinished  (line_unfinished_chn3), // output[15:0] 
         .suspend          (suspend_chn3), // input
-        .xfer_want       (want_rq3), // output
-        .xfer_need       (need_rq3), // output
-        .xfer_grant      (channel_pgm_en3), // input
-        .xfer_start      (lin_wr_chn3_start), // output
-        .xfer_bank       (lin_wr_chn3_bank), // output[2:0] 
-        .xfer_row        (lin_wr_chn3_row), // output[14:0] 
-        .xfer_col        (lin_wr_chn3_col), // output[6:0] 
-        .xfer_num128     (lin_wr_chn3_num128), // output[5:0]
-        .xfer_partial         (lin_wr_chn3_partial), // output
-        .xfer_done       (seq_done3), // input : sequence over
-//        .xfer_page       (xfer_page3) // output[1:0]
-        .xfer_reset_page (xfer_reset_page3) // output
+        .xfer_want        (want_rq3), // output
+        .xfer_need        (need_rq3), // output
+        .xfer_grant       (channel_pgm_en3), // input
+        .xfer_start_rd    (lin_rw_chn3_start_rd), // output
+        .xfer_start_wr    (lin_rw_chn3_start_wr), // output
+        .xfer_bank        (lin_rw_chn3_bank), // output[2:0] 
+        .xfer_row         (lin_rw_chn3_row), // output[14:0] 
+        .xfer_col         (lin_rw_chn3_col), // output[6:0] 
+        .xfer_num128      (lin_rw_chn3_num128), // output[5:0]
+        .xfer_partial     (lin_rw_chn3_partial), // output
+        .xfer_done        (seq_done3), // input : sequence over
+        .xfer_page_rst_wr (xfer_reset_page3_wr), // output
+        .xfer_page_rst_rd (xfer_reset_page3_rd) // output
+    );
+       mcntrl_tiled_rw #(
+        .ADDRESS_NUMBER                (ADDRESS_NUMBER),
+        .COLADDR_NUMBER                (COLADDR_NUMBER),
+        .FRAME_WIDTH_BITS              (FRAME_WIDTH_BITS),
+        .FRAME_HEIGHT_BITS             (FRAME_HEIGHT_BITS),
+        .MAX_TILE_WIDTH                (MAX_TILE_WIDTH),
+        .MAX_TILE_HEIGHT               (MAX_TILE_HEIGHT),
+        .MCNTRL_TILED_ADDR             (MCNTRL_TILED_CHN2_ADDR),
+        .MCNTRL_TILED_MASK             (MCNTRL_TILED_MASK),
+        .MCNTRL_TILED_MODE             (MCNTRL_TILED_MODE),
+        .MCNTRL_TILED_STATUS_CNTRL     (MCNTRL_TILED_STATUS_CNTRL),
+        .MCNTRL_TILED_STARTADDR        (MCNTRL_TILED_STARTADDR),
+        .MCNTRL_TILED_FRAME_FULL_WIDTH (MCNTRL_TILED_FRAME_FULL_WIDTH),
+        .MCNTRL_TILED_WINDOW_WH        (MCNTRL_TILED_WINDOW_WH),
+        .MCNTRL_TILED_WINDOW_X0Y0      (MCNTRL_TILED_WINDOW_X0Y0),
+        .MCNTRL_TILED_WINDOW_STARTXY   (MCNTRL_TILED_WINDOW_STARTXY),
+        .MCNTRL_TILED_TILE_WHS          (MCNTRL_TILED_TILE_WHS),
+        .MCNTRL_TILED_STATUS_REG_ADDR  (MCNTRL_TILED_STATUS_REG_CHN2_ADDR),
+        .MCNTRL_TILED_PENDING_CNTR_BITS(MCNTRL_TILED_PENDING_CNTR_BITS),
+        .MCNTRL_TILED_FRAME_PAGE_RESET (MCNTRL_TILED_FRAME_PAGE_RESET)
+    ) mcntrl_tiled_rw_chn2_i ( 
+        .rst(rst), // input
+        .mclk(mclk), // input
+        .cmd_ad               (cmd_tiled_chn2_ad), // input[7:0] 
+        .cmd_stb              (cmd_tiled_chn2_stb), // input
+        .status_ad            (status_tiled_chn2_ad), // output[7:0] 
+        .status_rq            (status_tiled_chn2_rq), // output
+        .status_start         (status_tiled_chn2_start), // input
+        .frame_start          (frame_start_chn2), // input
+        .next_page            (next_page_chn2), // input
+        .frame_done           (frame_done_chn2), // output
+        .frame_finished       (), // output
+        .line_unfinished      (line_unfinished_chn2), // output[15:0] 
+        .suspend              (suspend_chn2), // input
+        .xfer_want            (want_rq2), // output
+        .xfer_need            (need_rq2), // output
+        .xfer_grant           (channel_pgm_en2), // input
+        .xfer_start_rd        (tiled_rw_chn2_start_rd16), // output
+        .xfer_start_wr        (tiled_rw_chn2_start_wr16), // output
+        .xfer_start32_rd      (tiled_rw_chn2_start_rd32), // output
+        .xfer_start32_wr      (tiled_rw_chn2_start_wr32), // output
+        .xfer_bank            (tiled_rw_chn2_bank), // output[2:0] 
+        .xfer_row             (tiled_rw_chn2_row), // output[14:0] 
+        .xfer_col             (tiled_rw_chn2_col), // output[6:0] 
+        .rowcol_inc           (tiled_rw_chn2_rowcol_inc), // output[13:0] 
+        .num_rows_m1          (tiled_rw_chn2_num_rows_m1), // output[5:0] 
+        .num_cols_m1          (tiled_rw_chn2_num_cols_m1), // output[5:0] 
+        .keep_open            (tiled_rw_chn2_keep_open), // output
+        .xfer_partial         (tiled_rw_chn2_xfer_partial), // output
+        .xfer_page_done       (seq_done2), // input
+        .xfer_page_rst_wr     (xfer_reset_page2_wr), // output
+        .xfer_page_rst_rd     (xfer_reset_page2_rd) // output
+    );
+
+    mcntrl_tiled_rw #(
+        .ADDRESS_NUMBER                (ADDRESS_NUMBER),
+        .COLADDR_NUMBER                (COLADDR_NUMBER),
+        .FRAME_WIDTH_BITS              (FRAME_WIDTH_BITS),
+        .FRAME_HEIGHT_BITS             (FRAME_HEIGHT_BITS),
+        .MAX_TILE_WIDTH                (MAX_TILE_WIDTH),
+        .MAX_TILE_HEIGHT               (MAX_TILE_HEIGHT),
+        .MCNTRL_TILED_ADDR             (MCNTRL_TILED_CHN4_ADDR),
+        .MCNTRL_TILED_MASK             (MCNTRL_TILED_MASK),
+        .MCNTRL_TILED_MODE             (MCNTRL_TILED_MODE),
+        .MCNTRL_TILED_STATUS_CNTRL     (MCNTRL_TILED_STATUS_CNTRL),
+        .MCNTRL_TILED_STARTADDR        (MCNTRL_TILED_STARTADDR),
+        .MCNTRL_TILED_FRAME_FULL_WIDTH (MCNTRL_TILED_FRAME_FULL_WIDTH),
+        .MCNTRL_TILED_WINDOW_WH        (MCNTRL_TILED_WINDOW_WH),
+        .MCNTRL_TILED_WINDOW_X0Y0      (MCNTRL_TILED_WINDOW_X0Y0),
+        .MCNTRL_TILED_WINDOW_STARTXY   (MCNTRL_TILED_WINDOW_STARTXY),
+        .MCNTRL_TILED_TILE_WHS         (MCNTRL_TILED_TILE_WHS),
+        .MCNTRL_TILED_STATUS_REG_ADDR  (MCNTRL_TILED_STATUS_REG_CHN4_ADDR),
+        .MCNTRL_TILED_PENDING_CNTR_BITS(MCNTRL_TILED_PENDING_CNTR_BITS),
+        .MCNTRL_TILED_FRAME_PAGE_RESET (MCNTRL_TILED_FRAME_PAGE_RESET)
+    ) mcntrl_tiled_rw_chn4_i ( 
+        .rst(rst), // input
+        .mclk(mclk), // input
+        .cmd_ad               (cmd_tiled_chn4_ad), // input[7:0] 
+        .cmd_stb              (cmd_tiled_chn4_stb), // input
+        .status_ad            (status_tiled_chn4_ad), // output[7:0] 
+        .status_rq            (status_tiled_chn4_rq), // output
+        .status_start         (status_tiled_chn4_start), // input
+        .frame_start          (frame_start_chn4), // input
+        .next_page            (next_page_chn4), // input
+        .frame_done           (frame_done_chn4), // output
+        .frame_finished       (), // output
+        .line_unfinished      (line_unfinished_chn4), // output[15:0] 
+        .suspend              (suspend_chn4), // input
+        .xfer_want            (want_rq4), // output
+        .xfer_need            (need_rq4), // output
+        .xfer_grant           (channel_pgm_en4), // input
+        .xfer_start_rd        (tiled_rw_chn4_start_rd16), // output
+        .xfer_start_wr        (tiled_rw_chn4_start_wr16), // output
+        .xfer_start32_rd      (tiled_rw_chn4_start_rd32), // output
+        .xfer_start32_wr      (tiled_rw_chn4_start_wr32), // output
+        .xfer_bank            (tiled_rw_chn4_bank), // output[2:0] 
+        .xfer_row             (tiled_rw_chn4_row), // output[14:0] 
+        .xfer_col             (tiled_rw_chn4_col), // output[6:0] 
+        .rowcol_inc           (tiled_rw_chn4_rowcol_inc), // output[13:0] 
+        .num_rows_m1          (tiled_rw_chn4_num_rows_m1), // output[5:0] 
+        .num_cols_m1          (tiled_rw_chn4_num_cols_m1), // output[5:0] 
+        .keep_open            (tiled_rw_chn4_keep_open), // output
+        .xfer_partial         (tiled_rw_chn4_xfer_partial), // output
+        .xfer_page_done       (seq_done4), // input
+        .xfer_page_rst_wr     (xfer_reset_page4_wr), // output
+        .xfer_page_rst_rd     (xfer_reset_page4_rd) // output
     );
     
-    cmd_encod_linear_mux #(
-        .ADDRESS_NUMBER           (ADDRESS_NUMBER),
-        .COLADDR_NUMBER           (COLADDR_NUMBER)
-    ) cmd_encod_linear_mux_i (
-        .clk                      (mclk), // input
-        .bank2                    (lin_rd_chn2_bank), // input[2:0] 
-        .row2                     (lin_rd_chn2_row), // input[14:0] 
-        .start_col2               (lin_rd_chn2_col), // input[6:0] 
-        .num128_2                 (lin_rd_chn2_num128), // input[5:0] 
-        .partial2                 (lin_rd_chn2_partial), // input
-        .start2                   (lin_rd_chn2_start), // input
-        
-        .bank3                    (lin_wr_chn3_bank), // input[2:0] 
-        .row3                     (lin_wr_chn3_row), // input[14:0] 
-        .start_col3               (lin_wr_chn3_col), // input[6:0] 
-        .num128_3                 (lin_wr_chn3_num128), // input[5:0] 
-        .partial3                 (lin_wr_chn3_partial), // input
-        .start3                   (lin_wr_chn3_start), // input
-
-        .bank                     (lin_rw_bank), // output[2:0] 
-        .row                      (lin_rw_row), // output[14:0] 
-        .start_col                (lin_rw_col), // output[6:0] 
-        .num128                   (lin_rw_num128), // output[5:0]
-        .partial                  (lin_rw_xfer_partial), // output
-        .start_rd                 (lin_rd_start), // output
-        .start_wr                 (lin_wr_start) // output
-    );
-
     
-    cmd_encod_linear_rd #(
-        .ADDRESS_NUMBER  (ADDRESS_NUMBER),
-        .COLADDR_NUMBER  (COLADDR_NUMBER),
-        .NUM_XFER_BITS   (NUM_XFER_BITS),
-        .CMD_PAUSE_BITS  (CMD_PAUSE_BITS),
-        .CMD_DONE_BIT    (CMD_DONE_BIT)
-    ) cmd_encod_linear_rd_i (
-        .rst               (rst), // input
-        .clk               (mclk), // input
-        .bank_in           (lin_rw_bank), // input[2:0] 
-        .row_in            (lin_rw_row), // input[14:0] 
-        .start_col         (lin_rw_col), // input[6:0] 
-        .num128_in         (lin_rw_num128), // input[5:0] 
-        .skip_next_page_in (lin_rw_xfer_partial), // input
-        .start             (lin_rd_start), // input
-        .enc_cmd           (seq_data2x), // output[31:0] reg 
-        .enc_wr            (seq_wr2x), // output reg 
-        .enc_done          (seq_set2x) // output reg 
-    );
-
-    cmd_encod_linear_wr #(
-        .ADDRESS_NUMBER  (ADDRESS_NUMBER),
-        .COLADDR_NUMBER  (COLADDR_NUMBER),
-        .NUM_XFER_BITS   (NUM_XFER_BITS),
-        .CMD_PAUSE_BITS  (CMD_PAUSE_BITS),
-        .CMD_DONE_BIT    (CMD_DONE_BIT)
-    ) cmd_encod_linear_wr_i (
-        .rst               (rst), // input
-        .clk               (mclk), // input
-        .bank_in           (lin_rw_bank), // input[2:0] 
-        .row_in            (lin_rw_row), // input[14:0] 
-        .start_col         (lin_rw_col), // input[6:0] 
-        .num128_in         (lin_rw_num128), // input[5:0] 
-        .skip_next_page_in (lin_rw_xfer_partial), // input
-        .start             (lin_wr_start), // input
-        .enc_cmd           (seq_data3x), // output[31:0] reg 
-        .enc_wr            (seq_wr3x), // output reg 
-        .enc_done          (seq_set3x) // output reg 
-    );
-
-
-    mcntrl_ps_pio #(
+// PS-controlled launch of the memory controller sequences
+    mcntrl_ps_pio #( 
         .MCNTRL_PS_ADDR            (MCNTRL_PS_ADDR), //'h100),
         .MCNTRL_PS_MASK            (MCNTRL_PS_MASK), //'h3e0),
         .MCNTRL_PS_STATUS_REG_ADDR (MCNTRL_PS_STATUS_REG_ADDR), //'h2),
@@ -1186,29 +1135,212 @@ module  mcntrl393 #(
         .port0_data                (buf0_data), // output[31:0]
          
         .port1_clk                 (axi_clk), // input
-        .port1_we                  (buf1_we), // input
+        .port1_we                  (buf0wr_we), // input
         .port1_addr                (buf_waddr), // input[9:0] 
         .port1_data                (buf_wdata), // input[31:0]
          
-        .want_rq0                  (want_rq0), // output reg 
-        .need_rq0                  (need_rq0), // output reg 
-        .channel_pgm_en0           (channel_pgm_en0), // input
-        .seq_data0                 (seq_data0), // output[9:0] 
-        .seq_set0                  (seq_set0), // output
-        .seq_done0                 (seq_done0), // input
-        .buf_wr_chn0               (buf_wr_chn0), // input         @negedge mclk
-        .buf_wpage_nxt_chn0        (buf_wpage_nxt_chn0), // input @negedge mclk
-        .buf_run0                  (buf_run0), // input
-        .buf_wdata_chn0            (buf_wdata_chn0), // input[63:0]@negedge mclk
-         
-        .want_rq1                  (want_rq1), // output reg 
-        .need_rq1                  (need_rq1), // output reg 
-        .channel_pgm_en1           (channel_pgm_en1), // input
-        .seq_done1                 (seq_done1), // input
-        .rpage_nxt_chn1            (rpage_nxt_chn1), // input 
-        .buf_run1                  (buf_run1), // input
-        .buf_rd_chn1               (buf_rd_chn1), // input
-        .buf_rdata_chn1            (buf_rdata_chn1) // output[63:0] 
+        .want_rq                   (want_rq0), // output reg 
+        .need_rq                   (need_rq0), // output reg 
+        .channel_pgm_en            (channel_pgm_en0), // input
+        .seq_data                  (seq_data0), // output[9:0] 
+        .seq_set                   (seq_set0), // output
+        .seq_done                  (seq_done0), // input
+        .buf_wr                    (buf_wr_chn0), // input         @negedge mclk
+        .buf_wpage_nxt             (buf_wpage_nxt_chn0), // input @negedge mclk
+        .buf_run                   (buf_run0), // input
+        .buf_wrun                  (buf_wrun0), // input
+        .buf_wdata                 (buf_wdata_chn0), // input[63:0]@negedge mclk
+        .buf_rpage_nxt             (buf_rpage_nxt_chn0), // input @negedge mclk
+        .buf_rd                    (buf_rd_chn0), // input
+        .buf_rdata                 (buf_rdata_chn0) // output[63:0] 
+    );
+// multiplexer for scanline read/write (multiple channels can share it)
+    cmd_encod_linear_mux #(
+        .ADDRESS_NUMBER           (ADDRESS_NUMBER),
+        .COLADDR_NUMBER           (COLADDR_NUMBER)
+    ) cmd_encod_linear_mux_i (
+        .clk                      (mclk), // input
+        
+        .bank1                    (lin_rw_chn1_bank), // input[2:0] 
+        .row1                     (lin_rw_chn1_row), // input[14:0] 
+        .start_col1               (lin_rw_chn1_col), // input[6:0] 
+        .num128_1                 (lin_rw_chn1_num128), // input[5:0] 
+        .partial1                 (lin_rw_chn1_partial), // input
+        .start1_rd                (lin_rw_chn1_start_rd), // input
+        .start1_wr                (lin_rw_chn1_start_wr), // input
+
+        .bank3                    (lin_rw_chn3_bank), // input[2:0] 
+        .row3                     (lin_rw_chn3_row), // input[14:0] 
+        .start_col3               (lin_rw_chn3_col), // input[6:0] 
+        .num128_3                 (lin_rw_chn3_num128), // input[5:0] 
+        .partial3                 (lin_rw_chn3_partial), // input
+        .start3_rd                (lin_rw_chn3_start_rd), // input
+        .start3_wr                (lin_rw_chn3_start_wr), // input
+
+        .bank                     (lin_rw_bank), // output[2:0] 
+        .row                      (lin_rw_row), // output[14:0] 
+        .start_col                (lin_rw_col), // output[6:0] 
+        .num128                   (lin_rw_num128), // output[5:0]
+        .partial                  (lin_rw_xfer_partial), // output
+        .start_rd                 (lin_rw_start_rd), // output
+        .start_wr                 (lin_rw_start_wr) // output
+    );
+
+// encoder for scanline read/write
+    cmd_encod_linear_rw #(
+        .ADDRESS_NUMBER(ADDRESS_NUMBER),
+        .COLADDR_NUMBER(COLADDR_NUMBER),
+        .NUM_XFER_BITS(NUM_XFER_BITS),
+        .CMD_PAUSE_BITS(CMD_PAUSE_BITS),
+        .CMD_DONE_BIT(CMD_DONE_BIT)
+    ) cmd_encod_linear_rw_i (
+        .rst               (rst), // input
+        .clk               (mclk), // input
+        .bank_in           (lin_rw_bank), // input[2:0] 
+        .row_in            (lin_rw_row), // input[14:0] 
+        .start_col         (lin_rw_col), // input[6:0] 
+        .num128_in         (lin_rw_num128), // input[5:0] 
+        .skip_next_page_in (lin_rw_xfer_partial), // input
+        .start_rd          (lin_rw_start_rd), // input
+        .start_wr          (lin_rw_start_wr), // input
+        .start             (encod_linear_start_out), // output reg 
+        .enc_cmd           (encod_linear_cmd), // output[31:0] reg 
+        .enc_wr            (encod_linear_wr), // output reg 
+        .enc_done          (encod_linear_done) // output reg 
+    );
+
+// multiplexer for tiles read/write (multiple channels can share it)
+    cmd_encod_tiled_mux #(
+        .ADDRESS_NUMBER          (ADDRESS_NUMBER),
+        .COLADDR_NUMBER          (COLADDR_NUMBER),
+        .FRAME_WIDTH_BITS        (FRAME_WIDTH_BITS),
+        .MAX_TILE_WIDTH          (MAX_TILE_WIDTH),
+        .MAX_TILE_HEIGHT         (MAX_TILE_HEIGHT)
+    ) cmd_encod_tiled_mux_i (
+        .clk                     (mclk), // input
+        
+        .bank2                   (tiled_rw_chn2_bank), // input[2:0] 
+        .row2                    (tiled_rw_chn2_row), // input[14:0] 
+        .col2                    (tiled_rw_chn2_col), // input[6:0] 
+        .rowcol_inc2             (tiled_rw_chn2_rowcol_inc), // input[13:0] 
+        .num_rows2               (tiled_rw_chn2_num_rows_m1), // input[5:0] 
+        .num_cols2               (tiled_rw_chn2_num_cols_m1), // input[5:0] 
+        .keep_open2              (tiled_rw_chn2_keep_open), // input
+        .partial2                (tiled_rw_chn2_xfer_partial), // input
+        .start2_rd               (tiled_rw_chn2_start_rd16), // input
+        .start2_wr               (tiled_rw_chn2_start_wr16), // input
+        .start2_rd32             (tiled_rw_chn2_start_rd32), // input
+        .start2_wr32             (tiled_rw_chn2_start_wr32), // input
+        
+        .bank4                   (tiled_rw_chn4_bank), // input[2:0] 
+        .row4                    (tiled_rw_chn4_row), // input[14:0] 
+        .col4                    (tiled_rw_chn4_col), // input[6:0] 
+        .rowcol_inc4             (tiled_rw_chn4_rowcol_inc), // input[13:0] 
+        .num_rows4               (tiled_rw_chn4_num_rows_m1), // input[5:0] 
+        .num_cols4               (tiled_rw_chn4_num_cols_m1), // input[5:0] 
+        .keep_open4              (tiled_rw_chn4_keep_open), // input
+        .partial4                (tiled_rw_chn4_xfer_partial), // input
+        .start4_rd               (tiled_rw_chn4_start_rd16), // input
+        .start4_wr               (tiled_rw_chn4_start_wr16), // input
+        .start4_rd32             (tiled_rw_chn4_start_rd32), // input
+        .start4_wr32             (tiled_rw_chn4_start_wr32), // input
+        
+        .bank                    (tiled_rw_bank), // output[2:0] 
+        .row                     (tiled_rw_row), // output[14:0] 
+        .col                     (tiled_rw_col), // output[6:0] 
+        .rowcol_inc              (tiled_rw_rowcol_inc), // output[13:0] 
+        .num_rows                (tiled_rw_num_rows_m1), // output[5:0] 
+        .num_cols                (tiled_rw_num_cols_m1), // output[5:0] 
+        .keep_open               (tiled_rw_keep_open), // output
+        .partial                 (tiled_rw_xfer_partial), // output
+        .start_rd                (tiled_rw_start_rd16), // output
+        .start_wr                (tiled_rw_start_wr16), // output
+        .start_rd32              (tiled_rw_start_rd32), // output
+        .start_wr32              (tiled_rw_start_wr32) // output
+    );
+    
+    
+// encoder for tile read/write using 16-byte wide columns
+    cmd_encod_tiled_rw #(
+        .ADDRESS_NUMBER    (ADDRESS_NUMBER),
+        .COLADDR_NUMBER    (COLADDR_NUMBER),
+        .CMD_PAUSE_BITS    (CMD_PAUSE_BITS),
+        .CMD_DONE_BIT      (CMD_DONE_BIT),
+        .FRAME_WIDTH_BITS  (FRAME_WIDTH_BITS)
+    ) cmd_encod_tiled_16_rw_i (
+        .rst               (rst), // input
+        .clk               (mclk), // input
+        .start_bank        (tiled_rw_bank), // input[2:0] 
+        .start_row         (tiled_rw_row), // input[14:0] 
+        .start_col         (tiled_rw_col), // input[6:0] 
+        .rowcol_inc_in     (tiled_rw_rowcol_inc), // input[13:0] // [21:0] 
+        .num_rows_in_m1    (tiled_rw_num_rows_m1), // input[5:0] 
+        .num_cols_in_m1    (tiled_rw_num_cols_m1), // input[5:0] 
+        .keep_open_in      (tiled_rw_keep_open), // input
+        .skip_next_page_in (tiled_rw_xfer_partial), // input
+        .start_rd          (tiled_rw_start_rd16), // input
+        .start_wr          (tiled_rw_start_wr16), // input
+        .start             (encod_tiled16_start_out), // output reg 
+        .enc_cmd           (encod_tiled16_cmd), // output[31:0] reg 
+        .enc_wr            (encod_tiled16_wr), // output reg 
+        .enc_done          (encod_tiled16_done) // output reg 
+    );
+
+// encoder for tile read/write using 32-byte wide columns
+    cmd_encod_tiled_32_rw #(
+        .ADDRESS_NUMBER    (ADDRESS_NUMBER),
+        .COLADDR_NUMBER    (COLADDR_NUMBER),
+        .CMD_PAUSE_BITS    (CMD_PAUSE_BITS),
+        .CMD_DONE_BIT      (CMD_DONE_BIT),
+        .FRAME_WIDTH_BITS  (FRAME_WIDTH_BITS)
+    ) cmd_encod_tiled_32_rw_i (
+        .rst               (rst), // input
+        .clk               (mclk), // input
+        .start_bank        (tiled_rw_bank), // input[2:0] 
+        .start_row         (tiled_rw_row), // input[14:0] 
+        .start_col         (tiled_rw_col), // input[6:0] 
+        .rowcol_inc_in     (tiled_rw_rowcol_inc), // input[13:0] // [21:0] 
+        .num_rows_in_m1    (tiled_rw_num_rows_m1), // input[5:0] 
+        .num_cols_in_m1    (tiled_rw_num_cols_m1), // input[5:0] 
+        .keep_open_in      (tiled_rw_keep_open), // input
+        .skip_next_page_in (tiled_rw_xfer_partial), // input
+        .start_rd          (tiled_rw_start_rd32), // input
+        .start_wr          (tiled_rw_start_wr32), // input
+        .start             (encod_tiled32_start_out), // output reg 
+        .enc_cmd           (encod_tiled32_cmd), // output[31:0] reg 
+        .enc_wr            (encod_tiled32_wr), // output reg 
+        .enc_done          (encod_tiled32_done) // output reg 
+    );
+
+// Combine sequencer data from multiple sourecs
+    cmd_encod_4mux cmd_encod_4mux_i (
+        .rst                            (rst), // input
+        .clk                            (mclk), // input
+        // from ps pio
+        .start0                         (channel_pgm_en0), // start_seq_ps_pio), // input
+        .enc_cmd0                       ({22'b0,seq_data0}), // input[31:0] 
+        .enc_wr0                        (1'b0), // input
+        .enc_done0                      (seq_set0), // input
+        // from encod_linear_rw
+        .start1                         (encod_linear_start_out), // input
+        .enc_cmd1                       (encod_linear_cmd), // input[31:0] 
+        .enc_wr1                        (encod_linear_wr), // input
+        .enc_done1                      (encod_linear_done), // input
+        // from encod_tiled_rw
+        .start2                         (encod_tiled16_start_out), // input
+        .enc_cmd2                       (encod_tiled16_cmd), // input[31:0] 
+        .enc_wr2                        (encod_tiled16_wr), // input
+        .enc_done2                      (encod_tiled16_done), // input
+        // from encod_tiled_32_rw
+        .start3                         (encod_tiled32_start_out), // input
+        .enc_cmd3                       (encod_tiled32_cmd), // input[31:0] 
+        .enc_wr3                        (encod_tiled32_wr), // input
+        .enc_done3                      (encod_tiled32_done), // input
+
+        .start                          (), // output reg  not used - may be needed for cascading. Pulse before any data output
+        .enc_cmd                        (seq_data), // output[31:0] reg 
+        .enc_wr                         (seq_wr), // output reg 
+        .enc_done                       (seq_set) // output reg 
     );
 
 
@@ -1296,82 +1428,81 @@ module  mcntrl393 #(
         .cmd0_we            (cmd_we), // input
         .cmd0_addr          (buf_waddr), // input[9:0] 
         .cmd0_data          (buf_wdata), // input[31:0] 
+        
+        .seq_data           (seq_data), // input[31:0] 
+        .seq_wr             (seq_wr), // not used: seq_wr0), // input
+        .seq_set            (seq_set), // input
          
         .want_rq0           (want_rq0), // input
         .need_rq0           (need_rq0), // input
         .channel_pgm_en0    (channel_pgm_en0), // output reg 
-        .seq_data0          ({22'b0,seq_data0}), // input[31:0] 
-        .seq_wr0            (1'b0), // not used: seq_wr0), // input
-        .seq_set0           (seq_set0), // input
         .seq_done0          (seq_done0), // output
-        .rpage_nxt_chn0     (), //rpage_nxt_chn0), not used
+        .page_nxt_chn0      (), //rpage_nxt_chn0), not used
         .buf_run0           (buf_run0),
         .buf_wr_chn0        (buf_wr_chn0), // output
         .buf_wpage_nxt_chn0 (buf_wpage_nxt_chn0), // output
-//        .buf_waddr_chn0     (buf_waddr_chn0), // output[6:0] 
         .buf_wdata_chn0     (buf_wdata_chn0), // output[63:0]
+        .buf_wrun0          (buf_wrun0),
+        .buf_rd_chn0        (buf_rd_chn0), // output
+        .buf_rpage_nxt_chn0 (buf_rpage_nxt_chn0), // output
+        .buf_rdata_chn0     (buf_rdata_chn0), // input[63:0] 
 
         .want_rq1           (want_rq1), // input
         .need_rq1           (need_rq1), // input
         .channel_pgm_en1    (channel_pgm_en1), // output reg 
-        .seq_data1          ({22'b0,seq_data0}), // input[31:0] // same as for channel 0 
-        .seq_wr1            (1'b0), // not used: seq_wr1), // input
-        .seq_set1           (seq_set0), // seq_set0 from channel 0 (shared in ps_pio), // input
         .seq_done1          (seq_done1), // output
-        .rpage_nxt_chn1     (rpage_nxt_chn1), // output
-        .buf_run1           (buf_run1),
+        .page_nxt_chn1      (page_nxt_chn1), //rpage_nxt_chn0), not used
+        .buf_run1           (), //buf_run1),
+        .buf_wr_chn1        (buf_wr_chn1), // output
+        .buf_wpage_nxt_chn1 (buf_wpage_nxt_chn1), // output
+        .buf_wdata_chn1     (buf_wdata_chn1), // output[63:0]
+        .buf_wrun1          (), //buf_wrun1),
         .buf_rd_chn1        (buf_rd_chn1), // output
+        .buf_rpage_nxt_chn1 (rpage_nxt_chn1), // buf_rpage_nxt_chn1), // output
         .buf_rdata_chn1     (buf_rdata_chn1), // input[63:0] 
-
+        
+        
         .want_rq2           (want_rq2), // input
         .need_rq2           (need_rq2), // input
         .channel_pgm_en2    (channel_pgm_en2), // output reg 
-        .seq_data2          (seq_data2x), // input[31:0] 
-        .seq_wr2            (seq_wr2x), // input
-        .seq_set2           (seq_set2x), // input
         .seq_done2          (seq_done2), // output
-        .rpage_nxt_chn2     (), // not used rpage_nxt_chn2), // output
-        .buf_run2           (),
+        .page_nxt_chn2      (page_nxt_chn2), //rpage_nxt_chn0), not used
+        .buf_run2           (), //buf_run2),
         .buf_wr_chn2        (buf_wr_chn2), // output
         .buf_wpage_nxt_chn2 (buf_wpage_nxt_chn2), // output
         .buf_wdata_chn2     (buf_wdata_chn2), // output[63:0]
+        .buf_wrun2          (), //buf_wrun2),
+        .buf_rd_chn2        (buf_rd_chn2), // output
+        .buf_rpage_nxt_chn2 (rpage_nxt_chn2), // buf_rpage_nxt_chn2), // output
+        .buf_rdata_chn2     (buf_rdata_chn2), // input[63:0] 
 
         .want_rq3           (want_rq3), // input
         .need_rq3           (need_rq3), // input
         .channel_pgm_en3    (channel_pgm_en3), // output reg 
-        .seq_data3          (seq_data3x), // input[31:0] 
-        .seq_wr3            (seq_wr3x), // input
-        .seq_set3           (seq_set3x), // input
         .seq_done3          (seq_done3), // output
-        .rpage_nxt_chn3     (rpage_nxt_chn3), // output 
-        .buf_run3           (),
+        .page_nxt_chn3      (page_nxt_chn3), //rpage_nxt_chn0), not used
+        .buf_run3           (), //buf_run3),
+        .buf_wr_chn3        (buf_wr_chn3), // output
+        .buf_wpage_nxt_chn3 (buf_wpage_nxt_chn3), // output
+        .buf_wdata_chn3     (buf_wdata_chn3), // output[63:0]
+        .buf_wrun3          (), //buf_wrun3),
         .buf_rd_chn3        (buf_rd_chn3), // output
+        .buf_rpage_nxt_chn3 (rpage_nxt_chn3), // buf_rpage_nxt_chn3), // output
         .buf_rdata_chn3     (buf_rdata_chn3), // input[63:0] 
 
         .want_rq4           (want_rq4), // input
         .need_rq4           (need_rq4), // input
         .channel_pgm_en4    (channel_pgm_en4), // output reg 
-        .seq_data4          (seq_data4x), // input[31:0] 
-        .seq_wr4            (seq_wr4x), // input
-        .seq_set4           (seq_set4x), // input
         .seq_done4          (seq_done4), // output
-        .rpage_nxt_chn4     (rpage_nxt_chn4), // output 
-        .buf_run4           (),
+        .page_nxt_chn4      (page_nxt_chn4), //rpage_nxt_chn0), not used
+        .buf_run4           (), //buf_run4),
         .buf_wr_chn4        (buf_wr_chn4), // output
-        .buf_wpage_nxt_chn4 (buf_wpage_nxt_chn4), // output 
+        .buf_wpage_nxt_chn4 (buf_wpage_nxt_chn4), // output
         .buf_wdata_chn4     (buf_wdata_chn4), // output[63:0]
-
-        .want_rq5           (want_rq5), // input
-        .need_rq5           (need_rq5), // input
-        .channel_pgm_en5    (channel_pgm_en5), // output reg 
-        .seq_data5          (seq_data5x), // input[31:0] 
-        .seq_wr5            (seq_wr5x), // input
-        .seq_set5           (seq_set5x), // input
-        .seq_done5          (seq_done5), // output
-        .rpage_nxt_chn5     (rpage_nxt_chn5), // output 
-        .buf_run5           (),
-        .buf_rd_chn5        (buf_rd_chn5), // output
-        .buf_rdata_chn5     (buf_rdata_chn5), // input[63:0] 
+        .buf_wrun4          (), //buf_wrun4),
+        .buf_rd_chn4        (buf_rd_chn4), // output
+        .buf_rpage_nxt_chn4 (rpage_nxt_chn4), // buf_rpage_nxt_chn4), // output
+        .buf_rdata_chn4     (buf_rdata_chn4), // input[63:0] 
 
         .SDRST              (SDRST), // output
         .SDCLK              (SDCLK), // output

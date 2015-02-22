@@ -31,11 +31,11 @@ task write_block_scanline_chn;  // S uppressThisWarning VEditor : may be unused
     begin
         $display("====== write_block_scanline_chn:%d page: %x X=0x%x Y=0x%x num=%d @%t", chn, page, startX, startY,num_words, $time);
         case (chn)
-            1:  start_addr=MCONTR_BUF1_WR_ADDR + (page << 8);
+            1:  start_addr=MCONTR_BUF0_WR_ADDR + (page << 8);
             3:  start_addr=MCONTR_BUF3_WR_ADDR + (page << 8);
             default: begin
                 $display("**** ERROR: Invalid channel for write_block_scanline_chn = %d @%t", chn, $time);
-                start_addr = MCONTR_BUF1_WR_ADDR+ (page << 8);
+                start_addr = MCONTR_BUF0_WR_ADDR+ (page << 8);
             end
         endcase
 //        write_block_incremtal (start_addr, num_words, (startX<<2) + (startY<<16)); // 1 of startX is 8x16 bit, 16 bytes or 4 32-bit words
@@ -84,12 +84,14 @@ task write_block_buf_chn;  // S uppressThisWarning VEditor : may be unused
     reg    [29:0] start_addr;
     begin
         case (chn)
+            0:  start_addr=MCONTR_BUF0_WR_ADDR + (page << 8);
             1:  start_addr=MCONTR_BUF1_WR_ADDR + (page << 8);
+            2:  start_addr=MCONTR_BUF2_WR_ADDR + (page << 8);
             3:  start_addr=MCONTR_BUF3_WR_ADDR + (page << 8);
-            5:  start_addr=MCONTR_BUF5_WR_ADDR + (page << 8);
+            4:  start_addr=MCONTR_BUF4_WR_ADDR + (page << 8);
             default: begin
                 $display("**** ERROR: Invalid channel for write buffer = %d @%t", chn, $time);
-                start_addr = MCONTR_BUF1_WR_ADDR+ (page << 8);
+                start_addr = MCONTR_BUF0_WR_ADDR+ (page << 8);
             end
         endcase
         write_block_buf (start_addr, num_words);
@@ -106,7 +108,7 @@ task write_block_buf;
             axi_write_addr_data(
                 i,    // id
                 {start_word_address,2'b0}+( i << 2),
-//                (MCONTR_BUF1_WR_ADDR + (page <<8)+ i) << 2, // addr
+//                (MCONTR_BUF0_WR_ADDR + (page <<8)+ i) << 2, // addr
                 i | (((i + 7) & 'hff) << 8) | (((i + 23) & 'hff) << 16) | (((i + 31) & 'hff) << 24),
                 4'hf, // len
                 1,    // burst type - increment
@@ -131,7 +133,8 @@ endtask
    
    // read memory
 task read_block_buf_chn;  // S uppressThisWarning VEditor : may be unused
-    input integer chn; // buffer channel
+//    input integer chn; // buffer channel
+    input [3:0] chn; // buffer channel
     input   [1:0] page;
     input integer num_read; // number of words to read (will be rounded up to multiple of 16)
     input wait_done; 
@@ -139,7 +142,9 @@ task read_block_buf_chn;  // S uppressThisWarning VEditor : may be unused
     begin
         case (chn)
             0:  start_addr=MCONTR_BUF0_RD_ADDR + (page << 8);
+            1:  start_addr=MCONTR_BUF1_RD_ADDR + (page << 8);
             2:  start_addr=MCONTR_BUF2_RD_ADDR + (page << 8);
+            3:  start_addr=MCONTR_BUF3_RD_ADDR + (page << 8);
             4:  start_addr=MCONTR_BUF4_RD_ADDR + (page << 8);
             default: begin
                 $display("**** ERROR: Invalid channel for read buffer = %d @%t", chn, $time);
