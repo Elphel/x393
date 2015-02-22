@@ -31,9 +31,9 @@
 `define TEST_READ_BLOCK 1
 
 
-//`define TEST_SCANLINE_WRITE 1
+`define TEST_SCANLINE_WRITE 1
     `define TEST_SCANLINE_WRITE_WAIT 1 // wait TEST_SCANLINE_WRITE finished (frame_done)
-//`define TEST_SCANLINE_READ  1
+`define TEST_SCANLINE_READ  1
     `define TEST_READ_SHOW  1
 //`define TEST_TILED_WRITE  1
     `define TEST_TILED_WRITE_WAIT 1 // wait TEST_SCANLINE_WRITE finished (frame_done)
@@ -372,7 +372,8 @@ end
 // protect from never end
   initial begin
 //  #10000000;
-  #200000;
+//    #200000;
+    #100000;
 //  #60000;
     $display("finish testbench 2");
   $finish;
@@ -960,7 +961,7 @@ simul_axi_read #(
 // prepare all sequences
             set_all_sequences;
 // prepare write buffer    
-            write_block_buf_chn(1,0,256); // fill block memory (channel, page, number)
+            write_block_buf_chn(0,0,256); // fill block memory (channel, page, number)
 // set all delays
 //#axi_set_delays - from tables, per-pin
 `ifdef SET_PER_PIN_DEALYS

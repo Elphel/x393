@@ -40,10 +40,10 @@ module  mcntrl393 #(
     parameter MCONTR_BUF1_WR_ADDR =  'h0800, // AXI write address to buffer 1 (PL sequence, scanline, memory write)
     parameter MCONTR_BUF2_RD_ADDR =  'h0c00, // AXI read address from buffer 2 (PL sequence, tiles, memory read)
     parameter MCONTR_BUF2_WR_ADDR =  'h0c00, // AXI write address to buffer 2 (PL sequence, tiles, memory write)
-    parameter MCONTR_BUF3_RD_ADDR =  'h0800, // AXI read address from buffer 3 (PL sequence, scanline, memory read)
-    parameter MCONTR_BUF3_WR_ADDR =  'h0800, // AXI write address to buffer 3 (PL sequence, scanline, memory write)
-    parameter MCONTR_BUF4_RD_ADDR =  'h0c00, // AXI read address from buffer 4 (PL sequence, tiles, memory read)
-    parameter MCONTR_BUF4_WR_ADDR =  'h0c00, // AXI write address to buffer 4 (PL sequence, tiles, memory write)
+    parameter MCONTR_BUF3_RD_ADDR =  'h1000, // AXI read address from buffer 3 (PL sequence, scanline, memory read)
+    parameter MCONTR_BUF3_WR_ADDR =  'h1000, // AXI write address to buffer 3 (PL sequence, scanline, memory write)
+    parameter MCONTR_BUF4_RD_ADDR =  'h1400, // AXI read address from buffer 4 (PL sequence, tiles, memory read)
+    parameter MCONTR_BUF4_WR_ADDR =  'h1400, // AXI write address to buffer 4 (PL sequence, tiles, memory write)
 
     
 //command interface parameters
@@ -676,27 +676,27 @@ module  mcntrl393 #(
         if      (axi_rst)           select_buf0rd <= 0;
         else if (axird_start_burst) select_buf0rd <= select_buf0rd_w;
         if      (axi_rst)           select_buf0wr <= 0;
-        else if (axird_start_burst) select_buf0wr <= select_buf0wr_w;
+        else if (axiwr_start_burst) select_buf0wr <= select_buf0wr_w;
         
         if      (axi_rst)           select_buf1rd <= 0;
         else if (axird_start_burst) select_buf1rd <= select_buf1rd_w;
         if      (axi_rst)           select_buf1wr <= 0;
-        else if (axird_start_burst) select_buf1wr <= select_buf1wr_w;
+        else if (axiwr_start_burst) select_buf1wr <= select_buf1wr_w;
 
         if      (axi_rst)           select_buf2rd <= 0;
         else if (axird_start_burst) select_buf2rd <= select_buf2rd_w;
         if      (axi_rst)           select_buf2wr <= 0;
-        else if (axird_start_burst) select_buf2wr <= select_buf2wr_w;
+        else if (axiwr_start_burst) select_buf2wr <= select_buf2wr_w;
 
         if      (axi_rst)           select_buf3rd <= 0;
         else if (axird_start_burst) select_buf3rd <= select_buf3rd_w;
         if      (axi_rst)           select_buf3wr <= 0;
-        else if (axird_start_burst) select_buf3wr <= select_buf3wr_w;
+        else if (axiwr_start_burst) select_buf3wr <= select_buf3wr_w;
 
         if      (axi_rst)           select_buf4rd <= 0;
         else if (axird_start_burst) select_buf4rd <= select_buf4rd_w;
         if      (axi_rst)           select_buf4wr <= 0;
-        else if (axird_start_burst) select_buf4wr <= select_buf4wr_w;
+        else if (axiwr_start_burst) select_buf4wr <= select_buf4wr_w;
 
 
         if      (axi_rst)           axird_selected_r <= 0;
