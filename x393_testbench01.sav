@@ -1,18 +1,21 @@
 [*]
 [*] GTKWave Analyzer v3.3.64 (w)1999-2014 BSI
-[*] Sun Feb 22 08:00:29 2015
+[*] Sun Feb 22 21:43:30 2015
 [*]
-[dumpfile] "/home/andrey/git/x393/simulation/x393_testbench01-20150222003137072.lxt"
-[dumpfile_mtime] "Sun Feb 22 07:40:45 2015"
-[dumpfile_size] 422456978
+[dumpfile] "/home/andrey/git/x393/simulation/x393_testbench01-20150222141943750.lxt"
+[dumpfile_mtime] "Sun Feb 22 21:34:12 2015"
+[dumpfile_size] 804533571
 [savefile] "/home/andrey/git/x393/x393_testbench01.sav"
-[timestart] 42800000
+[timestart] 0
 [size] 1823 1173
 [pos] 2056 0
-*-21.698502 54350000 55877500 55843010 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-24.698502 80100000 55877500 55843010 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] x393_testbench01.
 [treeopen] x393_testbench01.x393_i.
 [treeopen] x393_testbench01.x393_i.mcntrl393_i.
+[treeopen] x393_testbench01.x393_i.mcntrl393_i.mcntrl_linear_rw_chn1_i.
+[treeopen] x393_testbench01.x393_i.mcntrl393_i.mcntrl_linear_rw_chn1_i.cmd_deser_32bit_i.
+[treeopen] x393_testbench01.x393_i.mcntrl393_i.mcntrl_linear_rw_chn1_i.cmd_deser_32bit_i.genblk4.
 [treeopen] x393_testbench01.x393_i.mcntrl393_i.mcntrl_ps_pio_i.
 [treeopen] x393_testbench01.x393_i.mcntrl393_i.mcntrl_ps_pio_i.chn0_buf_i.
 [treeopen] x393_testbench01.x393_i.mcntrl393_i.mcntrl_ps_pio_i.chn1_buf_i.
@@ -40,7 +43,7 @@ x393_testbench01.SIMUL_AXI_FULL[0]
 @22
 x393_testbench01.SIMUL_AXI_ADDR[15:0]
 x393_testbench01.SIMUL_AXI_READ[31:0]
-@800200
+@c00200
 -top_extra
 @22
 x393_testbench01.NUM_WORDS_READ[31:0]
@@ -93,7 +96,7 @@ x393_testbench01.x393_i.status_rdata[31:0]
 x393_testbench01.x393_i.axird_rdata[31:0]
 x393_testbench01.target_phase[7:0]
 x393_testbench01.read_and_wait_status.address[7:0]
-@1000200
+@1401200
 -top_extra
 @28
 x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mclk[0]
@@ -144,6 +147,14 @@ x393_testbench01.simul_axi_read_i.start_burst[0]
 -simul_axi_read
 @c00200
 -WAIT_STATUS_CONDITION
+-write_control_reg
+@22
+x393_testbench01.write_contol_register.data[31:0]
+x393_testbench01.write_contol_register.reg_addr[29:0]
+@1401200
+-write_control_reg
+@22
+x393_testbench01.registered_rdata[31:0]
 @28
 x393_testbench01.wait_status_condition.invert_match[0]
 @22
@@ -988,6 +999,110 @@ x393_testbench01.x393_i.mcntrl393_test01_i.suspend_chn4_r[0]
 @200
 -
 -
+@c00200
+-test01
+@22
+x393_testbench01.x393_i.mcntrl393_test01_i.cmd_a[3:0]
+x393_testbench01.x393_i.mcntrl393_test01_i.cmd_ad[7:0]
+x393_testbench01.x393_i.mcntrl393_test01_i.cmd_data[7:0]
+@28
+x393_testbench01.x393_i.mcntrl393_test01_i.cmd_frame_start_w[0]
+x393_testbench01.x393_i.mcntrl393_test01_i.cmd_next_page_w[0]
+x393_testbench01.x393_i.mcntrl393_test01_i.cmd_stb[0]
+x393_testbench01.x393_i.mcntrl393_test01_i.cmd_suspend_w[0]
+x393_testbench01.x393_i.mcntrl393_test01_i.cmd_we[0]
+x393_testbench01.x393_i.mcntrl393_test01_i.frame_busy_chn1[0]
+x393_testbench01.x393_i.mcntrl393_test01_i.frame_busy_chn2[0]
+x393_testbench01.x393_i.mcntrl393_test01_i.frame_busy_chn3[0]
+x393_testbench01.x393_i.mcntrl393_test01_i.frame_busy_chn4[0]
+x393_testbench01.x393_i.mcntrl393_test01_i.frame_done_chn1[0]
+x393_testbench01.x393_i.mcntrl393_test01_i.frame_done_chn2[0]
+x393_testbench01.x393_i.mcntrl393_test01_i.frame_done_chn3[0]
+x393_testbench01.x393_i.mcntrl393_test01_i.frame_done_chn4[0]
+x393_testbench01.x393_i.mcntrl393_test01_i.frame_finished_chn1[0]
+x393_testbench01.x393_i.mcntrl393_test01_i.frame_finished_chn2[0]
+x393_testbench01.x393_i.mcntrl393_test01_i.frame_finished_chn3[0]
+x393_testbench01.x393_i.mcntrl393_test01_i.frame_finished_chn4[0]
+x393_testbench01.x393_i.mcntrl393_test01_i.frame_start_chn1[0]
+x393_testbench01.x393_i.mcntrl393_test01_i.frame_start_chn1_r[0]
+x393_testbench01.x393_i.mcntrl393_test01_i.frame_start_chn2[0]
+x393_testbench01.x393_i.mcntrl393_test01_i.frame_start_chn2_r[0]
+x393_testbench01.x393_i.mcntrl393_test01_i.frame_start_chn3[0]
+x393_testbench01.x393_i.mcntrl393_test01_i.frame_start_chn3_r[0]
+x393_testbench01.x393_i.mcntrl393_test01_i.frame_start_chn4[0]
+x393_testbench01.x393_i.mcntrl393_test01_i.frame_start_chn4_r[0]
+@22
+x393_testbench01.x393_i.mcntrl393_test01_i.line_unfinished_chn1[15:0]
+x393_testbench01.x393_i.mcntrl393_test01_i.line_unfinished_chn2[15:0]
+x393_testbench01.x393_i.mcntrl393_test01_i.line_unfinished_chn3[15:0]
+x393_testbench01.x393_i.mcntrl393_test01_i.line_unfinished_chn4[15:0]
+@28
+x393_testbench01.x393_i.mcntrl393_test01_i.mclk[0]
+x393_testbench01.x393_i.mcntrl393_test01_i.next_page_chn1[0]
+x393_testbench01.x393_i.mcntrl393_test01_i.next_page_chn1_r[0]
+x393_testbench01.x393_i.mcntrl393_test01_i.next_page_chn2[0]
+x393_testbench01.x393_i.mcntrl393_test01_i.next_page_chn2_r[0]
+x393_testbench01.x393_i.mcntrl393_test01_i.next_page_chn3[0]
+x393_testbench01.x393_i.mcntrl393_test01_i.next_page_chn3_r[0]
+x393_testbench01.x393_i.mcntrl393_test01_i.next_page_chn4[0]
+x393_testbench01.x393_i.mcntrl393_test01_i.next_page_chn4_r[0]
+@22
+x393_testbench01.x393_i.mcntrl393_test01_i.page_chn1[3:0]
+x393_testbench01.x393_i.mcntrl393_test01_i.page_chn2[3:0]
+x393_testbench01.x393_i.mcntrl393_test01_i.page_chn3[3:0]
+x393_testbench01.x393_i.mcntrl393_test01_i.page_chn4[3:0]
+@28
+x393_testbench01.x393_i.mcntrl393_test01_i.page_ready_chn1[0]
+x393_testbench01.x393_i.mcntrl393_test01_i.page_ready_chn2[0]
+x393_testbench01.x393_i.mcntrl393_test01_i.page_ready_chn3[0]
+x393_testbench01.x393_i.mcntrl393_test01_i.page_ready_chn4[0]
+x393_testbench01.x393_i.mcntrl393_test01_i.rst[0]
+x393_testbench01.x393_i.mcntrl393_test01_i.set_chn1_mode[0]
+x393_testbench01.x393_i.mcntrl393_test01_i.set_chn1_status[0]
+x393_testbench01.x393_i.mcntrl393_test01_i.set_chn2_mode[0]
+x393_testbench01.x393_i.mcntrl393_test01_i.set_chn2_status[0]
+x393_testbench01.x393_i.mcntrl393_test01_i.set_chn3_mode[0]
+x393_testbench01.x393_i.mcntrl393_test01_i.set_chn3_status[0]
+x393_testbench01.x393_i.mcntrl393_test01_i.set_chn4_mode[0]
+x393_testbench01.x393_i.mcntrl393_test01_i.set_chn4_status[0]
+@22
+x393_testbench01.x393_i.mcntrl393_test01_i.status_ad[7:0]
+x393_testbench01.x393_i.mcntrl393_test01_i.status_chn1[21:0]
+x393_testbench01.x393_i.mcntrl393_test01_i.status_chn1_ad[7:0]
+@28
+x393_testbench01.x393_i.mcntrl393_test01_i.status_chn1_rq[0]
+x393_testbench01.x393_i.mcntrl393_test01_i.status_chn1_start[0]
+@22
+x393_testbench01.x393_i.mcntrl393_test01_i.status_chn2[21:0]
+x393_testbench01.x393_i.mcntrl393_test01_i.status_chn2_ad[7:0]
+@28
+x393_testbench01.x393_i.mcntrl393_test01_i.status_chn2_rq[0]
+x393_testbench01.x393_i.mcntrl393_test01_i.status_chn2_start[0]
+@22
+x393_testbench01.x393_i.mcntrl393_test01_i.status_chn3[21:0]
+x393_testbench01.x393_i.mcntrl393_test01_i.status_chn3_ad[7:0]
+@28
+x393_testbench01.x393_i.mcntrl393_test01_i.status_chn3_rq[0]
+x393_testbench01.x393_i.mcntrl393_test01_i.status_chn3_start[0]
+@22
+x393_testbench01.x393_i.mcntrl393_test01_i.status_chn4[21:0]
+x393_testbench01.x393_i.mcntrl393_test01_i.status_chn4_ad[7:0]
+@28
+x393_testbench01.x393_i.mcntrl393_test01_i.status_chn4_rq[0]
+x393_testbench01.x393_i.mcntrl393_test01_i.status_chn4_start[0]
+x393_testbench01.x393_i.mcntrl393_test01_i.status_rq[0]
+x393_testbench01.x393_i.mcntrl393_test01_i.status_start[0]
+x393_testbench01.x393_i.mcntrl393_test01_i.suspend_chn1[0]
+x393_testbench01.x393_i.mcntrl393_test01_i.suspend_chn1_r[0]
+x393_testbench01.x393_i.mcntrl393_test01_i.suspend_chn2[0]
+x393_testbench01.x393_i.mcntrl393_test01_i.suspend_chn2_r[0]
+x393_testbench01.x393_i.mcntrl393_test01_i.suspend_chn3[0]
+x393_testbench01.x393_i.mcntrl393_test01_i.suspend_chn3_r[0]
+x393_testbench01.x393_i.mcntrl393_test01_i.suspend_chn4[0]
+x393_testbench01.x393_i.mcntrl393_test01_i.suspend_chn4_r[0]
+@1401200
+-test01
+@200
 -
 -
 @c00200
@@ -1360,6 +1475,39 @@ x393_testbench01.x393_i.mcntrl393_i.mcntrl_ps_pio_i.want_rq[0]
 -PS_PIO
 @800200
 -LINEAR_CH1
+@200
+-
+@c00200
+-status_gen
+@22
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_linear_rw_chn1_i.status_generate_i.ad[7:0]
+@28
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_linear_rw_chn1_i.status_generate_i.aligned_status[1:0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_linear_rw_chn1_i.status_generate_i.clk[0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_linear_rw_chn1_i.status_generate_i.cmd_pend[0]
+@22
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_linear_rw_chn1_i.status_generate_i.data[7:0]
+@28
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_linear_rw_chn1_i.status_generate_i.mode[1:0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_linear_rw_chn1_i.status_generate_i.mode_w[1:0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_linear_rw_chn1_i.status_generate_i.need_to_send[0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_linear_rw_chn1_i.status_generate_i.rq[0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_linear_rw_chn1_i.status_generate_i.rq_r[0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_linear_rw_chn1_i.status_generate_i.rst[0]
+@22
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_linear_rw_chn1_i.status_generate_i.seq[5:0]
+@28
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_linear_rw_chn1_i.status_generate_i.snd_rest[0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_linear_rw_chn1_i.status_generate_i.start[0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_linear_rw_chn1_i.status_generate_i.status[1:0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_linear_rw_chn1_i.status_generate_i.status_changed_r[0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_linear_rw_chn1_i.status_generate_i.status_r[1:0]
+@22
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_linear_rw_chn1_i.status_generate_i.wd[7:0]
+@28
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_linear_rw_chn1_i.status_generate_i.we[0]
+@1401200
+-status_gen
 @c00200
 -chn1wr
 @22
@@ -1384,30 +1532,75 @@ x393_testbench01.x393_i.mcntrl393_i.chn1wr_buf_i.rpage_in[1:0]
 x393_testbench01.x393_i.mcntrl393_i.chn1wr_buf_i.rpage_set[0]
 @1401200
 -chn1wr
-@c00201
+@c00200
 -chn1rd
-@23
+@22
 x393_testbench01.x393_i.mcntrl393_i.chn1rd_buf_i.data_in[63:0]
-@29
+@28
 x393_testbench01.x393_i.mcntrl393_i.chn1rd_buf_i.ext_clk[0]
-@23
+@22
 x393_testbench01.x393_i.mcntrl393_i.chn1rd_buf_i.ext_data_out[31:0]
 x393_testbench01.x393_i.mcntrl393_i.chn1rd_buf_i.ext_raddr[9:0]
-@29
+@28
 x393_testbench01.x393_i.mcntrl393_i.chn1rd_buf_i.ext_rd[0]
 x393_testbench01.x393_i.mcntrl393_i.chn1rd_buf_i.ext_regen[0]
 x393_testbench01.x393_i.mcntrl393_i.chn1rd_buf_i.page[1:0]
 x393_testbench01.x393_i.mcntrl393_i.chn1rd_buf_i.page_next[0]
 x393_testbench01.x393_i.mcntrl393_i.chn1rd_buf_i.page_r[1:0]
-@23
+@22
 x393_testbench01.x393_i.mcntrl393_i.chn1rd_buf_i.waddr[6:0]
-@29
+@28
 x393_testbench01.x393_i.mcntrl393_i.chn1rd_buf_i.wclk[0]
 x393_testbench01.x393_i.mcntrl393_i.chn1rd_buf_i.we[0]
 x393_testbench01.x393_i.mcntrl393_i.chn1rd_buf_i.wpage_in[1:0]
 x393_testbench01.x393_i.mcntrl393_i.chn1rd_buf_i.wpage_set[0]
-@1401201
+@1401200
 -chn1rd
+@200
+-
+@c00200
+-test_scanline_rd
+@22
+x393_testbench01.test_scanline_read.channel[3:0]
+@28
+x393_testbench01.test_scanline_read.extra_pages[1:0]
+@22
+x393_testbench01.test_scanline_read.ii[31:0]
+x393_testbench01.test_scanline_read.mode[31:0]
+@28
+x393_testbench01.test_scanline_read.show_data[0]
+@22
+x393_testbench01.test_scanline_read.start_addr[29:0]
+x393_testbench01.test_scanline_read.status_address[7:0]
+x393_testbench01.test_scanline_read.status_control_address[29:0]
+x393_testbench01.test_scanline_read.test_mode_address[29:0]
+@1401200
+-test_scanline_rd
+@22
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_linear_rw_chn1_i.cmd_deser_32bit_i.addr[3:0]
+@28
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_linear_rw_chn1_i.cmd_stb[0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_linear_rw_chn1_i.cmd_we[0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_linear_rw_chn1_i.next_page[0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_linear_rw_chn1_i.frame_start[0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_linear_rw_chn1_i.xfer_start_r[2:0]
+@22
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_linear_rw_chn1_i.recalc_r[8:0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_linear_rw_chn1_i.curr_x[12:0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_linear_rw_chn1_i.next_y[16:0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_linear_rw_chn1_i.curr_y[15:0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_linear_rw_chn1_i.frame_x[12:0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_linear_rw_chn1_i.frame_y[15:0]
+@28
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_linear_rw_chn1_i.calc_valid[0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_linear_rw_chn1_i.want_r[0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_linear_rw_chn1_i.last_in_row_w[0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_linear_rw_chn1_i.last_row_w[0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_linear_rw_chn1_i.pending_xfers[1:0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_linear_rw_chn1_i.page_cntr[2:0]
+x393_testbench01.x393_i.mcntrl393_i.page_ready_chn1[0]
+@22
+x393_testbench01.x393_i.mcntrl393_test01_i.page_chn1[3:0]
 @200
 -
 @28

@@ -27,22 +27,43 @@ task wait_status_condition;
     input [25:0] pattern;        // bits as in read registers
     input [25:0] mask;           // which bits to compare
     input        invert_match;   // 0 - wait until match to pattern (all bits), 1 - wait until no match (any of bits differ)
+    input        wait_seq;
     reg          match;
     reg    [5:0] seq_num;
     begin
         WAITING_STATUS = 1;
         for (match=0; !match; match = invert_match ^ (((registered_rdata ^ {6'h0,pattern}) & {6'h0,mask})==0)) begin
             read_and_wait_status(status_address);
-            write_contol_register(status_control_address, {24'b0,status_mode,registered_rdata[STATUS_SEQ_SHFT+:6] ^ 6'h20});
-            seq_num <= registered_rdata[STATUS_SEQ_SHFT+:6] ^ 6'h20;
-            read_and_wait_status(status_address);
-            while (((registered_rdata[STATUS_SEQ_SHFT+:6] ^ seq_num) & 6'h30)!=0) begin // match just 2 MSBs
+            if (wait_seq) begin 
+                seq_num = (registered_rdata[STATUS_SEQ_SHFT+:6] ^ 6'h20)&'h30;
+                write_contol_register(status_control_address, {24'b0,status_mode,seq_num});
                 read_and_wait_status(status_address);
+                while (((registered_rdata[STATUS_SEQ_SHFT+:6] ^ seq_num) & 6'h30)!=0) begin // match just 2 MSBs
+                    read_and_wait_status(status_address);
+                end
             end
         end
         WAITING_STATUS = 0;
     end
 endtask    
+/*
+task wait_status_condition_auto; // assumes status is already updating
+    input [STATUS_DEPTH-1:0] status_address;
+    input [29:0] status_control_address;
+    input  [1:0] status_mode;
+    input [25:0] pattern;        // bits as in read registers
+    input [25:0] mask;           // which bits to compare
+    input        invert_match;   // 0 - wait until match to pattern (all bits), 1 - wait until no match (any of bits differ)
+    reg          match;
+    begin
+        WAITING_STATUS = 1;
+        for (match=0; !match; match = invert_match ^ (((registered_rdata ^ {6'h0,pattern}) & {6'h0,mask})==0)) begin
+            read_and_wait_status(status_address);
+        end
+        WAITING_STATUS = 0;
+    end
+endtask    
+*/
 
  task wait_phase_shifter_ready;
     begin

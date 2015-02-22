@@ -35,11 +35,13 @@
     `define TEST_SCANLINE_WRITE_WAIT 1 // wait TEST_SCANLINE_WRITE finished (frame_done)
 `define TEST_SCANLINE_READ  1
     `define TEST_READ_SHOW  1
-//`define TEST_TILED_WRITE  1
+`define TEST_TILED_WRITE  1
     `define TEST_TILED_WRITE_WAIT 1 // wait TEST_SCANLINE_WRITE finished (frame_done)
 
-//`define TEST_TILED_READ  1
+`define TEST_TILED_READ  1
 
+`define TEST_TILED_WRITE32  1
+`define TEST_TILED_READ32  1
 
 module  x393_testbench01 #(
 `include "includes/x393_parameters.vh"
@@ -242,10 +244,10 @@ module  x393_testbench01 #(
 //  localparam  integer     SCANLINE_FULL_XFER= 1<<NUM_XFER_BITS; // 64 - full page transfer in 8-bursts
 //  localparam  integer     SCANLINE_LAST_XFER= WINDOW_WIDTH % (1<<NUM_XFER_BITS); // last page transfer size in a row
   
-  integer ii;
+//  integer ii;
   integer  SCANLINE_XFER_SIZE;
   localparam       TEST_INITIAL_BURST=   4; // 3;
-always #(CLKIN_PERIOD/2) CLK <= ~CLK;
+always #(CLKIN_PERIOD/2) CLK = ~CLK;
   initial begin
 `ifdef IVERILOG              
     $display("IVERILOG is defined");
@@ -305,7 +307,7 @@ always #(CLKIN_PERIOD/2) CLK <= ~CLK;
     enable_reset_ps_pio(1,0);           // enable, no reset
 
 // set MR registers in DDR3 memory, run DCI calibration (long)
-    wait_ps_pio_ready(DEFAULT_STATUS_MODE); // wait FIFO not half full 
+    wait_ps_pio_ready(DEFAULT_STATUS_MODE, 1); // wait FIFO not half full 
     schedule_ps_pio ( // shedule software-control memory operation (may need to check FIFO status first)
                         INITIALIZE_OFFSET, // input [9:0] seq_addr; // sequence start address
                         0,                 // input [1:0] page;     // buffer page number
@@ -315,7 +317,7 @@ always #(CLKIN_PERIOD/2) CLK <= ~CLK;
                         
    
 `ifdef WAIT_MRS 
-    wait_ps_pio_done(DEFAULT_STATUS_MODE);
+    wait_ps_pio_done(DEFAULT_STATUS_MODE, 1);
 `else    
     repeat (32) @(posedge CLK) ;  // what delay is needed to be sure? Add to PS_PIO?
 //    first refreshes will be fast (accummulated while waiting)
@@ -366,14 +368,32 @@ always #(CLKIN_PERIOD/2) CLK <= ~CLK;
          1);                //       show_data;
 `endif
 
+`ifdef TEST_TILED_WRITE32
+    test_tiled_write (
+         4, // 2,                 // [3:0] channel;
+         1,                 //       byte32;
+         TILED_KEEP_OPEN,   //       keep_open;
+         TILED_EXTRA_PAGES, //       extra_pages;
+         1);                //       wait_done;
+`endif
+
+`ifdef TEST_TILED_READ32
+    test_tiled_read (
+         4, //2,                 // [3:0] channel;
+         1,                 //       byte32;
+         TILED_KEEP_OPEN,   //       keep_open;
+         TILED_EXTRA_PAGES, //       extra_pages;
+         1);                //       show_data;
+`endif
+
   #20000;
   $finish;
 end
 // protect from never end
   initial begin
 //  #10000000;
-//    #200000;
-    #100000;
+     #200000;
+//   #100000;
 //  #60000;
     $display("finish testbench 2");
   $finish;
@@ -980,7 +1000,7 @@ simul_axi_read #(
 task test_write_levelling; // SuppressThisWarning VEditor - may be unused
   begin
 // Set special values for DQS idelay for write leveling
-        wait_ps_pio_done(DEFAULT_STATUS_MODE); // not no interrupt running cycle - delays are changed immediately
+        wait_ps_pio_done(DEFAULT_STATUS_MODE,1); // not no interrupt running cycle - delays are changed immediately
         axi_set_dqs_idelay_wlv;
 // Set write buffer (from DDR3) WE signal delay for write leveling mode
         axi_set_wbuf_delay(WBUF_DLY_WLV);
@@ -992,7 +1012,7 @@ task test_write_levelling; // SuppressThisWarning VEditor - may be unused
                         0,                // input       chn;      // channel buffer to use: 0 - memory read, 1 - memory write
                         `PS_PIO_WAIT_COMPLETE );//  wait_complete; // Do not request a newe transaction from the scheduler until previous memory transaction is finished
                         
-        wait_ps_pio_done(DEFAULT_STATUS_MODE); // wait previous memory transaction finished before changing delays (effective immediately)
+        wait_ps_pio_done(DEFAULT_STATUS_MODE,1); // wait previous memory transaction finished before changing delays (effective immediately)
         read_block_buf_chn (0, 0, 32, 1 ); // chn=0, page=0, number of 32-bit words=32, wait_done
 //        @ (negedge rstb);
         axi_set_dqs_odelay(DLY_DQS_ODELAY);
@@ -1002,7 +1022,7 @@ task test_write_levelling; // SuppressThisWarning VEditor - may be unused
                         0,                 // input       urgent;   // high priority request (only for competion with other channels, wiil not pass in this FIFO)
                         0,                // input       chn;      // channel buffer to use: 0 - memory read, 1 - memory write
                         `PS_PIO_WAIT_COMPLETE );//  wait_complete; // Do not request a newe transaction from the scheduler until previous memory transaction is finished
-        wait_ps_pio_done(DEFAULT_STATUS_MODE); // wait previous memory transaction finished before changing delays (effective immediately)
+        wait_ps_pio_done(DEFAULT_STATUS_MODE,1); // wait previous memory transaction finished before changing delays (effective immediately)
         read_block_buf_chn (0, 1, 32, 1 ); // chn=0, page=1, number of 32-bit words=32, wait_done
 //    task wait_read_queue_empty; - alternative way to check fo empty read queue
         
@@ -1022,7 +1042,7 @@ task test_read_pattern; // SuppressThisWarning VEditor - may be unused
                         0,                     // input       urgent;   // high priority request (only for competion with other channels, wiil not pass in this FIFO)
                         0,                    // input       chn;      // channel buffer to use: 0 - memory read, 1 - memory write
                         `PS_PIO_WAIT_COMPLETE );//  wait_complete; // Do not request a newe transaction from the scheduler until previous memory transaction is finished
-        wait_ps_pio_done(DEFAULT_STATUS_MODE); // wait previous memory transaction finished before changing delays (effective immediately)
+        wait_ps_pio_done(DEFAULT_STATUS_MODE,1); // wait previous memory transaction finished before changing delays (effective immediately)
         read_block_buf_chn (0, 2, 32, 1 ); // chn=0, page=2, number of 32-bit words=32, wait_done
     end
 endtask
@@ -1037,7 +1057,7 @@ task test_write_block; // SuppressThisWarning VEditor - may be unused
                         1,                    // input       chn;      // channel buffer to use: 0 - memory read, 1 - memory write
                         `PS_PIO_WAIT_COMPLETE );//  wait_complete; // Do not request a newe transaction from the scheduler until previous memory transaction is finished
 // tempoary - for debugging:
-//        wait_ps_pio_done(DEFAULT_STATUS_MODE); // wait previous memory transaction finished before changing delays (effective immediately)
+//        wait_ps_pio_done(DEFAULT_STATUS_MODE,1); // wait previous memory transaction finished before changing delays (effective immediately)
     end
 endtask
 
@@ -1061,7 +1081,7 @@ task test_read_block; // SuppressThisWarning VEditor - may be unused
                         0,                     // input       urgent;   // high priority request (only for competion with other channels, wiil not pass in this FIFO)
                         0,                    // input       chn;      // channel buffer to use: 0 - memory read, 1 - memory write
                         `PS_PIO_WAIT_COMPLETE );//  wait_complete; // Do not request a newe transaction from the scheduler until previous memory transaction is finished
-        wait_ps_pio_done(DEFAULT_STATUS_MODE); // wait previous memory transaction finished before changing delays (effective immediately)
+        wait_ps_pio_done(DEFAULT_STATUS_MODE,1); // wait previous memory transaction finished before changing delays (effective immediately)
         read_block_buf_chn (0, 3, 256, 1 ); // chn=0, page=3, number of 32-bit words=256, wait_done
     end
 endtask
@@ -1145,7 +1165,8 @@ task test_scanline_write; // SuppressThisWarning VEditor - may be unused
                     DEFAULT_STATUS_MODE,
                     (ii-TEST_INITIAL_BURST)<<16, // 4-bit page number
                     'hf << 16,  // mask for the 4-bit page number
-                    1); // not equal to
+                    1, // not equal to
+                    (ii == TEST_INITIAL_BURST)); // synchronize sequence number - only first time, next just wait fro auto update
                 SCANLINE_XFER_SIZE= ((SCANLINE_PAGES_PER_ROW>1)?
                     (
                         (
@@ -1172,7 +1193,8 @@ task test_scanline_write; // SuppressThisWarning VEditor - may be unused
                 DEFAULT_STATUS_MODE,
                 2 << STATUS_2LSB_SHFT, // bit 24 - busy, bit 25 - frame done
                 2 << STATUS_2LSB_SHFT,  // mask for the 4-bit page number
-                0); // equal to
+                0, // equal to
+                0); // no need to synchronize sequence number
 //     enable_memcntrl_en_dis(channel,0); // disable channel
         end
     end
@@ -1245,7 +1267,8 @@ task test_scanline_read; // SuppressThisWarning VEditor - may be unused
                 DEFAULT_STATUS_MODE,
                 (ii) << 16, // -TEST_INITIAL_BURST)<<16, // 4-bit page number
                 'hf << 16,  // mask for the 4-bit page number
-                1); // not equal to
+                 1, // not equal to
+                 (ii == 0)); // synchronize sequence number - only first time, next just wait fro auto update
 // read block (if needed), for now just sikip  
                 if (show_data) begin 
                 read_block_buf_chn (
@@ -1332,7 +1355,8 @@ task test_tiled_write; // SuppressThisWarning VEditor - may be unused
                     DEFAULT_STATUS_MODE,
                     (ii-TEST_INITIAL_BURST)<<16, // 4-bit page number
                     'hf << 16,  // mask for the 4-bit page number
-                    1); // not equal to
+                    1, // not equal to
+                    (ii == TEST_INITIAL_BURST)); // synchronize sequence number - only first time, next just wait fro auto update
                 write_block_scanline_chn( // TODO: Make a different tile buffer data, matching the order
                     channel, // channel
                     (ii & 3),
@@ -1349,7 +1373,8 @@ task test_tiled_write; // SuppressThisWarning VEditor - may be unused
                 DEFAULT_STATUS_MODE,
                 2 << STATUS_2LSB_SHFT, // bit 24 - busy, bit 25 - frame done
                 2 << STATUS_2LSB_SHFT,  // mask for the 4-bit page number
-                0); // equal to
+                0, // equal to
+                0); // no need to synchronize sequence number
 //     enable_memcntrl_en_dis(channel,0); // disable channel
         end
     end  
@@ -1419,7 +1444,8 @@ task test_tiled_read; // SuppressThisWarning VEditor - may be unused
                 DEFAULT_STATUS_MODE,
                 ii << 16, // -TEST_INITIAL_BURST)<<16, // 4-bit page number
                 'hf << 16,  // mask for the 4-bit page number
-                1); // not equal to
+                1, // not equal to
+                (ii == 0)); // synchronize sequence number - only first time, next just wait fro auto update
                 if (show_data) begin 
                 read_block_buf_chn (
                     channel,

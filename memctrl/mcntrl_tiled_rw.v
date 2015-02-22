@@ -257,7 +257,7 @@ module  mcntrl_tiled_rw#(
     assign calc_valid=  par_mod_r[PAR_MOD_LATENCY-1]; // MSB, longest 0
     assign frame_done=      frame_done_r;
     assign frame_finished=  frame_finished_r;
-    assign pre_want=    chn_en && busy_r && !want_r && !xfer_start_r[0] && calc_valid && !last_block && !suspend;
+    assign pre_want=    chn_en && busy_r && !want_r && !xfer_start_r[0] && calc_valid && !last_block && !suspend && !frame_start;
     assign last_in_row_w=(row_left=={{(FRAME_WIDTH_BITS-MAX_TILE_WIDTH){1'b0}},num_cols_r}); // what if it crosses page? OK, num_cols_r & row_left know that
 //    assign last_row_w=  next_y>=window_height; // (next_y==window_height) is faster, but will not forgive software errors
 // tiles must completely fit window
@@ -350,9 +350,9 @@ module  mcntrl_tiled_rw#(
 // calculate number to read (min of row_left, maximal xfer and what is left in the DDR3 page
 wire    start_not_partial= xfer_start_r[0] && !xfer_limited_by_mem_page_r;    
     always @(posedge rst or posedge mclk) begin
-        if      (rst)                                       par_mod_r<=0;
-        else if (pgm_param_w || xfer_start_r[0] || chn_rst) par_mod_r<=0;
-        else                                                par_mod_r <= {par_mod_r[PAR_MOD_LATENCY-2:0], 1'b1};
+        if      (rst)                                                      par_mod_r<=0;
+        else if (pgm_param_w || xfer_start_r[0] || chn_rst || frame_start) par_mod_r<=0;
+        else                                                               par_mod_r <= {par_mod_r[PAR_MOD_LATENCY-2:0], 1'b1};
 
         if      (rst)          chn_rst_d <= 0;
         else                   chn_rst_d <= chn_rst;
@@ -360,7 +360,8 @@ wire    start_not_partial= xfer_start_r[0] && !xfer_limited_by_mem_page_r;
         if      (rst)          recalc_r<=0;
         else if (chn_rst)      recalc_r<=0;
 //        else                 recalc_r <= {recalc_r[PAR_MOD_LATENCY-2:0], (xfer_grant & ~chn_rst) | pgm_param_w | (chn_rst_d & ~chn_rst)};
-        else                   recalc_r <= {recalc_r[PAR_MOD_LATENCY-2:0], (xfer_start_r[0] & ~chn_rst) | pgm_param_w | (chn_rst_d & ~chn_rst)};
+        else                   recalc_r <= {recalc_r[PAR_MOD_LATENCY-2:0],
+                                 ((xfer_start_r[0] | frame_start)  & ~chn_rst) | pgm_param_w | (chn_rst_d & ~chn_rst)};
         
         if      (rst)          busy_r <= 0;
         else if (chn_rst)      busy_r <= 0;

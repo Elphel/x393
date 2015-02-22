@@ -33,6 +33,7 @@ endtask
 
 task wait_ps_pio_ready; // wait PS PIO module can accept comamnds (fifo half empty)
     input [1:0] mode;
+    input       sync_seq; //  synchronize sequences
     begin
         wait_status_condition (
             MCNTRL_PS_STATUS_REG_ADDR,
@@ -40,11 +41,13 @@ task wait_ps_pio_ready; // wait PS PIO module can accept comamnds (fifo half emp
             mode,
             0,
             2 << STATUS_2LSB_SHFT,
-            0);
+            0,
+            sync_seq);
     end
 endtask
 task wait_ps_pio_done; // wait PS PIO module has no pending/running memory transaction
     input [1:0] mode;
+    input       sync_seq; //  synchronize sequences
     begin
         wait_status_condition (
             MCNTRL_PS_STATUS_REG_ADDR,
@@ -52,8 +55,8 @@ task wait_ps_pio_done; // wait PS PIO module has no pending/running memory trans
             mode,
             0,
             3 << STATUS_2LSB_SHFT,
-            
-            0);
+            0,
+            sync_seq);
     end
 endtask
  
