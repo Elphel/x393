@@ -22,20 +22,11 @@
 
 module  mcntrl393 #(
 // AXI
-    parameter AXI_WR_ADDR_BITS =    13,
-    parameter AXI_RD_ADDR_BITS =    13,
-// buffers (1k='h400 each) map, addresses and masks are in 32-bit words, not bytes
-    parameter MCONTR_WR_MASK =       'h1c00, // AXI write address mask for the 1Kx32 buffers command sequence memory
-    parameter MCONTR_RD_MASK =       'h1c00, // AXI read address mask to generate busy
-
+    parameter MCONTR_WR_MASK =       'h3c00, // AXI write address mask for the 1Kx32 buffers command sequence memory
+    parameter MCONTR_RD_MASK =       'h3c00, // AXI read address mask to generate busy
     parameter MCONTR_CMD_WR_ADDR =   'h0000, // AXI write to command sequence memory
     parameter MCONTR_BUF0_RD_ADDR =  'h0400, // AXI read address from buffer 0 (PS sequence, memory read) 
     parameter MCONTR_BUF0_WR_ADDR =  'h0400, // AXI write address to buffer 0 (PS sequence, memory write)
-//    parameter MCONTR_BUF0_WR_ADDR =  'h0400, // AXI write address to buffer 1 (PS sequence, memory write)
-//    parameter MCONTR_BUF2_RD_ADDR =  'h0800, // AXI read address from buffer 2 (PL sequence, scanline, memory read)
-//    parameter MCONTR_BUF3_WR_ADDR =  'h0800, // AXI write address to buffer 3 (PL sequence, scanline, memory write)
-//    parameter MCONTR_BUF4_RD_ADDR =  'h0c00, // AXI read address from buffer 4 (PL sequence, tiles, memory read)
-//    parameter MCONTR_BUF5_WR_ADDR =  'h0c00, // AXI write address to buffer 5 (PL sequence, scanline, memory write)
     parameter MCONTR_BUF1_RD_ADDR =  'h0800, // AXI read address from buffer 1 (PL sequence, scanline, memory read)
     parameter MCONTR_BUF1_WR_ADDR =  'h0800, // AXI write address to buffer 1 (PL sequence, scanline, memory write)
     parameter MCONTR_BUF2_RD_ADDR =  'h0c00, // AXI read address from buffer 2 (PL sequence, tiles, memory read)
@@ -44,6 +35,8 @@ module  mcntrl393 #(
     parameter MCONTR_BUF3_WR_ADDR =  'h1000, // AXI write address to buffer 3 (PL sequence, scanline, memory write)
     parameter MCONTR_BUF4_RD_ADDR =  'h1400, // AXI read address from buffer 4 (PL sequence, tiles, memory read)
     parameter MCONTR_BUF4_WR_ADDR =  'h1400, // AXI write address to buffer 4 (PL sequence, tiles, memory write)
+    parameter AXI_WR_ADDR_BITS =        14,
+    parameter AXI_RD_ADDR_BITS =        14,
 
     
 //command interface parameters

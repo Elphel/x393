@@ -1,3 +1,58 @@
+    parameter MCONTR_WR_MASK =       'h3c00, // AXI write address mask for the 1Kx32 buffers command sequence memory
+    parameter MCONTR_RD_MASK =       'h3c00, // AXI read address mask to generate busy
+    parameter MCONTR_CMD_WR_ADDR =   'h0000, // AXI write to command sequence memory
+    parameter MCONTR_BUF0_RD_ADDR =  'h0400, // AXI read address from buffer 0 (PS sequence, memory read) 
+    parameter MCONTR_BUF0_WR_ADDR =  'h0400, // AXI write address to buffer 0 (PS sequence, memory write)
+    parameter MCONTR_BUF1_RD_ADDR =  'h0800, // AXI read address from buffer 1 (PL sequence, scanline, memory read)
+    parameter MCONTR_BUF1_WR_ADDR =  'h0800, // AXI write address to buffer 1 (PL sequence, scanline, memory write)
+    parameter MCONTR_BUF2_RD_ADDR =  'h0c00, // AXI read address from buffer 2 (PL sequence, tiles, memory read)
+    parameter MCONTR_BUF2_WR_ADDR =  'h0c00, // AXI write address to buffer 2 (PL sequence, tiles, memory write)
+    parameter MCONTR_BUF3_RD_ADDR =  'h1000, // AXI read address from buffer 3 (PL sequence, scanline, memory read)
+    parameter MCONTR_BUF3_WR_ADDR =  'h1000, // AXI write address to buffer 3 (PL sequence, scanline, memory write)
+    parameter MCONTR_BUF4_RD_ADDR =  'h1400, // AXI read address from buffer 4 (PL sequence, tiles, memory read)
+    parameter MCONTR_BUF4_WR_ADDR =  'h1400, // AXI write address to buffer 4 (PL sequence, tiles, memory write)
+    parameter CONTROL_ADDR =         'h2000, // AXI write address of control write registers
+    parameter CONTROL_ADDR_MASK =    'h3800, // AXI write address of control registers
+    // so 'h2000..'h23ff (CONTROL_ADDR) - no busy when writing, 'h2400..'h27ff (CONTROL_ADDR | BUSY_WR_ADDR) generates busy if fifo half full
+    parameter BUSY_WR_ADDR =         'h1400, // AXI write address to generate busy
+    parameter BUSY_WR_ADDR_MASK =    'h3c00, // AXI write address mask to generate busy during memory controller register write
+    parameter STATUS_ADDR =          'h2800, // AXI write address of status read registers
+    parameter STATUS_ADDR_MASK =     'h3c00, // AXI write address of status registers
+    parameter AXI_WR_ADDR_BITS =        14,
+    parameter AXI_RD_ADDR_BITS =        14,
+    parameter STATUS_DEPTH=              8,  // 256 cells, maybe just 16..64 are enough?
+
+
+--------------
+        .MCONTR_WR_MASK                    (MCONTR_WR_MASK),
+        .MCONTR_RD_MASK                    (MCONTR_RD_MASK),
+        .MCONTR_CMD_WR_ADDR                (MCONTR_CMD_WR_ADDR),
+        .MCONTR_BUF0_RD_ADDR               (MCONTR_BUF0_RD_ADDR),
+        .MCONTR_BUF0_WR_ADDR               (MCONTR_BUF0_WR_ADDR),
+        .MCONTR_BUF1_RD_ADDR               (MCONTR_BUF1_RD_ADDR),
+        .MCONTR_BUF1_WR_ADDR               (MCONTR_BUF1_WR_ADDR),
+        .MCONTR_BUF2_RD_ADDR               (MCONTR_BUF2_RD_ADDR),
+        .MCONTR_BUF2_WR_ADDR               (MCONTR_BUF2_WR_ADDR),
+        .MCONTR_BUF3_RD_ADDR               (MCONTR_BUF3_RD_ADDR),
+        .MCONTR_BUF3_WR_ADDR               (MCONTR_BUF3_WR_ADDR),
+        .MCONTR_BUF4_RD_ADDR               (MCONTR_BUF4_RD_ADDR),
+        .MCONTR_BUF4_WR_ADDR               (MCONTR_BUF4_WR_ADDR),
+        .CONTROL_ADDR                      (CONTROL_ADDR),
+        .CONTROL_ADDR_MASK                 (CONTROL_ADDR_MASK),
+        .BUSY_WR_ADDR                      (BUSY_WR_ADDR),
+        .BUSY_WR_ADDR_MASK                 (BUSY_WR_ADDR_MASK),
+        .STATUS_ADDR                       (STATUS_ADDR),
+        .STATUS_ADDR_MASK                  (STATUS_ADDR_MASK),
+        .AXI_WR_ADDR_BITS                  (AXI_WR_ADDR_BITS),
+        .AXI_RD_ADDR_BITS                  (AXI_RD_ADDR_BITS),
+        .STATUS_DEPTH                      (STATUS_DEPTH),
+
+ddrc_control        
+    parameter BUSY_WR_ADDR =        'h1800, // AXI write address to generate busy
+    parameter BUSY_WR_ADDR_MASK =   'h1c00, // AXI write address mask to generate busy
+        
+        
+
 //0x1080..10ff - 8- bit data - to set various delay values
     parameter DLY_LD =            'h080,  // address to generate delay load 
     parameter DLY_LD_MASK =       'h380,  // address mask to generate delay load

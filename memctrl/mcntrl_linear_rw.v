@@ -361,9 +361,9 @@ wire    start_not_partial= xfer_start_r[0] && !xfer_limited_by_mem_page_r;
         if (rst) xfer_start_wr_r <= 0;
         else     xfer_start_wr_r <=  xfer_grant && !chn_rst && cmd_wrmem;
         
-        if (rst)                             need_r <= 0;
-        else if (chn_rst || xfer_grant)      need_r <= 0;
-        else if (pre_want && (page_cntr>=3)) need_r <= 1;
+        if (rst)                                          need_r <= 0;
+        else if (chn_rst || xfer_grant)                   need_r <= 0;
+        else if ((pre_want  || want_r) && (page_cntr>=3)) need_r <= 1; // may raise need if want was already set
 
         if (rst)                                                 want_r <= 0;
         else if (chn_rst || xfer_grant)                          want_r <= 0;

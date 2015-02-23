@@ -23,17 +23,11 @@
 //`define DEBUG_FIFO 1
 `include ".editor_defines.vh" 
 module  x393 #(
-    parameter MCONTR_WR_MASK =       'h1c00, // AXI write address mask for the 1Kx32 buffers command sequence memory
-    parameter MCONTR_RD_MASK =       'h1c00, // AXI read address mask to generate busy
-
+    parameter MCONTR_WR_MASK =       'h3c00, // AXI write address mask for the 1Kx32 buffers command sequence memory
+    parameter MCONTR_RD_MASK =       'h3c00, // AXI read address mask to generate busy
     parameter MCONTR_CMD_WR_ADDR =   'h0000, // AXI write to command sequence memory
     parameter MCONTR_BUF0_RD_ADDR =  'h0400, // AXI read address from buffer 0 (PS sequence, memory read) 
     parameter MCONTR_BUF0_WR_ADDR =  'h0400, // AXI write address to buffer 0 (PS sequence, memory write)
-//    parameter MCONTR_BUF0_WR_ADDR =  'h0400, // AXI write address to buffer 1 (PS sequence, memory write)
-//    parameter MCONTR_BUF2_RD_ADDR =  'h0800, // AXI read address from buffer 2 (PL sequence, scanline, memory read)
-//    parameter MCONTR_BUF3_WR_ADDR =  'h0800, // AXI write address to buffer 3 (PL sequence, scanline, memory write)
-//    parameter MCONTR_BUF4_RD_ADDR =  'h0c00, // AXI read address from buffer 4 (PL sequence, tiles, memory read)
-//    parameter MCONTR_BUF5_WR_ADDR =  'h0c00, // AXI write address to buffer 5 (PL sequence, scanline, memory write)
     parameter MCONTR_BUF1_RD_ADDR =  'h0800, // AXI read address from buffer 1 (PL sequence, scanline, memory read)
     parameter MCONTR_BUF1_WR_ADDR =  'h0800, // AXI write address to buffer 1 (PL sequence, scanline, memory write)
     parameter MCONTR_BUF2_RD_ADDR =  'h0c00, // AXI read address from buffer 2 (PL sequence, tiles, memory read)
@@ -42,6 +36,14 @@ module  x393 #(
     parameter MCONTR_BUF3_WR_ADDR =  'h1000, // AXI write address to buffer 3 (PL sequence, scanline, memory write)
     parameter MCONTR_BUF4_RD_ADDR =  'h1400, // AXI read address from buffer 4 (PL sequence, tiles, memory read)
     parameter MCONTR_BUF4_WR_ADDR =  'h1400, // AXI write address to buffer 4 (PL sequence, tiles, memory write)
+    parameter CONTROL_ADDR =         'h2000, // AXI write address of control write registers
+    parameter CONTROL_ADDR_MASK =    'h3c00, // AXI write address of control registers
+    parameter STATUS_ADDR =          'h2400, // AXI write address of status read registers
+    parameter STATUS_ADDR_MASK =     'h3c00, // AXI write address of status registers
+    parameter AXI_WR_ADDR_BITS =        14,
+    parameter AXI_RD_ADDR_BITS =        14,
+    parameter STATUS_DEPTH=              8,  // 256 cells, maybe just 16..64 are enough?
+    
 //command interface parameters
     parameter DLY_LD =            'h080,  // address to generate delay load
     parameter DLY_LD_MASK =       'h380,  // address mask to generate delay load
@@ -155,15 +157,6 @@ module  x393 #(
     parameter SS_MOD_PERIOD =       10000,
     parameter CMD_PAUSE_BITS=       10,
     parameter CMD_DONE_BIT=         10,
-    
-    parameter STATUS_ADDR =         'h1400, // AXI write address of status read registers
-    parameter STATUS_ADDR_MASK =    'h1400, // AXI write address of status registers
-    parameter STATUS_DEPTH=         8,  // 256 cells, maybe just 16..64 are enough?
-    
-    parameter AXI_WR_ADDR_BITS =    13,
-    parameter AXI_RD_ADDR_BITS =    13,
-    parameter CONTROL_ADDR =        'h1000, // AXI write address of control write registers
-    parameter CONTROL_ADDR_MASK =   'h1400, // AXI write address of control registers
     parameter NUM_CYCLES_LOW_BIT=   'h6,    // decode addresses [NUM_CYCLES_LOW_BIT+:4] into command a/d length
 // TODO: put actual data    
     parameter NUM_CYCLES_00 =       2, // 2-cycle 000.003f
@@ -610,10 +603,10 @@ BUFG bufg_axi_aclk_i  (.O(axi_aclk),.I(fclk[0]));
     );
 
     status_read #(
-        .STATUS_ADDR(STATUS_ADDR),
-        .STATUS_ADDR_MASK(STATUS_ADDR_MASK),
-        .AXI_RD_ADDR_BITS(AXI_RD_ADDR_BITS),
-        .STATUS_DEPTH(STATUS_DEPTH)
+        .STATUS_ADDR      (STATUS_ADDR),
+        .STATUS_ADDR_MASK (STATUS_ADDR_MASK),
+        .AXI_RD_ADDR_BITS (AXI_RD_ADDR_BITS),
+        .STATUS_DEPTH     (STATUS_DEPTH)
     ) status_read_i (
         .rst              (axi_rst), // input
         .clk              (mclk), // input
@@ -647,8 +640,6 @@ BUFG bufg_axi_aclk_i  (.O(axi_aclk),.I(fclk[0]));
 
     /* Instance template for module mcntrl393 */
     mcntrl393 #(
-        .AXI_WR_ADDR_BITS                  (AXI_WR_ADDR_BITS),
-        .AXI_RD_ADDR_BITS                  (AXI_RD_ADDR_BITS),
         .MCONTR_WR_MASK                    (MCONTR_WR_MASK),
         .MCONTR_RD_MASK                    (MCONTR_RD_MASK),
         .MCONTR_CMD_WR_ADDR                (MCONTR_CMD_WR_ADDR),
@@ -662,6 +653,8 @@ BUFG bufg_axi_aclk_i  (.O(axi_aclk),.I(fclk[0]));
         .MCONTR_BUF3_WR_ADDR               (MCONTR_BUF3_WR_ADDR),
         .MCONTR_BUF4_RD_ADDR               (MCONTR_BUF4_RD_ADDR),
         .MCONTR_BUF4_WR_ADDR               (MCONTR_BUF4_WR_ADDR),
+        .AXI_WR_ADDR_BITS                  (AXI_WR_ADDR_BITS),
+        .AXI_RD_ADDR_BITS                  (AXI_RD_ADDR_BITS),
        
         .DLY_LD                            (DLY_LD),
         .DLY_LD_MASK                       (DLY_LD_MASK),

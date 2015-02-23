@@ -391,9 +391,9 @@ wire    start_not_partial= xfer_start_r[0] && !xfer_limited_by_mem_page_r;
         else if (frame_start)      continued_tile <= 1'b0;
         else if (xfer_start_r[0])  continued_tile <= xfer_limited_by_mem_page_r; // only set after actual start if it was partial, not after parameter change
         
-        if (rst)                             need_r <= 0;
-        else if (chn_rst || xfer_grant)      need_r <= 0;
-        else if (pre_want && (page_cntr>=3)) need_r <= 1;
+        if (rst)                                          need_r <= 0;
+        else if (chn_rst || xfer_grant)                   need_r <= 0;
+        else if ((pre_want  || want_r) && (page_cntr>=3)) need_r <= 1; // may raise need if want was already set
 
         if (rst)                                                 want_r <= 0;
         else if (chn_rst || xfer_grant)                          want_r <= 0;

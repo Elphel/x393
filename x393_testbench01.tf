@@ -466,6 +466,13 @@ assign bresp=                              x393_i.ps7_i.MAXIGP0BRESP;
         .MCONTR_BUF3_WR_ADDR               (MCONTR_BUF3_WR_ADDR),
         .MCONTR_BUF4_RD_ADDR               (MCONTR_BUF4_RD_ADDR),
         .MCONTR_BUF4_WR_ADDR               (MCONTR_BUF4_WR_ADDR),
+        .CONTROL_ADDR                      (CONTROL_ADDR),
+        .CONTROL_ADDR_MASK                 (CONTROL_ADDR_MASK),
+        .STATUS_ADDR                       (STATUS_ADDR),
+        .STATUS_ADDR_MASK                  (STATUS_ADDR_MASK),
+        .AXI_WR_ADDR_BITS                  (AXI_WR_ADDR_BITS),
+        .AXI_RD_ADDR_BITS                  (AXI_RD_ADDR_BITS),
+        .STATUS_DEPTH                      (STATUS_DEPTH),
         .DLY_LD                            (DLY_LD),
         .DLY_LD_MASK                       (DLY_LD_MASK),
         .MCONTR_PHY_0BIT_ADDR              (MCONTR_PHY_0BIT_ADDR),
@@ -535,13 +542,6 @@ assign bresp=                              x393_i.ps7_i.MAXIGP0BRESP;
         .SS_MOD_PERIOD                     (SS_MOD_PERIOD),
         .CMD_PAUSE_BITS                    (CMD_PAUSE_BITS),
         .CMD_DONE_BIT                      (CMD_DONE_BIT),
-        .STATUS_ADDR                       (STATUS_ADDR),
-        .STATUS_ADDR_MASK                  (STATUS_ADDR_MASK),
-        .STATUS_DEPTH                      (STATUS_DEPTH),
-        .AXI_WR_ADDR_BITS                  (AXI_WR_ADDR_BITS),
-        .AXI_RD_ADDR_BITS                  (AXI_RD_ADDR_BITS),
-        .CONTROL_ADDR                      (CONTROL_ADDR),
-        .CONTROL_ADDR_MASK                 (CONTROL_ADDR_MASK),
         .NUM_CYCLES_LOW_BIT                (NUM_CYCLES_LOW_BIT),
         .NUM_CYCLES_00                     (NUM_CYCLES_00),
         .NUM_CYCLES_01                     (NUM_CYCLES_01),
@@ -1149,6 +1149,7 @@ task test_scanline_write; // SuppressThisWarning VEditor - may be unused
                     )
                 ):
                 (WINDOW_WIDTH));
+           $display("########### test_scanline_write block %d: channel=%d, @%t", ii, channel, $time);
            write_block_scanline_chn(
             channel,
             (ii & 3),
@@ -1177,6 +1178,7 @@ task test_scanline_write; // SuppressThisWarning VEditor - may be unused
                         )
                     ):
                     (WINDOW_WIDTH));
+                $display("########### test_scanline_write block %d: channel=%d, @%t", ii, channel, $time);
                 write_block_scanline_chn(
                     channel,
                     (ii & 3),
@@ -1270,12 +1272,13 @@ task test_scanline_read; // SuppressThisWarning VEditor - may be unused
                  1, // not equal to
                  (ii == 0)); // synchronize sequence number - only first time, next just wait fro auto update
 // read block (if needed), for now just sikip  
-                if (show_data) begin 
-                read_block_buf_chn (
-                    channel,
-                    (ii & 3),
-                    SCANLINE_XFER_SIZE <<2,
-                    1 ); // chn=0, page=3, number of 32-bit words=256, wait_done
+                if (show_data) begin
+                    $display("########### test_scanline_read block %d: channel=%d, @%t", ii, channel, $time);
+                    read_block_buf_chn (
+                        channel,
+                        (ii & 3),
+                        SCANLINE_XFER_SIZE <<2,
+                        1 ); // chn=0, page=3, number of 32-bit words=256, wait_done
                 end
         write_contol_register(test_mode_address,            TEST01_NEXT_PAGE);
     end
@@ -1339,6 +1342,7 @@ task test_tiled_write; // SuppressThisWarning VEditor - may be unused
         write_contol_register(test_mode_address,            TEST01_START_FRAME);
     
         for (ii=0;ii<TEST_INITIAL_BURST;ii=ii+1) begin
+            $display("########### test_tiled_write block %d: channel=%d, @%t", ii, channel, $time);
             write_block_scanline_chn( // TODO: Make a different tile buffer data, matching the order
                 channel, // channel
                 (ii & 3),
@@ -1357,6 +1361,7 @@ task test_tiled_write; // SuppressThisWarning VEditor - may be unused
                     'hf << 16,  // mask for the 4-bit page number
                     1, // not equal to
                     (ii == TEST_INITIAL_BURST)); // synchronize sequence number - only first time, next just wait fro auto update
+                $display("########### test_tiled_write block %d: channel=%d, @%t", ii, channel, $time);
                 write_block_scanline_chn( // TODO: Make a different tile buffer data, matching the order
                     channel, // channel
                     (ii & 3),
@@ -1447,11 +1452,12 @@ task test_tiled_read; // SuppressThisWarning VEditor - may be unused
                 1, // not equal to
                 (ii == 0)); // synchronize sequence number - only first time, next just wait fro auto update
                 if (show_data) begin 
-                read_block_buf_chn (
-                    channel,
-                    (ii & 3),
-                    TILE_SIZE <<2,
-                    1 ); // chn=0, page=3, number of 32-bit words=256, wait_done
+                    $display("########### test_tiled_read block %d: channel=%d, @%t", ii, channel, $time);
+                    read_block_buf_chn (
+                        channel,
+                        (ii & 3),
+                        TILE_SIZE <<2,
+                        1 ); // chn=0, page=3, number of 32-bit words=256, wait_done
                 end
             write_contol_register(test_mode_address,            TEST01_NEXT_PAGE);
         end

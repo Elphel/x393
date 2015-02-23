@@ -21,9 +21,9 @@
 `timescale 1ns/1ps
 
 module  cmd_mux #(
-    parameter AXI_WR_ADDR_BITS=    13,
-    parameter CONTROL_ADDR =        'h1000, // AXI write address of control write registers
-    parameter CONTROL_ADDR_MASK =   'h1400, // AXI write address of control registers
+    parameter AXI_WR_ADDR_BITS=    14,
+    parameter CONTROL_ADDR =         'h2000, // AXI write address of control write registers
+    parameter CONTROL_ADDR_MASK =    'h3c00, // AXI write address of control registers
     parameter NUM_CYCLES_LOW_BIT=   6, // decode addresses [NUM_CYCLES_LOW_BIT+:4] into command a/d length
     parameter NUM_CYCLES_00 =       9, // single-cycle
     parameter NUM_CYCLES_01 =       2, // 2-cycle

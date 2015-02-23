@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.3.64 (w)1999-2014 BSI
-[*] Sun Feb 22 21:43:30 2015
+[*] Mon Feb 23 20:32:53 2015
 [*]
-[dumpfile] "/home/andrey/git/x393/simulation/x393_testbench01-20150222141943750.lxt"
-[dumpfile_mtime] "Sun Feb 22 21:34:12 2015"
-[dumpfile_size] 804533571
+[dumpfile] "/home/andrey/git/x393/simulation/x393_testbench01-20150223124353972.lxt"
+[dumpfile_mtime] "Mon Feb 23 20:02:26 2015"
+[dumpfile_size] 1073748834
 [savefile] "/home/andrey/git/x393/x393_testbench01.sav"
-[timestart] 0
-[size] 1823 1173
-[pos] 2056 0
-*-24.698502 80100000 55877500 55843010 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[timestart] 8460000
+[size] 1823 1180
+[pos] 2059 -3
+*-23.698502 45624323 55877500 55843010 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] x393_testbench01.
 [treeopen] x393_testbench01.x393_i.
 [treeopen] x393_testbench01.x393_i.mcntrl393_i.
@@ -20,18 +20,18 @@
 [treeopen] x393_testbench01.x393_i.mcntrl393_i.mcntrl_ps_pio_i.chn0_buf_i.
 [treeopen] x393_testbench01.x393_i.mcntrl393_i.mcntrl_ps_pio_i.chn1_buf_i.
 [treeopen] x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn4_i.
+[treeopen] x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.
 [treeopen] x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.cmd_deser_16bit_i.
 [treeopen] x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.cmd_deser_16bit_i.genblk4.
-[treeopen] x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.
 [treeopen] x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.phy_top_i.
 [treeopen] x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.scheduler16_i.
 [treeopen] x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.status_router2_top_i.
 [treeopen] x393_testbench01.x393_i.mcntrl393_test01_i.
 [treeopen] x393_testbench01.x393_i.mcntrl393_test01_i.status_router4_i.
-[sst_width] 260
-[signals_width] 369
+[sst_width] 285
+[signals_width] 402
 [sst_expanded] 1
-[sst_vpaned_height] 624
+[sst_vpaned_height] 628
 @800200
 -top_simulation
 @28
@@ -93,9 +93,51 @@ x393_testbench01.registered_rdata[31:0]
 @22
 x393_testbench01.read_and_wait_status.address[7:0]
 x393_testbench01.x393_i.status_rdata[31:0]
+@c00022
 x393_testbench01.x393_i.axird_rdata[31:0]
+@28
+(0)x393_testbench01.x393_i.axird_rdata[31:0]
+(1)x393_testbench01.x393_i.axird_rdata[31:0]
+(2)x393_testbench01.x393_i.axird_rdata[31:0]
+(3)x393_testbench01.x393_i.axird_rdata[31:0]
+(4)x393_testbench01.x393_i.axird_rdata[31:0]
+(5)x393_testbench01.x393_i.axird_rdata[31:0]
+(6)x393_testbench01.x393_i.axird_rdata[31:0]
+(7)x393_testbench01.x393_i.axird_rdata[31:0]
+(8)x393_testbench01.x393_i.axird_rdata[31:0]
+(9)x393_testbench01.x393_i.axird_rdata[31:0]
+(10)x393_testbench01.x393_i.axird_rdata[31:0]
+(11)x393_testbench01.x393_i.axird_rdata[31:0]
+(12)x393_testbench01.x393_i.axird_rdata[31:0]
+(13)x393_testbench01.x393_i.axird_rdata[31:0]
+(14)x393_testbench01.x393_i.axird_rdata[31:0]
+(15)x393_testbench01.x393_i.axird_rdata[31:0]
+(16)x393_testbench01.x393_i.axird_rdata[31:0]
+(17)x393_testbench01.x393_i.axird_rdata[31:0]
+(18)x393_testbench01.x393_i.axird_rdata[31:0]
+(19)x393_testbench01.x393_i.axird_rdata[31:0]
+(20)x393_testbench01.x393_i.axird_rdata[31:0]
+(21)x393_testbench01.x393_i.axird_rdata[31:0]
+(22)x393_testbench01.x393_i.axird_rdata[31:0]
+(23)x393_testbench01.x393_i.axird_rdata[31:0]
+(24)x393_testbench01.x393_i.axird_rdata[31:0]
+(25)x393_testbench01.x393_i.axird_rdata[31:0]
+(26)x393_testbench01.x393_i.axird_rdata[31:0]
+(27)x393_testbench01.x393_i.axird_rdata[31:0]
+(28)x393_testbench01.x393_i.axird_rdata[31:0]
+(29)x393_testbench01.x393_i.axird_rdata[31:0]
+(30)x393_testbench01.x393_i.axird_rdata[31:0]
+(31)x393_testbench01.x393_i.axird_rdata[31:0]
+@1401200
+-group_end
+@22
 x393_testbench01.target_phase[7:0]
 x393_testbench01.read_and_wait_status.address[7:0]
+@28
+x393_testbench01.x393_i.status_selected[0]
+x393_testbench01.x393_i.mcntrl_axird_selected[0]
+@22
+x393_testbench01.x393_i.mcntrl_axird_rdata[31:0]
 @1401200
 -top_extra
 @28
@@ -228,8 +270,6 @@ x393_testbench01.x393_i.axird_bram_rclk[0]
 x393_testbench01.x393_i.axird_dev_busy[0]
 x393_testbench01.x393_i.axird_dev_ready[0]
 @22
-x393_testbench01.x393_i.axird_pre_araddr[12:0]
-x393_testbench01.x393_i.axird_raddr[12:0]
 x393_testbench01.x393_i.axird_rdata[31:0]
 @28
 x393_testbench01.x393_i.axird_regen[0]
@@ -240,13 +280,7 @@ x393_testbench01.x393_i.axiwr_bram_wstb[3:0]
 @28
 x393_testbench01.x393_i.axiwr_dev_busy[0]
 x393_testbench01.x393_i.axiwr_dev_ready[0]
-@22
-x393_testbench01.x393_i.axiwr_pre_awaddr[12:0]
-@28
 x393_testbench01.x393_i.axiwr_start_burst[0]
-@22
-x393_testbench01.x393_i.axiwr_waddr[12:0]
-@28
 x393_testbench01.x393_i.axiwr_wclk[0]
 @22
 x393_testbench01.x393_i.axiwr_wdata[31:0]
@@ -272,8 +306,6 @@ x393_testbench01.x393_i.cmd_mux_i.can_start_w[0]
 x393_testbench01.x393_i.cmd_mux_i.cmdseq_full_r[0]
 x393_testbench01.x393_i.cmd_mux_i.cseq_ackn[0]
 @22
-x393_testbench01.x393_i.cmd_mux_i.cseq_waddr[12:0]
-x393_testbench01.x393_i.cmd_mux_i.cseq_waddr_r[12:0]
 x393_testbench01.x393_i.cmd_mux_i.cseq_wdata[31:0]
 x393_testbench01.x393_i.cmd_mux_i.cseq_wdata_r[31:0]
 @28
@@ -284,8 +316,6 @@ x393_testbench01.x393_i.cmd_mux_i.mclk[0]
 @22
 x393_testbench01.x393_i.cmd_mux_i.par_ad[47:0]
 x393_testbench01.x393_i.cmd_mux_i.par_data[31:0]
-x393_testbench01.x393_i.cmd_mux_i.par_waddr[12:0]
-x393_testbench01.x393_i.cmd_mux_i.pre_waddr[12:0]
 @28
 x393_testbench01.x393_i.cmd_mux_i.rst[0]
 x393_testbench01.x393_i.cmd_mux_i.selected[0]
@@ -309,8 +339,6 @@ x393_testbench01.x393_i.cmd_mux_i.start_axi_w[0]
 x393_testbench01.x393_i.cmd_mux_i.start_w[0]
 x393_testbench01.x393_i.cmd_mux_i.start_wburst[0]
 @22
-x393_testbench01.x393_i.cmd_mux_i.waddr[12:0]
-x393_testbench01.x393_i.cmd_mux_i.waddr_fifo_out[12:0]
 x393_testbench01.x393_i.cmd_mux_i.wdata[31:0]
 x393_testbench01.x393_i.cmd_mux_i.wdata_fifo_out[31:0]
 @28
@@ -326,7 +354,6 @@ x393_testbench01.x393_i.status_read_i.axi_clk[0]
 @22
 x393_testbench01.x393_i.status_read_i.axi_status_rdata[31:0]
 x393_testbench01.x393_i.status_read_i.axi_status_rdata_r[31:0]
-x393_testbench01.x393_i.status_read_i.axird_pre_araddr[12:0]
 x393_testbench01.x393_i.status_read_i.axird_raddr[7:0]
 x393_testbench01.x393_i.status_read_i.axird_rdata[31:0]
 @28
@@ -780,7 +807,6 @@ x393_testbench01.x393_i.axibram_read_i.ar_half_full[0]
 x393_testbench01.x393_i.axibram_read_i.ar_nempty[0]
 @22
 x393_testbench01.x393_i.axibram_read_i.araddr[31:0]
-x393_testbench01.x393_i.axibram_read_i.araddr_out[12:0]
 @28
 x393_testbench01.x393_i.axibram_read_i.arburst[1:0]
 x393_testbench01.x393_i.axibram_read_i.arburst_out[1:0]
@@ -794,9 +820,6 @@ x393_testbench01.x393_i.axibram_read_i.arready[0]
 x393_testbench01.x393_i.axibram_read_i.arsize[1:0]
 x393_testbench01.x393_i.axibram_read_i.arsize_out[1:0]
 x393_testbench01.x393_i.axibram_read_i.arvalid[0]
-@22
-x393_testbench01.x393_i.axibram_read_i.bram_raddr[12:0]
-@28
 x393_testbench01.x393_i.axibram_read_i.bram_rclk[0]
 @22
 x393_testbench01.x393_i.axibram_read_i.bram_rdata[31:0]
@@ -810,10 +833,6 @@ x393_testbench01.x393_i.axibram_read_i.last_in_burst_0[0]
 x393_testbench01.x393_i.axibram_read_i.last_in_burst_1[0]
 x393_testbench01.x393_i.axibram_read_i.last_in_burst_d_w[0]
 x393_testbench01.x393_i.axibram_read_i.last_in_burst_w[0]
-@22
-x393_testbench01.x393_i.axibram_read_i.next_rd_address_w[12:0]
-x393_testbench01.x393_i.axibram_read_i.pre_araddr[12:0]
-@28
 x393_testbench01.x393_i.axibram_read_i.pre_last_in_burst_r[0]
 x393_testbench01.x393_i.axibram_read_i.pre_left_zero_w[0]
 @22
@@ -824,7 +843,6 @@ x393_testbench01.x393_i.axibram_read_i.pre_rvalid_w[0]
 x393_testbench01.x393_i.axibram_read_i.rburst[1:0]
 @22
 x393_testbench01.x393_i.axibram_read_i.rdata[31:0]
-x393_testbench01.x393_i.axibram_read_i.read_address[12:0]
 @28
 x393_testbench01.x393_i.axibram_read_i.read_in_progress[0]
 x393_testbench01.x393_i.axibram_read_i.read_in_progress_d[0]
@@ -1263,8 +1281,9 @@ x393_testbench01.x393_i.mcntrl393_i.cmd_encod_4mux_i.start[0]
 x393_testbench01.x393_i.mcntrl393_i.cmd_encod_4mux_i.start_w[0]
 @1401200
 -enc4mux
-@c00200
+@800200
 -PS_PIO
+@c00200
 -PS_PIO_STATUS
 @22
 x393_testbench01.x393_i.mcntrl393_i.mcntrl_ps_pio_i.status_generate_i.ad[7:0]
@@ -1357,7 +1376,33 @@ x393_testbench01.x393_i.mcntrl393_i.buf0wr_we[0]
 @200
 -
 @800200
--PS_PIO_CHN1
+-PS_PIO_RD
+@22
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_ps_pio_i.chn0_buf_i.data_in[63:0]
+@28
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_ps_pio_i.chn0_buf_i.ext_clk[0]
+@22
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_ps_pio_i.chn0_buf_i.ext_data_out[31:0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_ps_pio_i.chn0_buf_i.ext_raddr[9:0]
+@28
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_ps_pio_i.chn0_buf_i.ext_rd[0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_ps_pio_i.chn0_buf_i.ext_regen[0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_ps_pio_i.chn0_buf_i.page[1:0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_ps_pio_i.chn0_buf_i.page_next[0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_ps_pio_i.chn0_buf_i.page_r[1:0]
+@22
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_ps_pio_i.chn0_buf_i.waddr[6:0]
+@28
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_ps_pio_i.chn0_buf_i.wclk[0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_ps_pio_i.chn0_buf_i.we[0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_ps_pio_i.chn0_buf_i.wpage_in[1:0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_ps_pio_i.chn0_buf_i.wpage_set[0]
+@1000200
+-PS_PIO_RD
+@200
+-
+@800200
+-PS_PIO_WR
 @22
 x393_testbench01.x393_i.mcntrl393_i.mcntrl_ps_pio_i.chn1_buf_i.data_out[63:0]
 @28
@@ -1379,7 +1424,7 @@ x393_testbench01.x393_i.mcntrl393_i.mcntrl_ps_pio_i.chn1_buf_i.regen[0]
 x393_testbench01.x393_i.mcntrl393_i.mcntrl_ps_pio_i.chn1_buf_i.rpage_in[1:0]
 x393_testbench01.x393_i.mcntrl393_i.mcntrl_ps_pio_i.chn1_buf_i.rpage_set[0]
 @1000200
--PS_PIO_CHN1
+-PS_PIO_WR
 @200
 -
 @28
@@ -1471,9 +1516,9 @@ x393_testbench01.x393_i.mcntrl393_i.mcntrl_ps_pio_i.status_data[1:0]
 x393_testbench01.x393_i.mcntrl393_i.mcntrl_ps_pio_i.status_rq[0]
 x393_testbench01.x393_i.mcntrl393_i.mcntrl_ps_pio_i.status_start[0]
 x393_testbench01.x393_i.mcntrl393_i.mcntrl_ps_pio_i.want_rq[0]
-@1401200
+@1000200
 -PS_PIO
-@800200
+@c00200
 -LINEAR_CH1
 @200
 -
@@ -1576,7 +1621,22 @@ x393_testbench01.test_scanline_read.status_control_address[29:0]
 x393_testbench01.test_scanline_read.test_mode_address[29:0]
 @1401200
 -test_scanline_rd
+@c00200
+-scanline_want_need
+@28
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_linear_rw_chn1_i.busy_r[0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_linear_rw_chn1_i.frame_start[0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_linear_rw_chn1_i.next_page[0]
 @22
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_linear_rw_chn1_i.page_cntr[2:0]
+@28
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_linear_rw_chn1_i.pre_want[0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_linear_rw_chn1_i.xfer_want[0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_linear_rw_chn1_i.xfer_need[0]
+@1401200
+-scanline_want_need
+@22
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_linear_rw_chn1_i.xfer_num128_r[6:0]
 x393_testbench01.x393_i.mcntrl393_i.mcntrl_linear_rw_chn1_i.cmd_deser_32bit_i.addr[3:0]
 @28
 x393_testbench01.x393_i.mcntrl393_i.mcntrl_linear_rw_chn1_i.cmd_stb[0]
@@ -1736,10 +1796,55 @@ x393_testbench01.x393_i.mcntrl393_i.mcntrl_linear_rw_chn1_i.xfer_start_rd_r[0]
 x393_testbench01.x393_i.mcntrl393_i.mcntrl_linear_rw_chn1_i.xfer_start_wr[0]
 x393_testbench01.x393_i.mcntrl393_i.mcntrl_linear_rw_chn1_i.xfer_start_wr_r[0]
 x393_testbench01.x393_i.mcntrl393_i.mcntrl_linear_rw_chn1_i.xfer_want[0]
-@1000200
+@1401200
 -LINEAR_CH1
 @200
 -
+@c00200
+-mmcm_phase_cntr
+@28
+x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.phy_top_i.mmcm_phase_cntr_i.clkfb_stopped[0]
+x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.phy_top_i.mmcm_phase_cntr_i.clkfbin[0]
+x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.phy_top_i.mmcm_phase_cntr_i.clkfbout[0]
+x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.phy_top_i.mmcm_phase_cntr_i.clkfboutb[0]
+x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.phy_top_i.mmcm_phase_cntr_i.clkin[0]
+x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.phy_top_i.mmcm_phase_cntr_i.clkin_stopped[0]
+x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.phy_top_i.mmcm_phase_cntr_i.clkout0[0]
+x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.phy_top_i.mmcm_phase_cntr_i.clkout0b[0]
+x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.phy_top_i.mmcm_phase_cntr_i.clkout1[0]
+x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.phy_top_i.mmcm_phase_cntr_i.clkout1b[0]
+x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.phy_top_i.mmcm_phase_cntr_i.clkout2[0]
+x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.phy_top_i.mmcm_phase_cntr_i.clkout2b[0]
+x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.phy_top_i.mmcm_phase_cntr_i.clkout3[0]
+x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.phy_top_i.mmcm_phase_cntr_i.clkout3b[0]
+x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.phy_top_i.mmcm_phase_cntr_i.clkout4[0]
+x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.phy_top_i.mmcm_phase_cntr_i.clkout5[0]
+x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.phy_top_i.mmcm_phase_cntr_i.clkout6[0]
+@22
+x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.phy_top_i.mmcm_phase_cntr_i.diff[8:0]
+@28
+x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.phy_top_i.mmcm_phase_cntr_i.locked[0]
+x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.phy_top_i.mmcm_phase_cntr_i.ps_busy[0]
+@22
+x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.phy_top_i.mmcm_phase_cntr_i.ps_din[7:0]
+x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.phy_top_i.mmcm_phase_cntr_i.ps_dout[7:0]
+x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.phy_top_i.mmcm_phase_cntr_i.ps_dout_r[7:0]
+@28
+x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.phy_top_i.mmcm_phase_cntr_i.ps_ready[0]
+x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.phy_top_i.mmcm_phase_cntr_i.ps_start0[0]
+x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.phy_top_i.mmcm_phase_cntr_i.ps_start[0]
+@22
+x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.phy_top_i.mmcm_phase_cntr_i.ps_target[7:0]
+@28
+x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.phy_top_i.mmcm_phase_cntr_i.ps_we[0]
+x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.phy_top_i.mmcm_phase_cntr_i.psclk[0]
+x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.phy_top_i.mmcm_phase_cntr_i.psdone[0]
+x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.phy_top_i.mmcm_phase_cntr_i.psen[0]
+x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.phy_top_i.mmcm_phase_cntr_i.psincdec[0]
+x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.phy_top_i.mmcm_phase_cntr_i.pwrdwn[0]
+x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.phy_top_i.mmcm_phase_cntr_i.rst[0]
+@1401200
+-mmcm_phase_cntr
 @c00200
 -memcntrl16_0
 @22

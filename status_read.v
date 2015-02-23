@@ -29,9 +29,9 @@
 `timescale 1ns/1ps
 
 module  status_read#(
-    parameter STATUS_ADDR =         'h1400, // AXI write address of status read registers
-    parameter STATUS_ADDR_MASK =    'h1400, // AXI write address of status registers
-    parameter AXI_RD_ADDR_BITS =    13,
+    parameter STATUS_ADDR =           'h2400, // AXI write address of status read registers
+    parameter STATUS_ADDR_MASK =      'h3c00, // AXI write address of status registers
+    parameter AXI_RD_ADDR_BITS =      14,
     parameter integer STATUS_DEPTH=   8 // 256 cells, maybe just 16..64 are enough?
 )(
     input rst,
