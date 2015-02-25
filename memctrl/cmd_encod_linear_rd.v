@@ -74,7 +74,7 @@ module  cmd_encod_linear_rd #(
     reg    [NUM_XFER_BITS-1:0] num128;  // number of 128-bit words to transfer
     reg                        skip_next_page;
     reg                        gen_run;
-    reg                        gen_run_d;
+//    reg                        gen_run_d;
     reg        [ROM_DEPTH-1:0] gen_addr; // will overrun as stop comes from ROM
     
     reg        [ROM_WIDTH-1:0] rom_r; 
@@ -82,7 +82,7 @@ module  cmd_encod_linear_rd #(
     wire                 [1:0] rom_cmd;
     wire                 [1:0] rom_skip;
     wire                 [2:0] full_cmd;
-    reg                        done;
+//    reg                        done;
 
     assign     pre_done=rom_r[ENC_PRE_DONE] && gen_run;
     assign     rom_cmd=  rom_r[ENC_CMD_SHIFT+:2];
@@ -94,8 +94,8 @@ module  cmd_encod_linear_rd #(
         else if (start)    gen_run<= 1;
         else if (pre_done) gen_run<= 0;
         
-        if (rst)           gen_run_d <= 0;
-        else               gen_run_d <= gen_run;
+//        if (rst)           gen_run_d <= 0;
+//        else               gen_run_d <= gen_run;
 
         if (rst)                     gen_addr <= 0;
         else if (!start && !gen_run) gen_addr <= 0;
@@ -136,19 +136,20 @@ module  cmd_encod_linear_rd #(
        endcase
     end
     always @ (posedge rst or posedge clk) begin
-        if (rst)           done <= 0;
-        else               done <= pre_done;
+//        if (rst)           done <= 0;
+//        else               done <= pre_done;
         
         if (rst)           enc_wr <= 0;
-        else               enc_wr <= gen_run || gen_run_d;
+        else               enc_wr <= gen_run; //  || gen_run_d;
         
         if (rst)           enc_done <= 0;
-        else               enc_done <= enc_wr && !gen_run_d;
+        else               enc_done <= enc_wr && !gen_run; // !gen_run_d;
         
         if (rst)             enc_cmd <= 0;
-        else if (rom_cmd==0) enc_cmd <= func_encode_skip ( // encode pause
+        else if (gen_run) begin
+          if (rom_cmd==0) enc_cmd <= func_encode_skip ( // encode pause
             {{CMD_PAUSE_BITS-2{1'b0}},rom_skip[1:0]}, // skip;   // number of extra cycles to skip (and keep all the other outputs)
-            done,                                     // end of sequence 
+            pre_done, // done,                                     // end of sequence 
             bank[2:0],                                // bank (here OK to be any)
             1'b0,                    //   odt_en;     // enable ODT
             1'b0,                    //   cke;        // disable CKE
@@ -160,7 +161,7 @@ module  cmd_encod_linear_rd #(
             rom_r[ENC_BUF_WR],       //   buf_wr;     // connect to external buffer (but only if not paused)
             1'b0,                    //   buf_rd;     // connect to external buffer (but only if not paused)
             rom_r[ENC_BUF_PGNEXT] && !skip_next_page);     //   buf_rst;    // connect to external buffer (but only if not paused)
-       else  enc_cmd <= func_encode_cmd ( // encode non-NOP command
+          else  enc_cmd <= func_encode_cmd ( // encode non-NOP command
             rom_cmd[1]?
                     row:
                     {{ADDRESS_NUMBER-COLADDR_NUMBER{1'b0}},col[COLADDR_NUMBER-4:0],3'b0}, //  [14:0] addr;       // 15-bit row/column adderss
@@ -177,9 +178,9 @@ module  cmd_encod_linear_rd #(
             1'b0,                    //   buf_rd;     // connect to external buffer (but only if not paused)     
             rom_r[ENC_NOP],          //   nop;        // add NOP after the current command, keep other data
             rom_r[ENC_BUF_PGNEXT] && !skip_next_page);  //   buf_rst;    // connect to external buffer (but only if not paused)
+        end
     end    
     
-
 // move to include?
 `include "includes/x393_mcontr_encode_cmd.vh" 
 /*

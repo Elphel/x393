@@ -108,7 +108,7 @@ module  x393 #(
     parameter MCONTR_TOP_STATUS_REG_ADDR=      'h1,    // 8 or less bits: status register address to use for memory controller
     
     
-    parameter CHNBUF_READ_LATENCY =             1,     // external channel buffer extra read latency ( 0 - data available next cycle after re (but prev. data))
+    parameter CHNBUF_READ_LATENCY =             2, //1,     // external channel buffer extra read latency ( 0 - data available next cycle after re (but prev. data))
     
     parameter DFLT_DQS_PATTERN=        8'h55,
     parameter DFLT_DQM_PATTERN=        8'h00, // 8'h00
@@ -360,7 +360,12 @@ module  x393 #(
    wire  [31:0]   status_rdata;  //
    wire           status_selected;
    wire  [31:0]   mcntrl_axird_rdata; // read data from the memory controller 
+   
    wire           mcntrl_axird_selected; // memory controoler has valid data output on mcntrl_axird_rdata 
+   reg            status_selected_ren;         // status_selected (set at axird_start_burst) delayed when ren is active
+   reg            mcntrl_axird_selected_ren;   // mcntrl_axird_selected (set at axird_start_burst) delayed when ren is active
+   reg            status_selected_regen;       // status_selected (set at axird_start_burst) delayed when ren is active, then when regen (normally 2 cycles)
+   reg            mcntrl_axird_selected_regen; // mcntrl_axird_selected (set at axird_start_burst) delayed when ren is active, then when regen (normally 2 cycles)
 
    wire        mclk;
 
@@ -375,13 +380,32 @@ module  x393 #(
 // Use this later    
 //   assign axird_rdata= ({32{status_selected}} & status_rdata[31:0]) | ({32{mcntrl_axird_selected}} & mcntrl_axird_rdata[31:0]);
 //Debug with this (to show 'x)   
-   assign axird_rdata= status_selected?status_rdata[31:0] : (mcntrl_axird_selected? mcntrl_axird_rdata[31:0]:'bx);
+//   assign axird_rdata= status_selected?status_rdata[31:0] : (mcntrl_axird_selected? mcntrl_axird_rdata[31:0]:'bx);
+   assign axird_rdata= status_selected_regen?status_rdata[31:0] : (mcntrl_axird_selected_regen? mcntrl_axird_rdata[31:0]:'bx);
    
    assign axiwr_dev_ready = ~axiwr_dev_busy; //may combine (AND) multiple sources if needed
 
 // Clock and reset from PS
     wire comb_rst=~frst[0] | frst[1];
     reg axi_rst_pre=1'b1;
+
+// delay status_selected and mcntrl_axird_selected to match data for multiplexing
+
+    always @(posedge axi_rst or posedge axird_bram_rclk) begin
+        if      (axi_rst)     status_selected_ren <= 1'b0;
+        else if (axird_ren)   status_selected_ren <= status_selected;
+        
+        if      (axi_rst)     status_selected_regen <= 1'b0;
+        else if (axird_regen) status_selected_regen <= status_selected_ren;
+
+        if      (axi_rst)     mcntrl_axird_selected_ren <= 1'b0;
+        else if (axird_ren)   mcntrl_axird_selected_ren <=  mcntrl_axird_selected;
+        
+        if      (axi_rst)     mcntrl_axird_selected_regen <= 1'b0;
+        else if (axird_regen) mcntrl_axird_selected_regen <= mcntrl_axird_selected_ren;
+    end
+
+
 
     always @(posedge comb_rst or posedge axi_aclk) begin
         if (comb_rst) axi_rst_pre <= 1'b1;

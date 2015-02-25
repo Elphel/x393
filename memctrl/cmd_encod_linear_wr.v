@@ -22,7 +22,6 @@
 `timescale 1ns/1ps
 
 module  cmd_encod_linear_wr #(
-//    parameter BASEADDR = 0,
     parameter ADDRESS_NUMBER=       15,
     parameter COLADDR_NUMBER=       10,
     parameter NUM_XFER_BITS=         6,    // number of bits to specify transfer length
@@ -32,8 +31,6 @@ module  cmd_encod_linear_wr #(
     input                        rst,
     input                        clk,
 // programming interface
-//    input                  [7:0] cmd_ad,      // byte-serial command address/data (up to 6 bytes: AL-AH-D0-D1-D2-D3 
-//    input                        cmd_stb,     // strobe (with first byte) for the command a/d
     input                  [2:0] bank_in,     // bank address
     input   [ADDRESS_NUMBER-1:0] row_in,      // memory row
     input   [COLADDR_NUMBER-4:0] start_col,   // start memory column (3 LSBs should be 0?)
@@ -44,7 +41,7 @@ module  cmd_encod_linear_wr #(
     output reg                   enc_wr,      // write encoded command
     output reg                   enc_done     // encoding finished
 );
-    localparam ROM_WIDTH=13;
+    localparam ROM_WIDTH=12;
     localparam ROM_DEPTH=4;
     
     localparam ENC_NOP=         0;
@@ -57,13 +54,26 @@ module  cmd_encod_linear_wr #(
     localparam ENC_PAUSE_SHIFT= 8; // [9:8] - 2- bit pause (for NOP commandes)
     localparam ENC_PRE_DONE=   10;
     localparam ENC_BUF_PGNEXT= 11;
-    localparam ENC_DUAL_CYC=   12; // 2-cycle command (with nop or skip) to count number of buffer reads (longer pauses are not used  with buffer reads)
     
     localparam ENC_CMD_NOP=      0; // 2-bit locally encoded commands
     localparam ENC_CMD_WRITE=    1;
     localparam ENC_CMD_PRECHARGE=2;
     localparam ENC_CMD_ACTIVATE= 3;
-    localparam REPEAT_ADDR=4;
+    
+// read buffer is always at addr 0 and 1,    
+    localparam REPEAT_ADDR=        5; // loop here (2-cycle command write)
+    localparam PRELAST_WRITE_ADDR='h6; // jump here (from 4) if only 2 writes are needed (are fall from 4 wnen 1 write is left 
+    localparam LAST_WRITE_ADDR=   'h8; // jump here (from 4) if only 2 writes are needed (are fall from 4 wnen 1 write is left 
+    localparam NO_WRITE_ADDR=     'ha; // jump here (from 4) if only 1 write is needed
+    localparam WRITE_ADDR1=     3;
+    localparam WRITE_ADDR2=     5;
+//    localparam WRITE_ADDR3=     6;
+//    localparam WRITE_ADDR4=     8;
+    localparam CUT_SINGLE_ADDR= 2; // cut read buffer after this address if only one burst is needed
+    localparam CUT_DUAL_ADDR=   4; // cut read buffer after this address if two bursts are needed
+    
+    
+    
     
     localparam CMD_NOP=      0; // 3-bit normal memory RCW commands (positive logic)
     localparam CMD_WRITE=    3;
@@ -77,7 +87,7 @@ module  cmd_encod_linear_wr #(
     reg                        skip_next_page;
     
     reg                        gen_run;
-    reg                        gen_run_d;
+//    reg                        gen_run_d;
     reg        [ROM_DEPTH-1:0] gen_addr; // will overrun as stop comes from ROM
     
     reg        [ROM_WIDTH-1:0] rom_r; 
@@ -85,27 +95,25 @@ module  cmd_encod_linear_wr #(
     wire                 [1:0] rom_cmd;
     wire                 [1:0] rom_skip;
     wire                 [2:0] full_cmd;
-    reg                        done;
-//    reg                        buf_rd_23; // read buffer at steps 2&3 (0 if only 1 read is required)
+//    reg                        done;
     reg                        start_d;
-//    reg        [ROM_DEPTH-1:0] gen_addr_jump; // next conditonal address
-    reg     [NUM_XFER_BITS:0] num_bufrd_left; //counts number of buffer reads left
-    wire    [NUM_XFER_BITS:0] num_bufrd_left_next_w; //next clock value of the counter
-    wire                      next_zero_w=(num_bufrd_left_next_w==0);
+    wire                      next_zero_w= single_write?((gen_addr==CUT_SINGLE_ADDR)?1:0):(dual_write?(gen_addr==CUT_DUAL_ADDR):0);
     reg                       cut_buf_rd;
+    reg                       single_write; // only one burst has to be written
+    reg                       dual_write;   // Two bursts have to be written
+    reg                       few_write;    //write 1,2 or 3 bursts
+    wire                      write_addr_w;   // gen_addr that generates write commands
+    reg       [ROM_DEPTH-1:0] jump_gen_addr; // will overrun as stop comes from ROM
 
     assign     pre_done=rom_r[ENC_PRE_DONE] && gen_run;
     assign     rom_cmd=  rom_r[ENC_CMD_SHIFT+:2];
     assign     rom_skip= rom_r[ENC_PAUSE_SHIFT+:2];
     assign     full_cmd= rom_cmd[1]?(rom_cmd[0]?CMD_ACTIVATE:CMD_PRECHARGE):(rom_cmd[0]?CMD_WRITE:CMD_NOP);
-    assign     num_bufrd_left_next_w= num_bufrd_left - (rom_r[ENC_DUAL_CYC]?2:1);
 // prepare jump address? and bufrd during 2,3 
-
+    assign     write_addr_w= (gen_addr==WRITE_ADDR1) || (gen_addr==WRITE_ADDR2); // do not need to update after WRITE_ADDR2
 // make num128 7-bits to accommodate 64!
     always @ (posedge clk) begin
         start_d <= start;
-        if      (start_d)           num_bufrd_left <= {num128[NUM_XFER_BITS-1:0],1'b0};
-        else if (rom_r[ENC_BUF_RD]) num_bufrd_left <= num_bufrd_left_next_w;
         cut_buf_rd <= rom_r[ENC_BUF_RD] && (cut_buf_rd || next_zero_w);
     end    
     always @ (posedge rst or posedge clk) begin
@@ -114,19 +122,46 @@ module  cmd_encod_linear_wr #(
         else if (start)    gen_run<= 1;
         else if (pre_done) gen_run<= 0;
         
-        if (rst)           gen_run_d <= 0;
-        else               gen_run_d <= gen_run;
+//        if (rst)           gen_run_d <= 0;
+//        else               gen_run_d <= gen_run;
 
-        if (rst)                     gen_addr <= 0;
-        else if (!start && !gen_run) gen_addr <= 0;
-        else if ((gen_addr==(REPEAT_ADDR-1)) && (num128[NUM_XFER_BITS:1]==0)) gen_addr <= REPEAT_ADDR+1; // skip loop alltogeter
-        else if ((gen_addr !=REPEAT_ADDR) || (num128[NUM_XFER_BITS:1]==0)) gen_addr <= gen_addr+1; // not in a loop
+        if (rst)                                                           gen_addr <= 0;
+        else if (!start && !gen_run)                                       gen_addr <= 0;
+        else if ((gen_addr==(REPEAT_ADDR-1)) && few_write)                 gen_addr <= jump_gen_addr;
+//        else if ((gen_addr !=REPEAT_ADDR) || (num128[NUM_XFER_BITS:1]==0)) gen_addr <= gen_addr+1; // not in a loop
+        else if ((gen_addr !=REPEAT_ADDR) || (num128==2))                  gen_addr <= gen_addr+1; // not in a loop
 
 //counting loops        
-        if      (rst)        num128 <= 0;
-        else if (start)      num128 <= {(num128_in==0)?1'b1:1'b0,num128_in};
-        else if (!gen_run)   num128 <= 0; //
-        else if ((gen_addr == (REPEAT_ADDR-1)) || (gen_addr == REPEAT_ADDR))  num128 <= num128 -1; // ????? - FIXME
+        if      (rst)          num128 <= 0;
+        else if (start)        num128 <= {(num128_in==0)?1'b1:1'b0,num128_in};
+        else if (!gen_run)     num128 <= 0; //
+//        else if ((gen_addr == (REPEAT_ADDR-1)) || (gen_addr == REPEAT_ADDR))  num128 <= num128 -1; // ????? - FIXME
+        else if (write_addr_w) num128 <= num128 -1;
+        
+        if      (rst)        single_write <= 0;
+        else if (start_d)    single_write <= (num128[NUM_XFER_BITS:1]==0); // could not be 0
+        
+        if      (rst)        dual_write <= 0;
+        else if (start_d)    dual_write <= (num128==2);
+
+//        if      (rst)        triple_write <= 0;
+//        else if (start_d)    triple_write <= (num128==3);
+        
+        if      (rst)        few_write <= 0;
+        else if (start_d)    few_write <=(num128[NUM_XFER_BITS:2]==0); // (0,)1,2 or3
+//        
+//        if (rst) few_write <= 0;
+//        else     few_write <= single_write | dual_write | triple_write;
+        
+        if (rst) jump_gen_addr <= 0;
+        else     jump_gen_addr <= single_write ? NO_WRITE_ADDR : (dual_write ? LAST_WRITE_ADDR:PRELAST_WRITE_ADDR);
+        
+
+//triple_write          
+//    reg                       single_write; // only one burst has to be written
+//    reg                       dual_write;   // Two bursts have to be written
+        
+        
     end
     
     always @ (posedge clk) if (start) begin
@@ -146,35 +181,41 @@ module  cmd_encod_linear_wr #(
     always @ (posedge rst or posedge clk) begin
         if (rst)           rom_r <= 0;
         else case (gen_addr)
-            4'h0: rom_r <= (ENC_CMD_ACTIVATE <<  ENC_CMD_SHIFT);// | (1 << ENC_NOP); 
-            4'h1: rom_r <= (ENC_CMD_NOP <<       ENC_CMD_SHIFT) | (1 << ENC_BUF_RD) | (1 << ENC_PAUSE_SHIFT)                      | (1 << ENC_DUAL_CYC);  // dual cycle
-            4'h2: rom_r <= (ENC_CMD_WRITE <<     ENC_CMD_SHIFT) | (1 << ENC_BUF_RD) | (1 << ENC_SEL)         | (1 << ENC_ODT);   // single cycle
-            4'h3: rom_r <= (ENC_CMD_NOP <<       ENC_CMD_SHIFT) | (1 << ENC_BUF_RD) | (1 << ENC_DQ_DQS_EN)   | (1 << ENC_ODT);  // single cycle
+            4'h0: rom_r <= (ENC_CMD_ACTIVATE <<  ENC_CMD_SHIFT) | (1 << ENC_BUF_RD);// | (1 << ENC_NOP); 
+            4'h1: rom_r <= (ENC_CMD_NOP <<       ENC_CMD_SHIFT) | (1 << ENC_BUF_RD);
+            4'h2: rom_r <= (ENC_CMD_NOP <<       ENC_CMD_SHIFT) | (1 << ENC_BUF_RD);
+            4'h3: rom_r <= (ENC_CMD_WRITE <<     ENC_CMD_SHIFT) | (1 << ENC_BUF_RD) | (1 << ENC_SEL)         | (1 << ENC_ODT);   // single cycle
+            4'h4: rom_r <= (ENC_CMD_NOP <<       ENC_CMD_SHIFT) | (1 << ENC_BUF_RD) | (1 << ENC_DQ_DQS_EN)   | (1 << ENC_ODT);  // single cycle
 // next may loop            
-            4'h4: rom_r <= (ENC_CMD_WRITE <<     ENC_CMD_SHIFT) | (1 << ENC_NOP) | (1 << ENC_BUF_RD) | (1 << ENC_DQS_TOGGLE)  | (1 << ENC_DQ_DQS_EN) | (1 << ENC_SEL)  | (1 << ENC_ODT) | (1 << ENC_DUAL_CYC);  // dual cycle 
-            4'h5: rom_r <= (ENC_CMD_NOP <<       ENC_CMD_SHIFT) | (2 << ENC_PAUSE_SHIFT) | (1 << ENC_DQS_TOGGLE) | (1 << ENC_DQ_DQS_EN) | (1 << ENC_ODT);
-            4'h6: rom_r <= (ENC_CMD_NOP <<       ENC_CMD_SHIFT) | (2 << ENC_PAUSE_SHIFT);
-            4'h7: rom_r <= (ENC_CMD_PRECHARGE << ENC_CMD_SHIFT) |      (1 << ENC_BUF_PGNEXT);
-            4'h8: rom_r <= (ENC_CMD_NOP <<       ENC_CMD_SHIFT) | (2 << ENC_PAUSE_SHIFT);
-            4'h9: rom_r <= (ENC_CMD_NOP <<       ENC_CMD_SHIFT) | (1 << ENC_PRE_DONE);
+            4'h5: rom_r <= (ENC_CMD_WRITE <<     ENC_CMD_SHIFT) | (1 << ENC_NOP) | (1 << ENC_BUF_RD) | (1 << ENC_DQS_TOGGLE) | (1 << ENC_DQ_DQS_EN) | (1 << ENC_SEL) | (1 << ENC_ODT);  // dual cycle 
+            4'h6: rom_r <= (ENC_CMD_WRITE <<     ENC_CMD_SHIFT)                  | (1 << ENC_BUF_RD) | (1 << ENC_DQS_TOGGLE) | (1 << ENC_DQ_DQS_EN) | (1 << ENC_SEL) | (1 << ENC_ODT);  // dual cycle 
+            4'h7: rom_r <= (ENC_CMD_NOP <<       ENC_CMD_SHIFT)                                      | (1 << ENC_DQS_TOGGLE) | (1 << ENC_DQ_DQS_EN) | (1 << ENC_SEL) | (1 << ENC_ODT);
+            4'h8: rom_r <= (ENC_CMD_WRITE <<     ENC_CMD_SHIFT)                                      | (1 << ENC_DQS_TOGGLE) | (1 << ENC_DQ_DQS_EN) | (1 << ENC_SEL) | (1 << ENC_ODT);  // dual cycle 
+            4'h9: rom_r <= (ENC_CMD_NOP <<       ENC_CMD_SHIFT)                                      | (1 << ENC_DQS_TOGGLE) | (1 << ENC_DQ_DQS_EN) | (1 << ENC_ODT);
+            4'ha: rom_r <= (ENC_CMD_NOP <<       ENC_CMD_SHIFT) | (2 << ENC_PAUSE_SHIFT)             | (1 << ENC_DQS_TOGGLE) | (1 << ENC_DQ_DQS_EN) | (1 << ENC_ODT);
+            4'hb: rom_r <= (ENC_CMD_NOP <<       ENC_CMD_SHIFT) | (2 << ENC_PAUSE_SHIFT);
+            4'hc: rom_r <= (ENC_CMD_PRECHARGE << ENC_CMD_SHIFT) |      (1 << ENC_BUF_PGNEXT);
+            4'hd: rom_r <= (ENC_CMD_NOP <<       ENC_CMD_SHIFT) | (2 << ENC_PAUSE_SHIFT);
+            4'he: rom_r <= (ENC_CMD_NOP <<       ENC_CMD_SHIFT) | (1 << ENC_PRE_DONE);
             default:rom_r <= 0;
        endcase
     end
     always @ (posedge rst or posedge clk) begin
-        if (rst)           done <= 0;
-        else               done <= pre_done;
+//        if (rst)           done <= 0;
+//        else               done <= pre_done;
         
         if (rst)           enc_wr <= 0;
-        else               enc_wr <= gen_run || gen_run_d;
+        else               enc_wr <= gen_run; // || gen_run_d;
         
         if (rst)           enc_done <= 0;
 //        else               enc_done <= enc_wr || !gen_run_d;
-        else               enc_done <= enc_wr && !gen_run_d;
+        else               enc_done <= enc_wr && !gen_run; // !gen_run_d;
         
         if (rst)             enc_cmd <= 0;
-        else if (rom_cmd==0) enc_cmd <= func_encode_skip ( // encode pause
+        else if (gen_run) begin
+          if (rom_cmd==0) enc_cmd <= func_encode_skip ( // encode pause
             {{CMD_PAUSE_BITS-2{1'b0}},rom_skip[1:0]}, // skip;   // number of extra cycles to skip (and keep all the other outputs)
-            done,                                     // end of sequence 
+            pre_done, // done,                                     // end of sequence 
             bank[2:0],                                // bank (here OK to be any)
             rom_r[ENC_ODT],          //   odt_en;     // enable ODT
             1'b0,                    //   cke;        // disable CKE
@@ -186,7 +227,7 @@ module  cmd_encod_linear_wr #(
             1'b0,                    //   buf_wr;     // connect to external buffer (but only if not paused)
             rom_r[ENC_BUF_RD] && !cut_buf_rd, //buf_rd;// connect to external buffer (but only if not paused)
             rom_r[ENC_BUF_PGNEXT] && !skip_next_page);     //   buf_rst;    // connect to external buffer (but only if not paused)
-       else  enc_cmd <= func_encode_cmd ( // encode non-NOP command
+          else  enc_cmd <= func_encode_cmd ( // encode non-NOP command
             rom_cmd[1]?
                     row:
                     {{ADDRESS_NUMBER-COLADDR_NUMBER{1'b0}},col[COLADDR_NUMBER-4:0],3'b0}, //  [14:0] addr;       // 15-bit row/column adderss
@@ -203,6 +244,7 @@ module  cmd_encod_linear_wr #(
             rom_r[ENC_BUF_RD] && !cut_buf_rd, //buf_rd;// connect to external buffer (but only if not paused)     
             rom_r[ENC_NOP],          //   nop;        // add NOP after the current command, keep other data
             rom_r[ENC_BUF_PGNEXT] && !skip_next_page);     //   buf_rst;    // connect to external buffer (but only if not paused)
+        end
     end    
     
 

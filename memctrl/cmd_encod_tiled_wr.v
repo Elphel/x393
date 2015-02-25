@@ -104,7 +104,7 @@ module  cmd_encod_tiled_wr #(
     reg                        keep_open;                        
     reg                        skip_next_page;
     reg                        gen_run;
-    reg                        gen_run_d; // to output "done"?
+//    reg                        gen_run_d; // to output "done"?
     reg        [ROM_DEPTH-1:0] gen_addr; // will overrun as stop comes from ROM
     
     reg        [ROM_WIDTH-1:0] rom_r; 
@@ -112,7 +112,7 @@ module  cmd_encod_tiled_wr #(
     wire                 [1:0] rom_cmd;
     wire                 [1:0] rom_skip;
     wire                 [2:0] full_cmd;
-    reg                        done;
+//    reg                        done;
     
     reg [FULL_ADDR_NUMBER-4:0] top_rc; // top combined row,column,bank burst address (excludes 3 CA LSBs), valid/modified @pre_act
     reg                        first_col;
@@ -136,12 +136,12 @@ module  cmd_encod_tiled_wr #(
 
     wire [FULL_ADDR_NUMBER-1:0] row_col_bank_next_w;     // RA,CA, BA - valid @pre_act;
     
-    reg                       cut_buf_rd;
+//    reg                       cut_buf_rd;
     
-    always @ (posedge clk) begin
-        if (!gen_run)                                         cut_buf_rd <= 0;
-        else if ((gen_addr==(LOOP_LAST-1)) && !loop_continue) cut_buf_rd <= 1;
-    end    
+//    always @ (posedge clk) begin
+//        if (!gen_run)                                         cut_buf_rd <= 0;
+//        else if ((gen_addr==(LOOP_LAST-1)) &&  loop_continue) cut_buf_rd <= 1; //*******
+//    end    
     
     assign row_col_bank_next_w= last_row?
                                 {top_rc,bank}: // can not work if ACTIVATE is next after ACTIVATE in the last row (single-row tile)
@@ -169,8 +169,8 @@ module  cmd_encod_tiled_wr #(
         else if (start_d)  gen_run<= 1; // delaying
         else if (pre_done) gen_run<= 0;
         
-        if (rst)           gen_run_d <= 0;
-        else               gen_run_d <= gen_run;
+ //       if (rst)           gen_run_d <= 0;
+ //       else               gen_run_d <= gen_run;
 
         if (rst)           num_rows_m1 <= 0;                    
         else if (start)    num_rows_m1 <= num_rows_in_m1;  // number of rows
@@ -233,7 +233,7 @@ module  cmd_encod_tiled_wr #(
     always @ (posedge rst or posedge clk) begin
         if (rst)           rom_r <= 0;
         else case (gen_addr)
-            4'h0: rom_r <= (ENC_CMD_ACTIVATE <<  ENC_CMD_SHIFT)                           ; // here does not matter, just to work with masked ACTIVATE
+            4'h0: rom_r <= (ENC_CMD_ACTIVATE <<  ENC_CMD_SHIFT)                          | (1 << ENC_BUF_RD) ; // here does not matter, just to work with masked ACTIVATE
             4'h1: rom_r <= (ENC_CMD_NOP <<       ENC_CMD_SHIFT)                          | (1 << ENC_BUF_RD) ; 
             4'h2: rom_r <= (ENC_CMD_ACTIVATE <<  ENC_CMD_SHIFT)                          | (1 << ENC_BUF_RD) | (1 << ENC_SEL); 
             4'h3: rom_r <= (ENC_CMD_WRITE <<     ENC_CMD_SHIFT)                          | (1 << ENC_BUF_RD) | (1 << ENC_SEL) | (1 << ENC_ODT); 
@@ -243,7 +243,7 @@ module  cmd_encod_tiled_wr #(
             4'h6: rom_r <= (ENC_CMD_ACTIVATE <<  ENC_CMD_SHIFT)                          | (1 << ENC_BUF_RD) | (1 << ENC_SEL) | (1 << ENC_ODT) | (1 << ENC_DQ_DQS_EN) | (1 << ENC_DQS_TOGGLE); 
             4'h7: rom_r <= (ENC_CMD_WRITE <<     ENC_CMD_SHIFT)                          | (1 << ENC_BUF_RD) | (1 << ENC_SEL) | (1 << ENC_ODT) | (1 << ENC_DQ_DQS_EN) | (1 << ENC_DQS_TOGGLE); 
             // end loop
-            4'h8: rom_r <= (ENC_CMD_NOP <<       ENC_CMD_SHIFT)                          | (1 << ENC_BUF_RD) | (1 << ENC_SEL) | (1 << ENC_ODT) | (1 << ENC_DQ_DQS_EN) | (1 << ENC_DQS_TOGGLE); 
+            4'h8: rom_r <= (ENC_CMD_NOP <<       ENC_CMD_SHIFT)                                              | (1 << ENC_SEL) | (1 << ENC_ODT) | (1 << ENC_DQ_DQS_EN) | (1 << ENC_DQS_TOGGLE); 
             4'h9: rom_r <= (ENC_CMD_WRITE <<     ENC_CMD_SHIFT)                      | (1 << ENC_BUF_PGNEXT) | (1 << ENC_SEL) | (1 << ENC_ODT) | (1 << ENC_DQ_DQS_EN) | (1 << ENC_DQS_TOGGLE); 
             4'ha: rom_r <= (ENC_CMD_NOP <<       ENC_CMD_SHIFT) | (3 << ENC_PAUSE_SHIFT)                     | (1 << ENC_SEL) | (1 << ENC_ODT) | (1 << ENC_DQ_DQS_EN) | (1 << ENC_DQS_TOGGLE); 
             4'hb: rom_r <= (ENC_CMD_NOP <<       ENC_CMD_SHIFT) | (3 << ENC_PAUSE_SHIFT); 
@@ -252,17 +252,17 @@ module  cmd_encod_tiled_wr #(
        endcase
     end
     always @ (posedge rst or posedge clk) begin
-        if (rst)           done <= 0;
-        else               done <= pre_done;
-        
+   //     if (rst)           done <= 0;
+   //     else               done <= pre_done;
         if (rst)           enc_wr <= 0;
-        else               enc_wr <= gen_run || gen_run_d;
+        else               enc_wr <= gen_run || gen_run; // gen_run_d; *****
         
         if (rst)           enc_done <= 0;
-        else               enc_done <= enc_wr && !gen_run_d;
+        else               enc_done <= enc_wr && !gen_run; // !gen_run_d; *****
         
         if (rst)             enc_cmd <= 0;
-        else if (rom_cmd[0] || (rom_cmd[1] && enable_act)) enc_cmd <= func_encode_cmd ( // encode non-NOP command
+        else if (gen_run) begin
+          if (rom_cmd[0] || (rom_cmd[1] && enable_act)) enc_cmd <= func_encode_cmd ( // encode non-NOP command
             rom_cmd[1]? // activate
             row_col_bank[FULL_ADDR_NUMBER-1:COLADDR_NUMBER]: // top combined row,column,bank burst address (excludes 3 CA LSBs), valid/modified @pre_act
                     {{ADDRESS_NUMBER-COLADDR_NUMBER-1{1'b0}},
@@ -281,12 +281,12 @@ module  cmd_encod_tiled_wr #(
             rom_r[ENC_DQS_TOGGLE],   //   dqs_toggle; // enable toggle DQS according to the pattern
             1'b0,                    //   dci;        // DCI disable, both DQ and DQS lines (internal logic and timing sequencer for 0->1 and 1->0)
             1'b0,                    //   buf_wr;     // connect to external buffer (but only if not paused)
-            rom_r[ENC_BUF_RD] && !cut_buf_rd,         //   buf_rd;     // connect to external buffer (but only if not paused)     
+            rom_r[ENC_BUF_RD],         //   buf_rd;     // connect to external buffer (but only if not paused)     
             rom_r[ENC_NOP],          //   nop;        // add NOP after the current command, keep other data
             rom_r[ENC_BUF_PGNEXT] && !skip_next_page);//   buf_rst;    // connect to external buffer (but only if not paused)
-        else enc_cmd <= func_encode_skip ( // encode pause
+          else enc_cmd <= func_encode_skip ( // encode pause
             {{CMD_PAUSE_BITS-2{1'b0}},rom_skip[1:0]}, // skip;   // number of extra cycles to skip (and keep all the other outputs)
-            done,                                     // end of sequence 
+            pre_done, // done,                                     // end of sequence 
             3'b0,                    // bank (here OK to be any)
             rom_r[ENC_ODT],          //   odt_en;     // enable ODT
             1'b0,                    //   cke;        // disable CKE
@@ -296,9 +296,10 @@ module  cmd_encod_tiled_wr #(
             rom_r[ENC_DQS_TOGGLE],   //   dqs_toggle; // enable toggle DQS according to the pattern
             1'b0,                    //   dci;        // DCI disable, both DQ and DQS lines (internal logic and timing sequencer for 0->1 and 1->0)
             1'b0,                    //   buf_wr;     // connect to external buffer (but only if not paused)
-            rom_r[ENC_BUF_RD] && !cut_buf_rd,         // buf_rd;     // connect to external buffer (but only if not paused)     
+            rom_r[ENC_BUF_RD],         // buf_rd;     // connect to external buffer (but only if not paused)     
             rom_r[ENC_BUF_PGNEXT] && !skip_next_page);// buf_rst;    // connect to external buffer (but only if not paused)
-          end    
+        end    
+    end
     fifo_2regs #(
         .WIDTH(COLADDR_NUMBER)
     ) fifo_2regs_i (

@@ -103,7 +103,7 @@
     parameter MCONTR_TOP_STATUS_REG_ADDR=      'h1,    // 8 or less bits: status register address to use for memory controller
     
     
-    parameter CHNBUF_READ_LATENCY =             1,     // external channel buffer extra read latency ( 0 - data available next cycle after re (but prev. data))
+    parameter CHNBUF_READ_LATENCY =             2, //1,     // external channel buffer extra read latency ( 0 - data available next cycle after re (but prev. data))
     
     parameter DFLT_DQS_PATTERN=        8'h55,
     parameter DFLT_DQM_PATTERN=        8'h00, // 8'h00

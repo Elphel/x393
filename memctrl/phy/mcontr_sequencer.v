@@ -482,7 +482,7 @@ module  mcontr_sequencer   #(
     
     always @ (posedge mclk) begin
        
-         if      (buf_wr)  mem_read_mode <= 1; // last was buf_wr, not buf_rd
+         if      (buf_wr_ndly)  mem_read_mode <= 1; // last was buf_wr, not buf_rd
          else if (buf_rd)  mem_read_mode <= 0;
         
     end

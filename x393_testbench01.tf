@@ -29,19 +29,19 @@
 //`define TEST_READ_PATTERN 1
 `define TEST_WRITE_BLOCK 1
 `define TEST_READ_BLOCK 1
-
+`define TESTL_SHORT_SCANLINE 1
 
 `define TEST_SCANLINE_WRITE 1
     `define TEST_SCANLINE_WRITE_WAIT 1 // wait TEST_SCANLINE_WRITE finished (frame_done)
 `define TEST_SCANLINE_READ  1
     `define TEST_READ_SHOW  1
-`define TEST_TILED_WRITE  1
+//`define TEST_TILED_WRITE  1
     `define TEST_TILED_WRITE_WAIT 1 // wait TEST_SCANLINE_WRITE finished (frame_done)
 
-`define TEST_TILED_READ  1
+//`define TEST_TILED_READ  1
 
-`define TEST_TILED_WRITE32  1
-`define TEST_TILED_READ32  1
+//`define TEST_TILED_WRITE32  1
+//`define TEST_TILED_READ32  1
 
 module  x393_testbench01 #(
 `include "includes/x393_parameters.vh"
@@ -232,20 +232,18 @@ module  x393_testbench01 #(
   
   
   //NUM_XFER_BITS=6
-  localparam       SCANLINE_PAGES_PER_ROW= (WINDOW_WIDTH>>NUM_XFER_BITS)+((WINDOW_WIDTH[NUM_XFER_BITS-1:0]==0)?0:1);
-  localparam       TILES_PER_ROW= (WINDOW_WIDTH/TILE_WIDTH)+  ((WINDOW_WIDTH % TILE_WIDTH==0)?0:1);
-//  localparam       TILE_ROWS_PER_WINDOW= ((WINDOW_HEIGHT-TILE_HEIGHT)/TILE_VSTEP) + (((WINDOW_HEIGHT-TILE_HEIGHT)%TILE_VSTEP==0)?0:1) +1;
-//  localparam       TILE_ROWS_PER_WINDOW= (WINDOW_HEIGHT/TILE_VSTEP) + ((WINDOW_HEIGHT%TILE_VSTEP==0)?0:1);
-  localparam       TILE_ROWS_PER_WINDOW= ((WINDOW_HEIGHT-1)/TILE_VSTEP) + 1;
+//  localparam       SCANLINE_PAGES_PER_ROW= (WINDOW_WIDTH>>NUM_XFER_BITS)+((WINDOW_WIDTH[NUM_XFER_BITS-1:0]==0)?0:1);
+//  localparam       TILES_PER_ROW= (WINDOW_WIDTH/TILE_WIDTH)+  ((WINDOW_WIDTH % TILE_WIDTH==0)?0:1);
+//  localparam       TILE_ROWS_PER_WINDOW= ((WINDOW_HEIGHT-1)/TILE_VSTEP) + 1;
   
-  localparam       TILE_SIZE= TILE_WIDTH*TILE_HEIGHT;
+//  localparam       TILE_SIZE= TILE_WIDTH*TILE_HEIGHT;
   
   
 //  localparam  integer     SCANLINE_FULL_XFER= 1<<NUM_XFER_BITS; // 64 - full page transfer in 8-bursts
 //  localparam  integer     SCANLINE_LAST_XFER= WINDOW_WIDTH % (1<<NUM_XFER_BITS); // last page transfer size in a row
   
 //  integer ii;
-  integer  SCANLINE_XFER_SIZE;
+//  integer  SCANLINE_XFER_SIZE;
   localparam       TEST_INITIAL_BURST=   4; // 3;
 always #(CLKIN_PERIOD/2) CLK = ~CLK;
   initial begin
@@ -337,17 +335,83 @@ always #(CLKIN_PERIOD/2) CLK = ~CLK;
 `ifdef TEST_READ_BLOCK
     test_read_block;
 `endif
+`ifdef TESTL_SHORT_SCANLINE
+    test_scanline_write(
+        1, // valid: 1 or 3 input            [3:0] channel;
+        SCANLINE_EXTRA_PAGES, // input            [1:0] extra_pages;
+        1, // input                  wait_done;
+        1, //WINDOW_WIDTH,
+        WINDOW_HEIGHT,
+        WINDOW_X0,
+        WINDOW_Y0);
+    test_scanline_read (
+        1, // valid: 1 or 3 input            [3:0] channel;
+        SCANLINE_EXTRA_PAGES, // input            [1:0] extra_pages;
+        1, // input                  show_data;
+        1, // WINDOW_WIDTH,
+        WINDOW_HEIGHT,
+        WINDOW_X0,
+        WINDOW_Y0);
+
+    test_scanline_write(
+        1, // valid: 1 or 3 input            [3:0] channel;
+        SCANLINE_EXTRA_PAGES, // input            [1:0] extra_pages;
+        1, // input                  wait_done;
+        2, //WINDOW_WIDTH,
+        WINDOW_HEIGHT,
+        WINDOW_X0,
+        WINDOW_Y0);
+    test_scanline_read (
+        1, // valid: 1 or 3 input            [3:0] channel;
+        SCANLINE_EXTRA_PAGES, // input            [1:0] extra_pages;
+        1, // input                  show_data;
+        2, // WINDOW_WIDTH,
+        WINDOW_HEIGHT,
+        WINDOW_X0,
+        WINDOW_Y0);
+
+    test_scanline_write(
+        1, // valid: 1 or 3 input            [3:0] channel;
+        SCANLINE_EXTRA_PAGES, // input            [1:0] extra_pages;
+        1, // input                  wait_done;
+        3, //WINDOW_WIDTH,
+        WINDOW_HEIGHT,
+        WINDOW_X0,
+        WINDOW_Y0);
+    test_scanline_read (
+        1, // valid: 1 or 3 input            [3:0] channel;
+        SCANLINE_EXTRA_PAGES, // input            [1:0] extra_pages;
+        1, // input                  show_data;
+        3, // WINDOW_WIDTH,
+        WINDOW_HEIGHT,
+        WINDOW_X0,
+        WINDOW_Y0);
+
+
+
+`endif
+
 `ifdef TEST_SCANLINE_WRITE
     test_scanline_write(
         1, // valid: 1 or 3 input            [3:0] channel;
         SCANLINE_EXTRA_PAGES, // input            [1:0] extra_pages;
-        1); // input                  wait_done;
+        1, // input                  wait_done;
+        WINDOW_WIDTH,
+        WINDOW_HEIGHT,
+        WINDOW_X0,
+        WINDOW_Y0);
+        
 `endif
 `ifdef TEST_SCANLINE_READ
     test_scanline_read (
         1, // valid: 1 or 3 input            [3:0] channel;
         SCANLINE_EXTRA_PAGES, // input            [1:0] extra_pages;
-        1); // input                  show_data;
+        1, // input                  show_data;
+        WINDOW_WIDTH,
+        WINDOW_HEIGHT,
+        WINDOW_X0,
+        WINDOW_Y0);
+        
 `endif
 
 `ifdef TEST_TILED_WRITE
@@ -356,36 +420,64 @@ always #(CLKIN_PERIOD/2) CLK = ~CLK;
          0,                 //       byte32;
          TILED_KEEP_OPEN,   //       keep_open;
          TILED_EXTRA_PAGES, //       extra_pages;
-         1);                //       wait_done;
+         1,                //       wait_done;
+        WINDOW_WIDTH,
+        WINDOW_HEIGHT,
+        WINDOW_X0,
+        WINDOW_Y0,
+        TILE_WIDTH,
+        TILE_HEIGHT,
+        TILE_VSTEP);
 `endif
 
 `ifdef TEST_TILED_READ
     test_tiled_read (
-         2,                 // [3:0] channel;
-         0,                 //       byte32;
-         TILED_KEEP_OPEN,   //       keep_open;
-         TILED_EXTRA_PAGES, //       extra_pages;
-         1);                //       show_data;
+        2,                 // [3:0] channel;
+        0,                 //       byte32;
+        TILED_KEEP_OPEN,   //       keep_open;
+        TILED_EXTRA_PAGES, //       extra_pages;
+        1,                 //       show_data;
+        WINDOW_WIDTH,
+        WINDOW_HEIGHT,
+        WINDOW_X0,
+        WINDOW_Y0,
+        TILE_WIDTH,
+        TILE_HEIGHT,
+        TILE_VSTEP);
+         
 `endif
 
 `ifdef TEST_TILED_WRITE32
     test_tiled_write (
-         4, // 2,                 // [3:0] channel;
-         1,                 //       byte32;
-         TILED_KEEP_OPEN,   //       keep_open;
-         TILED_EXTRA_PAGES, //       extra_pages;
-         1);                //       wait_done;
+        4, // 2,                 // [3:0] channel;
+        1,                 //       byte32;
+        TILED_KEEP_OPEN,   //       keep_open;
+        TILED_EXTRA_PAGES, //       extra_pages;
+        1,                 //       wait_done;
+        WINDOW_WIDTH,
+        WINDOW_HEIGHT,
+        WINDOW_X0,
+        WINDOW_Y0,
+        TILE_WIDTH,
+        TILE_HEIGHT,
+        TILE_VSTEP);
 `endif
 
 `ifdef TEST_TILED_READ32
     test_tiled_read (
-         4, //2,                 // [3:0] channel;
-         1,                 //       byte32;
-         TILED_KEEP_OPEN,   //       keep_open;
-         TILED_EXTRA_PAGES, //       extra_pages;
-         1);                //       show_data;
+        4, //2,                 // [3:0] channel;
+        1,                 //       byte32;
+        TILED_KEEP_OPEN,   //       keep_open;
+        TILED_EXTRA_PAGES, //       extra_pages;
+        1,                 //       show_data;
+        WINDOW_WIDTH,
+        WINDOW_HEIGHT,
+        WINDOW_X0,
+        WINDOW_Y0,
+        TILE_WIDTH,
+        TILE_HEIGHT,
+        TILE_VSTEP);
 `endif
-
   #20000;
   $finish;
 end
@@ -1090,6 +1182,11 @@ task test_scanline_write; // SuppressThisWarning VEditor - may be unused
     input            [3:0] channel;
     input            [1:0] extra_pages;
     input                  wait_done;
+    input [15:0]           window_width;
+    input [15:0]           window_height;
+    input [15:0]           window_left;
+    input [15:0]           window_top;
+    
     
     reg             [29:0] start_addr;
     integer                mode;
@@ -1098,7 +1195,11 @@ task test_scanline_write; // SuppressThisWarning VEditor - may be unused
     reg             [29:0] test_mode_address;
     
     integer       ii;
+    integer xfer_size;
+    integer pages_per_row;
+    integer startx,starty; // temporary - because of the vdt bug with integer ports
     begin
+        pages_per_row= (window_width>>NUM_XFER_BITS)+((window_width[NUM_XFER_BITS-1:0]==0)?0:1);
         $display("====== test_scanline_write: channel=%d, extra_pages=%d,  wait_done=%d @%t",
                                               channel,    extra_pages,     wait_done,   $time);
         case (channel)
@@ -1130,8 +1231,8 @@ task test_scanline_write; // SuppressThisWarning VEditor - may be unused
                 
         write_contol_register(start_addr+ MCNTRL_SCANLINE_STARTADDR,        FRAME_START_ADDRESS); // RA=80, CA=0, BA=0 22-bit frame start address (3 CA LSBs==0. BA==0) 
         write_contol_register(start_addr + MCNTRL_SCANLINE_FRAME_FULL_WIDTH, FRAME_FULL_WIDTH);
-        write_contol_register(start_addr + MCNTRL_SCANLINE_WINDOW_WH,        WINDOW_WIDTH + (WINDOW_HEIGHT<<16));
-        write_contol_register(start_addr + MCNTRL_SCANLINE_WINDOW_X0Y0,      WINDOW_X0+ (WINDOW_Y0<<16));
+        write_contol_register(start_addr + MCNTRL_SCANLINE_WINDOW_WH,        {window_height,window_width}); //WINDOW_WIDTH + (WINDOW_HEIGHT<<16));
+        write_contol_register(start_addr + MCNTRL_SCANLINE_WINDOW_X0Y0,      {window_top,window_left}); //WINDOW_X0+ (WINDOW_Y0<<16));
         write_contol_register(start_addr + MCNTRL_SCANLINE_WINDOW_STARTXY,   SCANLINE_STARTX+(SCANLINE_STARTY<<16));
         write_contol_register(start_addr + MCNTRL_SCANLINE_MODE,             mode); 
         configure_channel_priority(channel,0);    // lowest priority channel 3
@@ -1140,25 +1241,27 @@ task test_scanline_write; // SuppressThisWarning VEditor - may be unused
         write_contol_register(test_mode_address,            TEST01_START_FRAME);
         for (ii=0;ii<TEST_INITIAL_BURST;ii=ii+1) begin
 // VDT bugs: 1:does not propagate undefined width through ?:, 2: - does not allow to connect it to task integer input, 3: shows integer input width as 1  
-            SCANLINE_XFER_SIZE= ((SCANLINE_PAGES_PER_ROW>1)?
+            xfer_size= ((pages_per_row>1)?
                 (
                     (
-                        ((ii % SCANLINE_PAGES_PER_ROW) < (SCANLINE_PAGES_PER_ROW-1))?
+                        ((ii % pages_per_row) < (pages_per_row-1))?
                         (1<<NUM_XFER_BITS):
-                        (WINDOW_WIDTH % (1<<NUM_XFER_BITS))
+                        (window_width % (1<<NUM_XFER_BITS))
                     )
                 ):
-                (WINDOW_WIDTH));
+                ({16'b0,window_width}));
            $display("########### test_scanline_write block %d: channel=%d, @%t", ii, channel, $time);
+           startx=window_left + ((ii % pages_per_row)<<NUM_XFER_BITS);
+           starty=window_top + (ii / pages_per_row);
            write_block_scanline_chn(
             channel,
             (ii & 3),
-            SCANLINE_XFER_SIZE,
-            WINDOW_X0 + ((ii % SCANLINE_PAGES_PER_ROW)<<NUM_XFER_BITS),  // SCANLINE_CUR_X,
-            WINDOW_Y0 + (ii / SCANLINE_PAGES_PER_ROW)); // SCANLINE_CUR_Y);\
+            xfer_size,
+            startx, //window_left + ((ii % pages_per_row)<<NUM_XFER_BITS),  // SCANLINE_CUR_X,
+            starty); // window_top + (ii / pages_per_row)); // SCANLINE_CUR_Y);\
             
         end
-        for (ii=0;ii< (WINDOW_HEIGHT * SCANLINE_PAGES_PER_ROW) ;ii = ii+1) begin // here assuming 1 page per line
+        for (ii=0;ii< (window_height * pages_per_row) ;ii = ii+1) begin // here assuming 1 page per line
             if (ii >= TEST_INITIAL_BURST) begin // wait page ready and fill page after first 4 are filled
                 wait_status_condition (
                     status_address, //MCNTRL_TEST01_STATUS_REG_CHN3_ADDR,
@@ -1168,23 +1271,26 @@ task test_scanline_write; // SuppressThisWarning VEditor - may be unused
                     'hf << 16,  // mask for the 4-bit page number
                     1, // not equal to
                     (ii == TEST_INITIAL_BURST)); // synchronize sequence number - only first time, next just wait fro auto update
-                SCANLINE_XFER_SIZE= ((SCANLINE_PAGES_PER_ROW>1)?
+                xfer_size= ((pages_per_row>1)?
                     (
                         (
-                            ((ii % SCANLINE_PAGES_PER_ROW) < (SCANLINE_PAGES_PER_ROW-1))?
+                            ((ii % pages_per_row) < (pages_per_row-1))?
                         
                          (1<<NUM_XFER_BITS):
-                            (WINDOW_WIDTH % (1<<NUM_XFER_BITS))
+                            (window_width % (1<<NUM_XFER_BITS))
                         )
                     ):
-                    (WINDOW_WIDTH));
+                    ({16'b0,window_width}));
                 $display("########### test_scanline_write block %d: channel=%d, @%t", ii, channel, $time);
+                startx=window_left + ((ii % pages_per_row)<<NUM_XFER_BITS);
+                starty=window_top + (ii / pages_per_row);
+                
                 write_block_scanline_chn(
                     channel,
                     (ii & 3),
-                SCANLINE_XFER_SIZE,
-                WINDOW_X0 + ((ii % SCANLINE_PAGES_PER_ROW)<<NUM_XFER_BITS),  // SCANLINE_CUR_X,
-                WINDOW_Y0 + (ii / SCANLINE_PAGES_PER_ROW)); // SCANLINE_CUR_Y);
+                xfer_size,
+                startx,  // window_left + ((ii % pages_per_row)<<NUM_XFER_BITS),  // SCANLINE_CUR_X,
+                starty); // window_top + (ii / pages_per_row)); // SCANLINE_CUR_Y);
             end
             write_contol_register(test_mode_address,            TEST01_NEXT_PAGE);
         end
@@ -1206,6 +1312,10 @@ task test_scanline_read; // SuppressThisWarning VEditor - may be unused
     input            [3:0] channel;
     input            [1:0] extra_pages;
     input                  show_data;
+    input [15:0]           window_width;
+    input [15:0]           window_height;
+    input [15:0]           window_left;
+    input [15:0]           window_top;
     
     reg             [29:0] start_addr;
     integer                mode;
@@ -1213,7 +1323,11 @@ task test_scanline_read; // SuppressThisWarning VEditor - may be unused
     reg             [29:0] status_control_address;
     reg             [29:0] test_mode_address;
     integer       ii;
+    integer xfer_size;
+    integer pages_per_row;
+    
     begin
+        pages_per_row= (window_width>>NUM_XFER_BITS)+((window_width[NUM_XFER_BITS-1:0]==0)?0:1);
         $display("====== test_scanline_read: channel=%d, extra_pages=%d,  show_data=%d @%t",
                                              channel,    extra_pages,     show_data,    $time);
         case (channel)
@@ -1246,23 +1360,23 @@ task test_scanline_read; // SuppressThisWarning VEditor - may be unused
    // program to the
         write_contol_register(start_addr + MCNTRL_SCANLINE_STARTADDR,        FRAME_START_ADDRESS); // RA=80, CA=0, BA=0 22-bit frame start address (3 CA LSBs==0. BA==0) 
         write_contol_register(start_addr + MCNTRL_SCANLINE_FRAME_FULL_WIDTH, FRAME_FULL_WIDTH);
-        write_contol_register(start_addr + MCNTRL_SCANLINE_WINDOW_WH,        WINDOW_WIDTH + (WINDOW_HEIGHT<<16));
-        write_contol_register(start_addr + MCNTRL_SCANLINE_WINDOW_X0Y0,      WINDOW_X0+ (WINDOW_Y0<<16));
+        write_contol_register(start_addr + MCNTRL_SCANLINE_WINDOW_WH,        {window_height,window_width}); //WINDOW_WIDTH + (WINDOW_HEIGHT<<16));
+        write_contol_register(start_addr + MCNTRL_SCANLINE_WINDOW_X0Y0,      {window_top,window_left}); //WINDOW_X0+ (WINDOW_Y0<<16));
         write_contol_register(start_addr + MCNTRL_SCANLINE_WINDOW_STARTXY,   SCANLINE_STARTX+(SCANLINE_STARTY<<16));
         write_contol_register(start_addr + MCNTRL_SCANLINE_MODE,             mode);// set mode register: {extra_pages[1:0],enable,!reset}
         configure_channel_priority(channel,0);    // lowest priority channel 3
         enable_memcntrl_en_dis(channel,1);
         write_contol_register(test_mode_address,            TEST01_START_FRAME);
-        for (ii=0;ii<(WINDOW_HEIGHT * SCANLINE_PAGES_PER_ROW);ii = ii+1) begin
-            SCANLINE_XFER_SIZE= ((SCANLINE_PAGES_PER_ROW>1)?
+        for (ii=0;ii<(window_height * pages_per_row);ii = ii+1) begin
+            xfer_size= ((pages_per_row>1)?
                 (
                     (
-                        ((ii % SCANLINE_PAGES_PER_ROW) < (SCANLINE_PAGES_PER_ROW-1))?
+                        ((ii % pages_per_row) < (pages_per_row-1))?
                         (1<<NUM_XFER_BITS):
-                        (WINDOW_WIDTH % (1<<NUM_XFER_BITS))
+                        (window_width % (1<<NUM_XFER_BITS))
                     )
                 ):
-                (WINDOW_WIDTH));
+                ({16'b0,window_width}));
             wait_status_condition (
                 status_address, //MCNTRL_TEST01_STATUS_REG_CHN2_ADDR,
                 status_control_address, // MCNTRL_TEST01_ADDR + MCNTRL_TEST01_CHN2_STATUS_CNTRL,
@@ -1277,7 +1391,7 @@ task test_scanline_read; // SuppressThisWarning VEditor - may be unused
                     read_block_buf_chn (
                         channel,
                         (ii & 3),
-                        SCANLINE_XFER_SIZE <<2,
+                        xfer_size <<2,
                         1 ); // chn=0, page=3, number of 32-bit words=256, wait_done
                 end
         write_contol_register(test_mode_address,            TEST01_NEXT_PAGE);
@@ -1291,15 +1405,30 @@ task test_tiled_write; // SuppressThisWarning VEditor - may be unused
     input                  keep_open;
     input            [1:0] extra_pages;
     input                  wait_done;
+    input [15:0]           window_width;
+    input [15:0]           window_height;
+    input [15:0]           window_left;
+    input [15:0]           window_top;
+    input [ 7:0]           tile_width;
+    input [ 7:0]           tile_height;
+    input [ 7:0]           tile_vstep;
+    
+    
     
     reg             [29:0] start_addr;
     integer                mode;
     reg [STATUS_DEPTH-1:0] status_address;
     reg             [29:0] status_control_address;
     reg             [29:0] test_mode_address;
-    
     integer       ii;
+    integer       tiles_per_row;
+    integer       tile_rows_per_window;
+    integer       tile_size;
+    integer startx,starty; // temporary - because of the vdt bug with integer ports
     begin
+        tiles_per_row= (window_width/tile_width)+  ((window_width % tile_width==0)?0:1);
+        tile_rows_per_window= ((window_height-1)/tile_vstep) + 1;
+        tile_size= tile_width*tile_height;
         $display("====== test_tiled_write: channel=%d, byte32=%d, keep_open=%d, extra_pages=%d,  wait_done=%d @%t",
                                            channel,    byte32,    keep_open,    extra_pages,     wait_done,   $time);
         case (channel)
@@ -1332,10 +1461,11 @@ task test_tiled_write; // SuppressThisWarning VEditor - may be unused
                     0);  // chn_reset
         write_contol_register(start_addr + MCNTRL_TILED_STARTADDR,        FRAME_START_ADDRESS); // RA=80, CA=0, BA=0 22-bit frame start address (3 CA LSBs==0. BA==0) 
         write_contol_register(start_addr + MCNTRL_TILED_FRAME_FULL_WIDTH, FRAME_FULL_WIDTH);
-        write_contol_register(start_addr + MCNTRL_TILED_WINDOW_WH,        WINDOW_WIDTH + (WINDOW_HEIGHT<<16));
-        write_contol_register(start_addr + MCNTRL_TILED_WINDOW_X0Y0,      WINDOW_X0+ (WINDOW_Y0<<16));
+        write_contol_register(start_addr + MCNTRL_TILED_WINDOW_WH,        {window_height,window_width}); //WINDOW_WIDTH + (WINDOW_HEIGHT<<16));
+        write_contol_register(start_addr + MCNTRL_TILED_WINDOW_X0Y0,      {window_top,window_left}); //WINDOW_X0+ (WINDOW_Y0<<16));
+        
         write_contol_register(start_addr + MCNTRL_TILED_WINDOW_STARTXY,   TILED_STARTX+(TILED_STARTY<<16));
-        write_contol_register(start_addr + MCNTRL_TILED_TILE_WHS,         TILE_WIDTH+(TILE_HEIGHT<<8)+(TILE_VSTEP<<16));
+        write_contol_register(start_addr + MCNTRL_TILED_TILE_WHS,         {8'b0,tile_vstep,tile_height,tile_width});//tile_width+(tile_height<<8)+(tile_vstep<<16));
         write_contol_register(start_addr + MCNTRL_TILED_MODE,             mode);// set mode register: {extra_pages[1:0],enable,!reset}
         configure_channel_priority(channel,0);    // lowest priority channel 3
         enable_memcntrl_en_dis(channel,1);
@@ -1343,15 +1473,17 @@ task test_tiled_write; // SuppressThisWarning VEditor - may be unused
     
         for (ii=0;ii<TEST_INITIAL_BURST;ii=ii+1) begin
             $display("########### test_tiled_write block %d: channel=%d, @%t", ii, channel, $time);
+            startx = window_left + ((ii % tiles_per_row) * tile_width);
+            starty = window_top + (ii / tile_rows_per_window); // SCANLINE_CUR_Y);\
             write_block_scanline_chn( // TODO: Make a different tile buffer data, matching the order
                 channel, // channel
                 (ii & 3),
-                TILE_SIZE,
-                WINDOW_X0 + ((ii % TILES_PER_ROW) * TILE_WIDTH),
-                WINDOW_Y0 + (ii / TILE_ROWS_PER_WINDOW)); // SCANLINE_CUR_Y);\
+                tile_size,
+                startx, //window_left + ((ii % tiles_per_row) * tile_width),
+                starty); //window_top + (ii / tile_rows_per_window)); // SCANLINE_CUR_Y);\
         end
     
-        for (ii=0;ii<(TILES_PER_ROW * TILE_ROWS_PER_WINDOW);ii = ii+1) begin
+        for (ii=0;ii<(tiles_per_row * tile_rows_per_window);ii = ii+1) begin
             if (ii >= TEST_INITIAL_BURST) begin // wait page ready and fill page after first 4 are filled
                 wait_status_condition (
                     status_address, // MCNTRL_TEST01_STATUS_REG_CHN5_ADDR,
@@ -1362,12 +1494,14 @@ task test_tiled_write; // SuppressThisWarning VEditor - may be unused
                     1, // not equal to
                     (ii == TEST_INITIAL_BURST)); // synchronize sequence number - only first time, next just wait fro auto update
                 $display("########### test_tiled_write block %d: channel=%d, @%t", ii, channel, $time);
+                startx = window_left + ((ii % tiles_per_row) * tile_width);
+                starty = window_top + (ii / tile_rows_per_window);
                 write_block_scanline_chn( // TODO: Make a different tile buffer data, matching the order
                     channel, // channel
                     (ii & 3),
-                    TILE_SIZE,
-                    WINDOW_X0 + ((ii % TILES_PER_ROW) * TILE_WIDTH),
-                    WINDOW_Y0 + (ii / TILE_ROWS_PER_WINDOW)); // SCANLINE_CUR_Y);\
+                    tile_size,
+                    startx, // window_left + ((ii % tiles_per_row) * tile_width),
+                    starty); // window_top + (ii / tile_rows_per_window)); // SCANLINE_CUR_Y);\
             end
             write_contol_register(test_mode_address,            TEST01_NEXT_PAGE);
         end
@@ -1393,6 +1527,13 @@ task test_tiled_read; // SuppressThisWarning VEditor - may be unused
     input                  keep_open;
     input            [1:0] extra_pages;
     input                  show_data;
+    input [15:0]           window_width;
+    input [15:0]           window_height;
+    input [15:0]           window_left;
+    input [15:0]           window_top;
+    input [ 7:0]           tile_width;
+    input [ 7:0]           tile_height;
+    input [ 7:0]           tile_vstep;
     
     reg             [29:0] start_addr;
     integer                mode;
@@ -1401,7 +1542,14 @@ task test_tiled_read; // SuppressThisWarning VEditor - may be unused
     reg             [29:0] test_mode_address;
     
     integer       ii;
+    integer       tiles_per_row;
+    integer       tile_rows_per_window;
+    integer       tile_size;
+    
     begin
+        tiles_per_row= (window_width/tile_width)+  ((window_width % tile_width==0)?0:1);
+        tile_rows_per_window= ((window_height-1)/tile_vstep) + 1;
+        tile_size= tile_width*tile_height;
         $display("====== test_tiled_read: channel=%d, byte32=%d, keep_open=%d, extra_pages=%d,  show_data=%d @%t",
                                           channel,      byte32,  keep_open,    extra_pages,     show_data,   $time);
         case (channel)
@@ -1434,15 +1582,16 @@ task test_tiled_read; // SuppressThisWarning VEditor - may be unused
                     0);  // chn_reset
         write_contol_register(start_addr + MCNTRL_TILED_STARTADDR,        FRAME_START_ADDRESS); // RA=80, CA=0, BA=0 22-bit frame start address (3 CA LSBs==0. BA==0) 
         write_contol_register(start_addr + MCNTRL_TILED_FRAME_FULL_WIDTH, FRAME_FULL_WIDTH);
-        write_contol_register(start_addr + MCNTRL_TILED_WINDOW_WH,        WINDOW_WIDTH + (WINDOW_HEIGHT<<16));
-        write_contol_register(start_addr + MCNTRL_TILED_WINDOW_X0Y0,      WINDOW_X0+ (WINDOW_Y0<<16));
+        write_contol_register(start_addr + MCNTRL_TILED_WINDOW_WH,        {window_height,window_width}); //WINDOW_WIDTH + (WINDOW_HEIGHT<<16));
+        write_contol_register(start_addr + MCNTRL_TILED_WINDOW_X0Y0,      {window_top,window_left}); //WINDOW_X0+ (WINDOW_Y0<<16));
+        
         write_contol_register(start_addr + MCNTRL_TILED_WINDOW_STARTXY,   TILED_STARTX+(TILED_STARTY<<16));
-        write_contol_register(start_addr + MCNTRL_TILED_TILE_WHS,         TILE_WIDTH+(TILE_HEIGHT<<8)+(TILE_VSTEP<<16));
+        write_contol_register(start_addr + MCNTRL_TILED_TILE_WHS,         {8'b0,tile_vstep,tile_height,tile_width});//(tile_height<<8)+(tile_vstep<<16));
         write_contol_register(start_addr + MCNTRL_TILED_MODE,             mode);// set mode register: {extra_pages[1:0],enable,!reset}
         configure_channel_priority(channel,0);    // lowest priority channel 3
         enable_memcntrl_en_dis(channel,1);
         write_contol_register(test_mode_address,            TEST01_START_FRAME);
-        for (ii=0;ii<(TILES_PER_ROW * TILE_ROWS_PER_WINDOW);ii = ii+1) begin
+        for (ii=0;ii<(tiles_per_row * tile_rows_per_window);ii = ii+1) begin
             wait_status_condition (
                 status_address, // MCNTRL_TEST01_STATUS_REG_CHN4_ADDR,
                 status_control_address, // MCNTRL_TEST01_ADDR + MCNTRL_TEST01_CHN4_STATUS_CNTRL,
@@ -1456,7 +1605,7 @@ task test_tiled_read; // SuppressThisWarning VEditor - may be unused
                     read_block_buf_chn (
                         channel,
                         (ii & 3),
-                        TILE_SIZE <<2,
+                        tile_size <<2,
                         1 ); // chn=0, page=3, number of 32-bit words=256, wait_done
                 end
             write_contol_register(test_mode_address,            TEST01_NEXT_PAGE);

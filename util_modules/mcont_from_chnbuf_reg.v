@@ -22,7 +22,7 @@
 
 module  mcont_from_chnbuf_reg #(
     parameter CHN_NUMBER=0,
-    parameter CHN_LATENCY=1 // 0 - no extra latency in extrenal BRAM - data available next cycle after regen (1 extra from ren)
+    parameter CHN_LATENCY=2 // 0 - no extra latency in extrenal BRAM - data available next cycle after regen (1 extra from ren)
 )(
     input rst,
     input clk,
@@ -37,7 +37,8 @@ module  mcont_from_chnbuf_reg #(
     output reg                  rpage_nxt,
     input                [63:0] buf_rdata_chn
 );
-    reg                 buf_chn_sel;
+    reg                  [63:0] buf_rdata_chn_r; /// *** temporary register to delay buffer read data - may be used to implement multi-clock mux to ease timing
+    reg                         buf_chn_sel;
     reg [CHN_LATENCY:0] latency_reg=0;
     always @ (posedge rst or posedge clk) begin
         if (rst) buf_chn_sel <= 0;
@@ -58,8 +59,11 @@ module  mcont_from_chnbuf_reg #(
     end
 //    always @ (posedge clk)  buf_raddr_rst_chn <= ext_buf_raddr_rst && (ext_buf_rchn==CHN_NUMBER);
 //    always @ (posedge clk) if (buf_chn_sel && ext_buf_rd) buf_raddr_chn <= ext_buf_raddr;
-    always @ (posedge clk) if (latency_reg[CHN_LATENCY])  ext_buf_rdata <= buf_rdata_chn;
+//    always @ (posedge clk) if (latency_reg[CHN_LATENCY])  ext_buf_rdata <= buf_rdata_chn;
+    always @ (posedge clk)  buf_rdata_chn_r <= buf_rdata_chn; // THIS WILL BE REPLACED BY MULTI-CYCLE MUX
+    always @ (posedge clk) if (latency_reg[CHN_LATENCY])  ext_buf_rdata <= buf_rdata_chn_r;
     always @ (posedge clk)  rpage_nxt <= ext_buf_rpage_nxt && (ext_buf_rchn==CHN_NUMBER) && !ext_buf_rrefresh;
+    //buf_rdata_chn_r
     
 endmodule
 

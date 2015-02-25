@@ -104,7 +104,7 @@ module  cmd_encod_tiled_32_rd #(
     reg                        keep_open;                        
     reg                        skip_next_page;
     reg                        gen_run;
-    reg                        gen_run_d; // to output "done"?
+//    reg                        gen_run_d; // to output "done"?
     reg        [ROM_DEPTH-1:0] gen_addr; // will overrun as stop comes from ROM
     
     reg        [ROM_WIDTH-1:0] rom_r; 
@@ -112,7 +112,7 @@ module  cmd_encod_tiled_32_rd #(
     wire                 [1:0] rom_cmd;
     wire                 [1:0] rom_skip;
     wire                 [2:0] full_cmd;
-    reg                        done;
+//    reg                        done;
     
     reg [FULL_ADDR_NUMBER-4:0] top_rc; // top combined row,column,bank burst address (excludes 3 CA LSBs), valid/modified @pre_act
     reg                        first_col;
@@ -162,8 +162,8 @@ module  cmd_encod_tiled_32_rd #(
         else if (start_d)  gen_run<= 1; // delaying
         else if (pre_done) gen_run<= 0;
         
-        if (rst)           gen_run_d <= 0;
-        else               gen_run_d <= gen_run;
+//        if (rst)           gen_run_d <= 0;
+//        else               gen_run_d <= gen_run;
 
         if (rst)        num_rows_m1 <= 0;                    
         else if (start) num_rows_m1 <= num_rows_in_m1;  // number of rows
@@ -247,18 +247,19 @@ module  cmd_encod_tiled_32_rd #(
        endcase
     end
     always @ (posedge rst or posedge clk) begin
-        if (rst)           done <= 0;
-        else               done <= pre_done;
+//        if (rst)           done <= 0;
+//        else               done <= pre_done;
         
         if (rst)           enc_wr <= 0;
-        else               enc_wr <= gen_run || gen_run_d;
+        else               enc_wr <= gen_run; //  || gen_run_d;
         
         if (rst)           enc_done <= 0;
-        else               enc_done <= enc_wr && !gen_run_d;
+        else               enc_done <= enc_wr && !gen_run; // !gen_run_d;
         
         if (rst)             enc_cmd <= 0;
 //        else if ((rom_cmd==0) || (rom_cmd[1] && !enable_act)) enc_cmd <= func_encode_skip ( // encode pause
-        else if (rom_cmd[0] || (rom_cmd[1] && enable_act)) enc_cmd <= func_encode_cmd ( // encode non-NOP command
+        else if (gen_run) begin
+          if (rom_cmd[0] || (rom_cmd[1] && enable_act)) enc_cmd <= func_encode_cmd ( // encode non-NOP command
             rom_cmd[1]? // activate
             row_col_bank[FULL_ADDR_NUMBER-1:COLADDR_NUMBER]: // top combined row,column,bank burst address (excludes 3 CA LSBs), valid/modified @pre_act
                     {{ADDRESS_NUMBER-COLADDR_NUMBER-1{1'b0}},
@@ -280,9 +281,9 @@ module  cmd_encod_tiled_32_rd #(
             1'b0,                    //   buf_rd;     // connect to external buffer (but only if not paused)     
             rom_r[ENC_NOP],          //   nop;        // add NOP after the current command, keep other data
             rom_r[ENC_BUF_PGNEXT] && !skip_next_page);     //   buf_rst;    // connect to external buffer (but only if not paused)
-        else enc_cmd <= func_encode_skip ( // encode pause
+          else enc_cmd <= func_encode_skip ( // encode pause
             {{CMD_PAUSE_BITS-2{1'b0}},rom_skip[1:0]}, // skip;   // number of extra cycles to skip (and keep all the other outputs)
-            done,                                     // end of sequence 
+            pre_done, // done,                                     // end of sequence 
             3'b0,                    // bank (here OK to be any)
             1'b0,                    //   odt_en;     // enable ODT
             1'b0,                    //   cke;        // disable CKE
@@ -294,7 +295,8 @@ module  cmd_encod_tiled_32_rd #(
             rom_r[ENC_BUF_WR],       //   buf_wr;     // connect to external buffer (but only if not paused)
             1'b0,                    //   buf_rd;     // connect to external buffer (but only if not paused)
             rom_r[ENC_BUF_PGNEXT] && !skip_next_page);     //   buf_rst;    // connect to external buffer (but only if not paused)
-          end    
+        end
+    end    
     fifo_2regs #(
         .WIDTH(COLADDR_NUMBER)
     ) fifo_2regs_i (
