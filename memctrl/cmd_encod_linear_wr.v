@@ -129,7 +129,8 @@ module  cmd_encod_linear_wr #(
         else if (!start && !gen_run)                                       gen_addr <= 0;
         else if ((gen_addr==(REPEAT_ADDR-1)) && few_write)                 gen_addr <= jump_gen_addr;
 //        else if ((gen_addr !=REPEAT_ADDR) || (num128[NUM_XFER_BITS:1]==0)) gen_addr <= gen_addr+1; // not in a loop
-        else if ((gen_addr !=REPEAT_ADDR) || (num128==2))                  gen_addr <= gen_addr+1; // not in a loop
+//      else if ((gen_addr !=REPEAT_ADDR) || (num128==2))                  gen_addr <= gen_addr+1; // not in a loop
+        else if ((gen_addr !=REPEAT_ADDR) || (num128[NUM_XFER_BITS:2]==0)) gen_addr <= gen_addr+1; // not in a loop
 
 //counting loops        
         if      (rst)          num128 <= 0;

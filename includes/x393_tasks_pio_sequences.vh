@@ -122,7 +122,7 @@ task set_write_block;
             @(posedge CLK) axi_write_single_w(cmd_addr, data); cmd_addr <= cmd_addr + 1;
         end
         //                                add            bank     RCW ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD NOP, B_RST
-        data <=  func_encode_cmd( {5'b0,ca[9:0]}+(63<<3),ba[2:0],  3,  1,  0,  1,  1,    1,    1,    0,  0,   1,   0,   0);  // write w/o nop
+        data <=  func_encode_cmd( {5'b0,ca[9:0]}+(62<<3),ba[2:0],  3,  1,  0,  1,  1,    1,    1,    0,  0,   1,   0,   0);  // write w/o nop
         @(posedge CLK) axi_write_single_w(cmd_addr, data); cmd_addr <= cmd_addr + 1;
 // nop
         //                          skip     done        bank         ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD      B_RST
