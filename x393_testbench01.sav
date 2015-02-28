@@ -1,31 +1,31 @@
 [*]
 [*] GTKWave Analyzer v3.3.64 (w)1999-2014 BSI
-[*] Wed Feb 25 03:07:13 2015
+[*] Fri Feb 27 02:13:30 2015
 [*]
-[dumpfile] "/home/andrey/git/x393/simulation/x393_testbench01-20150224193905311.lxt"
-[dumpfile_mtime] "Wed Feb 25 02:50:26 2015"
-[dumpfile_size] 666325841
+[dumpfile] "/home/andrey/git/x393/simulation/x393_testbench01-20150226183110913.lxt"
+[dumpfile_mtime] "Fri Feb 27 01:46:16 2015"
+[dumpfile_size] 861913910
 [savefile] "/home/andrey/git/x393/x393_testbench01.sav"
-[timestart] 43849000
-[size] 1823 1180
+[timestart] 27500000
+[size] 1823 1173
 [pos] 2059 0
-*-18.698502 45009323 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-24.698502 91599500 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] x393_testbench01.
 [treeopen] x393_testbench01.x393_i.
 [treeopen] x393_testbench01.x393_i.mcntrl393_i.
-[treeopen] x393_testbench01.x393_i.mcntrl393_i.cmd_encod_linear_rw_i.
 [treeopen] x393_testbench01.x393_i.mcntrl393_i.cmd_encod_linear_rw_i.cmd_encod_linear_wr_i.
-[treeopen] x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_16_rw_i.
 [treeopen] x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_16_rw_i.cmd_encod_tiled_wr_i.
-[treeopen] x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_32_rw_i.
-[treeopen] x393_testbench01.x393_i.mcntrl393_i.mcntrl_linear_rw_chn1_i.
 [treeopen] x393_testbench01.x393_i.mcntrl393_i.mcntrl_linear_rw_chn1_i.cmd_deser_32bit_i.
 [treeopen] x393_testbench01.x393_i.mcntrl393_i.mcntrl_linear_rw_chn1_i.cmd_deser_32bit_i.genblk4.
 [treeopen] x393_testbench01.x393_i.mcntrl393_i.mcntrl_ps_pio_i.chn0_buf_i.
 [treeopen] x393_testbench01.x393_i.mcntrl393_i.mcntrl_ps_pio_i.chn1_buf_i.
+[treeopen] x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn2_i.
+[treeopen] x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn2_i.cmd_deser_32bit_i.
+[treeopen] x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn2_i.cmd_deser_32bit_i.genblk4.
 [treeopen] x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn4_i.
+[treeopen] x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn4_i.cmd_deser_32bit_i.
+[treeopen] x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn4_i.cmd_deser_32bit_i.genblk4.
 [treeopen] x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.
-[treeopen] x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.
 [treeopen] x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.cmd_deser_16bit_i.
 [treeopen] x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.cmd_deser_16bit_i.genblk4.
 [treeopen] x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.
@@ -34,10 +34,10 @@
 [treeopen] x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.status_router2_top_i.
 [treeopen] x393_testbench01.x393_i.mcntrl393_test01_i.
 [treeopen] x393_testbench01.x393_i.mcntrl393_test01_i.status_router4_i.
-[sst_width] 260
-[signals_width] 428
+[sst_width] 373
+[signals_width] 465
 [sst_expanded] 1
-[sst_vpaned_height] 628
+[sst_vpaned_height] 627
 @800200
 -top_simulation
 @28
@@ -1300,9 +1300,8 @@ x393_testbench01.x393_i.mcntrl393_i.cmd_encod_4mux_i.start[0]
 x393_testbench01.x393_i.mcntrl393_i.cmd_encod_4mux_i.start_w[0]
 @1401200
 -enc4mux
-@800200
--PS_PIO
 @c00200
+-PS_PIO
 -PS_PIO_STATUS
 @22
 x393_testbench01.x393_i.mcntrl393_i.mcntrl_ps_pio_i.status_generate_i.ad[7:0]
@@ -1420,29 +1419,29 @@ x393_testbench01.x393_i.mcntrl393_i.mcntrl_ps_pio_i.chn0_buf_i.wpage_set[0]
 -PS_PIO_RD
 @200
 -
-@800201
+@c00200
 -PS_PIO_WR
-@23
+@22
 x393_testbench01.x393_i.mcntrl393_i.mcntrl_ps_pio_i.chn1_buf_i.data_out[63:0]
-@29
+@28
 x393_testbench01.x393_i.mcntrl393_i.mcntrl_ps_pio_i.chn1_buf_i.ext_clk[0]
-@23
+@22
 x393_testbench01.x393_i.mcntrl393_i.mcntrl_ps_pio_i.chn1_buf_i.ext_data_in[31:0]
 x393_testbench01.x393_i.mcntrl393_i.mcntrl_ps_pio_i.chn1_buf_i.ext_waddr[9:0]
-@29
+@28
 x393_testbench01.x393_i.mcntrl393_i.mcntrl_ps_pio_i.chn1_buf_i.ext_we[0]
 x393_testbench01.x393_i.mcntrl393_i.mcntrl_ps_pio_i.chn1_buf_i.page[1:0]
 x393_testbench01.x393_i.mcntrl393_i.mcntrl_ps_pio_i.chn1_buf_i.page_next[0]
 x393_testbench01.x393_i.mcntrl393_i.mcntrl_ps_pio_i.chn1_buf_i.page_r[1:0]
-@23
+@22
 x393_testbench01.x393_i.mcntrl393_i.mcntrl_ps_pio_i.chn1_buf_i.raddr[6:0]
-@29
+@28
 x393_testbench01.x393_i.mcntrl393_i.mcntrl_ps_pio_i.chn1_buf_i.rclk[0]
 x393_testbench01.x393_i.mcntrl393_i.mcntrl_ps_pio_i.chn1_buf_i.rd[0]
 x393_testbench01.x393_i.mcntrl393_i.mcntrl_ps_pio_i.chn1_buf_i.regen[0]
 x393_testbench01.x393_i.mcntrl393_i.mcntrl_ps_pio_i.chn1_buf_i.rpage_in[1:0]
 x393_testbench01.x393_i.mcntrl393_i.mcntrl_ps_pio_i.chn1_buf_i.rpage_set[0]
-@1000201
+@1401200
 -PS_PIO_WR
 @200
 -
@@ -1535,7 +1534,7 @@ x393_testbench01.x393_i.mcntrl393_i.mcntrl_ps_pio_i.status_data[1:0]
 x393_testbench01.x393_i.mcntrl393_i.mcntrl_ps_pio_i.status_rq[0]
 x393_testbench01.x393_i.mcntrl393_i.mcntrl_ps_pio_i.status_start[0]
 x393_testbench01.x393_i.mcntrl393_i.mcntrl_ps_pio_i.want_rq[0]
-@1000200
+@1401200
 -PS_PIO
 @c00200
 -LINEAR_CH1
@@ -2641,8 +2640,79 @@ x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.phy
 x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.phy_top_i.mmcm_phase_cntr_i.rst[0]
 @1401200
 -mmcm_phase_cntr
-@c00200
+@800200
 -memcntrl16_0
+@200
+-
+@800200
+-debug_ch2_ch4
+@28
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn2_i.set_tile_whs_w[0]
+@22
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn2_i.tile_cols[6:0]
+@28
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn2_i.cmd_we[0]
+@22
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn2_i.cmd_deser_32bit_i.ad[7:0]
+@28
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn2_i.cmd_deser_32bit_i.genblk4.i_cmd_deser_multi.match_low[0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn2_i.cmd_deser_32bit_i.genblk4.i_cmd_deser_multi.match_high[0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn2_i.cmd_deser_32bit_i.genblk4.i_cmd_deser_multi.stb[0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn2_i.cmd_deser_32bit_i.genblk4.i_cmd_deser_multi.stb_d[0]
+@c00022
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn2_i.cmd_deser_32bit_i.genblk4.i_cmd_deser_multi.sr[4:0]
+@28
+(0)x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn2_i.cmd_deser_32bit_i.genblk4.i_cmd_deser_multi.sr[4:0]
+(1)x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn2_i.cmd_deser_32bit_i.genblk4.i_cmd_deser_multi.sr[4:0]
+(2)x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn2_i.cmd_deser_32bit_i.genblk4.i_cmd_deser_multi.sr[4:0]
+(3)x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn2_i.cmd_deser_32bit_i.genblk4.i_cmd_deser_multi.sr[4:0]
+(4)x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn2_i.cmd_deser_32bit_i.genblk4.i_cmd_deser_multi.sr[4:0]
+@1401200
+-group_end
+@200
+-
+@28
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn4_i.set_tile_whs_w[0]
+@22
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn4_i.tile_cols[6:0]
+@28
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn4_i.cmd_we[0]
+@22
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn4_i.cmd_deser_32bit_i.ad[7:0]
+@28
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn4_i.cmd_deser_32bit_i.genblk4.i_cmd_deser_multi.match_low[0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn4_i.cmd_deser_32bit_i.genblk4.i_cmd_deser_multi.match_high[0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn4_i.cmd_deser_32bit_i.genblk4.i_cmd_deser_multi.stb[0]
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn4_i.cmd_deser_32bit_i.genblk4.i_cmd_deser_multi.stb_d[0]
+@c00022
+x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn4_i.cmd_deser_32bit_i.genblk4.i_cmd_deser_multi.sr[4:0]
+@28
+(0)x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn4_i.cmd_deser_32bit_i.genblk4.i_cmd_deser_multi.sr[4:0]
+(1)x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn4_i.cmd_deser_32bit_i.genblk4.i_cmd_deser_multi.sr[4:0]
+(2)x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn4_i.cmd_deser_32bit_i.genblk4.i_cmd_deser_multi.sr[4:0]
+(3)x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn4_i.cmd_deser_32bit_i.genblk4.i_cmd_deser_multi.sr[4:0]
+(4)x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn4_i.cmd_deser_32bit_i.genblk4.i_cmd_deser_multi.sr[4:0]
+@1401200
+-group_end
+@1000200
+-debug_ch2_ch4
+@200
+-
+@c00200
+-cmd_deser_16bit_i
+@22
+x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.cmd_deser_16bit_i.ad[7:0]
+@28
+x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.cmd_deser_16bit_i.addr[2:0]
+x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.cmd_deser_16bit_i.clk[0]
+@22
+x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.cmd_deser_16bit_i.data[15:0]
+@28
+x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.cmd_deser_16bit_i.rst[0]
+x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.cmd_deser_16bit_i.stb[0]
+x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.cmd_deser_16bit_i.we[0]
+@1401200
+-cmd_deser_16bit_i
 @22
 x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.ext_buf_rchn_late[3:0]
 @28
@@ -2727,7 +2797,6 @@ x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.cmd0_buf_i.we
 x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.ext_buf_rrefresh[0]
 @1000200
 -cmd0_buf
-@1401200
 -memcntrl16_0
 @c00200
 -scheduler

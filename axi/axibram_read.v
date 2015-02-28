@@ -19,6 +19,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/> .
  *******************************************************************************/
  // Check that this fix did not break anything:
+`include "system_defines.vh" 
 `define USE_SHORT_REN_REGEN 
 module  axibram_read #(
     parameter ADDRESS_BITS = 10 // number of memory address bits

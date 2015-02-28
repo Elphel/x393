@@ -35,7 +35,6 @@ module  cmd_deser#(
     output [DATA_WIDTH-1:0] data,
     output                  we
 );
-    
     generate
         if (NUM_CYCLES==1)
             cmd_deser_single # (
@@ -191,7 +190,12 @@ module  cmd_deser_multi#(
     wire                      match_low;
     wire                      match_high;
     reg      [NUM_CYCLES-2:0] sr;
-    
+//    wire [31:0] debug_addr=      ADDR;
+//    wire [31:0] debug_mask=      ADDR_MASK;
+//    wire [31:0] debug_addr_low=  ADDR_LOW;
+//    wire [31:0] debug_addr_high= ADDR_HIGH;
+//    wire [31:0] debug_mask_low=  ADDR_MASK_LOW;
+//    wire [31:0] debug_mask_high= ADDR_MASK_HIGH;
     assign we=sr[0]; // we_r;
     assign match_low=  ((ad ^ ADDR_LOW)  & (8'hff & ADDR_MASK_LOW)) == 0;
     assign match_high= ((ad ^ ADDR_HIGH) & (8'hff & ADDR_MASK_HIGH)) == 0;

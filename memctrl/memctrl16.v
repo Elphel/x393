@@ -19,8 +19,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/> .
  *******************************************************************************/
 `timescale 1ns/1ps
+`include "system_defines.vh" 
 `define use200Mhz 1
-`define DEBUG_FIFO 1 
+//`define DEBUG_FIFO 1 
 module  memctrl16 #(
 //command interface parameters
     parameter DLY_LD =            'h080,  // address to generate delay load
@@ -604,6 +605,23 @@ wire rst=rst_in; // TODO: decide where toi generate
     reg    [15:0]   chn_want_r;
     wire   [17:0]   status_data;
     
+    wire [2:0] mcontr_0bit_addr;
+    wire       mcontr_0bit_we;
+    wire  [2:0] mcontr_16bit_addr;
+    // ???
+ //   wire [15:0] aaaa;
+//   assign aaaa={cmd_ad,cmd_ad};// just debugging Vivado synth
+    
+    wire [15:0] mcontr_16bit_data; //  = {cmd_ad,cmd_ad};
+//   assign mcontr_16bit_data={cmd_ad,cmd_ad};// just debugging Vivado synth
+    
+    wire        mcontr_16bit_we;
+    
+//   wire [15:0] aaaa;
+//  assign aaaa={cmd_ad,cmd_ad};// just debugging Vivado synth
+    
+    
+    
     assign status_data={chn_want_r,chn_need_some,chn_want_some};
     
 // mux status info from the memory controller and other modules    
@@ -653,8 +671,6 @@ wire rst=rst_in; // TODO: decide where toi generate
     );
   
 // generate on/off dependent on lsb and 0-bit commands
-    wire [2:0] mcontr_0bit_addr;
-    wire       mcontr_0bit_we;
     cmd_deser #(
         .ADDR       (MCONTR_TOP_0BIT_ADDR),
         .ADDR_MASK  (MCONTR_TOP_0BIT_ADDR_MASK),
@@ -680,10 +696,6 @@ wire rst=rst_in; // TODO: decide where toi generate
     end
   
 // generate 16-bit data commands (and set defaults to registers)
-    wire  [2:0] mcontr_16bit_addr;
-    wire [15:0] mcontr_16bit_data;
-    wire        mcontr_16bit_we;
-
     cmd_deser #(
         .ADDR       (MCONTR_TOP_16BIT_ADDR),
         .ADDR_MASK  (MCONTR_TOP_16BIT_ADDR_MASK),
@@ -699,13 +711,11 @@ wire rst=rst_in; // TODO: decide where toi generate
         .data       (mcontr_16bit_data), // output[31:0] 
         .we         (mcontr_16bit_we) // output
     );
+
     wire set_chn_en_w;
     wire set_refresh_period_w;
     wire set_refresh_address_w;
     reg  set_refresh_period;
-    
-//    wire                control_status_we; // share with write delay (8-but)?
-//    wire          [7:0] contral_status_data;
     
     assign set_chn_en_w=           mcontr_16bit_we && (mcontr_16bit_addr[2:0]==MCONTR_TOP_16BIT_CHN_EN);
     assign set_refresh_period_w=   mcontr_16bit_we && (mcontr_16bit_addr[2:0]==MCONTR_TOP_16BIT_REFRESH_PERIOD);
@@ -758,10 +768,7 @@ wire rst=rst_in; // TODO: decide where toi generate
 
         
 assign mcontr_enabled=mcontr_en && !mcontr_reset; 
-//assign sel_refresh_w= refresh_need || (refresh_want && (!cmd_seq_need || !(cmd_seq_full || (cmd_seq_fill && seq_set ))));  
 assign sel_refresh_w= refresh_need || (refresh_want && !(cmd_seq_need && cmd_seq_full));
-//assign pre_run_seq_w= mcontr_enabled && !sequencer_run_busy && !refresh_grant && (cmd_seq_full || refresh_need || refresh_want);
-//assign pre_run_seq_w= mcontr_enabled && !sequencer_run_busy && !refresh_grant && !cmd_seq_run && (cmd_seq_full || refresh_want);
 assign pre_run_seq_w= mcontr_enabled && !sequencer_run_busy && !cmd_seq_run && (cmd_seq_full || refresh_want);
 
 assign pre_run_chn_w= pre_run_seq_w && !sel_refresh_w;
@@ -779,22 +786,14 @@ always @ (posedge rst or posedge mclk) begin
     if (rst)        cmd_wr_chn <= 0;
     else if (grant) cmd_wr_chn <= grant_chn;
 
-//    if (rst)                                    cmd_seq_fill <= 0;
-//    else if (!mcontr_enabled || pre_run_chn_w ) cmd_seq_fill <= 0;
-//    else if (grant)                             cmd_seq_fill <= 1;
 
 //TODO: Modify,cmd_seq_fill was initially used to see if any sequaence data was written (or PS is used), now it is cmd_seq_set
     if (rst)                                              cmd_seq_fill <= 0;
-//    else if (!mcontr_enabled || seq_wr )        cmd_seq_fill <= 0;
-//    else if (grant)                             cmd_seq_fill <= 1;
-//    else if (!mcontr_enabled || grant )         cmd_seq_fill <= 0;
     else if (!mcontr_enabled || seq_set || cmd_seq_full ) cmd_seq_fill <= 0;
-//    else if (seq_wr)                            cmd_seq_fill <= 1;
     else if (grant)                                       cmd_seq_fill <= 1;
 
     if (rst)                                    cmd_seq_full <= 0;
     else if (!mcontr_enabled || pre_run_chn_w ) cmd_seq_full <= 0;
-//    else if (seq_wr)                            cmd_seq_full <= 1;
     else if (seq_set)                            cmd_seq_full <= 1; // even with no data
 
 

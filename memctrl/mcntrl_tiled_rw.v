@@ -100,7 +100,10 @@ module  mcntrl_tiled_rw#(
     reg   [NUM_RC_BURST_BITS-1:0] line_start_addr;// (calculated) Line start (in {row,col8} in burst8
     reg      [COLADDR_NUMBER-4:0] line_start_page_left; // number of 8-burst left in the memory page from the start of the frame line
  // calculating full width from the frame width
-    reg   [FRAME_HEIGHT_BITS-1:0] frame_y;     // current line number referenced to the frame top
+//WARNING: [Synth 8-3936] Found unconnected internal register 'frame_y_reg' and it is trimmed from '16' to '3' bits. [memctrl/mcntrl_tiled_rw.v:307]
+// Throblem seems to be that frame_y8_r_reg (load of trimmed bits of the frame_y_reg) is (as intended) absorbed into DSP48. The lower 3 bits are used
+// outside of the DSP 48.  "dont_touch" seems to work here
+(* keep = "true" *) reg   [FRAME_HEIGHT_BITS-1:0] frame_y;     // current line number referenced to the frame top
     reg    [FRAME_WIDTH_BITS-1:0] frame_x;     // current column number referenced to the frame left
     reg   [FRAME_HEIGHT_BITS-4:0] frame_y8_r;  // (13 bits) current row with bank removed, latency2 (to be absorbed when inferred DSP multipler)
     reg      [FRAME_WIDTH_BITS:0] frame_full_width_r;  // (14 bit) register to be absorbed by MPY
@@ -167,14 +170,15 @@ module  mcntrl_tiled_rw#(
 //    wire                          msw13_zero=!(|cmd_data[FRAME_WIDTH_BITS+15:16]); // MSW 13 (FRAME_WIDTH_BITS) low bits are all 0 - set carry bit
     wire                          msw_zero=  !(|cmd_data[31:16]); // MSW all bits are 0 - set carry bit
     wire                          tile_width_zero= !(|cmd_data[ 0+:MAX_TILE_WIDTH]);  
-    wire                          tile_height_zero=!(|cmd_data[ 8+:MAX_TILE_HEIGHT]);  
+//    wire                          tile_height_zero=!(|cmd_data[ 8+:MAX_TILE_HEIGHT]);  
     wire                          tile_vstep_zero= !(|cmd_data[16+:MAX_TILE_HEIGHT]);  
     
 //    reg                     [5:0] mode_reg;//mode register: {write_mode,keep_open,extra_pages[1:0],enable,!reset}
     reg                     [6:0] mode_reg;//mode register: {byte32,keep_open,extra_pages[1:0],write_mode,enable,!reset}
     reg   [NUM_RC_BURST_BITS-1:0] start_addr;     // (programmed) Frame start (in {row,col8} in burst8, bank ==0
     reg        [MAX_TILE_WIDTH:0] tile_cols;  // full number of columns in a tile
-    reg       [MAX_TILE_HEIGHT:0] tile_rows;  // full number of rows in a tile
+//    reg       [MAX_TILE_HEIGHT:0] tile_rows;  // full number of rows in a tile
+    reg     [MAX_TILE_HEIGHT-1:0] tile_rows;  // full number of rows in a tile
     reg       [MAX_TILE_HEIGHT:0] tile_vstep; // vertical step between rows of tiles
 
     reg        [MAX_TILE_WIDTH:0] num_cols_r; // full number of columns to transfer (not minus 1)
@@ -227,7 +231,8 @@ module  mcntrl_tiled_rw#(
                tile_vstep <= 0;
         end else if (set_tile_whs_w)  begin
                tile_cols <=  {tile_width_zero,  cmd_data[ 0+:MAX_TILE_WIDTH]};
-               tile_rows <=  {tile_height_zero, cmd_data[ 8+:MAX_TILE_HEIGHT]};
+//               tile_rows <=  {tile_height_zero, cmd_data[ 8+:MAX_TILE_HEIGHT]};
+               tile_rows <=  {                  cmd_data[ 8+:MAX_TILE_HEIGHT]};
                tile_vstep <= {tile_vstep_zero,  cmd_data[16+:MAX_TILE_HEIGHT]};
         end
 

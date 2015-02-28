@@ -20,28 +20,28 @@
  *******************************************************************************/
 `timescale 1ns/1ps
 `define use200Mhz 1
-`define DEBUG_FIFO 1
+//`define DEBUG_FIFO 1
 `undef WAIT_MRS
 `define SET_PER_PIN_DEALYS 1 // set individual (including per-DQ pin delays)
 `define PS_PIO_WAIT_COMPLETE 0 // wait until PS PIO module finished transaction before starting a new one
 // Disabled already passed test to speedup simulation
 //`define TEST_WRITE_LEVELLING 1
 //`define TEST_READ_PATTERN 1
-`define TEST_WRITE_BLOCK 1
-`define TEST_READ_BLOCK 1
-`define TESTL_SHORT_SCANLINE 1
+//`define TEST_WRITE_BLOCK 1
+//`define TEST_READ_BLOCK 1
+//`define TESTL_SHORT_SCANLINE 1
 
-`define TEST_SCANLINE_WRITE 1
+//`define TEST_SCANLINE_WRITE 1
     `define TEST_SCANLINE_WRITE_WAIT 1 // wait TEST_SCANLINE_WRITE finished (frame_done)
-`define TEST_SCANLINE_READ  1
+//`define TEST_SCANLINE_READ  1
     `define TEST_READ_SHOW  1
-//`define TEST_TILED_WRITE  1
+`define TEST_TILED_WRITE  1
     `define TEST_TILED_WRITE_WAIT 1 // wait TEST_SCANLINE_WRITE finished (frame_done)
 
-//`define TEST_TILED_READ  1
+`define TEST_TILED_READ  1
 
-//`define TEST_TILED_WRITE32  1
-//`define TEST_TILED_READ32  1
+`define TEST_TILED_WRITE32  1
+`define TEST_TILED_READ32  1
 
 module  x393_testbench01 #(
 `include "includes/x393_parameters.vh"

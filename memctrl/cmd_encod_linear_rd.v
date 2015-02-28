@@ -40,7 +40,7 @@ module  cmd_encod_linear_rd #(
     input    [NUM_XFER_BITS-1:0] num128_in,   // number of 128-bit words to transfer (8*16 bits) - full bursts of 8 ( 0 - maximal length, 64)
     input                        skip_next_page_in, // do not reset external buffer (continue)    
     input                        start,       // start generating commands
-    output reg            [31:0] enc_cmd,     // encoded commnad
+    output reg            [31:0] enc_cmd,     // encoded command SuppressThisWarning VivadoSynthesis [Synth 8-3332] Sequential element cmd_encod_linear_rd.enc_cmd_reg[10:9,7:5,2] is unused and will be removed from module cmd_encod_linear_rd.
     output reg                   enc_wr,      // write encoded command
     output reg                   enc_done     // encoding finished
 );
@@ -77,7 +77,7 @@ module  cmd_encod_linear_rd #(
 //    reg                        gen_run_d;
     reg        [ROM_DEPTH-1:0] gen_addr; // will overrun as stop comes from ROM
     
-    reg        [ROM_WIDTH-1:0] rom_r; 
+    reg        [ROM_WIDTH-1:0] rom_r; // SuppressThisWarning VivadoSynthesis [Synth 8-3332] Sequential element cmd_encod_linear_rd.rom_r_reg[0] is unused and will be removed from module cmd_encod_linear_rd.
     wire                       pre_done;
     wire                 [1:0] rom_cmd;
     wire                 [1:0] rom_skip;

@@ -41,14 +41,14 @@ module  cmd_encod_linear_rw#(
     input                        start_rd,       // start generating commands by cmd_encod_linear_rd
     input                        start_wr,       // start generating commands by cmd_encod_linear_wr
     output reg                   start,       // this channel was started (1 clk from start_rd || start_wr
-    output reg            [31:0] enc_cmd,     // encoded commnad
+    output reg            [31:0] enc_cmd,     // encoded command
     output reg                   enc_wr,      // write encoded command
     output reg                   enc_done     // encoding finished
 );
-    wire            [31:0] enc_cmd_rd;     // encoded commnad
+    wire            [31:0] enc_cmd_rd;     // encoded command
     wire                   enc_wr_rd;      // write encoded command
     wire                   enc_done_rd;    // encoding finished
-    wire            [31:0] enc_cmd_wr;     // encoded commnad
+    wire            [31:0] enc_cmd_wr;     // encoded command
     wire                   enc_wr_wr;      // write encoded command
     wire                   enc_done_wr;    // encoding finished
     reg                    select_wr;

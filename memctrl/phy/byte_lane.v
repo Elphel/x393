@@ -19,6 +19,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/> .
  *******************************************************************************/
 `timescale 1ns/1ps
+`include "system_defines.vh" 
 // minimizing total DQS in delay to match DQ (finedelay stage adds some?)
 //`define NOFINEDELAY_DQS 1
 module  byte_lane #(

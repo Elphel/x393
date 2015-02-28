@@ -20,6 +20,7 @@
  *******************************************************************************/
 `timescale 1ns/1ps
 // ISE 14.7 does not have OBUFT_DCIEN
+`include "system_defines.vh" 
 `define USE_IOBUF 1
 module  dm_single #(
     parameter IODELAY_GRP ="IODELAY_MEMORY",

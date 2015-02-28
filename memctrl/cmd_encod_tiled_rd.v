@@ -63,7 +63,7 @@ module  cmd_encod_tiled_rd #(
     input                        keep_open_in,  // keep banks open (for <=8 banks only
     input                        skip_next_page_in, // do not reset external buffer (continue)    
     input                        start,       // start generating commands
-    output reg            [31:0] enc_cmd,     // encoded commnad
+    output reg            [31:0] enc_cmd,     // encoded command  SuppressThisWarning VivadoSynthesis: [Synth 8-3332] Sequential element cmd_encod_tiled_rd.enc_cmd_reg[11:9,7:5,2] is unused and will be removed from module cmd_encod_tiled_rd.
     output reg                   enc_wr,      // write encoded command
     output reg                   enc_done     // encoding finished
 );
@@ -264,7 +264,7 @@ module  cmd_encod_tiled_rd #(
             rom_cmd[1]?
                 row_col_bank[2:0]:
                 col_bank[2:0],        //
-            full_cmd[2:0],           //   rcw;        // RAS/CAS/WE, positive logic
+            full_cmd[2:0],           //   rcw;        // RAS/CAS/WE, positive logic. full_cmd[0]==0 (never write/precharge) => enc_cmd_reg[11]==0
             1'b0,                    //   odt_en;     // enable ODT
             1'b0,                    //   cke;        // disable CKE
             rom_r[ENC_SEL],          //   sel;        // first/second half-cycle, other will be nop (cke+odt applicable to both)

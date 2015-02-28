@@ -63,7 +63,7 @@ module  cmd_encod_tiled_32_wr #(
     input                        keep_open_in,  // keep banks open (for <=8 banks only
     input                        skip_next_page_in, // do not reset external buffer (continue)    
     input                        start,       // start generating commands
-    output reg            [31:0] enc_cmd,     // encoded commnad
+    output reg            [31:0] enc_cmd,     // encoded command
     output reg                   enc_wr,      // write encoded command
     output reg                   enc_done     // encoding finished
 );

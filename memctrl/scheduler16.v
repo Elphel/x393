@@ -104,7 +104,8 @@ module  scheduler16 #(
     generate
         genvar i1;
         for (i1=0;i1<16;i1=i1+1) begin: sched_state_block
-            always @ (posedge rst or posedge clk) begin
+//            always @ (posedge rst or posedge clk) begin
+            always @ (posedge clk) begin
 //                if (rst) sched_state[width*i1 +: width] <= 0; // not needed?
 //                else
                 begin

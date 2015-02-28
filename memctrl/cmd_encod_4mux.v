@@ -25,27 +25,27 @@ module  cmd_encod_4mux(
     input                   clk,
 
     input                   start0,       // this channel was started
-    input            [31:0] enc_cmd0,     // encoded commnad
+    input            [31:0] enc_cmd0,     // encoded command
     input                   enc_wr0,      // write encoded command
     input                   enc_done0,     // encoding finished
 
     input                   start1,       // this channel was started
-    input            [31:0] enc_cmd1,     // encoded commnad
+    input            [31:0] enc_cmd1,     // encoded command
     input                   enc_wr1,      // write encoded command
     input                   enc_done1,     // encoding finished
 
     input                   start2,       // this channel was started
-    input            [31:0] enc_cmd2,     // encoded commnad
+    input            [31:0] enc_cmd2,     // encoded command
     input                   enc_wr2,      // write encoded command
     input                   enc_done2,     // encoding finished
 
     input                   start3,       // this channel was started
-    input            [31:0] enc_cmd3,     // encoded commnad
+    input            [31:0] enc_cmd3,     // encoded command
     input                   enc_wr3,      // write encoded command
     input                   enc_done3,     // encoding finished
 
     output reg              start,       // combined output was started (1 clk from |start*)
-    output reg       [31:0] enc_cmd,     // encoded commnad
+    output reg       [31:0] enc_cmd,     // encoded command
     output reg              enc_wr,      // write encoded command
     output reg              enc_done     // encoding finished
 );

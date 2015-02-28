@@ -37,7 +37,7 @@ module  cmd_encod_linear_wr #(
     input    [NUM_XFER_BITS-1:0] num128_in,   // number of 128-bit words to transfer (8*16 bits) - full burst of 8 (0 - full 64)
     input                        skip_next_page_in, // do not reset external buffer (continue)    
     input                        start,       // start generating commands
-    output reg            [31:0] enc_cmd,     // encoded commnad
+    output reg            [31:0] enc_cmd,     // encoded command SuppressThisWarning VivadoSynthesis  [Synth 8-3332] Sequential element cmd_encod_linear_wr.enc_cmd_reg[9,6,4:3] is unused and will be removed from module cmd_encod_linear_wr.
     output reg                   enc_wr,      // write encoded command
     output reg                   enc_done     // encoding finished
 );
@@ -90,7 +90,7 @@ module  cmd_encod_linear_wr #(
 //    reg                        gen_run_d;
     reg        [ROM_DEPTH-1:0] gen_addr; // will overrun as stop comes from ROM
     
-    reg        [ROM_WIDTH-1:0] rom_r; 
+    reg        [ROM_WIDTH-1:0] rom_r; // SuppressThisWarning VivadoSynthesis: [Synth 8-3332] Sequential element cmd_encod_linear_wr.rom_r_reg[8] is unused and will be removed from module cmd_encod_linear_wr.
     wire                       pre_done;
     wire                 [1:0] rom_cmd;
     wire                 [1:0] rom_skip;
@@ -103,7 +103,7 @@ module  cmd_encod_linear_wr #(
     reg                       dual_write;   // Two bursts have to be written
     reg                       few_write;    //write 1,2 or 3 bursts
     wire                      write_addr_w;   // gen_addr that generates write commands
-    reg       [ROM_DEPTH-1:0] jump_gen_addr; // will overrun as stop comes from ROM
+    reg       [ROM_DEPTH-1:0] jump_gen_addr; // will overrun as stop comes from ROM SuppressThisWarning VivadoSynthesis: [Synth 8-3332] Sequential element cmd_encod_linear_wr.jump_gen_addr_reg[0] is unused and will be removed from module cmd_encod_linear_wr.
 
     assign     pre_done=rom_r[ENC_PRE_DONE] && gen_run;
     assign     rom_cmd=  rom_r[ENC_CMD_SHIFT+:2];
@@ -155,7 +155,7 @@ module  cmd_encod_linear_wr #(
 //        else     few_write <= single_write | dual_write | triple_write;
         
         if (rst) jump_gen_addr <= 0;
-        else     jump_gen_addr <= single_write ? NO_WRITE_ADDR : (dual_write ? LAST_WRITE_ADDR:PRELAST_WRITE_ADDR);
+        else     jump_gen_addr <= single_write ? NO_WRITE_ADDR : (dual_write ? LAST_WRITE_ADDR : PRELAST_WRITE_ADDR);
         
 
 //triple_write          

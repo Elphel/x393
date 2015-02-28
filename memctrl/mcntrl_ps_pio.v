@@ -20,6 +20,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/> .
  *******************************************************************************/
 `timescale 1ns/1ps
+`include "system_defines.vh" 
 `undef DEBUG_FIFO
 module  mcntrl_ps_pio#(
     parameter MCNTRL_PS_ADDR=                    'h100,

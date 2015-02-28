@@ -20,6 +20,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/> .
  *******************************************************************************/
 //`define DEBUG_FIFO 1 
+`include "system_defines.vh" 
 `undef DEBUG_FIFO
 module  axibram_write #(
     parameter ADDRESS_BITS = 10 // number of memory address bits

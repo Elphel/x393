@@ -63,7 +63,7 @@ module  cmd_encod_tiled_32_rd #(
     input                        keep_open_in,  // keep banks open (for <=8 banks only
     input                        skip_next_page_in, // do not reset external buffer (continue)    
     input                        start,       // start generating commands
-    output reg            [31:0] enc_cmd,     // encoded commnad
+    output reg            [31:0] enc_cmd,     // encoded command SuppressThisWarning VivadoSynthesis: [Synth 8-3332] Sequential element cmd_encod_tiled_32_rd.enc_cmd_reg[11:9,7:5,2] is unused and will be removed from module cmd_encod_tiled_32_rd.
     output reg                   enc_wr,      // write encoded command
     output reg                   enc_done     // encoding finished
 );
@@ -94,10 +94,10 @@ module  cmd_encod_tiled_32_rd #(
 //    localparam AUTOPRECHARGE_BIT=COLADDR_NUMBER;
     
     reg   [ADDRESS_NUMBER-1:0] row;     // memory row
-    reg   [COLADDR_NUMBER-4:0] col;     // start memory column in 8-bursts
+    reg   [COLADDR_NUMBER-4:0] col;     // start memory column in 8-bursts SuppressThisWarning VivadoSynthesis: [Synth 8-3332] Sequential element cmd_encod_tiled_32_rd.col_reg[0] is unused and will be removed from module cmd_encod_tiled_32_rd.
     reg                  [2:0] bank;    // memory bank;
     reg                  [5:0] num_rows_m1;  // number of rows in a tile minus 1
-    reg                  [5:0] num_cols128_m2;  // number of r16-byte columns in a tile  -2 (even columns)
+    reg                  [5:0] num_cols128_m2;  // number of r16-byte columns in a tile  -2 (even columns) SuppressThisWarning VivadoSynthesis: [Synth 8-3332] Sequential element cmd_encod_tiled_32_rd.num_cols128_m2_reg[0] is unused and will be removed from module cmd_encod_tiled_32_rd.
 //    reg  [FULL_ADDR_NUMBER-4:0] rowcol_inc; // increment {row.col} when bank rolls over, remove 3 LSBs (in 8-bursts)
     reg   [FRAME_WIDTH_BITS:0] rowcol_inc; // increment {row.col} when bank rolls over, remove 3 LSBs (in 8-bursts)
     
@@ -120,7 +120,7 @@ module  cmd_encod_tiled_32_rd #(
     wire                       pre_act; //1 cycle before optional ACTIVATE
     wire                       pre_read; //1 cycle before READ command
     reg                  [5:0] scan_row; // current row in a tile (valid @pre_act)
-    reg                  [5:0] scan_col; // current 16-byte column in a tile (valid @pre_act)
+    reg                  [5:0] scan_col; // current 16-byte column in a tile (valid @pre_act) SuppressThisWarning VivadoSynthesis: [Synth 8-3332] Sequential element cmd_encod_tiled_32_rd.scan_col_reg[0] is unused and will be removed from module cmd_encod_tiled_32_rd.
     reg                        start_d; // start, delayed by 1 clocks
     wire                       last_row;
     reg [FULL_ADDR_NUMBER-1:0] row_col_bank;     // RA,CA, BA - valid @pre_act;
@@ -269,7 +269,7 @@ module  cmd_encod_tiled_32_rd #(
             rom_cmd[1]?
                 row_col_bank[2:0]:
                 col_bank[2:0],        //
-            full_cmd[2:0],           //   rcw;        // RAS/CAS/WE, positive logic
+            full_cmd[2:0],           //   rcw;        // RAS/CAS/WE, positive logic. full_cmd[0]==0 (never write/precharge) => enc_cmd_reg[11]==0
             1'b0,                    //   odt_en;     // enable ODT
             1'b0,                    //   cke;        // disable CKE
             rom_r[ENC_SEL],          //   sel;        // first/second half-cycle, other will be nop (cke+odt applicable to both)

@@ -19,7 +19,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/> .
  *******************************************************************************/
 `timescale 1ns/1ps
-
+`include "system_defines.vh" 
 module  mcntrl393 #(
 // AXI
     parameter MCONTR_WR_MASK =       'h3c00, // AXI write address mask for the 1Kx32 buffers command sequence memory
@@ -994,6 +994,7 @@ module  mcntrl393 #(
         .xfer_page_rst_wr (xfer_reset_page3_wr), // output
         .xfer_page_rst_rd (xfer_reset_page3_rd) // output
     );
+    
        mcntrl_tiled_rw #(
         .ADDRESS_NUMBER                (ADDRESS_NUMBER),
         .COLADDR_NUMBER                (COLADDR_NUMBER),
@@ -1010,7 +1011,7 @@ module  mcntrl393 #(
         .MCNTRL_TILED_WINDOW_WH        (MCNTRL_TILED_WINDOW_WH),
         .MCNTRL_TILED_WINDOW_X0Y0      (MCNTRL_TILED_WINDOW_X0Y0),
         .MCNTRL_TILED_WINDOW_STARTXY   (MCNTRL_TILED_WINDOW_STARTXY),
-        .MCNTRL_TILED_TILE_WHS          (MCNTRL_TILED_TILE_WHS),
+        .MCNTRL_TILED_TILE_WHS         (MCNTRL_TILED_TILE_WHS),
         .MCNTRL_TILED_STATUS_REG_ADDR  (MCNTRL_TILED_STATUS_REG_CHN2_ADDR),
         .MCNTRL_TILED_PENDING_CNTR_BITS(MCNTRL_TILED_PENDING_CNTR_BITS),
         .MCNTRL_TILED_FRAME_PAGE_RESET (MCNTRL_TILED_FRAME_PAGE_RESET)

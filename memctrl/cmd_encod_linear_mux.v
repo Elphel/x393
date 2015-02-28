@@ -21,7 +21,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/> .
  *******************************************************************************/
 `timescale 1ns/1ps
-
+`include "system_defines.vh" 
 module  cmd_encod_linear_mux#(
     parameter ADDRESS_NUMBER=       15,
     parameter COLADDR_NUMBER=       10

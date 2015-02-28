@@ -20,7 +20,8 @@
  *******************************************************************************/
  //TODO: make a 4-input mux too?
 `timescale 1ns/1ps
-`define DEBUG_FIFO 1
+`include "system_defines.vh" 
+//`define DEBUG_FIFO 1
 module  status_router2 (
     input        rst,
     input        clk,
@@ -83,7 +84,7 @@ module  status_router2 (
         else if (|fifo_re) next_chn <= fifo_re[0]; // just to be fair
         
         if      (rst)                         current_chn_r <= 0;
-        if      (set_other_only_w)            current_chn_r <= ~current_chn_r;
+        else if (set_other_only_w)            current_chn_r <= ~current_chn_r;
         else if (snd_pre_start)               current_chn_r <= chn_sel_w;
 ///        else if (|fifo_nempty && !snd_rest_r) current_chn_r <= chn_sel_w;
         //|fifo_nempty && (!snd_rest_r
