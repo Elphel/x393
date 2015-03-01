@@ -120,6 +120,7 @@ module  phy_top #(
     if (rst_in) rst <= 1'b1;
     else        rst <= 1'b0;
   end
+
   wire  ld_data_l = (dly_addr[6:5] == 2'h0) && ld_delay ;             
   wire  ld_data_h = (dly_addr[6:5] == 2'h1) && ld_delay ;             
   wire  ld_cmda =   (dly_addr[6:5] == 2'h2) && ld_delay ;             
@@ -271,7 +272,7 @@ wire sdclk; // BUFIO
     ) oddr_ds_i (
         .clk(sdclk), // input
         .ce(1'b1), // input
-        .rst(rst), // input
+        .rst(1'b0), //rst_n_clk), // input no need to reset?
         .set(1'b0), // input
         .din(2'b01), // input[1:0] 
         .tin(rst),   // tristate at reset

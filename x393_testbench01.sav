@@ -1,19 +1,22 @@
 [*]
 [*] GTKWave Analyzer v3.3.64 (w)1999-2014 BSI
-[*] Fri Feb 27 02:13:30 2015
+[*] Sun Mar  1 04:57:51 2015
 [*]
-[dumpfile] "/home/andrey/git/x393/simulation/x393_testbench01-20150226183110913.lxt"
-[dumpfile_mtime] "Fri Feb 27 01:46:16 2015"
-[dumpfile_size] 861913910
+[dumpfile] "/home/andrey/git/x393/simulation/x393_testbench01-20150228214141868.lxt"
+[dumpfile_mtime] "Sun Mar  1 04:56:21 2015"
+[dumpfile_size] 860951462
 [savefile] "/home/andrey/git/x393/x393_testbench01.sav"
-[timestart] 27500000
-[size] 1823 1173
-[pos] 2059 0
-*-24.698502 91599500 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[timestart] 0
+[size] 1823 1180
+[pos] 2062 0
+*-24.698502 12942500 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] x393_testbench01.
 [treeopen] x393_testbench01.x393_i.
 [treeopen] x393_testbench01.x393_i.mcntrl393_i.
+[treeopen] x393_testbench01.x393_i.mcntrl393_i.cmd_encod_linear_rw_i.
 [treeopen] x393_testbench01.x393_i.mcntrl393_i.cmd_encod_linear_rw_i.cmd_encod_linear_wr_i.
+[treeopen] x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_16_rw_i.
+[treeopen] x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_16_rw_i.cmd_encod_tiled_rd_i.
 [treeopen] x393_testbench01.x393_i.mcntrl393_i.cmd_encod_tiled_16_rw_i.cmd_encod_tiled_wr_i.
 [treeopen] x393_testbench01.x393_i.mcntrl393_i.mcntrl_linear_rw_chn1_i.cmd_deser_32bit_i.
 [treeopen] x393_testbench01.x393_i.mcntrl393_i.mcntrl_linear_rw_chn1_i.cmd_deser_32bit_i.genblk4.
@@ -26,6 +29,7 @@
 [treeopen] x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn4_i.cmd_deser_32bit_i.
 [treeopen] x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn4_i.cmd_deser_32bit_i.genblk4.
 [treeopen] x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.
+[treeopen] x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.
 [treeopen] x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.cmd_deser_16bit_i.
 [treeopen] x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.cmd_deser_16bit_i.genblk4.
 [treeopen] x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.
@@ -37,7 +41,7 @@
 [sst_width] 373
 [signals_width] 465
 [sst_expanded] 1
-[sst_vpaned_height] 627
+[sst_vpaned_height] 631
 @800200
 -top_simulation
 @28
@@ -1139,8 +1143,20 @@ x393_testbench01.x393_i.mcntrl393_test01_i.suspend_chn4[0]
 x393_testbench01.x393_i.mcntrl393_test01_i.suspend_chn4_r[0]
 @1401200
 -test01
+@c00201
+-vivado_debug
+@28
+x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.phy_top_i.clk_div_pre[0]
+x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.phy_top_i.clk_div[0]
+x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.phy_top_i.rst[0]
+x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.phy_top_i.sdclk_pre[0]
+x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.phy_top_i.sdclk[0]
+x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.phy_top_i.clk[0]
 @200
 -
+@1401201
+-vivado_debug
+@200
 -
 @c00200
 -byte_lane_0
@@ -2548,10 +2564,6 @@ x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn4_i.status_start[0]
 x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn4_i.suspend[0]
 @22
 x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn4_i.tile_cols[6:0]
-@28
-x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn4_i.tile_height_zero[0]
-@22
-x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn4_i.tile_rows[6:0]
 x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn4_i.tile_vstep[6:0]
 @28
 x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn4_i.tile_vstep_zero[0]
@@ -2640,11 +2652,12 @@ x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.phy
 x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.phy_top_i.mmcm_phase_cntr_i.rst[0]
 @1401200
 -mmcm_phase_cntr
-@800200
+@c00200
 -memcntrl16_0
 @200
 -
-@800200
+-
+@c00200
 -debug_ch2_ch4
 @28
 x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn2_i.set_tile_whs_w[0]
@@ -2694,10 +2707,13 @@ x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn4_i.cmd_deser_32bit_i.gen
 (4)x393_testbench01.x393_i.mcntrl393_i.mcntrl_tiled_rw_chn4_i.cmd_deser_32bit_i.genblk4.i_cmd_deser_multi.sr[4:0]
 @1401200
 -group_end
-@1000200
 -debug_ch2_ch4
 @200
 -
+@28
+x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_16bit_we[0]
+@22
+x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_16bit_data[15:0]
 @c00200
 -cmd_deser_16bit_i
 @22
@@ -2797,6 +2813,7 @@ x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.cmd0_buf_i.we
 x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.ext_buf_rrefresh[0]
 @1000200
 -cmd0_buf
+@1401200
 -memcntrl16_0
 @c00200
 -scheduler

@@ -44,7 +44,7 @@
 `define TEST_TILED_READ32  1
 
 module  x393_testbench01 #(
-`include "includes/x393_parameters.vh"
+`include "includes/x393_parameters.vh" // SuppressThisWarning VEditor - not used
 `include "includes/x393_simulation_parameters.vh"
 )(
 );
@@ -57,7 +57,7 @@ module  x393_testbench01 #(
 `endif
 `define DEBUG_WR_SINGLE 1  
 `define DEBUG_RD_DATA 1  
-`include "includes/x393_localparams.vh"
+`include "includes/x393_localparams.vh" // SuppressThisWarning VEditor - not used
   // DDR3 signals
   wire        SDRST;
   wire        SDCLK;  // output
@@ -76,7 +76,7 @@ module  x393_testbench01 #(
   wire        SDDMU;  // inout
   wire        DQSU;   // inout
   wire        NDQSU;  // inout
-  wire        DUMMY_TO_KEEP;  // output to keep PS7 signals from "optimization"
+  wire        DUMMY_TO_KEEP;  // output to keep PS7 signals from "optimization" // SuppressThisWarning all - not used
 //  wire        MEMCLK;
   
   // Simulation signals
@@ -212,7 +212,7 @@ module  x393_testbench01 #(
 //  localparam       SCANLINE_STARTXY=    'h0;         // low word - 13-bit start X (relative to window), high word - 16-bit start y (normally 0)
   localparam       SCANLINE_STARTX=     'h0;         // 13-bit start X (relative to window), high word (normally 0)
   localparam       SCANLINE_STARTY=     'h0;         // 16-bit start y (normally 0)
-  localparam [1:0] SCANLINE_EXTRA_PAGES= 0;          // 0..2 - number of pages in the buffer to keep/not write
+  localparam [1:0] SCANLINE_EXTRA_PAGES= 0;          // 0..2 - number of pages in the buffer to keep/not write // SuppressThisWarning VEditor - not used
   
   localparam       TILED_STARTX=     'h0;         // 13-bit start X (relative to window), high word (normally 0)
   localparam       TILED_STARTY=     'h0;         // 16-bit start y (normally 0)
@@ -227,7 +227,7 @@ module  x393_testbench01 #(
   
   localparam       TEST01_START_FRAME=   1;         
   localparam       TEST01_NEXT_PAGE=     2;         
-  localparam       TEST01_SUSPEND=       4;
+  localparam       TEST01_SUSPEND=       4; // SuppressThisWarning VEditor - not used
   
   
   
@@ -1718,7 +1718,7 @@ endtask
 `include "includes/x393_tasks_mcntrl_en_dis_priority.vh"
 `include "includes/x393_tasks_mcntrl_buffers.vh"
 `include "includes/x393_tasks_pio_sequences.vh"
-`include "includes/x393_tasks_mcntrl_timing.vh"
+`include "includes/x393_tasks_mcntrl_timing.vh" // SuppressThisWarning VEditor - not used
 `include "includes/x393_tasks_ps_pio.vh"
 `include "includes/x393_tasks_status.vh"
 `include "includes/x393_tasks01.vh"

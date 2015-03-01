@@ -45,19 +45,19 @@ module  x393 #(
     inout                        DQSU,  // UDQS I/O pad
     inout                        NDQSU,
     output                       DUMMY_TO_KEEP  // to keep PS7 signals from "optimization"
-//    ,input                        MEMCLK
+    ,input                        MEMCLK
 );
 
 //    localparam ADDRESS_NUMBER=15;
 //    localparam COLADDR_NUMBER=10;
 // Source for reset and clock
+(* keep = "true" *)
    wire    [3:0]     fclk;      // PL Clocks [3:0], output
+(* keep = "true" *)   
    wire    [3:0]     frst;      // PL Clocks [3:0], output
-   
-   
     
 // AXI write interface signals
-//(* keep = "true" *)
+//(* keep = "true" *) 
    wire           axi_aclk;    // clock - should be buffered
 //   wire           axi_naclk;   // debugging
 //   wire           axi_aresetn; // reset, active low
@@ -125,7 +125,7 @@ module  x393 #(
    wire           axird_dev_ready;   // extrernal combinatorial ready signal, multiplexed from different sources according to pre_araddr@start_burst
 // External memory interface   
 // SuppressWarnings VEditor unused (yet?) - use mclk 
-   wire           axird_bram_rclk;  //      .rclk(aclk),                  // clock for read port
+   wire           axird_bram_rclk;  // == axi_aclk      .rclk(aclk),                  // clock for read port
    // while only status provides read data, the next signals are not used (relies on axird_pre_araddr, axird_start_burst)
    wire  [AXI_RD_ADDR_BITS-1:0] axird_raddr; //   .raddr(read_in_progress?read_address[9:0]:10'h3ff),    // read address
    wire           axird_ren;   //      .ren(bram_reg_re_w) ,      // read port enable
@@ -150,78 +150,7 @@ module  x393 #(
    wire axiwr_dev_busy;
    wire axird_dev_busy;
    
-   assign axird_dev_ready = ~axird_dev_busy; //may combine (AND) multiple sources if needed
-   assign axird_dev_busy = 1'b0; // always for now
-// Use this later    
-//   assign axird_rdata= ({32{status_selected}} & status_rdata[31:0]) | ({32{mcntrl_axird_selected}} & mcntrl_axird_rdata[31:0]);
-//Debug with this (to show 'x)   
-//   assign axird_rdata= status_selected?status_rdata[31:0] : (mcntrl_axird_selected? mcntrl_axird_rdata[31:0]:'bx);
-   assign axird_rdata= status_selected_regen?status_rdata[31:0] : (mcntrl_axird_selected_regen? mcntrl_axird_rdata[31:0]:'bx);
-   
-   assign axiwr_dev_ready = ~axiwr_dev_busy; //may combine (AND) multiple sources if needed
-
-// Clock and reset from PS
-    wire comb_rst=~frst[0] | frst[1];
-    reg axi_rst_pre=1'b1;
-
-// delay status_selected and mcntrl_axird_selected to match data for multiplexing
-
-    always @(posedge axi_rst or posedge axird_bram_rclk) begin
-        if      (axi_rst)     status_selected_ren <= 1'b0;
-        else if (axird_ren)   status_selected_ren <= status_selected;
-        
-        if      (axi_rst)     status_selected_regen <= 1'b0;
-        else if (axird_regen) status_selected_regen <= status_selected_ren;
-
-        if      (axi_rst)     mcntrl_axird_selected_ren <= 1'b0;
-        else if (axird_ren)   mcntrl_axird_selected_ren <=  mcntrl_axird_selected;
-        
-        if      (axi_rst)     mcntrl_axird_selected_regen <= 1'b0;
-        else if (axird_regen) mcntrl_axird_selected_regen <= mcntrl_axird_selected_ren;
-    end
-
-
-
-    always @(posedge comb_rst or posedge axi_aclk) begin
-        if (comb_rst) axi_rst_pre <= 1'b1;
-        else          axi_rst_pre <= 1'b0;
-    end
-     
-//BUFG bufg_axi_rst_i   (.O(axi_rst),.I(axi_rst_pre));
-//BUFG bufg_axi_aclk_i  (.O(axi_aclk),.I(fclk[0]));
-   
-
-`ifdef DEBUG_FIFO
-        wire    waddr_under, wdata_under, wresp_under; 
-        wire    waddr_over, wdata_over, wresp_over;
-        reg     waddr_under_r, wdata_under_r, wresp_under_r;
-        reg     waddr_over_r, wdata_over_r, wresp_over_r;
-        wire    fifo_rst= frst[2];
-        wire [3:0]   waddr_wcount; 
-        wire [3:0]   waddr_rcount; 
-        wire [3:0]   waddr_num_in_fifo; 
-        
-        wire [3:0]   wdata_wcount; 
-        wire [3:0]   wdata_rcount; 
-        wire [3:0]   wdata_num_in_fifo; 
-        
-        wire [3:0]   wresp_wcount; 
-        wire [3:0]   wresp_rcount; 
-        wire [3:0]   wresp_num_in_fifo; 
-        wire [3:0]   wleft;
-        wire [3:0]   wlength; // output[3:0] 
-        wire [3:0]   wlen_in_dbg; // output[3:0] reg 
-        
-           
-    always @(posedge fifo_rst or posedge axi_aclk) begin
-     if (fifo_rst) {waddr_under_r, wdata_under_r, wresp_under_r,waddr_over_r, wdata_over_r, wresp_over_r} <= 0;
-     else {waddr_under_r, wdata_under_r, wresp_under_r, waddr_over_r, wdata_over_r, wresp_over_r} <=
-          {waddr_under_r, wdata_under_r, wresp_under_r, waddr_over_r, wdata_over_r, wresp_over_r} | 
-          {waddr_under,   wdata_under,   wresp_under,   waddr_over,   wdata_over,   wresp_over};
-    end         
-`endif
-
-//TODO: The following is the interface to the frame-based command sequencer (not yet implemnted)        
+   //TODO: The following is the interface to the frame-based command sequencer (not yet implemnted)        
     wire [AXI_WR_ADDR_BITS-1:0] cseq_waddr;   /// S uppressThisWarning VEditor ******  command sequencer write address (output to command multiplexer)
     wire                        cseq_wr_en;   /// S uppressThisWarning VEditor ****** command sequencer write enable (output to command multiplexer) - keep until cseq_ackn received
     wire                 [31:0] cseq_wdata;   /// S uppressThisWarning VEditor ****** command sequencer write data (output to command multiplexer) 
@@ -286,22 +215,114 @@ module  x393 #(
     wire                        frame_done_chn4; // output
     wire[FRAME_HEIGHT_BITS-1:0] line_unfinished_chn4; // output[15:0]
     wire                        suspend_chn4; // input
+   
+    reg                         axi_rst_pre=1'b1;
+    wire                        comb_rst; //=~frst[0] | frst[1];
+   //MEMCLK
+    wire                 [63:0] gpio_in;
+    
+    
+    
+    assign gpio_in= {52'h0,tmp_debug};
+   
+   
+   
+   
+   assign axird_dev_ready = ~axird_dev_busy; //may combine (AND) multiple sources if needed
+   assign axird_dev_busy = 1'b0; // always for now
+// Use this later    
+   assign axird_rdata= ({32{status_selected_regen}} & status_rdata[31:0]) | ({32{mcntrl_axird_selected_regen}} & mcntrl_axird_rdata[31:0]);
+   
+//Debug with this (to show 'x)   
+//   assign axird_rdata= status_selected_regen?status_rdata[31:0] : (mcntrl_axird_selected_regen? mcntrl_axird_rdata[31:0]:'bx);
 
-    assign cmd_mcontr_ad= cmd_root_ad;
-    assign cmd_mcontr_stb=cmd_root_stb;
-    assign cmd_test01_ad= cmd_root_ad;
-    assign cmd_test01_stb=cmd_root_stb;
+// temporary for Vivado debugging
+//   assign axird_rdata= status_rdata[31:0] |  mcntrl_axird_rdata[31:0];
+
+   
+   assign axiwr_dev_ready = ~axiwr_dev_busy; //may combine (AND) multiple sources if needed
+
+// Clock and reset from PS
+   assign comb_rst=~frst[0] | frst[1];
+
+   assign cmd_mcontr_ad= cmd_root_ad;
+   assign cmd_mcontr_stb=cmd_root_stb;
+   assign cmd_test01_ad= cmd_root_ad;
+   assign cmd_test01_stb=cmd_root_stb;
 
 // For now - connect status_test01 to status_other, if needed - increase number of multiplexer inputs)
-    assign status_other_ad = status_test01_ad;
-    assign status_other_rq = status_test01_rq;
-    assign status_test01_start = status_other_start;
+   assign status_other_ad = status_test01_ad;
+   assign status_other_rq = status_test01_rq;
+   assign status_test01_start = status_other_start;
 
 // missing command sequencer:
-        assign cseq_waddr='bx;  // command sequencer write address (output to command multiplexer)
-        assign cseq_wr_en= 0;   // command sequencer write enable (output to command multiplexer) - keep until cseq_ackn received
-        assign cseq_wdata='bx;  // command sequencer write data (output to command multiplexer) 
+   assign cseq_waddr='bx;  // command sequencer write address (output to command multiplexer)
+   assign cseq_wr_en= 0;   // command sequencer write enable (output to command multiplexer) - keep until cseq_ackn received
+   assign cseq_wdata='bx;  // command sequencer write data (output to command multiplexer) 
 
+
+
+
+// delay status_selected and mcntrl_axird_selected to match data for multiplexing
+
+    always @(posedge axi_rst or posedge axird_bram_rclk) begin // axird_bram_rclk==axi_aclk
+//    always @(posedge axi_rst or posedge axi_aclk) begin
+        if      (axi_rst)     status_selected_ren <= 1'b0;
+        else if (axird_ren)   status_selected_ren <= status_selected;
+        
+        if      (axi_rst)     status_selected_regen <= 1'b0;
+        else if (axird_regen) status_selected_regen <= status_selected_ren;
+
+        if      (axi_rst)     mcntrl_axird_selected_ren <= 1'b0;
+        else if (axird_ren)   mcntrl_axird_selected_ren <=  mcntrl_axird_selected;
+        
+        if      (axi_rst)     mcntrl_axird_selected_regen <= 1'b0;
+        else if (axird_regen) mcntrl_axird_selected_regen <= mcntrl_axird_selected_ren;
+    end
+
+
+
+    always @(posedge comb_rst or posedge axi_aclk) begin
+        if (comb_rst) axi_rst_pre <= 1'b1;
+        else          axi_rst_pre <= 1'b0;
+    end
+     
+//BUFG bufg_axi_rst_i   (.O(axi_rst),.I(axi_rst_pre));
+//BUFG bufg_axi_aclk_i  (.O(axi_aclk),.I(fclk[0]));
+   
+
+`ifdef DEBUG_FIFO
+        wire    waddr_under, wdata_under, wresp_under; 
+        wire    waddr_over, wdata_over, wresp_over;
+        reg     waddr_under_r, wdata_under_r, wresp_under_r;
+        reg     waddr_over_r, wdata_over_r, wresp_over_r;
+        wire    fifo_rst= frst[2];
+        wire [3:0]   waddr_wcount; 
+        wire [3:0]   waddr_rcount; 
+        wire [3:0]   waddr_num_in_fifo; 
+        
+        wire [3:0]   wdata_wcount; 
+        wire [3:0]   wdata_rcount; 
+        wire [3:0]   wdata_num_in_fifo; 
+        
+        wire [3:0]   wresp_wcount; 
+        wire [3:0]   wresp_rcount; 
+        wire [3:0]   wresp_num_in_fifo; 
+        wire [3:0]   wleft;
+        wire [3:0]   wlength; // output[3:0] 
+        wire [3:0]   wlen_in_dbg; // output[3:0] reg 
+        
+           
+    always @(posedge fifo_rst or posedge axi_aclk) begin
+     if (fifo_rst) {waddr_under_r, wdata_under_r, wresp_under_r,waddr_over_r, wdata_over_r, wresp_over_r} <= 0;
+     else {waddr_under_r, wdata_under_r, wresp_under_r, waddr_over_r, wdata_over_r, wresp_over_r} <=
+          {waddr_under_r, wdata_under_r, wresp_under_r, waddr_over_r, wdata_over_r, wresp_over_r} | 
+          {waddr_under,   wdata_under,   wresp_under,   waddr_over,   wdata_over,   wresp_over};
+    end         
+`endif
+
+BUFG bufg_axi_rst_i   (.O(axi_rst),.I(axi_rst_pre));
+BUFG bufg_axi_aclk_i  (.O(axi_aclk),.I(fclk[0]));
 
 // channel test module
     mcntrl393_test01 #(
@@ -378,24 +399,24 @@ module  x393 #(
         .NUM_CYCLES_13     (NUM_CYCLES_13),
         .NUM_CYCLES_14     (NUM_CYCLES_14),
         .NUM_CYCLES_15     (NUM_CYCLES_15)
-    ) cmd_mux_i (
+    ) cmd_mux_i ( // SuppressThisWarning ISExst: Output port <par_data>,<par_waddr>, <cseq_ackn> of the instance <cmd_mux_i> is unconnected or connected to loadless signal.
         .axi_clk      (axiwr_wclk), // input
         .mclk         (mclk), // input
         .rst          (axi_rst), // input
-        .pre_waddr    (axiwr_pre_awaddr[AXI_WR_ADDR_BITS-1:0]), // input[12:0] 
+        .pre_waddr    (axiwr_pre_awaddr[AXI_WR_ADDR_BITS-1:0]), // input[12:0] // SuppressThisWarning VivadoSynthesis: [Synth 8-3295] tying undriven pin #cmd_mux_i:pre_waddr[9:0] to constant 0
         .start_wburst (axiwr_start_burst), // input
         .waddr        (axiwr_waddr[AXI_WR_ADDR_BITS-1:0]), // input[12:0] 
         .wr_en        (axiwr_wen), // input
         .wdata        (axiwr_wdata[31:0]), // input[31:0] 
         .busy         (axiwr_dev_busy), // output // assign axiwr_dev_ready = ~axiwr_dev_busy; //may combine (AND) multiple sources if needed
 //TODO: The following is the interface to the command sequencer (not yet implemnted)        
-        .cseq_waddr   (cseq_waddr), // input[12:0] 
-        .cseq_wr_en   (cseq_wr_en), // input
-        .cseq_wdata   (cseq_wdata), // input[31:0] 
-        .cseq_ackn    (cseq_ackn), // output
+        .cseq_waddr   (cseq_waddr), // input[12:0] // SuppressThisWarning VivadoSynthesis: [Synth 8-3295] tying undriven pin #cmd_mux_i:cseq_waddr[13:0] to constant 0 (command sequencer not yet implemented)
+        .cseq_wr_en   (cseq_wr_en), // input // SuppressThisWarning VivadoSynthesis: [Synth 8-3295] tying undriven pin #cmd_mux_i:cseq_wr_en to constant 0 (command sequencer not yet implemented)
+        .cseq_wdata   (cseq_wdata), // input[31:0] // SuppressThisWarning VivadoSynthesis: [Synth 8-3295] tying undriven pin #cmd_mux_i:cseq_wdata[31:0] to constant 0 (command sequencer not yet implemented)
+        .cseq_ackn    (cseq_ackn), // output // SuppressThisWarning ISExst: Assignment to cseq_ackn ignored, since the identifier is never used (command sequencer not yet implemented)
 // parallel address/data - where higher bandwidth (single-cycle) is needed        
-        .par_waddr    (par_waddr), // output[12:0] 
-        .par_data     (par_data), // output[31:0]
+        .par_waddr    (par_waddr), // output[12:0] // SuppressThisWarning ISExst: Assignment to par_waddr ignored, since the identifier is never used (not yet used)
+        .par_data     (par_data), // output[31:0] // SuppressThisWarning ISExst: Assignment to par_data ignored, since the identifier is never used (not yet used)
         // registers may be inserted before byte_ad and ad_stb  
         .byte_ad      (cmd_root_ad), // output[7:0] 
         .ad_stb       (cmd_root_stb) // output
@@ -410,7 +431,7 @@ module  x393 #(
         .rst              (axi_rst), // input
         .clk              (mclk), // input
         .axi_clk          (axird_bram_rclk), // input == axi_aclk
-        .axird_pre_araddr (axird_pre_araddr), // input[7:0] 
+        .axird_pre_araddr (axird_pre_araddr), // input[7:0] // SuppressThisWarning VivadoSynthesis: [Synth 8-3295] tying undriven pin #status_read_i:axird_pre_araddr[9:0] to constant 0
         .axird_start_burst(axird_start_burst), // input
         .axird_raddr      (axird_raddr[STATUS_DEPTH-1:0]), // input[7:0] 
         .axird_ren        (axird_ren), // input
@@ -568,7 +589,7 @@ module  x393 #(
         .BUFFER_DEPTH32                    (BUFFER_DEPTH32)
     ) mcntrl393_i (
         .rst_in               (axi_rst), // input
-        .clk_in               (axi_aclk), // input
+        .clk_in               (axi_aclk), // == axird_bram_rclk SuppressThisWarning VivadoSynthesis: [Synth 8-3295] tying undriven pin #mcntrl393_i:clk_in to constant 0
         .mclk                 (mclk), // output
         .cmd_ad               (cmd_mcontr_ad), // input[7:0] 
         .cmd_stb              (cmd_mcontr_stb), // input
@@ -576,14 +597,14 @@ module  x393 #(
         .status_rq            (status_mcontr_rq),   // input request to send status downstream
         .status_start         (status_mcontr_start), // Acknowledge of the first status packet byte (address)
         
-        .axi_clk              (axird_bram_rclk), // axi_aclk), // input - same?
-        .axiwr_pre_awaddr     (axiwr_pre_awaddr), // input[12:0] 
+        .axi_clk              (axird_bram_rclk), // ==axi_aclk, // input - same?
+        .axiwr_pre_awaddr     (axiwr_pre_awaddr), // input[12:0] // SuppressThisWarning VivadoSynthesis: [Synth 8-3295] tying undriven pin #mcntrl393_i:axiwr_pre_awaddr[9:0] to constant 0
         .axiwr_start_burst    (axiwr_start_burst), // input
         .axiwr_waddr          (axiwr_waddr[BUFFER_DEPTH32-1:0]), // input[9:0] 
         .axiwr_wen            (axiwr_wen), // input
         .axiwr_data           (axiwr_wdata), // input[31:0] 
         
-        .axird_pre_araddr     (axird_pre_araddr), // input[12:0] 
+        .axird_pre_araddr     (axird_pre_araddr), // input[12:0] // SuppressThisWarning VivadoSynthesis: [Synth 8-3295] tying undriven pin #mcntrl393_i:axird_pre_araddr[9:0] to constant 0 (seems to be unused, not undriven) 
         .axird_start_burst    (axird_start_burst), // input
         .axird_raddr          (axird_raddr[BUFFER_DEPTH32-1:0]), // input[9:0] 
         .axird_ren            (axird_ren), // input
@@ -636,9 +657,6 @@ module  x393 #(
         .tmp_debug            (tmp_debug) // output[11:0] 
     );
 
-//MEMCLK
-wire [63:0] gpio_in;
-assign gpio_in= {52'h0,tmp_debug};
 /*
 {
 frst[3]?{
@@ -727,10 +745,10 @@ frst[3]?{
     ) axibram_write_i (  //SuppressThisWarning ISExst Output port <bram_wstb> of the instance <axibram_write_i> is unconnected or connected to loadless signal.
         .aclk        (axi_aclk), // input
         .rst         (axi_rst), // input
-        .awaddr      (axi_awaddr[31:0]), // input[31:0] 
+        .awaddr      (axi_awaddr[31:0]), // input[31:0] // SuppressThisWarning VivadoSynthesis: [Synth 8-3295] tying undriven pin #axibram_write_i:awaddr[31:16,1:0] to constant 0
         .awvalid     (axi_awvalid), // input
         .awready     (axi_awready), // output
-        .awid        (axi_awid[11:0]), // input[11:0] 
+        .awid        (axi_awid[11:0]), // input[11:0] // SuppressThisWarning VivadoSynthesis: [Synth 8-3295] tying undriven pin #axibram_write_i:awid[11:2] to constant 0
         .awlen       (axi_awlen[3:0]), // input[3:0] 
         .awsize      (axi_awsize[1:0]), // input[1:0] 
         .awburst     (axi_awburst[1:0]), // input[1:0] 
@@ -776,13 +794,12 @@ frst[3]?{
 `endif         
     );
 
-    /* Instance template for module axibram_read */
     axibram_read #(
         .ADDRESS_BITS(AXI_RD_ADDR_BITS)
     ) axibram_read_i ( //SuppressThisWarning ISExst Output port <bram_rclk> of the instance <axibram_read_i> is unconnected or connected to loadless signal.
         .aclk        (axi_aclk), // input
         .rst         (axi_rst), // input
-        .araddr      (axi_araddr[31:0]), // input[31:0] 
+        .araddr      (axi_araddr[31:0]), // input[31:0] // SuppressThisWarning VivadoSynthesis: [Synth 8-3295] tying undriven pin #axibram_read_i:araddr[31:16,1:0] to constant 0
         .arvalid     (axi_arvalid), // input
         .arready     (axi_arready), // output
         .arid        (axi_arid[11:0]), // input[11:0] 
@@ -797,15 +814,14 @@ frst[3]?{
         .rresp       (axi_rresp[1:0]), // output[1:0] 
         .pre_araddr  (axird_pre_araddr[AXI_RD_ADDR_BITS-1:0]), // output[9:0] 
         .start_burst (axird_start_burst), // output
-        .dev_ready   (axird_dev_ready), // input
-        .bram_rclk   (axird_bram_rclk), // output //S uppressThisWarning ISExst Assignment to axird_bram_rclk ignored, since the identifier is never used
+        .dev_ready   (axird_dev_ready), // input  SuppressThisWarning VivadoSynthesis: [Synth 8-3295] tying undriven pin #axibram_read_i:dev_ready to constant 0
+        .bram_rclk   (axird_bram_rclk), // output //SuppressThisWarning ISExst Assignment to axird_bram_rclk ignored, since the identifier is never used
         .bram_raddr  (axird_raddr[AXI_RD_ADDR_BITS-1:0]), // output[9:0] 
         .bram_ren    (axird_ren), // output
         .bram_regen  (axird_regen), // output
-        .bram_rdata  (axird_rdata) // input[31:0] 
+        .bram_rdata  (axird_rdata ) // input[31:0] == axi_rdata[31:0], so SuppressThisWarning VivadoSynthesis: [Synth 8-3295] tying undriven pin #axibram_read_i:bram_rdata[31:0] to constant 0
     );
-
-assign DUMMY_TO_KEEP = 1'b0; // dbg_toggle[0];
+assign DUMMY_TO_KEEP = frst[2] && MEMCLK; // 1'b0; // dbg_toggle[0];
 
   PS7 ps7_i (
  // EMIO interface
@@ -1549,6 +1565,4 @@ assign DUMMY_TO_KEEP = 1'b0; // dbg_toggle[0];
     .PSPORB(),                   // PS PSPORB, inout
     .PSSRSTB()                  // PS PSSRSTB, inout
   );
-BUFG bufg_axi_rst_i   (.O(axi_rst),.I(axi_rst_pre));
-BUFG bufg_axi_aclk_i  (.O(axi_aclk),.I(fclk[0]));
 endmodule
