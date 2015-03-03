@@ -20,7 +20,7 @@
  *******************************************************************************/
 `timescale 1ns/1ps
 `include "system_defines.vh" 
-`define use200Mhz 1
+//`define use200Mhz 1
 //`define DEBUG_FIFO 1 
 module  memctrl16 #(
 //command interface parameters

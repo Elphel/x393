@@ -19,7 +19,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/> .
  *******************************************************************************/
 `timescale 1ns/1ps
-`define use200Mhz 1
+//`define use200Mhz 1
 //`define DEBUG_FIFO 1
 `undef WAIT_MRS
 `define SET_PER_PIN_DEALYS 1 // set individual (including per-DQ pin delays)

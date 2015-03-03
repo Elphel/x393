@@ -19,7 +19,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/> .
  *******************************************************************************/
 `timescale 1ns/1ps
-`define use200Mhz 1
+//`define use200Mhz 1
 //`define DEBUG_FIFO 1
 `include "system_defines.vh" 
 module  x393 #(
