@@ -30,6 +30,18 @@ __status__ = "Development"
 import re
 import os
 import string
+class VerilogParameters(object): #this is Borg
+    __shared_state = {}
+    def __init__(self, parameters=None):
+        self.__dict__ = self.__shared_state
+        if (parameters):
+            adict={}
+            for parName in parameters:
+                adict[parName]=         parameters[parName][0]
+                adict[parName+"__TYPE"]=parameters[parName][1]
+                adict[parName+"__RAW"]= parameters[parName][2]
+            self.__dict__.update(adict)
+
 class ImportVerilogParameters(object):
     '''
     classdocs
@@ -38,6 +50,7 @@ class ImportVerilogParameters(object):
     parameters={}
     conditions=[True]
     rootPath=None
+    verbose=1
     '''
     parameters - dictionalry of already known parameters, defines - defined macros
     '''
@@ -47,6 +60,7 @@ class ImportVerilogParameters(object):
         '''
         if parameters:
             self.parameters=parameters.copy()
+            self.parseRawParameters()
         if defines:
             self.defines=defines.copy()
         if rootPath:    
@@ -249,7 +263,8 @@ class ImportVerilogParameters(object):
     Adds parsed parameters to the dictionary
     '''
     def readParameterPortList(self,path,portMode=True):
-        print ("readParameterPortList:Processing %s"%(path))
+        if (self.verbose>2):
+             print ("readParameterPortList:Processing %s"%(path))
         with open (path, "r") as myfile: #with will close file when done
             text=myfile.read()
 # remove /* */ comments            
@@ -339,13 +354,14 @@ class ImportVerilogParameters(object):
         for line in preprocessedLines:
             if line[-1] == ";":
                 portMode=False
-        print ("portMode is "+str(portMode))
+        if (self.verbose>2):
+             print ("portMode is "+str(portMode))
         try:
             if portMode and (preprocessedLines[0][0]==","):
                 preprocessedLines.insert(0,preprocessedLines.pop(0)[1:])
         except:
-            pass
-            print("No preprocessed lines left")
+            if (self.verbose>2):
+                print("No preprocessed lines left")
         while preprocessedLines:
 #            print("A: len(preprocessedLines)=%d, first is %s"%(len(preprocessedLines),preprocessedLines[0]))
             line= preprocessedLines.pop(0)
@@ -480,18 +496,30 @@ class ImportVerilogParameters(object):
                     # process expression here, for now - just use expression string
                     ev= self.parseExpression(expLine)
                     if ev is None:
-                        self.parameters[parName]= (expLine,parType)
+                        self.parameters[parName]= (expLine,parType,expLine)
                     else:
                         if not parType:
                             parType=ev[1]
 #                        self.parameters[parName]= (ev[0],parType)
-                        self.parameters[parName]= (ev[0],parType+" raw="+expLine)
+                        self.parameters[parName]= (ev[0],parType,expLine)
 #                    if portMode: # while True:
                     if portMode or (termChar == ";"): # while True:
                         break;
 #        print ("======= Parameters =======")
 #        for par in self.parameters:
-#            print (par+": "+self.parameters[par])        
+#            print (par+": "+self.parameters[par])  
+    def parseRawParameters(self):
+        for parName in self.parameters:
+            valTyp= self.parameters[parName]
+            if (not valTyp[1]) or (valTyp[1]=="RAW"):
+               ev= self.parseExpression(valTyp[0])
+#               print ("valTyp="+str(valTyp))
+#               print ("ev="+str(ev))
+               if ev:
+                   self.parameters[parName]= (ev[0],ev[1],valTyp[0])
+                   if parName == "VERBOSE":
+                       self.verbose=ev[0]
+                         
     '''
     get parameter dictionary
     '''

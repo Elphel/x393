@@ -38,6 +38,7 @@ from argparse import ArgumentParser
 from argparse import RawDescriptionHelpFormatter
 
 from import_verilog_parameters import ImportVerilogParameters
+from import_verilog_parameters import VerilogParameters
 __all__ = []
 __version__ = 0.1
 __date__ = '2015-03-01'
@@ -89,41 +90,36 @@ def main(argv=None): # IGNORE:C0111
 
 USAGE
 ''' % (program_shortdesc, __author__,str(__date__))
-
-#    parser = argparse.ArgumentParser()
-#    parser = ArgumentParser()
-    '''
-    parser = ArgumentParser(description=program_license, formatter_class=RawDescriptionHelpFormatter)
-    parser.add_argument("-v", "--verbose", dest="verbose", action="count", help="set verbosity level [default: %(default)s]")
-    parser.add_argument('-V', '--version', action='version', version=program_version_message)
-    parser.add_argument(dest="paths", help="Verilog include files with parameter definitions [default: %(default)s]", metavar="path", nargs='+')
-
-    args = parser.parse_args()
-#print argv
-    print args
-    print ("***1.25")
-    return
-    '''
-    ivp= ImportVerilogParameters (None,None)   
+    preDefines={}
+    preParameters={}
     try:
         # Setup argument parser
         parser = ArgumentParser(description=program_license, formatter_class=RawDescriptionHelpFormatter)
         parser.add_argument("-v", "--verbose", dest="verbose", action="count", help="set verbosity level [default: %(default)s]")
         parser.add_argument('-V', '--version', action='version', version=program_version_message)
-        parser.add_argument(dest="paths", help="Verilog include files with parameter definitions [default: %(default)s]", metavar="path", nargs='+')
+        parser.add_argument(                   dest="paths", help="Verilog include files with parameter definitions [default: %(default)s]", metavar="path", nargs='*')
+        parser.add_argument("-d", "--define",  dest="defines", action="append", help="Define macro(s)" )
+        parser.add_argument("-p", "--parameter",  dest="parameters", action="append", help="Define parameter(s) as name=value" )
+        
         # Process arguments
         args = parser.parse_args()
         paths = args.paths
         verbose = args.verbose
+        if args.defines:
+            for predef in args.defines:
+                kv=predef.split("=")
+                if len(kv)<2:
+                    kv.append("")
+                preDefines[kv[0].strip("`")]=kv[1]    
         if verbose > 0:
-            print("Verbose mode on")
-#        if inpat and expat and inpat == expat:
-#            raise CLIError("include and exclude pattern are equal! Nothing will be processed.")
-
-#        for path in paths:
-#            ### do something with inpath ###
-#            ivp.readParameterPortList(path)
-#        return 0
+#            print("Verbose mode on "+hex(verbose))
+            args.parameters.append('VERBOSE=%d'%verbose) # add as verilog parameter
+        if args.parameters:
+            for prePars in args.parameters:
+                kv=prePars.split("=")
+                if len(kv)>1:
+                    preParameters[kv[0]]=(kv[1],"RAW",kv[1]) # todo - need to go through the parser
+                    
     except KeyboardInterrupt:
         ### handle keyboard interrupt ###
         return 0
@@ -134,23 +130,34 @@ USAGE
         sys.stderr.write(program_name + ": " + repr(e) + "\n")
         sys.stderr.write(indent + "  for help use --help")
         return 2
-# Take out from the try/except for debugging    
+# Take out from the try/except for debugging
+    ivp= ImportVerilogParameters(preParameters,preDefines)   
     for path in paths:
         ### do something with inpath ###
         ivp.readParameterPortList(path)
-
-    defines= ivp.getDefines()
-    print ("======= Extracted defines =======")
-    for macro in defines:
-        print ("`"+macro+": "+defines[macro])        
-
     parameters=ivp.getParameters()
-    print ("======= Parameters =======")
-    for par in parameters:
-        try:
-            print (par+" = "+hex(parameters[par][0])+" (type = "+parameters[par][1]+")")        
-        except:
-            print (par+" = "+str(parameters[par][0])+" (type = "+parameters[par][1]+")")        
+    vpars=VerilogParameters(parameters)
+    if verbose > 3:
+        defines= ivp.getDefines()
+        print ("======= Extracted defines =======")
+        for macro in defines:
+            print ("`"+macro+": "+defines[macro])        
+        print ("======= Parameters =======")
+        for par in parameters:
+            try:
+                print (par+" = "+hex(parameters[par][0])+" (type = "+parameters[par][1]+" raw = "+parameters[par][2]+")")        
+            except:
+                print (par+" = "+str(parameters[par][0])+" (type = "+parameters[par][1]+" raw = "+parameters[par][2]+")")
+        print("vpars.VERBOSE="+str(vpars.VERBOSE))
+        print("vpars.VERBOSE__TYPE="+str(vpars.VERBOSE__TYPE))
+        print("vpars.VERBOSE__RAW="+str(vpars.VERBOSE__RAW))
+    
+    print (VerilogParameters.__dict__)
+    vpars1=VerilogParameters()
+    print("vpars1.VERBOSE="+str(vpars1.VERBOSE))
+    print("vpars1.VERBOSE__TYPE="+str(vpars1.VERBOSE__TYPE))
+    print("vpars1.VERBOSE__RAW="+str(vpars1.VERBOSE__RAW))
+    
        
     return 0
 
@@ -158,7 +165,6 @@ if __name__ == "__main__":
     if DEBUG:
 #        sys.argv.append("-h")
         sys.argv.append("-v")
-#        sys.argv.append("-r")
     if TESTRUN:
         import doctest
         doctest.testmod()

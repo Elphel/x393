@@ -35,7 +35,7 @@
         input                      buf_rst;    // connect to external buffer (but only if not paused)
         begin
             func_encode_skip= func_encode_cmd (
-                {{14-CMD_DONE_BIT{1'b0}}, done, skip[CMD_PAUSE_BITS-1:0]},       // 15-bit row/column adderss
+                {{14-CMD_DONE_BIT{1'b0}}, done, skip[CMD_PAUSE_BITS-1:0]},       // 15-bit row/column address
                 bank[2:0],  // bank (here OK to be any)
                 3'b0,       // RAS/CAS/WE, positive logic
                 odt_en,     // enable ODT

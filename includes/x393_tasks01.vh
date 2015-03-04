@@ -21,7 +21,7 @@
  // Low-level tasks 
 // alternative way to check for empty read queue (without a separate counter)
 
-     task   write_contol_register;
+    task   write_contol_register;
         input [29:0] reg_addr;
 //        input integer reg_addr;
         input [31:0] data;
