@@ -42,8 +42,9 @@ from argparse import RawDescriptionHelpFormatter
 
 from import_verilog_parameters import ImportVerilogParameters
 from import_verilog_parameters import VerilogParameters
-import x393_axi_control_status
 import x393_mem
+import x393_axi_control_status
+import x393_pio_sequences
 __all__ = []
 __version__ = 0.1
 __date__ = '2015-03-01'
@@ -222,8 +223,9 @@ USAGE
     if verbose > 3: print("vpars1.VERBOSE__TYPE="+str(vpars1.VERBOSE__TYPE))
     if verbose > 3: print("vpars1.VERBOSE__RAW="+str(vpars1.VERBOSE__RAW))
     
-    x393mem= x393_mem.X393Mem(verbose,True)
+    x393mem= x393_mem.X393Mem(verbose,True) #add dry run parameter
     x393tasks=x393_axi_control_status.X393AxiControlStatus(verbose,True)
+    x393Pio= x393_pio_sequences.X393PIOSequences(verbose,True)
     '''
     print ("----------------------")
     print("x393_mem.__dict__="+str(x393_mem.__dict__))
@@ -240,6 +242,8 @@ USAGE
                 print (name+": "+str(func_args))
     extractTasks(x393_mem.X393Mem,x393mem)
     extractTasks(x393_axi_control_status.X393AxiControlStatus,x393tasks)
+    extractTasks(x393_pio_sequences.X393PIOSequences,x393Pio)
+
     if verbose > 3:     
         funcName="read_mem"
         funcArgs=[0x377,123]
