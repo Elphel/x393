@@ -1,3 +1,4 @@
+from __future__ import print_function
 '''
 # Copyright (C) 2015, Elphel.inc.
 # Memory read/write functions 
@@ -27,7 +28,6 @@ __version__ = "3.0+"
 __maintainer__ = "Andrey Filippov"
 __email__ = "andrey@elphel.com"
 __status__ = "Development"
-from __future__ import print_function
 import mmap
 #import sys
 import struct
@@ -36,13 +36,13 @@ class X393Mem(object):
     '''
     classdocs
     '''
-    DRY_MODE= False # True
+    DRY_MODE= True # True
     PAGE_SIZE=4096
     DEBUG_MODE=1
     ENDIAN="<" # little, ">" for big
     AXI_SLAVE0_BASE=0x40000000
 
-    def __init__(self, debug_mode=1,dry_mode=False):
+    def __init__(self, debug_mode=1,dry_mode=True):
         self.DEBUG_MODE=debug_mode
         self.DRY_MODE=dry_mode
         
