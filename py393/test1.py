@@ -45,6 +45,7 @@ from import_verilog_parameters import VerilogParameters
 import x393_mem
 import x393_axi_control_status
 import x393_pio_sequences
+import x393_mcntrl_timing
 __all__ = []
 __version__ = 0.1
 __date__ = '2015-03-01'
@@ -90,7 +91,8 @@ def execTask(commandLine):
             funcArgs[i]=eval(arg) # Try parsing parameters as numbers, if possible
         except:
             pass
-#    result = callableTasks[funcName]['func'](callableTasks[funcName]['inst'],*funcArgs)
+    result = callableTasks[funcName]['func'](callableTasks[funcName]['inst'],*funcArgs)
+    '''
     try:
         result = callableTasks[funcName]['func'](callableTasks[funcName]['inst'],*funcArgs)
     except Exception as e:
@@ -107,6 +109,7 @@ def execTask(commandLine):
             sFuncArgs+=' <'+str(a)+'>'
         print ("Usage:\n%s %s"%(funcName,sFuncArgs))
         print ("exception message:"+str(e))
+    '''
     return result
 def hx(obj):
     try:
@@ -223,9 +226,10 @@ USAGE
     if verbose > 3: print("vpars1.VERBOSE__TYPE="+str(vpars1.VERBOSE__TYPE))
     if verbose > 3: print("vpars1.VERBOSE__RAW="+str(vpars1.VERBOSE__RAW))
     
-    x393mem= x393_mem.X393Mem(verbose,True) #add dry run parameter
-    x393tasks=x393_axi_control_status.X393AxiControlStatus(verbose,True)
-    x393Pio= x393_pio_sequences.X393PIOSequences(verbose,True)
+    x393mem=    x393_mem.X393Mem(verbose,True) #add dry run parameter
+    x393tasks=  x393_axi_control_status.X393AxiControlStatus(verbose,True)
+    x393Pio=    x393_pio_sequences.X393PIOSequences(verbose,True)
+    x393Timing= x393_mcntrl_timing.X393McntrlTiming(verbose,True)
     '''
     print ("----------------------")
     print("x393_mem.__dict__="+str(x393_mem.__dict__))
@@ -243,12 +247,13 @@ USAGE
     extractTasks(x393_mem.X393Mem,x393mem)
     extractTasks(x393_axi_control_status.X393AxiControlStatus,x393tasks)
     extractTasks(x393_pio_sequences.X393PIOSequences,x393Pio)
+    extractTasks(x393_mcntrl_timing.X393McntrlTiming,x393Timing)
 
     if verbose > 3:     
         funcName="read_mem"
         funcArgs=[0x377,123]
         print ('==== testing function : '+funcName+str(funcArgs)+' ====')
-#execTask(commandLine)    
+#        execTask(commandLine) 
         try:
             callableTasks[funcName]['func'](callableTasks[funcName]['inst'],*funcArgs)
         except Exception as e:
@@ -291,16 +296,27 @@ USAGE
                 print ('\n"parameters" and "defines" list known defined parameters and macros')
             elif line == 'parameters':
                 parameters=ivp.getParameters()
+                for par,val in sorted(parameters.items()):
+                    try:
+                        print (par+" = "+hex(val[0])+" (type = "+val[1]+" raw = "+val[2]+")")        
+                    except:
+                        print (par+" = "+str(val[0])+" (type = "+val[1]+" raw = "+val[2]+")")
+                
+                '''
                 for par in parameters:
                     try:
                         print (par+" = "+hex(parameters[par][0])+" (type = "+parameters[par][1]+" raw = "+parameters[par][2]+")")        
                     except:
                         print (par+" = "+str(parameters[par][0])+" (type = "+parameters[par][1]+" raw = "+parameters[par][2]+")")
+                '''        
 
             elif (line == 'defines') or (line == 'macros'):
                 defines= ivp.getDefines()
-                for macro in defines:
-                    print ("`"+macro+": "+defines[macro])        
+                for macro,val in sorted(parameters.items()):
+                    print ("`"+macro+": "+val)        
+
+#                for macro in defines:
+#                    print ("`"+macro+": "+defines[macro])        
             else:
                 cmdLine=line.split()
                 rslt= execTask(cmdLine)

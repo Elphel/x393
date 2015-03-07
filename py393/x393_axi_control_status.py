@@ -32,36 +32,8 @@ __status__ = "Development"
 #import x393_mem
 from import_verilog_parameters import VerilogParameters
 from x393_mem import X393Mem
-#MCNTRL_TEST01_CHN4_STATUS_CNTRL=0
-def hx(obj):
-    try:
-        return "0x%x"%obj
-    except:
-        return str(obj)
-'''
-Simulate Verilog concatenation. Input list tuple of items, each being a pair of (value, width)
-'''    
-def concat(items):
-    val=0
-    width=0
-    for vw in reversed(items):
-        v=vw[0]
-        if vw[1]==1:
-            v=(0,1)[v] # So True/False will also work, not juet o/1
-        val |= (v & ((1 << vw[1])-1))<<width
-        width += vw[1]
-    return (val,width)
-
-def bits(val,field):
-    try:
-        high=field[0]
-        low=field[1]
-        if low > high:
-            low,high=high,low
-    except:
-        low=field+0 # will be error if not a number
-        high=low
-    return (val >> low) & ((1 << (high-low+1))-1)    
+#from verilog_utils import hx,concat, bits 
+from verilog_utils import hx 
         
 class X393AxiControlStatus(object):
     DRY_MODE= True # True

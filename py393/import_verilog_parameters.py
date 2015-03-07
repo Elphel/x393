@@ -30,6 +30,7 @@ __status__ = "Development"
 import re
 import os
 import string
+from verilog_utils import getParWidth 
 class VerilogParameters(object): #this is Borg
     __shared_state = {}
     def __init__(self, parameters=None):
@@ -94,17 +95,32 @@ class ImportVerilogParameters(object):
                 return c
             except:
                 return None
-                
-            
-        def parseString():
-            if line[0]!="\"":
+        def skipWS(start=0):
+            cp[0]=start
+            while (cp[0]<len(line)) and (line[cp[0]] in string.whitespace):
+                cp[0]+=1
+            return cp[0]    
+                    
+        def useBest(first, second):
+            if first is None:
+                return second
+            elif second is None:
+                return first
+            elif first[2]>second[2]:
+                return first
+            else:
+                return second
+
+        def parseString(start=0):
+            if line[start]!="\"":
                 return None
-            endPointer=line[1:].find("\"")
+            endPointer=line[start+1:].find("\"")
             if (endPointer<0):
                 endPointer=len(line)
             else:
-                endPointer+=1
+                endPointer+=2
             return (line[1:endPointer],"STRING",endPointer)
+
         def parseUnsignedNumber(start=0):
             dChars=string.digits+"_"
             cp[0]=start;
@@ -122,6 +138,7 @@ class ImportVerilogParameters(object):
             if cp[0] <= start:
                 return None
             return (d,"INTEGER",cp[0])
+        
         def parseUnsignedFraction(start=0):
             dChars=string.digits+"_"
             cp[0]=start;
@@ -145,6 +162,7 @@ class ImportVerilogParameters(object):
             if cp[0] <= start+1:
                 return None
             return (d/k,"REAL",cp[0])
+        
         def parseSign(start=0):
             sign=1
             cp[0]=start;
@@ -158,6 +176,7 @@ class ImportVerilogParameters(object):
             else: 
                 cp[0]-=1
             return sign
+        
         def parseBase(start=0):
             cp[0]=start
             c=getNextChar()
@@ -196,12 +215,11 @@ class ImportVerilogParameters(object):
                 return (un[0]*sign,un[1],un[2])
             else:
                 return ((un[0]+fp[0])*sign,fp[1],fp[2])
-                
         
         def parseNumber(start=0):
             #try number of bits prefix
             sign=1
-            baseStart=start
+#            baseStart=start
             width=0 # undefined
             sdn=parseDecimalNumber(start)
             if sdn is None:
@@ -247,16 +265,141 @@ class ImportVerilogParameters(object):
                 if width > 0:
                     et="[%d:0]"%(width-1)
                 return (sign*d,et,cp[0])
-        def useBest(first, second):
-            if first is None:
-                return second
-            elif second is None:
-                return first
-            elif first[2]>second[2]:
-                return first
-            else:
-                return second
-        return useBest(useBest(parseString(),parseNumber()),parseRealNumber())
+
+
+        def parseParameter(start=0):
+            l=0
+            par=None
+            if (self.verbose>2) and(start !=0):
+                print ("parseParameter(start=%d)"%(start))
+
+            for parName in self.parameters:
+                if (line[start:start+len(parName)] == parName) and (len(parName)>l) :
+                    par=parName
+                    l=len(parName)
+                    
+            if l==0:
+                return None
+            end=start+l
+            try:
+                pass
+                if (line[end] in string.ascii_letters) or (line[end] in string.digits) or (line[end] == '_'):
+                    return None # Real parameter name is longer
+            except:
+                pass #Ok if it is the end of line
+            if (self.verbose>2) and (start !=0):
+                print ("parseParameter(start=%d), end=%d, line=%s, parName=%s, par=%s"%(start,end,line,parName,str(self.parameters[par])))
+
+            return (self.parameters[par][0],self.parameters[par][1],end)
+        def binop_add(exp1,exp2):
+            return (exp1[0] + exp2[0],max(exp1[1],exp2[1]))
+        def binop_sub(exp1,exp2):
+            return (exp1[0] - exp2[0],max(exp1[1],exp2[1]))
+        def binop_bitor(exp1,exp2):
+            return (exp1[0] | exp2[0],max(exp1[1],exp2[1]))
+        def binop_bitand(exp1,exp2):
+            return (exp1[0] & exp2[0],max(exp1[1],exp2[1]))
+        def binop_bitxor(exp1,exp2):
+            return (exp1[0] ^ exp2[0],max(exp1[1],exp2[1]))
+        def binop_mult(exp1,exp2):
+            return (exp1[0] * exp2[0],exp1[1]+exp2[1])
+        def binop_div(exp1,exp2):
+            return (exp1[0] / exp2[0],exp1[1])
+        def binop_mod(exp1,exp2):
+            return (exp1[0] % exp2[0],exp2[1])
+        def binop_lshift(exp1,exp2):
+            return (exp1[0] << exp2[0],exp1[1]+exp2[0])
+        def binop_rshift(exp1,exp2):
+            return (exp1[0] >> exp2[0],exp1[1])
+        
+        binops=(
+                ('+',binop_add),
+                ('-',binop_sub),
+                ('|',binop_bitor),
+                ('&',binop_bitand),
+                ('^',binop_bitxor),
+                ('*',binop_mult),
+                ('/',binop_div),
+                ('%',binop_mod),
+                ('<<',binop_lshift),
+                ('>>',binop_rshift)
+                )
+        def getBinOp(start):
+            l=0
+            op=None
+            for opTuple in binops:
+                opName=opTuple[0]
+                if (line[start:start+len(opName)] == opName) and (len(opName)>l) :
+                    op=opTuple
+                    l=len(opName)
+            return op
+            
+            pass
+        def parsePrimary(start=0):
+            return useBest(useBest(useBest(parseString(start),parseNumber(start)),parseRealNumber(start)),parseParameter(start))
+        def parsePraamryOrBinary(start=0):
+            operand1=parsePrimary(start)
+            if (self.verbose>2) and (start !=0):
+                print ("parsePraamryOrBinary(start=%d), line=%s, result=%s"%(start,line,str(operand1)))
+                
+            opStart=skipWS(operand1[2])
+            if opStart == len(line): # just primary
+                return operand1
+        # Try binary operation    
+            op=getBinOp(opStart)
+            if not op:
+                print("ERROR: Next token in '%s' (starting from %s) is not a binary operation"%(line,line[opStart:]))
+                return None
+            start2=skipWS(opStart+len(op[0]))
+            if (self.verbose>2):
+                print ("line=%s"%line)
+                print ("start=%d, opStart=%d, start2=%d"%(start,opStart, start2))
+            operand2=parseExp(start2)
+            if not operand2:
+                print("ERROR: Could not get the second operand for '%s' in '%s'"%(op[0],line))
+                return None
+            width1=getParWidth(operand1[1])  
+            width2=getParWidth(operand2[1])
+            if (self.verbose>2):
+                print("operand1=%s"%str(operand1))
+                print("operand2=%s"%str(operand2))
+            exp=op[1]((operand1[0],width1),(operand2[0],width2))
+            if (self.verbose>2):
+                print("exp=%s"%str(exp))
+            if not exp:
+                print("ERROR: Failed '%s' in '%s'"%(op[0],line))
+                return None
+            #Try limiting to 32 bits
+            width=exp[1]
+            if (width1==32) and (exp[1]>32) and ((width >> 32) == 0):
+                width=32
+            return (exp[0],"[%d:0]"%(width-1),operand2[2])
+
+        def parseExp(start=0):
+            start=skipWS(start)
+            if start>=len(line):
+                print ("ERROR: EOL reached when expression was expected in '%s'"%line)
+                return None
+            if line[start]=='(':
+                exp=parseExp(start+1)
+                if not exp:
+                    print ("ERROR: failed to evaluate expression in '%s' (starting from '%s'"%(line,line[start:]))
+                    return None
+                endPos=skipWS(exp[2])
+                if endPosp >= len(line):
+                    print ("ERROR: EOL reached when closing ')' was expected in '%s'"%line)
+                    return None
+                if line[ep] != ")":
+                    print ("ERROR: Found '%s'when closing ')' was expected in '%s'"%(line[endPos],line))
+                    return None
+                endPos=skipWS(endPos+1)
+                return (exp[0],"[%d:0]"%(exp[1]-1),endPos)
+            return parsePraamryOrBinary(start)
+        '''
+        parseExpression top level code
+        no support for bit select, &&, ||, ~ ! ? and more... 
+        '''
+        return parseExp(0)
 
     '''
     Read parameters defined in parameter port list (inside #(,,,), comma separated (last may have no comma)
@@ -264,7 +407,7 @@ class ImportVerilogParameters(object):
     '''
     def readParameterPortList(self,path,portMode=True):
         if (self.verbose>2):
-             print ("readParameterPortList:Processing %s"%(path))
+            print ("readParameterPortList:Processing %s"%(path))
         with open (path, "r") as myfile: #with will close file when done
             text=myfile.read()
 # remove /* */ comments            
@@ -355,7 +498,7 @@ class ImportVerilogParameters(object):
             if line[-1] == ";":
                 portMode=False
         if (self.verbose>2):
-             print ("portMode is "+str(portMode))
+            print ("portMode is "+str(portMode))
         try:
             if portMode and (preprocessedLines[0][0]==","):
                 preprocessedLines.insert(0,preprocessedLines.pop(0)[1:])
@@ -431,7 +574,7 @@ class ImportVerilogParameters(object):
 
                     def skipToWS(): # all tabs are already replaced with spaces
                         try:
-                            indx==preprocessedLines[textPointer["line"]].find(" ",[textPointer["char"]])
+                            indx=preprocessedLines[textPointer["line"]].find(" ",[textPointer["char"]])
                         except:
                             return
                         if (indx<0):
@@ -450,7 +593,7 @@ class ImportVerilogParameters(object):
                         if c=="\\":
                             skipToWS()
                         elif (c=='(') or (c=='[') or (c=='{'):
-                           mode.append(c)
+                            mode.append(c)
                         elif (c==')') or (c==']') or (c=='}'):
                             try:
                                 c1=mode.pop();
@@ -495,6 +638,9 @@ class ImportVerilogParameters(object):
                             preprocessedLines=[] # Nothing left
                     # process expression here, for now - just use expression string
                     ev= self.parseExpression(expLine)
+                    if (self.verbose>2):
+                        print (parName+": -> "+expLine)
+                        print (ev)
                     if ev is None:
                         self.parameters[parName]= (expLine,parType,expLine)
                     else:
@@ -503,6 +649,8 @@ class ImportVerilogParameters(object):
 #                        self.parameters[parName]= (ev[0],parType)
                         self.parameters[parName]= (ev[0],parType,expLine)
 #                    if portMode: # while True:
+                    if (self.verbose>2):
+                        print (parName+": "+str(self.parameters[parName]))
                     if portMode or (termChar == ";"): # while True:
                         break;
 #        print ("======= Parameters =======")
@@ -512,13 +660,13 @@ class ImportVerilogParameters(object):
         for parName in self.parameters:
             valTyp= self.parameters[parName]
             if (not valTyp[1]) or (valTyp[1]=="RAW"):
-               ev= self.parseExpression(valTyp[0])
+                ev= self.parseExpression(valTyp[0])
 #               print ("valTyp="+str(valTyp))
 #               print ("ev="+str(ev))
-               if ev:
-                   self.parameters[parName]= (ev[0],ev[1],valTyp[0])
-                   if parName == "VERBOSE":
-                       self.verbose=ev[0]
+                if ev:
+                    self.parameters[parName]= (ev[0],ev[1],valTyp[0])
+                    if parName == "VERBOSE":
+                        self.verbose=ev[0]
                          
     '''
     get parameter dictionary
