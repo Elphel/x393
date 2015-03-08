@@ -33,14 +33,15 @@ __status__ = "Development"
 from import_verilog_parameters import VerilogParameters
 from x393_mem import X393Mem
 #from verilog_utils import hx,concat, bits 
-from verilog_utils import hx 
+from verilog_utils import hx
         
 class X393AxiControlStatus(object):
     DRY_MODE= True # True
     DEBUG_MODE=1
 #    vpars=None
     x393_mem=None
-    target_phase=0 # TODO: set!
+    enabled_channels=0 # currently enable channels
+#    verbose=1
     def __init__(self, debug_mode=1,dry_mode=True):
         self.DEBUG_MODE=debug_mode
         self.DRY_MODE=dry_mode
@@ -52,7 +53,10 @@ class X393AxiControlStatus(object):
 #        print (VerilogParameters.__dict__)
 #        self.__dict__.update(VerilogParameters.__dict__) # Add verilog parameters to the class namespace
         self.__dict__.update(VerilogParameters.__dict__["_VerilogParameters__shared_state"]) # Add verilog parameters to the class namespace
-        
+#        try:
+#            verbose=self.verbose
+#        except:
+#            pass
 #        print ("+++++++++++++++ self.__dict__ ++++++++++++++++++++++++++")
 #        print (self.__dict__)
         '''
@@ -85,11 +89,6 @@ class X393AxiControlStatus(object):
             match = (((data ^ pattern) & mask & 0x3ffffff)==0)
             if invert_match:
                 match = not match
-            if self.DRY_MODE: break
-    def wait_phase_shifter_ready(self):
-        data=self.read_and_wait_status(self.MCONTR_PHY_STATUS_REG_ADDR)
-        while (((data & self.STATUS_PSHIFTER_RDY_MASK) == 0) or (((data ^ self.target_phase) & 0xff) != 0)):
-            data=self.read_and_wait_status(self.MCONTR_PHY_STATUS_REG_ADDR)
             if self.DRY_MODE: break
 
     def read_all_status(self):
@@ -138,6 +137,43 @@ class X393AxiControlStatus(object):
         self.program_status (self.MCNTRL_TEST01_ADDR,        self.MCNTRL_TEST01_CHN2_STATUS_CNTRL,mode,seq_num)#; //MCNTRL_TEST01_STATUS_REG_CHN2_ADDR=  'h3c,
         self.program_status (self.MCNTRL_TEST01_ADDR,        self.MCNTRL_TEST01_CHN3_STATUS_CNTRL,mode,seq_num)#; //MCNTRL_TEST01_STATUS_REG_CHN3_ADDR=  'h3d,
         self.program_status (self.MCNTRL_TEST01_ADDR,        self.MCNTRL_TEST01_CHN4_STATUS_CNTRL,mode,seq_num)#; //MCNTRL_TEST01_STATUS_REG_CHN4_ADDR=  'h3e,
-        '''
-        x393_tasks_ps_pio
-        '''
+        
+    def enable_cmda(self,
+                    en): # input en;
+        self.write_contol_register(self.MCONTR_PHY_0BIT_ADDR +  self.MCONTR_PHY_0BIT_CMDA_EN + en, 0);
+            
+    def enable_cke(self,
+                    en): # input en;
+        self.write_contol_register(self.MCONTR_PHY_0BIT_ADDR +  self.MCONTR_PHY_0BIT_CKE_EN + en, 0);
+
+    def activate_sdrst(self,
+                    en): # input en;
+        self.write_contol_register(self.MCONTR_PHY_0BIT_ADDR +  self.MCONTR_PHY_0BIT_SDRST_ACT + en, 0);
+
+    def enable_refresh(self,
+                    en): # input en;
+        self.write_contol_register(self.MCONTR_TOP_0BIT_ADDR +  self.MCONTR_TOP_0BIT_REFRESH_EN + en, 0);
+        
+    def enable_memcntrl(self,
+                    en): # input en;
+        self.write_contol_register(self.MCONTR_TOP_0BIT_ADDR +  self.MCONTR_TOP_0BIT_MCONTR_EN + en, 0);
+        
+    def enable_memcntrl_channels(self,
+                                 chnen): # input [15:0] chnen; // bit-per-channel, 1 - enable;
+        self.enabled_channels = chnen; # currently enabled memory channels
+        self.write_contol_register(self.MCONTR_TOP_16BIT_ADDR +  self.MCONTR_TOP_16BIT_CHN_EN, self.enabled_channels & 0xffff) # {16'b0,chnen});
+
+    def enable_memcntrl_en_dis(self,
+                               chn, # input [3:0] chn;
+                               en):# input       en;
+        if en:
+            self.enabled_channels = self.enabled_channels | (1<<chn);
+        else:
+            self.enabled_channels = self.enabled_channels & ~(1<<chn);
+        self.write_contol_register(self.MCONTR_TOP_16BIT_ADDR + self. MCONTR_TOP_16BIT_CHN_EN, self.enabled_channels & 0xffff) #  {16'b0,ENABLED_CHANNELS});
+
+    def configure_channel_priority(self,
+                                   chn, # input [ 3:0] chn;
+                                   priority): #input [15:0] priority; // (higher is more important)
+        self.write_contol_register(self.MCONTR_ARBIT_ADDR + chn, priority  & 0xffff)# {16'b0,priority});
+

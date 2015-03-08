@@ -36,7 +36,7 @@ from x393_mem import X393Mem
 from x393_axi_control_status import X393AxiControlStatus
 #from verilog_utils import * # concat, bits 
 #from verilog_utils import hx, concat, bits, getParWidth 
-from verilog_utils import concat, getParWidth 
+from verilog_utils import concat, getParWidth
 #from x393_axi_control_status import concat, bits 
 class X393McntrlTiming(object):
     DRY_MODE= True # True
@@ -45,7 +45,6 @@ class X393McntrlTiming(object):
     x393_mem=None
     x393_axi_tasks=None #x393X393AxiControlStatus
     target_phase=0 # TODO: set!
-    target_phase=0
     def __init__(self, debug_mode=1,dry_mode=True):
         self.DEBUG_MODE=debug_mode
         self.DRY_MODE=dry_mode
@@ -152,6 +151,12 @@ class X393McntrlTiming(object):
         self.x393_axi_tasks.write_contol_register(self.DLY_SET,0)
         self.target_phase = phase
             
+    def wait_phase_shifter_ready(self):
+        data=self.x393_axi_tasks.read_and_wait_status(self.MCONTR_PHY_STATUS_REG_ADDR)
+        while (((data & self.STATUS_PSHIFTER_RDY_MASK) == 0) or (((data ^ self.target_phase) & 0xff) != 0)):
+            data=self.x393_axi_tasks.read_and_wait_status(self.MCONTR_PHY_STATUS_REG_ADDR)
+            if self.DRY_MODE: break
+
     def axi_set_wbuf_delay(self,
                             delay): # input [3:0] delay;
         print("SET WBUF DELAY=0x%x"%delay)

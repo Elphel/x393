@@ -46,6 +46,8 @@ import x393_mem
 import x393_axi_control_status
 import x393_pio_sequences
 import x393_mcntrl_timing
+import x393_mcntrl_buffers
+import x393_mcntrl_tests
 __all__ = []
 __version__ = 0.1
 __date__ = '2015-03-01'
@@ -230,6 +232,8 @@ USAGE
     x393tasks=  x393_axi_control_status.X393AxiControlStatus(verbose,True)
     x393Pio=    x393_pio_sequences.X393PIOSequences(verbose,True)
     x393Timing= x393_mcntrl_timing.X393McntrlTiming(verbose,True)
+    x393Buffers=x393_mcntrl_buffers.X393McntrlBuffers(verbose,True)
+    x393Tests=  x393_mcntrl_tests.X393McntrlTests(verbose,True)
     '''
     print ("----------------------")
     print("x393_mem.__dict__="+str(x393_mem.__dict__))
@@ -248,7 +252,10 @@ USAGE
     extractTasks(x393_axi_control_status.X393AxiControlStatus,x393tasks)
     extractTasks(x393_pio_sequences.X393PIOSequences,x393Pio)
     extractTasks(x393_mcntrl_timing.X393McntrlTiming,x393Timing)
+    extractTasks(x393_mcntrl_buffers.X393McntrlBuffers,x393Buffers)
+    extractTasks(x393_mcntrl_tests.X393McntrlTests,x393Tests)
 
+#
     if verbose > 3:     
         funcName="read_mem"
         funcArgs=[0x377,123]

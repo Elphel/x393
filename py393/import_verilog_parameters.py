@@ -386,10 +386,10 @@ class ImportVerilogParameters(object):
                     print ("ERROR: failed to evaluate expression in '%s' (starting from '%s'"%(line,line[start:]))
                     return None
                 endPos=skipWS(exp[2])
-                if endPosp >= len(line):
+                if endPos >= len(line):
                     print ("ERROR: EOL reached when closing ')' was expected in '%s'"%line)
                     return None
-                if line[ep] != ")":
+                if line[endPos] != ")":
                     print ("ERROR: Found '%s'when closing ')' was expected in '%s'"%(line[endPos],line))
                     return None
                 endPos=skipWS(endPos+1)

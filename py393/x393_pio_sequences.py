@@ -64,7 +64,7 @@ class X393PIOSequences(object):
 #        __dict__.update(VerilogParameters.__dict__) # Add verilog parameters to the class namespace
         '''
         
-    def schedule_ps_pio(self,          #; // shedule software-control memory operation (may need to check FIFO status first)
+    def schedule_ps_pio(self,          #; // schedule software-control memory operation (may need to check FIFO status first)
                         seq_addr,      # input [9:0] seq_addr; // sequence start address
                         page,          # input [1:0] page;     // buffer page number
                         urgent,        # input       urgent;   // high priority request (only for competion wityh other channels, wiil not pass in this FIFO)
@@ -81,7 +81,7 @@ class X393PIOSequences(object):
     def wait_ps_pio_ready(self,      #; // wait PS PIO module can accept comamnds (fifo half empty)
                           mode,      # input [1:0] mode;
                           sync_seq): # input       sync_seq; //  synchronize sequences
-        self.wait_status_condition (
+        self.x393_axi_tasks.wait_status_condition (
             self.MCNTRL_PS_STATUS_REG_ADDR,
             self.MCNTRL_PS_ADDR + self.MCNTRL_PS_STATUS_CNTRL,
             mode & 3,
@@ -93,7 +93,7 @@ class X393PIOSequences(object):
     def wait_ps_pio_done(self,      # // wait PS PIO module has no pending/running memory transaction
                          mode,      # input [1:0] mode;
                          sync_seq): # input       sync_seq; //  synchronize sequences
-        self.wait_status_condition (
+        self.x393_axi_tasks.wait_status_condition (
             self.MCNTRL_PS_STATUS_REG_ADDR,
             self.MCNTRL_PS_ADDR + self.MCNTRL_PS_STATUS_CNTRL,
             mode & 3,

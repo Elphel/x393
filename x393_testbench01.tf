@@ -306,7 +306,7 @@ always #(CLKIN_PERIOD/2) CLK = ~CLK;
 
 // set MR registers in DDR3 memory, run DCI calibration (long)
     wait_ps_pio_ready(DEFAULT_STATUS_MODE, 1); // wait FIFO not half full 
-    schedule_ps_pio ( // shedule software-control memory operation (may need to check FIFO status first)
+    schedule_ps_pio ( // schedule software-control memory operation (may need to check FIFO status first)
                         INITIALIZE_OFFSET, // input [9:0] seq_addr; // sequence start address
                         0,                 // input [1:0] page;     // buffer page number
                         0,                 // input       urgent;   // high priority request (only for competion with other channels, wiil not pass in this FIFO)
@@ -1097,7 +1097,7 @@ task test_write_levelling; // SuppressThisWarning VEditor - may be unused
 // Set write buffer (from DDR3) WE signal delay for write leveling mode
         axi_set_wbuf_delay(WBUF_DLY_WLV);
         axi_set_dqs_odelay('h80); // 'h80 - inverted, 'h60 - not - 'h80 will cause warnings during simulation
-        schedule_ps_pio ( // shedule software-control memory operation (may need to check FIFO status first)
+        schedule_ps_pio ( // schedule software-control memory operation (may need to check FIFO status first)
                         WRITELEV_OFFSET,   // input [9:0] seq_addr; // sequence start address
                         0,                 // input [1:0] page;     // buffer page number
                         0,                 // input       urgent;   // high priority request (only for competion with other channels, wiil not pass in this FIFO)
@@ -1108,7 +1108,7 @@ task test_write_levelling; // SuppressThisWarning VEditor - may be unused
         read_block_buf_chn (0, 0, 32, 1 ); // chn=0, page=0, number of 32-bit words=32, wait_done
 //        @ (negedge rstb);
         axi_set_dqs_odelay(DLY_DQS_ODELAY);
-        schedule_ps_pio ( // shedule software-control memory operation (may need to check FIFO status first)
+        schedule_ps_pio ( // schedule software-control memory operation (may need to check FIFO status first)
                         WRITELEV_OFFSET,   // input [9:0] seq_addr; // sequence start address
                         1,                 // input [1:0] page;     // buffer page number
                         0,                 // input       urgent;   // high priority request (only for competion with other channels, wiil not pass in this FIFO)
@@ -1128,7 +1128,7 @@ endtask
 
 task test_read_pattern; // SuppressThisWarning VEditor - may be unused
     begin  
-        schedule_ps_pio ( // shedule software-control memory operation (may need to check FIFO status first)
+        schedule_ps_pio ( // schedule software-control memory operation (may need to check FIFO status first)
                         READ_PATTERN_OFFSET,   // input [9:0] seq_addr; // sequence start address
                         2,                     // input [1:0] page;     // buffer page number
                         0,                     // input       urgent;   // high priority request (only for competion with other channels, wiil not pass in this FIFO)
@@ -1142,7 +1142,7 @@ endtask
 task test_write_block; // SuppressThisWarning VEditor - may be unused
     begin
 //    write_block_buf_chn; // fill block memory - already set in set_up task
-        schedule_ps_pio ( // shedule software-control memory operation (may need to check FIFO status first)
+        schedule_ps_pio ( // schedule software-control memory operation (may need to check FIFO status first)
                         WRITE_BLOCK_OFFSET,    // input [9:0] seq_addr; // sequence start address
                         0,                     // input [1:0] page;     // buffer page number
                         0,                     // input       urgent;   // high priority request (only for competion with other channels, wiil not pass in this FIFO)
@@ -1155,19 +1155,19 @@ endtask
 
 task test_read_block; // SuppressThisWarning VEditor - may be unused
     begin
-        schedule_ps_pio ( // shedule software-control memory operation (may need to check FIFO status first)
+        schedule_ps_pio ( // schedule software-control memory operation (may need to check FIFO status first)
                         READ_BLOCK_OFFSET,   // input [9:0] seq_addr; // sequence start address
                         3,                     // input [1:0] page;     // buffer page number
                         0,                     // input       urgent;   // high priority request (only for competion with other channels, wiil not pass in this FIFO)
                         0,                    // input       chn;      // channel buffer to use: 0 - memory read, 1 - memory write
                         `PS_PIO_WAIT_COMPLETE );//  wait_complete; // Do not request a newe transaction from the scheduler until previous memory transaction is finished
-        schedule_ps_pio ( // shedule software-control memory operation (may need to check FIFO status first)
+        schedule_ps_pio ( // schedule software-control memory operation (may need to check FIFO status first)
                         READ_BLOCK_OFFSET,   // input [9:0] seq_addr; // sequence start address
                         2,                     // input [1:0] page;     // buffer page number
                         0,                     // input       urgent;   // high priority request (only for competion with other channels, wiil not pass in this FIFO)
                         0,                    // input       chn;      // channel buffer to use: 0 - memory read, 1 - memory write
                         `PS_PIO_WAIT_COMPLETE );//  wait_complete; // Do not request a newe transaction from the scheduler until previous memory transaction is finished
-        schedule_ps_pio ( // shedule software-control memory operation (may need to check FIFO status first)
+        schedule_ps_pio ( // schedule software-control memory operation (may need to check FIFO status first)
                         READ_BLOCK_OFFSET,   // input [9:0] seq_addr; // sequence start address
                         1,                     // input [1:0] page;     // buffer page number
                         0,                     // input       urgent;   // high priority request (only for competion with other channels, wiil not pass in this FIFO)

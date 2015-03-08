@@ -19,7 +19,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/> .
  *******************************************************************************/
-task schedule_ps_pio; // shedule software-control memory operation (may need to check FIFO status first)
+task schedule_ps_pio; // schedule software-control memory operation (may need to check FIFO status first)
     input [9:0] seq_addr; // sequence start address
     input [1:0] page;     // buffer page number
     input       urgent;   // high priority request (only for competion wityh other channels, wiil not pass in this FIFO)
