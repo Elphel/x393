@@ -30,7 +30,7 @@ __maintainer__ = "Andrey Filippov"
 __email__ = "andrey@elphel.com"
 __status__ = "Development"
 '''
-~/git/x393/py393$ ./test1.py -vv -f/home/andrey/git/x393/system_defines.vh -f /home/andrey/git/x393/includes/x393_parameters.vh  /home/andrey/git/x393/includes/x393_localparams.vh -pNEWPAR=\'h3ff -c write_mem 0x377 25 -c read_mem 0x3ff -i
+./test_mcntrl.py -v -f../system_defines.vh -f ../includes/x393_parameters.vh  ../includes/x393_localparams.vh -pNEWPAR=\'h3ff -c write_mem 0x377 25 -c read_mem 0x3ff -i -d aaa=bbb -d ccc=ddd
 
 '''
 import sys
@@ -81,7 +81,7 @@ def extractTasks(obj,inst):
             func_args=obj.__dict__[name].func_code.co_varnames[1:obj.__dict__[name].func_code.co_argcount]
             callableTasks[name]={'func':obj.__dict__[name],'args':func_args,'inst':inst}
 def execTask(commandLine):
-    result=None
+#    result=None
     cmdList=commandLine #.split()
     try:
         funcName=cmdList[0]
@@ -153,43 +153,74 @@ USAGE
     preParameters={}
     try:
         # Setup argument parser
-        parser = ArgumentParser(description=program_license, formatter_class=RawDescriptionHelpFormatter)
+        parser = ArgumentParser(description=program_license, formatter_class=RawDescriptionHelpFormatter,fromfile_prefix_chars='@')
         parser.add_argument("-v", "--verbose", dest="verbose", action="count", help="set verbosity level [default: %(default)s]")
         parser.add_argument('-V', '--version', action='version', version=program_version_message)
 #        parser.add_argument(                   dest="paths", help="Verilog include files with parameter definitions [default: %(default)s]", metavar="path", nargs='*')
-        parser.add_argument("-f", "--icludeFile",  dest="paths", action="append", help="Verilog include files with parameter definitions [default: %(default)s]", metavar="path", nargs='*')
-        parser.add_argument("-d", "--define",  dest="defines", action="append", help="Define macro(s)" )
-        parser.add_argument("-p", "--parameter",  dest="parameters", action="append", help="Define parameter(s) as name=value" )
-        parser.add_argument("-c", "--command",  dest="commands", action="append", help="execute command" , nargs='*')
+        parser.add_argument("-f", "--icludeFile",  dest="paths", action="append", default=[],
+                             help="Verilog include files with parameter definitions [default: %(default)s]", metavar="path", nargs='*')
+        parser.add_argument("-d", "--define",  dest="defines", action="append", default=[], help="Define macro(s)" , nargs='*' )
+        parser.add_argument("-p", "--parameter",  dest="parameters", action="append", default=[], help="Define parameter(s) as name=value" , nargs='*' )
+        parser.add_argument("-c", "--command",  dest="commands", action="append", default=[], help="execute command" , nargs='*')
         parser.add_argument("-i", "--interactive", dest="interactive", action="store_true", help="enter interactive mode [default: %(default)s]")
-        
+
         # Process arguments
         args = parser.parse_args()
-#        paths = args.paths
-        paths=[]
-        for group in args.paths:
-            paths+=group
+        #print("--- defines=%s"%    str(args.defines))
+        #print("--- paths=%s"%      str(args.paths))
+        #print("--- parameters=%s"% str(args.parameters))
+        #print("--- commands=%s"%   str(args.commands))
+            #        paths = args.paths
         verbose = args.verbose
-        if args.defines:
-            for predef in args.defines:
+        paths=[]
+        if (args.paths):
+            for group in args.paths:
+                for item in group:
+                    paths+=item.split()
+        #print("+++ paths=%s"%      str(paths))
+        if (args.defines):
+            defines=[]
+            for group in args.defines:
+                for item in group:
+                    defines+=item.split()
+            for predef in defines:
                 kv=predef.split("=")
                 if len(kv)<2:
                     kv.append("")
-                preDefines[kv[0].strip("`")]=kv[1]    
+                preDefines[kv[0].strip("`")]=kv[1]
+        #print("+++ defines=%s"%      str(preDefines))
+
         if verbose > 0:
 #            print("Verbose mode on "+hex(verbose))
-            args.parameters.append('VERBOSE=%d'%verbose) # add as verilog parameter
-        if args.parameters:
-            for prePars in args.parameters:
+            args.parameters.append(['VERBOSE=%d'%verbose]) # add as verilog parameter
+        
+        if (args.parameters):
+            parameters=[]
+            for group in args.parameters:
+                for item in group:
+                    parameters+=item.split()
+            for prePars in parameters:
                 kv=prePars.split("=")
                 if len(kv)>1:
-                    preParameters[kv[0]]=(kv[1],"RAW",kv[1]) # todo - need to go through the parser
+                    preParameters[kv[0]]=(kv[1],"RAW",kv[1])
+        #print("+++ parameters=%s"%      str(preParameters))
+        
+        commands=[]
+        if (args.commands):
+            for group in args.commands:
+                cmd=[]
+                for item in group:
+                    cmd+=item.split()
+                commands.append(cmd)    
+        #print("+++ commands=%s"%      str(commands))
+        
                     
+
     except KeyboardInterrupt:
         ### handle keyboard interrupt ###
         return 0
     except Exception, e:
-        if DEBUG or TESTRUN:
+        if DEBUG or TESTRUN: 
             raise(e)
         indent = len(program_name) * " "
         sys.stderr.write(program_name + ": " + repr(e) + "\n")
@@ -200,7 +231,7 @@ USAGE
     if verbose > 3: print ('paths='+str(paths))   
     if verbose > 3: print ('defines='+str(args.defines))   
     if verbose > 3: print ('parameters='+str(args.parameters)) 
-    if verbose > 3: print ('comamnds='+str(args.commands)) 
+    if verbose > 3: print ('comamnds='+str(commands)) 
     for path in paths:
         if verbose > 2: print ('path='+str(path))
         ### do something with inpath ###
@@ -274,7 +305,7 @@ USAGE
                     print ("Usage:\n%s %s"%(funcName,sFuncArgs))
                     print ("exception message:"+str(e))
      
-    for cmdLine in args.commands:
+    for cmdLine in commands:
         print ('Running task: '+str(cmdLine))
         rslt= execTask(cmdLine)
         print ('    Result: '+str(rslt))
@@ -319,8 +350,8 @@ USAGE
 
             elif (line == 'defines') or (line == 'macros'):
                 defines= ivp.getDefines()
-                for macro,val in sorted(parameters.items()):
-                    print ("`"+macro+": "+val)        
+                for macro,val in sorted(defines.items()):
+                    print ("`"+macro+": "+str(val))        
 
 #                for macro in defines:
 #                    print ("`"+macro+": "+defines[macro])        

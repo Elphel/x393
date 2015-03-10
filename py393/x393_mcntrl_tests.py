@@ -91,6 +91,30 @@ class X393McntrlTests(object):
                        ((0,1)[write_mem],1), # write_mem,
                        ((0,1)[enable],   1), #enable,
                        ((1,0)[chn_reset],1)) # ~chn_reset};
+    def task_set_up(self,
+                    set_per_pin_delays):
+# set dq /dqs tristate on/off patterns
+        self.x393_mcntrl_timing.axi_set_tristate_patterns()
+# set patterns for DM (always 0) and DQS - always the same (may try different for write lev.)
+        self.x393_mcntrl_timing.axi_set_dqs_dqm_patterns()
+# prepare all sequences
+        self.set_all_sequences;
+# prepare write buffer    
+        self.x393_mcntrl_buffers.write_block_buf_chn(0,0,256); # fill block memory (channel, page, number)
+# set all delays
+##axi_set_delays - from tables, per-pin
+        if set_per_pin_delays:
+            self.x393_mcntrl_timing.axi_set_delays() # set all individual delays, aslo runs axi_set_phase()
+        else:
+            self.x393_mcntrl_timing.axi_set_same_delays(
+                                                        self.DLY_DQ_IDELAY,
+                                                        self.DLY_DQ_ODELAY,
+                                                        self.DLY_DQS_IDELAY,
+                                                        self.DLY_DQS_ODELAY,
+                                                        self.DLY_DM_ODELAY,
+                                                        self.DLY_CMDA_ODELAY)
+# set clock phase relative to DDR clk
+        self.x393_mcntrl_timing.axi_set_phase(self.DLY_PHASE);
 
     def set_all_sequences(self):
         if self.verbose>0: print("SET MRS")    

@@ -51,11 +51,12 @@ class ImportVerilogParameters(object):
     parameters={}
     conditions=[True]
     rootPath=None
-    verbose=1
+    verbose=3
     '''
     parameters - dictionalry of already known parameters, defines - defined macros
     '''
     def __init__(self, parameters=None,defines=None,rootPath=None):
+        print("parameters=%s"%str(parameters))
         '''
         Constructor
         '''
@@ -337,11 +338,11 @@ class ImportVerilogParameters(object):
             pass
         def parsePrimary(start=0):
             return useBest(useBest(useBest(parseString(start),parseNumber(start)),parseRealNumber(start)),parseParameter(start))
-        def parsePraamryOrBinary(start=0):
+        def parsePrimaryOrBinary(start=0):
             operand1=parsePrimary(start)
             if (self.verbose>2) and (start !=0):
-                print ("parsePraamryOrBinary(start=%d), line=%s, result=%s"%(start,line,str(operand1)))
-                
+                print ("parsePrimaryOrBinary(start=%d), line=%s, result=%s"%(start,line,str(operand1)))
+            if not operand1: print (line)    
             opStart=skipWS(operand1[2])
             if opStart == len(line): # just primary
                 return operand1
@@ -394,7 +395,7 @@ class ImportVerilogParameters(object):
                     return None
                 endPos=skipWS(endPos+1)
                 return (exp[0],"[%d:0]"%(exp[1]-1),endPos)
-            return parsePraamryOrBinary(start)
+            return parsePrimaryOrBinary(start)
         '''
         parseExpression top level code
         no support for bit select, &&, ||, ~ ! ? and more... 
