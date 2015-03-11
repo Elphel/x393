@@ -70,6 +70,15 @@ class X393PIOSequences(object):
                         urgent,        # input       urgent;   // high priority request (only for competion wityh other channels, wiil not pass in this FIFO)
                         chn,           # input       chn;      // channel buffer to use: 0 - memory read, 1 - memory write
                         wait_complete): # input       wait_complete; // Do not request a newe transaction from the scheduler until previous memory transaction is finished
+        """
+        Schedule PS PIO memory transaction 
+        <seq_addr>       10-bit sequence start address
+        <page>           buffer page address to use (0..3)
+        <urgent>         high priority request (only for competition with other channels,
+                         will not pass other commands in this module FIFO)  
+        <chn>            sub-channel to use: 0 - memory read, 1 - memory write
+        <wait_complete>  Do not request a new transaction from the scheduler until previous memory transaction is finished
+        """
         self.write_contol_register(self.MCNTRL_PS_ADDR + self.MCNTRL_PS_CMD,
                                     # {17'b0,
                                     ((0,1)[wait_complete]<<14) |
@@ -81,6 +90,12 @@ class X393PIOSequences(object):
     def wait_ps_pio_ready(self,      #; // wait PS PIO module can accept comamnds (fifo half empty)
                           mode,      # input [1:0] mode;
                           sync_seq): # input       sync_seq; //  synchronize sequences
+        """
+        Wait until PS PIO module can accept comamnds (fifo half empty) 
+        <mode>           status mode (0..3) - see 'help program_status'
+        <synq_seq>       status sequence number - see 'help program_status'
+        """
+        
         self.x393_axi_tasks.wait_status_condition (
             self.MCNTRL_PS_STATUS_REG_ADDR,
             self.MCNTRL_PS_ADDR + self.MCNTRL_PS_STATUS_CNTRL,
@@ -93,6 +108,11 @@ class X393PIOSequences(object):
     def wait_ps_pio_done(self,      # // wait PS PIO module has no pending/running memory transaction
                          mode,      # input [1:0] mode;
                          sync_seq): # input       sync_seq; //  synchronize sequences
+        """
+        Wait PS PIO module has no pending/running memory transaction
+        <mode>           status mode (0..3) - see 'help program_status'
+        <synq_seq>       status sequence number - see 'help program_status'
+        """
         self.x393_axi_tasks.wait_status_condition (
             self.MCNTRL_PS_STATUS_REG_ADDR,
             self.MCNTRL_PS_ADDR + self.MCNTRL_PS_STATUS_CNTRL,
@@ -119,6 +139,23 @@ class X393PIOSequences(object):
                         buf_rd,    # input                      buf_rd;     // connect to external buffer (but only if not paused)
                         nop,       # input                      nop;        // add NOP after the current command, keep other data
                         buf_rst):  # input                      buf_rst;    // connect to external buffer (but only if not paused)
+        """
+        Encode data into memory controller sequencer word
+        <addr>       15-bit row/column adderss
+        <bank>       3-bit bank address
+        <rcw>        3-bit combined {RAS,CAS,WE}, positive logic
+        <odt_en>     enable ODT
+        <cke>        disable CKE
+        <sel>        first(0)/second(1) half-cycle, other half-cycle will be NOP (cke+odt applicable to both)
+        <dq_en>      enable (turn tristate off) DQ  lines (internal timing sequencer for 0->1 and 1->0)
+        <dqs_en>     enable (turn tristate off) DQS lines (internal timing sequencer for 0->1 and 1->0)
+        <dqs_toggle> enable toggle DQS lines according to the pattern
+        <dci>        DCI disable, both DQ and DQS lines (internal logic and timing sequencer for 0->1 and 1->0)
+        <buf_wr>     generate external buffer write/address increment
+        <buf_rd>     generate external buffer read/address increment
+        <nop>        add NOP after the current command, keep other data
+        <buf_rst>    reset external buffer page address to 0, increment page number
+        """
         return (
             ((addr & 0x7fff) << 17) | # addr[14:0], // 15-bit row/column adderss
             ((bank & 0x7)    << 14) | # bank [2:0], // bank
@@ -149,7 +186,23 @@ class X393PIOSequences(object):
                           dci,        # input                      dci;        // DCI disable, both DQ and DQS lines (internal logic and timing sequencer for 0->1 and 1->0)
                           buf_wr,     # input                      buf_wr;     // connect to external buffer (but only if not paused)
                           buf_rd,     # input                      buf_rd;     // connect to external buffer (but only if not paused)
-                          buf_rst):   #input                      buf_rst;    // connect to external buffer (but only if not paused)
+                          buf_rst):   #input                       buf_rst;    // connect to external buffer (but only if not paused)
+        """
+        Encode skip cycles command into memory controller sequencer word. NOP will be present on RCW(RAS/CAS/WE) lines
+        <skip>       10-bit number of cycles to skip minus 1
+        <done>       10-bit number of cycles to skip minus 1
+        <bank>       3-bit bank address
+        <odt_en>     enable ODT
+        <cke>        disable CKE
+        <sel>        first(0)/second(1) half-cycle, other half-cycle will be NOP (cke+odt applicable to both)
+        <dq_en>      enable (turn tristate off) DQ  lines (internal timing sequencer for 0->1 and 1->0)
+        <dqs_en>     enable (turn tristate off) DQS lines (internal timing sequencer for 0->1 and 1->0)
+        <dqs_toggle> enable toggle DQS lines according to the pattern
+        <dci>        DCI disable, both DQ and DQS lines (internal logic and timing sequencer for 0->1 and 1->0)
+        <buf_wr>     generate external buffer write/address increment
+        <buf_rd>     generate external buffer read/address increment
+        <buf_rst>    reset external buffer page address to 0, increment page number
+        """
         return self.func_encode_cmd (
                 ((0,1)[done] << self.CMD_PAUSE_BITS) |    # {{14-CMD_DONE_BIT{1'b0}}, done, 
                 (skip & ((1 << self.CMD_PAUSE_BITS)-1)), # skip[CMD_PAUSE_BITS-1:0]},       // 15-bit row/column address
@@ -197,6 +250,39 @@ class X393PIOSequences(object):
         #                   2'b01 - 4 or 8 on-the-fly by A12                                     
         #                   2'b10 - fixed BL4 (chop)
         #                   2'b11 - reserved
+        """
+        Encode DDR3 MR0 register data
+        <pd>  precharge power down 0 - dll off (slow exit), 1 - dll on (fast exit) 
+        <wr>  write recovery:
+            000: 16
+            001:  5
+            010:  6
+            011:  7
+            100:  8
+            101: 10
+            110: 12
+            111: 14
+        <dll_rst> 1 - dll reset (self clearing bit)
+        <cl> CAS latency (>=15ns):
+            0000: reserved                   
+            0010:  5                   
+            0100:  6                   
+            0110:  7                 
+            1000:  8                 
+            1010:  9                 
+            1100: 10                   
+            1110: 11                   
+            0001: 12                  
+            0011: 13                  
+            0101: 14
+        <bt>  read burst type: 0 sequential (nibble), 1 - interleaved
+        <bl>  burst length:
+            00 - fixed BL8
+            01 - 4 or 8 on-the-fly by A12                                     
+            10 - fixed BL4 (chop)
+            11 - reserved
+        """
+        
         return concat((
               (0,3),                      # 3'b0,
               (0,self.ADDRESS_NUMBER-13), #  {ADDRESS_NUMBER-13{1'b0}},
@@ -231,6 +317,30 @@ class X393PIOSequences(object):
                           #  2'b10 - AL=CL-2
                           #  2'b11 - reserved
                       dll): #input       dll;  # 0 - DLL enabled (normal), 1 - DLL disabled
+        """
+        Encode DDR3 MR1 register data
+        <qoff>  output enable: 0 - DQ, DQS operate in normal mode, 1 - DQ, DQS are disabled
+        <tdqs>  termination data strobe (for x8 devices) 0 - disabled, 1 - enabled
+        <rtt>   on-die termination resistance:
+            000 - disabled
+            001 - RZQ/4 (60 Ohm)
+            010 - RZQ/2 (120 Ohm)
+            011 - RZQ/6 (40 Ohm)
+            100 - RZQ/12(20 Ohm)
+            101 - RZQ/8 (30 Ohm)
+            11x - reserved
+        <wlev>  write leveling mode
+        <ods>   output drive strength:
+            00 - RZQ/6 - 40 Ohm
+            01 - RZQ/7 - 34 Ohm
+            1x - reserved
+        <al>    additive latency:
+            00 - disabled (AL=0)
+            01 - AL=CL-1;
+            10 - AL=CL-2
+            11 - reserved
+        <dll>   0 - DLL enabled (normal), 1 - DLL disabled
+        """ 
         return concat (( #    ddr3_mr1 = {
               (1,3), # 3'h1,
               (0, self.ADDRESS_NUMBER-13), # {ADDRESS_NUMBER-13{1'b0}},
@@ -263,6 +373,24 @@ class X393PIOSequences(object):
                         #  3'b100  9CK (1.071ns <= tCK < 1.25ns)  
                         #  3'b101 10CK (0.938ns <= tCK < 1.071ns)  
                         #  3'b11x reserved
+        """                
+        Encode DDR3 MR2 register data
+        <rtt_wr>  Dynamic ODT :
+            00 - disabled
+            01 - RZQ/4 = 60 Ohm
+            10 - RZQ/2 = 120 Ohm
+            11 - reserved
+        <srt>     Self-refresh temperature 0 - normal (0-85C), 1 - extended (<=95C)
+        <asr>     Auto self-refresh 0 - disabled (manual), 1 - enabled (auto)
+        <cwl>     CAS write latency:
+            000  5CK (           tCK >= 2.5ns)  
+            001  6CK (1.875ns <= tCK < 2.5ns)  
+            010  7CK (1.5ns   <= tCK < 1.875ns)  
+            011  8CK (1.25ns  <= tCK < 1.5ns)  
+            100  9CK (1.071ns <= tCK < 1.25ns)  
+            101 10CK (0.938ns <= tCK < 1.071ns)  
+            11x reserved
+        """ 
         return concat ((                  
                 (2,3),                       #   3'h2,
                 (0, self.ADDRESS_NUMBER-11), # {ADDRESS_NUMBER-11{1'b0}},
@@ -278,6 +406,13 @@ class X393PIOSequences(object):
                       mpr_rf):    # input [1:0] mpr_rf; # MPR read function:
                             #  2'b00: predefined pattern 0101...
                             #  2'b1x, 2'bx1 - reserved
+        """                
+        Encode DDR3 MR3 register data
+        <mpr>      MPR mode: 0 - normal, 1 - dataflow from MPR
+        <mpr_rf>   MPR read function:
+            00: predefined pattern 0101...
+            1x, 2'bx1 - reserved
+        """ 
         return concat((
                 (3,3),                   # 3'h3,
                 (0,self.ADDRESS_NUMBER), # {ADDRESS_NUMBER-3{1'b0}},
@@ -290,6 +425,12 @@ class X393PIOSequences(object):
     def enable_reset_ps_pio(self, #; // control reset and enable of the PS PIO channel;
                             en,   # input en;
                             rst): #input rst;
+        """
+        Enable/disable and reset PS PIO channel
+        <en>   1 - enable, 0 - disable (only influences request for arbitration, started transactions will finish if disabled)
+        <rst>  1 - reset active, 0 - reset off
+        """
+        
         self.write_contol_register(self.MCNTRL_PS_ADDR + self.MCNTRL_PS_EN_RST,
                                    ((0,1)[en]<<1) | #{30'b0,en,
                                    (1,0)[rst])  #~rst});
@@ -299,6 +440,12 @@ class X393PIOSequences(object):
                        ba,   # input [ 2:0] ba;
                        ra,   # input [14:0] ra;
                        ca):  #input [ 9:0] ca;
+        """
+        Setup read block sequence at parameter defined address in the sequencer memory
+            <ba>   3-bit memory bank address
+            <ra>  15-bit memory row address
+            <ca>  10-bit memory column address
+        """
         cmd_addr = self.MCONTR_CMD_WR_ADDR + self.READ_BLOCK_OFFSET
 # activate
         #                           addr                bank     RCW ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD NOP, B_RST
@@ -363,6 +510,13 @@ class X393PIOSequences(object):
                         ba,  # input[2:0]ba;
                         ra,  # input[14:0]ra;
                         ca): # input[9:0]ca;
+        """
+        Setup write block sequence at parameter defined address in the sequencer memory
+            <ba>   3-bit memory bank address
+            <ra>  15-bit memory row address
+            <ca>  10-bit memory column address
+        """
+        
         cmd_addr = self.MCONTR_CMD_WR_ADDR + self.WRITE_BLOCK_OFFSET
 # activate
         #                          addr                 bank     RCW ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD NOP, B_RST
@@ -445,6 +599,11 @@ class X393PIOSequences(object):
 # Set MR3, read nrep*8 words, save to buffer (port0). No ACTIVATE/PRECHARGE are needed/allowed   
     def set_read_pattern (self, 
                           nrep): # input integer nrep;
+        """
+        Setup read pattern sequence at parameter defined address in the sequencer memory
+            <nrep>   number of times pattern burst is read
+        """
+        
         cmd_addr = self.MCONTR_CMD_WR_ADDR + self.READ_PATTERN_OFFSET
         mr3_norm = self.func_ddr3_mr3(
            0, # 1'h0,     //       mpr;    // MPR mode: 0 - normal, 1 - dataflow from MPR
@@ -526,6 +685,10 @@ class X393PIOSequences(object):
 
     def set_write_lev(self,
                       nrep):  #input[CMD_PAUSE_BITS-1:0]nrep;
+        """
+        Setup write levelling sequence at parameter defined address in the sequencer memory
+            <nrep>  number of times write levelling burst is repeated
+        """
         dqs_low_rpt = 8
         nrep_minus_1 = nrep - 1;
         mr1_norm = self.func_ddr3_mr1(
@@ -593,6 +756,13 @@ class X393PIOSequences(object):
                 t_rfc,   # input[9:0]t_rfc; # =50 for tCK=2.5ns
                 t_refi, # input[7:0]t_refi; # 48/97 for normal, 8 - for simulation
                 en_refresh=0):
+        """
+        Setup refresh sequence at parameter defined address in the sequencer memory
+        <t_rfc>       tRFC =50 for tCK=2.5ns
+        <t_refi>      tREFI 48/97 for hardware, 8 - for simulation
+        <en_refresh>  enable refresh immediately 
+        """
+
         cmd_addr = self.MCONTR_CMD_WR_ADDR + self.REFRESH_OFFSET
         #                           addr                 bank                   RCW ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD NOP, B_RST
         data=self.func_encode_cmd(    0,                   0,                    6,  0,  0,  0,  0,    0,    0,    0,  0,   0,   0,   0)
@@ -618,6 +788,10 @@ class X393PIOSequences(object):
 
     def set_mrs(self,       # will also calibrate ZQ
                 reset_dll): # input reset_dll;
+        """
+        Setup sequence (at paramter-defined adderss) to write MR0, MR1, MR2 and MR3 mode registers of DDR3 memory
+        <reset_dll>    reset memory DLL when running this sequence
+        """
         mr0 = self.func_ddr3_mr0(
             0,         # 1'h0,      #       pd; # precharge power down 0 - dll off (slow exit), 1 - dll on (fast exit)
             2,         # 3'h2,      # [2:0] wr; # write recovery (encode ceil(tWR/tCK)) # 3'b010:  6

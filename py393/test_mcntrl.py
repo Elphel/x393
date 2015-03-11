@@ -35,7 +35,9 @@ __status__ = "Development"
 '''
 import sys
 import os
-
+import inspect
+import re
+#import os.path
 from argparse import ArgumentParser
 #import argparse
 from argparse import RawDescriptionHelpFormatter
@@ -78,8 +80,12 @@ class CLIError(Exception):
 def extractTasks(obj,inst):
     for name in obj.__dict__:
         if hasattr((obj.__dict__[name]), '__call__') and not (name[0]=='_'):
+#            print (name+" -->"+str(obj.__dict__[name]))
+#            print (obj.__dict__[name].func_code)
+#            print ("COMMENTS:"+str(inspect.getcomments(obj.__dict__[name])))
+#            print ("DOCS:"+str(inspect.getdoc(obj.__dict__[name])))
             func_args=obj.__dict__[name].func_code.co_varnames[1:obj.__dict__[name].func_code.co_argcount]
-            callableTasks[name]={'func':obj.__dict__[name],'args':func_args,'inst':inst}
+            callableTasks[name]={'func':obj.__dict__[name],'args':func_args,'inst':inst,'docs':inspect.getdoc(obj.__dict__[name])}
 def execTask(commandLine):
 #    result=None
     cmdList=commandLine #.split()
@@ -118,6 +124,17 @@ def hx(obj):
         return "0x%x"%obj
     except:
         return str(obj)
+
+def getFuncArgsString(name):
+    funcFArgs=callableTasks[name]['args']
+    sFuncArgs=""
+    if funcFArgs:
+        sFuncArgs+='<'+str(funcFArgs[0])+'>'
+        for a in funcFArgs[1:]:
+            sFuncArgs+=' <'+str(a)+'>'
+    return sFuncArgs
+
+    
 def main(argv=None): # IGNORE:C0111
     '''Command line options.'''
 
@@ -163,9 +180,14 @@ USAGE
         parser.add_argument("-p", "--parameter",  dest="parameters", action="append", default=[], help="Define parameter(s) as name=value" , nargs='*' )
         parser.add_argument("-c", "--command",  dest="commands", action="append", default=[], help="execute command" , nargs='*')
         parser.add_argument("-i", "--interactive", dest="interactive", action="store_true", help="enter interactive mode [default: %(default)s]")
+        parser.add_argument("-s", "--simulated", dest="simulated", action="store_true", help="Simulated mode (no real hardware I/O) [default: %(default)s]")
 
         # Process arguments
         args = parser.parse_args()
+        if not args.simulated:
+            if not os.path.isfile("/dev/xdevcfg"):
+                args.simulated=True
+                print("Program is forced to run in SIMULATED mode as '/dev/xdevcfg' does not exist (not a camera)")
         #print("--- defines=%s"%    str(args.defines))
         #print("--- paths=%s"%      str(args.paths))
         #print("--- parameters=%s"% str(args.parameters))
@@ -259,12 +281,12 @@ USAGE
     if verbose > 3: print("vpars1.VERBOSE__TYPE="+str(vpars1.VERBOSE__TYPE))
     if verbose > 3: print("vpars1.VERBOSE__RAW="+str(vpars1.VERBOSE__RAW))
     
-    x393mem=    x393_mem.X393Mem(verbose,True) #add dry run parameter
-    x393tasks=  x393_axi_control_status.X393AxiControlStatus(verbose,True)
-    x393Pio=    x393_pio_sequences.X393PIOSequences(verbose,True)
-    x393Timing= x393_mcntrl_timing.X393McntrlTiming(verbose,True)
-    x393Buffers=x393_mcntrl_buffers.X393McntrlBuffers(verbose,True)
-    x393Tests=  x393_mcntrl_tests.X393McntrlTests(verbose,True)
+    x393mem=    x393_mem.X393Mem(verbose,args.simulated) #add dry run parameter
+    x393tasks=  x393_axi_control_status.X393AxiControlStatus(verbose,args.simulated)
+    x393Pio=    x393_pio_sequences.X393PIOSequences(verbose,args.simulated)
+    x393Timing= x393_mcntrl_timing.X393McntrlTiming(verbose,args.simulated)
+    x393Buffers=x393_mcntrl_buffers.X393McntrlBuffers(verbose,args.simulated)
+    x393Tests=  x393_mcntrl_tests.X393McntrlTests(verbose,args.simulated)
     '''
     print ("----------------------")
     print("x393_mem.__dict__="+str(x393_mem.__dict__))
@@ -315,23 +337,40 @@ USAGE
     if (args.interactive):
         line =""
         while True:
-            line=raw_input('x393--> ').strip()
+            line=raw_input('x393%s--> '%('','(simulated)')[args.simulated]).strip()
             if not line:
                 print ('Use "quit" to exit, "help" - for help')
-            elif line == 'quit':
+            elif (line == 'quit') or (line == 'exit'):
                 break
             elif line== 'help' :
                 print ("\nAvailable tasks:")
                 for name,val in sorted(callableTasks.items()):
-#                    funcFArgs=callableTasks[name]['args']
-                    funcFArgs=val['args']
-                    sFuncArgs=""
-                    if funcFArgs:
-                        sFuncArgs+='<'+str(funcFArgs[0])+'>'
-                        for a in funcFArgs[1:]:
-                            sFuncArgs+=' <'+str(a)+'>'
+                    sFuncArgs=getFuncArgsString(name)
                     print ("Usage: %s %s"%(name,sFuncArgs))
                 print ('\n"parameters" and "defines" list known defined parameters and macros')
+            elif (len(line) > len("help")) and (line[:len("help")]=='help'):
+                helpFilter=line[len('help'):].strip()
+                try:
+                    re.match(helpFilter,"")
+                except:
+                    print("Invalid search expression: %s"%helpFilter)
+                    helpFilter=None    
+                if helpFilter:
+                    print
+                    for name,val in sorted(callableTasks.items()):
+#                       if re.findall(helpFilter,name):
+                        if re.match(helpFilter,name):
+                            print('=== %s ==='%name)
+                            sFuncArgs=getFuncArgsString(name)
+#                           print ("Usage: %s %s"%(name,sFuncArgs))
+                            docs=callableTasks[name]['docs']
+                            if docs:
+                                docsl=docs.split("\n")
+                                for l in docsl:
+                                    #print ('    %s'%l)
+                                    print ('%s'%l)
+                                    #print(docs)
+                            print ("     Usage: %s %s\n"%(name,sFuncArgs))
             elif line == 'parameters':
                 parameters=ivp.getParameters()
                 for par,val in sorted(parameters.items()):

@@ -72,7 +72,18 @@ class X393McntrlTests(object):
                                write_mem,    # input       write_mem;   # write to memory mode (0 - read from memory)
                                enable,       # input       enable;      # enable requests from this channel ( 0 will let current to finish, but not raise want/need)
                                chn_reset):   # input       chn_reset;       # immediately reset all the internal circuitry
-        return concat (# func_encode_mode_tiled={
+        """
+        Combines arguments to create a 7-bit encoded data for tiled mode memory R/W
+        <byte32>        use 32-byte wide columns (0 - use 16-byte ones)
+        <keep_open>,    do not close page between accesses (for 8 or less rows only)
+        <extra_pages>,  2-bit number of extra pages that need to stay (not to be overwritten) in the buffer
+                        This argument can be used for  read access with horizontal overlapping tiles
+        <write_mem>,    write to memory mode (0 - read from memory)
+        <enable>,       enable requests from this channel ( 0 will let current to finish, but not raise want/need)
+        <chn_reset>):   immediately reset all the internal circuitry
+        
+        """
+        return concat (
                        ((0,1)[byte32],   1), # byte32,
                        ((0,1)[keep_open],1), # keep_open,
                        (extra_pages,     2), # extra_pages,
@@ -86,13 +97,33 @@ class X393McntrlTests(object):
                                write_mem,    # input       write_mem;   # write to memory mode (0 - read from memory)
                                enable,       # input       enable;      # enable requests from this channel ( 0 will let current to finish, but not raise want/need)
                                chn_reset):   # input       chn_reset;       # immediately reset all the internal circuitry
-        return concat (# func_encode_mode_tiled={
+        """
+        Combines arguments to create a 5-bit encoded data for scanline mode memory R/W
+        <extra_pages>,  2-bit number of extra pages that need to stay (not to be overwritten) in the buffer
+                        This argument can be used for  read access with horizontal overlapping tiles
+        <write_mem>,    write to memory mode (0 - read from memory)
+        <enable>,       enable requests from this channel ( 0 will let current to finish, but not raise want/need)
+        <chn_reset>):   immediately reset all the internal circuitry
+        
+        """
+        return concat (
                        (extra_pages,     2), # extra_pages,
                        ((0,1)[write_mem],1), # write_mem,
                        ((0,1)[enable],   1), #enable,
                        ((1,0)[chn_reset],1)) # ~chn_reset};
     def task_set_up(self,
                     set_per_pin_delays):
+        """
+        Initial setup of the memory controller, including:
+            tristate patterns
+            DQS/DQM patterns
+            all sequences
+            channel 0 buffer data
+            I/O delays
+            clock phase
+        <set_per_pin_delays> - 1 - set individual (per-pin) I/O delays, 0 - use common for the whole class         
+        """
+
 # set dq /dqs tristate on/off patterns
         self.x393_mcntrl_timing.axi_set_tristate_patterns()
 # set patterns for DM (always 0) and DQS - always the same (may try different for write lev.)
@@ -117,6 +148,9 @@ class X393McntrlTests(object):
         self.x393_mcntrl_timing.axi_set_phase(self.DLY_PHASE);
 
     def set_all_sequences(self):
+        """
+        Set all sequences:  MRS, REFRESH, WRITE LEVELLING, READ PATTERN, WRITE BLOCK, READ BLOCK 
+        """
         if self.verbose>0: print("SET MRS")    
         self.x393_pio_sequences.set_mrs(1) # reset DLL
         if self.verbose>0: print("SET REFRESH")    
@@ -145,6 +179,13 @@ class X393McntrlTests(object):
                             wait_complete, # Wait for operation to complete
                             wlev_dqs_dly= 0x80,
                             norm_dqs_odly=0x78):
+        """
+        Test write levelling mode 
+        <wait_complete> wait write levelling operation to complete (0 - may initiate multiple PS PIO operations)
+        <wlev_dqs_dly>  DQS output delay for write levelling mode (default 0x80)
+        <norm_dqs_odly> DQS output delay for normal (not write levelling) mode (default 0x78)
+        returns list of the read data
+        """
 # Set special values for DQS idelay for write leveling
         self.x393_pio_sequences.wait_ps_pio_done(self.DEFAULT_STATUS_MODE,1); # not no interrupt running cycle - delays are changed immediately
         self.x393_mcntrl_timing.axi_set_dqs_idelay_wlv()
@@ -155,7 +196,7 @@ class X393McntrlTests(object):
         self.x393_pio_sequences.schedule_ps_pio (# schedule software-control memory operation (may need to check FIFO status first)
                                                   self.WRITELEV_OFFSET,   # input [9:0] seq_addr; # sequence start address
                                                   0,                 # input [1:0] page;     # buffer page number
-                                                  0,                 # input       urgent;   # high priority request (only for competion with other channels, wiil not pass in this FIFO)
+                                                  0,                 # input       urgent;   # high priority request (only for competion with other channels, will not pass in this FIFO)
                                                   0,                 # input       chn;      # channel buffer to use: 0 - memory read, 1 - memory write
                                                   wait_complete)     # `PS_PIO_WAIT_COMPLETE );#  wait_complete; # Do not request a newe transaction from the scheduler until previous memory transaction is finished
                         
@@ -165,7 +206,7 @@ class X393McntrlTests(object):
         self.x393_pio_sequences.schedule_ps_pio ( # schedule software-control memory operation (may need to check FIFO status first)
                                                   self.WRITELEV_OFFSET, # input [9:0] seq_addr; # sequence start address
                                                   1,                 # input [1:0] page;     # buffer page number
-                                                  0,                 # input       urgent;   # high priority request (only for competion with other channels, wiil not pass in this FIFO)
+                                                  0,                 # input       urgent;   # high priority request (only for competion with other channels, will not pass in this FIFO)
                                                   0,                 # input       chn;      # channel buffer to use: 0 - memory read, 1 - memory write
                                                   wait_complete)     # `PS_PIO_WAIT_COMPLETE );#  wait_complete; # Do not request a newe transaction from the scheduler until previous memory transaction is finished
         self.x393_pio_sequences.wait_ps_pio_done(self.DEFAULT_STATUS_MODE,1); # wait previous memory transaction finished before changing delays (effective immediately)
@@ -177,11 +218,16 @@ class X393McntrlTests(object):
    
     def test_read_pattern(self,
                           wait_complete): # Wait for operation to complete
+        """
+        Test read pattern mode 
+        <wait_complete> wait read pattern operation to complete (0 - may initiate multiple PS PIO operations)
+        returns list of the read data
+        """
 
         self.x393_pio_sequences.schedule_ps_pio ( # schedule software-control memory operation (may need to check FIFO status first)
                         self.READ_PATTERN_OFFSET,   # input [9:0] seq_addr; # sequence start address
                         2,                          # input [1:0] page;     # buffer page number
-                        0,                          # input       urgent;   # high priority request (only for competion with other channels, wiil not pass in this FIFO)
+                        0,                          # input       urgent;   # high priority request (only for competion with other channels, will not pass in this FIFO)
                         0,                          # input       chn;      # channel buffer to use: 0 - memory read, 1 - memory write
                         wait_complete) # `PS_PIO_WAIT_COMPLETE ) #  wait_complete; # Do not request a newe transaction from the scheduler until previous memory transaction is finished
         self.x393_pio_sequences.wait_ps_pio_done(self.DEFAULT_STATUS_MODE,1) # wait previous memory transaction finished before changing delays (effective immediately)
@@ -189,12 +235,15 @@ class X393McntrlTests(object):
     
     def test_write_block(self,
                          wait_complete): # Wait for operation to complete
-
+        """
+        Test write block in PS PIO mode 
+        <wait_complete> wait write block operation to complete (0 - may initiate multiple PS PIO operations)
+        """
 #    write_block_buf_chn; # fill block memory - already set in set_up task
         self.x393_pio_sequences.schedule_ps_pio ( # schedule software-control memory operation (may need to check FIFO status first)
                         self.WRITE_BLOCK_OFFSET,    # input [9:0] seq_addr; # sequence start address
                         0,                     # input [1:0] page;     # buffer page number
-                        0,                     # input       urgent;   # high priority request (only for competion with other channels, wiil not pass in this FIFO)
+                        0,                     # input       urgent;   # high priority request (only for competion with other channels, will not pass in this FIFO)
                         1,                     # input       chn;      # channel buffer to use: 0 - memory read, 1 - memory write
                         wait_complete)         # `PS_PIO_WAIT_COMPLETE )#  wait_complete; # Do not request a newe transaction from the scheduler until previous memory transaction is finished
 # temporary - for debugging:
@@ -202,22 +251,27 @@ class X393McntrlTests(object):
 
     def test_read_block(self,
                         wait_complete): # Wait for operation to complete
+        """
+        Test read block in PS PIO mode 
+        <wait_complete> wait read block operation to complete (0 - may initiate multiple PS PIO operations)
+        returns list of the read data
+        """
         self.x393_pio_sequences.schedule_ps_pio ( # schedule software-control memory operation (may need to check FIFO status first)
                         self.READ_BLOCK_OFFSET,   # input [9:0] seq_addr; # sequence start address
                         3,                     # input [1:0] page;     # buffer page number
-                        0,                     # input       urgent;   # high priority request (only for competion with other channels, wiil not pass in this FIFO)
+                        0,                     # input       urgent;   # high priority request (only for competion with other channels, will not pass in this FIFO)
                         0,                     # input       chn;      # channel buffer to use: 0 - memory read, 1 - memory write
                         wait_complete)         #  wait_complete; # Do not request a newe transaction from the scheduler until previous memory transaction is finished
         self.x393_pio_sequences.schedule_ps_pio ( # schedule software-control memory operation (may need to check FIFO status first)
                         self.READ_BLOCK_OFFSET,   # input [9:0] seq_addr; # sequence start address
                         2,                     # input [1:0] page;     # buffer page number
-                        0,                     # input       urgent;   # high priority request (only for competion with other channels, wiil not pass in this FIFO)
+                        0,                     # input       urgent;   # high priority request (only for competion with other channels, will not pass in this FIFO)
                         0,                     # input       chn;      # channel buffer to use: 0 - memory read, 1 - memory write
                         wait_complete)         #  wait_complete; # Do not request a newe transaction from the scheduler until previous memory transaction is finished
         self.x393_pio_sequences.schedule_ps_pio ( # schedule software-control memory operation (may need to check FIFO status first)
                         self.READ_BLOCK_OFFSET,   # input [9:0] seq_addr; # sequence start address
                         1,                     # input [1:0] page;     # buffer page number
-                        0,                     # input       urgent;   # high priority request (only for competion with other channels, wiil not pass in this FIFO)
+                        0,                     # input       urgent;   # high priority request (only for competion with other channels, will not pass in this FIFO)
                         0,                     # input       chn;      # channel buffer to use: 0 - memory read, 1 - memory write
                         wait_complete)         #  wait_complete; # Do not request a newe transaction from the scheduler until previous memory transaction is finished
         self.x393_pio_sequences.wait_ps_pio_done(self.DEFAULT_STATUS_MODE,1); # wait previous memory transaction finished before changing delays (effective immediately)
@@ -231,6 +285,16 @@ class X393McntrlTests(object):
                             window_height, # input [15:0]           window_height;
                             window_left,   # input [15:0]           window_left;
                             window_top):   # input [15:0]           window_top;
+        """
+        Test scanline write (frame size/row increment is set in parameters) 
+        <channel> channel number to use. Valid values: 1, 3
+        <extra_pages>    2-bit number of extra pages that need to stay (not to be overwritten) in the buffer
+        <wait_done>      for operation finished
+        <window_width>   13-bit window width in 8-bursts (16 bytes)
+        <window_height>  16 bit window height
+        <window_left>,   13-bit window left margin in 8-bursts (16 bytes)
+        <window_top>     16-bit window top margin
+        """
 #   integer startx,starty; # temporary - because of the vdt bug with integer ports
 #        pages_per_row= (window_width>>NUM_XFER_BITS)+((window_width[NUM_XFER_BITS-1:0]==0)?0:1);
         pages_per_row= (window_width>>self.NUM_XFER_BITS)+(0,1)[(window_width & ((1<<self.NUM_XFER_BITS))-1)==0] # (window_width>>NUM_XFER_BITS)+((window_width[NUM_XFER_BITS-1:0]==0)?0:1);
@@ -336,6 +400,18 @@ class X393McntrlTests(object):
                             window_height, # input [15:0]           window_height;
                             window_left,   # input [15:0]           window_left;
                             window_top):   # input [15:0]           window_top;
+        """
+        Test scanline read (frame size/row increment is set in parameters) 
+        <channel> channel number to use. Valid values: 1, 3
+        <extra_pages>    2-bit number of extra pages that need to stay (not to be overwritten) in the buffer
+        <show_data>      print read data
+        <window_width>   13-bit window width in 8-bursts (16 bytes)
+        <window_height>  16 bit window height
+        <window_left>,   13-bit window left margin in 8-bursts (16 bytes)
+        <window_top>     16-bit window top margin
+        Returns read data as list
+        """
+        
         result=[] # will be a 2-d array
     
 #        pages_per_row= (window_width>>NUM_XFER_BITS)+((window_width[NUM_XFER_BITS-1:0]==0)?0:1);
@@ -415,6 +491,22 @@ class X393McntrlTests(object):
                          tile_width,    # input [ 7:0]           tile_width;
                          tile_height,   # input [ 7:0]           tile_height;
                          tile_vstep):   # input [ 7:0]           tile_vstep;
+        """
+        Test tiled mode write (frame size/row increment is set in parameters) 
+        <channel> channel number to use. Valid values: 2, 4
+        <byte32>        use 32-byte wide columns (0 - use 16-byte ones)
+        <keep_open>,    do not close page between accesses (for 8 or less rows only)
+        <extra_pages>    2-bit number of extra pages that need to stay (not to be overwritten) in the buffer
+        <wait_done>      wait for operation finished
+        <window_width>   13-bit window width in 8-bursts (16 bytes)
+        <window_height>  16 bit window height
+        <window_left>,   13-bit window left margin in 8-bursts (16 bytes)
+        <window_top>     16-bit window top margin
+        <tile_width>     6-bit tile width in 8-bursts (16 bytes) (0 -> 64)
+        <tile_height>    6-bit tile_height (0->64)
+        <tile_vstep>     6-bit tile vertical step (0->64) to control tole vertical overlap
+        """
+        
 #        tiles_per_row= (window_width/tile_width)+  ((window_width % tile_width==0)?0:1);
         tiles_per_row= (window_width/tile_width)+  (0,1)[(window_width % tile_width)==0]
         tile_rows_per_window= ((window_height-1)/tile_vstep) + 1
@@ -525,6 +617,22 @@ class X393McntrlTests(object):
                         tile_width,    # input [ 7:0]           tile_width;
                         tile_height,   # input [ 7:0]           tile_height;
                         tile_vstep):   # input [ 7:0]           tile_vstep;
+        """
+        Test tiled mode write (frame size/row increment is set in parameters) 
+        <channel> channel number to use. Valid values: 2, 4
+        <byte32>        use 32-byte wide columns (0 - use 16-byte ones)
+        <keep_open>,    do not close page between accesses (for 8 or less rows only)
+        <extra_pages>    2-bit number of extra pages that need to stay (not to be overwritten) in the buffer
+        <show_data>      print read data
+        <window_width>   13-bit window width in 8-bursts (16 bytes)
+        <window_height>  16 bit window height
+        <window_left>,   13-bit window left margin in 8-bursts (16 bytes)
+        <window_top>     16-bit window top margin
+        <tile_width>     6-bit tile width in 8-bursts (16 bytes) (0 -> 64)
+        <tile_height>    6-bit tile_height (0->64)
+        <tile_vstep>     6-bit tile vertical step (0->64) to control tole vertical overlap
+        Returns read data as a list
+        """
         result=[] # will be a 2-d array
 #        tiles_per_row= (window_width/tile_width)+  ((window_width % tile_width==0)?0:1);
         tiles_per_row= (window_width/tile_width)+  (0,1)[(window_width % tile_width)==0]

@@ -61,7 +61,16 @@ class X393McntrlBuffers(object):
                                  num_bursts, # input [NUM_XFER_BITS:0] num_bursts; // number of 8-bursts to write (will be rounded up to multiple of 16)
                                  startX,     # input integer startX;
                                  startY):    #input integer startY;
-        print("====== write_block_scanline_chn:%d page: %x X=0x%x Y=0x%x num=%dt"%(chn, page, startX, startY,num_bursts))
+        """
+        Fill buffer with the generated data in scanline mode
+        <chn>        4-bit channel number (0,1,2,3,4 are valid) to use
+        <page>       2-bit page number in the buffer to write to
+        <num_bursts> number of 8-word (16 bytes) bursts to write
+        <startX>     horizontal shift of the left of the data line to write, in bytes
+        <startY>     line number to encode in the data
+        """
+        if self.DEBUG_MODE > 1:
+            print("====== write_block_scanline_chn:%d page: %x X=0x%x Y=0x%x num=%dt"%(chn, page, startX, startY,num_bursts))
         if   chn == 0:  start_addr=self.MCONTR_BUF0_WR_ADDR + (page << 8)
         elif chn == 1:  start_addr=self.MCONTR_BUF1_WR_ADDR + (page << 8)
         elif chn == 2:  start_addr=self.MCONTR_BUF2_WR_ADDR + (page << 8)
@@ -76,6 +85,11 @@ class X393McntrlBuffers(object):
     def write_block_buf(self,
                               start_word_address, # input [29:0] start_word_address;
                               num_words_or_data_list):          # input integer num_words; # number of words to write (will be rounded up to multiple of 16)
+        """
+        Fill buffer the pattern data
+        <start_word_address>     full register address in AXI space (in 32-bit words, not bytes)
+        <num_words_or_data_list> number of 32-bit words to generate/write or a list with integer data
+        """
         if isinstance (num_words_or_data_list,int):
             data=[]
             for i in range(num_words_or_data_list):
@@ -94,6 +108,12 @@ class X393McntrlBuffers(object):
                               start_word_address, # input [29:0] start_word_address;
                               num_words,          # input integer num_words; # number of words to write (will be rounded up to multiple of 16)
                               start_value):       # input integer start_value;      
+        """
+        Fill buffer the incremental data (each next register is written with previous register data + 1
+        <start_word_address>  full register address in AXI space (in 32-bit words, not bytes)
+        <num_words>           number of 32-bit words to generate/write
+        <start_value>         value to write to the first register (to start_word_address)
+        """
         if self.verbose>0:
             print("**** write_block_incremtal, start_word_address=0x%x, num_words=0x%x, start_value=0x%x "%(start_word_address,num_words,start_value))
         for i in range(0,num_words):
@@ -105,6 +125,12 @@ class X393McntrlBuffers(object):
                             chn,        # input integer chn; # buffer channel
                             page,       # input   [1:0] page;
                             num_words_or_data_list): # input integer num_words; # number of words to write (will be rounded up to multiple of 16)
+        """
+        Fill specified buffer with the pattern data
+        <chn>                    4-bit buffer channel (0..4) to write data to
+        <page>                   2-bit buffer page to write to
+        <num_words_or_data_list> number of 32-bit words to generate/write or a list with integer data
+        """
         start_addr=-1
         if   chn==0:start_addr=self.MCONTR_BUF0_WR_ADDR + (page << 8)
         elif chn==1:start_addr=self.MCONTR_BUF1_WR_ADDR + (page << 8)
@@ -120,6 +146,13 @@ class X393McntrlBuffers(object):
                        start_word_address, # input [29:0] start_word_address;
                        num_read,           # input integer num_read; # number of words to read (will be rounded up to multiple of 16)
                        show_rslt=True):
+        """
+        Fill buffer the incremental data (each next register is written with previous register data + 1
+        <start_word_address> full register address in AXI space (in 32-bit words, not bytes)
+        <num_read>           number of 32-bit words to read
+        <show_rslt>          print buffer data read
+        """
+        
         if self.verbose>0:
             print("**** read_block_buf, start_word_address=0x%x, num_read=0x%x "%(start_word_address,num_read))
         result=[]    
@@ -135,6 +168,13 @@ class X393McntrlBuffers(object):
                            page, #input   [1:0] page;
                            num_read, #input integer num_read; # number of words to read (will be rounded up to multiple of 16)
                            show_rslt=True):
+        """
+        Fill buffer the incremental data (each next register is written with previous register data + 1
+        <chn>                4-bit buffer channel (0..4) to read from
+        <page>               2-bit buffer page to read from
+        <num_read>           number of 32-bit words to read
+        <show_rslt>          print buffer data read
+        """
         start_addr=-1
         if   chn==0:  start_addr=self.MCONTR_BUF0_RD_ADDR + (page << 8)
         elif chn==1:  start_addr=self.MCONTR_BUF1_RD_ADDR + (page << 8)

@@ -45,8 +45,12 @@ class X393Mem(object):
     def __init__(self, debug_mode=1,dry_mode=True):
         self.DEBUG_MODE=debug_mode
         self.DRY_MODE=dry_mode
-        
     def write_mem (self,addr, data):
+        """
+        Write 32-bit word to physical memory
+        <addr> - physical byte address
+        <data> - 32-bit data to write
+        """
         if self.DRY_MODE:
             print ("write_mem(0x%x,0x%x)"%(addr,data))
             return
@@ -73,6 +77,10 @@ class X393Mem(object):
         '''    
 
     def read_mem (self,addr):
+        '''
+         Read 32-bit word from physical memory
+         <addr> - physical byte address
+        '''    
         if self.DRY_MODE:
             print ("read_mem(0x%x)"%(addr))
             return
@@ -89,93 +97,36 @@ class X393Mem(object):
             return d
 #        mm.close() #probably not needed with "with"
     '''
-    Read/write slave AXI using byte addresses relative to the AXI memory reagion
+    Read/write slave AXI using byte addresses relative to the AXI memory region
     '''
     def axi_write_single(self,addr,data):
+        """
+        Write 32-bit word to the slave AXI address range
+        <addr> - physical byte address relative to the slave AXI memory region
+        <data> - 32-bit data to write
+        """
         self.write_mem(self.AXI_SLAVE0_BASE+addr,data)
 
     def axi_read_addr(self,addr):
+        """
+        Read 32-bit word from the  slave AXI address range
+        <addr> - physical byte address relative to slave AXI AXI memory region
+        """
         return self.read_mem(self.AXI_SLAVE0_BASE+addr)
     '''
     Read/write slave AXI using 32-bit word addresses (same as in Verilog code)
     '''
     def axi_write_single_w(self,addr,data):
+        """
+        Write 32-bit word to the slave AXI address range, using 32-word address
+        <addr> - 32-bit word (register) address relative to the slave AXI memory region
+        <data> - 32-bit data to write
+        """
         self.axi_write_single(addr<<2,data)
 
     def axi_read_addr_w(self,addr):
+        """
+        Read 32-bit word from the slave AXI address range, using 32-word address
+        <addr> - 32-bit word (register) address relative to the slave AXI memory region
+        """
         return self.axi_read_addr(addr<<2)
-   
-    '''
-    task axi_write_addr_data;
-        input [11:0] id;
-        input [31:0] addr;
-        input [31:0] data;
-        input [ 3:0] len;
-        input [ 1:0] burst;
-        input        data_en; // if 0 - do not send data, only address
-        input [ 3:0] wstrb;
-        input        last;
-        reg          data_sent;
-//        wire         data_sent_d;
-//        assign #(.1) data_sent_d= data_sent;
-        begin
-            wait (!CLK && AW_READY);
-            AWID_IN_r    <= id;
-            AWADDR_IN_r  <= addr;
-            AWLEN_IN_r   <= len;
-            AWSIZE_IN_r  <= 3'b010;
-            AWBURST_IN_r <= burst;
-            AW_SET_CMD_r <= 1'b1;
-            if (data_en && W_READY) begin
-                WID_IN_r <= id;
-                WDATA_IN_r <= data;
-                WSTRB_IN_r <= wstrb;
-                WLAST_IN_r <= last;
-                W_SET_CMD_r <= 1'b1; 
-                data_sent <= 1'b1;
-            end else begin
-                data_sent <= 1'b0;
-            end
-            DEBUG1 <=1'b1;
-            wait (CLK);
-            DEBUG1 <=1'b0;
-            AWID_IN_r    <= 'hz;
-            AWADDR_IN_r  <= 'hz;
-            AWLEN_IN_r   <= 'hz;
-            AWSIZE_IN_r  <= 'hz;
-            AWBURST_IN_r <= 'hz;
-            AW_SET_CMD_r <= 1'b0;
-            DEBUG2 <=1'b1;
-            if (data_sent) begin
-                WID_IN_r    <= 'hz;
-                WDATA_IN_r  <= 'hz;
-                WSTRB_IN_r  <= 'hz;
-                WLAST_IN_r  <= 'hz;
-                W_SET_CMD_r <= 1'b0; 
-            end
-// Now sent data if it was not sent simultaneously with the address
-            if (data_en && !data_sent) begin
-                DEBUG3 <=1'b1;
-                wait (!CLK && W_READY);
-                DEBUG3 <=1'b0;
-                WID_IN_r    <= id;
-                WDATA_IN_r  <= data;
-                WSTRB_IN_r  <= wstrb;
-                WLAST_IN_r  <= last;
-                W_SET_CMD_r <= 1'b1; 
-                wait (CLK);
-                DEBUG3 <=1'bx;
-                WID_IN_r    <= 'hz;
-                WDATA_IN_r  <= 'hz;
-                WSTRB_IN_r  <= 'hz;
-                WLAST_IN_r  <= 'hz;
-                W_SET_CMD_r <= 1'b0; 
-            end
-            DEBUG2 <=1'b0;
-            #0.1;
-            data_sent <= 1'b0;
-            #0.1;
-        end
-    endtask
-    
-    '''     

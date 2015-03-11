@@ -65,8 +65,17 @@ class X393AxiControlStatus(object):
         '''
         
     def write_contol_register(self, reg_addr, data):
+        """
+        Write 32-bit word to the control register
+        <addr> - register address relative to the control register address space
+        <data> - 32-bit data to write
+        """
         self.x393_mem.axi_write_single_w(self.CONTROL_ADDR+reg_addr, data)
     def read_and_wait_status(self, address):
+        """
+        Read word from the status register (up to 26 bits payload and 6-bit sequence number)
+        <addr> - status register address (currently 0..255)
+        """
         return self.x393_mem.axi_read_addr_w(self.STATUS_ADDR + address )
     
     def wait_status_condition(self,
@@ -77,6 +86,20 @@ class X393AxiControlStatus(object):
                               mask,                   # input [25:0] mask;           // which bits to compare
                               invert_match,           # input        invert_match;   // 0 - wait until match to pattern (all bits), 1 - wait until no match (any of bits differ)
                               wait_seq):              # input        wait_seq; // Wait for the correct sequence number, False assume correct
+        """
+        Poll specified status register until some condition is matched
+        <status_address> -         status register address (currently 0..255)
+        <status_control_address> - control register address (to control status generation)
+        <status_mode>            - status generation mode:
+                                  0: disable status generation,
+                                  1: single status request,
+                                  2: auto status, keep specified seq number,
+                                  4: auto, inc sequence number 
+        <pattern> -                26-bit pattern to match
+        <mask> -                   26-bit mask to enable pattern matching (0-s - ignore)
+        <invert_match> -           invert match (wait until matching condition becomes false)
+        <wait_seq>-                wait for the correct sequence number, if False - assume always correct
+        """
         match=False
         while not match:
             data=self.read_and_wait_status(status_address)
@@ -92,6 +115,9 @@ class X393AxiControlStatus(object):
             if self.DRY_MODE: break
 
     def read_all_status(self):
+        """
+        Read and print contents of all defined status registers
+        """
 #        print (self.__dict__)
 #        for name in self.__dict__:
 #            print (name+": "+str(name=='MCONTR_PHY_STATUS_REG_ADDR'))
@@ -113,19 +139,33 @@ class X393AxiControlStatus(object):
                        reg_addr,    # input  [7:0] reg_addr;
                        mode,        # input  [1:0] mode;
                        seq_number): # input  [5:0] seq_number;
-        '''
- // mode bits:
- // 0 disable status generation,
- // 1 single status request,
- // 2 - auto status, keep specified seq number,
- // 3 - auto, inc sequence number
-         '''
+        """
+        Poll specified status register until some condition is matched
+        <base_addr> -  base control address of the selected module
+        <reg_addr> -   status control register relative to the module address space
+        <mode> -       status generation mode:
+                                  0: disable status generation,
+                                  1: single status request,
+                                  2: auto status, keep specified seq number,
+                                  4: auto, inc sequence number 
+        <seq_number> - 6-bit sequence number of the status message to be sent
+        """
         self.write_contol_register(base_addr + reg_addr, ((mode & 3)<< 6) | (seq_number * 0x3f))
 
 
     def program_status_all( self,
                             mode,     # input [1:0] mode;
                             seq_num): # input [5:0] seq_num;
+        """
+        Set status generation mode for all defined modules
+        <mode> -       status generation mode:
+                                  0: disable status generation,
+                                  1: single status request,
+                                  2: auto status, keep specified seq number,
+                                  4: auto, inc sequence number 
+        <seq_number> - 6-bit sequence number of the status message to be sent
+        """
+
         self.program_status (self.MCONTR_PHY_16BIT_ADDR,     self.MCONTR_PHY_STATUS_CNTRL,        mode,seq_num)# //MCONTR_PHY_STATUS_REG_ADDR=          'h0,
         self.program_status (self.MCONTR_TOP_16BIT_ADDR,     self.MCONTR_TOP_16BIT_STATUS_CNTRL,  mode,seq_num)# //MCONTR_TOP_STATUS_REG_ADDR=          'h1,
         self.program_status (self.MCNTRL_PS_ADDR,            self.MCNTRL_PS_STATUS_CNTRL,         mode,seq_num)# //MCNTRL_PS_STATUS_REG_ADDR=           'h2,
@@ -140,32 +180,61 @@ class X393AxiControlStatus(object):
         
     def enable_cmda(self,
                     en): # input en;
+        """
+        Enable (disable) address, bank and command lines to the DDR3 memory
+        <en> - 1 - enable, 0 - disable
+        """
         self.write_contol_register(self.MCONTR_PHY_0BIT_ADDR +  self.MCONTR_PHY_0BIT_CMDA_EN + en, 0);
             
     def enable_cke(self,
                     en): # input en;
+        """
+        Enable (disable) CKE - clock enable to DDR3 memory 
+        <en> - 1 - enable, 0 - disable
+        """
         self.write_contol_register(self.MCONTR_PHY_0BIT_ADDR +  self.MCONTR_PHY_0BIT_CKE_EN + en, 0);
 
     def activate_sdrst(self,
                     en): # input en;
+        """
+        Activate SDRST (reset) to DDR3 memory 
+        <en> - 1 - activate (low), 0 - deactivate (high)
+        """
         self.write_contol_register(self.MCONTR_PHY_0BIT_ADDR +  self.MCONTR_PHY_0BIT_SDRST_ACT + en, 0);
 
     def enable_refresh(self,
                     en): # input en;
+        """
+        Enable (disable) refresh of the DDR3 memory 
+        <en> - 1 - enable, 0 - disable
+        """
         self.write_contol_register(self.MCONTR_TOP_0BIT_ADDR +  self.MCONTR_TOP_0BIT_REFRESH_EN + en, 0);
         
     def enable_memcntrl(self,
                     en): # input en;
+        """
+        Enable memory controller module 
+        <en> - 1 - enable, 0 - disable
+        """
         self.write_contol_register(self.MCONTR_TOP_0BIT_ADDR +  self.MCONTR_TOP_0BIT_MCONTR_EN + en, 0);
         
     def enable_memcntrl_channels(self,
                                  chnen): # input [15:0] chnen; // bit-per-channel, 1 - enable;
+        """
+        Enable memory controller channels (all at once control) 
+        <chnen> - 16-bit control word with per-channel enable bits (bit0 - chn0, ... bit15 - chn15)
+        """
         self.enabled_channels = chnen; # currently enabled memory channels
         self.write_contol_register(self.MCONTR_TOP_16BIT_ADDR +  self.MCONTR_TOP_16BIT_CHN_EN, self.enabled_channels & 0xffff) # {16'b0,chnen});
 
     def enable_memcntrl_en_dis(self,
                                chn, # input [3:0] chn;
                                en):# input       en;
+        """
+        Enable memory controller channels (one at a time) 
+        <chn> - 4-bit channel select
+        <en> -  1 - enable, 0 - disable of the selected channel
+        """
         if en:
             self.enabled_channels = self.enabled_channels | (1<<chn);
         else:
@@ -175,5 +244,10 @@ class X393AxiControlStatus(object):
     def configure_channel_priority(self,
                                    chn, # input [ 3:0] chn;
                                    priority): #input [15:0] priority; // (higher is more important)
+        """
+        Configure channel priority  
+        <chn> -      4-bit channel select
+        <priority> - 16-bit priority value (higher value means more important)
+        """
         self.write_contol_register(self.MCONTR_ARBIT_ADDR + chn, priority  & 0xffff)# {16'b0,priority});
 
