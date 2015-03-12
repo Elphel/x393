@@ -1,3 +1,5 @@
 eclipse.preferences.version=1
+encoding/exp_gpio.py=utf-8
 encoding/import_verilog_parameters.py=utf-8
+encoding/mon_gpio.py=utf-8
 encoding/test_mcntrl.py=utf-8

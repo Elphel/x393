@@ -24,5 +24,5 @@
     parameter integer AXI_WRDATA_LATENCY= 2, // 1, //1, //1
     parameter integer AXI_TASK_HOLD=1.0,
     
-    parameter [1:0] DEFAULT_STATUS_MODE=3,
+//    parameter [1:0] DEFAULT_STATUS_MODE=3,
     parameter       SIMUL_AXI_READ_WIDTH=16

@@ -45,6 +45,7 @@ from argparse import RawDescriptionHelpFormatter
 from import_verilog_parameters import ImportVerilogParameters
 from import_verilog_parameters import VerilogParameters
 import x393_mem
+import x393_utils
 import x393_axi_control_status
 import x393_pio_sequences
 import x393_mcntrl_timing
@@ -58,6 +59,7 @@ __updated__ = '2015-03-01'
 DEBUG = 1
 TESTRUN = 0
 PROFILE = 0
+QUIET=1 # more try/excepts
 callableTasks={}
 class CLIError(Exception):
     #Generic exception to raise and log different fatal errors.
@@ -99,25 +101,25 @@ def execTask(commandLine):
             funcArgs[i]=eval(arg) # Try parsing parameters as numbers, if possible
         except:
             pass
-    result = callableTasks[funcName]['func'](callableTasks[funcName]['inst'],*funcArgs)
-    '''
-    try:
-        result = callableTasks[funcName]['func'](callableTasks[funcName]['inst'],*funcArgs)
-    except Exception as e:
-        print ('Error while executing %s %s'%(funcName,str(funcArgs)))
+    if QUIET:
         try:
-            funcFArgs= callableTasks[funcName]['args']
-        except:
-            print ("Unknown task: %s"%(funcName))
-            return None
-        sFuncArgs=""
-        if funcFArgs:
-           sFuncArgs+='<'+str(funcFArgs[0])+'>'
-        for a in funcFArgs[1:]:
-            sFuncArgs+=' <'+str(a)+'>'
-        print ("Usage:\n%s %s"%(funcName,sFuncArgs))
-        print ("exception message:"+str(e))
-    '''
+            result = callableTasks[funcName]['func'](callableTasks[funcName]['inst'],*funcArgs)
+        except Exception as e:
+            print ('Error while executing %s %s'%(funcName,str(funcArgs)))
+            try:
+                funcFArgs= callableTasks[funcName]['args']
+            except:
+                print ("Unknown task: %s"%(funcName))
+                return None
+            sFuncArgs=""
+            if funcFArgs:
+                sFuncArgs+='<'+str(funcFArgs[0])+'>'
+            for a in funcFArgs[1:]:
+                sFuncArgs+=' <'+str(a)+'>'
+            print ("Usage:\n%s %s"%(funcName,sFuncArgs))
+            print ("exception message:"+str(e))
+    else:
+        result = callableTasks[funcName]['func'](callableTasks[funcName]['inst'],*funcArgs)
     return result
 def hx(obj):
     try:
@@ -181,11 +183,13 @@ USAGE
         parser.add_argument("-c", "--command",  dest="commands", action="append", default=[], help="execute command" , nargs='*')
         parser.add_argument("-i", "--interactive", dest="interactive", action="store_true", help="enter interactive mode [default: %(default)s]")
         parser.add_argument("-s", "--simulated", dest="simulated", action="store_true", help="Simulated mode (no real hardware I/O) [default: %(default)s]")
+        parser.add_argument("-x", "--exceptions", dest="exceptions", action="count", help="Exit on more exceptions [default: %(default)s]")
 
         # Process arguments
         args = parser.parse_args()
+        QUIET = args.exceptions == 0
         if not args.simulated:
-            if not os.path.isfile("/dev/xdevcfg"):
+            if not os.path.exists("/dev/xdevcfg"):
                 args.simulated=True
                 print("Program is forced to run in SIMULATED mode as '/dev/xdevcfg' does not exist (not a camera)")
         #print("--- defines=%s"%    str(args.defines))
@@ -282,6 +286,7 @@ USAGE
     if verbose > 3: print("vpars1.VERBOSE__RAW="+str(vpars1.VERBOSE__RAW))
     
     x393mem=    x393_mem.X393Mem(verbose,args.simulated) #add dry run parameter
+    x393utils=  x393_utils.X393Utils(verbose,args.simulated)
     x393tasks=  x393_axi_control_status.X393AxiControlStatus(verbose,args.simulated)
     x393Pio=    x393_pio_sequences.X393PIOSequences(verbose,args.simulated)
     x393Timing= x393_mcntrl_timing.X393McntrlTiming(verbose,args.simulated)
@@ -302,6 +307,7 @@ USAGE
                 func_args=x393_mem.X393Mem.__dict__[name].func_code.co_varnames[1:x393_mem.X393Mem.__dict__[name].func_code.co_argcount]
                 print (name+": "+str(func_args))
     extractTasks(x393_mem.X393Mem,x393mem)
+    extractTasks(x393_utils.X393Utils,x393utils)
     extractTasks(x393_axi_control_status.X393AxiControlStatus,x393tasks)
     extractTasks(x393_pio_sequences.X393PIOSequences,x393Pio)
     extractTasks(x393_mcntrl_timing.X393McntrlTiming,x393Timing)

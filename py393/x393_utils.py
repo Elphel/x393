@@ -1,0 +1,175 @@
+from __future__ import print_function
+'''
+# Copyright (C) 2015, Elphel.inc.
+# Parsing Verilog parameters from the header files
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+@author:     Andrey Filippov
+@copyright:  2015 Elphel, Inc.
+@license:    GPLv3.0+
+@contact:    andrey@elphel.coml
+@deffield    updated: Updated
+'''
+__author__ = "Andrey Filippov"
+__copyright__ = "Copyright 2015, Elphel, Inc."
+__license__ = "GPL"
+__version__ = "3.0+"
+__maintainer__ = "Andrey Filippov"
+__email__ = "andrey@elphel.com"
+__status__ = "Development"
+
+from import_verilog_parameters import VerilogParameters
+from x393_mem import X393Mem
+#from verilog_utils import hx,concat, bits 
+#from verilog_utils import hx
+#from subprocess import call
+from time import sleep
+DEFAULT_BITFILE="/usr/local/verilog/x393.bit"
+FPGA_RST_CTRL= 0xf8000240
+FPGA0_THR_CTRL=0xf8000178
+FPGA_LOAD_BITSTREAM="/dev/xdevcfg"
+INT_STS=       0xf800700c
+class X393Utils(object):
+    DRY_MODE= True # True
+    DEBUG_MODE=1
+#    vpars=None
+    x393_mem=None
+    enabled_channels=0 # currently enable channels
+#    verbose=1
+    def __init__(self, debug_mode=1,dry_mode=True):
+        self.DEBUG_MODE=debug_mode
+        self.DRY_MODE=dry_mode
+        self.x393_mem=X393Mem(debug_mode,dry_mode)
+        self.__dict__.update(VerilogParameters.__dict__["_VerilogParameters__shared_state"]) # Add verilog parameters to the class namespace
+
+    def reset_get(self):
+        """
+        Get current reset state
+        """
+        return self.x393_mem.read_mem(FPGA_RST_CTRL)
+    def reset_once(self):
+        """
+        Pulse reset ON, then OFF
+        """
+        self.reset((0,0xa))
+    def reset(self,data):
+        """
+        Write data to FPGA_RST_CTRL register
+        <data> currently data=1 - reset on, data=0 - reset on
+               data can also be a list/tuple of integers, then it will be applied
+               in sequence (0,0xe) will turn reset on, then off
+        """
+        if isinstance(data,int):
+            self.x393_mem.write_mem(FPGA_RST_CTRL,data)
+        else:
+            for d in data:
+                self.x393_mem.write_mem(FPGA_RST_CTRL,d)
+    def bitstream(self,bitfile=DEFAULT_BITFILE):
+        """
+        Turn FPGA clock OFF, reset ON, load bitfile, turn clock ON and reset OFF
+        <bitfile> path to bitfile if provided, otherwise default bitfile will be used
+        """
+        print ("FPGA clock OFF")
+        self.x393_mem.write_mem(FPGA0_THR_CTRL,1)
+        print ("Reset ON")
+        self.reset(0)
+        print ("cat %s >%s"%(bitfile,FPGA_LOAD_BITSTREAM))
+        if not self.DRY_MODE:
+            l=0
+            with open(bitfile, 'rb') as src, open(FPGA_LOAD_BITSTREAM, 'wb') as dst:
+                buffer_size=1024*1024
+                while True:
+                    copy_buffer=src.read(buffer_size)
+                    if not copy_buffer:
+                        break
+                    dst.write(copy_buffer)
+                    l+=len(copy_buffer)
+                    print("sent %d bytes to FPGA"%l)                            
+
+            print("Loaded %d bytes to FPGA"%l)                            
+#            call(("cat",bitfile,">"+FPGA_LOAD_BITSTREAM))
+        print("Wait for DONE")
+        if not self.DRY_MODE:
+            for _ in range(100):
+                if (self.x393_mem.read_mem(INT_STS) & 4) != 0:
+                    break
+                sleep(0.1)
+            else:
+                print("Timeout waiting for DONE, [0x%x]=0x%x"%(INT_STS,self.x393_mem.read_mem(INT_STS)))
+                return
+        print ("FPGA clock ON")
+        self.x393_mem.write_mem(FPGA0_THR_CTRL,0)
+        print ("Reset OFF")
+        self.reset(0xa)
+    
+    def exp_gpio (self,
+                  mode="in",
+                  gpio_low=54,
+                  gpio_high=None):
+        """
+        Export GPIO pins connected to PL (full range is 54..117)
+        <mode>     GPIO mode: "in" or "out"
+        <gpio_low> lowest GPIO to export     
+        <gpio_hi>  Highest GPIO to export. Set to <gpio_low> if not provided     
+        """
+        if gpio_high is None:
+            gpio_high=gpio_low
+        print ("Exporting as \""+mode+"\":", end=""),    
+        for gpio_n in range (gpio_low, gpio_high + 1):
+            print (" %d"%gpio_n, end="")
+        print() 
+        if not self.DRY_MODE:
+            for gpio in range (gpio_low, gpio_high + 1):
+                try:
+                    with open ("/sys/class/gpio/export","w") as f:
+                        print (gpio,file=f)
+                except:
+                    print ("failed \"echo %d > /sys/class/gpio/export"%gpio)
+                try:
+                    with open ("/sys/class/gpio/gpio%d/direction"%gpio,"w") as f:
+                        print (mode,file=f)
+                except:
+                    print ("failed \"echo %s > /sys/class/gpio/gpio%d/direction"%(mode,gpio))
+
+    def mon_gpio (self,
+                  gpio_low=54,
+                  gpio_high=None):
+        """
+        Get state of the GPIO pins connected to PL (full range is 54..117)
+        <gpio_low> lowest GPIO to export     
+        <gpio_hi>  Highest GPIO to export. Set to <gpio_low> if not provided
+        Returns data as list of 0,1 or None    
+        """
+        if gpio_high is None:
+            gpio_high=gpio_low
+        print ("gpio %d.%d: "%(gpio_high,gpio_low), end="")
+        d=[]
+        for gpio in range (gpio_high, gpio_low-1,-1):
+            if gpio != gpio_high and ((gpio-gpio_low+1) % 4) == 0:
+                print (".",end="")
+            if not self.DRY_MODE:
+                try:
+                    with open ("/sys/class/gpio/gpio%d/value"%gpio,"r") as f:
+                        b=int(f.read(1))
+                        print ("%d"%b,end="")
+                        d.append(b)
+                except:
+                    print ("X",end="")
+                    d.append(None)
+            else:
+                print ("X",end="")
+                d.append(None)
+        print()
+        return d
+            

@@ -41,6 +41,7 @@ class X393AxiControlStatus(object):
 #    vpars=None
     x393_mem=None
     enabled_channels=0 # currently enable channels
+    FPGA_RST_CTRL=0xf8000240
 #    verbose=1
     def __init__(self, debug_mode=1,dry_mode=True):
         self.DEBUG_MODE=debug_mode
@@ -63,7 +64,7 @@ class X393AxiControlStatus(object):
         Maybe import parameters into the module, not class namespace to use directly, w/o self. ?
 #        __dict__.update(VerilogParameters.__dict__) # Add verilog parameters to the class namespace
         '''
-        
+                
     def write_contol_register(self, reg_addr, data):
         """
         Write 32-bit word to the control register
@@ -140,7 +141,7 @@ class X393AxiControlStatus(object):
                        mode,        # input  [1:0] mode;
                        seq_number): # input  [5:0] seq_number;
         """
-        Poll specified status register until some condition is matched
+        Program status control for specified module/register
         <base_addr> -  base control address of the selected module
         <reg_addr> -   status control register relative to the module address space
         <mode> -       status generation mode:

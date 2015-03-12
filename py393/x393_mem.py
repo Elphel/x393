@@ -83,7 +83,7 @@ class X393Mem(object):
         '''    
         if self.DRY_MODE:
             print ("read_mem(0x%x)"%(addr))
-            return
+            return addr # just some data
         with open("/dev/mem", "r+b") as f:
             page_addr=addr & (~(self.PAGE_SIZE-1))
             page_offs=addr-page_addr
@@ -96,6 +96,38 @@ class X393Mem(object):
                 print ("0x%08x ==> 0x%08x (%d)"%(addr,d,d))
             return d
 #        mm.close() #probably not needed with "with"
+    def mem_dump (self,start_addr,end_addr=0):
+        '''
+         Read and print memory range from physical memory
+         <start_addr> - physical byte start address
+         <end_addr> - physical byte end address (inclusive)
+         Returns list of read values
+        '''
+        start_addr &= 0xfffffffc
+        end_addr &=   0xfffffffc
+        if end_addr<start_addr:
+            end_addr = start_addr
+        rslt=[]
+        if self.DRY_MODE:
+            rslt=range(start_addr,end_addr+1,4)
+        else:
+            with open("/dev/mem", "r+b") as f:
+                for addr in range (start_addr,end_addr+4,4):
+                    page_addr=addr & (~(self.PAGE_SIZE-1))
+                    page_offs=addr-page_addr
+                    if (page_addr>=0x80000000):
+                        page_addr-= (1<<32)
+                    mm = mmap.mmap(f.fileno(), self.PAGE_SIZE, offset=page_addr)
+                    data=struct.unpack(self.ENDIAN+"L",mm[page_offs:page_offs+4])
+                    rslt.append(data[0])
+                    
+        for addr in range (start_addr,end_addr+4,4):
+            if (addr == start_addr) or ((addr & 0x3f) == 0):
+                print ("\n0x%08x:"%addr,end=""),
+            d=rslt[(addr-start_addr) >> 2]
+            print ("%08x "%d,end=""),
+        print("")
+        return rslt    
     '''
     Read/write slave AXI using byte addresses relative to the AXI memory region
     '''

@@ -521,7 +521,7 @@ class ImportVerilogParameters(object):
                         break
                 # common for comma-separated parameters - real/integer or bit range
                 if line[0]=="[": # skip bit range
-                    while ((line.find("]")<0) or (line.find("]")==(len(line-1)))) and preprocessedLines: # not found at all or last element in the stting - add next line
+                    while ((line.find("]")<0) or (line.find("]")==(len(line)-1))) and preprocessedLines: # not found at all or last element in the string - add next line
                         line+=preprocessedLines.pop(0)
                     parType=line[:line.find("]")+1:]
                     line=line[line.find("]")+1:]

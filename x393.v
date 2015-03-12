@@ -223,7 +223,7 @@ module  x393 #(
     
     
     
-    assign gpio_in= {52'h0,tmp_debug};
+    assign gpio_in= {48'h0,frst,tmp_debug};
    
    
    

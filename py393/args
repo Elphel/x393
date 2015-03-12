@@ -1,6 +1,5 @@
 -v
--d aaa=bbb
--d ccc=ddd
+-d TARGET_MODE=1
 -f ../system_defines.vh
 -f ../includes/x393_parameters.vh  ../includes/x393_localparams.vh
 -p NEWPAR='h3ff
