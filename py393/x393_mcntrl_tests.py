@@ -40,7 +40,8 @@ from x393_mcntrl_buffers     import X393McntrlBuffers
 #from verilog_utils import * # concat, bits 
 #from verilog_utils import hx, concat, bits, getParWidth 
 from verilog_utils import concat #, getParWidth
-#from x393_axi_control_status import concat, bits 
+#from x393_axi_control_status import concat, bits
+#from time import sleep 
 class X393McntrlTests(object):
     DRY_MODE= True # True
     DEBUG_MODE=1
@@ -55,9 +56,9 @@ class X393McntrlTests(object):
         self.DRY_MODE=    dry_mode
         self.x393_mem=            X393Mem(debug_mode,dry_mode)
         self.x393_axi_tasks=      X393AxiControlStatus(debug_mode,dry_mode)
-        self.x393_pio_sequences=  X393PIOSequences(debug_mode,True)
-        self.x393_mcntrl_timing=  X393McntrlTiming(debug_mode,True)
-        self.x393_mcntrl_buffers= X393McntrlBuffers(debug_mode,True)
+        self.x393_pio_sequences=  X393PIOSequences(debug_mode,dry_mode)
+        self.x393_mcntrl_timing=  X393McntrlTiming(debug_mode,dry_mode)
+        self.x393_mcntrl_buffers= X393McntrlBuffers(debug_mode,dry_mode)
         self.__dict__.update(VerilogParameters.__dict__["_VerilogParameters__shared_state"]) # Add verilog parameters to the class namespace
         try:
             self.verbose=self.VERBOSE
@@ -121,6 +122,7 @@ class X393McntrlTests(object):
             channel 0 buffer data
             I/O delays
             clock phase
+            status generation
         <set_per_pin_delays> - 1 - set individual (per-pin) I/O delays, 0 - use common for the whole class         
         """
 
@@ -145,8 +147,14 @@ class X393McntrlTests(object):
                                                         self.DLY_DM_ODELAY,
                                                         self.DLY_CMDA_ODELAY)
 # set clock phase relative to DDR clk
+#        print("Debugging: sleeping for 1 second")
+#        sleep(1)
         self.x393_mcntrl_timing.axi_set_phase(self.DLY_PHASE);
-
+#        self.x393_axi_tasks.read_all_status()
+        
+#program status for all used modules to refresh at any bit change        
+        self.x393_axi_tasks.program_status_all(3, 0)
+        
     def set_all_sequences(self):
         """
         Set all sequences:  MRS, REFRESH, WRITE LEVELLING, READ PATTERN, WRITE BLOCK, READ BLOCK 

@@ -97,7 +97,7 @@ def getParWidthLo(bitRange):
                     
 def getParWidth(bitRange):
     wl=getParWidthLo(bitRange)
-    print("\n***wl=%s, bitRange=%s"%(str(wl),str(bitRange)))
+#    print("\n***wl=%s, bitRange=%s"%(str(wl),str(bitRange)))
 #    print("bitRange=%s wl=%s"%(bitRange,str(wl)))
     if not wl:
         return None

@@ -351,6 +351,7 @@ USAGE
         line =""
         while True:
             line=raw_input('x393%s--> '%('','(simulated)')[args.simulated]).strip()
+            lineList=line.split()
             if not line:
                 print ('Use "quit" to exit, "help" - for help')
             elif (line == 'quit') or (line == 'exit'):
@@ -363,8 +364,10 @@ USAGE
                 print ('\n"parameters" and "defines" list known defined parameters and macros')
                 print ("args.exception=%d, QUIET=%d"%(args.exceptions,QUIET))
                 
-            elif (len(line) > len("help")) and (line[:len("help")]=='help'):
-                helpFilter=line[len('help'):].strip()
+#            elif (len(line) > len("help")) and (line[:len("help")]=='help'):
+            elif lineList[0] == 'help':
+#                helpFilter=line[len('help'):].strip()
+                helpFilter=lineList[1] # should not fail
                 try:
                     re.match(helpFilter,"")
                 except:
@@ -373,11 +376,9 @@ USAGE
                 if helpFilter:
                     print
                     for name,val in sorted(callableTasks.items()):
-#                       if re.findall(helpFilter,name):
                         if re.match(helpFilter,name):
                             print('=== %s ==='%name)
                             sFuncArgs=getFuncArgsString(name)
-#                           print ("Usage: %s %s"%(name,sFuncArgs))
                             docs=callableTasks[name]['docs']
                             if docs:
                                 docsl=docs.split("\n")
@@ -386,29 +387,39 @@ USAGE
                                     print ('%s'%l)
                                     #print(docs)
                             print ("     Usage: %s %s\n"%(name,sFuncArgs))
-            elif line == 'parameters':
+            elif lineList[0] == 'parameters':
+                nameFilter = None
+                if len(lineList)> 1:
+                    nameFilter=lineList[1]
+                    try:
+                        re.match(nameFilter,"")
+                    except:
+                        print("Invalid search expression: %s"%nameFilter)
+                        nameFilter=None    
                 parameters=ivp.getParameters()
                 for par,val in sorted(parameters.items()):
+                    if (not nameFilter) or re.match(nameFilter,par):
+                        try:
+                            print (par+" = "+hex(val[0])+" (type = "+val[1]+" raw = "+val[2]+")")        
+                        except:
+                            print (par+" = "+str(val[0])+" (type = "+val[1]+" raw = "+val[2]+")")
+                if nameFilter is None:
+                    print("    'parameters' command accepts regular expression as a second parameter to filter the list")        
+            elif (lineList[0] == 'defines') or (lineList[0] == 'macros'):
+                nameFilter = None
+                if len(lineList)> 1:
+                    nameFilter=lineList[1]
                     try:
-                        print (par+" = "+hex(val[0])+" (type = "+val[1]+" raw = "+val[2]+")")        
+                        re.match(nameFilter,"")
                     except:
-                        print (par+" = "+str(val[0])+" (type = "+val[1]+" raw = "+val[2]+")")
-                
-                '''
-                for par in parameters:
-                    try:
-                        print (par+" = "+hex(parameters[par][0])+" (type = "+parameters[par][1]+" raw = "+parameters[par][2]+")")        
-                    except:
-                        print (par+" = "+str(parameters[par][0])+" (type = "+parameters[par][1]+" raw = "+parameters[par][2]+")")
-                '''        
-
-            elif (line == 'defines') or (line == 'macros'):
+                        print("Invalid search expression: %s"%nameFilter)
+                        nameFilter=None    
                 defines= ivp.getDefines()
                 for macro,val in sorted(defines.items()):
-                    print ("`"+macro+": "+str(val))        
-
-#                for macro in defines:
-#                    print ("`"+macro+": "+defines[macro])        
+                    if (not nameFilter) or re.match(nameFilter,macro):
+                        print ("`"+macro+": "+str(val))
+                if nameFilter is None:
+                    print("    'defines' command accepts regular expression as a second parameter to filter the list")        
             else:
                 cmdLine=line.split()
                 rslt= execTask(cmdLine)

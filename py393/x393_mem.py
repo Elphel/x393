@@ -52,20 +52,19 @@ class X393Mem(object):
         <data> - 32-bit data to write
         """
         if self.DRY_MODE:
-            print ("write_mem(0x%x,0x%x)"%(addr,data))
+            print ("simulated: write_mem(0x%x,0x%x)"%(addr,data))
             return
         with open("/dev/mem", "r+b") as f:
             page_addr=addr & (~(self.PAGE_SIZE-1))
             page_offs=addr-page_addr
             if (page_addr>=0x80000000):
                 page_addr-= (1<<32)
-                mm = mmap.mmap(f.fileno(), self.PAGE_SIZE, offset=page_addr)
-                packedData=struct.pack(self.ENDIAN+"L",data)
-                d=struct.unpack(self.ENDIAN+"L",packedData)[0]
-                mm[page_offs:page_offs+4]=packedData
-                if self.DEBUG_MODE > 2:
-                    print ("0x%08x <== 0x%08x (%d)"%(addr,d,d))
-            mm.close()
+            mm = mmap.mmap(f.fileno(), self.PAGE_SIZE, offset=page_addr)
+            packedData=struct.pack(self.ENDIAN+"L",data)
+            d=struct.unpack(self.ENDIAN+"L",packedData)[0]
+            mm[page_offs:page_offs+4]=packedData
+            if self.DEBUG_MODE > 2:
+                print ("0x%08x <== 0x%08x (%d)"%(addr,d,d))
         '''    
         if MONITOR_EMIO and VEBOSE:
             gpio0=read_mem (0xe000a068)
@@ -82,7 +81,7 @@ class X393Mem(object):
          <addr> - physical byte address
         '''    
         if self.DRY_MODE:
-            print ("read_mem(0x%x)"%(addr))
+            print ("simulated: read_mem(0x%x)"%(addr))
             return addr # just some data
         with open("/dev/mem", "r+b") as f:
             page_addr=addr & (~(self.PAGE_SIZE-1))
@@ -123,7 +122,10 @@ class X393Mem(object):
                     
         for addr in range (start_addr,end_addr+4,4):
             if (addr == start_addr) or ((addr & 0x3f) == 0):
-                print ("\n0x%08x:"%addr,end=""),
+                if self.DRY_MODE:
+                    print ("\nsimulated: 0x%08x:"%addr,end="")
+                else:     
+                    print ("\n0x%08x:"%addr,end="")
             d=rslt[(addr-start_addr) >> 2]
             print ("%08x "%d,end=""),
         print("")
