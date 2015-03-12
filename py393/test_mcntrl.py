@@ -89,7 +89,7 @@ def extractTasks(obj,inst):
             func_args=obj.__dict__[name].func_code.co_varnames[1:obj.__dict__[name].func_code.co_argcount]
             callableTasks[name]={'func':obj.__dict__[name],'args':func_args,'inst':inst,'docs':inspect.getdoc(obj.__dict__[name])}
 def execTask(commandLine):
-#    result=None
+    result=None
     cmdList=commandLine #.split()
     try:
         funcName=cmdList[0]
@@ -106,6 +106,7 @@ def execTask(commandLine):
             result = callableTasks[funcName]['func'](callableTasks[funcName]['inst'],*funcArgs)
         except Exception as e:
             print ('Error while executing %s %s'%(funcName,str(funcArgs)))
+            print ("QUIET=%d"%QUIET)
             try:
                 funcFArgs= callableTasks[funcName]['args']
             except:
@@ -139,7 +140,7 @@ def getFuncArgsString(name):
     
 def main(argv=None): # IGNORE:C0111
     '''Command line options.'''
-
+    global QUIET
     if argv is None:
         argv = sys.argv
     else:
@@ -187,7 +188,11 @@ USAGE
 
         # Process arguments
         args = parser.parse_args()
-        QUIET = args.exceptions == 0
+        if not args.exceptions:
+            args.exceptions=0
+    
+        QUIET = (1,0)[args.exceptions]
+#        print ("args.exception=%d, QUIET=%d"%(args.exceptions,QUIET))
         if not args.simulated:
             if not os.path.exists("/dev/xdevcfg"):
                 args.simulated=True
@@ -315,11 +320,13 @@ USAGE
     extractTasks(x393_mcntrl_tests.X393McntrlTests,x393Tests)
 
 #
+    """
     if verbose > 3:     
         funcName="read_mem"
         funcArgs=[0x377,123]
         print ('==== testing function : '+funcName+str(funcArgs)+' ====')
 #        execTask(commandLine) 
+
         try:
             callableTasks[funcName]['func'](callableTasks[funcName]['inst'],*funcArgs)
         except Exception as e:
@@ -332,7 +339,7 @@ USAGE
                     sFuncArgs+=' <'+str(a)+'>'
                     print ("Usage:\n%s %s"%(funcName,sFuncArgs))
                     print ("exception message:"+str(e))
-     
+    """ 
     for cmdLine in commands:
         print ('Running task: '+str(cmdLine))
         rslt= execTask(cmdLine)
@@ -354,6 +361,8 @@ USAGE
                     sFuncArgs=getFuncArgsString(name)
                     print ("Usage: %s %s"%(name,sFuncArgs))
                 print ('\n"parameters" and "defines" list known defined parameters and macros')
+                print ("args.exception=%d, QUIET=%d"%(args.exceptions,QUIET))
+                
             elif (len(line) > len("help")) and (line[:len("help")]=='help'):
                 helpFilter=line[len('help'):].strip()
                 try:

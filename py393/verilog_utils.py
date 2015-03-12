@@ -65,30 +65,39 @@ def getParWidthLo(bitRange):
             return (32,0)
         else:
             try:
+#                print(">>bitRange=%s"%bitRange,end=" ")
                 if bitRange[0] != '[':
+#                    print("\nbitRange[0]=%s"%(bitRange[0]))
                     return None # may also fail through except if bitRange=""
                 startPosHi=1
                 endPosHi=bitRange.index(':')
                 startPosLo=endPosHi+1
                 endPosLo=bitRange.index(']')
+#                print("startPosHi=%d, endPosHi=%d, startPosLo=%d, endPosLo=%d"%(startPosHi,endPosHi,startPosLo,endPosLo))
+                
                 if endPosHi<0:
                     endPosHi=endPosLo
                     startPosLo=-1
             except:
                 return None
+#            print("1: startPosHi=%d, endPosHi=%d, startPosLo=%d, endPosLo=%d"%(startPosHi,endPosHi,startPosLo,endPosLo))
             if endPosHi <0:
                 return None # no ":" or terminating "]"
             loBit=0
             try:
-                if startPosLo >0:
-                    loBit=int(bitRange[startPosLo,endPosLo])
-                    width=int(bitRange[startPosHi,endPosHi])-loBit+1
+                if startPosLo > 0:
+#                    print("2. startPosHi=%d, endPosHi=%d, startPosLo=%d, endPosLo=%d"%(startPosHi,endPosHi,startPosLo,endPosLo))
+#                    print("bitRange[startPosLo,endPosLo]=%s"%(bitRange[startPosLo:endPosLo]))
+#                    print("bitRange[startPosHi,endPosHi]=%s"%(bitRange[startPosHi:endPosHi]))
+                    loBit=int(bitRange[startPosLo:endPosLo])
+                    width=int(bitRange[startPosHi:endPosHi])-loBit+1
                 return (width,loBit)
             except:
                 return None # could not parse: undefined width
                     
 def getParWidth(bitRange):
     wl=getParWidthLo(bitRange)
+    print("\n***wl=%s, bitRange=%s"%(str(wl),str(bitRange)))
 #    print("bitRange=%s wl=%s"%(bitRange,str(wl)))
     if not wl:
         return None

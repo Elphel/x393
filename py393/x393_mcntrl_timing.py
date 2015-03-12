@@ -133,8 +133,8 @@ class X393McntrlTiming(object):
         """
         if self.DEBUG_MODE > 1:
             print("SET DQ IDELAY=0x%x"%delay)
-        self.x393_axi_tasks.axi_set_multiple_delays(self.LD_DLY_LANE0_IDELAY, 8, delay)
-        self.x393_axi_tasks.axi_set_multiple_delays(self.LD_DLY_LANE1_IDELAY, 8, delay)
+        self.axi_set_multiple_delays(self.LD_DLY_LANE0_IDELAY, 8, delay)
+        self.axi_set_multiple_delays(self.LD_DLY_LANE1_IDELAY, 8, delay)
         self.x393_axi_tasks.write_contol_register  (self.DLY_SET,0);# // set all delays
         
     def axi_set_dq_odelay(self,
@@ -145,8 +145,8 @@ class X393McntrlTiming(object):
         """
         if self.DEBUG_MODE > 1:
             print("SET DQ ODELAY=0x%x"%delay)
-        self.x393_axi_tasks.axi_set_multiple_delays(self.LD_DLY_LANE0_ODELAY, 8, delay);
-        self.x393_axi_tasks.axi_set_multiple_delays(self.LD_DLY_LANE1_ODELAY, 8, delay);
+        self.axi_set_multiple_delays(self.LD_DLY_LANE0_ODELAY, 8, delay);
+        self.axi_set_multiple_delays(self.LD_DLY_LANE1_ODELAY, 8, delay);
         self.x393_axi_tasks.write_contol_register(self.DLY_SET,0); # set all delays
         
     def axi_set_dqs_idelay(self,
@@ -157,8 +157,8 @@ class X393McntrlTiming(object):
         """
         if self.DEBUG_MODE > 1:
             print("SET DQS IDELAY=0x%x"%delay)
-        self.x393_axi_tasks.axi_set_multiple_delays(self.LD_DLY_LANE0_IDELAY + 8, 1, delay)
-        self.x393_axi_tasks.axi_set_multiple_delays(self.LD_DLY_LANE1_IDELAY + 8, 1, delay)
+        self.axi_set_multiple_delays(self.LD_DLY_LANE0_IDELAY + 8, 1, delay)
+        self.axi_set_multiple_delays(self.LD_DLY_LANE1_IDELAY + 8, 1, delay)
         self.x393_axi_tasks.write_contol_register(self.DLY_SET,0); # set all delays
 
     def axi_set_dqs_odelay(self,
@@ -169,8 +169,8 @@ class X393McntrlTiming(object):
         """
         if self.DEBUG_MODE > 1:
             print("SET DQS ODELAY=0x%x"%delay)
-        self.x393_axi_tasks.axi_set_multiple_delays(self.LD_DLY_LANE0_ODELAY + 8, 1, delay)
-        self.x393_axi_tasks.axi_set_multiple_delays(self.LD_DLY_LANE1_ODELAY + 8, 1, delay)
+        self.axi_set_multiple_delays(self.LD_DLY_LANE0_ODELAY + 8, 1, delay)
+        self.axi_set_multiple_delays(self.LD_DLY_LANE1_ODELAY + 8, 1, delay)
         self.x393_axi_tasks.write_contol_register(self.DLY_SET,0); # set all delays
 
     def axi_set_dm_odelay (self,
@@ -181,8 +181,8 @@ class X393McntrlTiming(object):
         """
         if self.DEBUG_MODE > 1:
             print("SET DQM IDELAY=0x%x"%delay)
-        self.x393_axi_tasks.axi_set_multiple_delays(self.LD_DLY_LANE0_ODELAY + 9, 1, delay)
-        self.x393_axi_tasks.axi_set_multiple_delays(self.LD_DLY_LANE1_ODELAY + 9, 1, delay)
+        self.axi_set_multiple_delays(self.LD_DLY_LANE0_ODELAY + 9, 1, delay)
+        self.axi_set_multiple_delays(self.LD_DLY_LANE1_ODELAY + 9, 1, delay)
         self.x393_axi_tasks.write_contol_register(self.DLY_SET,0) #  set all delays
 
     def axi_set_cmda_odelay(self,
@@ -193,7 +193,7 @@ class X393McntrlTiming(object):
         """
         if self.DEBUG_MODE > 1:
             print("SET COMMAND and ADDRESS ODELAY=0x%x"%delay)
-        self.x393_axi_tasks.axi_set_multiple_delays(self.LD_DLY_CMDA, 32, delay);
+        self.axi_set_multiple_delays(self.LD_DLY_CMDA, 32, delay);
         self.x393_axi_tasks.write_contol_register(self.DLY_SET,0)  # set all delays
         
     def axi_set_multiple_delays(self,
@@ -246,13 +246,16 @@ class X393McntrlTiming(object):
         Set sequencer patterns for the tristate ON/OFF (defined by parameters)
         """
         # may fail if some of the parameters used have undefined width
-        delays=concat((0,16), #  {16'h0, 
-                      (self.DQSTRI_LAST, getParWidth(self.DQSTRI_LAST__TYPE)),      #  DQSTRI_LAST,
-                      (self.DQSTRI_FIRST,getParWidth(self.DQSTRI_FIRST__TYPE)),     #  DQSTRI_FIRST,
-                      (self.DQTRI_LAST,  getParWidth(self.DQTRI_LAST_FIRST__TYPE)), #   DQTRI_LAST,
-                      (self.DQTRI_FIRST, getParWidth(self.DQTRI_FIRST__TYPE))       #   DQTRI_FIRST});
-                      )
+        print("DQTRI_FIRST=%s, DQTRI_FIRST__TYPE=%s"%(str(self.DQTRI_FIRST),str(self.DQTRI_FIRST__TYPE)))
+        print("DQTRI_LAST=%s, DQTRI_LAST__TYPE=%s"%(str(self.DQTRI_LAST),str(self.DQTRI_LAST__TYPE)))
+        delays=concat(((0,16), #  {16'h0, 
+                       (self.DQSTRI_LAST, getParWidth(self.DQSTRI_LAST__TYPE)),      #  DQSTRI_LAST,
+                       (self.DQSTRI_FIRST,getParWidth(self.DQSTRI_FIRST__TYPE)),     #  DQSTRI_FIRST,
+                       (self.DQTRI_LAST,  getParWidth(self.DQTRI_LAST__TYPE)), #   DQTRI_LAST,
+                       (self.DQTRI_FIRST, getParWidth(self.DQTRI_FIRST__TYPE)))       #   DQTRI_FIRST});
+                      )[0]
         if self.DEBUG_MODE > 1:
+            print("SET TRISTATE PATTERNS, combined delays=%s"%str(delays))    
             print("SET TRISTATE PATTERNS, combined delays=0x%x"%delays)    
         self.x393_axi_tasks.write_contol_register(self.MCONTR_PHY_16BIT_ADDR +self.MCONTR_PHY_16BIT_PATTERNS_TRI, delays) #  DQSTRI_LAST, DQSTRI_FIRST, DQTRI_LAST, DQTRI_FIRST});
 

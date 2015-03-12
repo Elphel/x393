@@ -83,13 +83,13 @@ class X393McntrlTests(object):
         <chn_reset>):   immediately reset all the internal circuitry
         
         """
-        return concat (
+        return concat ((
                        ((0,1)[byte32],   1), # byte32,
                        ((0,1)[keep_open],1), # keep_open,
                        (extra_pages,     2), # extra_pages,
                        ((0,1)[write_mem],1), # write_mem,
                        ((0,1)[enable],   1), #enable,
-                       ((1,0)[chn_reset],1)) # ~chn_reset};
+                       ((1,0)[chn_reset],1)))# ~chn_reset};
 
     def func_encode_mode_scanline(self,      # function [4:0] 
                                extra_pages,  # input [1:0] extra_pages; # number of extra pages that need to stay (not to be overwritten) in the buffer
@@ -112,7 +112,7 @@ class X393McntrlTests(object):
                        ((0,1)[enable],   1), #enable,
                        ((1,0)[chn_reset],1)) # ~chn_reset};
     def task_set_up(self,
-                    set_per_pin_delays):
+                    set_per_pin_delays=0):
         """
         Initial setup of the memory controller, including:
             tristate patterns
@@ -545,18 +545,18 @@ class X393McntrlTests(object):
         self.x393_axi_tasks.write_contol_register(start_addr + self.MCNTRL_TILED_FRAME_FULL_WIDTH,
                                                   self.FRAME_FULL_WIDTH)
         self.x393_axi_tasks.write_contol_register(start_addr + self.MCNTRL_TILED_WINDOW_WH,
-                                                  concat((window_height,16),
-                                                         (window_width, 16))) # {window_height,window_width});
+                                                  concat(((window_height,16),
+                                                          (window_width, 16)))) # {window_height,window_width});
         self.x393_axi_tasks.write_contol_register(start_addr + self.MCNTRL_TILED_WINDOW_X0Y0,
-                                                  concat((window_top,  16),
-                                                         (window_left, 16)))  #  {window_top,window_left});
+                                                  concat(((window_top,  16),
+                                                          (window_left, 16))))  #  {window_top,window_left});
         self.x393_axi_tasks.write_contol_register(start_addr + self.MCNTRL_TILED_WINDOW_STARTXY,
-                                                  concat((self.TILED_STARTY, 16),
-                                                         (self.TILED_STARTX, 16)))  #  TILED_STARTX+(TILED_STARTY<<16));
+                                                  concat(((self.TILED_STARTY, 16),
+                                                          (self.TILED_STARTX, 16))))  #  TILED_STARTX+(TILED_STARTY<<16));
         self.x393_axi_tasks.write_contol_register(start_addr + self.MCNTRL_TILED_TILE_WHS,
-                                                  concat((tile_vstep, 8),
-                                                         (tile_height, 8),
-                                                         (tile_width, 8))) # {8'b0,tile_vstep,tile_height,tile_width});#tile_width+(tile_height<<8)+(tile_vstep<<16));
+                                                  concat(((tile_vstep, 8),
+                                                          (tile_height, 8),
+                                                          (tile_width, 8)))) # {8'b0,tile_vstep,tile_height,tile_width});#tile_width+(tile_height<<8)+(tile_vstep<<16));
         self.x393_axi_tasks.write_contol_register(start_addr + self.MCNTRL_TILED_MODE, mode);# set mode register: {extra_pages[1:0],enable,!reset}
         self.x393_axi_tasks.configure_channel_priority(channel,0)    # lowest priority channel 3
         self.x393_axi_tasks.enable_memcntrl_en_dis(channel,1);
@@ -672,18 +672,18 @@ class X393McntrlTests(object):
         self.x393_axi_tasks.write_contol_register(start_addr + self.MCNTRL_TILED_FRAME_FULL_WIDTH,
                                                   self.FRAME_FULL_WIDTH)
         self.x393_axi_tasks.write_contol_register(start_addr + self.MCNTRL_TILED_WINDOW_WH,
-                                                  concat((window_height,16),
-                                                         (window_width, 16))) # {window_height,window_width});
+                                                  concat(((window_height,16),
+                                                          (window_width, 16)))) # {window_height,window_width});
         self.x393_axi_tasks.write_contol_register(start_addr + self.MCNTRL_TILED_WINDOW_X0Y0,
-                                                  concat((window_top,  16),
-                                                         (window_left, 16)))  #  {window_top,window_left});
+                                                  concat(((window_top,  16),
+                                                          (window_left, 16))))  #  {window_top,window_left});
         self.x393_axi_tasks.write_contol_register(start_addr + self.MCNTRL_TILED_WINDOW_STARTXY,
-                                                  concat((self.TILED_STARTY, 16),
-                                                         (self.TILED_STARTX, 16)))  #  TILED_STARTX+(TILED_STARTY<<16));
+                                                  concat(((self.TILED_STARTY, 16),
+                                                          (self.TILED_STARTX, 16))))  #  TILED_STARTX+(TILED_STARTY<<16));
         self.x393_axi_tasks.write_contol_register(start_addr + self.MCNTRL_TILED_TILE_WHS,
-                                                  concat((tile_vstep, 8),
-                                                         (tile_height, 8),
-                                                         (tile_width, 8))) # {8'b0,tile_vstep,tile_height,tile_width});#tile_width+(tile_height<<8)+(tile_vstep<<16));
+                                                  concat(((tile_vstep, 8),
+                                                          (tile_height, 8),
+                                                          (tile_width, 8)))) # {8'b0,tile_vstep,tile_height,tile_width});#tile_width+(tile_height<<8)+(tile_vstep<<16));
         self.x393_axi_tasks.write_contol_register(start_addr + self.MCNTRL_TILED_MODE, mode);# set mode register: {extra_pages[1:0],enable,!reset}
         self.x393_axi_tasks.configure_channel_priority(channel,0)    # lowest priority channel 3
         self.x393_axi_tasks.enable_memcntrl_en_dis(channel,1);
