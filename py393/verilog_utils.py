@@ -40,12 +40,16 @@ def hx(obj):
 Simulate Verilog concatenation. Input list tuple of items, each being a pair of (value, width)
 '''    
 def concat(items):
+#    print(items)
     val=0
     width=0
     for vw in reversed(items):
         v=vw[0]
-        if vw[1]==1:
-            v=(0,1)[v] # So True/False will also work, not juet o/1
+        if vw[1]==1: # So True/False will also work, not just 0/1
+            if v:
+                v=1
+            else:
+                v=0
         val |= (v & ((1 << vw[1])-1))<<width
         width += vw[1]
     return (val,width)

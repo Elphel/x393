@@ -34,7 +34,7 @@ from import_verilog_parameters import VerilogParameters
 from x393_mem import X393Mem
 #from verilog_utils import hx,concat, bits 
 from verilog_utils import hx
-        
+from time import time
 class X393AxiControlStatus(object):
     DRY_MODE= True # True
     DEBUG_MODE=1
@@ -72,13 +72,12 @@ class X393AxiControlStatus(object):
         <data> - 32-bit data to write
         """
         self.x393_mem.axi_write_single_w(self.CONTROL_ADDR+reg_addr, data)
-    def read_and_wait_status(self, address):
+    def read_status(self, address): # was read_and_wait_status
         """
         Read word from the status register (up to 26 bits payload and 6-bit sequence number)
         <addr> - status register address (currently 0..255)
         """
         return self.x393_mem.axi_read_addr_w(self.STATUS_ADDR + address )
-    
     def wait_status_condition(self,
                               status_address,         # input [STATUS_DEPTH-1:0] status_address;
                               status_control_address, # input [29:0] status_control_address;
@@ -86,7 +85,8 @@ class X393AxiControlStatus(object):
                               pattern,                # input [25:0] pattern;        // bits as in read registers
                               mask,                   # input [25:0] mask;           // which bits to compare
                               invert_match,           # input        invert_match;   // 0 - wait until match to pattern (all bits), 1 - wait until no match (any of bits differ)
-                              wait_seq):              # input        wait_seq; // Wait for the correct sequence number, False assume correct
+                              wait_seq,               # input        wait_seq; // Wait for the correct sequence number, False assume correct
+                              timeout=10.0):          # maximal timeout (0 - no timeout)
         """
         Poll specified status register until some condition is matched
         <status_address> -         status register address (currently 0..255)
@@ -100,20 +100,37 @@ class X393AxiControlStatus(object):
         <mask> -                   26-bit mask to enable pattern matching (0-s - ignore)
         <invert_match> -           invert match (wait until matching condition becomes false)
         <wait_seq>-                wait for the correct sequence number, if False - assume always correct
+        <timeout>                  maximal time to wait for condition
+        Return 1 if success, 0 - if timeout
         """
         match=False
+        endTime=None
+        if timeout>0:
+            endTime=time()+timeout
         while not match:
-            data=self.read_and_wait_status(status_address)
+            data=self.read_status(status_address)
             if wait_seq:
                 seq_num = ((data >> self.STATUS_SEQ_SHFT) ^ 0x20) & 0x30
-                data=self.read_and_wait_status(status_address)
+                self.write_contol_register(status_control_address, ((status_mode & 3) <<6) | (seq_num & 0x3f))
+                data=self.read_status(status_address)
                 while (((data >> self.STATUS_SEQ_SHFT) ^ seq_num) & 0x30) !=0:
-                    data=self.read_and_wait_status(status_address)
+                    data=self.read_status(status_address)
                     if self.DRY_MODE: break
+                    if timeout and (time()>endTime):
+                        print("TIMEOUT in wait_status_condition(status_address=0x%x,status_control_address=0x%x,pattern=0x%x,mask=0x%x,timeout=%f)"%
+                               (status_address,status_control_address,pattern,mask,timeout))
+                        print ("last read status data is 0x%x, written seq number is 0x%x"%(data,seq_num))
+                        return 0
             match = (((data ^ pattern) & mask & 0x3ffffff)==0)
             if invert_match:
                 match = not match
             if self.DRY_MODE: break
+            if timeout and (time()>endTime):
+                print("TIMEOUT1 in wait_status_condition(status_address=0x%x,status_control_address=0x%x,pattern=0x%x,mask=0x%x,timeout=%f)"%
+                    (status_address,status_control_address,pattern,mask,timeout))
+                print ("last read status data is 0x%x"%(data))
+                return 0
+        return 1
 
     def read_all_status(self):
         """
@@ -123,17 +140,17 @@ class X393AxiControlStatus(object):
 #        for name in self.__dict__:
 #            print (name+": "+str(name=='MCONTR_PHY_STATUS_REG_ADDR'))
 #        print (self.__dict__['MCONTR_PHY_STATUS_REG_ADDR'])
-        print ("MCONTR_PHY_STATUS_REG_ADDR:          %s"%(hx(self.read_and_wait_status(self.MCONTR_PHY_STATUS_REG_ADDR))))
-        print ("MCONTR_TOP_STATUS_REG_ADDR:          %s"%(hx(self.read_and_wait_status(self.MCONTR_TOP_STATUS_REG_ADDR))))
-        print ("MCNTRL_PS_STATUS_REG_ADDR:           %s"%(hx(self.read_and_wait_status(self.MCNTRL_PS_STATUS_REG_ADDR))))
-        print ("MCNTRL_SCANLINE_STATUS_REG_CHN1_ADDR:%s"%(hx(self.read_and_wait_status(self.MCNTRL_SCANLINE_STATUS_REG_CHN1_ADDR))))
-        print ("MCNTRL_SCANLINE_STATUS_REG_CHN3_ADDR:%s"%(hx(self.read_and_wait_status(self.MCNTRL_SCANLINE_STATUS_REG_CHN3_ADDR))))
-        print ("MCNTRL_TILED_STATUS_REG_CHN2_ADDR:   %s"%(hx(self.read_and_wait_status(self.MCNTRL_TILED_STATUS_REG_CHN2_ADDR))))
-        print ("MCNTRL_TILED_STATUS_REG_CHN4_ADDR:   %s"%(hx(self.read_and_wait_status(self.MCNTRL_TILED_STATUS_REG_CHN4_ADDR))))
-        print ("MCNTRL_TEST01_STATUS_REG_CHN1_ADDR:  %s"%(hx(self.read_and_wait_status(self.MCNTRL_TEST01_STATUS_REG_CHN1_ADDR))))
-        print ("MCNTRL_TEST01_STATUS_REG_CHN2_ADDR:  %s"%(hx(self.read_and_wait_status(self.MCNTRL_TEST01_STATUS_REG_CHN2_ADDR))))
-        print ("MCNTRL_TEST01_STATUS_REG_CHN3_ADDR:  %s"%(hx(self.read_and_wait_status(self.MCNTRL_TEST01_STATUS_REG_CHN3_ADDR))))
-        print ("MCNTRL_TEST01_STATUS_REG_CHN4_ADDR:  %s"%(hx(self.read_and_wait_status(self.MCNTRL_TEST01_STATUS_REG_CHN4_ADDR))))
+        print ("MCONTR_PHY_STATUS_REG_ADDR:          %s"%(hx(self.read_status(self.MCONTR_PHY_STATUS_REG_ADDR))))
+        print ("MCONTR_TOP_STATUS_REG_ADDR:          %s"%(hx(self.read_status(self.MCONTR_TOP_STATUS_REG_ADDR))))
+        print ("MCNTRL_PS_STATUS_REG_ADDR:           %s"%(hx(self.read_status(self.MCNTRL_PS_STATUS_REG_ADDR))))
+        print ("MCNTRL_SCANLINE_STATUS_REG_CHN1_ADDR:%s"%(hx(self.read_status(self.MCNTRL_SCANLINE_STATUS_REG_CHN1_ADDR))))
+        print ("MCNTRL_SCANLINE_STATUS_REG_CHN3_ADDR:%s"%(hx(self.read_status(self.MCNTRL_SCANLINE_STATUS_REG_CHN3_ADDR))))
+        print ("MCNTRL_TILED_STATUS_REG_CHN2_ADDR:   %s"%(hx(self.read_status(self.MCNTRL_TILED_STATUS_REG_CHN2_ADDR))))
+        print ("MCNTRL_TILED_STATUS_REG_CHN4_ADDR:   %s"%(hx(self.read_status(self.MCNTRL_TILED_STATUS_REG_CHN4_ADDR))))
+        print ("MCNTRL_TEST01_STATUS_REG_CHN1_ADDR:  %s"%(hx(self.read_status(self.MCNTRL_TEST01_STATUS_REG_CHN1_ADDR))))
+        print ("MCNTRL_TEST01_STATUS_REG_CHN2_ADDR:  %s"%(hx(self.read_status(self.MCNTRL_TEST01_STATUS_REG_CHN2_ADDR))))
+        print ("MCNTRL_TEST01_STATUS_REG_CHN3_ADDR:  %s"%(hx(self.read_status(self.MCNTRL_TEST01_STATUS_REG_CHN3_ADDR))))
+        print ("MCNTRL_TEST01_STATUS_REG_CHN4_ADDR:  %s"%(hx(self.read_status(self.MCNTRL_TEST01_STATUS_REG_CHN4_ADDR))))
 
     def program_status(self,
                        base_addr,   # input [29:0] base_addr;

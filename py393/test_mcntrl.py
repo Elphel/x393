@@ -377,7 +377,13 @@ USAGE
                     print
                     for name,val in sorted(callableTasks.items()):
                         if re.match(helpFilter,name):
+                            #enable_memcntrl enable_memcntr .__class__.__name__
                             print('=== %s ==='%name)
+                            print('defined in %s.%s, %s: %d)'%(str(callableTasks[name]['inst'].__class__.__module__),
+                                                       callableTasks[name]['inst'].__class__.__name__,
+                                                       callableTasks[name]['func'].func_code.co_filename,
+                                                       callableTasks[name]['func'].func_code.co_firstlineno
+                                  ))
                             sFuncArgs=getFuncArgsString(name)
                             docs=callableTasks[name]['docs']
                             if docs:

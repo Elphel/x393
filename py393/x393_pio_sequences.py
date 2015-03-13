@@ -105,9 +105,10 @@ class X393PIOSequences(object):
             0,
             sync_seq)
 
-    def wait_ps_pio_done(self,      # // wait PS PIO module has no pending/running memory transaction
-                         mode,      # input [1:0] mode;
-                         sync_seq): # input       sync_seq; //  synchronize sequences
+    def wait_ps_pio_done(self,         # // wait PS PIO module has no pending/running memory transaction
+                         mode,         # input [1:0] mode;
+                         sync_seq,     # input       sync_seq; //  synchronize sequences
+                         timeout=2.0): # maximal timeout in seconds
         """
         Wait PS PIO module has no pending/running memory transaction
         <mode>           status mode (0..3) - see 'help program_status'
@@ -120,7 +121,8 @@ class X393PIOSequences(object):
             0,
             3 << self.STATUS_2LSB_SHFT,
             0,
-            sync_seq)
+            sync_seq,
+            timeout)
     '''
     x393_mcontr_encode_cmd
     '''
@@ -355,7 +357,7 @@ class X393PIOSequences(object):
               (al,2),                      # al[1:0],    # MR1.4_3 
               (rtt,1),                     # rtt[0],     # MR1.2 
               (ods,1),                     # ods[0],     # MR1.1 
-              (dll)))[0]                   #dll};       # MR1.0 
+              (dll,1)))[0]                 #dll};       # MR1.0 
     
     def func_ddr3_mr2(self, # ; function [ADDRESS_NUMBER+2:0] 
                         rtt_wr, # input [1:0] rtt_wr; # Dynamic ODT :
@@ -414,10 +416,10 @@ class X393PIOSequences(object):
             1x, 2'bx1 - reserved
         """ 
         return concat((
-                (3,3),                   # 3'h3,
-                (0,self.ADDRESS_NUMBER), # {ADDRESS_NUMBER-3{1'b0}},
-                (mpr, 1),                # mpr,          # MR3.2
-                (mpr_rf,2)))[0]          # mpr_rf[1:0]}; # MR3.1_0 
+                (3,3),                     # 3'h3,
+                (0,self.ADDRESS_NUMBER-3), # {ADDRESS_NUMBER-3{1'b0}},
+                (mpr, 1),                  # mpr,          # MR3.2
+                (mpr_rf,2)))[0]            # mpr_rf[1:0]}; # MR3.1_0 
         
     '''
     x393_tasks_pio_sequences
@@ -617,7 +619,7 @@ class X393PIOSequences(object):
         self.x393_mem.axi_write_single_w(cmd_addr, data)
         cmd_addr += 1
         #                          skip      done        bank                       ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD      B_RST
-        data.self.func_encode_skip( 5,        0,           0,                         0,  0,  0,  0,    0,    0,    0,  0,   0,        0)# tMOD
+        data=self.func_encode_skip( 5,        0,           0,                         0,  0,  0,  0,    0,    0,    0,  0,   0,        0)# tMOD
         self.x393_mem.axi_write_single_w(cmd_addr, data)
         cmd_addr += 1
 # first read
@@ -820,10 +822,10 @@ class X393PIOSequences(object):
             0)         # 2'h0);    # [1:0] mpr_rf; # MPR read function: 2'b00: predefined pattern 0101...
         cmd_addr = self.MCONTR_CMD_WR_ADDR + self.INITIALIZE_OFFSET;
         if self.DEBUG_MODE > 1:
-            print("mr0=0x%x", mr0);
-            print("mr1=0x%x", mr1);
-            print("mr2=0x%x", mr2);
-            print("mr3=0x%x", mr3);
+            print("mr0=0x%05x"%mr0);
+            print("mr1=0x%05x"%mr1);
+            print("mr2=0x%05x"%mr2);
+            print("mr3=0x%05x"%mr3);
         #                           addr                 bank                   RCW ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD NOP, B_RST
         data=self.func_encode_cmd(bits(mr2,(14,0)),     bits(mr2,(17,15)),       7,  0,  0,  0,  0,    0,    0,    0,  0,   0,   0,   0)
         self.x393_mem.axi_write_single_w(cmd_addr, data)

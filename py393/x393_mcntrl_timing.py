@@ -51,6 +51,51 @@ class X393McntrlTiming(object):
         self.x393_mem=X393Mem(debug_mode,dry_mode)
         self.x393_axi_tasks=X393AxiControlStatus(debug_mode,dry_mode)
         self.__dict__.update(VerilogParameters.__dict__["_VerilogParameters__shared_state"]) # Add verilog parameters to the class namespace
+
+    def axi_set_phase(self,
+                      phase,      # input [PHASE_WIDTH-1:0] phase;
+                      wait_phase_en=True,
+                      wait_seq=False):
+        """
+        Set clock phase
+        <phase>    8-bit clock phase value
+        <wait_phase_en> compare phase shift to programmed (will not work if the program was restarted)
+        <wait_seq> read and re-send status request to make sure status reflects new data (just for testing, too fast for Python)
+        Returns 1 if success, 0 if timeout (or no wait was performed)
+        """
+        if self.DEBUG_MODE > 1:
+            print("SET CLOCK PHASE=0x%x"%phase)
+        self.x393_axi_tasks.write_contol_register(self.LD_DLY_PHASE, phase & ((1<<self.PHASE_WIDTH)-1)) # {{(32-PHASE_WIDTH){1'b0}},phase}); // control regiter address
+        self.x393_axi_tasks.write_contol_register(self.DLY_SET,0)
+        self.target_phase = phase
+        if wait_phase_en:
+            return self.wait_phase(True, wait_seq)
+        return 0    
+
+    def wait_phase(self,
+                   check_phase_value=True,
+                   wait_seq=False):
+        """
+        Wait for the phase shifter
+        <check_phase_value> compare phase shift to programmed (will not work if the program was restarted)
+        <wait_seq> read and re-send status request to make sure status reflects new data (just for testing, too fast for Python)
+        Returns 1 if success, 0 if timeout
+        """
+        patt = 0x3000000 | self.target_phase
+        mask = 0x3000100
+        if check_phase_value:
+            mask |= 0xff
+        return self.x393_axi_tasks.wait_status_condition(
+                              self.MCONTR_PHY_STATUS_REG_ADDR,                                # status_address,
+                              self.MCONTR_PHY_16BIT_ADDR + self.MCONTR_PHY_STATUS_CNTRL,      # status_control_address,
+                              3,                                                              # status_mode,
+                              patt,                                                           # pattern,
+                              mask,                                                           # mask
+                              0,                                                              # invert_match
+                              wait_seq,                                                       # wait_seq;
+                              1.0)                                                            # maximal timeout (0 - no timeout)
+       
+        
     def get_target_phase(self):
         """
         Returns previously set clock phase value
@@ -210,25 +255,13 @@ class X393McntrlTiming(object):
         for i in range(0,number): # (i=0;i<number;i=i+1) begin
             self.x393_axi_tasks.write_contol_register(reg_addr + i, delay) # {24'b0,delay}); // control register address
 
-    def axi_set_phase(self,
-                      phase): # input [PHASE_WIDTH-1:0] phase;
-        """
-        Set clock phase
-        <phase>    8-bit clock phase value
-        """
-        if self.DEBUG_MODE > 1:
-            print("SET CLOCK PHASE=0x%x"%phase)
-        self.x393_axi_tasks.write_contol_register(self.LD_DLY_PHASE, phase & ((1<<self.PHASE_WIDTH)-1)) # {{(32-PHASE_WIDTH){1'b0}},phase}); // control regiter address
-        self.x393_axi_tasks.write_contol_register(self.DLY_SET,0)
-        self.target_phase = phase
-            
     def wait_phase_shifter_ready(self):
         """
         Wait until clock phase shifter is ready
         """
-        data=self.x393_axi_tasks.read_and_wait_status(self.MCONTR_PHY_STATUS_REG_ADDR)
+        data=self.x393_axi_tasks.read_status(self.MCONTR_PHY_STATUS_REG_ADDR)
         while (((data & self.STATUS_PSHIFTER_RDY_MASK) == 0) or (((data ^ self.target_phase) & 0xff) != 0)):
-            data=self.x393_axi_tasks.read_and_wait_status(self.MCONTR_PHY_STATUS_REG_ADDR)
+            data=self.x393_axi_tasks.read_status(self.MCONTR_PHY_STATUS_REG_ADDR)
             if self.DRY_MODE: break
 
     def axi_set_wbuf_delay(self,

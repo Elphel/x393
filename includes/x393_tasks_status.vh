@@ -33,13 +33,13 @@ task wait_status_condition;
     begin
         WAITING_STATUS = 1;
         for (match=0; !match; match = invert_match ^ (((registered_rdata ^ {6'h0,pattern}) & {6'h0,mask})==0)) begin
-            read_and_wait_status(status_address);
+            read_status(status_address);
             if (wait_seq) begin 
                 seq_num = (registered_rdata[STATUS_SEQ_SHFT+:6] ^ 6'h20)&'h30;
                 write_contol_register(status_control_address, {24'b0,status_mode,seq_num});
-                read_and_wait_status(status_address);
+                read_status(status_address);
                 while (((registered_rdata[STATUS_SEQ_SHFT+:6] ^ seq_num) & 6'h30)!=0) begin // match just 2 MSBs
-                    read_and_wait_status(status_address);
+                    read_status(status_address);
                 end
             end
         end
@@ -58,7 +58,7 @@ task wait_status_condition_auto; // assumes status is already updating
     begin
         WAITING_STATUS = 1;
         for (match=0; !match; match = invert_match ^ (((registered_rdata ^ {6'h0,pattern}) & {6'h0,mask})==0)) begin
-            read_and_wait_status(status_address);
+            read_status(status_address);
         end
         WAITING_STATUS = 0;
     end
@@ -68,9 +68,9 @@ endtask
  task wait_phase_shifter_ready;
     begin
         WAITING_STATUS = 1;
-        read_and_wait_status(MCONTR_PHY_STATUS_REG_ADDR);
+        read_status(MCONTR_PHY_STATUS_REG_ADDR);
         while (((registered_rdata & STATUS_PSHIFTER_RDY_MASK) == 0) || (((registered_rdata ^ {24'h0,target_phase}) & 'hff) != 0)) begin
-            read_and_wait_status(MCONTR_PHY_STATUS_REG_ADDR); // exits after negedge CLK
+            read_status(MCONTR_PHY_STATUS_REG_ADDR); // exits after negedge CLK
         end
         WAITING_STATUS = 0;
     end
@@ -78,21 +78,21 @@ endtask
  
  task read_all_status;
     begin
-        read_and_wait_status (MCONTR_PHY_STATUS_REG_ADDR);
-        read_and_wait_status (MCONTR_TOP_STATUS_REG_ADDR);
-        read_and_wait_status (MCNTRL_PS_STATUS_REG_ADDR);
-        read_and_wait_status (MCNTRL_SCANLINE_STATUS_REG_CHN1_ADDR);
-        read_and_wait_status (MCNTRL_SCANLINE_STATUS_REG_CHN3_ADDR);
-        read_and_wait_status (MCNTRL_TILED_STATUS_REG_CHN2_ADDR);
-        read_and_wait_status (MCNTRL_TILED_STATUS_REG_CHN4_ADDR);
-        read_and_wait_status (MCNTRL_TEST01_STATUS_REG_CHN1_ADDR);
-        read_and_wait_status (MCNTRL_TEST01_STATUS_REG_CHN2_ADDR);
-        read_and_wait_status (MCNTRL_TEST01_STATUS_REG_CHN3_ADDR);
-        read_and_wait_status (MCNTRL_TEST01_STATUS_REG_CHN4_ADDR);
+        read_status (MCONTR_PHY_STATUS_REG_ADDR);
+        read_status (MCONTR_TOP_STATUS_REG_ADDR);
+        read_status (MCNTRL_PS_STATUS_REG_ADDR);
+        read_status (MCNTRL_SCANLINE_STATUS_REG_CHN1_ADDR);
+        read_status (MCNTRL_SCANLINE_STATUS_REG_CHN3_ADDR);
+        read_status (MCNTRL_TILED_STATUS_REG_CHN2_ADDR);
+        read_status (MCNTRL_TILED_STATUS_REG_CHN4_ADDR);
+        read_status (MCNTRL_TEST01_STATUS_REG_CHN1_ADDR);
+        read_status (MCNTRL_TEST01_STATUS_REG_CHN2_ADDR);
+        read_status (MCNTRL_TEST01_STATUS_REG_CHN3_ADDR);
+        read_status (MCNTRL_TEST01_STATUS_REG_CHN4_ADDR);
     end
  endtask 
   
- task read_and_wait_status;
+ task read_status;
     input [STATUS_DEPTH-1:0] address;
     begin
         read_and_wait_w(STATUS_ADDR + address ); // Will set:       registered_rdata <= rdata;

@@ -116,22 +116,31 @@ class X393McntrlTests(object):
                     set_per_pin_delays=0):
         """
         Initial setup of the memory controller, including:
+            disable (and reset) memory controller
+            enable memory controller
+            setup status generation in all modules
             tristate patterns
             DQS/DQM patterns
             all sequences
             channel 0 buffer data
             I/O delays
             clock phase
-            status generation
-        <set_per_pin_delays> - 1 - set individual (per-pin) I/O delays, 0 - use common for the whole class         
+            write buffer latency
+        <set_per_pin_delays> - 1 - set individual (per-pin) I/O delays, 0 - use common for the whole class
+        Returns 1 if phase was set, 0 if it failed         
         """
-
+#reset memory controller
+        self.x393_axi_tasks.enable_memcntrl(0)
+#enable memory controller
+        self.x393_axi_tasks.enable_memcntrl(1)
+#program status for all used modules to refresh at any bit change        
+        self.x393_axi_tasks.program_status_all(3, 0)
 # set dq /dqs tristate on/off patterns
         self.x393_mcntrl_timing.axi_set_tristate_patterns()
 # set patterns for DM (always 0) and DQS - always the same (may try different for write lev.)
         self.x393_mcntrl_timing.axi_set_dqs_dqm_patterns()
 # prepare all sequences
-        self.set_all_sequences;
+        self.set_all_sequences()
 # prepare write buffer    
         self.x393_mcntrl_buffers.write_block_buf_chn(0,0,256); # fill block memory (channel, page, number)
 # set all delays
@@ -149,11 +158,14 @@ class X393McntrlTests(object):
 # set clock phase relative to DDR clk
 #        print("Debugging: sleeping for 1 second")
 #        sleep(1)
-        self.x393_mcntrl_timing.axi_set_phase(self.DLY_PHASE);
-#        self.x393_axi_tasks.read_all_status()
-        
-#program status for all used modules to refresh at any bit change        
-        self.x393_axi_tasks.program_status_all(3, 0)
+        phaseOK=self.x393_mcntrl_timing.axi_set_phase(self.DLY_PHASE,wait_phase_en=True); # wait for phase set
+        if not phaseOK:
+            print("Failed to set clock phase")
+            return 0
+# read and print status (optional)
+        self.x393_mcntrl_timing.axi_set_wbuf_delay(self.WBUF_DLY_DFLT)
+        self.x393_axi_tasks.read_all_status()
+        return 1
         
     def set_all_sequences(self):
         """
@@ -182,7 +194,51 @@ class X393McntrlTests(object):
                                                 0x1234, # 15'h1234, # row address
                                                 0x100   # 10'h100   # column address
         )
+    def init_ddr3(self):
+        """
+        Enable address/command pins, remove SDRST, enable CKE,
+        Setup PS PIO
+        Set DDR3 MR0..MR3 registers
+        """
+        """
+// enable output for address/commands to DDR chip    
+    enable_cmda(1);
+    repeat (16) @(posedge CLK) ;
+// remove reset from DDR chip    
+    activate_sdrst(0); // was enabled at system reset
 
+    #5000; // actually 500 usec required
+    repeat (16) @(posedge CLK) ;
+    enable_cke(1);
+    repeat (16) @(posedge CLK) ;
+    
+//    enable_memcntrl(1);                 // enable memory controller
+    enable_memcntrl_channels(16'h0003); // only channel 0 and 1 are enabled
+    configure_channel_priority(0,0);    // lowest priority channel 0
+    configure_channel_priority(1,0);    // lowest priority channel 1
+    enable_reset_ps_pio(1,0);           // enable, no reset
+
+// set MR registers in DDR3 memory, run DCI calibration (long)
+    wait_ps_pio_ready(DEFAULT_STATUS_MODE, 1); // wait FIFO not half full 
+    schedule_ps_pio ( // schedule software-control memory operation (may need to check FIFO status first)
+                        INITIALIZE_OFFSET, // input [9:0] seq_addr; // sequence start address
+                        0,                 // input [1:0] page;     // buffer page number
+                        0,                 // input       urgent;   // high priority request (only for competion with other channels, wiil not pass in this FIFO)
+                        0,                // input       chn;      // channel buffer to use: 0 - memory read, 1 - memory write
+                        `PS_PIO_WAIT_COMPLETE );//  wait_complete; // Do not request a newe transaction from the scheduler until previous memory transaction is finished
+                        
+   
+`ifdef WAIT_MRS 
+    wait_ps_pio_done(DEFAULT_STATUS_MODE, 1);
+`else    
+    repeat (32) @(posedge CLK) ;  // what delay is needed to be sure? Add to PS_PIO?
+//    first refreshes will be fast (accummulated while waiting)
+`endif    
+    enable_refresh(1);
+    axi_set_dqs_odelay('h78); //??? dafaults - wrong?
+        
+        """
+        
     def test_write_levelling(self,
                             wait_complete, # Wait for operation to complete
                             wlev_dqs_dly= 0x80,
