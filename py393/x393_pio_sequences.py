@@ -79,17 +79,18 @@ class X393PIOSequences(object):
         <chn>            sub-channel to use: 0 - memory read, 1 - memory write
         <wait_complete>  Do not request a new transaction from the scheduler until previous memory transaction is finished
         """
-        self.write_contol_register(self.MCNTRL_PS_ADDR + self.MCNTRL_PS_CMD,
-                                    # {17'b0,
-                                    ((0,1)[wait_complete]<<14) |
-                                    ((0,1)[chn]<<13) |
-                                    ((0,1)[urgent]<<12) |
-                                    ((page & 3) << 10) |
-                                    (seq_addr & 0x3ff))
+        self.x393_axi_tasks.write_contol_register(self.MCNTRL_PS_ADDR + self.MCNTRL_PS_CMD,
+                                                  # {17'b0,
+                                                  ((0,1)[wait_complete]<<14) |
+                                                  ((0,1)[chn]<<13) |
+                                                  ((0,1)[urgent]<<12) |
+                                                  ((page & 3) << 10) |
+                                                  (seq_addr & 0x3ff))
  
-    def wait_ps_pio_ready(self,      #; // wait PS PIO module can accept comamnds (fifo half empty)
-                          mode,      # input [1:0] mode;
-                          sync_seq): # input       sync_seq; //  synchronize sequences
+    def wait_ps_pio_ready(self,         #; // wait PS PIO module can accept comamnds (fifo half empty)
+                          mode,         # input [1:0] mode;
+                          sync_seq,     # input       sync_seq; //  synchronize sequences
+                          timeout=2.0): # maximal timeout in seconds
         """
         Wait until PS PIO module can accept comamnds (fifo half empty) 
         <mode>           status mode (0..3) - see 'help program_status'
@@ -433,7 +434,7 @@ class X393PIOSequences(object):
         <rst>  1 - reset active, 0 - reset off
         """
         
-        self.write_contol_register(self.MCNTRL_PS_ADDR + self.MCNTRL_PS_EN_RST,
+        self.x393_axi_tasks.write_contol_register(self.MCNTRL_PS_ADDR + self.MCNTRL_PS_EN_RST,
                                    ((0,1)[en]<<1) | #{30'b0,en,
                                    (1,0)[rst])  #~rst});
    
@@ -642,7 +643,7 @@ class X393PIOSequences(object):
             cmd_addr += 1
 # nop - all 3 below are the same? - just repeat?
         #                          skip      done        bank                       ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD      B_RST
-        data=self.func_encode_skip(   0,       0,          0,                        0,  0,  1,  0,    0,    0,    1,  1,   0,        0)
+        data=self.func_encode_skip(   0,       0,          0,                        0,  0,  1,  0,    0,    0,    1,  0,   0,        0)
         self.x393_mem.axi_write_single_w(cmd_addr, data)
         cmd_addr += 1
 # nop
@@ -761,10 +762,10 @@ class X393PIOSequences(object):
         """
         Setup refresh sequence at parameter defined address in the sequencer memory
         <t_rfc>       tRFC =50 for tCK=2.5ns
-        <t_refi>      tREFI 48/97 for hardware, 8 - for simulation
+        <t_refi>      tREFI 48/97 for hardware, 16 - for simulation
         <en_refresh>  enable refresh immediately 
         """
-
+        print("SET REFRESH: tRFC=%d, tREFI=%d"%(t_rfc,t_refi))
         cmd_addr = self.MCONTR_CMD_WR_ADDR + self.REFRESH_OFFSET
         #                           addr                 bank                   RCW ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD NOP, B_RST
         data=self.func_encode_cmd(    0,                   0,                    6,  0,  0,  0,  0,    0,    0,    0,  0,   0,   0,   0)
@@ -876,4 +877,60 @@ class X393PIOSequences(object):
         self.x393_mem.axi_write_single_w(cmd_addr, data)
         cmd_addr += 1
 
-        
+    def read_pattern(self,
+                     num,
+                     show_rslt,
+                     wait_complete=1): # Wait for operation to complete
+        """
+        Read pattern 
+        <num>           number of 32-bit words to read
+        <show_rslt>     print read data
+        <wait_complete> wait read pattern operation to complete (0 - may initiate multiple PS PIO operations)
+        returns list of the read data
+        """
+
+        self.x393_pio_sequences.schedule_ps_pio ( # schedule software-control memory operation (may need to check FIFO status first)
+                        self.READ_PATTERN_OFFSET,   # input [9:0] seq_addr; # sequence start address
+                        2,                          # input [1:0] page;     # buffer page number
+                        0,                          # input       urgent;   # high priority request (only for competion with other channels, will not pass in this FIFO)
+                        0,                          # input       chn;      # channel buffer to use: 0 - memory read, 1 - memory write
+                        wait_complete) # `PS_PIO_WAIT_COMPLETE ) #  wait_complete; # Do not request a newe transaction from the scheduler until previous memory transaction is finished
+        self.x393_pio_sequences.wait_ps_pio_done(self.DEFAULT_STATUS_MODE,1) # wait previous memory transaction finished before changing delays (effective immediately)
+        return self.x393_mcntrl_buffers.read_block_buf_chn (0, 2, num, show_rslt )    # chn=0, page=2, number of 32-bit words=num, show_rslt
+
+    def read_block(self,
+                     num,
+                     show_rslt,
+                     wait_complete=1): # Wait for operation to complete
+        """
+        Read block in PS PIO mode 
+        <num>           number of 32-bit words to read
+        <show_rslt>     print read data
+        <wait_complete> wait read pattern operation to complete (0 - may initiate multiple PS PIO operations)
+        returns list of the read data
+        """
+    
+        self.x393_pio_sequences.schedule_ps_pio ( # schedule software-control memory operation (may need to check FIFO status first)
+                        self.READ_BLOCK_OFFSET,   # input [9:0] seq_addr; # sequence start address
+                        3,                     # input [1:0] page;     # buffer page number
+                        0,                     # input       urgent;   # high priority request (only for competion with other channels, will not pass in this FIFO)
+                        0,                     # input       chn;      # channel buffer to use: 0 - memory read, 1 - memory write
+                        wait_complete)         #  wait_complete; # Do not request a newe transaction from the scheduler until previous memory transaction is finished
+        self.x393_pio_sequences.wait_ps_pio_done(self.DEFAULT_STATUS_MODE,1); # wait previous memory transaction finished before changing delays (effective immediately)
+        return self.x393_mcntrl_buffers.read_block_buf_chn (0, 3, num, show_rslt ) # chn=0, page=3, number of 32-bit words=num, show_rslt
+
+    def write_block(self,
+                     wait_complete): # Wait for operation to complete
+        """
+        Write block in PS PIO mode 
+        <wait_complete> wait write block operation to complete (0 - may initiate multiple PS PIO operations)
+        """
+#    write_block_buf_chn; # fill block memory - already set in set_up task
+        self.x393_pio_sequences.schedule_ps_pio ( # schedule software-control memory operation (may need to check FIFO status first)
+                        self.WRITE_BLOCK_OFFSET,    # input [9:0] seq_addr; # sequence start address
+                        0,                     # input [1:0] page;     # buffer page number
+                        0,                     # input       urgent;   # high priority request (only for competion with other channels, will not pass in this FIFO)
+                        1,                     # input       chn;      # channel buffer to use: 0 - memory read, 1 - memory write
+                        wait_complete)         # `PS_PIO_WAIT_COMPLETE )#  wait_complete; # Do not request a newer transaction from the scheduler until previous memory transaction is finished
+# temporary - for debugging:
+#        self.x393_pio_sequences.wait_ps_pio_done(self.DEFAULT_STATUS_MODE,1) # wait previous memory transaction finished before changing delays (effective immediately)

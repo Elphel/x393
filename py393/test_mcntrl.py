@@ -44,6 +44,8 @@ from argparse import RawDescriptionHelpFormatter
 
 from import_verilog_parameters import ImportVerilogParameters
 from import_verilog_parameters import VerilogParameters
+from verilog_utils             import hx 
+
 import x393_mem
 import x393_utils
 import x393_axi_control_status
@@ -51,6 +53,7 @@ import x393_pio_sequences
 import x393_mcntrl_timing
 import x393_mcntrl_buffers
 import x393_mcntrl_tests
+import x393_mcntrl_adjust
 __all__ = []
 __version__ = 0.1
 __date__ = '2015-03-01'
@@ -122,11 +125,7 @@ def execTask(commandLine):
     else:
         result = callableTasks[funcName]['func'](callableTasks[funcName]['inst'],*funcArgs)
     return result
-def hx(obj):
-    try:
-        return "0x%x"%obj
-    except:
-        return str(obj)
+
 
 def getFuncArgsString(name):
     funcFArgs=callableTasks[name]['args']
@@ -297,6 +296,8 @@ USAGE
     x393Timing= x393_mcntrl_timing.X393McntrlTiming(verbose,args.simulated)
     x393Buffers=x393_mcntrl_buffers.X393McntrlBuffers(verbose,args.simulated)
     x393Tests=  x393_mcntrl_tests.X393McntrlTests(verbose,args.simulated)
+    x393Adjust= x393_mcntrl_adjust.X393McntrlAdjust(verbose,args.simulated)
+    
     '''
     print ("----------------------")
     print("x393_mem.__dict__="+str(x393_mem.__dict__))
@@ -318,6 +319,7 @@ USAGE
     extractTasks(x393_mcntrl_timing.X393McntrlTiming,x393Timing)
     extractTasks(x393_mcntrl_buffers.X393McntrlBuffers,x393Buffers)
     extractTasks(x393_mcntrl_tests.X393McntrlTests,x393Tests)
+    extractTasks(x393_mcntrl_adjust.X393McntrlAdjust,x393Adjust)
 
 #
     """

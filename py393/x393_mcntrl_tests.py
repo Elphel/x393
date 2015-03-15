@@ -41,7 +41,7 @@ from x393_mcntrl_buffers     import X393McntrlBuffers
 #from verilog_utils import hx, concat, bits, getParWidth 
 from verilog_utils import concat #, getParWidth
 #from x393_axi_control_status import concat, bits
-#from time import sleep 
+from time import sleep
 class X393McntrlTests(object):
     DRY_MODE= True # True
     DEBUG_MODE=1
@@ -175,8 +175,8 @@ class X393McntrlTests(object):
         self.x393_pio_sequences.set_mrs(1) # reset DLL
         if self.verbose>0: print("SET REFRESH")    
         self.x393_pio_sequences.set_refresh(
-                                            50, # input [ 9:0] t_rfc; # =50 for tCK=2.5ns
-                                            16) #input [ 7:0] t_refi; # 48/97 for normal, 8 - for simulation
+                                            self.T_RFC, # input [ 9:0] t_rfc; # =50 for tCK=2.5ns
+                                            self.T_REFI) #input [ 7:0] t_refi; # 48/97 for normal, 16 - for simulation
         if self.verbose>0: print("SET WRITE LEVELING")    
         self.x393_pio_sequences.set_write_lev(16) # write leveling, 16 times   (full buffer - 128) 
         if self.verbose>0: print("SET READ PATTERNt")    
@@ -194,62 +194,55 @@ class X393McntrlTests(object):
                                                 0x1234, # 15'h1234, # row address
                                                 0x100   # 10'h100   # column address
         )
-    def init_ddr3(self):
+    def init_ddr3(self,
+                  wait_complete=True):
         """
         Enable address/command pins, remove SDRST, enable CKE,
         Setup PS PIO
         Set DDR3 MR0..MR3 registers
+        Enable refresh
+        <wait_complete>  Do not request a new transaction from the scheduler until previous memory transaction is finished
         """
-        """
-// enable output for address/commands to DDR chip    
-    enable_cmda(1);
-    repeat (16) @(posedge CLK) ;
-// remove reset from DDR chip    
-    activate_sdrst(0); // was enabled at system reset
-
-    #5000; // actually 500 usec required
-    repeat (16) @(posedge CLK) ;
-    enable_cke(1);
-    repeat (16) @(posedge CLK) ;
-    
-//    enable_memcntrl(1);                 // enable memory controller
-    enable_memcntrl_channels(16'h0003); // only channel 0 and 1 are enabled
-    configure_channel_priority(0,0);    // lowest priority channel 0
-    configure_channel_priority(1,0);    // lowest priority channel 1
-    enable_reset_ps_pio(1,0);           // enable, no reset
-
-// set MR registers in DDR3 memory, run DCI calibration (long)
-    wait_ps_pio_ready(DEFAULT_STATUS_MODE, 1); // wait FIFO not half full 
-    schedule_ps_pio ( // schedule software-control memory operation (may need to check FIFO status first)
-                        INITIALIZE_OFFSET, // input [9:0] seq_addr; // sequence start address
-                        0,                 // input [1:0] page;     // buffer page number
-                        0,                 // input       urgent;   // high priority request (only for competion with other channels, wiil not pass in this FIFO)
-                        0,                // input       chn;      // channel buffer to use: 0 - memory read, 1 - memory write
-                        `PS_PIO_WAIT_COMPLETE );//  wait_complete; // Do not request a newe transaction from the scheduler until previous memory transaction is finished
-                        
-   
-`ifdef WAIT_MRS 
-    wait_ps_pio_done(DEFAULT_STATUS_MODE, 1);
-`else    
-    repeat (32) @(posedge CLK) ;  // what delay is needed to be sure? Add to PS_PIO?
-//    first refreshes will be fast (accummulated while waiting)
-`endif    
-    enable_refresh(1);
-    axi_set_dqs_odelay('h78); //??? dafaults - wrong?
+# enable output for address/commands to DDR chip    
+        self.x393_axi_tasks.enable_cmda(1)
+# remove reset from DDR3 chip    
+        self.x393_axi_tasks.activate_sdrst(0) # was enabled at system reset
+        sleep(0.1) # actually 500 usec required
+        self.x393_axi_tasks.enable_cke(1);
         
-        """
+        self.x393_axi_tasks.enable_memcntrl_channels(0x3)      # only channel 0 and 1 are enabled
+        self.x393_axi_tasks.configure_channel_priority(0,0)    # lowest priority channel 0
+        self.x393_axi_tasks.configure_channel_priority(1,0)    # lowest priority channel 1
+        self.x393_pio_sequences.enable_reset_ps_pio(1,0)       # enable, no reset
+        
+# set MR registers in DDR3 memory, run DCI calibration (long)
+        self.x393_pio_sequences.wait_ps_pio_ready(self.DEFAULT_STATUS_MODE, 1, 2.0); # wait FIFO not half full, sync sequences, timeout 2 sec 
+        self.x393_pio_sequences.schedule_ps_pio ( # schedule software-control memory operation (may need to check FIFO status first)
+                        self.INITIALIZE_OFFSET,   # input [9:0] seq_addr; # sequence start address
+                        0,                        # input [1:0] page;     # buffer page number
+                        0,                        # input       urgent;   # high priority request (only for competion with other channels, wiil not pass in this FIFO)
+                        0,                        # input       chn;      # channel buffer to use: 0 - memory read, 1 - memory write
+                        wait_complete );          #  wait_complete; # Do not request a newe transaction from the scheduler until previous memory transaction is finished
+# Wait PS PIO sequence DOEN
+        self.x393_pio_sequences.wait_ps_pio_done(self.DEFAULT_STATUS_MODE, 1 , 2.0); # wait FIFO not half full, sync sequences, timeout 2 sec 
+        self.x393_axi_tasks.enable_refresh(1)
+#    axi_set_dqs_odelay('h78); #??? defaults - wrong? DLY_DQS_ODELAY=0x74
+
         
     def test_write_levelling(self,
                             wait_complete, # Wait for operation to complete
                             wlev_dqs_dly= 0x80,
-                            norm_dqs_odly=0x78):
+                            norm_dqs_odly=None):
         """
         Test write levelling mode 
         <wait_complete> wait write levelling operation to complete (0 - may initiate multiple PS PIO operations)
         <wlev_dqs_dly>  DQS output delay for write levelling mode (default 0x80)
         <norm_dqs_odly> DQS output delay for normal (not write levelling) mode (default 0x78)
-        returns list of the read data
+        returns a pair of ratios for getting "1" for 2 lanes
         """
+        numBufWords=32 # twice nrep in set_write_lev
+        if norm_dqs_odly  is None:
+            norm_dqs_odly=self.DLY_DQS_ODELAY
 # Set special values for DQS idelay for write leveling
         self.x393_pio_sequences.wait_ps_pio_done(self.DEFAULT_STATUS_MODE,1); # not no interrupt running cycle - delays are changed immediately
         self.x393_mcntrl_timing.axi_set_dqs_idelay_wlv()
@@ -260,87 +253,70 @@ class X393McntrlTests(object):
         self.x393_pio_sequences.schedule_ps_pio (# schedule software-control memory operation (may need to check FIFO status first)
                                                   self.WRITELEV_OFFSET,   # input [9:0] seq_addr; # sequence start address
                                                   0,                 # input [1:0] page;     # buffer page number
-                                                  0,                 # input       urgent;   # high priority request (only for competion with other channels, will not pass in this FIFO)
+                                                  0,                 # input       urgent;   # high priority request (only for competition with other channels, will not pass in this FIFO)
                                                   0,                 # input       chn;      # channel buffer to use: 0 - memory read, 1 - memory write
                                                   wait_complete)     # `PS_PIO_WAIT_COMPLETE );#  wait_complete; # Do not request a newe transaction from the scheduler until previous memory transaction is finished
                         
         self.x393_pio_sequences.wait_ps_pio_done(self.DEFAULT_STATUS_MODE,1); # wait previous memory transaction finished before changing delays (effective immediately)
-        self.x393_mcntrl_buffers.read_block_buf_chn (0, 0, 32, 1, 1); # chn=0, page=0, number of 32-bit words=32, wait_done
-        self.x393_mcntrl_timing.axi_set_dqs_odelay(self.DLY_DQS_ODELAY)
-        self.x393_pio_sequences.schedule_ps_pio ( # schedule software-control memory operation (may need to check FIFO status first)
-                                                  self.WRITELEV_OFFSET, # input [9:0] seq_addr; # sequence start address
-                                                  1,                 # input [1:0] page;     # buffer page number
-                                                  0,                 # input       urgent;   # high priority request (only for competion with other channels, will not pass in this FIFO)
-                                                  0,                 # input       chn;      # channel buffer to use: 0 - memory read, 1 - memory write
-                                                  wait_complete)     # `PS_PIO_WAIT_COMPLETE );#  wait_complete; # Do not request a newe transaction from the scheduler until previous memory transaction is finished
-        self.x393_pio_sequences.wait_ps_pio_done(self.DEFAULT_STATUS_MODE,1); # wait previous memory transaction finished before changing delays (effective immediately)
-        rslt=self.x393_mcntrl_buffers.read_block_buf_chn (0, 1, 32, 1, 1 ); # chn=0, page=1, number of 32-bit words=32, wait_done
+        buf=self.x393_mcntrl_buffers.read_block_buf_chn (0, 0, numBufWords, (0,1)[self.verbose>1]) # chn=0, page=0, number of 32-bit words=32, show_rslt
+        #calculate 1-s ratio for both lanes
+        rslt=[0.0,0.0]
+        for i in range(0,numBufWords):
+            rslt[i & 1]+=(buf[i] & 1) + ((buf[i] >> 8) & 1) + ((buf[i] >> 16) & 1) + ((buf[i] >> 24) & 1)
+        for i in range(2):
+            rslt[i]/=2*numBufWords    
         self.x393_mcntrl_timing.axi_set_dqs_idelay_nominal()
         self.x393_mcntrl_timing.axi_set_dqs_odelay(norm_dqs_odly) # 'h78);
         self.x393_mcntrl_timing.axi_set_wbuf_delay(self.WBUF_DLY_DFLT); #DFLT_WBUF_DELAY
         return rslt
    
     def test_read_pattern(self,
-                          wait_complete): # Wait for operation to complete
+                          dq_idelay=None,
+                          dqs_idelay=None,
+                          wait_complete=1): # Wait for operation to complete
         """
-        Test read pattern mode 
+        Test read pattern mode
+        <dq_idelay>  set DQ input delays if provided ([] - skip, single number - both lanes, 2 element list - per/lane)
+        <dqs_idelay> set DQS input delays if provided ([] - skip, single number - both lanes, 2 element list - per/lane)
         <wait_complete> wait read pattern operation to complete (0 - may initiate multiple PS PIO operations)
         returns list of the read data
         """
-
-        self.x393_pio_sequences.schedule_ps_pio ( # schedule software-control memory operation (may need to check FIFO status first)
-                        self.READ_PATTERN_OFFSET,   # input [9:0] seq_addr; # sequence start address
-                        2,                          # input [1:0] page;     # buffer page number
-                        0,                          # input       urgent;   # high priority request (only for competion with other channels, will not pass in this FIFO)
-                        0,                          # input       chn;      # channel buffer to use: 0 - memory read, 1 - memory write
-                        wait_complete) # `PS_PIO_WAIT_COMPLETE ) #  wait_complete; # Do not request a newe transaction from the scheduler until previous memory transaction is finished
-        self.x393_pio_sequences.wait_ps_pio_done(self.DEFAULT_STATUS_MODE,1) # wait previous memory transaction finished before changing delays (effective immediately)
-        return self.x393_mcntrl_buffers.read_block_buf_chn (0, 2, 32, 1, 1 )    # chn=0, page=2, number of 32-bit words=32, wait_done
-    
+        if (not dq_idelay is None) and (dq_idelay != []):
+            self.x393_mcntrl_timing.axi_set_dq_idelay(dq_idelay)
+        if (not dqs_idelay is None) and (dqs_idelay != []):
+            self.x393_mcntrl_timing.axi_set_dqs_idelay(dqs_idelay)
+        return self.x393_pio_sequences.read_pattern(
+                     32, # num
+                     1, # show_rslt,
+                     wait_complete) #  # Wait for operation to complete
     def test_write_block(self,
                          wait_complete): # Wait for operation to complete
         """
         Test write block in PS PIO mode 
         <wait_complete> wait write block operation to complete (0 - may initiate multiple PS PIO operations)
         """
-#    write_block_buf_chn; # fill block memory - already set in set_up task
-        self.x393_pio_sequences.schedule_ps_pio ( # schedule software-control memory operation (may need to check FIFO status first)
-                        self.WRITE_BLOCK_OFFSET,    # input [9:0] seq_addr; # sequence start address
-                        0,                     # input [1:0] page;     # buffer page number
-                        0,                     # input       urgent;   # high priority request (only for competion with other channels, will not pass in this FIFO)
-                        1,                     # input       chn;      # channel buffer to use: 0 - memory read, 1 - memory write
-                        wait_complete)         # `PS_PIO_WAIT_COMPLETE )#  wait_complete; # Do not request a newe transaction from the scheduler until previous memory transaction is finished
-# temporary - for debugging:
-#        self.x393_pio_sequences.wait_ps_pio_done(self.DEFAULT_STATUS_MODE,1) # wait previous memory transaction finished before changing delays (effective immediately)
+        return self.x393_pio_sequences.write_block(wait_complete) # Wait for operation to complete
 
     def test_read_block(self,
-                        wait_complete): # Wait for operation to complete
+                        dq_idelay=None,
+                        dqs_idelay=None,
+                        wait_complete=1): # Wait for operation to complete
         """
         Test read block in PS PIO mode 
+        <dq_idelay>  set DQ input delays if provided ([] - skip, single number - both lanes, 2 element list - per/lane)
+        <dqs_idelay> set DQS input delays if provided ([] - skip, single number - both lanes, 2 element list - per/lane)
         <wait_complete> wait read block operation to complete (0 - may initiate multiple PS PIO operations)
         returns list of the read data
         """
-        self.x393_pio_sequences.schedule_ps_pio ( # schedule software-control memory operation (may need to check FIFO status first)
-                        self.READ_BLOCK_OFFSET,   # input [9:0] seq_addr; # sequence start address
-                        3,                     # input [1:0] page;     # buffer page number
-                        0,                     # input       urgent;   # high priority request (only for competion with other channels, will not pass in this FIFO)
-                        0,                     # input       chn;      # channel buffer to use: 0 - memory read, 1 - memory write
-                        wait_complete)         #  wait_complete; # Do not request a newe transaction from the scheduler until previous memory transaction is finished
-        self.x393_pio_sequences.schedule_ps_pio ( # schedule software-control memory operation (may need to check FIFO status first)
-                        self.READ_BLOCK_OFFSET,   # input [9:0] seq_addr; # sequence start address
-                        2,                     # input [1:0] page;     # buffer page number
-                        0,                     # input       urgent;   # high priority request (only for competion with other channels, will not pass in this FIFO)
-                        0,                     # input       chn;      # channel buffer to use: 0 - memory read, 1 - memory write
-                        wait_complete)         #  wait_complete; # Do not request a newe transaction from the scheduler until previous memory transaction is finished
-        self.x393_pio_sequences.schedule_ps_pio ( # schedule software-control memory operation (may need to check FIFO status first)
-                        self.READ_BLOCK_OFFSET,   # input [9:0] seq_addr; # sequence start address
-                        1,                     # input [1:0] page;     # buffer page number
-                        0,                     # input       urgent;   # high priority request (only for competion with other channels, will not pass in this FIFO)
-                        0,                     # input       chn;      # channel buffer to use: 0 - memory read, 1 - memory write
-                        wait_complete)         #  wait_complete; # Do not request a newe transaction from the scheduler until previous memory transaction is finished
-        self.x393_pio_sequences.wait_ps_pio_done(self.DEFAULT_STATUS_MODE,1); # wait previous memory transaction finished before changing delays (effective immediately)
-        return self.x393_mcntrl_buffers.read_block_buf_chn (0, 3, 256, 1, 1 ) # chn=0, page=3, number of 32-bit words=256, wait_done
-
+        if (not dq_idelay is None) and (dq_idelay != []):
+            self.x393_mcntrl_timing.axi_set_dq_idelay(dq_idelay)
+        if (not dqs_idelay is None) and (dqs_idelay != []):
+            self.x393_mcntrl_timing.axi_set_dqs_idelay(dqs_idelay)
+        return    self.x393_pio_sequences.read_block(self,
+                     256,           # num,
+                     1,             # show_rslt,
+                     wait_complete) # Wait for operation to complete
+        
     def test_scanline_write(self, #
                             channel,       # input            [3:0] channel;
                             extra_pages,   # input            [1:0] extra_pages;
@@ -537,7 +513,7 @@ class X393McntrlTests(object):
                                                                        channel,
                                                                        (ii & 3),
                                                                        xfer_size <<2,
-                                                                       1, # chn=0, page=3, number of 32-bit words=256, wait_done
+#                                                                       1, # chn=0, page=3, number of 32-bit words=256, show_rslt
                                                                        show_data))
             self.x393_axi_tasks.write_contol_register(test_mode_address,            self.TEST01_NEXT_PAGE)
         return result    
@@ -767,7 +743,7 @@ class X393McntrlTests(object):
             result.append(self.x393_mcntrl_buffers.read_block_buf_chn (channel,
                                                                        (ii & 3),
                                                                        tile_size <<2,
-                                                                       1, # chn=0, page=3, number of 32-bit words=256, wait_done
+#                                                                       1, # chn=0, page=3, number of 32-bit words=256, show_rslt
                                                                        show_data))
             self.x393_axi_tasks.write_contol_register(test_mode_address, self.TEST01_NEXT_PAGE);
 #     enable_memcntrl_en_dis(channel,0); # disable channel

@@ -285,6 +285,7 @@ wire sdclk; // BUFIO
 // mclk - same frequency as clk_div (same dynamic phase adjust), but with BUFG to be used in other regions. Phase to be
 // statically adjusted for clock boundary crossing
 // Phase control included, allowing setting phase in +/- 127 steps, each 1/56 of 1/Fvco (~22ps for Fvco=800MHz)
+// So shifting phase dynamically by plus/- 113 moves SDCLK by a full period (2.5ns) forward and backward (113= 0x71)
 wire clk_pre, clk_div_pre, sdclk_pre, mclk_pre, clk_fb;
 BUFR clk_bufr_i (.O(clk), .CE(), .CLR(), .I(clk_pre));
 BUFR clk_div_bufr_i (.O(clk_div), .CE(), .CLR(), .I(clk_div_pre));

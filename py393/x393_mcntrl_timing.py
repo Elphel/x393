@@ -36,8 +36,8 @@ from x393_mem import X393Mem
 from x393_axi_control_status import X393AxiControlStatus
 #from verilog_utils import * # concat, bits 
 #from verilog_utils import hx, concat, bits, getParWidth 
-from verilog_utils import concat, getParWidth
-#from x393_axi_control_status import concat, bits 
+from verilog_utils import concat, getParWidth,hexMultiple
+#from x393_axi_control_status import concat, bits
 class X393McntrlTiming(object):
     DRY_MODE= True # True
     DEBUG_MODE=1
@@ -174,72 +174,141 @@ class X393McntrlTiming(object):
                           delay): # input [7:0] delay;
         """
         Set all DQ input delays to the same value
-        <delay> 8-bit (5+3) delay value to use
+        <delay> 8-bit (5+3) delay value to use or a tuple/list with a pair for (lane0, lane1)
+                Each of the two elements in the delay tuple/list may be a a common integer or a list/tuple itself
         """
+        if delay is None: return # Do nothing, that's OK
+        if isinstance(delay,int):
+            delay=(delay,delay)
         if self.DEBUG_MODE > 1:
-            print("SET DQ IDELAY=0x%x"%delay)
-        self.axi_set_multiple_delays(self.LD_DLY_LANE0_IDELAY, 8, delay)
-        self.axi_set_multiple_delays(self.LD_DLY_LANE1_IDELAY, 8, delay)
+            print("SET DQ IDELAY="+hexMultiple(delay)) # hexMultiple
+        self.axi_set_multiple_delays(self.LD_DLY_LANE0_IDELAY, 8, delay[0])
+        self.axi_set_multiple_delays(self.LD_DLY_LANE1_IDELAY, 8, delay[1])
         self.x393_axi_tasks.write_contol_register  (self.DLY_SET,0);# // set all delays
         
     def axi_set_dq_odelay(self,
                           delay): # input [7:0] delay;
         """
         Set all DQ OUTput delays to the same value
-        <delay> 8-bit (5+3) delay value to use
+        <delay> 8-bit (5+3) delay value to use or a tuple/list with a pair for (lane0, lane1)
+                Each of the two elements in the delay tuple/list may be a a common integer or a list/tuple itself
         """
+        if delay is None: return # Do nothing, that's OK
+        if isinstance(delay,int):
+            delay=(delay,delay)
         if self.DEBUG_MODE > 1:
-            print("SET DQ ODELAY=0x%x"%delay)
-        self.axi_set_multiple_delays(self.LD_DLY_LANE0_ODELAY, 8, delay);
-        self.axi_set_multiple_delays(self.LD_DLY_LANE1_ODELAY, 8, delay);
+            print("SET DQ ODELAY="+hexMultiple(delay)) # hexMultiple
+        self.axi_set_multiple_delays(self.LD_DLY_LANE0_ODELAY, 8, delay[0]);
+        self.axi_set_multiple_delays(self.LD_DLY_LANE1_ODELAY, 8, delay[1]);
         self.x393_axi_tasks.write_contol_register(self.DLY_SET,0); # set all delays
         
     def axi_set_dqs_idelay(self,
                            delay): # input [7:0] delay;
         """
         Set all DQs input delays to the same value
-        <delay> 8-bit (5+3) delay value to use
+        <delay> 8-bit (5+3) delay value to use or a tuple/list with a pair for (lane0, lane1)
         """
+        if delay is None: return # Do nothing, that's OK
+        if isinstance(delay,int):
+            delay=(delay,delay)
         if self.DEBUG_MODE > 1:
-            print("SET DQS IDELAY=0x%x"%delay)
-        self.axi_set_multiple_delays(self.LD_DLY_LANE0_IDELAY + 8, 1, delay)
-        self.axi_set_multiple_delays(self.LD_DLY_LANE1_IDELAY + 8, 1, delay)
+            print("SET DQS IDELAY="+hexMultiple(delay)) # hexMultiple
+        self.axi_set_multiple_delays(self.LD_DLY_LANE0_IDELAY + 8, 1, delay[0])
+        self.axi_set_multiple_delays(self.LD_DLY_LANE1_IDELAY + 8, 1, delay[1])
         self.x393_axi_tasks.write_contol_register(self.DLY_SET,0); # set all delays
 
     def axi_set_dqs_odelay(self,
                            delay): # input [7:0] delay;
         """
         Set all DQs OUTput delays to the same value
-        <delay> 8-bit (5+3) delay value to use
+        <delay> 8-bit (5+3) delay value to use or a tuple/list with a pair for (lane0, lane1)
         """
+        if delay is None: return # Do nothing, that's OK
+        if isinstance(delay,int):
+            delay=(delay,delay)
         if self.DEBUG_MODE > 1:
-            print("SET DQS ODELAY=0x%x"%delay)
-        self.axi_set_multiple_delays(self.LD_DLY_LANE0_ODELAY + 8, 1, delay)
-        self.axi_set_multiple_delays(self.LD_DLY_LANE1_ODELAY + 8, 1, delay)
+            print("SET DQS ODELAY="+hexMultiple(delay)) # hexMultiple
+        self.axi_set_multiple_delays(self.LD_DLY_LANE0_ODELAY + 8, 1, delay[0])
+        self.axi_set_multiple_delays(self.LD_DLY_LANE1_ODELAY + 8, 1, delay[1])
         self.x393_axi_tasks.write_contol_register(self.DLY_SET,0); # set all delays
 
     def axi_set_dm_odelay (self,
                            delay): # input [7:0] delay;
         """
         Set all DM output delays to the same value
-        <delay> 8-bit (5+3) delay value to use
+        <delay> 8-bit (5+3) delay value to use or a tuple/list with a pair for (lane0, lane1)
         """
+        if delay is None: return # Do nothing, that's OK
+        if isinstance(delay,int):
+            delay=(delay,delay)
         if self.DEBUG_MODE > 1:
-            print("SET DQM IDELAY=0x%x"%delay)
-        self.axi_set_multiple_delays(self.LD_DLY_LANE0_ODELAY + 9, 1, delay)
-        self.axi_set_multiple_delays(self.LD_DLY_LANE1_ODELAY + 9, 1, delay)
+            print("SET DQM IDELAY="+hexMultiple(delay)) # hexMultiple
+        self.axi_set_multiple_delays(self.LD_DLY_LANE0_ODELAY + 9, 1, delay[0])
+        self.axi_set_multiple_delays(self.LD_DLY_LANE1_ODELAY + 9, 1, delay[1])
         self.x393_axi_tasks.write_contol_register(self.DLY_SET,0) #  set all delays
 
     def axi_set_cmda_odelay(self,
                            delay): # input [7:0] delay;
         """
-        Set all command/addressoutput delays to the same value
-        <delay> 8-bit (5+3) delay value to use
+        Set all command/address output delays to the same value (or a list/tuple of the individual ones)
+        <delay>    8-bit (5+3) delay value to use or list/tuple containing individual values
+                   List elements may be None, those values will not be overwritten
         """
+        if delay is None: return # Do nothing, that's OK
+        if isinstance(delay,int):
+            delay=(delay,)*32 # all address/commands
         if self.DEBUG_MODE > 1:
-            print("SET COMMAND and ADDRESS ODELAY=0x%x"%delay)
+            print("SET COMMAND and ADDRESS ODELAY"+hexMultiple(delay))
         self.axi_set_multiple_delays(self.LD_DLY_CMDA, 32, delay);
         self.x393_axi_tasks.write_contol_register(self.DLY_SET,0)  # set all delays
+
+    def axi_set_address_odelay(self,
+                               delay): # input [7:0] delay;
+        """
+        Set output delays for address lines only
+        <delay>    8-bit (5+3) delay value to use or list/tuple containing individual values
+                   List elements may be None, those values will not be overwritten
+        """
+        if delay is None: return # Do nothing, that's OK
+        if isinstance(delay,int):
+            delay=(delay,)*self.ADDRESS_NUMBER
+        if self.DEBUG_MODE > 1:
+            print("SET ADDRESS ODELAY="+hexMultiple(delay))
+        self.axi_set_multiple_delays(self.LD_DLY_CMDA, 0,delay)  # 32, delay); length will be determined by len(delay)
+        self.x393_axi_tasks.write_contol_register(self.DLY_SET,0)  # set all delays
+        
+    def axi_set_bank_odelay(self,
+                               delay): # input [7:0] delay;
+        """
+        Set output delays for bank lines only
+        <delay>    8-bit (5+3) delay value to use or list/tuple containing individual values
+                   List elements may be None, those values will not be overwritten
+        """
+        bank_offset=24
+        if delay is None: return # Do nothing, that's OK
+        if isinstance(delay,int):
+            delay=(delay,)*3
+        if self.DEBUG_MODE > 1:
+            print("SET BANK ODELAY="+hexMultiple(delay))
+        self.axi_set_multiple_delays(self.LD_DLY_CMDA+bank_offset, 0,delay)  # length will be determined by len(delay)
+        self.x393_axi_tasks.write_contol_register(self.DLY_SET,0)  # set all delays
+
+    def axi_set_cmd_odelay(self,
+                               delay): # input [7:0] delay;
+        """
+        Set output delays for command lines only. command=(we,ras,cas,cke,odt)
+        <delay>    8-bit (5+3) delay value to use or list/tuple containing individual values
+                   List elements may be None, those values will not be overwritten
+        """
+        command_offset=24+3
+        if delay is None: return # Do nothing, that's OK
+        if isinstance(delay,int):
+            delay=(delay,)*3
+        if self.DEBUG_MODE > 1:
+            print("SET COMMAND ODELAY="+hexMultiple(delay))
+        self.axi_set_multiple_delays(self.LD_DLY_CMDA+command_offset, 0,delay)  # length will be determined by len(delay)
+        self.x393_axi_tasks.write_contol_register(self.DLY_SET,0)  # set all delays
+        
         
     def axi_set_multiple_delays(self,
                                 reg_addr, #input [29:0] reg_addr;
@@ -249,11 +318,17 @@ class X393McntrlTiming(object):
         Set same delay to a range of I/O delay registers
         <reg_addr> control register address of the first register in the range
         <number>   number of registers to write
-        <delay>    8-bit (5+3) delay value to use
+        <delay>    8-bit (5+3) delay value to use or list/tuple containing individual values
+                   List elements may be None, those values will not be overwritten
         """
-        
-        for i in range(0,number): # (i=0;i<number;i=i+1) begin
-            self.x393_axi_tasks.write_contol_register(reg_addr + i, delay) # {24'b0,delay}); // control register address
+        if delay is None: return # Do nothing, that's OK
+        if isinstance(delay,int):
+            delay=(delay,)*number
+        if len(delay) < number:
+            delay= delay + (None,)*(number-len(delay)) #
+        for i, d in enumerate(delay):
+            if not d is None:
+                self.x393_axi_tasks.write_contol_register(reg_addr + i, d) # {24'b0,delay}); // control register address
 
     def wait_phase_shifter_ready(self):
         """

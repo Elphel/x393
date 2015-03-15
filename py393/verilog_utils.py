@@ -31,11 +31,22 @@ __status__ = "Development"
 #import sys
 #import x393_mem
 #MCNTRL_TEST01_CHN4_STATUS_CNTRL=0
-def hx(obj):
+def hx(obj,length=None):
+    frmt="0x%x"
+    if (length):
+        frmt="0x%0"+str(length)+"x"
+    s=""        
     try:
-        return "0x%x"%obj
+        s=frmt%obj
+        s1=s[0:2]
+        for i in range(2,len(s)):
+            if s[i] != '0':
+                break
+            s1+="o"
+        s=s1+s[len(s1):]    
     except:
-        return str(obj)
+        s=str(obj)
+    return s
 '''
 Simulate Verilog concatenation. Input list tuple of items, each being a pair of (value, width)
 '''    
@@ -45,9 +56,9 @@ def concat(items):
     width=0
     for vw in reversed(items):
         v=vw[0]
-        if vw[1]==1: # So True/False will also work, not just 0/1
+        if not isinstance(v,int):
             if v:
-                v=1
+                v=1 # So True/False will also work, not just 0/1
             else:
                 v=0
         val |= (v & ((1 << vw[1])-1))<<width
@@ -108,4 +119,28 @@ def getParWidth(bitRange):
     else:
         return wl[0]
                     
+def hexMultiple(data):
+    if isinstance(data,list) or isinstance(data,tuple):
+        rslt=[]
+        for item in data:
+            if isinstance(item,list) or isinstance(item,tuple):
+                subResult=[]
+                for subItem in item:
+                    try:
+                        rslt.append("0x%x"%subItem)
+                    except:
+                        rslt.append(str(subItem))
+                rslt.append(subResult)
+            else:
+                try:
+                    rslt.append("0x%x"%item)
+                except:
+                    rslt.append(str(item))
+        rslt=str(rslt)
+    else:
+        try:
+            rslt = "0x%x"%item
+        except:
+            rslt = str(item)
+    return rslt        
             

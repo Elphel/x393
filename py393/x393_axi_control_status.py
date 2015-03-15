@@ -72,6 +72,17 @@ class X393AxiControlStatus(object):
         <data> - 32-bit data to write
         """
         self.x393_mem.axi_write_single_w(self.CONTROL_ADDR+reg_addr, data)
+    def test_read_status(self, rpt): # was read_and_wait_status
+        """
+        Read word from the status register 0 and calculate part of the run busy
+        <rpt> - number of times to repeat
+        """
+        num_busy=0
+        for _ in range(rpt):
+            num_busy+=(self.x393_mem.axi_read_addr_w(self.STATUS_ADDR + 0)>>8) & 1
+        ratio=(1.0* num_busy)/rpt
+        print (("num_busy=%d, rpt=%d, ratio=%f"%(num_busy,rpt,100*ratio))+"%")
+        return ratio
     def read_status(self, address): # was read_and_wait_status
         """
         Read word from the status register (up to 26 bits payload and 6-bit sequence number)
@@ -140,17 +151,17 @@ class X393AxiControlStatus(object):
 #        for name in self.__dict__:
 #            print (name+": "+str(name=='MCONTR_PHY_STATUS_REG_ADDR'))
 #        print (self.__dict__['MCONTR_PHY_STATUS_REG_ADDR'])
-        print ("MCONTR_PHY_STATUS_REG_ADDR:          %s"%(hx(self.read_status(self.MCONTR_PHY_STATUS_REG_ADDR))))
-        print ("MCONTR_TOP_STATUS_REG_ADDR:          %s"%(hx(self.read_status(self.MCONTR_TOP_STATUS_REG_ADDR))))
-        print ("MCNTRL_PS_STATUS_REG_ADDR:           %s"%(hx(self.read_status(self.MCNTRL_PS_STATUS_REG_ADDR))))
-        print ("MCNTRL_SCANLINE_STATUS_REG_CHN1_ADDR:%s"%(hx(self.read_status(self.MCNTRL_SCANLINE_STATUS_REG_CHN1_ADDR))))
-        print ("MCNTRL_SCANLINE_STATUS_REG_CHN3_ADDR:%s"%(hx(self.read_status(self.MCNTRL_SCANLINE_STATUS_REG_CHN3_ADDR))))
-        print ("MCNTRL_TILED_STATUS_REG_CHN2_ADDR:   %s"%(hx(self.read_status(self.MCNTRL_TILED_STATUS_REG_CHN2_ADDR))))
-        print ("MCNTRL_TILED_STATUS_REG_CHN4_ADDR:   %s"%(hx(self.read_status(self.MCNTRL_TILED_STATUS_REG_CHN4_ADDR))))
-        print ("MCNTRL_TEST01_STATUS_REG_CHN1_ADDR:  %s"%(hx(self.read_status(self.MCNTRL_TEST01_STATUS_REG_CHN1_ADDR))))
-        print ("MCNTRL_TEST01_STATUS_REG_CHN2_ADDR:  %s"%(hx(self.read_status(self.MCNTRL_TEST01_STATUS_REG_CHN2_ADDR))))
-        print ("MCNTRL_TEST01_STATUS_REG_CHN3_ADDR:  %s"%(hx(self.read_status(self.MCNTRL_TEST01_STATUS_REG_CHN3_ADDR))))
-        print ("MCNTRL_TEST01_STATUS_REG_CHN4_ADDR:  %s"%(hx(self.read_status(self.MCNTRL_TEST01_STATUS_REG_CHN4_ADDR))))
+        print ("MCONTR_PHY_STATUS_REG_ADDR:          %s"%(hx(self.read_status(self.MCONTR_PHY_STATUS_REG_ADDR),8)))
+        print ("MCONTR_TOP_STATUS_REG_ADDR:          %s"%(hx(self.read_status(self.MCONTR_TOP_STATUS_REG_ADDR),8)))
+        print ("MCNTRL_PS_STATUS_REG_ADDR:           %s"%(hx(self.read_status(self.MCNTRL_PS_STATUS_REG_ADDR) ,8)))
+        print ("MCNTRL_SCANLINE_STATUS_REG_CHN1_ADDR:%s"%(hx(self.read_status(self.MCNTRL_SCANLINE_STATUS_REG_CHN1_ADDR),8)))
+        print ("MCNTRL_SCANLINE_STATUS_REG_CHN3_ADDR:%s"%(hx(self.read_status(self.MCNTRL_SCANLINE_STATUS_REG_CHN3_ADDR),8)))
+        print ("MCNTRL_TILED_STATUS_REG_CHN2_ADDR:   %s"%(hx(self.read_status(self.MCNTRL_TILED_STATUS_REG_CHN2_ADDR),8)))
+        print ("MCNTRL_TILED_STATUS_REG_CHN4_ADDR:   %s"%(hx(self.read_status(self.MCNTRL_TILED_STATUS_REG_CHN4_ADDR),8)))
+        print ("MCNTRL_TEST01_STATUS_REG_CHN1_ADDR:  %s"%(hx(self.read_status(self.MCNTRL_TEST01_STATUS_REG_CHN1_ADDR),8)))
+        print ("MCNTRL_TEST01_STATUS_REG_CHN2_ADDR:  %s"%(hx(self.read_status(self.MCNTRL_TEST01_STATUS_REG_CHN2_ADDR),8)))
+        print ("MCNTRL_TEST01_STATUS_REG_CHN3_ADDR:  %s"%(hx(self.read_status(self.MCNTRL_TEST01_STATUS_REG_CHN3_ADDR),8)))
+        print ("MCNTRL_TEST01_STATUS_REG_CHN4_ADDR:  %s"%(hx(self.read_status(self.MCNTRL_TEST01_STATUS_REG_CHN4_ADDR),8)))
 
     def program_status(self,
                        base_addr,   # input [29:0] base_addr;

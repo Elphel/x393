@@ -210,7 +210,7 @@ task set_read_pattern;
         end
 // nop - all 3 below are the same? - just repeat?
         //                          skip     done        bank         ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD      B_RST
-        data <=  func_encode_skip(   0,       0,          0,           0,  0,  1,  0,    0,    0,    1,  1,   0,        0);
+        data <=  func_encode_skip(   0,       0,          0,           0,  0,  1,  0,    0,    0,    1,  0,   0,        0); // was BUF WR
         @(posedge CLK) axi_write_single_w(cmd_addr, data); cmd_addr <= cmd_addr + 1;
 // nop
         //                          skip     done        bank         ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD      B_RST

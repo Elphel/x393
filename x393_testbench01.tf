@@ -19,16 +19,18 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/> .
  *******************************************************************************/
 `timescale 1ns/1ps
+`include "system_defines.vh"
+
 //`define use200Mhz 1
 //`define DEBUG_FIFO 1
 `undef WAIT_MRS
-`define SET_PER_PIN_DEALYS 1 // set individual (including per-DQ pin delays)
+`define SET_PER_PIN_DELAYS 1 // set individual (including per-DQ pin delays)
 `define PS_PIO_WAIT_COMPLETE 0 // wait until PS PIO module finished transaction before starting a new one
 // Disabled already passed test to speedup simulation
 //`define TEST_WRITE_LEVELLING 1
-//`define TEST_READ_PATTERN 1
-//`define TEST_WRITE_BLOCK 1
-//`define TEST_READ_BLOCK 1
+`define TEST_READ_PATTERN 1
+`define TEST_WRITE_BLOCK 1
+`define TEST_READ_BLOCK 1
 //`define TESTL_SHORT_SCANLINE 1
 
 //`define TEST_SCANLINE_WRITE 1
@@ -322,6 +324,7 @@ always #(CLKIN_PERIOD/2) CLK = ~CLK;
 `endif    
     enable_refresh(1);
     axi_set_dqs_odelay('h78); //??? dafaults - wrong?
+    axi_set_dqs_odelay_nominal;
     
 `ifdef TEST_WRITE_LEVELLING 
     test_write_levelling;
@@ -485,6 +488,7 @@ end
   initial begin
 //  #10000000;
      #200000;
+//     #42000;
 //   #100000;
 //  #60000;
     $display("finish testbench 2");
@@ -1076,9 +1080,11 @@ simul_axi_read #(
             write_block_buf_chn(0,0,256); // fill block memory (channel, page, number)
 // set all delays
 //#axi_set_delays - from tables, per-pin
-`ifdef SET_PER_PIN_DEALYS
+`ifdef SET_PER_PIN_DELAYS
+            $display("SET_PER_PIN_DELAYS @ %t",$time);
             axi_set_delays; // set all individual delays, aslo runs axi_set_phase()
 `else
+            $display("SET COMMON DELAYS @ %t",$time);
             axi_set_same_delays(DLY_DQ_IDELAY,DLY_DQ_ODELAY,DLY_DQS_IDELAY,DLY_DQS_ODELAY,DLY_DM_ODELAY,DLY_CMDA_ODELAY);
 // set clock phase relative to DDR clk
             axi_set_phase(DLY_PHASE);
@@ -1120,8 +1126,8 @@ task test_write_levelling; // SuppressThisWarning VEditor - may be unused
         
 //        @ (negedge rstb);
         axi_set_dqs_idelay_nominal;
-//        axi_set_dqs_odelay_nominal;
-        axi_set_dqs_odelay('h78);
+        axi_set_dqs_odelay_nominal;
+//        axi_set_dqs_odelay('h78);
         axi_set_wbuf_delay(WBUF_DLY_DFLT); //DFLT_WBUF_DELAY
    end
 endtask
@@ -1626,8 +1632,8 @@ task set_all_sequences;
             set_mrs(1);
             $display("SET REFRESH @ %t",$time);    
             set_refresh(
-                50, // input [ 9:0] t_rfc; // =50 for tCK=2.5ns
-                16); //input [ 7:0] t_refi; // 48/97 for normal, 8 - for simulation
+                T_RFC, // input [ 9:0] t_rfc; // =50 for tCK=2.5ns
+                T_REFI); //input [ 7:0] t_refi; // 48/97 for normal, 8 - for simulation
             $display("SET WRITE LEVELING @ %t",$time);    
             set_write_lev(16); // write leveling, 16 times   (full buffer - 128) 
             $display("SET READ PATTERN @ %t",$time);    

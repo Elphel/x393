@@ -73,7 +73,9 @@ NUM_FINE_STEPS=    5
 DLY_PHASE=       0x2c # 0x1c # mmcm fine phase shift, 1/4 tCK
 
 */  
-`ifdef TARGET_MODE 
+`ifdef TARGET_MODE
+    localparam T_RFC=50;  // t_rfc=50 for tCK=2.5ns
+    localparam T_REFI=48; // t_refi; # 48/97 for normal, 8 - for simulation (7.8us <85C, 3.9us >85C)
   `ifdef use200Mhz
     localparam DLY_LANE0_DQS_WLV_IDELAY = 8'hb0; // idelay dqs
     localparam DLY_LANE1_DQS_WLV_IDELAY = 8'hb0; // idelay dqs
@@ -113,19 +115,21 @@ DLY_PHASE=       0x2c # 0x1c # mmcm fine phase shift, 1/4 tCK
   `endif   
     localparam DLY_PHASE= 8'h1c; // mmcm fine phase shift, 1/4 tCK
 `else
+    localparam T_RFC=50;  // t_rfc=50 for tCK=2.5ns
+    localparam T_REFI=16; // t_refi; # 48/97 for normal, 8 - for simulation (7.8us <85C, 3.9us >85C)
   `ifdef use200Mhz
     localparam DLY_LANE0_DQS_WLV_IDELAY = 8'hb0; // idelay dqs
     localparam DLY_LANE1_DQS_WLV_IDELAY = 8'hb0; // idelay dqs
-    localparam DLY_LANE0_ODELAY= 80'h4c4c4b4a494844434241; // odelay dqm, odelay ddqs, odelay dq[7:0]
+    localparam DLY_LANE0_ODELAY= 80'h4c784b4a494844434241; // odelay dqm, odelay ddqs, odelay dq[7:0]
     localparam DLY_LANE0_IDELAY= 72'ha0636261605c5b5a59; // idelay dqs, idelay dq[7:0
-    localparam DLY_LANE1_ODELAY= 80'h4c4c4b4a494844434241; // odelay dqm, odelay ddqs, odelay dq[7:0]
+    localparam DLY_LANE1_ODELAY= 80'h4c784b4a494844434241; // odelay dqm, odelay ddqs, odelay dq[7:0]
     localparam DLY_LANE1_IDELAY= 72'ha0636261605c5b5a59; // idelay dqs, idelay dq[7:0
     localparam DLY_CMDA=  256'h3c3c3c3c3b3a39383434343433323130002c2c2c2b2a29282424242423222120; // odelay odt, cke, cas, ras, we, ba2,ba1,ba0, X, a14,..,a0
 // alternative to set same type delays to the same value    
     localparam DLY_DQ_IDELAY =  'h20 ;// 'h60;
     localparam DLY_DQ_ODELAY =  'ha0; // 'h48;
     localparam DLY_DQS_IDELAY = 'h40; // 'ha0;
-    localparam DLY_DQS_ODELAY = 'h4c; // 
+    localparam DLY_DQS_ODELAY = 'h78; // 
     localparam DLY_DM_ODELAY =  'ha0; // 'h48;
     localparam DLY_CMDA_ODELAY ='h50; // 'h30;
   `else   

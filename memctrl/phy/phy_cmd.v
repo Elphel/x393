@@ -70,7 +70,7 @@ module  phy_cmd#(
 // clocks, reset
     input                        clk_in,
     input                        rst_in,
-    output                       mclk,     // global clock, half DDR3 clock, synchronizes all I/O thorough the command port
+    output                       mclk,     // global clock, half DDR3 clock, synchronizes all I/O through the command port
 // inteface to control I/O delays and mmcm
     input                  [7:0] dly_data, // delay value (3 LSB - fine delay)
     input                  [6:0] dly_addr, // select which delay to program

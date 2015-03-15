@@ -41,6 +41,10 @@
 
     task axi_set_dqs_odelay_nominal; //SuppressThisWarning VEditor : may be unused
      begin
+        $display("axi_set_dqs_odelay_nominal(0x%x,0x%x) @ %t",
+        (DLY_LANE0_ODELAY >> (8<<3)) & 32'hff,
+        (DLY_LANE1_ODELAY >> (8<<3)) & 32'hff,
+        $time);
 //        axi_set_dqs_idelay(
         write_contol_register(LD_DLY_LANE0_ODELAY + 8,      (DLY_LANE0_ODELAY >> (8<<3)) & 32'hff);
         write_contol_register(LD_DLY_LANE1_ODELAY + 8,      (DLY_LANE1_ODELAY >> (8<<3)) & 32'hff);
@@ -68,6 +72,8 @@
     task axi_set_delays; // set all individual delays
      integer i;
      begin
+         $display("axi_set_delays @ %t",$time);
+     
         for (i=0;i<10;i=i+1) begin
             write_contol_register(LD_DLY_LANE0_ODELAY + i,     (DLY_LANE0_ODELAY >> (i<<3)) & 32'hff);
         end
