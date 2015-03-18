@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.3.64 (w)1999-2014 BSI
-[*] Sat Mar 14 20:12:55 2015
+[*] Tue Mar 17 07:18:15 2015
 [*]
-[dumpfile] "/home/andrey/git/x393/simulation/x393_testbench01-20150314012414854.lxt"
-[dumpfile_mtime] "Sat Mar 14 07:40:45 2015"
+[dumpfile] "/home/andrey/git/x393/simulation/x393_testbench01-20150316202414190.lxt"
+[dumpfile_mtime] "Tue Mar 17 02:39:38 2015"
 [dumpfile_size] 982556355
 [savefile] "/home/andrey/git/x393/x393_testbench01.sav"
-[timestart] 45034520
+[timestart] 47475610
 [size] 1823 1180
 [pos] 2062 0
-*-12.698502 45069640 157271875 157546875 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-11.698502 47485628 157271875 157546875 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] x393_testbench01.
 [treeopen] x393_testbench01.x393_i.
 [treeopen] x393_testbench01.x393_i.mcntrl393_i.
@@ -37,12 +37,15 @@
 [treeopen] x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.
 [treeopen] x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.phy_top_i.
 [treeopen] x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.phy_top_i.byte_lane0_i.
+[treeopen] x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.phy_top_i.byte_lane0_i.dq_block[0].
+[treeopen] x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.phy_top_i.byte_lane0_i.dq_block[1].
+[treeopen] x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.phy_top_i.byte_lane0_i.dq_block[1].dq_i.
 [treeopen] x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.scheduler16_i.
 [treeopen] x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.status_router2_top_i.
 [treeopen] x393_testbench01.x393_i.mcntrl393_test01_i.
 [treeopen] x393_testbench01.x393_i.mcntrl393_test01_i.status_router4_i.
-[sst_width] 423
-[signals_width] 462
+[sst_width] 264
+[signals_width] 310
 [sst_expanded] 1
 [sst_vpaned_height] 631
 @800200
@@ -254,12 +257,47 @@ x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.phy
 x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.phy_top_i.clk_div[0]
 x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.phy_top_i.mclk[0]
 x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.phy_top_i.byte_lane0_i.iclk[0]
-@29
 x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.phy_top_i.byte_lane1_i.iclk[0]
 @1000200
 -mem_clocks
-@200
+@800200
+-write_delays
+@22
+x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.phy_top_i.byte_lane0_i.din[31:0]
+x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.phy_top_i.byte_lane0_i.din_dqs[3:0]
+@28
+x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.phy_top_i.byte_lane0_i.dqs[0]
+x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.phy_top_i.byte_lane0_i.ndqs[0]
+@22
+x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.phy_top_i.byte_lane0_i.dq[7:0]
+x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.phy_top_i.byte_lane0_i.dq_block[0].dq_i.din[3:0]
+x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.phy_top_i.byte_lane0_i.dq_block[1].dq_i.din[3:0]
+@28
+x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.phy_top_i.byte_lane0_i.dq_block[1].dq_i.d_ser[0]
+x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.phy_top_i.byte_lane0_i.dq_block[0].dq_i.d_ser[0]
+x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.phy_top_i.byte_lane0_i.dq_block[0].dq_i.dq_data_dly[0]
+x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.phy_top_i.byte_lane0_i.dqs_i.d_ser[0]
+x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.phy_top_i.byte_lane0_i.dqs_i.dqs_data_dly[0]
+@1000200
+-write_delays
+@800200
+-read_delays
+@28
+x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.phy_top_i.byte_lane0_i.dqs_i.dqs_di[0]
+x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.phy_top_i.byte_lane0_i.dqs_i.dqs_received_dly[0]
+@201
 -
+@28
+x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.phy_top_i.byte_lane0_i.dq_block[0].dq_i.iclk[0]
+x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.phy_top_i.byte_lane0_i.dq_block[0].dq_i.clk[0]
+x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.phy_top_i.byte_lane0_i.dq_block[0].dq_i.clk_div[0]
+x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.phy_top_i.byte_lane0_i.dq_block[0].dq_i.dq[0]
+x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.phy_top_i.byte_lane0_i.dq_block[0].dq_i.dq_dly[0]
+@22
+x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.phy_top_i.byte_lane0_i.dq_block[0].dq_i.dout[3:0]
+x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.phy_top_i.byte_lane0_i.dq_block[1].dq_i.dout[3:0]
+@1000200
+-read_delays
 @c00200
 -axi
 @28
@@ -934,7 +972,7 @@ x393_testbench01.x393_i.axibram_read_i.bram_ren[0]
 -
 @1401200
 -axibram_read
-@800200
+@c00200
 -refresh
 @28
 x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.run_busy[0]
@@ -961,7 +999,7 @@ x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.ddr_refresh_i.refresh_period[7:0
 x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.ddr_refresh_i.rst[0]
 x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.ddr_refresh_i.set[0]
 x393_testbench01.x393_i.mcntrl393_i.memctrl16_i.ddr_refresh_i.want[0]
-@1000200
+@1401200
 -refresh
 @800200
 -DDR3

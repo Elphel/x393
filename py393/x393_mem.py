@@ -150,12 +150,15 @@ class X393Mem(object):
     '''
     Read/write slave AXI using 32-bit word addresses (same as in Verilog code)
     '''
-    def axi_write_single_w(self,addr,data):
+    def axi_write_single_w(self,addr,data,verbose=0):
         """
         Write 32-bit word to the slave AXI address range, using 32-word address
         <addr> - 32-bit word (register) address relative to the slave AXI memory region
         <data> - 32-bit data to write
+        <verbose> print data being written (default: 0)
         """
+        if verbose:
+            print("axi_write_single_w(0x%x,0x%08x)"%(addr,data))
         self.axi_write_single(addr<<2,data)
 
     def axi_read_addr_w(self,addr):

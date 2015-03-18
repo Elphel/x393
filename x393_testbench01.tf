@@ -27,7 +27,7 @@
 `define SET_PER_PIN_DELAYS 1 // set individual (including per-DQ pin delays)
 `define PS_PIO_WAIT_COMPLETE 0 // wait until PS PIO module finished transaction before starting a new one
 // Disabled already passed test to speedup simulation
-//`define TEST_WRITE_LEVELLING 1
+`define TEST_WRITE_LEVELLING 1
 `define TEST_READ_PATTERN 1
 `define TEST_WRITE_BLOCK 1
 `define TEST_READ_BLOCK 1

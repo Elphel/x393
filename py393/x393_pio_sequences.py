@@ -34,6 +34,7 @@ __status__ = "Development"
 from import_verilog_parameters import VerilogParameters
 from x393_mem import X393Mem
 from x393_axi_control_status import X393AxiControlStatus
+from x393_mcntrl_buffers     import X393McntrlBuffers
 #from verilog_utils import * # concat, bits 
 from verilog_utils import concat, bits 
 #from x393_axi_control_status import concat, bits 
@@ -50,6 +51,7 @@ class X393PIOSequences(object):
 #        self.vpars=VerilogParameters()
         self.x393_mem=X393Mem(debug_mode,dry_mode)
         self.x393_axi_tasks=X393AxiControlStatus(debug_mode,dry_mode)
+        self.x393_mcntrl_buffers= X393McntrlBuffers(debug_mode,dry_mode)
 #        print ("+++++++++++++++ self.__dict__ ++++++++++++++++++++++++++")
 #        print (self.__dict__)
 #        print ("+++++++++++++++ VerilogParameters.__dict__ ++++++++++++++++++++++++++")
@@ -442,169 +444,184 @@ class X393PIOSequences(object):
     def set_read_block(self, #
                        ba,   # input [ 2:0] ba;
                        ra,   # input [14:0] ra;
-                       ca):  #input [ 9:0] ca;
+                       ca,  #input [ 9:0] ca;
+                       verbose=0):
         """
         Setup read block sequence at parameter defined address in the sequencer memory
-            <ba>   3-bit memory bank address
-            <ra>  15-bit memory row address
-            <ca>  10-bit memory column address
+        <ba>   3-bit memory bank address
+        <ra>  15-bit memory row address
+        <ca>  10-bit memory column address
+        <verbose> print data being written (default: False)
+            
         """
         cmd_addr = self.MCONTR_CMD_WR_ADDR + self.READ_BLOCK_OFFSET
 # activate
         #                           addr                bank     RCW ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD NOP, B_RST
         data=self.func_encode_cmd(  ra,                  ba,      4,  0,  0,  0,  0,    0,    0,    0,  0,   0,   0,   0)
-        self.x393_mem.axi_write_single_w(cmd_addr, data)
+        self.x393_mem.axi_write_single_w(cmd_addr, data, verbose)
         cmd_addr += 1
 # see if pause is needed . See when buffer read should be started - maybe before WR command
         #                          skip     done        bank         ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD      B_RST
         data=self.func_encode_skip( 1,       0,          0,           0,  0,  0,  0,    0,    0,    0,  0,   0,        0)
-        self.x393_mem.axi_write_single_w(cmd_addr, data)
+        self.x393_mem.axi_write_single_w(cmd_addr, data, verbose)
         cmd_addr+=1
 # first read
 # read
         #                          addr                 bank     RCW ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD NOP, B_RST
         data=self.func_encode_cmd(ca&0x3ff,              ba,      2,  0,  0,  1,  0,    0,    0,    1,  1,   0,   0,   0)
-        self.x393_mem.axi_write_single_w(cmd_addr, data)
+        self.x393_mem.axi_write_single_w(cmd_addr, data, verbose)
         cmd_addr += 1
 # nop
         #                          skip     done        bank         ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD      B_RST
         data=self.func_encode_skip( 0,       0,          ba,          0,  0,  1,  0,    0,    0,    1,  1,   0,        0)
-        self.x393_mem.axi_write_single_w(cmd_addr, data)
+        self.x393_mem.axi_write_single_w(cmd_addr, data, verbose)
         cmd_addr += 1
 #repeat remaining reads             
         for i in range(1,64):
 # read
 #                                  addr                 bank     RCW ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD NOP, B_RST
             data=self.func_encode_cmd((ca & 0x3ff)+(i<<3),ba,     2,  0,  0,  1,  0,    0,    0,    1,  1,   0,   1,   0)
-            self.x393_mem.axi_write_single_w(cmd_addr, data)
+            self.x393_mem.axi_write_single_w(cmd_addr, data, verbose)
             cmd_addr += 1
 # nop - all 3 below are the same? - just repeat?
         #                          skip     done        bank         ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD      B_RST
         data=self.func_encode_skip(  0,       0,         ba,          0,  0,  1,  0,    0,    0,    1,  0,   0,        0)
-        self.x393_mem.axi_write_single_w(cmd_addr, data)
+        self.x393_mem.axi_write_single_w(cmd_addr, data, verbose)
         cmd_addr += 1
 # nop
         #                          skip     done        bank         ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD      B_RST
         data=self.func_encode_skip(  0,       0,         ba,          0,  0,  1,  0,    0,    0,    1,  0,   0,        0)
-        self.x393_mem.axi_write_single_w(cmd_addr, data)
+        self.x393_mem.axi_write_single_w(cmd_addr, data, verbose)
         cmd_addr += 1
 # nop
         #                          skip     done        bank         ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD      B_RST
         data=self.func_encode_skip(  0,       0,         ba,          0,  0,  1,  0,    0,    0,    1,  0,   0,        0)
-        self.x393_mem.axi_write_single_w(cmd_addr, data)
+        self.x393_mem.axi_write_single_w(cmd_addr, data, verbose)
         cmd_addr += 1
 # tRTP = 4*tCK is already satisfied, no skip here
 # precharge, end of a page (B_RST)         
         #                          addr                 bank     RCW ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD NOP, B_RST
         data=self.func_encode_cmd(  ra,                  ba,      5,  0,  0,  0,  0,    0,    0,    1,  0,   0,   0,   1)
-        self.x393_mem.axi_write_single_w(cmd_addr, data)
+        self.x393_mem.axi_write_single_w(cmd_addr, data, verbose)
         cmd_addr += 1
         #                          skip     done        bank         ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD      B_RST
         data=self.func_encode_skip(  2,       0,         0,           0,  0,  0,  0,    0,    0,    1,  0,   0,        0)
-        self.x393_mem.axi_write_single_w(cmd_addr, data)
+        self.x393_mem.axi_write_single_w(cmd_addr, data, verbose)
         cmd_addr += 1
 # Turn off DCI, set DONE
         #                          skip     done        bank         ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD      B_RST
         data=self.func_encode_skip(  0,       1,         0,           0,  0,  0,  0,    0,    0,    0,  0,   0,        0)
-        self.x393_mem.axi_write_single_w(cmd_addr, data)
+        self.x393_mem.axi_write_single_w(cmd_addr, data, verbose)
         cmd_addr += 1
 
-    def set_write_block(self, #):
+    def set_write_block(self,#):
                         ba,  # input[2:0]ba;
                         ra,  # input[14:0]ra;
-                        ca): # input[9:0]ca;
+                        ca,  # input[9:0]ca;
+                        num8=64,
+                        extraTgl=1, #
+                        verbose=0):
+
         """
         Setup write block sequence at parameter defined address in the sequencer memory
-            <ba>   3-bit memory bank address
-            <ra>  15-bit memory row address
-            <ca>  10-bit memory column address
+        <ba>   3-bit memory bank address
+        <ra>  15-bit memory row address
+        <ca>  10-bit memory column address
+        <num8> - number of 8-bursts (default=64, should be >2)
+        <verbose> print data being written (default: False)
         """
-        
+        print("===set_write_block ba=0x%x, ra=0x%x, ca=0x%x"%(ba,ra,ca))
         cmd_addr = self.MCONTR_CMD_WR_ADDR + self.WRITE_BLOCK_OFFSET
 # activate
         #                          addr                 bank     RCW ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD NOP, B_RST
         data=self.func_encode_cmd( ra,                   ba,      4,  0,  0,  0,  0,    0,    0,    0,  0,   1,   0,   0)
-        self.x393_mem.axi_write_single_w(cmd_addr, data)
+        self.x393_mem.axi_write_single_w(cmd_addr, data, verbose)
         cmd_addr += 1
 # see if pause is needed . See when buffer read should be started - maybe before WR command
         #                          skip     done        bank         ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD      B_RST
         data=self.func_encode_skip( 1,       0,          0,           0,  0,  0,  0,    0,    0,    0,  0,   1,        0) # tRCD - 2 read bufs
-        self.x393_mem.axi_write_single_w(cmd_addr, data)
+        self.x393_mem.axi_write_single_w(cmd_addr, data, verbose)
         cmd_addr += 1
 # first write, 3 rd_buf
 # write
         #                          addr                 bank     RCW ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD NOP, B_RST
         data=self.func_encode_cmd(ca&0x3ff,              ba,      3,  1,  0,  1,  0,    0,    0,    0,  0,   1,   0,   0) # B_RD moved 1 cycle earlier 
-        self.x393_mem.axi_write_single_w(cmd_addr, data)
+        self.x393_mem.axi_write_single_w(cmd_addr, data, verbose)
         cmd_addr += 1
 # nop 4-th rd_buf
         #                          skip     done        bank         ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD      B_RST
         data=self.func_encode_skip( 0,       0,          ba,          1,  0,  0,  1,    1,    0,    0,  0,   1,        0)
-        self.x393_mem.axi_write_single_w(cmd_addr, data)
+        self.x393_mem.axi_write_single_w(cmd_addr, data, verbose)
         cmd_addr += 1
 #repeat remaining writes
-        for i in range(1,62) : #(i = 1; i < 62; i = i + 1) begin
+        for i in range(1,num8-2): # 62) : #(i = 1; i < 62; i = i + 1) begin
 # write
         #                          addr                 bank     RCW ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD NOP, B_RST
             data=self.func_encode_cmd((ca&0x3ff)+(i<<3), ba,      3,  1,  0,  1,  1,    1,    1,    0,  0,   1,   1,   0) 
-            self.x393_mem.axi_write_single_w(cmd_addr, data)
+            self.x393_mem.axi_write_single_w(cmd_addr, data, verbose)
             cmd_addr += 1
         #                          addr                 bank     RCW ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD NOP, B_RST
-        data=self.func_encode_cmd((ca&0x3ff)+(62<<3),    ba,      3,  1,  0,  1,  1,    1,    1,    0,  0,   1,   0,   0) # write w/o nop
-        self.x393_mem.axi_write_single_w(cmd_addr, data)
+#        data=self.func_encode_cmd((ca&0x3ff)+(62<<3),    ba,      3,  1,  0,  1,  1,    1,    1,    0,  0,   1,   0,   0) # write w/o nop
+        data=self.func_encode_cmd((ca&0x3ff)+((num8-2)<<3), ba,    3,  1,  0,  1,  1,    1,    1,    0,  0,   1,   0,   0) # write w/o nop
+        self.x393_mem.axi_write_single_w(cmd_addr, data, verbose)
         cmd_addr += 1
 #nop
         #                          skip     done        bank         ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD      B_RST
         data=self.func_encode_skip( 0,       0,          ba,          1,  0,  1,  1,    1,    1,    0,  0,   0,        0) # nop with buffer read off
-        self.x393_mem.axi_write_single_w(cmd_addr, data)
+        self.x393_mem.axi_write_single_w(cmd_addr, data, verbose)
         cmd_addr += 1
         
 # One last write pair w/o buffer
         #                          addr                 bank     RCW ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD NOP, B_RST
-        data=self.func_encode_cmd((ca&0x3ff)+(63<<3),    ba,      3,  1,  0,  1,  1,    1,    1,    0,  0,   0,   1,   0) # write with nop
-        self.x393_mem.axi_write_single_w(cmd_addr, data)
+#        data=self.func_encode_cmd((ca&0x3ff)+(63<<3),    ba,      3,  1,  0,  1,  1,    1,    1,    0,  0,   0,   1,   0) # write with nop
+        data=self.func_encode_cmd((ca&0x3ff)+((num8-1)<<3),ba,     3,  1,  0,  1,  1,    1,    1,    0,  0,   0,   1,   0) # write with nop
+        self.x393_mem.axi_write_single_w(cmd_addr, data, verbose)
         cmd_addr += 1
 # nop
         #                          skip     done        bank         ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD      B_RST
         data=self.func_encode_skip( 0,       0,          ba,          1,  0,  0,  1,    1,    1,    0,  0,   0,        0)
-        self.x393_mem.axi_write_single_w(cmd_addr, data)
+        self.x393_mem.axi_write_single_w(cmd_addr, data, verbose)
         cmd_addr += 1
 # nop
         #                          skip     done        bank         ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD      B_RST
         data=self.func_encode_skip( 0,       0,          ba,          1,  0,  0,  1,    1,    1,    0,  0,   0,        1) # removed B_RD 1 cycle earlier
-        self.x393_mem.axi_write_single_w(cmd_addr, data)
+        self.x393_mem.axi_write_single_w(cmd_addr, data, verbose)
         cmd_addr += 1
 # nop
         #                          skip     done        bank         ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD      B_RST
-        data=self.func_encode_skip( 0,       0,          ba,          1,  0,  0,  1,    1,    1,    0,  0,   0,        0)
-        self.x393_mem.axi_write_single_w(cmd_addr, data)
+        data=self.func_encode_skip( extraTgl,       0,          ba,          1,  0,  0,  1,    1,    1,    0,  0,   0,        0)
+        self.x393_mem.axi_write_single_w(cmd_addr, data, verbose)
         cmd_addr += 1
 # ODT off, it has latency
         #                          skip     done        bank         ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD      B_RST
         data=self.func_encode_skip( 2,       0,          ba,          0,  0,  0,  0,    0,    0,    0,  0,   0,        0)
-        self.x393_mem.axi_write_single_w(cmd_addr, data)
+        self.x393_mem.axi_write_single_w(cmd_addr, data, verbose)
         cmd_addr += 1
 # precharge, ODT off
         #                          addr                 bank     RCW ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD NOP, B_RST
         data=self.func_encode_cmd(  ra,                  ba,      5,  0,  0,  0,  0,    0,    0,    0,  0,   0,   0,   0)
-        self.x393_mem.axi_write_single_w(cmd_addr, data)
+        self.x393_mem.axi_write_single_w(cmd_addr, data, verbose)
         cmd_addr += 1
         #                          skip     done        bank         ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD      B_RST
         data=self.func_encode_skip( 2,       0,          ba,          0,  0,  0,  0,    0,    0,    0,  0,   0,        0)
-        self.x393_mem.axi_write_single_w(cmd_addr, data)
+        self.x393_mem.axi_write_single_w(cmd_addr, data, verbose)
         cmd_addr += 1
 # Finalize, set DONE        
         #                          skip     done        bank         ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD      B_RST
         data=self.func_encode_skip( 0,       1,          0,           0,  0,  0,  0,    0,    0,    0,  0,   0,        0);
-        self.x393_mem.axi_write_single_w(cmd_addr, data)
+        self.x393_mem.axi_write_single_w(cmd_addr, data, verbose)
         cmd_addr += 1
 
 # Set MR3, read nrep*8 words, save to buffer (port0). No ACTIVATE/PRECHARGE are needed/allowed   
     def set_read_pattern (self, 
-                          nrep): # input integer nrep;
+                          nrep, # input integer nrep;
+                          verbose=0):
+                          
         """
         Setup read pattern sequence at parameter defined address in the sequencer memory
-            <nrep>   number of times pattern burst is read
+        <nrep>   number of times pattern burst is read
+        <verbose> print data being written (default: False)
+            
         """
         
         cmd_addr = self.MCONTR_CMD_WR_ADDR + self.READ_PATTERN_OFFSET
@@ -617,80 +634,82 @@ class X393PIOSequences(object):
 # Set pattern mode
         #                           addr                 bank                   RCW ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD NOP, B_RST
         data=self.func_encode_cmd(bits(mr3_patt,(14,0)), bits(mr3_patt,(17,15)), 7,  0,  0,  0,  0,    0,    0,    0,  0,   0,   0,   0)
-        self.x393_mem.axi_write_single_w(cmd_addr, data)
+        self.x393_mem.axi_write_single_w(cmd_addr, data, verbose)
         cmd_addr += 1
         #                          skip      done        bank                       ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD      B_RST
         data=self.func_encode_skip( 5,        0,           0,                         0,  0,  0,  0,    0,    0,    0,  0,   0,        0)# tMOD
-        self.x393_mem.axi_write_single_w(cmd_addr, data)
+        self.x393_mem.axi_write_single_w(cmd_addr, data, verbose)
         cmd_addr += 1
 # first read
 #@ read
         #                           addr                 bank                   RCW ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD NOP, B_RST
         data=self.func_encode_cmd(    0,                   0,                    2,  0,  0,  1,  0,    0,    0,    1,  1,   0,   0,   0)
-        self.x393_mem.axi_write_single_w(cmd_addr, data)
+        self.x393_mem.axi_write_single_w(cmd_addr, data, verbose)
         cmd_addr += 1
 # nop (combine with previous?)
         #                          skip      done        bank                       ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD      B_RST
         data=self.func_encode_skip(   0,       0,          0,                        0,  0,  1,  0,    0,    0,    1,  1,   0,        0)
-        self.x393_mem.axi_write_single_w(cmd_addr, data)
+        self.x393_mem.axi_write_single_w(cmd_addr, data, verbose)
         cmd_addr += 1
 #repeat remaining reads
 #        for (i = 1; i < nrep; i = i + 1) begin
         for _ in range(1,nrep):
         #                           addr                 bank                   RCW ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD NOP, B_RST
             data=self.func_encode_cmd( 0,                  0,                    2,  0,  0,  1,  0,    0,    0,    1,  1,   0,   1,   0)
-            self.x393_mem.axi_write_single_w(cmd_addr, data)
+            self.x393_mem.axi_write_single_w(cmd_addr, data, verbose)
             cmd_addr += 1
 # nop - all 3 below are the same? - just repeat?
         #                          skip      done        bank                       ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD      B_RST
         data=self.func_encode_skip(   0,       0,          0,                        0,  0,  1,  0,    0,    0,    1,  0,   0,        0)
-        self.x393_mem.axi_write_single_w(cmd_addr, data)
+        self.x393_mem.axi_write_single_w(cmd_addr, data, verbose)
         cmd_addr += 1
 # nop
         #                          skip      done        bank                       ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD      B_RST
         data=self.func_encode_skip(   0,       0,          0,                        0,  0,  1,  0,    0,    0,    1,  0,   0,        0)
-        self.x393_mem.axi_write_single_w(cmd_addr, data)
+        self.x393_mem.axi_write_single_w(cmd_addr, data, verbose)
         cmd_addr += 1
 # nop
         #                          skip      done        bank                       ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD      B_RST
         data=self.func_encode_skip(   0,       0,          0,                        0,  0,  1,  0,    0,    0,    1,  0,   0,        0)
-        self.x393_mem.axi_write_single_w(cmd_addr, data)
+        self.x393_mem.axi_write_single_w(cmd_addr, data, verbose)
         cmd_addr += 1
 # nop, no write buffer - next page
         #                          skip      done        bank                       ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD      B_RST
         data=self.func_encode_skip(   0,       0,          0,                        0,  0,  1,  0,    0,    0,    1,  0,   0,        1)
-        self.x393_mem.axi_write_single_w(cmd_addr, data)
+        self.x393_mem.axi_write_single_w(cmd_addr, data, verbose)
         cmd_addr += 1
         #                          skip      done        bank                       ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD      B_RST
         data=self.func_encode_skip(   1,       0,          0,                        0,  0,  1,  0,    0,    0,    1,  0,   0,        0)
-        self.x393_mem.axi_write_single_w(cmd_addr, data)
+        self.x393_mem.axi_write_single_w(cmd_addr, data, verbose)
         cmd_addr += 1
 # Turn off read pattern mode
         #                           addr                 bank                   RCW ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD NOP, B_RST
         data=self.func_encode_cmd(bits(mr3_norm,(14,0)), bits(mr3_norm,(17,15)), 7,  0,  0,  0,  0,    0,    0,    1,  0,   0,   0,   0)
-        self.x393_mem.axi_write_single_w(cmd_addr, data)
+        self.x393_mem.axi_write_single_w(cmd_addr, data, verbose)
         cmd_addr += 1
 # tMOD (keep DCI enabled)
         #                          skip      done        bank                       ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD      B_RST
         data=self.func_encode_skip(   5,       0,          0,                        0,  0,  0,  0,    0,    0,    1,  0,   0,        0)
-        self.x393_mem.axi_write_single_w(cmd_addr, data)
+        self.x393_mem.axi_write_single_w(cmd_addr, data, verbose)
         cmd_addr += 1
 # Turn off DCI
         #                          skip      done        bank                       ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD      B_RST
         data=self.func_encode_skip(   0,       0,          0,                        0,  0,  0,  0,    0,    0,    0,  0,   0,        0)
-        self.x393_mem.axi_write_single_w(cmd_addr, data)
+        self.x393_mem.axi_write_single_w(cmd_addr, data, verbose)
         cmd_addr += 1
 # Finalize (set DONE)
         #                          skip      done        bank                       ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD      B_RST
         data=self.func_encode_skip(   0,       1,          0,                        0,  0,  0,  0,    0,    0,    0,  0,   0,        0)
-        self.x393_mem.axi_write_single_w(cmd_addr, data)
+        self.x393_mem.axi_write_single_w(cmd_addr, data, verbose)
         cmd_addr += 1
 
     def set_write_lev(self,
-                      nrep):  #input[CMD_PAUSE_BITS-1:0]nrep;
+                      nrep,  #input[CMD_PAUSE_BITS-1:0]nrep;
+                      verbose=0):
         """
         Setup write levelling sequence at parameter defined address in the sequencer memory
-            <nrep>  number of times write levelling burst is repeated
+        <nrep>  number of times write levelling burst is repeated
+        <verbose> print data being written (default: False)
         """
         dqs_low_rpt = 8
         nrep_minus_1 = nrep - 1;
@@ -714,72 +733,74 @@ class X393PIOSequences(object):
 # Enter write leveling mode
         #                           addr                 bank                   RCW ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD NOP, B_RST
         data=self.func_encode_cmd(bits(mr1_wlev,(14,0)), bits(mr1_wlev,(17,15)), 7,  0,  0,  0,  0,    0,    0,    0,  0,   0,   0,   0)
-        self.x393_mem.axi_write_single_w(cmd_addr, data)
+        self.x393_mem.axi_write_single_w(cmd_addr, data, verbose)
         cmd_addr += 1
         #                          skip      done        bank                       ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD      B_RST
         data=self.func_encode_skip( 13,       0,          0,                         0,  0,  0,  0,    0,    0,    0,  0,   0,        0) # tWLDQSEN=25tCK
-        self.x393_mem.axi_write_single_w(cmd_addr, data)
+        self.x393_mem.axi_write_single_w(cmd_addr, data, verbose)
         cmd_addr += 1
 # enable DQS output, keep it low (15 more tCK for the total of 40 tCK
         #                          skip      done        bank                       ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD      B_RST
         data=self.func_encode_skip(dqs_low_rpt,0,         0,                         1,  0,  0,  0,    1,    0,    0,  0,   0,        0)
-        self.x393_mem.axi_write_single_w(cmd_addr, data)
+        self.x393_mem.axi_write_single_w(cmd_addr, data, verbose)
         cmd_addr += 1
 # Toggle DQS as needed for write leveling, write to buffer
         #                          skip      done        bank                       ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD      B_RST
         data=self.func_encode_skip(nrep_minus_1,0,        0,                         1,  0,  0,  0,    1,    1,    1,  1,   0,        0)
-        self.x393_mem.axi_write_single_w(cmd_addr, data)
+        self.x393_mem.axi_write_single_w(cmd_addr, data, verbose)
         cmd_addr += 1
 # continue toggling (5 times), but disable writing to buffer (used same wbuf latency as for read) 
         #                          skip      done        bank                       ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD      B_RST
         data=self.func_encode_skip( 4,        0,          0,                         1,  0,  0,  0,    1,    1,    1,  0,   0,        0)
-        self.x393_mem.axi_write_single_w(cmd_addr, data)
+        self.x393_mem.axi_write_single_w(cmd_addr, data, verbose)
         cmd_addr += 1
         # Keep DCI (but not ODT) active  ODT should be off befor MRS
         #                          skip      done        bank                       ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD      B_RST
         data=self.func_encode_skip( 2,        0,          0,                         0,  0,  0,  0,    0,    0,    1,  0,   0,        0)
-        self.x393_mem.axi_write_single_w(cmd_addr, data)
+        self.x393_mem.axi_write_single_w(cmd_addr, data, verbose)
         cmd_addr += 1
         # exit write leveling mode, ODT off, DCI off
         #                           addr                 bank                   RCW ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD NOP, B_RST
         data=self.func_encode_cmd(bits(mr1_norm,(14,0)),bits(mr1_norm,(17,15)),  7,  0,  0,  0,  0,    0,    0,    0,  0,   0,   0,   0)
-        self.x393_mem.axi_write_single_w(cmd_addr, data)
+        self.x393_mem.axi_write_single_w(cmd_addr, data, verbose)
         cmd_addr += 1
         #                          skip      done        bank                       ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD      B_RST
         data=self.func_encode_skip( 5,        0,         0,                          0,  0,  0,  0,    0,    0,    0,  0,   0,        0) # tMOD
-        self.x393_mem.axi_write_single_w(cmd_addr, data)
+        self.x393_mem.axi_write_single_w(cmd_addr, data, verbose)
         cmd_addr += 1
         # Finalize. See if DONE can be combined with B_RST, if not - insert earlier
         #                          skip      done        bank                       ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD      B_RST
         data=self.func_encode_skip(  0,       1,           0,                        0,  0,  0,  0,    0,    0,    0,  0,   0,        1) # can DONE be combined with B_RST?
-        self.x393_mem.axi_write_single_w(cmd_addr, data)
+        self.x393_mem.axi_write_single_w(cmd_addr, data, verbose)
         cmd_addr += 1
 
     def set_refresh(self, #
                 t_rfc,   # input[9:0]t_rfc; # =50 for tCK=2.5ns
                 t_refi, # input[7:0]t_refi; # 48/97 for normal, 8 - for simulation
-                en_refresh=0):
+                en_refresh=0,
+                verbose=0):
         """
         Setup refresh sequence at parameter defined address in the sequencer memory
         <t_rfc>       tRFC =50 for tCK=2.5ns
         <t_refi>      tREFI 48/97 for hardware, 16 - for simulation
         <en_refresh>  enable refresh immediately 
+        <verbose> print data being written (default: False)
         """
         print("SET REFRESH: tRFC=%d, tREFI=%d"%(t_rfc,t_refi))
         cmd_addr = self.MCONTR_CMD_WR_ADDR + self.REFRESH_OFFSET
         #                           addr                 bank                   RCW ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD NOP, B_RST
         data=self.func_encode_cmd(    0,                   0,                    6,  0,  0,  0,  0,    0,    0,    0,  0,   0,   0,   0)
-        self.x393_mem.axi_write_single_w(cmd_addr, data)
+        self.x393_mem.axi_write_single_w(cmd_addr, data, verbose)
         cmd_addr += 1
         # =50 tREFI=260 ns before next ACTIVATE or REFRESH, @2.5ns clock, @5ns cycle
         #                          skip      done        bank                       ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD      B_RST
         data=self.func_encode_skip( t_rfc,     0,          0,                        0,  0,  0,  0,    0,    0,    0,  0,   0,        0)
-        self.x393_mem.axi_write_single_w(cmd_addr, data)
+        self.x393_mem.axi_write_single_w(cmd_addr, data, verbose)
         cmd_addr += 1
 # Ready for normal operation
         #                          skip      done        bank                       ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD      B_RST
         data=self.func_encode_skip(  0,       1,           0,                        0,  0,  0,  0,    0,    0,    0,  0,   0,        0)
-        self.x393_mem.axi_write_single_w(cmd_addr, data)
+        self.x393_mem.axi_write_single_w(cmd_addr, data, verbose)
         cmd_addr += 1
 #            write_contol_register(DLY_SET,0);
         self.x393_axi_tasks.write_contol_register(self.MCONTR_TOP_16BIT_ADDR + self.MCONTR_TOP_16BIT_REFRESH_ADDRESS, self.REFRESH_OFFSET)
@@ -790,10 +811,12 @@ class X393PIOSequences(object):
 
 
     def set_mrs(self,       # will also calibrate ZQ
-                reset_dll): # input reset_dll;
+                reset_dll, # input reset_dll;
+                verbose=0):
         """
         Setup sequence (at paramter-defined adderss) to write MR0, MR1, MR2 and MR3 mode registers of DDR3 memory
         <reset_dll>    reset memory DLL when running this sequence
+        <verbose> print data being written (default: False)
         """
         mr0 = self.func_ddr3_mr0(
             0,         # 1'h0,      #       pd; # precharge power down 0 - dll off (slow exit), 1 - dll on (fast exit)
@@ -829,52 +852,52 @@ class X393PIOSequences(object):
             print("mr3=0x%05x"%mr3);
         #                           addr                 bank                   RCW ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD NOP, B_RST
         data=self.func_encode_cmd(bits(mr2,(14,0)),     bits(mr2,(17,15)),       7,  0,  0,  0,  0,    0,    0,    0,  0,   0,   0,   0)
-        self.x393_mem.axi_write_single_w(cmd_addr, data)
+        self.x393_mem.axi_write_single_w(cmd_addr, data, verbose)
         cmd_addr += 1
         #                          skip      done        bank                       ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD      B_RST
         data=self.func_encode_skip(  1,       0,           0,                        0,  0,  0,  0,    0,    0,    0,  0,   0,        0);
-        self.x393_mem.axi_write_single_w(cmd_addr, data)
+        self.x393_mem.axi_write_single_w(cmd_addr, data, verbose)
         cmd_addr += 1
         #                           addr                 bank                   RCW ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD NOP, B_RST
         data=self.func_encode_cmd(bits(mr3,(14,0)),     bits(mr3,(17,15)),       7,  0,  0,  0,  0,    0,    0,    0,  0,   0,   0,   0)
         
-        self.x393_mem.axi_write_single_w(cmd_addr, data)
+        self.x393_mem.axi_write_single_w(cmd_addr, data, verbose)
         cmd_addr += 1
         #                          skip      done        bank                       ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD      B_RST
         data=self.func_encode_skip(  0,      0,           0,                         0,  0,  0,  0,    0,    0,    0,  0,   0,        0);
-        self.x393_mem.axi_write_single_w(cmd_addr, data)
+        self.x393_mem.axi_write_single_w(cmd_addr, data, verbose)
         cmd_addr += 1
         #                           addr                 bank                   RCW ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD NOP, B_RST
         data=self.func_encode_cmd(bits(mr1,(14,0)),     bits(mr1,(17,15)),       7,  0,  0,  1,  0,    0,    0,    0,  0,   0,   0,   0) # SEL==1 - just testing?
         
-        self.x393_mem.axi_write_single_w(cmd_addr, data)
+        self.x393_mem.axi_write_single_w(cmd_addr, data, verbose)
         cmd_addr += 1
         #                          skip      done        bank                       ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD      B_RST
         data=self.func_encode_skip(  2,       0,          0,                         0,  0,  0,  0,    0,    0,    0,  0,   0,        0);
-        self.x393_mem.axi_write_single_w(cmd_addr, data)
+        self.x393_mem.axi_write_single_w(cmd_addr, data, verbose)
         cmd_addr += 1
         #                           addr                 bank                   RCW ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD NOP, B_RST
         data=self.func_encode_cmd(bits(mr0,(14,0)),     bits(mr0,(17,15)),       7,  0,  0,  0,  0,    0,    0,    0,  0,   0,   0,   0)
-        self.x393_mem.axi_write_single_w(cmd_addr, data)
+        self.x393_mem.axi_write_single_w(cmd_addr, data, verbose)
         cmd_addr += 1
         #                          skip      done        bank                       ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD      B_RST
         data=self.func_encode_skip(  5,       0,          0,                         0,  0,  0,  0,    0,    0,    0,  0,   0,        0);
-        self.x393_mem.axi_write_single_w(cmd_addr, data)
+        self.x393_mem.axi_write_single_w(cmd_addr, data, verbose)
         cmd_addr += 1
         # encode ZQCL:
         #                           addr                 bank                   RCW ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD NOP, B_RST
         data=self.func_encode_cmd( 0x400,                 0,                     1,  0,  0,  0,  0,    0,    0,    0,  0,   0,   0,   0);
-        self.x393_mem.axi_write_single_w(cmd_addr, data)
+        self.x393_mem.axi_write_single_w(cmd_addr, data, verbose)
         cmd_addr += 1
         # 512 clock cycles after ZQCL
         #                          skip      done        bank                       ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD      B_RST
         data=self.func_encode_skip( 256,      0,          0,                         0,  0,  0,  0,    0,    0,    0,  0,   0,        0);
-        self.x393_mem.axi_write_single_w(cmd_addr, data)
+        self.x393_mem.axi_write_single_w(cmd_addr, data, verbose)
         cmd_addr += 1
         # sequence done bit, skip length is ignored
         #                          skip      done        bank                       ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD      B_RST
         data=self.func_encode_skip( 10,       1,          0,                         0,  0,  0,  0,    0,    0,    0,  0,   0,        0);
-        self.x393_mem.axi_write_single_w(cmd_addr, data)
+        self.x393_mem.axi_write_single_w(cmd_addr, data, verbose)
         cmd_addr += 1
 
     def read_pattern(self,
@@ -889,13 +912,13 @@ class X393PIOSequences(object):
         returns list of the read data
         """
 
-        self.x393_pio_sequences.schedule_ps_pio ( # schedule software-control memory operation (may need to check FIFO status first)
+        self.schedule_ps_pio ( # schedule software-control memory operation (may need to check FIFO status first)
                         self.READ_PATTERN_OFFSET,   # input [9:0] seq_addr; # sequence start address
                         2,                          # input [1:0] page;     # buffer page number
                         0,                          # input       urgent;   # high priority request (only for competion with other channels, will not pass in this FIFO)
                         0,                          # input       chn;      # channel buffer to use: 0 - memory read, 1 - memory write
                         wait_complete) # `PS_PIO_WAIT_COMPLETE ) #  wait_complete; # Do not request a newe transaction from the scheduler until previous memory transaction is finished
-        self.x393_pio_sequences.wait_ps_pio_done(self.DEFAULT_STATUS_MODE,1) # wait previous memory transaction finished before changing delays (effective immediately)
+        self.wait_ps_pio_done(self.DEFAULT_STATUS_MODE,1) # wait previous memory transaction finished before changing delays (effective immediately)
         return self.x393_mcntrl_buffers.read_block_buf_chn (0, 2, num, show_rslt )    # chn=0, page=2, number of 32-bit words=num, show_rslt
 
     def read_block(self,
@@ -910,13 +933,13 @@ class X393PIOSequences(object):
         returns list of the read data
         """
     
-        self.x393_pio_sequences.schedule_ps_pio ( # schedule software-control memory operation (may need to check FIFO status first)
+        self.schedule_ps_pio ( # schedule software-control memory operation (may need to check FIFO status first)
                         self.READ_BLOCK_OFFSET,   # input [9:0] seq_addr; # sequence start address
                         3,                     # input [1:0] page;     # buffer page number
                         0,                     # input       urgent;   # high priority request (only for competion with other channels, will not pass in this FIFO)
                         0,                     # input       chn;      # channel buffer to use: 0 - memory read, 1 - memory write
                         wait_complete)         #  wait_complete; # Do not request a newe transaction from the scheduler until previous memory transaction is finished
-        self.x393_pio_sequences.wait_ps_pio_done(self.DEFAULT_STATUS_MODE,1); # wait previous memory transaction finished before changing delays (effective immediately)
+        self.wait_ps_pio_done(self.DEFAULT_STATUS_MODE,1); # wait previous memory transaction finished before changing delays (effective immediately)
         return self.x393_mcntrl_buffers.read_block_buf_chn (0, 3, num, show_rslt ) # chn=0, page=3, number of 32-bit words=num, show_rslt
 
     def write_block(self,
@@ -926,11 +949,11 @@ class X393PIOSequences(object):
         <wait_complete> wait write block operation to complete (0 - may initiate multiple PS PIO operations)
         """
 #    write_block_buf_chn; # fill block memory - already set in set_up task
-        self.x393_pio_sequences.schedule_ps_pio ( # schedule software-control memory operation (may need to check FIFO status first)
+        self.schedule_ps_pio ( # schedule software-control memory operation (may need to check FIFO status first)
                         self.WRITE_BLOCK_OFFSET,    # input [9:0] seq_addr; # sequence start address
                         0,                     # input [1:0] page;     # buffer page number
                         0,                     # input       urgent;   # high priority request (only for competion with other channels, will not pass in this FIFO)
                         1,                     # input       chn;      # channel buffer to use: 0 - memory read, 1 - memory write
                         wait_complete)         # `PS_PIO_WAIT_COMPLETE )#  wait_complete; # Do not request a newer transaction from the scheduler until previous memory transaction is finished
 # temporary - for debugging:
-#        self.x393_pio_sequences.wait_ps_pio_done(self.DEFAULT_STATUS_MODE,1) # wait previous memory transaction finished before changing delays (effective immediately)
+#        self.wait_ps_pio_done(self.DEFAULT_STATUS_MODE,1) # wait previous memory transaction finished before changing delays (effective immediately)

@@ -37,6 +37,7 @@ from x393_axi_control_status import X393AxiControlStatus
 from x393_pio_sequences      import X393PIOSequences
 from x393_mcntrl_timing      import X393McntrlTiming
 from x393_mcntrl_buffers     import X393McntrlBuffers
+from x393_mcntrl_adjust      import X393McntrlAdjust
 #from verilog_utils import * # concat, bits 
 #from verilog_utils import hx, concat, bits, getParWidth 
 from verilog_utils import concat #, getParWidth
@@ -59,6 +60,7 @@ class X393McntrlTests(object):
         self.x393_pio_sequences=  X393PIOSequences(debug_mode,dry_mode)
         self.x393_mcntrl_timing=  X393McntrlTiming(debug_mode,dry_mode)
         self.x393_mcntrl_buffers= X393McntrlBuffers(debug_mode,dry_mode)
+        self.x393_mcntrl_adjust=  X393McntrlAdjust(debug_mode,dry_mode)
         self.__dict__.update(VerilogParameters.__dict__["_VerilogParameters__shared_state"]) # Add verilog parameters to the class namespace
         try:
             self.verbose=self.VERBOSE
@@ -245,11 +247,11 @@ class X393McntrlTests(object):
             norm_dqs_odly=self.DLY_DQS_ODELAY
 # Set special values for DQS idelay for write leveling
         self.x393_pio_sequences.wait_ps_pio_done(self.DEFAULT_STATUS_MODE,1); # not no interrupt running cycle - delays are changed immediately
-        self.x393_mcntrl_timing.axi_set_dqs_idelay_wlv()
+##        self.x393_mcntrl_timing.axi_set_dqs_idelay_wlv()
 # Set write buffer (from DDR3) WE signal delay for write leveling mode
-        self.x393_mcntrl_timing.axi_set_wbuf_delay(self.WBUF_DLY_WLV)
+##        self.x393_mcntrl_timing.axi_set_wbuf_delay(self.WBUF_DLY_WLV)
 # TODO: Set configurable delay time instead of #80
-        self.x393_mcntrl_timing.axi_set_dqs_odelay(wlev_dqs_dly) # 'h80); # 'h80 - inverted, 'h60 - not - 'h80 will cause warnings during simulation
+##        self.x393_mcntrl_timing.axi_set_dqs_odelay(wlev_dqs_dly) # 'h80); # 'h80 - inverted, 'h60 - not - 'h80 will cause warnings during simulation
         self.x393_pio_sequences.schedule_ps_pio (# schedule software-control memory operation (may need to check FIFO status first)
                                                   self.WRITELEV_OFFSET,   # input [9:0] seq_addr; # sequence start address
                                                   0,                 # input [1:0] page;     # buffer page number
@@ -265,9 +267,9 @@ class X393McntrlTests(object):
             rslt[i & 1]+=(buf[i] & 1) + ((buf[i] >> 8) & 1) + ((buf[i] >> 16) & 1) + ((buf[i] >> 24) & 1)
         for i in range(2):
             rslt[i]/=2*numBufWords    
-        self.x393_mcntrl_timing.axi_set_dqs_idelay_nominal()
-        self.x393_mcntrl_timing.axi_set_dqs_odelay(norm_dqs_odly) # 'h78);
-        self.x393_mcntrl_timing.axi_set_wbuf_delay(self.WBUF_DLY_DFLT); #DFLT_WBUF_DELAY
+##        self.x393_mcntrl_timing.axi_set_dqs_idelay_nominal()
+##        self.x393_mcntrl_timing.axi_set_dqs_odelay(norm_dqs_odly) # 'h78);
+##        self.x393_mcntrl_timing.axi_set_wbuf_delay(self.WBUF_DLY_DFLT); #DFLT_WBUF_DELAY
         return rslt
    
     def test_read_pattern(self,
@@ -290,11 +292,19 @@ class X393McntrlTests(object):
                      1, # show_rslt,
                      wait_complete) #  # Wait for operation to complete
     def test_write_block(self,
-                         wait_complete): # Wait for operation to complete
+                         dq_odelay=None,
+                         dqs_odelay=None,
+                         wait_complete=1): # Wait for operation to complete
         """
         Test write block in PS PIO mode 
+        <dq_odelay>  set DQ output delays if provided ([] - skip, single number - both lanes, 2 element list - per/lane)
+        <dqs odelay> set DQS output delays if provided ([] - skip, single number - both lanes, 2 element list - per/lane)
         <wait_complete> wait write block operation to complete (0 - may initiate multiple PS PIO operations)
         """
+        if (not dq_odelay is None) and (dq_odelay != []):
+            self.x393_mcntrl_timing.axi_set_dq_odelay(dq_odelay)
+        if (not dqs_odelay is None) and (dqs_odelay != []):
+            self.x393_mcntrl_timing.axi_set_dqs_odelay(dqs_odelay)
         return self.x393_pio_sequences.write_block(wait_complete) # Wait for operation to complete
 
     def test_read_block(self,
@@ -312,10 +322,51 @@ class X393McntrlTests(object):
             self.x393_mcntrl_timing.axi_set_dq_idelay(dq_idelay)
         if (not dqs_idelay is None) and (dqs_idelay != []):
             self.x393_mcntrl_timing.axi_set_dqs_idelay(dqs_idelay)
-        return    self.x393_pio_sequences.read_block(self,
+        rd_buf = self.x393_pio_sequences.read_block(
                      256,           # num,
-                     1,             # show_rslt,
+                     0,             # show_rslt,
                      wait_complete) # Wait for operation to complete
+        sum_rd_buf=0
+        for d in rd_buf:
+            sum_rd_buf+=d
+        print("read buffer: (0x%x):"%sum_rd_buf)
+        for i in range(len(rd_buf)):
+            if (i & 0xf) == 0:
+                print("\n%03x:"%i,end=" ")
+            print("%08x"%rd_buf[i],end=" ")
+        print("\n")        
+        return rd_buf
+        
+    def test_read_block16(self,
+                        dq_idelay=None,
+                        dqs_idelay=None,
+                        wait_complete=1): # Wait for operation to complete
+        """
+        Test read block in PS PIO mode, convert data to match DDR3 16-bit output words  
+        <dq_idelay>  set DQ input delays if provided ([] - skip, single number - both lanes, 2 element list - per/lane)
+        <dqs_idelay> set DQS input delays if provided ([] - skip, single number - both lanes, 2 element list - per/lane)
+        <wait_complete> wait read block operation to complete (0 - may initiate multiple PS PIO operations)
+        returns list of the read data
+        """
+        if (not dq_idelay is None) and (dq_idelay != []):
+            self.x393_mcntrl_timing.axi_set_dq_idelay(dq_idelay)
+        if (not dqs_idelay is None) and (dqs_idelay != []):
+            self.x393_mcntrl_timing.axi_set_dqs_idelay(dqs_idelay)
+        rd_buf = self.x393_pio_sequences.read_block(
+                     256,           # num,
+                     0,             # show_rslt,
+                     wait_complete) # Wait for operation to complete
+        read16=self.x393_mcntrl_adjust.convert_w32_to_mem16(rd_buf) # 512x16 bit, same as DDR3 DQ over time
+        sum_read16=0
+        for d in read16:
+            sum_read16+=d
+        print("read16 (0x%x):"%sum_read16)
+        for i in range(len(read16)):
+            if (i & 0x1f) == 0:
+                print("\n%03x:"%i,end=" ")
+            print("%04x"%read16[i],end=" ")
+        print("\n")
+        return read16
         
     def test_scanline_write(self, #
                             channel,       # input            [3:0] channel;

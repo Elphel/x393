@@ -90,16 +90,21 @@ class X393McntrlBuffers(object):
         <start_word_address>     full register address in AXI space (in 32-bit words, not bytes)
         <num_words_or_data_list> number of 32-bit words to generate/write or a list with integer data
         """
+        xor=0
+        if (isinstance (num_words_or_data_list,list) or isinstance (num_words_or_data_list,tuple)) and (len(num_words_or_data_list) == 2):
+            xor=num_words_or_data_list[1]
+            num_words_or_data_list=num_words_or_data_list[0]
+                    
         if isinstance (num_words_or_data_list,int):
             data=[]
             for i in range(num_words_or_data_list):
-                data.append(i | (((i + 7) & 0xff) << 8)  | (((i + 23) & 0xff) << 16) | (((i + 31) & 0xff) << 24))
+                data.append(xor ^(i | (((i + 7) & 0xff) << 8)  | (((i + 23) & 0xff) << 16) | (((i + 31) & 0xff) << 24)))
         else:
             data=num_words_or_data_list
         if self.verbose>0:
             print("**** write_block_buf, start_word_address=0x%x, num+words=0x%x"%(start_word_address,len(data)))
         for i,d in enumerate(data):
-            d= i | (((i + 7) & 0xff) << 8)  | (((i + 23) & 0xff) << 16) | (((i + 31) & 0xff) << 24)
+#            d= i | (((i + 7) & 0xff) << 8)  | (((i + 23) & 0xff) << 16) | (((i + 31) & 0xff) << 24)
             if self.verbose>2:
                 print("     write_block_buf 0x%x:0x%x"%(start_word_address+i,d))
             self.x393_mem.axi_write_single_w(start_word_address+i, d)
@@ -131,6 +136,13 @@ class X393McntrlBuffers(object):
         <page>                   2-bit buffer page to write to
         <num_words_or_data_list> number of 32-bit words to generate/write or a list with integer data
         """
+        print("===write_block_buf_chn() chn=0x%x, page=0x%x"%(chn,page), end=" ")
+        if isinstance (num_words_or_data_list,list):
+            try:
+                print("=== [0x%x,0x%x,0x%x,0x%x,0x%x,0x%x,0x%x,0x%x,...]"%tuple(num_words_or_data_list[:8]),end="")
+            except:
+                print("=== [%s]"%str(num_words_or_data_list))
+        print("===")    
         start_addr=-1
         if   chn==0:start_addr=self.MCONTR_BUF0_WR_ADDR + (page << 8)
         elif chn==1:start_addr=self.MCONTR_BUF1_WR_ADDR + (page << 8)
@@ -140,6 +152,7 @@ class X393McntrlBuffers(object):
         else:
             print("**** ERROR: Invalid channel for write buffer = %d"% chn)
             start_addr = self.MCONTR_BUF0_WR_ADDR+ (page << 8)
+            
         self.write_block_buf (start_addr, num_words_or_data_list)
     
     def read_block_buf(self, 
@@ -153,7 +166,7 @@ class X393McntrlBuffers(object):
         <show_rslt>          print buffer data read
         """
         
-        if self.verbose>0:
+        if (self.verbose>1) or show_rslt:
             print("**** read_block_buf, start_word_address=0x%x, num_read=0x%x "%(start_word_address,num_read))
         result=[]    
         for i in range(num_read): #for (i = 0; i < num_read; i = i + 16) begin

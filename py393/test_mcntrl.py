@@ -170,6 +170,7 @@ USAGE
 ''' % (program_shortdesc, __author__,str(__date__))
     preDefines={}
     preParameters={}
+    showResult=False
     try:
         # Setup argument parser
         parser = ArgumentParser(description=program_license, formatter_class=RawDescriptionHelpFormatter,fromfile_prefix_chars='@')
@@ -353,6 +354,9 @@ USAGE
         line =""
         while True:
             line=raw_input('x393%s--> '%('','(simulated)')[args.simulated]).strip()
+            #remove comment from the input line
+            if line.find("#") > 0:
+                line=line[:line.find("#")]
             lineList=line.split()
             if not line:
                 print ('Use "quit" to exit, "help" - for help')
@@ -365,7 +369,18 @@ USAGE
                     print ("Usage: %s %s"%(name,sFuncArgs))
                 print ('\n"parameters" and "defines" list known defined parameters and macros')
                 print ("args.exception=%d, QUIET=%d"%(args.exceptions,QUIET))
-                
+                print ("Enter 'R' to toggle show/hide command results, now it is %s"%(("OFF","ON")[showResult]))
+            elif lineList[0].upper() == 'R':
+                if len(lineList)>1:
+                    if (lineList[1].upper() == "ON") or (lineList[1].upper() == "1") or (lineList[1].upper() == "TRUE"):
+                        showResult=True
+                    elif (lineList[1].upper() == "OFF") or (lineList[1].upper() == "0") or (lineList[1].upper() == "FALSE"):
+                        showResult=False
+                    else:
+                        print ("Unrecognized parameter %s for 'R' command"%lineList[1])
+                else:
+                    showResult = not showResult
+                print ("Show results mode is now %s"%(("OFF","ON")[showResult]))
 #            elif (len(line) > len("help")) and (line[:len("help")]=='help'):
             elif lineList[0] == 'help':
 #                helpFilter=line[len('help'):].strip()
@@ -431,7 +446,8 @@ USAGE
             else:
                 cmdLine=line.split()
                 rslt= execTask(cmdLine)
-                print ('    Result: '+hx(rslt))   
+                if showResult:
+                    print ('    Result: '+hx(rslt))   
 #http://stackoverflow.com/questions/11781265/python-using-getattr-to-call-function-with-variable-parameters
 #*getattr(foo,bar)(*params)   
     return 0

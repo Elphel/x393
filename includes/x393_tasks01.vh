@@ -81,6 +81,9 @@
         input [29:0] address;
         input [31:0] data;
         begin
+`ifdef DEBUG_WR_SINGLE
+          $display("axi_write_single_w %h:%h @ %t",address,data,$time);
+`endif                
             axi_write_single ({address,2'b0},data);
         end
     endtask
@@ -89,9 +92,6 @@
         input [31:0] address;
         input [31:0] data;
         begin
-`ifdef DEBUG_WR_SINGLE
-          $display("axi_write_single %h:%h @ %t",address,data,$time);
-`endif                
           axi_write_addr_data(
                     GLOBAL_WRITE_ID,    // id
 //                    address << 2, // addr

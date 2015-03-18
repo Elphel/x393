@@ -43,7 +43,7 @@ from x393_mcntrl_buffers     import X393McntrlBuffers
 #from verilog_utils import concat #, getParWidth
 #from x393_axi_control_status import concat, bits
 #from time import sleep
-
+from verilog_utils import checkIntArgs,smooth2d
 NUM_FINE_STEPS=    5
 
 class X393McntrlAdjust(object):
@@ -98,7 +98,7 @@ class X393McntrlAdjust(object):
         if isinstance(dly,list) or isinstance(dly,tuple):
             rslt=[]
             for d in dly:
-                rslt.append(self.split_delay(d))
+                rslt.append(self.combine_delay(d))
             return rslt
         try:
             return ((dly/NUM_FINE_STEPS)<<3)+(dly%NUM_FINE_STEPS)
@@ -114,7 +114,31 @@ class X393McntrlAdjust(object):
         """
         for w in buf:
             if (w!=0xffffffff): return False
-        return True            
+        return True
+    def missing_dqs(self,
+                     rd_blk,
+                     quiet=False):
+        """
+        Suspect missing final DQS puls(es) during write if last written burst matches previous one
+        <rd_blk> - block of 32-bit data read from DDR3 device
+        <quiet>  - no output
+        Returns True if missing DQS pulse is suspected
+        """
+        if (not rd_blk) or (len(rd_blk) <8 ):
+            return False
+        for i in range(-4,0):
+            if rd_blk[i] != rd_blk[i-4]:
+                break
+        else:
+            if not quiet:
+                print ("End of the block repeats 2 last 8-bursts, insufficient number of trailing DQS pulses is suspected:")
+                print("\n%03x:"%(len(rd_blk)-8),end=" ")
+                for i in range(len(rd_blk)-8,len(rd_blk)):
+                    print("%08x"%rd_blk[i],end=" ")
+                print("\n")
+            return True
+        return False            
+                   
 
     def convert_mem16_to_w32(self,mem16):
         """
@@ -155,15 +179,18 @@ class X393McntrlAdjust(object):
 
 
     def scan_dqs(self,
-                 low_delay,
+                 low_delay, 
                  high_delay,
-                 num ):
+                 num=8,
+                 quiet=2  ):
         """
         Scan DQS input delay values using pattern read mode
-        <low_delay>   low delay value
-        <high_delay>  high delay value
+        <low_delay>   low delay value (in 'hardware' format, sparse)
+        <high_delay>  high delay value (in 'hardware' format, sparse)
         <num>         number of 64-bit words to process
+        <quiet>       less output
         """
+        checkIntArgs(('low_delay','high_delay','num'),locals())
         self.x393_pio_sequences.set_read_pattern(num+1) # do not use first/last pair of the 32 bit words
         low = self.split_delay(low_delay)
         high = self.split_delay(high_delay)
@@ -171,10 +198,17 @@ class X393McntrlAdjust(object):
         for dly in range (low, high+1):
             enc_dly=self.combine_delay(dly)
             self.x393_mcntrl_timing.axi_set_dqs_idelay(enc_dly)
-            buf= self.x393_pio_sequences.read_pattern(self,
+            buf= self.x393_pio_sequences.read_pattern(
                      (4*num+2),     # num,
                      0,             # show_rslt,
                      1) # Wait for operation to complete
+            if quiet <1:
+                hbuf=[]
+                for dd in buf:
+                    hbuf.append(hex(dd))
+                print(hbuf)
+            # with "good" data each word in buf should be 0xff00ff00
+            
             if self.bad_data(buf):
                 results.append([])
             else:    
@@ -187,46 +221,52 @@ class X393McntrlAdjust(object):
                         if (buf[w+2] & (1<<wb) != 0):
                             data[b]+=1
                 results.append(data)
-                print ("%3d (0x%02x): "%(dly,enc_dly),end="")
-                for i in range(32):
-                    print("%5x"%data[i],end="")
-                print()    
-        for index in range (len(results)):
-            dly=index+low
-            enc_dly=self.combine_delay(dly)
-            if (len (results[index])>0):
-                print ("%3d (0x%02x): "%(dly,enc_dly),end="")
-                for i in range(32):
-                    print("%5x"%results[index][i],end="")
-                print()    
-        print()
-        print()
-        print ("Delay",end=" ")
-        for i in range(16):
-            print ("Bit%dP"%i,end=" ")
-        for i in range(16):
-            print ("Bit%dM"%i,end=" ")
-        print()
-        for index in range (len(results)):
-            dly=index+low
-            enc_dly=self.combine_delay(dly)
-            if (len (results[index])>0):
-                print ("%d"%(dly),end=" ")
-                for i in range(32):
-                    print("%d"%results[index][i],end=" ")
-                print()    
+                if quiet < 2:
+                    print ("%3d (0x%02x): "%(dly,enc_dly),end="")
+                    for i in range(32):
+                        print("%5x"%data[i],end="")
+                    print()
+        if quiet<3:
+            for index in range (len(results)):
+                dly=index+low
+                enc_dly=self.combine_delay(dly)
+                if (len (results[index])>0):
+                    print ("%3d (0x%02x): "%(dly,enc_dly),end="")
+                    for i in range(32):
+                        print("%5x"%results[index][i],end="")
+                    print()    
+            print()
+        if quiet < 4:    
+            print()
+            print ("Delay",end=" ")
+            for i in range(16):
+                print ("Bit%dP"%i,end=" ")
+            for i in range(16):
+                print ("Bit%dM"%i,end=" ")
+            print()
+            for index in range (len(results)):
+                dly=index+low
+                enc_dly=self.combine_delay(dly)
+                if (len (results[index])>0):
+                    print ("%d"%(dly),end=" ")
+                    for i in range(32):
+                        print("%d"%results[index][i],end=" ")
+                    print()    
         return results                                  
 
     def scan_dq_idelay(self,
                        low_delay,
                        high_delay,
-                       num ):
+                       num=8,
+                       quiet=2 ):
         """
         Scan DQ input delay values using pattern read mode
-        <low_delay>   low delay value
-        <high_delay>  high delay value
+        <low_delay>   low delay value (in 'hardware' format, sparse)
+        <high_delay>  high delay value (in 'hardware' format, sparse)
         <num>         number of 64-bit words to process
+        <quiet>       less output
         """
+        checkIntArgs(('low_delay','high_delay','num'),locals())
         self.x393_pio_sequences.set_read_pattern(num+1) # do not use first/last pair of the 32 bit words
         low = self.split_delay(low_delay)
         high = self.split_delay(high_delay)
@@ -234,97 +274,158 @@ class X393McntrlAdjust(object):
         for dly in range (low, high+1):
             enc_dly=self.combine_delay(dly)
             self.x393_mcntrl_timing.axi_set_dq_idelay(enc_dly) # same value to all DQ lines
-            buf= self.x393_pio_sequences.read_pattern(self,
+            buf= self.x393_pio_sequences.read_pattern(
                      (4*num+2),     # num,
                      0,             # show_rslt,
                      1) # Wait for operation to complete
+            if not quiet:
+                hbuf=[]
+                for dd in buf:
+                    hbuf.append(hex(dd))
+                print(hbuf)
+            # with "good" data each word in buf should be 0xff00ff00
             if self.bad_data(buf):
                 results.append([])
             else:    
                 data=[0]*32 # for each bit - even, then for all - odd
-                for w in range (4*num):
-                    lane=w%2
+                for w in range (4*num):    # read 32-bit word number
+                    lane=w%2               # even words - lane 0, odd - lane 1
                     for wb in range(32):
                         g=(wb/8)%2
                         b=wb%8+lane*8+16*g
-                        if (buf[w+2] & (1<<wb) != 0):
+                        if (buf[w+2] & (1<<wb) != 0):# buf[w+2] - skip first 2 words
                             data[b]+=1
                 results.append(data)
-                print ("%3d (0x%02x): "%(dly,enc_dly),end="")
-                for i in range(32):
-                    print("%5x"%data[i],end="")
-                print()    
-        for index in range (len(results)):
-            dly=index+low
-            enc_dly=self.combine_delay(dly)
-            if (len (results[index])>0):
-                print ("%3d (0x%02x): "%(dly,enc_dly),end="")
-                for i in range(32):
-                    print("%5x"%results[index][i],end="")
-                print()    
-        print()
-        print()
-        print ("Delay",end=" ")
-        for i in range(16):
-            print ("Bit%dP"%i,end=" ")
-        for i in range(16):
-            print ("Bit%dM"%i,end=" ")
-        print()
-        for index in range (len(results)):
-            dly=index+low
-            enc_dly=self.combine_delay(dly)
-            if (len (results[index])>0):
-                print ("%d"%(dly),end=" ")
-                for i in range(32):
-                    print("%d"%results[index][i],end=" ")
-                print()    
-        print()
+                #When all correct, data[:16] should be all 0, data[16:] - maximal, (with num=8  - 32)
+                if not quiet: 
+                    print ("%3d (0x%02x): "%(dly,enc_dly),end="")
+                    for i in range(32):
+                        print("%5x"%data[i],end="")
+                    print()
+        if quiet <2:                
+            for index in range (len(results)):
+                dly=index+low
+                enc_dly=self.combine_delay(dly)
+                if (len (results[index])>0):
+                    print ("%3d (0x%02x): "%(dly,enc_dly),end="")
+                    for i in range(32):
+                        print("%5x"%results[index][i],end="")
+                    print()    
+            print()
+        if quiet <3:                
+            print()
+            print ("Delay",end=" ")
+            for i in range(16):
+                print ("Bit%dP"%i,end=" ")
+            for i in range(16):
+                print ("Bit%dM"%i,end=" ")
+            print()
+            for index in range (len(results)):
+                dly=index+low
+                enc_dly=self.combine_delay(dly)
+                if (len (results[index])>0):
+                    print ("%d"%(dly),end=" ")
+                    for i in range(32):
+                        print("%d"%results[index][i],end=" ")
+                    print()    
+            print()
         return results                                  
 
     def adjust_dq_idelay(self,
                          low_delay,
                          high_delay,
-                         num,
-                         falling ): # 0 - use rising as delay increases, 1 - use falling
+                         num=8,
+                         falling=0, # 0 - use rising as delay increases, 1 - use falling
+                         smooth=10,
+                         quiet=2):
         """
         Adjust individual per-line DQ delays using read pattern mode
-        <low_delay>   low delay value
-        <high_delay>  high delay value
+        DQS idelay(s) should be set 90-degrees from the final values
+        <low_delay>   low delay value (in 'hardware' format, sparse)
+        <high_delay>  high delay value (in 'hardware' format, sparse)
         <num>         number of 64-bit words to process
         <falling>     0 - use rising edge as delay increases, 1 - use falling one
-        Returns:      list of 16 per-line delay values
+                      In 'falling' mode results are the longest DQ idelay
+                      when bits switch from correct to incorrect,
+                      In 'rising' mode (falling==0) - the shortest one
+        <smooth>      number of times to run LPF
+        <quiet>       less output
+        Returns:      list of 16 per-line delay values (sequential, not 'hardware')
         """
+        checkIntArgs(('low_delay','high_delay','num'),locals())
         low = self.split_delay(low_delay)
-        data_raw=self.scan_dq_idelay(low_delay,high_delay,num)
+        data_raw=self.scan_dq_idelay(low_delay,high_delay,num,quiet)
         data=[]
         delays=[]
         for i,d in enumerate(data_raw):
             if len(d)>0:
                 data.append(d)
                 delays.append(i+low)
-        print(delays)
+        if (quiet<2):
+            print(delays)
         
-        best_dlys=[0]*16
-        best_diffs=[num*8.0]*16
-        for i in range (1,len(data)-1):
+        centerRaw=num*2.0# center value
+        uncert=[] #"uncertanty of read for each bit and even/odd words. list of 32-element lists, each positive in the [0,1] interval
+        rate=[]   # data change rate
+        lm1=len(data)-1
+        for i in range (0,len(data)):
+            im1=(0,  i-1)[i>0]
+            ip1=(lm1,i+1)[i<lm1]
+            r_uncert=[]
+            r_rate=[]
+            for j in range (32):
+                d=0.5*data[i][j]+0.25*(data[ip1][j]+data[im1][j])
+                r=data[im1][j]-data[ip1][j]
+                if (j>=16):
+                    r=-r
+                r_uncert.append(1.0-((d-centerRaw)/centerRaw)**2) #0 and max -> 0, center ->1.0
+                r_rate.append(r/(2.0*centerRaw))
+            uncert.append(r_uncert)
+            rate.append(r_rate)
+#            print ("%d %s"%(i,str(r_uncert)))
+        for _ in range(smooth):
+            uncert=smooth2d(uncert)
+        for _ in range(smooth):
+            rate= smooth2d(rate)
+        val=[] # list of 16-element rows of composite uncert*rate values, multiplied for odd/even values, hoping not to have
+        #         any bumps causes by asymmetry 0->1 and 1-->0
+        for i in range (0,len(data)):
+            r_val=[]
+            for j in range(16):
+                sign=(-1,1)[rate[i][j]>0]
+                rr=rate[i][j]*rate[i][j+16]
+#                if falling:
+#                    sign=-sign
+                if rr<0:
+                    sign=0 # different slope direction - ignore                
+                r_val.append(sign * rr * uncert[i][j] * uncert[i][j+16])
+            val.append(r_val)
+        best_dlys=[None]*16
+        best_diffs=[None]*16
+        for i in range (len(val)):
             for j in range (16):
-                delta=abs(data[i][j] -data[i][j+16] + 0.5*(data[i-1][j] -data[i-1][j+16]+data[i+1][j] -data[i+1][j+16]))
-                sign=(data[i-1][j] -data[i-1][j+16]-data[i+1][j]+data[i+1][j+16])
-                if falling > 0: sign=-sign;
-                if (sign>0) and (delta < best_diffs[j]):
-                    best_diffs[j]=delta
-                    best_dlys[j]=delays[i]
+                v=val[i][j]
+                if falling:
+                    v=-v
+                if (best_dlys[j] is None) or (v>best_diffs[j]):
+                    best_dlys[j]=  i+1
+                    best_diffs[j]= v
+        if quiet <2:
+            for i in range (len(data)):
+                print("%d "%(i),end="")
+                for j in range (32):
+                    print("%f "%uncert[i][j],end="")
+                for j in range (32):
+                    print("%f "%rate[i][j],end="")
+                for j in range (16):
+                    print("%f "%(val[i][j]),end="")
+                print()
+        
         for i in range (16):
             print("%2d: %3d (0x%02x)"%(i,best_dlys[i],self.combine_delay(best_dlys[i])))
-        self.x393_mcntrl_timing.axi_set_dq_idelay((best_dlys[0:8],best_dlys[8:16]))
+        comb_delays=self.combine_delay(best_dlys)
+        self.x393_mcntrl_timing.axi_set_dq_idelay((comb_delays[0:8],comb_delays[8:16]))
         return best_dlys       
-    """
-        for i in range (8):
-        axi_set_dly_single(1,i,combine_delay(best_dlys[i]))    
-    for i in range (8):
-        axi_set_dly_single(3,i,combine_delay(best_dlys[i+8]))    
-
-    """
 
     def corr_delays(self,
                     low,         # absolute delay value of start scan
@@ -439,7 +540,7 @@ class X393McntrlAdjust(object):
             ext_low_index=0
         ext_high_index=new_state_index+(new_state_index-last_initial_index)
         if ext_high_index>=len(res_bits):
-            ext_high_index=res_bits-1
+            ext_high_index=len(res_bits)-1
         if (verbose): print("ext_low_index=%d ext_high_index=%d"%(ext_low_index,ext_high_index))
         bit_data=[]
         for i in range(16):
@@ -567,6 +668,10 @@ class X393McntrlAdjust(object):
         <verbose>:    verbose mode (more prints) 
         Returns list of calculated delay values
         """
+        checkIntArgs(('low_delay','high_delay'),locals())
+        brc=(5,        # 3'h5,     # bank
+             0x1234,   # 15'h1234, # row address
+             0x100)     # 10'h100   # column address
            
 #        global BASEADDR_PORT1_WR,VERBOSE;
 #        saved_verbose=VERBOSE;
@@ -621,17 +726,17 @@ class X393McntrlAdjust(object):
         #write blok buffer with 256x32bit data
                 
         self.x393_mcntrl_buffers.write_block_buf_chn(0,0,wdata); # fill block memory (channel, page, number)
-        self.x393_pio_sequences.set_write_block(
-                                                5,        # 3'h5,     # bank
-                                                0x1234,   # 15'h1234, # row address
-                                                0x100     # 10'h100   # column address
-        )
+
+        self.x393_pio_sequences.set_write_block(*brc) #64 8-bursts, 1 extra DQ/DQS/ active cycle
+        self.x393_pio_sequences.set_read_block(*brc)
+        
         if (use_odelay==0) :
             self.x393_pio_sequences.write_block(1) # Wait for operation to complete
             if verbose: print("++++++++ block written once")
     #now scanning - first DQS, then try with DQ (post-adjustment - best fit) 
         results = []
         if verbose: print("******** use_odelay=%d use_dq=%d"%(use_odelay,use_dq))
+        alreadyWarned=False
         for dly in range (low, high+1):
             enc_dly=self.combine_delay(dly)
             if (use_odelay!=0):
@@ -650,13 +755,15 @@ class X393McntrlAdjust(object):
                 else:
                     if verbose: print("******** axi_set_dqs_idelay(0x%x)"%enc_dly)
                     self.x393_mcntrl_timing.axi_set_dqs_idelay(enc_dly)
-            buf32=self.x393_pio_sequences.read_block(self,
+            buf32=self.x393_pio_sequences.read_block(
                                                      256,    # num,
                                                      0,      # show_rslt,
                                                      1)      # Wait for operation to complete
             if self.bad_data(buf32):
                 results.append([])
-            else: 
+            else:
+                # Warn about possible missing DQS pulses during writes
+                alreadyWarned |= self.missing_dqs(buf32, alreadyWarned) 
                 read16=self.convert_w32_to_mem16(buf32) # 512x16 bit, same as DDR3 DQ over time
                 if verbose and (dly==low):   
                     if (verbose and not adjust): print("buf32:")
@@ -741,7 +848,10 @@ class X393McntrlAdjust(object):
                     print ("%d %.2f"%(dly,corr_dly),end=" ")
                     for t in range(8):
                         for i in range(16):
-                            print("%.4f"%(results[dly][i][t]),end=" ")
+                            try:
+                                print("%.4f"%(results[dly][i][t]),end=" ") #IndexError: list index out of range
+                            except:
+                                print(".????",end="")
                     print()
                             
             print("\n\n\n========== Copy below to the spreadsheet,  use columns from corr_delay ==========")
@@ -756,7 +866,10 @@ class X393McntrlAdjust(object):
                     corr_dly=dly+corr_fine[dly%period]
                     print ("%d %.2f"%(dly,corr_dly),end=" ")
                     for t in range(8):
-                        print("%.4f"%(res_avg[dly][t]),end=" ")
+                        try:
+                            print("%.4f"%(res_avg[dly][t]),end=" ")
+                        except:
+                            print(".????",end=" ")
                     print()
         dly_corr=None
         if adjust:        
@@ -806,8 +919,8 @@ class X393McntrlAdjust(object):
                           use_dq, # 0 - scan dqs, 1 - scan dq (common valuwe, post-adjustment)
                           use_odelay, # 0 - idelay, 1 - odelay
                           ends_dist,   # do not process if one of the primary interval ends is within this from 0.0 or 1.0
-                          min_diff,
-                          verbose):   # minimal difference between primary delay steps to process
+                          min_diff,   # minimal difference between primary delay steps to process
+                          verbose):
         """
         Scan  delays using random data write+read
         <low_delay>   Low delay value to tru
@@ -818,6 +931,7 @@ class X393McntrlAdjust(object):
         <min_diff>    minimal difference between primary delay steps to process 
         <verbose>:    verbose mode (more prints) 
         """
+        checkIntArgs(('low_delay','high_delay'),locals())
         self.scan_or_adjust_delay_random(
                                          low_delay,
                                          high_delay,
@@ -846,6 +960,7 @@ class X393McntrlAdjust(object):
         <verbose>:    verbose mode (more prints)
         Returns list of delays 
         """
+        checkIntArgs(('low_delay','high_delay'),locals())
         return self.scan_or_adjust_delay_random(
                                                 low_delay,
                                                 high_delay,

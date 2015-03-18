@@ -127,9 +127,9 @@ def hexMultiple(data):
                 subResult=[]
                 for subItem in item:
                     try:
-                        rslt.append("0x%x"%subItem)
+                        subResult.append("0x%x"%subItem)
                     except:
-                        rslt.append(str(subItem))
+                        subResult.append(str(subItem))
                 rslt.append(subResult)
             else:
                 try:
@@ -142,5 +142,31 @@ def hexMultiple(data):
             rslt = "0x%x"%item
         except:
             rslt = str(item)
-    return rslt        
-            
+    return rslt
+        
+def checkIntArgs(names,var_dict):
+    for name in names:
+        try:
+            v=var_dict[name]
+        except:
+            raise Exception("ERROR: '%s' is not among %s"%(name,str(var_dict.keys())))    
+        if not isinstance(v,int):
+            print ("Expected an integer for '%s', got '%s"%(name,v))
+            try:
+                d=int(v,16)
+                print ("Did you mean 0x%x ?"%d)
+            except:
+                pass
+            raise Exception("Not a number for '%s' : '%s'"%(name,v))
+def smooth2d(arr2d):
+    smooth=[]
+    l=len(arr2d)-1
+    for i in range(l+1):
+        im=(0,i-1)[i>0]
+        ip=(l,i+1)[i<l]
+        row=[]
+        for j in range(len(arr2d[i])):
+            row.append(0.5*arr2d[i][j]+0.25*(arr2d[ip][j]+arr2d[im][j]))
+        smooth.append(row)
+    return smooth                      
+                        

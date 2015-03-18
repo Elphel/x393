@@ -177,6 +177,8 @@ class X393McntrlTiming(object):
         <delay> 8-bit (5+3) delay value to use or a tuple/list with a pair for (lane0, lane1)
                 Each of the two elements in the delay tuple/list may be a a common integer or a list/tuple itself
         """
+#        print("====axi_set_dq_idelay %s"%str(delay))
+        
         if delay is None: return # Do nothing, that's OK
         if isinstance(delay,int):
             delay=(delay,delay)
@@ -321,6 +323,7 @@ class X393McntrlTiming(object):
         <delay>    8-bit (5+3) delay value to use or list/tuple containing individual values
                    List elements may be None, those values will not be overwritten
         """
+#        print ("===axi_set_multiple_delays(0x%x,%d,%s"%(reg_addr,number,delay))
         if delay is None: return # Do nothing, that's OK
         if isinstance(delay,int):
             delay=(delay,)*number
@@ -349,29 +352,81 @@ class X393McntrlTiming(object):
             print("SET WBUF DELAY=0x%x"%delay)
         self.x393_axi_tasks.write_contol_register(self.MCONTR_PHY_16BIT_ADDR+self.MCONTR_PHY_16BIT_WBUF_DELAY, delay & 0xf) # {28'h0, delay});
 #set dq /dqs tristate on/off patterns
-    def axi_set_tristate_patterns(self):
+
+    def axi_set_tristate_patterns(self,
+                                  strPattern=None):
         """
         Set sequencer patterns for the tristate ON/OFF (defined by parameters)
+        <strPattern> - optional up to 4-letter pattern. Each letter is one of 3:
+                       'E'- early, "N" - nominal and 'L' - late, first for DQ start,
+                       second - for DQS start, then DQ end and DQS end. If no pattern
+                       is provided, all will be set to Verilog parameter values (DQ*TRI_*),
+                       if only 1 - it will be applied to all, if 2 - it will be
+                       repeated twice, 3 will use  the same value for DQS end as for DQS start
         """
+        modes={'E':0,'N':1,'L':2}
+        evNames=('DQ_FIRST', 'DQS_FIRST', 'DQ_LAST','DQS_LAST')
+        
+        patVals={evNames[0]: (0x3,0x7,0xf), # DQ_FIRST:  early, nominal, late
+                 evNames[1]: (0x1,0x3,0x7), # DQS_FIRST: early, nominal, late
+                 evNames[2]: (0xf,0xe,0xc), # DQ_LAST:   early, nominal, late
+                 evNames[3]: (0xe,0xc,0x8)} # DQS_LAST:  early, nominal, late
+        
+        if not strPattern:
+            delays=concat(((0,16), #  {16'h0, 
+                           (self.DQSTRI_LAST, getParWidth(self.DQSTRI_LAST__TYPE)),      #  DQSTRI_LAST,
+                           (self.DQSTRI_FIRST,getParWidth(self.DQSTRI_FIRST__TYPE)),     #  DQSTRI_FIRST,
+                           (self.DQTRI_LAST,  getParWidth(self.DQTRI_LAST__TYPE)), #   DQTRI_LAST,
+                           (self.DQTRI_FIRST, getParWidth(self.DQTRI_FIRST__TYPE)))       #   DQTRI_FIRST});
+                          )[0]
+        else:
+            strPattern=strPattern.upper()
+            if len(strPattern) == 1:
+                strPattern*=4
+            elif len(strPattern) == 2:
+                strPattern*=2
+            elif len(strPattern) == 3:
+                strPattern+=strPattern[1]
+            strPattern=strPattern[:4]
+            vals={}
+            for i,n in enumerate(evNames):
+                try:
+                    vals[n]=patVals[n][modes[strPattern[i]]]
+                except:
+                    msg="axi_set_tristate_patterns(%s): Failed to determine delay mode for %s, got %s"%(strPattern,n,strPattern[i])
+                    print (msg)
+                    Exception(msg)              
+            print ("axi_set_tristate_patterns(%s) : %s"%(strPattern,str(vals)))
+            delays=concat(((0,16), #  {16'h0, 
+                           (vals['DQS_LAST'],4),  # self.DQSTRI_LAST, getParWidth(self.DQSTRI_LAST__TYPE)),      #  DQSTRI_LAST,
+                           (vals['DQS_FIRST'],4), # self.DQSTRI_FIRST,getParWidth(self.DQSTRI_FIRST__TYPE)),     #  DQSTRI_FIRST,
+                           (vals['DQ_LAST'],4),   # self.DQTRI_LAST,  getParWidth(self.DQTRI_LAST__TYPE)), #   DQTRI_LAST,
+                           (vals['DQ_FIRST'],4))  # self.DQTRI_FIRST, getParWidth(self.DQTRI_FIRST__TYPE)))       #   DQTRI_FIRST});
+                          )[0]
+                 
         # may fail if some of the parameters used have undefined width
         print("DQTRI_FIRST=%s, DQTRI_FIRST__TYPE=%s"%(str(self.DQTRI_FIRST),str(self.DQTRI_FIRST__TYPE)))
         print("DQTRI_LAST=%s, DQTRI_LAST__TYPE=%s"%(str(self.DQTRI_LAST),str(self.DQTRI_LAST__TYPE)))
-        delays=concat(((0,16), #  {16'h0, 
-                       (self.DQSTRI_LAST, getParWidth(self.DQSTRI_LAST__TYPE)),      #  DQSTRI_LAST,
-                       (self.DQSTRI_FIRST,getParWidth(self.DQSTRI_FIRST__TYPE)),     #  DQSTRI_FIRST,
-                       (self.DQTRI_LAST,  getParWidth(self.DQTRI_LAST__TYPE)), #   DQTRI_LAST,
-                       (self.DQTRI_FIRST, getParWidth(self.DQTRI_FIRST__TYPE)))       #   DQTRI_FIRST});
-                      )[0]
+#        delays=concat(((0,16), #  {16'h0, 
+#                       (self.DQSTRI_LAST, getParWidth(self.DQSTRI_LAST__TYPE)),      #  DQSTRI_LAST,
+#                       (self.DQSTRI_FIRST,getParWidth(self.DQSTRI_FIRST__TYPE)),     #  DQSTRI_FIRST,
+#                       (self.DQTRI_LAST,  getParWidth(self.DQTRI_LAST__TYPE)), #   DQTRI_LAST,
+#                       (self.DQTRI_FIRST, getParWidth(self.DQTRI_FIRST__TYPE)))       #   DQTRI_FIRST});
+#                      )[0]
         if self.DEBUG_MODE > 1:
             print("SET TRISTATE PATTERNS, combined delays=%s"%str(delays))    
             print("SET TRISTATE PATTERNS, combined delays=0x%x"%delays)    
         self.x393_axi_tasks.write_contol_register(self.MCONTR_PHY_16BIT_ADDR +self.MCONTR_PHY_16BIT_PATTERNS_TRI, delays) #  DQSTRI_LAST, DQSTRI_FIRST, DQTRI_LAST, DQTRI_FIRST});
 
-    def axi_set_dqs_dqm_patterns(self):
+    def axi_set_dqs_dqm_patterns(self,
+                                 patt=None):
         """
         Set sequencer patterns for the DQ lines ON/OFF (defined by parameters)
+        <patt> DQS toggle pattern (if None - use MCONTR_PHY_16BIT_PATTERNS (currently 0x55)
         """
+        if patt is None:
+            patt=self.MCONTR_PHY_16BIT_PATTERNS
         if self.DEBUG_MODE > 1:
-            print("SET DQS+DQM PATTERNS")
+            print("SET DQS+DQM PATTERNS, patt= 0x%x"%patt)
 # set patterns for DM (always 0) and DQS - always the same (may try different for write lev.)        
-        self.x393_axi_tasks.write_contol_register(self.MCONTR_PHY_16BIT_ADDR + self.MCONTR_PHY_16BIT_PATTERNS, 0x55) # 32'h0055);
+        self.x393_axi_tasks.write_contol_register(self.MCONTR_PHY_16BIT_ADDR + self.MCONTR_PHY_16BIT_PATTERNS, patt) # 32'h0055);
