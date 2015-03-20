@@ -31,7 +31,7 @@ __status__ = "Development"
 #import sys
 #import x393_mem
 #x393_pio_sequences
-from import_verilog_parameters import VerilogParameters
+#from import_verilog_parameters import VerilogParameters
 from x393_mem                import X393Mem
 from x393_axi_control_status import X393AxiControlStatus
 from x393_pio_sequences      import X393PIOSequences
@@ -43,6 +43,7 @@ from x393_mcntrl_adjust      import X393McntrlAdjust
 from verilog_utils import concat #, getParWidth
 #from x393_axi_control_status import concat, bits
 from time import sleep
+import vrlg
 class X393McntrlTests(object):
     DRY_MODE= True # True
     DEBUG_MODE=1
@@ -61,7 +62,7 @@ class X393McntrlTests(object):
         self.x393_mcntrl_timing=  X393McntrlTiming(debug_mode,dry_mode)
         self.x393_mcntrl_buffers= X393McntrlBuffers(debug_mode,dry_mode)
         self.x393_mcntrl_adjust=  X393McntrlAdjust(debug_mode,dry_mode)
-        self.__dict__.update(VerilogParameters.__dict__["_VerilogParameters__shared_state"]) # Add verilog parameters to the class namespace
+#        self.__dict__.update(VerilogParameters.__dict__["_VerilogParameters__shared_state"]) # Add verilog parameters to the class namespace
         try:
             self.verbose=self.VERBOSE
         except:
@@ -151,21 +152,21 @@ class X393McntrlTests(object):
             self.x393_mcntrl_timing.axi_set_delays() # set all individual delays, aslo runs axi_set_phase()
         else:
             self.x393_mcntrl_timing.axi_set_same_delays(
-                                                        self.DLY_DQ_IDELAY,
-                                                        self.DLY_DQ_ODELAY,
-                                                        self.DLY_DQS_IDELAY,
-                                                        self.DLY_DQS_ODELAY,
-                                                        self.DLY_DM_ODELAY,
-                                                        self.DLY_CMDA_ODELAY)
+                                                        vrlg.DLY_DQ_IDELAY,
+                                                        vrlg.DLY_DQ_ODELAY,
+                                                        vrlg.DLY_DQS_IDELAY,
+                                                        vrlg.DLY_DQS_ODELAY,
+                                                        vrlg.DLY_DM_ODELAY,
+                                                        vrlg.DLY_CMDA_ODELAY)
 # set clock phase relative to DDR clk
 #        print("Debugging: sleeping for 1 second")
 #        sleep(1)
-        phaseOK=self.x393_mcntrl_timing.axi_set_phase(self.DLY_PHASE,wait_phase_en=True); # wait for phase set
+        phaseOK=self.x393_mcntrl_timing.axi_set_phase(vrlg.DLY_PHASE,wait_phase_en=True); # wait for phase set
         if not phaseOK:
             print("Failed to set clock phase")
             return 0
 # read and print status (optional)
-        self.x393_mcntrl_timing.axi_set_wbuf_delay(self.WBUF_DLY_DFLT)
+        self.x393_mcntrl_timing.axi_set_wbuf_delay(vrlg.WBUF_DLY_DFLT)
         self.x393_axi_tasks.read_all_status()
         return 1
         
@@ -177,8 +178,8 @@ class X393McntrlTests(object):
         self.x393_pio_sequences.set_mrs(1) # reset DLL
         if self.verbose>0: print("SET REFRESH")    
         self.x393_pio_sequences.set_refresh(
-                                            self.T_RFC, # input [ 9:0] t_rfc; # =50 for tCK=2.5ns
-                                            self.T_REFI) #input [ 7:0] t_refi; # 48/97 for normal, 16 - for simulation
+                                            vrlg.T_RFC, # input [ 9:0] t_rfc; # =50 for tCK=2.5ns
+                                            vrlg.T_REFI) #input [ 7:0] t_refi; # 48/97 for normal, 16 - for simulation
         if self.verbose>0: print("SET WRITE LEVELING")    
         self.x393_pio_sequences.set_write_lev(16) # write leveling, 16 times   (full buffer - 128) 
         if self.verbose>0: print("SET READ PATTERNt")    
@@ -218,15 +219,15 @@ class X393McntrlTests(object):
         self.x393_pio_sequences.enable_reset_ps_pio(1,0)       # enable, no reset
         
 # set MR registers in DDR3 memory, run DCI calibration (long)
-        self.x393_pio_sequences.wait_ps_pio_ready(self.DEFAULT_STATUS_MODE, 1, 2.0); # wait FIFO not half full, sync sequences, timeout 2 sec 
+        self.x393_pio_sequences.wait_ps_pio_ready(vrlg.DEFAULT_STATUS_MODE, 1, 2.0); # wait FIFO not half full, sync sequences, timeout 2 sec 
         self.x393_pio_sequences.schedule_ps_pio ( # schedule software-control memory operation (may need to check FIFO status first)
-                        self.INITIALIZE_OFFSET,   # input [9:0] seq_addr; # sequence start address
+                        vrlg.INITIALIZE_OFFSET,   # input [9:0] seq_addr; # sequence start address
                         0,                        # input [1:0] page;     # buffer page number
                         0,                        # input       urgent;   # high priority request (only for competion with other channels, wiil not pass in this FIFO)
                         0,                        # input       chn;      # channel buffer to use: 0 - memory read, 1 - memory write
                         wait_complete );          #  wait_complete; # Do not request a newe transaction from the scheduler until previous memory transaction is finished
 # Wait PS PIO sequence DOEN
-        self.x393_pio_sequences.wait_ps_pio_done(self.DEFAULT_STATUS_MODE, 1 , 2.0); # wait FIFO not half full, sync sequences, timeout 2 sec 
+        self.x393_pio_sequences.wait_ps_pio_done(vrlg.DEFAULT_STATUS_MODE, 1 , 2.0); # wait FIFO not half full, sync sequences, timeout 2 sec 
         self.x393_axi_tasks.enable_refresh(1)
 #    axi_set_dqs_odelay('h78); #??? defaults - wrong? DLY_DQS_ODELAY=0x74
 
@@ -244,22 +245,22 @@ class X393McntrlTests(object):
         """
         numBufWords=32 # twice nrep in set_write_lev
         if norm_dqs_odly  is None:
-            norm_dqs_odly=self.DLY_DQS_ODELAY
+            norm_dqs_odly=vrlg.DLY_DQS_ODELAY
 # Set special values for DQS idelay for write leveling
-        self.x393_pio_sequences.wait_ps_pio_done(self.DEFAULT_STATUS_MODE,1); # not no interrupt running cycle - delays are changed immediately
+        self.x393_pio_sequences.wait_ps_pio_done(vrlg.DEFAULT_STATUS_MODE,1); # not no interrupt running cycle - delays are changed immediately
 ##        self.x393_mcntrl_timing.axi_set_dqs_idelay_wlv()
 # Set write buffer (from DDR3) WE signal delay for write leveling mode
-##        self.x393_mcntrl_timing.axi_set_wbuf_delay(self.WBUF_DLY_WLV)
+##        self.x393_mcntrl_timing.axi_set_wbuf_delay(vrlg.WBUF_DLY_WLV)
 # TODO: Set configurable delay time instead of #80
 ##        self.x393_mcntrl_timing.axi_set_dqs_odelay(wlev_dqs_dly) # 'h80); # 'h80 - inverted, 'h60 - not - 'h80 will cause warnings during simulation
         self.x393_pio_sequences.schedule_ps_pio (# schedule software-control memory operation (may need to check FIFO status first)
-                                                  self.WRITELEV_OFFSET,   # input [9:0] seq_addr; # sequence start address
+                                                  vrlg.WRITELEV_OFFSET,   # input [9:0] seq_addr; # sequence start address
                                                   0,                 # input [1:0] page;     # buffer page number
                                                   0,                 # input       urgent;   # high priority request (only for competition with other channels, will not pass in this FIFO)
                                                   0,                 # input       chn;      # channel buffer to use: 0 - memory read, 1 - memory write
                                                   wait_complete)     # `PS_PIO_WAIT_COMPLETE );#  wait_complete; # Do not request a newe transaction from the scheduler until previous memory transaction is finished
                         
-        self.x393_pio_sequences.wait_ps_pio_done(self.DEFAULT_STATUS_MODE,1); # wait previous memory transaction finished before changing delays (effective immediately)
+        self.x393_pio_sequences.wait_ps_pio_done(vrlg.DEFAULT_STATUS_MODE,1); # wait previous memory transaction finished before changing delays (effective immediately)
         buf=self.x393_mcntrl_buffers.read_block_buf_chn (0, 0, numBufWords, (0,1)[self.verbose>1]) # chn=0, page=0, number of 32-bit words=32, show_rslt
         #calculate 1-s ratio for both lanes
         rslt=[0.0,0.0]
@@ -269,7 +270,7 @@ class X393McntrlTests(object):
             rslt[i]/=2*numBufWords    
 ##        self.x393_mcntrl_timing.axi_set_dqs_idelay_nominal()
 ##        self.x393_mcntrl_timing.axi_set_dqs_odelay(norm_dqs_odly) # 'h78);
-##        self.x393_mcntrl_timing.axi_set_wbuf_delay(self.WBUF_DLY_DFLT); #DFLT_WBUF_DELAY
+##        self.x393_mcntrl_timing.axi_set_wbuf_delay(vrlg.WBUF_DLY_DFLT); #DFLT_WBUF_DELAY
         return rslt
    
     def test_read_pattern(self,
@@ -388,25 +389,25 @@ class X393McntrlTests(object):
         """
 #   integer startx,starty; # temporary - because of the vdt bug with integer ports
 #        pages_per_row= (window_width>>NUM_XFER_BITS)+((window_width[NUM_XFER_BITS-1:0]==0)?0:1);
-        pages_per_row= (window_width>>self.NUM_XFER_BITS)+(0,1)[(window_width & ((1<<self.NUM_XFER_BITS))-1)==0] # (window_width>>NUM_XFER_BITS)+((window_width[NUM_XFER_BITS-1:0]==0)?0:1);
+        pages_per_row= (window_width>>vrlg.NUM_XFER_BITS)+(0,1)[(window_width & ((1<<vrlg.NUM_XFER_BITS))-1)==0] # (window_width>>NUM_XFER_BITS)+((window_width[NUM_XFER_BITS-1:0]==0)?0:1);
         print("====== test_scanline_write: channel=%d, extra_pages=%d,  wait_done=%d"%
                                                 (channel,    extra_pages,     wait_done))
         if   channel == 1:
-            start_addr=             self.MCNTRL_SCANLINE_CHN1_ADDR
-            status_address=         self.MCNTRL_TEST01_STATUS_REG_CHN1_ADDR
-            status_control_address= self.MCNTRL_TEST01_ADDR + self.MCNTRL_TEST01_CHN1_STATUS_CNTRL
-            test_mode_address=      self.MCNTRL_TEST01_ADDR + self.MCNTRL_TEST01_CHN1_MODE
+            start_addr=             vrlg.MCNTRL_SCANLINE_CHN1_ADDR
+            status_address=         vrlg.MCNTRL_TEST01_STATUS_REG_CHN1_ADDR
+            status_control_address= vrlg.MCNTRL_TEST01_ADDR + vrlg.MCNTRL_TEST01_CHN1_STATUS_CNTRL
+            test_mode_address=      vrlg.MCNTRL_TEST01_ADDR + vrlg.MCNTRL_TEST01_CHN1_MODE
         elif channel ==  3:
-            start_addr=             self.MCNTRL_SCANLINE_CHN3_ADDR
-            status_address=         self.MCNTRL_TEST01_STATUS_REG_CHN3_ADDR
-            status_control_address= self.MCNTRL_TEST01_ADDR + self.MCNTRL_TEST01_CHN3_STATUS_CNTRL
-            test_mode_address=      self.MCNTRL_TEST01_ADDR + self.MCNTRL_TEST01_CHN3_MODE
+            start_addr=             vrlg.MCNTRL_SCANLINE_CHN3_ADDR
+            status_address=         vrlg.MCNTRL_TEST01_STATUS_REG_CHN3_ADDR
+            status_control_address= vrlg.MCNTRL_TEST01_ADDR + vrlg.MCNTRL_TEST01_CHN3_STATUS_CNTRL
+            test_mode_address=      vrlg.MCNTRL_TEST01_ADDR + vrlg.MCNTRL_TEST01_CHN3_MODE
         else:
             print("**** ERROR: Invalid channel, only 1 and 3 are valid")
-            start_addr=             self.MCNTRL_SCANLINE_CHN1_ADDR
-            status_address=         self.MCNTRL_TEST01_STATUS_REG_CHN1_ADDR
-            status_control_address= self.MCNTRL_TEST01_ADDR + self.MCNTRL_TEST01_CHN1_STATUS_CNTRL
-            test_mode_address=      self.MCNTRL_TEST01_ADDR + self.MCNTRL_TEST01_CHN1_MODE
+            start_addr=             vrlg.MCNTRL_SCANLINE_CHN1_ADDR
+            status_address=         vrlg.MCNTRL_TEST01_STATUS_REG_CHN1_ADDR
+            status_control_address= vrlg.MCNTRL_TEST01_ADDR + vrlg.MCNTRL_TEST01_CHN1_STATUS_CNTRL
+            test_mode_address=      vrlg.MCNTRL_TEST01_ADDR + vrlg.MCNTRL_TEST01_CHN1_MODE
 
         mode=   self.func_encode_mode_scanline(
                     extra_pages,
@@ -414,28 +415,28 @@ class X393McntrlTests(object):
                     1,  # enable
                     0)  # chn_reset
                 
-        self.x393_axi_tasks.write_contol_register(start_addr + self.MCNTRL_SCANLINE_STARTADDR,        self.FRAME_START_ADDRESS); # RA=80, CA=0, BA=0 22-bit frame start address (3 CA LSBs==0. BA==0) 
-        self.x393_axi_tasks.write_contol_register(start_addr + self.MCNTRL_SCANLINE_FRAME_FULL_WIDTH, self.FRAME_FULL_WIDTH);
-        self.x393_axi_tasks.write_contol_register(start_addr + self.MCNTRL_SCANLINE_WINDOW_WH,        {window_height,window_width}); #WINDOW_WIDTH + (WINDOW_HEIGHT<<16));
-        self.x393_axi_tasks.write_contol_register(start_addr + self.MCNTRL_SCANLINE_WINDOW_X0Y0,      {window_top,window_left}); #WINDOW_X0+ (WINDOW_Y0<<16));
-        self.x393_axi_tasks.write_contol_register(start_addr + self.MCNTRL_SCANLINE_WINDOW_STARTXY,   self.SCANLINE_STARTX+(self.SCANLINE_STARTY<<16));
-        self.x393_axi_tasks.write_contol_register(start_addr + self.MCNTRL_SCANLINE_MODE,             mode); 
+        self.x393_axi_tasks.write_contol_register(start_addr + vrlg.MCNTRL_SCANLINE_STARTADDR,        vrlg.FRAME_START_ADDRESS); # RA=80, CA=0, BA=0 22-bit frame start address (3 CA LSBs==0. BA==0) 
+        self.x393_axi_tasks.write_contol_register(start_addr + vrlg.MCNTRL_SCANLINE_FRAME_FULL_WIDTH, vrlg.FRAME_FULL_WIDTH);
+        self.x393_axi_tasks.write_contol_register(start_addr + vrlg.MCNTRL_SCANLINE_WINDOW_WH,        {window_height,window_width}); #WINDOW_WIDTH + (WINDOW_HEIGHT<<16));
+        self.x393_axi_tasks.write_contol_register(start_addr + vrlg.MCNTRL_SCANLINE_WINDOW_X0Y0,      {window_top,window_left}); #WINDOW_X0+ (WINDOW_Y0<<16));
+        self.x393_axi_tasks.write_contol_register(start_addr + vrlg.MCNTRL_SCANLINE_WINDOW_STARTXY,   vrlg.SCANLINE_STARTX+(vrlg.SCANLINE_STARTY<<16));
+        self.x393_axi_tasks.write_contol_register(start_addr + vrlg.MCNTRL_SCANLINE_MODE,             mode); 
         self.x393_axi_tasks.configure_channel_priority(channel,0);    # lowest priority channel 3
 #        enable_memcntrl_channels(16'h000b); # channels 0,1,3 are enabled
         self.x393_axi_tasks.enable_memcntrl_en_dis(channel,1);
-        self.x393_axi_tasks.write_contol_register(test_mode_address,            self.TEST01_START_FRAME);
-        for ii in range(0,self.TEST_INITIAL_BURST): # for (ii=0;ii<TEST_INITIAL_BURST;ii=ii+1) begin
+        self.x393_axi_tasks.write_contol_register(test_mode_address,            vrlg.TEST01_START_FRAME);
+        for ii in range(0,vrlg.TEST_INITIAL_BURST): # for (ii=0;ii<TEST_INITIAL_BURST;ii=ii+1) begin
 # VDT bugs: 1:does not propagate undefined width through ?:, 2: - does not allow to connect it to task integer input, 3: shows integer input width as 1
             if   pages_per_row > 1:
                 if (ii % pages_per_row) < (pages_per_row-1):
-                    xfer_size= 1 << self.NUM_XFER_BITS
+                    xfer_size= 1 << vrlg.NUM_XFER_BITS
                 else:
-                    xfer_size= window_width % (1<<self.NUM_XFER_BITS)
+                    xfer_size= window_width % (1<<vrlg.NUM_XFER_BITS)
             else:
                 xfer_size= window_width & 0xffff
                 
             print("########### test_scanline_write block %d: channel=%d"%(ii, channel));
-            startx=window_left + ((ii % pages_per_row) << self.NUM_XFER_BITS)
+            startx=window_left + ((ii % pages_per_row) << vrlg.NUM_XFER_BITS)
             starty=window_top + (ii / pages_per_row);
             self.x393_mcntrl_buffers.write_block_scanline_chn(
                                                               channel,
@@ -445,25 +446,25 @@ class X393McntrlTests(object):
                                                               starty)    # window_top + (ii / pages_per_row)); # SCANLINE_CUR_Y);\
             
         for ii in range(window_height * pages_per_row): # for (ii=0;ii< (window_height * pages_per_row) ;ii = ii+1) begin # here assuming 1 page per line
-            if (ii >= self.TEST_INITIAL_BURST):         #  begin # wait page ready and fill page after first 4 are filled
+            if (ii >= vrlg.TEST_INITIAL_BURST):         #  begin # wait page ready and fill page after first 4 are filled
                 self.x393_axi_tasks.wait_status_condition (
                                                            status_address,                   # MCNTRL_TEST01_STATUS_REG_CHN3_ADDR,
                                                            status_control_address,           # MCNTRL_TEST01_ADDR + MCNTRL_TEST01_CHN3_STATUS_CNTRL,
-                                                           self.DEFAULT_STATUS_MODE,
-                                                           (ii-self.TEST_INITIAL_BURST)<<16, # 4-bit page number
+                                                           vrlg.DEFAULT_STATUS_MODE,
+                                                           (ii-vrlg.TEST_INITIAL_BURST)<<16, # 4-bit page number
                                                            0xf << 16,                        #'hf << 16,  # mask for the 4-bit page number
                                                            1,                                # not equal to
-                                                           (0,1)[ii == self.TEST_INITIAL_BURST]) # synchronize sequence number - only first time, next just wait fro auto update
+                                                           (0,1)[ii == vrlg.TEST_INITIAL_BURST]) # synchronize sequence number - only first time, next just wait fro auto update
                 if   pages_per_row > 1:
                     if (ii % pages_per_row) < (pages_per_row-1):
-                        xfer_size= 1 << self.NUM_XFER_BITS
+                        xfer_size= 1 << vrlg.NUM_XFER_BITS
                     else:
-                        xfer_size= window_width % (1<<self.NUM_XFER_BITS)
+                        xfer_size= window_width % (1<<vrlg.NUM_XFER_BITS)
                 else:
                     xfer_size= window_width & 0xffff
                     
                 print("########### test_scanline_write block %d: channel=%d"%(ii, channel));
-                startx=window_left + ((ii % pages_per_row) << self.NUM_XFER_BITS);
+                startx=window_left + ((ii % pages_per_row) << vrlg.NUM_XFER_BITS);
                 starty=window_top + (ii / pages_per_row);
                 self.x393_mcntrl_buffers.write_block_scanline_chn(
                                                                   channel,
@@ -471,14 +472,14 @@ class X393McntrlTests(object):
                                                                   xfer_size,
                                                                   startx,  # window_left + ((ii % pages_per_row)<<NUM_XFER_BITS),  # SCANLINE_CUR_X,
                                                                   starty) # window_top + (ii / pages_per_row)); # SCANLINE_CUR_Y);
-            self.x393_axi_tasks.write_contol_register(test_mode_address,            self.TEST01_NEXT_PAGE)
+            self.x393_axi_tasks.write_contol_register(test_mode_address,            vrlg.TEST01_NEXT_PAGE)
         if wait_done:
             self.x393_axi_tasks.wait_status_condition ( # may also be read directly from the same bit of mctrl_linear_rw (address=5) status
                                                         status_address, # MCNTRL_TEST01_STATUS_REG_CHN3_ADDR,
                                                         status_control_address, # MCNTRL_TEST01_ADDR + MCNTRL_TEST01_CHN3_STATUS_CNTRL,
-                                                        self.DEFAULT_STATUS_MODE,
-                                                        2 << self.STATUS_2LSB_SHFT, # bit 24 - busy, bit 25 - frame done
-                                                        2 << self.STATUS_2LSB_SHFT,  # mask for the 4-bit page number
+                                                        vrlg.DEFAULT_STATUS_MODE,
+                                                        2 << vrlg.STATUS_2LSB_SHFT, # bit 24 - busy, bit 25 - frame done
+                                                        2 << vrlg.STATUS_2LSB_SHFT,  # mask for the 4-bit page number
                                                         0, # equal to
                                                         0); # no need to synchronize sequence number
 #     enable_memcntrl_en_dis(channel,0); # disable channel
@@ -506,53 +507,53 @@ class X393McntrlTests(object):
         result=[] # will be a 2-d array
     
 #        pages_per_row= (window_width>>NUM_XFER_BITS)+((window_width[NUM_XFER_BITS-1:0]==0)?0:1);
-        pages_per_row= (window_width>>self.NUM_XFER_BITS)+(0,1)[(window_width & ((1<<self.NUM_XFER_BITS))-1)==0] # (window_width>>NUM_XFER_BITS)+((window_width[NUM_XFER_BITS-1:0]==0)?0:1);
+        pages_per_row= (window_width>>vrlg.NUM_XFER_BITS)+(0,1)[(window_width & ((1<<vrlg.NUM_XFER_BITS))-1)==0] # (window_width>>NUM_XFER_BITS)+((window_width[NUM_XFER_BITS-1:0]==0)?0:1);
 
         print("====== test_scanline_read: channel=%d, extra_pages=%d,  show_data=%d"%
                                              (channel,    extra_pages,     show_data))
         if   channel == 1:
-            start_addr=             self.MCNTRL_SCANLINE_CHN1_ADDR
-            status_address=         self.MCNTRL_TEST01_STATUS_REG_CHN1_ADDR
-            status_control_address= self.MCNTRL_TEST01_ADDR + self.MCNTRL_TEST01_CHN1_STATUS_CNTRL
-            test_mode_address=      self.MCNTRL_TEST01_ADDR + self.MCNTRL_TEST01_CHN1_MODE
+            start_addr=             vrlg.MCNTRL_SCANLINE_CHN1_ADDR
+            status_address=         vrlg.MCNTRL_TEST01_STATUS_REG_CHN1_ADDR
+            status_control_address= vrlg.MCNTRL_TEST01_ADDR + vrlg.MCNTRL_TEST01_CHN1_STATUS_CNTRL
+            test_mode_address=      vrlg.MCNTRL_TEST01_ADDR + vrlg.MCNTRL_TEST01_CHN1_MODE
         elif channel == 3:
-            start_addr=             self.MCNTRL_SCANLINE_CHN3_ADDR
-            status_address=         self.MCNTRL_TEST01_STATUS_REG_CHN3_ADDR
-            status_control_address= self.MCNTRL_TEST01_ADDR + self.MCNTRL_TEST01_CHN3_STATUS_CNTRL
-            test_mode_address=      self.MCNTRL_TEST01_ADDR + self.MCNTRL_TEST01_CHN3_MODE
+            start_addr=             vrlg.MCNTRL_SCANLINE_CHN3_ADDR
+            status_address=         vrlg.MCNTRL_TEST01_STATUS_REG_CHN3_ADDR
+            status_control_address= vrlg.MCNTRL_TEST01_ADDR + vrlg.MCNTRL_TEST01_CHN3_STATUS_CNTRL
+            test_mode_address=      vrlg.MCNTRL_TEST01_ADDR + vrlg.MCNTRL_TEST01_CHN3_MODE
         else:
             print("**** ERROR: Invalid channel, only 1 and 3 are valid")
-            start_addr=             self.MCNTRL_SCANLINE_CHN1_ADDR
-            status_address=         self.MCNTRL_TEST01_STATUS_REG_CHN1_ADDR
-            status_control_address= self.MCNTRL_TEST01_ADDR + self.MCNTRL_TEST01_CHN1_STATUS_CNTRL
-            test_mode_address=      self.MCNTRL_TEST01_ADDR + self.MCNTRL_TEST01_CHN1_MODE
+            start_addr=             vrlg.MCNTRL_SCANLINE_CHN1_ADDR
+            status_address=         vrlg.MCNTRL_TEST01_STATUS_REG_CHN1_ADDR
+            status_control_address= vrlg.MCNTRL_TEST01_ADDR + vrlg.MCNTRL_TEST01_CHN1_STATUS_CNTRL
+            test_mode_address=      vrlg.MCNTRL_TEST01_ADDR + vrlg.MCNTRL_TEST01_CHN1_MODE
         mode=   self.func_encode_mode_scanline(
                                                extra_pages,
                                                0, # write_mem,
                                                1, # enable
                                                0)  # chn_reset
 # program to the
-        self.x393_axi_tasks.write_contol_register(start_addr + self.MCNTRL_SCANLINE_STARTADDR,        self.FRAME_START_ADDRESS); # RA=80, CA=0, BA=0 22-bit frame start address (3 CA LSBs==0. BA==0) 
-        self.x393_axi_tasks.write_contol_register(start_addr + self.MCNTRL_SCANLINE_FRAME_FULL_WIDTH, self.FRAME_FULL_WIDTH);
-        self.x393_axi_tasks.write_contol_register(start_addr + self.MCNTRL_SCANLINE_WINDOW_WH,        {window_height,window_width}); #WINDOW_WIDTH + (WINDOW_HEIGHT<<16));
-        self.x393_axi_tasks.write_contol_register(start_addr + self.MCNTRL_SCANLINE_WINDOW_X0Y0,      {window_top,window_left}); #WINDOW_X0+ (WINDOW_Y0<<16));
-        self.x393_axi_tasks.write_contol_register(start_addr + self.MCNTRL_SCANLINE_WINDOW_STARTXY,   self.SCANLINE_STARTX+(self.SCANLINE_STARTY<<16));
-        self.x393_axi_tasks.write_contol_register(start_addr + self.MCNTRL_SCANLINE_MODE,             mode);# set mode register: {extra_pages[1:0],enable,!reset}
+        self.x393_axi_tasks.write_contol_register(start_addr + vrlg.MCNTRL_SCANLINE_STARTADDR,        vrlg.FRAME_START_ADDRESS); # RA=80, CA=0, BA=0 22-bit frame start address (3 CA LSBs==0. BA==0) 
+        self.x393_axi_tasks.write_contol_register(start_addr + vrlg.MCNTRL_SCANLINE_FRAME_FULL_WIDTH, vrlg.FRAME_FULL_WIDTH);
+        self.x393_axi_tasks.write_contol_register(start_addr + vrlg.MCNTRL_SCANLINE_WINDOW_WH,        {window_height,window_width}); #WINDOW_WIDTH + (WINDOW_HEIGHT<<16));
+        self.x393_axi_tasks.write_contol_register(start_addr + vrlg.MCNTRL_SCANLINE_WINDOW_X0Y0,      {window_top,window_left}); #WINDOW_X0+ (WINDOW_Y0<<16));
+        self.x393_axi_tasks.write_contol_register(start_addr + vrlg.MCNTRL_SCANLINE_WINDOW_STARTXY,   vrlg.SCANLINE_STARTX+(vrlg.SCANLINE_STARTY<<16));
+        self.x393_axi_tasks.write_contol_register(start_addr + vrlg.MCNTRL_SCANLINE_MODE,             mode);# set mode register: {extra_pages[1:0],enable,!reset}
         self.x393_axi_tasks.configure_channel_priority(channel,0);    # lowest priority channel 3
         self.x393_axi_tasks.enable_memcntrl_en_dis(channel,1);
-        self.x393_axi_tasks.write_contol_register(test_mode_address,            self.TEST01_START_FRAME);
+        self.x393_axi_tasks.write_contol_register(test_mode_address,            vrlg.TEST01_START_FRAME);
         for ii in range(window_height * pages_per_row): # for (ii=0;ii<(window_height * pages_per_row);ii = ii+1) begin
             if   pages_per_row > 1:
                 if (ii % pages_per_row) < (pages_per_row-1):
-                    xfer_size= 1 << self.NUM_XFER_BITS
+                    xfer_size= 1 << vrlg.NUM_XFER_BITS
                 else:
-                    xfer_size= window_width % (1<<self.NUM_XFER_BITS)
+                    xfer_size= window_width % (1<<vrlg.NUM_XFER_BITS)
             else:
                 xfer_size= window_width & 0xffff
             self.x393_axi_tasks.wait_status_condition (
                                                        status_address, #MCNTRL_TEST01_STATUS_REG_CHN2_ADDR,
                                                        status_control_address, # MCNTRL_TEST01_ADDR + MCNTRL_TEST01_CHN2_STATUS_CNTRL,
-                                                       self.DEFAULT_STATUS_MODE,
+                                                       vrlg.DEFAULT_STATUS_MODE,
                                                        (ii) << 16, # -TEST_INITIAL_BURST)<<16, # 4-bit page number
                                                        0xf << 16, #'hf << 16,  # mask for the 4-bit page number
                                                        1, # not equal to
@@ -566,7 +567,7 @@ class X393McntrlTests(object):
                                                                        xfer_size <<2,
 #                                                                       1, # chn=0, page=3, number of 32-bit words=256, show_rslt
                                                                        show_data))
-            self.x393_axi_tasks.write_contol_register(test_mode_address,            self.TEST01_NEXT_PAGE)
+            self.x393_axi_tasks.write_contol_register(test_mode_address,            vrlg.TEST01_NEXT_PAGE)
         return result    
 
     def test_tiled_write(self,          #
@@ -609,21 +610,21 @@ class X393McntrlTests(object):
         print("====== test_tiled_write: channel=%d, byte32=%d, keep_open=%d, extra_pages=%d,  wait_done=%d"%
                                            (channel,    byte32,    keep_open,    extra_pages,     wait_done))
         if   channel == 2:
-            start_addr=             self.MCNTRL_TILED_CHN2_ADDR
-            status_address=         self.MCNTRL_TEST01_STATUS_REG_CHN2_ADDR
-            status_control_address= self.MCNTRL_TEST01_ADDR + self.MCNTRL_TEST01_CHN2_STATUS_CNTRL
-            test_mode_address=      self.MCNTRL_TEST01_ADDR + self.MCNTRL_TEST01_CHN2_MODE
+            start_addr=             vrlg.MCNTRL_TILED_CHN2_ADDR
+            status_address=         vrlg.MCNTRL_TEST01_STATUS_REG_CHN2_ADDR
+            status_control_address= vrlg.MCNTRL_TEST01_ADDR + vrlg.MCNTRL_TEST01_CHN2_STATUS_CNTRL
+            test_mode_address=      vrlg.MCNTRL_TEST01_ADDR + vrlg.MCNTRL_TEST01_CHN2_MODE
         elif channel == 4:
-            start_addr=             self.MCNTRL_TILED_CHN4_ADDR;
-            status_address=         self.MCNTRL_TEST01_STATUS_REG_CHN4_ADDR;
-            status_control_address= self.MCNTRL_TEST01_ADDR + self.MCNTRL_TEST01_CHN4_STATUS_CNTRL;
-            test_mode_address=      self.MCNTRL_TEST01_ADDR + self.MCNTRL_TEST01_CHN4_MODE;
+            start_addr=             vrlg.MCNTRL_TILED_CHN4_ADDR;
+            status_address=         vrlg.MCNTRL_TEST01_STATUS_REG_CHN4_ADDR;
+            status_control_address= vrlg.MCNTRL_TEST01_ADDR + vrlg.MCNTRL_TEST01_CHN4_STATUS_CNTRL;
+            test_mode_address=      vrlg.MCNTRL_TEST01_ADDR + vrlg.MCNTRL_TEST01_CHN4_MODE;
         else:
             print("**** ERROR: Invalid channel, only 2 and 4 are valid");
-            start_addr=             self.MCNTRL_TILED_CHN2_ADDR;
-            status_address=         self.MCNTRL_TEST01_STATUS_REG_CHN2_ADDR;
-            status_control_address= self.MCNTRL_TEST01_ADDR + self.MCNTRL_TEST01_CHN2_STATUS_CNTRL;
-            test_mode_address=      self.MCNTRL_TEST01_ADDR + self.MCNTRL_TEST01_CHN2_MODE;
+            start_addr=             vrlg.MCNTRL_TILED_CHN2_ADDR;
+            status_address=         vrlg.MCNTRL_TEST01_STATUS_REG_CHN2_ADDR;
+            status_control_address= vrlg.MCNTRL_TEST01_ADDR + vrlg.MCNTRL_TEST01_CHN2_STATUS_CNTRL;
+            test_mode_address=      vrlg.MCNTRL_TEST01_ADDR + vrlg.MCNTRL_TEST01_CHN2_MODE;
         mode=   self.func_encode_mode_tiled(
                                             byte32,
                                             keep_open,
@@ -631,29 +632,29 @@ class X393McntrlTests(object):
                                             1,           # write_mem,
                                             1,           # enable
                                             0)           # chn_reset
-        self.x393_axi_tasks.write_contol_register(start_addr + self.MCNTRL_TILED_STARTADDR,
-                                                  self.FRAME_START_ADDRESS) # RA=80, CA=0, BA=0 22-bit frame start address (3 CA LSBs==0. BA==0) 
-        self.x393_axi_tasks.write_contol_register(start_addr + self.MCNTRL_TILED_FRAME_FULL_WIDTH,
-                                                  self.FRAME_FULL_WIDTH)
-        self.x393_axi_tasks.write_contol_register(start_addr + self.MCNTRL_TILED_WINDOW_WH,
+        self.x393_axi_tasks.write_contol_register(start_addr + vrlg.MCNTRL_TILED_STARTADDR,
+                                                  vrlg.FRAME_START_ADDRESS) # RA=80, CA=0, BA=0 22-bit frame start address (3 CA LSBs==0. BA==0) 
+        self.x393_axi_tasks.write_contol_register(start_addr + vrlg.MCNTRL_TILED_FRAME_FULL_WIDTH,
+                                                  vrlg.FRAME_FULL_WIDTH)
+        self.x393_axi_tasks.write_contol_register(start_addr + vrlg.MCNTRL_TILED_WINDOW_WH,
                                                   concat(((window_height,16),
                                                           (window_width, 16)))) # {window_height,window_width});
-        self.x393_axi_tasks.write_contol_register(start_addr + self.MCNTRL_TILED_WINDOW_X0Y0,
+        self.x393_axi_tasks.write_contol_register(start_addr + vrlg.MCNTRL_TILED_WINDOW_X0Y0,
                                                   concat(((window_top,  16),
                                                           (window_left, 16))))  #  {window_top,window_left});
-        self.x393_axi_tasks.write_contol_register(start_addr + self.MCNTRL_TILED_WINDOW_STARTXY,
-                                                  concat(((self.TILED_STARTY, 16),
-                                                          (self.TILED_STARTX, 16))))  #  TILED_STARTX+(TILED_STARTY<<16));
-        self.x393_axi_tasks.write_contol_register(start_addr + self.MCNTRL_TILED_TILE_WHS,
+        self.x393_axi_tasks.write_contol_register(start_addr + vrlg.MCNTRL_TILED_WINDOW_STARTXY,
+                                                  concat(((vrlg.TILED_STARTY, 16),
+                                                          (vrlg.TILED_STARTX, 16))))  #  TILED_STARTX+(TILED_STARTY<<16));
+        self.x393_axi_tasks.write_contol_register(start_addr + vrlg.MCNTRL_TILED_TILE_WHS,
                                                   concat(((tile_vstep, 8),
                                                           (tile_height, 8),
                                                           (tile_width, 8)))) # {8'b0,tile_vstep,tile_height,tile_width});#tile_width+(tile_height<<8)+(tile_vstep<<16));
-        self.x393_axi_tasks.write_contol_register(start_addr + self.MCNTRL_TILED_MODE, mode);# set mode register: {extra_pages[1:0],enable,!reset}
+        self.x393_axi_tasks.write_contol_register(start_addr + vrlg.MCNTRL_TILED_MODE, mode);# set mode register: {extra_pages[1:0],enable,!reset}
         self.x393_axi_tasks.configure_channel_priority(channel,0)    # lowest priority channel 3
         self.x393_axi_tasks.enable_memcntrl_en_dis(channel,1);
-        self.x393_axi_tasks.write_contol_register(test_mode_address,            self.TEST01_START_FRAME);
+        self.x393_axi_tasks.write_contol_register(test_mode_address,            vrlg.TEST01_START_FRAME);
     
-        for ii in range(self.TEST_INITIAL_BURST): # for (ii=0;ii<TEST_INITIAL_BURST;ii=ii+1) begin
+        for ii in range(vrlg.TEST_INITIAL_BURST): # for (ii=0;ii<TEST_INITIAL_BURST;ii=ii+1) begin
             print("########### test_tiled_write block %d: channel=%d"%( ii, channel))
             startx = window_left + ((ii % tiles_per_row) * tile_width)
             starty = window_top + (ii / tile_rows_per_window)         # SCANLINE_CUR_Y);
@@ -665,15 +666,15 @@ class X393McntrlTests(object):
                                                                starty); #window_top + (ii / tile_rows_per_window)); # SCANLINE_CUR_Y);\
     
         for ii in range(tiles_per_row * tile_rows_per_window): # for (ii=0;ii<(tiles_per_row * tile_rows_per_window);ii = ii+1) begin
-            if ii >= self.TEST_INITIAL_BURST: # ) begin # wait page ready and fill page after first 4 are filled
+            if ii >= vrlg.TEST_INITIAL_BURST: # ) begin # wait page ready and fill page after first 4 are filled
                 self.x393_axi_tasks.wait_status_condition (
                                                            status_address,                   # MCNTRL_TEST01_STATUS_REG_CHN5_ADDR,
                                                            status_control_address,           # MCNTRL_TEST01_ADDR + MCNTRL_TEST01_CHN5_STATUS_CNTRL,
-                                                           self.DEFAULT_STATUS_MODE,
-                                                           (ii-self.TEST_INITIAL_BURST)<<16, # 4-bit page number
+                                                           vrlg.DEFAULT_STATUS_MODE,
+                                                           (ii-vrlg.TEST_INITIAL_BURST)<<16, # 4-bit page number
                                                            0xf << 16,                        # 'hf << 16,  # mask for the 4-bit page number
                                                            1,                                # not equal to
-                                                           (0,1)[ii == self.TEST_INITIAL_BURST]); # synchronize sequence number - only first time, next just wait fro auto update
+                                                           (0,1)[ii == vrlg.TEST_INITIAL_BURST]); # synchronize sequence number - only first time, next just wait fro auto update
                 print("########### test_tiled_write block %d: channel=%d"%(ii, channel))
                 startx = window_left + ((ii % tiles_per_row) * tile_width);
                 starty = window_top + (ii / tile_rows_per_window);
@@ -683,14 +684,14 @@ class X393McntrlTests(object):
                                                                    tile_size,
                                                                    startx,   # window_left + ((ii % tiles_per_row) * tile_width),
                                                                    starty)   # window_top + (ii / tile_rows_per_window)); # SCANLINE_CUR_Y);\
-            self.x393_axi_tasks.write_contol_register(test_mode_address, self.TEST01_NEXT_PAGE);
+            self.x393_axi_tasks.write_contol_register(test_mode_address, vrlg.TEST01_NEXT_PAGE);
         if wait_done:
             self.x393_axi_tasks.wait_status_condition( # may also be read directly from the same bit of mctrl_linear_rw (address=5) status
                                                        status_address,             # MCNTRL_TEST01_STATUS_REG_CHN3_ADDR,
                                                        status_control_address,     # MCNTRL_TEST01_ADDR + MCNTRL_TEST01_CHN3_STATUS_CNTRL,
-                                                       self.DEFAULT_STATUS_MODE,
-                                                       2 << self.STATUS_2LSB_SHFT, # bit 24 - busy, bit 25 - frame done
-                                                       2 << self.STATUS_2LSB_SHFT, # mask for the 4-bit page number
+                                                       vrlg.DEFAULT_STATUS_MODE,
+                                                       2 << vrlg.STATUS_2LSB_SHFT, # bit 24 - busy, bit 25 - frame done
+                                                       2 << vrlg.STATUS_2LSB_SHFT, # mask for the 4-bit page number
                                                        0,                          # equal to
                                                        0)                          # no need to synchronize sequence number
 #     enable_memcntrl_en_dis(channel,0); # disable channel
@@ -735,21 +736,21 @@ class X393McntrlTests(object):
         print("====== test_tiled_read: channel=%d, byte32=%d, keep_open=%d, extra_pages=%d,  show_data=%d"%
                                           (channel,      byte32,  keep_open,    extra_pages,     show_data))
         if   channel == 2:
-            start_addr=             self.MCNTRL_TILED_CHN2_ADDR;
-            status_address=         self.MCNTRL_TEST01_STATUS_REG_CHN2_ADDR;
-            status_control_address= self.MCNTRL_TEST01_ADDR + self.MCNTRL_TEST01_CHN2_STATUS_CNTRL;
-            test_mode_address=      self.MCNTRL_TEST01_ADDR + self.MCNTRL_TEST01_CHN2_MODE;
+            start_addr=             vrlg.MCNTRL_TILED_CHN2_ADDR;
+            status_address=         vrlg.MCNTRL_TEST01_STATUS_REG_CHN2_ADDR;
+            status_control_address= vrlg.MCNTRL_TEST01_ADDR + vrlg.MCNTRL_TEST01_CHN2_STATUS_CNTRL;
+            test_mode_address=      vrlg.MCNTRL_TEST01_ADDR + vrlg.MCNTRL_TEST01_CHN2_MODE;
         elif channel == 4:
-            start_addr=             self.MCNTRL_TILED_CHN4_ADDR;
-            status_address=         self.MCNTRL_TEST01_STATUS_REG_CHN4_ADDR;
-            status_control_address= self.MCNTRL_TEST01_ADDR + self.MCNTRL_TEST01_CHN4_STATUS_CNTRL;
-            test_mode_address=      self.MCNTRL_TEST01_ADDR + self.MCNTRL_TEST01_CHN4_MODE;
+            start_addr=             vrlg.MCNTRL_TILED_CHN4_ADDR;
+            status_address=         vrlg.MCNTRL_TEST01_STATUS_REG_CHN4_ADDR;
+            status_control_address= vrlg.MCNTRL_TEST01_ADDR + vrlg.MCNTRL_TEST01_CHN4_STATUS_CNTRL;
+            test_mode_address=      vrlg.MCNTRL_TEST01_ADDR + vrlg.MCNTRL_TEST01_CHN4_MODE;
         else:
             print("**** ERROR: Invalid channel, only 2 and 4 are valid");
-            start_addr=             self.MCNTRL_TILED_CHN2_ADDR;
-            status_address=         self.MCNTRL_TEST01_STATUS_REG_CHN2_ADDR;
-            status_control_address= self.MCNTRL_TEST01_ADDR + self.MCNTRL_TEST01_CHN2_STATUS_CNTRL;
-            test_mode_address=      self.MCNTRL_TEST01_ADDR + self.MCNTRL_TEST01_CHN2_MODE;
+            start_addr=             vrlg.MCNTRL_TILED_CHN2_ADDR;
+            status_address=         vrlg.MCNTRL_TEST01_STATUS_REG_CHN2_ADDR;
+            status_control_address= vrlg.MCNTRL_TEST01_ADDR + vrlg.MCNTRL_TEST01_CHN2_STATUS_CNTRL;
+            test_mode_address=      vrlg.MCNTRL_TEST01_ADDR + vrlg.MCNTRL_TEST01_CHN2_MODE;
 
         mode=   self.func_encode_mode_tiled(
                                             byte32,
@@ -758,32 +759,32 @@ class X393McntrlTests(object):
                                             0, # write_mem,
                                             1, # enable
                                             0)  # chn_reset
-        self.x393_axi_tasks.write_contol_register(start_addr + self.MCNTRL_TILED_STARTADDR,
-                                                  self.FRAME_START_ADDRESS) # RA=80, CA=0, BA=0 22-bit frame start address (3 CA LSBs==0. BA==0) 
-        self.x393_axi_tasks.write_contol_register(start_addr + self.MCNTRL_TILED_FRAME_FULL_WIDTH,
-                                                  self.FRAME_FULL_WIDTH)
-        self.x393_axi_tasks.write_contol_register(start_addr + self.MCNTRL_TILED_WINDOW_WH,
+        self.x393_axi_tasks.write_contol_register(start_addr + vrlg.MCNTRL_TILED_STARTADDR,
+                                                  vrlg.FRAME_START_ADDRESS) # RA=80, CA=0, BA=0 22-bit frame start address (3 CA LSBs==0. BA==0) 
+        self.x393_axi_tasks.write_contol_register(start_addr + vrlg.MCNTRL_TILED_FRAME_FULL_WIDTH,
+                                                  vrlg.FRAME_FULL_WIDTH)
+        self.x393_axi_tasks.write_contol_register(start_addr + vrlg.MCNTRL_TILED_WINDOW_WH,
                                                   concat(((window_height,16),
                                                           (window_width, 16)))) # {window_height,window_width});
-        self.x393_axi_tasks.write_contol_register(start_addr + self.MCNTRL_TILED_WINDOW_X0Y0,
+        self.x393_axi_tasks.write_contol_register(start_addr + vrlg.MCNTRL_TILED_WINDOW_X0Y0,
                                                   concat(((window_top,  16),
                                                           (window_left, 16))))  #  {window_top,window_left});
-        self.x393_axi_tasks.write_contol_register(start_addr + self.MCNTRL_TILED_WINDOW_STARTXY,
-                                                  concat(((self.TILED_STARTY, 16),
-                                                          (self.TILED_STARTX, 16))))  #  TILED_STARTX+(TILED_STARTY<<16));
-        self.x393_axi_tasks.write_contol_register(start_addr + self.MCNTRL_TILED_TILE_WHS,
+        self.x393_axi_tasks.write_contol_register(start_addr + vrlg.MCNTRL_TILED_WINDOW_STARTXY,
+                                                  concat(((vrlg.TILED_STARTY, 16),
+                                                          (vrlg.TILED_STARTX, 16))))  #  TILED_STARTX+(TILED_STARTY<<16));
+        self.x393_axi_tasks.write_contol_register(start_addr + vrlg.MCNTRL_TILED_TILE_WHS,
                                                   concat(((tile_vstep, 8),
                                                           (tile_height, 8),
                                                           (tile_width, 8)))) # {8'b0,tile_vstep,tile_height,tile_width});#tile_width+(tile_height<<8)+(tile_vstep<<16));
-        self.x393_axi_tasks.write_contol_register(start_addr + self.MCNTRL_TILED_MODE, mode);# set mode register: {extra_pages[1:0],enable,!reset}
+        self.x393_axi_tasks.write_contol_register(start_addr + vrlg.MCNTRL_TILED_MODE, mode);# set mode register: {extra_pages[1:0],enable,!reset}
         self.x393_axi_tasks.configure_channel_priority(channel,0)    # lowest priority channel 3
         self.x393_axi_tasks.enable_memcntrl_en_dis(channel,1);
-        self.x393_axi_tasks.write_contol_register(test_mode_address,            self.TEST01_START_FRAME);
+        self.x393_axi_tasks.write_contol_register(test_mode_address,            vrlg.TEST01_START_FRAME);
         for ii in range(tiles_per_row * tile_rows_per_window): # (ii=0;ii<(tiles_per_row * tile_rows_per_window);ii = ii+1) begin
             self.x393_axi_tasks.wait_status_condition (
                                                        status_address, # MCNTRL_TEST01_STATUS_REG_CHN4_ADDR,
                                                        status_control_address, # MCNTRL_TEST01_ADDR + MCNTRL_TEST01_CHN4_STATUS_CNTRL,
-                                                       self.DEFAULT_STATUS_MODE,
+                                                       vrlg.DEFAULT_STATUS_MODE,
                                                        ii << 16, # -TEST_INITIAL_BURST)<<16, # 4-bit page number
                                                        0xf<< 16, #'hf << 16,  # mask for the 4-bit page number
                                                        1, # not equal to
@@ -796,6 +797,6 @@ class X393McntrlTests(object):
                                                                        tile_size <<2,
 #                                                                       1, # chn=0, page=3, number of 32-bit words=256, show_rslt
                                                                        show_data))
-            self.x393_axi_tasks.write_contol_register(test_mode_address, self.TEST01_NEXT_PAGE);
+            self.x393_axi_tasks.write_contol_register(test_mode_address, vrlg.TEST01_NEXT_PAGE);
 #     enable_memcntrl_en_dis(channel,0); # disable channel
         return result    

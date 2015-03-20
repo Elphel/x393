@@ -31,7 +31,6 @@ __status__ = "Development"
 import mmap
 #import sys
 import struct
-
 class X393Mem(object):
     '''
     classdocs

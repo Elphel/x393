@@ -30,18 +30,23 @@ __status__ = "Development"
 import re
 import os
 import string
-from verilog_utils import getParWidth 
+from verilog_utils import getParWidth
+#import vrlg
+"""
 class VerilogParameters(object): #this is Borg
     __shared_state = {}
     def __init__(self, parameters=None):
         self.__dict__ = self.__shared_state
         if (parameters):
-            adict={}
-            for parName in parameters:
-                adict[parName]=         parameters[parName][0]
-                adict[parName+"__TYPE"]=parameters[parName][1]
-                adict[parName+"__RAW"]= parameters[parName][2]
-            self.__dict__.update(adict)
+            vrlg.init_vars(self.parsToDict(parameters))
+    def parsToDict(self, parameters=None):
+        adict={}
+        for parName in parameters:
+            adict[parName]=         parameters[parName][0]
+            adict[parName+"__TYPE"]=parameters[parName][1]
+            adict[parName+"__RAW"]= parameters[parName][2]
+        return adict
+"""    
 
 class ImportVerilogParameters(object):
     '''
@@ -67,6 +72,13 @@ class ImportVerilogParameters(object):
             self.defines=defines.copy()
         if rootPath:    
             self.rootPath=rootPath.rstrip(os.sep)
+    def parsToDict(self, parameters=None):
+        adict={}
+        for parName in parameters:
+            adict[parName]=         parameters[parName][0]
+            adict[parName+"__TYPE"]=parameters[parName][1]
+            adict[parName+"__RAW"]= parameters[parName][2]
+        return adict
     '''
     http://stackoverflow.com/questions/241327/python-snippet-to-remove-c-and-c-comments
     '''
@@ -338,23 +350,19 @@ class ImportVerilogParameters(object):
             pass
         def parsePrimary(start=0):
             return useBest(useBest(useBest(parseString(start),parseNumber(start)),parseRealNumber(start)),parseParameter(start))
-        def parsePrimaryOrBinary(start=0):
-            operand1=parsePrimary(start)
-            if (self.verbose>2) and (start !=0):
-                print ("parsePrimaryOrBinary(start=%d), line=%s, result=%s"%(start,line,str(operand1)))
-            if not operand1: print (line)    
-            opStart=skipWS(operand1[2])
-            if opStart == len(line): # just primary
-                return operand1
-        # Try binary operation    
+        
+        def parseBinary(operand1, opStart):
             op=getBinOp(opStart)
             if not op:
-                print("ERROR: Next token in '%s' (starting from %s) is not a binary operation"%(line,line[opStart:]))
-                return None
+                return None # not a binary operation
+#            if "( (DLY_LANE0_IDELAY      & 8'hff)" in line:
+#                print("parseBinary(): %d(%d): %s"%(opStart,len(line),line[opStart:]))
+#                if (opStart>530):
+#                    print ("(pre)Last one!")
             start2=skipWS(opStart+len(op[0]))
             if (self.verbose>2):
                 print ("line=%s"%line)
-                print ("start=%d, opStart=%d, start2=%d"%(start,opStart, start2))
+                print ("opStart=%d, start2=%d"%(opStart, start2))
             operand2=parseExp(start2)
             if not operand2:
                 print("ERROR: Could not get the second operand for '%s' in '%s'"%(op[0],line))
@@ -375,40 +383,92 @@ class ImportVerilogParameters(object):
             if (width1==32) and (exp[1]>32) and ((width >> 32) == 0):
                 width=32
             return (exp[0],"[%d:0]"%(width-1),operand2[2])
+            
+            
+        def parsePrimaryOrBinary(start=0):
+            operand1=parsePrimary(start)
+            if (self.verbose>2) and (start !=0):
+                print ("parsePrimaryOrBinary(start=%d), line=%s, result=%s"%(start,line,str(operand1)))
+            if not operand1: print (line)    
+        # Try binary operation 
+        # repeat until end of line or ')'
+            while True:
+                opStart=skipWS(operand1[2])
+                if (opStart == len(line)) : # or (line[opStart] == ')'): # just primary
+                    return operand1
+                if line[opStart] == ')': # just primary
+                    return operand1
+                binRes=parseBinary(operand1, opStart)
+                if not binRes:
+                    print ("opStart=%d, len(line)=%d, operand1=%s"%(opStart,len(line),str(operand1)))
+                    print()
+                    print(line)
+                    raise Exception("ERROR: Next token in '%s' (starting from '%s') is not a binary operation"%
+                                        (line,line[opStart:]))
+                operand1=binRes
 
-        def parseExp(start=0):
+        def parseExp(start=0, topExpr=False):
             start=skipWS(start)
             if start>=len(line):
                 print ("ERROR: EOL reached when expression was expected in '%s'"%line)
                 return None
-            if line[start]=='(':
-                exp=parseExp(start+1)
+#            if "( (DLY_LANE0_IDELAY      & 8'hff)" in line:
+#                print (line)
+#            if (line[0]=='(') and (start==0):
+#                print("Line starts with '(")
+            if (line[start]=='(') or topExpr:
+#                if (line[start]=='('):
+                if not topExpr:
+                    start+=1
+                exp=parseExp(start)
                 if not exp:
                     print ("ERROR: failed to evaluate expression in '%s' (starting from '%s'"%(line,line[start:]))
                     return None
-                endPos=skipWS(exp[2])
-                if endPos >= len(line):
-                    print ("ERROR: EOL reached when closing ')' was expected in '%s'"%line)
-                    return None
-                if line[endPos] != ")":
-                    print ("ERROR: Found '%s'when closing ')' was expected in '%s'"%(line[endPos],line))
-                    return None
-                endPos=skipWS(endPos+1)
-                return (exp[0],"[%d:0]"%(exp[1]-1),endPos)
+                while True:
+                    endPos=skipWS(exp[2])
+                    if (endPos >= len(line)) and (not topExpr):
+                        print ("ERROR: EOL reached when closing ')' was expected in '%s'"%line)
+                        return None
+                    if (endPos >= len(line)) or (line[endPos] == ")"): # (endPos >= len(line)) can only be here if topExpr
+                        endPos=skipWS(endPos+1)
+                        if (exp is None) or (exp[1] is None):
+                            print ("line=%s"%(line))
+                            print ()
+#                        print ("exp=%s"%(str(exp)))
+                        if isinstance(exp[0],(int,long)):
+                            width=getParWidth(exp[1])
+                        elif isinstance(exp[0],str):
+                            width=8*len(exp[0])
+                        else:
+#                            width=0
+#                            print ("Unrecognized width in %s"%(str(exp)))
+#                            print ("line=%s"%(line))
+                            return (exp[0],exp[1],endPos)
+
+                        return (exp[0],"[%d:0]"%(width-1),endPos)
+                    # here may be binOp
+                    binRes=parseBinary(exp, endPos)
+                    if not binRes:
+                        print ("endPos=%d, len(line)=%d, exp=%s"%(endPos,len(line),str(exp)))
+                        raise Exception("ERROR: Next token in '%s' (starting from '%s') is not a binary operation or closing')'"%
+                                        (line,line[endPos:]))
+                    exp=binRes
+                
             return parsePrimaryOrBinary(start)
+        
         '''
         parseExpression top level code
         no support for bit select, &&, ||, ~ ! ? and more... 
         '''
-        return parseExp(0)
+        return parseExp(0,True) # call top level expression that does not need enclosing ()
 
     '''
     Read parameters defined in parameter port list (inside #(,,,), comma separated (last may have no comma)
     Adds parsed parameters to the dictionary
     '''
     def readParameterPortList(self,path,portMode=True):
-        if (self.verbose>2):
-            print ("readParameterPortList:Processing %s"%(path))
+        if (self.verbose>0):
+            print ("readParameterPortList:Processing %s"%(os.path.abspath(path)))
         with open (path, "r") as myfile: #with will close file when done
             text=myfile.read()
 # remove /* */ comments            

@@ -28,135 +28,115 @@
   localparam LD_DLY_PHASE =        DLY_LD+'h60; // 0x10e0
   localparam DLY_SET =             MCONTR_PHY_0BIT_ADDR + MCONTR_PHY_0BIT_DLY_SET; //0x1020
 // different sets of settings for the functional simulation and the actual hardware
-/*
-if use200Mhz:
-    DLY_LANE0_DQS_WLV_IDELAY = 0xb0 # idelay dqs
-    DLY_LANE1_DQS_WLV_IDELAY = 0xb0 # idelay dqs
-    DLY_LANE0_ODELAY= [0x98,0x4c,0x94,0x94,0x98,0x9c,0x92,0x99,0x98,0x94] # odelay dqm, odelay ddqs, odelay dq[7:0]
-    
-    DLY_LANE0_IDELAY=      [0x40,0x13,0x14,0x14,0x1c,0x13,0x14,0x13,0x1a] # idelay dqs, idelay dq[7:0
-    DLY_LANE1_ODELAY= [0x98,0x4c,0x98,0x98,0x98,0x9b,0x99,0xa8,0x9c,0x98] # odelay dqm, odelay ddqs, odelay dq[7:0]
-    
-    DLY_LANE1_IDELAY=      [0x40,0x2c,0x2b,0x2c,0x2c,0x34,0x30,0x33,0x30] # idelay dqs, idelay dq[7:0
-    DLY_CMDA=  [0x3c,0x3c,0x3c,0x3c,0x3b,0x3a,0x39,0x38,0x34,0x34,0x34,0x34,0x33,0x32,0x31,0x30,
-                0x00,0x2c,0x2c,0x2c,0x2b,0x2a,0x29,0x28,0x24,0x24,0x24,0x24,0x23,0x22,0x21,0x20] # odelay odt, cke, cas, ras, we, ba2,ba1,ba0, X, a14,..,a0
-
-# alternative to set same type delays to the same value    
-    DLY_DQ_IDELAY =  0x20
-    DLY_DQ_ODELAY =  0xa0
-    DLY_DQS_IDELAY = 0x40
-    DLY_DQS_ODELAY = 0x4c #should match with phase write leveling
-    DLY_DM_ODELAY =  0xa0
-    DLY_CMDA_ODELAY =0x50
-    
-else:   
-    DLY_LANE0_DQS_WLV_IDELAY = 0xe8 # idelay dqs
-    DLY_LANE1_DQS_WLV_IDELAY = 0xe8 # idelay dqs
-    DLY_LANE0_ODELAY= [0x74,0x74,0x73,0x72,0x71,0x70,0x6c,0x6b,0x6a,0x69] # odelay dqm, odelay ddqs, odelay dq[7:0]
-    DLY_LANE0_IDELAY=      [0xd8,0x73,0x72,0x71,0x70,0x6c,0x6b,0x6a,0x69] # idelay dqs, idelay dq[7:0
-    DLY_LANE1_ODELAY= [0x74,0x74,0x73,0x72,0x71,0x70,0x6c,0x6b,0x6a,0x69] # odelay dqm, odelay ddqs, odelay dq[7:0]
-    DLY_LANE1_IDELAY=      [0xd8,0x73,0x72,0x71,0x70,0x6c,0x6b,0x6a,0x69] # idelay dqs, idelay dq[7:0
-    DLY_CMDA=  [0x5c,0x5c,0x5c,0x5c,0x5b,0x5a,0x59,0x58,0x54,0x54,0x54,0x54,0x53,0x52,0x51,0x50,
-                0x00,0x4c,0x4c,0x4c,0x4b,0x4a,0x49,0x48,0x44,0x44,0x44,0x44,0x43,0x42,0x41,0x40] # odelay odt, cke, cas, ras, we, ba2,ba1,ba0, X, a14,..,a0
-# alternative to set same type delays to the same value    
-    DLY_DQ_IDELAY =  0x20
-    DLY_DQ_ODELAY =  0xa0
-    DLY_DQS_IDELAY = 0x40
-    DLY_DQS_ODELAY = 0x4c #should match with phase write leveling
-    DLY_DM_ODELAY =  0xa0
-    DLY_CMDA_ODELAY =0x50
-
-
-NUM_FINE_STEPS=    5
-#`endif   
-    
-DLY_PHASE=       0x2c # 0x1c # mmcm fine phase shift, 1/4 tCK
-
-*/  
 `ifdef TARGET_MODE
     localparam T_RFC=50;  // t_rfc=50 for tCK=2.5ns
     localparam T_REFI=48; // t_refi; # 48/97 for normal, 8 - for simulation (7.8us <85C, 3.9us >85C)
   `ifdef use200Mhz
-    localparam DLY_LANE0_DQS_WLV_IDELAY = 8'hb0; // idelay dqs
-    localparam DLY_LANE1_DQS_WLV_IDELAY = 8'hb0; // idelay dqs
-    localparam DLY_LANE0_ODELAY= 80'h984c9494989c92999894; // odelay dqm, odelay ddqs, odelay dq[7:0]
-    localparam DLY_LANE0_IDELAY= 72'h401314141c1314131a; // idelay dqs, idelay dq[7:0
-    localparam DLY_LANE1_ODELAY= 80'h984c9898989b99a89c98; // odelay dqm, odelay ddqs, odelay dq[7:0]
-    localparam DLY_LANE1_IDELAY= 72'h402c2b2c2c34303330;   // idelay dqs, idelay dq[7:0
-    localparam DLY_CMDA= 256'h3c3c3c3c3b3a39383434343433323130002c2c2c2b2a29282424242423222120; // odelay odt, cke, cas, ras, we, ba2,ba1,ba0, X, a14,..,a0
-// alternative to set same type delays to the same value    
-    localparam DLY_DQ_IDELAY =  'h20 ;// 'h60;
-    localparam DLY_DQ_ODELAY =  'ha0; // 'h48;
-    localparam DLY_DQS_IDELAY = 'h40; // 'ha0;
-    localparam DLY_DQS_ODELAY = 'h4c; // 
-    localparam DLY_DM_ODELAY =  'ha0; // 'h48;
-    localparam DLY_CMDA_ODELAY ='h50; // 'h30;
+//    localparam DLY_LANE0_ODELAY= 80'hd8a0d8d4dae0d4dcdbd9; // odelay dqm, odelay dqs, odelay dq[7:0]
+//    localparam DLY_LANE0_IDELAY= 72'h40989c9aa4949898a4; // idelay dqs, idelay dq[7:0]
+//    localparam DLY_LANE1_ODELAY= 80'hd8a0dcdcdce0dcf1e0dc; // odelay dqm, odelay dqs, odelay dq[7:0]
+//    localparam DLY_LANE1_IDELAY= 72'h40aca8aaa8b4acb1ac; // idelay dqs, idelay dq[7:0]
+//    localparam DLY_CMDA= 256'h8080808080808080808080808080808080808080808080808080808080808080; // odelay odt, cke, cas, ras, we, ba2,ba1,ba0, X, a14,..,a0
+//    localparam DLY_PHASE= 8'h4c; // mmcm fine phase shift, 1/4 tCK
   `else   
-    localparam DLY_LANE0_DQS_WLV_IDELAY = 8'he8; // idelay dqs
-    localparam DLY_LANE1_DQS_WLV_IDELAY = 8'he8; // idelay dqs
-    localparam DLY_LANE0_ODELAY= 80'h7474737271706c6b6a69; // odelay dqm, odelay ddqs, odelay dq[7:0]
-    localparam DLY_LANE0_IDELAY= 72'hd8737271706c6b6a69; // idelay dqs, idelay dq[7:0
-    localparam DLY_LANE1_ODELAY= 80'h7474737271706c6b6a69; // odelay dqm, odelay ddqs, odelay dq[7:0]
-    localparam DLY_LANE1_IDELAY= 72'hd8737271706c6b6a69; // idelay dqs, idelay dq[7:0
-    localparam DLY_CMDA=  256'h5c5c5c5c5b5a59585454545453525150004c4c4c4b4a49484444444443424140; // odelay odt, cke, cas, ras, we, ba2,ba1,ba0, X, a14,..,a0
-// alternative to set same type delays to the same value    
-/*  localparam DLY_DQ_IDELAY =  'h70;
-    localparam DLY_DQ_ODELAY =  'h68;
-    localparam DLY_DQS_IDELAY = 'hd8;
-    localparam DLY_DQS_ODELAY = 'h74; // b0 for WLV
-    localparam DLY_DM_ODELAY =  'h74;
-    localparam DLY_CMDA_ODELAY ='h50; */
-    localparam DLY_DQ_IDELAY =  'h20 ;// 'h60;
-    localparam DLY_DQ_ODELAY =  'ha0; // 'h48;
-    localparam DLY_DQS_IDELAY = 'h40; // 'ha0;
-    localparam DLY_DQS_ODELAY = 'h4c; // 
-    localparam DLY_DM_ODELAY =  'ha0; // 'h48;
-    localparam DLY_CMDA_ODELAY ='h50; // 'h30;
+//    localparam DLY_LANE0_ODELAY= 80'h7474737271706c6b6a69; // odelay dqm, odelay ddqs, odelay dq[7:0]
+//    localparam DLY_LANE0_IDELAY= 72'hd8737271706c6b6a69; // idelay dqs, idelay dq[7:0
+//    localparam DLY_LANE1_ODELAY= 80'h7474737271706c6b6a69; // odelay dqm, odelay ddqs, odelay dq[7:0]
+//    localparam DLY_LANE1_IDELAY= 72'hd8737271706c6b6a69; // idelay dqs, idelay dq[7:0
+//    localparam DLY_CMDA=  256'h5c5c5c5c5b5a59585454545453525150004c4c4c4b4a49484444444443424140; // odelay odt, cke, cas, ras, we, ba2,ba1,ba0, X, a14,..,a0
+//    localparam DLY_PHASE= 8'h4c; // mmcm fine phase shift, 1/4 tCK
   `endif   
-    localparam DLY_PHASE= 8'h1c; // mmcm fine phase shift, 1/4 tCK
 `else
     localparam T_RFC=50;  // t_rfc=50 for tCK=2.5ns
     localparam T_REFI=16; // t_refi; # 48/97 for normal, 8 - for simulation (7.8us <85C, 3.9us >85C)
   `ifdef use200Mhz
-    localparam DLY_LANE0_DQS_WLV_IDELAY = 8'hb0; // idelay dqs
-    localparam DLY_LANE1_DQS_WLV_IDELAY = 8'hb0; // idelay dqs
-    localparam DLY_LANE0_ODELAY= 80'h4c784b4a494844434241; // odelay dqm, odelay ddqs, odelay dq[7:0]
-    localparam DLY_LANE0_IDELAY= 72'ha0636261605c5b5a59; // idelay dqs, idelay dq[7:0
-    localparam DLY_LANE1_ODELAY= 80'h4c784b4a494844434241; // odelay dqm, odelay ddqs, odelay dq[7:0]
-    localparam DLY_LANE1_IDELAY= 72'ha0636261605c5b5a59; // idelay dqs, idelay dq[7:0
-    localparam DLY_CMDA=  256'h3c3c3c3c3b3a39383434343433323130002c2c2c2b2a29282424242423222120; // odelay odt, cke, cas, ras, we, ba2,ba1,ba0, X, a14,..,a0
-// alternative to set same type delays to the same value    
-    localparam DLY_DQ_IDELAY =  'h20 ;// 'h60;
-    localparam DLY_DQ_ODELAY =  'ha0; // 'h48;
-    localparam DLY_DQS_IDELAY = 'h40; // 'ha0;
-    localparam DLY_DQS_ODELAY = 'h78; // 
-    localparam DLY_DM_ODELAY =  'ha0; // 'h48;
-    localparam DLY_CMDA_ODELAY ='h50; // 'h30;
+//    localparam DLY_LANE0_ODELAY= 80'h4c784b4a494844434241; // odelay dqm, odelay ddqs, odelay dq[7:0]
+//    localparam DLY_LANE0_IDELAY= 72'ha0636261605c5b5a59; // idelay dqs, idelay dq[7:0
+//    localparam DLY_LANE1_ODELAY= 80'h4c784b4a494844434241; // odelay dqm, odelay ddqs, odelay dq[7:0]
+//    localparam DLY_LANE1_IDELAY= 72'ha0636261605c5b5a59; // idelay dqs, idelay dq[7:0
+//    localparam DLY_CMDA=  256'h3c3c3c3c3b3a39383434343433323130002c2c2c2b2a29282424242423222120; // odelay odt, cke, cas, ras, we, ba2,ba1,ba0, X, a14,..,a0
+//    localparam DLY_PHASE= 8'h1c; // mmcm fine phase shift, 1/4 tCK
   `else   
-    localparam DLY_LANE0_DQS_WLV_IDELAY = 8'he8; // idelay dqs
-    localparam DLY_LANE1_DQS_WLV_IDELAY = 8'he8; // idelay dqs
-    localparam DLY_LANE0_ODELAY= 80'h7474737271706c6b6a69; // odelay dqm, odelay ddqs, odelay dq[7:0]
-    localparam DLY_LANE0_IDELAY= 72'hd8737271706c6b6a69; // idelay dqs, idelay dq[7:0
-    localparam DLY_LANE1_ODELAY= 80'h7474737271706c6b6a69; // odelay dqm, odelay ddqs, odelay dq[7:0]
-    localparam DLY_LANE1_IDELAY= 72'hd8737271706c6b6a69; // idelay dqs, idelay dq[7:0
-    localparam DLY_CMDA=  256'h5c5c5c5c5b5a59585454545453525150004c4c4c4b4a49484444444443424140; // odelay odt, cke, cas, ras, we, ba2,ba1,ba0, X, a14,..,a0
-// alternative to set same type delays to the same value    
-    localparam DLY_DQ_IDELAY =  'h70;
-    localparam DLY_DQ_ODELAY =  'h68;
-    localparam DLY_DQS_IDELAY = 'hd8;
-    localparam DLY_DQS_ODELAY = 'h74; // b0 for WLV
-    localparam DLY_DM_ODELAY =  'h74;
-    localparam DLY_CMDA_ODELAY ='h50;
+//    localparam DLY_LANE0_ODELAY= 80'h7474737271706c6b6a69; // odelay dqm, odelay ddqs, odelay dq[7:0]
+//    localparam DLY_LANE0_IDELAY= 72'hd8737271706c6b6a69; // idelay dqs, idelay dq[7:0
+//    localparam DLY_LANE1_ODELAY= 80'h7474737271706c6b6a69; // odelay dqm, odelay ddqs, odelay dq[7:0]
+//    localparam DLY_LANE1_IDELAY= 72'hd8737271706c6b6a69; // idelay dqs, idelay dq[7:0
+//    localparam DLY_CMDA=  256'h5c5c5c5c5b5a59585454545453525150004c4c4c4b4a49484444444443424140; // odelay odt, cke, cas, ras, we, ba2,ba1,ba0, X, a14,..,a0
+//    localparam DLY_PHASE= 8'h1c; // mmcm fine phase shift, 1/4 tCK
   `endif
-    localparam DLY_PHASE= 8'h1c; // mmcm fine phase shift, 1/4 tCK
 `endif
     
+// alternative to set same type delays to the same value
+    localparam DLY_DQ_IDELAY =  ( (DLY_LANE0_IDELAY      & 8'hff)+
+                                 ((DLY_LANE0_IDELAY>> 8) & 8'hff)+
+                                 ((DLY_LANE0_IDELAY>>16) & 8'hff)+
+                                 ((DLY_LANE0_IDELAY>>24) & 8'hff)+      
+                                 ((DLY_LANE0_IDELAY>>32) & 8'hff)+      
+                                 ((DLY_LANE0_IDELAY>>40) & 8'hff)+      
+                                 ((DLY_LANE0_IDELAY>>48) & 8'hff)+      
+                                 ((DLY_LANE0_IDELAY>>56) & 8'hff)+
+                                  (DLY_LANE1_IDELAY      & 8'hff)+
+                                 ((DLY_LANE1_IDELAY>> 8) & 8'hff)+
+                                 ((DLY_LANE1_IDELAY>>16) & 8'hff)+
+                                 ((DLY_LANE1_IDELAY>>24) & 8'hff)+      
+                                 ((DLY_LANE1_IDELAY>>32) & 8'hff)+      
+                                 ((DLY_LANE1_IDELAY>>40) & 8'hff)+      
+                                 ((DLY_LANE1_IDELAY>>48) & 8'hff)+      
+                                 ((DLY_LANE1_IDELAY>>56) & 8'hff)+  8 ) >> 4;      
+    localparam  DLY_DQ_ODELAY =  (((DLY_LANE0_ODELAY      & 8'hff)+
+                                 ((DLY_LANE0_ODELAY>> 8) & 8'hff)+
+                                 ((DLY_LANE0_ODELAY>>16) & 8'hff)+
+                                 ((DLY_LANE0_ODELAY>>24) & 8'hff)+      
+                                 ((DLY_LANE0_ODELAY>>32) & 8'hff)+      
+                                 ((DLY_LANE0_ODELAY>>40) & 8'hff)+      
+                                 ((DLY_LANE0_ODELAY>>48) & 8'hff)+      
+                                 ((DLY_LANE0_ODELAY>>56) & 8'hff)+
+                                  (DLY_LANE1_ODELAY      & 8'hff)+
+                                 ((DLY_LANE1_ODELAY>> 8) & 8'hff)+
+                                 ((DLY_LANE1_ODELAY>>16) & 8'hff)+
+                                 ((DLY_LANE1_ODELAY>>24) & 8'hff)+      
+                                 ((DLY_LANE1_ODELAY>>32) & 8'hff)+      
+                                 ((DLY_LANE1_ODELAY>>40) & 8'hff)+      
+                                 ((DLY_LANE1_ODELAY>>48) & 8'hff)+      
+                                 ((DLY_LANE1_ODELAY>>56) & 8'hff)+  8 ) >> 4);
+    
+    localparam DLY_DQS_IDELAY =  (((DLY_LANE0_IDELAY>>64) & 8'hff)+
+                                  ((DLY_LANE1_IDELAY>>64) & 8'hff)+  1 ) >> 1;
+    localparam DLY_DQS_ODELAY =  (((DLY_LANE0_ODELAY>>64) & 8'hff)+
+                                  ((DLY_LANE1_ODELAY>>64) & 8'hff)+  1 ) >> 1;
+    localparam DLY_DM_ODELAY =  DLY_DQ_ODELAY;
+    localparam DLY_CMDA_ODELAY =(((DLY_CMDA>>   0)  & 8'hff)+
+                                 ((DLY_CMDA>>   8) & 8'hff)+
+                                 ((DLY_CMDA>>'h10) & 8'hff)+
+                                 ((DLY_CMDA>>'h18) & 8'hff)+      
+                                 ((DLY_CMDA>>'h20) & 8'hff)+      
+                                 ((DLY_CMDA>>'h28) & 8'hff)+      
+                                 ((DLY_CMDA>>'h30) & 8'hff)+      
+                                 ((DLY_CMDA>>'h38) & 8'hff)+
+                                 ((DLY_CMDA>>'h40) & 8'hff)+
+                                 ((DLY_CMDA>>'h48) & 8'hff)+      
+                                 ((DLY_CMDA>>'h50) & 8'hff)+      
+                                 ((DLY_CMDA>>'h58) & 8'hff)+      
+                                 ((DLY_CMDA>>'h60) & 8'hff)+      
+                                 ((DLY_CMDA>>'h68) & 8'hff)+
+                                 ((DLY_CMDA>>'h70) & 8'hff)+
+                                 ((DLY_CMDA>>'hc0) & 8'hff)+
+                                 ((DLY_CMDA>>'hc8) & 8'hff)+      
+                                 ((DLY_CMDA>>'hd0) & 8'hff)+
+                                 ((DLY_CMDA>>'hd8) & 8'hff)+      
+                                 ((DLY_CMDA>>'he0) & 8'hff)+
+                                 ((DLY_CMDA>>'he8) & 8'hff)+      
+                                 ((DLY_CMDA>>'hf0) & 8'hff)+
+                                 ((DLY_CMDA>>'hf8) & 8'hff)+  12 ) / 23;
+    localparam DLY_LANE0_DQS_WLV_IDELAY = DLY_DQS_IDELAY; // b0; // idelay dqs
+    localparam DLY_LANE1_DQS_WLV_IDELAY = DLY_DQS_IDELAY; // b0; idelay dqs
+                                 
     localparam DQSTRI_FIRST=    4'h3; // DQS tri-state control word, first when enabling output 
     localparam DQSTRI_LAST=     4'hc; // DQS tri-state control word, first after disabling output
     localparam DQTRI_FIRST=     4'h7; // DQ tri-state control word, first when enabling output 
     localparam DQTRI_LAST=      4'he; // DQ tri-state control word, first after disabling output
-    localparam WBUF_DLY_DFLT=   DFLT_WBUF_DELAY; //4'h8; // 4'h6; // extra delay (in mclk cycles) to add to write buffer enable (DDR3 read data)
-    localparam WBUF_DLY_WLV=    4'h7; // write leveling mode: extra delay (in mclk cycles) to add to write buffer enable (DDR3 read data)
+    localparam WBUF_DLY_DFLT=   DFLT_WBUF_DELAY; // 4'h8; // 4'h6; // extra delay (in mclk cycles) to add to write buffer enable (DDR3 read data)
+    localparam WBUF_DLY_WLV=    DFLT_WBUF_DELAY; // 4'h7; // write leveling mode: extra delay (in mclk cycles) to add to write buffer enable (DDR3 read data)
     
 //    localparam DLY_PHASE= 8'hdb; // mmcm fine phase shift
     localparam INITIALIZE_OFFSET=  'h00; // moemory initialization start address (in words) ..`h0c
@@ -172,3 +152,34 @@ DLY_PHASE=       0x2c # 0x1c # mmcm fine phase shift, 1/4 tCK
     localparam STATUS_MSB_RSHFT=           2; // status bits [25:2] are read through [23:0]
     
     localparam STATUS_PSHIFTER_RDY_MASK = 1<<STATUS_2LSB_SHFT;
+  localparam       FRAME_START_ADDRESS= 'h1000; // RA=80, CA=0, BA=0 22-bit frame start address (3 CA LSBs==0. BA==0)
+  localparam       FRAME_FULL_WIDTH=    'h0c0;  // Padded line length (8-row increment), in 8-bursts (16 bytes)
+//  localparam SCANLINE_WINDOW_WH=  `h079000a2;  // 2592*1936: low word - 13-bit window width (0->'h4000), high word - 16-bit frame height (0->'h10000)
+//  localparam       SCANLINE_WINDOW_WH=  'h0009000b;  // 176*9: low word - 13-bit window width (0->'h4000), high word - 16-bit frame height (0->'h10000)
+  localparam       WINDOW_WIDTH=    'h000b; //'h005b; //'h000b;  // 176:  13-bit window width (0->'h4000)
+  localparam       WINDOW_HEIGHT=   'h000a;  // 9:    16-bit window height (0->'h10000)
+//  localparam       SCANLINE_X0Y0=       'h00050003;  // X0=3*16=48, Y0=5: // low word - 13-bit window left, high word - 16-bit window top
+  localparam       WINDOW_X0=     'h5c; //'h7f; //     'h005c; // 'h7c; // 'h0003;  // X0=3*16=48 - 13-bit window left
+  localparam       WINDOW_Y0=         'h0005;  // Y0=5: 16-bit window top
+//  localparam       SCANLINE_STARTXY=    'h0;         // low word - 13-bit start X (relative to window), high word - 16-bit start y (normally 0)
+  localparam       SCANLINE_STARTX=     'h0;         // 13-bit start X (relative to window), high word (normally 0)
+  localparam       SCANLINE_STARTY=     'h0;         // 16-bit start y (normally 0)
+  localparam [1:0] SCANLINE_EXTRA_PAGES= 0;          // 0..2 - number of pages in the buffer to keep/not write // SuppressThisWarning VEditor - not used
+  
+  localparam       TILED_STARTX=     'h0;         // 13-bit start X (relative to window), high word (normally 0)
+  localparam       TILED_STARTY=     'h0;         // 16-bit start y (normally 0)
+  localparam [1:0] TILED_EXTRA_PAGES= 0;          // 0..2 - number of pages in the buffer to keep/not write
+  
+  localparam       TILED_KEEP_OPEN=   1'b1; //1'b1; // 1'b0;       // Do not close banks between reads (valid only for tiles <=8 rows, needed if less than 3? rows)  
+  
+  localparam       TILE_WIDTH=    'h04; //     6-bit tile width  (1..'h40)
+  localparam       TILE_HEIGHT=   'h08; //'h05; // 'h04; //'h06;  //    6-bit tile height (1..'h40) // 4 - violation
+  localparam       TILE_VSTEP=    'h04;  //    6-bit tile vertical step, with no overlap it is equal to TILE_HEIGHT (1..'h40)
+  
+  
+  localparam       TEST01_START_FRAME=   1;         
+  localparam       TEST01_NEXT_PAGE=     2;         
+  localparam       TEST01_SUSPEND=       4; // SuppressThisWarning VEditor - not used
+  
+  localparam       TEST_INITIAL_BURST=   4; // 3;
+    

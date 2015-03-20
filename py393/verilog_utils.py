@@ -56,7 +56,7 @@ def concat(items):
     width=0
     for vw in reversed(items):
         v=vw[0]
-        if not isinstance(v,int):
+        if not isinstance(v,(int,long)):
             if v:
                 v=1 # So True/False will also work, not just 0/1
             else:
@@ -150,7 +150,7 @@ def checkIntArgs(names,var_dict):
             v=var_dict[name]
         except:
             raise Exception("ERROR: '%s' is not among %s"%(name,str(var_dict.keys())))    
-        if not isinstance(v,int):
+        if not isinstance(v,(int,long)):
             print ("Expected an integer for '%s', got '%s"%(name,v))
             try:
                 d=int(v,16)

@@ -31,13 +31,14 @@ __status__ = "Development"
 #import sys
 #import x393_mem
 #x393_pio_sequences
-from import_verilog_parameters import VerilogParameters
+#from import_verilog_parameters import VerilogParameters
 from x393_mem import X393Mem
 from x393_axi_control_status import X393AxiControlStatus
 #from verilog_utils import * # concat, bits 
 #from verilog_utils import hx, concat, bits, getParWidth 
 #from verilog_utils import concat, getParWidth
-#from x393_axi_control_status import concat, bits 
+#from x393_axi_control_status import concat, bits
+import vrlg 
 class X393McntrlBuffers(object):
     DRY_MODE= True # True
     DEBUG_MODE=1
@@ -50,7 +51,7 @@ class X393McntrlBuffers(object):
         self.DRY_MODE=dry_mode
         self.x393_mem=X393Mem(debug_mode,dry_mode)
         self.x393_axi_tasks=X393AxiControlStatus(debug_mode,dry_mode)
-        self.__dict__.update(VerilogParameters.__dict__["_VerilogParameters__shared_state"]) # Add verilog parameters to the class namespace
+#        self.__dict__.update(VerilogParameters.__dict__["_VerilogParameters__shared_state"]) # Add verilog parameters to the class namespace
         try:
             self.verbose=self.VERBOSE
         except:
@@ -71,14 +72,14 @@ class X393McntrlBuffers(object):
         """
         if self.DEBUG_MODE > 1:
             print("====== write_block_scanline_chn:%d page: %x X=0x%x Y=0x%x num=%dt"%(chn, page, startX, startY,num_bursts))
-        if   chn == 0:  start_addr=self.MCONTR_BUF0_WR_ADDR + (page << 8)
-        elif chn == 1:  start_addr=self.MCONTR_BUF1_WR_ADDR + (page << 8)
-        elif chn == 2:  start_addr=self.MCONTR_BUF2_WR_ADDR + (page << 8)
-        elif chn == 3:  start_addr=self.MCONTR_BUF3_WR_ADDR + (page << 8)
-        elif chn == 4:  start_addr=self.MCONTR_BUF4_WR_ADDR + (page << 8)
+        if   chn == 0:  start_addr=vrlg.MCONTR_BUF0_WR_ADDR + (page << 8)
+        elif chn == 1:  start_addr=vrlg.MCONTR_BUF1_WR_ADDR + (page << 8)
+        elif chn == 2:  start_addr=vrlg.MCONTR_BUF2_WR_ADDR + (page << 8)
+        elif chn == 3:  start_addr=vrlg.MCONTR_BUF3_WR_ADDR + (page << 8)
+        elif chn == 4:  start_addr=vrlg.MCONTR_BUF4_WR_ADDR + (page << 8)
         else:
             print("**** ERROR: Invalid channel for write_block_scanline_chn = %d"% chn)
-            start_addr = self.MCONTR_BUF0_WR_ADDR+ (page << 8);
+            start_addr = vrlg.MCONTR_BUF0_WR_ADDR+ (page << 8);
         num_words=num_bursts << 2;
         self.write_block_incremtal (start_addr, num_words, (startX<<2) + (startY<<16));# 1 of startX is 8x16 bit, 16 bytes or 4 32-bit words
 
@@ -95,7 +96,7 @@ class X393McntrlBuffers(object):
             xor=num_words_or_data_list[1]
             num_words_or_data_list=num_words_or_data_list[0]
                     
-        if isinstance (num_words_or_data_list,int):
+        if isinstance (num_words_or_data_list,(int,long)):
             data=[]
             for i in range(num_words_or_data_list):
                 data.append(xor ^(i | (((i + 7) & 0xff) << 8)  | (((i + 23) & 0xff) << 16) | (((i + 31) & 0xff) << 24)))
@@ -144,14 +145,14 @@ class X393McntrlBuffers(object):
                 print("=== [%s]"%str(num_words_or_data_list))
         print("===")    
         start_addr=-1
-        if   chn==0:start_addr=self.MCONTR_BUF0_WR_ADDR + (page << 8)
-        elif chn==1:start_addr=self.MCONTR_BUF1_WR_ADDR + (page << 8)
-        elif chn==2:start_addr=self.MCONTR_BUF2_WR_ADDR + (page << 8)
-        elif chn==3:start_addr=self.MCONTR_BUF3_WR_ADDR + (page << 8)
-        elif chn==4:start_addr=self.MCONTR_BUF4_WR_ADDR + (page << 8)
+        if   chn==0:start_addr=vrlg.MCONTR_BUF0_WR_ADDR + (page << 8)
+        elif chn==1:start_addr=vrlg.MCONTR_BUF1_WR_ADDR + (page << 8)
+        elif chn==2:start_addr=vrlg.MCONTR_BUF2_WR_ADDR + (page << 8)
+        elif chn==3:start_addr=vrlg.MCONTR_BUF3_WR_ADDR + (page << 8)
+        elif chn==4:start_addr=vrlg.MCONTR_BUF4_WR_ADDR + (page << 8)
         else:
             print("**** ERROR: Invalid channel for write buffer = %d"% chn)
-            start_addr = self.MCONTR_BUF0_WR_ADDR+ (page << 8)
+            start_addr = vrlg.MCONTR_BUF0_WR_ADDR+ (page << 8)
             
         self.write_block_buf (start_addr, num_words_or_data_list)
     
@@ -189,13 +190,13 @@ class X393McntrlBuffers(object):
         <show_rslt>          print buffer data read
         """
         start_addr=-1
-        if   chn==0:  start_addr=self.MCONTR_BUF0_RD_ADDR + (page << 8)
-        elif chn==1:  start_addr=self.MCONTR_BUF1_RD_ADDR + (page << 8)
-        elif chn==2:  start_addr=self.MCONTR_BUF2_RD_ADDR + (page << 8)
-        elif chn==3:  start_addr=self.MCONTR_BUF3_RD_ADDR + (page << 8)
-        elif chn==4:  start_addr=self.MCONTR_BUF4_RD_ADDR + (page << 8)
+        if   chn==0:  start_addr=vrlg.MCONTR_BUF0_RD_ADDR + (page << 8)
+        elif chn==1:  start_addr=vrlg.MCONTR_BUF1_RD_ADDR + (page << 8)
+        elif chn==2:  start_addr=vrlg.MCONTR_BUF2_RD_ADDR + (page << 8)
+        elif chn==3:  start_addr=vrlg.MCONTR_BUF3_RD_ADDR + (page << 8)
+        elif chn==4:  start_addr=vrlg.MCONTR_BUF4_RD_ADDR + (page << 8)
         else:
             print("**** ERROR: Invalid channel for read buffer = %d"%chn)
-            start_addr = self.MCONTR_BUF0_RD_ADDR+ (page << 8)
+            start_addr = vrlg.MCONTR_BUF0_RD_ADDR+ (page << 8)
         result=self.read_block_buf (start_addr, num_read, show_rslt)
         return result

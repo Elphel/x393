@@ -29,12 +29,15 @@ __maintainer__ = "Andrey Filippov"
 __email__ = "andrey@elphel.com"
 __status__ = "Development"
 
-from import_verilog_parameters import VerilogParameters
+import os
+#from import_verilog_parameters import VerilogParameters
 from x393_mem import X393Mem
 #from verilog_utils import hx,concat, bits 
 #from verilog_utils import hx
 #from subprocess import call
 from time import sleep
+import vrlg # global parameters
+
 DEFAULT_BITFILE="/usr/local/verilog/x393.bit"
 FPGA_RST_CTRL= 0xf8000240
 FPGA0_THR_CTRL=0xf8000178
@@ -46,13 +49,15 @@ class X393Utils(object):
 #    vpars=None
     x393_mem=None
     enabled_channels=0 # currently enable channels
+    saveFileName=None
 #    verbose=1
-    def __init__(self, debug_mode=1,dry_mode=True):
+    def __init__(self, debug_mode=1,dry_mode=True,saveFileName=None):
         self.DEBUG_MODE=debug_mode
         self.DRY_MODE=dry_mode
+        if saveFileName:
+            self.saveFileName=saveFileName.strip()
         self.x393_mem=X393Mem(debug_mode,dry_mode)
-        self.__dict__.update(VerilogParameters.__dict__["_VerilogParameters__shared_state"]) # Add verilog parameters to the class namespace
-
+#        self.__dict__.update(VerilogParameters.__dict__["_VerilogParameters__shared_state"]) # Add verilog parameters to the class namespace
     def reset_get(self):
         """
         Get current reset state
@@ -70,7 +75,7 @@ class X393Utils(object):
                data can also be a list/tuple of integers, then it will be applied
                in sequence (0,0xe) will turn reset on, then off
         """
-        if isinstance(data,int):
+        if isinstance(data, (int,long)):
             self.x393_mem.write_mem(FPGA_RST_CTRL,data)
         else:
             for d in data:
@@ -172,4 +177,87 @@ class X393Utils(object):
                 d.append(None)
         print()
         return d
+    
+    def getParTmpl(self):
+        return ({"name":"DLY_LANE0_ODELAY", "width": 80, "decl_width":""}, # decl_width can be "[7:0]", "integer", etc
+                {"name":"DLY_LANE0_IDELAY", "width": 72, "decl_width":""},
+                {"name":"DLY_LANE1_ODELAY", "width": 80, "decl_width":""},
+                {"name":"DLY_LANE1_IDELAY", "width": 72, "decl_width":""},
+                {"name":"DLY_CMDA",         "width":256, "decl_width":""},
+                {"name":"DLY_PHASE",        "width": 8,  "decl_width":""})
+ 
+    def localparams(self,
+                    quiet=False):
+        """
+        Generate verilog include file with localparam definitions for the DDR3 timing parameters
+        Returns definition as a string
+        """
+        nameLen=0
+        declWidth=0
+        for p in self.getParTmpl(): #parTmpl:
+            nameLen=max(nameLen,len(p['name']))
+            declWidth=max(declWidth,len(p['decl_width']))
+        txt=""
+        for p in self.getParTmpl(): # parTmpl:
+            numDigits = (p["width"]+3)/4
+            frmt="localparam %%%ds %%%ds %3d'h%%0%dx;\n"%(declWidth,nameLen+2,p["width"],numDigits)
+            txt+=frmt%(p['decl_width'],p['name']+" =",vrlg.__dict__[p['name']])
+        if not quiet:
+            print (txt)
+        return txt
+    
+    def save_defaults(self,
+                      allPars=False):
+        """
+        Save current parameter values to defaults (as read at start up)
+        <allPars>  use all parameters, if false - only for the ones used in
+                   'save' file  
+        """
+#        global parTmpl
+        if allPars:
+            vrlg.save_default()
+        else:
+            for par in self.getParTmpl(): # parTmpl:
+                vrlg.save_default(par['name'])
             
+    def restore_defaults(self,
+                         allPars=False):
+        """
+        Restore parameter values from defaults (as read at start up)
+        <allPars>  use all parameters, if false - only for the ones used in
+                   'save' file  
+        """
+        global parTmpl
+        if allPars:
+            vrlg.restore_default()
+        else:
+            for par in parTmpl:
+                vrlg.restore_default(par['name'])
+    
+    def save(self,
+                    fileName=None):
+        """
+        Write Verilog include file with localparam definitions for the DDR3 timing parameters
+        Also copies the same parameter values to defaults
+        <fileName> - optional path to write, pre-defined name if not specified
+        """
+        header= """/* This is a generated file with the current DDR3 memory timing parameters */
+
+"""
+        self.save_defaults(False) # copy current parameters to defaults
+        if not fileName:
+            fileName=self.saveFileName
+        txt=self.localparams(True) #quiet
+
+        if fileName:
+            try:
+                with open(fileName, "w") as text_file:
+                    text_file.write(header)
+                    text_file.write(txt)
+                    print ("Verilog parameters are written to  %s"%(os.path.abspath(fileName)))
+
+            except:
+                print ("Failed to write to %s"%(os.path.abspath(fileName)))
+        else:
+            print(txt)   
+

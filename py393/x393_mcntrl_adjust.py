@@ -32,7 +32,7 @@ __status__ = "Development"
 #import x393_mem
 #x393_pio_sequences
 import random
-from import_verilog_parameters import VerilogParameters
+#from import_verilog_parameters import VerilogParameters
 from x393_mem                import X393Mem
 from x393_axi_control_status import X393AxiControlStatus
 from x393_pio_sequences      import X393PIOSequences
@@ -44,6 +44,7 @@ from x393_mcntrl_buffers     import X393McntrlBuffers
 #from x393_axi_control_status import concat, bits
 #from time import sleep
 from verilog_utils import checkIntArgs,smooth2d
+#import vrlg
 NUM_FINE_STEPS=    5
 
 class X393McntrlAdjust(object):
@@ -63,11 +64,31 @@ class X393McntrlAdjust(object):
         self.x393_pio_sequences=  X393PIOSequences(debug_mode,dry_mode)
         self.x393_mcntrl_timing=  X393McntrlTiming(debug_mode,dry_mode)
         self.x393_mcntrl_buffers= X393McntrlBuffers(debug_mode,dry_mode)
-        self.__dict__.update(VerilogParameters.__dict__["_VerilogParameters__shared_state"]) # Add verilog parameters to the class namespace
+#        self.__dict__.update(VerilogParameters.__dict__["_VerilogParameters__shared_state"]) # Add verilog parameters to the class namespace
         try:
             self.verbose=self.VERBOSE
         except:
             pass
+    #//SET DQ ODELAY=[['0xd9', '0xdb', '0xdc', '0xd4', '0xe0', '0xda', '0xd4', '0xd8'], ['0xdc', '0xe0', '0xf1', '0xdc', '0xe0', '0xdc', '0xdc', '0xdc']]
+    def format_dq_to_verilog(self,
+                             estr):
+        """
+        Convert dq delays list to the form to paste to the Verilog parameters code
+        <estr> quoted string, such as:
+         "[['0xd9', '0xdb', '0xdc', '0xd4', '0xe0', '0xda', '0xd4', '0xd8'], ['0xdc', '0xe0', '0xf1', '0xdc', '0xe0', '0xdc', '0xdc', '0xdc']]"
+        Returns a pair of strings to paste
+        """
+        se=eval(estr) # now a list of list of strings
+        for l in se:
+            for i,v in enumerate(l):
+                l[i]=int(v,16)
+        for lane in range(2):
+            print("lane%d = 64'h"%lane,end="")
+            for i in range(len(se[lane])):
+                print("%02x"%se[lane][-i-1],end="")
+            print()
+        
+
         
     def split_delay(self,dly):
         """
@@ -970,3 +991,7 @@ class X393McntrlAdjust(object):
                                                 min_diff,    # minimal difference between primary delay steps to process
                                                 True,        #adjust, not scan
                                                 verbose)   
+           
+            
+            
+            

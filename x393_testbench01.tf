@@ -59,6 +59,7 @@ module  x393_testbench01 #(
 `endif
 `define DEBUG_WR_SINGLE 1  
 `define DEBUG_RD_DATA 1  
+`include "includes/x393_cur_params_sim.vh" // parameters that may need adjustment, should be before x393_localparams.vh
 `include "includes/x393_localparams.vh" // SuppressThisWarning VEditor - not used
   // DDR3 signals
   wire        SDRST;
@@ -202,35 +203,6 @@ module  x393_testbench01 #(
 //  integer     SCANLINE_CUR_Y;
   wire AXI_RD_EMPTY=NUM_WORDS_READ==NUM_WORDS_EXPECTED; //SuppressThisWarning VEditor : may be unused, just for simulation
   
-  localparam       FRAME_START_ADDRESS= 'h1000; // RA=80, CA=0, BA=0 22-bit frame start address (3 CA LSBs==0. BA==0)
-  localparam       FRAME_FULL_WIDTH=    'h0c0;  // Padded line length (8-row increment), in 8-bursts (16 bytes)
-//  localparam SCANLINE_WINDOW_WH=  `h079000a2;  // 2592*1936: low word - 13-bit window width (0->'h4000), high word - 16-bit frame height (0->'h10000)
-//  localparam       SCANLINE_WINDOW_WH=  'h0009000b;  // 176*9: low word - 13-bit window width (0->'h4000), high word - 16-bit frame height (0->'h10000)
-  localparam       WINDOW_WIDTH=    'h000b; //'h005b; //'h000b;  // 176:  13-bit window width (0->'h4000)
-  localparam       WINDOW_HEIGHT=   'h000a;  // 9:    16-bit window height (0->'h10000)
-//  localparam       SCANLINE_X0Y0=       'h00050003;  // X0=3*16=48, Y0=5: // low word - 13-bit window left, high word - 16-bit window top
-  localparam       WINDOW_X0=     'h5c; //'h7f; //     'h005c; // 'h7c; // 'h0003;  // X0=3*16=48 - 13-bit window left
-  localparam       WINDOW_Y0=         'h0005;  // Y0=5: 16-bit window top
-//  localparam       SCANLINE_STARTXY=    'h0;         // low word - 13-bit start X (relative to window), high word - 16-bit start y (normally 0)
-  localparam       SCANLINE_STARTX=     'h0;         // 13-bit start X (relative to window), high word (normally 0)
-  localparam       SCANLINE_STARTY=     'h0;         // 16-bit start y (normally 0)
-  localparam [1:0] SCANLINE_EXTRA_PAGES= 0;          // 0..2 - number of pages in the buffer to keep/not write // SuppressThisWarning VEditor - not used
-  
-  localparam       TILED_STARTX=     'h0;         // 13-bit start X (relative to window), high word (normally 0)
-  localparam       TILED_STARTY=     'h0;         // 16-bit start y (normally 0)
-  localparam [1:0] TILED_EXTRA_PAGES= 0;          // 0..2 - number of pages in the buffer to keep/not write
-  
-  localparam       TILED_KEEP_OPEN=   1'b1; //1'b1; // 1'b0;       // Do not close banks between reads (valid only for tiles <=8 rows, needed if less than 3? rows)  
-  
-  localparam       TILE_WIDTH=    'h04; //     6-bit tile width  (1..'h40)
-  localparam       TILE_HEIGHT=   'h08; //'h05; // 'h04; //'h06;  //    6-bit tile height (1..'h40) // 4 - violation
-  localparam       TILE_VSTEP=    'h04;  //    6-bit tile vertical step, with no overlap it is equal to TILE_HEIGHT (1..'h40)
-  
-  
-  localparam       TEST01_START_FRAME=   1;         
-  localparam       TEST01_NEXT_PAGE=     2;         
-  localparam       TEST01_SUSPEND=       4; // SuppressThisWarning VEditor - not used
-  
   
   
   //NUM_XFER_BITS=6
@@ -246,7 +218,6 @@ module  x393_testbench01 #(
   
 //  integer ii;
 //  integer  SCANLINE_XFER_SIZE;
-  localparam       TEST_INITIAL_BURST=   4; // 3;
 always #(CLKIN_PERIOD/2) CLK = ~CLK;
   initial begin
 `ifdef IVERILOG              

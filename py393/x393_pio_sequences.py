@@ -31,13 +31,14 @@ __status__ = "Development"
 #import sys
 #import x393_mem
 #x393_pio_sequences
-from import_verilog_parameters import VerilogParameters
+#from import_verilog_parameters import VerilogParameters
 from x393_mem import X393Mem
 from x393_axi_control_status import X393AxiControlStatus
 from x393_mcntrl_buffers     import X393McntrlBuffers
 #from verilog_utils import * # concat, bits 
 from verilog_utils import concat, bits 
-#from x393_axi_control_status import concat, bits 
+#from x393_axi_control_status import concat, bits
+import vrlg # global parameters
 class X393PIOSequences(object):
     DRY_MODE= True # True
     DEBUG_MODE=1
@@ -48,19 +49,10 @@ class X393PIOSequences(object):
     def __init__(self, debug_mode=1,dry_mode=True):
         self.DEBUG_MODE=debug_mode
         self.DRY_MODE=dry_mode
-#        self.vpars=VerilogParameters()
         self.x393_mem=X393Mem(debug_mode,dry_mode)
         self.x393_axi_tasks=X393AxiControlStatus(debug_mode,dry_mode)
         self.x393_mcntrl_buffers= X393McntrlBuffers(debug_mode,dry_mode)
-#        print ("+++++++++++++++ self.__dict__ ++++++++++++++++++++++++++")
-#        print (self.__dict__)
-#        print ("+++++++++++++++ VerilogParameters.__dict__ ++++++++++++++++++++++++++")
-#        print (VerilogParameters.__dict__)
-#        self.__dict__.update(VerilogParameters.__dict__) # Add verilog parameters to the class namespace
-        self.__dict__.update(VerilogParameters.__dict__["_VerilogParameters__shared_state"]) # Add verilog parameters to the class namespace
-        
-#        print ("+++++++++++++++ self.__dict__ ++++++++++++++++++++++++++")
-#        print (self.__dict__)
+#        self.__dict__.update(VerilogParameters.__dict__["_VerilogParameters__shared_state"]) # Add verilog parameters to the class namespace
         '''
         Maybe import parameters into the module, not class namespace to use directly, w/o self. ?
 #        __dict__.update(VerilogParameters.__dict__) # Add verilog parameters to the class namespace
@@ -81,7 +73,7 @@ class X393PIOSequences(object):
         <chn>            sub-channel to use: 0 - memory read, 1 - memory write
         <wait_complete>  Do not request a new transaction from the scheduler until previous memory transaction is finished
         """
-        self.x393_axi_tasks.write_contol_register(self.MCNTRL_PS_ADDR + self.MCNTRL_PS_CMD,
+        self.x393_axi_tasks.write_contol_register(vrlg.MCNTRL_PS_ADDR + vrlg.MCNTRL_PS_CMD,
                                                   # {17'b0,
                                                   ((0,1)[wait_complete]<<14) |
                                                   ((0,1)[chn]<<13) |
@@ -100,11 +92,11 @@ class X393PIOSequences(object):
         """
         
         self.x393_axi_tasks.wait_status_condition (
-            self.MCNTRL_PS_STATUS_REG_ADDR,
-            self.MCNTRL_PS_ADDR + self.MCNTRL_PS_STATUS_CNTRL,
+            vrlg.MCNTRL_PS_STATUS_REG_ADDR,
+            vrlg.MCNTRL_PS_ADDR + vrlg.MCNTRL_PS_STATUS_CNTRL,
             mode & 3,
             0,
-            2 << self.STATUS_2LSB_SHFT,
+            2 << vrlg.STATUS_2LSB_SHFT,
             0,
             sync_seq)
 
@@ -118,11 +110,11 @@ class X393PIOSequences(object):
         <synq_seq>       status sequence number - see 'help program_status'
         """
         self.x393_axi_tasks.wait_status_condition (
-            self.MCNTRL_PS_STATUS_REG_ADDR,
-            self.MCNTRL_PS_ADDR + self.MCNTRL_PS_STATUS_CNTRL,
+            vrlg.MCNTRL_PS_STATUS_REG_ADDR,
+            vrlg.MCNTRL_PS_ADDR + vrlg.MCNTRL_PS_STATUS_CNTRL,
             mode & 3,
             0,
-            3 << self.STATUS_2LSB_SHFT,
+            3 << vrlg.STATUS_2LSB_SHFT,
             0,
             sync_seq,
             timeout)
@@ -209,8 +201,8 @@ class X393PIOSequences(object):
         <buf_rst>    reset external buffer page address to 0, increment page number
         """
         return self.func_encode_cmd (
-                ((0,1)[done] << self.CMD_PAUSE_BITS) |    # {{14-CMD_DONE_BIT{1'b0}}, done, 
-                (skip & ((1 << self.CMD_PAUSE_BITS)-1)), # skip[CMD_PAUSE_BITS-1:0]},       // 15-bit row/column address
+                ((0,1)[done] << vrlg.CMD_PAUSE_BITS) |    # {{14-CMD_DONE_BIT{1'b0}}, done, 
+                (skip & ((1 << vrlg.CMD_PAUSE_BITS)-1)), # skip[CMD_PAUSE_BITS-1:0]},       // 15-bit row/column address
                 bank & 7,   # bank[2:0],  // bank (here OK to be any)
                 0,          # 3'b0,       // RAS/CAS/WE, positive logic
                 odt_en,     #// enable ODT
@@ -290,7 +282,7 @@ class X393PIOSequences(object):
         
         return concat((
               (0,3),                      # 3'b0,
-              (0,self.ADDRESS_NUMBER-13), #  {ADDRESS_NUMBER-13{1'b0}},
+              (0,vrlg.ADDRESS_NUMBER-13), #  {ADDRESS_NUMBER-13{1'b0}},
               (pd,1),              # pd,       # MR0.12 
               (wr,3),                     # wr,       # MR0.11_9
               (dll_rst,1),                # dll_rst,  # MR0.8
@@ -348,7 +340,7 @@ class X393PIOSequences(object):
         """ 
         return concat (( #    ddr3_mr1 = {
               (1,3), # 3'h1,
-              (0, self.ADDRESS_NUMBER-13), # {ADDRESS_NUMBER-13{1'b0}},
+              (0, vrlg.ADDRESS_NUMBER-13), # {ADDRESS_NUMBER-13{1'b0}},
               (qoff,1),                    # qoff,       # MR1.12 
               (tdqs,1),                    # tdqs,       # MR1.11
               (0,1),                       # 1'b0,       # MR1.10
@@ -398,7 +390,7 @@ class X393PIOSequences(object):
         """ 
         return concat ((                  
                 (2,3),                       #   3'h2,
-                (0, self.ADDRESS_NUMBER-11), # {ADDRESS_NUMBER-11{1'b0}},
+                (0, vrlg.ADDRESS_NUMBER-11), # {ADDRESS_NUMBER-11{1'b0}},
                 (rtt_wr,2),                  # rtt_wr[1:0], # MR2.10_9
                 (0,1),                       # 1'b0,        # MR2.8
                 (srt,1),                     # srt,         # MR2.7
@@ -420,7 +412,7 @@ class X393PIOSequences(object):
         """ 
         return concat((
                 (3,3),                     # 3'h3,
-                (0,self.ADDRESS_NUMBER-3), # {ADDRESS_NUMBER-3{1'b0}},
+                (0,vrlg.ADDRESS_NUMBER-3), # {ADDRESS_NUMBER-3{1'b0}},
                 (mpr, 1),                  # mpr,          # MR3.2
                 (mpr_rf,2)))[0]            # mpr_rf[1:0]}; # MR3.1_0 
         
@@ -436,7 +428,7 @@ class X393PIOSequences(object):
         <rst>  1 - reset active, 0 - reset off
         """
         
-        self.x393_axi_tasks.write_contol_register(self.MCNTRL_PS_ADDR + self.MCNTRL_PS_EN_RST,
+        self.x393_axi_tasks.write_contol_register(vrlg.MCNTRL_PS_ADDR + vrlg.MCNTRL_PS_EN_RST,
                                    ((0,1)[en]<<1) | #{30'b0,en,
                                    (1,0)[rst])  #~rst});
    
@@ -454,7 +446,7 @@ class X393PIOSequences(object):
         <verbose> print data being written (default: False)
             
         """
-        cmd_addr = self.MCONTR_CMD_WR_ADDR + self.READ_BLOCK_OFFSET
+        cmd_addr = vrlg.MCONTR_CMD_WR_ADDR + vrlg.READ_BLOCK_OFFSET
 # activate
         #                           addr                bank     RCW ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD NOP, B_RST
         data=self.func_encode_cmd(  ra,                  ba,      4,  0,  0,  0,  0,    0,    0,    0,  0,   0,   0,   0)
@@ -519,7 +511,7 @@ class X393PIOSequences(object):
                         ra,  # input[14:0]ra;
                         ca,  # input[9:0]ca;
                         num8=64,
-                        extraTgl=1, #
+                        extraTgl=0, #
                         verbose=0):
 
         """
@@ -531,7 +523,7 @@ class X393PIOSequences(object):
         <verbose> print data being written (default: False)
         """
         print("===set_write_block ba=0x%x, ra=0x%x, ca=0x%x"%(ba,ra,ca))
-        cmd_addr = self.MCONTR_CMD_WR_ADDR + self.WRITE_BLOCK_OFFSET
+        cmd_addr = vrlg.MCONTR_CMD_WR_ADDR + vrlg.WRITE_BLOCK_OFFSET
 # activate
         #                          addr                 bank     RCW ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD NOP, B_RST
         data=self.func_encode_cmd( ra,                   ba,      4,  0,  0,  0,  0,    0,    0,    0,  0,   1,   0,   0)
@@ -624,7 +616,7 @@ class X393PIOSequences(object):
             
         """
         
-        cmd_addr = self.MCONTR_CMD_WR_ADDR + self.READ_PATTERN_OFFSET
+        cmd_addr = vrlg.MCONTR_CMD_WR_ADDR + vrlg.READ_PATTERN_OFFSET
         mr3_norm = self.func_ddr3_mr3(
            0, # 1'h0,     //       mpr;    // MPR mode: 0 - normal, 1 - dataflow from MPR
            0) # 2'h0);    // [1:0] mpr_rf; // MPR read function: 2'b00: predefined pattern 0101...
@@ -729,7 +721,7 @@ class X393PIOSequences(object):
             0, # 2'h0,     #       ods;  # output drive strength: #  2'b00 - RZQ/6 - 40 Ohm
             0, # 2'h0,     # [1:0] al;   # additive latency: 2'b00 - disabled (AL=0)
             0) # 1'b0);    #       dll;  # 0 - DLL enabled (normal), 1 - DLL disabled
-        cmd_addr = self.MCONTR_CMD_WR_ADDR + self.WRITELEV_OFFSET
+        cmd_addr = vrlg.MCONTR_CMD_WR_ADDR + vrlg.WRITELEV_OFFSET
 # Enter write leveling mode
         #                           addr                 bank                   RCW ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD NOP, B_RST
         data=self.func_encode_cmd(bits(mr1_wlev,(14,0)), bits(mr1_wlev,(17,15)), 7,  0,  0,  0,  0,    0,    0,    0,  0,   0,   0,   0)
@@ -787,7 +779,7 @@ class X393PIOSequences(object):
         <verbose> print data being written (default: False)
         """
         print("SET REFRESH: tRFC=%d, tREFI=%d"%(t_rfc,t_refi))
-        cmd_addr = self.MCONTR_CMD_WR_ADDR + self.REFRESH_OFFSET
+        cmd_addr = vrlg.MCONTR_CMD_WR_ADDR + vrlg.REFRESH_OFFSET
         #                           addr                 bank                   RCW ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD NOP, B_RST
         data=self.func_encode_cmd(    0,                   0,                    6,  0,  0,  0,  0,    0,    0,    0,  0,   0,   0,   0)
         self.x393_mem.axi_write_single_w(cmd_addr, data, verbose)
@@ -803,11 +795,11 @@ class X393PIOSequences(object):
         self.x393_mem.axi_write_single_w(cmd_addr, data, verbose)
         cmd_addr += 1
 #            write_contol_register(DLY_SET,0);
-        self.x393_axi_tasks.write_contol_register(self.MCONTR_TOP_16BIT_ADDR + self.MCONTR_TOP_16BIT_REFRESH_ADDRESS, self.REFRESH_OFFSET)
-        self.x393_axi_tasks.write_contol_register(self.MCONTR_TOP_16BIT_ADDR + self.MCONTR_TOP_16BIT_REFRESH_PERIOD, t_refi)
+        self.x393_axi_tasks.write_contol_register(vrlg.MCONTR_TOP_16BIT_ADDR + vrlg.MCONTR_TOP_16BIT_REFRESH_ADDRESS, vrlg.REFRESH_OFFSET)
+        self.x393_axi_tasks.write_contol_register(vrlg.MCONTR_TOP_16BIT_ADDR + vrlg.MCONTR_TOP_16BIT_REFRESH_PERIOD, t_refi)
         # enable refresh - should it be done here?
         if en_refresh:
-            self.x393_axi_tasks.write_contol_register(self.MCONTR_PHY_0BIT_ADDR +  self.MCONTR_TOP_0BIT_REFRESH_EN + 1, 0)
+            self.x393_axi_tasks.write_contol_register(vrlg.MCONTR_PHY_0BIT_ADDR +  vrlg.MCONTR_TOP_0BIT_REFRESH_EN + 1, 0)
 
 
     def set_mrs(self,       # will also calibrate ZQ
@@ -844,7 +836,7 @@ class X393PIOSequences(object):
         mr3 = self.func_ddr3_mr3(
             0,         # 1'h0,     #       mpr;    # MPR mode: 0 - normal, 1 - dataflow from MPR
             0)         # 2'h0);    # [1:0] mpr_rf; # MPR read function: 2'b00: predefined pattern 0101...
-        cmd_addr = self.MCONTR_CMD_WR_ADDR + self.INITIALIZE_OFFSET;
+        cmd_addr = vrlg.MCONTR_CMD_WR_ADDR + vrlg.INITIALIZE_OFFSET;
         if self.DEBUG_MODE > 1:
             print("mr0=0x%05x"%mr0);
             print("mr1=0x%05x"%mr1);
@@ -913,12 +905,12 @@ class X393PIOSequences(object):
         """
 
         self.schedule_ps_pio ( # schedule software-control memory operation (may need to check FIFO status first)
-                        self.READ_PATTERN_OFFSET,   # input [9:0] seq_addr; # sequence start address
+                        vrlg.READ_PATTERN_OFFSET,   # input [9:0] seq_addr; # sequence start address
                         2,                          # input [1:0] page;     # buffer page number
                         0,                          # input       urgent;   # high priority request (only for competion with other channels, will not pass in this FIFO)
                         0,                          # input       chn;      # channel buffer to use: 0 - memory read, 1 - memory write
                         wait_complete) # `PS_PIO_WAIT_COMPLETE ) #  wait_complete; # Do not request a newe transaction from the scheduler until previous memory transaction is finished
-        self.wait_ps_pio_done(self.DEFAULT_STATUS_MODE,1) # wait previous memory transaction finished before changing delays (effective immediately)
+        self.wait_ps_pio_done(vrlg.DEFAULT_STATUS_MODE,1) # wait previous memory transaction finished before changing delays (effective immediately)
         return self.x393_mcntrl_buffers.read_block_buf_chn (0, 2, num, show_rslt )    # chn=0, page=2, number of 32-bit words=num, show_rslt
 
     def read_block(self,
@@ -934,12 +926,12 @@ class X393PIOSequences(object):
         """
     
         self.schedule_ps_pio ( # schedule software-control memory operation (may need to check FIFO status first)
-                        self.READ_BLOCK_OFFSET,   # input [9:0] seq_addr; # sequence start address
+                        vrlg.READ_BLOCK_OFFSET,   # input [9:0] seq_addr; # sequence start address
                         3,                     # input [1:0] page;     # buffer page number
                         0,                     # input       urgent;   # high priority request (only for competion with other channels, will not pass in this FIFO)
                         0,                     # input       chn;      # channel buffer to use: 0 - memory read, 1 - memory write
                         wait_complete)         #  wait_complete; # Do not request a newe transaction from the scheduler until previous memory transaction is finished
-        self.wait_ps_pio_done(self.DEFAULT_STATUS_MODE,1); # wait previous memory transaction finished before changing delays (effective immediately)
+        self.wait_ps_pio_done(vrlg.DEFAULT_STATUS_MODE,1); # wait previous memory transaction finished before changing delays (effective immediately)
         return self.x393_mcntrl_buffers.read_block_buf_chn (0, 3, num, show_rslt ) # chn=0, page=3, number of 32-bit words=num, show_rslt
 
     def write_block(self,
@@ -950,10 +942,10 @@ class X393PIOSequences(object):
         """
 #    write_block_buf_chn; # fill block memory - already set in set_up task
         self.schedule_ps_pio ( # schedule software-control memory operation (may need to check FIFO status first)
-                        self.WRITE_BLOCK_OFFSET,    # input [9:0] seq_addr; # sequence start address
+                        vrlg.WRITE_BLOCK_OFFSET,    # input [9:0] seq_addr; # sequence start address
                         0,                     # input [1:0] page;     # buffer page number
                         0,                     # input       urgent;   # high priority request (only for competion with other channels, will not pass in this FIFO)
                         1,                     # input       chn;      # channel buffer to use: 0 - memory read, 1 - memory write
                         wait_complete)         # `PS_PIO_WAIT_COMPLETE )#  wait_complete; # Do not request a newer transaction from the scheduler until previous memory transaction is finished
 # temporary - for debugging:
-#        self.wait_ps_pio_done(self.DEFAULT_STATUS_MODE,1) # wait previous memory transaction finished before changing delays (effective immediately)
+#        self.wait_ps_pio_done(vrlg.DEFAULT_STATUS_MODE,1) # wait previous memory transaction finished before changing delays (effective immediately)

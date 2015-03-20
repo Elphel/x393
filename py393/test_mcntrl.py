@@ -22,6 +22,7 @@
 @contact:    andrey@elphel.coml
 @deffield    updated: Updated
 '''
+from __builtin__ import str
 __author__ = "Andrey Filippov"
 __copyright__ = "Copyright 2015, Elphel, Inc."
 __license__ = "GPL"
@@ -43,7 +44,7 @@ from argparse import ArgumentParser
 from argparse import RawDescriptionHelpFormatter
 
 from import_verilog_parameters import ImportVerilogParameters
-from import_verilog_parameters import VerilogParameters
+#from import_verilog_parameters import VerilogParameters
 from verilog_utils             import hx 
 
 import x393_mem
@@ -54,6 +55,7 @@ import x393_mcntrl_timing
 import x393_mcntrl_buffers
 import x393_mcntrl_tests
 import x393_mcntrl_adjust
+import vrlg
 __all__ = []
 __version__ = 0.1
 __date__ = '2015-03-01'
@@ -90,7 +92,17 @@ def extractTasks(obj,inst):
 #            print ("COMMENTS:"+str(inspect.getcomments(obj.__dict__[name])))
 #            print ("DOCS:"+str(inspect.getdoc(obj.__dict__[name])))
             func_args=obj.__dict__[name].func_code.co_varnames[1:obj.__dict__[name].func_code.co_argcount]
-            callableTasks[name]={'func':obj.__dict__[name],'args':func_args,'inst':inst,'docs':inspect.getdoc(obj.__dict__[name])}
+#            print("%s: %d, varnames=%s func_args=%s, defaults=%s"%
+#                  (name,
+#                   obj.__dict__[name].func_code.co_argcount,
+#                   str(obj.__dict__[name].func_code.co_varnames),
+#                   str(func_args),
+#                   obj.__dict__[name].func_defaults))
+            callableTasks[name]={'func':obj.__dict__[name],
+                                 'args':func_args,
+                                 'dflts':obj.__dict__[name].func_defaults,
+                                 'inst':inst,
+                                 'docs':inspect.getdoc(obj.__dict__[name])}
 def execTask(commandLine):
     result=None
     cmdList=commandLine #.split()
@@ -128,14 +140,22 @@ def execTask(commandLine):
 
 
 def getFuncArgsString(name):
-    funcFArgs=callableTasks[name]['args']
+    funcFArgs=callableTasks[name]['args'] # () if none
+    funcDflts=callableTasks[name]['dflts'] # None if no parameters, not empty tuple
+#    print ("<<< %s : %s"%(funcFArgs,funcDflts))
     sFuncArgs=""
     if funcFArgs:
-        sFuncArgs+='<'+str(funcFArgs[0])+'>'
-        for a in funcFArgs[1:]:
-            sFuncArgs+=' <'+str(a)+'>'
+        offs=len(funcFArgs)
+        if not funcDflts is None:
+            offs-=len(funcDflts)
+#        sFuncArgs+='<'+str(funcFArgs[0])+'>'
+        for i,a in enumerate(funcFArgs):
+            sFuncArgs+=' <'+str(a)
+            if i>=offs:
+                sFuncArgs+='='+str(funcDflts[i-offs])
+            sFuncArgs+='> '
     return sFuncArgs
-
+#dflts
     
 def main(argv=None): # IGNORE:C0111
     '''Command line options.'''
@@ -168,9 +188,6 @@ def main(argv=None): # IGNORE:C0111
 
 USAGE
 ''' % (program_shortdesc, __author__,str(__date__))
-    preDefines={}
-    preParameters={}
-    showResult=False
     try:
         # Setup argument parser
         parser = ArgumentParser(description=program_license, formatter_class=RawDescriptionHelpFormatter,fromfile_prefix_chars='@')
@@ -185,12 +202,15 @@ USAGE
         parser.add_argument("-i", "--interactive", dest="interactive", action="store_true", help="enter interactive mode [default: %(default)s]")
         parser.add_argument("-s", "--simulated", dest="simulated", action="store_true", help="Simulated mode (no real hardware I/O) [default: %(default)s]")
         parser.add_argument("-x", "--exceptions", dest="exceptions", action="count", help="Exit on more exceptions [default: %(default)s]")
+        parser.add_argument("-l", "--localparams",  dest="localparams", action="store", default="",
+                             help="path were modified parameters are saved [default: %(default)s]", metavar="path")
 
         # Process arguments
         args = parser.parse_args()
         if not args.exceptions:
             args.exceptions=0
-    
+            
+            
         QUIET = (1,0)[args.exceptions]
 #        print ("args.exception=%d, QUIET=%d"%(args.exceptions,QUIET))
         if not args.simulated:
@@ -208,7 +228,13 @@ USAGE
             for group in args.paths:
                 for item in group:
                     paths+=item.split()
-        #print("+++ paths=%s"%      str(paths))
+        print("+++ paths=%s"%      str(paths))
+        print("localparams=%s"%str(args.localparams))
+        
+        preDefines={}
+        preParameters={}
+        showResult=False
+
         if (args.defines):
             defines=[]
             for group in args.defines:
@@ -235,7 +261,6 @@ USAGE
                 if len(kv)>1:
                     preParameters[kv[0]]=(kv[1],"RAW",kv[1])
         #print("+++ parameters=%s"%      str(preParameters))
-        
         commands=[]
         if (args.commands):
             for group in args.commands:
@@ -244,9 +269,6 @@ USAGE
                     cmd+=item.split()
                 commands.append(cmd)    
         #print("+++ commands=%s"%      str(commands))
-        
-                    
-
     except KeyboardInterrupt:
         ### handle keyboard interrupt ###
         return 0
@@ -268,7 +290,11 @@ USAGE
         ### do something with inpath ###
         ivp.readParameterPortList(path)
     parameters=ivp.getParameters()
-    vpars=VerilogParameters(parameters)
+    #set all verilog parameters as module-level ones in vrlg (each parameter creates 3 names)
+    if (parameters):
+        vrlg.init_vars(ivp.parsToDict(parameters))
+#    vpars=VerilogParameters(parameters)
+    
     if verbose > 3:
         defines= ivp.getDefines()
         print ("======= Extracted defines =======")
@@ -280,18 +306,13 @@ USAGE
                 print (par+" = "+hex(parameters[par][0])+" (type = "+parameters[par][1]+" raw = "+parameters[par][2]+")")        
             except:
                 print (par+" = "+str(parameters[par][0])+" (type = "+parameters[par][1]+" raw = "+parameters[par][2]+")")
-        print("vpars.VERBOSE="+str(vpars.VERBOSE))
-        print("vpars.VERBOSE__TYPE="+str(vpars.VERBOSE__TYPE))
-        print("vpars.VERBOSE__RAW="+str(vpars.VERBOSE__RAW))
+        print("vrlg.VERBOSE="+str(vrlg.VERBOSE))
+        print("vrlg.VERBOSE__TYPE="+str(vrlg.VERBOSE__TYPE))
+        print("vrlg.VERBOSE__RAW="+str(vrlg.VERBOSE__RAW))
     
-    if verbose > 3: print (VerilogParameters.__dict__)
-    vpars1=VerilogParameters()
-    if verbose > 3: print("vpars1.VERBOSE="+str(vpars1.VERBOSE))
-    if verbose > 3: print("vpars1.VERBOSE__TYPE="+str(vpars1.VERBOSE__TYPE))
-    if verbose > 3: print("vpars1.VERBOSE__RAW="+str(vpars1.VERBOSE__RAW))
     
     x393mem=    x393_mem.X393Mem(verbose,args.simulated) #add dry run parameter
-    x393utils=  x393_utils.X393Utils(verbose,args.simulated)
+    x393utils=  x393_utils.X393Utils(verbose,args.simulated,args.localparams)
     x393tasks=  x393_axi_control_status.X393AxiControlStatus(verbose,args.simulated)
     x393Pio=    x393_pio_sequences.X393PIOSequences(verbose,args.simulated)
     x393Timing= x393_mcntrl_timing.X393McntrlTiming(verbose,args.simulated)
@@ -322,27 +343,6 @@ USAGE
     extractTasks(x393_mcntrl_tests.X393McntrlTests,x393Tests)
     extractTasks(x393_mcntrl_adjust.X393McntrlAdjust,x393Adjust)
 
-#
-    """
-    if verbose > 3:     
-        funcName="read_mem"
-        funcArgs=[0x377,123]
-        print ('==== testing function : '+funcName+str(funcArgs)+' ====')
-#        execTask(commandLine) 
-
-        try:
-            callableTasks[funcName]['func'](callableTasks[funcName]['inst'],*funcArgs)
-        except Exception as e:
-            print ('Error while executing %s'%funcName)
-            funcFArgs= callableTasks[funcName]['args']
-            sFuncArgs=""
-            if funcFArgs:
-                sFuncArgs+='<'+str(funcFArgs[0])+'>'
-                for a in funcFArgs[1:]:
-                    sFuncArgs+=' <'+str(a)+'>'
-                    print ("Usage:\n%s %s"%(funcName,sFuncArgs))
-                    print ("exception message:"+str(e))
-    """ 
     for cmdLine in commands:
         print ('Running task: '+str(cmdLine))
         rslt= execTask(cmdLine)
@@ -370,6 +370,7 @@ USAGE
                 print ('\n"parameters" and "defines" list known defined parameters and macros')
                 print ("args.exception=%d, QUIET=%d"%(args.exceptions,QUIET))
                 print ("Enter 'R' to toggle show/hide command results, now it is %s"%(("OFF","ON")[showResult]))
+                print ("Use 'pydev_predefines' to generate a parameter list to paste to vrlg.py, so Pydev will be happy")
             elif lineList[0].upper() == 'R':
                 if len(lineList)>1:
                     if (lineList[1].upper() == "ON") or (lineList[1].upper() == "1") or (lineList[1].upper() == "TRUE"):
@@ -442,9 +443,54 @@ USAGE
                     if (not nameFilter) or re.match(nameFilter,macro):
                         print ("`"+macro+": "+str(val))
                 if nameFilter is None:
-                    print("    'defines' command accepts regular expression as a second parameter to filter the list")        
+                    print("    'defines' command accepts regular expression as a second parameter to filter the list")
+            elif (lineList[0] == 'pydev_predefines'):
+                predefines=""
+                for k,v in ivp.parsToDict(parameters).items():
+                    typ=str(type(v))
+                    typ=typ[typ.find("'")+1:typ.rfind("'")]
+                    if "None" in typ:
+                        typ="None"
+                    predefines += "%s = %s\n"%(k,typ)
+#                    print ("%s = %s"%(k,typ))
+                vrlg_path=vrlg.__dict__["init_vars"].func_code.co_filename
+#                print ("vrlg path: %s"%(vrlg_path))
+                try:
+                    magic="#### PyDev predefines"
+                    with open (vrlg_path, "r") as vrlg_file:
+                        vrlg_text=vrlg_file.read()
+                    index= vrlg_text.index(magic) #will fail if not found
+                    index= vrlg_text.index('\n',index)
+                    vrlg_text=vrlg_text[:index+1]+"\n"+predefines
+                except:
+                    print ("Failed to update %s - it is either missing or does not have a '%s'"%(vrlg_path,magic))
+                    continue
+                try:
+                    with open (vrlg_path, "w") as vrlg_file:
+                        vrlg_file.write(vrlg_text)
+                    print ("Updated file %s"%(vrlg_path))
+                except:
+                    print ("Failed to re-write %s\n"%(vrlg_path))
+                    print (vrlg_text)
+                    print ("\nFailed to re-write %s"%(vrlg_path))
             else:
-                cmdLine=line.split()
+#                cmdLine=line.split()
+                cmdLine=[lineList[0]]
+                l=line[len(lineList[0]):].strip()
+                while l:
+                    if l[0] == '"':
+                        indx=l.find('"',1) # skip opening
+                        if  indx > 0:
+                            cmdLine.append(l[:indx+1]) # including ""
+                            l=l[indx+1:].strip()
+                            continue
+                    indx=l.find(' ')
+                    if indx<0:
+                        indx=len(l) # use all the remaining l as next argument
+                    cmdLine.append(l[:indx]) # including ""
+                    l=l[indx:].strip()
+                        
+#                strarg=line[len(lineList[0]):].strip()
                 rslt= execTask(cmdLine)
                 if showResult:
                     print ('    Result: '+hx(rslt))   

@@ -1,7 +1,8 @@
 -v
 -d TARGET_MODE=1
 -f ../system_defines.vh
--f ../includes/x393_parameters.vh  ../includes/x393_localparams.vh
+-f ../includes/x393_parameters.vh ../includes/x393_cur_params_target.vh ../includes/x393_localparams.vh
+-l ../includes/x393_cur_params_target_gen.vh
 -p NEWPAR='h3ff
 -c write_mem 0x377 25
 -c read_mem 0x3ff

@@ -105,13 +105,13 @@
     
     parameter CHNBUF_READ_LATENCY =             2, //1,     // external channel buffer extra read latency ( 0 - data available next cycle after re (but prev. data))
     
-    parameter DFLT_DQS_PATTERN=        8'h55,
+    parameter DFLT_DQS_PATTERN=        8'haa,  // TODO: make work for the simulator too 8'h55,
     parameter DFLT_DQM_PATTERN=        8'h00, // 8'h00
     parameter DFLT_DQ_TRI_ON_PATTERN=  4'h7,  // DQ tri-state control word, first when enabling output
     parameter DFLT_DQ_TRI_OFF_PATTERN= 4'he,  // DQ tri-state control word, first after disabling output
     parameter DFLT_DQS_TRI_ON_PATTERN= 4'h3,  // DQS tri-state control word, first when enabling output
     parameter DFLT_DQS_TRI_OFF_PATTERN=4'hc,  // DQS tri-state control word, first after disabling output
-    parameter DFLT_WBUF_DELAY=         4'h8,  // write levelling - 7!
+    parameter DFLT_WBUF_DELAY=         4'h9,  // TODO: Find the reason - simulation needs 8, target - 9 
     parameter DFLT_INV_CLK_DIV=        1'b0,
     
     parameter DFLT_CHN_EN=            16'h0,  // channel mask to be enabled at reset
