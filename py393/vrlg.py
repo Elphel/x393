@@ -44,15 +44,11 @@ def set_name_field(vname,
     <fieldIndex> byte field index (0 - lowest byte, 1 - bits[15:8], etc)
     <value>      value to set the specified byte to  
     """
-#        v=vrlg.__dict__[vname]
     v=globals()[vname]
-#        print ("old value for %s is %s"%(vname,str(vrlg.__dict__[vname])))
     mask = 0xff << (8*fieldIndex)
     val = value << (8*fieldIndex)
     v = ((v ^ val) & mask) ^ v
-#        vrlg.__dict__[vname]=v
     globals()[vname]=v
-#        print ("new value for %s is %s (0x%x)"%(vname,str(vrlg.__dict__[vname]),vrlg.__dict__[vname]))
 
 def get_name_field(vname,
                    fieldIndex):
@@ -62,6 +58,11 @@ def get_name_field(vname,
     <fieldIndex> byte field index (0 - lowest byte, 1 - bits[15:8], etc)
     Return  specified byte
     """
+#    print ("value for %s is %s"%(vname,str(globals()[vname])))
+#    print ("dflt  for %s is %s"%(vname,str(DEFAULTS[vname])))
+#    print ("value[%d] for %s is 0x%x"%(fieldIndex,vname,globals()[vname]))
+#    print ("dflt[%d]  for %s is 0x%x"%(fieldIndex,vname,DEFAULTS[vname]))
+    
     return ( globals()[vname] >> (8*fieldIndex)) & 0xff
 
 def get_default_field(vname,
@@ -74,8 +75,11 @@ def get_default_field(vname,
     Return  specified byte
     """
     global DEFAULTS
+#    print ("value for %s is %s"%(vname,str(globals()[vname])))
+#    print ("dflt  for %s is %s"%(vname,str(DEFAULTS[vname])))
+#    print ("value[%d] for %s is 0x%x"%(fieldIndex,vname,globals()[vname]))
+#    print ("dflt[%d]  for %s is 0x%x"%(fieldIndex,vname,DEFAULTS[vname]))
 
-#        return (vrlg.DEFAULTS[vname] >> (8*fieldIndex)) & 0xff
     return (DEFAULTS[vname] >> (8*fieldIndex)) & 0xff
 
 def get_default(vname):

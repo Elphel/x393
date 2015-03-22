@@ -33,7 +33,8 @@ __status__ = "Development"
 #x393_pio_sequences
 #from import_verilog_parameters import VerilogParameters
 from x393_mem import X393Mem
-from x393_axi_control_status import X393AxiControlStatus
+#from x393_axi_control_status import X393AxiControlStatus
+import x393_axi_control_status
 #from verilog_utils import * # concat, bits 
 #from verilog_utils import hx, concat, bits, getParWidth 
 #from verilog_utils import concat, getParWidth
@@ -50,10 +51,11 @@ class X393McntrlBuffers(object):
         self.DEBUG_MODE=debug_mode
         self.DRY_MODE=dry_mode
         self.x393_mem=X393Mem(debug_mode,dry_mode)
-        self.x393_axi_tasks=X393AxiControlStatus(debug_mode,dry_mode)
+#        self.x393_axi_tasks=X393AxiControlStatus(debug_mode,dry_mode)
+        self.x393_axi_tasks=x393_axi_control_status.X393AxiControlStatus(debug_mode,dry_mode)
 #        self.__dict__.update(VerilogParameters.__dict__["_VerilogParameters__shared_state"]) # Add verilog parameters to the class namespace
         try:
-            self.verbose=self.VERBOSE
+            self.verbose=vrlg.VERBOSE
         except:
             pass
     def write_block_scanline_chn(self,       #

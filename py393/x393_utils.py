@@ -37,6 +37,7 @@ from x393_mem import X393Mem
 #from subprocess import call
 from time import sleep
 import vrlg # global parameters
+import x393_axi_control_status
 
 DEFAULT_BITFILE="/usr/local/verilog/x393.bit"
 FPGA_RST_CTRL= 0xf8000240
@@ -50,6 +51,7 @@ class X393Utils(object):
     x393_mem=None
     enabled_channels=0 # currently enable channels
     saveFileName=None
+    x393_axi_tasks=None
 #    verbose=1
     def __init__(self, debug_mode=1,dry_mode=True,saveFileName=None):
         self.DEBUG_MODE=debug_mode
@@ -57,6 +59,8 @@ class X393Utils(object):
         if saveFileName:
             self.saveFileName=saveFileName.strip()
         self.x393_mem=X393Mem(debug_mode,dry_mode)
+#        self.x393_axi_tasks=X393AxiControlStatus(debug_mode,dry_mode)
+        self.x393_axi_tasks=x393_axi_control_status.X393AxiControlStatus(debug_mode,dry_mode)
 #        self.__dict__.update(VerilogParameters.__dict__["_VerilogParameters__shared_state"]) # Add verilog parameters to the class namespace
     def reset_get(self):
         """
@@ -117,6 +121,7 @@ class X393Utils(object):
         self.x393_mem.write_mem(FPGA0_THR_CTRL,0)
         print ("Reset OFF")
         self.reset(0xa)
+        self.x393_axi_tasks.init_state()
     
     def exp_gpio (self,
                   mode="in",

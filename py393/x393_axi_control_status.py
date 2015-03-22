@@ -36,24 +36,122 @@ from x393_mem import X393Mem
 from verilog_utils import hx
 from time import time
 import vrlg
+
+enabled_channels=0 # currently enable channels
+cke_en=0
+cmda_en=0
+sdrst_on=1
+mcntrl_en=0
+refresh_en=0
+channel_priority=[None]*16
+sequences_set=0
 class X393AxiControlStatus(object):
     DRY_MODE= True # True
     DEBUG_MODE=1
 #    vpars=None
     x393_mem=None
-    enabled_channels=0 # currently enable channels
     FPGA_RST_CTRL=0xf8000240
-#    verbose=1
+    verbose=1
     def __init__(self, debug_mode=1,dry_mode=True):
         self.DEBUG_MODE=debug_mode
         self.DRY_MODE=dry_mode
         self.x393_mem=X393Mem(debug_mode,dry_mode)
+        try:
+            self.verbose=vrlg.VERBOSE
+        except:
+            pass
+        
 #        self.__dict__.update(VerilogParameters.__dict__["_VerilogParameters__shared_state"]) # Add verilog parameters to the class namespace
         '''
         Maybe import parameters into the module, not class namespace to use directly, w/o self. ?
 #        __dict__.update(VerilogParameters.__dict__) # Add verilog parameters to the class namespace
         '''
-                
+        
+        # Use 'import pickle' (exists in the camera) to save/restore state
+    def init_state(self):
+        global  enabled_channels, cke_en, cmda_en, sdrst_on, mcntrl_en, channel_priority, refresh_en, sequences_set
+        """
+        reset state (as after bitstream load)
+        """
+        enabled_channels=0 # currently enable channels
+        cke_en=0
+        cmda_en=0
+        sdrst_on=1
+        mcntrl_en=0
+        channel_priority=[None]*16
+        refresh_en=0
+        sequences_set=0
+        if self.verbose>0:
+            print ("*** System state reset ****")
+        # TODO: Add state save/restore in tmpfs file (like /var/state/...) (/var/state does not exist initially)
+    def get_sequences_set(self,quiet=1):
+        global  sequences_set
+        if quiet<2 :
+            print ("SEQUENCES SET =  %d"%sequences_set)
+        return sequences_set
+
+    def set_sequences_set(self,val,quiet=1):
+        global  sequences_set
+        val= (0,1)[val]
+        sequences_set=val
+        if quiet<2 :
+            print ("SEQUENCES SET =  %d"%sequences_set)
+
+    def get_cke_en(self,quiet=1):
+        global  cke_en
+        if quiet<2 :
+            print ("CKE EN =  %d"%cke_en)
+        return cke_en
+    def get_cmda_en(self,quiet=1):
+        global  cmda_en
+        if quiet<2 :
+            print ("CMDA EN =  %d"%cmda_en)
+        return cmda_en
+    def get_sdrst_on(self,quiet=1):
+        global  sdrst_on
+        if quiet<2 :
+            print ("SDRST ON =  %d"%sdrst_on)
+        return sdrst_on
+    def get_mcntrl_en(self,quiet=1):
+        global  mcntrl_en
+        if quiet<2 :
+            print ("MCNTRL ON =  %d"%mcntrl_en)
+        return mcntrl_en
+    def get_refresh_en(self,quiet=1):
+        global refresh_en
+        if quiet<2 :
+            print ("REFRESH EN =  %d"%refresh_en)
+        return refresh_en
+    def get_enabled_channels(self,quiet=1):
+        global  enabled_channels
+        if quiet<2 :
+            print ("ENABLED_CHANNELS =  0x%x"%enabled_channels)
+        return enabled_channels
+
+    def get_channel_priorities(self,quiet=1):
+        global channel_priority
+        if quiet<2 :
+            print ("CHANNEL PRIORITIES:",end=" ")
+            for v in channel_priority:
+                if v is None:
+                    print (" - ",end=" ")
+                else:
+                    print ("%d"%v,end=" ")
+            print()        
+        return channel_priority
+    
+    def get_state(self,quiet=1):
+        return {
+        'cke_en':             self.get_cke_en(quiet),
+        'cmda_en':            self.get_cmda_en(quiet),
+        'sdrst_on':           self.get_sdrst_on(quiet),
+        'mcntrl_en':          self.get_mcntrl_en(quiet),
+        'enabled_channels':   self.get_enabled_channels(quiet),
+        'channel_priorities': self.get_channel_priorities(quiet),
+        'refresh_en':         self.get_refresh_en(quiet),
+        'sequences_set':      self.get_sequences_set(quiet)
+        }
+        
     def write_contol_register(self, reg_addr, data):
         """
         Write 32-bit word to the control register
@@ -202,7 +300,12 @@ class X393AxiControlStatus(object):
         Enable (disable) address, bank and command lines to the DDR3 memory
         <en> - 1 - enable, 0 - disable
         """
+        global cmda_en
+        en=(0,1)[en]
+        if self.verbose>0:
+            print ("ENABLE CMDA %s"%str(en))
         self.write_contol_register(vrlg.MCONTR_PHY_0BIT_ADDR +  vrlg.MCONTR_PHY_0BIT_CMDA_EN + en, 0);
+        cmda_en=en
             
     def enable_cke(self,
                     en): # input en;
@@ -210,7 +313,12 @@ class X393AxiControlStatus(object):
         Enable (disable) CKE - clock enable to DDR3 memory 
         <en> - 1 - enable, 0 - disable
         """
+        global  cke_en
+        en=(0,1)[en]
+        if self.verbose>0:
+            print ("ENABLE CKE %s"%str(en))
         self.write_contol_register(vrlg.MCONTR_PHY_0BIT_ADDR +  vrlg.MCONTR_PHY_0BIT_CKE_EN + en, 0);
+        cke_en=en
 
     def activate_sdrst(self,
                     en): # input en;
@@ -218,32 +326,49 @@ class X393AxiControlStatus(object):
         Activate SDRST (reset) to DDR3 memory 
         <en> - 1 - activate (low), 0 - deactivate (high)
         """
+        global sdrst_on
+        en=(0,1)[en]
+        if self.verbose>0:
+            print ("ACTIVATE SDRST %s"%str(en))
         self.write_contol_register(vrlg.MCONTR_PHY_0BIT_ADDR +  vrlg.MCONTR_PHY_0BIT_SDRST_ACT + en, 0);
+        sdrst_on=en
 
     def enable_refresh(self,
-                    en): # input en;
+                       en): # input en;
         """
         Enable (disable) refresh of the DDR3 memory 
         <en> - 1 - enable, 0 - disable
         """
+        global  refresh_en
+        en=(0,1)[en]
+        if self.verbose>0:
+            print ("ENABLE REFRESH %s"%str(en))
         self.write_contol_register(vrlg.MCONTR_TOP_0BIT_ADDR +  vrlg.MCONTR_TOP_0BIT_REFRESH_EN + en, 0);
+        refresh_en=en
         
     def enable_memcntrl(self,
-                    en): # input en;
+                        en): # input en;
         """
         Enable memory controller module 
         <en> - 1 - enable, 0 - disable
         """
+        global  mcntrl_en
+        en=(0,1)[en]
+        if self.verbose>0:
+            print ("ENABLE MEMCTRL %s"%str(en))
         self.write_contol_register(vrlg.MCONTR_TOP_0BIT_ADDR +  vrlg.MCONTR_TOP_0BIT_MCONTR_EN + en, 0);
-        
+        mcntrl_en=en
     def enable_memcntrl_channels(self,
                                  chnen): # input [15:0] chnen; // bit-per-channel, 1 - enable;
         """
         Enable memory controller channels (all at once control) 
         <chnen> - 16-bit control word with per-channel enable bits (bit0 - chn0, ... bit15 - chn15)
         """
-        self.enabled_channels = chnen; # currently enabled memory channels
-        self.write_contol_register(vrlg.MCONTR_TOP_16BIT_ADDR +  vrlg.MCONTR_TOP_16BIT_CHN_EN, self.enabled_channels & 0xffff) # {16'b0,chnen});
+        global  enabled_channels
+        enabled_channels = chnen # currently enabled memory channels
+        self.write_contol_register(vrlg.MCONTR_TOP_16BIT_ADDR +  vrlg.MCONTR_TOP_16BIT_CHN_EN, enabled_channels & 0xffff) # {16'b0,chnen});
+        if self.verbose>0:
+            print ("ENABLED MEMCTRL CHANNELS 0x%x (word)"%enabled_channels)
 
     def enable_memcntrl_en_dis(self,
                                chn, # input [3:0] chn;
@@ -253,19 +378,26 @@ class X393AxiControlStatus(object):
         <chn> - 4-bit channel select
         <en> -  1 - enable, 0 - disable of the selected channel
         """
+        global  enabled_channels
         if en:
-            self.enabled_channels = self.enabled_channels | (1<<chn);
+            enabled_channels |=  1<<chn;
         else:
-            self.enabled_channels = self.enabled_channels & ~(1<<chn);
-        self.write_contol_register(vrlg.MCONTR_TOP_16BIT_ADDR + self. MCONTR_TOP_16BIT_CHN_EN, self.enabled_channels & 0xffff) #  {16'b0,ENABLED_CHANNELS});
+            enabled_channels &= ~(1<<chn);
+        self.write_contol_register(vrlg.MCONTR_TOP_16BIT_ADDR + self. MCONTR_TOP_16BIT_CHN_EN, enabled_channels & 0xffff) #  {16'b0,ENABLED_CHANNELS});
+        if self.verbose>0:
+            print ("ENABLED MEMCTRL CHANNELS 0x%x (en/dis)"%enabled_channels)
 
     def configure_channel_priority(self,
                                    chn, # input [ 3:0] chn;
-                                   priority): #input [15:0] priority; // (higher is more important)
+                                   priority=0): #input [15:0] priority; // (higher is more important)
         """
         Configure channel priority  
         <chn> -      4-bit channel select
         <priority> - 16-bit priority value (higher value means more important)
         """
+        global channel_priority
         self.write_contol_register(vrlg.MCONTR_ARBIT_ADDR + chn, priority  & 0xffff)# {16'b0,priority});
+        if self.verbose>0:
+            print ("SET CHANNEL %d priority=0x%x"%(chn,priority))
+        channel_priority[chn]=priority
 

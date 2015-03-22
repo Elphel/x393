@@ -61,7 +61,7 @@ __version__ = 0.1
 __date__ = '2015-03-01'
 __updated__ = '2015-03-01'
 
-DEBUG = 1
+DEBUG = 0 # 1
 TESTRUN = 0
 PROFILE = 0
 QUIET=1 # more try/excepts
@@ -209,7 +209,7 @@ USAGE
         args = parser.parse_args()
         if not args.exceptions:
             args.exceptions=0
-            
+          
             
         QUIET = (1,0)[args.exceptions]
 #        print ("args.exception=%d, QUIET=%d"%(args.exceptions,QUIET))
@@ -223,6 +223,14 @@ USAGE
         #print("--- commands=%s"%   str(args.commands))
             #        paths = args.paths
         verbose = args.verbose
+        if not verbose:
+            verbose=0
+        print("args=%s"%(str(args)))  
+        print("sys.argv=%s"%(str(sys.argv))) 
+        print("DEBUG=%s"%(str(DEBUG))) 
+        print ("verbose=%d"%verbose)
+        
+        
         paths=[]
         if (args.paths):
             for group in args.paths:
@@ -247,7 +255,7 @@ USAGE
                 preDefines[kv[0].strip("`")]=kv[1]
         #print("+++ defines=%s"%      str(preDefines))
 
-        if verbose > 0:
+        if verbose > -1: # always
 #            print("Verbose mode on "+hex(verbose))
             args.parameters.append(['VERBOSE=%d'%verbose]) # add as verilog parameter
         

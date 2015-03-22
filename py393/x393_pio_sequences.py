@@ -33,12 +33,15 @@ __status__ = "Development"
 #x393_pio_sequences
 #from import_verilog_parameters import VerilogParameters
 from x393_mem import X393Mem
-from x393_axi_control_status import X393AxiControlStatus
+#from x393_axi_control_status import X393AxiControlStatus
+import x393_axi_control_status
 from x393_mcntrl_buffers     import X393McntrlBuffers
 #from verilog_utils import * # concat, bits 
 from verilog_utils import concat, bits 
 #from x393_axi_control_status import concat, bits
 import vrlg # global parameters
+from time import sleep
+
 class X393PIOSequences(object):
     DRY_MODE= True # True
     DEBUG_MODE=1
@@ -50,7 +53,8 @@ class X393PIOSequences(object):
         self.DEBUG_MODE=debug_mode
         self.DRY_MODE=dry_mode
         self.x393_mem=X393Mem(debug_mode,dry_mode)
-        self.x393_axi_tasks=X393AxiControlStatus(debug_mode,dry_mode)
+#        self.x393_axi_tasks=X393AxiControlStatus(debug_mode,dry_mode)
+        self.x393_axi_tasks=x393_axi_control_status.X393AxiControlStatus(debug_mode,dry_mode)
         self.x393_mcntrl_buffers= X393McntrlBuffers(debug_mode,dry_mode)
 #        self.__dict__.update(VerilogParameters.__dict__["_VerilogParameters__shared_state"]) # Add verilog parameters to the class namespace
         '''
@@ -949,3 +953,79 @@ class X393PIOSequences(object):
                         wait_complete)         # `PS_PIO_WAIT_COMPLETE )#  wait_complete; # Do not request a newer transaction from the scheduler until previous memory transaction is finished
 # temporary - for debugging:
 #        self.wait_ps_pio_done(vrlg.DEFAULT_STATUS_MODE,1) # wait previous memory transaction finished before changing delays (effective immediately)
+
+
+    def write_levelling(self,
+                        wait_complete=1, # Wait for operation to complete
+                        quiet=1):       
+        """
+        Read data in write levelling mode 
+        <wait_complete> wait write levelling operation to complete (0 - may initiate multiple PS PIO operations)
+        <quiet>    reduce output
+        returns a pair of ratios for getting "1" for 2 lanes and problem marker (should be 0)
+        """
+        numBufWords=32 # twice nrep in set_write_lev
+        self.wait_ps_pio_done(vrlg.DEFAULT_STATUS_MODE,1); # not no interrupt running cycle - delays are changed immediately
+        self.schedule_ps_pio (# schedule software-control memory operation (may need to check FIFO status first)
+                                                  vrlg.WRITELEV_OFFSET,   # input [9:0] seq_addr; # sequence start address
+                                                  0,                 # input [1:0] page;     # buffer page number
+                                                  0,                 # input       urgent;   # high priority request (only for competition with other channels, will not pass in this FIFO)
+                                                  0,                 # input       chn;      # channel buffer to use: 0 - memory read, 1 - memory write
+                                                  wait_complete)     # `PS_PIO_WAIT_COMPLETE );#  wait_complete; # Do not request a newe transaction from the scheduler until previous memory transaction is finished
+                        
+        self.wait_ps_pio_done(vrlg.DEFAULT_STATUS_MODE,1); # wait previous memory transaction finished before changing delays (effective immediately)
+        buf=self.x393_mcntrl_buffers.read_block_buf_chn (0, 0, numBufWords, (0,1)[quiet<1]) # chn=0, page=0, number of 32-bit words=32, show_rslt
+        #calculate 1-s ratio for both lanes
+        rslt=[0.0,0.0,0.0] # last word - number of "problem" bytes that have non-ones in bits [7:1]
+        
+        for i in range(0,numBufWords):
+            rslt[i & 1] += ((buf[i] & 1) +
+                            ((buf[i] >> 8) & 1) +
+                            ((buf[i] >> 16) & 1) +
+                            ((buf[i] >> 24) & 1))
+            
+            rslt[2]     += ((0,1)[(buf[i] &       0xfe) != 0]+
+                            (0,1)[(buf[i] &     0xfe00) != 0]+
+                            (0,1)[(buf[i] &   0xfe0000) != 0]+
+                            (0,1)[(buf[i] & 0xfe000000) != 0])
+        for i in range(2):
+            rslt[i]/=2*numBufWords
+        rslt[2]/=4*numBufWords
+        if quiet <1:
+            print ("WLEV lanes ratios: %f %f, non 0x00/0x01 bytes: %f"%(rslt[0],rslt[1],rslt[2]))   
+        return rslt
+    
+    def restart_ddr3(self,
+                  wait_complete=True,
+                  quiet=1):
+        """
+        Activate SDRST, enable address/command pins, remove SDRST, enable CKE,
+        Setup PS PIO
+        Set DDR3 MR0..MR3 registers
+        <wait_complete>  Do not request a new transaction from the scheduler until previous memory transaction is finished
+        <quiet> reduce output
+        """
+# enable output for address/commands to DDR chip    
+        self.x393_axi_tasks.enable_cmda(1)
+        self.x393_axi_tasks.activate_sdrst(1) # reset DDR3
+        sleep(0.1)
+# remove reset from DDR3 chip    
+        self.x393_axi_tasks.activate_sdrst(0) # was enabled at system reset
+        sleep(0.1) # actually 500 usec required
+        self.x393_axi_tasks.enable_cke(1);
+        
+        self.x393_axi_tasks.enable_memcntrl_channels(0x3)      # only channel 0 and 1 are enabled
+        self.x393_axi_tasks.configure_channel_priority(0,0)    # lowest priority channel 0
+        self.x393_axi_tasks.configure_channel_priority(1,0)    # lowest priority channel 1
+        self.enable_reset_ps_pio(1,0)       # enable, no reset
+        
+# set MR registers in DDR3 memory, run DCI calibration (long)
+        self.wait_ps_pio_ready(vrlg.DEFAULT_STATUS_MODE, 1, 2.0); # wait FIFO not half full, sync sequences, timeout 2 sec 
+        self.schedule_ps_pio ( # schedule software-control memory operation (may need to check FIFO status first)
+                        vrlg.INITIALIZE_OFFSET,   # input [9:0] seq_addr; # sequence start address
+                        0,                        # input [1:0] page;     # buffer page number
+                        0,                        # input       urgent;   # high priority request (only for competion with other channels, wiil not pass in this FIFO)
+                        0,                        # input       chn;      # channel buffer to use: 0 - memory read, 1 - memory write
+                        wait_complete );          #  wait_complete; # Do not request a newe transaction from the scheduler until previous memory transaction is finished
+# Wait PS PIO sequence DOEN
+        self.wait_ps_pio_done(vrlg.DEFAULT_STATUS_MODE, 1 , 2.0); # wait FIFO not half full, sync sequences, timeout 2 sec 

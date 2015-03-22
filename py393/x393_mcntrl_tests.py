@@ -33,7 +33,8 @@ __status__ = "Development"
 #x393_pio_sequences
 #from import_verilog_parameters import VerilogParameters
 from x393_mem                import X393Mem
-from x393_axi_control_status import X393AxiControlStatus
+#from x393_axi_control_status import X393AxiControlStatus
+import x393_axi_control_status
 from x393_pio_sequences      import X393PIOSequences
 from x393_mcntrl_timing      import X393McntrlTiming
 from x393_mcntrl_buffers     import X393McntrlBuffers
@@ -57,14 +58,15 @@ class X393McntrlTests(object):
         self.DEBUG_MODE=  debug_mode
         self.DRY_MODE=    dry_mode
         self.x393_mem=            X393Mem(debug_mode,dry_mode)
-        self.x393_axi_tasks=      X393AxiControlStatus(debug_mode,dry_mode)
+#        self.x393_axi_tasks=      X393AxiControlStatus(debug_mode,dry_mode)
+        self.x393_axi_tasks=x393_axi_control_status.X393AxiControlStatus(debug_mode,dry_mode)
         self.x393_pio_sequences=  X393PIOSequences(debug_mode,dry_mode)
         self.x393_mcntrl_timing=  X393McntrlTiming(debug_mode,dry_mode)
         self.x393_mcntrl_buffers= X393McntrlBuffers(debug_mode,dry_mode)
         self.x393_mcntrl_adjust=  X393McntrlAdjust(debug_mode,dry_mode)
 #        self.__dict__.update(VerilogParameters.__dict__["_VerilogParameters__shared_state"]) # Add verilog parameters to the class namespace
         try:
-            self.verbose=self.VERBOSE
+            self.verbose=vrlg.VERBOSE
         except:
             pass
 
@@ -148,16 +150,16 @@ class X393McntrlTests(object):
         self.x393_mcntrl_buffers.write_block_buf_chn(0,0,256); # fill block memory (channel, page, number)
 # set all delays
 ##axi_set_delays - from tables, per-pin
-        if set_per_pin_delays:
-            self.x393_mcntrl_timing.axi_set_delays() # set all individual delays, aslo runs axi_set_phase()
-        else:
-            self.x393_mcntrl_timing.axi_set_same_delays(
-                                                        vrlg.DLY_DQ_IDELAY,
-                                                        vrlg.DLY_DQ_ODELAY,
-                                                        vrlg.DLY_DQS_IDELAY,
-                                                        vrlg.DLY_DQS_ODELAY,
-                                                        vrlg.DLY_DM_ODELAY,
-                                                        vrlg.DLY_CMDA_ODELAY)
+#        if set_per_pin_delays:
+# Make it an only option TODO: do the same for the simulation!!
+        self.x393_mcntrl_timing.axi_set_delays() # set all individual delays, aslo runs axi_set_phase()
+#       else:
+#        self.x393_mcntrl_timing.axi_set_same_delays(vrlg.DLY_DQ_IDELAY,
+#                                                    vrlg.DLY_DQ_ODELAY,
+#                                                    vrlg.DLY_DQS_IDELAY,
+#                                                    vrlg.DLY_DQS_ODELAY,
+#                                                    vrlg.DLY_DM_ODELAY,
+#                                                    vrlg.DLY_CMDA_ODELAY)
 # set clock phase relative to DDR clk
 #        print("Debugging: sleeping for 1 second")
 #        sleep(1)
@@ -195,82 +197,57 @@ class X393McntrlTests(object):
         self.x393_pio_sequences.set_read_block (
                                                 5,      #  3'h5,    # bank
                                                 0x1234, # 15'h1234, # row address
+           
                                                 0x100   # 10'h100   # column address
         )
+        self.x393_axi_tasks.set_sequences_set(1) # Mark sequences as being set
     def init_ddr3(self,
+                  refresh=1,
                   wait_complete=True):
         """
         Enable address/command pins, remove SDRST, enable CKE,
         Setup PS PIO
         Set DDR3 MR0..MR3 registers
-        Enable refresh
+        Optionally enable refresh
         <wait_complete>  Do not request a new transaction from the scheduler until previous memory transaction is finished
         """
-# enable output for address/commands to DDR chip    
-        self.x393_axi_tasks.enable_cmda(1)
-# remove reset from DDR3 chip    
-        self.x393_axi_tasks.activate_sdrst(0) # was enabled at system reset
-        sleep(0.1) # actually 500 usec required
-        self.x393_axi_tasks.enable_cke(1);
+        self.x393_pio_sequences.restart_ddr3(wait_complete)
         
-        self.x393_axi_tasks.enable_memcntrl_channels(0x3)      # only channel 0 and 1 are enabled
-        self.x393_axi_tasks.configure_channel_priority(0,0)    # lowest priority channel 0
-        self.x393_axi_tasks.configure_channel_priority(1,0)    # lowest priority channel 1
-        self.x393_pio_sequences.enable_reset_ps_pio(1,0)       # enable, no reset
-        
-# set MR registers in DDR3 memory, run DCI calibration (long)
-        self.x393_pio_sequences.wait_ps_pio_ready(vrlg.DEFAULT_STATUS_MODE, 1, 2.0); # wait FIFO not half full, sync sequences, timeout 2 sec 
-        self.x393_pio_sequences.schedule_ps_pio ( # schedule software-control memory operation (may need to check FIFO status first)
-                        vrlg.INITIALIZE_OFFSET,   # input [9:0] seq_addr; # sequence start address
-                        0,                        # input [1:0] page;     # buffer page number
-                        0,                        # input       urgent;   # high priority request (only for competion with other channels, wiil not pass in this FIFO)
-                        0,                        # input       chn;      # channel buffer to use: 0 - memory read, 1 - memory write
-                        wait_complete );          #  wait_complete; # Do not request a newe transaction from the scheduler until previous memory transaction is finished
-# Wait PS PIO sequence DOEN
-        self.x393_pio_sequences.wait_ps_pio_done(vrlg.DEFAULT_STATUS_MODE, 1 , 2.0); # wait FIFO not half full, sync sequences, timeout 2 sec 
-        self.x393_axi_tasks.enable_refresh(1)
-#    axi_set_dqs_odelay('h78); #??? defaults - wrong? DLY_DQS_ODELAY=0x74
+        self.x393_axi_tasks.enable_refresh(refresh)
 
         
     def test_write_levelling(self,
-                            wait_complete, # Wait for operation to complete
-                            wlev_dqs_dly= 0x80,
-                            norm_dqs_odly=None):
+                            dqs_odly= None,
+                            wbuf_dly = None,
+                            wait_complete=1, # Wait for operation to complete
+                            quiet=0):       
         """
         Test write levelling mode 
+        <dqs_dly>  DQS output delay for write levelling mode. If it is not None,
+                   the default DQS output delay will be restored in the end
+        <wbuf_dly> Write buffer latency (currently 9)  If it is not None,
+                   the default wbuf delay will be restored in the end
         <wait_complete> wait write levelling operation to complete (0 - may initiate multiple PS PIO operations)
-        <wlev_dqs_dly>  DQS output delay for write levelling mode (default 0x80)
-        <norm_dqs_odly> DQS output delay for normal (not write levelling) mode (default 0x78)
-        returns a pair of ratios for getting "1" for 2 lanes
+        <quiet>    reduce output
+        returns a pair of ratios for getting "1" for 2 lanes and problem marker (should be 0)
         """
-        numBufWords=32 # twice nrep in set_write_lev
-        if norm_dqs_odly  is None:
-            norm_dqs_odly=vrlg.DLY_DQS_ODELAY
-# Set special values for DQS idelay for write leveling
-        self.x393_pio_sequences.wait_ps_pio_done(vrlg.DEFAULT_STATUS_MODE,1); # not no interrupt running cycle - delays are changed immediately
-##        self.x393_mcntrl_timing.axi_set_dqs_idelay_wlv()
+        if not dqs_odly is None:
+            self.x393_mcntrl_timing.axi_set_dqs_odelay(dqs_odly)
 # Set write buffer (from DDR3) WE signal delay for write leveling mode
-##        self.x393_mcntrl_timing.axi_set_wbuf_delay(vrlg.WBUF_DLY_WLV)
-# TODO: Set configurable delay time instead of #80
-##        self.x393_mcntrl_timing.axi_set_dqs_odelay(wlev_dqs_dly) # 'h80); # 'h80 - inverted, 'h60 - not - 'h80 will cause warnings during simulation
-        self.x393_pio_sequences.schedule_ps_pio (# schedule software-control memory operation (may need to check FIFO status first)
-                                                  vrlg.WRITELEV_OFFSET,   # input [9:0] seq_addr; # sequence start address
-                                                  0,                 # input [1:0] page;     # buffer page number
-                                                  0,                 # input       urgent;   # high priority request (only for competition with other channels, will not pass in this FIFO)
-                                                  0,                 # input       chn;      # channel buffer to use: 0 - memory read, 1 - memory write
-                                                  wait_complete)     # `PS_PIO_WAIT_COMPLETE );#  wait_complete; # Do not request a newe transaction from the scheduler until previous memory transaction is finished
-                        
-        self.x393_pio_sequences.wait_ps_pio_done(vrlg.DEFAULT_STATUS_MODE,1); # wait previous memory transaction finished before changing delays (effective immediately)
-        buf=self.x393_mcntrl_buffers.read_block_buf_chn (0, 0, numBufWords, (0,1)[self.verbose>1]) # chn=0, page=0, number of 32-bit words=32, show_rslt
-        #calculate 1-s ratio for both lanes
-        rslt=[0.0,0.0]
-        for i in range(0,numBufWords):
-            rslt[i & 1]+=(buf[i] & 1) + ((buf[i] >> 8) & 1) + ((buf[i] >> 16) & 1) + ((buf[i] >> 24) & 1)
-        for i in range(2):
-            rslt[i]/=2*numBufWords    
-##        self.x393_mcntrl_timing.axi_set_dqs_idelay_nominal()
-##        self.x393_mcntrl_timing.axi_set_dqs_odelay(norm_dqs_odly) # 'h78);
-##        self.x393_mcntrl_timing.axi_set_wbuf_delay(vrlg.WBUF_DLY_DFLT); #DFLT_WBUF_DELAY
+        if not wbuf_dly is None:
+            self.x393_mcntrl_timing.axi_set_wbuf_delay(wbuf_dly)
+            
+        rslt= self.x393_pio_sequences.write_levelling(
+                     wait_complete,
+                     quiet)
+        #restore values to defaults (only if changed)
+        if not dqs_odly is None:
+            self.x393_mcntrl_timing.axi_set_dqs_odelay()
+# Set write buffer (from DDR3) WE signal delay for write leveling mode
+        if not wbuf_dly is None:
+            self.x393_mcntrl_timing.axi_set_wbuf_delay()
+#        if quiet <2:
+#            print ("WLEV lanes ratios: %f %f, non 0x00/0x01 bytes: %f"%(rslt[0],rslt[1],rslt[2]))   
         return rslt
    
     def test_read_pattern(self,
