@@ -57,6 +57,7 @@ class X393McntrlAdjust(object):
     x393_mcntrl_timing=None
     x393_mcntrl_buffers=None
     verbose=1
+    adjustment_state={}
     def __init__(self, debug_mode=1,dry_mode=True):
         self.DEBUG_MODE=  debug_mode
         self.DRY_MODE=    dry_mode
@@ -657,7 +658,7 @@ class X393McntrlAdjust(object):
                             for j in range (1,NUM_FINE_STEPS):
                                 if ( (len(res_avg[index+j])>0)):
                                     v=res_avg[index+j][t];
-                                    #correction to the initila step==1
+                                    #correction to the initial step==1
                                     d=(v-f)/(s-f)*NUM_FINE_STEPS-j
                                     #average
                                     corr[j]+=wd*d
@@ -1141,7 +1142,7 @@ class X393McntrlAdjust(object):
             if d[1]>0:
                 numValid += 1
         if numValid < 2:
-            raise Exception("Too few points wioth measured marginal CMDA odelay: %d"%numValid)
+            raise Exception("Too few points with measured marginal CMDA odelay: %d"%numValid)
         maxPosSep=0
         firstIndex=None
         for i,d in enumerate(cmda_marg_dly):
@@ -1192,6 +1193,7 @@ class X393McntrlAdjust(object):
                 fineCorr[i]/=fineCorrN[i]
         if (quiet <2):
             print ("fineCorr = %s"%str(fineCorr))
+            
         variantStep=-a*numPhaseSteps #how much b changes when moving over the full SDCLK period
         if (quiet <2):
             print ("Delay matching the full SDCLK period = %f"%(variantStep))
@@ -1208,6 +1210,7 @@ class X393McntrlAdjust(object):
             b_period+=1
         if (quiet <2):
             print ("a=%f, b=%f, b_period=%d"%(a,b,b_period))
+
         # Find best minimal delay (with higher SDCLK frequency delay range can exceed the period and there could
         # be more than one solution
         bestSolPerErr=[] #list ot tuples, each containing(best cmda_odelay,number of added periods,error)  
@@ -1304,75 +1307,340 @@ class X393McntrlAdjust(object):
                 else:
                     print()
 #TODO: Add 180 shift to get center, not marginal cmda_odelay        
+        self.adjustment_state.update(rdict)
         return rdict
         
+    def adjust_write_levelling(self,
+                               start_phase=0,
+                               reinits=1, #higher the number - more re-inits are used (0 - only where absolutely necessary
+                               invert=0, # anti-align DQS (should be 180 degrees off from the normal one)
+                               max_phase_err=0.1,
+                               quiet=1
+                               ):
         """
-        With 400MHz range of dealys approximately matches the full period, but with higher
-        frequency it may be possible to use several cmda delays for the same phase shift
-        So we'll create a list for all the phase shifts (of the period), each having one or
-        several best pairs - cmda (integer 0..159) delays and error (in ns) that this delay
-        setting will cause for command/data setup/hold to SDCLK.
-        Actual optimal delays are shifted by numPhaseSteps/2 (180 degrees of SDCLK)
+        Find DQS odelay for each phase value
+        Depends on adjust_cmda_odelay results
         """
-        """
-        #max_phase_err=0.1
-        max_dly_err=a*max_phase_err*numPhaseSteps # maximal allowed delay error (in 160-step scale)
-        valid_cmda_delays=[[]]*numPhaseSteps
-        variantStep=a*numPhaseSteps # delay step to get the same phase (in normalized 160 step scale)
-        minBranchIndex=None
-        maxBranchIndex=None
-        for phase in range(numPhaseSteps):
-            x=phase-firstIndex
-            y0=a*x+b
-            #find the lowest approximate solution to consider
-            if y0 > (-max_dly_err):
-                while (y0 >= (variantStep-max_dly_err)):
-                    y0 -= variantStep
+        if not self.adjustment_state['cmda_bspe']:
+            raise Exception("Command/Address delay calibration data is not found - please run 'adjust_cmda_odelay' command first")
+        start_phase &= 0xff
+        if start_phase >=128:
+            start_phase -= 256 # -128..+127
+        max_lin_dly=159
+        wlev_max_bad=0.01 # <= OK, > bad
+        numPhaseSteps=len(self.adjustment_state['cmda_bspe'])
+        if quiet < 2:
+            print("cmda_bspe = %s"%str(self.adjustment_state['cmda_bspe']))
+            print ("numPhaseSteps=%d"%(numPhaseSteps))
+        def wlev_phase_step (phase):
+            def norm_wlev(wlev): #change results to invert wlev data
+                if invert:
+                    return [1.0-wlev[0],1.0-wlev[1],wlev[2]]
+                else:
+                    return wlev
+            dly90=int(0.25*numPhaseSteps*abs(self.adjustment_state['cmda_odly_a']) + 0.5) # linear delay step ~ SDCLK period/4
+            cmda_odly_data=self.adjustment_state['cmda_bspe'][phase % numPhaseSteps]
+            if (not cmda_odly_data): # phase is invalid for CMDA
+                return None
+            cmda_odly_lin=cmda_odly_data['ldly']
+            self.x393_mcntrl_timing.axi_set_phase(phase,quiet=quiet)
+            self.x393_mcntrl_timing.axi_set_cmda_odelay(self.combine_delay(cmda_odly_lin),quiet=quiet)
+            d_low=0
+            while d_low <= max_lin_dly:
+                self.x393_mcntrl_timing.axi_set_dqs_odelay(self.combine_delay(d_low),quiet=quiet)
+                wlev_rslt=norm_wlev(self.x393_pio_sequences.write_levelling(1, quiet+1))
+                if wlev_rslt[2]>wlev_max_bad: # should be 0 - otherwise wlev did not work (CMDA?)
+                    raise Exception("Write levelling gave unespected data, aborting (may be wrong command/address delay, incorrectly initializaed")
+                if (wlev_rslt[0] <= wlev_max_bad) and (wlev_rslt[1] <= wlev_max_bad):
+                    break
+                d_low+=dly90
             else:
-                while (y0<(-max_dly_err)):
-                    y0 += variantStep
-            while y0 <= (159+max_dly_err): #May be never when using higher delay reference clock (300MHz) with the same SDCLK
-                #try delays in the range of +/- 5 steps from "ideal" and find the lowest error
+                if quiet < 3:
+                    print ("Failed to find d_low during initial quadrant search for phase=%d (0x%x)"%(phase,phase))
+                return None
+            # Now find d_high>d_low to get both bytes result above
+            d_high= d_low+dly90   
+            while d_high <= max_lin_dly:
+                self.x393_mcntrl_timing.axi_set_dqs_odelay(self.combine_delay(d_high),quiet=quiet)
+                wlev_rslt=norm_wlev(self.x393_pio_sequences.write_levelling(1, quiet+1))
+                if wlev_rslt[2]>wlev_max_bad: # should be 0 - otherwise wlev did not work (CMDA?)
+                    raise Exception("Write levelling gave unespected data, aborting (may be wrong command/address delay, incorrectly initializaed")
+                if (wlev_rslt[0] >= (1.0 -wlev_max_bad)) and (wlev_rslt[1] >= (1.0-wlev_max_bad)):
+                    break
+                d_high+=dly90
+            else:
+                if quiet < 3:
+                    print ("Failed to find d_high during initial quadrant search for phase=%d (0x%x)"%(phase,phase))
+                return None
+            # Narrow range while both bytes fit
+            if quiet < 2:
+                print ("After quadrant adjust d_low=%d, d_high=%d"%(d_low,d_high))
+            
+            while d_high > d_low:
+                dly= (d_high + d_low)//2
+                self.x393_mcntrl_timing.axi_set_dqs_odelay(self.combine_delay(dly),quiet=quiet)
+                wlev_rslt=norm_wlev(self.x393_pio_sequences.write_levelling(1, quiet+1))
+                if wlev_rslt[2]>wlev_max_bad: # should be 0 - otherwise wlev did not work (CMDA?)
+                    raise Exception("Write levelling gave unespected data, aborting (may be wrong command/address delay, incorrectly initializaed")
+                if (wlev_rslt[0] <= wlev_max_bad) and (wlev_rslt[1] <= wlev_max_bad):
+                    if d_low == dly:
+                        break
+                    d_low=dly
+                elif (wlev_rslt[0] >= (1.0 -wlev_max_bad)) and (wlev_rslt[1] >= (1.0-wlev_max_bad)):
+                    d_high=dly
+                else:
+                    break #mixed results
+            # Now process each byte separately
+            if quiet < 2:
+                print ("After common adjust d_low=%d, d_high=%d"%(d_low,d_high))
+            d_low=[d_low,d_low]
+            d_high=[d_high,d_high]
+            for i in range(2):
+                while d_high[i] > d_low[i]: 
+                    dly= (d_high[i] + d_low[i])//2
+                    if quiet < 1:
+                        print ("i=%d, d_low=%d, d_high=%d, dly=%d"%(i,d_low[i],d_high[i],dly))
+                    dly01=[d_low[0],d_low[1]]
+                    dly01[i]=dly
+                    self.x393_mcntrl_timing.axi_set_dqs_odelay(self.combine_delay(dly01),quiet=quiet)
+                    wlev_rslt=norm_wlev(self.x393_pio_sequences.write_levelling(1, quiet+1))
+                    if wlev_rslt[2]>wlev_max_bad: # should be 0 - otherwise wlev did not work (CMDA?)
+                        raise Exception("Write levelling gave unespected data, aborting (may be wrong command/address delay, incorrectly initializaed")
+                    if wlev_rslt[i] <= wlev_max_bad:
+                        if d_low[i] == dly:
+                            break
+                        d_low[i]=dly
+                    else:
+                        d_high[i]=dly
+            return d_low
+
+        if (start_phase+numPhaseSteps)>128:
+            old_start_phase=start_phase
+            while (start_phase+numPhaseSteps)>128:
+                start_phase -= numPhaseSteps
+            print("Selected scan phase range (%d..%d) does not fit into -128..+127, changing it to %d..%d)"%
+                  (old_start_phase,old_start_phase+numPhaseSteps-1,start_phase,start_phase+numPhaseSteps-1))
+#start_phase
+        if reinits > 1: # Normally not needed (When started after adjust_cmda_odelay, but refresh should be off (init will do that)
+            self.x393_pio_sequences.restart_ddr3()
+        wlev_dqs_delays=[None]*numPhaseSteps
+        
+        for phase in range(start_phase,start_phase+numPhaseSteps):
+            phase_mod=phase % numPhaseSteps
+            if quiet <3:
+                print ("%d(%d):"%(phase,phase_mod),end=" ")
+                sys.stdout.flush()
+            dlys=wlev_phase_step(phase)
+            wlev_dqs_delays[phase_mod]=dlys
+            if quiet <3:
+                print ("%s"%str(dlys),end=" ")
+                sys.stdout.flush()
+            if quiet <2:
+                print()
+                
+        if quiet <2:
+            for i,d in enumerate(wlev_dqs_delays):
+                if d:
+                    print ("%d %d %d"%(i, d[0], d[1]))
+                else:
+                    print ("%d"%(i))
+            
+        #find the largest positive step of cmda_marg_dly while cyclically increasing phase
+        numValid=0
+        for i,d in enumerate(wlev_dqs_delays):
+            if d:
+                numValid += 1
+        if numValid < 2:
+            raise Exception("Too few points with DQS output delay in write levelling mode: %d"%numValid)
+
+        firstIndex=[None]*2
+        for lane in range(2):
+            maxPosSep=0
+            for i,d in enumerate(wlev_dqs_delays):
+                if d>0:
+                    for j in range(1,numPhaseSteps):
+                        d1=wlev_dqs_delays[(i + j) % numPhaseSteps]
+                        if d1: # valid data
+                            if (d1[lane] - d[lane]) > maxPosSep:
+                                maxPosSep = d1[lane] - d[lane]
+                                firstIndex[lane]=(i + j) % numPhaseSteps
+                            break;
+        #now data from  firstIndex to (firstIndex+numPhaseSteps)%numPhaseSteps is ~monotonic - apply linear approximation
+        if quiet <2:
+            print ("firstIndices=[%d,%d]"%(firstIndex[0],firstIndex[1]))
+        #Linear approximate each lane
+        a=[None]*2
+        b=[None]*2
+        for lane in range(2):
+            S0=0
+            SX=0
+            SY=0
+            SX2=0
+            SXY=0
+            for x in range(numPhaseSteps):
+                dlys=wlev_dqs_delays[(x+firstIndex[lane]) % numPhaseSteps]
+                if dlys:
+                    y=dlys[lane]+0.5
+                    S0+=1
+                    SX+=x
+                    SY+=y
+                    SX2+=x*x
+                    SXY+=x*y
+    #            print("x=%f, index=%d, y=%f, S0=%f, SX=%f, SY=%f, SX2=%f, SXY=%f"%(x, (x+firstIndex) % numPhaseSteps, y, S0, SX, SY, SX2, SXY))
+            a[lane] = (SXY*S0 - SY*SX) / (SX2*S0 - SX*SX)
+            b[lane] = (SY*SX2 - SXY*SX) / (SX2*S0 - SX*SX)
+        if quiet < 2:
+            print ("a=[%f, %f], b=[%f, %f]"%(a[0],a[1],b[0],b[1]))
+
+        # fine delay corrections
+        fineCorr= [[0.0]*5,[0.0]*5] # not [[0.0]*5]*2 ! - they will poin to the same top element 
+        fineCorrN=[[0]*5,[0]*5]     # not [[0]*5]*2 !
+        for lane in range(2):
+            for x in range(numPhaseSteps):
+                dlys=wlev_dqs_delays[(x+firstIndex[lane]) % numPhaseSteps]
+                if dlys:
+                    y=dlys[lane]
+                    i=y % 5
+                    y+=0.5
+                    diff=y- (a[lane] * x + b[lane])
+                    fineCorr[lane][i]  += diff
+                    fineCorrN[lane][i] += 1
+#                    print("lane,x,y,i,diff,fc,fcn= %d, %d, %f, %d, %f, %f, %d"%(lane,x,y,i,diff,fineCorr[lane][i],fineCorrN[lane][i]))
+#            print ("lane=%d, fineCorr=%s, fineCorrN=%s"%(lane, fineCorr[lane], fineCorrN[lane]))
+            for i in range(5):
+                if fineCorrN[lane][i]>0:
+                    fineCorr[lane][i]/=fineCorrN[lane][i]
+#            print ("lane=%d, fineCorr=%s, fineCorrN=%s"%(lane, fineCorr[lane], fineCorrN[lane]))
+                    
+        if (quiet <2):
+            print ("fineCorr lane0 = %s"%str(fineCorr[0])) # Why ar they both the same?
+            print ("fineCorr lane1 = %s"%str(fineCorr[1]))
+        variantStep=[-a[0]*numPhaseSteps,-a[1]*numPhaseSteps] #how much b changes when moving over the full SDCLK period
+        if (quiet <2):
+            print ("Delay matching the full SDCLK period = [%f, %f]"%(variantStep[0],variantStep[1]))
+        b_period=[None]*2
+        for lane in range(2):
+            b[lane]-=a[lane]*firstIndex[lane] # recalculate b for phase=0
+            b_period[lane]=0
+            if (quiet <2):
+                print ("a[%d]=%f, b[%d]=%f"%(lane,a[lane],lane,b[lane]))
+            #Make b fit into 0..max_lin_dly range
+            while (b[lane] > max_lin_dly):
+                b[lane]-=variantStep[lane]
+                b_period[lane]-=1
+            while (b[lane] < 0):
+                b[lane] += variantStep[lane] # can end up having b>max_lin_dly - if the phase adjust by delay is lower than full period
+                b_period[lane] += 1
+        if (quiet <2):
+            print ("a[0]=%f, b[0]=%f, b_period[0]=%d"%(a[0],b[0],b_period[0]))
+            print ("a[1]=%f, b[1]=%f, b_period[1]=%d"%(a[1],b[1],b_period[1]))
+            
+        # Find best minimal delay (with higher SDCLK frequency delay range can exceed the period and there could
+        # be more than one solution
+        bestSolPerErr=[[],[]] # pair (for two lanes) of lists ot tuples, each containing(best cmda_odelay,number of added periods,error)
+        max_dly_err=[abs(a[0])*max_phase_err*numPhaseSteps, # maximal allowed delay error (in 160-step scale)
+                     abs(a[1])*max_phase_err*numPhaseSteps]
+        if (quiet <2):
+            print("Max dly error=%s"%(str(max_dly_err)))
+        for lane in range(2):
+            for phase in range (numPhaseSteps):
+                periods=0 # b_period[lane]
+                y=a[lane]*phase+b[lane]
+                y0=y
+                #find the lowest approximate solution to consider
+                if y0 > (-max_dly_err[lane]):
+                    while (y0 >= (variantStep[lane]-max_dly_err[lane])):
+                        y0 -= variantStep[lane]
+                        periods -= 1
+                else:
+                    while (y0<(-max_dly_err[lane])):
+                        y0 += variantStep[lane]
+                        periods += 1
                 dly_min= max(0,int(y0-4.5))
-                dly_max= max(159,int(y0+5.5))
+                dly_max= min(max_lin_dly,int(y0+5.5))
+                dly_to_try=[]
+                for d in range(dly_min,dly_max+1):
+                    dly_to_try.append((d,periods))
+                if (y0<0): # add a second range to try (higher delay values
+                    y0+=variantStep[lane]
+                    periods += 1
+                    dly_min= max(0,int(y0-4.5))
+                    dly_max= min(max_lin_dly,int(y0+5.5))
+                    for d in range(dly_min,dly_max+1):
+                        dly_to_try.append((d,periods))
                 bestDly=None
                 bestDiff=None
-                for dly in range(dly_min,dly_max+1):
-                    actualDelay=dly-fineCorr[dly % 5] # delay corrected for the non-uniform 160-scale
-                    diff=actualDelay-y0
+                bestPeriods=None
+                for dp in dly_to_try:
+                    actualDelay=dp[0]-fineCorr[lane][dp[0] % 5] # delay corrected for the non-uniform 160-scale
+                    diff=actualDelay-(y+variantStep[lane]*dp[1]) # dp[1] - number of added/removed full periods
                     if (bestDiff is None) or (abs(bestDiff) > abs(diff)):
                         bestDiff = diff
-                        bestDly =  dly
+                        bestDly =  dp[0]
+                        bestPeriods= dp[1]
+                phase_rslt=() #Default, if nothing was found
                 if not bestDiff is None:
-                    branchIndex=int(((y0-(a*x+b))/variantStep) + 0.5)
-                    valid_cmda_delays[phase].append((bestDly,bestDiff,branchIndex))
-                    if (minBranchIndex is None) or (branchIndex < minBranchIndex):
-                        minBranchIndex = branchIndex     
-                    if (maxBranchIndex is None) or (branchIndex > maxBranchIndex):
-                        maxBranchIndex = branchIndex     
-                y0+=variantStep
-#print for plotting  - find min/max for                
-        for phase in range(numPhaseSteps):
-            x=phase-firstIndex
-            y0=a*x+b
-            dlys={}
-            diffs={}
-            for i,v in enumerate(valid_cmda_delays[phase]):
-                dlys[v[2]]= v[0]
-                diffs[v[2]]=v[1]
-            print ("%3d: %3d"%(phase,cmda_marg_dly[phase][1]),end=" ")
-            for branch in range(minBranchIndex, maxBranchIndex+1):
-                if branch in dlys:
-                    print("%d"%dlys[branch],end=" ")
-                else:
-                    print("",end=" ")
-            for branch in range(minBranchIndex, maxBranchIndex+1):
-                if branch in diffs:
-                    print("%f"%diffs[branch],end=" ")
-                else:
-                    print("",end=" ")
-        
+                    phase_rslt=(bestDly,bestPeriods,bestDiff)
+                if (quiet <2):
+                    print ("%d:%d: %s %s"%(lane, phase, str(dly_to_try), str(phase_rslt)) )
                 
-                            
-## TODO: add 0.5 to result, split low/high bits (as done in adjust_random    
-       """ 
+                bestSolPerErr[lane].append(phase_rslt)
+        if (quiet <2):
+            for i in range(numPhaseSteps): # enumerate(cmda_marg_dly):
+                d=wlev_dqs_delays[i]
+                if d:
+                    print ("%d %d %d"%(i, d[0], d[1]),end=" ")
+                else:
+                    print ("%d X X"%(i),end=" ")
+                for lane in range(2):
+                    bspe=bestSolPerErr[lane][i]
+                    if bspe:
+                        print("%d %d %f"%(bspe[0], bspe[1], bspe[2]),end=" ")
+                    else:
+                        print("X X X",end=" ")
+                print()
+        wlev_bspe=[[],[]]
+        for lane in range (2):
+            for phase in range (numPhaseSteps):
+                bspe=bestSolPerErr[lane][phase]
+                if bspe:
+                    wlev_bspe[lane].append({'ldly':bspe[0],
+                                             'period':bspe[1]+b_period[lane], # b_period - shift from the branch
+                                                                        # where phase starts from the longest cmda_odelay and goes down
+                                             'err':bspe[2]})
+                else:
+                    wlev_bspe[lane].append({})
+                
+        rdict={"wlev_dqs_odly_a":    a, #[,]
+               "wlev_dqs_odly_b":    b,#[,]
+               "wlev_dqs_period":    b_period, # 
+               "wlev_dqs_fine_corr": fineCorr,
+               "wlev_dqs_bspe":      wlev_bspe}
+        if (quiet <3):
+            print("\nwrite levelling DQS output delay adjustmet results:")
+            print('wlev_dqs0_odly_a:    %f'%(rdict['wlev_dqs_odly_a'][0]))
+            print('wlev_dqs1_odly_a:    %f'%(rdict['wlev_dqs_odly_a'][1]))
+            print('wlev_dqs0_odly_b:    %f'%(rdict['wlev_dqs_odly_b'][0]))
+            print('wlev_dqs1_odly_b:    %f'%(rdict['wlev_dqs_odly_b'][1]))
+            print('wlev_dqs0_period:    %d'%(rdict['wlev_dqs_period'][0]))
+            print('wlev_dqs1_period:    %d'%(rdict['wlev_dqs_period'][1]))
+            print('wlev_dqs0_fine_corr: %s'%(rdict['wlev_dqs_fine_corr'][0]))
+            print('wlev_dqs1_fine_corr: %s'%(rdict['wlev_dqs_fine_corr'][1]))
+            print("\nPhase Measured_DQS0 Measured_DQS1 DQS0 PERIODS0*10 ERR0*10 DQS1 PERIODS1*10 ERR1*10")
+            for i in range(numPhaseSteps): # enumerate(cmda_marg_dly):
+                d=wlev_dqs_delays[i]
+                if d:
+                    print ("%d %d %d"%(i, d[0], d[1]),end=" ")
+                else:
+                    print ("%d X X"%(i),end=" ")
+                for lane in range(2):
+                    bspe=rdict['wlev_dqs_bspe'][lane][i] # bestSolPerErr[lane][i]
+                    if bspe:
+                        print("%d %d %f"%(bspe['ldly'], 10*bspe['period'], 10*bspe['err']),end=" ")
+                    else:
+                        print("X X X",end=" ")
+                print()            
+        self.adjustment_state.update(rdict)
+#        print (self.adjustment_state)
+        return rdict
+                        

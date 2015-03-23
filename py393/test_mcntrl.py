@@ -225,10 +225,10 @@ USAGE
         verbose = args.verbose
         if not verbose:
             verbose=0
-        print("args=%s"%(str(args)))  
-        print("sys.argv=%s"%(str(sys.argv))) 
-        print("DEBUG=%s"%(str(DEBUG))) 
-        print ("verbose=%d"%verbose)
+#        print("args=%s"%(str(args)))  
+#        print("sys.argv=%s"%(str(sys.argv))) 
+#        print("DEBUG=%s"%(str(DEBUG))) 
+#        print ("verbose=%d"%verbose)
         
         
         paths=[]

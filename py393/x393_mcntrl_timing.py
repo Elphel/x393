@@ -222,51 +222,58 @@ class X393McntrlTiming(object):
         self.x393_axi_tasks.write_contol_register(vrlg.DLY_SET,0); # set all delays
         
     def axi_set_dqs_idelay(self,
-                           delay=None): # input [7:0] delay;
+                           delay=None, # input [7:0] delay;
+                           quiet=1):
         """
         Set all DQs input delays to the same value
         <delay> 8-bit (5+3) delay value to use or a tuple/list with a pair for (lane0, lane1)
                 if delay is None will restore default values
+        <quiet> reduce output                  
         """
         if delay is None:
             delay=(vrlg.get_default_field("DLY_LANE0_IDELAY",8),vrlg.get_default_field("DLY_LANE1_IDELAY",8))
         if isinstance(delay,(int,long)):
             delay=(delay,delay)
-        if self.DEBUG_MODE > 1:
+        if quiet < 2:
             print("SET DQS IDELAY="+hexMultiple(delay)) # hexMultiple
         self.axi_set_multiple_delays(vrlg.LD_DLY_LANE0_IDELAY, 8, 1, delay[0], "DLY_LANE0_IDELAY")
         self.axi_set_multiple_delays(vrlg.LD_DLY_LANE1_IDELAY, 8, 1, delay[1], "DLY_LANE1_IDELAY")
         self.x393_axi_tasks.write_contol_register(vrlg.DLY_SET,0); # set all delays
 
     def axi_set_dqs_odelay(self,
-                           delay=None): # input [7:0] delay;
+                           delay=None, # input [7:0] delay;
+                           quiet=1):
         """
         Set all DQs OUTput delays to the same value
         <delay> 8-bit (5+3) delay value to use or a tuple/list with a pair for (lane0, lane1)
                 if delay is None will restore default values
+        <quiet> reduce output                  
+                
         """
         if delay is None:
             delay=(vrlg.get_default_field("DLY_LANE0_ODELAY",8),vrlg.get_default_field("DLY_LANE1_ODELAY",8))
         if isinstance(delay,(int,long)):
             delay=(delay,delay)
-        if self.DEBUG_MODE > 1:
+        if quiet < 2:
             print("SET DQS ODELAY="+hexMultiple(delay)) # hexMultiple
         self.axi_set_multiple_delays(vrlg.LD_DLY_LANE0_ODELAY, 8, 1, delay[0], "DLY_LANE0_ODELAY")
         self.axi_set_multiple_delays(vrlg.LD_DLY_LANE1_ODELAY, 8, 1, delay[1], "DLY_LANE1_ODELAY")
         self.x393_axi_tasks.write_contol_register(vrlg.DLY_SET,0); # set all delays
 
     def axi_set_dm_odelay (self,
-                           delay=None): # input [7:0] delay;
+                           delay=None, # input [7:0] delay;
+                           quiet=1):
         """
         Set all DM output delays to the same value
         <delay> 8-bit (5+3) delay value to use or a tuple/list with a pair for (lane0, lane1)
                 if delay is None will restore default values
+        <quiet> reduce output                  
         """
         if delay is None:
             delay=(vrlg.get_default_field("DLY_LANE0_ODELAY",9),vrlg.get_default_field("DLY_LANE1_ODELAY",9))
         if isinstance(delay,(int,long)):
             delay=(delay,delay)
-        if self.DEBUG_MODE > 1:
+        if quiet < 2:
             print("SET DQM IDELAY="+hexMultiple(delay)) # hexMultiple
         self.axi_set_multiple_delays(vrlg.LD_DLY_LANE0_ODELAY, 9, 1, delay[0], "DLY_LANE0_ODELAY")
         self.axi_set_multiple_delays(vrlg.LD_DLY_LANE1_ODELAY, 9, 1, delay[1], "DLY_LANE1_ODELAY")
