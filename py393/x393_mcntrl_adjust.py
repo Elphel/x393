@@ -45,6 +45,10 @@ from x393_mcntrl_buffers     import X393McntrlBuffers
 #from x393_axi_control_status import concat, bits
 #from time import sleep
 from verilog_utils import checkIntArgs,smooth2d
+
+import get_test_dq_dqs_data # temporary to test processing            
+import x393_lma
+
 #import vrlg
 NUM_FINE_STEPS=    5
 
@@ -210,16 +214,18 @@ class X393McntrlAdjust(object):
                  low_delay, 
                  high_delay,
                  num=8,
+                 sel=1,     # 0 - early, 1 - late read command (shift by a SDCLK period) 
                  quiet=2  ):
         """
         Scan DQS input delay values using pattern read mode
         <low_delay>   low delay value (in 'hardware' format, sparse)
         <high_delay>  high delay value (in 'hardware' format, sparse)
         <num>         number of 64-bit words to process
+        <sel>        0 - early, 1 - late read command (shift by a SDCLK period) 
         <quiet>       less output
         """
         checkIntArgs(('low_delay','high_delay','num'),locals())
-        self.x393_pio_sequences.set_read_pattern(num+1) # do not use first/last pair of the 32 bit words
+        self.x393_pio_sequences.set_read_pattern(num+1,sel) # do not use first/last pair of the 32 bit words
         low = self.split_delay(low_delay)
         high = self.split_delay(high_delay)
         results = []
@@ -286,16 +292,18 @@ class X393McntrlAdjust(object):
                        low_delay,
                        high_delay,
                        num=8,
+                       sel=1,#  0 - early, 1 - late read command (shift by a SDCLK period) 
                        quiet=2 ):
         """
         Scan DQ input delay values using pattern read mode
         <low_delay>   low delay value (in 'hardware' format, sparse)
         <high_delay>  high delay value (in 'hardware' format, sparse)
         <num>         number of 64-bit words to process
+        <sel>         0 - early, 1 - late read command (shift by a SDCLK period) 
         <quiet>       less output
         """
         checkIntArgs(('low_delay','high_delay','num'),locals())
-        self.x393_pio_sequences.set_read_pattern(num+1) # do not use first/last pair of the 32 bit words
+        self.x393_pio_sequences.set_read_pattern(num+1,sel) # do not use first/last pair of the 32 bit words
         low = self.split_delay(low_delay)
         high = self.split_delay(high_delay)
         results = []
@@ -363,6 +371,7 @@ class X393McntrlAdjust(object):
                          low_delay,
                          high_delay,
                          num=8,
+                         sel=1, # 0 - early, 1 - late read command (shift by a SDCLK period) 
                          falling=0, # 0 - use rising as delay increases, 1 - use falling
                          smooth=10,
                          quiet=2):
@@ -372,6 +381,7 @@ class X393McntrlAdjust(object):
         <low_delay>   low delay value (in 'hardware' format, sparse)
         <high_delay>  high delay value (in 'hardware' format, sparse)
         <num>         number of 64-bit words to process
+        <sel>         0 - early, 1 - late read command (shift by a SDCLK period) 
         <falling>     0 - use rising edge as delay increases, 1 - use falling one
                       In 'falling' mode results are the longest DQ idelay
                       when bits switch from correct to incorrect,
@@ -382,7 +392,7 @@ class X393McntrlAdjust(object):
         """
         checkIntArgs(('low_delay','high_delay','num'),locals())
         low = self.split_delay(low_delay)
-        data_raw=self.scan_dq_idelay(low_delay,high_delay,num,quiet)
+        data_raw=self.scan_dq_idelay(low_delay,high_delay,num,sel,quiet)
         data=[]
         delays=[]
         for i,d in enumerate(data_raw):
@@ -1318,7 +1328,7 @@ class X393McntrlAdjust(object):
                                quiet=1
                                ):
         """
-        Find DQS odelay for each phase value
+        Find DQS output delay for each phase value
         Depends on adjust_cmda_odelay results
         """
         if not self.adjustment_state['cmda_bspe']:
@@ -1643,4 +1653,359 @@ class X393McntrlAdjust(object):
         self.adjustment_state.update(rdict)
 #        print (self.adjustment_state)
         return rdict
+          
+    def adjust_pattern(self,
+                       limit_step=0.125, # initial delay step as a fraction of the period 
+                       max_phase_err=0.1,
+                       quiet=1,
+                       start_dly=0): #just to check dependence
+        """
+        for each DQS input delay find 4 DQ transitions for each DQ bit,
+        then use them to find finedelay for each of the DQS and DQ,
+        linear coefficients (a,b) for each DQ vs DQS and asymmetry
+        (late 0->1, early 1->0) for each of the DQ and DQS
+        """
+        nrep=8
+        max_lin_dly=159
+        timing=self.x393_mcntrl_timing.get_dly_steps()
+        #steps={'DLY_FINE_STEP': 0.01, 'DLY_STEP': 0.078125, 'PHASE_STEP': 0.022321428571428572, 'SDCLK_PERIOD': 2.5}
+        dly_step=int(5*limit_step*timing['SDCLK_PERIOD']/timing['DLY_STEP']+0.5)
+        step180= int(5*0.5* timing['SDCLK_PERIOD'] / timing['DLY_STEP'] +0.5)                                                                                                                                                                                                                 
+        if quiet<2:
+            print ("timing)=%s, dly_step=%d step180=%d"%(str(timing),dly_step,step180))
+        self.x393_pio_sequences.set_read_pattern(nrep+3) # set sequence once
+        
+        def patt_dqs_step(dqs_lin):
+            patt_cache=[None]*(max_lin_dly+1) # cache for holding already measured delays
+            def measure_patt(dly,force_meas=False):
+                if (patt_cache[dly] is None) or force_meas:
+                    self.x393_mcntrl_timing.axi_set_dq_idelay(self.combine_delay(dly),quiet=quiet)
+                    patt= self.x393_pio_sequences.read_levelling(nrep,
+                                                                 -1, # sel=1, # 0 - early, 1 - late read command (shift by a SDCLK period), -1 - use current sequence 
+                                                                 quiet+1)
+                    patt_cache[dly]=patt
+                    if quiet < 1:
+                        print ('measure_patt(%d,%s) - new measurement'%(dly,str(force_meas)))
+                else:
+                    patt=patt_cache[dly]
+                    if quiet < 1:
+                        print ('measure_patt(%d,%s) - using cache'%(dly,str(force_meas)))
+                return patt
+            def get_sign(data,edge=None):
+                """
+                edge: 0 - first 16, 1 - second 16
+                return -1 if  all <0.5
+                return +1 if all >0.5
+                return 0 otherwise
+                """
+                if edge == 0:
+                    return get_sign(data[:16])
+                if edge == 1:
+#                    return -get_sign(data[16:])
+                    return get_sign(data[16:])
+                m1=True
+                p1=True
+                for d in data:
+                    m1 &= (d < 0.5)
+                    p1 &= (d > 0.5)
+                    if not (m1 or p1):
+                        break
+                else:
+                    if m1:
+                        return -1
+                    elif p1:
+                        return 1
+                return 0
+            
+            rslt=[None]*16 # each bit will have [inphase][dqs_falling]
+            self.x393_mcntrl_timing.axi_set_dqs_idelay(self.combine_delay(dqs_lin),quiet=quiet)
+            d_low=[None]*2  # first - lowest when all are -+, second - when all are +-  
+            d_high=[None]*2 # first - when all are +- after -+, second - when all are -+ after +-
+            dly=0
+            notLast=True
+            needSigns=None
+            lowGot=None
+            highGot=None
+            while (dly <= max_lin_dly) and notLast:
+                notLast= dly < max_lin_dly
+                patt=measure_patt(dly) # ,force_meas=False)
+                signs=(get_sign(patt,0),get_sign(patt,1))
+                if quiet < 1:
+                    print ('dly=%d lowGot=%s, highGot=%s, signs=%s'%(dly,str(lowGot),str(highGot),str(signs)))
+                if lowGot is None : # looking for the first good sample
+                    if (signs==(-1,1)) or  (signs==(1,-1)) :
+                        if signs[0] == -1: #  == (-1,1):
+                            lowGot=0
+                        else:
+                            lowGot=1
+                        d_low[lowGot] = dly
+                        needSigns=((1,-1),(-1,1))[lowGot]
+                        dly += step180-dly_step # almost 180 degrees
+                    else: # at least one is 0
+                        dly += dly_step # small step
+                    if quiet < 1:
+                        print ('lowGot was None : dly=%d, lowGot=%s, needSigns=%s'%(dly,str(lowGot),str(needSigns)))
+                elif highGot is None : # only one good sample is available so far
+                    if signs == needSigns:
+                        highGot=lowGot
+                        d_high[highGot] = dly
+                        d_low[1-lowGot] = dly
+                        needSigns=((-1,1),(1,-1))[lowGot]
+                        dly += step180-dly_step # almost 180 degrees
+                    else:
+                        dly += dly_step # small step
+                    if quiet < 1:
+                        print ('highGot was None : dly=%d, lowGot=%s, highGot=%s, needSigns=%s'%(dly,str(lowGot),str(lowGot),str(needSigns)))
+                else: # looking for the 3-rd sample 
+                    if signs == needSigns:
+                        highGot=1-highGot
+                        d_high[highGot] = dly
+                        break
+                    else:
+                        dly += dly_step # small step
+                dly = min (dly,max_lin_dly)
+            if highGot is None:
+                if quiet < 3:
+                    print ("Could not find initial bounds for DQS input delay = %d d_low=%s, d_high=%s"%(dqs_lin,str(d_low),str(d_high)))
+                return None
+            if quiet < 2:
+                    print ("DQS input delay = %d , preliminary bounds: d_low=%s, d_high=%s"%(dqs_lin,str(d_low),str(d_high)))
+            for inPhase in range(2):
+                if not d_high[inPhase] is None:
+                    # Try to squeeze d_low, d_high closer to reduce scan range
+                    while d_high[inPhase]>d_low[inPhase]:
+                        dly=(d_high[inPhase] + d_low[inPhase])//2
+                        patt=measure_patt(dly) # ,force_meas=False)
+                        signs=(get_sign(patt,0),get_sign(patt,1))
+                        if signs==(-1,1):
+                            if inPhase:
+                                d_high[inPhase]=dly 
+                            else:
+                                if d_low[inPhase]==dly:
+                                    break
+                                d_low[inPhase]=dly 
+                        elif signs==(1,-1):     
+                            if inPhase:
+                                if d_low[inPhase]==dly:
+                                    break
+                                d_low[inPhase]=dly 
+                            else:
+                                d_high[inPhase]=dly 
+                        else: # uncertain result 
+                            break
+            if quiet < 2:
+                    print ("DQS input delay = %d , squeezed bounds: d_low=%s, d_high=%s"%(dqs_lin,str(d_low),str(d_high)))
+#Improve squeezing - each limit to the last
+
+            for inPhase in range(2):
+                if not d_high[inPhase] is None:
+                    # Try to squeeze d_low first
+                    d_uncertain=d_high[inPhase]
+                    while d_uncertain > d_low[inPhase]:
+                        dly=(d_uncertain + d_low[inPhase])//2
+                        patt=measure_patt(dly) # ,force_meas=False)
+                        signs=(get_sign(patt,0),get_sign(patt,1))
+                        if signs==(-1,1):
+                            if inPhase:
+                                d_uncertain=dly 
+                            else:
+                                if d_low[inPhase]==dly:
+                                    break
+                                d_low[inPhase]=dly 
+                        elif signs==(1,-1):     
+                            if inPhase:
+                                if d_low[inPhase]==dly:
+                                    break
+                                d_low[inPhase]=dly 
+                            else:
+                                d_uncertain=dly 
+                        else: # uncertain result
+                            d_uncertain=dly
+                    #now udjust upper limit
+                    while d_high[inPhase] > d_uncertain:
+                        dly=(d_high[inPhase] + d_uncertain)//2
+                        patt=measure_patt(dly) # ,force_meas=False)
+                        signs=(get_sign(patt,0),get_sign(patt,1))
+                        if signs==(-1,1):
+                            if inPhase:
+                                d_high[inPhase]=dly 
+                            else:
+                                if d_uncertain==dly:
+                                    break
+                                d_uncertain=dly 
+                        elif signs==(1,-1):     
+                            if inPhase:
+                                if d_uncertain==dly:
+                                    break
+                                d_uncertain=dly 
+                            else:
+                                d_high[inPhase]=dly 
+                        else: # uncertain result 
+                            if d_uncertain==dly:
+                                break
+                            d_uncertain=dly
+            if quiet < 2:
+                    print ("DQS input delay = %d , tight squeezed bounds: d_low=%s, d_high=%s"%(dqs_lin,str(d_low),str(d_high)))
+
+                    
+            # scan ranges, find closest solutions
+            best_dly= [[],[]]
+            best_diff=[[],[]]
+            for inPhase in range(2):
+                if not d_high[inPhase] is None:
+                    patt=None
+                    for dly in range(d_low[inPhase],d_high[inPhase]+1):
+                        patt_prev=patt
+                        patt=measure_patt(dly) # ,force_meas=False) - will be stored in cache
+                        if patt_prev is None: #first run
+                            best_dly[inPhase]=[d_low[inPhase]]*32
+                            for p in patt:
+                                best_diff[inPhase].append(p-0.5)
+                        else: # all the rest
+                            for b in range(32):
+                                positiveJump=((not inPhase) and (b<16)) or (inPhase and (b >= 16)) # may be 0, False, True       
+                                signs=((-1,1)[patt_prev[b]>0.5],(-1,1)[patt[b]>0.5])
+                                if (positiveJump and (signs==(-1,1))) or (not positiveJump and (signs==(1,-1))):
+                                    if abs(patt_prev[b]-0.5) < abs(patt[b]-0.5): # store previos sample
+                                        best_dly[inPhase][b]=dly-1
+                                        best_diff[inPhase][b]=patt_prev[b]-0.5
+                                    else:
+                                        best_dly[inPhase][b]=dly
+                                        best_diff[inPhase][b]=patt[b]-0.5
+                                    if not positiveJump:  
+                                        best_diff[inPhase][b] *= -1 # inver sign, so sign always means <0 - delay too low, >0 - too high
+                # rslt=[None]*16 # each bit will have [inphase][dqs_falling], each - a pair of (delay,diff)
+            for b in range(16):
+                rslt[b]=[[None]*2,[None]*2] # [inphase][dqs_falling]
+                for inPhase in range(2):
+                    if not d_high[inPhase] is None:
+                        rslt[b][inPhase]= [(best_dly[inPhase][b],best_diff[inPhase][b]),(best_dly[inPhase][b+16],best_diff[inPhase][b+16])]
+            if quiet < 2:
+                    print ("%d: rslt=%s"%(dqs_lin,str(rslt)))
+            return rslt
+#        meas_data=[]
+#        for ldly in range(max_lin_dly+1):
+#            if quiet <3:
+#                print ("%d(0x%x):"%(ldly,self.combine_delay(ldly)),end=" ")
+#                sys.stdout.flush()
+#            meas_data.append(patt_dqs_step(ldly))
+#        if quiet <3:
+#            print ()
+        meas_data=[None]*(max_lin_dly+1)
+        #start_dly
+        for sdly in range(max_lin_dly+1):
+            ldly = (start_dly+sdly)%(max_lin_dly+1)
+#        for ldly in range(max_lin_dly+1):
+            if quiet <3:
+                print ("%d(0x%x):"%(ldly,self.combine_delay(ldly)),end=" ")
+                sys.stdout.flush()
+            meas_data[ldly] = patt_dqs_step(ldly)
+        if quiet <3:
+            print ()
+
+        if quiet < 3:
+            print ("DQS",end=" ")
+            for f in ('ir','if','or','of'):
+                for b in range (16):
+                    print ("%s_%d"%(f,b),end=" ")
+            print()        
+            for ldly, data in enumerate(meas_data):
+                print("%d"%ldly,end=" ")
+                if data:
+                    for typ in ((0,0),(0,1),(1,0),(1,1)):
+                        for pData in data: # 16 DQs, each None nor a pair of lists for inPhase in (0,1), each a pair of edges, each a pair of (dly,diff)
+                            if pData:
+                                if pData[typ[0]] and pData[typ[0]][typ[1]]:
+                                    print ("%d"%pData[typ[0]][typ[1]][0],end=" ")
+                                    '''
+                                    try:
+                                        print ("%d"%pData[typ[0]][typ[1]][0],end=" ")
+                                    except:
+                                        print (".", end=" ")
+                                    '''
+                                else:
+                                    print ("?", end=" ")
+                            else:
+                                print ("x",end=" ")
                         
+                print()
+                    
+        if quiet < 2:
+            print ("\nDifferences from 0.5:")
+
+            print ("DQS",end=" ")
+            for f in ('ir','if','or','of'):
+                for b in range (16):
+                    print ("%s_%d"%(f,b),end=" ")
+            print()        
+            for ldly, data in enumerate(meas_data):
+                print("%d"%ldly,end=" ")
+                if data:
+                    for typ in ((0,0),(0,1),(1,0),(1,1)):
+                        for pData in data: # 16 DQs, each None nor a pair of lists for inPhase in (0,1), each a pair of edges, each a pair of (dly,diff)
+                            if pData:
+                                if pData[typ[0]] and pData[typ[0]][typ[1]]:
+                                    print ("%.2f"%pData[typ[0]][typ[1]][1],end=" ")
+                                    '''
+                                    try:
+                                        print ("%d"%pData[typ[0]][typ[1]][0],end=" ")
+                                    except:
+                                        print (".", end=" ")
+                                    '''
+                                else:
+                                    print ("?", end=" ")
+                            else:
+                                print ("x",end=" ")
+                        
+                print()
+            print("\n\n")    
+#            print ("meas_data=%s"%str(meas_data))
+            print ("meas_data=[")
+            for d in meas_data:
+                print("%s,"%(str(d)))
+            print("]")    
+#meas_data=[
+    '''
+    adjust_cmda_odelay 0 1 0.1 3
+    adjust_write_levelling 0 1 0 .1 3
+    adjust_pattern 0.125 0.1 1
+    '''
+    def proc_test_data(self,
+                       lane=0,
+                       bin_size=5,
+                       primary_set=2,
+                       quiet=1):
+        meas_data=get_test_dq_dqs_data.get_data()
+        meas_delays=[]
+        for data in meas_data:
+            if data:
+                bits=[None]*16
+                for b,pData in enumerate(data):
+                    if pData:
+                        """
+                        bits[b]=[[None,None],[None,None]]
+                        for inPhase in (0,1):
+                            if pData[inPhase]:
+                                for e in (0,1):
+                                    if pData[inPhase][e]:
+                                        bits[b][inPhase][e]=pData[inPhase][e][0]
+                        """                
+                        bits[b]=[None]*4
+                        for inPhase in (0,1):
+                            if pData[inPhase]:
+                                for e in (0,1):
+                                    if pData[inPhase][e]:
+                                        bits[b][inPhase*2+e]=pData[inPhase][e][0]
+                meas_delays.append(bits)
+        if quiet<1:
+            x393_lma.test_data(meas_delays,quiet)
+        lma=x393_lma.X393LMA()
+        lma.init_parameters(
+                        lane,
+                        bin_size,
+                        2500.0, # clk_period,
+                        78.0,   # dly_step_ds,
+                        primary_set,
+                        meas_delays,
+                        quiet)
+        

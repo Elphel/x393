@@ -610,12 +610,14 @@ class X393PIOSequences(object):
 
 # Set MR3, read nrep*8 words, save to buffer (port0). No ACTIVATE/PRECHARGE are needed/allowed   
     def set_read_pattern (self, 
-                          nrep, # input integer nrep;
+                          nrep,  # input integer nrep;
+                          sel=1, # 0 - early, 1 - late read command (shift by a SDCLK period) 
                           verbose=0):
                           
         """
         Setup read pattern sequence at parameter defined address in the sequencer memory
         <nrep>   number of times pattern burst is read
+        <sel>    0 - early, 1 - late read command (shift by a SDCLK period)
         <verbose> print data being written (default: False)
             
         """
@@ -633,49 +635,49 @@ class X393PIOSequences(object):
         self.x393_mem.axi_write_single_w(cmd_addr, data, verbose)
         cmd_addr += 1
         #                          skip      done        bank                       ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD      B_RST
-        data=self.func_encode_skip( 5,        0,           0,                         0,  0,  0,  0,    0,    0,    0,  0,   0,        0)# tMOD
+        data=self.func_encode_skip( 5,        0,           0,                        0,  0,  0,  0,    0,    0,    0,  0,   0,        0)# tMOD
         self.x393_mem.axi_write_single_w(cmd_addr, data, verbose)
         cmd_addr += 1
 # first read
 #@ read
         #                           addr                 bank                   RCW ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD NOP, B_RST
-        data=self.func_encode_cmd(    0,                   0,                    2,  0,  0,  1,  0,    0,    0,    1,  1,   0,   0,   0)
+        data=self.func_encode_cmd(    0,                   0,                    2,  0,  0, sel, 0,    0,    0,    1,  1,   0,   0,   0)
         self.x393_mem.axi_write_single_w(cmd_addr, data, verbose)
         cmd_addr += 1
 # nop (combine with previous?)
         #                          skip      done        bank                       ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD      B_RST
-        data=self.func_encode_skip(   0,       0,          0,                        0,  0,  1,  0,    0,    0,    1,  1,   0,        0)
+        data=self.func_encode_skip(   0,       0,          0,                        0,  0, sel, 0,    0,    0,    1,  1,   0,        0)
         self.x393_mem.axi_write_single_w(cmd_addr, data, verbose)
         cmd_addr += 1
 #repeat remaining reads
 #        for (i = 1; i < nrep; i = i + 1) begin
         for _ in range(1,nrep):
         #                           addr                 bank                   RCW ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD NOP, B_RST
-            data=self.func_encode_cmd( 0,                  0,                    2,  0,  0,  1,  0,    0,    0,    1,  1,   0,   1,   0)
+            data=self.func_encode_cmd( 0,                  0,                    2,  0,  0, sel, 0,    0,    0,    1,  1,   0,   1,   0)
             self.x393_mem.axi_write_single_w(cmd_addr, data, verbose)
             cmd_addr += 1
 # nop - all 3 below are the same? - just repeat?
         #                          skip      done        bank                       ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD      B_RST
-        data=self.func_encode_skip(   0,       0,          0,                        0,  0,  1,  0,    0,    0,    1,  0,   0,        0)
+        data=self.func_encode_skip(   0,       0,          0,                        0,  0, sel, 0,    0,    0,    1,  0,   0,        0)
         self.x393_mem.axi_write_single_w(cmd_addr, data, verbose)
         cmd_addr += 1
 # nop
         #                          skip      done        bank                       ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD      B_RST
-        data=self.func_encode_skip(   0,       0,          0,                        0,  0,  1,  0,    0,    0,    1,  0,   0,        0)
+        data=self.func_encode_skip(   0,       0,          0,                        0,  0, sel, 0,    0,    0,    1,  0,   0,        0)
         self.x393_mem.axi_write_single_w(cmd_addr, data, verbose)
         cmd_addr += 1
 # nop
         #                          skip      done        bank                       ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD      B_RST
-        data=self.func_encode_skip(   0,       0,          0,                        0,  0,  1,  0,    0,    0,    1,  0,   0,        0)
+        data=self.func_encode_skip(   0,       0,          0,                        0,  0, sel, 0,    0,    0,    1,  0,   0,        0)
         self.x393_mem.axi_write_single_w(cmd_addr, data, verbose)
         cmd_addr += 1
 # nop, no write buffer - next page
         #                          skip      done        bank                       ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD      B_RST
-        data=self.func_encode_skip(   0,       0,          0,                        0,  0,  1,  0,    0,    0,    1,  0,   0,        1)
+        data=self.func_encode_skip(   0,       0,          0,                        0,  0, sel, 0,    0,    0,    1,  0,   0,        1)
         self.x393_mem.axi_write_single_w(cmd_addr, data, verbose)
         cmd_addr += 1
         #                          skip      done        bank                       ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD      B_RST
-        data=self.func_encode_skip(   1,       0,          0,                        0,  0,  1,  0,    0,    0,    1,  0,   0,        0)
+        data=self.func_encode_skip(   1,       0,          0,                        0,  0, sel, 0,    0,    0,    1,  0,   0,        0)
         self.x393_mem.axi_write_single_w(cmd_addr, data, verbose)
         cmd_addr += 1
 # Turn off read pattern mode
@@ -994,6 +996,55 @@ class X393PIOSequences(object):
         if quiet <1:
             print ("WLEV lanes ratios: %f %f, non 0x00/0x01 bytes: %f"%(rslt[0],rslt[1],rslt[2]))   
         return rslt
+    
+    def read_levelling(self,
+                       nrep,
+                       sel=1, # 0 - early, 1 - late read command (shift by a SDCLK period), -1 - use current sequence 
+                       quiet=1):
+        """
+        Read and process data in 'read patter' mode
+        refresh may be off, delays: cmda_edelay, dq_idelay, dqs_idelauy should be set
+        <nrep>   number of times pattern burst is read (8-bursts), actually will be read nrep+3, nut the first/last will be discarded
+        <sel>    0 - early, 1 - late read command (shift by a SDCLK period)
+        """
+        if sel>=0:
+            self.set_read_pattern(nrep+3,sel) # do not use first/last pair of the 32 bit words
+        buf= self.read_pattern((4*(nrep+1)+2),     # num,
+                               (0,1)[quiet<1],     # show_rslt,
+                               1) # Wait for operation to complete
+        buf= buf[4:] # discard first 4*32-bit words
+        if quiet <1:
+            hbuf=[]
+            for dd in buf:
+                hbuf.append(hex(dd))
+            print(hbuf)
+            # with "good" data each word in buf should be 0xff00ff00
+        for d in buf:
+            if d !=0xffffffff:
+                break
+        else: # Maybe it is not needed with correct cmda_odelay ?
+            if quiet<3:
+                print ("Got a block of bad data during read pattern") 
+            return None
+        data=[0]*32 # for each bit - even, then for all - odd
+        for w in range (4 * nrep):
+            lane=w%2
+            for wb in range(32):
+                g=(wb/8)%2
+                b=wb%8+lane*8+16*g
+                if (buf[w+2] & (1<<wb) != 0):
+                    data[b]+=1
+        scale=1.0/(4*nrep)
+        for i in range(32):
+            data[i]*=scale
+        if quiet < 2:
+            for i in range(32):
+                print("%.2f"%data[i],end=" ")
+            print()
+        return data
+
+        
+        
     
     def restart_ddr3(self,
                   wait_complete=True,

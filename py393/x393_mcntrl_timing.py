@@ -178,12 +178,14 @@ class X393McntrlTiming(object):
         self.axi_set_phase()
         
     def axi_set_dq_idelay(self,   #  sets same delay to all dq idelay
-                          delay=None): # input [7:0] delay;
+                          delay=None, # input [7:0] delay;
+                          quiet=1):
         """
         Set all DQ input delays to the same value
         <delay> 8-bit (5+3) delay value to use or a tuple/list with a pair for (lane0, lane1)
                 Each of the two elements in the delay tuple/list may be a a common integer or a list/tuple itself
                 if delay is None will restore default values
+        <quiet> reduce output                  
         """
 #        print("====axi_set_dq_idelay %s"%str(delay))
         
@@ -194,7 +196,7 @@ class X393McntrlTiming(object):
                 delay[1].append(vrlg.get_default_field("DLY_LANE1_IDELAY",i))
         if isinstance(delay,(int,long)):
             delay=(delay,delay)
-        if self.DEBUG_MODE > 1:
+        if quiet < 2:
             print("SET DQ IDELAY="+hexMultiple(delay)) # hexMultiple
         self.axi_set_multiple_delays(vrlg.LD_DLY_LANE0_IDELAY, 0, 8, delay[0], "DLY_LANE0_IDELAY")
         self.axi_set_multiple_delays(vrlg.LD_DLY_LANE1_IDELAY, 0, 8, delay[1], "DLY_LANE1_IDELAY")
