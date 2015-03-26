@@ -28,7 +28,8 @@ __version__ = "3.0+"
 __maintainer__ = "Andrey Filippov"
 __email__ = "andrey@elphel.com"
 __status__ = "Development"
-
+import math
+import numpy as np
 """
 For each byte lane:
 tSDQS delay ps/step (~1/5 of datasheet value) - 1
@@ -71,14 +72,16 @@ def test_data(meas_delays,
             print()
             
 PARAMETER_TYPES=(
-                     {"name":"tSDQS",  "size":1, "units":"ps","description":"DQS input delay per step (1/5 of the datasheet value)","en":1},
-                     {"name":"tSDQ",   "size":8, "units":"ps","description":"DQ input delay per step (1/5 of the datasheet value)","en":1},
-                     {"name":"tDQSHL", "size":1, "units":"ps","description":"DQS HIGH minus LOW difference","en":1},
-                     {"name":"tDQHL",  "size":8, "units":"ps","description":"DQi HIGH minus LOW difference","en":1},
-                     {"name":"tDQS",   "size":1, "units":"ps","description":"DQS delay (not adjusted)","en":0},
-                     {"name":"tDQ",    "size":8, "units":"ps","description":"DQi delay","en":1},
-                     {"name":"tFDQS",  "size":4, "units":"ps","description":"DQS fine delays (mod 5)","en":1}, #only 4 are independent, 5-th is -sum of 4 
-                     {"name":"tFDQ",   "size":32,"units":"ps","description":"DQ  fine delays (mod 5)","en":1})
+                     {"name":"tSDQS",   "size":1,            "units":"ps","description":"DQS input delay per step (1/5 of the datasheet value)","en":1},
+                     {"name":"tSDQ",    "size":8,            "units":"ps","description":"DQ input delay per step (1/5 of the datasheet value)","en":1},
+                     {"name":"tDQSHL",  "size":1,            "units":"ps","description":"DQS HIGH minus LOW difference","en":1},
+                     {"name":"tDQHL",   "size":8,            "units":"ps","description":"DQi HIGH minus LOW difference","en":1},
+                     {"name":"tDQS",    "size":1,            "units":"ps","description":"DQS delay (not adjusted)","en":0},
+                     {"name":"tDQ",     "size":8,            "units":"ps","description":"DQi delay","en":1},
+                     {"name":"tFDQS",   "size":4,            "units":"ps","description":"DQS fine delays (mod 5)","en":1}, #only 4 are independent, 5-th is -sum of 4 
+                     {"name":"tFDQ",    "size":32,           "units":"ps","description":"DQ  fine delays (mod 5)","en":1},
+                     {"name":"anaScale","size":1, "dflt":20, "units":"ps","description":"Scale for non-binary measured results","en":0},
+                     )
 FINE_STEPS=5
 DLY_STEPS =FINE_STEPS * 32 # =160 
 def make_repeat(value,nRep):
@@ -88,9 +91,36 @@ def make_repeat(value,nRep):
         return (value,)*nRep
            
 class X393LMA(object):
+    lambdas={"initial":0.1,"current":0.1,"max":100.0}
+    maxNumSteps=25
+    finalDiffRMS=0.0001
     parameters=None
-    parameterMask=None
+#    parameterMask={}
+    parameterMask={'tSDQS':    True,
+                   'tSDQ':     [True, True, True, True, True, True, True, True],
+                   'tDQSHL':   True,
+                   'tDQHL':    [True, True, True, True, True, True, True, True],
+                   'tDQS':     False,
+                   'tDQ':      [True, True, True, True, True, True, True, True],
+                   'tFDQS':    [True, True, True, True],
+                   'tFDQ':     [True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True],
+                   'anaScale': False
+                   }
+    """
+    parameterMask={'tSDQS':    True,
+                   'tSDQ':     [True, True, True, True, True, True, True, True],
+                   'tDQSHL':   True, # False, # True,
+                   'tDQHL':    [True, True, True, True, True, True, True, True], # False, # [True, True, True, True, True, True, True, True], #OK
+                   'tDQS':     False,
+                   'tDQ':      [True, True, True, True, True, True, True, True], #BAD - without it 0 in JTbyJ for tFDQ
+                   'tFDQS':    [True, True, True, True], # False, # [True, True, True, True], # OK
+                   'tFDQ':     True, # False, # [True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True],
+                   'anaScale': False
+                   }
+    """
     parameterVector=None
+    clk_period=None
+    analog_scale=20 # ps when there is analog result -0.5...+0.5, multiply it by analog_scale and add to result
 #    hist_estimated=None # DQ/DQS delay period,
 #                        # DQ-DQS shift (and number of periods later) for averaged and individual bits,
 #                        # for each of 4 edge types
@@ -102,10 +132,16 @@ class X393LMA(object):
                            data_set,
                            periods=None):
         n=len(data_set)*32
-        y=[0]*n
-        w=[0]*n
+#        fx=np.zeros((DLY_STEPS*32,))
+        """
+        use np.nan instead of the None data
+        np.isnan() test
+        , dtype=np.float
+        """        
+        y=np.zeros((n,), dtype=np.int) #[0]*n
+        w=np.zeros((n,)) #[0]*n
         if not periods is None:
-            p=[0]*n 
+            p=np.zeros((n), dtype=np.int)#[0]*n 
         for dly,data in enumerate(data_set):
             if data:
                 data_lane=data[lane*8:(lane+1)*8]
@@ -152,11 +188,64 @@ class X393LMA(object):
                         print("?",end=" ")      
             print()
         
+    def normalizeParameters(self,
+                            parameters,
+                            isMask=False):
+        """
+        Convert single/lists as needed
+        """
+        if parameters is None:
+            parameters = self.parameters
+        for par in PARAMETER_TYPES:
+            name=par['name']
+            size=par["size"]
+            try:
+                v=parameters[name]
+            except:
+                if isMask:
+                    v=par['en']
+                else:
+                    try:
+                        v=par['dflt']
+                    except:
+                        raise Exception("parameter['%s'] is not defined and PARAMETER_TYPES['%s'] does not provide default value"%(name,name))
+            if size == 1:
+                if isinstance(v,(list,tuple)):
+                    v=v[0]
+                if isMask:
+                    if v:
+                        v=True
+                    else:
+                        v=False
+            else:
+                if isinstance(v,tuple):
+                    v=list(v)
+                elif not isinstance(v,list):
+                    v=[v]*size
+                if isMask:
+                    for i in range(size):
+                        if v[i]:
+                            v[i]=True
+                        else:
+                            v[i]=False
+                
+            parameters[name]=v 
+        return parameters        
+    def copyParameters(self,
+                       parameters):
+        newPars={}
+        for k,v in parameters.items():
+            if isinstance(v,(list,tuple)):
+                newPars[k]=list(v)
+            else:
+                newPars[k]=v
+        return newPars
+            
 
     def createParameterVector(self,
                               parameters=None,
                               parameterMask=None):
-        global PARAMETER_TYPES
+#        global PARAMETER_TYPES
         if parameters is None:
             parameters = self.parameters
         if parameterMask is None:
@@ -181,7 +270,49 @@ class X393LMA(object):
                     for m,p in zip(mask, parVal):
                         if m:
                             vector.append(p)
-        return vector
+        return np.array(vector)
+
+    def createParameterIndex(self,
+                             parameters=None,
+                             parameterMask=None):
+        """
+        create dict as parameters, but instead of values - index in the parameter vector, or -1
+        """
+        if parameters is None:
+            parameters = self.parameters
+        if parameterMask is None:
+            parameterMask = self.parameterMask
+        indices={}
+        parIndex=0
+        for par in PARAMETER_TYPES:
+            name=par['name']
+            size=par["size"]
+            if par['en']:
+                try:
+                    mask=parameterMask[name]
+                except:
+                    mask=True
+                if mask:
+                    if size==1:
+                        indices[name]=parIndex
+                        parIndex += 1
+                    else:
+                        if not isinstance(mask,(list,tuple)):
+                            mask=[mask]*size
+                        indices[name]=[]
+                        for m in mask:
+                            if m:
+                                indices[name].append(parIndex)
+                                parIndex += 1
+                            else:
+                                indices[name].append(-1)
+            if not name in indices:    
+                if size==1:
+                    indices[name]=-1
+                else:
+                    indices[name]=[-1]*size
+        indices['numPars']=parIndex # extra key with total number of parameters            
+        return indices
         
     def getParametersFromVector(self,
                                 vector=None,
@@ -212,10 +343,10 @@ class X393LMA(object):
                     else:
                         if not name in parameters:
                             parameters[name]=[None]*size
-                            for i,m in enumerate(mask):
-                                if m:
-                                    parameters[name][i]=vector[index]
-                                    index += 1
+                        for i,m in enumerate(mask):
+                            if m:
+                                parameters[name][i]=vector[index]
+                                index += 1
         return parameters
      
     def estimate_from_histograms(self,
@@ -543,6 +674,8 @@ class X393LMA(object):
         @data_set     measured data set
         @quiet        reduce output   
         """
+        self.clk_period=clk_period
+        
         hist_estimated=self.estimate_from_histograms(lane, # byte lane
                                                      bin_size,
                                                      clk_period,
@@ -550,7 +683,8 @@ class X393LMA(object):
                                                      primary_set,
                                                      data_set,
                                                      quiet)
-        print ("hist_estimated=%s"%(str(hist_estimated)))
+        if quiet < 3:
+            print ("hist_estimated=%s"%(str(hist_estimated)))
         data_periods_map=self.get_periods_map(lane,
                                               data_set,
                                               hist_estimated,
@@ -560,10 +694,12 @@ class X393LMA(object):
                                        data_set,
                                        data_periods_map)
 #        print("ywp=%s"%(str(ywp)))
-        print("\nY-vector:")
-        self.showYOrVector(ywp)
-        print("\nperiods map:")
-        self.showYOrVector(ywp,ywp['p'])
+        if quiet < 2:
+            print("\nY-vector:")
+            self.showYOrVector(ywp)
+        if quiet < 2:
+            print("\nperiods map:")
+            self.showYOrVector(ywp,ywp['p'])
         
         
         
@@ -591,9 +727,93 @@ class X393LMA(object):
                     "tDQS":   0.0,
                     "tDQ":    tDQ,
                     "tFDQS":  (0.0,)*4, 
-                    "tFDQ":   (0.0,)*32
+                    "tFDQ":   (0.0,)*32#,
+#                    "anaScale":self.analog_scale
                     }
         print ("parameters=%s"%(str(parameters)))
+        self.normalizeParameters(parameters) #isMask=False)
+        print ("normalized parameters=%s"%(str(parameters)))
+        """
+            both ways work:
+        self.parameterMask={}
+        self.normalizeParameters(self.parameterMask,isMask=True)
+            and
+        """
+#        self.parameterMask=self.normalizeParameters({},isMask=True)
+        self.parameterMask=self.normalizeParameters(self.parameterMask,isMask=True)
+        
+        print ("parameters mask=%s"%(str(self.parameterMask)))
+        create_jacobian=True
+
+        fxj= self.createFxAndJacobian(parameters,
+                                     ywp,   # keep in self.variable?
+                                     primary_set,
+                                     jacobian=create_jacobian,
+                                     parMask=None,
+                                     quiet=1)
+        
+        if create_jacobian:
+            fx=fxj['fx']
+        else:
+            fx=fxj
+            
+        if quiet < 2:
+            print("\nfx:")
+            self.showYOrVector(ywp,fx)
+        SX=0.0
+        SX2=0.0
+        S0=0.0
+        for d,w in zip(fx,ywp['w']):
+            if w>0:
+                S0+=w
+                SX+=w*d
+                SX2+=w*d*d
+        avg= SX/S0
+        rms= math.sqrt(SX2/S0)
+        print ("average(fx)= %fps, rms(fx)=%fps"%(avg,rms))
+        jByJT=np.dot(fxj['jacob'],np.transpose(fxj['jacob']))
+        
+        if quiet < 3:
+            print("\njByJT:")
+            for i,l in enumerate(jByJT):
+                print ("%d"%(i),end=" ")
+                for d in l: 
+                    print ("%f"%(d),end=" ")
+                print()
+        self.lambdas ['current']=self.lambdas ['initial']       
+        for _ in range(self.maxNumSteps):
+            OK,finished=self.LMA_step(parameters,
+                            ywp, # keep in self.variable?
+                            primary_set, # prima
+                            None, # parMask=    None,
+                            self.lambdas,
+                            self.finalDiffRMS,
+                            quiet)
+            if OK:
+                print ("parameters=%s"%(str(parameters)))
+            if finished:
+                break    
+                
+        fx= self.createFxAndJacobian(parameters,
+                                     ywp,   # keep in self.variable?
+                                     primary_set,
+                                     False,
+                                     parMask=None,
+                                     quiet=1)
+        
+        if quiet < 3:
+            print("\nfx:")
+            self.showYOrVector(ywp,fx)
+                
+    
+#        print("delta=%s"%(str(delta)))
+#        for i,d in enumerate(delta):
+#           print ("%d %f"%(i,d))    
+
+
+
+                
+        
     """
     ir = ir0 - s/4 + d/4 # ir - convert to ps from steps
     if = if0 + s/4 - d/4
@@ -603,6 +823,273 @@ class X393LMA(object):
     (s+d)/2=of-or
     s=if-ir+of-or
     d=ir-if+of-or
-    
-    
     """
+    def createFxAndJacobian(self,
+                            parameters,
+                            y_data, # keep in self.variable?
+                            primary_set, # prima
+                            jacobian=False, # create jacobian, False - only fx
+                            parMask=None,
+                            quiet=1):
+        def pythIsNone(obj):
+            return obj is None
+        isNone=pythIsNone # swithch to np.isnan
+        y_vector = y_data['y']
+        periods_vector=y_data['p']
+        period=self.clk_period
+        try:
+            y_fractions = y_data['f']
+        except:
+            y_fractions = None
+        try:
+            w_vector = y_data['w']
+        except:
+            w_vector = None
+        
+        anaScale = parameters['anaScale']
+        if y_fractions is None:
+            anaScale = 0
+        elif isinstance(y_fractions,np.ndarray):
+            isNone=np.isnan
+#        fx=[0.0]*DLY_STEPS*32
+        fx=np.zeros((DLY_STEPS*32,))
+        #self.clk_period
+        tFDQS5=list(parameters['tFDQS'])
+        tFDQS5.append(-tFDQS5[0]-tFDQS5[1]-tFDQS5[2]-tFDQS5[3])
+        tFDQ=[]
+        for b in range(8):
+            tFDQi=list(parameters['tFDQ'][4*b:4*(b+1)])
+            tFDQi.append(-tFDQi[0]-tFDQi[1]-tFDQi[2]-tFDQi[3])
+            tFDQ.append(tFDQi)
+        tSDQS=parameters['tSDQS']
+        tSDQ= parameters['tSDQ'] # list
+        
+        tDQS =parameters['tDQS']#single value
+        tDQ=  parameters['tDQ'] # list
+        
+        tDQSHL =parameters['tDQSHL']#single value
+        tDQHL=  parameters['tDQHL'] # list
+        for dly in range(DLY_STEPS):
+            tdqs=dly * tSDQS - tDQS - tFDQS5[dly % FINE_STEPS] # t - time from DQS pad to internal DQS clock with zero setup/hold times to DQ FFs
+            tdqs_r = tdqs + 0.25 * tDQSHL # sign opposite from: ir = ir0 - s/4 + d/4; or = or0 - s/4 - d/4
+            tdqs_f = tdqs - 0.25 * tDQSHL # sign opposite from: if = if0 + s/4 - d/4; of = of0 + s/4 + d/4
+            tdqs_rf=(tdqs_r, tdqs_f)
+            #correct for DQS edge type
+            for b in range(8): # use all 4 variants
+                for t in range(4):
+                    indx=32*dly+t*8+b
+                    if (w_vector is None) or (w_vector[indx] > 0):
+                        tdq=y_vector[indx] * tSDQ[b] - tDQ[b] - tFDQ[b][y_vector[indx] % FINE_STEPS]
+                        # correct for periods
+                        tdq -= period*periods_vector[indx] # or should it be minus here?
+                        # correct for edge types
+                        if (t == 0) or (t == 3):
+                            tdq -= 0.25*tDQHL[b]
+                        else: 
+                            tdq += 0.25*tDQHL[b]
+                        if anaScale:
+#                            if y_fractions[indx] is None:
+                            if isNone(y_fractions[indx]):
+                                tdq+=2.5
+                            else:
+                                tdq+=anaScale*y_fractions[indx]
+                        if (t ^ primary_set) & 2:
+                            tdq -= 0.5*period
+                        fx[indx] = tdq - tdqs_rf[t & 1] # odd are falling DQS, even are rising DQS
+        if not jacobian:
+            return fx
+        if parMask is None:
+            parMask=self.normalizeParameters(self.parameterMask,isMask=True)
+#        pv= self.createParameterVector(parameters,parMask)
+#        numPars=len(pv)
+#        print("pv=%s"%(str(pv)))
+        parInd=self.createParameterIndex(parameters,parMask)
+        print("parInd=%s"%(str(parInd)))
+        numPars=parInd['numPars']    
+        jacob=np.zeros((numPars,DLY_STEPS*32))
+        fineM5=((1.0, 0.0, 0.0, 0.0, -0.25),
+                (0.0, 1.0, 0.0, 0.0, -0.25),
+                (0.0, 0.0, 1.0, 0.0, -0.25),
+                (0.0, 0.0, 0.0, 1.0, -0.25))
+        dqs_finedelay_en=parInd['tFDQS']
+        for e in dqs_finedelay_en:
+            if e>=0:
+                break
+        else:
+            dqs_finedelay_en=None
+        dq_finedelay_en=[None]*8
+        for b in range(8):
+            dq_finedelay_en[b]=parInd['tFDQ'][4*b:4*(b+1)]
+            for e in dq_finedelay_en[b]:
+                if e>=0:
+                    break
+            else:
+                dq_finedelay_en[b]=None
+            
+        for dly in range(DLY_STEPS):
+            dlyMod5=dly % FINE_STEPS
+            dtdqs_dtSDQS = dly
+            dtdqs_dtDQS = -1.0
+            dtdqs_dtFDQS = (-fineM5[0][dlyMod5],-fineM5[1][dlyMod5],-fineM5[2][dlyMod5],-fineM5[3][dlyMod5])
+            dtdqs_dtDQSHL_rf=(0.25,-0.25)
+            #correct for DQS edge type
+            for b in range(8): # use all 4 variants
+                for t in range(4):
+                    indx=32*dly+t*8+b
+                    if (w_vector is None) or (w_vector[indx] > 0):
+                        #dependencies of DQS delays
+                        if parInd['tSDQS'] >= 0:
+                            jacob[parInd['tSDQS'],indx]=-dtdqs_dtSDQS
+                        if parInd['tDQS'] >= 0:
+                            jacob[parInd['tDQS'],indx]=-dtdqs_dtDQS
+                        if dqs_finedelay_en:
+                            for i,pIndx in enumerate (dqs_finedelay_en):
+                                if pIndx >= 0:
+                                    jacob[pIndx,indx]=-dtdqs_dtFDQS[i]
+                        if parInd['tDQSHL'] >= 0:
+                            jacob[parInd['tDQSHL'],indx]=-dtdqs_dtDQSHL_rf[t & 1]
+                        #dependencies of DQ delays
+                        # tdq=y_vector[indx] * tSDQ[b] - tDQ[b] - tFDQ[b][y_vector[indx] % FINE_STEPS]
+                        if parInd['tSDQ'][b] >= 0:
+                            jacob[parInd['tSDQ'][b],indx]=y_vector[indx]
+                        if parInd['tDQ'][b] >= 0:
+                            jacob[parInd['tDQ'][b],indx] = -1
+                        if dq_finedelay_en[b]:
+                            yMod5=y_vector[indx] % FINE_STEPS
+                            dtdq_dtFDQ = (-fineM5[0][yMod5],-fineM5[1][yMod5],-fineM5[2][yMod5],-fineM5[3][yMod5])
+                            for i,pIndx in enumerate (dq_finedelay_en[b]):
+                                if pIndx >= 0:
+                                    jacob[pIndx,indx]=dtdq_dtFDQ[i]
+                        if parInd['tDQHL'][b] >= 0:
+                            if (t == 0) or (t == 3):
+                                jacob[parInd['tDQHL'][b],indx]=-0.25
+                            else:
+                                jacob[parInd['tDQHL'][b],indx]=+0.25
+                        if parInd['anaScale'] >= 0:
+                            if anaScale and not isNone(y_fractions[indx]):
+                                jacob[parInd['anaScale'],indx]=y_fractions[indx]
+                                        
+        return {'fx':fx,'jacob':jacob}
+    def getParAvgRMS(self,
+                  parameters,
+                  ywp,
+                  primary_set, # prima
+                  quiet=1):
+        fx= self.createFxAndJacobian(parameters,
+                                     ywp,   # keep in self.variable?
+                                     primary_set,
+                                     False, # jacobian
+                                     None,
+                                     quiet)
+        SX=0.0
+        SX2=0.0
+        S0=0.0
+        for d,w in zip(fx,ywp['w']):
+            if w>0:
+                S0+=w
+                SX+=w*d
+                SX2+=w*d*d
+        avg= SX/S0
+        rms= math.sqrt(SX2/S0)
+        return {"avg":avg,"rms":rms}
+        
+
+
+    def LMA_step(self,
+                parameters,
+                ywp, # keep in self.variable?
+                primary_set, # prima
+                parMask,
+                lambdas, #single-element list to update value
+                finalDiffRMS,
+                quiet=      1):
+        parVector0=self.createParameterVector(parameters, parMask) # initial parameter vector
+        arms0 = self.getParAvgRMS(parameters,
+                                  ywp,
+                                  primary_set, # prima
+                                  quiet+1)
+        if quiet < 3:
+                print ("LMA_step <start>: average(fx)= %fps, rms(fx)=%fps"%(arms0['avg'],arms0['rms']))
+
+        delta=self.LMA_solve(parameters,
+                             ywp, # keep in self.variable?
+                             primary_set, # prima
+                             parMask,
+                             lambdas["current"],
+                             quiet)
+        parVector= parVector0+delta
+#        print ("\nparVector0=%s"%(str(parVector0)))
+#        print ("\ndelta=%s"%(str(delta)))
+#        print ("\nparVector=%s"%(str(parVector)))
+#        newPars = {}.update(parameters) # so fixed parameters will appear in the newPars
+        newPars = self.copyParameters(parameters) # so fixed parameters will appear in the newPars
+#        newPars = self.getParametersFromVector(parVector,
+        if quiet < 2:
+            print ("\nparameters=%s"%(str(parameters)))
+#        print ("\n1: newPars=%s"%(str(newPars)))
+        self.getParametersFromVector(parVector,
+                                               parMask,
+                                               newPars) # parameters=None):# if not None, will be updated 
+        if quiet < 2:
+            print ("\n2: newPars=%s"%(str(newPars)))
+            print ("\nparameters=%s"%(str(parameters)))
+        arms1 = self.getParAvgRMS(newPars,
+                                  ywp,
+                                  primary_set, # prima
+                                  quiet+1)
+        finished=False
+        if arms1['rms'] < arms0['rms']:
+            parameters.update(newPars) 
+            lambdas["current"]*=.5
+            success=True
+            if (arms0['rms'] - arms1['rms']) < finalDiffRMS:
+                finished=True
+        else:
+            lambdas["current"]*=8.0
+            success=False
+            if lambdas["current"] > lambdas["max"]:
+                finished=True
+        if quiet < 3:
+                print ("LMA_step %s: average(fx)= %fps, rms(fx)=%fps, lambda=%f"%(('FAILURE','SUCCESS')[success],arms1['avg'],arms1['rms'],lambdas["current"]))
+        return (success,finished)    
+            
+            
+
+    
+    def LMA_solve(self,
+                parameters,
+                ywp, # keep in self.variable?
+                primary_set, # prima
+                parMask=    None,
+                lmbda=      0.001,
+                quiet=      1):
+        fxj= self.createFxAndJacobian(parameters,
+                                      ywp,   # keep in self.variable?
+                                      primary_set,
+                                      True, # jacobian
+                                      parMask,
+                                      quiet)
+        JT=np.transpose(fxj['jacob'])
+        jByJT=np.dot(fxj['jacob'],JT)
+        for i,_ in enumerate(jByJT):
+            jByJT[i,i] += lmbda*jByJT[i,i]
+        jByDiff= -np.dot(fxj['jacob'],fxj['fx'])
+        delta=np.linalg.solve(jByJT,jByDiff)
+        return delta
+                
+    """
+    
+    ir = ir0 - s/4 + d/4 # ir - convert to ps from steps
+    if = if0 + s/4 - d/4
+    or = or0 - s/4 - d/4 # ir - convert to ps from steps
+    of = of0 + s/4 + d/4
+    (s-d)/2=if-ir
+    (s+d)/2=of-or
+    s=if-ir+of-or
+    d=ir-if+of-or
+    """
+             
+            
+        
+        
+        
