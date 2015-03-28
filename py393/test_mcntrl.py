@@ -42,7 +42,7 @@ import re
 from argparse import ArgumentParser
 #import argparse
 from argparse import RawDescriptionHelpFormatter
-
+import time
 from import_verilog_parameters import ImportVerilogParameters
 #from import_verilog_parameters import VerilogParameters
 from verilog_utils             import hx 
@@ -158,6 +158,7 @@ def getFuncArgsString(name):
 #dflts
     
 def main(argv=None): # IGNORE:C0111
+    tim=time.time()
     '''Command line options.'''
     global QUIET
     if argv is None:
@@ -361,7 +362,8 @@ USAGE
     if (args.interactive):
         line =""
         while True:
-            line=raw_input('x393%s--> '%('','(simulated)')[args.simulated]).strip()
+            line=raw_input('x393%s +%3.3fs--> '%(('','(simulated)')[args.simulated],(time.time()-tim))).strip()
+            tim=time.time()
             #remove comment from the input line
             if line.find("#") > 0:
                 line=line[:line.find("#")]

@@ -1655,7 +1655,9 @@ class X393McntrlAdjust(object):
         return rdict
           
     def adjust_pattern(self,
-                       limit_step=0.125, # initial delay step as a fraction of the period 
+                       compare_prim_steps=True, # while scanning, compare this delay with 1 less by primary(not fine) step,
+                                                # save None for fraction in unknown (previous -0.5, next +0.5) 
+                       limit_step=0.125, # initial delay step as a fraction of the period
                        max_phase_err=0.1,
                        quiet=1,
                        start_dly=0): #just to check dependence
@@ -1849,31 +1851,61 @@ class X393McntrlAdjust(object):
 
                     
             # scan ranges, find closest solutions
+            #compare_prim_steps
             best_dly= [[],[]]
             best_diff=[[],[]]
             for inPhase in range(2):
                 if not d_high[inPhase] is None:
-                    patt=None
-                    for dly in range(d_low[inPhase],d_high[inPhase]+1):
-                        patt_prev=patt
-                        patt=measure_patt(dly) # ,force_meas=False) - will be stored in cache
-                        if patt_prev is None: #first run
-                            best_dly[inPhase]=[d_low[inPhase]]*32
-                            for p in patt:
-                                best_diff[inPhase].append(p-0.5)
-                        else: # all the rest
-                            for b in range(32):
-                                positiveJump=((not inPhase) and (b<16)) or (inPhase and (b >= 16)) # may be 0, False, True       
-                                signs=((-1,1)[patt_prev[b]>0.5],(-1,1)[patt[b]>0.5])
-                                if (positiveJump and (signs==(-1,1))) or (not positiveJump and (signs==(1,-1))):
-                                    if abs(patt_prev[b]-0.5) < abs(patt[b]-0.5): # store previos sample
-                                        best_dly[inPhase][b]=dly-1
-                                        best_diff[inPhase][b]=patt_prev[b]-0.5
-                                    else:
-                                        best_dly[inPhase][b]=dly
-                                        best_diff[inPhase][b]=patt[b]-0.5
-                                    if not positiveJump:  
-                                        best_diff[inPhase][b] *= -1 # inver sign, so sign always means <0 - delay too low, >0 - too high
+#                    patt=None
+                    best_dly[inPhase]=[d_low[inPhase]]*32
+                    best_diff[inPhase]=[None]*32
+#                    for b,p in enumerate(patt):
+#                        positiveJump=((not inPhase) and (b<16)) or (inPhase and (b >= 16)) # may be 0, False, True
+#                        if positiveJump:
+#                            best_diff[inPhase].append(p-0.5)
+#                        else:
+#                            best_diff[inPhase].append(0.5-p)
+                    for dly in range(d_low[inPhase]+1,d_high[inPhase]+1):
+#                        patt_prev=patt
+                        #as measured data is cached, there is no need to specially maintain patt_prev from earlier measurement
+                        dly_prev= max(0,dly-(1,NUM_FINE_STEPS)[compare_prim_steps])
+                        patt_prev=measure_patt(dly_prev) # ,force_meas=False) - will be stored in cache
+                        patt=     measure_patt(dly) # ,force_meas=False) - will be stored in cache
+                        for b in range(32):
+                            positiveJump=((not inPhase) and (b<16)) or (inPhase and (b >= 16)) # may be 0, False, True       
+                            signs=((-1,1)[patt_prev[b]>0.5],(-1,1)[patt[b]>0.5])
+                            if (positiveJump and (signs==(-1,1))) or (not positiveJump and (signs==(1,-1))):
+                                if positiveJump:
+                                    diffs_prev_this=(patt_prev[b]-0.5,patt[b]-0.5)
+                                else:
+                                    diffs_prev_this=(0.5-patt_prev[b],0.5-patt[b])
+                                """    
+                                if abs(patt_prev[b]-0.5) < abs(patt[b]-0.5): # store previos sample
+                                    best_dly[inPhase][b]=dly_prev # dly-1
+                                    best_diff[inPhase][b]=patt_prev[b]-0.5
+                                else:
+                                    best_dly[inPhase][b]=dly
+                                    best_diff[inPhase][b]=patt[b]-0.5
+                                if not positiveJump:  
+                                    best_diff[inPhase][b] *= -1 # invert sign, so sign always means <0 - delay too low, >0 - too high
+                                """
+                                if abs(diffs_prev_this[0]) <= abs(diffs_prev_this[1]): # store previos sample
+                                    if (best_diff[inPhase][b] is None) or (abs (diffs_prev_this[0])<abs(best_diff[inPhase][b])):
+                                        best_dly[inPhase][b]=dly_prev # dly-1
+                                        best_diff[inPhase][b]=diffs_prev_this[0]
+                                        if quiet < 1:
+                                            print ("*%d:%0.3f:%0.3f%s"%(b,diffs_prev_this[0],diffs_prev_this[1],str(signs)),end="")
+                                else:
+                                    if (best_diff[inPhase][b] is None) or (abs (diffs_prev_this[1])<abs(best_diff[inPhase][b])):
+                                        best_dly[inPhase][b]=dly # dly-1
+                                        best_diff[inPhase][b]=diffs_prev_this[1]
+                                        if quiet < 1:
+                                            print ("?%d:%0.3f:%0.3f%s"%(b,diffs_prev_this[0],diffs_prev_this[1],str(signs)),end="")
+                        if quiet < 1:
+                            print("\n dly=%d dly_prev=%d:"%(dly,dly_prev),end=" ")
+                    for b in range(32):
+                        if  best_diff[inPhase][b] == -0.5:
+                            best_diff[inPhase][b] = None # will have to add half-interval (0.5 or 2.5) 
                 # rslt=[None]*16 # each bit will have [inphase][dqs_falling], each - a pair of (delay,diff)
             for b in range(16):
                 rslt[b]=[[None]*2,[None]*2] # [inphase][dqs_falling]
@@ -1904,6 +1936,7 @@ class X393McntrlAdjust(object):
             print ()
 
         if quiet < 3:
+            print("\n\nMeasured data, integer portion, measured with %s steps"%(("fine","primary")[compare_prim_steps]))
             print ("DQS",end=" ")
             for f in ('ir','if','or','of'):
                 for b in range (16):
@@ -1916,6 +1949,32 @@ class X393McntrlAdjust(object):
                         for pData in data: # 16 DQs, each None nor a pair of lists for inPhase in (0,1), each a pair of edges, each a pair of (dly,diff)
                             if pData:
                                 if pData[typ[0]] and pData[typ[0]][typ[1]]:
+                                    print ("%d"%pData[typ[0]][typ[1]][0],end=" ")
+                                    '''
+                                    try:
+                                        print ("%d"%pData[typ[0]][typ[1]][0],end=" ")
+                                    except:
+                                        print (".", end=" ")
+                                    '''
+                                else:
+                                    print ("?", end=" ")
+                            else:
+                                print ("x",end=" ")
+                        
+                print()
+        if quiet < 2:
+            print("\n\nMasked measured data, integer portion, measured with %s steps"%(("fine","primary")[compare_prim_steps]))
+            for f in ('ir','if','or','of'):
+                for b in range (16):
+                    print ("%s_%d"%(f,b),end=" ")
+            print()        
+            for ldly, data in enumerate(meas_data):
+                print("%d"%ldly,end=" ")
+                if data:
+                    for typ in ((0,0),(0,1),(1,0),(1,1)):
+                        for pData in data: # 16 DQs, each None nor a pair of lists for inPhase in (0,1), each a pair of edges, each a pair of (dly,diff)
+                            if pData:
+                                if pData[typ[0]] and pData[typ[0]][typ[1]] and (not pData[typ[0]][typ[1]][1] is None):
                                     print ("%d"%pData[typ[0]][typ[1]][0],end=" ")
                                     '''
                                     try:
@@ -1944,7 +2003,7 @@ class X393McntrlAdjust(object):
                     for typ in ((0,0),(0,1),(1,0),(1,1)):
                         for pData in data: # 16 DQs, each None nor a pair of lists for inPhase in (0,1), each a pair of edges, each a pair of (dly,diff)
                             if pData:
-                                if pData[typ[0]] and pData[typ[0]][typ[1]]:
+                                if pData[typ[0]] and pData[typ[0]][typ[1]] and (not pData[typ[0]][typ[1]][1] is None):
                                     print ("%.2f"%pData[typ[0]][typ[1]][1],end=" ")
                                     '''
                                     try:
@@ -1958,8 +2017,10 @@ class X393McntrlAdjust(object):
                                 print ("x",end=" ")
                         
                 print()
-            print("\n\n")    
-#            print ("meas_data=%s"%str(meas_data))
+        if quiet < 3:
+            print("\n\nMeasured data, comparing current data with the earlier by one %s step"%(("fine","primary")[compare_prim_steps]))
+            print("When the fractional (second in the tuple) data is exactly -0.5, the actual result is in the range %s from the integer delay"%
+                  (("+0.0..+1.0","+0.0..+%d"%NUM_FINE_STEPS)[compare_prim_steps]))
             print ("meas_data=[")
             for d in meas_data:
                 print("%s,"%(str(d)))
@@ -1974,8 +2035,19 @@ class X393McntrlAdjust(object):
                        lane=0,
                        bin_size=5,
                        primary_set=2,
+#                       compare_prim_steps=True, # while scanning, compare this delay with 1 less by primary(not fine) step,
+#                                                # save None for fraction in unknown (previous -0.5, next +0.5)
+                       data_set_number=2,
+                       scale_w=0.2,              # weight for "uncertain" values (where samples chane from all 0 to all 1 in one step)
+ 
                        quiet=1):
-        meas_data=get_test_dq_dqs_data.get_data()
+        """
+        @scale_w        weight for "uncertain" values (where samples chane from all 0 to all 1 in one step)
+
+        """
+        print ("proc_test_data(): scale_w=%f"%(scale_w))
+        compare_prim_steps=get_test_dq_dqs_data.get_compare_prim_steps(data_set_number)
+        meas_data=get_test_dq_dqs_data.get_data(data_set_number)
         meas_delays=[]
         for data in meas_data:
             if data:
@@ -1995,10 +2067,10 @@ class X393McntrlAdjust(object):
                             if pData[inPhase]:
                                 for e in (0,1):
                                     if pData[inPhase][e]:
-                                        bits[b][inPhase*2+e]=pData[inPhase][e][0]
+                                        bits[b][inPhase*2+e]=pData[inPhase][e]# [0]
                 meas_delays.append(bits)
         if quiet<1:
-            x393_lma.test_data(meas_delays,quiet)
+            x393_lma.test_data(meas_delays,compare_prim_steps,quiet)
         lma=x393_lma.X393LMA()
         lma.init_parameters(
                         lane,
@@ -2007,5 +2079,7 @@ class X393McntrlAdjust(object):
                         78.0,   # dly_step_ds,
                         primary_set,
                         meas_delays,
+                        compare_prim_steps,
+                        scale_w,
                         quiet)
         
