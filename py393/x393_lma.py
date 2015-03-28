@@ -116,7 +116,12 @@ class X393LMA(object):
                    'tFDQS':    [True, True, True, True],
                    'tFDQ':     [True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True],
                    'anaScale': True, # False,# True, # False # Broke?
-                   'tCDQS':    False # True #False #True # list of 30
+#                   'tCDQS':    False # True #False #True # list of 30
+                   'tCDQS':    [True,  True,  True,  True,  True,  True,  True,  True, # 8
+                               True,  True,  True,  True,  True,  True,  True,  True,  True,  True,  True,  True,  True,  True,  True,
+#                                False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, #15
+                                True,  True,  True,  True,  True,  True,  True]
+#                                False, False, False, False, False, False, False] #7
                    }
     """
     parameterMask={'tSDQS':    True,
@@ -144,8 +149,11 @@ class X393LMA(object):
                            data_set,
                            compare_prim_steps,
                            scale_w=0.2, # multiply weight by this if fractions are undefined
-                           periods=None):
-        print ("createYandWvectors(): scale_w=%f"%(scale_w))
+                           periods=None,
+                           quiet=1):
+        
+        if quiet < 3:
+            print ("createYandWvectors(): scale_w=%f"%(scale_w))
         def pythIsNone(obj):
             return obj is None
         isNone=pythIsNone
@@ -765,7 +773,7 @@ class X393LMA(object):
                 print()
         
         return data_periods_map
-    def init_parameters(self,
+    def lma_fit(self,
                         lane, # byte lane
                         bin_size,
                         clk_period,
@@ -782,6 +790,10 @@ class X393LMA(object):
         each of 2x2 elements (DQ delay values) or null
         Create data set template - for each DQS delay and inPhase
          - branch - number of full periods to add
+        After initial parametersn are created - run LMA to find optimal ones,
+        then return up to 3 varints (early, nominal, late) providing the best
+        DQ input delay for each DQS one
+         
         @lane          byte lane to process 
         @bin_size     bin size for the histograms (should be 5/10/20/40)
         @clk_period   SDCLK period in ps
@@ -791,9 +803,12 @@ class X393LMA(object):
         @compare_prim_steps while scanning, compare this delay with 1 less by primary(not fine) step,
                             save None for fraction in unknown (previous -0.5, next +0.5)
         @scale_w        weight for "uncertain" values (where samples chane from all 0 to all 1 in one step)
-        @quiet        reduce output   
+        @quiet        reduce output
+        @return 3-element dictionary of ('early','nominal','late'), each being None or a 160-element list,
+                each element being either None, or a list of 3 best DQ delay values for the DQS delay (some mey be None too) 
         """
-        print ("init_parameters(): scale_w=%f"%(scale_w))
+        if quiet < 3:
+            print ("init_parameters(): scale_w=%f"%(scale_w))
         self.clk_period=clk_period
         
         hist_estimated=self.estimate_from_histograms(lane, # byte lane
@@ -816,7 +831,8 @@ class X393LMA(object):
                                        data_set,
                                        compare_prim_steps,
                                        scale_w, 
-                                       data_periods_map)
+                                       data_periods_map,
+                                       quiet)
 #        print("ywp=%s"%(str(ywp)))
         if quiet < 2:
             print("\nY-vector:")
@@ -839,7 +855,8 @@ class X393LMA(object):
         for b, d in enumerate(hist_estimated['b_indiv']):
             tDQSHL  += (d[1][0]-d[0][0] +d[3][0]-d[2][0])*step_ps
             tDQHL[b] = (d[0][0]-d[1][0] +d[3][0]-d[2][0])*step_ps
-            print ("%d: S=%f, D=%f"%(b, d[1][0]-d[0][0] +d[3][0]-d[2][0], d[0][0]-d[1][0] +d[3][0]-d[2][0])) 
+            if quiet < 3:
+                print ("%d: S=%f, D=%f"%(b, d[1][0]-d[0][0] +d[3][0]-d[2][0], d[0][0]-d[1][0] +d[3][0]-d[2][0])) 
         tDQSHL  /= 8.0
         # calculate primary tDQ delays (primary - for the edges selected by 'primary_set'
         tDQ=[0.0]*8
@@ -860,9 +877,15 @@ class X393LMA(object):
                     "tCDQS":  (0.0,)*30
 #                    "anaScale":self.analog_scale
                     }
-        print ("parameters=%s"%(str(parameters)))
+        """
+        Returns # best (early,nominal,late) for each bit for each delay ([3][160][8])
+        Outer list each has 160-element list, some of which are None, others hove 8 elements (including None ones)
+        """
+        if quiet < 2:
+            print ("parameters=%s"%(str(parameters)))
         self.normalizeParameters(parameters) #isMask=False)
-        print ("normalized parameters=%s"%(str(parameters)))
+        if quiet < 4:
+            print ("normalized parameters=%s"%(str(parameters)))
         """
             both ways work:
         self.parameterMask={}
@@ -872,15 +895,16 @@ class X393LMA(object):
 #        self.parameterMask=self.normalizeParameters({},isMask=True)
         self.parameterMask=self.normalizeParameters(self.parameterMask,isMask=True)
         
-        print ("parameters mask=%s"%(str(self.parameterMask)))
+        if quiet < 4:
+            print ("parameters mask=%s"%(str(self.parameterMask)))
         create_jacobian=True
 
         fxj= self.createFxAndJacobian(parameters,
                                      ywp,   # keep in self.variable?
                                      primary_set,
-                                     jacobian=create_jacobian,
-                                     parMask=None,
-                                     quiet=1)
+                                     create_jacobian,
+                                     None, #parMask
+                                     quiet)
         
         if create_jacobian:
             fx=fxj['fx']
@@ -893,19 +917,12 @@ class X393LMA(object):
             print("\nfx (filtered):")
             self.showYOrVector(ywp,True,fx)
             
-            
-        SX=0.0
-        SX2=0.0
-        S0=0.0
-        for d,w in zip(fx,ywp['w']):
-            if w>0:
-                S0+=w
-                SX+=w*d
-                SX2+=w*d*d
-        avg= SX/S0
-        rms= math.sqrt(SX2/S0)
-        print ("average(fx)= %fps, rms(fx)=%fps"%(avg,rms))
-        
+        if quiet < 4:
+            arms = self.getParAvgRMS(parameters,
+                                     ywp,
+                                     primary_set, # prima
+                                     quiet+1)
+            print ("average(fx)= %fps, rms(fx)=%fps"%(arms['avg'],arms['rms']))
         if quiet < 3:
             jByJT=np.dot(fxj['jacob'],np.transpose(fxj['jacob']))
             print("\njByJT:")
@@ -923,7 +940,7 @@ class X393LMA(object):
                             self.lambdas,
                             self.finalDiffRMS,
                             quiet)
-            if quiet < 4:
+            if (quiet < 4) or ((quiet < 5) and finished):
                 arms = self.getParAvgRMS(parameters,
                                          ywp,
                                          primary_set, # prima
@@ -941,8 +958,8 @@ class X393LMA(object):
                                      ywp,   # keep in self.variable?
                                      primary_set,
                                      False,
-                                     parMask=None,
-                                     quiet=1)
+                                     None,
+                                     quiet)
         
         if quiet < 3:
             print("\nfx-postLMA:")
@@ -975,7 +992,15 @@ class X393LMA(object):
                                 print("?",end=" ")
                             else:
                                 print("%d"%(DQvDQS[enl][dly][b]),end=" ")
-                print()         
+                print()
+        rslt={}
+        rslt_names=("early","nominal","late")
+        for i, d in enumerate(DQvDQS):
+            rslt[rslt_names[i]] = d
+        return rslt
+#        return DQvDQS 
+#        Returns 3-element dictionary of ('early','nominal','late'), each being None or a 160-element list,
+#                each element being either None, or a list of 3 best DQ delay values for the DQS delay (some mey be None too) 
 
 
     def getBestDQforDQS(self,
@@ -1032,7 +1057,7 @@ class X393LMA(object):
             if someData:    
                 dqForDqs.append(vDQ)
             else:
-                dqForDqs.append(None)               
+                dqForDqs.append(None)
         return dqForDqs
     """
         for dly in range(DLY_STEPS):
@@ -1189,7 +1214,7 @@ class X393LMA(object):
                 if d >= 0:
                     dqs_delay32_index[i] = dqs_delay32_en[d]
                     
-            print("*****dqs_delay32_index=",dqs_delay32_index)            
+#            print("*****dqs_delay32_index=",dqs_delay32_index)            
             
         dq_finedelay_en=[None]*8
         for b in range(8):
@@ -1208,6 +1233,7 @@ class X393LMA(object):
             dtdqs_dtFDQS = (-fineM5[0][dlyMod5],-fineM5[1][dlyMod5],-fineM5[2][dlyMod5],-fineM5[3][dlyMod5])
             dtdqs_dtDQSHL_rf=(-0.25,+0.25) #  ign opposite from: ir = ir0 - s/4 + d/4; or = or0 - s/4 - d/4, ... - NOT, but maybe other is wrong
             #correct for DQS edge type
+#            dbg=[0.0]*32
             for b in range(8): # use all 4 variants
                 for t in range(4):
                     indx=32*dly+t*8+b
@@ -1223,9 +1249,10 @@ class X393LMA(object):
                                     jacob[pIndx,indx]=-dtdqs_dtFDQS[i]
                                     
                         if dqs_delay32_en:
-                            for i,pIndx in enumerate (dqs_delay32_en):
+                            for i,pIndx in enumerate (dqs_delay32_index):
                                 if pIndx >= 0:
                                     jacob[pIndx,indx]=(0,1.0)[i==dlyDiv5]
+#                                    dbg[i]+=jacob[pIndx,indx]
                                     
                         if parInd['tDQSHL'] >= 0:
                             jacob[parInd['tDQSHL'],indx]=-dtdqs_dtDQSHL_rf[t & 1]
@@ -1249,7 +1276,7 @@ class X393LMA(object):
                         if parInd['anaScale'] >= 0:
                             if anaScale and not isNone(y_fractions[indx]):
                                 jacob[parInd['anaScale'],indx]=-y_fractions[indx]
-                                        
+#            print("dbg: %d: "%(dly),dbg)                            
         return {'fx':fx,'jacob':jacob}
     def getParAvgRMS(self,
                   parameters,

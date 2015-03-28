@@ -2042,10 +2042,20 @@ class X393McntrlAdjust(object):
  
                        quiet=1):
         """
-        @scale_w        weight for "uncertain" values (where samples chane from all 0 to all 1 in one step)
-
+        Run DQ vs DQS fitting for one data lane (0 or 1) using earlier acquired hard-coded data
+        @lane             byte lane to process 
+        @bin_size         bin size for the histograms (should be 5/10/20/40)
+        @primary_set      which of the data edge series to use as leading (other will be trailing by 180) 
+        @data_set_number  select one of the hard-coded data sets (sets 0 and 1 use comparing with the data 1 fine step below
+                          set #2 (default) used measurement with previous primary step measurement (will not suffer from
+                          fine range wider than on primary step)
+        @scale_w        weight for "uncertain" values (where samples change from all 0 to all 1 in one step)
+                        For sufficient data 0.0 is OK (and seems to work better)- only "analog" samples are considered   
+        @return 3-element dictionary of ('early','nominal','late'), each being None or a 160-element list,
+                each element being either None, or a list of 3 best DQ delay values for the DQS delay (some mey be None too) 
         """
-        print ("proc_test_data(): scale_w=%f"%(scale_w))
+        if quiet < 3:
+            print ("proc_test_data(): scale_w=%f"%(scale_w))
         compare_prim_steps=get_test_dq_dqs_data.get_compare_prim_steps(data_set_number)
         meas_data=get_test_dq_dqs_data.get_data(data_set_number)
         meas_delays=[]
@@ -2054,14 +2064,6 @@ class X393McntrlAdjust(object):
                 bits=[None]*16
                 for b,pData in enumerate(data):
                     if pData:
-                        """
-                        bits[b]=[[None,None],[None,None]]
-                        for inPhase in (0,1):
-                            if pData[inPhase]:
-                                for e in (0,1):
-                                    if pData[inPhase][e]:
-                                        bits[b][inPhase][e]=pData[inPhase][e][0]
-                        """                
                         bits[b]=[None]*4
                         for inPhase in (0,1):
                             if pData[inPhase]:
@@ -2072,14 +2074,13 @@ class X393McntrlAdjust(object):
         if quiet<1:
             x393_lma.test_data(meas_delays,compare_prim_steps,quiet)
         lma=x393_lma.X393LMA()
-        lma.init_parameters(
-                        lane,
-                        bin_size,
-                        2500.0, # clk_period,
-                        78.0,   # dly_step_ds,
-                        primary_set,
-                        meas_delays,
-                        compare_prim_steps,
-                        scale_w,
-                        quiet)
+        return lma.lma_fit(lane,
+                           bin_size,
+                           2500.0, # clk_period,
+                           78.0,   # dly_step_ds,
+                           primary_set,
+                           meas_delays,
+                           compare_prim_steps,
+                           scale_w,
+                           quiet)
         
