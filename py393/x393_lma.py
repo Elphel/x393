@@ -54,7 +54,7 @@ PARAMETER_TYPES=(
                      {"name":"tDQ",     "size":8,            "units":"ps","description":"DQi delay","en":1},
                      {"name":"tFDQS",   "size":4,            "units":"ps","description":"DQS fine delays (mod 5)","en":1}, #only 4 are independent, 5-th is -sum of 4 
                      {"name":"tFDQ",    "size":32,           "units":"ps","description":"DQ  fine delays (mod 5)","en":1},
-                     {"name":"anaScale","size":1, "dflt":20, "units":"ps","description":"Scale for non-binary measured results","en":1},
+                     {"name":"anaScale","size":1, "dflt":20, "units":"ps","description":"Scale for non-binary measured results","en":1}, #should not be 0 - singular matrix
                      {"name":"tCDQS",   "size":30,           "units":"ps","description":"DQS primary dealays (all but 8 and 24","en":1}, #only 4 are independent, 5-th is -sum of 4 
                      )
 FINE_STEPS=5
@@ -115,8 +115,8 @@ class X393LMA(object):
                    'tDQ':      [True, True, True, True, True, True, True, True],
                    'tFDQS':    [True, True, True, True],
                    'tFDQ':     [True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, True],
-                   'anaScale': False,# True, # False # Broke?
-                   'tCDQS':    True #False #True # list of 30
+                   'anaScale': True, # False,# True, # False # Broke?
+                   'tCDQS':    False # True #False #True # list of 30
                    }
     """
     parameterMask={'tSDQS':    True,
@@ -192,7 +192,10 @@ class X393LMA(object):
                                     w[i]=scale_w
                                     yf[i]=tData[0]+halfStep
                                 if not periods is None:
-                                    p[i]=periods[dly][b][t] 
+                                    p[i]=periods[dly][b][t]
+        #Normalize weights
+        S0=np.sum(w)
+        w*=1.0/S0                            
         vectors={'y':y,'yf':yf,'w':w,'f':f} # yf - use for actual float value, y - integer
         if not periods is None:
             vectors['p']=p                        
@@ -1103,7 +1106,7 @@ class X393LMA(object):
         tFDQS5=list(parameters['tFDQS'])
         tFDQS5.append(-tFDQS5[0]-tFDQS5[1]-tFDQS5[2]-tFDQS5[3])
         tCDQS32=list(parameters['tCDQS'][0:8])+[0]+list(parameters['tCDQS'][8:23])+[0]+list(parameters['tCDQS'][23:30])
-        print("*****tCDQS32=",tCDQS32)            
+#        print("*****tCDQS32=",tCDQS32)            
         
         tFDQ=[]
         for b in range(8):
@@ -1186,7 +1189,7 @@ class X393LMA(object):
                 if d >= 0:
                     dqs_delay32_index[i] = dqs_delay32_en[d]
                     
-        print("*****dqs_delay32_index=",dqs_delay32_index)            
+            print("*****dqs_delay32_index=",dqs_delay32_index)            
             
         dq_finedelay_en=[None]*8
         for b in range(8):
@@ -1245,7 +1248,7 @@ class X393LMA(object):
                                 jacob[parInd['tDQHL'][b],indx]=+0.25
                         if parInd['anaScale'] >= 0:
                             if anaScale and not isNone(y_fractions[indx]):
-                                jacob[parInd['anaScale'],indx]=y_fractions[indx]
+                                jacob[parInd['anaScale'],indx]=-y_fractions[indx]
                                         
         return {'fx':fx,'jacob':jacob}
     def getParAvgRMS(self,
