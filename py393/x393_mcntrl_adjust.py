@@ -51,6 +51,7 @@ import x393_lma
 
 #import vrlg
 NUM_FINE_STEPS=    5
+NUM_DLY_STEPS =NUM_FINE_STEPS * 32 # =160 
 
 class X393McntrlAdjust(object):
     DRY_MODE= True # True
@@ -208,7 +209,28 @@ class X393McntrlAdjust(object):
             mem16.append(((w32[i]>>24) & 0xff) | (((w32[i+1] >> 24) & 0xff) << 8)) 
         return mem16
 
-
+    def set_phase_with_refresh(self, # check result for not None
+                               phase,
+                               quiet=2):
+        """
+        Set specified phase and matching cmda_odelay while temporarily turning off refresh
+        @phase phase to set, signed short
+        @quiet reduce output 
+        @return cmda_odelay linear value or None if there is no valid cmda output delay for this phase
+        """
+        if not "cmda_bspe" in self.adjustment_state:
+            raise Exception ("No cmda_odelay data is available. 'adjust_cmda_odelay 0 1 0.1 3' command should run first.")
+        dly_steps=self.x393_mcntrl_timing.get_dly_steps()
+        numPhaseSteps= int(dly_steps['SDCLK_PERIOD']/dly_steps['PHASE_STEP']+0.5)
+        cmda_odly_data=self.adjustment_state['cmda_bspe'][phase % numPhaseSteps]
+        if (not cmda_odly_data): # phase is invalid for CMDA
+            return None
+        cmda_odly_lin=cmda_odly_data['ldly']
+        self.x393_axi_tasks.enable_refresh(0)
+        self.x393_mcntrl_timing.axi_set_phase(phase,quiet=quiet)
+        self.x393_mcntrl_timing.axi_set_cmda_odelay(self.combine_delay(cmda_odly_lin),quiet=quiet)
+        self.x393_axi_tasks.enable_refresh(1)
+        return cmda_odly_lin
 
     def scan_dqs(self,
                  low_delay, 
@@ -1026,7 +1048,7 @@ class X393McntrlAdjust(object):
         if start_phase >=128:
             start_phase -= 256 # -128..+127
         recover_cmda_dly_step=0x20 # subtract/add from cmda_odelay (hardware!!!) and retry (same as 20 decimal)
-        max_lin_dly=159
+        max_lin_dly=NUM_DLY_STEPS-1
         wlev_address_bit=7
         wlev_max_bad=0.01 # <= OK, > bad
         def phase_step(phase,cmda_dly):
@@ -1318,6 +1340,11 @@ class X393McntrlAdjust(object):
                     print()
 #TODO: Add 180 shift to get center, not marginal cmda_odelay        
         self.adjustment_state.update(rdict)
+        if (quiet <3):
+            print ("rdict={")
+            for k,v in rdict.items():
+                print("'%s':%s,"%(k,str(v)))
+            print ("}")
         return rdict
         
     def adjust_write_levelling(self,
@@ -1331,12 +1358,14 @@ class X393McntrlAdjust(object):
         Find DQS output delay for each phase value
         Depends on adjust_cmda_odelay results
         """
-        if not self.adjustment_state['cmda_bspe']:
+        try:
+            self.adjustment_state['cmda_bspe']
+        except:
             raise Exception("Command/Address delay calibration data is not found - please run 'adjust_cmda_odelay' command first")
         start_phase &= 0xff
         if start_phase >=128:
             start_phase -= 256 # -128..+127
-        max_lin_dly=159
+        max_lin_dly=NUM_DLY_STEPS-1
         wlev_max_bad=0.01 # <= OK, > bad
         numPhaseSteps=len(self.adjustment_state['cmda_bspe'])
         if quiet < 2:
@@ -1649,12 +1678,17 @@ class X393McntrlAdjust(object):
                         print("%d %d %f"%(bspe['ldly'], 10*bspe['period'], 10*bspe['err']),end=" ")
                     else:
                         print("X X X",end=" ")
-                print()            
+                print()
+                            
         self.adjustment_state.update(rdict)
-#        print (self.adjustment_state)
+        if (quiet <3):
+            print ("rdict={")
+            for k,v in rdict.items():
+                print("'%s':%s,"%(k,str(v)))
+            print ("}")
         return rdict
           
-    def adjust_pattern(self,
+    def measure_pattern(self,
                        compare_prim_steps=True, # while scanning, compare this delay with 1 less by primary(not fine) step,
                                                 # save None for fraction in unknown (previous -0.5, next +0.5) 
                        limit_step=0.125, # initial delay step as a fraction of the period
@@ -1668,11 +1702,11 @@ class X393McntrlAdjust(object):
         (late 0->1, early 1->0) for each of the DQ and DQS
         """
         nrep=8
-        max_lin_dly=159
+        max_lin_dly=NUM_DLY_STEPS-1#159
         timing=self.x393_mcntrl_timing.get_dly_steps()
         #steps={'DLY_FINE_STEP': 0.01, 'DLY_STEP': 0.078125, 'PHASE_STEP': 0.022321428571428572, 'SDCLK_PERIOD': 2.5}
-        dly_step=int(5*limit_step*timing['SDCLK_PERIOD']/timing['DLY_STEP']+0.5)
-        step180= int(5*0.5* timing['SDCLK_PERIOD'] / timing['DLY_STEP'] +0.5)                                                                                                                                                                                                                 
+        dly_step=int(NUM_FINE_STEPS*limit_step*timing['SDCLK_PERIOD']/timing['DLY_STEP']+0.5)
+        step180= int(NUM_FINE_STEPS*0.5* timing['SDCLK_PERIOD'] / timing['DLY_STEP'] +0.5)                                                                                                                                                                                                                 
         if quiet<2:
             print ("timing)=%s, dly_step=%d step180=%d"%(str(timing),dly_step,step180))
         self.x393_pio_sequences.set_read_pattern(nrep+3) # set sequence once
@@ -1879,16 +1913,6 @@ class X393McntrlAdjust(object):
                                     diffs_prev_this=(patt_prev[b]-0.5,patt[b]-0.5)
                                 else:
                                     diffs_prev_this=(0.5-patt_prev[b],0.5-patt[b])
-                                """    
-                                if abs(patt_prev[b]-0.5) < abs(patt[b]-0.5): # store previos sample
-                                    best_dly[inPhase][b]=dly_prev # dly-1
-                                    best_diff[inPhase][b]=patt_prev[b]-0.5
-                                else:
-                                    best_dly[inPhase][b]=dly
-                                    best_diff[inPhase][b]=patt[b]-0.5
-                                if not positiveJump:  
-                                    best_diff[inPhase][b] *= -1 # invert sign, so sign always means <0 - delay too low, >0 - too high
-                                """
                                 if abs(diffs_prev_this[0]) <= abs(diffs_prev_this[1]): # store previos sample
                                     if (best_diff[inPhase][b] is None) or (abs (diffs_prev_this[0])<abs(best_diff[inPhase][b])):
                                         best_dly[inPhase][b]=dly_prev # dly-1
@@ -2024,40 +2048,350 @@ class X393McntrlAdjust(object):
             print ("meas_data=[")
             for d in meas_data:
                 print("%s,"%(str(d)))
-            print("]")    
+            print("]")
+        rdict={"patt_prim_steps":    compare_prim_steps,
+               "patt_meas_data":     meas_data} # TODO: May delete after LMA fitting
+        self.adjustment_state.update(rdict)
+
+    def measure_dqs_idly_phase(self,
+                               compare_prim_steps = True, # while scanning, compare this delay with 1 less by primary(not fine) step,
+                                                # save None for fraction in unknown (previous -0.5, next +0.5) 
+                               frac_step=0.125,
+                               sel=1,
+                               quiet=1):
+        """
+        Scan phase and find DQS input delay value to find when
+        the result changes (it is caused by crossing clock boundarty from extrenal memory device derived
+        to system-synchronous one
+        cmda_odelay should be already calibrated, refresh will be turned on.
+        Uses random/previously written pattern in one memory block (should have some varying data
+        """
+        
+        """
+        TODO: write block of data: 0xffff, 0xffff, 0x0000, 0x0000, 0xffff, 0xffff, ...(dqs_odelay set by wlev)
+        All bits will alternate, even if the DQ_ODELAY vs DQS_ODELAY will be wrong
+        """
+        try:
+            dqi_dqsi=self.adjustment_state['dqi_dqsi']
+        except:
+            print ("No DQ IDELAY vs. DQS IDELAY data available, exiting")
+            return
+        # Mark DQS idelay values that have all DQ delays valid 
+        dqsi_valid={} #[None]*NUM_DLY_STEPS
+        for k,v in dqi_dqsi.items():
+            if v:
+                dqsi_valid[k]=[False]*NUM_DLY_STEPS
+                for dly in range(NUM_DLY_STEPS):
+                    if v[dly]:
+                        for d in v[dly]:
+                            if d is None:
+                                break
+                        else: # All values are not None
+                            dqsi_valid[k][dly]=True
+        if not dqsi_valid:
+            print ("No Valid DQ IDELAY vs. DQS IDELAY data is available, exiting")
+            return
+        if quiet <1:
+            print ('dqi_dqsi=%s'%(str(dqi_dqsi)))
+            print("\n\n")
+        if quiet <2:
+            print ('dqsi_valid=%s'%(str(dqsi_valid)))
+        dqsi_lohi={}
+        for k,vdly in dqsi_valid.items():
+            if quiet <2:
+                print ("k='%s', vdly=%s"%(k,str(vdly)))
+            for i,v in enumerate(vdly):
+                if v:
+                    low=i
+                    break
+            else:
+                print ("Could not find valid data in dqsi_valid[%s]=%s"%(k,str(vdly)))
+                continue
+            for i in range(low+1,NUM_DLY_STEPS):
+                if not vdly[i]:
+                    high=i
+                    break
+            else:
+                high= NUM_DLY_STEPS-1
+            dqsi_lohi[k]=(low,high)       
+        if quiet <2:
+            print ('dqsi_valid=%s'%(str(dqsi_valid)))
+        if quiet <3:
+            print ('dqsi_lohi=%s'%(str(dqsi_lohi)))
+         
+
+        brc=(5,        # 3'h5,     # bank
+             0x1234,   # 15'h1234, # row address
+             0x100)     # 10'h100   # column address
+        nrep=8 # number of 8-bursts to compare (actual will have 3 more, first/last will be discarded
+        timing=self.x393_mcntrl_timing.get_dly_steps()
+        #steps={'DLY_FINE_STEP': 0.01, 'DLY_STEP': 0.078125, 'PHASE_STEP': 0.022321428571428572, 'SDCLK_PERIOD': 2.5}
+        dly_step=int(NUM_FINE_STEPS*frac_step*timing['SDCLK_PERIOD']/timing['DLY_STEP']+0.5)
+        numPhaseSteps= int(timing['SDCLK_PERIOD']/timing['PHASE_STEP']+0.5)
+        step180= int(NUM_FINE_STEPS*0.5* timing['SDCLK_PERIOD'] / timing['DLY_STEP'] +0.5)                                                                                                                                                                                                                 
+        if quiet<2:
+            print ("timing)=%s, dly_step=%d step180=%d"%(str(timing),dly_step,step180))
+        self.x393_pio_sequences.set_read_block(*(brc+(nrep+3,sel))) # set sequence once
+#        def read_blk(): #return array of 16-bit words to compare for bit diffs
+#            pass
+        
+        def dqsi_phase_step (phase):
+            dqsi_cache=[None]*NUM_DLY_STEPS # cache for holding already measured delays. None - not measured, 0 - no data, [[]..[]]
+            def measure_dqsi(dqs_idly,branch,force_meas=False):
+                if not dqsi_valid[branch]:
+                    return None
+                if (dqs_idly > len(dqsi_cache)) or (dqs_idly <0 ):
+                    print ("dqs_idly=%d, dqsi_cache=%s"%(dqs_idly,str(dqsi_cache)))
+                try:
+                    dqsi_cache[dqs_idly] 
+                except:
+                    print ("dqs_idly=%d, dqsi_cache=%s"%(dqs_idly,str(dqsi_cache)))
+                       
+                if (dqsi_cache[dqs_idly] is None) or force_meas:
+                    self.x393_mcntrl_timing.axi_set_dqs_idelay(self.combine_delay(dqs_idly),quiet=quiet)
+                    self.x393_mcntrl_timing.axi_set_dq_idelay(self.combine_delay(dqi_dqsi[branch][dqs_idly]),quiet=quiet)
+                    buf=self.x393_pio_sequences.read_block(4 * (nrep+1) +2,
+                                                           (0,1)[quiet<1], #show_rslt,
+                                                           1) # wait_complete=1)
+                    buf= buf[4:(nrep*4)+4] # discard first 4*32-bit words and the "tail" after nrep*4 words32
+                    patt=self.convert_w32_to_mem16(buf)# will be nrep*8 items
+                    dqsi_cache[dqs_idly]=patt
+                    if quiet < 1:
+                        print ('measure_phase(%d,%s) - new measurement'%(phase,str(force_meas)))
+                else:
+                    patt=dqsi_cache[dqs_idly]
+                    if quiet < 1:
+                        print ('measure_patt(%d,%s) - using cache'%(phase,str(force_meas)))
+                return patt
+            def get_bit_diffs(dqs_idly0,dqs_idly1,branch):
+                patt0=measure_dqsi(dqs_idly0,branch)
+                patt1=measure_dqsi(dqs_idly1,branch)
+                if (patt0 is None) or (patt1 is None):
+                    raise Exception("Tried to compare invalid(s): dqs_idly0=%d, dqs_idly1=%d, branch=%s"%(dqs_idly0, dqs_idly1, branch))
+                rslt=[0]*16
+                for i in range (nrep*8): # with 8 nursts - 64 x16-bit words
+                    diffs=patt0[i] ^ patt1[i]
+                    for b in range(len(rslt)):
+                        rslt[b]+= (diffs >> b) & 1
+                return rslt        
+            def get_lane_diffs(dqs_idly0,dqs_idly1,branch):
+                diffs= get_bit_diffs(dqs_idly0,dqs_idly1,branch)
+#                lane_diffs=[0]*(len(diffs)//8)
+                lane_diffs=[]
+                for lane in range(len(diffs)//8):
+                    num_diffs=0   
+                    for b in range(8):
+                        num_diffs += (0,1)[diffs[8*lane+b] != 0]
+                    lane_diffs.append(num_diffs)
+                if quiet <3:
+                    print ("%d ? %d : %s"%(dqs_idly0,dqs_idly1,lane_diffs))
+
+                return lane_diffs
+            def get_lane_adiffs(dqs_idly0,dqs_idly1,branch): # Assuming all 8 bits differ in the read data - check it in a single block? Write pattern?
+                diffs=get_lane_diffs(dqs_idly0,dqs_idly1,branch)
+                    
+                return ((diffs[0]-4)/4.0,(diffs[1]-4)/4.0)
+            # Set phase
+            phase_ok=self.set_phase_with_refresh( # check result for not None
+                               phase,
+                               quiet)
+            if not phase_ok:
+                return None # no vlaid CMDA ODELAY exists for this phase 
+            # try branches (will exit on first match)
+            for branch in dqsi_lohi.keys():
+                low=dqsi_lohi[branch][0]
+                high=dqsi_lohi[branch][1]
+                # start with low dqs idelay and increase it by 1 primary step until getting 2 results with no bit differences
+                # (using both byte lanes now)
+                for idly1 in range(low+NUM_FINE_STEPS,high,NUM_FINE_STEPS):
+                    diffs=get_lane_diffs(idly1-NUM_FINE_STEPS,idly1,branch)
+                    if diffs == [0,0]: # no bit diffs in both byte lanes
+                        low=idly1
+                        break
+                else: #failed to find two delays to get the same read results (no bit differences in both lanes)
+                    continue
+                # got both byte lanes with no difference, now try to find dqs_idelay delay where both bytes differ
+                for idly in range(low,high,dly_step):
+                    idly1=min(idly+dly_step,high)
+                    diffs=get_lane_diffs(low,idly1,branch)
+                    if (diffs[0] != 0) and (diffs[1] != 0):
+                        high=idly1
+                        break
+                    elif (diffs[0] == 0) and (diffs[1] == 0):
+                        low=idly1 # move low higher
+                else: #failed to find another delay to get different read results (both myte lanes have bit differences
+                    continue
+                if quiet <3:
+                    print ("0: low=%d, high=%d"%(low,high))
+                low_safe=low # safe low
+                # now find marginal dqs idelay for each byte lane by dividing (low,high) interval
+                #reduce low,high range for combined lanes
+                dly = high
+                while low < dly: # first adjust low
+                    dly_next = (low+dly) // 2
+                    diffs=get_lane_diffs(low,dly_next,branch)
+                    if (diffs[0] != 0) and (diffs[1] != 0):
+                        dly = dly_next
+                        high= dly
+                    elif (diffs[0] == 0) and (diffs[1] == 0):
+                        if low == dly_next:
+                            break
+                        low = dly_next # move low higher
+                    else: # one byte matches, other - not (uncertain)
+                        dly = dly_next
+                dly = low
+                while dly < high: # now adjust high
+                    dly_next = (high+dly) // 2
+                    diffs=get_lane_diffs(low_safe,dly_next,branch)
+                    if (diffs[0] != 0) and (diffs[1] != 0):
+                        high= dly_next
+                    else: 
+                        if dly == dly_next:
+                            break
+                        dly = dly_next # move low higher
+                #low, high are now closer, now scan and store (delay,num_bits) for each lane
+                #May be check maximal number of bits that mismatch for each lane? Now assuming that it can be up to all 8
+#                low -= NUM_FINE_STEPS
+#                low =  max(dqsi_lohi[branch][0], low - NUM_FINE_STEPS ) # try to move lower by the fine steps interval, if possible
+#                high = min(dqsi_lohi[branch][1], high+ NUM_FINE_STEPS ) # try to move higher by the fine steps interval, if possible
+                if quiet <3:
+                    print ("1: low=%d(%d), high=%d"%(low,low_safe,high))
+                high = min(dqsi_lohi[branch][1], high+ NUM_FINE_STEPS ) # try to move higher by the fine steps interval, if possible
+                if quiet <3:
+                    print ("2: low=%d(%d), high=%d"%(low,low_safe,high))
+                rslt=[]
+                bestDly=[None]*2 # [low_safe]*2 # otherwise may fail - check it?
+                bestDiffs=[None]*2
+                comp_step=(1,NUM_FINE_STEPS)[compare_prim_steps]
+                for dly in range (low, high+1):
+                    ref_dly= dly-comp_step
+                    if ref_dly < low_safe:
+                        continue
+                    if quiet <2:
+                        print ("dly=%d, ref_dly=%d"%(dly, ref_dly),end=" ")
+                    adiffs= get_lane_adiffs(low_safe,dly,branch)
+                    adiffs_ref=get_lane_adiffs(low_safe,ref_dly,branch)
+                    
+                    for lane in range(len(adiffs)):
+                        diffs_prev_this=(adiffs_ref[lane],adiffs[lane])
+                        if (diffs_prev_this[0] <= 0) and (diffs_prev_this[1] >= 0): 
+                            if abs(diffs_prev_this[0]) <= abs(diffs_prev_this[1]): # store previos sample
+                                if (bestDiffs[lane] is None) or (abs (diffs_prev_this[0]) < abs(bestDiffs[lane])):
+                                    bestDly[lane]=ref_dly # dly-1/dly-NUM_FINE_STEPS
+                                    bestDiffs[lane]=diffs_prev_this[0]
+                            else:
+                                if (bestDiffs[lane] is None) or (abs (diffs_prev_this[1])<abs(bestDiffs[lane])):
+                                    bestDly[lane]=dly # dly-1
+                                    bestDiffs[lane]=diffs_prev_this[1]
+                    if (adiffs[0] > 0) and (adiffs[1] > 0):
+                        break # no need to continue, data got already 
+                for lane in range(len(adiffs)):
+                    if bestDiffs[lane] == -1.0:
+                        bestDiffs[lane] = None # single step jumps from none to all            
+                    rslt.append((bestDly[lane],bestDiffs[lane],branch[0])) # adding first letter of branch name
+                    if quiet <3:
+                        print ("bestDly[%d]=%s, bestDiffs[%d]=%s, branch=%s"%(lane,str(bestDly[lane]),lane,str(bestDiffs[lane]),branch))
+                if quiet <3:
+                    print ('dly=%d rslt=%s'%(dly,str(rslt)))                    
+                        
+                if quiet < 2:
+                    for i,d in enumerate(dqsi_cache):
+                        if d:
+                            print ("%d %s  %d: %s"%(phase,branch,i,str(d)))
+                return rslt
+            return None # All Early/Nominal/Late variants were exhausted, did not find critical DQS inoput delay for this phase value 
+        # body of the  measure_dqs_idly_phase()
+        dqsi_vs_phase=[]
+        for phase in range (numPhaseSteps):
+            if quiet <3:
+                print ("====== PHASE=%d ======"%(phase))
+
+            elif quiet <4:
+                print ("%d:"%(phase),end=" ")
+                sys.stdout.flush()
+            dqsi_vs_phase.append(dqsi_phase_step (phase))
+                    
+        if quiet < 4 :
+            print ("dqsi_vs_phase=%s"%(str(dqsi_vs_phase)))
+            print("Phase DQSI0 DQSI1 diff0 diff1 branch0 branch1")
+            for phase,v in enumerate(dqsi_vs_phase):
+                print("%d"%(phase), end=" ")
+                if v:
+                    print ("%s %s %s %s %s %s"%(str(v[0][0]),str(v[1][0]),str(v[0][1]),str(v[1][1]), v[0][2], v[1][2]))
+                else:
+                    print()
+        self.adjustment_state['dqsi_vs_phase']=      dqsi_vs_phase
+        self.adjustment_state['dqsi_vs_phase_steps']=compare_prim_steps            
+        return dqsi_vs_phase        
+                
+                    
+                        
+                        
+                        
+                    
+                    
+                      
+#dly_step            
+            
+# compare_prim_steps              
 #meas_data=[
     '''
     adjust_cmda_odelay 0 1 0.1 3
     adjust_write_levelling 0 1 0 .1 3
     adjust_pattern 0.125 0.1 1
     '''
-    def proc_test_data(self,
-                       lane=0,
+    def load_hardcoded_data(self):
+        """
+        Debug feature - load hard-coded previously acquired/processed data
+        to reduce debugging time for nest stages
+        """
+        self.adjustment_state["dqi_dqsi"]=           get_test_dq_dqs_data.get_dqi_dqsi()
+        self.adjustment_state["dqi_dqsi_parameters"]=get_test_dq_dqs_data.get_dqi_dqsi_parameters()
+        self.adjustment_state.update(get_test_dq_dqs_data.get_adjust_cmda_odelay())
+        self.adjustment_state.update(get_test_dq_dqs_data.get_wlev_data())
+        self.adjustment_state.update(get_test_dq_dqs_data.get_dqsi_phase())
+    
+    
+    def proc_dqi_dqsi(self,
+                       lane="all",
                        bin_size=5,
                        primary_set=2,
 #                       compare_prim_steps=True, # while scanning, compare this delay with 1 less by primary(not fine) step,
 #                                                # save None for fraction in unknown (previous -0.5, next +0.5)
-                       data_set_number=2,
-                       scale_w=0.2,              # weight for "uncertain" values (where samples chane from all 0 to all 1 in one step)
+                       data_set_number=2,        # not number - use measured data
+                       scale_w=0.0,              # weight for "uncertain" values (where samples chane from all 0 to all 1 in one step)
  
                        quiet=1):
         """
         Run DQ vs DQS fitting for one data lane (0 or 1) using earlier acquired hard-coded data
-        @lane             byte lane to process 
+        @lane             byte lane to process (or non-number - process all byte lanes of the device) 
         @bin_size         bin size for the histograms (should be 5/10/20/40)
         @primary_set      which of the data edge series to use as leading (other will be trailing by 180) 
         @data_set_number  select one of the hard-coded data sets (sets 0 and 1 use comparing with the data 1 fine step below
                           set #2 (default) used measurement with previous primary step measurement (will not suffer from
                           fine range wider than on primary step)
+                          If not number or <0 - use measured data
         @scale_w        weight for "uncertain" values (where samples change from all 0 to all 1 in one step)
                         For sufficient data 0.0 is OK (and seems to work better)- only "analog" samples are considered   
         @return 3-element dictionary of ('early','nominal','late'), each being None or a 160-element list,
                 each element being either None, or a list of 3 best DQ delay values for the DQS delay (some mey be None too) 
         """
         if quiet < 3:
-            print ("proc_test_data(): scale_w=%f"%(scale_w))
-        compare_prim_steps=get_test_dq_dqs_data.get_compare_prim_steps(data_set_number)
-        meas_data=get_test_dq_dqs_data.get_data(data_set_number)
+            print ("proc_dqi_dqsi(): scale_w=%f"%(scale_w))
+        if isinstance (data_set_number,(int,long)) and (data_set_number>=0) :
+            if quiet < 4:
+                print("Using hard-coded data set #%d"%data_set_number)
+            compare_prim_steps=get_test_dq_dqs_data.get_compare_prim_steps(data_set_number)
+            meas_data=get_test_dq_dqs_data.get_data(data_set_number)
+        else:
+            if quiet < 4:
+                print("Using measured data set")
+            try:
+                compare_prim_steps=self.adjustment_state["patt_prim_steps"]
+                meas_data=         self.adjustment_state["patt_meas_data"]
+            except:
+                print ("Pattern-measured data is not available, exiting")
+                return
         meas_delays=[]
         for data in meas_data:
             if data:
@@ -2074,13 +2408,80 @@ class X393McntrlAdjust(object):
         if quiet<1:
             x393_lma.test_data(meas_delays,compare_prim_steps,quiet)
         lma=x393_lma.X393LMA()
-        return lma.lma_fit(lane,
-                           bin_size,
-                           2500.0, # clk_period,
-                           78.0,   # dly_step_ds,
-                           primary_set,
-                           meas_delays,
-                           compare_prim_steps,
-                           scale_w,
-                           quiet)
-        
+        rslt = lma.lma_fit_dqi_dqsi(lane,
+                                    bin_size,
+                                    1000.0*self.x393_mcntrl_timing.get_dly_steps()['SDCLK_PERIOD'], # 2500.0, # clk_period,
+                                    78.0,   # dly_step_ds,
+                                    primary_set,
+                                    meas_delays,
+                                    compare_prim_steps,
+                                    scale_w,
+                                    quiet)
+        if quiet<5:
+            lma.showENLresults(rslt)
+        if quiet<5:
+            print ("dqi_dqsi={")
+            for k,v in rslt.items():
+                print ("'%s':%s,"%(k,str(v)))
+            print ("}")
+        self.adjustment_state["dqi_dqsi_parameters"]=rslt.pop('parameters')
+        self.adjustment_state["dqi_dqsi"]=rslt         
+        return rslt
+
+    def proc_dqsi_phase(self,
+                       lane=0, # "all",
+                       bin_size_ps=50,
+                       data_set_number=0,        # not number - use measured data
+                       scale_w=0.1,              # weight for "uncertain" values (where samples chane from all 0 to all 1 in one step)
+ 
+                       quiet=1):
+        """
+        Run DQSI vs PHASE fitting for one data lane (0 or 1) using earlier acquired hard-coded data
+        @lane             byte lane to process (or non-number - process all byte lanes of the device) 
+        @bin_size_ps      histogram bin size (in ps)
+        @data_set_number  select one of the hard-coded data sets (sets 0 and 1 use comparing with the data 1 fine step below
+                          set #0 (default) used measurement with previous primary step measurement (will not suffer from
+                          fine range wider than on primary step)
+                          If not number or <0 - use measured data
+        @scale_w        weight for "uncertain" values (where samples change from all 0 to all 1 in one step)
+                        For sufficient data 0.0 is OK (and seems to work better)- only "analog" samples are considered   
+        @return 3-element dictionary of ('early','nominal','late'), each being None or a 160-element list,
+                each element being either None, or a list of 3 best DQ delay values for the DQS delay (some mey be None too) 
+        """
+        if quiet < 3:
+            print ("proc_dqsi_phase(): scale_w=%f"%(scale_w))
+        if isinstance (data_set_number,(int,long)) and (data_set_number>=0) :
+            self.load_hardcoded_data()
+            if quiet < 4:
+                print("Using hard-coded data set #%d"%data_set_number)
+            compare_prim_steps= get_test_dq_dqs_data.get_dqsi_vs_phase_prim_steps(data_set_number)
+            dqsi_phase_data=    get_test_dq_dqs_data.get_dqsi_vs_phase(data_set_number)
+            dqsi_dqi_parameters=get_test_dq_dqs_data.get_dqi_dqsi_parameters()
+        else:
+            if quiet < 4:
+                print("Using measured data set")
+            try:
+                compare_prim_steps=     self.adjustment_state["dqsi_vs_phase_steps"]
+                dqsi_phase_data=         self.adjustment_state["dqsi_vs_phase"]
+                dqsi_dqi_parameters=     self.adjustment_state["dqi_dqsi_parameters"]
+            except:
+                print ("DQS input delay vs. phase measured data is not available, exiting")
+                return
+        timing=self.x393_mcntrl_timing.get_dly_steps()
+        numPhaseSteps= int(timing['SDCLK_PERIOD']/timing['PHASE_STEP']+0.5)
+        lma=x393_lma.X393LMA() # use persistent one?
+            
+        dqsi_phase=lma.lma_fit_dqsi_phase(lane, # byte lane
+                                    bin_size_ps,
+                                    1000.0*self.x393_mcntrl_timing.get_dly_steps()['SDCLK_PERIOD'], # 2500.0, # clk_period,
+#                                    1000.0*self.x393_mcntrl_timing.get_dly_steps()['PHASE_STEP'],# phase_step,
+#                           dly_step_ds,
+#                           primary_set,
+                                    dqsi_dqi_parameters,
+                                    dqsi_phase_data, # data_set,
+                                    compare_prim_steps,
+                                    scale_w,
+                                    numPhaseSteps,
+                                    quiet=1)
+        self.adjustment_state.update(dqsi_phase)
+        return dqsi_phase

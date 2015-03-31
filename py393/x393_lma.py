@@ -177,7 +177,9 @@ class X393LMA(object):
         y=np.zeros((n,), dtype=np.int) #[0]*n
         
         w=np.zeros((n,)) #[0]*n
-        f=np.full((n,),np.nan) # fractions
+#        f=np.full((n,),np.nan) # fractions
+        f=np.empty((n,)) # fractions
+        f[:]=np.nan
         yf=np.zeros((n,)) # y with added fractions
         if not periods is None:
             p=np.zeros((n), dtype=np.int)#[0]*n 
@@ -291,7 +293,48 @@ class X393LMA(object):
                         print("?",end=" ")
                                   
             print()
+    def showENLresults(self,
+                       DQvDQS):
+        rslt_names=("early","nominal","late")
+        numBits=0
+        for n in DQvDQS:
+            try:
+                for d in DQvDQS[n]:
+                    try:
+                        numBits=len(d)
+#                        print ("d=",d)
+                        break
+                    except:
+                        pass
+                break        
+            except:
+                pass
+        if not numBits:
+            raise Exception("showENLresults(): No no-None data provided")
+#        print ("numBits=%d"%(numBits))            
+        enl_list=[]
+        for k in rslt_names:
+            if DQvDQS[k]:
+                enl_list.append(k)
+        print("DQS", end=" ")
+        for enl in enl_list:
+            for b in range(numBits):
+                print("%s%d"%(enl[0].upper(),b),end=" ")
+        print()
+        for dly in range(len(DQvDQS[enl_list[0]])):
+            print ("%d"%(dly),end=" ")
+            for enl in enl_list:
+                if DQvDQS[enl][dly] is None:
+                    print ("? "*numBits,end="")
+                else:
+                    for b in range(numBits):
+                        if DQvDQS[enl][dly][b] is None:
+                            print("?",end=" ")
+                        else:
+                            print("%d"%(DQvDQS[enl][dly][b]),end=" ")
+            print()
         
+    
     def normalizeParameters(self,
                             parameters,
                             isMask=False):
@@ -453,7 +496,7 @@ class X393LMA(object):
                                 index += 1
         return parameters
      
-    def estimate_from_histograms(self,
+    def dqi_dqsi_estimate_from_histograms(self,
                                  lane, # byte lane
                                  bin_size,
                                  clk_period,
@@ -773,16 +816,16 @@ class X393LMA(object):
                 print()
         
         return data_periods_map
-    def lma_fit(self,
-                        lane, # byte lane
-                        bin_size,
-                        clk_period,
-                        dly_step_ds,
-                        primary_set,
-                        data_set,
-                        compare_prim_steps,
-                        scale_w, 
-                        quiet=1):        
+    def lma_fit_dqi_dqsi(self,
+                       lane, # byte lane
+                       bin_size,
+                       clk_period,
+                       dly_step_ds,
+                       primary_set,
+                       data_set,
+                       compare_prim_steps,
+                       scale_w, 
+                       quiet=1):        
         """
         Initialize parameters and y-vector
         using datasheet delay/step (without fine step delay)
@@ -793,8 +836,7 @@ class X393LMA(object):
         After initial parametersn are created - run LMA to find optimal ones,
         then return up to 3 varints (early, nominal, late) providing the best
         DQ input delay for each DQS one
-         
-        @lane          byte lane to process 
+        @lane         byte lane to process (or non-number - process all byte lanes of the device) 
         @bin_size     bin size for the histograms (should be 5/10/20/40)
         @clk_period   SDCLK period in ps
         @dly_step_ds  IDELAY step (from the datasheet)
@@ -807,11 +849,58 @@ class X393LMA(object):
         @return 3-element dictionary of ('early','nominal','late'), each being None or a 160-element list,
                 each element being either None, or a list of 3 best DQ delay values for the DQS delay (some mey be None too) 
         """
+        if not isinstance(lane,(int, long)): # ignore content, process both lanes
+            lane_rslt=[]
+            numLanes=2
+            parametersKey='parameters'
+            for lane in range(numLanes):
+                lane_rslt.append(self.lma_fit(lane, # byte lane
+                                        bin_size,
+                                        clk_period,
+                                        dly_step_ds,
+                                        primary_set,
+                                        data_set,
+                                        compare_prim_steps,
+                                        scale_w, 
+                                        quiet))       
+            rslt={}
+            for k in lane_rslt[0].keys():
+                if k != parametersKey:
+                    for r in lane_rslt:
+                        try:
+                            l=len(r[k])
+                            break
+                        except:
+                            pass
+                    else:
+                        rslt[k]=None
+                        continue
+                    rslt[k]=[]
+                    for dly in range(l):
+                        w=[]
+                        for lane in range(numLanes):
+                            if (lane_rslt[lane][k] is None) or (lane_rslt[lane][k][dly] is None):
+                                w += [None]*8
+                            else:
+                                w+=lane_rslt[lane][k][dly]
+                        for b in w:
+                            if not b is None:
+                                rslt[k].append(w)
+                                break
+                        else:
+                            rslt[k].append(None)
+            rslt[parametersKey] = []             
+            for lane in range(numLanes):
+                rslt[parametersKey].append(lane_rslt[lane][parametersKey])             
+            return rslt # byte lanes combined        
+                
+                
+                
         if quiet < 3:
             print ("init_parameters(): scale_w=%f"%(scale_w))
         self.clk_period=clk_period
         
-        hist_estimated=self.estimate_from_histograms(lane, # byte lane
+        hist_estimated=self.dqi_dqsi_estimate_from_histograms(lane, # byte lane
                                                      bin_size,
                                                      clk_period,
                                                      dly_step_ds,
@@ -997,6 +1086,7 @@ class X393LMA(object):
         rslt_names=("early","nominal","late")
         for i, d in enumerate(DQvDQS):
             rslt[rslt_names[i]] = d
+        rslt['parameters']=parameters
         return rslt
 #        return DQvDQS 
 #        Returns 3-element dictionary of ('early','nominal','late'), each being None or a 160-element list,
@@ -1386,22 +1476,14 @@ class X393LMA(object):
             w_vector = ywp['w']
         except:
             w_vector = np.full((len(fxj['fx']),),1.0)
-#        print("w_vector=",w_vector)
-#        print("fxj['jacob']=",fxj['jacob'])
-#        JT=np.transpose(fxj['jacob'])
-#        print("JT=",JT)
         wJ=fxj['jacob'] *w_vector
-#        JT=np.transpose(wJ) # fxj['jacob'])
         JT=np.transpose(fxj['jacob'])
-        
-#        print("wJ=",wJ)
+        #np.fill_diagonal(z3,np.diag(z3)*0.1)
         jByJT=np.dot(wJ,JT)
-#        print("jByJT=",jByJT)
         for i,_ in enumerate(jByJT):
             jByJT[i,i] += lmbda*jByJT[i,i]
         jByDiff= -np.dot(wJ,fxj['fx'])
         delta=np.linalg.solve(jByJT,jByDiff)
-#        print("*****delta=",delta)
         return delta
                 
     """
@@ -1415,8 +1497,218 @@ class X393LMA(object):
     s=if-ir+of-or
     d=ir-if+of-or
     """
-             
+    def lma_fit_dqsi_phase(self,
+                           lane, # byte lane
+                           bin_size_ps,
+                           clk_period,
+#                           phase_step, # ~22ps
+#                           dly_step_ds,
+#                           primary_set,
+                            dqsi_dqi_parameters,
+                            data_set,
+                            compare_prim_steps,
+                            scale_w,
+                            numPhaseSteps, 
+                            quiet=1):
+        def show_input_data(filtered):
+            print(('unfiltered','filtered')[filtered])
+            for phase,d in enumerate(data_set):
+                print ("%d"%(phase),end=" ")
+                if not d is None:
+                    for lane,dl in enumerate(d):
+                        if (not dl is None) and (not dl[0] is None) and ((not filtered) or (not dl[1] is None)):
+                            dly = dl[0]
+                            if dl[1] is None:
+                                dly+=halfStep
+#                            print ("%f %f"%(dly, dly-phase*phase_step/dbg_tSDQS[lane]), end=" ")
+#                            print ("%f %f"%(dly*dbg_tSDQS[lane]/phase_step, dly*dbg_tSDQS[lane]/phase_step-phase), end=" ")
+                            print ("%f %f"%(dly*dbg_tSDQS[lane], dly*dbg_tSDQS[lane]-phase*phase_step), end=" ")
+                        else:
+                            print ("? ?", end=" ")
+                print()
+        def get_shift_by_hist(span=5):
+            for phase,d in enumerate(data_set):
+                if not d is None:
+                    dl=d[lane]
+                    if (not dl is None) and (not dl[0] is None):
+                        dly = dl[0]
+                        if dl[1] is None:
+                            dly+=halfStep
+                        diff_ps=dly*tSDQS-phase*phase_step
+                        binArr[int((diff_ps-minVal)/bin_size_ps)]+=1
+            if quiet < 3:
+                for i,h in enumerate(binArr):
+                    print ("%d %d"%(i,h))
+            indx=0
+            for i,h in enumerate(binArr):
+                if h > binArr[indx]:
+                    indx=i
+            low = max(0,indx-span)
+            high = min(len(binArr)-1,indx+span)
+            S0=0
+            SX=0.0
+            for i in range (low, high+1):
+                S0+=binArr[i]
+                SX+=binArr[i]*i
+            if S0>0:
+                SX/=S0
+            print ("SX=",SX)
+            return minVal+bin_size_ps*(SX+0.5) # ps
+        
+        if not isinstance(lane,(int, long)): # ignore content, process both lanes
+            rslt_names=("dqsi_optimal_ps","dqsi_phase")
+            rslt= {}
+            for name in rslt_names:
+                rslt[name] = []
+                 
+            for lane in range(2):
+                rslt_lane=self.lma_fit_dqsi_phase(lane, # byte lane
+                                                    bin_size_ps,
+                                                    clk_period,
+                                                    dqsi_dqi_parameters,
+                                                    data_set,
+                                                    compare_prim_steps,
+                                                    scale_w,
+                                                    numPhaseSteps, 
+                                                    quiet=1)
+                for name in rslt_names:
+                    rslt[name].append(rslt_lane[name])
+            if quiet<3:
+                print ('dqsi_optimal_ps=%s'%(str(rslt['dqsi_optimal_ps'])))
+                print ('dqsi_phase=[')
+                for lane in rslt['dqsi_phase']:
+                    print("    [",end=" ")
+                    for i,d in enumerate(lane):
+                        last= i == (len(lane)-1)
+                        print("%s"%(str(d)), end=" ")
+                        if not last:
+                            print(",",end=" ")
+                            if ((i+1) % 16) ==0:
+                                print("\n     ",end="")
+                        else:
+                            print('],')
+                print(']')
+#                print(rslt) 
+            return rslt
+               
             
+        phase_step= clk_period/ numPhaseSteps      
+        tSDQS=dqsi_dqi_parameters[lane]['tSDQS'] # ~16.081739769147354
+        dbg_tSDQS=(dqsi_dqi_parameters[0]['tSDQS'],dqsi_dqi_parameters[1]['tSDQS'])
+        halfStep=0.5*(1,compare_prim_steps)[compare_prim_steps]
+        #phase_step/tSDQS
+        print (phase_step,dbg_tSDQS)
+        if quiet < 2:
+            for filtered in range(2):
+                show_input_data(filtered)    
+
+        # all preliminary teset above
+        maxVal= DLY_STEPS*tSDQS
+        minVal= -clk_period
+        num_bins=int((maxVal-minVal)/bin_size_ps)+1
+        binArr=[0]*num_bins
+        print("minVal=",minVal)
+        print("maxVal=",maxVal)
+        print("num_bins=",num_bins)
+        #find main max
+        dly_max0=get_shift_by_hist() # delay in ps, corresponding to largest maximum
+        print("max0=%f, (%f)"%(dly_max0,dly_max0/tSDQS))
+        periods=[None]*len(data_set)
+        for phase,d in enumerate(data_set):
+            if not d is None:
+                dl=d[lane]
+                if (not dl is None) and (not dl[0] is None):
+                    dly = dl[0]
+                    if dl[1] is None:
+                        dly+=halfStep
+                    periods[phase]=int(round((dly*tSDQS-phase*phase_step)/clk_period))
+        w=[0.0]*len(data_set)
+        if quiet < 2:
+            for i,p in enumerate(periods):
+                print ("%d %s"%(i,str(p)))
+        tFDQS=dqsi_dqi_parameters[lane]['tFDQS'] # [-21.824409224001187, -10.830180678770162, 1.5698858542328959, 11.267851084349177]
+        tFDQS.append(-tFDQS[0]-tFDQS[1]-tFDQS[2]-tFDQS[3])
+        SY=0.0
+        S0=0.0
+        for phase,d in enumerate(data_set):
+            if not d is None:
+                dl=d[lane]
+                if (not dl is None) and (not dl[0] is None):
+                    dly = dl[0]
+                    w[i]=1.0
+                    if dl[1] is None:
+                        dly+=halfStep
+                        w[i]=scale_w
+                    d=dly*tSDQS-periods[phase]*clk_period-tFDQS[dl[0] % FINE_STEPS]
+                    y=d-phase*phase_step
+                    S0+=w[i]
+                    SY+=w[i]*y
+        if S0 > 0.0:
+            SY /= S0
+
+        print ("shift=",SY," ps")
+        if quiet < 2:
+            for phase,d in enumerate(data_set):
+                print ("%d"%(phase),end=" ")
+                if not d is None:
+                    dl=d[lane]
+                    if (not dl is None) and (not dl[0] is None):
+                        dly = dl[0]
+                        if dl[1] is None:
+                            dly+=halfStep
+                        d=dly*tSDQS-periods[phase]*clk_period-tFDQS[dl[0] % FINE_STEPS]
+                        print ("%f %f"%(d, w[i]), end=" ")
+                        if not dl[1] is None:
+                            print(d,end=" ")
+                        else:
+                            print("?",end=" ")
+                    else:
+                        print ("? ?", end=" ")
+                    print("%f"%(SY+phase*phase_step),end=" ")
+                print()
+        # Now shift SY by clk_period/2.0, for each phase find the closest DQSI match (None if does not exist)
+        dqsi_range=tSDQS*DLY_STEPS# full range of the DQSI delay for this lane
+#        dqsi_middle_in_ps = SY-clk_period*round(SY/clk_period)-0.5
+#        dqsi_middle_in_ps = (SY-clk_period/2)-clk_period*round((SY-clk_period/2)/clk_period)
+#        dqsi_middle_in_ps = (SY-clk_period/2)-clk_period*round(SY/clk_period -0.5)
+        dqsi_middle_in_ps = SY-clk_period*(round(SY/clk_period -0.5)+0.5)
+        dqsi_phase=[None]*numPhaseSteps
+        for phase in range(numPhaseSteps):
+            dly_ps=phase_step*phase+dqsi_middle_in_ps
+            dly_ps-=clk_period*round(dly_ps/clk_period - 0.5) # positive, <clk_period
+            #Using lowest delay branch if multiple are possible
+            if dly_ps > dqsi_range:
+                continue # no valid dqs_idelay for this phase
+            idly = int (round(dly_ps/tSDQS))
+            low= max(0,idly-FINE_STEPS)
+            high=min(DLY_STEPS-1,idly+FINE_STEPS)
+            idly=low
+            for i in range(low,high+1):
+                if abs(i*tSDQS-tFDQS[i % FINE_STEPS]-dly_ps) < abs(idly*tSDQS-tFDQS[idly % FINE_STEPS]-dly_ps):
+                    idly=i
+            dqsi_phase[phase]=idly
+        if quiet < 3:
+            for phase,d in enumerate(data_set):
+                print ("%d"%(phase),end=" ")
+                if (not d is None) and (not d[lane] is None) and (not d[lane][0] is None):
+                    dly = d[lane][0]
+                    if d[lane][1] is None:
+                        dly+=halfStep
+                    print ("%f"%(dly), end=" ")
+                else:
+                    print ("?", end=" ")
+                if not dqsi_phase[phase] is None:
+                    print("%f"%(dqsi_phase[phase]),end=" ")
+                else:
+                    print ("?", end=" ")
+                print()
+        return {"dqsi_optimal_ps":dqsi_middle_in_ps,
+                "dqsi_phase":dqsi_phase}        
+        
+            
+                        
+                    
+
         
         
         

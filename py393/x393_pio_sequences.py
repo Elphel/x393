@@ -441,13 +441,17 @@ class X393PIOSequences(object):
                        ba,   # input [ 2:0] ba;
                        ra,   # input [14:0] ra;
                        ca,  #input [ 9:0] ca;
+                       num8=64,
+                       sel=1, 
                        verbose=0):
         """
         Setup read block sequence at parameter defined address in the sequencer memory
-        <ba>   3-bit memory bank address
-        <ra>  15-bit memory row address
-        <ca>  10-bit memory column address
-        <verbose> print data being written (default: False)
+        @ba   3-bit memory bank address
+        @ra  15-bit memory row address
+        @ca  10-bit memory column address
+        @num8 - number of 8-bursts to read (maximal 64, min- 2)
+        @sel - 0 - early, 1 - late read command
+        @verbose print data being written (default: False)
             
         """
         cmd_addr = vrlg.MCONTR_CMD_WR_ADDR + vrlg.READ_BLOCK_OFFSET
@@ -464,34 +468,34 @@ class X393PIOSequences(object):
 # first read
 # read
         #                          addr                 bank     RCW ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD NOP, B_RST
-        data=self.func_encode_cmd(ca&0x3ff,              ba,      2,  0,  0,  1,  0,    0,    0,    1,  1,   0,   0,   0)
+        data=self.func_encode_cmd(ca&0x3ff,              ba,      2,  0,  0, sel, 0,    0,    0,    1,  1,   0,   0,   0)
         self.x393_mem.axi_write_single_w(cmd_addr, data, verbose)
         cmd_addr += 1
 # nop
         #                          skip     done        bank         ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD      B_RST
-        data=self.func_encode_skip( 0,       0,          ba,          0,  0,  1,  0,    0,    0,    1,  1,   0,        0)
+        data=self.func_encode_skip( 0,       0,          ba,          0,  0, sel, 0,    0,    0,    1,  1,   0,        0)
         self.x393_mem.axi_write_single_w(cmd_addr, data, verbose)
         cmd_addr += 1
 #repeat remaining reads             
-        for i in range(1,64):
+        for i in range(1,num8):
 # read
 #                                  addr                 bank     RCW ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD NOP, B_RST
-            data=self.func_encode_cmd((ca & 0x3ff)+(i<<3),ba,     2,  0,  0,  1,  0,    0,    0,    1,  1,   0,   1,   0)
+            data=self.func_encode_cmd((ca & 0x3ff)+(i<<3),ba,     2,  0,  0, sel, 0,    0,    0,    1,  1,   0,   1,   0)
             self.x393_mem.axi_write_single_w(cmd_addr, data, verbose)
             cmd_addr += 1
 # nop - all 3 below are the same? - just repeat?
         #                          skip     done        bank         ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD      B_RST
-        data=self.func_encode_skip(  0,       0,         ba,          0,  0,  1,  0,    0,    0,    1,  0,   0,        0)
+        data=self.func_encode_skip(  0,       0,         ba,          0,  0, sel, 0,    0,    0,    1,  0,   0,        0)
         self.x393_mem.axi_write_single_w(cmd_addr, data, verbose)
         cmd_addr += 1
 # nop
         #                          skip     done        bank         ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD      B_RST
-        data=self.func_encode_skip(  0,       0,         ba,          0,  0,  1,  0,    0,    0,    1,  0,   0,        0)
+        data=self.func_encode_skip(  0,       0,         ba,          0,  0, sel, 0,    0,    0,    1,  0,   0,        0)
         self.x393_mem.axi_write_single_w(cmd_addr, data, verbose)
         cmd_addr += 1
 # nop
         #                          skip     done        bank         ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD      B_RST
-        data=self.func_encode_skip(  0,       0,         ba,          0,  0,  1,  0,    0,    0,    1,  0,   0,        0)
+        data=self.func_encode_skip(  0,       0,         ba,          0,  0, sel, 0,    0,    0,    1,  0,   0,        0)
         self.x393_mem.axi_write_single_w(cmd_addr, data, verbose)
         cmd_addr += 1
 # tRTP = 4*tCK is already satisfied, no skip here
