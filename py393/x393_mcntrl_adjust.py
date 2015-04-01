@@ -2345,12 +2345,12 @@ class X393McntrlAdjust(object):
         Debug feature - load hard-coded previously acquired/processed data
         to reduce debugging time for nest stages
         """
-        self.adjustment_state["dqi_dqsi"]=           get_test_dq_dqs_data.get_dqi_dqsi()
-        self.adjustment_state["dqi_dqsi_parameters"]=get_test_dq_dqs_data.get_dqi_dqsi_parameters()
+        self.adjustment_state["dqi_dqsi"]=            get_test_dq_dqs_data.get_dqi_dqsi()
+        self.adjustment_state["maxErrDqs"]=           get_test_dq_dqs_data.get_maxErrDqs() 
+        self.adjustment_state["dqi_dqsi_parameters"]= get_test_dq_dqs_data.get_dqi_dqsi_parameters()
         self.adjustment_state.update(get_test_dq_dqs_data.get_adjust_cmda_odelay())
         self.adjustment_state.update(get_test_dq_dqs_data.get_wlev_data())
         self.adjustment_state.update(get_test_dq_dqs_data.get_dqsi_phase())
-    
     
     def proc_dqi_dqsi(self,
                        lane="all",
@@ -2424,7 +2424,18 @@ class X393McntrlAdjust(object):
             for k,v in rslt.items():
                 print ("'%s':%s,"%(k,str(v)))
             print ("}")
+
         self.adjustment_state["dqi_dqsi_parameters"]=rslt.pop('parameters')
+        try:
+            self.adjustment_state["maxErrDqs"]=rslt.pop('maxErrDqs')
+            if quiet<5:
+                print("maxErrDqs={")
+                for k,v in self.adjustment_state["maxErrDqs"].items():
+                    print ("'%s':%s,"%(k,str(v)))
+                print ("}")
+        except:
+            print ("maxErrDqs does not exist")
+            
         self.adjustment_state["dqi_dqsi"]=rslt         
         return rslt
 
@@ -2485,3 +2496,87 @@ class X393McntrlAdjust(object):
                                     quiet=1)
         self.adjustment_state.update(dqsi_phase)
         return dqsi_phase
+    
+    
+    def show_all_vs_phase(self, load_hardcoded=False):
+        if load_hardcoded:
+            self.load_hardcoded_data()
+        rslt_names=("early","nominal","late")
+        DQvDQS=self.adjustment_state["dqi_dqsi"]
+        cmda_bspe=self.adjustment_state['cmda_bspe']
+        dqsi_phase=self.adjustment_state['dqsi_phase']
+        wlev_dqs_bspe=self.adjustment_state['wlev_dqs_bspe']
+        numBits=0
+        for n in DQvDQS:
+            try:
+                for d in DQvDQS[n]:
+                    try:
+                        numBits=len(d)
+                        break
+                    except:
+                        pass
+                break        
+            except:
+                pass
+        if not numBits:
+            raise Exception("showENLresults(): No no-None data provided")
+        numLanes=numBits//8
+        enl_list=[]
+        for k in rslt_names:
+            if DQvDQS[k]:
+                enl_list.append(k)
+        timing=self.x393_mcntrl_timing.get_dly_steps()
+        numPhaseSteps= int(timing['SDCLK_PERIOD']/timing['PHASE_STEP']+0.5)
+                
+        print("Phase CMDA",end=" ")
+        for lane in range(numLanes):
+            print("DQS%di"%(lane),end=" ")
+        for k in enl_list:
+            for b in range(numBits):
+                print("%s-DQ%di"%(k.upper()[0], b),end=" ")
+        for lane in range(numLanes):
+            print("DQS%d0"%(lane),end=" ")
+        #TODO: add DQ%do 
+        print()
+        for phase in range(numPhaseSteps):
+            print("%d"%(phase),end=" ")
+            #CMDA_ODEALY
+            if not cmda_bspe[phase]['ldly'] is None:
+                print("%d"%(cmda_bspe[phase]['ldly']),end=" ")
+            else:
+                print ("?",end=" ")
+            #DQS_IDEALY
+#            print ('\n\ndqsi_phase=',dqsi_phase)            
+            for lane in range(numLanes):
+                if not dqsi_phase[lane][phase] is None:
+                    print("%d"%(dqsi_phase[lane][phase]),end=" ")
+                else:
+                    print ("?",end=" ")
+            #DQ_IDEALY, with half/clock variants
+            for k in enl_list:
+                for b in range(numBits):
+                    lane=b//8
+                    dqs_dly=dqsi_phase[lane][phase]
+                    valid =           not dqs_dly is None
+                    valid = valid and not DQvDQS[k] is None
+                    valid = valid and not DQvDQS[k][dqs_dly] is None
+                    valid = valid and not DQvDQS[k][dqs_dly][b] is None
+                    if valid:
+                        print("%d"%(DQvDQS[k][dqs_dly][b]),end=" ")
+                    else:
+                        print ("?",end=" ")
+            #DQS_ODEALY
+            for lane in range(numLanes):
+                if (not wlev_dqs_bspe[lane][phase] is None) and (not wlev_dqs_bspe[lane][phase]['ldly'] is None):
+                    print("%d"%(wlev_dqs_bspe[lane][phase]['ldly']),end=" ")
+                else:
+                    print ("?",end=" ")
+            print()                
+             
+            
+            
+            
+        
+        
+
+        

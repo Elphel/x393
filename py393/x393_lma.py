@@ -296,6 +296,7 @@ class X393LMA(object):
     def showENLresults(self,
                        DQvDQS):
         rslt_names=("early","nominal","late")
+        err_name='maxErrDqs'
         numBits=0
         for n in DQvDQS:
             try:
@@ -311,15 +312,23 @@ class X393LMA(object):
                 pass
         if not numBits:
             raise Exception("showENLresults(): No no-None data provided")
+        numLanes=numBits//8
 #        print ("numBits=%d"%(numBits))            
         enl_list=[]
         for k in rslt_names:
             if DQvDQS[k]:
                 enl_list.append(k)
+                
         print("DQS", end=" ")
         for enl in enl_list:
             for b in range(numBits):
                 print("%s%d"%(enl[0].upper(),b),end=" ")
+        for enl in enl_list:
+            for lane in range(numLanes):
+                    if numLanes > 1:
+                        print("%s%d_err"%(enl[0].upper(),lane),end=" ")
+                    else:    
+                        print("%s_err"%(enl[0].upper()),end=" ")
         print()
         for dly in range(len(DQvDQS[enl_list[0]])):
             print ("%d"%(dly),end=" ")
@@ -332,6 +341,25 @@ class X393LMA(object):
                             print("?",end=" ")
                         else:
                             print("%d"%(DQvDQS[enl][dly][b]),end=" ")
+            for enl in enl_list:
+#                if numLanes>1:
+#                    print ("DQvDQS[err_name]=",DQvDQS[err_name])
+#                    print ("DQvDQS[err_name][enl]=",DQvDQS[err_name][enl])
+#                    print ("DQvDQS[err_name][enl][dly]=",DQvDQS[err_name][enl][dly])
+                if DQvDQS[err_name][enl][dly] is None:
+                    print ("? "*numLanes,end="")
+                else:
+                    for lane in range(numLanes):
+                        if DQvDQS[err_name][enl][dly] is None:
+                            print("?",end=" ")
+                        else:
+                            if numLanes > 1:
+                                if DQvDQS[err_name][enl][dly][lane] is None:
+                                    print("?",end=" ")
+                                else:
+                                    print("%.1f"%(DQvDQS[err_name][enl][dly][lane]),end=" ")
+                            else:
+                                print("%.1f"%(DQvDQS[err_name][enl][dly]),end=" ")
             print()
         
     
@@ -853,8 +881,9 @@ class X393LMA(object):
             lane_rslt=[]
             numLanes=2
             parametersKey='parameters'
+            errorKey='maxErrDqs'
             for lane in range(numLanes):
-                lane_rslt.append(self.lma_fit(lane, # byte lane
+                lane_rslt.append(self.lma_fit_dqi_dqsi(lane, # byte lane
                                         bin_size,
                                         clk_period,
                                         dly_step_ds,
@@ -865,8 +894,8 @@ class X393LMA(object):
                                         quiet))       
             rslt={}
             for k in lane_rslt[0].keys():
-                if k != parametersKey:
-                    for r in lane_rslt:
+                if (k != parametersKey) and (k != errorKey):
+                    for r in lane_rslt: # lane_rslt is list of two dictionaries
                         try:
                             l=len(r[k])
                             break
@@ -891,8 +920,42 @@ class X393LMA(object):
                             rslt[k].append(None)
             rslt[parametersKey] = []             
             for lane in range(numLanes):
-                rslt[parametersKey].append(lane_rslt[lane][parametersKey])             
+                rslt[parametersKey].append(lane_rslt[lane][parametersKey])
+            rslt[errorKey]={}
+#            print ("lane_rslt[0][errorKey]=",lane_rslt[0][errorKey])
+            for k in lane_rslt[0][errorKey].keys():
+                for r in lane_rslt: # lane_rslt is list of two dictionaries
+                    try:
+                        l=len(r[errorKey][k])
+                        break
+                    except:
+                        pass
+                else:
+                    rslt[errorKey][k]=None
+                    continue
+                rslt[errorKey][k]=[]
+                for dly in range(l):
+                    w=[]
+                    for lane in range(numLanes):
+                        if (lane_rslt[lane][errorKey][k] is None) or (lane_rslt[lane][errorKey][k][dly] is None):
+                            w.append(None)
+                        else:
+                            w.append(lane_rslt[lane][errorKey][k][dly])
+                    for lane in w:
+                        if not lane is None:
+                            rslt[errorKey][k].append(w)
+                            break
+                    else:
+                        rslt[errorKey][k].append(None)
+                        
+#            print ("lane_rslt[0][errorKey]=",lane_rslt[0][errorKey])
+#            print ("lane_rslt[1][errorKey]=",lane_rslt[1][errorKey])
+#            print ("combined: rslt['maxErrDqs']=",rslt['maxErrDqs'])
+#            print ("rslt=",rslt)
+            
             return rslt # byte lanes combined        
+#        rslt['parameters']=parameters
+#        rslt['maxErrDqs']=DQvDQS_ERR # {enl}[dly]
                 
                 
                 
@@ -1057,10 +1120,14 @@ class X393LMA(object):
             self.showYOrVector(ywp,True,fx)
             
         # calculate DQ[i] vs. DQS for -1, 0 and +1 period
-        DQvDQS=self.getBestDQforDQS(parameters,
-                                     primary_set,
-                                     quiet)
+        DQvDQS_withErr=self.getBestDQforDQS(parameters,
+                                            primary_set,
+                                            quiet)
+
+        DQvDQS=    DQvDQS_withErr['dqForDqs']
+        DQvDQS_ERR=DQvDQS_withErr['maxErrDqs']
         if quiet < 4:
+#           print ("DQvDQS_ERR=",DQvDQS_ERR)
             enl_list=[]
             for i in range(3):
                 if not DQvDQS[i] is None:
@@ -1069,6 +1136,8 @@ class X393LMA(object):
             for enl in enl_list:
                 for b in range(8):
                     print("%s%d"%(('E','N','L')[enl],b),end=" ")
+            for enl in enl_list:
+                print("%s-Err"%(('E','N','L')[enl]),end=" ")
             print()
             for dly in range(DLY_STEPS):
                 print ("%d"%(dly),end=" ")
@@ -1081,12 +1150,26 @@ class X393LMA(object):
                                 print("?",end=" ")
                             else:
                                 print("%d"%(DQvDQS[enl][dly][b]),end=" ")
+                for enl in enl_list:
+                    if DQvDQS_ERR[enl][dly] is None:
+                        print ("? ",end="")
+                    else:
+                        print ("%f"%(DQvDQS_ERR[enl][dly]), end=" ")
                 print()
         rslt={}
         rslt_names=("early","nominal","late")
         for i, d in enumerate(DQvDQS):
             rslt[rslt_names[i]] = d
         rslt['parameters']=parameters
+        
+        rslt['maxErrDqs']={} # {enl}[dly]
+        for i, d in enumerate(DQvDQS_ERR):
+            rslt['maxErrDqs'][rslt_names[i]] = d
+        if quiet < 4:
+            self.showDQDQSValues(parameters)
+#        print ("DQvDQS_ERR=",DQvDQS_ERR)
+#        print ("rslt['maxErrDqs']=",rslt['maxErrDqs'])
+        
         return rslt
 #        return DQvDQS 
 #        Returns 3-element dictionary of ('early','nominal','late'), each being None or a 160-element list,
@@ -1107,75 +1190,80 @@ class X393LMA(object):
         tDQ=  parameters['tDQ'] # list
         
         tCDQS32=list(parameters['tCDQS'][0:8])+[0]+list(parameters['tCDQS'][8:23])+[0]+list(parameters['tCDQS'][23:30])
-#        tDQSHL =parameters['tDQSHL']#single value
-#        tDQHL=  parameters['tDQHL'] # list
+        
+        tDQSHL =parameters['tDQSHL']#single value
+        tDQHL=  parameters['tDQHL'] # list
 
-        tFDQs=[]
+        tFDQs=[] #corrections in steps?
         for b in range(8):
             tFDQi=list(parameters['tFDQ'][4*b:4*(b+1)])
             tFDQi.append(-tFDQi[0]-tFDQi[1]-tFDQi[2]-tFDQi[3])
-            for i in range(5):
-                tFDQi[i]/=tSDQ[b]
             tFDQs.append(tFDQi)
-            
+        #calculate worst bit error caused by duty cycles (asymmetry) of DQS and DQ lines
+        #bit delay error just adds to the  0.25*(abs(tDQSHL)+abs(tDQHL))
+        asym_err=[]
+        for i in range(8):
+            asym_err.append(0.25*(abs(tDQSHL)+abs(tDQHL[i])))
+        print("asym_err=",asym_err) 
         dqForDqs=[]
+        maxErrDqs=[]
         for enl in (0,1,2):
             vDQ=[]
+            vErr=[]
             someData=False
             for dly in range(DLY_STEPS):
                 tdqs=dly * tSDQS - tDQS - tFDQS5[dly % FINE_STEPS] # t - time from DQS pad to internal DQS clock with zero setup/hold times to DQ FFs
                 tdqs-=tCDQS32[dly // FINE_STEPS]
-                tdq3=tdqs +(-0.75+enl)*period # (early, nominal, late) 
+                tdqs3=tdqs +(-0.75+enl)*period # (early, nominal, late) in ps, centered in the middle
                 bDQ=[]
+                errDQ=None
+#                dbg_worstBit=None
+#                dbg_errs=[None]*8
                 for b in range(8): # use all 4 variants
-                    tdq=(tdq3+tDQ[b])/tSDQ[b]
-                    itdq=int(round(tdq)) # in delay steps
+                    tdq=(tdqs3+tDQ[b])/tSDQ[b]
+                    itdq=int((tdqs3+tDQ[b])/tSDQ[b]) # in delay steps, approximate (not including tFDQ
                     bestDQ=None
                     if (itdq >= 0) and (itdq < DLY_STEPS):
                         bestDiff=None
                         for idq in range (max(itdq-FINE_STEPS,0),min(itdq+FINE_STEPS,DLY_STEPS-1)+1):
-                            diff=idq-tFDQs[b][idq % FINE_STEPS]
-                            if (bestDQ is None) or (abs(diff) < bestDiff):
+                            tdq=idq * tSDQ[b] - tDQ[b] - tFDQs[b][idq % FINE_STEPS]
+                            diff=tdq - tdqs3 # idq-tFDQs[b][idq % FINE_STEPS]
+                            if (bestDQ is None) or (abs(diff) < abs(bestDiff)):
                                 bestDQ=idq
-                                bestDiff=abs(diff)
+                                bestDiff=diff
                     if bestDQ is None:            
                         bDQ=None
                         break
-                    bDQ.append(bestDQ)
+                    bDQ.append(bestDQ) #tuple(delay,signed error in ps)
+                    """
+                    fullBitErr=bestDiff # +asym_err[b] #TODO: Restore the full error!
+                    if (errDQ is None) or (abs(fullBitErr) > abs (errDQ)):
+                        errDQ= fullBitErr
+                    """
+                    fullBitErr=abs(bestDiff) +asym_err[b] #TODO: Restore the full error!
+#                    dbg_errs[b]=abs(bestDiff)
+                    if (errDQ is None) or (fullBitErr > errDQ):
+                        errDQ= fullBitErr
+#                        dbg_worstBit=b
+                    
                     someData=True
                 vDQ.append(bDQ)
+                vErr.append(errDQ)
+##                if dbg_worstBit is None:
+##                    vErr.append(None)
+##                else:
+#                    vErr.append(asym_err[dbg_worstBit])
+#                    vErr.append(10*dbg_worstBit)
+#                    vErr.append(dbg_errs[2])
+##                    vErr.append(dbg_errs[5])
+#                print ("enl=%d, dly=%d, err=%s"%(enl,dly,str(errDQ)))
             if someData:    
                 dqForDqs.append(vDQ)
+                maxErrDqs.append(vErr)
             else:
                 dqForDqs.append(None)
-        return dqForDqs
-    """
-        for dly in range(DLY_STEPS):
-            tdqs=dly * tSDQS - tDQS - tFDQS5[dly % FINE_STEPS] # t - time from DQS pad to internal DQS clock with zero setup/hold times to DQ FFs
-            tdq3=(tdqs-0.75*period, tdqs + 0.25*period,tdqs + 1.25*period) # (early, nominal, late) 
-            bDQ=[]
-            allBits=[True,True,True]
-            for b in range(8): # use all 4 variants
-                vDQ=[]
-                for enl in (0,1,2):
-                    tdq=(tdq3[enl]+tDQ[b])/tSDQ[b]
-                    itdq=int(round(tdq)) # in delay steps
-                    bestDQ=None
-                    if (itdq >= 0) and (itdq < DLY_STEPS):
-                        bestDiff=None
-                        for idq in range (max(itdq-FINE_STEPS,0),min(itdq+FINE_STEPS,DLY_STEPS-1)+1):
-                            diff=idq-tFDQs[b][idq % FINE_STEPS]
-                            if (bestDQ is None) or (abs(diff) < bestDiff):
-                                bestDQ=idq
-                                bestDiff=abs(diff)
-                    if bestDQ is None:            
-                        allBits[enl] = False
-                    vDQ.append(bestDQ)
-                bDQ.append(vDQ)
-                
-            dqForDqs.append(bDQ)               
-    """
-                
+                maxErrDqs.append(None)
+        return {'dqForDqs':dqForDqs,'maxErrDqs':maxErrDqs}
         
     """
     ir = ir0 - s/4 + d/4 # ir - convert to ps from steps
@@ -1187,6 +1275,34 @@ class X393LMA(object):
     s=if-ir+of-or
     d=ir-if+of-or
     """
+    def showDQDQSValues(self,
+                        parameters):
+        tFDQS5=list(parameters['tFDQS'])
+        tFDQS5.append(-tFDQS5[0]-tFDQS5[1]-tFDQS5[2]-tFDQS5[3])
+        tSDQS=parameters['tSDQS']
+        tSDQ= parameters['tSDQ'] # list
+        tCDQS32=list(parameters['tCDQS'][0:8])+[0]+list(parameters['tCDQS'][8:23])+[0]+list(parameters['tCDQS'][23:30])
+        tFDQs=[] #corrections in steps?
+        for b in range(8):
+            tFDQi=list(parameters['tFDQ'][4*b:4*(b+1)])
+            tFDQi.append(-tFDQi[0]-tFDQi[1]-tFDQi[2]-tFDQi[3])
+            tFDQs.append(tFDQi)
+        print("\nRelative delay vs delay value")
+        print ("dly DSQS", end=" ")
+        for b in range(8):
+            print ("DQ%d"%(b),end=" ")
+        print ()
+        for dly in range(DLY_STEPS): # no constant delay - just scale and corrections
+            print ("%d"%(dly),end=" ")
+            tdqs=dly * tSDQS  - tFDQS5[dly % FINE_STEPS] # t - time from DQS pad to internal DQS clock with zero setup/hold times to DQ FFs
+            tdqs-=tCDQS32[dly // FINE_STEPS]
+            print("%.3f"%(tdqs),end=" ")
+            for b in range(8):
+                tdq=dly * tSDQ[b] - tFDQs[b][dly % FINE_STEPS]
+                print("%.3f"%(tdq),end=" ")
+            print()    
+
+    
     def createFxAndJacobian(self,
                             parameters,
                             y_data, # keep in self.variable?
