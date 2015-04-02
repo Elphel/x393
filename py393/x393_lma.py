@@ -88,9 +88,9 @@ def test_data(meas_delays,
                     for pData in data: # 16 DQs, each None nor a pair of lists for inPhase in (0,1), each a pair of edges, each a pair of (dly,diff)
                         if pData and (not pData[typ] is None):
                             if pData[typ][1] is None:
-                                print ("%d"%(pData[typ]+halfStep),end=" ")
+                                print ("%d"%(pData[typ][0]+halfStep),end=" ")
                             else:
-                                print ("%d"%(pData[typ]),end=" ")
+                                print ("%d"%(pData[typ][0]),end=" ")
                         else:
                             print ("x",end=" ")
             print()
@@ -623,8 +623,8 @@ class X393LMA(object):
             if corr[x] > corr[xmx]:
                 xmx=x
         span=max(int(round(est_bin_period/8)),4)
-        corr_low=max(corr_low,xmx-span)
-        corr_high=min(corr_high,xmx+span)
+        corr_low=max(corr_low,xmx-span,-num_hist_steps//2)
+        corr_high=min(corr_high,xmx+span,num_hist_steps//2-1)
         if quiet <1:
             print ("corrected corr_low=%d, corr_high=%d, xmx=%d"%(corr_low, corr_high, xmx))
         S0=0
@@ -649,8 +649,8 @@ class X393LMA(object):
                 mx=y
                 xmx=x
         span=max(int(round(corr_bin_period/8)),4)
-        corr_low=max(corr_low,xmx-span)
-        corr_high=min(corr_high,xmx+span)
+        corr_low=max(corr_low,xmx-span,-num_hist_steps//2)
+        corr_high=min(corr_high,xmx+span,num_hist_steps//2-1)
         if quiet < 1:
             print ("corrected corr_low=%d, corr_high=%d, xmx=%d"%(corr_low, corr_high, xmx))
         S0=0
@@ -682,7 +682,7 @@ class X393LMA(object):
                 xSpan= corr_bin_period/2
                 #scanning in bin, not dly steps
                 corr_low= max(int(b_start/bin_size-xSpan),-(num_hist_steps//2))
-                corr_high=min(int(b_start/bin_size+xSpan), (num_hist_steps//2))
+                corr_high=min(int(b_start/bin_size+xSpan), (num_hist_steps//2)-1)
                 xmx=None
                 mx=0
                 if quiet < 1:
@@ -718,7 +718,7 @@ class X393LMA(object):
                 xSpan= corr_bin_period/2
                 #scanning in bin, not dly steps
                 corr_low= max(int(b_start/bin_size-xSpan),-(num_hist_steps//2))
-                corr_high=min(int(b_start/bin_size+xSpan), (num_hist_steps//2))
+                corr_high=min(int(b_start/bin_size+xSpan), (num_hist_steps//2)-1)
                 xmx=None
                 mx=0
                 if quiet < 1:
@@ -729,8 +729,8 @@ class X393LMA(object):
                         mx=y
                         xmx=x
                 span=max(int(round(corr_bin_period/8)),4)
-                corr_low=max(corr_low,xmx-span)
-                corr_high=min(corr_high,xmx+span)
+                corr_low=max(corr_low,xmx-span,-num_hist_steps//2)
+                corr_high=min(corr_high,xmx+span,num_hist_steps//2-1)
                 if quiet < 1:
                     print ("DQ[%d], series=%d corrected corr_low=%d, corr_high=%d, xmx=%d"%(b, t, corr_low, corr_high, xmx))
                 S0=0

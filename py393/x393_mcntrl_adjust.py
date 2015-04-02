@@ -2888,8 +2888,8 @@ class X393McntrlAdjust(object):
             for d in meas_data:
                 print("%s,"%(str(d)))
             print("]")
-        rdict={"patt_prim_steps":    compare_prim_steps,
-               "patt_meas_data":     meas_data} # TODO: May delete after LMA fitting
+        rdict={"write_prim_steps":    compare_prim_steps,
+               "write_meas_data":     meas_data} # TODO: May delete after LMA fitting
         self.adjustment_state.update(rdict)
                     
                     
@@ -2905,8 +2905,11 @@ class X393McntrlAdjust(object):
         to reduce debugging time for nest stages
         """
         self.adjustment_state["dqi_dqsi"]=            get_test_dq_dqs_data.get_dqi_dqsi()
-        self.adjustment_state["maxErrDqs"]=           get_test_dq_dqs_data.get_maxErrDqs() 
+        self.adjustment_state["maxErrDqsi"]=          get_test_dq_dqs_data.get_maxErrDqsi() 
         self.adjustment_state["dqi_dqsi_parameters"]= get_test_dq_dqs_data.get_dqi_dqsi_parameters()
+        self.adjustment_state["dqo_dqso"]=            get_test_dq_dqs_data.get_dqo_dqso()
+        self.adjustment_state["maxErrDqso"]=          get_test_dq_dqs_data.get_maxErrDqso() 
+        self.adjustment_state["dqo_dqso_parameters"]= get_test_dq_dqs_data.get_dqo_dqso_parameters()
         self.adjustment_state.update(get_test_dq_dqs_data.get_adjust_cmda_odelay())
         self.adjustment_state.update(get_test_dq_dqs_data.get_wlev_data())
         self.adjustment_state.update(get_test_dq_dqs_data.get_dqsi_phase())
@@ -2940,8 +2943,8 @@ class X393McntrlAdjust(object):
         if isinstance (data_set_number,(int,long)) and (data_set_number>=0) :
             if quiet < 4:
                 print("Using hard-coded data set #%d"%data_set_number)
-            compare_prim_steps=get_test_dq_dqs_data.get_compare_prim_steps(data_set_number)
-            meas_data=get_test_dq_dqs_data.get_data(data_set_number)
+            compare_prim_steps=get_test_dq_dqs_data.get_compare_prim_steps_in(data_set_number)
+            meas_data=get_test_dq_dqs_data.get_data_in(data_set_number)
         else:
             if quiet < 4:
                 print("Using measured data set")
@@ -2986,10 +2989,10 @@ class X393McntrlAdjust(object):
 
         self.adjustment_state["dqi_dqsi_parameters"]=rslt.pop('parameters')
         try:
-            self.adjustment_state["maxErrDqs"]=rslt.pop('maxErrDqs')
+            self.adjustment_state["maxErrDqsi"]=rslt.pop('maxErrDqs')
             if quiet<5:
-                print("maxErrDqs={")
-                for k,v in self.adjustment_state["maxErrDqs"].items():
+                print("maxErrDqsi={")
+                for k,v in self.adjustment_state["maxErrDqsi"].items():
                     print ("'%s':%s,"%(k,str(v)))
                 print ("}")
         except:
@@ -3055,20 +3058,108 @@ class X393McntrlAdjust(object):
                                     quiet=1)
         self.adjustment_state.update(dqsi_phase)
         return dqsi_phase
+
+    def proc_dqo_dqso(self,
+                       lane="all",
+                       bin_size=5,
+                       primary_set=2,
+#                       compare_prim_steps=True, # while scanning, compare this delay with 1 less by primary(not fine) step,
+#                                                # save None for fraction in unknown (previous -0.5, next +0.5)
+                       data_set_number=0,        # not number - use measured data
+                       scale_w=0.0,              # weight for "uncertain" values (where samples chane from all 0 to all 1 in one step)
+ 
+                       quiet=1):
+        """
+        Run DQ vs DQS fitting for one data lane (0 or 1) using earlier acquired hard-coded data
+        @param lane             byte lane to process (or non-number - process all byte lanes of the device) 
+        @param bin_size         bin size for the histograms (should be 5/10/20/40)
+        @param primary_set      which of the data edge series to use as leading (other will be trailing by 180) 
+        @param data_set_number  select one of the hard-coded data sets (sets 0 and 1 use comparing with the data 1 fine step below
+                          set #2 (default) used measurement with previous primary step measurement (will not suffer from
+                          fine range wider than on primary step)
+                          If not number or <0 - use measured data
+        @param scale_w        weight for "uncertain" values (where samples change from all 0 to all 1 in one step)
+                        For sufficient data 0.0 is OK (and seems to work better)- only "analog" samples are considered   
+        @return 3-element dictionary of ('early','nominal','late'), each being None or a 160-element list,
+                each element being either None, or a list of 3 best DQ delay values for the DQS delay (some mey be None too) 
+        """
+        if quiet < 3:
+            print ("proc_dqi_dqsi(): scale_w=%f"%(scale_w))
+        if isinstance (data_set_number,(int,long)) and (data_set_number>=0) :
+            if quiet < 4:
+                print("Using hard-coded data set #%d"%data_set_number)
+            compare_prim_steps=get_test_dq_dqs_data.get_compare_prim_steps_out(data_set_number)
+            meas_data=get_test_dq_dqs_data.get_data_out(data_set_number)
+        else:
+            if quiet < 4:
+                print("Using measured data set")
+            try:
+                compare_prim_steps=self.adjustment_state["wtite_prim_steps"]
+                meas_data=         self.adjustment_state["write_meas_data"]
+            except:
+                print ("Pattern-measured data is not available, exiting")
+                return
+        meas_delays=[]
+        for data in meas_data:
+            if data:
+                bits=[None]*16
+                for b,pData in enumerate(data):
+                    if pData:
+                        bits[b]=[None]*4
+                        for inPhase in (0,1):
+                            if pData[inPhase]:
+                                for e in (0,1):
+                                    if pData[inPhase][e]:
+                                        bits[b][inPhase*2+e]=pData[inPhase][e]# [0]
+                meas_delays.append(bits)
+        if quiet<1:
+            x393_lma.test_data(meas_delays,compare_prim_steps,quiet)
+        lma=x393_lma.X393LMA()
+        rslt = lma.lma_fit_dqi_dqsi(lane,
+                                    bin_size,
+                                    1000.0*self.x393_mcntrl_timing.get_dly_steps()['SDCLK_PERIOD'], # 2500.0, # clk_period,
+                                    78.0,   # dly_step_ds,
+                                    primary_set,
+                                    meas_delays,
+                                    compare_prim_steps,
+                                    scale_w,
+                                    quiet)
+        if quiet<5:
+            lma.showENLresults(rslt)
+        if quiet<5:
+            print ("dqi_dqsi={")
+            for k,v in rslt.items():
+                print ("'%s':%s,"%(k,str(v)))
+            print ("}")
+
+        self.adjustment_state["dqi_dqsi_parameters"]=rslt.pop('parameters')
+        try:
+            self.adjustment_state["maxErrDqso"]=rslt.pop('maxErrDqs')
+            if quiet<5:
+                print("maxErrDqso={")
+                for k,v in self.adjustment_state["maxErrDqso"].items():
+                    print ("'%s':%s,"%(k,str(v)))
+                print ("}")
+        except:
+            print ("maxErrDqs does not exist")
+            
+        self.adjustment_state["dqo_dqso"]=rslt         
+        return rslt
     
     
     def show_all_vs_phase(self, load_hardcoded=False):
         if load_hardcoded:
             self.load_hardcoded_data()
         rslt_names=("early","nominal","late")
-        DQvDQS=self.adjustment_state["dqi_dqsi"]
+        DQIvDQSI=self.adjustment_state["dqi_dqsi"]
+        DQOvDQSO=self.adjustment_state["dqo_dqso"]
         cmda_bspe=self.adjustment_state['cmda_bspe']
         dqsi_phase=self.adjustment_state['dqsi_phase']
         wlev_dqs_bspe=self.adjustment_state['wlev_dqs_bspe']
         numBits=0
-        for n in DQvDQS:
+        for n in DQIvDQSI:
             try:
-                for d in DQvDQS[n]:
+                for d in DQIvDQSI[n]:
                     try:
                         numBits=len(d)
                         break
@@ -3080,22 +3171,30 @@ class X393McntrlAdjust(object):
         if not numBits:
             raise Exception("showENLresults(): No no-None data provided")
         numLanes=numBits//8
-        enl_list=[]
+        enl_list_in=[]
         for k in rslt_names:
-            if DQvDQS[k]:
-                enl_list.append(k)
+            if DQIvDQSI[k]:
+                enl_list_in.append(k)
+        enl_list_out=[]
+        for k in rslt_names:
+            if DQOvDQSO[k]:
+                enl_list_out.append(k)
+                
         timing=self.x393_mcntrl_timing.get_dly_steps()
         numPhaseSteps= int(timing['SDCLK_PERIOD']/timing['PHASE_STEP']+0.5)
                 
         print("Phase CMDA",end=" ")
         for lane in range(numLanes):
             print("DQS%di"%(lane),end=" ")
-        for k in enl_list:
+        for k in enl_list_in:
             for b in range(numBits):
                 print("%s-DQ%di"%(k.upper()[0], b),end=" ")
         for lane in range(numLanes):
             print("DQS%d0"%(lane),end=" ")
         #TODO: add DQ%do 
+        for k in enl_list_out:
+            for b in range(numBits):
+                print("%s-DQ%do"%(k.upper()[0], b),end=" ")
         print()
         for phase in range(numPhaseSteps):
             print("%d"%(phase),end=" ")
@@ -3111,25 +3210,41 @@ class X393McntrlAdjust(object):
                     print("%d"%(dqsi_phase[lane][phase]),end=" ")
                 else:
                     print ("?",end=" ")
-            #DQ_IDEALY, with half/clock variants
-            for k in enl_list:
+            #DQ_IDELAY, with half/clock variants
+            for k in enl_list_in:
                 for b in range(numBits):
                     lane=b//8
                     dqs_dly=dqsi_phase[lane][phase]
                     valid =           not dqs_dly is None
-                    valid = valid and not DQvDQS[k] is None
-                    valid = valid and not DQvDQS[k][dqs_dly] is None
-                    valid = valid and not DQvDQS[k][dqs_dly][b] is None
+                    valid = valid and not DQIvDQSI[k] is None
+                    valid = valid and not DQIvDQSI[k][dqs_dly] is None
+                    valid = valid and not DQIvDQSI[k][dqs_dly][b] is None
                     if valid:
-                        print("%d"%(DQvDQS[k][dqs_dly][b]),end=" ")
+                        print("%d"%(DQIvDQSI[k][dqs_dly][b]),end=" ")
                     else:
                         print ("?",end=" ")
-            #DQS_ODEALY
+            #DQS_ODELAY
             for lane in range(numLanes):
                 if (not wlev_dqs_bspe[lane][phase] is None) and (not wlev_dqs_bspe[lane][phase]['ldly'] is None):
                     print("%d"%(wlev_dqs_bspe[lane][phase]['ldly']),end=" ")
                 else:
                     print ("?",end=" ")
+            #DQ_IDELAY, with half/clock variants
+            for k in enl_list_out:
+                for b in range(numBits):
+                    lane=b//8
+                    if (not wlev_dqs_bspe[lane][phase] is None):
+                        dqs_dly=wlev_dqs_bspe[lane][phase]['ldly']
+                    else:
+                        dqs_dly=None
+                    valid =           not dqs_dly is None
+                    valid = valid and not DQOvDQSO[k] is None
+                    valid = valid and not DQOvDQSO[k][dqs_dly] is None
+                    valid = valid and not DQOvDQSO[k][dqs_dly][b] is None
+                    if valid:
+                        print("%d"%(DQOvDQSO[k][dqs_dly][b]),end=" ")
+                    else:
+                        print ("?",end=" ")
             print()                
              
             
