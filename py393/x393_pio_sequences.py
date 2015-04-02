@@ -452,7 +452,6 @@ class X393PIOSequences(object):
         @num8 - number of 8-bursts to read (maximal 64, min- 2)
         @sel - 0 - early, 1 - late read command
         @verbose print data being written (default: False)
-            
         """
         cmd_addr = vrlg.MCONTR_CMD_WR_ADDR + vrlg.READ_BLOCK_OFFSET
 # activate
@@ -520,17 +519,20 @@ class X393PIOSequences(object):
                         ca,  # input[9:0]ca;
                         num8=64,
                         extraTgl=0, #
+                        sel=1,
                         verbose=0):
 
         """
         Setup write block sequence at parameter defined address in the sequencer memory
-        <ba>   3-bit memory bank address
-        <ra>  15-bit memory row address
-        <ca>  10-bit memory column address
-        <num8> - number of 8-bursts (default=64, should be >2)
-        <verbose> print data being written (default: False)
+        @ba   3-bit memory bank address
+        @ra  15-bit memory row address
+        @ca  10-bit memory column address
+        @num8 - number of 8-bursts (default=64, should be >2)
+        @extraTgl add extra 8-burst of toggling DQS
+        @sel - 0 - early, 1 - late read command
+        @verbose print data being written (default: False)
         """
-        print("===set_write_block ba=0x%x, ra=0x%x, ca=0x%x"%(ba,ra,ca))
+        print("===set_write_block ba=0x%x, ra=0x%x, ca=0x%x, num8=%d extraTgl=%d, sel=%d, verbose=%d"%(ba,ra,ca,num8,extraTgl,sel, verbose))
         cmd_addr = vrlg.MCONTR_CMD_WR_ADDR + vrlg.WRITE_BLOCK_OFFSET
 # activate
         #                          addr                 bank     RCW ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD NOP, B_RST
@@ -545,7 +547,7 @@ class X393PIOSequences(object):
 # first write, 3 rd_buf
 # write
         #                          addr                 bank     RCW ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD NOP, B_RST
-        data=self.func_encode_cmd(ca&0x3ff,              ba,      3,  1,  0,  1,  0,    0,    0,    0,  0,   1,   0,   0) # B_RD moved 1 cycle earlier 
+        data=self.func_encode_cmd(ca&0x3ff,              ba,      3,  1,  0, sel, 0,    0,    0,    0,  0,   1,   0,   0) # B_RD moved 1 cycle earlier 
         self.x393_mem.axi_write_single_w(cmd_addr, data, verbose)
         cmd_addr += 1
 # nop 4-th rd_buf
@@ -557,24 +559,24 @@ class X393PIOSequences(object):
         for i in range(1,num8-2): # 62) : #(i = 1; i < 62; i = i + 1) begin
 # write
         #                          addr                 bank     RCW ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD NOP, B_RST
-            data=self.func_encode_cmd((ca&0x3ff)+(i<<3), ba,      3,  1,  0,  1,  1,    1,    1,    0,  0,   1,   1,   0) 
+            data=self.func_encode_cmd((ca&0x3ff)+(i<<3), ba,      3,  1,  0, sel, 1,    1,    1,    0,  0,   1,   1,   0) 
             self.x393_mem.axi_write_single_w(cmd_addr, data, verbose)
             cmd_addr += 1
         #                          addr                 bank     RCW ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD NOP, B_RST
-#        data=self.func_encode_cmd((ca&0x3ff)+(62<<3),    ba,      3,  1,  0,  1,  1,    1,    1,    0,  0,   1,   0,   0) # write w/o nop
-        data=self.func_encode_cmd((ca&0x3ff)+((num8-2)<<3), ba,    3,  1,  0,  1,  1,    1,    1,    0,  0,   1,   0,   0) # write w/o nop
+#        data=self.func_encode_cmd((ca&0x3ff)+(62<<3),    ba,     3,  1,  0, sel, 1,    1,    1,    0,  0,   1,   0,   0) # write w/o nop
+        data=self.func_encode_cmd((ca&0x3ff)+((num8-2)<<3), ba,   3,  1,  0, sel, 1,    1,    1,    0,  0,   1,   0,   0) # write w/o nop
         self.x393_mem.axi_write_single_w(cmd_addr, data, verbose)
         cmd_addr += 1
 #nop
         #                          skip     done        bank         ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD      B_RST
-        data=self.func_encode_skip( 0,       0,          ba,          1,  0,  1,  1,    1,    1,    0,  0,   0,        0) # nop with buffer read off
+        data=self.func_encode_skip( 0,       0,          ba,          1,  0, sel, 1,    1,    1,    0,  0,   0,        0) # nop with buffer read off
         self.x393_mem.axi_write_single_w(cmd_addr, data, verbose)
         cmd_addr += 1
         
 # One last write pair w/o buffer
         #                          addr                 bank     RCW ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD NOP, B_RST
-#        data=self.func_encode_cmd((ca&0x3ff)+(63<<3),    ba,      3,  1,  0,  1,  1,    1,    1,    0,  0,   0,   1,   0) # write with nop
-        data=self.func_encode_cmd((ca&0x3ff)+((num8-1)<<3),ba,     3,  1,  0,  1,  1,    1,    1,    0,  0,   0,   1,   0) # write with nop
+#        data=self.func_encode_cmd((ca&0x3ff)+(63<<3),    ba,     3,  1,  0, sel, 1,    1,    1,    0,  0,   0,   1,   0) # write with nop
+        data=self.func_encode_cmd((ca&0x3ff)+((num8-1)<<3),ba,    3,  1,  0, sel, 1,    1,    1,    0,  0,   0,   1,   0) # write with nop
         self.x393_mem.axi_write_single_w(cmd_addr, data, verbose)
         cmd_addr += 1
 # nop
@@ -589,7 +591,7 @@ class X393PIOSequences(object):
         cmd_addr += 1
 # nop
         #                          skip     done        bank         ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD      B_RST
-        data=self.func_encode_skip( extraTgl,       0,          ba,          1,  0,  0,  1,    1,    1,    0,  0,   0,        0)
+        data=self.func_encode_skip( extraTgl,       0,          ba,          sel, 0,  0,  1,    1,    1,    0,  0,   0,        0)
         self.x393_mem.axi_write_single_w(cmd_addr, data, verbose)
         cmd_addr += 1
 # ODT off, it has latency
@@ -945,18 +947,20 @@ class X393PIOSequences(object):
         return self.x393_mcntrl_buffers.read_block_buf_chn (0, 3, num, show_rslt ) # chn=0, page=3, number of 32-bit words=num, show_rslt
 
     def write_block(self,
-                     wait_complete): # Wait for operation to complete
+                    page=0,
+                    wait_complete=1): # Wait for operation to complete
         """
         Write block in PS PIO mode 
-        <wait_complete> wait write block operation to complete (0 - may initiate multiple PS PIO operations)
+        @param page buffer page to use
+        @param wait_complete wait write block operation to complete (0 - may initiate multiple PS PIO operations)
         """
 #    write_block_buf_chn; # fill block memory - already set in set_up task
         self.schedule_ps_pio ( # schedule software-control memory operation (may need to check FIFO status first)
-                        vrlg.WRITE_BLOCK_OFFSET,    # input [9:0] seq_addr; # sequence start address
-                        0,                     # input [1:0] page;     # buffer page number
-                        0,                     # input       urgent;   # high priority request (only for competion with other channels, will not pass in this FIFO)
-                        1,                     # input       chn;      # channel buffer to use: 0 - memory read, 1 - memory write
-                        wait_complete)         # `PS_PIO_WAIT_COMPLETE )#  wait_complete; # Do not request a newer transaction from the scheduler until previous memory transaction is finished
+                        vrlg.WRITE_BLOCK_OFFSET, # input [9:0] seq_addr; # sequence start address
+                        page,                    # input [1:0] page;     # buffer page number
+                        0,                       # input       urgent;   # high priority request (only for competion with other channels, will not pass in this FIFO)
+                        1,                       # input       chn;      # channel buffer to use: 0 - memory read, 1 - memory write
+                        wait_complete)           # `PS_PIO_WAIT_COMPLETE )#  wait_complete; # Do not request a newer transaction from the scheduler until previous memory transaction is finished
 # temporary - for debugging:
 #        self.wait_ps_pio_done(vrlg.DEFAULT_STATUS_MODE,1) # wait previous memory transaction finished before changing delays (effective immediately)
 
@@ -1003,19 +1007,25 @@ class X393PIOSequences(object):
     
     def read_levelling(self,
                        nrep,
-                       sel=1, # 0 - early, 1 - late read command (shift by a SDCLK period), -1 - use current sequence 
+                       sel=1, # 0 - early, 1 - late read command (shift by a SDCLK period), -1 - use current sequence
                        quiet=1):
         """
         Read and process data in 'read patter' mode
         refresh may be off, delays: cmda_edelay, dq_idelay, dqs_idelauy should be set
-        <nrep>   number of times pattern burst is read (8-bursts), actually will be read nrep+3, nut the first/last will be discarded
-        <sel>    0 - early, 1 - late read command (shift by a SDCLK period)
+        @param nrep   number of times pattern burst is read (8-bursts), actually will be read nrep+3, nut the first/last will be discarded
+        @param sel    0 - early, 1 - late read command (shift by a SDCLK period) -1 - use pre-programmed sequence,
+                     -2 - use (pre-programmed) read_block sequence
         """
         if sel>=0:
             self.set_read_pattern(nrep+3,sel) # do not use first/last pair of the 32 bit words
-        buf= self.read_pattern((4*(nrep+1)+2),     # num,
-                               (0,1)[quiet<1],     # show_rslt,
-                               1) # Wait for operation to complete
+        if sel == -2:
+            buf= self.read_block((4*(nrep+1)+2),     # num,
+                                   (0,1)[quiet<1],     # show_rslt,
+                                   1) # Wait for operation to complete
+        else:
+            buf= self.read_pattern((4*(nrep+1)+2),     # num,
+                                   (0,1)[quiet<1],     # show_rslt,
+                                   1) # Wait for operation to complete
         buf= buf[4:] # discard first 4*32-bit words
         if quiet <1:
             hbuf=[]

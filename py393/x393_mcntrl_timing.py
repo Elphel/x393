@@ -82,7 +82,7 @@ class X393McntrlTiming(object):
         <phase>    8-bit clock phase value (None will use default)
         <wait_phase_en> compare phase shift to programmed (will not work if the program was restarted)
         <wait_seq> read and re-send status request to make sure status reflects new data (just for testing, too fast for Python)
-        <quiet> reduce output
+        @param quiet reduce output
         Returns 1 if success, 0 if timeout (or no wait was performed)
         """
         if phase is None:
@@ -182,10 +182,10 @@ class X393McntrlTiming(object):
                           quiet=1):
         """
         Set all DQ input delays to the same value
-        <delay> 8-bit (5+3) delay value to use or a tuple/list with a pair for (lane0, lane1)
+        @param delay 8-bit (5+3) delay value to use or a tuple/list with a pair for (lane0, lane1)
                 Each of the two elements in the delay tuple/list may be a a common integer or a list/tuple itself
                 if delay is None will restore default values
-        <quiet> reduce output                  
+        @param quiet reduce output                  
         """
 #        print("====axi_set_dq_idelay %s"%str(delay))
         
@@ -203,12 +203,15 @@ class X393McntrlTiming(object):
         self.x393_axi_tasks.write_contol_register  (vrlg.DLY_SET,0);# // set all delays
         
     def axi_set_dq_odelay(self,
-                          delay=None): # input [7:0] delay;
+                          delay=None, # input [7:0] delay;
+                          quiet=1):
+
         """
         Set all DQ OUTput delays to the same value
-        <delay> 8-bit (5+3) delay value to use or a tuple/list with a pair for (lane0, lane1)
+        @param delay 8-bit (5+3) delay value to use or a tuple/list with a pair for (lane0, lane1)
                 Each of the two elements in the delay tuple/list may be a a common integer or a list/tuple itself
                 if delay is None will restore default values
+        @param quiet reduce output                  
         """
         if delay is None:
             delay=[[],[]]
@@ -217,7 +220,7 @@ class X393McntrlTiming(object):
                 delay[1].append(vrlg.get_default_field("DLY_LANE1_ODELAY",i))
         if isinstance(delay,(int,long)):
             delay=(delay,delay)
-        if self.DEBUG_MODE > 1:
+        if quiet < 2:
             print("SET DQ ODELAY="+hexMultiple(delay)) # hexMultiple
         self.axi_set_multiple_delays(vrlg.LD_DLY_LANE0_ODELAY, 0, 8, delay[0], "DLY_LANE0_ODELAY");
         self.axi_set_multiple_delays(vrlg.LD_DLY_LANE1_ODELAY, 0, 8, delay[1], "DLY_LANE1_ODELAY");
@@ -228,9 +231,9 @@ class X393McntrlTiming(object):
                            quiet=1):
         """
         Set all DQs input delays to the same value
-        <delay> 8-bit (5+3) delay value to use or a tuple/list with a pair for (lane0, lane1)
+        @param delay 8-bit (5+3) delay value to use or a tuple/list with a pair for (lane0, lane1)
                 if delay is None will restore default values
-        <quiet> reduce output                  
+        @param quiet reduce output                  
         """
         if delay is None:
             delay=(vrlg.get_default_field("DLY_LANE0_IDELAY",8),vrlg.get_default_field("DLY_LANE1_IDELAY",8))
@@ -247,9 +250,9 @@ class X393McntrlTiming(object):
                            quiet=1):
         """
         Set all DQs OUTput delays to the same value
-        <delay> 8-bit (5+3) delay value to use or a tuple/list with a pair for (lane0, lane1)
+        @param delay 8-bit (5+3) delay value to use or a tuple/list with a pair for (lane0, lane1)
                 if delay is None will restore default values
-        <quiet> reduce output                  
+        @param quiet reduce output                  
                 
         """
         if delay is None:
@@ -267,9 +270,9 @@ class X393McntrlTiming(object):
                            quiet=1):
         """
         Set all DM output delays to the same value
-        <delay> 8-bit (5+3) delay value to use or a tuple/list with a pair for (lane0, lane1)
+        @param delay 8-bit (5+3) delay value to use or a tuple/list with a pair for (lane0, lane1)
                 if delay is None will restore default values
-        <quiet> reduce output                  
+        @param quiet reduce output                  
         """
         if delay is None:
             delay=(vrlg.get_default_field("DLY_LANE0_ODELAY",9),vrlg.get_default_field("DLY_LANE1_ODELAY",9))
@@ -287,11 +290,11 @@ class X393McntrlTiming(object):
                                quiet=1):
         """
         Set all command/address output delays to the same value (or a list/tuple of the individual ones)
-        <delay> 8-bit (5+3) delay value to use or list/tuple containing individual values
+        @param delay 8-bit (5+3) delay value to use or list/tuple containing individual values
                 List elements may be None, those values will not be overwritten
                 if delay is None will restore default values
-        <indx>  if present, delay only applies to the specified index (delay should be int/long)
-        <quiet> reduce output                  
+        @param indx  if present, delay only applies to the specified index (delay should be int/long)
+        @param quiet reduce output                  
         """
         if delay is None:
             delay=[]
@@ -317,10 +320,10 @@ class X393McntrlTiming(object):
                                quiet=1):
         """
         Set output delays for address lines only
-        <delay> 8-bit (5+3) delay value to use or list/tuple containing individual values
+        @param delay 8-bit (5+3) delay value to use or list/tuple containing individual values
                 List elements may be None, those values will not be overwritten
                 if delay is None will restore default values
-        <indx>  if present, delay only applies to the specified index (delay should be int/long)                  
+        @param indx  if present, delay only applies to the specified index (delay should be int/long)                  
         """
         if delay is None:
             delay=[]
@@ -345,10 +348,10 @@ class X393McntrlTiming(object):
                             indx=None): # address index
         """
         Set output delays for bank lines only
-        <delay>    8-bit (5+3) delay value to use or list/tuple containing individual values
+        @param delay    8-bit (5+3) delay value to use or list/tuple containing individual values
                    List elements may be None, those values will not be overwritten
                 if delay is None will restore default values
-        <indx>  if present, delay only applies to the specified index (delay should be int/long)                  
+        @param indx  if present, delay only applies to the specified index (delay should be int/long)                  
         """
         bank_offset=24
         if delay is None:
@@ -374,10 +377,10 @@ class X393McntrlTiming(object):
                            indx=None): # address index
         """
         Set output delays for command lines only. command=(we,ras,cas,cke,odt)
-        <delay>    8-bit (5+3) delay value to use or list/tuple containing individual values
+        @param delay    8-bit (5+3) delay value to use or list/tuple containing individual values
                    List elements may be None, those values will not be overwritten
                    if delay is None will restore default values
-        <indx>  if present, delay only applies to the specified index (delay should be int/long)                  
+        @param indx  if present, delay only applies to the specified index (delay should be int/long)                  
         """
         command_offset=24+3
         if delay is None:
@@ -410,7 +413,7 @@ class X393McntrlTiming(object):
         <reg_addr> control register address of the first register in the range
         <offset>   add this offset to address
         <number>   number of registers to write
-        <delay>    8-bit (5+3) delay value to use or list/tuple containing individual values
+        @param delay    8-bit (5+3) delay value to use or list/tuple containing individual values
                    List elements may be None, those values will not be overwritten
         <vname>    Verilog parameter name
         """
@@ -439,7 +442,7 @@ class X393McntrlTiming(object):
                             delay=None): # input [3:0] delay;
         """
         Set write to buffer latency
-        <delay>    4-bit write to buffer signal delay (in mclk clock cycles)
+        @param delay    4-bit write to buffer signal delay (in mclk clock cycles)
                    if delay is None will restore default values
         """
         if delay is None:

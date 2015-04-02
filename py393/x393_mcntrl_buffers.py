@@ -135,9 +135,9 @@ class X393McntrlBuffers(object):
                             num_words_or_data_list): # input integer num_words; # number of words to write (will be rounded up to multiple of 16)
         """
         Fill specified buffer with the pattern data
-        <chn>                    4-bit buffer channel (0..4) to write data to
-        <page>                   2-bit buffer page to write to
-        <num_words_or_data_list> number of 32-bit words to generate/write or a list with integer data
+        @param chn                    4-bit buffer channel (0..4) to write data to
+        @param page                   2-bit buffer page to write to
+        @param num_words_or_data_list> number of 32-bit words to generate/write or a list with integer data
         """
         print("===write_block_buf_chn() chn=0x%x, page=0x%x"%(chn,page), end=" ")
         if isinstance (num_words_or_data_list,list):

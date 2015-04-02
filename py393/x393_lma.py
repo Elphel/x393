@@ -166,7 +166,7 @@ class X393LMA(object):
         use np.nan instead of the None data
         np.isnan() test
         , dtype=np.float
-        @compare_prim_steps while scanning, compare this delay with 1 less by primary(not fine) step,
+        @param compare_prim_steps while scanning, compare this delay with 1 less by primary(not fine) step,
                             save None for fraction in unknown (previous -0.5, next +0.5)
         """
         halfStep=0.5
@@ -546,15 +546,15 @@ class X393LMA(object):
         each of 2x2 elements (DQ delay values) or null
         Create data set template - for each DQS delay and inPhase
          - branch - number of full periods to add
-        @lane          byte lane to process 
-        @bin_size     bin size for the histograms (should be 5/10/20/40)
-        @clk_period   SDCLK period in ps
-        @dly_step_ds  IDELAY step (from the datasheet)
-        @primary_set  which of the data edge series to use as leading (other will be trailing by 180) 
-        @data_set     measured data set
-        @compare_prim_steps while scanning, compare this delay with 1 less by primary(not fine) step,
+        @param lane          byte lane to process 
+        @param bin_size     bin size for the histograms (should be 5/10/20/40)
+        @param clk_period   SDCLK period in ps
+        @param dly_step_ds  IDELAY step (from the datasheet)
+        @param primary_set  which of the data edge series to use as leading (other will be trailing by 180) 
+        @param data_set     measured data set
+        @param compare_prim_steps while scanning, compare this delay with 1 less by primary(not fine) step,
                             save None for fraction in unknown (previous -0.5, next +0.5)
-        @quiet        reduce output   
+        @param quiet        reduce output   
         """
         num_hist_steps=2*((DLY_STEPS+bin_size-1)//bin_size)
         
@@ -756,7 +756,7 @@ class X393LMA(object):
                          hist_estimated,
                          quiet=1): 
         """
-        @compare_prim_steps while scanning, compare this delay with 1 less by primary(not fine) step,
+        @param compare_prim_steps while scanning, compare this delay with 1 less by primary(not fine) step,
                             save None for fraction in unknown (previous -0.5, next +0.5)
         
         """                      
@@ -864,16 +864,16 @@ class X393LMA(object):
         After initial parametersn are created - run LMA to find optimal ones,
         then return up to 3 varints (early, nominal, late) providing the best
         DQ input delay for each DQS one
-        @lane         byte lane to process (or non-number - process all byte lanes of the device) 
-        @bin_size     bin size for the histograms (should be 5/10/20/40)
-        @clk_period   SDCLK period in ps
-        @dly_step_ds  IDELAY step (from the datasheet)
-        @primary_set  which of the data edge series to use as leading (other will be trailing by 180) 
-        @data_set     measured data set
-        @compare_prim_steps while scanning, compare this delay with 1 less by primary(not fine) step,
+        @param lane         byte lane to process (or non-number - process all byte lanes of the device) 
+        @param bin_size     bin size for the histograms (should be 5/10/20/40)
+        @param clk_period   SDCLK period in ps
+        @param dly_step_ds  IDELAY step (from the datasheet)
+        @param primary_set  which of the data edge series to use as leading (other will be trailing by 180) 
+        @param data_set     measured data set
+        @param compare_prim_steps while scanning, compare this delay with 1 less by primary(not fine) step,
                             save None for fraction in unknown (previous -0.5, next +0.5)
-        @scale_w        weight for "uncertain" values (where samples chane from all 0 to all 1 in one step)
-        @quiet        reduce output
+        @param scale_w        weight for "uncertain" values (where samples chane from all 0 to all 1 in one step)
+        @param quiet        reduce output
         @return 3-element dictionary of ('early','nominal','late'), each being None or a 160-element list,
                 each element being either None, or a list of 3 best DQ delay values for the DQS delay (some mey be None too) 
         """

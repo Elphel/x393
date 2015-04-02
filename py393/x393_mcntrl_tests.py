@@ -283,7 +283,7 @@ class X393McntrlTests(object):
             self.x393_mcntrl_timing.axi_set_dq_odelay(dq_odelay)
         if (not dqs_odelay is None) and (dqs_odelay != []):
             self.x393_mcntrl_timing.axi_set_dqs_odelay(dqs_odelay)
-        return self.x393_pio_sequences.write_block(wait_complete) # Wait for operation to complete
+        return self.x393_pio_sequences.write_block(0,wait_complete) # Wait for operation to complete
 
     def test_read_block(self,
                         dq_idelay=None,
