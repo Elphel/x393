@@ -185,6 +185,7 @@ class X393McntrlTiming(object):
         @param delay 8-bit (5+3) delay value to use or a tuple/list with a pair for (lane0, lane1)
                 Each of the two elements in the delay tuple/list may be a a common integer or a list/tuple itself
                 if delay is None will restore default values
+                Alternatively it can be a one-level list/tuple covering all (16) delays
         @param quiet reduce output                  
         """
 #        print("====axi_set_dq_idelay %s"%str(delay))
@@ -196,6 +197,11 @@ class X393McntrlTiming(object):
                 delay[1].append(vrlg.get_default_field("DLY_LANE1_IDELAY",i))
         if isinstance(delay,(int,long)):
             delay=(delay,delay)
+        elif len(delay) % 8 == 0 :
+            delay2=[]
+            for lane in range(len(delay)//8):
+                delay2.append(delay[8*lane:8*(lane+1)])
+            delay=delay2
         if quiet < 2:
             print("SET DQ IDELAY="+hexMultiple(delay)) # hexMultiple
         self.axi_set_multiple_delays(vrlg.LD_DLY_LANE0_IDELAY, 0, 8, delay[0], "DLY_LANE0_IDELAY")
@@ -211,6 +217,7 @@ class X393McntrlTiming(object):
         @param delay 8-bit (5+3) delay value to use or a tuple/list with a pair for (lane0, lane1)
                 Each of the two elements in the delay tuple/list may be a a common integer or a list/tuple itself
                 if delay is None will restore default values
+                Alternatively it can be a one-level list/tuple covering all (16) delays
         @param quiet reduce output                  
         """
         if delay is None:
@@ -220,6 +227,11 @@ class X393McntrlTiming(object):
                 delay[1].append(vrlg.get_default_field("DLY_LANE1_ODELAY",i))
         if isinstance(delay,(int,long)):
             delay=(delay,delay)
+        elif len(delay) % 8 == 0 :
+            delay2=[]
+            for lane in range(len(delay)//8):
+                delay2.append(delay[8*lane:8*(lane+1)])
+            delay=delay2
         if quiet < 2:
             print("SET DQ ODELAY="+hexMultiple(delay)) # hexMultiple
         self.axi_set_multiple_delays(vrlg.LD_DLY_LANE0_ODELAY, 0, 8, delay[0], "DLY_LANE0_ODELAY");

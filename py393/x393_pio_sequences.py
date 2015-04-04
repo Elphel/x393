@@ -532,7 +532,8 @@ class X393PIOSequences(object):
         @sel - 0 - early, 1 - late read command
         @verbose print data being written (default: False)
         """
-        print("===set_write_block ba=0x%x, ra=0x%x, ca=0x%x, num8=%d extraTgl=%d, sel=%d, verbose=%d"%(ba,ra,ca,num8,extraTgl,sel, verbose))
+        if verbose > 0:
+            print("===set_write_block ba=0x%x, ra=0x%x, ca=0x%x, num8=%d extraTgl=%d, sel=%d, verbose=%d"%(ba,ra,ca,num8,extraTgl,sel, verbose))
         cmd_addr = vrlg.MCONTR_CMD_WR_ADDR + vrlg.WRITE_BLOCK_OFFSET
 # activate
         #                          addr                 bank     RCW ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD NOP, B_RST
@@ -790,7 +791,7 @@ class X393PIOSequences(object):
         <en_refresh>  enable refresh immediately 
         <verbose> print data being written (default: False)
         """
-        print("SET REFRESH: tRFC=%d, tREFI=%d"%(t_rfc,t_refi))
+        print("**** SET REFRESH: tRFC=%d, tREFI=%d"%(t_rfc,t_refi))
         cmd_addr = vrlg.MCONTR_CMD_WR_ADDR + vrlg.REFRESH_OFFSET
         #                           addr                 bank                   RCW ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD NOP, B_RST
         data=self.func_encode_cmd(    0,                   0,                    6,  0,  0,  0,  0,    0,    0,    0,  0,   0,   0,   0)

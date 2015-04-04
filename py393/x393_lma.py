@@ -311,9 +311,12 @@ class X393LMA(object):
             except:
                 pass
         if not numBits:
+#            print("showENLresults(): No no-None data provided")
+#            print("DQvDQS=",DQvDQS)
+#            return
             raise Exception("showENLresults(): No no-None data provided")
         numLanes=numBits//8
-#        print ("numBits=%d"%(numBits))            
+#        print ("****numBits=%d"%(numBits))            
         enl_list=[]
         for k in rslt_names:
             if DQvDQS[k]:
@@ -1036,7 +1039,7 @@ class X393LMA(object):
         if quiet < 2:
             print ("parameters=%s"%(str(parameters)))
         self.normalizeParameters(parameters) #isMask=False)
-        if quiet < 4:
+        if quiet < 3:
             print ("normalized parameters=%s"%(str(parameters)))
         """
             both ways work:
@@ -1069,12 +1072,13 @@ class X393LMA(object):
             print("\nfx (filtered):")
             self.showYOrVector(ywp,True,fx)
             
-        if quiet < 4:
+        if quiet < 5:
             arms = self.getParAvgRMS(parameters,
                                      ywp,
                                      primary_set, # prima
                                      quiet+1)
-            print ("average(fx)= %fps, rms(fx)=%fps"%(arms['avg'],arms['rms']))
+            print ("Before LMA (DQ lane %d): average(fx)= %fps, rms(fx)=%fps"%(lane,arms['avg'],arms['rms']))
+            
         if quiet < 3:
             jByJT=np.dot(fxj['jacob'],np.transpose(fxj['jacob']))
             print("\njByJT:")
@@ -1092,7 +1096,7 @@ class X393LMA(object):
                             self.lambdas,
                             self.finalDiffRMS,
                             quiet)
-            if (quiet < 4) or ((quiet < 5) and finished):
+            if (quiet < 5) or ((quiet < 6) and finished):
                 arms = self.getParAvgRMS(parameters,
                                          ywp,
                                          primary_set, # prima
@@ -1126,36 +1130,6 @@ class X393LMA(object):
 
         DQvDQS=    DQvDQS_withErr['dqForDqs']
         DQvDQS_ERR=DQvDQS_withErr['maxErrDqs']
-        if quiet < 4:
-#           print ("DQvDQS_ERR=",DQvDQS_ERR)
-            enl_list=[]
-            for i in range(3):
-                if not DQvDQS[i] is None:
-                    enl_list.append(i)
-            print("DQS", end=" ")
-            for enl in enl_list:
-                for b in range(8):
-                    print("%s%d"%(('E','N','L')[enl],b),end=" ")
-            for enl in enl_list:
-                print("%s-Err"%(('E','N','L')[enl]),end=" ")
-            print()
-            for dly in range(DLY_STEPS):
-                print ("%d"%(dly),end=" ")
-                for enl in enl_list:
-                    if DQvDQS[enl][dly] is None:
-                        print ("? "*8,end="")
-                    else:
-                        for b in range(8):
-                            if DQvDQS[enl][dly][b] is None:
-                                print("?",end=" ")
-                            else:
-                                print("%d"%(DQvDQS[enl][dly][b]),end=" ")
-                for enl in enl_list:
-                    if DQvDQS_ERR[enl][dly] is None:
-                        print ("? ",end="")
-                    else:
-                        print ("%f"%(DQvDQS_ERR[enl][dly]), end=" ")
-                print()
         rslt={}
         rslt_names=("early","nominal","late")
         for i, d in enumerate(DQvDQS):
@@ -1165,15 +1139,13 @@ class X393LMA(object):
         rslt['maxErrDqs']={} # {enl}[dly]
         for i, d in enumerate(DQvDQS_ERR):
             rslt['maxErrDqs'][rslt_names[i]] = d
-        if quiet < 4:
+        if quiet < 3:
             self.showDQDQSValues(parameters)
-#        print ("DQvDQS_ERR=",DQvDQS_ERR)
-#        print ("rslt['maxErrDqs']=",rslt['maxErrDqs'])
+        if quiet < 3:
+            print ("*** quiet=",quiet)
+            self.showENLresults(rslt) # here DQvDQS already contain the needed data 
         
         return rslt
-#        return DQvDQS 
-#        Returns 3-element dictionary of ('early','nominal','late'), each being None or a 160-element list,
-#                each element being either None, or a list of 3 best DQ delay values for the DQS delay (some mey be None too) 
 
 
     def getBestDQforDQS(self,
@@ -1204,7 +1176,8 @@ class X393LMA(object):
         asym_err=[]
         for i in range(8):
             asym_err.append(0.25*(abs(tDQSHL)+abs(tDQHL[i])))
-        print("asym_err=",asym_err) 
+        if quiet < 3:
+            print("asym_err=",asym_err) 
         dqForDqs=[]
         maxErrDqs=[]
         for enl in (0,1,2):
@@ -1617,15 +1590,13 @@ class X393LMA(object):
                            lane, # byte lane
                            bin_size_ps,
                            clk_period,
-#                           phase_step, # ~22ps
-#                           dly_step_ds,
-#                           primary_set,
-                            dqsi_dqi_parameters,
-                            data_set,
-                            compare_prim_steps,
-                            scale_w,
-                            numPhaseSteps, 
-                            quiet=1):
+                           dqsi_dqi_parameters,
+                           data_set,
+                           compare_prim_steps,
+                           scale_w,
+                           numPhaseSteps, 
+                           quiet=1):
+#       print("++++++lma_fit_dqsi_phase(), quiet=",quiet)
         def show_input_data(filtered):
             print(('unfiltered','filtered')[filtered])
             for phase,d in enumerate(data_set):
@@ -1668,7 +1639,8 @@ class X393LMA(object):
                 SX+=binArr[i]*i
             if S0>0:
                 SX/=S0
-            print ("SX=",SX)
+            if quiet < 3:
+                print ("SX=",SX)
             return minVal+bin_size_ps*(SX+0.5) # ps
         
         if not isinstance(lane,(int, long)): # ignore content, process both lanes
@@ -1686,7 +1658,7 @@ class X393LMA(object):
                                                     compare_prim_steps,
                                                     scale_w,
                                                     numPhaseSteps, 
-                                                    quiet=1)
+                                                    quiet)
                 for name in rslt_names:
                     rslt[name].append(rslt_lane[name])
             if quiet<3:
@@ -1713,8 +1685,9 @@ class X393LMA(object):
         dbg_tSDQS=(dqsi_dqi_parameters[0]['tSDQS'],dqsi_dqi_parameters[1]['tSDQS'])
         halfStep=0.5*(1,compare_prim_steps)[compare_prim_steps]
         #phase_step/tSDQS
-        print (phase_step,dbg_tSDQS)
+#        print("lma_fit_dqsi_phase(): quiet=",quiet)
         if quiet < 2:
+            print (phase_step,dbg_tSDQS)
             for filtered in range(2):
                 show_input_data(filtered)    
 
@@ -1723,12 +1696,14 @@ class X393LMA(object):
         minVal= -clk_period
         num_bins=int((maxVal-minVal)/bin_size_ps)+1
         binArr=[0]*num_bins
-        print("minVal=",minVal)
-        print("maxVal=",maxVal)
-        print("num_bins=",num_bins)
+        if quiet < 2:
+            print("minVal=",minVal)
+            print("maxVal=",maxVal)
+            print("num_bins=",num_bins)
         #find main max
         dly_max0=get_shift_by_hist() # delay in ps, corresponding to largest maximum
-        print("max0=%f, (%f)"%(dly_max0,dly_max0/tSDQS))
+        if quiet < 2:
+            print("max0=%f, (%f)"%(dly_max0,dly_max0/tSDQS))
         periods=[None]*len(data_set)
         for phase,d in enumerate(data_set):
             if not d is None:
@@ -1751,19 +1726,19 @@ class X393LMA(object):
                 dl=d[lane]
                 if (not dl is None) and (not dl[0] is None):
                     dly = dl[0]
-                    w[i]=1.0
+                    w[phase]=1.0
                     if dl[1] is None:
                         dly+=halfStep
-                        w[i]=scale_w
+                        w[phase]=scale_w
                     d=dly*tSDQS-periods[phase]*clk_period-tFDQS[dl[0] % FINE_STEPS]
                     y=d-phase*phase_step
-                    S0+=w[i]
-                    SY+=w[i]*y
+                    S0+=w[phase]
+                    SY+=w[phase]*y
         if S0 > 0.0:
             SY /= S0
 
-        print ("shift=",SY," ps")
         if quiet < 2:
+            print ("shift=",SY," ps")
             for phase,d in enumerate(data_set):
                 print ("%d"%(phase),end=" ")
                 if not d is None:

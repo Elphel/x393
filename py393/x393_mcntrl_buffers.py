@@ -132,20 +132,23 @@ class X393McntrlBuffers(object):
     def write_block_buf_chn(self,       #
                             chn,        # input integer chn; # buffer channel
                             page,       # input   [1:0] page;
-                            num_words_or_data_list): # input integer num_words; # number of words to write (will be rounded up to multiple of 16)
+                            num_words_or_data_list, # input integer num_words; # number of words to write (will be rounded up to multiple of 16)
+                            quiet = 1):
         """
         Fill specified buffer with the pattern data
         @param chn                    4-bit buffer channel (0..4) to write data to
         @param page                   2-bit buffer page to write to
         @param num_words_or_data_list> number of 32-bit words to generate/write or a list with integer data
+        @param quiet                  reduce output
         """
-        print("===write_block_buf_chn() chn=0x%x, page=0x%x"%(chn,page), end=" ")
-        if isinstance (num_words_or_data_list,list):
-            try:
-                print("=== [0x%x,0x%x,0x%x,0x%x,0x%x,0x%x,0x%x,0x%x,...]"%tuple(num_words_or_data_list[:8]),end="")
-            except:
-                print("=== [%s]"%str(num_words_or_data_list))
-        print("===")    
+        if quiet < 2:
+            print("===write_block_buf_chn() chn=0x%x, page=0x%x"%(chn,page), end=" ")
+            if isinstance (num_words_or_data_list,list):
+                try:
+                    print("=== [0x%x,0x%x,0x%x,0x%x,0x%x,0x%x,0x%x,0x%x,...]"%tuple(num_words_or_data_list[:8]),end="")
+                except:
+                    print("=== [%s]"%str(num_words_or_data_list))
+            print("===")    
         start_addr=-1
         if   chn==0:start_addr=vrlg.MCONTR_BUF0_WR_ADDR + (page << 8)
         elif chn==1:start_addr=vrlg.MCONTR_BUF1_WR_ADDR + (page << 8)
