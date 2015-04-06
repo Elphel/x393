@@ -336,6 +336,7 @@ class X393McntrlTiming(object):
                 List elements may be None, those values will not be overwritten
                 if delay is None will restore default values
         @param indx  if present, delay only applies to the specified index (delay should be int/long)                  
+        @param quiet reduce output                  
         """
         if delay is None:
             delay=[]
@@ -357,13 +358,16 @@ class X393McntrlTiming(object):
         
     def axi_set_bank_odelay(self,
                             delay=None, # input [7:0] delay;
-                            indx=None): # address index
+                            indx=None, # address index
+                            quiet=1):
+                            
         """
         Set output delays for bank lines only
         @param delay    8-bit (5+3) delay value to use or list/tuple containing individual values
                    List elements may be None, those values will not be overwritten
                 if delay is None will restore default values
         @param indx  if present, delay only applies to the specified index (delay should be int/long)                  
+        @param quiet reduce output                  
         """
         bank_offset=24
         if delay is None:
@@ -379,20 +383,22 @@ class X393McntrlTiming(object):
                 for i in range(len(delay)):
                     if (i != indx):
                         delay[i]=None
-        if self.DEBUG_MODE > 1:
+        if quiet < 2:
             print("SET BANK ODELAY="+hexMultiple(delay))
         self.axi_set_multiple_delays(vrlg.LD_DLY_CMDA, bank_offset, 0,delay, "DLY_CMDA")  # length will be determined by len(delay)
         self.x393_axi_tasks.write_contol_register(vrlg.DLY_SET,0)  # set all delays
 
     def axi_set_cmd_odelay(self,
                            delay=None, # input [7:0] delay;
-                           indx=None): # address index
+                           indx=None, # address index
+                           quiet=1):
         """
         Set output delays for command lines only. command=(we,ras,cas,cke,odt)
         @param delay    8-bit (5+3) delay value to use or list/tuple containing individual values
                    List elements may be None, those values will not be overwritten
                    if delay is None will restore default values
-        @param indx  if present, delay only applies to the specified index (delay should be int/long)                  
+        @param indx  if present, delay only applies to the specified index (delay should be int/long)
+        @param quiet reduce output                  
         """
         command_offset=24+3
         if delay is None:
@@ -408,7 +414,7 @@ class X393McntrlTiming(object):
                 for i in range(len(delay)):
                     if (i != indx):
                         delay[i]=None
-        if self.DEBUG_MODE > 1:
+        if quiet < 2:
             print("SET COMMAND ODELAY="+hexMultiple(delay))
         self.axi_set_multiple_delays(vrlg.LD_DLY_CMDA, command_offset, 0,delay, "DLY_CMDA")  # length will be determined by len(delay)
         self.x393_axi_tasks.write_contol_register(vrlg.DLY_SET,0)  # set all delays

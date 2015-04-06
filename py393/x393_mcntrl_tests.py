@@ -38,12 +38,12 @@ import x393_axi_control_status
 from x393_pio_sequences      import X393PIOSequences
 from x393_mcntrl_timing      import X393McntrlTiming
 from x393_mcntrl_buffers     import X393McntrlBuffers
-from x393_mcntrl_adjust      import X393McntrlAdjust
+#from x393_mcntrl_adjust      import X393McntrlAdjust
 #from verilog_utils import * # concat, bits 
 #from verilog_utils import hx, concat, bits, getParWidth 
-from verilog_utils import concat #, getParWidth
+from verilog_utils import concat,convert_w32_to_mem16 #, getParWidth
 #from x393_axi_control_status import concat, bits
-from time import sleep
+#from time import sleep
 import vrlg
 class X393McntrlTests(object):
     DRY_MODE= True # True
@@ -63,7 +63,7 @@ class X393McntrlTests(object):
         self.x393_pio_sequences=  X393PIOSequences(debug_mode,dry_mode)
         self.x393_mcntrl_timing=  X393McntrlTiming(debug_mode,dry_mode)
         self.x393_mcntrl_buffers= X393McntrlBuffers(debug_mode,dry_mode)
-        self.x393_mcntrl_adjust=  X393McntrlAdjust(debug_mode,dry_mode)
+#        self.x393_mcntrl_adjust=  X393McntrlAdjust(debug_mode,dry_mode)
 #        self.__dict__.update(VerilogParameters.__dict__["_VerilogParameters__shared_state"]) # Add verilog parameters to the class namespace
         try:
             self.verbose=vrlg.VERBOSE
@@ -334,7 +334,7 @@ class X393McntrlTests(object):
                      256,           # num,
                      0,             # show_rslt,
                      wait_complete) # Wait for operation to complete
-        read16=self.x393_mcntrl_adjust.convert_w32_to_mem16(rd_buf) # 512x16 bit, same as DDR3 DQ over time
+        read16=convert_w32_to_mem16(rd_buf) # 512x16 bit, same as DDR3 DQ over time
         sum_read16=0
         for d in read16:
             sum_read16+=d

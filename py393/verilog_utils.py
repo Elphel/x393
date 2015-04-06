@@ -31,6 +31,7 @@ __status__ = "Development"
 #import sys
 #import x393_mem
 #MCNTRL_TEST01_CHN4_STATUS_CNTRL=0
+NUM_FINE_STEPS=    5
 def hx(obj,length=None):
     frmt="0x%x"
     if (length):
@@ -169,4 +170,80 @@ def smooth2d(arr2d):
             row.append(0.5*arr2d[i][j]+0.25*(arr2d[ip][j]+arr2d[im][j]))
         smooth.append(row)
     return smooth                      
-                        
+   
+def split_delay(dly):
+    """
+    Convert hardware composite delay into continuous one
+    <dly> 8-bit (5+3) hardware delay value (or a list of delays)
+    Returns continuous delay value (or a list of delays)
+    """
+    if isinstance(dly,list) or isinstance(dly,tuple):
+        rslt=[]
+        for d in dly:
+            rslt.append(split_delay(d))
+        return rslt
+    try:
+        if isinstance(dly,float):
+            dly=int(dly+0.5)
+        dly_int=dly>>3
+        dly_fine=dly & 0x7
+        if dly_fine > (NUM_FINE_STEPS-1):
+            dly_fine= NUM_FINE_STEPS-1
+        return dly_int*NUM_FINE_STEPS+dly_fine
+    except:
+        return None    
+
+def combine_delay(dly):
+    """
+    Convert continuous delay value to the 5+3 bit encoded one
+    <dly> continuous (0..159) delay (or a list of delays)
+    Returns  8-bit (5+3) hardware delay value (or a list of delays)
+    """
+    if isinstance(dly,list) or isinstance(dly,tuple):
+        rslt=[]
+        for d in dly:
+            rslt.append(combine_delay(d))
+        return rslt
+    try:
+        if isinstance(dly,float):
+            dly=int(dly+0.5)
+        return ((dly/NUM_FINE_STEPS)<<3)+(dly%NUM_FINE_STEPS)
+    except:
+        return None
+
+def convert_mem16_to_w32(mem16):
+    """
+    Convert a list of 16-bit memory words
+    into a list of 32-bit data as encoded in the buffer memory
+    Each 4 of the input words provide 2 of the output elements
+    <mem16> - a list of the memory data
+    Returns a list of 32-bit buffer data
+    """
+    res32=[]
+    for i in range(0,len(mem16),4):
+        res32.append(((mem16[i+3] & 0xff) << 24) |
+                     ((mem16[i+2] & 0xff) << 16) |
+                     ((mem16[i+1] & 0xff) << 8) |
+                     ((mem16[i+0] & 0xff) << 0))
+        res32.append((((mem16[i+3]>>8) & 0xff) << 24) |
+                     (((mem16[i+2]>>8) & 0xff) << 16) |
+                     (((mem16[i+1]>>8) & 0xff) << 8) |
+                     (((mem16[i+0]>>8) & 0xff) << 0))
+    return res32
+
+def convert_w32_to_mem16(w32):
+    """
+    Convert a list of 32-bit data as encoded in the buffer memory
+    into a list of 16-bit memory words (so each bit corresponds to DQ line
+    Each 2 of the input words provide 4 of the output elements
+    <w32> - a list of the 32-bit buffer data
+    Returns a list of 16-bit memory data
+    """
+    mem16=[]
+    for i in range(0,len(w32),2):
+        mem16.append(((w32[i]>> 0) & 0xff) | (((w32[i+1] >>  0) & 0xff) << 8)) 
+        mem16.append(((w32[i]>> 8) & 0xff) | (((w32[i+1] >>  8) & 0xff) << 8)) 
+        mem16.append(((w32[i]>>16) & 0xff) | (((w32[i+1] >> 16) & 0xff) << 8)) 
+        mem16.append(((w32[i]>>24) & 0xff) | (((w32[i+1] >> 24) & 0xff) << 8)) 
+    return mem16
+

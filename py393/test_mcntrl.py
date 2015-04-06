@@ -54,6 +54,7 @@ import x393_pio_sequences
 import x393_mcntrl_timing
 import x393_mcntrl_buffers
 import x393_mcntrl_tests
+import x393_mcntrl_eyepatterns
 import x393_mcntrl_adjust
 import vrlg
 __all__ = []
@@ -320,14 +321,15 @@ USAGE
         print("vrlg.VERBOSE__RAW="+str(vrlg.VERBOSE__RAW))
     
     
-    x393mem=    x393_mem.X393Mem(verbose,args.simulated) #add dry run parameter
-    x393utils=  x393_utils.X393Utils(verbose,args.simulated,args.localparams)
-    x393tasks=  x393_axi_control_status.X393AxiControlStatus(verbose,args.simulated)
-    x393Pio=    x393_pio_sequences.X393PIOSequences(verbose,args.simulated)
-    x393Timing= x393_mcntrl_timing.X393McntrlTiming(verbose,args.simulated)
-    x393Buffers=x393_mcntrl_buffers.X393McntrlBuffers(verbose,args.simulated)
-    x393Tests=  x393_mcntrl_tests.X393McntrlTests(verbose,args.simulated)
-    x393Adjust= x393_mcntrl_adjust.X393McntrlAdjust(verbose,args.simulated)
+    x393mem=         x393_mem.X393Mem(verbose,args.simulated) #add dry run parameter
+    x393utils=       x393_utils.X393Utils(verbose,args.simulated,args.localparams)
+    x393tasks=       x393_axi_control_status.X393AxiControlStatus(verbose,args.simulated)
+    x393Pio=         x393_pio_sequences.X393PIOSequences(verbose,args.simulated)
+    x393Timing=      x393_mcntrl_timing.X393McntrlTiming(verbose,args.simulated)
+    x393Buffers=     x393_mcntrl_buffers.X393McntrlBuffers(verbose,args.simulated)
+    x393Tests=       x393_mcntrl_tests.X393McntrlTests(verbose,args.simulated)
+    x393Eyepatterns= x393_mcntrl_eyepatterns.X393McntrlEyepattern(verbose,args.simulated)
+    x393Adjust=      x393_mcntrl_adjust.X393McntrlAdjust(verbose,args.simulated)
     
     '''
     print ("----------------------")
@@ -350,6 +352,7 @@ USAGE
     extractTasks(x393_mcntrl_timing.X393McntrlTiming,x393Timing)
     extractTasks(x393_mcntrl_buffers.X393McntrlBuffers,x393Buffers)
     extractTasks(x393_mcntrl_tests.X393McntrlTests,x393Tests)
+    extractTasks(x393_mcntrl_eyepatterns.X393McntrlEyepattern,x393Eyepatterns)
     extractTasks(x393_mcntrl_adjust.X393McntrlAdjust,x393Adjust)
 
     for cmdLine in commands:

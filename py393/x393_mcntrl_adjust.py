@@ -1,7 +1,7 @@
 from __future__ import print_function
 '''
 # Copyright (C) 2015, Elphel.inc.
-# Methods that mimic Verilog tasks used for simulation  
+# Class to measure and adjust I/O delays  
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
@@ -31,7 +31,6 @@ __status__ = "Development"
 import sys
 #import x393_mem
 #x393_pio_sequences
-import random
 #from import_verilog_parameters import VerilogParameters
 from x393_mem                import X393Mem
 #from x393_axi_control_status import X393AxiControlStatus
@@ -39,18 +38,13 @@ import x393_axi_control_status
 from x393_pio_sequences      import X393PIOSequences
 from x393_mcntrl_timing      import X393McntrlTiming
 from x393_mcntrl_buffers     import X393McntrlBuffers
-#from verilog_utils import * # concat, bits 
-#from verilog_utils import hx, concat, bits, getParWidth 
-#from verilog_utils import concat #, getParWidth
-#from x393_axi_control_status import concat, bits
-#from time import sleep
-from verilog_utils import checkIntArgs,smooth2d
+from verilog_utils import split_delay,combine_delay,NUM_FINE_STEPS, convert_w32_to_mem16,convert_mem16_to_w32
 
 import get_test_dq_dqs_data # temporary to test processing            
 import x393_lma
 import time
-#import vrlg
-NUM_FINE_STEPS=    5
+import vrlg
+#NUM_FINE_STEPS=    5
 NUM_DLY_STEPS =NUM_FINE_STEPS * 32 # =160 
 
 class X393McntrlAdjust(object):
@@ -77,7 +71,8 @@ class X393McntrlAdjust(object):
             self.verbose=vrlg.VERBOSE
         except:
             pass
-    #//SET DQ ODELAY=[['0xd9', '0xdb', '0xdc', '0xd4', '0xe0', '0xda', '0xd4', '0xd8'], ['0xdc', '0xe0', '0xf1', '0xdc', '0xe0', '0xdc', '0xdc', '0xdc']]
+#keep as command        
+
     def format_dq_to_verilog(self,
                              estr):
         """
@@ -95,60 +90,8 @@ class X393McntrlAdjust(object):
             for i in range(len(se[lane])):
                 print("%02x"%se[lane][-i-1],end="")
             print()
-        
 
-        
-    def split_delay(self,dly):
-        """
-        Convert hardware composite delay into continuous one
-        <dly> 8-bit (5+3) hardware delay value (or a list of delays)
-        Returns continuous delay value (or a list of delays)
-        """
-        if isinstance(dly,list) or isinstance(dly,tuple):
-            rslt=[]
-            for d in dly:
-                rslt.append(self.split_delay(d))
-            return rslt
-        try:
-            if isinstance(dly,float):
-                dly=int(dly+0.5)
-            dly_int=dly>>3
-            dly_fine=dly & 0x7
-            if dly_fine > (NUM_FINE_STEPS-1):
-                dly_fine= NUM_FINE_STEPS-1
-            return dly_int*NUM_FINE_STEPS+dly_fine
-        except:
-            return None    
-
-    def combine_delay(self,dly):
-        """
-        Convert continuous delay value to the 5+3 bit encoded one
-        <dly> continuous (0..159) delay (or a list of delays)
-        Returns  8-bit (5+3) hardware delay value (or a list of delays)
-        """
-        if isinstance(dly,list) or isinstance(dly,tuple):
-            rslt=[]
-            for d in dly:
-                rslt.append(self.combine_delay(d))
-            return rslt
-        try:
-            if isinstance(dly,float):
-                dly=int(dly+0.5)
-            return ((dly/NUM_FINE_STEPS)<<3)+(dly%NUM_FINE_STEPS)
-        except:
-            return None
-
-    def bad_data(self,buf):
-        """
-        The whole block contains only "bad data" - nothing was read
-        It can happen if command was not decoded correctly
-        <buf> - list of the data read
-        Returns True if the data is bad, False otherwise
-        """
-        for w in buf:
-            if (w!=0xffffffff): return False
-        return True
-    def missing_dqs(self,
+    def missing_dqs_notused(self,
                      rd_blk,
                      quiet=False):
         """
@@ -172,43 +115,6 @@ class X393McntrlAdjust(object):
             return True
         return False            
                    
-
-    def convert_mem16_to_w32(self,mem16):
-        """
-        Convert a list of 16-bit memory words
-        into a list of 32-bit data as encoded in the buffer memory
-        Each 4 of the input words provide 2 of the output elements
-        <mem16> - a list of the memory data
-        Returns a list of 32-bit buffer data
-        """
-        res32=[]
-        for i in range(0,len(mem16),4):
-            res32.append(((mem16[i+3] & 0xff) << 24) |
-                         ((mem16[i+2] & 0xff) << 16) |
-                         ((mem16[i+1] & 0xff) << 8) |
-                         ((mem16[i+0] & 0xff) << 0))
-            res32.append((((mem16[i+3]>>8) & 0xff) << 24) |
-                         (((mem16[i+2]>>8) & 0xff) << 16) |
-                         (((mem16[i+1]>>8) & 0xff) << 8) |
-                         (((mem16[i+0]>>8) & 0xff) << 0))
-        return res32
-    
-    def convert_w32_to_mem16(self,w32):
-        """
-        Convert a list of 32-bit data as encoded in the buffer memory
-        into a list of 16-bit memory words (so each bit corresponds to DQ line
-        Each 2 of the input words provide 4 of the output elements
-        <w32> - a list of the 32-bit buffer data
-        Returns a list of 16-bit memory data
-        """
-        mem16=[]
-        for i in range(0,len(w32),2):
-            mem16.append(((w32[i]>> 0) & 0xff) | (((w32[i+1] >>  0) & 0xff) << 8)) 
-            mem16.append(((w32[i]>> 8) & 0xff) | (((w32[i+1] >>  8) & 0xff) << 8)) 
-            mem16.append(((w32[i]>>16) & 0xff) | (((w32[i+1] >> 16) & 0xff) << 8)) 
-            mem16.append(((w32[i]>>24) & 0xff) | (((w32[i+1] >> 24) & 0xff) << 8)) 
-        return mem16
-
     def set_phase_with_refresh(self, # check result for not None
                                phase,
                                quiet=1):
@@ -228,7 +134,7 @@ class X393McntrlAdjust(object):
         cmda_odly_lin=cmda_odly_data['ldly']
         self.x393_axi_tasks.enable_refresh(0)
         self.x393_mcntrl_timing.axi_set_phase(phase,quiet=quiet)
-        self.x393_mcntrl_timing.axi_set_cmda_odelay(self.combine_delay(cmda_odly_lin),quiet=quiet)
+        self.x393_mcntrl_timing.axi_set_cmda_odelay(combine_delay(cmda_odly_lin),quiet=quiet)
         self.x393_axi_tasks.enable_refresh(1)
         return cmda_odly_lin
     
@@ -237,6 +143,7 @@ class X393McntrlAdjust(object):
                          inp_period='A',
                          out_period='A',
                          refresh=True,
+                         delays_phase=None, # if None - use global
                          quiet=1):
         """
         Set clock phase and all I/O delays optimal for this phase
@@ -247,6 +154,9 @@ class X393McntrlAdjust(object):
         @param quiet - reduce output
         @return True on success, False on invalid phase    
         """
+        num_addr=vrlg.ADDRESS_NUMBER
+        num_banks=3
+        
         rslt_names=("early","nominal","late")
         enl_in=None
         enl_out=None
@@ -289,23 +199,26 @@ class X393McntrlAdjust(object):
         dly_steps=self.x393_mcntrl_timing.get_dly_steps()
         numPhaseSteps= int(dly_steps['SDCLK_PERIOD']/dly_steps['PHASE_STEP']+0.5)
         phase= phase % numPhaseSteps # valid for negative also, numPhaseSteps should be <=128 (now it is 112)
-        try:
-            delays_phase=self.adjustment_state['delays_phase']
-        except:
-            print("Delays for phases (self.adjustment_state['delays_phase']) are not set, running 'get_delays_vs_phase' command ")
+        if delays_phase == None:
             try:
-                delays_phase=self.get_delays_vs_phase(filter_dqo=2,
-                                         filter_dqi=2,
-                                         filter_dqso=2,
-                                         filter_dqsi=2,
-                                         filter_cmda=2,
-                                         keep_all=False,
-                                         set_table=True,
-                                         quiet=quiet+2)
-                self.adjustment_state['delays_phase']=delays_phase
+                delays_phase=self.adjustment_state['delays_phase']
             except:
-                print ("Failed to execute get_'delays_vs_phase' command")
-                return False
+                print("Delays for phases (self.adjustment_state['delays_phase']) are not set, running 'get_delays_vs_phase' command ")
+                try:
+                    delays_phase=self.get_delays_vs_phase(filter_dqo=2,
+                                             filter_dqi=2,
+                                             filter_dqso=2,
+                                             filter_dqsi=2,
+                                             filter_cmda=2,
+                                             keep_all=False,
+                                             set_table=True,
+                                             quiet=quiet+2)
+                    self.adjustment_state['delays_phase']=delays_phase
+                except:
+                    print ("Failed to execute get_'delays_vs_phase' command")
+                    return False
+        elif quiet < 2:
+            print ("using provided delays_phase")
         try:
             delays=delays_phase[phase]
         except:
@@ -368,835 +281,28 @@ class X393McntrlAdjust(object):
         if refresh:
             self.x393_axi_tasks.enable_refresh(0)
         self.x393_mcntrl_timing.axi_set_phase(phase,quiet=quiet)
-        self.x393_mcntrl_timing.axi_set_cmda_odelay(self.combine_delay(cmda_odly),quiet=quiet)
+        if isinstance(cmda_odly,(list,tuple)):
+            self.x393_mcntrl_timing.axi_set_address_odelay(combine_delay(cmda_odly[:num_addr]),quiet=quiet)
+            self.x393_mcntrl_timing.axi_set_bank_odelay   (combine_delay(cmda_odly[num_addr:num_addr+num_banks]),quiet=quiet)
+            self.x393_mcntrl_timing.axi_set_cmd_odelay    (combine_delay(cmda_odly[num_addr+num_banks]),quiet=quiet) # for now - same delay TODO: upgrade!
+            
+            self.x393_mcntrl_timing.axi_set_cmda_odelay(combine_delay(cmda_odly),quiet=quiet)
+        else:
+            self.x393_mcntrl_timing.axi_set_cmda_odelay(combine_delay(cmda_odly),quiet=quiet)
         if refresh:
             self.x393_axi_tasks.enable_refresh(1)
         if not dqs_idelays is None:
-            self.x393_mcntrl_timing.axi_set_dqs_idelay(self.combine_delay(dqs_idelays),quiet=quiet)
+            self.x393_mcntrl_timing.axi_set_dqs_idelay(combine_delay(dqs_idelays),quiet=quiet)
         if not dq_idelays is None:
-            self.x393_mcntrl_timing.axi_set_dq_idelay(self.combine_delay(dq_idelays),quiet=quiet)
+            self.x393_mcntrl_timing.axi_set_dq_idelay(combine_delay(dq_idelays),quiet=quiet)
         if not dqs_odelays is None:
-            self.x393_mcntrl_timing.axi_set_dqs_odelay(self.combine_delay(dqs_odelays),quiet=quiet)
+            self.x393_mcntrl_timing.axi_set_dqs_odelay(combine_delay(dqs_odelays),quiet=quiet)
         if not dq_odelays is None:
-            self.x393_mcntrl_timing.axi_set_dq_odelay(self.combine_delay(dq_odelays),quiet=quiet)
+            self.x393_mcntrl_timing.axi_set_dq_odelay(combine_delay(dq_odelays),quiet=quiet)
         if refresh:
             self.x393_axi_tasks.enable_refresh(1)
         return True
-            
-        """
-    {
-     'dqsi':[110, 100]
-     'dqo':{'nominal': [95, 94, 99, 93, 99, 95, 94, 94, 93, 94, 100, 94, 93, 93, 90, 92]}
-     'dqi':{'early': [1, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0]}
-     'cmda':48
-     'dqso':[57, 52]
-    },
-        
-        """
-        
-        pass
-    def scan_dqs(self,
-                 low_delay, 
-                 high_delay,
-                 num=8,
-                 sel=1,     # 0 - early, 1 - late read command (shift by a SDCLK period) 
-                 quiet=2  ):
-        """
-        Scan DQS input delay values using pattern read mode
-        <low_delay>   low delay value (in 'hardware' format, sparse)
-        <high_delay>  high delay value (in 'hardware' format, sparse)
-        <num>         number of 64-bit words to process
-        <sel>        0 - early, 1 - late read command (shift by a SDCLK period) 
-        <quiet>       less output
-        """
-        checkIntArgs(('low_delay','high_delay','num'),locals())
-        self.x393_pio_sequences.set_read_pattern(num+1,sel) # do not use first/last pair of the 32 bit words
-        low = self.split_delay(low_delay)
-        high = self.split_delay(high_delay)
-        results = []
-        for dly in range (low, high+1):
-            enc_dly=self.combine_delay(dly)
-            self.x393_mcntrl_timing.axi_set_dqs_idelay(enc_dly)
-            buf= self.x393_pio_sequences.read_pattern(
-                     (4*num+2),     # num,
-                     0,             # show_rslt,
-                     1) # Wait for operation to complete
-            if quiet <1:
-                hbuf=[]
-                for dd in buf:
-                    hbuf.append(hex(dd))
-                print(hbuf)
-            # with "good" data each word in buf should be 0xff00ff00
-            
-            if self.bad_data(buf):
-                results.append([])
-            else:    
-                data=[0]*32 # for each bit - even, then for all - odd
-                for w in range (4*num):
-                    lane=w%2
-                    for wb in range(32):
-                        g=(wb/8)%2
-                        b=wb%8+lane*8+16*g
-                        if (buf[w+2] & (1<<wb) != 0):
-                            data[b]+=1
-                results.append(data)
-                if quiet < 2:
-                    print ("%3d (0x%02x): "%(dly,enc_dly),end="")
-                    for i in range(32):
-                        print("%5x"%data[i],end="")
-                    print()
-        if quiet<3:
-            for index in range (len(results)):
-                dly=index+low
-                enc_dly=self.combine_delay(dly)
-                if (len (results[index])>0):
-                    print ("%3d (0x%02x): "%(dly,enc_dly),end="")
-                    for i in range(32):
-                        print("%5x"%results[index][i],end="")
-                    print()    
-            print()
-        if quiet < 4:    
-            print()
-            print ("Delay",end=" ")
-            for i in range(16):
-                print ("Bit%dP"%i,end=" ")
-            for i in range(16):
-                print ("Bit%dM"%i,end=" ")
-            print()
-            for index in range (len(results)):
-                dly=index+low
-                enc_dly=self.combine_delay(dly)
-                if (len (results[index])>0):
-                    print ("%d"%(dly),end=" ")
-                    for i in range(32):
-                        print("%d"%results[index][i],end=" ")
-                    print()    
-        return results                                  
 
-    def scan_dq_idelay(self,
-                       low_delay,
-                       high_delay,
-                       num=8,
-                       sel=1,#  0 - early, 1 - late read command (shift by a SDCLK period) 
-                       quiet=2 ):
-        """
-        Scan DQ input delay values using pattern read mode
-        <low_delay>   low delay value (in 'hardware' format, sparse)
-        <high_delay>  high delay value (in 'hardware' format, sparse)
-        <num>         number of 64-bit words to process
-        <sel>         0 - early, 1 - late read command (shift by a SDCLK period) 
-        <quiet>       less output
-        """
-        checkIntArgs(('low_delay','high_delay','num'),locals())
-        self.x393_pio_sequences.set_read_pattern(num+1,sel) # do not use first/last pair of the 32 bit words
-        low = self.split_delay(low_delay)
-        high = self.split_delay(high_delay)
-        results = []
-        for dly in range (low, high+1):
-            enc_dly=self.combine_delay(dly)
-            self.x393_mcntrl_timing.axi_set_dq_idelay(enc_dly) # same value to all DQ lines
-            buf= self.x393_pio_sequences.read_pattern(
-                     (4*num+2),     # num,
-                     0,             # show_rslt,
-                     1) # Wait for operation to complete
-            if not quiet:
-                hbuf=[]
-                for dd in buf:
-                    hbuf.append(hex(dd))
-                print(hbuf)
-            # with "good" data each word in buf should be 0xff00ff00
-            if self.bad_data(buf):
-                results.append([])
-            else:    
-                data=[0]*32 # for each bit - even, then for all - odd
-                for w in range (4*num):    # read 32-bit word number
-                    lane=w%2               # even words - lane 0, odd - lane 1
-                    for wb in range(32):
-                        g=(wb/8)%2
-                        b=wb%8+lane*8+16*g
-                        if (buf[w+2] & (1<<wb) != 0):# buf[w+2] - skip first 2 words
-                            data[b]+=1
-                results.append(data)
-                #When all correct, data[:16] should be all 0, data[16:] - maximal, (with num=8  - 32)
-                if not quiet: 
-                    print ("%3d (0x%02x): "%(dly,enc_dly),end="")
-                    for i in range(32):
-                        print("%5x"%data[i],end="")
-                    print()
-        if quiet <2:                
-            for index in range (len(results)):
-                dly=index+low
-                enc_dly=self.combine_delay(dly)
-                if (len (results[index])>0):
-                    print ("%3d (0x%02x): "%(dly,enc_dly),end="")
-                    for i in range(32):
-                        print("%5x"%results[index][i],end="")
-                    print()    
-            print()
-        if quiet <3:                
-            print()
-            print ("Delay",end=" ")
-            for i in range(16):
-                print ("Bit%dP"%i,end=" ")
-            for i in range(16):
-                print ("Bit%dM"%i,end=" ")
-            print()
-            for index in range (len(results)):
-                dly=index+low
-                enc_dly=self.combine_delay(dly)
-                if (len (results[index])>0):
-                    print ("%d"%(dly),end=" ")
-                    for i in range(32):
-                        print("%d"%results[index][i],end=" ")
-                    print()    
-            print()
-        return results                                  
-
-    def adjust_dq_idelay(self,
-                         low_delay,
-                         high_delay,
-                         num=8,
-                         sel=1, # 0 - early, 1 - late read command (shift by a SDCLK period) 
-                         falling=0, # 0 - use rising as delay increases, 1 - use falling
-                         smooth=10,
-                         quiet=2):
-        """
-        Adjust individual per-line DQ delays using read pattern mode
-        DQS idelay(s) should be set 90-degrees from the final values
-        <low_delay>   low delay value (in 'hardware' format, sparse)
-        <high_delay>  high delay value (in 'hardware' format, sparse)
-        <num>         number of 64-bit words to process
-        <sel>         0 - early, 1 - late read command (shift by a SDCLK period) 
-        <falling>     0 - use rising edge as delay increases, 1 - use falling one
-                      In 'falling' mode results are the longest DQ idelay
-                      when bits switch from correct to incorrect,
-                      In 'rising' mode (falling==0) - the shortest one
-        <smooth>      number of times to run LPF
-        <quiet>       less output
-        Returns:      list of 16 per-line delay values (sequential, not 'hardware')
-        """
-        checkIntArgs(('low_delay','high_delay','num'),locals())
-        low = self.split_delay(low_delay)
-        data_raw=self.scan_dq_idelay(low_delay,high_delay,num,sel,quiet)
-        data=[]
-        delays=[]
-        for i,d in enumerate(data_raw):
-            if len(d)>0:
-                data.append(d)
-                delays.append(i+low)
-        if (quiet<2):
-            print(delays)
-        
-        centerRaw=num*2.0# center value
-        uncert=[] #"uncertanty of read for each bit and even/odd words. list of 32-element lists, each positive in the [0,1] interval
-        rate=[]   # data change rate
-        lm1=len(data)-1
-        for i in range (0,len(data)):
-            im1=(0,  i-1)[i>0]
-            ip1=(lm1,i+1)[i<lm1]
-            r_uncert=[]
-            r_rate=[]
-            for j in range (32):
-                d=0.5*data[i][j]+0.25*(data[ip1][j]+data[im1][j])
-                r=data[im1][j]-data[ip1][j]
-                if (j>=16):
-                    r=-r
-                r_uncert.append(1.0-((d-centerRaw)/centerRaw)**2) #0 and max -> 0, center ->1.0
-                r_rate.append(r/(2.0*centerRaw))
-            uncert.append(r_uncert)
-            rate.append(r_rate)
-#            print ("%d %s"%(i,str(r_uncert)))
-        for _ in range(smooth):
-            uncert=smooth2d(uncert)
-        for _ in range(smooth):
-            rate= smooth2d(rate)
-        val=[] # list of 16-element rows of composite uncert*rate values, multiplied for odd/even values, hoping not to have
-        #         any bumps causes by asymmetry 0->1 and 1-->0
-        for i in range (0,len(data)):
-            r_val=[]
-            for j in range(16):
-                sign=(-1,1)[rate[i][j]>0]
-                rr=rate[i][j]*rate[i][j+16]
-#                if falling:
-#                    sign=-sign
-                if rr<0:
-                    sign=0 # different slope direction - ignore                
-                r_val.append(sign * rr * uncert[i][j] * uncert[i][j+16])
-            val.append(r_val)
-        best_dlys=[None]*16
-        best_diffs=[None]*16
-        for i in range (len(val)):
-            for j in range (16):
-                v=val[i][j]
-                if falling:
-                    v=-v
-                if (best_dlys[j] is None) or (v>best_diffs[j]):
-                    best_dlys[j]=  i+1
-                    best_diffs[j]= v
-        if quiet <2:
-            for i in range (len(data)):
-                print("%d "%(i),end="")
-                for j in range (32):
-                    print("%f "%uncert[i][j],end="")
-                for j in range (32):
-                    print("%f "%rate[i][j],end="")
-                for j in range (16):
-                    print("%f "%(val[i][j]),end="")
-                print()
-        
-        for i in range (16):
-            print("%2d: %3d (0x%02x)"%(i,best_dlys[i],self.combine_delay(best_dlys[i])))
-        comb_delays=self.combine_delay(best_dlys)
-        self.x393_mcntrl_timing.axi_set_dq_idelay((comb_delays[0:8],comb_delays[8:16]))
-        return best_dlys       
-
-    def corr_delays(self,
-                    low,         # absolute delay value of start scan
-                    avg_types,   # weights of each of the 8  bit sequences
-                    res_bits,    # individual per-bit results
-                    res_avg,     # averaged eye data table, each line has 8 elements, or [] for bad measurements
-                    corr_fine,   # fine delay correction
-                    ends_dist,   # do not process if one of the primary interval ends is within this from 0.0 or 1.0
-                    verbose
-                    ):
-        """
-        Correct delays
-        <low>         absolute delay value of start scan
-        <avg_types>   weights of each of the 8  bit sequences
-        <res_bits>    individual per-bit results
-        <res_avg>     averaged eye data table, each line has 8 elements, or [] for bad measurements
-        <corr_fine>   fine delay correction
-        <ends_dist>   do not process if one of the primary interval ends is within this from 0.0 or 1.0
-        <verbose>
-        Returns list of corrected delays
-        """
-        # coarse adjustments - decimate arrays to use the same (0) value of the fine delay
-        usable_types=[]
-        for i,w in enumerate(avg_types):
-            if (w>0) and not i in (0,7) :
-                usable_types.append(i)
-        if (verbose): print ("usable_types=",usable_types)            
-        def thr_sign(bit,typ,limit,data):
-#            lim_l=limit
-#            lim_u=1.0-limit
-            if data[bit][typ] <= limit: return -1
-            if data[bit][typ] >= (1.0- limit): return 1
-            return 0
-        def thr_signs(typ,limit,data):
-            signs=""
-            for bit in range(15,-1,-1):
-                signs+=("-","0","+")[thr_sign(bit,typ,limit,data)+1]
-        def full_state(types,limit,data): #will NOT return None if any is undefined
-            state=""
-            for t in types:
-                for bit in range(15,-1,-1):
-                    state+=("-","0","+")[thr_sign(bit,t,limit,data)+1]
-            return state                    
-        def full_same_state(types,limit,data): #will return None if any is undefined
-            state=""
-            for t in types:
-                s0=thr_sign(15,t,limit,data)
-                state+=("-","0","+")[s0+1]
-                for bit in range(15,-1,-1):
-                    s=thr_sign(bit,t,limit,data)
-                    if (not s) or (s != s0) :
-                        return None
-            return state                    
-                
-                        
-        def diff_state(state1,state2):
-            for i,s in enumerate(state1):
-                if s != state2[i]:
-                    return True
-            return False    
-#       start_index=0;
-#       if (low % NUM_FINE_STEPS) != 0:
-#           start_index=NUM_FINE_STEPS-(low % NUM_FINE_STEPS)
-        #find the first index where all bits are either above 1.0 -ends_dist or below ends_dist
-        for index in range(len(res_avg)):
-            print (" index=%d: %s"%(index,full_state(usable_types,ends_dist,res_bits[index])))
-            initial_state=full_same_state(usable_types,ends_dist,res_bits[index])
-            if initial_state:
-                break
-        else:
-            print ("Could not find delay value where all bits/types are outside of undefined area (%f thershold)"%ends_dist)
-            return None
-        if (verbose): print ("start index=%d, start state=%s"%(index,initial_state))
-        #find end of that state
-        for index in range(index+1,len(res_avg)):
-            state=full_same_state(usable_types,ends_dist,res_bits[index])
-            if state != initial_state:
-                break
-        else:
-            print ("Could not find delay value where initial state changes  (%f thershold)"%ends_dist)
-            return None
-        last_initial_index=index-1
-        if (verbose): print ("last start state index=%d, new state=%s"%(last_initial_index,state))
-        #find new defined state for all bits
-        for index in range(last_initial_index+1,len(res_avg)): #here repeat last delay
-            new_state=full_same_state(usable_types,ends_dist,res_bits[index])
-            if new_state and (new_state != initial_state):
-                break
-        else:
-            print ("Could not find delay value whith the new defined state (%f thershold)"%ends_dist)
-            return None
-        new_state_index=index
-        if (verbose): print ("new defined state index=%d, new state=%s"%(new_state_index,new_state))
-    # remove states that do not have a transition    
-        filtered_types=[]
-        for i,t in enumerate(usable_types):
-            if (new_state[i]!=initial_state[i]):
-                filtered_types.append(t)
-        if (verbose): print ("filtered_types=",filtered_types)            
-        second_trans= 1 in filtered_types # use second transition, false - use first transition
-        if (verbose): print("second_trans=",second_trans)
-    #    signs=((1,1,-1,-1),(1,-1,1,-1))[1 in filtered_types]
-        signs=((0,0,1,1,-1,-1,0,0),(0,1,-1,0,0,1,-1,0))[1 in filtered_types]
-        if (verbose): print("signs=",signs)
-            
-        for index in range(last_initial_index,new_state_index+1):
-            if (verbose): print ("index=%3d, delay=%3d, state=%s"%(index,index+low,full_state(filtered_types,ends_dist,res_bits[index])))  
-    
-    #extend range, combine each bit and averages
-        ext_low_index=last_initial_index-(new_state_index-last_initial_index)
-        if ext_low_index<0:
-            ext_low_index=0
-        ext_high_index=new_state_index+(new_state_index-last_initial_index)
-        if ext_high_index>=len(res_bits):
-            ext_high_index=len(res_bits)-1
-        if (verbose): print("ext_low_index=%d ext_high_index=%d"%(ext_low_index,ext_high_index))
-        bit_data=[]
-        for i in range(16):
-            bit_data.append([]) # [[]]*16 does not work! (shallow copy)
-        avg_data=[]
-        for index0 in range(ext_high_index-ext_low_index+1):
-            index=index0+ext_low_index
-    #        if (verbose): print(res_bits[index])
-            bit_samples=[0.0]*16
-            avg_sample=0.0
-            weight=0.0
-            for t in filtered_types:
-                w=avg_types[t]
-                weight+=w
-                sw=signs[t]*w
-                avg_sample += sw * (2.0*res_avg[index][t]-1.0)
-    #            if (verbose): print ("%3d %d:"%(index,t),end=" ")
-                for bit in range(16):
-                    bit_samples[bit] += sw*(2.0*res_bits[index][bit][t]-1.0)
-    #                if (verbose): print ("%.3f"%(res_bits[index][bit][t]),end=" ")
-    #            if (verbose): print()    
-            
-            avg_sample /= weight
-            avg_data.append(avg_sample)    
-            for bit in range(16):
-                bit_samples[bit] /= weight
-    #            if (verbose): print ("bit_samples[%d]=%f"%(bit,bit_samples[bit]))
-                bit_data[bit].append(bit_samples[bit])
-    #        if (verbose): print ("bit_samples=",bit_samples)
-    #       if index0 <3:
-    #            if (verbose): print ("bit_data=",bit_data)
-                        
-    #    if (verbose): print ("\n\nbit_data=",bit_data)
-        period_fine=len(corr_fine)
-        for index in range(ext_high_index-ext_low_index+1):
-            dly=low+index+ext_low_index
-            corr_dly=dly+corr_fine[dly%period_fine]
-            if (verbose): print ("%d %d %.2f %.3f"%(index,dly,corr_dly,avg_data[index]),end=" ")
-            for bit in range(16):
-                if (verbose): print ("%.3f"%(bit_data[bit][index]),end=" ")
-            if (verbose): print()            
-    # Seems all above was an overkill, just find bit delays that result in  most close to 0
-        delays=[]
-        for bit in range(16):
-            best_dist=1.0
-            best_index=None
-            for index in range(ext_high_index-ext_low_index+1):
-                if (abs(bit_data[bit][index])<best_dist):
-                    best_dist=abs(bit_data[bit][index])
-                    best_index=index
-            delays.append(best_index+low+ext_low_index)
-        if (verbose): print (delays)
-        return delays
-
-    def calibrate_finedelay(self,
-                            low,         # absolute delay value of start scan
-                            avg_types,   # weights of each of the 8  bit sequences
-                            res_avg,     # averaged eye data tablle, each line has 8 elements, or [] for bad measurements
-                            ends_dist,   # do not process if one of the primary interval ends is within this from 0.0 or 1.0
-                            min_diff):   # minimal difference between primary delay steps to process
-        """
-        Calibrate fine delay taps
-        <low>         absolute delay value of start scan
-        <avg_types>   weights of each of the 8  bit sequences
-        <res_avg>     averaged eye data tablle, each line has 8 elements, or [] for bad measurements
-        <ends_dist>   do not process if one of the primary interval ends is within this from 0.0 or 1.0
-        <min_diff>:   minimal difference between primary delay steps to process
-
-        """
-        start_index=0;
-        if (low % NUM_FINE_STEPS) != 0:
-            start_index=NUM_FINE_STEPS-(low % NUM_FINE_STEPS)
-        weights=[0.0]*( NUM_FINE_STEPS)
-        corr=[0.0]*( NUM_FINE_STEPS) #[0] will stay 0
-        for index in range(start_index, len(res_avg)-NUM_FINE_STEPS,NUM_FINE_STEPS):
-            if (len(res_avg[index])>0) and (len(res_avg[index+NUM_FINE_STEPS])>0):
-                for t,w in enumerate(avg_types):
-                    if (w>0):
-                        f=res_avg[index][t];
-                        s=res_avg[index+NUM_FINE_STEPS][t];
-#                       print ("index=%d t=%d f=%f s=%s"%(index,t,f,s))
-                        if ((f>ends_dist) and (s>ends_dist) and
-                             (f< (1-ends_dist)) and (s < (1-ends_dist)) and
-                             (abs(s-f)>min_diff)):
-                            diff=s-f
-                            wd=w* diff*diff # squared? or use abs?
-                            for j in range (1,NUM_FINE_STEPS):
-                                if ( (len(res_avg[index+j])>0)):
-                                    v=res_avg[index+j][t];
-                                    #correction to the initial step==1
-                                    d=(v-f)/(s-f)*NUM_FINE_STEPS-j
-                                    #average
-                                    corr[j]+=wd*d
-                                    weights[j]+=wd
-#       print ("\n weights:")
-#       print(weights)
-#       print ("\n corr:")
-#       print(corr)
-        for i,w in enumerate(weights):
-            if (w>0) : corr[i]/=w # will skip 0
-        print ("\ncorr:")
-#       print(corr)
-        for i,c in enumerate(corr):
-            print ("%i %f"%(i,c))
-        return corr
-
-    def scan_or_adjust_delay_random(self,
-                                    low_delay,
-                                    high_delay,
-                                    use_dq,
-                                    use_odelay,
-                                    ends_dist,
-                                    min_diff,
-                                    adjust,
-                                    verbose):
-        """
-        Scan or adjust delays using random data write+read
-        <low_delay>   Low delay value to tru
-        <high_delay>  high delay value to try
-        <use_dq>      0 - scan dqs, 1 - scan dq (common value, post-adjustment)
-        <use_odelay>  0 - use input delays, 1 - use output delays
-        <ends_dist>   do not process if one of the primary interval ends is within this from 0.0 or 1.0
-        <min_diff>    minimal difference between primary delay steps to process 
-        <adjust>      0 - scan, 1 - adjust
-        <verbose>:    verbose mode (more prints) 
-        Returns list of calculated delay values
-        """
-        checkIntArgs(('low_delay','high_delay'),locals())
-        brc=(5,        # 3'h5,     # bank
-             0x1234,   # 15'h1234, # row address
-             0x100)     # 10'h100   # column address
-           
-#        global BASEADDR_PORT1_WR,VERBOSE;
-#        saved_verbose=VERBOSE;
-#        VERBOSE=False;
-        low = self.split_delay(low_delay)
-        high = self.split_delay(high_delay)
-        rand16=[]
-        for i in range(512):
-            rand16.append(random.randint(0,65535))
-        wdata=self.convert_mem16_to_w32(rand16)
-        if (verbose and not adjust): print("rand16:")
-        for i in range(len(rand16)):
-            if (i & 0x1f) == 0:
-                if (verbose and not adjust): print("\n%03x:"%i,end=" ")
-            if (verbose and not adjust): print("%04x"%rand16[i],end=" ")
-        if (verbose and not adjust): print("\n")        
-        if (verbose and not adjust): print("wdata:")
-        for i in range(len(wdata)):
-            if (i & 0xf) == 0:
-                if (verbose and not adjust): print("\n%03x:"%i,end=" ")
-            if (verbose and not adjust): print("%08x"%wdata[i],end=" ")
-        if (verbose and not adjust): print("\n")        
-        bit_type=[] # does not include first and last elements
-        for i in range(1,511):
-            types=[]
-            for j in range(16):
-                types.append((((rand16[i-1]>>j) & 1)<<2) | (((rand16[i  ]>>j) & 1)<<1) |  (((rand16[i+1]>>j) & 1)))
-            bit_type.append(types)
-    #        if (verbose and not adjust): print ("i=%d",i)
-    #        if (verbose and not adjust): print(types)
-    #    total_types=[[0]*8]*16 # number of times each type occurred in the block for each DQ bit (separate for DG up/down?)
-        total_types=[] # number of times each type occurred in the block for each DQ bit (separate for DG up/down?)
-        for i in range(16): total_types.append([0]*8) 
-        for typ in bit_type:
-    #        if (verbose and not adjust): print(typ)
-            for j in range(16):
-    #            total_types[j][typ[j]]+=1
-                total_types[j][typ[j]]=total_types[j][typ[j]]+1
-        if (verbose and not adjust): print("\ntotal_types:")        
-        if (verbose and not adjust): print (total_types)
-        
-        avg_types=[0.0]*8
-        N=0
-        for t in total_types:
-            for j,n in enumerate(t):
-                avg_types[j]+=n
-                N+=n
-        for i in range(len(avg_types)):
-            avg_types[i]/=N
-        if (verbose and not adjust): print("\avg_types:")        
-        if (verbose and not adjust): print (avg_types)
-        #write blok buffer with 256x32bit data
-                
-        self.x393_mcntrl_buffers.write_block_buf_chn(0,0,wdata); # fill block memory (channel, page, number)
-
-        self.x393_pio_sequences.set_write_block(*brc) #64 8-bursts, 1 extra DQ/DQS/ active cycle
-        self.x393_pio_sequences.set_read_block(*brc)
-        
-        if (use_odelay==0) :
-            self.x393_pio_sequences.write_block(0,1) # Wait for operation to complete
-            if verbose: print("++++++++ block written once")
-    #now scanning - first DQS, then try with DQ (post-adjustment - best fit) 
-        results = []
-        if verbose: print("******** use_odelay=%d use_dq=%d"%(use_odelay,use_dq))
-        alreadyWarned=False
-        for dly in range (low, high+1):
-            enc_dly=self.combine_delay(dly)
-            if (use_odelay!=0):
-                if (use_dq!=0):
-                    if verbose: print("******** axi_set_dq_odelay(0x%x)"%enc_dly)
-                    self.x393_mcntrl_timing.axi_set_dq_odelay(enc_dly) #  set the same odelay for all DQ bits
-                else:
-                    if verbose: print("******** axi_set_dqs_odelay(0x%x)"%enc_dly)
-                    self.x393_mcntrl_timing.axi_set_dqs_odelay(enc_dly)
-                self.x393_pio_sequences.write_block(0,1) # Wait for operation to complete
-                if verbose: print("-------- block written AGAIN")
-            else:
-                if (use_dq!=0):
-                    if verbose: print("******** axi_set_dq_idelay(0x%x)"%enc_dly)
-                    self.x393_mcntrl_timing.axi_set_dq_idelay(enc_dly)#  set the same idelay for all DQ bits
-                else:
-                    if verbose: print("******** axi_set_dqs_idelay(0x%x)"%enc_dly)
-                    self.x393_mcntrl_timing.axi_set_dqs_idelay(enc_dly)
-            buf32=self.x393_pio_sequences.read_block(
-                                                     256,    # num,
-                                                     0,      # show_rslt,
-                                                     1)      # Wait for operation to complete
-            if self.bad_data(buf32):
-                results.append([])
-            else:
-                # Warn about possible missing DQS pulses during writes
-                alreadyWarned |= self.missing_dqs(buf32, alreadyWarned) 
-                read16=self.convert_w32_to_mem16(buf32) # 512x16 bit, same as DDR3 DQ over time
-                if verbose and (dly==low):   
-                    if (verbose and not adjust): print("buf32:")
-                    for i in range(len(buf32)):
-                        if (i & 0xf) == 0:
-                            if (verbose and not adjust): print("\n%03x:"%i,end=" ")
-                        if (verbose and not adjust): print("%08x"%buf32[i],end=" ")
-                    if (verbose and not adjust): print("\n")        
-    
-    
-                    if (verbose and not adjust): print("read16:")
-                    for i in range(len(read16)):
-                        if (i & 0x1f) == 0:
-                            if (verbose and not adjust): print("\n%03x:"%i,end=" ")
-                        if (verbose and not adjust): print("%04x"%read16[i],end=" ")
-                    if (verbose and not adjust): print("\n")
-                data=[] # number of times each type occurred in the block for each DQ bit (separate for DG up/down?)
-                for i in range(16):
-                    data.append([0]*8) 
-                
-                for i in range (1,511):
-                    w= read16[i]
-                    typ=bit_type[i-1] # first and last words are not used, no type was calculated
-                    for j in range(16):
-                        if (w & (1<<j)) !=0:
-                            data[j][typ[j]]+=1
-                for i in range(16):
-                    for t in range(8):
-                        if (total_types[i][t] >0 ):
-                            data[i][t]*=1.0/total_types[i][t]
-                results.append(data)
-                if (verbose and not adjust): print ("%3d (0x%02x): "%(dly,enc_dly),end="")
-                for i in range(16):
-                    if (verbose and not adjust): print("[",end="")
-                    for j in range(8):
-                        if (verbose and not adjust): print("%3d"%(round(100.0*data[i][j])),end=" ")
-                    if (verbose and not adjust): print("]",end=" ")
-                if (verbose and not adjust): print()    
-        titles=["'000","'001","'010", "'011","'100","'101","'110","'111"]
-        #calculate weighted averages
-        #TODO: for DQ scan shift individual bits for the best match
-        if  use_dq:
-            if (verbose and not adjust): print("TODO: shift individual bits for the best match before averaging")
-    
-        res_avg=[]
-        for dly in range (len(results)):
-            if (len(results[dly])>0):
-                data=results[dly]
-                avg=[0.0]*8
-                for t in range(8):
-                    weight=0;
-                    d=0.0
-                    for i in range(16):
-                        weight+=total_types[i][t]
-                        d+=total_types[i][t]*data[i][t]
-                    if (weight>0):
-                        d/=weight
-                    avg[t] = d
-                res_avg.append(avg)
-            else:
-                res_avg.append([])
-        corr_fine=self.calibrate_finedelay(
-                low,         # absolute delay value of start scan
-                avg_types,   # weights of weach of the 8  bit sequences
-                res_avg,     # averaged eye data tablle, each line has 8 elements, or [] for bad measurements
-                ends_dist/256.0, # ends_dist,   # do not process if one of the primary interval ends is within this from 0.0 or 1.0
-                min_diff/256.0) #min_diff):   # minimal difference between primary delay steps to process
-        period=len(corr_fine)
-    
-        if (not adjust):
-            print("\n\n\n========== Copy below to the spreadsheet,  use columns from corr_delay ==========")
-            print("========== First are individual results for each bit, then averaged eye pattern ==========")
-            print ("delay corr_delay",end=" ")
-            for t in range(8):
-                for i in range(16):
-                    if (not adjust): print("%02d:%s"%(i,titles[t]),end=" ")
-            print()
-            for index in range (len(results)):
-                if (len(results[index])>0):
-                    dly=index+low
-                    corr_dly=dly+corr_fine[dly%period]
-                    print ("%d %.2f"%(dly,corr_dly),end=" ")
-                    for t in range(8):
-                        for i in range(16):
-                            try:
-                                print("%.4f"%(results[dly][i][t]),end=" ") #IndexError: list index out of range
-                            except:
-                                print(".????",end="")
-                    print()
-                            
-            print("\n\n\n========== Copy below to the spreadsheet,  use columns from corr_delay ==========")
-            print("========== data above can be used for the individual bits eye patterns ==========")            
-            print ("delay corr_delay",end=" ")
-            for t in range(8):
-                print(titles[t],end=" ")
-            print()
-            for index in range (len(res_avg)):
-                if (len(res_avg[index])>0):
-                    dly=index+low
-                    corr_dly=dly+corr_fine[dly%period]
-                    print ("%d %.2f"%(dly,corr_dly),end=" ")
-                    for t in range(8):
-                        try:
-                            print("%.4f"%(res_avg[dly][t]),end=" ")
-                        except:
-                            print(".????",end=" ")
-                    print()
-        dly_corr=None
-        if adjust:        
-            dly_corr=self.corr_delays(
-                low,         # absolute delay value of start scan
-                avg_types,   # weights of weach of the 8  bit sequences
-                results,    #individual per-bit results
-                res_avg,     # averaged eye data tablle, each line has 8 elements, or [] for bad measurements
-                corr_fine,    # fine delay correction
-                ends_dist/256.0,   # find where all bits are above/below that distance from 0.0/1.0margin
-                verbose)
-#            VERBOSE=verbose
-#            print ("VERBOSE=",VERBOSE)
-            print ("dly_corr=",dly_corr)
-            print ("use_dq=",use_dq)
-            if dly_corr and use_dq: # only adjusting DQ delays, not DQS
-                dly_comb=self.combine_delay(dly_corr)
-                if use_odelay:
-                    self.x393_mcntrl_timing.axi_set_dq_odelay((dly_comb[0:8],dly_comb[8:16]))
-                    """
-                    for i in range (8):
-                        axi_set_dly_single(0,i,combine_delay(dly_corr[i]))    
-                    for i in range (8):
-                        axi_set_dly_single(2,i,combine_delay(dly_corr[i+8]))
-                    """
-                else: 
-                    self.x393_mcntrl_timing.axi_set_dq_idelay((dly_comb[0:8],dly_comb[8:16]))
-                    """
-                    for i in range (8):
-                        axi_set_dly_single(1,i,combine_delay(dly_corr[i]))    
-                    for i in range (8):
-                        axi_set_dly_single(3,i,combine_delay(dly_corr[i+8]))
-                    """
-    #          use_dq, # 0 - scan dqs, 1 - scan dq (common valuwe, post-adjustment)
-    #      use_odelay,
-            
-#        VEBOSE=saved_verbose
-        return dly_corr
-
-
-
-
-
-    def scan_delay_random(self,
-                          low_delay,
-                          high_delay,
-                          use_dq, # 0 - scan dqs, 1 - scan dq (common valuwe, post-adjustment)
-                          use_odelay, # 0 - idelay, 1 - odelay
-                          ends_dist,   # do not process if one of the primary interval ends is within this from 0.0 or 1.0
-                          min_diff,   # minimal difference between primary delay steps to process
-                          verbose):
-        """
-        Scan  delays using random data write+read
-        <low_delay>   Low delay value to tru
-        <high_delay>  high delay value to try
-        <use_dq>      0 - scan dqs, 1 - scan dq (common value, post-adjustment)
-        <use_odelay>  0 - use input delays, 1 - use output delays
-        <ends_dist>   do not process if one of the primary interval ends is within this from 0.0 or 1.0
-        <min_diff>    minimal difference between primary delay steps to process 
-        <verbose>:    verbose mode (more prints) 
-        """
-        checkIntArgs(('low_delay','high_delay'),locals())
-        self.scan_or_adjust_delay_random(
-                                         low_delay,
-                                         high_delay,
-                                         use_dq, # 0 - scan dqs, 1 - scan dq (common valuwe, post-adjustment)
-                                         use_odelay,
-                                         ends_dist,   # do not process if one of the primary interval ends is within this from 0.0 or 1.0
-                                         min_diff,
-                                         False,     #scan, not adjust
-                                         verbose)   # minimal difference between primary delay steps to process
-
-    def adjust_dq_delay_random(self,
-                               low_delay,
-                               high_delay,
-                               #use_dq, # 0 - scan dqs, 1 - scan dq (common valuwe, post-adjustment)
-                               use_odelay,
-                               ends_dist,   # do not process if one of the primary interval ends is within this from 0.0 or 1.0
-                               min_diff,   # minimal difference between primary delay steps to process
-                               verbose):
-        """
-        Adjust  delays using random data write+read
-        <low_delay>   Low delay value to tru
-        <high_delay>  high delay value to try
-        <use_odelay>  0 - use input delays, 1 - use output delays
-        <ends_dist>   do not process if one of the primary interval ends is within this from 0.0 or 1.0
-        <min_diff>    minimal difference between primary delay steps to process 
-        <verbose>:    verbose mode (more prints)
-        Returns list of delays 
-        """
-        checkIntArgs(('low_delay','high_delay'),locals())
-        return self.scan_or_adjust_delay_random(
-                                                low_delay,
-                                                high_delay,
-                                                1, #use_dq, # 0 - scan dqs, 1 - scan dq (common valuwe, post-adjustment)
-                                                use_odelay,
-                                                ends_dist,   # do not process if one of the primary interval ends is within this from 0.0 or 1.0
-                                                min_diff,    # minimal difference between primary delay steps to process
-                                                True,        #adjust, not scan
-                                                verbose)   
-           
-    # if it will fail, re-try with phase shifted by 180 degrees (half SDCLK period)
-    # Consider "hinted" scan when initial estimation for cmd_odelay is known from previous incomplete measurement
-    # Then use this knowledge to keep delay in safe region (not too close to clock edge) during second scanning         
     def adjust_cmda_odelay(self,
                            start_phase=0,
                            reinits=1, #higher the number - more re-inits are used (0 - only where absolutely necessary
@@ -1229,7 +335,7 @@ class X393McntrlAdjust(object):
             changing cmda delay and restarting memory device
             Returns a tuple of the current cmda_odelay (hardware) and a marginal one for a7
             """
-            cmda_dly_lin=self.split_delay(cmda_dly)
+            cmda_dly_lin=split_delay(cmda_dly)
             self.x393_mcntrl_timing.axi_set_phase(phase,quiet=quiet)
             self.x393_mcntrl_timing.axi_set_cmda_odelay(cmda_dly,quiet=quiet)
             wlev_rslt=self.x393_pio_sequences.write_levelling(1, quiet+1)
@@ -1257,18 +363,18 @@ class X393McntrlAdjust(object):
 # Try twice step before giving up (was not needed so far)                    
             d_high=max_lin_dly
             self.x393_mcntrl_timing.axi_set_address_odelay(
-                                                           self.combine_delay(d_high),
+                                                           combine_delay(d_high),
                                                            wlev_address_bit,
                                                            quiet=quiet)
             wlev_rslt=self.x393_pio_sequences.write_levelling(1, quiet+1)
             if not wlev_rslt[2]>wlev_max_bad:
-                return  (self.split_delay(cmda_dly),-1) # even maximal delay is not enough to make rising sdclk separate command from A7
+                return  (split_delay(cmda_dly),-1) # even maximal delay is not enough to make rising sdclk separate command from A7
             # find marginal value of a7 delay to spoil write levelling mode
             d_high=max_lin_dly
             d_low=cmda_dly_lin
             while d_high > d_low:
                 dly= (d_high + d_low)//2
-                self.x393_mcntrl_timing.axi_set_address_odelay(self.combine_delay(dly),wlev_address_bit,quiet=quiet)
+                self.x393_mcntrl_timing.axi_set_address_odelay(combine_delay(dly),wlev_address_bit,quiet=quiet)
                 wlev_rslt=self.x393_pio_sequences.write_levelling(1, quiet+1)
                 if wlev_rslt[2] > wlev_max_bad:
                     d_high=dly
@@ -1277,7 +383,7 @@ class X393McntrlAdjust(object):
                         break
                     d_low=dly
             self.x393_mcntrl_timing.axi_set_cmda_odelay(cmda_dly,quiet=quiet)
-            return (self.split_delay(cmda_dly),d_low)
+            return (split_delay(cmda_dly),d_low)
                
         dly_steps=self.x393_mcntrl_timing.get_dly_steps()
         if quiet<1:
@@ -1292,7 +398,7 @@ class X393McntrlAdjust(object):
 #start_phase
         cmda_marg_dly=[None]*numPhaseSteps
         cmda_dly=0
-        safe_early=self.split_delay(recover_cmda_dly_step)/2
+        safe_early=split_delay(recover_cmda_dly_step)/2
 #        print ("safe_early=%d(0x%x), recover_cmda_dly_step=%d(0x%x)"%(safe_early,safe_early,recover_cmda_dly_step,recover_cmda_dly_step))
         if reinits>0:
             self.x393_pio_sequences.restart_ddr3()
@@ -1307,7 +413,7 @@ class X393McntrlAdjust(object):
             phase_mod=phase % numPhaseSteps
             dlys= phase_step(phase,cmda_dly)
             cmda_marg_dly[phase_mod]=dlys # [1] # Marginal delay or -1
-            cmda_dly = self.combine_delay(dlys[0]) # update if it was modified during recover
+            cmda_dly = combine_delay(dlys[0]) # update if it was modified during recover
             # See if cmda_odelay is dangerously close - increase it (and re-init?)
             if dlys[1]<0:
                 if quiet <3:
@@ -1328,15 +434,15 @@ class X393McntrlAdjust(object):
                 elif quiet < 5:
                     print (".",end="")
                     sys.stdout.flush()
-                lin_dly=self.split_delay(cmda_dly)
+                lin_dly=split_delay(cmda_dly)
                 if (dlys[1]-lin_dly) < safe_early:
                     if (lin_dly > 0):
                         lin_dly=max(0,lin_dly-2*safe_early)
                 if (dlys[1]-lin_dly) < safe_early:
                     lin_dly=min(max_lin_dly,lin_dly+2*safe_early) # or just add safe_early to dlys[1]?
                 
-                if lin_dly != self.split_delay(cmda_dly):   
-                    cmda_dly=self.combine_delay(lin_dly)
+                if lin_dly != split_delay(cmda_dly):   
+                    cmda_dly=combine_delay(lin_dly)
                     self.x393_mcntrl_timing.axi_set_cmda_odelay(cmda_dly,quiet=quiet)
                     if reinits > 0: #re-init each time failed to find delay
                         if quiet <3:
@@ -1493,11 +599,20 @@ class X393McntrlAdjust(object):
             marg_phase=(phase+numPhaseSteps//2) % numPhaseSteps
             extra_periods=(phase+numPhaseSteps//2) // numPhaseSteps
             bspe= bestSolPerErr[marg_phase]
+#            err_for_zero=int(round(-(phase+(b+fineCorr[0])/a))%numPhaseSteps)/(1.0*numPhaseSteps)
+            err_for_zero=int(round(-(marg_phase+(b+fineCorr[0])/a))%numPhaseSteps)/(1.0*numPhaseSteps)
+            if err_for_zero >0.5:
+                err_for_zero=1.0-err_for_zero
+            else:
+                err_for_zero=None 
+
             if bspe:
                 cmda_dly_per_err.append({'ldly':bspe[0],
                                          'period':bspe[1]+period_shift+extra_periods+b_period, # b_period - shift from the branch
                                                                   # where phase starts from the longest cmda_odelay and goes down
-                                         'err':bspe[2]})
+                                         'err':bspe[2],
+                                         'zerr':err_for_zero
+                                         })
             else:
                 cmda_dly_per_err.append({}) # No solution for this phase value
         rdict={"cmda_odly_a":a,
@@ -1511,12 +626,18 @@ class X393McntrlAdjust(object):
             print('cmda_odly_b:      %f'%(rdict['cmda_odly_b']))
             print('cmda_odly_period: %d'%(rdict['cmda_odly_period']))
             print('cmda_fine_corr:   %s'%(rdict['cmda_fine_corr']))
-            print("\nPhase DLY0 MARG_A7 CMDA PERIODS*10 ERR*10")
+            print("\nPhase DLY0 MARG_A7 CMDA PERIODS*10 ERR*10 ZERR*100")
             for i in range(numPhaseSteps): # enumerate(cmda_marg_dly):
                 d=cmda_marg_dly[i]
                 print ("%d %d %d"%(i, d[0], d[1]),end=" ")
                 if (rdict['cmda_bspe'][i]):
-                    print("%d %d %f"%(rdict['cmda_bspe'][i]['ldly'],10*rdict['cmda_bspe'][i]['period'],10*rdict['cmda_bspe'][i]['err']))
+                    e1=rdict['cmda_bspe'][i]['zerr']
+                    if not e1 is None:
+                        e1="%.3f"%(100*e1)
+                    print("%d %d %f %s"%(rdict['cmda_bspe'][i]['ldly'],
+                                           10*rdict['cmda_bspe'][i]['period'],
+                                           10*rdict['cmda_bspe'][i]['err'],
+                                           e1))
                 else:
                     print()
 #TODO: Add 180 shift to get center, not marginal cmda_odelay        
@@ -1564,10 +685,10 @@ class X393McntrlAdjust(object):
                 return None
             cmda_odly_lin=cmda_odly_data['ldly']
             self.x393_mcntrl_timing.axi_set_phase(phase,quiet=quiet)
-            self.x393_mcntrl_timing.axi_set_cmda_odelay(self.combine_delay(cmda_odly_lin),quiet=quiet)
+            self.x393_mcntrl_timing.axi_set_cmda_odelay(combine_delay(cmda_odly_lin),quiet=quiet)
             d_low=0
             while d_low <= max_lin_dly:
-                self.x393_mcntrl_timing.axi_set_dqs_odelay(self.combine_delay(d_low),quiet=quiet)
+                self.x393_mcntrl_timing.axi_set_dqs_odelay(combine_delay(d_low),quiet=quiet)
                 wlev_rslt=norm_wlev(self.x393_pio_sequences.write_levelling(1, quiet+1))
                 if wlev_rslt[2]>wlev_max_bad: # should be 0 - otherwise wlev did not work (CMDA?)
                     raise Exception("Write levelling gave unespected data, aborting (may be wrong command/address delay, incorrectly initializaed")
@@ -1581,7 +702,7 @@ class X393McntrlAdjust(object):
             # Now find d_high>d_low to get both bytes result above
             d_high= d_low+dly90   
             while d_high <= max_lin_dly:
-                self.x393_mcntrl_timing.axi_set_dqs_odelay(self.combine_delay(d_high),quiet=quiet)
+                self.x393_mcntrl_timing.axi_set_dqs_odelay(combine_delay(d_high),quiet=quiet)
                 wlev_rslt=norm_wlev(self.x393_pio_sequences.write_levelling(1, quiet+1))
                 if wlev_rslt[2]>wlev_max_bad: # should be 0 - otherwise wlev did not work (CMDA?)
                     raise Exception("Write levelling gave unespected data, aborting (may be wrong command/address delay, incorrectly initializaed")
@@ -1598,7 +719,7 @@ class X393McntrlAdjust(object):
             
             while d_high > d_low:
                 dly= (d_high + d_low)//2
-                self.x393_mcntrl_timing.axi_set_dqs_odelay(self.combine_delay(dly),quiet=quiet)
+                self.x393_mcntrl_timing.axi_set_dqs_odelay(combine_delay(dly),quiet=quiet)
                 wlev_rslt=norm_wlev(self.x393_pio_sequences.write_levelling(1, quiet+1))
                 if wlev_rslt[2]>wlev_max_bad: # should be 0 - otherwise wlev did not work (CMDA?)
                     raise Exception("Write levelling gave unespected data, aborting (may be wrong command/address delay, incorrectly initializaed")
@@ -1622,7 +743,7 @@ class X393McntrlAdjust(object):
                         print ("i=%d, d_low=%d, d_high=%d, dly=%d"%(i,d_low[i],d_high[i],dly))
                     dly01=[d_low[0],d_low[1]]
                     dly01[i]=dly
-                    self.x393_mcntrl_timing.axi_set_dqs_odelay(self.combine_delay(dly01),quiet=quiet)
+                    self.x393_mcntrl_timing.axi_set_dqs_odelay(combine_delay(dly01),quiet=quiet)
                     wlev_rslt=norm_wlev(self.x393_pio_sequences.write_levelling(1, quiet+1))
                     if wlev_rslt[2]>wlev_max_bad: # should be 0 - otherwise wlev did not work (CMDA?)
                         raise Exception("Write levelling gave unespected data, aborting (may be wrong command/address delay, incorrectly initializaed")
@@ -1906,7 +1027,7 @@ class X393McntrlAdjust(object):
             patt_cache=[None]*(max_lin_dly+1) # cache for holding already measured delays
             def measure_patt(dly,force_meas=False):
                 if (patt_cache[dly] is None) or force_meas:
-                    self.x393_mcntrl_timing.axi_set_dq_idelay(self.combine_delay(dly),quiet=quiet)
+                    self.x393_mcntrl_timing.axi_set_dq_idelay(combine_delay(dly),quiet=quiet)
                     patt= self.x393_pio_sequences.read_levelling(nrep,
                                                                  -1, # sel=1, # 0 - early, 1 - late read command (shift by a SDCLK period), -1 - use current sequence 
                                                                  quiet+1)
@@ -1945,7 +1066,7 @@ class X393McntrlAdjust(object):
                 return 0
             
             rslt=[None]*16 # each bit will have [inphase][dqs_falling]
-            self.x393_mcntrl_timing.axi_set_dqs_idelay(self.combine_delay(dqs_lin),quiet=quiet)
+            self.x393_mcntrl_timing.axi_set_dqs_idelay(combine_delay(dqs_lin),quiet=quiet)
             d_low=[None]*2  # first - lowest when all are -+, second - when all are +-  
             d_high=[None]*2 # first - when all are +- after -+, second - when all are -+ after +-
             dly=0
@@ -2133,7 +1254,7 @@ class X393McntrlAdjust(object):
 #        meas_data=[]
 #        for ldly in range(max_lin_dly+1):
 #            if quiet <3:
-#                print ("%d(0x%x):"%(ldly,self.combine_delay(ldly)),end=" ")
+#                print ("%d(0x%x):"%(ldly,combine_delay(ldly)),end=" ")
 #                sys.stdout.flush()
 #            meas_data.append(patt_dqs_step(ldly))
 #        if quiet <3:
@@ -2145,7 +1266,7 @@ class X393McntrlAdjust(object):
             ldly = (start_dly+sdly)%(max_lin_dly+1)
 #        for ldly in range(max_lin_dly+1):
             if quiet <3:
-                print ("%d(0x%x):"%(ldly,self.combine_delay(ldly)),end=" ")
+                print ("%d(0x%x):"%(ldly,combine_delay(ldly)),end=" ")
                 sys.stdout.flush()
             elif quiet < 5:
                 print (".",end="")
@@ -2326,7 +1447,7 @@ class X393McntrlAdjust(object):
         self.x393_pio_sequences.set_read_block(*(brc+(nrep+3,sel))) # set sequence once
         #prepare writing block:
         wdata16=(0,0,0xffff,0xffff)*(2*(nrep+3)) # Data will have o/1 transitions in every bit, even if DQ_OPDELAY to DQS_OPDELAY is not yet adjusted
-        wdata32=self.convert_mem16_to_w32(wdata16)
+        wdata32=convert_mem16_to_w32(wdata16)
         self.x393_mcntrl_buffers.write_block_buf_chn(0,0,wdata32,quiet) # fill block memory (channel, page, number)
         self.x393_pio_sequences.set_write_block(*(brc+(nrep+3,0,sel))) # set sequence once
         cmda_bspe=self.adjustment_state['cmda_bspe']
@@ -2346,7 +1467,7 @@ class X393McntrlAdjust(object):
                            quiet)
         if not phase_ok:
             raise Exception("BUG: Failed set_phase_with_refresh(%s)"%(str(phase)))
-        self.x393_mcntrl_timing.axi_set_dqs_odelay(self.combine_delay(dqs_odelay),quiet=quiet)
+        self.x393_mcntrl_timing.axi_set_dqs_odelay(combine_delay(dqs_odelay),quiet=quiet)
         self.x393_pio_sequences.write_block() #page= 0, wait_complete=1)
 
         
@@ -2366,13 +1487,13 @@ class X393McntrlAdjust(object):
                     print ("dqs_idly=%d, dqsi_cache=%s"%(dqs_idly,str(dqsi_cache)))
                        
                 if (dqsi_cache[dqs_idly] is None) or force_meas:
-                    self.x393_mcntrl_timing.axi_set_dqs_idelay(self.combine_delay(dqs_idly),quiet=quiet)
-                    self.x393_mcntrl_timing.axi_set_dq_idelay(self.combine_delay(dqi_dqsi[branch][dqs_idly]),quiet=quiet)
+                    self.x393_mcntrl_timing.axi_set_dqs_idelay(combine_delay(dqs_idly),quiet=quiet)
+                    self.x393_mcntrl_timing.axi_set_dq_idelay(combine_delay(dqi_dqsi[branch][dqs_idly]),quiet=quiet)
                     buf=self.x393_pio_sequences.read_block(4 * (nrep+1) +2,
                                                            (0,1)[quiet<1], #show_rslt,
                                                            1) # wait_complete=1)
                     buf= buf[4:(nrep*4)+4] # discard first 4*32-bit words and the "tail" after nrep*4 words32
-                    patt=self.convert_w32_to_mem16(buf)# will be nrep*8 items
+                    patt=convert_w32_to_mem16(buf)# will be nrep*8 items
                     dqsi_cache[dqs_idly]=patt
                     if quiet < 1:
                         print ('measure_phase(%d,%s) - new measurement'%(phase,str(force_meas)))
@@ -2694,7 +1815,7 @@ class X393McntrlAdjust(object):
             patt_cache=[None]*NUM_DLY_STEPS # cache for holding already measured delays
             def measure_block(dly,invert_patt, force_meas=False):
                 if (patt_cache[dly] is None) or force_meas:
-                    self.x393_mcntrl_timing.axi_set_dq_odelay(self.combine_delay(dly),quiet=quiet)
+                    self.x393_mcntrl_timing.axi_set_dq_odelay(combine_delay(dly),quiet=quiet)
                     self.x393_pio_sequences.write_block() #page= 0, wait_complete=1)
                     patt= self.x393_pio_sequences.read_levelling(nrep,
                                                                  -2, # Actually read block, but pre-process as a pattern  
@@ -2739,7 +1860,7 @@ class X393McntrlAdjust(object):
                 return 0
             
             rslt=[None]*16 # each bit will have [inphase][dqs_falling]
-            self.x393_mcntrl_timing.axi_set_dqs_odelay(self.combine_delay(dqs_lin),quiet=quiet)
+            self.x393_mcntrl_timing.axi_set_dqs_odelay(combine_delay(dqs_lin),quiet=quiet)
             #set phase, cmda_odelay, dqsi, dqi to match this delay
             phase=phase_dqso[dqs_lin]
             if phase is None: # no good phase exist for the specified dqs_odelay
@@ -2761,8 +1882,8 @@ class X393McntrlAdjust(object):
             dqs_idelay=dqsi_dqi_for_phase[phase]['dqsi'] # 2-element list
             dq_idelay= dqsi_dqi_for_phase[phase]['dqi']  # 16-element list
             invert_patt= dqsi_dqi_for_phase[phase]['invert']  # 16-element list
-            self.x393_mcntrl_timing.axi_set_dqs_idelay(self.combine_delay(dqs_idelay),quiet=quiet)
-            self.x393_mcntrl_timing.axi_set_dq_idelay(self.combine_delay(dq_idelay),quiet=quiet)
+            self.x393_mcntrl_timing.axi_set_dqs_idelay(combine_delay(dqs_idelay),quiet=quiet)
+            self.x393_mcntrl_timing.axi_set_dq_idelay(combine_delay(dq_idelay),quiet=quiet)
 
             
             
@@ -2959,7 +2080,7 @@ class X393McntrlAdjust(object):
         if quiet<2:
             print ("timing=%s, dly_step=%d step180=%d"%(str(timing),dly_step,step180))
         wdata16=(0,0xffff)*(4*(nrep+3))
-        wdata32=self.convert_mem16_to_w32(wdata16)
+        wdata32=convert_mem16_to_w32(wdata16)
         dqsi_dqi_for_phase=get_dqsi_dqi_for_phase()
         phase_dqso=get_phase_for_dqso() # uses dqsi_dqi_for_phase
         if quiet < 2:
@@ -2989,7 +2110,7 @@ class X393McntrlAdjust(object):
             ldly = (start_dly+sdly)%(NUM_DLY_STEPS)
 #        for ldly in range(max_lin_dly+1):
             if quiet <3:
-                print ("%d(0x%x):"%(ldly,self.combine_delay(ldly)),end=" ")
+                print ("%d(0x%x):"%(ldly,combine_delay(ldly)),end=" ")
                 sys.stdout.flush()
             elif quiet < 5:
                 print (".",end="")
@@ -3091,23 +2212,339 @@ class X393McntrlAdjust(object):
         rdict={"write_prim_steps":    compare_prim_steps,
                "write_meas_data":     meas_data} # TODO: May delete after LMA fitting
         self.adjustment_state.update(rdict)
+    
+    def measure_addr_odelay(self,
+                            safe_phase=0.25, # 0 strictly follow cmda_odelay, >0 -program with this fraction of clk period from the margin 
+                            ra = 0,
+                            ba = 0,
+                            quiet=1,
+                            single=False):
+#                            quiet=0):
+        """
+        Will raise exception if read non good or bad - that may happen if cmda_odelay is violated too much. Need to re-
+        init memory if that happems and possibly re-run with largersafe_phase or safe_phase==0/None to disable this feature
+        Final measurement of output delay on address lines, performed when read/write timing is set
+        Writes different data in the specified block and then different pattern to all blocks different
+        by one row address or bank address bit.
+        Refresh is programmed to drive inverted ra and ba, so the lines have to switch during activate
+        command of read block, and the too late switch can be detected as it will cause the different block to
+        be read. Address and bank lines are tested with different delays, one bit at a time. 
+        """
+        
+#        self.load_hardcoded_data() # TODO: TEMPORARY - remove later
+        num_ba=3
+        if not single:
+            pass1=self.measure_addr_odelay(safe_phase=safe_phase, #0.25, # 0 strictly follow cmda_odelay, >0 -program with this fraction of clk period from the margin 
+                                           ra = ra, # 0,
+                                           ba = ba, # 0,
+                                           quiet=quiet+1, #1,
+                                           single=True) # single=False)
+            pass2=self.measure_addr_odelay(safe_phase=safe_phase, #0.25, # 0 strictly follow cmda_odelay, >0 -program with this fraction of clk period from the margin 
+                                           ra = ra ^ ((1 << vrlg.ADDRESS_NUMBER)-1), # 0,
+                                           ba = ba ^ ((1 << num_ba)-1), # 0,
+                                           quiet=quiet+1, #1,
+                                           single=True) # single=False)
+            self.adjustment_state['addr_meas']=[pass1,pass2]
+            if (quiet<4):
+                print ('addr_meas=[')
+                for p in [pass1,pass2]:
+                    print(p,",")
+                print(']')
                     
-                    
-                      
-    '''
-    adjust_cmda_odelay 0 1 0.1 3
-    adjust_write_levelling 0 1 0 .1 3
-    adjust_pattern 0.125 0.1 1
-    '''
+            return [pass1,pass2]
+            
+        nbursts=1 # just 1 full burst for block comparison(will write nbursts+3)
+        sel_wr=1
+        sel_rd=1
+        extraTgl=0
+        inv_ra=ra ^ ((1 << vrlg.ADDRESS_NUMBER)-1)
+        ca= ra & ((1 << vrlg.COLADDR_NUMBER) -1)
+        inv_ba=ba ^ ((1 << num_ba)-1)
+        if not "cmda_bspe" in self.adjustment_state:
+            raise Exception ("No cmda_odelay data is available. 'adjust_cmda_odelay 0 1 0.1 3' command should run first.")
+        dly_steps=self.x393_mcntrl_timing.get_dly_steps()
+        numPhaseSteps= int(dly_steps['SDCLK_PERIOD']/dly_steps['PHASE_STEP']+0.5)
+        #create a list of None/optimal cmda determined earlier
+        
+        cmda_odly=     [None if (self.adjustment_state['cmda_bspe'][phase] is None) else self.adjustment_state['cmda_bspe'][phase]['ldly'] for phase in range(numPhaseSteps)]
+        if safe_phase:
+            cmda_odly_zerr=[None if (self.adjustment_state['cmda_bspe'][phase] is None) else self.adjustment_state['cmda_bspe'][phase]['zerr'] for phase in range(numPhaseSteps)]
+            cmda_odly_early=[]
+            for phase,zerr in enumerate (cmda_odly_zerr):
+                if (not zerr is None) and (zerr < 0.5-safe_phase):
+                    cmda_odly_early.append(0)
+                else:
+                    cmda_odly_early.append(cmda_odly[phase])
+        else:
+            cmda_odly_early=cmda_odly
+#        cmda_odly=tuple(cmda_odly)
+        if quiet <1:
+            for phase,dly in enumerate(cmda_odly):
+                ldly=None
+                if not self.adjustment_state['cmda_bspe'][phase] is None:
+                    ldly=self.adjustment_state['cmda_bspe'][phase]['ldly']
+                print("%d %s %s"%(phase,str(dly),str(ldly)))
+        
+        dly_try_step=NUM_FINE_STEPS # how far to step when looking for zero crossing (from predicted)
+        phase_try_step=numPhaseSteps//8 # when searching for marginal delay, wry not optimal+perid/2 but smaller step to accommodate per-bit variations
+        good_patt=0xaaaa
+        bad_patt = good_patt ^ 0xffff
+        # make sure delay data is available
+        try:
+            delays_phase=self.adjustment_state['delays_phase']
+        except:
+            print("Delays for phases (self.adjustment_state['delays_phase']) are not set, running 'get_delays_vs_phase' command ")
+            try:
+                delays_phase=self.get_delays_vs_phase(filter_dqo=2,
+                                         filter_dqi=2,
+                                         filter_dqso=2,
+                                         filter_dqsi=2,
+                                         filter_cmda=2,
+                                         keep_all=False,
+                                         set_table=True,
+                                         quiet=quiet+2)
+                self.adjustment_state['delays_phase']=delays_phase
+            except:
+                raise Exception("Failed to execute get_'delays_vs_phase' command - probably incomplete calibration data")
+        # find first suitable phase
+        for phase,delays in enumerate(delays_phase):
+            if not delays is None:
+                break
+        else:
+            raise Exception("Could not find a valid phase to use")
+        #phase is usable delay
+        # reprogram refresh
+        self.x393_axi_tasks.enable_refresh(0) # turn off refresh
+        self.x393_pio_sequences.set_refresh(vrlg.T_RFC, # input [ 9:0] t_rfc; # =50 for tCK=2.5ns
+                                            vrlg.T_REFI, #input [ 7:0] t_refi; # 48/97 for normal, 16 - for simulation
+                                            0, #  en_refresh=0,
+                                            inv_ra, # used only for calibration of the address line output delay
+                                            inv_ba,
+                                            0) # verbose=0
+        # set usable timing, enable refresh
+        OK=self.set_phase_delays(phase=phase,
+                                 refresh=True,
+                                 quiet=quiet) # all the rest are defaults
+        if not OK:
+            raise Exception("measure_addr_odelay(): failed to set phase = %d"%(phase))        
+        #Write 0xaaaa pattern to correct block (all used words), address number - to all with a single bit different
+        self.x393_pio_sequences.set_read_block(ba,ra,ca,nbursts+3,sel_wr)
+        #prepare and writ 'correct' block:
+        wdata16_good=(good_patt,)*(8*(nbursts+3)) 
+        wdata32_good=convert_mem16_to_w32(wdata16_good)
+        wdata16_bad=(bad_patt,)*(8*(nbursts+3)) 
+        wdata32_bad=convert_mem16_to_w32(wdata16_bad)
+        comp32_good= wdata32_good[4:(nbursts*4)+4] # data to compare with read buffer - discard first 4*32-bit words and the "tail" after nrep*4 words32
+        comp32_bad=  wdata32_bad[4:(nbursts*4)+4] # data to compare with read buffer - discard first 4*32-bit words and the "tail" after nrep*4 words32
+        
+        self.x393_mcntrl_buffers.write_block_buf_chn(0,0,wdata32_good,quiet) # fill block memory (channel, page, number)
+        self.x393_pio_sequences.set_write_block(ba,ra,ca,nbursts+3,extraTgl,sel_wr) # set sequence to write 'correct' block
+        self.x393_pio_sequences.set_read_block(ba,ra,ca,nbursts+3,sel_rd) # set sequence to read block (will always be the same address)
+        self.x393_pio_sequences.write_block() #page= 0, wait_complete=1) # write 'correct' block
+        #prepare and write all alternative blocks (different by one address/bank 
+        self.x393_mcntrl_buffers.write_block_buf_chn(0,0,wdata32_bad,quiet) # fill block memory (channel, page, number)
+        raba_bits=[]
+#        print('vrlg.ADDRESS_NUMBER=',vrlg.ADDRESS_NUMBER)
+#        print('num_ba=',num_ba)
+        for addr_bit in range(vrlg.ADDRESS_NUMBER):
+            raba_bits.append((addr_bit,None))
+            ra_alt=ra ^ (1<<addr_bit)
+            self.x393_pio_sequences.set_write_block(ba,ra_alt,ca,nbursts+3,extraTgl,sel_wr,(0,1)[quiet<2]) # set sequence to write alternative (by one address bit) block
+            self.x393_pio_sequences.write_block() #page= 0, wait_complete=1) # write alternative block
+        for bank_bit in range(num_ba):
+            raba_bits.append((None,bank_bit))
+            ba_alt=ra ^ (1<<bank_bit)
+            self.x393_pio_sequences.set_write_block(ba_alt,ra,ca,nbursts+3,extraTgl,sel_wr,(0,1)[quiet<2]) # set sequence to write alternative (by one address bit) block
+            self.x393_pio_sequences.write_block() #page= 0, wait_complete=1) # write alternative block
+        # For each valid phase, set valid delays, then find marginal delay for one bit (start with the longest available delay?
+        # if got for one bit - try other bits  in vicinity
+        # check that the particular phase is valid for all parameters
+        # To increase valid range it is possible to ignore write delays as they are not used here (recalculate self.adjustment_state['delays_phase']
+        # after write is done
+        filter_cmda=2
+        if safe_phase > 0:
+            filter_cmda=1.0*safe_phase
+        delays_phase=self.get_delays_vs_phase(filter_dqo=0, #2,
+                                              filter_dqi=1, #2,
+                                              filter_dqso=0, #2,
+                                              filter_dqsi=1, #2,
+                                              filter_cmda=filter_cmda, #2, # special mode - try to keep cmda low, with setup violation to test marginal phase
+                                              keep_all=False,
+                                              set_table=False, # True, 
+                                              quiet=quiet+2)
+        if quiet < 2:
+            print ("delays_phase=",delays_phase)
+
+#        self.adjustment_state['delays_phase']=delays_phase
+#        delays_phase=self.adjustment_state['delays_phase'] # self.set_phase_delays already ran, but may now need to ease requirements
+        def addr_phase_step(phase):
+            def measure_block(dly,
+                              addr_bit,
+                              bank_bit,
+                              force_meas=False):
+                if (meas_cache[dly] is None) or force_meas:
+                    for _ in range(5):
+                        #set same delays for all cmda bits   (should be already done with 'set_phase_with_refresh'
+                        if not addr_bit is None:
+                            self.x393_mcntrl_timing.axi_set_address_odelay(combine_delay(dly),addr_bit,quiet=quiet)
+                        elif not bank_bit is None:
+                            self.x393_mcntrl_timing.axi_set_address_odelay(combine_delay(dly),bank_bit,quiet=quiet)
+                        else:
+                            raise Exception("BUG: both addr_bit and bank_bit are None")
+                        if quiet < 1:
+                            print ('measure_block(%d,%s) - new measurement'%(dly,str(force_meas)))
+                        self.x393_pio_sequences.manual_refresh() # run refresh that sets address bit to opposite values to the required row+bank address
+                        buf=self.x393_pio_sequences.read_block(4 * (nbursts+1) +2,
+                                                               (0,1)[quiet<1], #show_rslt,
+                                                               1) # wait_complete=1)
+                        buf= buf[4:(nbursts*4)+4] # discard first 4*32-bit words and the "tail" after nrep*4 words32
+                        if buf==comp32_good:
+                            meas=True
+                        elif buf==comp32_bad:
+                            meas=False
+                        else:
+                            print ("Inconclusive result for comparing read data for phase=%d, addr_bit=%s, bank_bit=%s  dly=%d"%(phase,str(addr_bit),str(bank_bit),dly))
+                            print ("Data read from memory=",buf, "(",convert_w32_to_mem16(buf),")")
+                            print ("Expected 'good' data=",comp32_good, "(",convert_w32_to_mem16(comp32_good),")")
+                            print ("Expected 'bad'  data=", comp32_bad, "(",convert_w32_to_mem16(comp32_bad),")")
+                            meas=None
+                        meas_cache[dly]=meas
+                        if not meas is None:
+                            break
+                    else:
+                        print("***** FAILED to get measurement ******")
+#                        raise Exception("***** FAILED to get measurement ******")
+                        meas=False
+                else:
+                    meas=meas_cache[dly]
+                    if quiet < 1:
+                        print ('measure_block(%d,%s) - using cache'%(dly,str(force_meas)))
+                return meas
+            # pass # addr_phase_step body
+            # check that the particular phase is valid for all parameters
+            # To increase valid range it is possible to ignore write delays as they are not used here (recalculate self.adjustment_state['delays_phase']
+            # after write is done
+            # delays_phase=self.adjustment_state['delays_phase']
+            if quiet < 1:
+                print ("****** phase=%d ******"%(phase),end=" ")
+            if delays_phase[phase] is None:
+                if quiet < 1:
+                    print ("delays_phase[%d] is None"%(phase))
+                return None
+            dly_optimal= cmda_odly[phase]
+            if dly_optimal is None:
+                if quiet < 1:
+                    print ("dly_optimal is None")
+                return None
+            # may increase range by using dly_optimal=0 until it is not dangerously late (say only 1/4 period off)
+            phase_marg= (phase+ (numPhaseSteps//2)-phase_try_step) % numPhaseSteps
+            if  cmda_odly[phase_marg] is None:
+                phase_marg_traget=phase_marg
+                phase_marg=None
+                for p in range(numPhaseSteps):
+                    if not cmda_odly[p is None]:
+                        if (phase_marg is None) or (min(abs(p-phase_marg_traget),
+                                                        abs(p-phase_marg_traget+numPhaseSteps),
+                                                        abs(p-phase_marg_traget-numPhaseSteps)) < min(abs(phase_marg-phase_marg_traget),
+                                                                                                      abs(phase_marg-phase_marg_traget+numPhaseSteps),
+                                                                                                      abs(phase_marg-phase_marg_traget-numPhaseSteps))):
+                            phase_marg=p
+                else:
+                    print("BUG: could to find a valid marginal phase")
+                    return None
+            # may increase range by using dly_optimal=0 until it is not dangerously late (say only 1/4 period off)
+            dly_marg = cmda_odly[phase_marg]# - dly_try_step
+            if dly_marg < dly_optimal:
+                if cmda_odly_early[phase] < dly_marg:
+                    dly_optimal=cmda_odly_early[phase]
+                else:
+                    if quiet < 1:
+                        print ("dly_marg (==%d) < dly_optimal (==%d)"%(dly_marg,dly_optimal))
+                    return None # It is not possble to try delay lower than optimal with this method
+                
+            #set phase and all optimal delays for that phase
+            self.set_phase_delays(phase=phase,
+                                 refresh=True,
+                                 delays_phase=delays_phase,
+                                 quiet=quiet) # all the rest are defaults
+
+            # Now try
+            #raba_bits [(addr_bit,bank_bit),...]
+            rslt=[]
+            for addr_bit,bank_bit in raba_bits:
+                if quiet < 1 :
+                    print("\n===== phase=%d, dly_optimal=%d, addr_bit=%s, bank_bit=%s"%(phase, dly_optimal,str(addr_bit),str(bank_bit)))
+                
+                self.x393_mcntrl_timing.axi_set_cmda_odelay(combine_delay(dly_optimal),quiet=quiet) # set all bits to optimal delay
+                meas_cache=[None]*NUM_DLY_STEPS # cache for holding results of already measured delays, new cach for each address bit
+#                ts=dly_try_step
+                dly=dly_marg
+                dly_low=None #dly
+                dly_high=None# dly
+                
+                while ((dly_low is None) or (dly_high is None)) and (dly > dly_optimal) and (dly < NUM_DLY_STEPS):
+                    meas=measure_block(dly,
+                                  addr_bit,
+                                  bank_bit)
+                    if meas :
+                        if dly==(NUM_DLY_STEPS-1):
+                            dly = None
+                            break
+                        dly_low=dly
+                        dly=min(NUM_DLY_STEPS-1,dly+dly_try_step)
+                    else:                        
+                        dly_high=dly
+                        dly=max(dly_optimal,dly-dly_try_step)
+                if quiet < 1 :
+                    print ("dly_low=%s, dly_high=%s, dly=%s"%(str(dly_low),str(dly_high),str(dly)))
+                if (dly_low is None) or (dly_high is None): # dly is None:
+                    rslt.append(None)
+                    continue
+                #find highest delay that is lower than margin (here delay monotonicity is assumed!)
+                while dly_low < (dly_high-1):
+                    dly=(dly_low+dly_high)//2
+                    meas=measure_block(dly,
+                                  addr_bit,
+                                  bank_bit)
+                    if meas:
+                        dly_low=dly
+                    else:
+                        dly_high=dly
+                rslt.append(dly_low)
+            return rslt     
+        #main method body - iterate over phases
+        addr_odelay=[]
+        for phase in range(numPhaseSteps):
+            if quiet < 6:
+                print (".",end="")
+                sys.stdout.flush()
+            addr_odelay.append(addr_phase_step(phase))
+        if quiet < 6:
+            print ()
+        self.adjustment_state['addr_odelay_meas']=addr_odelay
+        if quiet < 3:
+            for phase, adly in enumerate(addr_odelay):
+                print("%d"%(phase),end=" ")
+                print("%s"%(str(cmda_odly[phase])),end=" ")
+                if adly:
+                    for b in adly:
+                        if not b is None:
+                            print("%d"%(b),end=" ")
+                        else:
+                            print("?",end=" ")
+                print()
+        return addr_odelay              
+                        
+
     def measure_all(self,
-                    tasks="CWRPOZ",
+                    tasks="CWRPOAZ",
                     prim_steps=1,
                     primary_set_in=2,
                     primary_set_out=2,
                     quiet=3):
         """
         @param tasks - "C" cmda, "W' - write levelling, "R" - read levelling (DQI-DQSI), "P" -  dqs input phase (DQSI-PHASE),
-                       "O" - output timing (DQ odelay vs  DQS odelay) "Z" - print results
+                       "O" - output timing (DQ odelay vs  DQS odelay), "A" - address/bank lines output delays, "Z" - print results
         @param prim_steps -  compare measurement with current delay with one lower by 1 primary step (5 fine delay steps), 0 -
                              compare with one fine step lower
         @param quiet reduce output
@@ -3128,6 +2565,10 @@ class X393McntrlAdjust(object):
 #        primary_set_in=2
 #        primary_set_out=2
         write_sel=1 # set DDR3 command in the second cycle of two (0 - during the first omne)
+        safe_phase=0.25 # 0: strictly follow cmda_odelay, >0 -program with this fraction of clk period from the margin
+        commonFine=True, # use same values for fine delay for address/bank lines
+        addr_odly_max_err= 0.125 # 1/8 period
+
 
         task_data=[{'key':'C',
                     'func':self.adjust_cmda_odelay,
@@ -3192,6 +2633,22 @@ class X393McntrlAdjust(object):
                               'data_set_number':-1, # use measured data
                               'scale_w':write_scale_w,
                               'quiet':quiet+1}},
+                   
+                   {'key':'A',
+                    'func':self.measure_addr_odelay,
+                    'comment':'Measuring address and bank lines output delays',
+                    'params':{'safe_phase':safe_phase,
+                              'ra': 0,
+                              'ba': 0,
+                              'quiet':quiet+1}},
+                   
+                    {'key':'A',
+                    'func':self.proc_addr_odelay,
+                    'comment':'Processing address and bank lines output delays (using average data for RAS,CAS, WE output delays)',
+                    'params':{'commonFine':commonFine,
+                              'max_err':addr_odly_max_err,
+                              'quiet':quiet+1}},
+                    
                     {'key':'Z',
                     'func':self.show_all_vs_phase,
                     'comment':'Printing results table (delays and errors vs. phase)- all, including invalid phases',
@@ -3238,6 +2695,9 @@ class X393McntrlAdjust(object):
         self.adjustment_state.update(get_test_dq_dqs_data.get_adjust_cmda_odelay())
         self.adjustment_state.update(get_test_dq_dqs_data.get_wlev_data())
         self.adjustment_state.update(get_test_dq_dqs_data.get_dqsi_phase())
+        
+        self.adjustment_state['addr_odelay_meas']=    get_test_dq_dqs_data.get_addr_meas()
+        self.adjustment_state['addr_odelay']=         get_test_dq_dqs_data.get_addr_odly()
     
     def proc_dqi_dqsi(self,
                        lane="all",
@@ -3473,7 +2933,292 @@ class X393McntrlAdjust(object):
         self.adjustment_state["dqo_dqso"]=rslt         
 
         return rslt
-    
+    def proc_addr_odelay(self,
+                         commonFine=True, # use same values for fine delay
+                         max_err=0.125, # 1/8 period
+                         quiet=2):
+        """
+        Process delay calibration data for address and bank line, calculate delay scales, shift and rise/fall differences.
+        Calculate finedelay corrections and finally optimal delay value for each line each phase
+        """
+        self.load_hardcoded_data() # TODO: TEMPORARY - remove later
+        addr_odelay=self.adjustment_state['addr_odelay_meas']
+        
+        numLines=vrlg.ADDRESS_NUMBER+3
+        dly_steps=self.x393_mcntrl_timing.get_dly_steps()
+        numPhaseSteps= int(dly_steps['SDCLK_PERIOD']/dly_steps['PHASE_STEP']+0.5)
+        phase_step=1000.0*dly_steps['PHASE_STEP']
+        clk_period=1000.0*dly_steps['SDCLK_PERIOD']
+        if quiet <1:
+            print ("phase_step=%f, clk_period=%f"%(phase_step,clk_period))    
+        try:
+            cmda_odly_a=self.adjustment_state["cmda_odly_a"]
+        except:
+            raise Exception ("No cmda_odly_a is available.")
+        try:
+            cmda_odly_b=self.adjustment_state["cmda_odly_b"]
+        except:
+            raise Exception ("No cmda_odly_b is available.")
+        tSA=-clk_period/(numPhaseSteps*cmda_odly_a) # positive 
+        variantStep=-cmda_odly_a*numPhaseSteps #how much b changes when moving over the full SDCLK period
+        tA=cmda_odly_b*tSA-clk_period/2
+        while tA < 0:
+            tA+=clk_period
+        tOpt=cmda_odly_b*tSA
+        while tOpt < 0:
+            tOpt+=clk_period
+            
+        if quiet <1:
+            print ("cmda_odly_a=%f, cmda_odly=%f, tSA=%f ps/step, tA=%f ps (%f), variantStep=%f, tOpt=%f(%f)"%(cmda_odly_a,cmda_odly_b, tSA, tA, tA/tSA, variantStep,tOpt,tOpt/tSA))    
+#        return
+        parameters={# set TSA from cmda_odelay B
+                    'tA':  [tA]*numLines,    # static delay in each line, ps
+                    # set TSA from cmda_odelay A
+                    
+                    'tSA': [tSA]*numLines,    # delay per one finedelay step, ps
+                    
+                    'tAHL':[0.0]*numLines,    # time high - time low, ps
+                    'tAF' :[0.0]*((NUM_FINE_STEPS-1)*numLines), # fine delay correction (first 4, last is minus sum of the first 4)
+                    'tAFW':[0.0]*((NUM_FINE_STEPS)*numLines) # weight of tAF averaging
+                    }
+        if quiet <1:
+            print("parameters=",parameters)
+             
+        def proc_addr_step(indx,
+                           corrFine=False,
+                           useVarStep=False):
+            tAF5=parameters['tAF'][(NUM_FINE_STEPS-1)*indx:(NUM_FINE_STEPS-1)*(indx+1)]
+            tAF5.append(-sum(tAF5))
+            tAF5.append(tAF5[0])
+            if (useVarStep):
+                tAF5C=[0.5*(tAF5[i]+tAF5[i+1]+ parameters['tSA'][indx]) for i in range(5)]# includes half-step
+            else:
+                tAF5C=[tAF5[i]+ 0.5*parameters['tSA'][indx] for i in range(5)]# includes half-step
+            if quiet <1:
+                print ("tAF5=",tAF5)
+                print ("tAF5C=",tAF5C)
+            S0=0
+            SX=0
+            SY=0
+            SX2=0
+            SXY=0
+            sAF5=[0.0]*NUM_FINE_STEPS
+            nAF5=[0]*NUM_FINE_STEPS
+            s01= [0.0]*len(addr_odelay)
+            n01= [0]*len(addr_odelay)
+            
+            for edge,pol_data in enumerate(addr_odelay): 
+                for phase, phase_data in enumerate(pol_data):
+                    if (not phase_data is None) and (not phase_data[indx] is None):
+                        dly=phase_data[indx]
+#                        y=-(phase_step*phase+tAF5C[dly %NUM_FINE_STEPS])
+                        y=-(phase_step*phase-tAF5C[dly %NUM_FINE_STEPS])
+                        diff0= y+parameters['tA'][indx]-parameters['tSA'][indx]*dly
+                        periods=int(round(diff0/clk_period))
+                        y-=periods*clk_period
+                        diff=y+parameters['tA'][indx]-parameters['tSA'][indx]*dly
+                        #find closest period and add/subract
+                        S0+=1
+                        SX+=dly
+                        SY+=y
+                        SX2+=dly*dly
+                        SXY+=dly*y
+                        sAF5[dly % NUM_FINE_STEPS]+=diff
+                        nAF5[dly % NUM_FINE_STEPS]+=1
+                        s01[edge]+=diff
+                        n01[edge]+=1
+                        if quiet <1:
+                            print("%d %d %f %f %f"%(phase,dly,y,diff0,diff))
+            avgF=0.0
+            for i in range (NUM_FINE_STEPS):
+                if nAF5[i]:
+                    sAF5[i]/=nAF5[i]
+                avgF+=sAF5[i]
+            avgF/=NUM_FINE_STEPS
+            for edge in range(len(addr_odelay)):
+                if n01[edge]:
+                    s01[edge] /= n01[edge]
+                      
+                               
+            if quiet <2:
+                print ("avgF=",avgF)
+                print ("sAF5=",sAF5)
+                print ("nAF5=",nAF5)
+                print ("s01=",s01)
+                
+            if quiet <2:
+                print ("parameters['tSA'][%d]="%indx,parameters['tSA'][indx], " (old)")
+                print ("parameters['tA'][%d]="%indx,parameters['tA'][indx], " (old)")
+                print ("parameters['tAHL'][%d]="%indx,parameters['tAHL'][indx], " (old)")
+                print ("tAF4=",parameters['tAF'][4*indx:4*(indx+1)], "(old)")
+            parameters['tSA'][indx] = (SXY*S0 - SY*SX) / (SX2*S0 - SX*SX)
+            parameters['tA'][indx] =  - (SY*SX2 - SXY*SX) / (SX2*S0 - SX*SX)
+            parameters['tAHL'][indx] =  2*(s01[0]-s01[1])
+            if corrFine:
+                for i in range (NUM_FINE_STEPS-1):
+#                    parameters['tAF'][(NUM_FINE_STEPS-1)*indx+i] += sAF5[i] - avgF
+                    parameters['tAF'][(NUM_FINE_STEPS-1)*indx+i] -= sAF5[i] - avgF
+                for i in range (NUM_FINE_STEPS):
+                    parameters['tAFW'][NUM_FINE_STEPS*indx+i] =nAF5[i]
+                    
+            if quiet <2:
+                print ("parameters['tSA'][%d]="%indx,parameters['tSA'][indx])
+                print ("parameters['tA'][%d]="%indx,parameters['tA'][indx])
+                print ("parameters['tAHL'][%d]="%indx,parameters['tAHL'][indx])
+                print ("tAF4=",parameters['tAF'][4*indx:4*(indx+1)])
+                print ("parameters=",parameters)
+            # correct finedelay values
+        def average_finedelays():
+            tAF5A=[0.0]*NUM_FINE_STEPS
+            tAF5W=[0.0]*NUM_FINE_STEPS
+            for line in range(numLines):
+                tAF5Ai=parameters['tAF'][(NUM_FINE_STEPS-1)*line:(NUM_FINE_STEPS-1)*(line+1)]
+                tAF5Ai.append(-sum(tAF5Ai))
+                tAF5Wi=parameters['tAFW'][NUM_FINE_STEPS*line:NUM_FINE_STEPS*(line+1)]
+                for i in range (NUM_FINE_STEPS):
+                    tAF5A[i]+=tAF5Ai[i]*tAF5Wi[i]
+                    tAF5W[i]+=tAF5Wi[i]
+            for i in range (NUM_FINE_STEPS):
+                if tAF5W[i] > 0.0:
+                    tAF5A[i]/=tAF5W[i]
+            avg=sum(tAF5A) / NUM_FINE_STEPS    
+            if quiet<2:
+                print ("tAF5A=",tAF5A)
+                print ("tAF5W=",tAF5W)
+                print ("avg=",avg)
+            for i in range (NUM_FINE_STEPS):
+                tAF5A[i]-=avg
+            return tAF5A
+            
+        def get_optimal_dlys(phase,maxErr):
+            """
+            return list of delays and maximal error
+            expects average values in the last item(s)
+            use average to find the branch, all others - in the same branch
+            
+            """
+            avg_index=numLines # len(parameters['tA'])-1
+            s_avg=parameters['tSA'][avg_index]
+            t_avg= parameters['tA'][avg_index]-phase_step*phase - clk_period/2
+            periods=0
+            avg_max_delay=s_avg*NUM_DLY_STEPS # maximal delay with average line
+            
+            while t_avg < 0:
+                t_avg   += clk_period
+                periods += 1
+            if t_avg > avg_max_delay:
+                t_avg -= clk_period
+                periods -= 1
+                if t_avg < -clk_period*maxErr:
+                    if quiet < 2:
+                        print ("No solution for average signal for phase=",phase)
+                    return None
+            delays=[]
+            worst_err=0 #
+            if quiet < 1:
+                print ("Phase=%d"%(phase))
+ 
+            for line in range(numLines): #+1):
+                tAF5=parameters['tAF'][(NUM_FINE_STEPS-1)*line:(NUM_FINE_STEPS-1)*(line+1)]
+                tAF5.append(-sum(tAF5))
+                best_dly=None
+                best_err=None
+                if quiet < 1:
+                    dbg_dly=[]
+                for dly in range (NUM_DLY_STEPS):
+                    #TODO: verify finedelay polarity
+                    t_dly=parameters['tA'][line]-parameters['tSA'][line]*dly -phase_step*phase - clk_period/2 + tAF5[dly %NUM_FINE_STEPS] + periods*clk_period
+#                    t_dly=parameters['tA'][line]-parameters['tSA'][line]*dly -phase_step*phase - clk_period/2 - tAF5[dly %NUM_FINE_STEPS] + periods*clk_period
+                    if quiet < 1:
+                        dbg_dly.append(t_dly)
+                    if (best_dly is None) or (abs(t_dly) < abs(best_err)):
+                        best_dly=dly
+                        best_err=t_dly
+                if quiet < 1:
+                    print ("%f"%(best_err),end=" ")
+                        
+                delays.append(best_dly)
+                if worst_err< abs(best_err):
+                    worst_err = abs(best_err)
+            if quiet < 1:
+                print ()
+                print (dbg_dly)
+            if worst_err > maxErr*clk_period:
+                if quiet < 2:
+                    print ("Worst signal error (%f ps) is too high (>%f ps, %f clk_periods) fpr phase %d"%(worst_err, maxErr*clk_period,maxErr, phase))
+                return None
+                
+            return {'err':worst_err,
+                    'dlys':delays}        
+            
+            pass
+
+        #main method body:
+        
+        for line in range(numLines):
+            for _ in range (6):
+                proc_addr_step(line,1,0)
+        if quiet<3:
+            print ("parameters=",parameters)
+        if commonFine:
+            tAF5A=average_finedelays()    
+            for line in range(numLines):
+                for i in range (NUM_FINE_STEPS-1):
+                    parameters['tAF'][(NUM_FINE_STEPS-1)*line+i] = tAF5A[i]
+            for line in range(numLines):
+                for _ in range (2):
+                    proc_addr_step(line,0,1)
+        # Calculate average parameters (to be used for command bits until found better measurement for them:
+        parameters['tAFW'] += average_finedelays()[:NUM_FINE_STEPS-1] # do only once - increases length of parameters items
+        for k in ("tSA",'tA','tAHL'):
+            parameters[k].append(sum(parameters[k])/numLines)
+        if quiet<3:
+            print ("parameters=",parameters)
+                
+        #find best solutions/errors
+        delays=[]
+        errors=[]
+        for phase in range(numPhaseSteps):
+            dly_err=get_optimal_dlys(phase,max_err)
+            if not dly_err is None:
+                delays.append(dly_err['dlys'])
+                errors.append(dly_err['err'])
+            else:
+                delays.append(None)
+                errors.append(None)
+        if quiet < 4:
+            for phase in range(numPhaseSteps):
+                print("%d"%(phase), end=" ")
+                if not delays[phase] is None:
+                    for d in delays[phase]:
+                        print ("%s"%(str(d)),end=" ")
+                    print ("%s"%(str(errors[phase])),end=" ")     
+                print()
+        rslt={'err':errors,
+              'dlys':delays}
+        if quiet < 4:
+            print("addr_odelay={")
+            print("'dlys': ",rslt['dlys'],",")
+            print("'err': ",rslt['err'])
+            print("}")
+        self.adjustment_state['addr_odelay']= rslt                     
+        return rslt  
+                    
+                        
+                        
+                        
+
+            
+        """
+        proc_addr_odelay 3
+        proc_addr_odelay 0
+        dt=phase_step*phase+tA+tSA*dly+tAF5[dly %NUM_FINE_STEPS]
+        tSA* dly +tA =-(phase_step*phase+tAF5[dly %NUM_FINE_STEPS])
+        a <-> tSA,
+        b <-> tA,
+        y <->-(phase_step*phase+tAF5C[dly %NUM_FINE_STEPS]) tAF5C should include 0.5 of the step between this and next 
+        
+        """
     def get_delays_vs_phase(self,
                             filter_dqo=2,
                             filter_dqi=2,
@@ -3492,6 +3237,7 @@ class X393McntrlAdjust(object):
         @param filter_dqso  for DQS output delays
         @param filter_dqsi for DQS input delays
         @param filter_cmda for command and address output delays
+                        if non-integer - special mode - try to keep cmda low, with setup violation to test marginal phase
         @param keep_all Keep phases where some delays do not have valid values, just mark them as None
                remove just items that do not have any non-None elements
         @param set_table store results to the global table (used to simultaneously set all pahse-derived
@@ -3502,12 +3248,14 @@ class X393McntrlAdjust(object):
         
         """
 #        self.load_hardcoded_data() # TODO: REMOVE LATER
-        
+        num_addr=vrlg.ADDRESS_NUMBER
+        num_banks=3
         rslt_names=("early","nominal","late")
         timing=self.x393_mcntrl_timing.get_dly_steps()
         numPhaseSteps= int(timing['SDCLK_PERIOD']/timing['PHASE_STEP']+0.5)
         step180= int(NUM_FINE_STEPS*0.5* timing['SDCLK_PERIOD'] / timing['DLY_STEP'] +0.5)                                                                                                                                                                                                                 
         halfDlyRange=min(NUM_DLY_STEPS//2, step180) # minimum of half adjustment range of the delay and half SDCLK period
+#        clk_period=1000.0*timing['SDCLK_PERIOD'] # in PS
         if quiet <1:
             print ("halfDlyRange=",halfDlyRange)
         delays_phase=[]
@@ -3547,20 +3295,48 @@ class X393McntrlAdjust(object):
                 filter_dqsi=0
         if filter_cmda:
             try:
+                addr_odelay= self.adjustment_state['addr_odelay']
+            except:
+                addr_odelay=None
+            #keep cmda_bspe even if addr_odelay is available? 
+            try:
                 cmda_bspe=self.adjustment_state['cmda_bspe']
             except:
-                print ('Data for filter_cmda is not available (self.adjustment_state["cmda_bspe"]')
-                filter_cmda=0
+                if addr_odelay is None:
+                    print ('Data for filter_cmda is not available (self.adjustment_state["cmda_bspe"]')
+                    filter_cmda=0
+            if isinstance(filter_cmda,float):
+                if filter_cmda >=0.5:
+                    print ("Invalid 'safe range' for filter_cmda. It is measured in clock cycles and should be < 0.5.Using strict cmda filter")
+                    filter_cmda=2
+        num_cmda=0    
         for phase in range(numPhaseSteps):
             delays_phase.append({})
             if filter_cmda:
-                if (cmda_bspe[phase]['ldly'] is None) and (not keep_all):
-                    delays_phase[phase]=None
-                    continue # next phase
+                if (not addr_odelay is None) and (not isinstance(filter_cmda,float)): #TODO: add zerr to addr_odelay (error as a fraction of clock period if delay is set to 0)
+                    #special case to test address setup time - will never execute now
+                    if isinstance(filter_cmda,float) and (not addr_odelay['err'][phase] is None) and (addr_odelay['err'][phase] < 0.5-filter_cmda):
+                        delays_phase[phase]['cmda']=0
+                    else:
+                        if (addr_odelay['dlys'][phase] is None) and (not keep_all):
+                            delays_phase[phase]=None
+                            continue # next phase
+                        else:
+                            if not addr_odelay['dlys'][phase] is None:
+                                delays_phase[phase]['cmda']=addr_odelay['dlys'][phase] # list, not single value!
+                                num_cmda=len(addr_odelay['dlys'][phase])
                 else:
-                    if not cmda_bspe[phase]['ldly'] is None:
-                        delays_phase[phase]['cmda']=cmda_bspe[phase]['ldly']
-                    #all(v is None for v in l)
+                    #special case to test address setup time
+                    if isinstance(filter_cmda,float) and (not cmda_bspe[phase]['zerr'] is None) and (cmda_bspe[phase]['zerr']< 0.5-filter_cmda):
+                        delays_phase[phase]['cmda']=0
+                    else:
+                        if (cmda_bspe[phase]['ldly'] is None) and (not keep_all):
+                            delays_phase[phase]=None
+                            continue # next phase
+                        else:
+                            if not cmda_bspe[phase]['ldly'] is None:
+                                delays_phase[phase]['cmda']=cmda_bspe[phase]['ldly']
+                            #all(v is None for v in l)
             if filter_dqsi:
                 dqsi=[dqsi_lane[phase] for dqsi_lane in dqsi_phase]
                 if None in dqsi:
@@ -3718,7 +3494,17 @@ class X393McntrlAdjust(object):
                 maxErrDqso=None  
             
             #print header
-            print("Phase CMDA",end=" ")
+            print("Phase",end=" ")
+            if num_cmda == 0:
+                print("CMDA",end=" ")
+            else:
+                for i in range(num_addr):
+                    print("A%d"%(i),end=" ")
+                for i in range(num_banks):
+                    print("BA%d"%(i),end=" ")
+                print("RCW",end=" ") # TODO - modify when separate command line data will be available
+#        num_addr=vrlg.ADDRESS_NUMBER
+#        num_banks=3
             for lane in range(numLanes):
                 print("DQS%di"%(lane),end=" ")
             for k in enl_list_in:
@@ -3739,10 +3525,18 @@ class X393McntrlAdjust(object):
             for phase, phase_data in enumerate(delays_phase):
                 print ("%d"%(phase),end=" ")
                 if not phase_data is None:
-                    try:
-                        print ("%d"%(phase_data['cmda']),end=" ")
-                    except:
-                        print ("?",end=" ")
+                    if num_cmda ==0:
+                        try:
+                            print ("%d"%(phase_data['cmda']),end=" ")
+                        except:
+                            print ("?",end=" ")
+                    else:
+                        for line in range (num_cmda):
+                            try:
+                                print ("%d"%(phase_data['cmda'][line]),end=" ")
+                            except:
+                                print ("?",end=" ")
+                            
                     for lane in range(numLanes):
                         try:
                             print ("%d"%(phase_data['dqsi'][lane]),end=" ")

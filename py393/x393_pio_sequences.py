@@ -783,6 +783,8 @@ class X393PIOSequences(object):
                 t_rfc,   # input[9:0]t_rfc; # =50 for tCK=2.5ns
                 t_refi, # input[7:0]t_refi; # 48/97 for normal, 8 - for simulation
                 en_refresh=0,
+                ra=0, # used only for calibration of the address line output delay
+                ba=0,
                 verbose=0):
         """
         Setup refresh sequence at parameter defined address in the sequencer memory
@@ -794,7 +796,7 @@ class X393PIOSequences(object):
         print("**** SET REFRESH: tRFC=%d, tREFI=%d"%(t_rfc,t_refi))
         cmd_addr = vrlg.MCONTR_CMD_WR_ADDR + vrlg.REFRESH_OFFSET
         #                           addr                 bank                   RCW ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD NOP, B_RST
-        data=self.func_encode_cmd(    0,                   0,                    6,  0,  0,  0,  0,    0,    0,    0,  0,   0,   0,   0)
+        data=self.func_encode_cmd(   ra,                  ba,                    6,  0,  0,  0,  0,    0,    0,    0,  0,   0,   0,   0)
         self.x393_mem.axi_write_single_w(cmd_addr, data, verbose)
         cmd_addr += 1
         # =50 tREFI=260 ns before next ACTIVATE or REFRESH, @2.5ns clock, @5ns cycle
@@ -1058,8 +1060,20 @@ class X393PIOSequences(object):
             print()
         return data
 
-        
-        
+    def manual_refresh(self,
+                     wait_complete=1): # Wait for operation to complete
+        """
+        Run refresh cycle 
+        <wait_complete> wait read pattern operation to complete (0 - may initiate multiple PS PIO operations)
+        """
+
+        self.schedule_ps_pio ( # schedule software-control memory operation (may need to check FIFO status first)
+                        vrlg.REFRESH_OFFSET,   # input [9:0] seq_addr; # sequence start address
+                        0,                          # input [1:0] page;     # buffer page number
+                        0,                          # input       urgent;   # high priority request (only for competion with other channels, will not pass in this FIFO)
+                        0,                          # input       chn;      # channel buffer to use: 0 - memory read, 1 - memory write
+                        wait_complete) # `PS_PIO_WAIT_COMPLETE ) #  wait_complete; # Do not request a newe transaction from the scheduler until previous memory transaction is finished
+        self.wait_ps_pio_done(vrlg.DEFAULT_STATUS_MODE,1) # wait previous memory transaction finished before changing delays (effective immediately)
     
     def restart_ddr3(self,
                   wait_complete=True,

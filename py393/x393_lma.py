@@ -1208,28 +1208,13 @@ class X393LMA(object):
                         bDQ=None
                         break
                     bDQ.append(bestDQ) #tuple(delay,signed error in ps)
-                    """
-                    fullBitErr=bestDiff # +asym_err[b] #TODO: Restore the full error!
-                    if (errDQ is None) or (abs(fullBitErr) > abs (errDQ)):
-                        errDQ= fullBitErr
-                    """
                     fullBitErr=abs(bestDiff) +asym_err[b] #TODO: Restore the full error!
-#                    dbg_errs[b]=abs(bestDiff)
                     if (errDQ is None) or (fullBitErr > errDQ):
                         errDQ= fullBitErr
-#                        dbg_worstBit=b
                     
                     someData=True
                 vDQ.append(bDQ)
                 vErr.append(errDQ)
-##                if dbg_worstBit is None:
-##                    vErr.append(None)
-##                else:
-#                    vErr.append(asym_err[dbg_worstBit])
-#                    vErr.append(10*dbg_worstBit)
-#                    vErr.append(dbg_errs[2])
-##                    vErr.append(dbg_errs[5])
-#                print ("enl=%d, dly=%d, err=%s"%(enl,dly,str(errDQ)))
             if someData:    
                 dqForDqs.append(vDQ)
                 maxErrDqs.append(vErr)
