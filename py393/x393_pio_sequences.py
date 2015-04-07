@@ -958,10 +958,10 @@ class X393PIOSequences(object):
                      wait_complete=1): # Wait for operation to complete
         """
         Read pattern 
-        <num>           number of 32-bit words to read
-        <show_rslt>     print read data
-        <wait_complete> wait read pattern operation to complete (0 - may initiate multiple PS PIO operations)
-        returns list of the read data
+        @param num           number of 32-bit words to read
+        @param show_rslt  print buffer data read 1 - column, 16 - as 16-bit (memory words), 32 - as 32-bit (data words)
+        @param wait_complete wait read pattern operation to complete (0 - may initiate multiple PS PIO operations)
+        @return list of the read data
         """
 
         self.schedule_ps_pio ( # schedule software-control memory operation (may need to check FIFO status first)

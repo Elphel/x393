@@ -29,6 +29,7 @@ __maintainer__ = "Andrey Filippov"
 __email__ = "andrey@elphel.com"
 __status__ = "Development"
 import sys
+import pickle
 #import x393_mem
 #x393_pio_sequences
 #from import_verilog_parameters import VerilogParameters
@@ -2973,6 +2974,11 @@ class X393McntrlAdjust(object):
                               'keep_all':False,
                               'set_table':True,
                               'quiet':quiet+1}},
+                    {'key':'S',
+                    'func':self.save_mcntrl,
+                    'comment':'Save current state as Python pickle',
+                    'params':{'path': None, # use path defined by the parameter 'PICKLE'
+                              'quiet':quiet+1}},
                     {'key':'Z',
                     'func':self.show_all_vs_phase,
                     'comment':'Printing results table (delays and errors vs. phase)- all, including invalid phases',
@@ -3970,3 +3976,40 @@ class X393McntrlAdjust(object):
                             keep_all=keep_all,
                             set_table=False,
                             quiet=2)    
+    def save_mcntrl(self,
+                    path=None,
+                    quiet=1):
+        """
+        Save memory controller delays measuremnt/adjustment state to file
+        @param path location to save state or None to use path defined by parameter PICKLE
+        @return None, raises exception if path is not provided and PICKLE is not defined
+        """
+        if path is None:
+            try:
+                path=vrlg.PICKLE
+            except:
+                raise Exception ("path is not provided and Verilog parameter PICKLE is not defined")
+        pickle.dump(self.adjustment_state, open(path, "wb" ))
+        if quiet <2:
+            print ("mcntrl state (self.adjustment_state) is saved to %s"%(path))
+        
+    def load_mcntrl(self,
+                    path=None,
+                    quiet=1):
+        """
+        Load memory controller delays measuremnt/adjustment state from file
+        @param path location to load state from or None to use path defined by parameter PICKLE
+        @return None, raises exception if path is not provided and PICKLE is not defined
+        """
+        if path is None:
+            try:
+                path=vrlg.PICKLE
+            except:
+                raise Exception ("path is not provided and Verilog parameter PICKLE is not defined")
+        self.adjustment_state=pickle.load(open(path, "rb" ))
+        if quiet <2:
+            print ("mcntrl state (self.adjustment_state) is loaded from %s"%(path))
+            if quiet<1:
+                print ("self.adjustment_state=",self.adjustment_state)
+            
+            

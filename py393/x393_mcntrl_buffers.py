@@ -39,6 +39,8 @@ import x393_axi_control_status
 #from verilog_utils import hx, concat, bits, getParWidth 
 #from verilog_utils import concat, getParWidth
 #from x393_axi_control_status import concat, bits
+from verilog_utils import convert_w32_to_mem16 #,convert_mem16_to_w32
+
 import vrlg 
 class X393McntrlBuffers(object):
     DRY_MODE= True # True
@@ -167,19 +169,41 @@ class X393McntrlBuffers(object):
                        show_rslt=True):
         """
         Fill buffer the incremental data (each next register is written with previous register data + 1
-        <start_word_address> full register address in AXI space (in 32-bit words, not bytes)
-        <num_read>           number of 32-bit words to read
-        <show_rslt>          print buffer data read
+        @param start_word_address full register address in AXI space (in 32-bit words, not bytes)
+        @param num_read           number of 32-bit words to read
+        @param show_rslt          print buffer data read 1 - column, 16 - as 16-bit (memory words), 32 - as 32-bit (data words)
         """
         
-        if (self.verbose>1) or show_rslt:
+        if (self.verbose>1) or (show_rslt==1):
             print("**** read_block_buf, start_word_address=0x%x, num_read=0x%x "%(start_word_address,num_read))
         result=[]    
         for i in range(num_read): #for (i = 0; i < num_read; i = i + 16) begin
             d=self.x393_mem.axi_read_addr_w(start_word_address+i)
-            if (self.verbose>2) or show_rslt:
+            if (self.verbose>2) or (show_rslt==1):
                 print("     read_block_buf 0x%x:0x%x"%(start_word_address+i,d))
             result.append(d)
+        if show_rslt==16:
+            rslt16=convert_w32_to_mem16(result)
+            sum_read16=0
+            for d in rslt16:
+                sum_read16+=d
+            print("read16 (0x%x):"%(sum_read16),end="")
+            for i in range(len(rslt16)):
+                if (i & 0x1f) == 0:
+                    print("\n%03x:"%i,end=" ")
+                print("%04x"%rslt16[i],end=" ")
+            print("\n")
+        elif show_rslt==32:
+            sum_rd_buf=0
+            for d in result:
+                sum_rd_buf+=d
+            print("read buffer: (0x%x):"%(sum_rd_buf),end="")
+            for i in range(len(result)):
+                if (i & 0xf) == 0:
+                    print("\n%03x:"%i,end=" ")
+                print("%08x"%result[i],end=" ")
+            print("\n")        
+
         return result
 
     def read_block_buf_chn(self,  # S uppressThisWarning VEditor : may be unused
@@ -189,10 +213,10 @@ class X393McntrlBuffers(object):
                            show_rslt=True):
         """
         Fill buffer the incremental data (each next register is written with previous register data + 1
-        <chn>                4-bit buffer channel (0..4) to read from
-        <page>               2-bit buffer page to read from
-        <num_read>           number of 32-bit words to read
-        <show_rslt>          print buffer data read
+        @param chn                4-bit buffer channel (0..4) to read from
+        @param page               2-bit buffer page to read from
+        @param num_read           number of 32-bit words to read
+        @param show_rslt          print buffer data read 1 - column, 16 - as 16-bit (memory words), 32 - as 32-bit (data words)
         """
         start_addr=-1
         if   chn==0:  start_addr=vrlg.MCONTR_BUF0_RD_ADDR + (page << 8)
