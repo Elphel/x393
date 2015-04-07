@@ -32,6 +32,7 @@ __status__ = "Development"
 #import x393_mem
 #x393_pio_sequences
 #from import_verilog_parameters import VerilogParameters
+from x393_mcntrl_timing      import X393McntrlTiming
 from x393_mem import X393Mem
 #from x393_axi_control_status import X393AxiControlStatus
 import x393_axi_control_status
@@ -48,6 +49,7 @@ class X393PIOSequences(object):
 #    vpars=None
     x393_mem=None
     x393_axi_tasks=None #x393X393AxiControlStatus
+    x393_mcntrl_timing=None
     target_phase=0 # TODO: set!
     def __init__(self, debug_mode=1,dry_mode=True):
         self.DEBUG_MODE=debug_mode
@@ -56,6 +58,7 @@ class X393PIOSequences(object):
 #        self.x393_axi_tasks=X393AxiControlStatus(debug_mode,dry_mode)
         self.x393_axi_tasks=x393_axi_control_status.X393AxiControlStatus(debug_mode,dry_mode)
         self.x393_mcntrl_buffers= X393McntrlBuffers(debug_mode,dry_mode)
+        self.x393_mcntrl_timing=  X393McntrlTiming(debug_mode,dry_mode)
 #        self.__dict__.update(VerilogParameters.__dict__["_VerilogParameters__shared_state"]) # Add verilog parameters to the class namespace
         '''
         Maybe import parameters into the module, not class namespace to use directly, w/o self. ?
@@ -911,6 +914,44 @@ class X393PIOSequences(object):
         self.x393_mem.axi_write_single_w(cmd_addr, data, verbose)
         cmd_addr += 1
 
+    def set_all_sequences(self, quiet=1):
+        """
+        Set all sequences:  MRS, REFRESH, WRITE LEVELLING, READ PATTERN, WRITE BLOCK, READ BLOCK 
+        """
+        if quiet < 3 :
+            print("SET MRS")    
+        self.set_mrs(1) # reset DLL
+        if quiet < 3 :
+            print("SET REFRESH")    
+        self.set_refresh(
+                                            vrlg.T_RFC, # input [ 9:0] t_rfc; # =50 for tCK=2.5ns
+                                            vrlg.T_REFI) #input [ 7:0] t_refi; # 48/97 for normal, 16 - for simulation
+        if quiet < 3:
+            print("SET WRITE LEVELING")    
+        self.set_write_lev(16) # write leveling, 16 times   (full buffer - 128) 
+        if quiet < 3:
+            print("SET READ PATTERNt")    
+        self.set_read_pattern(8) # 8x2*64 bits, 32x32 bits to read
+        if quiet < 3:
+            print("SET WRITE BLOCK")    
+        self.set_write_block(
+                                                5,        # 3'h5,     # bank
+                                                0x1234,   # 15'h1234, # row address
+                                                0x100     # 10'h100   # column address
+        )
+           
+        if quiet < 3:
+            print("SET READ BLOCK");    
+        self.set_read_block (
+                                                5,      #  3'h5,    # bank
+                                                0x1234, # 15'h1234, # row address
+           
+                                                0x100   # 10'h100   # column address
+        )
+        self.x393_axi_tasks.set_sequences_set(1) # Mark sequences as being set
+
+
+
     def read_pattern(self,
                      num,
                      show_rslt,
@@ -1115,3 +1156,52 @@ class X393PIOSequences(object):
                         wait_complete );          #  wait_complete; # Do not request a newe transaction from the scheduler until previous memory transaction is finished
 # Wait PS PIO sequence DOEN
         self.wait_ps_pio_done(vrlg.DEFAULT_STATUS_MODE, 1 , 2.0); # wait FIFO not half full, sync sequences, timeout 2 sec 
+
+
+
+    def task_set_up(self,
+                    quiet = 1):
+        """
+        Initial setup of the memory controller, including:
+            disable (and reset) memory controller
+            enable memory controller
+            setup status generation in all modules
+            tristate patterns
+            DQS/DQM patterns
+            all sequences
+            channel 0 buffer data
+            I/O delays
+            clock phase
+            write buffer latency
+        <set_per_pin_delays> - 1 - set individual (per-pin) I/O delays, 0 - use common for the whole class
+        Returns 1 if phase was set, 0 if it failed         
+        """
+#reset memory controller
+        self.x393_axi_tasks.enable_memcntrl(0)
+#enable memory controller
+        self.x393_axi_tasks.enable_memcntrl(1)
+#program status for all used modules to refresh at any bit change        
+        self.x393_axi_tasks.program_status_all(3, 0)
+# set dq /dqs tristate on/off patterns
+        self.x393_mcntrl_timing.axi_set_tristate_patterns()
+# set patterns for DM (always 0) and DQS - always the same (may try different for write lev.)
+        self.x393_mcntrl_timing.axi_set_dqs_dqm_patterns()
+# prepare all sequences
+        self.set_all_sequences(quiet)
+# prepare write buffer    
+        self.x393_mcntrl_buffers.write_block_buf_chn(0,0,256,quiet); # fill block memory (channel, page, number)
+# set all delays
+# Make it an only option TODO: do the same for the simulation!!
+        self.x393_mcntrl_timing.axi_set_delays() # set all individual delays, aslo runs axi_set_phase()
+# set clock phase relative to DDR clk
+#phase already set in axi_set_delays
+#        print("Debugging: sleeping for 1 second")
+#        sleep(1)
+#        phaseOK=self.x393_mcntrl_timing.axi_set_phase(vrlg.DLY_PHASE,wait_phase_en=True); # wait for phase set
+#        if not phaseOK:
+#            print("Failed to set clock phase")
+#            return 0
+# read and print status (optional)
+        self.x393_mcntrl_timing.axi_set_wbuf_delay(vrlg.WBUF_DLY_DFLT)
+        self.x393_axi_tasks.read_all_status()
+        return 1

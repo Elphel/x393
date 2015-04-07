@@ -105,6 +105,7 @@ class X393McntrlTests(object):
                        ((0,1)[write_mem],1), # write_mem,
                        ((0,1)[enable],   1), #enable,
                        ((1,0)[chn_reset],1)) # ~chn_reset};
+    '''    
     def task_set_up(self,
                     set_per_pin_delays=0):
         """
@@ -121,7 +122,7 @@ class X393McntrlTests(object):
             write buffer latency
         <set_per_pin_delays> - 1 - set individual (per-pin) I/O delays, 0 - use common for the whole class
         Returns 1 if phase was set, 0 if it failed         
-        """
+        
 #reset memory controller
         self.x393_axi_tasks.enable_memcntrl(0)
 #enable memory controller
@@ -133,7 +134,7 @@ class X393McntrlTests(object):
 # set patterns for DM (always 0) and DQS - always the same (may try different for write lev.)
         self.x393_mcntrl_timing.axi_set_dqs_dqm_patterns()
 # prepare all sequences
-        self.set_all_sequences()
+        self.x393_pio_sequences.set_all_sequences()
 # prepare write buffer    
         self.x393_mcntrl_buffers.write_block_buf_chn(0,0,256); # fill block memory (channel, page, number)
 # set all delays
@@ -159,36 +160,8 @@ class X393McntrlTests(object):
         self.x393_mcntrl_timing.axi_set_wbuf_delay(vrlg.WBUF_DLY_DFLT)
         self.x393_axi_tasks.read_all_status()
         return 1
-        
-    def set_all_sequences(self):
-        """
-        Set all sequences:  MRS, REFRESH, WRITE LEVELLING, READ PATTERN, WRITE BLOCK, READ BLOCK 
-        """
-        if self.verbose>0: print("SET MRS")    
-        self.x393_pio_sequences.set_mrs(1) # reset DLL
-        if self.verbose>0: print("SET REFRESH")    
-        self.x393_pio_sequences.set_refresh(
-                                            vrlg.T_RFC, # input [ 9:0] t_rfc; # =50 for tCK=2.5ns
-                                            vrlg.T_REFI) #input [ 7:0] t_refi; # 48/97 for normal, 16 - for simulation
-        if self.verbose>0: print("SET WRITE LEVELING")    
-        self.x393_pio_sequences.set_write_lev(16) # write leveling, 16 times   (full buffer - 128) 
-        if self.verbose>0: print("SET READ PATTERNt")    
-        self.x393_pio_sequences.set_read_pattern(8) # 8x2*64 bits, 32x32 bits to read
-        if self.verbose>0: print("SET WRITE BLOCK")    
-        self.x393_pio_sequences.set_write_block(
-                                                5,        # 3'h5,     # bank
-                                                0x1234,   # 15'h1234, # row address
-                                                0x100     # 10'h100   # column address
-        )
+    ''' 
            
-        if self.verbose>0: print("SET READ BLOCK");    
-        self.x393_pio_sequences.set_read_block (
-                                                5,      #  3'h5,    # bank
-                                                0x1234, # 15'h1234, # row address
-           
-                                                0x100   # 10'h100   # column address
-        )
-        self.x393_axi_tasks.set_sequences_set(1) # Mark sequences as being set
     def init_ddr3(self,
                   refresh=1,
                   wait_complete=True):

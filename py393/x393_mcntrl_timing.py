@@ -164,18 +164,18 @@ class X393McntrlTiming(object):
 #        self.x393_axi_tasks.write_contol_register(vrlg.LD_DLY_LANE1_IDELAY + 8,      vrlg.DLY_LANE1_DQS_WLV_IDELAY)
         self.x393_axi_tasks.write_contol_register(vrlg.DLY_SET,0)
 
-    def axi_set_delays(self): #  set all individual delays
+    def axi_set_delays(self,quiet=1): #  set all individual delays
         """
         Set all DDR3 I/O delays to individual parameter-defined values (using default values,
         current ones are supposed to be synchronized)
         """
-        self.axi_set_dq_idelay()
-        self.axi_set_dqs_idelay()
-        self.axi_set_dq_odelay()
-        self.axi_set_dqs_odelay()
-        self.axi_set_dm_odelay()
-        self.axi_set_cmda_odelay()
-        self.axi_set_phase()
+        self.axi_set_dq_idelay(quiet=quiet)
+        self.axi_set_dqs_idelay(quiet=quiet)
+        self.axi_set_dq_odelay(quiet=quiet)
+        self.axi_set_dqs_odelay(quiet=quiet)
+        self.axi_set_dm_odelay(quiet=quiet)
+        self.axi_set_cmda_odelay(quiet=quiet)
+        self.axi_set_phase(quiet=quiet)
         
     def axi_set_dq_idelay(self,   #  sets same delay to all dq idelay
                           delay=None, # input [7:0] delay;

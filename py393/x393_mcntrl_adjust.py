@@ -2838,7 +2838,7 @@ class X393McntrlAdjust(object):
         return cmd_odelay              
 
     def measure_all(self,
-                    tasks="CWRPOAZ",
+                    tasks="ICWRPOASZ",
                     prim_steps=1,
                     primary_set_in=2,
                     primary_set_out=2,
@@ -2869,9 +2869,14 @@ class X393McntrlAdjust(object):
         safe_phase=0.25 # 0: strictly follow cmda_odelay, >0 -program with this fraction of clk period from the margin
         commonFine=True, # use same values for fine delay for address/bank lines
         addr_odly_max_err= 0.125 # 1/8 period
+        task_data=[
+                   {'key':'I',
+                    'func':self.x393_pio_sequences.task_set_up,
+                    'comment':'Initial setup - memory controller, sequnces',
+                    'params':{'quiet':quiet+1}},
 
 
-        task_data=[{'key':'C',
+                   {'key':'C',
                     'func':self.adjust_cmda_odelay,
                     'comment':'Measuring CMDA output delay for each clock phase',
                     'params':{'start_phase':0,
@@ -2956,7 +2961,18 @@ class X393McntrlAdjust(object):
                     'params':{'commonFine':commonFine,
                               'max_err':addr_odly_max_err,
                               'quiet':quiet+1}},
-                    
+
+                    {'key':'S',
+                    'func':self.get_delays_vs_phase,
+                    'comment':'Setting calculated delays to global parameters to be used when setting phase',
+                    'params':{'filter_dqo': 2,
+                              'filter_dqi': 2,
+                              'filter_dqso':2,
+                              'filter_dqsi':2,
+                              'filter_cmda':2,
+                              'keep_all':False,
+                              'set_table':True,
+                              'quiet':quiet+1}},
                     {'key':'Z',
                     'func':self.show_all_vs_phase,
                     'comment':'Printing results table (delays and errors vs. phase)- all, including invalid phases',
@@ -3928,8 +3944,8 @@ class X393McntrlAdjust(object):
                                 
                 print()
 
-            if set_table:
-                self.adjustment_state['delays_phase'] = delays_phase
+        if set_table:
+            self.adjustment_state['delays_phase'] = delays_phase
         return delays_phase   
     
     def show_all_vs_phase(self,
