@@ -1,0 +1,7 @@
+-d TARGET_MODE=1
+-f /usr/local/verilog/system_defines.vh
+-f /usr/local/verilog/x393_parameters.vh   /usr/local/verilog/x393_cur_params_target.vh /usr/local/verilog/x393_localparams.vh
+-l /usr/local/verilog/x393_cur_params_target.vh
+-c measure_all "ICWRPOASZ" 1 2 2 3
+-c set_phase_delays 15 'A' 'A' 1 None 0
+-c save
