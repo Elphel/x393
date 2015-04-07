@@ -438,9 +438,9 @@ class X393McntrlTiming(object):
 #        print ("===axi_set_multiple_delays(0x%x,%d,%s"%(reg_addr,number,delay))
         if delay is None: return # Do nothing, that's OK
         if isinstance(delay,(int,long)):
-            delay=(delay,)*number
+            delay=[delay]*number
         if len(delay) < number:
-            delay= delay + (None,)*(number-len(delay)) #
+            delay= delay + [None]*(number-len(delay)) #
         for i, d in enumerate(delay):
             if not d is None:
                 self.x393_axi_tasks.write_contol_register(reg_addr + (offset + i), d)

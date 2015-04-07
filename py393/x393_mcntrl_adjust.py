@@ -224,6 +224,8 @@ class X393McntrlAdjust(object):
         except:
             print("No valid delay data for phase %d is available"%(phase))
             return False
+        if quiet<1:
+            print ("delays=",delays)
 
         try:
             cmda_odly=delays['cmda']
@@ -284,9 +286,11 @@ class X393McntrlAdjust(object):
         if isinstance(cmda_odly,(list,tuple)):
             self.x393_mcntrl_timing.axi_set_address_odelay(combine_delay(cmda_odly[:num_addr]),quiet=quiet)
             self.x393_mcntrl_timing.axi_set_bank_odelay   (combine_delay(cmda_odly[num_addr:num_addr+num_banks]),quiet=quiet)
-            self.x393_mcntrl_timing.axi_set_cmd_odelay    (combine_delay(cmda_odly[num_addr+num_banks]),quiet=quiet) # for now - same delay TODO: upgrade!
-            
-            self.x393_mcntrl_timing.axi_set_cmda_odelay(combine_delay(cmda_odly),quiet=quiet)
+            cmd_dly_data=cmda_odly[num_addr+num_banks:]
+            while len(cmd_dly_data) < 5:
+                cmd_dly_data.append(cmd_dly_data[-1]) # repeat last element (average address/command delay)
+            self.x393_mcntrl_timing.axi_set_cmd_odelay    (combine_delay(cmd_dly_data),quiet=quiet) # for now - same delay TODO: upgrade!
+#            self.x393_mcntrl_timing.axi_set_cmda_odelay(combine_delay(cmda_odly),quiet=quiet)
         else:
             self.x393_mcntrl_timing.axi_set_cmda_odelay(combine_delay(cmda_odly),quiet=quiet)
         if refresh:
@@ -299,8 +303,8 @@ class X393McntrlAdjust(object):
             self.x393_mcntrl_timing.axi_set_dqs_odelay(combine_delay(dqs_odelays),quiet=quiet)
         if not dq_odelays is None:
             self.x393_mcntrl_timing.axi_set_dq_odelay(combine_delay(dq_odelays),quiet=quiet)
-        if refresh:
-            self.x393_axi_tasks.enable_refresh(1)
+#        if refresh: #already set
+#            self.x393_axi_tasks.enable_refresh(1)
         return True
 
     def adjust_cmda_odelay(self,
@@ -320,6 +324,7 @@ class X393McntrlAdjust(object):
         @param max_phase_err maximal phase error for command and address line as a fraction of SDCLK period to consider
         @param quiet reduce output
         """
+        nbursts=16
         start_phase &= 0xff
         if start_phase >=128:
             start_phase -= 256 # -128..+127
@@ -338,13 +343,13 @@ class X393McntrlAdjust(object):
             cmda_dly_lin=split_delay(cmda_dly)
             self.x393_mcntrl_timing.axi_set_phase(phase,quiet=quiet)
             self.x393_mcntrl_timing.axi_set_cmda_odelay(cmda_dly,quiet=quiet)
-            wlev_rslt=self.x393_pio_sequences.write_levelling(1, quiet+1)
+            wlev_rslt=self.x393_pio_sequences.write_levelling(1, nbursts, quiet+1)
             if wlev_rslt[2]>wlev_max_bad: # should be 0, if not - Try to recover
                 if quiet <4:
                     print("*** FAILED to read data in write levelling mode, restarting memory device")
                     print("    Retrying with the same cmda_odelay value = 0x%x"%cmda_dly)
                 self.x393_pio_sequences.restart_ddr3()
-                wlev_rslt=self.x393_pio_sequences.write_levelling(1, quiet)
+                wlev_rslt=self.x393_pio_sequences.write_levelling(1,nbursts, quiet)
                 if wlev_rslt[2]>wlev_max_bad: # should be 0, if not - change delay and restart memory
                     cmda_dly_old=cmda_dly
                     if cmda_dly >=recover_cmda_dly_step:
@@ -356,7 +361,7 @@ class X393McntrlAdjust(object):
                         print("    old cmda_odelay= 0x%x, new cmda_odelay =0x%x"%(cmda_dly_old,cmda_dly))
                     self.x393_mcntrl_timing.axi_set_cmda_odelay(cmda_dly,quiet=quiet)
                     self.x393_pio_sequences.restart_ddr3()
-                    wlev_rslt=self.x393_pio_sequences.write_levelling(1, quiet)
+                    wlev_rslt=self.x393_pio_sequences.write_levelling(1, nbursts, quiet)
                     if wlev_rslt[2]>wlev_max_bad: # should be 0, if not - change delay and restart memory
                         raise Exception("Failed to read in write levelling mode after modifying cmda_odelay, aborting")
                     
@@ -366,7 +371,7 @@ class X393McntrlAdjust(object):
                                                            combine_delay(d_high),
                                                            wlev_address_bit,
                                                            quiet=quiet)
-            wlev_rslt=self.x393_pio_sequences.write_levelling(1, quiet+1)
+            wlev_rslt=self.x393_pio_sequences.write_levelling(1, nbursts, quiet+1)
             if not wlev_rslt[2]>wlev_max_bad:
                 return  (split_delay(cmda_dly),-1) # even maximal delay is not enough to make rising sdclk separate command from A7
             # find marginal value of a7 delay to spoil write levelling mode
@@ -375,7 +380,7 @@ class X393McntrlAdjust(object):
             while d_high > d_low:
                 dly= (d_high + d_low)//2
                 self.x393_mcntrl_timing.axi_set_address_odelay(combine_delay(dly),wlev_address_bit,quiet=quiet)
-                wlev_rslt=self.x393_pio_sequences.write_levelling(1, quiet+1)
+                wlev_rslt=self.x393_pio_sequences.write_levelling(1, nbursts, quiet+1)
                 if wlev_rslt[2] > wlev_max_bad:
                     d_high=dly
                 else:
@@ -402,6 +407,8 @@ class X393McntrlAdjust(object):
 #        print ("safe_early=%d(0x%x), recover_cmda_dly_step=%d(0x%x)"%(safe_early,safe_early,recover_cmda_dly_step,recover_cmda_dly_step))
         if reinits>0:
             self.x393_pio_sequences.restart_ddr3()
+        else:
+            self.x393_axi_tasks.enable_refresh(0) # if not init, at least turn refresh off!
 
         for phase in range(start_phase,start_phase+numPhaseSteps):
             if quiet <3:
@@ -660,6 +667,7 @@ class X393McntrlAdjust(object):
         Find DQS output delay for each phase value
         Depends on adjust_cmda_odelay results
         """
+        nbursts=16
         try:
             self.adjustment_state['cmda_bspe']
         except:
@@ -673,6 +681,9 @@ class X393McntrlAdjust(object):
         if quiet < 2:
             print("cmda_bspe = %s"%str(self.adjustment_state['cmda_bspe']))
             print ("numPhaseSteps=%d"%(numPhaseSteps))
+            
+        self.x393_pio_sequences.set_write_lev(nbursts) # write leveling, 16 times   (full buffer - 128)
+         
         def wlev_phase_step (phase):
             def norm_wlev(wlev): #change results to invert wlev data
                 if invert:
@@ -689,7 +700,7 @@ class X393McntrlAdjust(object):
             d_low=0
             while d_low <= max_lin_dly:
                 self.x393_mcntrl_timing.axi_set_dqs_odelay(combine_delay(d_low),quiet=quiet)
-                wlev_rslt=norm_wlev(self.x393_pio_sequences.write_levelling(1, quiet+1))
+                wlev_rslt=norm_wlev(self.x393_pio_sequences.write_levelling(1, nbursts, quiet+1))
                 if wlev_rslt[2]>wlev_max_bad: # should be 0 - otherwise wlev did not work (CMDA?)
                     raise Exception("Write levelling gave unespected data, aborting (may be wrong command/address delay, incorrectly initializaed")
                 if (wlev_rslt[0] <= wlev_max_bad) and (wlev_rslt[1] <= wlev_max_bad):
@@ -703,7 +714,7 @@ class X393McntrlAdjust(object):
             d_high= d_low+dly90   
             while d_high <= max_lin_dly:
                 self.x393_mcntrl_timing.axi_set_dqs_odelay(combine_delay(d_high),quiet=quiet)
-                wlev_rslt=norm_wlev(self.x393_pio_sequences.write_levelling(1, quiet+1))
+                wlev_rslt=norm_wlev(self.x393_pio_sequences.write_levelling(1, nbursts, quiet+1))
                 if wlev_rslt[2]>wlev_max_bad: # should be 0 - otherwise wlev did not work (CMDA?)
                     raise Exception("Write levelling gave unespected data, aborting (may be wrong command/address delay, incorrectly initializaed")
                 if (wlev_rslt[0] >= (1.0 -wlev_max_bad)) and (wlev_rslt[1] >= (1.0-wlev_max_bad)):
@@ -720,7 +731,7 @@ class X393McntrlAdjust(object):
             while d_high > d_low:
                 dly= (d_high + d_low)//2
                 self.x393_mcntrl_timing.axi_set_dqs_odelay(combine_delay(dly),quiet=quiet)
-                wlev_rslt=norm_wlev(self.x393_pio_sequences.write_levelling(1, quiet+1))
+                wlev_rslt=norm_wlev(self.x393_pio_sequences.write_levelling(1, nbursts, quiet+1))
                 if wlev_rslt[2]>wlev_max_bad: # should be 0 - otherwise wlev did not work (CMDA?)
                     raise Exception("Write levelling gave unespected data, aborting (may be wrong command/address delay, incorrectly initializaed")
                 if (wlev_rslt[0] <= wlev_max_bad) and (wlev_rslt[1] <= wlev_max_bad):
@@ -744,7 +755,7 @@ class X393McntrlAdjust(object):
                     dly01=[d_low[0],d_low[1]]
                     dly01[i]=dly
                     self.x393_mcntrl_timing.axi_set_dqs_odelay(combine_delay(dly01),quiet=quiet)
-                    wlev_rslt=norm_wlev(self.x393_pio_sequences.write_levelling(1, quiet+1))
+                    wlev_rslt=norm_wlev(self.x393_pio_sequences.write_levelling(1, nbursts, quiet+1))
                     if wlev_rslt[2]>wlev_max_bad: # should be 0 - otherwise wlev did not work (CMDA?)
                         raise Exception("Write levelling gave unespected data, aborting (may be wrong command/address delay, incorrectly initializaed")
                     if wlev_rslt[i] <= wlev_max_bad:
@@ -2286,7 +2297,7 @@ class X393McntrlAdjust(object):
                 print("%d %s %s"%(phase,str(dly),str(ldly)))
         
         dly_try_step=NUM_FINE_STEPS # how far to step when looking for zero crossing (from predicted)
-        phase_try_step=numPhaseSteps//8 # when searching for marginal delay, wry not optimal+perid/2 but smaller step to accommodate per-bit variations
+        phase_try_step=numPhaseSteps//8 # when searching for marginal delay, try not optimal+perid/2 but smaller step to accommodate per-bit variations
         good_patt=0xaaaa
         bad_patt = good_patt ^ 0xffff
         # make sure delay data is available
@@ -2521,7 +2532,7 @@ class X393McntrlAdjust(object):
             addr_odelay.append(addr_phase_step(phase))
         if quiet < 6:
             print ()
-        self.adjustment_state['addr_odelay_meas']=addr_odelay
+#        self.adjustment_state['addr_odelay_meas']=addr_odelay
         if quiet < 3:
             for phase, adly in enumerate(addr_odelay):
                 print("%d"%(phase),end=" ")
@@ -2534,7 +2545,297 @@ class X393McntrlAdjust(object):
                             print("?",end=" ")
                 print()
         return addr_odelay              
+
+    def measure_cmd_odelay(self,
+                           safe_phase=0.25, # 0 strictly follow cmda_odelay, >0 -program with this fraction of clk period from the margin
+                           reinits=1,
+                           tryWrongWlev=1, # try wrong write levelling mode to make sure device is not stuck in write levelling mode 
+                           quiet=0):
+        """
+        Measure output delay on 3 command lines - WE, RAS and CAS, only for high-low transitions as controller
+        keeps these lines at high (inactive) level all the time but the command itself.
+        Scanning is performed with refresh off, one bit at a time in write levelling mode and DQS output delay set
+        1/4 later than nominal, so 0x01010101 pattern is supposed to be read on all bits. If it is not (usually just 0xffffffff-s)
+        the command bit is wrong. After each test one read with normal delay is done to make sure the write levelling mode is
+        turned off - during write levelling mode it is turned on first, then off and marginal command bit delay may cause
+        write levelling to turn on, but not off 
+        """
+#        self.load_hardcoded_data() # TODO: ******** TEMPORARY - remove later
+        nrep=4 #16 # number of 8-bursts in write levelling mode
+        margin_error=0.1 # put 0.0? - how high wlev error can be to accept 
+        cmd_bits=(0,1,2) # WE, RAS, CAS
+        if not "cmda_bspe" in self.adjustment_state:
+            raise Exception ("No cmda_odelay data is available. 'adjust_cmda_odelay 0 1 0.1 3' command should run first.")
+        dly_steps=self.x393_mcntrl_timing.get_dly_steps()
+        numPhaseSteps= int(dly_steps['SDCLK_PERIOD']/dly_steps['PHASE_STEP']+0.5)
+        #create a list of None/optimal cmda determined earlier
+        cmda_odly=     [None if (self.adjustment_state['cmda_bspe'][phase] is None) else self.adjustment_state['cmda_bspe'][phase]['ldly'] for phase in range(numPhaseSteps)]
+        if safe_phase:
+            cmda_odly_zerr=[None if (self.adjustment_state['cmda_bspe'][phase] is None) else self.adjustment_state['cmda_bspe'][phase]['zerr'] for phase in range(numPhaseSteps)]
+            cmda_odly_early=[]
+            for phase,zerr in enumerate (cmda_odly_zerr):
+                if (not zerr is None) and (zerr < 0.5-safe_phase):
+                    cmda_odly_early.append(0)
+                else:
+                    cmda_odly_early.append(cmda_odly[phase])
+        else:
+            cmda_odly_early=cmda_odly
+        #get write levellimg data
+        if not "wlev_dqs_bspe" in self.adjustment_state:
+            raise Exception ("No wlev_dqs_bspe data is available, this method should run after write levelling")
+        wlev_odly=[]
+        for wlev_data in self.adjustment_state['wlev_dqs_bspe']:
+            wlev_odly.append([None if (wlev_data[phase] is None) else wlev_data[phase]['ldly'] for phase in range(numPhaseSteps)])
+        if quiet <1:    
+            print("wlev_odly=",wlev_odly)
+        #fill gaps (if any - currently none
+        if quiet <1:
+            #simulate
+            wlev_odly[0][5]=None
+            wlev_odly[1][3]=None
+            print("wlev_odly=",wlev_odly)
+        for wlev_lane in wlev_odly:
+            for phase in range(numPhaseSteps):
+                if wlev_lane[phase] is None:
+                    otherPhase=None
+                    for p in range(phase-numPhaseSteps/8,phase+numPhaseSteps/8+1):
+                        if not wlev_lane[p % numPhaseSteps] is None:
+                            if (otherPhase is None) or (abs(phase-p) < abs(phase-otherPhase)):
+                                otherPhase=p
+                    if not otherPhase is None:
+                        print ("phase=",phase,", otherPhase=",otherPhase)
+                        wlev_lane[phase]=wlev_lane[otherPhase % numPhaseSteps]
+        if quiet <1:    
+            print("wlev_odly=",wlev_odly)
+        #shift by 90 degrees
+        wlev_odly_late=[]
+        for wlev_lane in wlev_odly:
+            wlev_odly_late.append(wlev_lane[3*numPhaseSteps//4:]+wlev_lane[:3*numPhaseSteps//4])
+        if quiet <1:    
+            print("wlev_odly_late=",wlev_odly_late)
+        if quiet <1:
+            for phase,dly in enumerate(cmda_odly):
+                ldly=None
+                if not self.adjustment_state['cmda_bspe'][phase] is None:
+                    ldly=self.adjustment_state['cmda_bspe'][phase]['ldly']
+                print("%d %s %s"%(phase,str(dly),str(ldly)))
+        
+        dly_try_step=NUM_FINE_STEPS # how far to step when looking for zero crossing (from predicted)
+        phase_try_step=numPhaseSteps//8 # when searching for marginal delay, try not optimal+perid/2 but smaller step to accommodate per-bit variations
+        #turn off refresh - it will not be needed in this test 
+        if reinits > 0:
+            self.x393_pio_sequences.restart_ddr3()
+        else:
+            self.x393_axi_tasks.enable_refresh(0) # if not init, at least turn refresh off!
+        self.x393_pio_sequences.set_write_lev(nrep,False) # write leveling - 'good' mode 
+        
+        def set_delays_with_reinit(phase,
+                                   restart=False):
+            """
+            Re-initialize memory device if it stopped responding
+            """
+            if restart:
+                if quiet < 2:
+                    print ('Re-initializing memory device after failure, phase=%d'%(phase))
+                    
+                self.x393_pio_sequences.restart_ddr3()
+            if cmda_odly_early[phase] is None:
+                if quiet < 2:
+                    print ('No good cmda_odly_early delays for phase = %d'%(phase))
+                return None
+            dly_wlev=(wlev_odly_late[0][phase],wlev_odly_late[1][phase])
+            if None in dly_wlev:
+                if quiet < 2:
+                    print ('No good late write levellilng DQS output delays for phase = %d'%(phase))
+                return None
+            # no need to set any other delays but cmda and dqs odelay?
+            #just set phase!
+            self.x393_mcntrl_timing.axi_set_phase(phase,quiet=quiet)
+            self.x393_mcntrl_timing.axi_set_cmda_odelay(combine_delay(cmda_odly_early[phase]),None, quiet=quiet)
+            # set DQS odelays  to get write levelling pattern
+            self.x393_mcntrl_timing.axi_set_dqs_odelay(combine_delay(dly_wlev), quiet=quiet)
+            #Verify wlev is OK
+            wl_rslt=self.x393_pio_sequences.write_levelling(1, nrep, quiet)
+            if wl_rslt[2] > margin_error:
+                self.x393_pio_sequences.set_write_lev(nrep,False) # write leveling - 'good' mode (if it was not set so) 
+            
+            wl_rslt=self.x393_pio_sequences.write_levelling(1, nrep, quiet)
+            if wl_rslt[2] > margin_error:
+                if not restart:
+                    set_delays_with_reinit(phase=phase,restart=True) # try with reinitialization
+                else:
+                    raise Exception ("set_delays_with_reinit failed to read with safe delays for phase=%d after re-initializing device, wl_rslt=%s"%
+                                     (phase,str(wl_rslt)))
+            return cmda_odly_early[phase] # safe command/adderss delay
+                
+        def cmd_phase_step(phase):
+            def measure_block(dly,
+                              cmd_bit,
+                              force_meas=False):
+                if (meas_cache[dly] is None) or force_meas:
+                    #set same delays for all cmda bits   (should be already done with 'set_phase_with_refresh'
+                    self.x393_mcntrl_timing.axi_set_cmd_odelay(combine_delay(cmda_odly_early[phase]),None,   quiet=quiet)
+                    self.x393_mcntrl_timing.axi_set_cmd_odelay(combine_delay(dly),     cmd_bit,quiet=quiet)
+                    if quiet < 1:
+                        print ('measure_block(%d,%d,%d,%d,%s) - new measurement'%(dly,cmda_odly_early[phase],cmd_bit,phase,str(force_meas)))
                         
+                    self.x393_pio_sequences.manual_refresh() # run refresh that sets address bit to opposite values to the required row+bank address
+                    wl_rslt=self.x393_pio_sequences.write_levelling(1, nrep, quiet)
+                    meas= not (wl_rslt[2] > margin_error) # not so many errors (normally should be just 0
+                    meas_cache[dly]=meas
+                    # now reset command bit delay and make sure it worked
+                    self.x393_mcntrl_timing.axi_set_cmd_odelay(combine_delay(cmda_odly_early[phase]),None,   quiet=quiet)
+                    wl_rslt=self.x393_pio_sequences.write_levelling(1, nrep,  quiet)
+                    
+                    if wl_rslt[2] > margin_error:
+                        if quiet < 2:
+                            print ("measure_block failed to re-read with safe delays for phase=%d, cmd_bit=%d. Resetting memory device, wl_rslt=%s"%(phase,cmd_bit,str(wl_rslt)))
+                        set_delays_with_reinit(phase=phase, restart=True)
+                        #retry after re-initialization                        
+                        wl_rslt=self.x393_pio_sequences.write_levelling(1,nrep, quiet)
+                        if wl_rslt[2] > margin_error:
+                            raise Exception ("measure_block failed to re-read with safe delays for phase=%d even after re-initializing device, wl_rslt=%s"%(phase,str(wl_rslt)))
+                    # Now make sure device responds - setup read "wrong" write levelling (no actually turning on wlev mode)
+                    if tryWrongWlev: 
+                        self.x393_pio_sequences.set_write_lev(nrep, True) # 'wrong' write leveling - should not work
+                        wl_rslt=self.x393_pio_sequences.write_levelling(1, nrep, quiet)
+                        #restore normal write levelling mode:
+                        self.x393_pio_sequences.set_write_lev(nrep, False) # 'wrong' write leveling - should not work
+                        if not (wl_rslt[2] > margin_error):
+                            if quiet < 2:
+                                print ("!!! Write levelling mode is stuck (not turning off) for phase=%d, wl_rslt=%s"%(phase,str(wl_rslt)))
+                            set_delays_with_reinit(phase=phase, restart=True) # just do it, no testimng here (wlev mode is already restored
+                    
+                else:
+                    meas=meas_cache[dly]
+                    if quiet < 1:
+                        print ('measure_block(%d,%s) - using cache'%(dly,str(force_meas)))
+                return meas
+            
+            #cmd_phase_step(phase) body
+            if quiet < 1:
+                print ("****** phase=%d ******"%(phase),end=" ")
+#            if delays_phase[phase] is None:
+#                if quiet < 1:
+#                    print ("delays_phase[%d] is None"%(phase))
+#                return None
+            dly_optimal= cmda_odly[phase]
+            if dly_optimal is None:
+                if quiet < 1:
+                    print ("dly_optimal is None")
+                return None
+            # may increase range by using dly_optimal=0 until it is not dangerously late (say only 1/4 period off)
+            phase_marg= (phase+ (numPhaseSteps//2)-phase_try_step) % numPhaseSteps
+            if  cmda_odly[phase_marg] is None:
+                phase_marg_traget=phase_marg
+                phase_marg=None
+                for p in range(numPhaseSteps):
+                    if not cmda_odly[p is None]:
+                        if (phase_marg is None) or (min(abs(p-phase_marg_traget),
+                                                        abs(p-phase_marg_traget+numPhaseSteps),
+                                                        abs(p-phase_marg_traget-numPhaseSteps)) < min(abs(phase_marg-phase_marg_traget),
+                                                                                                      abs(phase_marg-phase_marg_traget+numPhaseSteps),
+                                                                                                      abs(phase_marg-phase_marg_traget-numPhaseSteps))):
+                            phase_marg=p
+                else:
+                    print("BUG: could to find a valid marginal phase")
+                    return None
+            # may increase range by using dly_optimal=0 until it is not dangerously late (say only 1/4 period off)
+            dly_marg = cmda_odly[phase_marg]# - dly_try_step
+            if dly_marg < dly_optimal:
+                if cmda_odly_early[phase] < dly_marg:
+                    dly_optimal=cmda_odly_early[phase]
+                else:
+                    if quiet < 1:
+                        print ("dly_marg (==%d) < dly_optimal (==%d)"%(dly_marg,dly_optimal))
+                    return None # It is not possble to try delay lower than optimal with this method
+                
+            #set phase and all optimal delays for that phase
+            # Maybe it is not needed at all?
+#            self.set_phase_delays(phase=phase,
+#                                 refresh=True,
+#                                 delays_phase=delays_phase,
+#                                 quiet=quiet) # all the rest are defaults
+            dlyOK=set_delays_with_reinit(phase=phase, restart=False) # will check wlev and re-init if required
+            if dlyOK is None:
+                if quiet < 1:
+                    print ("set_delays_with_reinit(%d) failed"%(phase))
+                return None
+            
+            # Now try
+            
+            rslt=[]
+            for cmd_bit in cmd_bits:
+                if quiet < 1 :
+                    print("\n===== phase=%d, dly_optimal=%d, cmd_bit=%d"%(phase, dly_optimal,cmd_bit))
+                set_delays_with_reinit(phase=phase, restart=False) # no need to check results? Maybe remove completely?
+#                set_delays_with_reinit(phase=phase, restart=True) # no need to check results? Maybe remove completely?
+                meas_cache=[None]*NUM_DLY_STEPS # cache for holding results of already measured delays, new cach for each address bit
+                dly=dly_marg
+                dly_low=None #dly
+                dly_high=None# dly
+                
+                while ((dly_low is None) or (dly_high is None)) and (dly > dly_optimal) and (dly < NUM_DLY_STEPS):
+                    meas=measure_block(dly,
+                                  cmd_bit)
+                    if meas :
+                        if dly==(NUM_DLY_STEPS-1):
+                            dly = None
+                            break
+                        dly_low=dly
+                        dly=min(NUM_DLY_STEPS-1,dly+dly_try_step)
+                    else:                        
+                        dly_high=dly
+                        dly=max(dly_optimal,dly-dly_try_step)
+                if quiet < 1 :
+                    print ("dly_low=%s, dly_high=%s, dly=%s"%(str(dly_low),str(dly_high),str(dly)))
+                if (dly_low is None) or (dly_high is None): # dly is None:
+                    rslt.append(None)
+                    continue
+                #find highest delay that is lower than margin (here delay monotonicity is assumed!)
+                while dly_low < (dly_high-1):
+                    dly=(dly_low+dly_high)//2
+                    meas=measure_block(dly,
+                                  cmd_bit)
+                    if meas:
+                        dly_low=dly
+                    else:
+                        dly_high=dly
+                rslt.append(dly_low)
+                if quiet < 1 :
+                    print ("rslt=",rslt)
+            if quiet < 1 :
+                print ("final rslt=",rslt)
+            return rslt     
+
+        cmd_odelay=[]
+        for phase in range(numPhaseSteps):
+            if quiet < 6:
+                print (".",end="")
+                sys.stdout.flush()
+            cmd_odelay.append(cmd_phase_step(phase))
+        if quiet < 6:
+            print ()
+        self.adjustment_state['cmd_meas']=cmd_odelay
+        if quiet < 3:
+            for phase, cdly in enumerate(cmd_odelay):
+                print("%d"%(phase),end=" ")
+                print("%s"%(str(cmda_odly[phase])),end=" ")
+                if cdly:
+                    for b in cdly:
+                        if not b is None:
+                            print("%d"%(b),end=" ")
+                        else:
+                            print("?",end=" ")
+                print()
+        if quiet < 3:
+            print("cmd_meas=",cmd_odelay)    
+
+        # Keeps refresh off?
+        # Restore default write levelling sequence
+        self.x393_pio_sequences.set_write_lev(16,False) # write leveling - 'good' mode (if it was not set so) 
+        
+        return cmd_odelay              
 
     def measure_all(self,
                     tasks="CWRPOAZ",
@@ -2584,6 +2885,13 @@ class X393McntrlAdjust(object):
                               'reinits':1,
                               'invert':0,
                               'max_phase_err':max_phase_err,
+                              'quiet':quiet+1}},
+                   {'key':'A',
+                    'func':self.measure_cmd_odelay,
+                    'comment':'Measuring command (WE, RAS, CAS) lines output delays',
+                    'params':{'safe_phase':safe_phase,
+                              'reinits': 1,
+                              'tryWrongWlev': 1,
                               'quiet':quiet+1}},
                    {'key':'R',
                     'func':self.measure_pattern,
@@ -2696,8 +3004,11 @@ class X393McntrlAdjust(object):
         self.adjustment_state.update(get_test_dq_dqs_data.get_wlev_data())
         self.adjustment_state.update(get_test_dq_dqs_data.get_dqsi_phase())
         
-        self.adjustment_state['addr_odelay_meas']=    get_test_dq_dqs_data.get_addr_meas()
+#        self.adjustment_state['addr_odelay_meas']=    get_test_dq_dqs_data.get_addr_meas()
+        self.adjustment_state['addr_meas']=           get_test_dq_dqs_data.get_addr_meas()
         self.adjustment_state['addr_odelay']=         get_test_dq_dqs_data.get_addr_odly()
+        self.adjustment_state['cmd_meas']=            get_test_dq_dqs_data.get_cmd_meas()
+        
     
     def proc_dqi_dqsi(self,
                        lane="all",
@@ -2931,8 +3242,8 @@ class X393McntrlAdjust(object):
                 print ("'%s':%s,"%(k,str(v)))
             print ("}")
         self.adjustment_state["dqo_dqso"]=rslt         
-
         return rslt
+    
     def proc_addr_odelay(self,
                          commonFine=True, # use same values for fine delay
                          max_err=0.125, # 1/8 period
@@ -2941,10 +3252,24 @@ class X393McntrlAdjust(object):
         Process delay calibration data for address and bank line, calculate delay scales, shift and rise/fall differences.
         Calculate finedelay corrections and finally optimal delay value for each line each phase
         """
-        self.load_hardcoded_data() # TODO: TEMPORARY - remove later
-        addr_odelay=self.adjustment_state['addr_odelay_meas']
+#        self.load_hardcoded_data() # TODO: TEMPORARY - remove later
+        try:
+#            addr_odelay=self.adjustment_state['addr_odelay_meas']
+            addr_odelay=self.adjustment_state['addr_meas']
+        except:
+            print("No measurement data for address and bank lines is available. Please run 'measure_addr_odelay' first or load 'load_hardcoded_data'")
+            return None
+        try:
+            cmd_odelay=self.adjustment_state['cmd_meas']
+        except:
+            print("No measurement data for command (WE,RAS,CAS) lines is available. Please run 'measure_cmd_odelay' first or load 'load_hardcoded_data'")
+            return None
+        numCmdLines=3
+        numABLines=vrlg.ADDRESS_NUMBER+3
+        numLines=  numABLines+numCmdLines
+#        print('addr_odelay=','addr_odelay')
         
-        numLines=vrlg.ADDRESS_NUMBER+3
+        
         dly_steps=self.x393_mcntrl_timing.get_dly_steps()
         numPhaseSteps= int(dly_steps['SDCLK_PERIOD']/dly_steps['PHASE_STEP']+0.5)
         phase_step=1000.0*dly_steps['PHASE_STEP']
@@ -2959,6 +3284,18 @@ class X393McntrlAdjust(object):
             cmda_odly_b=self.adjustment_state["cmda_odly_b"]
         except:
             raise Exception ("No cmda_odly_b is available.")
+        #Combine measurements for address and command lines
+#        print ("cmd_odelay=",cmd_odelay)
+        for phase in range (numPhaseSteps):
+            if (not addr_odelay[0][phase] is None) or (not cmd_odelay[phase] is None):
+                if addr_odelay[0][phase] is None:
+                    addr_odelay[0][phase]=[None]*numABLines
+                if cmd_odelay[phase] is None:
+                    cmd_odelay[phase]=[None]*numCmdLines
+                addr_odelay[0][phase] += cmd_odelay[phase]
+            if not addr_odelay[1][phase] is None:
+                addr_odelay[1][phase] += [None]*numCmdLines
+        
         tSA=-clk_period/(numPhaseSteps*cmda_odly_a) # positive 
         variantStep=-cmda_odly_a*numPhaseSteps #how much b changes when moving over the full SDCLK period
         tA=cmda_odly_b*tSA-clk_period/2
@@ -3009,6 +3346,7 @@ class X393McntrlAdjust(object):
             
             for edge,pol_data in enumerate(addr_odelay): 
                 for phase, phase_data in enumerate(pol_data):
+#                    print("##### ",phase,phase_data)
                     if (not phase_data is None) and (not phase_data[indx] is None):
                         dly=phase_data[indx]
 #                        y=-(phase_step*phase+tAF5C[dly %NUM_FINE_STEPS])
@@ -3028,7 +3366,7 @@ class X393McntrlAdjust(object):
                         s01[edge]+=diff
                         n01[edge]+=1
                         if quiet <1:
-                            print("%d %d %f %f %f"%(phase,dly,y,diff0,diff))
+                            print("%d %d %d %f %f %f"%(edge, phase,dly,y,diff0,diff))
             avgF=0.0
             for i in range (NUM_FINE_STEPS):
                 if nAF5[i]:
@@ -3038,6 +3376,8 @@ class X393McntrlAdjust(object):
             for edge in range(len(addr_odelay)):
                 if n01[edge]:
                     s01[edge] /= n01[edge]
+                else:
+                    s01[edge] = None # commands have onl;y one edge tested
                       
                                
             if quiet <2:
@@ -3053,7 +3393,10 @@ class X393McntrlAdjust(object):
                 print ("tAF4=",parameters['tAF'][4*indx:4*(indx+1)], "(old)")
             parameters['tSA'][indx] = (SXY*S0 - SY*SX) / (SX2*S0 - SX*SX)
             parameters['tA'][indx] =  - (SY*SX2 - SXY*SX) / (SX2*S0 - SX*SX)
-            parameters['tAHL'][indx] =  2*(s01[0]-s01[1])
+            try:
+                parameters['tAHL'][indx] =  2*(s01[0]-s01[1])
+            except:
+                parameters['tAHL'][indx] = None
             if corrFine:
                 for i in range (NUM_FINE_STEPS-1):
 #                    parameters['tAF'][(NUM_FINE_STEPS-1)*indx+i] += sAF5[i] - avgF
@@ -3098,6 +3441,7 @@ class X393McntrlAdjust(object):
             
             """
             avg_index=numLines # len(parameters['tA'])-1
+            num_items=numLines+1
             s_avg=parameters['tSA'][avg_index]
             t_avg= parameters['tA'][avg_index]-phase_step*phase - clk_period/2
             periods=0
@@ -3117,8 +3461,13 @@ class X393McntrlAdjust(object):
             worst_err=0 #
             if quiet < 1:
                 print ("Phase=%d"%(phase))
+
+#            print("num_items=",num_items)
+#            print("len(parameters['tA'])=",len(parameters['tA']))
+#           print("len(parameters['tSA'])=",len(parameters['tSA']))
+#            print("len(parameters['tAF'])=",len(parameters['tAF']))
  
-            for line in range(numLines): #+1):
+            for line in range(num_items): #+1):
                 tAF5=parameters['tAF'][(NUM_FINE_STEPS-1)*line:(NUM_FINE_STEPS-1)*(line+1)]
                 tAF5.append(-sum(tAF5))
                 best_dly=None
@@ -3127,7 +3476,15 @@ class X393McntrlAdjust(object):
                     dbg_dly=[]
                 for dly in range (NUM_DLY_STEPS):
                     #TODO: verify finedelay polarity
-                    t_dly=parameters['tA'][line]-parameters['tSA'][line]*dly -phase_step*phase - clk_period/2 + tAF5[dly %NUM_FINE_STEPS] + periods*clk_period
+                    try:
+                        t_dly=parameters['tA'][line]-parameters['tSA'][line]*dly -phase_step*phase - clk_period/2 + tAF5[dly %NUM_FINE_STEPS] + periods*clk_period
+                    except:
+                        print ("line=",line)
+                        print ("parameters['tA']=",parameters['tA'])
+                        print ("parameters['tSA']=",parameters['tSA'])
+                        print ("tAF5=",tAF5)
+                        
+                        raise Exception("That's all")
 #                    t_dly=parameters['tA'][line]-parameters['tSA'][line]*dly -phase_step*phase - clk_period/2 - tAF5[dly %NUM_FINE_STEPS] + periods*clk_period
                     if quiet < 1:
                         dbg_dly.append(t_dly)
@@ -3169,9 +3526,25 @@ class X393McntrlAdjust(object):
                 for _ in range (2):
                     proc_addr_step(line,0,1)
         # Calculate average parameters (to be used for command bits until found better measurement for them:
-        parameters['tAFW'] += average_finedelays()[:NUM_FINE_STEPS-1] # do only once - increases length of parameters items
+#        print ("0:len(parameters['tAFW'])=",len(parameters['tAFW']))
+        parameters['tAF'] += average_finedelays()[:NUM_FINE_STEPS-1] # do only once - increases length of parameters items
+#        print ("1:len(parameters['tAFW'])=",len(parameters['tAFW']))
         for k in ("tSA",'tA','tAHL'):
-            parameters[k].append(sum(parameters[k])/numLines)
+            try:
+                parameters[k].append(sum(parameters[k])/numLines)
+            except:
+                s=0.0
+                n=0
+                for d in parameters[k]:
+                    if not d is None:
+                        s+=d
+                        n+=1
+                if n>0:
+                    parameters[k].append(s/n)
+                else:
+                    parameters[k].append(None)        
+        tAF5A=average_finedelays()
+
         if quiet<3:
             print ("parameters=",parameters)
                 
@@ -3201,24 +3574,11 @@ class X393McntrlAdjust(object):
             print("'dlys': ",rslt['dlys'],",")
             print("'err': ",rslt['err'])
             print("}")
+        if quiet<3:
+            print ("parameters=",parameters)
         self.adjustment_state['addr_odelay']= rslt                     
         return rslt  
                     
-                        
-                        
-                        
-
-            
-        """
-        proc_addr_odelay 3
-        proc_addr_odelay 0
-        dt=phase_step*phase+tA+tSA*dly+tAF5[dly %NUM_FINE_STEPS]
-        tSA* dly +tA =-(phase_step*phase+tAF5[dly %NUM_FINE_STEPS])
-        a <-> tSA,
-        b <-> tA,
-        y <->-(phase_step*phase+tAF5C[dly %NUM_FINE_STEPS]) tAF5C should include 0.5 of the step between this and next 
-        
-        """
     def get_delays_vs_phase(self,
                             filter_dqo=2,
                             filter_dqi=2,
@@ -3250,6 +3610,7 @@ class X393McntrlAdjust(object):
 #        self.load_hardcoded_data() # TODO: REMOVE LATER
         num_addr=vrlg.ADDRESS_NUMBER
         num_banks=3
+#        num_cmd=3 # (we,ras,cas,cke,odt)
         rslt_names=("early","nominal","late")
         timing=self.x393_mcntrl_timing.get_dly_steps()
         numPhaseSteps= int(timing['SDCLK_PERIOD']/timing['PHASE_STEP']+0.5)
@@ -3389,15 +3750,6 @@ class X393McntrlAdjust(object):
                     elif not keep_all:            
                         delays_phase[phase]=None
                         continue # next phase
-                    """
-                        
-                            delays_phase[phase]['in']=k # found solution
-                            delays_phase[phase]['dqi']=dqi
-                            break
-                    else:
-                        delays_phase[phase]=None # phase for at least one of the DQSI is invalid
-                        continue # next phase
-                    """       
             if filter_dqo:
                 dqso=[None if wlev_lane[phase] is None else wlev_lane[phase]['ldly'] for wlev_lane in wlev_dqs_bspe]
                 if (None in dqso) and (not keep_all):
@@ -3422,14 +3774,6 @@ class X393McntrlAdjust(object):
                     elif not keep_all:            
                         delays_phase[phase]=None
                         continue # next phase
-                    """
-                            delays_phase[phase]['out']=k # found solution
-                            delays_phase[phase]['dqo']=dqo
-                            break
-                    else:
-                        delays_phase[phase]=None # phase for at least one of the DQSI is invalid
-                        continue # next phase
-                    """
         if quiet <1:
             print("delays_phase=",delays_phase)
         if quiet < 2:
@@ -3502,7 +3846,8 @@ class X393McntrlAdjust(object):
                     print("A%d"%(i),end=" ")
                 for i in range(num_banks):
                     print("BA%d"%(i),end=" ")
-                print("RCW",end=" ") # TODO - modify when separate command line data will be available
+                print ("WE RAS CAS AVG", end=" ") # AVG - average for address,  banks, RCW
+#                print("RCW",end=" ") # TODO - modify when separate command line data will be available
 #        num_addr=vrlg.ADDRESS_NUMBER
 #        num_banks=3
             for lane in range(numLanes):

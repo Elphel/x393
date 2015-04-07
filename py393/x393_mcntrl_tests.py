@@ -28,22 +28,12 @@ __version__ = "3.0+"
 __maintainer__ = "Andrey Filippov"
 __email__ = "andrey@elphel.com"
 __status__ = "Development"
-#import sys
-#import x393_mem
-#x393_pio_sequences
-#from import_verilog_parameters import VerilogParameters
 from x393_mem                import X393Mem
-#from x393_axi_control_status import X393AxiControlStatus
 import x393_axi_control_status
 from x393_pio_sequences      import X393PIOSequences
 from x393_mcntrl_timing      import X393McntrlTiming
 from x393_mcntrl_buffers     import X393McntrlBuffers
-#from x393_mcntrl_adjust      import X393McntrlAdjust
-#from verilog_utils import * # concat, bits 
-#from verilog_utils import hx, concat, bits, getParWidth 
 from verilog_utils import concat,convert_w32_to_mem16 #, getParWidth
-#from x393_axi_control_status import concat, bits
-#from time import sleep
 import vrlg
 class X393McntrlTests(object):
     DRY_MODE= True # True
@@ -58,13 +48,11 @@ class X393McntrlTests(object):
         self.DEBUG_MODE=  debug_mode
         self.DRY_MODE=    dry_mode
         self.x393_mem=            X393Mem(debug_mode,dry_mode)
-#        self.x393_axi_tasks=      X393AxiControlStatus(debug_mode,dry_mode)
         self.x393_axi_tasks=x393_axi_control_status.X393AxiControlStatus(debug_mode,dry_mode)
         self.x393_pio_sequences=  X393PIOSequences(debug_mode,dry_mode)
         self.x393_mcntrl_timing=  X393McntrlTiming(debug_mode,dry_mode)
         self.x393_mcntrl_buffers= X393McntrlBuffers(debug_mode,dry_mode)
 #        self.x393_mcntrl_adjust=  X393McntrlAdjust(debug_mode,dry_mode)
-#        self.__dict__.update(VerilogParameters.__dict__["_VerilogParameters__shared_state"]) # Add verilog parameters to the class namespace
         try:
             self.verbose=vrlg.VERBOSE
         except:
@@ -231,6 +219,8 @@ class X393McntrlTests(object):
         <quiet>    reduce output
         returns a pair of ratios for getting "1" for 2 lanes and problem marker (should be 0)
         """
+        self.x393_pio_sequences.set_write_lev(16) # write leveling, 16 times   (full buffer - 128) 
+
         if not dqs_odly is None:
             self.x393_mcntrl_timing.axi_set_dqs_odelay(dqs_odly)
 # Set write buffer (from DDR3) WE signal delay for write leveling mode
@@ -239,6 +229,7 @@ class X393McntrlTests(object):
             
         rslt= self.x393_pio_sequences.write_levelling(
                      wait_complete,
+                     16, # number of 8-bursts
                      quiet)
         #restore values to defaults (only if changed)
         if not dqs_odly is None:

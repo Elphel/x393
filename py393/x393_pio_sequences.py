@@ -710,6 +710,7 @@ class X393PIOSequences(object):
 
     def set_write_lev(self,
                       nrep,  #input[CMD_PAUSE_BITS-1:0]nrep;
+                      make_bad=False, # do not turn write levelling mode on to test device is not stuck
                       verbose=0):
         """
         Setup write levelling sequence at parameter defined address in the sequencer memory
@@ -737,7 +738,10 @@ class X393PIOSequences(object):
         cmd_addr = vrlg.MCONTR_CMD_WR_ADDR + vrlg.WRITELEV_OFFSET
 # Enter write leveling mode
         #                           addr                 bank                   RCW ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD NOP, B_RST
-        data=self.func_encode_cmd(bits(mr1_wlev,(14,0)), bits(mr1_wlev,(17,15)), 7,  0,  0,  0,  0,    0,    0,    0,  0,   0,   0,   0)
+        if make_bad:
+            data=self.func_encode_cmd(bits(mr1_norm,(14,0)),bits(mr1_norm,(17,15)),7,0,  0,  0,  0,    0,    0,    0,  0,   0,   0,   0)
+        else:
+            data=self.func_encode_cmd(bits(mr1_wlev,(14,0)),bits(mr1_wlev,(17,15)),7,0,  0,  0,  0,    0,    0,    0,  0,   0,   0,   0)
         self.x393_mem.axi_write_single_w(cmd_addr, data, verbose)
         cmd_addr += 1
         #                          skip      done        bank                       ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD      B_RST
@@ -970,14 +974,16 @@ class X393PIOSequences(object):
 
     def write_levelling(self,
                         wait_complete=1, # Wait for operation to complete
+                        nburst=16,
                         quiet=1):       
         """
         Read data in write levelling mode 
-        <wait_complete> wait write levelling operation to complete (0 - may initiate multiple PS PIO operations)
-        <quiet>    reduce output
-        returns a pair of ratios for getting "1" for 2 lanes and problem marker (should be 0)
+        @param wait_complete wait write levelling operation to complete (0 - may initiate multiple PS PIO operations)
+        @param nburst  number of 8-bursts written (should match sequence!) 
+        @param quiet    reduce output
+        @eturn a pair of ratios for getting "1" for 2 lanes and problem marker (should be 0)
         """
-        numBufWords=32 # twice nrep in set_write_lev
+        numBufWords=2*nburst # twice nrep in set_write_lev
         self.wait_ps_pio_done(vrlg.DEFAULT_STATUS_MODE,1); # not no interrupt running cycle - delays are changed immediately
         self.schedule_ps_pio (# schedule software-control memory operation (may need to check FIFO status first)
                                                   vrlg.WRITELEV_OFFSET,   # input [9:0] seq_addr; # sequence start address
@@ -1088,10 +1094,10 @@ class X393PIOSequences(object):
 # enable output for address/commands to DDR chip    
         self.x393_axi_tasks.enable_cmda(1)
         self.x393_axi_tasks.activate_sdrst(1) # reset DDR3
-        sleep(0.1)
+        sleep(0.001)
 # remove reset from DDR3 chip    
         self.x393_axi_tasks.activate_sdrst(0) # was enabled at system reset
-        sleep(0.1) # actually 500 usec required
+        sleep(0.001) # actually 500 usec required
         self.x393_axi_tasks.enable_cke(1);
         
         self.x393_axi_tasks.enable_memcntrl_channels(0x3)      # only channel 0 and 1 are enabled
