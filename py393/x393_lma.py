@@ -847,7 +847,7 @@ class X393LMA(object):
                 print()
         
         return data_periods_map
-    def lma_fit_dqi_dqsi(self,
+    def lma_fit_dq_dqs(self,
                        lane, # byte lane
                        bin_size,
                        clk_period,
@@ -885,8 +885,11 @@ class X393LMA(object):
             numLanes=2
             parametersKey='parameters'
             errorKey='maxErrDqs'
+            tDQKey='tDQ'
+            earlyKey,nominalKey,lateKey=('early','nominal','late')
+#            periods={earlyKey:-1,nominalKey:0,lateKey:1} #t0~= +1216 t1~=-1245
             for lane in range(numLanes):
-                lane_rslt.append(self.lma_fit_dqi_dqsi(lane, # byte lane
+                lane_rslt.append(self.lma_fit_dq_dqs(lane, # byte lane
                                         bin_size,
                                         clk_period,
                                         dly_step_ds,
@@ -894,7 +897,56 @@ class X393LMA(object):
                                         data_set,
                                         compare_prim_steps,
                                         scale_w, 
-                                        quiet))       
+                                        quiet))
+            #fix parameters if they have average tDQ different by +/- period(s)
+            tDQ_avg=[]
+            for lane in range(numLanes):
+                tDQ_avg.append(sum(lane_rslt[lane][parametersKey][tDQKey])/len(lane_rslt[lane][parametersKey][tDQKey]))
+            per1_0=int(round((tDQ_avg[1]-tDQ_avg[0])/clk_period))
+            if abs(tDQ_avg[1]-tDQ_avg[0]) > clk_period/2:
+                if quiet <5:
+                    print ("lma_fit_dq_dqs: Data lanes tDQ average differs by %.1fps (%d clocks), shifting to match"%(abs(tDQ_avg[1]-tDQ_avg[0]),per1_0))
+                if abs(per1_0) > 1:
+                    raise Exception ("BUG: lma_fit_dq_dqs: dta lanes differ by more than a period (per1_0=%d periods) - should not happen"%(per1_0))
+                #see number of valid items in early,nominal,late branches of each lane
+                numInVar=[{},{}]
+                for lane in range(numLanes):    
+                    for k in lane_rslt[lane].keys():
+                        if (k != parametersKey) and (k != errorKey):
+                            numValid=0
+                            try:
+                                for ph in lane_rslt[lane][k]:
+                                    if not ph is None:
+                                        numValid+=1
+                            except:
+                                pass
+                            numInVar[lane][k]=numValid
+                if quiet < 2:
+                    print ("numInVar=",numInVar)
+                late_lane=(0,1)[per1_0<0] # for late_lane E,N,L -> x, E, N, for not late_lane: E,N,L -> N, L, x
+                move_late_lane= (0,1)[numInVar[late_lane][earlyKey] <= numInVar[1-late_lane][lateKey]] # currently both are 0 - nothing is lost
+                tDQ_delta=clk_period*(-1,1)[move_late_lane]
+                lane_to_change=(1,0)[late_lane ^ move_late_lane]
+                if quiet < 2:
+                    print ("late_lane=     ",late_lane)
+                    print ("move_late_lane=",move_late_lane)
+                    print ("lane_to_change=",lane_to_change)
+                    print ("tDQ_delta=     ",tDQ_delta)
+                # modify tDQ:
+                for b in range(len(lane_rslt[lane_to_change][parametersKey][tDQKey])):
+                    lane_rslt[lane_to_change][parametersKey][tDQKey][b]+=tDQ_delta
+                if quiet < 2:
+                    print ("lane_rslt[%d]['%s']['%s']=%s"%(lane_to_change,parametersKey,tDQKey, str(lane_rslt[lane_to_change][parametersKey][tDQKey])))
+                # modify variants:
+                if move_late_lane:
+                    lane_rslt[lane_to_change][earlyKey],  lane_rslt[lane_to_change][nominalKey], lane_rslt[lane_to_change][lateKey]= (
+                    lane_rslt[lane_to_change][nominalKey],lane_rslt[lane_to_change][lateKey],    None)
+                else:     
+                    lane_rslt[lane_to_change][lateKey],   lane_rslt[lane_to_change][nominalKey], lane_rslt[lane_to_change][earlyKey]= (
+                    lane_rslt[lane_to_change][nominalKey],lane_rslt[lane_to_change][earlyKey],    None)
+                
+            # If there are only 2 ENL variants, make 'Nominal' - the largest
+            
             rslt={}
             for k in lane_rslt[0].keys():
                 if (k != parametersKey) and (k != errorKey):
@@ -924,8 +976,17 @@ class X393LMA(object):
             rslt[parametersKey] = []             
             for lane in range(numLanes):
                 rslt[parametersKey].append(lane_rslt[lane][parametersKey])
+#per1_0
+#print parameters?
+            if quiet <4:
+                print ("'%s' = ["%(parametersKey))
+                for lane_params in rslt[parametersKey]:
+                    print("{")
+                    for k,v in lane_params.items():
+                        print('%s:%s'%(k,str(v)))  
+                    print("},") 
+                print ("]")    
             rslt[errorKey]={}
-#            print ("lane_rslt[0][errorKey]=",lane_rslt[0][errorKey])
             for k in lane_rslt[0][errorKey].keys():
                 for r in lane_rslt: # lane_rslt is list of two dictionaries
                     try:
@@ -951,14 +1012,7 @@ class X393LMA(object):
                     else:
                         rslt[errorKey][k].append(None)
                         
-#            print ("lane_rslt[0][errorKey]=",lane_rslt[0][errorKey])
-#            print ("lane_rslt[1][errorKey]=",lane_rslt[1][errorKey])
-#            print ("combined: rslt['maxErrDqs']=",rslt['maxErrDqs'])
-#            print ("rslt=",rslt)
-            
             return rslt # byte lanes combined        
-#        rslt['parameters']=parameters
-#        rslt['maxErrDqs']=DQvDQS_ERR # {enl}[dly]
                 
                 
                 

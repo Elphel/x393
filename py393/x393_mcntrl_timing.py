@@ -533,21 +533,24 @@ class X393McntrlTiming(object):
 
     def axi_set_dqs_dqm_patterns(self,
                                  dqs_patt=None,
-                                 dqm_patt=None):
+                                 dqm_patt=None,
+                                 quiet=1):
         """
         Set sequencer patterns for the DQ lines ON/OFF (defined by parameters)
-        <dqs_patt> DQS toggle pattern (if None - use DFLT_DQS_PATTERN (currently 0xaa)
-        <dm_patt>  DM pattern (if None - use DFLT_DQM_PATTERN (currently 0x00) should be 0 for now
+        @param dqs_patt DQS toggle pattern (if None - use DFLT_DQS_PATTERN (currently 0xaa)
+        @param dm_patt  DM pattern (if None - use DFLT_DQM_PATTERN (currently 0x00) should be 0 for now
+        @param quiet reduce output
         """
         if dqs_patt is None:
             dqs_patt=vrlg.DFLT_DQS_PATTERN
         if dqm_patt is None:
             dqm_patt=vrlg.DFLT_DQM_PATTERN
         patt = (dqs_patt & 0xff) | ((dqm_patt & 0xff) << 8)
-        if self.DEBUG_MODE > 1:
+        if quiet <2 :
             print("SET DQS+DQM PATTERNS, patt= 0x%08x"%patt)
 # set patterns for DM (always 0) and DQS - always the same (may try different for write lev.)        
         self.x393_axi_tasks.write_contol_register(vrlg.MCONTR_PHY_16BIT_ADDR + vrlg.MCONTR_PHY_16BIT_PATTERNS, patt) # 32'h0055);
+        
     def util_test4(self):
 #        print("vrlg.globals():")
 #        print(vrlg.globals())

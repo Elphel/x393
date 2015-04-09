@@ -38,7 +38,7 @@ from x393_mem import X393Mem
 import x393_axi_control_status
 from x393_mcntrl_buffers     import X393McntrlBuffers
 #from verilog_utils import * # concat, bits 
-from verilog_utils import concat, bits 
+from verilog_utils import concat, bits, convert_mem16_to_w32, convert_w32_to_mem16 
 #from x393_axi_control_status import concat, bits
 import vrlg # global parameters
 from time import sleep
@@ -527,13 +527,13 @@ class X393PIOSequences(object):
 
         """
         Setup write block sequence at parameter defined address in the sequencer memory
-        @ba   3-bit memory bank address
-        @ra  15-bit memory row address
-        @ca  10-bit memory column address
-        @num8 - number of 8-bursts (default=64, should be >2)
-        @extraTgl add extra 8-burst of toggling DQS
-        @sel - 0 - early, 1 - late read command
-        @verbose print data being written (default: False)
+        @param ba   3-bit memory bank address
+        @param ra  15-bit memory row address
+        @param ca  10-bit memory column address
+        @param num8 - number of 8-bursts (default=64, should be >2)
+        @param extraTgl add extra 8-burst of toggling DQS
+        @param sel - 0 - early, 1 - late read command
+        @param verbose print data being written (default: False)
         """
         if verbose > 0:
             print("===set_write_block ba=0x%x, ra=0x%x, ca=0x%x, num8=%d extraTgl=%d, sel=%d, verbose=%d"%(ba,ra,ca,num8,extraTgl,sel, verbose))
@@ -974,15 +974,15 @@ class X393PIOSequences(object):
         return self.x393_mcntrl_buffers.read_block_buf_chn (0, 2, num, show_rslt )    # chn=0, page=2, number of 32-bit words=num, show_rslt
 
     def read_block(self,
-                     num,
-                     show_rslt,
-                     wait_complete=1): # Wait for operation to complete
+                   num,
+                   show_rslt,
+                   wait_complete=1): # Wait for operation to complete
         """
         Read block in PS PIO mode 
-        <num>           number of 32-bit words to read
-        <show_rslt>     print read data
-        <wait_complete> wait read pattern operation to complete (0 - may initiate multiple PS PIO operations)
-        returns list of the read data
+        @param num      number of 32-bit words to read
+        @param show_rslt          print buffer data read 1 - column, 16 - as 16-bit (memory words), 32 - as 32-bit (data words)
+        @param wait_complete wait read pattern operation to complete (0 - may initiate multiple PS PIO operations)
+        @return list of the read data
         """
     
         self.schedule_ps_pio ( # schedule software-control memory operation (may need to check FIFO status first)
@@ -1011,6 +1011,117 @@ class X393PIOSequences(object):
                         wait_complete)           # `PS_PIO_WAIT_COMPLETE )#  wait_complete; # Do not request a newer transaction from the scheduler until previous memory transaction is finished
 # temporary - for debugging:
 #        self.wait_ps_pio_done(vrlg.DEFAULT_STATUS_MODE,1) # wait previous memory transaction finished before changing delays (effective immediately)
+
+    def write_block_inc(self,
+                        num8=64, # max 512 16-bit words
+                        startValue=0,
+                        ca=0,
+                        ra=0,
+                        ba=0,
+                        extraTgl=0, #
+                        sel=1,
+                        quiet=1):       
+        """
+        Program sequencer, fill buffer with incremented 16-bit wors (startValue, startValue+1...startValue+nrep*8-1)
+        and write buffer to memory 
+        @param num8  number of 8-bursts (default=64, should be >2)
+        @param startValue - value of the first word to write
+        @param ca  10-bit memory column address
+        @param ra  15-bit memory row address
+        @param ba   3-bit memory bank address
+        @param extraTgl add extra 8-burst of toggling DQS
+        @param sel  0 - early, 1 - late read command
+        @param quiet reduce output
+        """
+        self.set_write_block(ba=ba,  # input[2:0]ba;
+                             ra=ra,  # input[14:0]ra;
+                             ca=ca,  # input[9:0]ca;
+                             num8=num8,
+                             extraTgl=extraTgl, #
+                             sel=sel,
+                             verbose=(0,1)[quiet < 2])
+        wdata16=[startValue+i for i in range(num8*8)]
+        wdata32=convert_mem16_to_w32(wdata16)
+        self.x393_mcntrl_buffers.write_block_buf_chn(0,0,wdata32,quiet) # fill block memory (channel, page, number)
+        self.write_block()
+
+    def set_and_read(self,
+                     show_rslt=16,
+                     num8=64, # max 512 16-bit words
+                     ca=0,
+                     ra=0,
+                     ba=0,
+                     sel=1,
+                     quiet=1):       
+        """
+        Program sequencer, read block from memory and optionally print it
+        @param show_rslt: 0 - silent, 1 - as column, 16 - as 16-bit memory words, 32 - as 32-bit (system) words
+        @param num8  number of 8-bursts (default=64, should be >2)
+        @param ca  10-bit memory column address
+        @param ra  15-bit memory row address
+        @param ba   3-bit memory bank address
+        @param sel  0 - early, 1 - late read command
+        @param quiet reduce output
+        @return read data as 32-bit words
+        """
+        self.set_read_block(ba=ba,  # input[2:0]ba;
+                            ra=ra,  # input[14:0]ra;
+                            ca=ca,  # input[9:0]ca;
+                            num8=num8,
+                            sel=sel,
+                            verbose=(0,1)[quiet < 2])
+        return  self.read_block(num= num8*4,
+                                show_rslt=show_rslt,
+                                wait_complete=1) # Wait for operation to complete
+
+    def set_and_read_inc(self,
+                         num8=64, # max 512 16-bit words
+                         ca=0,
+                         ra=0,
+                         ba=0,
+                         sel=1,
+                         quiet=1):       
+        """
+        Program sequencer, read block from memory,optionally print it
+        Epecting incremental 16-bit data block, calculate number of leading and trailing
+        non-consecutive words and return them as a tuple
+        @param num8  number of 8-bursts (default=64, should be >2)
+        @param ca  10-bit memory column address
+        @param ra  15-bit memory row address
+        @param ba   3-bit memory bank address
+        @param sel  0 - early, 1 - late read command
+        @param quiet reduce output
+        @return read data as 32-bit words
+        """
+        data32=self.set_and_read(
+                     show_rslt=(0,16)[quiet<2],
+                     num8=num8, # max 512 16-bit words
+                     ca=ca,
+                     ra=ra,
+                     ba=ba,
+                     sel=sel,
+                     quiet=quiet+1)
+        data16=convert_w32_to_mem16(data32)
+        mid_index=len(data16)//2
+        data0= data16[mid_index]-mid_index
+        for i in range(mid_index-1,-1,-1):
+            if data16[i] != data0 + i:
+                first_bad=i+1
+                break
+        else:
+            first_bad= 0
+            
+        for i in range(mid_index+1,len(data16)):
+            if data16[i] != data0 + i:
+                last_bad=len(data16)-i
+                break
+        else:
+            last_bad= 0
+        if quiet < 3:
+            print ("non_consecutive leading/trailing: %d /%d"%(first_bad, last_bad))    
+        return (first_bad, last_bad)
+                 
+                 
 
 
     def write_levelling(self,
@@ -1160,6 +1271,7 @@ class X393PIOSequences(object):
 
 
     def task_set_up(self,
+                    dqs_pattern=None,
                     quiet = 1):
         """
         Initial setup of the memory controller, including:
@@ -1173,7 +1285,7 @@ class X393PIOSequences(object):
             I/O delays
             clock phase
             write buffer latency
-        <set_per_pin_delays> - 1 - set individual (per-pin) I/O delays, 0 - use common for the whole class
+        @param dqs_pattern None - use Verilog parameter, other values 0xaa or 0x55 - DQS output value per 1/2 SDCLK period
         Returns 1 if phase was set, 0 if it failed         
         """
 #reset memory controller
@@ -1185,7 +1297,9 @@ class X393PIOSequences(object):
 # set dq /dqs tristate on/off patterns
         self.x393_mcntrl_timing.axi_set_tristate_patterns()
 # set patterns for DM (always 0) and DQS - always the same (may try different for write lev.)
-        self.x393_mcntrl_timing.axi_set_dqs_dqm_patterns()
+        self.x393_mcntrl_timing.axi_set_dqs_dqm_patterns(dqs_patt=dqs_pattern, # use default
+                                                         dqm_patt=None, # use default
+                                                         quiet=1)
 # prepare all sequences
         self.set_all_sequences(quiet)
 # prepare write buffer    

@@ -117,17 +117,18 @@ class X393McntrlBuffers(object):
     def write_block_incremtal(self,
                               start_word_address, # input [29:0] start_word_address;
                               num_words,          # input integer num_words; # number of words to write (will be rounded up to multiple of 16)
-                              start_value):       # input integer start_value;      
+                              start_value,       # input integer start_value;
+                              quiet=1):      
         """
         Fill buffer the incremental data (each next register is written with previous register data + 1
-        <start_word_address>  full register address in AXI space (in 32-bit words, not bytes)
-        <num_words>           number of 32-bit words to generate/write
-        <start_value>         value to write to the first register (to start_word_address)
+        @param start_word_address  full register address in AXI space (in 32-bit words, not bytes)
+        @param num_words           number of 32-bit words to generate/write
+        @start_value         value to write to the first register (to start_word_address)
         """
-        if self.verbose>0:
+        if quiet < 2:
             print("**** write_block_incremtal, start_word_address=0x%x, num_words=0x%x, start_value=0x%x "%(start_word_address,num_words,start_value))
         for i in range(0,num_words):
-            if self.verbose>2:
+            if quiet < 1:
                 print("     write_block_buf 0x%x:0x%x"%(start_word_address+i,start_value+i))
             self.x393_mem.axi_write_single_w(start_word_address+i, start_value+i)
 
