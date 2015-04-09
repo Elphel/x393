@@ -144,7 +144,7 @@ class X393McntrlAdjust(object):
         return cmda_odly_lin
     
     def set_phase_delays(self,
-                         phase,
+                         phase= None,
                          inp_period='A',
                          out_period='A',
                          refresh=True,
@@ -152,13 +152,19 @@ class X393McntrlAdjust(object):
                          quiet=1):
         """
         Set clock phase and all I/O delays optimal for this phase
-        @param phase value to set
+        @param phase value to set (if None - set 'optimal' if it is defined)
         @param inp_period - period branch for DQ inputs: E<arly>, N<ominal>, L<ate> or A<ny>    
         @param out_period - period branch for DQ outputs: E<arly>, N<ominal>, L<ate> or A<ny>
         @param refresh - turn refresh OFF before and ON after changing the delays and phase
         @param quiet - reduce output
         @return True on success, False on invalid phase    
         """
+        if phase is None:
+            try:
+                phase= self.adjustment_state['optimal_phase']['optimal_phase']
+            except:
+                raise Exception("Phase value is not provided and global;optimal phase is not defined")
+        
         num_addr=vrlg.ADDRESS_NUMBER
         num_banks=3
         
@@ -3215,6 +3221,7 @@ class X393McntrlAdjust(object):
                         wsel=None, # None (any) or 0/1
                         quiet=3):     
         """
+        Find the phase range that satisfies all conditions, possibly filtered by read sel and write sel (early/late command)
         @param rsel filter by early/late read command (in two-clock command cycle - 'sel') Valid values: None, 0 or 1
         @param wsel filter by early/late write command (in two-clock command cycle - 'sel') Valid values: None, 0 or 1
         @param quiet reduce output
@@ -3306,6 +3313,8 @@ class X393McntrlAdjust(object):
                 write_var=variants[0][0].upper()
         if quiet < 4:
             print ("result=",rslt)
+        self.adjustment_state['optimal_phase']=rslt
+            
         #set delays to set Verilog parameters. TODO: save sel-s somehow too?
         self.set_phase_delays(phase=optimal_phase,
                              inp_period=read_var,
@@ -3317,15 +3326,18 @@ class X393McntrlAdjust(object):
 
 
     def measure_all(self,
-                    tasks="ICWRPOASZ",
+                    tasks="ICWRPOASZB",
                     prim_steps=1,
                     primary_set_in=2,
                     primary_set_out=2,
-                    dqs_pattern=0xaa,
+                    dqs_pattern=0x55,
+                    rsel=1, # None (any) or 0/1
+                    wsel=1, # None (any) or 0/1
                     quiet=3):
         """
         @param tasks - "C" cmda, "W' - write levelling, "R" - read levelling (DQI-DQSI), "P" -  dqs input phase (DQSI-PHASE),
-                       "O" - output timing (DQ odelay vs  DQS odelay), "A" - address/bank lines output delays, "Z" - print results
+                       "O" - output timing (DQ odelay vs  DQS odelay), "A" - address/bank lines output delays, "Z" - print results,
+                       "B" - select R/W brances and get the optimal phase
         @param prim_steps -  compare measurement with current delay with one lower by 1 primary step (5 fine delay steps), 0 -
                              compare with one fine step lower
         @param primary_set_in -  which of the primary sets to use when processing DQi/DQSi results (2 - normal, 0 - other DQS phase)
@@ -3347,6 +3359,7 @@ class X393McntrlAdjust(object):
         read_phase_scale_w=0.0
         prim_steps_in=prim_steps
         prim_steps_out=prim_steps
+        wbuf_dly=9 # just a hint, start value can be different
 #        primary_set_in=2
 #        primary_set_out=2
         write_sel=1 # set DDR3 command in the second cycle of two (0 - during the first omne)
@@ -3460,6 +3473,23 @@ class X393McntrlAdjust(object):
                               'keep_all':False,
                               'set_table':True,
                               'quiet':quiet+1}},
+
+                    {'key':'B',
+                    'func':self.set_read_branch,
+                    'comment':'Try read mode branches and find sel (early/late read command) and wbuf delay, if possible.',
+                    'params':{'wbuf_dly':wbuf_dly,
+                              'quiet':quiet+1}},
+                    {'key':'B',
+                    'func':self.set_write_branch,
+                    'comment':'Try read mode branches and find sel (early/late read command) and wbuf delay, if possible.',
+                    'params':{'dqs_pattern':dqs_pattern,
+                              'quiet':quiet+1}},
+                    {'key':'B',
+                    'func':self.get_phase_range,
+                    'comment':'Find the phase range that satisfies all conditions, possibly filtered by read sel and write sel (early/late command)',
+                    'params':{'rsel':rsel,
+                              'wsel':wsel,
+                              'quiet':quiet+1}},
                     {'key':'S',
                     'func':self.save_mcntrl,
                     'comment':'Save current state as Python pickle',
@@ -3469,18 +3499,32 @@ class X393McntrlAdjust(object):
                     'func':self.show_all_vs_phase,
                     'comment':'Printing results table (delays and errors vs. phase)- all, including invalid phases',
                     'params':{'keep_all':True,
+                              'filter_rw':False,
+                              'filter_rsel':None,
+                              'filter_wsel':None,
                               'load_hardcoded':False}},
                     {'key':'Z',
                     'func':self.show_all_vs_phase,
                     'comment':'Printing results table (delays and errors vs. phase)- only for valid clock phase values',
                     'params':{'keep_all':False,
+                              'filter_rw':False,
+                              'filter_rsel':None,
+                              'filter_wsel':None,
+                              'load_hardcoded':False}},
+                    {'key':'BZ',
+                    'func':self.show_all_vs_phase,
+                    'comment':'Printing results table, filtered by read/write blocks',
+                    'params':{'keep_all':False,
+                              'filter_rw':True,
+                              'filter_rsel':rsel,
+                              'filter_wsel':wsel,
                               'load_hardcoded':False}},
                   ]
         start_time=time.time()
         last_task_start_time=start_time
         for task_item in task_data: # execute tasks in predefined sequence, if their keys are enabled through arguments (several tasks may be needed for 1 key)
-            
-            if task_item['key'] in tasks.upper():
+#            if task_item['key'] in tasks.upper():
+            if all(k in tasks.upper() for k in task_item['key']):
                 tim=time.time()
                 if quiet < 5:
                     print ("[%.3f/+%.3f] %s"%(tim-start_time,tim-last_task_start_time,task_item['comment']))

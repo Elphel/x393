@@ -3,6 +3,6 @@
 -f /usr/local/verilog/x393_parameters.vh   /usr/local/verilog/x393_cur_params_target.vh /usr/local/verilog/x393_localparams.vh
 -l /usr/local/verilog/x393_cur_params_target.vh
 -p PICKLE="/usr/local/verilog/x393_mcntrl.pickle
--c measure_all "ICWRPOASZ" 1 2 2 0xaa 3
--c set_phase_delays 15 'A' 'A' 1 None 0
+-c measure_all "ICWRPOASZB" 1 2 2 0xaa None 1 3
+-c set_phase_delays
 -c save
