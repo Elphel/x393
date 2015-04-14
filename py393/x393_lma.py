@@ -1625,17 +1625,44 @@ class X393LMA(object):
     s=if-ir+of-or
     d=ir-if+of-or
     """
-    def lma_fit_dqsi_phase(self,
+    def lma_fit_dqs_phase(self,
                            lane, # byte lane
                            bin_size_ps,
                            clk_period,
-                           dqsi_dqi_parameters,
+                           dqs_dq_parameters,
+                           tSDQS, # use if dqs_dq_parameters are not available
                            data_set,
                            compare_prim_steps,
                            scale_w,
-                           numPhaseSteps, 
+                           numPhaseSteps,
+                           maxDlyErr=200.0, # ps - trying multiple overlapping branches
+                           fallingPhase=False, # output mode - delays decrease when phase increases
+                           shiftFracPeriod=0.5, # measured data is marginal, shift optimal by half period 
                            quiet=1):
-#       print("++++++lma_fit_dqsi_phase(), quiet=",quiet)
+        """
+        Calculate linear approximation for DQS-in or DQS-out vs. phase, crossing periods
+        @param lane byte          lane to use (0,1 or 'all')
+        @param bin_size_ps        histogram bin size in ps
+        @param clk_period         clock period, in ps
+        @param dqs_dq_parameters  dq{i,0} vs dqs[i,o} parameters or Null if not yet available (after write levelling)
+                                  used to get initial delay scale and fine delay correction
+        @param tSDQS              delay in ps for one finedelay step - used only if dqs_dq_parameters are not available 
+        @param data_set           data set number for hard-coded debug data or -1 to use actual just measured results
+        @param compare_prim_steps if True input data was calibrated with primary delay steps, False - if with fine delay
+                                  That means that delay data is on average is either 2.5 or 0.5 lower than unbiased average  
+        @param scale_w            weight for samples that have "binary" data with full uncertainty of +/-2.5 or +/-0.5 steps
+        @param numPhaseSteps      Total number of delay steps (currently 5*32 = 160)
+        @param maxDlyErr          Made for testing multiple overlapping branches, maximal error in ps to keep the result branch
+        @param fallingPhase       input data is decreasing with phase increasing (command/addresses, data output), False - increasing
+                                  as for DQS in /DQ in
+        @param shiftFracPeriod    When measured data is marginal, not optimal, result needs to be shifted by this fraction of the period
+                                  Currently it should be 0.5 for input, 0.0 - for output
+        @param quiet=1):
+        """
+        
+#       print("++++++lma_fit_dqs_phase(), quiet=",quiet)
+        phase_sign=(1,-1)[fallingPhase]
+        phase_add=(0,numPhaseSteps)[fallingPhase]
         def show_input_data(filtered):
             print(('unfiltered','filtered')[filtered])
             for phase,d in enumerate(data_set):
@@ -1648,7 +1675,7 @@ class X393LMA(object):
                                 dly+=halfStep
 #                            print ("%f %f"%(dly, dly-phase*phase_step/dbg_tSDQS[lane]), end=" ")
 #                            print ("%f %f"%(dly*dbg_tSDQS[lane]/phase_step, dly*dbg_tSDQS[lane]/phase_step-phase), end=" ")
-                            print ("%f %f"%(dly*dbg_tSDQS[lane], dly*dbg_tSDQS[lane]-phase*phase_step), end=" ")
+                            print ("%f %f"%(dly*dbg_tSDQS[lane], dly*dbg_tSDQS[lane]+(phase_add-phase)*phase_step), end=" ")
                         else:
                             print ("? ?", end=" ")
                 print()
@@ -1660,7 +1687,7 @@ class X393LMA(object):
                         dly = dl[0]
                         if dl[1] is None:
                             dly+=halfStep
-                        diff_ps=dly*tSDQS-phase*phase_step
+                        diff_ps=dly*tSDQS+(phase_add-phase)*phase_step
                         binArr[int((diff_ps-minVal)/bin_size_ps)]+=1
             if quiet < 3:
                 for i,h in enumerate(binArr):
@@ -1683,27 +1710,32 @@ class X393LMA(object):
             return minVal+bin_size_ps*(SX+0.5) # ps
         
         if not isinstance(lane,(int, long)): # ignore content, process both lanes
-            rslt_names=("dqsi_optimal_ps","dqsi_phase")
+            rslt_names=("dqs_optimal_ps","dqs_phase","dqs_phase_multi","dqs_phase_err","dqs_min_max_periods")
             rslt= {}
             for name in rslt_names:
                 rslt[name] = []
                  
             for lane in range(2):
-                rslt_lane=self.lma_fit_dqsi_phase(lane, # byte lane
-                                                    bin_size_ps,
-                                                    clk_period,
-                                                    dqsi_dqi_parameters,
-                                                    data_set,
-                                                    compare_prim_steps,
-                                                    scale_w,
-                                                    numPhaseSteps, 
-                                                    quiet)
+                rslt_lane=self.lma_fit_dqs_phase(lane=               lane, # byte lane
+                                                 bin_size_ps=        bin_size_ps,
+                                                 clk_period=         clk_period,
+                                                 dqs_dq_parameters=  dqs_dq_parameters,
+                                                 tSDQS=              tSDQS,
+                                                 data_set=           data_set,
+                                                 compare_prim_steps= compare_prim_steps,
+                                                 scale_w=            scale_w,
+                                                 numPhaseSteps=      numPhaseSteps,
+                                                 maxDlyErr=          maxDlyErr,
+                                                 fallingPhase=       fallingPhase,
+                                                 shiftFracPeriod=    shiftFracPeriod, 
+                                                 quiet=              quiet)
+                
                 for name in rslt_names:
                     rslt[name].append(rslt_lane[name])
             if quiet<3:
-                print ('dqsi_optimal_ps=%s'%(str(rslt['dqsi_optimal_ps'])))
-                print ('dqsi_phase=[')
-                for lane in rslt['dqsi_phase']:
+                print ('dqs_optimal_ps=%s'%(str(rslt['dqs_optimal_ps'])))
+                print ('dqs_phase=[')
+                for lane in rslt['dqs_phase']:
                     print("    [",end=" ")
                     for i,d in enumerate(lane):
                         last= i == (len(lane)-1)
@@ -1715,24 +1747,67 @@ class X393LMA(object):
                         else:
                             print('],')
                 print(']')
-#                print(rslt) 
+                print ('dqs_phase_multi=[')
+                for lane in rslt['dqs_phase_multi']:
+                    print("    [",end=" ")
+                    for i,d in enumerate(lane):
+                        last= i == (len(lane)-1)
+                        print("%s"%(str(d)), end=" ")
+                        if not last:
+                            print(",",end=" ")
+                            if ((i+1) % 16) ==0:
+                                print("\n     ",end="")
+                        else:
+                            print('],')
+                print(']')
+                print ('dqs_phase_err=[')
+                for lane in rslt['dqs_phase_err']:
+                    print("    [",end=" ")
+                    for i,d in enumerate(lane):
+                        last= i == (len(lane)-1)
+                        print("%s"%(str(d)), end=" ")
+                        if not last:
+                            print(",",end=" ")
+                            if ((i+1) % 16) ==0:
+                                print("\n     ",end="")
+                        else:
+                            print('],')
+                print(']')
+                
+#                print(rslt)
+            
             return rslt
                
             
-        phase_step= clk_period/ numPhaseSteps      
-        tSDQS=dqsi_dqi_parameters[lane]['tSDQS'] # ~16.081739769147354
-        dbg_tSDQS=(dqsi_dqi_parameters[0]['tSDQS'],dqsi_dqi_parameters[1]['tSDQS'])
+        phase_step= phase_sign*clk_period/ numPhaseSteps
+        try:      
+            tSDQS=dqs_dq_parameters[lane]['tSDQS'] # ~16.081739769147354
+        except:
+            if quiet < 2:
+                print("dqs_dq_parameters are not available, using datasheet value for tSDQS=%f ps"%(tSDQS))
+        
+        try:
+            dbg_tSDQS=(dqs_dq_parameters[0]['tSDQS'],dqs_dq_parameters[1]['tSDQS'])
+        except:
+            dbg_tSDQS=(tSDQS,tSDQS)
+
         halfStep=0.5*(1,compare_prim_steps)[compare_prim_steps]
+            
         #phase_step/tSDQS
-#        print("lma_fit_dqsi_phase(): quiet=",quiet)
+#        print("lma_fit_dqs_phase(): quiet=",quiet)
         if quiet < 2:
             print (phase_step,dbg_tSDQS)
             for filtered in range(2):
                 show_input_data(filtered)    
 
-        # all preliminary teset above
-        maxVal= DLY_STEPS*tSDQS
-        minVal= -clk_period
+        # all preliminary tests above
+        #phase_add
+        if fallingPhase:
+            maxVal= clk_period
+            minVal= -DLY_STEPS*abs(tSDQS)
+        else:
+            maxVal= DLY_STEPS*abs(tSDQS)
+            minVal= -clk_period
         num_bins=int((maxVal-minVal)/bin_size_ps)+1
         binArr=[0]*num_bins
         if quiet < 2:
@@ -1751,13 +1826,16 @@ class X393LMA(object):
                     dly = dl[0]
                     if dl[1] is None:
                         dly+=halfStep
-                    periods[phase]=int(round((dly*tSDQS-phase*phase_step)/clk_period))
+                    periods[phase]=int(round((dly*tSDQS+(phase_add-phase)*phase_step)/clk_period)) #############################
         w=[0.0]*len(data_set)
         if quiet < 2:
             for i,p in enumerate(periods):
                 print ("%d %s"%(i,str(p)))
-        tFDQS=dqsi_dqi_parameters[lane]['tFDQS'] # [-21.824409224001187, -10.830180678770162, 1.5698858542328959, 11.267851084349177]
-        tFDQS.append(-tFDQS[0]-tFDQS[1]-tFDQS[2]-tFDQS[3])
+        try:
+            tFDQS=dqs_dq_parameters[lane]['tFDQS'] # [-21.824409224001187, -10.830180678770162, 1.5698858542328959, 11.267851084349177]
+            tFDQS.append(-tFDQS[0]-tFDQS[1]-tFDQS[2]-tFDQS[3])
+        except:
+            tFDQS=[0.0]*FINE_STEPS
         SY=0.0
         S0=0.0
         for phase,d in enumerate(data_set):
@@ -1769,8 +1847,8 @@ class X393LMA(object):
                     if dl[1] is None:
                         dly+=halfStep
                         w[phase]=scale_w
-                    d=dly*tSDQS-periods[phase]*clk_period-tFDQS[dl[0] % FINE_STEPS]
-                    y=d-phase*phase_step
+                    d=dly*tSDQS-periods[phase]*clk_period-tFDQS[dl[0] % FINE_STEPS] ############################
+                    y=d+(phase_add-phase)*phase_step
                     S0+=w[phase]
                     SY+=w[phase]*y
         if S0 > 0.0:
@@ -1786,7 +1864,7 @@ class X393LMA(object):
                         dly = dl[0]
                         if dl[1] is None:
                             dly+=halfStep
-                        d=dly*tSDQS-periods[phase]*clk_period-tFDQS[dl[0] % FINE_STEPS]
+                        d=dly*tSDQS-periods[phase]*clk_period-tFDQS[dl[0] % FINE_STEPS] ############################
                         print ("%f %f"%(d, w[i]), end=" ")
                         if not dl[1] is None:
                             print(d,end=" ")
@@ -1794,29 +1872,36 @@ class X393LMA(object):
                             print("?",end=" ")
                     else:
                         print ("? ?", end=" ")
-                    print("%f"%(SY+phase*phase_step),end=" ")
+                    print("%f"%(SY-(phase_add-phase)*phase_step),end=" ")
                 print()
-        # Now shift SY by clk_period/2.0, for each phase find the closest DQSI match (None if does not exist)
-        dqsi_range=tSDQS*DLY_STEPS# full range of the DQSI delay for this lane
-#        dqsi_middle_in_ps = SY-clk_period*round(SY/clk_period)-0.5
-#        dqsi_middle_in_ps = (SY-clk_period/2)-clk_period*round((SY-clk_period/2)/clk_period)
-#        dqsi_middle_in_ps = (SY-clk_period/2)-clk_period*round(SY/clk_period -0.5)
-        dqsi_middle_in_ps = SY-clk_period*(round(SY/clk_period -0.5)+0.5)
-        dqsi_phase=[None]*numPhaseSteps
+        # Now shift SY by half clk_period for each phase find the closest DQSI match (None if does not exist)
+        # Shift should only be for DQSI (middle between the errors), for WLEV - no shift
+        #shiftFracPeriod
+        dqsi_range=abs(tSDQS)*DLY_STEPS# full range of the DQSI delay for this lane
+#        dqsi_middle_in_ps = SY-clk_period*(round(SY/clk_period -0.5)+0.5)
+        dqsi_middle_in_ps = SY-clk_period*(round(SY/clk_period -shiftFracPeriod)+shiftFracPeriod)
+        if quiet < 3:
+            print("SY=",SY)
+            print("dqsi_middle_in_ps=",dqsi_middle_in_ps)
+            print("phase_add=",phase_add)
+            print("phase_step=",phase_step)
+            print("shiftFracPeriod=",shiftFracPeriod)
+            print("clk_period*shiftFracPeriod=",(clk_period*shiftFracPeriod))
+        dqs_phase=[None]*numPhaseSteps
         for phase in range(numPhaseSteps):
-            dly_ps=phase_step*phase+dqsi_middle_in_ps
+            dly_ps=-phase_step*(phase_add-phase)+dqsi_middle_in_ps
             dly_ps-=clk_period*round(dly_ps/clk_period - 0.5) # positive, <clk_period
             #Using lowest delay branch if multiple are possible
             if dly_ps > dqsi_range:
                 continue # no valid dqs_idelay for this phase
-            idly = int (round(dly_ps/tSDQS))
+            idly = int (round(dly_ps/tSDQS))  ###############?
             low= max(0,idly-FINE_STEPS)
             high=min(DLY_STEPS-1,idly+FINE_STEPS)
             idly=low
             for i in range(low,high+1):
-                if abs(i*tSDQS-tFDQS[i % FINE_STEPS]-dly_ps) < abs(idly*tSDQS-tFDQS[idly % FINE_STEPS]-dly_ps):
+                if abs(i*tSDQS-tFDQS[i % FINE_STEPS]-dly_ps) < abs(idly*tSDQS-tFDQS[idly % FINE_STEPS]-dly_ps): ############################
                     idly=i
-            dqsi_phase[phase]=idly
+            dqs_phase[phase]=idly
         if quiet < 3:
             for phase,d in enumerate(data_set):
                 print ("%d"%(phase),end=" ")
@@ -1827,13 +1912,80 @@ class X393LMA(object):
                     print ("%f"%(dly), end=" ")
                 else:
                     print ("?", end=" ")
-                if not dqsi_phase[phase] is None:
-                    print("%f"%(dqsi_phase[phase]),end=" ")
+                if not dqs_phase[phase] is None:
+                    print("%f"%(dqs_phase[phase]),end=" ")
                 else:
                     print ("?", end=" ")
                 print()
-        return {"dqsi_optimal_ps":dqsi_middle_in_ps,
-                "dqsi_phase":dqsi_phase}        
+        # maxDlyErr (ps)
+        dqsi_phase_multi=[None]*numPhaseSteps
+        dqsi_phase_err=  [None]*numPhaseSteps
+        min_max_periods=None
+        for phase in range(numPhaseSteps):
+            dly_ps=phase_step*(phase-phase_add)+dqsi_middle_in_ps
+            periods=int(round((dly_ps+ +maxDlyErr)/clk_period - 0.5))
+            dly_ps-=clk_period*periods # positive, <clk_period
+            #Using lowest delay branch if multiple are possible - now all branches
+            if dly_ps <= (dqsi_range+maxDlyErr):
+                dqsi_phase_multi[phase]={}
+                dqsi_phase_err[phase]={}
+                while dly_ps <= (dqsi_range+maxDlyErr):
+                    try:
+                        min_max_periods[0]=min(min_max_periods[0],periods)
+                        min_max_periods[1]=max(min_max_periods[1],periods)
+                    except:
+                        min_max_periods=[periods,periods]
+                    idly = int (round(dly_ps/tSDQS))   ##########################################
+                    low= max(0,idly-FINE_STEPS)
+#                    high=min(DLY_STEPS-1,idly+FINE_STEPS)
+                    high=idly+FINE_STEPS
+                    if  high >= DLY_STEPS:
+                        high=DLY_STEPS - 1
+                        low= DLY_STEPS - FINE_STEPS
+                    idly=low
+                    for i in range(low,high+1):
+                        if abs(i*tSDQS-tFDQS[i % FINE_STEPS]-dly_ps) < abs(idly*tSDQS-tFDQS[idly % FINE_STEPS]-dly_ps):   ###################
+                            idly=i
+                    dqsi_phase_multi[phase][periods]=idly
+                    dqsi_phase_err[phase][periods]=idly*tSDQS-tFDQS[idly % FINE_STEPS]-dly_ps    ######################
+                    periods-=1
+                    dly_ps+=clk_period
+                    
+        if quiet < 3:
+            print ("maxDlyErr=",maxDlyErr)
+            print ("min_max_periods=",min_max_periods)
+            print ("dqsi_phase_multi=",dqsi_phase_multi)
+            print ("dqsi_phase_err=",dqsi_phase_err)
+            for phase,d in enumerate(data_set):
+                print ("%d"%(phase),end=" ")
+                if (not d is None) and (not d[lane] is None) and (not d[lane][0] is None):
+                    dly = d[lane][0]
+                    if d[lane][1] is None:
+                        dly+=halfStep
+                    print ("%f"%(dly), end=" ")
+                else:
+                    print ("?", end=" ")
+                if not dqsi_phase_multi[phase] is None:
+                    for periods in range (min_max_periods[0],min_max_periods[1]+1):
+                        try:
+                            print("%f"%(dqsi_phase_multi[phase][periods]),end=" ")
+                        except:
+                            print ("?", end=" ")
+                    for periods in range (min_max_periods[0],min_max_periods[1]+1):
+                        try:
+                            print("%.1f"%(dqsi_phase_err[phase][periods]),end=" ")
+                        except:
+                            print ("?", end=" ")
+                else:
+                    print ("?", end=" ")
+                print()
+                
+        return {"dqs_optimal_ps":dqsi_middle_in_ps,
+                "dqs_phase":dqs_phase,
+                "dqs_phase_multi":dqsi_phase_multi,
+                "dqs_phase_err":dqsi_phase_err,
+                "dqs_min_max_periods":min_max_periods
+                }        
         
             
                         

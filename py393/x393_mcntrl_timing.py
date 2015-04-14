@@ -546,11 +546,18 @@ class X393McntrlTiming(object):
         if dqm_patt is None:
             dqm_patt=vrlg.DFLT_DQM_PATTERN
         patt = (dqs_patt & 0xff) | ((dqm_patt & 0xff) << 8)
-        if quiet <2 :
-            print("SET DQS+DQM PATTERNS, patt= 0x%08x"%patt)
+        vrlg.dqs_dqm_patt=patt
+        if quiet < 2 :
+            print("axi_set_dqs_dqm_patterns(): SET DQS+DQM PATTERNS, patt= 0x%08x (TODO:reduce quiet threshold)"%patt)
 # set patterns for DM (always 0) and DQS - always the same (may try different for write lev.)        
         self.x393_axi_tasks.write_contol_register(vrlg.MCONTR_PHY_16BIT_ADDR + vrlg.MCONTR_PHY_16BIT_PATTERNS, patt) # 32'h0055);
         
+    def get_dqs_dqm_patterns(self):
+        #print ('vrlg.dqs_dqm_patt=',vrlg.dqs_dqm_patt)
+        try:
+            return (vrlg.dqs_dqm_patt & 0xff,(vrlg.dqs_dqm_patt >> 8) & 0xff)
+        except:
+            return None    
     def util_test4(self):
 #        print("vrlg.globals():")
 #        print(vrlg.globals())

@@ -29,6 +29,7 @@ __maintainer__ = "Andrey Filippov"
 __email__ = "andrey@elphel.com"
 __status__ = "Development"
 DEFAULTS={}
+dqs_dqm_patt=None
 def init_vars(d):
     global DEFAULTS
     if d:
