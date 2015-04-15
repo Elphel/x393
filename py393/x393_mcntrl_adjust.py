@@ -551,6 +551,18 @@ class X393McntrlAdjust(object):
         @return used delays dictionary on success, None on failure
         raises Exception() if any delays with non-None filters miss required data
         """
+        if quiet < 2:
+            print ("set_delays (",
+                   phase,',',
+                   filter_cmda,',', 
+                   filter_dqsi, ',', 
+                   filter_dqi, ',', 
+                   filter_dqso, ',', 
+                   filter_dqo, ',', 
+                   cost, ',', 
+                   refresh, ',', 
+                   forgive_missing, ',',
+                   quiet,")")
         if phase is None:
             try:
                 phase= self.adjustment_state['optimal_phase']
@@ -574,7 +586,7 @@ class X393McntrlAdjust(object):
         if delays is None: #May also be an empty dictionary? 
             return None
         filters=dict(zip(SIG_LIST,[filter_cmda,filter_dqsi,filter_dqi,filter_dqso,filter_dqo]))
-        if quiet < 2:
+        if quiet < 3:
             print ("Going to set:")
             print ("phase=",phase)
             name_len=max(len(k) for k in SIG_LIST if filters[k] is not None)
@@ -702,14 +714,16 @@ class X393McntrlAdjust(object):
         return delays
     
     def show_all_delays(self,
-                        filter_cmda='A',#None,
-                        filter_dqsi='A',#None,
-                        filter_dqi= 'A',#None,
-                        filter_dqso='A',#None,
-                        filter_dqo= 'A',#None,
-                        quiet=3):
+                        filter_variants = None,
+                        filter_cmda =    'A',#None,
+                        filter_dqsi =    'A',#None,
+                        filter_dqi =     'A',#None,
+                        filter_dqso =    'A',#None,
+                        filter_dqo =     'A',#None,
+                        quiet =          3):
         """
         Print all optionally filtered delays, the results can be copied to a spreadsheet program to create graph
+        @param filter_variants optional list of 3-tuples (cmda_variant, (dqso_variant,dqo-dqso), (dqsi_variant,dqi-dqsi))
         @param filter_cmda  filter clock period branches for command and addresses. See documentation for
         get_delays_for_phase() - b_filter
         @param filter_dqsi filter for DQS output delays
@@ -748,6 +762,48 @@ class X393McntrlAdjust(object):
                                                        b_filter=filters[k],
                                                        #cost=NUM_FINE_STEPS,
                                                        quiet = quiet+2)
+        
+        numPhases=len(periods_phase[CMDA_KEY])
+        if not filter_variants is None:
+            strict= not ('all' in filter_variants)
+            if quiet < 3:
+                print ("filter_variants=",filter_variants)                     
+
+            for phase in range (numPhases):# ,cmda,dqso,dqo, in zip(range(numPhases),cmda_vars,dqso_vars,dqo_vars):
+                key_vars={}
+                for k in SIG_LIST:
+                    key_vars[k]=set()
+                try:
+                    for cmda in periods_phase[CMDA_KEY][phase]:
+                        for dqo in  periods_phase[DQO_KEY][phase]:
+                            for dqi in  periods_phase[DQI_KEY][phase]:
+                                print("phase=%d, (cmda,dqo,dqi)=%s"%(phase,str((cmda,dqo,dqi))))
+                               
+                                if (((cmda,dqo,dqi) in filter_variants) and 
+                                    (dqo[0] in periods_phase[DQSO_KEY][phase]) and
+                                    (dqi[0] in periods_phase[DQSI_KEY][phase])):
+                                    for i,k in enumerate(SIG_LIST):
+                                        key_vars[k].add((cmda,dqi[0],dqi,dqo[0],dqo)[i]) #careful with the order
+                    print("phase=%d, key_vars=%s"%(phase,str(key_vars))) # OK
+                    for k in SIG_LIST:
+                        for variant in periods_phase[k][phase]:
+                            if not variant in  key_vars[k]:
+                                print ("variant % s is not in %s for %s"%(variant,str(key_vars[k]), str(k)))
+                                periods_phase[k][phase].pop(variant) # remove variants that do not fit in one of the combinations in filter_variants
+                        print("periods_phase[%s][phase]=%s, strict=%s"%(str(k),str(periods_phase[k][phase]),str(strict)))
+                        if strict and (not periods_phase[k][phase]):
+                            print("empty")
+                            raise Exception('Just get to except')
+                except:
+                    for k in SIG_LIST:
+                        print("except %s"%str(k))
+                        periods_phase[k][phase]=None
+            for phase in range (numPhases):
+                print ("phase= %d"%(phase), end=" ")
+                for k in SIG_LIST:
+                    print ("%s"%(periods_phase[k][phase]), end=" ")
+                print()
+        for k in SIG_LIST:
             periods_all[k]=set()
             for lp in periods_phase[k]:
                 try:
@@ -798,16 +854,19 @@ class X393McntrlAdjust(object):
 #        """
         print()
         #print body
-        for phase in range(len(periods_phase[CMDA_KEY])):
+        for phase in range(numPhases):
             print ("%d"%(phase),end=" ")
             for k in SIG_LIST:               
                 for period in periods_all[k]:
-                    data_group=self.get_delays_for_phase(phase = phase,
+                    if not periods_phase[k][phase] is None:
+                        data_group=self.get_delays_for_phase(phase = phase,
                                                         list_branches=False,
                                                         target=k,
                                                         b_filter=[period,"A"],
                                                        #cost=NUM_FINE_STEPS, only used with 'B'
                                                         quiet = quiet+2)
+                    else:
+                        data_group=None
                     for i in range(positions[k]):
                         try:
                             print("%d"%(data_group[i]), end=" ")
@@ -816,12 +875,15 @@ class X393McntrlAdjust(object):
 
             for k in [CMDA_KEY,DQSI_KEY,DQSO_KEY]:               
                 for period in periods_all[k]:
-                    err_ps=self.get_delays_for_phase(phase = phase,
+                    if not periods_phase[k][phase] is None:
+                        err_ps=self.get_delays_for_phase(phase = phase,
                                                      list_branches='Err',
                                                      target=k,
                                                      b_filter=[period,"A"],
                                                      #cost=NUM_FINE_STEPS, only used with 'B'
                                                      quiet = quiet+2)
+                    else:
+                        err_ps=None
                     try:
                         print("%.1f"%(err_ps/tSDQS), end=" ")
                     except:
@@ -3940,7 +4002,7 @@ class X393McntrlAdjust(object):
                           if the remaining number of errors is odd
         """
         #temporarily:
-        self.load_mcntrl('dbg/proc_addr_odelay_0x55.pickle')
+        #self.load_mcntrl('dbg/proc_addr_odelay_0x55.pickle')
         #write/used block parameters
         startValue=0
         num8=8 # 8 bursts to read/write
@@ -3979,9 +4041,6 @@ read_variants= {(-1, (0, 0)): {'sel': 1, 'wbuf_dly': 9},
 
         if not read_var_set:
             raise Exception ("No valid read variant is found, can not proceed with write setup")
-
-        
-        
         
         cmda_vars= self.get_delays_for_phase(phase = None,
                                              list_branches=True,
@@ -4083,23 +4142,23 @@ read_variants= {(-1, (0, 0)): {'sel': 1, 'wbuf_dly': 9},
         if not read_write_map:
             default_read_var=readVars.keys()[0]
             default_read={'cmda_read':  default_read_var[0],
-                          'dqi':   default_read_var[1],
-                          'dqs':  default_read_var[1][0],
+                          'dqi':        default_read_var[1],
+                          'dqsi':       default_read_var[1][0],
                           'read_phase':(readVars[default_read_var][0]+readVars[default_read_var][1]//2)% numPhases}
         else: # take a first in r/w map
             default_read_var=read_write_map.keys()[0]
             default_read={'cmda_read':  default_read_var[0], # center of the first interval that works both for read and write
-                          'dqi':   default_read_var[2],
-                          'dqsi':  default_read_var[2][0],
+                          'dqi':        default_read_var[2],
+                          'dqsi':       default_read_var[2][0],
                           'read_phase':(read_write_map[default_read_var][0]+read_write_map[default_read_var][1]//2)% numPhases}
         # now go through all write only ramnges, try to find included r/w one, if not - use default_read
-        write_variants={}
+        write_settings={}
         for k_wo in write_only_map.keys():
             try:
                 for k_rw in read_write_map.keys():
                     if (k_rw[0],k_rw[1]) == k_wo:
                         phase=(read_write_map[k_rw][0]+read_write_map[k_rw][1]//2)% numPhases
-                        write_variants[k_wo]={'cmda_read':  k_rw[0],
+                        write_settings[k_wo]={'cmda_read':  k_rw[0],
                                               'cmda_write': k_rw[0],
                                               'dqi':        k_rw[2],
                                               'dqsi':       k_rw[2][0],
@@ -4112,15 +4171,15 @@ read_variants= {(-1, (0, 0)): {'sel': 1, 'wbuf_dly': 9},
                     raise Exception("failed") # just to get to "except"
             except:
                 phase=(write_only_map[k_wo][0]+read_write_map[k_wo][1]//2)% numPhases
-                write_variants[k_wo]={'cmda_write': k_wo[0],
+                write_settings[k_wo]={'cmda_write': k_wo[0],
                                       'dqo':        k_wo[1],
                                       'dqso':       k_wo[1][0],
                                       'write_phase': phase}
-                write_variants[k_wo].update(default_read)
+                write_settings[k_wo].update(default_read)
         if quiet < 3:
-            print ("write_variants=",write_variants)
+            print ("write_settings=",write_settings)
         """
-write_variants= {
+write_settings= {
    (0, (0, -1)): {
              'dqsi':         0,
              'cmda_write':   0,
@@ -4159,34 +4218,25 @@ write_variants= {
              'dqi':     (0,  0)}}
         
         """    
-                
 
-                         
-            
-            
-        
-        
-        
-        
-        return
-        
-    '''       
-        self.x393_mcntrl_timing.axi_set_wbuf_delay(readVars[readBranch]['wbuf_dly'])
-        rsel=readVars[readBranch]['sel']
         odd_list=[]    
-        for var,phase in phase_var.items():
+        for write_variant_key, variant in write_settings.items():
+            if quiet < 3:
+                print ('Trying variant %s:'%(str(write_variant_key)))
+                print ('Settings: %s:'%(str(variant)))
             problems_min=None
             best_wsel=None
             for wsel in range (2):
-                used_delays=self.set_delays(phase=phase,
-                                            filter_cmda=DFLT_DLY_FILT, # may be special case: 'S<safe_phase_as_float_number>
-                                            filter_dqsi=DFLT_DLY_FILT,
-                                            filter_dqi= DFLT_DLY_FILT,
-                                            filter_dqso=DFLT_DLY_FILT,
-                                            filter_dqo= DFLT_DLY_FILT,
-                                            cost=None,
-                                            refresh=True,
-                                            forgive_missing=True,
+                #set write delay
+                used_delays=self.set_delays(phase =           variant['write_phase'],
+                                            filter_cmda =     [variant['cmda_write']], #DFLT_DLY_FILT, # may be special case: 'S<safe_phase_as_float_number>
+                                            filter_dqsi =     None, 
+                                            filter_dqi =      None,
+                                            filter_dqso =     [variant['dqso']],
+                                            filter_dqo =      [variant['dqo']],
+                                            cost =            None,
+                                            refresh =         True,
+                                            forgive_missing = False,
                                             quiet=quiet+2)
                 if used_delays is None:
                     raise Exception("measure_addr_odelay(): failed to set phase = %d"%(phase))        
@@ -4203,35 +4253,36 @@ write_variants= {
                 
                 startValue += 0x200
                 startValue &= 0xffff
-                if phase != read_phase_var[var]:
-                    used_delays=self.set_delays(phase=read_phase_var[var],
-                                                filter_cmda=DFLT_DLY_FILT, # may be special case: 'S<safe_phase_as_float_number>
-                                                filter_dqsi=DFLT_DLY_FILT,
-                                                filter_dqi= DFLT_DLY_FILT,
-                                                filter_dqso=DFLT_DLY_FILT,
-                                                filter_dqo= DFLT_DLY_FILT,
-                                                cost=None,
-                                                refresh=True,
-                                                forgive_missing=True,
-                                                quiet=quiet+2)
-                    if used_delays is None:
-                        raise Exception("set_write_branch(): failed to set phase = %d"%(phase))
+                used_delays=self.set_delays(phase =           variant['read_phase'],
+                                            filter_cmda =     [variant['cmda_read']], # may be special case: 'S<safe_phase_as_float_number>
+                                            filter_dqsi =     [variant['dqsi']],
+                                            filter_dqi =      [variant['dqi']],
+                                            filter_dqso =     None,
+                                            filter_dqo =      None,
+                                            cost =            None,
+                                            refresh =         True,
+                                            forgive_missing = False,
+                                            quiet=quiet+2)
+                if used_delays is None:
+                    raise Exception("set_write_branch(): failed to set phase = %d"%(phase))
+                #set wbuf delay
+                self.x393_mcntrl_timing.axi_set_wbuf_delay(readVars[(variant['cmda_read'],variant['dqi'])]['wbuf_dly'])
                 problems=self.x393_pio_sequences. set_and_read_inc(num8=num8, # max 512 16-bit words
                                                                         ca=ca,
                                                                         ra=ra,
                                                                         ba=ba,
-                                                                        sel=rsel,
+                                                                        sel=readVars[(variant['cmda_read'],variant['dqi'])]['sel'],
                                                                         quiet=quiet+1)
                 if (problems_min is None) or (sum(problems) < sum(problems_min)):
                     problems_min=problems
                     best_wsel=wsel
             if sum(problems_min) == 0:
-                rslt[var]={'sel':best_wsel}
+                rslt[write_variant_key]={'sel':best_wsel}
             elif (problems_min[0]%2) or (problems_min[1]%2):
-                odd_list.append(var)
+                odd_list.append(write_variant_key)
                 if quiet < 3:
                     print("Failed to find write settings for varinat '%s', phase=%d - best start write errors=%d, end write errors=%d, wsel=%d"%(
-                        var,phase,problems_min[0],problems_min[1],best_wsel))
+                        write_variant_key,phase,problems_min[0],problems_min[1],best_wsel))
                     print("Odd number of wrong read words means that there is a half clock period shift, you may need to change")
                     print("primary_set parameter of proc_dqo_dqso() 2 <->0 or change DQS pattern (0x55<->0xAA)" )
                     print("Using of DQS PATTERN of 0xAA (output will start from 0, not 1) is not optimal, it requires extra toggling" )
@@ -4239,22 +4290,25 @@ write_variants= {
             else:
                 if quiet < 2:
                     print("Failed to find write settings for varinat '%s', phase=%d - best start read errors=%d, end read errors=%d, wsel=%d"%(
-                        var,phase,problems_min[0],problems_min[1],best_wsel))
-
+                        write_variant_key,phase,problems_min[0],problems_min[1],best_wsel))
         if odd_list:
             rslt[ODD_KEY]=odd_list    
         self.adjustment_state['write_variants']=rslt
-
         if quiet < 3:
             print ('write_variants=',rslt)
         return rslt            
-    '''
     
     
     def get_phase_range(self,
                         rsel=None, # None (any) or 0/1
                         wsel=None, # None (any) or 0/1
-                        quiet=3):     
+                        cmda_filter=None,
+                        dqsi_filter=None,
+                        dqi_filter= None,
+                        dqso_filter=None,
+                        dqo_filter= None,
+                        set_globals=True,
+                        quiet=1):
         """
         Find the phase range that satisfies all conditions, possibly filtered by read sel and write sel (early/late command)
         @param rsel filter by early/late read command (in two-clock command cycle - 'sel') Valid values: None, 0 or 1
@@ -4263,7 +4317,20 @@ write_variants= {
         @return {'optimal_phase': optimal phase, 'rsel': read_sel, 'wsel': write_sel, 'min_phase': minimal_phase, 'max_phase': maximal_phase}
                  'max_phase' may be lower than  'min_phase' if the range rolls over
         """
-#        self.load_mcntrl('dbg/state_0x55.pickle')
+        #temporarily:
+#        self.load_mcntrl('dbg/proc_addr_odelay_0x55.pickle')
+        if cmda_filter is None:
+            cmda_filter = DFLT_DLY_FILT
+        if dqsi_filter is None:
+            dqsi_filter = DFLT_DLY_FILT
+        if dqi_filter is None:
+            dqi_filter = DFLT_DLY_FILT
+        if dqso_filter is None:
+            dqso_filter = DFLT_DLY_FILT
+        if dqo_filter is None:
+            dqo_filter = DFLT_DLY_FILT
+
+        
         try:
             read_variants=self.adjustment_state['read_variants']
         except:
@@ -4272,7 +4339,6 @@ write_variants= {
             write_variants=self.adjustment_state['write_variants']
         except:
             write_variants=None
-        return
         try:
             dqs_pattern=self.adjustment_state["dqs_pattern"]
         except:
@@ -4282,105 +4348,154 @@ write_variants= {
         self.x393_mcntrl_timing.axi_set_dqs_dqm_patterns(dqs_patt=dqs_pattern,
                                                          dqm_patt=None,
                                                          quiet=quiet+2)
-    
-        #FIXME:
-        """    
-        try:
-            delays_phase=self.get_delays_vs_phase(filter_dqo=2,
-                                     filter_dqi=2,
-                                     filter_dqso=2,
-                                     filter_dqsi=2,
-                                     filter_cmda=2,
-                                     filter_read=True,
-                                     filter_write=True,
-                                     filter_rsel=rsel,
-                                     filter_wsel=wsel,
-                                     keep_all=False,
-                                     set_table=True,
-#                                         quiet=quiet+2)
-                                     quiet=quiet)
-            self.adjustment_state['delays_phase']=delays_phase
-        except:
-            print ("Failed to execute 'get_delays_vs_phase' command")
-            return None
-        """
-        delays_phase=None
-        phase_starts=[]
-        numPhases=len(delays_phase)
-        for phase,dlys in enumerate (delays_phase):
-            if (not dlys is None) and (delays_phase[(phase-1) % numPhases] is None):
-                phase_starts.append(phase)
-        phase_lengths=[]
-        if phase_starts:
-            for phase_start in phase_starts:
-                for phase in range(phase_start+1,phase_start+numPhases):
-                    p=phase % numPhases
-                    if delays_phase[p] is None:
-                        phase_lengths.append((p-phase_start) % numPhases)
-                        break
-            best_len= max(phase_lengths)
-            best_start=phase_starts[phase_lengths.index(best_len)]        
-        else: # no ends, maybe all None, or all non-None
-            if delays_phase[0] is None:
-                return None
-            else: # all are valid
-                best_start=0
-                best_len=numPhases
-        #find center
-        rslt={}
-        optimal_phase= (best_start+best_len//2) % numPhases
-        rslt['optimal_phase'] = optimal_phase
-        rslt['min_phase'] = best_start
-        rslt['max_phase'] = (best_start+best_len-1) % numPhases
-        read_var="A"
-        write_var="A"
-        if quiet < 2:
-            print ("result=",rslt)
-            print ("phase_starts=",phase_starts)
-            print ("phase_lengths=",phase_lengths)
+        if rsel is None:
+            rsels=(0,1)
+        elif isinstance(rsel,(list,tuple)):
+            rsels=tuple(rsel)
+        else:
+            rsels=(rsel,)
+        if wsel is None:
+            wsels=(0,1)
+        elif isinstance(wsel,(list,tuple)):
+            wsels=tuple(wsel)
+        else:
+            wsels=(wsel,)
+        if quiet <2:
+            print ("read_variants=", read_variants)
+            print ("write_variants=",write_variants)
+            print ("rsels=%s, wsels=%s"%(str(rsels),str(wsels)))
         
-        if not read_variants is None:
-            # find common variants in read_variants and delays_phase[optimal_phase] - in the future there may be several of them!
-            variants=[]
-            for var in read_variants.keys():
-                if quiet < 1:
-                    print ("var=",var)
-                    print ("delays_phase[optimal_phase]=",delays_phase[optimal_phase])
-                    print ("delays_phase[optimal_phase][DQI_KEY]=",delays_phase[optimal_phase][DQI_KEY])
-                if var in delays_phase[optimal_phase][DQI_KEY]:
-                    variants.append(var)
-            if variants:        
-                rslt['rsel'] = read_variants[variants[0]]['sel']
-                read_var=variants[0][0].upper()
-        if not write_variants is None:
-            # find common variants in write_variants and delays_phase[optimal_phase] - in the future there may be several of them!
-            variants=[]
-            for var in write_variants.keys():
-                if var in delays_phase[optimal_phase][DQO_KEY]:
-                    variants.append(var)
-            if variants:        
-                rslt['wsel'] = write_variants[variants[0]]['sel']
-                write_var=variants[0][0].upper()
-        if quiet < 4:
-            print ("result=",rslt)
-        self.adjustment_state['optimal_phase']=rslt
+        #TODO: Add filters (maximal errors?) here
+        
+        cmda_vars= self.get_delays_for_phase(phase = None,
+                                             list_branches=True,
+                                             target=CMDA_KEY,
+                                             b_filter=cmda_filter, 
+                                             cost=None, # if None - will default to NUM_FINE_STEPS, if 0 - will keep it 
+                                             quiet = quiet+2)
+        dqsi_vars= self.get_delays_for_phase(phase = None,
+                                             list_branches=True,
+                                             target=DQSI_KEY,
+                                             b_filter=dqsi_filter, 
+                                             cost=None, # if None - will default to NUM_FINE_STEPS, if 0 - will keep it 
+                                             quiet = quiet+2)
+        dqi_vars= self.get_delays_for_phase(phase = None,
+                                             list_branches=True,
+                                             target=DQI_KEY,
+                                             b_filter=dqi_filter,
+                                             cost=None, # if None - will default to NUM_FINE_STEPS, if 0 - will keep it 
+                                             quiet = quiet+2)
+        dqso_vars= self.get_delays_for_phase(phase = None,
+                                             list_branches=True,
+                                             target=DQSO_KEY,
+                                             b_filter=dqso_filter,
+                                             cost=None, # if None - will default to NUM_FINE_STEPS, if 0 - will keep it 
+                                             quiet = quiet+2)
+        dqo_vars= self.get_delays_for_phase(phase = None,
+                                             list_branches=True,
+                                             target=DQO_KEY,
+                                             b_filter=dqo_filter,
+                                             cost=None, # if None - will default to NUM_FINE_STEPS, if 0 - will keep it 
+                                             quiet = quiet+2)
+        numPhases=len(cmda_vars)
+        
+        all_variants=[]
+        for phase,cmda,dqso,dqo,dqsi,dqi in zip(range(numPhases),cmda_vars,dqso_vars,dqo_vars,dqsi_vars,dqi_vars):
+            if quiet < 2:
+                print ("phase=",phase,', cmda=',cmda,', dqso=',dqso,', dqo=',dqo,', dqsi=',dqsi,', dqi=',dqi)
+            if all([cmda,dqso,dqo,dqsi,dqi]):
+                av=set()
+                for cv in cmda:
+                    for dvo in dqo:
+                        if dvo[0] in dqso:
+                            for dvi in dqi:
+                                if(( dvi[0] in dqsi) and
+                                   ((cv,dvi) in read_variants.keys()) and
+                                   ((cv,dvo) in write_variants.keys()) and
+                                   (read_variants[(cv,dvi)]['sel'] in rsels) and
+                                   (write_variants[(cv,dvo)]['sel'] in wsels)):
+                                    av.add((cv,dvo,dvi))
+                if av:
+                    all_variants.append(av)
+#                    all_read_variants |= rv
+                else:
+                    all_variants.append(None)
+#                    print ("rv is not - it is ",rv)
+            else:    
+                all_variants.append(None)
+#                print ("Some are not: phase=",phase,', cmda=',cmda,', dqsi=',dqsi,', dqi=',dqi)
+        
+        if quiet < 3:
+            print ("all_variants=",all_variants)
+        varints_map=self._map_varinats(all_variants)
+        if quiet < 3:
+            print ("varints_map=",varints_map)
+        rslt=[]
+        for k,v in varints_map.items():
+            rslt.append({
+                        'rsel':      read_variants [(k[0],k[2])]['sel'],
+                        'wbuf_dly':  read_variants [(k[0],k[2])]['wbuf_dly'],
+                        'wsel':      write_variants[(k[0],k[1])]['sel'],
+                        'cmda':      k[0],
+                        'dqsi':      k[2][0],
+                        'dqi':       k[2],
+                        'dqo':       k[1],
+                        'dqso':      k[1][0],
+                        'start':     v[0],
+                        'len':       v[1],
+                        'phase':     (v[0]+v[1] // 2) % numPhases
+                        })
+        if not rslt:
+            print("Could not find any combination of parameters that fit all filters")
+            return None
+        
             
-        #set delays to set Verilog parameters. TODO: save sel-s somehow too?
-        #TODO: redo the following code
-        print('write_var=',write_var)
-        """
-        self.set_phase_delays(phase=optimal_phase,
-                             inp_period=read_var,
-                             out_period=write_var,
-                             refresh=False,
-                             delays_phase=delays_phase, # if None - use global
-                             quiet=quiet)
-        """
-        return rslt         
+        if quiet < 3:
+            print ("result=",rslt)
+            
+        # Find the longest streak : TODO - combine roll over phase (not in this case, cmda just adds +1 from high phase to 0
+        # TODO: use minimal cmda/dqsi,dqso errors ? Or just add them to parameters of this method?
+        toSort=[(-i['len'], i) for i in rslt]
+        toSort.sort()
+        if quiet < 3:
+            print ("toSort=",toSort)
+        rslt=[i[1] for i in toSort]
+
+        if quiet < 3:
+            print ("sorted result=",rslt)
+        optimal=rslt[0]
+        if set_globals:
+            self.adjustment_state['adjustment_variants']=rslt
+        #set phase and delays matching the best variant
+        
+        used_delays=self.set_delays(phase=            optimal['phase'],
+                                    filter_cmda =     (optimal['cmda'],),
+                                    filter_dqsi =     (optimal['dqsi'],),
+                                    filter_dqi =      (optimal['dqi'],),
+                                    filter_dqso =     (optimal['dqso'],),
+                                    filter_dqo =      (optimal['dqo'],),
+                                    cost =            None,
+                                    refresh =         True,
+                                    forgive_missing = False,
+                                    quiet =           quiet)
+        if used_delays is None:
+            print ("sorted result=",rslt)
+            raise Exception("get_phase_range(): failed to set phase = %d"%(optimal['phase']))  #      
+   
+        if quiet <5:
+            self.show_all_delays(filter_variants = varints_map.keys(),
+                        filter_cmda =    'A',#None,
+                        filter_dqsi =    'A',#None,
+                        filter_dqi =     'A',#None,
+                        filter_dqso =    'A',#None,
+                        filter_dqo =     'A',#None,
+                        quiet =          quiet+2)
+        
+        return rslt # first in the list is the best
 
 
     def measure_all(self,
-                    tasks="ICWRPOA", #"ICWRPOASZB",
+                    tasks="ICWRPOASZB", # "ICWRPOA", #"ICWRPOASZB",
                     prim_steps=1,
                     primary_set_in=2,
                     primary_set_out=2,
@@ -4587,7 +4702,7 @@ write_variants= {
                               'quiet':quiet+1}},
                     {'key':'B',
                     'func':self.set_write_branch,
-                    'comment':'Try read mode branches and find sel (early/late read command) and wbuf delay, if possible.',
+                    'comment':'Try write mode branches and find sel (early/late read command) and wbuf delay, if possible.',
                     'params':{'dqs_pattern':dqs_pattern,
                               'quiet':quiet+1}},
                     {'key':'B',
