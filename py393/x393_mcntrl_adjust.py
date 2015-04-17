@@ -40,6 +40,7 @@ from x393_pio_sequences      import X393PIOSequences
 from x393_mcntrl_timing      import X393McntrlTiming
 from x393_mcntrl_buffers     import X393McntrlBuffers
 from verilog_utils import split_delay,combine_delay,NUM_FINE_STEPS, convert_w32_to_mem16,convert_mem16_to_w32
+from x393_utils              import X393Utils
 
 import get_test_dq_dqs_data # temporary to test processing            
 import x393_lma
@@ -64,6 +65,7 @@ class X393McntrlAdjust(object):
     x393_pio_sequences=None
     x393_mcntrl_timing=None
     x393_mcntrl_buffers=None
+    x393_utils=None
     verbose=1
     adjustment_state={}
     def __init__(self, debug_mode=1,dry_mode=True):
@@ -75,6 +77,7 @@ class X393McntrlAdjust(object):
         self.x393_pio_sequences=  X393PIOSequences(debug_mode,dry_mode)
         self.x393_mcntrl_timing=  X393McntrlTiming(debug_mode,dry_mode)
         self.x393_mcntrl_buffers= X393McntrlBuffers(debug_mode,dry_mode)
+        self.x393_utils=          X393Utils(debug_mode,dry_mode)
 #        self.__dict__.update(VerilogParameters.__dict__["_VerilogParameters__shared_state"]) # Add verilog parameters to the class namespace
         try:
             self.verbose=vrlg.VERBOSE
@@ -745,6 +748,8 @@ class X393McntrlAdjust(object):
         """
         Print all optionally filtered delays, the results can be copied to a spreadsheet program to create graph
         @param filter_variants optional list of 3-tuples (cmda_variant, (dqso_variant,dqo-dqso), (dqsi_variant,dqi-dqsi))
+               Alternatively if this parameter is a string (currently any), only phase values that have all signals valid
+               will be shown 
         @param filter_cmda  filter clock period branches for command and addresses. See documentation for
         get_delays_for_phase() - b_filter
         @param filter_dqsi filter for DQS output delays
@@ -765,16 +770,18 @@ class X393McntrlAdjust(object):
                        'dqso_phase_err')
         """
         #temporarily:
-        self.load_mcntrl('dbg/x393_mcntrl.pickle')
-        
-        
-#        if not all (k in self.adjustment_state for k in required_keys):
-#            print ("Running in simulation mode, using hardcoded data")
-#            self.load_hardcoded_data()
-#            self.proc_addr_odelay(True, 200.0, 4)
-#            self.proc_dqsi_phase ('All', 50, 0, 0.0, 200, 3)
-#            self.proc_dqso_phase ('All', 50, 0, 0.0, 200, 3)
-        #datasheet step per average delay per finedelay step    
+#        self.load_mcntrl('dbg/x393_mcntrl.pickle')
+        if quiet < 5:
+            print("\n\nCopy the table below to a spreadsheet program to plot graphs)")
+            print("show_all_delays(",
+                  filter_variants,",",
+                  filter_cmda,",",
+                  filter_dqsi,",",
+                  filter_dqi,",",
+                  filter_dqso,",",
+                  filter_dqo ,",",
+                  quiet,")")
+
         all_groups_valid_only=False
         if (isinstance(filter_variants,str)) : # currently - any string means "keep only phases that have all groups valid)
             all_groups_valid_only=True
@@ -782,7 +789,6 @@ class X393McntrlAdjust(object):
 
         tSDQS=1000.0*self.x393_mcntrl_timing.get_dly_steps()['DLY_STEP']/NUM_FINE_STEPS
         filters=dict(zip(SIG_LIST,[filter_cmda,filter_dqsi,filter_dqi,filter_dqso,filter_dqo]))
-#        filters={CMDA_KEY:filter_cmda,DQSI_KEY:filter_dqsi,DQI_KEY:filter_dqi,DQSO_KEY:filter_dqso,DQO_KEY:filter_dqo}
         periods_phase={}
         periods_all={}
         for k in SIG_LIST:
@@ -793,8 +799,8 @@ class X393McntrlAdjust(object):
                                                        target=k,
                                                        b_filter=filters[k],
                                                        #cost=NUM_FINE_STEPS,
-#                                                       quiet = quiet+2)
-                                                       quiet = quiet+0)
+                                                       quiet = quiet+1)
+#                                                       quiet = quiet+0)
         numPhases=len(periods_phase[CMDA_KEY])
         #Remove DQI and DQO branches that are referenced to non-existing (filtered out) DQSI/DQI
         for phase in range (numPhases):# ,cmda,dqso,dqo, in zip(range(numPhases),cmda_vars,dqso_vars,dqo_vars):
@@ -4727,29 +4733,64 @@ write_settings= {
             print ("sorted result=",rslt)
             raise Exception("get_phase_range(): failed to set phase = %d"%(optimal['phase']))  #      
    
-        if quiet <4:
+        if quiet < 4:
             self.show_all_delays(filter_variants = varints_map.keys(),
                         filter_cmda =    filters[CMDA_KEY],
                         filter_dqsi =    filters[DQSI_KEY],
                         filter_dqi =     filters[DQI_KEY],
                         filter_dqso =    filters[DQSO_KEY],
                         filter_dqo =     filters[DQO_KEY],
-                        quiet =          quiet+1)
+                        quiet =          quiet+0)
         
         return rslt # first in the list is the best
 
+    def verify_write_read(self,
+                          brc=None,
+                          adj_vars=None,
+                          quiet=1):
+        """
+        Veriy random write+read for each valid phase (filtered by adj_vars or current  self.adjustment_state['adjustment_variants'],
+        either to a selected bank/row/column or using random address
+        """
+        #temporarily:
+        self.load_mcntrl('dbg/x393_mcntrl.pickle')
+        
+        if adj_vars is None:
+            adj_vars=self.adjustment_state['adjustment_variants']
+        if quiet < 2:
+            print ("adj_vars=",adj_vars)
+        for variant in adj_vars:
+            if quiet < 2:
+                print ("Testing variant %s to write and read data"%(variant))
+            dlys= self.get_all_delays(phase=None,
+                                      filter_cmda =     [variant[CMDA_KEY]],
+                                      filter_dqsi =     [variant[DQSI_KEY]],
+                                      filter_dqi =      [variant[DQI_KEY]],
+                                      filter_dqso =     [variant[DQSO_KEY]],
+                                      filter_dqo =      [variant[DQO_KEY]],
+                                      forgive_missing = False,
+                                      cost =            None,
+                                      quiet =           quiet+2)
+            if quiet < 2:
+                for phase, d in enumerate(dlys):
+                    if not d is None:
+                        print ("%d %s"%(phase,d))
+
+            
+             
 
     def measure_all(self,
-                    tasks="ICWRPOASZB", # "ICWRPOA", #"ICWRPOASZB",
+                    tasks="*ICWRPOASZB", # "ICWRPOA", #"ICWRPOASZB",
                     prim_steps=1,
                     primary_set_in=2,
                     primary_set_out=2,
                     dqs_pattern=0x55,
                     rsel=1, # None (any) or 0/1
-                    wsel=1, # None (any) or 0/1
+                    wsel=1, # None (any) or 0/1 # Seems wsel=0 has a better fit - consider changing
                     quiet=3):
         """
-        @param tasks - "C" cmda, "W' - write levelling, "R" - read levelling (DQI-DQSI), "P" -  dqs input phase (DQSI-PHASE),
+        @param tasks - "*" - load bitfile
+                       "C" cmda, "W' - write levelling, "R" - read levelling (DQI-DQSI), "P" -  dqs input phase (DQSI-PHASE),
                        "O" - output timing (DQ odelay vs  DQS odelay), "A" - address/bank lines output delays, "Z" - print results,
                        "B" - select R/W brances and get the optimal phase
         @param prim_steps -  compare measurement with current delay with one lower by 1 primary step (5 fine delay steps), 0 -
@@ -4760,10 +4801,11 @@ write_settings= {
         @param quiet reduce output
         """
 #        dqs_pattern=0x55 # 0xaa
-        try:
-            s_dqs_pattern="0x%x"%(dqs_pattern)
-        except:
-            s_dqs_pattern=""
+#        try:
+#            s_dqs_pattern="0x%x"%(dqs_pattern)
+#        except:
+#            s_dqs_pattern=""
+        bitfile_path=None # use default
         max_phase_err=0.1
         frac_step=0.125
 #        read_sel=1 # set DDR3 command in the second cycle of two (0 - during the first omne)
@@ -4789,9 +4831,14 @@ write_settings= {
         DqsoMaxDlyErr=200.0 # currently just to check multiple overlapping DQSI branches
         CMDAMaxDlyErr=200.0 # currently just to check multiple overlapping DQSI branches
         task_data=[
+                   {'key':'*',
+                    'func':self.x393_utils.bitstream,
+                    'comment':'Load bitfile, initialize FPGA',
+                    'params':{'bitfile':bitfile_path,
+                              'quiet':quiet+1}},
                    {'key':'I',
                     'func':self.x393_pio_sequences.task_set_up,
-                    'comment':'Initial setup - memory controller, sequnces',
+                    'comment':'Initial setup - memory controller, sequences',
                     'params':{'dqs_pattern':dqs_pattern,
                               'quiet':quiet+1}},
                    {'key':'C',
@@ -4811,14 +4858,6 @@ write_settings= {
                               'invert':0,
                               'dqs_patt':dqs_pattern,
                               'quiet':quiet+1}},
-                   # See what depends on it to use self.proc_dqo_dqso instead . Probably use self.proc_dqsi_phase with None for parameters
-                   # Use zero finedelay and estimated step duration
-#                   {'key':'W',
-#                    'func':self.proc_write_levelling,
-#                    'comment':'Processing measure write levellingresults',
-#                    'params':{'data_set_number':-1,
-#                              'max_phase_err':max_phase_err,
-#                              'quiet':quiet+1}},
                                        
                    {'key':'W',
                     'func':self.proc_dqso_phase,
@@ -4898,12 +4937,12 @@ write_settings= {
                               'maxDlyErr':DqsoMaxDlyErr,
                               'quiet':quiet+1}},
 
-                    {'key':'O',
-                    'func':self.save_mcntrl,
-                    'comment':'Save current state as Python pickle',
-                    'params':{'path': 'proc_dqso_phase_%s.pickle'%(s_dqs_pattern), # None, # use path defined by the parameter 'PICKLE'
-                              'quiet':quiet+1}},
-                   
+#                    {'key':'O',
+#                    'func':self.save_mcntrl,
+#                    'comment':'Save current state as Python pickle',
+#                    'params':{'path': 'proc_dqso_phase_%s.pickle'%(s_dqs_pattern), # None, # use path defined by the parameter 'PICKLE'
+#                              'quiet':quiet+1}},
+#                   
                    
                    {'key':'A',
                     'func':self.measure_addr_odelay,
@@ -4919,27 +4958,13 @@ write_settings= {
                     'params':{'commonFine':commonFine,
                               'maxErrPs':CMDAMaxDlyErr,
                               'quiet':quiet+1}},
-                    {'key':'A',
-                    'func':self.save_mcntrl,
-                    'comment':'Save current state as Python pickle',
-                    'params':{'path': 'proc_addr_odelay_%s.pickle'%(s_dqs_pattern), # None, # use path defined by the parameter 'PICKLE'
-                              'quiet':quiet+1}},
-                   
-#                    {'key':'S',
-#                    'func':self.get_delays_vs_phase,
-#                    'comment':'Setting calculated delays to global parameters to be used when setting phase',
-#                    'params':{'filter_dqo': 2,
-#                              'filter_dqi': 2,
-#                              'filter_dqso':2,
-#                              'filter_dqsi':2,
-#                              'filter_cmda':2,
-#                              'filter_read':0,
-#                              'filter_write':0,
-#                              'filter_rsel':None,
-#                              'filter_wsel':None,
-#                              'keep_all':False,
-#                              'set_table':True,
+
+#                    {'key':'A',
+#                    'func':self.save_mcntrl,
+#                    'comment':'Save current state as Python pickle',
+#                    'params':{'path': 'proc_addr_odelay_%s.pickle'%(s_dqs_pattern), # None, # use path defined by the parameter 'PICKLE'
 #                              'quiet':quiet+1}},
+                   
                     {'key':'B',
                     'func':self.set_read_branch,
                     'comment':'Try read mode branches and find sel (early/late read command) and wbuf delay, if possible.',
@@ -4955,36 +4980,39 @@ write_settings= {
                     'comment':'Find the phase range that satisfies all conditions, possibly filtered by read sel and write sel (early/late command)',
                     'params':{'rsel':rsel,
                               'wsel':wsel,
-                              'quiet':quiet+1}},
+                              'quiet':quiet+0}},
                     {'key':'S',
                     'func':self.save_mcntrl,
                     'comment':'Save current state as Python pickle',
                     'params':{'path': None, # use path defined by the parameter 'PICKLE'
                               'quiet':quiet+1}},
-#                    {'key':'Z',
-#                    'func':self.show_all_vs_phase,
-#                    'comment':'Printing results table (delays and errors vs. phase)- all, including invalid phases',
-#                    'params':{'keep_all':True,
-#                              'filter_rw':False,
-#                              'filter_rsel':None,
-#                              'filter_wsel':None,
-#                              'load_hardcoded':False}},
-#                    {'key':'Z',
-#                    'func':self.show_all_vs_phase,
-#                    'comment':'Printing results table (delays and errors vs. phase)- only for valid clock phase values',
-#                    'params':{'keep_all':False,
-#                              'filter_rw':False,
-#                              'filter_rsel':None,
-#                              'filter_wsel':None,
-#                              'load_hardcoded':False}},
-#                    {'key':'BZ',
-#                    'func':self.show_all_vs_phase,
-#                    'comment':'Printing results table, filtered by read/write blocks',
-#                    'params':{'keep_all':False,
-#                              'filter_rw':True,
-#                              'filter_rsel':rsel,
-#                              'filter_wsel':wsel,
-#                              'load_hardcoded':False}},
+                    {'key':'S',
+                    'func':self.x393_utils.save,
+                    'comment':'Save timing parameters as a Verilog header file',
+                    'params':{'fileName': None}}, # use path defined by the parameter
+                   
+                    {'key':'Z',
+                    'func':self.show_all_delays,
+                    'comment':'Printing results table (delays and errors vs. phase)- all, including invalid phases',
+                    'params':{'filter_variants':None, # Here any string
+                        'filter_cmda': None,
+                        'filter_dqsi': None,
+                        'filter_dqi':  None,
+                        'filter_dqso': None,
+                        'filter_dqo':  None,
+                        'quiet': quiet+1}},
+
+                    {'key':'Z',
+                    'func':self.show_all_delays,
+                    'comment':'Printing results table (delays and errors vs. phase)- Only phases that nave valid values for all signals',
+                    'params':{'filter_variants':'A', # Here any string
+                        'filter_cmda': None,
+                        'filter_dqsi': None,
+                        'filter_dqi':  None,
+                        'filter_dqso': None,
+                        'filter_dqo':  None,
+                        'quiet': quiet+1}},
+
                   ]
         start_time=time.time()
         last_task_start_time=start_time

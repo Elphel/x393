@@ -84,11 +84,16 @@ class X393Utils(object):
         else:
             for d in data:
                 self.x393_mem.write_mem(FPGA_RST_CTRL,d)
-    def bitstream(self,bitfile=DEFAULT_BITFILE):
+    def bitstream(self,
+                  bitfile=None,
+                  quiet=1):
         """
         Turn FPGA clock OFF, reset ON, load bitfile, turn clock ON and reset OFF
-        <bitfile> path to bitfile if provided, otherwise default bitfile will be used
+        @param bitfile path to bitfile if provided, otherwise default bitfile will be used
+        @param quiet Reduce output
         """
+        if bitfile is None:
+            bitfile=DEFAULT_BITFILE
         print ("FPGA clock OFF")
         self.x393_mem.write_mem(FPGA0_THR_CTRL,1)
         print ("Reset ON")
@@ -104,11 +109,13 @@ class X393Utils(object):
                         break
                     dst.write(copy_buffer)
                     l+=len(copy_buffer)
-                    print("sent %d bytes to FPGA"%l)                            
+                    if quiet < 4 :
+                        print("sent %d bytes to FPGA"%l)                            
 
             print("Loaded %d bytes to FPGA"%l)                            
 #            call(("cat",bitfile,">"+FPGA_LOAD_BITSTREAM))
-        print("Wait for DONE")
+        if quiet < 4 :
+            print("Wait for DONE")
         if not self.DRY_MODE:
             for _ in range(100):
                 if (self.x393_mem.read_mem(INT_STS) & 4) != 0:
@@ -117,9 +124,11 @@ class X393Utils(object):
             else:
                 print("Timeout waiting for DONE, [0x%x]=0x%x"%(INT_STS,self.x393_mem.read_mem(INT_STS)))
                 return
-        print ("FPGA clock ON")
+        if quiet < 4 :
+            print ("FPGA clock ON")
         self.x393_mem.write_mem(FPGA0_THR_CTRL,0)
-        print ("Reset OFF")
+        if quiet < 4 :
+            print ("Reset OFF")
         self.reset(0xa)
         self.x393_axi_tasks.init_state()
     
