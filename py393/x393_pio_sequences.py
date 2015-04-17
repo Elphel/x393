@@ -1117,9 +1117,10 @@ class X393PIOSequences(object):
                 break
         else:
             last_bad= 0
+        rslt=(first_bad, last_bad, data16[mid_index],mid_index)
         if quiet < 3:
-            print ("non_consecutive leading/trailing: %d /%d"%(first_bad, last_bad))    
-        return (first_bad, last_bad)
+            print ("non_consecutive leading/trailing: %d /%d, middle data=0x%x, index=0x%x"%rslt)    
+        return rslt
                  
                  
 
