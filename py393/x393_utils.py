@@ -198,7 +198,11 @@ class X393Utils(object):
                 {"name":"DLY_LANE1_ODELAY", "width": 80, "decl_width":""},
                 {"name":"DLY_LANE1_IDELAY", "width": 72, "decl_width":""},
                 {"name":"DLY_CMDA",         "width":256, "decl_width":""},
-                {"name":"DLY_PHASE",        "width": 8,  "decl_width":""})
+                {"name":"DLY_PHASE",        "width": 8,  "decl_width":""},
+                {"name":"DFLT_WBUF_DELAY",  "width": 4,  "decl_width":""},
+                {"name":"DFLT_WSEL",        "width": 1,  "decl_width":""},
+                {"name":"DFLT_RSEL",        "width": 1,  "decl_width":""},
+                )
  
     def localparams(self,
                     quiet=False):
