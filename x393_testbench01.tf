@@ -27,23 +27,20 @@
 `define SET_PER_PIN_DELAYS 1 // set individual (including per-DQ pin delays)
 `define PS_PIO_WAIT_COMPLETE 0 // wait until PS PIO module finished transaction before starting a new one
 // Disabled already passed test to speedup simulation
-`define TEST_WRITE_LEVELLING 1
-`define TEST_READ_PATTERN 1
+//`define TEST_WRITE_LEVELLING 1
+//`define TEST_READ_PATTERN 1
 `define TEST_WRITE_BLOCK 1
 `define TEST_READ_BLOCK 1
-//`define TESTL_SHORT_SCANLINE 1
-
-//`define TEST_SCANLINE_WRITE 1
+//`define TEST_SCANLINE_WRITE
     `define TEST_SCANLINE_WRITE_WAIT 1 // wait TEST_SCANLINE_WRITE finished (frame_done)
-//`define TEST_SCANLINE_READ  1
     `define TEST_READ_SHOW  1
-`define TEST_TILED_WRITE  1
+//`define TEST_TILED_WRITE  0
     `define TEST_TILED_WRITE_WAIT 1 // wait TEST_SCANLINE_WRITE finished (frame_done)
 
-`define TEST_TILED_READ  1
+//`define TEST_TILED_READ  0
 
-`define TEST_TILED_WRITE32  1
-`define TEST_TILED_READ32  1
+//`define TEST_TILED_WRITE32  0
+//`define TEST_TILED_READ32  0
 
 module  x393_testbench01 #(
 `include "includes/x393_parameters.vh" // SuppressThisWarning VEditor - not used
@@ -59,7 +56,8 @@ module  x393_testbench01 #(
 `endif
 `define DEBUG_WR_SINGLE 1  
 `define DEBUG_RD_DATA 1  
-`include "includes/x393_cur_params_sim.vh" // parameters that may need adjustment, should be before x393_localparams.vh
+//`include "includes/x393_cur_params_sim.vh" // parameters that may need adjustment, should be before x393_localparams.vh
+`include "includes/x393_cur_params_target.vh" // SuppressThisWarning VEditor - not used parameters that may need adjustment, should be before x393_localparams.vh
 `include "includes/x393_localparams.vh" // SuppressThisWarning VEditor - not used
   // DDR3 signals
   wire        SDRST;
@@ -298,18 +296,23 @@ always #(CLKIN_PERIOD/2) CLK = ~CLK;
     axi_set_dqs_odelay_nominal;
     
 `ifdef TEST_WRITE_LEVELLING 
+    $display("===================== TEST_WRITE_LEVELLING =========================");
     test_write_levelling;
 `endif
 `ifdef TEST_READ_PATTERN
+    $display("===================== TEST_READ_PATTERN =========================");
     test_read_pattern;
 `endif
 `ifdef TEST_WRITE_BLOCK
+    $display("===================== TEST_WRITE_BLOCK =========================");
     test_write_block;
 `endif
 `ifdef TEST_READ_BLOCK
+    $display("===================== TEST_READ_BLOCK =========================");
     test_read_block;
 `endif
 `ifdef TESTL_SHORT_SCANLINE
+    $display("===================== TESTL_SHORT_SCANLINE =========================");
     test_scanline_write(
         1, // valid: 1 or 3 input            [3:0] channel;
         SCANLINE_EXTRA_PAGES, // input            [1:0] extra_pages;
@@ -366,6 +369,7 @@ always #(CLKIN_PERIOD/2) CLK = ~CLK;
 `endif
 
 `ifdef TEST_SCANLINE_WRITE
+    $display("===================== TEST_SCANLINE_WRITE =========================");
     test_scanline_write(
         1, // valid: 1 or 3 input            [3:0] channel;
         SCANLINE_EXTRA_PAGES, // input            [1:0] extra_pages;
@@ -377,6 +381,7 @@ always #(CLKIN_PERIOD/2) CLK = ~CLK;
         
 `endif
 `ifdef TEST_SCANLINE_READ
+    $display("===================== TEST_SCANLINE_READ =========================");
     test_scanline_read (
         1, // valid: 1 or 3 input            [3:0] channel;
         SCANLINE_EXTRA_PAGES, // input            [1:0] extra_pages;
@@ -389,6 +394,7 @@ always #(CLKIN_PERIOD/2) CLK = ~CLK;
 `endif
 
 `ifdef TEST_TILED_WRITE
+    $display("===================== TEST_TILED_WRITE =========================");
     test_tiled_write (
          2,                 // [3:0] channel;
          0,                 //       byte32;
@@ -405,6 +411,7 @@ always #(CLKIN_PERIOD/2) CLK = ~CLK;
 `endif
 
 `ifdef TEST_TILED_READ
+    $display("===================== TEST_TILED_READ =========================");
     test_tiled_read (
         2,                 // [3:0] channel;
         0,                 //       byte32;
@@ -422,6 +429,7 @@ always #(CLKIN_PERIOD/2) CLK = ~CLK;
 `endif
 
 `ifdef TEST_TILED_WRITE32
+    $display("===================== TEST_TILED_WRITE32 =========================");
     test_tiled_write (
         4, // 2,                 // [3:0] channel;
         1,                 //       byte32;
@@ -438,6 +446,7 @@ always #(CLKIN_PERIOD/2) CLK = ~CLK;
 `endif
 
 `ifdef TEST_TILED_READ32
+    $display("===================== TEST_TILED_READ32 =========================");
     test_tiled_read (
         4, //2,                 // [3:0] channel;
         1,                 //       byte32;
@@ -702,8 +711,47 @@ assign bresp=                              x393_i.ps7_i.MAXIGP0BRESP;
         .DUMMY_TO_KEEP(DUMMY_TO_KEEP)  // to keep PS7 signals from "optimization"
 //      ,.MEMCLK  (MEMCLK)
     );
-// Micron DDR3 memory model
-    /* Instance of Micron DDR3 memory model */
+    // just to simplify extra delays in tri-state memory bus - provide output enable
+    wire WRAP_MCLK=x393_i.mclk;
+    wire [7:0] WRAP_PHY_DQ_TRI=x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.phy_dq_tri[7:0] ;
+    wire [7:0] WRAP_PHY_DQS_TRI=x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.phy_dqs_tri[7:0] ;    
+    //x393_i.mcntrl393_i.mcntrl16_i.mcontr_sequencer_i.phy_cmd_i.phy_dq_tri
+    //x393_i.mcntrl393_i.mcntrl16_i.mcontr_sequencer_i.phy_cmd_i.phy_dqs_tri
+`define USE_DDR3_WRAP 1    
+`ifdef USE_DDR3_WRAP
+    ddr3_wrap #(
+        .ADDRESS_NUMBER     (ADDRESS_NUMBER),
+        .TRISTATE_DELAY_CLK (1), // total 2
+        .TRISTATE_DELAY     (0),
+        .CLK_DELAY          (0),
+        .CMDA_DELAY         (0),
+        .DQS_IN_DELAY       (0),
+        .DQ_IN_DELAY        (0),
+        .DQS_OUT_DELAY      (0),
+        .DQ_OUT_DELAY       (0)
+    ) ddr3_i (
+        .mclk    (WRAP_MCLK), // input
+        .dq_tri  ({WRAP_PHY_DQ_TRI[4],WRAP_PHY_DQ_TRI[0]}), // input[1:0] 
+        .dqs_tri ({WRAP_PHY_DQS_TRI[4],WRAP_PHY_DQS_TRI[0]}), // input[1:0] 
+        .SDRST   (SDRST), 
+        .SDCLK   (SDCLK), 
+        .SDNCLK  (SDNCLK), 
+        .SDCKE   (SDCKE), 
+        .SDRAS   (SDRAS), 
+        .SDCAS   (SDCAS), 
+        .SDWE    (SDWE), 
+        .SDDMU   (SDDMU),
+        .SDDML   (SDDML),
+        .SDBA    (SDBA[2:0]),  
+        .SDA     (SDA[ADDRESS_NUMBER-1:0]), 
+        .SDD     (SDD[15:0]),  
+        .DQSU    (DQSU),
+        .NDQSU   (NDQSU),
+        .DQSL    (DQSL),
+        .NDQSL   (NDQSL),
+        .SDODT     (SDODT)          // input 
+    );
+`else
     ddr3 #(
         .TCK_MIN             (2500), 
         .TJIT_PER            (100),
@@ -890,7 +938,7 @@ assign bresp=                              x393_i.ps7_i.MAXIGP0BRESP;
         .tdqs_n  (),              // output[1:0] 
         .odt     (SDODT)          // input 
     );
-    
+`endif    
     
 // Simulation modules    
 simul_axi_master_rdaddr
@@ -1046,7 +1094,7 @@ simul_axi_read #(
 // set patterns for DM (always 0) and DQS - always the same (may try different for write lev.)
             axi_set_dqs_dqm_patterns;
 // prepare all sequences
-            set_all_sequences;
+            set_all_sequences (1,0); // rsel = 1, wsel=0
 // prepare write buffer    
             write_block_buf_chn(0,0,256); // fill block memory (channel, page, number)
 // set all delays
@@ -1598,6 +1646,8 @@ endtask
 
 
 task set_all_sequences;
+    input rsel;
+    input wsel;
         begin
             $display("SET MRS @ %t",$time);    
             set_mrs(1);
@@ -1613,14 +1663,16 @@ task set_all_sequences;
             set_write_block(
                 3'h5,     // bank
                 15'h1234, // row address
-                10'h100   // column address
+                10'h100,   // column address
+                wsel
             );
            
             $display("SET READ BLOCK @ %t",$time);    
             set_read_block(
                 3'h5,     // bank
                 15'h1234, // row address
-                10'h100   // column address
+                10'h100,   // column address
+                rsel      // sel
             );
         end
 endtask

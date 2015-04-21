@@ -27,44 +27,9 @@
   localparam LD_DLY_CMDA  =        DLY_LD+'h40; // 0x10c0
   localparam LD_DLY_PHASE =        DLY_LD+'h60; // 0x10e0
   localparam DLY_SET =             MCONTR_PHY_0BIT_ADDR + MCONTR_PHY_0BIT_DLY_SET; //0x1020
-// different sets of settings for the functional simulation and the actual hardware
-`ifdef TARGET_MODE
-    localparam T_RFC=50;  // t_rfc=50 for tCK=2.5ns
-    localparam T_REFI=48; // t_refi; # 48/97 for normal, 8 - for simulation (7.8us <85C, 3.9us >85C)
-  `ifdef use200Mhz
-//    localparam DLY_LANE0_ODELAY= 80'hd8a0d8d4dae0d4dcdbd9; // odelay dqm, odelay dqs, odelay dq[7:0]
-//    localparam DLY_LANE0_IDELAY= 72'h40989c9aa4949898a4; // idelay dqs, idelay dq[7:0]
-//    localparam DLY_LANE1_ODELAY= 80'hd8a0dcdcdce0dcf1e0dc; // odelay dqm, odelay dqs, odelay dq[7:0]
-//    localparam DLY_LANE1_IDELAY= 72'h40aca8aaa8b4acb1ac; // idelay dqs, idelay dq[7:0]
-//    localparam DLY_CMDA= 256'h8080808080808080808080808080808080808080808080808080808080808080; // odelay odt, cke, cas, ras, we, ba2,ba1,ba0, X, a14,..,a0
-//    localparam DLY_PHASE= 8'h4c; // mmcm fine phase shift, 1/4 tCK
-  `else   
-//    localparam DLY_LANE0_ODELAY= 80'h7474737271706c6b6a69; // odelay dqm, odelay ddqs, odelay dq[7:0]
-//    localparam DLY_LANE0_IDELAY= 72'hd8737271706c6b6a69; // idelay dqs, idelay dq[7:0
-//    localparam DLY_LANE1_ODELAY= 80'h7474737271706c6b6a69; // odelay dqm, odelay ddqs, odelay dq[7:0]
-//    localparam DLY_LANE1_IDELAY= 72'hd8737271706c6b6a69; // idelay dqs, idelay dq[7:0
-//    localparam DLY_CMDA=  256'h5c5c5c5c5b5a59585454545453525150004c4c4c4b4a49484444444443424140; // odelay odt, cke, cas, ras, we, ba2,ba1,ba0, X, a14,..,a0
-//    localparam DLY_PHASE= 8'h4c; // mmcm fine phase shift, 1/4 tCK
-  `endif   
-`else
-    localparam T_RFC=50;  // t_rfc=50 for tCK=2.5ns
-    localparam T_REFI=16; // t_refi; # 48/97 for normal, 8 - for simulation (7.8us <85C, 3.9us >85C)
-  `ifdef use200Mhz
-//    localparam DLY_LANE0_ODELAY= 80'h4c784b4a494844434241; // odelay dqm, odelay ddqs, odelay dq[7:0]
-//    localparam DLY_LANE0_IDELAY= 72'ha0636261605c5b5a59; // idelay dqs, idelay dq[7:0
-//    localparam DLY_LANE1_ODELAY= 80'h4c784b4a494844434241; // odelay dqm, odelay ddqs, odelay dq[7:0]
-//    localparam DLY_LANE1_IDELAY= 72'ha0636261605c5b5a59; // idelay dqs, idelay dq[7:0
-//    localparam DLY_CMDA=  256'h3c3c3c3c3b3a39383434343433323130002c2c2c2b2a29282424242423222120; // odelay odt, cke, cas, ras, we, ba2,ba1,ba0, X, a14,..,a0
-//    localparam DLY_PHASE= 8'h1c; // mmcm fine phase shift, 1/4 tCK
-  `else   
-//    localparam DLY_LANE0_ODELAY= 80'h7474737271706c6b6a69; // odelay dqm, odelay ddqs, odelay dq[7:0]
-//    localparam DLY_LANE0_IDELAY= 72'hd8737271706c6b6a69; // idelay dqs, idelay dq[7:0
-//    localparam DLY_LANE1_ODELAY= 80'h7474737271706c6b6a69; // odelay dqm, odelay ddqs, odelay dq[7:0]
-//    localparam DLY_LANE1_IDELAY= 72'hd8737271706c6b6a69; // idelay dqs, idelay dq[7:0
-//    localparam DLY_CMDA=  256'h5c5c5c5c5b5a59585454545453525150004c4c4c4b4a49484444444443424140; // odelay odt, cke, cas, ras, we, ba2,ba1,ba0, X, a14,..,a0
-//    localparam DLY_PHASE= 8'h1c; // mmcm fine phase shift, 1/4 tCK
-  `endif
-`endif
+// different sets of settings for the functional simulation and the actual hardware - should not be needed anymore
+  localparam T_RFC=50;  // t_rfc=50 for tCK=2.5ns
+  localparam T_REFI=48; // t_refi; # 48/97 for normal, 8 - for simulation (7.8us <85C, 3.9us >85C)
     
 // alternative to set same type delays to the same value
     localparam DLY_DQ_IDELAY =  ( (DLY_LANE0_IDELAY      & 8'hff)+
@@ -131,14 +96,13 @@
     localparam DLY_LANE0_DQS_WLV_IDELAY = DLY_DQS_IDELAY; // b0; // idelay dqs
     localparam DLY_LANE1_DQS_WLV_IDELAY = DLY_DQS_IDELAY; // b0; idelay dqs
                                  
-    localparam DQSTRI_FIRST=    4'h3; // DQS tri-state control word, first when enabling output 
+    localparam DQSTRI_FIRST=    4'h1; // 3; // DQS tri-state control word, first when enabling output 
     localparam DQSTRI_LAST=     4'hc; // DQS tri-state control word, first after disabling output
-    localparam DQTRI_FIRST=     4'h7; // DQ tri-state control word, first when enabling output 
+    localparam DQTRI_FIRST=     4'h3; // 7; // DQ tri-state control word, first when enabling output 
     localparam DQTRI_LAST=      4'he; // DQ tri-state control word, first after disabling output
     localparam WBUF_DLY_DFLT=   DFLT_WBUF_DELAY; // 4'h8; // 4'h6; // extra delay (in mclk cycles) to add to write buffer enable (DDR3 read data)
     localparam WBUF_DLY_WLV=    DFLT_WBUF_DELAY; // 4'h7; // write leveling mode: extra delay (in mclk cycles) to add to write buffer enable (DDR3 read data)
     
-//    localparam DLY_PHASE= 8'hdb; // mmcm fine phase shift
     localparam INITIALIZE_OFFSET=  'h00; // moemory initialization start address (in words) ..`h0c
     localparam REFRESH_OFFSET=     'h10; // refresh start address (in words) ..`h13
     localparam WRITELEV_OFFSET=    'h20; // write leveling start address (in words) ..`h2a

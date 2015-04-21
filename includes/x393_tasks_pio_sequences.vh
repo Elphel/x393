@@ -31,6 +31,7 @@ task set_read_block;
     input [ 2:0] ba;
     input [14:0] ra;
     input [ 9:0] ca;
+    input        sel;
     reg   [29:0] cmd_addr;
     reg   [31:0] data;
     integer i;
@@ -47,11 +48,11 @@ task set_read_block;
 // first read
 // read
         //                          addr                 bank     RCW ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD NOP, B_RST
-        data <=  func_encode_cmd( {5'b0,ca[9:0]},      ba[2:0],    2,  0,  0,  1,  0,    0,    0,    1,  1,   0,   0,   0);
+        data <=  func_encode_cmd( {5'b0,ca[9:0]},      ba[2:0],    2,  0,  0, sel, 0,    0,    0,    1,  1,   0,   0,   0);
         @(posedge CLK) axi_write_single_w(cmd_addr, data); cmd_addr <= cmd_addr + 1;
 // nop
         //                          skip     done        bank         ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD      B_RST
-        data <=  func_encode_skip(   0,       0,       ba[2:0],        0,  0,  1,  0,    0,    0,    1,  1,   0,        0);
+        data <=  func_encode_skip(   0,       0,       ba[2:0],        0,  0, sel, 0,    0,    0,    1,  1,   0,        0);
         @(posedge CLK) axi_write_single_w(cmd_addr, data); cmd_addr <= cmd_addr + 1;
 //repeat remaining reads             
         for (i=1;i<64;i=i+1) begin
@@ -62,15 +63,15 @@ task set_read_block;
         end
 // nop - all 3 below are the same? - just repeat?
         //                          skip     done        bank         ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD      B_RST
-        data <=  func_encode_skip(   0,       0,       ba[2:0],        0,  0,  1,  0,    0,    0,    1,  0,   0,        0);
+        data <=  func_encode_skip(   0,       0,       ba[2:0],        0,  0, sel, 0,    0,    0,    1,  0,   0,        0);
         @(posedge CLK) axi_write_single_w(cmd_addr, data); cmd_addr <= cmd_addr + 1;
 // nop
         //                          skip     done        bank         ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD      B_RST
-        data <=  func_encode_skip(   0,       0,       ba[2:0],        0,  0,  1,  0,    0,    0,    1,  0,   0,        0);
+        data <=  func_encode_skip(   0,       0,       ba[2:0],        0,  0, sel, 0,    0,    0,    1,  0,   0,        0);
         @(posedge CLK) axi_write_single_w(cmd_addr, data); cmd_addr <= cmd_addr + 1;
 // nop
         //                          skip     done        bank         ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD      B_RST
-        data <=  func_encode_skip(   0,       0,       ba[2:0],        0,  0,  1,  0,    0,    0,    1,  0,   0,        0);
+        data <=  func_encode_skip(   0,       0,       ba[2:0],        0,  0, sel, 0,    0,    0,    1,  0,   0,        0);
         @(posedge CLK) axi_write_single_w(cmd_addr, data); cmd_addr <= cmd_addr + 1;
 // tRTP = 4*tCK is already satisfied, no skip here
 // precharge, end of a page (B_RST)         
@@ -91,6 +92,7 @@ task set_write_block;
     input[2:0]ba;
     input[14:0]ra;
     input[9:0]ca;
+    input sel;
     reg[29:0] cmd_addr;
     reg[31:0] data;
     integer i;
@@ -107,31 +109,32 @@ task set_write_block;
 // first write, 3 rd_buf
 // write
         //                          addr                 bank     RCW ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD NOP, B_RST
-        data <=  func_encode_cmd( {5'b0,ca[9:0]},      ba[2:0],    3,  1,  0,  1,  0,    0,    0,    0,  0,   1,   0,   0); // B_RD moved 1 cycle earlier 
+        data <=  func_encode_cmd( {5'b0,ca[9:0]},      ba[2:0],    3,  1,  0, sel, 0,    0,    0,    0,  0,   1,   0,   0); // B_RD moved 1 cycle earlier 
         @(posedge CLK) axi_write_single_w(cmd_addr, data); cmd_addr <= cmd_addr + 1;
 // nop 4-th rd_buf
         //                          skip     done        bank         ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD      B_RST
-//        data <=  func_encode_skip(   0,       0,       ba[2:0],        1,  0,  1,  1,    1,    0,    1,  0,   1,        0);
-        data <=  func_encode_skip(   0,       0,       ba[2:0],        1,  0,  0,  1,    1,    0,    0,  0,   1,        0);
+//      data <=  func_encode_skip(   0,       0,       ba[2:0],        1,  0,  1,  1,    1,    0,    1,  0,   1,        0);
+//      data <=  func_encode_skip(   0,       0,       ba[2:0],        1,  0,  0,  1,    1,    0,    0,  0,   1,        0);
+        data <=  func_encode_skip(   0,       0,       ba[2:0],        1,  0,  0,  0,    0,    0,    0,  0,   1,        0);
         @(posedge CLK) axi_write_single_w(cmd_addr, data); cmd_addr <= cmd_addr + 1;
 //repeat remaining writes
         for (i = 1; i < 62; i = i + 1) begin
 // write
         //                                add            bank     RCW ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD NOP, B_RST
-            data <=  func_encode_cmd( {5'b0,ca[9:0]}+(i<<3),ba[2:0],3, 1,  0,  1,  1,    1,    1,    0,  0,   1,   1,   0); 
+            data <=  func_encode_cmd( {5'b0,ca[9:0]}+(i<<3),ba[2:0],3, 1,  0, sel, 1,    1,    1,    0,  0,   1,   1,   0); 
             @(posedge CLK) axi_write_single_w(cmd_addr, data); cmd_addr <= cmd_addr + 1;
         end
         //                                add            bank     RCW ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD NOP, B_RST
-        data <=  func_encode_cmd( {5'b0,ca[9:0]}+(62<<3),ba[2:0],  3,  1,  0,  1,  1,    1,    1,    0,  0,   1,   0,   0);  // write w/o nop
+        data <=  func_encode_cmd( {5'b0,ca[9:0]}+(62<<3),ba[2:0],  3,  1,  0, sel, 1,    1,    1,    0,  0,   1,   0,   0);  // write w/o nop
         @(posedge CLK) axi_write_single_w(cmd_addr, data); cmd_addr <= cmd_addr + 1;
 // nop
         //                          skip     done        bank         ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD      B_RST
-        data <=  func_encode_skip(   0,       0,       ba[2:0],        1,  0,  1,  1,    1,    1,    0,  0,   0,        0); // nop with buffer read off
+        data <=  func_encode_skip(   0,       0,       ba[2:0],        1,  0, sel, 1,    1,    1,    0,  0,   0,        0); // nop with buffer read off
         @(posedge CLK) axi_write_single_w(cmd_addr, data); cmd_addr <= cmd_addr + 1;
         
 // One last write pair w/o buffer
         //                                add            bank     RCW ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD NOP, B_RST
-        data <=  func_encode_cmd( {5'b0,ca[9:0]}+(63<<3),ba[2:0],  3,  1,  0,  1,  1,    1,    1,    0,  0,   0,   1,   0);  // write with nop
+        data <=  func_encode_cmd( {5'b0,ca[9:0]}+(63<<3),ba[2:0],  3,  1,  0, sel, 1,    1,    1,    0,  0,   0,   1,   0);  // write with nop
         @(posedge CLK) axi_write_single_w(cmd_addr, data); cmd_addr <= cmd_addr + 1;
 
 // nop

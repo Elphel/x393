@@ -67,6 +67,7 @@ TESTRUN = 0
 PROFILE = 0
 QUIET=1 # more try/excepts
 callableTasks={}
+
 class CLIError(Exception):
     #Generic exception to raise and log different fatal errors.
     def __init__(self, msg):
@@ -320,7 +321,6 @@ USAGE
         print("vrlg.VERBOSE__TYPE="+str(vrlg.VERBOSE__TYPE))
         print("vrlg.VERBOSE__RAW="+str(vrlg.VERBOSE__RAW))
     
-    
     x393mem=         x393_mem.X393Mem(verbose,args.simulated) #add dry run parameter
     x393utils=       x393_utils.X393Utils(verbose,args.simulated,args.localparams)
     x393tasks=       x393_axi_control_status.X393AxiControlStatus(verbose,args.simulated)
@@ -329,7 +329,7 @@ USAGE
     x393Buffers=     x393_mcntrl_buffers.X393McntrlBuffers(verbose,args.simulated)
     x393Tests=       x393_mcntrl_tests.X393McntrlTests(verbose,args.simulated)
     x393Eyepatterns= x393_mcntrl_eyepatterns.X393McntrlEyepattern(verbose,args.simulated)
-    x393Adjust=      x393_mcntrl_adjust.X393McntrlAdjust(verbose,args.simulated)
+    x393Adjust=      x393_mcntrl_adjust.X393McntrlAdjust(verbose,args.simulated,args.localparams)
     
     '''
     print ("----------------------")

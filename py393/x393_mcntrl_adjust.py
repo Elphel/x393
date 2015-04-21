@@ -40,7 +40,8 @@ from x393_pio_sequences      import X393PIOSequences
 from x393_mcntrl_timing      import X393McntrlTiming
 from x393_mcntrl_buffers     import X393McntrlBuffers
 from verilog_utils import split_delay,combine_delay,NUM_FINE_STEPS, convert_w32_to_mem16,convert_mem16_to_w32
-from x393_utils              import X393Utils
+#from x393_utils              import X393Utils
+import x393_utils
 
 import get_test_dq_dqs_data # temporary to test processing            
 import x393_lma
@@ -68,7 +69,7 @@ class X393McntrlAdjust(object):
     x393_utils=None
     verbose=1
     adjustment_state={}
-    def __init__(self, debug_mode=1,dry_mode=True):
+    def __init__(self, debug_mode=1,dry_mode=True, saveFileName=None):
         self.DEBUG_MODE=  debug_mode
         self.DRY_MODE=    dry_mode
         self.x393_mem=            X393Mem(debug_mode,dry_mode)
@@ -77,7 +78,8 @@ class X393McntrlAdjust(object):
         self.x393_pio_sequences=  X393PIOSequences(debug_mode,dry_mode)
         self.x393_mcntrl_timing=  X393McntrlTiming(debug_mode,dry_mode)
         self.x393_mcntrl_buffers= X393McntrlBuffers(debug_mode,dry_mode)
-        self.x393_utils=          X393Utils(debug_mode,dry_mode)
+#        print("x393_utils.SAVE_FILE_NAME=",x393_utils.SAVE_FILE_NAME)
+        self.x393_utils=          x393_utils.X393Utils(debug_mode,dry_mode, saveFileName) # should not overwrite save file path
 #        self.__dict__.update(VerilogParameters.__dict__["_VerilogParameters__shared_state"]) # Add verilog parameters to the class namespace
         try:
             self.verbose=vrlg.VERBOSE
@@ -4367,6 +4369,7 @@ class X393McntrlAdjust(object):
 
     def set_write_branch(self,
                          dqs_pattern=None,
+                         extraTgl=1, # just in case
                          quiet=1):
         """
         Try write mode branches and find sel (early/late write command), even if it does not match read settings
@@ -4388,7 +4391,6 @@ class X393McntrlAdjust(object):
         ca=0
         ra=0
         ba=0
-        extraTgl=1 # just in case
         wsel=1
         rslt={}
         
@@ -4684,7 +4686,7 @@ write_settings= {
         if odd_list:
             rslt[ODD_KEY]=odd_list    
         self.adjustment_state['write_variants']=rslt
-        if quiet < 3:
+        if quiet < 4:
             print ('write_variants=',rslt)
         return rslt            
     
@@ -4874,7 +4876,7 @@ write_settings= {
                                     refresh =         True,
                                     forgive_missing = False,
                                     maxPhaseErrorsPS= None,
-                                    quiet =           quiet+1)
+                                    quiet =           quiet+0)
         if used_delays is None:
             print ("sorted result=",rslt)
             raise Exception("get_phase_range(): failed to set phase = %d"%(optimal['phase']))  #      
@@ -4889,7 +4891,7 @@ write_settings= {
                         filter_dqo =     filters[DQO_KEY],
                         quiet =          quiet+0)
         if quiet < 4:
-            print ("Best Range:")
+            print ("\nBest Range:",end=" ")
             self.show_all_delays(filter_variants = [(optimal['cmda'],optimal['dqo'],optimal['dqi'])],
                         filter_cmda =    filters[CMDA_KEY],
                         filter_dqsi =    filters[DQSI_KEY],
@@ -4946,8 +4948,9 @@ write_settings= {
                     primary_set_in=2,
                     primary_set_out=2,
                     dqs_pattern=0x55,
-                    rsel=1, # None (any) or 0/1
-                    wsel=1, # None (any) or 0/1 # Seems wsel=0 has a better fit - consider changing
+                    rsel=None, # None (any) or 0/1
+                    wsel=None, # None (any) or 0/1 # Seems wsel=0 has a better fit - consider changing
+                    extraTgl=0,
                     quiet=3):
         """
         @param tasks - "*" - load bitfile
@@ -4959,6 +4962,7 @@ write_settings= {
         @param primary_set_in -  which of the primary sets to use when processing DQi/DQSi results (2 - normal, 0 - other DQS phase)
         @param primary_set_out - which of the primary sets to use when processing DQo/DQSo results (2 - normal, 0 - other DQS phase)
         @param dqs_pattern -     0x55/0xaa - DQS output toggle pattern. When it is 0x55 primary_set_out is reversed ? 
+        @param extraTgl - add extra dqs toggle (2 clock cycles)
         @param quiet reduce output
         """
 #        dqs_pattern=0x55 # 0xaa
@@ -4985,7 +4989,7 @@ write_settings= {
         wbuf_dly=9 # just a hint, start value can be different
 #        primary_set_in=2
 #        primary_set_out=2
-        write_sel=1 # set DDR3 command in the second cycle of two (0 - during the first omne)
+        write_sel=1 # set DDR3 command in the second cycle of two (0 - during the first one)
         safe_phase=0.25 # 0: strictly follow cmda_odelay, >0 -program with this fraction of clk period from the margin
         measure_addr_odelay_dqsi_safe_phase=0.125 # > 0 - allow DQSI with DQI simultaneously deviate  +/- this fraction of a period   
         commonFine=True, # use same values for fine delay for address/bank lines
@@ -5137,6 +5141,7 @@ write_settings= {
                     'func':self.set_write_branch,
                     'comment':'Try write mode branches and find sel (early/late read command) and wbuf delay, if possible.',
                     'params':{'dqs_pattern':dqs_pattern,
+                              'extraTgl':extraTgl,
                               'quiet':quiet+1}},
                     {'key':'B',
                     'func':self.get_phase_range,

@@ -99,7 +99,7 @@ def save_default(vname=None):
     <vname>      Verilog parameter name string (as listen in 'parameters')
     """
     global DEFAULTS
-    if vname:
+    if vname and vname in DEFAULTS:
         DEFAULTS[vname] =  globals()[vname]
     else:
         for vname in DEFAULTS:

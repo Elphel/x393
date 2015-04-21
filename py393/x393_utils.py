@@ -44,7 +44,9 @@ FPGA_RST_CTRL= 0xf8000240
 FPGA0_THR_CTRL=0xf8000178
 FPGA_LOAD_BITSTREAM="/dev/xdevcfg"
 INT_STS=       0xf800700c
+#SAVE_FILE_NAME="Some_name"# None
 class X393Utils(object):
+#    global SAVE_FILE_NAME
     DRY_MODE= True # True
     DEBUG_MODE=1
 #    vpars=None
@@ -53,7 +55,7 @@ class X393Utils(object):
     saveFileName=None
     x393_axi_tasks=None
 #    verbose=1
-    def __init__(self, debug_mode=1,dry_mode=True,saveFileName=None):
+    def __init__(self, debug_mode=1,dry_mode=True ,saveFileName=None):
         self.DEBUG_MODE=debug_mode
         self.DRY_MODE=dry_mode
         if saveFileName:
@@ -193,15 +195,15 @@ class X393Utils(object):
         return d
     
     def getParTmpl(self):
-        return ({"name":"DLY_LANE0_ODELAY", "width": 80, "decl_width":""}, # decl_width can be "[7:0]", "integer", etc
-                {"name":"DLY_LANE0_IDELAY", "width": 72, "decl_width":""},
-                {"name":"DLY_LANE1_ODELAY", "width": 80, "decl_width":""},
-                {"name":"DLY_LANE1_IDELAY", "width": 72, "decl_width":""},
-                {"name":"DLY_CMDA",         "width":256, "decl_width":""},
-                {"name":"DLY_PHASE",        "width": 8,  "decl_width":""},
-                {"name":"DFLT_WBUF_DELAY",  "width": 4,  "decl_width":""},
-                {"name":"DFLT_WSEL",        "width": 1,  "decl_width":""},
-                {"name":"DFLT_RSEL",        "width": 1,  "decl_width":""},
+        return ({"name":"DLY_LANE0_ODELAY", "width": 80, "decl_width":"","disable":False}, # decl_width can be "[7:0]", "integer", etc
+                {"name":"DLY_LANE0_IDELAY", "width": 72, "decl_width":"","disable":False},
+                {"name":"DLY_LANE1_ODELAY", "width": 80, "decl_width":"","disable":False},
+                {"name":"DLY_LANE1_IDELAY", "width": 72, "decl_width":"","disable":False},
+                {"name":"DLY_CMDA",         "width":256, "decl_width":"","disable":False},
+                {"name":"DLY_PHASE",        "width": 8,  "decl_width":"","disable":False},
+                {"name":"DFLT_WBUF_DELAY",  "width": 4,  "decl_width":"","disable":True},
+                {"name":"DFLT_WSEL",        "width": 1,  "decl_width":"","disable":True},
+                {"name":"DFLT_RSEL",        "width": 1,  "decl_width":"","disable":True},
                 )
  
     def localparams(self,
@@ -219,7 +221,13 @@ class X393Utils(object):
         for p in self.getParTmpl(): # parTmpl:
             numDigits = (p["width"]+3)/4
             frmt="localparam %%%ds %%%ds %3d'h%%0%dx;\n"%(declWidth,nameLen+2,p["width"],numDigits)
-            txt+=frmt%(p['decl_width'],p['name']+" =",vrlg.__dict__[p['name']])
+            try:
+                pv=vrlg.__dict__[p['name']]
+                if p['disable']:
+                    txt += '// '
+                txt+=frmt%(p['decl_width'],p['name']+" =",pv)
+            except: # parameter does not exist
+                pass
         if not quiet:
             print (txt)
         return txt
