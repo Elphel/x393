@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.3.64 (w)1999-2014 BSI
-[*] Tue Apr 21 01:47:19 2015
+[*] Tue Apr 21 03:43:52 2015
 [*]
-[dumpfile] "/home/andrey/git/x393/simulation/x393_testbench01-20150420193910060.lxt"
-[dumpfile_mtime] "Tue Apr 21 01:44:01 2015"
-[dumpfile_size] 252436540
+[dumpfile] "/home/andrey/git/x393/simulation/x393_testbench01-20150420194727213.lxt"
+[dumpfile_mtime] "Tue Apr 21 01:52:16 2015"
+[dumpfile_size] 252456387
 [savefile] "/home/andrey/git/x393/x393_testbench01.sav"
-[timestart] 41564660
+[timestart] 41533420
 [size] 1823 1173
 [pos] 2065 0
-*-12.595797 41576250 157271875 157546875 43667500 43655000 44285000 44297500 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-13.595797 41566328 157271875 157546875 43667500 43655000 44285000 44297500 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] x393_testbench01.
 [treeopen] x393_testbench01.ddr3_i.
 [treeopen] x393_testbench01.x393_i.

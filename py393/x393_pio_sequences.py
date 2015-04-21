@@ -556,7 +556,8 @@ class X393PIOSequences(object):
         cmd_addr += 1
 # nop 4-th rd_buf
         #                          skip     done        bank         ODT CKE SEL DQEN DQSEN DQSTGL DCI B_WR B_RD      B_RST
-        data=self.func_encode_skip( 0,       0,          ba,          1,  0,  0,  1,    1,    0,    0,  0,   1,        0)
+#       data=self.func_encode_skip( 0,       0,          ba,          1,  0,  0,  1,    1,    0,    0,  0,   1,        0)
+        data=self.func_encode_skip( 0,       0,          ba,          1,  0,  0,  0,    0,    0,    0,  0,   1,        0)
         self.x393_mem.axi_write_single_w(cmd_addr, data, verbose)
         cmd_addr += 1
 #repeat remaining writes
