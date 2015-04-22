@@ -24,8 +24,11 @@ module  cmd_encod_tiled_32_rw #(
     parameter ADDRESS_NUMBER=       15,
     parameter COLADDR_NUMBER=       10,
     parameter CMD_PAUSE_BITS=       10,
-    parameter CMD_DONE_BIT=         10,  // VDT BUG: CMD_DONE_BIT is used in a function call parameter!
-    parameter FRAME_WIDTH_BITS=     13  // Maximal frame width - 8-word (16 bytes) bursts 
+    parameter CMD_DONE_BIT=         10,   // VDT BUG: CMD_DONE_BIT is used in a function call parameter!
+    parameter FRAME_WIDTH_BITS=     13,   // Maximal frame width - 8-word (16 bytes) bursts 
+    parameter RSEL=                 1'b1, // late/early READ commands (to adjust timing by 1 SDCLK period)
+    parameter WSEL=                 1'b0  // late/early WRITE commands (to adjust timing by 1 SDCLK period)
+    
 ) (
     input                        rst,
     input                        clk,
@@ -57,7 +60,8 @@ module  cmd_encod_tiled_32_rw #(
         .ADDRESS_NUMBER (ADDRESS_NUMBER),
         .COLADDR_NUMBER (COLADDR_NUMBER),
         .CMD_PAUSE_BITS (CMD_PAUSE_BITS),
-        .CMD_DONE_BIT   (CMD_DONE_BIT)
+        .CMD_DONE_BIT   (CMD_DONE_BIT),
+        .RSEL           (RSEL)
     ) cmd_encod_tiled_rd_i (
         .rst               (rst), // input
         .clk               (clk), // input
@@ -80,7 +84,8 @@ module  cmd_encod_tiled_32_rw #(
         .ADDRESS_NUMBER (ADDRESS_NUMBER),
         .COLADDR_NUMBER (COLADDR_NUMBER),
         .CMD_PAUSE_BITS (CMD_PAUSE_BITS),
-        .CMD_DONE_BIT   (CMD_DONE_BIT)
+        .CMD_DONE_BIT   (CMD_DONE_BIT),
+        .WSEL           (WSEL)
     ) cmd_encod_tiled_wr_i (
         .rst               (rst), // input
         .clk               (clk), // input

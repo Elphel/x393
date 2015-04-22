@@ -211,9 +211,10 @@ module  mcntrl393 #(
                                                    // if memory controller will allow programming several sequences in advance to
                                                    // spread long-programming (tiled) over fast-programming (linear) requests.
                                                    // But that should not be too big to maintain 2-level priorities
-    parameter MCNTRL_TILED_FRAME_PAGE_RESET =1'b0,  // reset internal page number to zero at the frame start (false - only when hard/soft reset)                                                     
-    parameter BUFFER_DEPTH32=                10    // Block rum buffer depth on a 32-bit port
-    
+    parameter MCNTRL_TILED_FRAME_PAGE_RESET =1'b0, // reset internal page number to zero at the frame start (false - only when hard/soft reset)                                                     
+    parameter BUFFER_DEPTH32=                10,    // Block RAM buffer depth on a 32-bit port
+    parameter RSEL=                          1'b1, // late/early READ commands (to adjust timing by 1 SDCLK period)
+    parameter WSEL=                          1'b0  // late/early WRITE commands (to adjust timing by 1 SDCLK period)
     ) (
     input                        rst_in,
     input                        clk_in,
@@ -1182,11 +1183,13 @@ module  mcntrl393 #(
 
 // encoder for scanline read/write
     cmd_encod_linear_rw #(
-        .ADDRESS_NUMBER(ADDRESS_NUMBER),
-        .COLADDR_NUMBER(COLADDR_NUMBER),
-        .NUM_XFER_BITS(NUM_XFER_BITS),
-        .CMD_PAUSE_BITS(CMD_PAUSE_BITS),
-        .CMD_DONE_BIT(CMD_DONE_BIT)
+        .ADDRESS_NUMBER    (ADDRESS_NUMBER),
+        .COLADDR_NUMBER    (COLADDR_NUMBER),
+        .NUM_XFER_BITS     (NUM_XFER_BITS),
+        .CMD_PAUSE_BITS    (CMD_PAUSE_BITS),
+        .CMD_DONE_BIT      (CMD_DONE_BIT),
+        .RSEL              (RSEL),
+        .WSEL              (WSEL)
     ) cmd_encod_linear_rw_i (
         .rst               (rst), // input
         .clk               (mclk), // input
@@ -1260,7 +1263,9 @@ module  mcntrl393 #(
         .COLADDR_NUMBER    (COLADDR_NUMBER),
         .CMD_PAUSE_BITS    (CMD_PAUSE_BITS),
         .CMD_DONE_BIT      (CMD_DONE_BIT),
-        .FRAME_WIDTH_BITS  (FRAME_WIDTH_BITS)
+        .FRAME_WIDTH_BITS  (FRAME_WIDTH_BITS),
+        .RSEL              (RSEL),
+        .WSEL              (WSEL)
     ) cmd_encod_tiled_16_rw_i (
         .rst               (rst), // input
         .clk               (mclk), // input
@@ -1286,7 +1291,9 @@ module  mcntrl393 #(
         .COLADDR_NUMBER    (COLADDR_NUMBER),
         .CMD_PAUSE_BITS    (CMD_PAUSE_BITS),
         .CMD_DONE_BIT      (CMD_DONE_BIT),
-        .FRAME_WIDTH_BITS  (FRAME_WIDTH_BITS)
+        .FRAME_WIDTH_BITS  (FRAME_WIDTH_BITS),
+        .RSEL              (RSEL),
+        .WSEL              (WSEL)
     ) cmd_encod_tiled_32_rw_i (
         .rst               (rst), // input
         .clk               (mclk), // input

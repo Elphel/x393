@@ -29,18 +29,18 @@
 // Disabled already passed test to speedup simulation
 //`define TEST_WRITE_LEVELLING 1
 //`define TEST_READ_PATTERN 1
-`define TEST_WRITE_BLOCK 1
-`define TEST_READ_BLOCK 1
+//`define TEST_WRITE_BLOCK 1
+//`define TEST_READ_BLOCK 1
 //`define TEST_SCANLINE_WRITE
     `define TEST_SCANLINE_WRITE_WAIT 1 // wait TEST_SCANLINE_WRITE finished (frame_done)
 //`define TEST_SCANLINE_READ
     `define TEST_READ_SHOW  1
-//`define TEST_TILED_WRITE  0
+//`define TEST_TILED_WRITE  1
     `define TEST_TILED_WRITE_WAIT 1 // wait TEST_SCANLINE_WRITE finished (frame_done)
 //`define TEST_TILED_READ  1
 
-//`define TEST_TILED_WRITE32  1
-//`define TEST_TILED_READ32  1
+`define TEST_TILED_WRITE32  1
+`define TEST_TILED_READ32  1
 
 module  x393_testbench01 #(
 `include "includes/x393_parameters.vh" // SuppressThisWarning VEditor - not used
@@ -80,6 +80,7 @@ module  x393_testbench01 #(
   wire        DUMMY_TO_KEEP;  // output to keep PS7 signals from "optimization" // SuppressThisWarning all - not used
 //  wire        MEMCLK;
   
+  reg [639:0] TEST_TITLE;
   // Simulation signals
   reg [11:0] ARID_IN_r;
   reg [31:0] ARADDR_IN_r;
@@ -296,23 +297,28 @@ always #(CLKIN_PERIOD/2) CLK = ~CLK;
     axi_set_dqs_odelay_nominal;
     
 `ifdef TEST_WRITE_LEVELLING 
-    $display("===================== TEST_WRITE_LEVELLING =========================");
+    TEST_TITLE = "WRITE_LEVELLING";
+    $display("===================== TEST_%s =========================",TEST_TITLE);
     test_write_levelling;
 `endif
 `ifdef TEST_READ_PATTERN
-    $display("===================== TEST_READ_PATTERN =========================");
+    TEST_TITLE = "READ_PATTERN";
+    $display("===================== TEST_%s =========================",TEST_TITLE);
     test_read_pattern;
 `endif
 `ifdef TEST_WRITE_BLOCK
-    $display("===================== TEST_WRITE_BLOCK =========================");
+    TEST_TITLE = "WRITE_BLOCK";
+    $display("===================== TEST_%s =========================",TEST_TITLE);
     test_write_block;
 `endif
 `ifdef TEST_READ_BLOCK
-    $display("===================== TEST_READ_BLOCK =========================");
+    TEST_TITLE = "READ_BLOCK";
+    $display("===================== TEST_%s =========================",TEST_TITLE);
     test_read_block;
 `endif
 `ifdef TESTL_SHORT_SCANLINE
-    $display("===================== TESTL_SHORT_SCANLINE =========================");
+    TEST_TITLE = "TESTL_SHORT_SCANLINE";
+    $display("===================== TEST_%s =========================",TEST_TITLE);
     test_scanline_write(
         1, // valid: 1 or 3 input            [3:0] channel;
         SCANLINE_EXTRA_PAGES, // input            [1:0] extra_pages;
@@ -369,7 +375,8 @@ always #(CLKIN_PERIOD/2) CLK = ~CLK;
 `endif
 
 `ifdef TEST_SCANLINE_WRITE
-    $display("===================== TEST_SCANLINE_WRITE =========================");
+    TEST_TITLE = "SCANLINE_WRITE";
+    $display("===================== TEST_%s =========================",TEST_TITLE);
     test_scanline_write(
         1, // valid: 1 or 3 input            [3:0] channel;
         SCANLINE_EXTRA_PAGES, // input            [1:0] extra_pages;
@@ -381,7 +388,8 @@ always #(CLKIN_PERIOD/2) CLK = ~CLK;
         
 `endif
 `ifdef TEST_SCANLINE_READ
-    $display("===================== TEST_SCANLINE_READ =========================");
+    TEST_TITLE = "SCANLINE_READ";
+    $display("===================== TEST_%s =========================",TEST_TITLE);
     test_scanline_read (
         1, // valid: 1 or 3 input            [3:0] channel;
         SCANLINE_EXTRA_PAGES, // input            [1:0] extra_pages;
@@ -394,7 +402,8 @@ always #(CLKIN_PERIOD/2) CLK = ~CLK;
 `endif
 
 `ifdef TEST_TILED_WRITE
-    $display("===================== TEST_TILED_WRITE =========================");
+    TEST_TITLE = "TILED_WRITE";
+    $display("===================== TEST_%s =========================",TEST_TITLE);
     test_tiled_write (
          2,                 // [3:0] channel;
          0,                 //       byte32;
@@ -411,7 +420,8 @@ always #(CLKIN_PERIOD/2) CLK = ~CLK;
 `endif
 
 `ifdef TEST_TILED_READ
-    $display("===================== TEST_TILED_READ =========================");
+    TEST_TITLE = "TILED_READ";
+    $display("===================== TEST_%s =========================",TEST_TITLE);
     test_tiled_read (
         2,                 // [3:0] channel;
         0,                 //       byte32;
@@ -429,9 +439,10 @@ always #(CLKIN_PERIOD/2) CLK = ~CLK;
 `endif
 
 `ifdef TEST_TILED_WRITE32
-    $display("===================== TEST_TILED_WRITE32 =========================");
+    TEST_TITLE = "TILED_WRITE32";
+    $display("===================== TEST_%s =========================",TEST_TITLE);
     test_tiled_write (
-        4, // 2,                 // [3:0] channel;
+        2, // 4, // 2,                 // [3:0] channel;
         1,                 //       byte32;
         TILED_KEEP_OPEN,   //       keep_open;
         TILED_EXTRA_PAGES, //       extra_pages;
@@ -446,9 +457,10 @@ always #(CLKIN_PERIOD/2) CLK = ~CLK;
 `endif
 
 `ifdef TEST_TILED_READ32
-    $display("===================== TEST_TILED_READ32 =========================");
+    TEST_TITLE = "TILED_READ32";
+    $display("===================== TEST_%s =========================",TEST_TITLE);
     test_tiled_read (
-        4, //2,                 // [3:0] channel;
+        2, // 4, //2,                 // [3:0] channel;
         1,                 //       byte32;
         TILED_KEEP_OPEN,   //       keep_open;
         TILED_EXTRA_PAGES, //       extra_pages;
@@ -461,6 +473,8 @@ always #(CLKIN_PERIOD/2) CLK = ~CLK;
         TILE_HEIGHT,
         TILE_VSTEP);
 `endif
+  TEST_TITLE = "ALL_DONE";
+  $display("===================== TEST_%s =========================",TEST_TITLE);
   #20000;
   $finish;
 end
@@ -709,7 +723,7 @@ assign bresp=                              x393_i.ps7_i.MAXIGP0BRESP;
         .DQSU    (DQSU), // inout
         .NDQSU   (NDQSU), // inout
         .DUMMY_TO_KEEP(DUMMY_TO_KEEP)  // to keep PS7 signals from "optimization"
-//      ,.MEMCLK  (MEMCLK)
+      ,.MEMCLK  (1'b0)
     );
     // just to simplify extra delays in tri-state memory bus - provide output enable
     wire WRAP_MCLK=x393_i.mclk;

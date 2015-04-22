@@ -586,7 +586,9 @@ BUFG bufg_axi_aclk_i  (.O(axi_aclk),.I(fclk[0]));
         .MCNTRL_TILED_STATUS_REG_CHN4_ADDR (MCNTRL_TILED_STATUS_REG_CHN4_ADDR),
         .MCNTRL_TILED_PENDING_CNTR_BITS    (MCNTRL_TILED_PENDING_CNTR_BITS),
         .MCNTRL_TILED_FRAME_PAGE_RESET     (MCNTRL_TILED_FRAME_PAGE_RESET),
-        .BUFFER_DEPTH32                    (BUFFER_DEPTH32)
+        .BUFFER_DEPTH32                    (BUFFER_DEPTH32),
+        .RSEL                              (RSEL),
+        .WSEL                              (WSEL)
     ) mcntrl393_i (
         .rst_in               (axi_rst), // input
         .clk_in               (axi_aclk), // == axird_bram_rclk SuppressThisWarning VivadoSynthesis: [Synth 8-3295] tying undriven pin #mcntrl393_i:clk_in to constant 0

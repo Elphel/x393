@@ -47,8 +47,8 @@ module  cmd_encod_tiled_32_rd #(
     parameter COLADDR_NUMBER=       10,
     parameter CMD_PAUSE_BITS=       10,
     parameter CMD_DONE_BIT=         10,  // VDT BUG: CMD_DONE_BIT is used in a function call parameter!
-    parameter FRAME_WIDTH_BITS=     13  // Maximal frame width - 8-word (16 bytes) bursts 
-    
+    parameter FRAME_WIDTH_BITS=     13,  // Maximal frame width - 8-word (16 bytes) bursts 
+    parameter RSEL=                 1'b1 // Late/early READ commands
 ) (
     input                        rst,
     input                        clk,
@@ -227,20 +227,20 @@ module  cmd_encod_tiled_32_rd #(
         else case (gen_addr)
             4'h0: rom_r <= (ENC_CMD_ACTIVATE <<  ENC_CMD_SHIFT)  | (1 << ENC_NOP) | (1 << ENC_PAUSE_SHIFT); // here does not matter, just to work with masked ACTIVATE
             4'h1: rom_r <= (ENC_CMD_ACTIVATE <<  ENC_CMD_SHIFT);
-            4'h2: rom_r <= (ENC_CMD_READ <<      ENC_CMD_SHIFT) | (1 << ENC_NOP)         | (1 << ENC_BUF_WR) | (1 << ENC_DCI) | (1 << ENC_SEL); 
-            4'h3: rom_r <= (ENC_CMD_READ <<      ENC_CMD_SHIFT)                          | (1 << ENC_BUF_WR) | (1 << ENC_DCI) | (1 << ENC_SEL); 
+            4'h2: rom_r <= (ENC_CMD_READ <<      ENC_CMD_SHIFT) | (1 << ENC_NOP)         | (1 << ENC_BUF_WR) | (1 << ENC_DCI) | (RSEL << ENC_SEL); 
+            4'h3: rom_r <= (ENC_CMD_READ <<      ENC_CMD_SHIFT)                          | (1 << ENC_BUF_WR) | (1 << ENC_DCI) | (RSEL << ENC_SEL); 
 // loop:            
-            4'h4: rom_r <= (ENC_CMD_ACTIVATE <<  ENC_CMD_SHIFT)                          | (1 << ENC_BUF_WR) | (1 << ENC_DCI) | (1 << ENC_SEL); 
-            4'h5: rom_r <= (ENC_CMD_READ <<      ENC_CMD_SHIFT) | (1 << ENC_NOP)         | (1 << ENC_BUF_WR) | (1 << ENC_DCI) | (1 << ENC_SEL); 
-            4'h6: rom_r <= (ENC_CMD_READ <<      ENC_CMD_SHIFT)                          | (1 << ENC_BUF_WR) | (1 << ENC_DCI) | (1 << ENC_SEL); 
+            4'h4: rom_r <= (ENC_CMD_ACTIVATE <<  ENC_CMD_SHIFT)                          | (1 << ENC_BUF_WR) | (1 << ENC_DCI) | (RSEL << ENC_SEL); 
+            4'h5: rom_r <= (ENC_CMD_READ <<      ENC_CMD_SHIFT) | (1 << ENC_NOP)         | (1 << ENC_BUF_WR) | (1 << ENC_DCI) | (RSEL << ENC_SEL); 
+            4'h6: rom_r <= (ENC_CMD_READ <<      ENC_CMD_SHIFT)                          | (1 << ENC_BUF_WR) | (1 << ENC_DCI) | (RSEL << ENC_SEL); 
 // end loop            
-            4'h7: rom_r <= (ENC_CMD_NOP <<       ENC_CMD_SHIFT)                          | (1 << ENC_BUF_WR) | (1 << ENC_DCI) | (1 << ENC_SEL); 
-            4'h8: rom_r <= (ENC_CMD_READ <<      ENC_CMD_SHIFT) | (1 << ENC_NOP)         | (1 << ENC_BUF_WR) | (1 << ENC_DCI) | (1 << ENC_SEL);
-            4'h9: rom_r <= (ENC_CMD_READ <<      ENC_CMD_SHIFT)                          | (1 << ENC_BUF_WR) | (1 << ENC_DCI) | (1 << ENC_SEL); 
+            4'h7: rom_r <= (ENC_CMD_NOP <<       ENC_CMD_SHIFT)                          | (1 << ENC_BUF_WR) | (1 << ENC_DCI) | (RSEL << ENC_SEL); 
+            4'h8: rom_r <= (ENC_CMD_READ <<      ENC_CMD_SHIFT) | (1 << ENC_NOP)         | (1 << ENC_BUF_WR) | (1 << ENC_DCI) | (RSEL << ENC_SEL);
+            4'h9: rom_r <= (ENC_CMD_READ <<      ENC_CMD_SHIFT)                          | (1 << ENC_BUF_WR) | (1 << ENC_DCI) | (RSEL << ENC_SEL); 
 // do not combine this NOP -  ENC_CMD_READ + ENC_NOP enables autoprecharge
-            4'ha: rom_r <= (ENC_CMD_NOP <<       ENC_CMD_SHIFT)                          | (1 << ENC_BUF_WR) | (1 << ENC_DCI) | (1 << ENC_SEL); 
-            4'hb: rom_r <= (ENC_CMD_NOP <<       ENC_CMD_SHIFT) | (1 << ENC_PAUSE_SHIFT)                     | (1 << ENC_DCI) | (1 << ENC_SEL); 
-            4'hc: rom_r <= (ENC_CMD_NOP <<       ENC_CMD_SHIFT) | (1 << ENC_DCI) | (1 << ENC_SEL) | (1 << ENC_BUF_PGNEXT); 
+            4'ha: rom_r <= (ENC_CMD_NOP <<       ENC_CMD_SHIFT)                          | (1 << ENC_BUF_WR) | (1 << ENC_DCI) | (RSEL << ENC_SEL); 
+            4'hb: rom_r <= (ENC_CMD_NOP <<       ENC_CMD_SHIFT) | (1 << ENC_PAUSE_SHIFT)                     | (1 << ENC_DCI) | (RSEL << ENC_SEL); 
+            4'hc: rom_r <= (ENC_CMD_NOP <<       ENC_CMD_SHIFT) | (1 << ENC_DCI) | (RSEL << ENC_SEL) | (1 << ENC_BUF_PGNEXT); 
             4'hd: rom_r <= (ENC_CMD_NOP <<       ENC_CMD_SHIFT) | (3 << ENC_PAUSE_SHIFT)                     | (1 << ENC_DCI);
             4'he: rom_r <= (ENC_CMD_NOP <<       ENC_CMD_SHIFT) | (1 << ENC_PRE_DONE);
             default:rom_r <= 0;

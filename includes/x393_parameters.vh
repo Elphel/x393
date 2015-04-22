@@ -244,5 +244,7 @@
     parameter MCNTRL_TEST01_STATUS_REG_CHN1_ADDR= 'h3c,  // status/readback register for channel 2
     parameter MCNTRL_TEST01_STATUS_REG_CHN2_ADDR= 'h3d,  // status/readback register for channel 3
     parameter MCNTRL_TEST01_STATUS_REG_CHN3_ADDR= 'h3e,  // status/readback register for channel 4
-    parameter MCNTRL_TEST01_STATUS_REG_CHN4_ADDR= 'h3f  // status/readback register for channel 4
+    parameter MCNTRL_TEST01_STATUS_REG_CHN4_ADDR= 'h3f,  // status/readback register for channel 4
+    parameter RSEL=                               1'b1, // late/early READ commands (to adjust timing by 1 SDCLK period)
+    parameter WSEL=                               1'b0  // late/early WRITE commands (to adjust timing by 1 SDCLK period)
     

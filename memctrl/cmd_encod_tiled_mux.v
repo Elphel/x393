@@ -750,7 +750,7 @@ module  cmd_encod_tiled_mux #(
 `endif    
 ;
     always @ (posedge clk) begin
-        if (start_rd_w || start_wr_w) begin
+        if (start_rd_w || start_wr_w || start_rd32_w || start_wr32_w) begin
             bank_r <=        bank_w;
             row_r <=         row_w;
             col_r <=         col_w;

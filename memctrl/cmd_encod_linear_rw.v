@@ -24,9 +24,11 @@ module  cmd_encod_linear_rw#(
 //    parameter BASEADDR = 0,
     parameter ADDRESS_NUMBER=       15,
     parameter COLADDR_NUMBER=       10,
-    parameter NUM_XFER_BITS=         6,    // number of bits to specify transfer length
+    parameter NUM_XFER_BITS=         6,   // number of bits to specify transfer length
     parameter CMD_PAUSE_BITS=       10,
-    parameter CMD_DONE_BIT=         10 // VDT BUG: CMD_DONE_BIT is used in a function call parameter!
+    parameter CMD_DONE_BIT=         10,   // VDT BUG: CMD_DONE_BIT is used in a function call parameter!
+    parameter RSEL=                 1'b1, // late/early READ commands (to adjust timing by 1 SDCLK period)
+    parameter WSEL=                 1'b0  // late/early WRITE commands (to adjust timing by 1 SDCLK period)
 ) (
     input                        rst,
     input                        clk,
@@ -58,7 +60,8 @@ module  cmd_encod_linear_rw#(
         .COLADDR_NUMBER    (COLADDR_NUMBER),
         .NUM_XFER_BITS     (NUM_XFER_BITS),
         .CMD_PAUSE_BITS    (CMD_PAUSE_BITS),
-        .CMD_DONE_BIT      (CMD_DONE_BIT)
+        .CMD_DONE_BIT      (CMD_DONE_BIT),
+        .RSEL              (RSEL)
     ) cmd_encod_linear_rd_i (
         .rst                (rst), // input
         .clk                (clk), // input
@@ -78,7 +81,8 @@ module  cmd_encod_linear_rw#(
         .COLADDR_NUMBER    (COLADDR_NUMBER),
         .NUM_XFER_BITS     (NUM_XFER_BITS),
         .CMD_PAUSE_BITS    (CMD_PAUSE_BITS),
-        .CMD_DONE_BIT      (CMD_DONE_BIT)
+        .CMD_DONE_BIT      (CMD_DONE_BIT),
+        .WSEL              (WSEL)
     ) cmd_encod_linear_wr_i (
         .rst                (rst), // input
         .clk                (clk), // input
