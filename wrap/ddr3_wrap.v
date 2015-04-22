@@ -23,14 +23,14 @@
 
 module  ddr3_wrap#(
     parameter ADDRESS_NUMBER =      15,
-    parameter TRISTATE_DELAY_CLK =   2,
+    parameter TRISTATE_DELAY_CLK =   4'h2,
     parameter TRISTATE_DELAY =       0,
-    parameter CLK_DELAY =            0,
-    parameter CMDA_DELAY =           0,
-    parameter DQS_IN_DELAY =         0,
-    parameter DQ_IN_DELAY =          0,
-    parameter DQS_OUT_DELAY =        0,
-    parameter DQ_OUT_DELAY =         0
+    parameter CLK_DELAY =            1500,
+    parameter CMDA_DELAY =           1500,
+    parameter DQS_IN_DELAY =         1500,
+    parameter DQ_IN_DELAY =          1500,
+    parameter DQS_OUT_DELAY =        1500,
+    parameter DQ_OUT_DELAY =         1500
     )(
     input                       mclk,
     input                [1:0]  dq_tri,
@@ -56,27 +56,88 @@ module  ddr3_wrap#(
     inout                       NDQSU //,
 
 );
-    wire                      #(CLK_DELAY)  SDCLK_D =   SDCLK;
-    wire                      #(CLK_DELAY)  SDNCLK_D =  SDNCLK;
-    wire                      #(CMDA_DELAY) SDRST_D =   SDRST;
-    wire [ADDRESS_NUMBER-1:0] #(CMDA_DELAY) SDA_D =     SDA;
-    wire                [2:0] #(CMDA_DELAY) SDBA_D =    SDBA;
-    wire                      #(CMDA_DELAY) SDWE_D =    SDWE;
-    wire                      #(CMDA_DELAY) SDRAS_D =   SDRAS;
-    wire                      #(CMDA_DELAY) SDCAS_D =   SDCAS;
-    wire                      #(CMDA_DELAY) SDCKE_D =   SDCKE;
-    wire                      #(CMDA_DELAY) SDODT_D =   SDODT;
+    localparam CLK_DELAY_H =            CLK_DELAY/4;
+    localparam CMDA_DELAY_H =           CMDA_DELAY/4;
+    localparam DQS_IN_DELAY_H =         DQS_IN_DELAY/4;
+    localparam DQ_IN_DELAY_H =          DQ_IN_DELAY/4;
+    localparam DQS_OUT_DELAY_H =        DQS_OUT_DELAY/4;
+    localparam DQ_OUT_DELAY_H =         DQ_OUT_DELAY/4;
     
-    // generate
-    /*
-    input                       mclk,
-    input                [1:0]  dq_tri,
-    input                [1:0]  dqs_tri,
-    */
-    wire [1:0] en_dq_d;
-    wire [1:0] en_dqs_d;
-    wire [1:0] #(TRISTATE_DELAY) en_dq  = en_dq_d;
-    wire [1:0] #(TRISTATE_DELAY) en_dqs = en_dqs_d;
+    wire                      #(CLK_DELAY_H)  SDCLK_H1 =   SDCLK;
+    wire                      #(CLK_DELAY_H)  SDNCLK_H1 =  SDNCLK;
+    wire                      #(CMDA_DELAY_H) SDRST_H1 =   SDRST;
+    wire [ADDRESS_NUMBER-1:0] #(CMDA_DELAY_H) SDA_H1 =     SDA;
+    wire                [2:0] #(CMDA_DELAY_H) SDBA_H1 =    SDBA;
+    wire                      #(CMDA_DELAY_H) SDWE_H1 =    SDWE;
+    wire                      #(CMDA_DELAY_H) SDRAS_H1 =   SDRAS;
+    wire                      #(CMDA_DELAY_H) SDCAS_H1 =   SDCAS;
+    wire                      #(CMDA_DELAY_H) SDCKE_H1 =   SDCKE;
+    wire                      #(CMDA_DELAY_H) SDODT_H1 =   SDODT;
+
+    wire                      #(CLK_DELAY_H)  SDCLK_H2 =   SDCLK_H1;
+    wire                      #(CLK_DELAY_H)  SDNCLK_H2 =  SDNCLK_H1;
+    wire                      #(CMDA_DELAY_H) SDRST_H2 =   SDRST_H1;
+    wire [ADDRESS_NUMBER-1:0] #(CMDA_DELAY_H) SDA_H2 =     SDA_H1;
+    wire                [2:0] #(CMDA_DELAY_H) SDBA_H2 =    SDBA_H1;
+    wire                      #(CMDA_DELAY_H) SDWE_H2 =    SDWE_H1;
+    wire                      #(CMDA_DELAY_H) SDRAS_H2 =   SDRAS_H1;
+    wire                      #(CMDA_DELAY_H) SDCAS_H2 =   SDCAS_H1;
+    wire                      #(CMDA_DELAY_H) SDCKE_H2 =   SDCKE_H1;
+    wire                      #(CMDA_DELAY_H) SDODT_H2 =   SDODT_H1;
+    
+    wire                      #(CLK_DELAY_H)  SDCLK_H3 =   SDCLK_H2;
+    wire                      #(CLK_DELAY_H)  SDNCLK_H3 =  SDNCLK_H2;
+    wire                      #(CMDA_DELAY_H) SDRST_H3 =   SDRST_H2;
+    wire [ADDRESS_NUMBER-1:0] #(CMDA_DELAY_H) SDA_H3 =     SDA_H2;
+    wire                [2:0] #(CMDA_DELAY_H) SDBA_H3 =    SDBA_H2;
+    wire                      #(CMDA_DELAY_H) SDWE_H3 =    SDWE_H2;
+    wire                      #(CMDA_DELAY_H) SDRAS_H3 =   SDRAS_H2;
+    wire                      #(CMDA_DELAY_H) SDCAS_H3 =   SDCAS_H2;
+    wire                      #(CMDA_DELAY_H) SDCKE_H3 =   SDCKE_H2;
+    wire                      #(CMDA_DELAY_H) SDODT_H3=   SDODT_H2;
+
+    wire                      #(CLK_DELAY_H)  SDCLK_D =   SDCLK_H3;
+    wire                      #(CLK_DELAY_H)  SDNCLK_D =  SDNCLK_H3;
+    wire                      #(CMDA_DELAY_H) SDRST_D =   SDRST_H3;
+    wire [ADDRESS_NUMBER-1:0] #(CMDA_DELAY_H) SDA_D =     SDA_H3;
+    wire                [2:0] #(CMDA_DELAY_H) SDBA_D =    SDBA_H3;
+    wire                      #(CMDA_DELAY_H) SDWE_D =    SDWE_H3;
+    wire                      #(CMDA_DELAY_H) SDRAS_D =   SDRAS_H3;
+    wire                      #(CMDA_DELAY_H) SDCAS_D =   SDCAS_H3;
+    wire                      #(CMDA_DELAY_H) SDCKE_D =   SDCKE_H3;
+    wire                      #(CMDA_DELAY_H) SDODT_D =   SDODT_H3;
+
+    wire [1:0] en_dq_dl;
+    wire [1:0] en_dqs_dl;
+    wire [1:0] #(TRISTATE_DELAY) en_dq_d0  = en_dq_dl;
+    wire [1:0] #(TRISTATE_DELAY) en_dqs_d0 = en_dqs_dl;
+    
+    wire [1:0] #(DQ_OUT_DELAY_H) en_dq_d1=en_dq_d0;
+    wire [1:0] #(DQ_OUT_DELAY_H) en_dqs_d1=en_dqs_d0;
+    wire [1:0] #(DQ_OUT_DELAY_H) en_dq_d2=en_dq_d1;
+    wire [1:0] #(DQ_OUT_DELAY_H) en_dqs_d2=en_dqs_d1;
+    wire [1:0] #(DQ_IN_DELAY_H)  en_dq_d3=en_dq_d2;
+    wire [1:0] #(DQ_IN_DELAY_H)  en_dqs_d3=en_dqs_d2;
+    wire [1:0] #(DQ_OUT_DELAY_H) en_dq_d4=en_dq_d3;
+    wire [1:0] #(DQ_OUT_DELAY_H) en_dqs_d4=en_dqs_d3;
+    wire [1:0] #(DQ_OUT_DELAY_H) en_dq_d5=en_dq_d4;
+    wire [1:0] #(DQ_OUT_DELAY_H) en_dqs_d5=en_dqs_d4;
+    wire [1:0] #(DQ_IN_DELAY_H)  en_dq_d6=en_dq_d5;
+    wire [1:0] #(DQ_IN_DELAY_H)  en_dqs_d6=en_dqs_d5;
+    wire [1:0] #(DQ_IN_DELAY_H)  en_dq_d7=en_dq_d6;
+    wire [1:0] #(DQ_IN_DELAY_H)  en_dqs_d7=en_dqs_d6;
+    
+//  wire [1:0]  en_dq_out=en_dq_d2;
+//  wire [1:0]  en_dqs_out=en_dqs_d2;
+    wire [1:0]  en_dq_out=en_dq_d3;
+    wire [1:0]  en_dqs_out=en_dqs_d3;
+
+//  wire [1:0]  en_dq_in= ~en_dq_d0  & ~en_dq_d1  & ~en_dq_d2  & ~en_dq_d3  & ~en_dq_d4;
+//  wire [1:0]  en_dqs_in=~en_dqs_d0 & ~en_dqs_d1 & ~en_dqs_d2 & ~en_dqs_d3 & ~en_dqs_d4;
+
+    wire [1:0]  en_dq_in= ~en_dq_d0  & ~en_dq_d1  & ~en_dq_d2  & ~en_dq_d3  & ~en_dq_d4  & ~en_dq_d5  & ~en_dq_d6  & ~en_dq_d7;
+    wire [1:0]  en_dqs_in=~en_dqs_d0 & ~en_dqs_d1 & ~en_dqs_d2 & ~en_dqs_d3 & ~en_dqs_d4 & ~en_dqs_d5 & ~en_dqs_d6 & ~en_dqs_d7;
+    
     
     /* Instance template for module dly_16 */
     dly_16 #(
@@ -86,37 +147,134 @@ module  ddr3_wrap#(
         .rst     (~SDRST),
         .dly     (TRISTATE_DELAY_CLK), 
         .din     ({~dqs_tri,~dq_tri}), 
-        .dout    ({en_dqs_d,en_dq_d}) 
+        .dout    ({en_dqs_dl,en_dq_dl}) 
     );
+    wire [15:0] SDD_H1;
+    wire        SDDML_H1;
+    wire        SDDMU_H1;
+    wire        DQSL_H1;
+    wire        NDQSL_H1;
+    wire        DQSU_H1;
+    wire        NDQSU_H1;
+
+    wire [15:0] SDD_H2;
+    wire        SDDML_H2;
+    wire        SDDMU_H2;
+    wire        DQSL_H2;
+    wire        NDQSL_H2;
+    wire        DQSU_H2;
+    wire        NDQSU_H2;
+
+    wire [15:0] SDD_H3;
+    wire        SDDML_H3;
+    wire        SDDMU_H3;
+    wire        DQSL_H3;
+    wire        NDQSL_H3;
+    wire        DQSU_H3;
+    wire        NDQSU_H3;
+    
     wire [15:0] SDD_D;
     wire        SDDML_D;
     wire        SDDMU_D;
-    wire        DQSL_D;  // LDQS I/O pad
-    wire        NDQSL_D; // ~LDQS I/O pad
-    wire        DQSU_D;  // UDQS I/O pad
-    wire        NDQSU_D; //,
+    wire        DQSL_D;
+    wire        NDQSL_D;
+    wire        DQSU_D;
+    wire        NDQSU_D;
+
+    wire [15:0] SDD_DH1;
+    wire        DQSL_DH1;
+    wire        NDQSL_DH1;
+    wire        DQSU_DH1;
+    wire        NDQSU_DH1;
     
+    wire [15:0] SDD_DH2;
+    wire        DQSL_DH2;
+    wire        NDQSL_DH2;
+    wire        DQSU_DH2;
+    wire        NDQSU_DH2;
     
-    assign #(DQ_OUT_DELAY) SDD_D[ 7:0] = en_dq[0]? SDD[7:0]: 8'bz;
-    assign #(DQ_OUT_DELAY) SDD_D[15:8] = en_dq[1]? SDD[15:8]:8'bz;
+    wire [15:0] SDD_DH3;
+    wire        DQSL_DH3;
+    wire        NDQSL_DH3;
+    wire        DQSU_DH3;
+    wire        NDQSU_DH3;
     
-    assign #(DQ_OUT_DELAY) SDDML_D = en_dq[0]? SDDML: 1'bz;
-    assign #(DQ_OUT_DELAY) SDDMU_D = en_dq[1]? SDDMU: 1'bz;
+    assign #(DQ_OUT_DELAY_H) SDD_H1[ 7:0] = SDD[7:0];
+    assign #(DQ_OUT_DELAY_H) SDD_H1[15:8] = SDD[15:8];
+    
+    assign #(DQ_OUT_DELAY_H) SDD_H2[ 7:0] = SDD_H1[7:0];
+    assign #(DQ_OUT_DELAY_H) SDD_H2[15:8] = SDD_H1[15:8];
+    
+    assign #(DQ_OUT_DELAY_H) SDD_H3[ 7:0] = SDD_H2[7:0];
+    assign #(DQ_OUT_DELAY_H) SDD_H3[15:8] = SDD_H2[15:8];
+    
+    assign #(DQ_OUT_DELAY_H) SDD_D[ 7:0] = en_dq_out[0]? SDD_H3[7:0]: 8'bz;
+    assign #(DQ_OUT_DELAY_H) SDD_D[15:8] = en_dq_out[1]? SDD_H3[15:8]:8'bz;
+    
+    assign #(DQ_OUT_DELAY_H) SDDML_H1 = SDDML;
+    assign #(DQ_OUT_DELAY_H) SDDMU_H1 = SDDMU;
 
+    assign #(DQ_OUT_DELAY_H) SDDML_H2 = SDDML_H1;
+    assign #(DQ_OUT_DELAY_H) SDDMU_H2 = SDDMU_H1;
 
-    assign #(DQ_IN_DELAY) SDD  [ 7:0] = en_dq[0]? 8'bz : SDD_D[7:0];
-    assign #(DQ_IN_DELAY) SDD  [15:8] = en_dq[1]? 8'bz : SDD_D[15:8];
+    assign #(DQ_OUT_DELAY_H) SDDML_H3 = SDDML_H2;
+    assign #(DQ_OUT_DELAY_H) SDDMU_H3 = SDDMU_H2;
 
-    assign #(DQS_OUT_DELAY) DQSL_D =  en_dqs[0]? DQSL: 1'bz;
-    assign #(DQS_OUT_DELAY) NDQSL_D = en_dqs[0]? NDQSL: 1'bz;
-    assign #(DQS_OUT_DELAY) DQSU_D =  en_dqs[1]? DQSU: 1'bz;
-    assign #(DQS_OUT_DELAY) NDQSU_D = en_dqs[1]? NDQSU: 1'bz;
+    assign #(DQ_OUT_DELAY_H) SDDML_D = en_dq_out[0]? SDDML_H3: 1'bz;
+    assign #(DQ_OUT_DELAY_H) SDDMU_D = en_dq_out[1]? SDDMU_H3: 1'bz;
 
-    assign #(DQS_IN_DELAY) DQSL =  en_dqs[0]? 1'bz : DQSL_D;
-    assign #(DQS_IN_DELAY) NDQSL = en_dqs[0]? 1'bz : NDQSL_D;
-    assign #(DQS_IN_DELAY) DQSU =  en_dqs[1]? 1'bz : DQSU_D;
-    assign #(DQS_IN_DELAY) NDQSU = en_dqs[1]? 1'bz : NDQSU_D;
+    assign #(DQ_IN_DELAY_H) SDD_DH1  [ 7:0] = SDD_D[7:0];
+    assign #(DQ_IN_DELAY_H) SDD_DH1  [15:8] = SDD_D[15:8];
+    
+    assign #(DQ_IN_DELAY_H) SDD_DH2  [ 7:0] = SDD_DH1[7:0];
+    assign #(DQ_IN_DELAY_H) SDD_DH2  [15:8] = SDD_DH1[15:8];
+    
+    assign #(DQ_IN_DELAY_H) SDD_DH3  [ 7:0] = SDD_DH2[7:0];
+    assign #(DQ_IN_DELAY_H) SDD_DH3  [15:8] = SDD_DH2[15:8];
+    
+    assign #(DQ_IN_DELAY_H) SDD  [ 7:0] = en_dq_in[0]? SDD_DH3[7:0]:8'bz;
+    assign #(DQ_IN_DELAY_H) SDD  [15:8] = en_dq_in[1]? SDD_DH3[15:8]:8'bz;
+    
 
+    assign #(DQS_OUT_DELAY_H) DQSL_H1 =  DQSL;
+    assign #(DQS_OUT_DELAY_H) NDQSL_H1 = NDQSL;
+    assign #(DQS_OUT_DELAY_H) DQSU_H1 =  DQSU;
+    assign #(DQS_OUT_DELAY_H) NDQSU_H1 = NDQSU;
+
+    assign #(DQS_OUT_DELAY_H) DQSL_H2 =  DQSL_H1;
+    assign #(DQS_OUT_DELAY_H) NDQSL_H2 = NDQSL_H1;
+    assign #(DQS_OUT_DELAY_H) DQSU_H2 =  DQSU_H1;
+    assign #(DQS_OUT_DELAY_H) NDQSU_H2 = NDQSU_H1;
+
+    assign #(DQS_OUT_DELAY_H) DQSL_H3 =  DQSL_H2;
+    assign #(DQS_OUT_DELAY_H) NDQSL_H3 = NDQSL_H2;
+    assign #(DQS_OUT_DELAY_H) DQSU_H3 =  DQSU_H2;
+    assign #(DQS_OUT_DELAY_H) NDQSU_H3 = NDQSU_H2;
+    
+    assign #(DQS_OUT_DELAY_H) DQSL_D =  en_dqs_out[0]? DQSL_H3:  1'bz;
+    assign #(DQS_OUT_DELAY_H) NDQSL_D = en_dqs_out[0]? NDQSL_H3: 1'bz;
+    assign #(DQS_OUT_DELAY_H) DQSU_D =  en_dqs_out[1]? DQSU_H3:  1'bz;
+    assign #(DQS_OUT_DELAY_H) NDQSU_D = en_dqs_out[1]? NDQSU_H3: 1'bz;
+    
+    assign #(DQS_IN_DELAY_H) DQSL_DH1 =  DQSL_D;
+    assign #(DQS_IN_DELAY_H) NDQSL_DH1 = NDQSL_D;
+    assign #(DQS_IN_DELAY_H) DQSU_DH1 =  DQSU_D;
+    assign #(DQS_IN_DELAY_H) NDQSU_DH1 = NDQSU_D;
+
+    assign #(DQS_IN_DELAY_H) DQSL_DH2 =  DQSL_DH1;
+    assign #(DQS_IN_DELAY_H) NDQSL_DH2 = NDQSL_DH1;
+    assign #(DQS_IN_DELAY_H) DQSU_DH2 =  DQSU_DH1;
+    assign #(DQS_IN_DELAY_H) NDQSU_DH2 = NDQSU_DH1;
+
+    assign #(DQS_IN_DELAY_H) DQSL_DH3 =  DQSL_DH2;
+    assign #(DQS_IN_DELAY_H) NDQSL_DH3 = NDQSL_DH2;
+    assign #(DQS_IN_DELAY_H) DQSU_DH3 =  DQSU_DH2;
+    assign #(DQS_IN_DELAY_H) NDQSU_DH3 = NDQSU_DH2;
+
+    assign #(DQS_IN_DELAY_H) DQSL =  en_dqs_in[0]? DQSL_DH3:  1'bz;
+    assign #(DQS_IN_DELAY_H) NDQSL = en_dqs_in[0]? NDQSL_DH3: 1'bz;
+    assign #(DQS_IN_DELAY_H) DQSU =  en_dqs_in[1]? DQSU_DH3:  1'bz;
+    assign #(DQS_IN_DELAY_H) NDQSU = en_dqs_in[1]? NDQSU_DH3: 1'bz;
 
     ddr3 #(
         .TCK_MIN             (2500), 

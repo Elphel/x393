@@ -371,8 +371,8 @@ module  phy_cmd#(
 
 
     wire [7:0] dqs_data;
-//  assign dqs_data=phy_dqs_toggle_cur?dqs_pattern[7:0]:8'h0;
-    assign dqs_data=phy_dqs_toggle_cur?dqs_pattern[7:0]:8'hff;
+  assign dqs_data=phy_dqs_toggle_cur?dqs_pattern[7:0]:8'h0; // Has to be low to satisfy write levelling preamble
+
     phy_top #(
         .IOSTANDARD_DQ      ("SSTL15_T_DCI"),
         .IOSTANDARD_DQS     ("DIFF_SSTL15_T_DCI"),

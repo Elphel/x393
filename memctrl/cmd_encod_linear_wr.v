@@ -26,7 +26,8 @@ module  cmd_encod_linear_wr #(
     parameter COLADDR_NUMBER=       10,
     parameter NUM_XFER_BITS=         6,    // number of bits to specify transfer length
     parameter CMD_PAUSE_BITS=       10,
-    parameter CMD_DONE_BIT=         10 // VDT BUG: CMD_DONE_BIT is used in a function call parameter!
+    parameter CMD_DONE_BIT=         10, // VDT BUG: CMD_DONE_BIT is used in a function call parameter!
+    parameter WSEL=                 1'b0
 ) (
     input                        rst,
     input                        clk,
@@ -185,13 +186,14 @@ module  cmd_encod_linear_wr #(
             4'h0: rom_r <= (ENC_CMD_ACTIVATE <<  ENC_CMD_SHIFT) | (1 << ENC_BUF_RD);// | (1 << ENC_NOP); 
             4'h1: rom_r <= (ENC_CMD_NOP <<       ENC_CMD_SHIFT) | (1 << ENC_BUF_RD);
             4'h2: rom_r <= (ENC_CMD_NOP <<       ENC_CMD_SHIFT) | (1 << ENC_BUF_RD);
-            4'h3: rom_r <= (ENC_CMD_WRITE <<     ENC_CMD_SHIFT) | (1 << ENC_BUF_RD) | (1 << ENC_SEL)         | (1 << ENC_ODT);   // single cycle
-            4'h4: rom_r <= (ENC_CMD_NOP <<       ENC_CMD_SHIFT) | (1 << ENC_BUF_RD) | (1 << ENC_DQ_DQS_EN)   | (1 << ENC_ODT);  // single cycle
+            4'h3: rom_r <= (ENC_CMD_WRITE <<     ENC_CMD_SHIFT) | (1 << ENC_BUF_RD) | (WSEL << ENC_SEL)         | (1 << ENC_ODT);   // single cycle
+//          4'h4: rom_r <= (ENC_CMD_NOP <<       ENC_CMD_SHIFT) | (1 << ENC_BUF_RD) | (1 << ENC_DQ_DQS_EN)   | (1 << ENC_ODT);  // single cycle
+            4'h4: rom_r <= (ENC_CMD_NOP <<       ENC_CMD_SHIFT) | (1 << ENC_BUF_RD)                  | (1 << ENC_ODT);  // single cycle
 // next may loop            
-            4'h5: rom_r <= (ENC_CMD_WRITE <<     ENC_CMD_SHIFT) | (1 << ENC_NOP) | (1 << ENC_BUF_RD) | (1 << ENC_DQS_TOGGLE) | (1 << ENC_DQ_DQS_EN) | (1 << ENC_SEL) | (1 << ENC_ODT);  // dual cycle 
-            4'h6: rom_r <= (ENC_CMD_WRITE <<     ENC_CMD_SHIFT)                  | (1 << ENC_BUF_RD) | (1 << ENC_DQS_TOGGLE) | (1 << ENC_DQ_DQS_EN) | (1 << ENC_SEL) | (1 << ENC_ODT);  // dual cycle 
-            4'h7: rom_r <= (ENC_CMD_NOP <<       ENC_CMD_SHIFT)                                      | (1 << ENC_DQS_TOGGLE) | (1 << ENC_DQ_DQS_EN) | (1 << ENC_SEL) | (1 << ENC_ODT);
-            4'h8: rom_r <= (ENC_CMD_WRITE <<     ENC_CMD_SHIFT)                                      | (1 << ENC_DQS_TOGGLE) | (1 << ENC_DQ_DQS_EN) | (1 << ENC_SEL) | (1 << ENC_ODT);  // dual cycle 
+            4'h5: rom_r <= (ENC_CMD_WRITE <<     ENC_CMD_SHIFT) | (1 << ENC_NOP) | (1 << ENC_BUF_RD) | (1 << ENC_DQS_TOGGLE) | (1 << ENC_DQ_DQS_EN) | (WSEL << ENC_SEL) | (1 << ENC_ODT);  // dual cycle 
+            4'h6: rom_r <= (ENC_CMD_WRITE <<     ENC_CMD_SHIFT)                  | (1 << ENC_BUF_RD) | (1 << ENC_DQS_TOGGLE) | (1 << ENC_DQ_DQS_EN) | (WSEL << ENC_SEL) | (1 << ENC_ODT);  // dual cycle 
+            4'h7: rom_r <= (ENC_CMD_NOP <<       ENC_CMD_SHIFT)                                      | (1 << ENC_DQS_TOGGLE) | (1 << ENC_DQ_DQS_EN) | (WSEL << ENC_SEL) | (1 << ENC_ODT);
+            4'h8: rom_r <= (ENC_CMD_WRITE <<     ENC_CMD_SHIFT)                                      | (1 << ENC_DQS_TOGGLE) | (1 << ENC_DQ_DQS_EN) | (WSEL << ENC_SEL) | (1 << ENC_ODT);  // dual cycle 
             4'h9: rom_r <= (ENC_CMD_NOP <<       ENC_CMD_SHIFT)                                      | (1 << ENC_DQS_TOGGLE) | (1 << ENC_DQ_DQS_EN) | (1 << ENC_ODT);
             4'ha: rom_r <= (ENC_CMD_NOP <<       ENC_CMD_SHIFT) | (2 << ENC_PAUSE_SHIFT)             | (1 << ENC_DQS_TOGGLE) | (1 << ENC_DQ_DQS_EN) | (1 << ENC_ODT);
             4'hb: rom_r <= (ENC_CMD_NOP <<       ENC_CMD_SHIFT) | (2 << ENC_PAUSE_SHIFT);

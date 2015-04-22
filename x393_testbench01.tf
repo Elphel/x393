@@ -33,14 +33,14 @@
 `define TEST_READ_BLOCK 1
 //`define TEST_SCANLINE_WRITE
     `define TEST_SCANLINE_WRITE_WAIT 1 // wait TEST_SCANLINE_WRITE finished (frame_done)
+//`define TEST_SCANLINE_READ
     `define TEST_READ_SHOW  1
 //`define TEST_TILED_WRITE  0
     `define TEST_TILED_WRITE_WAIT 1 // wait TEST_SCANLINE_WRITE finished (frame_done)
+//`define TEST_TILED_READ  1
 
-//`define TEST_TILED_READ  0
-
-//`define TEST_TILED_WRITE32  0
-//`define TEST_TILED_READ32  0
+//`define TEST_TILED_WRITE32  1
+//`define TEST_TILED_READ32  1
 
 module  x393_testbench01 #(
 `include "includes/x393_parameters.vh" // SuppressThisWarning VEditor - not used
@@ -721,14 +721,14 @@ assign bresp=                              x393_i.ps7_i.MAXIGP0BRESP;
 `ifdef USE_DDR3_WRAP
     ddr3_wrap #(
         .ADDRESS_NUMBER     (ADDRESS_NUMBER),
-        .TRISTATE_DELAY_CLK (1), // total 2
+        .TRISTATE_DELAY_CLK (4'h1), // total 2
         .TRISTATE_DELAY     (0),
-        .CLK_DELAY          (0),
-        .CMDA_DELAY         (0),
-        .DQS_IN_DELAY       (0),
-        .DQ_IN_DELAY        (0),
-        .DQS_OUT_DELAY      (0),
-        .DQ_OUT_DELAY       (0)
+        .CLK_DELAY          (1550),
+        .CMDA_DELAY         (1550),
+        .DQS_IN_DELAY       (3150),
+        .DQ_IN_DELAY        (1550),
+        .DQS_OUT_DELAY      (1550),
+        .DQ_OUT_DELAY       (1550)
     ) ddr3_i (
         .mclk    (WRAP_MCLK), // input
         .dq_tri  ({WRAP_PHY_DQ_TRI[4],WRAP_PHY_DQ_TRI[0]}), // input[1:0] 
@@ -749,7 +749,7 @@ assign bresp=                              x393_i.ps7_i.MAXIGP0BRESP;
         .NDQSU   (NDQSU),
         .DQSL    (DQSL),
         .NDQSL   (NDQSL),
-        .SDODT     (SDODT)          // input 
+        .SDODT   (SDODT)          // input 
     );
 `else
     ddr3 #(
