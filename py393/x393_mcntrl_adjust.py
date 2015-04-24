@@ -4939,7 +4939,60 @@ write_settings= {
                     if not d is None:
                         print ("%d %s"%(phase,d))
 
-            
+    def dq_dqs_parameters_stats(self,
+                                out_mode=None):
+        if out_mode is None:
+            try:
+                self.load_mcntrl('dbg/x393_mcntrl.pickle') # load previously acquired data
+            except:
+                print("'dbg/x393_mcntrl.pickle' not found, using current data")
+            print("\nInput:")
+            self.dq_dqs_parameters_stats(False)
+            print("\nOutput:")
+            self.dq_dqs_parameters_stats(True)
+            return
+        def get_fine_step(tS,tF):
+            tF.append(-sum(tF))
+#            tF.append(tF[0]) Do not process last (large) step, average 4 small ones
+            rslt=[]
+            for i in range (len(tF)-1):
+                rslt.append(tS+tF[i]-tF[i+1])
+            return rslt    
+        parameters =   self.adjustment_state[("dqi_dqsi_parameters","dqo_dqso_parameters")[out_mode]]
+        for laneP in parameters:
+            laneP['tFSDQS']=get_fine_step(laneP['tSDQS'],laneP['tFDQS'][0:4] )
+            laneP['tFSDQ']=[]
+            for line in range(8):
+                laneP['tFSDQ'] += get_fine_step(laneP['tSDQ'][line],laneP['tFDQ'][4*line:4*(line+1)])
+        print('parameters=',parameters)
+        templ=({'name':'tDQSHL',  'units':'ps','scale':1},
+               {'name':'tDQHL',   'units':'ps','scale':1},               
+               {'name':'tDQ',     'units':'ps','scale':1},
+               {'name':'tSDQS',   'units':'ps/step','scale':5.0}, 
+               {'name':'tSDQ',    'units':'ps/step','scale':5.0}, 
+               {'name':'tFSDQS',  'units':'ps/step','scale':1.0}, 
+               {'name':'tFSDQ',   'units':'ps/step','scale':1.0},
+               {'name':'anaScale','units':'ps',     'scale':1.0},
+               )
+        print ('parameter number average min max max-min units')
+        for par in templ:
+            v=[]
+            for laneP in parameters:
+                if isinstance(laneP[par['name']],(list,tuple)):
+                    v += laneP[par['name']]
+                else:
+                    v.append(laneP[par['name']])
+            print ("%s %d %.2f %.2f %.2f %.2f %s"%(par['name'],
+                                                   len(v),
+                                                   par['scale']*sum(v)/len(v),
+                                                   par['scale']*min(v),
+                                                   par['scale']*max(v),
+                                                   par['scale']*(max(v)-min(v)),
+                                                   par['units']))
+#            print (par['name'],par['scale']*sum(v)/len(v),par['scale']*(max(v)-min(v)), par['units'])
+                    
+                    
+        
              
 
     def measure_all(self,

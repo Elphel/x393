@@ -55,7 +55,7 @@ PARAMETER_TYPES=(
                      {"name":"tFDQS",   "size":4,            "units":"ps","description":"DQS fine delays (mod 5)","en":1}, #only 4 are independent, 5-th is -sum of 4 
                      {"name":"tFDQ",    "size":32,           "units":"ps","description":"DQ  fine delays (mod 5)","en":1},
                      {"name":"anaScale","size":1, "dflt":20, "units":"ps","description":"Scale for non-binary measured results","en":1}, #should not be 0 - singular matrix
-                     {"name":"tCDQS",   "size":30,           "units":"ps","description":"DQS primary dealays (all but 8 and 24","en":1}, #only 4 are independent, 5-th is -sum of 4 
+                     {"name":"tCDQS",   "size":30,           "units":"ps","description":"DQS primary delays (all but 8 and 24","en":1}, #only 4 are independent, 5-th is -sum of 4 
                      )
 FINE_STEPS=5
 DLY_STEPS =FINE_STEPS * 32 # =160 
