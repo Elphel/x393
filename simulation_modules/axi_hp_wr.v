@@ -62,7 +62,7 @@ module  axi_hp_wr#(
     input         sim_wr_ready, // simulation may pause this channel by keeping this signal inactive
     output [63:0] sim_wr_data,
     output [ 7:0] sim_wr_stb,
-    input  [ 3:0] sim_bresp_latency, // latency in writeing data outside of the module 
+    input  [ 3:0] sim_bresp_latency, // latency in writing data outside of the module 
     output [ 2:0] sim_wr_cap,
     output [ 3:0] sim_wr_qos,
     input  [31:0] reg_addr,
@@ -80,19 +80,25 @@ module  axi_hp_wr#(
     localparam AFI_WRDEBUG= AFI_BASECTRL + 'h24; // SuppressThisWarning VEditor - not yet used
     
     localparam VALID_AWLOCK =  2'b0; // TODO
-    localparam VALID_AWCACHE = 4'b0; //
-    localparam VALID_AWPROT =  3'b0;
+    localparam VALID_AWCACHE = 4'b0011; //
+    localparam VALID_AWPROT =  3'b000;
     localparam VALID_AWLOCK_MASK =  2'b11; // TODO
-    localparam VALID_AWCACHE_MASK = 4'b1111; //
-    localparam VALID_AWPROT_MASK =  3'b111;
-    
+    localparam VALID_AWCACHE_MASK = 4'b0011; //
+    localparam VALID_AWPROT_MASK =  3'b010;
+/*
+http://forums.xilinx.com/t5/Embedded-Processor-System-Design/Accessing-DDR-from-PL-on-Zynq/m-p/324877#M8413
+Solved it!
+To make it work, I set the (AR/AW)CACHE=0x11 and (AR/AW)PROT=0x00. In the CDMA datasheet, these were the recommended values, which I confirmed with ChipScope, when attached to CDMA's master port.
+The default values set by VHLS were 0x00 and 0x10 respectively, which is also the case in the last post.
+Alex
+*/    
     
     reg   [3:0] WrDataThreshold =  'hf;
     reg   [1:0] WrCmdReleaseMode =  0;
-    reg         QosHeadOfCmdQEn =   0;
-    reg         FabricOutCmdEn =    0;
-    reg         FabricQosEn =       1;
-    reg         en32BitEn =         0; // verify it i 0
+    reg         wrQosHeadOfCmdQEn =   0;
+    reg         wrFabricOutCmdEn =    0;
+    reg         wrFabricQosEn =       0;
+    reg         wr32BitEn =         0; // verify it i 0
     reg   [2:0] wrIssueCap1 =       0;
     reg   [2:0] wrIssueCap0 =       7;
     reg   [3:0] staticQos =         0;
@@ -134,16 +140,16 @@ module  axi_hp_wr#(
         
     // documentation sais : "When set, allows the priority of a transaction at the head of the WrCmdQ to be promoted if higher
     // priority transactions are backed up behind it." Whqt about demotion? Assuming it is not demoted
-    assign sim_wr_qos = (QosHeadOfCmdQEn && (wr_qos_in > wr_qos_out))? wr_qos_in : wr_qos_out;
-    assign sim_wr_cap = (FabricOutCmdEn && wrissuecap1en) ? wrIssueCap1 : wrIssueCap0;
-    assign wr_qos_in = FabricQosEn?(awqos & {4{awvalid}}) : staticQos;
+    assign sim_wr_qos = (wrQosHeadOfCmdQEn && (wr_qos_in > wr_qos_out))? wr_qos_in : wr_qos_out;
+    assign sim_wr_cap = (wrFabricOutCmdEn && wrissuecap1en) ? wrIssueCap1 : wrIssueCap0;
+    assign wr_qos_in = wrFabricQosEn?(awqos & {4{awvalid}}) : staticQos;
  //awqos & {4{awvalid}}   
     assign aresetn= ~rst; // probably not needed at all - docs say "do not use"
-    // Only supported control register fields
+    // Supported control register fields
     assign reg_dout=(reg_rd && (reg_addr==AFI_WRDATAFIFO_LEVEL))?
                           {24'b0,wcount}:
                     (   (reg_rd && (reg_addr==AFI_WRCHAN_CTRL))?
-                          {20'b0,WrDataThreshold,2'b0,WrCmdReleaseMode,QosHeadOfCmdQEn,FabricOutCmdEn,FabricQosEn,en32BitEn}:
+                          {20'b0,WrDataThreshold,2'b0,WrCmdReleaseMode,wrQosHeadOfCmdQEn,wrFabricOutCmdEn,wrFabricQosEn,wr32BitEn}:
                      (  (reg_rd && (reg_addr==AFI_WRCHAN_ISSUINGCAP))?
                           {25'b0,wrIssueCap1,1'b0,wrIssueCap0}:
                       ( (reg_rd && (reg_addr==AFI_WRQOS))?
@@ -153,17 +159,17 @@ module  axi_hp_wr#(
         if (rst) begin
             WrDataThreshold  <= 'hf;
             WrCmdReleaseMode <= 0;
-            QosHeadOfCmdQEn  <= 0;
-            FabricOutCmdEn   <= 0;
-            FabricQosEn      <= 1;
-            en32BitEn        <= 0;
+            wrQosHeadOfCmdQEn  <= 0;
+            wrFabricOutCmdEn   <= 0;
+            wrFabricQosEn      <= 0;
+            wr32BitEn        <= 0;
         end else if (reg_wr && (reg_addr==AFI_WRCHAN_CTRL)) begin
             WrDataThreshold  <= reg_din[11:8];
             WrCmdReleaseMode <= reg_din[5:4];
-            QosHeadOfCmdQEn  <= reg_din[3];
-            FabricOutCmdEn   <= reg_din[2];
-            FabricQosEn      <= reg_din[1];
-            en32BitEn        <= reg_din[0];
+            wrQosHeadOfCmdQEn  <= reg_din[3];
+            wrFabricOutCmdEn   <= reg_din[2];
+            wrFabricQosEn      <= reg_din[1];
+            wr32BitEn        <= reg_din[0];
         end
         if (rst) begin
             wrIssueCap1  <= 0;
