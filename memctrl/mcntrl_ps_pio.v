@@ -228,7 +228,9 @@ fifo_same_clock   #(
 
 
 // Port 0 (read DDR to AXI) buffer
-    mcntrl_1kx32r chn0_buf_i (
+    mcntrl_buf_rd #(
+        .LOG2WIDTH_RD(5)
+    ) chn0_buf_i (
         .ext_clk      (port0_clk), // input
         .ext_raddr    (port0_addr), // input[9:0] 
         .ext_rd       (port0_re), // input
@@ -244,7 +246,9 @@ fifo_same_clock   #(
     );
     
 // Port 1 (write DDR from AXI) buffer
-     mcntrl_1kx32w chn1_buf_i (
+    mcntrl_buf_wr #(
+        .LOG2WIDTH_WR(5)
+    ) chn1_buf_i (
         .ext_clk      (port1_clk), // input
         .ext_waddr    (port1_addr), // input[9:0] 
         .ext_we       (port1_we), // input

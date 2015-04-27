@@ -779,7 +779,9 @@ module  mcntrl393 #(
 // Port memory buffer (4 pages each, R/W fixed, port 0 - AXI read from DDR, port 1 - AXI write to DDR
 
 // Port 1rd (read DDR to AXI) buffer, linear
-    mcntrl_1kx32r chn1rd_buf_i (
+    mcntrl_buf_rd #(
+        .LOG2WIDTH_RD(5)
+    ) chn1rd_buf_i (
         .ext_clk      (axi_clk), // input
         .ext_raddr    (buf_raddr), // input[9:0] 
         .ext_rd       (buf1rd_rd), // input
@@ -795,7 +797,9 @@ module  mcntrl393 #(
     );
 
 // Port 1wr (write DDR from AXI) buffer, linear
-         mcntrl_1kx32w chn1wr_buf_i (
+    mcntrl_buf_wr #(
+         .LOG2WIDTH_WR(5)
+    ) chn1wr_buf_i (
         .ext_clk      (axi_clk), // input
         .ext_waddr    (buf_waddr), // input[9:0] 
         .ext_we       (buf1wr_we), // input
@@ -810,7 +814,9 @@ module  mcntrl393 #(
     );
 
 // Port 2rd (read DDR to AXI) buffer, tiled
-    mcntrl_1kx32r chn2rd_buf_i (
+    mcntrl_buf_rd #(
+        .LOG2WIDTH_RD(5)
+    ) chn2rd_buf_i (
         .ext_clk      (axi_clk), // input
         .ext_raddr    (buf_raddr), // input[9:0] 
         .ext_rd       (buf2rd_rd), // input
@@ -826,7 +832,9 @@ module  mcntrl393 #(
     );
 
 // Port 2wr (write DDR from AXI) buffer, tiled
-         mcntrl_1kx32w chn2wr_buf_i (
+    mcntrl_buf_wr #(
+         .LOG2WIDTH_WR(5)
+    ) chn2wr_buf_i (
         .ext_clk      (axi_clk), // input
         .ext_waddr    (buf_waddr), // input[9:0] 
         .ext_we       (buf2wr_we), // input
@@ -841,7 +849,9 @@ module  mcntrl393 #(
     );
 //-----------
 // Port 3rd (read DDR to AXI) buffer, linear
-    mcntrl_1kx32r chn3rd_buf_i (
+    mcntrl_buf_rd #(
+        .LOG2WIDTH_RD(5)
+    ) chn3rd_buf_i (
         .ext_clk      (axi_clk), // input
         .ext_raddr    (buf_raddr), // input[9:0] 
         .ext_rd       (buf3rd_rd), // input
@@ -857,7 +867,9 @@ module  mcntrl393 #(
     );
 
 // Port 3wr (write DDR from AXI) buffer, linear
-         mcntrl_1kx32w chn3wr_buf_i (
+    mcntrl_buf_wr #(
+        .LOG2WIDTH_WR(5)
+    ) chn3wr_buf_i (
         .ext_clk      (axi_clk), // input
         .ext_waddr    (buf_waddr), // input[9:0] 
         .ext_we       (buf3wr_we), // input
@@ -872,7 +884,9 @@ module  mcntrl393 #(
     );
 
 // Port 4rd (read DDR to AXI) buffer, tiled
-    mcntrl_1kx32r chn4rd_buf_i (
+    mcntrl_buf_rd #(
+        .LOG2WIDTH_RD(5)
+    ) chn4rd_buf_i (
         .ext_clk      (axi_clk), // input
         .ext_raddr    (buf_raddr), // input[9:0] 
         .ext_rd       (buf4rd_rd), // input
@@ -888,7 +902,9 @@ module  mcntrl393 #(
     );
 
 // Port 4wr (write DDR from AXI) buffer, tiled
-         mcntrl_1kx32w chn4wr_buf_i (
+    mcntrl_buf_wr #(
+        .LOG2WIDTH_WR(5)
+    ) chn4wr_buf_i (
         .ext_clk      (axi_clk), // input
         .ext_waddr    (buf_waddr), // input[9:0] 
         .ext_we       (buf4wr_we), // input
