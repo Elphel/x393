@@ -962,7 +962,8 @@ module  mcntrl393 #(
         .xfer_partial     (lin_rw_chn1_partial), // output
         .xfer_done        (seq_done1), // input : sequence over
         .xfer_page_rst_wr (xfer_reset_page1_wr), // output
-        .xfer_page_rst_rd (xfer_reset_page1_rd) // output
+        .xfer_page_rst_rd (xfer_reset_page1_rd), // output
+        .cmd_wrmem        () // output
     );
 
     mcntrl_linear_rw #(
@@ -1009,7 +1010,8 @@ module  mcntrl393 #(
         .xfer_partial     (lin_rw_chn3_partial), // output
         .xfer_done        (seq_done3), // input : sequence over
         .xfer_page_rst_wr (xfer_reset_page3_wr), // output
-        .xfer_page_rst_rd (xfer_reset_page3_rd) // output
+        .xfer_page_rst_rd (xfer_reset_page3_rd), // output
+        .cmd_wrmem        () // output
     );
     
        mcntrl_tiled_rw #(

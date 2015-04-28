@@ -163,7 +163,7 @@
     parameter NUM_CYCLES_05 =       6, // 6-cycle 140.017f
     parameter NUM_CYCLES_06 =       4, // 4-cycle 180.01bf
     parameter NUM_CYCLES_07 =       4, // 4-cycle 1c0.01ff
-    parameter NUM_CYCLES_08 =       6, //
+    parameter NUM_CYCLES_08 =       6, // 6-cycle 200.023f
     parameter NUM_CYCLES_09 =       6, //
     parameter NUM_CYCLES_10 =       6, //
     parameter NUM_CYCLES_11 =       6, //
@@ -245,6 +245,20 @@
     parameter MCNTRL_TEST01_STATUS_REG_CHN2_ADDR= 'h3d,  // status/readback register for channel 3
     parameter MCNTRL_TEST01_STATUS_REG_CHN3_ADDR= 'h3e,  // status/readback register for channel 4
     parameter MCNTRL_TEST01_STATUS_REG_CHN4_ADDR= 'h3f,  // status/readback register for channel 4
+    
+// membridge module parameters    
+    parameter MEMBRIDGE_ADDR=                     'h200,
+    parameter MEMBRIDGE_MASK=                     'h3f0,
+    parameter MEMBRIDGE_CTRL=                     'h0,
+    parameter MEMBRIDGE_STATUS_CNTRL=             'h1,
+    parameter MEMBRIDGE_RD_LOADDR64=              'h2,
+    parameter MEMBRIDGE_RD_RUNADDR64=             'h3,
+    parameter MEMBRIDGE_RD_LEN64=                 'h5,
+    parameter MEMBRIDGE_WR_LOADDR64=              'h2,
+    parameter MEMBRIDGE_WR_RUNADDR64=             'h3,
+    parameter MEMBRIDGE_WR_LEN64=                 'h5,
+    parameter MEMBRIDGE_STATUS_REG=               'h3b,
+    
     parameter RSEL=                               1'b1, // late/early READ commands (to adjust timing by 1 SDCLK period)
     parameter WSEL=                               1'b0  // late/early WRITE commands (to adjust timing by 1 SDCLK period)
     

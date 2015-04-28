@@ -77,7 +77,8 @@ module  mcntrl_linear_rw #(
     output                         xfer_partial,  // partial tile (first of 2) , sequencer will not generate page_next at the end of block   
     input                          xfer_done,     // transfer to/from the buffer finished
     output                         xfer_page_rst_wr, // reset buffer internal page - at each frame start or when specifically reset (write to memory channel), @posedge
-    output                         xfer_page_rst_rd // reset buffer internal page - at each frame start or when specifically reset (read memory channel), @negedge
+    output                         xfer_page_rst_rd, // reset buffer internal page - at each frame start or when specifically reset (read memory channel), @negedge
+    output                         cmd_wrmem
 );
     localparam NUM_RC_BURST_BITS=ADDRESS_NUMBER+COLADDR_NUMBER-3;  //to spcify row and col8 == 22
     localparam MPY_WIDTH=        NUM_RC_BURST_BITS; // 22
@@ -129,7 +130,7 @@ module  mcntrl_linear_rw #(
     
     reg                     [2:0] page_cntr;
     
-    wire                          cmd_wrmem; //=MCNTRL_SCANLINE_WRITE_MODE; // 0: read from memory, 1:write to memory
+//    wire                          cmd_wrmem; //=MCNTRL_SCANLINE_WRITE_MODE; // 0: read from memory, 1:write to memory
     wire                    [1:0] cmd_extra_pages; // external module needs more than 1 page
     reg                           busy_r;
     reg                           want_r;
@@ -247,7 +248,7 @@ module  mcntrl_linear_rw #(
     assign xfer_row= row_col_r[NUM_RC_BURST_BITS-1:COLADDR_NUMBER-3] ;      // memory row
     assign xfer_col= row_col_r[COLADDR_NUMBER-4:0];    // start memory column in 8-bursts
     assign line_unfinished=line_unfinished_r[1];
-    assign chn_en =         &mode_reg[1:0];   // enable requests by channle (continue ones in progress)
+    assign chn_en =         &mode_reg[1:0];   // enable requests by channel (continue ones in progress)
     assign chn_rst =        ~mode_reg[0]; // resets command, including fifo;
     assign cmd_wrmem =       mode_reg[2];// 0: read from memory, 1:write to memory
     assign cmd_extra_pages = mode_reg[4:3]; // external module needs more than 1 page

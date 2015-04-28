@@ -62,77 +62,77 @@
 		<link>
 			<name>vivado_logs/VivadoBitstream.log</name>
 			<type>1</type>
-			<location>/home/andrey/git/x393/vivado_logs/VivadoBitstream-20150422150006515.log</location>
+			<location>/home/andrey/git/x393/vivado_logs/VivadoBitstream-20150426202414513.log</location>
 		</link>
 		<link>
 			<name>vivado_logs/VivadoOpt.log</name>
 			<type>1</type>
-			<location>/home/andrey/git/x393/vivado_logs/VivadoOpt-20150422150006515.log</location>
+			<location>/home/andrey/git/x393/vivado_logs/VivadoOpt-20150426202414513.log</location>
 		</link>
 		<link>
 			<name>vivado_logs/VivadoOptPhys.log</name>
 			<type>1</type>
-			<location>/home/andrey/git/x393/vivado_logs/VivadoOptPhys-20150422150006515.log</location>
+			<location>/home/andrey/git/x393/vivado_logs/VivadoOptPhys-20150426202414513.log</location>
 		</link>
 		<link>
 			<name>vivado_logs/VivadoOptPower.log</name>
 			<type>1</type>
-			<location>/home/andrey/git/x393/vivado_logs/VivadoOptPower-20150422150006515.log</location>
+			<location>/home/andrey/git/x393/vivado_logs/VivadoOptPower-20150426202414513.log</location>
 		</link>
 		<link>
 			<name>vivado_logs/VivadoPlace.log</name>
 			<type>1</type>
-			<location>/home/andrey/git/x393/vivado_logs/VivadoPlace-20150422150006515.log</location>
+			<location>/home/andrey/git/x393/vivado_logs/VivadoPlace-20150426202414513.log</location>
 		</link>
 		<link>
 			<name>vivado_logs/VivadoRoute.log</name>
 			<type>1</type>
-			<location>/home/andrey/git/x393/vivado_logs/VivadoRoute-20150422150006515.log</location>
+			<location>/home/andrey/git/x393/vivado_logs/VivadoRoute-20150426202414513.log</location>
 		</link>
 		<link>
 			<name>vivado_logs/VivadoSynthesis.log</name>
 			<type>1</type>
-			<location>/home/andrey/git/x393/vivado_logs/VivadoSynthesis-20150422145717867.log</location>
+			<location>/home/andrey/git/x393/vivado_logs/VivadoSynthesis-20150426202222327.log</location>
 		</link>
 		<link>
 			<name>vivado_logs/VivadoTimimgSummaryReportImplemented.log</name>
 			<type>1</type>
-			<location>/home/andrey/git/x393/vivado_logs/VivadoTimimgSummaryReportImplemented-20150422150006515.log</location>
+			<location>/home/andrey/git/x393/vivado_logs/VivadoTimimgSummaryReportImplemented-20150426202414513.log</location>
 		</link>
 		<link>
 			<name>vivado_logs/VivadoTimimgSummaryReportSynthesis.log</name>
 			<type>1</type>
-			<location>/home/andrey/git/x393/vivado_logs/VivadoTimimgSummaryReportSynthesis-20150422145717867.log</location>
+			<location>/home/andrey/git/x393/vivado_logs/VivadoTimimgSummaryReportSynthesis-20150426202222327.log</location>
 		</link>
 		<link>
 			<name>vivado_logs/VivadoTimingReportImplemented.log</name>
 			<type>1</type>
-			<location>/home/andrey/git/x393/vivado_logs/VivadoTimingReportImplemented-20150422150006515.log</location>
+			<location>/home/andrey/git/x393/vivado_logs/VivadoTimingReportImplemented-20150426202414513.log</location>
 		</link>
 		<link>
 			<name>vivado_logs/VivadoTimingReportSynthesis.log</name>
 			<type>1</type>
-			<location>/home/andrey/git/x393/vivado_logs/VivadoTimingReportSynthesis-20150422145717867.log</location>
+			<location>/home/andrey/git/x393/vivado_logs/VivadoTimingReportSynthesis-20150426202222327.log</location>
 		</link>
 		<link>
 			<name>vivado_state/x393-opt-phys.dcp</name>
 			<type>1</type>
-			<location>/home/andrey/git/x393/vivado_state/x393-opt-phys-20150422150006515.dcp</location>
+			<location>/home/andrey/git/x393/vivado_state/x393-opt-phys-20150426202414513.dcp</location>
 		</link>
 		<link>
 			<name>vivado_state/x393-place.dcp</name>
 			<type>1</type>
-			<location>/home/andrey/git/x393/vivado_state/x393-place-20150422150006515.dcp</location>
+			<location>/home/andrey/git/x393/vivado_state/x393-place-20150426202414513.dcp</location>
 		</link>
 		<link>
 			<name>vivado_state/x393-route.dcp</name>
 			<type>1</type>
-			<location>/home/andrey/git/x393/vivado_state/x393-route-20150422150006515.dcp</location>
+			<location>/home/andrey/git/x393/vivado_state/x393-route-20150426202414513.dcp</location>
 		</link>
 		<link>
 			<name>vivado_state/x393-synth.dcp</name>
 			<type>1</type>
-			<location>/home/andrey/git/x393/vivado_state/x393-synth-20150422145717867.dcp</location>
+			<location>/home/andrey/git/x393/vivado_state/x393-synth-20150426202222327.dcp</location>
 		</link>
 	</linkedResources>
 </projectDescription>
