@@ -80,6 +80,36 @@ module  x393_testbench01 #(
   wire        DUMMY_TO_KEEP;  // output to keep PS7 signals from "optimization" // SuppressThisWarning all - not used
 //  wire        MEMCLK;
   
+// axi_hp simulation signals
+  reg  [31:0] afi_reg_addr; 
+  reg         afi_reg_wr;
+  reg         afi_reg_rd;
+  reg  [31:0] afi_reg_din;
+  wire [31:0] afi_reg_dout; 
+
+  wire [31:0] afi_sim_rd_address;    // output[31:0] 
+  wire [ 5:0] afi_sim_rid;           // output[5:0] 
+  reg         afi_sim_rd_valid;      // input
+  wire        afi_sim_rd_ready;      // output
+  reg  [63:0] afi_sim_rd_data;       // input[63:0] 
+  wire [ 2:0] afi_sim_rd_cap;        // output[2:0] 
+  wire [ 3:0] afi_sim_rd_qos;        // output[3:0] 
+  reg  [ 1:0] afi_sim_rd_resp;       // input[1:0] 
+
+
+
+  wire [31:0] afi_sim_wr_address;    // output[31:0] 
+  wire [ 5:0] afi_sim_wid;           // output[5:0] 
+  wire        afi_sim_wr_valid;      // output
+  reg         afi_sim_wr_ready;      // input
+  wire [63:0] afi_sim_wr_data;       // output[63:0] 
+  wire [ 7:0] afi_sim_wr_stb;        // output[7:0] 
+  reg  [ 3:0] afi_sim_bresp_latency; // input[3:0] 
+  wire [ 2:0] afi_sim_wr_cap;        // output[2:0] 
+  wire [ 3:0] afi_sim_wr_qos;        // output[3:0] 
+
+  
+  
   reg [639:0] TEST_TITLE;
   // Simulation signals
   reg [11:0] ARID_IN_r;
@@ -548,8 +578,8 @@ assign bresp=                              x393_i.ps7_i.MAXIGP0BRESP;
         .MCONTR_CMD_WR_ADDR                (MCONTR_CMD_WR_ADDR),
         .MCONTR_BUF0_RD_ADDR               (MCONTR_BUF0_RD_ADDR),
         .MCONTR_BUF0_WR_ADDR               (MCONTR_BUF0_WR_ADDR),
-        .MCONTR_BUF1_RD_ADDR               (MCONTR_BUF1_RD_ADDR),
-        .MCONTR_BUF1_WR_ADDR               (MCONTR_BUF1_WR_ADDR),
+//        .MCONTR_BUF1_RD_ADDR               (MCONTR_BUF1_RD_ADDR),
+//        .MCONTR_BUF1_WR_ADDR               (MCONTR_BUF1_WR_ADDR),
         .MCONTR_BUF2_RD_ADDR               (MCONTR_BUF2_RD_ADDR),
         .MCONTR_BUF2_WR_ADDR               (MCONTR_BUF2_WR_ADDR),
         .MCONTR_BUF3_RD_ADDR               (MCONTR_BUF3_RD_ADDR),
@@ -1072,6 +1102,97 @@ simul_axi_read #(
   .addr_out(SIMUL_AXI_ADDR_W[SIMUL_AXI_READ_WIDTH-1:0]),
   .burst(),     // burst in progress - just debug
   .err_out());  // data last does not match predicted or FIFO over/under run - just debug
+
+
+simul_axi_hp_rd #(
+        .HP_PORT(0)
+    ) simul_axi_hp_rd_i (
+        .rst            (RST),                               // input
+        .aclk           (x393_i.ps7_i.SAXIHP0ACLK),          // input
+        .aresetn        (),                                  // output
+        .araddr         (x393_i.ps7_i.SAXIHP0ARADDR[31:0]),  // input[31:0] 
+        .arvalid        (x393_i.ps7_i.SAXIHP0ARVALID),       // input
+        .arready        (x393_i.ps7_i.SAXIHP0ARREADY),       // output
+        .arid           (x393_i.ps7_i.SAXIHP0ARID),          // input[5:0] 
+        .arlock         (x393_i.ps7_i.SAXIHP0ARLOCK),        // input[1:0] 
+        .arcache        (x393_i.ps7_i.SAXIHP0ARCACHE),       // input[3:0] 
+        .arprot         (x393_i.ps7_i.SAXIHP0ARPROT),        // input[2:0] 
+        .arlen          (x393_i.ps7_i.SAXIHP0ARLEN),         // input[3:0] 
+        .arsize         (x393_i.ps7_i.SAXIHP0ARSIZE),        // input[2:0] 
+        .arburst        (x393_i.ps7_i.SAXIHP0ARBURST),       // input[1:0] 
+        .arqos          (x393_i.ps7_i.SAXIHP0ARQOS),         // input[3:0] 
+        .rdata          (x393_i.ps7_i.SAXIHP0RDATA),         // output[63:0] 
+        .rvalid         (x393_i.ps7_i.SAXIHP0RVALID),        // output
+        .rready         (x393_i.ps7_i.SAXIHP0RREADY),        // input
+        .rid            (x393_i.ps7_i.SAXIHP0RID),           // output[5:0] 
+        .rlast          (x393_i.ps7_i.SAXIHP0RLAST),         // output
+        .rresp          (x393_i.ps7_i.SAXIHP0RRESP),         // output[1:0] 
+        .rcount         (x393_i.ps7_i.SAXIHP0RCOUNT),        // output[7:0] 
+        .racount        (x393_i.ps7_i.SAXIHP0RACOUNT),       // output[2:0] 
+        .rdissuecap1en  (x393_i.ps7_i.SAXIHP0RDISSUECAP1EN), // input
+        .sim_rd_address (afi_sim_rd_address), // output[31:0] 
+        .sim_rid        (afi_sim_rid), // output[5:0] 
+        .sim_rd_valid   (afi_sim_rd_valid), // input
+        .sim_rd_ready   (afi_sim_rd_ready), // output
+        .sim_rd_data    (afi_sim_rd_data), // input[63:0] 
+        .sim_rd_cap     (afi_sim_rd_cap), // output[2:0] 
+        .sim_rd_qos     (afi_sim_rd_qos), // output[3:0] 
+        .sim_rd_resp    (afi_sim_rd_resp), // input[1:0] 
+        .reg_addr       (afi_reg_addr), // input[31:0] 
+        .reg_wr         (afi_reg_wr), // input
+        .reg_rd         (afi_reg_rd), // input
+        .reg_din        (afi_reg_din), // input[31:0] 
+        .reg_dout       (afi_reg_dout) // output[31:0] 
+    );
+
+simul_axi_hp_wr #(
+        .HP_PORT(0)
+    ) simul_axi_hp_wr_i (
+        .rst            (), // input
+        .aclk           (x393_i.ps7_i.SAXIHP0ACLK),          // input
+        .aresetn        (),                                  // output
+        .awaddr         (x393_i.ps7_i.SAXIHP0AWADDR),        // input[31:0] 
+        .awvalid        (x393_i.ps7_i.SAXIHP0AWVALID),       // input
+        .awready        (x393_i.ps7_i.SAXIHP0AWREADY),       // output
+        .awid           (x393_i.ps7_i.SAXIHP0AWID),          // input[5:0] 
+        .awlock         (x393_i.ps7_i.SAXIHP0AWLOCK),        // input[1:0] 
+        .awcache        (x393_i.ps7_i.SAXIHP0AWCACHE),       // input[3:0] 
+        .awprot         (x393_i.ps7_i.SAXIHP0AWPROT),        // input[2:0] 
+        .awlen          (x393_i.ps7_i.SAXIHP0AWLEN),         // input[3:0] 
+        .awsize         (x393_i.ps7_i.SAXIHP0AWSIZE),        // input[2:0] 
+        .awburst        (x393_i.ps7_i.SAXIHP0AWBURST),       // input[1:0] 
+        .awqos          (x393_i.ps7_i.SAXIHP0AWQOS),         // input[3:0] 
+        .wdata          (x393_i.ps7_i.SAXIHP0WDATA),         // input[63:0] 
+        .wvalid         (x393_i.ps7_i.SAXIHP0WVALID),        // input
+        .wready         (x393_i.ps7_i.SAXIHP0WREADY),        // output
+        .wid            (x393_i.ps7_i.SAXIHP0WID),           // input[5:0] 
+        .wlast          (x393_i.ps7_i.SAXIHP0WLAST),         // input
+        .wstrb          (x393_i.ps7_i.SAXIHP0WSTRB),         // input[7:0] 
+        .bvalid         (x393_i.ps7_i.SAXIHP0BVALID),        // output
+        .bready         (x393_i.ps7_i.SAXIHP0BREADY),        // input
+        .bid            (x393_i.ps7_i.SAXIHP0BID),           // output[5:0] 
+        .bresp          (x393_i.ps7_i.SAXIHP0BRESP),         // output[1:0] 
+        .wcount         (x393_i.ps7_i.SAXIHP0WCOUNT),        // output[7:0] 
+        .wacount        (x393_i.ps7_i.SAXIHP0WACOUNT),       // output[5:0] 
+        .wrissuecap1en  (x393_i.ps7_i.SAXIHP0WRISSUECAP1EN), // input
+        .sim_wr_address (afi_sim_wr_address), // output[31:0] 
+        .sim_wid        (afi_sim_wid), // output[5:0] 
+        .sim_wr_valid   (afi_sim_wr_valid), // output
+        .sim_wr_ready   (afi_sim_wr_ready), // input
+        .sim_wr_data    (afi_sim_wr_data), // output[63:0] 
+        .sim_wr_stb     (afi_sim_wr_stb), // output[7:0] 
+        .sim_bresp_latency(afi_sim_bresp_latency), // input[3:0] 
+        .sim_wr_cap     (afi_sim_wr_cap), // output[2:0] 
+        .sim_wr_qos     (afi_sim_wr_qos), // output[3:0] 
+        .reg_addr       (afi_reg_addr), // input[31:0] 
+        .reg_wr         (afi_reg_wr), // input
+        .reg_rd         (afi_reg_rd), // input
+        .reg_din        (afi_reg_din), // input[31:0] 
+        .reg_dout       (afi_reg_dout) // output[31:0] 
+    );
+
+
+
     
     //  wire [ 3:0] SIMUL_ADD_ADDR; 
     always @ (posedge CLK) begin

@@ -142,7 +142,8 @@ module  x393 #(
    reg            status_selected_regen;       // status_selected (set at axird_start_burst) delayed when ren is active, then when regen (normally 2 cycles)
    reg            mcntrl_axird_selected_regen; // mcntrl_axird_selected (set at axird_start_burst) delayed when ren is active, then when regen (normally 2 cycles)
 
-   wire        mclk;
+   wire           mclk; // global clock, memory controller, command/status network (currently 200MHz)
+   wire           hclk; // global clock, axi_hp (150MHz) derived from aclk_in = 50MHz
 
    wire [11:0] tmp_debug; 
    
@@ -172,9 +173,13 @@ module  x393 #(
     wire                        status_mcontr_rq;    // Memory controller status request  
     wire                        status_mcontr_start; // Memory controller status packet transfer start (currently with 0 latency from status_root_rq)
 // Not yet connected
-    wire                  [7:0] status_other_ad;    /// S uppressThisWarning VEditor ****** Other status byte-wide address/data 
-    wire                        status_other_rq;    /// S uppressThisWarning VEditor ****** Other status request  
-    wire                        status_other_start; /// S =uppressThisWarning VEditor ****** Other status packet transfer start (currently with 0 latency from status_root_rq)
+    wire                  [7:0] status_membridge_ad;    // membridge (afi to ddr3) status byte-wide address/data 
+    wire                        status_membridge_rq;    // membridge (afi to ddr3) status request  
+    wire                        status_membridge_start; //membridge (afi to ddr3) status packet transfer start (currently with 0 latency from status_root_rq)
+
+    wire                  [7:0] status_other_ad = 0; // Other status byte-wide address/data
+    wire                        status_other_rq = 0; // Other status request   
+    wire                        status_other_start;  // SuppressThisWarning VEditor ****** Other status packet transfer start (currently with 0 latency from status_root_rq)
 
 
     wire                  [7:0] status_test01_ad;    // Test module status byte-wide address/data 
@@ -187,16 +192,31 @@ module  x393 #(
     wire       cmd_mcontr_stb;
     wire [7:0] cmd_test01_ad;
     wire       cmd_test01_stb;
+    wire [7:0] cmd_membridge_ad;
+    wire       cmd_membridge_stb;
 
 
-//mcntrl393_test01
-
+// membridge
     wire                        frame_start_chn1; // input
     wire                        next_page_chn1; // input
+    wire                        cmd_wrmem_chn1;
     wire                        page_ready_chn1; // output
     wire                        frame_done_chn1; // output
     wire[FRAME_HEIGHT_BITS-1:0] line_unfinished_chn1; // output[15:0] 
     wire                        suspend_chn1; // input
+    wire                        xfer_reset_page1_rd;
+    wire                        buf_wpage_nxt_chn1;
+    wire                        buf_wr_chn1;
+    wire                 [63:0] buf_wdata_chn1; 
+    wire                        xfer_reset_page1_wr;
+    wire                        rpage_nxt_chn1;
+    wire                        buf_rd_chn1;
+    wire                 [63:0] buf_rdata_chn1; 
+    
+    
+    
+    
+//mcntrl393_test01
     wire                        frame_start_chn2;  // input
     wire                        next_page_chn2;    // input
     wire                        page_ready_chn2; // output
@@ -245,15 +265,18 @@ module  x393 #(
 // Clock and reset from PS
    assign comb_rst=~frst[0] | frst[1];
 
+    // insert register layers if needed
    assign cmd_mcontr_ad= cmd_root_ad;
    assign cmd_mcontr_stb=cmd_root_stb;
    assign cmd_test01_ad= cmd_root_ad;
    assign cmd_test01_stb=cmd_root_stb;
+   assign cmd_membridge_ad= cmd_root_ad;
+   assign cmd_membridge_stb=cmd_root_stb;
 
 // For now - connect status_test01 to status_other, if needed - increase number of multiplexer inputs)
-   assign status_other_ad = status_test01_ad;
-   assign status_other_rq = status_test01_rq;
-   assign status_test01_start = status_other_start;
+//   assign status_other_ad = status_test01_ad;
+//   assign status_other_rq = status_test01_rq;
+//   assign status_test01_start = status_other_start;
 
 // missing command sequencer:
    assign cseq_waddr='bx;  // command sequencer write address (output to command multiplexer)
@@ -323,6 +346,17 @@ module  x393 #(
 
 BUFG bufg_axi_rst_i   (.O(axi_rst),.I(axi_rst_pre));
 BUFG bufg_axi_aclk_i  (.O(axi_aclk),.I(fclk[0]));
+    axi_hp_clk #(
+        .CLKIN_PERIOD(CLKIN_PERIOD),
+        .CLKFBOUT_MULT_AXIHP(CLKFBOUT_MULT_AXIHP),
+        .CLKFBOUT_DIV_AXIHP(CLKFBOUT_DIV_AXIHP)
+    ) axi_hp_clk_i (
+        .rst          (axi_rst), // input
+        .clk_in       (axi_aclk), // input
+        .clk_axihp    (hclk), // output
+        .locked_axihp () // output // not controlled?
+    );
+
 
 // channel test module
     mcntrl393_test01 #(
@@ -342,7 +376,7 @@ BUFG bufg_axi_aclk_i  (.O(axi_aclk),.I(fclk[0]));
         .MCNTRL_TEST01_STATUS_REG_CHN3_ADDR (MCNTRL_TEST01_STATUS_REG_CHN3_ADDR),
         .MCNTRL_TEST01_STATUS_REG_CHN4_ADDR (MCNTRL_TEST01_STATUS_REG_CHN4_ADDR)
     ) mcntrl393_test01_i (
-        .rst(axi_rst), // input
+        .rst                  (axi_rst), // input
         .mclk                 (mclk), // input
         .cmd_ad               (cmd_test01_ad), // input[7:0] 
         .cmd_stb              (cmd_test01_stb), // input
@@ -444,15 +478,24 @@ BUFG bufg_axi_aclk_i  (.O(axi_aclk),.I(fclk[0]));
     );
 
 // mux status info from the memory controller and other modules    
-    status_router2 status_router2_top_i (
+    status_router4 status_router4_top_i (
         .rst       (axi_rst), // input
         .clk       (mclk), // input
         .db_in0    (status_mcontr_ad), // input[7:0] 
         .rq_in0    (status_mcontr_rq), // input
         .start_in0 (status_mcontr_start), // output
-        .db_in1    (status_other_ad), // input[7:0] 
-        .rq_in1    (status_other_rq), // input
-        .start_in1 (status_other_start), // output
+        .db_in1    (status_test01_ad), // input[7:0] 
+        .rq_in1    (status_test01_rq), // input
+        .start_in1 (status_test01_start), // output
+        
+        .db_in2    (status_membridge_ad), // input[7:0] 
+        .rq_in2    (status_membridge_rq), // input
+        .start_in2 (status_membridge_start), // output
+
+        .db_in3    (status_other_ad), // input[7:0] 
+        .rq_in3    (status_other_rq), // input
+        .start_in3 (status_other_start), // output
+        
         .db_out    (status_root_ad), // output[7:0] 
         .rq_out    (status_root_rq), // output
         .start_out (status_root_start) // input
@@ -465,8 +508,8 @@ BUFG bufg_axi_aclk_i  (.O(axi_aclk),.I(fclk[0]));
         .MCONTR_CMD_WR_ADDR                (MCONTR_CMD_WR_ADDR),
         .MCONTR_BUF0_RD_ADDR               (MCONTR_BUF0_RD_ADDR),
         .MCONTR_BUF0_WR_ADDR               (MCONTR_BUF0_WR_ADDR),
-        .MCONTR_BUF1_RD_ADDR               (MCONTR_BUF1_RD_ADDR),
-        .MCONTR_BUF1_WR_ADDR               (MCONTR_BUF1_WR_ADDR),
+//        .MCONTR_BUF1_RD_ADDR               (MCONTR_BUF1_RD_ADDR), // not used - replaced with membridge
+//        .MCONTR_BUF1_WR_ADDR               (MCONTR_BUF1_WR_ADDR), // not used - replaced with membridge
         .MCONTR_BUF2_RD_ADDR               (MCONTR_BUF2_RD_ADDR),
         .MCONTR_BUF2_WR_ADDR               (MCONTR_BUF2_WR_ADDR),
         .MCONTR_BUF3_RD_ADDR               (MCONTR_BUF3_RD_ADDR),
@@ -616,10 +659,20 @@ BUFG bufg_axi_aclk_i  (.O(axi_aclk),.I(fclk[0]));
  //TODO:        
         .frame_start_chn1     (frame_start_chn1), // input
         .next_page_chn1       (next_page_chn1), // input
+        .cmd_wrmem_chn1       (cmd_wrmem_chn1), // output
         .page_ready_chn1      (page_ready_chn1), // output
         .frame_done_chn1      (frame_done_chn1), // output
-        .line_unfinished_chn1 (line_unfinished_chn1), // output[15:0] 
+        .line_unfinished_chn1 (line_unfinished_chn1), // output[15:0]
         .suspend_chn1         (suspend_chn1), // input
+        .xfer_reset_page1_rd  (xfer_reset_page1_rd), // output
+        .buf_wpage_nxt_chn1   (buf_wpage_nxt_chn1), // output
+        .buf_wr_chn1          (buf_wr_chn1), // output
+        .buf_wdata_chn1       (buf_wdata_chn1[63:0]), // output[63:0] 
+        .xfer_reset_page1_wr  (xfer_reset_page1_wr), // output
+        .rpage_nxt_chn1       (rpage_nxt_chn1), // output
+        .buf_rd_chn1          (buf_rd_chn1), // output
+        .buf_rdata_chn1       (buf_rdata_chn1[63:0]), // input[63:0] 
+        
         .frame_start_chn2     (frame_start_chn2), // input
         .next_page_chn2       (next_page_chn2), // input
         .page_ready_chn2      (page_ready_chn2), // output
@@ -657,6 +710,139 @@ BUFG bufg_axi_aclk_i  (.O(axi_aclk),.I(fclk[0]));
         .DQSU                 (DQSU), // inout
         .NDQSU                (NDQSU), // inout
         .tmp_debug            (tmp_debug) // output[11:0] 
+    );
+
+    wire [31:0] afi0_awaddr;   // output[31:0]
+    wire        afi0_awvalid;  // output
+    wire        afi0_awready;     // input
+    wire [ 5:0] afi0_awid;     // output[5:0] 
+    wire [ 1:0] afi0_awlock;     // output[1:0] 
+    wire [ 3:0] afi0_awcache;     // output[3:0] 
+    wire [ 2:0] afi0_awprot;     // output[2:0] 
+    wire [ 3:0] afi0_awlen;     // output[3:0] 
+    wire [ 2:0] afi0_awsize;     // output[2:0] 
+    wire [ 1:0] afi0_awburst;     // output[1:0] 
+    wire [ 3:0] afi0_awqos;     // output[3:0] 
+    wire [63:0] afi0_wdata;     // output[63:0] 
+    wire        afi0_wvalid;     // output
+    wire        afi0_wready;     // input
+    wire [ 5:0] afi0_wid;     // output[5:0] 
+    wire        afi0_wlast;     // output
+    wire [ 7:0] afi0_wstrb;     // output[7:0] 
+    wire        afi0_bvalid;     // input
+    wire        afi0_bready;     // output
+    wire [ 5:0] afi0_bid;     // input[5:0] 
+    wire [ 1:0] afi0_bresp;     // input[1:0] 
+    wire [ 7:0] afi0_wcount;     // input[7:0] 
+    wire [ 5:0] afi0_wacount;     // input[5:0] 
+    wire        afi0_wrissuecap1en;     // output
+    wire [31:0] afi0_araddr;     // output[31:0] 
+    wire        afi0_arvalid;     // output
+    wire        afi0_arready;     // input
+    wire [ 5:0] afi0_arid;     // output[5:0] 
+    wire [ 1:0] afi0_arlock;     // output[1:0] 
+    wire [ 3:0] afi0_arcache;     // output[3:0] 
+    wire [ 2:0] afi0_arprot;     // output[2:0] 
+    wire [ 3:0] afi0_arlen;     // output[3:0] 
+    wire [ 2:0] afi0_arsize;     // output[2:0] 
+    wire [ 1:0] afi0_arburst;     // output[1:0] 
+    wire [ 3:0] afi0_arqos;     // output[3:0] 
+    wire [63:0] afi0_rdata;     // input[63:0] 
+    wire        afi0_rvalid;     // input
+    wire        afi0_rready;     // output
+    wire [ 5:0] afi0_rid;     // input[5:0] 
+    wire        afi0_rlast;     // input
+    wire [ 1:0] afi0_rresp;     // input[2:0] 
+    wire [ 7:0] afi0_rcount;     // input[7:0] 
+    wire [ 2:0] afi0_racount;     // input[2:0] 
+    wire        afi0_rdissuecap1en; // output
+
+
+
+
+
+    // DDR3 frame memory to system memory bridge over axi_hp
+    membridge #(
+        .MEMBRIDGE_ADDR         (MEMBRIDGE_ADDR),
+        .MEMBRIDGE_MASK         (MEMBRIDGE_MASK),
+        .MEMBRIDGE_CTRL         (MEMBRIDGE_CTRL),
+        .MEMBRIDGE_STATUS_CNTRL (MEMBRIDGE_STATUS_CNTRL),
+        .MEMBRIDGE_LO_ADDR64    (MEMBRIDGE_LO_ADDR64),
+        .MEMBRIDGE_SIZE64       (MEMBRIDGE_SIZE64),
+        .MEMBRIDGE_START64      (MEMBRIDGE_START64),
+        .MEMBRIDGE_LEN64        (MEMBRIDGE_LEN64),
+        .MEMBRIDGE_WIDTH64      (MEMBRIDGE_WIDTH64),
+        .MEMBRIDGE_STATUS_REG   (MEMBRIDGE_STATUS_REG),
+        .FRAME_HEIGHT_BITS      (FRAME_HEIGHT_BITS),
+        .FRAME_WIDTH_BITS       (FRAME_WIDTH_BITS)
+    ) membridge_i (
+        .rst                    (axi_rst), // input
+        .mclk                   (mclk), // input
+        .hclk                   (hclk), // input
+        .cmd_ad                 (cmd_membridge_ad), // input[7:0] 
+        .cmd_stb                (cmd_membridge_stb), // input
+        .status_ad              (status_membridge_ad[7:0]), // output[7:0] 
+        .status_rq              (status_membridge_rq),      // output
+        .status_start           (status_membridge_start),   // input
+        .frame_start_chn        (frame_start_chn1),     // output
+        .next_page_chn          (next_page_chn1),       // output
+        .cmd_wrmem              (cmd_wrmem_chn1),       // input
+        .page_ready_chn         (page_ready_chn1),      // input
+        .frame_done_chn         (frame_done_chn1),      // input
+        .line_unfinished_chn1   (line_unfinished_chn1), // input[15:0] 
+        .suspend_chn1           (suspend_chn1),         // output
+        .xfer_reset_page_rd     (xfer_reset_page1_rd),  // input
+        .buf_wpage_nxt          (buf_wpage_nxt_chn1),   // input
+        .buf_wr                 (buf_wr_chn1),          // input
+        .buf_wdata              (buf_wdata_chn1[63:0]), // input[63:0] 
+        .xfer_reset_page_wr     (xfer_reset_page1_wr),  // input
+        .buf_rpage_nxt          (rpage_nxt_chn1),       // input
+        .buf_rd                 (buf_rd_chn1),          // input
+        .buf_rdata              (buf_rdata_chn1[63:0]), // output[63:0] 
+        .afi_awaddr             (afi0_awaddr), // output[31:0] 
+        .afi_awvalid            (afi0_awvalid), // output
+        .afi_awready            (afi0_awready), // input
+        .afi_awid               (afi0_awid), // output[5:0] 
+        .afi_awlock             (afi0_awlock), // output[1:0] 
+        .afi_awcache            (afi0_awcache), // output[3:0] 
+        .afi_awprot             (afi0_awprot), // output[2:0] 
+        .afi_awlen              (afi0_awlen), // output[3:0] 
+        .afi_awsize             (afi0_awsize), // output[2:0] 
+        .afi_awburst            (afi0_awburst), // output[1:0] 
+        .afi_awqos              (afi0_awqos), // output[3:0] 
+        .afi_wdata              (afi0_wdata), // output[63:0] 
+        .afi_wvalid             (afi0_wvalid), // output
+        .afi_wready             (afi0_wready), // input
+        .afi_wid                (afi0_wid), // output[5:0] 
+        .afi_wlast              (afi0_wlast), // output
+        .afi_wstrb              (afi0_wstrb), // output[7:0] 
+        .afi_bvalid             (afi0_bvalid), // input
+        .afi_bready             (afi0_bready), // output
+        .afi_bid                (afi0_bid), // input[5:0] 
+        .afi_bresp              (afi0_bresp), // input[1:0] 
+        .afi_wcount             (afi0_wcount), // input[7:0] 
+        .afi_wacount            (afi0_wacount), // input[5:0] 
+        .afi_wrissuecap1en      (afi0_wrissuecap1en), // output
+        .afi_araddr             (afi0_araddr), // output[31:0] 
+        .afi_arvalid            (afi0_arvalid), // output
+        .afi_arready            (afi0_arready), // input
+        .afi_arid               (afi0_arid), // output[5:0] 
+        .afi_arlock             (afi0_arlock), // output[1:0] 
+        .afi_arcache            (afi0_arcache), // output[3:0] 
+        .afi_arprot             (afi0_arprot), // output[2:0] 
+        .afi_arlen              (afi0_arlen), // output[3:0] 
+        .afi_arsize             (afi0_arsize), // output[2:0] 
+        .afi_arburst            (afi0_arburst), // output[1:0] 
+        .afi_arqos              (afi0_arqos), // output[3:0] 
+        .afi_rdata              (afi0_rdata), // input[63:0] 
+        .afi_rvalid             (afi0_rvalid), // input
+        .afi_rready             (afi0_rready), // output
+        .afi_rid                (afi0_rid), // input[5:0] 
+        .afi_rlast              (afi0_rlast), // input
+        .afi_rresp              (afi0_rresp), // input[2:0] 
+        .afi_rcount             (afi0_rcount), // input[7:0] 
+        .afi_racount            (afi0_racount), // input[2:0] 
+        .afi_rdissuecap1en      (afi0_rdissuecap1en) // output
     );
 
 /*
@@ -1280,57 +1466,57 @@ assign DUMMY_TO_KEEP = frst[2] && MEMCLK; // 1'b0; // dbg_toggle[0];
 
 // AXI PS Slave HP0    
 // AXI PS Slave HP0: Clock, Reset
-    .SAXIHP0ACLK(),              // AXI PS Slave HP0 Clock , input
-    .SAXIHP0ARESETN(),           // AXI PS Slave HP0 Reset, output
+    .SAXIHP0ACLK          (hclk),              // AXI PS Slave HP0 Clock , input
+    .SAXIHP0ARESETN       (),           // AXI PS Slave HP0 Reset, output
 // AXI PS Slave HP0: Read Address    
-    .SAXIHP0ARADDR(),            // AXI PS Slave HP0 ARADDR[31:0], input  
-    .SAXIHP0ARVALID(),           // AXI PS Slave HP0 ARVALID, input
-    .SAXIHP0ARREADY(),           // AXI PS Slave HP0 ARREADY, output
-    .SAXIHP0ARID(),              // AXI PS Slave HP0 ARID[5:0], input
-    .SAXIHP0ARLOCK(),            // AXI PS Slave HP0 ARLOCK[1:0], input
-    .SAXIHP0ARCACHE(),           // AXI PS Slave HP0 ARCACHE[3:0], input
-    .SAXIHP0ARPROT(),            // AXI PS Slave HP0 ARPROT[2:0], input
-    .SAXIHP0ARLEN(),             // AXI PS Slave HP0 ARLEN[3:0], input
-    .SAXIHP0ARSIZE(),            // AXI PS Slave HP0 ARSIZE[2:0], input
-    .SAXIHP0ARBURST(),           // AXI PS Slave HP0 ARBURST[1:0], input
-    .SAXIHP0ARQOS(),             // AXI PS Slave HP0 ARQOS[3:0], input
+    .SAXIHP0ARADDR        (afi0_araddr),            // AXI PS Slave HP0 ARADDR[31:0], input  
+    .SAXIHP0ARVALID       (afi0_arvalid),           // AXI PS Slave HP0 ARVALID, input
+    .SAXIHP0ARREADY       (afi0_arready),           // AXI PS Slave HP0 ARREADY, output
+    .SAXIHP0ARID          (afi0_arid),              // AXI PS Slave HP0 ARID[5:0], input
+    .SAXIHP0ARLOCK        (afi0_arlock),            // AXI PS Slave HP0 ARLOCK[1:0], input
+    .SAXIHP0ARCACHE       (afi0_arcache),           // AXI PS Slave HP0 ARCACHE[3:0], input
+    .SAXIHP0ARPROT        (afi0_arprot),            // AXI PS Slave HP0 ARPROT[2:0], input
+    .SAXIHP0ARLEN         (afi0_arlen),             // AXI PS Slave HP0 ARLEN[3:0], input
+    .SAXIHP0ARSIZE        (afi0_arsize),            // AXI PS Slave HP0 ARSIZE[2:0], input
+    .SAXIHP0ARBURST       (afi0_arburst),           // AXI PS Slave HP0 ARBURST[1:0], input
+    .SAXIHP0ARQOS         (afi0_arqos),             // AXI PS Slave HP0 ARQOS[3:0], input
 // AXI PS Slave HP0: Read Data
-    .SAXIHP0RDATA(),             // AXI PS Slave HP0 RDATA[63:0], output
-    .SAXIHP0RVALID(),            // AXI PS Slave HP0 RVALID, output
-    .SAXIHP0RREADY(),            // AXI PS Slave HP0 RREADY, input
-    .SAXIHP0RID(),               // AXI PS Slave HP0 RID[5:0], output
-    .SAXIHP0RLAST(),             // AXI PS Slave HP0 RLAST, output
-    .SAXIHP0RRESP(),             // AXI PS Slave HP0 RRESP[1:0], output
-    .SAXIHP0RCOUNT(),            // AXI PS Slave HP0 RCOUNT[7:0], output
-    .SAXIHP0RACOUNT(),           // AXI PS Slave HP0 RACOUNT[2:0], output
-    .SAXIHP0RDISSUECAP1EN(),     // AXI PS Slave HP0 RDISSUECAP1EN, input
+    .SAXIHP0RDATA         (afi0_rdata),             // AXI PS Slave HP0 RDATA[63:0], output
+    .SAXIHP0RVALID        (afi0_rvalid),            // AXI PS Slave HP0 RVALID, output
+    .SAXIHP0RREADY        (afi0_rready),            // AXI PS Slave HP0 RREADY, input
+    .SAXIHP0RID           (afi0_rid),               // AXI PS Slave HP0 RID[5:0], output
+    .SAXIHP0RLAST         (afi0_rlast),             // AXI PS Slave HP0 RLAST, output
+    .SAXIHP0RRESP         (afi0_rresp),             // AXI PS Slave HP0 RRESP[1:0], output
+    .SAXIHP0RCOUNT        (afi0_rcount),            // AXI PS Slave HP0 RCOUNT[7:0], output
+    .SAXIHP0RACOUNT       (afi0_racount),           // AXI PS Slave HP0 RACOUNT[2:0], output
+    .SAXIHP0RDISSUECAP1EN (afi0_rdissuecap1en),     // AXI PS Slave HP0 RDISSUECAP1EN, input
 // AXI PS Slave HP0: Write Address    
-    .SAXIHP0AWADDR(),            // AXI PS Slave HP0 AWADDR[31:0], input
-    .SAXIHP0AWVALID(),           // AXI PS Slave HP0 AWVALID, input
-    .SAXIHP0AWREADY(),           // AXI PS Slave HP0 AWREADY, output
-    .SAXIHP0AWID(),              // AXI PS Slave HP0 AWID[5:0], input
-    .SAXIHP0AWLOCK(),            // AXI PS Slave HP0 AWLOCK[1:0], input
-    .SAXIHP0AWCACHE(),           // AXI PS Slave HP0 AWCACHE[3:0], input
-    .SAXIHP0AWPROT(),            // AXI PS Slave HP0 AWPROT[2:0], input
-    .SAXIHP0AWLEN(),             // AXI PS Slave HP0 AWLEN[3:0], input
-    .SAXIHP0AWSIZE(),            // AXI PS Slave HP0 AWSIZE[1:0], input
-    .SAXIHP0AWBURST(),           // AXI PS Slave HP0 AWBURST[1:0], input
-    .SAXIHP0AWQOS(),             // AXI PS Slave HP0 AWQOS[3:0], input
+    .SAXIHP0AWADDR        (afi0_awaddr),            // AXI PS Slave HP0 AWADDR[31:0], input
+    .SAXIHP0AWVALID       (afi0_awvalid),           // AXI PS Slave HP0 AWVALID, input
+    .SAXIHP0AWREADY       (afi0_awready),           // AXI PS Slave HP0 AWREADY, output
+    .SAXIHP0AWID          (afi0_awid),              // AXI PS Slave HP0 AWID[5:0], input
+    .SAXIHP0AWLOCK        (afi0_awlock),            // AXI PS Slave HP0 AWLOCK[1:0], input
+    .SAXIHP0AWCACHE       (afi0_awcache),           // AXI PS Slave HP0 AWCACHE[3:0], input
+    .SAXIHP0AWPROT        (afi0_awprot),            // AXI PS Slave HP0 AWPROT[2:0], input
+    .SAXIHP0AWLEN         (afi0_awlen),             // AXI PS Slave HP0 AWLEN[3:0], input
+    .SAXIHP0AWSIZE        (afi0_awsize),            // AXI PS Slave HP0 AWSIZE[1:0], input
+    .SAXIHP0AWBURST       (afi0_awburst),           // AXI PS Slave HP0 AWBURST[1:0], input
+    .SAXIHP0AWQOS         (afi0_awqos),             // AXI PS Slave HP0 AWQOS[3:0], input
 // AXI PS Slave HP0: Write Data
-    .SAXIHP0WDATA(),             // AXI PS Slave HP0 WDATA[63:0], input
-    .SAXIHP0WVALID(),            // AXI PS Slave HP0 WVALID, input
-    .SAXIHP0WREADY(),            // AXI PS Slave HP0 WREADY, output
-    .SAXIHP0WID(),               // AXI PS Slave HP0 WID[5:0], input
-    .SAXIHP0WLAST(),             // AXI PS Slave HP0 WLAST, input
-    .SAXIHP0WSTRB(),             // AXI PS Slave HP0 WSTRB[7:0], input
-    .SAXIHP0WCOUNT(),            // AXI PS Slave HP0 WCOUNT[7:0], output
-    .SAXIHP0WACOUNT(),           // AXI PS Slave HP0 WACOUNT[5:0], output
-    .SAXIHP0WRISSUECAP1EN(),     // AXI PS Slave HP0 WRISSUECAP1EN, input
+    .SAXIHP0WDATA         (afi0_wdata),             // AXI PS Slave HP0 WDATA[63:0], input
+    .SAXIHP0WVALID        (afi0_wvalid),            // AXI PS Slave HP0 WVALID, input
+    .SAXIHP0WREADY        (afi0_wready),            // AXI PS Slave HP0 WREADY, output
+    .SAXIHP0WID           (afi0_wid),               // AXI PS Slave HP0 WID[5:0], input
+    .SAXIHP0WLAST         (afi0_wlast),             // AXI PS Slave HP0 WLAST, input
+    .SAXIHP0WSTRB         (afi0_wstrb),             // AXI PS Slave HP0 WSTRB[7:0], input
+    .SAXIHP0WCOUNT        (afi0_wcount),            // AXI PS Slave HP0 WCOUNT[7:0], output
+    .SAXIHP0WACOUNT       (afi0_wacount),           // AXI PS Slave HP0 WACOUNT[5:0], output
+    .SAXIHP0WRISSUECAP1EN (afi0_wrissuecap1en),     // AXI PS Slave HP0 WRISSUECAP1EN, input
 // AXI PS Slave HP0: Write Responce
-    .SAXIHP0BVALID(),            // AXI PS Slave HP0 BVALID, output
-    .SAXIHP0BREADY(),            // AXI PS Slave HP0 BREADY, input
-    .SAXIHP0BID(),               // AXI PS Slave HP0 BID[5:0], output
-    .SAXIHP0BRESP(),             // AXI PS Slave HP0 BRESP[1:0], output
+    .SAXIHP0BVALID        (afi0_bvalid),            // AXI PS Slave HP0 BVALID, output
+    .SAXIHP0BREADY        (afi0_bready),            // AXI PS Slave HP0 BREADY, input
+    .SAXIHP0BID           (afi0_bid),               // AXI PS Slave HP0 BID[5:0], output
+    .SAXIHP0BRESP         (afi0_bresp),             // AXI PS Slave HP0 BRESP[1:0], output
 
 // AXI PS Slave HP1    
 // AXI PS Slave 1: Clock, Reset

@@ -45,7 +45,7 @@ module  simul_axi_hp_rd #(
     input         rready,
     output [ 5:0] rid,
     output        rlast,
-    output [ 2:0] rresp,
+    output [ 1:0] rresp,
     // PL extra (non-AXI) signals
     output [ 7:0] rcount,
     output [ 2:0] racount,

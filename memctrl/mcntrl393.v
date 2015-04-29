@@ -27,8 +27,8 @@ module  mcntrl393 #(
     parameter MCONTR_CMD_WR_ADDR =   'h0000, // AXI write to command sequence memory
     parameter MCONTR_BUF0_RD_ADDR =  'h0400, // AXI read address from buffer 0 (PS sequence, memory read) 
     parameter MCONTR_BUF0_WR_ADDR =  'h0400, // AXI write address to buffer 0 (PS sequence, memory write)
-    parameter MCONTR_BUF1_RD_ADDR =  'h0800, // AXI read address from buffer 1 (PL sequence, scanline, memory read)
-    parameter MCONTR_BUF1_WR_ADDR =  'h0800, // AXI write address to buffer 1 (PL sequence, scanline, memory write)
+//    parameter MCONTR_BUF1_RD_ADDR =  'h0800, // AXI read address from buffer 1 (PL sequence, scanline, memory read)  // not used - replaced with membridge
+//    parameter MCONTR_BUF1_WR_ADDR =  'h0800, // AXI write address to buffer 1 (PL sequence, scanline, memory write)   // not used - replaced with membridge
     parameter MCONTR_BUF2_RD_ADDR =  'h0c00, // AXI read address from buffer 2 (PL sequence, tiles, memory read)
     parameter MCONTR_BUF2_WR_ADDR =  'h0c00, // AXI write address to buffer 2 (PL sequence, tiles, memory write)
     parameter MCONTR_BUF3_RD_ADDR =  'h1000, // AXI read address from buffer 3 (PL sequence, scanline, memory read)
@@ -262,16 +262,34 @@ module  mcntrl393 #(
 //   wire  [31:0]   port0_rdata;  //
 //   wire  [31:0]   status_rdata;  //
 
-// Channels 2 and 3 control signals
 // TODO: move line_unfinished and suspend to internals of this module (and control comparator modes)
+    // Channel 1 - AFI read/write to system memory with scanline linear mode
     input                          frame_start_chn1,   // resets page, x,y, and initiates transfer requests (in write mode will wait for next_page)
     input                          next_page_chn1,     // page was read/written from/to 4*1kB on-chip buffer
+    output                         cmd_wrmem_chn1,     // channel1 in write mode
     output                         page_ready_chn1,    // == xfer_done, connect externally | Single-cycle pulse indicating that a page was read/written from/to DDR3 memory
     output                         frame_done_chn1,    // single-cycle pulse when the full frame (window) was transferred to/from DDR3 memory
 // optional I/O for channel synchronization
     output [FRAME_HEIGHT_BITS-1:0] line_unfinished_chn1, // number of the current (ufinished ) line, REALATIVE TO FRAME, NOT WINDOW?. 
     input                          suspend_chn1,       // suspend transfers (from external line number comparator)
 
+    // chn1 buffer interface, DDR3 memory read
+    output                         xfer_reset_page1_rd, // input
+    output                         buf_wpage_nxt_chn1,     // input
+    output                         buf_wr_chn1, // input
+    output                  [63:0] buf_wdata_chn1,
+
+    // chn1 buffer interface, DDR3 memory write
+    output                         xfer_reset_page1_wr, // input  @ posedge mclk
+    output                         rpage_nxt_chn1,
+    output                         buf_rd_chn1,
+    input                  [63:0]  buf_rdata_chn1, 
+
+
+
+
+
+// Channels 2 and 3 control signals
     input                          frame_start_chn2,   // resets page, x,y, and initiates transfer requests (in write mode will wait for next_page)
     input                          next_page_chn2,     // page was read/written from/to 4*1kB on-chip buffer
     output                         page_ready_chn2,    // == xfer_done, connect externally | Single-cycle pulse indicating that a page was read/written from/to DDR3 memory
@@ -359,13 +377,15 @@ module  mcntrl393 #(
     wire        channel_pgm_en1; 
     wire        seq_done1;
     wire        page_nxt_chn1;
+// routed outside to membredge module    
+/*
     wire        buf_wr_chn1;
     wire        buf_wpage_nxt_chn1;
     wire [63:0] buf_wdata_chn1;
     wire        buf_rd_chn1;
     wire        rpage_nxt_chn1;
     wire [63:0] buf_rdata_chn1;
-
+*/
     wire        want_rq2;
     wire        need_rq2;
     wire        channel_pgm_en2; 
@@ -449,8 +469,8 @@ module  mcntrl393 #(
     wire                         select_cmd0_w;
     wire                         select_buf0rd_w;
     wire                         select_buf0wr_w;
-    wire                         select_buf1rd_w;
-    wire                         select_buf1wr_w;
+//    wire                         select_buf1rd_w;  // not used - replaced with membridge
+//    wire                         select_buf1wr_w;  // not used - replaced with membridge
     wire                         select_buf2rd_w;
     wire                         select_buf2wr_w;
     wire                         select_buf3rd_w;
@@ -461,8 +481,8 @@ module  mcntrl393 #(
     reg                         select_cmd0;
     reg                         select_buf0rd;
     reg                         select_buf0wr;
-    reg                         select_buf1rd;
-    reg                         select_buf1wr;
+//    reg                         select_buf1rd;  // not used - replaced with membridge
+//    reg                         select_buf1wr;  // not used - replaced with membridge
     reg                         select_buf2rd;
     reg                         select_buf2wr;
     reg                         select_buf3rd;
@@ -471,7 +491,7 @@ module  mcntrl393 #(
     reg                         select_buf4wr;
 
     reg                         select_buf0rd_d; // delayed by 1 clock, for combining with regen?
-    reg                         select_buf1rd_d;
+//    reg                         select_buf1rd_d;  // not used - replaced with membridge
     reg                         select_buf2rd_d;
     reg                         select_buf3rd_d;
     reg                         select_buf4rd_d;
@@ -483,22 +503,22 @@ module  mcntrl393 #(
     reg                 [31:0]  buf_wdata;
     reg                         cmd_we;
     reg                         buf0wr_we;
-    reg                         buf1wr_we;
+//    reg                         buf1wr_we; // not used - replaced with membridge
     reg                         buf2wr_we;
     reg                         buf3wr_we;
     reg                         buf4wr_we;
     wire  [BUFFER_DEPTH32-1:0]  buf_raddr;
     
     wire                [31:0]  buf0_data;
-    wire                [31:0]  buf1rd_data;
+//    wire                [31:0]  buf1rd_data; // not used - replaced with membridge
     wire                [31:0]  buf2rd_data;
     wire                [31:0]  buf3rd_data;
     wire                [31:0]  buf4rd_data;
     
     wire                        buf0_rd;
     wire                        buf0_regen;
-    wire                        buf1rd_rd;
-    wire                        buf1rd_regen;
+//    wire                        buf1rd_rd; // not used - replaced with membridge
+//    wire                        buf1rd_regen; // not used - replaced with membridge
     wire                        buf2rd_rd;
     wire                        buf2rd_regen;
     wire                        buf3rd_rd;
@@ -522,9 +542,8 @@ module  mcntrl393 #(
     wire                        lin_rw_chn1_partial;  // do not increment page in the end, continue current
     wire                        lin_rw_chn1_start_rd;  // start generating commands
     wire                        lin_rw_chn1_start_wr;  // start generating commands
-//    wire                  [1:0] xfer_page2;         // "internal" buffer page
-    wire                        xfer_reset_page1_wr;         // "internal" buffer page reset, @posedge mclk
-    wire                        xfer_reset_page1_rd;         // "internal" buffer page reset, @negedge mclk
+//    wire                        xfer_reset_page1_wr;   // not used - replaced with membridge
+//    wire                        xfer_reset_page1_rd;    // not used - replaced with membridge
     
     wire                  [2:0] lin_rw_chn3_bank;   // bank address
     wire   [ADDRESS_NUMBER-1:0] lin_rw_chn3_row;    // memory row
@@ -533,7 +552,6 @@ module  mcntrl393 #(
     wire                        lin_rw_chn3_partial; // do not increment page in the end, continue current
     wire                        lin_rw_chn3_start_rd;  // start generating commands
     wire                        lin_rw_chn3_start_wr;  // start generating commands
-//    wire                  [1:0] xfer_page3;       // "internal" buffer page
     wire                        xfer_reset_page3_wr;         // "internal" buffer page reset, @posedge mclk
     wire                        xfer_reset_page3_rd;         // "internal" buffer page reset, @negedge mclk
 
@@ -627,15 +645,15 @@ module  mcntrl393 #(
 // For now - combinatorial, maybe add registers (modify axibram_read)
     assign buf_raddr=axird_raddr;    
     assign axird_rdata = (select_buf0rd ? buf0_data :   32'b0) |
-                         (select_buf1rd ? buf1rd_data : 32'b0) |
+//                         (select_buf1rd ? buf1rd_data : 32'b0) |  // not used - replaced with membridge
                          (select_buf2rd ? buf2rd_data : 32'b0) |
                          (select_buf3rd ? buf3rd_data : 32'b0) |
                          (select_buf4rd ? buf4rd_data : 32'b0); 
     
     assign buf0_rd=      axird_ren   && select_buf0rd;
     assign buf0_regen=   axird_regen && select_buf0rd_d;
-    assign buf1rd_rd=    axird_ren   && select_buf1rd;
-    assign buf1rd_regen= axird_regen && select_buf1rd_d;
+//    assign buf1rd_rd=    axird_ren   && select_buf1rd;    // not used - replaced with membridge
+//    assign buf1rd_regen= axird_regen && select_buf1rd_d;  // not used - replaced with membridge
     assign buf2rd_rd=    axird_ren   && select_buf2rd;
     assign buf2rd_regen= axird_regen && select_buf2rd_d;
     assign buf3rd_rd=    axird_ren   && select_buf3rd;
@@ -654,8 +672,8 @@ module  mcntrl393 #(
     assign select_cmd0_w = ((axiwr_pre_awaddr ^ MCONTR_CMD_WR_ADDR) & MCONTR_WR_MASK)==0;
     assign select_buf0rd_w = ((axird_pre_araddr ^ MCONTR_BUF0_RD_ADDR) & MCONTR_RD_MASK)==0;
     assign select_buf0wr_w = ((axiwr_pre_awaddr ^ MCONTR_BUF0_WR_ADDR) & MCONTR_WR_MASK)==0;
-    assign select_buf1rd_w = ((axird_pre_araddr ^ MCONTR_BUF1_RD_ADDR) & MCONTR_RD_MASK)==0;
-    assign select_buf1wr_w = ((axiwr_pre_awaddr ^ MCONTR_BUF1_WR_ADDR) & MCONTR_WR_MASK)==0;
+//    assign select_buf1rd_w = ((axird_pre_araddr ^ MCONTR_BUF1_RD_ADDR) & MCONTR_RD_MASK)==0;  // not used - replaced with membridge
+//    assign select_buf1wr_w = ((axiwr_pre_awaddr ^ MCONTR_BUF1_WR_ADDR) & MCONTR_WR_MASK)==0;  // not used - replaced with membridge
     assign select_buf2rd_w = ((axird_pre_araddr ^ MCONTR_BUF2_RD_ADDR) & MCONTR_RD_MASK)==0;
     assign select_buf2wr_w = ((axiwr_pre_awaddr ^ MCONTR_BUF2_WR_ADDR) & MCONTR_WR_MASK)==0;
     assign select_buf3rd_w = ((axird_pre_araddr ^ MCONTR_BUF3_RD_ADDR) & MCONTR_RD_MASK)==0;
@@ -672,10 +690,10 @@ module  mcntrl393 #(
         if      (axi_rst)           select_buf0wr <= 0;
         else if (axiwr_start_burst) select_buf0wr <= select_buf0wr_w;
         
-        if      (axi_rst)           select_buf1rd <= 0;
-        else if (axird_start_burst) select_buf1rd <= select_buf1rd_w;
-        if      (axi_rst)           select_buf1wr <= 0;
-        else if (axiwr_start_burst) select_buf1wr <= select_buf1wr_w;
+//        if      (axi_rst)           select_buf1rd <= 0;  // not used - replaced with membridge
+//        else if (axird_start_burst) select_buf1rd <= select_buf1rd_w; // not used - replaced with membridge
+//        if      (axi_rst)           select_buf1wr <= 0; // not used - replaced with membridge
+//        else if (axiwr_start_burst) select_buf1wr <= select_buf1wr_w; // not used - replaced with membridge
 
         if      (axi_rst)           select_buf2rd <= 0;
         else if (axird_start_burst) select_buf2rd <= select_buf2rd_w;
@@ -694,7 +712,7 @@ module  mcntrl393 #(
 
 
         if      (axi_rst)           axird_selected_r <= 0;
-        else if (axird_start_burst) axird_selected_r <= select_buf0rd_w || select_buf1rd_w ||
+        else if (axird_start_burst) axird_selected_r <= select_buf0rd_w || //select_buf1rd_w ||  // not used - replaced with membridge
                                                         select_buf2rd_w  || select_buf3rd_w || select_buf4rd_w;
     end
     always @ (posedge axi_clk) begin
@@ -702,13 +720,13 @@ module  mcntrl393 #(
         if (axiwr_wen) buf_waddr <= axiwr_waddr;
         cmd_we <=  axiwr_wen && select_cmd0;
         buf0wr_we <= axiwr_wen && select_buf0wr;
-        buf1wr_we <= axiwr_wen && select_buf1wr;
+//        buf1wr_we <= axiwr_wen && select_buf1wr;  // not used - replaced with membridge
         buf2wr_we <= axiwr_wen && select_buf2wr;
         buf3wr_we <= axiwr_wen && select_buf3wr;
         buf4wr_we <= axiwr_wen && select_buf4wr;
         
         select_buf0rd_d <= select_buf0rd;
-        select_buf1rd_d <= select_buf1rd;
+//        select_buf1rd_d <= select_buf1rd;  // not used - replaced with membridge
         select_buf2rd_d <= select_buf2rd;
         select_buf3rd_d <= select_buf3rd;
         select_buf4rd_d <= select_buf4rd;
@@ -777,7 +795,8 @@ module  mcntrl393 #(
 
 //
 // Port memory buffer (4 pages each, R/W fixed, port 0 - AXI read from DDR, port 1 - AXI write to DDR
-
+// Routing out to membridge module
+/*
 // Port 1rd (read DDR to AXI) buffer, linear
     mcntrl_buf_rd #(
         .LOG2WIDTH_RD(5)
@@ -812,7 +831,7 @@ module  mcntrl393 #(
         .rd           (buf_rd_chn1), // input
         .data_out     (buf_rdata_chn1) // output[63:0] 
     );
-
+*/
 // Port 2rd (read DDR to AXI) buffer, tiled
     mcntrl_buf_rd #(
         .LOG2WIDTH_RD(5)
@@ -963,7 +982,7 @@ module  mcntrl393 #(
         .xfer_done        (seq_done1), // input : sequence over
         .xfer_page_rst_wr (xfer_reset_page1_wr), // output
         .xfer_page_rst_rd (xfer_reset_page1_rd), // output
-        .cmd_wrmem        () // output
+        .cmd_wrmem        (cmd_wrmem_chn1) // output
     );
 
     mcntrl_linear_rw #(

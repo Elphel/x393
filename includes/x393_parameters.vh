@@ -23,8 +23,8 @@
     parameter MCONTR_CMD_WR_ADDR =   'h0000, // AXI write to command sequence memory
     parameter MCONTR_BUF0_RD_ADDR =  'h0400, // AXI read address from buffer 0 (PS sequence, memory read) 
     parameter MCONTR_BUF0_WR_ADDR =  'h0400, // AXI write address to buffer 0 (PS sequence, memory write)
-    parameter MCONTR_BUF1_RD_ADDR =  'h0800, // AXI read address from buffer 1 (PL sequence, scanline, memory read)
-    parameter MCONTR_BUF1_WR_ADDR =  'h0800, // AXI write address to buffer 1 (PL sequence, scanline, memory write)
+//    parameter MCONTR_BUF1_RD_ADDR =  'h0800, // AXI read address from buffer 1 (PL sequence, scanline, memory read) // not used - replaced with membridge
+//    parameter MCONTR_BUF1_WR_ADDR =  'h0800, // AXI write address to buffer 1 (PL sequence, scanline, memory write) // not used - replaced with membridge
     parameter MCONTR_BUF2_RD_ADDR =  'h0c00, // AXI read address from buffer 2 (PL sequence, tiles, memory read)
     parameter MCONTR_BUF2_WR_ADDR =  'h0c00, // AXI write address to buffer 2 (PL sequence, tiles, memory write)
     parameter MCONTR_BUF3_RD_ADDR =  'h1000, // AXI read address from buffer 3 (PL sequence, scanline, memory read)
@@ -128,7 +128,7 @@
 `ifdef use200Mhz
     parameter real REFCLK_FREQUENCY = 200.0, // 300.0,
     parameter HIGH_PERFORMANCE_MODE = "FALSE",
-    parameter CLKIN_PERIOD          = 20, // 10, //ns >1.25, 600<Fvco<1200 // Hardware 150MHz , change to             | 6.667
+    parameter CLKIN_PERIOD =        20, // 10, //ns >1.25, 600<Fvco<1200 // Hardware 150MHz , change to             | 6.667
     parameter CLKFBOUT_MULT =       16,   // 8, // Fvco=Fclkin*CLKFBOUT_MULT_F/DIVCLK_DIVIDE, Fout=Fvco/CLKOUT#_DIVIDE  | 16
     parameter CLKFBOUT_MULT_REF =   16,   // 18,   // 9, // Fvco=Fclkin*CLKFBOUT_MULT_F/DIVCLK_DIVIDE, Fout=Fvco/CLKOUT#_DIVIDE  | 6
     parameter CLKFBOUT_DIV_REF =    4, // 200Mhz 3, // To get 300MHz for the reference clock
@@ -246,17 +246,20 @@
     parameter MCNTRL_TEST01_STATUS_REG_CHN3_ADDR= 'h3e,  // status/readback register for channel 4
     parameter MCNTRL_TEST01_STATUS_REG_CHN4_ADDR= 'h3f,  // status/readback register for channel 4
     
+// axi_hp_clk_i parameters
+    parameter CLKFBOUT_MULT_AXIHP =                18,
+    parameter CLKFBOUT_DIV_AXIHP =                 6,
+
 // membridge module parameters    
     parameter MEMBRIDGE_ADDR=                     'h200,
     parameter MEMBRIDGE_MASK=                     'h3f0,
-    parameter MEMBRIDGE_CTRL=                     'h0,
+    parameter MEMBRIDGE_CTRL=                     'h0, // bit 0 - enable, bits[2:1]: 01 - start, 11 - start and reset address
     parameter MEMBRIDGE_STATUS_CNTRL=             'h1,
-    parameter MEMBRIDGE_RD_LOADDR64=              'h2,
-    parameter MEMBRIDGE_RD_RUNADDR64=             'h3,
-    parameter MEMBRIDGE_RD_LEN64=                 'h5,
-    parameter MEMBRIDGE_WR_LOADDR64=              'h2,
-    parameter MEMBRIDGE_WR_RUNADDR64=             'h3,
-    parameter MEMBRIDGE_WR_LEN64=                 'h5,
+    parameter MEMBRIDGE_LO_ADDR64=                'h2, // low address of the system memory, in 64-bit words (<<3 to get byte address)
+    parameter MEMBRIDGE_SIZE64=                   'h3, // size of the system memory range (access will roll over to lo_addr
+    parameter MEMBRIDGE_START64=                  'h4, // start address relative to lo_addr
+    parameter MEMBRIDGE_LEN64=                    'h5, // full length of transfer in 64-bit words
+    parameter MEMBRIDGE_WIDTH64=                  'h6, // frame width in 64-bit words (partial last page in each line)
     parameter MEMBRIDGE_STATUS_REG=               'h3b,
     
     parameter RSEL=                               1'b1, // late/early READ commands (to adjust timing by 1 SDCLK period)

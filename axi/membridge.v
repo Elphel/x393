@@ -111,7 +111,7 @@ module  membridge#(
     output         afi_rready,
     input   [ 5:0] afi_rid,     // @SuppressThisWarning VEditor unused
     input          afi_rlast,   // @SuppressThisWarning VEditor unused
-    input   [ 2:0] afi_rresp,   // @SuppressThisWarning VEditor unused
+    input   [ 1:0] afi_rresp,   // @SuppressThisWarning VEditor unused
     // PL extra (non-AXI) signals
     input   [ 7:0] afi_rcount,
     input   [ 2:0] afi_racount,
@@ -558,7 +558,6 @@ module  membridge#(
         .start            (status_start) // input
     );
 
-
 // Port 1rd (read DDR to AFI) buffer, linear
     mcntrl_buf_rd #(
         .LOG2WIDTH_RD(6) // 64 bit external interface
@@ -593,8 +592,6 @@ module  membridge#(
         .rd           (buf_rd), // input
         .data_out     (buf_rdata) // output[63:0] 
     );
-
-
 
 endmodule
 
