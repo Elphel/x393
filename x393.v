@@ -383,12 +383,12 @@ BUFG bufg_axi_aclk_i  (.O(axi_aclk),.I(fclk[0]));
         .status_ad            (status_test01_ad), // output[7:0] 
         .status_rq            (status_test01_rq), // output
         .status_start         (status_test01_start), // input
-        .frame_start_chn1     (frame_start_chn1), // output
-        .next_page_chn1       (next_page_chn1), // output
-        .page_ready_chn1      (page_ready_chn1), // input
-        .frame_done_chn1      (frame_done_chn1), // input
-        .line_unfinished_chn1 (line_unfinished_chn1), // input[15:0] 
-        .suspend_chn1         (suspend_chn1), // output
+        .frame_start_chn1     (), //frame_start_chn1), // output
+        .next_page_chn1       (), //next_page_chn1), // output
+        .page_ready_chn1      (1'b0), // page_ready_chn1), // input
+        .frame_done_chn1      (1'b0), //frame_done_chn1), // input
+        .line_unfinished_chn1 (16'b0), //line_unfinished_chn1), // input[15:0] 
+        .suspend_chn1         (), //suspend_chn1), // output
         .frame_start_chn2     (frame_start_chn2), // output
         .next_page_chn2       (next_page_chn2), // output
         .page_ready_chn2      (page_ready_chn2), // input

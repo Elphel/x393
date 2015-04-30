@@ -85,12 +85,12 @@ task write_block_buf_chn;  // S uppressThisWarning VEditor : may be unused
     begin
         case (chn)
             0:  start_addr=MCONTR_BUF0_WR_ADDR + (page << 8);
-            1:  start_addr=MCONTR_BUF1_WR_ADDR + (page << 8);
+//            1:  start_addr=MCONTR_BUF1_WR_ADDR + (page << 8);
             2:  start_addr=MCONTR_BUF2_WR_ADDR + (page << 8);
             3:  start_addr=MCONTR_BUF3_WR_ADDR + (page << 8);
             4:  start_addr=MCONTR_BUF4_WR_ADDR + (page << 8);
             default: begin
-                $display("**** ERROR: Invalid channel for write buffer = %d @%t", chn, $time);
+                $display("**** ERROR: Invalid channel (not 0,2,3,4) for write buffer = %d @%t", chn, $time);
                 start_addr = MCONTR_BUF0_WR_ADDR+ (page << 8);
             end
         endcase
@@ -142,12 +142,12 @@ task read_block_buf_chn;  // S uppressThisWarning VEditor : may be unused
     begin
         case (chn)
             0:  start_addr=MCONTR_BUF0_RD_ADDR + (page << 8);
-            1:  start_addr=MCONTR_BUF1_RD_ADDR + (page << 8);
+//            1:  start_addr=MCONTR_BUF1_RD_ADDR + (page << 8);
             2:  start_addr=MCONTR_BUF2_RD_ADDR + (page << 8);
             3:  start_addr=MCONTR_BUF3_RD_ADDR + (page << 8);
             4:  start_addr=MCONTR_BUF4_RD_ADDR + (page << 8);
             default: begin
-                $display("**** ERROR: Invalid channel for read buffer = %d @%t", chn, $time);
+                $display("**** ERROR: Invalid channel (not 0,2,3,4) for read buffer = %d @%t", chn, $time);
                 start_addr = 30'b0+ (page << 8);
             end
         endcase

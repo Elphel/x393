@@ -118,6 +118,11 @@
     localparam STATUS_PSHIFTER_RDY_MASK = 1<<STATUS_2LSB_SHFT;
   localparam       FRAME_START_ADDRESS= 'h1000; // RA=80, CA=0, BA=0 22-bit frame start address (3 CA LSBs==0. BA==0)
   localparam       FRAME_FULL_WIDTH=    'h0c0;  // Padded line length (8-row increment), in 8-bursts (16 bytes)
+  
+  localparam       AFI_LO_ADDR64=       'h4000; // start of the system memory range in 64-bit words
+  localparam       AFI_SIZE64=          'h4000; // size of system memory range in 64-bit words
+  
+  
 //  localparam SCANLINE_WINDOW_WH=  `h079000a2;  // 2592*1936: low word - 13-bit window width (0->'h4000), high word - 16-bit frame height (0->'h10000)
 //  localparam       SCANLINE_WINDOW_WH=  'h0009000b;  // 176*9: low word - 13-bit window width (0->'h4000), high word - 16-bit frame height (0->'h10000)
   localparam       WINDOW_WIDTH=    'h000b; //'h005b; //'h000b;  // 176:  13-bit window width (0->'h4000)

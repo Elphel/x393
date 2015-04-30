@@ -352,12 +352,12 @@ fifo_same_clock_fill  #( .DATA_WIDTH(8),.DATA_DEPTH(5))
         .num_in_fifo() // wresp_num_in_fifo) // output[3:0] 
     );
 
-    assign wresp_re=bready && bvalid && !was_wresp_re;
+    assign wresp_re=bready && bvalid; // && !was_wresp_re;
     always @ (posedge rst or posedge aclk) begin
         if (rst) was_wresp_re<=0;
         else was_wresp_re <= wresp_re;
     end
-    assign bvalid=|wresp_num_in_fifo[5:1] || !was_wresp_re;
+    assign bvalid=|wresp_num_in_fifo[5:1] || (!was_wresp_re && wresp_num_in_fifo[0]);
     // second wresp FIFO (does it exist in the actual module)?
 fifo_same_clock_fill  #( .DATA_WIDTH(8),.DATA_DEPTH(5))    
     wresp_i (

@@ -48,6 +48,7 @@ module fifo_same_clock_fill
 //ISExst: FF/Latch ddrc_test01.axibram_write_i.wdata_i.fill[4] has a constant value of 0 in block <ddrc_test01>. This FF/Latch will be trimmed during the optimization process.
 // Do not understand - why?
     reg  [DATA_DEPTH:  0] fill=0; // RAM fill
+    reg  [DATA_DEPTH:  0] fifo_fill=0; // FIFO (RAM+reg) fill
     reg  [DATA_WIDTH-1:0] inreg;
     reg  [DATA_WIDTH-1:0] outreg;
     reg  [DATA_DEPTH-1:0] ra;
@@ -64,12 +65,18 @@ module fifo_same_clock_fill
     assign rem= ram_nempty && (re || !out_full); 
     assign data_out=outreg;
     assign nempty=out_full;
-    assign num_in_fifo=fill[DATA_DEPTH:0];
+//    assign num_in_fifo=fill[DATA_DEPTH:0];
+    assign num_in_fifo=fifo_fill[DATA_DEPTH:0];
     always @ (posedge  clk or posedge  rst) begin
       if      (rst)      fill <= 0;
       else if (sync_rst) fill <= 0;
       else               fill <= next_fill;
       
+      if      (rst)        fifo_fill <= 0;
+      else if (sync_rst)   fifo_fill <= 0;
+      else if ( we && !re) fifo_fill <= fifo_fill+1;
+      else if (!we &&  re) fifo_fill <= fifo_fill-1;
+
       if (rst)           wem <= 0;
       else if (sync_rst) wem <= 0;
       else               wem <= we;

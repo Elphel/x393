@@ -85,10 +85,12 @@ endtask
         read_status (MCNTRL_SCANLINE_STATUS_REG_CHN3_ADDR);
         read_status (MCNTRL_TILED_STATUS_REG_CHN2_ADDR);
         read_status (MCNTRL_TILED_STATUS_REG_CHN4_ADDR);
-        read_status (MCNTRL_TEST01_STATUS_REG_CHN1_ADDR);
+//        read_status (MCNTRL_TEST01_STATUS_REG_CHN1_ADDR);
         read_status (MCNTRL_TEST01_STATUS_REG_CHN2_ADDR);
         read_status (MCNTRL_TEST01_STATUS_REG_CHN3_ADDR);
         read_status (MCNTRL_TEST01_STATUS_REG_CHN4_ADDR);
+        read_status (MEMBRIDGE_STATUS_REG);
+        
     end
  endtask 
   
@@ -112,10 +114,11 @@ endtask
         program_status (MCNTRL_SCANLINE_CHN3_ADDR, MCNTRL_SCANLINE_STATUS_CNTRL,   mode,seq_num); //MCNTRL_SCANLINE_STATUS_REG_CHN3_ADDR='h5,
         program_status (MCNTRL_TILED_CHN2_ADDR,    MCNTRL_TILED_STATUS_CNTRL,      mode,seq_num); //MCNTRL_TILED_STATUS_REG_CHN4_ADDR=   'h6,
         program_status (MCNTRL_TILED_CHN4_ADDR,    MCNTRL_TILED_STATUS_CNTRL,      mode,seq_num); //MCNTRL_TILED_STATUS_REG_CHN4_ADDR=   'h6,
-        program_status (MCNTRL_TEST01_ADDR,        MCNTRL_TEST01_CHN1_STATUS_CNTRL,mode,seq_num); //MCNTRL_TEST01_STATUS_REG_CHN2_ADDR=  'h3c,
+//        program_status (MCNTRL_TEST01_ADDR,        MCNTRL_TEST01_CHN1_STATUS_CNTRL,mode,seq_num); //MCNTRL_TEST01_STATUS_REG_CHN2_ADDR=  'h3c,
         program_status (MCNTRL_TEST01_ADDR,        MCNTRL_TEST01_CHN2_STATUS_CNTRL,mode,seq_num); //MCNTRL_TEST01_STATUS_REG_CHN2_ADDR=  'h3c,
         program_status (MCNTRL_TEST01_ADDR,        MCNTRL_TEST01_CHN3_STATUS_CNTRL,mode,seq_num); //MCNTRL_TEST01_STATUS_REG_CHN3_ADDR=  'h3d,
         program_status (MCNTRL_TEST01_ADDR,        MCNTRL_TEST01_CHN4_STATUS_CNTRL,mode,seq_num); //MCNTRL_TEST01_STATUS_REG_CHN4_ADDR=  'h3e,
+        program_status (MEMBRIDGE_ADDR    ,        MEMBRIDGE_STATUS_CNTRL,         mode,seq_num); //MCNTRL_TEST01_STATUS_REG_CHN4_ADDR=  'h3e,
     end
  endtask
   

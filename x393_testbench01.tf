@@ -39,8 +39,11 @@
     `define TEST_TILED_WRITE_WAIT 1 // wait TEST_SCANLINE_WRITE finished (frame_done)
 //`define TEST_TILED_READ  1
 
-`define TEST_TILED_WRITE32  1
-`define TEST_TILED_READ32  1
+//`define TEST_TILED_WRITE32  1
+//`define TEST_TILED_READ32  1
+
+`define TEST_AFI_WRITE 1
+`define TEST_AFI_READ 1
 
 module  x393_testbench01 #(
 `include "includes/x393_parameters.vh" // SuppressThisWarning VEditor - not used
@@ -81,34 +84,63 @@ module  x393_testbench01 #(
 //  wire        MEMCLK;
   
 // axi_hp simulation signals
+  wire HCLK;
+  wire [31:0] afi_sim_rd_address;    // output[31:0] 
+  wire [ 5:0] afi_sim_rid;           // output[5:0]  SuppressThisWarning VEditor - not used - just view
+//  reg         afi_sim_rd_valid;      // input
+  wire        afi_sim_rd_valid;      // input
+  wire        afi_sim_rd_ready;      // output
+//  reg  [63:0] afi_sim_rd_data;       // input[63:0] 
+  wire [63:0] afi_sim_rd_data;       // input[63:0] 
+  wire [ 2:0] afi_sim_rd_cap;        // output[2:0]  SuppressThisWarning VEditor - not used - just view
+  wire [ 3:0] afi_sim_rd_qos;        // output[3:0]  SuppressThisWarning VEditor - not used - just view
+  wire  [ 1:0] afi_sim_rd_resp;       // input[1:0] 
+//  reg  [ 1:0] afi_sim_rd_resp;       // input[1:0] 
+
+  wire [31:0] afi_sim_wr_address;    // output[31:0] SuppressThisWarning VEditor - not used - just view
+  wire [ 5:0] afi_sim_wid;           // output[5:0]  SuppressThisWarning VEditor - not used - just view
+  wire        afi_sim_wr_valid;      // output
+  wire        afi_sim_wr_ready;      // input
+//  reg         afi_sim_wr_ready;      // input
+  wire [63:0] afi_sim_wr_data;       // output[63:0] SuppressThisWarning VEditor - not used - just view
+  wire [ 7:0] afi_sim_wr_stb;        // output[7:0]  SuppressThisWarning VEditor - not used - just view
+  wire [ 3:0] afi_sim_bresp_latency; // input[3:0] 
+//  reg  [ 3:0] afi_sim_bresp_latency; // input[3:0] 
+  wire [ 2:0] afi_sim_wr_cap;        // output[2:0]  SuppressThisWarning VEditor - not used - just view
+  wire [ 3:0] afi_sim_wr_qos;        // output[3:0]  SuppressThisWarning VEditor - not used - just view
+
+  assign HCLK = x393_i.ps7_i.SAXIHP0ACLK; // shortcut name
+// afi loopback
+  assign #1 afi_sim_rd_data= {2'h0,afi_sim_rd_address[31:3],1'h1,  2'h0,afi_sim_rd_address[31:3],1'h0};
+  assign #1 afi_sim_rd_valid = afi_sim_rd_ready;
+  assign #1 afi_sim_rd_resp = afi_sim_rd_ready?2'b0:2'bx;
+  assign #1 afi_sim_wr_ready = afi_sim_wr_valid;
+  assign #1 afi_sim_bresp_latency=4'h5; 
+  
+// axi_hp register access
+  // PS memory mapped registers to read/write over a separate simulation bus running at HCLK, no waits
+  reg  [31:0] PS_REG_ADDR;
+  reg         PS_REG_WR;
+  reg         PS_REG_RD;
+  reg  [31:0] PS_REG_DIN;
+  wire [31:0] PS_REG_DOUT;
+  reg  [31:0] PS_RDATA;  // SuppressThisWarning VEditor - not used - just view
+/*  
   reg  [31:0] afi_reg_addr; 
   reg         afi_reg_wr;
   reg         afi_reg_rd;
   reg  [31:0] afi_reg_din;
-  wire [31:0] afi_reg_dout; 
-
-  wire [31:0] afi_sim_rd_address;    // output[31:0] 
-  wire [ 5:0] afi_sim_rid;           // output[5:0] 
-  reg         afi_sim_rd_valid;      // input
-  wire        afi_sim_rd_ready;      // output
-  reg  [63:0] afi_sim_rd_data;       // input[63:0] 
-  wire [ 2:0] afi_sim_rd_cap;        // output[2:0] 
-  wire [ 3:0] afi_sim_rd_qos;        // output[3:0] 
-  reg  [ 1:0] afi_sim_rd_resp;       // input[1:0] 
-
-
-
-  wire [31:0] afi_sim_wr_address;    // output[31:0] 
-  wire [ 5:0] afi_sim_wid;           // output[5:0] 
-  wire        afi_sim_wr_valid;      // output
-  reg         afi_sim_wr_ready;      // input
-  wire [63:0] afi_sim_wr_data;       // output[63:0] 
-  wire [ 7:0] afi_sim_wr_stb;        // output[7:0] 
-  reg  [ 3:0] afi_sim_bresp_latency; // input[3:0] 
-  wire [ 2:0] afi_sim_wr_cap;        // output[2:0] 
-  wire [ 3:0] afi_sim_wr_qos;        // output[3:0] 
-
-  
+  wire [31:0] afi_reg_dout;
+  reg  [31:0] AFI_REG_RD; // SuppressThisWarning VEditor - not used - just view
+*/  
+  initial begin
+    PS_REG_ADDR <= 'bx;
+    PS_REG_WR   <= 0;
+    PS_REG_RD   <= 0;
+    PS_REG_DIN  <= 'bx;
+    PS_RDATA    <= 'bx;
+  end 
+  always @ (posedge HCLK) if (PS_REG_RD) PS_RDATA <= PS_REG_DOUT;
   
   reg [639:0] TEST_TITLE;
   // Simulation signals
@@ -408,7 +440,7 @@ always #(CLKIN_PERIOD/2) CLK = ~CLK;
     TEST_TITLE = "SCANLINE_WRITE";
     $display("===================== TEST_%s =========================",TEST_TITLE);
     test_scanline_write(
-        1, // valid: 1 or 3 input            [3:0] channel;
+        3, // valid: 1 or 3 input            [3:0] channel; now - 3 only, 1 is for afi
         SCANLINE_EXTRA_PAGES, // input            [1:0] extra_pages;
         1, // input                  wait_done;
         WINDOW_WIDTH,
@@ -421,7 +453,7 @@ always #(CLKIN_PERIOD/2) CLK = ~CLK;
     TEST_TITLE = "SCANLINE_READ";
     $display("===================== TEST_%s =========================",TEST_TITLE);
     test_scanline_read (
-        1, // valid: 1 or 3 input            [3:0] channel;
+        3, // valid: 1 or 3 input            [3:0] channel; now - 3 only, 1 is for afi
         SCANLINE_EXTRA_PAGES, // input            [1:0] extra_pages;
         1, // input                  show_data;
         WINDOW_WIDTH,
@@ -503,6 +535,44 @@ always #(CLKIN_PERIOD/2) CLK = ~CLK;
         TILE_HEIGHT,
         TILE_VSTEP);
 `endif
+
+`ifdef TEST_AFI_WRITE
+    TEST_TITLE = "AFI_WRITE";
+    $display("===================== TEST_%s =========================",TEST_TITLE);
+    test_afi_rw (
+       1, // write_ddr3;
+       SCANLINE_EXTRA_PAGES,//  extra_pages;
+       FRAME_START_ADDRESS, //  input [21:0] frame_start_addr;
+       FRAME_FULL_WIDTH,    // input [15:0] window_full_width; // 13 bit - in 8*16=128 bit bursts
+       WINDOW_WIDTH,        // input [15:0] window_width;  // 13 bit - in 8*16=128 bit bursts
+       WINDOW_HEIGHT,       // input [15:0] window_height; // 16 bit (only 14 are used here)
+       WINDOW_X0,           // input [15:0] window_left;
+       WINDOW_Y0,           // input [15:0] window_top;
+       0,                   // input [28:0] start64;  // relative start adderss of the transfer (set to 0 when writing lo_addr64)
+       AFI_LO_ADDR64,       // input [28:0] lo_addr64; // low address of the system memory range, in 64-bit words 
+       AFI_SIZE64,          // input [28:0] size64;    // size of the system memory range in 64-bit words
+       0);                  // input        continue;    // 0 start from start64, 1 - continue from where it was
+`endif
+
+
+`ifdef TEST_AFI_READ
+    TEST_TITLE = "AFI_READ";
+    $display("===================== TEST_%s =========================",TEST_TITLE);
+    test_afi_rw (
+       0, // write_ddr3;
+       SCANLINE_EXTRA_PAGES,//  extra_pages;
+       FRAME_START_ADDRESS, //  input [21:0] frame_start_addr;
+       FRAME_FULL_WIDTH,    // input [15:0] window_full_width; // 13 bit - in 8*16=128 bit bursts
+       WINDOW_WIDTH,        // input [15:0] window_width;  // 13 bit - in 8*16=128 bit bursts
+       WINDOW_HEIGHT,       // input [15:0] window_height; // 16 bit (only 14 are used here)
+       WINDOW_X0,           // input [15:0] window_left;
+       WINDOW_Y0,           // input [15:0] window_top;
+       0,                   // input [28:0] start64;  // relative start adderss of the transfer (set to 0 when writing lo_addr64)
+       AFI_LO_ADDR64,       // input [28:0] lo_addr64; // low address of the system memory range, in 64-bit words 
+       AFI_SIZE64,          // input [28:0] size64;    // size of the system memory range in 64-bit words
+       0);                  // input        continue;    // 0 start from start64, 1 - continue from where it was
+`endif
+
   TEST_TITLE = "ALL_DONE";
   $display("===================== TEST_%s =========================",TEST_TITLE);
   #20000;
@@ -510,11 +580,8 @@ always #(CLKIN_PERIOD/2) CLK = ~CLK;
 end
 // protect from never end
   initial begin
-//  #10000000;
-     #200000;
-//     #42000;
-//   #100000;
-//  #60000;
+//     #200000;
+     #50000;
     $display("finish testbench 2");
   $finish;
   end
@@ -1138,17 +1205,17 @@ simul_axi_hp_rd #(
         .sim_rd_cap     (afi_sim_rd_cap), // output[2:0] 
         .sim_rd_qos     (afi_sim_rd_qos), // output[3:0] 
         .sim_rd_resp    (afi_sim_rd_resp), // input[1:0] 
-        .reg_addr       (afi_reg_addr), // input[31:0] 
-        .reg_wr         (afi_reg_wr), // input
-        .reg_rd         (afi_reg_rd), // input
-        .reg_din        (afi_reg_din), // input[31:0] 
-        .reg_dout       (afi_reg_dout) // output[31:0] 
+        .reg_addr       (PS_REG_ADDR), // input[31:0] 
+        .reg_wr         (PS_REG_WR), // input
+        .reg_rd         (PS_REG_RD), // input
+        .reg_din        (PS_REG_DIN), // input[31:0] 
+        .reg_dout       (PS_REG_DOUT) // output[31:0] 
     );
 
 simul_axi_hp_wr #(
         .HP_PORT(0)
     ) simul_axi_hp_wr_i (
-        .rst            (), // input
+        .rst            (RST), // input
         .aclk           (x393_i.ps7_i.SAXIHP0ACLK),          // input
         .aresetn        (),                                  // output
         .awaddr         (x393_i.ps7_i.SAXIHP0AWADDR),        // input[31:0] 
@@ -1184,11 +1251,11 @@ simul_axi_hp_wr #(
         .sim_bresp_latency(afi_sim_bresp_latency), // input[3:0] 
         .sim_wr_cap     (afi_sim_wr_cap), // output[2:0] 
         .sim_wr_qos     (afi_sim_wr_qos), // output[3:0] 
-        .reg_addr       (afi_reg_addr), // input[31:0] 
-        .reg_wr         (afi_reg_wr), // input
-        .reg_rd         (afi_reg_rd), // input
-        .reg_din        (afi_reg_din), // input[31:0] 
-        .reg_dout       (afi_reg_dout) // output[31:0] 
+        .reg_addr       (PS_REG_ADDR), // input[31:0] 
+        .reg_wr         (PS_REG_WR), // input
+        .reg_rd         (PS_REG_RD), // input
+        .reg_din        (PS_REG_DIN), // input[31:0] 
+        .reg_dout       (PS_REG_DOUT) // output[31:0] 
     );
 
 
@@ -1338,12 +1405,169 @@ task test_read_block; // SuppressThisWarning VEditor - may be unused
     end
 endtask
 
+task membridge_setup;
+    input [28:0] len64;    // number of 64-bit words to transfer
+    input [28:0] width64;  // frame width in 64-bit words
+    input [28:0] start64;  // relative start adderss of the transfer (set to 0 when writing lo_addr64)
+    input [28:0] lo_addr64; // low address of the system memory range, in 64-bit words 
+    input [28:0] size64;    // size of the system memory range in 64-bit words
+     
+    begin
+        write_contol_register(MEMBRIDGE_ADDR + MEMBRIDGE_LO_ADDR64,        {3'b0,lo_addr64});    
+        write_contol_register(MEMBRIDGE_ADDR + MEMBRIDGE_SIZE64,           {3'b0,size64});    
+        write_contol_register(MEMBRIDGE_ADDR + MEMBRIDGE_START64,          {3'b0,start64});    
+        write_contol_register(MEMBRIDGE_ADDR + MEMBRIDGE_LEN64,            {3'b0,len64});    
+        write_contol_register(MEMBRIDGE_ADDR + MEMBRIDGE_WIDTH64,          {3'b0,width64});    
+    end
+endtask
+
+task membridge_start;
+    input continue;    // 0 start from start64, 1 - continue from where it was
+    begin
+        write_contol_register(MEMBRIDGE_ADDR + MEMBRIDGE_CTRL,         {29'b0,continue,2'b11});    
+    end
+endtask
+
+task membridge_en; // SuppressThisWarning VEditor - may be unused
+    input en;    // not needed to start, pauses axi if set to 0 whil running, resets "done" status bit
+    begin
+        write_contol_register(MEMBRIDGE_ADDR + MEMBRIDGE_CTRL,         {31'b0,en});    
+    end
+endtask
+
+
+task afi_setup;
+    input   [1:0] port_num;
+    begin
+        afi_write_reg(port_num,  'h0, 0); // AFI_RDCHAN_CTRL
+        afi_write_reg(port_num,  'h4, 7); // AFI_RDCHAN_ISSUINGCAP
+        afi_write_reg(port_num,  'h8, 0); // AFI_RDQOS
+        //afi_write_reg(port_num,  'hc, 0); // AFI_RDDATAFIFO_LEVEL
+        //afi_write_reg(port_num, 'h10, 0); // AFI_RDDEBUG
+        afi_write_reg(port_num, 'h14, 'hf00); // AFI_WRCHAN_CTRL
+        afi_write_reg(port_num, 'h18, 0); // AFI_WRCHAN_ISSUINGCAP
+        afi_write_reg(port_num, 'h1c, 0); // AFI_WRQOS
+        //afi_write_reg(port_num,  'h20, 0); // AFI_WRDATAFIFO_LEVEL
+        //afi_write_reg(port_num, 'h24, 0); // AFI_WRDEBUG
+    end
+endtask
+
+task afi_write_reg;
+    input   [1:0] port_num;
+    input integer rel_baddr; // relative byte address
+    input  [31:0] data;
+    begin
+       ps_write_reg(32'hf8008000+ (port_num << 12) + (rel_baddr & 'hfffffffc), data);
+    end
+endtask
+
+task afi_read_reg; // SuppressThisWarning VEditor - may be unused
+    input   [1:0] port_num;
+    input integer rel_baddr; // relative byte address
+    input  verbose;
+    begin
+       ps_read_reg(32'hf8008000+ (port_num << 12) + (rel_baddr & 'hfffffffc), verbose);
+    end
+endtask
+
+task ps_write_reg;
+    input [31:0] ps_reg_addr;
+    input [31:0] ps_reg_data;
+    begin
+        @(posedge HCLK);
+        PS_REG_ADDR <= ps_reg_addr;
+        PS_REG_DIN <= ps_reg_data;
+        PS_REG_WR <= 1'b1;
+        @(posedge HCLK);
+        PS_REG_ADDR <= 'bx;
+        PS_REG_DIN <= 'bx;
+        PS_REG_WR <= 1'b0;
+    end
+endtask
+
+task ps_read_reg;
+    input [31:0] ps_reg_addr;
+    input verbose;
+    begin
+        @(posedge HCLK);
+        PS_REG_ADDR <= ps_reg_addr;
+        PS_REG_RD <= 1'b1;
+        @(posedge HCLK);
+        PS_REG_ADDR <= 'bx;
+        PS_REG_DIN <= 'bx;
+        PS_REG_WR <= 1'b0;
+        @(negedge HCLK);
+        if (verbose) begin
+            $display("ps_read_reg(%x) -> %x @%t",ps_reg_addr,PS_RDATA,$time);
+        end
+    end
+endtask
+
+// above - move to include
+
+task test_afi_rw; // SuppressThisWarning VEditor - may be unused
+    input        write_ddr3;
+    input  [1:0] extra_pages;
+    input [21:0] frame_start_addr;
+    input [15:0] window_full_width; // 13 bit - in 8*16=128 bit bursts
+    input [15:0] window_width;  // 13 bit - in 8*16=128 bit bursts
+    input [15:0] window_height; // 16 bit (only 14 are used here)
+    input [15:0] window_left;
+    input [15:0] window_top;
+    input [28:0] start64;  // relative start adderss of the transfer (set to 0 when writing lo_addr64)
+    input [28:0] lo_addr64; // low address of the system memory range, in 64-bit words 
+    input [28:0] size64;    // size of the system memory range in 64-bit words
+    input        continue;    // 0 start from start64, 1 - continue from where it was
+    
+// -----------------------------------------
+    integer mode;
+    begin
+        $display("====== test_afi_rw: write=%d, extra_pages=%d,  frame_start= %x, window_full_width=%d, window_width=%d, window_height=%d, window_left=%d, window_top=%d,@%t",
+                                      write_ddr3,  extra_pages, frame_start_addr, window_full_width,   window_width, window_height, window_left, window_top, $time);
+        $display("len64=%x,  width64=%x, start64=%x, lo_addr64=%x, size64=%x,@%t",
+                  ((window_width[12:0]==0)? 15'h4000 : {1'b0,window_width[12:0],1'b0})*window_height[13:0],
+                  (window_width[12:0]==0)? 29'h4000 : {15'b0,window_width[12:0],1'b0},
+                  start64, lo_addr64, size64, $time);
+        mode=   func_encode_mode_scanline(
+                    extra_pages,
+                    write_ddr3, // write_mem,
+                    1, // enable
+                    0);  // chn_reset
+        write_contol_register(MCNTRL_SCANLINE_CHN1_ADDR + MCNTRL_SCANLINE_STARTADDR,        {10'b0,frame_start_addr}); // RA=80, CA=0, BA=0 22-bit frame start address (3 CA LSBs==0. BA==0) 
+        write_contol_register(MCNTRL_SCANLINE_CHN1_ADDR + MCNTRL_SCANLINE_FRAME_FULL_WIDTH, {16'h0, window_full_width});
+        write_contol_register(MCNTRL_SCANLINE_CHN1_ADDR + MCNTRL_SCANLINE_WINDOW_WH,        {window_height,window_width}); //WINDOW_WIDTH + (WINDOW_HEIGHT<<16));
+        write_contol_register(MCNTRL_SCANLINE_CHN1_ADDR + MCNTRL_SCANLINE_WINDOW_X0Y0,      {window_top,window_left}); //WINDOW_X0+ (WINDOW_Y0<<16));
+        write_contol_register(MCNTRL_SCANLINE_CHN1_ADDR + MCNTRL_SCANLINE_WINDOW_STARTXY,   0);
+        write_contol_register(MCNTRL_SCANLINE_CHN1_ADDR + MCNTRL_SCANLINE_MODE,             mode); 
+        configure_channel_priority(1,0);    // lowest priority channel 3
+        enable_memcntrl_en_dis(1,1);
+//        write_contol_register(test_mode_address,            TEST01_START_FRAME);
+        afi_setup(0);
+        membridge_setup(
+            ((window_width[12:0]==0)? 15'h4000 : {1'b0,window_width[12:0],1'b0})*window_height[13:0], //len64,
+            (window_width[12:0]==0)? 29'h4000 : {15'b0,window_width[12:0],1'b0}, // width64,
+            start64,
+            lo_addr64,
+            size64);
+        membridge_start (continue);         
+// just wait done
+        wait_status_condition ( // may also be read directly from the same bit of mctrl_linear_rw (address=5) status
+            MEMBRIDGE_STATUS_REG, // MCNTRL_TEST01_STATUS_REG_CHN3_ADDR,
+            MCNTRL_SCANLINE_CHN1_ADDR + MEMBRIDGE_STATUS_CNTRL, // MCNTRL_TEST01_ADDR + MCNTRL_TEST01_CHN3_STATUS_CNTRL,
+            DEFAULT_STATUS_MODE,
+            2 << STATUS_2LSB_SHFT, // bit 24 - busy, bit 25 - frame done
+            2 << STATUS_2LSB_SHFT,  // mask for the 4-bit page number
+            0, // equal to
+            0); // no need to synchronize sequence number
+    end
+endtask
+
 task test_scanline_write; // SuppressThisWarning VEditor - may be unused
     input            [3:0] channel;
     input            [1:0] extra_pages;
     input                  wait_done;
-    input [15:0]           window_width;
-    input [15:0]           window_height;
+    input [15:0]           window_width;  // 13 bit - in 8*16=128 bit bursts
+    input [15:0]           window_height; // 16 bit
     input [15:0]           window_left;
     input [15:0]           window_top;
     
@@ -1363,12 +1587,12 @@ task test_scanline_write; // SuppressThisWarning VEditor - may be unused
         $display("====== test_scanline_write: channel=%d, extra_pages=%d,  wait_done=%d @%t",
                                               channel,    extra_pages,     wait_done,   $time);
         case (channel)
-            1:  begin
-                    start_addr=             MCNTRL_SCANLINE_CHN1_ADDR;
-                    status_address=         MCNTRL_TEST01_STATUS_REG_CHN1_ADDR;
-                    status_control_address= MCNTRL_TEST01_ADDR + MCNTRL_TEST01_CHN1_STATUS_CNTRL;
-                    test_mode_address=      MCNTRL_TEST01_ADDR + MCNTRL_TEST01_CHN1_MODE;
-                end
+//            1:  begin
+//                    start_addr=             MCNTRL_SCANLINE_CHN1_ADDR;
+//                    status_address=         MCNTRL_TEST01_STATUS_REG_CHN1_ADDR;
+//                    status_control_address= MCNTRL_TEST01_ADDR + MCNTRL_TEST01_CHN1_STATUS_CNTRL;
+//                    test_mode_address=      MCNTRL_TEST01_ADDR + MCNTRL_TEST01_CHN1_MODE;
+//                end
             3:  begin
                     start_addr=             MCNTRL_SCANLINE_CHN3_ADDR;
                     status_address=         MCNTRL_TEST01_STATUS_REG_CHN3_ADDR;
@@ -1376,8 +1600,8 @@ task test_scanline_write; // SuppressThisWarning VEditor - may be unused
                     test_mode_address=      MCNTRL_TEST01_ADDR + MCNTRL_TEST01_CHN3_MODE;
                 end
             default: begin
-                $display("**** ERROR: Invalid channel, only 1 and 3 are valid");
-                start_addr=             MCNTRL_SCANLINE_CHN1_ADDR;
+                $display("**** ERROR: Invalid channel, only 3 is valid");
+                start_addr=             MCNTRL_SCANLINE_CHN3_ADDR;
                 status_address=         MCNTRL_TEST01_STATUS_REG_CHN1_ADDR;
                 status_control_address= MCNTRL_TEST01_ADDR + MCNTRL_TEST01_CHN1_STATUS_CNTRL;
                 test_mode_address=      MCNTRL_TEST01_ADDR + MCNTRL_TEST01_CHN1_MODE;
@@ -1389,7 +1613,7 @@ task test_scanline_write; // SuppressThisWarning VEditor - may be unused
                     1, // enable
                     0);  // chn_reset
                 
-        write_contol_register(start_addr+ MCNTRL_SCANLINE_STARTADDR,        FRAME_START_ADDRESS); // RA=80, CA=0, BA=0 22-bit frame start address (3 CA LSBs==0. BA==0) 
+        write_contol_register(start_addr + MCNTRL_SCANLINE_STARTADDR,        FRAME_START_ADDRESS); // RA=80, CA=0, BA=0 22-bit frame start address (3 CA LSBs==0. BA==0) 
         write_contol_register(start_addr + MCNTRL_SCANLINE_FRAME_FULL_WIDTH, FRAME_FULL_WIDTH);
         write_contol_register(start_addr + MCNTRL_SCANLINE_WINDOW_WH,        {window_height,window_width}); //WINDOW_WIDTH + (WINDOW_HEIGHT<<16));
         write_contol_register(start_addr + MCNTRL_SCANLINE_WINDOW_X0Y0,      {window_top,window_left}); //WINDOW_X0+ (WINDOW_Y0<<16));
@@ -1491,12 +1715,12 @@ task test_scanline_read; // SuppressThisWarning VEditor - may be unused
         $display("====== test_scanline_read: channel=%d, extra_pages=%d,  show_data=%d @%t",
                                              channel,    extra_pages,     show_data,    $time);
         case (channel)
-            1:  begin
-                    start_addr=             MCNTRL_SCANLINE_CHN1_ADDR;
-                    status_address=         MCNTRL_TEST01_STATUS_REG_CHN1_ADDR;
-                    status_control_address= MCNTRL_TEST01_ADDR + MCNTRL_TEST01_CHN1_STATUS_CNTRL;
-                    test_mode_address=      MCNTRL_TEST01_ADDR + MCNTRL_TEST01_CHN1_MODE;
-                end
+//            1:  begin
+//                    start_addr=             MCNTRL_SCANLINE_CHN1_ADDR;
+//                    status_address=         MCNTRL_TEST01_STATUS_REG_CHN1_ADDR;
+//                    status_control_address= MCNTRL_TEST01_ADDR + MCNTRL_TEST01_CHN1_STATUS_CNTRL;
+//                    test_mode_address=      MCNTRL_TEST01_ADDR + MCNTRL_TEST01_CHN1_MODE;
+//                end
             3:  begin
                     start_addr=             MCNTRL_SCANLINE_CHN3_ADDR;
                     status_address=         MCNTRL_TEST01_STATUS_REG_CHN3_ADDR;
@@ -1504,8 +1728,8 @@ task test_scanline_read; // SuppressThisWarning VEditor - may be unused
                     test_mode_address=      MCNTRL_TEST01_ADDR + MCNTRL_TEST01_CHN3_MODE;
                 end
             default: begin
-                $display("**** ERROR: Invalid channel, only 1 and 3 are valid");
-                start_addr=             MCNTRL_SCANLINE_CHN1_ADDR;
+                $display("**** ERROR: Invalid channel, only 3 is valid");
+                start_addr=             MCNTRL_SCANLINE_CHN3_ADDR;
                 status_address=         MCNTRL_TEST01_STATUS_REG_CHN1_ADDR;
                 status_control_address= MCNTRL_TEST01_ADDR + MCNTRL_TEST01_CHN1_STATUS_CNTRL;
                 test_mode_address=      MCNTRL_TEST01_ADDR + MCNTRL_TEST01_CHN1_MODE;
@@ -1827,12 +2051,12 @@ task write_block_scanline_chn;  // S uppressThisWarning VEditor : may be unused
         $display("====== write_block_scanline_chn:%d page: %x X=0x%x Y=0x%x num=%d @%t", chn, page, startX, startY,num_bursts, $time);
         case (chn)
             0:  start_addr=MCONTR_BUF0_WR_ADDR + (page << 8);
-            1:  start_addr=MCONTR_BUF1_WR_ADDR + (page << 8);
+//            1:  start_addr=MCONTR_BUF1_WR_ADDR + (page << 8);
             2:  start_addr=MCONTR_BUF2_WR_ADDR + (page << 8);
             3:  start_addr=MCONTR_BUF3_WR_ADDR + (page << 8);
             4:  start_addr=MCONTR_BUF4_WR_ADDR + (page << 8);
             default: begin
-                $display("**** ERROR: Invalid channel for write_block_scanline_chn = %d @%t", chn, $time);
+                $display("**** ERROR: Invalid channel (not 0,2,3,4) for write_block_scanline_chn = %d @%t", chn, $time);
                 start_addr = MCONTR_BUF0_WR_ADDR+ (page << 8);
             end
         endcase

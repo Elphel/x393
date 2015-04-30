@@ -23,7 +23,7 @@
 module  membridge#(
     parameter MEMBRIDGE_ADDR=                     'h200,
     parameter MEMBRIDGE_MASK=                     'h3f0,
-    parameter MEMBRIDGE_CTRL=                     'h0, // bit 0 - enable, bits[2:1]: 01 - start, 11 - start and reset address
+    parameter MEMBRIDGE_CTRL=                     'h0, // bit 0 - enable, bits[2:1]: 11 - start(continue), 01 - start and reset address
     parameter MEMBRIDGE_STATUS_CNTRL=             'h1,
     parameter MEMBRIDGE_LO_ADDR64=                'h2, // low address of the system memory, in 64-bit words (<<3 to get byte address)
     parameter MEMBRIDGE_SIZE64=                   'h3, // size of the system memory range (access will roll over to lo_addr
@@ -52,7 +52,7 @@ module  membridge#(
     input                         page_ready_chn, // output single mclk
     input                         frame_done_chn, // output single mclk
     input [FRAME_HEIGHT_BITS-1:0] line_unfinished_chn1, // output[15:0] @SuppressThisWarning VEditor unused (yet)
-    output                        suspend_chn1, // input  @SuppressThisWarning VEditor unused (yet)
+    output                        suspend_chn1, //
     // buffer interface, DDR3 memory read
     input                         xfer_reset_page_rd, // input
     input                         buf_wpage_nxt,     // input
@@ -138,8 +138,8 @@ module  membridge#(
     assign afi_rdissuecap1en = 1'b0;
 
 
-    assign frame_start_chn=start_mclk;
-    
+    assign frame_start_chn = start_mclk;
+    assign suspend_chn1    = 1'b0;
     wire [ 3:0] cmd_a;    // control register address
     wire [31:0] cmd_data; // register data
     wire        cmd_we;   // register write
@@ -277,7 +277,7 @@ module  membridge#(
     pulse_cross_clock next_page_i  (.rst(rst), .src_clk(hclk), .dst_clk(mclk), .in_pulse(next_page), .out_pulse(next_page_chn),.busy(busy_next_page));
     
     // Common to both directions
-    localparam DELAY_ADVANCE_ADDR=4;    
+    localparam DELAY_ADVANCE_ADDR=3;    
     reg [28:0] rel_addr64; // realtive (to lo_addr) address
     wire                         advance_rel_addr_w;
     wire                         advance_rel_addr_wr;
@@ -308,8 +308,8 @@ module  membridge#(
     assign left_zero = low4_zero && last_burst;
     always @ (posedge hclk or posedge rst) begin
         if      (rst)                advance_rel_addr_d <= 0;
-        else if (advance_rel_addr_w) advance_rel_addr_d <= {DELAY_ADVANCE_ADDR{1'b1}};
-        else                         advance_rel_addr_d <= advance_rel_addr_d << 1;
+//        else if (advance_rel_addr_w) advance_rel_addr_d <= {DELAY_ADVANCE_ADDR{1'b1}};
+        else                         advance_rel_addr_d <= {advance_rel_addr_d[DELAY_ADVANCE_ADDR-2:0],advance_rel_addr};
                 
     end
 
@@ -322,17 +322,17 @@ module  membridge#(
     assign rw_in_progress = read_started || write_busy;
     
     always @ (posedge hclk) begin
-        advance_rel_addr <= advance_rel_addr_w && !advance_rel_addr_d[DELAY_ADVANCE_ADDR-1]; // make sure advance_rel_addr_w is recalculated after address change
+        advance_rel_addr <= advance_rel_addr_w && !advance_rel_addr && !(|advance_rel_addr_d); // make sure advance_rel_addr_w is recalculated after address change
         last_burst <= ! (|left64[28:4]);
         rollover <= rel_addr64[28:4] == last_addr1k;
         low4_zero <= ! (|left64[3:0]);
         if (rdwr_start[0] && rdwr_reset_addr) rel_addr64 <= start64;
-        else if (advance_rel_addr) rel_addr64 <= last_burst?(rel_addr64 + left64[3:0]) : (rollover?29'h0:(rel_addr64 + 4'h10));
+        else if (advance_rel_addr) rel_addr64 <= last_burst?(rel_addr64 + {25'h0,left64[3:0]}) : (rollover?29'h0:(rel_addr64 + 29'h10));
 
         axi_addr64 <= lo_addr64 + rel_addr64;
         
         if (rdwr_start)            left64 <= len64;
-        else if (advance_rel_addr) left64 <= last_burst? 0: (left64 - 4'h10);
+        else if (advance_rel_addr) left64 <= last_burst? 0: (left64 - 29'h10);
         
         afi_len       <= (|left64[28:4])?4'hf : (left64[3:0]-1);
         afi_len_plus1 <= (|left64[28:4]) ? 5'h10 : {1'b0,left64[3:0]};
@@ -381,11 +381,15 @@ module  membridge#(
         else if (!read_busy) read_started <= 0;
         else if (page_ready) read_started <= 1; // first page is in the buffer - use it to mask page number comparison
         
+        //TODO:  Make wresp_pending as difference of 2 counters, wa - on input (variable increment) wresp - on output
+        
+        
         if      (rst)                          wresp_pending <= 0;
         else if (!read_busy)                   wresp_pending <= 0;
         else if ( afi_wvalid && !afi_bvalid_r) wresp_pending <= wresp_pending +1;
         else if (!afi_wvalid &&  afi_bvalid_r) wresp_pending <= wresp_pending -1;
-        read_over <= left_zero && (wresp_pending == 0); 
+        // TODO: Make a counter for addresses outside of afi_wacount
+        read_over <= left_zero && (wresp_pending == 0) && (afi_wacount==0); 
         
         if      (rst)            read_page <= 0;
         else if (reset_page_rd)  read_page <= 0;
@@ -408,6 +412,7 @@ module  membridge#(
         if      (rst)                                                    done <= 0;
         else if (!rdwr_en)                                               done <= 0; // disabling when idle will reset done
         else if ((write_busy && frame_done) || (read_busy && read_over)) done <= 1;
+        else if (rdwr_start)                                             done <= 0;
         
         
     end
@@ -434,9 +439,9 @@ module  membridge#(
 //last_in_line64 - last word number in scan line
     reg                        left_was_1; // was 1 or 0 (0 does not matter)
     reg                  [3:0] src_wcntr;
-    reg                  [1:0] wlast_in_burst;
+    reg                  [2:0] wlast_in_burst;
     
-    assign afi_wlast = wlast_in_burst[1];
+    assign afi_wlast = wlast_in_burst[2];
      
     always @ (posedge hclk) begin
         if (!rw_in_progress) left_was_1 <= 0;
@@ -446,7 +451,7 @@ module  membridge#(
         else if (bufrd_rd[0]) src_wcntr <= src_wcntr+1;
         
         if    (!read_started) wlast_in_burst <= 0;
-        else if (bufrd_rd[0]) wlast_in_burst <= {wlast_in_burst[0],left_was_1 | (&src_wcntr)};
+        else if (bufrd_rd[0]) wlast_in_burst <= {wlast_in_burst[1:0],left_was_1 | (&src_wcntr)};
         
         bufrd_rd <= {bufrd_rd[1:0], bufrd_rd_w };
         buf_rdwr <= bufrd_rd_w || bufwr_we_w;
@@ -515,7 +520,7 @@ module  membridge#(
         else if (next_page_wr_w) write_page <= write_page + 1;
 
         if      (rst)                               write_pages_ready <= 0;
-        else if (!read_busy)                        write_pages_ready <= 0;
+        else if (!write_busy)                       write_pages_ready <= 0;
         else if ( page_ready_wr && !next_page_wr_w) write_pages_ready <= write_pages_ready -1; //+1;
         else if (!page_ready_wr &&  next_page_wr_w) write_pages_ready <= write_pages_ready +1; //-1;
 
@@ -552,7 +557,7 @@ module  membridge#(
         .clk              (mclk), // input
         .we               (set_status_w), // input
         .wd               (cmd_data[7:0]), // input[7:0] 
-        .status           ({busy,done}), // input[25:0] 
+        .status           ({done,busy}), // input[25:0] 
         .ad               (status_ad), // output[7:0] 
         .rq               (status_rq), // output
         .start            (status_start) // input
