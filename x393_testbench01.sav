@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.3.64 (w)1999-2014 BSI
-[*] Thu Apr 30 06:18:13 2015
+[*] Thu Apr 30 18:06:37 2015
 [*]
-[dumpfile] "/home/andrey/git/x393/simulation/x393_testbench01-20150429235314774.lxt"
-[dumpfile_mtime] "Thu Apr 30 05:56:34 2015"
-[dumpfile_size] 174025939
+[dumpfile] "/home/andrey/git/x393/simulation/x393_testbench01-20150430115913649.lxt"
+[dumpfile_mtime] "Thu Apr 30 18:02:38 2015"
+[dumpfile_size] 174024137
 [savefile] "/home/andrey/git/x393/x393_testbench01.sav"
-[timestart] 44401000
-[size] 1823 1173
+[timestart] 37450000
+[size] 1823 1180
 [pos] 1919 0
-*-18.982071 45883334 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-21.063198 46660000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] x393_testbench01.
 [treeopen] x393_testbench01.ddr3_i.
 [treeopen] x393_testbench01.simul_axi_hp_wr_i.
@@ -324,6 +324,7 @@ x393_testbench01.simul_axi_hp_wr_i.awready[0]
 x393_testbench01.simul_axi_hp_wr_i.awvalid[0]
 x393_testbench01.simul_axi_hp_wr_i.aw_nempty[0]
 x393_testbench01.simul_axi_hp_wr_i.wvalid[0]
+@29
 x393_testbench01.x393_i.membridge_i.left_was_1[0]
 @c00022
 x393_testbench01.x393_i.membridge_i.src_wcntr[3:0]
@@ -365,13 +366,14 @@ x393_testbench01.x393_i.membridge_i.read_busy[0]
 x393_testbench01.x393_i.membridge_i.afi_wvalid[0]
 x393_testbench01.simul_axi_hp_wr_i.fifo_wd_rd[0]
 x393_testbench01.simul_axi_hp_wr_i.fifo_wd_rd_dly[0]
-@29
 x393_testbench01.simul_axi_hp_wr_i.wresp_re[0]
-@28
 x393_testbench01.x393_i.membridge_i.afi_bvalid[0]
 x393_testbench01.x393_i.membridge_i.afi_bvalid_r[0]
 @22
 x393_testbench01.x393_i.membridge_i.wresp_pending[7:0]
+x393_testbench01.x393_i.membridge_i.axi_arw_requested[7:0]
+x393_testbench01.x393_i.membridge_i.wresp_conf[7:0]
+x393_testbench01.x393_i.membridge_i.axi_wr_pending[7:0]
 @200
 -
 @28
@@ -463,7 +465,6 @@ x393_testbench01.x393_i.membridge_i.afi_wvalid[0]
 x393_testbench01.x393_i.membridge_i.axi_addr64[28:0]
 x393_testbench01.x393_i.membridge_i.axi_rd_pending[7:0]
 x393_testbench01.x393_i.membridge_i.axi_rd_received[7:0]
-x393_testbench01.x393_i.membridge_i.axi_rd_requested[7:0]
 x393_testbench01.x393_i.membridge_i.buf_in_line64[13:0]
 x393_testbench01.x393_i.membridge_i.buf_in_line64_r[6:0]
 x393_testbench01.x393_i.membridge_i.buf_left64[28:0]

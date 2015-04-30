@@ -355,7 +355,15 @@ module  membridge#(
 
     // DDR3 read - AFI write
     //rdwr_en    
-    reg  [7:0] wresp_pending; // count not-yet-confirmed afi writes
+    reg  [7:0] axi_arw_requested;  // 64-bit words to be read/written over axi queued to AR/AW channels
+    reg  [7:0] wresp_conf;         // number of 64-bit words confirmed through axi b channel
+    wire [7:0] axi_wr_pending;     // Number of words qued to AW but not yet confirmed through B-channel;
+    wire [7:0] axi_rd_pending;
+
+    reg  [7:0] axi_rd_received;
+    assign axi_rd_pending= axi_arw_requested - axi_rd_received;
+    assign axi_wr_pending= axi_arw_requested - wresp_conf;
+    
     reg        read_busy;
     reg        read_over;
     reg        afi_bvalid_r;
@@ -380,16 +388,14 @@ module  membridge#(
         if      (rst)        read_started <= 0;
         else if (!read_busy) read_started <= 0;
         else if (page_ready) read_started <= 1; // first page is in the buffer - use it to mask page number comparison
+
+        afi_bvalid_r <=afi_bvalid;
         
-        //TODO:  Make wresp_pending as difference of 2 counters, wa - on input (variable increment) wresp - on output
+        if      (rst)          wresp_conf <= 0;
+        else if (!read_busy)   wresp_conf <= 0;
+        else if (afi_bvalid_r) wresp_conf <= wresp_conf +1;
         
-        
-        if      (rst)                          wresp_pending <= 0;
-        else if (!read_busy)                   wresp_pending <= 0;
-        else if ( afi_wvalid && !afi_bvalid_r) wresp_pending <= wresp_pending +1;
-        else if (!afi_wvalid &&  afi_bvalid_r) wresp_pending <= wresp_pending -1;
-        // TODO: Make a counter for addresses outside of afi_wacount
-        read_over <= left_zero && (wresp_pending == 0) && (afi_wacount==0); 
+        read_over <= left_zero && (axi_wr_pending == 0) && read_started; 
         
         if      (rst)            read_page <= 0;
         else if (reset_page_rd)  read_page <= 0;
@@ -414,11 +420,6 @@ module  membridge#(
         else if ((write_busy && frame_done) || (read_busy && read_over)) done <= 1;
         else if (rdwr_start)                                             done <= 0;
         
-        
-    end
-
-    always @ (posedge hclk) begin
-        afi_bvalid_r <=afi_bvalid;
     end
     
     // handle interaction with the buffer, advance addresses, keep track of partial (last) pages in each line
@@ -461,12 +462,6 @@ module  membridge#(
     assign afi_wvalid=bufrd_rd[2];
 
     // write to ddr3 from afi
-    wire [7:0] axi_rd_pending;
-    reg  [7:0] axi_rd_requested;
-    reg  [7:0] axi_rd_received;
-//    wire       axi_rd_data; // assign
-    assign axi_rd_pending= axi_rd_requested - axi_rd_received;
-//    wire some_read_ready;
     reg        afi_rd_safe_not_empty;
     reg        afi_ra_safe_not_full;
     reg        afi_safe_rd_pending;
@@ -478,10 +473,7 @@ module  membridge#(
     
     assign bufwr_we_w= afi_rd_safe_not_empty && !write_pages_ready[2] && (!(&write_pages_ready[1:0]) ||  !is_last_in_page);
     
-
- //afi_len_plus1
     // handle buffer address, page 
-    
     reg  [1:0] write_page;        // current number of buffer page
     reg  [2:0] write_pages_ready; // number of pages in the buffer
     reg  [1:0] write_page_r;      // 1-cycle delayed page address
@@ -494,9 +486,9 @@ module  membridge#(
         else if (wr_start)   write_busy <= 1;
         else if (frame_done) write_busy <= 0;
 
-        if      (rst)              axi_rd_requested <= 0;
-        else if (!write_busy)      axi_rd_requested <= 0;
-        else if (advance_rel_addr) axi_rd_requested <= axi_rd_requested + afi_len_plus1;
+        if      (rst)                           axi_arw_requested <= 0;
+        else if (!write_busy && !read_started)  axi_arw_requested <= 0;
+        else if (advance_rel_addr)              axi_arw_requested <= axi_arw_requested + afi_len_plus1;
 
         if      (rst)              axi_rd_received <= 0;
         else if (!write_busy)      axi_rd_received <= 0;
@@ -511,8 +503,9 @@ module  membridge#(
         if (rst) afi_ra_safe_not_full <= 0;
         else     afi_ra_safe_not_full <= rdwr_en && ( !afi_racount[2] && !(&afi_racount[1:0]));
         
-        if (rst) afi_safe_rd_pending <= 0;
-        else     afi_safe_rd_pending <=  rdwr_en && ( !axi_rd_pending[7] && !(&axi_rd_pending[6:4]));
+        if       (rst)        afi_safe_rd_pending <= 0;
+        else if (!write_busy) afi_safe_rd_pending <= 0;
+        else                  afi_safe_rd_pending <= rdwr_en && ( !axi_rd_pending[7] && !(&axi_rd_pending[6:4]));
         
         // handle buffer address, page 
         if      (rst)            write_page <= 0;
@@ -530,8 +523,6 @@ module  membridge#(
         write_page_r    <= write_page;
         buf_in_line64_r <= buf_in_line64[6:0];
     end    
-//{write_page, buf_in_line64[6:0]}    
-//bufwr_we
         
     cmd_deser #(
         .ADDR       (MEMBRIDGE_ADDR),
