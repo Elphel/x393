@@ -187,19 +187,19 @@ class X393AxiControlStatus(object):
                               timeout=10.0):          # maximal timeout (0 - no timeout)
         """
         Poll specified status register until some condition is matched
-        <status_address> -         status register address (currently 0..255)
-        <status_control_address> - control register address (to control status generation)
-        <status_mode>            - status generation mode:
-                                  0: disable status generation,
-                                  1: single status request,
-                                  2: auto status, keep specified seq number,
-                                  4: auto, inc sequence number 
-        <pattern> -                26-bit pattern to match
-        <mask> -                   26-bit mask to enable pattern matching (0-s - ignore)
-        <invert_match> -           invert match (wait until matching condition becomes false)
-        <wait_seq>-                wait for the correct sequence number, if False - assume always correct
-        <timeout>                  maximal time to wait for condition
-        Return 1 if success, 0 - if timeout
+        @param status_address   status register address (currently 0..255)
+        @param status_control_address> - control register address (to control status generation)
+        @param status_mode status generation mode:
+                             0: disable status generation,
+                             1: single status request,
+                             2: auto status, keep specified seq number,
+                             4: auto, inc sequence number 
+        @param pattern       26-bit pattern to match
+        @param mask          26-bit mask to enable pattern matching (0-s - ignore)
+        @param invert_match  invert match (wait until matching condition becomes false)
+        @param wait_seq      wait for the correct sequence number, if False - assume always correct
+        @param timeout       maximal time to wait for condition
+        @return 1 if success, 0 - if timeout
         """
         match=False
         endTime=None
@@ -245,10 +245,11 @@ class X393AxiControlStatus(object):
         print ("MCNTRL_SCANLINE_STATUS_REG_CHN3_ADDR:%s"%(hx(self.read_status(vrlg.MCNTRL_SCANLINE_STATUS_REG_CHN3_ADDR),8)))
         print ("MCNTRL_TILED_STATUS_REG_CHN2_ADDR:   %s"%(hx(self.read_status(vrlg.MCNTRL_TILED_STATUS_REG_CHN2_ADDR),8)))
         print ("MCNTRL_TILED_STATUS_REG_CHN4_ADDR:   %s"%(hx(self.read_status(vrlg.MCNTRL_TILED_STATUS_REG_CHN4_ADDR),8)))
-        print ("MCNTRL_TEST01_STATUS_REG_CHN1_ADDR:  %s"%(hx(self.read_status(vrlg.MCNTRL_TEST01_STATUS_REG_CHN1_ADDR),8)))
+#        print ("MCNTRL_TEST01_STATUS_REG_CHN1_ADDR:  %s"%(hx(self.read_status(vrlg.MCNTRL_TEST01_STATUS_REG_CHN1_ADDR),8)))
         print ("MCNTRL_TEST01_STATUS_REG_CHN2_ADDR:  %s"%(hx(self.read_status(vrlg.MCNTRL_TEST01_STATUS_REG_CHN2_ADDR),8)))
         print ("MCNTRL_TEST01_STATUS_REG_CHN3_ADDR:  %s"%(hx(self.read_status(vrlg.MCNTRL_TEST01_STATUS_REG_CHN3_ADDR),8)))
         print ("MCNTRL_TEST01_STATUS_REG_CHN4_ADDR:  %s"%(hx(self.read_status(vrlg.MCNTRL_TEST01_STATUS_REG_CHN4_ADDR),8)))
+        print ("MEMBRIDGE_STATUS_REG:                %s"%(hx(self.read_status(vrlg.MEMBRIDGE_STATUS_REG),8)))
 
     def program_status(self,
                        base_addr,   # input [29:0] base_addr;
@@ -289,10 +290,11 @@ class X393AxiControlStatus(object):
         self.program_status (vrlg.MCNTRL_SCANLINE_CHN3_ADDR, vrlg.MCNTRL_SCANLINE_STATUS_CNTRL,   mode,seq_num)# //MCNTRL_SCANLINE_STATUS_REG_CHN3_ADDR='h5,
         self.program_status (vrlg.MCNTRL_TILED_CHN2_ADDR,    vrlg.MCNTRL_TILED_STATUS_CNTRL,      mode,seq_num)# //MCNTRL_TILED_STATUS_REG_CHN4_ADDR=   'h6,
         self.program_status (vrlg.MCNTRL_TILED_CHN4_ADDR,    vrlg.MCNTRL_TILED_STATUS_CNTRL,      mode,seq_num)#; //MCNTRL_TILED_STATUS_REG_CHN4_ADDR=   'h6,
-        self.program_status (vrlg.MCNTRL_TEST01_ADDR,        vrlg.MCNTRL_TEST01_CHN1_STATUS_CNTRL,mode,seq_num)#; //MCNTRL_TEST01_STATUS_REG_CHN2_ADDR=  'h3c,
+#        self.program_status (vrlg.MCNTRL_TEST01_ADDR,        vrlg.MCNTRL_TEST01_CHN1_STATUS_CNTRL,mode,seq_num)#; //MCNTRL_TEST01_STATUS_REG_CHN2_ADDR=  'h3c,
         self.program_status (vrlg.MCNTRL_TEST01_ADDR,        vrlg.MCNTRL_TEST01_CHN2_STATUS_CNTRL,mode,seq_num)#; //MCNTRL_TEST01_STATUS_REG_CHN2_ADDR=  'h3c,
         self.program_status (vrlg.MCNTRL_TEST01_ADDR,        vrlg.MCNTRL_TEST01_CHN3_STATUS_CNTRL,mode,seq_num)#; //MCNTRL_TEST01_STATUS_REG_CHN3_ADDR=  'h3d,
         self.program_status (vrlg.MCNTRL_TEST01_ADDR,        vrlg.MCNTRL_TEST01_CHN4_STATUS_CNTRL,mode,seq_num)#; //MCNTRL_TEST01_STATUS_REG_CHN4_ADDR=  'h3e,
+        self.program_status (vrlg.MEMBRIDGE_ADDR,            vrlg.MEMBRIDGE_STATUS_CNTRL,         mode,seq_num)#; //MCNTRL_TEST01_STATUS_REG_CHN4_ADDR=  'h3e,
         
     def enable_cmda(self,
                     en): # input en;

@@ -333,22 +333,24 @@ class X393McntrlTests(object):
         pages_per_row= (window_width>>vrlg.NUM_XFER_BITS)+(0,1)[(window_width & ((1<<vrlg.NUM_XFER_BITS))-1)==0] # (window_width>>NUM_XFER_BITS)+((window_width[NUM_XFER_BITS-1:0]==0)?0:1);
         print("====== test_scanline_write: channel=%d, extra_pages=%d,  wait_done=%d"%
                                                 (channel,    extra_pages,     wait_done))
+        '''
         if   channel == 1:
             start_addr=             vrlg.MCNTRL_SCANLINE_CHN1_ADDR
             status_address=         vrlg.MCNTRL_TEST01_STATUS_REG_CHN1_ADDR
             status_control_address= vrlg.MCNTRL_TEST01_ADDR + vrlg.MCNTRL_TEST01_CHN1_STATUS_CNTRL
             test_mode_address=      vrlg.MCNTRL_TEST01_ADDR + vrlg.MCNTRL_TEST01_CHN1_MODE
-        elif channel ==  3:
+        '''            
+        if channel ==  3:
             start_addr=             vrlg.MCNTRL_SCANLINE_CHN3_ADDR
             status_address=         vrlg.MCNTRL_TEST01_STATUS_REG_CHN3_ADDR
             status_control_address= vrlg.MCNTRL_TEST01_ADDR + vrlg.MCNTRL_TEST01_CHN3_STATUS_CNTRL
             test_mode_address=      vrlg.MCNTRL_TEST01_ADDR + vrlg.MCNTRL_TEST01_CHN3_MODE
         else:
-            print("**** ERROR: Invalid channel, only 1 and 3 are valid")
+            print("**** ERROR: Invalid channel, only 3 is valid")
             start_addr=             vrlg.MCNTRL_SCANLINE_CHN1_ADDR
-            status_address=         vrlg.MCNTRL_TEST01_STATUS_REG_CHN1_ADDR
-            status_control_address= vrlg.MCNTRL_TEST01_ADDR + vrlg.MCNTRL_TEST01_CHN1_STATUS_CNTRL
-            test_mode_address=      vrlg.MCNTRL_TEST01_ADDR + vrlg.MCNTRL_TEST01_CHN1_MODE
+            status_address=         vrlg.MCNTRL_TEST01_STATUS_REG_CHN3_ADDR
+            status_control_address= vrlg.MCNTRL_TEST01_ADDR + vrlg.MCNTRL_TEST01_CHN3_STATUS_CNTRL
+            test_mode_address=      vrlg.MCNTRL_TEST01_ADDR + vrlg.MCNTRL_TEST01_CHN3_MODE
 
         mode=   self.func_encode_mode_scanline(
                     extra_pages,
@@ -452,22 +454,24 @@ class X393McntrlTests(object):
 
         print("====== test_scanline_read: channel=%d, extra_pages=%d,  show_data=%d"%
                                              (channel,    extra_pages,     show_data))
+        '''
         if   channel == 1:
             start_addr=             vrlg.MCNTRL_SCANLINE_CHN1_ADDR
             status_address=         vrlg.MCNTRL_TEST01_STATUS_REG_CHN1_ADDR
             status_control_address= vrlg.MCNTRL_TEST01_ADDR + vrlg.MCNTRL_TEST01_CHN1_STATUS_CNTRL
             test_mode_address=      vrlg.MCNTRL_TEST01_ADDR + vrlg.MCNTRL_TEST01_CHN1_MODE
-        elif channel == 3:
+        '''
+        if channel == 3:
             start_addr=             vrlg.MCNTRL_SCANLINE_CHN3_ADDR
             status_address=         vrlg.MCNTRL_TEST01_STATUS_REG_CHN3_ADDR
             status_control_address= vrlg.MCNTRL_TEST01_ADDR + vrlg.MCNTRL_TEST01_CHN3_STATUS_CNTRL
             test_mode_address=      vrlg.MCNTRL_TEST01_ADDR + vrlg.MCNTRL_TEST01_CHN3_MODE
         else:
-            print("**** ERROR: Invalid channel, only 1 and 3 are valid")
+            print("**** ERROR: Invalid channel, only 3 is valid")
             start_addr=             vrlg.MCNTRL_SCANLINE_CHN1_ADDR
-            status_address=         vrlg.MCNTRL_TEST01_STATUS_REG_CHN1_ADDR
-            status_control_address= vrlg.MCNTRL_TEST01_ADDR + vrlg.MCNTRL_TEST01_CHN1_STATUS_CNTRL
-            test_mode_address=      vrlg.MCNTRL_TEST01_ADDR + vrlg.MCNTRL_TEST01_CHN1_MODE
+            status_address=         vrlg.MCNTRL_TEST01_STATUS_REG_CHN3_ADDR
+            status_control_address= vrlg.MCNTRL_TEST01_ADDR + vrlg.MCNTRL_TEST01_CHN3_STATUS_CNTRL
+            test_mode_address=      vrlg.MCNTRL_TEST01_ADDR + vrlg.MCNTRL_TEST01_CHN3_MODE
         mode=   self.func_encode_mode_scanline(
                                                extra_pages,
                                                0, # write_mem,

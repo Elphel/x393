@@ -1,10 +1,10 @@
 [*]
 [*] GTKWave Analyzer v3.3.64 (w)1999-2014 BSI
-[*] Thu Apr 30 18:06:37 2015
+[*] Thu Apr 30 18:37:14 2015
 [*]
-[dumpfile] "/home/andrey/git/x393/simulation/x393_testbench01-20150430115913649.lxt"
-[dumpfile_mtime] "Thu Apr 30 18:02:38 2015"
-[dumpfile_size] 174024137
+[dumpfile] "/home/andrey/git/x393/simulation/x393_testbench01-20150430120701234.lxt"
+[dumpfile_mtime] "Thu Apr 30 18:10:21 2015"
+[dumpfile_size] 174023349
 [savefile] "/home/andrey/git/x393/x393_testbench01.sav"
 [timestart] 37450000
 [size] 1823 1180
@@ -15,7 +15,7 @@
 [treeopen] x393_testbench01.simul_axi_hp_wr_i.
 [treeopen] x393_testbench01.x393_i.
 [sst_width] 301
-[signals_width] 333
+[signals_width] 446
 [sst_expanded] 1
 [sst_vpaned_height] 367
 @800200
@@ -370,7 +370,6 @@ x393_testbench01.simul_axi_hp_wr_i.wresp_re[0]
 x393_testbench01.x393_i.membridge_i.afi_bvalid[0]
 x393_testbench01.x393_i.membridge_i.afi_bvalid_r[0]
 @22
-x393_testbench01.x393_i.membridge_i.wresp_pending[7:0]
 x393_testbench01.x393_i.membridge_i.axi_arw_requested[7:0]
 x393_testbench01.x393_i.membridge_i.wresp_conf[7:0]
 x393_testbench01.x393_i.membridge_i.axi_wr_pending[7:0]
@@ -589,17 +588,8 @@ x393_testbench01.x393_i.membridge_i.wr_id[4:0]
 @28
 x393_testbench01.x393_i.membridge_i.wr_mode[0]
 x393_testbench01.x393_i.membridge_i.wr_start[0]
-@c00022
-x393_testbench01.x393_i.membridge_i.wresp_pending[7:0]
-@28
-(0)x393_testbench01.x393_i.membridge_i.wresp_pending[7:0]
-(1)x393_testbench01.x393_i.membridge_i.wresp_pending[7:0]
-(2)x393_testbench01.x393_i.membridge_i.wresp_pending[7:0]
-(3)x393_testbench01.x393_i.membridge_i.wresp_pending[7:0]
-(4)x393_testbench01.x393_i.membridge_i.wresp_pending[7:0]
-(5)x393_testbench01.x393_i.membridge_i.wresp_pending[7:0]
-(6)x393_testbench01.x393_i.membridge_i.wresp_pending[7:0]
-(7)x393_testbench01.x393_i.membridge_i.wresp_pending[7:0]
+@c00200
+-x393_testbench01.x393_i.membridge_i.wresp_pending
 @1401200
 -group_end
 @28

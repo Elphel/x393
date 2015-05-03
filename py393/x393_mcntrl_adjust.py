@@ -5007,6 +5007,7 @@ write_settings= {
                     quiet=3):
         """
         @param tasks - "*" - load bitfile
+                       "I" - initialize memory, set defaults
                        "C" cmda, "W' - write levelling, "R" - read levelling (DQI-DQSI), "P" -  dqs input phase (DQSI-PHASE),
                        "O" - output timing (DQ odelay vs  DQS odelay), "A" - address/bank lines output delays, "Z" - print results,
                        "B" - select R/W brances and get the optimal phase
