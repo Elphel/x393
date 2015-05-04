@@ -111,7 +111,7 @@ module  x393_testbench01 #(
 
   assign HCLK = x393_i.ps7_i.SAXIHP0ACLK; // shortcut name
 // afi loopback
-  assign #1 afi_sim_rd_data= {2'h0,afi_sim_rd_address[31:3],1'h1,  2'h0,afi_sim_rd_address[31:3],1'h0};
+  assign #1 afi_sim_rd_data=  afi_sim_rd_ready?{2'h0,afi_sim_rd_address[31:3],1'h1,  2'h0,afi_sim_rd_address[31:3],1'h0}:64'bx;
   assign #1 afi_sim_rd_valid = afi_sim_rd_ready;
   assign #1 afi_sim_rd_resp = afi_sim_rd_ready?2'b0:2'bx;
   assign #1 afi_sim_wr_ready = afi_sim_wr_valid;

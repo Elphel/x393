@@ -518,10 +518,11 @@ module  membridge#(
         else if (!page_ready_wr &&  next_page_wr_w) write_pages_ready <= write_pages_ready +1; //-1;
 
     end
-        
+    reg [63:0] rdata_r;        
     always @ (posedge hclk) begin
         write_page_r    <= write_page;
         buf_in_line64_r <= buf_in_line64[6:0];
+        rdata_r <= afi_rdata;
     end    
         
     cmd_deser #(
@@ -579,7 +580,7 @@ module  membridge#(
         .ext_clk      (hclk), // input
         .ext_waddr    ({write_page_r, buf_in_line64_r[6:0]}), // input[8:0] 
         .ext_we       (bufwr_we[1]), // input
-        .ext_data_in  (afi_rdata), // input[63:0] buf_wdata - from AXI
+        .ext_data_in  (rdata_r), //afi_rdata), // input[63:0] buf_wdata - from AXI
         .rclk         (mclk), // input
         .rpage_in     (2'b0), // input[1:0] 
         .rpage_set    (xfer_reset_page_wr), // input  @ posedge mclk
