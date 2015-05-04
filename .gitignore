@@ -11,3 +11,4 @@ x393.prj
 *.old
 *.pyc
 *.pickle
+py393/dbg/*
