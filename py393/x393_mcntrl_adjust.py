@@ -4996,7 +4996,7 @@ write_settings= {
              
 
     def measure_all(self,
-                    tasks="*ICWRPOASZB", # "ICWRPOA", #"ICWRPOASZB",
+                    tasks="*DCWRPOASZB", # "ICWRPOA", #"ICWRPOASZB",
                     prim_steps=1,
                     primary_set_in=2,
                     primary_set_out=2,
@@ -5007,7 +5007,8 @@ write_settings= {
                     quiet=3):
         """
         @param tasks - "*" - load bitfile
-                       "I" - initialize memory, set defaults
+                       "D" - set defaults
+                       "I" - initialize memory, set refresh
                        "C" cmda, "W' - write levelling, "R" - read levelling (DQI-DQSI), "P" -  dqs input phase (DQSI-PHASE),
                        "O" - output timing (DQ odelay vs  DQS odelay), "A" - address/bank lines output delays, "Z" - print results,
                        "B" - select R/W brances and get the optimal phase
@@ -5056,10 +5057,16 @@ write_settings= {
                     'comment':'Load bitfile, initialize FPGA',
                     'params':{'bitfile':bitfile_path,
                               'quiet':quiet+1}},
-                   {'key':'I',
+                   {'key':'D',
                     'func':self.x393_pio_sequences.task_set_up,
                     'comment':'Initial setup - memory controller, sequences',
                     'params':{'dqs_pattern':dqs_pattern,
+                              'quiet':quiet+1}},
+                   {'key':'I', # Used when no calibration is needed  - "*DI"
+                    'func':self.x393_pio_sequences.init_ddr3,
+                    'comment':'Initialize memory, turn on refresh (used when no calibration is needed)',
+                    'params':{'refresh':True,
+                              'wait_complete':True,
                               'quiet':quiet+1}},
                    {'key':'C',
                     'func':self.adjust_cmda_odelay,

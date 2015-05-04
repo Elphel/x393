@@ -35,10 +35,6 @@ __status__ = "Development"
 from x393_mem import X393Mem
 #from x393_axi_control_status import X393AxiControlStatus
 import x393_axi_control_status
-#from verilog_utils import * # concat, bits 
-#from verilog_utils import hx, concat, bits, getParWidth 
-#from verilog_utils import concat, getParWidth
-#from x393_axi_control_status import concat, bits
 from verilog_utils import convert_w32_to_mem16 #,convert_mem16_to_w32
 
 import vrlg 

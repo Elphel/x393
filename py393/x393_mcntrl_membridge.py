@@ -43,8 +43,13 @@ BUFFER_ASSRESS_NAME='buffer_address'
 BUFFER_PAGES_NAME='buffer_pages'
 BUFFER_ADDRESS=None
 BUFFER_LEN=None
+
+#BUFFER_ADDRESS=0x27900000
+#BUFFER_LEN=    0x6400000
+
 PAGE_SIZE=4096
 AFI_BASE_ADDR= 0xf8008000
+
 '''
 root@elphel393:/sys/devices/elphel393-mem.2# cat buffer_address 
 0x27900000
@@ -70,10 +75,10 @@ def func_encode_mode_scanline(extra_pages,  # input [1:0] extra_pages; # number 
     <chn_reset>):   immediately reset all the internal circuitry
     
     """
-    return verilog_utils.concat ((extra_pages,     2), # extra_pages,
+    return verilog_utils.concat (((extra_pages,     2), # extra_pages,
                                  ((0,1)[write_mem],1), # write_mem,
                                  ((0,1)[enable],   1), #enable,
-                                 ((1,0)[chn_reset],1)) # ~chn_reset};
+                                 ((1,0)[chn_reset],1)))[0] # ~chn_reset};
 
 class X393McntrlMembridge(object):
     DRY_MODE= True # True
@@ -87,6 +92,7 @@ class X393McntrlMembridge(object):
     verbose=1
     adjustment_state={}
     def __init__(self, debug_mode=1,dry_mode=True): #, saveFileName=None):
+        global BUFFER_ADDRESS, BUFFER_LEN
         self.DEBUG_MODE=  debug_mode
         self.DRY_MODE=    dry_mode
         self.x393_mem=            x393_mem.X393Mem(debug_mode,dry_mode)
@@ -94,6 +100,7 @@ class X393McntrlMembridge(object):
         self.x393_pio_sequences=  x393_pio_sequences.X393PIOSequences(debug_mode,dry_mode)
         self.x393_mcntrl_timing=  x393_mcntrl_timing.X393McntrlTiming(debug_mode,dry_mode)
         self.x393_mcntrl_buffers= x393_mcntrl_buffers.X393McntrlBuffers(debug_mode,dry_mode)
+        
 #        self.x393_utils=          x393_utils.X393Utils(debug_mode,dry_mode, saveFileName) # should not overwrite save file path
         try:
             self.verbose=vrlg.VERBOSE
@@ -116,6 +123,7 @@ class X393McntrlMembridge(object):
                 return
         print('BUFFER_ADDRESS=0x%x'%(BUFFER_ADDRESS))    
         print('BUFFER_LEN=0x%x'%(BUFFER_LEN))
+        
     def afi_write_reg(self,
                      port_num, # input   [1:0] port_num;
                      rel_baddr, # input integer rel_baddr; # relative byte address
@@ -132,9 +140,9 @@ class X393McntrlMembridge(object):
                                 data & 0xffffffff,
                                 quiet)
     def afi_read_reg(self,
-                     port_num, # input   [1:0] port_num;
-                     rel_baddr, # input integer rel_baddr; # relative byte address
-                     quiet=1): #input  verbose;
+                     port_num,       # input   [1:0] port_num;
+                     rel_baddr=None, # input integer rel_baddr; # relative byte address
+                     quiet=1):       #input  verbose;
         '''
         Read data from the AXI_HP (AFI) register
         @param port - AXI_HP port number (0..3)
@@ -142,6 +150,13 @@ class X393McntrlMembridge(object):
         @param quiet - reduce output (>=1 - silent)
         @return register data
         '''
+        
+        if rel_baddr is None:
+            rslt=[]
+            for baddr in (0,4,8,0xc,0x10,0x14,0x18,0x1c,0x20,0x24):
+                rslt.append(self.afi_read_reg(port_num,baddr,quiet-1))
+            return rslt    
+                
         return self.x393_mem.read_mem(AFI_BASE_ADDR+ (port_num << 12) + (rel_baddr & 0xfffffffc),
                                 quiet)
 
@@ -168,8 +183,8 @@ class X393McntrlMembridge(object):
                          len64,                         # input [28:0] len64;    # number of 64-bit words to transfer
                          width64,                       # input [28:0] width64;  # frame width in 64-bit words
                          start64,                       # input [28:0] start64;  # relative start adderss of the transfer (set to 0 when writing lo_addr64)
-                         lo_addr64=BUFFER_ADDRESS // 8, # input [28:0] lo_addr64; # low address of the system memory range, in 64-bit words 
-                         size64=BUFFER_LEN // 8,        # input [28:0] size64;    # size of the system memory range in 64-bit words
+                         lo_addr64 =       None,        # input [28:0] lo_addr64; # low address of the system memory range, in 64-bit words 
+                         size64 =          None,        # input [28:0] size64;    # size of the system memory range in 64-bit words
                          quiet=1):
         '''
         Set up membridge parameters for data transfer
@@ -180,6 +195,11 @@ class X393McntrlMembridge(object):
         @param size64  size of the system memory range in 64-bit words
         @quiet - reduce output (>=1 - silent)
         '''
+        if lo_addr64 is None:
+            lo_addr64 =         BUFFER_ADDRESS//8        # input [28:0] lo_addr64;        # low address of the system memory range, in 64-bit words 
+        if size64 is None:
+            size64 =            BUFFER_LEN//8            # input [28:0] size64;           # size of the system memory range in 64-bit words
+        
         if quiet <2:
             print("membridge_setup(0x%08x,0x%0xx,0x%08x,0x%0xx,0x%08x,%d)"%(len64, width64, start64, lo_addr64, size64, quiet))
         self.x393_axi_tasks.write_contol_register(vrlg.MEMBRIDGE_ADDR + vrlg.MEMBRIDGE_LO_ADDR64,  lo_addr64);    
@@ -211,18 +231,19 @@ class X393McntrlMembridge(object):
 #       write_contol_register(MEMBRIDGE_ADDR + MEMBRIDGE_CTRL,         {31'b0,en});
 
     def membridge_rw (self,
-                      write_ddr3,         # input        write_ddr3;
-#                      extra_pages,        # input  [1:0] extra_pages;
-                      frame_start_addr,   # input [21:0] frame_start_addr;
-                      window_full_width,  # input [15:0] window_full_width; # 13 bit - in 8*16=128 bit bursts
-                      window_width,       # input [15:0] window_width;  # 13 bit - in 8*16=128 bit bursts
-                      window_height,      # input [15:0] window_height; # 16 bit (only 14 are used here)
-                      window_left,        # input [15:0] window_left;
-                      window_top,         # input [15:0] window_top;
-                      start64,            # input [28:0] start64;  # relative start adderss of the transfer (set to 0 when writing lo_addr64)
-                      lo_addr64=BUFFER_ADDRESS//8, # input [28:0] lo_addr64; # low address of the system memory range, in 64-bit words 
-                      size64=BUFFER_LEN//8,        # input [28:0] size64;    # size of the system memory range in 64-bit words
-                      cont,               # input        continue;    # 0 start from start64, 1 - continue from where it was
+                      write_ddr3,                                   # input        write_ddr3;
+#                      extra_pages,                                 # input  [1:0] extra_pages;
+                      frame_start_addr =  None,                     # input [21:0] frame_start_addr;
+                      window_full_width = None,                     # input [15:0] window_full_width;# 13 bit - in 8*16=128 bit bursts
+                      window_width =      None,                     # input [15:0] window_width;     # 13 bit - in 8*16=128 bit bursts
+                      window_height =     None,                     # input [15:0] window_height;    # 16 bit (only 14 are used here)
+                      window_left =       None,                     # input [15:0] window_left;
+                      window_top =        None,                     # input [15:0] window_top;
+                      start64 =           0,                        # input [28:0] start64;          # relative start address of the transfer (set to 0 when writing lo_addr64)
+                      lo_addr64 =         None,                     # input [28:0] lo_addr64;        # low address of the system memory range, in 64-bit words 
+                      size64 =            None,                     # input [28:0] size64;           # size of the system memory range in 64-bit words
+                      cont =              False,                    # input        continue;         # 0 start from start64, 1 - continue from where it was
+                      wait_ready =        False,
                       quiet=1):
         '''
         Set up and run data transfer between the system and videobuffer memory
@@ -237,8 +258,26 @@ class X393McntrlMembridge(object):
         @param lo_addr64 start of the system memory buffer, in 8-bytes (byte_address >>3), 29 bits 
         @param size64 size of the transfer buffer in the system memory, in 8-bytes. Transfers will roll over to lo_addr64. 29 bits.
         @param cont True: continue from  the same address in the system memory, where the previous transfer stopped. False - start from lo_addr64+start64
+        @param wait_ready poll status to see if the command finished
         @param quiet Reduce output
         '''
+        if frame_start_addr is None:
+            frame_start_addr =  vrlg.FRAME_START_ADDRESS # input [21:0] frame_start_addr;
+        if window_full_width is None:
+            window_full_width = vrlg.FRAME_FULL_WIDTH    # input [15:0] window_full_width;# 13 bit - in 8*16=128 bit bursts
+        if window_width is None:
+            window_width =      vrlg.WINDOW_WIDTH        # input [15:0] window_width;     # 13 bit - in 8*16=128 bit bursts
+        if window_height is None:
+            window_height =     vrlg.WINDOW_HEIGHT       # input [15:0] window_height;    # 16 bit (only 14 are used here)
+        if window_left is None:
+            window_left =       vrlg.WINDOW_X0           # input [15:0] window_left;
+        if window_top is None:
+            window_top =        vrlg.WINDOW_Y0           # input [15:0] window_top;
+        if lo_addr64 is None:
+            lo_addr64 =         BUFFER_ADDRESS//8        # input [28:0] lo_addr64;        # low address of the system memory range, in 64-bit words 
+        if size64 is None:
+            size64 =            BUFFER_LEN//8            # input [28:0] size64;           # size of the system memory range in 64-bit words
+        
         window_height &= 0x3fff
         if window_height == 0:
             window_height = 0x4000
@@ -266,8 +305,8 @@ class X393McntrlMembridge(object):
         self.x393_axi_tasks.write_contol_register(vrlg.MCNTRL_SCANLINE_CHN1_ADDR + vrlg.MCNTRL_SCANLINE_WINDOW_X0Y0,      (window_top << 16) | window_left)     # WINDOW_X0+ (WINDOW_Y0<<16));
         self.x393_axi_tasks.write_contol_register(vrlg.MCNTRL_SCANLINE_CHN1_ADDR + vrlg.MCNTRL_SCANLINE_WINDOW_STARTXY,   0)
         self.x393_axi_tasks.write_contol_register(vrlg.MCNTRL_SCANLINE_CHN1_ADDR + vrlg.MCNTRL_SCANLINE_MODE,             mode) 
-        self.x393_axi_control_status.configure_channel_priority(1,0);    # lowest priority channel 1
-        self.x393_axi_control_status.enable_memcntrl_en_dis(1,1);
+        self.x393_axi_tasks.configure_channel_priority(1,0);    # lowest priority channel 1
+        self.x393_axi_tasks.enable_memcntrl_en_dis(1,1);
 #        write_contol_register(test_mode_address,            TEST01_START_FRAME);
         self.afi_setup(0)
         self.membridge_setup(
@@ -278,12 +317,13 @@ class X393McntrlMembridge(object):
             size64)
         self.membridge_start (cont)         
 # just wait done (default timeout = 10 sec)
-        self.x393_axi_tasks.wait_status_condition ( # may also be read directly from the same bit of mctrl_linear_rw (address=5) status
-            vrlg.MEMBRIDGE_STATUS_REG, # MCNTRL_TEST01_STATUS_REG_CHN3_ADDR,
-            vrlg.MCNTRL_SCANLINE_CHN1_ADDR +vrlg.MEMBRIDGE_STATUS_CNTRL, # MCNTRL_TEST01_ADDR + MCNTRL_TEST01_CHN3_STATUS_CNTRL,
-            vrlg.DEFAULT_STATUS_MODE,
-            2 << vrlg.STATUS_2LSB_SHFT, # bit 24 - busy, bit 25 - frame done
-            2 << vrlg.STATUS_2LSB_SHFT,  # mask for the 4-bit page number
-            0, # equal to
-            0); # no need to synchronize sequence number
+        if wait_ready:
+            self.x393_axi_tasks.wait_status_condition ( # may also be read directly from the same bit of mctrl_linear_rw (address=5) status
+                vrlg.MEMBRIDGE_STATUS_REG, # MCNTRL_TEST01_STATUS_REG_CHN3_ADDR,
+                vrlg.MCNTRL_SCANLINE_CHN1_ADDR +vrlg.MEMBRIDGE_STATUS_CNTRL, # MCNTRL_TEST01_ADDR + MCNTRL_TEST01_CHN3_STATUS_CNTRL,
+                vrlg.DEFAULT_STATUS_MODE,
+                2 << vrlg.STATUS_2LSB_SHFT, # bit 24 - busy, bit 25 - frame done
+                2 << vrlg.STATUS_2LSB_SHFT,  # mask for the 4-bit page number
+                0, # equal to
+                0); # no need to synchronize sequence number
 

@@ -32,7 +32,6 @@ __status__ = "Development"
 #import x393_mem
 #from import_verilog_parameters import VerilogParameters
 from x393_mem import X393Mem
-#from verilog_utils import hx,concat, bits 
 from verilog_utils import hx
 from time import time
 import vrlg
@@ -356,7 +355,7 @@ class X393AxiControlStatus(object):
         """
         global  mcntrl_en
         en=(0,1)[en]
-        if self.verbose>0:
+        if self.verbose > -10: # 0:
             print ("ENABLE MEMCTRL %s"%str(en))
         self.write_contol_register(vrlg.MCONTR_TOP_0BIT_ADDR +  vrlg.MCONTR_TOP_0BIT_MCONTR_EN + en, 0);
         mcntrl_en=en
@@ -369,8 +368,8 @@ class X393AxiControlStatus(object):
         global  enabled_channels
         enabled_channels = chnen # currently enabled memory channels
         self.write_contol_register(vrlg.MCONTR_TOP_16BIT_ADDR +  vrlg.MCONTR_TOP_16BIT_CHN_EN, enabled_channels & 0xffff) # {16'b0,chnen});
-        if self.verbose>0:
-            print ("ENABLED MEMCTRL CHANNELS 0x%x (word)"%enabled_channels)
+        if self.verbose > -10: # 0:
+            print ("ENABLED MEMCTRL CHANNELS 0x%x (word), chnen=0x%x"%(enabled_channels,chnen))
 
     def enable_memcntrl_en_dis(self,
                                chn, # input [3:0] chn;
@@ -385,8 +384,8 @@ class X393AxiControlStatus(object):
             enabled_channels |=  1<<chn;
         else:
             enabled_channels &= ~(1<<chn);
-        self.write_contol_register(vrlg.MCONTR_TOP_16BIT_ADDR + self. MCONTR_TOP_16BIT_CHN_EN, enabled_channels & 0xffff) #  {16'b0,ENABLED_CHANNELS});
-        if self.verbose>0:
+        self.write_contol_register(vrlg.MCONTR_TOP_16BIT_ADDR + vrlg.MCONTR_TOP_16BIT_CHN_EN, enabled_channels & 0xffff) #  {16'b0,ENABLED_CHANNELS});
+        if self.verbose > -10: #0:
             print ("ENABLED MEMCTRL CHANNELS 0x%x (en/dis)"%enabled_channels)
 
     def configure_channel_priority(self,
@@ -399,7 +398,7 @@ class X393AxiControlStatus(object):
         """
         global channel_priority
         self.write_contol_register(vrlg.MCONTR_ARBIT_ADDR + chn, priority  & 0xffff)# {16'b0,priority});
-        if self.verbose>0:
+        if self.verbose > -1: # 0:
             print ("SET CHANNEL %d priority=0x%x"%(chn,priority))
         channel_priority[chn]=priority
 

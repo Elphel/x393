@@ -1234,6 +1234,25 @@ class X393PIOSequences(object):
                         0,                          # input       chn;      # channel buffer to use: 0 - memory read, 1 - memory write
                         wait_complete) # `PS_PIO_WAIT_COMPLETE ) #  wait_complete; # Do not request a newe transaction from the scheduler until previous memory transaction is finished
         self.wait_ps_pio_done(vrlg.DEFAULT_STATUS_MODE,1) # wait previous memory transaction finished before changing delays (effective immediately)
+
+
+    def init_ddr3(self,
+                  refresh=1,
+                  wait_complete=True,
+                  quiet=1):
+
+        """
+        Enable address/command pins, remove SDRST, enable CKE,
+        Setup PS PIO
+        Set DDR3 MR0..MR3 registers
+        Optionally enable refresh
+        @param refresh - enable refresh
+        @param wait_complete  Do not request a new transaction from the scheduler until previous memory transaction is finished
+        @param quiet reduce output
+        """
+        self.restart_ddr3(wait_complete,quiet)
+        self.x393_axi_tasks.enable_refresh(refresh)
+
     
     def restart_ddr3(self,
                   wait_complete=True,
@@ -1242,8 +1261,8 @@ class X393PIOSequences(object):
         Activate SDRST, enable address/command pins, remove SDRST, enable CKE,
         Setup PS PIO
         Set DDR3 MR0..MR3 registers
-        <wait_complete>  Do not request a new transaction from the scheduler until previous memory transaction is finished
-        <quiet> reduce output
+        @param wait_complete  Do not request a new transaction from the scheduler until previous memory transaction is finished
+        @param quiet reduce output
         """
 # enable output for address/commands to DDR chip    
         self.x393_axi_tasks.enable_cmda(1)
@@ -1254,9 +1273,9 @@ class X393PIOSequences(object):
         sleep(0.001) # actually 500 usec required
         self.x393_axi_tasks.enable_cke(1);
         
-        self.x393_axi_tasks.enable_memcntrl_channels(0x3)      # only channel 0 and 1 are enabled
+        self.x393_axi_tasks.enable_memcntrl_channels(0x1)      # only channel 0 and 1 are enabled
         self.x393_axi_tasks.configure_channel_priority(0,0)    # lowest priority channel 0
-        self.x393_axi_tasks.configure_channel_priority(1,0)    # lowest priority channel 1
+#        self.x393_axi_tasks.configure_channel_priority(1,0)    # lowest priority channel 1
         self.enable_reset_ps_pio(1,0)       # enable, no reset
         
 # set MR registers in DDR3 memory, run DCI calibration (long)

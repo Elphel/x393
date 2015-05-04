@@ -580,8 +580,8 @@ always #(CLKIN_PERIOD/2) CLK = ~CLK;
 end
 // protect from never end
   initial begin
-//     #200000;
-     #50000;
+     #200000;
+//     #50000;
     $display("finish testbench 2");
   $finish;
   end
