@@ -119,8 +119,12 @@
   localparam       FRAME_START_ADDRESS= 'h1000; // RA=80, CA=0, BA=0 22-bit frame start address (3 CA LSBs==0. BA==0)
   localparam       FRAME_FULL_WIDTH=    'h0c0;  // Padded line length (8-row increment), in 8-bursts (16 bytes)
   
-  localparam       AFI_LO_ADDR64=       'h4000; // start of the system memory range in 64-bit words
-  localparam       AFI_SIZE64=          'h4000; // size of system memory range in 64-bit words
+//  localparam       AFI_LO_ADDR64=       'h4000; // start of the system memory range in 64-bit words
+//  localparam       AFI_SIZE64=          'h4000; // size of system memory range in 64-bit words
+
+// Same as in the actual hardware
+  localparam       AFI_LO_ADDR64=       'h4f20000; // start of the system memory range in 64-bit words
+  localparam       AFI_SIZE64=          'h0c80000; // size of system memory range in 64-bit words
   
   
 //  localparam SCANLINE_WINDOW_WH=  `h079000a2;  // 2592*1936: low word - 13-bit window width (0->'h4000), high word - 16-bit frame height (0->'h10000)

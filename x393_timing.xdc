@@ -79,3 +79,5 @@ create_generated_clock -name ddr3_clk_ref [get_nets -hierarchical clk_ref_pre ]
 
 # do not check timing between axi_aclk and other clocks. Code should provide correct asynchronous crossing of the clock boundary.
 set_clock_groups -name ps_async_clock -asynchronous -group {axi_aclk}
+# do not check timing between clk_axihp_pre and other clocks. Code should provide correct asynchronous crossing of the clock boundary.
+set_clock_groups -name ps_async_clock_axihp -asynchronous -group {clk_axihp_pre}

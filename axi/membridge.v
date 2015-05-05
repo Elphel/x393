@@ -19,7 +19,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/> .
  *******************************************************************************/
 `timescale 1ns/1ps
-
+//`define MEMBRIDGE_DEBUG_READ 1
 module  membridge#(
     parameter MEMBRIDGE_ADDR=                     'h200,
     parameter MEMBRIDGE_MASK=                     'h3f0,
@@ -164,10 +164,28 @@ module  membridge#(
     reg [28:0] size64_mclk;
     reg [28:0] start64_mclk;
     reg [28:0] len64_mclk;
-    reg [FRAME_WIDTH_BITS+1:0] width64_mclk; // FRAME_WIDTH_BITS in 128 bit bursts
+//  reg [FRAME_WIDTH_BITS+1:0] width64_mclk; // FRAME_WIDTH_BITS in 128 bit bursts
+    reg [FRAME_WIDTH_BITS:0] width64_mclk; // FRAME_WIDTH_BITS in 128 bit bursts
+    reg [FRAME_WIDTH_BITS:0]   width64_minus1_mclk; // FRAME_WIDTH_BITS in 128 bit bursts
     reg        rdwr_en_mclk;
     reg        rdwr_reset_addr_mclk; // resets system memory address
     reg        start_mclk;
+`ifdef MEMBRIDGE_DEBUG_READ    
+    reg        debug_aw_mclk; // enable sending next address over AFI
+    reg        debug_w_mclk; // enable sending next data burst over AFI
+    wire       debug_aw; // enable sending next address over AFI, sync to hclk
+    wire       debug_w; // enable sending next data burst over AFI, sync to hclk
+    reg  [6:0] debug_aw_allowed;
+    reg  [8:0] debug_w_allowed;
+    reg  [4:0] debug_bufrd_rd;
+    reg        debug_disable_set_mclk; // disable debug slowdown
+    wire       debug_disable_set;      // disable debug slowdown
+    reg        debug_disable; // disable debug slowdown
+    wire       debug_aw_ready;
+    wire       debug_w_ready;
+    assign debug_aw_ready = (!debug_aw_allowed[6] && (|debug_aw_allowed[5:0])) || debug_disable; // > 0
+    assign debug_w_ready =  (!debug_w_allowed[8]  && (|debug_w_allowed [7:0]) &&((|debug_w_allowed [7:1]) || !(|debug_bufrd_rd))) || debug_disable; // > 0
+`endif    
 //cmd_wrmem
     always @ (posedge mclk) begin
         if (set_lo_addr64_w)    lo_addr64_mclk       <= {cmd_data[28:4],4'b0}; // align to 16-bursts
@@ -175,9 +193,10 @@ module  membridge#(
         if (set_lo_addr64_w)    start64_mclk         <= 0;
         else if (set_start64_w) start64_mclk         <= {cmd_data[28:4],4'b0}; // align to 16-bursts
         if (set_len64_w)        len64_mclk           <= cmd_data[28:0]; // OK not to be aligned
-        if (set_width64_w)      width64_mclk         <= {~(|cmd_data[FRAME_WIDTH_BITS:0]),cmd_data[FRAME_WIDTH_BITS:0]}; // OK not to be aligned
+//        if (set_width64_w)      width64_mclk         <= {~(|cmd_data[FRAME_WIDTH_BITS:0]),cmd_data[FRAME_WIDTH_BITS:0]}; // OK not to be aligned
+        if (set_width64_w)      width64_mclk         <= cmd_data[FRAME_WIDTH_BITS:0]; // OK not to be aligned
         if (set_ctrl_w)         rdwr_reset_addr_mclk <= cmd_data[1] && !cmd_data[2];
-        
+        width64_minus1_mclk <= width64_mclk-1;
     end
 
     always @ (posedge mclk or posedge rst) begin
@@ -186,6 +205,16 @@ module  membridge#(
         
         if   (rst) start_mclk <= 0;
         else       start_mclk <= set_ctrl_w & cmd_data[1];
+`ifdef MEMBRIDGE_DEBUG_READ
+        if   (rst) debug_aw_mclk <= 0;
+        else       debug_aw_mclk <= set_ctrl_w & cmd_data[2];
+
+        if   (rst) debug_w_mclk <= 0;
+        else       debug_w_mclk <= set_ctrl_w & cmd_data[3];
+
+        if   (rst) debug_disable_set_mclk <= 0;
+        else       debug_disable_set_mclk <= set_ctrl_w & cmd_data[4];
+`endif
 
     end
     
@@ -236,7 +265,8 @@ module  membridge#(
         start64         <= start64_mclk;
         len64           <= len64_mclk;
 //        width64         <= width64_mclk;
-        last_in_line64  <= width64_mclk[FRAME_WIDTH_BITS:0]-1;
+        last_in_line64  <= width64_minus1_mclk;
+//        last_in_line64  <= width64_mclk[FRAME_WIDTH_BITS:0]-1;
         wr_mode         <= cmd_wrmem;
         rdwr_reset_addr <= rdwr_reset_addr_mclk;
         last_addr1k     <= size64[28:4] - 1;
@@ -270,6 +300,13 @@ module  membridge#(
     pulse_cross_clock page_ready_i     (.rst(rst), .src_clk(mclk), .dst_clk(hclk), .in_pulse(page_ready_chn), .out_pulse(page_ready),.busy());
     pulse_cross_clock frame_done_i     (.rst(rst), .src_clk(mclk), .dst_clk(hclk), .in_pulse(frame_done_chn), .out_pulse(frame_done),.busy());
     pulse_cross_clock  reset_page_wr_i (.rst(rst), .src_clk(mclk), .dst_clk(hclk), .in_pulse(xfer_reset_page_wr), .out_pulse(reset_page_wr),.busy());
+
+`ifdef MEMBRIDGE_DEBUG_READ
+    // mclk -> hclk, debug-only
+    pulse_cross_clock debug_aw_i       (.rst(rst), .src_clk(mclk), .dst_clk(hclk), .in_pulse(debug_aw_mclk), .out_pulse(debug_aw),.busy());
+    pulse_cross_clock debug_w_i        (.rst(rst), .src_clk(mclk), .dst_clk(hclk), .in_pulse(debug_w_mclk),  .out_pulse(debug_w), .busy());
+    pulse_cross_clock debug_disable_set_i(.rst(rst),.src_clk(mclk),.dst_clk(hclk), .in_pulse(debug_disable_set_mclk),.out_pulse(debug_disable_set), .busy());
+`endif    
     // negedge mclk -> hclk (verify clock inversion is absorbed)
     pulse_cross_clock  reset_page_rd_i (.rst(rst), .src_clk(~mclk),.dst_clk(hclk), .in_pulse(xfer_reset_page_rd), .out_pulse(reset_page_rd),.busy());
     
@@ -377,17 +414,43 @@ module  membridge#(
     reg        afi_wa_safe_not_full;
     
     assign advance_rel_addr_w =  advance_rel_addr_wr || advance_rel_addr_rd;
-    assign advance_rel_addr_wr = read_started && afi_wa_safe_not_full && (|left64); // left 64 is decremented by 16, except possibly the last (partial)
-    
+//    assign advance_rel_addr_wr = read_started && afi_wa_safe_not_full && (|left64); // left 64 is decremented by 16, except possibly the last (partial)
+`ifdef MEMBRIDGE_DEBUG_READ
+    assign advance_rel_addr_wr = read_started && afi_wa_safe_not_full && (|left64) && debug_aw_ready; // debugging ddr3 -> system
+`else
+    assign advance_rel_addr_wr = read_started && afi_wa_safe_not_full && (|left64);
+`endif    
     assign afi_awvalid=advance_rel_addr && read_started;
     
     always @ (posedge hclk or posedge rst) begin
         if      (rst)       read_busy <= 0;
         else if (rd_start)  read_busy <= 1;
         else if (read_over) read_busy <= 0;
+        
+        
+        
         if      (rst)        read_started <= 0;
         else if (!read_busy) read_started <= 0;
+        else if (wr_mode)    read_started <= 0; // just debugging, making sure read is disabled in write mode
         else if (page_ready) read_started <= 1; // first page is in the buffer - use it to mask page number comparison
+        
+`ifdef MEMBRIDGE_DEBUG_READ
+        if      (rst)                       debug_aw_allowed <= 0;
+        else if (!read_busy)                debug_aw_allowed <= 0;
+        else if ( debug_aw && !afi_awvalid) debug_aw_allowed <= debug_aw_allowed + 1;
+        else if (!debug_aw &&  afi_awvalid) debug_aw_allowed <= debug_aw_allowed - 1;
+        
+        
+        if      (rst)                                    debug_w_allowed <= 0;
+        else if (!read_busy)                             debug_w_allowed <= 0;
+        else if ( debug_w && !(afi_wvalid && afi_wlast)) debug_w_allowed <= debug_w_allowed + 1;
+        else if (!debug_w &&  (afi_wvalid && afi_wlast)) debug_w_allowed <= debug_w_allowed - 1;
+        
+        if      (rst)               debug_disable <= 0;
+        else if (!read_busy)        debug_disable <= 0;
+        else if (debug_disable_set) debug_disable <= 1;
+`endif        
+        
 
         afi_bvalid_r <=afi_bvalid;
         
@@ -396,6 +459,8 @@ module  membridge#(
         else if (afi_bvalid_r) wresp_conf <= wresp_conf +1;
         
         read_over <= left_zero && (axi_wr_pending == 0) && read_started; 
+//        read_over <= ((left_zero && (axi_wr_pending == 0)) || frame_done) && read_started ;  // WRONG, just for debugging
+//        else if (frame_done) read_busy <= 0;
         
         if      (rst)            read_page <= 0;
         else if (reset_page_rd)  read_page <= 0;
@@ -436,14 +501,22 @@ module  membridge#(
     assign next_page_rd_w = read_started && !busy_next_page && is_last_in_page && bufrd_rd[0];
     assign is_last_in_line = buf_in_line64 == last_in_line64;
     assign is_last_in_page = is_last_in_line || (&buf_in_line64[6:0]);
+`ifdef MEMBRIDGE_DEBUG_READ
+    assign bufrd_rd_w = afi_wd_safe_not_full && (|read_pages_ready[2:1] || (read_pages_ready[0] && !is_last_in_page)) && debug_w_ready;
+`else
     assign bufrd_rd_w = afi_wd_safe_not_full && (|read_pages_ready[2:1] || (read_pages_ready[0] && !is_last_in_page));
+`endif    
 //last_in_line64 - last word number in scan line
-    reg                        left_was_1; // was 1 or 0 (0 does not matter)
+    reg                        left_was_1; // was <=1 (0 does not matter)  valid next after buffer address
     reg                  [3:0] src_wcntr;
-    reg                  [2:0] wlast_in_burst;
+//    reg                  [2:0] wlast_in_burst;
+    reg                        wlast; // valid 2 after buffer address, same as wvalid
     
-    assign afi_wlast = wlast_in_burst[2];
-     
+    reg                        src_was_f;  // valid next after buffer address
+
+//    assign afi_wlast = wlast_in_burst[2];
+    assign afi_wlast = wlast;
+
     always @ (posedge hclk) begin
         if (!rw_in_progress) left_was_1 <= 0;
         else if   (buf_rdwr) left_was_1 <= !(|buf_left64[28:1]);
@@ -451,10 +524,20 @@ module  membridge#(
         if    (!read_started) src_wcntr <= 0;
         else if (bufrd_rd[0]) src_wcntr <= src_wcntr+1;
         
-        if    (!read_started) wlast_in_burst <= 0;
-        else if (bufrd_rd[0]) wlast_in_burst <= {wlast_in_burst[1:0],left_was_1 | (&src_wcntr)};
+        if    (!read_started) src_was_f <= 0;          
+        else if (bufrd_rd[0]) src_was_f <= &src_wcntr; // valid with buffer address
+        
+//        if    (!read_started) wlast_in_burst <= 0;
+//        else if (bufrd_rd[0]) wlast_in_burst <= {wlast_in_burst[1:0],left_was_1 | (&src_wcntr)};
+
+        if    (!read_started) wlast <= 0;
+        else if (bufrd_rd[1]) wlast <= left_was_1 || src_was_f;
+        
         
         bufrd_rd <= {bufrd_rd[1:0], bufrd_rd_w };
+`ifdef MEMBRIDGE_DEBUG_READ
+        debug_bufrd_rd<= {debug_bufrd_rd[3:0], bufrd_rd_w };
+`endif        
         buf_rdwr <= bufrd_rd_w || bufwr_we_w;
         bufwr_we <= {bufwr_we[0],bufwr_we_w};
         
@@ -484,6 +567,7 @@ module  membridge#(
     always @ (posedge hclk or posedge rst) begin
         if      (rst)        write_busy <= 0;
         else if (wr_start)   write_busy <= 1;
+        else if (!wr_mode)   write_busy <= 0; // Just debugging, making sure write mode is disabled in read mode
         else if (frame_done) write_busy <= 0;
 
         if      (rst)                           axi_arw_requested <= 0;
@@ -543,13 +627,21 @@ module  membridge#(
 
     status_generate #(
         .STATUS_REG_ADDR  (MEMBRIDGE_STATUS_REG),
-        .PAYLOAD_BITS     (2) // ???
+`ifdef MEMBRIDGE_DEBUG_READ
+        .PAYLOAD_BITS     (18) // 2) // With debug
+`else
+        .PAYLOAD_BITS     (2)
+`endif        
     ) status_generate_i (
         .rst              (rst), // input
         .clk              (mclk), // input
         .we               (set_status_w), // input
-        .wd               (cmd_data[7:0]), // input[7:0] 
+        .wd               (cmd_data[7:0]), // input[7:0]
+`ifdef MEMBRIDGE_DEBUG_READ
+        .status           ({debug_aw_allowed, debug_w_allowed, done, busy}), // input[25:0]
+`else
         .status           ({done,busy}), // input[25:0] 
+`endif
         .ad               (status_ad), // output[7:0] 
         .rq               (status_rq), // output
         .start            (status_start) // input

@@ -1,6 +1,7 @@
   // This file may be used to define same pre-processor macros to be included into each parsed file
 `ifndef SYSTEM_DEFINES
   `define SYSTEM_DEFINES
+//`define MEMBRIDGE_DEBUG_READ 1
   `define use200Mhz 1
   `define USE_CMD_ENCOD_TILED_32_RD 1  
   // It can be used to check different `ifdef branches

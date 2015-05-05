@@ -31,7 +31,7 @@
 //`define TEST_READ_PATTERN 1
 //`define TEST_WRITE_BLOCK 1
 //`define TEST_READ_BLOCK 1
-//`define TEST_SCANLINE_WRITE
+`define TEST_SCANLINE_WRITE
     `define TEST_SCANLINE_WRITE_WAIT 1 // wait TEST_SCANLINE_WRITE finished (frame_done)
 //`define TEST_SCANLINE_READ
     `define TEST_READ_SHOW  1
@@ -42,7 +42,7 @@
 //`define TEST_TILED_WRITE32  1
 //`define TEST_TILED_READ32  1
 
-`define TEST_AFI_WRITE 1
+//`define TEST_AFI_WRITE 1
 `define TEST_AFI_READ 1
 
 module  x393_testbench01 #(
@@ -580,8 +580,8 @@ always #(CLKIN_PERIOD/2) CLK = ~CLK;
 end
 // protect from never end
   initial begin
-     #200000;
-//     #50000;
+//     #200000;
+     #60000;
     $display("finish testbench 2");
   $finish;
   end
@@ -1424,6 +1424,9 @@ task test_afi_rw; // SuppressThisWarning VEditor - may be unused
     
 // -----------------------------------------
     integer mode;
+`ifdef MEMBRIDGE_DEBUG_READ    
+    integer       ii;
+`endif    
     begin
         $display("====== test_afi_rw: write=%d, extra_pages=%d,  frame_start= %x, window_full_width=%d, window_width=%d, window_height=%d, window_left=%d, window_top=%d,@%t",
                                       write_ddr3,  extra_pages, frame_start_addr, window_full_width,   window_width, window_height, window_left, window_top, $time);
@@ -1452,7 +1455,16 @@ task test_afi_rw; // SuppressThisWarning VEditor - may be unused
             start64,
             lo_addr64,
             size64);
-        membridge_start (continue);         
+        membridge_start (continue);
+`ifdef MEMBRIDGE_DEBUG_READ    
+        // debugging
+        for (ii=0; ii < 10; ii=ii +1) begin
+            #200; //#50;
+            write_contol_register(MEMBRIDGE_ADDR + MEMBRIDGE_CTRL,         {27'b0,continue,4'b1101});  // enable both address and data
+        end
+        #500;
+        write_contol_register(MEMBRIDGE_ADDR + MEMBRIDGE_CTRL,         {26'b0,continue,5'b10001});  // disable debug (enable remaining xfers)
+`endif        
 // just wait done
         wait_status_condition ( // may also be read directly from the same bit of mctrl_linear_rw (address=5) status
             MEMBRIDGE_STATUS_REG, // MCNTRL_TEST01_STATUS_REG_CHN3_ADDR,
