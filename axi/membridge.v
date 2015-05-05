@@ -355,6 +355,7 @@ module  membridge#(
     wire       rw_in_progress;
     reg        busy;
     reg        done;
+    reg        pre_done;
 
     assign rw_in_progress = read_started || write_busy;
     
@@ -392,14 +393,16 @@ module  membridge#(
 
     // DDR3 read - AFI write
     //rdwr_en    
-    reg  [7:0] axi_arw_requested;  // 64-bit words to be read/written over axi queued to AR/AW channels
+    reg  [7:0] axi_arw_requested;     // 64-bit words to be read/written over axi queued to AR/AW channels
+    reg  [7:0] axi_bursts_requested;  // number of bursts requested
     reg  [7:0] wresp_conf;         // number of 64-bit words confirmed through axi b channel
     wire [7:0] axi_wr_pending;     // Number of words qued to AW but not yet confirmed through B-channel;
     wire [7:0] axi_rd_pending;
 
     reg  [7:0] axi_rd_received;
     assign axi_rd_pending= axi_arw_requested - axi_rd_received;
-    assign axi_wr_pending= axi_arw_requested - wresp_conf;
+//    assign axi_wr_pending= axi_arw_requested - wresp_conf;
+    assign axi_wr_pending= axi_bursts_requested - wresp_conf;
     
     reg        read_busy;
     reg        read_over;
@@ -480,10 +483,13 @@ module  membridge#(
         if (rst) busy <= 0;
         else     busy <=  read_busy || write_busy;
         
-        if      (rst)                                                    done <= 0;
-        else if (!rdwr_en)                                               done <= 0; // disabling when idle will reset done
-        else if ((write_busy && frame_done) || (read_busy && read_over)) done <= 1;
-        else if (rdwr_start)                                             done <= 0;
+        if (rst) pre_done <= 0; // delay done to turn on same time busy is off
+        else     pre_done <= (write_busy && frame_done) || (read_busy && read_over);
+        
+        if      (rst)            done <= 0;
+        else if (!rdwr_en)       done <= 0; // disabling when idle will reset done
+        else if (pre_done)       done <= 1;
+        else if (rdwr_start)     done <= 0;
         
     end
     
@@ -573,6 +579,10 @@ module  membridge#(
         if      (rst)                           axi_arw_requested <= 0;
         else if (!write_busy && !read_started)  axi_arw_requested <= 0;
         else if (advance_rel_addr)              axi_arw_requested <= axi_arw_requested + afi_len_plus1;
+        
+        if      (rst)                           axi_bursts_requested <= 0;
+        else if (!write_busy && !read_started)  axi_bursts_requested <= 0;
+        else if (advance_rel_addr)              axi_bursts_requested <= axi_bursts_requested + 1;
 
         if      (rst)              axi_rd_received <= 0;
         else if (!write_busy)      axi_rd_received <= 0;
@@ -630,7 +640,7 @@ module  membridge#(
 `ifdef MEMBRIDGE_DEBUG_READ
         .PAYLOAD_BITS     (18) // 2) // With debug
 `else
-        .PAYLOAD_BITS     (2)
+        .PAYLOAD_BITS     (18) //2)
 `endif        
     ) status_generate_i (
         .rst              (rst), // input
@@ -640,7 +650,8 @@ module  membridge#(
 `ifdef MEMBRIDGE_DEBUG_READ
         .status           ({debug_aw_allowed, debug_w_allowed, done, busy}), // input[25:0]
 `else
-        .status           ({done,busy}), // input[25:0] 
+//        .status           ({done,busy}), // input[25:0] 
+        .status           ({axi_arw_requested, wresp_conf, done, busy}), // input[25:0] 
 `endif
         .ad               (status_ad), // output[7:0] 
         .rq               (status_rq), // output

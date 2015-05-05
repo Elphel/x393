@@ -121,6 +121,7 @@ Alex
     wire  [3:0] awlen_out;
     wire [31:0] awaddr_out;
     wire  [5:0] wid_out;
+    wire        wlast_out;
     wire  [7:0] wstrb_out;
     wire [63:0] wdata_out;
 
@@ -209,7 +210,7 @@ Alex
     assign enough_data=|num_full_data || ((WrCmdReleaseMode==2'b01) && (wcount > {4'b0,WrDataThreshold}));
     assign fifo_wd_rd=   write_in_progress && w_nempty && sim_wr_ready;
     assign sim_wr_valid= write_in_progress && w_nempty; // for continuing writes
-    assign last_confirmed_write = (write_left==0) && fifo_wd_rd;
+    assign last_confirmed_write = (write_left==0) && fifo_wd_rd && wlast_out; // wlast_out should take precedence over write_left?
     assign start_write_burst_w= 
         aw_nempty && enough_data &&
         (! write_in_progress || last_confirmed_write);
@@ -296,15 +297,15 @@ fifo_same_clock_fill   #( .DATA_WIDTH(51),.DATA_DEPTH(5)) // read - 4, write - 3
         .rcount     (), //waddr_rcount), // output[3:0] reg 
         .num_in_fifo(wacount) // output[3:0] 
     );
-fifo_same_clock_fill   #( .DATA_WIDTH(78),.DATA_DEPTH(7))    
+fifo_same_clock_fill   #( .DATA_WIDTH(79),.DATA_DEPTH(7))    
     wdata_i (
         .rst(rst),
         .clk(aclk),
         .sync_rst  (1'b0),
         .we(wvalid && wready),
         .re(fifo_wd_rd), //start_write_burst_w), // wrong
-        .data_in({wid[5:0],          wstrb[7:0],     wdata[63:0]}),
-        .data_out({wid_out[5:0],  wstrb_out[7:0], wdata_out[63:0]}),
+        .data_in({wlast, wid[5:0],          wstrb[7:0],     wdata[63:0]}),
+        .data_out({wlast_out,wid_out[5:0],  wstrb_out[7:0], wdata_out[63:0]}),
         .nempty(w_nempty),
         .half_full(), //w_half_full),
         .under      (), //wdata_under), // output reg 
@@ -320,7 +321,7 @@ fifo_same_clock_fill   #( .DATA_WIDTH(78),.DATA_DEPTH(7))
     wire fifo_wd_rd_dly;
     wire [5:0] bid_in;
 
-//    input  [ 3:0] sim_bresp_latency, // latency in writeing data outside of the module 
+//    input  [ 3:0] sim_bresp_latency, // latency in writing data outside of the module 
 
     dly_16 #(
         .WIDTH(1)
@@ -328,18 +329,18 @@ fifo_same_clock_fill   #( .DATA_WIDTH(78),.DATA_DEPTH(7))
         .clk(aclk), // input
         .rst(rst), // input
         .dly(sim_bresp_latency[3:0]), // input[3:0] 
-        .din(fifo_wd_rd), // input[0:0] 
+        .din(last_confirmed_write), //fifo_wd_rd), // input[0:0] 
         .dout(fifo_wd_rd_dly) // output[0:0] 
     );
 
     // first FIFO for bresp - latency outside of the module
-    
+// wresp per burst, not per item !    
 fifo_same_clock_fill  #( .DATA_WIDTH(8),.DATA_DEPTH(5))    
     wresp_ext_i (
         .rst(rst),
         .clk(aclk),
         .sync_rst  (1'b0),
-        .we(fifo_wd_rd),
+        .we(last_confirmed_write), // fifo_wd_rd),
         .re(fifo_wd_rd_dly), // not allowing RE next cycle after bvalid
         .data_in({wid_out[5:0],bresp_value[1:0]}),
         .data_out({bid_in[5:0],bresp_in[1:0]}),

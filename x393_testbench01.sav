@@ -1,24 +1,25 @@
 [*]
 [*] GTKWave Analyzer v3.3.64 (w)1999-2014 BSI
-[*] Mon May  4 23:59:20 2015
+[*] Tue May  5 16:05:00 2015
 [*]
-[dumpfile] "/home/andrey/git/x393/simulation/x393_testbench01-20150504175355196.lxt"
-[dumpfile_mtime] "Mon May  4 23:58:48 2015"
-[dumpfile_size] 264023680
+[dumpfile] "/home/andrey/git/x393/simulation/x393_testbench01-20150505094007974.lxt"
+[dumpfile_mtime] "Tue May  5 15:45:33 2015"
+[dumpfile_size] 282012275
 [savefile] "/home/andrey/git/x393/x393_testbench01.sav"
-[timestart] 50540000
+[timestart] 18656300
 [size] 1823 1180
 [pos] 1919 0
-*-20.063198 54490000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-16.063198 18590000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] x393_testbench01.
 [treeopen] x393_testbench01.ddr3_i.
 [treeopen] x393_testbench01.simul_axi_hp_wr_i.
 [treeopen] x393_testbench01.x393_i.
+[treeopen] x393_testbench01.x393_i.axibram_write_i.
 [treeopen] x393_testbench01.x393_i.membridge_i.
-[sst_width] 202
-[signals_width] 547
+[sst_width] 363
+[signals_width] 446
 [sst_expanded] 1
-[sst_vpaned_height] 775
+[sst_vpaned_height] 550
 @800200
 -DDR3
 @28
@@ -61,6 +62,16 @@ x393_testbench01.PS_RDATA[31:0]
 -PS
 @800200
 -simul_afi_wr
+@22
+x393_testbench01.simul_axi_hp_wr_i.write_left[3:0]
+x393_testbench01.simul_axi_hp_wr_i.awlen_out[3:0]
+@28
+x393_testbench01.simul_axi_hp_wr_i.wlast_out[0]
+x393_testbench01.simul_axi_hp_wr_i.fifo_wd_rd[0]
+x393_testbench01.simul_axi_hp_wr_i.fifo_wd_rd_dly[0]
+x393_testbench01.simul_axi_hp_wr_i.last_confirmed_write[0]
+@200
+-
 @28
 x393_testbench01.simul_axi_hp_wr_i.WrCmdReleaseMode[1:0]
 @22
@@ -288,8 +299,14 @@ x393_testbench01.simul_axi_hp_rd_i.was_data_fifo_read[0]
 x393_testbench01.simul_axi_hp_rd_i.was_data_fifo_write[0]
 @1401200
 -simul_afi_rd
-@800200
+@c00200
 -membridge
+@28
+x393_testbench01.x393_i.membridge_i.rdwr_en[0]
+x393_testbench01.x393_i.membridge_i.read_busy[0]
+x393_testbench01.x393_i.membridge_i.write_busy[0]
+x393_testbench01.x393_i.membridge_i.busy[0]
+x393_testbench01.x393_i.membridge_i.done[0]
 @200
 -
 @22
@@ -307,6 +324,7 @@ x393_testbench01.x393_i.membridge_i.read_started[0]
 x393_testbench01.x393_i.membridge_i.left_zero[0]
 @22
 x393_testbench01.x393_i.membridge_i.axi_arw_requested[7:0]
+x393_testbench01.x393_i.membridge_i.axi_bursts_requested[7:0]
 x393_testbench01.x393_i.membridge_i.wresp_conf[7:0]
 x393_testbench01.x393_i.membridge_i.axi_wr_pending[7:0]
 @28
@@ -502,6 +520,8 @@ x393_testbench01.x393_i.membridge_i.afi_wstrb[7:0]
 x393_testbench01.x393_i.membridge_i.afi_wvalid[0]
 @22
 x393_testbench01.x393_i.membridge_i.axi_addr64[28:0]
+x393_testbench01.x393_i.membridge_i.axi_arw_requested[7:0]
+x393_testbench01.x393_i.membridge_i.axi_bursts_requested[7:0]
 x393_testbench01.x393_i.membridge_i.axi_rd_pending[7:0]
 x393_testbench01.x393_i.membridge_i.axi_rd_received[7:0]
 x393_testbench01.x393_i.membridge_i.buf_in_line64[13:0]
@@ -589,8 +609,10 @@ x393_testbench01.x393_i.membridge_i.rdwr_reset_addr_mclk[0]
 x393_testbench01.x393_i.membridge_i.rdwr_start[2:0]
 x393_testbench01.x393_i.membridge_i.read_busy[0]
 x393_testbench01.x393_i.membridge_i.read_over[0]
+@22
 x393_testbench01.x393_i.membridge_i.read_page[1:0]
 x393_testbench01.x393_i.membridge_i.read_pages_ready[2:0]
+@28
 x393_testbench01.x393_i.membridge_i.read_started[0]
 @22
 x393_testbench01.x393_i.membridge_i.rel_addr64[28:0]
@@ -638,11 +660,84 @@ x393_testbench01.x393_i.membridge_i.write_page_r[1:0]
 x393_testbench01.x393_i.membridge_i.write_pages_ready[2:0]
 x393_testbench01.x393_i.membridge_i.xfer_reset_page_rd[0]
 x393_testbench01.x393_i.membridge_i.xfer_reset_page_wr[0]
-@1000200
+@200
+-
+@28
+x393_testbench01.x393_i.membridge_i.cmd_we[0]
+x393_testbench01.x393_i.membridge_i.set_status_w[0]
+@c00200
+-membridge_status
+@22
+x393_testbench01.x393_i.membridge_i.status_generate_i.ad[7:0]
+@28
+x393_testbench01.x393_i.membridge_i.status_generate_i.clk[0]
+x393_testbench01.x393_i.membridge_i.status_generate_i.cmd_pend[0]
+x393_testbench01.x393_i.membridge_i.status_generate_i.mode[1:0]
+x393_testbench01.x393_i.membridge_i.status_generate_i.mode_w[1:0]
+x393_testbench01.x393_i.membridge_i.status_generate_i.need_to_send[0]
+x393_testbench01.x393_i.membridge_i.status_generate_i.rq[0]
+x393_testbench01.x393_i.membridge_i.status_generate_i.rst[0]
+@22
+x393_testbench01.x393_i.membridge_i.status_generate_i.seq[5:0]
+@28
+x393_testbench01.x393_i.membridge_i.status_generate_i.snd_rest[0]
+x393_testbench01.x393_i.membridge_i.status_generate_i.start[0]
+x393_testbench01.x393_i.membridge_i.status_generate_i.status_changed_r[0]
+@22
+x393_testbench01.x393_i.membridge_i.status_generate_i.wd[7:0]
+@28
+x393_testbench01.x393_i.membridge_i.status_generate_i.we[0]
+@1401200
+-membridge_status
 -membridge
 @200
 -
+@22
+x393_testbench01.x393_i.membridge_i.status_generate_i.status[17:0]
+@28
+x393_testbench01.x393_i.membridge_i.status_generate_i.status_changed_r[0]
+x393_testbench01.x393_i.membridge_i.status_generate_i.rq[0]
+x393_testbench01.x393_i.membridge_i.status_generate_i.start[0]
+@22
+x393_testbench01.x393_i.membridge_i.status_generate_i.ad[7:0]
+@c00200
+-wait_stat_cond
+@28
+x393_testbench01.wait_status_condition.invert_match[0]
+@22
+x393_testbench01.wait_status_condition.mask[25:0]
+@28
+x393_testbench01.wait_status_condition.match[0]
+@22
+x393_testbench01.wait_status_condition.pattern[25:0]
+x393_testbench01.wait_status_condition.seq_num[5:0]
+x393_testbench01.wait_status_condition.status_address[7:0]
+x393_testbench01.wait_status_condition.status_control_address[29:0]
+@28
+x393_testbench01.wait_status_condition.status_mode[1:0]
+x393_testbench01.wait_status_condition.wait_seq[0]
+@22
+x393_testbench01.write_contol_register.data[31:0]
+x393_testbench01.write_contol_register.reg_addr[29:0]
 @800200
+-axi_write_single_w
+@22
+x393_testbench01.axi_write_single_w.address[29:0]
+x393_testbench01.axi_write_single_w.data[31:0]
+@1000200
+-axi_write_single_w
+@28
+x393_testbench01.axi_write_addr_data.data_sent[0]
+@22
+x393_testbench01.axi_write_addr_data.addr[31:0]
+x393_testbench01.GLOBAL_WRITE_ID[11:0]
+@200
+-
+@1401200
+-wait_stat_cond
+@200
+-
+@c00200
 -SAXIHP0
 @28
 x393_testbench01.x393_i.ps7_i.SAXIHP0ACLK[0]
@@ -717,7 +812,7 @@ x393_testbench01.x393_i.ps7_i.SAXIHP0WRISSUECAP1EN[0]
 x393_testbench01.x393_i.ps7_i.SAXIHP0WSTRB[7:0]
 @28
 x393_testbench01.x393_i.ps7_i.SAXIHP0WVALID[0]
-@1000200
+@1401200
 -SAXIHP0
 @c00200
 -linear_rw_chn1
@@ -856,5 +951,118 @@ x393_testbench01.x393_i.mcntrl393_i.mcntrl_linear_rw_chn1_i.xfer_start_wr_r[0]
 x393_testbench01.x393_i.mcntrl393_i.mcntrl_linear_rw_chn1_i.xfer_want[0]
 @1401200
 -linear_rw_chn1
+@200
+-
+@800200
+-axibram_write
+@28
+x393_testbench01.x393_i.axibram_write_i.bram_wclk[0]
+x393_testbench01.x393_i.axibram_write_i.bram_wen[0]
+@22
+x393_testbench01.x393_i.axibram_write_i.bram_wdata[31:0]
+@28
+x393_testbench01.x393_i.axibram_write_i.bvalid[0]
+x393_testbench01.x393_i.axibram_write_i.bram_we_w[0]
+x393_testbench01.x393_i.axibram_write_i.bresp_re[0]
+x393_testbench01.x393_i.axibram_write_i.wlast[0]
+@29
+x393_testbench01.x393_i.axibram_write_i.wlast_out[0]
+@22
+x393_testbench01.x393_i.axibram_write_i.awlen_out[3:0]
+x393_testbench01.x393_i.axibram_write_i.wlen[3:0]
+x393_testbench01.x393_i.axibram_write_i.write_left[3:0]
+@28
+x393_testbench01.x393_i.axibram_write_i.start_write_burst_w[0]
+x393_testbench01.x393_i.axibram_write_i.write_in_progress_w[0]
+x393_testbench01.x393_i.axibram_write_i.write_in_progress[0]
+@22
+x393_testbench01.x393_i.axibram_write_i.write_address[13:0]
+@200
+-
+@28
+x393_testbench01.x393_i.axibram_write_i.awvalid[0]
+x393_testbench01.x393_i.axibram_write_i.awready[0]
+x393_testbench01.x393_i.axibram_write_i.wvalid[0]
+x393_testbench01.x393_i.axibram_write_i.wready[0]
+@200
+-
+@28
+x393_testbench01.x393_i.axibram_write_i.aclk[0]
+x393_testbench01.x393_i.axibram_write_i.aw_half_full[0]
+x393_testbench01.x393_i.axibram_write_i.aw_nempty[0]
+x393_testbench01.x393_i.axibram_write_i.aw_nempty_ready[0]
+@22
+x393_testbench01.x393_i.axibram_write_i.awaddr[31:0]
+x393_testbench01.x393_i.axibram_write_i.awaddr_out[13:0]
+@28
+x393_testbench01.x393_i.axibram_write_i.awburst[1:0]
+x393_testbench01.x393_i.axibram_write_i.awburst_out[1:0]
+@22
+x393_testbench01.x393_i.axibram_write_i.awid[11:0]
+x393_testbench01.x393_i.axibram_write_i.awid_out[11:0]
+x393_testbench01.x393_i.axibram_write_i.awlen[3:0]
+x393_testbench01.x393_i.axibram_write_i.awlen_out[3:0]
+@28
+x393_testbench01.x393_i.axibram_write_i.awready[0]
+x393_testbench01.x393_i.axibram_write_i.awsize[1:0]
+x393_testbench01.x393_i.axibram_write_i.awsize_out[1:0]
+x393_testbench01.x393_i.axibram_write_i.awvalid[0]
+@22
+x393_testbench01.x393_i.axibram_write_i.bid[11:0]
+x393_testbench01.x393_i.axibram_write_i.bram_waddr[13:0]
+@28
+x393_testbench01.x393_i.axibram_write_i.bram_wclk[0]
+@22
+x393_testbench01.x393_i.axibram_write_i.bram_wdata[31:0]
+@28
+x393_testbench01.x393_i.axibram_write_i.bram_we_w[0]
+x393_testbench01.x393_i.axibram_write_i.bram_wen[0]
+@22
+x393_testbench01.x393_i.axibram_write_i.bram_wstb[3:0]
+@28
+x393_testbench01.x393_i.axibram_write_i.bready[0]
+x393_testbench01.x393_i.axibram_write_i.bresp[1:0]
+x393_testbench01.x393_i.axibram_write_i.bresp_in[1:0]
+x393_testbench01.x393_i.axibram_write_i.bresp_re[0]
+x393_testbench01.x393_i.axibram_write_i.bvalid[0]
+x393_testbench01.x393_i.axibram_write_i.dev_ready[0]
+x393_testbench01.x393_i.axibram_write_i.dev_ready_r[0]
+@22
+x393_testbench01.x393_i.axibram_write_i.next_wr_address_w[13:0]
+x393_testbench01.x393_i.axibram_write_i.pre_awaddr[13:0]
+@28
+x393_testbench01.x393_i.axibram_write_i.rst[0]
+x393_testbench01.x393_i.axibram_write_i.start_burst[0]
+x393_testbench01.x393_i.axibram_write_i.start_write_burst_w[0]
+x393_testbench01.x393_i.axibram_write_i.w_half_full[0]
+x393_testbench01.x393_i.axibram_write_i.w_nempty[0]
+x393_testbench01.x393_i.axibram_write_i.w_nempty_ready[0]
+x393_testbench01.x393_i.axibram_write_i.was_bresp_re[0]
+x393_testbench01.x393_i.axibram_write_i.wburst[1:0]
+@22
+x393_testbench01.x393_i.axibram_write_i.wdata[31:0]
+x393_testbench01.x393_i.axibram_write_i.wdata_out[31:0]
+x393_testbench01.x393_i.axibram_write_i.wid[11:0]
+x393_testbench01.x393_i.axibram_write_i.wid_out[11:0]
+@28
+x393_testbench01.x393_i.axibram_write_i.wlast[0]
+x393_testbench01.x393_i.axibram_write_i.wlast_out[0]
+@22
+x393_testbench01.x393_i.axibram_write_i.wlen[3:0]
+@28
+x393_testbench01.x393_i.axibram_write_i.wready[0]
+@22
+x393_testbench01.x393_i.axibram_write_i.write_address[13:0]
+@28
+x393_testbench01.x393_i.axibram_write_i.write_in_progress[0]
+x393_testbench01.x393_i.axibram_write_i.write_in_progress_w[0]
+@22
+x393_testbench01.x393_i.axibram_write_i.write_left[3:0]
+x393_testbench01.x393_i.axibram_write_i.wstb[3:0]
+x393_testbench01.x393_i.axibram_write_i.wstb_out[3:0]
+@28
+x393_testbench01.x393_i.axibram_write_i.wvalid[0]
+@1000200
+-axibram_write
 [pattern_trace] 1
 [pattern_trace] 0

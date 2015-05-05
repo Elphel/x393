@@ -31,7 +31,7 @@
 //`define TEST_READ_PATTERN 1
 //`define TEST_WRITE_BLOCK 1
 //`define TEST_READ_BLOCK 1
-`define TEST_SCANLINE_WRITE
+//`define TEST_SCANLINE_WRITE
     `define TEST_SCANLINE_WRITE_WAIT 1 // wait TEST_SCANLINE_WRITE finished (frame_done)
 //`define TEST_SCANLINE_READ
     `define TEST_READ_SHOW  1
@@ -42,7 +42,7 @@
 //`define TEST_TILED_WRITE32  1
 //`define TEST_TILED_READ32  1
 
-//`define TEST_AFI_WRITE 1
+`define TEST_AFI_WRITE 1
 `define TEST_AFI_READ 1
 
 module  x393_testbench01 #(
@@ -571,6 +571,21 @@ always #(CLKIN_PERIOD/2) CLK = ~CLK;
        AFI_LO_ADDR64,       // input [28:0] lo_addr64; // low address of the system memory range, in 64-bit words 
        AFI_SIZE64,          // input [28:0] size64;    // size of the system memory range in 64-bit words
        0);                  // input        continue;    // 0 start from start64, 1 - continue from where it was
+    $display("===================== #2 TEST_%s =========================",TEST_TITLE);
+    test_afi_rw (
+       0, // write_ddr3;
+       SCANLINE_EXTRA_PAGES,//  extra_pages;
+       FRAME_START_ADDRESS, //  input [21:0] frame_start_addr;
+       FRAME_FULL_WIDTH,    // input [15:0] window_full_width; // 13 bit - in 8*16=128 bit bursts
+       WINDOW_WIDTH,        // input [15:0] window_width;  // 13 bit - in 8*16=128 bit bursts
+       WINDOW_HEIGHT,       // input [15:0] window_height; // 16 bit (only 14 are used here)
+       WINDOW_X0,           // input [15:0] window_left;
+       WINDOW_Y0,           // input [15:0] window_top;
+       0,                   // input [28:0] start64;  // relative start adderss of the transfer (set to 0 when writing lo_addr64)
+       AFI_LO_ADDR64,       // input [28:0] lo_addr64; // low address of the system memory range, in 64-bit words 
+       AFI_SIZE64,          // input [28:0] size64;    // size of the system memory range in 64-bit words
+       0);                  // input        continue;    // 0 start from start64, 1 - continue from where it was
+       
 `endif
 
   TEST_TITLE = "ALL_DONE";
@@ -580,6 +595,7 @@ always #(CLKIN_PERIOD/2) CLK = ~CLK;
 end
 // protect from never end
   initial begin
+//       #30000;
 //     #200000;
      #60000;
     $display("finish testbench 2");
@@ -1468,12 +1484,12 @@ task test_afi_rw; // SuppressThisWarning VEditor - may be unused
 // just wait done
         wait_status_condition ( // may also be read directly from the same bit of mctrl_linear_rw (address=5) status
             MEMBRIDGE_STATUS_REG, // MCNTRL_TEST01_STATUS_REG_CHN3_ADDR,
-            MCNTRL_SCANLINE_CHN1_ADDR + MEMBRIDGE_STATUS_CNTRL, // MCNTRL_TEST01_ADDR + MCNTRL_TEST01_CHN3_STATUS_CNTRL,
+            MEMBRIDGE_ADDR + MEMBRIDGE_STATUS_CNTRL, // MCNTRL_TEST01_ADDR + MCNTRL_TEST01_CHN3_STATUS_CNTRL,
             DEFAULT_STATUS_MODE,
             2 << STATUS_2LSB_SHFT, // bit 24 - busy, bit 25 - frame done
             2 << STATUS_2LSB_SHFT,  // mask for the 4-bit page number
             0, // equal to
-            0); // no need to synchronize sequence number
+            1); // do synchronize sequence number
     end
 endtask
 

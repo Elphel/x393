@@ -135,9 +135,11 @@ module  axibram_write #(
         (wburst[0]? (write_address[ADDRESS_BITS-1:0]+1):(write_address[ADDRESS_BITS-1:0]));
         
     assign      bram_we_w=         w_nempty_ready &&  write_in_progress;
-    assign start_write_burst_w=w_nempty_ready && aw_nempty_ready && (!write_in_progress || (w_nempty_ready && (write_left[3:0]==4'b0)));
-//    assign write_in_progress_w=                  aw_nempty_ready || (write_in_progress && !(w_nempty_ready && (write_left[3:0]==4'b0))); 
-    assign write_in_progress_w=w_nempty_ready && aw_nempty_ready || (write_in_progress && !(w_nempty_ready && (write_left[3:0]==4'b0))); 
+//    assign start_write_burst_w=w_nempty_ready && aw_nempty_ready && (!write_in_progress || (w_nempty_ready && (write_left[3:0]==4'b0)));
+//    assign write_in_progress_w=w_nempty_ready && aw_nempty_ready || (write_in_progress && !(w_nempty_ready && (write_left[3:0]==4'b0))); 
+    // adding wlast_out to take precedence over (write_left[3:0]==4'b0), maybe wlast_out itself is sufficient
+    assign start_write_burst_w=w_nempty_ready && aw_nempty_ready && (!write_in_progress || (w_nempty_ready && ((write_left[3:0]==4'b0) || wlast_out)));
+    assign write_in_progress_w=w_nempty_ready && aw_nempty_ready || (write_in_progress && !(w_nempty_ready && ((write_left[3:0]==4'b0) || wlast_out))); 
     
     always @ (posedge  aclk or posedge  rst) begin
       if   (rst)                    wburst[1:0] <= 0;
@@ -249,7 +251,7 @@ fifo_same_clock  #( .DATA_WIDTH(14),.DATA_DEPTH(4))
         .rst(rst),
         .clk(aclk),
         .sync_rst  (1'b0),
-        .we(bram_we_w),
+        .we(bram_we_w &&((write_left[3:0]==4'b0) || wlast_out)), // added ((write_left[3:0]==4'b0) || wlast_out) - only last wrtite -> bresp
 //        .re(bready && bvalid),
         .re(bresp_re), // not allowing RE next cycle after bvalid
         .data_in({wid_out[11:0],bresp_in[1:0]}),

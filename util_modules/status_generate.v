@@ -32,7 +32,7 @@ module  status_generate #(
     input                    clk,
     input                    we,     // command strobe
     input              [7:0] wd,     // command data - 6 bits of sequence and 2 mode bits
-    input [PAYLOAD_BITS-1:0] status, // parallel status data to be sent out
+    input [PAYLOAD_BITS-1:0] status, // parallel status data to be sent out, may come from different clock domain
     output             [7:0] ad,     // byte-wide address/data
     output                   rq,     // request to send downstream (last byte with rq==0)
     input                    start   // acknowledge of address (first byte) from downsteram   
@@ -48,6 +48,7 @@ module  status_generate #(
     wire                [1:0] mode_w;
     reg                 [1:0] mode;
     reg                 [5:0] seq;
+    reg    [PAYLOAD_BITS-1:0] status_r0; // registered status as it may come from the different clock domain 
     reg    [PAYLOAD_BITS-1:0] status_r; // "frozen" status to be sent;
     reg                       status_changed_r; // not reset if status changes back to original
     reg                       cmd_pend;
@@ -58,7 +59,7 @@ module  status_generate #(
     
     reg    [NUM_BYTES-2:0]    rq_r;
     
-    assign aligned_status=(ALIGNED_STATUS_WIDTH==PAYLOAD_BITS)?status:{{(ALIGNED_STATUS_WIDTH-PAYLOAD_BITS){1'b0}},status};
+    assign aligned_status=(ALIGNED_STATUS_WIDTH==PAYLOAD_BITS)?status_r0:{{(ALIGNED_STATUS_WIDTH-PAYLOAD_BITS){1'b0}},status_r0};
     assign ad=data[7:0];
     assign need_to_send=cmd_pend || (mode[1] && status_changed_r); // latency
     assign rq=rq_r[0]; // NUM_BYTES-2];
@@ -69,7 +70,7 @@ module  status_generate #(
         if      (rst)       status_changed_r <= 0;
 //        else     status_changed_r <= (status_changed_r && !start) || (status_r != status);
         else if (start)     status_changed_r <= 0;
-        else                status_changed_r <= status_changed_r  || (status_r != status);
+        else                status_changed_r <= status_changed_r  || (status_r != status_r0);
         
         if     (rst) mode <= 0;
         else if (we) mode <= mode_w; // wd[7:6];
@@ -82,13 +83,16 @@ module  status_generate #(
         else if (we && (mode_w!=0)) cmd_pend <= 1;
         else if (start)             cmd_pend <= 0;
         
+        if      (rst)   status_r0 <= 0;
+        else            status_r0 <= status;
+
         if      (rst)   status_r<=0;
-        else if (start) status_r<=status;
+        else if (start) status_r<=status_r0;
         
         if (rst)                             data <= STATUS_REG_ADDR;
         else if (start)                      data <= (NUM_BYTES>2)?
-                                                     {aligned_status[ALIGNED_STATUS_WIDTH-1:ALIGNED_STATUS_BIT_2],seq,status[1:0]}:
-                                                     {seq,status[1:0]};
+                                                     {aligned_status[ALIGNED_STATUS_WIDTH-1:ALIGNED_STATUS_BIT_2],seq,status_r0[1:0]}:
+                                                     {seq,status_r0[1:0]};
         else if ((NUM_BYTES>2) && snd_rest)  data <= data >> 8; // never happens with 2-byte packet
         else                                 data <= STATUS_REG_ADDR;
         

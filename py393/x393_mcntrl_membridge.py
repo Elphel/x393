@@ -298,7 +298,7 @@ class X393McntrlMembridge(object):
                     1, # enable
                     0)  # chn_reset
 #        self.x393_axi_tasks.write_contol_register(vrlg.MEMBRIDGE_ADDR + vrlg.MEMBRIDGE_WIDTH64,    width64);    
-                    
+#        self.x393_axi_tasks.write_contol_register(vrlg.MCNTRL_SCANLINE_CHN1_ADDR + vrlg.MCNTRL_SCANLINE_MODE,             0); # reset channel, including page address
         self.x393_axi_tasks.write_contol_register(vrlg.MCNTRL_SCANLINE_CHN1_ADDR + vrlg.MCNTRL_SCANLINE_STARTADDR,        frame_start_addr) # RA=80, CA=0, BA=0 22-bit frame start address (3 CA LSBs==0. BA==0) 
         self.x393_axi_tasks.write_contol_register(vrlg.MCNTRL_SCANLINE_CHN1_ADDR + vrlg.MCNTRL_SCANLINE_FRAME_FULL_WIDTH, window_full_width);
         self.x393_axi_tasks.write_contol_register(vrlg.MCNTRL_SCANLINE_CHN1_ADDR + vrlg.MCNTRL_SCANLINE_WINDOW_WH,        (window_height << 16) | window_width) # WINDOW_WIDTH + (WINDOW_HEIGHT<<16));
@@ -320,10 +320,10 @@ class X393McntrlMembridge(object):
         if wait_ready:
             self.x393_axi_tasks.wait_status_condition ( # may also be read directly from the same bit of mctrl_linear_rw (address=5) status
                 vrlg.MEMBRIDGE_STATUS_REG, # MCNTRL_TEST01_STATUS_REG_CHN3_ADDR,
-                vrlg.MCNTRL_SCANLINE_CHN1_ADDR +vrlg.MEMBRIDGE_STATUS_CNTRL, # MCNTRL_TEST01_ADDR + MCNTRL_TEST01_CHN3_STATUS_CNTRL,
+                vrlg.MEMBRIDGE_ADDR +vrlg.MEMBRIDGE_STATUS_CNTRL, # MCNTRL_TEST01_ADDR + MCNTRL_TEST01_CHN3_STATUS_CNTRL,
                 vrlg.DEFAULT_STATUS_MODE,
                 2 << vrlg.STATUS_2LSB_SHFT, # bit 24 - busy, bit 25 - frame done
                 2 << vrlg.STATUS_2LSB_SHFT,  # mask for the 4-bit page number
                 0, # equal to
-                0); # no need to synchronize sequence number
+                1); # synchronize sequence number
 
