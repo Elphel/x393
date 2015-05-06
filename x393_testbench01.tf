@@ -25,6 +25,7 @@
 //`define DEBUG_FIFO 1
 `undef WAIT_MRS
 `define SET_PER_PIN_DELAYS 1 // set individual (including per-DQ pin delays)
+`define READBACK_DELAYS 1
 `define PS_PIO_WAIT_COMPLETE 0 // wait until PS PIO module finished transaction before starting a new one
 // Disabled already passed test to speedup simulation
 //`define TEST_WRITE_LEVELLING 1
@@ -321,6 +322,7 @@ always #(CLKIN_PERIOD/2) CLK = ~CLK;
     
     wait_phase_shifter_ready;
     read_all_status;
+    
 // enable output for address/commands to DDR chip    
     enable_cmda(1);
     repeat (16) @(posedge CLK) ;
@@ -588,6 +590,13 @@ always #(CLKIN_PERIOD/2) CLK = ~CLK;
        
 `endif
 
+`ifdef READBACK_DELAYS    
+  TEST_TITLE = "READBACK";
+  $display("===================== TEST_%s =========================",TEST_TITLE);
+    axi_get_delays;
+`endif    
+
+
   TEST_TITLE = "ALL_DONE";
   $display("===================== TEST_%s =========================",TEST_TITLE);
   #20000;
@@ -596,8 +605,8 @@ end
 // protect from never end
   initial begin
 //       #30000;
-//     #200000;
-     #60000;
+     #200000;
+//     #60000;
     $display("finish testbench 2");
   $finish;
   end

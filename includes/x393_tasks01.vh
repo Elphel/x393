@@ -30,6 +30,13 @@
         end
     endtask   
 
+    task   read_contol_register;
+        input [29:0] reg_addr;
+        begin
+            read_and_wait_w(CONTROL_RBACK_ADDR+reg_addr);
+        end
+    endtask   
+
     task wait_read_queue_empty;
         begin
         wait (~rvalid && rready && (rid==LAST_ARID)); // nothing left in read queue?   

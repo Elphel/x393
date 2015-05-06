@@ -154,10 +154,33 @@ class X393AxiControlStatus(object):
     def write_contol_register(self, reg_addr, data):
         """
         Write 32-bit word to the control register
-        <addr> - register address relative to the control register address space
-        <data> - 32-bit data to write
+        @param addr - register address relative to the control register address space
+        @param data - 32-bit data to write
         """
         self.x393_mem.axi_write_single_w(vrlg.CONTROL_ADDR+reg_addr, data)
+
+    def read_contol_register(self, reg_addr=None, quiet=1):
+        """
+        Read 32-bit word from the control register (written by the software or the command sequencer)
+        @param  addr - register address relative to the control register address space
+        @param quiet - reduce output
+        @return control register value
+        """
+        if reg_addr is None:
+            rslt=[self.x393_mem.axi_read_addr_w(vrlg.CONTROL_RBACK_ADDR+reg_addr) for reg_addr in range(1024)]
+            if quiet < 2:
+                for reg_addr in range(1024):
+                    if (reg_addr & 0x0f) == 0:
+                        print("\n0x%03x:"%(reg_addr),end=" ")
+                    print("%08x"%(rslt[reg_addr]),end=" ")
+                print()    
+            return rslt
+        rslt=self.x393_mem.axi_read_addr_w(vrlg.CONTROL_RBACK_ADDR+reg_addr)
+        if quiet < 1:
+            print("control register 0x%x(0x%x) --> 0x%x"%(reg_addr,vrlg.CONTROL_RBACK_ADDR+reg_addr,rslt))
+        return rslt
+
+    
     def test_read_status(self, rpt): # was read_and_wait_status
         """
         Read word from the status register 0 and calculate part of the run busy

@@ -134,12 +134,18 @@ module  x393 #(
 //   wire  [31:0]   port0_rdata;  //
    wire  [31:0]   status_rdata;  //
    wire           status_selected;
+   wire  [31:0]   readback_rdata;  //
+   wire           readback_selected;
    wire  [31:0]   mcntrl_axird_rdata; // read data from the memory controller 
+
+
    
-   wire           mcntrl_axird_selected; // memory controoler has valid data output on mcntrl_axird_rdata 
+   wire           mcntrl_axird_selected; // memory controller has valid data output on mcntrl_axird_rdata 
    reg            status_selected_ren;         // status_selected (set at axird_start_burst) delayed when ren is active
+   reg            readback_selected_ren;
    reg            mcntrl_axird_selected_ren;   // mcntrl_axird_selected (set at axird_start_burst) delayed when ren is active
    reg            status_selected_regen;       // status_selected (set at axird_start_burst) delayed when ren is active, then when regen (normally 2 cycles)
+   reg            readback_selected_regen;
    reg            mcntrl_axird_selected_regen; // mcntrl_axird_selected (set at axird_start_burst) delayed when ren is active, then when regen (normally 2 cycles)
 
    wire           mclk; // global clock, memory controller, command/status network (currently 200MHz)
@@ -251,7 +257,9 @@ module  x393 #(
    assign axird_dev_ready = ~axird_dev_busy; //may combine (AND) multiple sources if needed
    assign axird_dev_busy = 1'b0; // always for now
 // Use this later    
-   assign axird_rdata= ({32{status_selected_regen}} & status_rdata[31:0]) | ({32{mcntrl_axird_selected_regen}} & mcntrl_axird_rdata[31:0]);
+   assign axird_rdata= ({32{status_selected_regen}} & status_rdata[31:0]) |
+                       ({32{readback_selected_regen}} & readback_rdata[31:0]) |
+                       ({32{mcntrl_axird_selected_regen}} & mcntrl_axird_rdata[31:0]);
    
 //Debug with this (to show 'x)   
 //   assign axird_rdata= status_selected_regen?status_rdata[31:0] : (mcntrl_axird_selected_regen? mcntrl_axird_rdata[31:0]:'bx);
@@ -295,6 +303,12 @@ module  x393 #(
         
         if      (axi_rst)     status_selected_regen <= 1'b0;
         else if (axird_regen) status_selected_regen <= status_selected_ren;
+
+        if      (axi_rst)     readback_selected_ren <= 1'b0;
+        else if (axird_ren)   readback_selected_ren <= readback_selected;
+        
+        if      (axi_rst)     readback_selected_regen <= 1'b0;
+        else if (axird_regen) readback_selected_regen <= readback_selected_ren;
 
         if      (axi_rst)     mcntrl_axird_selected_ren <= 1'b0;
         else if (axird_ren)   mcntrl_axird_selected_ren <=  mcntrl_axird_selected;
@@ -454,6 +468,30 @@ BUFG bufg_axi_aclk_i  (.O(axi_aclk),.I(fclk[0]));
         // registers may be inserted before byte_ad and ad_stb  
         .byte_ad      (cmd_root_ad), // output[7:0] 
         .ad_stb       (cmd_root_stb) // output
+    );
+    
+    // Mirror control register data for readback (registers can be written both from the PS and from the command sequencer)
+    cmd_readback #(
+        .AXI_WR_ADDR_BITS        (AXI_WR_ADDR_BITS),
+        .AXI_RD_ADDR_BITS        (AXI_RD_ADDR_BITS),
+        .CONTROL_RBACK_DEPTH     (CONTROL_RBACK_DEPTH),
+        .CONTROL_ADDR            (CONTROL_ADDR),
+        .CONTROL_ADDR_MASK       (CONTROL_ADDR_MASK),
+        .CONTROL_RBACK_ADDR      (CONTROL_RBACK_ADDR),
+        .CONTROL_RBACK_ADDR_MASK (CONTROL_RBACK_ADDR_MASK)
+    ) cmd_readback_i (
+        .rst                     (axi_rst), // input
+        .mclk                    (mclk), // input
+        .axi_clk                 (axird_bram_rclk), // input
+        .par_waddr               (par_waddr), // input[13:0] 
+        .par_data                (par_data), // input[31:0] 
+        .ad_stb                  (cmd_root_stb), // input
+        .axird_pre_araddr        (axird_pre_araddr), // input[13:0] 
+        .axird_start_burst       (axird_start_burst), // input
+        .axird_raddr             (axird_raddr[CONTROL_RBACK_DEPTH-1:0]), // input[9:0] 
+        .axird_ren               (axird_ren), // input
+        .axird_rdata             (readback_rdata), // output[31:0] 
+        .axird_selected          (readback_selected) // output
     );
 
     status_read #(
@@ -772,6 +810,7 @@ BUFG bufg_axi_aclk_i  (.O(axi_aclk),.I(fclk[0]));
         .MEMBRIDGE_START64      (MEMBRIDGE_START64),
         .MEMBRIDGE_LEN64        (MEMBRIDGE_LEN64),
         .MEMBRIDGE_WIDTH64      (MEMBRIDGE_WIDTH64),
+        .MEMBRIDGE_MODE         (MEMBRIDGE_MODE),
         .MEMBRIDGE_STATUS_REG   (MEMBRIDGE_STATUS_REG),
         .FRAME_HEIGHT_BITS      (FRAME_HEIGHT_BITS),
         .FRAME_WIDTH_BITS       (FRAME_WIDTH_BITS)

@@ -18,26 +18,29 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/> .
  *******************************************************************************/
-    parameter MCONTR_WR_MASK =       'h3c00, // AXI write address mask for the 1Kx32 buffers command sequence memory
-    parameter MCONTR_RD_MASK =       'h3c00, // AXI read address mask to generate busy
-    parameter MCONTR_CMD_WR_ADDR =   'h0000, // AXI write to command sequence memory
-    parameter MCONTR_BUF0_RD_ADDR =  'h0400, // AXI read address from buffer 0 (PS sequence, memory read) 
-    parameter MCONTR_BUF0_WR_ADDR =  'h0400, // AXI write address to buffer 0 (PS sequence, memory write)
+    parameter MCONTR_WR_MASK =          'h3c00, // AXI write address mask for the 1Kx32 buffers command sequence memory
+    parameter MCONTR_RD_MASK =          'h3c00, // AXI read address mask to generate busy
+    parameter MCONTR_CMD_WR_ADDR =      'h0000, // AXI write to command sequence memory
+    parameter MCONTR_BUF0_RD_ADDR =     'h0400, // AXI read address from buffer 0 (PS sequence, memory read) 
+    parameter MCONTR_BUF0_WR_ADDR =     'h0400, // AXI write address to buffer 0 (PS sequence, memory write)
 //    parameter MCONTR_BUF1_RD_ADDR =  'h0800, // AXI read address from buffer 1 (PL sequence, scanline, memory read) // not used - replaced with membridge
 //    parameter MCONTR_BUF1_WR_ADDR =  'h0800, // AXI write address to buffer 1 (PL sequence, scanline, memory write) // not used - replaced with membridge
-    parameter MCONTR_BUF2_RD_ADDR =  'h0c00, // AXI read address from buffer 2 (PL sequence, tiles, memory read)
-    parameter MCONTR_BUF2_WR_ADDR =  'h0c00, // AXI write address to buffer 2 (PL sequence, tiles, memory write)
-    parameter MCONTR_BUF3_RD_ADDR =  'h1000, // AXI read address from buffer 3 (PL sequence, scanline, memory read)
-    parameter MCONTR_BUF3_WR_ADDR =  'h1000, // AXI write address to buffer 3 (PL sequence, scanline, memory write)
-    parameter MCONTR_BUF4_RD_ADDR =  'h1400, // AXI read address from buffer 4 (PL sequence, tiles, memory read)
-    parameter MCONTR_BUF4_WR_ADDR =  'h1400, // AXI write address to buffer 4 (PL sequence, tiles, memory write)
-    parameter CONTROL_ADDR =         'h2000, // AXI write address of control write registers
-    parameter CONTROL_ADDR_MASK =    'h3c00, // AXI write address of control registers
-    parameter STATUS_ADDR =          'h2400, // AXI write address of status read registers
-    parameter STATUS_ADDR_MASK =     'h3c00, // AXI write address of status registers
-    parameter AXI_WR_ADDR_BITS =        14,
-    parameter AXI_RD_ADDR_BITS =        14,
-    parameter STATUS_DEPTH=              8,  // 256 cells, maybe just 16..64 are enough?
+    parameter MCONTR_BUF2_RD_ADDR =     'h0c00, // AXI read address from buffer 2 (PL sequence, tiles, memory read)
+    parameter MCONTR_BUF2_WR_ADDR =     'h0c00, // AXI write address to buffer 2 (PL sequence, tiles, memory write)
+    parameter MCONTR_BUF3_RD_ADDR =     'h1000, // AXI read address from buffer 3 (PL sequence, scanline, memory read)
+    parameter MCONTR_BUF3_WR_ADDR =     'h1000, // AXI write address to buffer 3 (PL sequence, scanline, memory write)
+    parameter MCONTR_BUF4_RD_ADDR =     'h1400, // AXI read address from buffer 4 (PL sequence, tiles, memory read)
+    parameter MCONTR_BUF4_WR_ADDR =     'h1400, // AXI write address to buffer 4 (PL sequence, tiles, memory write)
+    parameter CONTROL_ADDR =            'h2000, // AXI write address of control write registers
+    parameter CONTROL_ADDR_MASK =       'h3c00, // AXI write mask of control registers
+    parameter CONTROL_RBACK_ADDR =      'h2000, // AXI read address of control registers readback
+    parameter CONTROL_RBACK_ADDR_MASK = 'h3c00, // AXI mask of control registers readback addresses
+    parameter CONTROL_RBACK_DEPTH=          10, // 
+    parameter STATUS_ADDR =             'h2400, // AXI write address of status read registers
+    parameter STATUS_ADDR_MASK =        'h3c00, // AXI write address of status registers
+    parameter AXI_WR_ADDR_BITS =            14,
+    parameter AXI_RD_ADDR_BITS =            14,
+    parameter STATUS_DEPTH=                  8,  // 256 cells, maybe just 16..64 are enough?
     
 //command interface parameters
     parameter DLY_LD =            'h080,  // address to generate delay load
@@ -260,6 +263,7 @@
     parameter MEMBRIDGE_START64=                  'h4, // start address relative to lo_addr
     parameter MEMBRIDGE_LEN64=                    'h5, // full length of transfer in 64-bit words
     parameter MEMBRIDGE_WIDTH64=                  'h6, // frame width in 64-bit words (partial last page in each line)
+    parameter MEMBRIDGE_MODE=                     'h7, // frame width in 64-bit words (partial last page in each line)
     parameter MEMBRIDGE_STATUS_REG=               'h3b,
     
     parameter RSEL=                               1'b1, // late/early READ commands (to adjust timing by 1 SDCLK period)

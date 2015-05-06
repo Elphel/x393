@@ -30,6 +30,7 @@ module  membridge#(
     parameter MEMBRIDGE_START64=                  'h4, // start address relative to lo_addr
     parameter MEMBRIDGE_LEN64=                    'h5, // full length of transfer in 64-bit words
     parameter MEMBRIDGE_WIDTH64=                  'h6, // frame width in 64-bit words (partial last page in each line)
+    parameter MEMBRIDGE_MODE=                     'h7, // frame width in 64-bit words (partial last page in each line)
     parameter MEMBRIDGE_STATUS_REG=               'h3b,
     parameter FRAME_HEIGHT_BITS=                   16,   // Maximal frame height bits
     parameter FRAME_WIDTH_BITS=                    13
@@ -118,10 +119,12 @@ module  membridge#(
     output         afi_rdissuecap1en
     
 );
+    localparam BUFWR_WE_WIDTH = 4; //2; // 4;
+    localparam SAFE_RD_BITS =   3; //2; // 3;
     // Some constant signals:
     
     assign afi_awlock =        2'h0;
-    assign afi_awcache =       4'h3;
+//    assign afi_awcache =       4'h3;
     assign afi_awprot =        3'h0;
     assign afi_awsize =        3'h3;
     assign afi_awburst =       2'h1;
@@ -130,7 +133,7 @@ module  membridge#(
     assign afi_wrissuecap1en = 1'b0;
 
     assign afi_arlock =        2'h0;
-    assign afi_arcache =       4'h3;
+//    assign afi_arcache =       4'h3;
     assign afi_arprot =        3'h0;
     assign afi_arsize =        3'h3;
     assign afi_arburst =       2'h1;
@@ -150,9 +153,14 @@ module  membridge#(
     wire set_size64_w;
     wire set_start64_w;
     wire set_len64_w;
+    wire set_mode_w;
     wire set_width64_w;
-    
-    
+    reg  [4:0] mode_reg_mclk;
+    reg  [4:0] mode_reg;
+    wire       cache_debug;
+    assign cache_debug=mode_reg[4];
+    assign afi_awcache =       mode_reg[3:0]; // 4'h3;
+    assign afi_arcache =       mode_reg[3:0]; // 4'h3;
     assign set_ctrl_w =         cmd_we && (cmd_a== MEMBRIDGE_CTRL);
     assign set_lo_addr64_w =    cmd_we && (cmd_a== MEMBRIDGE_LO_ADDR64);
     assign set_size64_w =       cmd_we && (cmd_a== MEMBRIDGE_SIZE64);
@@ -160,6 +168,7 @@ module  membridge#(
     assign set_len64_w =        cmd_we && (cmd_a== MEMBRIDGE_LEN64);
     assign set_width64_w =      cmd_we && (cmd_a== MEMBRIDGE_WIDTH64);
     assign set_status_w =       cmd_we && (cmd_a== MEMBRIDGE_STATUS_CNTRL);
+    assign set_mode_w =         cmd_we && (cmd_a== MEMBRIDGE_MODE);
     reg [28:0] lo_addr64_mclk;
     reg [28:0] size64_mclk;
     reg [28:0] start64_mclk;
@@ -205,6 +214,10 @@ module  membridge#(
         
         if   (rst) start_mclk <= 0;
         else       start_mclk <= set_ctrl_w & cmd_data[1];
+
+        if      (rst)        mode_reg_mclk <= 5'h03;
+        else if (set_mode_w) mode_reg_mclk <= cmd_data[4:0];
+
 `ifdef MEMBRIDGE_DEBUG_READ
         if   (rst) debug_aw_mclk <= 0;
         else       debug_aw_mclk <= set_ctrl_w & cmd_data[2];
@@ -214,6 +227,8 @@ module  membridge#(
 
         if   (rst) debug_disable_set_mclk <= 0;
         else       debug_disable_set_mclk <= set_ctrl_w & cmd_data[4];
+        
+        
 `endif
 
     end
@@ -264,9 +279,8 @@ module  membridge#(
         size64          <= size64_mclk;
         start64         <= start64_mclk;
         len64           <= len64_mclk;
-//        width64         <= width64_mclk;
+        mode_reg        <= mode_reg_mclk;
         last_in_line64  <= width64_minus1_mclk;
-//        last_in_line64  <= width64_mclk[FRAME_WIDTH_BITS:0]-1;
         wr_mode         <= cmd_wrmem;
         rdwr_reset_addr <= rdwr_reset_addr_mclk;
         last_addr1k     <= size64[28:4] - 1;
@@ -293,6 +307,8 @@ module  membridge#(
 
         if      (rst)      wr_id <= 0;
         else if (wr_start) wr_id <= wr_id +1;
+        
+        
 
     end
     // mclk -> hclk
@@ -498,7 +514,7 @@ module  membridge#(
     wire                       bufwr_we_w; // TODO: assign
     
     reg                  [2:0] bufrd_rd;
-    reg                  [1:0] bufwr_we;
+    reg   [BUFWR_WE_WIDTH-1:0] bufwr_we;
     reg                        buf_rdwr; // equiv to  bufrd_rd[0] || bufwr_we)
     wire                       is_last_in_line;
     wire                       is_last_in_page;
@@ -545,7 +561,7 @@ module  membridge#(
         debug_bufrd_rd<= {debug_bufrd_rd[3:0], bufrd_rd_w };
 `endif        
         buf_rdwr <= bufrd_rd_w || bufwr_we_w;
-        bufwr_we <= {bufwr_we[0],bufwr_we_w};
+        bufwr_we <= {bufwr_we[BUFWR_WE_WIDTH-2:0],bufwr_we_w};
         
     end
     assign afi_wvalid=bufrd_rd[2];
@@ -592,7 +608,7 @@ module  membridge#(
         if (rst) afi_rd_safe_not_empty <= 0;
          // allow 1 cycle latency, no continuous reads when FIFO is low (like in the very end of the transfer)
          // Adjust '2' in afi_rcount[6:2] ? 
-        else     afi_rd_safe_not_empty <= rdwr_en && ( afi_rcount[7] || (|afi_rcount[6:2]) || (!(|bufwr_we) && afi_rvalid));
+        else     afi_rd_safe_not_empty <= rdwr_en && ( afi_rcount[7] || (|afi_rcount[6:SAFE_RD_BITS]) || (!(|bufwr_we) && !bufwr_we_w && afi_rvalid));
 
         if (rst) afi_ra_safe_not_full <= 0;
         else     afi_ra_safe_not_full <= rdwr_en && ( !afi_racount[2] && !(&afi_racount[1:0]));
@@ -616,7 +632,8 @@ module  membridge#(
     always @ (posedge hclk) begin
         write_page_r    <= write_page;
         buf_in_line64_r <= buf_in_line64[6:0];
-        rdata_r <= afi_rdata;
+//        rdata_r <= afi_rdata;
+        rdata_r <= cache_debug?{wr_id[3:0],2'b0,write_page_r[1:0],afi_rcount[7:0],afi_rdata[47:0]}:afi_rdata[63:0]; // debugging
     end    
         
     cmd_deser #(

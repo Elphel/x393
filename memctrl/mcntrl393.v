@@ -258,7 +258,7 @@ module  mcntrl393 #(
     input                        axird_regen, //==axird_ren?? - remove?   .regen(bram_reg_re_w),        // output register enable
 //   wire  [31:0]   axird_bram_rdata;  //      .data_out(rdata[31:0]),       // data out
     output              [31:0]   axird_rdata,  // combinatorial multiplexed (add external register layer, modify axibram_read?)     .data_out(rdata[31:0]),       // data out
-    output                       axird_selected, // axird_rdata contains cvalid data from this module 
+    output                       axird_selected, // axird_rdata contains valid data from this module 
 //   wire  [31:0]   port0_rdata;  //
 //   wire  [31:0]   status_rdata;  //
 

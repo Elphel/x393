@@ -366,15 +366,30 @@ class X393McntrlTests(object):
                             window_top):   # input [15:0]           window_top;
         """
         Test scanline read (frame size/row increment is set in parameters) 
-        <channel> channel number to use. Valid values: 1, 3
-        <extra_pages>    2-bit number of extra pages that need to stay (not to be overwritten) in the buffer
-        <show_data>      print read data
-        <window_width>   13-bit window width in 8-bursts (16 bytes)
-        <window_height>  16 bit window height
-        <window_left>,   13-bit window left margin in 8-bursts (16 bytes)
-        <window_top>     16-bit window top margin
-        Returns read data as list
+        @param channel channel number to use. Valid values: 1, 3
+        @param extra_pages    2-bit number of extra pages that need to stay (not to be overwritten) in the buffer
+        @param show_data      print read data
+        @param window_width   13-bit window width in 8-bursts (16 bytes)
+        @param window_height  16 bit window height
+        @param window_left,   13-bit window left margin in 8-bursts (16 bytes)
+        @param window_top     16-bit window top margin
+        @return read data as list
         """
+        if show_data==2:
+            result=self.test_scanline_read (channel = channel,       # input            [3:0] channel;
+                                            extra_pages = extra_pages,   # input            [1:0] extra_pages;
+                                            show_data = 0,     # input                  extra_pages;
+                                            window_width = window_width,  # input [15:0]           window_width;
+                                            window_height = window_height, # input [15:0]           window_height;
+                                            window_left = window_left,   # input [15:0]           window_left;
+                                            window_top = window_top)
+            for line_no,line in enumerate(result):
+                print("%03x:"%(line_no),end=" ")
+                for i in range(len(line)//2):
+                    d = line[2*i] + (line[2*i+1] << 32)
+                    print("%16x"%(d),end=" ")
+                print()    
+            return result
         
         result=[] # will be a 2-d array
     
@@ -445,6 +460,7 @@ class X393McntrlTests(object):
             self.x393_axi_tasks.write_contol_register(test_mode_address,            vrlg.TEST01_NEXT_PAGE)
         return result    
 
+  
     def test_tiled_write(self,          #
                          channel,       # input            [3:0] channel;
                          byte32,        # input                  byte32;

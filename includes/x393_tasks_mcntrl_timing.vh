@@ -94,6 +94,30 @@
      end
     endtask
 
+    task axi_get_delays; // set all individual delays
+     integer i;
+     begin
+         $display("axi_get_delays @ %t",$time);
+     
+        for (i=0;i<10;i=i+1) begin
+            read_contol_register(LD_DLY_LANE0_ODELAY + i);
+        end
+        for (i=0;i<9;i=i+1) begin
+            read_contol_register(LD_DLY_LANE0_IDELAY + i);
+        end
+        for (i=0;i<10;i=i+1) begin
+            read_contol_register(LD_DLY_LANE1_ODELAY + i);
+        end
+        for (i=0;i<9;i=i+1) begin
+            read_contol_register(LD_DLY_LANE1_IDELAY + i);
+        end
+        for (i=0;i<32;i=i+1) begin
+            read_contol_register(LD_DLY_CMDA + i);
+        end
+        read_contol_register(LD_DLY_PHASE);
+     end
+    endtask
+
 
     task axi_set_dq_idelay; // sets same delay to all dq idelay
         input [7:0] delay;
