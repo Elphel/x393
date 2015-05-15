@@ -36,7 +36,7 @@ TODO: Maybe allow less rows with different sequence (no autoprecharge/no activat
 number fo rows>1!
 
 Known issues:
-1: Most tile heights cause timing violation. Valid height mod 8 can be 0,6,7 (1,2,3,4,5 - invalid)
+1: Most tile heights cause timing violation. Valid height mod 8 can be 0,6,7 (1,2,3,4,5 - invalid- wrong - that was for tile16 mode)
 2: With option "keep_open" there should be no page boundary crossings, caller only checks the first line, and if window full width
  is not multiple of CAS page, page crossings can appear on other than first line (fix caller to use largest common divider of page and
  frame full width? Seems easy to fix
