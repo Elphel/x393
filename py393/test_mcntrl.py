@@ -57,6 +57,7 @@ import x393_mcntrl_tests
 import x393_mcntrl_eyepatterns
 import x393_mcntrl_adjust
 import x393_mcntrl_membridge
+import x393_mcntrl_dmatest
 import vrlg
 __all__ = []
 __version__ = 0.1
@@ -332,6 +333,7 @@ USAGE
     x393Eyepatterns= x393_mcntrl_eyepatterns.X393McntrlEyepattern(verbose,args.simulated)
     x393Adjust=      x393_mcntrl_adjust.X393McntrlAdjust(verbose,args.simulated,args.localparams)
     X393Membridge=   x393_mcntrl_membridge.X393McntrlMembridge(verbose,args.simulated)
+    x393Dmatest=     x393_mcntrl_dmatest.X393McntrlDmatest(verbose,args.simulated)
     '''
     print ("----------------------")
     print("x393_mem.__dict__="+str(x393_mem.__dict__))
@@ -356,6 +358,7 @@ USAGE
     extractTasks(x393_mcntrl_eyepatterns.X393McntrlEyepattern,x393Eyepatterns)
     extractTasks(x393_mcntrl_adjust.X393McntrlAdjust,x393Adjust)
     extractTasks(x393_mcntrl_membridge.X393McntrlMembridge,X393Membridge)
+    extractTasks(x393_mcntrl_dmatest.X393McntrlDmatest,x393Dmatest)
     
 
     for cmdLine in commands:
