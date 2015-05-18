@@ -229,8 +229,20 @@ class X393McntrlDmatest(object):
         and transfer data to fb
         @pages Number of data memory pages
         @source Source offset in buffer (in pages)
-        @startaddr,@fullwidth,@width,@leftoffset,@topoffset,@linemultiplier - 
-            see _set_fb_region()
+        Set framebuffer memory region 
+        to transfer data from system memory
+        Default values allow to read framebuffer at
+        0x20, 0x21... lines, 0th column, 0..7 memory banks 
+        with 32x32 region showing 1 recorded line
+        Example: set_and_read 32 32 0 0x20 0 1 1
+        @startaddr Starting address of data array in framebuffer
+        @fullwidth Period of lines in memory
+        @width Length of line
+        @leftoffset Data offset from beginning of line
+        @topoffset Data offset from zeroth line
+        @linemultiplier set this value to a number of lines
+                        which form 1 memory page (to sync
+                        allocated memory size in sysmem and fb))
         '''
         self._set_source_region(source,pages)
         self._set_fb_region(startaddr,fullwidth,width,leftoffset,topoffset,linemultiplier)
@@ -261,8 +273,20 @@ class X393McntrlDmatest(object):
                 generate randomly
         @dest Destination offset (in pages) left 'None' to
                 generate randomly
-        @startaddr,@fullwidth,@width,@leftoffset,@topoffset,@linemultiplier - 
-            see _set_fb_region()
+        Set framebuffer memory region 
+        to transfer data from system memory
+        Default values allow to read framebuffer at
+        0x20, 0x21... lines, 0th column, 0..7 memory banks 
+        with 32x32 region showing 1 recorded line
+        Example: set_and_read 32 32 0 0x20 0 1 1
+        @startaddr Starting address of data array in framebuffer
+        @fullwidth Period of lines in memory
+        @width Length of line
+        @leftoffset Data offset from beginning of line
+        @topoffset Data offset from zeroth line
+        @linemultiplier set this value to a number of lines
+                        which form 1 memory page (to sync
+                        allocated memory size in sysmem and fb)
         @return True if successful
         '''
         self.dmatest_set_buffer_from_sysfs()
@@ -288,11 +312,22 @@ class X393McntrlDmatest(object):
                 generate randomly
         @dest Destination offset (in pages) left 'None' to
                 generate randomly
-        @startaddr,@fullwidth,@width,@leftoffset,@topoffset,@linemultiplier - 
-            see _set_fb_region()
+        Set framebuffer memory region 
+        to transfer data from system memory
+        Default values allow to read framebuffer at
+        0x20, 0x21... lines, 0th column, 0..7 memory banks 
+        with 32x32 region showing 1 recorded line
+        Example: set_and_read 32 32 0 0x20 0 1 1
+        @startaddr Starting address of data array in framebuffer
+        @fullwidth Period of lines in memory
+        @width Length of line
+        @leftoffset Data offset from beginning of line
+        @topoffset Data offset from zeroth line
+        @linemultiplier set this value to a number of lines
+                        which form 1 memory page (to sync
+                        allocated memory size in sysmem and fb)
         @return None
         '''
         while True:
             if not self.dmatest(random.randint(1,sizerange),source,dest,startaddr,fullwidth,width,leftoffset,topoffset,linemultiplier):
                 break
-
