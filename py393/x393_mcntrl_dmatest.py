@@ -272,7 +272,7 @@ class X393McntrlDmatest(object):
             dest = random.randint(0,self.buffer_size-pages*self.PAGE_SIZE)
         self.dmatest_prepare(pages,source,startaddr,fullwidth,width,leftoffset,topoffset,linemultiplier)
         transfer_str = ( str(pages)+" pages starting from page "+
-                         hex(int(source))+" -> page "+hex(int(dest)))
+                         hex(int(source//self.PAGE_SIZE))+" -> page "+hex(int(dest//self.PAGE_SIZE)))
         result = self.dmatest_run(pages,dest)
         if (result):
             print(transfer_str+" PASSED")
