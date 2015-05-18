@@ -66,8 +66,8 @@ class X393McntrlDmatest(object):
         @return None
         '''
         self.buffer_startaddr = addr
-        self.buffer_size = pages*self.PAGE_SIZE
-        self.buffer_endaddr = self.buffer_startaddr + self.buffer_size
+        self.buffer_size = pages
+        self.buffer_endaddr = self.buffer_startaddr + self.buffer_size*self.PAGE_SIZE
 
     def dmatest_set_buffer_from_sysfs(self):
         '''
@@ -79,8 +79,8 @@ class X393McntrlDmatest(object):
             with open(self.MEM_PATH + self.BUFFER_ADDRESS_NAME) as sysfile:
                 self.buffer_startaddr = int(sysfile.read(),0)
             with open(self.MEM_PATH + self.BUFFER_PAGES_NAME) as sysfile:
-                self.buffer_size = self.PAGE_SIZE*int(sysfile.read(),0)
-            self.buffer_endaddr = self.buffer_startaddr + self.buffer_size
+                self.buffer_size = int(sysfile.read(),0)
+            self.buffer_endaddr = self.buffer_startaddr + self.buffer_size*self.PAGE_SIZE
         except:
             print("Failed to get reserved physical memory range")
 
@@ -89,17 +89,15 @@ class X393McntrlDmatest(object):
         Set DMA region to be transfered into
         framebuffer memory. Page-aligned. Memory buffer
         for DMA operations has to be allocated.
-        @param offset Position in the allocated memory buffer
+        @param offset Position in the allocated memory buffer (in pages)
         @param pages Data region size (in pages)
         @return None
         '''
-        pagealigned = offset & (~(self.PAGE_SIZE-1))
-        self.source_offset = pagealigned
-        self.source_size = self.PAGE_SIZE*pages
-        self.source_pages = pages
-        self.source_startaddr = self.buffer_startaddr + self.source_offset
-        self.source_endaddr = self.source_startaddr + self.source_size
-        if (    self.source_offset + self.source_size > self.buffer_endaddr or
+        self.source_offset = offset
+        self.source_size = pages
+        source_startaddr = self.buffer_startaddr + self.source_offset*self.PAGE_SIZE
+        source_endaddr = source_startaddr + self.source_size*self.PAGE_SIZE
+        if (    source_endaddr > self.buffer_endaddr or
                 self.source_offset < 0 or self.source_size < 0  ):
             raise MemoryError("Region is outside of the buffer")
 
@@ -108,17 +106,15 @@ class X393McntrlDmatest(object):
         Set DMA region to transfer data from
         framebuffer memory. Page-aligned. Memory buffer
         for DMA operations has to be allocated.
-        @param offset Position in the allocated memory buffer
+        @param offset Position in the allocated memory buffer (in pages)
         @param pages Data region size (in pages)
         @return None
         '''
-        pagealigned = offset & (~(self.PAGE_SIZE-1))
-        self.dest_offset = pagealigned
-        self.dest_size = self.PAGE_SIZE*pages
-        self.dest_pages = pages
-        self.dest_startaddr = self.buffer_startaddr + self.dest_offset
-        self.dest_endaddr = self.dest_startaddr + self.dest_size
-        if (    self.dest_offset + self.dest_size > self.buffer_endaddr or
+        self.dest_offset = offset
+        self.dest_size = pages
+        dest_startaddr = self.buffer_startaddr + self.dest_offset*self.PAGE_SIZE
+        dest_endaddr = dest_startaddr + self.dest_size*self.PAGE_SIZE
+        if (    dest_endaddr > self.buffer_endaddr or
                 self.dest_offset < 0 or self.dest_size < 0      ):
             raise MemoryError("Region is outside of the buffer")
 
@@ -127,11 +123,13 @@ class X393McntrlDmatest(object):
         Fill defined DMA test region with random data
         @return None
         '''
+        source_startaddr = self.buffer_startaddr + self.source_offset*self.PAGE_SIZE
+        source_endaddr = source_startaddr + self.source_size*self.PAGE_SIZE
         datactr = 0
         self.tag = random.randint(0,0xFF) << 24
         print("Tag = "+hex(int(self.tag>>24)))
         with open("/dev/mem", "r+b") as f:
-            for addr in range(self.source_startaddr,self.source_endaddr,self.BYTEMODE):
+            for addr in range(source_startaddr,source_endaddr,self.BYTEMODE):
                 data = datactr*0x400//self.PAGE_SIZE | self.tag # random.randint(0,(1<<self.BYTEMODE*8)-1) & (1<<self.BYTEMODE*8)-1
                 page_addr = addr & (~(self.PAGE_SIZE-1))
                 page_offs = addr - page_addr
@@ -147,10 +145,12 @@ class X393McntrlDmatest(object):
         Calculate checksum of destination data
         @return None
         '''
+        dest_startaddr = self.buffer_startaddr + self.dest_offset*self.PAGE_SIZE
+        dest_endaddr = dest_startaddr + self.dest_size*self.PAGE_SIZE
         errors = 0
         dataref = 0
         with open("/dev/mem", "r+b") as f:
-            for addr in range(self.dest_startaddr,self.dest_endaddr,self.BYTEMODE):
+            for addr in range(dest_startaddr,dest_endaddr,self.BYTEMODE):
                 page_addr = addr & (~(self.PAGE_SIZE-1))
                 page_offs = addr - page_addr
                 if (page_addr >= 0x80000000):
@@ -197,10 +197,10 @@ class X393McntrlDmatest(object):
         print("Source: start = "+hex(self.source_offset)+", size = "+str(self.source_size))
         self.membridge.membridge_rw(    True, 
                         self.fb_startaddr, self.fb_fullwidth, self.fb_width, 
-                        self.source_size/self.PAGE_SIZE*self.fb_linemul, 
+                        self.source_size*self.fb_linemul, 
                         self.fb_left, self.fb_top, 
-                        self.source_offset>>3, self.buffer_startaddr>>3, 
-                        self.source_size>>3, False, 0x3, True, True )
+                        self.source_offset*self.PAGE_SIZE>>3, self.buffer_startaddr>>3, 
+                        self.source_size*self.PAGE_SIZE>>3, False, 0x3, True, True )
 
     def _transfer_fb_to_dest(self):
         '''
@@ -211,10 +211,10 @@ class X393McntrlDmatest(object):
         print("Dest:   start = "+hex(self.dest_offset)+", size = "+str(self.dest_size))
         self.membridge.membridge_rw(    False, 
                         self.fb_startaddr, self.fb_fullwidth, self.fb_width, 
-                        self.dest_size/self.PAGE_SIZE*self.fb_linemul, 
+                        self.dest_size*self.fb_linemul, 
                         self.fb_left, self.fb_top, 
-                        self.dest_offset>>3, self.buffer_startaddr>>3, 
-                        self.dest_size>>3, False, 0x3, True, True )
+                        self.dest_offset*self.PAGE_SIZE>>3, self.buffer_startaddr>>3, 
+                        self.dest_size*self.PAGE_SIZE>>3, False, 0x3, True, True )
 
     def _result(self):
         '''
@@ -228,21 +228,9 @@ class X393McntrlDmatest(object):
         Set source memory region
         and transfer data to fb
         @pages Number of data memory pages
-        @source Source offset in buffer (pages)
-        Set framebuffer memory region 
-        to transfer data from system memory
-        Default values allow to read framebuffer at
-        0x20, 0x21... lines, 0th column, 0..7 memory banks 
-        with 32x32 region showing 1 recorded line
-        Example: set_and_read 32 32 0 0x20 0 1 1
-        @startaddr Starting address of data array in framebuffer
-        @fullwidth Period of lines in memory
-        @width Length of line
-        @leftoffset Data offset from beginning of line
-        @topoffset Data offset from zeroth line
-        @linemultiplier set this value to a number of lines
-                        which form 1 memory page (to sync
-                        allocated memory size in sysmem and fb)
+        @source Source offset in buffer (in pages)
+        @startaddr,@fullwidth,@width,@leftoffset,@topoffset,@linemultiplier - 
+            see _set_fb_region()
         '''
         self._set_source_region(source,pages)
         self._set_fb_region(startaddr,fullwidth,width,leftoffset,topoffset,linemultiplier)
@@ -255,7 +243,7 @@ class X393McntrlDmatest(object):
         Set destination memory region
         and transfer data from fb
         @pages Number of data memory pages
-        @dest Destination offset in buffer (pages)
+        @dest Destination offset in buffer (in pages)
         @return True if no data corruption was detected
         '''
         self._set_dest_region(dest,pages)
@@ -273,30 +261,18 @@ class X393McntrlDmatest(object):
                 generate randomly
         @dest Destination offset (in pages) left 'None' to
                 generate randomly
-        Set framebuffer memory region 
-        to transfer data from system memory
-        Default values allow to read framebuffer at
-        0x20, 0x21... lines, 0th column, 0..7 memory banks 
-        with 32x32 region showing 1 recorded line
-        Example: set_and_read 32 32 0 0x20 0 1 1
-        @startaddr Starting address of data array in framebuffer
-        @fullwidth Period of lines in memory
-        @width Length of line
-        @leftoffset Data offset from beginning of line
-        @topoffset Data offset from zeroth line
-        @linemultiplier set this value to a number of lines
-                        which form 1 memory page (to sync
-                        allocated memory size in sysmem and fb)
+        @startaddr,@fullwidth,@width,@leftoffset,@topoffset,@linemultiplier - 
+            see _set_fb_region()
         @return True if successful
         '''
         self.dmatest_set_buffer_from_sysfs()
         if source == None:
-            source = random.randint(0,self.buffer_size-pages*self.PAGE_SIZE)
+            source = random.randint(0,self.buffer_size-pages)
         if dest == None:
-            dest = random.randint(0,self.buffer_size-pages*self.PAGE_SIZE)
+            dest = random.randint(0,self.buffer_size-pages)
         self.dmatest_prepare(pages,source,startaddr,fullwidth,width,leftoffset,topoffset,linemultiplier)
         transfer_str = ( str(pages)+" pages starting from page "+
-                         hex(int(source//self.PAGE_SIZE))+" -> page "+hex(int(dest//self.PAGE_SIZE)))
+                         hex(int(source))+" -> page "+hex(int(dest)))
         result = self.dmatest_run(pages,dest)
         if (result):
             print(transfer_str+" PASSED")
@@ -312,20 +288,8 @@ class X393McntrlDmatest(object):
                 generate randomly
         @dest Destination offset (in pages) left 'None' to
                 generate randomly
-        Set framebuffer memory region 
-        to transfer data from system memory
-        Default values allow to read framebuffer at
-        0x20, 0x21... lines, 0th column, 0..7 memory banks 
-        with 32x32 region showing 1 recorded line
-        Example: set_and_read 32 32 0 0x20 0 1 1
-        @startaddr Starting address of data array in framebuffer
-        @fullwidth Period of lines in memory
-        @width Length of line
-        @leftoffset Data offset from beginning of line
-        @topoffset Data offset from zeroth line
-        @linemultiplier set this value to a number of lines
-                        which form 1 memory page (to sync
-                        allocated memory size in sysmem and fb)
+        @startaddr,@fullwidth,@width,@leftoffset,@topoffset,@linemultiplier - 
+            see _set_fb_region()
         @return None
         '''
         while True:
