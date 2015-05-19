@@ -101,6 +101,8 @@ module  sensor_i2c_io#(
         .I     (sda_out), // input
         .T     (!sda_en) // input
     );
+    mpullup i_scl_pullup(scl);
+    mpullup i_sda_pullup(sda);
 
 endmodule
 

@@ -71,7 +71,9 @@ module  mmcm_phase_cntr#(
     parameter STARTUP_WAIT  =         "FALSE"       // Delays "DONE" signal until MMCM is locked
 )
 (
-    input clkin,   // General clock input
+    input clkin1,   // General clock input
+    input clkin2,   // Alternative clock input
+    input clkinsel, // Clock input select
     input clkfbin,  // Feedback clock input
     input rst,      // asynchronous reset input
     input pwrdwn,   // power down input    
@@ -205,9 +207,9 @@ module  mmcm_phase_cntr#(
         .LOCKED         (locked), // output
         .PSDONE         (psdone), // output
         .CLKFBIN        (clkfbin), // input
-        .CLKIN1         (clkin), // input
-        .CLKIN2            (1'b0), // input
-        .CLKINSEL          (1'b1), // input Select CLKIN1
+        .CLKIN1         (clkin1), // input
+        .CLKIN2         (clkin2), // input
+        .CLKINSEL       (clkinsel), // input Select CLKIN1
         .DADDR             (7'b0), // Dynamic reconfiguration address (input[6:0])
         .DCLK              (1'b0), // Dynamic reconfiguration clock input
         .DEN               (1'b0), // Dynamic reconfiguration enable input

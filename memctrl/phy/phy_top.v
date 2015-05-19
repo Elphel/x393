@@ -295,7 +295,6 @@ BUFIO iclk_bufio_i (.O(sdclk), .I(sdclk_pre) );
 //BUFH clk_ref_i (.O(clk_ref), .I(clk_ref_pre));
 BUFG clk_ref_i (.O(clk_ref), .I(clk_ref_pre));
 BUFG mclk_i (.O(mclk),.I(mclk_pre) );
-    /* Instance template for module mmcm_phase_cntr */
     mmcm_phase_cntr #(
         .PHASE_WIDTH         (PHASE_WIDTH),
         .CLKIN_PERIOD        (CLKIN_PERIOD),
@@ -333,7 +332,9 @@ BUFG mclk_i (.O(mclk),.I(mclk_pre) );
         .SS_MOD_PERIOD       (SS_MOD_PERIOD),
         .STARTUP_WAIT             ("FALSE")
     ) mmcm_phase_cntr_i (
-        .clkin               (clk_in), // input
+        .clkin1              (clk_in), // input
+        .clkin2              (1'b0), // input
+        .clkinsel            (1'b0), // input
         .clkfbin             (clk_fb), // input
 //        .rst                 (rst), // input
         .rst                 (rst_in), // input

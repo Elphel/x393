@@ -218,7 +218,7 @@ module  sensor_i2c#(
     status_generate #(
         .STATUS_REG_ADDR(SENSI2C_STATUS_REG),
         .PAYLOAD_BITS(7) // STATUS_PAYLOAD_BITS)
-    ) status_generate_i (
+    ) status_generate_sens_i2c_i (
         .rst        (rst), // input
         .clk        (mclk), // input
         .we         (set_status_w), // input

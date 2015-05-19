@@ -1,16 +1,16 @@
 /*******************************************************************************
- * Module: oddr_ds
- * Date:2014-05-13  
- * Author: Andrey Filippov
- * Description: wrapper for ODDR+OBUFDS
+ * Module: oddr_ss
+ * Date:2015-05-16  
+ * Author: andrey     
+ * Description: Wrapper for ODDR+OBUFT
  *
- * Copyright (c) 2014 Elphel, Inc.
- * oddr_ds.v is free software; you can redistribute it and/or modify
+ * Copyright (c) 2015 <set up in Preferences-Verilog/VHDL Editor-Templates> .
+ * oddr_ss.v is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- *  oddr_ds.v is distributed in the hope that it will be useful,
+ *  oddr_ss.v is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
@@ -20,13 +20,12 @@
  *******************************************************************************/
 `timescale 1ns/1ps
 
-module  oddr_ds # (
-        parameter CAPACITANCE =  "DONT_CARE",
-        parameter IOSTANDARD =   "DIFF_SSTL15",
-        parameter SLEW =         "SLOW",
-        parameter DDR_CLK_EDGE = "OPPOSITE_EDGE",
-        parameter INIT         = 1'b0,
-        parameter SRTYPE = "SYNC"
+module  oddr_ss #(
+    parameter IOSTANDARD = "DEFAULT",
+    parameter SLEW = "SLOW",
+    parameter DDR_CLK_EDGE = "OPPOSITE_EDGE",
+    parameter INIT         = 1'b0,
+    parameter SRTYPE =       "SYNC"
 )(
     input  clk,
     input  ce,
@@ -34,8 +33,7 @@ module  oddr_ds # (
     input  set,
     input [1:0] din,
     input  tin, // tristate control
-    output dq,
-    output ndq
+    output dq
 );
     wire idq;
     ODDR #(
@@ -51,17 +49,12 @@ module  oddr_ds # (
         .R(rst), // input 
         .S(set) // input 
     );
-
-    OBUFTDS #(
-        .CAPACITANCE (CAPACITANCE),
-        .IOSTANDARD  (IOSTANDARD),
-        .SLEW        (SLEW)
-    ) OBUFDS_i (
-        .O  (dq), // output 
-        .OB (ndq), // output 
-        .I  (idq), // input 
-        .T  (tin) // input 
-    );
-
+OBUFT #(
+    .IOSTANDARD(IOSTANDARD),
+    .SLEW(SLEW)
+) iobufs_i (
+    .O(dq),
+    .I(idq),
+    .T(tin));
 endmodule
 
