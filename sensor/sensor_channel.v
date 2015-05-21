@@ -57,6 +57,9 @@ module  sensor_channel#(
     parameter SENS_CTRL_LD_DLY =   10,  // 10
     parameter SENS_CTRL_QUADRANTS =12,  // 17:12, enable - 20
     
+    parameter SENSOR_DATA_WIDTH =  12,
+    parameter SENSOR_FIFO_2DEPTH = 4,
+    parameter SENSOR_FIFO_DELAY =  7,
     
     parameter IODELAY_GRP ="IODELAY_SENSOR", // may need different for different channels?
     parameter integer IDELAY_VALUE = 0,
@@ -114,10 +117,16 @@ module  sensor_channel#(
     wire         sens_par12_status_start;
     
     wire         ipclk;   // Use in FIFO
-    wire         ipclk2x; // Use in FIFO
+//    wire         ipclk2x; // Use in FIFO?
+    wire  [11:0] pxd_to_fifo;
+    wire         vact_to_fifo;    // frame active @posedge  ipclk
+    wire         hact_to_fifo;    // line active @posedge  ipclk
+    
+    // data from FIFO
     wire  [11:0] pxd;     // TODO: align MSB? parallel data, @posedge  ipclk
-    wire         vact;    // frame active @posedge  ipclk
     wire         hact;    // line active @posedge  ipclk
+    wire         sof; // start of frame
+    wire         eof; // end of frame
 
     status_router2 status_router2_sensori (
         .rst       (rst),                     // input
@@ -205,7 +214,7 @@ module  sensor_channel#(
         .rst                  (rst),                    // input
         .pclk                 (pclk),                   // input
         .ipclk                (ipclk),                  // output
-        .ipclk2x              (ipclk2x),                // output
+        .ipclk2x              (), // ipclk2x),          // output
         .vact                 (sns_dn[1]),              // input
         .hact                 (sns_dp[1]),              // input
         .bpf                  (sns_dn[0]),              // inout
@@ -215,9 +224,9 @@ module  sensor_channel#(
         .arst                 (sns_dn[7]),              // inout
         .aro                  (sns_ctl),                // inout
         .dclk                 (sns_dp[0]),              // output
-        .pxd_out              (pxd[11:0]),              // output[11:0] 
-        .vact_out             (vact),                   // output
-        .hact_out             (hact),                   // output: either delayed input, or regenerated from the leading edge and programmable duration
+        .pxd_out              (pxd_to_fifo[11:0]),      // output[11:0] 
+        .vact_out             (vact_to_fifo),                   // output
+        .hact_out             (hact_to_fifo),                   // output: either delayed input, or regenerated from the leading edge and programmable duration
         .mclk                 (mclk),                   // input
         .cmd_ad               (cmd_ad),                 // input[7:0] 
         .cmd_stb              (cmd_stb),                // input
@@ -225,6 +234,25 @@ module  sensor_channel#(
         .status_rq            (sens_par12_status_rq),   // output
         .status_start         (sens_par12_status_start) // input
     );
+
+    sensor_fifo #(
+        .SENSOR_DATA_WIDTH  (SENSOR_DATA_WIDTH),
+        .SENSOR_FIFO_2DEPTH (SENSOR_FIFO_2DEPTH),
+        .SENSOR_FIFO_DELAY  (SENSOR_FIFO_DELAY)
+    ) sensor_fifo_i (
+        .rst         (rst),     // input
+        .iclk        (ipclk), // input
+        .pclk        (pclk), // input
+        .pxd_in      (pxd_to_fifo), // input[11:0] 
+        .vact        (vact_to_fifo), // input
+        .hact        (hact_to_fifo), // input
+        .pxd_out     (pxd), // output[11:0] 
+        .data_valid  (hact), // output
+        .sof         (sof), // output
+        .eof         (eof) // output
+    );
+
+
 
 
 endmodule
