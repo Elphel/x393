@@ -100,7 +100,7 @@ module  sensor_channel#(
     inout        sns_ctl,
     inout        sns_pg,
     // programming interface
-    input        mclk,     // global clock, half DDR3 clock, synchronizes all I/O thorough the command port
+    input        mclk,     // global clock, half DDR3 clock, synchronizes all I/O through the command port
     input  [7:0] cmd_ad,      // byte-serial command address/data (up to 6 bytes: AL-AH-D0-D1-D2-D3 
     input        cmd_stb,     // strobe (with first byte) for the command a/d
     output [7:0] status_ad,   // status address/data - up to 5 bytes: A - {seq,status[1:0]} - status[2:9] - status[10:17] - status[18:25]

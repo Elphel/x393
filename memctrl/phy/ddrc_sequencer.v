@@ -68,7 +68,7 @@ module  ddrc_sequencer   #(
 // clocks, reset
     input                        clk_in,
     input                        rst_in,
-    output                       mclk,     // global clock, half DDR3 clock, synchronizes all I/O thorough the command port
+    output                       mclk,     // global clock, half DDR3 clock, synchronizes all I/O through the command port
 // command port 0 (filled by software - 32w->32r) - used for mode set, refresh, write levelling, ...
     input                        cmd0_clk,
     input                        cmd0_we,

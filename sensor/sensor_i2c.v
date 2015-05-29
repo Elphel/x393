@@ -31,7 +31,7 @@ module  sensor_i2c#(
     parameter SENSI2C_STATUS_REG =  'h30
 )(
     input         rst,
-    input         mclk,         // global clock, half DDR3 clock, synchronizes all I/O thorough the command port
+    input         mclk,         // global clock, half DDR3 clock, synchronizes all I/O through the command port
     input   [7:0] cmd_ad,       // byte-serial command address/data (up to 6 bytes: AL-AH-D0-D1-D2-D3 
     input         cmd_stb,      // strobe (with first byte) for the command a/d
 // status will {frame_num[3:0],busy,sda,scl} - read outside of this module?

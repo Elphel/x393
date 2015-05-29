@@ -38,7 +38,7 @@ module  mcntrl393_test01#(
     parameter MCNTRL_TEST01_STATUS_REG_CHN4_ADDR= 'h3f  // status/readback register for channel 4
 )(
     input                         rst,
-    input                         mclk,     // global clock, half DDR3 clock, synchronizes all I/O thorough the command port
+    input                         mclk,     // global clock, half DDR3 clock, synchronizes all I/O through the command port
     // programming interface
     input                   [7:0] cmd_ad,      // byte-serial command address/data (up to 6 bytes: AL-AH-D0-D1-D2-D3 
     input                         cmd_stb,     // strobe (with first byte) for the command a/d
