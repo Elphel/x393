@@ -242,7 +242,7 @@ module  ram_64w_64r
 
 endmodule
 
-// Both ports with less than 64 bit widths
+// Both ports with less than 64 bit widths - TODO: see if it is still possible to use SDP
 module  ram_lt64w_lt64r
 #(
   parameter integer REGISTERS    = 0, // 1 - registered output
@@ -283,7 +283,7 @@ module  ram_lt64w_lt64r
     .READ_WIDTH_B              (0),              // Valid: 0,1,2,4,9,18,36 and in SDP mode - 72 (should be 0 if port is not used)
     .WRITE_WIDTH_A             (0),              // Valid: 0,1,2,4,9,18,36 and in SDP mode - 72 (should be 0 if port is not used)
     .WRITE_WIDTH_B             (PWIDTH_WR),      // Valid: 0,1,2,4,9,18,36 and in SDP mode - 72 (should be 0 if port is not used)
-    .RAM_MODE                  ("SDP"),          // Valid "TDP" (true dual-port) and "SDP" - simple dual-port
+    .RAM_MODE                  ("TDP"),          // Valid "TDP" (true dual-port) and "SDP" - simple dual-port
     .WRITE_MODE_A              ("WRITE_FIRST"),  // Valid: "WRITE_FIRST", "READ_FIRST", "NO_CHANGE"
     .WRITE_MODE_B              ("WRITE_FIRST"),  // Valid: "WRITE_FIRST", "READ_FIRST", "NO_CHANGE"
     .RDADDR_COLLISION_HWCONFIG ("DELAYED_WRITE"),// Valid: "DELAYED_WRITE","PERFORMANCE" (no access to the same page)
