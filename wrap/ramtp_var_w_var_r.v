@@ -82,7 +82,9 @@ module  ramtp_var_w_var_r
   parameter integer REGISTERS_A = 0, // 1 - registered output
   parameter integer REGISTERS_B = 0, // 1 - registered output
   parameter integer LOG2WIDTH_A = 5,  // WIDTH= 9  << (LOG2WIDTH - 3)
-  parameter integer LOG2WIDTH_B = 5   // WIDTH= 9  << (LOG2WIDTH - 3)
+  parameter integer LOG2WIDTH_B = 5,  // WIDTH= 9  << (LOG2WIDTH - 3)
+  parameter WRITE_MODE_A =        "NO_CHANGE", //Valid: "WRITE_FIRST", "READ_FIRST", "NO_CHANGE"
+  parameter WRITE_MODE_B =        "NO_CHANGE"  //Valid: "WRITE_FIRST", "READ_FIRST", "NO_CHANGE"
  )(
       input                               clk_a,     // clock for port A
       input            [14-LOG2WIDTH_A:0] addr_a,    // address port A
@@ -140,8 +142,8 @@ module  ramtp_var_w_var_r
     .WRITE_WIDTH_A             (PWIDTH_A),              // Valid: 0,1,2,4,9,18,36 and in SDP mode - 72 (should be 0 if port is not used)
     .WRITE_WIDTH_B             (PWIDTH_B),       // Valid: 0,1,2,4,9,18,36 and in SDP mode - 72 (should be 0 if port is not used)
     .RAM_MODE                  ("TDP"),          // Valid "TDP" (true dual-port) and "SDP" - simple dual-port
-    .WRITE_MODE_A              ("WRITE_FIRST"),  // Valid: "WRITE_FIRST", "READ_FIRST", "NO_CHANGE"
-    .WRITE_MODE_B              ("WRITE_FIRST"),  // Valid: "WRITE_FIRST", "READ_FIRST", "NO_CHANGE"
+    .WRITE_MODE_A              (WRITE_MODE_A),   // Valid: "WRITE_FIRST", "READ_FIRST", "NO_CHANGE"
+    .WRITE_MODE_B              (WRITE_MODE_B),   // Valid: "WRITE_FIRST", "READ_FIRST", "NO_CHANGE"
     .RDADDR_COLLISION_HWCONFIG ("DELAYED_WRITE"),// Valid: "DELAYED_WRITE","PERFORMANCE" (no access to the same page)
     .SIM_COLLISION_CHECK       ("ALL"),          // Valid: "ALL", "GENERATE_X_ONLY", "NONE", and "WARNING_ONLY"
     .INIT_FILE                 ("NONE"),         // "NONE" or filename with initialization data

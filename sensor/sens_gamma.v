@@ -26,9 +26,14 @@ module  sens_gamma #(
     parameter SENS_GAMMA_CTRL =        'h0,
 //    parameter SENS_GAMMA_STATUS =      'h1,
     parameter SENS_GAMMA_TADDR =       'h2,
-    parameter SENS_GAMMA_TDATA =       'h3 // 1.. 2^16, 0 - use HACT
+    parameter SENS_GAMMA_TDATA =       'h3, // 1.. 2^16, 0 - use HACT
 //    parameter SENS_GAMMA_STATUS_REG =  'h32
-    
+    parameter    SENS_GAMMA_MODE_WIDTH = 5, // does not include trig
+    parameter    SENS_GAMMA_MODE_BAYER = 0,
+    parameter    SENS_GAMMA_MODE_PAGE =  2,
+    parameter    SENS_GAMMA_MODE_EN =    3,
+    parameter    SENS_GAMMA_MODE_REPET = 4,
+    parameter    SENS_GAMMA_MODE_TRIG =  5
 ) (
     input         rst,
     input         pclk,   // global clock input, pixel rate (96MHz for MT9P006)
@@ -46,7 +51,8 @@ module  sens_gamma #(
     input         hact_in,
     input         sof_in,    // start of frame, single pclk, input
     input         eof_in,   // end of frame
-    input         trig,
+    input         trig_in,  // external trigger to process a single frame. May be unused (grounded) as there
+                            // is a software trigger option implemented
     output [7:0]  pxd_out,
     output        hact_out,
     output        sof_out,    // start of frame, single pclk, output
@@ -62,7 +68,6 @@ module  sens_gamma #(
     input         status_start // Acknowledge of the first status packet byte (address)
 */    
 );
-    localparam    SENS_GAMMA_MODE_WIDTH=10;
     wire    [1:0] cmd_a;
     wire   [31:0] cmd_data;
     wire          cmd_we;
@@ -110,7 +115,8 @@ module  sens_gamma #(
     reg           pend_trig; // pending trigger (if trig came outside of vblank 
     wire          sof_masked;
     reg           frame_run;
-    
+    wire          trig_soft;
+    wire          trig;
 
     assign        pxd_out = cdata;
     assign        hact_out = hact_d[3];
@@ -120,17 +126,30 @@ module  sens_gamma #(
     assign set_taddr_w =  cmd_we && (cmd_a == SENS_GAMMA_TADDR );
     assign set_tdata_w =  cmd_we && (cmd_a == SENS_GAMMA_TDATA );
     
+/*
     assign bayer =        mode[1:0];
     assign table_page =   mode[2]; // TODO: re-assign?
     assign en_input =     mode[3]; 
     assign repet_mode =   mode[4]; // TODO: re-assign?
+    parameter    SENS_GAMMA_MODE_WIDTH = 5, // does not include trig
+    parameter    SENS_GAMMA_MODE_BAYER = 0,
+    parameter    SENS_GAMMA_MODE_PAGE =  2,
+    parameter    SENS_GAMMA_MODE_EN =    3,
+    parameter    SENS_GAMMA_MODE_REPET = 4,
+    parameter    SENS_GAMMA_MODE_TRIG =  5
+
+*/    
+    assign bayer =        mode[SENS_GAMMA_MODE_BAYER +: 2];
+    assign table_page =   mode[SENS_GAMMA_MODE_PAGE]; // TODO: re-assign?
+    assign en_input =     mode[SENS_GAMMA_MODE_EN]; 
+    assign repet_mode =   mode[SENS_GAMMA_MODE_REPET]; // TODO: re-assign?
     
     assign sync_bayer=hact_d[1] && ~hact_d[2];
     assign interp_data[9:0] = table_base_r[9:0]+table_mult_r[17:8]+table_mult_r[7]; //round
     assign table_mult=table_diff*{1'b0,pxd_in_r3[7:0]}; // 11 bits, signed* 9 bits, positive
     
     assign sof_masked= sof_in && (pend_trig || repet_mode) && en_input;
-    
+    assign trig = trig_in || trig_soft;
     always @ (posedge rst or posedge mclk) begin
         if      (rst)         taddr <= 0;
         else if (set_taddr_w) taddr <= cmd_data[10:0];
@@ -140,7 +159,7 @@ module  sens_gamma #(
     end 
 //    reg           vblank;    // from sof to first hact
 //    reg           pend_trig; // pending trigger (if trig came outside of vblank 
-    
+//SENS_GAMMA_MODE_TRIG    
     always @ (posedge rst or posedge pclk) begin
         if (rst) begin
             mode <= 0;
@@ -233,6 +252,14 @@ module  sens_gamma #(
         .din ({eof_in, sof_masked}), // input[0:0] 
         .dout({eof_out,sof_out})    // output[0:0] 
     );
+    pulse_cross_clock trig_soft_i (
+        .rst       (rst),
+        .src_clk   (mclk),
+        .dst_clk   (pclk),
+        .in_pulse  (cmd_data[SENS_GAMMA_MODE_TRIG] && set_ctrl_w),
+        .out_pulse (trig_soft),
+        .busy      ());
+    
 
 //sof_masked
     ramp_var_w_var_r #(

@@ -61,6 +61,20 @@ module  sensor_channel#(
     parameter SENSOR_FIFO_2DEPTH = 4,
     parameter SENSOR_FIFO_DELAY =  7,
     
+    parameter SENS_GAMMA_ADDR =        'h338,
+    parameter SENS_GAMMA_ADDR_MASK =   'h3fc,
+    parameter SENS_GAMMA_CTRL =        'h0,
+//    parameter SENS_GAMMA_STATUS =      'h1,
+    parameter SENS_GAMMA_TADDR =       'h2,
+    parameter SENS_GAMMA_TDATA =       'h3, // 1.. 2^16, 0 - use HACT
+//    parameter SENS_GAMMA_STATUS_REG =  'h32
+    parameter SENS_GAMMA_MODE_WIDTH =  5, // does not include trig
+    parameter SENS_GAMMA_MODE_BAYER =  0,
+    parameter SENS_GAMMA_MODE_PAGE =   2,
+    parameter SENS_GAMMA_MODE_EN =     3,
+    parameter SENS_GAMMA_MODE_REPET =  4,
+    parameter SENS_GAMMA_MODE_TRIG =   5,
+    
     parameter IODELAY_GRP ="IODELAY_SENSOR", // may need different for different channels?
     parameter integer IDELAY_VALUE = 0,
     parameter integer PXD_DRIVE = 12,
@@ -101,14 +115,18 @@ module  sensor_channel#(
     inout        sns_pg,
     // programming interface
     input        mclk,     // global clock, half DDR3 clock, synchronizes all I/O through the command port
-    input  [7:0] cmd_ad,      // byte-serial command address/data (up to 6 bytes: AL-AH-D0-D1-D2-D3 
-    input        cmd_stb,     // strobe (with first byte) for the command a/d
+    input  [7:0] cmd_ad_in,      // byte-serial command address/data (up to 6 bytes: AL-AH-D0-D1-D2-D3 
+    input        cmd_stb_in,     // strobe (with first byte) for the command a/d
     output [7:0] status_ad,   // status address/data - up to 5 bytes: A - {seq,status[1:0]} - status[2:9] - status[10:17] - status[18:25]
     output       status_rq,   // input request to send status downstream
     input        status_start // Acknowledge of the first status packet byte (address)
 // (much) more will be added later    
     
 );
+    reg    [7:0] cmd_ad;      // byte-serial command address/data (up to 6 bytes: AL-AH-D0-D1-D2-D3 
+    reg          cmd_stb;     // strobe (with first byte) for the command a/d
+
+
     wire   [7:0] sens_i2c_status_ad;
     wire         sens_i2c_status_rq;
     wire         sens_i2c_status_start;
@@ -127,6 +145,23 @@ module  sensor_channel#(
     wire         hact;    // line active @posedge  ipclk
     wire         sof; // start of frame
     wire         eof; // end of frame
+    
+    wire  [15:0] gamma_pxd_in; 
+    wire         gamma_hact_in;
+    wire         gamma_sof_in;
+    wire         gamma_eof_in;
+    
+    // TODO: insert vignetting and/or flat field, pixel defects before gamma_*_in
+    assign gamma_pxd_in = {pxd[11:0],4'b0};
+    assign gamma_hact_in = hact;
+    assign gamma_sof_in =  sof;
+    assign gamma_eof_in =  eof;
+     
+    
+    always @ (posedge mclk) begin
+        cmd_ad  <= cmd_ad_in; 
+        cmd_stb <= cmd_stb_in;
+    end
 
     status_router2 status_router2_sensori (
         .rst       (rst),                     // input
@@ -252,6 +287,34 @@ module  sensor_channel#(
         .eof         (eof) // output
     );
 
+    sens_gamma #(
+        .SENS_GAMMA_ADDR       (SENS_GAMMA_ADDR),
+        .SENS_GAMMA_ADDR_MASK  (SENS_GAMMA_ADDR_MASK),
+        .SENS_GAMMA_CTRL       (SENS_GAMMA_CTRL),
+        .SENS_GAMMA_TADDR      (SENS_GAMMA_TADDR),
+        .SENS_GAMMA_TDATA      (SENS_GAMMA_TDATA),
+        .SENS_GAMMA_MODE_WIDTH (SENS_GAMMA_MODE_WIDTH),
+        .SENS_GAMMA_MODE_BAYER (SENS_GAMMA_MODE_BAYER),
+        .SENS_GAMMA_MODE_PAGE  (SENS_GAMMA_MODE_PAGE),
+        .SENS_GAMMA_MODE_EN    (SENS_GAMMA_MODE_EN),
+        .SENS_GAMMA_MODE_REPET (SENS_GAMMA_MODE_REPET),
+        .SENS_GAMMA_MODE_TRIG  (SENS_GAMMA_MODE_TRIG)
+    ) sens_gamma_i (
+        .rst         (rst), // input
+        .pclk        (pclk), // input
+        .pxd_in      (gamma_pxd_in), // input[15:0] 
+        .hact_in     (gamma_hact_in), // input
+        .sof_in      (gamma_sof_in), // input
+        .eof_in      (gamma_eof_in), // input
+        .trig_in     (1'b0), // input (use trig_soft)
+        .pxd_out     (gamma_pxd_out), // output[7:0] 
+        .hact_out    (gamma_hact_out), // output
+        .sof_out     (gamma_sof_out), // output
+        .eof_out     (gamma_eof_out), // output
+        .mclk        (mclk), // input
+        .cmd_ad      (cmd_ad), // input[7:0] 
+        .cmd_stb     (cmd_stb) // input
+    );
 
 
 
