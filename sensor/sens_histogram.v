@@ -37,8 +37,8 @@ module  sens_histogram #(
     input         mclk,
     input         hist_en,  // @mclk - gracefully enable/disable histogram
     input         hist_rst, // @mclk - immediately disable if true
-    output        hist_out_rq,
-    input         hist_out_grant,
+    output        hist_rq,
+    input         hist_grant,
     output [31:0] hist_do,
     output        hist_dv,
     input   [7:0] cmd_ad,      // byte-serial command address/data (up to 6 bytes: AL-AH-D0-D1-D2-D3 
@@ -108,7 +108,7 @@ module  sens_histogram #(
     reg           hist_out_d;
     reg     [2:0] hist_re;
     reg     [9:0] hist_raddr;
-    reg           hist_rq;
+    reg           hist_rq_r;
     wire          hist_xfer_done_mclk; //@ mclk
     wire          hist_xfer_done; // @pclk
     reg           hist_xfer_busy; // @pclk, during histogram readout , immediately after woi (no gaps)
@@ -121,7 +121,7 @@ module  sens_histogram #(
     assign hcntr_zero_w =      !(|hcntr);
     assign inc_w =             to_inc+1;
 
-    assign hist_out_rq = hist_rq;
+    assign hist_rq = hist_rq_r;
     assign hist_dv = hist_re[2];
     assign hist_xfer_done_mclk = hist_out_d && !hist_out_d;
     
@@ -228,11 +228,11 @@ module  sens_histogram #(
         if      (!en_mclk)       hist_raddr <= 0;
         else if (hist_re)        hist_raddr <= hist_raddr + 1;
         
-        if      (!en_mclk)             hist_rq <= 0;
-        else if (hist_out && !hist_re) hist_rq <= 1;
+        if      (!en_mclk)             hist_rq_r <= 0;
+        else if (hist_out && !hist_re) hist_rq_r <= 1;
         
         if      (!hist_out)        hist_re[0] <= 0;
-        else if (hist_out_grant)   hist_re[0] <= 1;
+        else if (hist_grant)   hist_re[0] <= 1;
         else if (&hist_raddr[7:0]) hist_re[0] <= 0;
         
         hist_re[2:1] <= hist_re[1:0];
@@ -518,4 +518,15 @@ module sens_hist_ram_nobuff(
         .data_in_b  (32'b0)             // input[15:0] 
     );
     
+endmodule
+
+module  sens_histogram_dummy(
+    output        hist_rq,
+    output [31:0] hist_do,
+    output        hist_dv
+
+);
+    assign         hist_rq = 0;
+    assign         hist_do = 0;
+    assign         hist_dv = 0;
 endmodule

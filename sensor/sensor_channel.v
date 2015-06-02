@@ -75,6 +75,16 @@ module  sensor_channel#(
     parameter SENS_GAMMA_MODE_REPET =  4,
     parameter SENS_GAMMA_MODE_TRIG =   5,
     
+    parameter HISTOGRAM_RAM_MODE =     "NOBUF", // valid: "NOBUF" (32-bits, no buffering), "BUF18", "BUF32"
+    parameter HISTOGRAM_ADDR_MASK =    'h3fe,
+    parameter HISTOGRAM_LEFT_TOP =     'h0,
+    parameter HISTOGRAM_WIDTH_HEIGHT = 'h1, // 1.. 2^16, 0 - use HACT
+    parameter HISTOGRAM_ADDR0 =        'h340, // TODO: optimize!
+    parameter HISTOGRAM_ADDR1 =        'h342, // TODO: optimize!
+    parameter HISTOGRAM_ADDR2 =        'h344, // TODO: optimize!
+    parameter HISTOGRAM_ADDR3 =        -1,    // < 0 - not implemented
+    
+    
     parameter IODELAY_GRP ="IODELAY_SENSOR", // may need different for different channels?
     parameter integer IDELAY_VALUE = 0,
     parameter integer PXD_DRIVE = 12,
@@ -102,25 +112,33 @@ module  sensor_channel#(
     parameter SS_MOD_PERIOD =         10000        // integer 4000-40000 - SS modulation period in ns
     
 ) (
-    input rst,
-    input pclk, // global clock input, pixel rate (96MHz for MT9P006)
+    input         rst,
+    input         pclk,   // global clock input, pixel rate (96MHz for MT9P006)
+    input         pclk2x, // global clock input, double pixel rate (192MHz for MT9P006)
     // I/O pads, pin names match circuit diagram
-    inout  [7:0] sns_dp,
-    inout  [7:0] sns_dn,
-    inout        sns_clkp,
-    inout        sns_clkn,
-    inout        sns_scl,
-    inout        sns_sda,
-    inout        sns_ctl,
-    inout        sns_pg,
+    inout   [7:0] sns_dp,
+    inout   [7:0] sns_dn,
+    inout         sns_clkp,
+    inout         sns_clkn,
+    inout         sns_scl,
+    inout         sns_sda,
+    inout         sns_ctl,
+    inout         sns_pg,
     // programming interface
-    input        mclk,     // global clock, half DDR3 clock, synchronizes all I/O through the command port
-    input  [7:0] cmd_ad_in,      // byte-serial command address/data (up to 6 bytes: AL-AH-D0-D1-D2-D3 
-    input        cmd_stb_in,     // strobe (with first byte) for the command a/d
-    output [7:0] status_ad,   // status address/data - up to 5 bytes: A - {seq,status[1:0]} - status[2:9] - status[10:17] - status[18:25]
-    output       status_rq,   // input request to send status downstream
-    input        status_start // Acknowledge of the first status packet byte (address)
-// (much) more will be added later    
+    input         mclk,     // global clock, half DDR3 clock, synchronizes all I/O through the command port
+    input   [7:0] cmd_ad_in,      // byte-serial command address/data (up to 6 bytes: AL-AH-D0-D1-D2-D3 
+    input         cmd_stb_in,     // strobe (with first byte) for the command a/d
+    output  [7:0] status_ad,   // status address/data - up to 5 bytes: A - {seq,status[1:0]} - status[2:9] - status[10:17] - status[18:25]
+    output        status_rq,   // input request to send status downstream
+    input         status_start, // Acknowledge of the first status packet byte (address)
+
+    output        hist_request,
+    input         hist_grant,
+    output  [1:0] hist_chn,      // output[1:0]
+    output        hist_dvalid,   // output
+    output [31:0] hist_data     // output[31:0] 
+// (much) more will be added later
+    
     
 );
     reg    [7:0] cmd_ad;      // byte-serial command address/data (up to 6 bytes: AL-AH-D0-D1-D2-D3 
@@ -150,6 +168,12 @@ module  sensor_channel#(
     wire         gamma_hact_in;
     wire         gamma_sof_in;
     wire         gamma_eof_in;
+    
+    wire   [7:0] gamma_pxd_out; 
+    wire         gamma_hact_out;
+    wire         gamma_sof_out;
+    wire         gamma_eof_out;
+    
     
     // TODO: insert vignetting and/or flat field, pixel defects before gamma_*_in
     assign gamma_pxd_in = {pxd[11:0],4'b0};
@@ -316,6 +340,170 @@ module  sensor_channel#(
         .cmd_stb     (cmd_stb) // input
     );
 
+    // TODO: Use generate to generate 1-4 histogram modules
+    wire  [3:0] hist_en;
+    wire        hist_nrst;
+    wire  [3:0] hist_rq;
+    wire  [3:0] hist_gr;
+    wire  [3:0] hist_dv;
+    wire [31:0] hist_do0;
+    wire [31:0] hist_do1;
+    wire [31:0] hist_do2;
+    wire [31:0] hist_do3;
+    generate
+        if (HISTOGRAM_ADDR0 >=0)
+            sens_histogram #(
+                .HISTOGRAM_RAM_MODE     (HISTOGRAM_RAM_MODE),
+                .HISTOGRAM_ADDR         (HISTOGRAM_ADDR0),
+                .HISTOGRAM_ADDR_MASK    (HISTOGRAM_ADDR_MASK),
+                .HISTOGRAM_LEFT_TOP     (HISTOGRAM_LEFT_TOP),
+                .HISTOGRAM_WIDTH_HEIGHT (HISTOGRAM_WIDTH_HEIGHT)
+            ) sens_histogram_i (
+                .rst        (rst), // input
+                .pclk       (pclk), // input
+                .pclk2x     (pclk2x), // input
+                .sof        (gamma_sof_out), // input
+                .hact       (gamma_hact_out), // input
+                .hist_di    (gamma_pxd_out), // input[7:0] 
+                .mclk       (mclk), // input
+                .hist_en    (hist_en[0]), // input
+                .hist_rst   (!hist_nrst), // input
+                .hist_rq    (hist_rq[0]), // output
+                .hist_grant (hist_gr[0]), // input
+                .hist_do    (hist_do0), // output[31:0] 
+                .hist_dv    (hist_dv[0]), // output
+                .cmd_ad     (cmd_ad), // input[7:0] 
+                .cmd_stb    (cmd_stb) // input
+            );
+        else
+            sens_histogram_dummy sens_histogram_dummy_i (
+                .hist_rq(hist_rq[0]), // output
+                .hist_do(hist_do0), // output[31:0] 
+                .hist_dv(hist_dv[0]) // output
+            );
+    endgenerate
+    generate
+        if (HISTOGRAM_ADDR1 >=0)
+            sens_histogram #(
+                .HISTOGRAM_RAM_MODE     (HISTOGRAM_RAM_MODE),
+                .HISTOGRAM_ADDR         (HISTOGRAM_ADDR1),
+                .HISTOGRAM_ADDR_MASK    (HISTOGRAM_ADDR_MASK),
+                .HISTOGRAM_LEFT_TOP     (HISTOGRAM_LEFT_TOP),
+                .HISTOGRAM_WIDTH_HEIGHT (HISTOGRAM_WIDTH_HEIGHT)
+            ) sens_histogram_i (
+                .rst        (rst), // input
+                .pclk       (pclk), // input
+                .pclk2x     (pclk2x), // input
+                .sof        (gamma_sof_out), // input
+                .hact       (gamma_hact_out), // input
+                .hist_di    (gamma_pxd_out), // input[7:0] 
+                .mclk       (mclk), // input
+                .hist_en    (hist_en[1]), // input
+                .hist_rst   (!hist_nrst), // input
+                .hist_rq    (hist_rq[1]), // output
+                .hist_grant (hist_gr[1]), // input
+                .hist_do    (hist_do1), // output[31:0] 
+                .hist_dv    (hist_dv[1]), // output
+                .cmd_ad     (cmd_ad), // input[7:0] 
+                .cmd_stb    (cmd_stb) // input
+            );
+        else
+            sens_histogram_dummy sens_histogram_dummy_i (
+                .hist_rq(hist_rq[1]), // output
+                .hist_do(hist_do1), // output[31:0] 
+                .hist_dv(hist_dv[1]) // output
+            );
+    endgenerate
+    generate
+        if (HISTOGRAM_ADDR2 >=0)
+            sens_histogram #(
+                .HISTOGRAM_RAM_MODE     (HISTOGRAM_RAM_MODE),
+                .HISTOGRAM_ADDR         (HISTOGRAM_ADDR2),
+                .HISTOGRAM_ADDR_MASK    (HISTOGRAM_ADDR_MASK),
+                .HISTOGRAM_LEFT_TOP     (HISTOGRAM_LEFT_TOP),
+                .HISTOGRAM_WIDTH_HEIGHT (HISTOGRAM_WIDTH_HEIGHT)
+            ) sens_histogram_i (
+                .rst        (rst), // input
+                .pclk       (pclk), // input
+                .pclk2x     (pclk2x), // input
+                .sof        (gamma_sof_out), // input
+                .hact       (gamma_hact_out), // input
+                .hist_di    (gamma_pxd_out), // input[7:0] 
+                .mclk       (mclk), // input
+                .hist_en    (hist_en[2]), // input
+                .hist_rst   (!hist_nrst), // input
+                .hist_rq    (hist_rq[2]), // output
+                .hist_grant (hist_gr[2]), // input
+                .hist_do    (hist_do2), // output[31:0] 
+                .hist_dv    (hist_dv[2]), // output
+                .cmd_ad     (cmd_ad), // input[7:0] 
+                .cmd_stb    (cmd_stb) // input
+            );
+        else
+            sens_histogram_dummy sens_histogram_dummy_i (
+                .hist_rq(hist_rq[2]), // output
+                .hist_do(hist_do2), // output[31:0] 
+                .hist_dv(hist_dv[2]) // output
+            );
+    endgenerate
+    generate
+        if (HISTOGRAM_ADDR3 >=0)
+            sens_histogram #(
+                .HISTOGRAM_RAM_MODE     (HISTOGRAM_RAM_MODE),
+                .HISTOGRAM_ADDR         (HISTOGRAM_ADDR3),
+                .HISTOGRAM_ADDR_MASK    (HISTOGRAM_ADDR_MASK),
+                .HISTOGRAM_LEFT_TOP     (HISTOGRAM_LEFT_TOP),
+                .HISTOGRAM_WIDTH_HEIGHT (HISTOGRAM_WIDTH_HEIGHT)
+            ) sens_histogram_i (
+                .rst        (rst), // input
+                .pclk       (pclk), // input
+                .pclk2x     (pclk2x), // input
+                .sof        (gamma_sof_out), // input
+                .hact       (gamma_hact_out), // input
+                .hist_di    (gamma_pxd_out), // input[7:0] 
+                .mclk       (mclk), // input
+                .hist_en    (hist_en[3]), // input
+                .hist_rst   (!hist_nrst), // input
+                .hist_rq    (hist_rq[3]), // output
+                .hist_grant (hist_gr[3]), // input
+                .hist_do    (hist_do3), // output[31:0] 
+                .hist_dv    (hist_dv[3]), // output
+                .cmd_ad     (cmd_ad), // input[7:0] 
+                .cmd_stb    (cmd_stb) // input
+            );
+        else
+            sens_histogram_dummy sens_histogram_dummy_i (
+                .hist_rq(hist_rq[3]), // output
+                .hist_do(hist_do3), // output[31:0] 
+                .hist_dv(hist_dv[3]) // output
+            );
+    endgenerate
+    
+    sens_histogram_mux sens_histogram_mux_i (
+        .mclk   (mclk),          // input
+        .en     (!hist_nrst),    // input
+        .rq0    (hist_rq[0]),    // input
+        .grant0 (hist_gr[0]),    // output
+        .dav0   (hist_dv[0]),    // input
+        .din0   (hist_do0),      // input[31:0] 
+        .rq1    (hist_rq[1]),    // input
+        .grant1 (hist_gr[1]),    // output
+        .dav1   (hist_dv[1]),    // input
+        .din1   (hist_do1),      // input[31:0] 
+        .rq2    (hist_rq[2]),    // input
+        .grant2 (hist_gr[2]),    // output
+        .dav2   (hist_dv[2]),    // input
+        .din2   (hist_do2),      // input[31:0] 
+        .rq3    (hist_rq[3]),    // input
+        .grant3 (hist_gr[3]),    // output
+        .dav3   (hist_dv[3]),    // input
+        .din3   (hist_do3),      // input[31:0] 
+        .rq     (hist_request),  // output
+        .grant  (hist_grant),    // input
+        .chn    (hist_chn),      // output[1:0]
+        .dv     (hist_dvalid),   // output
+        .dout   (hist_data)      // output[31:0] 
+    );
 
 
 endmodule
