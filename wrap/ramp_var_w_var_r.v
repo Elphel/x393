@@ -74,8 +74,9 @@
 module  ramp_var_w_var_r
 #(
   parameter integer REGISTERS    = 0, // 1 - registered output
-  parameter integer LOG2WIDTH_WR = 6,  // WIDTH= 9  << (LOG2WIDTH - 3)
-  parameter integer LOG2WIDTH_RD = 6   // WIDTH= 9  << (LOG2WIDTH - 3)
+  parameter integer LOG2WIDTH_WR = 6, // WIDTH= 9  << (LOG2WIDTH - 3)
+  parameter integer LOG2WIDTH_RD = 6, // WIDTH= 9  << (LOG2WIDTH - 3)
+  parameter         DUMMY = 0
  )
    (
       input                            rclk,     // clock for read port
@@ -92,7 +93,13 @@ module  ramp_var_w_var_r
       input  [(9 << (LOG2WIDTH_WR-3))-1:0] data_in   // data out
     );
     generate
-        if ((LOG2WIDTH_WR == 6) && (LOG2WIDTH_RD == 6))
+        if (DUMMY)
+            ramp_dummy #(
+                .LOG2WIDTH_RD(LOG2WIDTH_RD)
+            ) ramp_dummy_i (
+                .data_out(data_out) 
+            );
+        else if ((LOG2WIDTH_WR == 6) && (LOG2WIDTH_RD == 6))
             ramp_64w_64r #(
                 .REGISTERS    (REGISTERS)
             ) ram_i (
@@ -546,3 +553,12 @@ module  ramp_64w_lt64r
 
 endmodule
 
+module  ramp_dummy
+#(
+  parameter integer LOG2WIDTH_RD = 5   // WIDTH= 1  << LOG2WIDTH
+ )
+   (
+      output [(9 << (LOG2WIDTH_RD-3))-1:0] data_out // data out
+   );
+   assign data_out=0;
+endmodule

@@ -21,10 +21,23 @@
 `timescale 1ns/1ps
 
 module  sensor_channel#(
-    parameter SENSI2C_ABS_ADDR =    'h300,
-    parameter SENSI2C_REL_ADDR =    'h310,
+    parameter SENSOR_BASE_ADDR =    'h300, // sensor registers base address
+    parameter SENSOR_NUM_HISTOGRAM= 3, // number of histogram channels
+    parameter SENSOR_CTRL_RADDR =   0, //'h300
+    parameter SENSI2C_CTRL_RADDR =  2, // 302..'h303
+    parameter SENS_GAMMA_RADDR =    4,
+    parameter SENSIO_RADDR =        8, //'h308  .. 'h30c
+    parameter SENSI2C_ABS_RADDR =   'h10, // 'h310..'h31f
+    parameter SENSI2C_REL_RADDR =   'h20, // 'h320..'h32f
+    parameter HISTOGRAM_RADDR0 =    'h30, //
+    parameter HISTOGRAM_RADDR1 =    'h32, //
+    parameter HISTOGRAM_RADDR2 =    'h34, //
+    parameter HISTOGRAM_RADDR3 =    -1,    // < 0 - not implemented
+    
+//    parameter SENSI2C_ABS_ADDR =   'h302, // 'h300,
+//    parameter SENSI2C_REL_ADDR =   'h320, // 'h310,
     parameter SENSI2C_ADDR_MASK =   'h3f0, // both for SENSI2C_ABS_ADDR and SENSI2C_REL_ADDR
-    parameter SENSI2C_CTRL_ADDR =   'h320,
+//    parameter SENSI2C_CTRL_ADDR = 'h302. //  'h320,
     parameter SENSI2C_CTRL_MASK =   'h3fe,
     parameter SENSI2C_CTRL =        'h0,
     parameter SENSI2C_STATUS =      'h1,
@@ -34,13 +47,13 @@ module  sensor_channel#(
     parameter SENSI2C_IOSTANDARD =  "DEFAULT",
     parameter SENSI2C_SLEW =        "SLOW",
     
-    parameter SENSIO_ADDR =         'h330,
+//    parameter SENSIO_ADDR =        'h308, //  'h330,
     parameter SENSIO_ADDR_MASK =    'h3f8,
     parameter SENSIO_CTRL =         'h0,
     parameter SENSIO_STATUS =       'h1,
     parameter SENSIO_JTAG =         'h2,
     parameter SENSIO_WIDTH =        'h3, // 1.. 2^16, 0 - use HACT
-    parameter SENSIO_DELAYS =       'h4,
+    parameter SENSIO_DELAYS =       'h4, // 'h4..'h7
     parameter SENSIO_STATUS_REG =   'h31,
 
     parameter SENS_JTAG_PGMEN =     8,
@@ -61,7 +74,7 @@ module  sensor_channel#(
     parameter SENSOR_FIFO_2DEPTH = 4,
     parameter SENSOR_FIFO_DELAY =  7,
     
-    parameter SENS_GAMMA_ADDR =        'h338,
+//    parameter SENS_GAMMA_ADDR =      'h304, //..'h307, //  'h338,
     parameter SENS_GAMMA_ADDR_MASK =   'h3fc,
     parameter SENS_GAMMA_CTRL =        'h0,
 //    parameter SENS_GAMMA_STATUS =      'h1,
@@ -79,10 +92,10 @@ module  sensor_channel#(
     parameter HISTOGRAM_ADDR_MASK =    'h3fe,
     parameter HISTOGRAM_LEFT_TOP =     'h0,
     parameter HISTOGRAM_WIDTH_HEIGHT = 'h1, // 1.. 2^16, 0 - use HACT
-    parameter HISTOGRAM_ADDR0 =        'h340, // TODO: optimize!
-    parameter HISTOGRAM_ADDR1 =        'h342, // TODO: optimize!
-    parameter HISTOGRAM_ADDR2 =        'h344, // TODO: optimize!
-    parameter HISTOGRAM_ADDR3 =        -1,    // < 0 - not implemented
+//    parameter HISTOGRAM_ADDR0 =        'h340, // TODO: optimize!
+//    parameter HISTOGRAM_ADDR1 =        'h342, // TODO: optimize!
+//    parameter HISTOGRAM_ADDR2 =        'h344, // TODO: optimize!
+//    parameter HISTOGRAM_ADDR3 =        -1,    // < 0 - not implemented
     
     
     parameter IODELAY_GRP ="IODELAY_SENSOR", // may need different for different channels?
@@ -141,6 +154,19 @@ module  sensor_channel#(
     
     
 );
+//    parameter SENSOR_BASE_ADDR =    'h300; // sensor registers base address
+    localparam SENSOR_CTRL_ADDR =  SENSOR_BASE_ADDR + SENSOR_CTRL_RADDR; //'h300
+    localparam SENSI2C_CTRL_ADDR = SENSOR_BASE_ADDR + SENSI2C_CTRL_RADDR; // 302..'h303
+    localparam SENS_GAMMA_ADDR =   SENSOR_BASE_ADDR + SENS_GAMMA_RADDR;
+    localparam SENSIO_ADDR =       SENSOR_BASE_ADDR + SENSIO_RADDR; //'h308  .. 'h30c
+    localparam SENSI2C_ABS_ADDR =  SENSOR_BASE_ADDR + SENSI2C_ABS_RADDR; // 'h310..'h31f
+    localparam SENSI2C_REL_ADDR =  SENSOR_BASE_ADDR + SENSI2C_REL_RADDR; // 'h320..'h32f
+    localparam HISTOGRAM_ADDR0 =   (SENSOR_NUM_HISTOGRAM > 0)?HISTOGRAM_RADDR0:-1; //
+    localparam HISTOGRAM_ADDR1 =   (SENSOR_NUM_HISTOGRAM > 1)?HISTOGRAM_RADDR1:-1; //
+    localparam HISTOGRAM_ADDR2 =   (SENSOR_NUM_HISTOGRAM > 2)?HISTOGRAM_RADDR2:-1; //
+    localparam HISTOGRAM_ADDR3 =   (SENSOR_NUM_HISTOGRAM > 3)?HISTOGRAM_RADDR3:-1; //
+
+
     reg    [7:0] cmd_ad;      // byte-serial command address/data (up to 6 bytes: AL-AH-D0-D1-D2-D3 
     reg          cmd_stb;     // strobe (with first byte) for the command a/d
 

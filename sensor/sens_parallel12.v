@@ -27,7 +27,7 @@ module  sens_parallel12 #(
     parameter SENSIO_STATUS =      'h1,
     parameter SENSIO_JTAG =        'h2,
     parameter SENSIO_WIDTH =       'h3, // 1.. 2^16, 0 - use HACT
-    parameter SENSIO_DELAYS =      'h4,
+    parameter SENSIO_DELAYS =      'h4, // 'h4..'h7
     parameter SENSIO_STATUS_REG =  'h31,
 
     parameter SENS_JTAG_PGMEN =    8,

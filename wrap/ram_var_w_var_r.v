@@ -74,7 +74,8 @@ module  ram_var_w_var_r
 #(
   parameter integer REGISTERS    = 0, // 1 - registered output
   parameter integer LOG2WIDTH_WR = 6,  // WIDTH= 1  << LOG2WIDTH
-  parameter integer LOG2WIDTH_RD = 6   // WIDTH= 1  << LOG2WIDTH
+  parameter integer LOG2WIDTH_RD = 6,  // WIDTH= 1  << LOG2WIDTH
+  parameter         DUMMY = 0
  )
    (
       input                         rclk,     // clock for read port
@@ -91,7 +92,13 @@ module  ram_var_w_var_r
       input  [(1 << LOG2WIDTH_WR)-1:0] data_in   // data out
     );
     generate
-        if ((LOG2WIDTH_WR == 6) && (LOG2WIDTH_RD == 6))
+        if (DUMMY)
+            ram_dummy #(
+                .LOG2WIDTH_RD(LOG2WIDTH_RD)
+            ) ramp_dummy_i (
+                .data_out(data_out) 
+            );
+        else if ((LOG2WIDTH_WR == 6) && (LOG2WIDTH_RD == 6))
             ram_64w_64r #(
                 .REGISTERS    (REGISTERS)
             ) ram_i (
@@ -528,5 +535,15 @@ module  ram_64w_lt64r
         .CASCADEINB      (1'b0)            // B-port cascade, input
     );
 
+endmodule
+
+module  ram_dummy
+#(
+  parameter integer LOG2WIDTH_RD = 5   // WIDTH= 1  << LOG2WIDTH
+ )
+   (
+      output [(1 << LOG2WIDTH_RD)-1:0] data_out // data out
+   );
+   assign data_out=0;
 endmodule
 
