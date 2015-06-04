@@ -109,7 +109,7 @@ module  sens_gamma #(
     reg     [1:0] color; // for selecting page in a gamma table
     reg           bayer0_latched; // latch bayer[0] at the beginning of first line
 //    reg           hact_m;
-    reg     [3:0] hact_d; // combine sevaral delays?
+    reg     [4:0] hact_d; // combine several delays?
 //    reg           en_d;
     reg     [7:0] cdata;   //8-bit pixel data after "curves"
 // modified table data to increase precision. table_base[9:0] is now 10 bits (2 extra).
@@ -117,8 +117,8 @@ module  sens_gamma #(
 // 8 bit table_diff will be "floating point" with the following format
 // now "signed" is 2's complement, was sign, abs() before
 
-    wire    [7:0] table_diff_w; // 8 msbs in table word - msb - sign (0 plus, 1 - minus), other 7 bits - +/-127 difference to the next value
-    wire    [9:0] table_base_w; // 10 lsbs in the table - base value, will be corrected using table_diff and input data lsbs (2 for now)
+    reg     [7:0] table_diff_m; // 8 msbs in table word - msb - sign (0 plus, 1 - minus), other 7 bits - +/-127 difference to the next value
+    reg     [9:0] table_base_m; // 10 lsbs in the table - base value, will be corrected using table_diff and input data lsbs (2 for now)
     wire   [35:0] table_mult;
     
 // register decoded memory output
@@ -128,8 +128,8 @@ module  sens_gamma #(
     reg    [ 9:0] table_base_r;
     
     wire    [9:0] interp_data;
-    wire    [7:0] pxd_in_d2;
-    reg     [7:0] pxd_in_r3; // register to be absorbed in mpy
+    wire    [7:0] pxd_in_d3;
+    reg     [7:0] pxd_in_r4; // register to be absorbed in mpy
     
     reg           vblank;    // from sof to first hact
     reg           pend_trig; // pending trigger (if trig came outside of vblank 
@@ -145,7 +145,7 @@ module  sens_gamma #(
     wire   [17:0] table_rdata;
 
     assign        pxd_out = cdata;
-    assign        hact_out = hact_d[3];
+    assign        hact_out = hact_d[4];
     
     assign set_ctrl_w =   cmd_we && (cmd_a == SENS_GAMMA_CTRL );
 //    assign set_status_w = cmd_we && (cmd_a == SENS_GAMMA_STATUS );
@@ -170,7 +170,7 @@ module  sens_gamma #(
     assign table_rdata= ram_chn_d2[1]?
                             (ram_chn_d2[0]?table_rdata3:table_rdata2):
                             (ram_chn_d2[0]?table_rdata1:table_rdata0);
-    assign {table_diff_w[7:0],table_base_w[9:0]} = table_rdata;
+//    assign {table_diff_w[7:0],table_base_w[9:0]} = table_rdata;
 
     assign bayer =        mode[SENS_GAMMA_MODE_BAYER +: 2];
     assign table_page =   mode[SENS_GAMMA_MODE_PAGE]; // TODO: re-assign?
@@ -179,7 +179,7 @@ module  sens_gamma #(
     
     assign sync_bayer=hact_d[1] && ~hact_d[2];
     assign interp_data[9:0] = table_base_r[9:0]+table_mult_r[17:8]+table_mult_r[7]; //round
-    assign table_mult=table_diff*{1'b0,pxd_in_r3[7:0]}; // 11 bits, signed* 9 bits, positive
+    assign table_mult=table_diff*{1'b0,pxd_in_r4[7:0]}; // 11 bits, signed* 9 bits, positive
     
     assign sof_masked= sof_in && (pend_trig || repet_mode) && en_input;
     assign trig = trig_in || trig_soft;
@@ -218,7 +218,7 @@ module  sens_gamma #(
     always @ (posedge rst or posedge pclk) begin
         if (rst) begin
             mode <= 0;
-            hact_d[3:0] <= 0;
+            hact_d[4:0] <= 0;
             bayer_nset <= 0;
             bayer0_latched <= 0;
             color[1:0] <= 0;
@@ -229,12 +229,12 @@ module  sens_gamma #(
             
         end else begin
             mode <= mode_mclk;
-            hact_d[3:0] <= {hact_d[2:0],hact_in};
+            hact_d[4:0] <= {hact_d[3:0],hact_in};
             bayer_nset <= frame_run && (bayer_nset || hact_in);
             bayer0_latched <= bayer_nset? bayer0_latched:bayer[0];
             color[1:0] <= { bayer_nset? (sync_bayer ^ color[1]):bayer[1] ,
                            (bayer_nset &&(~sync_bayer))?~color[0]:bayer0_latched };
-            pxd_in_r3 <= pxd_in_d2;
+            pxd_in_r4 <= pxd_in_d3;
             cdata[7:0] <= interp_data[9:2];
             vblank <= sof_in || (vblank && !hact_in);
             pend_trig <= (trig && !vblank) || (pend_trig && !sof_in);  
@@ -245,10 +245,11 @@ module  sens_gamma #(
     end
     
   always @ (posedge pclk) begin
-    table_base[9:0]  <= table_base_w[9:0];
-    table_diff[10:0] <= table_diff_w[7]?
-                          {table_diff_w[6:0],4'b0}:
-                          {{4{table_diff_w[6]}},table_diff_w[6:0]}; 
+    {table_diff_m[7:0],table_base_m[9:0]} <= table_rdata;
+    table_base[9:0]  <= table_base_m[9:0];
+    table_diff[10:0] <= table_diff_m[7]?
+                          {table_diff_m[6:0],4'b0}:
+                          {{4{table_diff_m[6]}},table_diff_m[6:0]}; 
     table_mult_r[17:7] <= table_mult[17:7];
     table_base_r[ 9:0] <= table_base[ 9:0];
     
@@ -290,9 +291,9 @@ module  sens_gamma #(
     ) dly_16_pxd_i (
         .clk (pclk),        // input
         .rst (rst),         // input
-        .dly (2),           // input[3:0] 
+        .dly (3),           // input[3:0] 
         .din (pxd_in[7:0]), // input[0:0] 
-        .dout(pxd_in_d2)    // output[0:0] 
+        .dout(pxd_in_d3)    // output[0:0] 
     );
 
     dly_16 #(
@@ -300,7 +301,7 @@ module  sens_gamma #(
     ) dly_16_sof_eof_i (
         .clk (pclk),        // input
         .rst (rst),         // input
-        .dly (3),           // input[3:0] 
+        .dly (4),           // input[3:0] 
         .din ({eof_in, sof_masked}), // input[0:0] 
         .dout({eof_out,sof_out})    // output[0:0] 
     );

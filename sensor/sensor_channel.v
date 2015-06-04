@@ -36,6 +36,7 @@ module  sensor_channel#(
     
 //    parameter SENSI2C_ABS_ADDR =   'h302, // 'h300,
 //    parameter SENSI2C_REL_ADDR =   'h320, // 'h310,
+    parameter SENSOR_CTRL_ADDR_MASK = 'h3ff, //
     parameter SENSI2C_ADDR_MASK =   'h3f0, // both for SENSI2C_ABS_ADDR and SENSI2C_REL_ADDR
 //    parameter SENSI2C_CTRL_ADDR = 'h302. //  'h320,
     parameter SENSI2C_CTRL_MASK =   'h3fe,
@@ -75,11 +76,14 @@ module  sensor_channel#(
     parameter SENSOR_FIFO_DELAY =  7,
     
 //    parameter SENS_GAMMA_ADDR =      'h304, //..'h307, //  'h338,
+    parameter SENS_GAMMA_NUM_CHN =     3, // number of subchannels for his sensor ports (1..4)
+    parameter SENS_GAMMA_BUFFER =      0, // 1 - use "shadow" table for clean switching, 0 - single table per channel
+//    parameter SENS_GAMMA_ADDR =        'h338,
     parameter SENS_GAMMA_ADDR_MASK =   'h3fc,
     parameter SENS_GAMMA_CTRL =        'h0,
-//    parameter SENS_GAMMA_STATUS =      'h1,
-    parameter SENS_GAMMA_TADDR =       'h2,
-    parameter SENS_GAMMA_TDATA =       'h3, // 1.. 2^16, 0 - use HACT
+    parameter SENS_GAMMA_ADDR_DATA =   'h1, // bit 20 ==1 - table address, bit 20==0 - table data (18 bits)
+    parameter SENS_GAMMA_HEIGHT01 =    'h2, // bits [15:0] - height minus 1 of image 0, [31:16] - height-1 of image1
+    parameter SENS_GAMMA_HEIGHT2 =     'h3, // bits [15:0] - height minus 1 of image 2 ( no need for image 3)
 //    parameter SENS_GAMMA_STATUS_REG =  'h32
     parameter SENS_GAMMA_MODE_WIDTH =  5, // does not include trig
     parameter SENS_GAMMA_MODE_BAYER =  0,
@@ -145,11 +149,17 @@ module  sensor_channel#(
     output        status_rq,   // input request to send status downstream
     input         status_start, // Acknowledge of the first status packet byte (address)
 
+    output [15:0] dout,
+    output        dout_valid,
+    output        sof_out,
+    output        eof_out,
+
     output        hist_request,
     input         hist_grant,
     output  [1:0] hist_chn,      // output[1:0]
     output        hist_dvalid,   // output
     output [31:0] hist_data     // output[31:0] 
+    
 // (much) more will be added later
     
     
@@ -200,20 +210,73 @@ module  sensor_channel#(
     wire         gamma_sof_out;
     wire         gamma_eof_out;
     
+    wire  [31:0] sensor_ctrl_data;
+    wire         sensor_ctrl_we;
+    reg    [8:0] mode;
+    wire   [3:0] hist_en;
+    wire         hist_nrst;
+    wire         bit16; // 16-bit mode, 0 - 8 bit mode
+    wire   [3:0] hist_rq;
+    wire   [3:0] hist_gr;
+    wire   [3:0] hist_dv;
+    wire  [31:0] hist_do0;
+    wire  [31:0] hist_do1;
+    wire  [31:0] hist_do2;
+    wire  [31:0] hist_do3;
+    reg    [7:0] gamma_data_r;
+    reg   [15:0] dout_r;
+    reg          dav_8bit;
+    reg          dav_r;       
+    wire  [15:0] dout_w;
+    wire         dav_w;
+    
+    reg          sof_out_r;       
+    reg          eof_out_r;       
     
     // TODO: insert vignetting and/or flat field, pixel defects before gamma_*_in
     assign gamma_pxd_in = {pxd[11:0],4'b0};
     assign gamma_hact_in = hact;
     assign gamma_sof_in =  sof;
     assign gamma_eof_in =  eof;
+    
+    assign dout = dout_r;
+    assign dout_valid = dav_r;
+    assign sof_out = sof_out_r;       
+    assign eof_out = eof_out_r;       
+    
+    assign dout_w = bit16 ? gamma_pxd_in :  {gamma_data_r,gamma_pxd_out};
+    assign dav_w =  bit16 ? gamma_hact_in : dav_8bit;
+    
      
+    assign hist_en =   mode[3:0];
+    assign hist_nrst = mode[4];
+    assign bit16 =     mode[8];
+    
     
     always @ (posedge mclk) begin
         cmd_ad  <= cmd_ad_in; 
         cmd_stb <= cmd_stb_in;
     end
 
-    status_router2 status_router2_sensori (
+    always @ (posedge  rst or posedge mclk) begin
+        if      (rst)            mode <= 0;
+        else if (sensor_ctrl_we) mode <= sensor_ctrl_data[8:0];
+    end
+    
+    always @ (posedge pclk) begin
+        if (dav_w) dout_r <= dout_w;
+
+        dav_r <= dav_w;
+
+        dav_8bit <= gamma_hact_out && !dav_8bit;
+        
+        if (gamma_hact_out && !dav_8bit) gamma_data_r <= gamma_pxd_out;
+        
+        sof_out_r <= bit16 ? gamma_sof_in : gamma_sof_out;
+        eof_out_r <= bit16 ? gamma_eof_in : gamma_eof_out;
+    end
+
+    status_router2 status_router2_sensor_i (
         .rst       (rst),                     // input
         .clk       (mclk),                    // input
         .db_in0    (sens_i2c_status_ad),      // input[7:0] 
@@ -225,6 +288,22 @@ module  sensor_channel#(
         .db_out    (status_ad),               // output[7:0] 
         .rq_out    (status_rq),               // output
         .start_out (status_start)             // input
+    );
+
+    cmd_deser #(
+        .ADDR        (SENSOR_CTRL_ADDR),
+        .ADDR_MASK   (SENSOR_CTRL_ADDR_MASK),
+        .NUM_CYCLES  (6),
+        .ADDR_WIDTH  (1),
+        .DATA_WIDTH  (32)
+    ) cmd_deser_sens_channel_i (
+        .rst         (rst), // input
+        .clk         (mclk), // input
+        .ad          (cmd_ad), // input[7:0] 
+        .stb         (cmd_stb), // input
+        .addr        (), // output[0:0] - not used
+        .data        (sensor_ctrl_data), // output[31:0] 
+        .we          (sensor_ctrl_we) // output
     );
 
     sensor_i2c_io #(
@@ -338,11 +417,14 @@ module  sensor_channel#(
     );
 
     sens_gamma #(
+        .SENS_GAMMA_NUM_CHN    (SENS_GAMMA_NUM_CHN),
+        .SENS_GAMMA_BUFFER     (SENS_GAMMA_BUFFER),
         .SENS_GAMMA_ADDR       (SENS_GAMMA_ADDR),
         .SENS_GAMMA_ADDR_MASK  (SENS_GAMMA_ADDR_MASK),
         .SENS_GAMMA_CTRL       (SENS_GAMMA_CTRL),
-        .SENS_GAMMA_TADDR      (SENS_GAMMA_TADDR),
-        .SENS_GAMMA_TDATA      (SENS_GAMMA_TDATA),
+        .SENS_GAMMA_ADDR_DATA  (SENS_GAMMA_ADDR_DATA),
+        .SENS_GAMMA_HEIGHT01   (SENS_GAMMA_HEIGHT01),
+        .SENS_GAMMA_HEIGHT2    (SENS_GAMMA_HEIGHT2),
         .SENS_GAMMA_MODE_WIDTH (SENS_GAMMA_MODE_WIDTH),
         .SENS_GAMMA_MODE_BAYER (SENS_GAMMA_MODE_BAYER),
         .SENS_GAMMA_MODE_PAGE  (SENS_GAMMA_MODE_PAGE),
@@ -367,15 +449,6 @@ module  sensor_channel#(
     );
 
     // TODO: Use generate to generate 1-4 histogram modules
-    wire  [3:0] hist_en;
-    wire        hist_nrst;
-    wire  [3:0] hist_rq;
-    wire  [3:0] hist_gr;
-    wire  [3:0] hist_dv;
-    wire [31:0] hist_do0;
-    wire [31:0] hist_do1;
-    wire [31:0] hist_do2;
-    wire [31:0] hist_do3;
     generate
         if (HISTOGRAM_ADDR0 >=0)
             sens_histogram #(
