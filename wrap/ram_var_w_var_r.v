@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Copyright (c) 2014 Elphel, Inc.
  * Dual port memory wrapper, with variable width write and variable width read
- * using "SDP" mode of RAMB36E1
+ * using "SDP" ot "TDP" modes of RAMB36E1
  * ram_var_w_var_r.v is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
