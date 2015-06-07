@@ -21,86 +21,96 @@
 `timescale 1ns/1ps
 
 module  sensor_channel#(
-    parameter SENSOR_BASE_ADDR =    'h300, // sensor registers base address
-    parameter SENSOR_NUM_HISTOGRAM= 3, // number of histogram channels
-    parameter SENSOR_CTRL_RADDR =   0, //'h300
-    parameter SENSI2C_CTRL_RADDR =  2, // 302..'h303
-    parameter SENS_GAMMA_RADDR =    4,
-    parameter SENSIO_RADDR =        8, //'h308  .. 'h30c
-    parameter SENSI2C_ABS_RADDR =   'h10, // 'h310..'h31f
-    parameter SENSI2C_REL_RADDR =   'h20, // 'h320..'h32f
-    parameter HISTOGRAM_RADDR0 =    'h30, //
-    parameter HISTOGRAM_RADDR1 =    'h32, //
-    parameter HISTOGRAM_RADDR2 =    'h34, //
-    parameter HISTOGRAM_RADDR3 =    -1,    // < 0 - not implemented
-    
-//    parameter SENSI2C_ABS_ADDR =   'h302, // 'h300,
-//    parameter SENSI2C_REL_ADDR =   'h320, // 'h310,
-    parameter SENSOR_CTRL_ADDR_MASK = 'h3ff, //
-    parameter SENSI2C_ADDR_MASK =   'h3f0, // both for SENSI2C_ABS_ADDR and SENSI2C_REL_ADDR
-//    parameter SENSI2C_CTRL_ADDR = 'h302. //  'h320,
-    parameter SENSI2C_CTRL_MASK =   'h3fe,
-    parameter SENSI2C_CTRL =        'h0,
-    parameter SENSI2C_STATUS =      'h1,
-    parameter SENSI2C_STATUS_REG =  'h30,
-    parameter integer SENSI2C_DRIVE=12,
-    parameter SENSI2C_IBUF_LOW_PWR= "TRUE",
-    parameter SENSI2C_IOSTANDARD =  "DEFAULT",
-    parameter SENSI2C_SLEW =        "SLOW",
-    
-//    parameter SENSIO_ADDR =        'h308, //  'h330,
-    parameter SENSIO_ADDR_MASK =    'h3f8,
-    parameter SENSIO_CTRL =         'h0,
-    parameter SENSIO_STATUS =       'h1,
-    parameter SENSIO_JTAG =         'h2,
-    parameter SENSIO_WIDTH =        'h3, // 1.. 2^16, 0 - use HACT
-    parameter SENSIO_DELAYS =       'h4, // 'h4..'h7
-    parameter SENSIO_STATUS_REG =   'h31,
-
-    parameter SENS_JTAG_PGMEN =     8,
-    parameter SENS_JTAG_PROG =      6,
-    parameter SENS_JTAG_TCK =       4,
-    parameter SENS_JTAG_TMS =       2,
-    parameter SENS_JTAG_TDI =       0,
-    
-    parameter SENS_CTRL_MRST =      0,  //  1: 0
-    parameter SENS_CTRL_ARST =      2,  //  3: 2
-    parameter SENS_CTRL_ARO =       4,  //  5: 4
-    parameter SENS_CTRL_RST_MMCM =  6,  //  7: 6
-    parameter SENS_CTRL_EXT_CLK =   8,  //  9: 8
-    parameter SENS_CTRL_LD_DLY =   10,  // 10
-    parameter SENS_CTRL_QUADRANTS =12,  // 17:12, enable - 20
-    
-    parameter SENSOR_DATA_WIDTH =  12,
-    parameter SENSOR_FIFO_2DEPTH = 4,
-    parameter SENSOR_FIFO_DELAY =  7,
-    
-//    parameter SENS_GAMMA_ADDR =      'h304, //..'h307, //  'h338,
-    parameter SENS_GAMMA_NUM_CHN =     3, // number of subchannels for his sensor ports (1..4)
-    parameter SENS_GAMMA_BUFFER =      0, // 1 - use "shadow" table for clean switching, 0 - single table per channel
-//    parameter SENS_GAMMA_ADDR =        'h338,
-    parameter SENS_GAMMA_ADDR_MASK =   'h3fc,
-    parameter SENS_GAMMA_CTRL =        'h0,
-    parameter SENS_GAMMA_ADDR_DATA =   'h1, // bit 20 ==1 - table address, bit 20==0 - table data (18 bits)
-    parameter SENS_GAMMA_HEIGHT01 =    'h2, // bits [15:0] - height minus 1 of image 0, [31:16] - height-1 of image1
-    parameter SENS_GAMMA_HEIGHT2 =     'h3, // bits [15:0] - height minus 1 of image 2 ( no need for image 3)
-//    parameter SENS_GAMMA_STATUS_REG =  'h32
-    parameter SENS_GAMMA_MODE_WIDTH =  5, // does not include trig
-    parameter SENS_GAMMA_MODE_BAYER =  0,
-    parameter SENS_GAMMA_MODE_PAGE =   2,
-    parameter SENS_GAMMA_MODE_EN =     3,
-    parameter SENS_GAMMA_MODE_REPET =  4,
-    parameter SENS_GAMMA_MODE_TRIG =   5,
-    
+    // parameters, individual to sensor channels and those likely to be modified
+    parameter SENSOR_BASE_ADDR =      'h300, // sensor registers base address
+    parameter SENSI2C_STATUS_REG =    'h30,
+    parameter SENSIO_STATUS_REG =     'h31,
+    parameter SENSOR_NUM_HISTOGRAM=   3, // number of histogram channels
     parameter HISTOGRAM_RAM_MODE =     "NOBUF", // valid: "NOBUF" (32-bits, no buffering), "BUF18", "BUF32"
-    parameter HISTOGRAM_ADDR_MASK =    'h3fe,
-    parameter HISTOGRAM_LEFT_TOP =     'h0,
-    parameter HISTOGRAM_WIDTH_HEIGHT = 'h1, // 1.. 2^16, 0 - use HACT
-//    parameter HISTOGRAM_ADDR0 =        'h340, // TODO: optimize!
-//    parameter HISTOGRAM_ADDR1 =        'h342, // TODO: optimize!
-//    parameter HISTOGRAM_ADDR2 =        'h344, // TODO: optimize!
-//    parameter HISTOGRAM_ADDR3 =        -1,    // < 0 - not implemented
+    parameter SENS_GAMMA_NUM_CHN =    3, // number of subchannels for his sensor ports (1..4)
+    parameter SENS_GAMMA_BUFFER =     0, // 1 - use "shadow" table for clean switching, 0 - single table per channel
     
+    // parameters defining address map
+    parameter SENSOR_CTRL_RADDR =     0, //'h300
+    parameter SENSOR_CTRL_ADDR_MASK = 'h3ff, //
+        // bits of the SENSOR mode register
+        parameter SENSOR_MODE_WIDTH =     9,
+        parameter SENSOR_HIST_EN_BIT =    0, // 0..3 1 - enable histogram modules, disable after processing the started frame
+        parameter SENSOR_HIST_NRST_BIT =  4, // 0 - immediately reset all histogram modules 
+        parameter SENSOR_16BIT_BIT =      8, // 0 - 8 bpp mode, 1 - 16 bpp (bypass gamma). Gamma-processed data is still used for histograms
+    
+    parameter SENSI2C_CTRL_RADDR =    2, // 302..'h303
+    parameter SENSI2C_CTRL_MASK =     'h3fe,
+      // sensor_i2c_io relative control register addresses
+      parameter SENSI2C_CTRL =          'h0,
+      parameter SENSI2C_STATUS =        'h1,
+    
+    parameter SENS_GAMMA_RADDR =      4,
+    parameter SENS_GAMMA_ADDR_MASK =   'h3fc,
+      // sens_gamma registers
+      parameter SENS_GAMMA_CTRL =        'h0,
+      parameter SENS_GAMMA_ADDR_DATA =   'h1, // bit 20 ==1 - table address, bit 20==0 - table data (18 bits)
+      parameter SENS_GAMMA_HEIGHT01 =    'h2, // bits [15:0] - height minus 1 of image 0, [31:16] - height-1 of image1
+      parameter SENS_GAMMA_HEIGHT2 =     'h3, // bits [15:0] - height minus 1 of image 2 ( no need for image 3)
+        // bits of the SENS_GAMMA_CTRL mode register
+        parameter SENS_GAMMA_MODE_WIDTH =  5, // does not include trig
+        parameter SENS_GAMMA_MODE_BAYER =  0,
+        parameter SENS_GAMMA_MODE_PAGE =   2,
+        parameter SENS_GAMMA_MODE_EN =     3,
+        parameter SENS_GAMMA_MODE_REPET =  4,
+        parameter SENS_GAMMA_MODE_TRIG =   5,
+    
+    parameter SENSIO_RADDR =          8, //'h308  .. 'h30c
+    parameter SENSIO_ADDR_MASK =      'h3f8,
+      // sens_parallel12 registers
+      parameter SENSIO_CTRL =           'h0,
+        // SENSIO_CTRL register bits
+        parameter SENS_CTRL_MRST =        0,  //  1: 0
+        parameter SENS_CTRL_ARST =        2,  //  3: 2
+        parameter SENS_CTRL_ARO =         4,  //  5: 4
+        parameter SENS_CTRL_RST_MMCM =    6,  //  7: 6
+        parameter SENS_CTRL_EXT_CLK =     8,  //  9: 8
+        parameter SENS_CTRL_LD_DLY =     10,  // 10
+        parameter SENS_CTRL_QUADRANTS =  12,  // 17:12, enable - 20
+      parameter SENSIO_STATUS =         'h1,
+      parameter SENSIO_JTAG =           'h2,
+        // SENSIO_JTAG register bits
+        parameter SENS_JTAG_PGMEN =       8,
+        parameter SENS_JTAG_PROG =        6,
+        parameter SENS_JTAG_TCK =         4,
+        parameter SENS_JTAG_TMS =         2,
+        parameter SENS_JTAG_TDI =         0,
+      parameter SENSIO_WIDTH =          'h3, // 1.. 2^16, 0 - use HACT
+      parameter SENSIO_DELAYS =         'h4, // 'h4..'h7
+        // 4 of 8-bit delays per register
+    // sensor_i2c_io command/data write registers s (relative to SENSOR_BASE_ADDR)
+    parameter SENSI2C_ABS_RADDR =     'h10, // 'h310..'h31f
+    parameter SENSI2C_REL_RADDR =     'h20, // 'h320..'h32f
+    parameter SENSI2C_ADDR_MASK =     'h3f0, // both for SENSI2C_ABS_ADDR and SENSI2C_REL_ADDR
+
+    // sens_hist registers (relative to SENSOR_BASE_ADDR)
+    parameter HISTOGRAM_RADDR0 =      'h30, //
+    parameter HISTOGRAM_RADDR1 =      'h32, //
+    parameter HISTOGRAM_RADDR2 =      'h34, //
+    parameter HISTOGRAM_RADDR3 =      'h36, //
+    parameter HISTOGRAM_ADDR_MASK =   'h3fe, // for each channel
+      // sens_hist registers
+      parameter HISTOGRAM_LEFT_TOP =     'h0,
+      parameter HISTOGRAM_WIDTH_HEIGHT = 'h1, // 1.. 2^16, 0 - use HACT
+    
+    //sensor_i2c_io other parameters
+    parameter integer SENSI2C_DRIVE=  12,
+    parameter SENSI2C_IBUF_LOW_PWR=   "TRUE",
+    parameter SENSI2C_IOSTANDARD =    "DEFAULT",
+    parameter SENSI2C_SLEW =          "SLOW",
+    
+    //sensor_fifo parameters
+    parameter SENSOR_DATA_WIDTH =      12,
+    parameter SENSOR_FIFO_2DEPTH =     4,
+    parameter SENSOR_FIFO_DELAY =      7,
+    
+    
+    // sens_parallel12 other parameters
     
     parameter IODELAY_GRP ="IODELAY_SENSOR", // may need different for different channels?
     parameter integer IDELAY_VALUE = 0,
@@ -149,32 +159,31 @@ module  sensor_channel#(
     output        status_rq,   // input request to send status downstream
     input         status_start, // Acknowledge of the first status packet byte (address)
 
+    // 16/8-bit mode data to memory (8-bits are packed by 2 in 16 mode
     output [15:0] dout,
-    output        dout_valid,
-    output        sof_out,
-    output        eof_out,
+    output        dout_valid, // in 8-bit mode continues pixel flow have dout_valid alternating on/off
+    output        sof_out,    // start of frame 1-clk pulse with the same delays as output data
+    output        eof_out,    // end of frame 1-clk pulse with the same delays as output data
 
-    output        hist_request,
-    input         hist_grant,
-    output  [1:0] hist_chn,      // output[1:0]
-    output        hist_dvalid,   // output
-    output [31:0] hist_data     // output[31:0] 
-    
-// (much) more will be added later
-    
+    // histogram interface to S_AXI, 256x32bit continuous bursts @posedge mclk, each histogram having 4 bursts
+    output        hist_request, // request to transfer a burst
+    input         hist_grant,   // request to transfer over S_AXI granted
+    output  [1:0] hist_chn,     // output[1:0] histogram (sub) channel, valid with request and transfer
+    output        hist_dvalid,  // output data valid - active when sending a burst
+    output [31:0] hist_data     // output[31:0] histogram data
     
 );
 //    parameter SENSOR_BASE_ADDR =    'h300; // sensor registers base address
-    localparam SENSOR_CTRL_ADDR =  SENSOR_BASE_ADDR + SENSOR_CTRL_RADDR; //'h300
-    localparam SENSI2C_CTRL_ADDR = SENSOR_BASE_ADDR + SENSI2C_CTRL_RADDR; // 302..'h303
-    localparam SENS_GAMMA_ADDR =   SENSOR_BASE_ADDR + SENS_GAMMA_RADDR;
-    localparam SENSIO_ADDR =       SENSOR_BASE_ADDR + SENSIO_RADDR; //'h308  .. 'h30c
-    localparam SENSI2C_ABS_ADDR =  SENSOR_BASE_ADDR + SENSI2C_ABS_RADDR; // 'h310..'h31f
-    localparam SENSI2C_REL_ADDR =  SENSOR_BASE_ADDR + SENSI2C_REL_RADDR; // 'h320..'h32f
-    localparam HISTOGRAM_ADDR0 =   (SENSOR_NUM_HISTOGRAM > 0)?HISTOGRAM_RADDR0:-1; //
-    localparam HISTOGRAM_ADDR1 =   (SENSOR_NUM_HISTOGRAM > 1)?HISTOGRAM_RADDR1:-1; //
-    localparam HISTOGRAM_ADDR2 =   (SENSOR_NUM_HISTOGRAM > 2)?HISTOGRAM_RADDR2:-1; //
-    localparam HISTOGRAM_ADDR3 =   (SENSOR_NUM_HISTOGRAM > 3)?HISTOGRAM_RADDR3:-1; //
+    localparam SENSOR_CTRL_ADDR =  SENSOR_BASE_ADDR + SENSOR_CTRL_RADDR;  // 'h300
+    localparam SENSI2C_CTRL_ADDR = SENSOR_BASE_ADDR + SENSI2C_CTRL_RADDR; // 'h302..'h303
+    localparam SENS_GAMMA_ADDR =   SENSOR_BASE_ADDR + SENS_GAMMA_RADDR;   // 'h304..'h307
+    localparam SENSIO_ADDR =       SENSOR_BASE_ADDR + SENSIO_RADDR;       // 'h308  .. 'h30c
+    localparam SENSI2C_ABS_ADDR =  SENSOR_BASE_ADDR + SENSI2C_ABS_RADDR;  // 'h310..'h31f
+    localparam SENSI2C_REL_ADDR =  SENSOR_BASE_ADDR + SENSI2C_REL_RADDR;  // 'h320..'h32f
+    localparam HISTOGRAM_ADDR0 =   (SENSOR_NUM_HISTOGRAM > 0)?(SENSOR_BASE_ADDR + HISTOGRAM_RADDR0):-1; //
+    localparam HISTOGRAM_ADDR1 =   (SENSOR_NUM_HISTOGRAM > 1)?(SENSOR_BASE_ADDR + HISTOGRAM_RADDR1):-1; //
+    localparam HISTOGRAM_ADDR2 =   (SENSOR_NUM_HISTOGRAM > 2)?(SENSOR_BASE_ADDR + HISTOGRAM_RADDR2):-1; //
+    localparam HISTOGRAM_ADDR3 =   (SENSOR_NUM_HISTOGRAM > 3)?(SENSOR_BASE_ADDR + HISTOGRAM_RADDR3):-1; //
 
 
     reg    [7:0] cmd_ad;      // byte-serial command address/data (up to 6 bytes: AL-AH-D0-D1-D2-D3 
@@ -212,7 +221,7 @@ module  sensor_channel#(
     
     wire  [31:0] sensor_ctrl_data;
     wire         sensor_ctrl_we;
-    reg    [8:0] mode;
+    reg    [SENSOR_MODE_WIDTH-1:0] mode;
     wire   [3:0] hist_en;
     wire         hist_nrst;
     wire         bit16; // 16-bit mode, 0 - 8 bit mode
@@ -248,9 +257,9 @@ module  sensor_channel#(
     assign dav_w =  bit16 ? gamma_hact_in : dav_8bit;
     
      
-    assign hist_en =   mode[3:0];
-    assign hist_nrst = mode[4];
-    assign bit16 =     mode[8];
+    assign hist_en =   mode[SENSOR_HIST_EN_BIT+:4];
+    assign hist_nrst = mode[SENSOR_HIST_NRST_BIT];
+    assign bit16 =     mode[SENSOR_16BIT_BIT];
     
     
     always @ (posedge mclk) begin
@@ -303,7 +312,7 @@ module  sensor_channel#(
         .stb         (cmd_stb), // input
         .addr        (), // output[0:0] - not used
         .data        (sensor_ctrl_data), // output[31:0] 
-        .we          (sensor_ctrl_we) // output
+        .we          (sensor_ctrl_we)    // output
     );
 
     sensor_i2c_io #(
