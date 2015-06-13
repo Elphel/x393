@@ -3,6 +3,8 @@
  * Date:2015-04-27  
  * Author: andrey     
  * Description: Propagate a single pulse through clock domain boundary
+ * For same frequencies input pulses can have 1:3 duty cycle EXTRA_DLY=0
+ * and 1:5 for EXTRA_DLY=1 
  *
  * Copyright (c) 2015 <set up in Preferences-Verilog/VHDL Editor-Templates> .
  * pulse_cross_clock.v is free software; you can redistribute it and/or modify
@@ -20,7 +22,9 @@
  *******************************************************************************/
 `timescale 1ns/1ps
 
-module  pulse_cross_clock(
+module  pulse_cross_clock#(
+    parameter EXTRA_DLY=0 // for 
+)(
     input  rst,
     input  src_clk,
     input  dst_clk,
@@ -28,13 +32,17 @@ module  pulse_cross_clock(
     output out_pulse,
     output busy
 );
-    reg       in_reg;
-    reg [2:0] out_reg;
+    localparam EXTRA_DLY_SAFE=EXTRA_DLY ? 1 : 0;
+    reg       in_reg = 0;
+    reg [2:0] out_reg = 0;
+    reg       busy_r = 0;
     assign out_pulse=out_reg[2];
-    assign busy=in_reg;
+    assign busy=busy_r; // in_reg;
     always @(posedge src_clk or posedge rst) begin
         if   (rst) in_reg <= 0;
-        else       in_reg <= in_pulse || (in_reg && !out_reg[1]);
+        else       in_reg <= in_pulse || (in_reg && !out_reg[EXTRA_DLY_SAFE]);
+        if   (rst) busy_r <= 0;
+        else       busy_r <= in_pulse || in_reg || (busy_r && out_reg[EXTRA_DLY_SAFE]);
     end
     always @(posedge dst_clk or posedge rst) begin
         if   (rst) out_reg <= 0;

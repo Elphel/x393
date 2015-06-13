@@ -49,7 +49,7 @@ module  membridge#(
     // mcntrl_linear_rw.v interface
     output                        frame_start_chn, // input
     output                        next_page_chn, // input
-    input                         cmd_wrmem,      //
+    input                         cmd_wrmem,      // @mclk - writing to DDR3 mode (0 - reading from DDR3)
     input                         page_ready_chn, // output single mclk
     input                         frame_done_chn, // output single mclk
     input [FRAME_HEIGHT_BITS-1:0] line_unfinished_chn1, // output[15:0] @SuppressThisWarning VEditor unused (yet)
