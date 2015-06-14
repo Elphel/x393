@@ -23,11 +23,18 @@
 `timescale 1ns/1ps
 
 module  cmprs_pixel_buf_iface #(
-        parameter CMPRS_PREEND_EARLY =      8, // TODO: adjust according to cmprs_macroblock_buf_iface latency. In
+        parameter CMPRS_PREEND_EARLY =      6, // TODO: adjust according to cmprs_macroblock_buf_iface latency. In
                                                // color18 mode this should be later than end of address run - (6*64>18*18)
                                                // "0" would generate pulse at eth same time as next macro mb_pre_start
         parameter CMPRS_RELEASE_EARLY =    16, // set to minimal actual latency in memory read, but not more than 
-        parameter CMPRS_BUF_EXTRA_LATENCY = 0  // extra register layers insered between the buffer and this module
+        parameter CMPRS_BUF_EXTRA_LATENCY = 0,  // extra register layers insered between the buffer and this module
+        parameter CMPRS_COLOR18 =           0, // JPEG 4:2:0 with 18x18 overlapping tiles for de-bayer
+        parameter CMPRS_COLOR20 =           1, // JPEG 4:2:0 with 18x18 overlapping tiles for de-bayer (not implemented)
+        parameter CMPRS_MONO16 =            2, // JPEG 4:2:0 with 16x16 non-overlapping tiles, color components zeroed
+        parameter CMPRS_JP4 =               3, // JP4 mode with 16x16 macroblocks
+        parameter CMPRS_JP4DIFF =           4, // JP4DIFF mode TODO: see if correct
+        parameter CMPRS_MONO8 =             7  // Regular JPEG monochrome with 8x8 macroblocks (not yet implemented)
+        
     )(
     input         xclk,               // global clock input, compressor single clock rate
     input         frame_en,           // if 0 - will reset logic immediately (but not page number)
@@ -57,7 +64,7 @@ module  cmprs_pixel_buf_iface #(
     localparam PERIOD_MONO16 =  384; // 6*64 - sends 2 of zeroed blobks
     localparam PERIOD_JP4 =     256; // 4*64 - exact match
     localparam PERIOD_JP4DIFF = 256; // TODO: see if correct
-    localparam PERIOD_MONO8 =    64; // 1*64 - exact match - not yet implemented (notmal mono JPEG)
+    localparam PERIOD_MONO8 =    64; // 1*64 - exact match - not yet implemented (normal mono JPEG)
     
 
     reg   [CMPRS_BUF_EXTRA_LATENCY+3:0] buf_re=0;
@@ -159,13 +166,13 @@ module  cmprs_pixel_buf_iface #(
         if      (!frame_en)     period_cntr <= 0;
         else if (mb_pre_start) begin
             case (converter_type[2:0])
-                3'h0: period_cntr <= PERIOD_COLOR18 - 1;
-                3'h1: period_cntr <= PERIOD_COLOR20 - 1;
-                3'h2: period_cntr <= PERIOD_MONO16  - 1;
-                3'h3: period_cntr <= PERIOD_JP4     - 1;
-                3'h4: period_cntr <= PERIOD_JP4DIFF - 1;
-                3'h7: period_cntr <= PERIOD_MONO8   - 1;
-                default: period_cntr <= 'bx;
+                CMPRS_COLOR18: period_cntr <= PERIOD_COLOR18 - 1;
+                CMPRS_COLOR20: period_cntr <= PERIOD_COLOR20 - 1;
+                CMPRS_MONO16:  period_cntr <= PERIOD_MONO16  - 1;
+                CMPRS_JP4:     period_cntr <= PERIOD_JP4     - 1;
+                CMPRS_JP4DIFF: period_cntr <= PERIOD_JP4DIFF - 1;
+                CMPRS_MONO8:   period_cntr <= PERIOD_MONO8   - 1;
+                default:       period_cntr <= 'bx;
             endcase
         end else if (|period_cntr) period_cntr <= period_cntr - 1;
         
@@ -178,4 +185,3 @@ module  cmprs_pixel_buf_iface #(
     end
     
 endmodule
-
