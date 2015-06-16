@@ -286,14 +286,14 @@ module csconvert18a(
 //  SRL16 i_nxtline(.Q(nxtline),.D(!RST && ywe_r && (yaddr_r[3:0]==4'hf) && (yaddr_r[7:4]!=4'hf)), .CLK(CLK),   .A0(1'b1),  .A1(1'b0), .A2(1'b0), .A3(1'b0));	// dly=1+1
 
   always @ (posedge CLK) begin
-    ywe_r <= !RST && (ystrt || nxtline || (ywe_r && (yaddr_r[3:0]!=4'hf)));
-	 yaddr_r[7:4] <= (RST || strt)? 4'h0: (nxtline?(yaddr_r[7:4]+1):yaddr_r[7:4]);
-	 yaddr_r[3:0] <= ywe_r? (yaddr_r[3:0]+1):4'h0;
-	 odd_pix <= RST || strt || ~odd_pix;
-	 if (RST || strt)           odd_line <= 1'b0;
-	 else if (yaddr_r[3:0]==4'hd) odd_line <= ~odd_line;
-	 if (RST || strt)           pix_green <=bayer_phase[1]^bayer_phase[0];
-	 else                       pix_green <=~(yaddr_r[3:0]==4'hd)^pix_green;
+      ywe_r <= !RST && (ystrt || nxtline || (ywe_r && (yaddr_r[3:0]!=4'hf)));
+	  yaddr_r[7:4] <= (RST || strt)? 4'h0: (nxtline?(yaddr_r[7:4]+1):yaddr_r[7:4]);
+	  yaddr_r[3:0] <= ywe_r? (yaddr_r[3:0]+1):4'h0;
+	  odd_pix <= RST || strt || ~odd_pix;
+	  if (RST || strt)           odd_line <= 1'b0;
+	  else if (yaddr_r[3:0]==4'hd) odd_line <= ~odd_line;
+	  if (RST || strt)           pix_green <=bayer_phase[1]^bayer_phase[0];
+	  else                       pix_green <=~(yaddr_r[3:0]==4'hd)^pix_green;
   end
 
 // First block generates 2 8-bit values (latency=3)- pixel (p2) and average value of previous and next pixel in the same

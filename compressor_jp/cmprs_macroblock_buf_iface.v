@@ -49,7 +49,9 @@ module  cmprs_macroblock_buf_iface #(
                                       // controller this can just be the same as mb_pre_end_in        
     output        mb_pre_start_out,   // 1 clock cycle before stream of addresses to the buffer
     output [ 1:0] start_page,         // page to read next tile from (or first of several pages)
-    output [ 6:0] macroblock_x        // macroblock left pixel x relative to a tile (page) Maximal page - 128 bytes wide
+    output [ 6:0] macroblock_x,       // macroblock left pixel x relative to a tile (page) Maximal page - 128 bytes wide
+    output reg    first_mb,           // during first macroblock (valid @mb_pre_start_out)
+    output        last_mb             // during last macroblock (valid @mb_pre_start_out)
     
 );
 
@@ -79,12 +81,14 @@ module  cmprs_macroblock_buf_iface #(
     reg           mb_first_in_row;
     reg           mb_last_in_row;
     reg           mb_last_row;
-    wire          mb_last;
+//    wire          last_mb;
     reg    [ 2:0] next_valid;     // number of next valid page (only 2 LSB are actual page number)
     reg    [ 2:0] next_invalid;   // oldest valid page
     reg    [ 1:0] add_invalid;    // advance next_invalid pointer by this value, send next_page pulses
     reg    [ 2:0] used_pages;     // number of pages simultaneously used for the last macroblock
     reg    [ 2:0] needed_page;    // calculate at MB start
+    reg           pre_first_mb;   // from frame start to mb_pre_start[2]
+//    reg           first_mb;       // from mb_pre_start[2]  to mb_pre_start[1]
     wire          starting;
     reg frame_pre_run;
 
@@ -97,11 +101,11 @@ module  cmprs_macroblock_buf_iface #(
     assign mb_pre_start_out=mb_pre_start[5]; // first after wait?
     assign macroblock_x = mbl_x;
 
-    assign mb_last = mb_last_row && mb_last_in_row;
+    assign last_mb = mb_last_row && mb_last_in_row;
     assign starting = |mb_pre_start;
 
-    assign mb_pre_start_w =  (mb_pre_end_in && (!mb_last || frame_en_w)) || (!frame_pre_run && frame_en_w && !frame_en_r && !starting);
-    assign frame_pre_start_w =  frame_en_w && ((mb_pre_end_in && mb_last) || (!frame_pre_run && !frame_en_r && !starting));
+    assign mb_pre_start_w =  (mb_pre_end_in && (!last_mb || frame_en_w)) || (!frame_pre_run && frame_en_w && !frame_en_r && !starting);
+    assign frame_pre_start_w =  frame_en_w && ((mb_pre_end_in && last_mb) || (!frame_pre_run && !frame_en_r && !starting));
     
     assign start_page = next_invalid[1:0]; // oldest page needed for this macroblock
     always @ (posedge xclk) begin
@@ -117,7 +121,7 @@ module  cmprs_macroblock_buf_iface #(
         
         if      (!frame_en)                frame_pre_run <= 0;
         else if (mb_pre_start_w)           frame_pre_run <= 1;
-        else if (mb_pre_end_in && mb_last) frame_pre_run <= 0;
+        else if (mb_pre_end_in && last_mb) frame_pre_run <= 0;
         
         if      (frame_pre_start_r)                                        mb_rows_left <= n_block_rows_m1;
         else if (mb_pre_start[0] && mb_last_in_row)                        mb_rows_left <= mb_rows_left - 1;        
@@ -128,6 +132,11 @@ module  cmprs_macroblock_buf_iface #(
         if      (mb_pre_start[1])                                          mb_last_row <= (mb_rows_left == 0);
         
         if      (mb_pre_start[1])                                          mb_last_in_row <= (mb_cols_left == 0);
+        
+        if (!frame_en || mb_pre_start[1]) pre_first_mb <= 0;
+        else if (frame_pre_start_r)       pre_first_mb <= 1;
+        
+        if (mb_pre_start[1]) first_mb <= pre_first_mb;
         
         // pages read from the external memory, previous one is the last in the buffer
         if   (reset_page_rd) next_valid <= 0;

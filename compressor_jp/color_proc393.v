@@ -48,7 +48,7 @@ module  color_proc393 (
 
          output         dv_raw,     // data valid for di (for testing to bypass color conversion - use di[7:0])
          input          ignore_color,   //zero Cb/Cr components
-         input          four_blocks, // use only 6 blocks for the output, not 6
+         input          four_blocks, // use only 4 blocks for the output, not 6
          input          jp4_dc_improved, // in JP4 mode, compare DC coefficients to the same color ones
          input   [ 1:0] tile_margin, // margins around 16x16 tiles (0/1/2)
          input   [ 2:0] tile_shift, // tile shift from top left corner
@@ -56,7 +56,7 @@ module  color_proc393 (
          input          scale_diff,     // divide differences by 2 (to fit in 8-bit range)
          input          hdr,            // second green absolute, not difference
          output  [ 9:0] do,         // [9:0] data out (4:2:0) (signed, average=0)
-         output  [ 8:0] avr,            // [8:0]    DC (average value) - RAM output, no register. For Y components 9'h080..9'h07f, for C - 9'h100..9'h0ff!
+         output  [ 8:0] avr,        // [8:0]    DC (average value) - RAM output, no register. For Y components 9'h080..9'h07f, for C - 9'h100..9'h0ff!
          output         dv,         // out data valid (will go high for at least 64 cycles)
          output         ds,         // single-cycle mark of the first_r pixel in a 64 (8x8) - pixel block
          output  [ 2:0] tn,         // [2:0] tile number 0..3 - Y, 4 - Cb, 5 - Cr (valid with start)
@@ -273,50 +273,56 @@ module  color_proc393 (
    wire [8:0] avrY_di= avrY_wa[1] ? (avrY_wa[0]?accY3[14:6]:accY2[14:6]):(avrY_wa[0]?accY1[14:6]:accY0[14:6]);
    wire [8:0] avrC_di= avrC_wa ?accC1[14:6]:accC0[14:6];
    assign  avr  = avermem[avr_ra[3:0]];
-   assign pre_accYdone[3:0] = {(accCntrY3[5:0]==6'h3e)?1'b1:1'b0,(accCntrY2[5:0]==6'h3e)?1'b1:1'b0,(accCntrY1[5:0]==6'h3e)?1'b1:1'b0,(accCntrY0[5:0]==6'h3e)?1'b1:1'b0} & accYen[3:0];
-   assign pre_accCdone[1:0] = {                                                                    (accCntrC1[5:0]==6'h3e)?1'b1:1'b0,(accCntrC0[5:0]==6'h3e)?1'b1:1'b0} & accCen[1:0];
+   assign pre_accYdone[3:0] = {(accCntrY3[5:0]==6'h3e)?1'b1:1'b0,
+                               (accCntrY2[5:0]==6'h3e)?1'b1:1'b0,
+                               (accCntrY1[5:0]==6'h3e)?1'b1:1'b0,
+                               (accCntrY0[5:0]==6'h3e)?1'b1:1'b0} & accYen[3:0];
+   assign pre_accCdone[1:0] = {(accCntrC1[5:0]==6'h3e)?1'b1:1'b0,
+                               (accCntrC0[5:0]==6'h3e)?1'b1:1'b0} & accCen[1:0];
    always @ (posedge clk) begin
-    cs_first_out<=cs_pre_first_out;
-    if (ywe) preAccY[8:0] <= y_in[8:0];
-    if (cwe) preAccC[8:0] <= c_in[8:0];
-    accYen[3:0] <= {4{en & ywe}} & {yaddrw[7] &  yaddrw[6], yaddrw[7] &  ~yaddrw[6],~ yaddrw[7] &  yaddrw[6], ~yaddrw[7] &  ~yaddrw[6]};
-    accCen[1:0] <= {2{en & cwe}} & {caddrw[6], ~caddrw[6]};
-    accYfirst[3:0] <= {4{cs_first_out}} | (accYfirst[3:0] & ~accYen[3:0]);
-    accCfirst[1:0] <= {2{cs_first_out}} | (accCfirst[1:0] & ~accCen[1:0]);
-    if (accYen[0]) accY0[14:0]<= (accYfirst[0]?15'h0:accY0[14:0]) + {{6{preAccY[8]}},preAccY[8:0]};
-    if (accYen[1]) accY1[14:0]<= (accYfirst[1]?15'h0:accY1[14:0]) + {{6{preAccY[8]}},preAccY[8:0]};
-    if (accYen[2]) accY2[14:0]<= (accYfirst[2]?15'h0:accY2[14:0]) + {{6{preAccY[8]}},preAccY[8:0]};
-    if (accYen[3]) accY3[14:0]<= (accYfirst[3]?15'h0:accY3[14:0]) + {{6{preAccY[8]}},preAccY[8:0]};
-    if (accCen[0]) accC0[14:0]<= (accCfirst[0]?15'h0:accC0[14:0]) + {{6{preAccC[8]}},preAccC[8:0]};
-    if (accCen[1]) accC1[14:0]<= (accCfirst[1]?15'h0:accC1[14:0]) + {{6{preAccC[8]}},preAccC[8:0]};
-
-    if (!en) accCntrY0[5:0]<= 6'h0; else if (accYen[0]) accCntrY0[5:0]<= (accYfirst[0]?6'h0:(accCntrY0[5:0]+1));
-    if (!en) accCntrY1[5:0]<= 6'h0; else if (accYen[1]) accCntrY1[5:0]<= (accYfirst[1]?6'h0:(accCntrY1[5:0]+1));
-    if (!en) accCntrY2[5:0]<= 6'h0; else if (accYen[2]) accCntrY2[5:0]<= (accYfirst[2]?6'h0:(accCntrY2[5:0]+1));
-    if (!en) accCntrY3[5:0]<= 6'h0; else if (accYen[3]) accCntrY3[5:0]<= (accYfirst[3]?6'h0:(accCntrY3[5:0]+1));
-    if (!en) accCntrC0[5:0]<= 6'h0; else if (accCen[0]) accCntrC0[5:0]<= (accCfirst[0]?6'h0:(accCntrC0[5:0]+1));
-    if (!en) accCntrC1[5:0]<= 6'h0; else if (accCen[1]) accCntrC1[5:0]<= (accCfirst[1]?6'h0:(accCntrC1[5:0]+1));
-
-    accYrun[3:0] <= {4{en}} & ((accYfirst[3:0] & accYen[3:0]) | (accYrun[3:0] & ~pre_accYdone[3:0]));
-    accCrun[1:0] <= {2{en}} & ((accCfirst[1:0] & accCen[1:0]) | (accCrun[1:0] & ~pre_accCdone[1:0]));
-
-    accYdone[3:0] <= pre_accYdone[3:0] & accYrun[3:0];
-    accYdoneAny   <= |(pre_accYdone[3:0] & accYrun[3:0]);
-    avr_we        <=  |(pre_accYdone[3:0] & accYrun[3:0]) || |(pre_accCdone[1:0] & accCrun[1:0]);
-
-    pre_avrY_wa[1:0] <= yaddrw[7:6];
-    avrY_wa[1:0]     <= pre_avrY_wa[1:0];
-    pre_avrC_wa      <= caddrw[  6];
-    avrC_wa          <= pre_avrC_wa;
-    pre_avrPage_wa   <= wpage[0];
-    avrPage_wa       <= pre_avrPage_wa;
-
-    if (avr_we)  avermem[avr_wa[3:0]] <= en_sdc?(accYdoneAny?avrY_di[8:0]:avrC_di[8:0]):9'h0; 
-
-    avr_ra[3:0] <= {rpage[0],raddr[8:6]};
-    raddr8_d <=    raddr[8];
-
-
+        cs_first_out<=cs_pre_first_out;
+        if (ywe) preAccY[8:0] <= y_in[8:0];
+        if (cwe) preAccC[8:0] <= c_in[8:0];
+        accYen[3:0] <= {4{en & ywe}} & {yaddrw[7] &  yaddrw[6],
+                           yaddrw[7] &  ~yaddrw[6],
+                          ~yaddrw[7] &   yaddrw[6],
+                          ~yaddrw[7] &  ~yaddrw[6]};
+        accCen[1:0] <= {2{en & cwe}} & { caddrw[6],
+                                        ~caddrw[6]};
+        accYfirst[3:0] <= {4{cs_first_out}} | (accYfirst[3:0] & ~accYen[3:0]);
+        accCfirst[1:0] <= {2{cs_first_out}} | (accCfirst[1:0] & ~accCen[1:0]);
+        if (accYen[0]) accY0[14:0]<= (accYfirst[0]?15'h0:accY0[14:0]) + {{6{preAccY[8]}},preAccY[8:0]};
+        if (accYen[1]) accY1[14:0]<= (accYfirst[1]?15'h0:accY1[14:0]) + {{6{preAccY[8]}},preAccY[8:0]};
+        if (accYen[2]) accY2[14:0]<= (accYfirst[2]?15'h0:accY2[14:0]) + {{6{preAccY[8]}},preAccY[8:0]};
+        if (accYen[3]) accY3[14:0]<= (accYfirst[3]?15'h0:accY3[14:0]) + {{6{preAccY[8]}},preAccY[8:0]};
+        if (accCen[0]) accC0[14:0]<= (accCfirst[0]?15'h0:accC0[14:0]) + {{6{preAccC[8]}},preAccC[8:0]};
+        if (accCen[1]) accC1[14:0]<= (accCfirst[1]?15'h0:accC1[14:0]) + {{6{preAccC[8]}},preAccC[8:0]};
+        
+        if (!en) accCntrY0[5:0]<= 6'h0; else if (accYen[0]) accCntrY0[5:0]<= (accYfirst[0]?6'h0:(accCntrY0[5:0]+1));
+        if (!en) accCntrY1[5:0]<= 6'h0; else if (accYen[1]) accCntrY1[5:0]<= (accYfirst[1]?6'h0:(accCntrY1[5:0]+1));
+        if (!en) accCntrY2[5:0]<= 6'h0; else if (accYen[2]) accCntrY2[5:0]<= (accYfirst[2]?6'h0:(accCntrY2[5:0]+1));
+        if (!en) accCntrY3[5:0]<= 6'h0; else if (accYen[3]) accCntrY3[5:0]<= (accYfirst[3]?6'h0:(accCntrY3[5:0]+1));
+        if (!en) accCntrC0[5:0]<= 6'h0; else if (accCen[0]) accCntrC0[5:0]<= (accCfirst[0]?6'h0:(accCntrC0[5:0]+1));
+        if (!en) accCntrC1[5:0]<= 6'h0; else if (accCen[1]) accCntrC1[5:0]<= (accCfirst[1]?6'h0:(accCntrC1[5:0]+1));
+        
+        accYrun[3:0] <= {4{en}} & ((accYfirst[3:0] & accYen[3:0]) | (accYrun[3:0] & ~pre_accYdone[3:0]));
+        accCrun[1:0] <= {2{en}} & ((accCfirst[1:0] & accCen[1:0]) | (accCrun[1:0] & ~pre_accCdone[1:0]));
+        
+        accYdone[3:0] <= pre_accYdone[3:0] & accYrun[3:0];
+        accYdoneAny   <= |(pre_accYdone[3:0] & accYrun[3:0]);
+        avr_we        <=  |(pre_accYdone[3:0] & accYrun[3:0]) || |(pre_accCdone[1:0] & accCrun[1:0]);
+        
+        pre_avrY_wa[1:0] <= yaddrw[7:6];
+        avrY_wa[1:0]     <= pre_avrY_wa[1:0];
+        pre_avrC_wa      <= caddrw[  6];
+        avrC_wa          <= pre_avrC_wa;
+        pre_avrPage_wa   <= wpage[0];
+        avrPage_wa       <= pre_avrPage_wa;
+        
+        if (avr_we)  avermem[avr_wa[3:0]] <= en_sdc?(accYdoneAny?avrY_di[8:0]:avrC_di[8:0]):9'h0; 
+        
+        avr_ra[3:0] <= {rpage[0],raddr[8:6]};
+        raddr8_d <=    raddr[8];
    end
 
   reg transfer_ended=0; /// there was already EOT pulse for the current frame
@@ -400,7 +406,7 @@ module  color_proc393 (
           yaddrw[7:0]      <= {conv18_yaddrw[7],conv18_yaddrw[3],conv18_yaddrw[6:4],conv18_yaddrw[2:0]};
           c_in[8:0]        <= {conv18_c_in[8:0]};
           cwe              <= conv18_cwe;
-             pre_color_enable <= 1'b1;
+          pre_color_enable <= 1'b1;
           caddrw[7:0]      <= {1'b0,conv18_caddrw[6:0]};
           ccv_out_start    <= (conv18_yaddrw[7:0]==8'hc5); //TODO: adjust to minimal latency?
           component_numsLS  <= 6'h10; // component_num [0]
@@ -416,7 +422,7 @@ module  color_proc393 (
           yaddrw[7:0]      <= {conv20_yaddrw[7],conv20_yaddrw[3],conv20_yaddrw[6:4],conv20_yaddrw[2:0]};
           c_in[8:0]        <= {conv20_c_in[8:0]};
           cwe              <= conv20_cwe;
-             pre_color_enable <= 1'b1;
+          pre_color_enable <= 1'b1;
           caddrw[7:0]      <= {1'b0,conv20_caddrw[6:0]};
           ccv_out_start    <= (conv20_yaddrw[7:0]==8'hc5); //TODO: adjust to minimal latency?
           component_numsLS  <= 6'h10; // component_num [0]

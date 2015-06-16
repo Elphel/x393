@@ -57,14 +57,27 @@ module  jp_channel#(
     wire   [ 4:0] left_marg;          // left margin (for not-yet-implemented) mono JPEG (8 lines tile row) can need 7 bits (mod 32 - tile)
     wire   [12:0] n_blocks_in_row_m1; // number of macroblocks in a macroblock row minus 1
     wire   [12:0] n_block_rows_m1;    // number of macroblock rows in a frame minus 1
+    wire          ignore_color;       // zero Cb/Cr components (TODO: maybe include into converter_type?)
+    wire   [ 1:0] bayer_phase;        // [1:0])  bayer color filter phase 0:(GR/BG), 1:(RG/GB), 2: (BG/GR), 3: (GB/RG)
+    wire          four_blocks;        // use only 6 blocks for the output, not 6
+    wire          jp4_dc_improved;    // in JP4 mode, compare DC coefficients to the same color ones
+    wire   [ 1:0] tile_margin;        // margins around 16x16 tiles (0/1/2)
+    wire   [ 2:0] tile_shift;         // tile shift from top left corner
+    wire   [ 2:0] converter_type;     // 0 - color18, 1 - color20, 2 - mono, 3 - jp4, 4 - jp4-diff, 7 - mono8 (not yet implemented)
+    wire          scale_diff;         // divide differences by 2 (to fit in 8-bit range)
+    wire          hdr;                // second green absolute, not difference
+    wire          subtract_dc_in;     // subtract/restore DC components
+    wire   [ 9:0] m_cb;               // [9:0] scale for CB - default 0.564 (10'h90)
+    wire   [ 9:0] m_cr;               // [9:0] scale for CB - default 0.713 (10'hb6)
 
-    wire   [ 2:0] converter_type;    // 0 - color18, 1 - color20, 2 - mono, 3 - jp4, 4 - jp4-diff, 7 - mono8 (not yet implemented)
+
+
     //TODO: assign next 5 values from converter_type[2:0]
-    reg    [ 5:0] mb_w_m1;            // macroblock width minus 1 // 3 LSB not used, SHOULD BE SET to 3'b111
-    reg    [ 5:0] mb_h_m1;            // macroblock horizontal period (8/16) // 3 LSB not used  SHOULD BE SET to 3'b111
-    reg    [ 4:0] mb_hper;            // macroblock horizontal period (8/16) // 3 LSB not used TODO: assign from converter_type[2:0]
-    reg    [ 1:0] tile_width;         // memory tile width (can be 128 for monochrome JPEG)   Can be 32/64/128: 0 - 16, 1 - 32, 2 - 64, 3 - 128
-    reg           tile_col_width;     // 0 - 16 pixels,  1 -32 pixels
+    wire   [ 5:0] mb_w_m1;            // macroblock width minus 1 // 3 LSB not used, SHOULD BE SET to 3'b111
+    wire   [ 5:0] mb_h_m1;            // macroblock horizontal period (8/16) // 3 LSB not used  SHOULD BE SET to 3'b111
+    wire   [ 4:0] mb_hper;            // macroblock horizontal period (8/16) // 3 LSB not used TODO: assign from converter_type[2:0]
+    wire   [ 1:0] tile_width;         // memory tile width (can be 128 for monochrome JPEG)   Can be 32/64/128: 0 - 16, 1 - 32, 2 - 64, 3 - 128
+    wire          tile_col_width;     // 0 - 16 pixels,  1 -32 pixels
     
     
     // signals connecting modules: cmprs_macroblock_buf_iface_i and cmprs_pixel_buf_iface_i:
@@ -73,7 +86,12 @@ module  jp_channel#(
                                       // controller this can just be the same as mb_pre_end_in        
     wire          mb_pre_start;       // 1 clock cycle before stream of addresses to the buffer
     wire   [ 1:0] start_page;         // page to read next tile from (or first of several pages)
-    wire   [ 6:0] macroblock_x;        // macroblock left pixel x relative to a tile (page) Maximal page - 128 bytes wide
+    wire   [ 6:0] macroblock_x;       // macroblock left pixel x relative to a tile (page) Maximal page - 128 bytes wide
+    
+    // signals connecting modules: cmprs_macroblock_buf_iface_i and cmprs_buf_average:
+    
+     wire         first_mb;           // output reg 
+     wire         last_mb;            // output
     
     // signals connecting modules: cmprs_pixel_buf_iface_i and chn_rd_buf_i:
     wire   [ 7:0] buf_di;             // data from the buffer
@@ -86,61 +104,60 @@ module  jp_channel#(
     wire          mb_pre_first_out;  // Macroblock data out strobe - 1 cycle just before data valid
     wire          mb_data_valid;     // Macroblock data out valid
     
-    // set derived parameters from converter_type
+    wire           limit_diff     = 1'b1;  // as in the prototype - just a constant 1
+    
+    // signals connecting modules: csconvert and cmprs_buf_average:
+    
+ 
+    wire   [8:0]  signed_y; // was y_in
+    wire   [8:0]  signed_c; // was c_in
+    wire   [7:0]  yaddrw; 
+    wire          ywe; 
+    wire   [7:0]  caddrw; 
+    wire          cwe; 
+    wire          yc_pre_first_out; // pre first output from color converter (was  pre_first_out) - last cycle of writing (may inc wpage
+    // How they are used? Can it be average instead?  
+    wire   [7:0]  n000;  // number of all 0 in macroblock (255 for 256), valid only for color JPEG 
+    wire   [7:0]  n255;  // number of all 255 in macroblock (255 for 256), valid only for color JPEG 
+    
+    // signals connecting modules: cmprs_buf_average and ???:
+
+    wire   [ 9:0] yc_nodc;         // [9:0] data out (4:2:0) (signed, average=0)
+    wire   [ 8:0] yc_avr;          // [8:0]    DC (average value) - RAM output, no register. For Y components 9'h080..9'h07f, for C - 9'h100..9'h0ff!
+    wire          yc_nodc_dv;         // out data valid (will go high for at least 64 cycles)
+    wire          yc_nodc_ds;         // single-cycle mark of the first_r pixel in a 64 (8x8) - pixel block
+    wire   [ 2:0] yc_nodc_tn;   // [2:0] tile number 0..3 - Y, 4 - Cb, 5 - Cr (valid with start)
+    wire          yc_nodc_first;      // sending first_r MCU (valid @ ds)
+    wire          yc_nodc_last;       // sending last_r MCU (valid @ ds)
+// below signals valid at ds ( 1 later than tn, first_r, last_r)
+    wire    [2:0] yc_nodc_component_num;    //[2:0] - component number (YCbCr: 0 - Y, 1 - Cb, 2 - Cr, JP4: 0-1-2-3 in sequence (depends on shift) 4 - don't use
+    wire          yc_nodc_component_color;  // use color quantization table (YCbCR, jp4diff)
+    wire          yc_nodc_component_first;   // first_r this component in a frame (DC absolute, otherwise - difference to previous)
+    wire          yc_nodc_component_lastinmb; // last_r component in a macroblock;
+
+
+
+    
+    
+// set derived parameters from converter_type
 //    wire   [ 2:0] converter_type;    // 0 - color18, 1 - color20, 2 - mono, 3 - jp4, 4 - jp4-diff, 7 - mono8 (not yet implemented)
-    always @(converter_type) begin
-        case (converter_type)
-            CMPRS_COLOR18:    begin
-                        mb_w_m1 <=        17;            // macroblock width minus 1 // 3 LSB not used, SHOULD BE SET to 3'b111
-                        mb_h_m1 <=        17;            // macroblock horizontal period (8/16) // 3 LSB not used  SHOULD BE SET to 3'b111
-                        mb_hper <=        16;            // macroblock horizontal period (8/16) // 3 LSB not used TODO: assign from converter_type[2:0]
-                        tile_width <=      1;            // memory tile width (can be 128 for monochrome JPEG)   Can be 32/64/128: 0 - 16, 1 - 32, 2 - 64, 3 - 128
-                        tile_col_width <=  1;            // 0 - 16 pixels,  1 -32 pixels
-                     end
-            CMPRS_COLOR20:    begin
-                        mb_w_m1 <=        19;            // macroblock width minus 1 // 3 LSB not used, SHOULD BE SET to 3'b111
-                        mb_h_m1 <=        19;            // macroblock horizontal period (8/16) // 3 LSB not used  SHOULD BE SET to 3'b111
-                        mb_hper <=        16;            // macroblock horizontal period (8/16) // 3 LSB not used TODO: assign from converter_type[2:0]
-                        tile_width <=      1;            // memory tile width (can be 128 for monochrome JPEG)   Can be 32/64/128: 0 - 16, 1 - 32, 2 - 64, 3 - 128
-                        tile_col_width <=  1;            // 0 - 16 pixels,  1 -32 pixels
-                     end
-            CMPRS_MONO16:    begin
-                        mb_w_m1 <=        15;            // macroblock width minus 1 // 3 LSB not used, SHOULD BE SET to 3'b111
-                        mb_h_m1 <=        15;            // macroblock horizontal period (8/16) // 3 LSB not used  SHOULD BE SET to 3'b111
-                        mb_hper <=        16;            // macroblock horizontal period (8/16) // 3 LSB not used TODO: assign from converter_type[2:0]
-                        tile_width <=      2;            // memory tile width (can be 128 for monochrome JPEG)   Can be 32/64/128: 0 - 16, 1 - 32, 2 - 64, 3 - 128
-                        tile_col_width <=  1;            // 0 - 16 pixels,  1 -32 pixels
-                     end
-            CMPRS_JP4:    begin
-                        mb_w_m1 <=        15;            // macroblock width minus 1 // 3 LSB not used, SHOULD BE SET to 3'b111
-                        mb_h_m1 <=        15;            // macroblock horizontal period (8/16) // 3 LSB not used  SHOULD BE SET to 3'b111
-                        mb_hper <=        16;            // macroblock horizontal period (8/16) // 3 LSB not used TODO: assign from converter_type[2:0]
-                        tile_width <=      2;            // memory tile width (can be 128 for monochrome JPEG)   Can be 32/64/128: 0 - 16, 1 - 32, 2 - 64, 3 - 128
-                        tile_col_width <=  1;            // 0 - 16 pixels,  1 -32 pixels
-                     end
-            CMPRS_JP4DIFF:    begin
-                        mb_w_m1 <=        15;            // macroblock width minus 1 // 3 LSB not used, SHOULD BE SET to 3'b111
-                        mb_h_m1 <=        15;            // macroblock horizontal period (8/16) // 3 LSB not used  SHOULD BE SET to 3'b111
-                        mb_hper <=        16;            // macroblock horizontal period (8/16) // 3 LSB not used TODO: assign from converter_type[2:0]
-                        tile_width <=      2;            // memory tile width (can be 128 for monochrome JPEG)   Can be 32/64/128: 0 - 16, 1 - 32, 2 - 64, 3 - 128
-                        tile_col_width <=  1;            // 0 - 16 pixels,  1 -32 pixels
-                     end
-            CMPRS_MONO8:    begin
-                        mb_w_m1 <=         7;            // macroblock width minus 1 // 3 LSB not used, SHOULD BE SET to 3'b111
-                        mb_h_m1 <=         7;            // macroblock horizontal period (8/16) // 3 LSB not used  SHOULD BE SET to 3'b111
-                        mb_hper <=         8;            // macroblock horizontal period (8/16) // 3 LSB not used TODO: assign from converter_type[2:0]
-                        tile_width <=      3;            // memory tile width (can be 128 for monochrome JPEG)   Can be 32/64/128: 0 - 16, 1 - 32, 2 - 64, 3 - 128
-                        tile_col_width <=  1;            // 0 - 16 pixels,  1 -32 pixels
-                     end
-            default: begin
-                        mb_w_m1 <=        'bx;            // macroblock width minus 1 // 3 LSB not used, SHOULD BE SET to 3'b111
-                        mb_h_m1 <=        'bx;            // macroblock horizontal period (8/16) // 3 LSB not used  SHOULD BE SET to 3'b111
-                        mb_hper <=        'bx;            // macroblock horizontal period (8/16) // 3 LSB not used TODO: assign from converter_type[2:0]
-                        tile_width <=     'bx;            // memory tile width (can be 128 for monochrome JPEG)   Can be 32/64/128: 0 - 16, 1 - 32, 2 - 64, 3 - 128
-                        tile_col_width <= 'bx;            // 0 - 16 pixels,  1 -32 pixels
-                     end
-        endcase
-    end
+    cmprs_tile_mode_decode #( // fully combinatorial
+        .CMPRS_COLOR18(0),
+        .CMPRS_COLOR20(1),
+        .CMPRS_MONO16(2),
+        .CMPRS_JP4(3),
+        .CMPRS_JP4DIFF(4),
+        .CMPRS_MONO8(7)
+    ) cmprs_tile_mode_decode_i (
+        .converter_type  (converter_type), // input[2:0] 
+        .mb_w_m1         (mb_w_m1),        // output[5:0] reg 
+        .mb_h_m1         (mb_h_m1),        // output[5:0] reg 
+        .mb_hper         (mb_hper),        // output[4:0] reg 
+        .tile_width      (tile_width),     // output[1:0] reg 
+        .tile_col_width  (tile_col_width)  // output reg 
+    );
+    
+//mb_pre_first_out    
 // Port buffer - TODO: Move to memory controller
     mcntrl_buf_rd #(
         .LOG2WIDTH_RD(3) // 64 bit external interface
@@ -178,7 +195,10 @@ module  jp_channel#(
         .mb_release_buf     (mb_release_buf), // input
         .mb_pre_start_out   (mb_pre_start), // output
         .start_page         (start_page), // output[1:0] 
-        .macroblock_x       (macroblock_x)  // output[6:0] 
+        .macroblock_x       (macroblock_x),  // output[6:0] 
+        .first_mb           (first_mb), // output reg 
+        .last_mb            (last_mb) // output
+        
     );
 
     cmprs_pixel_buf_iface #(
@@ -209,14 +229,79 @@ module  jp_channel#(
         .start_page         (start_page), // input[1:0] 
         .macroblock_x       (macroblock_x), // input[6:0] 
         .data_out           (mb_data_out), // output[7:0] // Macroblock data out in scanline order
-        .pre_first_out      (mb_pre_first_out), // output // Macroblock data out strobe - 1 cycle just before data valid
+        .pre_first_out      (mb_pre_first_out), // output // Macroblock data out strobe - 1 cycle just before data valid  == old pre_first_pixel?
         .data_valid         (mb_data_valid) // output     // Macroblock data out valid
     );
 
-/*
-*/
+    csconvert #(
+        .CMPRS_COLOR18   (CMPRS_COLOR18),
+        .CMPRS_COLOR20   (CMPRS_COLOR20),
+        .CMPRS_MONO16    (CMPRS_MONO16),
+        .CMPRS_JP4       (CMPRS_JP4),
+        .CMPRS_JP4DIFF   (CMPRS_JP4DIFF),
+        .CMPRS_MONO8     (CMPRS_MONO8)
+    ) csconvert_i (
+        .xclk           (xclk),             // input
+        .frame_en       (frame_en),         // input
+        .converter_type (converter_type),   // input[2:0] 
+        .ignore_color   (ignore_color),     // input
+        .scale_diff     (scale_diff),       // input
+        .hdr            (hdr),              // input
+        .limit_diff     (limit_diff),       // input
+        .m_cb           (m_cb),             // input[9:0] 
+        .m_cr           (m_cr),             // input[9:0] 
+        .mb_din         (mb_data_out),      // input[7:0] 
+        .bayer_phase    (bayer_phase),      // input[1:0] 
+        .pre_first_in   (mb_pre_first_out), // input
+        .signed_y       (signed_y),         // output[8:0] reg 
+        .signed_c       (signed_c),         // output[8:0] reg 
+        .yaddrw         (yaddrw),           // output[7:0] reg 
+        .ywe            (ywe),              // output reg 
+        .caddrw         (caddrw),           // output[7:0] reg 
+        .cwe            (cwe),              // output reg 
+        .pre_first_out  (yc_pre_first_out), // output reg 
+        .n000           (n000),             // output[7:0] reg 
+        .n255           (n255)              // output[7:0] reg 
+    );
 
 
+    cmprs_buf_average #(
+        .CMPRS_COLOR18   (CMPRS_COLOR18),
+        .CMPRS_COLOR20   (CMPRS_COLOR20),
+        .CMPRS_MONO16    (CMPRS_MONO16),
+        .CMPRS_JP4       (CMPRS_JP4),
+        .CMPRS_JP4DIFF   (CMPRS_JP4DIFF),
+        .CMPRS_MONO8     (CMPRS_MONO8)
+    ) cmprs_buf_average_i (
+        .xclk               (xclk),             // input
+        .frame_en           (frame_en),         // input
+        .converter_type     (converter_type),   // input[2:0] 
+        .pre_first_in       (mb_pre_first_out), // input
+        .yc_pre_first_out   (yc_pre_first_out), // input
+        .bayer_phase        (bayer_phase),      // input[1:0] 
+        .jp4_dc_improved    (jp4_dc_improved),  // input
+        .hdr                (hdr),              // input
+        .subtract_dc_in     (subtract_dc_in),   // input
+        .first_mb_in        (first_mb),         // input - calculate in cmprs_macroblock_buf_iface 
+        .last_mb_in         (last_mb),          // input - calculate in cmprs_macroblock_buf_iface
+        .yaddrw             (yaddrw),           // input[7:0] 
+        .ywe                (ywe),              // input
+        .signed_y           (signed_y),         // input[8:0] 
+        .caddrw             (caddrw),           // input[7:0] 
+        .cwe                (cwe),              // input
+        .signed_c           (signed_c),         // input[8:0] 
+        .do                 (yc_nodc), // output[9:0] 
+        .avr                (yc_avr), // output[8:0] 
+        .dv                 (yc_nodc_dv), // output
+        .ds                 (yc_nodc_ds), // output
+        .tn                 (yc_nodc_tn), // output[2:0] 
+        .first              (yc_nodc_first), // output reg 
+        .last               (yc_nodc_last), // output reg 
+        .component_num      (yc_nodc_component_num), // output[2:0] 
+        .component_color    (yc_nodc_component_color), // output
+        .component_first    (yc_nodc_component_first), // output
+        .component_lastinmb (yc_nodc_component_lastinmb) // output reg 
+    );
 
 endmodule
 
