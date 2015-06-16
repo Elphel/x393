@@ -290,18 +290,66 @@ module  jp_channel#(
         .caddrw             (caddrw),           // input[7:0] 
         .cwe                (cwe),              // input
         .signed_c           (signed_c),         // input[8:0] 
-        .do                 (yc_nodc), // output[9:0] 
-        .avr                (yc_avr), // output[8:0] 
-        .dv                 (yc_nodc_dv), // output
-        .ds                 (yc_nodc_ds), // output
-        .tn                 (yc_nodc_tn), // output[2:0] 
-        .first              (yc_nodc_first), // output reg 
-        .last               (yc_nodc_last), // output reg 
+        .do                 (yc_nodc),          // output[9:0] 
+        .avr                (yc_avr),           // output[8:0] 
+        .dv                 (yc_nodc_dv),       // output
+        .ds                 (yc_nodc_ds),       // output
+        .tn                 (yc_nodc_tn),       // output[2:0] 
+        .first              (yc_nodc_first),    // output reg 
+        .last               (yc_nodc_last),     // output reg 
         .component_num      (yc_nodc_component_num), // output[2:0] 
         .component_color    (yc_nodc_component_color), // output
         .component_first    (yc_nodc_component_first), // output
         .component_lastinmb (yc_nodc_component_lastinmb) // output reg 
     );
+//  wire   [ 9:0] yc_nodc;         // [9:0] data out (4:2:0) (signed, average=0)
+
+    wire          dct_last_in;
+    wire          dct_pre_first_out;
+    wire          dct_dv;
+    wire   [12:0] dct_out;
+    
+    xdct393 xdct393_i (
+        .clk                (xclk), // input
+        .en                 (frame_en), // input  if zero will reset transpose memory page numbers
+        .start              (yc_nodc_ds), // input  single-cycle start pulse that goes with the first pixel data. Other 63 should follow
+        .xin                (yc_nodc), // input[9:0] 
+        .last_in            (dct_last_in), // output reg  output high during input of the last of 64 pixels in a 8x8 block //
+        .pre_first_out      (dct_pre_first_out), // outpu 1 cycle ahead of the first output in a 64 block
+        .dv                 (dct_dv), // output data output valid. Will go high on the 94-th cycle after the start (now - on 95-th?)
+        .d_out              (dct_out) // output[12:0] 
+    );
+    reg           quant_start;
+    always @ (posedge xclk) quant_start <= dct_pre_first_out;
+    
+/*
+ xdct       i_xdct ( .clk(clk),             // top level module
+                     .en(cmprs_en),       // if zero will reset transpose memory page numbers
+                     .start(dct_start),    // single-cycle start pulse that goes with the first pixel data. Other 63 should follow
+                     .xin(color_d[9:0]),    // [7:0] - input data
+                     .last_in(dct_last_in),   // output high during input of the last of 64 pixels in a 8x8 block //
+                     .pre_first_out(dct_pre_first_out),// 1 cycle ahead of the first output in a 64 block
+
+                     .dv(dct_dv),          // data output valid. Will go high on the 94-th cycle after the start
+                     .d_out(dct_out[12:0]));// [12:0]output data
+
+// probably dcc things are not needed anymore
+
+ always @ (posedge clk) quant_start <= dct_pre_first_out;
+
+ always @ (posedge clk) begin
+  if (!dccout) dcc_en <=1'b0;
+  else if (dct_start && color_first && (color_tn[2:0]==3'b001)) dcc_en <=1'b1; // 3'b001 - closer to the first "start" in quantizator
+ end
+ wire [15:0] quant_dc_tdo;// MSB aligned coefficient for the DC component (used in focus module)
+
+ wire [2:0]  coring_num;
+
+   FDE_1   i_coring_num0   (.C(clk2x),.CE(wr_quantizer_mode),.D(di[ 0]),.Q(coring_num[0]));
+   FDE_1   i_coring_num1   (.C(clk2x),.CE(wr_quantizer_mode),.D(di[ 1]),.Q(coring_num[1]));
+   FDE_1   i_coring_num2   (.C(clk2x),.CE(wr_quantizer_mode),.D(di[ 2]),.Q(coring_num[2]));
+
+*/
 
 endmodule
 

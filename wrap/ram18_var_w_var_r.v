@@ -1,21 +1,25 @@
 /*******************************************************************************
- * Copyright (c) 2015 Elphel, Inc.
- * Dual port memory wrapper, with variable width write and variable width read
- * using "SDP" or "TDP" mode of RAMB18E1 (half of RAMB18E1) 
- * Uses parity bits to extend total data width (minimal width should be >=8).
- * ram18p_var_w_var_r.v is free software; you can redistribute it and/or modify
+ * Module: ram18_var_w_var_r
+ * Date:2015-06-16  
+ * Author: andrey     
+ * Description: Half-BRAM module wrapper to use as a variable width R/W, no parity
+ *
+ * Copyright (c) 2015 <set up in Preferences-Verilog/VHDL Editor-Templates> .
+ * ram18_var_w_var_r.v is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * ram18p_var_w_var_r.v is distributed in the hope that it will be useful,
+ *  ram18_var_w_var_r.v is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * along with this program.  If not, see <http://www.gnu.org/licenses/> .
  *******************************************************************************/
+`timescale 1ns/1ps
+
 /*
    Address/data widths
    Connect unused data to 1b0, unused addresses - to 1'b1
@@ -71,7 +75,7 @@
    |   64/ 72   | A[14:6] | D[63:0] | DP[7:0] |
    +------------+---------+---------+---------+
 */
-module  ram18p_var_w_var_r
+module  ram18_var_w_var_r
 #(
   parameter integer REGISTERS    = 0, // 1 - registered output
   parameter integer LOG2WIDTH_WR = 5, // WIDTH= 9  << (LOG2WIDTH - 3)
@@ -84,23 +88,23 @@ module  ram18p_var_w_var_r
       input        [13-LOG2WIDTH_RD:0] raddr,    // read address
       input                            ren,      // read port enable
       input                            regen,    // output register enable
-      output [(9 << (LOG2WIDTH_RD-3))-1:0] data_out, // data out
+      output [(1 << LOG2WIDTH_RD)-1:0] data_out, // data out
       
       input                            wclk,     // clock for read port
       input        [13-LOG2WIDTH_WR:0] waddr,    // write address
       input                            we,       // write port enable
       input                     [ 3:0] web,      // write byte enable
-      input  [(9 << (LOG2WIDTH_WR-3))-1:0] data_in   // data out
+      input  [(1 << LOG2WIDTH_WR)-1:0] data_in   // data out
     );
     generate
         if (DUMMY)
-            ram18p_dummy #(
+            ram18_dummy #(
                 .LOG2WIDTH_RD(LOG2WIDTH_RD)
-            ) ram18p_dummy_i (
+            ) ram18_dummy_i (
                 .data_out(data_out) 
             );
         else if ((LOG2WIDTH_WR == 5) && (LOG2WIDTH_RD == 5))
-            ram18p_32w_32r #(
+            ram18_32w_32r #(
                 .REGISTERS    (REGISTERS)
             ) ram_i (
                 .rclk         (rclk),     // input
@@ -115,7 +119,7 @@ module  ram18p_var_w_var_r
                 .data_in      (data_in)   // input[35:0] 
             );
         else if ((LOG2WIDTH_WR == 5) && (LOG2WIDTH_RD < 5))
-            ram18p_32w_lt32r #(
+            ram18_32w_lt32r #(
                 .REGISTERS    (REGISTERS),
                 .LOG2WIDTH_RD (LOG2WIDTH_RD)
             ) ram_i (
@@ -131,7 +135,7 @@ module  ram18p_var_w_var_r
                 .data_in      (data_in)   // input[35:0] 
             );
         else if ((LOG2WIDTH_WR < 5) && (LOG2WIDTH_RD == 5))
-            ram18p_lt32w_32r #(
+            ram18_lt32w_32r #(
                 .REGISTERS    (REGISTERS),
                 .LOG2WIDTH_WR (LOG2WIDTH_WR)
             ) ram_i (
@@ -147,7 +151,7 @@ module  ram18p_var_w_var_r
                 .data_in      (data_in)   // input[(<35):0] 
             );
         else if ((LOG2WIDTH_WR < 5) && (LOG2WIDTH_RD < 5))
-            ram18p_lt32w_lt32r #(
+            ram18_lt32w_lt32r #(
                 .REGISTERS    (REGISTERS),
                 .LOG2WIDTH_WR (LOG2WIDTH_WR),
                 .LOG2WIDTH_RD (LOG2WIDTH_RD)
@@ -168,7 +172,7 @@ endmodule
 
 // Both ports with 32 bit widths
 
-module  ram18p_32w_32r
+module  ram18_32w_32r
 #(
   parameter integer REGISTERS    = 0 // 1 - registered output
  )
@@ -177,13 +181,13 @@ module  ram18p_32w_32r
       input                   [8:0] raddr,    // read address
       input                         ren,      // read port enable
       input                         regen,    // output register enable
-      output                 [35:0] data_out, // data out
+      output                 [31:0] data_out, // data out
       
       input                         wclk,     // clock for read port
       input                  [ 8:0] waddr,    // write address
       input                         we,       // write port enable
       input                  [ 3:0] web,      // write byte enable
-      input                  [35:0] data_in  // data out
+      input                  [31:0] data_in  // data out
     );
     localparam  PWIDTH_WR=72;
     localparam  PWIDTH_RD=72;
@@ -220,10 +224,10 @@ module  ram18p_32w_32r
         .RSTREGARSTREG   (1'b0),           // Port A (read port in SDP) register set/reset, input
         .WEA             (2'b0),           // Port A (read port in SDP) Write Enable[2:0], input
         // Port B
-        .DOBDO           (data_out[33:18]),// Port B data/MSB data[15:0], output
-        .DOPBDOP         (data_out[35:34]),// Port B parity/MSB parity[2:0], output
-        .DIBDI           (data_in[33:18]), // Port B data/MSB data[31:0], input
-        .DIPBDIP         (data_in[35:34]), // Port B parity/MSB parity[1:0], input
+        .DOBDO           (data_out[31:16]),// Port B data/MSB data[15:0], output
+        .DOPBDOP         (),               // Port B parity/MSB parity[2:0], output
+        .DIBDI           (data_in[31:16]), // Port B data/MSB data[31:0], input
+        .DIPBDIP         (2'b0),           // Port B parity/MSB parity[1:0], input
         .ADDRBWRADDR     ({waddr[8:0],5'b11111}), // Port B (write port in SDP) address [13:0], unused should be high, input
         .CLKBWRCLK       (wclk),           // Port B (write port in SDP) clock, input
         .ENBWREN         (we),             // Port B (write port in SDP) Enable, input
@@ -237,7 +241,7 @@ endmodule
 
 // Both ports with less than 32 bit widths
 
-module  ram18p_lt32w_lt32r
+module  ram18_lt32w_lt32r
 #(
   parameter integer REGISTERS    = 0, // 1 - registered output
   parameter integer LOG2WIDTH_WR = 4,  // WIDTH= 1  << LOG2WIDTH
@@ -248,29 +252,24 @@ module  ram18p_lt32w_lt32r
       input            [13-LOG2WIDTH_RD:0] raddr,    // read address
       input                                ren,      // read port enable
       input                                regen,    // output register enable
-      output [(9 << (LOG2WIDTH_RD-3))-1:0] data_out, // data out
+      output     [(1 << LOG2WIDTH_RD)-1:0] data_out, // data out
       
       input                                wclk,     // clock for read port
       input            [13-LOG2WIDTH_WR:0] waddr,    // write address
       input                                we,       // write port enable
       input                         [ 3:0] web,      // write byte enable
-      input  [(9 << (LOG2WIDTH_WR-3))-1:0] data_in   // data out
+      input      [(1 << LOG2WIDTH_WR)-1:0] data_in   // data out
     );
     localparam  PWIDTH_WR = (LOG2WIDTH_WR > 2)? (9 << (LOG2WIDTH_WR - 3)): (1 << LOG2WIDTH_WR);
     localparam  PWIDTH_RD = (LOG2WIDTH_RD > 2)? (9 << (LOG2WIDTH_RD - 3)): (1 << LOG2WIDTH_RD);
     localparam  WIDTH_WR  = 1 << LOG2WIDTH_WR;
-    localparam  WIDTH_WRP = 1 << (LOG2WIDTH_WR-3);
     localparam  WIDTH_RD  = 1 << LOG2WIDTH_RD;
-    localparam  WIDTH_RDP = 1 << (LOG2WIDTH_RD-3);
     
     wire          [15:0] data_out16;
-    wire          [ 1:0] datap_out2;
-    assign data_out={datap_out2[WIDTH_RDP-1:0], data_out16[WIDTH_RD-1:0]};
+    assign data_out=data_out16[WIDTH_RD-1:0];
 
     wire [WIDTH_WR+15:0] data_in_ext = {16'b0,data_in[WIDTH_WR-1:0]};
     wire          [15:0] data_in16=data_in_ext[15:0];
-    wire [WIDTH_WRP+1:0] datap_in_ext = {2'b0,data_in[WIDTH_WR+:WIDTH_WRP]};
-    wire           [1:0] datap_in2=      datap_in_ext[1:0];
 
     RAMB18E1
     #(
@@ -294,7 +293,7 @@ module  ram18p_lt32w_lt32r
     (
         // Port A (Read port in SDP mode):
         .DOADO           (data_out16),     // Port A data/LSB data[15:0], output
-        .DOPADOP         (datap_out2),     // Port A parity/LSB parity[1:0], output
+        .DOPADOP         (),               // Port A parity/LSB parity[1:0], output
         .DIADI           (16'h0),          // Port A data/LSB data[15:0], input
         .DIPADIP         (2'h0),           // Port A parity/LSB parity[1:0], input
         .ADDRARDADDR     ({raddr,{LOG2WIDTH_RD{1'b1}}}),  // Port A (read port in SDP) address [13:0], unused should be high, input
@@ -308,7 +307,7 @@ module  ram18p_lt32w_lt32r
         .DOBDO           (),               // Port B data/MSB data[31:0], output
         .DOPBDOP         (),               // Port B parity/MSB parity[3:0], output
         .DIBDI           (data_in16),      // Port B data/MSB data[31:0], input
-        .DIPBDIP         (datap_in2),      // Port B parity/MSB parity[3:0], input
+        .DIPBDIP         (2'b0),           // Port B parity/MSB parity[3:0], input
         .ADDRBWRADDR     ({waddr,{LOG2WIDTH_WR{1'b1}}}), // Port B (write port in SDP) address [13:0], unused should be high, input
         .CLKBWRCLK       (wclk),           // Port B (write port in SDP) clock, input
         .ENBWREN         (we),             // Port B (write port in SDP) Enable, input
@@ -321,7 +320,7 @@ module  ram18p_lt32w_lt32r
 endmodule
 
 // Write port less than 32bits, read port 32 bit widths
-module  ram18p_lt32w_32r
+module  ram18_lt32w_32r
 #(
   parameter integer REGISTERS    = 0, // 1 - registered output
   parameter integer LOG2WIDTH_WR = 4  // WIDTH= 1  << LOG2WIDTH
@@ -331,24 +330,20 @@ module  ram18p_lt32w_32r
       input                          [8:0] raddr,    // read address
       input                                ren,      // read port enable
       input                                regen,    // output register enable
-      output                        [35:0] data_out, // data out
+      output                        [31:0] data_out, // data out
       
       input                                wclk,     // clock for read port
       input            [13-LOG2WIDTH_WR:0] waddr,    // write address
       input                                we,       // write port enable
       input                         [ 3:0] web,      // write byte enable
-      input  [(9 << (LOG2WIDTH_WR-3))-1:0] data_in   // data out
+      input      [(1 << LOG2WIDTH_WR)-1:0] data_in   // data out
     );
     localparam  PWIDTH_WR = (LOG2WIDTH_WR > 2)? (9 << (LOG2WIDTH_WR - 3)): (1 << LOG2WIDTH_WR);
     localparam  PWIDTH_RD = 36;
     localparam  WIDTH_WR  = 1 << LOG2WIDTH_WR;
-    localparam  WIDTH_WRP = 1 << (LOG2WIDTH_WR-3);
 
     wire [WIDTH_WR+15:0] data_in_ext = {16'b0,data_in[WIDTH_WR-1:0]};
     wire          [15:0] data_in16=data_in_ext[15:0];
-
-    wire [WIDTH_WRP+1:0] datap_in_ext = {2'b0,data_in[WIDTH_WR+:WIDTH_WRP]};
-    wire           [1:0] datap_in2=      datap_in_ext[1:0];
 
     RAMB18E1
     #(
@@ -382,10 +377,10 @@ module  ram18p_lt32w_32r
         .RSTREGARSTREG   (1'b0),           // Port A (read port in SDP) register set/reset, input
         .WEA             (2'b0),           // Port A (read port in SDP) Write Enable[3:0], input
         // Port B
-        .DOBDO           (data_out[33:18]),// Port B data/MSB data[31:0], output
-        .DOPBDOP         (data_out[35:34]),// Port B parity/MSB parity[3:0], output
+        .DOBDO           (data_out[31:16]),// Port B data/MSB data[31:0], output
+        .DOPBDOP         (),               // Port B parity/MSB parity[3:0], output
         .DIBDI           (data_in16),      // Port B data/MSB data[31:0], input
-        .DIPBDIP         (datap_in2),      // Port B parity/MSB parity[3:0], input
+        .DIPBDIP         (2'b0),           // Port B parity/MSB parity[3:0], input
         .ADDRBWRADDR     ({waddr,{LOG2WIDTH_WR{1'b1}}}), // Port B (write port in SDP) address [15:0]. used from [14] down, unused should be high, input
         .CLKBWRCLK       (wclk),           // Port B (write port in SDP) clock, input
         .ENBWREN         (we),             // Port B (write port in SDP) Enable, input
@@ -398,7 +393,7 @@ module  ram18p_lt32w_32r
 endmodule
 
 // Write port 64 bita, read port - less than 64 bits
-module  ram18p_32w_lt32r
+module  ram18_32w_lt32r
 #(
   parameter integer REGISTERS    = 0, // 1 - registered output
 //  parameter integer LOG2WIDTH_WR = 4,  // WIDTH= 1  << LOG2WIDTH
@@ -409,21 +404,19 @@ module  ram18p_32w_lt32r
       input            [13-LOG2WIDTH_RD:0] raddr,    // read address
       input                                ren,      // read port enable
       input                                regen,    // output register enable
-      output [(9 << (LOG2WIDTH_RD-3))-1:0] data_out, // data out
+      output     [(1 << LOG2WIDTH_RD)-1:0] data_out, // data out
       
       input                                wclk,     // clock for read port
       input                          [8:0] waddr,    // write address
       input                                we,       // write port enable
       input                         [ 3:0] web,      // write byte enable
-      input                         [35:0] data_in   // data out
+      input                         [31:0] data_in   // data out
     );
     localparam  PWIDTH_WR = 72;
     localparam  PWIDTH_RD = (LOG2WIDTH_RD > 2)? (9 << (LOG2WIDTH_RD - 3)): (1 << LOG2WIDTH_RD);
     localparam  WIDTH_RD  = 1 << LOG2WIDTH_RD;
-    localparam  WIDTH_RDP = 1 << (LOG2WIDTH_RD-3);
     wire          [15:0] data_out16;
-    wire          [ 1:0] datap_out2;
-    assign data_out={datap_out2[WIDTH_RDP-1:0], data_out16[WIDTH_RD-1:0]};
+    assign data_out=data_out16[WIDTH_RD-1:0];
     RAMB18E1
     #(
     .RSTREG_PRIORITY_A         ("RSTREG"),       // Valid: "RSTREG" or "REGCE"
@@ -445,9 +438,9 @@ module  ram18p_32w_lt32r
     (
         // Port A (Read port in SDP mode):
         .DOADO           (data_out16),     // Port A data/LSB data[15:0], output
-        .DOPADOP         (datap_out2),     // Port A parity/LSB parity[1:0], output
+        .DOPADOP         (),               // Port A parity/LSB parity[1:0], output
         .DIADI           (data_in[15:0]),  // Port A data/LSB data[15:0], input
-        .DIPADIP         (data_in[17:16]), // Port A parity/LSB parity[1:0], input
+        .DIPADIP         (2'b0),           // Port A parity/LSB parity[1:0], input
         .ADDRARDADDR     ({raddr,{LOG2WIDTH_RD{1'b1}}}),  // Port A (read port in SDP) address [13:0], unused should be high, input
         .CLKARDCLK       (rclk),           // Port A (read port in SDP) clock, input
         .ENARDEN         (ren),            // Port A (read port in SDP) Enable, input
@@ -458,8 +451,8 @@ module  ram18p_32w_lt32r
         // Port B
         .DOBDO           (),               // Port B data/MSB data[15:0], output
         .DOPBDOP         (),               // Port B parity/MSB parity[1:0], output
-        .DIBDI           (data_in[33:18]), // Port B data/MSB data[15:0], input
-        .DIPBDIP         (data_in[35:34]), // Port B parity/MSB parity[1:0], input
+        .DIBDI           (data_in[31:16]), // Port B data/MSB data[15:0], input
+        .DIPBDIP         (2'b0),           // Port B parity/MSB parity[1:0], input
         .ADDRBWRADDR({waddr[8:0],5'b11111}), // Port B (write port in SDP) address [13:0], unused should be high, input
         .CLKBWRCLK       (wclk),           // Port B (write port in SDP) clock, input
         .ENBWREN         (we),             // Port B (write port in SDP) Enable, input
@@ -471,12 +464,16 @@ module  ram18p_32w_lt32r
 
 endmodule
 
-module  ram18p_dummy
+module  ram18_dummy
 #(
   parameter integer LOG2WIDTH_RD = 4   // WIDTH= 1  << LOG2WIDTH
  )
    (
-      output [(9 << (LOG2WIDTH_RD-3))-1:0] data_out // data out
+      output [(1 << LOG2WIDTH_RD)-1:0] data_out // data out
    );
    assign data_out=0;
 endmodule
+
+
+endmodule
+
