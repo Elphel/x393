@@ -125,14 +125,14 @@ module  jp_channel#(
     wire   [ 9:0] yc_nodc;         // [9:0] data out (4:2:0) (signed, average=0)
     wire   [ 8:0] yc_avr;          // [8:0]    DC (average value) - RAM output, no register. For Y components 9'h080..9'h07f, for C - 9'h100..9'h0ff!
     wire          yc_nodc_dv;         // out data valid (will go high for at least 64 cycles)
-    wire          yc_nodc_ds;         // single-cycle mark of the first_r pixel in a 64 (8x8) - pixel block
-    wire   [ 2:0] yc_nodc_tn;   // [2:0] tile number 0..3 - Y, 4 - Cb, 5 - Cr (valid with start)
-    wire          yc_nodc_first;      // sending first_r MCU (valid @ ds)
-    wire          yc_nodc_last;       // sending last_r MCU (valid @ ds)
+    wire          dct_start;         // single-cycle mark of the first_r pixel in a 64 (8x8) - pixel block
+    wire   [ 2:0] color_tn;   // [2:0] tile number 0..3 - Y, 4 - Cb, 5 - Cr (valid with start)
+    wire          color_first;      // sending first_r MCU (valid @ ds)
+    wire          color_last;       // sending last_r MCU (valid @ ds)
 // below signals valid at ds ( 1 later than tn, first_r, last_r)
     wire    [2:0] yc_nodc_component_num;    //[2:0] - component number (YCbCr: 0 - Y, 1 - Cb, 2 - Cr, JP4: 0-1-2-3 in sequence (depends on shift) 4 - don't use
     wire          yc_nodc_component_color;  // use color quantization table (YCbCR, jp4diff)
-    wire          yc_nodc_component_first;   // first_r this component in a frame (DC absolute, otherwise - difference to previous)
+    wire          color_first;   // first_r this component in a frame (DC absolute, otherwise - difference to previous)
     wire          yc_nodc_component_lastinmb; // last_r component in a macroblock;
 
 
@@ -293,13 +293,13 @@ module  jp_channel#(
         .do                 (yc_nodc),          // output[9:0] 
         .avr                (yc_avr),           // output[8:0] 
         .dv                 (yc_nodc_dv),       // output
-        .ds                 (yc_nodc_ds),       // output
-        .tn                 (yc_nodc_tn),       // output[2:0] 
-        .first              (yc_nodc_first),    // output reg 
-        .last               (yc_nodc_last),     // output reg 
+        .ds                 (dct_start),       // output
+        .tn                 (color_tn),       // output[2:0] 
+        .first              (color_first),    // output reg 
+        .last               (color_last),     // output reg 
         .component_num      (yc_nodc_component_num), // output[2:0] 
         .component_color    (yc_nodc_component_color), // output
-        .component_first    (yc_nodc_component_first), // output
+        .component_first    (color_first),      // output
         .component_lastinmb (yc_nodc_component_lastinmb) // output reg 
     );
 //  wire   [ 9:0] yc_nodc;         // [9:0] data out (4:2:0) (signed, average=0)
@@ -309,18 +309,87 @@ module  jp_channel#(
     wire          dct_dv;
     wire   [12:0] dct_out;
     
+    
+ //propagation of first block through compressor pipeline
+ 
+    wire          first_block_color=(color_tn[2:0]==3'h0) && color_first;        // while color conversion,
+    reg           first_block_color_after;  // after color conversion,
+    reg           first_block_dct;     // after DCT
+    wire          first_block_quant;   // after quantizer
+    always @ (posedge clk) begin
+        if (dct_start)   first_block_color_after <= first_block_color;
+        if (dct_last_in) first_block_dct   <= first_block_color_after;
+    end
+    
+    
+    
+    
     xdct393 xdct393_i (
         .clk                (xclk), // input
         .en                 (frame_en), // input  if zero will reset transpose memory page numbers
-        .start              (yc_nodc_ds), // input  single-cycle start pulse that goes with the first pixel data. Other 63 should follow
+        .start              (dct_start), // input  single-cycle start pulse that goes with the first pixel data. Other 63 should follow
         .xin                (yc_nodc), // input[9:0] 
         .last_in            (dct_last_in), // output reg  output high during input of the last of 64 pixels in a 8x8 block //
         .pre_first_out      (dct_pre_first_out), // outpu 1 cycle ahead of the first output in a 64 block
         .dv                 (dct_dv), // output data output valid. Will go high on the 94-th cycle after the start (now - on 95-th?)
         .d_out              (dct_out) // output[12:0] 
     );
-    reg           quant_start;
-    always @ (posedge xclk) quant_start <= dct_pre_first_out;
+    wire          quant_start;
+    dly_16 #(.WIDTH(1)) i_quant_start (.clk(xclk),.rst(1'b0), .dly(0), .din(dct_pre_first_out), .dout(quant_start));    // dly=0+1
+ 
+    // TODO: Change interface
+    wire          twqe;
+    wire          twce;
+    wire    [8:0] ta; 
+    wire   [15:0] tdi; 
+    
+    reg    [ 2:0] cmprs_qpage_this;
+    wire          first_block_quant;
+    wire   [12:0] quant_do; 
+    wire          quant_ds;
+    wire   [15:0] quant_dc_tdo;// MSB aligned coefficient for the DC component (used in focus module)
+    wire   [ 2:0] coring_num;
+    reg           dcc_en;
+    wire          dccout;
+    wire   [ 2:0] hfc_sel;
+    wire          dccvld;
+    
+
+    always @ (posedge clk) begin
+        if (!dccout) dcc_en <=1'b0;
+        else if (dct_start && color_first && (color_tn[2:0]==3'b001)) dcc_en <=1'b1; // 3'b001 - closer to the first "start" in quantizator
+    end
+    
+    quantizer393 quantizer393_i (
+        .clk                (xclk),                   // input
+        .en                 (frame_en),               // input 
+        .sclk               (mclk),                   // input system clock, twqe, twce, ta,tdi - valid @posedge (ra, tdi - 2 cycles ahead (was negedge)
+        .twqe               (twqe),                   // input enable write to a quantization table
+        .twce               (twce),                   // input enable write to a coring table
+        .ta                 (ta),                     // input[8:0] table address
+        .tdi                (tdi),                    // input[15:0] data in (8 LSBs - quantization data - obsolete?)
+        .ctypei             (yc_nodc_component_color),// input component type input (Y/C)
+        .dci                (yc_avr),                 // input[8:0] - average value in a block - subtracted before DCT. now normal signed number
+        .first_stb          (first_block_color),      // input - this is first stb pulse in a frame
+        .stb                (dct_start),              // input - strobe that writes ctypei, dci
+        .tsi                (cmprs_qpage_this[2:0]),  // input[2:0] - table (quality) select [2:0]
+        .pre_start          (dct_pre_first_out),      // input - marks first input pixel (one before)
+        .first_in           (first_block_dct),        // input - first block in (valid @ start)
+        .first_out          (first_block_quant),      // output reg - valid @ ds
+        .di                 (dct_out[12:0]),          // input[12:0] -  pixel data in (signed)
+        .do                 (quant_do[12:0]),         // output[12:0] - pixel data out (AC is only 9 bits long?) - changed to 10
+        .dv                 (),                       // output reg - data out valid
+        .ds                 (quant_ds),               // output reg - data out strobe (one ahead of the start of dv)
+        .dc_tdo             (quant_dc_tdo[15:0]),     // output[15:0] reg -  MSB aligned coefficient for the DC component (used in focus module)
+        .dcc_en             (dcc_en),                 // input - enable dcc (sync to beginning of a new frame)
+        .hfc_sel            (hfc_sel),                // input[2:0] - hight frequency components select [2:0] (includes components with both numbers >=hfc_sel
+        .color_first        (color_first),            // input - first MCU in a frame
+        .coring_num         (coring_num),             // input[2:0] - coring table pair number (0..7)
+        .dcc_vld            (dccvld),                 // output reg  - single cycle when dcc_data is valid
+        .dcc_data           (), // output[15:0] - dc component data out (for reading by software) 
+        .n000               (n000), // input[7:0] - number of zero pixels (255 if 256) - to be multiplexed with dcc
+        .n255               (n255) // input[7:0] - number of 0xff pixels (255 if 256) - to be multiplexed with dcc
+    );
     
 /*
  xdct       i_xdct ( .clk(clk),             // top level module
