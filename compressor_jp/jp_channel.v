@@ -422,12 +422,15 @@ module  jp_channel#(
     wire   [31:0] hifreq;       // output[31:0] reg accumulated high frequency components in a frame sub-window
     
     focus_sharp393 focus_sharp393_i (
-        .clk                (xclk),                   // input
+        .clk                (xclk),                   // input - pixel clock
+        .clk2x              (xclk2x),                 // input 2x pixel clock
         .en                 (frame_en),               // input 
-        .sclk               (mclk),                   // input system clock:  twe, ta,tdi - valid @negedge (ra, tdi - 2 cycles ahead)
-        .twe                (twfe),                   // input enable write to a table
-        .ta                 (ta[9:0]),                // input[9:0]  table address
-        .tdi                (tdi),                    // input[15:0]  table data in (8 LSBs - quantization data)
+
+        .mclk               (mclk),                   // input system clock, twqe, twce, ta,tdi - valid @posedge (ra, tdi - 2 cycles ahead (was negedge)
+        .tser_we            (tser_fe),                // input - write to a quantization table
+        .tser_a_not_d       (tser_a_not_d),           // input - address/not data to tables
+        .tser_d             (tser_d),                 // input[7:0] - byte-wide data to tables
+        
         .mode               (cmprs_fmode_this[1:0]),  // input[1:0] focus mode (combine image with focus info) - 0 - none, 1 - replace, 2 - combine all,  3 - combine woi
         .firsti             (color_first),            // input first macroblock
         .lasti              (color_last),             // input last macroblock

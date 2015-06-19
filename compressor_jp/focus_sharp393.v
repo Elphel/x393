@@ -29,6 +29,7 @@
 //TODO: Modify to work with other modes (now only on color)
 module focus_sharp393(
     input             clk,          // pixel clock, posedge
+    input             clk2x,        // 2x pixel clock
     input             en,           // enable (0 resets)
     input             mclk,         // system clock to write tables
     input             tser_we,      // enable write to a  table
@@ -176,7 +177,7 @@ module focus_sharp393(
     
     reg [2:0] clksync;
     wire      csync=clksync[2];
-    always @ (posedge sclk) begin
+    always @ (posedge clk2x) begin
        clksync[2:0] <= {(clksync[1]==clksync[0]),clksync[0],clkdiv2};
     end
 
@@ -188,7 +189,7 @@ module focus_sharp393(
     assign       mult_a[17:0] = use_coef ? {1'b0,tdo[15:0],1'b0}: mult_s[17:0];
     assign      mult_b[17:0] = use_coef ? {d1[10:0],{7{d1[0]}}}: mult_s[17:0];
 
-    always @ (posedge sclk) begin
+    always @ (posedge clk2x) begin
         filt_sel[3:0] <= filt_sel0[3:0];
         if (clksync[2]) d1[11:0]<=di_d[11:0];
         start2[8:0] <= {start2[7:0], start && csync};
@@ -273,7 +274,7 @@ module focus_sharp393(
     reg      [17:0] mult_a_r;
     reg      [17:0] mult_b_r;
     assign mult_p = mult_p_r;
-    always @(posedge sclk) begin
+    always @(posedge clk2x) begin
         mult_a_r <= mult_a;
         mult_b_r <= mult_b;
         mult_p_r <= mult_a_r * mult_b_r;
