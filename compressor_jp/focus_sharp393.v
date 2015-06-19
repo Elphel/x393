@@ -30,10 +30,10 @@
 module focus_sharp393(
     input             clk,          // pixel clock, posedge
     input             en,           // enable (0 resets)
-    input             sclk,         // system clock:  twe, ta,tdi - valid @negedge (ra, tdi - 2 cycles ahead)
-    input             twe,          // enable write to a table
-    input      [ 9:0] ta,           // [9:0]  table address
-    input      [15:0] tdi,          // [15:0] table data in (8 LSBs - quantization data)
+    input             mclk,         // system clock to write tables
+    input             tser_we,      // enable write to a  table
+    input             tser_a_not_d, // address/not data distributed to submodules
+    input      [ 7:0] tser_d,       // byte-wide serialized tables address/data to submodules
     input      [ 1:0] mode,         // focus mode (combine image with focus info) - 0 - none, 1 - replace, 2 - combine all,  3 - combine woi
     input             firsti,       // first macroblock
     input             lasti,        // last macroblock
@@ -46,7 +46,7 @@ module focus_sharp393(
     input      [15:0] quant_dc_tdo, // [15:0], MSB aligned coefficient for the DC component (used in focus module)
     output reg [12:0] do,           // [11:0] pixel data out, make timing ignore (valid 1.5 clk earlier that Quantizer output)
     output reg        ds,           // data out strobe (one ahead of the start of dv)
-    output reg [31:0] hifreq);        //[31:0])  //  accumulated high frequency components in a frame sub-window
+    output reg [31:0] hifreq);      //[31:0])  //  accumulated high frequency components in a frame sub-window
 
     wire   [15:0] tdo;
     reg    [ 5:0] tba;
@@ -105,6 +105,11 @@ module focus_sharp393(
     reg           luma_dc_acc; // 1 cycle ahead of the luma DC component out (always combined with the WOI)
     reg           was_last_luma;
     reg           copy_acc_frame;
+    
+    wire          twe;
+    wire  [15:0]  tdi;
+    wire  [22:0]  ta;
+    
     assign        fdo_minus_max[12:0]= {1'b0,fdo[11:0]}-{1'b0,quant_dc_tdo[15:5]};
     assign        combined_qf[12:0]=stren?({quant_d[12:0]}+{1'b0,fdo[11:0]}): //original image plus positive
                                           ({quant_d[12],quant_d[12:1]}+ // half original 
@@ -120,22 +125,22 @@ module focus_sharp393(
     end
 
 // writing window parameters in the last bank of a table     
-    always @ (negedge sclk) begin
+    always @ (posedge mclk) begin
       if (twe) begin
           wnd_reg[11:0] <= tdi[11:0] ;
           wnd_a  <= ta[2:0];
         end
         wnd_wr <= twe && (ta[9:3]==7'h78) ; // first 8 location in the last 64-word bank
         if (wnd_wr) begin
-        case (wnd_a[2:0])
-          3'h0: wnd_left[8:0]       <= wnd_reg[11:3] ;
-          3'h1: wnd_right[8:0]      <= wnd_reg[11:3] ;
-          3'h2: wnd_top[8:0]        <= wnd_reg[11:3] ;
-          3'h3: wnd_bottom[8:0]     <= wnd_reg[11:3] ;
-          3'h4: wnd_totalwidth[8:1] <= wnd_reg[11:4] ;
-          3'h5: filt_sel0[3:0]      <= wnd_reg[3:0] ;
-          3'h6: stren               <= wnd_reg[0] ;
-        endcase
+            case (wnd_a[2:0])
+              3'h0: wnd_left[8:0]       <= wnd_reg[11:3] ;
+              3'h1: wnd_right[8:0]      <= wnd_reg[11:3] ;
+              3'h2: wnd_top[8:0]        <= wnd_reg[11:3] ;
+              3'h3: wnd_bottom[8:0]     <= wnd_reg[11:3] ;
+              3'h4: wnd_totalwidth[8:1] <= wnd_reg[11:4] ;
+              3'h5: filt_sel0[3:0]      <= wnd_reg[3:0] ;
+              3'h6: stren               <= wnd_reg[0] ;
+            endcase
         end
      end
      
@@ -228,6 +233,21 @@ module focus_sharp393(
                     {2'b0,quant_dc_tdo[15:5]} :
                     pre_do[12:0];
      end
+     
+     table_ad_receive #(
+        .MODE_16_BITS (1),
+        .NUM_CHN      (1)
+    ) table_ad_receive_i (
+        .clk       (mclk),              // input
+        .a_not_d   (tser_a_not_d),      // input
+        .ser_d     (tser_d),            // input[7:0] 
+        .dv        (tser_we),           // input
+        .ta        (ta),                // output[22:0] 
+        .td        (tdi),               // output[15:0] 
+        .twe       (twe)               // output
+    );
+     
+     
 /*   
    MULT18X18SIO #(
       .AREG(1), // Enable the input registers on the A port (1=on, 0=off)
@@ -306,9 +326,9 @@ module focus_sharp393(
         .ren          (1'b1), // input
         .regen        (1'b1), // input
         .data_out     (tdo[15:0]), // output[31:0] 
-        .wclk         (!sclk), // input
-        .waddr        ({ta[9:0]}), // input[8:0] 
-        .we           (!sclk), // input
+        .wclk         (mclk), // input
+        .waddr        (ta[9:0]), // input[8:0] 
+        .we           (twe), // input
         .web          (4'hf), // input[3:0] 
         .data_in      (tdi[15:0]) // input[31:0] 
     );

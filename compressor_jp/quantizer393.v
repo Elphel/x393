@@ -32,11 +32,11 @@
 module quantizer393(
     input             clk,           // pixel clock, posedge
     input             en,   // enable (0 resets counter)
-    input             sclk, // system clock, twqe, twce, ta,tdi - valid @posedge (ra, tdi - 2 cycles ahead (was negedge)
-    input             twqe, // enable write to a quantization table
-    input             twce, // enable write to a coring table                   
-    input      [ 8:0] ta,   // [8:0]  table address
-    input      [15:0] tdi,  // [15:0] table data in (8 LSBs - quantization data)
+    input             mclk, // system clock to write tables
+    input             tser_qe, // enable write to a quantization table
+    input             tser_ce, // enable write to a coring table
+    input             tser_a_not_d,  // address/not data distributed to submodules
+    input      [ 7:0] tser_d,        // byte-wide serialized tables address/data to submodules
     input             ctypei,   // component type input (Y/C)
     input      [ 8:0] dci,      // [7:0]   - average value in a block - subtracted before DCT. now normal signed number
     input             first_stb, //this is first stb pulse in a frame
@@ -101,8 +101,6 @@ module quantizer393(
     reg             hfc_copy; // copy hfc_acc to dcc_acc
     wire     [10:0] d2_dct;   // 11 bits enough, convetred to positive (before - 0 was in the middle - pixel value 128) - dcc only
     reg             sel_satnum; // select saturation numbers - dcc only
-    reg             twqe_d; //twqe delayed (write MSW)
-    reg             twce_d; //twce delayed (write MSW)
     reg      [15:0] pre_dc_tdo;
     wire            copy_dc_tdo;
 
@@ -229,11 +227,26 @@ module quantizer393(
         
         dcc_vld <= (dcc_run && dcc_stb && (ctype || ctype_prev[0] || sel_satnum)) || hfc_copy;
     end
+    
+    wire          twqe;
+    wire          twce;
+    wire  [15:0]  tdi;
+    wire  [22:0]  ta;
+    
 
-    always @ (posedge sclk) begin
-        twqe_d <= twqe;
-        twce_d <= twce;
-    end
+    table_ad_receive #( // here may be changed to 8-bit from 16-bit
+        .MODE_16_BITS (1),
+        .NUM_CHN      (2)
+    ) table_ad_receive_i (
+        .clk       (mclk),              // input
+        .a_not_d   (tser_a_not_d),      // input
+        .ser_d     (tser_d),            // input[7:0] 
+        .dv        ({tser_ce,tser_qe}), // input[1:0] 
+        .ta        (ta), // output[22:0] 
+        .td        (tdi), // output[15:0] 
+        .twe       ({twce,twqe}) // output[1:0] 
+    );
+
 
 //    SRL16 i_hfc_en (.Q(hfc_en), .A0(1'b1), .A1(1'b0), .A2(1'b0), .A3(1'b0), .CLK(clk),
 //                    .D(((tba[2:0]>hfc_sel[2:0]) || (tba[5:3]>hfc_sel[2:0])) && dcc_run && !ctype_prev[0])); // dly=1+1
@@ -260,9 +273,9 @@ module quantizer393(
         .ren          (1'b1),                         // input
         .regen        (1'b1),                         // input
         .data_out     (tdo[15:0]),                    // output[15:0] 
-        .wclk         (sclk),                         // input
-        .waddr        ({ta[8:0],twqe_d}),             // input[8:0] 
-        .we           (twqe || twqe_d),               // input
+        .wclk         (mclk),                         // input
+        .waddr        (ta[9:0]),                      // input[8:0] 
+        .we           (twqe),                         // input
         .web          (4'hf),                         // input[3:0] 
         .data_in      (tdi[15:0])                     // input[15:0] 
     );
@@ -275,14 +288,14 @@ module quantizer393(
     ) i_coring_table (
         .rclk         (clk), // input
         .raddr        ({tbac[3:0],qmulr[11:4]}), // input[10:0] 
-        .ren          (1'b1), // input
-        .regen        (1'b1), // input
-        .data_out     (tdco[3:0]), // output[3:0] 
-        .wclk         (sclk), // input
-        .waddr        ({ta[8:0],twce_d}), // input[9:0] 
-        .we           (twce || twce_d), // input
-        .web          (4'hf), // input[3:0] 
-        .data_in      (tdi[15:0]) // input[15:0] 
+        .ren          (1'b1),                    // input
+        .regen        (1'b1),                    // input
+        .data_out     (tdco[3:0]),               // output[3:0] 
+        .wclk         (mclk),                    // input
+        .waddr        (ta[9:0]),                 // input[9:0] 
+        .we           (twce),                    // input
+        .web          (4'hf),                    // input[3:0] 
+        .data_in      (tdi[15:0])                // input[15:0] 
     );
 
     ram18_var_w_var_r #(
@@ -291,16 +304,16 @@ module quantizer393(
         .LOG2WIDTH_RD (4),
         .DUMMY        (0)
     ) i_zigzagbuf (
-        .rclk         (clk), // input
-        .raddr        ({3'b0,rpage,zra[5:0]}), // input[8:0] 
-        .ren          (next_dv), // input
-        .regen        (1'b1), // input
-        .data_out     (zigzag_q[15:0]), // output[31:0] 
-        .wclk         (clk), // input
-        .waddr        ({3'b0,wpage,zwa[5:0]}), // input[8:0] 
-        .we           (zwe), // input
-        .web          (4'hf), // input[3:0] 
-        .data_in      ({3'b0,qdo[12:0]}) // input[31:0] 
+        .rclk         (clk),                     // input
+        .raddr        ({3'b0,rpage,zra[5:0]}),   // input[9:0] 
+        .ren          (next_dv),                 // input
+        .regen        (1'b1),                    // input
+        .data_out     (zigzag_q[15:0]),          // output[15:0] 
+        .wclk         (clk),                     // input
+        .waddr        ({3'b0,wpage,zwa[5:0]}),   // input[9:0] 
+        .we           (zwe),                     // input
+        .web          (4'hf),                    // input[3:0] 
+        .data_in      ({3'b0,qdo[12:0]})         // input[15:0] 
     );
 
 

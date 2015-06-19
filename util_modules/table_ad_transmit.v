@@ -23,7 +23,8 @@
 `timescale 1ns/1ps
 
 module  table_ad_transmit#(
-    parameter NUM_CHANNELS = 1
+    parameter NUM_CHANNELS = 1,
+    parameter ADDR_BITS=4
 )(
     input                         clk,        // posedge mclk
     input                         a_not_d_in, // address/not data input (valid @ we)
@@ -31,12 +32,12 @@ module  table_ad_transmit#(
     input                  [31:0] din,        // 32 bit data to send or 8-bit channel select concatenated with 24-bit byte adderss (@we)
     output                 [ 7:0] ser_d,      // 8-bit adderss/data to be sent to submodules that have table write port(s)
     output reg                    a_not_d,    // sending adderass / not data - valid during all bytes
-    output reg [NUM_CHANNELS-1:0] chn_stb     // sending LSB (first) of address data (other bytes to follow)
+    output reg [NUM_CHANNELS-1:0] chn_en      // sending  address or data
 );
     wire [NUM_CHANNELS-1:0] sel;
     reg              [31:0] d_r;
     reg                     any_en;
-    reg               [7:0] sel_a;
+    reg               [ADDR_BITS-1:0] sel_a;
     reg                     we_r;
     wire                    we3;
     
@@ -51,13 +52,12 @@ module  table_ad_transmit#(
         we_r <= we && a_not_d_in;
         
         if ((we && !a_not_d_in) || we_r) any_en <= 1;
-//        else if (we3)                    any_en <= 0;
-        else                             any_en <= 0;
+        else if (we3)                    any_en <= 0;
 
-        if ((we && !a_not_d_in) || we_r) chn_stb <= sel;
-        else if (we3)                    chn_stb <= 0;
+        if ((we && !a_not_d_in) || we_r) chn_en <= sel;
+        else if (we3)                    chn_en <= 0;
 
-        if (we && a_not_d_in) sel_a <= din[31:24];
+        if (we && a_not_d_in) sel_a <= din[24+:ADDR_BITS];
         
     end
     dly_16 #(.WIDTH(1)) i_end_burst(.clk(clk),.rst(1'b0), .dly(2), .din(we), .dout(we3)); // dly=2+1=3

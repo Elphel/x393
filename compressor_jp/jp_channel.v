@@ -341,17 +341,6 @@ module  jp_channel#(
     wire          quant_start;
     dly_16 #(.WIDTH(1)) i_quant_start (.clk(xclk),.rst(1'b0), .dly(0), .din(dct_pre_first_out), .dout(quant_start));    // dly=0+1
  
-    // TODO: Change interface (first are negedge, twhe - @poswedge mclk
-    wire          twqe;
-    wire          twce;
-    wire          twfe; // focusing table write enable
-    
-    wire          twhe; // now @posedge mclk
-    
-    
-    wire    [9:0] ta; // some use [8:0]
-    wire   [15:0] tdi; 
-    
     reg    [ 2:0] cmprs_qpage_this;
     wire          first_block_quant;
     wire   [12:0] quant_do; 
@@ -370,14 +359,40 @@ module  jp_channel#(
         else if (dct_start && color_first && (color_tn[2:0]==3'b001)) dcc_en <=1'b1; // 3'b001 - closer to the first "start" in quantizator
     end
     
+    
+    wire          table_a_not_d; // writing table address /not data (a[0] from cmd_deser)
+    wire          table_we;      // writing to tables               (decoded stb from cmd_deser)
+    wire   [31:0] table_di;      // 32-bit data to write to tables (LSB first) - from cmd_deser
+    wire          tser_a_not_d;  // address/not data distributed to submodules
+    wire   [ 7:0] tser_d;        // byte-wide serialized tables address/data to submodules
+    wire          tser_qe;       // write serialized table data to quantizer
+    wire          tser_ce;       // write serialized table data to coring
+    wire          tser_fe;       // write serialized table data to focusing
+    wire          tser_he;       // write serialized table data to Huffman
+    
+    table_ad_transmit #(
+        .NUM_CHANNELS(4),
+        .ADDR_BITS(3)
+    ) table_ad_transmit_i (
+        .clk             (mclk),                  // input @posedge
+        .a_not_d_in      (table_a_not_d),         // input writing table address /not data (a[0] from cmd_deser)
+        .we              (table_we),              // input writing to tables               (decoded stb from cmd_deser)
+        .din             (table_di),              // input[31:0] 32-bit data to serialize/write to tables (LSB first) - from cmd_deser
+        .ser_d           (tser_d),                // output[7:0] byte-wide serialized tables address/data to submodules
+        .a_not_d         (tser_a_not_d),          // output reg address/not data distributed to submodules
+        .chn_en          ({tser_he,tser_fe,tser_ce,tser_qe}) // output[0:0] reg - table 1-hot select outputs
+    );
+    
+    
+    
     quantizer393 quantizer393_i (
         .clk                (xclk),                   // input
         .en                 (frame_en),               // input 
-        .sclk               (mclk),                   // input system clock, twqe, twce, ta,tdi - valid @posedge (ra, tdi - 2 cycles ahead (was negedge)
-        .twqe               (twqe),                   // input enable write to a quantization table
-        .twce               (twce),                   // input enable write to a coring table
-        .ta                 (ta[8:0]),                // input[8:0] table address
-        .tdi                (tdi),                    // input[15:0] data in (8 LSBs - quantization data - obsolete?)
+        .mclk               (mclk),                   // input system clock, twqe, twce, ta,tdi - valid @posedge (ra, tdi - 2 cycles ahead (was negedge)
+        .tser_qe            (tser_qe),                // input - write to a quantization table
+        .tser_ce            (tser_ce),                // input - write to a coring table
+        .tser_a_not_d       (tser_a_not_d),           // input - address/not data to tables
+        .tser_d             (tser_d),                 // input[7:0] - byte-wide data to tables
         .ctypei             (component_color),        // input component type input (Y/C)
         .dci                (yc_avr),                 // input[8:0] - average value in a block - subtracted before DCT. now normal signed number
         .first_stb          (first_block_color),      // input - this is first stb pulse in a frame

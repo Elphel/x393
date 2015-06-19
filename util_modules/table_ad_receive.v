@@ -22,12 +22,12 @@
 
 module  table_ad_receive #(
     parameter MODE_16_BITS = 1,
-    parameter NUM_CHN = 2
+    parameter NUM_CHN = 1
 )(
     input                          clk,        // posedge mclk
     input                          a_not_d,    // receiving adderass / not data - valid during all bytes
     input                    [7:0] ser_d,      // byte-wide address/data
-    input            [NUM_CHN-1:0] en, // stb,        // single-cycle strobe marking the first byte of adderss/data burst
+    input            [NUM_CHN-1:0] dv,         // data valid - active for each address or data bytes
     output     [23-MODE_16_BITS:0] ta,         // table address
     output [(MODE_16_BITS?15:7):0] td,         // 8/16 bit table data
     output           [NUM_CHN-1:0] twe         // table write enable
@@ -43,8 +43,8 @@ module  table_ad_receive #(
     
     always @(posedge clk) begin
 //        twe_r <= en && !a_not_d;
-        twe_r <= a_not_d ? 0 : en;
-        if ((|en) && a_not_d)  addr_r[23:0] <= {ser_d,addr_r[23:8]};
+        twe_r <= a_not_d ? 0 : dv;
+        if ((|dv) && a_not_d)  addr_r[23:0] <= {ser_d,addr_r[23:8]};
         else if (|twe_r)       addr_r[23:0] <= addr_r[23:0] + 1;
     end
     generate
