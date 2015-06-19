@@ -258,7 +258,7 @@ module quantizer393(
         .rclk         (clk),                          // input
         .raddr        ({tba[9:6],tba[2:0],tba[5:3]}), // input[8:0] 
         .ren          (1'b1),                         // input
-        .regen        (1'b0),                         // input
+        .regen        (1'b1),                         // input
         .data_out     (tdo[15:0]),                    // output[15:0] 
         .wclk         (sclk),                         // input
         .waddr        ({ta[8:0],twqe_d}),             // input[8:0] 
@@ -276,7 +276,7 @@ module quantizer393(
         .rclk         (clk), // input
         .raddr        ({tbac[3:0],qmulr[11:4]}), // input[10:0] 
         .ren          (1'b1), // input
-        .regen        (1'b0), // input
+        .regen        (1'b1), // input
         .data_out     (tdco[3:0]), // output[3:0] 
         .wclk         (sclk), // input
         .waddr        ({ta[8:0],twce_d}), // input[9:0] 
@@ -294,7 +294,7 @@ module quantizer393(
         .rclk         (clk), // input
         .raddr        ({3'b0,rpage,zra[5:0]}), // input[8:0] 
         .ren          (next_dv), // input
-        .regen        (1'b0), // input
+        .regen        (1'b1), // input
         .data_out     (zigzag_q[15:0]), // output[31:0] 
         .wclk         (clk), // input
         .waddr        ({3'b0,wpage,zwa[5:0]}), // input[8:0] 

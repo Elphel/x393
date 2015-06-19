@@ -46,7 +46,10 @@ module  jp_channel#(
     input  [63:0] buf_wdata, // input[63:0] 
     
     input         page_ready_chn,     // single mclk (posedge)
-    output        next_page_chn      // single mclk (posedge): Done with the page in the  buffer, memory controller may read more data 
+    output        next_page_chn,      // single mclk (posedge): Done with the page in the  buffer, memory controller may read more data 
+// statistics data was not used in late nc353    
+    output        statistics_dv,
+    output [15:0] statistics_do
     
 
 );
@@ -70,7 +73,7 @@ module  jp_channel#(
     wire   [ 9:0] m_cb;               // [9:0] scale for CB - default 0.564 (10'h90)
     wire   [ 9:0] m_cr;               // [9:0] scale for CB - default 0.713 (10'hb6)
 
-
+    reg    [ 1:0] cmprs_fmode_this;   // focusing/overlay mode
 
     //TODO: assign next 5 values from converter_type[2:0]
     wire   [ 5:0] mb_w_m1;            // macroblock width minus 1 // 3 LSB not used, SHOULD BE SET to 3'b111
@@ -130,10 +133,11 @@ module  jp_channel#(
     wire          color_first;      // sending first_r MCU (valid @ ds)
     wire          color_last;       // sending last_r MCU (valid @ ds)
 // below signals valid at ds ( 1 later than tn, first_r, last_r)
-    wire    [2:0] yc_nodc_component_num;    //[2:0] - component number (YCbCr: 0 - Y, 1 - Cb, 2 - Cr, JP4: 0-1-2-3 in sequence (depends on shift) 4 - don't use
-    wire          yc_nodc_component_color;  // use color quantization table (YCbCR, jp4diff)
-    wire          color_first;   // first_r this component in a frame (DC absolute, otherwise - difference to previous)
-    wire          yc_nodc_component_lastinmb; // last_r component in a macroblock;
+    wire    [2:0] component_num;    //[2:0] - component number (YCbCr: 0 - Y, 1 - Cb, 2 - Cr, JP4: 0-1-2-3 in sequence (depends on shift) 4 - don't use
+    wire          component_color;  // use color quantization table (YCbCR, jp4diff)
+    wire          component_first;  // first this component in a frame (DC absolute, otherwise - difference to previous)
+    
+    wire          component_lastinmb; // last_r component in a macroblock;
 
 
 
@@ -293,14 +297,14 @@ module  jp_channel#(
         .do                 (yc_nodc),          // output[9:0] 
         .avr                (yc_avr),           // output[8:0] 
         .dv                 (yc_nodc_dv),       // output
-        .ds                 (dct_start),       // output
-        .tn                 (color_tn),       // output[2:0] 
-        .first              (color_first),    // output reg 
-        .last               (color_last),     // output reg 
-        .component_num      (yc_nodc_component_num), // output[2:0] 
-        .component_color    (yc_nodc_component_color), // output
-        .component_first    (color_first),      // output
-        .component_lastinmb (yc_nodc_component_lastinmb) // output reg 
+        .ds                 (dct_start),        // output
+        .tn                 (color_tn),         // output[2:0] 
+        .first              (color_first),      // output reg 
+        .last               (color_last),       // output reg 
+        .component_num      (component_num),    // output[2:0] 
+        .component_color    (component_color),  // output
+        .component_first    (component_first),  // output
+        .component_lastinmb (component_lastinmb)// output reg 
     );
 //  wire   [ 9:0] yc_nodc;         // [9:0] data out (4:2:0) (signed, average=0)
 
@@ -316,7 +320,7 @@ module  jp_channel#(
     reg           first_block_color_after;  // after color conversion,
     reg           first_block_dct;     // after DCT
     wire          first_block_quant;   // after quantizer
-    always @ (posedge clk) begin
+    always @ (posedge xclk) begin
         if (dct_start)   first_block_color_after <= first_block_color;
         if (dct_last_in) first_block_dct   <= first_block_color_after;
     end
@@ -337,10 +341,15 @@ module  jp_channel#(
     wire          quant_start;
     dly_16 #(.WIDTH(1)) i_quant_start (.clk(xclk),.rst(1'b0), .dly(0), .din(dct_pre_first_out), .dout(quant_start));    // dly=0+1
  
-    // TODO: Change interface
+    // TODO: Change interface (first are negedge, twhe - @poswedge mclk
     wire          twqe;
     wire          twce;
-    wire    [8:0] ta; 
+    wire          twfe; // focusing table write enable
+    
+    wire          twhe; // now @posedge mclk
+    
+    
+    wire    [9:0] ta; // some use [8:0]
     wire   [15:0] tdi; 
     
     reg    [ 2:0] cmprs_qpage_this;
@@ -352,10 +361,11 @@ module  jp_channel#(
     reg           dcc_en;
     wire          dccout;
     wire   [ 2:0] hfc_sel;
-    wire          dccvld;
-    
 
-    always @ (posedge clk) begin
+    wire   [15:0] dccdata; // was not used in late nc353
+    wire          dccvld;  // was not used in late nc353
+    
+    always @ (posedge xclk) begin
         if (!dccout) dcc_en <=1'b0;
         else if (dct_start && color_first && (color_tn[2:0]==3'b001)) dcc_en <=1'b1; // 3'b001 - closer to the first "start" in quantizator
     end
@@ -366,9 +376,9 @@ module  jp_channel#(
         .sclk               (mclk),                   // input system clock, twqe, twce, ta,tdi - valid @posedge (ra, tdi - 2 cycles ahead (was negedge)
         .twqe               (twqe),                   // input enable write to a quantization table
         .twce               (twce),                   // input enable write to a coring table
-        .ta                 (ta),                     // input[8:0] table address
+        .ta                 (ta[8:0]),                // input[8:0] table address
         .tdi                (tdi),                    // input[15:0] data in (8 LSBs - quantization data - obsolete?)
-        .ctypei             (yc_nodc_component_color),// input component type input (Y/C)
+        .ctypei             (component_color),        // input component type input (Y/C)
         .dci                (yc_avr),                 // input[8:0] - average value in a block - subtracted before DCT. now normal signed number
         .first_stb          (first_block_color),      // input - this is first stb pulse in a frame
         .stb                (dct_start),              // input - strobe that writes ctypei, dci
@@ -386,12 +396,230 @@ module  jp_channel#(
         .color_first        (color_first),            // input - first MCU in a frame
         .coring_num         (coring_num),             // input[2:0] - coring table pair number (0..7)
         .dcc_vld            (dccvld),                 // output reg  - single cycle when dcc_data is valid
-        .dcc_data           (), // output[15:0] - dc component data out (for reading by software) 
-        .n000               (n000), // input[7:0] - number of zero pixels (255 if 256) - to be multiplexed with dcc
-        .n255               (n255) // input[7:0] - number of 0xff pixels (255 if 256) - to be multiplexed with dcc
+        .dcc_data           (dccdata[15:0]),          // output[15:0] - dc component data out (for reading by software) 
+        .n000               (n000),                   // input[7:0] - number of zero pixels (255 if 256) - to be multiplexed with dcc
+        .n255               (n255)                    // input[7:0] - number of 0xff pixels (255 if 256) - to be multiplexed with dcc
+    );
+
+    // focus sharp module calculates amount of high-frequency components and optioanlly overlays/replaces actual image
+    wire   [12:0] focus_do;     // output[12:0] reg  pixel data out, make timing ignore (valid 1.5 clk earlier that Quantizer output)
+    wire          focus_ds;     // output reg data out strobe (one ahead of the start of dv)
+    wire   [31:0] hifreq;       // output[31:0] reg accumulated high frequency components in a frame sub-window
+    
+    focus_sharp393 focus_sharp393_i (
+        .clk                (xclk),                   // input
+        .en                 (frame_en),               // input 
+        .sclk               (mclk),                   // input system clock:  twe, ta,tdi - valid @negedge (ra, tdi - 2 cycles ahead)
+        .twe                (twfe),                   // input enable write to a table
+        .ta                 (ta[9:0]),                // input[9:0]  table address
+        .tdi                (tdi),                    // input[15:0]  table data in (8 LSBs - quantization data)
+        .mode               (cmprs_fmode_this[1:0]),  // input[1:0] focus mode (combine image with focus info) - 0 - none, 1 - replace, 2 - combine all,  3 - combine woi
+        .firsti             (color_first),            // input first macroblock
+        .lasti              (color_last),             // input last macroblock
+        .tni                (color_tn[2:0]),          // input[2:0] block number in a macronblock - 0..3 - Y, >=4 - color (sync to stb)
+        .stb                (dct_start),              // input strobe that writes ctypei, dci
+        .start              (quant_start),            // input marks first input pixel (needs 1 cycle delay from previous DCT stage)
+        .di                 (dct_out),                // input[12:0] pixel data in (signed)
+        .quant_ds           (quant_ds),               // input quantizator ds
+        .quant_d            (quant_do[12:0]),         // input[12:0] quantizator data output
+        .quant_dc_tdo       (quant_dc_tdo),           // input[15:0] MSB aligned coefficient for the DC component (used in focus module)
+        .do                 (focus_do[12:0]),         // output[12:0] reg  pixel data out, make timing ignore (valid 1.5 clk earlier that Quantizer output)
+        .ds                 (focus_ds),               // output reg data out strobe (one ahead of the start of dv)
+        .hifreq             (hifreq[31:0])            // output[31:0] reg accumulated high frequency components in a frame sub-window
+    );
+
+    // Format DC components to be output as a mini-frame. Was not used in the late NC353 as the dma1 channel was use3d for IMU instead of dcc
+    reg           pre_finish_dcc;
+    reg           finish_dcc;
+    
+    dcc_sync393 dcc_sync393_i (
+        .sclk               (xclk2x),                // input
+        .dcc_en             (dcc_en),                // input xclk rising, sync with start of the frame
+        .finish_dcc         (finish_dcc),            // input @ sclk rising
+        .dcc_vld            (dccvld),                // input xclk rising
+        .dcc_data           (dccdata[15:0]),         // input[15:0] @clk rising
+        .statistics_dv      (statistics_dv),         // output reg 
+        .statistics_do      (statistics_do[15:0])    // output[15:0] reg @ sclk
+    );
+    
+    wire          enc_last; 
+    wire   [15:0] enc_do; 
+    wire          enc_dv; 
+
+// generate DC data/strobe for the direct output (re) using sdram channel3 buffering
+// encoderDCAC is updated to handle 13-bit signed data instead of the 12-bit. It will limit the values on ot's own
+    encoderDCAC393 encoderDCAC393_i (
+        .clk                (xclk),                   // input
+        .en                 (frame_en),               // input 
+        .lasti              (color_last),             // input - was "last MCU in a frame" (@ stb)
+        .first_blocki       (first_block_color),      // input - first block in frame - save fifo write address (@ stb)
+        .comp_numberi       (component_num[2:0]),     // input[2:0] - component number 0..2 in color, 0..3 - in jp4diff, >= 4 - don't use (@ stb)
+        .comp_firsti        (component_first),        // input - first this component in a frame (reset DC) (@ stb)
+        .comp_colori        (component_color),        // input - use color - huffman? (@ stb)
+        .comp_lastinmbi     (component_lastinmb),     // input - last component in a macroblock (@ stb) is it needed?
+        .stb                (dct_start),              // input - strobe that writes firsti, lasti, tni,average
+        .zdi                (focus_do[12:0]),         // input[12:0] - zigzag-reordered data input
+        .first_blockz       (first_block_quant),      // input - first block input (@zds)
+        .zds                (focus_ds),               // input - strobe - one ahead of the DC component output
+        .last               (enc_last),               // output reg 
+        .do                 (enc_do[15:0]),           // output[15:0] reg 
+        .dv                 (enc_dv)                  // output reg 
+    );
+
+    wire          last_block;
+    wire          test_lbw;
+    wire          stuffer_rdy; // receiver (bit stuffer) is ready to accept data;
+    wire   [15:0] huff_do;     // output[15:0] reg 
+    wire    [3:0] huff_dl;     // output[3:0] reg 
+    wire          huff_dv;     // output reg 
+    wire          flush;       // output reg 
+
+    huffman393 i_huffman (
+        .xclk               (xclk),                   // input
+        .xclk2x             (xclk2x),                 // input
+        .en                 (frame_en),               // input
+        .sclk               (mclk),                   // input - for writing tables - now @posedge
+        .twe                (twhe),                   // input - for writing tables - now @posedge mclk
+        .ta                 (ta[8:0]),                // input[8:0] - table write address @posedge mclk
+        .tdi                (tdi),                    // input[15:0] - table data in @posedge mclk
+        .di                 (enc_do[15:0]),           // input[15:0] - specially RLL prepared 16-bit data (to FIFO)
+        .ds                 (enc_dv),                 // input -  di valid strobe
+        .rdy                (stuffer_rdy),            // input - receiver (bit stuffer) is ready to accept data
+        .do(huff_do[15:0]), // output[15:0] reg 
+        .dl(huff_dl[3:0]), // output[3:0] reg 
+        .dv(huff_dv), // output reg 
+        .flush(flush), // output reg 
+        .last_block(last_block), // output reg 
+        .test_lbw(), // output reg ??
+        .gotLastBlock(test_lbw) // output ??
+    );
+    
+  /*
+ wire last_block, test_lbw;
+ huffman i_huffman  (.pclk(clk),      // pixel clock
+                      .clk(clk2x),   // twice frequency - uses negedge inside
+                      .en(cmprs_en),      // enable (0 resets counter) sync to .pclk(clk)
+//                      .cwr(cwr),      // CPU WR global clock
+                      .twe(twhe),      // enable write to a table
+                      .ta(ta[8:0]),      // [8:0]  table address
+                      .tdi(di[15:0]),      // [23:0] table data in (8 LSBs - quantization data, [13:9] zigzag address
+                      .di(enc_do[15:0]),      // [15:0]   specially RLL prepared 16-bit data (to FIFO)
+                      .ds(enc_dv),      // di valid strobe
+                      .rdy(stuffer_rdy),      // receiver (bit stuffer) is ready to accept data
+                      .do(huff_do),      // [15:0]   output data
+                      .dl(huff_dl),      // [3:0]   output width (0==16)
+                      .dv(huff_dv),      // output data bvalid
+                     .flush(flush),
+                     .last_block(last_block),
+                     .test_lbw(),
+                     .gotLastBlock(test_lbw));   // last block done - flush the rest bits
+  
+  */  
+    
+    
+    wire   [15:0] stuffer_do;
+    wire          stuffer_dv;
+    wire          stuffer_done;
+    reg           stuffer_done_persist;
+    wire          stuffer_flushing;
+    wire   [23:0] imgptr;
+    wire   [31:0] sec;
+    wire   [19:0] usec;
+    
+    always @ (negedge xclk2x) pre_finish_dcc <= stuffer_done;
+    always @ (posedge xclk2x) finish_dcc     <= pre_finish_dcc; //stuffer+done - @negedge clk2x
+
+    stuffer393 stuffer393_i (
+        .clk                 (xclk2x),                 // input clock - uses negedge inside
+        .en                  (cmprs_en_2x_n),          // input
+        .reset_data_counters (reset_data_counters[1]), // input reset data transfer counters (only when DMA and compressor are disabled)
+        .flush               (flush || force_flush),   // input - flush output data (fill byte with 0, long word with FFs
+        .stb                 (huff_dv),                // input
+        .dl                  (huff_dl),                // input[3:0] number of bits to send (0 - 16) (0-16??)
+        .d                   (huff_do),                // input[15:0] data to shift (only lower huff_dl bits are valid)
+// time stamping - will copy time at the end of color_first (later than the first hact after vact in the current froma, but before the next one
+// and before the data is needed for output 
+        .color_first(color_first), // input
+        .sec(sec[31:0]), // input[31:0] 
+        .usec(usec[19:0]), // input[19:0] 
+        .rdy(stuffer_rdy), // output - enable huffman encoder to proceed. Used as CE for many huffman encoder registers
+        .q(stuffer_do), // output[15:0] reg - output data
+        .qv(stuffer_dv), // output reg - output data valid
+        .done(stuffer_done), // output
+        .imgptr(imgptr[23:0]), // output[23:0] reg - image pointer in 32-byte chunks
+        .flushing(stuffer_flushing) // output reg 
+`ifdef debug_stuffer
+       ,.etrax_dma_r(tst_stuf_etrax[3:0]) // [3:0] just for testing
+       ,.test_cntr(test_cntr[3:0])
+       ,.test_cntr1(test_cntr1[7:0])
+`endif
     );
     
 /*
+ stuffer   i_stuffer  (.clk(clk2x),         //clock - uses negedge inside
+                     .en(cmprs_en_2x_n),         // enable, 0- reset
+                     .reset_data_counters(reset_data_counters[1]), // reset data transfer counters (only when DMA and compressor are disabled)
+                     .flush(flush || force_flush),      // flush output data (fill byte with 0, long word with FFs
+                     .stb(huff_dv),       // input data strobe
+                     .dl(huff_dl),         // [3:0] number of bits to send (0 - 16)
+                     .d(huff_do),          // [15:0] input data to shift (only lower bits are valid)
+// time stamping - will copy time at the end of color_first (later than the first hact after vact in the current froma, but before the next one
+// and before the data is needed for output 
+                     .color_first(color_first), //
+                     .sec(sec[31:0]),
+                     .usec(usec[19:0]),
+                     .rdy(stuffer_rdy),      // enable huffman encoder to proceed. Used as CE for many huffman encoder registers
+                     .q(stuffer_do),         // [15:0] output data
+                     .qv(stuffer_dv),      // output data valid
+                     .done(stuffer_done),
+                     .imgptr (imgptr[23:0]), // [23:0]image pointer in 32-byte chunks
+                     .flushing(stuffer_flushing)
+`ifdef debug_stuffer
+                     ,.etrax_dma_r(tst_stuf_etrax[3:0]) // [3:0] just for testing
+                     ,.test_cntr(test_cntr[3:0])
+                     ,.test_cntr1(test_cntr1[7:0])
+`endif
+                     );
+
+
+
+dcc_sync i_dcc_sync(//.clk(clk),
+                    .sclk(clk2x),
+                    .dcc_en(dcc_en),                   // clk rising, sync with start of the frame
+                    .finish_dcc(finish_dcc),           // sclk rising
+                    .dcc_vld(dccvld),                 // clk rising
+                    .dcc_data(dccdata[15:0]),         //[15:0] clk risimg
+                    .statistics_dv(statistics_dv),     //sclk
+                    .statistics_do(statistics_do[15:0])//[15:0] sclk
+                 );
+
+
+
+//TODO: compact table                     
+focus_sharp i_focus_sharp(.clk(clk),   // pixel clock
+                   .en(cmprs_en),   // enable (0 resets counter)
+                   .sclk(clk2x), // system clock, twe, ta,tdi - valid @negedge (ra, tdi - 2 cycles ahead
+                   .twe(twfe), // enable write to a table
+                   .ta(ta[9:0]),  // [9:0]  table address
+                   .tdi(di[15:0]),  // [15:0] table data in (8 LSBs - quantization data)
+                   .mode(cmprs_fmode_this[1:0]), // focus mode (combine image with focus info) - 0 - none, 1 - replace, 2 - combine all,  3 - combine woi
+//                   .stren(focus_strength),
+                   .firsti(color_first),  // first macroblock
+                   .lasti(color_last),    // last macroblock
+                   .tni(color_tn[2:0]),   // block number in a macronblock - 0..3 - Y, >=4 - color (sync to stb)
+                   .stb(dct_start),      // strobe that writes ctypei, dci
+                   .start(quant_start),// marks first input pixel (needs 1 cycle delay from previous DCT stage)
+                   .di(dct_out[12:0]),    // [11:0] pixel data in (signed)
+                   .quant_ds(quant_ds), // quantizator data strobe (1 before DC)
+                   .quant_d(quant_do[12:0]), // quantizator data output
+                   .quant_dc_tdo(quant_dc_tdo[15:0]), //[15:0], MSB aligned coefficient for the DC component (used in focus module)
+//                   .quant_dc_tdo_stb(quant_dc_tdo_stb),
+                   .do(focus_do[12:0]),    // [11:0] pixel data out (AC is only 9 bits long?) - changed to 10
+                   .ds(focus_ds),  // data out strobe (one ahead of the start of dv)
+                   .hifreq(hifreq[31:0])  //[31:0])  //  accumulated high frequency components in a frame sub-window
+                   );
+
+
  xdct       i_xdct ( .clk(clk),             // top level module
                      .en(cmprs_en),       // if zero will reset transpose memory page numbers
                      .start(dct_start),    // single-cycle start pulse that goes with the first pixel data. Other 63 should follow
