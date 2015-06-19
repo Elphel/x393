@@ -426,7 +426,7 @@ module  jp_channel#(
         .clk2x              (xclk2x),                 // input 2x pixel clock
         .en                 (frame_en),               // input 
 
-        .mclk               (mclk),                   // input system clock, twqe, twce, ta,tdi - valid @posedge (ra, tdi - 2 cycles ahead (was negedge)
+        .mclk               (mclk),                   // input system clock to write tables
         .tser_we            (tser_fe),                // input - write to a quantization table
         .tser_a_not_d       (tser_a_not_d),           // input - address/not data to tables
         .tser_d             (tser_d),                 // input[7:0] - byte-wide data to tables
@@ -496,10 +496,10 @@ module  jp_channel#(
         .xclk               (xclk),                   // input
         .xclk2x             (xclk2x),                 // input
         .en                 (frame_en),               // input
-        .sclk               (mclk),                   // input - for writing tables - now @posedge
-        .twe                (twhe),                   // input - for writing tables - now @posedge mclk
-        .ta                 (ta[8:0]),                // input[8:0] - table write address @posedge mclk
-        .tdi                (tdi),                    // input[15:0] - table data in @posedge mclk
+        .mclk               (mclk),                   // input system clock to write tables
+        .tser_we            (tser_he),                // input - write to a quantization table
+        .tser_a_not_d       (tser_a_not_d),           // input - address/not data to tables
+        .tser_d             (tser_d),                 // input[7:0] - byte-wide data to tables
         .di                 (enc_do[15:0]),           // input[15:0] - specially RLL prepared 16-bit data (to FIFO)
         .ds                 (enc_dv),                 // input -  di valid strobe
         .rdy                (stuffer_rdy),            // input - receiver (bit stuffer) is ready to accept data

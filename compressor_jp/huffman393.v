@@ -29,10 +29,18 @@ module huffman393    (
     input             xclk,            // pixel clock, sync to incoming data
     input             xclk2x,          // twice frequency - uses negedge inside
     input             en,              // will reset if ==0 (sync to xclk)
-    input             sclk,            // clock to write tables (NOW posgedge) AF2015
-    input             twe,             // enable write to a table - now the following will be valid ant negedge sclk
-    input       [8:0] ta,              // [8:0]  table address
-    input      [15:0] tdi,             // [15:0] table data in
+
+    input             mclk,         // system clock to write tables
+    input             tser_we,      // enable write to a  table
+    input             tser_a_not_d, // address/not data distributed to submodules
+    input      [ 7:0] tser_d,       // byte-wide serialized tables address/data to submodules
+    
+//    input             sclk,            // clock to write tables (NOW posgedge) AF2015
+//    input             twe,             // enable write to a table - now the following will be valid ant negedge sclk
+//    input       [8:0] ta,              // [8:0]  table address
+//    input      [15:0] tdi,             // [15:0] table data in
+    
+    
     input      [15:0] di,              // [15:0]    specially RLL prepared 16-bit data (to FIFO) (sync to xclk)
     input             ds,              // di valid strobe  (sync to xclk)
     input             rdy,             // receiver (bit stuffer) is ready to accept data
@@ -127,7 +135,7 @@ module huffman393    (
     wire   [15:0] pre_bits;
     wire   [ 3:0] pre_len;
 
-    reg           twe_d; // table write enable (twe) delayed by 1 clock
+//    reg           twe_d; // table write enable (twe) delayed by 1 clock
 
     always @ (negedge xclk2x) en2x <= en;
     
@@ -279,6 +287,25 @@ module huffman393    (
 */  
     always @* if (~xclk2x) hlen_latch <=  tables_out[19:16];
     always @* if (~xclk2x) hcode_latch <= tables_out[15:0];
+    
+    wire          twe;
+    wire  [15:0]  tdi;
+    wire  [22:0]  ta;
+    
+  
+     table_ad_receive #(
+        .MODE_16_BITS (1),
+        .NUM_CHN      (1)
+    ) table_ad_receive_i (
+        .clk       (mclk),              // input
+        .a_not_d   (tser_a_not_d),      // input
+        .ser_d     (tser_d),            // input[7:0] 
+        .dv        (tser_we),           // input
+        .ta        (ta),                // output[22:0] 
+        .td        (tdi),               // output[15:0] 
+        .twe       (twe)               // output
+    );
+  
   
 
     huff_fifo393 i_huff_fifo (
@@ -301,9 +328,8 @@ module huffman393    (
         .l_late   (var_dl_late[3:0]), // output[3:0] reg
         .q        (var_do[10:0]));    // output[10:0] reg code
                                         
-                                        
 //   always @ (negedge xclk2x) twe_d <= twe;
-    always @ (posedge   sclk) twe_d <= twe;
+//   always @ (posedge   sclk) twe_d <= twe;
 /*   
    RAMB16_S18_S36 i_htab (
                           .DOA(),           // Port A 16-bit Data Output
@@ -340,7 +366,7 @@ module huffman393    (
         .regen(1'b1), // input
 //        .data_out({unused[11:0],tables_out[19:0]}), // output[31:0] 
         .data_out(tables_out), // output[31:0] 
-        .wclk(sclk), // input
+        .wclk(mclk), // input
         .waddr({ta[8:0],twe_d}), // input[9:0] 
         .we(twe | twe_d), // input
         .web(4'hf), // input[3:0] 
