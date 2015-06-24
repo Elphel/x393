@@ -93,7 +93,7 @@ module  mcntrl_ps_pio#(
  wire                     set_en_rst; // set enable, reset register
  reg                [1:0] en_reset;//
  wire                     chn_rst = ~en_reset[0]; // resets command, including fifo;
- wire                     chn_en = &en_reset[1];   // enable requests by channle (continue ones in progress)
+ wire                     chn_en = &en_reset[1];   // enable requests by channel (continue ones in progress)
 // reg                      mem_run;              // sequencer pgm granted and set, waiting/executing memory transfer to/from buffur 0/1
  wire                     busy;
  wire                     short_busy; // does not include memory transaction

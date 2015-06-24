@@ -187,6 +187,7 @@
     parameter NUM_XFER_BITS=                       6,    // number of bits to specify transfer length
     parameter FRAME_WIDTH_BITS=                   13,    // Maximal frame width - 8-word (16 bytes) bursts 
     parameter FRAME_HEIGHT_BITS=                  16,    // Maximal frame height 
+    parameter LAST_FRAME_BITS=                    16,     // number of bits in frame counter (before rolls over)
     parameter MCNTRL_SCANLINE_CHN1_ADDR=         'h120,
     parameter MCNTRL_SCANLINE_CHN3_ADDR=         'h130,
     parameter MCNTRL_SCANLINE_MASK=              'h3f0, // both channels 0 and 1

@@ -228,18 +228,21 @@ module  x393 #(
     wire                        page_ready_chn2; // output
     wire                        frame_done_chn2; // output
     wire[FRAME_HEIGHT_BITS-1:0] line_unfinished_chn2; // output[15:0] 
+    wire  [LAST_FRAME_BITS-1:0] frame_number_chn2; // output[15:0] 
     wire                        suspend_chn2; // input
     wire                        frame_start_chn3; // input
     wire                        next_page_chn3; // input
     wire                        page_ready_chn3; // output
     wire                        frame_done_chn3; // output
     wire[FRAME_HEIGHT_BITS-1:0] line_unfinished_chn3; // output[15:0] 
+    wire  [LAST_FRAME_BITS-1:0] frame_number_chn3; // output[15:0] 
     wire                        suspend_chn3; // input
     wire                        frame_start_chn4; // input
     wire                        next_page_chn4; // input
     wire                        page_ready_chn4; // output
     wire                        frame_done_chn4; // output
     wire[FRAME_HEIGHT_BITS-1:0] line_unfinished_chn4; // output[15:0]
+    wire  [LAST_FRAME_BITS-1:0] frame_number_chn4; // output[15:0] 
     wire                        suspend_chn4; // input
    
     reg                         axi_rst_pre=1'b1;
@@ -636,6 +639,7 @@ BUFG bufg_axi_aclk_i  (.O(axi_aclk),.I(fclk[0]));
         .NUM_XFER_BITS                     (NUM_XFER_BITS),
         .FRAME_WIDTH_BITS                  (FRAME_WIDTH_BITS),
         .FRAME_HEIGHT_BITS                 (FRAME_HEIGHT_BITS),
+        .LAST_FRAME_BITS                   (LAST_FRAME_BITS),
         .MCNTRL_SCANLINE_CHN1_ADDR         (MCNTRL_SCANLINE_CHN1_ADDR),
         .MCNTRL_SCANLINE_CHN3_ADDR         (MCNTRL_SCANLINE_CHN3_ADDR),
         .MCNTRL_SCANLINE_MASK              (MCNTRL_SCANLINE_MASK),
@@ -715,19 +719,22 @@ BUFG bufg_axi_aclk_i  (.O(axi_aclk),.I(fclk[0]));
         .next_page_chn2       (next_page_chn2), // input
         .page_ready_chn2      (page_ready_chn2), // output
         .frame_done_chn2      (frame_done_chn2), // output
-        .line_unfinished_chn2 (line_unfinished_chn2), // output[15:0] 
+        .line_unfinished_chn2 (line_unfinished_chn2), // output[15:0]
+        .frame_number_chn2    (frame_number_chn2), // output[15:0]  
         .suspend_chn2         (suspend_chn2), // input
         .frame_start_chn3     (frame_start_chn3), // input
         .next_page_chn3       (next_page_chn3), // input
         .page_ready_chn3      (page_ready_chn3), // output
         .frame_done_chn3      (frame_done_chn3), // output
         .line_unfinished_chn3 (line_unfinished_chn3), // output[15:0] 
+        .frame_number_chn3    (frame_number_chn3), // output[15:0]  
         .suspend_chn3         (suspend_chn3), // input
         .frame_start_chn4     (frame_start_chn4), // input
         .next_page_chn4       (next_page_chn4), // input
         .page_ready_chn4      (page_ready_chn4), // output
         .frame_done_chn4      (frame_done_chn4), // output
         .line_unfinished_chn4 (line_unfinished_chn4), // output[15:0]
+        .frame_number_chn4    (frame_number_chn4), // output[15:0]  
         .suspend_chn4         (suspend_chn4), // input
 
         .SDRST                (SDRST), // output

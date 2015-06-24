@@ -27,7 +27,7 @@ module  mcntrl_linear_rw #(
     parameter NUM_XFER_BITS=                     6,    // number of bits to specify transfer length
     parameter FRAME_WIDTH_BITS=                 13,    // Maximal frame width - 8-word (16 bytes) bursts 
     parameter FRAME_HEIGHT_BITS=                16,    // Maximal frame height
-    parameter LAST_FRAME_BITS=                 16,     // number of bits in frame counter (before rolls over)
+    parameter LAST_FRAME_BITS=                  16,     // number of bits in frame counter (before rolls over)
     parameter MCNTRL_SCANLINE_ADDR=            'h120,
     parameter MCNTRL_SCANLINE_MASK=            'h3f0, // both channels 0 and 1
     parameter MCNTRL_SCANLINE_MODE=            'h0,   // set mode register: {repet,single,rst_frame,na[2:0],extra_pages[1:0],write_mode,enable,!reset}
@@ -66,7 +66,8 @@ module  mcntrl_linear_rw #(
     output                         frame_done,    // single-cycle pulse when the full frame (window) was transferred to/from DDR3 memory
     output                         frame_finished,// turns on and stays on after frame_done
 // optional I/O for channel synchronization
-    output [FRAME_HEIGHT_BITS-1:0] line_unfinished, // number of the current (ufinished ) line, REALATIVE TO FRAME, NOT WINDOW?. 
+// after the last tile in a frame, before starting a new frame line_unfinished will point to non-existent (too high) line in the same frame
+    output [FRAME_HEIGHT_BITS-1:0] line_unfinished, // number of the current (unfinished ) line, RELATIVE TO FRAME, NOT WINDOW?. 
     input                          suspend,       // suspend transfers (from external line number comparator)
     output   [LAST_FRAME_BITS-1:0] frame_number,  // current frame number (for multi-frame ranges)
     output                         xfer_want,     // "want" data transfer
@@ -124,7 +125,7 @@ module  mcntrl_linear_rw #(
     reg     [PAR_MOD_LATENCY-1:0] par_mod_r;
     reg     [PAR_MOD_LATENCY-1:0] recalc_r; // 1-hot CE for re-calculating registers
     wire                          calc_valid;   // calculated registers have valid values   
-    wire                          chn_en;   // enable requests by channle (continue ones in progress), enable frame_start inputs
+    wire                          chn_en;   // enable requests by channel (continue ones in progress), enable frame_start inputs
     wire                          chn_rst; // resets command, including fifo;
     reg                           chn_rst_d; // delayed by 1 cycle do detect turning off
 //    reg                           xfer_reset_page_r;
@@ -182,8 +183,11 @@ module  mcntrl_linear_rw #(
     reg   [NUM_RC_BURST_BITS-1:0] start_addr;     // (programmed) Frame start (in {row,col8} in burst8, bank ==0
     reg   [NUM_RC_BURST_BITS-1:0] next_frame_start_addr;
     reg     [LAST_FRAME_BITS-1:0] frame_number_cntr;
+    reg     [LAST_FRAME_BITS-1:0] frame_number_current;
+    
     reg                           is_last_frame;
-    reg                     [2:0] frame_start_r;
+//    reg                     [2:0] frame_start_r;
+    reg                     [4:0] frame_start_r; // increased length to have time from line_unfinished to suspend (external)
     
     reg      [FRAME_WIDTH_BITS:0] frame_full_width;     // (programmed) increment combined row/col when moving to the next line
                                                   // frame_width rounded up to max transfer (half page) if frame_width> max transfer/2,
@@ -195,7 +199,7 @@ module  mcntrl_linear_rw #(
     reg    [FRAME_WIDTH_BITS-1:0] start_x;        // (programmed) normally 0, copied to curr_x on frame_start  
     reg   [FRAME_HEIGHT_BITS-1:0] start_y;        // (programmed) normally 0, copied to curr_y on frame_start 
     reg                           xfer_done_d;    // xfer_done delayed by 1 cycle;
-    assign frame_number =       frame_number_cntr;
+    assign frame_number =       frame_number_current;
     
     assign set_mode_w =         cmd_we && (cmd_a== MCNTRL_SCANLINE_MODE);
     assign set_status_w =       cmd_we && (cmd_a== MCNTRL_SCANLINE_STATUS_CNTRL);
@@ -242,7 +246,7 @@ module  mcntrl_linear_rw #(
         else     is_last_frame <= frame_number_cntr == last_frame_number;
         
         if (rst) frame_start_r <= 0;
-        else     frame_start_r <= {frame_start_r[1:0], frame_start & frame_en};
+        else     frame_start_r <= {frame_start_r[3:0], frame_start & frame_en};
 
         if      (rst)                             frame_en <= 0;
         else if (single_frame_r || repeat_frames) frame_en <= 1;
@@ -251,6 +255,10 @@ module  mcntrl_linear_rw #(
         if      (rst)                frame_number_cntr <= 0;
         else if (rst_frame_num_r[0]) frame_number_cntr <= 0;
         else if (frame_start_r[2])   frame_number_cntr <= is_last_frame?{LAST_FRAME_BITS{1'b0}}:(frame_number_cntr+1);
+
+        if      (rst)                frame_number_current <= 0;
+        else if (rst_frame_num_r[0]) frame_number_current <= 0;
+        else if (frame_start_r[2])   frame_number_current <= frame_number_cntr;
 
         if      (rst)                next_frame_start_addr <= start_range_addr; // just to use rst
         else if (rst_frame_num_r[1]) next_frame_start_addr <= start_range_addr;
@@ -296,7 +304,8 @@ module  mcntrl_linear_rw #(
     assign frame_done=  frame_done_r;
     assign frame_finished=  frame_finished_r;
     
-    assign pre_want=    chn_en && busy_r && !want_r && !xfer_start_r[0] && calc_valid && !last_block && !suspend && !frame_start_r[0];
+//    assign pre_want=    chn_en && busy_r && !want_r && !xfer_start_r[0] && calc_valid && !last_block && !suspend && !frame_start_r[0];
+    assign pre_want=    chn_en && busy_r && !want_r && !xfer_start_r[0] && calc_valid && !last_block && !suspend && !(|frame_start_r);
 
     assign last_in_row_w=(row_left=={{(FRAME_WIDTH_BITS-NUM_XFER_BITS){1'b0}},xfer_num128_r});
     assign last_row_w=  next_y==window_height;
@@ -471,10 +480,11 @@ wire    start_not_partial= xfer_start_r[0] && !xfer_limited_by_mem_page_r;
         else if (xfer_start_r[2])             line_unfinished_r[0] <= window_y0+next_y[FRAME_HEIGHT_BITS-1:0]; // latency 2 from xfer_start
 
         if (rst)                              line_unfinished_r[1] <= 0; //{FRAME_HEIGHT_BITS{1'b0}};
-        else if (chn_rst || frame_start_r[0]) line_unfinished_r[1] <= window_y0+start_y;
+//        else if (chn_rst || frame_start_r[0]) line_unfinished_r[1] <= window_y0+start_y;
+        else if (chn_rst || frame_start_r[2]) line_unfinished_r[1] <= window_y0+start_y; // _r[0] -> _r[2] to make it simultaneous with frame_number
         // in read mode advance line number ASAP
         else if (xfer_start_r[2] && !cmd_wrmem) line_unfinished_r[1] <= window_y0+next_y[FRAME_HEIGHT_BITS-1:0]; // latency 2 from xfer_start
-        // in write mode advance line number only when it is guaranteed it will be the first to acyually access memory
+        // in write mode advance line number only when it is guaranteed it will be the first to actually access memory
         else if (xfer_grant      && cmd_wrmem)  line_unfinished_r[1] <=  line_unfinished_r[0];
         
     end

@@ -165,7 +165,8 @@ module  mcntrl393 #(
 
     parameter NUM_XFER_BITS=                       6,    // number of bits to specify transfer length
     parameter FRAME_WIDTH_BITS=                   13,    // Maximal frame width - 8-word (16 bytes) bursts 
-    parameter FRAME_HEIGHT_BITS=                  16,    // Maximal frame height 
+    parameter FRAME_HEIGHT_BITS=                  16,    // Maximal frame height
+    parameter LAST_FRAME_BITS=                    16,     // number of bits in frame counter (before rolls over)
     parameter MCNTRL_SCANLINE_CHN1_ADDR=         'h120,
     parameter MCNTRL_SCANLINE_CHN3_ADDR=         'h130,
     parameter MCNTRL_SCANLINE_MASK=              'h3f0, // both channels 0 and 1
@@ -270,7 +271,7 @@ module  mcntrl393 #(
     output                         page_ready_chn1,    // == xfer_done, connect externally | Single-cycle pulse indicating that a page was read/written from/to DDR3 memory
     output                         frame_done_chn1,    // single-cycle pulse when the full frame (window) was transferred to/from DDR3 memory
 // optional I/O for channel synchronization
-    output [FRAME_HEIGHT_BITS-1:0] line_unfinished_chn1, // number of the current (ufinished ) line, REALATIVE TO FRAME, NOT WINDOW?. 
+    output [FRAME_HEIGHT_BITS-1:0] line_unfinished_chn1, // number of the current (unfinished ) line, RELATIVE TO FRAME, NOT WINDOW?. 
     input                          suspend_chn1,       // suspend transfers (from external line number comparator)
 
     // chn1 buffer interface, DDR3 memory read
@@ -295,7 +296,8 @@ module  mcntrl393 #(
     output                         page_ready_chn2,    // == xfer_done, connect externally | Single-cycle pulse indicating that a page was read/written from/to DDR3 memory
     output                         frame_done_chn2,    // single-cycle pulse when the full frame (window) was transferred to/from DDR3 memory
 // optional I/O for channel synchronization
-    output [FRAME_HEIGHT_BITS-1:0] line_unfinished_chn2, // number of the current (ufinished ) line, REALATIVE TO FRAME, NOT WINDOW?. 
+    output [FRAME_HEIGHT_BITS-1:0] line_unfinished_chn2, // number of the current (unfinished ) line, RELATIVE TO FRAME, NOT WINDOW?.
+    output [LAST_FRAME_BITS-1:0]   frame_number_chn2,  // current frame number (for multi-frame ranges)                        
     input                          suspend_chn2,       // suspend transfers (from external line number comparator)
 
     input                          frame_start_chn3,   // resets page, x,y, and initiates transfer requests (in write mode will wait for next_page)
@@ -303,7 +305,8 @@ module  mcntrl393 #(
     output                         page_ready_chn3,    // == xfer_done, connect externally | Single-cycle pulse indicating that a page was read/written from/to DDR3 memory
     output                         frame_done_chn3,    // single-cycle pulse when the full frame (window) was transferred to/from DDR3 memory
 // optional I/O for channel synchronization
-    output [FRAME_HEIGHT_BITS-1:0] line_unfinished_chn3, // number of the current (ufinished ) line, REALATIVE TO FRAME, NOT WINDOW?. 
+    output [FRAME_HEIGHT_BITS-1:0] line_unfinished_chn3, // number of the current (unfinished ) line, RELATIVE TO FRAME, NOT WINDOW?. 
+    output [LAST_FRAME_BITS-1:0]   frame_number_chn3,  // current frame number (for multi-frame ranges)                        
     input                          suspend_chn3,       // suspend transfers (from external line number comparator)
 // Channel 4 (tiled read)
     input                          frame_start_chn4,   // resets page, x,y, and initiates transfer requests (in write mode will wait for next_page)
@@ -311,7 +314,8 @@ module  mcntrl393 #(
     output                         page_ready_chn4,    // == xfer_done, connect externally | Single-cycle pulse indicating that a page was read/written from/to DDR3 memory
     output                         frame_done_chn4,    // single-cycle pulse when the full frame (window) was transferred to/from DDR3 memory
 // optional I/O for channel synchronization
-    output [FRAME_HEIGHT_BITS-1:0] line_unfinished_chn4, // number of the current (ufinished ) line, REALATIVE TO FRAME, NOT WINDOW?. 
+    output [FRAME_HEIGHT_BITS-1:0] line_unfinished_chn4, // number of the current (unfinished ) line, RELATIVE TO FRAME, NOT WINDOW?. 
+    output [LAST_FRAME_BITS-1:0]   frame_number_chn4,  // current frame number (for multi-frame ranges)                        
     input                          suspend_chn4,       // suspend transfers (from external line number comparator)
 
 
@@ -943,6 +947,7 @@ module  mcntrl393 #(
         .NUM_XFER_BITS                     (NUM_XFER_BITS),
         .FRAME_WIDTH_BITS                  (FRAME_WIDTH_BITS),
         .FRAME_HEIGHT_BITS                 (FRAME_HEIGHT_BITS),
+        .LAST_FRAME_BITS                   (LAST_FRAME_BITS),
         .MCNTRL_SCANLINE_ADDR              (MCNTRL_SCANLINE_CHN1_ADDR),
         .MCNTRL_SCANLINE_MASK              (MCNTRL_SCANLINE_MASK),
         .MCNTRL_SCANLINE_MODE              (MCNTRL_SCANLINE_MODE),
@@ -969,6 +974,7 @@ module  mcntrl393 #(
         .frame_finished       (), // output
         .line_unfinished  (line_unfinished_chn1), // output[15:0] 
         .suspend          (suspend_chn1), // input
+        .frame_number     (), // output[15:0] - not used for this channel
         .xfer_want        (want_rq1), // output
         .xfer_need        (need_rq1), // output
         .xfer_grant       (channel_pgm_en1), // input
@@ -991,6 +997,7 @@ module  mcntrl393 #(
         .NUM_XFER_BITS                     (NUM_XFER_BITS),
         .FRAME_WIDTH_BITS                  (FRAME_WIDTH_BITS),
         .FRAME_HEIGHT_BITS                 (FRAME_HEIGHT_BITS),
+        .LAST_FRAME_BITS                   (LAST_FRAME_BITS),
         .MCNTRL_SCANLINE_ADDR              (MCNTRL_SCANLINE_CHN3_ADDR),
         .MCNTRL_SCANLINE_MASK              (MCNTRL_SCANLINE_MASK),
         .MCNTRL_SCANLINE_MODE              (MCNTRL_SCANLINE_MODE),
@@ -1017,6 +1024,7 @@ module  mcntrl393 #(
         .frame_finished       (), // output
         .line_unfinished  (line_unfinished_chn3), // output[15:0] 
         .suspend          (suspend_chn3), // input
+        .frame_number     (frame_number_chn3),
         .xfer_want        (want_rq3), // output
         .xfer_need        (need_rq3), // output
         .xfer_grant       (channel_pgm_en3), // input
@@ -1040,6 +1048,7 @@ module  mcntrl393 #(
         .FRAME_HEIGHT_BITS             (FRAME_HEIGHT_BITS),
         .MAX_TILE_WIDTH                (MAX_TILE_WIDTH),
         .MAX_TILE_HEIGHT               (MAX_TILE_HEIGHT),
+        .LAST_FRAME_BITS               (LAST_FRAME_BITS),
         .MCNTRL_TILED_ADDR             (MCNTRL_TILED_CHN2_ADDR),
         .MCNTRL_TILED_MASK             (MCNTRL_TILED_MASK),
         .MCNTRL_TILED_MODE             (MCNTRL_TILED_MODE),
@@ -1067,6 +1076,7 @@ module  mcntrl393 #(
         .frame_finished       (), // output
         .line_unfinished      (line_unfinished_chn2), // output[15:0] 
         .suspend              (suspend_chn2), // input
+        .frame_number         (frame_number_chn2),
         .xfer_want            (want_rq2), // output
         .xfer_need            (need_rq2), // output
         .xfer_grant           (channel_pgm_en2), // input
@@ -1094,6 +1104,7 @@ module  mcntrl393 #(
         .FRAME_HEIGHT_BITS             (FRAME_HEIGHT_BITS),
         .MAX_TILE_WIDTH                (MAX_TILE_WIDTH),
         .MAX_TILE_HEIGHT               (MAX_TILE_HEIGHT),
+        .LAST_FRAME_BITS               (LAST_FRAME_BITS),
         .MCNTRL_TILED_ADDR             (MCNTRL_TILED_CHN4_ADDR),
         .MCNTRL_TILED_MASK             (MCNTRL_TILED_MASK),
         .MCNTRL_TILED_MODE             (MCNTRL_TILED_MODE),
@@ -1121,6 +1132,7 @@ module  mcntrl393 #(
         .frame_finished       (), // output
         .line_unfinished      (line_unfinished_chn4), // output[15:0] 
         .suspend              (suspend_chn4), // input
+        .frame_number         (frame_number_chn4),
         .xfer_want            (want_rq4), // output
         .xfer_need            (need_rq4), // output
         .xfer_grant           (channel_pgm_en4), // input

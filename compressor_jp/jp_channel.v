@@ -21,20 +21,80 @@
 `timescale 1ns/1ps
 
 module  jp_channel#(
+        parameter CMPRS_ADDR=                'h120, //TODO: assign valid adderss
+        parameter CMPRS_MASK=                'h3f8,
+        parameter CMPRS_CONTROL_REG=          0,
+        parameter CMPRS_STATUS_CNTRL=         1,
+        parameter CMPRS_FORMAT=               2,
+        parameter CMPRS_COLOR_SATURATION=     3,
+        parameter CMPRS_CORING_MODE=          4,
+        parameter CMPRS_TABLES=               6, // 6..7
+        parameter CMPRS_STATUS_REG_ADDR=     'h10,  //TODO: assign valid adderss
+
+        parameter FRAME_HEIGHT_BITS=          16, // Maximal frame height 
+        parameter LAST_FRAME_BITS=            16, // number of bits in frame counter (before rolls over)
+        // Bit-fields in compressor control word
+        parameter CMPRS_CBIT_RUN =            2, // bit # to control compressor run modes
+        parameter CMPRS_CBIT_RUN_BITS =       2, // number of bits to control compressor run modes
+        parameter CMPRS_CBIT_QBANK =          6, // bit # to control quantization table page
+        parameter CMPRS_CBIT_QBANK_BITS =     3, // number of bits to control quantization table page
+        parameter CMPRS_CBIT_DCSUB =          8, // bit # to control extracting DC components bypassing DCT
+        parameter CMPRS_CBIT_DCSUB_BITS =     1, // bit # to control extracting DC components bypassing DCT
+        parameter CMPRS_CBIT_CMODE =         13, // bit # to control compressor color modes
+        parameter CMPRS_CBIT_CMODE_BITS =     4, // number of bits to control compressor color modes
+        parameter CMPRS_CBIT_FRAMES =        15, // bit # to control compressor multi/single frame buffer modes
+        parameter CMPRS_CBIT_FRAMES_BITS =    1, // number of bits to control compressor multi/single frame buffer modes
+        parameter CMPRS_CBIT_BAYER =         20, // bit # to control compressor Bayer shift mode
+        parameter CMPRS_CBIT_BAYER_BITS =     2, // number of bits to control compressor Bayer shift mode
+        parameter CMPRS_CBIT_FOCUS =         23, // bit # to control compressor focus display mode
+        parameter CMPRS_CBIT_FOCUS_BITS =     2, // number of bits to control compressor focus display mode
+        // compressor bit-fields decode
+        parameter CMPRS_CBIT_RUN_RST =        2'h0, // reset compressor, stop immediately
+//      parameter CMPRS_CBIT_RUN_DISABLE =    2'h1, // disable compression of the new frames, finish any already started
+        parameter CMPRS_CBIT_RUN_STANDALONE = 2'h2, // enable compressor, compress single frame from memory (async)
+        parameter CMPRS_CBIT_RUN_ENABLE =     2'h3, // enable compressor, enable synchronous compression mode
+        parameter CMPRS_CBIT_CMODE_JPEG18 =   4'h0, // color 4:2:0
+        parameter CMPRS_CBIT_CMODE_MONO6 =    4'h1, // mono 4:2:0 (6 blocks)
+        parameter CMPRS_CBIT_CMODE_JP46 =     4'h2, // jp4, 6 blocks, original
+        parameter CMPRS_CBIT_CMODE_JP46DC =   4'h3, // jp4, 6 blocks, dc -improved
+        parameter CMPRS_CBIT_CMODE_JPEG20 =   4'h4, // mono, 4 blocks (but still not actual monochrome JPEG as the blocks are scanned in 2x2 macroblocks)
+        parameter CMPRS_CBIT_CMODE_JP4 =      4'h5, // jp4,  4 blocks, dc-improved
+        parameter CMPRS_CBIT_CMODE_JP4DC =    4'h6, // jp4,  4 blocks, dc-improved
+        parameter CMPRS_CBIT_CMODE_JP4DIFF =  4'h7, // jp4,  4 blocks, differential
+        parameter CMPRS_CBIT_CMODE_JP4DIFFHDR =  4'h8, // jp4,  4 blocks, differential, hdr
+        parameter CMPRS_CBIT_CMODE_JP4DIFFDIV2 = 4'h9, // jp4,  4 blocks, differential, divide by 2
+        parameter CMPRS_CBIT_CMODE_JP4DIFFHDRDIV2 = 4'ha, // jp4,  4 blocks, differential, hdr,divide by 2
+        parameter CMPRS_CBIT_CMODE_MONO1 =    4'hb, // mono JPEG (not yet implemented)
+        parameter CMPRS_CBIT_CMODE_MONO4 =    4'he, // mono 4 blocks
+        parameter CMPRS_CBIT_FRAMES_SINGLE =  0, //1, // use a single-frame buffer for images
+
         parameter CMPRS_COLOR18 =           0, // JPEG 4:2:0 with 18x18 overlapping tiles for de-bayer
         parameter CMPRS_COLOR20 =           1, // JPEG 4:2:0 with 18x18 overlapping tiles for de-bayer (not implemented)
         parameter CMPRS_MONO16 =            2, // JPEG 4:2:0 with 16x16 non-overlapping tiles, color components zeroed
         parameter CMPRS_JP4 =               3, // JP4 mode with 16x16 macroblocks
         parameter CMPRS_JP4DIFF =           4, // JP4DIFF mode TODO: see if correct
-        parameter CMPRS_MONO8 =             7  // Regular JPEG monochrome with 8x8 macroblocks (not yet implemented)
+        parameter CMPRS_MONO8 =             7,  // Regular JPEG monochrome with 8x8 macroblocks (not yet implemented)
+        
+        parameter CMPRS_FRMT_MBCM1 =           0, // bit # of number of macroblock columns minus 1 field in format word
+        parameter CMPRS_FRMT_MBCM1_BITS =     13, // number of bits in number of macroblock columns minus 1 field in format word
+        parameter CMPRS_FRMT_MBRM1 =          13, // bit # of number of macroblock rows minus 1 field in format word
+        parameter CMPRS_FRMT_MBRM1_BITS =     13, // number of bits in number of macroblock rows minus 1 field in format word
+        parameter CMPRS_FRMT_LMARG =          26, // bit # of left margin field in format word
+        parameter CMPRS_FRMT_LMARG_BITS =      5, // number of bits in left margin field in format word
+        parameter CMPRS_CSAT_CB =              0, // bit # of number of blue scale field in color saturation word
+        parameter CMPRS_CSAT_CB_BITS =        10, // number of bits in blue scale field in color saturation word
+        parameter CMPRS_CSAT_CR =             12, // bit # of number of red scale field in color saturation word
+        parameter CMPRS_CSAT_CR_BITS =        10, // number of bits in red scale field in color saturation word
+        parameter CMPRS_CORING_BITS =          3  // number of bits in coring mode
+        
 )(
     input         rst,
     input         xclk,   // global clock input, compressor single clock rate
     input         xclk2x, // global clock input, compressor double clock rate, nominally rising edge aligned
     // programming interface
-    input         mclk,     // global clock, half DDR3 clock, synchronizes all I/O through the command port
-    input   [7:0] cmd_ad_in,      // byte-serial command address/data (up to 6 bytes: AL-AH-D0-D1-D2-D3 
-    input         cmd_stb_in,     // strobe (with first byte) for the command a/d
+    input         mclk,     // global system/memory clock
+    input   [7:0] cmd_ad,      // byte-serial command address/data (up to 6 bytes: AL-AH-D0-D1-D2-D3 
+    input         cmd_stb,     // strobe (with first byte) for the command a/d
     output  [7:0] status_ad,   // status address/data - up to 5 bytes: A - {seq,status[1:0]} - status[2:9] - status[10:17] - status[18:25]
     output        status_rq,   // input request to send status downstream
     input         status_start, // Acknowledge of the first status packet byte (address)
@@ -49,31 +109,51 @@ module  jp_channel#(
     output        next_page_chn,      // single mclk (posedge): Done with the page in the  buffer, memory controller may read more data 
 // statistics data was not used in late nc353    
     output        statistics_dv,
-    output [15:0] statistics_do
+    output [15:0] statistics_do,
+    input  [31:0] sec,
+    input  [19:0] usec,
+//    input  [ 1:0] bayer_phase, // shared with sensor channel - remove!
+    input                         vsync_late,         // delayed start of frame, @xclk. In 353 it was 16 lines after VACT active
+                                                      // source channel should already start, some delay give time for sequencer commands
+                                                      // that should arrive before it
+    output                        frame_start_dst,    // @mclk - trigger receive (tiledc) memory channel (it will take care of single/repetitive
+                                                      // these output either follows vsync_late (reclocks it) or generated in non-bonded mode
+                                                      // (compress from memory)
+    input [FRAME_HEIGHT_BITS-1:0] line_unfinished_src,// number of the current (unfinished ) line, in the source (sensor) channel (RELATIVE TO FRAME, NOT WINDOW?)
+    input   [LAST_FRAME_BITS-1:0] frame_number_src,   // current frame number (for multi-frame ranges) in the source (sensor) channel
+    input                         frame_done_src,     // single-cycle pulse when the full frame (window) was transferred to/from DDR3 memory 
+                                                      // frame_done_src is later than line_unfinished_src/ frame_number_src changes
+                                                      // Used withe a single-frame buffers
+     
+    input [FRAME_HEIGHT_BITS-1:0] line_unfinished_dst,// number of the current (unfinished ) line in this (compressor) channel
+    input   [LAST_FRAME_BITS-1:0] frame_number_dst,   // current frame number (for multi-frame ranges) in this (compressor channel
+    input                         frame_done_dst,     // single-cycle pulse when the full frame (window) was transferred to/from DDR3 memory
+                                                      // use as 'eot_real' in 353 
+    output                        suspend             // suspend reading data for this channel - waiting for the source data
     
 
 );
     // Control signals to be defined
-    wire          frame_en;           // if 0 - will reset logic immediately (but not page number)
-    wire          frame_go;           // start frame: if idle, will start reading data (if available),
+    wire                             frame_en;           // if 0 - will reset logic immediately (but not page number)
+    wire                             frame_go=frame_en;  // start frame: if idle, will start reading data (if available),
                                       // if running - will not restart a new frame if 0.
-    wire   [ 4:0] left_marg;          // left margin (for not-yet-implemented) mono JPEG (8 lines tile row) can need 7 bits (mod 32 - tile)
-    wire   [12:0] n_blocks_in_row_m1; // number of macroblocks in a macroblock row minus 1
-    wire   [12:0] n_block_rows_m1;    // number of macroblock rows in a frame minus 1
-    wire          ignore_color;       // zero Cb/Cr components (TODO: maybe include into converter_type?)
-    wire   [ 1:0] bayer_phase;        // [1:0])  bayer color filter phase 0:(GR/BG), 1:(RG/GB), 2: (BG/GR), 3: (GB/RG)
-    wire          four_blocks;        // use only 6 blocks for the output, not 6
-    wire          jp4_dc_improved;    // in JP4 mode, compare DC coefficients to the same color ones
-    wire   [ 1:0] tile_margin;        // margins around 16x16 tiles (0/1/2)
-    wire   [ 2:0] tile_shift;         // tile shift from top left corner
-    wire   [ 2:0] converter_type;     // 0 - color18, 1 - color20, 2 - mono, 3 - jp4, 4 - jp4-diff, 7 - mono8 (not yet implemented)
-    wire          scale_diff;         // divide differences by 2 (to fit in 8-bit range)
-    wire          hdr;                // second green absolute, not difference
-    wire          subtract_dc_in;     // subtract/restore DC components
-    wire   [ 9:0] m_cb;               // [9:0] scale for CB - default 0.564 (10'h90)
-    wire   [ 9:0] m_cr;               // [9:0] scale for CB - default 0.713 (10'hb6)
+    wire [CMPRS_FRMT_LMARG_BITS-1:0] left_marg;          // left margin (for not-yet-implemented) mono JPEG (8 lines tile row) can need 7 bits (mod 32 - tile)
+    wire [CMPRS_FRMT_MBCM1_BITS-1:0] n_blocks_in_row_m1; // number of macroblocks in a macroblock row minus 1
+    wire [CMPRS_FRMT_MBRM1_BITS-1:0] n_block_rows_m1;    // number of macroblock rows in a frame minus 1
+    wire                             ignore_color;       // zero Cb/Cr components (TODO: maybe include into converter_type?)
+    wire                      [ 1:0] bayer_phase;        // [1:0])  bayer color filter phase 0:(GR/BG), 1:(RG/GB), 2: (BG/GR), 3: (GB/RG)
+    wire                             four_blocks;        // use only 6 blocks for the output, not 6
+    wire                             jp4_dc_improved;    // in JP4 mode, compare DC coefficients to the same color ones
+//    wire   [ 1:0] tile_margin;        // margins around 16x16 tiles (0/1/2)
+//    wire   [ 2:0] tile_shift;         // tile shift from top left corner
+    wire                      [ 2:0] converter_type;     // 0 - color18, 1 - color20, 2 - mono, 3 - jp4, 4 - jp4-diff, 7 - mono8 (not yet implemented)
+    wire                             scale_diff;         // divide differences by 2 (to fit in 8-bit range)
+    wire                             hdr;                // second green absolute, not difference
+    wire                             subtract_dc;        // subtract/restore DC components
+    wire    [CMPRS_CSAT_CB_BITS-1:0] m_cb;               // [9:0] scale for CB - default 0.564 (10'h90)
+    wire    [CMPRS_CSAT_CR_BITS-1:0] m_cr;               // [9:0] scale for CR - default 0.713 (10'hb6)
 
-    reg    [ 1:0] cmprs_fmode_this;   // focusing/overlay mode
+    wire   [ 1:0] cmprs_fmode;        // focusing/overlay mode
 
     //TODO: assign next 5 values from converter_type[2:0]
     wire   [ 5:0] mb_w_m1;            // macroblock width minus 1 // 3 LSB not used, SHOULD BE SET to 3'b111
@@ -140,8 +220,47 @@ module  jp_channel#(
     wire          component_lastinmb; // last_r component in a macroblock;
 
 
+// control signals valid @ mclk
+    wire          cmprs_en_extend;  // extend cmprs_en_xclk to include flushing
+    wire          cmprs_en_mclk;    // resets immediately
+    wire          cmprs_run_mclk;   // enable propagation of vsync_late to frame_start_dst in bonded(sync to src) mode
+    wire          cmprs_standalone; // single-cycle: generate a single frame_start_dst in unbonded (not synchronized) mode. cmprs_run should be off
+    wire          sigle_frame_buf;  // input - memory controller uses a single frame buffer (frame_number_* == 0), use other sync
 
+    wire          stuffer_done_mclk;
+    wire          broken_frame;    // @ mclk tried to start frame compression before the previous one was finished
     
+    wire          last_block;
+    wire          test_lbw;
+    wire          stuffer_rdy; // receiver (bit stuffer) is ready to accept data;
+    wire   [15:0] huff_do;     // output[15:0] reg 
+    wire    [3:0] huff_dl;     // output[3:0] reg 
+    wire          huff_dv;     // output reg 
+    wire          flush;       // output reg @ negedge xclk2x
+    wire          force_flush; // @ negedge xclk2x
+
+
+    wire   [31:0] cmd_data;       // 32-bit data to write to tables and registers(LSB first) - from cmd_deser
+    wire          cmd_we;         // control register write enable
+    wire   [2:0]  cmd_a;          // control register write enable
+    
+    wire          set_ctrl_reg_w;
+    wire          set_status_w;
+    wire          set_format_w;
+    wire          set_color_saturation_w;
+    wire          set_coring_w;
+    wire          set_tables_w;
+    
+     assign set_ctrl_reg_w =          cmd_we && (cmd_a==       CMPRS_CONTROL_REG);
+     assign set_status_w =            cmd_we && (cmd_a==       CMPRS_STATUS_CNTRL);
+     assign set_format_w =            cmd_we && (cmd_a==       CMPRS_FORMAT);
+     assign set_color_saturation_w =  cmd_we && (cmd_a==       CMPRS_COLOR_SATURATION);
+     assign set_coring_w =            cmd_we && (cmd_a==       CMPRS_CORING_MODE);
+     assign set_tables_w =            cmd_we && ((cmd_a & 6)== CMPRS_TABLES);
+    
+    // re-clock single-pulse broken_frame@mclk to force_flush@negedge xclk2x
+    pulse_cross_clock force_flush_i (.rst(rst), .src_clk(mclk), .dst_clk(~xclk2x), .in_pulse(broken_frame), .out_pulse(force_flush),.busy());
+
     
 // set derived parameters from converter_type
 //    wire   [ 2:0] converter_type;    // 0 - color18, 1 - color20, 2 - mono, 3 - jp4, 4 - jp4-diff, 7 - mono8 (not yet implemented)
@@ -180,6 +299,156 @@ module  jp_channel#(
         .data_in      (buf_wdata) // input[63:0] 
     );
 
+
+    cmd_deser #(
+        .ADDR       (CMPRS_ADDR),
+        .ADDR_MASK  (CMPRS_MASK),
+        .NUM_CYCLES (6),
+        .ADDR_WIDTH (3),
+        .DATA_WIDTH (32)
+    ) cmd_deser_32bit_i (
+        .rst        (rst),      // input
+        .clk        (mclk),     // input
+        .ad         (cmd_ad),   // input[7:0] 
+        .stb        (cmd_stb),  // input
+        .addr       (cmd_a),    // output[3:0] 
+        .data       (cmd_data), // output[31:0] 
+        .we         (cmd_we)    // output
+    );
+
+    status_generate #(
+        .STATUS_REG_ADDR  (CMPRS_STATUS_REG_ADDR),
+        .PAYLOAD_BITS     (2)
+    ) status_generate_i (
+        .rst              (rst), // input
+        .clk              (mclk), // input
+        .we               (set_status_w), // input
+        .wd               (cmd_data[7:0]), // input[7:0] 
+        .status           (status_data), // input[25:0] 
+        .ad               (status_ad), // output[7:0] 
+        .rq               (status_rq), // output
+        .start            (status_start) // input
+    );
+
+
+    cmprs_cmd_decode #(
+        .CMPRS_CBIT_RUN                  (CMPRS_CBIT_RUN),
+        .CMPRS_CBIT_RUN_BITS             (CMPRS_CBIT_RUN_BITS),
+        .CMPRS_CBIT_QBANK                (CMPRS_CBIT_QBANK),
+        .CMPRS_CBIT_QBANK_BITS           (CMPRS_CBIT_QBANK_BITS),
+        .CMPRS_CBIT_DCSUB                (CMPRS_CBIT_DCSUB),
+        .CMPRS_CBIT_DCSUB_BITS           (CMPRS_CBIT_DCSUB_BITS),
+        .CMPRS_CBIT_CMODE                (CMPRS_CBIT_CMODE),
+        .CMPRS_CBIT_CMODE_BITS           (CMPRS_CBIT_CMODE_BITS),
+        .CMPRS_CBIT_FRAMES               (CMPRS_CBIT_FRAMES),
+        .CMPRS_CBIT_FRAMES_BITS          (CMPRS_CBIT_FRAMES_BITS),
+        .CMPRS_CBIT_BAYER                (CMPRS_CBIT_BAYER),
+        .CMPRS_CBIT_BAYER_BITS           (CMPRS_CBIT_BAYER_BITS),
+        .CMPRS_CBIT_FOCUS                (CMPRS_CBIT_FOCUS),
+        .CMPRS_CBIT_FOCUS_BITS           (CMPRS_CBIT_FOCUS_BITS),
+        .CMPRS_CBIT_RUN_RST              (CMPRS_CBIT_RUN_RST),
+        .CMPRS_CBIT_RUN_STANDALONE       (CMPRS_CBIT_RUN_STANDALONE),
+        .CMPRS_CBIT_RUN_ENABLE           (CMPRS_CBIT_RUN_ENABLE),
+        .CMPRS_CBIT_CMODE_JPEG18         (CMPRS_CBIT_CMODE_JPEG18),
+        .CMPRS_CBIT_CMODE_MONO6          (CMPRS_CBIT_CMODE_MONO6),
+        .CMPRS_CBIT_CMODE_JP46           (CMPRS_CBIT_CMODE_JP46),
+        .CMPRS_CBIT_CMODE_JP46DC         (CMPRS_CBIT_CMODE_JP46DC),
+        .CMPRS_CBIT_CMODE_JPEG20         (CMPRS_CBIT_CMODE_JPEG20),
+        .CMPRS_CBIT_CMODE_JP4            (CMPRS_CBIT_CMODE_JP4),
+        .CMPRS_CBIT_CMODE_JP4DC          (CMPRS_CBIT_CMODE_JP4DC),
+        .CMPRS_CBIT_CMODE_JP4DIFF        (CMPRS_CBIT_CMODE_JP4DIFF),
+        .CMPRS_CBIT_CMODE_JP4DIFFHDR     (CMPRS_CBIT_CMODE_JP4DIFFHDR),
+        .CMPRS_CBIT_CMODE_JP4DIFFDIV2    (CMPRS_CBIT_CMODE_JP4DIFFDIV2),
+        .CMPRS_CBIT_CMODE_JP4DIFFHDRDIV2 (CMPRS_CBIT_CMODE_JP4DIFFHDRDIV2),
+        .CMPRS_CBIT_CMODE_MONO1          (CMPRS_CBIT_CMODE_MONO1),
+        .CMPRS_CBIT_CMODE_MONO4          (CMPRS_CBIT_CMODE_MONO4),
+        .CMPRS_CBIT_FRAMES_SINGLE        (CMPRS_CBIT_FRAMES_SINGLE),
+        .CMPRS_COLOR18                   (CMPRS_COLOR18),
+        .CMPRS_COLOR20                   (CMPRS_COLOR20),
+        .CMPRS_MONO16                    (CMPRS_MONO16),
+        .CMPRS_JP4                       (CMPRS_JP4),
+        .CMPRS_JP4DIFF                   (CMPRS_JP4DIFF),
+        .CMPRS_MONO8                     (CMPRS_MONO8),
+        .CMPRS_FRMT_MBCM1                (CMPRS_FRMT_MBCM1),
+        .CMPRS_FRMT_MBCM1_BITS           (CMPRS_FRMT_MBCM1_BITS),
+        .CMPRS_FRMT_MBRM1                (CMPRS_FRMT_MBRM1),
+        .CMPRS_FRMT_MBRM1_BITS           (CMPRS_FRMT_MBRM1_BITS),
+        .CMPRS_FRMT_LMARG                (CMPRS_FRMT_LMARG),
+        .CMPRS_FRMT_LMARG_BITS           (CMPRS_FRMT_LMARG_BITS),
+        .CMPRS_CSAT_CB                   (CMPRS_CSAT_CB),
+        .CMPRS_CSAT_CB_BITS              (CMPRS_CSAT_CB_BITS),
+        .CMPRS_CSAT_CR                   (CMPRS_CSAT_CR),
+        .CMPRS_CSAT_CR_BITS              (CMPRS_CSAT_CR_BITS),
+        .CMPRS_CORING_BITS               (CMPRS_CORING_BITS)
+    ) cmprs_cmd_decode_i (
+        .rst                (rst),                 // input
+        .xclk               (xclk),                // input - global clock input, compressor single clock rate
+        .mclk               (mclk),                // input - global system/memory clock
+        .ctrl_we            (set_ctrl_reg_w),      // input - control register write enable
+        .format_we          (set_format_w),        // input - write number of tiles and left margin
+        .color_sat_we       (set_color_saturation_w), // input - write color saturation values
+        .coring_we          (set_coring_w),        // input - write color saturation values
+        .di                 (cmd_data),            // input[31:0] - 32-bit data to write to control register (24LSB are used)
+        .frame_start        (frame_start_dst),     // input @mclk
+        .cmprs_en_mclk      (cmprs_en_mclk),       // output
+        .cmprs_en_extend    (cmprs_en_extend),     // input
+        .cmprs_run_mclk     (cmprs_run_mclk),      // output reg 
+        .cmprs_standalone   (cmprs_standalone),    // output reg 
+        .sigle_frame_buf    (sigle_frame_buf),     // output reg 
+        .cmprs_en_xclk      (frame_en),            // output reg 
+        .cmprs_qpage        (cmprs_qpage),         // output[2:0] reg 
+        .cmprs_dcsub        (subtract_dc),         // output reg 
+        .cmprs_fmode        (cmprs_fmode),         // output[1:0] reg 
+        .bayer_shift        (bayer_phase),         // output[1:0] reg 
+        .ignore_color       (ignore_color),        // output reg 
+        .four_blocks        (four_blocks),         // output reg Not used?
+        .jp4_dc_improved    (jp4_dc_improved),     // output reg 
+        .converter_type     (converter_type),      // output[2:0] reg 
+        .scale_diff         (scale_diff),          // output reg 
+        .hdr                (hdr),                 // output reg 
+        .left_marg          (left_marg),           // output[4:0] reg 
+        .n_blocks_in_row_m1 (n_blocks_in_row_m1),  // output[12:0] reg 
+        .n_block_rows_m1    (n_block_rows_m1),     // output[12:0] reg 
+        .color_sat_cb       (m_cb),                // output[9:0] reg 
+        .color_sat_cr       (m_cr),                // output[9:0] reg 
+        .coring             ()                     // output[2:0] reg 
+    );
+
+
+
+    cmprs_frame_sync #(
+        .FRAME_HEIGHT_BITS  (FRAME_HEIGHT_BITS),
+        .LAST_FRAME_BITS    (LAST_FRAME_BITS)
+    ) cmprs_frame_sync_i (
+        .rst                (rst),                 // input
+        .xclk               (xclk),                // input - global clock input, compressor single clock rate
+        .mclk               (mclk),                // input - global system/memory clock
+        .cmprs_en           (cmprs_en_mclk),       // input - @mclk 0 resets immediately
+        .cmprs_en_extend    (cmprs_en_extend), // output
+        .cmprs_run          (cmprs_run_mclk),      // input - @mclk enable propagation of vsync_late to frame_start_dst in bonded(sync to src) mode
+        .cmprs_standalone   (cmprs_standalone),    // input - @mclk single-cycle: generate a single frame_start_dst in unbonded (not synchronized) mode.
+                                                   // cmprs_run should be off
+        .sigle_frame_buf    (sigle_frame_buf),     // input - memory controller uses a single frame buffer (frame_number_* == 0), use other sync
+        .vsync_late         (vsync_late),          // input - @xclk delayed start of frame, @xclk. In 353 it was 16 lines after VACT active
+                                                   // source channel should already start, some delay give time for sequencer commands
+                                                   // that should arrive before it
+        .frame_started      (first_mb && mb_pre_start), // @xclk started first macroblock (checking fro broken frames)
+        .frame_start_dst    (frame_start_dst),     // output reg @mclk - trigger receive (tiled) memory channel (it will take care of
+                                                   // single/repetitive modes itself this output either follows vsync_late (reclocks it)
+                                                   // or generated in non-bonded mode (compress from memory once)
+        .line_unfinished_src(line_unfinished_src), // input[15:0] - number of the current (unfinished ) line, in the source (sensor) channel
+        .frame_number_src   (frame_number_src),    // input[15:0] - current frame number (for multi-frame ranges) in the source (sensor) channel
+        .frame_done_src     (frame_done_src),      // input - single-cycle pulse when the full frame (window) was transferred to/from DDR3 memory 
+                                                   // frame_done_src is later than line_unfinished_src/ frame_number_src changes
+                                                   // Used withe a single-frame buffers
+        .line_unfinished    (line_unfinished_dst), // input[15:0] - number of the current (unfinished ) line in this (compressor) channel
+        .frame_number       (frame_number_dst),    // input[15:0] - current frame number (for multi-frame ranges) in this (compressor channel
+        .frame_done         (frame_done_dst),      // input - single-cycle pulse when the full frame (window) was transferred to/from DDR3 memory 
+        .suspend            (suspend),             // output reg - suspend reading data for this channel - waiting for the source data
+        .broken_frame       (broken_frame)         // output reg - @ mclk tried to start frame compression before the previous one was finished
+    );
+
+    // 353's eot ~= broken_frame || frame_done_dst
     cmprs_macroblock_buf_iface cmprs_macroblock_buf_iface_i (
         .rst                (rst), // input
         .xclk               (xclk), // input
@@ -188,12 +457,12 @@ module  jp_channel#(
         .page_ready_chn     (page_ready_chn), // input
         .next_page_chn      (next_page_chn), // output
         .frame_en           (frame_en), // input
-        .frame_go           (frame_go), // input
+        .frame_go           (frame_go), // input - do not use - assign to frame_en? Running frames can be controlled by other means
         .left_marg          (left_marg), // input[4:0] 
         .n_blocks_in_row_m1 (n_blocks_in_row_m1), // input[12:0] 
         .n_block_rows_m1    (n_block_rows_m1), // input[12:0] 
-        .mb_w_m1            (mb_w_m1), // input[5:0]   // macroblock width minus 1 // 3 LSB not used - set them to all 1
-        .mb_hper            (mb_hper), // input[4:0]   // macroblock horizontal period (8/16) // 3 LSB not used (set them 0)
+        .mb_w_m1            (mb_w_m1),  // input[5:0]   // macroblock width minus 1 // 3 LSB not used - set them to all 1
+        .mb_hper            (mb_hper),  // input[4:0]   // macroblock horizontal period (8/16) // 3 LSB not used (set them 0)
         .tile_width         (tile_width), // input[1:0]   // memory tile width. Can be 32/64/128: 0 - 16, 1 - 32, 2 - 64, 3 - 128
         .mb_pre_end_in      (mb_pre_end), // input
         .mb_release_buf     (mb_release_buf), // input
@@ -285,7 +554,7 @@ module  jp_channel#(
         .bayer_phase        (bayer_phase),      // input[1:0] 
         .jp4_dc_improved    (jp4_dc_improved),  // input
         .hdr                (hdr),              // input
-        .subtract_dc_in     (subtract_dc_in),   // input
+        .subtract_dc_in     (subtract_dc),      // input
         .first_mb_in        (first_mb),         // input - calculate in cmprs_macroblock_buf_iface 
         .last_mb_in         (last_mb),          // input - calculate in cmprs_macroblock_buf_iface
         .yaddrw             (yaddrw),           // input[7:0] 
@@ -310,7 +579,7 @@ module  jp_channel#(
 
     wire          dct_last_in;
     wire          dct_pre_first_out;
-    wire          dct_dv;
+//    wire          dct_dv;
     wire   [12:0] dct_out;
     
     
@@ -335,13 +604,14 @@ module  jp_channel#(
         .xin                (yc_nodc), // input[9:0] 
         .last_in            (dct_last_in), // output reg  output high during input of the last of 64 pixels in a 8x8 block //
         .pre_first_out      (dct_pre_first_out), // outpu 1 cycle ahead of the first output in a 64 block
-        .dv                 (dct_dv), // output data output valid. Will go high on the 94-th cycle after the start (now - on 95-th?)
+//        .dv                 (dct_dv), // output data output valid. Will go high on the 94-th cycle after the start (now - on 95-th?)
+        .dv                 (),  // not used: output data output valid. Will go high on the 94-th cycle after the start (now - on 95-th?)
         .d_out              (dct_out) // output[12:0] 
     );
     wire          quant_start;
     dly_16 #(.WIDTH(1)) i_quant_start (.clk(xclk),.rst(1'b0), .dly(0), .din(dct_pre_first_out), .dout(quant_start));    // dly=0+1
  
-    reg    [ 2:0] cmprs_qpage_this;
+    reg    [ 2:0] cmprs_qpage;
     wire          first_block_quant;
     wire   [12:0] quant_do; 
     wire          quant_ds;
@@ -360,9 +630,8 @@ module  jp_channel#(
     end
     
     
-    wire          table_a_not_d; // writing table address /not data (a[0] from cmd_deser)
-    wire          table_we;      // writing to tables               (decoded stb from cmd_deser)
-    wire   [31:0] table_di;      // 32-bit data to write to tables (LSB first) - from cmd_deser
+//    wire          table_a_not_d; // writing table address /not data (a[0] from cmd_deser)
+//  wire          table_we;      // writing to tables               (decoded stb from cmd_deser)
     wire          tser_a_not_d;  // address/not data distributed to submodules
     wire   [ 7:0] tser_d;        // byte-wide serialized tables address/data to submodules
     wire          tser_qe;       // write serialized table data to quantizer
@@ -375,9 +644,9 @@ module  jp_channel#(
         .ADDR_BITS(3)
     ) table_ad_transmit_i (
         .clk             (mclk),                  // input @posedge
-        .a_not_d_in      (table_a_not_d),         // input writing table address /not data (a[0] from cmd_deser)
-        .we              (table_we),              // input writing to tables               (decoded stb from cmd_deser)
-        .din             (table_di),              // input[31:0] 32-bit data to serialize/write to tables (LSB first) - from cmd_deser
+        .a_not_d_in      (cmd_a[0]),               // input writing table address /not data (a[0] from cmd_deser)
+        .we              (set_tables_w),          // input writing to tables               (decoded stb from cmd_deser)
+        .din             (cmd_data),              // input[31:0] 32-bit data to serialize/write to tables (LSB first) - from cmd_deser
         .ser_d           (tser_d),                // output[7:0] byte-wide serialized tables address/data to submodules
         .a_not_d         (tser_a_not_d),          // output reg address/not data distributed to submodules
         .chn_en          ({tser_he,tser_fe,tser_ce,tser_qe}) // output[0:0] reg - table 1-hot select outputs
@@ -397,7 +666,7 @@ module  jp_channel#(
         .dci                (yc_avr),                 // input[8:0] - average value in a block - subtracted before DCT. now normal signed number
         .first_stb          (first_block_color),      // input - this is first stb pulse in a frame
         .stb                (dct_start),              // input - strobe that writes ctypei, dci
-        .tsi                (cmprs_qpage_this[2:0]),  // input[2:0] - table (quality) select [2:0]
+        .tsi                (cmprs_qpage[2:0]),       // input[2:0] - table (quality) select [2:0]
         .pre_start          (dct_pre_first_out),      // input - marks first input pixel (one before)
         .first_in           (first_block_dct),        // input - first block in (valid @ start)
         .first_out          (first_block_quant),      // output reg - valid @ ds
@@ -431,7 +700,7 @@ module  jp_channel#(
         .tser_a_not_d       (tser_a_not_d),           // input - address/not data to tables
         .tser_d             (tser_d),                 // input[7:0] - byte-wide data to tables
         
-        .mode               (cmprs_fmode_this[1:0]),  // input[1:0] focus mode (combine image with focus info) - 0 - none, 1 - replace, 2 - combine all,  3 - combine woi
+        .mode               (cmprs_fmode[1:0]),  // input[1:0] focus mode (combine image with focus info) - 0 - none, 1 - replace, 2 - combine all,  3 - combine woi
         .firsti             (color_first),            // input first macroblock
         .lasti              (color_last),             // input last macroblock
         .tni                (color_tn[2:0]),          // input[2:0] block number in a macronblock - 0..3 - Y, >=4 - color (sync to stb)
@@ -484,13 +753,6 @@ module  jp_channel#(
         .dv                 (enc_dv)                  // output reg 
     );
 
-    wire          last_block;
-    wire          test_lbw;
-    wire          stuffer_rdy; // receiver (bit stuffer) is ready to accept data;
-    wire   [15:0] huff_do;     // output[15:0] reg 
-    wire    [3:0] huff_dl;     // output[3:0] reg 
-    wire          huff_dv;     // output reg 
-    wire          flush;       // output reg 
 
     huffman393 i_huffman (
         .xclk               (xclk),                   // input
@@ -559,11 +821,12 @@ module  jp_channel#(
 // and before the data is needed for output 
         .color_first(color_first), // input
         .sec(sec[31:0]), // input[31:0] 
-        .usec(usec[19:0]), // input[19:0] 
+        .usec(usec[19:0]), // input[19:0]
+        // outputs valid @negedge xclk2x 
         .rdy(stuffer_rdy), // output - enable huffman encoder to proceed. Used as CE for many huffman encoder registers
         .q(stuffer_do), // output[15:0] reg - output data
         .qv(stuffer_dv), // output reg - output data valid
-        .done(stuffer_done), // output
+        .done(stuffer_done), // output 
         .imgptr(imgptr[23:0]), // output[23:0] reg - image pointer in 32-byte chunks
         .flushing(stuffer_flushing) // output reg 
 `ifdef debug_stuffer
@@ -573,98 +836,8 @@ module  jp_channel#(
 `endif
     );
     
-/*
- stuffer   i_stuffer  (.clk(clk2x),         //clock - uses negedge inside
-                     .en(cmprs_en_2x_n),         // enable, 0- reset
-                     .reset_data_counters(reset_data_counters[1]), // reset data transfer counters (only when DMA and compressor are disabled)
-                     .flush(flush || force_flush),      // flush output data (fill byte with 0, long word with FFs
-                     .stb(huff_dv),       // input data strobe
-                     .dl(huff_dl),         // [3:0] number of bits to send (0 - 16)
-                     .d(huff_do),          // [15:0] input data to shift (only lower bits are valid)
-// time stamping - will copy time at the end of color_first (later than the first hact after vact in the current froma, but before the next one
-// and before the data is needed for output 
-                     .color_first(color_first), //
-                     .sec(sec[31:0]),
-                     .usec(usec[19:0]),
-                     .rdy(stuffer_rdy),      // enable huffman encoder to proceed. Used as CE for many huffman encoder registers
-                     .q(stuffer_do),         // [15:0] output data
-                     .qv(stuffer_dv),      // output data valid
-                     .done(stuffer_done),
-                     .imgptr (imgptr[23:0]), // [23:0]image pointer in 32-byte chunks
-                     .flushing(stuffer_flushing)
-`ifdef debug_stuffer
-                     ,.etrax_dma_r(tst_stuf_etrax[3:0]) // [3:0] just for testing
-                     ,.test_cntr(test_cntr[3:0])
-                     ,.test_cntr1(test_cntr1[7:0])
-`endif
-                     );
-
-
-
-dcc_sync i_dcc_sync(//.clk(clk),
-                    .sclk(clk2x),
-                    .dcc_en(dcc_en),                   // clk rising, sync with start of the frame
-                    .finish_dcc(finish_dcc),           // sclk rising
-                    .dcc_vld(dccvld),                 // clk rising
-                    .dcc_data(dccdata[15:0]),         //[15:0] clk risimg
-                    .statistics_dv(statistics_dv),     //sclk
-                    .statistics_do(statistics_do[15:0])//[15:0] sclk
-                 );
-
-
-
-//TODO: compact table                     
-focus_sharp i_focus_sharp(.clk(clk),   // pixel clock
-                   .en(cmprs_en),   // enable (0 resets counter)
-                   .sclk(clk2x), // system clock, twe, ta,tdi - valid @negedge (ra, tdi - 2 cycles ahead
-                   .twe(twfe), // enable write to a table
-                   .ta(ta[9:0]),  // [9:0]  table address
-                   .tdi(di[15:0]),  // [15:0] table data in (8 LSBs - quantization data)
-                   .mode(cmprs_fmode_this[1:0]), // focus mode (combine image with focus info) - 0 - none, 1 - replace, 2 - combine all,  3 - combine woi
-//                   .stren(focus_strength),
-                   .firsti(color_first),  // first macroblock
-                   .lasti(color_last),    // last macroblock
-                   .tni(color_tn[2:0]),   // block number in a macronblock - 0..3 - Y, >=4 - color (sync to stb)
-                   .stb(dct_start),      // strobe that writes ctypei, dci
-                   .start(quant_start),// marks first input pixel (needs 1 cycle delay from previous DCT stage)
-                   .di(dct_out[12:0]),    // [11:0] pixel data in (signed)
-                   .quant_ds(quant_ds), // quantizator data strobe (1 before DC)
-                   .quant_d(quant_do[12:0]), // quantizator data output
-                   .quant_dc_tdo(quant_dc_tdo[15:0]), //[15:0], MSB aligned coefficient for the DC component (used in focus module)
-//                   .quant_dc_tdo_stb(quant_dc_tdo_stb),
-                   .do(focus_do[12:0]),    // [11:0] pixel data out (AC is only 9 bits long?) - changed to 10
-                   .ds(focus_ds),  // data out strobe (one ahead of the start of dv)
-                   .hifreq(hifreq[31:0])  //[31:0])  //  accumulated high frequency components in a frame sub-window
-                   );
-
-
- xdct       i_xdct ( .clk(clk),             // top level module
-                     .en(cmprs_en),       // if zero will reset transpose memory page numbers
-                     .start(dct_start),    // single-cycle start pulse that goes with the first pixel data. Other 63 should follow
-                     .xin(color_d[9:0]),    // [7:0] - input data
-                     .last_in(dct_last_in),   // output high during input of the last of 64 pixels in a 8x8 block //
-                     .pre_first_out(dct_pre_first_out),// 1 cycle ahead of the first output in a 64 block
-
-                     .dv(dct_dv),          // data output valid. Will go high on the 94-th cycle after the start
-                     .d_out(dct_out[12:0]));// [12:0]output data
-
-// probably dcc things are not needed anymore
-
- always @ (posedge clk) quant_start <= dct_pre_first_out;
-
- always @ (posedge clk) begin
-  if (!dccout) dcc_en <=1'b0;
-  else if (dct_start && color_first && (color_tn[2:0]==3'b001)) dcc_en <=1'b1; // 3'b001 - closer to the first "start" in quantizator
- end
- wire [15:0] quant_dc_tdo;// MSB aligned coefficient for the DC component (used in focus module)
-
- wire [2:0]  coring_num;
-
-   FDE_1   i_coring_num0   (.C(clk2x),.CE(wr_quantizer_mode),.D(di[ 0]),.Q(coring_num[0]));
-   FDE_1   i_coring_num1   (.C(clk2x),.CE(wr_quantizer_mode),.D(di[ 1]),.Q(coring_num[1]));
-   FDE_1   i_coring_num2   (.C(clk2x),.CE(wr_quantizer_mode),.D(di[ 2]),.Q(coring_num[2]));
-
-*/
+    pulse_cross_clock stuffer_done_mclk_i (.rst(rst), .src_clk(~xclk2x), .dst_clk(mclk), .in_pulse(stuffer_done), .out_pulse(stuffer_done_mclk),.busy());
+    
 
 endmodule
 

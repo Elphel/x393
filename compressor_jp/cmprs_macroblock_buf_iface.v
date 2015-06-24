@@ -42,7 +42,7 @@ module  cmprs_macroblock_buf_iface #(
     input  [12:0] n_block_rows_m1,    // number of macroblock rows in a frame minus 1
     input  [ 5:0] mb_w_m1,            // macroblock width minus 1 // 3 LSB not used
     input  [ 4:0] mb_hper,            // macroblock horizontal period (8/16) // 3 LSB not used
-    input  [ 1:0] tile_width,       // memory tile width (can be 128 for monochrome JPEG)   Can be 32/64/128: 0 - 16, 1 - 32, 2 - 64, 3 - 128
+    input  [ 1:0] tile_width,        // memory tile width (can be 128 for monochrome JPEG)   Can be 32/64/128: 0 - 16, 1 - 32, 2 - 64, 3 - 128
     
     input         mb_pre_end_in,      // from cmprs_pixel_buf_iface - just in time to start a new macroblock w/o gaps
     input         mb_release_buf,     // send required "next_page" pulses to buffer. Having rather long minimal latency in the memory

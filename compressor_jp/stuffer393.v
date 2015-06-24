@@ -35,26 +35,31 @@
 // s ynthesis attribute use_sync_set of stuffer is no; 
 // s ynthesis attribute use_sync_reset of stuffer is no; 
 // s ynthesis attribute use_clock_enable of stuffer is no; 
-
+// TODO:
+// 1: Add FIFO buffer - with hclk on the read side
+// 2: Get rid of imgptr - read addresses from the AFI module
+// 3  Add multi-word status transmitter or just status transmit module for each compressor channel (29 bits are OK to read in multiple of 32-byte blocks
+// Or make FIFO outside of the stuffer?
 
 module stuffer393 (
-    input              clk,            // 2x pixel clock
-    input              en,            // enable, 0- reset
+    input              clk,         // 2x pixel clock
+    input              en,          // enable, 0- reset
     input              reset_data_counters, // reset data transfer counters (only when DMA and compressor are disabled)
-    input              flush,        // flush output data (fill byte with 0, long word with 0
-    input              stb,        // input data strobe
-    input        [3:0] dl,            // [3:0] number of bits to send (0 - 16) ??
-    input       [15:0] d,            // [15:0] input data to shift (only lower bits are valid)
+    input              flush,       // flush output data (fill byte with 0, long word with 0
+    input              stb,         // input data strobe
+    input        [3:0] dl,          // [3:0] number of bits to send (0 - 16) ??
+    input       [15:0] d,           // [15:0] input data to shift (only lower bits are valid)
 // time stamping - will copy time at the end of color_first (later than the first hact after vact in the current froma, but before the next one
 // and before the data is needed for output 
     input              color_first, //
-    input       [31:0] sec,    // [31:0] number of seconds
-    input       [19:0] usec,    // [19:0] number of microseconds
-    output             rdy,        // enable huffman encoder to proceed. Used as CE for many huffman encoder registers
-    output reg  [15:0] q,            // [15:0] output data
-    output reg         qv,        // output data valid
-    output             done,// reset by !en, goes high after some delay after flushing
-    output reg  [23:0] imgptr, // [23:0]image pointer in 32-byte chunks 
+    input       [31:0] sec,         // [31:0] number of seconds
+    input       [19:0] usec,        // [19:0] number of microseconds
+    output             rdy,         // enable huffman encoder to proceed. Used as CE for many huffman encoder registers
+    // outputs @ negedge clk
+    output reg  [15:0] q,           // [15:0] output data
+    output reg         qv,          // output data valid
+    output             done,        // reset by !en, goes high after some delay after flushing
+    output reg  [23:0] imgptr,      // [23:0]image pointer in 32-byte chunks 
     output reg         flushing
 `ifdef debug_stuffer
 ,      output reg   [3:0] etrax_dma_r, // [3:0] just for testing
@@ -68,7 +73,7 @@ module stuffer393 (
 `endif
 
     reg    [23:1] stage1;         //    stage 1 register (after right-shifting input data by 0..7 - actually left by 7..0)
-    wire    [2:0]  shift1;        // shift amount for stage 1
+    wire    [2:0] shift1;        // shift amount for stage 1
     reg     [4:0] stage1_bits;    // number of topmost invalid bits in stage1 register - 2 MSBs, use lower 3  stage2_bits
     reg     [4:0] stage1_length;  // number of bits (1..16) in stage 1 register
 
