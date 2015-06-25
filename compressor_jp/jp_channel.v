@@ -112,11 +112,17 @@ module  jp_channel#(
     input         page_ready_chn,     // single mclk (posedge)
     output        next_page_chn,      // single mclk (posedge): Done with the page in the  buffer, memory controller may read more data 
 // statistics data was not used in late nc353    
+    input         dccout,         //enable output of DC and HF components for brightness/color/focus adjustments
+    input   [2:0] hfc_sel,        // [2:0] (for autofocus) only components with both spacial frequencies higher than specified will be added
     output        statistics_dv,
     output [15:0] statistics_do,
+// timestamp input    
     input  [31:0] sec,
     input  [19:0] usec,
-    output [23:0] imgptr,
+///    output [23:0] imgptr, - removed - use AFI channel MUX
+    
+    output [31:0] hifreq,       //  accumulated high frequency components in a frame sub-window
+    
     
 //    input  [ 1:0] bayer_phase, // shared with sensor channel - remove!
     input                         vsync_late,         // delayed start of frame, @xclk. In 353 it was 16 lines after VACT active
@@ -246,12 +252,20 @@ module  jp_channel#(
     wire          cmprs_standalone; // single-cycle: generate a single frame_start_dst in unbonded (not synchronized) mode. cmprs_run should be off
     wire          sigle_frame_buf;  // input - memory controller uses a single frame buffer (frame_number_* == 0), use other sync
 
-    wire          stuffer_done_mclk;
-    
+
+
     wire          force_flush_long; 
-    
-    wire          last_block;
-    wire          test_lbw;
+///    wire          enc_last; not used
+    wire   [15:0] enc_do; 
+    wire          enc_dv;
+
+//TODO: use next signals for status
+    wire          eof_written_mclk;
+    wire          stuffer_done_mclk;
+///    wire          last_block; //huffman393
+///    wire          test_lbw; 
+
+
     wire          stuffer_rdy; // receiver (bit stuffer) is ready to accept data;
     wire   [15:0] huff_do;     // output[15:0] reg 
     wire    [3:0] huff_dl;     // output[3:0] reg 
@@ -279,12 +293,9 @@ module  jp_channel#(
     wire   [ 2:0] cmprs_qpage;
     wire   [ 2:0] coring_num;
     reg           dcc_en;
-    wire          dccout;
-    wire   [ 2:0] hfc_sel;
 
     wire   [15:0] dccdata; // was not used in late nc353
     wire          dccvld;  // was not used in late nc353
-    
     
      assign set_ctrl_reg_w =          cmd_we && (cmd_a==       CMPRS_CONTROL_REG);
      assign set_status_w =            cmd_we && (cmd_a==       CMPRS_STATUS_CNTRL);
@@ -348,6 +359,7 @@ module  jp_channel#(
         .data       (cmd_data), // output[31:0] 
         .we         (cmd_we)    // output
     );
+
 
     status_generate #(
         .STATUS_REG_ADDR  (CMPRS_STATUS_REG_ADDR),
@@ -616,6 +628,9 @@ module  jp_channel#(
     );
 //  wire   [ 9:0] yc_nodc;         // [9:0] data out (4:2:0) (signed, average=0)
 
+
+///TODO: Replace always@ with a module?
+
     wire          dct_last_in;
     wire          dct_pre_first_out;
 //    wire          dct_dv;
@@ -643,7 +658,7 @@ module  jp_channel#(
         .xin                (yc_nodc), // input[9:0] 
         .last_in            (dct_last_in), // output reg  output high during input of the last of 64 pixels in a 8x8 block //
         .pre_first_out      (dct_pre_first_out), // outpu 1 cycle ahead of the first output in a 64 block
-//        .dv                 (dct_dv), // output data output valid. Will go high on the 94-th cycle after the start (now - on 95-th?)
+///        .dv                 (dct_dv), // output data output valid. Will go high on the 94-th cycle after the start (now - on 95-th?)
         .dv                 (),  // not used: output data output valid. Will go high on the 94-th cycle after the start (now - on 95-th?)
         .d_out              (dct_out) // output[12:0] 
     );
@@ -715,7 +730,6 @@ module  jp_channel#(
     // focus sharp module calculates amount of high-frequency components and optioanlly overlays/replaces actual image
     wire   [12:0] focus_do;     // output[12:0] reg  pixel data out, make timing ignore (valid 1.5 clk earlier that Quantizer output)
     wire          focus_ds;     // output reg data out strobe (one ahead of the start of dv)
-    wire   [31:0] hifreq;       // output[31:0] reg accumulated high frequency components in a frame sub-window
     
     focus_sharp393 focus_sharp393_i (
         .clk                (xclk),                   // input - pixel clock
@@ -743,8 +757,9 @@ module  jp_channel#(
     );
 
     // Format DC components to be output as a mini-frame. Was not used in the late NC353 as the dma1 channel was use3d for IMU instead of dcc
-    reg           pre_finish_dcc;
-    reg           finish_dcc;
+    wire          finish_dcc;
+    // re-sync to posedge xclk2x
+    pulse_cross_clock finish_dcc_i (.rst(rst), .src_clk(~xclk2x), .dst_clk(xclk2x), .in_pulse(stuffer_done), .out_pulse(finish_dcc),.busy());
     
     dcc_sync393 dcc_sync393_i (
         .sclk               (xclk2x),                // input
@@ -756,9 +771,6 @@ module  jp_channel#(
         .statistics_do      (statistics_do[15:0])    // output[15:0] reg @ sclk
     );
     
-    wire          enc_last; 
-    wire   [15:0] enc_do; 
-    wire          enc_dv; 
 
 // generate DC data/strobe for the direct output (re) using sdram channel3 buffering
 // encoderDCAC is updated to handle 13-bit signed data instead of the 12-bit. It will limit the values on ot's own
@@ -775,7 +787,8 @@ module  jp_channel#(
         .zdi                (focus_do[12:0]),         // input[12:0] - zigzag-reordered data input
         .first_blockz       (first_block_quant),      // input - first block input (@zds)
         .zds                (focus_ds),               // input - strobe - one ahead of the DC component output
-        .last               (enc_last),               // output reg 
+///        .last               (enc_last),               // output reg 
+        .last               (),                       // output reg - not used
         .do                 (enc_do[15:0]),           // output[15:0] reg 
         .dv                 (enc_dv)                  // output reg 
     );
@@ -796,9 +809,11 @@ module  jp_channel#(
         .dl(huff_dl[3:0]), // output[3:0] reg 
         .dv(huff_dv), // output reg 
         .flush(flush), // output reg 
-        .last_block(last_block), // output reg 
+///        .last_block(last_block), // output reg 
+        .last_block(), // output reg unused
         .test_lbw(), // output reg ??
-        .gotLastBlock(test_lbw) // output ??
+///        .gotLastBlock(test_lbw) // output ??
+        .gotLastBlock() // output ?? - unused (was for debug)
     );
     
     
@@ -806,17 +821,15 @@ module  jp_channel#(
     wire   [15:0] stuffer_do;
     wire          stuffer_dv;
     wire          stuffer_done;
+    wire          eof_written_xclk2xn;
+    
 //    reg           stuffer_done_persist;
 //    wire          stuffer_flushing;
-    
-    
-    always @ (negedge xclk2x) pre_finish_dcc <= stuffer_done;
-    always @ (posedge xclk2x) finish_dcc     <= pre_finish_dcc; //stuffer+done - @negedge clk2x
 
     stuffer393 stuffer393_i (
         .clk                 (xclk2x),                 // input clock - uses negedge inside
         .en_in               (stuffer_en),             // 
-        .reset_data_counters (reset_data_counters[1]), // input reset data transfer counters (only when DMA and compressor are disabled)
+ ///       .reset_data_counters (reset_data_counters[1]), // input reset data transfer counters (only when DMA and compressor are disabled)
         .flush               (flush),                  // input - flush output data (fill byte with 0, long word with FFs)
         .abort               (force_flush_long),       // @ any, extracts 0->1 and flushes
         .stb                 (huff_dv),                // input
@@ -832,7 +845,7 @@ module  jp_channel#(
         .q                   (stuffer_do),             // output[15:0] reg - output data
         .qv                  (stuffer_dv),             // output reg - output data valid
         .done                (stuffer_done),           // output 
-        .imgptr              (imgptr[23:0]),           // output[23:0] reg - image pointer in 32-byte chunks
+///        .imgptr              (imgptr[23:0]),           // output[23:0] reg - image pointer in 32-byte chunks
 //        .flushing            (stuffer_flushing),       // output reg 
         .flushing            (),                       // output reg Not used?
         .running             (stuffer_running)         // from registering timestamp until done
@@ -845,7 +858,6 @@ module  jp_channel#(
     );
     
     pulse_cross_clock stuffer_done_mclk_i (.rst(rst), .src_clk(~xclk2x), .dst_clk(mclk), .in_pulse(stuffer_done), .out_pulse(stuffer_done_mclk),.busy());
-    wire eof_written;
     cmprs_out_fifo cmprs_out_fifo_i (
         .rst                 (rst),            // input mostly for simulation
         // source (stuffer) clock domain
@@ -854,7 +866,7 @@ module  jp_channel#(
         .wdata               (stuffer_do),     // input[15:0] data from stuffer module;
         .wa_rst              (!stuffer_en),    // input reset low address bits when stuffer is disabled (to make sure it is multiple of 32 bytes
         .wlast               (stuffer_done),   // input - written last 32 bytes of a frame (flush FIFO) - stuffer_done (has to be later than we)
-        .eof_written_wclk    (eof_written),    // output - AFI had transferred frame data to the system memory
+        .eof_written_wclk    (eof_written_xclk2xn),    // output - AFI had transferred frame data to the system memory
         .rclk                (hclk),           // input - AFI clock
         // AFI clock domain
         .rst_fifo            (fifo_rst),       // input - reset FIFO (set read adderss to write, reset count)
@@ -865,6 +877,9 @@ module  jp_channel#(
         .flush_fifo          (fifo_flush),     // output level signalling that FIFO has data from the current frame (use short AXI burst if needed)
         .fifo_count          (fifo_count)      // output[7:0] - number of 32-byte chunks available in FIFO
     );
+    pulse_cross_clock eof_written_mclk_i (.rst(rst), .src_clk(~xclk2x), .dst_clk(mclk), .in_pulse(eof_written_xclk2xn), .out_pulse(eof_written_mclk),.busy());
+
+// TODO: Add status module to combine/FF, re-clock status signals
 
 
 endmodule

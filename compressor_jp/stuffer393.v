@@ -44,7 +44,7 @@
 module stuffer393 (
     input              clk,         // 2x pixel clock
     input              en_in,       // enable, 0- reset (other clock domain, needs re-sync)
-    input              reset_data_counters, // reset data transfer counters (only when DMA and compressor are disabled)
+///    input              reset_data_counters, // reset data transfer counters (only when DMA and compressor are disabled)
     input              flush,       // flush output data (fill byte with 0, long word with 0
     input              abort,       // @ any, extracts 0->1 and flushes
     input              stb,         // input data strobe
@@ -60,7 +60,7 @@ module stuffer393 (
     output reg  [15:0] q,           // [15:0] output data
     output reg         qv,          // output data valid
     output             done,        // reset by !en, goes high after some delay after flushing
-    output reg  [23:0] imgptr,      // [23:0]image pointer in 32-byte chunks 
+///    output reg  [23:0] imgptr,      // [23:0]image pointer in 32-byte chunks 
     output reg         flushing,
     output reg         running      // from registering timestamp until done
 `ifdef debug_stuffer
@@ -310,7 +310,8 @@ end
   
  //reset_data_counters; // reset data transfer counters (only when DMA and compressor are disabled)
  
-        if (reset_data_counters ) etrax_dma[3:0] <= 0; // not needed to be reset after frame, and that was wrong (to early)
+//        if (reset_data_counters ) etrax_dma[3:0] <= 0; // not needed to be reset after frame, and that was wrong (to early)
+        if (!en ) etrax_dma[3:0] <= 0; // Now en here waits for flashing to end, so it should not be too early
         else if (qv) etrax_dma[3:0] <= etrax_dma[3:0] + 1;
 
 // just for testing
@@ -349,11 +350,12 @@ end
                                              ((stage2_bits[4] && !send8h)? stage2[23:16]:8'b0)};
         inc_imgsz32 <= (etrax_dma[3:0]== 4'h0) && qv;
 //reset_data_counters instead of !en here?
-        if (reset_data_counters || done) imgsz32[19:0] <= 0;
+//        if (reset_data_counters || done) imgsz32[19:0] <= 0;
+        if (!en || done) imgsz32[19:0] <= 0; // now en is just for stuffer, waits for flushing to end
         else if (inc_imgsz32) imgsz32[19:0]<=imgsz32[19:0]+1;
 
-        if (reset_data_counters) imgptr[23:0] <= 0;
-        else if (done) imgptr[23:0] <= imgptr[23:0]+ imgsz32[19:0];
+///        if (reset_data_counters) imgptr[23:0] <= 0;
+///        else if (done) imgptr[23:0] <= imgptr[23:0]+ imgsz32[19:0];
         
         flush_end_delayed <= en & pre_flush_end_delayed; // en just to prevent optimizing pre_flush_end_delayed+flush_end_delayed into a single SRL16
     end
