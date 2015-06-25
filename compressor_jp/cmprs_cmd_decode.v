@@ -132,7 +132,9 @@ module  cmprs_cmd_decode#(
         parameter CMPRS_CSAT_CB_BITS =        10, // number of bits in blue scale field in color saturation word
         parameter CMPRS_CSAT_CR =             12, // bit # of number of red scale field in color saturation word
         parameter CMPRS_CSAT_CR_BITS =        10, // number of bits in red scale field in color saturation word
-        parameter CMPRS_CORING_BITS =          3  // number of bits in coring mode
+        parameter CMPRS_CORING_BITS =          3, // number of bits in coring mode
+        
+        parameter CMPRS_STUFFER_NEG =          1  // stuffer runs @ negedge xclk2x
 
     
 )(
@@ -160,7 +162,8 @@ module  cmprs_cmd_decode#(
                                                       // cmprs_run should be off
     output reg                    sigle_frame_buf,    // memory controller uses a single frame buffer (frame_number_* == 0), use other sync
                                   //  outputs sync @ posedge xclk:
-    output reg                    cmprs_en_xclk,      // enable compressor, extends control fields for graceful shutdown
+    output reg                    cmprs_en_xclk,      // enable compressor, turne off immedaitely
+    output reg                    cmprs_en_late_xclk, // enable stuffer, extends control fields for graceful shutdown
 //                    cmprs_start, // single cycle when single or constant compression is turned on
 //                    cmprs_repeat,// high in repetitive mode
                                   // outputs @posedge xclk, frozen when the new frame is requested
@@ -291,7 +294,8 @@ module  cmprs_cmd_decode#(
     // re-clock to compressor clock
     
     always @ (posedge xclk) if (ctrl_we_xclk) begin
-        cmprs_en_xclk   <=      cmprs_en_mclk_r || cmprs_en_extend;
+        cmprs_en_xclk   <=      cmprs_en_mclk_r;
+        cmprs_en_late_xclk  <=  cmprs_en_mclk_r || cmprs_en_extend;
         cmprs_qpage_xclk <=     cmprs_qpage_mclk;
         cmprs_dcsub_xclk <=     cmprs_dcsub_mclk;
         cmprs_mode_xclk <=      cmprs_mode_mclk;

@@ -22,7 +22,9 @@
 
 module  cmprs_frame_sync#(
     parameter FRAME_HEIGHT_BITS=               16,    // Maximal frame height 
-    parameter LAST_FRAME_BITS=                 16     // number of bits in frame counter (before rolls over)
+    parameter LAST_FRAME_BITS=                 16,     // number of bits in frame counter (before rolls over)
+    parameter CMPRS_TIMEOUT_BITS=              12,
+    parameter CMPRS_TIMEOUT=                   1000   // mclk cycles
 
 )(
     input                         rst,
@@ -54,8 +56,17 @@ module  cmprs_frame_sync#(
     input   [LAST_FRAME_BITS-1:0] frame_number,       // current frame number (for multi-frame ranges) in this (compressor channel
     input                         frame_done,         // input - single-cycle pulse when the full frame (window) was transferred to/from DDR3 memory 
     output reg                    suspend,            // suspend reading data for this channel - waiting for the source data
-    output reg                    broken_frame        // next frame start came before previous frame was read to compressor
+
+    input                         stuffer_running,    // @xclk2x stuffer is running/flushing
+    output reg                    force_flush_long    // force flush (abort frame), can be any clock and may last until stuffer_done_mclk
+                                                      // stuffer will re-clock and extract 0->1 transition
 );
+/*
+ Abort frame (force flush) if:
+ a) "broken frame" - attempted to start a new frame before previous one was completely read from the memory
+ b) turned off enable while frame was being compressed
+ Abort frame lasts until flush end or timeout expire
+*/
     wire   vsync_late_mclk; // single mclk cycle, reclocked from vsync_late
     wire   frame_started_mclk; 
     reg    bonded_mode;
@@ -65,9 +76,39 @@ module  cmprs_frame_sync#(
     reg    line_numbers_sync;      // src unfinished line number is > this unfinished line number
     
     reg    reading_frame;         // compressor is reading frame data (make sure input is done before starting next frame, otherwise make it a broken frame
-   
+    reg    broken_frame;
+    reg    aborted_frame;
+    reg    stuffer_running_mclk;
+    reg [CMPRS_TIMEOUT_BITS-1:0] timeout;
+    reg    cmprs_en_extend_r=0;
+    reg    cmprs_en_d;
     assign frame_start_dst = frame_start_dst_r;
+    assign cmprs_en_extend = cmprs_en_extend_r;
+    always @ (posedge rst or posedge mclk) begin
+        if       (rst)                                      cmprs_en_extend_r <= 0;
+        else if  (cmprs_en)                                 cmprs_en_extend_r <= 1;
+        else if  ((timeout == 0) || !stuffer_running_mclk)  cmprs_en_extend_r <= 0;
+    end
+    
     always @ (posedge mclk) begin
+        stuffer_running_mclk <= stuffer_running; // re-clock from negedge xclk2x
+        
+        if      (cmprs_en)           timeout <= CMPRS_TIMEOUT;
+        else if (!cmprs_en_extend_r) timeout <= 0;
+        else                         timeout <= timeout - 1;
+        
+        cmprs_en_d <= cmprs_en;
+
+        broken_frame <=  cmprs_en && cmprs_run && vsync_late_mclk && reading_frame; // single xclk pulse
+        aborted_frame <= cmprs_en_d && !cmprs_en && stuffer_running_mclk;
+        
+        if      (!stuffer_running_mclk ||!cmprs_en_extend_r) force_flush_long <= 0;
+        else if (broken_frame || aborted_frame)              force_flush_long <= 1;
+
+    
+        if (!cmprs_en || frame_done || (cmprs_run && vsync_late_mclk)) reading_frame <= 0;
+        else if (frame_started_mclk)                                   reading_frame <= 1;
+
         frame_start_dst_r <= cmprs_en && (cmprs_run ? (vsync_late_mclk && !reading_frame) : cmprs_standalone);
         if      (!cmprs_en)        bonded_mode <= 0;
         else if (cmprs_run)        bonded_mode <= 1;
@@ -82,10 +123,6 @@ module  cmprs_frame_sync#(
         
         suspend <= !bonded_mode && ((sigle_frame_buf ? frames_differ : frames_numbers_differ) || line_numbers_sync);
         
-        if (!cmprs_en || frame_done || (cmprs_run && vsync_late_mclk)) reading_frame <= 0;
-        else if (frame_started_mclk)                                   reading_frame <= 1;
-        
-        broken_frame <= cmprs_en && cmprs_run && vsync_late_mclk && reading_frame; // single xclk pulse
     
     end
     

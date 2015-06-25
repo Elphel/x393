@@ -43,15 +43,16 @@
 
 module stuffer393 (
     input              clk,         // 2x pixel clock
-    input              en,          // enable, 0- reset
+    input              en_in,       // enable, 0- reset (other clock domain, needs re-sync)
     input              reset_data_counters, // reset data transfer counters (only when DMA and compressor are disabled)
     input              flush,       // flush output data (fill byte with 0, long word with 0
+    input              abort,       // @ any, extracts 0->1 and flushes
     input              stb,         // input data strobe
     input        [3:0] dl,          // [3:0] number of bits to send (0 - 16) ??
     input       [15:0] d,           // [15:0] input data to shift (only lower bits are valid)
 // time stamping - will copy time at the end of color_first (later than the first hact after vact in the current froma, but before the next one
 // and before the data is needed for output 
-    input              color_first, //
+    input              color_first, // (different clock) only used for timestamp
     input       [31:0] sec,         // [31:0] number of seconds
     input       [19:0] usec,        // [19:0] number of microseconds
     output             rdy,         // enable huffman encoder to proceed. Used as CE for many huffman encoder registers
@@ -60,7 +61,8 @@ module stuffer393 (
     output reg         qv,          // output data valid
     output             done,        // reset by !en, goes high after some delay after flushing
     output reg  [23:0] imgptr,      // [23:0]image pointer in 32-byte chunks 
-    output reg         flushing
+    output reg         flushing,
+    output reg         running      // from registering timestamp until done
 `ifdef debug_stuffer
 ,      output reg   [3:0] etrax_dma_r, // [3:0] just for testing
        output reg   [3:0] test_cntr,
@@ -71,7 +73,12 @@ module stuffer393 (
 `ifdef debug_stuffer
     reg           en_d;
 `endif
-
+    reg           en; // re-clock en_in to match this clock
+    reg     [2:0] abort_r;
+    reg           force_flush;
+    
+    
+    
     reg    [23:1] stage1;         //    stage 1 register (after right-shifting input data by 0..7 - actually left by 7..0)
     wire    [2:0] shift1;        // shift amount for stage 1
     reg     [4:0] stage1_bits;    // number of topmost invalid bits in stage1 register - 2 MSBs, use lower 3  stage2_bits
@@ -127,8 +134,24 @@ module stuffer393 (
 // stb_time[2] - single-cycle pulse after color_first goes low 
     reg    [19:0] imgsz32; // current image size in multiples of 32-bytes
     reg           inc_imgsz32;
+    // re-clock enable to this clock
+    always @ (negedge clk) begin
+        en <= en_in;
+        // re-clock abort, extract leading edge
+        abort_r <= {abort_r[0] & ~abort_r[1], abort_r[0], abort};
+        if      (!en)       force_flush <= 0;
+        else if (abort_r)   force_flush <= 1;
+        else if (flush_end) force_flush <= 0;
+        
+        if      (!en)         running <= 0;
+        else if (stb_time[2]) running <= 1;
+        else if (flush_end)   running <= 0;
+        
+    end
 
-    always @ (negedge clk)  flushing <= en && !flush_end && ((flush && rdy) || flushing);
+    always @ (negedge clk)  begin
+        flushing <= en && !flush_end && (((flush || force_flush) && rdy) || flushing);
+    end
     
     wire    [4:0]    pre_stage1_bits;
     assign pre_stage1_bits[4:0]={2'b00,stage1_bits[2:0]} +  {(dl[3:0]==4'b0),dl[3:0]};

@@ -85,7 +85,11 @@ module  jp_channel#(
         parameter CMPRS_CSAT_CB_BITS =        10, // number of bits in blue scale field in color saturation word
         parameter CMPRS_CSAT_CR =             12, // bit # of number of red scale field in color saturation word
         parameter CMPRS_CSAT_CR_BITS =        10, // number of bits in red scale field in color saturation word
-        parameter CMPRS_CORING_BITS =          3  // number of bits in coring mode
+        parameter CMPRS_CORING_BITS =          3,  // number of bits in coring mode
+        
+        parameter CMPRS_TIMEOUT_BITS=              12,
+        parameter CMPRS_TIMEOUT=                   1000   // mclk cycles
+        
         
 )(
     input         rst,
@@ -112,6 +116,8 @@ module  jp_channel#(
     output [15:0] statistics_do,
     input  [31:0] sec,
     input  [19:0] usec,
+    output [23:0] imgptr,
+    
 //    input  [ 1:0] bayer_phase, // shared with sensor channel - remove!
     input                         vsync_late,         // delayed start of frame, @xclk. In 353 it was 16 lines after VACT active
                                                       // source channel should already start, some delay give time for sequencer commands
@@ -129,12 +135,25 @@ module  jp_channel#(
     input   [LAST_FRAME_BITS-1:0] frame_number_dst,   // current frame number (for multi-frame ranges) in this (compressor channel
     input                         frame_done_dst,     // single-cycle pulse when the full frame (window) was transferred to/from DDR3 memory
                                                       // use as 'eot_real' in 353 
-    output                        suspend             // suspend reading data for this channel - waiting for the source data
+    output                        suspend,            // suspend reading data for this channel - waiting for the source data
+    
+    // Output interface to the AFI mux
+    input                         hclk,
+    input                         fifo_rst,      // reset FIFO (set read adderss to write, reset count)
+    input                         fifo_ren,
+    output                 [63:0] fifo_rdata,
+    output                        fifo_eof,        // single rclk pulse signalling EOF
+    input                         eof_written,   // confirm frame written ofer AFI to the system memory (single rclk pulse)
+    output                        fifo_flush,    // EOF, need to output all what is in FIFO (Stays active until enough data chunks are read)
+    output                 [7:0]  fifo_count     // number of 32-byte chunks in FIFO
+    
     
 
 );
     // Control signals to be defined
     wire                             frame_en;           // if 0 - will reset logic immediately (but not page number)
+    wire                             stuffer_en;        //  extended enable to allow stuffer to gracefully finish 
+    
     wire                             frame_go=frame_en;  // start frame: if idle, will start reading data (if available),
                                       // if running - will not restart a new frame if 0.
     wire [CMPRS_FRMT_LMARG_BITS-1:0] left_marg;          // left margin (for not-yet-implemented) mono JPEG (8 lines tile row) can need 7 bits (mod 32 - tile)
@@ -142,7 +161,7 @@ module  jp_channel#(
     wire [CMPRS_FRMT_MBRM1_BITS-1:0] n_block_rows_m1;    // number of macroblock rows in a frame minus 1
     wire                             ignore_color;       // zero Cb/Cr components (TODO: maybe include into converter_type?)
     wire                      [ 1:0] bayer_phase;        // [1:0])  bayer color filter phase 0:(GR/BG), 1:(RG/GB), 2: (BG/GR), 3: (GB/RG)
-    wire                             four_blocks;        // use only 6 blocks for the output, not 6
+//    wire                             four_blocks;        // use only 6 blocks for the output, not 6
     wire                             jp4_dc_improved;    // in JP4 mode, compare DC coefficients to the same color ones
 //    wire   [ 1:0] tile_margin;        // margins around 16x16 tiles (0/1/2)
 //    wire   [ 2:0] tile_shift;         // tile shift from top left corner
@@ -185,7 +204,7 @@ module  jp_channel#(
     // signals connecting modules: chn_rd_buf_i and ???:
     wire   [ 7:0] mb_data_out;       // Macroblock data out in scanline order 
     wire          mb_pre_first_out;  // Macroblock data out strobe - 1 cycle just before data valid
-    wire          mb_data_valid;     // Macroblock data out valid
+//    wire          mb_data_valid;     // Macroblock data out valid
     
     wire           limit_diff     = 1'b1;  // as in the prototype - just a constant 1
     
@@ -207,7 +226,7 @@ module  jp_channel#(
 
     wire   [ 9:0] yc_nodc;         // [9:0] data out (4:2:0) (signed, average=0)
     wire   [ 8:0] yc_avr;          // [8:0]    DC (average value) - RAM output, no register. For Y components 9'h080..9'h07f, for C - 9'h100..9'h0ff!
-    wire          yc_nodc_dv;         // out data valid (will go high for at least 64 cycles)
+//    wire          yc_nodc_dv;         // out data valid (will go high for at least 64 cycles)
     wire          dct_start;         // single-cycle mark of the first_r pixel in a 64 (8x8) - pixel block
     wire   [ 2:0] color_tn;   // [2:0] tile number 0..3 - Y, 4 - Cb, 5 - Cr (valid with start)
     wire          color_first;      // sending first_r MCU (valid @ ds)
@@ -228,7 +247,8 @@ module  jp_channel#(
     wire          sigle_frame_buf;  // input - memory controller uses a single frame buffer (frame_number_* == 0), use other sync
 
     wire          stuffer_done_mclk;
-    wire          broken_frame;    // @ mclk tried to start frame compression before the previous one was finished
+    
+    wire          force_flush_long; 
     
     wire          last_block;
     wire          test_lbw;
@@ -237,7 +257,7 @@ module  jp_channel#(
     wire    [3:0] huff_dl;     // output[3:0] reg 
     wire          huff_dv;     // output reg 
     wire          flush;       // output reg @ negedge xclk2x
-    wire          force_flush; // @ negedge xclk2x
+    
 
 
     wire   [31:0] cmd_data;       // 32-bit data to write to tables and registers(LSB first) - from cmd_deser
@@ -251,6 +271,21 @@ module  jp_channel#(
     wire          set_coring_w;
     wire          set_tables_w;
     
+    wire          stuffer_running;   // @negedge xclk2x from registering timestamp until done
+    
+    wire   [12:0] quant_do; 
+    wire          quant_ds;
+    wire   [15:0] quant_dc_tdo;// MSB aligned coefficient for the DC component (used in focus module)
+    wire   [ 2:0] cmprs_qpage;
+    wire   [ 2:0] coring_num;
+    reg           dcc_en;
+    wire          dccout;
+    wire   [ 2:0] hfc_sel;
+
+    wire   [15:0] dccdata; // was not used in late nc353
+    wire          dccvld;  // was not used in late nc353
+    
+    
      assign set_ctrl_reg_w =          cmd_we && (cmd_a==       CMPRS_CONTROL_REG);
      assign set_status_w =            cmd_we && (cmd_a==       CMPRS_STATUS_CNTRL);
      assign set_format_w =            cmd_we && (cmd_a==       CMPRS_FORMAT);
@@ -258,8 +293,6 @@ module  jp_channel#(
      assign set_coring_w =            cmd_we && (cmd_a==       CMPRS_CORING_MODE);
      assign set_tables_w =            cmd_we && ((cmd_a & 6)== CMPRS_TABLES);
     
-    // re-clock single-pulse broken_frame@mclk to force_flush@negedge xclk2x
-    pulse_cross_clock force_flush_i (.rst(rst), .src_clk(mclk), .dst_clk(~xclk2x), .in_pulse(broken_frame), .out_pulse(force_flush),.busy());
 
     
 // set derived parameters from converter_type
@@ -395,13 +428,15 @@ module  jp_channel#(
         .cmprs_run_mclk     (cmprs_run_mclk),      // output reg 
         .cmprs_standalone   (cmprs_standalone),    // output reg 
         .sigle_frame_buf    (sigle_frame_buf),     // output reg 
-        .cmprs_en_xclk      (frame_en),            // output reg 
+        .cmprs_en_xclk      (frame_en),            // output reg
+        .cmprs_en_late_xclk (stuffer_en),          // output reg - extended enable to allow stuffer to gracefully finish 
         .cmprs_qpage        (cmprs_qpage),         // output[2:0] reg 
         .cmprs_dcsub        (subtract_dc),         // output reg 
         .cmprs_fmode        (cmprs_fmode),         // output[1:0] reg 
         .bayer_shift        (bayer_phase),         // output[1:0] reg 
         .ignore_color       (ignore_color),        // output reg 
-        .four_blocks        (four_blocks),         // output reg Not used?
+//      .four_blocks        (four_blocks),         // output reg Not used?
+        .four_blocks        (),                    // output reg Not used?
         .jp4_dc_improved    (jp4_dc_improved),     // output reg 
         .converter_type     (converter_type),      // output[2:0] reg 
         .scale_diff         (scale_diff),          // output reg 
@@ -411,14 +446,16 @@ module  jp_channel#(
         .n_block_rows_m1    (n_block_rows_m1),     // output[12:0] reg 
         .color_sat_cb       (m_cb),                // output[9:0] reg 
         .color_sat_cr       (m_cr),                // output[9:0] reg 
-        .coring             ()                     // output[2:0] reg 
+        .coring             (coring_num)           // output[2:0] reg 
     );
 
 
 
     cmprs_frame_sync #(
         .FRAME_HEIGHT_BITS  (FRAME_HEIGHT_BITS),
-        .LAST_FRAME_BITS    (LAST_FRAME_BITS)
+        .LAST_FRAME_BITS    (LAST_FRAME_BITS),
+        .CMPRS_TIMEOUT_BITS (CMPRS_TIMEOUT_BITS),
+        .CMPRS_TIMEOUT      (CMPRS_TIMEOUT)
     ) cmprs_frame_sync_i (
         .rst                (rst),                 // input
         .xclk               (xclk),                // input - global clock input, compressor single clock rate
@@ -445,10 +482,10 @@ module  jp_channel#(
         .frame_number       (frame_number_dst),    // input[15:0] - current frame number (for multi-frame ranges) in this (compressor channel
         .frame_done         (frame_done_dst),      // input - single-cycle pulse when the full frame (window) was transferred to/from DDR3 memory 
         .suspend            (suspend),             // output reg - suspend reading data for this channel - waiting for the source data
-        .broken_frame       (broken_frame)         // output reg - @ mclk tried to start frame compression before the previous one was finished
+        .stuffer_running    (stuffer_running), // input
+        .force_flush_long   (force_flush_long)         // output reg - @ mclk tried to start frame compression before the previous one was finished
     );
 
-    // 353's eot ~= broken_frame || frame_done_dst
     cmprs_macroblock_buf_iface cmprs_macroblock_buf_iface_i (
         .rst                (rst), // input
         .xclk               (xclk), // input
@@ -503,7 +540,8 @@ module  jp_channel#(
         .macroblock_x       (macroblock_x), // input[6:0] 
         .data_out           (mb_data_out), // output[7:0] // Macroblock data out in scanline order
         .pre_first_out      (mb_pre_first_out), // output // Macroblock data out strobe - 1 cycle just before data valid  == old pre_first_pixel?
-        .data_valid         (mb_data_valid) // output     // Macroblock data out valid
+//        .data_valid         (mb_data_valid) // output     // Macroblock data out valid
+        .data_valid         () // output     // Macroblock data out valid Unused
     );
 
     csconvert #(
@@ -565,7 +603,8 @@ module  jp_channel#(
         .signed_c           (signed_c),         // input[8:0] 
         .do                 (yc_nodc),          // output[9:0] 
         .avr                (yc_avr),           // output[8:0] 
-        .dv                 (yc_nodc_dv),       // output
+//        .dv                 (yc_nodc_dv),       // output
+        .dv                 (),                 // output unused?
         .ds                 (dct_start),        // output
         .tn                 (color_tn),         // output[2:0] 
         .first              (color_first),      // output reg 
@@ -611,18 +650,6 @@ module  jp_channel#(
     wire          quant_start;
     dly_16 #(.WIDTH(1)) i_quant_start (.clk(xclk),.rst(1'b0), .dly(0), .din(dct_pre_first_out), .dout(quant_start));    // dly=0+1
  
-    reg    [ 2:0] cmprs_qpage;
-    wire          first_block_quant;
-    wire   [12:0] quant_do; 
-    wire          quant_ds;
-    wire   [15:0] quant_dc_tdo;// MSB aligned coefficient for the DC component (used in focus module)
-    wire   [ 2:0] coring_num;
-    reg           dcc_en;
-    wire          dccout;
-    wire   [ 2:0] hfc_sel;
-
-    wire   [15:0] dccdata; // was not used in late nc353
-    wire          dccvld;  // was not used in late nc353
     
     always @ (posedge xclk) begin
         if (!dccout) dcc_en <=1'b0;
@@ -774,61 +801,42 @@ module  jp_channel#(
         .gotLastBlock(test_lbw) // output ??
     );
     
-  /*
- wire last_block, test_lbw;
- huffman i_huffman  (.pclk(clk),      // pixel clock
-                      .clk(clk2x),   // twice frequency - uses negedge inside
-                      .en(cmprs_en),      // enable (0 resets counter) sync to .pclk(clk)
-//                      .cwr(cwr),      // CPU WR global clock
-                      .twe(twhe),      // enable write to a table
-                      .ta(ta[8:0]),      // [8:0]  table address
-                      .tdi(di[15:0]),      // [23:0] table data in (8 LSBs - quantization data, [13:9] zigzag address
-                      .di(enc_do[15:0]),      // [15:0]   specially RLL prepared 16-bit data (to FIFO)
-                      .ds(enc_dv),      // di valid strobe
-                      .rdy(stuffer_rdy),      // receiver (bit stuffer) is ready to accept data
-                      .do(huff_do),      // [15:0]   output data
-                      .dl(huff_dl),      // [3:0]   output width (0==16)
-                      .dv(huff_dv),      // output data bvalid
-                     .flush(flush),
-                     .last_block(last_block),
-                     .test_lbw(),
-                     .gotLastBlock(test_lbw));   // last block done - flush the rest bits
-  
-  */  
     
     
     wire   [15:0] stuffer_do;
     wire          stuffer_dv;
     wire          stuffer_done;
-    reg           stuffer_done_persist;
-    wire          stuffer_flushing;
-    wire   [23:0] imgptr;
-    wire   [31:0] sec;
-    wire   [19:0] usec;
+//    reg           stuffer_done_persist;
+//    wire          stuffer_flushing;
+    
     
     always @ (negedge xclk2x) pre_finish_dcc <= stuffer_done;
     always @ (posedge xclk2x) finish_dcc     <= pre_finish_dcc; //stuffer+done - @negedge clk2x
 
     stuffer393 stuffer393_i (
         .clk                 (xclk2x),                 // input clock - uses negedge inside
-        .en                  (cmprs_en_2x_n),          // input
+        .en_in               (stuffer_en),             // 
         .reset_data_counters (reset_data_counters[1]), // input reset data transfer counters (only when DMA and compressor are disabled)
-        .flush               (flush || force_flush),   // input - flush output data (fill byte with 0, long word with FFs
+        .flush               (flush),                  // input - flush output data (fill byte with 0, long word with FFs)
+        .abort               (force_flush_long),       // @ any, extracts 0->1 and flushes
         .stb                 (huff_dv),                // input
         .dl                  (huff_dl),                // input[3:0] number of bits to send (0 - 16) (0-16??)
         .d                   (huff_do),                // input[15:0] data to shift (only lower huff_dl bits are valid)
 // time stamping - will copy time at the end of color_first (later than the first hact after vact in the current froma, but before the next one
 // and before the data is needed for output 
-        .color_first(color_first), // input
-        .sec(sec[31:0]), // input[31:0] 
-        .usec(usec[19:0]), // input[19:0]
+        .color_first         (color_first),            // input valid @xclk - only for sec/usec
+        .sec                 (sec[31:0]),              // input[31:0] registers to right clock/time inside
+        .usec                (usec[19:0]),             // input[19:0]
         // outputs valid @negedge xclk2x 
-        .rdy(stuffer_rdy), // output - enable huffman encoder to proceed. Used as CE for many huffman encoder registers
-        .q(stuffer_do), // output[15:0] reg - output data
-        .qv(stuffer_dv), // output reg - output data valid
-        .done(stuffer_done), // output 
-        .imgptr(imgptr[23:0]), // output[23:0] reg - image pointer in 32-byte chunks
-        .flushing(stuffer_flushing) // output reg 
+        .rdy                 (stuffer_rdy),            // output - enable huffman encoder to proceed. Used as CE for many huffman encoder registers
+        .q                   (stuffer_do),             // output[15:0] reg - output data
+        .qv                  (stuffer_dv),             // output reg - output data valid
+        .done                (stuffer_done),           // output 
+        .imgptr              (imgptr[23:0]),           // output[23:0] reg - image pointer in 32-byte chunks
+//        .flushing            (stuffer_flushing),       // output reg 
+        .flushing            (),                       // output reg Not used?
+        .running             (stuffer_running)         // from registering timestamp until done
+        
 `ifdef debug_stuffer
        ,.etrax_dma_r(tst_stuf_etrax[3:0]) // [3:0] just for testing
        ,.test_cntr(test_cntr[3:0])
@@ -837,7 +845,27 @@ module  jp_channel#(
     );
     
     pulse_cross_clock stuffer_done_mclk_i (.rst(rst), .src_clk(~xclk2x), .dst_clk(mclk), .in_pulse(stuffer_done), .out_pulse(stuffer_done_mclk),.busy());
-    
+    wire eof_written;
+    cmprs_out_fifo cmprs_out_fifo_i (
+        .rst                 (rst),            // input mostly for simulation
+        // source (stuffer) clock domain
+        .wclk                (~xclk2x),        // input source clock (2x pixel clock, inverted) - same as stuffer out
+        .we                  (stuffer_dv),     // input write data from stuffer
+        .wdata               (stuffer_do),     // input[15:0] data from stuffer module;
+        .wa_rst              (!stuffer_en),    // input reset low address bits when stuffer is disabled (to make sure it is multiple of 32 bytes
+        .wlast               (stuffer_done),   // input - written last 32 bytes of a frame (flush FIFO) - stuffer_done (has to be later than we)
+        .eof_written_wclk    (eof_written),    // output - AFI had transferred frame data to the system memory
+        .rclk                (hclk),           // input - AFI clock
+        // AFI clock domain
+        .rst_fifo            (fifo_rst),       // input - reset FIFO (set read adderss to write, reset count)
+        .ren                 (fifo_ren),       // input - fifo read from AFI channel mux
+        .rdata               (fifo_rdata),     // output[63:0] - data to AFI channel mux (latency == 2 from fifo_ren)
+        .eof                 (fifo_eof),       // output single hclk pulse signalling EOF
+        .eof_written         (eof_written),    // input single hclk pulse confirming frame data is written to the system memory
+        .flush_fifo          (fifo_flush),     // output level signalling that FIFO has data from the current frame (use short AXI burst if needed)
+        .fifo_count          (fifo_count)      // output[7:0] - number of 32-byte chunks available in FIFO
+    );
+
 
 endmodule
 
