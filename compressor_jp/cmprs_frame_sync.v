@@ -58,8 +58,10 @@ module  cmprs_frame_sync#(
     output reg                    suspend,            // suspend reading data for this channel - waiting for the source data
 
     input                         stuffer_running,    // @xclk2x stuffer is running/flushing
-    output reg                    force_flush_long    // force flush (abort frame), can be any clock and may last until stuffer_done_mclk
+    output reg                    force_flush_long,    // force flush (abort frame), can be any clock and may last until stuffer_done_mclk
                                                       // stuffer will re-clock and extract 0->1 transition
+    output                        stuffer_running_mclk,
+    output                        reading_frame
 );
 /*
  Abort frame (force flush) if:
@@ -75,23 +77,27 @@ module  cmprs_frame_sync#(
     reg    frames_numbers_differ;  // src and dest point to different frames (multi-frame buffer mode), disregard line_unfinished_*
     reg    line_numbers_sync;      // src unfinished line number is > this unfinished line number
     
-    reg    reading_frame;         // compressor is reading frame data (make sure input is done before starting next frame, otherwise make it a broken frame
+    reg    reading_frame_r;         // compressor is reading frame data (make sure input is done before starting next frame, otherwise make it a broken frame
     reg    broken_frame;
     reg    aborted_frame;
-    reg    stuffer_running_mclk;
+    reg    stuffer_running_mclk_r;
     reg [CMPRS_TIMEOUT_BITS-1:0] timeout;
     reg    cmprs_en_extend_r=0;
     reg    cmprs_en_d;
     assign frame_start_dst = frame_start_dst_r;
     assign cmprs_en_extend = cmprs_en_extend_r;
+    
+    assign stuffer_running_mclk = stuffer_running_mclk_r;
+    assign reading_frame =        reading_frame_r;
+    
     always @ (posedge rst or posedge mclk) begin
         if       (rst)                                      cmprs_en_extend_r <= 0;
         else if  (cmprs_en)                                 cmprs_en_extend_r <= 1;
-        else if  ((timeout == 0) || !stuffer_running_mclk)  cmprs_en_extend_r <= 0;
+        else if  ((timeout == 0) || !stuffer_running_mclk_r)  cmprs_en_extend_r <= 0;
     end
     
     always @ (posedge mclk) begin
-        stuffer_running_mclk <= stuffer_running; // re-clock from negedge xclk2x
+        stuffer_running_mclk_r <= stuffer_running; // re-clock from negedge xclk2x
         
         if      (cmprs_en)           timeout <= CMPRS_TIMEOUT;
         else if (!cmprs_en_extend_r) timeout <= 0;
@@ -99,17 +105,17 @@ module  cmprs_frame_sync#(
         
         cmprs_en_d <= cmprs_en;
 
-        broken_frame <=  cmprs_en && cmprs_run && vsync_late_mclk && reading_frame; // single xclk pulse
-        aborted_frame <= cmprs_en_d && !cmprs_en && stuffer_running_mclk;
+        broken_frame <=  cmprs_en && cmprs_run && vsync_late_mclk && reading_frame_r; // single xclk pulse
+        aborted_frame <= cmprs_en_d && !cmprs_en && stuffer_running_mclk_r;
         
-        if      (!stuffer_running_mclk ||!cmprs_en_extend_r) force_flush_long <= 0;
+        if      (!stuffer_running_mclk_r ||!cmprs_en_extend_r) force_flush_long <= 0;
         else if (broken_frame || aborted_frame)              force_flush_long <= 1;
 
     
-        if (!cmprs_en || frame_done || (cmprs_run && vsync_late_mclk)) reading_frame <= 0;
-        else if (frame_started_mclk)                                   reading_frame <= 1;
+        if (!cmprs_en || frame_done || (cmprs_run && vsync_late_mclk)) reading_frame_r <= 0;
+        else if (frame_started_mclk)                                   reading_frame_r <= 1;
 
-        frame_start_dst_r <= cmprs_en && (cmprs_run ? (vsync_late_mclk && !reading_frame) : cmprs_standalone);
+        frame_start_dst_r <= cmprs_en && (cmprs_run ? (vsync_late_mclk && !reading_frame_r) : cmprs_standalone);
         if      (!cmprs_en)        bonded_mode <= 0;
         else if (cmprs_run)        bonded_mode <= 1;
         else if (cmprs_standalone) bonded_mode <= 0;

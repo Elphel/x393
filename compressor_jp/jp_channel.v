@@ -92,39 +92,38 @@ module  jp_channel#(
         
         
 )(
-    input         rst,
-    input         xclk,   // global clock input, compressor single clock rate
-    input         xclk2x, // global clock input, compressor double clock rate, nominally rising edge aligned
+    input                         rst,    // global reset
+    input                         xclk,   // global clock input, compressor single clock rate
+    input                         xclk2x, // global clock input, compressor double clock rate, nominally rising edge aligned
     // programming interface
-    input         mclk,     // global system/memory clock
-    input   [7:0] cmd_ad,      // byte-serial command address/data (up to 6 bytes: AL-AH-D0-D1-D2-D3 
-    input         cmd_stb,     // strobe (with first byte) for the command a/d
-    output  [7:0] status_ad,   // status address/data - up to 5 bytes: A - {seq,status[1:0]} - status[2:9] - status[10:17] - status[18:25]
-    output        status_rq,   // input request to send status downstream
-    input         status_start, // Acknowledge of the first status packet byte (address)
+    input                         mclk,     // global system/memory clock
+    input                   [7:0] cmd_ad,      // byte-serial command address/data (up to 6 bytes: AL-AH-D0-D1-D2-D3 
+    input                         cmd_stb,     // strobe (with first byte) for the command a/d
+    output                  [7:0] status_ad,   // status address/data - up to 5 bytes: A - {seq,status[1:0]} - status[2:9] - status[10:17] - status[18:25]
+    output                        status_rq,   // input request to send status downstream
+    input                         status_start, // Acknowledge of the first status packet byte (address)
     
     // TODO: Maybe move buffer to memory controller ?
-    input         xfer_reset_page_rd, // from mcntrl_tiled_rw
-    input         buf_wpage_nxt,     // input
-    input         buf_wr,            // input
-    input  [63:0] buf_wdata, // input[63:0] 
+    input                         xfer_reset_page_rd, // from mcntrl_tiled_rw
+    input                         buf_wpage_nxt,     // input
+    input                         buf_wr,            // input
+    input                  [63:0] buf_wdata, // input[63:0] 
     
-    input         page_ready_chn,     // single mclk (posedge)
-    output        next_page_chn,      // single mclk (posedge): Done with the page in the  buffer, memory controller may read more data 
+    input                         page_ready_chn,     // single mclk (posedge)
+    output                        next_page_chn,      // single mclk (posedge): Done with the page in the  buffer, memory controller may read more data 
 // statistics data was not used in late nc353    
-    input         dccout,         //enable output of DC and HF components for brightness/color/focus adjustments
-    input   [2:0] hfc_sel,        // [2:0] (for autofocus) only components with both spacial frequencies higher than specified will be added
-    output        statistics_dv,
-    output [15:0] statistics_do,
+    input                         dccout,         //enable output of DC and HF components for brightness/color/focus adjustments
+    input                   [2:0] hfc_sel,        // [2:0] (for autofocus) only components with both spacial frequencies higher than specified will be added
+    output                        statistics_dv,
+    output                 [15:0] statistics_do,
 // timestamp input    
-    input  [31:0] sec,
-    input  [19:0] usec,
+    input                  [31:0] sec,
+    input                  [19:0] usec,
 ///    output [23:0] imgptr, - removed - use AFI channel MUX
+    output                        eof_written_mclk,
+    output                        stuffer_done_mclk,
     
-    output [31:0] hifreq,       //  accumulated high frequency components in a frame sub-window
-    
-    
-//    input  [ 1:0] bayer_phase, // shared with sensor channel - remove!
+    output                 [31:0] hifreq,             //  accumulated high frequency components in a frame sub-window
     input                         vsync_late,         // delayed start of frame, @xclk. In 353 it was 16 lines after VACT active
                                                       // source channel should already start, some delay give time for sequencer commands
                                                       // that should arrive before it
@@ -260,8 +259,11 @@ module  jp_channel#(
     wire          enc_dv;
 
 //TODO: use next signals for status
-    wire          eof_written_mclk;
-    wire          stuffer_done_mclk;
+//    wire          eof_written_mclk;
+//    wire          stuffer_done_mclk;
+    wire          stuffer_running_mclk;
+    wire          reading_frame;
+    
 ///    wire          last_block; //huffman393
 ///    wire          test_lbw; 
 
@@ -309,12 +311,12 @@ module  jp_channel#(
 // set derived parameters from converter_type
 //    wire   [ 2:0] converter_type;    // 0 - color18, 1 - color20, 2 - mono, 3 - jp4, 4 - jp4-diff, 7 - mono8 (not yet implemented)
     cmprs_tile_mode_decode #( // fully combinatorial
-        .CMPRS_COLOR18(0),
-        .CMPRS_COLOR20(1),
-        .CMPRS_MONO16(2),
-        .CMPRS_JP4(3),
-        .CMPRS_JP4DIFF(4),
-        .CMPRS_MONO8(7)
+        .CMPRS_COLOR18   (CMPRS_COLOR18),
+        .CMPRS_COLOR20   (CMPRS_COLOR20),
+        .CMPRS_MONO16    (CMPRS_MONO16),
+        .CMPRS_JP4       (CMPRS_JP4),
+        .CMPRS_JP4DIFF   (CMPRS_JP4DIFF),
+        .CMPRS_MONO8     (CMPRS_MONO8)
     ) cmprs_tile_mode_decode_i (
         .converter_type  (converter_type), // input[2:0] 
         .mb_w_m1         (mb_w_m1),        // output[5:0] reg 
@@ -359,20 +361,27 @@ module  jp_channel#(
         .data       (cmd_data), // output[31:0] 
         .we         (cmd_we)    // output
     );
-
+    wire [2:0] status_data; 
+    cmprs_status cmprs_status_i (
+        .mclk            (mclk),                 // input
+        .eof_written     (eof_written_mclk),     // input
+        .stuffer_running (stuffer_running_mclk), // input
+        .reading_frame   (reading_frame),        // input
+        .status          (status_data)           // output[2:0] 
+    );
 
     status_generate #(
         .STATUS_REG_ADDR  (CMPRS_STATUS_REG_ADDR),
-        .PAYLOAD_BITS     (2)
+        .PAYLOAD_BITS     (3)
     ) status_generate_i (
-        .rst              (rst), // input
-        .clk              (mclk), // input
-        .we               (set_status_w), // input
+        .rst              (rst),           // input
+        .clk              (mclk),          // input
+        .we               (set_status_w),  // input
         .wd               (cmd_data[7:0]), // input[7:0] 
-        .status           (status_data), // input[25:0] 
-        .ad               (status_ad), // output[7:0] 
-        .rq               (status_rq), // output
-        .start            (status_start) // input
+        .status           (status_data),   // input[2:0] 
+        .ad               (status_ad),     // output[7:0] 
+        .rq               (status_rq),     // output
+        .start            (status_start)   // input
     );
 
 
@@ -495,7 +504,10 @@ module  jp_channel#(
         .frame_done         (frame_done_dst),      // input - single-cycle pulse when the full frame (window) was transferred to/from DDR3 memory 
         .suspend            (suspend),             // output reg - suspend reading data for this channel - waiting for the source data
         .stuffer_running    (stuffer_running), // input
-        .force_flush_long   (force_flush_long)         // output reg - @ mclk tried to start frame compression before the previous one was finished
+        .force_flush_long   (force_flush_long),         // output reg - @ mclk tried to start frame compression before the previous one was finished
+        .stuffer_running_mclk(stuffer_running_mclk), // output
+        .reading_frame      (reading_frame) // output
+        
     );
 
     cmprs_macroblock_buf_iface cmprs_macroblock_buf_iface_i (
