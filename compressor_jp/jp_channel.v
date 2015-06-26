@@ -104,10 +104,15 @@ module  jp_channel#(
     input                         status_start, // Acknowledge of the first status packet byte (address)
     
     // TODO: Maybe move buffer to memory controller ?
-    input                         xfer_reset_page_rd, // from mcntrl_tiled_rw
-    input                         buf_wpage_nxt,     // input
-    input                         buf_wr,            // input
-    input                  [63:0] buf_wdata, // input[63:0] 
+    input                         xfer_reset_page_rd, // from mcntrl_tiled_rw (
+///    input                         buf_wpage_nxt,     // input
+///    input                         buf_wr,            // input
+///    input                  [63:0] buf_wdata, // input[63:0] 
+    output                 [11:0] buf_ra,
+    output                        buf_ren,
+    output                        buf_regen,
+    input                  [ 7:0] buf_di, 
+    
     
     input                         page_ready_chn,     // single mclk (posedge)
     output                        next_page_chn,      // single mclk (posedge): Done with the page in the  buffer, memory controller may read more data 
@@ -201,8 +206,8 @@ module  jp_channel#(
      wire         last_mb;            // output
     
     // signals connecting modules: cmprs_pixel_buf_iface_i and chn_rd_buf_i:
-    wire   [ 7:0] buf_di;             // data from the buffer
-    wire   [11:0] buf_ra;             // buffer read address (2 MSB - page number)
+//    wire   [ 7:0] buf_di;             // data from the buffer
+//    wire   [11:0] buf_ra;             // buffer read address (2 MSB - page number)
     wire   [ 1:0] buf_rd;             // buf {regen, re}
     
     
@@ -299,34 +304,17 @@ module  jp_channel#(
     wire   [15:0] dccdata; // was not used in late nc353
     wire          dccvld;  // was not used in late nc353
     
-     assign set_ctrl_reg_w =          cmd_we && (cmd_a==       CMPRS_CONTROL_REG);
-     assign set_status_w =            cmd_we && (cmd_a==       CMPRS_STATUS_CNTRL);
-     assign set_format_w =            cmd_we && (cmd_a==       CMPRS_FORMAT);
-     assign set_color_saturation_w =  cmd_we && (cmd_a==       CMPRS_COLOR_SATURATION);
-     assign set_coring_w =            cmd_we && (cmd_a==       CMPRS_CORING_MODE);
-     assign set_tables_w =            cmd_we && ((cmd_a & 6)== CMPRS_TABLES);
+    assign set_ctrl_reg_w =          cmd_we && (cmd_a==       CMPRS_CONTROL_REG);
+    assign set_status_w =            cmd_we && (cmd_a==       CMPRS_STATUS_CNTRL);
+    assign set_format_w =            cmd_we && (cmd_a==       CMPRS_FORMAT);
+    assign set_color_saturation_w =  cmd_we && (cmd_a==       CMPRS_COLOR_SATURATION);
+    assign set_coring_w =            cmd_we && (cmd_a==       CMPRS_CORING_MODE);
+    assign set_tables_w =            cmd_we && ((cmd_a & 6)== CMPRS_TABLES);
     
-
+    assign buf_ren =   buf_rd[0];
+    assign buf_regen = buf_rd[1];
     
-// set derived parameters from converter_type
-//    wire   [ 2:0] converter_type;    // 0 - color18, 1 - color20, 2 - mono, 3 - jp4, 4 - jp4-diff, 7 - mono8 (not yet implemented)
-    cmprs_tile_mode_decode #( // fully combinatorial
-        .CMPRS_COLOR18   (CMPRS_COLOR18),
-        .CMPRS_COLOR20   (CMPRS_COLOR20),
-        .CMPRS_MONO16    (CMPRS_MONO16),
-        .CMPRS_JP4       (CMPRS_JP4),
-        .CMPRS_JP4DIFF   (CMPRS_JP4DIFF),
-        .CMPRS_MONO8     (CMPRS_MONO8)
-    ) cmprs_tile_mode_decode_i (
-        .converter_type  (converter_type), // input[2:0] 
-        .mb_w_m1         (mb_w_m1),        // output[5:0] reg 
-        .mb_h_m1         (mb_h_m1),        // output[5:0] reg 
-        .mb_hper         (mb_hper),        // output[4:0] reg 
-        .tile_width      (tile_width),     // output[1:0] reg 
-        .tile_col_width  (tile_col_width)  // output reg 
-    );
-    
-//mb_pre_first_out    
+/*    
 // Port buffer - TODO: Move to memory controller
     mcntrl_buf_rd #(
         .LOG2WIDTH_RD(3) // 64 bit external interface
@@ -344,7 +332,7 @@ module  jp_channel#(
         .we           (buf_wr), // input
         .data_in      (buf_wdata) // input[63:0] 
     );
-
+*/
 
     cmd_deser #(
         .ADDR       (CMPRS_ADDR),
@@ -470,6 +458,23 @@ module  jp_channel#(
         .coring             (coring_num)           // output[2:0] reg 
     );
 
+// set derived parameters from converter_type
+//    wire   [ 2:0] converter_type;    // 0 - color18, 1 - color20, 2 - mono, 3 - jp4, 4 - jp4-diff, 7 - mono8 (not yet implemented)
+    cmprs_tile_mode_decode #( // fully combinatorial
+        .CMPRS_COLOR18   (CMPRS_COLOR18),
+        .CMPRS_COLOR20   (CMPRS_COLOR20),
+        .CMPRS_MONO16    (CMPRS_MONO16),
+        .CMPRS_JP4       (CMPRS_JP4),
+        .CMPRS_JP4DIFF   (CMPRS_JP4DIFF),
+        .CMPRS_MONO8     (CMPRS_MONO8)
+    ) cmprs_tile_mode_decode_i (
+        .converter_type  (converter_type), // input[2:0] 
+        .mb_w_m1         (mb_w_m1),        // output[5:0] reg 
+        .mb_h_m1         (mb_h_m1),        // output[5:0] reg 
+        .mb_hper         (mb_hper),        // output[4:0] reg 
+        .tile_width      (tile_width),     // output[1:0] reg 
+        .tile_col_width  (tile_col_width)  // output reg 
+    );
 
 
     cmprs_frame_sync #(
