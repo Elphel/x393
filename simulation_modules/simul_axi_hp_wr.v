@@ -314,7 +314,7 @@ fifo_same_clock_fill   #( .DATA_WIDTH(79),.DATA_DEPTH(7))
         .rcount     (), //wdata_rcount), // output[3:0] reg 
         .num_in_fifo(wcount) // output[3:0] 
     );
-// **** Write responce channel ****    
+// **** Write response channel ****    
     wire [ 1:0] bresp_value=2'b0;
     wire [ 1:0] bresp_in;
     

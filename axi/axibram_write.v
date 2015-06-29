@@ -162,7 +162,7 @@ module  axibram_write #(
       if (rst) dev_ready_r <= 1'b0;
       else     dev_ready_r <= dev_ready;
     end
-// **** Write responce channel ****    
+// **** Write response channel ****    
     wire [ 1:0] bresp_in;
     assign bresp_in=2'b0;
         

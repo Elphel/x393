@@ -1088,7 +1088,7 @@ assign DUMMY_TO_KEEP = frst[2] && MEMCLK; // 1'b0; // dbg_toggle[0];
     .EMIOENET0SOFRX(),           // GMII 0 Rx Start of Frame, output
     .EMIOENET0PTPDELAYREQRX(),   // GMII 0 Rx PTP delay req frame detected
     .EMIOENET0PTPPDELAYREQRX(),  // GMII 0 Rx PTP peer delay frame detected, output
-    .EMIOENET0PTPPDELAYRESPRX(), // GMII 0 Rx PTP peer delay responce frame detected, output
+    .EMIOENET0PTPPDELAYRESPRX(), // GMII 0 Rx PTP peer delay response frame detected, output
     .EMIOENET0PTPSYNCFRAMERX(),  // GMII 0 Rx PTP sync frame detected, output
     // MDIO 0
     .EMIOENET0MDIOMDC(),         // MDIO 0 MD clock output, output
@@ -1120,7 +1120,7 @@ assign DUMMY_TO_KEEP = frst[2] && MEMCLK; // 1'b0; // dbg_toggle[0];
     .EMIOENET1SOFRX(),           // GMII 1 Rx Start of Frame, output
     .EMIOENET1PTPDELAYREQRX(),   // GMII 1 Rx PTP delay req frame detected
     .EMIOENET1PTPPDELAYREQRX(),  // GMII 1 Rx PTP peer delay frame detected, output
-    .EMIOENET1PTPPDELAYRESPRX(), // GMII 1 Rx PTP peer delay responce frame detected, output
+    .EMIOENET1PTPPDELAYRESPRX(), // GMII 1 Rx PTP peer delay response frame detected, output
     .EMIOENET1PTPSYNCFRAMERX(),  // GMII 1 Rx PTP sync frame detected, output
     // MDIO 1
     .EMIOENET1MDIOMDC(),         // MDIO 1 MD clock output, output

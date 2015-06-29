@@ -100,7 +100,13 @@ module  cmprs_afi_mux#(
     output                        afi_wrissuecap1en
 );
     reg         en;      // enable mux
+    reg         en_d;
     reg   [3:0] en_chn;  // per-channel enable 
+    
+    wire [31:0] cmd_data;
+    wire [ 3:0] cmd_a;
+    wire        cmd_we_sa_len;    
+    
 //    reg   [2:0] cur_chn;          // 'b0xx - none, 'b1** - ** - channel number (should match fifo_ren*)
     reg   [1:0] cur_chn;           // 'b0xx - none, 'b1** - ** - channel number (should match fifo_ren*)
     reg   [7:0] left_to_eof[0:3];  // number of chunks left to end of frame
@@ -123,50 +129,50 @@ module  cmprs_afi_mux#(
     wire        need_to_bother = |counts_corr2[8:2];
     reg         ready_to_start; // TBD: either idle or soon will finish the previous burst (include AFI FIFO level here too?)
     wire  [3:0] last_chunk_w;
-    reg   [2:0] busy; // TODO: adjust number of bits. During continuous run busy is deasseted for 1 clock cycle
+    reg   [3:0] busy; // TODO: adjust number of bits. During continuous run busy is deasseted for 1 clock cycle
     wire        done_burst_w; // de-asset busy
     wire        pre_busy_w;
     reg         last_burst_in_frame;
 //    reg   [1:0] wlen32; // 2 high bits of burst len (LSB are always 2'b11)
     
     reg   [3:0] wleft; // number of 64-bit words left to be sent - also used as awlen (valid @ awvalid)
+    reg   [2:0] chunk_inc;              // how much to increment chunk pointer (1..4)
+
+    wire [ 3:0] reset_pointers;         // per-channel - after chunk_start_hclk or chunk_len_hclk were written or  explicit fifo_rst*
     
-    reg  [26:0] chunk_addr_chn[0:3]; //system memory address in "chunks" (32-bytes)
-    reg  [26:0] chunk_addr;
-    reg         awvalid;
+    wire        ptr_resetting;          // pointers are being reset in cmprs_afi_mux_ptr module
+    
+    
+    wire [26:0] chunk_addr;
+    reg   [1:0] awvalid;
     reg         wvalid;
     reg         wlast;
-    reg   [3:0] eof_written;
     reg  [63:0] wdata;     // registered data from one of the 4 buffers
     wire        wdata_en;  // register enable for wdata
     wire  [1:0] wdata_sel; // source select for wdata
     reg   [3:0] fifo_ren;
+    
+    wire [26:0] chunk_ptr_rd;
+    wire [ 3:0] chunk_ptr_ra;
+    
+    
+    
     // use last_chunk_w to apply a special id to waddr and wdata and watch for it during readout
     // compose ID of channel number, frame bumber LSBs and last/not last chunk
-//    assign last_chunk_w[3:0] = {~(|left_to_eof[3]),~(|left_to_eof[2]),~(|left_to_eof[1]),~(|left_to_eof[0])};
     assign last_chunk_w[3:0] = {(left_to_eof[3]==1)?1'b1:1'b0,
                                 (left_to_eof[2]==1)?1'b1:1'b0,
                                 (left_to_eof[1]==1)?1'b1:1'b0,
                                 (left_to_eof[0]==1)?1'b1:1'b0};
     
-    assign pre_busy_w = !busy && ready_to_start && need_to_bother;
-    assign done_burst_w = busy && !(|wleft[3:1]);  // when wleft[3:0] == 0, busy is 0
-    assign eof_written0 = eof_written[0];
-    assign eof_written1 = eof_written[1];
-    assign eof_written2 = eof_written[2];
-    assign eof_written3 = eof_written[3];
-    assign fifo_ren0 = fifo_ren[0];
-    assign fifo_ren1 = fifo_ren[1];
-    assign fifo_ren2 = fifo_ren[2];
-    assign fifo_ren3 = fifo_ren[3];
+    assign pre_busy_w = !busy[0] && ready_to_start && need_to_bother && !ptr_resetting;
+    assign done_burst_w = busy[0] && !(|wleft[3:1]);  // when wleft[3:0] == 0, busy is 0
+    assign {fifo_rst3, fifo_rst2, fifo_rst1, fifo_rst0} = reset_pointers;
+    assign {fifo_ren3, fifo_ren2, fifo_ren1, fifo_ren0} = fifo_ren;
     
     assign afi_awaddr =  {chunk_addr,5'b0};
-    assign afi_awid =    {3'b0,last_burst_in_frame,cur_chn}; 
-    assign afi_awvalid = awvalid;
-    assign afi_awlen = wleft;
-//    assign afi_wid = {3'b0,last_burst_in_frame,cur_chn};
-//    assign afi_wvalid = wvalid;
-//    assign afi_wlast = wlast;
+    assign afi_awid =    {1'b0,wleft[3:2],last_burst_in_frame,cur_chn}; 
+    assign afi_awvalid = awvalid[1];
+    assign afi_awlen = {wleft[3:2],2'b11};
     assign afi_wdata = wdata;
     assign afi_bready = 1'b1; // always ready
     
@@ -181,8 +187,9 @@ module  cmprs_afi_mux#(
     assign afi_wrissuecap1en = 1'b0;
     
     
-    
     always @ (posedge hclk) begin
+        en_d <= en;
+    
         ready_to_start <= en && // ready to strta a burst
                           !afi_wacount[5] && !(&afi_wacount[4:1]) &&  // >=2 free 
                           !afi_wcount[7] &&  !(&afi_wcount[6:3]);     // >=8 free (4 would be enough too)
@@ -254,18 +261,18 @@ module  cmprs_afi_mux#(
         //ready_to_start need_to_bother
         //done_burst
         if      (!en)          busy <= 0;
-        else if (pre_busy_w)   busy <= {busy[1:0],1'b1};
-        else if (done_burst_w) busy <= {busy[1:0],1'b0};
+        else if (pre_busy_w)   busy <= {busy[2:0],1'b1};
+        else if (done_burst_w) busy <= 0; // {busy[2:0],1'b0};
         
         if      (!en)        wleft <= 0;
         else if (pre_busy_w) wleft <= {(|counts_corr2[7:2])? 2'b11 : left_to_eof[winner2][1:0], 2'b11};
         else if (wleft != 0) wleft <= wleft - 1;
+        
 
         if      (!en)        wvalid <= 0;
         else if (pre_busy_w) wvalid <= 1;
         else if (wlast)      wvalid <= 0; // should be after pre_busy_w as both can happen simultaneously
 
-//fifo_ren
         if      (!en)          fifo_ren <= 0;
         else if (pre_busy_w)   fifo_ren <= {(winner2 == 3) ?1'b1:1'b0,
                                             (winner2 == 2) ?1'b1:1'b0,
@@ -273,27 +280,21 @@ module  cmprs_afi_mux#(
                                             (winner2 == 0) ?1'b1:1'b0};
         else if (wlast)        fifo_ren <= 0;
         
-        awvalid <= pre_busy_w; // no need to wait for afi_awready, will use fifo levels to enable pre_busy_w
+        awvalid <= {awvalid[0],pre_busy_w}; // no need to wait for afi_awready, will use fifo levels to enable pre_busy_w
+        
         if (pre_busy_w)  begin
             cur_chn <= winner2;
             last_burst_in_frame <= last_chunk_w[winner2];
-            wleft <= {(|counts_corr2[7:2])? 2'b11 : left_to_eof[winner2][1:0], 2'b11};
-            chunk_addr <= chunk_addr_chn[winner2];
-                
         end
         
         wlast <= done_burst_w; // when wleft==4'h1
+
         // wdata register mux
         if (wdata_en) wdata <= wdata_sel[1]?(wdata_sel[1]?fifo_rdata3:fifo_rdata2):(wdata_sel[1]?fifo_rdata1:fifo_rdata0);
-        
-        // Watch write responce channel, detect EOF IDs, generate eof_written* output signals
-        eof_written[0] <=  afi_bvalid && (afi_bid[2:0]== 3'h4);
-        eof_written[1] <=  afi_bvalid && (afi_bid[2:0]== 3'h5);
-        eof_written[2] <=  afi_bvalid && (afi_bid[2:0]== 3'h6);
-        eof_written[3] <=  afi_bvalid && (afi_bid[2:0]== 3'h7);
-        
-        // calculate and rollover channel addresses
-        
+
+        if (pre_busy_w) chunk_inc <= (|counts_corr2[7:2])?
+                                       3'h4 :
+                                       ({1'b0,left_to_eof[winner2][1:0]} + 3'h1);
         
     end
 
@@ -304,7 +305,7 @@ module  cmprs_afi_mux#(
         .clk       (hclk), // input
         .rst       (!en),  // input
         .dly       (AFI_MUX_BUF_LATENCY), // input[3:0] will delay by AFI_MUX_BUF_LATENCY+1 (normally 3) 
-        .din       ({    wvalid,     wlast, 3'b0,last_burst_in_frame, cur_chn}), // input[0:0] 
+        .din       ({    wvalid,     wlast, afi_awid}), // input[0:0] 
         .dout      ({afi_wvalid, afi_wlast, afi_wid}) // output[0:0] 
     );
 
@@ -316,6 +317,42 @@ module  cmprs_afi_mux#(
         .dly       (AFI_MUX_BUF_LATENCY-1), // input[3:0] will delay by AFI_MUX_BUF_LATENCY+1 (normally 3) 
         .din       ({wvalid, cur_chn}), // input[0:0] 
         .dout      ({wdata_en,wdata_sel}) // output[0:0] 
+    );
+    
+    wire [26:0] chunk_ptr_rd01[0:1];
+
+    cmprs_afi_mux_ptr cmprs_afi_mux_ptr_i (
+        .hclk                (hclk),                // input
+        .sa_len_di           (cmd_data[26:0]),      // input[26:0] 
+        .sa_len_wa           (cmd_a[2:0]),          // input[2:0] 
+        .sa_len_we           (cmd_we_sa_len),       // input
+        .en                  (en),                  // input
+        .reset_pointers      (reset_pointers),      // input[3:0] 
+        .pre_busy_w          (pre_busy_w),          // input
+        .winner_channel      (winner2),             // input[1:0] 
+        .need_to_bother      (need_to_bother),      // input
+        .chunk_inc           (chunk_inc),           // input[2:0] 
+        .last_burst_in_frame (last_burst_in_frame), // input
+        .busy                (busy),                // input[3:0] 
+        .ptr_resetting       (ptr_resetting),       // output
+        .chunk_addr          (chunk_addr),          // output[26:0] reg 
+        .chunk_ptr_ra        (chunk_ptr_ra[2:0]),   // input[2:0] 
+        .chunk_ptr_rd        (chunk_ptr_rd01[0])    // output[26:0] 
+    );
+    assign chunk_ptr_rd=chunk_ptr_ra[3]?chunk_ptr_rd01[1]:chunk_ptr_rd01[0];
+    cmprs_afi_mux_ptr_wresp cmprs_afi_mux_ptr_wresp_i (
+        .hclk                (hclk),                // input
+        .length_di           (cmd_data[26:0]),      // input[26:0] 
+        .length_wa           (cmd_a[1:0]),          // input[1:0] 
+        .length_we           (cmd_we_sa_len & cmd_a[2]), // input
+        .en                  (en),                  // input
+        .reset_pointers      (reset_pointers),      // input[3:0] 
+        .chunk_ptr_ra        (chunk_ptr_ra[2:0]),   // input[2:0] 
+        .chunk_ptr_rd        (chunk_ptr_rd01[1]),   // output[26:0] 
+        .eof_written         ({eof_written3,eof_written2,eof_written1,eof_written0}), // output[3:0] reg 
+        .afi_bvalid          (afi_bvalid),          // input
+        .afi_bready          (afi_bready),          // output
+        .afi_bid             (afi_bid)              // input[5:0] 
     );
 
 

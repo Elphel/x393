@@ -657,7 +657,7 @@ assign wready=                             x393_i.ps7_i.MAXIGP0WREADY;
 assign x393_i.ps7_i.MAXIGP0WID=     wid;
 assign x393_i.ps7_i.MAXIGP0WLAST=   wlast;
 assign x393_i.ps7_i.MAXIGP0WSTRB=   wstrb;
-// Write responce
+// Write response
 assign bvalid=                             x393_i.ps7_i.MAXIGP0BVALID;
 assign x393_i.ps7_i.MAXIGP0BREADY=  bready;
 assign bid=                                x393_i.ps7_i.MAXIGP0BID;
