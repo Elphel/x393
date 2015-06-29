@@ -21,7 +21,18 @@
 `timescale 1ns/1ps
 
 module  cmprs_afi_mux#(
-    parameter AFI_MUX_BUF_LATENCY = 2  // buffers read latency from fifo_ren* to fifo_rdata* valid : 2 if no register layers are used
+    parameter CMPRS_AFIMUX_ADDR=                'h140, //TODO: assign valid adderss
+    parameter CMPRS_AFIMUX_MASK=                'h3f0,
+    parameter CMPRS_AFIMUX_EN=                  'h0, // enables (gl;obal and per-channel)
+    parameter CMPRS_AFIMUX_RST=                 'h1, // per-channel resets
+    parameter CMPRS_AFIMUX_MODE=                'h2, // per-channel select - which register to return as status
+    parameter CMPRS_AFIMUX_STATUS_CNTRL=        'h4, // .. 'h7
+    parameter CMPRS_AFIMUX_SA_LEN=              'h8, // .. 'hf
+
+    parameter CMPRS_AFIMUX_STATUS_REG_ADDR=     'h20,  //Uses 4 locations TODO: assign valid adderss
+    parameter CMPRS_AFIMUX_WIDTH =              26, // maximal for status: currently only works with 26)
+    parameter CMPRS_AFIMUX_CYCBITS =            3,
+    parameter AFI_MUX_BUF_LATENCY =             2  // buffers read latency from fifo_ren* to fifo_rdata* valid : 2 if no register layers are used
 )(
     input                         rst,
     input                         mclk, // for command/status
@@ -100,12 +111,33 @@ module  cmprs_afi_mux#(
     output                        afi_wrissuecap1en
 );
     reg         en;      // enable mux
-    reg         en_d;
+    reg         en_d;    // or use it to reset all channels?
     reg   [3:0] en_chn;  // per-channel enable 
     
     wire [31:0] cmd_data;
     wire [ 3:0] cmd_a;
-    wire        cmd_we_sa_len;    
+    wire        cmd_we;
+    wire        cmd_we_status_w;    
+    wire        cmd_we_mode_w;    
+
+    wire        cmd_we_sa_len_w;
+    wire        cmd_we_en_w;    
+    wire        cmd_we_rst_w; 
+
+    reg [26:0] sa_len_d;
+    reg  [2:0] sa_len_wa;
+    reg  [3:0] rst_mclk;
+    reg  [9:0] en_mclk;
+
+    // hclk domain    
+//    reg [26:0] sa_len_d;
+//    reg  [2:0] sa_len_wa;
+    wire       sa_len_we;
+    wire       en_we;
+    wire       en_rst;
+    
+    
+       
     
 //    reg   [2:0] cur_chn;          // 'b0xx - none, 'b1** - ** - channel number (should match fifo_ren*)
     reg   [1:0] cur_chn;           // 'b0xx - none, 'b1** - ** - channel number (should match fifo_ren*)
@@ -138,7 +170,7 @@ module  cmprs_afi_mux#(
     reg   [3:0] wleft; // number of 64-bit words left to be sent - also used as awlen (valid @ awvalid)
     reg   [2:0] chunk_inc;              // how much to increment chunk pointer (1..4)
 
-    wire [ 3:0] reset_pointers;         // per-channel - after chunk_start_hclk or chunk_len_hclk were written or  explicit fifo_rst*
+    reg [ 3:0] reset_pointers;         // per-channel - after chunk_start_hclk or chunk_len_hclk were written or  explicit fifo_rst*
     
     wire        ptr_resetting;          // pointers are being reset in cmprs_afi_mux_ptr module
     
@@ -154,6 +186,16 @@ module  cmprs_afi_mux#(
     
     wire [26:0] chunk_ptr_rd;
     wire [ 3:0] chunk_ptr_ra;
+    
+    
+    
+
+    assign cmd_we_status_w = cmd_we && ((cmd_a & 'hc) ==       CMPRS_AFIMUX_STATUS_CNTRL);    
+    assign cmd_we_mode_w =   cmd_we && (cmd_a ==               CMPRS_AFIMUX_MODE);    
+
+    assign cmd_we_sa_len_w = cmd_we && ((cmd_a & 'h8) ==       CMPRS_AFIMUX_SA_LEN);
+    assign cmd_we_en_w =     cmd_we && (cmd_a ==               CMPRS_AFIMUX_EN);    
+    assign cmd_we_rst_w =    cmd_we && (cmd_a ==               CMPRS_AFIMUX_RST);    
     
     
     
@@ -186,6 +228,24 @@ module  cmprs_afi_mux#(
     assign afi_wstrb =         8'hff;
     assign afi_wrissuecap1en = 1'b0;
     
+    always @ (posedge mclk) begin
+        if (cmd_we_sa_len_w) begin
+            sa_len_d <= cmd_data[26:0];
+            sa_len_wa <= cmd_a[2:0];
+        end
+        if (cmd_we_en_w)  en_mclk <=  cmd_data[9:0];
+        if (cmd_we_rst_w) rst_mclk <= cmd_data[3:0];
+    end
+
+    always @ (posedge hclk) begin
+        reset_pointers <= (en && !en_d)? 4'hf : (en_rst ? rst_mclk : 4'h0);
+        if (en_we && en_mclk[1]) en_chn[0] <= en_mclk[0];
+        if (en_we && en_mclk[3]) en_chn[1] <= en_mclk[2];
+        if (en_we && en_mclk[5]) en_chn[2] <= en_mclk[4];
+        if (en_we && en_mclk[7]) en_chn[3] <= en_mclk[6];
+        if (en_we && en_mclk[9]) en <=        en_mclk[8];
+    end
+
     
     always @ (posedge hclk) begin
         en_d <= en;
@@ -319,13 +379,30 @@ module  cmprs_afi_mux#(
         .dout      ({wdata_en,wdata_sel}) // output[0:0] 
     );
     
+    cmd_deser #(
+        .ADDR       (CMPRS_AFIMUX_ADDR),
+        .ADDR_MASK  (CMPRS_AFIMUX_MASK),
+        .NUM_CYCLES (6),
+        .ADDR_WIDTH (4),
+        .DATA_WIDTH (32)
+    ) cmd_deser_32bit_i (
+        .rst        (rst),      // input
+        .clk        (mclk),     // input
+        .ad         (cmd_ad),   // input[7:0] 
+        .stb        (cmd_stb),  // input
+        .addr       (cmd_a),    // output[3:0] 
+        .data       (cmd_data), // output[31:0] 
+        .we         (cmd_we)    // output
+    );
+    
+    
     wire [26:0] chunk_ptr_rd01[0:1];
 
     cmprs_afi_mux_ptr cmprs_afi_mux_ptr_i (
         .hclk                (hclk),                // input
-        .sa_len_di           (cmd_data[26:0]),      // input[26:0] 
-        .sa_len_wa           (cmd_a[2:0]),          // input[2:0] 
-        .sa_len_we           (cmd_we_sa_len),       // input
+        .sa_len_di           (sa_len_d[26:0]),      // input[26:0] 
+        .sa_len_wa           (sa_len_wa[2:0]),      // input[2:0] 
+        .sa_len_we           (sa_len_we),           // input
         .en                  (en),                  // input
         .reset_pointers      (reset_pointers),      // input[3:0] 
         .pre_busy_w          (pre_busy_w),          // input
@@ -342,9 +419,9 @@ module  cmprs_afi_mux#(
     assign chunk_ptr_rd=chunk_ptr_ra[3]?chunk_ptr_rd01[1]:chunk_ptr_rd01[0];
     cmprs_afi_mux_ptr_wresp cmprs_afi_mux_ptr_wresp_i (
         .hclk                (hclk),                // input
-        .length_di           (cmd_data[26:0]),      // input[26:0] 
-        .length_wa           (cmd_a[1:0]),          // input[1:0] 
-        .length_we           (cmd_we_sa_len & cmd_a[2]), // input
+        .length_di           (sa_len_d[26:0]),      // input[26:0] 
+        .length_wa           (sa_len_wa[1:0]),      // input[1:0] 
+        .length_we           (sa_len_we & sa_len_wa[2]), // input
         .en                  (en),                  // input
         .reset_pointers      (reset_pointers),      // input[3:0] 
         .chunk_ptr_ra        (chunk_ptr_ra[2:0]),   // input[2:0] 
@@ -355,6 +432,28 @@ module  cmprs_afi_mux#(
         .afi_bid             (afi_bid)              // input[5:0] 
     );
 
+    /* Instance template for module cmprs_afi_mux_status */
+    cmprs_afi_mux_status #(
+        .CMPRS_AFIMUX_STATUS_REG_ADDR (CMPRS_AFIMUX_STATUS_REG_ADDR),
+        .CMPRS_AFIMUX_WIDTH(CMPRS_AFIMUX_WIDTH),
+        .CMPRS_AFIMUX_CYCBITS(CMPRS_AFIMUX_CYCBITS)
+    ) cmprs_afi_mux_status_i (
+        .rst          (rst), // input
+        .hclk         (hclk), // input
+        .mclk         (mclk), // input
+        .cmd_data     (cmd_data[15:0]), // input[15:0] 
+        .cmd_a        (cmd_a[1:0]), // input[1:0] 
+        .status_we    (cmd_we_status_w), // input
+        .mode_we      (cmd_we_mode_w), // input
+        .status_ad    (status_ad), // output[7:0] 
+        .status_rq    (status_rq), // output
+        .status_start (status_start), // input
+        .en           (en), // input
+        .chunk_ptr_ra (chunk_ptr_ra), // output[3:0] reg 
+        .chunk_ptr_rd (chunk_ptr_rd[CMPRS_AFIMUX_WIDTH-1:0]) // input[25:0] 
+    );
+    pulse_cross_clock sa_len_we_i (.rst(rst), .src_clk(mclk), .dst_clk(hclk), .in_pulse(cmd_we_sa_len_w), .out_pulse(sa_len_we),.busy());
+    pulse_cross_clock en_we_i     (.rst(rst), .src_clk(mclk), .dst_clk(hclk), .in_pulse(cmd_we_en_w),     .out_pulse(en_we),    .busy());
+    pulse_cross_clock en_rst_i    (.rst(rst), .src_clk(mclk), .dst_clk(hclk), .in_pulse(cmd_we_rst_w),    .out_pulse(en_rst),.busy());
 
 endmodule
-
