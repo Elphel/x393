@@ -158,10 +158,29 @@ module  x393 #(
    wire axird_dev_busy;
    
    //TODO: The following is the interface to the frame-based command sequencer (not yet implemnted)        
-    wire [AXI_WR_ADDR_BITS-1:0] cseq_waddr;   /// S uppressThisWarning VEditor ******  command sequencer write address (output to command multiplexer)
-    wire                        cseq_wr_en;   /// S uppressThisWarning VEditor ****** command sequencer write enable (output to command multiplexer) - keep until cseq_ackn received
-    wire                 [31:0] cseq_wdata;   /// S uppressThisWarning VEditor ****** command sequencer write data (output to command multiplexer) 
-    wire                        cseq_ackn;    /// SuppressThisWarning VEditor ****** ackn to command sequencer, command sequencer should de-assert cseq_wr_en
+    wire [AXI_WR_ADDR_BITS-1:0] cseq_waddr;   // command sequencer write address (output to command multiplexer)
+    wire                        cseq_wr_en;   // command sequencer write enable (output to command multiplexer) - keep until cseq_ackn received
+    wire                 [31:0] cseq_wdata;   // command sequencer write data (output to command multiplexer) 
+    wire                        cseq_ackn;    // ackn to command sequencer, command sequencer should de-assert cseq_wr_en
+    // per-sensor channel command sequencer signals
+    wire [AXI_WR_ADDR_BITS-1:0] cseq0_waddr;   // command sequencer write address (output to command multiplexer)
+    wire                        cseq0_wr_en;   // command sequencer write enable (output to command multiplexer) - keep until cseq_ackn received
+    wire                 [31:0] cseq0_wdata;   // command sequencer write data (output to command multiplexer) 
+    wire                        cseq0_ackn;    /// SuppressThisWarning VEditor ****** ackn to command sequencer, command sequencer should de-assert cseq_wr_en
+    wire [AXI_WR_ADDR_BITS-1:0] cseq1_waddr;   // command sequencer write address (output to command multiplexer)
+    wire                        cseq1_wr_en;   // command sequencer write enable (output to command multiplexer) - keep until cseq_ackn received
+    wire                 [31:0] cseq1_wdata;   // command sequencer write data (output to command multiplexer) 
+    wire                        cseq1_ackn;    /// SuppressThisWarning VEditor ****** ackn to command sequencer, command sequencer should de-assert cseq_wr_en
+    wire [AXI_WR_ADDR_BITS-1:0] cseq2_waddr;   // command sequencer write address (output to command multiplexer)
+    wire                        cseq2_wr_en;   // command sequencer write enable (output to command multiplexer) - keep until cseq_ackn received
+    wire                 [31:0] cseq2_wdata;   // command sequencer write data (output to command multiplexer) 
+    wire                        cseq2_ackn;    /// SuppressThisWarning VEditor ****** ackn to command sequencer, command sequencer should de-assert cseq_wr_en
+    wire [AXI_WR_ADDR_BITS-1:0] cseq3_waddr;   // command sequencer write address (output to command multiplexer)
+    wire                        cseq3_wr_en;   // command sequencer write enable (output to command multiplexer) - keep until cseq_ackn received
+    wire                 [31:0] cseq3_wdata;   // command sequencer write data (output to command multiplexer) 
+    wire                        cseq3_ackn;    /// SuppressThisWarning VEditor ****** ackn to command sequencer, command sequencer should de-assert cseq_wr_en
+    
+    
 // parallel address/data - where higher bandwidth (single-cycle) is needed        
     wire [AXI_WR_ADDR_BITS-1:0] par_waddr;    /// SuppressThisWarning VEditor ****** multiplexed address (full, parallel) to slave devices 
     wire                 [31:0] par_data;     /// SuppressThisWarning VEditor ****** multiplexed data (full, parallel) to slave devices 
@@ -290,10 +309,21 @@ module  x393 #(
 //   assign status_test01_start = status_other_start;
 
 // missing command sequencer:
-   assign cseq_waddr='bx;  // command sequencer write address (output to command multiplexer)
-   assign cseq_wr_en= 0;   // command sequencer write enable (output to command multiplexer) - keep until cseq_ackn received
-   assign cseq_wdata='bx;  // command sequencer write data (output to command multiplexer) 
+   assign cseq0_waddr='bx;  // command sequencer write address (output to command multiplexer)
+   assign cseq0_wr_en= 0;   // command sequencer write enable (output to command multiplexer) - keep until cseq_ackn received
+   assign cseq0_wdata='bx;  // command sequencer write data (output to command multiplexer) 
 
+   assign cseq1_waddr='bx;  // command sequencer write address (output to command multiplexer)
+   assign cseq1_wr_en= 0;   // command sequencer write enable (output to command multiplexer) - keep until cseq_ackn received
+   assign cseq1_wdata='bx;  // command sequencer write data (output to command multiplexer) 
+
+   assign cseq2_waddr='bx;  // command sequencer write address (output to command multiplexer)
+   assign cseq2_wr_en= 0;   // command sequencer write enable (output to command multiplexer) - keep until cseq_ackn received
+   assign cseq2_wdata='bx;  // command sequencer write data (output to command multiplexer) 
+
+   assign cseq3_waddr='bx;  // command sequencer write address (output to command multiplexer)
+   assign cseq3_wr_en= 0;   // command sequencer write enable (output to command multiplexer) - keep until cseq_ackn received
+   assign cseq3_wdata='bx;  // command sequencer write data (output to command multiplexer) 
 
 
 
@@ -427,7 +457,7 @@ BUFG bufg_axi_aclk_i  (.O(axi_aclk),.I(fclk[0]));
     );
 
 // Interface to channels to read/write memory (including 4 page BRAM buffers)
-
+// TODO:increase depth, number of NUM_CYCLES - twice?
     cmd_mux #(
         .AXI_WR_ADDR_BITS  (AXI_WR_ADDR_BITS),
         .CONTROL_ADDR      (CONTROL_ADDR),
@@ -472,6 +502,34 @@ BUFG bufg_axi_aclk_i  (.O(axi_aclk),.I(fclk[0]));
         .byte_ad      (cmd_root_ad), // output[7:0] 
         .ad_stb       (cmd_root_stb) // output
     );
+    
+    cmd_seq_mux #(
+        .AXI_WR_ADDR_BITS (AXI_WR_ADDR_BITS)
+    ) cmd_seq_mux_i (
+        .rst          (axi_rst),     // input
+        .mclk         (mclk),        // input
+        .waddr0       (cseq0_waddr), // input[13:0] 
+        .wr_en0       (cseq0_wr_en), // input
+        .wdata0       (cseq0_wdata), // input[31:0] 
+        .ackn0        (cseq0_ackn),  // output
+        .waddr1       (cseq1_waddr), // input[13:0] 
+        .wr_en1       (cseq1_wr_en), // input
+        .wdata1       (cseq1_wdata), // input[31:0] 
+        .ackn1        (cseq1_ackn),  // output
+        .waddr2       (cseq2_waddr), // input[13:0] 
+        .wr_en2       (cseq2_wr_en), // input
+        .wdata2       (cseq2_wdata), // input[31:0] 
+        .ackn2        (cseq2_ackn),  // output
+        .waddr3       (cseq3_waddr), // input[13:0] 
+        .wr_en3       (cseq3_wr_en), // input
+        .wdata3       (cseq3_wdata), // input[31:0] 
+        .ackn3        (cseq3_ackn),  // output
+        .waddr_out    (cseq_waddr),  // output[13:0] reg 
+        .wr_en_out    (cseq_wr_en),  // output
+        .wdata_out    (cseq_wdata),  // output[31:0] reg 
+        .ackn_out     (cseq_ackn)    // input
+    );
+    
     
     // Mirror control register data for readback (registers can be written both from the PS and from the command sequencer)
     cmd_readback #(
