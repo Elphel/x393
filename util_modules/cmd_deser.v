@@ -22,14 +22,15 @@
 
 module  cmd_deser#(
     parameter ADDR=0,
-    parameter ADDR_MASK='hffff,
-    parameter NUM_CYCLES=6,
-    parameter ADDR_WIDTH=16,
-    parameter DATA_WIDTH=32,
-    parameter ADDR1=0,        // optional second address
-    parameter ADDR_MASK1=0,   // optional second mask
-    parameter ADDR2=0,        // optional third address 
-    parameter ADDR_MASK2=0    // optional third mask
+    parameter ADDR_MASK =  'hffff,
+    parameter NUM_CYCLES =  6,
+    parameter ADDR_WIDTH =  16,
+    parameter DATA_WIDTH =  32,
+    parameter ADDR1 =       0,   // optional second address
+    parameter ADDR_MASK1 =  0,   // optional second mask
+    parameter ADDR2 =       0,   // optional third address 
+    parameter ADDR_MASK2 =  0,   // optional third mask
+    parameter WE_EARLY =    0    // if 1 - we and addr will be valid 1 cycle before data
 )(
     input                                               rst,
     input                                               clk,
@@ -51,7 +52,8 @@ module  cmd_deser#(
                 .ADDR_MASK1 (ADDR_MASK1),
                 .ADDR2      (ADDR2),
                 .ADDR_MASK2 (ADDR_MASK2),
-                .WE_WIDTH   (WE_WIDTH)
+                .WE_WIDTH   (WE_WIDTH),
+                .WE_EARLY   (WE_EARLY)
             ) i_cmd_deser_single (
                 .rst(rst),
                 .clk(clk),
@@ -71,7 +73,8 @@ module  cmd_deser#(
                 .ADDR_MASK1 (ADDR_MASK1),
                 .ADDR2      (ADDR2),
                 .ADDR_MASK2 (ADDR_MASK2),
-                .WE_WIDTH   (WE_WIDTH)
+                .WE_WIDTH   (WE_WIDTH),
+                .WE_EARLY   (WE_EARLY)
             ) i_cmd_deser_dual (
                 .rst(rst),
                 .clk(clk),
@@ -92,7 +95,8 @@ module  cmd_deser#(
                 .ADDR_MASK1 (ADDR_MASK1),
                 .ADDR2      (ADDR2),
                 .ADDR_MASK2 (ADDR_MASK2),
-                .WE_WIDTH   (WE_WIDTH)
+                .WE_WIDTH   (WE_WIDTH),
+                .WE_EARLY   (WE_EARLY)
             ) i_cmd_deser_multi (
                 .rst(rst),
                 .clk(clk),
@@ -116,7 +120,9 @@ module  cmd_deser_single#(
     parameter ADDR_MASK1=0,
     parameter ADDR2=0,
     parameter ADDR_MASK2=0,
-    parameter WE_WIDTH=1
+    parameter WE_WIDTH=1,
+    parameter WE_EARLY =    0 //
+    
 )(
     input                   rst,
     input                   clk,
@@ -134,21 +140,22 @@ module  cmd_deser_single#(
     localparam  ADDR_MASK_LOW2= ADDR_MASK2 & 8'hff;
     reg                 [7:0] deser_r;
     wire                [2:0] match_low;
-    reg [WE_WIDTH-1:0]         we_r;
+    reg         [2:0]         we_r;
     
-    assign we=we_r;
+    assign we = (WE_EARLY > 0)?(match_low[WE_WIDTH-1:0] & {WE_WIDTH{stb}}):we_r[WE_WIDTH-1:0];
     assign match_low= { // unused bits will be optimized
      ((ad ^ ADDR_LOW2)  & (8'hff & ADDR_MASK_LOW2)) == 0,
      ((ad ^ ADDR_LOW1)  & (8'hff & ADDR_MASK_LOW1)) == 0,
      ((ad ^ ADDR_LOW )  & (8'hff & ADDR_MASK_LOW )) == 0};
     always @ (posedge rst or posedge clk) begin
         if (rst) we_r <= 0; 
-        else we_r <= match_low && stb;
+        else we_r <= match_low & {3{stb}};
         if (rst) deser_r <= 0; 
         else if ((|match_low) && stb) deser_r <= ad;
     end
     assign data={DATA_WIDTH{1'b0}};
-    assign addr=deser_r[ADDR_WIDTH-1:0];
+//    assign addr=deser_r[ADDR_WIDTH-1:0];
+    assign addr=(WE_EARLY>0) ? ad[ADDR_WIDTH-1:0]: deser_r[ADDR_WIDTH-1:0];
 endmodule
 
 module  cmd_deser_dual#(
@@ -160,7 +167,8 @@ module  cmd_deser_dual#(
     parameter ADDR_MASK1=0,
     parameter ADDR2=0,
     parameter ADDR_MASK2=0,
-    parameter WE_WIDTH=1
+    parameter WE_WIDTH=1,
+    parameter WE_EARLY =    0    // if 1 - we and addr will be valid 1 cycle before data
 )(
     input                   rst,
     input                   clk,
@@ -187,12 +195,18 @@ module  cmd_deser_dual#(
 
 
     reg                [15:0] deser_r;
-    reg                       stb_d;
+//    reg                       stb_d;
+    reg                 [2:0] stb_d;
     wire                [2:0] match_low;
     wire                [2:0] match_high;
-    reg        [WE_WIDTH-1:0] we_r;
+
+    wire                [2:0] we3;
+    reg                 [2:0] we_r;
     
-    assign we=we_r;
+//    assign we=we_r;
+    assign we3 = (WE_EARLY > 0) ? (match_high & stb_d):we_r; // 3 bits wide - for each possible output
+    assign we = we3[WE_WIDTH-1:0]; // truncate
+    
     assign match_low=  {((ad ^ ADDR_LOW2)  & (8'hff & ADDR_MASK_LOW2)) == 0,
                         ((ad ^ ADDR_LOW1)  & (8'hff & ADDR_MASK_LOW1)) == 0,
                         ((ad ^ ADDR_LOW )  & (8'hff & ADDR_MASK_LOW )) == 0};
@@ -201,15 +215,19 @@ module  cmd_deser_dual#(
                         ((ad ^ ADDR_HIGH ) & (8'hff & ADDR_MASK_HIGH )) == 0};
     
     always @ (posedge rst or posedge clk) begin
-        if (rst) stb_d <= 1'b0;
-        else stb_d <= match_low && stb;
-        if (rst) we_r <= 1'b0;
-        else we_r  <= match_high && stb_d;
+        if (rst) stb_d <= 3'b0;
+//        else stb_d <= match_low && stb;
+        else stb_d <= stb?match_low:3'b0;
+
+        if (rst) we_r <= 3'b0;
+        else we_r  <= match_high & stb_d;
+        
         if      (rst)                                         deser_r[15:0]  <= 0;
         else if ((match_low && stb) || (match_high && stb_d)) deser_r[15:0] <= {ad,deser_r[15:8]};
     end
     assign data=0; // {DATA_WIDTH{1'b0}};
-    assign addr=deser_r[ADDR_WIDTH-1:0];
+//    assign addr=deser_r[ADDR_WIDTH-1:0];
+    assign addr=deser_r[8*WE_EARLY +: ADDR_WIDTH];
 endmodule
 
 module  cmd_deser_multi#(
@@ -222,7 +240,8 @@ module  cmd_deser_multi#(
     parameter ADDR_MASK1=0,
     parameter ADDR2=0,
     parameter ADDR_MASK2=0,
-    parameter WE_WIDTH=1
+    parameter WE_WIDTH=1,
+    parameter WE_EARLY =    0    // if 1 - we and addr will be valid 1 cycle before data
 )(
     input                   rst,
     input                   clk,
@@ -255,7 +274,12 @@ module  cmd_deser_multi#(
     reg      [NUM_CYCLES-2:0] sr;
     reg      [NUM_CYCLES-2:0] sr1;
     reg      [NUM_CYCLES-2:0] sr2;
-    assign we=sr[0]; // we_r;
+    wire                [2:0] we3;
+
+    assign we3={sr2[WE_EARLY],sr1[WE_EARLY],sr[WE_EARLY]};
+//    assign we=sr[WE_WIDTH-1:0]; // we_r;
+    assign we=we3[WE_WIDTH-1:0]; // truncate to required number of bits
+    
     assign match_low=  {((ad ^ ADDR_LOW2)  & (8'hff & ADDR_MASK_LOW2)) == 0,
                         ((ad ^ ADDR_LOW1)  & (8'hff & ADDR_MASK_LOW1)) == 0,
                         ((ad ^ ADDR_LOW )  & (8'hff & ADDR_MASK_LOW )) == 0};
@@ -265,17 +289,18 @@ module  cmd_deser_multi#(
     always @ (posedge rst or posedge clk) begin
         if (rst) stb_d <= 0;
         else stb_d <= stb?match_low:3'b0;
-        if      (rst)                    sr <= 0;
-        else if (match_high[0] && stb_d) sr <= 1 << (NUM_CYCLES-2);
-        else                             sr <= {1'b0,sr[NUM_CYCLES-2:1]};
 
-        if      (rst)                    sr1<= 0;
-        else if (match_high[1] && stb_d) sr1 <= 1 << (NUM_CYCLES-2);
-        else                             sr1 <= {1'b0,sr1[NUM_CYCLES-2:1]};
+        if      (rst)                       sr <= 0;
+        else if (match_high[0] && stb_d[0]) sr <= 1 << (NUM_CYCLES-2);
+        else                                sr <= {1'b0,sr[NUM_CYCLES-2:1]};
 
-        if      (rst)                    sr2 <= 0;
-        else if (match_high[2] && stb_d) sr2 <= 1 << (NUM_CYCLES-2);
-        else                             sr2 <= {1'b0,sr2[NUM_CYCLES-2:1]};
+        if      (rst)                       sr1<= 0;
+        else if (match_high[1] && stb_d[1]) sr1 <= 1 << (NUM_CYCLES-2);
+        else                                sr1 <= {1'b0,sr1[NUM_CYCLES-2:1]};
+
+        if      (rst)                       sr2 <= 0;
+        else if (match_high[2] && stb_d[2]) sr2 <= 1 << (NUM_CYCLES-2);
+        else                                sr2 <= {1'b0,sr2[NUM_CYCLES-2:1]};
         
         if      (rst)                       deser_r[8*NUM_CYCLES-1:0] <= 0;
         else if ((match_low &&  (|stb)) ||
@@ -284,5 +309,6 @@ module  cmd_deser_multi#(
 
     end
     assign data=deser_r[DATA_WIDTH+15:16];
-    assign addr=deser_r[ADDR_WIDTH-1:0];
+//    assign addr=deser_r[ADDR_WIDTH-1:0];
+    assign addr=deser_r[8*WE_EARLY +: ADDR_WIDTH];
 endmodule
