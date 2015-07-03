@@ -19,6 +19,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/> .
  *******************************************************************************/
 `timescale 1ns/1ps
+// Comments from the x353 code:
 // This command sequencer is designed (together with i2c sequencer) to provide
 // pipelined operation of the sensor, FPGA pre-processor and compressor, to avoid
 // requirement of resetting the circuitry and loosing several frames when the sensor

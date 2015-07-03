@@ -42,19 +42,24 @@
 // Or make FIFO outside of the stuffer?
 
 module stuffer393 (
+    input              rst,         // global reset
+    input              mclk,
+// time stamping - will copy time at the end of color_first (later than the first hact after vact in the current frame, but before the next one
+// and before the data is needed for output 
+    input              ts_pre_stb,  // @mclk - 1 cycle before receiving 8 bytes of timestamp data
+    input        [7:0] ts_data,     // timestamp data (s0,s1,s2,s3,us0,us1,us2,us3==0)
+    input              color_first, // @fradv_clk only used for timestamp
+    input              fradv_clk,   // clock to synchronize color_first (leading edge to advance timestamp data for the output)
+    
     input              clk,         // 2x pixel clock
     input              en_in,       // enable, 0- reset (other clock domain, needs re-sync)
-///    input              reset_data_counters, // reset data transfer counters (only when DMA and compressor are disabled)
     input              flush,       // flush output data (fill byte with 0, long word with 0
     input              abort,       // @ any, extracts 0->1 and flushes
     input              stb,         // input data strobe
     input        [3:0] dl,          // [3:0] number of bits to send (0 - 16) ??
     input       [15:0] d,           // [15:0] input data to shift (only lower bits are valid)
-// time stamping - will copy time at the end of color_first (later than the first hact after vact in the current froma, but before the next one
-// and before the data is needed for output 
-    input              color_first, // (different clock) only used for timestamp
-    input       [31:0] sec,         // [31:0] number of seconds
-    input       [19:0] usec,        // [19:0] number of microseconds
+//    input       [31:0] sec,         // [31:0] number of seconds
+//    input       [19:0] usec,        // [19:0] number of microseconds
     output             rdy,         // enable huffman encoder to proceed. Used as CE for many huffman encoder registers
     // outputs @ negedge clk
     output reg  [15:0] q,           // [15:0] output data
@@ -124,7 +129,7 @@ module stuffer393 (
     wire    [3:0] sum_lengths;
     reg     [1:0] st2m_r;
     
-    reg     [2:0] stb_time;
+//    reg     [2:0] stb_time;
     reg    [31:0] sec_r;
     reg    [19:0] usec_r;
     reg           time_out;
@@ -135,6 +140,53 @@ module stuffer393 (
     reg    [19:0] imgsz32; // current image size in multiples of 32-bytes
     reg           inc_imgsz32;
     // re-clock enable to this clock
+    
+    wire          ts_rstb; // one cycle before getting timestamp data from FIFO
+    wire    [7:0] ts_dout; // timestamp data, byte at a time
+    reg     [7:0] ts_cycles; // 1-hot we for the portions of the 'old" timestamp registers
+    
+    reg           color_first_r; // registered with the same clock as color_first to extract leading edge
+    wire          stb_start; // re-clocked  color_first
+    
+    
+    assign ts_rstb = trailer && !was_trailer;  // enough time to have timestamp data
+    always @ (negedge clk) begin
+        ts_cycles <= {ts_cycles[6:0],ts_rstb};
+        if      (ts_cycles[0])  sec_r[ 7: 0] <= ts_dout;
+        else if (time_size_out) sec_r[ 7: 0] <= sec_r[23:16];
+        else if (start_sizeout) sec_r[ 7: 0] <= size_count[ 7:0];
+        
+        if      (ts_cycles[1])  sec_r[15: 8] <= ts_dout;
+        else if (time_size_out) sec_r[15: 8] <= sec_r[31:24];
+        else if (start_sizeout) sec_r[15: 8] <= size_count[15:8];
+        
+        if      (ts_cycles[2])  sec_r[23:16] <= ts_dout;
+        else if (time_size_out) sec_r[23:16] <= usec_r[ 7: 0];
+        else if (start_sizeout) sec_r[23:16] <= size_count[23:16];
+
+        if      (ts_cycles[3])  sec_r[31:24] <= ts_dout;
+        else if (time_size_out) sec_r[31:24] <= usec_r[15: 8];
+        else if (start_sizeout) sec_r[31:24] <= 8'hff;
+        
+        if      (ts_cycles[4]) usec_r[ 7: 0] <= ts_dout;
+        else if (time_out)     usec_r[ 7: 0] <= {4'h0, usec_r[19:16]};
+        
+        if      (ts_cycles[5]) usec_r[15: 8] <= ts_dout;
+        else if (time_out)     usec_r[15: 8] <= 8'h0;
+
+        if      (ts_cycles[6]) usec_r[19:16] <= ts_dout[3:0];
+        else if (time_out)     usec_r[19:16] <= 4'h0;
+        
+/*    
+        stb_time[2:0] <= {stb_time[1] & ~stb_time[0], stb_time[0],color_first};
+        if        (stb_time[2]) sec_r[31:0] <= sec[31:0];
+        else if (start_sizeout) sec_r[31:0] <= {8'hff, size_count[23:0]};
+        else if (time_size_out) sec_r[31:0] <= {usec_r[15:0],sec_r[31:16]};
+        if   (stb_time[2]) usec_r[19:0] <= usec[19:0];
+        else if (time_out) usec_r[19:0] <= {16'h0,usec_r[19:16]};
+*/        
+    end
+    
     always @ (negedge clk) begin
         en <= en_in;
         // re-clock abort, extract leading edge
@@ -144,7 +196,8 @@ module stuffer393 (
         else if (flush_end) force_flush <= 0;
         
         if      (!en)         running <= 0;
-        else if (stb_time[2]) running <= 1;
+//        else if (stb_time[2]) running <= 1;
+        else if (stb_start)   running <= 1;
         else if (flush_end)   running <= 0;
         
     end
@@ -300,16 +353,7 @@ end
 `endif
 
     always @ (negedge clk) begin
-        stb_time[2:0] <= {stb_time[1] & ~stb_time[0], stb_time[0],color_first};
-      
-        if        (stb_time[2]) sec_r[31:0] <= sec[31:0];
-        else if (start_sizeout) sec_r[31:0] <= {8'hff, size_count[23:0]};
-        else if (time_size_out) sec_r[31:0] <= {usec_r[15:0],sec_r[31:16]};
-        if   (stb_time[2]) usec_r[19:0] <= usec[19:0];
-        else if (time_out) usec_r[19:0] <= {16'h0,usec_r[19:16]};
-  
  //reset_data_counters; // reset data transfer counters (only when DMA and compressor are disabled)
- 
 //        if (reset_data_counters ) etrax_dma[3:0] <= 0; // not needed to be reset after frame, and that was wrong (to early)
         if (!en ) etrax_dma[3:0] <= 0; // Now en here waits for flashing to end, so it should not be too early
         else if (qv) etrax_dma[3:0] <= etrax_dma[3:0] + 1;
@@ -365,5 +409,22 @@ end
 // SRL16_1 i_pre_flush_end_delayed (.D(size_out[1]),.Q(pre_flush_end_delayed), .A0(1'b0), .A1(1'b1), .A2(1'b1), .A3(1'b1), .CLK(clk)); // dly=3+1    // rather arbitrary?
     dly_16 #(.WIDTH(1)) i_pre_flush_end_delayed(.clk(~clk),.rst(1'b0), .dly(14), .din(size_out[1]), .dout(pre_flush_end_delayed));    // dly=14+1 // rather arbitrary?
     assign done = flush_end_delayed;
+
+    // extract strart of frame run from different clock, re-clock from the source
+    always @ (posedge fradv_clk) color_first_r <= color_first;
+    pulse_cross_clock stb_start_i    (.rst(rst), .src_clk(fradv_clk), .dst_clk(~clk), .in_pulse(!color_first && color_first_r), .out_pulse(stb_start),.busy());
+    
+    timestamp_fifo timestamp_fifo_i (
+        .rst      (rst),         // input
+        .sclk     (mclk),        // input
+        .pre_stb  (ts_pre_stb),  // input
+        .din      (ts_data),     // input[7:0] 
+         // may use stb_start @ negedge clk
+        .aclk     (~clk),        //fradv_clk),   // input
+        .advance  (stb_start),   // color_first), // input
+        .rclk     (~clk),        // input
+        .rstb     (ts_rstb),     // input
+        .dout     (ts_dout)      // output[7:0] reg 
+    );
 
 endmodule

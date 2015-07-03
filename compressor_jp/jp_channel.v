@@ -103,16 +103,12 @@ module  jp_channel#(
     output                        status_rq,   // input request to send status downstream
     input                         status_start, // Acknowledge of the first status packet byte (address)
     
-    // TODO: Maybe move buffer to memory controller ?
+    // Buffer interface (buffer to be a part of the memory controller - it is connected there by a 64-bit data, here - by an 9-bit one
     input                         xfer_reset_page_rd, // from mcntrl_tiled_rw (
-///    input                         buf_wpage_nxt,     // input
-///    input                         buf_wr,            // input
-///    input                  [63:0] buf_wdata, // input[63:0] 
     output                 [11:0] buf_ra,
     output                        buf_ren,
     output                        buf_regen,
     input                  [ 7:0] buf_di, 
-    
     
     input                         page_ready_chn,     // single mclk (posedge)
     output                        next_page_chn,      // single mclk (posedge): Done with the page in the  buffer, memory controller may read more data 
@@ -121,9 +117,11 @@ module  jp_channel#(
     input                   [2:0] hfc_sel,        // [2:0] (for autofocus) only components with both spacial frequencies higher than specified will be added
     output                        statistics_dv,
     output                 [15:0] statistics_do,
-// timestamp input    
-    input                  [31:0] sec,
-    input                  [19:0] usec,
+
+// Timestamp messages (@mclk)    
+    input                         ts_pre_stb,  // @mclk - 1 cycle before receiving 8 bytes of timestamp data
+    input                   [7:0] ts_data,     // timestamp data (s0,s1,s2,s3,us0,us1,us2,us3==0)
+    
 ///    output [23:0] imgptr, - removed - use AFI channel MUX
     output                        eof_written_mclk,
     output                        stuffer_done_mclk,
@@ -156,9 +154,6 @@ module  jp_channel#(
     input                         eof_written,   // confirm frame written ofer AFI to the system memory (single rclk pulse)
     output                        fifo_flush,    // EOF, need to output all what is in FIFO (Stays active until enough data chunks are read)
     output                 [7:0]  fifo_count     // number of 32-byte chunks in FIFO
-    
-    
-
 );
     // Control signals to be defined
     wire                             frame_en;           // if 0 - will reset logic immediately (but not page number)
@@ -839,31 +834,26 @@ module  jp_channel#(
     wire          stuffer_dv;
     wire          stuffer_done;
     wire          eof_written_xclk2xn;
-    
-//    reg           stuffer_done_persist;
-//    wire          stuffer_flushing;
 
     stuffer393 stuffer393_i (
+        .rst                 (rst),                    // input
+        .mclk                (mclk),                   // input
+        .ts_pre_stb          (ts_pre_stb),             // input      1 cycle before timestamp data, @mclk
+        .ts_data             (ts_data),                // input[7:0] 8-byte timestamp data (s0,s1,s2,s3,us0,us1,us2,us3==0)
+        .color_first         (color_first),            // input valid @xclk - only for sec/usec
+        .fradv_clk           (xclk),                   // input
         .clk                 (xclk2x),                 // input clock - uses negedge inside
         .en_in               (stuffer_en),             // 
- ///       .reset_data_counters (reset_data_counters[1]), // input reset data transfer counters (only when DMA and compressor are disabled)
         .flush               (flush),                  // input - flush output data (fill byte with 0, long word with FFs)
         .abort               (force_flush_long),       // @ any, extracts 0->1 and flushes
         .stb                 (huff_dv),                // input
         .dl                  (huff_dl),                // input[3:0] number of bits to send (0 - 16) (0-16??)
         .d                   (huff_do),                // input[15:0] data to shift (only lower huff_dl bits are valid)
-// time stamping - will copy time at the end of color_first (later than the first hact after vact in the current froma, but before the next one
-// and before the data is needed for output 
-        .color_first         (color_first),            // input valid @xclk - only for sec/usec
-        .sec                 (sec[31:0]),              // input[31:0] registers to right clock/time inside
-        .usec                (usec[19:0]),             // input[19:0]
         // outputs valid @negedge xclk2x 
         .rdy                 (stuffer_rdy),            // output - enable huffman encoder to proceed. Used as CE for many huffman encoder registers
         .q                   (stuffer_do),             // output[15:0] reg - output data
         .qv                  (stuffer_dv),             // output reg - output data valid
         .done                (stuffer_done),           // output 
-///        .imgptr              (imgptr[23:0]),           // output[23:0] reg - image pointer in 32-byte chunks
-//        .flushing            (stuffer_flushing),       // output reg 
         .flushing            (),                       // output reg Not used?
         .running             (stuffer_running)         // from registering timestamp until done
         
