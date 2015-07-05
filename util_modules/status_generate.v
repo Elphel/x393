@@ -29,7 +29,7 @@ module  status_generate #(
     parameter STATUS_REG_ADDR=   7, // status register address to direct data to
     parameter PAYLOAD_BITS =     15, //6   // >=2! (2..26)
     parameter REGISTER_STATUS =  1,  // 1 - register input status data (for different clock domains),  0 - do not register (same domain)
-    parameter EXTRA_WORDS=       1, // should always be >0
+    parameter EXTRA_WORDS=       0, // should always be >0
     // if EXTRA_WORDS >0 the mesasges with these extra data will be generated and sent before the status message itself
     // if PAYLOAD_BITS == 0, then one status bit will still have to be provided (status input will have width of 1+32*EXTRA_WORDS),
     // but the status message will not be sent - only the data words
