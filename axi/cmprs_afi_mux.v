@@ -21,7 +21,7 @@
 `timescale 1ns/1ps
 
 module  cmprs_afi_mux#(
-    parameter CMPRS_AFIMUX_ADDR=                'h140, //TODO: assign valid adderss
+    parameter CMPRS_AFIMUX_ADDR=                'h140, //TODO: assign valid address
     parameter CMPRS_AFIMUX_MASK=                'h3f0,
     parameter CMPRS_AFIMUX_EN=                  'h0, // enables (gl;obal and per-channel)
     parameter CMPRS_AFIMUX_RST=                 'h1, // per-channel resets
@@ -29,7 +29,7 @@ module  cmprs_afi_mux#(
     parameter CMPRS_AFIMUX_STATUS_CNTRL=        'h4, // .. 'h7
     parameter CMPRS_AFIMUX_SA_LEN=              'h8, // .. 'hf
 
-    parameter CMPRS_AFIMUX_STATUS_REG_ADDR=     'h20,  //Uses 4 locations TODO: assign valid adderss
+    parameter CMPRS_AFIMUX_STATUS_REG_ADDR=     'h20,  //Uses 4 locations TODO: assign valid address
     parameter CMPRS_AFIMUX_WIDTH =              26, // maximal for status: currently only works with 26)
     parameter CMPRS_AFIMUX_CYCBITS =            3,
     parameter AFI_MUX_BUF_LATENCY =             2  // buffers read latency from fifo_ren* to fifo_rdata* valid : 2 if no register layers are used
@@ -45,7 +45,7 @@ module  cmprs_afi_mux#(
     input                         status_start, // Acknowledge of the first status packet byte (address)
     
     // compressor channel 0
-    output                        fifo_rst0,      // reset FIFO (set read adderss to write, reset count)
+    output                        fifo_rst0,      // reset FIFO (set read address to write, reset count)
     output                        fifo_ren0,
     input                  [63:0] fifo_rdata0,
 //    input                         fifo_eof0,        // single rclk pulse signalling EOF
@@ -54,7 +54,7 @@ module  cmprs_afi_mux#(
     input                  [7:0]  fifo_count0,     // number of 32-byte chunks in FIFO
 
     // compressor channel 1
-    output                        fifo_rst1,      // reset FIFO (set read adderss to write, reset count)
+    output                        fifo_rst1,      // reset FIFO (set read address to write, reset count)
     output                        fifo_ren1,
     input                  [63:0] fifo_rdata1,
 //    input                         fifo_eof1,        // single rclk pulse signalling EOF
@@ -63,7 +63,7 @@ module  cmprs_afi_mux#(
     input                  [7:0]  fifo_count1,     // number of 32-byte chunks in FIFO
 
     // compressor channel 2
-    output                        fifo_rst2,      // reset FIFO (set read adderss to write, reset count)
+    output                        fifo_rst2,      // reset FIFO (set read address to write, reset count)
     output                        fifo_ren2,
     input                  [63:0] fifo_rdata2,
 //    input                         fifo_eof2,        // single rclk pulse signalling EOF
@@ -72,7 +72,7 @@ module  cmprs_afi_mux#(
     input                  [7:0]  fifo_count2,     // number of 32-byte chunks in FIFO
 
     // compressor channel 3
-    output                        fifo_rst3,      // reset FIFO (set read adderss to write, reset count)
+    output                        fifo_rst3,      // reset FIFO (set read address to write, reset count)
     output                        fifo_ren3,
     input                  [63:0] fifo_rdata3,
 //    input                         fifo_eof3,        // single rclk pulse signalling EOF

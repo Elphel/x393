@@ -53,7 +53,7 @@
     endfunction
 
     function [31:0] func_encode_cmd;
-        input               [14:0] addr;       // 15-bit row/column adderss
+        input               [14:0] addr;       // 15-bit row/column address
         input                [2:0] bank;       // bank (here OK to be any)
         input                [2:0] rcw;        // RAS/CAS/WE, positive logic
         input                      odt_en;     // enable ODT
@@ -69,7 +69,7 @@
         input                      buf_rst;    // connect to external buffer (but only if not paused)
         begin
             func_encode_cmd={
-            addr[14:0], // 15-bit row/column adderss
+            addr[14:0], // 15-bit row/column address
             bank [2:0], // bank
             rcw[2:0],   // RAS/CAS/WE
             odt_en,     // enable ODT

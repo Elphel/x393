@@ -21,7 +21,7 @@
 `timescale 1ns/1ps
 
 module  jp_channel#(
-        parameter CMPRS_ADDR=                'h120, //TODO: assign valid adderss
+        parameter CMPRS_ADDR=                'h120, //TODO: assign valid address
         parameter CMPRS_MASK=                'h3f8,
         parameter CMPRS_CONTROL_REG=          0,
         parameter CMPRS_STATUS_CNTRL=         1,
@@ -29,7 +29,7 @@ module  jp_channel#(
         parameter CMPRS_COLOR_SATURATION=     3,
         parameter CMPRS_CORING_MODE=          4,
         parameter CMPRS_TABLES=               6, // 6..7
-        parameter CMPRS_STATUS_REG_ADDR=     'h10,  //TODO: assign valid adderss
+        parameter CMPRS_STATUS_REG_ADDR=     'h10,  //TODO: assign valid address
 
         parameter FRAME_HEIGHT_BITS=          16, // Maximal frame height 
         parameter LAST_FRAME_BITS=            16, // number of bits in frame counter (before rolls over)
@@ -147,7 +147,7 @@ module  jp_channel#(
     
     // Output interface to the AFI mux
     input                         hclk,
-    input                         fifo_rst,      // reset FIFO (set read adderss to write, reset count)
+    input                         fifo_rst,      // reset FIFO (set read address to write, reset count)
     input                         fifo_ren,
     output                 [63:0] fifo_rdata,
     output                        fifo_eof,        // single rclk pulse signalling EOF
@@ -876,7 +876,7 @@ module  jp_channel#(
         .eof_written_wclk    (eof_written_xclk2xn),    // output - AFI had transferred frame data to the system memory
         .rclk                (hclk),           // input - AFI clock
         // AFI clock domain
-        .rst_fifo            (fifo_rst),       // input - reset FIFO (set read adderss to write, reset count)
+        .rst_fifo            (fifo_rst),       // input - reset FIFO (set read address to write, reset count)
         .ren                 (fifo_ren),       // input - fifo read from AFI channel mux
         .rdata               (fifo_rdata),     // output[63:0] - data to AFI channel mux (latency == 2 from fifo_ren)
         .eof                 (fifo_eof),       // output single hclk pulse signalling EOF

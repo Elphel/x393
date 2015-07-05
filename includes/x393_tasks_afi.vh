@@ -22,7 +22,7 @@
  task membridge_setup;
     input [28:0] len64;    // number of 64-bit words to transfer
     input [28:0] width64;  // frame width in 64-bit words
-    input [28:0] start64;  // relative start adderss of the transfer (set to 0 when writing lo_addr64)
+    input [28:0] start64;  // relative start address of the transfer (set to 0 when writing lo_addr64)
     input [28:0] lo_addr64; // low address of the system memory range, in 64-bit words 
     input [28:0] size64;    // size of the system memory range in 64-bit words
      

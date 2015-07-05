@@ -99,7 +99,7 @@ module  cmprs_afi_mux_ptr(
                   (busy[2] && !busy[3] && last_burst_in_frame); // optionally update frame chunk pointer (same value)
 
         if (busy[0] && !busy[1]) begin // first clock of busy
-            // calculate full adderss for current AXI burst (valid 1 clk after busy)
+            // calculate full address for current AXI burst (valid 1 clk after busy)
             chunk_addr <= ptr_ram[ptr_wa] + sa_len_ram[sa_len_ra];
             chunk_ptr_inc <= ptr_ram[ptr_wa] + chunk_inc;
         end                  

@@ -29,7 +29,7 @@
  // TODO: see what depends on pclk and if can be made independent of the sensor clock.
 
 module camsync393       #(
-    parameter CAMSYNC_ADDR =                    'h160, //TODO: assign valid adderss
+    parameter CAMSYNC_ADDR =                    'h160, //TODO: assign valid address
     parameter CAMSYNC_MASK =                    'h3f8,
     parameter CAMSYNC_MODE =                    'h0,
     parameter CAMSYNC_TRIG_SRC =                'h4, // setup trigger source
@@ -39,6 +39,7 @@ module camsync393       #(
     
     parameter CAMSYNC_SNDEN_BIT =               'h1, // enable writing ts_snd_en
     parameter CAMSYNC_EXTERNAL_BIT =            'h3, // enable writing ts_external
+    parameter CAMSYNC_TRIGGERED_BIT =           'h5, // enable writing ts_external
     
     parameter CAMSYNC_PRE_MAGIC =               6'b110100,
     parameter CAMSYNC_POST_MAGIC =              6'b001101
@@ -51,6 +52,7 @@ module camsync393       #(
                            // 0 - mode: [1:0] +2 - reset ts_snd_en, +3 - set ts_snd_en - enable sending timestamp over sync line
                            //           [3:2] +8 - reset ts_external, +'hc - set ts_external:
                            //                  1 - use external timestamp, if available. 0 - always use local ts
+                           //           [5:4] +'h20 - reset triggered mode (free running sensor), +'h30 - set sensor triggered mode
                            // 4 - source of trigger (10 bit pairs, LSB - level to trigger, MSB - use this bit). All 0 - internal trigger
                            //     in internal mode output has variable delay from the internal trigger (relative to sensor trigger)
                            
@@ -64,7 +66,8 @@ module camsync393       #(
                            //     256>=d - repetitive trigger
     input                         pclk,    // pixel clock (global)
     
-    input                         triggered_mode, // use triggered mode (0 - sensor is free-running)
+    output                        triggered_mode, // use triggered mode (0 - sensor is free-running) @mclk
+                                  // trigrst is already combined with cb_sensor_trigger  
     input                         trigrst,   // single-clock start of frame input (resets trigger output) posedge
     input                  [9:0]  gpio_in, // 12-bit input from GPIO pins -> 10 bit
     output                 [9:0]  gpio_out,// 12-bit output to GPIO pins
@@ -105,7 +108,7 @@ module camsync393       #(
 // TODO: change to control bit fields    
     reg           ts_snd_en;   // enable sending timestamp over sync line
     reg           ts_external; // 1 - use external timestamp, if available. 0 - always use local ts
-    
+    reg           triggered_mode_r;
 // TODO: remove next 2                                     
     wire   [31:0] ts_snd_sec;  // [31:0] timestamp seconds to be sent over the sync line
     wire   [19:0] ts_snd_usec; // [19:0] timestamp microseconds to be sent over the sync line
@@ -209,6 +212,7 @@ module camsync393       #(
     wire          local_got; // received local timestamp (@ posedge mclk)
     wire          local_got_pclk; // local_got reclocked @pclk
     reg           ts_snap;     // make a timestamp pulse  single @(posedge pclk)
+    wire          trigrst_or_freerun; // trigger reset (2pclk, vacts) or sensor is in fre running mode
 
 //! in testmode GPIO[9] and GPIO[8] use internal signals instead of the outsync:
 //! bit 11 - same as TRIGGER output to the sensor (signal to the sensor may be disabled externally)
@@ -239,12 +243,16 @@ module camsync393       #(
     assign set_trig_dst_w =     cmd_we && (cmd_a == CAMSYNC_TRIG_DST);
     assign set_trig_period_w =  cmd_we && (cmd_a == CAMSYNC_TRIG_PERIOD);
     assign pre_input_use = {cmd_data[19],cmd_data[17],cmd_data[15],cmd_data[13],cmd_data[11],cmd_data[9],cmd_data[7],cmd_data[5],cmd_data[3],cmd_data[1]};
-    assign pre_input_pattern = {cmd_data[18],cmd_data[16],cmd_data[14],cmd_data[12],cmd_data[10],cmd_data[8],cmd_data[6],cmd_data[4],cmd_data[2],cmd_data[0]};        
+    assign pre_input_pattern = {cmd_data[18],cmd_data[16],cmd_data[14],cmd_data[12],cmd_data[10],cmd_data[8],cmd_data[6],cmd_data[4],cmd_data[2],cmd_data[0]};
+    assign triggered_mode = triggered_mode_r;
+    assign trigrst_or_freerun = trigrst || !triggered_mode_pclk;        
 
     always @(posedge mclk) begin
         if (set_mode_reg_w) begin
-            if (cmd_data[CAMSYNC_SNDEN_BIT])    ts_snd_en <=   cmd_data[CAMSYNC_SNDEN_BIT - 1];
-            if (cmd_data[CAMSYNC_EXTERNAL_BIT]) ts_external <= cmd_data[CAMSYNC_EXTERNAL_BIT - 1];
+            if (cmd_data[CAMSYNC_SNDEN_BIT])     ts_snd_en <=   cmd_data[CAMSYNC_SNDEN_BIT - 1];
+            if (cmd_data[CAMSYNC_EXTERNAL_BIT])  ts_external <= cmd_data[CAMSYNC_EXTERNAL_BIT - 1];
+            if (cmd_data[CAMSYNC_TRIGGERED_BIT]) triggered_mode_r <= cmd_data[CAMSYNC_TRIGGERED_BIT - 1];
+            
         end 
         if (set_trig_src_w) begin
             input_use <= pre_input_use;
@@ -314,9 +322,9 @@ module camsync393       #(
  
     always @ (posedge rst or posedge pclk) begin
         if (rst) dly_cntr_run <= 0;
-        else     dly_cntr_run <= triggered_mode && (start_dly || (dly_cntr_run && (dly_cntr[31:0]!=0)));
+        else     dly_cntr_run <= triggered_mode_pclk && (start_dly || (dly_cntr_run && (dly_cntr[31:0]!=0)));
         if (rst) trigger_r <= 0;
-        else     trigger_r <= trigrst?1'b0:(trigger1_r ^ trigger_r);
+        else     trigger_r <= trigrst_or_freerun ? 1'b0 : (trigger1_r ^ trigger_r);
     end
  
  
@@ -332,18 +340,17 @@ module camsync393       #(
 /// if the trigger pulses continue to come.
 
     assign pre_rcv_error= (sr_rcv_first[31:26]!=CAMSYNC_PRE_MAGIC) || (sr_rcv_second[5:0]!=CAMSYNC_POST_MAGIC);
-//    FD i_trigger      (.C(pclk),.D(trigrst?1'b0:(trigger1_r ^ trigger)),  .Q(trigger)); // for simulator to be happy
     always @ (posedge pclk) begin
-      if (trigrst)       overdue <= 1'b0;
-      else if (trigger1_r) overdue <= trigger;
+      if (trigrst_or_freerun) overdue <= 1'b0;
+      else if (trigger1_r)    overdue <= trigger;
 
-      triggered_mode_pclk<= triggered_mode;
+      triggered_mode_pclk<= triggered_mode_r;
       bit_length_short[7:0] <= bit_length[7:0]-bit_length_plus1[7:2]-1; // 3/4 of the duration
 
       trigger_condition <= (((gpio_in[9:0] ^ input_pattern[9:0]) & input_use[9:0]) == 10'b0);
       trigger_condition_d <= trigger_condition;
      
-      if (!triggered_mode || (trigger_condition !=trigger_condition_d)) trigger_filter_cntr <= {1'b0,bit_length[7:2]};
+      if (!triggered_mode_pclk || (trigger_condition !=trigger_condition_d)) trigger_filter_cntr <= {1'b0,bit_length[7:2]};
       else if (!trigger_filter_cntr[6]) trigger_filter_cntr<=trigger_filter_cntr-1;
      
       if (input_use_intern) trigger_condition_filtered <= 1'b0;

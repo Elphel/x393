@@ -32,7 +32,7 @@ module  cmprs_out_fifo(
     
     // rclk domain
     input              rclk,
-    input              rst_fifo,      // reset FIFO (set read adderss to write, reset count)
+    input              rst_fifo,      // reset FIFO (set read address to write, reset count)
     input              ren,
     output      [63:0] rdata,
     output             eof,           // single rclk pulse signalling EOF

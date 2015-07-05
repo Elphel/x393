@@ -165,7 +165,7 @@ module  cmd_encod_linear_rd #(
           else  enc_cmd <= func_encode_cmd ( // encode non-NOP command
             rom_cmd[1]?
                     row:
-                    {{ADDRESS_NUMBER-COLADDR_NUMBER{1'b0}},col[COLADDR_NUMBER-4:0],3'b0}, //  [14:0] addr;       // 15-bit row/column adderss
+                    {{ADDRESS_NUMBER-COLADDR_NUMBER{1'b0}},col[COLADDR_NUMBER-4:0],3'b0}, //  [14:0] addr;       // 15-bit row/column address
             bank[2:0],                                // bank (here OK to be any)
             full_cmd[2:0],           //   rcw;        // RAS/CAS/WE, positive logic
             1'b0,                    //   odt_en;     // enable ODT
@@ -201,7 +201,7 @@ module  cmd_encod_linear_rd #(
         input                      buf_rst;    // connect to external buffer (but only if not paused)
         begin
             func_encode_skip= func_encode_cmd (
-                {{14-CMD_DONE_BIT{1'b0}}, done, skip[CMD_PAUSE_BITS-1:0]},       // 15-bit row/column adderss
+                {{14-CMD_DONE_BIT{1'b0}}, done, skip[CMD_PAUSE_BITS-1:0]},       // 15-bit row/column address
                 bank[2:0],  // bank (here OK to be any)
                 3'b0,       // RAS/CAS/WE, positive logic
                 odt_en,     // enable ODT
@@ -219,7 +219,7 @@ module  cmd_encod_linear_rd #(
     endfunction
 
     function [31:0] func_encode_cmd;
-        input               [14:0] addr;       // 15-bit row/column adderss
+        input               [14:0] addr;       // 15-bit row/column address
         input                [2:0] bank;       // bank (here OK to be any)
         input                [2:0] rcw;        // RAS/CAS/WE, positive logic
         input                      odt_en;     // enable ODT
@@ -235,7 +235,7 @@ module  cmd_encod_linear_rd #(
         input                      buf_rst;    // connect to external buffer (but only if not paused)
         begin
             func_encode_cmd={
-            addr[14:0], // 15-bit row/column adderss
+            addr[14:0], // 15-bit row/column address
             bank [2:0], // bank
             rcw[2:0],   // RAS/CAS/WE
             odt_en,     // enable ODT

@@ -142,7 +142,7 @@ module  mcntrl_linear_rw #(
     wire                          single_frame_w; // pulse
     wire                          rst_frame_num_w;
     reg                           single_frame_r;  // pulse
-    reg                     [1:0] rst_frame_num_r; // reset frame number/next start adderss
+    reg                     [1:0] rst_frame_num_r; // reset frame number/next start address
     reg                           frame_en;       // enable next frame
     
     reg                           busy_r;

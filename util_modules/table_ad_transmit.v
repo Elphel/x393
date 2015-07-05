@@ -29,8 +29,8 @@ module  table_ad_transmit#(
     input                         clk,        // posedge mclk
     input                         a_not_d_in, // address/not data input (valid @ we)
     input                         we,         // write address/data (single cycle) with at least 5 inactive between
-    input                  [31:0] din,        // 32 bit data to send or 8-bit channel select concatenated with 24-bit byte adderss (@we)
-    output                 [ 7:0] ser_d,      // 8-bit adderss/data to be sent to submodules that have table write port(s)
+    input                  [31:0] din,        // 32 bit data to send or 8-bit channel select concatenated with 24-bit byte address (@we)
+    output                 [ 7:0] ser_d,      // 8-bit address/data to be sent to submodules that have table write port(s)
     output reg                    a_not_d,    // sending adderass / not data - valid during all bytes
     output reg [NUM_CHANNELS-1:0] chn_en      // sending  address or data
 );

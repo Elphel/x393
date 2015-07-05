@@ -236,7 +236,7 @@ module  mcontr_sequencer   #(
     wire                         rst=rst_in;
   
 //    wire                 [ 9:0]  next_cmd_addr;
-    reg                  [ 9:0]  cmd_addr;      // command word adderss  
+    reg                  [ 9:0]  cmd_addr;      // command word address  
     reg                          cmd_sel;
     reg                  [ 2:0]  cmd_busy;      // bit 0 - immediately,
     wire                         phy_cmd_nop;   // decoded command (ras, cas, we) was NOP

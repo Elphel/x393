@@ -265,7 +265,7 @@ module  cmd_encod_tiled_32_rd #(
                     {{ADDRESS_NUMBER-COLADDR_NUMBER-1{1'b0}},
                         enable_autopre & ~rom_r[ENC_NOP],
                         {col_bank[COLADDR_NUMBER-1:4],~rom_r[ENC_NOP]},
-                        3'b0}, //  [14:0] addr;       // 15-bit row/column adderss
+                        3'b0}, //  [14:0] addr;       // 15-bit row/column address
             rom_cmd[1]?
                 row_col_bank[2:0]:
                 col_bank[2:0],        //

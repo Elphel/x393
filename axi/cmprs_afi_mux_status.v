@@ -25,7 +25,7 @@
 `timescale 1ns/1ps
 
 module  cmprs_afi_mux_status #(
-    parameter CMPRS_AFIMUX_STATUS_REG_ADDR=     'h20,  //Uses 4 locations TODO: assign valid adderss
+    parameter CMPRS_AFIMUX_STATUS_REG_ADDR=     'h20,  //Uses 4 locations TODO: assign valid address
     parameter CMPRS_AFIMUX_WIDTH =              26, // maximal for status: currently only works with 26)
     parameter CMPRS_AFIMUX_CYCBITS =            3
  ) (

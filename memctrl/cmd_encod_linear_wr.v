@@ -233,7 +233,7 @@ module  cmd_encod_linear_wr #(
           else  enc_cmd <= func_encode_cmd ( // encode non-NOP command
             rom_cmd[1]?
                     row:
-                    {{ADDRESS_NUMBER-COLADDR_NUMBER{1'b0}},col[COLADDR_NUMBER-4:0],3'b0}, //  [14:0] addr;       // 15-bit row/column adderss
+                    {{ADDRESS_NUMBER-COLADDR_NUMBER{1'b0}},col[COLADDR_NUMBER-4:0],3'b0}, //  [14:0] addr;       // 15-bit row/column address
             bank[2:0],                                // bank (here OK to be any)
             full_cmd[2:0],           //   rcw;        // RAS/CAS/WE, positive logic
             rom_r[ENC_ODT],          //   odt_en;     // enable ODT

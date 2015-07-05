@@ -550,7 +550,7 @@ always #(CLKIN_PERIOD/2) CLK = ~CLK;
        WINDOW_HEIGHT,       // input [15:0] window_height; // 16 bit (only 14 are used here)
        WINDOW_X0,           // input [15:0] window_left;
        WINDOW_Y0,           // input [15:0] window_top;
-       0,                   // input [28:0] start64;  // relative start adderss of the transfer (set to 0 when writing lo_addr64)
+       0,                   // input [28:0] start64;  // relative start address of the transfer (set to 0 when writing lo_addr64)
        AFI_LO_ADDR64,       // input [28:0] lo_addr64; // low address of the system memory range, in 64-bit words 
        AFI_SIZE64,          // input [28:0] size64;    // size of the system memory range in 64-bit words
        0);                  // input        continue;    // 0 start from start64, 1 - continue from where it was
@@ -569,7 +569,7 @@ always #(CLKIN_PERIOD/2) CLK = ~CLK;
        WINDOW_HEIGHT,       // input [15:0] window_height; // 16 bit (only 14 are used here)
        WINDOW_X0,           // input [15:0] window_left;
        WINDOW_Y0,           // input [15:0] window_top;
-       0,                   // input [28:0] start64;  // relative start adderss of the transfer (set to 0 when writing lo_addr64)
+       0,                   // input [28:0] start64;  // relative start address of the transfer (set to 0 when writing lo_addr64)
        AFI_LO_ADDR64,       // input [28:0] lo_addr64; // low address of the system memory range, in 64-bit words 
        AFI_SIZE64,          // input [28:0] size64;    // size of the system memory range in 64-bit words
        0);                  // input        continue;    // 0 start from start64, 1 - continue from where it was
@@ -583,7 +583,7 @@ always #(CLKIN_PERIOD/2) CLK = ~CLK;
        WINDOW_HEIGHT,       // input [15:0] window_height; // 16 bit (only 14 are used here)
        WINDOW_X0,           // input [15:0] window_left;
        WINDOW_Y0,           // input [15:0] window_top;
-       0,                   // input [28:0] start64;  // relative start adderss of the transfer (set to 0 when writing lo_addr64)
+       0,                   // input [28:0] start64;  // relative start address of the transfer (set to 0 when writing lo_addr64)
        AFI_LO_ADDR64,       // input [28:0] lo_addr64; // low address of the system memory range, in 64-bit words 
        AFI_SIZE64,          // input [28:0] size64;    // size of the system memory range in 64-bit words
        0);                  // input        continue;    // 0 start from start64, 1 - continue from where it was
@@ -1442,7 +1442,7 @@ task test_afi_rw; // SuppressThisWarning VEditor - may be unused
     input [15:0] window_height; // 16 bit (only 14 are used here)
     input [15:0] window_left;
     input [15:0] window_top;
-    input [28:0] start64;  // relative start adderss of the transfer (set to 0 when writing lo_addr64)
+    input [28:0] start64;  // relative start address of the transfer (set to 0 when writing lo_addr64)
     input [28:0] lo_addr64; // low address of the system memory range, in 64-bit words 
     input [28:0] size64;    // size of the system memory range in 64-bit words
     input        continue;    // 0 start from start64, 1 - continue from where it was
