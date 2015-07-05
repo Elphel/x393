@@ -42,7 +42,7 @@ module  pulse_cross_clock#(
         if   (rst) in_reg <= 0;
         else       in_reg <= in_pulse || (in_reg && !out_reg[EXTRA_DLY_SAFE]);
         if   (rst) busy_r <= 0;
-        else       busy_r <= in_pulse || in_reg || (busy_r && out_reg[EXTRA_DLY_SAFE]);
+        else       busy_r <= in_pulse || in_reg || (busy_r && (|out_reg[EXTRA_DLY_SAFE:0]));
     end
     always @(posedge dst_clk or posedge rst) begin
         if   (rst) out_reg <= 0;
