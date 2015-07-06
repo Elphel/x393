@@ -23,13 +23,17 @@
 `timescale 1ns/1ps
 
 module  rtc393 #(
-        parameter RTC_ADDR=                  'h170, //TODO: assign valid address
-        parameter RTC_MASK=                  'h3fc,
-        parameter RTC_MHZ=                      25, // RTC input clock in MHz (should be interger number)
+        parameter RTC_ADDR =                  'h170, //TODO: assign valid address
+        parameter RTC_STATUS_REG_ADDR =          7,  // address where status can be read out (currnelti just sequence # and alternating bit) 
+        parameter RTC_SEC_USEC_ADDR =            8,  // address where seconds of the snapshot can be read (microseconds - next adderss)
+        
+        parameter RTC_MASK =                  'h3fc,
+        parameter RTC_MHZ =                      25, // RTC input clock in MHz (should be interger number)
         parameter RTC_BITC_PREDIV =              5, // number of bits to generate 2 MHz pulses counting refclk 
-        parameter RTC_SET_USEC=                  0, // 20-bit number of microseconds
-        parameter RTC_SET_SEC=                   1, // 32-bit full number of seconds (und actually update timer)
-        parameter RTC_SET_CORR=                  2 // write correction 16-bit signed
+        parameter RTC_SET_USEC =                 0, // 20-bit number of microseconds
+        parameter RTC_SET_SEC =                  1, // 32-bit full number of seconds (und actually update timer)
+        parameter RTC_SET_CORR =                 2, // write correction 16-bit signed
+        parameter RTC_SET_STATUS =               3  // set status mode, and take a time snapshot (wait response and read time)
 
 )   (
     input                         rst,
@@ -38,9 +42,14 @@ module  rtc393 #(
     // programming interface
     input                   [7:0] cmd_ad,      // byte-serial command address/data (up to 6 bytes: AL-AH-D0-D1-D2-D3 
     input                         cmd_stb,     // strobe (with first byte) for the command a/d
+
+    output                  [7:0] status_ad,    // status address/data - up to 5 bytes: A - {seq,status[1:0]} - status[2:9] - status[10:17] - status[18:25]
+    output                        status_rq,    // input request to send status downstream
+    input                         status_start, // Acknowledge of the first status packet byte (address)
     
     output                 [31:0] live_sec,
     output                 [19:0] live_usec);
+//    output reg                    snap);       // take a snapshot (externally)
     
     wire  [31:0] cmd_data;
     wire   [2:0] cmd_a;
@@ -49,6 +58,7 @@ module  rtc393 #(
     wire         set_usec_w;  
     wire         set_sec_w;  
     wire         set_corr_w;
+    wire         set_status_w;
     
     reg  [19:0] wusec;   
     reg  [31:0] wsec;   
@@ -72,20 +82,34 @@ module  rtc393 #(
     reg  [19:0] usec_plus1;
     reg  [31:0] sec_plus1;
     
+    reg   [31:0] pio_sec;       // seconds snapshot to be read as PIO  
+    reg   [19:0] pio_usec;      // micro seconds snapshot to be read as PIO
+    reg          pio_alt_snap;  // FF to invert after each PIO snapshot (used to generate status)
     
     
     assign set_usec_w = cmd_we && (cmd_a == RTC_SET_USEC);
     assign set_sec_w =  cmd_we && (cmd_a == RTC_SET_SEC);
     assign set_corr_w = cmd_we && (cmd_a == RTC_SET_CORR);
+    assign set_status_w = cmd_we && (cmd_a == RTC_SET_STATUS);
     assign next_acc[24:0]= {1'b0,acc[23:0]} + {1'b0,~corr [15], {7{corr [15]}}, corr[15:0]};
     
     assign live_sec = sec;
     assign live_usec = usec;
     
+    always @ (posedge rst or posedge mclk) begin
+        if      (rst)          pio_alt_snap <= 0;
+        else if (set_status_w) pio_alt_snap <= ~pio_alt_snap; 
+    end 
+
+    always @ (posedge mclk) begin
+        if (set_status_w) pio_sec <=  live_sec; 
+        if (set_status_w) pio_usec <= live_usec; 
+    end 
+    
     always @ (posedge mclk) begin
         if (set_usec_w) wusec <= cmd_data[19:0]; 
         if (set_sec_w)  wsec <=  cmd_data[31:0]; 
-        if (set_corr_w) corr <=  cmd_data[15:0]; 
+        if (set_corr_w) corr <=  cmd_data[15:0];
     end
 
     always @ (posedge rst or posedge mclk) begin
@@ -145,6 +169,25 @@ module  rtc393 #(
         .data       (cmd_data), // output[31:0] 
         .we         (cmd_we)    // output
     );
+ 
+        status_generate #(
+        .STATUS_REG_ADDR     (RTC_STATUS_REG_ADDR),
+        .PAYLOAD_BITS        (1),
+        .REGISTER_STATUS     (0),
+        .EXTRA_WORDS         (2),
+        .EXTRA_REG_ADDR      (RTC_SEC_USEC_ADDR)
+    ) status_generate_i (
+        .rst           (), // input
+        .clk           (mclk), // input
+        .we            (set_status_w), // input
+        .wd            (cmd_data[7:0]), // input[7:0] 
+        .status        ({12'b0,pio_usec,pio_sec,pio_alt_snap}), // input[14:0] 
+        .ad            (status_ad), // output[7:0] 
+        .rq            (status_rq), // output
+        .start         (status_start) // input
+    );
+
+
     
 endmodule
 

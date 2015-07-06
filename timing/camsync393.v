@@ -27,7 +27,8 @@
  // TODO: make a separate clock for transmission (program counters too?) and/or for the period timer?
  // TODO: change timestamp to serial message
  // TODO: see what depends on pclk and if can be made independent of the sensor clock.
-
+//`define GENERATE_TRIG_OVERDUE 1
+`undef GENERATE_TRIG_OVERDUE
 module camsync393       #(
     parameter CAMSYNC_ADDR =                    'h160, //TODO: assign valid address
     parameter CAMSYNC_MASK =                    'h3f8,
@@ -81,26 +82,30 @@ module camsync393       #(
 
     output                        triggered_mode, // use triggered mode (0 - sensors are free-running) @mclk
 
-    input                         frsync_chn0,  // @mclk trigrst,   // single-clock start of frame input (resets trigger output) posedge (@pclk)
-    output                        trigger1_chn0, // @mclk 1 cycle-long trigger output
+    input                         frsync_chn0,   // @mclk trigrst,   // single-clock start of frame input (resets trigger output) posedge (@pclk)
+    output                        trig_chn0,     // @mclk 1 cycle-long trigger output
+`ifdef GENERATE_TRIG_OVERDUE    
     output                        trigger_chn0,  // @mclk active high trigger to the sensor (reset by vacts)
     output                        overdue_chn0,  // @mclk prevents lock-up when no vact was detected during one period and trigger was toggled
-
-    input                         frsync_chn1,  // @mclk trigrst,   // single-clock start of frame input (resets trigger output) posedge (@pclk)
-    output                        trigger1_chn1, // 1 cycle-long trigger output
+`endif
+    input                         frsync_chn1,   // @mclk trigrst,   // single-clock start of frame input (resets trigger output) posedge (@pclk)
+    output                        trig_chn1,     // 1 cycle-long trigger output
+`ifdef GENERATE_TRIG_OVERDUE    
     output                        trigger_chn1,  // active high trigger to the sensor (reset by vacts)
     output                        overdue_chn1,  // prevents lock-up when no vact was detected during one period and trigger was toggled
-
+`endif
     input                         frsync_chn2,  // @mclk trigrst,   // single-clock start of frame input (resets trigger output) posedge (@pclk)
-    output                        trigger1_chn2, // 1 cycle-long trigger output
-    output                        trigger_chn2,  // active high trigger to the sensor (reset by vacts)
-    output                        overdue_chn2,  // prevents lock-up when no vact was detected during one period and trigger was toggled
-
+    output                        trig_chn2,    // 1 cycle-long trigger output
+`ifdef GENERATE_TRIG_OVERDUE    
+    output                        trigger_chn2, // active high trigger to the sensor (reset by vacts)
+    output                        overdue_chn2, // prevents lock-up when no vact was detected during one period and trigger was toggled
+`endif
     input                         frsync_chn3,  // @mclk trigrst,   // single-clock start of frame input (resets trigger output) posedge (@pclk)
-    output                        trigger1_chn3, // 1 cycle-long trigger output
-    output                        trigger_chn3,  // active high trigger to the sensor (reset by vacts)
-    output                        overdue_chn3,  // prevents lock-up when no vact was detected during one period and trigger was toggled
-    
+    output                        trig_chn3,    // 1 cycle-long trigger output
+`ifdef GENERATE_TRIG_OVERDUE    
+    output                        trigger_chn3, // active high trigger to the sensor (reset by vacts)
+    output                        overdue_chn3, // prevents lock-up when no vact was detected during one period and trigger was toggled
+`endif    
     // getting timestamp from rtc module, all @posedge mclk (from timestmp_snapshot)
     // this timestmp is used either to send local timestamp for synchronization, or
     // to acquire local timestamp of sync pulse for logging
@@ -216,10 +221,13 @@ module camsync393       #(
     reg           trigger_condition_d; // GPIO input trigger condition met, delayed (for edge detection)
     reg           trigger_condition_filtered; // trigger condition filtered
     reg    [6:0]  trigger_filter_cntr;
-    reg    [3:0]  trigger1_r;
-    wire   [3:0]  trigger1_r_mclk;
-//    wire          trigger1_dly16; // trigger1 delayed by 16 clk cycles to get local timestamp
+    reg    [3:0]  trig_r;
+    wire   [3:0]  trig_r_mclk;
+//    wire          trig_dly16; // trigger1 delayed by 16 clk cycles to get local timestamp
+`ifdef GENERATE_TRIG_OVERDUE    
     reg    [3:0]  trigger_r=0;       // for happy simulator
+    reg     [3:0] overdue;
+`endif    
     reg           start_dly;      // start delay (external input filtered or from internal single/rep)
     reg   [31:0]  dly_cntr_chn0;       // trigger delay counter
     reg   [31:0]  dly_cntr_chn1;       // trigger delay counter
@@ -276,7 +284,6 @@ module camsync393       #(
     wire    [3:0] frame_sync;
     reg     [3:0] ts_snap_triggered;     // make a timestamp pulse  single @(posedge pclk)
     wire    [3:0] ts_snap_triggered_mclk;     // make a timestamp pulse  single @(posedge pclk)
-    reg     [3:0] overdue;
 //! in testmode GPIO[9] and GPIO[8] use internal signals instead of the outsync:
 //! bit 11 - same as TRIGGER output to the sensor (signal to the sensor may be disabled externally)
 //!          then that bit will be still from internall trigger to frame valid
@@ -290,17 +297,23 @@ module camsync393       #(
 
     assign  gpio_out[7: 0] = out_data? gpio_active[7: 0]: ~gpio_active[7: 0];
     assign  gpio_out[8] = (testmode? dly_cntr_run[0]:  out_data)? gpio_active[8]: ~gpio_active[8];
+`ifdef GENERATE_TRIG_OVERDUE    
     assign  gpio_out[9] = (testmode? trigger_r[0]:  out_data)? gpio_active[9]: ~gpio_active[9];
+`else
+    assign  gpio_out[9] = (out_data)? gpio_active[9]: ~gpio_active[9];
+`endif
     assign  restart= restart_cntr_run[1] && !restart_cntr_run[0];
     
     assign  pre_set_bit=     (|cmd_data[31:8]==0) && |cmd_data[7:1]; // 2..255
     assign  pre_start0=       |cmd_data[31:0] && !pre_set_bit;
     assign  pre_set_period = !pre_set_bit;
 
+    assign {trig_chn3, trig_chn2, trig_chn1, trig_chn0} =  trig_r_mclk;
+
+`ifdef GENERATE_TRIG_OVERDUE    
     assign {trigger_chn3,  trigger_chn2,  trigger_chn1,  trigger_chn0} =   trigger_r;
-    assign {trigger1_chn3, trigger1_chn2, trigger1_chn1, trigger1_chn0} =  trigger1_r_mclk;
     assign {overdue_chn3,  overdue_chn2,  overdue_chn1,  overdue_chn0} =   overdue;
-    
+`endif    
     assign frame_sync = {frsync_chn3, frsync_chn2, frsync_chn1, frsync_chn0}; 
     
     assign set_mode_reg_w =     cmd_we && (cmd_a == CAMSYNC_MODE);
@@ -394,7 +407,7 @@ module camsync393       #(
     end    
     always @ (posedge pclk) begin
         ts_snap_triggered <=  chn_en & ({4{(start_pclk[2] & ts_snd_en_pclk)}} | //strobe by internal generator if output timestamp is enabled
-                              (trigger1_r & ~{4{ts_external_pclk}}));  // get local timestamp of the trigger (ext/int)
+                              (trig_r & ~{4{ts_external_pclk}}));  // get local timestamp of the trigger (ext/int)
 
         ts_snd_en_pclk<=ts_snd_en;
         input_use_intern <= pre_input_use_intern;
@@ -443,23 +456,24 @@ module camsync393       #(
                   (dly_cntr_chn0[31:0]!=0)?1'b1:1'b0};
     end
  
-    always @ (posedge rst or posedge mclk) begin
+ `ifdef GENERATE_TRIG_OVERDUE    
+     always @ (posedge rst or posedge mclk) begin
         if      (rst)             trigger_r <= 0;
         else if (!triggered_mode) trigger_r <= 0;
-        else                      trigger_r <= ~frame_sync & (trigger1_r_mclk ^ trigger_r);
+        else                      trigger_r <= ~frame_sync & (trig_r_mclk ^ trigger_r);
 
         if      (rst)             overdue <= 0;
         else if (!triggered_mode) overdue <= 0;
-        else                      overdue <= ((overdue ^ trigger_r) & trigger1_r_mclk) ^ overdue;
+        else                      overdue <= ((overdue ^ trigger_r) & trig_r_mclk) ^ overdue;
         
     end
-    
+ `endif   
      
 // Detecting input sync pulse (filter - 64 pclk, pulse is 256 pclk)
 
-/// Now trigger1_r toggles trigger output to prevent lock-up if no vacts
+/// Now trig_r toggles trigger output to prevent lock-up if no vacts
 /// Lock-up could take place if:
-/// 1 - Sensoris in snapshot mode
+/// 1 - Sensor is in snapshot mode
 /// 2 - trigger was applied before end of previous frame.
 /// With implemented toggling 1 extra pulse can be missed (2 with the original missed one), but the system will not lock-up 
 /// if the trigger pulses continue to come.
@@ -500,11 +514,11 @@ module camsync393       #(
         if (dly_cntr_run[3]) dly_cntr_chn3[31:0] <= dly_cntr_chn3[31:0] -1;
         else                 dly_cntr_chn3[31:0] <= input_dly_chn3[31:0];
         
-        /// bypass delay to trigger1_r in internal trigger mode
-        trigger1_r[0] <= (input_use_intern && (master_chn ==0)) ? (start_late && start_en):(dly_cntr_run_d[0] && !dly_cntr_run[0]);
-        trigger1_r[1] <= (input_use_intern && (master_chn ==1)) ? (start_late && start_en):(dly_cntr_run_d[1] && !dly_cntr_run[1]);
-        trigger1_r[2] <= (input_use_intern && (master_chn ==2)) ? (start_late && start_en):(dly_cntr_run_d[2] && !dly_cntr_run[2]);
-        trigger1_r[3] <= (input_use_intern && (master_chn ==3)) ? (start_late && start_en):(dly_cntr_run_d[3] && !dly_cntr_run[3]);
+        /// bypass delay to trig_r in internal trigger mode
+        trig_r[0] <= (input_use_intern && (master_chn ==0)) ? (start_late && start_en):(dly_cntr_run_d[0] && !dly_cntr_run[0]);
+        trig_r[1] <= (input_use_intern && (master_chn ==1)) ? (start_late && start_en):(dly_cntr_run_d[1] && !dly_cntr_run[1]);
+        trig_r[2] <= (input_use_intern && (master_chn ==2)) ? (start_late && start_en):(dly_cntr_run_d[2] && !dly_cntr_run[2]);
+        trig_r[3] <= (input_use_intern && (master_chn ==3)) ? (start_late && start_en):(dly_cntr_run_d[3] && !dly_cntr_run[3]);
         
 /// 64-bit serial receiver (52 bit payload, 6 pre magic and 6 bits post magic for error checking
         if      (!rcv_run_or_deaf)         bit_rcv_duration[7:0] <= bit_length_short[7:0]; // 3/4 bit length-1
@@ -663,10 +677,10 @@ module camsync393       #(
     pulse_cross_clock i_local_got_pclk2(.rst(1'b0), .src_clk(mclk), .dst_clk(pclk), .in_pulse(local_got[2]), .out_pulse(local_got_pclk[2]),.busy());
     pulse_cross_clock i_local_got_pclk3(.rst(1'b0), .src_clk(mclk), .dst_clk(pclk), .in_pulse(local_got[3]), .out_pulse(local_got_pclk[3]),.busy());
 
-    pulse_cross_clock i_trigger1_r_mclk0 (.rst(1'b0), .src_clk(pclk), .dst_clk(mclk), .in_pulse(trigger1_r[0]), .out_pulse(trigger1_r_mclk[0]),.busy());
-    pulse_cross_clock i_trigger1_r_mclk1 (.rst(1'b0), .src_clk(pclk), .dst_clk(mclk), .in_pulse(trigger1_r[1]), .out_pulse(trigger1_r_mclk[1]),.busy());
-    pulse_cross_clock i_trigger1_r_mclk2 (.rst(1'b0), .src_clk(pclk), .dst_clk(mclk), .in_pulse(trigger1_r[2]), .out_pulse(trigger1_r_mclk[2]),.busy());
-    pulse_cross_clock i_trigger1_r_mclk3 (.rst(1'b0), .src_clk(pclk), .dst_clk(mclk), .in_pulse(trigger1_r[3]), .out_pulse(trigger1_r_mclk[3]),.busy());
+    pulse_cross_clock i_trig_r_mclk0 (.rst(1'b0), .src_clk(pclk), .dst_clk(mclk), .in_pulse(trig_r[0]), .out_pulse(trig_r_mclk[0]),.busy());
+    pulse_cross_clock i_trig_r_mclk1 (.rst(1'b0), .src_clk(pclk), .dst_clk(mclk), .in_pulse(trig_r[1]), .out_pulse(trig_r_mclk[1]),.busy());
+    pulse_cross_clock i_trig_r_mclk2 (.rst(1'b0), .src_clk(pclk), .dst_clk(mclk), .in_pulse(trig_r[2]), .out_pulse(trig_r_mclk[2]),.busy());
+    pulse_cross_clock i_trig_r_mclk3 (.rst(1'b0), .src_clk(pclk), .dst_clk(mclk), .in_pulse(trig_r[3]), .out_pulse(trig_r_mclk[3]),.busy());
     
 endmodule
 
