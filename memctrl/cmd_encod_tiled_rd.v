@@ -12,7 +12,7 @@
  * if number of rows >=8, that port is ignored. If number of rows is less than
  * 5 (less for slower clock) without keep_open_in tRTP may be not matched.
  * Seems that actual tile heigt mod 8 should be only 0, 6 or7
- * Copyright (c) 2015 <set up in Preferences-Verilog/VHDL Editor-Templates> .
+ * Copyright (c) 2015 Elphel, Inc.
  * cmd_encod_tiled_rd.v is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or

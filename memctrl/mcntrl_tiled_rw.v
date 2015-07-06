@@ -7,7 +7,7 @@
  * Tiles spreading over two different frames is not yet supported (needed for
  * line-scan mode in JPEG (JP4 - OK)
  *
- * Copyright (c) 2015 <set up in Preferences-Verilog/VHDL Editor-Templates> .
+ * Copyright (c) 2015 Elphel, Inc.
  * mcntrl_tiled_rw.v is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or

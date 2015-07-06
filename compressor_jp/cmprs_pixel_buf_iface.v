@@ -6,7 +6,7 @@
  * stream matching selected color mode, accommodates for the buffer latency,
  * acts as a pacemaker for the whole compressor (next stages are able to keep up).
  *
- * Copyright (c) 2015 <set up in Preferences-Verilog/VHDL Editor-Templates> .
+ * Copyright (c) 2015 Elphel, Inc.
  * cmprs_pixel_buf_iface.v is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or

@@ -4,7 +4,7 @@
  * Author: andrey     
  * Description: move data between clk and clk2x (nominally posedge aligned)
  *
- * Copyright (c) 2015 <set up in Preferences-Verilog/VHDL Editor-Templates> .
+ * Copyright (c) 2015 Elphel, Inc.
  * clk_to_clk2x.v is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or

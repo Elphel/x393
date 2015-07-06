@@ -6,7 +6,7 @@
  * linear command encoders (cmd_encod_linear_rd and cmd_encod_linear_wr)
  * Latency 1 clcok cycle
  *
- * Copyright (c) 2015 <set up in Preferences-Verilog/VHDL Editor-Templates> .
+ * Copyright (c) 2015 Elphel, Inc.
  * cmd_encod_linear_mux.v is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or

@@ -5,7 +5,7 @@
  * Description: Organize paged R/W from DDR3 memory in scan-line order
  * with window support
  *
- * Copyright (c) 2015 <set up in Preferences-Verilog/VHDL Editor-Templates> .
+ * Copyright (c) 2015 Elphel, Inc.
  * mcntrl_linear_rw.v is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or

@@ -4,7 +4,7 @@
  * Author: andrey     
  * Description: Find index of the maximal of 16 values (masked), 4 cycle latency
  *
- * Copyright (c) 2015 <set up in Preferences-Verilog/VHDL Editor-Templates> .
+ * Copyright (c) 2015 Elphel, Inc.
  * index_max_16.v is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or

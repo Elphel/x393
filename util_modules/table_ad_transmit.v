@@ -6,7 +6,7 @@
  * In 32-bit mode we duty cycle is >= 6, so there will always be gaps in
  * chn_stb[i] active 
  *
- * Copyright (c) 2015 <set up in Preferences-Verilog/VHDL Editor-Templates> .
+ * Copyright (c) 2015 Elphel, Inc.
  * table_ad_transmit.v is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or

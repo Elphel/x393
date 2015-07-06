@@ -6,7 +6,7 @@
  * Syncronizes dcc data with dma1 output, adds 16..31 16-bit zero words for Axis DMA
  * Was not used in late NC353 camera (DMA channel used fro IMU logger)
  *
- * Copyright (c) 2015 <set up in Preferences-Verilog/VHDL Editor-Templates> .
+ * Copyright (c) 2015 Elphel, Inc.
  * dcc_sync393.v is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or

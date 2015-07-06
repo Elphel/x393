@@ -5,7 +5,7 @@
  * Description: Maintain 4-channel chunk pointers (before AXI)
  * Advance 32-byte chunk pointers for each AXI burst and each frame (4*2=8 pointers)
  *
- * Copyright (c) 2015 <set up in Preferences-Verilog/VHDL Editor-Templates> .
+ * Copyright (c) 2015 Elphel, Inc.
  * cmprs_afi_mux_ptr.v is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or

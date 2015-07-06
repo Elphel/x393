@@ -4,7 +4,7 @@
  * Author: andrey     
  * Description: Simplified model of AXI_HP write channel (64-bit only)
  *
- * Copyright (c) 2015 <set up in Preferences-Verilog/VHDL Editor-Templates> .
+ * Copyright (c) 2015 Elphel, Inc.
  * simul_axi_hp_wr.v is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or

@@ -6,7 +6,7 @@
  * timestamps. Provides seconds (32 bit) and microseconds (20 bits),
  * allows 24-bit accummulator-based fine adjustment
  *
- * Copyright (c) 2005-2015 <set up in Preferences-Verilog/VHDL Editor-Templates> .
+ * Copyright (c) 2005-2015 Elphel, Inc.
  * rtc393.v is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or

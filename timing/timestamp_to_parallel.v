@@ -5,7 +5,7 @@
  * Description: convert byte-parallel timestamp message to parallel sec, usec
  * compatible to the x353 code (for NC353 camera)
  *
- * Copyright (c) 2015 <set up in Preferences-Verilog/VHDL Editor-Templates> .
+ * Copyright (c) 2015 Elphel, Inc.
  * timestamp_to_parallel.v is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or

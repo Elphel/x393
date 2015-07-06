@@ -4,7 +4,7 @@
  * Author: andrey     
  * Description: Temporary  module to interface mcntrl393 control signals
  *
- * Copyright (c) 2015 <set up in Preferences-Verilog/VHDL Editor-Templates> .
+ * Copyright (c) 2015 Elphel, Inc.
  * mcntrl393_test01.v is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or

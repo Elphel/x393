@@ -5,7 +5,7 @@
  * Description: Command sequencer generator for writing a sequential  up to 1KB page
  * single page access, bank and row will not be changed
  *
- * Copyright (c) 2015 <set up in Preferences-Verilog/VHDL Editor-Templates> .
+ * Copyright (c) 2015 Elphel, Inc.
  * cmd_encod_linear_wr.v is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or

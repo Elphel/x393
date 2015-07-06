@@ -4,7 +4,7 @@
  * Author: andrey     
  * Description: table based piecewise-linear conversion of 16 -> 8 bit data
  *
- * Copyright (c) 2015 <set up in Preferences-Verilog/VHDL Editor-Templates> .
+ * Copyright (c) 2015 Elphel, Inc.
  * sens_gamma.v is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or

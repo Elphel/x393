@@ -4,7 +4,7 @@
  * Author: andrey     
  * Description: Cross clock boundary for sensor data, synchronize to HACT
  *
- * Copyright (c) 2015 <set up in Preferences-Verilog/VHDL Editor-Templates> .
+ * Copyright (c) 2015 Elphel, Inc.
  * sensor_fifo.v is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or

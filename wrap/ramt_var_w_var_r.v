@@ -6,7 +6,7 @@
  * width read,  using "TDP" mode of RAMB36E1. Same R/W widths in each port.
  * Does not use parity bits to increase total data width, width down to 1 are valid.
  *
- * Copyright (c) 2015 <set up in Preferences-Verilog/VHDL Editor-Templates> .
+ * Copyright (c) 2015 Elphel, Inc.
  * ramt_var_w_var_r.v is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or

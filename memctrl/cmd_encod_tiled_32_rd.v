@@ -10,7 +10,7 @@
  * just reading 32 bytes per row instead of the 16 - that eases timing
  * Start burst should be even (LSB is ignored)
  *
- * Copyright (c) 2015 <set up in Preferences-Verilog/VHDL Editor-Templates> .
+ * Copyright (c) 2015 Elphel, Inc.
  * cmd_encod_tiled_32_rd.v is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
