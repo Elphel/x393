@@ -24,7 +24,7 @@
 
 module  rtc393 #(
         parameter RTC_ADDR =                  'h170, //TODO: assign valid address
-        parameter RTC_STATUS_REG_ADDR =          7,  // address where status can be read out (currnelti just sequence # and alternating bit) 
+        parameter RTC_STATUS_REG_ADDR =          7,  // address where status can be read out (currently just sequence # and alternating bit) 
         parameter RTC_SEC_USEC_ADDR =            8,  // address where seconds of the snapshot can be read (microseconds - next adderss)
         
         parameter RTC_MASK =                  'h3fc,
