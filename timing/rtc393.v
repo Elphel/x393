@@ -154,7 +154,7 @@ module  rtc393 #(
         
     end
 
-        cmd_deser #(
+    cmd_deser #(
         .ADDR       (RTC_ADDR),
         .ADDR_MASK  (RTC_MASK),
         .NUM_CYCLES (6),
@@ -170,7 +170,7 @@ module  rtc393 #(
         .we         (cmd_we)    // output
     );
  
-        status_generate #(
+    status_generate #(
         .STATUS_REG_ADDR     (RTC_STATUS_REG_ADDR),
         .PAYLOAD_BITS        (1),
         .REGISTER_STATUS     (0),
