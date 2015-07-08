@@ -30,7 +30,7 @@ module  timestamp_fifo(
     input                pre_stb, // marks pre-first input byte (s0,s1,s2,s3,u0,u1,u2,u3)
     input          [7:0] din,     // data in - valid for 8 cycles after pre_stb
 
-    input                aclk,    // clock to synchronize advance puls
+    input                aclk,    // clock to synchronize "advance" commands
     input                advance, // @aclk advance registers
     
     input                rclk,    // output clock
@@ -65,11 +65,11 @@ module  timestamp_fifo(
     always @(posedge rst or posedge rclk) begin
         if      (rst)         snd <= 0; 
         else if (rstb)        snd <= 1;
-        else if (&rpntr[2:0]) snd <= 0;
+        else if (&rpntr[2:1]) snd <= 0; // at count 6 
     
-        if      (rst)     rpntr[2:0] <= 0;
-        else if (!snd)    rpntr[2:0] <= 0;
-        else              rpntr[2:0] <= rpntr[2:0] + 1;
+        if      (rst)           rpntr[2:0] <= 0;
+        else if (!snd && !rstb) rpntr[2:0] <= 0;
+        else                    rpntr[2:0] <= rpntr[2:0] + 1;
         
         if (snd)          dout <= fifo_ram[rpntr];
     end
