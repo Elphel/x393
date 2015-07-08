@@ -99,7 +99,7 @@ module  timing393       #(
     output                  [7:0] ts_data_chn3, // byte-wide serialized timestamp message received or local
     
     // timestamp for the event logger
-    input                         lclk,           // clock used by the evebt logger 
+    input                         lclk,           // clock used by the event logger 
     input                         ts_logger_snap, // request from the logger to take a snapshot
     output                        ts_logger_stb,  // one clock pulse before sending TS data
     output                  [7:0] ts_logger_data  // timestamp data (s0,s1,s2,s3,u0,u1,u2,u3==0)

@@ -21,132 +21,75 @@
 `timescale 1ns/1ps
 
 module  imu_timestamps393(
-                        sclk, // 160MHz, negedge            
-                        xclk, // 80 MHz, posedge
-                        rst,  // reset (@posedge xclk)
-                        sec,  // running seconds (@negedge sclk)
-                        usec, // running microseconds (@negedge sclk)
-                        ts_rq,// requests to create timestamps (4 channels), @posedge xclk
-                        ts_ackn, // timestamp for this channel is stored
-                        ra,   // read address (2 MSBs - channel number, 2 LSBs - usec_low, (usec_high ORed with channel <<24), sec_low, sec_high
-                        dout);// output data
-   input         sclk;
-   input         xclk;
-   input         rst;
-   input  [31:0] sec;
-   input  [19:0] usec;
-   input  [ 3:0] ts_rq;
-   output [ 3:0] ts_ackn;
-   input  [ 3:0] ra;
-   output [15:0] dout;
-   
-   reg    [31:0] sec_latched;
-   reg    [19:0] usec_latched;
-   reg    [15:0] ts_mux;
-   
-   reg    [ 3:0] wa;
-   reg           srst;
-   reg    [3:0]  rq_d;
-   reg    [3:0]  rq_d2;
-   reg    [3:0]  rq_r;
-   reg    [3:0]  rq_sclk;
-   reg    [3:0]  rq_sclk2;
-   reg    [3:0]  pri_sclk;
-   reg    [3:0]  pri_sclk_d;
-   reg    [3:0]  rst_rq;
-   reg    [9:0]  proc;
-   wire          wstart;
-   reg           we;
-   wire   [3:0]  wrst_rq;
-   reg    [3:0]  ts_preackn;
-   reg    [3:0]  ts_ackn;
-   assign        wstart=|pri_sclk[3:0] && (pri_sclk[3:0] != pri_sclk_d[3:0]);
-   assign        wrst_rq[3:0]={wa[3]&wa[2],wa[3]&~wa[2],~wa[3]&wa[2],~wa[3]&~wa[2]} & {4{proc[5]}};
-   always @ (posedge xclk) begin
-     rq_d[3:0] <= ts_rq[3:0];
-     rq_d2[3:0] <= rq_d[3:0];
-   end
-   
-   always @ (negedge sclk) begin
-     srst <= rst;
-     rq_sclk[3:0]  <= srst?4'h0:(~rst_rq[3:0] & (rq_r[3:0] | rq_sclk[3:0])) ;
-     rq_sclk2[3:0] <= srst?4'h0:(~rst_rq[3:0] & rq_sclk[3:0]) ;
-     pri_sclk[3:0] <= {rq_sclk2[3] & ~|rq_sclk2[2:0],
-                       rq_sclk2[2] & ~|rq_sclk2[1:0],
-                       rq_sclk2[1] &  ~rq_sclk2[0],
-                       rq_sclk2[0]};
-     pri_sclk_d[3:0] <= pri_sclk[3:0];
-     proc[9:0] <= {proc[9:0], wstart};
-     if (proc[0]) wa[3:2] <= {|pri_sclk_d[3:2], pri_sclk_d[3] | pri_sclk_d[1]};
-     if (proc[0]) sec_latched[31:0] <= sec[31:0];
-     if (proc[0]) usec_latched[19:0] <= usec[19:0];
-//     if (proc[2]) ts_mux[15:0] <= {6'h0,wa[3:2],4'h0,usec[19:16]};
-     casex({proc[8],proc[6],proc[4],proc[2]})
-//       4'bXXX1: ts_mux[15:0] <= {6'h0,wa[3:2],4'h0,usec_latched[19:16]};
-//       4'bXX1X: ts_mux[15:0] <= usec_latched[15: 0];
-//       4'bX1XX: ts_mux[15:0] <=  sec_latched[31:16];
-//       4'b1XXX: ts_mux[15:0] <=  sec_latched[15: 0];
-       4'bXXX1: ts_mux[15:0] <= usec_latched[15: 0];
-       4'bXX1X: ts_mux[15:0] <= {6'h0,wa[3:2],4'h0,usec_latched[19:16]};
-       4'bX1XX: ts_mux[15:0] <= sec_latched[15: 0];
-       4'b1XXX: ts_mux[15:0] <= sec_latched[31:16];
+    input                         xclk, // 80 MHz, posedge
+    input                         rst,  // sync reset (@posedge xclk)
+    output reg                    ts_snap, // request to take a local time snapshot
+    input                         ts_stb,  // one clock pulse before receiving a local TS data
+    input                   [7:0] ts_data, // local timestamp data (s0,s1,s2,s3,u0,u1,u2,u3==0)
 
-     endcase
-     we <= proc[3] || proc[5] || proc[7] || proc[9];
-     if (proc[2]) wa[1:0] <= 2'b0;
-     else if (we) wa[1:0] <= wa[1:0] + 1;
-     rst_rq[3:0] <= wrst_rq[3:0] | {4{srst}};
-   end
-   always @ (posedge xclk or posedge rq_sclk2[0]) begin
-     if       (rq_sclk2[0])          rq_r[0] <= 1'b0;
-     else  if (srst)                 rq_r[0] <= 1'b0;
-     else  if (rq_d[0] && !rq_d2[0]) rq_r[0] <= 1'b1;
-   end
-   always @ (posedge xclk or posedge rq_sclk2[1]) begin
-     if       (rq_sclk2[1])          rq_r[1] <= 1'b0;
-     else  if (srst)                 rq_r[1] <= 1'b0;
-     else  if (rq_d[1] && !rq_d2[1]) rq_r[1] <= 1'b1;
-   end
-   always @ (posedge xclk or posedge rq_sclk2[2]) begin
-     if       (rq_sclk2[2])          rq_r[2] <= 1'b0;
-     else  if (srst)                 rq_r[2] <= 1'b0;
-     else  if (rq_d[2] && !rq_d2[2]) rq_r[2] <= 1'b1;
-   end
-   always @ (posedge xclk or posedge rq_sclk2[3]) begin
-     if       (rq_sclk2[3])          rq_r[3] <= 1'b0;
-     else  if (srst)                 rq_r[3] <= 1'b0;
-     else  if (rq_d[3] && !rq_d2[3]) rq_r[3] <= 1'b1;
-   end
-
-   always @ (posedge xclk or posedge rst_rq[0]) begin
-     if       (rst_rq[0])  ts_preackn[0] <= 1'b1;
-     else  if (!ts_rq[0])  ts_preackn[0] <= 1'b0;
-   end
-   always @ (posedge xclk or posedge rst_rq[1]) begin
-     if       (rst_rq[1])  ts_preackn[1] <= 1'b1;
-     else  if (!ts_rq[1])  ts_preackn[1] <= 1'b0;
-   end
-   always @ (posedge xclk or posedge rst_rq[2]) begin
-     if       (rst_rq[2])  ts_preackn[2] <= 1'b1;
-     else  if (!ts_rq[2])  ts_preackn[2] <= 1'b0;
-   end
-   always @ (posedge xclk or posedge rst_rq[3]) begin
-     if       (rst_rq[3])  ts_preackn[3] <= 1'b1;
-     else  if (!ts_rq[3])  ts_preackn[3] <= 1'b0;
-   end
-
-   always @ (posedge xclk) begin
-     ts_ackn[3:0] <= ts_preackn[3:0] & ts_rq[3:0];
-   end
-
-  myRAM_WxD_D #( .DATA_WIDTH(16),.DATA_DEPTH(4))
-            i_ts   (.D(ts_mux[15:0]),
-                       .WE(we), // we_d, decoded sub_address
-                       .clk(!sclk),
-                       .AW(wa[3:0]),
-                       .AR(ra[3:0]),
-                       .QW(),
-                       .QR(dout[15:0]));
+    input                   [3:0] ts_rq,// requests to create timestamps (4 channels), @posedge xclk
+    output                  [3:0] ts_ackn, // timestamp for this channel is stored
+    input                   [3:0] ra,   // read address (2 MSBs - channel number, 2 LSBs - usec_low, (usec_high ORed with channel <<24), sec_low, sec_high
+    output                 [15:0] dout);// output data
+    reg           ts_rcv;
+    reg           ts_busy;
+    reg     [1:0] chn; // channel for which timestamp is bein requested/received
+    wire    [3:0] rq_pri; // 1-hot prioritized timestamp request
+    wire    [1:0] rq_enc; // encoded request channel
+    reg     [2:0] cntr; // ts rcv counter
+    wire          pre_snap;
+    reg     [7:0] ts_data_r; // previous value of ts_data
+    reg    [15:0] ts_ram[0:15];
+    reg           rcv_last; // receiving last byte (usec MSB)
+    reg     [3:0] ts_ackn_r;
+    wire    [3:0] chn1hot;
+    wire          pre_ackn;
+    
+    assign rq_pri = {ts_rq[3] & ~(|ts_rq[2:0]),
+                     ts_rq[2] & ~(|ts_rq[1:0]),
+                     ts_rq[1] & ~  ts_rq[0],
+                     ts_rq[0]};
+    assign rq_enc = {rq_pri[3] | rq_pri[2],
+                     rq_pri[3] | rq_pri[1]};
+                     
+    assign pre_snap = (|ts_rq) && !ts_busy; 
+    assign chn1hot = {chn[1] & chn[0], chn[1] & ~chn[0], ~chn[1] & chn[0], ~chn[1] & ~chn[0]};
+    assign pre_ackn = ts_rcv && (cntr == 3'h6);
+    
+    
+    assign ts_ackn = ts_ackn_r;
+    
+    
+    always @ (posedge xclk) begin
+        ts_snap <= pre_snap && !rst;
+        
+        if (ts_rcv) ts_data_r <= ts_data;
+        
+        if      (rst)                      ts_busy <= 0;
+        else if (pre_snap)                 ts_busy <= 1;
+        else if (ts_rcv && (cntr == 3'h6)) ts_busy <= 0; // adjust 6?
+        
+        rcv_last <= ts_rcv && (cntr == 3'h6);
+        
+        if      (rst)       ts_rcv <= 0;
+        else if (ts_stb)    ts_rcv <= 1;
+        else if (rcv_last)  ts_rcv <= 0;
+        
+        if (!rcv) cntr <= 0;
+        else      cntr <= cntr + 1;
+        if (pre_snap) chn <= rq_enc;
+        // insert channel instead of the usec MSB, swap usec <-> sec
+        if (ts_rcv && cntr[0]) ts_ram[{chn, ~cntr[2], cntr[1]}] <= {rcv_last ? {6'b0,chn} : ts_data, ts_data_r};
+        
+        if (rst) ts_ackn_r <= 4'hf;
+        else     ts_ackn_r <= ts_rq & (ts_ackn_r | (chn1hot & {4{pre_ackn}}));
+        
+    
+        
+        
+    end
+    
+    assign dout[15:0] = ts_ram[ra];
                        
 endmodule 
 

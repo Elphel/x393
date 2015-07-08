@@ -101,11 +101,11 @@ module  imu_exttime393(
         
         if (pre_copy_w) sel_chn <= chn_enc_w;
         
-        if (!copy_selected[1]) copy_cntr <= 0;
+        if (!copy_selected[1]) copy_cntr <= 4;             // reverse order - timestamp message start with seconds, here usec first
         else                   copy_cntr <= copy_cntr + 1;
         
         copy_data_r <= copy_data; // previous data is low byte
-        // write x16 timestamp data to RAM, inser channel number into unused microseconds byte
+        // write x16 timestamp data to RAM, insert channel number into unused microseconds byte
         if (copy_selected[1] && copy_cntr[0]) ts_ram[copy_cntr[2:1]] <= {copy_selected[0]?copy_data:{6'b0,sel_chn},copy_data_r};
          
     end
