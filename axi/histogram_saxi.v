@@ -99,7 +99,7 @@ module  histogram_saxi#(
     input                      saxi_bvalid,            // AXI PS Slave GP0 BVALID, output
     output                     saxi_bready,            // AXI PS Slave GP0 BREADY, input
     input               [ 5:0] saxi_bid,               // AXI PS Slave GP0 BID[5:0], output //TODO:  Update range !!!  // @SuppressThisWarning VEditor unused
-    input               [ 1:0] saxi_bresp             // AXI PS Slave GP0 BRESP[1:0], output    // @SuppressThisWarning VEditor unused
+    input               [ 1:0] saxi_bresp              // AXI PS Slave GP0 BRESP[1:0], output    // @SuppressThisWarning VEditor unused
     
 
 );
@@ -355,36 +355,6 @@ module  histogram_saxi#(
         
     end    
     
-/*
-    wire                             saxi_start_burst_w;
-    reg                              first_burst;
-
-    reg                      [31:10] hist_start_addr; // higher bits of the system memory address of the histogram (1024 bytes) start
-    reg                      [31: 6] saxi_start_addr; // higher bits of the system memory address of the saxi burst start address
-    
-    wire                             saxi_start_burst;
-
-    reg                       [31:9] hist_start_addr; // higher bits of the system memory address of the histogram (1024 bytes) start
-
-    assign attrib_chn =   attrib_r[NUM_FRAME_BITS+2+:4];
-    assign attrib_frame = attrib_r[2+:NUM_FRAME_BITS];
-    assign attrib_color = attrib_r[1:0];
-
-    reg                              page_sent_aclk; // page sent over saxi
-    reg                              preen_aclk;
-    reg                              en_aclk;
-    wire                             page_written_aclk;
-    reg                        [2:0] pages_in_buf_rd; // pages in buffer (as seen from read side), 0..4
-    reg                        [1:0] page_rd;         // page number being read
-    reg                        [7:0] page_ra;         // 32-bit word address in page being read
-    wire                             buf_empty = (pages_in_buf_rd==0);
-    reg                        [3:0] block_run; // TODO: adjust width 
-    reg [NUM_FRAME_BITS + 4 +2 -1:0] attrib [0:3]; // to hold frame number, sensor number and burst (color) for the histograms in the buffer
-    reg [NUM_FRAME_BITS + 4 +2 -1:0] attrib_r;
-{enc_rq[1:0], sub_chn_r, frame_r,  burst[1:0]}
-    reg                       [19:0] hist_start_page_r;
-
-*/    
 
     pulse_cross_clock pulse_cross_clock_page_sent_i (
         .rst         (rst), // input
@@ -455,50 +425,5 @@ module  histogram_saxi#(
         .nempty    (fifo_nempty), // output
         .half_full (fifo_half_full) // output reg 
     );
-    always @(posedge aclk) begin
-        //en_aclk 
-    end    
-/*
-    wire                      [31:0] inter_buf_data; // data between bram buffer and a small FIFO
-    reg                        [3:0] wburst_cntr;    // count words in output data burst (using max==16)
-    reg                        [5:0] num_bursts_in_buf; // number of 16-word bursts written no buffer but not yet sent to SAXI 
-    reg                        [5:0] num_bursts_pending; // number of 16-word bursts written no buffer but not yet confirmed from SAXI
-
-    wire                             saxi_start_burst_w;
-    wire                      [31:0] inter_buf_data;
-
-    // write data
-    output              [31:0] saxi_wdata,             // AXI PS Slave GP0 WDATA[31:0], input
-    output                     saxi_wvalid,            // AXI PS Slave GP0 WVALID, input
-    input                      saxi_wready,            // AXI PS Slave GP0 WREADY, output
-    output              [ 5:0] saxi_wid,               // AXI PS Slave GP0 WID[5:0], input
-    output                     saxi_wlast,             // AXI PS Slave GP0 WLAST, input
-    output              [ 3:0] saxi_wstrb,             // AXI PS Slave GP0 WSTRB[3:0], input
-    // write response
-    input                      saxi_bvalid,            // AXI PS Slave GP0 BVALID, output
-    output                     saxi_bready,            // AXI PS Slave GP0 BREADY, input
-    input               [ 5:0] saxi_bid,               // AXI PS Slave GP0 BID[5:0], output //TODO:  Update range !!!  // @SuppressThisWarning VEditor unused
-    input               [ 1:0] saxi_bresp             // AXI PS Slave GP0 BRESP[1:0], output    // @SuppressThisWarning VEditor unused
-
-
-    assign afi_awlock =        2'h0;
-//    assign afi_awcache =       4'h3;
-    assign afi_awprot =        3'h0;
-    assign afi_awsize =        3'h3;
-    assign afi_awburst =       2'h1;
-    assign afi_awqos =         4'h0;
-    assign afi_wstrb =         8'hff;
-    assign afi_wrissuecap1en = 1'b0;
-
-    output               [1:0] saxi_awlock,            // AXI PS Slave GP0 AWLOCK[1:0], input
-    output              [ 3:0] saxi_awcache,           // AXI PS Slave GP0 AWCACHE[3:0], input
-    output              [ 2:0] saxi_awprot,            // AXI PS Slave GP0 AWPROT[2:0], input
-    output              [ 3:0] saxi_awlen,             // AXI PS Slave GP0 AWLEN[3:0], input
-    output              [ 1:0] saxi_awsize,            // AXI PS Slave GP0 AWSIZE[1:0], input
-    output              [ 1:0] saxi_awburst,           // AXI PS Slave GP0 AWBURST[1:0], input
-    output              [ 3:0] saxi_awqos,             // AXI PS Slave GP0 AWQOS[3:0], input
-
-*/    
-
 endmodule
 

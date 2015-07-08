@@ -432,9 +432,8 @@ module  cmprs_afi_mux#(
         .afi_bid             (afi_bid)              // input[5:0] 
     );
 
-    /* Instance template for module cmprs_afi_mux_status */
     cmprs_afi_mux_status #(
-        .CMPRS_AFIMUX_STATUS_REG_ADDR (CMPRS_AFIMUX_STATUS_REG_ADDR),
+        .CMPRS_AFIMUX_STATUS_REG_ADDR (CMPRS_AFIMUX_STATUS_REG_ADDR), // uses 4 locations
         .CMPRS_AFIMUX_WIDTH(CMPRS_AFIMUX_WIDTH),
         .CMPRS_AFIMUX_CYCBITS(CMPRS_AFIMUX_CYCBITS)
     ) cmprs_afi_mux_status_i (
