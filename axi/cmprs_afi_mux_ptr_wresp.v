@@ -28,7 +28,7 @@ module  cmprs_afi_mux_ptr_wresp(
     input                  [ 1:0] length_wa,          // channel address to write lengths
     input                         length_we,          // write enable length data
     
-    input                         en,                 // 0 - resets, 0->1 resets all pointers. While rezset allows write response
+    input                         en,                 // 0 - resets, 0->1 resets all pointers. While reset allows write response
     input                  [ 3:0] reset_pointers,     // per-channel - reset pointers
     
     input                  [ 2:0] chunk_ptr_ra,       // chunk pointer read address {eof, chn[1:0]}

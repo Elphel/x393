@@ -49,7 +49,7 @@ module  cmprs_afi_mux#(
     output                        fifo_ren0,
     input                  [63:0] fifo_rdata0,
 //    input                         fifo_eof0,        // single rclk pulse signalling EOF
-    output                        eof_written0,   // confirm frame written ofer AFI to the system memory (single rclk pulse)
+    output                        eof_written0,   // confirm frame written over AFI to the system memory (single hclk pulse)
     input                         fifo_flush0,    // EOF, need to output all what is in FIFO (Stays active until enough data chunks are read)
     input                  [7:0]  fifo_count0,     // number of 32-byte chunks in FIFO
 
@@ -58,7 +58,7 @@ module  cmprs_afi_mux#(
     output                        fifo_ren1,
     input                  [63:0] fifo_rdata1,
 //    input                         fifo_eof1,        // single rclk pulse signalling EOF
-    output                        eof_written1,   // confirm frame written ofer AFI to the system memory (single rclk pulse)
+    output                        eof_written1,   // confirm frame written over AFI to the system memory (single hclk pulse)
     input                         fifo_flush1,    // EOF, need to output all what is in FIFO (Stays active until enough data chunks are read)
     input                  [7:0]  fifo_count1,     // number of 32-byte chunks in FIFO
 
@@ -67,7 +67,7 @@ module  cmprs_afi_mux#(
     output                        fifo_ren2,
     input                  [63:0] fifo_rdata2,
 //    input                         fifo_eof2,        // single rclk pulse signalling EOF
-    output                        eof_written2,   // confirm frame written ofer AFI to the system memory (single rclk pulse)
+    output                        eof_written2,   // confirm frame written over AFI to the system memory (single hclk pulse)
     input                         fifo_flush2,    // EOF, need to output all what is in FIFO (Stays active until enough data chunks are read)
     input                  [7:0]  fifo_count2,     // number of 32-byte chunks in FIFO
 
@@ -76,7 +76,7 @@ module  cmprs_afi_mux#(
     output                        fifo_ren3,
     input                  [63:0] fifo_rdata3,
 //    input                         fifo_eof3,        // single rclk pulse signalling EOF
-    output                        eof_written3,   // confirm frame written ofer AFI to the system memory (single rclk pulse)
+    output                        eof_written3,   // confirm frame written over AFI to the system memory (single hclk pulse)
     input                         fifo_flush3,    // EOF, need to output all what is in FIFO (Stays active until enough data chunks are read)
     input                  [7:0]  fifo_count3,     // number of 32-byte chunks in FIFO
     

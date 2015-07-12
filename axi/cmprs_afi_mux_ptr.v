@@ -28,10 +28,10 @@ module  cmprs_afi_mux_ptr(
     input                  [ 2:0] sa_len_wa,          // channel address to write sa/lengths
     input                         sa_len_we,          // write enable sa/length data
     
-    input                         en,                 // 0 - resets, 0->1 resets all pointers. While rezset allows write response
+    input                         en,                 // 0 - resets, 0->1 resets all pointers. While reset allows write response
     input                  [ 3:0] reset_pointers,     // per-channel - reset pointers
     input                         pre_busy_w,         // combinatorial signal - one before busy[0] (depends on ptr_resetting)
-    input                  [ 1:0] winner_channel,     // channel that won arbitration for AXI axxess, valid @ pre_busy_w
+    input                  [ 1:0] winner_channel,     // channel that won arbitration for AXI access, valid @ pre_busy_w
     input                         need_to_bother,     // whants to start access if address and data FIFO permit
     input                   [2:0] chunk_inc,          // how much to increment chunk pointer (1..4) - valid witrh busy[0]
     

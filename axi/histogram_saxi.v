@@ -31,7 +31,7 @@ module  histogram_saxi#(
       parameter HIST_SAXI_EN =           0,
       parameter HIST_SAXI_NRESET =       1,
       parameter HIST_CONFIRM_WRITE =     2, // wait write confirmation for each block
-      parameter HIST_SAXI_AWCACHE =      4, //..7 cache mode (4 bits, default 4'h3)
+      parameter HIST_SAXI_AWCACHE =      4'h3, //..7 cache mode (4 bits, default 4'h3)
       
     parameter HIST_SAXI_MODE_ADDR_MASK = 'h3ff,
 //    parameter HIST_SAXI_STATUS_REG =     'h34,
@@ -237,10 +237,10 @@ module  histogram_saxi#(
     assign saxi_wstrb =    4'hf; // All bytes
     
       
-    // TODO: MAybe reduce pause between 16-burst pages? Allow some overlap? 
+    // TODO: Maybe reduce pause between 16-burst pages? Allow some overlap? 
     assign buf_re_w = en_aclk && (|pages_in_buf_rd) && !fifo_half_full && !(&page_ra) && page_read_run; // will stay off until next page
     assign fifo_re= saxi_wvalid && saxi_wready;
-    // currently waiting for SAXI to get confirmnation of all data in the current page before proceeding to teh next
+    // currently waiting for SAXI to get confirmnation of all data in the current page before proceeding to the next
     //
 //    assign confirm_write
     assign block_end = !(|block_start_r) && (confirm_write? (!(|num_bursts_pending)):(!(|num_bursts_in_buf)));
@@ -390,7 +390,7 @@ module  histogram_saxi#(
         .stb         (cmd_stb), // input
         .addr        (cmd_wa), // output[3:0] 
         .data        (cmd_data), // output[31:0] 
-        .we          ({we_addr,we_mode}) // output
+        .we          ({we_mode,we_addr}) // output
     );
 
     ram_var_w_var_r #(
@@ -419,9 +419,9 @@ module  histogram_saxi#(
         .clk       (aclk), // input
         .sync_rst  (!en_aclk), // input
         .we        (buf_re[2]), // input
-        .re        (), // input
-        .data_in   (inter_buf_data), // input[15:0] 
-        .data_out  (saxi_wdata), // output[15:0] 
+        .re        (fifo_re), // input 
+        .data_in   (inter_buf_data), // input[31:0] 
+        .data_out  (saxi_wdata), // output[31:0] 
         .nempty    (fifo_nempty), // output
         .half_full (fifo_half_full) // output reg 
     );
