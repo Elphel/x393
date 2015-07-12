@@ -52,7 +52,7 @@ module  event_logger#(
     parameter GPIO_N =                     10 // number of GPIO bits to control
 )(
     input                         rst,
-    input                         mclk,        // system clock, negedge TODO:COnvert to posedge!
+    input                         mclk,        // system clock
     input                         xclk,        // half frequency (80 MHz nominal)
     // programming interface
     input                   [7:0] cmd_ad,      // byte-serial command address/data (up to 6 bytes: AL-AH-D0-D1-D2-D3 
@@ -87,8 +87,8 @@ module  event_logger#(
     
     
 // TODO: Convert to 32-bit?    
-    output                 [15:0] data_out,    // 16-bit data out to DMA1 (@negedge mclk)
-    output                        data_out_stb,// data out valid (@negedge mclk)
+    output                 [15:0] data_out,    // 16-bit data out to DMA1 (@posdge mclk)
+    output                        data_out_stb,// data out valid (@posedge mclk)
 //                       sample_counter, // could be DMA latency, safe to use sample_counter-1
     output                 [31:0] debug_state);
                        

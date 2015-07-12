@@ -49,21 +49,25 @@ module  mult_saxi_wr #(
     output                     status_rq,     // input request to send status downstream
     input                      status_start,  // Acknowledge of the first status packet byte (address)
 
+    output                     en_chn0,       // @mclk enable channel 0 input FIFO ( 0 - reset)
     input                      has_burst0,    // channel has at least 1 burst (should go down immediately after read_burst0 if no more data)
     output                     read_burst0,   // request to read a burst of data from channel 0
     input               [31:0] data_in_chn0,  // data read from channel 0 (with some latency)
     input                      pre_valid_chn0,// data valid (same latency)
     
+    output                     en_chn1,       // @mclk enable channel 1 input FIFO ( 0 - reset)
     input                      has_burst1,    // channel has at least 1 burst (should go down immediately after read_burst0 if no more data)
     output                     read_burst1,   // request to read a burst of data from channel 0
     input               [31:0] data_in_chn1,  // data read from channel 0 (with some latency)
     input                      pre_valid_chn1,// data valid (same latency)
     
+    output                     en_chn2,       // @mclk enable channel 2 input FIFO ( 0 - reset)
     input                      has_burst2,    // channel has at least 1 burst (should go down immediately after read_burst0 if no more data)
     output                     read_burst2,   // request to read a burst of data from channel 0
     input               [31:0] data_in_chn2,  // data read from channel 0 (with some latency)
     input                      pre_valid_chn2,// data valid (same latency)
     
+    output                     en_chn3,       // @mclk enable channel 3 input FIFO ( 0 - reset)
     input                      has_burst3,    // channel has at least 1 burst (should go down immediately after read_burst0 if no more data)
     output                     read_burst3,   // request to read a burst of data from channel 0
     input               [31:0] data_in_chn3,  // data read from channel 0 (with some latency)
@@ -145,10 +149,7 @@ module  mult_saxi_wr #(
     wire                       we_ctrl;
     wire                       cmd_we_sa_len;
     
-    always @ (posedge rst or posedge mclk) begin
-        if      (rst)                  mode_reg <= 0;
-        else if (we_ctrl && !cmd_a[0]) mode_reg <= cmd_data[7:0];
-    end
+    assign {en_chn3, en_chn2, en_chn1, en_chn0} = en_chn_mclk; 
 
     assign {read_burst3, read_burst2, read_burst1, read_burst0} = grant_wr; // single clock pulse
     assign data_in[0] = data_in_chn0;
@@ -160,9 +161,12 @@ module  mult_saxi_wr #(
     assign en_chn_mclk =  mode_reg[3:0];
     assign run_chn_mclk = mode_reg[7:4];
     
+    always @ (posedge rst or posedge mclk) begin
+        if      (rst)                  mode_reg <= 0;
+        else if (we_ctrl && !cmd_a[0]) mode_reg <= cmd_data[7:0];
+    end
+
 // Arbiter requests on copying from one of teh input channels to the internal buffer
-    
-    
 
     mult_saxi_wr_chn #(
         .MULT_SAXI_HALF_BRAM (MULT_SAXI_HALF_BRAM),
