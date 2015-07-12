@@ -29,7 +29,7 @@ module  mcntrl_linear_rw #(
     parameter FRAME_HEIGHT_BITS=                16,    // Maximal frame height
     parameter LAST_FRAME_BITS=                  16,     // number of bits in frame counter (before rolls over)
     parameter MCNTRL_SCANLINE_ADDR=            'h120,
-    parameter MCNTRL_SCANLINE_MASK=            'h3f0, // both channels 0 and 1
+    parameter MCNTRL_SCANLINE_MASK=            'h7f0, // both channels 0 and 1
     parameter MCNTRL_SCANLINE_MODE=            'h0,   // set mode register: {repet,single,rst_frame,na[2:0],extra_pages[1:0],write_mode,enable,!reset}
     parameter MCNTRL_SCANLINE_STATUS_CNTRL=    'h1,   // control status reporting
     parameter MCNTRL_SCANLINE_STARTADDR=       'h2,   // 22-bit frame start address (3 CA LSBs==0. BA==0)

@@ -22,7 +22,7 @@
 
 module  mcntrl393_test01#(
     parameter MCNTRL_TEST01_ADDR=                 'h0f0,
-    parameter MCNTRL_TEST01_MASK=                 'h3f0,
+    parameter MCNTRL_TEST01_MASK=                 'h7f0,
     parameter FRAME_HEIGHT_BITS=                   16,   // Maximal frame height
     parameter MCNTRL_TEST01_CHN1_MODE=            'h2,   // set mode register for channel 5
     parameter MCNTRL_TEST01_CHN1_STATUS_CNTRL=    'h3,   // control status reporting for channel 5

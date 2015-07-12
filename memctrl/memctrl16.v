@@ -28,7 +28,7 @@ module  memctrl16 #(
     parameter DLY_LD_MASK =       'h380,  // address mask to generate delay load
 //0x1000..103f - 0- bit data (set/reset)
     parameter MCONTR_PHY_0BIT_ADDR =           'h020,  // address to set sequnecer channel and  run (4 LSB-s - channel)
-    parameter MCONTR_PHY_0BIT_ADDR_MASK =      'h3f0,  // address mask to generate sequencer channel/run
+    parameter MCONTR_PHY_0BIT_ADDR_MASK =      'h7f0,  // address mask to generate sequencer channel/run
 //  0x1020       - DLY_SET      // 0 bits -set pre-programmed delays 
 //  0x1024..1025 - CMDA_EN      // 0 bits - enable/disable command/address outputs 
 //  0x1026..1027 - SDRST_ACT    // 0 bits - enable/disable active-low reset signal to DDR3 memory
@@ -43,7 +43,7 @@ module  memctrl16 #(
     parameter MCONTR_PHY_0BIT_DLY_RST =        'hc,    // enable/disable CKE signal to memory
 //0x1030..1037 - 0-bit memory cotroller (set/reset)
     parameter MCONTR_TOP_0BIT_ADDR =           'h030,  // address to turn on/off memory controller features
-    parameter MCONTR_TOP_0BIT_ADDR_MASK =      'h3f8,  // address mask to generate sequencer channel/run
+    parameter MCONTR_TOP_0BIT_ADDR_MASK =      'h7f8,  // address mask to generate sequencer channel/run
 //  0x1030..1031 - MCONTR_EN  // 0 bits, disable/enable memory controller
 //  0x1032..1033 - REFRESH_EN // 0 bits, disable/enable memory refresh
 //  0x1034..1037 - reserved
@@ -52,10 +52,10 @@ module  memctrl16 #(
 //0x1040..107f - 16-bit data
 //  0x1040..104f - RUN_CHN      // address to set sequncer channel and  run (4 LSB-s - channel) - bits? 
 //    parameter RUN_CHN_REL =           'h040,  // address to set sequnecer channel and  run (4 LSB-s - channel)
-//   parameter RUN_CHN_REL_MASK =      'h3f0,  // address mask to generate sequencer channel/run
+//   parameter RUN_CHN_REL_MASK =      'h7f0,  // address mask to generate sequencer channel/run
 //  0x1050..1057: MCONTR_PHY16
     parameter MCONTR_PHY_16BIT_ADDR =           'h050,  // address to set sequnecer channel and  run (4 LSB-s - channel)
-    parameter MCONTR_PHY_16BIT_ADDR_MASK =      'h3f8,  // address mask to generate sequencer channel/run
+    parameter MCONTR_PHY_16BIT_ADDR_MASK =      'h7f8,  // address mask to generate sequencer channel/run
 //  0x1050       - PATTERNS     // 16 bits
 //  0x1051       - PATTERNS_TRI // 16-bit address to set DQM and DQS tristate on/off patterns {dqs_off,dqs_on, dq_off,dq_on} - 4 bits each 
 //  0x1052       - WBUF_DELAY   // 4 bits - extra delay (in mclk cycles) to add to write buffer enable (DDR3 read data)
@@ -69,10 +69,10 @@ module  memctrl16 #(
    
 //0x1060..106f: arbiter priority data
     parameter MCONTR_ARBIT_ADDR =               'h060,   // Address to set channel priorities
-    parameter MCONTR_ARBIT_ADDR_MASK =          'h3f0,   // Address mask to set channel priorities
+    parameter MCONTR_ARBIT_ADDR_MASK =          'h7f0,   // Address mask to set channel priorities
 //0x1070..1077 - 16-bit top memory controller:
     parameter MCONTR_TOP_16BIT_ADDR =           'h070,  // address to set mcontr top control registers
-    parameter MCONTR_TOP_16BIT_ADDR_MASK =      'h3f8,  // address mask to set mcontr top control registers
+    parameter MCONTR_TOP_16BIT_ADDR_MASK =      'h7f8,  // address mask to set mcontr top control registers
 //  0x1070       - MCONTR_CHN_EN     // 16 bits per-channel enable (want/need requests)
 //  0x1071       - REFRESH_PERIOD    // 8-bit refresh period
 //  0x1072       - REFRESH_ADDRESS   // 10 bits

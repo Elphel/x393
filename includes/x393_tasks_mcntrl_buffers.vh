@@ -142,7 +142,6 @@ task read_block_buf_chn;  // S uppressThisWarning VEditor : may be unused
     begin
         case (chn)
             0:  start_addr=MCONTR_BUF0_RD_ADDR + (page << 8);
-//            1:  start_addr=MCONTR_BUF1_RD_ADDR + (page << 8);
             2:  start_addr=MCONTR_BUF2_RD_ADDR + (page << 8);
             3:  start_addr=MCONTR_BUF3_RD_ADDR + (page << 8);
             4:  start_addr=MCONTR_BUF4_RD_ADDR + (page << 8);

@@ -670,8 +670,6 @@ assign bresp=                              x393_i.ps7_i.MAXIGP0BRESP;
         .MCONTR_CMD_WR_ADDR                (MCONTR_CMD_WR_ADDR),
         .MCONTR_BUF0_RD_ADDR               (MCONTR_BUF0_RD_ADDR),
         .MCONTR_BUF0_WR_ADDR               (MCONTR_BUF0_WR_ADDR),
-//        .MCONTR_BUF1_RD_ADDR               (MCONTR_BUF1_RD_ADDR),
-//        .MCONTR_BUF1_WR_ADDR               (MCONTR_BUF1_WR_ADDR),
         .MCONTR_BUF2_RD_ADDR               (MCONTR_BUF2_RD_ADDR),
         .MCONTR_BUF2_WR_ADDR               (MCONTR_BUF2_WR_ADDR),
         .MCONTR_BUF3_RD_ADDR               (MCONTR_BUF3_RD_ADDR),

@@ -22,25 +22,42 @@
 
 module  cmd_mux #(
     parameter AXI_WR_ADDR_BITS=    14,
-    parameter CONTROL_ADDR =         'h2000, // AXI write address of control write registers
-    parameter CONTROL_ADDR_MASK =    'h3c00, // AXI write address of control registers
-    parameter NUM_CYCLES_LOW_BIT=   6, // decode addresses [NUM_CYCLES_LOW_BIT+:4] into command a/d length
-    parameter NUM_CYCLES_00 =       9, // single-cycle
-    parameter NUM_CYCLES_01 =       2, // 2-cycle
-    parameter NUM_CYCLES_02 =       3, // 3-cycle
-    parameter NUM_CYCLES_03 =       4, // 4-cycle
-    parameter NUM_CYCLES_04 =       5, // 5-cycle
-    parameter NUM_CYCLES_05 =       6, // 6-cycle
-    parameter NUM_CYCLES_06 =       6, //
-    parameter NUM_CYCLES_07 =       6, //
-    parameter NUM_CYCLES_08 =       6, //
+    parameter CONTROL_ADDR =       'h0000, // AXI write address of control write registers
+    parameter CONTROL_ADDR_MASK =  'h3800, // AXI write address of control registers
+    parameter NUM_CYCLES_LOW_BIT=   6, // decode addresses [NUM_CYCLES_LOW_BIT+:5] into command a/d length
+    parameter NUM_CYCLES_00 =       2, // 2-cycle 000.003f
+    parameter NUM_CYCLES_01 =       4, // 4-cycle 040.007f
+    parameter NUM_CYCLES_02 =       3, // 3-cycle 080.00bf
+    parameter NUM_CYCLES_03 =       3, // 3-cycle 0c0.00ff
+    parameter NUM_CYCLES_04 =       6, // 6-cycle 100.013f
+    parameter NUM_CYCLES_05 =       6, // 6-cycle 140.017f
+    parameter NUM_CYCLES_06 =       4, // 4-cycle 180.01bf
+    parameter NUM_CYCLES_07 =       4, // 4-cycle 1c0.01ff
+    parameter NUM_CYCLES_08 =       6, // 6-cycle 200.023f
     parameter NUM_CYCLES_09 =       6, //
     parameter NUM_CYCLES_10 =       6, //
     parameter NUM_CYCLES_11 =       6, //
     parameter NUM_CYCLES_12 =       6, //
-    parameter NUM_CYCLES_13 =       6, //
-    parameter NUM_CYCLES_14 =       6, //
-    parameter NUM_CYCLES_15 =       6 //
+    parameter NUM_CYCLES_13 =       5, // 5-cycle - not yet used
+    parameter NUM_CYCLES_14 =       6, // 6-cycle - not yet used
+    parameter NUM_CYCLES_15 =       9, // single-cycle
+    parameter NUM_CYCLES_16 =       6,  //
+    parameter NUM_CYCLES_17 =       6,  //
+    parameter NUM_CYCLES_18 =       6,  //
+    parameter NUM_CYCLES_19 =       6,  //
+    parameter NUM_CYCLES_20 =       6,  //
+    parameter NUM_CYCLES_21 =       6,  //
+    parameter NUM_CYCLES_22 =       6,  //
+    parameter NUM_CYCLES_23 =       6,  //
+    parameter NUM_CYCLES_24 =       6,  //
+    parameter NUM_CYCLES_25 =       6,  //
+    parameter NUM_CYCLES_26 =       6,  //
+    parameter NUM_CYCLES_27 =       6,  //
+    parameter NUM_CYCLES_28 =       6,  //
+    parameter NUM_CYCLES_29 =       6,  //
+    parameter NUM_CYCLES_30 =       6,  //
+    parameter NUM_CYCLES_31 =       6  //
+    
 ) (
     input                         axi_clk,
     input                         mclk,
@@ -77,7 +94,7 @@ module  cmd_mux #(
     reg                    [31:0] cseq_wdata_r;   // registered command data from the sequencer
     reg                     [3:0] seq_length;     // encoded ROM output - number of cycles in command sequence, [3] - single cycle 
     reg                     [4:0] seq_busy_r;     // shift register loaded by decoded seq_length
-    wire                    [3:0] seq_length_rom_a; // address range used to determine command length
+    wire                    [4:0] seq_length_rom_a; // address range used to determine command length
 
     wire  can_start_w;  // can start command cycle (either from sequencer or from AXI)
     wire  start_w;      // start cycle
@@ -94,7 +111,7 @@ module  cmd_mux #(
     assign byte_ad=par_ad[7:0];      // byte-wide address/data (AL-AH-DB0-DB1-DB2-DB3)
     assign ad_stb=ad_stb_r;       // low address output strobe (and parallel A/D)
     
-    assign seq_length_rom_a=par_ad[NUM_CYCLES_LOW_BIT+:4];
+    assign seq_length_rom_a=par_ad[NUM_CYCLES_LOW_BIT+:5];
     assign ss= seq_length[3];
 
     always @ (posedge axi_clk or posedge rst) begin
@@ -108,22 +125,38 @@ module  cmd_mux #(
 //    always @ (seq_length_rom_a) begin
     always @*
         case (seq_length_rom_a)  // just temporary - fill out later
-            4'h0:seq_length <= NUM_CYCLES_00;
-            4'h1:seq_length <= NUM_CYCLES_01;
-            4'h2:seq_length <= NUM_CYCLES_02;
-            4'h3:seq_length <= NUM_CYCLES_03;
-            4'h4:seq_length <= NUM_CYCLES_04;
-            4'h5:seq_length <= NUM_CYCLES_05;
-            4'h6:seq_length <= NUM_CYCLES_06;
-            4'h7:seq_length <= NUM_CYCLES_07;
-            4'h8:seq_length <= NUM_CYCLES_08;
-            4'h9:seq_length <= NUM_CYCLES_09;
-            4'ha:seq_length <= NUM_CYCLES_10;
-            4'hb:seq_length <= NUM_CYCLES_11;
-            4'hc:seq_length <= NUM_CYCLES_12;
-            4'hd:seq_length <= NUM_CYCLES_13;
-            4'he:seq_length <= NUM_CYCLES_14;
-            4'hf:seq_length <= NUM_CYCLES_15;
+            5'h00:seq_length <= NUM_CYCLES_00;
+            5'h01:seq_length <= NUM_CYCLES_01;
+            5'h02:seq_length <= NUM_CYCLES_02;
+            5'h03:seq_length <= NUM_CYCLES_03;
+            5'h04:seq_length <= NUM_CYCLES_04;
+            5'h05:seq_length <= NUM_CYCLES_05;
+            5'h06:seq_length <= NUM_CYCLES_06;
+            5'h07:seq_length <= NUM_CYCLES_07;
+            5'h08:seq_length <= NUM_CYCLES_08;
+            5'h09:seq_length <= NUM_CYCLES_09;
+            5'h0a:seq_length <= NUM_CYCLES_10;
+            5'h0b:seq_length <= NUM_CYCLES_11;
+            5'h0c:seq_length <= NUM_CYCLES_12;
+            5'h0d:seq_length <= NUM_CYCLES_13;
+            5'h0e:seq_length <= NUM_CYCLES_14;
+            5'h0f:seq_length <= NUM_CYCLES_15;
+            5'h10:seq_length <= NUM_CYCLES_16;
+            5'h11:seq_length <= NUM_CYCLES_17;
+            5'h12:seq_length <= NUM_CYCLES_18;
+            5'h13:seq_length <= NUM_CYCLES_19;
+            5'h14:seq_length <= NUM_CYCLES_20;
+            5'h15:seq_length <= NUM_CYCLES_21;
+            5'h16:seq_length <= NUM_CYCLES_22;
+            5'h17:seq_length <= NUM_CYCLES_23;
+            5'h18:seq_length <= NUM_CYCLES_24;
+            5'h19:seq_length <= NUM_CYCLES_25;
+            5'h1a:seq_length <= NUM_CYCLES_26;
+            5'h1b:seq_length <= NUM_CYCLES_27;
+            5'h1c:seq_length <= NUM_CYCLES_28;
+            5'h1d:seq_length <= NUM_CYCLES_29;
+            5'h1e:seq_length <= NUM_CYCLES_30;
+            5'h1f:seq_length <= NUM_CYCLES_31;
         endcase
     always @ (posedge rst or posedge mclk) begin
         if (rst) seq_busy_r<=0;

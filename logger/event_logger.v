@@ -24,8 +24,8 @@ module  event_logger#(
     parameter LOGGER_ADDR =                    'h1a0, //TODO: assign valid address
     parameter LOGGER_STATUS =                  'h1a2, //TODO: assign valid address (just 1 location)
     parameter LOGGER_STATUS_REG_ADDR =         'h0b, //TODO: assign valid address (just 1 location)
-    parameter LOGGER_MASK =                    'h3fe,
-    parameter LOGGER_STATUS_MASK =             'h3ff,
+    parameter LOGGER_MASK =                    'h7fe,
+    parameter LOGGER_STATUS_MASK =             'h7ff,
 
     parameter LOGGER_PAGE_IMU =                 0, // 'h00..'h1f - overlaps with period/duration/halfperiod/config?
     parameter LOGGER_PAGE_GPS =                 1, // 'h20..'h3f

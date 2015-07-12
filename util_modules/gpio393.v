@@ -51,7 +51,7 @@
 // Enabled bits will be priority encoded (C - highest, software - lowest)
 module  gpio393  #(
         parameter GPIO_ADDR =                 'h180, //TODO: assign valid address
-        parameter GPIO_MASK =                 'h3fe,
+        parameter GPIO_MASK =                 'h7fe,
         parameter GPIO_STATUS_REG_ADDR =      'ha,  // address where status can be read out (10 GPIO inputs)
         
         parameter integer GPIO_DRIVE =        12,

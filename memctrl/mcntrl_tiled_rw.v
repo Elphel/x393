@@ -32,7 +32,7 @@ module  mcntrl_tiled_rw#(
     parameter MAX_TILE_HEIGHT=                  6,     // number of bits to specify maximal tile (height-1) (6 -> 64)
     parameter LAST_FRAME_BITS=                 16,     // number of bits in frame counter (before rolls over)
     parameter MCNTRL_TILED_ADDR=            'h120,
-    parameter MCNTRL_TILED_MASK=            'h3f0, // both channels 0 and 1
+    parameter MCNTRL_TILED_MASK=            'h7f0, // both channels 0 and 1
     parameter MCNTRL_TILED_MODE=            'h0,   // set mode register: {byte32,keep_open,extra_pages[1:0],write_mode,enable,!reset}
     parameter MCNTRL_TILED_STATUS_CNTRL=    'h1,   // control status reporting
     parameter MCNTRL_TILED_STARTADDR=       'h2,   // 22-bit frame start address (3 CA LSBs==0. BA==0)

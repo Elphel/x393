@@ -22,7 +22,7 @@
 
 module  jp_channel#(
         parameter CMPRS_ADDR=                'h120, //TODO: assign valid address
-        parameter CMPRS_MASK=                'h3f8,
+        parameter CMPRS_MASK=                'h7f8,
         parameter CMPRS_CONTROL_REG=          0,
         parameter CMPRS_STATUS_CNTRL=         1,
         parameter CMPRS_FORMAT=               2,

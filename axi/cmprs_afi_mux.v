@@ -22,7 +22,7 @@
 
 module  cmprs_afi_mux#(
     parameter CMPRS_AFIMUX_ADDR=                'h140, //TODO: assign valid address
-    parameter CMPRS_AFIMUX_MASK=                'h3f0,
+    parameter CMPRS_AFIMUX_MASK=                'h7f0,
     parameter CMPRS_AFIMUX_EN=                  'h0, // enables (gl;obal and per-channel)
     parameter CMPRS_AFIMUX_RST=                 'h1, // per-channel resets
     parameter CMPRS_AFIMUX_MODE=                'h2, // per-channel select - which register to return as status

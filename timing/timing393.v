@@ -26,8 +26,8 @@ module  timing393       #(
     parameter RTC_STATUS_REG_ADDR =              7,  // address where status can be read out (currnelti just sequence # and alternating bit) 
     parameter RTC_SEC_USEC_ADDR =                8,  // address where seconds of the snapshot can be read (microseconds - next adderss)
     
-    parameter CAMSYNC_MASK =                    'h3f8,
-    parameter RTC_MASK=                         'h3fc,
+    parameter CAMSYNC_MASK =                    'h7f8,
+    parameter RTC_MASK =                        'h7fc,
     parameter CAMSYNC_MODE =                    'h0,
     parameter CAMSYNC_TRIG_SRC =                'h1, // setup trigger source
     parameter CAMSYNC_TRIG_DST =                'h2, // setup trigger destination line(s)

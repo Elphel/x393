@@ -25,7 +25,7 @@
 
 module  histogram_saxi#(
     parameter HIST_SAXI_ADDR =           'h380,  // need to modify addresses and masks to fit into overall command range
-    parameter HIST_SAXI_ADDR_MASK =      'h3f0,
+    parameter HIST_SAXI_ADDR_MASK =      'h7f0,
     parameter HIST_SAXI_MODE_ADDR =      'h390,
       parameter HIST_SAXI_MODE_WIDTH =   8,
       parameter HIST_SAXI_EN =           0,
@@ -33,7 +33,7 @@ module  histogram_saxi#(
       parameter HIST_CONFIRM_WRITE =     2, // wait write confirmation for each block
       parameter HIST_SAXI_AWCACHE =      4'h3, //..7 cache mode (4 bits, default 4'h3)
       
-    parameter HIST_SAXI_MODE_ADDR_MASK = 'h3ff,
+    parameter HIST_SAXI_MODE_ADDR_MASK = 'h7ff,
 //    parameter HIST_SAXI_STATUS_REG =     'h34,
     parameter NUM_FRAME_BITS = 4 // number of bits use for frame number 
 )(
@@ -233,7 +233,7 @@ module  histogram_saxi#(
     
     assign saxi_bready = 1'b1; // always ready
     assign saxi_wlast =  &wburst_cntr;
-    assign saxi_wid[5:0] = {attrib_chn,attrib_color};
+    assign saxi_wid[5:0] = {attrib_chn,attrib_color}; // TODO: Verify they match FIFO output (otherwise save them in FIFO too) block_start waits for FIFO?
     assign saxi_wstrb =    4'hf; // All bytes
     
       

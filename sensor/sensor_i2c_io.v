@@ -23,9 +23,9 @@
 module  sensor_i2c_io#(
     parameter SENSI2C_ABS_ADDR =    'h300,
     parameter SENSI2C_REL_ADDR =    'h310,
-    parameter SENSI2C_ADDR_MASK =   'h3f0, // both for SENSI2C_ABS_ADDR and SENSI2C_REL_ADDR
+    parameter SENSI2C_ADDR_MASK =   'h7f0, // both for SENSI2C_ABS_ADDR and SENSI2C_REL_ADDR
     parameter SENSI2C_CTRL_ADDR =   'h320,
-    parameter SENSI2C_CTRL_MASK =   'h3fe,
+    parameter SENSI2C_CTRL_MASK =   'h7fe,
     parameter SENSI2C_CTRL =        'h0,
     parameter SENSI2C_STATUS =      'h1,
     parameter SENSI2C_STATUS_REG =  'h30,

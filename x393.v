@@ -182,8 +182,8 @@ module  x393 #(
     
     
 // parallel address/data - where higher bandwidth (single-cycle) is needed        
-    wire [AXI_WR_ADDR_BITS-1:0] par_waddr;    /// SuppressThisWarning VEditor ****** multiplexed address (full, parallel) to slave devices 
-    wire                 [31:0] par_data;     /// SuppressThisWarning VEditor ****** multiplexed data (full, parallel) to slave devices 
+    wire [AXI_WR_ADDR_BITS-1:0] par_waddr; 
+    wire                 [31:0] par_data; 
 
 
 
@@ -607,8 +607,6 @@ BUFG bufg_axi_aclk_i  (.O(axi_aclk),.I(fclk[0]));
         .MCONTR_CMD_WR_ADDR                (MCONTR_CMD_WR_ADDR),
         .MCONTR_BUF0_RD_ADDR               (MCONTR_BUF0_RD_ADDR),
         .MCONTR_BUF0_WR_ADDR               (MCONTR_BUF0_WR_ADDR),
-//        .MCONTR_BUF1_RD_ADDR               (MCONTR_BUF1_RD_ADDR), // not used - replaced with membridge
-//        .MCONTR_BUF1_WR_ADDR               (MCONTR_BUF1_WR_ADDR), // not used - replaced with membridge
         .MCONTR_BUF2_RD_ADDR               (MCONTR_BUF2_RD_ADDR),
         .MCONTR_BUF2_WR_ADDR               (MCONTR_BUF2_WR_ADDR),
         .MCONTR_BUF3_RD_ADDR               (MCONTR_BUF3_RD_ADDR),

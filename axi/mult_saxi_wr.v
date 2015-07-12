@@ -32,8 +32,8 @@ module  mult_saxi_wr #(
     parameter MULT_SAXI_BSLOG1 =          4,
     parameter MULT_SAXI_BSLOG2 =          4,
     parameter MULT_SAXI_BSLOG3 =          4,
-    parameter MULT_SAXI_MASK =           'h3f8,  // 4 address/length pairs. In bytes, but lower bits are set to 0?
-    parameter MULT_SAXI_CNTRL_MASK =     'h3fe,  // mode and status - 2 locations
+    parameter MULT_SAXI_MASK =           'h7f8,  // 4 address/length pairs. In bytes, but lower bits are set to 0?
+    parameter MULT_SAXI_CNTRL_MASK =     'h7fe,  // mode and status - 2 locations
     parameter HIST_SAXI_AWCACHE =         4'h3, //..7 cache mode (4 bits, default 4'h3)
     parameter MULT_SAXI_ADV_WR =          4, // number of clock cycles before end of write to genearte adv_wr_done
     parameter MULT_SAXI_ADV_RD =          3 // number of clock cycles before end of write to genearte adv_wr_done

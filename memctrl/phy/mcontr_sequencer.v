@@ -31,7 +31,7 @@ module  mcontr_sequencer   #(
 //  0x10e0       - set delay for MMCM
 //0x1000..103f - 0- bit data (set/reset)
     parameter MCONTR_PHY_0BIT_ADDR =           'h020,  // address to set sequnecer channel and  run (4 LSB-s - channel)
-    parameter MCONTR_PHY_0BIT_ADDR_MASK =      'h3f0,  // address mask to generate sequencer channel/run
+    parameter MCONTR_PHY_0BIT_ADDR_MASK =      'h7f0,  // address mask to generate sequencer channel/run
 //  0x1024..1025 - CMDA_EN      // 0 bits - enable/disable command/address outputs 
 //  0x1026..1027 - SDRST_ACT    // 0 bits - enable/disable active-low reset signal to DDR3 memory
 //  0x1028..1029 - CKE_EN       // 0 bits - enable/disable CKE signal to memory 
@@ -48,10 +48,10 @@ module  mcontr_sequencer   #(
 //0x1040..107f - 16-bit data
 //  0x1040..104f - RUN_CHN      // address to set sequncer channel and  run (4 LSB-s - channel) - bits? 
 //    parameter RUN_CHN_REL =           'h040,  // address to set sequnecer channel and  run (4 LSB-s - channel)
-//   parameter RUN_CHN_REL_MASK =      'h3f0,  // address mask to generate sequencer channel/run
+//   parameter RUN_CHN_REL_MASK =      'h7f0,  // address mask to generate sequencer channel/run
 //  0x1050..1057: MCONTR_PHY16
     parameter MCONTR_PHY_16BIT_ADDR =           'h050,  // address to set sequnecer channel and  run (4 LSB-s - channel)
-    parameter MCONTR_PHY_16BIT_ADDR_MASK =      'h3f8,  // address mask to generate sequencer channel/run
+    parameter MCONTR_PHY_16BIT_ADDR_MASK =      'h7f8,  // address mask to generate sequencer channel/run
     parameter MCONTR_PHY_16BIT_PATTERNS =       'h0,    // set DQM and DQS patterns (16'h0055)
     parameter MCONTR_PHY_16BIT_PATTERNS_TRI =   'h1,    // 16-bit address to set DQM and DQS tristate on/off patterns {dqs_off,dqs_on, dq_off,dq_on} - 4 bits each 
     parameter MCONTR_PHY_16BIT_WBUF_DELAY =     'h2,    // 4? bits - extra delay (in mclk cycles) to add to write buffer enable (DDR3 read data)

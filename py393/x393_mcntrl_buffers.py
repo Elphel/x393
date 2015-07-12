@@ -217,7 +217,6 @@ class X393McntrlBuffers(object):
         """
         start_addr=-1
         if   chn==0:  start_addr=vrlg.MCONTR_BUF0_RD_ADDR + (page << 8)
-#        elif chn==1:  start_addr=vrlg.MCONTR_BUF1_RD_ADDR + (page << 8)
         elif chn==2:  start_addr=vrlg.MCONTR_BUF2_RD_ADDR + (page << 8)
         elif chn==3:  start_addr=vrlg.MCONTR_BUF3_RD_ADDR + (page << 8)
         elif chn==4:  start_addr=vrlg.MCONTR_BUF4_RD_ADDR + (page << 8)

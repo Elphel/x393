@@ -22,7 +22,7 @@
 //`define MEMBRIDGE_DEBUG_READ 1
 module  membridge#(
     parameter MEMBRIDGE_ADDR=                     'h200,
-    parameter MEMBRIDGE_MASK=                     'h3f0,
+    parameter MEMBRIDGE_MASK=                     'h7f0,
     parameter MEMBRIDGE_CTRL=                     'h0, // bit 0 - enable, bits[2:1]: 11 - start(continue), 01 - start and reset address
     parameter MEMBRIDGE_STATUS_CNTRL=             'h1,
     parameter MEMBRIDGE_LO_ADDR64=                'h2, // low address of the system memory, in 64-bit words (<<3 to get byte address)

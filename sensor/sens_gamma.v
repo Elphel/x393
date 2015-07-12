@@ -24,7 +24,7 @@ module  sens_gamma #(
     parameter SENS_GAMMA_NUM_CHN =     3, // number of subchannels for his sensor ports (1..4)
     parameter SENS_GAMMA_BUFFER =      0, // 1 - use "shadow" table for clean switching, 0 - single table per channel
     parameter SENS_GAMMA_ADDR =        'h338,
-    parameter SENS_GAMMA_ADDR_MASK =   'h3fc,
+    parameter SENS_GAMMA_ADDR_MASK =   'h7fc,
     parameter SENS_GAMMA_CTRL =        'h0,
     parameter SENS_GAMMA_ADDR_DATA =   'h1, // bit 20 ==1 - table address, bit 20==0 - table data (18 bits)
     parameter SENS_GAMMA_HEIGHT01 =    'h2, // bits [15:0] - height minus 1 of image 0, [31:16] - height-1 of image1

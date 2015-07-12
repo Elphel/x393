@@ -22,7 +22,7 @@
 
 module  sens_parallel12 #(
     parameter SENSIO_ADDR =        'h330,
-    parameter SENSIO_ADDR_MASK =   'h3f8,
+    parameter SENSIO_ADDR_MASK =   'h7f8,
     parameter SENSIO_CTRL =        'h0,
     parameter SENSIO_STATUS =      'h1,
     parameter SENSIO_JTAG =        'h2,

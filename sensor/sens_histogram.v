@@ -23,7 +23,7 @@
 module  sens_histogram #(
     parameter HISTOGRAM_RAM_MODE =     "NOBUF", // valid: "NOBUF" (32-bits, no buffering), "BUF18", "BUF32"
     parameter HISTOGRAM_ADDR =         'h33c,
-    parameter HISTOGRAM_ADDR_MASK =    'h3fe,
+    parameter HISTOGRAM_ADDR_MASK =    'h7fe,
     parameter HISTOGRAM_LEFT_TOP =     'h0,
     parameter HISTOGRAM_WIDTH_HEIGHT = 'h1 // 1.. 2^16, 0 - use HACT
 )(

@@ -32,7 +32,7 @@ module  sensor_channel#(
     
     // parameters defining address map
     parameter SENSOR_CTRL_RADDR =     0, //'h300
-    parameter SENSOR_CTRL_ADDR_MASK = 'h3ff, //
+    parameter SENSOR_CTRL_ADDR_MASK = 'h7ff, //
         // bits of the SENSOR mode register
         parameter SENSOR_MODE_WIDTH =     9,
         parameter SENSOR_HIST_EN_BIT =    0, // 0..3 1 - enable histogram modules, disable after processing the started frame
@@ -40,13 +40,13 @@ module  sensor_channel#(
         parameter SENSOR_16BIT_BIT =      8, // 0 - 8 bpp mode, 1 - 16 bpp (bypass gamma). Gamma-processed data is still used for histograms
     
     parameter SENSI2C_CTRL_RADDR =    2, // 302..'h303
-    parameter SENSI2C_CTRL_MASK =     'h3fe,
+    parameter SENSI2C_CTRL_MASK =     'h7fe,
       // sensor_i2c_io relative control register addresses
       parameter SENSI2C_CTRL =          'h0,
       parameter SENSI2C_STATUS =        'h1,
     
     parameter SENS_GAMMA_RADDR =      4,
-    parameter SENS_GAMMA_ADDR_MASK =   'h3fc,
+    parameter SENS_GAMMA_ADDR_MASK =   'h7fc,
       // sens_gamma registers
       parameter SENS_GAMMA_CTRL =        'h0,
       parameter SENS_GAMMA_ADDR_DATA =   'h1, // bit 20 ==1 - table address, bit 20==0 - table data (18 bits)
@@ -61,7 +61,7 @@ module  sensor_channel#(
         parameter SENS_GAMMA_MODE_TRIG =   5,
     
     parameter SENSIO_RADDR =          8, //'h308  .. 'h30c
-    parameter SENSIO_ADDR_MASK =      'h3f8,
+    parameter SENSIO_ADDR_MASK =      'h7f8,
       // sens_parallel12 registers
       parameter SENSIO_CTRL =           'h0,
         // SENSIO_CTRL register bits
@@ -86,14 +86,14 @@ module  sensor_channel#(
     // sensor_i2c_io command/data write registers s (relative to SENSOR_BASE_ADDR)
     parameter SENSI2C_ABS_RADDR =     'h10, // 'h310..'h31f
     parameter SENSI2C_REL_RADDR =     'h20, // 'h320..'h32f
-    parameter SENSI2C_ADDR_MASK =     'h3f0, // both for SENSI2C_ABS_ADDR and SENSI2C_REL_ADDR
+    parameter SENSI2C_ADDR_MASK =     'h7f0, // both for SENSI2C_ABS_ADDR and SENSI2C_REL_ADDR
 
     // sens_hist registers (relative to SENSOR_BASE_ADDR)
     parameter HISTOGRAM_RADDR0 =      'h30, //
     parameter HISTOGRAM_RADDR1 =      'h32, //
     parameter HISTOGRAM_RADDR2 =      'h34, //
     parameter HISTOGRAM_RADDR3 =      'h36, //
-    parameter HISTOGRAM_ADDR_MASK =   'h3fe, // for each channel
+    parameter HISTOGRAM_ADDR_MASK =   'h7fe, // for each channel
       // sens_hist registers
       parameter HISTOGRAM_LEFT_TOP =     'h0,
       parameter HISTOGRAM_WIDTH_HEIGHT = 'h1, // 1.. 2^16, 0 - use HACT

@@ -23,12 +23,12 @@
 module  cmd_readback#(
     parameter AXI_WR_ADDR_BITS=              14,
     parameter AXI_RD_ADDR_BITS =             14,
-    parameter CONTROL_RBACK_DEPTH=           10, // 
+    parameter CONTROL_RBACK_DEPTH=           11, // 10 - 1xbram, 11 - 2xbram
     
-    parameter CONTROL_ADDR =             'h2000,  // AXI write address of control write registers
-    parameter CONTROL_ADDR_MASK =        'h3c00,  // AXI write address of control registers
-    parameter CONTROL_RBACK_ADDR =       'h2000,  // AXI write address of control write registers
-    parameter CONTROL_RBACK_ADDR_MASK =  'h3c00   // AXI write address of control registers
+    parameter CONTROL_ADDR =             'h0000,  // AXI write address of control write registers
+    parameter CONTROL_ADDR_MASK =        'h3800,  // AXI write address of control registers
+    parameter CONTROL_RBACK_ADDR =       'h0000,  // AXI write address of control write registers
+    parameter CONTROL_RBACK_ADDR_MASK =  'h3800   // AXI write address of control registers
 )(
     input                            rst,
     input                            mclk,
