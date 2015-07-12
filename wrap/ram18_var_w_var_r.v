@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: ram18_var_w_var_r
  * Date:2015-06-16  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: Half-BRAM module wrapper to use as a variable width R/W, no parity
  *
  * Copyright (c) 2015 Elphel, Inc.

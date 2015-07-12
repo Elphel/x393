@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: status_router2
  * Date:2015-01-13  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: 2:1 status data router/mux
  *
  * Copyright (c) 2015 Elphel, Inc.

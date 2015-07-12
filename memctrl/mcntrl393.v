@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: mcntrl393
  * Date:2015-01-31  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: Top level memory controller for 393 camera, includes channel buffers
  *
  * Copyright (c) 2015 Elphel, Inc.

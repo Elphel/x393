@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: table_ad_transmit
  * Date:2015-06-18  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: transmit byte-wide table address/data from 32-bit cmd_desr
  * In 32-bit mode we duty cycle is >= 6, so there will always be gaps in
  * chn_stb[i] active 

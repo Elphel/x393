@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: cmprs_macroblock_buf_iface
  * Date:2015-06-11  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: Communicates with compressor memory buffer, generates pixel
  * stream matching selected color mode, accommodates for the buffer latency,
  * acts as a pacemaker for the whole compressor (next stages are able to keep up).

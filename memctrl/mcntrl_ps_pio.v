@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: mcntrl_ps_pio
  * Date:2015-01-27  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: Read/write channels to DDR3 memory with software-programmable
  * command sequence
  *

@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: cmd_frame_sequencer
  * Date:2015-06-30  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: Store/dispatch commands on per-frame basis
  *
  * Copyright (c) 2015 Elphel, Inc.

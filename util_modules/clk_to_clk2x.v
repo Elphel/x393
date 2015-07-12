@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: clk_to_clk2x
  * Date:2015-05-29  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: move data between clk and clk2x (nominally posedge aligned)
  *
  * Copyright (c) 2015 Elphel, Inc.

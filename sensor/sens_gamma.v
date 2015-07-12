@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: sens_gamma
  * Date:2015-05-24  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: table based piecewise-linear conversion of 16 -> 8 bit data
  *
  * Copyright (c) 2015 Elphel, Inc.

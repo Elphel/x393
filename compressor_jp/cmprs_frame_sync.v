@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: cmprs_frame_sync
  * Date:2015-06-23  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: Synchronizes memory channels (sensor and compressor)
  *
  * Copyright (c) 2015 Elphel, Inc.

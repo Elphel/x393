@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: rtc393
  * Date:2015-07-05  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: Adjustable real time clock, generate 1 microsecond resolution,
  * timestamps. Provides seconds (32 bit) and microseconds (20 bits),
  * allows 24-bit accummulator-based fine adjustment

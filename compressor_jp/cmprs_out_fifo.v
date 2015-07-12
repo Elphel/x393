@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: cmprs_out_fifo
  * Date:2015-06-25  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: Compressor output FIFO
  *
  * Copyright (c) 2015 Elphel, Inc.

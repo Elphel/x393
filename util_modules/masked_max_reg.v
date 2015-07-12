@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: masked_max_reg
  * Date:2015-01-09  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: Finds maximal of two masked values, registers result
  *
  * Copyright (c) 2015 Elphel, Inc.

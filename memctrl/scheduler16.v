@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: scheduler16
  * Date:2015-01-09  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: 16-channel programmable DDR memory access scheduler
  *
  * Copyright (c) 2015 Elphel, Inc.

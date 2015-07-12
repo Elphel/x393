@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: cmprs_buf_average
  * Date:2015-06-14  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: Saves Y and C components to buffers, caculates averages
  * during write, then subtracts them during read and provides to
  * the after DCT to restore DC

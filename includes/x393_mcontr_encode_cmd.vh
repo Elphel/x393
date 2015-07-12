@@ -1,7 +1,7 @@
 /*******************************************************************************
  * File: x393_mcontr_encode_cmd.vh
  * Date:2015-02-09  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: Functions used to encode memory controller sequences
  *
  * Copyright (c) 2015 Elphel, Inc.

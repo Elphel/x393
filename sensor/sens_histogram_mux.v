@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: sens_histogram_mux
  * Date:2015-06-01  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: Readout multiplexer for 4 histogram modules
  *
  * Copyright (c) 2015 Elphel, Inc.

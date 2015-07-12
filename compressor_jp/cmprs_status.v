@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: cmprs_status
  * Date:2015-06-25  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: Generate compressor status word
  *
  * Copyright (c) 2015 Elphel, Inc.

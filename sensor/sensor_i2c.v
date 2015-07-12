@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: sensor_i2c
  * Date:2015-05-10  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: i2c write-only sequencer to control image sensor
  *
  * Copyright (c) 2015 Elphel, Inc.

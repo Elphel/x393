@@ -1,7 +1,7 @@
  /*******************************************************************************
  * File: x393_tasks_ps_pio.vh
  * Date:2015-02-07  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: Simulation tasks for mcntrl_ps_pio module (launching software
  * - programmed memory transaction sequences)
  *

@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: oddr_ss
  * Date:2015-05-16  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: Wrapper for ODDR+OBUFT
  *
  * Copyright (c) 2015 Elphel, Inc.

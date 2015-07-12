@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: buf_xclk_mclk16_393
  * Date:2015-07-06  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: move data from xclk to mclk domain
  *
  * Copyright (c) 2015 Elphel, Inc.

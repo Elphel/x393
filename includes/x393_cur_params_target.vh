@@ -1,7 +1,7 @@
 /*******************************************************************************
  * File: x393_cur_params_target.vh
  * Date:2015-02-07  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: Memory controller parameters that need adjustment during training
  * Target ,pde
  * Copyright (c) 2015 Elphel, Inc.

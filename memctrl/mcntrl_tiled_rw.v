@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: mcntrl_tiled_rw
  * Date:2015-02-03  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description:  Organize paged R/W from DDR3 memory in tiled order
  * with window support
  * Tiles spreading over two different frames is not yet supported (needed for

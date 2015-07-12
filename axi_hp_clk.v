@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: axi_hp_clk
  * Date:2015-04-27  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: Generate global clock for axi_hp
  *
  * Copyright (c) 2015 Elphel, Inc.

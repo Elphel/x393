@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: jp_channel
  * Date:2015-06-10  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: Top module of JPEG/JP4 compressor channel
  *
  * Copyright (c) 2015 Elphel, Inc.

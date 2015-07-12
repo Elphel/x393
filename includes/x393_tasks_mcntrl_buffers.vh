@@ -1,7 +1,7 @@
  /*******************************************************************************
  * File: x393_tasks_mcntrl_buffers.vh
  * Date:2015-02-07  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: Simulation tasks for software reading/writing (with test patterns)
  * of the block buffers.
  *

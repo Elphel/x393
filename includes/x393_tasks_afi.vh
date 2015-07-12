@@ -1,7 +1,7 @@
  /*******************************************************************************
  * File: x393_tasks_afi.vh
  * Date:2015-02-07  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: Simulation tasks for the AXI_HP (AFI)
  *
  * Copyright (c) 2015 Elphel, Inc.

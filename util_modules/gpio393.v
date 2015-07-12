@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: gpio393
  * Date:2015-07-06  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: Control of the 10 GPIO signals of the 10393 board
  * Converted from twelve_ios.v of teh x353 project (2005)
  *

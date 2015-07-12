@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: mul_saxi_wr_chn
  * Date:2015-07-10  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: One channel of the mult_saxi_wr (read/write common buffer)
  *
  * Copyright (c) 2015 Elphel, Inc .

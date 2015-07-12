@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: ramt_var_w_var_r
  * Date:2015-05-29  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description:  Dual port memory wrapper, with variable width write and variable
  * width read,  using "TDP" mode of RAMB36E1. Same R/W widths in each port.
  * Does not use parity bits to increase total data width, width down to 1 are valid.

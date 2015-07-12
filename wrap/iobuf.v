@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: iobuf
  * Date:2015-05-15  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: Wrapper for IOBUF primitive
  *
  * Copyright (c) 2015 Elphel, Inc.

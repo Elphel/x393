@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: mcntrl_1kx32r
  * Date:2015-02-03  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: Paged buffer for ddr3 controller read channel
  * with address autoincrement. 32 bit external data.
  *

@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: histogram_saxi
  * Date:2015-06-04  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: Histograms transfer to the system memory over S_AXI 
  *
  * Copyright (c) 2015 Elphel, Inc.

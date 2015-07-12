@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: cmd_encod_linear_mux
  * Date:2015-01-31  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: Multiplex parameters from multiple channels sharing the same
  * linear command encoders (cmd_encod_linear_rd and cmd_encod_linear_wr)
  * Latency 1 clcok cycle

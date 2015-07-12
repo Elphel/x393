@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: cmd_encod_tiled_32_rd
  * Date:2015-02-218  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: Command sequencer generator for reading a tiled area
  * up to 1 kB. Memory is mapped so 8 consecuitive rows have same RA, CA
  * and alternating BA (0 to 7). Data will be read in columns 32 bytes wide,

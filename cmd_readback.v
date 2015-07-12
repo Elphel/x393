@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: cmd_readback
  * Date:2015-05-05  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: Store control register data and readback
  *
  * Copyright (c) 2015 Elphel, Inc.

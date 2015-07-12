@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: cmprs_afi_mux_status
  * Date:2015-06-28  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: prepare and send per-channel chunk pointer information as status
  * Using 4 consecutive locations. Each channel can provide one of the 4 pointers:
  * frame pointer in the write channel, current chunk pointer in the write channel

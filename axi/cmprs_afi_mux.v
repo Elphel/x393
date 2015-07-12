@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: cmprs_afi_mux
  * Date:2015-06-26  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: Writes comressor data from up to 4 channels to system memory over AXI_HP
  *
  * Copyright (c) 2015 Elphel, Inc.

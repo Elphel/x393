@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: cmd_seq_mux
  * Date:2015-06-29  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: Command multiplexer from 4 channels of frame-based command
  * sequencers.
  *

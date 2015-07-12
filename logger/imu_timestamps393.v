@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: imu_timestamps393
  * Date:2015-07-06  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: Acquire timestmps for events
  *
  * Copyright (c) 2015 Elphel, Inc.

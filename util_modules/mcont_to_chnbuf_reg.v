@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: mcont_to_chnbuf_reg
  * Date:2015-01-19  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: Registering data from memory controller to channel buffer
  *
  * Copyright (c) 2015 Elphel, Inc.

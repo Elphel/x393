@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: table_ad_receive
  * Date:2015-06-18  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: Receive tabble address/data sent by table_ad_transmit
  *
  * Copyright (c) 2015 Elphel, Inc.

@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: timestamp_to_parallel
  * Date:2015-07-04  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: convert byte-parallel timestamp message to parallel sec, usec
  * compatible to the x353 code (for NC353 camera)
  *

@@ -1,7 +1,7 @@
  /*******************************************************************************
  * File: x393_simulation_parameters.vh
  * Date:2015-02-07  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: Simulation-specific parameters for the x393
  *
  * Copyright (c) 2015 Elphel, Inc.

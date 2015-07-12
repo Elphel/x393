@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: csconvert
  * Date:2015-06-14  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: Color space convert: combine differnt color modes
  *
  * Copyright (c) 2015 Elphel, Inc.

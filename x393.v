@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: x393
  * Date:2015-01-13  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: Elphel NC393 camera FPGA top module
  *
  * Copyright (c) 2015 Elphel, Inc.

@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: dcc_sync393
  * Date:2015-06-17  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: Synchronises output of DC components
  * Syncronizes dcc data with dma1 output, adds 16..31 16-bit zero words for Axis DMA
  * Was not used in late NC353 camera (DMA channel used fro IMU logger)

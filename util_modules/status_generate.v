@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: status_generate
  * Date:2015-01-14  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: generate byte-serial status data
  *
  * Copyright (c) 2015 Elphel, Inc.

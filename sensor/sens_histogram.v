@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: sens_histogram
  * Date:2015-05-29  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: Calculates per-color histogram over the specified rectangular region
  *
  * Copyright (c) 2015 Elphel, Inc.

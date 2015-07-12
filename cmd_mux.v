@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: cmd_mux
  * Date:2015-01-11  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: Command multiplexer between AXI and frame-based command sequencer
  *
  * Copyright (c) 2015 Elphel, Inc.

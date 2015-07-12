@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: mpullup
  * Date:2015-05-15  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: wrapper for PULLUP primitive
  *
  * Copyright (c) 2015 Elphel, Inc.

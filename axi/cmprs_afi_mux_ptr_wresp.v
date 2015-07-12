@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: cmprs_afi_mux_ptr_wresp
  * Date:2015-06-28  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: Maintain 4-channel chunk pointers for wrirte response
  * Advance 32-byte chunk pointers for each AXI burst and each frame (4*2=8 pointers)
  *

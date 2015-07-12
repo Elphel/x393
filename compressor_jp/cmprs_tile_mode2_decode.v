@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: cmprs_tile_mode2_decode
  * Date:2015-06-14  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: Decode mode parameters, registered at pre-start of the macroblock
  * data to color conversion module
  *

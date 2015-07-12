@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: pxd_clock
  * Date:2015-05-16  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: pixel clock line input
  *
  * Copyright (c) 2015 Elphel, Inc.

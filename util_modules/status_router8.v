@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: status_router8
  * Date:2015-01-31  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: Routes status data from 8 sources
  *
  * Copyright (c) 2015 Elphel, Inc.

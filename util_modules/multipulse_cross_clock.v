@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: multipulse_cross_clock
  * Date:2015-04-27  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: Generate a train of pulses through clock domains boundary
  * Maximal duty cycle (with EXTRA_DLY=0 and Fdst << Fsrc) = 50%
  * same frequencies - ~1/3 (with EXTRA_DLY=0) and 1/5 (with EXTRA_DLY=1)

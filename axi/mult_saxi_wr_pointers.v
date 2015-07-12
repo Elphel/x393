@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: mult_saxi_wr_pointers
  * Date:2015-07-10  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: Process pointers for mult_saxi_wr
  *
  * Copyright (c) 2015 Elphel, Inc .

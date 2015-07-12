@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: cmd_encod_4mux
  * Date:2015-02-21  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: 4-to-1 mux to cmbine memory sequences sources
  *
  * Copyright (c) 2015 Elphel, Inc.

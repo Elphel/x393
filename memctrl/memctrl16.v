@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: memctrl16
  * Date:2015-01-10  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: 16-channel memory controller
  *
  * Copyright (c) 2015 Elphel, Inc.

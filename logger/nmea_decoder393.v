@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: nmea_decoder393
  * Date:2015-07-06  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: Decode some of the NMEA sentences (to compress them)
  *
  * Copyright (c) 2015 Elphel, Inc.

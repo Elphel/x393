@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: sensor_i2c_io
  * Date:2015-05-15  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: sensor_i2c with I/O pad elements
  *
  * Copyright (c) 2015 Elphel, Inc.

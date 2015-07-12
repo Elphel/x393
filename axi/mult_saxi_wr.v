@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: mult_saxi_wr
  * Date:2015-07-08  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: send data from up to 4 sources to the system memory over S_AXI.
  * Each source should have a 32-bit wide buffer running at the same clock (mclk).
  * Buffer should contain at least burst size (4,8,16,32,64 bytes)

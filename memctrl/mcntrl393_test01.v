@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: mcntrl393_test01
  * Date:2015-02-06  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: Temporary  module to interface mcntrl393 control signals
  *
  * Copyright (c) 2015 Elphel, Inc.

@@ -1,7 +1,7 @@
  /*******************************************************************************
  * File: x393_tasks_mcntrl_timing.vh
  * Date:2015-02-07  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: Simulation tasks for programming I/O delays and other timing
  * parameters in the memory controller
  *

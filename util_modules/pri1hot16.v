@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: pri1hot16
  * Date:2015-01-09  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: Priority select one of 16 inputs
  *
  * Copyright (c) 2015 Elphel, Inc.

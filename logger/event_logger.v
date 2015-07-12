@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: event_logger
  * Date:2015-07-06  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: top module of the event logger (ported from imu_logger)
  *
  * Copyright (c) 2015 Elphel, Inc.

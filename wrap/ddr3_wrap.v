@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: ddr3_wrap
  * Date:2015-04-20  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: ddr3 model wrapper to include delays matching hardware
  *
  * Copyright (c) 2015 Elphel, Inc.

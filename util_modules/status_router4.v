@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: status_router4
  * Date:2015-01-31  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: Routes status data from 4 sources
  *
  * Copyright (c) 2015 Elphel, Inc.

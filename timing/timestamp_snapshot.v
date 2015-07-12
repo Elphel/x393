@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: timestamp_snapshot
  * Date:2015-07-03  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: Take timestamp snapshot and send the ts message over the 8-bit bus
  *
  * Copyright (c) 2015 Elphel, Inc.

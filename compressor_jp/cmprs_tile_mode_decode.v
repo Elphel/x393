@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: cmprs_tile_mode_decode
  * Date:2015-06-14  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: Decode tile/macroblocks parameters from compressor type
  *
  * Copyright (c) 2015 Elphel, Inc.

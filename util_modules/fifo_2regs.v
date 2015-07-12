@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: fifo_2regs
  * Date:2015-02-17  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: Simple two-register FIFO, no over/under check,
  * behaves correctly only for correct inputs
  *

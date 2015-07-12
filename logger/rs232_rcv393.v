@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: rs232_rcv393
  * Date:2015-07-06  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: rs232 receiver
  *
  * Copyright (c) 2015 Elphel, Inc.

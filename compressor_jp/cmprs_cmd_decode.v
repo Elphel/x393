@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: cmprs_cmd_decode
  * Date:2015-06-23  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: Decode compressor command/modes, reclock some signals
  *
  * Copyright (c) 2015 Elphel, Inc.

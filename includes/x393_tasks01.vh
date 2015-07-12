@@ -1,7 +1,7 @@
  /*******************************************************************************
  * File: x393_tasks01.vh
  * Date:2015-02-07  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: Simulation tasks for the x393 (low level)
  *
  * Copyright (c) 2015 Elphel, Inc.

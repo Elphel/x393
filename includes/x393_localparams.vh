@@ -1,7 +1,7 @@
 /*******************************************************************************
  * File: x393_localparams.vh
  * Date:2015-02-07  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: Local parameters for simulation of the x393
  *
  * Copyright (c) 2015 Elphel, Inc.

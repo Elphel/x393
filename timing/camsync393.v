@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: camsync393
  * Date:2015-07-03  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: Synchronization between cameras using GPIO lines:
  *  - triggering from selected line(s) with filter;
  *  - programmable delay to actual trigger (in pixel clock periods)

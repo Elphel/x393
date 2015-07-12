@@ -1,7 +1,7 @@
 /**************************************
 * Module: simul_axi_fifo
 * Date:2014-03-23  
-* Author: andrey     
+* Author: Andrey Filippov     
 *
 * Description: 
 ***************************************/

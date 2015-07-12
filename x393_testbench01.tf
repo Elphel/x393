@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: x393_testbench01
  * Date:2015-02-06  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: testbench for the initial x393.v simulation
  *
  * Copyright (c) 2015 Elphel, Inc.

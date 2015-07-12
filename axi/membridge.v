@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: membridge
  * Date:2015-04-26  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: bi-directional bridge between system and video memory over axi_hp
  *
  * Copyright (c) 2015 Elphel, Inc.

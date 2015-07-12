@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: simul_axi_hp_wr
  * Date:2015-04-25  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: Simplified model of AXI_HP write channel (64-bit only)
  *
  * Copyright (c) 2015 Elphel, Inc.

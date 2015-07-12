@@ -1,7 +1,7 @@
  /*******************************************************************************
  * File: x393_status.vh
  * Date:2015-02-07  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: Simulation tasks for the x393 related to status
  *
  * Copyright (c) 2015 Elphel, Inc.

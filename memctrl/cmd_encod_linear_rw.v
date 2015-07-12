@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: cmd_encod_linear_rw
  * Date:2015-02-21  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: Combining 2 modules:cmd_encod_linear_rd and cmd_encod_linear_wr
  *
  * Copyright (c) 2015 Elphel, Inc.

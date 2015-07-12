@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: cmd_encod_linear_wr
  * Date:2015-01-23  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: Command sequencer generator for writing a sequential  up to 1KB page
  * single page access, bank and row will not be changed
  *

@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: imu_spi393
  * Date:2015-07-06  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: SPI interface for the IMU
  *
  * Copyright (c) 2015 Elphel, Inc.

@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: pulse_cross_clock
  * Date:2015-04-27  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: Propagate a single pulse through clock domain boundary
  * For same frequencies input pulses can have 1:3 duty cycle EXTRA_DLY=0
  * and 1:5 for EXTRA_DLY=1 

@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: csconvert_jp4
  * Date:2015-06-10  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: Color conversion for JP4 mode
  *
  * Copyright (c) 2015 Elphel, Inc.

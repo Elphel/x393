@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: cmd_encod_tiled_32_rw
  * Date:2015-02-21  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: Combines  cmd_encod_tiled_32_rd and  cmd_encod_tiled_32_wr modules
  *
  * Copyright (c) 2015 Elphel, Inc.

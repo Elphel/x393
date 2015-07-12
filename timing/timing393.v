@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: timing393
  * Date:2015-07-05  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: timestamp realrted functionality, extrenal synchronization
  *
  * Copyright (c) 2015 Elphel, Inc.

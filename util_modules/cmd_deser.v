@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: cmd_deser
  * Date:2015-01-12  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: Expand command address/data from a byte-wide
  *
  * Copyright (c) 2015 Elphel, Inc.

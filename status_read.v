@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: status_read
  * Date:2015-01-14  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: Receives status read data (low bandwidth) from multiple
  * subsystems byte-serial, stores in axi-addressable memory
  * 8-bita ddress is received from the source module,

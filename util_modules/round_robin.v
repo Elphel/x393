@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: round_robin
  * Date:2015-07-10  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: Round-robin arbiter
  *
  * Copyright (c) 2015 Elphel, Inc .

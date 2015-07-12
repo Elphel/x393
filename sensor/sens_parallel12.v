@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: sens_parallel12
  * Date:2015-05-10  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: Sensor interface with 12-bit for parallel bus
  *
  * Copyright (c) 2015 Elphel, Inc.

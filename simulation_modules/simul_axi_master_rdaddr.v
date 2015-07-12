@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: simul_axi_master_rdaddr
  * Date:2014-03-23  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: Simulation model for AXI read address channel
  *
  * Copyright (c) 2014 Elphel, Inc.

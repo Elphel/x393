@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: mcntrl_buf_rd
  * Date:2015-02-03  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: Paged buffer for ddr3 controller read channel
  * with address autoincrement. Variable width external data
  *

@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: index_max_16
  * Date:2015-01-09  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: Find index of the maximal of 16 values (masked), 4 cycle latency
  *
  * Copyright (c) 2015 Elphel, Inc.

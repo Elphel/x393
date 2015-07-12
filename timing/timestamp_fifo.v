@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: timestamp_fifo
  * Date:2015-07-02  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: Receives 64-bit timestamp data over 8-bit bus,
  * copies it to the outputr register set at 'advance' leading edge
  * and then reads through the different clock domain 8-bit bus.

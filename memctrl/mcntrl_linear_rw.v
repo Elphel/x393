@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: mcntrl_linear_rw
  * Date:2015-01-29  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: Organize paged R/W from DDR3 memory in scan-line order
  * with window support
  *

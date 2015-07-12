@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: timestamp_to_serial
  * Date:2015-07-04  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: convert legacy parallel timestamp data to a byte-parallel message
  *
  * Copyright (c) 2015 Elphel, Inc.

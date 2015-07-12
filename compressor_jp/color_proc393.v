@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: color_proc393
  * Date:2015-06-10  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: Color processor for JPEG 4:2:0/JP4
  * Updating from the earlier 2002-2010 version
  *

@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: sensor_fifo
  * Date:2015-05-19  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: Cross clock boundary for sensor data, synchronize to HACT
  *
  * Copyright (c) 2015 Elphel, Inc.
