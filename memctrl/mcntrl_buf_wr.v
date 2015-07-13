@@ -51,12 +51,12 @@ module  mcntrl_buf_wr #(
         if      (page_next || rpage_set) raddr <= 0;
         else if (rd)                     raddr <= raddr+1;
     end
-//    ram_1kx32w_512x64r #(
+
     ram_var_w_var_r #(
         .REGISTERS(1),
         .LOG2WIDTH_WR(LOG2WIDTH_WR),
         .LOG2WIDTH_RD(6)
-    )ram_1kx32w_512x64r_i (
+    ) ram_var_w_var_r_i (
         .rclk     (rclk),           // input
         .raddr    ({page_r,raddr}), // input[8:0] 
         .ren      (rd),             // input

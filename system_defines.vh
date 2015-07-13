@@ -53,28 +53,60 @@
   // chn 7 is disabled
  `undef  def_enable_mem_chn7
  
-  // chn 8 is disabled
- `undef  def_enable_mem_chn8
+  // chn 8 is scanline w (sensor channel 0)
+ `define  def_enable_mem_chn8
+ `undef   def_read_mem_chn8
+ `define  def_write_mem_chn8
+ `define  def_scanline_chn8
+ `undef   def_tiled_chn8
+
+  // chn 9 is scanline w (sensor channel 1)
+ `define  def_enable_mem_chn9
+ `undef   def_read_mem_chn9
+ `define  def_write_mem_chn9
+ `define  def_scanline_chn9
+ `undef   def_tiled_chn9
+
+  // chn 10 is scanline w (sensor channel 2)
+ `define  def_enable_mem_chn10
+ `undef   def_read_mem_chn10
+ `define  def_write_mem_chn10
+ `define  def_scanline_chn10
+ `undef   def_tiled_chn10
+
+  // chn 11 is scanline w (sensor channel 3)
+ `define  def_enable_mem_chn11
+ `undef   def_read_mem_chn11
+ `define  def_write_mem_chn11
+ `define  def_scanline_chn11
+ `undef   def_tiled_chn11
+
+  // chn 12 is tiled read (compressor channel 0)
+ `define  def_enable_mem_chn12
+ `define  def_read_mem_chn12
+ `undef   def_write_mem_chn12
+ `undef   def_scanline_chn12
+ `define  def_tiled_chn12
  
-  // chn 9 is disabled
- `undef  def_enable_mem_chn9
+  // chn 12 is tiled read (compressor channel 1)
+ `define  def_enable_mem_chn13
+ `define  def_read_mem_chn13
+ `undef   def_write_mem_chn13
+ `undef   def_scanline_chn13
+ `define  def_tiled_chn13
  
-  // chn 10 is disabled
- `undef  def_enable_mem_chn10
+  // chn 12 is tiled read (compressor channel 2)
+ `define  def_enable_mem_chn14
+ `define  def_read_mem_chn14
+ `undef   def_write_mem_chn14
+ `undef   def_scanline_chn14
+ `define  def_tiled_chn14
  
-  // chn 11 is disabled
- `undef  def_enable_mem_chn11
- 
-  // chn 12 is disabled
- `undef  def_enable_mem_chn12
- 
-  // chn 13 is disabled
- `undef  def_enable_mem_chn13
- 
-  // chn 14 is disabled
- `undef  def_enable_mem_chn14
- 
-  // chn 15 is disabled
- `undef  def_enable_mem_chn15
+  // chn 12 is tiled read (compressor channel 3)
+ `define  def_enable_mem_chn15
+ `define  def_read_mem_chn15
+ `undef   def_write_mem_chn15
+ `undef   def_scanline_chn15
+ `define  def_tiled_chn15
 `endif
  

@@ -479,7 +479,23 @@ BUFG bufg_axi_aclk_i  (.O(axi_aclk),.I(fclk[0]));
         .NUM_CYCLES_12     (NUM_CYCLES_12),
         .NUM_CYCLES_13     (NUM_CYCLES_13),
         .NUM_CYCLES_14     (NUM_CYCLES_14),
-        .NUM_CYCLES_15     (NUM_CYCLES_15)
+        .NUM_CYCLES_15     (NUM_CYCLES_15),
+        .NUM_CYCLES_16     (NUM_CYCLES_16),
+        .NUM_CYCLES_17     (NUM_CYCLES_17),
+        .NUM_CYCLES_18     (NUM_CYCLES_18),
+        .NUM_CYCLES_19     (NUM_CYCLES_19),
+        .NUM_CYCLES_20     (NUM_CYCLES_20),
+        .NUM_CYCLES_21     (NUM_CYCLES_21),
+        .NUM_CYCLES_22     (NUM_CYCLES_22),
+        .NUM_CYCLES_23     (NUM_CYCLES_23),
+        .NUM_CYCLES_24     (NUM_CYCLES_24),
+        .NUM_CYCLES_25     (NUM_CYCLES_25),
+        .NUM_CYCLES_26     (NUM_CYCLES_26),
+        .NUM_CYCLES_27     (NUM_CYCLES_27),
+        .NUM_CYCLES_28     (NUM_CYCLES_28),
+        .NUM_CYCLES_29     (NUM_CYCLES_29),
+        .NUM_CYCLES_30     (NUM_CYCLES_30),
+        .NUM_CYCLES_31     (NUM_CYCLES_31)
     ) cmd_mux_i ( // SuppressThisWarning ISExst: Output port <par_data>,<par_waddr>, <cseq_ackn> of the instance <cmd_mux_i> is unconnected or connected to loadless signal.
         .axi_clk      (axiwr_wclk), // input
         .mclk         (mclk), // input
@@ -778,6 +794,7 @@ BUFG bufg_axi_aclk_i  (.O(axi_aclk),.I(fclk[0]));
         .line_unfinished_chn2 (line_unfinished_chn2), // output[15:0]
         .frame_number_chn2    (frame_number_chn2), // output[15:0]  
         .suspend_chn2         (suspend_chn2), // input
+        
         .frame_start_chn3     (frame_start_chn3), // input
         .next_page_chn3       (next_page_chn3), // input
         .page_ready_chn3      (page_ready_chn3), // output
@@ -785,6 +802,7 @@ BUFG bufg_axi_aclk_i  (.O(axi_aclk),.I(fclk[0]));
         .line_unfinished_chn3 (line_unfinished_chn3), // output[15:0] 
         .frame_number_chn3    (frame_number_chn3), // output[15:0]  
         .suspend_chn3         (suspend_chn3), // input
+        
         .frame_start_chn4     (frame_start_chn4), // input
         .next_page_chn4       (next_page_chn4), // input
         .page_ready_chn4      (page_ready_chn4), // output

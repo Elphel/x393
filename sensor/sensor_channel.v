@@ -22,9 +22,17 @@
 
 module  sensor_channel#(
     // parameters, individual to sensor channels and those likely to be modified
-    parameter SENSOR_BASE_ADDR =      'h300, // sensor registers base address
-    parameter SENSI2C_STATUS_REG =    'h30,
-    parameter SENSIO_STATUS_REG =     'h31,
+    parameter SENSOR_NUMBER =             0,     // sensor number (0..3)
+    parameter SENSOR_GROUP_ADDR =         'h400, // sensor registers base address
+    parameter SENSOR_BASE_INC =           'h040, // increment for sesor channel
+    parameter SENSI2C_STATUS_REG_BASE =   'h30,  // 4 locations" x30, x32, x34, x36
+    parameter SENSI2C_STATUS_REG_INC =    2,     // increment to the next sensor
+    parameter SENSI2C_STATUS_REG_REL =    0,     // 4 locations" 'h30, 'h32, 'h34, 'h36
+    parameter SENSIO_STATUS_REG_REL =     1,     // 4 locations" 'h31, 'h33, 'h35, 'h37
+    
+//    parameter SENSOR_BASE_ADDR =      'h300, // sensor registers base address
+//    parameter SENSI2C_STATUS_REG =    'h30,
+//    parameter SENSIO_STATUS_REG =     'h31,
     parameter SENSOR_NUM_HISTOGRAM=   3, // number of histogram channels
     parameter HISTOGRAM_RAM_MODE =     "NOBUF", // valid: "NOBUF" (32-bits, no buffering), "BUF18", "BUF32"
     parameter SENS_GAMMA_NUM_CHN =    3, // number of subchannels for his sensor ports (1..4)
@@ -159,9 +167,10 @@ module  sensor_channel#(
     output        status_rq,   // input request to send status downstream
     input         status_start, // Acknowledge of the first status packet byte (address)
 
-    // 16/8-bit mode data to memory (8-bits are packed by 2 in 16 mode
-    output [15:0] dout,
+    // 16/8-bit mode data to memory (8-bits are packed by 2 in 16 mode @posedge pclk
+    output [15:0] dout,        // @posedge pclk
     output        dout_valid, // in 8-bit mode continues pixel flow have dout_valid alternating on/off
+    output        last_in_line, // valid with dout_valid - last in line dout 
     output        sof_out,    // start of frame 1-clk pulse with the same delays as output data
     output        eof_out,    // end of frame 1-clk pulse with the same delays as output data
 
@@ -173,6 +182,11 @@ module  sensor_channel#(
     output [31:0] hist_data     // output[31:0] histogram data
     
 );
+
+    localparam SENSOR_BASE_ADDR =   (SENSOR_GROUP_ADDR + SENSOR_NUMBER * SENSOR_BASE_INC);
+    localparam SENSI2C_STATUS_REG = (SENSI2C_STATUS_REG_BASE + SENSOR_NUMBER * SENSI2C_STATUS_REG_INC + SENSI2C_STATUS_REG_REL);
+    localparam SENSIO_STATUS_REG =  (SENSI2C_STATUS_REG_BASE + SENSOR_NUMBER * SENSI2C_STATUS_REG_INC + SENSIO_STATUS_REG_REL);
+
 //    parameter SENSOR_BASE_ADDR =    'h300; // sensor registers base address
     localparam SENSOR_CTRL_ADDR =  SENSOR_BASE_ADDR + SENSOR_CTRL_RADDR;  // 'h300
     localparam SENSI2C_CTRL_ADDR = SENSOR_BASE_ADDR + SENSI2C_CTRL_RADDR; // 'h302..'h303
@@ -253,9 +267,10 @@ module  sensor_channel#(
     assign sof_out = sof_out_r;       
     assign eof_out = eof_out_r;       
     
-    assign dout_w = bit16 ? gamma_pxd_in :  {gamma_data_r,gamma_pxd_out};
+//    assign dout_w = bit16 ? gamma_pxd_in :  {gamma_data_r,gamma_pxd_out};
+    assign dout_w = bit16 ? gamma_pxd_in :  {gamma_pxd_out,gamma_data_r}; // earlier data in LSB, later - MSB
     assign dav_w =  bit16 ? gamma_hact_in : dav_8bit;
-    
+    assign last_in_line = ! ( bit16 ? gamma_hact_in : gamma_hact_out);
      
     assign hist_en =   mode[SENSOR_HIST_EN_BIT+:4];
     assign hist_nrst = mode[SENSOR_HIST_NRST_BIT];

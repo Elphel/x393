@@ -195,7 +195,7 @@
     parameter NUM_CYCLES_28 =       6,  //
     parameter NUM_CYCLES_29 =       6,  //
     parameter NUM_CYCLES_30 =       6,  //
-    parameter NUM_CYCLES_31 =       6  //
+    parameter NUM_CYCLES_31 =       6,  //
     
 //    parameter CMD0_ADDR =           'h0800, // AXI write to command sequence memory
 //    parameter CMD0_ADDR_MASK =      'h1800, // AXI read address mask for the command sequence memory
