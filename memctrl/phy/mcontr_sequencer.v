@@ -115,6 +115,7 @@ module  mcontr_sequencer   #(
     input                        clk_in,
     input                        rst_in,
     output                       mclk,     // global clock, half DDR3 clock, synchronizes all I/O through the command port
+    output                       ref_clk,  // global clock for idelay_ctrl calibration
 // command port 0 (filled by software - 32w->32r) - used for mode set, refresh, write levelling, ...
     input                        cmd0_clk,
     input                        cmd0_we,
@@ -581,6 +582,7 @@ module  mcontr_sequencer   #(
         .clk_in              (clk_in), // input
         .rst_in              (rst_in), // input
         .mclk                (mclk), // output
+        .ref_clk             (ref_clk), // output
         .dly_data            (dly_data[7:0]), // input[7:0] 
         .dly_addr            (dly_addr[6:0]), // input[6:0] 
         .ld_delay            (ld_delay), // input

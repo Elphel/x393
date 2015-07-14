@@ -75,6 +75,7 @@ module  phy_top #(
     output                       clk,      // free-running system clock, same frequency as iclk (shared for R/W),     BUFR output
     output                       clk_div,  // free-running half clk frequency, front aligned to clk (shared for R/W), BUFR output
     output                       mclk,     // same as clk_div, through separate BUFG and static phase adjust
+    output                       ref_clk,  // global clock for idelay_ctrl calibration
     input                        rst_in,   // reset delays/serdes
     input                        ddr_rst,  // active high - generate NRST to memory
     input                        dci_rst,  // active high - reset DCI circuitry
@@ -126,7 +127,7 @@ module  phy_top #(
   wire  ld_cmda =   (dly_addr[6:5] == 2'h2) && ld_delay ;             
   wire  ld_mmcm=    (dly_addr[6:0] == 7'h60) && ld_delay ;
   wire  clkfb_ref, clk_ref_pre; 
-  wire  clk_ref; // 200MHz/300Mhz to calibrate I/O delays            
+//  wire  ref_clk; // 200MHz/300Mhz to calibrate I/O delays            
 //  wire locked_mmcm,locked_pll, dly_ready, dci_ready;
 //  assign locked=locked_mmcm && locked_pll && dly_ready && dci_ready; // both PLL ready, I/O delay calibrated
   wire clkin_stopped_mmcm;
@@ -290,10 +291,10 @@ wire clk_pre, clk_div_pre, sdclk_pre, mclk_pre, clk_fb;
 BUFR clk_bufr_i (.O(clk), .CE(), .CLR(), .I(clk_pre));
 BUFR clk_div_bufr_i (.O(clk_div), .CE(), .CLR(), .I(clk_div_pre));
 BUFIO iclk_bufio_i (.O(sdclk), .I(sdclk_pre) );
-//BUFIO clk_ref_i (.O(clk_ref), .I(clk_ref_pre));
-//assign clk_ref=clk_ref_pre;
-//BUFH clk_ref_i (.O(clk_ref), .I(clk_ref_pre));
-BUFG clk_ref_i (.O(clk_ref), .I(clk_ref_pre));
+//BUFIO clk_ref_i (.O(ref_clk), .I(clk_ref_pre));
+//assign ref_clk=clk_ref_pre;
+//BUFH clk_ref_i (.O(ref_clk), .I(clk_ref_pre));
+BUFG clk_ref_i (.O(ref_clk), .I(clk_ref_pre));
 BUFG mclk_i (.O(mclk),.I(mclk_pre) );
     mmcm_phase_cntr #(
         .PHASE_WIDTH         (PHASE_WIDTH),
@@ -390,7 +391,7 @@ BUFG mclk_i (.O(mclk),.I(mclk_pre) );
     idelay_ctrl# (
         .IODELAY_GRP("IODELAY_MEMORY")
     ) idelay_ctrl_i (
-        .refclk(clk_ref),
+        .refclk(ref_clk),
         .rst(rst || dly_rst),
         .rdy(dly_ready)
     );

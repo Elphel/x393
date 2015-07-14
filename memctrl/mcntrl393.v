@@ -220,6 +220,7 @@ module  mcntrl393 #(
     input                        rst_in,
     input                        clk_in,
     output                       mclk,     // global clock, half DDR3 clock, synchronizes all I/O through the command port
+    output                       ref_clk,  // global clock for idelay_ctrl calibration
     // programming interface
     input                  [7:0] cmd_ad,      // byte-serial command address/data (up to 6 bytes: AL-AH-D0-D1-D2-D3 
     input                        cmd_stb,     // strobe (with first byte) for the command a/d
@@ -1466,6 +1467,7 @@ module  mcntrl393 #(
         .rst_in             (rst_in), // input
         .clk_in             (clk_in), // input
         .mclk               (mclk), // output
+        .ref_clk            (ref_clk), // output
         .cmd_ad             (cmd_mcontr_ad), // input[7:0] 
         .cmd_stb            (cmd_mcontr_stb), // input
         .status_ad          (status_mcontr_ad[7:0]), // output[7:0]

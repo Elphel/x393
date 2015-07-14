@@ -52,25 +52,25 @@ module  sens_parallel12 #(
     parameter PXD_IBUF_LOW_PWR = "TRUE",
     parameter PXD_IOSTANDARD = "DEFAULT",
     parameter PXD_SLEW = "SLOW",
-    parameter real REFCLK_FREQUENCY = 300.0,
-    parameter HIGH_PERFORMANCE_MODE = "FALSE",
+    parameter real SENS_REFCLK_FREQUENCY =    300.0,
+    parameter SENS_HIGH_PERFORMANCE_MODE =    "FALSE",
     
-    parameter PHASE_WIDTH=      8,      // number of bits for te phase counter (depends on divisors)
-    parameter PCLK_PERIOD =     10.000,  // input period in ns, 0..100.000 - MANDATORY, resolution down to 1 ps
-    parameter BANDWIDTH =       "OPTIMIZED",  //"OPTIMIZED", "HIGH","LOW"
+    parameter SENS_PHASE_WIDTH=               8,      // number of bits for te phase counter (depends on divisors)
+    parameter SENS_PCLK_PERIOD =              10.000,  // input period in ns, 0..100.000 - MANDATORY, resolution down to 1 ps
+    parameter SENS_BANDWIDTH =                "OPTIMIZED",  //"OPTIMIZED", "HIGH","LOW"
 
     parameter CLKFBOUT_MULT_SENSOR =   8,  // 100 MHz --> 800 MHz
     parameter CLKFBOUT_PHASE_SENSOR =  0.000,  // CLOCK FEEDBACK phase in degrees (3 significant digits, -360.000...+360.000)
-    parameter IPCLK_PHASE =           0.000,
-    parameter IPCLK2X_PHASE =         0.000,
+    parameter IPCLK_PHASE =            0.000,
+    parameter IPCLK2X_PHASE =          0.000,
     
 
-    parameter DIVCLK_DIVIDE =         1,            // Integer 1..106. Divides all outputs with respect to CLKIN
-    parameter REF_JITTER1   =         0.010,        // Expectet jitter on CLKIN1 (0.000..0.999)
-    parameter REF_JITTER2   =         0.010,
-    parameter SS_EN         =         "FALSE",      // Enables Spread Spectrum mode
-    parameter SS_MODE       =         "CENTER_HIGH",//"CENTER_HIGH","CENTER_LOW","DOWN_HIGH","DOWN_LOW"
-    parameter SS_MOD_PERIOD =         10000        // integer 4000-40000 - SS modulation period in ns
+    parameter SENS_DIVCLK_DIVIDE =     1,            // Integer 1..106. Divides all outputs with respect to CLKIN
+    parameter SENS_REF_JITTER1   =     0.010,        // Expectet jitter on CLKIN1 (0.000..0.999)
+    parameter SENS_REF_JITTER2   =     0.010,
+    parameter SENS_SS_EN         =     "FALSE",      // Enables Spread Spectrum mode
+    parameter SENS_SS_MODE       =     "CENTER_HIGH",//"CENTER_HIGH","CENTER_LOW","DOWN_HIGH","DOWN_LOW"
+    parameter SENS_SS_MOD_PERIOD =     10000        // integer 4000-40000 - SS modulation period in ns
     
 )(
     input         rst,
@@ -328,8 +328,8 @@ module  sens_parallel12 #(
         .PXD_IBUF_LOW_PWR      (PXD_IBUF_LOW_PWR),
         .PXD_IOSTANDARD        (PXD_IOSTANDARD),
         .PXD_SLEW              (PXD_SLEW),
-        .REFCLK_FREQUENCY      (REFCLK_FREQUENCY),
-        .HIGH_PERFORMANCE_MODE (HIGH_PERFORMANCE_MODE)
+        .REFCLK_FREQUENCY      (SENS_REFCLK_FREQUENCY),
+        .HIGH_PERFORMANCE_MODE (SENS_HIGH_PERFORMANCE_MODE)
     ) pxd_pxd0_i (
         .pxd            (pxd[0]),          // inout
         .pxd_out        (xfpgatdi),            // input
@@ -353,8 +353,8 @@ module  sens_parallel12 #(
         .PXD_IBUF_LOW_PWR      (PXD_IBUF_LOW_PWR),
         .PXD_IOSTANDARD        (PXD_IOSTANDARD),
         .PXD_SLEW              (PXD_SLEW),
-        .REFCLK_FREQUENCY      (REFCLK_FREQUENCY),
-        .HIGH_PERFORMANCE_MODE (HIGH_PERFORMANCE_MODE)
+        .REFCLK_FREQUENCY      (SENS_REFCLK_FREQUENCY),
+        .HIGH_PERFORMANCE_MODE (SENS_HIGH_PERFORMANCE_MODE)
     ) pxd_pxd1_i (
         .pxd            (pxd[1]),          // inout
         .pxd_out        (1'b0),            // input
@@ -381,8 +381,8 @@ module  sens_parallel12 #(
                 .PXD_IBUF_LOW_PWR      (PXD_IBUF_LOW_PWR),
                 .PXD_IOSTANDARD        (PXD_IOSTANDARD),
                 .PXD_SLEW              (PXD_SLEW),
-                .REFCLK_FREQUENCY      (REFCLK_FREQUENCY),
-                .HIGH_PERFORMANCE_MODE (HIGH_PERFORMANCE_MODE)
+                .REFCLK_FREQUENCY      (SENS_REFCLK_FREQUENCY),
+                .HIGH_PERFORMANCE_MODE (SENS_HIGH_PERFORMANCE_MODE)
             ) pxd_pxd1_i (
                 .pxd            (pxd[i]),          // inout
                 .pxd_out        (1'b0),            // input
@@ -408,8 +408,8 @@ module  sens_parallel12 #(
         .PXD_IBUF_LOW_PWR      (PXD_IBUF_LOW_PWR),
         .PXD_IOSTANDARD        (PXD_IOSTANDARD),
         .PXD_SLEW              (PXD_SLEW),
-        .REFCLK_FREQUENCY      (REFCLK_FREQUENCY),
-        .HIGH_PERFORMANCE_MODE (HIGH_PERFORMANCE_MODE)
+        .REFCLK_FREQUENCY      (SENS_REFCLK_FREQUENCY),
+        .HIGH_PERFORMANCE_MODE (SENS_HIGH_PERFORMANCE_MODE)
     ) pxd_hact_i (
         .pxd            (hact),          // inout
         .pxd_out        (1'b0),          // input
@@ -433,8 +433,8 @@ module  sens_parallel12 #(
         .PXD_IBUF_LOW_PWR      (PXD_IBUF_LOW_PWR),
         .PXD_IOSTANDARD        (PXD_IOSTANDARD),
         .PXD_SLEW              (PXD_SLEW),
-        .REFCLK_FREQUENCY      (REFCLK_FREQUENCY),
-        .HIGH_PERFORMANCE_MODE (HIGH_PERFORMANCE_MODE)
+        .REFCLK_FREQUENCY      (SENS_REFCLK_FREQUENCY),
+        .HIGH_PERFORMANCE_MODE (SENS_HIGH_PERFORMANCE_MODE)
     ) pxd_vact_i (
         .pxd            (vact),          // inout
         .pxd_out        (1'b0),          // input
@@ -458,8 +458,8 @@ module  sens_parallel12 #(
         .PXD_IBUF_LOW_PWR      (PXD_IBUF_LOW_PWR),
         .PXD_IOSTANDARD        (PXD_IOSTANDARD),
         .PXD_SLEW              (PXD_SLEW),
-        .REFCLK_FREQUENCY      (REFCLK_FREQUENCY),
-        .HIGH_PERFORMANCE_MODE (HIGH_PERFORMANCE_MODE)
+        .REFCLK_FREQUENCY      (SENS_REFCLK_FREQUENCY),
+        .HIGH_PERFORMANCE_MODE (SENS_HIGH_PERFORMANCE_MODE)
     ) pxd_clock_i (
         .pxclk      (bpf),             // inout
         .pxclk_out  (1'b0),            // input
@@ -555,11 +555,11 @@ module  sens_parallel12 #(
     // generate phase-shifterd pixel clock (and 2x version) from either the internal clock (that is output to the sensor) or from the clock
     // received from the sensor (may need to reset MMCM after resetting sensor)
     mmcm_phase_cntr #(
-        .PHASE_WIDTH         (PHASE_WIDTH),
-        .CLKIN_PERIOD        (PCLK_PERIOD),
-        .BANDWIDTH           (BANDWIDTH),
+        .PHASE_WIDTH         (SENS_PHASE_WIDTH),
+        .CLKIN_PERIOD        (SENS_PCLK_PERIOD),
+        .BANDWIDTH           (SENS_BANDWIDTH),
         .CLKFBOUT_MULT_F     (CLKFBOUT_MULT_SENSOR), //8
-        .DIVCLK_DIVIDE       (DIVCLK_DIVIDE),
+        .DIVCLK_DIVIDE       (SENS_DIVCLK_DIVIDE),
         .CLKFBOUT_PHASE      (CLKFBOUT_PHASE_SENSOR),
         .CLKOUT0_PHASE       (IPCLK_PHASE),
         .CLKOUT1_PHASE       (IPCLK2X_PHASE),
@@ -584,11 +584,11 @@ module  sens_parallel12 #(
 //        .CLKOUT5_DIVIDE(1),
 //        .CLKOUT6_DIVIDE(1),
         .COMPENSATION        ("ZHOLD"),
-        .REF_JITTER1         (REF_JITTER1),
-        .REF_JITTER2         (REF_JITTER2),
-        .SS_EN               (SS_EN),
-        .SS_MODE             (SS_MODE),
-        .SS_MOD_PERIOD       (SS_MOD_PERIOD),
+        .REF_JITTER1         (SENS_REF_JITTER1),
+        .REF_JITTER2         (SENS_REF_JITTER2),
+        .SS_EN               (SENS_SS_EN),
+        .SS_MODE             (SENS_SS_MODE),
+        .SS_MOD_PERIOD       (SENS_SS_MOD_PERIOD),
         .STARTUP_WAIT        ("FALSE")
     ) mmcm_phase_cntr_i (
         .clkin1              (pclk),            // input

@@ -149,6 +149,7 @@ module  x393 #(
    reg            mcntrl_axird_selected_regen; // mcntrl_axird_selected (set at axird_start_burst) delayed when ren is active, then when regen (normally 2 cycles)
 
    wire           mclk; // global clock, memory controller, command/status network (currently 200MHz)
+   wire           ref_clk; // global clock for idelay_ctrl calibration
    wire           hclk; // global clock, axi_hp (150MHz) derived from aclk_in = 50MHz
 
    wire [11:0] tmp_debug; 
@@ -202,9 +203,9 @@ module  x393 #(
     wire                        status_membridge_rq;    // membridge (afi to ddr3) status request  
     wire                        status_membridge_start; //membridge (afi to ddr3) status packet transfer start (currently with 0 latency from status_root_rq)
 
-    wire                  [7:0] status_other_ad = 0; // Other status byte-wide address/data
-    wire                        status_other_rq = 0; // Other status request   
-    wire                        status_other_start;  // SuppressThisWarning VEditor ****** Other status packet transfer start (currently with 0 latency from status_root_rq)
+//    wire                  [7:0] status_other_ad = 0; // Other status byte-wide address/data
+//    wire                        status_other_rq = 0; // Other status request   
+//    wire                        status_other_start;  // SuppressThisWarning VEditor ****** Other status packet transfer start (currently with 0 latency from status_root_rq)
 
 
     wire                  [7:0] status_test01_ad;    // Test module status byte-wide address/data 
@@ -212,14 +213,50 @@ module  x393 #(
     wire                        status_test01_start; // Test module status packet transfer start (currently with 0 latency from status_root_rq)
 
 
-    // Insert register layer if needed
-    wire [7:0] cmd_mcontr_ad;
-    wire       cmd_mcontr_stb;
-    wire [7:0] cmd_test01_ad;
-    wire       cmd_test01_stb;
-    wire [7:0] cmd_membridge_ad;
-    wire       cmd_membridge_stb;
+    wire                  [7:0] status_sensor_ad;     // Other status byte-wide address/data
+    wire                        status_sensor_rq;     // Other status request   
+    wire                        status_sensor_start;  // S uppressThisWarning VEditor ****** Other status packet transfer start (currently with 0 latency from status_root_rq)
 
+    wire                  [7:0] status_compressor_ad; // Other status byte-wide address/data
+    wire                        status_compressor_rq; // Other status request   
+    wire                        status_compressor_start;  // S uppressThisWarning VEditor ****** Other status packet transfer start (currently with 0 latency from status_root_rq)
+
+    wire                  [7:0] status_sequencer_ad; // Other status byte-wide address/data
+    wire                        status_sequencer_rq; // Other status request   
+    wire                        status_sequencer_start;  // S uppressThisWarning VEditor ****** Other status packet transfer start (currently with 0 latency from status_root_rq)
+
+    wire                  [7:0] status_logger_ad; // Other status byte-wide address/data
+    wire                        status_logger_rq; // Other status request   
+    wire                        status_logger_start;  // S uppressThisWarning VEditor ****** Other status packet transfer start (currently with 0 latency from status_root_rq)
+
+    wire                  [7:0] status_timing_ad; // Other status byte-wide address/data
+    wire                        status_timing_rq; // Other status request   
+    wire                        status_timing_start;  // S uppressThisWarning VEditor ****** Other status packet transfer start (currently with 0 latency from status_root_rq)
+
+    // Insert register layer if needed
+    reg  [7:0] cmd_mcontr_ad;
+    reg        cmd_mcontr_stb;
+    
+    reg  [7:0] cmd_test01_ad;
+    reg        cmd_test01_stb;
+    
+    reg  [7:0] cmd_membridge_ad;
+    reg        cmd_membridge_stb;
+
+    reg  [7:0] cmd_sensor_ad;
+    reg        cmd_sensor_stb;
+
+    reg  [7:0] cmd_compressor_ad;
+    reg        cmd_compressor_stb;
+
+    reg  [7:0] cmd_sequencer_ad;
+    reg        cmd_sequencer_stb;
+
+    reg  [7:0] cmd_logger_ad;
+    reg        cmd_logger_stb;
+
+    reg  [7:0] cmd_timing_ad;
+    reg        cmd_timing_stb;
 
 // membridge
     wire                        frame_start_chn1; // input
@@ -296,12 +333,31 @@ module  x393 #(
    assign comb_rst=~frst[0] | frst[1];
 
     // insert register layers if needed
-   assign cmd_mcontr_ad= cmd_root_ad;
-   assign cmd_mcontr_stb=cmd_root_stb;
-   assign cmd_test01_ad= cmd_root_ad;
-   assign cmd_test01_stb=cmd_root_stb;
-   assign cmd_membridge_ad= cmd_root_ad;
-   assign cmd_membridge_stb=cmd_root_stb;
+    always @ (posedge mclk) begin
+        cmd_mcontr_ad <=      cmd_root_ad;
+        cmd_mcontr_stb <=     cmd_root_stb;
+        
+        cmd_test01_ad <=      cmd_root_ad;
+        cmd_test01_stb <=     cmd_root_stb;
+        
+        cmd_membridge_ad <=   cmd_root_ad;
+        cmd_membridge_stb <=  cmd_root_stb;
+        
+        cmd_sensor_ad <=      cmd_root_ad;
+        cmd_sensor_stb <=     cmd_root_stb;
+        
+        cmd_compressor_ad <=  cmd_root_ad;
+        cmd_compressor_stb <= cmd_root_stb;
+        
+        cmd_sequencer_ad <=   cmd_root_ad;
+        cmd_sequencer_stb <=  cmd_root_stb;
+        
+        cmd_logger_ad <=      cmd_root_ad;
+        cmd_logger_stb <=     cmd_root_stb;
+        
+        cmd_timing_ad <=      cmd_root_ad;
+        cmd_timing_stb <=     cmd_root_stb;
+    end
 
 // For now - connect status_test01 to status_other, if needed - increase number of multiplexer inputs)
 //   assign status_other_ad = status_test01_ad;
@@ -593,12 +649,13 @@ BUFG bufg_axi_aclk_i  (.O(axi_aclk),.I(fclk[0]));
     );
 
 // mux status info from the memory controller and other modules    
-    status_router4 status_router4_top_i (
+    status_router8 status_router8_top_i (
         .rst       (axi_rst), // input
         .clk       (mclk), // input
         .db_in0    (status_mcontr_ad), // input[7:0] 
         .rq_in0    (status_mcontr_rq), // input
         .start_in0 (status_mcontr_start), // output
+        
         .db_in1    (status_test01_ad), // input[7:0] 
         .rq_in1    (status_test01_rq), // input
         .start_in1 (status_test01_start), // output
@@ -607,9 +664,29 @@ BUFG bufg_axi_aclk_i  (.O(axi_aclk),.I(fclk[0]));
         .rq_in2    (status_membridge_rq), // input
         .start_in2 (status_membridge_start), // output
 
-        .db_in3    (status_other_ad), // input[7:0] 
-        .rq_in3    (status_other_rq), // input
-        .start_in3 (status_other_start), // output
+//        .db_in3    (status_other_ad), // input[7:0] 
+//        .rq_in3    (status_other_rq), // input
+//        .start_in3 (status_other_start), // output
+        
+        .db_in3    (status_sensor_ad), // input[7:0] 
+        .rq_in3    (status_sensor_rq), // input
+        .start_in3 (status_sensor_start), // output
+        
+        .db_in4    (status_compressor_ad), // input[7:0] 
+        .rq_in4    (status_compressor_rq), // input
+        .start_in4 (status_compressor_start), // output
+        
+        .db_in5    (status_sequencer_ad), // input[7:0] 
+        .rq_in5    (status_sequencer_rq), // input
+        .start_in5 (status_sequencer_start), // output
+        
+        .db_in6    (status_logger_ad), // input[7:0] 
+        .rq_in6    (status_logger_rq), // input
+        .start_in6 (status_logger_start), // output
+        
+        .db_in7    (status_timing_ad), // input[7:0] 
+        .rq_in7    (status_timing_rq), // input
+        .start_in7 (status_timing_start), // output
         
         .db_out    (status_root_ad), // output[7:0] 
         .rq_out    (status_root_rq), // output
@@ -750,6 +827,7 @@ BUFG bufg_axi_aclk_i  (.O(axi_aclk),.I(fclk[0]));
         .rst_in               (axi_rst), // input
         .clk_in               (axi_aclk), // == axird_bram_rclk SuppressThisWarning VivadoSynthesis: [Synth 8-3295] tying undriven pin #mcntrl393_i:clk_in to constant 0
         .mclk                 (mclk), // output
+        .ref_clk              (ref_clk), // output
         .cmd_ad               (cmd_mcontr_ad), // input[7:0] 
         .cmd_stb              (cmd_mcontr_stb), // input
         .status_ad            (status_mcontr_ad[7:0]), // output[7:0]
@@ -965,89 +1043,208 @@ BUFG bufg_axi_aclk_i  (.O(axi_aclk),.I(fclk[0]));
         .afi_rdissuecap1en      (afi0_rdissuecap1en) // output
     );
 
-/*
-{
-frst[3]?{
-16'b0,
-    1'b1,              // 1
-    1'b0, //MEMCLK,            // 1/0? - external clock
-    1'b0,              //
-    1'b0,              // 
-    
-    frst[1],           // 0 (follows)
-    fclk[1:0],         // 2'bXX (toggle)
-    axird_dev_busy,    // 0
+    sensors393 #(
+        .SENSOR_GROUP_ADDR          (SENSOR_GROUP_ADDR),
+        .SENSOR_BASE_INC            (SENSOR_BASE_INC),
+        .HIST_SAXI_ADDR_REL         (HIST_SAXI_ADDR_REL),
+        .HIST_SAXI_MODE_ADDR_REL    (HIST_SAXI_MODE_ADDR_REL),
+        .SENSI2C_STATUS_REG_BASE    (SENSI2C_STATUS_REG_BASE),
+        .SENSI2C_STATUS_REG_INC     (SENSI2C_STATUS_REG_INC),
+        .SENSI2C_STATUS_REG_REL     (SENSI2C_STATUS_REG_REL),
+        .SENSIO_STATUS_REG_REL      (SENSIO_STATUS_REG_REL),
+        .SENSOR_NUM_HISTOGRAM       (SENSOR_NUM_HISTOGRAM),
+        .HISTOGRAM_RAM_MODE         (HISTOGRAM_RAM_MODE),
+        .SENS_GAMMA_NUM_CHN         (SENS_GAMMA_NUM_CHN),
+        .SENS_GAMMA_BUFFER          (SENS_GAMMA_BUFFER),
+        .SENSOR_CTRL_RADDR          (SENSOR_CTRL_RADDR),
+        .SENSOR_CTRL_ADDR_MASK      (SENSOR_CTRL_ADDR_MASK),
+        .SENSOR_MODE_WIDTH          (SENSOR_MODE_WIDTH),
+        .SENSOR_HIST_EN_BIT         (SENSOR_HIST_EN_BIT),
+        .SENSOR_HIST_NRST_BIT       (SENSOR_HIST_NRST_BIT),
+        .SENSOR_16BIT_BIT           (SENSOR_16BIT_BIT),
+        .SENSI2C_CTRL_RADDR         (SENSI2C_CTRL_RADDR),
+        .SENSI2C_CTRL_MASK          (SENSI2C_CTRL_MASK),
+        .SENSI2C_CTRL               (SENSI2C_CTRL),
+        .SENSI2C_STATUS             (SENSI2C_STATUS),
+        .SENS_SYNC_RADDR            (SENS_SYNC_RADDR),
+        .SENS_SYNC_MASK             (SENS_SYNC_MASK),
+        .SENS_SYNC_MULT             (SENS_SYNC_MULT),
+        .SENS_SYNC_LATE             (SENS_SYNC_LATE),
+        .SENS_GAMMA_RADDR           (SENS_GAMMA_RADDR),
+        .SENS_GAMMA_ADDR_MASK       (SENS_GAMMA_ADDR_MASK),
+        .SENS_GAMMA_CTRL            (SENS_GAMMA_CTRL),
+        .SENS_GAMMA_ADDR_DATA       (SENS_GAMMA_ADDR_DATA),
+        .SENS_GAMMA_HEIGHT01        (SENS_GAMMA_HEIGHT01),
+        .SENS_GAMMA_HEIGHT2         (SENS_GAMMA_HEIGHT2),
+        .SENS_GAMMA_MODE_WIDTH      (SENS_GAMMA_MODE_WIDTH),
+        .SENS_GAMMA_MODE_BAYER      (SENS_GAMMA_MODE_BAYER),
+        .SENS_GAMMA_MODE_PAGE       (SENS_GAMMA_MODE_PAGE),
+        .SENS_GAMMA_MODE_EN         (SENS_GAMMA_MODE_EN),
+        .SENS_GAMMA_MODE_REPET      (SENS_GAMMA_MODE_REPET),
+        .SENS_GAMMA_MODE_TRIG       (SENS_GAMMA_MODE_TRIG),
+        .SENSIO_RADDR               (SENSIO_RADDR),
+        .SENSIO_ADDR_MASK           (SENSIO_ADDR_MASK),
+        .SENSIO_CTRL                (SENSIO_CTRL),
+        .SENS_CTRL_MRST             (SENS_CTRL_MRST),
+        .SENS_CTRL_ARST             (SENS_CTRL_ARST),
+        .SENS_CTRL_ARO              (SENS_CTRL_ARO),
+        .SENS_CTRL_RST_MMCM         (SENS_CTRL_RST_MMCM),
+        .SENS_CTRL_EXT_CLK          (SENS_CTRL_EXT_CLK),
+        .SENS_CTRL_LD_DLY           (SENS_CTRL_LD_DLY),
+        .SENS_CTRL_QUADRANTS        (SENS_CTRL_QUADRANTS),
+        .SENSIO_STATUS              (SENSIO_STATUS),
+        .SENSIO_JTAG                (SENSIO_JTAG),
+        .SENS_JTAG_PGMEN            (SENS_JTAG_PGMEN),
+        .SENS_JTAG_PROG             (SENS_JTAG_PROG),
+        .SENS_JTAG_TCK              (SENS_JTAG_TCK),
+        .SENS_JTAG_TMS              (SENS_JTAG_TMS),
+        .SENS_JTAG_TDI              (SENS_JTAG_TDI),
+        .SENSIO_WIDTH               (SENSIO_WIDTH),
+        .SENSIO_DELAYS              (SENSIO_DELAYS),
+        .SENSI2C_ABS_RADDR          (SENSI2C_ABS_RADDR),
+        .SENSI2C_REL_RADDR          (SENSI2C_REL_RADDR),
+        .SENSI2C_ADDR_MASK          (SENSI2C_ADDR_MASK),
+        .HISTOGRAM_RADDR0           (HISTOGRAM_RADDR0),
+        .HISTOGRAM_RADDR1           (HISTOGRAM_RADDR1),
+        .HISTOGRAM_RADDR2           (HISTOGRAM_RADDR2),
+        .HISTOGRAM_RADDR3           (HISTOGRAM_RADDR3),
+        .HISTOGRAM_ADDR_MASK        (HISTOGRAM_ADDR_MASK),
+        .HISTOGRAM_LEFT_TOP         (HISTOGRAM_LEFT_TOP),
+        .HISTOGRAM_WIDTH_HEIGHT     (HISTOGRAM_WIDTH_HEIGHT),
+        .SENSI2C_DRIVE              (SENSI2C_DRIVE),
+        .SENSI2C_IBUF_LOW_PWR       (SENSI2C_IBUF_LOW_PWR),
+        .SENSI2C_IOSTANDARD         (SENSI2C_IOSTANDARD),
+        .SENSI2C_SLEW               (SENSI2C_SLEW),
+        .SENSOR_DATA_WIDTH          (SENSOR_DATA_WIDTH),
+        .SENSOR_FIFO_2DEPTH         (SENSOR_FIFO_2DEPTH),
+        .SENSOR_FIFO_DELAY          (SENSOR_FIFO_DELAY),
+        .HIST_SAXI_ADDR_MASK        (HIST_SAXI_ADDR_MASK),
+        .HIST_SAXI_MODE_WIDTH       (HIST_SAXI_MODE_WIDTH),
+        .HIST_SAXI_EN               (HIST_SAXI_EN),
+        .HIST_SAXI_NRESET           (HIST_SAXI_NRESET),
+        .HIST_CONFIRM_WRITE         (HIST_CONFIRM_WRITE),
+        .HIST_SAXI_AWCACHE          (HIST_SAXI_AWCACHE),
+        .HIST_SAXI_MODE_ADDR_MASK   (HIST_SAXI_MODE_ADDR_MASK),
+        .NUM_FRAME_BITS             (NUM_FRAME_BITS),
+        .SENS_SYNC_FBITS            (SENS_SYNC_FBITS),
+        .SENS_SYNC_LBITS            (SENS_SYNC_LBITS),
+        .SENS_SYNC_LATE_DFLT        (SENS_SYNC_LATE_DFLT),
+        .SENS_SYNC_MINBITS          (SENS_SYNC_MINBITS),
+        .SENS_SYNC_MINPER           (SENS_SYNC_MINPER),
+        .IDELAY_VALUE               (IDELAY_VALUE),
+        .PXD_DRIVE                  (PXD_DRIVE),
+        .PXD_IBUF_LOW_PWR           (PXD_IBUF_LOW_PWR),
+        .PXD_IOSTANDARD             (PXD_IOSTANDARD),
+        .PXD_SLEW                   (PXD_SLEW),
+        .SENS_REFCLK_FREQUENCY      (SENS_REFCLK_FREQUENCY),
+        .SENS_HIGH_PERFORMANCE_MODE (SENS_HIGH_PERFORMANCE_MODE),
+        .SENS_PHASE_WIDTH           (SENS_PHASE_WIDTH),
+        .SENS_PCLK_PERIOD           (SENS_PCLK_PERIOD),
+        .SENS_BANDWIDTH             (SENS_BANDWIDTH),
+        .CLKFBOUT_MULT_SENSOR       (CLKFBOUT_MULT_SENSOR),
+        .CLKFBOUT_PHASE_SENSOR      (CLKFBOUT_PHASE_SENSOR),
+        .IPCLK_PHASE                (IPCLK_PHASE),
+        .IPCLK2X_PHASE              (IPCLK2X_PHASE),
+        .SENS_DIVCLK_DIVIDE         (SENS_DIVCLK_DIVIDE),
+        .SENS_REF_JITTER1           (SENS_REF_JITTER1),
+        .SENS_REF_JITTER2           (SENS_REF_JITTER2),
+        .SENS_SS_EN                 (SENS_SS_EN),
+        .SENS_SS_MODE               (SENS_SS_MODE),
+        .SENS_SS_MOD_PERIOD         (SENS_SS_MOD_PERIOD)
+    ) sensors393_i (
+        .rst                (axi_rst),             // input
+        .pclk             (),                      //  input
+        .pclk2x           (),                      // input
+        .ref_clk            (ref_clk),             // input
+        .dly_rst            (axi_rst),             // input
+        .mclk               (mclk),                // input
+        .cmd_ad_in          (cmd_sensor_ad),       // input[7:0] 
+        .cmd_stb_in         (cmd_sensor_stb),      // input
+        .status_ad          (status_sensor_ad),    // output[7:0] 
+        .status_rq          (status_sensor_rq),    // output
+        .status_start       (status_sensor_start), // input
+        .sns1_dp(), // inout[7:0] 
+        .sns1_dn(), // inout[7:0] 
+        .sns1_clkp(), // inout
+        .sns1_clkn(), // inout
+        .sns1_scl(), // inout
+        .sns1_sda(), // inout
+        .sns1_ctl(), // inout
+        .sns1_pg(), // inout
+        .sns2_dp(), // inout[7:0] 
+        .sns2_dn(), // inout[7:0] 
+        .sns2_clkp(), // inout
+        .sns2_clkn(), // inout
+        .sns2_scl(), // inout
+        .sns2_sda(), // inout
+        .sns2_ctl(), // inout
+        .sns2_pg(), // inout
+        .sns3_dp(), // inout[7:0] 
+        .sns3_dn(), // inout[7:0] 
+        .sns3_clkp(), // inout
+        .sns3_clkn(), // inout
+        .sns3_scl(), // inout
+        .sns3_sda(), // inout
+        .sns3_ctl(), // inout
+        .sns3_pg(), // inout
+        .sns4_dp(), // inout[7:0] 
+        .sns4_dn(), // inout[7:0] 
+        .sns4_clkp(), // inout
+        .sns4_clkn(), // inout
+        .sns4_scl(), // inout
+        .sns4_sda(), // inout
+        .sns4_ctl(), // inout
+        .sns4_pg(), // inout
+        .rpage_set0(), // input
+        .rpage_next0(), // input
+        .buf_rd0(), // input
+        .buf_dout0(), // output[63:0] 
+        .rpage_set1(), // input
+        .rpage_next1(), // input
+        .buf_rd1(), // input
+        .buf_dout1(), // output[63:0] 
+        .rpage_set2(), // input
+        .rpage_next2(), // input
+        .buf_rd2(), // input
+        .buf_dout2(), // output[63:0] 
+        .rpage_set3(), // input
+        .rpage_next3(), // input
+        .buf_rd3(), // input
+        .buf_dout3(), // output[63:0] 
+        .trigger_mode(), // input
+        .trig_in(), // input[3:0] 
+        .sof_out_pclk(), // output[3:0] 
+        .eof_out_pclk(), // output[3:0] 
+        .sof_out_mclk(), // output[3:0] 
+        .sof_late_mclk(), // output[3:0] 
+        .frame_num0(), // input[3:0] 
+        .frame_num1(), // input[3:0] 
+        .frame_num2(), // input[3:0] 
+        .frame_num3(), // input[3:0] 
+        .aclk(), // input
+        .saxi_awaddr(), // output[31:0] 
+        .saxi_awvalid(), // output
+        .saxi_awready(), // input
+        .saxi_awid(), // output[5:0] 
+        .saxi_awlock(), // output[1:0] 
+        .saxi_awcache(), // output[3:0] 
+        .saxi_awprot(), // output[2:0] 
+        .saxi_awlen(), // output[3:0] 
+        .saxi_awsize(), // output[1:0] 
+        .saxi_awburst(), // output[1:0] 
+        .saxi_awqos(), // output[3:0] 
+        .saxi_wdata(), // output[31:0] 
+        .saxi_wvalid(), // output
+        .saxi_wready(), // input
+        .saxi_wid(), // output[5:0] 
+        .saxi_wlast(), // output
+        .saxi_wstrb(), // output[3:0] 
+        .saxi_bvalid(), // input
+        .saxi_bready(), // output
+        .saxi_bid(), // input[5:0] 
+        .saxi_bresp() // input[1:0] 
+    );
 
-    4'b0,              // 4'b0
-    
-    tmp_debug[11:8],   // 4'b0
-    
-    tmp_debug[7:4],    // 4'b0111 -> 4'bx00x
-                       //    dly_addr[1],        0
-                       //    dly_addr[0],        0
-                       //    clkin_stopped_mmcm, 0 
-                       //    clkfb_stopped_mmcm, 0
-    tmp_debug[3:0],     // 4'b1100 -> 4'bxx00
-                       //    ddr_rst, 1 1 4000609c -> 0 , 40006098 -> 1
-                       //    rst_in,  0 0
-                       //    dci_rst, 0 1
-                       //    dly_rst  0 1
-    4'h0,                   
-//    phy_locked_mmcm,   //  1 1
-//    phy_locked_pll,    //  1 1
-//    phy_dci_ready,     //  1 0
-//    phy_dly_ready,     //  1 0
-    
-    4'h0                   
-//    locked_mmcm,       //  1 1
-//    locked_pll,        //  1 1
-//    dci_ready,         //  1 0
-//    dly_ready         //  1 0
-                       
-    }:{
-    
-        waddr_wcount[3:0], 
-        waddr_rcount[3:0], 
-        waddr_num_in_fifo[3:0], 
-        
-        wdata_wcount[3:0], 
-        wdata_rcount[3:0], 
-        wdata_num_in_fifo[3:0], 
-        
-        wresp_wcount[3:0], 
-        wresp_rcount[3:0], 
-        wresp_num_in_fifo[3:0],
-        wleft[3:0],
-        wlength[3:0], 
-        wlen_in_dbg[3:0] 
-       
-    },
-    
-    
-    //ps_out[7:4],       // 4'b0 input[7:0] 4'b0
-    
-    //ps_out[3:0],       // 4'b0 input[7:0] 4'b0
-    1'b0,
-    waddr_under_r,
-    wdata_under_r,
-    wresp_under_r,
-    
-    1'b0, 
-    waddr_over_r,
-    wdata_over_r,
-    wresp_over_r, // ???
-     
-    1'b0, // run_busy, // input // 0 
-    1'b0, //locked, // input   // 1
-    1'b0, // ps_rdy, // input   // 1
-    axi_arready,       // 1
-    
-    axi_awready,       // 1
-    axi_wready,        // 1  - sometimes gets stuck with 0 (axi_awready==1) ? TODO: Add timeout 
-    fifo_rst,   // fclk[0],          // 0/1 
-    axi_rst_pre //axi_rst            // 0
-};
-*/
     axibram_write #(
         .ADDRESS_BITS(AXI_WR_ADDR_BITS)
     ) axibram_write_i (  //SuppressThisWarning ISExst Output port <bram_wstb> of the instance <axibram_write_i> is unconnected or connected to loadless signal.

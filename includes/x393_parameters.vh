@@ -290,5 +290,155 @@
     parameter MEMBRIDGE_STATUS_REG=               'h3b,
     
     parameter RSEL=                               1'b1, // late/early READ commands (to adjust timing by 1 SDCLK period)
-    parameter WSEL=                               1'b0  // late/early WRITE commands (to adjust timing by 1 SDCLK period)
+    parameter WSEL=                               1'b0,  // late/early WRITE commands (to adjust timing by 1 SDCLK period)
+    
+    parameter SENSOR_GROUP_ADDR =         'h400, // sensor registers base address
+    parameter SENSOR_BASE_INC =           'h040, // increment for sesor channel
+    
+    parameter HIST_SAXI_ADDR_REL =         'h100, // histograms control addresses (16 locations) relative to SENSOR_GROUP_ADDR
+    parameter HIST_SAXI_MODE_ADDR_REL =    'h110, // histograms mode address (1 locatios) relative to SENSOR_GROUP_ADDR
+    
+    
+    parameter SENSI2C_STATUS_REG_BASE =   'h30,  // 4 locations" x30, x32, x34, x36
+    parameter SENSI2C_STATUS_REG_INC =    2,     // increment to the next sensor
+    parameter SENSI2C_STATUS_REG_REL =    0,     // 4 locations" 'h30, 'h32, 'h34, 'h36
+    parameter SENSIO_STATUS_REG_REL =     1,     // 4 locations" 'h31, 'h33, 'h35, 'h37
+    parameter SENSOR_NUM_HISTOGRAM=       3,     // number of histogram channels
+    parameter HISTOGRAM_RAM_MODE =        "NOBUF", // valid: "NOBUF" (32-bits, no buffering), "BUF18", "BUF32"
+    parameter SENS_GAMMA_NUM_CHN =        3,     // number of subchannels for his sensor ports (1..4)
+    parameter SENS_GAMMA_BUFFER =         0,     // 1 - use "shadow" table for clean switching, 0 - single table per channel
+    
+    // parameters defining address map
+    parameter SENSOR_CTRL_RADDR =         0, // relative to SENSOR_GROUP_ADDR 
+    parameter SENSOR_CTRL_ADDR_MASK =    'h7ff, //
+        // bits of the SENSOR mode register
+        parameter SENSOR_MODE_WIDTH =     9,
+        parameter SENSOR_HIST_EN_BIT =    0, // 0..3 1 - enable histogram modules, disable after processing the started frame
+        parameter SENSOR_HIST_NRST_BIT =  4, // 0 - immediately reset all histogram modules 
+        parameter SENSOR_16BIT_BIT =      8, // 0 - 8 bpp mode, 1 - 16 bpp (bypass gamma). Gamma-processed data is still used for histograms
+    
+    parameter SENSI2C_CTRL_RADDR =        2, // 302..'h303
+    parameter SENSI2C_CTRL_MASK =     'h7fe,
+      // sensor_i2c_io relative control register addresses
+      parameter SENSI2C_CTRL =          'h0,
+      parameter SENSI2C_STATUS =        'h1,
+    
+    parameter SENS_SYNC_RADDR  =        'h4,
+    parameter SENS_SYNC_MASK  =         'h7fc,
+      // 2 locations reserved for control/status (if they will be needed)
+      parameter SENS_SYNC_MULT  =       'h2,   // relative register address to write number of frames to combine in one (minus 1, '0' - each farme)
+      parameter SENS_SYNC_LATE  =       'h3,    // number of lines to delay late frame sync
+    
+    
+    
+    parameter SENS_GAMMA_RADDR =        'h38, // 'h38..'h3b was 4,
+    parameter SENS_GAMMA_ADDR_MASK =   'h7fc,
+      // sens_gamma registers
+      parameter SENS_GAMMA_CTRL =        'h0,
+      parameter SENS_GAMMA_ADDR_DATA =   'h1, // bit 20 ==1 - table address, bit 20==0 - table data (18 bits)
+      parameter SENS_GAMMA_HEIGHT01 =    'h2, // bits [15:0] - height minus 1 of image 0, [31:16] - height-1 of image1
+      parameter SENS_GAMMA_HEIGHT2 =     'h3, // bits [15:0] - height minus 1 of image 2 ( no need for image 3)
+        // bits of the SENS_GAMMA_CTRL mode register
+        parameter SENS_GAMMA_MODE_WIDTH =  5, // does not include trig
+        parameter SENS_GAMMA_MODE_BAYER =  0,
+        parameter SENS_GAMMA_MODE_PAGE =   2,
+        parameter SENS_GAMMA_MODE_EN =     3,
+        parameter SENS_GAMMA_MODE_REPET =  4,
+        parameter SENS_GAMMA_MODE_TRIG =   5,
+    
+    parameter SENSIO_RADDR =          8, //'h308  .. 'h30c
+    parameter SENSIO_ADDR_MASK =      'h7f8,
+      // sens_parallel12 registers
+      parameter SENSIO_CTRL =           'h0,
+        // SENSIO_CTRL register bits
+        parameter SENS_CTRL_MRST =        0,  //  1: 0
+        parameter SENS_CTRL_ARST =        2,  //  3: 2
+        parameter SENS_CTRL_ARO =         4,  //  5: 4
+        parameter SENS_CTRL_RST_MMCM =    6,  //  7: 6
+        parameter SENS_CTRL_EXT_CLK =     8,  //  9: 8
+        parameter SENS_CTRL_LD_DLY =     10,  // 10
+        parameter SENS_CTRL_QUADRANTS =  12,  // 17:12, enable - 20
+      parameter SENSIO_STATUS =         'h1,
+      parameter SENSIO_JTAG =           'h2,
+        // SENSIO_JTAG register bits
+        parameter SENS_JTAG_PGMEN =       8,
+        parameter SENS_JTAG_PROG =        6,
+        parameter SENS_JTAG_TCK =         4,
+        parameter SENS_JTAG_TMS =         2,
+        parameter SENS_JTAG_TDI =         0,
+      parameter SENSIO_WIDTH =          'h3, // 1.. 2^16, 0 - use HACT
+      parameter SENSIO_DELAYS =         'h4, // 'h4..'h7
+        // 4 of 8-bit delays per register
+    // sensor_i2c_io command/data write registers s (relative to SENSOR_GROUP_ADDR)
+    parameter SENSI2C_ABS_RADDR =       'h10, // 'h310..'h31f
+    parameter SENSI2C_REL_RADDR =       'h20, // 'h320..'h32f
+    parameter SENSI2C_ADDR_MASK =       'h7f0, // both for SENSI2C_ABS_ADDR and SENSI2C_REL_ADDR
+
+    // sens_hist registers (relative to SENSOR_GROUP_ADDR)
+    parameter HISTOGRAM_RADDR0 =        'h30, //
+    parameter HISTOGRAM_RADDR1 =        'h32, //
+    parameter HISTOGRAM_RADDR2 =        'h34, //
+    parameter HISTOGRAM_RADDR3 =        'h36, //
+    parameter HISTOGRAM_ADDR_MASK =     'h7fe, // for each channel
+      // sens_hist registers
+      parameter HISTOGRAM_LEFT_TOP =     'h0,
+      parameter HISTOGRAM_WIDTH_HEIGHT = 'h1, // 1.. 2^16, 0 - use HACT
+    
+    //sensor_i2c_io other parameters
+    parameter integer SENSI2C_DRIVE=     12,
+    parameter SENSI2C_IBUF_LOW_PWR=      "TRUE",
+    parameter SENSI2C_IOSTANDARD =       "DEFAULT",
+    parameter SENSI2C_SLEW =             "SLOW",
+    
+    //sensor_fifo parameters
+    parameter SENSOR_DATA_WIDTH =        12,
+    parameter SENSOR_FIFO_2DEPTH =       4,
+    parameter SENSOR_FIFO_DELAY =        7,
+    // other parameters for histogram_saxi module
+    parameter HIST_SAXI_ADDR_MASK =      'h7f0,
+      parameter HIST_SAXI_MODE_WIDTH =   8,
+      parameter HIST_SAXI_EN =           0,
+      parameter HIST_SAXI_NRESET =       1,
+      parameter HIST_CONFIRM_WRITE =     2, // wait write confirmation for each block
+      parameter HIST_SAXI_AWCACHE =      4'h3, //..7 cache mode (4 bits, default 4'h3)
+      
+    parameter HIST_SAXI_MODE_ADDR_MASK = 'h7ff,
+    parameter NUM_FRAME_BITS =           4, // number of bits use for frame number 
+    
+    // Other parameters
+    parameter SENS_SYNC_FBITS =          16,    // number of bits in a frame counter for linescan mode
+    parameter SENS_SYNC_LBITS =          16,    // number of bits in a line counter for sof_late output (limited by eof) 
+    parameter SENS_SYNC_LATE_DFLT =      15,    // number of lines to delay late frame sync
+    parameter SENS_SYNC_MINBITS =        8,    // number of bits to enforce minimal frame period 
+    parameter SENS_SYNC_MINPER =         130,    // minimal frame period (in pclk/mclk?) 
+    
+    
+    // sens_parallel12 other parameters
+    
+//    parameter IODELAY_GRP ="IODELAY_SENSOR", // may need different for different channels?
+    parameter integer IDELAY_VALUE =     0,
+    parameter integer PXD_DRIVE =        12,
+    parameter PXD_IBUF_LOW_PWR =         "TRUE",
+    parameter PXD_IOSTANDARD =           "DEFAULT",
+    parameter PXD_SLEW =                 "SLOW",
+    parameter real SENS_REFCLK_FREQUENCY = 300.0,
+    parameter SENS_HIGH_PERFORMANCE_MODE = "FALSE",
+    
+    parameter SENS_PHASE_WIDTH=          8,      // number of bits for te phase counter (depends on divisors)
+    parameter SENS_PCLK_PERIOD =         10.000,  // input period in ns, 0..100.000 - MANDATORY, resolution down to 1 ps
+    parameter SENS_BANDWIDTH =           "OPTIMIZED",  //"OPTIMIZED", "HIGH","LOW"
+
+    parameter CLKFBOUT_MULT_SENSOR =     8,  // 100 MHz --> 800 MHz
+    parameter CLKFBOUT_PHASE_SENSOR =    0.000,  // CLOCK FEEDBACK phase in degrees (3 significant digits, -360.000...+360.000)
+    parameter IPCLK_PHASE =              0.000,
+    parameter IPCLK2X_PHASE =            0.000,
+    
+
+    parameter SENS_DIVCLK_DIVIDE =       1,            // Integer 1..106. Divides all outputs with respect to CLKIN
+    parameter SENS_REF_JITTER1   =       0.010,        // Expectet jitter on CLKIN1 (0.000..0.999)
+    parameter SENS_REF_JITTER2   =       0.010,
+    parameter SENS_SS_EN         =       "FALSE",      // Enables Spread Spectrum mode
+    parameter SENS_SS_MODE       =       "CENTER_HIGH",//"CENTER_HIGH","CENTER_LOW","DOWN_HIGH","DOWN_LOW"
+    parameter SENS_SS_MOD_PERIOD =       10000        // integer 4000-40000 - SS modulation period in ns
+    
     

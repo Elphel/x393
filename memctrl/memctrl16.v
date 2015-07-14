@@ -141,6 +141,7 @@ module  memctrl16 #(
     input                        rst_in,
     input                        clk_in,
     output                       mclk,     // global clock, half DDR3 clock, synchronizes all I/O through the command port
+    output                       ref_clk,  // global clock for idelay_ctrl calibration
     // programming interface
     input                  [7:0] cmd_ad,      // byte-serial command address/data (up to 6 bytes: AL-AH-D0-D1-D2-D3 
     input                        cmd_stb,     // strobe (with first byte) for the command a/d
@@ -913,6 +914,7 @@ end
         .clk_in         (clk_in), // axi_aclk), // input
         .rst_in         (rst_in), // axi_rst), // input TODO: move buffer outside?
         .mclk           (mclk), // output
+        .ref_clk        (ref_clk), // output
         
         .cmd0_clk       (cmd0_clk), // input
         .cmd0_we        (cmd0_we), // input
