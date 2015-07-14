@@ -54,7 +54,15 @@ module  sensors393 #(
       parameter SENSI2C_CTRL =          'h0,
       parameter SENSI2C_STATUS =        'h1,
     
-    parameter SENS_GAMMA_RADDR =      4,
+    parameter SENS_SYNC_RADDR  =        'h4,
+    parameter SENS_SYNC_MASK  =         'h7fc,
+      // 2 locations reserved for control/status (if they will be needed)
+      parameter SENS_SYNC_MULT  =       'h2,   // relative register address to write number of frames to combine in one (minus 1, '0' - each farme)
+      parameter SENS_SYNC_LATE  =       'h3,    // number of lines to delay late frame sync
+    
+    
+    
+    parameter SENS_GAMMA_RADDR =        'h38, // 'h38..'h3b was 4,
     parameter SENS_GAMMA_ADDR_MASK =   'h7fc,
       // sens_gamma registers
       parameter SENS_GAMMA_CTRL =        'h0,
@@ -127,6 +135,13 @@ module  sensors393 #(
       
     parameter HIST_SAXI_MODE_ADDR_MASK = 'h7ff,
     parameter NUM_FRAME_BITS =           4, // number of bits use for frame number 
+    
+    // Other parameters
+    parameter SENS_SYNC_FBITS =          16,    // number of bits in a frame counter for linescan mode
+    parameter SENS_SYNC_LBITS =          16,    // number of bits in a line counter for sof_late output (limited by eof) 
+    parameter SENS_SYNC_LATE_DFLT =      15,    // number of lines to delay late frame sync
+    parameter SENS_SYNC_MINBITS =        8,    // number of bits to enforce minimal frame period 
+    parameter SENS_SYNC_MINPER =         130,    // minimal frame period (in pclk/mclk?) 
     
     
     // sens_parallel12 other parameters
@@ -230,6 +245,15 @@ module  sensors393 #(
     output [63:0] buf_dout3,     // data out
     
     // Lower bits of frame numbers to use with the histograms, get from the sequencers
+    // trigger inputs
+    input         trigger_mode, // common to all sensors - running in triggered mode (0 - free running mode)
+    input   [3:0] trig_in,      // per-sensor trigger input
+    output  [3:0] sof_out_pclk, // @ pclk start of frame 
+    output  [3:0] eof_out_pclk, // @ pclk end of frame
+    output  [3:0] sof_out_mclk, // @ mclk start of frame - use to run sequencer, so register writes should be before compressor start
+    output  [3:0] sof_late_mclk,// @ mclk start of frame, delayed (use to start compressor and interrupts)
+    
+    
     input  [NUM_FRAME_BITS-1:0] frame_num0,
     input  [NUM_FRAME_BITS-1:0] frame_num1, 
     input  [NUM_FRAME_BITS-1:0] frame_num2, 
@@ -263,67 +287,6 @@ module  sensors393 #(
     input               [ 1:0] saxi_bresp              // AXI PS Slave GP0 BRESP[1:0], output
     
 );
-//    parameter SENSOR_GROUP_ADDR =    'h300; // sensor registers base address
-/*
-    localparam SENSOR_CTRL_ADDR =  SENSOR_GROUP_ADDR + SENSOR_CTRL_RADDR;  // 'h300
-    localparam SENSI2C_CTRL_ADDR = SENSOR_GROUP_ADDR + SENSI2C_CTRL_RADDR; // 'h302..'h303
-    localparam SENS_GAMMA_ADDR =   SENSOR_GROUP_ADDR + SENS_GAMMA_RADDR;   // 'h304..'h307
-    localparam SENSIO_ADDR =       SENSOR_GROUP_ADDR + SENSIO_RADDR;       // 'h308  .. 'h30c
-    localparam SENSI2C_ABS_ADDR =  SENSOR_GROUP_ADDR + SENSI2C_ABS_RADDR;  // 'h310..'h31f
-    localparam SENSI2C_REL_ADDR =  SENSOR_GROUP_ADDR + SENSI2C_REL_RADDR;  // 'h320..'h32f
-    localparam HISTOGRAM_ADDR0 =   (SENSOR_NUM_HISTOGRAM > 0)?(SENSOR_GROUP_ADDR + HISTOGRAM_RADDR0):-1; //
-    localparam HISTOGRAM_ADDR1 =   (SENSOR_NUM_HISTOGRAM > 1)?(SENSOR_GROUP_ADDR + HISTOGRAM_RADDR1):-1; //
-    localparam HISTOGRAM_ADDR2 =   (SENSOR_NUM_HISTOGRAM > 2)?(SENSOR_GROUP_ADDR + HISTOGRAM_RADDR2):-1; //
-    localparam HISTOGRAM_ADDR3 =   (SENSOR_NUM_HISTOGRAM > 3)?(SENSOR_GROUP_ADDR + HISTOGRAM_RADDR3):-1; //
-
-    output [15:0] dout,        // @posedge pclk
-    output        dout_valid, // in 8-bit mode continues pixel flow have dout_valid alternating on/off
-    output        last_in_line, // valid with dout_valid - last in line dout 
-    output        sof_out,    // start of frame 1-clk pulse with the same delays as output data
-    output        eof_out,    // end of frame 1-clk pulse with the same delays as output data
-
-    // histogram interface to S_AXI, 256x32bit continuous bursts @posedge mclk, each histogram having 4 bursts
-    output        hist_request, // request to transfer a burst
-    input         hist_grant,   // request to transfer over S_AXI granted
-    output  [1:0] hist_chn,     // output[1:0] histogram (sub) channel, valid with request and transfer
-    output        hist_dvalid,  // output data valid - active when sending a burst
-    output [31:0] hist_data     // output[31:0] histogram data
-        .rst          (rst), // input
-        .pclk         (), // input
-        .pclk2x       (), // input
-        .sns_dp       (), // inout[7:0] 
-        .sns_dn       (), // inout[7:0] 
-        .sns_clkp     (), // inout
-        .sns_clkn     (), // inout
-        .sns_scl      (), // inout
-        .sns_sda      (), // inout
-        .sns_ctl      (), // inout
-        .sns_pg       (), // inout
-        .mclk         (), // input
-        .cmd_ad_in    (), // input[7:0] 
-        .cmd_stb_in   (), // input
-        .status_ad    (), // output[7:0] 
-        .status_rq    (), // output
-        .status_start (), // input
-        
-        .dout         (), // output[15:0] 
-        .dout_valid   (), // output
-        .last_in_line (), // output
-        .sof_out      (), // output
-        .eof_out      (), // output
-        .hist_request (), // output
-        .hist_grant   (), // input
-        .hist_chn     (), // output[1:0] 
-        .hist_dvalid  (), // output
-        .hist_data    () // output[31:0] 
-
-*/
-//    reg              [1:0] wpage;
-//    wire                   pclk;
-///    localparam FRAME_NUM_WIDTH = 32; // decide wher to keep the frame counter or get them from sequencer modules
-///    wire [FRAME_NUM_WIDTH-1:0] frame_num;
-
-//    wire [NUM_FRAME_BITS-1:0] frame_num4[0:3]; // low 4 bits from the frame numbers
 
 
     wire [3:0] rpage_set =  {rpage_set3,  rpage_set2,  rpage_set1,  rpage_set0};   // set internal read page to rpage_in (reset pointers)
@@ -340,8 +303,6 @@ module  sensors393 #(
     wire            [15:0] px_data[0:3];
     wire             [3:0] px_valid;
     wire             [3:0] last_in_line;
-    wire             [3:0] sof_out;
-    wire             [3:0] eof_out;
     wire             [3:0] hist_request;
     wire             [3:0] hist_grant;
     wire             [1:0] hist_chn[0:3]; 
@@ -362,7 +323,7 @@ module  sensors393 #(
 
     generate
         genvar i;
-        for (i=0; i < 8; i=i+1) begin: sencor_channel_block
+        for (i=0; i < 4; i=i+1) begin: sencor_channel_block
             sensor_channel #(
                 .SENSOR_NUMBER                 (i),
                 .SENSOR_GROUP_ADDR             (SENSOR_GROUP_ADDR),
@@ -371,6 +332,15 @@ module  sensors393 #(
                 .SENSI2C_STATUS_REG_INC        (SENSI2C_STATUS_REG_INC),
                 .SENSI2C_STATUS_REG_REL        (SENSI2C_STATUS_REG_REL),
                 .SENSIO_STATUS_REG_REL         (SENSIO_STATUS_REG_REL),
+                .SENS_SYNC_RADDR               (SENS_SYNC_RADDR),
+                .SENS_SYNC_MASK                (SENS_SYNC_MASK),
+                .SENS_SYNC_MULT                (SENS_SYNC_MULT),
+                .SENS_SYNC_LATE                (SENS_SYNC_LATE),
+                .SENS_SYNC_FBITS               (SENS_SYNC_FBITS),
+                .SENS_SYNC_LBITS               (SENS_SYNC_LBITS),
+                .SENS_SYNC_LATE_DFLT           (SENS_SYNC_LATE_DFLT),
+                .SENS_SYNC_MINBITS             (SENS_SYNC_MINBITS),
+                .SENS_SYNC_MINPER              (SENS_SYNC_MINPER),
                 .SENSOR_NUM_HISTOGRAM          (SENSOR_NUM_HISTOGRAM),
                 .HISTOGRAM_RAM_MODE            (HISTOGRAM_RAM_MODE),
                 .SENS_GAMMA_NUM_CHN            (SENS_GAMMA_NUM_CHN),
@@ -468,22 +438,27 @@ module  sensors393 #(
                 .sns_ctl      ((i & 2) ? ((i & 1) ? sns4_ctl:  sns3_ctl): ((i & 1) ? sns2_ctl:  sns1_ctl)),  // inout
                 .sns_pg       ((i & 2) ? ((i & 1) ? sns4_pg:   sns3_pg):  ((i & 1) ? sns2_pg:   sns1_pg)),   // inout
 //                .sns_pg       (sns_pg[i]),   // inout
-                .mclk         (mclk), // input
-                .cmd_ad_in    (cmd_ad), // input[7:0] 
-                .cmd_stb_in   (cmd_stb), // input
-                .status_ad    (status_ad_chn[i]), // output[7:0] 
-                .status_rq    (status_rq_chn[i]), // output
-                .status_start (status_start_chn[i]), // input
-                .dout         (px_data[i]), // output[15:0] 
-                .dout_valid   (px_valid[i]), // output
-                .last_in_line (last_in_line[i]), // output
-                .sof_out      (sof_out[i]), // output
-                .eof_out      (eof_out[i]), // output
-                .hist_request (hist_request[i]), // output
-                .hist_grant   (hist_grant[i]), // input
-                .hist_chn     (hist_chn[i]), // output[1:0] 
-                .hist_dvalid  (hist_dvalid[i]), // output
-                .hist_data    (hist_data[i]) // output[31:0] 
+                .mclk         (mclk),                  // input
+                .cmd_ad_in    (cmd_ad),                // input[7:0] 
+                .cmd_stb_in   (cmd_stb),               // input
+                .status_ad    (status_ad_chn[i]),      // output[7:0] 
+                .status_rq    (status_rq_chn[i]),      // output
+                .status_start (status_start_chn[i]),   // input
+                .trigger_mode (trigger_mode),          // input
+                .trig_in      (trig_in[i]),            // input
+                
+                .dout         (px_data[i]),            // output[15:0] 
+                .dout_valid   (px_valid[i]),           // output
+                .last_in_line (last_in_line[i]),       // output
+                .sof_out      (sof_out_pclk[i]),       // output
+                .eof_out      (eof_out_pclk[i]),       // output
+                .sof_out_mclk (sof_out_mclk[i]),       // output
+                .sof_late_mclk(sof_late_mclk[i]),      // output
+                .hist_request (hist_request[i]),       // output
+                .hist_grant   (hist_grant[i]),         // input
+                .hist_chn     (hist_chn[i]),           // output[1:0] 
+                .hist_dvalid  (hist_dvalid[i]),        // output
+                .hist_data    (hist_data[i])           // output[31:0] 
             );
 
             sensor_membuf #(

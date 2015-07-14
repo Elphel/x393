@@ -70,7 +70,7 @@ module  event_logger#(
     output           [GPIO_N-1:0] ext_en,
     
 
-    // byte-parallel timestamps from 4 sesnors channels (in triggered mode all are the same, different only in free running mode)
+    // byte-parallel timestamps from 4 sensors channels (in triggered mode all are the same, different only in free running mode)
     // each may generate logger event, channel number encoded in bits 25:24 of the external microseconds
 
     input                         ts_stb_chn0,  // @mclk 1 clock before ts_rcv_data is valid

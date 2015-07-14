@@ -26,8 +26,8 @@ module  sens_parallel12 #(
     parameter SENSIO_CTRL =        'h0,
     parameter SENSIO_STATUS =      'h1,
     parameter SENSIO_JTAG =        'h2,
-    parameter SENSIO_WIDTH =       'h3, // 1.. 2^16, 0 - use HACT
-    parameter SENSIO_DELAYS =      'h4, // 'h4..'h7
+    parameter SENSIO_WIDTH =       'h3, // set line width (1.. 2^16) if 0 - use HACT
+    parameter SENSIO_DELAYS =      'h4, // 'h4..'h7 - each address sets 4 delays through 4 bytes of 32-bit data
     parameter SENSIO_STATUS_REG =  'h31,
 
     parameter SENS_JTAG_PGMEN =    8,
@@ -78,9 +78,11 @@ module  sens_parallel12 #(
     output        ipclk,  // re-generated sensor output clock (regional clock to drive external fifo) 
     output        ipclk2x,// twice frequency regenerated sensor clock (possibly to run external fifo)
 //    input         pclk2x, // maybe not needed here
+    input         trigger_mode, // running in triggered mode (0 - free running mode)
+    input         trig,      // per-sensor trigger input
     // sensor pads excluding i2c
-    input         vact,
-    input         hact, //output in fillfactory mode
+    inout         vact,
+    inout         hact, //output in fillfactory mode
     inout         bpf,  // output in fillfactory mode
     inout  [11:0] pxd, //actually only 2 LSBs are inouts
     inout         mrst,
@@ -88,7 +90,7 @@ module  sens_parallel12 #(
     
     inout         arst,
     inout         aro,
-    output        dclk,
+    output        dclk, // externally connected to inout port
     // output
     output [11:0] pxd_out,
     output        vact_out, 
@@ -142,13 +144,14 @@ module  sens_parallel12 #(
     wire        clkfb_pxd_stopped_mmcm;
     
     // programmed resets to the sensor 
-    reg         iaro  = 0;
+    reg         iaro_soft  = 0;
+    wire        iaro;
     reg         iarst = 0;
     reg         imrst = 0;
     reg         rst_mmcm=1; // rst and command - en/dis 
-    reg  [5:0]  quadrants=0;
+    reg  [5:0]  quadrants=0; //90-degree shifts for data {1:0], hact [3:2] and vact [5:4]
     reg         ld_idelay=0;
-    reg         sel_ext_clk=0; // select clock source from the sensor (0 - use internal clock - to sesnor)
+    reg         sel_ext_clk=0; // select clock source from the sensor (0 - use internal clock - to sensor)
 
 
 
@@ -175,15 +178,16 @@ module  sens_parallel12 #(
     assign set_other_delay = set_idelay[3];
     assign status = {locked_pxd_mmcm,clkin_pxd_stopped_mmcm,clkfb_pxd_stopped_mmcm,xfpgadone,ps_rdy, ps_out,xfpgatdo,senspgmin};
     assign hact_out = hact_r;
+    assign iaro = trigger_mode?  ~trig : iaro_soft;
     
     always @(posedge rst or posedge mclk) begin
         if      (rst)     data_r <= 0;
         else if (cmd_we)  data_r <= cmd_data;
         if      (rst)     set_idelay <= 0;
-        else   set_idelay <=  {4{cmd_we}} & {(cmd_a==(SENSIO_DELAYS+3))?1'b1:1'b0,
-                                             (cmd_a==(SENSIO_DELAYS+2))?1'b1:1'b0,
-                                             (cmd_a==(SENSIO_DELAYS+1))?1'b1:1'b0,
-                                             (cmd_a==(SENSIO_DELAYS+0))?1'b1:1'b0};
+        else   set_idelay <=  {4{cmd_we}} & {(cmd_a==(SENSIO_DELAYS+3)),
+                                             (cmd_a==(SENSIO_DELAYS+2)),
+                                             (cmd_a==(SENSIO_DELAYS+1)),
+                                             (cmd_a==(SENSIO_DELAYS+0))};
         if (rst) set_status_r <=0;
         else     set_status_r <= cmd_we && (cmd_a== SENSIO_STATUS);                             
         if (rst) set_ctrl_r <=0;
@@ -212,8 +216,8 @@ module  sens_parallel12 #(
         if      (rst)                                           iarst <= 0;
         else if (set_ctrl_r && data_r[SENS_CTRL_ARST + 1])      iarst <= data_r[SENS_CTRL_ARST]; 
          
-        if      (rst)                                           iaro <= 0;
-        else if (set_ctrl_r && data_r[SENS_CTRL_MRST + 1])      iaro <= data_r[SENS_CTRL_ARO]; 
+        if      (rst)                                           iaro_soft <= 0;
+        else if (set_ctrl_r && data_r[SENS_CTRL_MRST + 1])      iaro_soft <= data_r[SENS_CTRL_ARO]; 
          
         if      (rst)                                           rst_mmcm <= 0;
         else if (set_ctrl_r && data_r[SENS_CTRL_RST_MMCM + 1])  rst_mmcm <= data_r[SENS_CTRL_RST_MMCM]; 
@@ -538,7 +542,7 @@ module  sens_parallel12 #(
         .I  (xpgmen?(~xfpgaprog):force_senspgm), // input
         .T  (~(xpgmen || force_senspgm))         // input - disable when reading DONE
     );
-    // pullup for mrst (used as input for "DONE") and senspgm (grounded on sesnor boards)
+    // pullup for mrst (used as input for "DONE") and senspgm (grounded on sensor boards)
     mpullup i_mrst_pullup(mrst);
     mpullup i_senspgm_pullup(senspgm);
     always @ (posedge mclk or posedge rst) begin

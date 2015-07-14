@@ -260,7 +260,7 @@ module  sens_histogram #(
         .ADDR_MASK1  (0),
         .ADDR2       (0),
         .ADDR_MASK2  (0)
-    ) cmd_deser_sens_i2c_i (
+    ) cmd_deser_sens_histogram_i (
         .rst         (rst), // input
         .clk         (mclk), // input
         .ad          (cmd_ad), // input[7:0] 

@@ -21,7 +21,7 @@
 `timescale 1ns/1ps
 /*
 Logs frame synchronization data from other camera (same as frame sync)
-When sesnors are running in free running mode, each sensor may provide individual timestamp (sampled at vsync)
+When sensors are running in free running mode, each sensor may provide individual timestamp (sampled at vsync)
 */
 
 module  imu_exttime393(
@@ -29,7 +29,7 @@ module  imu_exttime393(
     input                         mclk,         // system clock, negedge TODO:COnvert to posedge!
     input                         xclk,         // half frequency (80 MHz nominal)
     input                   [3:0] en_chn_mclk,  // enable per-channel module operation, if all 0 - reset
-    // byte-parallel timestamps from 4 sesnors channels (in triggered mode all are the same, different only in free running mode)
+    // byte-parallel timestamps from 4 sensors channels (in triggered mode all are the same, different only in free running mode)
     // each may generate logger event, channel number encoded in bits 25:24 of the external microseconds
 
     input                         ts_stb_chn0,  // @mclk 1 clock before ts_rcv_data is valid

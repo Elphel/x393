@@ -29,17 +29,26 @@ module  sensor_channel#(
     parameter SENSI2C_STATUS_REG_INC =    2,     // increment to the next sensor
     parameter SENSI2C_STATUS_REG_REL =    0,     // 4 locations" 'h30, 'h32, 'h34, 'h36
     parameter SENSIO_STATUS_REG_REL =     1,     // 4 locations" 'h31, 'h33, 'h35, 'h37
+
+    parameter SENS_SYNC_RADDR  =          'h4,
+    parameter SENS_SYNC_MASK  =           'h7fc,
+    // 2 locations reserved for control/status (if they will be needed)
+    parameter SENS_SYNC_MULT  =           'h2,   // relative register address to write number of frames to combine in one (minus 1, '0' - each farme)
+    parameter SENS_SYNC_LATE  =           'h3,    // number of lines to delay late frame sync
+    parameter SENS_SYNC_FBITS =           16,    // number of bits in a frame counter for linescan mode
+    parameter SENS_SYNC_LBITS =           16,    // number of bits in a line counter for sof_late output (limited by eof) 
+    parameter SENS_SYNC_LATE_DFLT =       15,    // number of lines to delay late frame sync
+    parameter SENS_SYNC_MINBITS =         8,    // number of bits to enforce minimal frame period 
+    parameter SENS_SYNC_MINPER =          130,    // minimal frame period (in pclk/mclk?) 
     
-//    parameter SENSOR_BASE_ADDR =      'h300, // sensor registers base address
-//    parameter SENSI2C_STATUS_REG =    'h30,
-//    parameter SENSIO_STATUS_REG =     'h31,
-    parameter SENSOR_NUM_HISTOGRAM=   3, // number of histogram channels
-    parameter HISTOGRAM_RAM_MODE =     "NOBUF", // valid: "NOBUF" (32-bits, no buffering), "BUF18", "BUF32"
-    parameter SENS_GAMMA_NUM_CHN =    3, // number of subchannels for his sensor ports (1..4)
-    parameter SENS_GAMMA_BUFFER =     0, // 1 - use "shadow" table for clean switching, 0 - single table per channel
+
+    parameter SENSOR_NUM_HISTOGRAM=       3, // number of histogram channels
+    parameter HISTOGRAM_RAM_MODE =        "NOBUF", // valid: "NOBUF" (32-bits, no buffering), "BUF18", "BUF32"
+    parameter SENS_GAMMA_NUM_CHN =        3, // number of subchannels for his sensor ports (1..4)
+    parameter SENS_GAMMA_BUFFER =         0, // 1 - use "shadow" table for clean switching, 0 - single table per channel
     
     // parameters defining address map
-    parameter SENSOR_CTRL_RADDR =     0, //'h300
+    parameter SENSOR_CTRL_RADDR =     0, //'h00
     parameter SENSOR_CTRL_ADDR_MASK = 'h7ff, //
         // bits of the SENSOR mode register
         parameter SENSOR_MODE_WIDTH =     9,
@@ -47,13 +56,13 @@ module  sensor_channel#(
         parameter SENSOR_HIST_NRST_BIT =  4, // 0 - immediately reset all histogram modules 
         parameter SENSOR_16BIT_BIT =      8, // 0 - 8 bpp mode, 1 - 16 bpp (bypass gamma). Gamma-processed data is still used for histograms
     
-    parameter SENSI2C_CTRL_RADDR =    2, // 302..'h303
+    parameter SENSI2C_CTRL_RADDR =    2, // 'h02..'h03
     parameter SENSI2C_CTRL_MASK =     'h7fe,
       // sensor_i2c_io relative control register addresses
       parameter SENSI2C_CTRL =          'h0,
       parameter SENSI2C_STATUS =        'h1,
     
-    parameter SENS_GAMMA_RADDR =      4,
+    parameter SENS_GAMMA_RADDR =       'h38, //4,  'h38..'h3b
     parameter SENS_GAMMA_ADDR_MASK =   'h7fc,
       // sens_gamma registers
       parameter SENS_GAMMA_CTRL =        'h0,
@@ -68,7 +77,7 @@ module  sensor_channel#(
         parameter SENS_GAMMA_MODE_REPET =  4,
         parameter SENS_GAMMA_MODE_TRIG =   5,
     
-    parameter SENSIO_RADDR =          8, //'h308  .. 'h30c
+    parameter SENSIO_RADDR =          8, //'h308  .. 'h30f
     parameter SENSIO_ADDR_MASK =      'h7f8,
       // sens_parallel12 registers
       parameter SENSIO_CTRL =           'h0,
@@ -167,12 +176,18 @@ module  sensor_channel#(
     output        status_rq,   // input request to send status downstream
     input         status_start, // Acknowledge of the first status packet byte (address)
 
+    input         trigger_mode, // running in triggered mode (0 - free running mode)
+    input         trig_in,      // per-sensor trigger input
+
     // 16/8-bit mode data to memory (8-bits are packed by 2 in 16 mode @posedge pclk
-    output [15:0] dout,        // @posedge pclk
-    output        dout_valid, // in 8-bit mode continues pixel flow have dout_valid alternating on/off
-    output        last_in_line, // valid with dout_valid - last in line dout 
-    output        sof_out,    // start of frame 1-clk pulse with the same delays as output data
-    output        eof_out,    // end of frame 1-clk pulse with the same delays as output data
+    output [15:0] dout,         // @posedge pclk
+    output        dout_valid,   // in 8-bit mode continues pixel flow have dout_valid alternating on/off
+    output        last_in_line, // valid with dout_valid - last in line dout
+     
+    output        sof_out,       // @pclk start of frame 1-clk pulse with the same delays as output data
+    output        eof_out,       // @pclk end of frame 1-clk pulse with the same delays as output data
+    output        sof_out_mclk,  // @mclk filtered, possibly decimated  start of frame 
+    output        sof_late_mclk, // @mclk filtered, possibly decimated  start of frame, delayed by specified number of lines
 
     // histogram interface to S_AXI, 256x32bit continuous bursts @posedge mclk, each histogram having 4 bursts
     output        hist_request, // request to transfer a burst
@@ -186,14 +201,14 @@ module  sensor_channel#(
     localparam SENSOR_BASE_ADDR =   (SENSOR_GROUP_ADDR + SENSOR_NUMBER * SENSOR_BASE_INC);
     localparam SENSI2C_STATUS_REG = (SENSI2C_STATUS_REG_BASE + SENSOR_NUMBER * SENSI2C_STATUS_REG_INC + SENSI2C_STATUS_REG_REL);
     localparam SENSIO_STATUS_REG =  (SENSI2C_STATUS_REG_BASE + SENSOR_NUMBER * SENSI2C_STATUS_REG_INC + SENSIO_STATUS_REG_REL);
-
+    localparam SENS_SYNC_ADDR =     SENSOR_BASE_ADDR + SENS_SYNC_RADDR;
 //    parameter SENSOR_BASE_ADDR =    'h300; // sensor registers base address
-    localparam SENSOR_CTRL_ADDR =  SENSOR_BASE_ADDR + SENSOR_CTRL_RADDR;  // 'h300
-    localparam SENSI2C_CTRL_ADDR = SENSOR_BASE_ADDR + SENSI2C_CTRL_RADDR; // 'h302..'h303
-    localparam SENS_GAMMA_ADDR =   SENSOR_BASE_ADDR + SENS_GAMMA_RADDR;   // 'h304..'h307
-    localparam SENSIO_ADDR =       SENSOR_BASE_ADDR + SENSIO_RADDR;       // 'h308  .. 'h30c
-    localparam SENSI2C_ABS_ADDR =  SENSOR_BASE_ADDR + SENSI2C_ABS_RADDR;  // 'h310..'h31f
-    localparam SENSI2C_REL_ADDR =  SENSOR_BASE_ADDR + SENSI2C_REL_RADDR;  // 'h320..'h32f
+    localparam SENSOR_CTRL_ADDR =  SENSOR_BASE_ADDR + SENSOR_CTRL_RADDR;
+    localparam SENSI2C_CTRL_ADDR = SENSOR_BASE_ADDR + SENSI2C_CTRL_RADDR;
+    localparam SENS_GAMMA_ADDR =   SENSOR_BASE_ADDR + SENS_GAMMA_RADDR;
+    localparam SENSIO_ADDR =       SENSOR_BASE_ADDR + SENSIO_RADDR; 
+    localparam SENSI2C_ABS_ADDR =  SENSOR_BASE_ADDR + SENSI2C_ABS_RADDR;
+    localparam SENSI2C_REL_ADDR =  SENSOR_BASE_ADDR + SENSI2C_REL_RADDR;
     localparam HISTOGRAM_ADDR0 =   (SENSOR_NUM_HISTOGRAM > 0)?(SENSOR_BASE_ADDR + HISTOGRAM_RADDR0):-1; //
     localparam HISTOGRAM_ADDR1 =   (SENSOR_NUM_HISTOGRAM > 1)?(SENSOR_BASE_ADDR + HISTOGRAM_RADDR1):-1; //
     localparam HISTOGRAM_ADDR2 =   (SENSOR_NUM_HISTOGRAM > 2)?(SENSOR_BASE_ADDR + HISTOGRAM_RADDR2):-1; //
@@ -223,10 +238,14 @@ module  sensor_channel#(
     wire         sof; // start of frame
     wire         eof; // end of frame
     
+    wire         sof_out_sync; // sof filtetred, optionally decimated (for linescan mode)
+    
     wire  [15:0] gamma_pxd_in; 
     wire         gamma_hact_in;
     wire         gamma_sof_in;
     wire         gamma_eof_in;
+    
+    
     
     wire   [7:0] gamma_pxd_out; 
     wire         gamma_hact_out;
@@ -252,14 +271,14 @@ module  sensor_channel#(
     reg          dav_r;       
     wire  [15:0] dout_w;
     wire         dav_w;
-    
+    wire         trig;
     reg          sof_out_r;       
     reg          eof_out_r;       
     
     // TODO: insert vignetting and/or flat field, pixel defects before gamma_*_in
     assign gamma_pxd_in = {pxd[11:0],4'b0};
     assign gamma_hact_in = hact;
-    assign gamma_sof_in =  sof;
+    assign gamma_sof_in =  sof_out_sync; // sof;
     assign gamma_eof_in =  eof;
     
     assign dout = dout_r;
@@ -403,6 +422,8 @@ module  sensor_channel#(
         .pclk                 (pclk),                   // input
         .ipclk                (ipclk),                  // output
         .ipclk2x              (), // ipclk2x),          // output
+        .trigger_mode         (trigger_mode), // input
+        .trig                 (trig),                   // input
         .vact                 (sns_dn[1]),              // input
         .hact                 (sns_dp[1]),              // input
         .bpf                  (sns_dn[0]),              // inout
@@ -413,8 +434,8 @@ module  sensor_channel#(
         .aro                  (sns_ctl),                // inout
         .dclk                 (sns_dp[0]),              // output
         .pxd_out              (pxd_to_fifo[11:0]),      // output[11:0] 
-        .vact_out             (vact_to_fifo),                   // output
-        .hact_out             (hact_to_fifo),                   // output: either delayed input, or regenerated from the leading edge and programmable duration
+        .vact_out             (vact_to_fifo),           // output
+        .hact_out             (hact_to_fifo),           // output: either delayed input, or regenerated from the leading edge and programmable duration
         .mclk                 (mclk),                   // input
         .cmd_ad               (cmd_ad),                 // input[7:0] 
         .cmd_stb              (cmd_stb),                // input
@@ -439,6 +460,37 @@ module  sensor_channel#(
         .sof         (sof), // output
         .eof         (eof) // output
     );
+
+    sens_sync #(
+        .SENS_SYNC_ADDR       (SENS_SYNC_ADDR),
+        .SENS_SYNC_MASK       (SENS_SYNC_MASK),
+        .SENS_SYNC_MULT       (SENS_SYNC_MULT),
+        .SENS_SYNC_LATE       (SENS_SYNC_LATE),
+        .SENS_SYNC_FBITS      (SENS_SYNC_FBITS),
+        .SENS_SYNC_LBITS      (SENS_SYNC_LBITS),
+        .SENS_SYNC_LATE_DFLT  (SENS_SYNC_LATE_DFLT),
+        .SENS_SYNC_MINBITS    (SENS_SYNC_MINBITS),
+        .SENS_SYNC_MINPER     (SENS_SYNC_MINPER)
+    ) sens_sync_i (
+        .rst          (rst), // input
+        .pclk         (pclk), // input
+        .mclk         (), // input
+        .en(), // input
+        .sof_in       (sof), // input
+        .eof_in       (eof), // input
+        .hact         (hact), // input
+        .trigger_mode (trigger_mode), // input
+        .trig_in      (trig_in), // input
+        .trig         (trig), // output
+        .sof_out_pclk (sof_out_sync), // output reg 
+        .sof_out      (sof_out_mclk), // output
+        .sof_late     (sof_late_mclk), // output
+        .cmd_ad       (cmd_ad), // input[7:0] 
+        .cmd_stb      (cmd_stb) // input
+    );
+
+
+
 
     sens_gamma #(
         .SENS_GAMMA_NUM_CHN    (SENS_GAMMA_NUM_CHN),
