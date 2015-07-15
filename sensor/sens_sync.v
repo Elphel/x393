@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: sens_sync
  * Date:2015-07-13  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: Handle linescan mode, sensor trigger and late frame sync
  *
  * Copyright (c) 2015 Elphel, Inc .

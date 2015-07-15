@@ -21,7 +21,13 @@
 `timescale 1ns/1ps
 
 module  jp_channel#(
-        parameter CMPRS_ADDR=                'h120, //TODO: assign valid address
+        parameter CMPRS_NUMBER =             0,
+        parameter CMPRS_GROUP_ADDR =         'h600,
+        parameter CMPRS_BASE_INC =           'h10,
+        parameter CMPRS_STATUS_REG_BASE=     'h10,
+        parameter CMPRS_HIFREQ_REG_BASE=     'h14, 
+        parameter CMPRS_STATUS_REG_INC=       1,
+        parameter CMPRS_HIFREQ_REG_INC=       1,
         parameter CMPRS_MASK=                'h7f8,
         parameter CMPRS_CONTROL_REG=          0,
         parameter CMPRS_STATUS_CNTRL=         1,
@@ -29,7 +35,6 @@ module  jp_channel#(
         parameter CMPRS_COLOR_SATURATION=     3,
         parameter CMPRS_CORING_MODE=          4,
         parameter CMPRS_TABLES=               6, // 6..7
-        parameter CMPRS_STATUS_REG_ADDR=     'h10,  //TODO: assign valid address
 
         parameter FRAME_HEIGHT_BITS=          16, // Maximal frame height 
         parameter LAST_FRAME_BITS=            16, // number of bits in frame counter (before rolls over)
@@ -105,10 +110,15 @@ module  jp_channel#(
     
     // Buffer interface (buffer to be a part of the memory controller - it is connected there by a 64-bit data, here - by an 9-bit one
     input                         xfer_reset_page_rd, // from mcntrl_tiled_rw (
-    output                 [11:0] buf_ra,
-    output                        buf_ren,
-    output                        buf_regen,
-    input                  [ 7:0] buf_di, 
+
+    input                         buf_wpage_nxt, // advance to next page memory interface writes to
+    input                         buf_we,       // @!mclk write buffer from memory, increment write
+    input                  [63:0] buf_din,      // data out 
+
+//    output                 [11:0] buf_ra,
+//    output                        buf_ren,
+//    output                        buf_regen,
+//    input                  [ 7:0] buf_di, 
     
     input                         page_ready_chn,     // single mclk (posedge)
     output                        next_page_chn,      // single mclk (posedge): Done with the page in the  buffer, memory controller may read more data 
@@ -122,11 +132,10 @@ module  jp_channel#(
     input                         ts_pre_stb,  // @mclk - 1 cycle before receiving 8 bytes of timestamp data
     input                   [7:0] ts_data,     // timestamp data (s0,s1,s2,s3,us0,us1,us2,us3==0)
     
-///    output [23:0] imgptr, - removed - use AFI channel MUX
     output                        eof_written_mclk,
     output                        stuffer_done_mclk,
     
-    output                 [31:0] hifreq,             //  accumulated high frequency components in a frame sub-window
+//    output                 [31:0] hifreq,             //  accumulated high frequency components in a frame sub-window
     input                         vsync_late,         // delayed start of frame, @xclk. In 353 it was 16 lines after VACT active
                                                       // source channel should already start, some delay give time for sequencer commands
                                                       // that should arrive before it
@@ -155,6 +164,11 @@ module  jp_channel#(
     output                        fifo_flush,    // EOF, need to output all what is in FIFO (Stays active until enough data chunks are read)
     output                 [7:0]  fifo_count     // number of 32-byte chunks in FIFO
 );
+    localparam CMPRS_ADDR = CMPRS_GROUP_ADDR + CMPRS_NUMBER * CMPRS_BASE_INC;
+    localparam CMPRS_STATUS_REG_ADDR = CMPRS_STATUS_REG_BASE + CMPRS_NUMBER *  CMPRS_STATUS_REG_INC;
+    localparam CMPRS_HIFREQ_REG_ADDR = CMPRS_HIFREQ_REG_BASE + CMPRS_NUMBER *  CMPRS_HIFREQ_REG_INC;
+    wire                      [31:0] hifreq;   //  accumulated high frequency components in a frame sub-window was output, now - with status
+    
     // Control signals to be defined
     wire                             frame_en;           // if 0 - will reset logic immediately (but not page number)
     wire                             stuffer_en;        //  extended enable to allow stuffer to gracefully finish 
@@ -204,8 +218,8 @@ module  jp_channel#(
 //    wire   [ 7:0] buf_di;             // data from the buffer
 //    wire   [11:0] buf_ra;             // buffer read address (2 MSB - page number)
     wire   [ 1:0] buf_rd;             // buf {regen, re}
-    
-    
+    wire   [ 7:0] buf_pxd;            // 8-bit pixel data from the memory buffer
+    wire   [11:0] buf_ra;             // Memory buffer read adderss
     // signals connecting modules: chn_rd_buf_i and ???:
     wire   [ 7:0] mb_data_out;       // Macroblock data out in scanline order 
     wire          mb_pre_first_out;  // Macroblock data out strobe - 1 cycle just before data valid
@@ -306,28 +320,8 @@ module  jp_channel#(
     assign set_coring_w =            cmd_we && (cmd_a==       CMPRS_CORING_MODE);
     assign set_tables_w =            cmd_we && ((cmd_a & 6)== CMPRS_TABLES);
     
-    assign buf_ren =   buf_rd[0];
-    assign buf_regen = buf_rd[1];
-    
-/*    
-// Port buffer - TODO: Move to memory controller
-    mcntrl_buf_rd #(
-        .LOG2WIDTH_RD(3) // 64 bit external interface
-    ) chn_rd_buf_i (
-        .ext_clk      (xclk), // input
-        .ext_raddr    (buf_ra), // input[11:0] 
-        .ext_rd       (buf_rd[0]), // input
-        .ext_regen    (buf_rd[1]), // input
-        .ext_data_out (buf_di), // output[7:0] 
-        .wclk         (!mclk), // input
-        .wpage_in     (2'b0), // input[1:0] 
-        .wpage_set    (xfer_reset_page_rd), // input  TODO: Generate @ negedge mclk on frame start
-        .page_next    (buf_wpage_nxt), // input
-        .page         (), // output[1:0]
-        .we           (buf_wr), // input
-        .data_in      (buf_wdata) // input[63:0] 
-    );
-*/
+//    assign buf_ren =   buf_rd[0];
+//    assign buf_regen = buf_rd[1];
 
     cmd_deser #(
         .ADDR       (CMPRS_ADDR),
@@ -355,19 +349,38 @@ module  jp_channel#(
 
     status_generate #(
         .STATUS_REG_ADDR  (CMPRS_STATUS_REG_ADDR),
-        .PAYLOAD_BITS     (3)
+        .PAYLOAD_BITS     (3),
+        .EXTRA_WORDS      (1),
+        .EXTRA_REG_ADDR   (CMPRS_HIFREQ_REG_ADDR)
+        
     ) status_generate_i (
         .rst              (rst),           // input
         .clk              (mclk),          // input
         .we               (set_status_w),  // input
         .wd               (cmd_data[7:0]), // input[7:0] 
-        .status           (status_data),   // input[2:0] 
+        .status           ({hifreq,status_data}),   // input[2:0] 
         .ad               (status_ad),     // output[7:0] 
         .rq               (status_rq),     // output
         .start            (status_start)   // input
     );
-
-
+//hifreq
+// Port buffer - TODO: Move to memory controller
+    mcntrl_buf_rd #(
+        .LOG2WIDTH_RD(3) // 64 bit external interface
+    ) chn_rd_buf_i (
+        .ext_clk      (xclk), // input
+        .ext_raddr    (buf_ra), // input[11:0] 
+        .ext_rd       (buf_rd[0]), // input
+        .ext_regen    (buf_rd[1]), // input
+        .ext_data_out (buf_pxd), // output[7:0] 
+        .wclk         (!mclk), // input
+        .wpage_in     (2'b0), // input[1:0] 
+        .wpage_set    (xfer_reset_page_rd), // input  TODO: Generate @ negedge mclk on frame start
+        .page_next    (buf_wpage_nxt), // input
+        .page         (), // output[1:0]
+        .we           (buf_we), // input
+        .data_in      (buf_din) // input[63:0] 
+    );
     cmprs_cmd_decode #(
         .CMPRS_CBIT_RUN                  (CMPRS_CBIT_RUN),
         .CMPRS_CBIT_RUN_BITS             (CMPRS_CBIT_RUN_BITS),
@@ -549,7 +562,7 @@ module  jp_channel#(
     ) cmprs_pixel_buf_iface_i (
         .xclk               (xclk), // input
         .frame_en           (frame_en), // input
-        .buf_di             (buf_di), // input[7:0] 
+        .buf_di             (buf_pxd), // input[7:0] 
         .buf_ra             (buf_ra), // output[11:0] 
         .buf_rd             (buf_rd), // output[1:0] 
         .converter_type     (converter_type), // input[2:0] 

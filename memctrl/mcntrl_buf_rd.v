@@ -32,7 +32,7 @@ module  mcntrl_buf_rd #(
       
       input                            wclk,         // !mclk (inverted)
       input                      [1:0] wpage_in,     // will register to wclk, input OK with mclk
-      input                            wpage_set,    // set internal read page to rpage_in 
+      input                            wpage_set,    // set internal write page to wpage_in 
       input                            page_next,    // advance to next page (and reset lower bits to 0)
       output                     [1:0] page,         // current inernal page   
       input                            we,           // write port enable (also increment write buffer address)

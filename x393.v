@@ -25,6 +25,44 @@
 module  x393 #(
 `include "includes/x393_parameters.vh"
 )(
+    // Sensors interface: I/O pads, pin names match circuit diagram (each sensor)
+    inout                  [7:0] sns1_dp,
+    inout                  [7:0] sns1_dn,
+    inout                        sns1_clkp,
+    inout                        sns1_clkn,
+    inout                        sns1_scl,
+    inout                        sns1_sda,
+    inout                        sns1_ctl,
+    inout                        sns1_pg,
+    
+    inout                  [7:0] sns2_dp,
+    inout                  [7:0] sns2_dn,
+    inout                        sns2_clkp,
+    inout                        sns2_clkn,
+    inout                        sns2_scl,
+    inout                        sns2_sda,
+    inout                        sns2_ctl,
+    inout                        sns2_pg,
+    
+    inout                  [7:0] sns3_dp,
+    inout                  [7:0] sns3_dn,
+    inout                        sns3_clkp,
+    inout                        sns3_clkn,
+    inout                        sns3_scl,
+    inout                        sns3_sda,
+    inout                        sns3_ctl,
+    inout                        sns3_pg,
+    
+    inout                  [7:0] sns4_dp,
+    inout                  [7:0] sns4_dn,
+    inout                        sns4_clkp,
+    inout                        sns4_clkn,
+    inout                        sns4_scl,
+    inout                        sns4_sda,
+    inout                        sns4_ctl,
+    inout                        sns4_pg,
+    
+
     // DDR3 interface
     output                       SDRST, // DDR3 reset (active low)
     output                       SDCLK, // DDR3 clock differential output, positive
@@ -64,29 +102,29 @@ module  x393 #(
 //(* dont_touch = "true" *)
    wire           axi_rst;     // reset, active high
 // AXI Write Address
-   wire   [31:0]  axi_awaddr;  // AWADDR[31:0], input
-   wire           axi_awvalid; // AWVALID, input
-   wire           axi_awready; // AWREADY, output
-   wire   [11:0]  axi_awid;    // AWID[11:0], input
+   wire   [31:0]  maxi0_awaddr;  // AWADDR[31:0], input
+   wire           maxi0_awvalid; // AWVALID, input
+   wire           maxi0_awready; // AWREADY, output
+   wire   [11:0]  maxi0_awid;    // AWID[11:0], input
 //   input  [ 1:0] awlock,     // AWLOCK[1:0], input
 //   input  [ 3:0] awcache,    // AWCACHE[3:0], input
 //   input  [ 2:0] awprot,     // AWPROT[2:0], input
-   wire   [ 3:0]  axi_awlen;       // AWLEN[3:0], input
-   wire   [ 1:0]  axi_awsize;      // AWSIZE[1:0], input
-   wire   [ 1:0]  axi_awburst;     // AWBURST[1:0], input
+   wire   [ 3:0]  maxi0_awlen;       // AWLEN[3:0], input
+   wire   [ 1:0]  maxi0_awsize;      // AWSIZE[1:0], input
+   wire   [ 1:0]  maxi0_awburst;     // AWBURST[1:0], input
 //   input  [ 3:0] awqos,      // AWQOS[3:0], input
 // AXI PS Master GP0: Write Data
-   wire   [31:0]  axi_wdata;       // WDATA[31:0], input
-   wire           axi_wvalid;      // WVALID, input
-   wire           axi_wready;      // WREADY, output
-   wire   [11:0]  axi_wid;         // WID[11:0], input
-   wire           axi_wlast;       // WLAST, input
-   wire   [ 3:0]  axi_wstb;        // WSTRB[3:0], input
+   wire   [31:0]  maxi0_wdata;       // WDATA[31:0], input
+   wire           maxi0_wvalid;      // WVALID, input
+   wire           maxi0_wready;      // WREADY, output
+   wire   [11:0]  maxi0_wid;         // WID[11:0], input
+   wire           maxi0_wlast;       // WLAST, input
+   wire   [ 3:0]  maxi0_wstb;        // WSTRB[3:0], input
 // AXI PS Master GP0: Write Responce
-   wire           axi_bvalid;      // BVALID, output
-   wire           axi_bready;      // BREADY, input
-   wire   [11:0]  axi_bid;         // BID[11:0], output
-   wire   [ 1:0]  axi_bresp;       // BRESP[1:0], output
+   wire           maxi0_bvalid;      // BVALID, output
+   wire           maxi0_bready;      // BREADY, input
+   wire   [11:0]  maxi0_bid;         // BID[11:0], output
+   wire   [ 1:0]  maxi0_bresp;       // BRESP[1:0], output
    
 // BRAM (and other write modules) interface from AXI write
    wire [AXI_WR_ADDR_BITS-1:0] axiwr_pre_awaddr; // same as awaddr_out, early address to decode and return dev_ready
@@ -100,24 +138,24 @@ module  x393 #(
    wire   [31:0]  axiwr_wdata;
 
  // AXI Read Address   
-   wire   [31:0]  axi_araddr;  // ARADDR[31:0], input 
-   wire           axi_arvalid; // ARVALID, input
-   wire           axi_arready; // ARREADY, output
-   wire   [11:0]  axi_arid;    // ARID[11:0], input
+   wire   [31:0]  maxi0_araddr;  // ARADDR[31:0], input 
+   wire           maxi0_arvalid; // ARVALID, input
+   wire           maxi0_arready; // ARREADY, output
+   wire   [11:0]  maxi0_arid;    // ARID[11:0], input
 //   input  [ 1:0] arlock,  // ARLOCK[1:0], input
 //   input  [ 3:0] archache,// ARCACHE[3:0], input
 //   input  [ 2:0] arprot,  // ARPROT[2:0], input
-   wire   [ 3:0]  axi_arlen;   // ARLEN[3:0], input
-   wire   [ 1:0]  axi_arsize;  // ARSIZE[1:0], input
-   wire   [ 1:0]  axi_arburst; // ARBURST[1:0], input
+   wire   [ 3:0]  maxi0_arlen;   // ARLEN[3:0], input
+   wire   [ 1:0]  maxi0_arsize;  // ARSIZE[1:0], input
+   wire   [ 1:0]  maxi0_arburst; // ARBURST[1:0], input
 //   input  [ 3:0] adqos,   // ARQOS[3:0], input
 // AXI Read Data
-   wire   [31:0]  axi_rdata;   // RDATA[31:0], output
-   wire           axi_rvalid;  // RVALID, output
-   wire           axi_rready;  // RREADY, input
-   wire   [11:0]  axi_rid;     // RID[11:0], output
-   wire           axi_rlast;   // RLAST, output
-   wire   [ 1:0]  axi_rresp;
+   wire   [31:0]  maxi0_rdata;   // RDATA[31:0], output
+   wire           maxi0_rvalid;  // RVALID, output
+   wire           maxi0_rready;  // RREADY, input
+   wire   [11:0]  maxi0_rid;     // RID[11:0], output
+   wire           maxi0_rlast;   // RLAST, output
+   wire   [ 1:0]  maxi0_rresp;
 
 // External memory synchronization
    wire [AXI_RD_ADDR_BITS-1:0] axird_pre_araddr; // same as awaddr_out, early address to decode and return dev_ready
@@ -306,6 +344,44 @@ module  x393 #(
    //MEMCLK
     wire                 [63:0] gpio_in;
     
+    // signals for sensor393 (in/outs as sseen for the sensor393)
+    wire                        rpage_set0; //         (), // input
+    wire                        rpage_next0; //        (), // input
+    wire                        buf_rd0; //            (), // input
+    wire                 [63:0] buf_dout0; //          (), // output[63:0] 
+        
+    wire                        rpage_set1; //         (), // input
+    wire                        rpage_next1; //        (), // input
+    wire                        buf_rd1; //            (), // input
+    wire                 [63:0] buf_dout1; //          (), // output[63:0] 
+        
+    wire                        rpage_set2; //         (), // input
+    wire                        rpage_next2; //        (), // input
+    wire                        buf_rd2; //            (), // input
+    wire                 [63:0] buf_dout2; //          (), // output[63:0] 
+        
+    wire                        rpage_set3; //         (), // input
+    wire                        rpage_next3; //        (), // input
+    wire                        buf_rd3; //            (), // input
+    wire                 [63:0] buf_dout3; //          (), // output[63:0] 
+        
+        
+    wire                        trigger_mode; //       (), // input
+    wire                  [3:0] trig_in;                  // input[3:0] 
+        
+    wire                  [3:0] sof_out_pclk; //       (), // output[3:0] 
+    wire                  [3:0] eof_out_pclk; //       (), // output[3:0] 
+    wire                  [3:0] sof_out_mclk; //       (), // output[3:0] 
+    wire                  [3:0] sof_late_mclk; //      (), // output[3:0] 
+        
+    wire [NUM_FRAME_BITS - 1:0] frame_num0; //         (), // input[3:0] 
+    wire [NUM_FRAME_BITS - 1:0] frame_num1; //         (), // input[3:0] 
+    wire [NUM_FRAME_BITS - 1:0] frame_num2; //         (), // input[3:0] 
+    wire [NUM_FRAME_BITS - 1:0] frame_num3; //         (), // input[3:0] 
+    
+
+
+
     
     
     assign gpio_in= {48'h0,frst,tmp_debug};
@@ -908,7 +984,7 @@ BUFG bufg_axi_aclk_i  (.O(axi_aclk),.I(fclk[0]));
         .NDQSU                (NDQSU), // inout
         .tmp_debug            (tmp_debug) // output[11:0] 
     );
-
+    // AFI0 (AXI_HP0) signals
     wire [31:0] afi0_awaddr;   // output[31:0]
     wire        afi0_awvalid;  // output
     wire        afi0_awready;     // input
@@ -1042,6 +1118,31 @@ BUFG bufg_axi_aclk_i  (.O(axi_aclk),.I(fclk[0]));
         .afi_racount            (afi0_racount), // input[2:0] 
         .afi_rdissuecap1en      (afi0_rdissuecap1en) // output
     );
+    
+    // SAXIGP0 signals
+    
+    wire        saxi0_aclk     = hclk; // 150KHz
+    wire [31:0] saxi0_awaddr;
+    wire        saxi0_awvalid;
+    wire        saxi0_awready;
+    wire [ 5:0] saxi0_awid; 
+    wire [ 1:0] saxi0_awlock; 
+    wire [ 3:0] saxi0_awcache; 
+    wire [ 2:0] saxi0_awprot; 
+    wire [ 3:0] saxi0_awlen; 
+    wire [ 1:0] saxi0_awsize; 
+    wire [ 1:0] saxi0_awburst; 
+    wire [ 3:0] saxi0_awqos; 
+    wire [31:0] saxi0_wdata; 
+    wire        saxi0_wvalid;
+    wire        saxi0_wready;
+    wire [ 5:0] saxi0_wid; 
+    wire        saxi0_wlast;
+    wire [ 3:0] saxi0_wstrb; 
+    wire        saxi0_bvalid;
+    wire        saxi0_bready;
+    wire [ 5:0] saxi0_bid; 
+    wire [ 1:0] saxi0_bresp; 
 
     sensors393 #(
         .SENSOR_GROUP_ADDR          (SENSOR_GROUP_ADDR),
@@ -1163,86 +1264,97 @@ BUFG bufg_axi_aclk_i  (.O(axi_aclk),.I(fclk[0]));
         .status_ad          (status_sensor_ad),    // output[7:0] 
         .status_rq          (status_sensor_rq),    // output
         .status_start       (status_sensor_start), // input
-        .sns1_dp(), // inout[7:0] 
-        .sns1_dn(), // inout[7:0] 
-        .sns1_clkp(), // inout
-        .sns1_clkn(), // inout
-        .sns1_scl(), // inout
-        .sns1_sda(), // inout
-        .sns1_ctl(), // inout
-        .sns1_pg(), // inout
-        .sns2_dp(), // inout[7:0] 
-        .sns2_dn(), // inout[7:0] 
-        .sns2_clkp(), // inout
-        .sns2_clkn(), // inout
-        .sns2_scl(), // inout
-        .sns2_sda(), // inout
-        .sns2_ctl(), // inout
-        .sns2_pg(), // inout
-        .sns3_dp(), // inout[7:0] 
-        .sns3_dn(), // inout[7:0] 
-        .sns3_clkp(), // inout
-        .sns3_clkn(), // inout
-        .sns3_scl(), // inout
-        .sns3_sda(), // inout
-        .sns3_ctl(), // inout
-        .sns3_pg(), // inout
-        .sns4_dp(), // inout[7:0] 
-        .sns4_dn(), // inout[7:0] 
-        .sns4_clkp(), // inout
-        .sns4_clkn(), // inout
-        .sns4_scl(), // inout
-        .sns4_sda(), // inout
-        .sns4_ctl(), // inout
-        .sns4_pg(), // inout
-        .rpage_set0(), // input
-        .rpage_next0(), // input
-        .buf_rd0(), // input
-        .buf_dout0(), // output[63:0] 
-        .rpage_set1(), // input
-        .rpage_next1(), // input
-        .buf_rd1(), // input
-        .buf_dout1(), // output[63:0] 
-        .rpage_set2(), // input
-        .rpage_next2(), // input
-        .buf_rd2(), // input
-        .buf_dout2(), // output[63:0] 
-        .rpage_set3(), // input
-        .rpage_next3(), // input
-        .buf_rd3(), // input
-        .buf_dout3(), // output[63:0] 
-        .trigger_mode(), // input
-        .trig_in(), // input[3:0] 
-        .sof_out_pclk(), // output[3:0] 
-        .eof_out_pclk(), // output[3:0] 
-        .sof_out_mclk(), // output[3:0] 
-        .sof_late_mclk(), // output[3:0] 
-        .frame_num0(), // input[3:0] 
-        .frame_num1(), // input[3:0] 
-        .frame_num2(), // input[3:0] 
-        .frame_num3(), // input[3:0] 
-        .aclk(), // input
-        .saxi_awaddr(), // output[31:0] 
-        .saxi_awvalid(), // output
-        .saxi_awready(), // input
-        .saxi_awid(), // output[5:0] 
-        .saxi_awlock(), // output[1:0] 
-        .saxi_awcache(), // output[3:0] 
-        .saxi_awprot(), // output[2:0] 
-        .saxi_awlen(), // output[3:0] 
-        .saxi_awsize(), // output[1:0] 
-        .saxi_awburst(), // output[1:0] 
-        .saxi_awqos(), // output[3:0] 
-        .saxi_wdata(), // output[31:0] 
-        .saxi_wvalid(), // output
-        .saxi_wready(), // input
-        .saxi_wid(), // output[5:0] 
-        .saxi_wlast(), // output
-        .saxi_wstrb(), // output[3:0] 
-        .saxi_bvalid(), // input
-        .saxi_bready(), // output
-        .saxi_bid(), // input[5:0] 
-        .saxi_bresp() // input[1:0] 
+        .sns1_dp            (sns1_dp),             // inout[7:0] 
+        .sns1_dn            (sns1_dn),             // inout[7:0] 
+        .sns1_clkp          (sns1_clkp),           // inout
+        .sns1_clkn          (sns1_clkn),           // inout
+        .sns1_scl           (sns1_scl),            // inout
+        .sns1_sda           (sns1_sda),            // inout
+        .sns1_ctl           (sns1_ctl),            // inout
+        .sns1_pg            (sns1_pg),             // inout
+
+        .sns2_dp            (sns2_dp),             // inout[7:0] 
+        .sns2_dn            (sns2_dn),             // inout[7:0] 
+        .sns2_clkp          (sns2_clkp),           // inout
+        .sns2_clkn          (sns2_clkn),           // inout
+        .sns2_scl           (sns2_scl),            // inout
+        .sns2_sda           (sns2_sda),            // inout
+        .sns2_ctl           (sns2_ctl),            // inout
+        .sns2_pg            (sns2_pg),             // inout
+
+        .sns3_dp            (sns3_dp),             // inout[7:0] 
+        .sns3_dn            (sns3_dn),             // inout[7:0] 
+        .sns3_clkp          (sns3_clkp),           // inout
+        .sns3_clkn          (sns3_clkn),           // inout
+        .sns3_scl           (sns3_scl),            // inout
+        .sns3_sda           (sns3_sda),            // inout
+        .sns3_ctl           (sns3_ctl),            // inout
+        .sns3_pg            (sns3_pg),             // inout
+
+        .sns4_dp            (sns4_dp),             // inout[7:0] 
+        .sns4_dn            (sns4_dn),             // inout[7:0] 
+        .sns4_clkp          (sns4_clkp),           // inout
+        .sns4_clkn          (sns4_clkn),           // inout
+        .sns4_scl           (sns4_scl),            // inout
+        .sns4_sda           (sns4_sda),            // inout
+        .sns4_ctl           (sns4_ctl),            // inout
+        .sns4_pg            (sns4_pg),             // inout
+
+        .rpage_set0         (rpage_set0),          // input
+        .rpage_next0        (rpage_next0),         // input
+        .buf_rd0            (buf_rd0),             // input
+        .buf_dout0          (buf_dout0),           // output[63:0] 
+        
+        .rpage_set1         (rpage_set1),          // input
+        .rpage_next1        (rpage_next1),         // input
+        .buf_rd1            (buf_rd1),             // input
+        .buf_dout1          (buf_dout1),           // output[63:0] 
+        
+        .rpage_set2         (rpage_set2),          // input
+        .rpage_next2        (rpage_next2),         // input
+        .buf_rd2            (buf_rd2),             // input
+        .buf_dout2          (buf_dout2),           // output[63:0] 
+        
+        .rpage_set3         (rpage_set3),          // input
+        .rpage_next3        (rpage_next3),         // input
+        .buf_rd3            (buf_rd3),             // input
+        .buf_dout3          (buf_dout3),           // output[63:0] 
+        
+        .trigger_mode       (trigger_mode),        // input
+        .trig_in            (trig_in),             // input[3:0] 
+        
+        .sof_out_pclk       (sof_out_pclk),        // output[3:0] 
+        .eof_out_pclk       (eof_out_pclk),        // output[3:0] 
+        .sof_out_mclk       (sof_out_mclk),        // output[3:0] 
+        .sof_late_mclk      (sof_late_mclk),       // output[3:0] 
+        
+        .frame_num0         (frame_num0),          // input[3:0] 
+        .frame_num1         (frame_num1),          // input[3:0] 
+        .frame_num2         (frame_num2),          // input[3:0] 
+        .frame_num3         (frame_num3),          // input[3:0] 
+        
+        .aclk               (saxi0_aclk),          // input
+        .saxi_awaddr        (saxi0_awaddr),        // output[31:0] 
+        .saxi_awvalid       (saxi0_awvalid),       // output
+        .saxi_awready       (saxi0_awready),       // input
+        .saxi_awid          (saxi0_awid),          // output[5:0] 
+        .saxi_awlock        (saxi0_awlock),        // output[1:0] 
+        .saxi_awcache       (saxi0_awcache),       // output[3:0] 
+        .saxi_awprot        (saxi0_awprot),        // output[2:0] 
+        .saxi_awlen         (saxi0_awlen),         // output[3:0] 
+        .saxi_awsize        (saxi0_awsize),        // output[1:0] 
+        .saxi_awburst       (saxi0_awburst),       // output[1:0] 
+        .saxi_awqos         (saxi0_awqos),         // output[3:0] 
+        .saxi_wdata         (saxi0_wdata),         // output[31:0] 
+        .saxi_wvalid        (saxi0_wvalid),        // output
+        .saxi_wready        (saxi0_wready),        // input
+        .saxi_wid           (saxi0_wid),           // output[5:0] 
+        .saxi_wlast         (saxi0_wlast),         // output
+        .saxi_wstrb         (saxi0_wstrb),         // output[3:0] 
+        .saxi_bvalid        (saxi0_bvalid),        // input
+        .saxi_bready        (saxi0_bready),        // output
+        .saxi_bid           (saxi0_bid),           // input[5:0] 
+        .saxi_bresp         (saxi0_bresp)          // input[1:0] 
     );
 
     axibram_write #(
@@ -1250,23 +1362,23 @@ BUFG bufg_axi_aclk_i  (.O(axi_aclk),.I(fclk[0]));
     ) axibram_write_i (  //SuppressThisWarning ISExst Output port <bram_wstb> of the instance <axibram_write_i> is unconnected or connected to loadless signal.
         .aclk        (axi_aclk), // input
         .rst         (axi_rst), // input
-        .awaddr      (axi_awaddr[31:0]), // input[31:0] // SuppressThisWarning VivadoSynthesis: [Synth 8-3295] tying undriven pin #axibram_write_i:awaddr[31:16,1:0] to constant 0
-        .awvalid     (axi_awvalid), // input
-        .awready     (axi_awready), // output
-        .awid        (axi_awid[11:0]), // input[11:0] // SuppressThisWarning VivadoSynthesis: [Synth 8-3295] tying undriven pin #axibram_write_i:awid[11:2] to constant 0
-        .awlen       (axi_awlen[3:0]), // input[3:0] 
-        .awsize      (axi_awsize[1:0]), // input[1:0] 
-        .awburst     (axi_awburst[1:0]), // input[1:0] 
-        .wdata       (axi_wdata[31:0]), // input[31:0] 
-        .wvalid      (axi_wvalid), // input
-        .wready      (axi_wready), // output
-        .wid         (axi_wid[11:0]), // input[11:0] 
-        .wlast       (axi_wlast), // input
-        .wstb        (axi_wstb[3:0]), // input[3:0] 
-        .bvalid      (axi_bvalid), // output
-        .bready      (axi_bready), // input
-        .bid         (axi_bid[11:0]), // output[11:0] 
-        .bresp       (axi_bresp[1:0]), // output[1:0] 
+        .awaddr      (maxi0_awaddr[31:0]), // input[31:0] // SuppressThisWarning VivadoSynthesis: [Synth 8-3295] tying undriven pin #axibram_write_i:awaddr[31:16,1:0] to constant 0
+        .awvalid     (maxi0_awvalid), // input
+        .awready     (maxi0_awready), // output
+        .awid        (maxi0_awid[11:0]), // input[11:0] // SuppressThisWarning VivadoSynthesis: [Synth 8-3295] tying undriven pin #axibram_write_i:awid[11:2] to constant 0
+        .awlen       (maxi0_awlen[3:0]), // input[3:0] 
+        .awsize      (maxi0_awsize[1:0]), // input[1:0] 
+        .awburst     (maxi0_awburst[1:0]), // input[1:0] 
+        .wdata       (maxi0_wdata[31:0]), // input[31:0] 
+        .wvalid      (maxi0_wvalid), // input
+        .wready      (maxi0_wready), // output
+        .wid         (maxi0_wid[11:0]), // input[11:0] 
+        .wlast       (maxi0_wlast), // input
+        .wstb        (maxi0_wstb[3:0]), // input[3:0] 
+        .bvalid      (maxi0_bvalid), // output
+        .bready      (maxi0_bready), // input
+        .bid         (maxi0_bid[11:0]), // output[11:0] 
+        .bresp       (maxi0_bresp[1:0]), // output[1:0] 
         .pre_awaddr  (axiwr_pre_awaddr[AXI_WR_ADDR_BITS-1:0]), // output[9:0] 
         .start_burst (axiwr_start_burst), // output
         .dev_ready   (axiwr_dev_ready), // input
@@ -1304,19 +1416,19 @@ BUFG bufg_axi_aclk_i  (.O(axi_aclk),.I(fclk[0]));
     ) axibram_read_i ( //SuppressThisWarning ISExst Output port <bram_rclk> of the instance <axibram_read_i> is unconnected or connected to loadless signal.
         .aclk        (axi_aclk), // input
         .rst         (axi_rst), // input
-        .araddr      (axi_araddr[31:0]), // input[31:0] // SuppressThisWarning VivadoSynthesis: [Synth 8-3295] tying undriven pin #axibram_read_i:araddr[31:16,1:0] to constant 0
-        .arvalid     (axi_arvalid), // input
-        .arready     (axi_arready), // output
-        .arid        (axi_arid[11:0]), // input[11:0] 
-        .arlen       (axi_arlen[3:0]), // input[3:0] 
-        .arsize      (axi_arsize[1:0]), // input[1:0] 
-        .arburst     (axi_arburst[1:0]), // input[1:0] 
-        .rdata       (axi_rdata[31:0]), // output[31:0] 
-        .rvalid      (axi_rvalid), // output reg 
-        .rready      (axi_rready), // input
-        .rid         (axi_rid), // output[11:0] reg 
-        .rlast       (axi_rlast), // output reg 
-        .rresp       (axi_rresp[1:0]), // output[1:0] 
+        .araddr      (maxi0_araddr[31:0]), // input[31:0] // SuppressThisWarning VivadoSynthesis: [Synth 8-3295] tying undriven pin #axibram_read_i:araddr[31:16,1:0] to constant 0
+        .arvalid     (maxi0_arvalid), // input
+        .arready     (maxi0_arready), // output
+        .arid        (maxi0_arid[11:0]), // input[11:0] 
+        .arlen       (maxi0_arlen[3:0]), // input[3:0] 
+        .arsize      (maxi0_arsize[1:0]), // input[1:0] 
+        .arburst     (maxi0_arburst[1:0]), // input[1:0] 
+        .rdata       (maxi0_rdata[31:0]), // output[31:0] 
+        .rvalid      (maxi0_rvalid), // output reg 
+        .rready      (maxi0_rready), // input
+        .rid         (maxi0_rid), // output[11:0] reg 
+        .rlast       (maxi0_rlast), // output reg 
+        .rresp       (maxi0_rresp[1:0]), // output[1:0] 
         .pre_araddr  (axird_pre_araddr[AXI_RD_ADDR_BITS-1:0]), // output[9:0] 
         .start_burst (axird_start_burst), // output
         .dev_ready   (axird_dev_ready), // input  SuppressThisWarning VivadoSynthesis: [Synth 8-3295] tying undriven pin #axibram_read_i:dev_ready to constant 0
@@ -1593,49 +1705,49 @@ assign DUMMY_TO_KEEP = frst[2] && MEMCLK; // 1'b0; // dbg_toggle[0];
     //
     .MAXIGP0ARESETN(),            // AXI PS Master GP0 Reset, output
 // AXI PS Master GP0: Read Address    
-    .MAXIGP0ARADDR  (axi_araddr[31:0]), // AXI PS Master GP0 ARADDR[31:0], output  
-    .MAXIGP0ARVALID (axi_arvalid),     // AXI PS Master GP0 ARVALID, output
-    .MAXIGP0ARREADY (axi_arready),     // AXI PS Master GP0 ARREADY, input
-    .MAXIGP0ARID    (axi_arid[11:0]),     // AXI PS Master GP0 ARID[11:0], output
+    .MAXIGP0ARADDR  (maxi0_araddr[31:0]), // AXI PS Master GP0 ARADDR[31:0], output  
+    .MAXIGP0ARVALID (maxi0_arvalid),     // AXI PS Master GP0 ARVALID, output
+    .MAXIGP0ARREADY (maxi0_arready),     // AXI PS Master GP0 ARREADY, input
+    .MAXIGP0ARID    (maxi0_arid[11:0]),     // AXI PS Master GP0 ARID[11:0], output
     .MAXIGP0ARLOCK   (),  // AXI PS Master GP0 ARLOCK[1:0], output
     .MAXIGP0ARCACHE  (),// AXI PS Master GP0 ARCACHE[3:0], output
     .MAXIGP0ARPROT(),  // AXI PS Master GP0 ARPROT[2:0], output
-    .MAXIGP0ARLEN   (axi_arlen[3:0]),    // AXI PS Master GP0 ARLEN[3:0], output
-    .MAXIGP0ARSIZE  (axi_arsize[1:0]),  // AXI PS Master GP0 ARSIZE[1:0], output
-    .MAXIGP0ARBURST (axi_arburst[1:0]),// AXI PS Master GP0 ARBURST[1:0], output
+    .MAXIGP0ARLEN   (maxi0_arlen[3:0]),    // AXI PS Master GP0 ARLEN[3:0], output
+    .MAXIGP0ARSIZE  (maxi0_arsize[1:0]),  // AXI PS Master GP0 ARSIZE[1:0], output
+    .MAXIGP0ARBURST (maxi0_arburst[1:0]),// AXI PS Master GP0 ARBURST[1:0], output
     .MAXIGP0ARQOS    (),    // AXI PS Master GP0 ARQOS[3:0], output
 // AXI PS Master GP0: Read Data
-    .MAXIGP0RDATA   (axi_rdata[31:0]),   // AXI PS Master GP0 RDATA[31:0], input
-    .MAXIGP0RVALID  (axi_rvalid),       // AXI PS Master GP0 RVALID, input
-    .MAXIGP0RREADY  (axi_rready),       // AXI PS Master GP0 RREADY, output
-    .MAXIGP0RID     (axi_rid[11:0]),       // AXI PS Master GP0 RID[11:0], input
-    .MAXIGP0RLAST   (axi_rlast),         // AXI PS Master GP0 RLAST, input
-    .MAXIGP0RRESP   (axi_rresp[1:0]),    // AXI PS Master GP0 RRESP[1:0], input
+    .MAXIGP0RDATA   (maxi0_rdata[31:0]),   // AXI PS Master GP0 RDATA[31:0], input
+    .MAXIGP0RVALID  (maxi0_rvalid),       // AXI PS Master GP0 RVALID, input
+    .MAXIGP0RREADY  (maxi0_rready),       // AXI PS Master GP0 RREADY, output
+    .MAXIGP0RID     (maxi0_rid[11:0]),       // AXI PS Master GP0 RID[11:0], input
+    .MAXIGP0RLAST   (maxi0_rlast),         // AXI PS Master GP0 RLAST, input
+    .MAXIGP0RRESP   (maxi0_rresp[1:0]),    // AXI PS Master GP0 RRESP[1:0], input
     
 // AXI PS Master GP0: Write Address    
-    .MAXIGP0AWADDR  (axi_awaddr[31:0]), // AXI PS Master GP0 AWADDR[31:0], output
-    .MAXIGP0AWVALID (axi_awvalid),     // AXI PS Master GP0 AWVALID, output
-    .MAXIGP0AWREADY (axi_awready),     // AXI PS Master GP0 AWREADY, input
-    .MAXIGP0AWID    (axi_awid[11:0]),     // AXI PS Master GP0 AWID[11:0], output
+    .MAXIGP0AWADDR  (maxi0_awaddr[31:0]), // AXI PS Master GP0 AWADDR[31:0], output
+    .MAXIGP0AWVALID (maxi0_awvalid),     // AXI PS Master GP0 AWVALID, output
+    .MAXIGP0AWREADY (maxi0_awready),     // AXI PS Master GP0 AWREADY, input
+    .MAXIGP0AWID    (maxi0_awid[11:0]),     // AXI PS Master GP0 AWID[11:0], output
     .MAXIGP0AWLOCK   (),  // AXI PS Master GP0 AWLOCK[1:0], output
     .MAXIGP0AWCACHE  (),// AXI PS Master GP0 AWCACHE[3:0], output
     .MAXIGP0AWPROT   (),  // AXI PS Master GP0 AWPROT[2:0], output
-    .MAXIGP0AWLEN   (axi_awlen[3:0]),    // AXI PS Master GP0 AWLEN[3:0], output
-    .MAXIGP0AWSIZE  (axi_awsize[1:0]),  // AXI PS Master GP0 AWSIZE[1:0], output
-    .MAXIGP0AWBURST (axi_awburst[1:0]),// AXI PS Master GP0 AWBURST[1:0], output
+    .MAXIGP0AWLEN   (maxi0_awlen[3:0]),    // AXI PS Master GP0 AWLEN[3:0], output
+    .MAXIGP0AWSIZE  (maxi0_awsize[1:0]),  // AXI PS Master GP0 AWSIZE[1:0], output
+    .MAXIGP0AWBURST (maxi0_awburst[1:0]),// AXI PS Master GP0 AWBURST[1:0], output
     .MAXIGP0AWQOS    (),          // AXI PS Master GP0 AWQOS[3:0], output
 // AXI PS Master GP0: Write Data
-    .MAXIGP0WDATA   (axi_wdata[31:0]),   // AXI PS Master GP0 WDATA[31:0], output
-    .MAXIGP0WVALID  (axi_wvalid),       // AXI PS Master GP0 WVALID, output
-    .MAXIGP0WREADY  (axi_wready),       // AXI PS Master GP0 WREADY, input
-    .MAXIGP0WID     (axi_wid[11:0]),       // AXI PS Master GP0 WID[11:0], output
-    .MAXIGP0WLAST   (axi_wlast),         // AXI PS Master GP0 WLAST, output
-    .MAXIGP0WSTRB   (axi_wstb[3:0]),    // AXI PS Master GP0 WSTRB[3:0], output
+    .MAXIGP0WDATA   (maxi0_wdata[31:0]),   // AXI PS Master GP0 WDATA[31:0], output
+    .MAXIGP0WVALID  (maxi0_wvalid),       // AXI PS Master GP0 WVALID, output
+    .MAXIGP0WREADY  (maxi0_wready),       // AXI PS Master GP0 WREADY, input
+    .MAXIGP0WID     (maxi0_wid[11:0]),       // AXI PS Master GP0 WID[11:0], output
+    .MAXIGP0WLAST   (maxi0_wlast),         // AXI PS Master GP0 WLAST, output
+    .MAXIGP0WSTRB   (maxi0_wstb[3:0]),    // AXI PS Master GP0 WSTRB[3:0], output
 // AXI PS Master GP0: Write Responce
-    .MAXIGP0BVALID  (axi_bvalid),       // AXI PS Master GP0 BVALID, input
-    .MAXIGP0BREADY  (axi_bready),       // AXI PS Master GP0 BREADY, output
-    .MAXIGP0BID     (axi_bid[11:0]),       // AXI PS Master GP0 BID[11:0], input
-    .MAXIGP0BRESP   (axi_bresp[1:0]),    // AXI PS Master GP0 BRESP[1:0], input
+    .MAXIGP0BVALID  (maxi0_bvalid),       // AXI PS Master GP0 BVALID, input
+    .MAXIGP0BREADY  (maxi0_bready),       // AXI PS Master GP0 BREADY, output
+    .MAXIGP0BID     (maxi0_bid[11:0]),       // AXI PS Master GP0 BID[11:0], input
+    .MAXIGP0BRESP   (maxi0_bresp[1:0]),    // AXI PS Master GP0 BRESP[1:0], input
 
 // AXI PS Master GP1    
 // AXI PS Master GP1: Clock, Reset
@@ -1687,9 +1799,9 @@ assign DUMMY_TO_KEEP = frst[2] && MEMCLK; // 1'b0; // dbg_toggle[0];
 
 // AXI PS Slave GP0    
 // AXI PS Slave GP0: Clock, Reset
-    .SAXIGP0ACLK(),              // AXI PS Slave GP0 Clock , input
+    .SAXIGP0ACLK       (saxi0_aclk),              // AXI PS Slave GP0 Clock , input
     .SAXIGP0ARESETN(),           // AXI PS Slave GP0 Reset, output
-// AXI PS Slave GP0: Read Address    
+// AXI PS Slave GP0: Read Address    - Not used
     .SAXIGP0ARADDR(),            // AXI PS Slave GP0 ARADDR[31:0], input  
     .SAXIGP0ARVALID(),           // AXI PS Slave GP0 ARVALID, input
     .SAXIGP0ARREADY(),           // AXI PS Slave GP0 ARREADY, output
@@ -1701,7 +1813,7 @@ assign DUMMY_TO_KEEP = frst[2] && MEMCLK; // 1'b0; // dbg_toggle[0];
     .SAXIGP0ARSIZE(),            // AXI PS Slave GP0 ARSIZE[1:0], input
     .SAXIGP0ARBURST(),           // AXI PS Slave GP0 ARBURST[1:0], input
     .SAXIGP0ARQOS(),             // AXI PS Slave GP0 ARQOS[3:0], input
-// AXI PS Slave GP0: Read Data
+// AXI PS Slave GP0: Read Data    - Not used
     .SAXIGP0RDATA(),             // AXI PS Slave GP0 RDATA[31:0], output
     .SAXIGP0RVALID(),            // AXI PS Slave GP0 RVALID, output
     .SAXIGP0RREADY(),            // AXI PS Slave GP0 RREADY, input
@@ -1709,29 +1821,29 @@ assign DUMMY_TO_KEEP = frst[2] && MEMCLK; // 1'b0; // dbg_toggle[0];
     .SAXIGP0RLAST(),             // AXI PS Slave GP0 RLAST, output
     .SAXIGP0RRESP(),             // AXI PS Slave GP0 RRESP[1:0], output
 // AXI PS Slave GP0: Write Address    
-    .SAXIGP0AWADDR(),            // AXI PS Slave GP0 AWADDR[31:0], input
-    .SAXIGP0AWVALID(),           // AXI PS Slave GP0 AWVALID, input
-    .SAXIGP0AWREADY(),           // AXI PS Slave GP0 AWREADY, output
-    .SAXIGP0AWID(),              // AXI PS Slave GP0 AWID[5:0], input
-    .SAXIGP0AWLOCK(),            // AXI PS Slave GP0 AWLOCK[1:0], input
-    .SAXIGP0AWCACHE(),           // AXI PS Slave GP0 AWCACHE[3:0], input
-    .SAXIGP0AWPROT(),            // AXI PS Slave GP0 AWPROT[2:0], input
-    .SAXIGP0AWLEN(),             // AXI PS Slave GP0 AWLEN[3:0], input
-    .SAXIGP0AWSIZE(),            // AXI PS Slave GP0 AWSIZE[1:0], input
-    .SAXIGP0AWBURST(),           // AXI PS Slave GP0 AWBURST[1:0], input
-    .SAXIGP0AWQOS(),             // AXI PS Slave GP0 AWQOS[3:0], input
+    .SAXIGP0AWADDR     (saxi0_awaddr),   // AXI PS Slave GP0 AWADDR[31:0], input
+    .SAXIGP0AWVALID    (saxi0_awvalid),  // AXI PS Slave GP0 AWVALID, input
+    .SAXIGP0AWREADY    (saxi0_awready),  // AXI PS Slave GP0 AWREADY, output
+    .SAXIGP0AWID       (saxi0_awid),     // AXI PS Slave GP0 AWID[5:0], input
+    .SAXIGP0AWLOCK     (saxi0_awlock),   // AXI PS Slave GP0 AWLOCK[1:0], input
+    .SAXIGP0AWCACHE    (saxi0_awcache),  // AXI PS Slave GP0 AWCACHE[3:0], input
+    .SAXIGP0AWPROT     (saxi0_awprot),   // AXI PS Slave GP0 AWPROT[2:0], input
+    .SAXIGP0AWLEN      (saxi0_awlen),    // AXI PS Slave GP0 AWLEN[3:0], input
+    .SAXIGP0AWSIZE     (saxi0_awsize),   // AXI PS Slave GP0 AWSIZE[1:0], input
+    .SAXIGP0AWBURST    (saxi0_awburst),  // AXI PS Slave GP0 AWBURST[1:0], input
+    .SAXIGP0AWQOS      (saxi0_awqos),    // AXI PS Slave GP0 AWQOS[3:0], input
 // AXI PS Slave GP0: Write Data
-    .SAXIGP0WDATA(),             // AXI PS Slave GP0 WDATA[31:0], input
-    .SAXIGP0WVALID(),            // AXI PS Slave GP0 WVALID, input
-    .SAXIGP0WREADY(),            // AXI PS Slave GP0 WREADY, output
-    .SAXIGP0WID(),               // AXI PS Slave GP0 WID[5:0], input
-    .SAXIGP0WLAST(),             // AXI PS Slave GP0 WLAST, input
-    .SAXIGP0WSTRB(),             // AXI PS Slave GP0 WSTRB[3:0], input
+    .SAXIGP0WDATA      (saxi0_wdata),    // AXI PS Slave GP0 WDATA[31:0], input
+    .SAXIGP0WVALID     (saxi0_wvalid),   // AXI PS Slave GP0 WVALID, input
+    .SAXIGP0WREADY     (saxi0_wready),   // AXI PS Slave GP0 WREADY, output
+    .SAXIGP0WID        (saxi0_wid),      // AXI PS Slave GP0 WID[5:0], input
+    .SAXIGP0WLAST      (saxi0_wlast),    // AXI PS Slave GP0 WLAST, input
+    .SAXIGP0WSTRB      (saxi0_wstrb),    // AXI PS Slave GP0 WSTRB[3:0], input
 // AXI PS Slave GP0: Write Responce
-    .SAXIGP0BVALID(),            // AXI PS Slave GP0 BVALID, output
-    .SAXIGP0BREADY(),            // AXI PS Slave GP0 BREADY, input
-    .SAXIGP0BID(),               // AXI PS Slave GP0 BID[5:0], output //TODO:  Update range !!!
-    .SAXIGP0BRESP(),             // AXI PS Slave GP0 BRESP[1:0], output
+    .SAXIGP0BVALID     (saxi0_bvalid),   // AXI PS Slave GP0 BVALID, output
+    .SAXIGP0BREADY     (saxi0_bready),   // AXI PS Slave GP0 BREADY, input
+    .SAXIGP0BID        (saxi0_bid),      // AXI PS Slave GP0 BID[5:0], output //TODO:  Update range !!!
+    .SAXIGP0BRESP      (saxi0_bresp),    // AXI PS Slave GP0 BRESP[1:0], output
 
 // AXI PS Slave GP1    
 // AXI PS Slave GP1: Clock, Reset
@@ -1783,8 +1895,8 @@ assign DUMMY_TO_KEEP = frst[2] && MEMCLK; // 1'b0; // dbg_toggle[0];
 
 // AXI PS Slave HP0    
 // AXI PS Slave HP0: Clock, Reset
-    .SAXIHP0ACLK          (hclk),              // AXI PS Slave HP0 Clock , input
-    .SAXIHP0ARESETN       (),           // AXI PS Slave HP0 Reset, output
+    .SAXIHP0ACLK          (hclk),                   // AXI PS Slave HP0 Clock , input
+    .SAXIHP0ARESETN       (),                       // AXI PS Slave HP0 Reset, output
 // AXI PS Slave HP0: Read Address    
     .SAXIHP0ARADDR        (afi0_araddr),            // AXI PS Slave HP0 ARADDR[31:0], input  
     .SAXIHP0ARVALID       (afi0_arvalid),           // AXI PS Slave HP0 ARVALID, input

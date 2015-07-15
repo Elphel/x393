@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: mult_saxi_wr_inbuf
  * Date:2015-07-11  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: Channel buffer with width conversion to 32 to use with mult_saxi_wr
  *
  * Copyright (c) 2015 Elphel, Inc .

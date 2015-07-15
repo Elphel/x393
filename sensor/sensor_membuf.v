@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: sensor_membuf
  * Date:2015-07-12  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: Memory buffer for one sensor channel
  *
  * Copyright (c) 2015 Elphel, Inc .

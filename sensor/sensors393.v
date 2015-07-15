@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: sensors393
  * Date:2015-07-12  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: 4-channel sensor subsystem
  *  Uniform, assuming the same sensors/multiplexers, common pixel clock
  *
@@ -196,7 +196,7 @@ module  sensors393 #(
     inout         sns1_scl,
     inout         sns1_sda,
     inout         sns1_ctl,
-    inout         sns1_pg,  //S uppressThisWarning VEditor : VDT bug? - assigned used in generate block only
+    inout         sns1_pg,
     
     inout   [7:0] sns2_dp,   //SuppressThisWarning VEditor : VDT bug? - assigned used in generate block only
     inout   [7:0] sns2_dn,   //SuppressThisWarning VEditor : VDT bug? - assigned used in generate block only
@@ -325,7 +325,7 @@ module  sensors393 #(
 
     generate
         genvar i;
-        for (i=0; i < 4; i=i+1) begin: sencor_channel_block
+        for (i=0; i < 4; i=i+1) begin: sensor_channel_block
             sensor_channel #(
                 .SENSOR_NUMBER                 (i),
                 .SENSOR_GROUP_ADDR             (SENSOR_GROUP_ADDR),
