@@ -49,22 +49,21 @@ module  cmprs_afi_mux_status #(
     reg [15:0] mode_data_mclk; // some bits unused
     wire       mode_we_hclk;
     reg  [7:0] mode_hclk;
-//    wire [1:0] sel[0:3]={mode_hclk[7:6],mode_hclk[5:4],mode_hclk[3:2],mode_hclk[1:0]};
 
-    reg  [1:0] index;
-    reg  [CMPRS_AFIMUX_CYCBITS-1:0] cntr;
-    reg    [CMPRS_AFIMUX_WIDTH-1:0] chunk_ptr_hclk;  // pointer data
-    reg                       [1:0] chunk_chn_hclk;  // pointer channel
+    reg   [1:0] index;
+    reg   [CMPRS_AFIMUX_CYCBITS-1:0] cntr;
+    reg     [CMPRS_AFIMUX_WIDTH-1:0] chunk_ptr_hclk;  // pointer data
+    reg                        [1:0] chunk_chn_hclk;  // pointer channel
     
-    reg    [CMPRS_AFIMUX_WIDTH-1:0] status_data[0:3];
+    reg [4 * CMPRS_AFIMUX_WIDTH-1:0] status_data;
     
     wire stb_w;
     reg  stb_r;
     wire stb_mclk;
     
-    wire [7:0] ad[0:3];
-    wire [3:0] rq;
-    wire [3:0] start;
+    wire [31:0] ad;
+    wire  [3:0] rq;
+    wire  [3:0] start;
     
     assign stb_w = en && (cntr==0);
     always @ (posedge mclk) begin
@@ -78,7 +77,7 @@ module  cmprs_afi_mux_status #(
             if (mode_data_mclk[10]) mode_hclk[5:4] <= mode_data_mclk[ 9: 8];
             if (mode_data_mclk[14]) mode_hclk[7:6] <= mode_data_mclk[13:12];
             
-            if (stb_mclk) status_data[chunk_chn_hclk] <= chunk_ptr_hclk;
+            if (stb_mclk) status_data[chunk_chn_hclk * CMPRS_AFIMUX_WIDTH +: CMPRS_AFIMUX_WIDTH] <= chunk_ptr_hclk;
         end
         
         if (!en) {index,cntr} <= 0;
@@ -104,80 +103,80 @@ module  cmprs_afi_mux_status #(
     pulse_cross_clock mode_we_hclk_i (.rst(rst), .src_clk(mclk), .dst_clk(hclk), .in_pulse(mode_we), .out_pulse(mode_we_hclk),.busy());
     pulse_cross_clock stb_mclk_i     (.rst(rst), .src_clk(hclk), .dst_clk(mclk), .in_pulse(stb_r),   .out_pulse(stb_mclk),    .busy());
     status_router4 status_router4_i (
-        .rst       (rst),          // input
-        .clk       (mclk),         // input
-        .db_in0    (ad[0]),        // input[7:0] 
-        .rq_in0    (rq[0]),        // input
-        .start_in0 (start[0]),     // output
+        .rst       (rst),            // input
+        .clk       (mclk),           // input
+        .db_in0    (ad[0 * 8 +: 8]), // input[7:0] 
+        .rq_in0    (rq[0]),          // input
+        .start_in0 (start[0]),       // output
 
-        .db_in1    (ad[1]),        // input[7:0] 
-        .rq_in1    (rq[1]),        // input
-        .start_in1 (start[1]),     // output
-        .db_in2    (ad[2]),        // input[7:0] 
-        .rq_in2    (rq[2]),        // input
-        .start_in2 (start[2]),     // output
-        .db_in3    (ad[3]),        // input[7:0] 
-        .rq_in3    (rq[3]),        // input
-        .start_in3 (start[3]),     // output
-        .db_out    (status_ad),    // output[7:0] 
-        .rq_out    (status_rq),    // output
-        .start_out (status_start)  // input
+        .db_in1    (ad[1 * 8 +: 8]), // input[7:0] 
+        .rq_in1    (rq[1]),          // input
+        .start_in1 (start[1]),       // output
+        .db_in2    (ad[2 * 8 +: 8]), // input[7:0] 
+        .rq_in2    (rq[2]),          // input
+        .start_in2 (start[2]),       // output
+        .db_in3    (ad[3 * 8 +: 8]), // input[7:0] 
+        .rq_in3    (rq[3]),          // input
+        .start_in3 (start[3]),       // output
+        .db_out    (status_ad),      // output[7:0] 
+        .rq_out    (status_rq),      // output
+        .start_out (status_start)    // input
     );
 
     status_generate #(
         .STATUS_REG_ADDR  (CMPRS_AFIMUX_STATUS_REG_ADDR+0),
         .PAYLOAD_BITS     (CMPRS_AFIMUX_WIDTH)
     ) status_generate0_i (
-        .rst     (rst),                     // input
-        .clk     (mclk),                    // input
-        .we      (status_we && (cmd_a==0)), // input
-        .wd      (cmd_data[7:0]),           // input[7:0] 
-        .status  (status_data[0]),          // input[25:0] 
-        .ad      (ad[0]),                   // output[7:0] 
-        .rq      (rq[0]),                   // output
-        .start   (start[0])                 // input
+        .rst     (rst),                                                       // input
+        .clk     (mclk),                                                      // input
+        .we      (status_we && (cmd_a==0)),                                   // input
+        .wd      (cmd_data[7:0]),                                             // input[7:0] 
+        .status  (status_data[0 * CMPRS_AFIMUX_WIDTH +: CMPRS_AFIMUX_WIDTH]), // input[25:0] 
+        .ad      (ad[0 * 8 +: 8]),                                            // output[7:0] 
+        .rq      (rq[0]),                                                     // output
+        .start   (start[0])                                                   // input
     );
 
     status_generate #(
         .STATUS_REG_ADDR  (CMPRS_AFIMUX_STATUS_REG_ADDR+0),
         .PAYLOAD_BITS     (CMPRS_AFIMUX_WIDTH)
     ) status_generate1_i (
-        .rst     (rst),                     // input
-        .clk     (mclk),                    // input
-        .we      (status_we && (cmd_a==1)), // input
-        .wd      (cmd_data[7:0]),           // input[7:0] 
-        .status  (status_data[1]),          // input[25:0] 
-        .ad      (ad[1]),                   // output[7:0] 
-        .rq      (rq[1]),                   // output
-        .start   (start[1])                 // input
+        .rst     (rst),                                                       // input
+        .clk     (mclk),                                                      // input
+        .we      (status_we && (cmd_a==1)),                                   // input
+        .wd      (cmd_data[7:0]),                                             // input[7:0] 
+        .status  (status_data[1 * CMPRS_AFIMUX_WIDTH +: CMPRS_AFIMUX_WIDTH]), // input[25:0] 
+        .ad      (ad[1 * 8 +: 8]),                                            // output[7:0] 
+        .rq      (rq[1]),                                                     // output
+        .start   (start[1])                                                   // input
     );
 
     status_generate #(
         .STATUS_REG_ADDR  (CMPRS_AFIMUX_STATUS_REG_ADDR+0),
         .PAYLOAD_BITS     (CMPRS_AFIMUX_WIDTH)
     ) status_generate2_i (
-        .rst     (rst),                     // input
-        .clk     (mclk),                    // input
-        .we      (status_we && (cmd_a==2)), // input
-        .wd      (cmd_data[7:0]),           // input[7:0] 
-        .status  (status_data[2]),          // input[25:0] 
-        .ad      (ad[2]),                   // output[7:0] 
-        .rq      (rq[2]),                   // output
-        .start   (start[2])                 // input
+        .rst     (rst),                                                       // input
+        .clk     (mclk),                                                      // input
+        .we      (status_we && (cmd_a==2)),                                   // input
+        .wd      (cmd_data[7:0]),                                             // input[7:0] 
+        .status  (status_data[2 * CMPRS_AFIMUX_WIDTH +: CMPRS_AFIMUX_WIDTH]), // input[25:0] 
+        .ad      (ad[2 * 8 +: 8]),                                            // output[7:0] 
+        .rq      (rq[2]),                                                     // output
+        .start   (start[2])                                                   // input
     );
 
     status_generate #(
         .STATUS_REG_ADDR  (CMPRS_AFIMUX_STATUS_REG_ADDR+0),
         .PAYLOAD_BITS     (CMPRS_AFIMUX_WIDTH)
     ) status_generate3_i (
-        .rst     (rst),                     // input
-        .clk     (mclk),                    // input
-        .we      (status_we && (cmd_a==3)), // input
-        .wd      (cmd_data[7:0]),           // input[7:0] 
-        .status  (status_data[3]),          // input[25:0] 
-        .ad      (ad[3]),                   // output[7:0] 
-        .rq      (rq[3]),                   // output
-        .start   (start[3])                 // input
+        .rst     (rst),                                                       // input
+        .clk     (mclk),                                                      // input
+        .we      (status_we && (cmd_a==3)),                                   // input
+        .wd      (cmd_data[7:0]),                                             // input[7:0] 
+        .status  (status_data[3 * CMPRS_AFIMUX_WIDTH +: CMPRS_AFIMUX_WIDTH]), // input[25:0] 
+        .ad      (ad[3 * 8 +: 8]),                                            // output[7:0] 
+        .rq      (rq[3]),                                                     // output
+        .start   (start[3])                                                   // input
     );
 
 endmodule

@@ -141,12 +141,12 @@ module  cmprs_afi_mux#(
     
 //    reg   [2:0] cur_chn;          // 'b0xx - none, 'b1** - ** - channel number (should match fifo_ren*)
     reg   [1:0] cur_chn;           // 'b0xx - none, 'b1** - ** - channel number (should match fifo_ren*)
-    reg   [7:0] left_to_eof[0:3];  // number of chunks left to end of frame
+    reg  [31:0] left_to_eof;  // number of chunks left to end of frame
     reg   [3:0] fifo_flush_d;      // fifo_flush* delayed by 1 clk (to detect rising edge
     reg   [3:0] eof_stb;           // single-cycle pulse after fifo_flush is asserted
 //    reg   [1:0] w64_cnt;           // count 64-bit words in a chunk
-    reg   [8:0] counts_corr0[0:3]; // registers to hold corrected (decremented currently processed ones if any) fifo count values, MSB - needs flush
-    reg   [8:0] counts_corr1[0:1]; // first arbitration level winning values
+    reg  [35:0] counts_corr0; // registers to hold corrected (decremented currently processed ones if any) fifo count values, MSB - needs flush
+    reg  [17:0] counts_corr1; // first arbitration level winning values
     reg   [8:0] counts_corr2;      // second arbitration level winning values
     
     reg   [1:0] winner1;           // 2 first level arbitration winners
@@ -201,10 +201,10 @@ module  cmprs_afi_mux#(
     
     // use last_chunk_w to apply a special id to waddr and wdata and watch for it during readout
     // compose ID of channel number, frame bumber LSBs and last/not last chunk
-    assign last_chunk_w[3:0] = {(left_to_eof[3]==1)?1'b1:1'b0,
-                                (left_to_eof[2]==1)?1'b1:1'b0,
-                                (left_to_eof[1]==1)?1'b1:1'b0,
-                                (left_to_eof[0]==1)?1'b1:1'b0};
+    assign last_chunk_w[3:0] = {(left_to_eof[3 * 8 +: 8]==1),
+                                (left_to_eof[2 * 8 +: 8]==1),
+                                (left_to_eof[1 * 8 +: 8]==1),
+                                (left_to_eof[0 * 8 +: 8]==1)};
     
     assign pre_busy_w = !busy[0] && ready_to_start && need_to_bother && !ptr_resetting;
     assign done_burst_w = busy[0] && !(|wleft[3:1]);  // when wleft[3:0] == 0, busy is 0
@@ -262,60 +262,60 @@ module  cmprs_afi_mux#(
                     
         // TODO: change &w64_cnt[1:0] so left_to_eof[*] will be updated earlier and valid at pre_busy_w       
         // Done, updating at the first (not last) word of 4
-        if (eof_stb[0])                      left_to_eof[0] <= fifo_count0 - (fifo_ren0 & (&wleft[1:0]));
-        else if (fifo_ren0 & (&wleft[1:0]))  left_to_eof[0] <= left_to_eof[0] - 1;
+        if (eof_stb[0])                      left_to_eof[0 * 8 +: 8] <= fifo_count0 - (fifo_ren0 & (&wleft[1:0]));
+        else if (fifo_ren0 & (&wleft[1:0]))  left_to_eof[0 * 8 +: 8] <= left_to_eof[0 * 8 +: 8] - 1;
     
-        if (eof_stb[1])                      left_to_eof[1] <= fifo_count1 - (fifo_ren1 & (&wleft[1:0]));
-        else if (fifo_ren1 & (&wleft[1:0]))  left_to_eof[1] <= left_to_eof[1] - 1;
+        if (eof_stb[1])                      left_to_eof[1 * 8 +: 8] <= fifo_count1 - (fifo_ren1 & (&wleft[1:0]));
+        else if (fifo_ren1 & (&wleft[1:0]))  left_to_eof[1 * 8 +: 8] <= left_to_eof[1 * 8 +: 8] - 1;
     
-        if (eof_stb[2])                      left_to_eof[2] <= fifo_count2 - (fifo_ren2 & (&wleft[1:0]));
-        else if (fifo_ren2 & (&wleft[1:0]))  left_to_eof[2] <= left_to_eof[2] - 1;
+        if (eof_stb[2])                      left_to_eof[2 * 8 +: 8] <= fifo_count2 - (fifo_ren2 & (&wleft[1:0]));
+        else if (fifo_ren2 & (&wleft[1:0]))  left_to_eof[2 * 8 +: 8] <= left_to_eof[2 * 8 +: 8] - 1;
     
-        if (eof_stb[3])                      left_to_eof[3] <= fifo_count3 - (fifo_ren3 & (&wleft[1:0]));
-        else if (fifo_ren3 & (&wleft[1:0]))  left_to_eof[3] <= left_to_eof[3] - 1;
+        if (eof_stb[3])                      left_to_eof[3 * 8 +: 8] <= fifo_count3 - (fifo_ren3 & (&wleft[1:0]));
+        else if (fifo_ren3 & (&wleft[1:0]))  left_to_eof[3 * 8 +: 8] <= left_to_eof[3 * 8 +: 8] - 1;
     
         // Calculate corrected values decrementing currently served channel (if any) values by 1 (latency 1 clk)
         
-        if      ((fifo_count0 == 0) || !en_chn[0]) counts_corr0[0] <= 0;
-        else if (fifo_ren[0])                      counts_corr0[0] <= (fifo_count0_m1 == 0)? 0 : {fifo_flush0,fifo_count0_m1};
-        else                                       counts_corr0[0] <= {fifo_flush0,fifo_count0};
+        if      ((fifo_count0 == 0) || !en_chn[0]) counts_corr0[0 * 9 +: 9] <= 0;
+        else if (fifo_ren[0])                      counts_corr0[0 * 9 +: 9] <= (fifo_count0_m1 == 0)? 0 : {fifo_flush0,fifo_count0_m1};
+        else                                       counts_corr0[0 * 9 +: 9] <= {fifo_flush0,fifo_count0};
 
-        if      ((fifo_count1 == 0) || !en_chn[1]) counts_corr0[1] <= 0;
-        else if (fifo_ren[1])                      counts_corr0[1] <= (fifo_count1_m1 == 0)? 0 : {fifo_flush1,fifo_count1_m1};
-        else                                       counts_corr0[1] <= {fifo_flush1,fifo_count1};
+        if      ((fifo_count1 == 0) || !en_chn[1]) counts_corr0[1 * 9 +: 9] <= 0;
+        else if (fifo_ren[1])                      counts_corr0[1 * 9 +: 9] <= (fifo_count1_m1 == 0)? 0 : {fifo_flush1,fifo_count1_m1};
+        else                                       counts_corr0[1 * 9 +: 9] <= {fifo_flush1,fifo_count1};
 
-        if      ((fifo_count2 == 0) || !en_chn[2]) counts_corr0[2] <= 0;
-        else if (fifo_ren[2])                      counts_corr0[2] <= (fifo_count2_m1 == 0)? 0 : {fifo_flush2,fifo_count2_m1};
-        else                                       counts_corr0[2] <= {fifo_flush2,fifo_count2};
+        if      ((fifo_count2 == 0) || !en_chn[2]) counts_corr0[2 * 9 +: 9] <= 0;
+        else if (fifo_ren[2])                      counts_corr0[2 * 9 +: 9] <= (fifo_count2_m1 == 0)? 0 : {fifo_flush2,fifo_count2_m1};
+        else                                       counts_corr0[2 * 9 +: 9] <= {fifo_flush2,fifo_count2};
 
-        if      ((fifo_count3 == 0) || !en_chn[3]) counts_corr0[3] <= 0;
-        else if (fifo_ren[3])                      counts_corr0[3] <= (fifo_count3_m1 == 0)? 0 : {fifo_flush3,fifo_count3_m1};
-        else                                       counts_corr0[3] <= {fifo_flush3,fifo_count3};
+        if      ((fifo_count3 == 0) || !en_chn[3]) counts_corr0[3 * 9 +: 9] <= 0;
+        else if (fifo_ren[3])                      counts_corr0[3 * 9 +: 9] <= (fifo_count3_m1 == 0)? 0 : {fifo_flush3,fifo_count3_m1};
+        else                                       counts_corr0[3 * 9 +: 9] <= {fifo_flush3,fifo_count3};
 
         // 2-level arbitration
         // first arbitration level (latency 2 clk)
-        if (counts_corr0[1] > counts_corr0[0]) begin
-            counts_corr1[0] <= counts_corr0[1];
+        if (counts_corr0[1 * 9 +: 9] > counts_corr0[0 * 9 +: 9]) begin
+            counts_corr1[0 * 9 +: 9] <= counts_corr0[1 * 9 +: 9];
             winner1[0] <=      1;
         end else begin
-            counts_corr1[0] <= counts_corr0[0];
+            counts_corr1[0 * 9 +: 9] <= counts_corr0[0 * 9 +: 9];
             winner1[0] <=      0;
         end
 
-        if (counts_corr0[3] > counts_corr0[2]) begin
-            counts_corr1[1] <= counts_corr0[3];
+        if (counts_corr0[3 * 9 +: 9] > counts_corr0[2 * 9 +: 9]) begin
+            counts_corr1[1 * 9 +: 9] <= counts_corr0[3 * 9 +: 9];
             winner1[1] <=      1;
         end else begin
-            counts_corr1[1] <= counts_corr0[2];
+            counts_corr1[1 * 9 +: 9] <= counts_corr0[2 * 9 +: 9];
             winner1[1] <=      0;
         end
         
         // second arbitration level (latency 3 clk)
-        if (counts_corr1[1] > counts_corr1[0]) begin
-            counts_corr2 <= counts_corr1[1];
+        if (counts_corr1[1 * 9 +: 9] > counts_corr1[0 * 9 +: 9]) begin
+            counts_corr2 <= counts_corr1[1 * 9 +: 9];
             winner2 <=      {1'b1,winner1[1]};
         end else begin
-            counts_corr2 <= counts_corr1[0];
+            counts_corr2 <= counts_corr1[0 * 9 +: 9];
             winner2 <=      {1'b0,winner1[0]};
         end
         //ready_to_start need_to_bother
@@ -325,7 +325,7 @@ module  cmprs_afi_mux#(
         else if (done_burst_w) busy <= 0; // {busy[2:0],1'b0};
         
         if      (!en)        wleft <= 0;
-        else if (pre_busy_w) wleft <= {(|counts_corr2[7:2])? 2'b11 : left_to_eof[winner2][1:0], 2'b11};
+        else if (pre_busy_w) wleft <= {(|counts_corr2[7:2])? 2'b11 : left_to_eof[winner2 * 8 +: 8][1:0], 2'b11};
         else if (wleft != 0) wleft <= wleft - 1;
         
 
@@ -354,7 +354,7 @@ module  cmprs_afi_mux#(
 
         if (pre_busy_w) chunk_inc <= (|counts_corr2[7:2])?
                                        3'h4 :
-                                       ({1'b0,left_to_eof[winner2][1:0]} + 3'h1);
+                                       ({1'b0,left_to_eof[winner2 * 8 +: 8][1:0]} + 3'h1);
         
     end
 
@@ -395,8 +395,7 @@ module  cmprs_afi_mux#(
         .we         (cmd_we)    // output
     );
     
-    
-    wire [26:0] chunk_ptr_rd01[0:1];
+    wire [53:0] chunk_ptr_rd01; // [0:1];
 
     cmprs_afi_mux_ptr cmprs_afi_mux_ptr_i (
         .hclk                (hclk),                // input
@@ -414,9 +413,9 @@ module  cmprs_afi_mux#(
         .ptr_resetting       (ptr_resetting),       // output
         .chunk_addr          (chunk_addr),          // output[26:0] reg 
         .chunk_ptr_ra        (chunk_ptr_ra[2:0]),   // input[2:0] 
-        .chunk_ptr_rd        (chunk_ptr_rd01[0])    // output[26:0] 
+        .chunk_ptr_rd        (chunk_ptr_rd01[0 * 27 +: 27])    // output[26:0] 
     );
-    assign chunk_ptr_rd=chunk_ptr_ra[3]?chunk_ptr_rd01[1]:chunk_ptr_rd01[0];
+    assign chunk_ptr_rd=chunk_ptr_ra[3]?chunk_ptr_rd01[1 * 27 +: 27]:chunk_ptr_rd01[0 * 27 +: 27];
     cmprs_afi_mux_ptr_wresp cmprs_afi_mux_ptr_wresp_i (
         .hclk                (hclk),                // input
         .length_di           (sa_len_d[26:0]),      // input[26:0] 
@@ -425,7 +424,7 @@ module  cmprs_afi_mux#(
         .en                  (en),                  // input
         .reset_pointers      (reset_pointers),      // input[3:0] 
         .chunk_ptr_ra        (chunk_ptr_ra[2:0]),   // input[2:0] 
-        .chunk_ptr_rd        (chunk_ptr_rd01[1]),   // output[26:0] 
+        .chunk_ptr_rd        (chunk_ptr_rd01[1* 27 +: 27]),   // output[26:0] 
         .eof_written         ({eof_written3,eof_written2,eof_written1,eof_written0}), // output[3:0] reg 
         .afi_bvalid          (afi_bvalid),          // input
         .afi_bready          (afi_bready),          // output

@@ -298,18 +298,18 @@ module  sensors393 #(
 
     reg              [7:0] cmd_ad;    
     reg                    cmd_stb;
-    wire             [7:0] status_ad_chn[0:3];
+    wire            [31:0] status_ad_chn;
     wire             [3:0] status_rq_chn;
     wire             [3:0] status_start_chn;
 
-    wire            [15:0] px_data[0:3];
+    wire            [63:0] px_data;
     wire             [3:0] px_valid;
     wire             [3:0] last_in_line;
     wire             [3:0] hist_request;
     wire             [3:0] hist_grant;
-    wire             [1:0] hist_chn[0:3]; 
+    wire             [7:0] hist_chn; 
     wire             [3:0] hist_dvalid;
-    wire            [31:0] hist_data[0:3]; 
+    wire           [127:0] hist_data; 
     wire           [255:0] buf_dout_all;
     
 //    wire             [3:0] sns_pg; // bidir!
@@ -443,13 +443,13 @@ module  sensors393 #(
                 .mclk         (mclk),                  // input
                 .cmd_ad_in    (cmd_ad),                // input[7:0] 
                 .cmd_stb_in   (cmd_stb),               // input
-                .status_ad    (status_ad_chn[i]),      // output[7:0] 
+                .status_ad    (status_ad_chn[i * 8 +: 8]), // output[7:0] 
                 .status_rq    (status_rq_chn[i]),      // output
                 .status_start (status_start_chn[i]),   // input
                 .trigger_mode (trigger_mode),          // input
                 .trig_in      (trig_in[i]),            // input
                 
-                .dout         (px_data[i]),            // output[15:0] 
+                .dout         (px_data[16 * i +: 16]), // output[15:0] 
                 .dout_valid   (px_valid[i]),           // output
                 .last_in_line (last_in_line[i]),       // output
                 .sof_out      (sof_out_pclk[i]),       // output
@@ -458,24 +458,22 @@ module  sensors393 #(
                 .sof_late_mclk(sof_late_mclk[i]),      // output
                 .hist_request (hist_request[i]),       // output
                 .hist_grant   (hist_grant[i]),         // input
-                .hist_chn     (hist_chn[i]),           // output[1:0] 
+                .hist_chn     (hist_chn[2 * i +: 2]),  // output[1:0] 
                 .hist_dvalid  (hist_dvalid[i]),        // output
-                .hist_data    (hist_data[i])           // output[31:0] 
+                .hist_data    (hist_data[i * 32 +: 32])// output[31:0] 
             );
 
             sensor_membuf #(
                 .WADDR_WIDTH(9)
             ) sensor_membuf_i (
-                .pclk         (pclk), // input
-                .px_data      (px_data[i]), // input[15:0] 
-                .px_valid     (px_valid[i]), // input
-                .last_in_line (last_in_line[i]), // input
-                .mclk         (mclk), // input
-                .rpage_set    (rpage_set[i]), // input
-                .rpage_next   (rpage_next[i]), // input
-                .buf_rd       (buf_rd[i]), // input
-                //buf_dout_all
-//                .buf_dout     ((i & 2) ? ((i & 1) ? buf_dout3 : buf_dout2): ((i & 1) ? buf_dout1: buf_dout0)) // output[63:0] 
+                .pclk         (pclk),                    // input
+                .px_data      (px_data[16 * i +: 16]),   // input[15:0] 
+                .px_valid     (px_valid[i]),             // input
+                .last_in_line (last_in_line[i]),         // input
+                .mclk         (mclk),                    // input
+                .rpage_set    (rpage_set[i]),            // input
+                .rpage_next   (rpage_next[i]),           // input
+                .buf_rd       (buf_rd[i]),               // input
                 .buf_dout     (buf_dout_all[64*i +: 64]) // output[63:0] 
             );
         end
@@ -493,76 +491,76 @@ module  sensors393 #(
         .HIST_SAXI_MODE_ADDR_MASK (HIST_SAXI_MODE_ADDR_MASK),
         .NUM_FRAME_BITS           (NUM_FRAME_BITS)
     ) histogram_saxi_i (
-        .rst            (rst), // input
-        .mclk           (mclk), // input
-        .aclk           (aclk), // input
-        .frame0         (frame_num0),        // input[3:0] 
-        .hist_request0  (hist_request[0]),   // input
-        .hist_grant0    (hist_grant[0]),     // output
-        .hist_chn0      (hist_chn[0]),       // input[1:0] 
-        .hist_dvalid0   (hist_dvalid[0]),    // input
-        .hist_data0     (hist_data[0]),      // input[31:0] 
-        .frame1         (frame_num1),        // input[3:0] 
-        .hist_request1  (hist_request[1]),   // input
-        .hist_grant1    (hist_grant[1]),     // output
-        .hist_chn1      (hist_chn[1]),       // input[1:0] 
-        .hist_dvalid1   (hist_dvalid[1]),    // input
-        .hist_data1     (hist_data[1]),      // input[31:0] 
-        .frame2         (frame_num2),        // input[3:0] 
-        .hist_request2  (hist_request[2]),   // input
-        .hist_grant2    (hist_grant[2]),     // output
-        .hist_chn2      (hist_chn[2]),       // input[1:0] SuppressThisWarning VEditor : VDT bug - wrong dimension
-        .hist_dvalid2   (hist_dvalid[2]),    // input
-        .hist_data2     (hist_data[2]),      // input[31:0] 
-        .frame3         (frame_num3),        // input[3:0] 
-        .hist_request3  (hist_request[3]),   // input
-        .hist_grant3    (hist_grant[3]),     // output
-        .hist_chn3      (hist_chn[3]),       // input[1:0]  SuppressThisWarning VEditor : VDT bug - wrong dimension
-        .hist_dvalid3   (hist_dvalid[3]),    // input
-        .hist_data3     (hist_data[3]),      // input[31:0] 
-        .cmd_ad         (cmd_ad), // input[7:0] 
-        .cmd_stb        (cmd_stb), // input
-        .saxi_awaddr    (saxi_awaddr), // output[31:0] 
-        .saxi_awvalid   (saxi_awvalid), // output
-        .saxi_awready   (saxi_awready), // input
-        .saxi_awid      (saxi_awid), // output[5:0] 
-        .saxi_awlock    (saxi_awlock), // output[1:0] 
-        .saxi_awcache   (saxi_awcache), // output[3:0] 
-        .saxi_awprot    (saxi_awprot), // output[2:0] 
-        .saxi_awlen     (saxi_awlen), // output[3:0] 
-        .saxi_awsize    (saxi_awsize), // output[1:0] 
-        .saxi_awburst   (saxi_awburst), // output[1:0] 
-        .saxi_awqos     (saxi_awqos), // output[3:0] 
-        .saxi_wdata     (saxi_wdata), // output[31:0] 
-        .saxi_wvalid    (saxi_wvalid), // output
-        .saxi_wready    (saxi_wready), // input
-        .saxi_wid       (saxi_wid), // output[5:0] 
-        .saxi_wlast     (saxi_wlast), // output
-        .saxi_wstrb     (saxi_wstrb), // output[3:0] 
-        .saxi_bvalid    (saxi_bvalid), // input
-        .saxi_bready    (saxi_bready), // output
-        .saxi_bid       (saxi_bid), // input[5:0] 
-        .saxi_bresp     (saxi_bresp) // input[1:0] 
+        .rst            (rst),                    // input
+        .mclk           (mclk),                   // input
+        .aclk           (aclk),                   // input
+        .frame0         (frame_num0),             // input[3:0] 
+        .hist_request0  (hist_request[0]),        // input
+        .hist_grant0    (hist_grant[0]),          // output
+        .hist_chn0      (hist_chn[0 * 2 +: 2]),   // input[1:0] 
+        .hist_dvalid0   (hist_dvalid[0]),         // input
+        .hist_data0     (hist_data[0 * 32 +: 32]),// input[31:0] 
+        .frame1         (frame_num1),             // input[3:0] 
+        .hist_request1  (hist_request[1]),        // input
+        .hist_grant1    (hist_grant[1]),          // output
+        .hist_chn1      (hist_chn[1 * 2 +: 2]),   // input[1:0] 
+        .hist_dvalid1   (hist_dvalid[1]),         // input
+        .hist_data1     (hist_data[1 * 32 +: 32]),// input[31:0] 
+        .frame2         (frame_num2),             // input[3:0] 
+        .hist_request2  (hist_request[2]),        // input
+        .hist_grant2    (hist_grant[2]),          // output
+        .hist_chn2      (hist_chn[2 * 2 +: 2]),   // input[1:0]
+        .hist_dvalid2   (hist_dvalid[2]),         // input
+        .hist_data2     (hist_data[2 * 32 +: 32]),// input[31:0] 
+        .frame3         (frame_num3),             // input[3:0] 
+        .hist_request3  (hist_request[3]),        // input
+        .hist_grant3    (hist_grant[3]),          // output
+        .hist_chn3      (hist_chn[3 * 2 +: 2]),   // input[1:0]
+        .hist_dvalid3   (hist_dvalid[3]),         // input
+        .hist_data3     (hist_data[3 * 32 +: 32]),// input[31:0] 
+        .cmd_ad         (cmd_ad),                 // input[7:0] 
+        .cmd_stb        (cmd_stb),                // input
+        .saxi_awaddr    (saxi_awaddr),            // output[31:0] 
+        .saxi_awvalid   (saxi_awvalid),           // output
+        .saxi_awready   (saxi_awready),           // input
+        .saxi_awid      (saxi_awid),              // output[5:0] 
+        .saxi_awlock    (saxi_awlock),            // output[1:0] 
+        .saxi_awcache   (saxi_awcache),           // output[3:0] 
+        .saxi_awprot    (saxi_awprot),            // output[2:0] 
+        .saxi_awlen     (saxi_awlen),             // output[3:0] 
+        .saxi_awsize    (saxi_awsize),            // output[1:0] 
+        .saxi_awburst   (saxi_awburst),           // output[1:0] 
+        .saxi_awqos     (saxi_awqos),             // output[3:0] 
+        .saxi_wdata     (saxi_wdata),             // output[31:0] 
+        .saxi_wvalid    (saxi_wvalid),            // output
+        .saxi_wready    (saxi_wready),            // input
+        .saxi_wid       (saxi_wid),               // output[5:0] 
+        .saxi_wlast     (saxi_wlast),             // output
+        .saxi_wstrb     (saxi_wstrb),             // output[3:0] 
+        .saxi_bvalid    (saxi_bvalid),            // input
+        .saxi_bready    (saxi_bready),            // output
+        .saxi_bid       (saxi_bid),               // input[5:0] 
+        .saxi_bresp     (saxi_bresp)              // input[1:0] 
     );
     
     status_router4 status_router4_i (
-        .rst           (rst), // input
-        .clk           (mclk), // input
-        .db_in0        (status_ad_chn[0]),    // input[7:0] 
-        .rq_in0        (status_rq_chn[0]),    // input
-        .start_in0     (status_start_chn[0]), // output
-        .db_in1        (status_ad_chn[1]),    // input[7:0] 
-        .rq_in1        (status_rq_chn[1]),    // input
-        .start_in1     (status_start_chn[1]), // output
-        .db_in2        (status_ad_chn[2]),    // input[7:0] 
-        .rq_in2        (status_rq_chn[2]),    // input
-        .start_in2     (status_start_chn[2]), // output
-        .db_in3        (status_ad_chn[3]),    // input[7:0] 
-        .rq_in3        (status_rq_chn[3]),    // input
-        .start_in3     (status_start_chn[3]), // output
-        .db_out        (status_ad), // output[7:0] 
-        .rq_out        (status_rq), // output
-        .start_out     (status_start) // input
+        .rst           (rst),                    // input
+        .clk           (mclk),                   // input
+        .db_in0        (status_ad_chn[0 +: 8]),  // input[7:0] 
+        .rq_in0        (status_rq_chn[0]),       // input
+        .start_in0     (status_start_chn[0]),    // output
+        .db_in1        (status_ad_chn[8 +: 8]),  // input[7:0] 
+        .rq_in1        (status_rq_chn[1]),       // input
+        .start_in1     (status_start_chn[1]),    // output
+        .db_in2        (status_ad_chn[16 +: 8]), // input[7:0] 
+        .rq_in2        (status_rq_chn[2]),       // input
+        .start_in2     (status_start_chn[2]),    // output
+        .db_in3        (status_ad_chn[24 +: 8]), // input[7:0] 
+        .rq_in3        (status_rq_chn[3]),       // input
+        .start_in3     (status_start_chn[3]),    // output
+        .db_out        (status_ad),              // output[7:0] 
+        .rq_out        (status_rq),              // output
+        .start_out     (status_start)            // input
     );
 
     idelay_ctrl# (

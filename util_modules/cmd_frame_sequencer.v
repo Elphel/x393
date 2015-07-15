@@ -92,9 +92,9 @@ module  cmd_frame_sequencer#(
     reg                         we_fifo_wp;     // enable writing to fifo write pointer memory
     reg                         next_frame_rq;  // request to switch to the new frame page, clear pointer for the one just left
     wire                        pre_wpage_inc;
-    reg         [PNTR_WIDH-1:0] fifo_wr_pointers [0:7];
-    wire        [PNTR_WIDH-1:0] fifo_wr_pointers_outw=fifo_wr_pointers[wpage_w];
-    wire        [PNTR_WIDH-1:0] fifo_wr_pointers_outr=fifo_wr_pointers[page_r];
+    reg         [PNTR_WIDH-1:0] fifo_wr_pointers_ram [0:7];
+    wire        [PNTR_WIDH-1:0] fifo_wr_pointers_outw=fifo_wr_pointers_ram[wpage_w];
+    wire        [PNTR_WIDH-1:0] fifo_wr_pointers_outr=fifo_wr_pointers_ram[page_r];
     
     reg         [PNTR_WIDH-1:0] fifo_wr_pointers_outw_r;
     reg         [PNTR_WIDH-1:0] fifo_wr_pointers_outr_r;
@@ -205,7 +205,7 @@ module  cmd_frame_sequencer#(
         
         if (cmd_we_any_r[1])  fifo_wr_pointers_outw_r <= fifo_wr_pointers_outw; // register pointer RAM output (write port)
         // write to pointer RAM (to the same address as just read from if read)
-        if (we_fifo_wp) fifo_wr_pointers[wpage_w] <= wpage_inc[1] ? {PNTR_WIDH{1'b0}}:(fifo_wr_pointers_outw_r + 1); 
+        if (we_fifo_wp) fifo_wr_pointers_ram[wpage_w] <= wpage_inc[1] ? {PNTR_WIDH{1'b0}}:(fifo_wr_pointers_outw_r + 1); 
         
         if (cmd_we_any_r[1]) seq_cmd_wa <= {wpage_w, fifo_wr_pointers_outw};
         

@@ -71,7 +71,7 @@ module  imu_exttime393(
     wire    [1:0] chn_enc_w;
     
     reg    [15:0] ts_ram [0:3];  // inner timestamp x16 memory that receives timestamp from one of the 4 input channel fifos
-    wire    [7:0] dout_chn[0:3];
+    wire   [31:0] dout_chn;
     wire    [7:0] copy_data;     // data from the selected input fifos
     reg     [7:0] copy_data_r; // low byte of the timestamp data being copied from one of the input fifos to the ts_ram
     
@@ -83,7 +83,7 @@ module  imu_exttime393(
                         chn_pri_w[3] | chn_pri_w[1]};
     
     assign pre_copy_w = (|in_full) && !copy_selected[0] && !ts_full;
-    assign copy_data  = dout_chn[sel_chn]; // 4:1 mux
+    assign copy_data  = dout_chn[sel_chn * 8 +: 8]; // 4:1 mux
     
 // acquire external timestamps @ mclk
     
@@ -136,7 +136,7 @@ module  imu_exttime393(
         .advance  (ts_stb[0]),                            // enough time 
         .rclk     (mclk),                                 // input
         .rstb     (pre_copy_started && (sel_chn == 2'h0)),// input
-        .dout     (dout_chn[0])                           // output[7:0] reg valid with copy_selected[1]
+        .dout     (dout_chn[0 * 8 +: 8])                  // output[7:0] reg valid with copy_selected[1]
     );
 
     timestamp_fifo timestamp_fifo_chn1_i (
@@ -148,7 +148,7 @@ module  imu_exttime393(
         .advance  (ts_stb[1]),                            // enough time 
         .rclk     (mclk),                                 // input
         .rstb     (pre_copy_started && (sel_chn == 2'h1)),// input
-        .dout     (dout_chn[1])                           // output[7:0] reg valid with copy_selected[1]
+        .dout     (dout_chn[1 * 8 +: 8])                  // output[7:0] reg valid with copy_selected[1]
     );
 
     timestamp_fifo timestamp_fifo_chn2_i (
@@ -160,7 +160,7 @@ module  imu_exttime393(
         .advance  (ts_stb[2]),                            // enough time 
         .rclk     (mclk),                                 // input
         .rstb     (pre_copy_started && (sel_chn == 2'h2)),// input
-        .dout     (dout_chn[2])                           // output[7:0] reg valid with copy_selected[1]
+        .dout     (dout_chn[2 * 8 +: 8])                  // output[7:0] reg valid with copy_selected[1]
     );
 
     timestamp_fifo timestamp_fifo_chn3_i (
@@ -172,7 +172,7 @@ module  imu_exttime393(
         .advance  (ts_stb[3]),                            // enough time 
         .rclk     (mclk),                                 // input
         .rstb     (pre_copy_started && (sel_chn == 2'h3)),// input
-        .dout     (dout_chn[3])                           // output[7:0] reg valid with copy_selected[1]
+        .dout     (dout_chn[3 * 8 +: 8])                  // output[7:0] reg valid with copy_selected[1]
     );
 
 

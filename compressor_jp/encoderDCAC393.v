@@ -77,8 +77,8 @@ module encoderDCAC393(
     reg     [2:0] block_mem_ra;
     reg     [2:0] block_mem_wa;
     reg     [2:0] block_mem_wa_save;
-    reg     [6:0] block_mem[0:7];
-    wire    [6:0] block_mem_o=block_mem[block_mem_ra[2:0]];
+    reg     [6:0] block_mem_ram[0:7];
+    wire    [6:0] block_mem_o=block_mem_ram[block_mem_ra[2:0]];
     
     assign comp_numbero[2:0]= block_mem_o[2:0];
     assign comp_firsto=       block_mem_o[3];
@@ -86,7 +86,7 @@ module encoderDCAC393(
     assign comp_lastinmbo=    block_mem_o[5];
     assign lasto=             block_mem_o[6];
     always @ (posedge clk) begin
-        if (stb) block_mem[block_mem_wa[2:0]] <= {lasti, comp_lastinmbi, comp_colori,comp_firsti,comp_numberi[2:0]};
+        if (stb) block_mem_ram[block_mem_wa[2:0]] <= {lasti, comp_lastinmbi, comp_colori,comp_firsti,comp_numberi[2:0]};
         if      (!en) block_mem_wa[2:0] <= 3'h0;
         else if (stb) block_mem_wa[2:0] <= block_mem_wa[2:0] +1;
 

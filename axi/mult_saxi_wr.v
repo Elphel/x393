@@ -103,6 +103,7 @@ module  mult_saxi_wr #(
 
 //    localparam BURSTS_CAP0= (MULT_SAXI_HALF_BRAM ? 'h400 : 'h800 ) / MULT_SAXI_BURST0 / 4;
     localparam BRAM_A_WDTH = MULT_SAXI_HALF_BRAM?9:10;
+    localparam CHN_A_WDTH = BRAM_A_WDTH - 2;
     
     wire                 [3:0] en_chn_mclk;
     wire                 [3:0] run_chn_mclk;
@@ -112,16 +113,16 @@ module  mult_saxi_wr #(
     wire                       en_aclk= |en_chn_aclk; // at least one channel enabled
     wire                 [3:0] rq_wr;
     wire                 [3:0] grant_wr;
-    wire     [BRAM_A_WDTH-3:0] wa_chn[0:3];
+    wire [4 * CHN_A_WDTH - 1:0] wa_chn;
     wire                 [3:0] adv_wr_done; // outputs grant_wr for short bursts, or several clocks before end of wr
     wire                 [3:0] rq_out_chn;
-    wire     [BRAM_A_WDTH-3:0] ra_chn[0:3];
+    wire [4 * CHN_A_WDTH - 1:0] ra_chn;
     wire                 [3:0] pre_re;
     
     reg                        en_we_arb; // @mclk  should be reset by we_grant
     wire                       we_grant;  // @mclk
     wire                 [1:0] we_cur_chn; // @mclk
-    wire                [31:0] data_in[0:3];
+    wire               [127:0] data_in;
     wire                 [3:0] pre_valid;
     reg                  [3:0] valid;
     reg      [BRAM_A_WDTH-1:0] buf_wa; // multiplexed buffer write adderss
@@ -152,10 +153,7 @@ module  mult_saxi_wr #(
     assign {en_chn3, en_chn2, en_chn1, en_chn0} = en_chn_mclk; 
 
     assign {read_burst3, read_burst2, read_burst1, read_burst0} = grant_wr; // single clock pulse
-    assign data_in[0] = data_in_chn0;
-    assign data_in[1] = data_in_chn1;
-    assign data_in[2] = data_in_chn2;
-    assign data_in[3] = data_in_chn3;
+    assign data_in = {data_in_chn3, data_in_chn2, data_in_chn1, data_in_chn0};
     assign pre_valid = {pre_valid_chn3, pre_valid_chn2, pre_valid_chn1, pre_valid_chn0};
     
     assign en_chn_mclk =  mode_reg[3:0];
@@ -182,12 +180,12 @@ module  mult_saxi_wr #(
         .valid         (valid[0]),         // input
         .rq_wr         (rq_wr[0]),         // output
         .grant_wr      (grant_wr[0]),      // input
-        .wa            (wa_chn[0]),        // output[7:0]
+        .wa            (wa_chn[0 * CHN_A_WDTH +: CHN_A_WDTH]),        // output[7:0]
         .adv_wr_done   (adv_wr_done[0]),   // output
         .rq_out        (rq_out_chn[0]),    // output reg 
         .grant_out     (grant_rd[0]),      // input
         .fifo_half_full(fifo_half_full),   // input
-        .ra            (ra_chn[0]),        // output[7:0] 
+        .ra            (ra_chn[0* CHN_A_WDTH +: CHN_A_WDTH]),        // output[7:0] 
         .pre_re        (pre_re[0]),        // output
         .first_re      (first_re[0]),      // output reg // 1 clock later than pre_re
         .last_re       (last_re[0]),       // output reg // 1 clock later than pre_re
@@ -207,12 +205,12 @@ module  mult_saxi_wr #(
         .valid         (valid[1]),         // input
         .rq_wr         (rq_wr[1]),         // output
         .grant_wr      (grant_wr[1]),      // input
-        .wa            (wa_chn[1]),        // output[7:0] 
+        .wa            (wa_chn[1 * CHN_A_WDTH +: CHN_A_WDTH]),        // output[7:0] 
         .adv_wr_done   (adv_wr_done[1]),   // output
         .rq_out        (rq_out_chn[1]),    // output reg 
         .grant_out     (grant_rd[1]),      // input
         .fifo_half_full(fifo_half_full),   // input
-        .ra            (ra_chn[1]),        // output[7:0] 
+        .ra            (ra_chn[1* CHN_A_WDTH +: CHN_A_WDTH]),        // output[7:0] 
         .pre_re        (pre_re[1]),        // output
         .first_re      (first_re[1]),      // output reg // 1 clock later than pre_re
         .last_re       (last_re[1]),       // output reg // 1 clock later than pre_re
@@ -232,12 +230,12 @@ module  mult_saxi_wr #(
         .valid         (valid[2]),         // input
         .rq_wr         (rq_wr[2]),         // output
         .grant_wr      (grant_wr[2]),      // input
-        .wa            (wa_chn[2]),        // output[7:0] 
+        .wa            (wa_chn[2 * CHN_A_WDTH +: CHN_A_WDTH]),        // output[7:0] 
         .adv_wr_done   (adv_wr_done[2]),   // output
         .rq_out        (rq_out_chn[2]),    // output reg 
         .grant_out     (grant_rd[2]),      // input
         .fifo_half_full(fifo_half_full),   // input
-        .ra            (ra_chn[2]),        // output[7:0] 
+        .ra            (ra_chn[2* CHN_A_WDTH +: CHN_A_WDTH]),        // output[7:0] 
         .pre_re        (pre_re[2]),        // output
         .first_re      (first_re[2]),      // output reg // 1 clock later than pre_re
         .last_re       (last_re[2]),       // output reg // 1 clock later than pre_re
@@ -257,12 +255,12 @@ module  mult_saxi_wr #(
         .valid         (valid[3]),         // input
         .rq_wr         (rq_wr[3]),         // output
         .grant_wr      (grant_wr[3]),      // input
-        .wa            (wa_chn[3]),        // output[7:0] 
+        .wa            (wa_chn[3 * CHN_A_WDTH +: CHN_A_WDTH]),        // output[7:0] 
         .adv_wr_done   (adv_wr_done[3]),   // output
         .rq_out        (rq_out_chn[3]),    // output reg 
         .grant_out     (grant_rd[3]),      // input
         .fifo_half_full(fifo_half_full),   // input
-        .ra            (ra_chn[3]),        // output[7:0] 
+        .ra            (ra_chn[3* CHN_A_WDTH +: CHN_A_WDTH]),        // output[7:0] 
         .pre_re        (pre_re[3]),        // output
         .first_re      (first_re[3]),      // output reg // 1 clock later than pre_re
         .last_re       (last_re[3]),       // output reg // 1 clock later than pre_re
@@ -299,8 +297,8 @@ module  mult_saxi_wr #(
         if (pre_pre_buf_we &&  !pre_buf_we) chn_wr <= we_cur_chn; // to re-start arbitration early
         
         // multiplex address and data
-        buf_wa <= {chn_wr, wa_chn[chn_wr]};
-        buf_wd <= data_in[chn_wr];
+        buf_wa <= {chn_wr, wa_chn[chn_wr * CHN_A_WDTH +: CHN_A_WDTH]};
+        buf_wd <= data_in[chn_wr* 32 +: 32];
         // early re-enable arbitration (en_we_arb)
         if (!en_mclk || adv_wr_done[chn_wr]) en_we_arb <= 1;
         else if (we_grant)                   en_we_arb <= 0; 
@@ -318,7 +316,7 @@ module  mult_saxi_wr #(
     always @ (posedge aclk) begin
         en_chn_aclk <=en_chn_mclk;
         chn_rd <= re_cur_chn; // delay by 1 clock (to increase overlap)
-        buf_ra <= {chn_rd, ra_chn[chn_rd]};
+        buf_ra <= {chn_rd, ra_chn[chn_rd* CHN_A_WDTH +: CHN_A_WDTH]};
         buf_re <= {buf_re[1:0], pre_re[chn_rd]};
         pre_first_rd_valid <= first_re[chn_rd];
         is_last_rd <= {is_last_rd[0], last_re[chn_rd]};

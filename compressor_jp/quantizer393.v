@@ -112,8 +112,8 @@ module quantizer393(
     reg      [ 2:0] block_mem_ra;
     reg      [ 2:0] block_mem_wa;
     reg      [ 2:0] block_mem_wa_save;
-    reg      [15:0] block_mem[0:7];
-    wire     [15:0] block_mem_o=block_mem[block_mem_ra[2:0]];
+    reg      [15:0] block_mem_ram[0:7];
+    wire     [15:0] block_mem_o=block_mem_ram[block_mem_ra[2:0]];
 
     assign dc[8:0] =          block_mem_o[8:0];
     assign ctype =            block_mem_o[9];
@@ -125,7 +125,7 @@ module quantizer393(
     assign dcc_stb = start[2];
 
     always @ (posedge clk) begin
-        if (stb) block_mem[block_mem_wa[2:0]] <= {coring_num[2:0],tsi[2:0], ctypei, dci[8:0]};
+        if (stb) block_mem_ram[block_mem_wa[2:0]] <= {coring_num[2:0],tsi[2:0], ctypei, dci[8:0]};
 
         if      (!en) block_mem_wa[2:0] <= 3'h0;
         else if (stb) block_mem_wa[2:0] <= block_mem_wa[2:0] +1;

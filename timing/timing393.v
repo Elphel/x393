@@ -108,26 +108,19 @@ module  timing393       #(
 
     wire   [3:0] frame_sync;
     wire   [3:0] trig;
-    wire   [3:0] ts_local_snap;           // ts_snap_mclk make a timestamp pulse  single @(posedge pclk)
-    wire   [3:0] ts_local_stb;        // 1 clk before ts_snd_data is valid
-    wire   [7:0] ts_local_data [0:3]; // byte-wide serialized timestamp message  
-
-//    wire         ts_pio_snap;           // ts_snap_mclk make a timestamp pulse  single @(posedge pclk)
-//    wire         ts_pio_stb;        // 1 clk before ts_snd_data is valid
-//    wire   [7:0] ts_pio_data; // byte-wide serialized timestamp message  
+    wire   [3:0] ts_local_snap;  // ts_snap_mclk make a timestamp pulse  single @(posedge pclk)
+    wire   [3:0] ts_local_stb;   // 1 clk before ts_snd_data is valid
+    wire  [31:0] ts_local_data;  // byte-wide serialized timestamp message  
 
     wire   [3:0] ts_stb;        // 1 clk before ts_snd_data is valid
-    wire   [7:0] ts_data [0:3]; // byte-wide serialized timestamp message
+    wire  [31:0] ts_data;       // byte-wide serialized timestamp message (channels concatenated)
     
     wire  [31:0] live_sec;      // current time seconds, updated @ mclk  
     wire  [19:0] live_usec;     // current time microseconds, updated @ mclk
 
 
     assign {ts_stb_chn3, ts_stb_chn2, ts_stb_chn1, ts_stb_chn0} = ts_stb;
-    assign ts_data_chn0 = ts_data[0];
-    assign ts_data_chn1 = ts_data[1];
-    assign ts_data_chn2 = ts_data[2];
-    assign ts_data_chn3 = ts_data[3];
+    assign {ts_data_chn3, ts_data_chn2, ts_data_chn1, ts_data_chn0} = ts_data; 
     assign {trig_chn3, trig_chn2, trig_chn1, trig_chn0} = trig;
     assign frame_sync = {frsync_chn3, frsync_chn2, frsync_chn1, frsync_chn0};
 
@@ -143,72 +136,72 @@ module  timing393       #(
         .RTC_SET_CORR           (RTC_SET_CORR),
         .RTC_SET_STATUS         (RTC_SET_STATUS)
     ) rtc393_i (
-        .rst                    (rst),       // input
-        .mclk                   (mclk),      // input
-        .refclk                 (refclk),    // input
-        .cmd_ad                 (cmd_ad),    // input[7:0] 
-        .cmd_stb                (cmd_stb),   // input
-        .status_ad              (status_ad), // output[7:0] 
-        .status_rq              (status_rq), // output
+        .rst                    (rst),          // input
+        .mclk                   (mclk),         // input
+        .refclk                 (refclk),       // input
+        .cmd_ad                 (cmd_ad),       // input[7:0] 
+        .cmd_stb                (cmd_stb),      // input
+        .status_ad              (status_ad),    // output[7:0] 
+        .status_rq              (status_rq),    // output
         .status_start           (status_start), // input
-        .live_sec               (live_sec),  // output[31:0] 
-        .live_usec              (live_usec)  // output[19:0] 
+        .live_sec               (live_sec),     // output[31:0] 
+        .live_usec              (live_usec)     // output[19:0] 
     );
 
 
     timestamp_snapshot timestamp_snapshot_logger_i (
-        .rst                   (rst),              // input
-        .tclk                  (mclk),             // input
-        .sec                   (live_sec),         // input[31:0] 
-        .usec                  (live_usec),        // input[19:0] 
-        .sclk                  (lclk),             // input
-        .snap                  (ts_logger_snap),   // input
-        .pre_stb               (ts_logger_stb),    // output
-        .ts_data               (ts_logger_data)    // output[7:0] reg 
+        .rst                   (rst),                      // input
+        .tclk                  (mclk),                     // input
+        .sec                   (live_sec),                 // input[31:0] 
+        .usec                  (live_usec),                // input[19:0] 
+        .sclk                  (lclk),                     // input
+        .snap                  (ts_logger_snap),           // input
+        .pre_stb               (ts_logger_stb),            // output
+        .ts_data               (ts_logger_data)            // output[7:0] reg 
     );
 
     timestamp_snapshot timestamp_snapshot_chn0_i (
-        .rst                   (rst),              // input
-        .tclk                  (mclk),             // input
-        .sec                   (live_sec),         // input[31:0] 
-        .usec                  (live_usec),        // input[19:0] 
-        .sclk                  (mclk),             // input
-        .snap                  (ts_local_snap[0]), // input
-        .pre_stb               (ts_local_stb[0]),  // output
-        .ts_data               (ts_local_data[0])  // output[7:0] reg 
+        .rst                   (rst),                      // input
+        .tclk                  (mclk),                     // input
+        .sec                   (live_sec),                 // input[31:0] 
+        .usec                  (live_usec),                // input[19:0] 
+        .sclk                  (mclk),                     // input
+        .snap                  (ts_local_snap[0]),         // input
+        .pre_stb               (ts_local_stb[0]),          // output
+        .ts_data               (ts_local_data[0 * 8 +: 8]) // output[7:0] reg 
     );
 
     timestamp_snapshot timestamp_snapshot_chn1_i (
-        .rst                   (rst),              // input
-        .tclk                  (mclk),             // input
-        .sec                   (live_sec),         // input[31:0] 
-        .usec                  (live_usec),        // input[19:0] 
-        .sclk                  (mclk),             // input
-        .snap                  (ts_local_snap[1]), // input
-        .pre_stb               (ts_local_stb[1]),  // output
-        .ts_data               (ts_local_data[1])  // output[7:0] reg 
+        .rst                   (rst),                      // input
+        .tclk                  (mclk),                     // input
+        .sec                   (live_sec),                 // input[31:0] 
+        .usec                  (live_usec),                // input[19:0] 
+        .sclk                  (mclk),                     // input
+        .snap                  (ts_local_snap[1]),         // input
+        .pre_stb               (ts_local_stb[1]),          // output
+        .ts_data               (ts_local_data[1 * 8 +: 8]) // output[7:0] reg 
     );
 
     timestamp_snapshot timestamp_snapshot_chn2_i (
-        .rst                   (rst),              // input
-        .tclk                  (mclk),             // input
-        .sec                   (live_sec),         // input[31:0] 
-        .usec                  (live_usec),        // input[19:0] 
-        .sclk                  (mclk),             // input
-        .snap                  (ts_local_snap[2]), // input
-        .pre_stb               (ts_local_stb[2]),  // output
-        .ts_data               (ts_local_data[2])  // output[7:0] reg 
+        .rst                   (rst),                      // input
+        .tclk                  (mclk),                     // input
+        .sec                   (live_sec),                 // input[31:0] 
+        .usec                  (live_usec),                // input[19:0] 
+        .sclk                  (mclk),                     // input
+        .snap                  (ts_local_snap[2]),         // input
+        .pre_stb               (ts_local_stb[2]),          // output
+        .ts_data               (ts_local_data[2 * 8 +: 8]) // output[7:0] reg 
     );
 
     timestamp_snapshot timestamp_snapshot_chn3_i (
-        .rst                   (rst),              // input
-        .tclk                  (mclk),             // input
-        .sec                   (live_sec),         // input[31:0] 
-        .usec                  (live_usec),        // input[19:0] 
-        .sclk                  (mclk),             // input
-        .snap                  (ts_local_snap[3]), // input
-        .pre_stb               (ts_local_stb[3]),  // output
-        .ts_data               (ts_local_data[3])  // output[7:0] reg 
+        .rst                   (rst),                      // input
+        .tclk                  (mclk),                     // input
+        .sec                   (live_sec),                 // input[31:0] 
+        .usec                  (live_usec),                // input[19:0] 
+        .sclk                  (mclk),                     // input
+        .snap                  (ts_local_snap[3]),         // input
+        .pre_stb               (ts_local_stb[3]),          // output
+        .ts_data               (ts_local_data[3 * 8 +: 8]) // output[7:0] reg 
     );
 
     camsync393 #(
@@ -230,43 +223,43 @@ module  timing393       #(
         .CAMSYNC_PRE_MAGIC      (CAMSYNC_PRE_MAGIC),
         .CAMSYNC_POST_MAGIC     (CAMSYNC_POST_MAGIC)
     ) camsync393_i (
-        .rst               (rst),              // input
-        .mclk              (mclk),             // input
-        .cmd_ad            (cmd_ad),           // input[7:0] 
-        .cmd_stb           (cmd_stb),          // input
-        .pclk              (pclk),             // input
-        .gpio_in           (gpio_in),          // input[9:0] 
-        .gpio_out          (gpio_out),         // output[9:0] 
-        .gpio_out_en       (gpio_out_en),      // output[9:0] reg 
-        .triggered_mode    (triggered_mode),   // output
-        .frsync_chn0       (frame_sync[0]),    // input
-        .trig_chn0         (trig[0]),          // output
-        .frsync_chn1       (frame_sync[1]),    // input
-        .trig_chn1         (trig[1]),          // output
-        .frsync_chn2       (frame_sync[2]),    // input
-        .trig_chn2         (trig[2]),          // output
-        .frsync_chn3       (frame_sync[3]),    // input
-        .trig_chn3         (trig[3]),          // output
-        .ts_snap_mclk_chn0 (ts_local_snap[0]), // output
-        .ts_snd_stb_chn0   (ts_local_stb[0]),  // input
-        .ts_snd_data_chn0  (ts_local_data[0]), // input[7:0] 
-        .ts_snap_mclk_chn1 (ts_local_snap[1]), // output
-        .ts_snd_stb_chn1   (ts_local_stb[1]),  // input
-        .ts_snd_data_chn1  (ts_local_data[1]), // input[7:0] 
-        .ts_snap_mclk_chn2 (ts_local_snap[2]), // output
-        .ts_snd_stb_chn2   (ts_local_stb[2]),  // input
-        .ts_snd_data_chn2  (ts_local_data[2]), // input[7:0] 
-        .ts_snap_mclk_chn3 (ts_local_snap[3]), // output
-        .ts_snd_stb_chn3   (ts_local_stb[3]),  // input
-        .ts_snd_data_chn3  (ts_local_data[3]), // input[7:0] 
-        .ts_rcv_stb_chn0   (ts_stb[0]),        // output
-        .ts_rcv_data_chn0  (ts_data[0]),       // output[7:0] 
-        .ts_rcv_stb_chn1   (ts_stb[1]),        // output
-        .ts_rcv_data_chn1  (ts_data[1]),       // output[7:0] 
-        .ts_rcv_stb_chn2   (ts_stb[2]),        // output
-        .ts_rcv_data_chn2  (ts_data[2]),       // output[7:0] 
-        .ts_rcv_stb_chn3   (ts_stb[3]),        // output
-        .ts_rcv_data_chn3  (ts_data[3])        // output[7:0] 
+        .rst               (rst),                       // input
+        .mclk              (mclk),                      // input
+        .cmd_ad            (cmd_ad),                    // input[7:0] 
+        .cmd_stb           (cmd_stb),                   // input
+        .pclk              (pclk),                      // input
+        .gpio_in           (gpio_in),                   // input[9:0] 
+        .gpio_out          (gpio_out),                  // output[9:0] 
+        .gpio_out_en       (gpio_out_en),               // output[9:0] reg 
+        .triggered_mode    (triggered_mode),            // output
+        .frsync_chn0       (frame_sync[0]),             // input
+        .trig_chn0         (trig[0]),                   // output
+        .frsync_chn1       (frame_sync[1]),             // input
+        .trig_chn1         (trig[1]),                   // output
+        .frsync_chn2       (frame_sync[2]),             // input
+        .trig_chn2         (trig[2]),                   // output
+        .frsync_chn3       (frame_sync[3]),             // input
+        .trig_chn3         (trig[3]),                   // output
+        .ts_snap_mclk_chn0 (ts_local_snap[0]),          // output
+        .ts_snd_stb_chn0   (ts_local_stb[0]),           // input
+        .ts_snd_data_chn0  (ts_local_data[0 * 8 +: 8]), // input[7:0] 
+        .ts_snap_mclk_chn1 (ts_local_snap[1]),          // output
+        .ts_snd_stb_chn1   (ts_local_stb[1]),           // input
+        .ts_snd_data_chn1  (ts_local_data[1 * 8 +: 8]), // input[7:0] 
+        .ts_snap_mclk_chn2 (ts_local_snap[2]),          // output
+        .ts_snd_stb_chn2   (ts_local_stb[2]),           // input
+        .ts_snd_data_chn2  (ts_local_data[2 * 8 +: 8]), // input[7:0] 
+        .ts_snap_mclk_chn3 (ts_local_snap[3]),          // output
+        .ts_snd_stb_chn3   (ts_local_stb[3]),           // input
+        .ts_snd_data_chn3  (ts_local_data[3 * 8 +: 8]), // input[7:0] 
+        .ts_rcv_stb_chn0   (ts_stb[0]),                 // output
+        .ts_rcv_data_chn0  (ts_data[0 * 8 +: 8]),       // output[7:0] 
+        .ts_rcv_stb_chn1   (ts_stb[1]),                 // output
+        .ts_rcv_data_chn1  (ts_data[1 * 8 +: 8]),       // output[7:0] 
+        .ts_rcv_stb_chn2   (ts_stb[2]),                 // output
+        .ts_rcv_data_chn2  (ts_data[2 * 8 +: 8]),       // output[7:0] 
+        .ts_rcv_stb_chn3   (ts_stb[3]),                 // output
+        .ts_rcv_data_chn3  (ts_data[3 * 8 +: 8])        // output[7:0] 
     );
 
 endmodule

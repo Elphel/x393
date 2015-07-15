@@ -52,21 +52,23 @@ module  cmd_seq_mux#(
     output reg                 [31:0] wdata_out,   // write data, valid with waddr_out and wr_en_out
     input                             ackn_out     // command sequencer address/data accepted
 );
-    wire [3:0] wr_en = {wr_en3 & ~ackn3, wr_en2 & ~ackn2, wr_en1 & ~ackn1, wr_en0 & ~ackn0};
-    wire [3:0] pri_one_rr[0:3]; // round robin priority
-    wire [3:0] pri_one;
-    reg  [1:0] chn_r; // last served channel
-    wire       rq_any;
-    wire [1:0] pri_enc_w;
-    reg        full_r;
-    wire       ackn_w;  //pre-acknowledge of one of the channels
-    reg  [3:0] ackn_r;
+    wire  [3:0] wr_en = {wr_en3 & ~ackn3, wr_en2 & ~ackn2, wr_en1 & ~ackn1, wr_en0 & ~ackn0};
+    wire [15:0] pri_one_rr; // round robin priority
+    wire  [3:0] pri_one;
+    reg   [1:0] chn_r; // last served channel
+    wire        rq_any;
+    wire  [1:0] pri_enc_w;
+    reg         full_r;
+    wire        ackn_w;  //pre-acknowledge of one of the channels
+    reg   [3:0] ackn_r;
     
-    assign pri_one_rr[0]={wr_en[3] & ~(|wr_en[2:1]), wr_en[2] & ~wr_en[1],             wr_en[1],                              wr_en[0] & ~(|wr_en[3:1])};
-    assign pri_one_rr[1]={wr_en[3] & ~  wr_en[2],    wr_en[2],                         wr_en[1] & ~(|wr_en[3:2]) & wr_en[0],  wr_en[0] & ~(|wr_en[3:2])};
-    assign pri_one_rr[2]={wr_en[3],                  wr_en[2]&~(|wr_en[1:0])&wr_en[3], wr_en[1] & ~  wr_en[3]    & wr_en[0],  wr_en[0] & ~  wr_en[3]   };
-    assign pri_one_rr[3]={wr_en[3] & ~(|wr_en[2:0]), wr_en[2]&~(|wr_en[1:0]),          wr_en[1] &                  wr_en[0],  wr_en[0]                 };
-    assign pri_one = pri_one_rr[chn_r];
+    assign pri_one_rr = {wr_en[3] & ~(|wr_en[2:0]), wr_en[2]&~(|wr_en[1:0]),          wr_en[1] &                  wr_en[0],  wr_en[0],
+                         wr_en[3],                  wr_en[2]&~(|wr_en[1:0])&wr_en[3], wr_en[1] & ~  wr_en[3]    & wr_en[0],  wr_en[0] & ~  wr_en[3],
+                         wr_en[3] & ~  wr_en[2],    wr_en[2],                         wr_en[1] & ~(|wr_en[3:2]) & wr_en[0],  wr_en[0] & ~(|wr_en[3:2]),
+                         wr_en[3] & ~(|wr_en[2:1]), wr_en[2] & ~wr_en[1],             wr_en[1],                              wr_en[0] & ~(|wr_en[3:1])};
+
+
+    assign pri_one = pri_one_rr[chn_r * 4 +: 4];
     assign rq_any= |wr_en;
     assign pri_enc_w ={pri_one[3] | pri_one[2],
                        pri_one[3] | pri_one[1]};

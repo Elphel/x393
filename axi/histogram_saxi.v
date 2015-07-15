@@ -103,7 +103,7 @@ module  histogram_saxi#(
     
 
 );
-
+    localparam ATTRIB_WIDTH = NUM_FRAME_BITS + 4 +2;
     reg  [HIST_SAXI_MODE_WIDTH-1:0]  mode;
     wire                             en =     mode[HIST_SAXI_EN] & mode[HIST_SAXI_NRESET];
     reg                        [3:0] awcache_mode;
@@ -123,7 +123,7 @@ module  histogram_saxi#(
     reg                        [1:0] mux_sel;
     wire                             start_w;
     reg                              started;
-    reg [NUM_FRAME_BITS + 4 +2 -1:0] attrib [0:3]; // to hold frame number, sensor number and burst (color) for the histograms in the buffer
+    reg          [ATTRIB_WIDTH -1:0] attrib; // to hold frame number, sensor number and burst (color) for the histograms in the buffer
     wire                             page_sent_mclk; // page sent over saxi - pulse in mclk domain
     reg                        [1:0] page_wr;         // page number being written
     reg                        [7:0] page_wa;         // 32-bit word address in page being written
@@ -292,7 +292,7 @@ module  histogram_saxi#(
         
         wr_attr <=  en && !dav_r && dav;
         
-        if (wr_attr) attrib[page_wr] <= {enc_rq[1:0], sub_chn_r, frame_r,  burst[1:0]};
+        if (wr_attr) attrib[page_wr * ATTRIB_WIDTH +: ATTRIB_WIDTH] <= {enc_rq[1:0], sub_chn_r, frame_r,  burst[1:0]};
         
         if (!dav_r) page_wa <= 0;
         else        page_wa <= page_wa + 1; 
@@ -322,7 +322,7 @@ module  histogram_saxi#(
         if (!en_aclk) block_start_r <= 0;
         else          block_start_r <= {block_run[2:0], block_start_w};
         
-        if (block_start_r[0]) attrib_r <= attrib[page_rd];
+        if (block_start_r[0]) attrib_r <= attrib[page_rd * ATTRIB_WIDTH +: ATTRIB_WIDTH];
 
         if (block_start_r[1]) hist_start_page_r <= hist_start_page[attrib_chn];
         if (block_start_r[2]) hist_start_addr[31:12] <= hist_start_page_r + attrib_frame; 
