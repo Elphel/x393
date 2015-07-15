@@ -204,7 +204,7 @@ fifo_same_clock   #( .DATA_WIDTH(20+ADDRESS_BITS),.DATA_DEPTH(4))
         .sync_rst  (1'b0),
         .we        (awvalid && awready),
         .re        (start_write_burst_w),
-        .data_in   ({awid[11:0], awburst[1:0],awsize[1:0],awlen[3:0],awaddr[ADDRESS_BITS+1:2]}),
+        .data_in   ({awid[11:0], awburst[1:0],awsize[1:0],awlen[3:0],2'b00,awaddr[ADDRESS_BITS-1:2]/*,awaddr[ADDRESS_BITS-1:2]*/}),
         .data_out  ({awid_out[11:0], awburst_out[1:0],awsize_out[1:0],awlen_out[3:0],awaddr_out[ADDRESS_BITS-1:0]}),  //SuppressThisWarning ISExst Assignment to awsize_out ignored, since the identifier is never used
         .nempty    (aw_nempty),
         .half_full (aw_half_full)
