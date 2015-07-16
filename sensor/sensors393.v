@@ -230,6 +230,7 @@ module  sensors393 #(
     input    [3:0] rpage_next,   // advance to next page (and reset lower bits to 0)
     input    [3:0] buf_rd,       // read buffer to memory, increment read address (regester enable will be delayed)
     output [255:0] buf_dout,     // data out 
+    output   [3:0] page_written, // single mclk pulse: buffer page (full or partial) is written to the memory buffer 
     
     // Lower bits of frame numbers to use with the histograms, get from the sequencers
     // trigger inputs
@@ -448,7 +449,8 @@ module  sensors393 #(
                 .rpage_set    (rpage_set[i]),            // input
                 .rpage_next   (rpage_next[i]),           // input
                 .buf_rd       (buf_rd[i]),               // input
-                .buf_dout     (buf_dout[64*i +: 64]) // output[63:0] 
+                .buf_dout     (buf_dout[64*i +: 64]),    // output[63:0]
+                .page_written(page_written[i]) // output reg  single mclk pulse: buffer page (full or partial) is written to the memory buffer 
             );
         end
     endgenerate

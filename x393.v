@@ -360,13 +360,16 @@ module  x393 #(
     wire                  [3:0] sens_rpage_next; //    (), // input
     wire                  [3:0] sens_buf_rd;     //    (), // input
     wire                [255:0] sens_buf_dout;   //    (), // output[63:0] 
-        
+    wire                  [3:0] sens_page_written;     //   single mclk pulse: buffer page (full or partial) is written to the memory buffer 
     wire                        trigger_mode; //       (), // input
     wire                  [3:0] trig_in;                  // input[3:0] 
         
     wire                  [3:0] sof_out_pclk; //       (), // output[3:0] 
     wire                  [3:0] eof_out_pclk; //       (), // output[3:0] 
-    wire                  [3:0] sof_out_mclk; //       (), // output[3:0] 
+    wire                  [3:0] sof_out_mclk; // Use for sequencer and to start memory write
+// if sof_out_mclk is applied to both sequencer and memory controller (as it is now) reprogramming of the sensor->memory
+// parameters will be applied to the next frame TODO: Verify that sequencer will always be later than memory controller
+// handling this pulse (should be so). Make sure parameters are applied in ASAP in single-trigger mode
     wire                  [3:0] sof_late_mclk; //      (), // output[3:0] 
         
     wire [NUM_FRAME_BITS - 1:0] frame_num0; //         (), // input[3:0] 
@@ -962,11 +965,12 @@ BUFG bufg_axi_aclk_i  (.O(axi_aclk),.I(fclk[0]));
         .axird_selected            (mcntrl_axird_selected), // output 
 
 // sensors interface
+        .sens_sof                  (sof_out_mclk),               // input[3:0]  // Early start of frame pulses (@mclk)
         .sens_rpage_set            (sens_rpage_set),             // output[3:0] 
         .sens_rpage_next           (sens_rpage_next),            // output[3:0] 
         .sens_buf_rd               (sens_buf_rd),                // output[3:0] 
         .sens_buf_dout             (sens_buf_dout),              // input[255:0] 
-
+        .sens_page_written         (sens_page_written),          // input [3:0] single mclk pulse: buffer page (full or partial) is written to the memory buffer 
 
 // compressor interface
         .cmprs_xfer_reset_page_rd  (cmprs_xfer_reset_page_rd),   // output[3:0] 
@@ -1360,10 +1364,11 @@ BUFG bufg_axi_aclk_i  (.O(axi_aclk),.I(fclk[0]));
         .sns4_ctl           (sns4_ctl),            // inout
         .sns4_pg            (sns4_pg),             // inout
 
-        .rpage_set         (sens_rpage_set),          // input
-        .rpage_next        (sens_rpage_next),         // input
-        .buf_rd            (sens_buf_rd),             // input
-        .buf_dout          (sens_buf_dout),           // output[63:0] 
+        .rpage_set          (sens_rpage_set),      // input
+        .rpage_next         (sens_rpage_next),     // input
+        .buf_rd             (sens_buf_rd),         // input
+        .buf_dout           (sens_buf_dout),       // output[63:0]
+        .page_written       (sens_page_written),   // output[3:0]
         
         .trigger_mode       (trigger_mode),        // input
         .trig_in            (trig_in),             // input[3:0] 
