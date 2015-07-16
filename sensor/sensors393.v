@@ -29,11 +29,11 @@ module  sensors393 #(
     parameter HIST_SAXI_ADDR_REL =         'h100, // histograms control addresses (16 locations) relative to SENSOR_GROUP_ADDR
     parameter HIST_SAXI_MODE_ADDR_REL =    'h110, // histograms mode address (1 locatios) relative to SENSOR_GROUP_ADDR
     
-    
-    parameter SENSI2C_STATUS_REG_BASE =   'h30,  // 4 locations" x30, x32, x34, x36
+    // Sesnors use 8 status registers, 'h20..'h27
+    parameter SENSI2C_STATUS_REG_BASE =   'h20,  // 4 locations" x20, x22, x24, x26
     parameter SENSI2C_STATUS_REG_INC =    2,     // increment to the next sensor
-    parameter SENSI2C_STATUS_REG_REL =    0,     // 4 locations" 'h30, 'h32, 'h34, 'h36
-    parameter SENSIO_STATUS_REG_REL =     1,     // 4 locations" 'h31, 'h33, 'h35, 'h37
+    parameter SENSI2C_STATUS_REG_REL =    0,     // 4 locations" 'h20, 'h22, 'h24, 'h26
+    parameter SENSIO_STATUS_REG_REL =     1,     // 4 locations" 'h21, 'h23, 'h25, 'h27
     parameter SENSOR_NUM_HISTOGRAM=       3,     // number of histogram channels
     parameter HISTOGRAM_RAM_MODE =        "NOBUF", // valid: "NOBUF" (32-bits, no buffering), "BUF18", "BUF32"
     parameter SENS_GAMMA_NUM_CHN =        3,     // number of subchannels for his sensor ports (1..4)
@@ -225,26 +225,11 @@ module  sensors393 #(
     inout         sns4_ctl,  //SuppressThisWarning VEditor : VDT bug? - assigned used in generate block only
     inout         sns4_pg,   //SuppressThisWarning VEditor : VDT bug? - assigned used in generate block only
     
-    // Memory interface
-    input         rpage_set0,    // set internal read page to rpage_in (reset pointers)
-    input         rpage_next0,   // advance to next page (and reset lower bits to 0)
-    input         buf_rd0,       // read buffer to memory, increment read address (regester enable will be delayed)
-    output [63:0] buf_dout0,     // data out 
-    
-    input         rpage_set1,    // set internal read page to rpage_in (reset pointers)
-    input         rpage_next1,   // advance to next page (and reset lower bits to 0)
-    input         buf_rd1,       // read buffer to memory, increment read address (regester enable will be delayed)
-    output [63:0] buf_dout1,     // data out
-    
-    input         rpage_set2,    // set internal read page to rpage_in (reset pointers)
-    input         rpage_next2,   // advance to next page (and reset lower bits to 0)
-    input         buf_rd2,       // read buffer to memory, increment read address (regester enable will be delayed)
-    output [63:0] buf_dout2,     // data out
-    
-    input         rpage_set3,    // set internal read page to rpage_in (reset pointers)
-    input         rpage_next3,   // advance to next page (and reset lower bits to 0)
-    input         buf_rd3,       // read buffer to memory, increment read address (regester enable will be delayed)
-    output [63:0] buf_dout3,     // data out
+    // Memory interface (4 channels)
+    input    [3:0] rpage_set,    // set internal read page to rpage_in (reset pointers)
+    input    [3:0] rpage_next,   // advance to next page (and reset lower bits to 0)
+    input    [3:0] buf_rd,       // read buffer to memory, increment read address (regester enable will be delayed)
+    output [255:0] buf_dout,     // data out 
     
     // Lower bits of frame numbers to use with the histograms, get from the sequencers
     // trigger inputs
@@ -291,10 +276,6 @@ module  sensors393 #(
 );
 
 
-    wire [3:0] rpage_set =  {rpage_set3,  rpage_set2,  rpage_set1,  rpage_set0};   // set internal read page to rpage_in (reset pointers)
-    wire [3:0] rpage_next = {rpage_next3, rpage_next2, rpage_next1, rpage_next0};   // advance to next page (and reset lower bits to 0)
-    wire [3:0] buf_rd =     {buf_rd3,     buf_rd2,     buf_rd1,     buf_rd0};       // read buffer to memory, increment read address (regester enable will be delayed)
-
 
     reg              [7:0] cmd_ad;    
     reg                    cmd_stb;
@@ -310,13 +291,6 @@ module  sensors393 #(
     wire             [7:0] hist_chn; 
     wire             [3:0] hist_dvalid;
     wire           [127:0] hist_data; 
-    wire           [255:0] buf_dout_all;
-    
-//    wire             [3:0] sns_pg; // bidir!
-//my_alias    
-//    my_alias #(.WIDTH(4)) my_alias_i (sns_pg, {sns4_pg, sns3_pg, sns2_pg, sns1_pg});
-    
-    assign  {buf_dout3, buf_dout2, buf_dout1, buf_dout0} = buf_dout_all;
     
     always @ (posedge mclk) begin
         cmd_ad <= cmd_ad_in;
@@ -474,7 +448,7 @@ module  sensors393 #(
                 .rpage_set    (rpage_set[i]),            // input
                 .rpage_next   (rpage_next[i]),           // input
                 .buf_rd       (buf_rd[i]),               // input
-                .buf_dout     (buf_dout_all[64*i +: 64]) // output[63:0] 
+                .buf_dout     (buf_dout[64*i +: 64]) // output[63:0] 
             );
         end
     endgenerate
@@ -581,13 +555,3 @@ module  sensors393 #(
     
     
 endmodule
-// TODO: if that works, move it to util_modules
-/*
-                .IODELAY_GRP                   ((i & 2)?"IODELAY_SENSOR_34":"IODELAY_SENSOR_12"),
-
-module my_alias #(
-    parameter WIDTH=1
-) (a,a);
-inout [WIDTH-1:0] a; // SuppressThisWarning VEditor : it is just an alias for bidirectional wires
-endmodule
-*/

@@ -21,7 +21,16 @@
 `timescale 1ns/1ps
 `include "system_defines.vh" 
 module  mcntrl393 #(
-// AXI
+// MAXI address space, in 32-bit words
+    parameter MCONTR_SENS_BASE =         'h680, // .. 'h6bf
+    parameter MCONTR_SENS_INC =          'h10,
+    parameter MCONTR_CMPRS_BASE =        'h6c0, // .. 'h6ff
+    parameter MCONTR_CMPRS_INC =         'h10,
+    parameter MCONTR_SENS_STATUS_BASE =  'h28, // .. 'h2b
+    parameter MCONTR_SENS_STATUS_INC =   'h1,
+    parameter MCONTR_CMPRS_STATUS_BASE = 'h2c, // .. 'h2f
+    parameter MCONTR_CMPRS_STATUS_INC =  'h1,
+    
     parameter MCONTR_WR_MASK =          'h3c00, // AXI write address mask for the 1Kx32 buffers command sequence memory
     parameter MCONTR_RD_MASK =          'h3c00, // AXI read address mask to generate busy
     
@@ -261,8 +270,35 @@ module  mcntrl393 #(
 //   wire  [31:0]   axird_bram_rdata;  //      .data_out(rdata[31:0]),       // data out
     output              [31:0]   axird_rdata,  // combinatorial multiplexed (add external register layer, modify axibram_read?)     .data_out(rdata[31:0]),       // data out
     output                       axird_selected, // axird_rdata contains valid data from this module 
-//   wire  [31:0]   port0_rdata;  //
-//   wire  [31:0]   status_rdata;  //
+
+    // sensor subsystem interface
+    output                     [3:0] sens_rpage_set,  //    (), // input
+    output                     [3:0] sens_rpage_next, //    (), // input
+    output                     [3:0] sens_buf_rd,     //    (), // input
+    input                    [255:0] sens_buf_dout,   //    (), // output[63:0] 
+    // compressor subsystem interface
+    // Buffer interfaces, combined for 4 channels 
+    output                     [3:0] cmprs_xfer_reset_page_rd, // from mcntrl_tiled_rw (
+    output                     [3:0] cmprs_buf_wpage_nxt,      // advance to next page memory interface writes to
+    output                     [3:0] cmprs_buf_we,             // @!mclk write buffer from memory, increment write
+    output                   [255:0] cmprs_buf_din,            // data out 
+    output                     [3:0] cmprs_page_ready,         // single mclk (posedge)
+    input                      [3:0] cmprs_next_page,          // single mclk (posedge): Done with the page in the  buffer, memory controller may read more data 
+
+    // master (sensor) with slave (compressor) synchronization I/Os
+    input                      [3:0] cmprs_frame_start_dst,    // @mclk - trigger receive (tiledc) memory channel (it will take care of single/repetitive
+                                                                // these output either follows vsync_late (reclocks it) or generated in non-bonded mode
+                                                                // (compress from memory)
+    output [4*FRAME_HEIGHT_BITS-1:0] cmprs_line_unfinished_src,// number of the current (unfinished ) line, in the source (sensor) channel (RELATIVE TO FRAME, NOT WINDOW?)
+    output   [4*LAST_FRAME_BITS-1:0] cmprs_frame_number_src,   // current frame number (for multi-frame ranges) in the source (sensor) channel
+    output                     [3:0] cmprs_frame_done_src,     // single-cycle pulse when the full frame (window) was transferred to/from DDR3 memory 
+                                                                // frame_done_src is later than line_unfinished_src/ frame_number_src changes
+                                                                // Used withe a single-frame buffers
+    output [4*FRAME_HEIGHT_BITS-1:0] cmprs_line_unfinished_dst,// number of the current (unfinished ) line in this (compressor) channel
+    output   [4*LAST_FRAME_BITS-1:0] cmprs_frame_number_dst,   // current frame number (for multi-frame ranges) in this (compressor channel
+    output                     [3:0] cmprs_frame_done_dst,     // single-cycle pulse when the full frame (window) was transferred to/from DDR3 memory
+                                                                // use as 'eot_real' in 353 
+    input                      [3:0] cmprs_suspend,            // suspend reading data for this channel - waiting for the source data
 
 // TODO: move line_unfinished and suspend to internals of this module (and control comparator modes)
     // Channel 1 - AFI read/write to system memory with scanline linear mode
@@ -286,10 +322,6 @@ module  mcntrl393 #(
     output                         rpage_nxt_chn1,
     output                         buf_rd_chn1,
     input                  [63:0]  buf_rdata_chn1, 
-
-
-
-
 
 // Channels 2 and 3 control signals
     input                          frame_start_chn2,   // resets page, x,y, and initiates transfer requests (in write mode will wait for next_page)
@@ -320,6 +352,10 @@ module  mcntrl393 #(
     input                          suspend_chn4,       // suspend transfers (from external line number comparator)
 
 
+
+
+
+
     // DDR3 interface
     output                       SDRST, // DDR3 reset (active low)
     output                       SDCLK, // DDR3 clock differential output, positive
@@ -345,7 +381,8 @@ module  mcntrl393 #(
 // temporary debug data    
     ,output                [11:0] tmp_debug // add some signals generated here?
 );
-    
+    localparam COL_WDTH = COLADDR_NUMBER-3; // number of column address bits in bursts
+    localparam FRAME_WBP1 = FRAME_WIDTH_BITS + 1;
     wire rst=rst_in;
     wire axi_rst=rst_in; 
 
@@ -441,9 +478,15 @@ module  mcntrl393 #(
     wire       cmd_scanline_chn3_stb;
     wire [7:0] cmd_tiled_chn2_ad;
     wire       cmd_tiled_chn2_stb;
+    
     wire [7:0] cmd_tiled_chn4_ad;
     wire       cmd_tiled_chn4_stb;
 
+    wire [7:0] cmd_sens_ad;
+    wire       cmd_sens_stb;
+
+    wire [7:0] cmd_cmprs_ad;
+    wire       cmd_cmprs_stb;
 
 // Status tree:
     wire                  [7:0] status_mcontr_ad;    // Memory controller status byte-wide address/data 
@@ -469,6 +512,46 @@ module  mcntrl393 #(
     wire                  [7:0] status_tiled_chn4_ad;    // PL tiled channel4 (memory read) status byte-wide address/data 
     wire                        status_tiled_chn4_rq;    // PL tiled channel4 (memory read) channels status request  
     wire                        status_tiled_chn4_start; // PL tiled channel4 (memory read) channels status packet transfer start (currently with 0 latency from status_root_rq)
+
+ // status control for scanline sensor access, 4 channels
+    wire                 [31:0] status_sens_ad; 
+    wire                  [3:0] status_sens_rq;  
+    wire                  [3:0] status_sens_start;
+
+
+ // status control for tiled compressor access, 4 channels
+    wire                 [31:0] status_cmprs_ad; 
+    wire                  [3:0] status_cmprs_rq;  
+    wire                  [3:0] status_cmprs_start;
+
+// Sensor and compressor signals
+    wire                   [3:0] sens_want;
+    wire                   [3:0] sens_need;
+    wire                   [3:0] cmprs_want;
+    wire                   [3:0] cmprs_need;
+
+    wire                   [3:0] sens_channel_pgm_en;
+    wire                   [3:0] sens_start_wr;
+    wire                  [11:0] sens_bank;   // output[2:0] 
+    wire  [4*ADDRESS_NUMBER-1:0] sens_row;    // output[14:0] 
+    wire        [4*COL_WDTH-1:0] sens_col;    // output[6:0] 
+    wire               [4*6-1:0] sens_num128; // output[5:0]
+    wire                   [3:0] sens_partial; // output
+    wire                   [3:0] sens_done; // input : sequence over
+
+    wire                   [3:0] cmprs_channel_pgm_en;
+    wire                   [3:0] cmprs_start_rd16;
+    wire                   [3:0] cmprs_start_rd32;
+    wire                  [11:0] cmprs_bank;   // output[2:0] 
+    wire  [4*ADDRESS_NUMBER-1:0] cmprs_row;    // output[14:0] 
+    wire        [4*COL_WDTH-1:0] cmprs_col;    // output[6:0] 
+    wire      [4*FRAME_WBP1-1:0] cmprs_rowcol_inc;  // number of 128-bit words to transfer (8*16 bits) - full bursts of 8 ( 0 - maximal length, 64)
+    wire  [4*MAX_TILE_WIDTH-1:0] cmprs_num_rows_m1; // number of 128-bit words to transfer (8*16 bits) - full bursts of 8 ( 0 - maximal length, 64)
+    wire [4*MAX_TILE_HEIGHT-1:0] cmprs_num_cols_m1; // number of 128-bit words to transfer (8*16 bits) - full bursts of 8 ( 0 - maximal length, 64)
+    wire                   [3:0] cmprs_keep_open;   // start generating commands
+    wire                   [3:0] cmprs_partial; // output
+    wire                   [3:0] cmprs_done; // input : sequence over
+
 
 // combinatorial early signals
     wire                         select_cmd0_w;
@@ -534,7 +617,7 @@ module  mcntrl393 #(
 // common for channels 1 and 3
     wire                  [2:0] lin_rw_bank;     // memory bank
     wire   [ADDRESS_NUMBER-1:0] lin_rw_row;      // memory row
-    wire   [COLADDR_NUMBER-4:0] lin_rw_col;      // start memory column in 8-bursts
+    wire         [COL_WDTH-1:0] lin_rw_col;      // start memory column in 8-bursts
     wire                  [5:0] lin_rw_num128;   // number of 128-bit words to transfer (8*16 bits) - full bursts of 8 ( 0 - maximal length, 64)
     wire                        lin_rw_xfer_partial; // do not increment page in the end, continue current
     wire                        lin_rw_start_rd;    // start generating commands for read sequence
@@ -542,7 +625,7 @@ module  mcntrl393 #(
 
     wire                  [2:0] lin_rw_chn1_bank;   // bank address
     wire   [ADDRESS_NUMBER-1:0] lin_rw_chn1_row;    // memory row
-    wire   [COLADDR_NUMBER-4:0] lin_rw_chn1_col;    // start memory column in 8-bursts
+    wire         [COL_WDTH-1:0] lin_rw_chn1_col;    // start memory column in 8-bursts
     wire                  [5:0] lin_rw_chn1_num128; // number of 128-bit words to transfer (8*16 bits) - full bursts of 8 ( 0 - maximal length, 64)
     wire                        lin_rw_chn1_partial;  // do not increment page in the end, continue current
     wire                        lin_rw_chn1_start_rd;  // start generating commands
@@ -552,7 +635,7 @@ module  mcntrl393 #(
     
     wire                  [2:0] lin_rw_chn3_bank;   // bank address
     wire   [ADDRESS_NUMBER-1:0] lin_rw_chn3_row;    // memory row
-    wire   [COLADDR_NUMBER-4:0] lin_rw_chn3_col;    // start memory column in 8-bursts
+    wire         [COL_WDTH-1:0] lin_rw_chn3_col;    // start memory column in 8-bursts
     wire                  [5:0] lin_rw_chn3_num128; // number of 128-bit words to transfer (8*16 bits) - full bursts of 8 ( 0 - maximal length, 64)
     wire                        lin_rw_chn3_partial; // do not increment page in the end, continue current
     wire                        lin_rw_chn3_start_rd;  // start generating commands
@@ -563,7 +646,7 @@ module  mcntrl393 #(
 // common for tiled r/w - channels 2 and 4
     wire                  [2:0] tiled_rw_bank;   // bank address
     wire   [ADDRESS_NUMBER-1:0] tiled_rw_row;    // memory row
-    wire   [COLADDR_NUMBER-4:0] tiled_rw_col;    // start memory column in 8-bursts
+    wire         [COL_WDTH-1:0] tiled_rw_col;    // start memory column in 8-bursts
     wire   [FRAME_WIDTH_BITS:0] tiled_rw_rowcol_inc; // number of 128-bit words to transfer (8*16 bits) - full bursts of 8 ( 0 - maximal length, 64)
     wire   [MAX_TILE_WIDTH-1:0] tiled_rw_num_rows_m1; // number of 128-bit words to transfer (8*16 bits) - full bursts of 8 ( 0 - maximal length, 64)
     wire  [MAX_TILE_HEIGHT-1:0] tiled_rw_num_cols_m1; // number of 128-bit words to transfer (8*16 bits) - full bursts of 8 ( 0 - maximal length, 64)
@@ -572,7 +655,7 @@ module  mcntrl393 #(
 
     wire                  [2:0] tiled_rw_chn2_bank;   // bank address
     wire   [ADDRESS_NUMBER-1:0] tiled_rw_chn2_row;    // memory row
-    wire   [COLADDR_NUMBER-4:0] tiled_rw_chn2_col;    // start memory column in 8-bursts
+    wire         [COL_WDTH-1:0] tiled_rw_chn2_col;    // start memory column in 8-bursts
     wire   [FRAME_WIDTH_BITS:0] tiled_rw_chn2_rowcol_inc; // number of 128-bit words to transfer (8*16 bits) - full bursts of 8 ( 0 - maximal length, 64)
     wire   [MAX_TILE_WIDTH-1:0] tiled_rw_chn2_num_rows_m1; // number of 128-bit words to transfer (8*16 bits) - full bursts of 8 ( 0 - maximal length, 64)
     wire  [MAX_TILE_HEIGHT-1:0] tiled_rw_chn2_num_cols_m1; // number of 128-bit words to transfer (8*16 bits) - full bursts of 8 ( 0 - maximal length, 64)
@@ -589,7 +672,7 @@ module  mcntrl393 #(
 
     wire                  [2:0] tiled_rw_chn4_bank;   // bank address
     wire   [ADDRESS_NUMBER-1:0] tiled_rw_chn4_row;    // memory row
-    wire   [COLADDR_NUMBER-4:0] tiled_rw_chn4_col;    // start memory column in 8-bursts
+    wire         [COL_WDTH-1:0] tiled_rw_chn4_col;    // start memory column in 8-bursts
     wire   [FRAME_WIDTH_BITS:0] tiled_rw_chn4_rowcol_inc; // number of 128-bit words to transfer (8*16 bits) - full bursts of 8 ( 0 - maximal length, 64)
     wire   [MAX_TILE_WIDTH-1:0] tiled_rw_chn4_num_rows_m1; // number of 128-bit words to transfer (8*16 bits) - full bursts of 8 ( 0 - maximal length, 64)
     wire  [MAX_TILE_HEIGHT-1:0] tiled_rw_chn4_num_cols_m1; // number of 128-bit words to transfer (8*16 bits) - full bursts of 8 ( 0 - maximal length, 64)
@@ -644,6 +727,11 @@ module  mcntrl393 #(
     assign cmd_tiled_chn2_stb=   cmd_stb;
     assign cmd_tiled_chn4_ad=    cmd_ad;
     assign cmd_tiled_chn4_stb=   cmd_stb;
+
+    assign cmd_sens_ad=    cmd_ad;
+    assign cmd_sens_stb=   cmd_stb;
+    assign cmd_cmprs_ad=    cmd_ad;
+    assign cmd_cmprs_stb=   cmd_stb;
 
     
     
@@ -736,56 +824,58 @@ module  mcntrl393 #(
     end
    //axiwr_waddr 
     status_router16 status_router16_mctrl_top_i (
-        .rst       (rst), // input
-        .clk       (mclk), // input
-        .db_in0    (status_mcontr_ad), // input[7:0] 
-        .rq_in0    (status_mcontr_rq), // input
-        .start_in0 (status_mcontr_start), // output
-        .db_in1    (status_ps_pio_ad), // input[7:0] 
-        .rq_in1    (status_ps_pio_rq), // input
-        .start_in1 (status_ps_pio_start), // output
-        .db_in2    (status_scanline_chn1_ad), // input[7:0] 
-        .rq_in2    (status_scanline_chn1_rq), // input
-        .start_in2 (status_scanline_chn1_start), // output
-        .db_in3    (status_scanline_chn3_ad), // input[7:0] 
-        .rq_in3    (status_scanline_chn3_rq), // input
-        .start_in3 (status_scanline_chn3_start), // output
-        .db_in4    (status_tiled_chn2_ad), // input[7:0] 
-        .rq_in4    (status_tiled_chn2_rq), // input
-        .start_in4 (status_tiled_chn2_start), // output
-        .db_in5    (status_tiled_chn4_ad), // input[7:0] 
-        .rq_in5    (status_tiled_chn4_rq), // input
-        .start_in5 (status_tiled_chn4_start), // output
+        .rst       (rst),                          // input
+        .clk       (mclk),                         // input
+        .db_in0    (status_mcontr_ad),             // input[7:0] 
+        .rq_in0    (status_mcontr_rq),             // input
+        .start_in0 (status_mcontr_start),          // output
+        .db_in1    (status_ps_pio_ad),             // input[7:0] 
+        .rq_in1    (status_ps_pio_rq),             // input
+        .start_in1 (status_ps_pio_start),          // output
+        .db_in2    (status_scanline_chn1_ad),      // input[7:0] 
+        .rq_in2    (status_scanline_chn1_rq),      // input
+        .start_in2 (status_scanline_chn1_start),   // output
+        .db_in3    (status_scanline_chn3_ad),      // input[7:0] 
+        .rq_in3    (status_scanline_chn3_rq),      // input
+        .start_in3 (status_scanline_chn3_start),   // output
+        .db_in4    (status_tiled_chn2_ad),         // input[7:0] 
+        .rq_in4    (status_tiled_chn2_rq),         // input
+        .start_in4 (status_tiled_chn2_start),      // output
+        .db_in5    (status_tiled_chn4_ad),         // input[7:0] 
+        .rq_in5    (status_tiled_chn4_rq),         // input
+        .start_in5 (status_tiled_chn4_start),      // output
+        // spare
         .db_in6    (8'b0), // input[7:0] 
         .rq_in6    (1'b0), // input
         .start_in6 (), // output
         .db_in7    (8'b0), // input[7:0] 
         .rq_in7    (1'b0), // input
         .start_in7 (), // output
-        .db_in8    (8'b0), // input[7:0] 
-        .rq_in8    (1'b0), // input
-        .start_in8 (), // output
-        .db_in9    (8'b0), // input[7:0] 
-        .rq_in9    (1'b0), // input
-        .start_in9 (), // output
-        .db_in10   (8'b0), // input[7:0] 
-        .rq_in10   (1'b0), // input
-        .start_in10(), // output
-        .db_in11    (8'b0), // input[7:0] 
-        .rq_in11    (1'b0), // input
-        .start_in11(), // output
-        .db_in12   (8'b0), // input[7:0] 
-        .rq_in12   (1'b0), // input
-        .start_in12(), // output
-        .db_in13   (8'b0), // input[7:0] 
-        .rq_in13   (1'b0), // input
-        .start_in13(), // output
-        .db_in14   (8'b0), // input[7:0] 
-        .rq_in14   (1'b0), // input
-        .start_in14(), // output
-        .db_in15   (8'b0), // input[7:0] 
-        .rq_in15   (1'b0), // input
-        .start_in15(), // output
+        
+        .db_in8     (status_sens_ad[0 * 8 +: 8]),  // input[7:0] 
+        .rq_in8     (status_sens_rq[0]),           // input
+        .start_in8  (status_sens_start[0]),        // output
+        .db_in9     (status_sens_ad[1 * 8 +: 8]),  // input[7:0] 
+        .rq_in9     (status_sens_rq[1]),           // input
+        .start_in9  (status_sens_start[1]),        // output
+        .db_in10    (status_sens_ad[2 * 8 +: 8]),  // input[7:0] 
+        .rq_in10    (status_sens_rq[2]),           // input
+        .start_in10 (status_sens_start[2]),        // output
+        .db_in11    (status_sens_ad[3 * 8 +: 8]),  // input[7:0] 
+        .rq_in11    (status_sens_rq[3]),           // input
+        .start_in11 (status_sens_start[3]),        // output
+        .db_in12    (status_cmprs_ad[0 * 8 +: 8]), // input[7:0] 
+        .rq_in12    (status_cmprs_rq[0]),          // input
+        .start_in12 (status_cmprs_start[0]),       // output
+        .db_in13    (status_cmprs_ad[1 * 8 +: 8]), // input[7:0] 
+        .rq_in13    (status_cmprs_rq[1]),          // input
+        .start_in13 (status_cmprs_start[1]),       // output
+        .db_in14    (status_cmprs_ad[2 * 8 +: 8]), // input[7:0] 
+        .rq_in14    (status_cmprs_rq[2]),          // input
+        .start_in14 (status_cmprs_start[2]),       // output
+        .db_in15    (status_cmprs_ad[3 * 8 +: 8]), // input[7:0] 
+        .rq_in15    (status_cmprs_rq[3]),          // input
+        .start_in15 (status_cmprs_start[3]),       // output
         
         .db_out    (status_ad), // output[7:0] 
         .rq_out    (status_rq), // output
@@ -939,6 +1029,124 @@ module  mcntrl393 #(
         .rd           (buf_rd_chn4), // input
         .data_out     (buf_rdata_chn4) // output[63:0] 
     );
+    
+    generate
+        genvar i;
+        for (i = 0; i < 4; i = i+1) begin:sens_comp_block
+            mcntrl_linear_rw #(
+                .ADDRESS_NUMBER                    (ADDRESS_NUMBER),
+                .COLADDR_NUMBER                    (COLADDR_NUMBER),
+                .NUM_XFER_BITS                     (NUM_XFER_BITS),
+                .FRAME_WIDTH_BITS                  (FRAME_WIDTH_BITS),
+                .FRAME_HEIGHT_BITS                 (FRAME_HEIGHT_BITS),
+                .LAST_FRAME_BITS                   (LAST_FRAME_BITS),
+                .MCNTRL_SCANLINE_ADDR              (MCONTR_SENS_BASE + MCONTR_SENS_INC * i),
+                .MCNTRL_SCANLINE_MASK              (MCNTRL_SCANLINE_MASK),
+                .MCNTRL_SCANLINE_MODE              (MCNTRL_SCANLINE_MODE),
+                .MCNTRL_SCANLINE_STATUS_CNTRL      (MCNTRL_SCANLINE_STATUS_CNTRL),
+                .MCNTRL_SCANLINE_STARTADDR         (MCNTRL_SCANLINE_STARTADDR),
+                .MCNTRL_SCANLINE_FRAME_FULL_WIDTH  (MCNTRL_SCANLINE_FRAME_FULL_WIDTH),
+                .MCNTRL_SCANLINE_WINDOW_WH         (MCNTRL_SCANLINE_WINDOW_WH),
+                .MCNTRL_SCANLINE_WINDOW_X0Y0       (MCNTRL_SCANLINE_WINDOW_X0Y0),
+                .MCNTRL_SCANLINE_WINDOW_STARTXY    (MCNTRL_SCANLINE_WINDOW_STARTXY),
+                .MCNTRL_SCANLINE_STATUS_REG_ADDR   (MCONTR_SENS_STATUS_BASE + MCONTR_SENS_STATUS_INC * i),
+                .MCNTRL_SCANLINE_PENDING_CNTR_BITS (MCNTRL_SCANLINE_PENDING_CNTR_BITS),
+                .MCNTRL_SCANLINE_FRAME_PAGE_RESET  (MCNTRL_SCANLINE_FRAME_PAGE_RESET)
+            ) mcntrl_linear_wr_sensor_i (
+                .rst              (rst),                        // input
+                .mclk             (mclk),                       // input
+                .cmd_ad           (cmd_sens_ad),                // input[7:0] 
+                .cmd_stb          (cmd_sens_stb),               // input
+                .status_ad        (status_sens_ad[i * 8 +: 8]), // output[7:0] 
+                .status_rq        (status_sens_rq[i]),          // output
+                .status_start     (status_sens_start[i]),       // input
+                .frame_start      (WTF_WTF_WTF),                // input
+                .next_page        (sens_rpage_next[i]),         // input
+                .frame_done       (WTF_WTF_WTF), // output - just as status to reed somewhere?
+                .frame_finished       (), // output
+                .line_unfinished  (cmprs_line_unfinished_src[i * FRAME_HEIGHT_BITS +: FRAME_HEIGHT_BITS]), // output[15:0] 
+                .suspend          (1'b0), // input
+                .frame_number     (cmprs_frame_number_src[i * LAST_FRAME_BITS +: LAST_FRAME_BITS]),
+                .xfer_want        (sens_want[i]),               // output
+                .xfer_need        (sens_need[i]),               // output
+                .xfer_grant       (sens_channel_pgm_en[i]),     // input
+                .xfer_start_rd    (),                           // output
+                .xfer_start_wr    (sens_start_wr[i]),           // output
+                .xfer_bank        (sens_bank[3 * i +: 3]),      // output[2:0] 
+                .xfer_row         (sens_row[ADDRESS_NUMBER * i +: ADDRESS_NUMBER]), // output[14:0] 
+                .xfer_col         (sens_col[COL_WDTH * i +: COL_WDTH]), // output[6:0] 
+                .xfer_num128      (sens_num128[i * 6 +: 6]),    // output[5:0]
+                .xfer_partial     (sens_partial[i]),            // output
+                .xfer_done        (sens_done[i]),               // input : sequence over
+                .xfer_page_rst_wr (sens_rpage_set[i]),          // output
+                .xfer_page_rst_rd (), // output
+                .cmd_wrmem        () // output
+            );
+            
+               mcntrl_tiled_rw #(
+                .ADDRESS_NUMBER                (ADDRESS_NUMBER),
+                .COLADDR_NUMBER                (COLADDR_NUMBER),
+                .FRAME_WIDTH_BITS              (FRAME_WIDTH_BITS),
+                .FRAME_HEIGHT_BITS             (FRAME_HEIGHT_BITS),
+                .MAX_TILE_WIDTH                (MAX_TILE_WIDTH),
+                .MAX_TILE_HEIGHT               (MAX_TILE_HEIGHT),
+                .LAST_FRAME_BITS               (LAST_FRAME_BITS),
+                .MCNTRL_TILED_ADDR             (MCONTR_CMPRS_BASE + MCONTR_CMPRS_INC * i),
+                .MCNTRL_TILED_MASK             (MCNTRL_TILED_MASK),
+                .MCNTRL_TILED_MODE             (MCNTRL_TILED_MODE),
+                .MCNTRL_TILED_STATUS_CNTRL     (MCNTRL_TILED_STATUS_CNTRL),
+                .MCNTRL_TILED_STARTADDR        (MCNTRL_TILED_STARTADDR),
+                .MCNTRL_TILED_FRAME_FULL_WIDTH (MCNTRL_TILED_FRAME_FULL_WIDTH),
+                .MCNTRL_TILED_WINDOW_WH        (MCNTRL_TILED_WINDOW_WH),
+                .MCNTRL_TILED_WINDOW_X0Y0      (MCNTRL_TILED_WINDOW_X0Y0),
+                .MCNTRL_TILED_WINDOW_STARTXY   (MCNTRL_TILED_WINDOW_STARTXY),
+                .MCNTRL_TILED_TILE_WHS         (MCNTRL_TILED_TILE_WHS),
+                .MCNTRL_TILED_STATUS_REG_ADDR  (MCONTR_CMPRS_STATUS_BASE + MCONTR_CMPRS_STATUS_INC * i),
+                .MCNTRL_TILED_PENDING_CNTR_BITS(MCNTRL_TILED_PENDING_CNTR_BITS),
+                .MCNTRL_TILED_FRAME_PAGE_RESET (MCNTRL_TILED_FRAME_PAGE_RESET)
+            ) mcntrl_tiled_rd_compressor_i ( 
+                .rst                  (rst),                         // input
+                .mclk                 (mclk),                        // input
+                .cmd_ad               (cmd_cmprs_ad),                // input[7:0] 
+                .cmd_stb              (cmd_cmprs_stb),               // input
+                .status_ad            (status_cmprs_ad[i * 8 +: 8]), // output[7:0] 
+                .status_rq            (status_cmprs_rq[i]),          // output
+                .status_start         (status_cmprs_start[i]),       // input
+                .frame_start          (cmprs_frame_start_dst[i]),    // input
+                .next_page            (WTF_WTF_WTF),                 // input compressor consumed page cmprs_buf_wpage_nxt?
+                .frame_done           (cmprs_frame_done_dst[i]),     // output
+                .frame_finished       (),                            // output
+                .line_unfinished      (cmprs_line_unfinished_dst[i * FRAME_HEIGHT_BITS +: FRAME_HEIGHT_BITS]), // output[15:0] 
+                .suspend              (cmprs_suspend[i]),            // input
+                .frame_number         (cmprs_frame_number_dst[i * LAST_FRAME_BITS +: LAST_FRAME_BITS]),
+                .xfer_want            (cmprs_want[i]),               // output
+                .xfer_need            (cmprs_need[i]),               // output
+                .xfer_grant           (cmprs_channel_pgm_en[i]),     // input
+                .xfer_start_rd        (cmprs_start_rd16[i]),         // output
+                .xfer_start_wr        (),                            // output
+                .xfer_start32_rd      (cmprs_start_rd32[i]),         // output
+                .xfer_start32_wr      (),                            // output
+                .xfer_bank            (cmprs_bank[i * 3 +: 3]), // output[2:0] 
+                .xfer_row             (cmprs_row[ADDRESS_NUMBER * i +: ADDRESS_NUMBER]), // output[14:0] 
+                .xfer_col             (cmprs_col[COL_WDTH * i +: COL_WDTH]), // output[6:0] 
+                .rowcol_inc           (cmprs_rowcol_inc[i * FRAME_WBP1 +: FRAME_WBP1]), // output[13:0] 
+                .num_rows_m1          (cmprs_num_rows_m1[i * MAX_TILE_WIDTH +: MAX_TILE_WIDTH]), // output[5:0] 
+                .num_cols_m1          (cmprs_num_cols_m1[i * MAX_TILE_HEIGHT +: MAX_TILE_HEIGHT]), // output[5:0] 
+                .keep_open            (cmprs_keep_open[i]),          // output
+                .xfer_partial         (cmprs_partial[i]),            // output
+                .xfer_page_done       (cmprs_done[i]),               // input
+                .xfer_page_rst_wr     (),                            // output
+                .xfer_page_rst_rd     (cmprs_xfer_reset_page_rd[i])  // output
+            );
+
+
+
+
+        
+        end
+    endgenerate
+
+
 
     mcntrl_linear_rw #(
         .ADDRESS_NUMBER                    (ADDRESS_NUMBER),
@@ -970,7 +1178,7 @@ module  mcntrl393 #(
         .frame_start      (frame_start_chn1), // input
         .next_page        (next_page_chn1), // input
         .frame_done       (frame_done_chn1), // output
-        .frame_finished       (), // output
+        .frame_finished     (), // output
         .line_unfinished  (line_unfinished_chn1), // output[15:0] 
         .suspend          (suspend_chn1), // input
         .frame_number     (), // output[15:0] - not used for this channel

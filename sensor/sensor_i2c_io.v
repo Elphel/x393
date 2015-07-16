@@ -28,7 +28,7 @@ module  sensor_i2c_io#(
     parameter SENSI2C_CTRL_MASK =   'h7fe,
     parameter SENSI2C_CTRL =        'h0,
     parameter SENSI2C_STATUS =      'h1,
-    parameter SENSI2C_STATUS_REG =  'h30,
+    parameter SENSI2C_STATUS_REG =  'h20,
     parameter integer SENSI2C_DRIVE = 12,
     parameter SENSI2C_IBUF_LOW_PWR = "TRUE",
     parameter SENSI2C_IOSTANDARD = "DEFAULT",

@@ -122,6 +122,22 @@ module  jp_channel#(
     
     input                         page_ready_chn,     // single mclk (posedge)
     output                        next_page_chn,      // single mclk (posedge): Done with the page in the  buffer, memory controller may read more data 
+// Master(sensor)/slave(compressor) synchronization signals
+    output                        frame_start_dst,    // @mclk - trigger receive (tiledc) memory channel (it will take care of single/repetitive
+                                                      // these output either follows vsync_late (reclocks it) or generated in non-bonded mode
+                                                      // (compress from memory)
+    input [FRAME_HEIGHT_BITS-1:0] line_unfinished_src,// number of the current (unfinished ) line, in the source (sensor) channel (RELATIVE TO FRAME, NOT WINDOW?)
+    input   [LAST_FRAME_BITS-1:0] frame_number_src,   // current frame number (for multi-frame ranges) in the source (sensor) channel
+    input                         frame_done_src,     // single-cycle pulse when the full frame (window) was transferred to/from DDR3 memory 
+                                                      // frame_done_src is later than line_unfinished_src/ frame_number_src changes
+                                                      // Used withe a single-frame buffers
+     
+    input [FRAME_HEIGHT_BITS-1:0] line_unfinished_dst,// number of the current (unfinished ) line in this (compressor) channel
+    input   [LAST_FRAME_BITS-1:0] frame_number_dst,   // current frame number (for multi-frame ranges) in this (compressor channel
+    input                         frame_done_dst,     // single-cycle pulse when the full frame (window) was transferred to/from DDR3 memory
+                                                      // use as 'eot_real' in 353 
+    output                        suspend,            // suspend reading data for this channel - waiting for the source data
+
 // statistics data was not used in late nc353    
     input                         dccout,         //enable output of DC and HF components for brightness/color/focus adjustments
     input                   [2:0] hfc_sel,        // [2:0] (for autofocus) only components with both spacial frequencies higher than specified will be added
@@ -139,20 +155,6 @@ module  jp_channel#(
     input                         vsync_late,         // delayed start of frame, @xclk. In 353 it was 16 lines after VACT active
                                                       // source channel should already start, some delay give time for sequencer commands
                                                       // that should arrive before it
-    output                        frame_start_dst,    // @mclk - trigger receive (tiledc) memory channel (it will take care of single/repetitive
-                                                      // these output either follows vsync_late (reclocks it) or generated in non-bonded mode
-                                                      // (compress from memory)
-    input [FRAME_HEIGHT_BITS-1:0] line_unfinished_src,// number of the current (unfinished ) line, in the source (sensor) channel (RELATIVE TO FRAME, NOT WINDOW?)
-    input   [LAST_FRAME_BITS-1:0] frame_number_src,   // current frame number (for multi-frame ranges) in the source (sensor) channel
-    input                         frame_done_src,     // single-cycle pulse when the full frame (window) was transferred to/from DDR3 memory 
-                                                      // frame_done_src is later than line_unfinished_src/ frame_number_src changes
-                                                      // Used withe a single-frame buffers
-     
-    input [FRAME_HEIGHT_BITS-1:0] line_unfinished_dst,// number of the current (unfinished ) line in this (compressor) channel
-    input   [LAST_FRAME_BITS-1:0] frame_number_dst,   // current frame number (for multi-frame ranges) in this (compressor channel
-    input                         frame_done_dst,     // single-cycle pulse when the full frame (window) was transferred to/from DDR3 memory
-                                                      // use as 'eot_real' in 353 
-    output                        suspend,            // suspend reading data for this channel - waiting for the source data
     
     // Output interface to the AFI mux
     input                         hclk,

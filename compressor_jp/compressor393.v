@@ -27,7 +27,7 @@ module  compressor393 # (
         parameter CMPRS_AFIMUX_RADDR0=        'h40,  // relative to CMPRS_NUM_AFI_CHN ( 16 addr)
         parameter CMPRS_AFIMUX_RADDR1=        'h50,  // relative to CMPRS_NUM_AFI_CHN ( 16 addr)
         parameter CMPRS_AFIMUX_MASK=          'h7f0,
-        
+        // Ststus needs 'h10 (16) registers, currently 'h10..'h1f
         parameter CMPRS_STATUS_REG_BASE=      'h10,
         parameter CMPRS_HIFREQ_REG_BASE=      'h14, 
         parameter CMPRS_AFIMUX_REG_ADDR0=     'h18,  // Uses 4 locations
@@ -35,7 +35,6 @@ module  compressor393 # (
         
         parameter CMPRS_STATUS_REG_INC=        1,
         parameter CMPRS_HIFREQ_REG_INC=        1,
-//        parameter CMPRS_ADDR=                'h120, //TODO: assign valid address
         parameter CMPRS_MASK=                 'h7f8,
         parameter CMPRS_CONTROL_REG=           0,
         parameter CMPRS_STATUS_CNTRL=          1,
@@ -125,34 +124,29 @@ module  compressor393 # (
     output                        status_rq,   // input request to send status downstream
     input                         status_start, // Acknowledge of the first status packet byte (address)
     
-    // Buffer interfaces 
-    input                         xfer_reset_page_rd_chn0,  // from mcntrl_tiled_rw (
-    input                         buf_wpage_nxt_chn0,       // advance to next page memory interface writes to
-    input                         buf_we_chn0,              // @!mclk write buffer from memory, increment write
-    input                  [63:0] buf_din_chn0,             // data out 
-    input                         page_ready_chn0,          // single mclk (posedge)
-    output                        next_page_chn0,           // single mclk (posedge): Done with the page in the  buffer, memory controller may read more data 
+    // Buffer interfaces, combined for 4 channels 
+    input                   [3:0] xfer_reset_page_rd,  // from mcntrl_tiled_rw (
+    input                   [3:0] buf_wpage_nxt,       // advance to next page memory interface writes to
+    input                   [3:0] buf_we,              // @!mclk write buffer from memory, increment write
+    input                 [255:0] buf_din,             // data out 
+    input                   [3:0] page_ready,          // single mclk (posedge)
+    output                  [3:0] next_page,           // single mclk (posedge): Done with the page in the  buffer, memory controller may read more data 
 
-    input                         xfer_reset_page_rd_chn1,  // from mcntrl_tiled_rw (
-    input                         buf_wpage_nxt_chn1,       // advance to next page memory interface writes to
-    input                         buf_we_chn1,              // @!mclk write buffer from memory, increment write
-    input                  [63:0] buf_din_chn1,             // data out 
-    input                         page_ready_chn1,          // single mclk (posedge)
-    output                        next_page_chn1,           // single mclk (posedge): Done with the page in the  buffer, memory controller may read more data 
+    // master (sensor) with slave (compressor) synchronization I/Os
+    output                    [3:0] frame_start_dst,    // @mclk - trigger receive (tiledc) memory channel (it will take care of single/repetitive
+                                                        // these output either follows vsync_late (reclocks it) or generated in non-bonded mode
+                                                        // (compress from memory)
+    input [4*FRAME_HEIGHT_BITS-1:0] line_unfinished_src,// number of the current (unfinished ) line, in the source (sensor) channel (RELATIVE TO FRAME, NOT WINDOW?)
+    input   [4*LAST_FRAME_BITS-1:0] frame_number_src,   // current frame number (for multi-frame ranges) in the source (sensor) channel
+    input                     [3:0] frame_done_src,     // single-cycle pulse when the full frame (window) was transferred to/from DDR3 memory 
+                                                        // frame_done_src is later than line_unfinished_src/ frame_number_src changes
+                                                        // Used withe a single-frame buffers
+    input [4*FRAME_HEIGHT_BITS-1:0] line_unfinished_dst,// number of the current (unfinished ) line in this (compressor) channel
+    input   [4*LAST_FRAME_BITS-1:0] frame_number_dst,   // current frame number (for multi-frame ranges) in this (compressor channel
+    input                     [3:0]frame_done_dst,      // single-cycle pulse when the full frame (window) was transferred to/from DDR3 memory
+                                                        // use as 'eot_real' in 353 
+    output                    [3:0]suspend,             // suspend reading data for this channel - waiting for the source data
 
-    input                         xfer_reset_page_rd_chn2,  // from mcntrl_tiled_rw (
-    input                         buf_wpage_nxt_chn2,       // advance to next page memory interface writes to
-    input                         buf_we_chn2,              // @!mclk write buffer from memory, increment write
-    input                  [63:0] buf_din_chn2,             // data out 
-    input                         page_ready_chn2,          // single mclk (posedge)
-    output                        next_page_chn2,           // single mclk (posedge): Done with the page in the  buffer, memory controller may read more data 
-
-    input                         xfer_reset_page_rd_chn3,  // from mcntrl_tiled_rw (
-    input                         buf_wpage_nxt_chn3,       // advance to next page memory interface writes to
-    input                         buf_we_chn3,              // @!mclk write buffer from memory, increment write
-    input                  [63:0] buf_din_chn3,             // data out 
-    input                         page_ready_chn3,          // single mclk (posedge)
-    output                        next_page_chn3,           // single mclk (posedge): Done with the page in the  buffer, memory controller may read more data 
 
 // statistics data was not used in late nc353    
 //    input                         dccout,         //enable output of DC and HF components for brightness/color/focus adjustments
@@ -161,80 +155,18 @@ module  compressor393 # (
 //    output                 [15:0] statistics_do,
 
 // Timestamp messages (@mclk) - combine to a single ts_data?    
-    input                         ts_pre_stb_chn0,  // @mclk - 1 cycle before receiving 8 bytes of timestamp data
-    input                   [7:0] ts_data_chn0,     // timestamp data (s0,s1,s2,s3,us0,us1,us2,us3==0)
-    
-    input                         ts_pre_stb_chn1,  // @mclk - 1 cycle before receiving 8 bytes of timestamp data
-    input                   [7:0] ts_data_chn1,     // timestamp data (s0,s1,s2,s3,us0,us1,us2,us3==0)
-    
-    input                         ts_pre_stb_chn2,  // @mclk - 1 cycle before receiving 8 bytes of timestamp data
-    input                   [7:0] ts_data_chn2,     // timestamp data (s0,s1,s2,s3,us0,us1,us2,us3==0)
-    
-    input                         ts_pre_stb_chn3,  // @mclk - 1 cycle before receiving 8 bytes of timestamp data
-    input                   [7:0] ts_data_chn3,     // timestamp data (s0,s1,s2,s3,us0,us1,us2,us3==0)
+    input                   [3:0] ts_pre_stb,  // @mclk - 1 cycle before receiving 8 bytes of timestamp data
+    input                  [31:0] ts_data,     // timestamp data (s0,s1,s2,s3,us0,us1,us2,us3==0)
 
 // Outputs for interrupts generation    
-    output                        eof_written_mclk_chn0,
-    output                        stuffer_done_mclk_chn0,
-    
-    output                        eof_written_mclk_chn1,
-    output                        stuffer_done_mclk_chn1,
-    
-    output                        eof_written_mclk_chn2,
-    output                        stuffer_done_mclk_chn2,
-    
-    output                        eof_written_mclk_chn3,
-    output                        stuffer_done_mclk_chn3,
+    output                  [3:0] eof_written_mclk,
+    output                  [3:0] stuffer_done_mclk,
     
     // frame input synchronization
-    input                         vsync_late_chn0,         // delayed start of frame, @xclk. In 353 it was 16 lines after VACT active
+    input                   [3:0] vsync_late,         // delayed start of frame, @xclk. In 353 it was 16 lines after VACT active
                                                       // source channel should already start, some delay give time for sequencer commands
                                                       // that should arrive before it
-    input                         vsync_late_chn1,                                                  
-    input                         vsync_late_chn2,                                                  
-    input                         vsync_late_chn3,                                                  
     
-    // master (sensor) with slave (compressor) synchronization I/Os
-    output                        frame_start_dst_chn0,    // @mclk - trigger receive (tiledc) memory channel (it will take care of single/repetitive
-                                                           // these output either follows vsync_late (reclocks it) or generated in non-bonded mode
-                                                           // (compress from memory)
-    input [FRAME_HEIGHT_BITS-1:0] line_unfinished_src_chn0,// number of the current (unfinished ) line, in the source (sensor) channel (RELATIVE TO FRAME, NOT WINDOW?)
-    input   [LAST_FRAME_BITS-1:0] frame_number_src_chn0,   // current frame number (for multi-frame ranges) in the source (sensor) channel
-    input                         frame_done_src_chn0,     // single-cycle pulse when the full frame (window) was transferred to/from DDR3 memory 
-                                                            // frame_done_src is later than line_unfinished_src/ frame_number_src changes
-                                                           // Used withe a single-frame buffers
-    input [FRAME_HEIGHT_BITS-1:0] line_unfinished_dst_chn0,// number of the current (unfinished ) line in this (compressor) channel
-    input   [LAST_FRAME_BITS-1:0] frame_number_dst_chn0,   // current frame number (for multi-frame ranges) in this (compressor channel
-    input                         frame_done_dst_chn0,     // single-cycle pulse when the full frame (window) was transferred to/from DDR3 memory
-                                                           // use as 'eot_real' in 353 
-    output                        suspend_chn0,            // suspend reading data for this channel - waiting for the source data
-
-    output                        frame_start_dst_chn1,
-    input [FRAME_HEIGHT_BITS-1:0] line_unfinished_src_chn1,
-    input   [LAST_FRAME_BITS-1:0] frame_number_src_chn1,
-    input                         frame_done_src_chn1, 
-    input [FRAME_HEIGHT_BITS-1:0] line_unfinished_dst_chn1,
-    input   [LAST_FRAME_BITS-1:0] frame_number_dst_chn1,
-    input                         frame_done_dst_chn1,
-    output                        suspend_chn1,
-
-    output                        frame_start_dst_chn2,
-    input [FRAME_HEIGHT_BITS-1:0] line_unfinished_src_chn2,
-    input   [LAST_FRAME_BITS-1:0] frame_number_src_chn2,
-    input                         frame_done_src_chn2, 
-    input [FRAME_HEIGHT_BITS-1:0] line_unfinished_dst_chn2,
-    input   [LAST_FRAME_BITS-1:0] frame_number_dst_chn2,
-    input                         frame_done_dst_chn2,
-    output                        suspend_chn2,
-
-    output                        frame_start_dst_chn3,
-    input [FRAME_HEIGHT_BITS-1:0] line_unfinished_src_chn3,
-    input   [LAST_FRAME_BITS-1:0] frame_number_src_chn3,
-    input                         frame_done_src_chn3, 
-    input [FRAME_HEIGHT_BITS-1:0] line_unfinished_dst_chn3,
-    input   [LAST_FRAME_BITS-1:0] frame_number_dst_chn3,
-    input                         frame_done_dst_chn3,
-    output                        suspend_chn3,
     // AXI_HP inteface (single/dual). afi indices - relative (0,1) may actually be connected to 1,2 (or only to 1)
     input                         hclk,
     
@@ -301,38 +233,6 @@ module  compressor393 # (
     wire    [5:0] status_rq_mux;
     wire    [5:0] status_start_mux;
 
-    wire    [3:0] xfer_reset_page_rd = {xfer_reset_page_rd_chn3, xfer_reset_page_rd_chn2, xfer_reset_page_rd_chn1, xfer_reset_page_rd_chn0};
-    wire    [3:0] buf_wpage_nxt =      {buf_wpage_nxt_chn3,      buf_wpage_nxt_chn2,      buf_wpage_nxt_chn1,      buf_wpage_nxt_chn0};
-    wire    [3:0] buf_we =             {buf_we_chn3,             buf_we_chn2,             buf_we_chn1,             buf_we_chn0};
-    wire  [255:0] buf_din =            {buf_din_chn3,            buf_din_chn2,            buf_din_chn1,            buf_din_chn0}; 
-    wire    [3:0] page_ready =         {page_ready_chn3,         page_ready_chn2,         page_ready_chn1,         page_ready_chn0};
-    wire    [3:0] next_page;
-    assign {next_page_chn3, next_page_chn2, next_page_chn1, next_page_chn0} = next_page;
-    
-   // Timestamp messages (@mclk) - combine to a single ts_data?    
-    wire    [3:0] ts_pre_stb =         {ts_pre_stb_chn3,         ts_pre_stb_chn2,         ts_pre_stb_chn1,         ts_pre_stb_chn0};
-    wire   [31:0] ts_data =            {ts_data_chn3,            ts_data_chn2,            ts_data_chn1,            ts_data_chn0};
-
-// Outputs for interrupts generation    
-    wire    [3:0] eof_written_mclk;
-    wire    [3:0] stuffer_done_mclk;
-    assign {eof_written_mclk_chn3,  eof_written_mclk_chn2,  eof_written_mclk_chn1,  eof_written_mclk_chn0} =  eof_written_mclk;
-    assign {stuffer_done_mclk_chn3, stuffer_done_mclk_chn2, stuffer_done_mclk_chn1, stuffer_done_mclk_chn0} = stuffer_done_mclk;
-    // frame input synchronization
-    wire    [3:0] vsync_late =         {vsync_late_chn3,         vsync_late_chn2,         vsync_late_chn1,         vsync_late_chn0}; 
-
-    // master (sensor) with slave (compressor) synchronization I/Os
-    wire                     [3:0] frame_start_dst;
-    assign  {frame_start_dst_chn3, frame_start_dst_chn2, frame_start_dst_chn1, frame_start_dst_chn0} = frame_start_dst;
-    wire [4*FRAME_HEIGHT_BITS-1:0] line_unfinished_src = {line_unfinished_src_chn3, line_unfinished_src_chn2, line_unfinished_src_chn1, line_unfinished_src_chn0};
-    wire   [4*LAST_FRAME_BITS-1:0] frame_number_src =    {frame_number_src_chn3,    frame_number_src_chn2,    frame_number_src_chn1,    frame_number_src_chn0};
-    wire                     [3:0] frame_done_src =      {frame_done_src_chn3,      frame_done_src_chn2,      frame_done_src_chn1,      frame_done_src_chn0}; 
-    wire [4*FRAME_HEIGHT_BITS-1:0] line_unfinished_dst = {line_unfinished_dst_chn3, line_unfinished_dst_chn2, line_unfinished_dst_chn1, line_unfinished_dst_chn0};
-    wire   [4*LAST_FRAME_BITS-1:0] frame_number_dst =    {frame_number_dst_chn3,    frame_number_dst_chn2,    frame_number_dst_chn1,    frame_number_dst_chn0};
-    wire                     [3:0] frame_done_dst =      {frame_done_dst_chn3,      frame_done_dst_chn2,      frame_done_dst_chn1,      frame_done_dst_chn0};
-    wire                     [3:0] suspend;
-    assign {suspend_chn3, suspend_chn2, suspend_chn1, suspend_chn0} = suspend;
-    
     // signals to connect to AFI multiplexers
     wire    [3:0] fifo_rst;
     wire    [3:0] fifo_ren;
@@ -469,6 +369,16 @@ module  compressor393 # (
                 .buf_din                              (buf_din[64 * i +: 64]),     // input[63:0] 
                 .page_ready_chn                       (page_ready[i]),             // input
                 .next_page_chn                        (next_page[i]),              // output
+                
+                .frame_start_dst                      (frame_start_dst[i]),        // output
+                .line_unfinished_src                  (line_unfinished_src[FRAME_HEIGHT_BITS * i +: FRAME_HEIGHT_BITS]), // input[15:0] 
+                .frame_number_src                     (frame_number_src[LAST_FRAME_BITS * i +: LAST_FRAME_BITS]), // input[15:0] 
+                .frame_done_src                       (frame_done_src[i]),         // input
+                .line_unfinished_dst                  (line_unfinished_dst[FRAME_HEIGHT_BITS * i +: FRAME_HEIGHT_BITS]), // input[15:0] 
+                .frame_number_dst                     (frame_number_dst[LAST_FRAME_BITS * i +: LAST_FRAME_BITS]), // input[15:0] 
+                .frame_done_dst                       (frame_done_dst[i]),         // input
+                .suspend                              (suspend[i]),                // output
+                
                 .dccout                               (1'b0), // input
                 .hfc_sel                              (3'b0), // input[2:0] 
                 .statistics_dv                        (), // output
@@ -478,14 +388,6 @@ module  compressor393 # (
                 .eof_written_mclk                     (eof_written_mclk[i]),       // output
                 .stuffer_done_mclk                    (stuffer_done_mclk[i]),      // output
                 .vsync_late                           (vsync_late[i]),             // input
-                .frame_start_dst                      (frame_start_dst[i]),        // output
-                .line_unfinished_src                  (line_unfinished_src[FRAME_HEIGHT_BITS * i +: FRAME_HEIGHT_BITS]), // input[15:0] 
-                .frame_number_src                     (frame_number_src[LAST_FRAME_BITS * i +: LAST_FRAME_BITS]), // input[15:0] 
-                .frame_done_src                       (frame_done_src[i]),         // input
-                .line_unfinished_dst                  (line_unfinished_dst[FRAME_HEIGHT_BITS * i +: FRAME_HEIGHT_BITS]), // input[15:0] 
-                .frame_number_dst                     (frame_number_dst[LAST_FRAME_BITS * i +: LAST_FRAME_BITS]), // input[15:0] 
-                .frame_done_dst                       (frame_done_dst[i]),         // input
-                .suspend                              (suspend[i]),                // output
                 
                 .hclk                                 (hclk),                      // input
                 .fifo_rst                             (fifo_rst[i]),               // input

@@ -299,10 +299,10 @@
     parameter HIST_SAXI_MODE_ADDR_REL =    'h110, // histograms mode address (1 locatios) relative to SENSOR_GROUP_ADDR
     
     
-    parameter SENSI2C_STATUS_REG_BASE =   'h30,  // 4 locations" x30, x32, x34, x36
+    parameter SENSI2C_STATUS_REG_BASE =   'h20,  // 4 locations" x20, x22, x24, x26
     parameter SENSI2C_STATUS_REG_INC =    2,     // increment to the next sensor
-    parameter SENSI2C_STATUS_REG_REL =    0,     // 4 locations" 'h30, 'h32, 'h34, 'h36
-    parameter SENSIO_STATUS_REG_REL =     1,     // 4 locations" 'h31, 'h33, 'h35, 'h37
+    parameter SENSI2C_STATUS_REG_REL =    0,     // 4 locations" 'h20, 'h22, 'h24, 'h26
+    parameter SENSIO_STATUS_REG_REL =     1,     // 4 locations" 'h21, 'h23, 'h25, 'h27
     parameter SENSOR_NUM_HISTOGRAM=       3,     // number of histogram channels
     parameter HISTOGRAM_RAM_MODE =        "NOBUF", // valid: "NOBUF" (32-bits, no buffering), "BUF18", "BUF32"
     parameter SENS_GAMMA_NUM_CHN =        3,     // number of subchannels for his sensor ports (1..4)
@@ -439,6 +439,94 @@
     parameter SENS_REF_JITTER2   =       0.010,
     parameter SENS_SS_EN         =       "FALSE",      // Enables Spread Spectrum mode
     parameter SENS_SS_MODE       =       "CENTER_HIGH",//"CENTER_HIGH","CENTER_LOW","DOWN_HIGH","DOWN_LOW"
-    parameter SENS_SS_MOD_PERIOD =       10000        // integer 4000-40000 - SS modulation period in ns
+    parameter SENS_SS_MOD_PERIOD =       10000,        // integer 4000-40000 - SS modulation period in ns
     
+    parameter CMPRS_NUM_AFI_CHN =         2, // 1 - multiplex all 4 compressors to a single AXI_HP, 2 - split between to AXI_HP
+    parameter CMPRS_GROUP_ADDR =          'h600, // total of 'h60
+    parameter CMPRS_BASE_INC =            'h10,
+    parameter CMPRS_AFIMUX_RADDR0=        'h40,  // relative to CMPRS_NUM_AFI_CHN ( 16 addr)
+    parameter CMPRS_AFIMUX_RADDR1=        'h50,  // relative to CMPRS_NUM_AFI_CHN ( 16 addr)
+    parameter CMPRS_AFIMUX_MASK=          'h7f0,
+    
+    parameter CMPRS_STATUS_REG_BASE=      'h10,
+    parameter CMPRS_HIFREQ_REG_BASE=      'h14, 
+    parameter CMPRS_AFIMUX_REG_ADDR0=     'h18,  // Uses 4 locations
+    parameter CMPRS_AFIMUX_REG_ADDR1=     'h1c,  // Uses 4 locations
+    
+    parameter CMPRS_STATUS_REG_INC=        1,
+    parameter CMPRS_HIFREQ_REG_INC=        1,
+    parameter CMPRS_MASK=                 'h7f8,
+    parameter CMPRS_CONTROL_REG=           0,
+    parameter CMPRS_STATUS_CNTRL=          1,
+    parameter CMPRS_FORMAT=                2,
+    parameter CMPRS_COLOR_SATURATION=      3,
+    parameter CMPRS_CORING_MODE=           4,
+    parameter CMPRS_TABLES=                6, // 6..7
+
+    // Bit-fields in compressor control word
+    parameter CMPRS_CBIT_RUN =             2, // bit # to control compressor run modes
+    parameter CMPRS_CBIT_RUN_BITS =        2, // number of bits to control compressor run modes
+    parameter CMPRS_CBIT_QBANK =           6, // bit # to control quantization table page
+    parameter CMPRS_CBIT_QBANK_BITS =      3, // number of bits to control quantization table page
+    parameter CMPRS_CBIT_DCSUB =           8, // bit # to control extracting DC components bypassing DCT
+    parameter CMPRS_CBIT_DCSUB_BITS =      1, // bit # to control extracting DC components bypassing DCT
+    parameter CMPRS_CBIT_CMODE =          13, // bit # to control compressor color modes
+    parameter CMPRS_CBIT_CMODE_BITS =      4, // number of bits to control compressor color modes
+    parameter CMPRS_CBIT_FRAMES =         15, // bit # to control compressor multi/single frame buffer modes
+    parameter CMPRS_CBIT_FRAMES_BITS =     1, // number of bits to control compressor multi/single frame buffer modes
+    parameter CMPRS_CBIT_BAYER =          20, // bit # to control compressor Bayer shift mode
+    parameter CMPRS_CBIT_BAYER_BITS =      2, // number of bits to control compressor Bayer shift mode
+    parameter CMPRS_CBIT_FOCUS =          23, // bit # to control compressor focus display mode
+    parameter CMPRS_CBIT_FOCUS_BITS =      2, // number of bits to control compressor focus display mode
+    // compressor bit-fields decode
+    parameter CMPRS_CBIT_RUN_RST =         2'h0, // reset compressor, stop immediately
+//      parameter CMPRS_CBIT_RUN_DISABLE =     2'h1, // disable compression of the new frames, finish any already started
+    parameter CMPRS_CBIT_RUN_STANDALONE =  2'h2, // enable compressor, compress single frame from memory (async)
+    parameter CMPRS_CBIT_RUN_ENABLE =      2'h3, // enable compressor, enable synchronous compression mode
+    parameter CMPRS_CBIT_CMODE_JPEG18 =    4'h0, // color 4:2:0
+    parameter CMPRS_CBIT_CMODE_MONO6 =     4'h1, // mono 4:2:0 (6 blocks)
+    parameter CMPRS_CBIT_CMODE_JP46 =      4'h2, // jp4, 6 blocks, original
+    parameter CMPRS_CBIT_CMODE_JP46DC =    4'h3, // jp4, 6 blocks, dc -improved
+    parameter CMPRS_CBIT_CMODE_JPEG20 =    4'h4, // mono, 4 blocks (but still not actual monochrome JPEG as the blocks are scanned in 2x2 macroblocks)
+    parameter CMPRS_CBIT_CMODE_JP4 =       4'h5, // jp4,  4 blocks, dc-improved
+    parameter CMPRS_CBIT_CMODE_JP4DC =     4'h6, // jp4,  4 blocks, dc-improved
+    parameter CMPRS_CBIT_CMODE_JP4DIFF =   4'h7, // jp4,  4 blocks, differential
+    parameter CMPRS_CBIT_CMODE_JP4DIFFHDR =  4'h8, // jp4,  4 blocks, differential, hdr
+    parameter CMPRS_CBIT_CMODE_JP4DIFFDIV2 = 4'h9, // jp4,  4 blocks, differential, divide by 2
+    parameter CMPRS_CBIT_CMODE_JP4DIFFHDRDIV2 = 4'ha, // jp4,  4 blocks, differential, hdr,divide by 2
+    parameter CMPRS_CBIT_CMODE_MONO1 =     4'hb, // mono JPEG (not yet implemented)
+    parameter CMPRS_CBIT_CMODE_MONO4 =     4'he, // mono 4 blocks
+    parameter CMPRS_CBIT_FRAMES_SINGLE =   0, //1, // use a single-frame buffer for images
+
+    parameter CMPRS_COLOR18 =              0, // JPEG 4:2:0 with 18x18 overlapping tiles for de-bayer
+    parameter CMPRS_COLOR20 =              1, // JPEG 4:2:0 with 18x18 overlapping tiles for de-bayer (not implemented)
+    parameter CMPRS_MONO16 =               2, // JPEG 4:2:0 with 16x16 non-overlapping tiles, color components zeroed
+    parameter CMPRS_JP4 =                  3, // JP4 mode with 16x16 macroblocks
+    parameter CMPRS_JP4DIFF =              4, // JP4DIFF mode TODO: see if correct
+    parameter CMPRS_MONO8 =                7,  // Regular JPEG monochrome with 8x8 macroblocks (not yet implemented)
+    
+    parameter CMPRS_FRMT_MBCM1 =           0, // bit # of number of macroblock columns minus 1 field in format word
+    parameter CMPRS_FRMT_MBCM1_BITS =     13, // number of bits in number of macroblock columns minus 1 field in format word
+    parameter CMPRS_FRMT_MBRM1 =          13, // bit # of number of macroblock rows minus 1 field in format word
+    parameter CMPRS_FRMT_MBRM1_BITS =     13, // number of bits in number of macroblock rows minus 1 field in format word
+    parameter CMPRS_FRMT_LMARG =          26, // bit # of left margin field in format word
+    parameter CMPRS_FRMT_LMARG_BITS =      5, // number of bits in left margin field in format word
+    parameter CMPRS_CSAT_CB =              0, // bit # of number of blue scale field in color saturation word
+    parameter CMPRS_CSAT_CB_BITS =        10, // number of bits in blue scale field in color saturation word
+    parameter CMPRS_CSAT_CR =             12, // bit # of number of red scale field in color saturation word
+    parameter CMPRS_CSAT_CR_BITS =        10, // number of bits in red scale field in color saturation word
+    parameter CMPRS_CORING_BITS =          3,  // number of bits in coring mode
+    
+    parameter CMPRS_TIMEOUT_BITS=         12,
+    parameter CMPRS_TIMEOUT=            1000,   // mclk cycles
+    
+    parameter CMPRS_AFIMUX_EN=            'h0, // enables (gl;obal and per-channel)
+    parameter CMPRS_AFIMUX_RST=           'h1, // per-channel resets
+    parameter CMPRS_AFIMUX_MODE=          'h2, // per-channel select - which register to return as status
+    parameter CMPRS_AFIMUX_STATUS_CNTRL=  'h4, // .. 'h7
+    parameter CMPRS_AFIMUX_SA_LEN=        'h8, // .. 'hf
+
+    parameter CMPRS_AFIMUX_WIDTH =         26, // maximal for status: currently only works with 26)
+    parameter CMPRS_AFIMUX_CYCBITS =        3,
+    parameter AFI_MUX_BUF_LATENCY =         2  // buffers read latency from fifo_ren* to fifo_rdata* valid : 2 if no register layers are used
     

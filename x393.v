@@ -186,9 +186,20 @@ module  x393 #(
    reg            readback_selected_regen;
    reg            mcntrl_axird_selected_regen; // mcntrl_axird_selected (set at axird_start_burst) delayed when ren is active, then when regen (normally 2 cycles)
 
+   // global clocks
    wire           mclk; // global clock, memory controller, command/status network (currently 200MHz)
    wire           ref_clk; // global clock for idelay_ctrl calibration
    wire           hclk; // global clock, axi_hp (150MHz) derived from aclk_in = 50MHz
+   
+    // sensor pixel rate clock likely to originate from the external clock
+   wire           pclk;   // global clock, sensor pixel rate (96 MHz)
+   wire           pclk2x; // global clock, sensor double pixel rate (192 MHz)
+   
+   // compressor pixel rate can be adjusted independently
+   wire           xclk;   // global clock, compressor pixel rate (100 MHz)?
+   wire           xclk2x; // global clock, compressor double pixel rate (200 MHz)
+   
+   
 
    wire [11:0] tmp_debug; 
    
@@ -345,26 +356,10 @@ module  x393 #(
     wire                 [63:0] gpio_in;
     
     // signals for sensor393 (in/outs as sseen for the sensor393)
-    wire                        rpage_set0; //         (), // input
-    wire                        rpage_next0; //        (), // input
-    wire                        buf_rd0; //            (), // input
-    wire                 [63:0] buf_dout0; //          (), // output[63:0] 
-        
-    wire                        rpage_set1; //         (), // input
-    wire                        rpage_next1; //        (), // input
-    wire                        buf_rd1; //            (), // input
-    wire                 [63:0] buf_dout1; //          (), // output[63:0] 
-        
-    wire                        rpage_set2; //         (), // input
-    wire                        rpage_next2; //        (), // input
-    wire                        buf_rd2; //            (), // input
-    wire                 [63:0] buf_dout2; //          (), // output[63:0] 
-        
-    wire                        rpage_set3; //         (), // input
-    wire                        rpage_next3; //        (), // input
-    wire                        buf_rd3; //            (), // input
-    wire                 [63:0] buf_dout3; //          (), // output[63:0] 
-        
+    wire                  [3:0] sens_rpage_set;  //    (), // input
+    wire                  [3:0] sens_rpage_next; //    (), // input
+    wire                  [3:0] sens_buf_rd;     //    (), // input
+    wire                [255:0] sens_buf_dout;   //    (), // output[63:0] 
         
     wire                        trigger_mode; //       (), // input
     wire                  [3:0] trig_in;                  // input[3:0] 
@@ -379,9 +374,41 @@ module  x393 #(
     wire [NUM_FRAME_BITS - 1:0] frame_num2; //         (), // input[3:0] 
     wire [NUM_FRAME_BITS - 1:0] frame_num3; //         (), // input[3:0] 
     
+    // signals for compressor393 (in/outs as seen for the sensor393)
+    // per-channel memory buffers interface
 
+    wire   [3:0] cmprs_xfer_reset_page_rd;  // input
+    wire   [3:0] cmprs_buf_wpage_nxt;       // input
+    wire   [3:0] cmprs_buf_we;              // input
+    wire [255:0] cmprs_buf_din;             // input[63:0] 
+    wire   [3:0] cmprs_page_ready;          // input
+    wire   [3:0] cmprs_next_page;           // output
 
+// per-channel master (sesnor)/slave (compressor) synchronization (compressor wait until sesnor provided data)
+    wire                     [3:0] cmprs_frame_start_dst; // output - trigger receive (tiledc) memory channel (it will take care of single/repetitive
+                                                          // these output either follows vsync_late (reclocks it) or generated in non-bonded mode
+                                                          // (compress from memory)
+    wire [4*FRAME_HEIGHT_BITS-1:0] cmprs_line_unfinished_src; // input[15:0] number of the current (unfinished ) line, in the source (sensor)
+                                                          //  channel (RELATIVE TO FRAME, NOT WINDOW?)
+    wire   [4*LAST_FRAME_BITS-1:0] cmprs_frame_number_src;// input[15:0] current frame number (for multi-frame ranges) in the source (sensor) channel
+    wire                     [3:0] cmprs_frame_done_src;  // input single-cycle pulse when the full frame (window) was transferred to/from DDR3 memory 
+                                                          // frame_done_src is later than line_unfinished_src/ frame_number_src changes
+                                                          // Used withe a single-frame buffers
+    wire [4*FRAME_HEIGHT_BITS-1:0] cmprs_line_unfinished_dst; // input[15:0] number of the current (unfinished ) line in this (compressor) channel
+    wire   [4*LAST_FRAME_BITS-1:0] cmprs_frame_number_dst; // input[15:0] current frame number (for multi-frame ranges) in this (compressor channel
+    wire                     [3:0] cmprs_frame_done_dst;   // input single-cycle pulse when the full frame (window) was transferred to/from DDR3 memory
+                                                           // use as 'eot_real' in 353 
+    wire                     [3:0] cmprs_suspend;          // output suspend reading data for this channel - waiting for the source data
 
+// Timestamp messages (@mclk) - combine to a single ts_data?    
+   wire                      [3:0] ts_pre_stb; // input
+   wire                     [31:0] ts_data;    // input[7:0] 
+   
+// Compressor signals for interrupts generation    
+   wire                      [3:0] eof_written_mclk;  // output
+   wire                      [3:0] stuffer_done_mclk; // output
+// Compressor frame synchronization
+   wire                      [3:0] vsync_late; // input
     
     
     assign gpio_in= {48'h0,frst,tmp_debug};
@@ -771,6 +798,15 @@ BUFG bufg_axi_aclk_i  (.O(axi_aclk),.I(fclk[0]));
 
     /* Instance template for module mcntrl393 */
     mcntrl393 #(
+        .MCONTR_SENS_BASE('h680),
+        .MCONTR_SENS_INC('h10),
+        .MCONTR_CMPRS_BASE('h6c0),
+        .MCONTR_CMPRS_INC('h10),
+        .MCONTR_SENS_STATUS_BASE('h28),
+        .MCONTR_SENS_STATUS_INC('h1),
+        .MCONTR_CMPRS_STATUS_BASE('h2c),
+        .MCONTR_CMPRS_STATUS_INC('h1),
+    
         .MCONTR_WR_MASK                    (MCONTR_WR_MASK),
         .MCONTR_RD_MASK                    (MCONTR_RD_MASK),
         .MCONTR_CMD_WR_ADDR                (MCONTR_CMD_WR_ADDR),
@@ -900,89 +936,113 @@ BUFG bufg_axi_aclk_i  (.O(axi_aclk),.I(fclk[0]));
         .RSEL                              (RSEL),
         .WSEL                              (WSEL)
     ) mcntrl393_i (
-        .rst_in               (axi_rst), // input
-        .clk_in               (axi_aclk), // == axird_bram_rclk SuppressThisWarning VivadoSynthesis: [Synth 8-3295] tying undriven pin #mcntrl393_i:clk_in to constant 0
-        .mclk                 (mclk), // output
-        .ref_clk              (ref_clk), // output
-        .cmd_ad               (cmd_mcontr_ad), // input[7:0] 
-        .cmd_stb              (cmd_mcontr_stb), // input
-        .status_ad            (status_mcontr_ad[7:0]), // output[7:0]
-        .status_rq            (status_mcontr_rq),   // input request to send status downstream
-        .status_start         (status_mcontr_start), // Acknowledge of the first status packet byte (address)
+        .rst_in                    (axi_rst), // input
+        .clk_in                    (axi_aclk), // == axird_bram_rclk SuppressThisWarning VivadoSynthesis: [Synth 8-3295] tying undriven pin #mcntrl393_i:clk_in to constant 0
+        .mclk                      (mclk), // output
+        .ref_clk                   (ref_clk), // output
+        .cmd_ad                    (cmd_mcontr_ad), // input[7:0] 
+        .cmd_stb                   (cmd_mcontr_stb), // input
+        .status_ad                 (status_mcontr_ad[7:0]), // output[7:0]
+        .status_rq                 (status_mcontr_rq),   // input request to send status downstream
+        .status_start              (status_mcontr_start), // Acknowledge of the first status packet byte (address)
         
-        .axi_clk              (axird_bram_rclk), // ==axi_aclk, // input - same?
-        .axiwr_pre_awaddr     (axiwr_pre_awaddr), // input[12:0] // SuppressThisWarning VivadoSynthesis: [Synth 8-3295] tying undriven pin #mcntrl393_i:axiwr_pre_awaddr[9:0] to constant 0
-        .axiwr_start_burst    (axiwr_start_burst), // input
-        .axiwr_waddr          (axiwr_waddr[BUFFER_DEPTH32-1:0]), // input[9:0] 
-        .axiwr_wen            (axiwr_wen), // input
-        .axiwr_data           (axiwr_wdata), // input[31:0] 
+        .axi_clk                   (axird_bram_rclk), // ==axi_aclk, // input - same?
+        .axiwr_pre_awaddr          (axiwr_pre_awaddr), // input[12:0] // SuppressThisWarning VivadoSynthesis: [Synth 8-3295] tying undriven pin #mcntrl393_i:axiwr_pre_awaddr[9:0] to constant 0
+        .axiwr_start_burst         (axiwr_start_burst), // input
+        .axiwr_waddr               (axiwr_waddr[BUFFER_DEPTH32-1:0]), // input[9:0] 
+        .axiwr_wen                 (axiwr_wen), // input
+        .axiwr_data                (axiwr_wdata), // input[31:0] 
         
-        .axird_pre_araddr     (axird_pre_araddr), // input[12:0] // SuppressThisWarning VivadoSynthesis: [Synth 8-3295] tying undriven pin #mcntrl393_i:axird_pre_araddr[9:0] to constant 0 (seems to be unused, not undriven) 
-        .axird_start_burst    (axird_start_burst), // input
-        .axird_raddr          (axird_raddr[BUFFER_DEPTH32-1:0]), // input[9:0] 
-        .axird_ren            (axird_ren), // input
-        .axird_regen          (axird_regen), // input
-        .axird_rdata          (mcntrl_axird_rdata), // output[31:0]
-        .axird_selected       (mcntrl_axird_selected), // output 
- //TODO:        
-        .frame_start_chn1     (frame_start_chn1), // input
-        .next_page_chn1       (next_page_chn1), // input
-        .cmd_wrmem_chn1       (cmd_wrmem_chn1), // output
-        .page_ready_chn1      (page_ready_chn1), // output
-        .frame_done_chn1      (frame_done_chn1), // output
-        .line_unfinished_chn1 (line_unfinished_chn1), // output[15:0]
-        .suspend_chn1         (suspend_chn1), // input
-        .xfer_reset_page1_rd  (xfer_reset_page1_rd), // output
-        .buf_wpage_nxt_chn1   (buf_wpage_nxt_chn1), // output
-        .buf_wr_chn1          (buf_wr_chn1), // output
-        .buf_wdata_chn1       (buf_wdata_chn1[63:0]), // output[63:0] 
-        .xfer_reset_page1_wr  (xfer_reset_page1_wr), // output
-        .rpage_nxt_chn1       (rpage_nxt_chn1), // output
-        .buf_rd_chn1          (buf_rd_chn1), // output
-        .buf_rdata_chn1       (buf_rdata_chn1[63:0]), // input[63:0] 
-        
-        .frame_start_chn2     (frame_start_chn2), // input
-        .next_page_chn2       (next_page_chn2), // input
-        .page_ready_chn2      (page_ready_chn2), // output
-        .frame_done_chn2      (frame_done_chn2), // output
-        .line_unfinished_chn2 (line_unfinished_chn2), // output[15:0]
-        .frame_number_chn2    (frame_number_chn2), // output[15:0]  
-        .suspend_chn2         (suspend_chn2), // input
-        
-        .frame_start_chn3     (frame_start_chn3), // input
-        .next_page_chn3       (next_page_chn3), // input
-        .page_ready_chn3      (page_ready_chn3), // output
-        .frame_done_chn3      (frame_done_chn3), // output
-        .line_unfinished_chn3 (line_unfinished_chn3), // output[15:0] 
-        .frame_number_chn3    (frame_number_chn3), // output[15:0]  
-        .suspend_chn3         (suspend_chn3), // input
-        
-        .frame_start_chn4     (frame_start_chn4), // input
-        .next_page_chn4       (next_page_chn4), // input
-        .page_ready_chn4      (page_ready_chn4), // output
-        .frame_done_chn4      (frame_done_chn4), // output
-        .line_unfinished_chn4 (line_unfinished_chn4), // output[15:0]
-        .frame_number_chn4    (frame_number_chn4), // output[15:0]  
-        .suspend_chn4         (suspend_chn4), // input
+        .axird_pre_araddr          (axird_pre_araddr), // input[12:0] // SuppressThisWarning VivadoSynthesis: [Synth 8-3295] tying undriven pin #mcntrl393_i:axird_pre_araddr[9:0] to constant 0 (seems to be unused, not undriven) 
+        .axird_start_burst         (axird_start_burst), // input
+        .axird_raddr               (axird_raddr[BUFFER_DEPTH32-1:0]), // input[9:0] 
+        .axird_ren                 (axird_ren), // input
+        .axird_regen               (axird_regen), // input
+        .axird_rdata               (mcntrl_axird_rdata), // output[31:0]
+        .axird_selected            (mcntrl_axird_selected), // output 
 
-        .SDRST                (SDRST), // output
-        .SDCLK                (SDCLK), // output
-        .SDNCLK               (SDNCLK), // output
-        .SDA                  (SDA), // output[14:0] 
-        .SDBA                 (SDBA), // output[2:0] 
-        .SDWE                 (SDWE), // output
-        .SDRAS                (SDRAS), // output
-        .SDCAS                (SDCAS), // output
-        .SDCKE                (SDCKE), // output
-        .SDODT                (SDODT), // output
-        .SDD                  (SDD), // inout[15:0] 
-        .SDDML                (SDDML), // output
-        .DQSL                 (DQSL), // inout
-        .NDQSL                (NDQSL), // inout
-        .SDDMU                (SDDMU), // output
-        .DQSU                 (DQSU), // inout
-        .NDQSU                (NDQSU), // inout
-        .tmp_debug            (tmp_debug) // output[11:0] 
+// sensors interface
+        .sens_rpage_set            (sens_rpage_set),             // output[3:0] 
+        .sens_rpage_next           (sens_rpage_next),            // output[3:0] 
+        .sens_buf_rd               (sens_buf_rd),                // output[3:0] 
+        .sens_buf_dout             (sens_buf_dout),              // input[255:0] 
+
+
+// compressor interface
+        .cmprs_xfer_reset_page_rd  (cmprs_xfer_reset_page_rd),   // output[3:0] 
+        .cmprs_buf_wpage_nxt       (cmprs_buf_wpage_nxt),        // output[3:0] 
+        .cmprs_buf_we              (cmprs_buf_we),               // output[3:0] 
+        .cmprs_buf_din             (cmprs_buf_din),              // output[255:0] 
+        .cmprs_page_ready          (cmprs_page_ready),           // output[3:0] 
+        .cmprs_next_page           (cmprs_next_page),            // input[3:0] 
+        .cmprs_frame_start_dst     (cmprs_frame_start_dst),      // input[3:0] 
+        .cmprs_line_unfinished_src (cmprs_line_unfinished_src),  // output[63:0] 
+        .cmprs_frame_number_src    (cmprs_frame_number_src),     // output[63:0] 
+        .cmprs_frame_done_src      (cmprs_frame_done_src),       // output[3:0] 
+        .cmprs_line_unfinished_dst (cmprs_line_unfinished_dst),  // output[63:0] 
+        .cmprs_frame_number_dst    (cmprs_frame_number_dst),     // output[63:0] 
+        .cmprs_frame_done_dst      (cmprs_frame_done_dst),       // output[3:0] 
+        .cmprs_suspend             (cmprs_suspend),              // input[3:0] 
+        
+ // Originally implemented channels, some are just for testing and may be replaced        
+        .frame_start_chn1          (frame_start_chn1),           // input
+        .next_page_chn1            (next_page_chn1),             // input
+        .cmd_wrmem_chn1            (cmd_wrmem_chn1),             // output
+        .page_ready_chn1           (page_ready_chn1),            // output
+        .frame_done_chn1           (frame_done_chn1),            // output
+        .line_unfinished_chn1      (line_unfinished_chn1),       // output[15:0]
+        .suspend_chn1              (suspend_chn1),               // input
+        .xfer_reset_page1_rd       (xfer_reset_page1_rd),        // output
+        .buf_wpage_nxt_chn1        (buf_wpage_nxt_chn1),         // output
+        .buf_wr_chn1               (buf_wr_chn1),                // output
+        .buf_wdata_chn1            (buf_wdata_chn1[63:0]),       // output[63:0] 
+        .xfer_reset_page1_wr       (xfer_reset_page1_wr),        // output
+        .rpage_nxt_chn1            (rpage_nxt_chn1),             // output
+        .buf_rd_chn1               (buf_rd_chn1),                // output
+        .buf_rdata_chn1            (buf_rdata_chn1[63:0]),       // input[63:0] 
+        
+        .frame_start_chn2          (frame_start_chn2),           // input
+        .next_page_chn2            (next_page_chn2),             // input
+        .page_ready_chn2           (page_ready_chn2),            // output
+        .frame_done_chn2           (frame_done_chn2),            // output
+        .line_unfinished_chn2      (line_unfinished_chn2),       // output[15:0]
+        .frame_number_chn2         (frame_number_chn2),          // output[15:0]  
+        .suspend_chn2              (suspend_chn2),               // input
+        
+        .frame_start_chn3          (frame_start_chn3),           // input
+        .next_page_chn3            (next_page_chn3),             // input
+        .page_ready_chn3           (page_ready_chn3),            // output
+        .frame_done_chn3           (frame_done_chn3),            // output
+        .line_unfinished_chn3      (line_unfinished_chn3),       // output[15:0] 
+        .frame_number_chn3         (frame_number_chn3),          // output[15:0]  
+        .suspend_chn3              (suspend_chn3),               // input
+        
+        .frame_start_chn4          (frame_start_chn4),           // input
+        .next_page_chn4            (next_page_chn4),             // input
+        .page_ready_chn4           (page_ready_chn4),            // output
+        .frame_done_chn4           (frame_done_chn4),            // output
+        .line_unfinished_chn4      (line_unfinished_chn4),       // output[15:0]
+        .frame_number_chn4         (frame_number_chn4),          // output[15:0]  
+        .suspend_chn4              (suspend_chn4),               // input
+
+        .SDRST                     (SDRST),                      // output
+        .SDCLK                     (SDCLK),                      // output
+        .SDNCLK                    (SDNCLK),                     // output
+        .SDA                       (SDA),                        // output[14:0] 
+        .SDBA                      (SDBA),                       // output[2:0] 
+        .SDWE                      (SDWE),                       // output
+        .SDRAS                     (SDRAS),                      // output
+        .SDCAS                     (SDCAS),                      // output
+        .SDCKE                     (SDCKE),                      // output
+        .SDODT                     (SDODT),                      // output
+        .SDD                       (SDD),                        // inout[15:0] 
+        .SDDML                     (SDDML),                      // output
+        .DQSL                      (DQSL),                       // inout
+        .NDQSL                     (NDQSL),                      // inout
+        .SDDMU                     (SDDMU),                      // output
+        .DQSU                      (DQSU),                       // inout
+        .NDQSU                     (NDQSU),                      // inout
+        .tmp_debug                 (tmp_debug)                   // output[11:0] 
     );
     // AFI0 (AXI_HP0) signals
     wire [31:0] afi0_awaddr;   // output[31:0]
@@ -1254,8 +1314,8 @@ BUFG bufg_axi_aclk_i  (.O(axi_aclk),.I(fclk[0]));
         .SENS_SS_MOD_PERIOD         (SENS_SS_MOD_PERIOD)
     ) sensors393_i (
         .rst                (axi_rst),             // input
-        .pclk             (),                      //  input
-        .pclk2x           (),                      // input
+        .pclk               (pclk),                //  input
+        .pclk2x             (pclk2x),              // input
         .ref_clk            (ref_clk),             // input
         .dly_rst            (axi_rst),             // input
         .mclk               (mclk),                // input
@@ -1300,25 +1360,10 @@ BUFG bufg_axi_aclk_i  (.O(axi_aclk),.I(fclk[0]));
         .sns4_ctl           (sns4_ctl),            // inout
         .sns4_pg            (sns4_pg),             // inout
 
-        .rpage_set0         (rpage_set0),          // input
-        .rpage_next0        (rpage_next0),         // input
-        .buf_rd0            (buf_rd0),             // input
-        .buf_dout0          (buf_dout0),           // output[63:0] 
-        
-        .rpage_set1         (rpage_set1),          // input
-        .rpage_next1        (rpage_next1),         // input
-        .buf_rd1            (buf_rd1),             // input
-        .buf_dout1          (buf_dout1),           // output[63:0] 
-        
-        .rpage_set2         (rpage_set2),          // input
-        .rpage_next2        (rpage_next2),         // input
-        .buf_rd2            (buf_rd2),             // input
-        .buf_dout2          (buf_dout2),           // output[63:0] 
-        
-        .rpage_set3         (rpage_set3),          // input
-        .rpage_next3        (rpage_next3),         // input
-        .buf_rd3            (buf_rd3),             // input
-        .buf_dout3          (buf_dout3),           // output[63:0] 
+        .rpage_set         (sens_rpage_set),          // input
+        .rpage_next        (sens_rpage_next),         // input
+        .buf_rd            (sens_buf_rd),             // input
+        .buf_dout          (sens_buf_dout),           // output[63:0] 
         
         .trigger_mode       (trigger_mode),        // input
         .trig_in            (trig_in),             // input[3:0] 
@@ -1355,6 +1400,229 @@ BUFG bufg_axi_aclk_i  (.O(axi_aclk),.I(fclk[0]));
         .saxi_bready        (saxi0_bready),        // output
         .saxi_bid           (saxi0_bid),           // input[5:0] 
         .saxi_bresp         (saxi0_bresp)          // input[1:0] 
+    );
+
+    // AFI1 (AXI_HP1) signals - write channels only
+    wire [31:0] afi1_awaddr;   // output[31:0]
+    wire        afi1_awvalid;  // output
+    wire        afi1_awready;     // input
+    wire [ 5:0] afi1_awid;     // output[5:0] 
+    wire [ 1:0] afi1_awlock;     // output[1:0] 
+    wire [ 3:0] afi1_awcache;     // output[3:0] 
+    wire [ 2:0] afi1_awprot;     // output[2:0] 
+    wire [ 3:0] afi1_awlen;     // output[3:0] 
+    wire [ 2:0] afi1_awsize;     // output[2:0] 
+    wire [ 1:0] afi1_awburst;     // output[1:0] 
+    wire [ 3:0] afi1_awqos;     // output[3:0] 
+    wire [63:0] afi1_wdata;     // output[63:0] 
+    wire        afi1_wvalid;     // output
+    wire        afi1_wready;     // input
+    wire [ 5:0] afi1_wid;     // output[5:0] 
+    wire        afi1_wlast;     // output
+    wire [ 7:0] afi1_wstrb;     // output[7:0] 
+    wire        afi1_bvalid;     // input
+    wire        afi1_bready;     // output
+    wire [ 5:0] afi1_bid;     // input[5:0] 
+    wire [ 1:0] afi1_bresp;     // input[1:0] 
+    wire [ 7:0] afi1_wcount;     // input[7:0] 
+    wire [ 5:0] afi1_wacount;     // input[5:0] 
+    wire        afi1_wrissuecap1en;     // output
+
+    // AFI2 (AXI_HP2) signals - write channels only - used only if CMPRS_NUM_AFI_CHN == 2
+    wire [31:0] afi2_awaddr;   // output[31:0]
+    wire        afi2_awvalid;  // output
+    wire        afi2_awready;     // input
+    wire [ 5:0] afi2_awid;     // output[5:0] 
+    wire [ 1:0] afi2_awlock;     // output[1:0] 
+    wire [ 3:0] afi2_awcache;     // output[3:0] 
+    wire [ 2:0] afi2_awprot;     // output[2:0] 
+    wire [ 3:0] afi2_awlen;     // output[3:0] 
+    wire [ 2:0] afi2_awsize;     // output[2:0] 
+    wire [ 1:0] afi2_awburst;     // output[1:0] 
+    wire [ 3:0] afi2_awqos;     // output[3:0] 
+    wire [63:0] afi2_wdata;     // output[63:0] 
+    wire        afi2_wvalid;     // output
+    wire        afi2_wready;     // input
+    wire [ 5:0] afi2_wid;     // output[5:0] 
+    wire        afi2_wlast;     // output
+    wire [ 7:0] afi2_wstrb;     // output[7:0] 
+    wire        afi2_bvalid;     // input
+    wire        afi2_bready;     // output
+    wire [ 5:0] afi2_bid;     // input[5:0] 
+    wire [ 1:0] afi2_bresp;     // input[1:0] 
+    wire [ 7:0] afi2_wcount;     // input[7:0] 
+    wire [ 5:0] afi2_wacount;     // input[5:0] 
+    wire        afi2_wrissuecap1en;     // output
+
+
+
+
+
+    compressor393 #(
+        .CMPRS_NUM_AFI_CHN               (CMPRS_NUM_AFI_CHN),
+        .CMPRS_GROUP_ADDR                (CMPRS_GROUP_ADDR),
+        .CMPRS_BASE_INC                  (CMPRS_BASE_INC),
+        .CMPRS_AFIMUX_RADDR0             (CMPRS_AFIMUX_RADDR0),
+        .CMPRS_AFIMUX_RADDR1             (CMPRS_AFIMUX_RADDR1),
+        .CMPRS_AFIMUX_MASK               (CMPRS_AFIMUX_MASK),
+        .CMPRS_STATUS_REG_BASE           (CMPRS_STATUS_REG_BASE),
+        .CMPRS_HIFREQ_REG_BASE           (CMPRS_HIFREQ_REG_BASE),
+        .CMPRS_AFIMUX_REG_ADDR0          (CMPRS_AFIMUX_REG_ADDR0),
+        .CMPRS_AFIMUX_REG_ADDR1          (CMPRS_AFIMUX_REG_ADDR1),
+        .CMPRS_STATUS_REG_INC            (CMPRS_STATUS_REG_INC),
+        .CMPRS_HIFREQ_REG_INC            (CMPRS_HIFREQ_REG_INC),
+        .CMPRS_MASK                      (CMPRS_MASK),
+        .CMPRS_CONTROL_REG               (CMPRS_CONTROL_REG),
+        .CMPRS_STATUS_CNTRL              (CMPRS_STATUS_CNTRL),
+        .CMPRS_FORMAT                    (CMPRS_FORMAT),
+        .CMPRS_COLOR_SATURATION          (CMPRS_COLOR_SATURATION),
+        .CMPRS_CORING_MODE               (CMPRS_CORING_MODE),
+        .CMPRS_TABLES                    (CMPRS_TABLES),
+        .FRAME_HEIGHT_BITS               (FRAME_HEIGHT_BITS),
+        .LAST_FRAME_BITS                 (LAST_FRAME_BITS),
+        .CMPRS_CBIT_RUN                  (CMPRS_CBIT_RUN),
+        .CMPRS_CBIT_RUN_BITS             (CMPRS_CBIT_RUN_BITS),
+        .CMPRS_CBIT_QBANK                (CMPRS_CBIT_QBANK),
+        .CMPRS_CBIT_QBANK_BITS           (CMPRS_CBIT_QBANK_BITS),
+        .CMPRS_CBIT_DCSUB                (CMPRS_CBIT_DCSUB),
+        .CMPRS_CBIT_DCSUB_BITS           (CMPRS_CBIT_DCSUB_BITS),
+        .CMPRS_CBIT_CMODE                (CMPRS_CBIT_CMODE),
+        .CMPRS_CBIT_CMODE_BITS           (CMPRS_CBIT_CMODE_BITS),
+        .CMPRS_CBIT_FRAMES               (CMPRS_CBIT_FRAMES),
+        .CMPRS_CBIT_FRAMES_BITS          (CMPRS_CBIT_FRAMES_BITS),
+        .CMPRS_CBIT_BAYER                (CMPRS_CBIT_BAYER),
+        .CMPRS_CBIT_BAYER_BITS           (CMPRS_CBIT_BAYER_BITS),
+        .CMPRS_CBIT_FOCUS                (CMPRS_CBIT_FOCUS),
+        .CMPRS_CBIT_FOCUS_BITS           (CMPRS_CBIT_FOCUS_BITS),
+        .CMPRS_CBIT_RUN_RST              (CMPRS_CBIT_RUN_RST),
+        .CMPRS_CBIT_RUN_STANDALONE       (CMPRS_CBIT_RUN_STANDALONE),
+        .CMPRS_CBIT_RUN_ENABLE           (CMPRS_CBIT_RUN_ENABLE),
+        .CMPRS_CBIT_CMODE_JPEG18         (CMPRS_CBIT_CMODE_JPEG18),
+        .CMPRS_CBIT_CMODE_MONO6          (CMPRS_CBIT_CMODE_MONO6),
+        .CMPRS_CBIT_CMODE_JP46           (CMPRS_CBIT_CMODE_JP46),
+        .CMPRS_CBIT_CMODE_JP46DC         (CMPRS_CBIT_CMODE_JP46DC),
+        .CMPRS_CBIT_CMODE_JPEG20         (CMPRS_CBIT_CMODE_JPEG20),
+        .CMPRS_CBIT_CMODE_JP4            (CMPRS_CBIT_CMODE_JP4),
+        .CMPRS_CBIT_CMODE_JP4DC          (CMPRS_CBIT_CMODE_JP4DC),
+        .CMPRS_CBIT_CMODE_JP4DIFF        (CMPRS_CBIT_CMODE_JP4DIFF),
+        .CMPRS_CBIT_CMODE_JP4DIFFHDR     (CMPRS_CBIT_CMODE_JP4DIFFHDR),
+        .CMPRS_CBIT_CMODE_JP4DIFFDIV2    (CMPRS_CBIT_CMODE_JP4DIFFDIV2),
+        .CMPRS_CBIT_CMODE_JP4DIFFHDRDIV2 (CMPRS_CBIT_CMODE_JP4DIFFHDRDIV2),
+        .CMPRS_CBIT_CMODE_MONO1          (CMPRS_CBIT_CMODE_MONO1),
+        .CMPRS_CBIT_CMODE_MONO4          (CMPRS_CBIT_CMODE_MONO4),
+        .CMPRS_CBIT_FRAMES_SINGLE        (CMPRS_CBIT_FRAMES_SINGLE),
+        .CMPRS_COLOR18                   (CMPRS_COLOR18),
+        .CMPRS_COLOR20                   (CMPRS_COLOR20),
+        .CMPRS_MONO16                    (CMPRS_MONO16),
+        .CMPRS_JP4                       (CMPRS_JP4),
+        .CMPRS_JP4DIFF                   (CMPRS_JP4DIFF),
+        .CMPRS_MONO8                     (CMPRS_MONO8),
+        .CMPRS_FRMT_MBCM1                (CMPRS_FRMT_MBCM1),
+        .CMPRS_FRMT_MBCM1_BITS           (CMPRS_FRMT_MBCM1_BITS),
+        .CMPRS_FRMT_MBRM1                (CMPRS_FRMT_MBRM1),
+        .CMPRS_FRMT_MBRM1_BITS           (CMPRS_FRMT_MBRM1_BITS),
+        .CMPRS_FRMT_LMARG                (CMPRS_FRMT_LMARG),
+        .CMPRS_FRMT_LMARG_BITS           (CMPRS_FRMT_LMARG_BITS),
+        .CMPRS_CSAT_CB                   (CMPRS_CSAT_CB),
+        .CMPRS_CSAT_CB_BITS              (CMPRS_CSAT_CB_BITS),
+        .CMPRS_CSAT_CR                   (CMPRS_CSAT_CR),
+        .CMPRS_CSAT_CR_BITS              (CMPRS_CSAT_CR_BITS),
+        .CMPRS_CORING_BITS               (CMPRS_CORING_BITS),
+        .CMPRS_TIMEOUT_BITS              (CMPRS_TIMEOUT_BITS),
+        .CMPRS_TIMEOUT                   (CMPRS_TIMEOUT),
+        .CMPRS_AFIMUX_EN                 (CMPRS_AFIMUX_EN),
+        .CMPRS_AFIMUX_RST                (CMPRS_AFIMUX_RST),
+        .CMPRS_AFIMUX_MODE               (CMPRS_AFIMUX_MODE),
+        .CMPRS_AFIMUX_STATUS_CNTRL       (CMPRS_AFIMUX_STATUS_CNTRL),
+        .CMPRS_AFIMUX_SA_LEN             (CMPRS_AFIMUX_SA_LEN),
+        .CMPRS_AFIMUX_WIDTH              (CMPRS_AFIMUX_WIDTH),
+        .CMPRS_AFIMUX_CYCBITS            (CMPRS_AFIMUX_CYCBITS),
+        .AFI_MUX_BUF_LATENCY             (AFI_MUX_BUF_LATENCY)
+    ) compressor393_i (
+        .rst                       (axi_rst),                    // input
+        .xclk                      (xclk),                       // input
+        .xclk2x                    (xclk2x),                     // input
+        .mclk                      (mclk),                       // input
+        .cmd_ad                    (cmd_compressor_ad),          // input[7:0] 
+        .cmd_stb                   (cmd_compressor_stb),         // input
+        .status_ad                 (status_compressor_ad),       // output[7:0] 
+        .status_rq                 (status_compressor_rq),       // output
+        .status_start              (status_compressor_start),    // input
+
+        .xfer_reset_page_rd        (cmprs_xfer_reset_page_rd),   // input[3:0]
+        .buf_wpage_nxt             (cmprs_buf_wpage_nxt),        // input[3:0]
+        .buf_we                    (cmprs_buf_we),               // input[3:0]
+        .buf_din                   (cmprs_buf_din),              // input[255:0] 
+        .page_ready                (cmprs_page_ready),           // input[3:0]
+        .next_page                 (cmprs_next_page),            // output[3:0]
+        
+        .frame_start_dst           (cmprs_frame_start_dst),      // output[3:0] 
+        .line_unfinished_src       (cmprs_line_unfinished_src),  // input[63:0] 
+        .frame_number_src          (cmprs_frame_number_src),     // input[63:0] 
+        .frame_done_src            (cmprs_frame_done_src),       // input[3:0] 
+        .line_unfinished_dst       (cmprs_line_unfinished_dst),  // input[63:0] 
+        .frame_number_dst          (cmprs_frame_number_dst),     // input[63:0] 
+        .frame_done_dst            (cmprs_frame_done_dst),       // input[3:0] 
+        .suspend                   (cmprs_suspend),              // output[3:0] 
+
+        .ts_pre_stb                (ts_pre_stb),                 // input[3:0]
+        .ts_data                   (ts_data),                    // input[31:0] 
+        
+        .eof_written_mclk          (eof_written_mclk),           // output[3:0]
+        .stuffer_done_mclk         (stuffer_done_mclk),          // output[3:0]
+
+        .vsync_late                (vsync_late),                 // input[3:0]
+        
+        .hclk                      (hclk),                       // input
+        .afi0_awaddr               (afi1_awaddr),                // output[31:0] 
+        .afi0_awvalid              (afi1_awvalid),               // output
+        .afi0_awready              (afi1_awready),               // input
+        .afi0_awid                 (afi1_awid),                  // output[5:0] 
+        .afi0_awlock               (afi1_awlock),                // output[1:0] 
+        .afi0_awcache              (afi1_awcache),               // output[3:0] 
+        .afi0_awprot               (afi1_awprot),                // output[2:0] 
+        .afi0_awlen                (afi1_awlen),                 // output[3:0] 
+        .afi0_awsize               (afi1_awsize),                // output[2:0] 
+        .afi0_awburst              (afi1_awburst),               // output[1:0] 
+        .afi0_awqos                (afi1_awqos),                 // output[3:0] 
+        .afi0_wdata                (afi1_wdata),                 // output[63:0] 
+        .afi0_wvalid               (afi1_wvalid),                // output
+        .afi0_wready               (afi1_wready),                // input
+        .afi0_wid                  (afi1_wid),                   // output[5:0] 
+        .afi0_wlast                (afi1_wlast),                 // output
+        .afi0_wstrb                (afi1_wstrb),                 // output[7:0] 
+        .afi0_bvalid               (afi1_bvalid),                // input
+        .afi0_bready               (afi1_bready),                // output
+        .afi0_bid                  (afi1_bid),                   // input[5:0] 
+        .afi0_bresp                (afi1_bresp),                 // input[1:0] 
+        .afi0_wcount               (afi1_wcount),                // input[7:0] 
+        .afi0_wacount              (afi1_wacount),               // input[5:0] 
+        .afi0_wrissuecap1en        (afi1_wrissuecap1en),         // output
+        
+        .afi1_awaddr               (afi2_awaddr),                // output[31:0] 
+        .afi1_awvalid              (afi2_awvalid),               // output
+        .afi1_awready              (afi2_awready),               // input
+        .afi1_awid                 (afi2_awid),                  // output[5:0] 
+        .afi1_awlock               (afi2_awlock),                // output[1:0] 
+        .afi1_awcache              (afi2_awcache),               // output[3:0] 
+        .afi1_awprot               (afi2_awprot),                // output[2:0] 
+        .afi1_awlen                (afi2_awlen),                 // output[3:0] 
+        .afi1_awsize               (afi2_awsize),                // output[2:0] 
+        .afi1_awburst              (afi2_awburst),               // output[1:0] 
+        .afi1_awqos                (afi2_awqos),                 // output[3:0] 
+        .afi1_wdata                (afi2_wdata),                 // output[63:0] 
+        .afi1_wvalid               (afi2_wvalid),                // output
+        .afi1_wready               (afi2_wready),                // input
+        .afi1_wid                  (afi2_wid),                   // output[5:0] 
+        .afi1_wlast                (afi2_wlast),                 // output
+        .afi1_wstrb                (afi2_wstrb),                 // output[7:0] 
+        .afi1_bvalid               (afi2_bvalid),                // input
+        .afi1_bready               (afi2_bready),                // output
+        .afi1_bid                  (afi2_bid),                   // input[5:0] 
+        .afi1_bresp                (afi2_bresp),                 // input[1:0] 
+        .afi1_wcount               (afi2_wcount),                // input[7:0] 
+        .afi1_wacount              (afi2_wacount),               // input[5:0] 
+        .afi1_wrissuecap1en        (afi2_wrissuecap1en)          // output
     );
 
     axibram_write #(
@@ -1949,9 +2217,9 @@ assign DUMMY_TO_KEEP = frst[2] && MEMCLK; // 1'b0; // dbg_toggle[0];
 
 // AXI PS Slave HP1    
 // AXI PS Slave 1: Clock, Reset
-    .SAXIHP1ACLK(),              // AXI PS Slave HP1 Clock , input
+    .SAXIHP1ACLK          (hclk),              // AXI PS Slave HP1 Clock , input
     .SAXIHP1ARESETN(),           // AXI PS Slave HP1 Reset, output
-// AXI PS Slave HP1: Read Address    
+// AXI PS Slave HP1: Read Address   - unused
     .SAXIHP1ARADDR(),            // AXI PS Slave HP1 ARADDR[31:0], input  
     .SAXIHP1ARVALID(),           // AXI PS Slave HP1 ARVALID, input
     .SAXIHP1ARREADY(),           // AXI PS Slave HP1 ARREADY, output
@@ -1974,38 +2242,38 @@ assign DUMMY_TO_KEEP = frst[2] && MEMCLK; // 1'b0; // dbg_toggle[0];
     .SAXIHP1RACOUNT(),           // AXI PS Slave HP1 RACOUNT[2:0], output
     .SAXIHP1RDISSUECAP1EN(),     // AXI PS Slave HP1 RDISSUECAP1EN, input
 // AXI PS Slave HP1: Write Address    
-    .SAXIHP1AWADDR(),            // AXI PS Slave HP1 AWADDR[31:0], input
-    .SAXIHP1AWVALID(),           // AXI PS Slave HP1 AWVALID, input
-    .SAXIHP1AWREADY(),           // AXI PS Slave HP1 AWREADY, output
-    .SAXIHP1AWID(),              // AXI PS Slave HP1 AWID[5:0], input
-    .SAXIHP1AWLOCK(),            // AXI PS Slave HP1 AWLOCK[1:0], input
-    .SAXIHP1AWCACHE(),           // AXI PS Slave HP1 AWCACHE[3:0], input
-    .SAXIHP1AWPROT(),            // AXI PS Slave HP1 AWPROT[2:0], input
-    .SAXIHP1AWLEN(),             // AXI PS Slave HP1 AWLEN[3:0], input
-    .SAXIHP1AWSIZE(),            // AXI PS Slave HP1 AWSIZE[1:0], input
-    .SAXIHP1AWBURST(),           // AXI PS Slave HP1 AWBURST[1:0], input
-    .SAXIHP1AWQOS(),             // AXI PS Slave HP1 AWQOS[3:0], input
+    .SAXIHP1AWADDR        (afi1_awaddr),            // AXI PS Slave HP1 AWADDR[31:0], input
+    .SAXIHP1AWVALID       (afi1_awvalid),           // AXI PS Slave HP1 AWVALID, input
+    .SAXIHP1AWREADY       (afi1_awready),           // AXI PS Slave HP1 AWREADY, output
+    .SAXIHP1AWID          (afi1_awid),              // AXI PS Slave HP1 AWID[5:0], input
+    .SAXIHP1AWLOCK        (afi1_awlock),            // AXI PS Slave HP1 AWLOCK[1:0], input
+    .SAXIHP1AWCACHE       (afi1_awcache),           // AXI PS Slave HP1 AWCACHE[3:0], input
+    .SAXIHP1AWPROT        (afi1_awprot),            // AXI PS Slave HP1 AWPROT[2:0], input
+    .SAXIHP1AWLEN         (afi1_awlen),             // AXI PS Slave HP1 AWLEN[3:0], input
+    .SAXIHP1AWSIZE        (afi1_awsize),            // AXI PS Slave HP1 AWSIZE[1:0], input
+    .SAXIHP1AWBURST       (afi1_awburst),           // AXI PS Slave HP1 AWBURST[1:0], input
+    .SAXIHP1AWQOS         (afi1_awqos),             // AXI PS Slave HP1 AWQOS[3:0], input
 // AXI PS Slave HP1: Write Data
-    .SAXIHP1WDATA(),             // AXI PS Slave HP1 WDATA[63:0], input
-    .SAXIHP1WVALID(),            // AXI PS Slave HP1 WVALID, input
-    .SAXIHP1WREADY(),            // AXI PS Slave HP1 WREADY, output
-    .SAXIHP1WID(),               // AXI PS Slave HP1 WID[5:0], input
-    .SAXIHP1WLAST(),             // AXI PS Slave HP1 WLAST, input
-    .SAXIHP1WSTRB(),             // AXI PS Slave HP1 WSTRB[7:0], input
-    .SAXIHP1WCOUNT(),            // AXI PS Slave HP1 WCOUNT[7:0], output
-    .SAXIHP1WACOUNT(),           // AXI PS Slave HP1 WACOUNT[5:0], output
-    .SAXIHP1WRISSUECAP1EN(),     // AXI PS Slave HP1 WRISSUECAP1EN, input
+    .SAXIHP1WDATA         (afi1_wdata),             // AXI PS Slave HP1 WDATA[63:0], input
+    .SAXIHP1WVALID        (afi1_wvalid),            // AXI PS Slave HP1 WVALID, input
+    .SAXIHP1WREADY        (afi1_wready),            // AXI PS Slave HP1 WREADY, output
+    .SAXIHP1WID           (afi1_wid),               // AXI PS Slave HP1 WID[5:0], input
+    .SAXIHP1WLAST         (afi1_wlast),             // AXI PS Slave HP1 WLAST, input
+    .SAXIHP1WSTRB         (afi1_wstrb),             // AXI PS Slave HP1 WSTRB[7:0], input
+    .SAXIHP1WCOUNT        (afi1_wcount),            // AXI PS Slave HP1 WCOUNT[7:0], output
+    .SAXIHP1WACOUNT       (afi1_wacount),           // AXI PS Slave HP1 WACOUNT[5:0], output
+    .SAXIHP1WRISSUECAP1EN (afi1_wrissuecap1en),     // AXI PS Slave HP1 WRISSUECAP1EN, input
 // AXI PS Slave HP1: Write Responce
-    .SAXIHP1BVALID(),            // AXI PS Slave HP1 BVALID, output
-    .SAXIHP1BREADY(),            // AXI PS Slave HP1 BREADY, input
-    .SAXIHP1BID(),               // AXI PS Slave HP1 BID[5:0], output
-    .SAXIHP1BRESP(),             // AXI PS Slave HP1 BRESP[1:0], output
+    .SAXIHP1BVALID        (afi1_bvalid),            // AXI PS Slave HP1 BVALID, output
+    .SAXIHP1BREADY        (afi1_bready),            // AXI PS Slave HP1 BREADY, input
+    .SAXIHP1BID           (afi1_bid),               // AXI PS Slave HP1 BID[5:0], output
+    .SAXIHP1BRESP         (afi1_bresp),             // AXI PS Slave HP1 BRESP[1:0], output
 
 // AXI PS Slave HP2    
 // AXI PS Slave HP2: Clock, Reset
     .SAXIHP2ACLK(),              // AXI PS Slave HP2 Clock , input
     .SAXIHP2ARESETN(),           // AXI PS Slave HP2 Reset, output
-// AXI PS Slave HP2: Read Address    
+// AXI PS Slave HP2: Read Address   - not used
     .SAXIHP2ARADDR(),            // AXI PS Slave HP2 ARADDR[31:0], input  
     .SAXIHP2ARVALID(),           // AXI PS Slave HP2 ARVALID, input
     .SAXIHP2ARREADY(),           // AXI PS Slave HP2 ARREADY, output
@@ -2017,7 +2285,7 @@ assign DUMMY_TO_KEEP = frst[2] && MEMCLK; // 1'b0; // dbg_toggle[0];
     .SAXIHP2ARSIZE(),            // AXI PS Slave HP2 ARSIZE[2:0], input
     .SAXIHP2ARBURST(),           // AXI PS Slave HP2 ARBURST[1:0], input
     .SAXIHP2ARQOS(),             // AXI PS Slave HP2 ARQOS[3:0], input
-// AXI PS Slave HP2: Read Data
+// AXI PS Slave HP2: Read Data - not used
     .SAXIHP2RDATA(),             // AXI PS Slave HP2 RDATA[63:0], output
     .SAXIHP2RVALID(),            // AXI PS Slave HP2 RVALID, output
     .SAXIHP2RREADY(),            // AXI PS Slave HP2 RREADY, input
@@ -2028,32 +2296,32 @@ assign DUMMY_TO_KEEP = frst[2] && MEMCLK; // 1'b0; // dbg_toggle[0];
     .SAXIHP2RACOUNT(),           // AXI PS Slave HP2 RACOUNT[2:0], output
     .SAXIHP2RDISSUECAP1EN(),     // AXI PS Slave HP2 RDISSUECAP1EN, input
 // AXI PS Slave HP2: Write Address    
-    .SAXIHP2AWADDR(),            // AXI PS Slave HP2 AWADDR[31:0], input
-    .SAXIHP2AWVALID(),           // AXI PS Slave HP2 AWVALID, input
-    .SAXIHP2AWREADY(),           // AXI PS Slave HP2 AWREADY, output
-    .SAXIHP2AWID(),              // AXI PS Slave HP2 AWID[5:0], input
-    .SAXIHP2AWLOCK(),            // AXI PS Slave HP2 AWLOCK[1:0], input
-    .SAXIHP2AWCACHE(),           // AXI PS Slave HP2 AWCACHE[3:0], input
-    .SAXIHP2AWPROT(),            // AXI PS Slave HP2 AWPROT[2:0], input
-    .SAXIHP2AWLEN(),             // AXI PS Slave HP2 AWLEN[3:0], input
-    .SAXIHP2AWSIZE(),            // AXI PS Slave HP2 AWSIZE[1:0], input
-    .SAXIHP2AWBURST(),           // AXI PS Slave HP2 AWBURST[1:0], input
-    .SAXIHP2AWQOS(),             // AXI PS Slave HP2 AWQOS[3:0], input
+    .SAXIHP2AWADDR        (afi2_awaddr),            // AXI PS Slave HP2 AWADDR[31:0], input
+    .SAXIHP2AWVALID       (afi2_awvalid),           // AXI PS Slave HP2 AWVALID, input
+    .SAXIHP2AWREADY       (afi2_awready),           // AXI PS Slave HP2 AWREADY, output
+    .SAXIHP2AWID          (afi2_awid),              // AXI PS Slave HP2 AWID[5:0], input
+    .SAXIHP2AWLOCK        (afi2_awlock),            // AXI PS Slave HP2 AWLOCK[1:0], input
+    .SAXIHP2AWCACHE       (afi2_awcache),           // AXI PS Slave HP2 AWCACHE[3:0], input
+    .SAXIHP2AWPROT        (afi2_awprot),            // AXI PS Slave HP2 AWPROT[2:0], input
+    .SAXIHP2AWLEN         (afi2_awlen),             // AXI PS Slave HP2 AWLEN[3:0], input
+    .SAXIHP2AWSIZE        (afi2_awsize),            // AXI PS Slave HP2 AWSIZE[1:0], input
+    .SAXIHP2AWBURST       (afi2_awburst),           // AXI PS Slave HP2 AWBURST[1:0], input
+    .SAXIHP2AWQOS         (afi2_awqos),             // AXI PS Slave HP2 AWQOS[3:0], input
 // AXI PS Slave HP2: Write Data
-    .SAXIHP2WDATA(),             // AXI PS Slave HP2 WDATA[63:0], input
-    .SAXIHP2WVALID(),            // AXI PS Slave HP2 WVALID, input
-    .SAXIHP2WREADY(),            // AXI PS Slave HP2 WREADY, output
-    .SAXIHP2WID(),               // AXI PS Slave HP2 WID[5:0], input
-    .SAXIHP2WLAST(),             // AXI PS Slave HP2 WLAST, input
-    .SAXIHP2WSTRB(),             // AXI PS Slave HP2 WSTRB[7:0], input
-    .SAXIHP2WCOUNT(),            // AXI PS Slave HP2 WCOUNT[7:0], output
-    .SAXIHP2WACOUNT(),           // AXI PS Slave HP2 WACOUNT[5:0], output
-    .SAXIHP2WRISSUECAP1EN(),     // AXI PS Slave HP2 WRISSUECAP1EN, input
+    .SAXIHP2WDATA         (afi2_wdata),             // AXI PS Slave HP2 WDATA[63:0], input
+    .SAXIHP2WVALID        (afi2_wvalid),            // AXI PS Slave HP2 WVALID, input
+    .SAXIHP2WREADY        (afi2_wready),            // AXI PS Slave HP2 WREADY, output
+    .SAXIHP2WID           (afi2_wid),               // AXI PS Slave HP2 WID[5:0], input
+    .SAXIHP2WLAST         (afi2_wlast),             // AXI PS Slave HP2 WLAST, input
+    .SAXIHP2WSTRB         (afi2_wstrb),             // AXI PS Slave HP2 WSTRB[7:0], input
+    .SAXIHP2WCOUNT        (afi2_wcount),            // AXI PS Slave HP2 WCOUNT[7:0], output
+    .SAXIHP2WACOUNT       (afi2_wacount),           // AXI PS Slave HP2 WACOUNT[5:0], output
+    .SAXIHP2WRISSUECAP1EN (afi2_wrissuecap1en),     // AXI PS Slave HP2 WRISSUECAP1EN, input
 // AXI PS Slave HP2: Write Responce
-    .SAXIHP2BVALID(),            // AXI PS Slave HP2 BVALID, output
-    .SAXIHP2BREADY(),            // AXI PS Slave HP2 BREADY, input
-    .SAXIHP2BID(),               // AXI PS Slave HP2 BID[5:0], output
-    .SAXIHP2BRESP(),             // AXI PS Slave HP2 BRESP[1:0], output
+    .SAXIHP2BVALID        (afi2_bvalid),            // AXI PS Slave HP2 BVALID, output
+    .SAXIHP2BREADY        (afi2_bready),            // AXI PS Slave HP2 BREADY, input
+    .SAXIHP2BID           (afi2_bid),               // AXI PS Slave HP2 BID[5:0], output
+    .SAXIHP2BRESP         (afi2_bresp),             // AXI PS Slave HP2 BRESP[1:0], output
 
 // AXI PS Slave HP3    
 // AXI PS Slave HP3: Clock, Reset

@@ -28,7 +28,7 @@ module  sens_parallel12 #(
     parameter SENSIO_JTAG =        'h2,
     parameter SENSIO_WIDTH =       'h3, // set line width (1.. 2^16) if 0 - use HACT
     parameter SENSIO_DELAYS =      'h4, // 'h4..'h7 - each address sets 4 delays through 4 bytes of 32-bit data
-    parameter SENSIO_STATUS_REG =  'h31,
+    parameter SENSIO_STATUS_REG =  'h21,
 
     parameter SENS_JTAG_PGMEN =    8,
     parameter SENS_JTAG_PROG =     6,
