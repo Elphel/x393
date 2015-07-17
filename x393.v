@@ -90,128 +90,133 @@ module  x393 #(
 //    localparam COLADDR_NUMBER=10;
 // Source for reset and clock
 (* keep = "true" *)
-   wire    [3:0]     fclk;      // PL Clocks [3:0], output
+    wire    [3:0]     fclk;      // PL Clocks [3:0], output
 (* keep = "true" *)   
-   wire    [3:0]     frst;      // PL Clocks [3:0], output
+    wire    [3:0]     frst;      // PL Clocks [3:0], output
     
 // AXI write interface signals
 //(* keep = "true" *) 
-   wire           axi_aclk;    // clock - should be buffered
+    wire           axi_aclk;    // clock - should be buffered
 //   wire           axi_naclk;   // debugging
 //   wire           axi_aresetn; // reset, active low
 //(* dont_touch = "true" *)
-   wire           axi_rst;     // reset, active high
+    wire           axi_rst;     // reset, active high
 // AXI Write Address
-   wire   [31:0]  maxi0_awaddr;  // AWADDR[31:0], input
-   wire           maxi0_awvalid; // AWVALID, input
-   wire           maxi0_awready; // AWREADY, output
-   wire   [11:0]  maxi0_awid;    // AWID[11:0], input
+    wire   [31:0]  maxi0_awaddr;  // AWADDR[31:0], input
+    wire           maxi0_awvalid; // AWVALID, input
+    wire           maxi0_awready; // AWREADY, output
+    wire   [11:0]  maxi0_awid;    // AWID[11:0], input
 //   input  [ 1:0] awlock,     // AWLOCK[1:0], input
 //   input  [ 3:0] awcache,    // AWCACHE[3:0], input
 //   input  [ 2:0] awprot,     // AWPROT[2:0], input
-   wire   [ 3:0]  maxi0_awlen;       // AWLEN[3:0], input
-   wire   [ 1:0]  maxi0_awsize;      // AWSIZE[1:0], input
-   wire   [ 1:0]  maxi0_awburst;     // AWBURST[1:0], input
+    wire   [ 3:0]  maxi0_awlen;       // AWLEN[3:0], input
+    wire   [ 1:0]  maxi0_awsize;      // AWSIZE[1:0], input
+    wire   [ 1:0]  maxi0_awburst;     // AWBURST[1:0], input
 //   input  [ 3:0] awqos,      // AWQOS[3:0], input
 // AXI PS Master GP0: Write Data
-   wire   [31:0]  maxi0_wdata;       // WDATA[31:0], input
-   wire           maxi0_wvalid;      // WVALID, input
-   wire           maxi0_wready;      // WREADY, output
-   wire   [11:0]  maxi0_wid;         // WID[11:0], input
-   wire           maxi0_wlast;       // WLAST, input
-   wire   [ 3:0]  maxi0_wstb;        // WSTRB[3:0], input
+    wire   [31:0]  maxi0_wdata;       // WDATA[31:0], input
+    wire           maxi0_wvalid;      // WVALID, input
+    wire           maxi0_wready;      // WREADY, output
+    wire   [11:0]  maxi0_wid;         // WID[11:0], input
+    wire           maxi0_wlast;       // WLAST, input
+    wire   [ 3:0]  maxi0_wstb;        // WSTRB[3:0], input
 // AXI PS Master GP0: Write Responce
-   wire           maxi0_bvalid;      // BVALID, output
-   wire           maxi0_bready;      // BREADY, input
-   wire   [11:0]  maxi0_bid;         // BID[11:0], output
-   wire   [ 1:0]  maxi0_bresp;       // BRESP[1:0], output
+    wire           maxi0_bvalid;      // BVALID, output
+    wire           maxi0_bready;      // BREADY, input
+    wire   [11:0]  maxi0_bid;         // BID[11:0], output
+    wire   [ 1:0]  maxi0_bresp;       // BRESP[1:0], output
    
 // BRAM (and other write modules) interface from AXI write
-   wire [AXI_WR_ADDR_BITS-1:0] axiwr_pre_awaddr; // same as awaddr_out, early address to decode and return dev_ready
-   wire           axiwr_start_burst; // start of write burst, valid pre_awaddr, save externally to control ext. dev_ready multiplexer
-   wire           axiwr_dev_ready;   // extrernal combinatorial ready signal, multiplexed from different sources according to pre_awaddr@start_burst
-   wire           axiwr_wclk;
-   wire  [AXI_WR_ADDR_BITS-1:0] axiwr_waddr;
-   wire           axiwr_wen;    // external memory write enable, (internally combined with registered dev_ready
+    wire [AXI_WR_ADDR_BITS-1:0] axiwr_pre_awaddr; // same as awaddr_out, early address to decode and return dev_ready
+    wire           axiwr_start_burst; // start of write burst, valid pre_awaddr, save externally to control ext. dev_ready multiplexer
+    wire           axiwr_dev_ready;   // extrernal combinatorial ready signal, multiplexed from different sources according to pre_awaddr@start_burst
+    wire           axiwr_wclk;
+    wire  [AXI_WR_ADDR_BITS-1:0] axiwr_waddr;
+    wire           axiwr_wen;    // external memory write enable, (internally combined with registered dev_ready
 // SuppressWarnings VEditor unused (yet?) 
-   wire    [3:0]  axiwr_bram_wstb; 
-   wire   [31:0]  axiwr_wdata;
+    wire    [3:0]  axiwr_bram_wstb; 
+    wire   [31:0]  axiwr_wdata;
 
  // AXI Read Address   
-   wire   [31:0]  maxi0_araddr;  // ARADDR[31:0], input 
-   wire           maxi0_arvalid; // ARVALID, input
-   wire           maxi0_arready; // ARREADY, output
-   wire   [11:0]  maxi0_arid;    // ARID[11:0], input
+    wire   [31:0]  maxi0_araddr;  // ARADDR[31:0], input 
+    wire           maxi0_arvalid; // ARVALID, input
+    wire           maxi0_arready; // ARREADY, output
+    wire   [11:0]  maxi0_arid;    // ARID[11:0], input
 //   input  [ 1:0] arlock,  // ARLOCK[1:0], input
 //   input  [ 3:0] archache,// ARCACHE[3:0], input
 //   input  [ 2:0] arprot,  // ARPROT[2:0], input
-   wire   [ 3:0]  maxi0_arlen;   // ARLEN[3:0], input
-   wire   [ 1:0]  maxi0_arsize;  // ARSIZE[1:0], input
-   wire   [ 1:0]  maxi0_arburst; // ARBURST[1:0], input
+    wire   [ 3:0]  maxi0_arlen;   // ARLEN[3:0], input
+    wire   [ 1:0]  maxi0_arsize;  // ARSIZE[1:0], input
+    wire   [ 1:0]  maxi0_arburst; // ARBURST[1:0], input
 //   input  [ 3:0] adqos,   // ARQOS[3:0], input
 // AXI Read Data
-   wire   [31:0]  maxi0_rdata;   // RDATA[31:0], output
-   wire           maxi0_rvalid;  // RVALID, output
-   wire           maxi0_rready;  // RREADY, input
-   wire   [11:0]  maxi0_rid;     // RID[11:0], output
-   wire           maxi0_rlast;   // RLAST, output
-   wire   [ 1:0]  maxi0_rresp;
+    wire   [31:0]  maxi0_rdata;   // RDATA[31:0], output
+    wire           maxi0_rvalid;  // RVALID, output
+    wire           maxi0_rready;  // RREADY, input
+    wire   [11:0]  maxi0_rid;     // RID[11:0], output
+    wire           maxi0_rlast;   // RLAST, output
+    wire   [ 1:0]  maxi0_rresp;
 
 // External memory synchronization
-   wire [AXI_RD_ADDR_BITS-1:0] axird_pre_araddr; // same as awaddr_out, early address to decode and return dev_ready
-   wire           axird_start_burst; // start of read burst, valid pre_araddr, save externally to control ext. dev_ready multiplexer
-   wire           axird_dev_ready;   // extrernal combinatorial ready signal, multiplexed from different sources according to pre_araddr@start_burst
+    wire [AXI_RD_ADDR_BITS-1:0] axird_pre_araddr; // same as awaddr_out, early address to decode and return dev_ready
+    wire           axird_start_burst; // start of read burst, valid pre_araddr, save externally to control ext. dev_ready multiplexer
+    wire           axird_dev_ready;   // extrernal combinatorial ready signal, multiplexed from different sources according to pre_araddr@start_burst
 // External memory interface   
 // SuppressWarnings VEditor unused (yet?) - use mclk 
-   wire           axird_bram_rclk;  // == axi_aclk      .rclk(aclk),                  // clock for read port
+    wire           axird_bram_rclk;  // == axi_aclk      .rclk(aclk),                  // clock for read port
    // while only status provides read data, the next signals are not used (relies on axird_pre_araddr, axird_start_burst)
-   wire  [AXI_RD_ADDR_BITS-1:0] axird_raddr; //   .raddr(read_in_progress?read_address[9:0]:10'h3ff),    // read address
-   wire           axird_ren;   //      .ren(bram_reg_re_w) ,      // read port enable
-   wire           axird_regen; //   .regen(bram_reg_re_w),        // output register enable
-   wire  [31:0]   axird_rdata;  //      .data_out(rdata[31:0]),       // data out
+    wire  [AXI_RD_ADDR_BITS-1:0] axird_raddr; //   .raddr(read_in_progress?read_address[9:0]:10'h3ff),    // read address
+    wire           axird_ren;   //      .ren(bram_reg_re_w) ,      // read port enable
+    wire           axird_regen; //   .regen(bram_reg_re_w),        // output register enable
+    wire  [31:0]   axird_rdata;  //      .data_out(rdata[31:0]),       // data out
 //   wire  [31:0]   port0_rdata;  //
-   wire  [31:0]   status_rdata;  //
-   wire           status_selected;
-   wire  [31:0]   readback_rdata;  //
-   wire           readback_selected;
-   wire  [31:0]   mcntrl_axird_rdata; // read data from the memory controller 
+    wire  [31:0]   status_rdata;  //
+    wire           status_selected;
+    wire  [31:0]   readback_rdata;  //
+    wire           readback_selected;
+    wire  [31:0]   mcntrl_axird_rdata; // read data from the memory controller 
 
 
    
-   wire           mcntrl_axird_selected; // memory controller has valid data output on mcntrl_axird_rdata 
-   reg            status_selected_ren;         // status_selected (set at axird_start_burst) delayed when ren is active
-   reg            readback_selected_ren;
-   reg            mcntrl_axird_selected_ren;   // mcntrl_axird_selected (set at axird_start_burst) delayed when ren is active
-   reg            status_selected_regen;       // status_selected (set at axird_start_burst) delayed when ren is active, then when regen (normally 2 cycles)
-   reg            readback_selected_regen;
-   reg            mcntrl_axird_selected_regen; // mcntrl_axird_selected (set at axird_start_burst) delayed when ren is active, then when regen (normally 2 cycles)
+    wire           mcntrl_axird_selected; // memory controller has valid data output on mcntrl_axird_rdata 
+    reg            status_selected_ren;         // status_selected (set at axird_start_burst) delayed when ren is active
+    reg            readback_selected_ren;
+    reg            mcntrl_axird_selected_ren;   // mcntrl_axird_selected (set at axird_start_burst) delayed when ren is active
+    reg            status_selected_regen;       // status_selected (set at axird_start_burst) delayed when ren is active, then when regen (normally 2 cycles)
+    reg            readback_selected_regen;
+    reg            mcntrl_axird_selected_regen; // mcntrl_axird_selected (set at axird_start_burst) delayed when ren is active, then when regen (normally 2 cycles)
 
    // global clocks
-   wire           mclk; // global clock, memory controller, command/status network (currently 200MHz)
-   wire           ref_clk; // global clock for idelay_ctrl calibration
-   wire           hclk; // global clock, axi_hp (150MHz) derived from aclk_in = 50MHz
+    wire           mclk; // global clock, memory controller, command/status network (currently 200MHz)
+    wire           ref_clk; // global clock for idelay_ctrl calibration
+    wire           hclk; // global clock, axi_hp (150MHz) derived from aclk_in = 50MHz
    
     // sensor pixel rate clock likely to originate from the external clock
-   wire           pclk;   // global clock, sensor pixel rate (96 MHz)
-   wire           pclk2x; // global clock, sensor double pixel rate (192 MHz)
+ //TODO: Create missing clocks   
+    
+    wire           pclk;   // global clock, sensor pixel rate (96 MHz)
+    wire           pclk2x; // global clock, sensor double pixel rate (192 MHz)
    
    // compressor pixel rate can be adjusted independently
-   wire           xclk;   // global clock, compressor pixel rate (100 MHz)?
-   wire           xclk2x; // global clock, compressor double pixel rate (200 MHz)
+    wire           xclk;   // global clock, compressor pixel rate (100 MHz)?
+    wire           xclk2x; // global clock, compressor double pixel rate (200 MHz)
    
-   wire           camsync_clk; // global clock used for external synchronization. 96MHz in x353.
+    wire           camsync_clk; // global clock used for external synchronization. 96MHz in x353.
                                //  Make it independent of pixel, compressor and mclk so it can be frozen
-   wire           logger_clk;  // global clock for the event logger. Use 100 MHz, shared with camsync_clk
-   assign logger_clk = camsync_clk;
+    wire           logger_clk;  // global clock for the event logger. Use 100 MHz, shared with camsync_clk
+    assign logger_clk = camsync_clk;
    
-   wire           time_ref; // RTC reference: integer number of microseconds, less than mclk/2. Not a global clock
-   
+    wire           time_ref; // RTC reference: integer number of microseconds, less than mclk/2. Not a global clock
+   // temporary:
+    reg [2:0] time_ref_r;
+    always @ (posedge mclk or posedge axi_rst) if (axi_rst) time_ref_r <= 0; else time_ref_r <= time_ref_r + 1;
+    assign time_ref = time_ref_r[2];
 
-   wire [11:0] tmp_debug; 
+    wire [11:0] tmp_debug; 
    
 //   reg    select_port0; // May be used later!
-   wire axiwr_dev_busy;
-   wire axird_dev_busy;
+    wire axiwr_dev_busy;
+    wire axird_dev_busy;
    
    //TODO: The following is the interface to the frame-based command sequencer (not yet implemnted)        
     wire [AXI_WR_ADDR_BITS-1:0] cseq_waddr;   // command sequencer write address (output to command multiplexer)
@@ -220,10 +225,10 @@ module  x393 #(
     wire                        cseq_ackn;    // ackn to command sequencer, command sequencer should de-assert cseq_wr_en
     
    // Signals for the frame sequnecer/mux
-   wire [4 * AXI_WR_ADDR_BITS-1:0] frseq_waddr; 
-   wire                      [3:0] frseq_valid;
-   wire                    [127:0] frseq_wdata; 
-   wire                      [3:0] frseq_ackn;
+    wire [4 * AXI_WR_ADDR_BITS-1:0] frseq_waddr; 
+    wire                      [3:0] frseq_valid;
+    wire                    [127:0] frseq_wdata; 
+    wire                      [3:0] frseq_ackn;
     
     
 // parallel address/data - where higher bandwidth (single-cycle) is needed        
@@ -249,7 +254,7 @@ module  x393 #(
 
 //    wire                  [7:0] status_other_ad = 0; // Other status byte-wide address/data
 //    wire                        status_other_rq = 0; // Other status request   
-//    wire                        status_other_start;  // SuppressThisWarning VEditor ****** Other status packet transfer start (currently with 0 latency from status_root_rq)
+//    wire                        status_other_start;  //
 
 
     wire                  [7:0] status_test01_ad;    // Test module status byte-wide address/data 
@@ -259,11 +264,11 @@ module  x393 #(
 
     wire                  [7:0] status_sensor_ad;     // Other status byte-wide address/data
     wire                        status_sensor_rq;     // Other status request   
-    wire                        status_sensor_start;  // S uppressThisWarning VEditor ****** Other status packet transfer start (currently with 0 latency from status_root_rq)
+    wire                        status_sensor_start;  //
 
     wire                  [7:0] status_compressor_ad; // Other status byte-wide address/data
     wire                        status_compressor_rq; // Other status request   
-    wire                        status_compressor_start;  // S uppressThisWarning VEditor ****** Other status packet transfer start (currently with 0 latency from status_root_rq)
+    wire                        status_compressor_start;  //
 
 
 // TODO: Add sequencer status (16+2) bits of current frame number. Ose 'h31 as the adderss, 'h702 (701..703 were empty) to program
@@ -283,6 +288,10 @@ module  x393 #(
     wire                  [7:0] status_gpio_ad; // Other status byte-wide address/data
     wire                        status_gpio_rq; // Other status request   
     wire                        status_gpio_start;  // S uppressThisWarning VEditor ****** Other status packet transfer start (currently with 0 latency from status_root_rq)
+
+    wire                  [7:0] status_saxi1wr_ad; // saxi1 - logger data Other status byte-wide address/data
+    wire                        status_saxi1wr_rq; // Other status request   
+    wire                        status_saxi1wr_start;  // S uppressThisWarning VEditor ****** Other status packet transfer start (currently with 0 latency from status_root_rq)
 
     // Insert register layer if needed
     reg  [7:0] cmd_mcontr_ad;
@@ -312,6 +321,9 @@ module  x393 #(
     reg  [7:0] cmd_gpio_ad;
     reg        cmd_gpio_stb;
 
+    reg  [7:0] cmd_saxi1wr_ad;
+    reg        cmd_saxi1wr_stb;
+
 // membridge
     wire                        frame_start_chn1; // input
     wire                        next_page_chn1; // input
@@ -338,21 +350,21 @@ module  x393 #(
     wire                        page_ready_chn2; // output
     wire                        frame_done_chn2; // output
     wire[FRAME_HEIGHT_BITS-1:0] line_unfinished_chn2; // output[15:0] 
-    wire  [LAST_FRAME_BITS-1:0] frame_number_chn2; // output[15:0] 
+ //   wire  [LAST_FRAME_BITS-1:0] frame_number_chn2; // output[15:0] 
     wire                        suspend_chn2; // input
     wire                        frame_start_chn3; // input
     wire                        next_page_chn3; // input
     wire                        page_ready_chn3; // output
     wire                        frame_done_chn3; // output
     wire[FRAME_HEIGHT_BITS-1:0] line_unfinished_chn3; // output[15:0] 
-    wire  [LAST_FRAME_BITS-1:0] frame_number_chn3; // output[15:0] 
+//    wire  [LAST_FRAME_BITS-1:0] frame_number_chn3; // output[15:0] 
     wire                        suspend_chn3; // input
     wire                        frame_start_chn4; // input
     wire                        next_page_chn4; // input
     wire                        page_ready_chn4; // output
     wire                        frame_done_chn4; // output
     wire[FRAME_HEIGHT_BITS-1:0] line_unfinished_chn4; // output[15:0]
-    wire  [LAST_FRAME_BITS-1:0] frame_number_chn4; // output[15:0] 
+//    wire  [LAST_FRAME_BITS-1:0] frame_number_chn4; // output[15:0] 
     wire                        suspend_chn4; // input
    
     reg                         axi_rst_pre=1'b1;
@@ -369,8 +381,8 @@ module  x393 #(
     wire                        trigger_mode; //       (), // input
     wire                  [3:0] trig_in;                  // input[3:0] 
         
-    wire                  [3:0] sof_out_pclk; //       (), // output[3:0] 
-    wire                  [3:0] eof_out_pclk; //       (), // output[3:0] 
+    wire                  [3:0] sof_out_pclk; //       (), // output[3:0] // SuppressThisWarning VEditor - (yet) unused
+    wire                  [3:0] eof_out_pclk; //       (), // output[3:0] // SuppressThisWarning VEditor - (yet) unused
     wire                  [3:0] sof_out_mclk; // Use for sequencer and to start memory write
 // if sof_out_mclk is applied to both sequencer and memory controller (as it is now) reprogramming of the sensor->memory
 // parameters will be applied to the next frame TODO: Verify that sequencer will always be later than memory controller
@@ -414,8 +426,8 @@ module  x393 #(
    wire                      [7:0] ts_logegr_data;    // input[7:0] loger timestamp data (@logger_clk) 
    
 // Compressor signals for interrupts generation    
-   wire                      [3:0] eof_written_mclk;  // output
-   wire                      [3:0] stuffer_done_mclk; // output
+   wire                      [3:0] eof_written_mclk;  // output // SuppressThisWarning VEditor - (yet) unused
+   wire                      [3:0] stuffer_done_mclk; // output// SuppressThisWarning VEditor - (yet) unused
 // Compressor frame synchronization
   
 // GPIO internal signals (for camera GPIOs, not Zynq PS GPIO)
@@ -434,7 +446,17 @@ module  x393 #(
    // Internal signal for toming393 (camsync) modules
    wire               logger_snap;
    
-      
+   // event_logger intermediate signals
+   wire        [15:0] logger_out;          // output[15:0] 
+   wire               logger_stb;          // output
+   // event_logger intermediate signals (after mult_saxi_wr_inbuf - converted to 32 bit wide)
+   
+  wire               logger_saxi_en;
+  wire               logger_has_burst; 
+  wire               logger_read_burst;
+  wire        [31:0] logger_data32; 
+  wire               logger_pre_valid_chn;
+ 
    
    assign axird_dev_ready = ~axird_dev_busy; //may combine (AND) multiple sources if needed
    assign axird_dev_busy = 1'b0; // always for now
@@ -483,6 +505,10 @@ module  x393 #(
 
         cmd_gpio_ad <=        cmd_root_ad;
         cmd_gpio_stb <=       cmd_root_stb;
+        
+        cmd_saxi1wr_ad <=     cmd_root_ad;
+        cmd_saxi1wr_stb <=    cmd_root_stb;
+        
     end
 
 // For now - connect status_test01 to status_other, if needed - increase number of multiplexer inputs)
@@ -836,17 +862,17 @@ BUFG bufg_axi_aclk_i  (.O(axi_aclk),.I(fclk[0]));
         .rq_in6    (status_logger_rq), // input
         .start_in6 (status_logger_start), // output
         
-        .db_in7    (status_timing_ad), // input[7:0] 
-        .rq_in7    (status_timing_rq), // input
-        .start_in7 (status_timing_start), // output
+        .db_in7    (status_timing_ad),        // input[7:0] 
+        .rq_in7    (status_timing_rq),       // input
+        .start_in7 (status_timing_start),    // output
         
-        .db_in8    (8'b0),                   // input[7:0] 
-        .rq_in8    (1'b0),                   // input
-        .start_in8 (),                       // output
+        .db_in8    (status_gpio_ad),         // input[7:0] 
+        .rq_in8    (status_gpio_rq),         // input
+        .start_in8 (status_gpio_start),      // output
         
-        .db_in9    (8'b0),                   // input[7:0] 
-        .rq_in9    (1'b0),                   // input
-        .start_in9 (),                       // output
+        .db_in9    (status_saxi1wr_ad),      // input[7:0] 
+        .rq_in9    (status_saxi1wr_rq),      // input
+        .start_in9 (status_saxi1wr_start),   // output
         
         .db_in10   (8'b0),                   // input[7:0] 
         .rq_in10   (1'b0),                   // input
@@ -1089,7 +1115,7 @@ BUFG bufg_axi_aclk_i  (.O(axi_aclk),.I(fclk[0]));
         .page_ready_chn2           (page_ready_chn2),            // output
         .frame_done_chn2           (frame_done_chn2),            // output
         .line_unfinished_chn2      (line_unfinished_chn2),       // output[15:0]
-        .frame_number_chn2         (frame_number_chn2),          // output[15:0]  
+        .frame_number_chn2         (), //frame_number_chn2),     // output[15:0]  
         .suspend_chn2              (suspend_chn2),               // input
         
         .frame_start_chn3          (frame_start_chn3),           // input
@@ -1097,7 +1123,7 @@ BUFG bufg_axi_aclk_i  (.O(axi_aclk),.I(fclk[0]));
         .page_ready_chn3           (page_ready_chn3),            // output
         .frame_done_chn3           (frame_done_chn3),            // output
         .line_unfinished_chn3      (line_unfinished_chn3),       // output[15:0] 
-        .frame_number_chn3         (frame_number_chn3),          // output[15:0]  
+        .frame_number_chn3         (), //frame_number_chn3),     // output[15:0]  
         .suspend_chn3              (suspend_chn3),               // input
         
         .frame_start_chn4          (frame_start_chn4),           // input
@@ -1105,7 +1131,7 @@ BUFG bufg_axi_aclk_i  (.O(axi_aclk),.I(fclk[0]));
         .page_ready_chn4           (page_ready_chn4),            // output
         .frame_done_chn4           (frame_done_chn4),            // output
         .line_unfinished_chn4      (line_unfinished_chn4),       // output[15:0]
-        .frame_number_chn4         (frame_number_chn4),          // output[15:0]  
+        .frame_number_chn4         (), //frame_number_chn4),     // output[15:0]  
         .suspend_chn4              (suspend_chn4),               // input
 
         .SDRST                     (SDRST),                      // output
@@ -1262,8 +1288,7 @@ BUFG bufg_axi_aclk_i  (.O(axi_aclk),.I(fclk[0]));
         .afi_rdissuecap1en      (afi0_rdissuecap1en) // output
     );
     
-    // SAXIGP0 signals
-    
+    // SAXIGP0 signals (read unused)  (for the histograms)
     wire        saxi0_aclk     = hclk; // 150KHz
     wire [31:0] saxi0_awaddr;
     wire        saxi0_awvalid;
@@ -1286,6 +1311,31 @@ BUFG bufg_axi_aclk_i  (.O(axi_aclk),.I(fclk[0]));
     wire        saxi0_bready;
     wire [ 5:0] saxi0_bid; 
     wire [ 1:0] saxi0_bresp; 
+
+    // SAXIGP1 signals (read unused) (for the event logger - has 3 spare channels for write)
+    wire        saxi1_aclk     = hclk; // 150KHz
+    wire [31:0] saxi1_awaddr;
+    wire        saxi1_awvalid;
+    wire        saxi1_awready;
+    wire [ 5:0] saxi1_awid; 
+    wire [ 1:0] saxi1_awlock; 
+    wire [ 3:0] saxi1_awcache; 
+    wire [ 2:0] saxi1_awprot; 
+    wire [ 3:0] saxi1_awlen; 
+    wire [ 1:0] saxi1_awsize; 
+    wire [ 1:0] saxi1_awburst; 
+    wire [ 3:0] saxi1_awqos; 
+    wire [31:0] saxi1_wdata; 
+    wire        saxi1_wvalid;
+    wire        saxi1_wready;
+    wire [ 5:0] saxi1_wid; 
+    wire        saxi1_wlast;
+    wire [ 3:0] saxi1_wstrb; 
+    wire        saxi1_bvalid;
+    wire        saxi1_bready;
+    wire [ 5:0] saxi1_bid; 
+    wire [ 1:0] saxi1_bresp; 
+
 
     sensors393 #(
         .SENSOR_GROUP_ADDR          (SENSOR_GROUP_ADDR),
@@ -1844,112 +1894,104 @@ BUFG bufg_axi_aclk_i  (.O(axi_aclk),.I(fclk[0]));
         .ts_local_stb  (ts_pre_logger_stb),   // input
         .ts_local_data (ts_logegr_data),      // input[7:0] 
         .ext_di        (gpio_rd),             // input[9:0] 
-        .ext_do        (gpio_camsync),        // output[9:0] 
-        .ext_en        (gpio_camsync_en),     // output[9:0] 
-        .ts_stb_chn0(), // input
-        .ts_data_chn0(), // input[7:0] 
-        .ts_stb_chn1(), // input
-        .ts_data_chn1(), // input[7:0] 
-        .ts_stb_chn2(), // input
-        .ts_data_chn2(), // input[7:0] 
-        .ts_stb_chn3(), // input
-        .ts_data_chn3(), // input[7:0] 
+        .ext_do        (gpio_logger),         // output[9:0] 
+        .ext_en        (gpio_logger_en),      // output[9:0] 
+        .ts_stb_chn0   (ts_pre_stb[0]),       // input
+        .ts_data_chn0  (ts_data[0 * 8 +: 8]), // input[7:0] 
+        .ts_stb_chn1   (ts_pre_stb[1]),       // input
+        .ts_data_chn1  (ts_data[1 * 8 +: 8]), // input[7:0] 
+        .ts_stb_chn2   (ts_pre_stb[2]),       // input
+        .ts_data_chn2  (ts_data[2 * 8 +: 8]), // input[7:0] 
+        .ts_stb_chn3   (ts_pre_stb[3]),       // input
+        .ts_data_chn3  (ts_data[3 * 8 +: 8]), // input[7:0] 
         
-        .data_out(), // output[15:0] 
-        .data_out_stb(), // output
+        .data_out      (logger_out),          // output[15:0] @mclk
+        .data_out_stb  (logger_stb),          // output @mclk
         .debug_state() // output[31:0] 
     );
-    /* Instance template for module mult_saxi_wr_chn */
-    mult_saxi_wr_chn #(
-        .MULT_SAXI_HALF_BRAM(1),
-        .MULT_SAXI_BSLOG(4),
-        .MULT_SAXI_ADV_WR(4),
-        .MULT_SAXI_ADV_RD(3)
-    ) mult_saxi_wr_chn_i (
-        .mclk(), // input
-        .aclk(), // input
-        .en(), // input
-        .has_burst(), // input
-        .valid(), // input
-        .rq_wr(), // output
-        .grant_wr(), // input
-        .wa(), // output[6:0] 
-        .adv_wr_done(), // output reg 
-        .rq_out(), // output reg 
-        .grant_out(), // input
-        .fifo_half_full(), // input
-        .ra(), // output[6:0] 
-        .pre_re(), // output
-        .first_re(), // output reg 
-        .last_re(), // output reg 
-        .wdata_busy() // output reg 
+    /* Instance template for module mult_saxi_wr_inbuf */
+    mult_saxi_wr_inbuf #(
+        .MULT_SAXI_HALF_BRAM_IN  (MULT_SAXI_HALF_BRAM_IN),
+        .MULT_SAXI_BSLOG         (MULT_SAXI_BSLOG0),
+        .MULT_SAXI_WLOG          (MULT_SAXI_WLOG)
+    ) mult_saxi_wr_inbuf_i (
+        .mclk                    (mclk),                // input
+        .en                      (logger_saxi_en),      // input
+        .iclk                    (mclk),                // input
+        .data_in                 (logger_out),          // input[15:0] 
+        .valid                   (logger_stb),          // input
+        .has_burst               (logger_has_burst),    // output reg 
+        .read_burst              (logger_read_burst),   // input
+        .data_out                (logger_data32),       // output[31:0] 
+        .pre_valid_chn           (logger_pre_valid_chn) // output
     );
 
-    /* Instance template for module mult_saxi_wr */
     mult_saxi_wr #(
-        .MULT_SAXI_ADDR('h380),
-        .MULT_SAXI_CNTRL_ADDR('h3a0),
-        .MULT_SAXI_STATUS_REG('h30),
-        .MULT_SAXI_HALF_BRAM(1),
-        .MULT_SAXI_BSLOG0(4),
-        .MULT_SAXI_BSLOG1(4),
-        .MULT_SAXI_BSLOG2(4),
-        .MULT_SAXI_BSLOG3(4),
-        .MULT_SAXI_MASK('h7f8),
-        .MULT_SAXI_CNTRL_MASK('h7fe),
-        .HIST_SAXI_AWCACHE(4'h3),
-        .MULT_SAXI_ADV_WR(4),
-        .MULT_SAXI_ADV_RD(3)
+        .MULT_SAXI_ADDR          (MULT_SAXI_ADDR),
+        .MULT_SAXI_CNTRL_ADDR    (MULT_SAXI_CNTRL_ADDR),
+        .MULT_SAXI_STATUS_REG    (MULT_SAXI_STATUS_REG),
+        .MULT_SAXI_HALF_BRAM     (MULT_SAXI_HALF_BRAM),
+        .MULT_SAXI_BSLOG0        (MULT_SAXI_BSLOG0),
+        .MULT_SAXI_BSLOG1        (MULT_SAXI_BSLOG1),
+        .MULT_SAXI_BSLOG2        (MULT_SAXI_BSLOG2),
+        .MULT_SAXI_BSLOG3        (MULT_SAXI_BSLOG3),
+        .MULT_SAXI_MASK          (MULT_SAXI_MASK),
+        .MULT_SAXI_CNTRL_MASK    (MULT_SAXI_CNTRL_MASK),
+        .MULT_SAXI_AWCACHE       (MULT_SAXI_AWCACHE),
+        .MULT_SAXI_ADV_WR        (MULT_SAXI_ADV_WR),
+        .MULT_SAXI_ADV_RD        (MULT_SAXI_ADV_RD)
     ) mult_saxi_wr_i (
-        .rst(), // input
-        .mclk(), // input
-        .aclk(), // input
-        .cmd_ad(), // input[7:0] 
-        .cmd_stb(), // input
-        .status_ad(), // output[7:0] 
-        .status_rq(), // output
-        .status_start(), // input
-        .en_chn0(), // output
-        .has_burst0(), // input
-        .read_burst0(), // output
-        .data_in_chn0(), // input[31:0] 
-        .pre_valid_chn0(), // input
-        .en_chn1(), // output
-        .has_burst1(), // input
-        .read_burst1(), // output
-        .data_in_chn1(), // input[31:0] 
-        .pre_valid_chn1(), // input
-        .en_chn2(), // output
-        .has_burst2(), // input
-        .read_burst2(), // output
-        .data_in_chn2(), // input[31:0] 
-        .pre_valid_chn2(), // input
-        .en_chn3(), // output
-        .has_burst3(), // input
-        .read_burst3(), // output
-        .data_in_chn3(), // input[31:0] 
-        .pre_valid_chn3(), // input
-        .saxi_awaddr(), // output[31:0] 
-        .saxi_awvalid(), // output
-        .saxi_awready(), // input
-        .saxi_awid(), // output[5:0] 
-        .saxi_awlock(), // output[1:0] 
-        .saxi_awcache(), // output[3:0] 
-        .saxi_awprot(), // output[2:0] 
-        .saxi_awlen(), // output[3:0] 
-        .saxi_awsize(), // output[1:0] 
-        .saxi_awburst(), // output[1:0] 
-        .saxi_awqos(), // output[3:0] 
-        .saxi_wdata(), // output[31:0] 
-        .saxi_wvalid(), // output
-        .saxi_wready(), // input
-        .saxi_wid(), // output[5:0] 
-        .saxi_wlast(), // output
-        .saxi_wstrb(), // output[3:0] 
-        .saxi_bvalid(), // input
-        .saxi_bready(), // output
-        .saxi_bid(), // input[5:0] 
-        .saxi_bresp() // input[1:0] 
+        .rst                     (axi_rst),              // input
+        .mclk                    (mclk),                 // input
+        .aclk                    (saxi1_aclk),           // input
+        .cmd_ad                  (cmd_saxi1wr_ad),       // input[7:0] 
+        .cmd_stb                 (cmd_saxi1wr_stb),      // input
+        .status_ad               (status_saxi1wr_ad),    // output[7:0] 
+        .status_rq               (status_saxi1wr_rq),    // output
+        .status_start            (status_saxi1wr_start), // input
+        .en_chn0                 (logger_saxi_en),       // output
+        .has_burst0              (logger_has_burst),     // input
+        .read_burst0             (logger_read_burst),    // output
+        .data_in_chn0            (logger_data32),        // input[31:0] 
+        .pre_valid_chn0          (logger_pre_valid_chn), // input
+        // 3 spare channels for SAXI_GP 1
+        .en_chn1                 (),                     // output
+        .has_burst1              (1'b0),                 // input
+        .read_burst1             (),                     // output
+        .data_in_chn1            (32'b0),                // input[31:0] 
+        .pre_valid_chn1          (1'b0),                 // input
+        .en_chn2                 (),                     // output
+        .has_burst2              (1'b0),                 // input
+        .read_burst2             (),                     // output
+        .data_in_chn2            (32'b0),                // input[31:0] 
+        .pre_valid_chn2          (1'b0),                 // input
+        .en_chn3                 (),                     // output
+        .has_burst3              (1'b0),                 // input
+        .read_burst3             (),                     // output
+        .data_in_chn3            (32'b0),                // input[31:0] 
+        .pre_valid_chn3          (1'b0),                 // input
+        
+        .saxi_awaddr             (saxi1_awaddr),        // output[31:0] 
+        .saxi_awvalid            (saxi1_awvalid),       // output
+        .saxi_awready            (saxi1_awready),       // input
+        .saxi_awid               (saxi1_awid),          // output[5:0] 
+        .saxi_awlock             (saxi1_awlock),        // output[1:0] 
+        .saxi_awcache            (saxi1_awcache),       // output[3:0] 
+        .saxi_awprot             (saxi1_awprot),        // output[2:0] 
+        .saxi_awlen              (saxi1_awlen),         // output[3:0] 
+        .saxi_awsize             (saxi1_awsize),        // output[1:0] 
+        .saxi_awburst            (saxi1_awburst),       // output[1:0] 
+        .saxi_awqos              (saxi1_awqos),         // output[3:0] 
+        .saxi_wdata              (saxi1_wdata),         // output[31:0] 
+        .saxi_wvalid             (saxi1_wvalid),        // output
+        .saxi_wready             (saxi1_wready),        // input
+        .saxi_wid                (saxi1_wid),           // output[5:0] 
+        .saxi_wlast              (saxi1_wlast),         // output
+        .saxi_wstrb              (saxi1_wstrb),         // output[3:0] 
+        .saxi_bvalid             (saxi1_bvalid),        // input
+        .saxi_bready             (saxi1_bready),        // output
+        .saxi_bid                (saxi1_bid),           // input[5:0] 
+        .saxi_bresp              (saxi1_bresp)          // input[1:0] 
     );
     
 
@@ -2443,7 +2485,7 @@ assign DUMMY_TO_KEEP = frst[2] && MEMCLK; // 1'b0; // dbg_toggle[0];
 
 // AXI PS Slave GP1    
 // AXI PS Slave GP1: Clock, Reset
-    .SAXIGP1ACLK(),              // AXI PS Slave GP1 Clock , input
+    .SAXIGP1ACLK       (saxi1_aclk),    // AXI PS Slave GP1 Clock , input
     .SAXIGP1ARESETN(),           // AXI PS Slave GP1 Reset, output
 // AXI PS Slave GP1: Read Address    
     .SAXIGP1ARADDR(),            // AXI PS Slave GP1 ARADDR[31:0], input  
@@ -2465,29 +2507,29 @@ assign DUMMY_TO_KEEP = frst[2] && MEMCLK; // 1'b0; // dbg_toggle[0];
     .SAXIGP1RLAST(),             // AXI PS Slave GP1 RLAST, output
     .SAXIGP1RRESP(),             // AXI PS Slave GP1 RRESP[1:0], output
 // AXI PS Slave GP1: Write Address    
-    .SAXIGP1AWADDR(),            // AXI PS Slave GP1 AWADDR[31:0], input
-    .SAXIGP1AWVALID(),           // AXI PS Slave GP1 AWVALID, input
-    .SAXIGP1AWREADY(),           // AXI PS Slave GP1 AWREADY, output
-    .SAXIGP1AWID(),              // AXI PS Slave GP1 AWID[5:0], input
-    .SAXIGP1AWLOCK(),            // AXI PS Slave GP1 AWLOCK[1:0], input
-    .SAXIGP1AWCACHE(),           // AXI PS Slave GP1 AWCACHE[3:0], input
-    .SAXIGP1AWPROT(),            // AXI PS Slave GP1 AWPROT[2:0], input
-    .SAXIGP1AWLEN(),             // AXI PS Slave GP1 AWLEN[3:0], input
-    .SAXIGP1AWSIZE(),            // AXI PS Slave GP1 AWSIZE[1:0], input
-    .SAXIGP1AWBURST(),           // AXI PS Slave GP1 AWBURST[1:0], input
-    .SAXIGP1AWQOS(),             // AXI PS Slave GP1 AWQOS[3:0], input
+    .SAXIGP1AWADDR     (saxi1_awaddr),   // AXI PS Slave GP1 AWADDR[31:0], input
+    .SAXIGP1AWVALID    (saxi1_awvalid),  // AXI PS Slave GP1 AWVALID, input
+    .SAXIGP1AWREADY    (saxi1_awready),  // AXI PS Slave GP1 AWREADY, output
+    .SAXIGP1AWID       (saxi1_awid),     // AXI PS Slave GP1 AWID[5:0], input
+    .SAXIGP1AWLOCK     (saxi1_awlock),   // AXI PS Slave GP1 AWLOCK[1:0], input
+    .SAXIGP1AWCACHE    (saxi1_awcache),  // AXI PS Slave GP1 AWCACHE[3:0], input
+    .SAXIGP1AWPROT     (saxi1_awprot),   // AXI PS Slave GP1 AWPROT[2:0], input
+    .SAXIGP1AWLEN      (saxi1_awlen),    // AXI PS Slave GP1 AWLEN[3:0], input
+    .SAXIGP1AWSIZE     (saxi1_awsize),   // AXI PS Slave GP1 AWSIZE[1:0], input
+    .SAXIGP1AWBURST    (saxi1_awburst),  // AXI PS Slave GP1 AWBURST[1:0], input
+    .SAXIGP1AWQOS      (saxi1_awqos),    // AXI PS Slave GP1 AWQOS[3:0], input
 // AXI PS Slave GP1: Write Data
-    .SAXIGP1WDATA(),             // AXI PS Slave GP1 WDATA[31:0], input
-    .SAXIGP1WVALID(),            // AXI PS Slave GP1 WVALID, input
-    .SAXIGP1WREADY(),            // AXI PS Slave GP1 WREADY, output
-    .SAXIGP1WID(),               // AXI PS Slave GP1 WID[5:0], input
-    .SAXIGP1WLAST(),             // AXI PS Slave GP1 WLAST, input
-    .SAXIGP1WSTRB(),             // AXI PS Slave GP1 WSTRB[3:0], input
+    .SAXIGP1WDATA      (saxi1_wdata),    // AXI PS Slave GP1 WDATA[31:0], input
+    .SAXIGP1WVALID     (saxi1_wvalid),   // AXI PS Slave GP1 WVALID, input
+    .SAXIGP1WREADY     (saxi1_wready),   // AXI PS Slave GP1 WREADY, output
+    .SAXIGP1WID        (saxi1_wid),      // AXI PS Slave GP1 WID[5:0], input
+    .SAXIGP1WLAST      (saxi1_wlast),    // AXI PS Slave GP1 WLAST, input
+    .SAXIGP1WSTRB      (saxi1_wstrb),    // AXI PS Slave GP1 WSTRB[3:0], input
 // AXI PS Slave GP1: Write Responce
-    .SAXIGP1BVALID(),            // AXI PS Slave GP1 BVALID, output
-    .SAXIGP1BREADY(),            // AXI PS Slave GP1 BREADY, input
-    .SAXIGP1BID(),               // AXI PS Slave GP1 BID[5:0], output
-    .SAXIGP1BRESP(),             // AXI PS Slave GP1 BRESP[1:0], output
+    .SAXIGP1BVALID     (saxi1_bvalid),   // AXI PS Slave GP1 BVALID, output
+    .SAXIGP1BREADY     (saxi1_bready),   // AXI PS Slave GP1 BREADY, input
+    .SAXIGP1BID        (saxi1_bid),      // AXI PS Slave GP1 BID[5:0], output //TODO:  Update range !!!
+    .SAXIGP1BRESP      (saxi1_bresp),    // AXI PS Slave GP1 BRESP[1:0], output
 
 // AXI PS Slave HP0    
 // AXI PS Slave HP0: Clock, Reset

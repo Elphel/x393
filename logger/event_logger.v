@@ -23,7 +23,7 @@
 module  event_logger#(
     parameter LOGGER_ADDR =                    'h720, //..'h721
     parameter LOGGER_STATUS =                  'h722, // .. 'h722
-    parameter LOGGER_STATUS_REG_ADDR =         'h34, // just 1 location)
+    parameter LOGGER_STATUS_REG_ADDR =         'h39, // just 1 location)
     parameter LOGGER_MASK =                    'h7fe,
     parameter LOGGER_STATUS_MASK =             'h7ff,
 

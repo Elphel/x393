@@ -24,9 +24,9 @@
 `timescale 1ns/1ps
 
 module  mult_saxi_wr #(
-    parameter MULT_SAXI_ADDR =           'h380,  // need to modify addresses and masks to fit into overall command range
-    parameter MULT_SAXI_CNTRL_ADDR =     'h3a0,  // 
-    parameter MULT_SAXI_STATUS_REG =     'h30,  // uses 4 consecutive locations
+    parameter MULT_SAXI_ADDR =           'h730,  // ..'h737
+    parameter MULT_SAXI_CNTRL_ADDR =     'h738,  // ..'h739
+    parameter MULT_SAXI_STATUS_REG =     'h34,   //..'h37 uses 4 consecutive locations
     parameter MULT_SAXI_HALF_BRAM =       1,     // 0 - use full 36Kb BRAM for the buffer, 1 - use just half
     parameter MULT_SAXI_BSLOG0 =          4,     // number of bits to represent burst size (4 - b.s. = 16, 0 - b.s = 1)
     parameter MULT_SAXI_BSLOG1 =          4,
@@ -34,7 +34,7 @@ module  mult_saxi_wr #(
     parameter MULT_SAXI_BSLOG3 =          4,
     parameter MULT_SAXI_MASK =           'h7f8,  // 4 address/length pairs. In bytes, but lower bits are set to 0?
     parameter MULT_SAXI_CNTRL_MASK =     'h7fe,  // mode and status - 2 locations
-    parameter HIST_SAXI_AWCACHE =         4'h3, //..7 cache mode (4 bits, default 4'h3)
+    parameter MULT_SAXI_AWCACHE =         4'h3, //..7 cache mode (4 bits, default 4'h3)
     parameter MULT_SAXI_ADV_WR =          4, // number of clock cycles before end of write to genearte adv_wr_done
     parameter MULT_SAXI_ADV_RD =          3 // number of clock cycles before end of write to genearte adv_wr_done
     
@@ -348,7 +348,7 @@ module  mult_saxi_wr #(
     assign saxi_awlen = axi_len;
     
     assign saxi_awlock=  2'h0;               // AXI PS Slave GP0 AWLOCK[1:0], input
-    assign saxi_awcache= HIST_SAXI_AWCACHE;  // awcache_mode; // 4'h3;          // AXI PS Slave GP0 AWCACHE[3:0], input
+    assign saxi_awcache= MULT_SAXI_AWCACHE;  // awcache_mode; // 4'h3;          // AXI PS Slave GP0 AWCACHE[3:0], input
     assign saxi_awprot=  3'h0;               // AXI PS Slave GP0 AWPROT[2:0], input
     assign saxi_awsize=  2'h2;               // 4 bytes; AXI PS Slave GP0 AWSIZE[1:0], input
     assign saxi_awburst= 2'h1;               // Increment address bursts AXI PS Slave GP0 AWBURST[1:0], input

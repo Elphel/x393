@@ -24,7 +24,7 @@
 module  cmd_seq_mux#(
     parameter CMDSEQMUX_ADDR =   'h702, // only status control
     parameter CMDSEQMUX_MASK =   'h7ff,
-    parameter CMDSEQMUX_STATUS = 'h31,
+    parameter CMDSEQMUX_STATUS = 'h38,
     parameter AXI_WR_ADDR_BITS=14
 )(
     input                             rst,          // global system reset

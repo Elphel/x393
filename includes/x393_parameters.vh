@@ -585,35 +585,53 @@
     
     parameter CMDSEQMUX_ADDR =              'h702, // only status control
     parameter CMDSEQMUX_MASK =              'h7ff,
-    parameter CMDSEQMUX_STATUS =            'h31,
+    parameter CMDSEQMUX_STATUS =            'h38,
     // Logger parameters
-    parameter LOGGER_ADDR =                    'h720, //..'h721
-    parameter LOGGER_STATUS =                  'h722, // .. 'h722
-    parameter LOGGER_STATUS_REG_ADDR =         'h34, // just 1 location)
-    parameter LOGGER_MASK =                    'h7fe,
-    parameter LOGGER_STATUS_MASK =             'h7ff,
+    parameter LOGGER_ADDR =                 'h720, //..'h721
+    parameter LOGGER_STATUS =               'h722, // .. 'h722
+    parameter LOGGER_STATUS_REG_ADDR =      'h39, // just 1 location)
+    parameter LOGGER_MASK =                 'h7fe,
+    parameter LOGGER_STATUS_MASK =          'h7ff,
 
-    parameter LOGGER_PAGE_IMU =                 0, // 'h00..'h1f - overlaps with period/duration/halfperiod/config?
-    parameter LOGGER_PAGE_GPS =                 1, // 'h20..'h3f
-    parameter LOGGER_PAGE_MSG =                 2, // 'h40..'h5f
+    parameter LOGGER_PAGE_IMU =             0, // 'h00..'h1f - overlaps with period/duration/halfperiod/config?
+    parameter LOGGER_PAGE_GPS =             1, // 'h20..'h3f
+    parameter LOGGER_PAGE_MSG =             2, // 'h40..'h5f
     
-    parameter LOGGER_PERIOD =                   0,
-    parameter LOGGER_BIT_DURATION =             1,
-    parameter LOGGER_BIT_HALF_PERIOD =          2, //rs232 half bit period
-    parameter LOGGER_CONFIG =                   3,
+    parameter LOGGER_PERIOD =               0,
+    parameter LOGGER_BIT_DURATION =         1,
+    parameter LOGGER_BIT_HALF_PERIOD =      2, //rs232 half bit period
+    parameter LOGGER_CONFIG =               3,
 
-    parameter LOGGER_CONF_IMU =                 2,
-    parameter LOGGER_CONF_IMU_BITS =            2,
-    parameter LOGGER_CONF_GPS =                 7,
-    parameter LOGGER_CONF_GPS_BITS =            4,
-    parameter LOGGER_CONF_MSG =                13,
-    parameter LOGGER_CONF_MSG_BITS =            5,
-    parameter LOGGER_CONF_SYN =                18, // 15,
-    parameter LOGGER_CONF_SYN_BITS =            4, // 1,
-    parameter LOGGER_CONF_EN =                 20, // 17,
-    parameter LOGGER_CONF_EN_BITS =             1,
-    parameter LOGGER_CONF_DBG =                25, // 22,
-    parameter LOGGER_CONF_DBG_BITS =            4
+    parameter LOGGER_CONF_IMU =             2,
+    parameter LOGGER_CONF_IMU_BITS =        2,
+    parameter LOGGER_CONF_GPS =             7,
+    parameter LOGGER_CONF_GPS_BITS =        4,
+    parameter LOGGER_CONF_MSG =            13,
+    parameter LOGGER_CONF_MSG_BITS =        5,
+    parameter LOGGER_CONF_SYN =            18, // 15,
+    parameter LOGGER_CONF_SYN_BITS =        4, // 1,
+    parameter LOGGER_CONF_EN =             20, // 17,
+    parameter LOGGER_CONF_EN_BITS =         1,
+    parameter LOGGER_CONF_DBG =            25, // 22,
+    parameter LOGGER_CONF_DBG_BITS =        4,
+
+    parameter MULT_SAXI_HALF_BRAM_IN =      1,     // 0 - use full 36Kb BRAM for the buffer, 1 - use just half
+    parameter MULT_SAXI_WLOG =              4,      // number of bits for the input data ( 3 - 8 bit, 4 - 16-bit, 5 - 32-bit
+    
+    parameter MULT_SAXI_ADDR =           'h730,  // ..'h737
+    parameter MULT_SAXI_CNTRL_ADDR =     'h738,  // ..'h739
+    parameter MULT_SAXI_STATUS_REG =     'h34,   //..'h37 uses 4 consecutive locations
+    parameter MULT_SAXI_HALF_BRAM =       1,     // 0 - use full 36Kb BRAM for the buffer, 1 - use just half
+    parameter MULT_SAXI_BSLOG0 =          4,     // number of bits to represent burst size (4 - b.s. = 16, 0 - b.s = 1)
+    parameter MULT_SAXI_BSLOG1 =          4,
+    parameter MULT_SAXI_BSLOG2 =          4,
+    parameter MULT_SAXI_BSLOG3 =          4,
+    parameter MULT_SAXI_MASK =           'h7f8,  // 4 address/length pairs. In bytes, but lower bits are set to 0?
+    parameter MULT_SAXI_CNTRL_MASK =     'h7fe,  // mode and status - 2 locations
+    parameter MULT_SAXI_AWCACHE =         4'h3, //..7 cache mode (4 bits, default 4'h3)
+    parameter MULT_SAXI_ADV_WR =          4, // number of clock cycles before end of write to genearte adv_wr_done
+    parameter MULT_SAXI_ADV_RD =          3 // number of clock cycles before end of write to genearte adv_wr_done
+    
     
     
     
