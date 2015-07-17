@@ -48,7 +48,7 @@
 //     [13:12] - 3 - run seq, 2 - stop seq , 1,0 - no change to run state
 
 module  cmd_frame_sequencer#(
-    parameter CMDFRAMESEQ_ADDR=                'h160, //TODO: assign valid address
+    parameter CMDFRAMESEQ_ADDR=                'h780,
     parameter CMDFRAMESEQ_MASK=                'h3e0,
     parameter AXI_WR_ADDR_BITS =                14,
     parameter CMDFRAMESEQ_DEPTH =               64, // 32/64/128

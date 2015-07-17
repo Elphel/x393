@@ -528,5 +528,95 @@
 
     parameter CMPRS_AFIMUX_WIDTH =         26, // maximal for status: currently only works with 26)
     parameter CMPRS_AFIMUX_CYCBITS =        3,
-    parameter AFI_MUX_BUF_LATENCY =         2  // buffers read latency from fifo_ren* to fifo_rdata* valid : 2 if no register layers are used
+    parameter AFI_MUX_BUF_LATENCY =         2,  // buffers read latency from fifo_ren* to fifo_rdata* valid : 2 if no register layers are used
+    // GPIO control : 'h700..'h701, status: 'h30
+    parameter integer GPIO_DRIVE =        12,
+    parameter GPIO_ADDR =                 'h700, // .701
+    parameter GPIO_MASK =                 'h7fe,
+    parameter GPIO_STATUS_REG_ADDR =      'h30,  // address where status can be read out (10 GPIO inputs)
+    
+    parameter GPIO_IBUF_LOW_PWR =         "TRUE",
+    parameter GPIO_IOSTANDARD =           "DEFAULT", // power is 1.5V
+    parameter GPIO_SLEW =                 "SLOW",
+    
+    parameter GPIO_SET_PINS =              0,  // Set GPIO output state, give control for some bits to other modules 
+    parameter GPIO_SET_STATUS =            1,   // set status mode
+    parameter GPIO_N =                     10, // number of GPIO bits to control
+    parameter GPIO_PORTEN =                24, // bit number to control port enables (up from this) 
+    // Timing (rtc+camsync) parameters    
+    parameter RTC_ADDR=                    'h704, // 'h707
+    parameter CAMSYNC_ADDR =               'h708, // 'h70f
+    parameter RTC_STATUS_REG_ADDR =        'h31,   // (1 loc) address where status can be read out (currently just sequence # and alternating bit) 
+    parameter RTC_SEC_USEC_ADDR =          'h32,  // ..'h33 address where seconds of the snapshot can be read (microseconds - next adderss)
+    parameter RTC_MASK =                   'h7fc,
+    parameter CAMSYNC_MASK =               'h7f8,
+    parameter CAMSYNC_MODE =               'h0,
+    parameter CAMSYNC_TRIG_SRC =           'h1, // setup trigger source
+    parameter CAMSYNC_TRIG_DST =           'h2, // setup trigger destination line(s)
+    parameter CAMSYNC_TRIG_PERIOD =        'h3, // setup output trigger period
+    parameter CAMSYNC_TRIG_DELAY0 =        'h4, // setup input trigger delay
+    parameter CAMSYNC_TRIG_DELAY1 =        'h5, // setup input trigger delay
+    parameter CAMSYNC_TRIG_DELAY2 =        'h6, // setup input trigger delay
+    parameter CAMSYNC_TRIG_DELAY3 =        'h7, // setup input trigger delay
+    parameter CAMSYNC_SNDEN_BIT =          'h1, // enable writing ts_snd_en
+    parameter CAMSYNC_EXTERNAL_BIT =       'h3, // enable writing ts_external
+    parameter CAMSYNC_TRIGGERED_BIT =      'h5, // enable writing ts_external
+    parameter CAMSYNC_MASTER_BIT =         'h8, // select a 2-bit master channel (master delay may be used as a flash delay)
+    parameter CAMSYNC_CHN_EN_BIT =         'hd, // per-channel enable timestamp generation
+    parameter CAMSYNC_PRE_MAGIC =          6'b110100,
+    parameter CAMSYNC_POST_MAGIC =         6'b001101,
+    
+    parameter RTC_MHZ=                    25, // RTC input clock in MHz (should be interger number)
+    parameter RTC_BITC_PREDIV =            5, // number of bits to generate 2 MHz pulses counting refclk 
+    parameter RTC_SET_USEC=                0, // 20-bit number of microseconds
+    parameter RTC_SET_SEC=                 1, // 32-bit full number of seconds (und actually update timer)
+    parameter RTC_SET_CORR=                2, // write correction 16-bit signed
+    parameter RTC_SET_STATUS=              3,  // generate an output pulse to take a snapshot
+    // Command sequencers parameters
+    parameter CMDFRAMESEQ_ADDR_BASE=       'h780,
+    parameter CMDFRAMESEQ_ADDR_INC=        'h20,
+    parameter CMDFRAMESEQ_MASK=            'h3e0,
+    parameter CMDFRAMESEQ_DEPTH =           64, // 32/64/128
+    parameter CMDFRAMESEQ_ABS =             0,
+    parameter CMDFRAMESEQ_REL =             16,
+    parameter CMDFRAMESEQ_CTRL =            31,
+    parameter CMDFRAMESEQ_RST_BIT =         14,
+    parameter CMDFRAMESEQ_RUN_BIT =         13,
+    
+    parameter CMDSEQMUX_ADDR =              'h702, // only status control
+    parameter CMDSEQMUX_MASK =              'h7ff,
+    parameter CMDSEQMUX_STATUS =            'h31,
+    // Logger parameters
+    parameter LOGGER_ADDR =                    'h720, //..'h721
+    parameter LOGGER_STATUS =                  'h722, // .. 'h722
+    parameter LOGGER_STATUS_REG_ADDR =         'h34, // just 1 location)
+    parameter LOGGER_MASK =                    'h7fe,
+    parameter LOGGER_STATUS_MASK =             'h7ff,
+
+    parameter LOGGER_PAGE_IMU =                 0, // 'h00..'h1f - overlaps with period/duration/halfperiod/config?
+    parameter LOGGER_PAGE_GPS =                 1, // 'h20..'h3f
+    parameter LOGGER_PAGE_MSG =                 2, // 'h40..'h5f
+    
+    parameter LOGGER_PERIOD =                   0,
+    parameter LOGGER_BIT_DURATION =             1,
+    parameter LOGGER_BIT_HALF_PERIOD =          2, //rs232 half bit period
+    parameter LOGGER_CONFIG =                   3,
+
+    parameter LOGGER_CONF_IMU =                 2,
+    parameter LOGGER_CONF_IMU_BITS =            2,
+    parameter LOGGER_CONF_GPS =                 7,
+    parameter LOGGER_CONF_GPS_BITS =            4,
+    parameter LOGGER_CONF_MSG =                13,
+    parameter LOGGER_CONF_MSG_BITS =            5,
+    parameter LOGGER_CONF_SYN =                18, // 15,
+    parameter LOGGER_CONF_SYN_BITS =            4, // 1,
+    parameter LOGGER_CONF_EN =                 20, // 17,
+    parameter LOGGER_CONF_EN_BITS =             1,
+    parameter LOGGER_CONF_DBG =                25, // 22,
+    parameter LOGGER_CONF_DBG_BITS =            4
+    
+    
+    
+    
+    
     

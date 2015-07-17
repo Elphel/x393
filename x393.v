@@ -61,8 +61,8 @@ module  x393 #(
     inout                        sns4_sda,
     inout                        sns4_ctl,
     inout                        sns4_pg,
-    
-
+    // GPIO pins (1.5V): assigned in 10389: [1:0] - i2c, [5:2] - gpio, [GPIO_N-1:6] - sync i/o
+    inout           [GPIO_N-1:0] gpio_pins,
     // DDR3 interface
     output                       SDRST, // DDR3 reset (active low)
     output                       SDCLK, // DDR3 clock differential output, positive
@@ -199,6 +199,12 @@ module  x393 #(
    wire           xclk;   // global clock, compressor pixel rate (100 MHz)?
    wire           xclk2x; // global clock, compressor double pixel rate (200 MHz)
    
+   wire           camsync_clk; // global clock used for external synchronization. 96MHz in x353.
+                               //  Make it independent of pixel, compressor and mclk so it can be frozen
+   wire           logger_clk;  // global clock for the event logger. Use 100 MHz, shared with camsync_clk
+   assign logger_clk = camsync_clk;
+   
+   wire           time_ref; // RTC reference: integer number of microseconds, less than mclk/2. Not a global clock
    
 
    wire [11:0] tmp_debug; 
@@ -212,23 +218,12 @@ module  x393 #(
     wire                        cseq_wr_en;   // command sequencer write enable (output to command multiplexer) - keep until cseq_ackn received
     wire                 [31:0] cseq_wdata;   // command sequencer write data (output to command multiplexer) 
     wire                        cseq_ackn;    // ackn to command sequencer, command sequencer should de-assert cseq_wr_en
-    // per-sensor channel command sequencer signals
-    wire [AXI_WR_ADDR_BITS-1:0] cseq0_waddr;   // command sequencer write address (output to command multiplexer)
-    wire                        cseq0_wr_en;   // command sequencer write enable (output to command multiplexer) - keep until cseq_ackn received
-    wire                 [31:0] cseq0_wdata;   // command sequencer write data (output to command multiplexer) 
-    wire                        cseq0_ackn;    /// SuppressThisWarning VEditor ****** ackn to command sequencer, command sequencer should de-assert cseq_wr_en
-    wire [AXI_WR_ADDR_BITS-1:0] cseq1_waddr;   // command sequencer write address (output to command multiplexer)
-    wire                        cseq1_wr_en;   // command sequencer write enable (output to command multiplexer) - keep until cseq_ackn received
-    wire                 [31:0] cseq1_wdata;   // command sequencer write data (output to command multiplexer) 
-    wire                        cseq1_ackn;    /// SuppressThisWarning VEditor ****** ackn to command sequencer, command sequencer should de-assert cseq_wr_en
-    wire [AXI_WR_ADDR_BITS-1:0] cseq2_waddr;   // command sequencer write address (output to command multiplexer)
-    wire                        cseq2_wr_en;   // command sequencer write enable (output to command multiplexer) - keep until cseq_ackn received
-    wire                 [31:0] cseq2_wdata;   // command sequencer write data (output to command multiplexer) 
-    wire                        cseq2_ackn;    /// SuppressThisWarning VEditor ****** ackn to command sequencer, command sequencer should de-assert cseq_wr_en
-    wire [AXI_WR_ADDR_BITS-1:0] cseq3_waddr;   // command sequencer write address (output to command multiplexer)
-    wire                        cseq3_wr_en;   // command sequencer write enable (output to command multiplexer) - keep until cseq_ackn received
-    wire                 [31:0] cseq3_wdata;   // command sequencer write data (output to command multiplexer) 
-    wire                        cseq3_ackn;    /// SuppressThisWarning VEditor ****** ackn to command sequencer, command sequencer should de-assert cseq_wr_en
+    
+   // Signals for the frame sequnecer/mux
+   wire [4 * AXI_WR_ADDR_BITS-1:0] frseq_waddr; 
+   wire                      [3:0] frseq_valid;
+   wire                    [127:0] frseq_wdata; 
+   wire                      [3:0] frseq_ackn;
     
     
 // parallel address/data - where higher bandwidth (single-cycle) is needed        
@@ -270,9 +265,12 @@ module  x393 #(
     wire                        status_compressor_rq; // Other status request   
     wire                        status_compressor_start;  // S uppressThisWarning VEditor ****** Other status packet transfer start (currently with 0 latency from status_root_rq)
 
+
+// TODO: Add sequencer status (16+2) bits of current frame number. Ose 'h31 as the adderss, 'h702 (701..703 were empty) to program
     wire                  [7:0] status_sequencer_ad; // Other status byte-wide address/data
     wire                        status_sequencer_rq; // Other status request   
     wire                        status_sequencer_start;  // S uppressThisWarning VEditor ****** Other status packet transfer start (currently with 0 latency from status_root_rq)
+    
 
     wire                  [7:0] status_logger_ad; // Other status byte-wide address/data
     wire                        status_logger_rq; // Other status request   
@@ -281,6 +279,10 @@ module  x393 #(
     wire                  [7:0] status_timing_ad; // Other status byte-wide address/data
     wire                        status_timing_rq; // Other status request   
     wire                        status_timing_start;  // S uppressThisWarning VEditor ****** Other status packet transfer start (currently with 0 latency from status_root_rq)
+
+    wire                  [7:0] status_gpio_ad; // Other status byte-wide address/data
+    wire                        status_gpio_rq; // Other status request   
+    wire                        status_gpio_start;  // S uppressThisWarning VEditor ****** Other status packet transfer start (currently with 0 latency from status_root_rq)
 
     // Insert register layer if needed
     reg  [7:0] cmd_mcontr_ad;
@@ -306,6 +308,9 @@ module  x393 #(
 
     reg  [7:0] cmd_timing_ad;
     reg        cmd_timing_stb;
+
+    reg  [7:0] cmd_gpio_ad;
+    reg        cmd_gpio_stb;
 
 // membridge
     wire                        frame_start_chn1; // input
@@ -372,10 +377,7 @@ module  x393 #(
 // handling this pulse (should be so). Make sure parameters are applied in ASAP in single-trigger mode
     wire                  [3:0] sof_late_mclk; //      (), // output[3:0] 
         
-    wire [NUM_FRAME_BITS - 1:0] frame_num0; //         (), // input[3:0] 
-    wire [NUM_FRAME_BITS - 1:0] frame_num1; //         (), // input[3:0] 
-    wire [NUM_FRAME_BITS - 1:0] frame_num2; //         (), // input[3:0] 
-    wire [NUM_FRAME_BITS - 1:0] frame_num3; //         (), // input[3:0] 
+    wire [4 * NUM_FRAME_BITS - 1:0] frame_num; //      (), // input[15:0] 
     
     // signals for compressor393 (in/outs as seen for the sensor393)
     // per-channel memory buffers interface
@@ -404,20 +406,35 @@ module  x393 #(
     wire                     [3:0] cmprs_suspend;          // output suspend reading data for this channel - waiting for the source data
 
 // Timestamp messages (@mclk) - combine to a single ts_data?    
-   wire                      [3:0] ts_pre_stb; // input
-   wire                     [31:0] ts_data;    // input[7:0] 
+   wire                      [3:0] ts_pre_stb; // input[ 3:0] 4 compressor channels
+   wire                     [31:0] ts_data;    // input[31:0] 4 compressor channels
+
+// Timestamp messages (@mclk) - combine to a single ts_data?    
+   wire                            ts_pre_logger_stb; // input logger timestamp sync (@logger_clk)
+   wire                      [7:0] ts_logegr_data;    // input[7:0] loger timestamp data (@logger_clk) 
    
 // Compressor signals for interrupts generation    
    wire                      [3:0] eof_written_mclk;  // output
    wire                      [3:0] stuffer_done_mclk; // output
 // Compressor frame synchronization
-   wire                      [3:0] vsync_late; // input
+  
+// GPIO internal signals (for camera GPIOs, not Zynq PS GPIO)
+   wire               [GPIO_N-1:0] gpio_rd;          // data read from the external GPIO pins 
+   wire               [GPIO_N-1:0] gpio_camsync;     // data out from the camsync module 
+   wire               [GPIO_N-1:0] gpio_camsync_en;  // output enable from the camsync module 
+   wire               [GPIO_N-1:0] gpio_db;          // data out from the port B (unused,  Motors in x353)
+   wire               [GPIO_N-1:0] gpio_db_en;       // output enable from the port B (unused,  Motors in x353)  
+   wire               [GPIO_N-1:0] gpio_logger;      // data out from the event_logger module 
+   wire               [GPIO_N-1:0] gpio_logger_en;   // output enable from the event_logger module 
+   assign gpio_db = 0;    // unused,  Motors in x353
+   assign gpio_db_en = 0; // unused,  Motors in x353
     
-    
-    assign gpio_in= {48'h0,frst,tmp_debug};
+   assign gpio_in= {48'h0,frst,tmp_debug}; // these are PS GPIO pins
    
+   // Internal signal for toming393 (camsync) modules
+   wire               logger_snap;
    
-   
+      
    
    assign axird_dev_ready = ~axird_dev_busy; //may combine (AND) multiple sources if needed
    assign axird_dev_busy = 1'b0; // always for now
@@ -463,29 +480,15 @@ module  x393 #(
         
         cmd_timing_ad <=      cmd_root_ad;
         cmd_timing_stb <=     cmd_root_stb;
+
+        cmd_gpio_ad <=        cmd_root_ad;
+        cmd_gpio_stb <=       cmd_root_stb;
     end
 
 // For now - connect status_test01 to status_other, if needed - increase number of multiplexer inputs)
 //   assign status_other_ad = status_test01_ad;
 //   assign status_other_rq = status_test01_rq;
 //   assign status_test01_start = status_other_start;
-
-// missing command sequencer:
-   assign cseq0_waddr='bx;  // command sequencer write address (output to command multiplexer)
-   assign cseq0_wr_en= 0;   // command sequencer write enable (output to command multiplexer) - keep until cseq_ackn received
-   assign cseq0_wdata='bx;  // command sequencer write data (output to command multiplexer) 
-
-   assign cseq1_waddr='bx;  // command sequencer write address (output to command multiplexer)
-   assign cseq1_wr_en= 0;   // command sequencer write enable (output to command multiplexer) - keep until cseq_ackn received
-   assign cseq1_wdata='bx;  // command sequencer write data (output to command multiplexer) 
-
-   assign cseq2_waddr='bx;  // command sequencer write address (output to command multiplexer)
-   assign cseq2_wr_en= 0;   // command sequencer write enable (output to command multiplexer) - keep until cseq_ackn received
-   assign cseq2_wdata='bx;  // command sequencer write data (output to command multiplexer) 
-
-   assign cseq3_waddr='bx;  // command sequencer write address (output to command multiplexer)
-   assign cseq3_wr_en= 0;   // command sequencer write enable (output to command multiplexer) - keep until cseq_ackn received
-   assign cseq3_wdata='bx;  // command sequencer write data (output to command multiplexer) 
 
 
 
@@ -680,35 +683,78 @@ BUFG bufg_axi_aclk_i  (.O(axi_aclk),.I(fclk[0]));
         .byte_ad      (cmd_root_ad), // output[7:0] 
         .ad_stb       (cmd_root_stb) // output
     );
-    
+
+    generate
+        genvar i;
+            for (i = 0; i < 4; i = i+1) begin: frame_sequencer_block
+            cmd_frame_sequencer #(
+                .CMDFRAMESEQ_ADDR     (CMDFRAMESEQ_ADDR_BASE + i * CMDFRAMESEQ_ADDR_INC),
+                .CMDFRAMESEQ_MASK     (CMDFRAMESEQ_MASK),
+                .AXI_WR_ADDR_BITS     (AXI_WR_ADDR_BITS),
+                .CMDFRAMESEQ_DEPTH    (CMDFRAMESEQ_DEPTH),
+                .CMDFRAMESEQ_ABS      (CMDFRAMESEQ_ABS),
+                .CMDFRAMESEQ_REL      (CMDFRAMESEQ_REL),
+                .CMDFRAMESEQ_CTRL     (CMDFRAMESEQ_CTRL),
+                .CMDFRAMESEQ_RST_BIT  (CMDFRAMESEQ_RST_BIT),
+                .CMDFRAMESEQ_RUN_BIT  (CMDFRAMESEQ_RUN_BIT)
+            ) cmd_frame_sequencer_i (
+                .rst         (axi_rst),                    // input
+                .mclk        (mclk),                       // input
+                .cmd_ad      (cmd_sequencer_ad),           // input[7:0] 
+                .cmd_stb     (cmd_sequencer_stb),          // input
+                .frame_sync  (sof_out_mclk[i]),            // input
+                .frame_no    (frame_num[i * NUM_FRAME_BITS +: NUM_FRAME_BITS]), // output[3:0] 
+                .waddr       (frseq_waddr[i * AXI_WR_ADDR_BITS +: AXI_WR_ADDR_BITS]), // output[13:0] 
+                .valid       (frseq_valid[i]),             // output
+                .wdata       (frseq_wdata[i * 32 +: 32]),  // output[31:0] 
+                .ackn        (frseq_ackn[i])               // input
+            );
+        end
+    endgenerate
+
     cmd_seq_mux #(
-        .AXI_WR_ADDR_BITS (AXI_WR_ADDR_BITS)
+        .CMDSEQMUX_ADDR      (CMDSEQMUX_ADDR),
+        .CMDSEQMUX_MASK      (CMDSEQMUX_MASK),
+        .CMDSEQMUX_STATUS    (CMDSEQMUX_STATUS),
+        .AXI_WR_ADDR_BITS    (AXI_WR_ADDR_BITS)
     ) cmd_seq_mux_i (
-        .rst          (axi_rst),     // input
-        .mclk         (mclk),        // input
-        .waddr0       (cseq0_waddr), // input[13:0] 
-        .wr_en0       (cseq0_wr_en), // input
-        .wdata0       (cseq0_wdata), // input[31:0] 
-        .ackn0        (cseq0_ackn),  // output
-        .waddr1       (cseq1_waddr), // input[13:0] 
-        .wr_en1       (cseq1_wr_en), // input
-        .wdata1       (cseq1_wdata), // input[31:0] 
-        .ackn1        (cseq1_ackn),  // output
-        .waddr2       (cseq2_waddr), // input[13:0] 
-        .wr_en2       (cseq2_wr_en), // input
-        .wdata2       (cseq2_wdata), // input[31:0] 
-        .ackn2        (cseq2_ackn),  // output
-        .waddr3       (cseq3_waddr), // input[13:0] 
-        .wr_en3       (cseq3_wr_en), // input
-        .wdata3       (cseq3_wdata), // input[31:0] 
-        .ackn3        (cseq3_ackn),  // output
-        .waddr_out    (cseq_waddr),  // output[13:0] reg 
-        .wr_en_out    (cseq_wr_en),  // output
-        .wdata_out    (cseq_wdata),  // output[31:0] reg 
-        .ackn_out     (cseq_ackn)    // input
+        .rst          (axi_rst),                            // input
+        .mclk         (mclk),                               // input
+        .cmd_ad       (cmd_sequencer_ad),                   // input[7:0] 
+        .cmd_stb      (cmd_sequencer_stb),                  // input
+        .status_ad    (status_sequencer_ad),                // output[7:0] 
+        .status_rq    (status_sequencer_rq),                // output
+        .status_start (status_sequencer_start),             // input
+        
+        .frame_num0   (frame_num[0 * NUM_FRAME_BITS +: 4]), // input[3:0] Use 4 bits even if NUM_FRAME_BITS > 4
+        .waddr0       (frseq_waddr[0 * AXI_WR_ADDR_BITS +: AXI_WR_ADDR_BITS]), // input[13:0] 
+        .wr_en0       (frseq_valid[0]),                     // input
+        .wdata0       (frseq_wdata[0 * 32 +: 32]),          // input[31:0] 
+        .ackn0        (frseq_ackn[0]),                      // output
+        
+        .frame_num1   (frame_num[1 * NUM_FRAME_BITS +: 4]), // input[3:0] Use 4 bits even if NUM_FRAME_BITS > 4
+        .waddr1       (frseq_waddr[1 * AXI_WR_ADDR_BITS +: AXI_WR_ADDR_BITS]), // input[13:0] 
+        .wr_en1       (frseq_valid[1]),                     // input
+        .wdata1       (frseq_wdata[1 * 32 +: 32]),          // input[31:0] 
+        .ackn1        (frseq_ackn[1]),                      // output
+        
+        .frame_num2   (frame_num[2 * NUM_FRAME_BITS +: 4]), // input[3:0] Use 4 bits even if NUM_FRAME_BITS > 4
+        .waddr2       (frseq_waddr[2 * AXI_WR_ADDR_BITS +: AXI_WR_ADDR_BITS]), // input[13:0] 
+        .wr_en2       (frseq_valid[2]),                     // input
+        .wdata2       (frseq_wdata[2 * 32 +: 32]),          // input[31:0] 
+        .ackn2        (frseq_ackn[2]),                      // output
+        
+        .frame_num3   (frame_num[3 * NUM_FRAME_BITS +: 4]), // input[3:0] Use 4 bits even if NUM_FRAME_BITS > 4
+        .waddr3       (frseq_waddr[3 * AXI_WR_ADDR_BITS +: AXI_WR_ADDR_BITS]), // input[13:0] 
+        .wr_en3       (frseq_valid[3]),                     // input
+        .wdata3       (frseq_wdata[3 * 32 +: 32]),          // input[31:0] 
+        .ackn3        (frseq_ackn[3]),                      // output
+        .waddr_out    (cseq_waddr),                         // output[13:0] reg 
+        .wr_en_out    (cseq_wr_en),                         // output
+        .wdata_out    (cseq_wdata),                         // output[31:0] reg 
+        .ackn_out     (cseq_ackn)                           // input
     );
-    
-    
+
     // Mirror control register data for readback (registers can be written both from the PS and from the command sequencer)
     cmd_readback #(
         .AXI_WR_ADDR_BITS        (AXI_WR_ADDR_BITS),
@@ -755,7 +801,7 @@ BUFG bufg_axi_aclk_i  (.O(axi_aclk),.I(fclk[0]));
     );
 
 // mux status info from the memory controller and other modules    
-    status_router8 status_router8_top_i (
+    status_router16 status_router16_top_i (
         .rst       (axi_rst), // input
         .clk       (mclk), // input
         .db_in0    (status_mcontr_ad), // input[7:0] 
@@ -794,6 +840,39 @@ BUFG bufg_axi_aclk_i  (.O(axi_aclk),.I(fclk[0]));
         .rq_in7    (status_timing_rq), // input
         .start_in7 (status_timing_start), // output
         
+        .db_in8    (8'b0),                   // input[7:0] 
+        .rq_in8    (1'b0),                   // input
+        .start_in8 (),                       // output
+        
+        .db_in9    (8'b0),                   // input[7:0] 
+        .rq_in9    (1'b0),                   // input
+        .start_in9 (),                       // output
+        
+        .db_in10   (8'b0),                   // input[7:0] 
+        .rq_in10   (1'b0),                   // input
+        .start_in10(),                       // output
+        
+        .db_in11   (8'b0),                   // input[7:0] 
+        .rq_in11   (1'b0),                   // input
+        .start_in11(),                       // output
+        
+        .db_in12   (8'b0),                   // input[7:0] 
+        .rq_in12   (1'b0),                   // input
+        .start_in12(),                       // output
+        
+        .db_in13   (8'b0),                   // input[7:0] 
+        .rq_in13   (1'b0),                   // input
+        .start_in13(),                       // output
+        
+        .db_in14   (8'b0),                   // input[7:0] 
+        .rq_in14   (1'b0),                   // input
+        .start_in14(),                       // output
+        
+        .db_in15   (8'b0),                   // input[7:0] 
+        .rq_in15   (1'b0),                   // input
+        .start_in15(),                       // output
+        
+
         .db_out    (status_root_ad), // output[7:0] 
         .rq_out    (status_root_rq), // output
         .start_out (status_root_start) // input
@@ -1378,10 +1457,10 @@ BUFG bufg_axi_aclk_i  (.O(axi_aclk),.I(fclk[0]));
         .sof_out_mclk       (sof_out_mclk),        // output[3:0] 
         .sof_late_mclk      (sof_late_mclk),       // output[3:0] 
         
-        .frame_num0         (frame_num0),          // input[3:0] 
-        .frame_num1         (frame_num1),          // input[3:0] 
-        .frame_num2         (frame_num2),          // input[3:0] 
-        .frame_num3         (frame_num3),          // input[3:0] 
+        .frame_num0         (frame_num[0 * NUM_FRAME_BITS +: NUM_FRAME_BITS]), // input[3:0] 
+        .frame_num1         (frame_num[1 * NUM_FRAME_BITS +: NUM_FRAME_BITS]), // input[3:0] 
+        .frame_num2         (frame_num[2 * NUM_FRAME_BITS +: NUM_FRAME_BITS]), // input[3:0] 
+        .frame_num3         (frame_num[3 * NUM_FRAME_BITS +: NUM_FRAME_BITS]), // input[3:0] 
         
         .aclk               (saxi0_aclk),          // input
         .saxi_awaddr        (saxi0_awaddr),        // output[31:0] 
@@ -1576,7 +1655,7 @@ BUFG bufg_axi_aclk_i  (.O(axi_aclk),.I(fclk[0]));
         .eof_written_mclk          (eof_written_mclk),           // output[3:0]
         .stuffer_done_mclk         (stuffer_done_mclk),          // output[3:0]
 
-        .vsync_late                (vsync_late),                 // input[3:0]
+        .vsync_late                (sof_late_mclk),                 // input[3:0]
         
         .hclk                      (hclk),                       // input
         .afi0_awaddr               (afi1_awaddr),                // output[31:0] 
@@ -1629,6 +1708,250 @@ BUFG bufg_axi_aclk_i  (.O(axi_aclk),.I(fclk[0]));
         .afi1_wacount              (afi2_wacount),               // input[5:0] 
         .afi1_wrissuecap1en        (afi2_wrissuecap1en)          // output
     );
+
+    // general purpose I/Os, connected to the 10389 boards
+    gpio393 #(
+        .GPIO_ADDR            (GPIO_ADDR),
+        .GPIO_MASK            (GPIO_MASK),
+        .GPIO_STATUS_REG_ADDR (GPIO_STATUS_REG_ADDR),
+        .GPIO_DRIVE           (GPIO_DRIVE),
+        .GPIO_IBUF_LOW_PWR    (GPIO_IBUF_LOW_PWR),
+        .GPIO_IOSTANDARD      (GPIO_IOSTANDARD),
+        .GPIO_SLEW            (GPIO_SLEW),
+        .GPIO_SET_PINS        (GPIO_SET_PINS),
+        .GPIO_SET_STATUS      (GPIO_SET_STATUS),
+        .GPIO_N               (GPIO_N),
+        .GPIO_PORTEN          (GPIO_PORTEN)
+    ) gpio393_i (
+        .rst           (axi_rst),           // input
+        .mclk          (mclk),              // input
+        .cmd_ad        (cmd_gpio_ad),       // input[7:0] 
+        .cmd_stb       (cmd_gpio_stb),      // input
+        .status_ad     (status_gpio_ad),    // output[7:0] 
+        .status_rq     (status_gpio_rq),    // output
+        .status_start  (status_gpio_start), // input
+        .ext_pins      (gpio_pins),         // inout[9:0] 
+        .io_pins       (gpio_rd),           // output[9:0] 
+        .da            (gpio_camsync),      // input[9:0] 
+        .da_en         (gpio_camsync_en),   // input[9:0] 
+        .db            (gpio_db),           // input[9:0] Motors in x353
+        .db_en         (gpio_db_en),        // input[9:0] Motors in x353 
+        .dc            (gpio_logger),       // input[9:0] 
+        .dc_en         (gpio_logger_en)     // input[9:0] 
+    );
+
+    /* Instance template for module timing393 */
+    timing393 #(
+        .RTC_ADDR              (RTC_ADDR),
+        .CAMSYNC_ADDR          (CAMSYNC_ADDR),
+        .RTC_STATUS_REG_ADDR   (RTC_STATUS_REG_ADDR),
+        .RTC_SEC_USEC_ADDR     (RTC_SEC_USEC_ADDR),
+        .RTC_MASK              (RTC_MASK),
+        .CAMSYNC_MASK          (CAMSYNC_MASK),
+        .CAMSYNC_MODE          (CAMSYNC_MODE),
+        .CAMSYNC_TRIG_SRC      (CAMSYNC_TRIG_SRC),
+        .CAMSYNC_TRIG_DST      (CAMSYNC_TRIG_DST),
+        .CAMSYNC_TRIG_PERIOD   (CAMSYNC_TRIG_PERIOD),
+        .CAMSYNC_TRIG_DELAY0   (CAMSYNC_TRIG_DELAY0),
+        .CAMSYNC_TRIG_DELAY1   (CAMSYNC_TRIG_DELAY1),
+        .CAMSYNC_TRIG_DELAY2   (CAMSYNC_TRIG_DELAY2),
+        .CAMSYNC_TRIG_DELAY3   (CAMSYNC_TRIG_DELAY3),
+        .CAMSYNC_SNDEN_BIT     (CAMSYNC_SNDEN_BIT),
+        .CAMSYNC_EXTERNAL_BIT  (CAMSYNC_EXTERNAL_BIT),
+        .CAMSYNC_TRIGGERED_BIT (CAMSYNC_TRIGGERED_BIT),
+        .CAMSYNC_MASTER_BIT    (CAMSYNC_MASTER_BIT),
+        .CAMSYNC_CHN_EN_BIT    (CAMSYNC_CHN_EN_BIT),
+        .CAMSYNC_PRE_MAGIC     (CAMSYNC_PRE_MAGIC),
+        .CAMSYNC_POST_MAGIC    (CAMSYNC_POST_MAGIC),
+        .RTC_MHZ               (RTC_MHZ),
+        .RTC_BITC_PREDIV       (RTC_BITC_PREDIV),
+        .RTC_SET_USEC          (RTC_SET_USEC),
+        .RTC_SET_SEC           (RTC_SET_SEC),
+        .RTC_SET_CORR          (RTC_SET_CORR),
+        .RTC_SET_STATUS        (RTC_SET_STATUS)
+    ) timing393_i (
+        .rst            (axi_rst),               // input
+        .mclk           (mclk),                  // input
+        .pclk           (camsync_clk),           // global clock used for external synchronization. 96MHz in x353.  Make it independent
+        .refclk         (time_ref),              // RTC reference: integer number of microseconds, less than mclk/2. Not a global clock
+        .cmd_ad         (cmd_timing_ad),         // input[7:0] 
+        .cmd_stb        (cmd_timing_stb),        // input
+        .status_ad      (status_timing_ad),      // output[7:0] 
+        .status_rq      (status_timing_rq),      // output
+        .status_start   (status_timing_start),   // input
+        .gpio_in        (gpio_rd),               // input[9:0] 
+        .gpio_out       (gpio_camsync),          // output[9:0] 
+        .gpio_out_en    (gpio_camsync_en),       // output[9:0] 
+        .triggered_mode (trigger_mode),          // output
+        .frsync_chn0    (sof_out_mclk[0]),       // input
+        .trig_chn0      (trig_in[0]),            // output
+        .frsync_chn1    (sof_out_mclk[1]),       // input
+        .trig_chn1      (trig_in[1]),            // output
+        .frsync_chn2    (sof_out_mclk[2]),       // input
+        .trig_chn2      (trig_in[2]),            // output
+        .frsync_chn3    (sof_out_mclk[3]),       // input
+        .trig_chn3      (trig_in[3]),            // output
+        .ts_stb_chn0    (ts_pre_stb[0]),         // output
+        .ts_data_chn0   (ts_data[0 * 8 +: 8]),   // output[7:0] 
+        .ts_stb_chn1    (ts_pre_stb[1]),         // output
+        .ts_data_chn1   (ts_data[1 * 8 +: 8]),   // output[7:0] 
+        .ts_stb_chn2    (ts_pre_stb[2]),         // output
+        .ts_data_chn2   (ts_data[2 * 8 +: 8]),   // output[7:0] 
+        .ts_stb_chn3    (ts_pre_stb[3]),         // output
+        .ts_data_chn3   (ts_data[3 * 8 +: 8]),   // output[7:0] 
+        .lclk           (logger_clk),            // input global clock, common with the logger (use 100 MHz?)
+        .ts_logger_snap (logger_snap), // input
+        .ts_logger_stb  (ts_pre_logger_stb), // output
+        .ts_logger_data (ts_logegr_data) // output[7:0] 
+    );
+
+    event_logger #(
+        .LOGGER_ADDR            (LOGGER_ADDR),
+        .LOGGER_STATUS          (LOGGER_STATUS),
+        .LOGGER_STATUS_REG_ADDR (LOGGER_STATUS_REG_ADDR),
+        .LOGGER_MASK            (LOGGER_MASK),
+        .LOGGER_STATUS_MASK     (LOGGER_STATUS_MASK),
+        .LOGGER_PAGE_IMU        (LOGGER_PAGE_IMU),
+        .LOGGER_PAGE_GPS        (LOGGER_PAGE_GPS),
+        .LOGGER_PAGE_MSG        (LOGGER_PAGE_MSG),
+        .LOGGER_PERIOD          (LOGGER_PERIOD),
+        .LOGGER_BIT_DURATION    (LOGGER_BIT_DURATION),
+        .LOGGER_BIT_HALF_PERIOD (LOGGER_BIT_HALF_PERIOD),
+        .LOGGER_CONFIG          (LOGGER_CONFIG),
+        .LOGGER_CONF_IMU        (LOGGER_CONF_IMU),
+        .LOGGER_CONF_IMU_BITS   (LOGGER_CONF_IMU_BITS),
+        .LOGGER_CONF_GPS        (LOGGER_CONF_GPS),
+        .LOGGER_CONF_GPS_BITS   (LOGGER_CONF_GPS_BITS),
+        .LOGGER_CONF_MSG        (LOGGER_CONF_MSG),
+        .LOGGER_CONF_MSG_BITS   (LOGGER_CONF_MSG_BITS),
+        .LOGGER_CONF_SYN        (LOGGER_CONF_SYN),
+        .LOGGER_CONF_SYN_BITS   (LOGGER_CONF_SYN_BITS),
+        .LOGGER_CONF_EN         (LOGGER_CONF_EN),
+        .LOGGER_CONF_EN_BITS    (LOGGER_CONF_EN_BITS),
+        .LOGGER_CONF_DBG        (LOGGER_CONF_DBG),
+        .LOGGER_CONF_DBG_BITS   (LOGGER_CONF_DBG_BITS),
+        .GPIO_N                 (GPIO_N)
+    ) event_logger_i (
+        .rst           (axi_rst),             // input
+        .mclk          (mclk),                // input
+        .xclk          (logger_clk),          // input
+        .cmd_ad        (cmd_logger_ad),       // input[7:0] 
+        .cmd_stb       (cmd_logger_stb),      // input
+        .status_ad     (status_logger_ad),    // output[7:0] 
+        .status_rq     (status_logger_rq),    // output
+        .status_start  (status_logger_start), // input
+        .ts_local_snap (logger_snap),         // output
+        .ts_local_stb  (ts_pre_logger_stb),   // input
+        .ts_local_data (ts_logegr_data),      // input[7:0] 
+        .ext_di        (gpio_rd),             // input[9:0] 
+        .ext_do        (gpio_camsync),        // output[9:0] 
+        .ext_en        (gpio_camsync_en),     // output[9:0] 
+        .ts_stb_chn0(), // input
+        .ts_data_chn0(), // input[7:0] 
+        .ts_stb_chn1(), // input
+        .ts_data_chn1(), // input[7:0] 
+        .ts_stb_chn2(), // input
+        .ts_data_chn2(), // input[7:0] 
+        .ts_stb_chn3(), // input
+        .ts_data_chn3(), // input[7:0] 
+        
+        .data_out(), // output[15:0] 
+        .data_out_stb(), // output
+        .debug_state() // output[31:0] 
+    );
+    /* Instance template for module mult_saxi_wr_chn */
+    mult_saxi_wr_chn #(
+        .MULT_SAXI_HALF_BRAM(1),
+        .MULT_SAXI_BSLOG(4),
+        .MULT_SAXI_ADV_WR(4),
+        .MULT_SAXI_ADV_RD(3)
+    ) mult_saxi_wr_chn_i (
+        .mclk(), // input
+        .aclk(), // input
+        .en(), // input
+        .has_burst(), // input
+        .valid(), // input
+        .rq_wr(), // output
+        .grant_wr(), // input
+        .wa(), // output[6:0] 
+        .adv_wr_done(), // output reg 
+        .rq_out(), // output reg 
+        .grant_out(), // input
+        .fifo_half_full(), // input
+        .ra(), // output[6:0] 
+        .pre_re(), // output
+        .first_re(), // output reg 
+        .last_re(), // output reg 
+        .wdata_busy() // output reg 
+    );
+
+    /* Instance template for module mult_saxi_wr */
+    mult_saxi_wr #(
+        .MULT_SAXI_ADDR('h380),
+        .MULT_SAXI_CNTRL_ADDR('h3a0),
+        .MULT_SAXI_STATUS_REG('h30),
+        .MULT_SAXI_HALF_BRAM(1),
+        .MULT_SAXI_BSLOG0(4),
+        .MULT_SAXI_BSLOG1(4),
+        .MULT_SAXI_BSLOG2(4),
+        .MULT_SAXI_BSLOG3(4),
+        .MULT_SAXI_MASK('h7f8),
+        .MULT_SAXI_CNTRL_MASK('h7fe),
+        .HIST_SAXI_AWCACHE(4'h3),
+        .MULT_SAXI_ADV_WR(4),
+        .MULT_SAXI_ADV_RD(3)
+    ) mult_saxi_wr_i (
+        .rst(), // input
+        .mclk(), // input
+        .aclk(), // input
+        .cmd_ad(), // input[7:0] 
+        .cmd_stb(), // input
+        .status_ad(), // output[7:0] 
+        .status_rq(), // output
+        .status_start(), // input
+        .en_chn0(), // output
+        .has_burst0(), // input
+        .read_burst0(), // output
+        .data_in_chn0(), // input[31:0] 
+        .pre_valid_chn0(), // input
+        .en_chn1(), // output
+        .has_burst1(), // input
+        .read_burst1(), // output
+        .data_in_chn1(), // input[31:0] 
+        .pre_valid_chn1(), // input
+        .en_chn2(), // output
+        .has_burst2(), // input
+        .read_burst2(), // output
+        .data_in_chn2(), // input[31:0] 
+        .pre_valid_chn2(), // input
+        .en_chn3(), // output
+        .has_burst3(), // input
+        .read_burst3(), // output
+        .data_in_chn3(), // input[31:0] 
+        .pre_valid_chn3(), // input
+        .saxi_awaddr(), // output[31:0] 
+        .saxi_awvalid(), // output
+        .saxi_awready(), // input
+        .saxi_awid(), // output[5:0] 
+        .saxi_awlock(), // output[1:0] 
+        .saxi_awcache(), // output[3:0] 
+        .saxi_awprot(), // output[2:0] 
+        .saxi_awlen(), // output[3:0] 
+        .saxi_awsize(), // output[1:0] 
+        .saxi_awburst(), // output[1:0] 
+        .saxi_awqos(), // output[3:0] 
+        .saxi_wdata(), // output[31:0] 
+        .saxi_wvalid(), // output
+        .saxi_wready(), // input
+        .saxi_wid(), // output[5:0] 
+        .saxi_wlast(), // output
+        .saxi_wstrb(), // output[3:0] 
+        .saxi_bvalid(), // input
+        .saxi_bready(), // output
+        .saxi_bid(), // input[5:0] 
+        .saxi_bresp() // input[1:0] 
+    );
+    
 
     axibram_write #(
         .ADDRESS_BITS(AXI_WR_ADDR_BITS)

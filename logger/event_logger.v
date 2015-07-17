@@ -21,9 +21,9 @@
 `timescale 1ns/1ps
 
 module  event_logger#(
-    parameter LOGGER_ADDR =                    'h1a0, //TODO: assign valid address
-    parameter LOGGER_STATUS =                  'h1a2, //TODO: assign valid address (just 1 location)
-    parameter LOGGER_STATUS_REG_ADDR =         'h0b, //TODO: assign valid address (just 1 location)
+    parameter LOGGER_ADDR =                    'h720, //..'h721
+    parameter LOGGER_STATUS =                  'h722, // .. 'h722
+    parameter LOGGER_STATUS_REG_ADDR =         'h34, // just 1 location)
     parameter LOGGER_MASK =                    'h7fe,
     parameter LOGGER_STATUS_MASK =             'h7ff,
 
@@ -327,14 +327,14 @@ module  event_logger#(
         .PAYLOAD_BITS        (26),
         .REGISTER_STATUS     (1)
     ) status_generate_i (
-        .rst           (), // input
-        .clk           (mclk), // input
-        .we            (cmd_status), // input
-        .wd            (cmd_data[7:0]), // input[7:0] 
+        .rst           (rst),                   // input
+        .clk           (mclk),                  // input
+        .we            (cmd_status),            // input
+        .wd            (cmd_data[7:0]),         // input[7:0] 
         .status        ({sample_counter,2'b0}), // input[25:0] // 2 LSBs - may add "real" status 
-        .ad            (status_ad), // output[7:0] 
-        .rq            (status_rq), // output
-        .start         (status_start) // input
+        .ad            (status_ad),             // output[7:0] 
+        .rq            (status_rq),             // output
+        .start         (status_start)           // input
     );
 
     imu_spi393 i_imu_spi (

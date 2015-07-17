@@ -50,9 +50,9 @@
 // bit [31:30] - enable chn. C
 // Enabled bits will be priority encoded (C - highest, software - lowest)
 module  gpio393  #(
-        parameter GPIO_ADDR =                 'h180, //TODO: assign valid address
+        parameter GPIO_ADDR =                 'h700, //TODO: assign valid address
         parameter GPIO_MASK =                 'h7fe,
-        parameter GPIO_STATUS_REG_ADDR =      'ha,  // address where status can be read out (10 GPIO inputs)
+        parameter GPIO_STATUS_REG_ADDR =      'h30,  // address where status can be read out (10 GPIO inputs)
         
         parameter integer GPIO_DRIVE =        12,
         parameter GPIO_IBUF_LOW_PWR =         "TRUE",

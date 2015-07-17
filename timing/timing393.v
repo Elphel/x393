@@ -21,13 +21,12 @@
 `timescale 1ns/1ps
 
 module  timing393       #(
-    parameter CAMSYNC_ADDR =                    'h160, //TODO: assign valid address
-    parameter RTC_ADDR=                         'h170, //TODO: assign valid address
-    parameter RTC_STATUS_REG_ADDR =              7,  // address where status can be read out (currnelti just sequence # and alternating bit) 
-    parameter RTC_SEC_USEC_ADDR =                8,  // address where seconds of the snapshot can be read (microseconds - next adderss)
-    
-    parameter CAMSYNC_MASK =                    'h7f8,
+    parameter RTC_ADDR=                         'h704, // 'h707
+    parameter CAMSYNC_ADDR =                    'h708, // 'h70f
+    parameter RTC_STATUS_REG_ADDR =             'h31,   // (1 loc) address where status can be read out (currently just sequence # and alternating bit) 
+    parameter RTC_SEC_USEC_ADDR =               'h32,  // ..'h33 address where seconds of the snapshot can be read (microseconds - next adderss)
     parameter RTC_MASK =                        'h7fc,
+    parameter CAMSYNC_MASK =                    'h7f8,
     parameter CAMSYNC_MODE =                    'h0,
     parameter CAMSYNC_TRIG_SRC =                'h1, // setup trigger source
     parameter CAMSYNC_TRIG_DST =                'h2, // setup trigger destination line(s)
@@ -53,7 +52,7 @@ module  timing393       #(
     )(
     input                         rst,          // global reset
     input                         mclk,         // system clock
-    input                         pclk,         // pixel clock (global) - switch it to 100MHz (mclk/2)?
+    input                         pclk,         // was pixel clock in x353 clock (global) - switch it to 100MHz (mclk/2)?
     
     input                         refclk,       // not a global clock, reference frequency < mclk/2    
     
