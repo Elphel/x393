@@ -75,7 +75,7 @@ module  imu_timestamps393(
         else if (ts_stb)    ts_rcv <= 1;
         else if (rcv_last)  ts_rcv <= 0;
         
-        if (!rcv) cntr <= 0;
+        if (!ts_rcv) cntr <= 0;
         else      cntr <= cntr + 1;
         if (pre_snap) chn <= rq_enc;
         // insert channel instead of the usec MSB, swap usec <-> sec

@@ -150,20 +150,20 @@ module  gpio393  #(
                 .d_out   (ds[i]),              // output
                 .en_out  (ds_en[i])            // output
             );
+            iobuf #(
+                .DRIVE        (GPIO_DRIVE),
+                .IBUF_LOW_PWR (GPIO_IBUF_LOW_PWR),
+                .IOSTANDARD   (GPIO_IOSTANDARD),
+                .SLEW         (GPIO_SLEW)
+            ) iobuf_gpio_i (
+                .O     (io_pins[i]),  // output
+                .IO    (ext_pins[i]), // inout
+                .I     (io_do[i]), // input
+                .T     (io_t[i]) // input
+            );
         
         end
         
-        iobuf #(
-            .DRIVE        (GPIO_DRIVE),
-            .IBUF_LOW_PWR (GPIO_IBUF_LOW_PWR),
-            .IOSTANDARD   (GPIO_IOSTANDARD),
-            .SLEW         (GPIO_SLEW)
-        ) iobuf_gpio_i (
-            .O     (io_pins[i]),  // output
-            .IO    (ext_pins[i]), // inout
-            .I     (io_do[i]), // input
-            .T     (io_t[i]) // input
-        );
     endgenerate
     
     cmd_deser #(

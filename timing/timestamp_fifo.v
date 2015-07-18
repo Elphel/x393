@@ -51,14 +51,18 @@ module  timestamp_fifo(
         if      (rst)  wpntr <= 0;
         else if (!rcv) wpntr <= {wpntr[3],3'b0};
         else           wpntr <= wpntr + 1;
-        
+    end
+
+    always @ (posedge sclk) begin
         if (rcv) fifo_ram[wpntr] <= din;
     end
     
     always @(posedge rst or posedge aclk) begin
         if (rst) advance_r <= 0;
         else     advance_r <= {advance_r[0], advance};
-        
+    end
+
+    always @(posedge aclk) begin
         if (advance_r[0] && !advance_r[1]) rpntr[3] <= wpntr[3];
     end
     
@@ -70,7 +74,9 @@ module  timestamp_fifo(
         if      (rst)           rpntr[2:0] <= 0;
         else if (!snd && !rstb) rpntr[2:0] <= 0;
         else                    rpntr[2:0] <= rpntr[2:0] + 1;
-        
+    end
+
+    always @(posedge rclk) begin
         if (snd)          dout <= fifo_ram[rpntr];
     end
 endmodule

@@ -665,10 +665,10 @@ module camsync393       #(
     assign {ts_rcv_stb_chn3, ts_rcv_stb_chn2, ts_rcv_stb_chn1, ts_rcv_stb_chn0}= ts_stb;
     pulse_cross_clock i_start_to_pclk (.rst(1'b0), .src_clk(mclk), .dst_clk(pclk), .in_pulse(start_d && start_en), .out_pulse(start_to_pclk),.busy());
 
-    pulse_cross_clock i_ts_snap_mclk  (.rst(1'b0), .src_clk(pclk), .dst_clk(mclk), .in_pulse(ts_snap_triggered[0]), .out_pulse(ts_snap_triggered_mclk[0]),.busy());
-    pulse_cross_clock i_ts_snap_mclk  (.rst(1'b0), .src_clk(pclk), .dst_clk(mclk), .in_pulse(ts_snap_triggered[1]), .out_pulse(ts_snap_triggered_mclk[1]),.busy());
-    pulse_cross_clock i_ts_snap_mclk  (.rst(1'b0), .src_clk(pclk), .dst_clk(mclk), .in_pulse(ts_snap_triggered[2]), .out_pulse(ts_snap_triggered_mclk[2]),.busy());
-    pulse_cross_clock i_ts_snap_mclk  (.rst(1'b0), .src_clk(pclk), .dst_clk(mclk), .in_pulse(ts_snap_triggered[3]), .out_pulse(ts_snap_triggered_mclk[3]),.busy());
+    pulse_cross_clock i_ts_snap_mclk0 (.rst(1'b0), .src_clk(pclk), .dst_clk(mclk), .in_pulse(ts_snap_triggered[0]), .out_pulse(ts_snap_triggered_mclk[0]),.busy());
+    pulse_cross_clock i_ts_snap_mclk1 (.rst(1'b0), .src_clk(pclk), .dst_clk(mclk), .in_pulse(ts_snap_triggered[1]), .out_pulse(ts_snap_triggered_mclk[1]),.busy());
+    pulse_cross_clock i_ts_snap_mclk2 (.rst(1'b0), .src_clk(pclk), .dst_clk(mclk), .in_pulse(ts_snap_triggered[2]), .out_pulse(ts_snap_triggered_mclk[2]),.busy());
+    pulse_cross_clock i_ts_snap_mclk3 (.rst(1'b0), .src_clk(pclk), .dst_clk(mclk), .in_pulse(ts_snap_triggered[3]), .out_pulse(ts_snap_triggered_mclk[3]),.busy());
 
     pulse_cross_clock i_rcv_done_mclk (.rst(1'b0), .src_clk(pclk), .dst_clk(mclk), .in_pulse(rcv_done), .out_pulse(rcv_done_mclk),.busy());
 

@@ -68,9 +68,9 @@ module  status_generate #(
         
         end else begin
             status_generate_only #(
-                .STATUS_REG_ADDR(7),
-                .PAYLOAD_BITS(15),
-                .REGISTER_STATUS(1)
+                .STATUS_REG_ADDR  (STATUS_REG_ADDR),
+                .PAYLOAD_BITS     (PAYLOAD_BITS),
+                .REGISTER_STATUS  (REGISTER_STATUS)
             ) status_generate_only_i (
                 .rst      (rst), // input
                 .clk      (clk), // input

@@ -101,7 +101,8 @@ module  clocks393#(
     output      xclk,        // global clock for compressor (now 100MHz) 
     output      xclk2x,      // global clock for compressor, 2x frequency (now 200MHz)
     output      sync_clk,    // global clock for camsync module (96 MHz for 353 compatibility - switch to 100MHz)?
-    output      time_ref     // non-global, just RTC (currently just mclk/8 = 25 MHz)
+    output      time_ref,     // non-global, just RTC (currently just mclk/8 = 25 MHz)
+    input [1:0] extra_status // just extra two status bits from the top module
 );
     wire         memclk;
     wire         ffclk0;
@@ -127,7 +128,7 @@ module  clocks393#(
         if (rst)        pwrdwn_clk <= 0;
         if (set_ctrl_w) pwrdwn_clk <= cmd_data[7:4]; 
     end
-    assign status_data = {test_clk, locked, 2'b0};
+    assign status_data = {test_clk, locked, extra_status};
     always @ (posedge memclk or posedge memclk_rst) if (memclk_rst) test_clk[0] <= ~test_clk[0];
     always @ (posedge ffclk0 or posedge ffclk0_rst) if (ffclk0_rst) test_clk[1] <= ~test_clk[1];
     always @ (posedge ffclk1 or posedge ffclk1_rst) if (ffclk1_rst) test_clk[2] <= ~test_clk[2];

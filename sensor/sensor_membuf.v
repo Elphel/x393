@@ -33,7 +33,7 @@ module  sensor_membuf #(
     input         rpage_next,   // advance to next page (and reset lower bits to 0)
     input         buf_rd,       // read buffer to memory, increment read address (regester enable will be delayed)
     output [63:0] buf_dout,     // data out
-    output reg    page_written  // buffer page (full or partial) is written to the memory buffer 
+    output        page_written  // buffer page (full or partial) is written to the memory buffer 
               
 
 );

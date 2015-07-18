@@ -347,30 +347,29 @@ module zigzag393 (
         5'h07: rom_q <= 6'h23;
         5'h08: rom_q <= 6'h01;
         5'h09: rom_q <= 6'h04;
-        5'h10: rom_q <= 6'h08;
-        5'h11: rom_q <= 6'h0b;
-        5'h12: rom_q <= 6'h13;
-        5'h13: rom_q <= 6'h16;
-        5'h14: rom_q <= 6'h22;
-        5'h15: rom_q <= 6'h24;
-        5'h16: rom_q <= 6'h05;
-        5'h17: rom_q <= 6'h07;
-        5'h18: rom_q <= 6'h0c;
-        5'h19: rom_q <= 6'h12;
-        5'h20: rom_q <= 6'h17;
-        5'h21: rom_q <= 6'h21;
-        5'h22: rom_q <= 6'h25;
-        5'h23: rom_q <= 6'h30;
-        5'h24: rom_q <= 6'h06;
-        5'h25: rom_q <= 6'h0d;
-        5'h26: rom_q <= 6'h11;
-        5'h27: rom_q <= 6'h18;
-        5'h28: rom_q <= 6'h20;
-        5'h29: rom_q <= 6'h26;
-        5'h30: rom_q <= 6'h2f;
-        5'h31: rom_q <= 6'h31;
+        5'h0a: rom_q <= 6'h08;
+        5'h0b: rom_q <= 6'h0b;
+        5'h0c: rom_q <= 6'h13;
+        5'h0d: rom_q <= 6'h16;
+        5'h0e: rom_q <= 6'h22;
+        5'h0f: rom_q <= 6'h24;
+        5'h10: rom_q <= 6'h05;
+        5'h11: rom_q <= 6'h07;
+        5'h12: rom_q <= 6'h0c;
+        5'h13: rom_q <= 6'h12;
+        5'h14: rom_q <= 6'h17;
+        5'h15: rom_q <= 6'h21;
+        5'h16: rom_q <= 6'h25;
+        5'h17: rom_q <= 6'h30;
+        5'h18: rom_q <= 6'h06;
+        5'h19: rom_q <= 6'h0d;
+        5'h1a: rom_q <= 6'h11;
+        5'h1b: rom_q <= 6'h18;
+        5'h1c: rom_q <= 6'h20;
+        5'h1d: rom_q <= 6'h26;
+        5'h1e: rom_q <= 6'h2f;
+        5'h1f: rom_q <= 6'h31;
     endcase
-    
     // add symmetrical part
     always @ (posedge clk) q[5:0]   <= a[5]? (~rom_q[5:0]):rom_q[5:0];
 endmodule

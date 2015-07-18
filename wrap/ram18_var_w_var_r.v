@@ -474,6 +474,3 @@ module  ram18_dummy
    assign data_out=0;
 endmodule
 
-
-endmodule
-

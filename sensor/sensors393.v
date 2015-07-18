@@ -189,41 +189,14 @@ module  sensors393 #(
     input         status_start, // Acknowledge of the first status packet byte (address)
     
     // I/O pads, pin names match circuit diagram (each sensor)
-    inout   [7:0] sns1_dp,
-    inout   [7:0] sns1_dn,
-    inout         sns1_clkp,
-    inout         sns1_clkn,
-    inout         sns1_scl,
-    inout         sns1_sda,
-    inout         sns1_ctl,
-    inout         sns1_pg,
-    
-    inout   [7:0] sns2_dp,   //SuppressThisWarning VEditor : VDT bug? - assigned used in generate block only
-    inout   [7:0] sns2_dn,   //SuppressThisWarning VEditor : VDT bug? - assigned used in generate block only
-    inout         sns2_clkp, //SuppressThisWarning VEditor : VDT bug? - assigned used in generate block only
-    inout         sns2_clkn, //SuppressThisWarning VEditor : VDT bug? - assigned used in generate block only
-    inout         sns2_scl,  //SuppressThisWarning VEditor : VDT bug? - assigned used in generate block only
-    inout         sns2_sda,  //SuppressThisWarning VEditor : VDT bug? - assigned used in generate block only
-    inout         sns2_ctl,  //SuppressThisWarning VEditor : VDT bug? - assigned used in generate block only
-    inout         sns2_pg,   //SuppressThisWarning VEditor : VDT bug? - assigned used in generate block only
-    
-    inout   [7:0] sns3_dp,   //SuppressThisWarning VEditor : VDT bug? - assigned used in generate block only
-    inout   [7:0] sns3_dn,   //SuppressThisWarning VEditor : VDT bug? - assigned used in generate block only
-    inout         sns3_clkp, //SuppressThisWarning VEditor : VDT bug? - assigned used in generate block only
-    inout         sns3_clkn, //SuppressThisWarning VEditor : VDT bug? - assigned used in generate block only
-    inout         sns3_scl,  //SuppressThisWarning VEditor : VDT bug? - assigned used in generate block only
-    inout         sns3_sda,  //SuppressThisWarning VEditor : VDT bug? - assigned used in generate block only
-    inout         sns3_ctl,  //SuppressThisWarning VEditor : VDT bug? - assigned used in generate block only
-    inout         sns3_pg,   //SuppressThisWarning VEditor : VDT bug? - assigned used in generate block only
-    
-    inout   [7:0] sns4_dp,   //SuppressThisWarning VEditor : VDT bug? - assigned used in generate block only
-    inout   [7:0] sns4_dn,   //SuppressThisWarning VEditor : VDT bug? - assigned used in generate block only
-    inout         sns4_clkp, //SuppressThisWarning VEditor : VDT bug? - assigned used in generate block only
-    inout         sns4_clkn, //SuppressThisWarning VEditor : VDT bug? - assigned used in generate block only
-    inout         sns4_scl,  //SuppressThisWarning VEditor : VDT bug? - assigned used in generate block only
-    inout         sns4_sda,  //SuppressThisWarning VEditor : VDT bug? - assigned used in generate block only
-    inout         sns4_ctl,  //SuppressThisWarning VEditor : VDT bug? - assigned used in generate block only
-    inout         sns4_pg,   //SuppressThisWarning VEditor : VDT bug? - assigned used in generate block only
+    inout  [31:0] sns_dp,
+    inout  [31:0] sns_dn,
+    inout   [3:0] sns_clkp,
+    inout   [3:0] sns_clkn,
+    inout   [3:0] sns_scl,
+    inout   [3:0] sns_sda,
+    inout   [3:0] sns_ctl,
+    inout   [3:0] sns_pg,
     
     // Memory interface (4 channels)
     input    [3:0] rpage_set,    // set internal read page to rpage_in (reset pointers)
@@ -246,6 +219,8 @@ module  sensors393 #(
     input  [NUM_FRAME_BITS-1:0] frame_num1, 
     input  [NUM_FRAME_BITS-1:0] frame_num2, 
     input  [NUM_FRAME_BITS-1:0] frame_num3, 
+    
+    output                     idelay_rdy, // need to connect outputs to prevent optimizing out
     
     // S_AXI interface write only (histograms out)
     // write address
@@ -275,9 +250,8 @@ module  sensors393 #(
     input               [ 1:0] saxi_bresp              // AXI PS Slave GP0 BRESP[1:0], output
     
 );
-
-
-
+    wire               [1:0] idelay_ctrl_rdy;   // need to connect outputs to prevent optimizing out
+    assign idelay_rdy = &idelay_ctrl_rdy;
     reg              [7:0] cmd_ad;    
     reg                    cmd_stb;
     wire            [31:0] status_ad_chn;
@@ -297,6 +271,8 @@ module  sensors393 #(
         cmd_ad <= cmd_ad_in;
         cmd_stb <= cmd_stb_in;
     end    
+//    wire [3:0] sns_pg;
+//   my_alias #(.WIDTH(4)) my_alias_sns_pg_i  ({sns4_pg,sns3_pg,sns2_pg,sns1_pg},sns_pg);
 
     generate
         genvar i;
@@ -406,6 +382,7 @@ module  sensors393 #(
                 .rst          (rst),       // input
                 .pclk         (pclk),      // input
                 .pclk2x       (pclk2x),    // input
+/*                
                 .sns_dp       ((i & 2) ? ((i & 1) ? sns4_dp:   sns3_dp):  ((i & 1) ? sns2_dp:   sns1_dp)),   // inout[7:0] 
                 .sns_dn       ((i & 2) ? ((i & 1) ? sns4_dn:   sns3_dn):  ((i & 1) ? sns2_dn:   sns1_dn)),   // inout[7:0] 
                 .sns_clkp     ((i & 2) ? ((i & 1) ? sns4_clkp: sns3_clkp):((i & 1) ? sns2_clkp: sns1_clkp)), // inout
@@ -413,8 +390,21 @@ module  sensors393 #(
                 .sns_scl      ((i & 2) ? ((i & 1) ? sns4_scl:  sns3_scl): ((i & 1) ? sns2_scl:  sns1_scl)),  // inout
                 .sns_sda      ((i & 2) ? ((i & 1) ? sns4_sda:  sns3_sda): ((i & 1) ? sns2_sda:  sns1_sda)),  // inout
                 .sns_ctl      ((i & 2) ? ((i & 1) ? sns4_ctl:  sns3_ctl): ((i & 1) ? sns2_ctl:  sns1_ctl)),  // inout
-                .sns_pg       ((i & 2) ? ((i & 1) ? sns4_pg:   sns3_pg):  ((i & 1) ? sns2_pg:   sns1_pg)),   // inout
-//                .sns_pg       (sns_pg[i]),   // inout
+//                .sns_pg       ((i & 2) ? ((i & 1) ? sns4_pg:   sns3_pg):  ((i & 1) ? sns2_pg:   sns1_pg)),   // inout
+//                .sns_pg       ({sns4_pg,sns3_pg,sns2_pg,sns1_pg}[i]),   // inout
+                .sns_pg       (sns_pg[i]),   // inout
+*/
+
+                
+                .sns_dp       (sns_dp[i * 8 +: 8]),   // inout[7:0] 
+                .sns_dn       (sns_dn[i * 8 +: 8]),   // inout[7:0] 
+                .sns_clkp     (sns_clkp[i]),   // inout
+                .sns_clkn     (sns_clkn[i]),   // inout
+                .sns_scl      (sns_scl[i]),   // inout
+                .sns_sda      (sns_sda[i]),   // inout
+                .sns_ctl      (sns_ctl[i]),   // inout
+                .sns_pg       (sns_pg[i]),   // inout
+                
                 .mclk         (mclk),                  // input
                 .cmd_ad_in    (cmd_ad),                // input[7:0] 
                 .cmd_stb_in   (cmd_stb),               // input
@@ -538,13 +528,13 @@ module  sensors393 #(
         .rq_out        (status_rq),              // output
         .start_out     (status_start)            // input
     );
-
+// TODO: connect idelay outputs to smth
     idelay_ctrl# (
         .IODELAY_GRP("IODELAY_SENSOR_12")
     ) idelay_ctrl_sensor12_i (
         .refclk(ref_clk),
         .rst(dly_rst), //rst || dly_rst
-        .rdy()
+        .rdy(idelay_ctrl_rdy[0])
     );
     
     idelay_ctrl# (
@@ -552,8 +542,23 @@ module  sensors393 #(
     ) idelay_ctrl_sensor34_i (
         .refclk(ref_clk),
         .rst(dly_rst), //rst || dly_rst
-        .rdy()
+        .rdy(idelay_ctrl_rdy[1])
     );
     
     
 endmodule
+
+/*
+module my_alias #(
+    parameter WIDTH = 1)
+(
+    inout [WIDTH-1:0] a,
+    inout [WIDTH-1:0] a
+);
+module my_alias #(
+    parameter WIDTH = 1)
+(.A(W), .B(W));
+    inout [WIDTH-1:0] W;
+
+endmodule
+*/

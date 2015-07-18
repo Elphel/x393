@@ -216,7 +216,7 @@ module  cmprs_afi_mux#(
     assign afi_awvalid = awvalid[1];
     assign afi_awlen = {wleft[3:2],2'b11};
     assign afi_wdata = wdata;
-    assign afi_bready = 1'b1; // always ready
+//    assign afi_bready = 1'b1; // always ready
     
 // other fixed-value AFI signals
     assign afi_awlock =        2'h0;
@@ -325,7 +325,7 @@ module  cmprs_afi_mux#(
         else if (done_burst_w) busy <= 0; // {busy[2:0],1'b0};
         
         if      (!en)        wleft <= 0;
-        else if (pre_busy_w) wleft <= {(|counts_corr2[7:2])? 2'b11 : left_to_eof[winner2 * 8 +: 8][1:0], 2'b11};
+        else if (pre_busy_w) wleft <= {(|counts_corr2[7:2])? 2'b11 : left_to_eof[winner2 * 8 +: 2], 2'b11};
         else if (wleft != 0) wleft <= wleft - 1;
         
 
@@ -354,7 +354,7 @@ module  cmprs_afi_mux#(
 
         if (pre_busy_w) chunk_inc <= (|counts_corr2[7:2])?
                                        3'h4 :
-                                       ({1'b0,left_to_eof[winner2 * 8 +: 8][1:0]} + 3'h1);
+                                       ({1'b0,left_to_eof[winner2 * 8 +: 2]} + 3'h1);
         
     end
 

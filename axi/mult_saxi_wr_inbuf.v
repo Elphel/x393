@@ -115,7 +115,7 @@ module  mult_saxi_wr_inbuf#(
                 .wclk      (iclk), // input
                 .waddr     (waddr[13-MULT_SAXI_WLOG:0]), // input[9:0] 
                 .we        (valid), // input
-                .web       (4'hff), // input[7:0] 
+                .web       (4'hf), // input[7:0] 
                 .data_in   (data_in) // input[31:0] 
             );
         else

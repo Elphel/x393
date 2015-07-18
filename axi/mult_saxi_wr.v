@@ -445,7 +445,7 @@ module  mult_saxi_wr #(
                 .wclk      (mclk), // input
                 .waddr     (buf_wa[8:0]), // input[9:0] 
                 .we        (buf_we), // input
-                .web       (4'hff), // input[7:0] 
+                .web       (4'hf), // input[7:0] 
                 .data_in   (buf_wd) // input[31:0] 
             );
         else

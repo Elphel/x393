@@ -785,6 +785,11 @@ module  jp_channel#(
 
     // Format DC components to be output as a mini-frame. Was not used in the late NC353 as the dma1 channel was use3d for IMU instead of dcc
     wire          finish_dcc;
+    wire   [15:0] stuffer_do;
+    wire          stuffer_dv;
+    wire          stuffer_done;
+    wire          eof_written_xclk2xn;
+    
     // re-sync to posedge xclk2x
     pulse_cross_clock finish_dcc_i (.rst(rst), .src_clk(~xclk2x), .dst_clk(xclk2x), .in_pulse(stuffer_done), .out_pulse(finish_dcc),.busy());
     
@@ -843,12 +848,6 @@ module  jp_channel#(
         .gotLastBlock() // output ?? - unused (was for debug)
     );
     
-    
-    
-    wire   [15:0] stuffer_do;
-    wire          stuffer_dv;
-    wire          stuffer_done;
-    wire          eof_written_xclk2xn;
 
     stuffer393 stuffer393_i (
         .rst                 (rst),                    // input

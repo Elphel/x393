@@ -1312,32 +1312,32 @@ always @ (posedge mclk) if (ext_buf_rd_late) begin
 `endif    
 `ifdef def_enable_mem_chn10
   `ifdef def_write_mem_chn10
-        4'h10:ext_buf_rdata <= ext_buf_rdata10;
+        4'ha:ext_buf_rdata <= ext_buf_rdata10;
   `endif
 `endif    
 `ifdef def_enable_mem_chn11
   `ifdef def_write_mem_chn11
-        4'h11:ext_buf_rdata <= ext_buf_rdata11;
+        4'hb:ext_buf_rdata <= ext_buf_rdata11;
   `endif
 `endif    
 `ifdef def_enable_mem_chn12
   `ifdef def_write_mem_chn12
-        4'h12:ext_buf_rdata <= ext_buf_rdata12;
+        4'hc:ext_buf_rdata <= ext_buf_rdata12;
   `endif
 `endif    
 `ifdef def_enable_mem_chn13
   `ifdef def_write_mem_chn13
-        4'h13:ext_buf_rdata <= ext_buf_rdata13;
+        4'hd:ext_buf_rdata <= ext_buf_rdata13;
   `endif
 `endif    
 `ifdef def_enable_mem_chn14
   `ifdef def_write_mem_chn14
-        4'h14:ext_buf_rdata <= ext_buf_rdata14;
+        4'he:ext_buf_rdata <= ext_buf_rdata14;
   `endif
 `endif    
 `ifdef def_enable_mem_chn15
   `ifdef def_write_mem_chn15
-        4'h15:ext_buf_rdata <= ext_buf_rdata15;
+        4'hf:ext_buf_rdata <= ext_buf_rdata15;
   `endif
 `endif    
         default: ext_buf_rdata <= 'bx;

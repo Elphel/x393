@@ -92,7 +92,7 @@
 		<link>
 			<name>vivado_logs/VivadoSynthesis.log</name>
 			<type>1</type>
-			<location>/home/andrey/git/x393/vivado_logs/VivadoSynthesis-20150702180615691.log</location>
+			<location>/home/andrey/git/x393/vivado_logs/VivadoSynthesis-20150718125232570.log</location>
 		</link>
 		<link>
 			<name>vivado_logs/VivadoTimimgSummaryReportImplemented.log</name>

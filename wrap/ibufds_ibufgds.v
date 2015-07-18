@@ -53,6 +53,3 @@ module  ibufds_ibufgds  #(
     
 endmodule
 
-
-endmodule
-

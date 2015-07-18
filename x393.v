@@ -464,6 +464,7 @@ module  x393 #(
   wire        [31:0] logger_data32; 
   wire               logger_pre_valid_chn;
  
+    wire        idelay_ctrl_rdy;// just to keep idelay_ctrl instances
    
    assign axird_dev_ready = ~axird_dev_busy; //may combine (AND) multiple sources if needed
    assign axird_dev_busy = 1'b0; // always for now
@@ -1343,7 +1344,6 @@ BUFG bufg_axi_aclk_i  (.O(axi_aclk),.I(fclk[0]));
     wire [ 5:0] saxi1_bid; 
     wire [ 1:0] saxi1_bresp; 
 
-
     sensors393 #(
         .SENSOR_GROUP_ADDR          (SENSOR_GROUP_ADDR),
         .SENSOR_BASE_INC            (SENSOR_BASE_INC),
@@ -1464,6 +1464,17 @@ BUFG bufg_axi_aclk_i  (.O(axi_aclk),.I(fclk[0]));
         .status_ad          (status_sensor_ad),    // output[7:0] 
         .status_rq          (status_sensor_rq),    // output
         .status_start       (status_sensor_start), // input
+        
+        .sns_dp            ({sns4_dp, sns3_dp, sns2_dp, sns1_dp}),             // inout[7:0] 
+        .sns_dn            ({sns4_dn, sns3_dn, sns2_dn, sns1_dn}),             // inout[7:0] 
+        .sns_clkp          ({sns4_clkp, sns3_clkp, sns2_clkp, sns1_clkp}),     // inout
+        .sns_clkn          ({sns4_clkn, sns3_clkn, sns2_clkn, sns1_clkn}),     // inout
+        .sns_scl           ({sns4_scl, sns3_scl, sns2_scl, sns1_scl}),         // inout
+        .sns_sda           ({sns4_sda, sns3_sda, sns2_sda, sns1_sda}),         // inout
+        .sns_ctl           ({sns4_ctl, sns3_ctl, sns2_ctl, sns1_ctl}),         // inout
+        .sns_pg            ({sns4_pg, sns3_pg, sns2_pg, sns1_pg}),             // inout
+
+/*
         .sns1_dp            (sns1_dp),             // inout[7:0] 
         .sns1_dn            (sns1_dn),             // inout[7:0] 
         .sns1_clkp          (sns1_clkp),           // inout
@@ -1499,7 +1510,7 @@ BUFG bufg_axi_aclk_i  (.O(axi_aclk),.I(fclk[0]));
         .sns4_sda           (sns4_sda),            // inout
         .sns4_ctl           (sns4_ctl),            // inout
         .sns4_pg            (sns4_pg),             // inout
-
+*/
         .rpage_set          (sens_rpage_set),      // input
         .rpage_next         (sens_rpage_next),     // input
         .buf_rd             (sens_buf_rd),         // input
@@ -1518,6 +1529,7 @@ BUFG bufg_axi_aclk_i  (.O(axi_aclk),.I(fclk[0]));
         .frame_num1         (frame_num[1 * NUM_FRAME_BITS +: NUM_FRAME_BITS]), // input[3:0] 
         .frame_num2         (frame_num[2 * NUM_FRAME_BITS +: NUM_FRAME_BITS]), // input[3:0] 
         .frame_num3         (frame_num[3 * NUM_FRAME_BITS +: NUM_FRAME_BITS]), // input[3:0] 
+        .idelay_rdy         (idelay_ctrl_rdy), // output[1:0] // just to preserve iodelay_cntr
         
         .aclk               (saxi0_aclk),          // input
         .saxi_awaddr        (saxi0_awaddr),        // output[31:0] 
@@ -2073,7 +2085,8 @@ BUFG bufg_axi_aclk_i  (.O(axi_aclk),.I(fclk[0]));
         .xclk         (xclk),                // output
         .xclk2x       (xclk2x),              // output
         .sync_clk     (camsync_clk),         // output
-        .time_ref     (time_ref)             // output
+        .time_ref     (time_ref),            // output
+        .extra_status ({1'b0,idelay_ctrl_rdy}) // input[1:0] 
     );
 
     axibram_write #(
