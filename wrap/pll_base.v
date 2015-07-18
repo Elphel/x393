@@ -44,7 +44,7 @@ module  pll_base#(
     parameter CLKOUT4_DIVIDE =        1,
     parameter CLKOUT5_DIVIDE =        1,
     parameter DIVCLK_DIVIDE =         1,            // Integer 1..106. Divides all outputs with respect to CLKIN
-    parameter REF_JITTER1   =         0.010,        // Expectet jitter on CLKIN1 (0.000..0.999)
+    parameter REF_JITTER1   =         0.010,        // Expected jitter on CLKIN1 (0.000..0.999)
     parameter STARTUP_WAIT  =         "FALSE"       // Delays "DONE" signal until MMCM is locked
 )
 (

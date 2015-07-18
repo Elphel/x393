@@ -82,8 +82,12 @@ module  x393 #(
     output                       SDDMU, // UDM  I/O pad (actually only output)
     inout                        DQSU,  // UDQS I/O pad
     inout                        NDQSU,
-    output                       DUMMY_TO_KEEP  // to keep PS7 signals from "optimization"
-    ,input                        MEMCLK
+    // Clock inputs
+    input                        memclk,  // M5
+    input                        ffclk0p, // Y12
+    input                        ffclk0n, // Y11
+    input                        ffclk1p, // W14
+    input                        ffclk1n  // W13
 );
 
 //    localparam ADDRESS_NUMBER=15;
@@ -207,10 +211,6 @@ module  x393 #(
     assign logger_clk = camsync_clk;
    
     wire           time_ref; // RTC reference: integer number of microseconds, less than mclk/2. Not a global clock
-   // temporary:
-    reg [2:0] time_ref_r;
-    always @ (posedge mclk or posedge axi_rst) if (axi_rst) time_ref_r <= 0; else time_ref_r <= time_ref_r + 1;
-    assign time_ref = time_ref_r[2];
 
     wire [11:0] tmp_debug; 
    
@@ -293,6 +293,10 @@ module  x393 #(
     wire                        status_saxi1wr_rq; // Other status request   
     wire                        status_saxi1wr_start;  // S uppressThisWarning VEditor ****** Other status packet transfer start (currently with 0 latency from status_root_rq)
 
+    wire                  [7:0] status_clocks_ad; // saxi1 - logger data Other status byte-wide address/data
+    wire                        status_clocks_rq; // Other status request   
+    wire                        status_clocks_start;  // S uppressThisWarning VEditor ****** Other status packet transfer start (currently with 0 latency from status_root_rq)
+
     // Insert register layer if needed
     reg  [7:0] cmd_mcontr_ad;
     reg        cmd_mcontr_stb;
@@ -323,6 +327,9 @@ module  x393 #(
 
     reg  [7:0] cmd_saxi1wr_ad;
     reg        cmd_saxi1wr_stb;
+
+    reg  [7:0] cmd_clocks_ad;
+    reg        cmd_clocks_stb;
 
 // membridge
     wire                        frame_start_chn1; // input
@@ -369,7 +376,7 @@ module  x393 #(
    
     reg                         axi_rst_pre=1'b1;
     wire                        comb_rst; //=~frst[0] | frst[1];
-   //MEMCLK
+
     wire                 [63:0] gpio_in;
     
     // signals for sensor393 (in/outs as sseen for the sensor393)
@@ -509,6 +516,8 @@ module  x393 #(
         cmd_saxi1wr_ad <=     cmd_root_ad;
         cmd_saxi1wr_stb <=    cmd_root_stb;
         
+        cmd_clocks_ad <=      cmd_root_ad;
+        cmd_clocks_stb <=     cmd_root_stb;
     end
 
 // For now - connect status_test01 to status_other, if needed - increase number of multiplexer inputs)
@@ -548,9 +557,6 @@ module  x393 #(
         else          axi_rst_pre <= 1'b0;
     end
      
-//BUFG bufg_axi_rst_i   (.O(axi_rst),.I(axi_rst_pre));
-//BUFG bufg_axi_aclk_i  (.O(axi_aclk),.I(fclk[0]));
-   
 
 `ifdef DEBUG_FIFO
         wire    waddr_under, wdata_under, wresp_under; 
@@ -583,6 +589,7 @@ module  x393 #(
 `endif
 
 BUFG bufg_axi_rst_i   (.O(axi_rst),.I(axi_rst_pre));
+/*
 BUFG bufg_axi_aclk_i  (.O(axi_aclk),.I(fclk[0]));
     axi_hp_clk #(
         .CLKIN_PERIOD(CLKIN_PERIOD),
@@ -595,7 +602,7 @@ BUFG bufg_axi_aclk_i  (.O(axi_aclk),.I(fclk[0]));
         .locked_axihp () // output // not controlled?
     );
 
-
+*/
 // channel test module
     mcntrl393_test01 #(
         .MCNTRL_TEST01_ADDR                 (MCNTRL_TEST01_ADDR),
@@ -874,9 +881,9 @@ BUFG bufg_axi_aclk_i  (.O(axi_aclk),.I(fclk[0]));
         .rq_in9    (status_saxi1wr_rq),      // input
         .start_in9 (status_saxi1wr_start),   // output
         
-        .db_in10   (8'b0),                   // input[7:0] 
-        .rq_in10   (1'b0),                   // input
-        .start_in10(),                       // output
+        .db_in10   (status_clocks_ad),       // input[7:0] 
+        .rq_in10   (status_clocks_rq),       // input
+        .start_in10(status_clocks_start),    // output
         
         .db_in11   (8'b0),                   // input[7:0] 
         .rq_in11   (1'b0),                   // input
@@ -1994,6 +2001,80 @@ BUFG bufg_axi_aclk_i  (.O(axi_aclk),.I(fclk[0]));
         .saxi_bresp              (saxi1_bresp)          // input[1:0] 
     );
     
+    clocks393 #(
+        .CLK_ADDR                (CLK_ADDR),
+        .CLK_MASK                (CLK_MASK),
+        .CLK_STATUS_REG_ADDR     (CLK_STATUS_REG_ADDR),
+        .CLK_CNTRL               (CLK_CNTRL),
+        .CLK_STATUS              (CLK_STATUS),
+        .CLKIN_PERIOD_AXIHP      (CLKIN_PERIOD_AXIHP),
+        .DIVCLK_DIVIDE_AXIHP     (DIVCLK_DIVIDE_AXIHP),
+        .CLKFBOUT_MULT_AXIHP     (CLKFBOUT_MULT_AXIHP),
+        .CLKOUT_DIV_AXIHP        (CLKOUT_DIV_AXIHP),
+        .BUF_CLK1X_AXIHP         (BUF_CLK1X_AXIHP),
+        .CLKIN_PERIOD_PCLK       (CLKIN_PERIOD_PCLK),
+        .DIVCLK_DIVIDE_PCLK      (DIVCLK_DIVIDE_PCLK),
+        .CLKFBOUT_MULT_PCLK      (CLKFBOUT_MULT_PCLK),
+        .CLKOUT_DIV_PCLK         (CLKOUT_DIV_PCLK),
+        .CLKOUT_DIV_PCLK2X       (CLKOUT_DIV_PCLK2X),
+        .PHASE_CLK2X_PCLK        (PHASE_CLK2X_PCLK),
+        .BUF_CLK1X_PCLK          (BUF_CLK1X_PCLK),
+        .BUF_CLK1X_PCLK2X        (BUF_CLK1X_PCLK2X),
+        .CLKIN_PERIOD_XCLK       (CLKIN_PERIOD_XCLK),
+        .DIVCLK_DIVIDE_XCLK      (DIVCLK_DIVIDE_XCLK),
+        .CLKFBOUT_MULT_XCLK      (CLKFBOUT_MULT_XCLK),
+        .CLKOUT_DIV_XCLK         (CLKOUT_DIV_XCLK),
+        .CLKOUT_DIV_XCLK2X       (CLKOUT_DIV_XCLK2X),
+        .PHASE_CLK2X_XCLK        (PHASE_CLK2X_XCLK),
+        .BUF_CLK1X_XCLK          (BUF_CLK1X_XCLK),
+        .BUF_CLK1X_XCLK2X        (BUF_CLK1X_XCLK2X),
+        .CLKIN_PERIOD_SYNC       (CLKIN_PERIOD_SYNC),
+        .DIVCLK_DIVIDE_SYNC      (DIVCLK_DIVIDE_SYNC),
+        .CLKFBOUT_MULT_SYNC      (CLKFBOUT_MULT_SYNC),
+        .CLKOUT_DIV_SYNC         (CLKOUT_DIV_SYNC),
+        .BUF_CLK1X_SYNC          (BUF_CLK1X_SYNC),
+        .MEMCLK_CAPACITANCE      (MEMCLK_CAPACITANCE),
+        .MEMCLK_IBUF_DELAY_VALUE (MEMCLK_IBUF_DELAY_VALUE),
+        .MEMCLK_IBUF_LOW_PWR     (MEMCLK_IBUF_LOW_PWR),
+        .MEMCLK_IFD_DELAY_VALUE  (MEMCLK_IFD_DELAY_VALUE),
+        .MEMCLK_IOSTANDARD       (MEMCLK_IOSTANDARD),
+        .FFCLK0_CAPACITANCE      (FFCLK0_CAPACITANCE),
+        .FFCLK0_DIFF_TERM        (FFCLK0_DIFF_TERM),
+        .FFCLK0_DQS_BIAS         (FFCLK0_DQS_BIAS),
+        .FFCLK0_IBUF_DELAY_VALUE (FFCLK0_IBUF_DELAY_VALUE),
+        .FFCLK0_IBUF_LOW_PWR     (FFCLK0_IBUF_LOW_PWR),
+        .FFCLK0_IFD_DELAY_VALUE  (FFCLK0_IFD_DELAY_VALUE),
+        .FFCLK0_IOSTANDARD       (FFCLK0_IOSTANDARD),
+        .FFCLK1_CAPACITANCE      (FFCLK1_CAPACITANCE),
+        .FFCLK1_DIFF_TERM        (FFCLK1_DIFF_TERM),
+        .FFCLK1_DQS_BIAS         (FFCLK1_DQS_BIAS),
+        .FFCLK1_IBUF_DELAY_VALUE (FFCLK1_IBUF_DELAY_VALUE),
+        .FFCLK1_IBUF_LOW_PWR     (FFCLK1_IBUF_LOW_PWR),
+        .FFCLK1_IFD_DELAY_VALUE  (FFCLK1_IFD_DELAY_VALUE),
+        .FFCLK1_IOSTANDARD       (FFCLK1_IOSTANDARD)
+    ) clocks393_i (
+        .rst          (axi_rst),             // input
+        .mclk         (mclk),                // input
+        .cmd_ad       (cmd_clocks_ad),       // input[7:0] 
+        .cmd_stb      (cmd_clocks_stb),      // input
+        .status_ad    (status_clocks_ad),    // output[7:0] 
+        .status_rq    (status_clocks_rq),    // output
+        .status_start (status_clocks_start), // input
+        .fclk         (fclk),                // input[3:0] 
+        .memclk_pad   (memclk),              // input
+        .ffclk0p_pad  (ffclk0p),             // input
+        .ffclk0n_pad  (ffclk0n),             // input
+        .ffclk1p_pad  (ffclk1p),             // input
+        .ffclk1n_pad  (ffclk1n),             // input
+        .aclk         (axi_aclk),            // output
+        .hclk         (hclk),                // output
+        .pclk         (pclk),                // output
+        .pclk2x       (pclk2x),              // output
+        .xclk         (xclk),                // output
+        .xclk2x       (xclk2x),              // output
+        .sync_clk     (camsync_clk),         // output
+        .time_ref     (time_ref)             // output
+    );
 
     axibram_write #(
         .ADDRESS_BITS(AXI_WR_ADDR_BITS)
@@ -2076,7 +2157,6 @@ BUFG bufg_axi_aclk_i  (.O(axi_aclk),.I(fclk[0]));
         .bram_regen  (axird_regen), // output
         .bram_rdata  (axird_rdata ) // input[31:0] == axi_rdata[31:0], so SuppressThisWarning VivadoSynthesis: [Synth 8-3295] tying undriven pin #axibram_read_i:bram_rdata[31:0] to constant 0
     );
-assign DUMMY_TO_KEEP = frst[2] && MEMCLK; // 1'b0; // dbg_toggle[0];
 
   PS7 ps7_i (
  // EMIO interface

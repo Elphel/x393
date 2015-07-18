@@ -271,10 +271,6 @@
     parameter MCNTRL_TEST01_STATUS_REG_CHN2_ADDR= 'h3d,  // status/readback register for channel 3
     parameter MCNTRL_TEST01_STATUS_REG_CHN3_ADDR= 'h3e,  // status/readback register for channel 4
     parameter MCNTRL_TEST01_STATUS_REG_CHN4_ADDR= 'h3f,  // status/readback register for channel 4
-    
-// axi_hp_clk_i parameters
-    parameter CLKFBOUT_MULT_AXIHP =                18,
-    parameter CLKFBOUT_DIV_AXIHP =                 6,
 
 // membridge module parameters    
     parameter MEMBRIDGE_ADDR=                     'h200,
@@ -387,7 +383,7 @@
     //sensor_i2c_io other parameters
     parameter integer SENSI2C_DRIVE=     12,
     parameter SENSI2C_IBUF_LOW_PWR=      "TRUE",
-    parameter SENSI2C_IOSTANDARD =       "DEFAULT",
+    parameter SENSI2C_IOSTANDARD =       "LVCMOS25",
     parameter SENSI2C_SLEW =             "SLOW",
     
     //sensor_fifo parameters
@@ -419,7 +415,7 @@
     parameter integer IDELAY_VALUE =     0,
     parameter integer PXD_DRIVE =        12,
     parameter PXD_IBUF_LOW_PWR =         "TRUE",
-    parameter PXD_IOSTANDARD =           "DEFAULT",
+    parameter PXD_IOSTANDARD =           "LVCMOS33",
     parameter PXD_SLEW =                 "SLOW",
     parameter real SENS_REFCLK_FREQUENCY = 300.0,
     parameter SENS_HIGH_PERFORMANCE_MODE = "FALSE",
@@ -536,7 +532,7 @@
     parameter GPIO_STATUS_REG_ADDR =      'h30,  // address where status can be read out (10 GPIO inputs)
     
     parameter GPIO_IBUF_LOW_PWR =         "TRUE",
-    parameter GPIO_IOSTANDARD =           "DEFAULT", // power is 1.5V
+    parameter GPIO_IOSTANDARD =           "LVCMOS15", // power is 1.5V
     parameter GPIO_SLEW =                 "SLOW",
     
     parameter GPIO_SET_PINS =              0,  // Set GPIO output state, give control for some bits to other modules 
@@ -630,7 +626,67 @@
     parameter MULT_SAXI_CNTRL_MASK =     'h7fe,  // mode and status - 2 locations
     parameter MULT_SAXI_AWCACHE =         4'h3, //..7 cache mode (4 bits, default 4'h3)
     parameter MULT_SAXI_ADV_WR =          4, // number of clock cycles before end of write to genearte adv_wr_done
-    parameter MULT_SAXI_ADV_RD =          3 // number of clock cycles before end of write to genearte adv_wr_done
+    parameter MULT_SAXI_ADV_RD =          3, // number of clock cycles before end of write to genearte adv_wr_done
+
+    // Clock management (input, generation, buffering) 
+    parameter CLK_ADDR =                  'h728, // ..'h729
+    parameter CLK_MASK =                  'h7fe, //
+    parameter CLK_STATUS_REG_ADDR =       'h3a,  //  
+    parameter CLK_CNTRL =                 0,
+    parameter CLK_STATUS =                1,
+    
+    parameter CLKIN_PERIOD_AXIHP =        20, //ns >1.25, 600<Fvco<1200
+    parameter DIVCLK_DIVIDE_AXIHP =       1,
+    parameter CLKFBOUT_MULT_AXIHP =       18, // Fvco=Fclkin*CLKFBOUT_MULT_F/DIVCLK_DIVIDE, Fout=Fvco/CLKOUT#_DIVIDE
+    parameter CLKOUT_DIV_AXIHP =           6,   // To get 150MHz for the reference clock
+    parameter BUF_CLK1X_AXIHP =           "BUFG", // "BUFG", "BUFH", "BUFR", "NONE"
+    
+    parameter CLKIN_PERIOD_PCLK =         42, // 24MHz 
+    parameter DIVCLK_DIVIDE_PCLK =         1,
+    parameter CLKFBOUT_MULT_PCLK =        40, // 960 MHz
+    parameter CLKOUT_DIV_PCLK =           10, // 96MHz 
+    parameter CLKOUT_DIV_PCLK2X =          5, // 192 MHz
+    parameter PHASE_CLK2X_PCLK =           0.000, 
+    parameter BUF_CLK1X_PCLK =            "BUFG",
+    parameter BUF_CLK1X_PCLK2X =          "BUFG",  
+    
+    parameter CLKIN_PERIOD_XCLK =         20, // 24MHz 
+    parameter DIVCLK_DIVIDE_XCLK =         1,
+    parameter CLKFBOUT_MULT_XCLK =        50, // 1000 MHz
+    parameter CLKOUT_DIV_XCLK =           10, // 100 MHz 
+    parameter CLKOUT_DIV_XCLK2X =          5, // 200 MHz
+    parameter PHASE_CLK2X_XCLK =           0.000, 
+    parameter BUF_CLK1X_XCLK =            "BUFG",
+    parameter BUF_CLK1X_XCLK2X =          "BUFG",  
+    
+    parameter CLKIN_PERIOD_SYNC =         20, // 24MHz 
+    parameter DIVCLK_DIVIDE_SYNC =         1,
+    parameter CLKFBOUT_MULT_SYNC =        50, // 1000 MHz
+    parameter CLKOUT_DIV_SYNC =           10, // 100 MHz 
+    parameter BUF_CLK1X_SYNC =            "BUFG",
+    
+    parameter MEMCLK_CAPACITANCE =        "DONT_CARE",
+    parameter MEMCLK_IBUF_DELAY_VALUE =   "0",
+    parameter MEMCLK_IBUF_LOW_PWR =       "TRUE",
+    parameter MEMCLK_IFD_DELAY_VALUE =    "AUTO",
+    parameter MEMCLK_IOSTANDARD =         "SSTL15",
+
+    parameter FFCLK0_CAPACITANCE =        "DONT_CARE",
+    parameter FFCLK0_DIFF_TERM =          "FALSE",
+    parameter FFCLK0_DQS_BIAS =           "FALSE",
+    parameter FFCLK0_IBUF_DELAY_VALUE =   "0",
+    parameter FFCLK0_IBUF_LOW_PWR =       "TRUE",
+    parameter FFCLK0_IFD_DELAY_VALUE =    "AUTO",
+    parameter FFCLK0_IOSTANDARD =         "RSDS_25",
+    
+    parameter FFCLK1_CAPACITANCE =        "DONT_CARE",
+    parameter FFCLK1_DIFF_TERM =          "FALSE",
+    parameter FFCLK1_DQS_BIAS =           "FALSE",
+    parameter FFCLK1_IBUF_DELAY_VALUE =   "0",
+    parameter FFCLK1_IBUF_LOW_PWR =       "TRUE",
+    parameter FFCLK1_IFD_DELAY_VALUE =    "AUTO",
+    parameter FFCLK1_IOSTANDARD =         "RSDS_25"
+    
     
     
     
