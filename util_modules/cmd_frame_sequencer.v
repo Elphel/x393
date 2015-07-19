@@ -92,7 +92,7 @@ module  cmd_frame_sequencer#(
     reg                         we_fifo_wp;     // enable writing to fifo write pointer memory
     reg                         next_frame_rq;  // request to switch to the new frame page, clear pointer for the one just left
     wire                        pre_wpage_inc;
-    reg         [PNTR_WIDH-1:0] fifo_wr_pointers_ram [0:7];
+    reg         [PNTR_WIDH-1:0] fifo_wr_pointers_ram [0:15];
     wire        [PNTR_WIDH-1:0] fifo_wr_pointers_outw=fifo_wr_pointers_ram[wpage_w];
     wire        [PNTR_WIDH-1:0] fifo_wr_pointers_outr=fifo_wr_pointers_ram[page_r];
     

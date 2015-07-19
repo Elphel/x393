@@ -380,13 +380,13 @@ module csconvert18a(
 // second term is pa1, third - (pd0+pd2)/2
 // else
 // second term is (pa1 + (pd0+pd2)/2)/2, third - (pa0+pa2)/2
-  reg		[7:0] m1;
+//  reg		[7:0] m1; same as pd1_dly
   reg		[7:0] m2;
   reg		[7:0] m3;
   wire	[8:0]	pd02s=   {1'b0,pd_prev[7:0]}+{1'b0,pd_next[7:0]};   // will use pd02s[8:1]
   wire	[8:0]	pa1pd02s={1'b0,pa1[7:0]}+{1'b0,pd02s[8:1]}; // will use pa1pd02s[8:1]
   wire	[8:0]	pa02s=   {1'b0,pa_prev[7:0]}+{1'b0,pa_next[7:0]};   // will use pa02s[8:1]
-  always @ (posedge CLK) m1 <= pd1[7:0];
+//  always @ (posedge CLK) m1 <= pd1[7:0]; // same as pd1_dly
 //  always @ (posedge CLK) m2 <= (odd_pix==odd_line)? pa1[7:0]   : pa1pd02s[8:1];
 //  always @ (posedge CLK) m3 <= (odd_pix==odd_line)? pd02s[8:1] : pa02s[8:1];
   always @ (posedge CLK) m2 <= pix_green? pa1[7:0]   : pa1pd02s[8:1];
@@ -526,16 +526,17 @@ Y[1,1]=(0x96*P[1,1]+   0x1d*((P[1,0]+P[1,2])/2 +                 0x4d*((P[0,1] +
              end
   endcase
 
-  wire [15:0] mm1=m1[7:0]*k1[7:0];
+  wire [15:0] mm1=pd1_dly[7:0] * k1[7:0]; //m1[7:0]*k1[7:0];
   wire [15:0] mm2=m2[7:0]*k2[7:0];
   wire [15:0] mm3=m3[7:0]*k3[7:0];
 
   reg   [7:0] y;
-  reg   [7:0] y0;	// bypass in monochrome mode
+//  reg   [7:0] y0;	// bypass in monochrome mode
+  wire  [7:0] y0 = pdc;
 //  wire   [7:0] y0;	// bypass in monochrome mode
   reg   [15:0] y1,y2,y3; 
   wire	[15:0] y_sum =y1+y2+y3;
-  always @ (posedge CLK) y0 <= m1;
+//  always @ (posedge CLK) y0 <= pd1_dly; // m1; // equivalent
   always @ (posedge CLK) y1 <= mm1;
   always @ (posedge CLK) y2 <= mm2;
   always @ (posedge CLK) y3 <= mm3;

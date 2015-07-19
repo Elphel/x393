@@ -42,18 +42,18 @@ module  clocks393#(
         parameter BUF_CLK1X_PCLK =            "BUFG",
         parameter BUF_CLK1X_PCLK2X =          "BUFG",  
         
-        parameter CLKIN_PERIOD_XCLK =         20, // 24MHz 
+        parameter CLKIN_PERIOD_XCLK =         20, // 50MHz 
         parameter DIVCLK_DIVIDE_XCLK =         1,
-        parameter CLKFBOUT_MULT_XCLK =        50, // 1000 MHz
+        parameter CLKFBOUT_MULT_XCLK =        20, // 50*20=1000 MHz
         parameter CLKOUT_DIV_XCLK =           10, // 100 MHz 
         parameter CLKOUT_DIV_XCLK2X =          5, // 200 MHz
         parameter PHASE_CLK2X_XCLK =           0.000, 
         parameter BUF_CLK1X_XCLK =            "BUFG",
         parameter BUF_CLK1X_XCLK2X =          "BUFG",  
         
-        parameter CLKIN_PERIOD_SYNC =         20, // 24MHz 
+        parameter CLKIN_PERIOD_SYNC =         20, // 50MHz 
         parameter DIVCLK_DIVIDE_SYNC =         1,
-        parameter CLKFBOUT_MULT_SYNC =        50, // 1000 MHz
+        parameter CLKFBOUT_MULT_SYNC =        20, // 50*20=1000 MHz
         parameter CLKOUT_DIV_SYNC =           10, // 100 MHz 
         parameter BUF_CLK1X_SYNC =            "BUFG",
         

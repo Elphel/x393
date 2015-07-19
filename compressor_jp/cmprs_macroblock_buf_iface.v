@@ -85,7 +85,8 @@ module  cmprs_macroblock_buf_iface #(
     reg    [ 2:0] next_valid;     // number of next valid page (only 2 LSB are actual page number)
     reg    [ 2:0] next_invalid;   // oldest valid page
     reg    [ 1:0] add_invalid;    // advance next_invalid pointer by this value, send next_page pulses
-    reg    [ 2:0] used_pages;     // number of pages simultaneously used for the last macroblock
+//    reg    [ 2:0] used_pages;    // number of pages simultaneously used for the last macroblock
+    reg    [ 1:0] used_pages;     // number of pages simultaneously used for the last macroblock - [2] was never used
     reg    [ 2:0] needed_page;    // calculate at MB start
     reg           pre_first_mb;   // from frame start to mb_pre_start[2]
 //    reg           first_mb;       // from mb_pre_start[2]  to mb_pre_start[1]
@@ -183,7 +184,8 @@ module  cmprs_macroblock_buf_iface #(
                             pre_advance_tiles[1:0]  <= {1'b0, mbl_x_inc_r[7]}; 
                         end
             endcase
-            used_pages <= needed_page - next_invalid +1;
+//            used_pages <= needed_page - next_invalid +1;
+            used_pages <= needed_page[1:0] - next_invalid[1:0] +1; // nit [2] not used
         end
         if  (mb_pre_start[7]) begin // TODO: apply after delay, regardless last or not
             if (mb_last_in_row) add_invalid <= used_pages[1:0];

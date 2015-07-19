@@ -305,7 +305,7 @@ module  cmprs_cmd_decode#(
     
     always @ (posedge xclk) begin
          if (format_we_xclk)    format_xclk <=    format_mclk;
-         if (color_sat_we_xclk) color_sat_xclk <= color_sat_mclk;
+         if (color_sat_we_xclk) color_sat_xclk <= color_sat_mclk; // SuppressThisWarning VivadoSynthesis
          if (coring_we_xclk)    coring_xclk <=    coring_mclk;
     end
 

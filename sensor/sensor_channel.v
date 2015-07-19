@@ -51,10 +51,11 @@ module  sensor_channel#(
     parameter SENSOR_CTRL_RADDR =     0, //'h00
     parameter SENSOR_CTRL_ADDR_MASK = 'h7ff, //
         // bits of the SENSOR mode register
-        parameter SENSOR_MODE_WIDTH =     9,
-        parameter SENSOR_HIST_EN_BIT =    0, // 0..3 1 - enable histogram modules, disable after processing the started frame
-        parameter SENSOR_HIST_NRST_BIT =  4, // 0 - immediately reset all histogram modules 
-        parameter SENSOR_16BIT_BIT =      8, // 0 - 8 bpp mode, 1 - 16 bpp (bypass gamma). Gamma-processed data is still used for histograms
+        parameter SENSOR_MODE_WIDTH =     10,
+        parameter SENSOR_HIST_EN_BIT =    4,  // 0..3 1 - enable histogram modules, disable after processing the started frame
+        parameter SENSOR_HIST_NRST_BIT =  8,  // 0 - immediately reset all histogram modules 
+        parameter SENSOR_CHN_EN_BIT =     8,  // 1 - this enable channel
+        parameter SENSOR_16BIT_BIT =      9, // 0 - 8 bpp mode, 1 - 16 bpp (bypass gamma). Gamma-processed data is still used for histograms
     
     parameter SENSI2C_CTRL_RADDR =    2, // 'h02..'h03
     parameter SENSI2C_CTRL_MASK =     'h7fe,
@@ -256,6 +257,8 @@ module  sensor_channel#(
     wire         sensor_ctrl_we;
     reg    [SENSOR_MODE_WIDTH-1:0] mode;
     wire   [3:0] hist_en;
+    wire         en_mclk; // enable this channel
+    wire         en_pclk; // enabole in pclk domain   
     wire         hist_nrst;
     wire         bit16; // 16-bit mode, 0 - 8 bit mode
     wire   [3:0] hist_rq;
@@ -291,6 +294,7 @@ module  sensor_channel#(
     assign dav_w =  bit16 ? gamma_hact_in : dav_8bit;
     assign last_in_line = ! ( bit16 ? gamma_hact_in : gamma_hact_out);
      
+    assign en_mclk =   mode[SENSOR_CHN_EN_BIT];
     assign hist_en =   mode[SENSOR_HIST_EN_BIT+:4];
     assign hist_nrst = mode[SENSOR_HIST_NRST_BIT];
     assign bit16 =     mode[SENSOR_16BIT_BIT];
@@ -303,7 +307,7 @@ module  sensor_channel#(
 
     always @ (posedge  rst or posedge mclk) begin
         if      (rst)            mode <= 0;
-        else if (sensor_ctrl_we) mode <= sensor_ctrl_data[8:0];
+        else if (sensor_ctrl_we) mode <= sensor_ctrl_data[SENSOR_MODE_WIDTH-1:0];
     end
     
     always @ (posedge pclk) begin
@@ -319,6 +323,8 @@ module  sensor_channel#(
         eof_out_r <= bit16 ? gamma_eof_in : gamma_eof_out;
     end
 
+    level_cross_clocks  level_cross_clocks_en_pclk_i (.clk(pclk), .d_in(en_mclk), .d_out(en_pclk));
+    
     status_router2 status_router2_sensor_i (
         .rst       (rst),                     // input
         .clk       (mclk),                    // input
@@ -340,13 +346,13 @@ module  sensor_channel#(
         .ADDR_WIDTH  (1),
         .DATA_WIDTH  (32)
     ) cmd_deser_sens_channel_i (
-        .rst         (rst), // input
-        .clk         (mclk), // input
-        .ad          (cmd_ad), // input[7:0] 
-        .stb         (cmd_stb), // input
-        .addr        (), // output[0:0] - not used
-        .data        (sensor_ctrl_data), // output[31:0] 
-        .we          (sensor_ctrl_we)    // output
+        .rst         (rst),               // input
+        .clk         (mclk),              // input
+        .ad          (cmd_ad),            // input[7:0] 
+        .stb         (cmd_stb),           // input
+        .addr      (),                    // output[0:0] - not used
+        .data        (sensor_ctrl_data),  // output[31:0] 
+        .we          (sensor_ctrl_we)     // output
     );
 
     sensor_i2c_io #(
@@ -363,16 +369,16 @@ module  sensor_channel#(
         .SENSI2C_IOSTANDARD    (SENSI2C_IOSTANDARD),
         .SENSI2C_SLEW          (SENSI2C_SLEW)
     ) sensor_i2c_io_i (
-        .rst                   (rst), // input
-        .mclk                  (mclk), // input
-        .cmd_ad                (cmd_ad), // input[7:0] 
-        .cmd_stb               (cmd_stb), // input
-        .status_ad             (sens_i2c_status_ad), // output[7:0] 
-        .status_rq             (sens_i2c_status_rq), // output
+        .rst                   (rst),                   // input
+        .mclk                  (mclk),                  // input
+        .cmd_ad                (cmd_ad),                // input[7:0] 
+        .cmd_stb               (cmd_stb),               // input
+        .status_ad             (sens_i2c_status_ad),    // output[7:0] 
+        .status_rq             (sens_i2c_status_rq),    // output
         .status_start          (sens_i2c_status_start), // input
-        .frame_sync            (sof_out_mclk), // input
-        .scl                   (sns_scl), // inout
-        .sda                   (sns_sda) // inout
+        .frame_sync            (sof_out_mclk),          // input
+        .scl                   (sns_scl),               // inout
+        .sda                   (sns_sda)                // inout
     );
 
     sens_parallel12 #(
@@ -449,16 +455,16 @@ module  sensor_channel#(
         .SENSOR_FIFO_2DEPTH (SENSOR_FIFO_2DEPTH),
         .SENSOR_FIFO_DELAY  (SENSOR_FIFO_DELAY)
     ) sensor_fifo_i (
-        .rst         (rst),     // input
-        .iclk        (ipclk), // input
-        .pclk        (pclk), // input
-        .pxd_in      (pxd_to_fifo), // input[11:0] 
+        .rst         (rst),          // input
+        .iclk        (ipclk),        // input
+        .pclk        (pclk),         // input
+        .pxd_in      (pxd_to_fifo),  // input[11:0] 
         .vact        (vact_to_fifo), // input
         .hact        (hact_to_fifo), // input
-        .pxd_out     (pxd), // output[11:0] 
-        .data_valid  (hact), // output
-        .sof         (sof), // output
-        .eof         (eof) // output
+        .pxd_out     (pxd),          // output[11:0] 
+        .data_valid  (hact),         // output
+        .sof         (sof),          // output
+        .eof         (eof)           // output
     );
 
     sens_sync #(
@@ -472,25 +478,22 @@ module  sensor_channel#(
         .SENS_SYNC_MINBITS    (SENS_SYNC_MINBITS),
         .SENS_SYNC_MINPER     (SENS_SYNC_MINPER)
     ) sens_sync_i (
-        .rst          (rst), // input
-        .pclk         (pclk), // input
-        .mclk         (mclk), // input
-        .en(), // input
-        .sof_in       (sof), // input
-        .eof_in       (eof), // input
-        .hact         (hact), // input
-        .trigger_mode (trigger_mode), // input
-        .trig_in      (trig_in), // input
-        .trig         (trig), // output
-        .sof_out_pclk (sof_out_sync), // output reg 
-        .sof_out      (sof_out_mclk), // output
+        .rst          (rst),           // input
+        .pclk         (pclk),          // input
+        .mclk         (mclk),          // input
+        .en           (en_pclk),       // input @pclk
+        .sof_in       (sof),           // input
+        .eof_in       (eof),           // input
+        .hact         (hact),          // input
+        .trigger_mode (trigger_mode),  // input
+        .trig_in      (trig_in),       // input
+        .trig         (trig),          // output
+        .sof_out_pclk (sof_out_sync),  // output reg 
+        .sof_out      (sof_out_mclk),  // output
         .sof_late     (sof_late_mclk), // output
-        .cmd_ad       (cmd_ad), // input[7:0] 
-        .cmd_stb      (cmd_stb) // input
+        .cmd_ad       (cmd_ad),        // input[7:0] 
+        .cmd_stb      (cmd_stb)        // input
     );
-
-
-
 
     sens_gamma #(
         .SENS_GAMMA_NUM_CHN    (SENS_GAMMA_NUM_CHN),
@@ -508,20 +511,20 @@ module  sensor_channel#(
         .SENS_GAMMA_MODE_REPET (SENS_GAMMA_MODE_REPET),
         .SENS_GAMMA_MODE_TRIG  (SENS_GAMMA_MODE_TRIG)
     ) sens_gamma_i (
-        .rst         (rst), // input
-        .pclk        (pclk), // input
-        .pxd_in      (gamma_pxd_in), // input[15:0] 
-        .hact_in     (gamma_hact_in), // input
-        .sof_in      (gamma_sof_in), // input
-        .eof_in      (gamma_eof_in), // input
-        .trig_in     (1'b0), // input (use trig_soft)
-        .pxd_out     (gamma_pxd_out), // output[7:0] 
+        .rst         (rst),            // input
+        .pclk        (pclk),           // input
+        .pxd_in      (gamma_pxd_in),   // input[15:0] 
+        .hact_in     (gamma_hact_in),  // input
+        .sof_in      (gamma_sof_in),   // input
+        .eof_in      (gamma_eof_in),   // input
+        .trig_in  (1'b0),              // input (use trig_soft)
+        .pxd_out     (gamma_pxd_out),  // output[7:0] 
         .hact_out    (gamma_hact_out), // output
-        .sof_out     (gamma_sof_out), // output
-        .eof_out     (gamma_eof_out), // output
-        .mclk        (mclk), // input
-        .cmd_ad      (cmd_ad), // input[7:0] 
-        .cmd_stb     (cmd_stb) // input
+        .sof_out     (gamma_sof_out),  // output
+        .eof_out     (gamma_eof_out),  // output
+        .mclk        (mclk),           // input
+        .cmd_ad      (cmd_ad),         // input[7:0] 
+        .cmd_stb     (cmd_stb)         // input
     );
 
     // TODO: Use generate to generate 1-4 histogram modules
@@ -534,27 +537,27 @@ module  sensor_channel#(
                 .HISTOGRAM_LEFT_TOP     (HISTOGRAM_LEFT_TOP),
                 .HISTOGRAM_WIDTH_HEIGHT (HISTOGRAM_WIDTH_HEIGHT)
             ) sens_histogram_i (
-                .rst        (rst), // input
-                .pclk       (pclk), // input
-                .pclk2x     (pclk2x), // input
-                .sof        (gamma_sof_out), // input
+                .rst        (rst),            // input
+                .pclk       (pclk),           // input
+                .pclk2x     (pclk2x),         // input
+                .sof        (gamma_sof_out),  // input
                 .hact       (gamma_hact_out), // input
-                .hist_di    (gamma_pxd_out), // input[7:0] 
-                .mclk       (mclk), // input
-                .hist_en    (hist_en[0]), // input
-                .hist_rst   (!hist_nrst), // input
-                .hist_rq    (hist_rq[0]), // output
-                .hist_grant (hist_gr[0]), // input
-                .hist_do    (hist_do0), // output[31:0] 
-                .hist_dv    (hist_dv[0]), // output
-                .cmd_ad     (cmd_ad), // input[7:0] 
-                .cmd_stb    (cmd_stb) // input
+                .hist_di    (gamma_pxd_out),  // input[7:0] 
+                .mclk       (mclk),           // input
+                .hist_en    (hist_en[0]),     // input
+                .hist_rst   (!hist_nrst),     // input
+                .hist_rq    (hist_rq[0]),     // output
+                .hist_grant (hist_gr[0]),     // input
+                .hist_do    (hist_do0),       // output[31:0] 
+                .hist_dv    (hist_dv[0]),     // output
+                .cmd_ad     (cmd_ad),         // input[7:0] 
+                .cmd_stb    (cmd_stb)         // input
             );
         else
             sens_histogram_dummy sens_histogram_dummy_i (
-                .hist_rq(hist_rq[0]), // output
-                .hist_do(hist_do0), // output[31:0] 
-                .hist_dv(hist_dv[0]) // output
+                .hist_rq(hist_rq[0]),         // output
+                .hist_do(hist_do0),           // output[31:0] 
+                .hist_dv(hist_dv[0])          // output
             );
     endgenerate
     generate
@@ -566,27 +569,27 @@ module  sensor_channel#(
                 .HISTOGRAM_LEFT_TOP     (HISTOGRAM_LEFT_TOP),
                 .HISTOGRAM_WIDTH_HEIGHT (HISTOGRAM_WIDTH_HEIGHT)
             ) sens_histogram_i (
-                .rst        (rst), // input
-                .pclk       (pclk), // input
-                .pclk2x     (pclk2x), // input
-                .sof        (gamma_sof_out), // input
+                .rst        (rst),            // input
+                .pclk       (pclk),           // input
+                .pclk2x     (pclk2x),         // input
+                .sof        (gamma_sof_out),  // input
                 .hact       (gamma_hact_out), // input
-                .hist_di    (gamma_pxd_out), // input[7:0] 
-                .mclk       (mclk), // input
-                .hist_en    (hist_en[1]), // input
-                .hist_rst   (!hist_nrst), // input
-                .hist_rq    (hist_rq[1]), // output
-                .hist_grant (hist_gr[1]), // input
-                .hist_do    (hist_do1), // output[31:0] 
-                .hist_dv    (hist_dv[1]), // output
-                .cmd_ad     (cmd_ad), // input[7:0] 
-                .cmd_stb    (cmd_stb) // input
+                .hist_di    (gamma_pxd_out),  // input[7:0] 
+                .mclk       (mclk),           // input
+                .hist_en    (hist_en[1]),     // input
+                .hist_rst   (!hist_nrst),     // input
+                .hist_rq    (hist_rq[1]),     // output
+                .hist_grant (hist_gr[1]),     // input
+                .hist_do    (hist_do1),       // output[31:0] 
+                .hist_dv    (hist_dv[1]),     // output
+                .cmd_ad     (cmd_ad),         // input[7:0] 
+                .cmd_stb    (cmd_stb)         // input
             );
         else
             sens_histogram_dummy sens_histogram_dummy_i (
-                .hist_rq(hist_rq[1]), // output
-                .hist_do(hist_do1), // output[31:0] 
-                .hist_dv(hist_dv[1]) // output
+                .hist_rq(hist_rq[1]),   // output
+                .hist_do(hist_do1),     // output[31:0] 
+                .hist_dv(hist_dv[1])    // output
             );
     endgenerate
     generate
@@ -598,27 +601,27 @@ module  sensor_channel#(
                 .HISTOGRAM_LEFT_TOP     (HISTOGRAM_LEFT_TOP),
                 .HISTOGRAM_WIDTH_HEIGHT (HISTOGRAM_WIDTH_HEIGHT)
             ) sens_histogram_i (
-                .rst        (rst), // input
-                .pclk       (pclk), // input
-                .pclk2x     (pclk2x), // input
-                .sof        (gamma_sof_out), // input
+                .rst        (rst),            // input
+                .pclk       (pclk),           // input
+                .pclk2x     (pclk2x),         // input
+                .sof        (gamma_sof_out),  // input
                 .hact       (gamma_hact_out), // input
-                .hist_di    (gamma_pxd_out), // input[7:0] 
-                .mclk       (mclk), // input
-                .hist_en    (hist_en[2]), // input
-                .hist_rst   (!hist_nrst), // input
-                .hist_rq    (hist_rq[2]), // output
-                .hist_grant (hist_gr[2]), // input
-                .hist_do    (hist_do2), // output[31:0] 
-                .hist_dv    (hist_dv[2]), // output
-                .cmd_ad     (cmd_ad), // input[7:0] 
-                .cmd_stb    (cmd_stb) // input
+                .hist_di    (gamma_pxd_out),  // input[7:0] 
+                .mclk       (mclk),           // input
+                .hist_en    (hist_en[2]),     // input
+                .hist_rst   (!hist_nrst),     // input
+                .hist_rq    (hist_rq[2]),     // output
+                .hist_grant (hist_gr[2]),     // input
+                .hist_do    (hist_do2),       // output[31:0] 
+                .hist_dv    (hist_dv[2]),     // output
+                .cmd_ad     (cmd_ad),         // input[7:0] 
+                .cmd_stb    (cmd_stb)         // input
             );
         else
             sens_histogram_dummy sens_histogram_dummy_i (
-                .hist_rq(hist_rq[2]), // output
-                .hist_do(hist_do2), // output[31:0] 
-                .hist_dv(hist_dv[2]) // output
+                .hist_rq(hist_rq[2]),        // output
+                .hist_do(hist_do2),          // output[31:0] 
+                .hist_dv(hist_dv[2])         // output
             );
     endgenerate
     generate
@@ -630,27 +633,27 @@ module  sensor_channel#(
                 .HISTOGRAM_LEFT_TOP     (HISTOGRAM_LEFT_TOP),
                 .HISTOGRAM_WIDTH_HEIGHT (HISTOGRAM_WIDTH_HEIGHT)
             ) sens_histogram_i (
-                .rst        (rst), // input
-                .pclk       (pclk), // input
-                .pclk2x     (pclk2x), // input
-                .sof        (gamma_sof_out), // input
+                .rst        (rst),            // input
+                .pclk       (pclk),           // input
+                .pclk2x     (pclk2x),         // input
+                .sof        (gamma_sof_out),  // input
                 .hact       (gamma_hact_out), // input
-                .hist_di    (gamma_pxd_out), // input[7:0] 
-                .mclk       (mclk), // input
-                .hist_en    (hist_en[3]), // input
-                .hist_rst   (!hist_nrst), // input
-                .hist_rq    (hist_rq[3]), // output
-                .hist_grant (hist_gr[3]), // input
-                .hist_do    (hist_do3), // output[31:0] 
-                .hist_dv    (hist_dv[3]), // output
-                .cmd_ad     (cmd_ad), // input[7:0] 
-                .cmd_stb    (cmd_stb) // input
+                .hist_di    (gamma_pxd_out),  // input[7:0] 
+                .mclk       (mclk),           // input
+                .hist_en    (hist_en[3]),     // input
+                .hist_rst   (!hist_nrst),     // input
+                .hist_rq    (hist_rq[3]),     // output
+                .hist_grant (hist_gr[3]),     // input
+                .hist_do    (hist_do3),       // output[31:0] 
+                .hist_dv    (hist_dv[3]),     // output
+                .cmd_ad     (cmd_ad),         // input[7:0] 
+                .cmd_stb    (cmd_stb)         // input
             );
         else
             sens_histogram_dummy sens_histogram_dummy_i (
-                .hist_rq(hist_rq[3]), // output
-                .hist_do(hist_do3), // output[31:0] 
-                .hist_dv(hist_dv[3]) // output
+                .hist_rq(hist_rq[3]),  // output
+                .hist_do(hist_do3),    // output[31:0] 
+                .hist_dv(hist_dv[3])   // output
             );
     endgenerate
     

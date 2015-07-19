@@ -110,7 +110,8 @@ module  cmprs_buf_average#(
     wire [1:0] pre_accCdone; // need to make sure that pre_accCdone do_r not happen with pre_accYdone
     reg  [3:0] accYrun;
     reg  [1:0] accCrun;
-    reg  [3:0] accYdone; // only bit 0 is used as a start of output
+//    reg  [3:0] accYdone; // only bit 0 is used as a start of output
+    reg        accYdone; // only bit 0 is used as a start of output
     reg        accYdoneAny;
     reg  [1:0] avrY_wa, pre_avrY_wa;
     reg        avrC_wa, pre_avrC_wa;
@@ -199,7 +200,8 @@ module  cmprs_buf_average#(
         accYrun[3:0] <= {4{frame_en}} & ((accYfirst[3:0] & accYen[3:0]) | (accYrun[3:0] & ~pre_accYdone[3:0]));
         accCrun[1:0] <= {2{frame_en}} & ((accCfirst[1:0] & accCen[1:0]) | (accCrun[1:0] & ~pre_accCdone[1:0]));
         
-        accYdone[3:0] <=  pre_accYdone[3:0] & accYrun[3:0];
+//        accYdone[3:0] <=  pre_accYdone[3:0] & accYrun[3:0];
+        accYdone      <=  pre_accYdone[0] & accYrun[0];
         accYdoneAny   <=  |(pre_accYdone[3:0] & accYrun[3:0]);
         avr_we        <=  |(pre_accYdone[3:0] & accYrun[3:0]) || |(pre_accCdone[1:0] & accCrun[1:0]);
         
@@ -284,11 +286,11 @@ module  cmprs_buf_average#(
         case (converter_type_r)
             CMPRS_COLOR18: ccv_out_start <= (yaddrw[7:0]==8'hc4); //TODO: adjust to minimal latency?
             CMPRS_COLOR20: ccv_out_start <= (yaddrw[7:0]==8'hc4); //TODO: adjust to minimal latency?
-            CMPRS_MONO16:  ccv_out_start    <=  accYdone[0];
-            CMPRS_JP4:     ccv_out_start    <=  accYdone[0];
-            CMPRS_JP4DIFF: ccv_out_start    <=  accYdone[0];
-            CMPRS_MONO8:   ccv_out_start    <=  accYdone[0];
-            default:       ccv_out_start    <=  accYdone[0];
+            CMPRS_MONO16:  ccv_out_start    <=  accYdone; //[0];
+            CMPRS_JP4:     ccv_out_start    <=  accYdone; //[0];
+            CMPRS_JP4DIFF: ccv_out_start    <=  accYdone; //[0];
+            CMPRS_MONO8:   ccv_out_start    <=  accYdone; //[0];
+            default:       ccv_out_start    <=  accYdone; //[0];
         endcase
     end    
     

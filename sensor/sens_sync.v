@@ -36,7 +36,7 @@ module  sens_sync#(
     input         rst,         // global reset
     input         pclk,        // global clock input, pixel rate (96MHz for MT9P006)
     input         mclk,        // global system clock, synchronizes commands
-    input         en,          // enable channel (0 resets counters)
+    input         en,          // @pclk enable channel (0 resets counters)
     input         sof_in,      // @pclk start of frame input, single-cycle
     input         eof_in,      // @pclk end of frame input, single-cycle (to limit sof_late
     input         hact,        // @pclk (use to count lines for delayed pulse)

@@ -85,7 +85,8 @@ module focus_sharp393(
     reg    [11:0] di_d;
     reg    [11:0] d1; 
     reg     [8:0] start2;
-    reg     [7:0] finish2;
+//    reg     [7:0] finish2;
+    reg     [6:0] finish2; // bit[7] never used
     reg     [5:0] use_k_dly;
     reg    [23:0] acc_blk; // accumulator for the sum ((a[i]*d[i])^2)
     reg    [22:0] sum_blk; // accumulator for the sum ((a[i]*d[i])^2), copied at block end
@@ -141,6 +142,7 @@ module focus_sharp393(
               3'h4: wnd_totalwidth[8:1] <= wnd_reg[11:4] ;
               3'h5: filt_sel0[3:0]      <= wnd_reg[3:0] ;
               3'h6: stren               <= wnd_reg[0] ;
+              default: begin end
             endcase
         end
      end
@@ -193,10 +195,12 @@ module focus_sharp393(
         filt_sel[3:0] <= filt_sel0[3:0];
         if (clksync[2]) d1[11:0]<=di_d[11:0];
         start2[8:0] <= {start2[7:0], start && csync};
-        finish2[7:0]<= {finish2[6:0],use_coef && !next_ac};
+//        finish2[7:0]<= {finish2[6:0],use_coef && !next_ac};
+        finish2[6:0]<= {finish2[5:0],use_coef && !next_ac}; // finish2[7] was never used
         if      (!en || start2[0]) tba[5:0] <= 6'h0;
         else if (!csync && (tba[5:0] != 6'h3f))   tba[5:0] <= tba[5:0] + 1;
-        mult_s[17:0] <= (&mult_p[35:31] || !(&mult_p[35:31]))?mult_p[31:14]:18'h1ffff;
+//        mult_s[17:0] <= (&mult_p[35:31] || !(&mult_p[35:31]))?mult_p[31:14]:18'h1ffff;
+        mult_s[17:0] <= (&mult_p[35:31] || !(|mult_p[35:31]))?mult_p[31:14]:18'h1ffff;
         next_ac <= en && (start2[3] || (next_ac && ((tba[5:0] != 6'h3f) || csync )));
         use_coef <= next_ac && !csync;
         use_k_dly[5:0] <= {use_k_dly[4:0],use_coef};

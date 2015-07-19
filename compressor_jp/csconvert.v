@@ -268,6 +268,18 @@ module  csconvert#(
 //          pre_color_enable <= 1'b0;
 //          ccv_out_start    <=  accYdone[0];
          end
+    default:begin //color 18 (or try 'X'
+          pre_first_out    <= 'bx; // conv18_pre_first_out;
+          signed_y[8:0]    <= 'bx; // {conv18_signed_y[7],conv18_signed_y[7:0]};
+          ywe              <= 'bx; //conv18_ywe;
+          yaddrw[7:0]      <= 'bx; //{conv18_yaddrw[7],conv18_yaddrw[3],conv18_yaddrw[6:4],conv18_yaddrw[2:0]};
+          signed_c[8:0]    <= 'bx; //{conv18_signed_c[8:0]};
+          cwe              <= 'bx; //conv18_cwe;
+          caddrw[7:0]      <= 'bx; //{1'b0,conv18_caddrw[6:0]};
+          n000             <= 'bx; //conv18_n000;
+          n255             <= 'bx; //conv18_n255;
+         end
+         
   endcase
 
     
