@@ -370,7 +370,7 @@ module  sensor_channel#(
         .status_ad             (sens_i2c_status_ad), // output[7:0] 
         .status_rq             (sens_i2c_status_rq), // output
         .status_start          (sens_i2c_status_start), // input
-        .frame_sync      (), // input
+        .frame_sync            (sof_out_mclk), // input
         .scl                   (sns_scl), // inout
         .sda                   (sns_sda) // inout
     );
@@ -474,7 +474,7 @@ module  sensor_channel#(
     ) sens_sync_i (
         .rst          (rst), // input
         .pclk         (pclk), // input
-        .mclk         (), // input
+        .mclk         (mclk), // input
         .en(), // input
         .sof_in       (sof), // input
         .eof_in       (eof), // input

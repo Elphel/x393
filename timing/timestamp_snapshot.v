@@ -45,10 +45,14 @@ module  timestamp_snapshot(
     end
     
     always @(posedge rst or posedge sclk) begin
-        pulse_busy_r <= pulse_busy;
         if      (rst)                          snd <= 0;
         else if (!pulse_busy && pulse_busy_r)  snd <= 1;
         else if ((&cntr) || snap)              snd <= 0;
+    end
+
+    always @(posedge sclk) begin
+
+        pulse_busy_r <= pulse_busy;
         
         if (!snd) cntr <= 0;
         else      cntr <=  cntr + 1;
@@ -63,8 +67,6 @@ module  timestamp_snapshot(
             3'h6: ts_data <= {4'b0,sec_usec_snap[51:48]};
             3'h7: ts_data <= 8'b0;
         endcase
-        
-        
     end
     
     pulse_cross_clock #(

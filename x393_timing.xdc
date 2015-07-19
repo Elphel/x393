@@ -72,7 +72,8 @@ create_clock -name axi_aclk -period 20 [get_nets -hierarchical *axi_aclk]
 create_generated_clock -name ddr3_sdclk [get_nets -hierarchical sdclk_pre ]
 create_generated_clock -name ddr3_clk [get_nets -hierarchical clk_pre ]
 create_generated_clock -name ddr3_clk_div [get_nets -hierarchical clk_div_pre ]
-create_generated_clock -name ddr3_mclk [get_nets -hierarchical mclk_pre ]
+#create_generated_clock -name ddr3_mclk [get_nets -hierarchical mclk_pre ]
+create_generated_clock -name mcntrl393_i/memctrl16_i/mcontr_sequencer_i/phy_cmd_i/phy_top_i/mclk
 create_generated_clock -name ddr3_clk_ref [get_nets -hierarchical clk_ref_pre ]
 
 

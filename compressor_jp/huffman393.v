@@ -303,7 +303,7 @@ module huffman393    (
         .dv        (tser_we),           // input
         .ta        (ta),                // output[22:0] 
         .td        (tdi),               // output[15:0] 
-        .twe       (twe)               // output
+        .twe       (twe)                // output
     );
   
   
@@ -367,8 +367,10 @@ module huffman393    (
 //        .data_out({unused[11:0],tables_out[19:0]}), // output[31:0] 
         .data_out(tables_out), // output[31:0] 
         .wclk(mclk), // input
-        .waddr({ta[8:0],twe_d}), // input[9:0] 
-        .we(twe | twe_d), // input
+//        .waddr({ta[8:0],twe_d}), // input[9:0] 
+//        .we(twe | twe_d), // input
+        .waddr(ta[9:0]), // input[9:0] 
+        .we   (twe), // input
         .web(4'hf), // input[3:0] 
         .data_in(tdi[15:0]) // input[15:0] 
     );

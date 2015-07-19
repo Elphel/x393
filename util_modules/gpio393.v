@@ -187,7 +187,7 @@ module  gpio393  #(
         .PAYLOAD_BITS        (12),
         .REGISTER_STATUS     (1)
     ) status_generate_i (
-        .rst           (), // input
+        .rst           (rst), // input
         .clk           (mclk), // input
         .we            (set_status_w), // input
         .wd            (cmd_data[7:0]), // input[7:0] 

@@ -254,7 +254,7 @@ module  histogram_saxi#(
     end
     always @(posedge mclk) begin
         if (we_addr) hist_start_page[cmd_wa] <= cmd_data[19:0];
-        en_aclk <= en;
+//        en_aclk <= en;
     end
 
     // mclk (write) port of the buffer

@@ -177,7 +177,7 @@ module  rtc393 #(
         .EXTRA_WORDS         (2),
         .EXTRA_REG_ADDR      (RTC_SEC_USEC_ADDR)
     ) status_generate_i (
-        .rst           (), // input
+        .rst           (rst), // input
         .clk           (mclk), // input
         .we            (set_status_w), // input
         .wd            (cmd_data[7:0]), // input[7:0] 

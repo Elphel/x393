@@ -204,13 +204,15 @@ set_property IOSTANDARD SSTL15 [get_ports {SDDMU}]
 set_property PACKAGE_PIN J5 [get_ports {SDDMU}]
 
 #    output                      DUMMY_TO_KEEP,  // to keep PS7 signals from "optimization"
-set_property IOSTANDARD SSTL15 [get_ports {DUMMY_TO_KEEP}]
-set_property PACKAGE_PIN E3 [get_ports {DUMMY_TO_KEEP}]
+#set_property IOSTANDARD SSTL15 [get_ports {DUMMY_TO_KEEP}]
+set_property PACKAGE_PIN T11 [get_ports {DUMMY_TO_KEEP}]
 
 #not yet used, just for debugging
 #    input                      memclk,
 #set_property IOSTANDARD SSTL15 [get_ports {memclk}]
 set_property PACKAGE_PIN M5 [get_ports {memclk}]
+
+
 
 # ================= Sensor port 0 =================
 #        inout                  [7:0] sns1_dp,

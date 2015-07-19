@@ -58,7 +58,8 @@ module  sens_histogram #(
     reg  [31:0] to_inc;
     wire [31:0] hist_new;
     reg         hist_rwen;  // read/write enable
-    reg   [2:0] hist_regen; // bram output register enable: [0] - ren, [1] - regen, [2] - next after regen
+//    reg   [2:0] hist_regen; // bram output register enable: [0] - ren, [1] - regen, [2] - next after regen
+    reg   [1:0] hist_regen; // bram output register enable: [0] - ren, [1] - regen, [2] - next after regen
     reg         hist_we;    // bram write enable
     reg         hist_bank_mclk;
     
@@ -204,7 +205,8 @@ module  sens_histogram #(
             
         end
         hist_rwen <= (woi[0] & ~pclk_sync) || (woi[2] & pclk_sync);
-        hist_regen <= {hist_regen[1:0], woi[0] & ~pclk_sync};
+//        hist_regen <= {hist_regen[1:0], woi[0] & ~pclk_sync};
+        hist_regen <= {hist_regen[0], woi[0] & ~pclk_sync};
         hist_we <= woi[2] & pclk_sync;
         
         if     (woi[0] & ~pclk_sync) hist_rwaddr <= hist_addr;

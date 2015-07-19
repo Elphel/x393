@@ -421,7 +421,6 @@ module  mcntrl393 #(
     wire        need_rq1;
     wire        channel_pgm_en1; 
     wire        seq_done1;
-    wire        page_nxt_chn1;
 // routed outside to membredge module    
 /*
     wire        buf_wr_chn1;
@@ -435,7 +434,6 @@ module  mcntrl393 #(
     wire        need_rq2;
     wire        channel_pgm_en2; 
     wire        seq_done2;
-    wire        page_nxt_chn2;
     wire        buf_wr_chn2;
     wire        buf_wpage_nxt_chn2;
     wire [63:0] buf_wdata_chn2;
@@ -447,7 +445,6 @@ module  mcntrl393 #(
     wire        need_rq3;
     wire        channel_pgm_en3; 
     wire        seq_done3;
-    wire        page_nxt_chn3;
     wire        buf_wr_chn3;
     wire        buf_wpage_nxt_chn3;
     wire [63:0] buf_wdata_chn3;
@@ -459,7 +456,6 @@ module  mcntrl393 #(
     wire        need_rq4;
     wire        channel_pgm_en4; 
     wire        seq_done4;
-    wire        page_nxt_chn4;
     wire        buf_wr_chn4;
     wire        buf_wpage_nxt_chn4;
     wire [63:0] buf_wdata_chn4;
@@ -554,7 +550,7 @@ module  mcntrl393 #(
     wire                   [3:0] cmprs_keep_open;   // start generating commands
     wire                   [3:0] cmprs_partial; // output
     wire                   [3:0] cmprs_seq_done; // input : sequence over
-    assign cmprs_page_ready = cmprs_seq_done;// mcntrl_tiled_rw does not generate page_ready pulse as it is the same as xfer_done input
+//    assign cmprs_page_ready = cmprs_seq_done;// mcntrl_tiled_rw does not generate page_ready pulse as it is the same as xfer_done input
 
 // combinatorial early signals
     wire                         select_cmd0_w;
@@ -756,13 +752,6 @@ module  mcntrl393 #(
     assign buf3rd_regen= axird_regen && select_buf3rd_d;
     assign buf4rd_rd=    axird_ren   && select_buf4rd;
     assign buf4rd_regen= axird_regen && select_buf4rd_d;
-    
-    
-    assign page_ready_chn1=page_nxt_chn1; //seq_done2;
-    assign page_ready_chn2=page_nxt_chn2; //seq_done2;
-    assign page_ready_chn3=page_nxt_chn3; //seq_done3;      // TODO - check if it should not be rpage_next
-    assign page_ready_chn4=page_nxt_chn4; //rpage_nxt_chn4;
-    
     
     assign axird_selected=axird_selected_r;
     assign select_cmd0_w = ((axiwr_pre_awaddr ^ MCONTR_CMD_WR_ADDR) & MCONTR_WR_MASK)==0;
@@ -1784,7 +1773,7 @@ module  mcntrl393 #(
         .need_rq1           (need_rq1), // input
         .channel_pgm_en1    (channel_pgm_en1), // output reg 
         .seq_done1          (seq_done1), // output
-        .page_nxt_chn1      (page_nxt_chn1), //rpage_nxt_chn0), not used
+        .page_nxt_chn1      (page_ready_chn1), //rpage_nxt_chn0), not used
         .buf_run1           (), //buf_run1),
         .buf_wr_chn1        (buf_wr_chn1), // output
         .buf_wpage_nxt_chn1 (buf_wpage_nxt_chn1), // output
@@ -1799,7 +1788,7 @@ module  mcntrl393 #(
         .need_rq2           (need_rq2), // input
         .channel_pgm_en2    (channel_pgm_en2), // output reg 
         .seq_done2          (seq_done2), // output
-        .page_nxt_chn2      (page_nxt_chn2), //rpage_nxt_chn0), not used
+        .page_nxt_chn2      (page_ready_chn2), //rpage_nxt_chn0), not used
         .buf_run2           (), //buf_run2),
         .buf_wr_chn2        (buf_wr_chn2), // output
         .buf_wpage_nxt_chn2 (buf_wpage_nxt_chn2), // output
@@ -1813,7 +1802,7 @@ module  mcntrl393 #(
         .need_rq3           (need_rq3), // input
         .channel_pgm_en3    (channel_pgm_en3), // output reg 
         .seq_done3          (seq_done3), // output
-        .page_nxt_chn3      (page_nxt_chn3), //rpage_nxt_chn0), not used
+        .page_nxt_chn3      (page_ready_chn3), //rpage_nxt_chn0), not used
         .buf_run3           (), //buf_run3),
         .buf_wr_chn3        (buf_wr_chn3), // output
         .buf_wpage_nxt_chn3 (buf_wpage_nxt_chn3), // output
@@ -1827,7 +1816,7 @@ module  mcntrl393 #(
         .need_rq4           (need_rq4), // input
         .channel_pgm_en4    (channel_pgm_en4), // output reg 
         .seq_done4          (seq_done4), // output
-        .page_nxt_chn4      (page_nxt_chn4), //rpage_nxt_chn0), not used
+        .page_nxt_chn4      (page_ready_chn4), //rpage_nxt_chn0), not used
         .buf_run4           (), //buf_run4),
         .buf_wr_chn4        (buf_wr_chn4), // output
         .buf_wpage_nxt_chn4 (buf_wpage_nxt_chn4), // output
@@ -1881,7 +1870,7 @@ module  mcntrl393 #(
         .need_rq12          (cmprs_need[0]),               // input
         .channel_pgm_en12   (cmprs_channel_pgm_en[0]),     // output reg 
         .seq_done12         (cmprs_seq_done[0]),           // output
-        .page_nxt_chn12     (cmprs_next_page[0]),          // output ???
+        .page_nxt_chn12     (cmprs_page_ready[0]),          // output ???
         .buf_run12          (), // output
         .buf_wr_chn12       (cmprs_buf_we[0]),             // output
         .buf_wpage_nxt_chn12(cmprs_buf_wpage_nxt[0]),      // output
@@ -1892,7 +1881,7 @@ module  mcntrl393 #(
         .need_rq13          (cmprs_need[1]),               // input
         .channel_pgm_en13   (cmprs_channel_pgm_en[1]),     // output reg 
         .seq_done13         (cmprs_seq_done[1]),           // output
-        .page_nxt_chn13     (cmprs_next_page[1]),          // output ???
+        .page_nxt_chn13     (cmprs_page_ready[1]),          // output ???
         .buf_run13          (), // output
         .buf_wr_chn13       (cmprs_buf_we[1]),             // output
         .buf_wpage_nxt_chn13(cmprs_buf_wpage_nxt[1]),      // output
@@ -1903,7 +1892,7 @@ module  mcntrl393 #(
         .need_rq14          (cmprs_need[2]),               // input
         .channel_pgm_en14   (cmprs_channel_pgm_en[2]),     // output reg 
         .seq_done14         (cmprs_seq_done[2]),           // output
-        .page_nxt_chn14     (cmprs_next_page[2]),          // output ???
+        .page_nxt_chn14     (cmprs_page_ready[2]),          // output ???
         .buf_run14          (), // output
         .buf_wr_chn14       (cmprs_buf_we[2]),             // output
         .buf_wpage_nxt_chn14(cmprs_buf_wpage_nxt[2]),      // output
@@ -1914,7 +1903,7 @@ module  mcntrl393 #(
         .need_rq15          (cmprs_need[3]),               // input
         .channel_pgm_en15   (cmprs_channel_pgm_en[3]),     // output reg 
         .seq_done15         (cmprs_seq_done[3]),           // output
-        .page_nxt_chn15     (cmprs_next_page[3]),          // output ???
+        .page_nxt_chn15     (cmprs_page_ready[3]),          // output ???
         .buf_run15          (), // output
         .buf_wr_chn15       (cmprs_buf_we[3]),             // output
         .buf_wpage_nxt_chn15(cmprs_buf_wpage_nxt[3]),      // output

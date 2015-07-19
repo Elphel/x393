@@ -123,10 +123,11 @@ module  clocks393#(
     wire ffclk1_rst = reset_clk[6];
     
     always @ (posedge mclk or posedge rst) begin
-        if (rst)        reset_clk <= 0;
-        if (set_ctrl_w) reset_clk <= {cmd_data[10:8], cmd_data[3:0]}; 
-        if (rst)        pwrdwn_clk <= 0;
-        if (set_ctrl_w) pwrdwn_clk <= cmd_data[7:4]; 
+        if (rst)             reset_clk <= 0;
+        else if (set_ctrl_w) reset_clk <= {cmd_data[10:8], cmd_data[3:0]};
+         
+        if (rst)             pwrdwn_clk <= 0;
+        else if (set_ctrl_w) pwrdwn_clk <= cmd_data[7:4]; 
     end
     assign status_data = {test_clk, locked, extra_status};
     always @ (posedge memclk or posedge memclk_rst) if (memclk_rst) test_clk[0] <= ~test_clk[0];
@@ -154,7 +155,7 @@ module  clocks393#(
         .PAYLOAD_BITS        (9),
         .REGISTER_STATUS     (0)
     ) status_generate_i (
-        .rst           (), // input
+        .rst           (rst), // input
         .clk           (mclk), // input
         .we            (set_status_w), // input
         .wd            (cmd_data[7:0]), // input[7:0] 

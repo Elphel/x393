@@ -95,7 +95,7 @@ module  mult_saxi_wr #(
     output              [ 3:0] saxi_wstrb,             // AXI PS Slave GP0 WSTRB[3:0], input
     // write response Not used - may add guaranteed address (as for the histogram)?
     input                      saxi_bvalid,            // AXI PS Slave GP0 BVALID, output   // @SuppressThisWarning VEditor unused
-    output                     saxi_bready,            // AXI PS Slave GP0 BREADY, input    // @SuppressThisWarning VEditor unused
+    output                     saxi_bready,            // AXI PS Slave GP0 BREADY, input 
     input               [ 5:0] saxi_bid,               // AXI PS Slave GP0 BID[5:0], output //TODO:  Update range !!!  // @SuppressThisWarning VEditor unused
     input               [ 1:0] saxi_bresp              // AXI PS Slave GP0 BRESP[1:0], output    // @SuppressThisWarning VEditor unused
 );
@@ -149,6 +149,8 @@ module  mult_saxi_wr #(
      
     wire                       we_ctrl;
     wire                       cmd_we_sa_len;
+    
+    assign                     saxi_bready=1'b1;
     
     assign {en_chn3, en_chn2, en_chn1, en_chn0} = en_chn_mclk; 
 

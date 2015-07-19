@@ -171,7 +171,8 @@ module  sensor_i2c#(
      wire          set_status_w;
 
      reg            [1:0] wen_r;
-     reg            [1:0] wen_fifo;
+//     reg            [1:0] wen_fifo;
+     reg            wen_fifo; // [1] was not used - we_fifo_wp was used instead
 
      
      assign set_ctrl_w = we_cmd && (wa == SENSI2C_CTRL );// ==0
@@ -232,8 +233,8 @@ module  sensor_i2c#(
     always @ (posedge mclk) begin
         if (wen) di_r <= di; // 32 bit command takes 6 cycles, so di_r can hold data for up to this long
         wen_r    <= {wen_r[0],wen}; // is it needed?      
-        wen_fifo <= {wen_fifo[0],we_rel || we_abs};      
-        
+//        wen_fifo <= {wen_fifo[0],we_rel || we_abs};      
+        wen_fifo <= we_rel || we_abs;              
          
 // signals related to writing to i2c FIFO
 // delayed versions of address, data write strobe
@@ -292,13 +293,15 @@ module  sensor_i2c#(
 //      we_fifo_wp <= wen || wpage0_inc; // during commands and during reset?
 
 ///   we_fifo_wp <= wen_fifo[0] || wpage0_inc; // during commands and during reset?
-      we_fifo_wp <= wen_fifo[0] || we_rel || we_abs; // ??
+//      we_fifo_wp <= wen_fifo[0] || we_rel || we_abs; // ??
+      we_fifo_wp <= wen_fifo || we_rel || we_abs; // ??
       
 //     reg            [1:0] wen_r;
 //     reg            [1:0] wen_fifo;
       
       
-       if (wen_fifo[0])  fifo_wr_pointers_outw_r[5:0] <= fifo_wr_pointers_outw[5:0];
+//       if (wen_fifo[0])  fifo_wr_pointers_outw_r[5:0] <= fifo_wr_pointers_outw[5:0];
+       if (wen_fifo)  fifo_wr_pointers_outw_r[5:0] <= fifo_wr_pointers_outw[5:0];
        
        // write to dual-port pointer memory
        if (we_fifo_wp) fifo_wr_pointers[wpage_wr] <= wpage0_inc[1]? 6'h0:(fifo_wr_pointers_outw_r[5:0]+1); 
@@ -306,11 +309,12 @@ module  sensor_i2c#(
         fifo_wr_pointers_outr_r[5:0] <= fifo_wr_pointers_outr[5:0]; // just register distri
 // command i2c fifo (RAMB16_S9_S18)
 
-      if (wen_fifo[0]) i2c_cmd_wa <= {wpage_wr[3:0],fifo_wr_pointers_outw[5:0]};
+//      if (wen_fifo[0]) i2c_cmd_wa <= {wpage_wr[3:0],fifo_wr_pointers_outw[5:0]};
+      if (wen_fifo) i2c_cmd_wa <= {wpage_wr[3:0],fifo_wr_pointers_outw[5:0]};
 //      if (wen_d[1]) i2c_cmd_wa[10:1] <= {wpage_wr[3:0],fifo_wr_pointers_outw[5:0]};
 //        i2c_cmd_wa[0] <= !wen_d[1]; // 0 for the first in a pair, 1 - for the second
   //    i2c_cmd_we    <=  !reset_cmd && (wen_d[1]  || (i2c_cmd_we && !wen_d[3])); //reset_cmd added to keep simulator happy
-      i2c_cmd_we    <=  !reset_cmd && wen_fifo[0];
+      i2c_cmd_we    <=  !reset_cmd && wen_fifo; // [0];
         
 // signals related to reading from i2c FIFO
       if      (reset_on)      page_r<=0;

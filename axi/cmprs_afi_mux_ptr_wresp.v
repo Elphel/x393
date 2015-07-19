@@ -55,7 +55,8 @@ module  cmprs_afi_mux_ptr_wresp(
     reg  [26:0] chunk_ptr_inc;          // incremented by 1..4 chunk pointer
     reg  [27:0] chunk_ptr_rovr;         // incremented chunk pointer, decremented by length (MSB - sign)
     reg  [ 3:0] busy;                   // one-hot busy stages (usually end with [3]   
-    reg  [ 5:0] id_r;                   // registered ID data
+//    reg  [ 5:0] id_r;                   // registered ID data
+    reg  [ 4:0] id_r;                   // registered ID data - MSB is unused
     reg   [1:0] chn;                    // selected channel
     reg         eof;                    // eof register being written
     reg         last_burst_in_frame;    // this response is for eof
@@ -90,7 +91,8 @@ module  cmprs_afi_mux_ptr_wresp(
         afi_bready_r <= !en || pre_busy; // (!busy[0] && !pre_busy && !resetting[0] && !start_resetting_w);
         busy <= {busy[2:0], pre_busy}; // adjust bits
         
-        id_r <= afi_bid;
+//        id_r <= afi_bid;
+        id_r <= afi_bid[4:0]; // id_r[5] is never used - revoved
         
         if (start_resetting_w)  reset_rq_pri <= {reset_rq[3] & ~(|reset_rq[2:0]),
                                                  reset_rq[2] & ~(|reset_rq[1:0]),

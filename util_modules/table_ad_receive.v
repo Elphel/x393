@@ -29,7 +29,7 @@ module  table_ad_receive #(
     input                    [7:0] ser_d,      // byte-wide address/data
     input            [NUM_CHN-1:0] dv,         // data valid - active for each address or data bytes
     output     [23-MODE_16_BITS:0] ta,         // table address
-    output [(MODE_16_BITS?15:7):0] td,         // 8/16 bit table data
+    output [(MODE_16_BITS?15:7):0] td,         // 8/16 bit table data, LSB first
     output           [NUM_CHN-1:0] twe         // table write enable
 );
     reg                  [23:0] addr_r;
@@ -48,7 +48,7 @@ module  table_ad_receive #(
         else if (|twe_r)       addr_r[23:0] <= addr_r[23:0] + 1;
     end
     generate
-        if (MODE_16_BITS) always @ (posedge clk) td_r[15:0] <= {ser_d[7:0],td_r[15:8]};
+        if (MODE_16_BITS) always @ (posedge clk) td_r[15:0] <= {ser_d[7:0],td_r[15:8]}; //LSB received first
         else              always @ (posedge clk) td_r[ 7:0] <= ser_d[7:0];
     endgenerate
 

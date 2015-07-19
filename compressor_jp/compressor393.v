@@ -179,7 +179,7 @@ module  compressor393 # (
     output                 [ 3:0] afi0_awcache,
     output                 [ 2:0] afi0_awprot,
     output                 [ 3:0] afi0_awlen,
-    output                 [ 2:0] afi0_awsize,
+    output                 [ 1:0] afi0_awsize,
     output                 [ 1:0] afi0_awburst,
     output                 [ 3:0] afi0_awqos,
     // write data
@@ -208,7 +208,7 @@ module  compressor393 # (
     output                 [ 3:0] afi1_awcache,
     output                 [ 2:0] afi1_awprot,
     output                 [ 3:0] afi1_awlen,
-    output                 [ 2:0] afi1_awsize,
+    output                 [ 1:0] afi1_awsize,
     output                 [ 1:0] afi1_awburst,
     output                 [ 3:0] afi1_awqos,
     // write data

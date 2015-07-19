@@ -143,7 +143,8 @@ module stuffer393 (
     
     wire          ts_rstb; // one cycle before getting timestamp data from FIFO
     wire    [7:0] ts_dout; // timestamp data, byte at a time
-    reg     [7:0] ts_cycles; // 1-hot we for the portions of the 'old" timestamp registers
+//    reg     [7:0] ts_cycles; // 1-hot we for the portions of the 'old" timestamp registers
+    reg     [6:0] ts_cycles; // 1-hot we for the portions of the 'old" timestamp registers
     
     reg           color_first_r; // registered with the same clock as color_first to extract leading edge
     wire          stb_start; // re-clocked  color_first
@@ -151,7 +152,8 @@ module stuffer393 (
     
     assign ts_rstb = trailer && !was_trailer;  // enough time to have timestamp data
     always @ (negedge clk) begin
-        ts_cycles <= {ts_cycles[6:0],ts_rstb};
+//        ts_cycles <= {ts_cycles[6:0],ts_rstb};
+        ts_cycles <= {ts_cycles[5:0],ts_rstb};
         if      (ts_cycles[0])  sec_r[ 7: 0] <= ts_dout;
         else if (time_size_out) sec_r[ 7: 0] <= sec_r[23:16];
         else if (start_sizeout) sec_r[ 7: 0] <= size_count[ 7:0];

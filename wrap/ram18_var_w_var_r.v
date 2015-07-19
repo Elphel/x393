@@ -189,8 +189,8 @@ module  ram18_32w_32r
       input                  [ 3:0] web,      // write byte enable
       input                  [31:0] data_in  // data out
     );
-    localparam  PWIDTH_WR=72;
-    localparam  PWIDTH_RD=72;
+    localparam  PWIDTH_WR=36;
+    localparam  PWIDTH_RD=36;
     
     RAMB18E1
     #(
@@ -213,9 +213,9 @@ module  ram18_32w_32r
     (
         // Port A (Read port in SDP mode):
         .DOADO           (data_out[15:0]), // Port A data/LSB data[15:0], output
-        .DOPADOP         (data_out[17:16]),// Port A parity/LSB parity[2:0], output
+        .DOPADOP         (),               // Port A parity/LSB parity[2:0], output
         .DIADI           (data_in[15:0]),  // Port A data/LSB data[15:0], input
-        .DIPADIP         (data_in[17:16]), // Port A parity/LSB parity[2:0], input
+        .DIPADIP         (),               // Port A parity/LSB parity[2:0], input
         .ADDRARDADDR     ({raddr[8:0],5'b11111}),  // Port A (read port in SDP) address [13:0], unused should be high, input
         .CLKARDCLK       (rclk),           // Port A (read port in SDP) clock, input
         .ENARDEN         (ren),            // Port A (read port in SDP) Enable, input
@@ -366,7 +366,7 @@ module  ram18_lt32w_32r
     (
         // Port A (Read port in SDP mode):
         .DOADO           (data_out[15:0]), // Port A data/LSB data[15:0], output
-        .DOPADOP         (data_out[17:16]),// Port A parity/LSB parity[3:0], output
+        .DOPADOP         (),               // Port A parity/LSB parity[3:0], output
         .DIADI           (16'h0),          // Port A data/LSB data[31:0], input
         .DIPADIP         (2'h0),           // Port A parity/LSB parity[3:0], input
         .ADDRARDADDR     ({raddr[8:0],5'b11111}),  // Port A (read port in SDP) address [15:0]. used from [14] down, unused should be high, input
@@ -412,7 +412,7 @@ module  ram18_32w_lt32r
       input                         [ 3:0] web,      // write byte enable
       input                         [31:0] data_in   // data out
     );
-    localparam  PWIDTH_WR = 72;
+    localparam  PWIDTH_WR = 36;
     localparam  PWIDTH_RD = (LOG2WIDTH_RD > 2)? (9 << (LOG2WIDTH_RD - 3)): (1 << LOG2WIDTH_RD);
     localparam  WIDTH_RD  = 1 << LOG2WIDTH_RD;
     wire          [15:0] data_out16;

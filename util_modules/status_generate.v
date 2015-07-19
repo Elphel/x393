@@ -175,10 +175,10 @@ endmodule
 //module that generates several 32-bit words and optionally status message
 module  status_generate_extra #(
     parameter STATUS_REG_ADDR=   7, // status register address to direct data to
-    parameter PAYLOAD_BITS =     15, //6   // >=2! (2..26)
-    parameter REGISTER_STATUS =  1,  // 1 - register input status data (for different clock domains),  0 - do not register (same domain)
-    parameter EXTRA_WORDS=       1, // should always be >0
-    parameter EXTRA_WORDS_LN2 =  3, // number of bits to select among extra words and (optional) status 
+    parameter PAYLOAD_BITS =     1, ///15, //6   // >=2! (2..26)
+    parameter REGISTER_STATUS =  0, ///1,  // 1 - register input status data (for different clock domains),  0 - do not register (same domain)
+    parameter EXTRA_WORDS=       2, ///1, // should always be >0
+//    parameter EXTRA_WORDS_LN2 =  3, // number of bits to select among extra words and (optional) status 
     // if EXTRA_WORDS >0 the mesasges with these extra data will be generated and sent before the status message itself
     // if PAYLOAD_BITS == 0, then one status bit will still have to be provided (status input will have width of 1+32*EXTRA_WORDS),
     // but the status message will not be sent - only the data words
@@ -195,6 +195,8 @@ module  status_generate_extra #(
     input                    start   // acknowledge of address (first byte) from downsteram   
 );
 
+//    localparam EXTRA_WORDS_LN2 =  $clog2(EXTRA_WORDS+1); // number of bits to select among extra words and (optional) status 
+    localparam EXTRA_WORDS_LN2 =  clogb2(EXTRA_WORDS+1); // number of bits to select among extra words and (optional) status 
 // multiple of 32 bits added to PAYLOAD_BITS, these words are not compared but always sent before status to locations above/below status one
 // no need to register extra words - status should be modified after the extra.
     localparam STATUS_BITS = ((PAYLOAD_BITS > 0) ? PAYLOAD_BITS: 1);
@@ -235,18 +237,19 @@ module  status_generate_extra #(
     
     reg  [EXTRA_WORDS_LN2-1:0] msg_num;
     wire                [31:0] dont_care= 32'bx;
-    wire                [31:0] pre_mux [0:(1<<EXTRA_WORDS_LN2)-1];
+//    wire                [31:0] pre_mux [0:(1<<EXTRA_WORDS_LN2)-1];
+    wire [32 * (1<<EXTRA_WORDS_LN2) -1 :0] pre_mux;
     wire                [31:0] status32=(NUM_BYTES>2) ?
          ((ALIGNED_STATUS_WIDTH < 26)?
-              {{(26-ALIGNED_STATUS_WIDTH){1'b0}},aligned_status[ALIGNED_STATUS_WIDTH-1:ALIGNED_STATUS_BIT_2],seq,status_r0[1:0]}:
-              {                                  aligned_status[ALIGNED_STATUS_WIDTH-1:ALIGNED_STATUS_BIT_2],seq,status_r0[1:0]}):
-              {24'b0,seq,status_r0[1:0]};
+              {{(26-ALIGNED_STATUS_WIDTH){1'b0}},aligned_status[ALIGNED_STATUS_WIDTH-1:ALIGNED_STATUS_BIT_2],seq,aligned_status[1:0]}:
+              {                                  aligned_status[ALIGNED_STATUS_WIDTH-1:ALIGNED_STATUS_BIT_2],seq,aligned_status[1:0]}):
+              {24'b0,seq,aligned_status[1:0]};
     genvar i;
     generate
         for (i = 0; i <  (1<<EXTRA_WORDS_LN2); i=i+1) begin:gen_cyc1
-            assign pre_mux[i] = (i < EXTRA_WORDS)?  //status[PAYLOAD_BITS + 32*i +:32] : // actually change order!
-                                {status[PAYLOAD_BITS + 32*i + 24 +:8],status[PAYLOAD_BITS + 32*i +:24] }:
-                                (((i == EXTRA_WORDS) && (PAYLOAD_BITS > 0)) ? status32 : dont_care);
+            assign pre_mux[32 * i +: 32] = (i < EXTRA_WORDS)?  //status[PAYLOAD_BITS + 32*i +:32] : // actually change order!
+                                               {status[PAYLOAD_BITS + 32*i + 24 +:8],status[PAYLOAD_BITS + 32*i +:24] }:
+                                               (((i == EXTRA_WORDS) && (PAYLOAD_BITS > 0)) ? status32 : dont_care);
         end
     endgenerate
     
@@ -256,7 +259,7 @@ module  status_generate_extra #(
     assign need_to_send=cmd_pend || (mode[1] && status_changed_r); // latency
     assign rq=rq_r[0]; // NUM_BYTES-2];
     assign mode_w=wd[7:6];
-    assign status_r0 = REGISTER_STATUS? status_r0r : status;
+    assign status_r0 = REGISTER_STATUS? status_r0r : status[STATUS_BITS-1:0];
     
     assign msg_is_last =   msg1hot[NUM_MSG-1];
     assign msg_is_status = msg_is_last && (PAYLOAD_BITS > 0);
@@ -314,9 +317,19 @@ module  status_generate_extra #(
     end
     
     always @ (posedge clk) begin
-        if      (!rq)            data <= {next_addr, pre_mux[msg_num]};
+        if      (!rq)            data <= {next_addr, pre_mux[32 * msg_num +:32]};
         else if (start || start) data <= data >> 8;
     end
+ //http://www.edaboard.com/thread177879.html
+    function integer clogb2;
+        input [31:0] value;
+        integer  i;
+        begin
+            clogb2 = 0;
+            for(i = 0; 2**i < value; i = i + 1)
+                clogb2 = i + 1;
+       end
+    endfunction
     
     
 endmodule

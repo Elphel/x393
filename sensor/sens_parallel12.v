@@ -393,8 +393,10 @@ module  sens_parallel12 #(
                 .ipclk2x        (ipclk2x),         // input
                 .rst            (rst),             // input
                 .mclk           (mclk),            // input
-                .dly_data       (data_r[8*((i+2)&3)+:8]), // input[7:0] alternating bytes of 32-bit word
-                .set_idelay     (set_pxd_delay[(i+2)>>2]),// input 0 for pxd[3:2], 1 for pxd[7:4], 2 for pxd [11:8]
+//                .dly_data       (data_r[8*((i+2)&3)+:8]), // input[7:0] alternating bytes of 32-bit word
+//                .set_idelay     (set_pxd_delay[(i+2)>>2]),// input 0 for pxd[3:2], 1 for pxd[7:4], 2 for pxd [11:8]
+                .dly_data       (data_r[8 * (i & 3) +: 8]), // input[7:0] alternating bytes of 32-bit word
+                .set_idelay     (set_pxd_delay[i >> 2]),// input 0 for pxd[3:2], 1 for pxd[7:4], 2 for pxd [11:8]
                 .ld_idelay      (ld_idelay),       // input
                 .quadrant       (quadrants[1:0])   // input[1:0] 
             );

@@ -74,7 +74,7 @@ module  membridge#(
     output  [ 3:0] afi_awcache,
     output  [ 2:0] afi_awprot,
     output  [ 3:0] afi_awlen,
-    output  [ 2:0] afi_awsize,
+    output  [ 1:0] afi_awsize,
     output  [ 1:0] afi_awburst,
     output  [ 3:0] afi_awqos,
     // write data
@@ -103,7 +103,7 @@ module  membridge#(
     output  [ 3:0] afi_arcache,
     output  [ 2:0] afi_arprot,
     output  [ 3:0] afi_arlen,
-    output  [ 2:0] afi_arsize,
+    output  [ 1:0] afi_arsize,
     output  [ 1:0] afi_arburst,
     output  [ 3:0] afi_arqos,
     // read data
@@ -126,7 +126,7 @@ module  membridge#(
     assign afi_awlock =        2'h0;
 //    assign afi_awcache =       4'h3;
     assign afi_awprot =        3'h0;
-    assign afi_awsize =        3'h3;
+    assign afi_awsize =        2'h3;
     assign afi_awburst =       2'h1;
     assign afi_awqos =         4'h0;
     assign afi_wstrb =         8'hff;
@@ -135,7 +135,7 @@ module  membridge#(
     assign afi_arlock =        2'h0;
 //    assign afi_arcache =       4'h3;
     assign afi_arprot =        3'h0;
-    assign afi_arsize =        3'h3;
+    assign afi_arsize =        2'h3;
     assign afi_arburst =       2'h1;
     assign afi_arqos =         4'h0;
     assign afi_rdissuecap1en = 1'b0;

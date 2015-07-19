@@ -88,7 +88,10 @@ module  x393 #(
     input                        ffclk0n, // Y11
     input                        ffclk1p, // W14
     input                        ffclk1n  // W13
+    ,output                      DUMMY_TO_KEEP
+    
 );
+ assign DUMMY_TO_KEEP = frst[2] && fclk[1];
 
 //    localparam ADDRESS_NUMBER=15;
 //    localparam COLADDR_NUMBER=10;
@@ -1170,7 +1173,7 @@ BUFG bufg_axi_aclk_i  (.O(axi_aclk),.I(fclk[0]));
     wire [ 3:0] afi0_awcache;     // output[3:0] 
     wire [ 2:0] afi0_awprot;     // output[2:0] 
     wire [ 3:0] afi0_awlen;     // output[3:0] 
-    wire [ 2:0] afi0_awsize;     // output[2:0] 
+    wire [ 1:0] afi0_awsize;     // output[2:0] 
     wire [ 1:0] afi0_awburst;     // output[1:0] 
     wire [ 3:0] afi0_awqos;     // output[3:0] 
     wire [63:0] afi0_wdata;     // output[63:0] 
@@ -1194,7 +1197,7 @@ BUFG bufg_axi_aclk_i  (.O(axi_aclk),.I(fclk[0]));
     wire [ 3:0] afi0_arcache;     // output[3:0] 
     wire [ 2:0] afi0_arprot;     // output[2:0] 
     wire [ 3:0] afi0_arlen;     // output[3:0] 
-    wire [ 2:0] afi0_arsize;     // output[2:0] 
+    wire [ 1:0] afi0_arsize;     // output[2:0] 
     wire [ 1:0] afi0_arburst;     // output[1:0] 
     wire [ 3:0] afi0_arqos;     // output[3:0] 
     wire [63:0] afi0_rdata;     // input[63:0] 
@@ -1474,43 +1477,6 @@ BUFG bufg_axi_aclk_i  (.O(axi_aclk),.I(fclk[0]));
         .sns_ctl           ({sns4_ctl, sns3_ctl, sns2_ctl, sns1_ctl}),         // inout
         .sns_pg            ({sns4_pg, sns3_pg, sns2_pg, sns1_pg}),             // inout
 
-/*
-        .sns1_dp            (sns1_dp),             // inout[7:0] 
-        .sns1_dn            (sns1_dn),             // inout[7:0] 
-        .sns1_clkp          (sns1_clkp),           // inout
-        .sns1_clkn          (sns1_clkn),           // inout
-        .sns1_scl           (sns1_scl),            // inout
-        .sns1_sda           (sns1_sda),            // inout
-        .sns1_ctl           (sns1_ctl),            // inout
-        .sns1_pg            (sns1_pg),             // inout
-
-        .sns2_dp            (sns2_dp),             // inout[7:0] 
-        .sns2_dn            (sns2_dn),             // inout[7:0] 
-        .sns2_clkp          (sns2_clkp),           // inout
-        .sns2_clkn          (sns2_clkn),           // inout
-        .sns2_scl           (sns2_scl),            // inout
-        .sns2_sda           (sns2_sda),            // inout
-        .sns2_ctl           (sns2_ctl),            // inout
-        .sns2_pg            (sns2_pg),             // inout
-
-        .sns3_dp            (sns3_dp),             // inout[7:0] 
-        .sns3_dn            (sns3_dn),             // inout[7:0] 
-        .sns3_clkp          (sns3_clkp),           // inout
-        .sns3_clkn          (sns3_clkn),           // inout
-        .sns3_scl           (sns3_scl),            // inout
-        .sns3_sda           (sns3_sda),            // inout
-        .sns3_ctl           (sns3_ctl),            // inout
-        .sns3_pg            (sns3_pg),             // inout
-
-        .sns4_dp            (sns4_dp),             // inout[7:0] 
-        .sns4_dn            (sns4_dn),             // inout[7:0] 
-        .sns4_clkp          (sns4_clkp),           // inout
-        .sns4_clkn          (sns4_clkn),           // inout
-        .sns4_scl           (sns4_scl),            // inout
-        .sns4_sda           (sns4_sda),            // inout
-        .sns4_ctl           (sns4_ctl),            // inout
-        .sns4_pg            (sns4_pg),             // inout
-*/
         .rpage_set          (sens_rpage_set),      // input
         .rpage_next         (sens_rpage_next),     // input
         .buf_rd             (sens_buf_rd),         // input
@@ -1564,7 +1530,7 @@ BUFG bufg_axi_aclk_i  (.O(axi_aclk),.I(fclk[0]));
     wire [ 3:0] afi1_awcache;     // output[3:0] 
     wire [ 2:0] afi1_awprot;     // output[2:0] 
     wire [ 3:0] afi1_awlen;     // output[3:0] 
-    wire [ 2:0] afi1_awsize;     // output[2:0] 
+    wire [ 1:0] afi1_awsize;     // output[2:0] 
     wire [ 1:0] afi1_awburst;     // output[1:0] 
     wire [ 3:0] afi1_awqos;     // output[3:0] 
     wire [63:0] afi1_wdata;     // output[63:0] 
@@ -1590,7 +1556,7 @@ BUFG bufg_axi_aclk_i  (.O(axi_aclk),.I(fclk[0]));
     wire [ 3:0] afi2_awcache;     // output[3:0] 
     wire [ 2:0] afi2_awprot;     // output[2:0] 
     wire [ 3:0] afi2_awlen;     // output[3:0] 
-    wire [ 2:0] afi2_awsize;     // output[2:0] 
+    wire [ 1:0] afi2_awsize;     // output[2:0] 
     wire [ 1:0] afi2_awburst;     // output[1:0] 
     wire [ 3:0] afi2_awqos;     // output[3:0] 
     wire [63:0] afi2_wdata;     // output[63:0] 
