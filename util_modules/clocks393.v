@@ -129,9 +129,9 @@ module  clocks393#(
         else if (set_ctrl_w) pwrdwn_clk <= cmd_data[7:4]; 
     end
     assign status_data = {test_clk, locked, extra_status};
-    always @ (posedge memclk or posedge memclk_rst) if (memclk_rst) test_clk[0] <= ~test_clk[0];
-    always @ (posedge ffclk0 or posedge ffclk0_rst) if (ffclk0_rst) test_clk[1] <= ~test_clk[1];
-    always @ (posedge ffclk1 or posedge ffclk1_rst) if (ffclk1_rst) test_clk[2] <= ~test_clk[2];
+    always @ (posedge memclk or posedge memclk_rst) if (memclk_rst) test_clk[0] <= 0; else test_clk[0] <= ~test_clk[0];
+    always @ (posedge ffclk0 or posedge ffclk0_rst) if (ffclk0_rst) test_clk[1] <= 0; else test_clk[1] <= ~test_clk[1];
+    always @ (posedge ffclk1 or posedge ffclk1_rst) if (ffclk1_rst) test_clk[2] <= 0; else test_clk[2] <= ~test_clk[2];
     
     cmd_deser #(
         .ADDR       (CLK_ADDR),
