@@ -69,15 +69,15 @@ create_clock -name axi_aclk -period 20 [get_nets -hierarchical *axi_aclk]
 ###create_generated_clock -name ddr3_mclk [get_nets */mclk_pre ]
 ###create_generated_clock -name ddr3_clk_ref [get_nets */clk_ref_pre]
 
-####create_generated_clock -name ddr3_sdclk [get_nets -hierarchical sdclk_pre ]
-####create_generated_clock -name ddr3_clk [get_nets -hierarchical clk_pre ]
-####create_generated_clock -name ddr3_clk_div [get_nets -hierarchical clk_div_pre ]
-####create_generated_clock -name ddr3_mclk [get_nets -hierarchical mclk_pre]
-####create_generated_clock -name ddr3_clk_ref [get_nets -hierarchical clk_ref_pre ]
+create_generated_clock -name ddr3_sdclk [get_nets -hierarchical sdclk_pre ]
+create_generated_clock -name ddr3_clk [get_nets -hierarchical clk_pre ]
+create_generated_clock -name ddr3_clk_div [get_nets -hierarchical clk_div_pre ]
+create_generated_clock -name ddr3_mclk [get_nets -hierarchical mclk_pre]
+create_generated_clock -name ddr3_clk_ref [get_nets -hierarchical clk_ref_pre ]
 
 
 
 # do not check timing between axi_aclk and other clocks. Code should provide correct asynchronous crossing of the clock boundary.
-####set_clock_groups -name ps_async_clock -asynchronous -group {axi_aclk}
+set_clock_groups -name ps_async_clock -asynchronous -group {axi_aclk}
 # do not check timing between clk_axihp_pre and other clocks. Code should provide correct asynchronous crossing of the clock boundary.
-####set_clock_groups -name ps_async_clock_axihp -asynchronous -group {clk_axihp_pre}
+set_clock_groups -name ps_async_clock_axihp -asynchronous -group {clk_axihp_pre}

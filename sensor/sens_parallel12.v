@@ -595,7 +595,7 @@ module  sens_parallel12 #(
     ) mmcm_phase_cntr_i (
         .clkin1              (pclk),            // input
         .clkin2              (ibpf),            // input
-        .clkinsel            (sel_ext_clk),     // input
+        .sel_clk2            (sel_ext_clk),     // input
         .clkfbin             (clk_fb),          // input
         .rst                 (rst_mmcm),        // input
         .pwrdwn              (1'b0),            // input

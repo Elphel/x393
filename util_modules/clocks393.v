@@ -121,7 +121,6 @@ module  clocks393#(
     wire memclk_rst = reset_clk[4];
     wire ffclk0_rst = reset_clk[5];
     wire ffclk1_rst = reset_clk[6];
-    
     always @ (posedge mclk or posedge rst) begin
         if (rst)             reset_clk <= 0;
         else if (set_ctrl_w) reset_clk <= {cmd_data[10:8], cmd_data[3:0]};

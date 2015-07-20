@@ -335,7 +335,7 @@ BUFG mclk_i (.O(mclk),.I(mclk_pre) );
     ) mmcm_phase_cntr_i (
         .clkin1              (clk_in), // input
         .clkin2              (1'b0), // input
-        .clkinsel            (1'b0), // input
+        .sel_clk2            (1'b0), // input
         .clkfbin             (clk_fb), // input
 //        .rst                 (rst), // input
         .rst                 (rst_in), // input

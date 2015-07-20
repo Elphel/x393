@@ -91,7 +91,7 @@ module  x393 #(
     ,output                      DUMMY_TO_KEEP
     
 );
- assign DUMMY_TO_KEEP = frst[2] && fclk[1];
+    assign DUMMY_TO_KEEP = frst[2] && fclk[1];
 
 //    localparam ADDRESS_NUMBER=15;
 //    localparam COLADDR_NUMBER=10;

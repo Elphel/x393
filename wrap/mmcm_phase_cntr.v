@@ -73,7 +73,7 @@ module  mmcm_phase_cntr#(
 (
     input clkin1,   // General clock input
     input clkin2,   // Alternative clock input
-    input clkinsel, // Clock input select
+    input sel_clk2, // Clock input select (inverted from MMCME2_ADV !!!)
     input clkfbin,  // Feedback clock input
     input rst,      // asynchronous reset input
     input pwrdwn,   // power down input    
@@ -209,7 +209,7 @@ module  mmcm_phase_cntr#(
         .CLKFBIN        (clkfbin), // input
         .CLKIN1         (clkin1), // input
         .CLKIN2         (clkin2), // input
-        .CLKINSEL       (clkinsel), // input Select CLKIN1
+        .CLKINSEL       (~sel_clk2), // input  0: Select CLKIN2, 1: Select CLKIN1 !!!!!!!!!!!!! 
         .DADDR             (7'b0), // Dynamic reconfiguration address (input[6:0])
         .DCLK              (1'b0), // Dynamic reconfiguration clock input
         .DEN               (1'b0), // Dynamic reconfiguration enable input
