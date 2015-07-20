@@ -163,6 +163,8 @@ module  sensors393 #(
     parameter CLKFBOUT_PHASE_SENSOR =    0.000,  // CLOCK FEEDBACK phase in degrees (3 significant digits, -360.000...+360.000)
     parameter IPCLK_PHASE =              0.000,
     parameter IPCLK2X_PHASE =            0.000,
+    parameter BUF_IPCLK =                "BUFR",
+    parameter BUF_IPCLK2X =              "BUFR",  
     
 
     parameter SENS_DIVCLK_DIVIDE =       1,            // Integer 1..106. Divides all outputs with respect to CLKIN
@@ -271,8 +273,6 @@ module  sensors393 #(
         cmd_ad <= cmd_ad_in;
         cmd_stb <= cmd_stb_in;
     end    
-//    wire [3:0] sns_pg;
-//   my_alias #(.WIDTH(4)) my_alias_sns_pg_i  ({sns4_pg,sns3_pg,sns2_pg,sns1_pg},sns_pg);
 
     generate
         genvar i;
@@ -372,6 +372,8 @@ module  sensors393 #(
                 .CLKFBOUT_PHASE_SENSOR         (CLKFBOUT_PHASE_SENSOR),
                 .IPCLK_PHASE                   (IPCLK_PHASE),
                 .IPCLK2X_PHASE                 (IPCLK2X_PHASE),
+                .BUF_IPCLK                     (BUF_IPCLK),
+                .BUF_IPCLK2X                   (BUF_IPCLK2X),
                 .SENS_DIVCLK_DIVIDE            (SENS_DIVCLK_DIVIDE),
                 .SENS_REF_JITTER1              (SENS_REF_JITTER1),
                 .SENS_REF_JITTER2              (SENS_REF_JITTER2),
@@ -547,18 +549,3 @@ module  sensors393 #(
     
     
 endmodule
-
-/*
-module my_alias #(
-    parameter WIDTH = 1)
-(
-    inout [WIDTH-1:0] a,
-    inout [WIDTH-1:0] a
-);
-module my_alias #(
-    parameter WIDTH = 1)
-(.A(W), .B(W));
-    inout [WIDTH-1:0] W;
-
-endmodule
-*/

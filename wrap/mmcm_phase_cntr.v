@@ -143,7 +143,7 @@ module  mmcm_phase_cntr#(
         .CLKFBOUT_PHASE      (CLKFBOUT_PHASE),
         .CLKFBOUT_USE_FINE_PS(CLKFBOUT_USE_FINE_PS),
         .CLKIN1_PERIOD       (CLKIN_PERIOD), 
-        .CLKIN2_PERIOD        (0),
+        .CLKIN2_PERIOD       (CLKIN_PERIOD),
         .CLKOUT0_DIVIDE_F    (CLKOUT0_DIVIDE_F),
         .CLKOUT0_DUTY_CYCLE  (CLKOUT0_DUTY_CYCLE),
         .CLKOUT0_PHASE       (CLKOUT0_PHASE),

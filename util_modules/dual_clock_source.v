@@ -41,18 +41,23 @@ module  dual_clock_source #(
 );
     wire  clkfb, clk1x_pre, clk2x_pre;
     generate
-        if      (BUF_CLK1X == "BUFG") BUFG clk1x_i (.O(clk1x), .I(clk1x_pre));
-        else if (BUF_CLK1X == "BUFH") BUFH clk1x_i (.O(clk1x), .I(clk1x_pre));
-        else if (BUF_CLK1X == "BUFR") BUFR clk1x_i (.O(clk1x), .I(clk1x_pre), .CE(1'b1), .CLR(rst));
+        if      (BUF_CLK1X == "BUFG")  BUFG  clk1x_i (.O(clk1x), .I(clk1x_pre));
+        else if (BUF_CLK1X == "BUFH")  BUFH  clk1x_i (.O(clk1x), .I(clk1x_pre));
+        else if (BUF_CLK1X == "BUFR")  BUFR  clk1x_i (.O(clk1x), .I(clk1x_pre), .CE(1'b1), .CLR(rst));
+        else if (BUF_CLK1X == "BUFMR") BUFMR clk1x_i (.O(clk1x), .I(clk1x_pre));
+        else if (BUF_CLK1X == "BUFIO") BUFIO clk1x_i (.O(clk1x), .I(clk1x_pre));
         else assign clk1x = clk1x_pre;
     endgenerate
 
     generate
-        if      (BUF_CLK2X == "BUFG") BUFG clk2x_i (.O(clk2x), .I(clk2x_pre));
-        else if (BUF_CLK2X == "BUFH") BUFH clk2x_i (.O(clk2x), .I(clk2x_pre));
-        else if (BUF_CLK2X == "BUFR") BUFR clk2x_i (.O(clk2x), .I(clk2x_pre), .CE(1'b1), .CLR(rst));
+        if      (BUF_CLK2X == "BUFG")  BUFG  clk2x_i (.O(clk2x), .I(clk2x_pre));
+        else if (BUF_CLK2X == "BUFH")  BUFH  clk2x_i (.O(clk2x), .I(clk2x_pre));
+        else if (BUF_CLK2X == "BUFR")  BUFR  clk2x_i (.O(clk2x), .I(clk2x_pre), .CE(1'b1), .CLR(rst));
+        else if (BUF_CLK2X == "BUFMR") BUFMR clk2x_i (.O(clk2x), .I(clk2x_pre));
+        else if (BUF_CLK2X == "BUFIO") BUFIO clk2x_i (.O(clk2x), .I(clk2x_pre));
         else assign clk2x = clk2x_pre;
     endgenerate
+    
     pll_base #(
         .CLKIN_PERIOD   (CLKIN_PERIOD), // 20
         .BANDWIDTH      ("OPTIMIZED"),

@@ -415,9 +415,13 @@
     parameter integer IDELAY_VALUE =     0,
     parameter integer PXD_DRIVE =        12,
     parameter PXD_IBUF_LOW_PWR =         "TRUE",
-    parameter PXD_IOSTANDARD =           "LVCMOS33",
+    parameter PXD_IOSTANDARD =           "LVCMOS25",
     parameter PXD_SLEW =                 "SLOW",
-    parameter real SENS_REFCLK_FREQUENCY = 300.0,
+`ifdef use200Mhz
+    parameter real SENS_REFCLK_FREQUENCY = 300.0, // same as REFCLK_FREQUENCY
+`else
+    parameter real SENS_REFCLK_FREQUENCY = 200.0,
+`endif    
     parameter SENS_HIGH_PERFORMANCE_MODE = "FALSE",
     
     parameter SENS_PHASE_WIDTH=          8,      // number of bits for te phase counter (depends on divisors)
@@ -428,7 +432,9 @@
     parameter CLKFBOUT_PHASE_SENSOR =    0.000,  // CLOCK FEEDBACK phase in degrees (3 significant digits, -360.000...+360.000)
     parameter IPCLK_PHASE =              0.000,
     parameter IPCLK2X_PHASE =            0.000,
-    
+
+    parameter BUF_IPCLK =                "BUFG", // "BUFR",
+    parameter BUF_IPCLK2X =              "BUFG", // "BUFR",  
 
     parameter SENS_DIVCLK_DIVIDE =       1,            // Integer 1..106. Divides all outputs with respect to CLKIN
     parameter SENS_REF_JITTER1   =       0.010,        // Expectet jitter on CLKIN1 (0.000..0.999)

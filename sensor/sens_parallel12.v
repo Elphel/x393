@@ -63,6 +63,8 @@ module  sens_parallel12 #(
     parameter CLKFBOUT_PHASE_SENSOR =  0.000,  // CLOCK FEEDBACK phase in degrees (3 significant digits, -360.000...+360.000)
     parameter IPCLK_PHASE =            0.000,
     parameter IPCLK2X_PHASE =          0.000,
+    parameter BUF_IPCLK =             "BUFR",
+    parameter BUF_IPCLK2X =           "BUFR",  
     
 
     parameter SENS_DIVCLK_DIVIDE =     1,            // Integer 1..106. Divides all outputs with respect to CLKIN
@@ -622,9 +624,26 @@ module  sens_parallel12 #(
         .clkfb_stopped       (clkfb_pxd_stopped_mmcm) // output
          // output
     );
+    generate
+        if      (BUF_IPCLK == "BUFG")  BUFG  clk1x_i (.O(ipclk),   .I(ipclk_pre));
+        else if (BUF_IPCLK == "BUFH")  BUFH  clk1x_i (.O(ipclk),   .I(ipclk_pre));
+        else if (BUF_IPCLK == "BUFR")  BUFR  clk1x_i (.O(ipclk),   .I(ipclk_pre), .CE(1'b1), .CLR(rst));
+        else if (BUF_IPCLK == "BUFMR") BUFMR clk1x_i (.O(ipclk),   .I(ipclk_pre));
+        else if (BUF_IPCLK == "BUFIO") BUFIO clk1x_i (.O(ipclk),   .I(ipclk_pre));
+        else assign ipclk = ipclk_pre;
+    endgenerate
 
-BUFR ipclk_bufr_i   (.O(ipclk),   .CE(), .CLR(), .I(ipclk_pre));
-BUFR ipclk2x_bufr_i (.O(ipclk2x), .CE(), .CLR(), .I(ipclk2x_pre));
+    generate
+        if      (BUF_IPCLK2X == "BUFG")  BUFG  clk2x_i (.O(ipclk2x), .I(ipclk2x_pre));
+        else if (BUF_IPCLK2X == "BUFH")  BUFH  clk2x_i (.O(ipclk2x), .I(ipclk2x_pre));
+        else if (BUF_IPCLK2X == "BUFR")  BUFR  clk2x_i (.O(ipclk2x), .I(ipclk2x_pre), .CE(1'b1), .CLR(rst));
+        else if (BUF_IPCLK2X == "BUFMR") BUFMR clk2x_i (.O(ipclk2x), .I(ipclk2x_pre));
+        else if (BUF_IPCLK2X == "BUFIO") BUFIO clk2x_i (.O(ipclk2x), .I(ipclk2x_pre));
+        else assign ipclk2x = ipclk2x_pre;
+    endgenerate
+
+// BUFR ipclk_bufr_i   (.O(ipclk),   .CE(), .CLR(), .I(ipclk_pre));
+// BUFR ipclk2x_bufr_i (.O(ipclk2x), .CE(), .CLR(), .I(ipclk2x_pre));
 
 
 endmodule

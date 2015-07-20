@@ -1449,6 +1449,8 @@ BUFG bufg_axi_aclk_i  (.O(axi_aclk),.I(fclk[0]));
         .CLKFBOUT_PHASE_SENSOR      (CLKFBOUT_PHASE_SENSOR),
         .IPCLK_PHASE                (IPCLK_PHASE),
         .IPCLK2X_PHASE              (IPCLK2X_PHASE),
+        .BUF_IPCLK                  (BUF_IPCLK),
+        .BUF_IPCLK2X                (BUF_IPCLK2X),
         .SENS_DIVCLK_DIVIDE         (SENS_DIVCLK_DIVIDE),
         .SENS_REF_JITTER1           (SENS_REF_JITTER1),
         .SENS_REF_JITTER2           (SENS_REF_JITTER2),

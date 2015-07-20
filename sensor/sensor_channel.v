@@ -147,7 +147,8 @@ module  sensor_channel#(
     parameter CLKFBOUT_PHASE_SENSOR =  0.000,  // CLOCK FEEDBACK phase in degrees (3 significant digits, -360.000...+360.000)
     parameter IPCLK_PHASE =            0.000,
     parameter IPCLK2X_PHASE =          0.000,
-    
+    parameter BUF_IPCLK =             "BUFR",
+    parameter BUF_IPCLK2X =           "BUFR",  
 
     parameter SENS_DIVCLK_DIVIDE =     1,            // Integer 1..106. Divides all outputs with respect to CLKIN
     parameter SENS_REF_JITTER1   =     0.010,        // Expectet jitter on CLKIN1 (0.000..0.999)
@@ -417,6 +418,8 @@ module  sensor_channel#(
         .CLKFBOUT_PHASE_SENSOR (CLKFBOUT_PHASE_SENSOR),
         .IPCLK_PHASE           (IPCLK_PHASE),
         .IPCLK2X_PHASE         (IPCLK2X_PHASE),
+        .BUF_IPCLK             (BUF_IPCLK),
+        .BUF_IPCLK2X           (BUF_IPCLK2X),
         .SENS_DIVCLK_DIVIDE    (SENS_DIVCLK_DIVIDE),
         .SENS_REF_JITTER1      (SENS_REF_JITTER1),
         .SENS_REF_JITTER2      (SENS_REF_JITTER2),

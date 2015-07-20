@@ -54,7 +54,8 @@ module  pxd_clock #(
         .I     (pxclk_out), // input
         .T     (!pxclk_en) // input
     );
-
+/*
+//finedelay not supported by HR banks?
     idelay_fine_pipe # (
         .IODELAY_GRP           (IODELAY_GRP),
         .DELAY_VALUE           (IDELAY_VALUE),
@@ -66,6 +67,21 @@ module  pxd_clock #(
         .set          (set_idelay),
         .ld           (ld_idelay),
         .delay        (dly_data[7:0]),
+        .data_in      (pxclk_iobuf),
+        .data_out     (pxclk_in)
+    );
+*/
+    idelay_nofine # (
+        .IODELAY_GRP           (IODELAY_GRP),
+        .DELAY_VALUE           (IDELAY_VALUE),
+        .REFCLK_FREQUENCY      (REFCLK_FREQUENCY),
+        .HIGH_PERFORMANCE_MODE (HIGH_PERFORMANCE_MODE)
+    ) pxclk_dly_i(
+        .clk          (mclk),
+        .rst          (rst),
+        .set          (set_idelay),
+        .ld           (ld_idelay),
+        .delay        (dly_data[7:3]),
         .data_in      (pxclk_iobuf),
         .data_out     (pxclk_in)
     );
