@@ -224,22 +224,16 @@ module  mcontr_sequencer   #(
     wire                 [31:0]  phy_cmd1_word; // cmd1 buffer output
     reg                          buf_raddr_reset;
     reg                          buf_addr_reset; // generated regardless of read/write
-//    reg                  [ 6:0]  buf_raddr;
     reg                          buf_waddr_reset_negedge;
-//    reg                  [ 6:0]  buf_waddr_negedge;
     reg                          buf_wr_negedge; 
     wire                 [63:0]  buf_wdata; // output[63:0]
     reg                  [63:0]  buf_wdata_negedge; // output[63:0]
     wire                 [63:0]  buf_rdata; // multiplexed input from one of the write channels buffer
-//    wire                 [63:0]  buf1_rdata;
     wire                         buf_wr; // delayed by specified number of clock cycles
     wire                         buf_wr_ndly; // before dealy
     wire                         buf_rd; // read next 64 bits from the buffer, need one extra pre-read
     wire                         buf_rst; // reset buffer address to 
     wire                         buf_rst_d; //buf_rst delayed to match buf_wr 
-//    wire                         rst=rst_in;
-  
-//    wire                 [ 9:0]  next_cmd_addr;
     reg                  [ 9:0]  cmd_addr;      // command word address  
     reg                          cmd_sel;
     reg                  [ 2:0]  cmd_busy;      // bit 0 - immediately,
@@ -252,8 +246,6 @@ module  mcontr_sequencer   #(
     wire                         pause;         // do not register new data from the command memory
     reg    [CMD_PAUSE_BITS-1:0]  pause_cntr;
     
- //   reg                   [1:0]  buf_page;      // one of 4 pages in the channel buffer to use for R/W
- //   reg                  [15:0]  buf_sel_1hot; // 1 hot channel buffer select
     wire                  [3:0]  run_chn_w_d; // run chn delayed to match buf_wr delay
     wire                         run_refresh_w_d; // run refresh delayed to match buf_wr delay
     wire                         run_w_d;

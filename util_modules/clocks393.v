@@ -27,6 +27,9 @@ module  clocks393#(
         parameter CLK_CNTRL =                 0,
         parameter CLK_STATUS =                1,
         
+        parameter CLK_RESET =                'h0, // which clocks should stay reset after release of masrter reset {ff1,ff0,mem,sync,xclk,pclk,xclk}
+        parameter CLK_PWDWN =                'h0, // which clocks should stay powered down  after release of masrter reset {sync,xclk,pclk,xclk}
+        
         parameter CLKIN_PERIOD_AXIHP =        20, //ns >1.25, 600<Fvco<1200
         parameter DIVCLK_DIVIDE_AXIHP =       1,
         parameter CLKFBOUT_MULT_AXIHP =       18, // Fvco=Fclkin*CLKFBOUT_MULT_F/DIVCLK_DIVIDE, Fout=Fvco/CLKOUT#_DIVIDE
@@ -80,7 +83,7 @@ module  clocks393#(
         parameter FFCLK1_IOSTANDARD =         "DEFAULT"
         
 )(
-//    input       rst,
+    input       async_rst, // always reset MMCM/PLL 
     input       mclk, // global clock, comes from the memory controller (uses aclk generated here)
     input       mrst,
     // command/status interface
@@ -103,7 +106,11 @@ module  clocks393#(
     output      xclk2x,      // global clock for compressor, 2x frequency (now 200MHz)
     output      sync_clk,    // global clock for camsync module (96 MHz for 353 compatibility - switch to 100MHz)?
     output      time_ref,     // non-global, just RTC (currently just mclk/8 = 25 MHz)
-    input [1:0] extra_status // just extra two status bits from the top module
+    input [1:0] extra_status, // just extra two status bits from the top module
+    output      locked_sync_clk,
+    output      locked_xclk,
+    output      locked_pclk,
+    output      locked_hclk
 );
     wire         memclk;
     wire         ffclk0;
@@ -116,23 +123,29 @@ module  clocks393#(
     wire         set_ctrl_w =   cmd_we & ((cmd_a  && CLK_MASK) == CLK_CNTRL);
     wire         set_status_w = cmd_we & ((cmd_a  && CLK_MASK) == CLK_STATUS);
     wire   [3:0] locked;
-    reg    [6:0] reset_clk = 0;
-    reg    [3:0] pwrdwn_clk = 0; 
+    reg    [6:0] reset_clk = CLK_RESET;
+    reg    [3:0] pwrdwn_clk = CLK_PWDWN; 
     reg    [2:0] test_clk; // FF to test input clocks are running
     wire memclk_rst = reset_clk[4];
     wire ffclk0_rst = reset_clk[5];
     wire ffclk1_rst = reset_clk[6];
+
+    assign locked_sync_clk = locked[3];
+    assign locked_xclk =     locked[2];
+    assign locked_pclk =     locked[1];
+    assign locked_hclk =     locked[0];
+
     always @ (posedge mclk) begin
-        if (mrst)            reset_clk <= 0;
+        if (mrst)            reset_clk <= CLK_RESET;
         else if (set_ctrl_w) reset_clk <= {cmd_data[10:8], cmd_data[3:0]};
          
-        if (mrst)            pwrdwn_clk <= 0;
+        if (mrst)            pwrdwn_clk <= CLK_PWDWN;
         else if (set_ctrl_w) pwrdwn_clk <= cmd_data[7:4]; 
     end
     assign status_data = {test_clk, locked, extra_status};
-    always @ (posedge memclk or posedge memclk_rst) if (memclk_rst) test_clk[0] <= 0; else test_clk[0] <= ~test_clk[0];
-    always @ (posedge ffclk0 or posedge ffclk0_rst) if (ffclk0_rst) test_clk[1] <= 0; else test_clk[1] <= ~test_clk[1];
-    always @ (posedge ffclk1 or posedge ffclk1_rst) if (ffclk1_rst) test_clk[2] <= 0; else test_clk[2] <= ~test_clk[2];
+    always @ (posedge memclk or posedge memclk_rst) if (async_rst || memclk_rst) test_clk[0] <= 0; else test_clk[0] <= ~test_clk[0];
+    always @ (posedge ffclk0 or posedge ffclk0_rst) if (async_rst || ffclk0_rst) test_clk[1] <= 0; else test_clk[1] <= ~test_clk[1];
+    always @ (posedge ffclk1 or posedge ffclk1_rst) if (async_rst || ffclk1_rst) test_clk[2] <= 0; else test_clk[2] <= ~test_clk[2];
     
     cmd_deser #(
         .ADDR       (CLK_ADDR),
@@ -177,7 +190,7 @@ module  clocks393#(
         .BUF_CLK1X        (BUF_CLK1X_AXIHP),
         .BUF_CLK2X        ("NONE")
     ) dual_clock_axihp_i (
-        .rst              (reset_clk[0]), // input
+        .rst              (async_rst || reset_clk[0]), // input
         .clk_in           (aclk),         // input
         .pwrdwn           (pwrdwn_clk[0]), // input
         .clk1x            (hclk), // output
@@ -195,7 +208,7 @@ module  clocks393#(
         .BUF_CLK1X        (BUF_CLK1X_PCLK),
         .BUF_CLK2X        (BUF_CLK1X_PCLK2X)
     ) dual_clock_pclk_i (
-        .rst              (reset_clk[1]),     // input
+        .rst              (async_rst || reset_clk[1]),     // input
         .clk_in           (ffclk0),           // input
         .pwrdwn           (pwrdwn_clk[1]),    // input
         .clk1x            (pclk),             // output
@@ -213,7 +226,7 @@ module  clocks393#(
         .BUF_CLK1X        (BUF_CLK1X_XCLK),
         .BUF_CLK2X        (BUF_CLK1X_XCLK2X)
     ) dual_clock_xclk_i (
-        .rst              (reset_clk[2]),     // input
+        .rst              (async_rst || reset_clk[2]),     // input
         .clk_in           (aclk),             // input
         .pwrdwn           (pwrdwn_clk[2]),    // input
         .clk1x            (xclk),             // output
@@ -229,11 +242,11 @@ module  clocks393#(
         .BUF_CLK1X        (BUF_CLK1X_SYNC),
         .BUF_CLK2X        ("NONE")
     ) dual_clock_sync_clk_i (
-        .rst              (reset_clk[3]),     // input
-        .clk_in           (aclk),           // input
+        .rst              (async_rst || reset_clk[3]),     // input
+        .clk_in           (aclk),             // input
         .pwrdwn           (pwrdwn_clk[3]),    // input
-        .clk1x            (sync_clk),             // output
-        .clk2x            (),           // output
+        .clk1x            (sync_clk),         // output
+        .clk2x            (),                 // output
         .locked           (locked[3])         // output
     );
     
@@ -280,7 +293,7 @@ module  clocks393#(
    // RTC reference: integer number of microseconds, less than mclk/2. Not a global clock
    // temporary:
     reg [2:0] time_ref_r;
-    always @ (posedge mclk or posedge rst) if (rst) time_ref_r <= 0; else time_ref_r <= time_ref_r + 1;
+    always @ (posedge mclk) if (mrst) time_ref_r <= 0; else time_ref_r <= time_ref_r + 1;
     assign time_ref = time_ref_r[2];
 
 endmodule

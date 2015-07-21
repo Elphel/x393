@@ -105,7 +105,7 @@ module  x393 #(
 //(* keep = "true" *) 
     wire           axi_aclk;          // clock - should be buffered
 //(* dont_touch = "true" *)
-    wire           axi_grst;          // reset, active high, global (try to get rid of)
+    wire           axi_grst;          // reset, active high, global (try to get rid of) - trying, removed BUFG
 // AXI Write Address
     wire   [31:0]  maxi0_awaddr;      // AWADDR[31:0], input
     wire           maxi0_awvalid;     // AWVALID, input
@@ -212,6 +212,10 @@ module  x393 #(
     wire           arst; // @ posedge axi_aclk;
     wire           hrst; // @ posedge hclk;
     
+    wire           locked_sync_clk;
+    wire           locked_xclk;
+    wire           locked_pclk;
+    wire           locked_hclk;
     
     wire           idelay_ctrl_reset; // to reset idelay_cntrl
     
@@ -597,7 +601,10 @@ module  x393 #(
     end         
 `endif
 
-BUFG bufg_axi_rst_i   (.O(axi_grst),.I(axi_rst_pre)); // will go only to memory controller (to minimize changes), later - remove from there too
+// Checking if global axi_grst is not needed anymore:
+//BUFG bufg_axi_rst_i   (.O(axi_grst),.I(axi_rst_pre)); // will go only to memory controller (to minimize changes), later - remove from there too
+assign axi_grst = axi_rst_pre;
+
 
 // channel test module
     mcntrl393_test01 #(
@@ -2039,40 +2046,44 @@ BUFG bufg_axi_rst_i   (.O(axi_grst),.I(axi_rst_pre)); // will go only to memory 
         .FFCLK1_IFD_DELAY_VALUE  (FFCLK1_IFD_DELAY_VALUE),
         .FFCLK1_IOSTANDARD       (FFCLK1_IOSTANDARD)
     ) clocks393_i (
-//        .rst          (axi_rst),             // input
-        .mclk         (mclk),                // input
-        .mrst         (mrst),
-        .cmd_ad       (cmd_clocks_ad),       // input[7:0] 
-        .cmd_stb      (cmd_clocks_stb),      // input
-        .status_ad    (status_clocks_ad),    // output[7:0] 
-        .status_rq    (status_clocks_rq),    // output
-        .status_start (status_clocks_start), // input
-        .fclk         (fclk),                // input[3:0] 
-        .memclk_pad   (memclk),              // input
-        .ffclk0p_pad  (ffclk0p),             // input
-        .ffclk0n_pad  (ffclk0n),             // input
-        .ffclk1p_pad  (ffclk1p),             // input
-        .ffclk1n_pad  (ffclk1n),             // input
-        .aclk         (axi_aclk),            // output
-        .hclk         (hclk),                // output
-        .pclk         (pclk),                // output
-        .pclk2x       (pclk2x),              // output
-        .xclk         (xclk),                // output
-        .xclk2x       (xclk2x),              // output
-        .sync_clk     (camsync_clk),         // output
-        .time_ref     (time_ref),            // output
-        .extra_status ({1'b0,idelay_ctrl_rdy}) // input[1:0] 
+        .async_rst       (axi_rst_pre),         
+        .mclk            (mclk),                // input
+        .mrst            (mrst),
+        .cmd_ad          (cmd_clocks_ad),       // input[7:0] 
+        .cmd_stb         (cmd_clocks_stb),      // input
+        .status_ad       (status_clocks_ad),    // output[7:0] 
+        .status_rq       (status_clocks_rq),    // output
+        .status_start    (status_clocks_start), // input
+        .fclk            (fclk),                // input[3:0] 
+        .memclk_pad      (memclk),              // input
+        .ffclk0p_pad     (ffclk0p),             // input
+        .ffclk0n_pad     (ffclk0n),             // input
+        .ffclk1p_pad     (ffclk1p),             // input
+        .ffclk1n_pad     (ffclk1n),             // input
+        .aclk            (axi_aclk),            // output
+        .hclk            (hclk),                // output
+        .pclk            (pclk),                // output
+        .pclk2x          (pclk2x),              // output
+        .xclk            (xclk),                // output
+        .xclk2x          (xclk2x),              // output
+        .sync_clk        (camsync_clk),         // output
+        .time_ref        (time_ref),            // output
+        .extra_status    ({1'b0,idelay_ctrl_rdy}), // input[1:0] 
+        .locked_sync_clk (locked_sync_clk), // output
+        .locked_xclk     (locked_xclk), // output
+        .locked_pclk     (locked_pclk), // output
+        .locked_hclk     (locked_hclk) // output
+        
     );
 
     sync_resets #(
         .WIDTH(7),
-        .REGISTER(4),
-        .LATE_MASTER(1)
+        .REGISTER(4)
     ) sync_resets_i (
         .arst(), // input
-        .mlocked(mcntrl_locked), // input
-        .clk({hclk, axi_aclk, logger_clk, camsync_clk, xclk, pclk, mclk}), // input[0:0] 
-        .rst({hrst, arst,     lrst,       crst,        xrst, prst, mrst}) // output[0:0] 
+        .locked ({locked_hclk, 1'b1,     locked_sync_clk, locked_sync_clk, locked_xclk, locked_pclk, mcntrl_locked}), // input
+        .clk    ({hclk,        axi_aclk, logger_clk,      camsync_clk,     xclk,        pclk,        mclk}),          // input[6:0] 
+        .rst    ({hrst,        arst,     lrst,            crst,            xrst,        prst,        mrst})          // output[6:0] 
     );
 
     axibram_write #(

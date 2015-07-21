@@ -21,7 +21,7 @@
 `timescale 1ns/1ps
 
 module  cmd_encod_4mux(
-    input                   rst,
+    input                   mrst,
     input                   clk,
 
     input                   start0,       // this channel was started
@@ -51,11 +51,11 @@ module  cmd_encod_4mux(
 );
     reg [3:0] select;
     wire start_w= start0 | start1 |start2 | start3;
-    always @ (posedge rst or posedge clk) begin
-        if (rst)       start <= 0;
+    always @ (posedge clk) begin
+        if (mrst)      start <= 0;
         else           start <= start_w;
     
-        if      (rst) select <= 0;
+        if      (mrst)    select <= 0;
         else if (start_w) select <={ // normally should be no simultaneous starts, so priority is not needed
                             start3 & ~start2 & ~start1 & ~start0,
                             start2 & ~start1 & ~start0,

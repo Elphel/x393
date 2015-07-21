@@ -529,19 +529,16 @@ module  memctrl16 #(
 // temporary debug data    
     ,output                [11:0] tmp_debug // add some signals generated here?
 );
-//wire rst=rst_in; // TODO: decide where to generate
 
     wire        ext_buf_rd;
     wire        ext_buf_rpage_nxt;
     wire        ext_buf_page_nxt;
-//    wire  [6:0] ext_buf_raddr; 
     wire  [3:0] ext_buf_rchn; 
     wire        ext_buf_rrefresh;
     wire        ext_buf_rrun; // run read sequence (to be used with external buffer to set initial address
     reg  [63:0] ext_buf_rdata; 
     wire        ext_buf_wr;
     wire        ext_buf_wpage_nxt;
-//    wire  [6:0] ext_buf_waddr; 
     wire  [3:0] ext_buf_wchn; 
     wire        ext_buf_wrefresh; 
     wire        ext_buf_wrun;  // @negedge,first cycle of sequencer run matching write delay 

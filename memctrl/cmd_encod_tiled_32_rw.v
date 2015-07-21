@@ -30,7 +30,7 @@ module  cmd_encod_tiled_32_rw #(
     parameter WSEL=                 1'b0  // late/early WRITE commands (to adjust timing by 1 SDCLK period)
     
 ) (
-    input                        rst,
+    input                        mrst,
     input                        clk,
 // programming interface
     input                  [2:0] start_bank,    // bank address
@@ -63,21 +63,21 @@ module  cmd_encod_tiled_32_rw #(
         .CMD_DONE_BIT   (CMD_DONE_BIT),
         .RSEL           (RSEL)
     ) cmd_encod_tiled_rd_i (
-        .rst               (rst), // input
-        .clk               (clk), // input
-        .start_bank        (start_bank), // input[2:0] 
-        .start_row         (start_row), // input[14:0] 
-        .start_col         (start_col), // input[6:0] 
-        .rowcol_inc_in     (rowcol_inc_in), // input[13:0] // [21:0] 
-        .num_rows_in_m1    (num_rows_in_m1), // input[5:0] 
-        .num_cols_in_m1    (num_cols_in_m1), // input[5:0] 
-        .keep_open_in      (keep_open_in), // input
+        .mrst              (mrst),              // input
+        .clk               (clk),               // input
+        .start_bank        (start_bank),        // input[2:0] 
+        .start_row         (start_row),         // input[14:0] 
+        .start_col         (start_col),         // input[6:0] 
+        .rowcol_inc_in     (rowcol_inc_in),     // input[13:0] // [21:0] 
+        .num_rows_in_m1    (num_rows_in_m1),    // input[5:0] 
+        .num_cols_in_m1    (num_cols_in_m1),    // input[5:0] 
+        .keep_open_in      (keep_open_in),      // input
         .skip_next_page_in (skip_next_page_in), // input
         
-        .start             (start_rd), // input
-        .enc_cmd           (enc_cmd_rd), // output[31:0] reg 
-        .enc_wr            (enc_wr_rd), // output reg 
-        .enc_done          (enc_done_rd) // output reg 
+        .start             (start_rd),          // input
+        .enc_cmd           (enc_cmd_rd),        // output[31:0] reg 
+        .enc_wr            (enc_wr_rd),         // output reg 
+        .enc_done          (enc_done_rd)        // output reg 
     );
  
     cmd_encod_tiled_32_wr #(
@@ -87,28 +87,28 @@ module  cmd_encod_tiled_32_rw #(
         .CMD_DONE_BIT   (CMD_DONE_BIT),
         .WSEL           (WSEL)
     ) cmd_encod_tiled_wr_i (
-        .rst               (rst), // input
-        .clk               (clk), // input
-        .start_bank        (start_bank), // input[2:0] 
-        .start_row         (start_row), // input[14:0] 
-        .start_col         (start_col), // input[6:0] 
-        .rowcol_inc_in     (rowcol_inc_in), // input[13:0] // [21:0] 
-        .num_rows_in_m1    (num_rows_in_m1), // input[5:0] 
-        .num_cols_in_m1    (num_cols_in_m1), // input[5:0] 
-        .keep_open_in      (keep_open_in), // input
+        .mrst              (mrst),              // input
+        .clk               (clk),               // input
+        .start_bank        (start_bank),        // input[2:0] 
+        .start_row         (start_row),         // input[14:0] 
+        .start_col         (start_col),         // input[6:0] 
+        .rowcol_inc_in     (rowcol_inc_in),     // input[13:0] // [21:0] 
+        .num_rows_in_m1    (num_rows_in_m1),    // input[5:0] 
+        .num_cols_in_m1    (num_cols_in_m1),    // input[5:0] 
+        .keep_open_in      (keep_open_in),      // input
         .skip_next_page_in (skip_next_page_in), // input
         
-        .start             (start_wr), // input
-        .enc_cmd           (enc_cmd_wr), // output[31:0] reg 
-        .enc_wr            (enc_wr_wr), // output reg 
-        .enc_done          (enc_done_wr) // output reg 
+        .start             (start_wr),          // input
+        .enc_cmd           (enc_cmd_wr),        // output[31:0] reg 
+        .enc_wr            (enc_wr_wr),         // output reg 
+        .enc_done          (enc_done_wr)        // output reg 
     );
 
-    always @(posedge rst or posedge clk) begin
-        if (rst)       start <= 0;
+    always @(posedge clk) begin
+        if (mrst)      start <= 0;
         else           start <= start_rd || start_wr;
 
-        if      (rst)      select_wr <= 0;
+        if      (mrst)     select_wr <= 0;
         else if (start_rd) select_wr <= 0;
         else if (start_wr) select_wr <= 1;
     end

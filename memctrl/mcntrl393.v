@@ -388,19 +388,6 @@ module  mcntrl393 #(
 );
     localparam COL_WDTH = COLADDR_NUMBER-3; // number of column address bits in bursts
     localparam FRAME_WBP1 = FRAME_WIDTH_BITS + 1;
-    
-    wire rrst=rst_in;
-    wire axi_rst=rst_in; 
-
-// Not yet connected
-//    wire                  [7:0] status_other_ad;    // Other status byte-wide address/data 
-//    wire                        status_other_rq;    // Other status request  
-//    wire                        status_other_start; // Other status packet transfer start (currently with 0 latency from status_root_rq)
-
-//cmd_ps_pio_stb
-
-// command port 0 (filled by software - 32w->32r) - used for mode set, refresh, write levelling, ...
-// TODO: move to internal !
 
 // Interface to channels to read/write memory (including 4 page BRAM buffers)
 
@@ -767,37 +754,33 @@ module  mcntrl393 #(
     assign select_buf4rd_w = ((axird_pre_araddr ^ MCONTR_BUF4_RD_ADDR) & MCONTR_RD_MASK)==0;
     assign select_buf4wr_w = ((axiwr_pre_awaddr ^ MCONTR_BUF4_WR_ADDR) & MCONTR_WR_MASK)==0;
 
-    always @ (posedge axi_rst or posedge axi_clk) begin
-        if      (axi_rst)           select_cmd0 <= 0;
+    always @ (posedge axi_clk) begin
+        if      (mrst)              select_cmd0 <= 0;
         else if (axiwr_start_burst) select_cmd0 <= select_cmd0_w;
         
-        if      (axi_rst)           select_buf0rd <= 0;
+        if      (mrst)              select_buf0rd <= 0;
         else if (axird_start_burst) select_buf0rd <= select_buf0rd_w;
-        if      (axi_rst)           select_buf0wr <= 0;
-        else if (axiwr_start_burst) select_buf0wr <= select_buf0wr_w;
         
-//        if      (axi_rst)           select_buf1rd <= 0;  // not used - replaced with membridge
-//        else if (axird_start_burst) select_buf1rd <= select_buf1rd_w; // not used - replaced with membridge
-//        if      (axi_rst)           select_buf1wr <= 0; // not used - replaced with membridge
-//        else if (axiwr_start_burst) select_buf1wr <= select_buf1wr_w; // not used - replaced with membridge
+        if      (mrst)              select_buf0wr <= 0;
+        else if (axiwr_start_burst) select_buf0wr <= select_buf0wr_w;
 
-        if      (axi_rst)           select_buf2rd <= 0;
+        if      (mrst)              select_buf2rd <= 0;
         else if (axird_start_burst) select_buf2rd <= select_buf2rd_w;
-        if      (axi_rst)           select_buf2wr <= 0;
+        if      (mrst)              select_buf2wr <= 0;
         else if (axiwr_start_burst) select_buf2wr <= select_buf2wr_w;
 
-        if      (axi_rst)           select_buf3rd <= 0;
+        if      (mrst)              select_buf3rd <= 0;
         else if (axird_start_burst) select_buf3rd <= select_buf3rd_w;
-        if      (axi_rst)           select_buf3wr <= 0;
+        if      (mrst)              select_buf3wr <= 0;
         else if (axiwr_start_burst) select_buf3wr <= select_buf3wr_w;
 
-        if      (axi_rst)           select_buf4rd <= 0;
+        if      (mrst)              select_buf4rd <= 0;
         else if (axird_start_burst) select_buf4rd <= select_buf4rd_w;
-        if      (axi_rst)           select_buf4wr <= 0;
+        if      (mrst)              select_buf4wr <= 0;
         else if (axiwr_start_burst) select_buf4wr <= select_buf4wr_w;
 
 
-        if      (axi_rst)           axird_selected_r <= 0;
+        if      (mrst)              axird_selected_r <= 0;
         else if (axird_start_burst) axird_selected_r <= select_buf0rd_w || //select_buf1rd_w ||  // not used - replaced with membridge
                                                         select_buf2rd_w  || select_buf3rd_w || select_buf4rd_w;
     end
@@ -1618,53 +1601,53 @@ module  mcntrl393 #(
         .RSEL              (RSEL),
         .WSEL              (WSEL)
     ) cmd_encod_tiled_32_rw_i (
-        .rst               (rst), // input
-        .clk               (mclk), // input
-        .start_bank        (tiled_rw_bank), // input[2:0] 
-        .start_row         (tiled_rw_row), // input[14:0] 
-        .start_col         (tiled_rw_col), // input[6:0] 
-        .rowcol_inc_in     (tiled_rw_rowcol_inc), // input[13:0] // [21:0] 
-        .num_rows_in_m1    (tiled_rw_num_rows_m1), // input[5:0] 
-        .num_cols_in_m1    (tiled_rw_num_cols_m1), // input[5:0] 
-        .keep_open_in      (tiled_rw_keep_open), // input
-        .skip_next_page_in (tiled_rw_xfer_partial), // input
-        .start_rd          (tiled_rw_start_rd32), // input
-        .start_wr          (tiled_rw_start_wr32), // input
+        .mrst              (mrst),                    // input
+        .clk               (mclk),                    // input
+        .start_bank        (tiled_rw_bank),           // input[2:0] 
+        .start_row         (tiled_rw_row),            // input[14:0] 
+        .start_col         (tiled_rw_col),            // input[6:0] 
+        .rowcol_inc_in     (tiled_rw_rowcol_inc),     // input[13:0] // [21:0] 
+        .num_rows_in_m1    (tiled_rw_num_rows_m1),    // input[5:0] 
+        .num_cols_in_m1    (tiled_rw_num_cols_m1),    // input[5:0] 
+        .keep_open_in      (tiled_rw_keep_open),      // input
+        .skip_next_page_in (tiled_rw_xfer_partial),   // input
+        .start_rd          (tiled_rw_start_rd32),     // input
+        .start_wr          (tiled_rw_start_wr32),     // input
         .start             (encod_tiled32_start_out), // output reg 
-        .enc_cmd           (encod_tiled32_cmd), // output[31:0] reg 
-        .enc_wr            (encod_tiled32_wr), // output reg 
-        .enc_done          (encod_tiled32_done) // output reg 
+        .enc_cmd           (encod_tiled32_cmd),       // output[31:0] reg 
+        .enc_wr            (encod_tiled32_wr),        // output reg 
+        .enc_done          (encod_tiled32_done)       // output reg 
     );
 
 // Combine sequencer data from multiple sources
     cmd_encod_4mux cmd_encod_4mux_i (
-        .rst                            (rst), // input
-        .clk                            (mclk), // input
+        .mrst                           (mrst),                    // input
+        .clk                            (mclk),                    // input
         // from ps pio
-        .start0                         (channel_pgm_en0), // start_seq_ps_pio), // input
-        .enc_cmd0                       ({22'b0,seq_data0}), // input[31:0] 
-        .enc_wr0                        (1'b0), // input
-        .enc_done0                      (seq_set0), // input
+        .start0                         (channel_pgm_en0),         // start_seq_ps_pio), // input
+        .enc_cmd0                       ({22'b0,seq_data0}),       // input[31:0] 
+        .enc_wr0                        (1'b0),                    // input
+        .enc_done0                      (seq_set0),                // input
         // from encod_linear_rw
-        .start1                         (encod_linear_start_out), // input
-        .enc_cmd1                       (encod_linear_cmd), // input[31:0] 
-        .enc_wr1                        (encod_linear_wr), // input
-        .enc_done1                      (encod_linear_done), // input
+        .start1                         (encod_linear_start_out) , // input
+        .enc_cmd1                       (encod_linear_cmd),        // input[31:0] 
+        .enc_wr1                        (encod_linear_wr),         // input
+        .enc_done1                      (encod_linear_done),       // input
         // from encod_tiled_rw
         .start2                         (encod_tiled16_start_out), // input
-        .enc_cmd2                       (encod_tiled16_cmd), // input[31:0] 
-        .enc_wr2                        (encod_tiled16_wr), // input
-        .enc_done2                      (encod_tiled16_done), // input
+        .enc_cmd2                       (encod_tiled16_cmd),       // input[31:0] 
+        .enc_wr2                        (encod_tiled16_wr),        // input
+        .enc_done2                      (encod_tiled16_done),      // input
         // from encod_tiled_32_rw
         .start3                         (encod_tiled32_start_out), // input
-        .enc_cmd3                       (encod_tiled32_cmd), // input[31:0] 
-        .enc_wr3                        (encod_tiled32_wr), // input
-        .enc_done3                      (encod_tiled32_done), // input
+        .enc_cmd3                       (encod_tiled32_cmd),       // input[31:0] 
+        .enc_wr3                        (encod_tiled32_wr),        // input
+        .enc_done3                      (encod_tiled32_done),      // input
 
         .start                          (), // output reg  not used - may be needed for cascading. Pulse before any data output
-        .enc_cmd                        (seq_data), // output[31:0] reg 
-        .enc_wr                         (seq_wr), // output reg 
-        .enc_done                       (seq_set) // output reg 
+        .enc_cmd                        (seq_data),                // output[31:0] reg 
+        .enc_wr                         (seq_wr),                  // output reg 
+        .enc_done                       (seq_set)                  // output reg 
     );
 
 
@@ -1739,105 +1722,104 @@ module  mcntrl393 #(
         .CMD_PAUSE_BITS        (CMD_PAUSE_BITS),
         .CMD_DONE_BIT          (CMD_DONE_BIT)
     ) memctrl16_i (
-        .rst_in             (rst_in), // input
-        .clk_in             (clk_in), // input
-        .mclk               (mclk), // output
-        .mrst               (mrst), // input
-        .locked             (locked), // output
-        .ref_clk            (ref_clk), // output
-        .idelay_ctrl_reset  (idelay_ctrl_reset), // output
-        .cmd_ad             (cmd_mcontr_ad), // input[7:0] 
-        .cmd_stb            (cmd_mcontr_stb), // input
-        .status_ad          (status_mcontr_ad[7:0]), // output[7:0]
-        .status_rq          (status_mcontr_rq),   // input request to send status downstream
-        .status_start       (status_mcontr_start), // Acknowledge of the first status packet byte (address)
+        .rst_in             (rst_in),                     // input
+        .clk_in             (clk_in),                     // input
+        .mclk               (mclk),                       // output
+        .mrst               (mrst),                       // input
+        .locked             (locked),                     // output
+        .ref_clk            (ref_clk),                    // output
+        .idelay_ctrl_reset  (idelay_ctrl_reset),          // output
+        .cmd_ad             (cmd_mcontr_ad),              // input[7:0] 
+        .cmd_stb            (cmd_mcontr_stb),             // input
+        .status_ad          (status_mcontr_ad[7:0]),      // output[7:0]
+        .status_rq          (status_mcontr_rq),           // input request to send status downstream
+        .status_start       (status_mcontr_start),        // Acknowledge of the first status packet byte (address)
         
-        .cmd0_clk           (axi_clk), // input
-        .cmd0_we            (cmd_we), // input
-        .cmd0_addr          (buf_waddr), // input[9:0] 
-        .cmd0_data          (buf_wdata), // input[31:0] 
+        .cmd0_clk           (axi_clk),                    // input
+        .cmd0_we            (cmd_we),                     // input
+        .cmd0_addr          (buf_waddr),                  // input[9:0] 
+        .cmd0_data          (buf_wdata),                  // input[31:0] 
         
-        .seq_data           (seq_data), // input[31:0] 
-        .seq_wr             (seq_wr), // not used: seq_wr0), // input
-        .seq_set            (seq_set), // input
+        .seq_data           (seq_data),                   // input[31:0] 
+        .seq_wr             (seq_wr),                     // not used: seq_wr0), // input
+        .seq_set            (seq_set),                    // input
          
-        .want_rq0           (want_rq0), // input
-        .need_rq0           (need_rq0), // input
-        .channel_pgm_en0    (channel_pgm_en0), // output reg 
-        .seq_done0          (seq_done0), // output
-        .page_nxt_chn0      (), //rpage_nxt_chn0), not used
-        .buf_run0           (buf_run0),
-        .buf_wr_chn0        (buf_wr_chn0), // output
-        .buf_wpage_nxt_chn0 (buf_wpage_nxt_chn0), // output
-        .buf_wdata_chn0     (buf_wdata_chn0), // output[63:0]
-        .buf_wrun0          (buf_wrun0),
-        .buf_rd_chn0        (buf_rd_chn0), // output
-        .buf_rpage_nxt_chn0 (buf_rpage_nxt_chn0), // output
-        .buf_rdata_chn0     (buf_rdata_chn0), // input[63:0] 
+        .want_rq0           (want_rq0),                   // input
+        .need_rq0           (need_rq0),                   // input
+        .channel_pgm_en0    (channel_pgm_en0),            // output reg 
+        .seq_done0          (seq_done0),                  // output
+        .page_nxt_chn0      (),                           //rpage_nxt_chn0), not used
+        .buf_run0           (buf_run0),                   // output
+        .buf_wr_chn0        (buf_wr_chn0),                // output
+        .buf_wpage_nxt_chn0 (buf_wpage_nxt_chn0),         // output
+        .buf_wdata_chn0     (buf_wdata_chn0),             // output[63:0]
+        .buf_wrun0          (buf_wrun0),                  // output
+        .buf_rd_chn0        (buf_rd_chn0),                // output
+        .buf_rpage_nxt_chn0 (buf_rpage_nxt_chn0),         // output
+        .buf_rdata_chn0     (buf_rdata_chn0),             // input[63:0] 
 
-        .want_rq1           (want_rq1), // input
-        .need_rq1           (need_rq1), // input
-        .channel_pgm_en1    (channel_pgm_en1), // output reg 
-        .seq_done1          (seq_done1), // output
-        .page_nxt_chn1      (page_ready_chn1), //rpage_nxt_chn0), not used
-        .buf_run1           (), //buf_run1),
-        .buf_wr_chn1        (buf_wr_chn1), // output
-        .buf_wpage_nxt_chn1 (buf_wpage_nxt_chn1), // output
-        .buf_wdata_chn1     (buf_wdata_chn1), // output[63:0]
-        .buf_wrun1          (), //buf_wrun1),
-        .buf_rd_chn1        (buf_rd_chn1), // output
-        .buf_rpage_nxt_chn1 (rpage_nxt_chn1), // buf_rpage_nxt_chn1), // output
-        .buf_rdata_chn1     (buf_rdata_chn1), // input[63:0] 
+        .want_rq1           (want_rq1),                   // input
+        .need_rq1           (need_rq1),                   // input
+        .channel_pgm_en1    (channel_pgm_en1),            // output reg 
+        .seq_done1          (seq_done1),                  // output
+        .page_nxt_chn1      (page_ready_chn1),            //rpage_nxt_chn0), not used
+        .buf_run1           (),                           // output
+        .buf_wr_chn1        (buf_wr_chn1),                // output
+        .buf_wpage_nxt_chn1 (buf_wpage_nxt_chn1),         // output
+        .buf_wdata_chn1     (buf_wdata_chn1),             // output[63:0]
+        .buf_wrun1          (),                           // output//buf_wrun1),
+        .buf_rd_chn1        (buf_rd_chn1),                // output
+        .buf_rpage_nxt_chn1 (rpage_nxt_chn1),             // buf_rpage_nxt_chn1), // output
+        .buf_rdata_chn1     (buf_rdata_chn1),             // input[63:0] 
         
-        
-        .want_rq2           (want_rq2), // input
-        .need_rq2           (need_rq2), // input
-        .channel_pgm_en2    (channel_pgm_en2), // output reg 
-        .seq_done2          (seq_done2), // output
-        .page_nxt_chn2      (page_ready_chn2), //rpage_nxt_chn0), not used
-        .buf_run2           (), //buf_run2),
-        .buf_wr_chn2        (buf_wr_chn2), // output
-        .buf_wpage_nxt_chn2 (buf_wpage_nxt_chn2), // output
-        .buf_wdata_chn2     (buf_wdata_chn2), // output[63:0]
-        .buf_wrun2          (), //buf_wrun2),
-        .buf_rd_chn2        (buf_rd_chn2), // output
-        .buf_rpage_nxt_chn2 (rpage_nxt_chn2), // buf_rpage_nxt_chn2), // output
-        .buf_rdata_chn2     (buf_rdata_chn2), // input[63:0] 
+        .want_rq2           (want_rq2),                   // input
+        .need_rq2           (need_rq2),                   // input
+        .channel_pgm_en2    (channel_pgm_en2),            // output reg 
+        .seq_done2          (seq_done2),                  // output
+        .page_nxt_chn2      (page_ready_chn2),            //rpage_nxt_chn0), not used
+        .buf_run2           (),                           // output //buf_run2),
+        .buf_wr_chn2        (buf_wr_chn2),                // output
+        .buf_wpage_nxt_chn2 (buf_wpage_nxt_chn2),         // output
+        .buf_wdata_chn2     (buf_wdata_chn2),             // output[63:0]
+        .buf_wrun2          (),                           // output//buf_wrun2),
+        .buf_rd_chn2        (buf_rd_chn2),                // output
+        .buf_rpage_nxt_chn2 (rpage_nxt_chn2),             // buf_rpage_nxt_chn2), // output
+        .buf_rdata_chn2     (buf_rdata_chn2),             // input[63:0] 
 
-        .want_rq3           (want_rq3), // input
-        .need_rq3           (need_rq3), // input
-        .channel_pgm_en3    (channel_pgm_en3), // output reg 
-        .seq_done3          (seq_done3), // output
-        .page_nxt_chn3      (page_ready_chn3), //rpage_nxt_chn0), not used
-        .buf_run3           (), //buf_run3),
-        .buf_wr_chn3        (buf_wr_chn3), // output
-        .buf_wpage_nxt_chn3 (buf_wpage_nxt_chn3), // output
-        .buf_wdata_chn3     (buf_wdata_chn3), // output[63:0]
-        .buf_wrun3          (), //buf_wrun3),
-        .buf_rd_chn3        (buf_rd_chn3), // output
-        .buf_rpage_nxt_chn3 (rpage_nxt_chn3), // buf_rpage_nxt_chn3), // output
-        .buf_rdata_chn3     (buf_rdata_chn3), // input[63:0] 
+        .want_rq3           (want_rq3),                   // input
+        .need_rq3           (need_rq3),                   // input
+        .channel_pgm_en3    (channel_pgm_en3),            // output reg 
+        .seq_done3          (seq_done3),                  // output
+        .page_nxt_chn3      (page_ready_chn3),            //rpage_nxt_chn0), not used
+        .buf_run3           (),                           // output//buf_run3),
+        .buf_wr_chn3        (buf_wr_chn3),                // output
+        .buf_wpage_nxt_chn3 (buf_wpage_nxt_chn3),         // output
+        .buf_wdata_chn3     (buf_wdata_chn3),             // output[63:0]
+        .buf_wrun3          (),                           // output //buf_wrun3),
+        .buf_rd_chn3        (buf_rd_chn3),                // output
+        .buf_rpage_nxt_chn3 (rpage_nxt_chn3),             // buf_rpage_nxt_chn3), // output
+        .buf_rdata_chn3     (buf_rdata_chn3),             // input[63:0] 
 
-        .want_rq4           (want_rq4), // input
-        .need_rq4           (need_rq4), // input
-        .channel_pgm_en4    (channel_pgm_en4), // output reg 
-        .seq_done4          (seq_done4), // output
-        .page_nxt_chn4      (page_ready_chn4), //rpage_nxt_chn0), not used
-        .buf_run4           (), //buf_run4),
-        .buf_wr_chn4        (buf_wr_chn4), // output
-        .buf_wpage_nxt_chn4 (buf_wpage_nxt_chn4), // output
-        .buf_wdata_chn4     (buf_wdata_chn4), // output[63:0]
-        .buf_wrun4          (), //buf_wrun4),
-        .buf_rd_chn4        (buf_rd_chn4), // output
-        .buf_rpage_nxt_chn4 (rpage_nxt_chn4), // buf_rpage_nxt_chn4), // output
-        .buf_rdata_chn4     (buf_rdata_chn4), // input[63:0] 
+        .want_rq4           (want_rq4),                   // input
+        .need_rq4           (need_rq4),                   // input
+        .channel_pgm_en4    (channel_pgm_en4),            // output reg 
+        .seq_done4          (seq_done4),                  // output
+        .page_nxt_chn4      (page_ready_chn4),            //rpage_nxt_chn0), not used
+        .buf_run4           (),                           // output //buf_run4),
+        .buf_wr_chn4        (buf_wr_chn4),                // output
+        .buf_wpage_nxt_chn4 (buf_wpage_nxt_chn4),         // output
+        .buf_wdata_chn4     (buf_wdata_chn4),             // output[63:0]
+        .buf_wrun4          (),                           // output//buf_wrun4),
+        .buf_rd_chn4        (buf_rd_chn4),                // output
+        .buf_rpage_nxt_chn4 (rpage_nxt_chn4),             // buf_rpage_nxt_chn4), // output
+        .buf_rdata_chn4     (buf_rdata_chn4),             // input[63:0] 
         
         .want_rq8           (sens_want[0]),                // input
         .need_rq8           (sens_need[0]),                // input
         .channel_pgm_en8    (sens_channel_pgm_en[0]),      // output reg 
         .seq_done8          (sens_seq_done[0]),            // output
-        .page_nxt_chn8      (), // output ?
-        .buf_run8           (), // output
+        .page_nxt_chn8      (),                            // output ?
+        .buf_run8           (),                            // output
         .buf_rd_chn8        (sens_buf_rd[0]),              // output
         .buf_rpage_nxt_chn8 (sens_rpage_next[0]),          // output
         .buf_rdata_chn8     (sens_buf_dout[0 * 64 +: 64]), // input[63:0] 
@@ -1846,8 +1828,8 @@ module  mcntrl393 #(
         .need_rq9           (sens_need[1]),                // input
         .channel_pgm_en9    (sens_channel_pgm_en[1]),      // output reg 
         .seq_done9          (sens_seq_done[1]),            // output
-        .page_nxt_chn9      (), // output ?
-        .buf_run9           (), // output
+        .page_nxt_chn9      (),                            // output ?
+        .buf_run9           (),                            // output
         .buf_rd_chn9        (sens_buf_rd[1]),              // output
         .buf_rpage_nxt_chn9 (sens_rpage_next[1]),          // output
         .buf_rdata_chn9     (sens_buf_dout[1 * 64 +: 64]), // input[63:0] 
@@ -1856,8 +1838,8 @@ module  mcntrl393 #(
         .need_rq10          (sens_need[2]),                // input
         .channel_pgm_en10   (sens_channel_pgm_en[2]),      // output reg 
         .seq_done10         (sens_seq_done[2]),            // output
-        .page_nxt_chn10     (), // output
-        .buf_run10          (), // output
+        .page_nxt_chn10     (),                            // output
+        .buf_run10          (),                            // output
         .buf_rd_chn10       (sens_buf_rd[2]),              // output
         .buf_rpage_nxt_chn10(sens_rpage_next[2]),          // output
         .buf_rdata_chn10    (sens_buf_dout[2 * 64 +: 64]), // input[63:0] 
@@ -1866,8 +1848,8 @@ module  mcntrl393 #(
         .need_rq11          (sens_need[3]),                // input
         .channel_pgm_en11   (sens_channel_pgm_en[3]),      // output reg 
         .seq_done11         (sens_seq_done[3]),            // output
-        .page_nxt_chn11     (), // output
-        .buf_run11          (), // output
+        .page_nxt_chn11     (),                            // output
+        .buf_run11          (),                            // output
         .buf_rd_chn11       (sens_buf_rd[3]),              // output
         .buf_rpage_nxt_chn11(sens_rpage_next[3]),          // output
         .buf_rdata_chn11    (sens_buf_dout[3 * 64 +: 64]), // input[63:0] 
@@ -1876,64 +1858,64 @@ module  mcntrl393 #(
         .need_rq12          (cmprs_need[0]),               // input
         .channel_pgm_en12   (cmprs_channel_pgm_en[0]),     // output reg 
         .seq_done12         (cmprs_seq_done[0]),           // output
-        .page_nxt_chn12     (cmprs_page_ready[0]),          // output ???
-        .buf_run12          (), // output
+        .page_nxt_chn12     (cmprs_page_ready[0]),         // output ???
+        .buf_run12          (),                            // output
         .buf_wr_chn12       (cmprs_buf_we[0]),             // output
         .buf_wpage_nxt_chn12(cmprs_buf_wpage_nxt[0]),      // output
         .buf_wdata_chn12    (cmprs_buf_din[0 * 64 +: 64]), // output[63:0] 
-        .buf_wrun12         (), // output
+        .buf_wrun12         (),                            // output
  
         .want_rq13          (cmprs_want[1]),               // input
         .need_rq13          (cmprs_need[1]),               // input
         .channel_pgm_en13   (cmprs_channel_pgm_en[1]),     // output reg 
         .seq_done13         (cmprs_seq_done[1]),           // output
-        .page_nxt_chn13     (cmprs_page_ready[1]),          // output ???
-        .buf_run13          (), // output
+        .page_nxt_chn13     (cmprs_page_ready[1]),         // output ???
+        .buf_run13          (),                            // output
         .buf_wr_chn13       (cmprs_buf_we[1]),             // output
         .buf_wpage_nxt_chn13(cmprs_buf_wpage_nxt[1]),      // output
         .buf_wdata_chn13    (cmprs_buf_din[1 * 64 +: 64]), // output[63:0] 
-        .buf_wrun13         (), // output
+        .buf_wrun13         (),                            // output
  
         .want_rq14          (cmprs_want[2]),               // input
         .need_rq14          (cmprs_need[2]),               // input
         .channel_pgm_en14   (cmprs_channel_pgm_en[2]),     // output reg 
         .seq_done14         (cmprs_seq_done[2]),           // output
-        .page_nxt_chn14     (cmprs_page_ready[2]),          // output ???
-        .buf_run14          (), // output
+        .page_nxt_chn14     (cmprs_page_ready[2]),         // output ???
+        .buf_run14          (),                            // output
         .buf_wr_chn14       (cmprs_buf_we[2]),             // output
         .buf_wpage_nxt_chn14(cmprs_buf_wpage_nxt[2]),      // output
         .buf_wdata_chn14    (cmprs_buf_din[2 * 64 +: 64]), // output[63:0] 
-        .buf_wrun14         (), // output
+        .buf_wrun14         (),                            // output
  
         .want_rq15          (cmprs_want[3]),               // input
         .need_rq15          (cmprs_need[3]),               // input
         .channel_pgm_en15   (cmprs_channel_pgm_en[3]),     // output reg 
         .seq_done15         (cmprs_seq_done[3]),           // output
-        .page_nxt_chn15     (cmprs_page_ready[3]),          // output ???
-        .buf_run15          (), // output
+        .page_nxt_chn15     (cmprs_page_ready[3]),         // output ???
+        .buf_run15          (),                            // output
         .buf_wr_chn15       (cmprs_buf_we[3]),             // output
         .buf_wpage_nxt_chn15(cmprs_buf_wpage_nxt[3]),      // output
         .buf_wdata_chn15    (cmprs_buf_din[3 * 64 +: 64]), // output[63:0] 
-        .buf_wrun15         (), // output
+        .buf_wrun15         (),                            // output
  
-        .SDRST              (SDRST), // output
-        .SDCLK              (SDCLK), // output
-        .SDNCLK             (SDNCLK), // output
-        .SDA                (SDA), // output[14:0] 
-        .SDBA               (SDBA), // output[2:0] 
-        .SDWE               (SDWE), // output
-        .SDRAS              (SDRAS), // output
-        .SDCAS              (SDCAS), // output
-        .SDCKE              (SDCKE), // output
-        .SDODT              (SDODT), // output
-        .SDD                (SDD), // inout[15:0] 
-        .SDDML              (SDDML), // output
-        .DQSL               (DQSL), // inout
-        .NDQSL              (NDQSL), // inout
-        .SDDMU              (SDDMU), // output
-        .DQSU               (DQSU), // inout
-        .NDQSU              (NDQSU), // inout
-        .tmp_debug          (tmp_debug) // output[11:0] 
+        .SDRST              (SDRST),                       // output
+        .SDCLK              (SDCLK),                       // output
+        .SDNCLK             (SDNCLK),                      // output
+        .SDA                (SDA),                         // output[14:0] 
+        .SDBA               (SDBA),                        // output[2:0] 
+        .SDWE               (SDWE),                        // output
+        .SDRAS              (SDRAS),                       // output
+        .SDCAS              (SDCAS),                       // output
+        .SDCKE              (SDCKE),                       // output
+        .SDODT              (SDODT),                       // output
+        .SDD                (SDD),                         // inout[15:0] 
+        .SDDML              (SDDML),                       // output
+        .DQSL               (DQSL),                        // inout
+        .NDQSL              (NDQSL),                       // inout
+        .SDDMU              (SDDMU),                       // output
+        .DQSU               (DQSU),                        // inout
+        .NDQSU              (NDQSU),                       // inout
+        .tmp_debug          (tmp_debug)                    // output[11:0] 
     );
 
 endmodule

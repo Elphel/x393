@@ -404,10 +404,11 @@ module  membridge#(
         if (!rw_in_progress) buf_in_line64 <= 0;
         else if (buf_rdwr)   buf_in_line64 <= is_last_in_line? {(FRAME_WIDTH_BITS+1){1'b0}} : (buf_in_line64 +1);
         
-        next_page_rd <= next_page_rd_w;
-        next_page_wr <= next_page_wr_w;
+        if (hrst) next_page_rd <= 0;
+        else      next_page_rd <= next_page_rd_w;
         
-        
+        if (hrst) next_page_wr <= 0;
+        else      next_page_wr <= next_page_wr_w;
         
     end
 
