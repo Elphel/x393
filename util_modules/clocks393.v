@@ -80,8 +80,9 @@ module  clocks393#(
         parameter FFCLK1_IOSTANDARD =         "DEFAULT"
         
 )(
-    input       rst,
+//    input       rst,
     input       mclk, // global clock, comes from the memory controller (uses aclk generated here)
+    input       mrst,
     // command/status interface
     input                   [7:0] cmd_ad,       // byte-serial command address/data (up to 6 bytes: AL-AH-D0-D1-D2-D3 
     input                         cmd_stb,      // strobe (with first byte) for the command a/d
@@ -121,11 +122,11 @@ module  clocks393#(
     wire memclk_rst = reset_clk[4];
     wire ffclk0_rst = reset_clk[5];
     wire ffclk1_rst = reset_clk[6];
-    always @ (posedge mclk or posedge rst) begin
-        if (rst)             reset_clk <= 0;
+    always @ (posedge mclk) begin
+        if (mrst)            reset_clk <= 0;
         else if (set_ctrl_w) reset_clk <= {cmd_data[10:8], cmd_data[3:0]};
          
-        if (rst)             pwrdwn_clk <= 0;
+        if (mrst)            pwrdwn_clk <= 0;
         else if (set_ctrl_w) pwrdwn_clk <= cmd_data[7:4]; 
     end
     assign status_data = {test_clk, locked, extra_status};
@@ -140,8 +141,9 @@ module  clocks393#(
         .ADDR_WIDTH (1),
         .DATA_WIDTH (11)
     ) cmd_deser_32bit_i (
-        .rst        (rst),      // input
+        .rst        (1'b0),     // rst),      // input
         .clk        (mclk),     // input
+        .srst       (mrst),     // input
         .ad         (cmd_ad),   // input[7:0] 
         .stb        (cmd_stb),  // input
         .addr       (cmd_a),    // output[3:0] 
@@ -154,14 +156,15 @@ module  clocks393#(
         .PAYLOAD_BITS        (9),
         .REGISTER_STATUS     (0)
     ) status_generate_i (
-        .rst           (rst), // input
-        .clk           (mclk), // input
-        .we            (set_status_w), // input
+        .rst           (1'b0),          // rst),      // input
+        .clk           (mclk),          // input
+        .srst          (mrst),          // input
+        .we            (set_status_w),  // input
         .wd            (cmd_data[7:0]), // input[7:0] 
-        .status        (status_data), // input[14:0] 
-        .ad            (status_ad), // output[7:0] 
-        .rq            (status_rq), // output
-        .start         (status_start) // input
+        .status        (status_data),   // input[14:0] 
+        .ad            (status_ad),     // output[7:0] 
+        .rq            (status_rq),     // output
+        .start         (status_start)   // input
     );
     
     BUFG bufg_axi_aclk_i  (.O(aclk), .I(fclk[0]));

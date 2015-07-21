@@ -52,8 +52,9 @@ module camsync393       #(
     parameter CAMSYNC_POST_MAGIC =              6'b001101
 
     )(
-    input                         rst,  // global reset
+//    input                         rst,  // global reset
     input                         mclk, // @posedge (was negedge) AF2015: check external inversion - make it @posedge mclk
+    input                         mrst,        // @ posedge mclk - sync reset
     input                   [7:0] cmd_ad,      // byte-serial command address/data (up to 6 bytes: AL-AH-D0-D1-D2-D3 
     input                         cmd_stb,     // strobe (with first byte) for the command a/d
                            // 0 - mode: [1:0] +2 - reset ts_snd_en, +3 - set ts_snd_en - enable sending timestamp over sync line
@@ -75,7 +76,7 @@ module camsync393       #(
                            
                            // 4..7 - input trigger delay (in pclk periods) 
     input                         pclk,    // pixel clock (global) - switch it to 100MHz (mclk/2)?
-    
+    input                         prst,        // @ posedge pclk - sync reset
     input                  [9:0]  gpio_in, // 12-bit input from GPIO pins -> 10 bit
     output                 [9:0]  gpio_out,// 12-bit output to GPIO pins
     output reg             [9:0]  gpio_out_en,// 12-bit output enable to GPIO pins
@@ -445,8 +446,8 @@ module camsync393       #(
       
     end
  
-    always @ (posedge rst or posedge pclk) begin
-        if      (rst)                  dly_cntr_run <= 0;
+    always @ (posedge pclk) begin
+        if      (prst)                 dly_cntr_run <= 0;
         else if (!triggered_mode_pclk) dly_cntr_run <= 0;
         else if (start_dly)            dly_cntr_run <= 4'hf;
         else                           dly_cntr_run <= dly_cntr_run &
@@ -585,8 +586,9 @@ module camsync393       #(
         .ADDR_WIDTH (3),
         .DATA_WIDTH (32)
     ) cmd_deser_32bit_i (
-        .rst        (rst),         // input
+        .rst        (1'b0),        //rst),         // input
         .clk        (mclk),        // input
+        .srst       (mrst),        // input
         .ad         (cmd_ad),      // input[7:0] 
         .stb        (cmd_stb),     // input
         .addr       (cmd_a),       // output[3:0] 
@@ -663,24 +665,24 @@ module camsync393       #(
     );
 
     assign {ts_rcv_stb_chn3, ts_rcv_stb_chn2, ts_rcv_stb_chn1, ts_rcv_stb_chn0}= ts_stb;
-    pulse_cross_clock i_start_to_pclk (.rst(1'b0), .src_clk(mclk), .dst_clk(pclk), .in_pulse(start_d && start_en), .out_pulse(start_to_pclk),.busy());
+    pulse_cross_clock i_start_to_pclk (.rst(mrst), .src_clk(mclk), .dst_clk(pclk), .in_pulse(start_d && start_en), .out_pulse(start_to_pclk),.busy());
 
-    pulse_cross_clock i_ts_snap_mclk0 (.rst(1'b0), .src_clk(pclk), .dst_clk(mclk), .in_pulse(ts_snap_triggered[0]), .out_pulse(ts_snap_triggered_mclk[0]),.busy());
-    pulse_cross_clock i_ts_snap_mclk1 (.rst(1'b0), .src_clk(pclk), .dst_clk(mclk), .in_pulse(ts_snap_triggered[1]), .out_pulse(ts_snap_triggered_mclk[1]),.busy());
-    pulse_cross_clock i_ts_snap_mclk2 (.rst(1'b0), .src_clk(pclk), .dst_clk(mclk), .in_pulse(ts_snap_triggered[2]), .out_pulse(ts_snap_triggered_mclk[2]),.busy());
-    pulse_cross_clock i_ts_snap_mclk3 (.rst(1'b0), .src_clk(pclk), .dst_clk(mclk), .in_pulse(ts_snap_triggered[3]), .out_pulse(ts_snap_triggered_mclk[3]),.busy());
+    pulse_cross_clock i_ts_snap_mclk0 (.rst(prst), .src_clk(pclk), .dst_clk(mclk), .in_pulse(ts_snap_triggered[0]), .out_pulse(ts_snap_triggered_mclk[0]),.busy());
+    pulse_cross_clock i_ts_snap_mclk1 (.rst(prst), .src_clk(pclk), .dst_clk(mclk), .in_pulse(ts_snap_triggered[1]), .out_pulse(ts_snap_triggered_mclk[1]),.busy());
+    pulse_cross_clock i_ts_snap_mclk2 (.rst(prst), .src_clk(pclk), .dst_clk(mclk), .in_pulse(ts_snap_triggered[2]), .out_pulse(ts_snap_triggered_mclk[2]),.busy());
+    pulse_cross_clock i_ts_snap_mclk3 (.rst(prst), .src_clk(pclk), .dst_clk(mclk), .in_pulse(ts_snap_triggered[3]), .out_pulse(ts_snap_triggered_mclk[3]),.busy());
 
-    pulse_cross_clock i_rcv_done_mclk (.rst(1'b0), .src_clk(pclk), .dst_clk(mclk), .in_pulse(rcv_done), .out_pulse(rcv_done_mclk),.busy());
+    pulse_cross_clock i_rcv_done_mclk (.rst(prst), .src_clk(pclk), .dst_clk(mclk), .in_pulse(rcv_done), .out_pulse(rcv_done_mclk),.busy());
 
-    pulse_cross_clock i_local_got_pclk0(.rst(1'b0), .src_clk(mclk), .dst_clk(pclk), .in_pulse(local_got[0]), .out_pulse(local_got_pclk[0]),.busy());
-    pulse_cross_clock i_local_got_pclk1(.rst(1'b0), .src_clk(mclk), .dst_clk(pclk), .in_pulse(local_got[1]), .out_pulse(local_got_pclk[1]),.busy());
-    pulse_cross_clock i_local_got_pclk2(.rst(1'b0), .src_clk(mclk), .dst_clk(pclk), .in_pulse(local_got[2]), .out_pulse(local_got_pclk[2]),.busy());
-    pulse_cross_clock i_local_got_pclk3(.rst(1'b0), .src_clk(mclk), .dst_clk(pclk), .in_pulse(local_got[3]), .out_pulse(local_got_pclk[3]),.busy());
+    pulse_cross_clock i_local_got_pclk0(.rst(mrst), .src_clk(mclk), .dst_clk(pclk), .in_pulse(local_got[0]), .out_pulse(local_got_pclk[0]),.busy());
+    pulse_cross_clock i_local_got_pclk1(.rst(mrst), .src_clk(mclk), .dst_clk(pclk), .in_pulse(local_got[1]), .out_pulse(local_got_pclk[1]),.busy());
+    pulse_cross_clock i_local_got_pclk2(.rst(mrst), .src_clk(mclk), .dst_clk(pclk), .in_pulse(local_got[2]), .out_pulse(local_got_pclk[2]),.busy());
+    pulse_cross_clock i_local_got_pclk3(.rst(mrst), .src_clk(mclk), .dst_clk(pclk), .in_pulse(local_got[3]), .out_pulse(local_got_pclk[3]),.busy());
 
-    pulse_cross_clock i_trig_r_mclk0 (.rst(1'b0), .src_clk(pclk), .dst_clk(mclk), .in_pulse(trig_r[0]), .out_pulse(trig_r_mclk[0]),.busy());
-    pulse_cross_clock i_trig_r_mclk1 (.rst(1'b0), .src_clk(pclk), .dst_clk(mclk), .in_pulse(trig_r[1]), .out_pulse(trig_r_mclk[1]),.busy());
-    pulse_cross_clock i_trig_r_mclk2 (.rst(1'b0), .src_clk(pclk), .dst_clk(mclk), .in_pulse(trig_r[2]), .out_pulse(trig_r_mclk[2]),.busy());
-    pulse_cross_clock i_trig_r_mclk3 (.rst(1'b0), .src_clk(pclk), .dst_clk(mclk), .in_pulse(trig_r[3]), .out_pulse(trig_r_mclk[3]),.busy());
+    pulse_cross_clock i_trig_r_mclk0 (.rst(prst), .src_clk(pclk), .dst_clk(mclk), .in_pulse(trig_r[0]), .out_pulse(trig_r_mclk[0]),.busy());
+    pulse_cross_clock i_trig_r_mclk1 (.rst(prst), .src_clk(pclk), .dst_clk(mclk), .in_pulse(trig_r[1]), .out_pulse(trig_r_mclk[1]),.busy());
+    pulse_cross_clock i_trig_r_mclk2 (.rst(prst), .src_clk(pclk), .dst_clk(mclk), .in_pulse(trig_r[2]), .out_pulse(trig_r_mclk[2]),.busy());
+    pulse_cross_clock i_trig_r_mclk3 (.rst(prst), .src_clk(pclk), .dst_clk(mclk), .in_pulse(trig_r[3]), .out_pulse(trig_r_mclk[3]),.busy());
     
 endmodule
 

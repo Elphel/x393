@@ -34,9 +34,11 @@ module  cmprs_afi_mux#(
     parameter CMPRS_AFIMUX_CYCBITS =            3,
     parameter AFI_MUX_BUF_LATENCY =             2  // buffers read latency from fifo_ren* to fifo_rdata* valid : 2 if no register layers are used
 )(
-    input                         rst,
+//    input                         rst,
     input                         mclk, // for command/status
     input                         hclk,   // global clock to run axi_hp @ 150MHz, shared by all compressor channels
+    input                         mrst,      // @posedge mclk, sync reset
+    input                         hrst,      // @posedge xclk, sync reset
     // programming interface
     input                   [7:0] cmd_ad,      // byte-serial command address/data (up to 6 bytes: AL-AH-D0-D1-D2-D3 
     input                         cmd_stb,     // strobe (with first byte) for the command a/d
@@ -386,8 +388,9 @@ module  cmprs_afi_mux#(
         .ADDR_WIDTH (4),
         .DATA_WIDTH (32)
     ) cmd_deser_32bit_i (
-        .rst        (rst),      // input
+        .rst        (1'b0),     // rst),      // input
         .clk        (mclk),     // input
+        .srst       (mrst),      // input
         .ad         (cmd_ad),   // input[7:0] 
         .stb        (cmd_stb),  // input
         .addr       (cmd_a),    // output[3:0] 
@@ -436,9 +439,11 @@ module  cmprs_afi_mux#(
         .CMPRS_AFIMUX_WIDTH(CMPRS_AFIMUX_WIDTH),
         .CMPRS_AFIMUX_CYCBITS(CMPRS_AFIMUX_CYCBITS)
     ) cmprs_afi_mux_status_i (
-        .rst          (rst), // input
+//        .rst          (rst), // input
         .hclk         (hclk), // input
         .mclk         (mclk), // input
+        .mrst         (mrst), // input
+        .hrst         (hrst), // input
         .cmd_data     (cmd_data[15:0]), // input[15:0] 
         .cmd_a        (cmd_a[1:0]), // input[1:0] 
         .status_we    (cmd_we_status_w), // input

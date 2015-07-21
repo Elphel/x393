@@ -141,7 +141,10 @@ module  memctrl16 #(
     input                        rst_in,
     input                        clk_in,
     output                       mclk,     // global clock, half DDR3 clock, synchronizes all I/O through the command port
+    input                        mrst,     // @posedge mclk synchronous reset - should not interrupt mclk generation
+    output                       locked,   // to generate sync reset
     output                       ref_clk,  // global clock for idelay_ctrl calibration
+    output                       idelay_ctrl_reset,
     // programming interface
     input                  [7:0] cmd_ad,      // byte-serial command address/data (up to 6 bytes: AL-AH-D0-D1-D2-D3 
     input                        cmd_stb,     // strobe (with first byte) for the command a/d
@@ -526,7 +529,7 @@ module  memctrl16 #(
 // temporary debug data    
     ,output                [11:0] tmp_debug // add some signals generated here?
 );
-wire rst=rst_in; // TODO: decide where toi generate
+//wire rst=rst_in; // TODO: decide where to generate
 
     wire        ext_buf_rd;
     wire        ext_buf_rpage_nxt;
@@ -627,31 +630,33 @@ wire rst=rst_in; // TODO: decide where toi generate
     
 // mux status info from the memory controller and other modules    
     status_router2 status_router2_top_i (
-        .rst       (rst), // input
-        .clk       (mclk), // input
-        .db_in0    (status_ad_phy), // input[7:0] 
-        .rq_in0    (status_rq_phy), // input
-        .start_in0 (status_start_phy), // output
-        .db_in1    (status_ad_mcontr), // input[7:0] 
-        .rq_in1    (status_rq_mcontr), // input
+        .rst       (1'b0),                // rst),  // input
+        .clk       (mclk),                // input
+        .srst      (mrst),                // input
+        .db_in0    (status_ad_phy),       // input[7:0] 
+        .rq_in0    (status_rq_phy),       // input
+        .start_in0 (status_start_phy),    // output
+        .db_in1    (status_ad_mcontr),    // input[7:0] 
+        .rq_in1    (status_rq_mcontr),    // input
         .start_in1 (status_start_mcontr), // output
-        .db_out    (status_ad), // output[7:0] 
-        .rq_out    (status_rq), // output
-        .start_out (status_start) // input
+        .db_out    (status_ad),           // output[7:0] 
+        .rq_out    (status_rq),           // output
+        .start_out (status_start)         // input
     );
     
     status_generate #(
         .STATUS_REG_ADDR  (MCONTR_TOP_STATUS_REG_ADDR),
         .PAYLOAD_BITS     (18)
     ) status_generate_i (
-        .rst              (rst), // input
-        .clk              (mclk), // input
-        .we               (set_status_w), // input
+        .rst              (1'b0),                   // rst), // input
+        .clk              (mclk),                   // input
+        .srst             (mrst),                   // input
+        .we               (set_status_w),           // input
         .wd               (mcontr_16bit_data[7:0]), // input[7:0] 
-        .status           (status_data), // input[25:0] 
-        .ad               (status_ad_mcontr), // output[7:0] 
-        .rq               (status_rq_mcontr), // output
-        .start            (status_start_mcontr) // input
+        .status           (status_data),            // input[25:0] 
+        .ad               (status_ad_mcontr),       // output[7:0] 
+        .rq               (status_rq_mcontr),       // output
+        .start            (status_start_mcontr)     // input
     );
     
 // generate 16-bit data commands (and set defaults to registers)
@@ -662,13 +667,14 @@ wire rst=rst_in; // TODO: decide where toi generate
         .ADDR_WIDTH (4),
         .DATA_WIDTH (16)
     ) cmd_deser_mcontr_16bit_i (
-        .rst        (rst), // input
-        .clk        (mclk), // input
-        .ad         (cmd_ad), // input[7:0] 
-        .stb        (cmd_stb), // input
-        .addr       (priority_addr), // output[15:0] 
-        .data       (priority_data), // output[31:0] 
-        .we         (priority_en) // output
+        .rst        (1'b0),               // rst), // input
+        .clk        (mclk),               // input
+        .srst       (mrst),               // input
+        .ad         (cmd_ad),             // input[7:0] 
+        .stb        (cmd_stb),            // input
+        .addr       (priority_addr),      // output[15:0] 
+        .data       (priority_data),      // output[31:0] 
+        .we         (priority_en)         // output
     );
   
 // generate on/off dependent on lsb and 0-bit commands
@@ -679,19 +685,20 @@ wire rst=rst_in; // TODO: decide where toi generate
         .ADDR_WIDTH (3),
         .DATA_WIDTH (0)
     ) cmd_deser_0bit_i (
-        .rst        (rst), // input
-        .clk        (mclk), // input
-        .ad         (cmd_ad), // input[7:0] 
-        .stb        (cmd_stb), // input
-        .addr       (mcontr_0bit_addr), // output[15:0] 
-        .data       (), // output[31:0] 
-        .we         (mcontr_0bit_we) // output
+        .rst        (1'b0),              //  rst), // input
+        .clk        (mclk),              // input
+        .srst       (mrst),              // input
+        .ad         (cmd_ad),            // input[7:0] 
+        .stb        (cmd_stb),           // input
+        .addr       (mcontr_0bit_addr),  // output[15:0] 
+        .data       (),                  // output[31:0] 
+        .we         (mcontr_0bit_we)     // output
     );
-    always @ (posedge rst or posedge mclk) begin
-        if (rst)                                                                             mcontr_en <= 0;
+    always @ (posedge mclk) begin
+        if (mrst)                                                                            mcontr_en <= 0;
         else if (mcontr_0bit_we && (mcontr_0bit_addr[2:1]==(MCONTR_TOP_0BIT_MCONTR_EN>>1)))  mcontr_en <= mcontr_0bit_addr[0];
         
-        if (rst)                                                                             refresh_en <= 0 ; // 1;
+        if (mrst)                                                                            refresh_en <= 0 ; // 1;
         else if (mcontr_0bit_we && (mcontr_0bit_addr[2:1]==(MCONTR_TOP_0BIT_REFRESH_EN>>1))) refresh_en <= mcontr_0bit_addr[0];
         
     end
@@ -704,8 +711,9 @@ wire rst=rst_in; // TODO: decide where toi generate
         .ADDR_WIDTH (3),
         .DATA_WIDTH (16)
     ) cmd_deser_16bit_i (
-        .rst        (rst), // input
+        .rst        (1'b0), // input
         .clk        (mclk), // input
+        .srst       (mrst), // input
         .ad         (cmd_ad), // input[7:0] 
         .stb        (cmd_stb), // input
         .addr       (mcontr_16bit_addr), // output[15:0] 
@@ -723,27 +731,27 @@ wire rst=rst_in; // TODO: decide where toi generate
     assign set_refresh_address_w=  mcontr_16bit_we && (mcontr_16bit_addr[2:0]==MCONTR_TOP_16BIT_REFRESH_ADDRESS);
     assign set_status_w=           mcontr_16bit_we && (mcontr_16bit_addr[2:0]==MCONTR_TOP_16BIT_STATUS_CNTRL);
 
-    always @ (posedge rst or posedge mclk) begin
-        if (rst) set_refresh_period  <= 0;
-        else     set_refresh_period <= set_refresh_period_w;
+    always @ (posedge mclk) begin
+        if (mrst) set_refresh_period  <= 0;
+        else      set_refresh_period <= set_refresh_period_w;
 
-        if (rst)                        mcontr_chn_en <= DFLT_CHN_EN;
+        if      (mrst)                  mcontr_chn_en <= DFLT_CHN_EN;
         else if (set_chn_en_w)          mcontr_chn_en <= mcontr_16bit_data[15:0];
         
-        if (rst)                        refresh_addr  <= DFLT_REFRESH_ADDR;
+        if      (mrst)                  refresh_addr  <= DFLT_REFRESH_ADDR;
         else if (set_refresh_address_w) refresh_addr <= mcontr_16bit_data[9:0];
 
-        if (rst)                        refresh_period <= DFLT_REFRESH_PERIOD;
+        if      (mrst)                  refresh_period <= DFLT_REFRESH_PERIOD;
         else if (set_refresh_period_w)  refresh_period <= mcontr_16bit_data[7:0];
         
-        if (rst) chn_want_some <= 0;
-        else     chn_want_some <= |want_rq;
+        if (mrst) chn_want_some <= 0;
+        else      chn_want_some <= |want_rq;
 
-        if (rst) chn_need_some <= 0;
-        else     chn_need_some <= |need_rq;
+        if (mrst) chn_need_some <= 0;
+        else      chn_need_some <= |need_rq;
         
-        if (rst) chn_want_r <= 0;
-        else     chn_want_r <= want_rq ; // unmasked channel requests
+        if (mrst) chn_want_r <= 0;
+        else      chn_want_r <= want_rq ; // unmasked channel requests
         
     end
         
@@ -752,7 +760,7 @@ wire rst=rst_in; // TODO: decide where toi generate
     scheduler16 #(
         .width      (16)
     ) scheduler16_i (
-        .rst        (rst), // input
+        .mrst       (mrst), // input
         .clk        (mclk), // input
         .chn_en     (mcontr_chn_en), // input[15:0]
         .want_rq    (want_rq), // input[15:0] 
@@ -776,42 +784,42 @@ assign pre_run_chn_w= pre_run_seq_w && !sel_refresh_w;
 assign en_schedul= mcontr_enabled && !cmd_seq_fill && !cmd_seq_full;
 
 // sequential logic for commands transfer to the sequencer 
-always @ (posedge rst or posedge mclk) begin
-    if (rst) grant_r <= 0;
-    else     grant_r <= grant;
+always @ (posedge mclk) begin
+    if (mrst) grant_r <= 0;
+    else      grant_r <= grant;
     
-    if (rst)           cmd_seq_set <= 0;
+    if (mrst)          cmd_seq_set <= 0;
     else if (grant_r)  cmd_seq_set <= 0;
     else if (seq_wr)   cmd_seq_set <= 1;
     
-    if (rst)        cmd_wr_chn <= 0;
+    if (mrst)       cmd_wr_chn <= 0;
     else if (grant) cmd_wr_chn <= grant_chn;
 
 
 //TODO: Modify,cmd_seq_fill was initially used to see if any sequaence data was written (or PS is used), now it is cmd_seq_set
-    if (rst)                                              cmd_seq_fill <= 0;
+    if (mrst)                                             cmd_seq_fill <= 0;
     else if (!mcontr_enabled || seq_set || cmd_seq_full ) cmd_seq_fill <= 0;
     else if (grant)                                       cmd_seq_fill <= 1;
 
-    if (rst)                                    cmd_seq_full <= 0;
+    if (mrst)                                   cmd_seq_full <= 0;
     else if (!mcontr_enabled || pre_run_chn_w ) cmd_seq_full <= 0;
-    else if (seq_set)                            cmd_seq_full <= 1; // even with no data
+    else if (seq_set)                           cmd_seq_full <= 1; // even with no data
 
 
-    if (rst)                                    cmd_seq_need <= 0;
+    if (mrst)                                   cmd_seq_need <= 0;
     else if (grant)                             cmd_seq_need <= need;
 
 
-    if (rst)         cmd_addr_cur <= 0;
+    if (mrst)        cmd_addr_cur <= 0;
     else if (seq_wr) cmd_addr_cur <= cmd_addr_cur+1;
     
-    if (rst)                           cmd_addr_start <= 0;
+    if (mrst)                          cmd_addr_start <= 0;
     else if (grant_r)                  cmd_addr_start <= {1'b1,cmd_addr_cur};  // address in PL bank
     else if (!cmd_seq_set && seq_set)  cmd_addr_start <= {1'b0,seq_data[9:0]}; // address in PS bank
     
     
-    if (rst) cmd_seq_run <= 0;
-    else cmd_seq_run <= pre_run_seq_w;
+    if (mrst) cmd_seq_run <= 0;
+    else      cmd_seq_run <= pre_run_seq_w;
     
 // add refresh address here?    
 end   
@@ -826,18 +834,18 @@ end
 
     
     ddr_refresh ddr_refresh_i (
-        .rst              (rst), // input
-        .clk              (mclk), // input
-        .en               (refresh_en),
-        .refresh_period   (refresh_period), // input[7:0] 
+        .mrst             (mrst),               // input
+        .clk              (mclk),               // input
+        .en               (refresh_en),         // input
+        .refresh_period   (refresh_period),     // input[7:0] 
         .set              (set_refresh_period), // input
-        .want             (refresh_want), // output
-        .need             (refresh_need), // output
-        .grant            (refresh_grant) // input
+        .want             (refresh_want),       // output
+        .need             (refresh_need),       // output
+        .grant            (refresh_grant)       // input
     );
-    always @(posedge rst or  posedge mclk) begin
-         if (rst) refresh_grant <= 0; 
-         else refresh_grant <= pre_run_seq_w && sel_refresh_w; 
+    always @(posedge mclk) begin
+         if (mrst) refresh_grant <= 0; 
+         else      refresh_grant <= pre_run_seq_w && sel_refresh_w; 
     end
 
 
@@ -914,7 +922,10 @@ end
         .clk_in         (clk_in), // axi_aclk), // input
         .rst_in         (rst_in), // axi_rst), // input TODO: move buffer outside?
         .mclk           (mclk), // output
+        .mrst           (mrst), // input
+        .locked         (locked), // output
         .ref_clk        (ref_clk), // output
+        .idelay_ctrl_reset (idelay_ctrl_reset),
         
         .cmd0_clk       (cmd0_clk), // input
         .cmd0_we        (cmd0_we), // input
@@ -958,281 +969,281 @@ end
 
 // Registering existing channel buffers I/Os
 `ifdef def_enable_mem_chn0
-    mcont_common_chnbuf_reg #( .CHN_NUMBER(0)) mcont_common_chnbuf_reg0_i(.rst(rst),.clk(mclk), .ext_buf_rchn(ext_buf_rchn),
+    mcont_common_chnbuf_reg #( .CHN_NUMBER(0)) mcont_common_chnbuf_reg0_i(.rst(mrst),.clk(mclk), .ext_buf_rchn(ext_buf_rchn),
         .ext_buf_rrefresh(ext_buf_rrefresh),.ext_buf_page_nxt(ext_buf_page_nxt),.seq_done(sequencer_run_done), .ext_buf_run(ext_buf_rrun),
         .buf_done(seq_done0),.page_nxt(page_nxt_chn0),.buf_run(buf_run0));
   `ifdef def_read_mem_chn0
-    mcont_to_chnbuf_reg #(.CHN_NUMBER( 0)) mcont_to_chnbuf_reg0_i(.rst(rst),.clk(mclk),.ext_buf_wr(ext_buf_wr),
+    mcont_to_chnbuf_reg #(.CHN_NUMBER( 0)) mcont_to_chnbuf_reg0_i(.rst(mrst),.clk(mclk),.ext_buf_wr(ext_buf_wr),
         .ext_buf_wpage_nxt(ext_buf_wpage_nxt),.ext_buf_wchn(ext_buf_wchn), .ext_buf_wrefresh(ext_buf_wrefresh),
         .ext_buf_wrun(ext_buf_wrun),.ext_buf_wdata(ext_buf_wdata),.buf_wr_chn(buf_wr_chn0),
         .buf_wpage_nxt_chn(buf_wpage_nxt_chn0),.buf_run(buf_wrun0),.buf_wdata_chn(buf_wdata_chn0));
   `endif
   `ifdef def_write_mem_chn0
     wire [63:0] ext_buf_rdata0;
-    mcont_from_chnbuf_reg #(.CHN_NUMBER( 0),.CHN_LATENCY(CHNBUF_READ_LATENCY)) mcont_from_chnbuf_reg0_i (.rst(rst),.clk(mclk),
+    mcont_from_chnbuf_reg #(.CHN_NUMBER( 0),.CHN_LATENCY(CHNBUF_READ_LATENCY)) mcont_from_chnbuf_reg0_i (.rst(mrst),.clk(mclk),
         .ext_buf_rd(ext_buf_rd),.ext_buf_rchn(ext_buf_rchn), .ext_buf_rrefresh(ext_buf_rrefresh),.ext_buf_rpage_nxt(ext_buf_rpage_nxt),
         .ext_buf_rdata(ext_buf_rdata0),.buf_rd_chn(buf_rd_chn0),.rpage_nxt(buf_rpage_nxt_chn0),.buf_rdata_chn(buf_rdata_chn0));
   `endif
 `endif    
 
 `ifdef def_enable_mem_chn1
-    mcont_common_chnbuf_reg #( .CHN_NUMBER(1)) mcont_common_chnbuf_reg1_i(.rst(rst),.clk(mclk), .ext_buf_rchn(ext_buf_rchn),
+    mcont_common_chnbuf_reg #( .CHN_NUMBER(1)) mcont_common_chnbuf_reg1_i(.rst(mrst),.clk(mclk), .ext_buf_rchn(ext_buf_rchn),
         .ext_buf_rrefresh(ext_buf_rrefresh),.ext_buf_page_nxt(ext_buf_page_nxt),.seq_done(sequencer_run_done), .ext_buf_run(ext_buf_rrun),
         .buf_done(seq_done1),.page_nxt(page_nxt_chn1),.buf_run(buf_run1));
   `ifdef def_read_mem_chn1
-    mcont_to_chnbuf_reg #(.CHN_NUMBER( 1)) mcont_to_chnbuf_reg1_i(.rst(rst),.clk(mclk),.ext_buf_wr(ext_buf_wr),
+    mcont_to_chnbuf_reg #(.CHN_NUMBER( 1)) mcont_to_chnbuf_reg1_i(.rst(mrst),.clk(mclk),.ext_buf_wr(ext_buf_wr),
         .ext_buf_wpage_nxt(ext_buf_wpage_nxt),.ext_buf_wchn(ext_buf_wchn), .ext_buf_wrefresh(ext_buf_wrefresh),
         .ext_buf_wrun(ext_buf_wrun),.ext_buf_wdata(ext_buf_wdata),.buf_wr_chn(buf_wr_chn1),
         .buf_wpage_nxt_chn(buf_wpage_nxt_chn1),.buf_run(buf_wrun1),.buf_wdata_chn(buf_wdata_chn1));
   `endif
   `ifdef def_write_mem_chn1
     wire [63:0] ext_buf_rdata1;
-    mcont_from_chnbuf_reg #(.CHN_NUMBER( 1),.CHN_LATENCY(CHNBUF_READ_LATENCY)) mcont_from_chnbuf_reg1_i (.rst(rst),.clk(mclk),
+    mcont_from_chnbuf_reg #(.CHN_NUMBER( 1),.CHN_LATENCY(CHNBUF_READ_LATENCY)) mcont_from_chnbuf_reg1_i (.rst(mrst),.clk(mclk),
         .ext_buf_rd(ext_buf_rd),.ext_buf_rchn(ext_buf_rchn), .ext_buf_rrefresh(ext_buf_rrefresh),.ext_buf_rpage_nxt(ext_buf_rpage_nxt),
         .ext_buf_rdata(ext_buf_rdata1),.buf_rd_chn(buf_rd_chn1),.rpage_nxt(buf_rpage_nxt_chn1),.buf_rdata_chn(buf_rdata_chn1));
   `endif
 `endif    
 
 `ifdef def_enable_mem_chn2
-    mcont_common_chnbuf_reg #( .CHN_NUMBER(2)) mcont_common_chnbuf_reg2_i(.rst(rst),.clk(mclk), .ext_buf_rchn(ext_buf_rchn),
+    mcont_common_chnbuf_reg #( .CHN_NUMBER(2)) mcont_common_chnbuf_reg2_i(.rst(mrst),.clk(mclk), .ext_buf_rchn(ext_buf_rchn),
         .ext_buf_rrefresh(ext_buf_rrefresh),.ext_buf_page_nxt(ext_buf_page_nxt),.seq_done(sequencer_run_done), .ext_buf_run(ext_buf_rrun),
         .buf_done(seq_done2),.page_nxt(page_nxt_chn2),.buf_run(buf_run2));
   `ifdef def_read_mem_chn2
-    mcont_to_chnbuf_reg #(.CHN_NUMBER( 2)) mcont_to_chnbuf_reg2_i(.rst(rst),.clk(mclk),.ext_buf_wr(ext_buf_wr),
+    mcont_to_chnbuf_reg #(.CHN_NUMBER( 2)) mcont_to_chnbuf_reg2_i(.rst(mrst),.clk(mclk),.ext_buf_wr(ext_buf_wr),
         .ext_buf_wpage_nxt(ext_buf_wpage_nxt),.ext_buf_wchn(ext_buf_wchn), .ext_buf_wrefresh(ext_buf_wrefresh),
         .ext_buf_wrun(ext_buf_wrun),.ext_buf_wdata(ext_buf_wdata),.buf_wr_chn(buf_wr_chn2),
         .buf_wpage_nxt_chn(buf_wpage_nxt_chn2),.buf_run(buf_wrun2),.buf_wdata_chn(buf_wdata_chn2));
   `endif
   `ifdef def_write_mem_chn2
     wire [63:0] ext_buf_rdata2;
-    mcont_from_chnbuf_reg #(.CHN_NUMBER( 2),.CHN_LATENCY(CHNBUF_READ_LATENCY)) mcont_from_chnbuf_reg2_i (.rst(rst),.clk(mclk),
+    mcont_from_chnbuf_reg #(.CHN_NUMBER( 2),.CHN_LATENCY(CHNBUF_READ_LATENCY)) mcont_from_chnbuf_reg2_i (.rst(mrst),.clk(mclk),
         .ext_buf_rd(ext_buf_rd),.ext_buf_rchn(ext_buf_rchn), .ext_buf_rrefresh(ext_buf_rrefresh),.ext_buf_rpage_nxt(ext_buf_rpage_nxt),
         .ext_buf_rdata(ext_buf_rdata2),.buf_rd_chn(buf_rd_chn2),.rpage_nxt(buf_rpage_nxt_chn2),.buf_rdata_chn(buf_rdata_chn2));
   `endif
 `endif    
 
 `ifdef def_enable_mem_chn3
-    mcont_common_chnbuf_reg #( .CHN_NUMBER(3)) mcont_common_chnbuf_reg3_i(.rst(rst),.clk(mclk), .ext_buf_rchn(ext_buf_rchn),
+    mcont_common_chnbuf_reg #( .CHN_NUMBER(3)) mcont_common_chnbuf_reg3_i(.rst(mrst),.clk(mclk), .ext_buf_rchn(ext_buf_rchn),
         .ext_buf_rrefresh(ext_buf_rrefresh),.ext_buf_page_nxt(ext_buf_page_nxt),.seq_done(sequencer_run_done), .ext_buf_run(ext_buf_rrun),
         .buf_done(seq_done3),.page_nxt(page_nxt_chn3),.buf_run(buf_run3));
   `ifdef def_read_mem_chn3
-    mcont_to_chnbuf_reg #(.CHN_NUMBER( 3)) mcont_to_chnbuf_reg3_i(.rst(rst),.clk(mclk),.ext_buf_wr(ext_buf_wr),
+    mcont_to_chnbuf_reg #(.CHN_NUMBER( 3)) mcont_to_chnbuf_reg3_i(.rst(mrst),.clk(mclk),.ext_buf_wr(ext_buf_wr),
         .ext_buf_wpage_nxt(ext_buf_wpage_nxt),.ext_buf_wchn(ext_buf_wchn), .ext_buf_wrefresh(ext_buf_wrefresh),
         .ext_buf_wrun(ext_buf_wrun),.ext_buf_wdata(ext_buf_wdata),.buf_wr_chn(buf_wr_chn3),
         .buf_wpage_nxt_chn(buf_wpage_nxt_chn3),.buf_run(buf_wrun3),.buf_wdata_chn(buf_wdata_chn3));
   `endif
   `ifdef def_write_mem_chn3
     wire [63:0] ext_buf_rdata3;
-    mcont_from_chnbuf_reg #(.CHN_NUMBER( 3),.CHN_LATENCY(CHNBUF_READ_LATENCY)) mcont_from_chnbuf_reg3_i (.rst(rst),.clk(mclk),
+    mcont_from_chnbuf_reg #(.CHN_NUMBER( 3),.CHN_LATENCY(CHNBUF_READ_LATENCY)) mcont_from_chnbuf_reg3_i (.rst(mrst),.clk(mclk),
         .ext_buf_rd(ext_buf_rd),.ext_buf_rchn(ext_buf_rchn), .ext_buf_rrefresh(ext_buf_rrefresh),.ext_buf_rpage_nxt(ext_buf_rpage_nxt),
         .ext_buf_rdata(ext_buf_rdata3),.buf_rd_chn(buf_rd_chn3),.rpage_nxt(buf_rpage_nxt_chn3),.buf_rdata_chn(buf_rdata_chn3));
   `endif
 `endif    
 
 `ifdef def_enable_mem_chn4
-    mcont_common_chnbuf_reg #( .CHN_NUMBER(4)) mcont_common_chnbuf_reg4_i(.rst(rst),.clk(mclk), .ext_buf_rchn(ext_buf_rchn),
+    mcont_common_chnbuf_reg #( .CHN_NUMBER(4)) mcont_common_chnbuf_reg4_i(.rst(mrst),.clk(mclk), .ext_buf_rchn(ext_buf_rchn),
         .ext_buf_rrefresh(ext_buf_rrefresh),.ext_buf_page_nxt(ext_buf_page_nxt),.seq_done(sequencer_run_done), .ext_buf_run(ext_buf_rrun),
         .buf_done(seq_done4),.page_nxt(page_nxt_chn4),.buf_run(buf_run4));
   `ifdef def_read_mem_chn4
-    mcont_to_chnbuf_reg #(.CHN_NUMBER( 4)) mcont_to_chnbuf_reg4_i(.rst(rst),.clk(mclk),.ext_buf_wr(ext_buf_wr),
+    mcont_to_chnbuf_reg #(.CHN_NUMBER( 4)) mcont_to_chnbuf_reg4_i(.rst(mrst),.clk(mclk),.ext_buf_wr(ext_buf_wr),
         .ext_buf_wpage_nxt(ext_buf_wpage_nxt),.ext_buf_wchn(ext_buf_wchn), .ext_buf_wrefresh(ext_buf_wrefresh),
         .ext_buf_wrun(ext_buf_wrun),.ext_buf_wdata(ext_buf_wdata),.buf_wr_chn(buf_wr_chn4),
         .buf_wpage_nxt_chn(buf_wpage_nxt_chn4),.buf_run(buf_wrun4),.buf_wdata_chn(buf_wdata_chn4));
   `endif
   `ifdef def_write_mem_chn4
     wire [63:0] ext_buf_rdata4;
-    mcont_from_chnbuf_reg #(.CHN_NUMBER( 4),.CHN_LATENCY(CHNBUF_READ_LATENCY)) mcont_from_chnbuf_reg4_i (.rst(rst),.clk(mclk),
+    mcont_from_chnbuf_reg #(.CHN_NUMBER( 4),.CHN_LATENCY(CHNBUF_READ_LATENCY)) mcont_from_chnbuf_reg4_i (.rst(mrst),.clk(mclk),
         .ext_buf_rd(ext_buf_rd),.ext_buf_rchn(ext_buf_rchn), .ext_buf_rrefresh(ext_buf_rrefresh),.ext_buf_rpage_nxt(ext_buf_rpage_nxt),
         .ext_buf_rdata(ext_buf_rdata4),.buf_rd_chn(buf_rd_chn4),.rpage_nxt(buf_rpage_nxt_chn4),.buf_rdata_chn(buf_rdata_chn4));
   `endif
 `endif    
 
 `ifdef def_enable_mem_chn5
-    mcont_common_chnbuf_reg #( .CHN_NUMBER(5)) mcont_common_chnbuf_reg5_i(.rst(rst),.clk(mclk), .ext_buf_rchn(ext_buf_rchn),
+    mcont_common_chnbuf_reg #( .CHN_NUMBER(5)) mcont_common_chnbuf_reg5_i(.rst(mrst),.clk(mclk), .ext_buf_rchn(ext_buf_rchn),
         .ext_buf_rrefresh(ext_buf_rrefresh),.ext_buf_page_nxt(ext_buf_page_nxt),.seq_done(sequencer_run_done), .ext_buf_run(ext_buf_rrun),
         .buf_done(seq_done5),.page_nxt(page_nxt_chn5),.buf_run(buf_run5));
   `ifdef def_read_mem_chn5
-    mcont_to_chnbuf_reg #(.CHN_NUMBER( 5)) mcont_to_chnbuf_reg5_i(.rst(rst),.clk(mclk),.ext_buf_wr(ext_buf_wr),
+    mcont_to_chnbuf_reg #(.CHN_NUMBER( 5)) mcont_to_chnbuf_reg5_i(.rst(mrst),.clk(mclk),.ext_buf_wr(ext_buf_wr),
         .ext_buf_wpage_nxt(ext_buf_wpage_nxt),.ext_buf_wchn(ext_buf_wchn), .ext_buf_wrefresh(ext_buf_wrefresh),
         .ext_buf_wrun(ext_buf_wrun),.ext_buf_wdata(ext_buf_wdata),.buf_wr_chn(buf_wr_chn5),
         .buf_wpage_nxt_chn(buf_wpage_nxt_chn5),.buf_run(buf_wrun5),.buf_wdata_chn(buf_wdata_chn5));
   `endif
   `ifdef def_write_mem_chn5
     wire [63:0] ext_buf_rdata5;
-    mcont_from_chnbuf_reg #(.CHN_NUMBER( 5),.CHN_LATENCY(CHNBUF_READ_LATENCY)) mcont_from_chnbuf_reg5_i (.rst(rst),.clk(mclk),
+    mcont_from_chnbuf_reg #(.CHN_NUMBER( 5),.CHN_LATENCY(CHNBUF_READ_LATENCY)) mcont_from_chnbuf_reg5_i (.rst(mrst),.clk(mclk),
         .ext_buf_rd(ext_buf_rd),.ext_buf_rchn(ext_buf_rchn), .ext_buf_rrefresh(ext_buf_rrefresh),.ext_buf_rpage_nxt(ext_buf_rpage_nxt),
         .ext_buf_rdata(ext_buf_rdata5),.buf_rd_chn(buf_rd_chn5),.rpage_nxt(buf_rpage_nxt_chn5),.buf_rdata_chn(buf_rdata_chn5));
   `endif
 `endif    
 
 `ifdef def_enable_mem_chn6
-    mcont_common_chnbuf_reg #( .CHN_NUMBER(6)) mcont_common_chnbuf_reg6_i(.rst(rst),.clk(mclk), .ext_buf_rchn(ext_buf_rchn),
+    mcont_common_chnbuf_reg #( .CHN_NUMBER(6)) mcont_common_chnbuf_reg6_i(.rst(mrst),.clk(mclk), .ext_buf_rchn(ext_buf_rchn),
         .ext_buf_rrefresh(ext_buf_rrefresh),.ext_buf_page_nxt(ext_buf_page_nxt),.seq_done(sequencer_run_done), .ext_buf_run(ext_buf_rrun),
         .buf_done(seq_done6),.page_nxt(page_nxt_chn6),.buf_run(buf_run6));
   `ifdef def_read_mem_chn6
-    mcont_to_chnbuf_reg #(.CHN_NUMBER( 6)) mcont_to_chnbuf_reg6_i(.rst(rst),.clk(mclk),.ext_buf_wr(ext_buf_wr),
+    mcont_to_chnbuf_reg #(.CHN_NUMBER( 6)) mcont_to_chnbuf_reg6_i(.rst(mrst),.clk(mclk),.ext_buf_wr(ext_buf_wr),
         .ext_buf_wpage_nxt(ext_buf_wpage_nxt),.ext_buf_wchn(ext_buf_wchn), .ext_buf_wrefresh(ext_buf_wrefresh),
         .ext_buf_wrun(ext_buf_wrun),.ext_buf_wdata(ext_buf_wdata),.buf_wr_chn(buf_wr_chn6),
         .buf_wpage_nxt_chn(buf_wpage_nxt_chn6),.buf_run(buf_wrun6),.buf_wdata_chn(buf_wdata_chn6));
   `endif
   `ifdef def_write_mem_chn6
     wire [63:0] ext_buf_rdata6;
-    mcont_from_chnbuf_reg #(.CHN_NUMBER( 6),.CHN_LATENCY(CHNBUF_READ_LATENCY)) mcont_from_chnbuf_reg6_i (.rst(rst),.clk(mclk),
+    mcont_from_chnbuf_reg #(.CHN_NUMBER( 6),.CHN_LATENCY(CHNBUF_READ_LATENCY)) mcont_from_chnbuf_reg6_i (.rst(mrst),.clk(mclk),
         .ext_buf_rd(ext_buf_rd),.ext_buf_rchn(ext_buf_rchn), .ext_buf_rrefresh(ext_buf_rrefresh),.ext_buf_rpage_nxt(ext_buf_rpage_nxt),
         .ext_buf_rdata(ext_buf_rdata6),.buf_rd_chn(buf_rd_chn6),.rpage_nxt(buf_rpage_nxt_chn6),.buf_rdata_chn(buf_rdata_chn6));
   `endif
 `endif    
 
 `ifdef def_enable_mem_chn7
-    mcont_common_chnbuf_reg #( .CHN_NUMBER(7)) mcont_common_chnbuf_reg7_i(.rst(rst),.clk(mclk), .ext_buf_rchn(ext_buf_rchn),
+    mcont_common_chnbuf_reg #( .CHN_NUMBER(7)) mcont_common_chnbuf_reg7_i(.rst(mrst),.clk(mclk), .ext_buf_rchn(ext_buf_rchn),
         .ext_buf_rrefresh(ext_buf_rrefresh),.ext_buf_page_nxt(ext_buf_page_nxt),.seq_done(sequencer_run_done), .ext_buf_run(ext_buf_rrun),
         .buf_done(seq_done7),.page_nxt(page_nxt_chn7),.buf_run(buf_run7));
   `ifdef def_read_mem_chn7
-    mcont_to_chnbuf_reg #(.CHN_NUMBER( 7)) mcont_to_chnbuf_reg7_i(.rst(rst),.clk(mclk),.ext_buf_wr(ext_buf_wr),
+    mcont_to_chnbuf_reg #(.CHN_NUMBER( 7)) mcont_to_chnbuf_reg7_i(.rst(mrst),.clk(mclk),.ext_buf_wr(ext_buf_wr),
         .ext_buf_wpage_nxt(ext_buf_wpage_nxt),.ext_buf_wchn(ext_buf_wchn), .ext_buf_wrefresh(ext_buf_wrefresh),
         .ext_buf_wrun(ext_buf_wrun),.ext_buf_wdata(ext_buf_wdata),.buf_wr_chn(buf_wr_chn7),
         .buf_wpage_nxt_chn(buf_wpage_nxt_chn7),.buf_run(buf_wrun7),.buf_wdata_chn(buf_wdata_chn7));
   `endif
   `ifdef def_write_mem_chn7
     wire [63:0] ext_buf_rdata7;
-    mcont_from_chnbuf_reg #(.CHN_NUMBER( 7),.CHN_LATENCY(CHNBUF_READ_LATENCY)) mcont_from_chnbuf_reg7_i (.rst(rst),.clk(mclk),
+    mcont_from_chnbuf_reg #(.CHN_NUMBER( 7),.CHN_LATENCY(CHNBUF_READ_LATENCY)) mcont_from_chnbuf_reg7_i (.rst(mrst),.clk(mclk),
         .ext_buf_rd(ext_buf_rd),.ext_buf_rchn(ext_buf_rchn), .ext_buf_rrefresh(ext_buf_rrefresh),.ext_buf_rpage_nxt(ext_buf_rpage_nxt),
         .ext_buf_rdata(ext_buf_rdata7),.buf_rd_chn(buf_rd_chn7),.rpage_nxt(buf_rpage_nxt_chn7),.buf_rdata_chn(buf_rdata_chn7));
   `endif
 `endif    
 
 `ifdef def_enable_mem_chn8
-    mcont_common_chnbuf_reg #( .CHN_NUMBER(8)) mcont_common_chnbuf_reg8_i(.rst(rst),.clk(mclk), .ext_buf_rchn(ext_buf_rchn),
+    mcont_common_chnbuf_reg #( .CHN_NUMBER(8)) mcont_common_chnbuf_reg8_i(.rst(mrst),.clk(mclk), .ext_buf_rchn(ext_buf_rchn),
         .ext_buf_rrefresh(ext_buf_rrefresh),.ext_buf_page_nxt(ext_buf_page_nxt),.seq_done(sequencer_run_done), .ext_buf_run(ext_buf_rrun),
         .buf_done(seq_done8),.page_nxt(page_nxt_chn8),.buf_run(buf_run8));
   `ifdef def_read_mem_chn8
-    mcont_to_chnbuf_reg #(.CHN_NUMBER( 8)) mcont_to_chnbuf_reg8_i(.rst(rst),.clk(mclk),.ext_buf_wr(ext_buf_wr),
+    mcont_to_chnbuf_reg #(.CHN_NUMBER( 8)) mcont_to_chnbuf_reg8_i(.rst(mrst),.clk(mclk),.ext_buf_wr(ext_buf_wr),
         .ext_buf_wpage_nxt(ext_buf_wpage_nxt),.ext_buf_wchn(ext_buf_wchn), .ext_buf_wrefresh(ext_buf_wrefresh),
         .ext_buf_wrun(ext_buf_wrun),.ext_buf_wdata(ext_buf_wdata),.buf_wr_chn(buf_wr_chn8),
         .buf_wpage_nxt_chn(buf_wpage_nxt_chn8),.buf_run(buf_wrun8),.buf_wdata_chn(buf_wdata_chn8));
   `endif
   `ifdef def_write_mem_chn8
     wire [63:0] ext_buf_rdata8;
-    mcont_from_chnbuf_reg #(.CHN_NUMBER( 8),.CHN_LATENCY(CHNBUF_READ_LATENCY)) mcont_from_chnbuf_reg8_i (.rst(rst),.clk(mclk),
+    mcont_from_chnbuf_reg #(.CHN_NUMBER( 8),.CHN_LATENCY(CHNBUF_READ_LATENCY)) mcont_from_chnbuf_reg8_i (.rst(mrst),.clk(mclk),
         .ext_buf_rd(ext_buf_rd),.ext_buf_rchn(ext_buf_rchn), .ext_buf_rrefresh(ext_buf_rrefresh),.ext_buf_rpage_nxt(ext_buf_rpage_nxt),
         .ext_buf_rdata(ext_buf_rdata8),.buf_rd_chn(buf_rd_chn8),.rpage_nxt(buf_rpage_nxt_chn8),.buf_rdata_chn(buf_rdata_chn8));
   `endif
 `endif    
 
 `ifdef def_enable_mem_chn9
-    mcont_common_chnbuf_reg #( .CHN_NUMBER(9)) mcont_common_chnbuf_reg9_i(.rst(rst),.clk(mclk), .ext_buf_rchn(ext_buf_rchn),
+    mcont_common_chnbuf_reg #( .CHN_NUMBER(9)) mcont_common_chnbuf_reg9_i(.rst(mrst),.clk(mclk), .ext_buf_rchn(ext_buf_rchn),
         .ext_buf_rrefresh(ext_buf_rrefresh),.ext_buf_page_nxt(ext_buf_page_nxt),.seq_done(sequencer_run_done), .ext_buf_run(ext_buf_rrun),
         .buf_done(seq_done9),.page_nxt(page_nxt_chn9),.buf_run(buf_run9));
   `ifdef def_read_mem_chn9
-    mcont_to_chnbuf_reg #(.CHN_NUMBER( 9)) mcont_to_chnbuf_reg9_i(.rst(rst),.clk(mclk),.ext_buf_wr(ext_buf_wr),
+    mcont_to_chnbuf_reg #(.CHN_NUMBER( 9)) mcont_to_chnbuf_reg9_i(.rst(mrst),.clk(mclk),.ext_buf_wr(ext_buf_wr),
         .ext_buf_wpage_nxt(ext_buf_wpage_nxt),.ext_buf_wchn(ext_buf_wchn), .ext_buf_wrefresh(ext_buf_wrefresh),
         .ext_buf_wrun(ext_buf_wrun),.ext_buf_wdata(ext_buf_wdata),.buf_wr_chn(buf_wr_chn9),
         .buf_wpage_nxt_chn(buf_wpage_nxt_chn9),.buf_run(buf_wrun9),.buf_wdata_chn(buf_wdata_chn9));
   `endif
   `ifdef def_write_mem_chn9
     wire [63:0] ext_buf_rdata9;
-    mcont_from_chnbuf_reg #(.CHN_NUMBER( 9),.CHN_LATENCY(CHNBUF_READ_LATENCY)) mcont_from_chnbuf_reg9_i (.rst(rst),.clk(mclk),
+    mcont_from_chnbuf_reg #(.CHN_NUMBER( 9),.CHN_LATENCY(CHNBUF_READ_LATENCY)) mcont_from_chnbuf_reg9_i (.rst(mrst),.clk(mclk),
         .ext_buf_rd(ext_buf_rd),.ext_buf_rchn(ext_buf_rchn), .ext_buf_rrefresh(ext_buf_rrefresh),.ext_buf_rpage_nxt(ext_buf_rpage_nxt),
         .ext_buf_rdata(ext_buf_rdata9),.buf_rd_chn(buf_rd_chn9),.rpage_nxt(buf_rpage_nxt_chn9),.buf_rdata_chn(buf_rdata_chn9));
   `endif
 `endif    
 
 `ifdef def_enable_mem_chn10
-    mcont_common_chnbuf_reg #( .CHN_NUMBER(10)) mcont_common_chnbuf_reg10_i(.rst(rst),.clk(mclk), .ext_buf_rchn(ext_buf_rchn),
+    mcont_common_chnbuf_reg #( .CHN_NUMBER(10)) mcont_common_chnbuf_reg10_i(.rst(mrst),.clk(mclk), .ext_buf_rchn(ext_buf_rchn),
         .ext_buf_rrefresh(ext_buf_rrefresh),.ext_buf_page_nxt(ext_buf_page_nxt),.seq_done(sequencer_run_done), .ext_buf_run(ext_buf_rrun),
         .buf_done(seq_done10),.page_nxt(page_nxt_chn10),.buf_run(buf_run10));
   `ifdef def_read_mem_chn10
-    mcont_to_chnbuf_reg #(.CHN_NUMBER( 10)) mcont_to_chnbuf_reg10_i(.rst(rst),.clk(mclk),.ext_buf_wr(ext_buf_wr),
+    mcont_to_chnbuf_reg #(.CHN_NUMBER( 10)) mcont_to_chnbuf_reg10_i(.rst(mrst),.clk(mclk),.ext_buf_wr(ext_buf_wr),
         .ext_buf_wpage_nxt(ext_buf_wpage_nxt),.ext_buf_wchn(ext_buf_wchn), .ext_buf_wrefresh(ext_buf_wrefresh),
         .ext_buf_wrun(ext_buf_wrun),.ext_buf_wdata(ext_buf_wdata),.buf_wr_chn(buf_wr_chn10),
         .buf_wpage_nxt_chn(buf_wpage_nxt_chn10),.buf_run(buf_wrun10),.buf_wdata_chn(buf_wdata_chn10));
   `endif
   `ifdef def_write_mem_chn10
     wire [63:0] ext_buf_rdata10;
-    mcont_from_chnbuf_reg #(.CHN_NUMBER( 10),.CHN_LATENCY(CHNBUF_READ_LATENCY)) mcont_from_chnbuf_reg10_i (.rst(rst),.clk(mclk),
+    mcont_from_chnbuf_reg #(.CHN_NUMBER( 10),.CHN_LATENCY(CHNBUF_READ_LATENCY)) mcont_from_chnbuf_reg10_i (.rst(mrst),.clk(mclk),
         .ext_buf_rd(ext_buf_rd),.ext_buf_rchn(ext_buf_rchn), .ext_buf_rrefresh(ext_buf_rrefresh),.ext_buf_rpage_nxt(ext_buf_rpage_nxt),
         .ext_buf_rdata(ext_buf_rdata10),.buf_rd_chn(buf_rd_chn10),.rpage_nxt(buf_rpage_nxt_chn10),.buf_rdata_chn(buf_rdata_chn10));
   `endif
 `endif    
 
 `ifdef def_enable_mem_chn11
-    mcont_common_chnbuf_reg #( .CHN_NUMBER(11)) mcont_common_chnbuf_reg11_i(.rst(rst),.clk(mclk), .ext_buf_rchn(ext_buf_rchn),
+    mcont_common_chnbuf_reg #( .CHN_NUMBER(11)) mcont_common_chnbuf_reg11_i(.rst(mrst),.clk(mclk), .ext_buf_rchn(ext_buf_rchn),
         .ext_buf_rrefresh(ext_buf_rrefresh),.ext_buf_page_nxt(ext_buf_page_nxt),.seq_done(sequencer_run_done), .ext_buf_run(ext_buf_rrun),
         .buf_done(seq_done11),.page_nxt(page_nxt_chn11),.buf_run(buf_run11));
   `ifdef def_read_mem_chn11
-    mcont_to_chnbuf_reg #(.CHN_NUMBER( 11)) mcont_to_chnbuf_reg11_i(.rst(rst),.clk(mclk),.ext_buf_wr(ext_buf_wr),
+    mcont_to_chnbuf_reg #(.CHN_NUMBER( 11)) mcont_to_chnbuf_reg11_i(.rst(mrst),.clk(mclk),.ext_buf_wr(ext_buf_wr),
         .ext_buf_wpage_nxt(ext_buf_wpage_nxt),.ext_buf_wchn(ext_buf_wchn), .ext_buf_wrefresh(ext_buf_wrefresh),
         .ext_buf_wrun(ext_buf_wrun),.ext_buf_wdata(ext_buf_wdata),.buf_wr_chn(buf_wr_chn11),
         .buf_wpage_nxt_chn(buf_wpage_nxt_chn11),.buf_run(buf_wrun11),.buf_wdata_chn(buf_wdata_chn11));
   `endif
   `ifdef def_write_mem_chn11
     wire [63:0] ext_buf_rdata11;
-    mcont_from_chnbuf_reg #(.CHN_NUMBER( 11),.CHN_LATENCY(CHNBUF_READ_LATENCY)) mcont_from_chnbuf_reg11_i (.rst(rst),.clk(mclk),
+    mcont_from_chnbuf_reg #(.CHN_NUMBER( 11),.CHN_LATENCY(CHNBUF_READ_LATENCY)) mcont_from_chnbuf_reg11_i (.rst(mrst),.clk(mclk),
         .ext_buf_rd(ext_buf_rd),.ext_buf_rchn(ext_buf_rchn), .ext_buf_rrefresh(ext_buf_rrefresh),.ext_buf_rpage_nxt(ext_buf_rpage_nxt),
         .ext_buf_rdata(ext_buf_rdata11),.buf_rd_chn(buf_rd_chn11),.rpage_nxt(buf_rpage_nxt_chn11),.buf_rdata_chn(buf_rdata_chn11));
   `endif
 `endif    
 
 `ifdef def_enable_mem_chn12
-    mcont_common_chnbuf_reg #( .CHN_NUMBER(12)) mcont_common_chnbuf_reg12_i(.rst(rst),.clk(mclk), .ext_buf_rchn(ext_buf_rchn),
+    mcont_common_chnbuf_reg #( .CHN_NUMBER(12)) mcont_common_chnbuf_reg12_i(.rst(mrst),.clk(mclk), .ext_buf_rchn(ext_buf_rchn),
         .ext_buf_rrefresh(ext_buf_rrefresh),.ext_buf_page_nxt(ext_buf_page_nxt),.seq_done(sequencer_run_done), .ext_buf_run(ext_buf_rrun),
         .buf_done(seq_done12),.page_nxt(page_nxt_chn12),.buf_run(buf_run12));
   `ifdef def_read_mem_chn12
-    mcont_to_chnbuf_reg #(.CHN_NUMBER( 12)) mcont_to_chnbuf_reg12_i(.rst(rst),.clk(mclk),.ext_buf_wr(ext_buf_wr),
+    mcont_to_chnbuf_reg #(.CHN_NUMBER( 12)) mcont_to_chnbuf_reg12_i(.rst(mrst),.clk(mclk),.ext_buf_wr(ext_buf_wr),
         .ext_buf_wpage_nxt(ext_buf_wpage_nxt),.ext_buf_wchn(ext_buf_wchn), .ext_buf_wrefresh(ext_buf_wrefresh),
         .ext_buf_wrun(ext_buf_wrun),.ext_buf_wdata(ext_buf_wdata),.buf_wr_chn(buf_wr_chn12),
         .buf_wpage_nxt_chn(buf_wpage_nxt_chn12),.buf_run(buf_wrun12),.buf_wdata_chn(buf_wdata_chn12));
   `endif
   `ifdef def_write_mem_chn12
     wire [63:0] ext_buf_rdata12;
-    mcont_from_chnbuf_reg #(.CHN_NUMBER( 12),.CHN_LATENCY(CHNBUF_READ_LATENCY)) mcont_from_chnbuf_reg12_i (.rst(rst),.clk(mclk),
+    mcont_from_chnbuf_reg #(.CHN_NUMBER( 12),.CHN_LATENCY(CHNBUF_READ_LATENCY)) mcont_from_chnbuf_reg12_i (.rst(mrst),.clk(mclk),
         .ext_buf_rd(ext_buf_rd),.ext_buf_rchn(ext_buf_rchn), .ext_buf_rrefresh(ext_buf_rrefresh),.ext_buf_rpage_nxt(ext_buf_rpage_nxt),
         .ext_buf_rdata(ext_buf_rdata12),.buf_rd_chn(buf_rd_chn12),.rpage_nxt(buf_rpage_nxt_chn12),.buf_rdata_chn(buf_rdata_chn12));
   `endif
 `endif    
 
 `ifdef def_enable_mem_chn13
-    mcont_common_chnbuf_reg #( .CHN_NUMBER(13)) mcont_common_chnbuf_reg13_i(.rst(rst),.clk(mclk), .ext_buf_rchn(ext_buf_rchn),
+    mcont_common_chnbuf_reg #( .CHN_NUMBER(13)) mcont_common_chnbuf_reg13_i(.rst(mrst),.clk(mclk), .ext_buf_rchn(ext_buf_rchn),
         .ext_buf_rrefresh(ext_buf_rrefresh),.ext_buf_page_nxt(ext_buf_page_nxt),.seq_done(sequencer_run_done), .ext_buf_run(ext_buf_rrun),
         .buf_done(seq_done13),.page_nxt(page_nxt_chn13),.buf_run(buf_run13));
   `ifdef def_read_mem_chn13
-    mcont_to_chnbuf_reg #(.CHN_NUMBER( 13)) mcont_to_chnbuf_reg13_i(.rst(rst),.clk(mclk),.ext_buf_wr(ext_buf_wr),
+    mcont_to_chnbuf_reg #(.CHN_NUMBER( 13)) mcont_to_chnbuf_reg13_i(.rst(mrst),.clk(mclk),.ext_buf_wr(ext_buf_wr),
         .ext_buf_wpage_nxt(ext_buf_wpage_nxt),.ext_buf_wchn(ext_buf_wchn), .ext_buf_wrefresh(ext_buf_wrefresh),
         .ext_buf_wrun(ext_buf_wrun),.ext_buf_wdata(ext_buf_wdata),.buf_wr_chn(buf_wr_chn13),
         .buf_wpage_nxt_chn(buf_wpage_nxt_chn13),.buf_run(buf_wrun13),.buf_wdata_chn(buf_wdata_chn13));
   `endif
   `ifdef def_write_mem_chn13
     wire [63:0] ext_buf_rdata13;
-    mcont_from_chnbuf_reg #(.CHN_NUMBER( 13),.CHN_LATENCY(CHNBUF_READ_LATENCY)) mcont_from_chnbuf_reg13_i (.rst(rst),.clk(mclk),
+    mcont_from_chnbuf_reg #(.CHN_NUMBER( 13),.CHN_LATENCY(CHNBUF_READ_LATENCY)) mcont_from_chnbuf_reg13_i (.rst(mrst),.clk(mclk),
         .ext_buf_rd(ext_buf_rd),.ext_buf_rchn(ext_buf_rchn), .ext_buf_rrefresh(ext_buf_rrefresh),.ext_buf_rpage_nxt(ext_buf_rpage_nxt),
         .ext_buf_rdata(ext_buf_rdata13),.buf_rd_chn(buf_rd_chn13),.rpage_nxt(buf_rpage_nxt_chn13),.buf_rdata_chn(buf_rdata_chn13));
   `endif
 `endif    
 
 `ifdef def_enable_mem_chn14
-    mcont_common_chnbuf_reg #( .CHN_NUMBER(14)) mcont_common_chnbuf_reg14_i(.rst(rst),.clk(mclk), .ext_buf_rchn(ext_buf_rchn),
+    mcont_common_chnbuf_reg #( .CHN_NUMBER(14)) mcont_common_chnbuf_reg14_i(.rst(mrst),.clk(mclk), .ext_buf_rchn(ext_buf_rchn),
         .ext_buf_rrefresh(ext_buf_rrefresh),.ext_buf_page_nxt(ext_buf_page_nxt),.seq_done(sequencer_run_done), .ext_buf_run(ext_buf_rrun),
         .buf_done(seq_done14),.page_nxt(page_nxt_chn14),.buf_run(buf_run14));
   `ifdef def_read_mem_chn14
-    mcont_to_chnbuf_reg #(.CHN_NUMBER( 14)) mcont_to_chnbuf_reg14_i(.rst(rst),.clk(mclk),.ext_buf_wr(ext_buf_wr),
+    mcont_to_chnbuf_reg #(.CHN_NUMBER( 14)) mcont_to_chnbuf_reg14_i(.rst(mrst),.clk(mclk),.ext_buf_wr(ext_buf_wr),
         .ext_buf_wpage_nxt(ext_buf_wpage_nxt),.ext_buf_wchn(ext_buf_wchn), .ext_buf_wrefresh(ext_buf_wrefresh),
         .ext_buf_wrun(ext_buf_wrun),.ext_buf_wdata(ext_buf_wdata),.buf_wr_chn(buf_wr_chn14),
         .buf_wpage_nxt_chn(buf_wpage_nxt_chn14),.buf_run(buf_wrun14),.buf_wdata_chn(buf_wdata_chn14));
   `endif
   `ifdef def_write_mem_chn14
     wire [63:0] ext_buf_rdata14;
-    mcont_from_chnbuf_reg #(.CHN_NUMBER( 14),.CHN_LATENCY(CHNBUF_READ_LATENCY)) mcont_from_chnbuf_reg14_i (.rst(rst),.clk(mclk),
+    mcont_from_chnbuf_reg #(.CHN_NUMBER( 14),.CHN_LATENCY(CHNBUF_READ_LATENCY)) mcont_from_chnbuf_reg14_i (.rst(mrst),.clk(mclk),
         .ext_buf_rd(ext_buf_rd),.ext_buf_rchn(ext_buf_rchn), .ext_buf_rrefresh(ext_buf_rrefresh),.ext_buf_rpage_nxt(ext_buf_rpage_nxt),
         .ext_buf_rdata(ext_buf_rdata14),.buf_rd_chn(buf_rd_chn14),.rpage_nxt(buf_rpage_nxt_chn14),.buf_rdata_chn(buf_rdata_chn14));
   `endif
 `endif    
 
 `ifdef def_enable_mem_chn15
-    mcont_common_chnbuf_reg #( .CHN_NUMBER(15)) mcont_common_chnbuf_reg15_i(.rst(rst),.clk(mclk), .ext_buf_rchn(ext_buf_rchn),
+    mcont_common_chnbuf_reg #( .CHN_NUMBER(15)) mcont_common_chnbuf_reg15_i(.rst(mrst),.clk(mclk), .ext_buf_rchn(ext_buf_rchn),
         .ext_buf_rrefresh(ext_buf_rrefresh),.ext_buf_page_nxt(ext_buf_page_nxt),.seq_done(sequencer_run_done), .ext_buf_run(ext_buf_rrun),
         .buf_done(seq_done15),.page_nxt(page_nxt_chn15),.buf_run(buf_run15));
   `ifdef def_read_mem_chn15
-    mcont_to_chnbuf_reg #(.CHN_NUMBER( 15)) mcont_to_chnbuf_reg15_i(.rst(rst),.clk(mclk),.ext_buf_wr(ext_buf_wr),
+    mcont_to_chnbuf_reg #(.CHN_NUMBER( 15)) mcont_to_chnbuf_reg15_i(.rst(mrst),.clk(mclk),.ext_buf_wr(ext_buf_wr),
         .ext_buf_wpage_nxt(ext_buf_wpage_nxt),.ext_buf_wchn(ext_buf_wchn), .ext_buf_wrefresh(ext_buf_wrefresh),
         .ext_buf_wrun(ext_buf_wrun),.ext_buf_wdata(ext_buf_wdata),.buf_wr_chn(buf_wr_chn15),
         .buf_wpage_nxt_chn(buf_wpage_nxt_chn15),.buf_run(buf_wrun15),.buf_wdata_chn(buf_wdata_chn15));
@@ -1253,7 +1264,7 @@ localparam [3:0] EXT_READ_LATENCY=CHNBUF_READ_LATENCY+2; // +1;
         .WIDTH(5)
     ) dly_16_i (
         .clk(mclk), // input
-        .rst(rst), // input
+        .rst(mrst), // input
         .dly(EXT_READ_LATENCY), // input[3:0] 
         .din({~ext_buf_rrefresh & ext_buf_rd,ext_buf_rchn}), // input[0:0] 
         .dout({ext_buf_rd_late,ext_buf_rchn_late}) // output[0:0] 

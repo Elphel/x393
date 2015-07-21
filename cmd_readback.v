@@ -30,7 +30,8 @@ module  cmd_readback#(
     parameter CONTROL_RBACK_ADDR =       'h0000,  // AXI write address of control write registers
     parameter CONTROL_RBACK_ADDR_MASK =  'h3800   // AXI write address of control registers
 )(
-    input                            rst,
+    input                            mrst, // @posedge mclk - sync reset
+    input                            arst, // @posedge axi_clk - sync reset
     input                            mclk,
     input                            axi_clk,
     input     [AXI_WR_ADDR_BITS-1:0] par_waddr,     // parallel address
@@ -71,11 +72,11 @@ module  cmd_readback#(
     assign axird_selected = select_r; 
     
     
-    always @ (posedge rst or posedge axi_clk) begin
-        if (rst) axird_regen <= 0;
-        else    axird_regen <= axird_ren;
+    always @ (posedge axi_clk) begin
+        if (arst) axird_regen <= 0;
+        else      axird_regen <= axird_ren;
         
-        if      (rst)               select_r <= 0;
+        if      (arst)              select_r <= 0;
         else if (axird_start_burst) select_r <= select_w;
     
     end
@@ -85,9 +86,9 @@ module  cmd_readback#(
         select_d <=   select_r;
     end
     
-    always @ (posedge rst or posedge mclk) begin
-        if (rst) we <= 0;
-        else     we <= we_w;
+    always @ (posedge mclk) begin
+        if (mrst) we <= 0;
+        else      we <= we_w;
     end
     always @ (posedge mclk) begin
         if (we_w) wdata <= par_data;

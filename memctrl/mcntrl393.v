@@ -229,7 +229,10 @@ module  mcntrl393 #(
     input                        rst_in,
     input                        clk_in,
     output                       mclk,     // global clock, half DDR3 clock, synchronizes all I/O through the command port
+    input                        mrst,     // @posedge mclk synchronous reset - should not interrupt mclk generation
+    output                       locked,   // to generate sync reset
     output                       ref_clk,  // global clock for idelay_ctrl calibration
+    output                       idelay_ctrl_reset,
     // programming interface
     input                  [7:0] cmd_ad,      // byte-serial command address/data (up to 6 bytes: AL-AH-D0-D1-D2-D3 
     input                        cmd_stb,     // strobe (with first byte) for the command a/d
@@ -386,7 +389,7 @@ module  mcntrl393 #(
     localparam COL_WDTH = COLADDR_NUMBER-3; // number of column address bits in bursts
     localparam FRAME_WBP1 = FRAME_WIDTH_BITS + 1;
     
-    wire rst=rst_in;
+    wire rrst=rst_in;
     wire axi_rst=rst_in; 
 
 // Not yet connected
@@ -816,8 +819,9 @@ module  mcntrl393 #(
     end
    //axiwr_waddr 
     status_router16 status_router16_mctrl_top_i (
-        .rst       (rst),                          // input
+        .rst       (1'b0),                         // input
         .clk       (mclk),                         // input
+        .srst      (mrst),                         // input
         .db_in0    (status_mcontr_ad),             // input[7:0] 
         .rq_in0    (status_mcontr_rq),             // input
         .start_in0 (status_mcontr_start),          // output
@@ -1045,7 +1049,7 @@ module  mcntrl393 #(
                 .MCNTRL_SCANLINE_PENDING_CNTR_BITS (MCNTRL_SCANLINE_PENDING_CNTR_BITS),
                 .MCNTRL_SCANLINE_FRAME_PAGE_RESET  (MCNTRL_SCANLINE_FRAME_PAGE_RESET)
             ) mcntrl_linear_wr_sensor_i (
-                .rst              (rst),                        // input
+                .mrst             (mrst),                       // input
                 .mclk             (mclk),                       // input
                 .cmd_ad           (cmd_sens_ad),                // input[7:0] 
                 .cmd_stb          (cmd_sens_stb),               // input
@@ -1097,7 +1101,7 @@ module  mcntrl393 #(
                 .MCNTRL_TILED_PENDING_CNTR_BITS(MCNTRL_TILED_PENDING_CNTR_BITS),
                 .MCNTRL_TILED_FRAME_PAGE_RESET (MCNTRL_TILED_FRAME_PAGE_RESET)
             ) mcntrl_tiled_rd_compressor_i ( 
-                .rst                  (rst),                         // input
+                .mrst                 (mrst),                         // input
                 .mclk                 (mclk),                        // input
                 .cmd_ad               (cmd_cmprs_ad),                // input[7:0] 
                 .cmd_stb              (cmd_cmprs_stb),               // input
@@ -1158,7 +1162,7 @@ module  mcntrl393 #(
         .MCNTRL_SCANLINE_PENDING_CNTR_BITS (MCNTRL_SCANLINE_PENDING_CNTR_BITS),
         .MCNTRL_SCANLINE_FRAME_PAGE_RESET  (MCNTRL_SCANLINE_FRAME_PAGE_RESET)
     ) mcntrl_linear_rw_chn1_i (
-        .rst              (rst), // input
+        .mrst             (mrst), // input
         .mclk             (mclk), // input
         .cmd_ad           (cmd_scanline_chn1_ad), // input[7:0] 
         .cmd_stb          (cmd_scanline_chn1_stb), // input
@@ -1208,7 +1212,7 @@ module  mcntrl393 #(
         .MCNTRL_SCANLINE_PENDING_CNTR_BITS (MCNTRL_SCANLINE_PENDING_CNTR_BITS),
         .MCNTRL_SCANLINE_FRAME_PAGE_RESET  (MCNTRL_SCANLINE_FRAME_PAGE_RESET)
     ) mcntrl_linear_rw_chn3_i (
-        .rst              (rst), // input
+        .mrst             (mrst), // input
         .mclk             (mclk), // input
         .cmd_ad           (cmd_scanline_chn3_ad), // input[7:0] 
         .cmd_stb          (cmd_scanline_chn3_stb), // input
@@ -1260,34 +1264,34 @@ module  mcntrl393 #(
         .MCNTRL_TILED_PENDING_CNTR_BITS(MCNTRL_TILED_PENDING_CNTR_BITS),
         .MCNTRL_TILED_FRAME_PAGE_RESET (MCNTRL_TILED_FRAME_PAGE_RESET)
     ) mcntrl_tiled_rw_chn2_i ( 
-        .rst(rst), // input
-        .mclk(mclk), // input
-        .cmd_ad               (cmd_tiled_chn2_ad), // input[7:0] 
-        .cmd_stb              (cmd_tiled_chn2_stb), // input
-        .status_ad            (status_tiled_chn2_ad), // output[7:0] 
-        .status_rq            (status_tiled_chn2_rq), // output
-        .status_start         (status_tiled_chn2_start), // input
-        .frame_start          (frame_start_chn2), // input
-        .next_page            (next_page_chn2), // input
-        .frame_done           (frame_done_chn2), // output
-        .frame_finished       (), // output
-        .line_unfinished      (line_unfinished_chn2), // output[15:0] 
-        .suspend              (suspend_chn2), // input
+        .mrst                 (mrst),                       // input
+        .mclk                 (mclk),                       // input
+        .cmd_ad               (cmd_tiled_chn2_ad),          // input[7:0] 
+        .cmd_stb              (cmd_tiled_chn2_stb),         // input
+        .status_ad            (status_tiled_chn2_ad),       // output[7:0] 
+        .status_rq            (status_tiled_chn2_rq),       // output
+        .status_start         (status_tiled_chn2_start),    // input
+        .frame_start          (frame_start_chn2),           // input
+        .next_page            (next_page_chn2),             // input
+        .frame_done           (frame_done_chn2),            // output
+        .frame_finished       (),                           // output
+        .line_unfinished      (line_unfinished_chn2),       // output[15:0] 
+        .suspend              (suspend_chn2),               // input
         .frame_number         (frame_number_chn2),
-        .xfer_want            (want_rq2), // output
-        .xfer_need            (need_rq2), // output
-        .xfer_grant           (channel_pgm_en2), // input
-        .xfer_start_rd        (tiled_rw_chn2_start_rd16), // output
-        .xfer_start_wr        (tiled_rw_chn2_start_wr16), // output
-        .xfer_start32_rd      (tiled_rw_chn2_start_rd32), // output
-        .xfer_start32_wr      (tiled_rw_chn2_start_wr32), // output
-        .xfer_bank            (tiled_rw_chn2_bank), // output[2:0] 
-        .xfer_row             (tiled_rw_chn2_row), // output[14:0] 
-        .xfer_col             (tiled_rw_chn2_col), // output[6:0] 
-        .rowcol_inc           (tiled_rw_chn2_rowcol_inc), // output[13:0] 
-        .num_rows_m1          (tiled_rw_chn2_num_rows_m1), // output[5:0] 
-        .num_cols_m1          (tiled_rw_chn2_num_cols_m1), // output[5:0] 
-        .keep_open            (tiled_rw_chn2_keep_open), // output
+        .xfer_want            (want_rq2),                   // output
+        .xfer_need            (need_rq2),                   // output
+        .xfer_grant           (channel_pgm_en2),            // input
+        .xfer_start_rd        (tiled_rw_chn2_start_rd16),   // output
+        .xfer_start_wr        (tiled_rw_chn2_start_wr16),   // output
+        .xfer_start32_rd      (tiled_rw_chn2_start_rd32),   // output
+        .xfer_start32_wr      (tiled_rw_chn2_start_wr32),   // output
+        .xfer_bank            (tiled_rw_chn2_bank),         // output[2:0] 
+        .xfer_row             (tiled_rw_chn2_row),          // output[14:0] 
+        .xfer_col             (tiled_rw_chn2_col),          // output[6:0] 
+        .rowcol_inc           (tiled_rw_chn2_rowcol_inc),   // output[13:0] 
+        .num_rows_m1          (tiled_rw_chn2_num_rows_m1),  // output[5:0] 
+        .num_cols_m1          (tiled_rw_chn2_num_cols_m1),  // output[5:0] 
+        .keep_open            (tiled_rw_chn2_keep_open),    // output
         .xfer_partial         (tiled_rw_chn2_xfer_partial), // output
         .xfer_page_done       (seq_done2), // input
         .xfer_page_rst_wr     (xfer_reset_page2_wr), // output
@@ -1316,39 +1320,39 @@ module  mcntrl393 #(
         .MCNTRL_TILED_PENDING_CNTR_BITS(MCNTRL_TILED_PENDING_CNTR_BITS),
         .MCNTRL_TILED_FRAME_PAGE_RESET (MCNTRL_TILED_FRAME_PAGE_RESET)
     ) mcntrl_tiled_rw_chn4_i ( 
-        .rst(rst), // input
-        .mclk(mclk), // input
-        .cmd_ad               (cmd_tiled_chn4_ad), // input[7:0] 
-        .cmd_stb              (cmd_tiled_chn4_stb), // input
-        .status_ad            (status_tiled_chn4_ad), // output[7:0] 
-        .status_rq            (status_tiled_chn4_rq), // output
-        .status_start         (status_tiled_chn4_start), // input
-        .frame_start          (frame_start_chn4), // input
-        .next_page            (next_page_chn4), // input
-        .frame_done           (frame_done_chn4), // output
-        .frame_finished       (), // output
-        .line_unfinished      (line_unfinished_chn4), // output[15:0] 
-        .suspend              (suspend_chn4), // input
-        .frame_number         (frame_number_chn4),
-        .xfer_want            (want_rq4), // output
-        .xfer_need            (need_rq4), // output
-        .xfer_grant           (channel_pgm_en4), // input
-        .xfer_start_rd        (tiled_rw_chn4_start_rd16), // output
-        .xfer_start_wr        (tiled_rw_chn4_start_wr16), // output
-        .xfer_start32_rd      (tiled_rw_chn4_start_rd32), // output
-        .xfer_start32_wr      (tiled_rw_chn4_start_wr32), // output
-        .xfer_bank            (tiled_rw_chn4_bank), // output[2:0] 
-        .xfer_row             (tiled_rw_chn4_row), // output[14:0] 
-        .xfer_col             (tiled_rw_chn4_col), // output[6:0] 
-        .rowcol_inc           (tiled_rw_chn4_rowcol_inc), // output[13:0] 
-        .num_rows_m1          (tiled_rw_chn4_num_rows_m1), // output[5:0] 
-        .num_cols_m1          (tiled_rw_chn4_num_cols_m1), // output[5:0] 
-        .keep_open            (tiled_rw_chn4_keep_open), // output
+        .mrst                 (mrst),                       // input
+        .mclk                 (mclk),                       // input
+        .cmd_ad               (cmd_tiled_chn4_ad),          // input[7:0] 
+        .cmd_stb              (cmd_tiled_chn4_stb),         // input
+        .status_ad            (status_tiled_chn4_ad),       // output[7:0] 
+        .status_rq            (status_tiled_chn4_rq),       // output
+        .status_start         (status_tiled_chn4_start),    // input
+        .frame_start          (frame_start_chn4),           // input
+        .next_page            (next_page_chn4),             // input
+        .frame_done           (frame_done_chn4),            // output
+        .frame_finished       (),                           // output
+        .line_unfinished      (line_unfinished_chn4),       // output[15:0] 
+        .suspend              (suspend_chn4),               // input
+        .frame_number         (frame_number_chn4),          // output  [15:0]
+        .xfer_want            (want_rq4),                   // output
+        .xfer_need            (need_rq4),                   // output
+        .xfer_grant           (channel_pgm_en4),            // input
+        .xfer_start_rd        (tiled_rw_chn4_start_rd16),   // output
+        .xfer_start_wr        (tiled_rw_chn4_start_wr16),   // output
+        .xfer_start32_rd      (tiled_rw_chn4_start_rd32),   // output
+        .xfer_start32_wr      (tiled_rw_chn4_start_wr32),   // output
+        .xfer_bank            (tiled_rw_chn4_bank),         // output[2:0] 
+        .xfer_row             (tiled_rw_chn4_row),          // output[14:0] 
+        .xfer_col             (tiled_rw_chn4_col),          // output[6:0] 
+        .rowcol_inc           (tiled_rw_chn4_rowcol_inc),   // output[13:0] 
+        .num_rows_m1          (tiled_rw_chn4_num_rows_m1),  // output[5:0] 
+        .num_cols_m1          (tiled_rw_chn4_num_cols_m1),  // output[5:0] 
+        .keep_open            (tiled_rw_chn4_keep_open),    // output
         .xfer_partial         (tiled_rw_chn4_xfer_partial), // output
-        .xfer_page_done       (seq_done4), // input
-        .xfer_page_rst_wr     (xfer_reset_page4_wr), // output
-        .xfer_page_rst_rd     (xfer_reset_page4_rd) // output
-    );
+        .xfer_page_done       (seq_done4),                  // input
+        .xfer_page_rst_wr     (xfer_reset_page4_wr),        // output
+        .xfer_page_rst_rd     (xfer_reset_page4_rd)         // output
+    ); 
     
     
 // PS-controlled launch of the memory controller sequences
@@ -1360,7 +1364,7 @@ module  mcntrl393 #(
         .MCNTRL_PS_CMD             (MCNTRL_PS_CMD), //'h1),
         .MCNTRL_PS_STATUS_CNTRL    (MCNTRL_PS_STATUS_CNTRL) //'h2)
     ) mcntrl_ps_pio_i (
-        .rst                       (rst), // input
+        .mrst                      (mrst), // input
         .mclk                      (mclk), // input
         
         .cmd_ad                    (cmd_ps_pio_ad), // input[7:0] 
@@ -1467,7 +1471,7 @@ module  mcntrl393 #(
         .RSEL              (RSEL),
         .WSEL              (WSEL)
     ) cmd_encod_linear_rw_i (
-        .rst               (rst), // input
+        .mrst              (mrst), // input
         .clk               (mclk), // input
         .bank_in           (lin_rw_bank), // input[2:0] 
         .row_in            (lin_rw_row), // input[14:0] 
@@ -1491,7 +1495,6 @@ module  mcntrl393 #(
         .MAX_TILE_HEIGHT         (MAX_TILE_HEIGHT)
     ) cmd_encod_tiled_mux_i (
         .clk                     (mclk), // input
-        
         .bank2                   (tiled_rw_chn2_bank), // input[2:0] 
         .row2                    (tiled_rw_chn2_row), // input[14:0] 
         .col2                    (tiled_rw_chn2_col), // input[6:0] 
@@ -1587,9 +1590,9 @@ module  mcntrl393 #(
         .RSEL              (RSEL),
         .WSEL              (WSEL)
     ) cmd_encod_tiled_16_rw_i (
-        .rst               (rst), // input
-        .clk               (mclk), // input
-        .start_bank        (tiled_rw_bank), // input[2:0] 
+        .mrst              (mrst),                 // input
+        .clk               (mclk),                 // input
+        .start_bank        (tiled_rw_bank),        // input[2:0] 
         .start_row         (tiled_rw_row), // input[14:0] 
         .start_col         (tiled_rw_col), // input[6:0] 
         .rowcol_inc_in     (tiled_rw_rowcol_inc), // input[13:0] // [21:0] 
@@ -1739,7 +1742,10 @@ module  mcntrl393 #(
         .rst_in             (rst_in), // input
         .clk_in             (clk_in), // input
         .mclk               (mclk), // output
+        .mrst               (mrst), // input
+        .locked             (locked), // output
         .ref_clk            (ref_clk), // output
+        .idelay_ctrl_reset  (idelay_ctrl_reset), // output
         .cmd_ad             (cmd_mcontr_ad), // input[7:0] 
         .cmd_stb            (cmd_mcontr_stb), // input
         .status_ad          (status_mcontr_ad[7:0]), // output[7:0]

@@ -26,21 +26,16 @@ module  axibram_write #(
     parameter ADDRESS_BITS = 10 // number of memory address bits
 )(
    input         aclk,    // clock - should be buffered
-//   input         aresetn, // reset, active low
-   input         rst,     // reset, active highw
+   input         arst,     // @aclk sync reset, active high
    
 // AXI Write Address
    input  [31:0] awaddr,  // AWADDR[31:0], input
    input         awvalid, // AWVALID, input
    output        awready, // AWREADY, output
    input  [11:0] awid,    // AWID[11:0], input
-//   input  [ 1:0] awlock,  // AWLOCK[1:0], input
-//   input  [ 3:0] awcache, // AWCACHE[3:0], input
-//   input  [ 2:0] awprot,  // AWPROT[2:0], input
    input  [ 3:0] awlen,   // AWLEN[3:0], input
    input  [ 1:0] awsize,  // AWSIZE[1:0], input
    input  [ 1:0] awburst, // AWBURST[1:0], input
-//   input  [ 3:0] awqos,   // AWQOS[3:0], input
 // AXI PS Master GP0: Write Data
    input  [31:0] wdata,   // WDATA[31:0], input
    input         wvalid,  // WVALID, input
@@ -141,44 +136,30 @@ module  axibram_write #(
     assign start_write_burst_w=w_nempty_ready && aw_nempty_ready && (!write_in_progress || (w_nempty_ready && ((write_left[3:0]==4'b0) || wlast_out)));
     assign write_in_progress_w=w_nempty_ready && aw_nempty_ready || (write_in_progress && !(w_nempty_ready && ((write_left[3:0]==4'b0) || wlast_out))); 
     
-    always @ (posedge  aclk or posedge  rst) begin
-      if   (rst)                    wburst[1:0] <= 0;
+    always @ (posedge  aclk) begin
+      if   (arst)                   wburst[1:0] <= 0;
       else if (start_write_burst_w) wburst[1:0] <= awburst_out[1:0];
 
-      if   (rst)                    wlen[3:0] <= 0;
+      if   (arst)                   wlen[3:0] <= 0;
       else if (start_write_burst_w) wlen[3:0] <= awlen_out[3:0];
     
-      if   (rst) write_in_progress <= 0;
-      else       write_in_progress <= write_in_progress_w;
+      if   (arst) write_in_progress <= 0;
+      else        write_in_progress <= write_in_progress_w;
 
-      if   (rst) write_left <= 0;
+      if   (arst)                   write_left <= 0;
       else if (start_write_burst_w) write_left <= awlen_out[3:0]; // precedence over inc
       else if (bram_we_w)           write_left <= write_left-1; //SuppressThisWarning ISExst Result of 32-bit expression is truncated to fit in 4-bit target.
             
-      if   (rst)                    write_address <= {ADDRESS_BITS{1'b0}};
+      if   (arst)                   write_address <= {ADDRESS_BITS{1'b0}};
       else if (start_write_burst_w) write_address <= awaddr_out[ADDRESS_BITS-1:0]; // precedence over inc
       else if (bram_we_w)           write_address <= next_wr_address_w;
       
-      if (rst) dev_ready_r <= 1'b0;
-      else     dev_ready_r <= dev_ready;
+      if (arst) dev_ready_r <= 1'b0;
+      else      dev_ready_r <= dev_ready;
     end
 // **** Write response channel ****    
     wire [ 1:0] bresp_in;
     assign bresp_in=2'b0;
-        
-/*
-   output        bvalid,  // BVALID, output
-   input         bready,  // BREADY, input
-   output [11:0] bid,     // BID[11:0], output
-   output [ 1:0] bresp    // BRESP[1:0], output
-
-*/
-/*    
-    reg bram_reg_re_r;
-    always @ (posedge aclk) begin
-        bram_reg_re_r <= bram_reg_re_w;
-    end
-*/
 
 // external memory interface (write only)
    assign pre_awaddr=awaddr_out[ADDRESS_BITS-1:0];
@@ -199,9 +180,9 @@ module  axibram_write #(
  `endif  
 fifo_same_clock   #( .DATA_WIDTH(20+ADDRESS_BITS),.DATA_DEPTH(4))
     waddr_i (
-        .rst       (rst),
+        .rst       (1'b0), //rst),
         .clk       (aclk),
-        .sync_rst  (1'b0),
+        .sync_rst  (arst),
         .we        (awvalid && awready),
         .re        (start_write_burst_w),
         .data_in   ({awid[11:0], awburst[1:0],awsize[1:0],awlen[3:0],awaddr[ADDRESS_BITS+1:2]}),
@@ -219,9 +200,9 @@ fifo_same_clock   #( .DATA_WIDTH(20+ADDRESS_BITS),.DATA_DEPTH(4))
     );
 fifo_same_clock   #( .DATA_WIDTH(49),.DATA_DEPTH(4))    
     wdata_i (
-        .rst(rst),
+        .rst(1'b0), //rst),
         .clk(aclk),
-        .sync_rst  (1'b0),
+        .sync_rst  (arst),
         .we(wvalid && wready),
         .re(bram_we_w), //start_write_burst_w), // wrong
         .data_in({wid[11:0],wlast,wstb[3:0],wdata[31:0]}),
@@ -241,16 +222,16 @@ fifo_same_clock   #( .DATA_WIDTH(49),.DATA_DEPTH(4))
 reg was_bresp_re=0;
 wire bresp_re;
 assign bresp_re=bready && bvalid && !was_bresp_re;
-always @ (posedge rst or posedge aclk) begin
-    if (rst) was_bresp_re<=0;
-    else was_bresp_re <= bresp_re;
+always @ (posedge aclk) begin
+    if (arst) was_bresp_re<=0;
+    else      was_bresp_re <= bresp_re;
 end
   
 fifo_same_clock  #( .DATA_WIDTH(14),.DATA_DEPTH(4))    
     wresp_i (
-        .rst(rst),
+        .rst(1'b0), //rst),
         .clk(aclk),
-        .sync_rst  (1'b0),
+        .sync_rst  (arst),
         .we(bram_we_w &&((write_left[3:0]==4'b0) || wlast_out)), // added ((write_left[3:0]==4'b0) || wlast_out) - only last wrtite -> bresp
 //        .re(bready && bvalid),
         .re(bresp_re), // not allowing RE next cycle after bvalid

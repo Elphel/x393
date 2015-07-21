@@ -50,7 +50,7 @@ module  mcntrl_linear_rw #(
     parameter MCNTRL_SCANLINE_FRAME_PAGE_RESET =1'b0 // reset internal page number to zero at the frame start (false - only when hard/soft reset)                                                     
 //    parameter MCNTRL_SCANLINE_WRITE_MODE =    1'b0    // module is configured to write tiles to external memory (false - read tiles)                                                                                                           
 )(
-    input                          rst,
+    input                          mrst,
     input                          mclk,
 // programming interface
     input                    [7:0] cmd_ad,      // byte-serial command address/data (up to 6 bytes: AL-AH-D0-D1-D2-D3 
@@ -215,59 +215,59 @@ module  mcntrl_linear_rw #(
     assign rst_frame_num_w = cmd_we && (cmd_a== MCNTRL_SCANLINE_MODE) && cmd_data[8];
     
     // Set parameter registers
-    always @(posedge rst or posedge mclk) begin
-        if      (rst)                mode_reg <= 0;
+    always @(posedge mclk) begin
+        if      (mrst)               mode_reg <= 0;
         else if (set_mode_w)         mode_reg <= cmd_data[10:0]; // 4:0]; // [4:0];
 
-        if (rst) single_frame_r <= 0;
-        else     single_frame_r <= single_frame_w;
+        if (mrst) single_frame_r <= 0;
+        else      single_frame_r <= single_frame_w;
         
-        if (rst) rst_frame_num_r <= 0;
-        else     rst_frame_num_r <= {rst_frame_num_r[0],
+        if (mrst) rst_frame_num_r <= 0;
+        else      rst_frame_num_r <= {rst_frame_num_r[0],
                                      rst_frame_num_w |
                                      set_start_addr_w |
                                      set_last_frame_w |
                                      set_frame_size_w};
 
-        if      (rst)                start_range_addr <= 0;
+        if      (mrst)               start_range_addr <= 0;
         else if (set_start_addr_w)   start_range_addr <= cmd_data[NUM_RC_BURST_BITS-1:0];
 
-        if      (rst)                frame_size <= 0;
+        if      (mrst)               frame_size <= 0;
         else if (set_start_addr_w)   frame_size <= 1; // default number of frames - just one
         else if (set_frame_size_w)   frame_size <= cmd_data[NUM_RC_BURST_BITS-1:0];
 
-        if      (rst)              last_frame_number <= 0;
+        if      (mrst)             last_frame_number <= 0;
         else if (set_last_frame_w) last_frame_number <= cmd_data[LAST_FRAME_BITS-1:0];
         
-        if      (rst)               frame_full_width <=  0;
+        if      (mrst)              frame_full_width <=  0;
         else if (set_frame_width_w) frame_full_width <= {lsw13_zero,cmd_data[FRAME_WIDTH_BITS-1:0]};
         
-        if (rst) is_last_frame <= 0;
-        else     is_last_frame <= frame_number_cntr == last_frame_number;
+        if (mrst) is_last_frame <= 0;
+        else      is_last_frame <= frame_number_cntr == last_frame_number;
         
-        if (rst) frame_start_r <= 0;
-        else     frame_start_r <= {frame_start_r[3:0], frame_start & frame_en};
+        if (mrst) frame_start_r <= 0;
+        else      frame_start_r <= {frame_start_r[3:0], frame_start & frame_en};
 
-        if      (rst)                             frame_en <= 0;
+        if      (mrst)                            frame_en <= 0;
         else if (single_frame_r || repeat_frames) frame_en <= 1;
         else if (frame_start)                     frame_en <= 0;
         
-        if      (rst)                frame_number_cntr <= 0;
+        if      (mrst)               frame_number_cntr <= 0;
         else if (rst_frame_num_r[0]) frame_number_cntr <= 0;
         else if (frame_start_r[2])   frame_number_cntr <= is_last_frame?{LAST_FRAME_BITS{1'b0}}:(frame_number_cntr+1);
 
-        if      (rst)                frame_number_current <= 0;
+        if      (mrst)               frame_number_current <= 0;
         else if (rst_frame_num_r[0]) frame_number_current <= 0;
         else if (frame_start_r[2])   frame_number_current <= frame_number_cntr;
 
-        if      (rst)                next_frame_start_addr <= start_range_addr; // just to use rst
+        if      (mrst)               next_frame_start_addr <= start_range_addr; // just to use rst
         else if (rst_frame_num_r[1]) next_frame_start_addr <= start_range_addr;
         else if (frame_start_r[2])   next_frame_start_addr <= is_last_frame? start_range_addr : (start_addr+frame_size);
 
-        if      (rst)                start_addr <= start_range_addr; // just to use rst
+        if      (mrst)               start_addr <= start_range_addr; // just to use rst
         else if (frame_start_r[0])   start_addr <= next_frame_start_addr;
         
-        if      (rst) begin
+        if      (mrst) begin
                window_width <= 0; 
                window_height <=  0;
         end else if (set_window_wh_w)  begin
@@ -275,7 +275,7 @@ module  mcntrl_linear_rw #(
                window_height  <= {msw_zero,cmd_data[FRAME_HEIGHT_BITS+15:16]};
         end
 
-        if      (rst) begin
+        if      (mrst) begin
                window_x0 <= 0; 
                window_y0 <=  0;
         end else if (set_window_x0y0_w)  begin
@@ -283,7 +283,7 @@ module  mcntrl_linear_rw #(
                window_y0  <=cmd_data[FRAME_HEIGHT_BITS+15:16];
         end
 
-        if      (rst) begin
+        if      (mrst) begin
                start_x <= 0; 
                start_y <=  0;
         end else if (set_window_start_w)  begin
@@ -386,88 +386,88 @@ module  mcntrl_linear_rw #(
 wire    start_not_partial= xfer_start_r[0] && !xfer_limited_by_mem_page_r;    
 // now have row start address, bank and row_left ;
 // calculate number to read (min of row_left, maximal xfer and what is left in the DDR3 page    
-    always @(posedge rst or posedge mclk) begin
-        if      (rst)                 par_mod_r<=0;
+    always @(posedge mclk) begin
+        if      (mrst)                par_mod_r<=0;
         else if (pgm_param_w ||
                  xfer_start_r[0] ||
                  chn_rst ||
                  frame_start_r[0])    par_mod_r<=0;
         else                          par_mod_r <= {par_mod_r[PAR_MOD_LATENCY-2:0], 1'b1};
 
-        if      (rst)          chn_rst_d <= 0;
+        if      (mrst)         chn_rst_d <= 0;
         else                   chn_rst_d <= chn_rst;
 
-        if      (rst)          recalc_r<=0;
+        if      (mrst)         recalc_r<=0;
         else if (chn_rst)      recalc_r<=0;
         else                   recalc_r <= {recalc_r[PAR_MOD_LATENCY-2:0],
              ((xfer_start_r[0] | frame_start_r[0]) & ~chn_rst) | pgm_param_w | (chn_rst_d & ~chn_rst)};
         
-        if      (rst)               busy_r <= 0;
+        if      (mrst)              busy_r <= 0;
         else if (chn_rst)           busy_r <= 0;
         else if (frame_start_r[0])  busy_r <= 1;
         else if (frame_done_r)      busy_r <= 0;
         
-        if (rst)          xfer_done_d <= 0;
+        if (mrst)         xfer_done_d <= 0;
         else              xfer_done_d <= xfer_done;
         
         
-        if (rst)                    continued_xfer <= 1'b0;
+        if (mrst)                   continued_xfer <= 1'b0;
         else if (chn_rst)           continued_xfer <= 1'b0;
         else if (frame_start_r[0])  continued_xfer <= 1'b0;
         else if (xfer_start_r[0])   continued_xfer <= xfer_limited_by_mem_page_r; // only set after actual start if it was partial, not after parameter change
 
         // single cycle (sent out)
-        if (rst)          frame_done_r <= 0;
+        if (mrst)         frame_done_r <= 0;
         else              frame_done_r <= busy_r && last_block && xfer_done_d && (pending_xfers==0);
 
         // turns and stays on (used in status)
-        if (rst)                              frame_finished_r <= 0;
+        if (mrst)                             frame_finished_r <= 0;
         else if (chn_rst || frame_start_r[0]) frame_finished_r <= 0;
         else if (frame_done_r)                frame_finished_r <= 1;
         
-        if (rst) xfer_start_r <= 0;
-        else     xfer_start_r <= {xfer_start_r[1:0],xfer_grant && !chn_rst};
+        if (mrst) xfer_start_r <= 0;
+        else      xfer_start_r <= {xfer_start_r[1:0],xfer_grant && !chn_rst};
 
-        if (rst) xfer_start_rd_r <= 0;
-        else     xfer_start_rd_r <=  xfer_grant && !chn_rst && !cmd_wrmem;
+        if (mrst) xfer_start_rd_r <= 0;
+        else      xfer_start_rd_r <=  xfer_grant && !chn_rst && !cmd_wrmem;
 
-        if (rst) xfer_start_wr_r <= 0;
-        else     xfer_start_wr_r <=  xfer_grant && !chn_rst && cmd_wrmem;
+        if (mrst) xfer_start_wr_r <= 0;
+        else      xfer_start_wr_r <=  xfer_grant && !chn_rst && cmd_wrmem;
         
-        if (rst)                                          need_r <= 0;
+        if (mrst)                                         need_r <= 0;
         else if (chn_rst || xfer_grant)                   need_r <= 0;
         else if ((pre_want  || want_r) && (page_cntr>=3)) need_r <= 1; // may raise need if want was already set
 
-        if (rst)                                                 want_r <= 0;
+        if (mrst)                                                want_r <= 0;
         else if (chn_rst || xfer_grant)                          want_r <= 0;
         else if (pre_want && (page_cntr>{1'b0,cmd_extra_pages})) want_r <= 1;
         
-        if (rst)                                   page_cntr <= 0;
+        if (mrst)                                  page_cntr <= 0;
         else if (frame_start_r[0])                 page_cntr <= cmd_wrmem?0:4; // What about last pages (like if only 1 page is needed)? Early frame end?
         else if ( start_not_partial && !next_page) page_cntr <= page_cntr - 1;     
         else if (!start_not_partial &&  next_page) page_cntr <= page_cntr + 1;
         
-        if (rst) xfer_page_rst_r <= 1;
-        else     xfer_page_rst_r <= chn_rst || (MCNTRL_SCANLINE_FRAME_PAGE_RESET ? (frame_start_r[0] & cmd_wrmem):1'b0);
+        if (mrst) xfer_page_rst_r <= 1;
+        else      xfer_page_rst_r <= chn_rst || (MCNTRL_SCANLINE_FRAME_PAGE_RESET ? (frame_start_r[0] & cmd_wrmem):1'b0);
 
-        if (rst) xfer_page_rst_pos <= 1;
-        else     xfer_page_rst_pos <= chn_rst || (MCNTRL_SCANLINE_FRAME_PAGE_RESET ? (frame_start_r[0] & ~cmd_wrmem):1'b0);
+        if (mrst) xfer_page_rst_pos <= 1;
+        else      xfer_page_rst_pos <= chn_rst || (MCNTRL_SCANLINE_FRAME_PAGE_RESET ? (frame_start_r[0] & ~cmd_wrmem):1'b0);
 
         
 // increment x,y (two cycles)
-        if (rst)                                  curr_x <= 0;
+        if (mrst)                                  curr_x <= 0;
         else if (chn_rst || frame_start_r[0])     curr_x <= start_x;
         else if (xfer_start_r[0])                 curr_x <= last_in_row?0: curr_x + xfer_num128_r;
         
-        if (rst)                                  curr_y <= 0;
+        if (mrst)                                  curr_y <= 0;
         else if (chn_rst || frame_start_r[0])     curr_y <= start_y;
         else if (xfer_start_r[0] && last_in_row)  curr_y <= next_y[FRAME_HEIGHT_BITS-1:0];
                
-        if      (rst)                         last_block <= 0;
+        if      (mrst)                         last_block <= 0;
         else if (chn_rst || !busy_r)          last_block <= 0;
         else if (xfer_start_r[0])             last_block <= last_row_w && last_in_row_w;
         
-        if      (rst)                              pending_xfers <= 0;
+        if      (mrst)                              pending_xfers <= 0;
         else if (chn_rst || !busy_r)               pending_xfers <= 0;
         else if ( xfer_start_r[0] && !xfer_done) pending_xfers <= pending_xfers + 1;     
         else if (!xfer_start_r[0] &&  xfer_done) pending_xfers <= pending_xfers - 1;
@@ -475,11 +475,11 @@ wire    start_not_partial= xfer_start_r[0] && !xfer_limited_by_mem_page_r;
         
         
         //line_unfinished_r cmd_wrmem
-        if (rst)                              line_unfinished_r[0] <= 0; //{FRAME_HEIGHT_BITS{1'b0}};
+        if (mrst)                              line_unfinished_r[0] <= 0; //{FRAME_HEIGHT_BITS{1'b0}};
         else if (chn_rst || frame_start_r[0]) line_unfinished_r[0] <= window_y0+start_y;
         else if (xfer_start_r[2])             line_unfinished_r[0] <= window_y0+next_y[FRAME_HEIGHT_BITS-1:0]; // latency 2 from xfer_start
 
-        if (rst)                              line_unfinished_r[1] <= 0; //{FRAME_HEIGHT_BITS{1'b0}};
+        if (mrst)                              line_unfinished_r[1] <= 0; //{FRAME_HEIGHT_BITS{1'b0}};
 //        else if (chn_rst || frame_start_r[0]) line_unfinished_r[1] <= window_y0+start_y;
         else if (chn_rst || frame_start_r[2]) line_unfinished_r[1] <= window_y0+start_y; // _r[0] -> _r[2] to make it simultaneous with frame_number
         // in read mode advance line number ASAP
@@ -498,27 +498,29 @@ wire    start_not_partial= xfer_start_r[0] && !xfer_limited_by_mem_page_r;
         .ADDR_WIDTH (4),
         .DATA_WIDTH (32)
     ) cmd_deser_32bit_i (
-        .rst        (rst), // input
-        .clk        (mclk), // input
-        .ad         (cmd_ad), // input[7:0] 
-        .stb        (cmd_stb), // input
-        .addr       (cmd_a), // output[15:0] 
-        .data       (cmd_data), // output[31:0] 
-        .we         (cmd_we) // output
+        .rst        (1'b0),      //rst), // input
+        .clk        (mclk),      // input
+        .srst       (mrst),      // input
+        .ad         (cmd_ad),    // input[7:0] 
+        .stb        (cmd_stb),   // input
+        .addr       (cmd_a),     // output[15:0] 
+        .data       (cmd_data),  // output[31:0] 
+        .we         (cmd_we)     // output
     );
 
     status_generate #(
         .STATUS_REG_ADDR  (MCNTRL_SCANLINE_STATUS_REG_ADDR),
         .PAYLOAD_BITS     (2)
     ) status_generate_i (
-        .rst              (rst), // input
-        .clk              (mclk), // input
-        .we               (set_status_w), // input
+        .rst              (1'b0),          //rst), // input
+        .clk              (mclk),          // input
+        .srst             (mrst),          // input
+        .we               (set_status_w),  // input
         .wd               (cmd_data[7:0]), // input[7:0] 
-        .status           (status_data), // input[25:0] 
-        .ad               (status_ad), // output[7:0] 
-        .rq               (status_rq), // output
-        .start            (status_start) // input
+        .status           (status_data),   // input[25:0] 
+        .ad               (status_ad),     // output[7:0] 
+        .rq               (status_rq),     // output
+        .start            (status_start)   // input
     );
 endmodule
 

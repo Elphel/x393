@@ -30,7 +30,7 @@ module  sensor_i2c#(
     parameter SENSI2C_STATUS =      'h1,
     parameter SENSI2C_STATUS_REG =  'h30
 )(
-    input         rst,
+    input         mrst,         // @ posedge mclk
     input         mclk,         // global clock, half DDR3 clock, synchronizes all I/O through the command port
     input   [7:0] cmd_ad,       // byte-serial command address/data (up to 6 bytes: AL-AH-D0-D1-D2-D3 
     input         cmd_stb,      // strobe (with first byte) for the command a/d
@@ -207,8 +207,9 @@ module  sensor_i2c#(
         .ADDR2       (SENSI2C_CTRL_ADDR),
         .ADDR_MASK2  (SENSI2C_CTRL_MASK)
     ) cmd_deser_sens_i2c_i (
-        .rst         (rst), // input
+        .rst         (1'b0), // rst), // input
         .clk         (mclk), // input
+        .srst        (mrst), // input
         .ad          (cmd_ad), // input[7:0] 
         .stb         (cmd_stb), // input
         .addr        (wa), // output[15:0] 
@@ -220,8 +221,9 @@ module  sensor_i2c#(
         .STATUS_REG_ADDR(SENSI2C_STATUS_REG),
         .PAYLOAD_BITS(7) // STATUS_PAYLOAD_BITS)
     ) status_generate_sens_i2c_i (
-        .rst        (rst), // input
+        .rst        (1'b0), // rst), // input
         .clk        (mclk), // input
+        .srst       (mrst), // input
         .we         (set_status_w), // input
         .wd         (di[7:0]), // input[7:0] 
         .status     ({busy, frame_num, sda_in, scl_in}), // input[25:0] 

@@ -30,6 +30,7 @@ module fifo_1cycle
     (
   input                   rst,      // reset, active high
   input                   clk,      // clock - positive edge
+  input                   srst,     // sync reset
   input                   we,       // write enable
   input                   re,       // read enable
   input  [DATA_WIDTH-1:0] data_in,  // input data
@@ -59,23 +60,32 @@ module fifo_1cycle
     assign next_fill = fill[DATA_DEPTH-1:0]+((we && ~re)?1:((~we && re)?-1:0));
     
     always @ (posedge  clk or posedge  rst) begin
-      if   (rst) fill <= 0;
-      else fill <= next_fill;
-      if (rst)      wa <= 0;
-      else if (we) wa <= wa+1;
-      if (rst)      ra <=  0;
-      else if (re) ra <= ra+1;
+      if      (rst)  fill <= 0;
+      else if (srst) fill <= 0;
+      else           fill <= next_fill;
+      
+      if      (rst)  wa <= 0;
+      else if (srst) wa <= 0;
+      else if (we)   wa <= wa+1;
+      
+      if      (rst)  ra <=  0;
+      else if (srst) ra <=  0;
+      else if (re)   ra <= ra+1;
       else if (fill==0) ra <= wa; // Just recover from bit errors
-      if (rst) nempty <= 0;
-      else nempty <= (next_fill!=0);
+      
+      if      (rst)  nempty <= 0;
+      else if (srst) nempty <= 0;
+      else           nempty <= (next_fill!=0);
 
 
 `ifdef DEBUG_FIFO
-      if (rst)     wcount <= 0;
-      else if (we) wcount <= wcount + 1;
+      if      (rst)   wcount <= 0;
+      else if (srst)  wcount <= 0;
+      else if (we)    wcount <= wcount + 1;
 
-      if (rst)     rcount <= 0;
-      else if (re) rcount <= rcount + 1;
+      if      (rst)   rcount <= 0;
+      else if (srst)  rcount <= 0;
+      else if (re)    rcount <= rcount + 1;
 `endif      
     end
 

@@ -50,9 +50,11 @@ module  timing393       #(
     parameter RTC_SET_CORR=                     2, // write correction 16-bit signed
     parameter RTC_SET_STATUS=                   3  // generate an output pulse to take a snapshot
     )(
-    input                         rst,          // global reset
+//    input                         rst,          // global reset
     input                         mclk,         // system clock
     input                         pclk,         // was pixel clock in x353 clock (global) - switch it to 100MHz (mclk/2)?
+    input                         mrst,        // @ posedge mclk - sync reset
+    input                         prst,        // @ posedge pclk - sync reset
     
     input                         refclk,       // not a global clock, reference frequency < mclk/2    
     
@@ -99,6 +101,7 @@ module  timing393       #(
     
     // timestamp for the event logger
     input                         lclk,           // clock used by the event logger 
+    input                         lrst,           // @ posedge lclk - sync reset
     input                         ts_logger_snap, // request from the logger to take a snapshot
     output                        ts_logger_stb,  // one clock pulse before sending TS data
     output                  [7:0] ts_logger_data  // timestamp data (s0,s1,s2,s3,u0,u1,u2,u3==0)
@@ -135,8 +138,9 @@ module  timing393       #(
         .RTC_SET_CORR           (RTC_SET_CORR),
         .RTC_SET_STATUS         (RTC_SET_STATUS)
     ) rtc393_i (
-        .rst                    (rst),          // input
+//        .rst                    (rst),          // input
         .mclk                   (mclk),         // input
+        .mrst                   (mrst),          // input
         .refclk                 (refclk),       // input
         .cmd_ad                 (cmd_ad),       // input[7:0] 
         .cmd_stb                (cmd_stb),      // input
@@ -149,55 +153,60 @@ module  timing393       #(
 
 
     timestamp_snapshot timestamp_snapshot_logger_i (
-        .rst                   (rst),                      // input
+//        .rst                   (rst),                      // input
         .tclk                  (mclk),                     // input
         .sec                   (live_sec),                 // input[31:0] 
         .usec                  (live_usec),                // input[19:0] 
         .sclk                  (lclk),                     // input
+        .srst                  (lrst),                     // input
         .snap                  (ts_logger_snap),           // input
         .pre_stb               (ts_logger_stb),            // output
         .ts_data               (ts_logger_data)            // output[7:0] reg 
     );
 
     timestamp_snapshot timestamp_snapshot_chn0_i (
-        .rst                   (rst),                      // input
+//        .rst                   (rst),                      // input
         .tclk                  (mclk),                     // input
         .sec                   (live_sec),                 // input[31:0] 
         .usec                  (live_usec),                // input[19:0] 
         .sclk                  (mclk),                     // input
+        .srst                  (mrst),                     // input
         .snap                  (ts_local_snap[0]),         // input
         .pre_stb               (ts_local_stb[0]),          // output
         .ts_data               (ts_local_data[0 * 8 +: 8]) // output[7:0] reg 
     );
 
     timestamp_snapshot timestamp_snapshot_chn1_i (
-        .rst                   (rst),                      // input
+//        .rst                   (rst),                      // input
         .tclk                  (mclk),                     // input
         .sec                   (live_sec),                 // input[31:0] 
         .usec                  (live_usec),                // input[19:0] 
         .sclk                  (mclk),                     // input
+        .srst                  (mrst),                     // input
         .snap                  (ts_local_snap[1]),         // input
         .pre_stb               (ts_local_stb[1]),          // output
         .ts_data               (ts_local_data[1 * 8 +: 8]) // output[7:0] reg 
     );
 
     timestamp_snapshot timestamp_snapshot_chn2_i (
-        .rst                   (rst),                      // input
+//        .rst                   (rst),                      // input
         .tclk                  (mclk),                     // input
         .sec                   (live_sec),                 // input[31:0] 
         .usec                  (live_usec),                // input[19:0] 
         .sclk                  (mclk),                     // input
+        .srst                  (mrst),                     // input
         .snap                  (ts_local_snap[2]),         // input
         .pre_stb               (ts_local_stb[2]),          // output
         .ts_data               (ts_local_data[2 * 8 +: 8]) // output[7:0] reg 
     );
 
     timestamp_snapshot timestamp_snapshot_chn3_i (
-        .rst                   (rst),                      // input
+//        .rst                   (rst),                      // input
         .tclk                  (mclk),                     // input
         .sec                   (live_sec),                 // input[31:0] 
         .usec                  (live_usec),                // input[19:0] 
         .sclk                  (mclk),                     // input
+        .srst                  (mrst),                     // input
         .snap                  (ts_local_snap[3]),         // input
         .pre_stb               (ts_local_stb[3]),          // output
         .ts_data               (ts_local_data[3 * 8 +: 8]) // output[7:0] reg 
@@ -222,11 +231,14 @@ module  timing393       #(
         .CAMSYNC_PRE_MAGIC      (CAMSYNC_PRE_MAGIC),
         .CAMSYNC_POST_MAGIC     (CAMSYNC_POST_MAGIC)
     ) camsync393_i (
-        .rst               (rst),                       // input
+//        .rst               (rst),                       // input
         .mclk              (mclk),                      // input
+        .mrst              (mrst),                      // input
         .cmd_ad            (cmd_ad),                    // input[7:0] 
         .cmd_stb           (cmd_stb),                   // input
         .pclk              (pclk),                      // input
+        .prst              (prst),                      // input
+        
         .gpio_in           (gpio_in),                   // input[9:0] 
         .gpio_out          (gpio_out),                  // output[9:0] 
         .gpio_out_en       (gpio_out_en),               // output[9:0] reg 

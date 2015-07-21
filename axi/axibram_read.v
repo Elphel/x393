@@ -25,20 +25,16 @@ module  axibram_read #(
     parameter ADDRESS_BITS = 10 // number of memory address bits
 )(
    input         aclk,    // clock - should be buffered
-//   input         aresetn, // reset, active low
-   input         rst, // reset, active high
+//   input         rst, // reset, active high
+   input         arst, // @posedge aclk  sync reset, active high
 // AXI Read Address   
    input  [31:0] araddr,  // ARADDR[31:0], input 
    input         arvalid, // ARVALID, input
    output        arready, // ARREADY, output
    input  [11:0] arid,    // ARID[11:0], input
-//   input  [ 1:0] arlock,  // ARLOCK[1:0], input
-//   input  [ 3:0] archache,// ARCACHE[3:0], input
-//   input  [ 2:0] arprot,  // ARPROT[2:0], input
    input  [ 3:0] arlen,   // ARLEN[3:0], input
    input  [ 1:0] arsize,  // ARSIZE[1:0], input
    input  [ 1:0] arburst, // ARBURST[1:0], input
-//   input  [ 3:0] adqos,   // ARQOS[3:0], input
 // AXI Read Data
    output [31:0] rdata,   // RDATA[31:0], output
    output reg    rvalid,  // RVALID, output
@@ -145,30 +141,30 @@ module  axibram_read #(
    
    assign  rdata[31:0] = bram_rdata;    // data out
 
-    always @ (posedge  aclk or posedge  rst) begin
+    always @ (posedge  aclk) begin
 `ifdef USE_SHORT_REN_REGEN   
-      if   (rst)  bram_regen_r <= 0;
+      if   (arst)  bram_regen_r <= 0;
       else        bram_regen_r <=  bram_ren;
 `endif    
    
-      if   (rst)                   pre_last_in_burst_r <= 0;
+      if   (arst)                   pre_last_in_burst_r <= 0;
 //      else if (start_read_burst_w) pre_last_in_burst_r <= (read_left==4'b0);
       else if (bram_reg_re_w)      pre_last_in_burst_r <= (read_left==4'b0);
     
-      if   (rst)                   rburst[1:0] <= 0;
+      if   (arst)                   rburst[1:0] <= 0;
       else if (start_read_burst_w) rburst[1:0] <= arburst_out[1:0];
 
-      if   (rst)                   rlen[3:0] <= 0;
+      if   (arst)                   rlen[3:0] <= 0;
       else if (start_read_burst_w) rlen[3:0] <= arlen_out[3:0];
     
-      if   (rst) read_in_progress <= 0;
+      if   (arst) read_in_progress <= 0;
       else       read_in_progress <= read_in_progress_w;
 
-      if   (rst)                read_in_progress_d <= 0;
+      if   (arst)                read_in_progress_d <= 0;
 //      else   read_in_progress_d <= read_in_progress_d_w;
       else if (bram_reg_re_w)   read_in_progress_d <= read_in_progress_d_w;
       
-      if   (rst) read_in_progress_or <= 0;
+      if   (arst) read_in_progress_or <= 0;
 //      else       read_in_progress_or <= read_in_progress_d_w || read_in_progress_w;
 //      else  if (bram_reg_re_w) read_in_progress_or <= read_in_progress_d_w || read_in_progress_w;
 // FIXME:
@@ -177,22 +173,23 @@ module  axibram_read #(
 //    reg  read_in_progress_d=0; // delayed by one active cycle (not skipped)
 //    reg  read_in_progress_or=0; // read_in_progress || read_in_progress_d
 
-      if   (rst) read_left <= 0;
+      if      (arst)               read_left <= 0;
       else if (start_read_burst_w) read_left <= arlen_out[3:0]; // precedence over inc
       else if (bram_reg_re_w)      read_left <= read_left-1; //SuppressThisWarning ISExst Result of 32-bit expression is truncated to fit in 4-bit target.
             
-      if   (rst)                   read_address <= {ADDRESS_BITS{1'b0}};
+      if      (arst)               read_address <= {ADDRESS_BITS{1'b0}};
       else if (start_read_burst_w) read_address <= araddr_out[ADDRESS_BITS-1:0]; // precedence over inc
       else if (bram_reg_re_w)      read_address <= next_rd_address_w;
       
-      if      (rst)                                  rvalid <= 1'b0;
+      if      (arst)                                 rvalid <= 1'b0;
       else if (bram_reg_re_w && read_in_progress_d)  rvalid <= 1'b1;
       else if (rready)                               rvalid <= 1'b0;
 
-      if      (rst)                rlast <= 1'b0;
+      if      (arst)               rlast <= 1'b0;
       else if (last_in_burst_d_w)  rlast <= 1'b1;
       else if (rready)             rlast <= 1'b0;
     end
+    
     always @ (posedge  aclk) begin //SuppressThisWarning ISExst Assignment to bram_reg_re_0 ignored, since the identifier is never used
 //        bram_reg_re_0 <= read_in_progress_w && !pre_rvalid_w;
 
@@ -240,9 +237,9 @@ module  axibram_read #(
 
 fifo_same_clock   #( .DATA_WIDTH(ADDRESS_BITS+20),.DATA_DEPTH(4))    
     raddr_i (
-        .rst(rst),
+        .rst(1'b0),
         .clk(aclk),
-        .sync_rst(1'b0), // input
+        .sync_rst(arst),
         .we(arvalid && arready),
         .re(start_read_burst_w),
         .data_in({arid[11:0], arburst[1:0],arsize[1:0],arlen[3:0],araddr[ADDRESS_BITS+1:2]}), 

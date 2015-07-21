@@ -71,13 +71,14 @@ module  phy_cmd#(
     input                        clk_in,
     input                        rst_in,
     output                       mclk,     // global clock, half DDR3 clock, synchronizes all I/O through the command port
+    input                        mrst,     // @posedge mclk synchronous reset - should not interrupt mclk generation
     output                       ref_clk,  // global clock for idelay_ctrl calibration
+    output                       idelay_ctrl_reset,
 // inteface to control I/O delays and mmcm
     input                  [7:0] dly_data, // delay value (3 LSB - fine delay)
     input                  [6:0] dly_addr, // select which delay to program
     input                        ld_delay, // load delay data to selected iodelayl (clk_div synchronous)
     input                        set,       // clk_div synchronous set all delays from previously loaded values
-//    output                       locked,
     output                       locked_mmcm,
     output                       locked_pll,
     output                       dly_ready,
@@ -93,7 +94,6 @@ module  phy_cmd#(
     output                       ps_rdy,
     output     [PHASE_WIDTH-1:0] ps_out, 
 // command port
-//    input                 [35:0] phy_cmd,
     input                 [31:0] phy_cmd_word,
     output                       phy_cmd_nop,
     output                       phy_cmd_add_pause, // one pause cycle (for 8-bursts)
@@ -101,14 +101,12 @@ module  phy_cmd#(
     output  [CMD_PAUSE_BITS-1:0] pause_len,
     output                       sequence_done,
 // external memory buffer (cs- channel select, high addresses- page addresses are decoded externally)
-//    output                [ 6:0] buf_addr,
     output                [63:0] buf_wdata, // data to be written to the buffer (from DDR3), valid @ negedge mclk
     input                 [63:0] buf_rdata, // data read from the buffer (to DDR3)
     output                       buf_wr,    // write buffer (next cycle!)
     output                       buf_rd,    // read buffer  (ready next cycle)
     output                       buf_rst,   // reset external buffer address to page start 
     // extras
-//    input                        cmda_tri, // tristate command and address lines // not likely to be used
     input                        cmda_en, // tristate command and address lines // not likely to be used
     input                        ddr_rst, // generate reset to DDR3 memory (active high)
     input                        dci_rst, // active high - reset DCI circuitry
@@ -157,7 +155,6 @@ module  phy_cmd#(
     wire                         phy_buf_rd_cur;        // connect to external buffer (but only if not paused)
     wire                         phy_buf_rst_cur;
     
-//    wire                         clk;
     wire                         clk_div;
 
     reg                    [7:0] dly_data_r; // delay value (3 LSB - fine delay)
@@ -176,10 +173,8 @@ module  phy_cmd#(
     wire                         phy_dci_dis_dqs;
         
     reg                          dqs_tri_prev, dq_tri_prev;
-//    wire                         phy_locked;
     wire                         phy_ps_rdy;
     wire       [PHASE_WIDTH-1:0] phy_ps_out; 
-//    reg                          locked_r1,locked_r2;
     reg                          ps_rdy_r1,ps_rdy_r2;
     reg                          locked_mmcm_r1,locked_mmcm_r2;
     reg                          locked_pll_r1, locked_pll_r2;
@@ -195,16 +190,8 @@ module  phy_cmd#(
     reg                  [ 2:0] phy_bank_prev;
     wire   [ADDRESS_NUMBER-1:0] phy_addr_calm;
     wire                 [ 2:0] phy_bank_calm;
-//    reg                  [ 8:0] extra_prev;
     reg                  [ 9:0] extra_prev;
     
-//    assign     phy_locked= phy_locked_mmcm && phy_locked_pll; // no dci and dly here
-    
-    
-    
-//    output                [63:0] buf_wdata, // data to be written to the buffer (from DDR3)
-    // SuppressWarnings VEditor 
-//  (* keep = "true" *)  wire  phy_spare;
     assign {
         phy_addr_in,
         phy_bank_in,
@@ -216,7 +203,6 @@ module  phy_cmd#(
         phy_dqs_en_in, //phy_dqs_tri_in,  // tristate DQS lines (internal timing sequencer for 0->1 and 1->0)
         phy_dqs_toggle_en,   //enable toggle DQS according to the pattern
         phy_dci_en_in, //phy_dci_in,      // DCI disable, both DQ and DQS lines (internal logic and timing sequencer for 0->1 and 1->0)
-//        phy_buf_addr, // connect to external buffer (is it needed? maybe just autoincrement?)
         phy_buf_wr,   // connect to external buffer (but only if not paused)
         phy_buf_rd,    // connect to external buffer (but only if not paused)
         phy_cmd_add_pause, // add nop to current command
@@ -260,13 +246,10 @@ module  phy_cmd#(
     
     assign phy_addr_calm= (phy_cmd_nop || add_pause) ? phy_addr_prev : phy_addr_in;
     assign phy_bank_calm= (phy_cmd_nop || add_pause) ? phy_bank_prev : phy_bank_in;
-//    assign buf_addr = phy_buf_addr;
     assign buf_wr =   phy_buf_wr_cur;
     assign buf_rd =   phy_buf_rd_cur;
     assign buf_rst=   phy_buf_rst_cur;
     
-//    assign  phy_addr=   {phy_addr_in,phy_addr_in};       // also provides pause length when the command is NOP
-//    assign  phy_bank=   {phy_bank_in,phy_bank_in};
     assign  phy_addr=   {phy_addr_calm,phy_addr_calm};       // also provides pause length when the command is NOP
     assign  phy_bank=   {phy_bank_calm,phy_bank_calm};
     assign  phy_rcw=    {phy_sel_cur?phy_rcw_in:3'h7, phy_sel_cur?3'h7:phy_rcw_in}; // {ras,cas,we}
@@ -282,7 +265,6 @@ module  phy_cmd#(
     assign  phy_dci_dis_dq =   phy_dci_in;         // DCI disable, both DQ and DQS lines (internal logic and timing sequencer for 0->1 and 1->0)
     assign  phy_dci_dis_dqs =  phy_dci_in || phy_odt_cur;  // In write leveling mode phy_dci_in = 0, phy_odt_cur=1 - use DCI on DQ only, no DQS
     
-//    assign  locked = locked_r2;
     assign  ps_rdy = ps_rdy_r2;
     assign  ps_out = ps_out_r2;
     
@@ -300,8 +282,8 @@ module  phy_cmd#(
         dq_tri_prev  <= phy_dq_tri_in;
     end 
 
-    always @ (posedge mclk  or posedge rst_in) begin
-        if (rst_in) begin
+    always @ (posedge mclk) begin
+        if (mrst) begin
             phy_addr_prev <= 0;
             phy_bank_prev <= 0;
             extra_prev    <= 0;
@@ -325,9 +307,12 @@ module  phy_cmd#(
             
     end
     
-// cross clock boundary posedge mclk -> posedge clk_div (mclk is later than clk_div)    
-    always @ (posedge clk_div or posedge rst_in) begin
-        if (rst_in) begin
+// cross clock boundary posedge mclk -> posedge clk_div (mclk is later than clk_div)
+    reg rst_clk_div = 1;
+    always @ (posedge clk_div) rst_clk_div <= mrst;
+
+    always @ (posedge clk_div) begin
+        if (rst_clk_div) begin
             dly_data_r <= 0;
             dly_addr_r <= 0;
             ld_delay_r <= 0;
@@ -343,7 +328,6 @@ module  phy_cmd#(
     
 // cross clock boundary posedge posedge clk_div->negedge clk_div -> posedge mclk  (mclk is later than clk_div)    
     always @ (negedge clk_div) begin
-//        locked_r1 <=   phy_locked;
         ps_rdy_r1 <=   phy_ps_rdy;
         ps_out_r1 <=   phy_ps_out;
         
@@ -354,7 +338,6 @@ module  phy_cmd#(
         
     end
     always @ (posedge mclk) begin
-//        locked_r2 <=   locked_r1;
         ps_rdy_r2 <=   ps_rdy_r1;
         ps_out_r2 <=   ps_out_r1; 
 
@@ -405,63 +388,63 @@ module  phy_cmd#(
         .SS_MODE          (SS_MODE),
         .SS_MOD_PERIOD    (SS_MOD_PERIOD)
     ) phy_top_i (
-        .ddr3_nrst       (SDRST), // output
-        .ddr3_clk        (SDCLK), // output
-        .ddr3_nclk       (SDNCLK), // output
-        .ddr3_a          (SDA[ADDRESS_NUMBER-1:0]), // output[14:0] 
-        .ddr3_ba         (SDBA[2:0]), // output[2:0] 
-        .ddr3_we         (SDWE), // output
-        .ddr3_ras        (SDRAS), // output
-        .ddr3_cas        (SDCAS), // output
-        .ddr3_cke        (SDCKE), // output
-        .ddr3_odt        (SDODT), // output
-        .dq              (SDD[15:0]), // inout[15:0] 
-        .dml             (SDDML), // inout
-        .dqsl            (DQSL), // inout
-        .ndqsl           (NDQSL), // inout
-        .dmu             (SDDMU), // inout
-        .dqsu            (DQSU), // inout
-        .ndqsu           (NDQSU), // inout
-        .clk_in          (clk_in), // input
-//        .clk             (clk), // output
-        .clk             (), // output
-        .clk_div         (clk_div), // output
-        .mclk            (mclk), // output
-        .ref_clk         (ref_clk), // output
+        .ddr3_nrst       (SDRST),                          // output
+        .ddr3_clk        (SDCLK),                          // output
+        .ddr3_nclk       (SDNCLK),                         // output
+        .ddr3_a          (SDA[ADDRESS_NUMBER-1:0]),        // output[14:0] 
+        .ddr3_ba         (SDBA[2:0]),                      // output[2:0] 
+        .ddr3_we         (SDWE),                           // output
+        .ddr3_ras        (SDRAS),                          // output
+        .ddr3_cas        (SDCAS),                          // output
+        .ddr3_cke        (SDCKE),                          // output
+        .ddr3_odt        (SDODT),                          // output
+        .dq              (SDD[15:0]),                      // inout[15:0] 
+        .dml             (SDDML),                          // inout
+        .dqsl            (DQSL),                           // inout
+        .ndqsl           (NDQSL),                          // inout
+        .dmu             (SDDMU),                          // inout
+        .dqsu            (DQSU),                           // inout
+        .ndqsu           (NDQSU),                          // inout
+        .clk_in          (clk_in),                         // input
+        .clk             (),                               // output
+        .clk_div         (clk_div),                        // output
+        .mclk            (mclk),                           // output
+        .mrst            (mrst),                           // input
+        .ref_clk         (ref_clk),                        // output
+        .idelay_ctrl_reset (idelay_ctrl_reset),            // output
 
-        .rst_in          (rst_in),   // input
-        .ddr_rst         (ddr_rst),  // input
-        .dci_rst         (dci_rst), // input
-        .dly_rst         (dly_rst), // input
+        .rst_in          (rst_in),                         // input
+        .ddr_rst         (ddr_rst),                        // input
+        .dci_rst         (dci_rst),                        // input
+        .dly_rst         (dly_rst),                        // input
         .in_a            (phy_addr[2*ADDRESS_NUMBER-1:0]), // input[29:0] 
-        .in_ba           (phy_bank[5:0]), // input[5:0] 
-        .in_we           ({phy_rcw[3],phy_rcw[0]}), // input[1:0] 
-        .in_ras          ({phy_rcw[5],phy_rcw[2]}), // input[1:0] 
-        .in_cas          ({phy_rcw[4],phy_rcw[1]}), // input[1:0] 
-        .in_cke          (phy_cke), // input[1:0] 
-        .in_odt          (phy_odt), // input[1:0] 
-        .in_tri          (cmda_tri), // input
-        .din             (buf_rdata[63:0]), // input[63:0] 
-        .din_dm          (dqm_pattern[7:0]), // input[7:0] 
-        .tin_dq          (phy_dq_tri[7:0]), // input[7:0] 
-        .din_dqs         (dqs_data), // input[7:0] 
-        .tin_dqs         (phy_dqs_tri[7:0]), // input[7:0] 
-        .dout            (phy_rdata[63:0]), // output[63:0] @posedge clk_div
-        .inv_clk_div     (inv_clk_div), // input
-        .dci_disable_dqs (phy_dci_dis_dqs), // input
-        .dci_disable_dq  (phy_dci_dis_dq), // input
-        .dly_data        (dly_data_r), // input[7:0] 
-        .dly_addr        (dly_addr_r), // input[6:0] 
-        .ld_delay        (ld_delay_r), // input
-        .set             (set_r), // input
-//        .locked          (phy_locked), // output
-        .locked_mmcm     (phy_locked_mmcm), // output
-        .locked_pll      (phy_locked_pll), // output
-        .dly_ready       (phy_dly_ready), // output
-        .dci_ready       (phy_dci_ready), // output
-        .tmp_debug       (tmp_debug[7:0]),
-        .ps_rdy          (phy_ps_rdy), // output
-        .ps_out          (phy_ps_out) // output[7:0] 
+        .in_ba           (phy_bank[5:0]),                  // input[5:0] 
+        .in_we           ({phy_rcw[3],phy_rcw[0]}),        // input[1:0] 
+        .in_ras          ({phy_rcw[5],phy_rcw[2]}),        // input[1:0] 
+        .in_cas          ({phy_rcw[4],phy_rcw[1]}),        // input[1:0] 
+        .in_cke          (phy_cke),                        // input[1:0] 
+        .in_odt          (phy_odt),                        // input[1:0] 
+        .in_tri          (cmda_tri),                       // input
+        .din             (buf_rdata[63:0]),                // input[63:0] 
+        .din_dm          (dqm_pattern[7:0]),               // input[7:0] 
+        .tin_dq          (phy_dq_tri[7:0]),                // input[7:0] 
+        .din_dqs         (dqs_data),                       // input[7:0] 
+        .tin_dqs         (phy_dqs_tri[7:0]),               // input[7:0] 
+        .dout            (phy_rdata[63:0]),                // output[63:0] @posedge clk_div
+        .inv_clk_div     (inv_clk_div),                    // input
+        .dci_disable_dqs (phy_dci_dis_dqs),                // input
+        .dci_disable_dq  (phy_dci_dis_dq),                 // input
+        .dly_data        (dly_data_r),                     // input[7:0] 
+        .dly_addr        (dly_addr_r),                     // input[6:0] 
+        .ld_delay        (ld_delay_r),                     // input
+        .set             (set_r),                          // input
+        .locked_mmcm     (phy_locked_mmcm),                // output
+        .locked_pll      (phy_locked_pll),                 // output
+        .dly_ready       (phy_dly_ready),                  // output
+        .dci_ready       (phy_dci_ready),                  // output
+        .tmp_debug       (tmp_debug[7:0]),                 // output[7:0]
+        .ps_rdy          (phy_ps_rdy),                     // output
+        .ps_out          (phy_ps_out)                      // output[7:0] 
     );
 
 endmodule

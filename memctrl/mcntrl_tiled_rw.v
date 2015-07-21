@@ -55,7 +55,7 @@ module  mcntrl_tiled_rw#(
     parameter MCNTRL_TILED_FRAME_PAGE_RESET =1'b0 // reset internal page number to zero at the frame start (false - only when hard/soft reset)                                                     
 //    parameter MCNTRL_TILED_WRITE_MODE =      1'b0  // module is configured to write tiles to external memory (false - read tiles)                                                     
 )(
-    input                          rst,
+    input                          mrst,
     input                          mclk,
 // programming interface
     input                    [7:0] cmd_ad,      // byte-serial command address/data (up to 6 bytes: AL-AH-D0-D1-D2-D3 
@@ -247,60 +247,60 @@ module  mcntrl_tiled_rw#(
 
     //
     // Set parameter registers
-    always @(posedge rst or posedge mclk) begin
-        if      (rst)                mode_reg <= 0;
+    always @(posedge mclk) begin
+        if      (mrst)               mode_reg <= 0;
         else if (set_mode_w)         mode_reg <= cmd_data[10:0]; // [5:0];
         
-        if (rst) single_frame_r <= 0;
-        else     single_frame_r <= single_frame_w;
+        if (mrst) single_frame_r <= 0;
+        else      single_frame_r <= single_frame_w;
         
-        if (rst) rst_frame_num_r <= 0;
-        else     rst_frame_num_r <= {rst_frame_num_r[0],
+        if (mrst) rst_frame_num_r <= 0;
+        else      rst_frame_num_r <= {rst_frame_num_r[0],
                                      rst_frame_num_w |
                                      set_start_addr_w |
                                      set_last_frame_w |
                                      set_frame_size_w};
 
-        if      (rst)                start_range_addr <= 0;
+        if      (mrst)               start_range_addr <= 0;
         else if (set_start_addr_w)   start_range_addr <= cmd_data[NUM_RC_BURST_BITS-1:0];
 
-        if      (rst)                frame_size <= 0;
+        if      (mrst)               frame_size <= 0;
         else if (set_start_addr_w)   frame_size <= 1; // default number of frames - just one
         else if (set_frame_size_w)   frame_size <= cmd_data[NUM_RC_BURST_BITS-1:0];
 
-        if      (rst)              last_frame_number <= 0;
+        if      (mrst)             last_frame_number <= 0;
         else if (set_last_frame_w) last_frame_number <= cmd_data[LAST_FRAME_BITS-1:0];
         
-        if      (rst)               frame_full_width <=  0;
+        if      (mrst)              frame_full_width <=  0;
         else if (set_frame_width_w) frame_full_width <= {lsw13_zero,cmd_data[FRAME_WIDTH_BITS-1:0]};
         
-        if (rst) is_last_frame <= 0;
+        if (mrst) is_last_frame <= 0;
         else     is_last_frame <= frame_number_cntr == last_frame_number;
         
-        if (rst) frame_start_r <= 0;
+        if (mrst) frame_start_r <= 0;
         else     frame_start_r <= {frame_start_r[3:0], frame_start & frame_en};
 
-        if      (rst)                             frame_en <= 0;
+        if      (mrst)                            frame_en <= 0;
         else if (single_frame_r || repeat_frames) frame_en <= 1;
         else if (frame_start)                     frame_en <= 0;
         
-        if      (rst)                frame_number_cntr <= 0;
+        if      (mrst)               frame_number_cntr <= 0;
         else if (rst_frame_num_r[0]) frame_number_cntr <= 0;
         else if (frame_start_r[2])   frame_number_cntr <= is_last_frame?{LAST_FRAME_BITS{1'b0}}:(frame_number_cntr+1);
         
-        if      (rst)                frame_number_current <= 0;
+        if      (mrst)               frame_number_current <= 0;
         else if (rst_frame_num_r[0]) frame_number_current <= 0;
         else if (frame_start_r[2])   frame_number_current <= frame_number_cntr;
 
-        if      (rst)                next_frame_start_addr <= start_range_addr; // just to use rst
+        if      (mrst)               next_frame_start_addr <= start_range_addr; // just to use rst
         else if (rst_frame_num_r[1]) next_frame_start_addr <= start_range_addr;
         else if (frame_start_r[2])   next_frame_start_addr <= is_last_frame? start_range_addr : (start_addr+frame_size);
 
-        if      (rst)                start_addr <= start_range_addr; // just to use rst
+        if      (mrst)               start_addr <= start_range_addr; // just to use rst
         else if (frame_start_r[0])   start_addr <= next_frame_start_addr;
 
         
-        if (rst) begin
+        if (mrst) begin
                window_width <= 0; 
                window_height <=  0;
         end else if (set_window_wh_w)  begin
@@ -308,18 +308,17 @@ module  mcntrl_tiled_rw#(
                window_height  <= {msw_zero,cmd_data[FRAME_HEIGHT_BITS+15:16]};
         end
 
-        if (rst) begin
+        if (mrst) begin
                tile_cols <= 0; 
                tile_rows <=  0;
                tile_vstep <= 0;
         end else if (set_tile_whs_w)  begin
                tile_cols <=  {tile_width_zero,  cmd_data[ 0+:MAX_TILE_WIDTH]};
-//               tile_rows <=  {tile_height_zero, cmd_data[ 8+:MAX_TILE_HEIGHT]};
                tile_rows <=  {                  cmd_data[ 8+:MAX_TILE_HEIGHT]};
                tile_vstep <= {tile_vstep_zero,  cmd_data[16+:MAX_TILE_HEIGHT]};
         end
 
-        if (rst) begin
+        if (mrst) begin
                window_x0 <= 0; 
                window_y0 <= 0;
         end else if (set_window_x0y0_w)  begin
@@ -327,7 +326,7 @@ module  mcntrl_tiled_rw#(
                window_y0  <=cmd_data[FRAME_HEIGHT_BITS+15:16];
         end
 
-        if (rst) begin
+        if (mrst) begin
                start_x <= 0; 
                start_y <=  0;
         end else if (set_window_start_w)  begin
@@ -345,12 +344,9 @@ module  mcntrl_tiled_rw#(
     assign calc_valid=  par_mod_r[PAR_MOD_LATENCY-1]; // MSB, longest 0
     assign frame_done=      frame_done_r;
     assign frame_finished=  frame_finished_r;
-//    assign pre_want=    chn_en && busy_r && !want_r && !xfer_start_r[0] && calc_valid && !last_block && !suspend && !frame_start_r[0];
     assign pre_want=    chn_en && busy_r && !want_r && !xfer_start_r[0] && calc_valid && !last_block && !suspend && !(|frame_start_r);
     assign last_in_row_w=(row_left=={{(FRAME_WIDTH_BITS-MAX_TILE_WIDTH){1'b0}},num_cols_r}); // what if it crosses page? OK, num_cols_r & row_left know that
-//    assign last_row_w=  next_y>=window_height; // (next_y==window_height) is faster, but will not forgive software errors
 // tiles must completely fit window
-//    assign last_row_w=  next_y > window_m_tile_height; // (next_y==window_height) is faster, but will not forgive software errors
 // all window should be covered (tiles may extend):    
     assign last_row_w=  next_y>=window_height;
     //window_m_tile_height
@@ -360,7 +356,6 @@ module  mcntrl_tiled_rw#(
     assign xfer_row= row_col_r[NUM_RC_BURST_BITS-1:COLADDR_NUMBER-3] ;      // memory row
     assign xfer_col= row_col_r[COLADDR_NUMBER-4:0];    // start memory column in 8-bursts
     assign line_unfinished=line_unfinished_r[1];
-//    assign line_unfinished=line_unfinished_r1;
     assign chn_en =         &mode_reg[1:0];   // enable requests by channel (continue ones in progress)
     assign chn_rst =        ~mode_reg[0]; // resets command, including fifo;
     assign cmd_wrmem =       mode_reg[2];// 0: read from memory, 1:write to memory
@@ -368,7 +363,6 @@ module  mcntrl_tiled_rw#(
     assign keep_open=        mode_reg[5]; // keep banks open (will be used only if number of rows <= 8
     assign byte32=           mode_reg[6]; // use 32-byte wide columns in each tile (false - 16-byte) 
     assign repeat_frames=    mode_reg[10];
-//    reg                    [10:0] mode_reg;//mode register: {repet,single,rst_frame,na,byte32,keep_open,extra_pages[1:0],write_mode,enable,!reset}
     
     
     assign status_data=      {frame_finished_r, busy_r}; 
@@ -380,15 +374,12 @@ module  mcntrl_tiled_rw#(
     assign num_rows_m1=      num_rows_m1_w[MAX_TILE_HEIGHT-1:0]; // remove MSB
     assign remainder_tile_width = {EXTRA_BITS,lim_by_tile_width}-mem_page_left;
     
-//    assign buf_skip_reset=   continued_tile; // buf_skip_reset_r;
-//    assign xfer_page_rst=   xfer_page_rst_r;
     assign xfer_page_rst_wr=  xfer_page_rst_r;
     assign xfer_page_rst_rd=  xfer_page_rst_neg;
     
     assign xfer_partial=    xfer_limited_by_mem_page_r;
     
     integer i;
-//    localparam EXTRA_BITS={COLADDR_NUMBER-3-NUM_XFER_BITS{1'b0}};
     localparam [COLADDR_NUMBER-3-MAX_TILE_WIDTH-1:0] EXTRA_BITS=0;
     wire xfer_limited_by_mem_page;
     reg  xfer_limited_by_mem_page_r;
@@ -398,7 +389,6 @@ module  mcntrl_tiled_rw#(
         if (recalc_r[0]) begin
             frame_x <= curr_x + window_x0;
             frame_y <= curr_y + window_y0;
-//            next_y <= curr_y + tile_rows;
             next_y <= curr_y + tile_vstep;
             row_left <= window_width - curr_x; // 14 bits - 13 bits
         end    
@@ -411,7 +401,6 @@ module  mcntrl_tiled_rw#(
 // TODO: Verify MPY/register timing above        
         if (recalc_r[5]) begin    // cycle 6
             row_col_r <= line_start_addr+frame_x;
-//            line_start_page_left <= {COLADDR_NUMBER-3{1'b0}} - line_start_addr[COLADDR_NUMBER-4:0]; // 7 bits
             line_start_page_left <=  - line_start_addr[COLADDR_NUMBER-4:0]; // 7 bits
         end
         bank_reg[0]   <= frame_y[2:0]; //TODO: is it needed - a pipeline for the bank? - remove! 
@@ -435,126 +424,109 @@ module  mcntrl_tiled_rw#(
         if (recalc_r[8]) begin    // cycle 9
             last_in_row <= last_in_row_w;
         end
-        
- //       window_m_tile_height <= window_height - tile_rows;
     end
     
 // now have row start address, bank and row_left ;
 // calculate number to read (min of row_left, maximal xfer and what is left in the DDR3 page
 wire    start_not_partial= xfer_start_r[0] && !xfer_limited_by_mem_page_r;    
-    always @(posedge rst or posedge mclk) begin
-        if      (rst)                par_mod_r<=0;
+    always @(posedge mclk) begin
+        if      (mrst)               par_mod_r<=0;
         else if (pgm_param_w ||
                  xfer_start_r[0] ||
                  chn_rst ||
                  frame_start_r[0])   par_mod_r<=0;
         else                         par_mod_r <= {par_mod_r[PAR_MOD_LATENCY-2:0], 1'b1};
 
-        if      (rst)          chn_rst_d <= 0;
+        if     (mrst)          chn_rst_d <= 0;
         else                   chn_rst_d <= chn_rst;
 
-        if      (rst)          recalc_r<=0;
+        if      (mrst)         recalc_r<=0;
         else if (chn_rst)      recalc_r<=0;
 //        else                 recalc_r <= {recalc_r[PAR_MOD_LATENCY-2:0], (xfer_grant & ~chn_rst) | pgm_param_w | (chn_rst_d & ~chn_rst)};
         else                   recalc_r <= {recalc_r[PAR_MOD_LATENCY-2:0],
                                  ((xfer_start_r[0] | frame_start_r[0])  & ~chn_rst) | pgm_param_w | (chn_rst_d & ~chn_rst)};
         
-        if      (rst)               busy_r <= 0;
+        if      (mrst)              busy_r <= 0;
         else if (chn_rst)           busy_r <= 0;
         else if (frame_start_r[0])  busy_r <= 1;
         else if (frame_done_r)      busy_r <= 0;
         
-        if (rst) xfer_page_done_d <= 0;
-        else     xfer_page_done_d <= xfer_page_done;
+        if (mrst) xfer_page_done_d <= 0;
+        else      xfer_page_done_d <= xfer_page_done;
         
-        if (rst) xfer_start_r <= 0;
-        else     xfer_start_r <= {xfer_start_r[1:0],xfer_grant && !chn_rst};
+        if (mrst) xfer_start_r <= 0;
+        else      xfer_start_r <= {xfer_start_r[1:0],xfer_grant && !chn_rst};
         
-        if (rst) xfer_start_rd_r <= 0;
-        else     xfer_start_rd_r <=  xfer_grant && !chn_rst && !cmd_wrmem && !byte32;
+        if (mrst) xfer_start_rd_r <= 0;
+        else      xfer_start_rd_r <=  xfer_grant && !chn_rst && !cmd_wrmem && !byte32;
 
-        if (rst) xfer_start_wr_r <= 0;
-        else     xfer_start_wr_r <=  xfer_grant && !chn_rst && cmd_wrmem && !byte32;
+        if (mrst) xfer_start_wr_r <= 0;
+        else      xfer_start_wr_r <=  xfer_grant && !chn_rst && cmd_wrmem && !byte32;
 
-        if (rst) xfer_start32_rd_r <= 0;
-        else     xfer_start32_rd_r <=  xfer_grant && !chn_rst && !cmd_wrmem && byte32;
+        if (mrst) xfer_start32_rd_r <= 0;
+        else      xfer_start32_rd_r <=  xfer_grant && !chn_rst && !cmd_wrmem && byte32;
 
-        if (rst) xfer_start32_wr_r <= 0;
+        if (mrst) xfer_start32_wr_r <= 0;
         else     xfer_start32_wr_r <=  xfer_grant && !chn_rst && cmd_wrmem && byte32;
 
-        if (rst)                   continued_tile <= 1'b0;
+        if (mrst)                   continued_tile <= 1'b0;
         else if (chn_rst)          continued_tile <= 1'b0;
         else if (frame_start_r[0]) continued_tile <= 1'b0;
         else if (xfer_start_r[0])  continued_tile <= xfer_limited_by_mem_page_r; // only set after actual start if it was partial, not after parameter change
         
-        if (rst)                                          need_r <= 0;
+        if (mrst)                                          need_r <= 0;
         else if (chn_rst || xfer_grant)                   need_r <= 0;
         else if ((pre_want  || want_r) && (page_cntr>=3)) need_r <= 1; // may raise need if want was already set
 
-        if (rst)                                                 want_r <= 0;
+        if (mrst)                                                 want_r <= 0;
         else if (chn_rst || xfer_grant)                          want_r <= 0;
         else if (pre_want && (page_cntr>{1'b0,cmd_extra_pages})) want_r <= 1;
         
-        if (rst)                                   page_cntr <= 0;
+        if (mrst)                                   page_cntr <= 0;
         else if (frame_start_r[0])                 page_cntr <= cmd_wrmem?0:4;
-//        else if ( xfer_start_r[0] && !next_page) page_cntr <= page_cntr + 1;     
-//        else if (!xfer_start_r[0] &&  next_page) page_cntr <= page_cntr - 1;
         else if ( start_not_partial && !next_page) page_cntr <= page_cntr - 1;     
         else if (!start_not_partial &&  next_page) page_cntr <= page_cntr + 1;
         
-        if (rst) xfer_page_rst_r <= 1;
+        if (mrst) xfer_page_rst_r <= 1;
         else     xfer_page_rst_r <= chn_rst || (MCNTRL_TILED_FRAME_PAGE_RESET ? (frame_start_r[0] & cmd_wrmem):1'b0);
 
-        if (rst) xfer_page_rst_pos <= 1;
+        if (mrst) xfer_page_rst_pos <= 1;
         else     xfer_page_rst_pos <= chn_rst || (MCNTRL_TILED_FRAME_PAGE_RESET ? (frame_start_r[0] & ~cmd_wrmem):1'b0);
         
 // increment x,y (two cycles)
-        if (rst)                                  curr_x <= 0;
+        if (mrst)                                  curr_x <= 0;
         else if (chn_rst || frame_start_r[0])     curr_x <= start_x;
         else if (xfer_start_r[0])                 curr_x <= last_in_row?0: curr_x + num_cols_r;
         
-        if (rst)                                  curr_y <= 0;
+        if (mrst)                                  curr_y <= 0;
         else if (chn_rst || frame_start_r[0])     curr_y <= start_y;
         else if (xfer_start_r[0] && last_in_row)  curr_y <= next_y[FRAME_HEIGHT_BITS-1:0];
                
-        if      (rst)                         last_block <= 0;
+        if      (mrst)                         last_block <= 0;
         else if (chn_rst || !busy_r)          last_block <= 0;
         else if (xfer_start_r[0])             last_block <= last_row_w && last_in_row_w;
  
  // start_not_partial is not generated when partial (first of 2, caused by a tile crossing memory page) transfer is requested       
  // here we need to cout all requests - partial or not
-        if      (rst)                                   pending_xfers <= 0;
+        if      (mrst)                                   pending_xfers <= 0;
         else if (chn_rst || !busy_r)                    pending_xfers <= 0;
         else if ( xfer_start_r[0] && !xfer_page_done) pending_xfers <= pending_xfers + 1;     
         else if (!xfer_start_r[0] &&  xfer_page_done) pending_xfers <= pending_xfers - 1; // page done is not generated on partial (first) pages
         
         // single cycle (sent out)
-        if (rst)          frame_done_r <= 0;
+        if (mrst)          frame_done_r <= 0;
         else              frame_done_r <= busy_r && last_block && xfer_page_done_d && (pending_xfers==0);
 
         // turns and stays on (used in status)
-        if (rst)                              frame_finished_r <= 0;
+        if (mrst)                              frame_finished_r <= 0;
         else if (chn_rst || frame_start_r[0]) frame_finished_r <= 0;
         else if (frame_done_r)                frame_finished_r <= 1;
-/*        //line_unfinished_r cmd_wrmem
-        if (rst)                              line_unfinished_r0 <= 0; //{FRAME_HEIGHT_BITS{1'b0}};
-        else if (chn_rst || frame_start_r[0]) line_unfinished_r0 <= window_y0+start_y;
-        else if (xfer_start_r[2])             line_unfinished_r0 <= window_y0+next_y[FRAME_HEIGHT_BITS-1:0]; // latency 2 from xfer_start
-
-        if (rst)                                line_unfinished_r1 <= 0; //{FRAME_HEIGHT_BITS{1'b0}};
-        else if (chn_rst || frame_start_r[0])   line_unfinished_r1 <= window_y0+start_y;
-        // in read mode advance line number ASAP
-        else if (xfer_start_r[2] && !cmd_wrmem) line_unfinished_r1 <= window_y0+next_y[FRAME_HEIGHT_BITS-1:0]; // latency 2 from xfer_start
-        // in write mode advance line number only when it is guaranteed it will be the first to actually access memory
-        else if (xfer_grant      && cmd_wrmem)  line_unfinished_r1 <=  line_unfinished_r0;
-*/        
         //line_unfinished_r cmd_wrmem
-        if (rst)                              line_unfinished_r[0] <= 0; //{FRAME_HEIGHT_BITS{1'b0}};
+        if (mrst)                              line_unfinished_r[0] <= 0; //{FRAME_HEIGHT_BITS{1'b0}};
         else if (chn_rst || frame_start_r[0]) line_unfinished_r[0] <= window_y0+start_y;
         else if (xfer_start_r[2])             line_unfinished_r[0] <= window_y0+next_y[FRAME_HEIGHT_BITS-1:0]; // latency 2 from xfer_start
 
-        if (rst)                              line_unfinished_r[1] <= 0; //{FRAME_HEIGHT_BITS{1'b0}};
-//      else if (chn_rst || frame_start_r[0]) line_unfinished_r[1] <= window_y0+start_y;
+        if (mrst)                              line_unfinished_r[1] <= 0; //{FRAME_HEIGHT_BITS{1'b0}};
         else if (chn_rst || frame_start_r[2]) line_unfinished_r[1] <= window_y0+start_y; // _r[0] -> _r[2] to make it simultaneous with frame_number
         
         // in read mode advance line number ASAP
@@ -574,27 +546,29 @@ wire    start_not_partial= xfer_start_r[0] && !xfer_limited_by_mem_page_r;
         .ADDR_WIDTH (4),
         .DATA_WIDTH (32)
     ) cmd_deser_32bit_i (
-        .rst        (rst), // input
-        .clk        (mclk), // input
-        .ad         (cmd_ad), // input[7:0] 
-        .stb        (cmd_stb), // input
-        .addr       (cmd_a), // output[15:0] 
+        .rst        (1'b0),     // input
+        .clk        (mclk),     // input
+        .srst       (mrst),     // input
+        .ad         (cmd_ad),   // input[7:0] 
+        .stb        (cmd_stb),  // input
+        .addr       (cmd_a),    // output[15:0] 
         .data       (cmd_data), // output[31:0] 
-        .we         (cmd_we) // output
+        .we         (cmd_we)    // output
     );
 
     status_generate #(
         .STATUS_REG_ADDR  (MCNTRL_TILED_STATUS_REG_ADDR),
         .PAYLOAD_BITS     (2)
     ) status_generate_i (
-        .rst              (rst), // input
-        .clk              (mclk), // input
-        .we               (set_status_w), // input
+        .rst              (1'b0),          // input
+        .clk              (mclk),          // input
+        .srst             (mrst),          // input
+        .we               (set_status_w),  // input
         .wd               (cmd_data[7:0]), // input[7:0] 
-        .status           (status_data), // input[25:0] 
-        .ad               (status_ad), // output[7:0] 
-        .rq               (status_rq), // output
-        .start            (status_start) // input
+        .status           (status_data),   // input[25:0] 
+        .ad               (status_ad),     // output[7:0] 
+        .rq               (status_rq),     // output
+        .start            (status_start)   // input
     );
 endmodule
 

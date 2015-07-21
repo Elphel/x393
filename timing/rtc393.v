@@ -36,8 +36,10 @@ module  rtc393 #(
         parameter RTC_SET_STATUS =               3  // set status mode, and take a time snapshot (wait response and read time)
 
 )   (
-    input                         rst,
+//    input                         rst,
     input                         mclk,
+    input                         mrst,        // @ posedge mclk - sync reset
+    
     input                         refclk, // not a global clock, reference frequency < mclk/2
     // programming interface
     input                   [7:0] cmd_ad,      // byte-serial command address/data (up to 6 bytes: AL-AH-D0-D1-D2-D3 
@@ -96,8 +98,8 @@ module  rtc393 #(
     assign live_sec = sec;
     assign live_usec = usec;
     
-    always @ (posedge rst or posedge mclk) begin
-        if      (rst)          pio_alt_snap <= 0;
+    always @ (posedge mclk) begin
+        if      (mrst)         pio_alt_snap <= 0;
         else if (set_status_w) pio_alt_snap <= ~pio_alt_snap; 
     end 
 
@@ -112,8 +114,8 @@ module  rtc393 #(
         if (set_corr_w) corr <=  cmd_data[15:0];
     end
 
-    always @ (posedge rst or posedge mclk) begin
-        if      (rst)       enable_rtc <= 0;
+    always @ (posedge mclk) begin
+        if      (mrst)      enable_rtc <= 0;
         else if (set_sec_w) enable_rtc <= 1;
     end
     
@@ -161,8 +163,9 @@ module  rtc393 #(
         .ADDR_WIDTH (3),
         .DATA_WIDTH (32)
     ) cmd_deser_32bit_i (
-        .rst        (rst),      // input
+        .rst        (1'b0),     //rst),      // input
         .clk        (mclk),     // input
+        .srst       (mrst),     // input
         .ad         (cmd_ad),   // input[7:0] 
         .stb        (cmd_stb),  // input
         .addr       (cmd_a),    // output[3:0] 
@@ -177,14 +180,15 @@ module  rtc393 #(
         .EXTRA_WORDS         (2),
         .EXTRA_REG_ADDR      (RTC_SEC_USEC_ADDR)
     ) status_generate_i (
-        .rst           (rst), // input
-        .clk           (mclk), // input
-        .we            (set_status_w), // input
-        .wd            (cmd_data[7:0]), // input[7:0] 
+        .rst           (1'b0),                                  // rst), // input
+        .clk           (mclk),                                  // input
+        .srst          (mrst),                                  // input
+        .we            (set_status_w),                          // input
+        .wd            (cmd_data[7:0]),                         // input[7:0] 
         .status        ({12'b0,pio_usec,pio_sec,pio_alt_snap}), // input[14:0] 
-        .ad            (status_ad), // output[7:0] 
-        .rq            (status_rq), // output
-        .start         (status_start) // input
+        .ad            (status_ad),                             // output[7:0] 
+        .rq            (status_rq),                             // output
+        .start         (status_start)                           // input
     );
 
 

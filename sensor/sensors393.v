@@ -175,12 +175,15 @@ module  sensors393 #(
     parameter SENS_SS_MOD_PERIOD =       10000        // integer 4000-40000 - SS modulation period in ns
     
 ) (
-    input         rst,
+//    input         rst,
 // will generate it here
+    input         pclk,    // global clock input, pixel rate (96MHz for MT9P006)
+    input         pclk2x,  // global clock input, double pixel rate (192MHz for MT9P006)
     input         ref_clk, // IODELAY calibration 
     input         dly_rst,       
-    input         pclk,   // global clock input, pixel rate (96MHz for MT9P006)
-    input         pclk2x, // global clock input, double pixel rate (192MHz for MT9P006)
+    input         mrst,      // @posedge mclk, sync reset
+    input         prst,      // @posedge pclk, sync reset
+    input         arst,      // @posedge aclk, sync reset
     
     // programming interface
     input         mclk,     // global clock, half DDR3 clock, synchronizes all I/O through the command port
@@ -381,31 +384,20 @@ module  sensors393 #(
                 .SENS_SS_MODE                  (SENS_SS_MODE),
                 .SENS_SS_MOD_PERIOD            (SENS_SS_MOD_PERIOD)
             ) sensor_channel_i (
-                .rst          (rst),       // input
-                .pclk         (pclk),      // input
-                .pclk2x       (pclk2x),    // input
-/*                
-                .sns_dp       ((i & 2) ? ((i & 1) ? sns4_dp:   sns3_dp):  ((i & 1) ? sns2_dp:   sns1_dp)),   // inout[7:0] 
-                .sns_dn       ((i & 2) ? ((i & 1) ? sns4_dn:   sns3_dn):  ((i & 1) ? sns2_dn:   sns1_dn)),   // inout[7:0] 
-                .sns_clkp     ((i & 2) ? ((i & 1) ? sns4_clkp: sns3_clkp):((i & 1) ? sns2_clkp: sns1_clkp)), // inout
-                .sns_clkn     ((i & 2) ? ((i & 1) ? sns4_clkn: sns3_clkn):((i & 1) ? sns2_clkn: sns1_clkn)), // inout
-                .sns_scl      ((i & 2) ? ((i & 1) ? sns4_scl:  sns3_scl): ((i & 1) ? sns2_scl:  sns1_scl)),  // inout
-                .sns_sda      ((i & 2) ? ((i & 1) ? sns4_sda:  sns3_sda): ((i & 1) ? sns2_sda:  sns1_sda)),  // inout
-                .sns_ctl      ((i & 2) ? ((i & 1) ? sns4_ctl:  sns3_ctl): ((i & 1) ? sns2_ctl:  sns1_ctl)),  // inout
-//                .sns_pg       ((i & 2) ? ((i & 1) ? sns4_pg:   sns3_pg):  ((i & 1) ? sns2_pg:   sns1_pg)),   // inout
-//                .sns_pg       ({sns4_pg,sns3_pg,sns2_pg,sns1_pg}[i]),   // inout
-                .sns_pg       (sns_pg[i]),   // inout
-*/
-
+//                .rst          (rst),                 // input
+                .pclk         (pclk),                  // input
+                .pclk2x       (pclk2x),                // input
+                .mrst         (mrst),                  // input
+                .prst         (prst),                  // input
                 
-                .sns_dp       (sns_dp[i * 8 +: 8]),   // inout[7:0] 
-                .sns_dn       (sns_dn[i * 8 +: 8]),   // inout[7:0] 
-                .sns_clkp     (sns_clkp[i]),   // inout
-                .sns_clkn     (sns_clkn[i]),   // inout
-                .sns_scl      (sns_scl[i]),   // inout
-                .sns_sda      (sns_sda[i]),   // inout
-                .sns_ctl      (sns_ctl[i]),   // inout
-                .sns_pg       (sns_pg[i]),   // inout
+                .sns_dp       (sns_dp[i * 8 +: 8]),    // inout[7:0] 
+                .sns_dn       (sns_dn[i * 8 +: 8]),    // inout[7:0] 
+                .sns_clkp     (sns_clkp[i]),           // inout
+                .sns_clkn     (sns_clkn[i]),           // inout
+                .sns_scl      (sns_scl[i]),            // inout
+                .sns_sda      (sns_sda[i]),            // inout
+                .sns_ctl      (sns_ctl[i]),            // inout
+                .sns_pg       (sns_pg[i]),             // inout
                 
                 .mclk         (mclk),                  // input
                 .cmd_ad_in    (cmd_ad),                // input[7:0] 
@@ -459,9 +451,11 @@ module  sensors393 #(
         .HIST_SAXI_MODE_ADDR_MASK (HIST_SAXI_MODE_ADDR_MASK),
         .NUM_FRAME_BITS           (NUM_FRAME_BITS)
     ) histogram_saxi_i (
-        .rst            (rst),                    // input
+//        .rst            (rst),                    // input
         .mclk           (mclk),                   // input
         .aclk           (aclk),                   // input
+        .mrst           (mrst),                   // input
+        .arst           (arst),                   // input
         .frame0         (frame_num0),             // input[3:0] 
         .hist_request0  (hist_request[0]),        // input
         .hist_grant0    (hist_grant[0]),          // output
@@ -512,8 +506,9 @@ module  sensors393 #(
     );
     
     status_router4 status_router4_i (
-        .rst           (rst),                    // input
+        .rst           (1'b0),                   // input
         .clk           (mclk),                   // input
+        .srst          (mrst),                    // input
         .db_in0        (status_ad_chn[0 +: 8]),  // input[7:0] 
         .rq_in0        (status_rq_chn[0]),       // input
         .start_in0     (status_start_chn[0]),    // output

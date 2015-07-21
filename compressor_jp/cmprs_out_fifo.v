@@ -21,9 +21,11 @@
 `timescale 1ns/1ps
 
 module  cmprs_out_fifo(
-    input              rst,          // mostly for simulation
+//    input              rst,          // mostly for simulation
+
     // wclk domain
     input              wclk,         // source clock (2x pixel clock, inverted)
+    input              wrst,         // @posedge wclk, sync reset
     input              we,
     input       [15:0] wdata,
     input              wa_rst,       // reset low address bits when stuffer is disabled (to make sure it is multiple of 32 bytes
@@ -32,13 +34,14 @@ module  cmprs_out_fifo(
     
     // rclk domain
     input              rclk,
-    input              rst_fifo,      // reset FIFO (set read address to write, reset count)
+    input              rrst,         // @posedge rclk, sync reset
+    input              rst_fifo,     // reset FIFO (set read address to write, reset count)
     input              ren,
     output      [63:0] rdata,
-    output             eof,           // single rclk pulse signalling EOF
-    input              eof_written,   // confirm frame written ofer AFI to the system memory (single rclk pulse)
-    output             flush_fifo,    // EOF, need to output all what is in FIFO (Stays active until enough data chunks are read)
-    output      [7:0]  fifo_count     // number of 32-byte chunks in FIFO
+    output             eof,          // single rclk pulse signalling EOF
+    input              eof_written,  // confirm frame written ofer AFI to the system memory (single rclk pulse)
+    output             flush_fifo,   // EOF, need to output all what is in FIFO (Stays active until enough data chunks are read)
+    output      [7:0]  fifo_count    // number of 32-byte chunks in FIFO
 
 );
     reg        regen;
@@ -54,8 +57,8 @@ module  cmprs_out_fifo(
     assign fifo_count = count32;
     assign eof = wlast_rclk;
     
-    always @ (posedge rst or posedge wclk) begin
-        if      (rst)    waddr <= 0;
+    always @ (posedge wclk) begin
+        if      (wrst)   waddr <= 0;
         else if (wa_rst) waddr <= waddr & 11'h7f0; // reset 4 LSBs only
         else if (we)     waddr <= waddr + 1;
     end
@@ -82,10 +85,10 @@ module  cmprs_out_fifo(
     end
 
 // wclk -> rclk
-    pulse_cross_clock written32b_i (.rst(rst), .src_clk(wclk), .dst_clk(rclk), .in_pulse(we && (&waddr[3:0])), .out_pulse(written32b),.busy());
-    pulse_cross_clock wlast_rclk_i (.rst(rst), .src_clk(wclk), .dst_clk(rclk), .in_pulse(wlast),               .out_pulse(wlast_rclk),.busy());
+    pulse_cross_clock written32b_i (.rst(wrst), .src_clk(wclk), .dst_clk(rclk), .in_pulse(we && (&waddr[3:0])), .out_pulse(written32b),.busy());
+    pulse_cross_clock wlast_rclk_i (.rst(wrst), .src_clk(wclk), .dst_clk(rclk), .in_pulse(wlast),               .out_pulse(wlast_rclk),.busy());
 // rclk -> wclk
-    pulse_cross_clock eof_written_wclk_i (.rst(rst), .src_clk(rclk), .dst_clk(wclk), .in_pulse(eof_written), .out_pulse(eof_written_wclk),.busy());
+    pulse_cross_clock eof_written_wclk_i (.rst(rrst), .src_clk(rclk), .dst_clk(wclk), .in_pulse(eof_written), .out_pulse(eof_written_wclk),.busy());
     ram_var_w_var_r #(
         .REGISTERS(1),
         .LOG2WIDTH_WR(4),

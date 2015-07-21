@@ -25,15 +25,20 @@
 `timescale 1ns/1ps
 
 module  timestamp_fifo(
-    input                rst,
+//    input                rst,
     input                sclk,
+    input                srst,    // @ posedge smclk - sync reset
+    
     input                pre_stb, // marks pre-first input byte (s0,s1,s2,s3,u0,u1,u2,u3)
     input          [7:0] din,     // data in - valid for 8 cycles after pre_stb
 
     input                aclk,    // clock to synchronize "advance" commands
+    input                arst,    // @ posedge aclk - sync reset
+    
     input                advance, // @aclk advance registers
     
     input                rclk,    // output clock
+    input                rrst,   // @ posedge rclk - sync reset
     input                rstb,    // @rclk, read start (data available next 8 cycles)
     output    reg [ 7:0] dout
 );
@@ -43,12 +48,12 @@ module  timestamp_fifo(
     reg    [3:0] rpntr;          // fifo read pointer
     reg    [1:0] advance_r;
     reg          snd;            // receive data
-    always @ (posedge rst or posedge sclk) begin
-        if      (rst)         rcv <= 0; 
+    always @ (posedge sclk) begin
+        if      (srst)        rcv <= 0; 
         else if (pre_stb)     rcv <= 1;
         else if (&wpntr[2:0]) rcv <= 0;
         
-        if      (rst)  wpntr <= 0;
+        if      (srst) wpntr <= 0;
         else if (!rcv) wpntr <= {wpntr[3],3'b0};
         else           wpntr <= wpntr + 1;
     end
@@ -57,21 +62,21 @@ module  timestamp_fifo(
         if (rcv) fifo_ram[wpntr] <= din;
     end
     
-    always @(posedge rst or posedge aclk) begin
-        if (rst) advance_r <= 0;
-        else     advance_r <= {advance_r[0], advance};
+    always @(posedge aclk) begin
+        if (arst) advance_r <= 0;
+        else      advance_r <= {advance_r[0], advance};
     end
 
     always @(posedge aclk) begin
         if (advance_r[0] && !advance_r[1]) rpntr[3] <= wpntr[3];
     end
     
-    always @(posedge rst or posedge rclk) begin
-        if      (rst)         snd <= 0; 
+    always @(posedge rclk) begin
+        if      (rrst)         snd <= 0; 
         else if (rstb)        snd <= 1;
         else if (&rpntr[2:1]) snd <= 0; // at count 6 
     
-        if      (rst)           rpntr[2:0] <= 0;
+        if      (rrst)           rpntr[2:0] <= 0;
         else if (!snd && !rstb) rpntr[2:0] <= 0;
         else                    rpntr[2:0] <= rpntr[2:0] + 1;
     end

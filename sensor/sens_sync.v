@@ -33,9 +33,11 @@ module  sens_sync#(
     parameter SENS_SYNC_MINPER =   130    // minimal frame period (in pclk/mclk?) 
     
 )(
-    input         rst,         // global reset
+//    input         rst,         // global reset
     input         pclk,        // global clock input, pixel rate (96MHz for MT9P006)
     input         mclk,        // global system clock, synchronizes commands
+    input         mrst,        // @mclk sync reset
+    input         prst,        // @mclk sync reset
     input         en,          // @pclk enable channel (0 resets counters)
     input         sof_in,      // @pclk start of frame input, single-cycle
     input         eof_in,      // @pclk end of frame input, single-cycle (to limit sof_late
@@ -144,8 +146,9 @@ module  sens_sync#(
         .ADDR2       (0),
         .ADDR_MASK2  (0)
     ) cmd_deser_sens_sync_i (
-        .rst         (rst),           // input
+        .rst         (1'b0),          // input
         .clk         (mclk),          // input
+        .srst        (mrst),          // input
         .ad          (cmd_ad),        // input[7:0] 
         .stb         (cmd_stb),       // input
         .addr        (cmd_a),         // output[15:0] 
@@ -155,7 +158,7 @@ module  sens_sync#(
 
     // mclk -> pclk    
     pulse_cross_clock pulse_cross_clock_set_data_pclk_i (
-        .rst         (rst),           // input
+        .rst         (mrst),           // input
         .src_clk     (mclk),          // input
         .dst_clk     (pclk),          // input
         .in_pulse    (set_data_mclk), // input
@@ -164,7 +167,7 @@ module  sens_sync#(
     );
     
     pulse_cross_clock pulse_cross_clock_trig_in_pclk_i (
-        .rst         (rst),           // input
+        .rst         (mrst),           // input
         .src_clk     (mclk),          // input
         .dst_clk     (pclk),          // input
         .in_pulse    (trig_in),       // input
@@ -174,7 +177,7 @@ module  sens_sync#(
     
     // pclk -> mclk    
     pulse_cross_clock pulse_cross_clock_sof_out_i (
-        .rst         (rst),           // input
+        .rst         (prst),           // input
         .src_clk     (pclk),          // input
         .dst_clk     (mclk),          // input
         .in_pulse    (pre_sof_out),   // input
@@ -182,17 +185,13 @@ module  sens_sync#(
         .busy() // output
     );
     pulse_cross_clock pulse_cross_clock_sof_late_i (
-        .rst         (rst),           // input
+        .rst         (prst),           // input
         .src_clk     (pclk),          // input
         .dst_clk     (mclk),          // input
         .in_pulse    (pre_sof_late),  // input
         .out_pulse   (sof_late),      // output
         .busy() // output
     );
-    
-    
-    
-
 
 endmodule
 

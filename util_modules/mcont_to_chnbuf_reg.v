@@ -37,14 +37,16 @@ parameter CHN_NUMBER=0
     output reg           [63:0] buf_wdata_chn     // @ negedge mclk
 );
     reg buf_chn_sel;
-    always @ (posedge rst or negedge clk) begin
-        if (rst) buf_chn_sel <= 0;
+    reg rst_nclk = 1;
+    always @ (negedge clk) rst_nclk <= rst;
+    always @ (negedge clk) begin
+        if (rst_nclk) buf_chn_sel <= 0;
         else     buf_chn_sel <= (ext_buf_wchn==CHN_NUMBER) && !ext_buf_wrefresh;
         
-        if (rst) buf_wr_chn <= 0;
+        if (rst_nclk) buf_wr_chn <= 0;
         else     buf_wr_chn <= buf_chn_sel && ext_buf_wr;
 
-        if (rst) buf_run <= 0;
+        if (rst_nclk) buf_run <= 0;
         else     buf_run <= (ext_buf_wchn==CHN_NUMBER) && !ext_buf_wrefresh && ext_buf_wrun;
     end
     

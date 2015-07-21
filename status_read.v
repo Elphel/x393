@@ -34,13 +34,11 @@ module  status_read#(
     parameter AXI_RD_ADDR_BITS =      14,
     parameter integer STATUS_DEPTH=   8 // 256 cells, maybe just 16..64 are enough?
 )(
-    input rst,
-    input clk,
+    input                        mrst, // @posedge mclk - sync reset
+    input                        arst, // @posedge axi_clk - sync reset
+    input                        clk,
     input                        axi_clk,   // common for read and write channels
     input [AXI_RD_ADDR_BITS-1:0] axird_pre_araddr,     // status read address, 1 cycle ahead of read data
-//    input                        pre_stb,          // read data request, with axi_pre_addr
-//    output reg            [31:0] axi_status_rdata, // read data, 1 cycle latency from the address/stb
-//    output reg                   data_valid,       // read data valid, 1 cycle latency from pre_stb, decoded address
     input                        axird_start_burst, // start of read burst, valid pre_araddr, save externally to control ext. dev_ready multiplexer
     input     [STATUS_DEPTH-1:0] axird_raddr, //   .raddr(read_in_progress?read_address[9:0]:10'h3ff),    // read address
     input                        axird_ren,   //      .ren(bram_reg_re_w) ,      // read port enable
@@ -55,9 +53,7 @@ module  status_read#(
     localparam integer DATA_2DEPTH=(1<<STATUS_DEPTH)-1;
     reg  [31:0] ram [0:DATA_2DEPTH];
     reg         [STATUS_DEPTH-1:0] waddr;
-//    wire        [STATUS_DEPTH-1:0] raddr;
     reg                          we;
-//    wire                         re;
     reg                  [31: 0] wdata;
     reg                          rq_r;
     reg                   [3:0]  dstb;
@@ -71,13 +67,6 @@ module  status_read#(
     reg                 [31:0]   axi_status_rdata; 
     reg                 [31:0]   axi_status_rdata_r;
     
-// registering to match BRAM timing (so it is possible to instantioate it instead)    
-//    reg       [STATUS_DEPTH-1:0] raddr_r; //   .raddr(read_in_progress?read_address[9:0]:10'h3ff),    // read address
-//    reg                          rd_r;   //      .ren(bram_reg_re_w) ,      // read port enable
-//    reg                          regen_r; //==axird_ren?? - remove?   .regen(bram_reg_re_w),        // output register enable
-   
-    
-    
     assign select_w = ((axird_pre_araddr ^ STATUS_ADDR) & STATUS_ADDR_MASK)==0;
     assign rd =        axird_ren   && select_r;
     assign regen =     axird_regen && select_d;
@@ -90,60 +79,52 @@ module  status_read#(
     assign start=rq && !rq_r;
     assign axird_rdata=axi_status_rdata_r;
     assign axird_selected = select_r; 
-    always @ (posedge rst or posedge axi_clk) begin
-        if      (rst)               select_r <= 0;
+    always @ (posedge axi_clk) begin
+        if      (arst)              select_r <= 0;
         else if (axird_start_burst) select_r <= select_w;
     end
     always @ (posedge axi_clk) begin
-//        if (rd_r)     axi_status_rdata <= ram[raddr_r];
-//        if (regen_r)  axi_status_rdata_r <= axi_status_rdata;
         if (rd)       axi_status_rdata <= ram[axird_raddr];
         if (regen)    axi_status_rdata_r <= axi_status_rdata;
         
         select_d <=   select_r;
-//        raddr_r <=   axird_raddr;
-//        rd_r <=      rd;
-//        regen_r <=   regen;
     end
     
-    always @ (posedge rst or posedge clk) begin
-    
-//        if (rst) data_valid <= 0;
-//        else     data_valid <= re;
+    always @ (posedge clk) begin
         
-        if (rst) rq_r <= 0;
-        else     rq_r <= rq;
+        if (mrst) rq_r <= 0;
+        else      rq_r <= rq;
         
-        if (rst)        dstb <= 0;
+        if (mrst)       dstb <= 0;
         else if (!rq)   dstb <= 0;
         else            dstb <= {dstb[2:0],~rq_r};
         // byte 0 - address
-        if (rst)        waddr <= 0;
+        if (mrst)       waddr <= 0;
         else if (start) waddr <= ad[STATUS_DEPTH-1:0];
         
         // byte 1 - 2 payload bits and sequence number
         // 6 bits of the sequence number will go to bits 26.. 31
         // 2 bits (24,25) are payload status
-        if (rst)          wdata[31:24] <= 0;
+        if (mrst)         wdata[31:24] <= 0;
         else if (start)   wdata[31:24] <= 0;
         else if (dstb[0]) wdata[31:24] <= ad;
 
         // byte 2 - payload bits 0..7 
-        if (rst)          wdata[ 7: 0] <= 0;
+        if (mrst)         wdata[ 7: 0] <= 0;
         else if (start)   wdata[ 7: 0] <= 0;
         else if (dstb[1]) wdata[ 7: 0] <= ad;
         
         // byte 3 - payload bits 8..15 
-        if (rst)          wdata[15: 8] <= 0;
+        if (mrst)         wdata[15: 8] <= 0;
         else if (start)   wdata[15: 8] <= 0;
         else if (dstb[2]) wdata[15: 8] <= ad;
 
         // byte 4 - payload bits 16..23 
-        if (rst)          wdata[23:16] <= 0;
+        if (mrst)         wdata[23:16] <= 0;
         else if (start)   wdata[23:16] <= 0;
         else if (dstb[3]) wdata[23:16] <= ad;
         
-        if (rst)          we <= 0;
+        if (mrst)         we <= 0;
         else              we <= !rq && rq_r; 
     end
     

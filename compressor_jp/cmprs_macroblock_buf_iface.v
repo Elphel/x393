@@ -25,10 +25,13 @@
 module  cmprs_macroblock_buf_iface #(
 
     )(
-    input         rst,
+//    input         rst,
     input         xclk,               // global clock input, compressor single clock rate
     
     input         mclk,               // global clock for commands (posedge) and write side of the memory buffer (negedge)
+    input         mrst,      // @posedge mclk, sync reset
+    input         xrst,      // @posedge xclk, sync reset
+    
     // buffer interface, DDR3 memory read
     input         xfer_reset_page_rd, // @ negedge mclk - reset ddr3 memory buffer. Use it to reset the read buffer too
     input         page_ready_chn,     // single mclk (posedge)
@@ -200,18 +203,19 @@ module  cmprs_macroblock_buf_iface #(
         
     
     end     
-
+    reg nmrst;
+    always @(negedge mclk) nmrst <= mrst;
     // synchronization between mclk and xclk clock domains
     // negedge mclk -> xclk (verify clock inversion is absorbed)
-    pulse_cross_clock  reset_page_rd_i (.rst(rst), .src_clk(~mclk),.dst_clk(xclk), .in_pulse(xfer_reset_page_rd), .out_pulse(reset_page_rd),.busy());
+    pulse_cross_clock  reset_page_rd_i (.rst(nmrst), .src_clk(~mclk),.dst_clk(xclk), .in_pulse(xfer_reset_page_rd), .out_pulse(reset_page_rd),.busy());
     // mclk -> xclk
-    pulse_cross_clock page_ready_i     (.rst(rst), .src_clk(mclk), .dst_clk(xclk), .in_pulse(page_ready_chn), .out_pulse(page_ready),.busy());
+    pulse_cross_clock page_ready_i     (.rst(mrst), .src_clk(mclk), .dst_clk(xclk), .in_pulse(page_ready_chn), .out_pulse(page_ready),.busy());
 
     multipulse_cross_clock #(
         .WIDTH(3),
         .EXTRA_DLY(0)
     ) multipulse_cross_clock_i (
-        .rst        (rst), // input
+        .rst        (xrst), // input
         .src_clk    (xclk), // input
         .dst_clk    (mclk), // input
         .num_pulses ({1'b0,add_invalid}), // input[0:0] 

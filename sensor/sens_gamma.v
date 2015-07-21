@@ -40,7 +40,7 @@ module  sens_gamma #(
     parameter    SENS_GAMMA_MODE_REPET = 4,
     parameter    SENS_GAMMA_MODE_TRIG =  5
 ) (
-    input         rst,
+//    input         rst,
     input         pclk,   // global clock input, pixel rate (96MHz for MT9P006)
     //input         en,     //    @(posedge pclk)      // Enable. Should go active before or with the first hact going active.
                                        // when low will also reset MSB of addresses - buffer page for ping-pong access.
@@ -51,6 +51,9 @@ module  sens_gamma #(
                                        //   2 - wait for frame sync and enable "en"
                                        //   3 (optional) - after frame is over (before the first hact of the next one)
                                        //      turn "en" off. If needed to restart - go to step 1 to keep buffer pages in sync.
+    
+    input         mrst,        // @mclk sync reset
+    input         prst,        // @mclk sync reset
     
     input  [15:0] pxd_in, //    @(posedge pclk)
     input         hact_in,
@@ -183,40 +186,40 @@ module  sens_gamma #(
     
     assign sof_masked= sof_in && (pend_trig || repet_mode) && en_input;
     assign trig = trig_in || trig_soft;
-    always @ (posedge rst or posedge mclk) begin
-        if      (rst)         tdata <= 0;
+    always @ (posedge mclk) begin
+        if     (mrst)         tdata <= 0;
         else if (set_taddr_w) tdata <= cmd_data[17:0];
     
-        if (rst) set_tdata_r <= 0;
-        else     set_tdata_r <= set_tdata_w;
+        if (mrst) set_tdata_r <= 0;
+        else      set_tdata_r <= set_tdata_w;
         
-        if      (rst)         taddr <= 0;
+        if     (mrst)         taddr <= 0;
         else if (set_taddr_w) taddr <= cmd_data[12:0];
         else if (set_tdata_r) taddr <= taddr + 1;
         
-        if      (rst)         mode_mclk <= 0;
+        if     (mrst)         mode_mclk <= 0;
         else if (set_ctrl_w)  mode_mclk <= cmd_data[SENS_GAMMA_MODE_WIDTH-1:0];
         
-        if (rst) set_tdata_ram <=0;
-        else     set_tdata_ram <= {4{set_tdata_w}} &
+        if (mrst) set_tdata_ram <=0;
+        else      set_tdata_ram <= {4{set_tdata_w}} &
                                   { taddr[12] &  taddr[11],
                                     taddr[12] & ~taddr[11],
                                    ~taddr[12] &  taddr[11],
                                    ~taddr[12] & ~taddr[11]};
-        if      (rst)            height0_m1 <= 0;
+        if      (mrst)           height0_m1 <= 0;
         else if (set_height01_w) height0_m1 <= cmd_data[15:0];
                                    
-        if      (rst)            height1_m1 <= 0;
+        if      (mrst)           height1_m1 <= 0;
         else if (set_height01_w) height1_m1 <= cmd_data[31:16];
                                    
-        if      (rst)            height2_m1 <= 0;
+        if      (mrst)           height2_m1 <= 0;
         else if (set_height2_w)  height2_m1 <= cmd_data[15:0];
                                    
                                    
     end 
 
-    always @ (posedge rst or posedge pclk) begin
-        if (rst) begin
+    always @ (posedge pclk) begin
+        if (prst) begin
             mode <= 0;
             hact_d[4:0] <= 0;
             bayer_nset <= 0;
@@ -277,8 +280,9 @@ module  sens_gamma #(
         .ADDR_WIDTH  (2),
         .DATA_WIDTH  (32)
     ) cmd_deser_sens_io_i (
-        .rst         (rst), // input
+        .rst         (1'b0), // rst), // input
         .clk         (mclk), // input
+        .srst        (mrst), // input
         .ad          (cmd_ad), // input[7:0] 
         .stb         (cmd_stb), // input
         .addr        (cmd_a), // output[15:0] 
@@ -290,7 +294,7 @@ module  sens_gamma #(
         .WIDTH(8)
     ) dly_16_pxd_i (
         .clk (pclk),        // input
-        .rst (rst),         // input
+        .rst (prst),        // input
         .dly (3),           // input[3:0] 
         .din (pxd_in[7:0]), // input[0:0] 
         .dout(pxd_in_d3)    // output[0:0] 
@@ -300,13 +304,13 @@ module  sens_gamma #(
         .WIDTH(2)
     ) dly_16_sof_eof_i (
         .clk (pclk),        // input
-        .rst (rst),         // input
+        .rst (prst),         // input
         .dly (4),           // input[3:0] 
         .din ({eof_in, sof_masked}), // input[0:0] 
         .dout({eof_out,sof_out})    // output[0:0] 
     );
     pulse_cross_clock trig_soft_i (
-        .rst       (rst),
+        .rst       (mrst),
         .src_clk   (mclk),
         .dst_clk   (pclk),
         .in_pulse  (cmd_data[SENS_GAMMA_MODE_TRIG] && set_ctrl_w),

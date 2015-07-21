@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: level_cross_clocks
  * Date:2015-07-19  
- * Author: andrey     
+ * Author: Aandrey Filippov     
  * Description: re-sample signal to a different clock to reduce metastability
  *
  * Copyright (c) 2015 Elphel, Inc .

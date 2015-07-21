@@ -97,29 +97,23 @@ module  x393 #(
 //    localparam COLADDR_NUMBER=10;
 // Source for reset and clock
 (* keep = "true" *)
-    wire    [3:0]     fclk;      // PL Clocks [3:0], output
+    wire    [3:0]     fclk;           // PL Clocks [3:0], output
 (* keep = "true" *)   
-    wire    [3:0]     frst;      // PL Clocks [3:0], output
+    wire    [3:0]     frst;           // PL Clocks [3:0], output
     
 // AXI write interface signals
 //(* keep = "true" *) 
-    wire           axi_aclk;    // clock - should be buffered
-//   wire           axi_naclk;   // debugging
-//   wire           axi_aresetn; // reset, active low
+    wire           axi_aclk;          // clock - should be buffered
 //(* dont_touch = "true" *)
-    wire           axi_rst;     // reset, active high
+    wire           axi_grst;          // reset, active high, global (try to get rid of)
 // AXI Write Address
-    wire   [31:0]  maxi0_awaddr;  // AWADDR[31:0], input
-    wire           maxi0_awvalid; // AWVALID, input
-    wire           maxi0_awready; // AWREADY, output
-    wire   [11:0]  maxi0_awid;    // AWID[11:0], input
-//   input  [ 1:0] awlock,     // AWLOCK[1:0], input
-//   input  [ 3:0] awcache,    // AWCACHE[3:0], input
-//   input  [ 2:0] awprot,     // AWPROT[2:0], input
+    wire   [31:0]  maxi0_awaddr;      // AWADDR[31:0], input
+    wire           maxi0_awvalid;     // AWVALID, input
+    wire           maxi0_awready;     // AWREADY, output
+    wire   [11:0]  maxi0_awid;        // AWID[11:0], input
     wire   [ 3:0]  maxi0_awlen;       // AWLEN[3:0], input
     wire   [ 1:0]  maxi0_awsize;      // AWSIZE[1:0], input
     wire   [ 1:0]  maxi0_awburst;     // AWBURST[1:0], input
-//   input  [ 3:0] awqos,      // AWQOS[3:0], input
 // AXI PS Master GP0: Write Data
     wire   [31:0]  maxi0_wdata;       // WDATA[31:0], input
     wire           maxi0_wvalid;      // WVALID, input
@@ -139,7 +133,7 @@ module  x393 #(
     wire           axiwr_dev_ready;   // extrernal combinatorial ready signal, multiplexed from different sources according to pre_awaddr@start_burst
     wire           axiwr_wclk;
     wire  [AXI_WR_ADDR_BITS-1:0] axiwr_waddr;
-    wire           axiwr_wen;    // external memory write enable, (internally combined with registered dev_ready
+    wire           axiwr_wen;         // external memory write enable, (internally combined with registered dev_ready
 // SuppressWarnings VEditor unused (yet?) 
     wire    [3:0]  axiwr_bram_wstb; 
     wire   [31:0]  axiwr_wdata;
@@ -149,13 +143,9 @@ module  x393 #(
     wire           maxi0_arvalid; // ARVALID, input
     wire           maxi0_arready; // ARREADY, output
     wire   [11:0]  maxi0_arid;    // ARID[11:0], input
-//   input  [ 1:0] arlock,  // ARLOCK[1:0], input
-//   input  [ 3:0] archache,// ARCACHE[3:0], input
-//   input  [ 2:0] arprot,  // ARPROT[2:0], input
     wire   [ 3:0]  maxi0_arlen;   // ARLEN[3:0], input
     wire   [ 1:0]  maxi0_arsize;  // ARSIZE[1:0], input
     wire   [ 1:0]  maxi0_arburst; // ARBURST[1:0], input
-//   input  [ 3:0] adqos,   // ARQOS[3:0], input
 // AXI Read Data
     wire   [31:0]  maxi0_rdata;   // RDATA[31:0], output
     wire           maxi0_rvalid;  // RVALID, output
@@ -195,6 +185,7 @@ module  x393 #(
 
    // global clocks
     wire           mclk; // global clock, memory controller, command/status network (currently 200MHz)
+    wire           mcntrl_locked; // to generate syn resets
     wire           ref_clk; // global clock for idelay_ctrl calibration
     wire           hclk; // global clock, axi_hp (150MHz) derived from aclk_in = 50MHz
    
@@ -212,6 +203,19 @@ module  x393 #(
                                //  Make it independent of pixel, compressor and mclk so it can be frozen
     wire           logger_clk;  // global clock for the event logger. Use 100 MHz, shared with camsync_clk
     assign logger_clk = camsync_clk;
+    
+    wire           mrst; // @ posedge mclk
+    wire           prst; // @ posedge pclk
+    wire           xrst; // @ posedge xclk
+    wire           crst; // @ posedge camsync_clk
+    wire           lrst; // @ posedge logger_clk;
+    wire           arst; // @ posedge axi_aclk;
+    wire           hrst; // @ posedge hclk;
+    
+    
+    wire           idelay_ctrl_reset; // to reset idelay_cntrl
+    
+    
    
     wire           time_ref; // RTC reference: integer number of microseconds, less than mclk/2. Not a global clock
 
@@ -533,30 +537,31 @@ module  x393 #(
 
 // delay status_selected and mcntrl_axird_selected to match data for multiplexing
 
-    always @(posedge axi_rst or posedge axird_bram_rclk) begin // axird_bram_rclk==axi_aclk
-//    always @(posedge axi_rst or posedge axi_aclk) begin
-        if      (axi_rst)     status_selected_ren <= 1'b0;
+//    always @(posedge axi_grst or posedge axird_bram_rclk) begin // axird_bram_rclk==axi_aclk
+    always @(posedge axird_bram_rclk) begin // axird_bram_rclk==axi_aclk
+
+        if      (arst)        status_selected_ren <= 1'b0;
         else if (axird_ren)   status_selected_ren <= status_selected;
         
-        if      (axi_rst)     status_selected_regen <= 1'b0;
+        if      (arst)        status_selected_regen <= 1'b0;
         else if (axird_regen) status_selected_regen <= status_selected_ren;
 
-        if      (axi_rst)     readback_selected_ren <= 1'b0;
+        if      (arst)        readback_selected_ren <= 1'b0;
         else if (axird_ren)   readback_selected_ren <= readback_selected;
         
-        if      (axi_rst)     readback_selected_regen <= 1'b0;
+        if      (arst)        readback_selected_regen <= 1'b0;
         else if (axird_regen) readback_selected_regen <= readback_selected_ren;
 
-        if      (axi_rst)     mcntrl_axird_selected_ren <= 1'b0;
+        if      (arst)        mcntrl_axird_selected_ren <= 1'b0;
         else if (axird_ren)   mcntrl_axird_selected_ren <=  mcntrl_axird_selected;
         
-        if      (axi_rst)     mcntrl_axird_selected_regen <= 1'b0;
+        if      (arst)        mcntrl_axird_selected_regen <= 1'b0;
         else if (axird_regen) mcntrl_axird_selected_regen <= mcntrl_axird_selected_ren;
     end
 
 
 
-    always @(posedge comb_rst or posedge axi_aclk) begin
+    always @(posedge comb_rst or posedge axi_aclk) begin 
         if (comb_rst) axi_rst_pre <= 1'b1;
         else          axi_rst_pre <= 1'b0;
     end
@@ -592,21 +597,8 @@ module  x393 #(
     end         
 `endif
 
-BUFG bufg_axi_rst_i   (.O(axi_rst),.I(axi_rst_pre));
-/*
-BUFG bufg_axi_aclk_i  (.O(axi_aclk),.I(fclk[0]));
-    axi_hp_clk #(
-        .CLKIN_PERIOD(CLKIN_PERIOD),
-        .CLKFBOUT_MULT_AXIHP(CLKFBOUT_MULT_AXIHP),
-        .CLKFBOUT_DIV_AXIHP(CLKFBOUT_DIV_AXIHP)
-    ) axi_hp_clk_i (
-        .rst          (axi_rst), // input
-        .clk_in       (axi_aclk), // input
-        .clk_axihp    (hclk), // output
-        .locked_axihp () // output // not controlled?
-    );
+BUFG bufg_axi_rst_i   (.O(axi_grst),.I(axi_rst_pre)); // will go only to memory controller (to minimize changes), later - remove from there too
 
-*/
 // channel test module
     mcntrl393_test01 #(
         .MCNTRL_TEST01_ADDR                 (MCNTRL_TEST01_ADDR),
@@ -625,37 +617,37 @@ BUFG bufg_axi_aclk_i  (.O(axi_aclk),.I(fclk[0]));
         .MCNTRL_TEST01_STATUS_REG_CHN3_ADDR (MCNTRL_TEST01_STATUS_REG_CHN3_ADDR),
         .MCNTRL_TEST01_STATUS_REG_CHN4_ADDR (MCNTRL_TEST01_STATUS_REG_CHN4_ADDR)
     ) mcntrl393_test01_i (
-        .rst                  (axi_rst), // input
-        .mclk                 (mclk), // input
-        .cmd_ad               (cmd_test01_ad), // input[7:0] 
-        .cmd_stb              (cmd_test01_stb), // input
-        .status_ad            (status_test01_ad), // output[7:0] 
-        .status_rq            (status_test01_rq), // output
-        .status_start         (status_test01_start), // input
-        .frame_start_chn1     (), //frame_start_chn1), // output
-        .next_page_chn1       (), //next_page_chn1), // output
-        .page_ready_chn1      (1'b0), // page_ready_chn1), // input
-        .frame_done_chn1      (1'b0), //frame_done_chn1), // input
-        .line_unfinished_chn1 (16'b0), //line_unfinished_chn1), // input[15:0] 
-        .suspend_chn1         (), //suspend_chn1), // output
-        .frame_start_chn2     (frame_start_chn2), // output
-        .next_page_chn2       (next_page_chn2), // output
-        .page_ready_chn2      (page_ready_chn2), // input
-        .frame_done_chn2      (frame_done_chn2), // input
+        .mrst                 (mrst),                 // input
+        .mclk                 (mclk),                 // input
+        .cmd_ad               (cmd_test01_ad),        // input[7:0] 
+        .cmd_stb              (cmd_test01_stb),       // input
+        .status_ad            (status_test01_ad),     // output[7:0] 
+        .status_rq            (status_test01_rq),     // output
+        .status_start         (status_test01_start),  // input
+        .frame_start_chn1     (),                     //frame_start_chn1), // output
+        .next_page_chn1       (),                     //next_page_chn1), // output
+        .page_ready_chn1      (1'b0),                 // page_ready_chn1), // input
+        .frame_done_chn1      (1'b0),                 //frame_done_chn1), // input
+        .line_unfinished_chn1 (16'b0),                //line_unfinished_chn1), // input[15:0] 
+        .suspend_chn1         (),                     //suspend_chn1), // output
+        .frame_start_chn2     (frame_start_chn2),     // output
+        .next_page_chn2       (next_page_chn2),       // output
+        .page_ready_chn2      (page_ready_chn2),      // input
+        .frame_done_chn2      (frame_done_chn2),      // input
         .line_unfinished_chn2 (line_unfinished_chn2), // input[15:0] 
-        .suspend_chn2         (suspend_chn2), // output
-        .frame_start_chn3     (frame_start_chn3), // output
-        .next_page_chn3       (next_page_chn3), // output
-        .page_ready_chn3      (page_ready_chn3), // input
-        .frame_done_chn3      (frame_done_chn3), // input
+        .suspend_chn2         (suspend_chn2),         // output
+        .frame_start_chn3     (frame_start_chn3),     // output
+        .next_page_chn3       (next_page_chn3),       // output
+        .page_ready_chn3      (page_ready_chn3),      // input
+        .frame_done_chn3      (frame_done_chn3),      // input
         .line_unfinished_chn3 (line_unfinished_chn3), // input[15:0] 
-        .suspend_chn3         (suspend_chn3), // output
-        .frame_start_chn4     (frame_start_chn4), // output
-        .next_page_chn4       (next_page_chn4), // output
-        .page_ready_chn4      (page_ready_chn4), // input
-        .frame_done_chn4      (frame_done_chn4), // input
+        .suspend_chn3         (suspend_chn3),         // output
+        .frame_start_chn4     (frame_start_chn4),     // output
+        .next_page_chn4       (next_page_chn4),       // output
+        .page_ready_chn4      (page_ready_chn4),      // input
+        .frame_done_chn4      (frame_done_chn4),      // input
         .line_unfinished_chn4 (line_unfinished_chn4), // input[15:0] 
-        .suspend_chn4         (suspend_chn4) // output
+        .suspend_chn4         (suspend_chn4)          // output
     );
 
 // Interface to channels to read/write memory (including 4 page BRAM buffers)
@@ -701,7 +693,8 @@ BUFG bufg_axi_aclk_i  (.O(axi_aclk),.I(fclk[0]));
     ) cmd_mux_i ( // SuppressThisWarning ISExst: Output port <par_data>,<par_waddr>, <cseq_ackn> of the instance <cmd_mux_i> is unconnected or connected to loadless signal.
         .axi_clk      (axiwr_wclk), // input
         .mclk         (mclk), // input
-        .rst          (axi_rst), // input
+        .mrst         (mrst), // input
+        .arst         (arst), // input
         .pre_waddr    (axiwr_pre_awaddr[AXI_WR_ADDR_BITS-1:0]), // input[12:0] // SuppressThisWarning VivadoSynthesis: [Synth 8-3295] tying undriven pin #cmd_mux_i:pre_waddr[9:0] to constant 0
         .start_wburst (axiwr_start_burst), // input
         .waddr        (axiwr_waddr[AXI_WR_ADDR_BITS-1:0]), // input[12:0] 
@@ -735,7 +728,7 @@ BUFG bufg_axi_aclk_i  (.O(axi_aclk),.I(fclk[0]));
                 .CMDFRAMESEQ_RST_BIT  (CMDFRAMESEQ_RST_BIT),
                 .CMDFRAMESEQ_RUN_BIT  (CMDFRAMESEQ_RUN_BIT)
             ) cmd_frame_sequencer_i (
-                .rst         (axi_rst),                    // input
+                .mrst        (mrst),                       // input
                 .mclk        (mclk),                       // input
                 .cmd_ad      (cmd_sequencer_ad),           // input[7:0] 
                 .cmd_stb     (cmd_sequencer_stb),          // input
@@ -755,7 +748,7 @@ BUFG bufg_axi_aclk_i  (.O(axi_aclk),.I(fclk[0]));
         .CMDSEQMUX_STATUS    (CMDSEQMUX_STATUS),
         .AXI_WR_ADDR_BITS    (AXI_WR_ADDR_BITS)
     ) cmd_seq_mux_i (
-        .rst          (axi_rst),                            // input
+        .mrst         (mrst),                               // input
         .mclk         (mclk),                               // input
         .cmd_ad       (cmd_sequencer_ad),                   // input[7:0] 
         .cmd_stb      (cmd_sequencer_stb),                  // input
@@ -802,18 +795,19 @@ BUFG bufg_axi_aclk_i  (.O(axi_aclk),.I(fclk[0]));
         .CONTROL_RBACK_ADDR      (CONTROL_RBACK_ADDR),
         .CONTROL_RBACK_ADDR_MASK (CONTROL_RBACK_ADDR_MASK)
     ) cmd_readback_i (
-        .rst                     (axi_rst), // input
-        .mclk                    (mclk), // input
-        .axi_clk                 (axird_bram_rclk), // input
-        .par_waddr               (par_waddr), // input[13:0] 
-        .par_data                (par_data), // input[31:0] 
-        .ad_stb                  (cmd_root_stb), // input
-        .axird_pre_araddr        (axird_pre_araddr), // input[13:0] 
-        .axird_start_burst       (axird_start_burst), // input
+        .mrst                    (mrst),                                 // input
+        .arst                    (arst),                                 // input
+        .mclk                    (mclk),                                 // input
+        .axi_clk                 (axird_bram_rclk),                      // input
+        .par_waddr               (par_waddr),                            // input[13:0] 
+        .par_data                (par_data),                             // input[31:0] 
+        .ad_stb                  (cmd_root_stb),                         // input
+        .axird_pre_araddr        (axird_pre_araddr),                     // input[13:0] 
+        .axird_start_burst       (axird_start_burst),                    // input
         .axird_raddr             (axird_raddr[CONTROL_RBACK_DEPTH-1:0]), // input[9:0] 
-        .axird_ren               (axird_ren), // input
-        .axird_rdata             (readback_rdata), // output[31:0] 
-        .axird_selected          (readback_selected) // output
+        .axird_ren               (axird_ren),                            // input
+        .axird_rdata             (readback_rdata),                       // output[31:0] 
+        .axird_selected          (readback_selected)                     // output
     );
 
     status_read #(
@@ -822,100 +816,96 @@ BUFG bufg_axi_aclk_i  (.O(axi_aclk),.I(fclk[0]));
         .AXI_RD_ADDR_BITS (AXI_RD_ADDR_BITS),
         .STATUS_DEPTH     (STATUS_DEPTH)
     ) status_read_i (
-        .rst              (axi_rst), // input
-        .clk              (mclk), // input
-        .axi_clk          (axird_bram_rclk), // input == axi_aclk
-        .axird_pre_araddr (axird_pre_araddr), // input[7:0] // SuppressThisWarning VivadoSynthesis: [Synth 8-3295] tying undriven pin #status_read_i:axird_pre_araddr[9:0] to constant 0
-        .axird_start_burst(axird_start_burst), // input
+        .mrst             (mrst),                          // input
+        .arst             (arst),                          // input
+        .clk              (mclk),                          // input
+        .axi_clk          (axird_bram_rclk),               // input == axi_aclk
+        .axird_pre_araddr (axird_pre_araddr),              // input[7:0] // SuppressThisWarning VivadoSynthesis: [Synth 8-3295] tying undriven pin #status_read_i:axird_pre_araddr[9:0] to constant 0
+        .axird_start_burst(axird_start_burst),             // input
         .axird_raddr      (axird_raddr[STATUS_DEPTH-1:0]), // input[7:0] 
-        .axird_ren        (axird_ren), // input
-        .axird_regen      (axird_regen), // input
-        .axird_rdata      (status_rdata), // output[31:0] 
-        .axird_selected   (status_selected), // output
-        .ad               (status_root_ad), // input[7:0] 
-        .rq               (status_root_rq), // input
-        .start            (status_root_start) // output
+        .axird_ren        (axird_ren),                     // input
+        .axird_regen      (axird_regen),                   // input
+        .axird_rdata      (status_rdata),                  // output[31:0] 
+        .axird_selected   (status_selected),               // output
+        .ad               (status_root_ad),                // input[7:0] 
+        .rq               (status_root_rq),                // input
+        .start            (status_root_start)              // output
     );
 
 // mux status info from the memory controller and other modules    
     status_router16 status_router16_top_i (
-        .rst       (axi_rst), // input
-        .clk       (mclk), // input
-        .db_in0    (status_mcontr_ad), // input[7:0] 
-        .rq_in0    (status_mcontr_rq), // input
-        .start_in0 (status_mcontr_start), // output
+        .rst       (1'b0),                    //axi_rst), // input
+        .clk       (mclk),                    // input
+        .srst      (mrst),                    // input
+        .db_in0    (status_mcontr_ad),        // input[7:0] 
+        .rq_in0    (status_mcontr_rq),        // input
+        .start_in0 (status_mcontr_start),     // output
         
-        .db_in1    (status_test01_ad), // input[7:0] 
-        .rq_in1    (status_test01_rq), // input
-        .start_in1 (status_test01_start), // output
+        .db_in1    (status_test01_ad),        // input[7:0] 
+        .rq_in1    (status_test01_rq),        // input
+        .start_in1 (status_test01_start),     // output
         
-        .db_in2    (status_membridge_ad), // input[7:0] 
-        .rq_in2    (status_membridge_rq), // input
-        .start_in2 (status_membridge_start), // output
+        .db_in2    (status_membridge_ad),     // input[7:0] 
+        .rq_in2    (status_membridge_rq),     // input
+        .start_in2 (status_membridge_start),  // output
 
-//        .db_in3    (status_other_ad), // input[7:0] 
-//        .rq_in3    (status_other_rq), // input
-//        .start_in3 (status_other_start), // output
+        .db_in3    (status_sensor_ad),        // input[7:0] 
+        .rq_in3    (status_sensor_rq),        // input
+        .start_in3 (status_sensor_start),     // output
         
-        .db_in3    (status_sensor_ad), // input[7:0] 
-        .rq_in3    (status_sensor_rq), // input
-        .start_in3 (status_sensor_start), // output
-        
-        .db_in4    (status_compressor_ad), // input[7:0] 
-        .rq_in4    (status_compressor_rq), // input
+        .db_in4    (status_compressor_ad),    // input[7:0] 
+        .rq_in4    (status_compressor_rq),    // input
         .start_in4 (status_compressor_start), // output
         
-        .db_in5    (status_sequencer_ad), // input[7:0] 
-        .rq_in5    (status_sequencer_rq), // input
-        .start_in5 (status_sequencer_start), // output
+        .db_in5    (status_sequencer_ad),     // input[7:0] 
+        .rq_in5    (status_sequencer_rq),     // input
+        .start_in5 (status_sequencer_start),  // output
         
-        .db_in6    (status_logger_ad), // input[7:0] 
-        .rq_in6    (status_logger_rq), // input
-        .start_in6 (status_logger_start), // output
+        .db_in6    (status_logger_ad),        // input[7:0] 
+        .rq_in6    (status_logger_rq),        // input
+        .start_in6 (status_logger_start),     // output
         
         .db_in7    (status_timing_ad),        // input[7:0] 
-        .rq_in7    (status_timing_rq),       // input
-        .start_in7 (status_timing_start),    // output
+        .rq_in7    (status_timing_rq),        // input
+        .start_in7 (status_timing_start),     // output
         
-        .db_in8    (status_gpio_ad),         // input[7:0] 
-        .rq_in8    (status_gpio_rq),         // input
-        .start_in8 (status_gpio_start),      // output
+        .db_in8    (status_gpio_ad),          // input[7:0] 
+        .rq_in8    (status_gpio_rq),          // input
+        .start_in8 (status_gpio_start),       // output
         
-        .db_in9    (status_saxi1wr_ad),      // input[7:0] 
-        .rq_in9    (status_saxi1wr_rq),      // input
-        .start_in9 (status_saxi1wr_start),   // output
+        .db_in9    (status_saxi1wr_ad),       // input[7:0] 
+        .rq_in9    (status_saxi1wr_rq),       // input
+        .start_in9 (status_saxi1wr_start),    // output
         
-        .db_in10   (status_clocks_ad),       // input[7:0] 
-        .rq_in10   (status_clocks_rq),       // input
-        .start_in10(status_clocks_start),    // output
+        .db_in10   (status_clocks_ad),        // input[7:0] 
+        .rq_in10   (status_clocks_rq),        // input
+        .start_in10(status_clocks_start),     // output
         
-        .db_in11   (8'b0),                   // input[7:0] 
-        .rq_in11   (1'b0),                   // input
-        .start_in11(),                       // output
+        .db_in11   (8'b0),                    // input[7:0] 
+        .rq_in11   (1'b0),                    // input
+        .start_in11(),                        // output
         
-        .db_in12   (8'b0),                   // input[7:0] 
-        .rq_in12   (1'b0),                   // input
-        .start_in12(),                       // output
+        .db_in12   (8'b0),                    // input[7:0] 
+        .rq_in12   (1'b0),                    // input
+        .start_in12(),                        // output
         
-        .db_in13   (8'b0),                   // input[7:0] 
-        .rq_in13   (1'b0),                   // input
-        .start_in13(),                       // output
+        .db_in13   (8'b0),                    // input[7:0] 
+        .rq_in13   (1'b0),                    // input
+        .start_in13(),                        // output
         
-        .db_in14   (8'b0),                   // input[7:0] 
-        .rq_in14   (1'b0),                   // input
-        .start_in14(),                       // output
+        .db_in14   (8'b0),                    // input[7:0] 
+        .rq_in14   (1'b0),                    // input
+        .start_in14(),                        // output
         
-        .db_in15   (8'b0),                   // input[7:0] 
-        .rq_in15   (1'b0),                   // input
-        .start_in15(),                       // output
-        
+        .db_in15   (8'b0),                    // input[7:0] 
+        .rq_in15   (1'b0),                    // input
+        .start_in15(),                        // output
 
-        .db_out    (status_root_ad), // output[7:0] 
-        .rq_out    (status_root_rq), // output
-        .start_out (status_root_start) // input
+        .db_out    (status_root_ad),          // output[7:0] 
+        .rq_out    (status_root_rq),          // output
+        .start_out (status_root_start)        // input
     );
 
-    /* Instance template for module mcntrl393 */
     mcntrl393 #(
         .MCONTR_SENS_BASE('h680),
         .MCONTR_SENS_INC('h10),
@@ -1055,10 +1045,14 @@ BUFG bufg_axi_aclk_i  (.O(axi_aclk),.I(fclk[0]));
         .RSEL                              (RSEL),
         .WSEL                              (WSEL)
     ) mcntrl393_i (
-        .rst_in                    (axi_rst), // input
+        .rst_in                    (axi_grst), // input global reset, but does not need to be global
         .clk_in                    (axi_aclk), // == axird_bram_rclk SuppressThisWarning VivadoSynthesis: [Synth 8-3295] tying undriven pin #mcntrl393_i:clk_in to constant 0
         .mclk                      (mclk), // output
+        .mrst                      (mrst),
+        .locked                    (mcntrl_locked), // to generate sync reset
         .ref_clk                   (ref_clk), // output
+        .idelay_ctrl_reset         (idelay_ctrl_reset), // output
+        
         .cmd_ad                    (cmd_mcontr_ad), // input[7:0] 
         .cmd_stb                   (cmd_mcontr_stb), // input
         .status_ad                 (status_mcontr_ad[7:0]), // output[7:0]
@@ -1230,73 +1224,74 @@ BUFG bufg_axi_aclk_i  (.O(axi_aclk),.I(fclk[0]));
         .FRAME_HEIGHT_BITS      (FRAME_HEIGHT_BITS),
         .FRAME_WIDTH_BITS       (FRAME_WIDTH_BITS)
     ) membridge_i (
-        .rst                    (axi_rst), // input
-        .mclk                   (mclk), // input
-        .hclk                   (hclk), // input
-        .cmd_ad                 (cmd_membridge_ad), // input[7:0] 
-        .cmd_stb                (cmd_membridge_stb), // input
+        .mrst                   (mrst),                     // input
+        .hrst                   (hrst),                     // input
+        .mclk                   (mclk),                     // input
+        .hclk                   (hclk),                     // input
+        .cmd_ad                 (cmd_membridge_ad),         // input[7:0] 
+        .cmd_stb                (cmd_membridge_stb),        // input
         .status_ad              (status_membridge_ad[7:0]), // output[7:0] 
         .status_rq              (status_membridge_rq),      // output
         .status_start           (status_membridge_start),   // input
-        .frame_start_chn        (frame_start_chn1),     // output
-        .next_page_chn          (next_page_chn1),       // output
-        .cmd_wrmem              (cmd_wrmem_chn1),       // input
-        .page_ready_chn         (page_ready_chn1),      // input
-        .frame_done_chn         (frame_done_chn1),      // input
-        .line_unfinished_chn1   (line_unfinished_chn1), // input[15:0] 
-        .suspend_chn1           (suspend_chn1),         // output
-        .xfer_reset_page_rd     (xfer_reset_page1_rd),  // input
-        .buf_wpage_nxt          (buf_wpage_nxt_chn1),   // input
-        .buf_wr                 (buf_wr_chn1),          // input
-        .buf_wdata              (buf_wdata_chn1[63:0]), // input[63:0] 
-        .xfer_reset_page_wr     (xfer_reset_page1_wr),  // input
-        .buf_rpage_nxt          (rpage_nxt_chn1),       // input
-        .buf_rd                 (buf_rd_chn1),          // input
-        .buf_rdata              (buf_rdata_chn1[63:0]), // output[63:0] 
-        .afi_awaddr             (afi0_awaddr), // output[31:0] 
-        .afi_awvalid            (afi0_awvalid), // output
-        .afi_awready            (afi0_awready), // input
-        .afi_awid               (afi0_awid), // output[5:0] 
-        .afi_awlock             (afi0_awlock), // output[1:0] 
-        .afi_awcache            (afi0_awcache), // output[3:0] 
-        .afi_awprot             (afi0_awprot), // output[2:0] 
-        .afi_awlen              (afi0_awlen), // output[3:0] 
-        .afi_awsize             (afi0_awsize), // output[2:0] 
-        .afi_awburst            (afi0_awburst), // output[1:0] 
-        .afi_awqos              (afi0_awqos), // output[3:0] 
-        .afi_wdata              (afi0_wdata), // output[63:0] 
-        .afi_wvalid             (afi0_wvalid), // output
-        .afi_wready             (afi0_wready), // input
-        .afi_wid                (afi0_wid), // output[5:0] 
-        .afi_wlast              (afi0_wlast), // output
-        .afi_wstrb              (afi0_wstrb), // output[7:0] 
-        .afi_bvalid             (afi0_bvalid), // input
-        .afi_bready             (afi0_bready), // output
-        .afi_bid                (afi0_bid), // input[5:0] 
-        .afi_bresp              (afi0_bresp), // input[1:0] 
-        .afi_wcount             (afi0_wcount), // input[7:0] 
-        .afi_wacount            (afi0_wacount), // input[5:0] 
-        .afi_wrissuecap1en      (afi0_wrissuecap1en), // output
-        .afi_araddr             (afi0_araddr), // output[31:0] 
-        .afi_arvalid            (afi0_arvalid), // output
-        .afi_arready            (afi0_arready), // input
-        .afi_arid               (afi0_arid), // output[5:0] 
-        .afi_arlock             (afi0_arlock), // output[1:0] 
-        .afi_arcache            (afi0_arcache), // output[3:0] 
-        .afi_arprot             (afi0_arprot), // output[2:0] 
-        .afi_arlen              (afi0_arlen), // output[3:0] 
-        .afi_arsize             (afi0_arsize), // output[2:0] 
-        .afi_arburst            (afi0_arburst), // output[1:0] 
-        .afi_arqos              (afi0_arqos), // output[3:0] 
-        .afi_rdata              (afi0_rdata), // input[63:0] 
-        .afi_rvalid             (afi0_rvalid), // input
-        .afi_rready             (afi0_rready), // output
-        .afi_rid                (afi0_rid), // input[5:0] 
-        .afi_rlast              (afi0_rlast), // input
-        .afi_rresp              (afi0_rresp), // input[2:0] 
-        .afi_rcount             (afi0_rcount), // input[7:0] 
-        .afi_racount            (afi0_racount), // input[2:0] 
-        .afi_rdissuecap1en      (afi0_rdissuecap1en) // output
+        .frame_start_chn        (frame_start_chn1),         // output
+        .next_page_chn          (next_page_chn1),           // output
+        .cmd_wrmem              (cmd_wrmem_chn1),           // input
+        .page_ready_chn         (page_ready_chn1),          // input
+        .frame_done_chn         (frame_done_chn1),          // input
+        .line_unfinished_chn1   (line_unfinished_chn1),     // input[15:0] 
+        .suspend_chn1           (suspend_chn1),             // output
+        .xfer_reset_page_rd     (xfer_reset_page1_rd),      // input
+        .buf_wpage_nxt          (buf_wpage_nxt_chn1),       // input
+        .buf_wr                 (buf_wr_chn1),              // input
+        .buf_wdata              (buf_wdata_chn1[63:0]),     // input[63:0] 
+        .xfer_reset_page_wr     (xfer_reset_page1_wr),      // input
+        .buf_rpage_nxt          (rpage_nxt_chn1),           // input
+        .buf_rd                 (buf_rd_chn1),              // input
+        .buf_rdata              (buf_rdata_chn1[63:0]),     // output[63:0] 
+        .afi_awaddr             (afi0_awaddr),              // output[31:0] 
+        .afi_awvalid            (afi0_awvalid),             // output
+        .afi_awready            (afi0_awready),             // input
+        .afi_awid               (afi0_awid),                // output[5:0] 
+        .afi_awlock             (afi0_awlock),              // output[1:0] 
+        .afi_awcache            (afi0_awcache),             // output[3:0] 
+        .afi_awprot             (afi0_awprot),              // output[2:0] 
+        .afi_awlen              (afi0_awlen),               // output[3:0] 
+        .afi_awsize             (afi0_awsize),              // output[2:0] 
+        .afi_awburst            (afi0_awburst),             // output[1:0] 
+        .afi_awqos              (afi0_awqos),               // output[3:0] 
+        .afi_wdata              (afi0_wdata),               // output[63:0] 
+        .afi_wvalid             (afi0_wvalid),              // output
+        .afi_wready             (afi0_wready),              // input
+        .afi_wid                (afi0_wid),                 // output[5:0] 
+        .afi_wlast              (afi0_wlast),               // output
+        .afi_wstrb              (afi0_wstrb),               // output[7:0] 
+        .afi_bvalid             (afi0_bvalid),              // input
+        .afi_bready             (afi0_bready),              // output
+        .afi_bid                (afi0_bid),                 // input[5:0] 
+        .afi_bresp              (afi0_bresp),               // input[1:0] 
+        .afi_wcount             (afi0_wcount),              // input[7:0] 
+        .afi_wacount            (afi0_wacount),             // input[5:0] 
+        .afi_wrissuecap1en      (afi0_wrissuecap1en),       // output
+        .afi_araddr             (afi0_araddr),              // output[31:0] 
+        .afi_arvalid            (afi0_arvalid),             // output
+        .afi_arready            (afi0_arready),             // input
+        .afi_arid               (afi0_arid),                // output[5:0] 
+        .afi_arlock             (afi0_arlock),              // output[1:0] 
+        .afi_arcache            (afi0_arcache),             // output[3:0] 
+        .afi_arprot             (afi0_arprot),              // output[2:0] 
+        .afi_arlen              (afi0_arlen),               // output[3:0] 
+        .afi_arsize             (afi0_arsize),              // output[2:0] 
+        .afi_arburst            (afi0_arburst),             // output[1:0] 
+        .afi_arqos              (afi0_arqos),               // output[3:0] 
+        .afi_rdata              (afi0_rdata),               // input[63:0] 
+        .afi_rvalid             (afi0_rvalid),              // input
+        .afi_rready             (afi0_rready),              // output
+        .afi_rid                (afi0_rid),                 // input[5:0] 
+        .afi_rlast              (afi0_rlast),               // input
+        .afi_rresp              (afi0_rresp),               // input[2:0] 
+        .afi_rcount             (afi0_rcount),              // input[7:0] 
+        .afi_racount            (afi0_racount),             // input[2:0] 
+        .afi_rdissuecap1en      (afi0_rdissuecap1en)        // output
     );
     
     // SAXIGP0 signals (read unused)  (for the histograms)
@@ -1458,11 +1453,15 @@ BUFG bufg_axi_aclk_i  (.O(axi_aclk),.I(fclk[0]));
         .SENS_SS_MODE               (SENS_SS_MODE),
         .SENS_SS_MOD_PERIOD         (SENS_SS_MOD_PERIOD)
     ) sensors393_i (
-        .rst                (axi_rst),             // input
+//        .rst                (axi_rst),           // input
         .pclk               (pclk),                //  input
         .pclk2x             (pclk2x),              // input
         .ref_clk            (ref_clk),             // input
-        .dly_rst            (axi_rst),             // input
+        .dly_rst            (idelay_ctrl_reset),   // input 
+        .mrst               (mrst),                // input
+        .prst               (prst),                // input
+        .arst               (arst),                // input
+        
         .mclk               (mclk),                // input
         .cmd_ad_in          (cmd_sensor_ad),       // input[7:0] 
         .cmd_stb_in         (cmd_sensor_stb),      // input
@@ -1575,10 +1574,6 @@ BUFG bufg_axi_aclk_i  (.O(axi_aclk),.I(fclk[0]));
     wire [ 5:0] afi2_wacount;     // input[5:0] 
     wire        afi2_wrissuecap1en;     // output
 
-
-
-
-
     compressor393 #(
         .CMPRS_NUM_AFI_CHN               (CMPRS_NUM_AFI_CHN),
         .CMPRS_GROUP_ADDR                (CMPRS_GROUP_ADDR),
@@ -1660,10 +1655,14 @@ BUFG bufg_axi_aclk_i  (.O(axi_aclk),.I(fclk[0]));
         .CMPRS_AFIMUX_CYCBITS            (CMPRS_AFIMUX_CYCBITS),
         .AFI_MUX_BUF_LATENCY             (AFI_MUX_BUF_LATENCY)
     ) compressor393_i (
-        .rst                       (axi_rst),                    // input
+//        .rst                       (axi_rst),                    // input
         .xclk                      (xclk),                       // input
         .xclk2x                    (xclk2x),                     // input
         .mclk                      (mclk),                       // input
+        .mrst                      (mrst),                       // input
+        .xrst                      (xrst),                       // input
+        .hrst                      (hrst),                       // input
+        
         .cmd_ad                    (cmd_compressor_ad),          // input[7:0] 
         .cmd_stb                   (cmd_compressor_stb),         // input
         .status_ad                 (status_compressor_ad),       // output[7:0] 
@@ -1760,8 +1759,9 @@ BUFG bufg_axi_aclk_i  (.O(axi_aclk),.I(fclk[0]));
         .GPIO_N               (GPIO_N),
         .GPIO_PORTEN          (GPIO_PORTEN)
     ) gpio393_i (
-        .rst           (axi_rst),           // input
+//        .rst           (axi_rst),           // input
         .mclk          (mclk),              // input
+        .mrst          (mrst),              // input
         .cmd_ad        (cmd_gpio_ad),       // input[7:0] 
         .cmd_stb       (cmd_gpio_stb),      // input
         .status_ad     (status_gpio_ad),    // output[7:0] 
@@ -1777,7 +1777,6 @@ BUFG bufg_axi_aclk_i  (.O(axi_aclk),.I(fclk[0]));
         .dc_en         (gpio_logger_en)     // input[9:0] 
     );
 
-    /* Instance template for module timing393 */
     timing393 #(
         .RTC_ADDR              (RTC_ADDR),
         .CAMSYNC_ADDR          (CAMSYNC_ADDR),
@@ -1807,9 +1806,11 @@ BUFG bufg_axi_aclk_i  (.O(axi_aclk),.I(fclk[0]));
         .RTC_SET_CORR          (RTC_SET_CORR),
         .RTC_SET_STATUS        (RTC_SET_STATUS)
     ) timing393_i (
-        .rst            (axi_rst),               // input
+//        .rst            (axi_rst),               // input
         .mclk           (mclk),                  // input
         .pclk           (camsync_clk),           // global clock used for external synchronization. 96MHz in x353.  Make it independent
+        .mrst           (mrst),                  // input
+        .prst           (crst),                  // input
         .refclk         (time_ref),              // RTC reference: integer number of microseconds, less than mclk/2. Not a global clock
         .cmd_ad         (cmd_timing_ad),         // input[7:0] 
         .cmd_stb        (cmd_timing_stb),        // input
@@ -1837,9 +1838,10 @@ BUFG bufg_axi_aclk_i  (.O(axi_aclk),.I(fclk[0]));
         .ts_stb_chn3    (ts_pre_stb[3]),         // output
         .ts_data_chn3   (ts_data[3 * 8 +: 8]),   // output[7:0] 
         .lclk           (logger_clk),            // input global clock, common with the logger (use 100 MHz?)
-        .ts_logger_snap (logger_snap), // input
-        .ts_logger_stb  (ts_pre_logger_stb), // output
-        .ts_logger_data (ts_logegr_data) // output[7:0] 
+        .lrst           (lrst),                  // input
+        .ts_logger_snap (logger_snap),           // input
+        .ts_logger_stb  (ts_pre_logger_stb),     // output
+        .ts_logger_data (ts_logegr_data)         // output[7:0] 
     );
 
     event_logger #(
@@ -1869,9 +1871,11 @@ BUFG bufg_axi_aclk_i  (.O(axi_aclk),.I(fclk[0]));
         .LOGGER_CONF_DBG_BITS   (LOGGER_CONF_DBG_BITS),
         .GPIO_N                 (GPIO_N)
     ) event_logger_i (
-        .rst           (axi_rst),             // input
+//        .rst           (axi_rst),            // input
         .mclk          (mclk),                // input
         .xclk          (logger_clk),          // input
+        .mrst          (mrst),                // input
+        .xrst          (lrst),                // input
         .cmd_ad        (cmd_logger_ad),       // input[7:0] 
         .cmd_stb       (cmd_logger_stb),      // input
         .status_ad     (status_logger_ad),    // output[7:0] 
@@ -1928,9 +1932,11 @@ BUFG bufg_axi_aclk_i  (.O(axi_aclk),.I(fclk[0]));
         .MULT_SAXI_ADV_WR        (MULT_SAXI_ADV_WR),
         .MULT_SAXI_ADV_RD        (MULT_SAXI_ADV_RD)
     ) mult_saxi_wr_i (
-        .rst                     (axi_rst),              // input
+//        .rst                     (axi_rst),              // input
         .mclk                    (mclk),                 // input
-        .aclk                    (saxi1_aclk),           // input
+        .aclk                    (saxi1_aclk),           // input == hclk
+        .mrst                    (mrst),                 // input
+        .arst                    (hrst),                 // input
         .cmd_ad                  (cmd_saxi1wr_ad),       // input[7:0] 
         .cmd_stb                 (cmd_saxi1wr_stb),      // input
         .status_ad               (status_saxi1wr_ad),    // output[7:0] 
@@ -2033,8 +2039,9 @@ BUFG bufg_axi_aclk_i  (.O(axi_aclk),.I(fclk[0]));
         .FFCLK1_IFD_DELAY_VALUE  (FFCLK1_IFD_DELAY_VALUE),
         .FFCLK1_IOSTANDARD       (FFCLK1_IOSTANDARD)
     ) clocks393_i (
-        .rst          (axi_rst),             // input
+//        .rst          (axi_rst),             // input
         .mclk         (mclk),                // input
+        .mrst         (mrst),
         .cmd_ad       (cmd_clocks_ad),       // input[7:0] 
         .cmd_stb      (cmd_clocks_stb),      // input
         .status_ad    (status_clocks_ad),    // output[7:0] 
@@ -2057,11 +2064,22 @@ BUFG bufg_axi_aclk_i  (.O(axi_aclk),.I(fclk[0]));
         .extra_status ({1'b0,idelay_ctrl_rdy}) // input[1:0] 
     );
 
+    sync_resets #(
+        .WIDTH(7),
+        .REGISTER(4),
+        .LATE_MASTER(1)
+    ) sync_resets_i (
+        .arst(), // input
+        .mlocked(mcntrl_locked), // input
+        .clk({hclk, axi_aclk, logger_clk, camsync_clk, xclk, pclk, mclk}), // input[0:0] 
+        .rst({hrst, arst,     lrst,       crst,        xrst, prst, mrst}) // output[0:0] 
+    );
+
     axibram_write #(
         .ADDRESS_BITS(AXI_WR_ADDR_BITS)
     ) axibram_write_i (  //SuppressThisWarning ISExst Output port <bram_wstb> of the instance <axibram_write_i> is unconnected or connected to loadless signal.
         .aclk        (axi_aclk), // input
-        .rst         (axi_rst), // input
+        .arst        (arst), // input
         .awaddr      (maxi0_awaddr[31:0]), // input[31:0] // SuppressThisWarning VivadoSynthesis: [Synth 8-3295] tying undriven pin #axibram_write_i:awaddr[31:16,1:0] to constant 0
         .awvalid     (maxi0_awvalid), // input
         .awready     (maxi0_awready), // output
@@ -2115,7 +2133,8 @@ BUFG bufg_axi_aclk_i  (.O(axi_aclk),.I(fclk[0]));
         .ADDRESS_BITS(AXI_RD_ADDR_BITS)
     ) axibram_read_i ( //SuppressThisWarning ISExst Output port <bram_rclk> of the instance <axibram_read_i> is unconnected or connected to loadless signal.
         .aclk        (axi_aclk), // input
-        .rst         (axi_rst), // input
+        .arst        (arst),
+//        .rst         (axi_rst), // input
         .araddr      (maxi0_araddr[31:0]), // input[31:0] // SuppressThisWarning VivadoSynthesis: [Synth 8-3295] tying undriven pin #axibram_read_i:araddr[31:16,1:0] to constant 0
         .arvalid     (maxi0_arvalid), // input
         .arready     (maxi0_arready), // output

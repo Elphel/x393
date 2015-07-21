@@ -21,12 +21,13 @@
 `timescale 1ns/1ps
 
 module  timestamp_snapshot(
-    input                rst,
+//    input                rst,
     input                tclk, // clock that drives time counters
     input         [31:0] sec,  // @tclk: current time seconds
     input         [19:0] usec, // @tclk: current time microseconds
     // snapshot destination clock domain
     input                sclk,
+    input                srst, // @ posedge sclk - sync reset
     input                snap,
     output               pre_stb, // one clock pulse before sending TS data
     output reg     [7:0] ts_data  // timestamp data (s0,s1,s2,s3,u0,u1,u2,u3==0)
@@ -44,8 +45,8 @@ module  timestamp_snapshot(
         if (snap_tclk) sec_usec_snap <= {usec,sec};
     end
     
-    always @(posedge rst or posedge sclk) begin
-        if      (rst)                          snd <= 0;
+    always @(posedge sclk) begin
+        if      (srst)                         snd <= 0;
         else if (!pulse_busy && pulse_busy_r)  snd <= 1;
         else if ((&cntr) || snap)              snd <= 0;
     end
@@ -72,7 +73,7 @@ module  timestamp_snapshot(
     pulse_cross_clock #(
         .EXTRA_DLY (1)
     ) snap_tclk_i (
-        .rst       (rst), // input
+        .rst       (srst), // input
         .src_clk   (sclk), // input
         .dst_clk   (tclk), // input
         .in_pulse  (snap), // input

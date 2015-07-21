@@ -52,7 +52,7 @@ module  cmd_encod_tiled_wr #(
     parameter FRAME_WIDTH_BITS=     13,  // Maximal frame width - 8-word (16 bytes) bursts 
     parameter WSEL=                 1'b0
 ) (
-    input                        rst,
+    input                        mrst,
     input                        clk,
 // programming interface
     input                  [2:0] start_bank,    // bank address
@@ -164,57 +164,54 @@ module  cmd_encod_tiled_wr #(
     assign pre_write=       rom_r[ENC_CMD_SHIFT]; //1 cycle before READ command
     
     
-    always @ (posedge rst or posedge clk) begin
-        if (rst)           gen_run <= 0;
+    always @ (posedge clk) begin
+        if      (mrst)     gen_run <= 0;
         else if (start_d)  gen_run<= 1; // delaying
         else if (pre_done) gen_run<= 0;
         
- //       if (rst)           gen_run_d <= 0;
- //       else               gen_run_d <= gen_run;
-
-        if (rst)           num_rows_m1 <= 0;                    
+        if (mrst)           num_rows_m1 <= 0;                    
         else if (start)    num_rows_m1 <= num_rows_in_m1;  // number of rows
         
-        if (rst)           num_cols128_m1 <= 0;
+        if (mrst)           num_cols128_m1 <= 0;
         else if (start)    num_cols128_m1 <= num_cols_in_m1;  // number of r16-byte columns
         
-        if (rst)         start_d <=0;
+        if (mrst)         start_d <=0;
         else             start_d <=  start;
         
-        if (rst)                      top_rc <= 0;
+        if (mrst)                      top_rc <= 0;
         else if (start_d)             top_rc <= {row,col}+1;
         else if (pre_act && last_row) top_rc <= top_rc+1; // may increment RA  
 
-        if (rst)                          row_col_bank <= 0;
+        if (mrst)                          row_col_bank <= 0;
         else if (start_d)                 row_col_bank <= {row,col,bank}; // TODO: Use start_col,... and start, not start_d?
         
         else if (pre_act)               row_col_bank <= row_col_bank_next_w; 
         
 
-        if (rst)                      scan_row <= 0;
+        if (mrst)                      scan_row <= 0;
         else if (start_d)             scan_row <= 0;
         else if (pre_act)             scan_row <= last_row?0:scan_row+1;
         
-        if (rst)                      scan_col <= 0;
+        if (mrst)                      scan_col <= 0;
         else if (start_d)             scan_col <= 0;
         else if (pre_act && last_row) scan_col <= scan_col+1; // for ACTIVATE, not for READ
 
-        if (rst)                      first_col <= 0;
+        if (mrst)                      first_col <= 0;
         else if (start_d)             first_col <= 1;
         else if (pre_act && last_row) first_col  <= 0;
 
-        if (rst)                      last_col <= 0;
+        if (mrst)                      last_col <= 0;
         else if (start_d)             last_col <= num_cols128_m1==0; // if single column - will start with 1'b1;
         else if (pre_act)             last_col <= (scan_col==num_cols128_m1); // too early for READ ?
 
-        if (rst)                      enable_autopre <= 0;
+        if (mrst)                      enable_autopre <= 0;
         else if (start_d)             enable_autopre <= 0;
         else if (pre_act)             enable_autopre <=  last_col || !keep_open; // delayed by 2 pre_act tacts form last_col, OK with a single column
         
-        if (rst)     loop_continue<=0;
+        if (mrst)     loop_continue<=0;
         else loop_continue <=  (scan_col==num_cols128_m1) && last_row;                 
         
-        if (rst)                     gen_addr <= 0;
+        if (mrst)                     gen_addr <= 0;
         else if (!start_d && !gen_run) gen_addr <= 0;
         else if ((gen_addr==LOOP_LAST) && !loop_continue) gen_addr <= LOOP_FIRST; // skip loop alltogeter
         else                         gen_addr <= gen_addr+1; // not in a loop
@@ -230,14 +227,13 @@ module  cmd_encod_tiled_wr #(
     end
     
     // ROM-based (registered output) encoded sequence
-    always @ (posedge rst or posedge clk) begin
-        if (rst)           rom_r <= 0;
+    always @ (posedge clk) begin
+        if (mrst)           rom_r <= 0;
         else case (gen_addr)
             4'h0: rom_r <= (ENC_CMD_ACTIVATE <<  ENC_CMD_SHIFT)                          | (1 << ENC_BUF_RD) ; // here does not matter, just to work with masked ACTIVATE
             4'h1: rom_r <= (ENC_CMD_NOP <<       ENC_CMD_SHIFT)                          | (1 << ENC_BUF_RD) ; 
             4'h2: rom_r <= (ENC_CMD_ACTIVATE <<  ENC_CMD_SHIFT)                          | (1 << ENC_BUF_RD) | (WSEL << ENC_SEL); 
             4'h3: rom_r <= (ENC_CMD_WRITE <<     ENC_CMD_SHIFT)                          | (1 << ENC_BUF_RD) | (WSEL << ENC_SEL) | (1 << ENC_ODT); 
-//          4'h4: rom_r <= (ENC_CMD_ACTIVATE <<  ENC_CMD_SHIFT)                          | (1 << ENC_BUF_RD) | (WSEL << ENC_SEL) | (1 << ENC_ODT) | (1 << ENC_DQ_DQS_EN); 
             4'h4: rom_r <= (ENC_CMD_ACTIVATE <<  ENC_CMD_SHIFT)                          | (1 << ENC_BUF_RD) | (WSEL << ENC_SEL) | (1 << ENC_ODT); 
             4'h5: rom_r <= (ENC_CMD_WRITE <<     ENC_CMD_SHIFT)                          | (1 << ENC_BUF_RD) | (WSEL << ENC_SEL) | (1 << ENC_ODT) | (1 << ENC_DQ_DQS_EN) | (1 << ENC_DQS_TOGGLE); 
             // start loop
@@ -252,16 +248,14 @@ module  cmd_encod_tiled_wr #(
             default:rom_r <= 0;
        endcase
     end
-    always @ (posedge rst or posedge clk) begin
-   //     if (rst)           done <= 0;
-   //     else               done <= pre_done;
-        if (rst)           enc_wr <= 0;
+    always @ (posedge clk) begin
+        if (mrst)          enc_wr <= 0;
         else               enc_wr <= gen_run || gen_run; // gen_run_d; *****
         
-        if (rst)           enc_done <= 0;
+        if (mrst)          enc_done <= 0;
         else               enc_done <= enc_wr && !gen_run; // !gen_run_d; *****
         
-        if (rst)             enc_cmd <= 0;
+        if (mrst)          enc_cmd <= 0;
         else if (gen_run) begin
           if (rom_cmd[0] || (rom_cmd[1] && enable_act)) enc_cmd <= func_encode_cmd ( // encode non-NOP command
             rom_cmd[1]? // activate
@@ -304,7 +298,7 @@ module  cmd_encod_tiled_wr #(
     fifo_2regs #(
         .WIDTH(COLADDR_NUMBER)
     ) fifo_2regs_i (
-        .rst (rst), // input
+        .mrst (rst), // input
         .clk (clk), // input
         .din (row_col_bank[COLADDR_NUMBER-1:0]), // input[15:0] 
         .wr(pre_act), // input

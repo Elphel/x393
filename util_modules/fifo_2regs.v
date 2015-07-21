@@ -24,7 +24,7 @@
 module  fifo_2regs #(
     parameter WIDTH =16)
      (
-     input              rst,
+     input              mrst,
      input              clk,
      input  [WIDTH-1:0] din,
      input              wr,
@@ -38,12 +38,12 @@ module  fifo_2regs #(
     reg  [WIDTH-1:0] reg_in;
     
     assign dout=reg_out;
-    always @ (posedge rst or posedge clk) begin
-        if      (rst)      full_out <=0;
+    always @ (posedge clk) begin
+        if      (mrst)     full_out <=0;
         else if (srst)     full_out <=0;
         else if (wr || rd) full_out <= !(!wr && rd && !full_in);
         
-        if      (rst)      full_in <=0;
+        if      (mrst)     full_in <=0;
         else if (srst)     full_in <=0;
         else if (wr ^rd)   full_in <= wr && (full_out || full_in);
     end

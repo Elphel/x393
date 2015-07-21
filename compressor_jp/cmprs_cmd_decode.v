@@ -132,16 +132,16 @@ module  cmprs_cmd_decode#(
         parameter CMPRS_CSAT_CB_BITS =        10, // number of bits in blue scale field in color saturation word
         parameter CMPRS_CSAT_CR =             12, // bit # of number of red scale field in color saturation word
         parameter CMPRS_CSAT_CR_BITS =        10, // number of bits in red scale field in color saturation word
-        parameter CMPRS_CORING_BITS =          3, // number of bits in coring mode
+        parameter CMPRS_CORING_BITS =          3 // number of bits in coring mode
         
-        parameter CMPRS_STUFFER_NEG =          1  // stuffer runs @ negedge xclk2x
+        //parameter CMPRS_STUFFER_NEG =          1  // stuffer runs @ negedge xclk2x
 
     
 )(
-    input                         rst,
+//    input                         rst,
     input                         xclk,               // global clock input, compressor single clock rate
-//  input                         xclk2x,             // global clock input, compressor double clock rate, nominally rising edge aligned
     input                         mclk,               // global system/memory clock
+    input                         mrst,      // @posedge mclk, sync reset
     input                         ctrl_we,            // input - @mclk control register write enable
     input                         format_we,          // input - @mclk write number of tiles and left margin
     input                         color_sat_we,       // input - @mclk write color saturation values
@@ -236,57 +236,57 @@ module  cmprs_cmd_decode#(
     wire         frame_start_xclk;
     assign cmprs_en_mclk = cmprs_en_mclk_r;
     
-    always @ (posedge rst or posedge mclk) begin
-        if (rst) ctrl_we_r <= 0;
-        else     ctrl_we_r <= ctrl_we;
+    always @ (posedge mclk) begin
+        if (mrst) ctrl_we_r <= 0;
+        else      ctrl_we_r <= ctrl_we;
         
-        if (rst) format_we_r <= 0;
-        else     format_we_r <= format_we;
+        if (mrst) format_we_r <= 0;
+        else      format_we_r <= format_we;
         
-        if (rst) color_sat_we_r <= 0;
-        else     color_sat_we_r <= color_sat_we;
+        if (mrst) color_sat_we_r <= 0;
+        else      color_sat_we_r <= color_sat_we;
         
-        if (rst) coring_we_r <= 0;
-        else     coring_we_r <= coring_we;
+        if (mrst) coring_we_r <= 0;
+        else      coring_we_r <= coring_we;
         
-        if (rst)                                                       di_r <= 0;
+        if (mrst)                                                      di_r <= 0;
         else if (ctrl_we || format_we || color_sat_we || coring_we)    di_r <= di[30:0];
     
-        if      (rst)                           cmprs_en_mclk_r <= 0;
+        if      (mrst)                              cmprs_en_mclk_r <= 0;
         else if (ctrl_we_r && di_r[CMPRS_CBIT_RUN]) cmprs_en_mclk_r <= (di_r[CMPRS_CBIT_RUN-1 -:CMPRS_CBIT_RUN_BITS] != CMPRS_CBIT_RUN_RST);
         
-        if      (rst)                           cmprs_run_mclk <= 0;
+        if      (mrst)                              cmprs_run_mclk <= 0;
         else if (ctrl_we_r && di_r[CMPRS_CBIT_RUN]) cmprs_run_mclk <= (di_r[CMPRS_CBIT_RUN-1 -:CMPRS_CBIT_RUN_BITS] == CMPRS_CBIT_RUN_ENABLE);
         
-        if      (rst)   cmprs_standalone <= 0;
+        if      (mrst)      cmprs_standalone <= 0;
         else if (ctrl_we_r) cmprs_standalone <=  ctrl_we_r && di_r[CMPRS_CBIT_RUN] && (di_r[CMPRS_CBIT_RUN-1 -:CMPRS_CBIT_RUN_BITS] == CMPRS_CBIT_RUN_STANDALONE);
 
-        if      (rst)                              sigle_frame_buf <= 0;
+        if      (mrst)                                 sigle_frame_buf <= 0;
         else if (ctrl_we_r && di_r[CMPRS_CBIT_FRAMES]) sigle_frame_buf <= (di_r[CMPRS_CBIT_FRAMES-1 -:CMPRS_CBIT_FRAMES_BITS] == CMPRS_CBIT_FRAMES_SINGLE);
 
-        if      (rst)                              cmprs_qpage_mclk <= 0;
+        if      (mrst)                                 cmprs_qpage_mclk <= 0;
         else if (ctrl_we_r && di_r[CMPRS_CBIT_QBANK])  cmprs_qpage_mclk <= di_r[CMPRS_CBIT_QBANK-1 -:CMPRS_CBIT_QBANK_BITS];
 
-        if      (rst)                              cmprs_dcsub_mclk <= 0;
+        if      (mrst)                                 cmprs_dcsub_mclk <= 0;
         else if (ctrl_we_r && di_r[CMPRS_CBIT_DCSUB])  cmprs_dcsub_mclk <= di_r[CMPRS_CBIT_DCSUB-1 -:CMPRS_CBIT_DCSUB_BITS];
         
-        if      (rst)                              cmprs_mode_mclk <=  0;
+        if      (mrst)                                 cmprs_mode_mclk <=  0;
         else if (ctrl_we_r && di_r[CMPRS_CBIT_CMODE])  cmprs_mode_mclk <=  di_r[CMPRS_CBIT_CMODE-1 -:CMPRS_CBIT_CMODE_BITS];
         
-        if      (rst)                              cmprs_fmode_mclk <=  0;
+        if      (mrst)                                 cmprs_fmode_mclk <=  0;
         else if (ctrl_we_r && di_r[CMPRS_CBIT_FOCUS])  cmprs_fmode_mclk <=  di_r[CMPRS_CBIT_FOCUS-1 -:CMPRS_CBIT_FOCUS_BITS];
         
-        if      (rst)                              bayer_shift_mclk <=  0;
+        if      (mrst)                                 bayer_shift_mclk <=  0;
         else if (ctrl_we_r && di_r[CMPRS_CBIT_BAYER])  bayer_shift_mclk <=  di_r[CMPRS_CBIT_BAYER-1 -:CMPRS_CBIT_BAYER_BITS];
         
         
-        if      (rst)            format_mclk <=  0;
+        if      (mrst)           format_mclk <=  0;
         else if (format_we_r)    format_mclk <=  di_r[30:0];
         
-        if      (rst)            color_sat_mclk <=  0;
+        if      (mrst)           color_sat_mclk <=  0;
         else if (color_sat_we_r) color_sat_mclk <=  di_r[23:0];
         
-        if      (rst)            coring_mclk <=  0;
+        if      (mrst)           coring_mclk <=  0;
         else if (coring_we_r)    coring_mclk <=  di_r[2:0];
 
     end
@@ -438,11 +438,11 @@ module  cmprs_cmd_decode#(
     
     end
 //frame_start_xclk
-    pulse_cross_clock ctrl_we_xclk_i       (.rst(rst), .src_clk(mclk), .dst_clk(xclk), .in_pulse(ctrl_we_r),      .out_pulse(ctrl_we_xclk),.busy());
-    pulse_cross_clock format_we_xclk_i     (.rst(rst), .src_clk(mclk), .dst_clk(xclk), .in_pulse(format_we_r),    .out_pulse(format_we_xclk),.busy());
-    pulse_cross_clock color_sat_we_xclk_i  (.rst(rst), .src_clk(mclk), .dst_clk(xclk), .in_pulse(color_sat_we_r), .out_pulse(color_sat_we_xclk),.busy());
-    pulse_cross_clock coring__we_xclk_i    (.rst(rst), .src_clk(mclk), .dst_clk(xclk), .in_pulse(coring_we_r),    .out_pulse(coring_we_xclk),.busy());
+    pulse_cross_clock ctrl_we_xclk_i       (.rst(mrst), .src_clk(mclk), .dst_clk(xclk), .in_pulse(ctrl_we_r),      .out_pulse(ctrl_we_xclk),.busy());
+    pulse_cross_clock format_we_xclk_i     (.rst(mrst), .src_clk(mclk), .dst_clk(xclk), .in_pulse(format_we_r),    .out_pulse(format_we_xclk),.busy());
+    pulse_cross_clock color_sat_we_xclk_i  (.rst(mrst), .src_clk(mclk), .dst_clk(xclk), .in_pulse(color_sat_we_r), .out_pulse(color_sat_we_xclk),.busy());
+    pulse_cross_clock coring__we_xclk_i    (.rst(mrst), .src_clk(mclk), .dst_clk(xclk), .in_pulse(coring_we_r),    .out_pulse(coring_we_xclk),.busy());
     
-    pulse_cross_clock frame_start_xclk_i   (.rst(rst), .src_clk(mclk), .dst_clk(xclk), .in_pulse(frame_start),    .out_pulse(frame_start_xclk),.busy());
+    pulse_cross_clock frame_start_xclk_i   (.rst(mrst), .src_clk(mclk), .dst_clk(xclk), .in_pulse(frame_start),    .out_pulse(frame_start_xclk),.busy());
 
 endmodule

@@ -113,9 +113,13 @@ module  compressor393 # (
         parameter AFI_MUX_BUF_LATENCY =         2  // buffers read latency from fifo_ren* to fifo_rdata* valid : 2 if no register layers are used
 
 )(
-    input                         rst,    // global reset
+//    input                         rst,    // global reset
     input                         xclk,   // global clock input, compressor single clock rate
     input                         xclk2x, // global clock input, compressor double clock rate, nominally rising edge aligned
+    input                         mrst,      // @posedge mclk, sync reset
+    input                         xrst,      // @posedge xclk, sync reset
+    input                         hrst,      // @posedge hclk, sync reset
+    
     // programming interface
     input                         mclk,     // global system/memory clock
     input                   [7:0] cmd_ad,      // byte-serial command address/data (up to 6 bytes: AL-AH-D0-D1-D2-D3 
@@ -244,8 +248,9 @@ module  compressor393 # (
 
     /* Instance template for module status_router8 */
     status_router8 status_router8_i (
-        .rst         (rst),                     // input
+        .rst         (1'b0),                    //rst),                     // input
         .clk         (mclk),                    // input
+        .srst        (mrst), // input
         .db_in0      (status_ad_mux[  0 +: 8]), // input[7:0] 
         .rq_in0      (status_rq_mux[0]),        // input
         .start_in0   (status_start_mux[0]),     // output
@@ -354,9 +359,12 @@ module  compressor393 # (
                 .CMPRS_TIMEOUT_BITS              (CMPRS_TIMEOUT_BITS),
                 .CMPRS_TIMEOUT                   (CMPRS_TIMEOUT)
             ) jp_channel_i (
-                .rst                                  (rst),                       // input
+//                .rst                                  (rst),                       // input
                 .xclk                                 (xclk),                      // input
                 .xclk2x                               (xclk2x),                    // input
+                .mrst                                 (mrst),                      // input
+                .xrst                                 (xrst),                      // input
+                .hrst                                 (hrst),                      // input
                 .mclk                                 (mclk),                      // input
                 .cmd_ad                               (cmd_ad),                    // input[7:0] 
                 .cmd_stb                              (cmd_stb),                   // input
@@ -417,9 +425,11 @@ module  compressor393 # (
                 .CMPRS_AFIMUX_CYCBITS         (CMPRS_AFIMUX_CYCBITS),
                 .AFI_MUX_BUF_LATENCY          (AFI_MUX_BUF_LATENCY)
             ) cmprs_afi0_mux_i (
-                .rst              (rst),                    // input
+//                .rst              (rst),                    // input
                 .mclk             (mclk),                   // input
                 .hclk             (hclk),                   // input
+                .mrst             (mrst),                    // input
+                .hrst             (hrst),                    // input
                 .cmd_ad           (cmd_ad),                 // input[7:0] 
                 .cmd_stb          (cmd_stb),                // input
                 .status_ad        (status_ad_mux[32 +: 8]), // output[7:0]
@@ -490,9 +500,11 @@ module  compressor393 # (
                 .CMPRS_AFIMUX_CYCBITS         (CMPRS_AFIMUX_CYCBITS),
                 .AFI_MUX_BUF_LATENCY          (AFI_MUX_BUF_LATENCY)
             ) cmprs_afi1_mux_i (
-                .rst              (rst),                    // input
+//                .rst              (rst),                    // input
                 .mclk             (mclk),                   // input
                 .hclk             (hclk),                   // input
+                .mrst             (mrst),                    // input
+                .hrst             (hrst),                    // input
                 .cmd_ad           (cmd_ad),                 // input[7:0] 
                 .cmd_stb          (cmd_stb),                // input
                 .status_ad        (status_ad_mux[40 +: 8]), // output[7:0]
@@ -561,9 +573,11 @@ module  compressor393 # (
                 .CMPRS_AFIMUX_CYCBITS         (CMPRS_AFIMUX_CYCBITS),
                 .AFI_MUX_BUF_LATENCY          (AFI_MUX_BUF_LATENCY)
             ) cmprs_afi0_mux_i (
-                .rst              (rst),                    // input
+//                .rst              (rst),                    // input
                 .mclk             (mclk),                   // input
                 .hclk             (hclk),                   // input
+                .mrst             (mrst),                    // input
+                .hrst             (hrst),                    // input
                 .cmd_ad           (cmd_ad),                 // input[7:0] 
                 .cmd_stb          (cmd_stb),                // input
                 .status_ad        (status_ad_mux[32 +: 8]), // output[7:0]

@@ -42,8 +42,11 @@
 // Or make FIFO outside of the stuffer?
 
 module stuffer393 (
-    input              rst,         // global reset
+//    input              rst,         // global reset
     input              mclk,
+    input              mrst,      // @posedge mclk, sync reset
+    input              xrst,      // @posedge xclk, sync reset
+    
 // time stamping - will copy time at the end of color_first (later than the first hact after vact in the current frame, but before the next one
 // and before the data is needed for output 
     input              ts_pre_stb,  // @mclk - 1 cycle before receiving 8 bytes of timestamp data
@@ -414,17 +417,23 @@ end
 
     // extract strart of frame run from different clock, re-clock from the source
     always @ (posedge fradv_clk) color_first_r <= color_first;
-    pulse_cross_clock stb_start_i    (.rst(rst), .src_clk(fradv_clk), .dst_clk(~clk), .in_pulse(!color_first && color_first_r), .out_pulse(stb_start),.busy());
+    pulse_cross_clock stb_start_i    (.rst(xrst), .src_clk(fradv_clk), .dst_clk(~clk), .in_pulse(!color_first && color_first_r), .out_pulse(stb_start),.busy());
     
+    reg rst_nclk;
+    always @ (negedge clk) rst_nclk <= xrst;
     timestamp_fifo timestamp_fifo_i (
-        .rst      (rst),         // input
+//        .rst      (rst),       // input
         .sclk     (mclk),        // input
+        .srst     (mrst),        // input
         .pre_stb  (ts_pre_stb),  // input
         .din      (ts_data),     // input[7:0] 
          // may use stb_start @ negedge clk
         .aclk     (~clk),        //fradv_clk),   // input
+        .arst     (rst_nclk),        //fradv_clk),   // input
+        
         .advance  (stb_start),   // color_first), // input
         .rclk     (~clk),        // input
+        .rrst     (rst_nclk),    //fradv_clk),   // input
         .rstb     (ts_rstb),     // input
         .dout     (ts_dout)      // output[7:0] reg 
     );

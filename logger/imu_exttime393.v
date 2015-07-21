@@ -25,9 +25,11 @@ When sensors are running in free running mode, each sensor may provide individua
 */
 
 module  imu_exttime393(
-    input                         rst,
+//    input                         rst,
     input                         mclk,         // system clock, negedge TODO:COnvert to posedge!
     input                         xclk,         // half frequency (80 MHz nominal)
+    input                         mrst,        // @ posedge mclk - sync reset
+    input                         xrst,        // @ posedge xclk - sync reset
     input                   [3:0] en_chn_mclk,  // enable per-channel module operation, if all 0 - reset
     // byte-parallel timestamps from 4 sensors channels (in triggered mode all are the same, different only in free running mode)
     // each may generate logger event, channel number encoded in bits 25:24 of the external microseconds
@@ -128,58 +130,70 @@ module  imu_exttime393(
     
     
     timestamp_fifo timestamp_fifo_chn0_i (
-        .rst      (rst),                                  // input
+//        .rst      (rst),                                  // input
         .sclk     (mclk),                                 // input
+        .srst     (mrst),                                 // input
         .pre_stb  (ts_stb[0]),                            // input
         .din      (ts_data_chn0),                         // input[7:0] 
         .aclk     (mclk),                                 // input
+        .arst     (mrst),                                 // input
         .advance  (ts_stb[0]),                            // enough time 
         .rclk     (mclk),                                 // input
+        .rrst     (mrst),                                 // input
         .rstb     (pre_copy_started && (sel_chn == 2'h0)),// input
         .dout     (dout_chn[0 * 8 +: 8])                  // output[7:0] reg valid with copy_selected[1]
     );
 
     timestamp_fifo timestamp_fifo_chn1_i (
-        .rst      (rst),                                  // input
+//        .rst      (rst),                                  // input
         .sclk     (mclk),                                 // input
+        .srst     (mrst),                                 // input
         .pre_stb  (ts_stb[1]),                            // input
         .din      (ts_data_chn1),                         // input[7:0] 
         .aclk     (mclk),                                 // input
+        .arst     (mrst),                                 // input
         .advance  (ts_stb[1]),                            // enough time 
         .rclk     (mclk),                                 // input
+        .rrst     (mrst),                                 // input
         .rstb     (pre_copy_started && (sel_chn == 2'h1)),// input
         .dout     (dout_chn[1 * 8 +: 8])                  // output[7:0] reg valid with copy_selected[1]
     );
 
     timestamp_fifo timestamp_fifo_chn2_i (
-        .rst      (rst),                                  // input
+//        .rst      (rst),                                  // input
         .sclk     (mclk),                                 // input
+        .srst     (mrst),                                 // input
         .pre_stb  (ts_stb[2]),                            // input
         .din      (ts_data_chn2),                         // input[7:0] 
         .aclk     (mclk),                                 // input
+        .arst     (mrst),                                 // input
         .advance  (ts_stb[2]),                            // enough time 
         .rclk     (mclk),                                 // input
+        .rrst     (mrst),                                 // input
         .rstb     (pre_copy_started && (sel_chn == 2'h2)),// input
         .dout     (dout_chn[2 * 8 +: 8])                  // output[7:0] reg valid with copy_selected[1]
     );
 
     timestamp_fifo timestamp_fifo_chn3_i (
-        .rst      (rst),                                  // input
+//        .rst      (rst),                                  // input
         .sclk     (mclk),                                 // input
+        .srst     (mrst),                                 // input
         .pre_stb  (ts_stb[3]),                            // input
         .din      (ts_data_chn3),                         // input[7:0] 
         .aclk     (mclk),                                 // input
+        .arst     (mrst),                                 // input
         .advance  (ts_stb[3]),                            // enough time 
         .rclk     (mclk),                                 // input
+        .rrst     (mrst),                                 // input
         .rstb     (pre_copy_started && (sel_chn == 2'h3)),// input
         .dout     (dout_chn[3 * 8 +: 8])                  // output[7:0] reg valid with copy_selected[1]
     );
 
 
-    pulse_cross_clock i_rd_start_mclk (.rst(1'b0), .src_clk(xclk), .dst_clk(mclk), .in_pulse(rd_start), .out_pulse(rd_start_mclk),.busy());
+    pulse_cross_clock i_rd_start_mclk (.rst(xrst), .src_clk(xclk), .dst_clk(mclk), .in_pulse(rd_start), .out_pulse(rd_start_mclk),.busy());
 
 // generate timestamp request as soon as one of the sub-channels starts copying. That time stamp will be stored for this (ext) channel
-    pulse_cross_clock i_ts           (.rst(1'b0), .src_clk(mclk), .dst_clk(xclk), .in_pulse(pre_copy_w), .out_pulse(ts),.busy());
+    pulse_cross_clock i_ts           (.rst(mrst), .src_clk(mclk), .dst_clk(xclk), .in_pulse(pre_copy_w), .out_pulse(ts),.busy());
 
 endmodule
 

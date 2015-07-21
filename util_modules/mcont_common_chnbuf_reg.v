@@ -35,7 +35,7 @@ module  mcont_common_chnbuf_reg #(
     output reg                  buf_run
 );
     reg                 buf_chn_sel;
-    always @ (posedge rst or posedge clk) begin
+    always @ (posedge clk) begin
         if (rst) buf_chn_sel <= 0;
         else     buf_chn_sel <= (ext_buf_rchn==CHN_NUMBER) && !ext_buf_rrefresh;
         

@@ -23,6 +23,7 @@
 module  status_router8(
     input        rst,
     input        clk,
+    input        srst, // @ posedge clk
     // 4 input channels 
     input [7:0]  db_in0,
     input        rq_in0,
@@ -61,6 +62,7 @@ module  status_router8(
     status_router2 status_router2_top_i (
         .rst       (rst), // input
         .clk       (clk), // input
+        .srst      (srst), // input
         .db_in0    (db_int[0]), // input[7:0] 
         .rq_in0    (rq_int[0]), // input
         .start_in0 (start_int[0]), // output
@@ -75,6 +77,7 @@ module  status_router8(
     status_router4 status_router4_0123_i (
         .rst       (rst), // input
         .clk       (clk), // input
+        .srst      (srst), // input
         .db_in0    (db_in0), // input[7:0] 
         .rq_in0    (rq_in0), // input
         .start_in0 (start_in0), // output
@@ -95,6 +98,7 @@ module  status_router8(
     status_router4 status_router4_4567_i (
         .rst       (rst), // input
         .clk       (clk), // input
+        .srst      (srst), // input
         .db_in0    (db_in4), // input[7:0] 
         .rq_in0    (rq_in4), // input
         .start_in0 (start_in4), // output

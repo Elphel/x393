@@ -27,7 +27,7 @@ module  cmd_seq_mux#(
     parameter CMDSEQMUX_STATUS = 'h38,
     parameter AXI_WR_ADDR_BITS=14
 )(
-    input                             rst,          // global system reset
+    input                             mrst,         // global system reset
     input                             mclk,         // global system clock
     // programming interface
     input                       [7:0] cmd_ad,       // byte-serial command address/data (up to 6 bytes: AL-AH-D0-D1-D2-D3 
@@ -90,12 +90,12 @@ module  cmd_seq_mux#(
     assign {ackn3, ackn2, ackn1, ackn0} = ackn_r;               
     assign ackn_w = rq_any && (!full_r || ackn_out);
     
-    always @(posedge rst or posedge mclk) begin
-        if (rst)            full_r <= 0;
+    always @(posedge mclk) begin
+        if (mrst)           full_r <= 0;
         else if (rq_any)    full_r <= 1;
         else if (ackn_out)  full_r <= 0;
         
-        if (rst)            ackn_r <=0;
+        if (mrst)           ackn_r <=0;
         else                ackn_r <= {4{ackn_w}} & { pri_enc_w[1] &  pri_enc_w[0],
                                                       pri_enc_w[1] & ~pri_enc_w[0],
                                                      ~pri_enc_w[1] &  pri_enc_w[0],
@@ -139,13 +139,14 @@ module  cmd_seq_mux#(
         .DATA_WIDTH (8) //,32)
         
     ) cmd_deser_32bit_i (
-        .rst        (rst),         // input
+        .rst        (1'b0),        //rst),         // input
         .clk        (mclk),        // input
+        .srst       (mrst),        // input
         .ad         (cmd_ad),      // input[7:0] 
         .stb        (cmd_stb),     // input
-        .addr       (),           // output[0:0] 
+        .addr       (),            // output[0:0] 
         .data       (cmd_data),    // output[31:0] 
-        .we         (cmd_status)       // output
+        .we         (cmd_status)   // output
     );
                       
     status_generate #(
@@ -153,14 +154,15 @@ module  cmd_seq_mux#(
         .PAYLOAD_BITS        (18),
         .REGISTER_STATUS     (1)
     ) status_generate_cmd_seq_mux_i (
-        .rst           (rst), // input
-        .clk           (mclk), // input
-        .we            (cmd_status), // input
-        .wd            (cmd_data[7:0]), // input[7:0] 
+        .rst           (1'b0),               //rst),         // input
+        .clk           (mclk),               // input
+        .srst          (mrst),               // input
+        .we            (cmd_status),         // input
+        .wd            (cmd_data[7:0]),      // input[7:0] 
         .status        ({frame_num3, frame_num2, frame_num1, frame_num0, 2'b0}), // input[18:0] // 2 LSBs - may add "real" status 
-        .ad            (status_ad), // output[7:0] 
-        .rq            (status_rq), // output
-        .start         (status_start) // input
+        .ad            (status_ad),          // output[7:0] 
+        .rq            (status_rq),          // output
+        .start         (status_start)        // input
     );
 
 

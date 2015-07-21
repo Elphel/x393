@@ -158,9 +158,12 @@ module  sensor_channel#(
     parameter SENS_SS_MOD_PERIOD =     10000        // integer 4000-40000 - SS modulation period in ns
     
 ) (
-    input         rst,
+//    input         rst,
     input         pclk,   // global clock input, pixel rate (96MHz for MT9P006)
     input         pclk2x, // global clock input, double pixel rate (192MHz for MT9P006)
+    input         mrst,      // @posedge mclk, sync reset
+    input         prst,      // @posedge pclk, sync reset
+    
     // I/O pads, pin names match circuit diagram
     inout   [7:0] sns_dp,
     inout   [7:0] sns_dn,
@@ -306,8 +309,8 @@ module  sensor_channel#(
         cmd_stb <= cmd_stb_in;
     end
 
-    always @ (posedge  rst or posedge mclk) begin
-        if      (rst)            mode <= 0;
+    always @ (posedge mclk) begin
+        if      (mrst)           mode <= 0;
         else if (sensor_ctrl_we) mode <= sensor_ctrl_data[SENSOR_MODE_WIDTH-1:0];
     end
     
@@ -327,8 +330,9 @@ module  sensor_channel#(
     level_cross_clocks  level_cross_clocks_en_pclk_i (.clk(pclk), .d_in(en_mclk), .d_out(en_pclk));
     
     status_router2 status_router2_sensor_i (
-        .rst       (rst),                     // input
+        .rst       (1'b0), //rst),                     // input
         .clk       (mclk),                    // input
+        .srst      (mrst),                    // input
         .db_in0    (sens_i2c_status_ad),      // input[7:0] 
         .rq_in0    (sens_i2c_status_rq),      // input
         .start_in0 (sens_i2c_status_start),   // output
@@ -347,8 +351,9 @@ module  sensor_channel#(
         .ADDR_WIDTH  (1),
         .DATA_WIDTH  (32)
     ) cmd_deser_sens_channel_i (
-        .rst         (rst),               // input
+        .rst         (1'b0), // rst),               // input
         .clk         (mclk),              // input
+        .srst        (mrst),                    // input
         .ad          (cmd_ad),            // input[7:0] 
         .stb         (cmd_stb),           // input
         .addr      (),                    // output[0:0] - not used
@@ -370,7 +375,7 @@ module  sensor_channel#(
         .SENSI2C_IOSTANDARD    (SENSI2C_IOSTANDARD),
         .SENSI2C_SLEW          (SENSI2C_SLEW)
     ) sensor_i2c_io_i (
-        .rst                   (rst),                   // input
+        .mrst                  (mrst),                   // input
         .mclk                  (mclk),                  // input
         .cmd_ad                (cmd_ad),                // input[7:0] 
         .cmd_stb               (cmd_stb),               // input
@@ -381,7 +386,7 @@ module  sensor_channel#(
         .scl                   (sns_scl),               // inout
         .sda                   (sns_sda)                // inout
     );
-
+    wire irst; // @ posedge ipclk
     sens_parallel12 #(
         .SENSIO_ADDR           (SENSIO_ADDR),
         .SENSIO_ADDR_MASK      (SENSIO_ADDR_MASK),
@@ -427,8 +432,11 @@ module  sensor_channel#(
         .SENS_SS_MODE          (SENS_SS_MODE),
         .SENS_SS_MOD_PERIOD    (SENS_SS_MOD_PERIOD)
     ) sens_parallel12_i (
-        .rst                  (rst),                    // input
+//        .rst                  (rst),                    // input
         .pclk                 (pclk),                   // input
+        .mclk_rst             (mrst),                   // input
+        .prst                 (prst),                   // input
+        .irst                 (irst),                   // output
         .ipclk                (ipclk),                  // output
         .ipclk2x              (), // ipclk2x),          // output
         .trigger_mode         (trigger_mode), // input
@@ -458,9 +466,11 @@ module  sensor_channel#(
         .SENSOR_FIFO_2DEPTH (SENSOR_FIFO_2DEPTH),
         .SENSOR_FIFO_DELAY  (SENSOR_FIFO_DELAY)
     ) sensor_fifo_i (
-        .rst         (rst),          // input
+//        .rst         (rst),        // input
         .iclk        (ipclk),        // input
         .pclk        (pclk),         // input
+        .prst        (prst),         // input
+        .irst        (irst),         // input
         .pxd_in      (pxd_to_fifo),  // input[11:0] 
         .vact        (vact_to_fifo), // input
         .hact        (hact_to_fifo), // input
@@ -481,9 +491,10 @@ module  sensor_channel#(
         .SENS_SYNC_MINBITS    (SENS_SYNC_MINBITS),
         .SENS_SYNC_MINPER     (SENS_SYNC_MINPER)
     ) sens_sync_i (
-        .rst          (rst),           // input
         .pclk         (pclk),          // input
         .mclk         (mclk),          // input
+        .mrst         (mrst),          // input
+        .prst         (prst),          // input
         .en           (en_pclk),       // input @pclk
         .sof_in       (sof),           // input
         .eof_in       (eof),           // input
@@ -514,8 +525,10 @@ module  sensor_channel#(
         .SENS_GAMMA_MODE_REPET (SENS_GAMMA_MODE_REPET),
         .SENS_GAMMA_MODE_TRIG  (SENS_GAMMA_MODE_TRIG)
     ) sens_gamma_i (
-        .rst         (rst),            // input
+//        .rst         (rst),            // input
         .pclk        (pclk),           // input
+        .mrst        (mrst),          // input
+        .prst        (prst),          // input
         .pxd_in      (gamma_pxd_in),   // input[15:0] 
         .hact_in     (gamma_hact_in),  // input
         .sof_in      (gamma_sof_in),   // input
@@ -540,7 +553,9 @@ module  sensor_channel#(
                 .HISTOGRAM_LEFT_TOP     (HISTOGRAM_LEFT_TOP),
                 .HISTOGRAM_WIDTH_HEIGHT (HISTOGRAM_WIDTH_HEIGHT)
             ) sens_histogram_i (
-                .rst        (rst),            // input
+//                .rst        (rst),            // input
+                .mrst       (mrst),           // input
+                .prst       (prst),           // input
                 .pclk       (pclk),           // input
                 .pclk2x     (pclk2x),         // input
                 .sof        (gamma_sof_out),  // input
@@ -572,7 +587,9 @@ module  sensor_channel#(
                 .HISTOGRAM_LEFT_TOP     (HISTOGRAM_LEFT_TOP),
                 .HISTOGRAM_WIDTH_HEIGHT (HISTOGRAM_WIDTH_HEIGHT)
             ) sens_histogram_i (
-                .rst        (rst),            // input
+//                .rst        (rst),            // input
+                .mrst        (mrst),          // input
+                .prst        (prst),          // input
                 .pclk       (pclk),           // input
                 .pclk2x     (pclk2x),         // input
                 .sof        (gamma_sof_out),  // input
@@ -604,7 +621,9 @@ module  sensor_channel#(
                 .HISTOGRAM_LEFT_TOP     (HISTOGRAM_LEFT_TOP),
                 .HISTOGRAM_WIDTH_HEIGHT (HISTOGRAM_WIDTH_HEIGHT)
             ) sens_histogram_i (
-                .rst        (rst),            // input
+//                .rst        (rst),            // input
+                .mrst        (mrst),          // input
+                .prst        (prst),          // input
                 .pclk       (pclk),           // input
                 .pclk2x     (pclk2x),         // input
                 .sof        (gamma_sof_out),  // input
@@ -636,7 +655,9 @@ module  sensor_channel#(
                 .HISTOGRAM_LEFT_TOP     (HISTOGRAM_LEFT_TOP),
                 .HISTOGRAM_WIDTH_HEIGHT (HISTOGRAM_WIDTH_HEIGHT)
             ) sens_histogram_i (
-                .rst        (rst),            // input
+//                .rst        (rst),            // input
+                .mrst        (mrst),          // input
+                .prst        (prst),          // input
                 .pclk       (pclk),           // input
                 .pclk2x     (pclk2x),         // input
                 .sof        (gamma_sof_out),  // input

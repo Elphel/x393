@@ -30,7 +30,7 @@ module  cmd_encod_linear_rw#(
     parameter RSEL=                 1'b1, // late/early READ commands (to adjust timing by 1 SDCLK period)
     parameter WSEL=                 1'b0  // late/early WRITE commands (to adjust timing by 1 SDCLK period)
 ) (
-    input                        rst,
+    input                        mrst,
     input                        clk,
 // programming interface
 //    input                  [7:0] cmd_ad,      // byte-serial command address/data (up to 6 bytes: AL-AH-D0-D1-D2-D3 
@@ -63,7 +63,7 @@ module  cmd_encod_linear_rw#(
         .CMD_DONE_BIT      (CMD_DONE_BIT),
         .RSEL              (RSEL)
     ) cmd_encod_linear_rd_i (
-        .rst                (rst), // input
+        .mrst               (mrst), // input
         .clk                (clk), // input
         .bank_in            (bank_in), // input[2:0] 
         .row_in             (row_in), // input[14:0] 
@@ -84,7 +84,7 @@ module  cmd_encod_linear_rw#(
         .CMD_DONE_BIT      (CMD_DONE_BIT),
         .WSEL              (WSEL)
     ) cmd_encod_linear_wr_i (
-        .rst                (rst), // input
+        .mrst               (mrst), // input
         .clk                (clk), // input
         .bank_in            (bank_in), // input[2:0] 
         .row_in             (row_in), // input[14:0] 
@@ -97,11 +97,11 @@ module  cmd_encod_linear_rw#(
         .enc_done           (enc_done_wr) // output reg 
     );
     
-    always @(posedge rst or posedge clk) begin
-        if (rst)       start <= 0;
+    always @(posedge clk) begin
+        if (mrst)      start <= 0;
         else           start <= start_rd || start_wr;
 
-        if      (rst)      select_wr <= 0;
+        if      (mrst)     select_wr <= 0;
         else if (start_rd) select_wr <= 0;
         else if (start_wr) select_wr <= 1;
     end

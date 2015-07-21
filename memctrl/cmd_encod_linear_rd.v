@@ -30,7 +30,7 @@ module  cmd_encod_linear_rd #(
     parameter CMD_DONE_BIT=         10, // VDT BUG: CMD_DONE_BIT is used in a function call parameter!
     parameter RSEL=                1'b1
 ) (
-    input                        rst,
+    input                        mrst,
     input                        clk,
 // programming interface
 //    input                  [7:0] cmd_ad,      // byte-serial command address/data (up to 6 bytes: AL-AH-D0-D1-D2-D3 
@@ -90,20 +90,18 @@ module  cmd_encod_linear_rd #(
     assign     rom_skip= rom_r[ENC_PAUSE_SHIFT+:2];
     assign     full_cmd= rom_cmd[1]?(rom_cmd[0]?CMD_ACTIVATE:CMD_PRECHARGE):(rom_cmd[0]?CMD_READ:CMD_NOP);
     
-    always @ (posedge rst or posedge clk) begin
-        if (rst)           gen_run <= 0;
+    always @ (posedge clk) begin
+        if (mrst)          gen_run <= 0;
         else if (start)    gen_run<= 1;
         else if (pre_done) gen_run<= 0;
         
-//        if (rst)           gen_run_d <= 0;
-//        else               gen_run_d <= gen_run;
 
-        if (rst)                     gen_addr <= 0;
+        if      (mrst)               gen_addr <= 0;
         else if (!start && !gen_run) gen_addr <= 0;
         else if ((gen_addr==(REPEAT_ADDR-1)) && (num128[NUM_XFER_BITS-1:1]==0)) gen_addr <= REPEAT_ADDR+1; // skip loop alltogeter
         else if ((gen_addr !=REPEAT_ADDR) || (num128[NUM_XFER_BITS-1:1]==0)) gen_addr <= gen_addr+1; // not in a loop
 //counting loops?        
-        if      (rst)          num128 <= 0;
+        if      (mrst)         num128 <= 0;
         else if (start)        num128 <= num128_in;
         else if (!gen_run)     num128 <= 0; //
         else if ((gen_addr == (REPEAT_ADDR-1)) || (gen_addr == REPEAT_ADDR))  num128 <= num128 -1;
@@ -121,8 +119,8 @@ module  cmd_encod_linear_rd #(
     end
     
     // ROM-based (registered output) encoded sequence
-    always @ (posedge rst or posedge clk) begin
-        if (rst)           rom_r <= 0;
+    always @ (posedge clk) begin
+        if (mrst)          rom_r <= 0;
         else case (gen_addr)
             4'h0: rom_r <= (ENC_CMD_ACTIVATE <<  ENC_CMD_SHIFT); 
             4'h1: rom_r <= (ENC_CMD_NOP <<       ENC_CMD_SHIFT) | (1 << ENC_PAUSE_SHIFT); 
@@ -136,17 +134,15 @@ module  cmd_encod_linear_rd #(
             default:rom_r <= 0;
        endcase
     end
-    always @ (posedge rst or posedge clk) begin
-//        if (rst)           done <= 0;
-//        else               done <= pre_done;
+    always @ (posedge clk) begin
         
-        if (rst)           enc_wr <= 0;
+        if (mrst)          enc_wr <= 0;
         else               enc_wr <= gen_run; //  || gen_run_d;
         
-        if (rst)           enc_done <= 0;
+        if (mrst)          enc_done <= 0;
         else               enc_done <= enc_wr && !gen_run; // !gen_run_d;
         
-        if (rst)             enc_cmd <= 0;
+        if (mrst)          enc_cmd <= 0;
         else if (gen_run) begin
           if (rom_cmd==0) enc_cmd <= func_encode_skip ( // encode pause
             {{CMD_PAUSE_BITS-2{1'b0}},rom_skip[1:0]}, // skip;   // number of extra cycles to skip (and keep all the other outputs)
@@ -184,74 +180,5 @@ module  cmd_encod_linear_rd #(
     
 // move to include?
 `include "includes/x393_mcontr_encode_cmd.vh" 
-/*
-    function [31:0] func_encode_skip;
-        input [CMD_PAUSE_BITS-1:0] skip;       // number of extra cycles to skip (and keep all the other outputs)
-        input                      done;       // end of sequence 
-        input [2:0]                bank;       // bank (here OK to be any)
-        input                      odt_en;     // enable ODT
-        input                      cke;        // disable CKE
-        input                      sel;        // first/second half-cycle, other will be nop (cke+odt applicable to both)
-        input                      dq_en;      // enable (not tristate) DQ  lines (internal timing sequencer for 0->1 and 1->0)
-        input                      dqs_en;     // enable (not tristate) DQS lines (internal timing sequencer for 0->1 and 1->0)
-        input                      dqs_toggle; // enable toggle DQS according to the pattern
-        input                      dci;        // DCI disable, both DQ and DQS lines (internal logic and timing sequencer for 0->1 and 1->0)
-        input                      buf_wr;     // connect to external buffer (but only if not paused)
-        input                      buf_rd;     // connect to external buffer (but only if not paused)
-        input                      buf_rst;    // connect to external buffer (but only if not paused)
-        begin
-            func_encode_skip= func_encode_cmd (
-                {{14-CMD_DONE_BIT{1'b0}}, done, skip[CMD_PAUSE_BITS-1:0]},       // 15-bit row/column address
-                bank[2:0],  // bank (here OK to be any)
-                3'b0,       // RAS/CAS/WE, positive logic
-                odt_en,     // enable ODT
-                cke,        // disable CKE
-                sel,        // first/second half-cycle, other will be nop (cke+odt applicable to both)
-                dq_en,      // enable (not tristate) DQ  lines (internal timing sequencer for 0->1 and 1->0)
-                dqs_en,     // enable (not tristate) DQS lines (internal timing sequencer for 0->1 and 1->0)
-                dqs_toggle, // enable toggle DQS according to the pattern
-                dci,        // DCI disable, both DQ and DQS lines (internal logic and timing sequencer for 0->1 and 1->0)
-                buf_wr,     // connect to external buffer (but only if not paused)
-                buf_rd,     // connect to external buffer (but only if not paused)
-                1'b0,       // nop
-                buf_rst);
-        end
-    endfunction
-
-    function [31:0] func_encode_cmd;
-        input               [14:0] addr;       // 15-bit row/column address
-        input                [2:0] bank;       // bank (here OK to be any)
-        input                [2:0] rcw;        // RAS/CAS/WE, positive logic
-        input                      odt_en;     // enable ODT
-        input                      cke;        // disable CKE
-        input                      sel;        // first/second half-cycle, other will be nop (cke+odt applicable to both)
-        input                      dq_en;      // enable (not tristate) DQ  lines (internal timing sequencer for 0->1 and 1->0)
-        input                      dqs_en;     // enable (not tristate) DQS lines (internal timing sequencer for 0->1 and 1->0)
-        input                      dqs_toggle; // enable toggle DQS according to the pattern
-        input                      dci;        // DCI disable, both DQ and DQS lines (internal logic and timing sequencer for 0->1 and 1->0)
-        input                      buf_wr;     // connect to external buffer (but only if not paused)
-        input                      buf_rd;     // connect to external buffer (but only if not paused)
-        input                      nop;        // add NOP after the current command, keep other data
-        input                      buf_rst;    // connect to external buffer (but only if not paused)
-        begin
-            func_encode_cmd={
-            addr[14:0], // 15-bit row/column address
-            bank [2:0], // bank
-            rcw[2:0],   // RAS/CAS/WE
-            odt_en,     // enable ODT
-            cke,        // may be optimized (removed from here)?
-            sel,        // first/second half-cycle, other will be nop (cke+odt applicable to both)
-            dq_en,      // enable (not tristate) DQ  lines (internal timing sequencer for 0->1 and 1->0)
-            dqs_en,     // enable (not tristate) DQS  lines (internal timing sequencer for 0->1 and 1->0)
-            dqs_toggle, // enable toggle DQS according to the pattern
-            dci,        // DCI disable, both DQ and DQS lines (internal logic and timing sequencer for 0->1 and 1->0)
-            buf_wr,     // phy_buf_wr,   // connect to external buffer (but only if not paused)
-            buf_rd,     // phy_buf_rd,    // connect to external buffer (but only if not paused)
-            nop,        // add NOP after the current command, keep other data
-            buf_rst     // Reserved for future use
-           };
-        end
-    endfunction
-*/
-endmodule
+/endmodule
 

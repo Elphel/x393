@@ -24,7 +24,7 @@ module  scheduler16 #(
     parameter width=16, // counter number of bits
     parameter n_chn=16  // number of channels
 )(
-    input             rst,
+    input             mrst,
     input             clk,
     input [n_chn-1:0] chn_en,    // channel enable mask  
     input [n_chn-1:0] want_rq,   // both want_rq and need_rq should go inactive after being granted  
@@ -60,8 +60,8 @@ module  scheduler16 #(
     generate
         genvar i;
         for (i=0;i<n_chn;i=i+1) begin: pri_reg_block
-            always @ (posedge rst or posedge clk) begin
-                if      (rst)                     pri_reg[width*i +: width] <= 0;
+            always @ (posedge clk) begin
+                if      (mrst)                    pri_reg[width*i +: width] <= 0;
                 else if (pgm_en && (pgm_addr==i)) pri_reg[width*i +: width] <= pgm_data; 
             end
         end
@@ -81,8 +81,8 @@ module  scheduler16 #(
     assign next_want_conf=  (want_conf &  want_rq & chn_en) | want_set;
     assign next_need_conf=  (need_conf &  need_rq & chn_en) | need_set;
     assign need_want_conf_w=need_some? next_need_conf: next_want_conf;
-    always @(posedge rst or posedge clk) begin
-        if (rst) begin
+    always @(posedge clk) begin
+        if (mrst) begin
             want_conf <= 0;
             need_conf <= 0;
         end else begin
@@ -126,8 +126,8 @@ module  scheduler16 #(
         .index    (index[3:0]),
         .valid    (index_valid),
         .need_out (need));
-    always @(posedge rst or posedge clk) begin
-        if (rst) begin
+    always @(posedge clk) begin
+        if (mrst) begin
             grant_r <=0;
             grant_sent <=0;
             grant_chn_r <=0;

@@ -59,7 +59,7 @@ module  cmd_frame_sequencer#(
     parameter CMDFRAMESEQ_RUN_BIT =             13
     
 )(
-    input                         rst,
+    input                         mrst,
     input                         mclk, // for command/status
      // programming interface
     input                   [7:0] cmd_ad,      // byte-serial command address/data (up to 6 bytes: AL-AH-D0-D1-D2-D3 
@@ -145,22 +145,22 @@ module  cmd_frame_sequencer#(
     assign commands_pending = rpointer != fifo_wr_pointers_outr_r; // only look at the current page different pages will trigger page increment first
     assign pre_cmd_seq_w = commands_pending & ~(|page_r_inc) & seq_enrun;
     assign valid = valid_r;
-    always @ (posedge rst or posedge mclk) begin
-        if (rst) por <= 0;
-        else     por <= {por[1:0], 1'b1};
+    always @ (posedge mclk) begin
+        if (mrst) por <= 0;
+        else      por <= {por[1:0], 1'b1};
         
-        if      (rst)       seq_enrun <= 0;
+        if      (mrst)      seq_enrun <= 0;
         else if (reset_cmd) seq_enrun <= 0;
         else if (run_cmd)   seq_enrun <=  cmd_data[CMDFRAMESEQ_RUN_BIT-1];
     
-        if      (rst)            initialized <= 0;
+        if      (mrst)           initialized <= 0;
         else if (reset_seq_done) initialized <= 1;
         
-        if      (rst)          d_na <= 0;
+        if      (mrst)         d_na <= 0;
         else if (cmd_we_ctl_w) d_na <= 0;
         else if (cmd_we)       d_na <= ~ d_na;
         
-        if      (rst)    valid_r <= 0;
+        if      (mrst)   valid_r <= 0;
         else if (ren[1]) valid_r <= 1;
         else if (ackn)   valid_r <= 0;
     
@@ -242,8 +242,9 @@ module  cmd_frame_sequencer#(
         .DATA_WIDTH (32),
         .WE_EARLY   (3) // generate cmd_we and cmd_a three cycles before cmd_data is valid
     ) cmd_deser_32bit_i (
-        .rst        (rst),      // input
+        .rst        (1'b0), // rst),      // input
         .clk        (mclk),     // input
+        .srst       (mrst),      // input
         .ad         (cmd_ad),   // input[7:0] 
         .stb        (cmd_stb),  // input
         .addr       (cmd_a),    // output[3:0] 

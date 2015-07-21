@@ -51,9 +51,11 @@ module  event_logger#(
 
     parameter GPIO_N =                     10 // number of GPIO bits to control
 )(
-    input                         rst,
+//    input                         rst,
     input                         mclk,        // system clock
-    input                         xclk,        // half frequency (80 MHz nominal)
+    input                         xclk,        // was in 353: half frequency (80 MHz nominal)
+    input                         mrst,        // @ posedge mclk - sync reset
+    input                         xrst,        // @ posedge xclk - sync reset
     // programming interface
     input                   [7:0] cmd_ad,      // byte-serial command address/data (up to 6 bytes: AL-AH-D0-D1-D2-D3 
     input                         cmd_stb,     // strobe (with first byte) for the command a/d
@@ -296,12 +298,12 @@ module  event_logger#(
     end
 
 // generate strobes to copy configuration data from mclk to xclk domain    
-    pulse_cross_clock i_we_config_imu_xclk (.rst(1'b0), .src_clk(mclk), .dst_clk(xclk), .in_pulse(we_config_imu), .out_pulse(we_config_imu_xclk),.busy());
-    pulse_cross_clock i_we_config_gps_xclk (.rst(1'b0), .src_clk(mclk), .dst_clk(xclk), .in_pulse(we_config_gps), .out_pulse(we_config_gps_xclk),.busy());
-    pulse_cross_clock i_we_config_msg_xclk (.rst(1'b0), .src_clk(mclk), .dst_clk(xclk), .in_pulse(we_config_msg), .out_pulse(we_config_msg_xclk),.busy());
-    pulse_cross_clock i_we_config_rst_xclk (.rst(1'b0), .src_clk(mclk), .dst_clk(xclk), .in_pulse(we_config_rst), .out_pulse(we_config_rst_xclk),.busy());
-    pulse_cross_clock i_we_config_debug_xclk (.rst(1'b0), .src_clk(mclk), .dst_clk(xclk), .in_pulse(we_config_debug), .out_pulse(we_config_debug_xclk),.busy());
-    pulse_cross_clock i_we_bitHalfPeriod_xclk (.rst(1'b0), .src_clk(mclk), .dst_clk(xclk), .in_pulse(we_bitHalfPeriod), .out_pulse(we_bitHalfPeriod_xclk),.busy());
+    pulse_cross_clock i_we_config_imu_xclk (.rst(mrst), .src_clk(mclk), .dst_clk(xclk), .in_pulse(we_config_imu), .out_pulse(we_config_imu_xclk),.busy());
+    pulse_cross_clock i_we_config_gps_xclk (.rst(mrst), .src_clk(mclk), .dst_clk(xclk), .in_pulse(we_config_gps), .out_pulse(we_config_gps_xclk),.busy());
+    pulse_cross_clock i_we_config_msg_xclk (.rst(mrst), .src_clk(mclk), .dst_clk(xclk), .in_pulse(we_config_msg), .out_pulse(we_config_msg_xclk),.busy());
+    pulse_cross_clock i_we_config_rst_xclk (.rst(mrst), .src_clk(mclk), .dst_clk(xclk), .in_pulse(we_config_rst), .out_pulse(we_config_rst_xclk),.busy());
+    pulse_cross_clock i_we_config_debug_xclk (.rst(mrst), .src_clk(mclk), .dst_clk(xclk), .in_pulse(we_config_debug), .out_pulse(we_config_debug_xclk),.busy());
+    pulse_cross_clock i_we_bitHalfPeriod_xclk (.rst(mrst), .src_clk(mclk), .dst_clk(xclk), .in_pulse(we_bitHalfPeriod), .out_pulse(we_bitHalfPeriod_xclk),.busy());
 
     cmd_deser #(
         .ADDR       (LOGGER_ADDR),
@@ -313,8 +315,9 @@ module  event_logger#(
         .ADDR_MASK1 (LOGGER_STATUS_MASK)
         
     ) cmd_deser_32bit_i (
-        .rst        (rst),         // input
+        .rst        (1'b0),         //rst),         // input
         .clk        (mclk),        // input
+        .srst       (mrst),        // input
         .ad         (cmd_ad),      // input[7:0] 
         .stb        (cmd_stb),     // input
         .addr       (cmd_a),       // output[3:0] 
@@ -327,8 +330,9 @@ module  event_logger#(
         .PAYLOAD_BITS        (26),
         .REGISTER_STATUS     (1)
     ) status_generate_i (
-        .rst           (rst),                   // input
+        .rst           (1'b0),                  //  rst),                   // input
         .clk           (mclk),                  // input
+        .srst          (mrst),                  // input
         .we            (cmd_status),            // input
         .wd            (cmd_data[7:0]),         // input[7:0] 
         .status        ({sample_counter,2'b0}), // input[25:0] // 2 LSBs - may add "real" status 
@@ -378,9 +382,11 @@ fixed-length de-noise circuitry with latency 256*T(xclk) (~3usec)
 /* logs frame synchronization data from other camera (same as frame sync) */
 // ts_stb (mclk) -> trig)
     imu_exttime393 i_imu_exttime(
-                        .rst              (rst),                  // input global reset
+//                        .rst              (rst),                  // input global reset
                         .mclk             (mclk),                 // system clock, negedge
                         .xclk             (xclk),                 // half frequency (80 MHz nominal)
+                        .mrst             (mrst),                 // @mclk - sync reset
+                        .xrst             (xrst),                 // @xclk - sync reset
                         .en_chn_mclk      (enable_syn_mclk),      // enable module operation, if 0 - reset
                         .ts_stb_chn0      (ts_stb_chn0),          // input
                         .ts_data_chn0     (ts_data_chn0),         // input[7:0] 

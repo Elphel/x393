@@ -97,9 +97,13 @@ module  jp_channel#(
         
         
 )(
-    input                         rst,    // global reset
+//    input                         rst,    // global reset
     input                         xclk,   // global clock input, compressor single clock rate
     input                         xclk2x, // global clock input, compressor double clock rate, nominally rising edge aligned
+    input                         mrst,      // @posedge mclk, sync reset
+    input                         xrst,      // @posedge xclk, sync reset
+    input                         hrst,      // @posedge xclk, sync reset
+    
     // programming interface
     input                         mclk,     // global system/memory clock
     input                   [7:0] cmd_ad,      // byte-serial command address/data (up to 6 bytes: AL-AH-D0-D1-D2-D3 
@@ -332,8 +336,9 @@ module  jp_channel#(
         .ADDR_WIDTH (3),
         .DATA_WIDTH (32)
     ) cmd_deser_32bit_i (
-        .rst        (rst),      // input
+        .rst        (1'b0), //rst),      // input
         .clk        (mclk),     // input
+        .srst       (mrst),      // input
         .ad         (cmd_ad),   // input[7:0] 
         .stb        (cmd_stb),  // input
         .addr       (cmd_a),    // output[3:0] 
@@ -356,14 +361,15 @@ module  jp_channel#(
         .EXTRA_REG_ADDR   (CMPRS_HIFREQ_REG_ADDR)
         
     ) status_generate_i (
-        .rst              (rst),           // input
-        .clk              (mclk),          // input
-        .we               (set_status_w),  // input
-        .wd               (cmd_data[7:0]), // input[7:0] 
-        .status           ({hifreq,status_data}),   // input[2:0] 
-        .ad               (status_ad),     // output[7:0] 
-        .rq               (status_rq),     // output
-        .start            (status_start)   // input
+        .rst              (1'b0),                 //rst),      // input
+        .clk              (mclk),                 // input
+        .srst             (mrst),                 // input
+        .we               (set_status_w),         // input
+        .wd               (cmd_data[7:0]),        // input[7:0] 
+        .status           ({hifreq,status_data}), // input[2:0] 
+        .ad               (status_ad),            // output[7:0] 
+        .rq               (status_rq),            // output
+        .start            (status_start)          // input
     );
 //hifreq
 // Port buffer - TODO: Move to memory controller
@@ -383,6 +389,7 @@ module  jp_channel#(
         .we           (buf_we), // input
         .data_in      (buf_din) // input[63:0] 
     );
+    
     cmprs_cmd_decode #(
         .CMPRS_CBIT_RUN                  (CMPRS_CBIT_RUN),
         .CMPRS_CBIT_RUN_BITS             (CMPRS_CBIT_RUN_BITS),
@@ -433,9 +440,10 @@ module  jp_channel#(
         .CMPRS_CSAT_CR_BITS              (CMPRS_CSAT_CR_BITS),
         .CMPRS_CORING_BITS               (CMPRS_CORING_BITS)
     ) cmprs_cmd_decode_i (
-        .rst                (rst),                 // input
+//        .rst                (rst),                 // input
         .xclk               (xclk),                // input - global clock input, compressor single clock rate
         .mclk               (mclk),                // input - global system/memory clock
+        .mrst               (mrst),                // input
         .ctrl_we            (set_ctrl_reg_w),      // input - control register write enable
         .format_we          (set_format_w),        // input - write number of tiles and left margin
         .color_sat_we       (set_color_saturation_w), // input - write color saturation values
@@ -493,9 +501,11 @@ module  jp_channel#(
         .CMPRS_TIMEOUT_BITS (CMPRS_TIMEOUT_BITS),
         .CMPRS_TIMEOUT      (CMPRS_TIMEOUT)
     ) cmprs_frame_sync_i (
-        .rst                (rst),                 // input
+//        .rst                (rst),                 // input
         .xclk               (xclk),                // input - global clock input, compressor single clock rate
         .mclk               (mclk),                // input - global system/memory clock
+        .mrst               (mrst),                // input
+        .xrst               (xrst),                // input
         .cmprs_en           (cmprs_en_mclk),       // input - @mclk 0 resets immediately
         .cmprs_en_extend    (cmprs_en_extend), // output
         .cmprs_run          (cmprs_run_mclk),      // input - @mclk enable propagation of vsync_late to frame_start_dst in bonded(sync to src) mode
@@ -526,27 +536,29 @@ module  jp_channel#(
     );
 
     cmprs_macroblock_buf_iface cmprs_macroblock_buf_iface_i (
-        .rst                (rst), // input
-        .xclk               (xclk), // input
-        .mclk               (mclk), // input
+//        .rst                (rst), // input
+        .xclk               (xclk),               // input
+        .mclk               (mclk),               // input
+        .mrst               (mrst),               // input
+        .xrst               (xrst),               // input
         .xfer_reset_page_rd (xfer_reset_page_rd), // input
-        .page_ready_chn     (page_ready_chn), // input
-        .next_page_chn      (next_page_chn), // output
-        .frame_en           (frame_en), // input
-        .frame_go           (frame_go), // input - do not use - assign to frame_en? Running frames can be controlled by other means
-        .left_marg          (left_marg), // input[4:0] 
+        .page_ready_chn     (page_ready_chn),     // input
+        .next_page_chn      (next_page_chn),      // output
+        .frame_en           (frame_en),           // input
+        .frame_go           (frame_go),           // input - do not use - assign to frame_en? Running frames can be controlled by other means
+        .left_marg          (left_marg),          // input[4:0] 
         .n_blocks_in_row_m1 (n_blocks_in_row_m1), // input[12:0] 
-        .n_block_rows_m1    (n_block_rows_m1), // input[12:0] 
-        .mb_w_m1            (mb_w_m1),  // input[5:0]   // macroblock width minus 1 // 3 LSB not used - set them to all 1
-        .mb_hper            (mb_hper),  // input[4:0]   // macroblock horizontal period (8/16) // 3 LSB not used (set them 0)
-        .tile_width         (tile_width), // input[1:0]   // memory tile width. Can be 32/64/128: 0 - 16, 1 - 32, 2 - 64, 3 - 128
-        .mb_pre_end_in      (mb_pre_end), // input
-        .mb_release_buf     (mb_release_buf), // input
-        .mb_pre_start_out   (mb_pre_start), // output
-        .start_page         (start_page), // output[1:0] 
-        .macroblock_x       (macroblock_x),  // output[6:0] 
-        .first_mb           (first_mb), // output reg 
-        .last_mb            (last_mb) // output
+        .n_block_rows_m1    (n_block_rows_m1),    // input[12:0] 
+        .mb_w_m1            (mb_w_m1),            // input[5:0]   // macroblock width minus 1 // 3 LSB not used - set them to all 1
+        .mb_hper            (mb_hper),            // input[4:0]   // macroblock horizontal period (8/16) // 3 LSB not used (set them 0)
+        .tile_width         (tile_width),         // input[1:0]   // memory tile width. Can be 32/64/128: 0 - 16, 1 - 32, 2 - 64, 3 - 128
+        .mb_pre_end_in      (mb_pre_end),         // input
+        .mb_release_buf     (mb_release_buf),     // input
+        .mb_pre_start_out   (mb_pre_start),       // output
+        .start_page         (start_page),         // output[1:0] 
+        .macroblock_x       (macroblock_x),       // output[6:0] 
+        .first_mb           (first_mb),           // output reg 
+        .last_mb            (last_mb)             // output
         
     );
 
@@ -562,25 +574,25 @@ module  jp_channel#(
         .CMPRS_MONO8             (CMPRS_MONO8)
          
     ) cmprs_pixel_buf_iface_i (
-        .xclk               (xclk), // input
-        .frame_en           (frame_en), // input
-        .buf_di             (buf_pxd), // input[7:0] 
-        .buf_ra             (buf_ra), // output[11:0] 
-        .buf_rd             (buf_rd), // output[1:0] 
-        .converter_type     (converter_type), // input[2:0] 
-        .mb_w_m1            (mb_w_m1), // input[5:0] 
-        .mb_h_m1            (mb_h_m1), // input[5:0] 
-        .tile_width         (tile_width), // input[1:0] 
-        .tile_col_width     (tile_col_width), // input
-        .mb_pre_end         (mb_pre_end), // output
-        .mb_release_buf     (mb_release_buf), // output
-        .mb_pre_start       (mb_pre_start), // input
-        .start_page         (start_page), // input[1:0] 
-        .macroblock_x       (macroblock_x), // input[6:0] 
-        .data_out           (mb_data_out), // output[7:0] // Macroblock data out in scanline order
+        .xclk               (xclk),             // input
+        .frame_en           (frame_en),         // input
+        .buf_di             (buf_pxd),          // input[7:0] 
+        .buf_ra             (buf_ra),           // output[11:0] 
+        .buf_rd             (buf_rd),           // output[1:0] 
+        .converter_type     (converter_type),   // input[2:0] 
+        .mb_w_m1            (mb_w_m1),          // input[5:0] 
+        .mb_h_m1            (mb_h_m1),          // input[5:0] 
+        .tile_width         (tile_width),       // input[1:0] 
+        .tile_col_width     (tile_col_width),   // input
+        .mb_pre_end         (mb_pre_end),       // output
+        .mb_release_buf     (mb_release_buf),   // output
+        .mb_pre_start       (mb_pre_start),     // input
+        .start_page         (start_page),       // input[1:0] 
+        .macroblock_x       (macroblock_x),     // input[6:0] 
+        .data_out           (mb_data_out),      // output[7:0] // Macroblock data out in scanline order
         .pre_first_out      (mb_pre_first_out), // output // Macroblock data out strobe - 1 cycle just before data valid  == old pre_first_pixel?
 //        .data_valid         (mb_data_valid) // output     // Macroblock data out valid
-        .data_valid         () // output     // Macroblock data out valid Unused
+        .data_valid         () // output        // Macroblock data out valid Unused
     );
 
     csconvert #(
@@ -668,8 +680,8 @@ module  jp_channel#(
  
     wire          first_block_color=(color_tn[2:0]==3'h0) && color_first;        // while color conversion,
     reg           first_block_color_after;  // after color conversion,
-    reg           first_block_dct;     // after DCT
-    wire          first_block_quant;   // after quantizer
+    reg           first_block_dct;          // after DCT
+    wire          first_block_quant;        // after quantizer
     always @ (posedge xclk) begin
         if (dct_start)   first_block_color_after <= first_block_color;
         if (dct_last_in) first_block_dct   <= first_block_color_after;
@@ -679,15 +691,15 @@ module  jp_channel#(
     
     
     xdct393 xdct393_i (
-        .clk                (xclk), // input
-        .en                 (frame_en), // input  if zero will reset transpose memory page numbers
-        .start              (dct_start), // input  single-cycle start pulse that goes with the first pixel data. Other 63 should follow
-        .xin                (yc_nodc), // input[9:0] 
-        .last_in            (dct_last_in), // output reg  output high during input of the last of 64 pixels in a 8x8 block //
-        .pre_first_out      (dct_pre_first_out), // outpu 1 cycle ahead of the first output in a 64 block
-///        .dv                 (dct_dv), // output data output valid. Will go high on the 94-th cycle after the start (now - on 95-th?)
+        .clk                (xclk),                // input
+        .en                 (frame_en),            // input  if zero will reset transpose memory page numbers
+        .start              (dct_start),           // input  single-cycle start pulse that goes with the first pixel data. Other 63 should follow
+        .xin                (yc_nodc),             // input[9:0] 
+        .last_in            (dct_last_in),         // output reg  output high during input of the last of 64 pixels in a 8x8 block //
+        .pre_first_out      (dct_pre_first_out),   // outpu 1 cycle ahead of the first output in a 64 block
+///        .dv                 (dct_dv),           // output data output valid. Will go high on the 94-th cycle after the start (now - on 95-th?)
         .dv                 (),  // not used: output data output valid. Will go high on the 94-th cycle after the start (now - on 95-th?)
-        .d_out              (dct_out) // output[12:0] 
+        .d_out              (dct_out)              // output[12:0] 
     );
     wire          quant_start;
     dly_16 #(.WIDTH(1)) i_quant_start (.clk(xclk),.rst(1'b0), .dly(0), .din(dct_pre_first_out), .dout(quant_start));    // dly=0+1
@@ -713,7 +725,7 @@ module  jp_channel#(
         .ADDR_BITS(3)
     ) table_ad_transmit_i (
         .clk             (mclk),                  // input @posedge
-        .a_not_d_in      (cmd_a[0]),               // input writing table address /not data (a[0] from cmd_deser)
+        .a_not_d_in      (cmd_a[0]),              // input writing table address /not data (a[0] from cmd_deser)
         .we              (set_tables_w),          // input writing to tables               (decoded stb from cmd_deser)
         .din             (cmd_data),              // input[31:0] 32-bit data to serialize/write to tables (LSB first) - from cmd_deser
         .ser_d           (tser_d),                // output[7:0] byte-wide serialized tables address/data to submodules
@@ -791,7 +803,10 @@ module  jp_channel#(
     wire          eof_written_xclk2xn;
     
     // re-sync to posedge xclk2x
-    pulse_cross_clock finish_dcc_i (.rst(rst), .src_clk(~xclk2x), .dst_clk(xclk2x), .in_pulse(stuffer_done), .out_pulse(finish_dcc),.busy());
+    reg           xrst2xn;
+    always @ (negedge xclk2x) xrst2xn <= xrst;
+    
+    pulse_cross_clock finish_dcc_i (.rst(xrst2xn), .src_clk(~xclk2x), .dst_clk(xclk2x), .in_pulse(stuffer_done), .out_pulse(finish_dcc),.busy());
     
     dcc_sync393 dcc_sync393_i (
         .sclk               (xclk2x),                // input
@@ -850,8 +865,11 @@ module  jp_channel#(
     
 
     stuffer393 stuffer393_i (
-        .rst                 (rst),                    // input
+//        .rst                 (rst),                    // input
         .mclk                (mclk),                   // input
+        .mrst                (mrst),                    // input
+        .xrst                (xrst),                    // input
+        
         .ts_pre_stb          (ts_pre_stb),             // input      1 cycle before timestamp data, @mclk
         .ts_data             (ts_data),                // input[7:0] 8-byte timestamp data (s0,s1,s2,s3,us0,us1,us2,us3==0)
         .color_first         (color_first),            // input valid @xclk - only for sec/usec
@@ -878,17 +896,20 @@ module  jp_channel#(
 `endif
     );
     
-    pulse_cross_clock stuffer_done_mclk_i (.rst(rst), .src_clk(~xclk2x), .dst_clk(mclk), .in_pulse(stuffer_done), .out_pulse(stuffer_done_mclk),.busy());
+    pulse_cross_clock stuffer_done_mclk_i (.rst(xrst2xn), .src_clk(~xclk2x), .dst_clk(mclk), .in_pulse(stuffer_done), .out_pulse(stuffer_done_mclk),.busy());
     cmprs_out_fifo cmprs_out_fifo_i (
-        .rst                 (rst),            // input mostly for simulation
+//        .rst                 (rst),            // input mostly for simulation
         // source (stuffer) clock domain
         .wclk                (~xclk2x),        // input source clock (2x pixel clock, inverted) - same as stuffer out
+        .wrst                (xrst2xn),         // input mostly for simulation
+        
         .we                  (stuffer_dv),     // input write data from stuffer
         .wdata               (stuffer_do),     // input[15:0] data from stuffer module;
         .wa_rst              (!stuffer_en),    // input reset low address bits when stuffer is disabled (to make sure it is multiple of 32 bytes
         .wlast               (stuffer_done),   // input - written last 32 bytes of a frame (flush FIFO) - stuffer_done (has to be later than we)
         .eof_written_wclk    (eof_written_xclk2xn),    // output - AFI had transferred frame data to the system memory
         .rclk                (hclk),           // input - AFI clock
+        .rrst                (hrst),           // input - AFI clock
         // AFI clock domain
         .rst_fifo            (fifo_rst),       // input - reset FIFO (set read address to write, reset count)
         .ren                 (fifo_ren),       // input - fifo read from AFI channel mux
@@ -898,7 +919,7 @@ module  jp_channel#(
         .flush_fifo          (fifo_flush),     // output level signalling that FIFO has data from the current frame (use short AXI burst if needed)
         .fifo_count          (fifo_count)      // output[7:0] - number of 32-byte chunks available in FIFO
     );
-    pulse_cross_clock eof_written_mclk_i (.rst(rst), .src_clk(~xclk2x), .dst_clk(mclk), .in_pulse(eof_written_xclk2xn), .out_pulse(eof_written_mclk),.busy());
+    pulse_cross_clock eof_written_mclk_i (.rst(xrst2xn), .src_clk(~xclk2x), .dst_clk(mclk), .in_pulse(eof_written_xclk2xn), .out_pulse(eof_written_mclk),.busy());
 
 // TODO: Add status module to combine/FF, re-clock status signals
 

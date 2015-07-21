@@ -75,8 +75,10 @@ module  phy_top #(
     output                       clk,      // free-running system clock, same frequency as iclk (shared for R/W),     BUFR output
     output                       clk_div,  // free-running half clk frequency, front aligned to clk (shared for R/W), BUFR output
     output                       mclk,     // same as clk_div, through separate BUFG and static phase adjust
+    input                        mrst,     // @posedge mclk synchronous reset - should not interrupt mclk generation
     output                       ref_clk,  // global clock for idelay_ctrl calibration
-    input                        rst_in,   // reset delays/serdes
+    output                       idelay_ctrl_reset,
+    input                        rst_in,   // reset delays/serdes - global reset?
     input                        ddr_rst,  // active high - generate NRST to memory
     input                        dci_rst,  // active high - reset DCI circuitry
     input                        dly_rst,  // active high - delay calibration circuitry
@@ -116,10 +118,16 @@ module  phy_top #(
     output                       ps_rdy,
     output     [PHASE_WIDTH-1:0] ps_out 
 );
+  
   reg rst= 1'b1;
-  always @(negedge clk_div or posedge rst_in) begin
-    if (rst_in) rst <= 1'b1;
-    else        rst <= 1'b0;
+//  always @(negedge clk_div or posedge rst_in) begin // Why is it @ negedge clk_div?
+//    if (rst_in) rst <= 1'b1;
+//    else        rst <= 1'b0;
+//  end
+
+  always @(negedge clk_div) begin // Why is it @ negedge clk_div?
+    if (mrst) rst <= 1'b1;
+    else      rst <= 1'b0;
   end
 
   wire  ld_data_l = (dly_addr[6:5] == 2'h0) && ld_delay ;             
@@ -136,6 +144,7 @@ module  phy_top #(
   
   reg dbg1=0;
   reg dbg2=0;
+/*  
   always @ (posedge rst_in or posedge mclk) begin
     if (rst_in) dbg1 <= 0;
     else dbg1 <= ~dbg1;
@@ -145,7 +154,17 @@ module  phy_top #(
     if (rst_in) dbg2 <= 0;
     else dbg2 <= ~dbg2;
   end
-  
+*/  
+  always @ (posedge mclk) begin
+    if (mrst) dbg1 <= 0;
+    else     dbg1 <= ~dbg1;
+  end
+
+  always @ (posedge clk_div) begin
+    if (mrst) dbg2 <= 0;
+    else dbg2 <= ~dbg2;
+  end
+
 
   assign tmp_debug ={
     dbg2, //dly_addr[1],
@@ -153,7 +172,7 @@ module  phy_top #(
     clkin_stopped_mmcm,
     clkfb_stopped_mmcm,
     ddr_rst,
-    rst_in,
+    mrst, // rst_in, rst_in - is it global clock?
     dci_rst,
     dly_rst
   };
@@ -388,11 +407,12 @@ BUFG mclk_i (.O(mclk),.I(mclk_pre) );
         .locked(locked_pll) // output
     );
 // Does it need to be re-calibrated periodically - yes when temperature changes, same as dci_reset
+assign idelay_ctrl_reset = rst || dly_rst;
     idelay_ctrl# (
         .IODELAY_GRP("IODELAY_MEMORY")
     ) idelay_ctrl_i (
         .refclk(ref_clk),
-        .rst(rst || dly_rst),
+        .rst(idelay_ctrl_reset), // route it to the top
         .rdy(dly_ready)
     );
     dci_reset dci_reset_i (

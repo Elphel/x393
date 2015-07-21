@@ -25,9 +25,12 @@ module  sensor_fifo #(
     parameter SENSOR_FIFO_2DEPTH = 4, // 4-bit address
     parameter SENSOR_FIFO_DELAY = 7 // approxiametly half (1 << SENSOR_FIFO_2DEPTH) - how long to wait after getting HACT on FIFO before stering it on output
 )(
-    input                          rst,
+//    input                          rst,
     input                          iclk, // input -synchronous clock
     input                          pclk, // internal lixel clock
+    input                          prst, // @ posedge pclk
+    input                          irst, // @ posedge iclk
+    
     input  [SENSOR_DATA_WIDTH-1:0] pxd_in,  // sensor data @posedge iclk
     input                          vact,
     input                          hact,
@@ -50,34 +53,36 @@ module  sensor_fifo #(
     wire                        hact_out_start;
     
     assign we=sof_in || eof_in || hact || hact_r;
-    always @(posedge rst or posedge iclk) begin
-        if (rst) {vact_r,hact_r,sof_in,eof_in} <= 0;
-        else     {vact_r,hact_r,sof_in,eof_in} <= {vact,hact, vact && ! vact_r, vact_r && !vact};
+    always @(posedge iclk) begin
+        if (irst) {vact_r,hact_r,sof_in,eof_in} <= 0;
+        else      {vact_r,hact_r,sof_in,eof_in} <= {vact,hact, vact && ! vact_r, vact_r && !vact};
     end
 
     fifo_cross_clocks #(
         .DATA_WIDTH(SENSOR_DATA_WIDTH+3),
         .DATA_DEPTH(SENSOR_FIFO_2DEPTH)
     ) fifo_cross_clocks_i (
-        .rst        (rst), // input
-        .rclk       (pclk), // input
-        .wclk       (iclk), // input
-        .we         (we), // input
-        .re         (re), // input
+        .rst        (1'b0),   // rst), // input
+        .rrst       (prst),   // input
+        .wrst       (irst),   // input
+        .rclk       (pclk),   // input
+        .wclk       (iclk),   // input
+        .we         (we),     // input
+        .re         (re),     // input
         .data_in    ({eof_in, sof_in, hact,   pxd_in}), // input[15:0] 
         .data_out   ({eof_w,  sof_w,  hact_w, pxd_w}), // output[15:0] 
         .nempty     (nempty), // output
-        .half_empty () // output
+        .half_empty ()        // output
     );
 
     dly_16 #(
         .WIDTH(1)
     ) hact_dly_16_i (
-        .clk(pclk), // input
-        .rst(rst), // input
-        .dly(SENSOR_FIFO_DELAY), // input[3:0] 
+        .clk(pclk),                         // input
+        .rst(prst),                         // input
+        .dly(SENSOR_FIFO_DELAY),            // input[3:0] 
         .din(pre_hact[0] && ! pre_hact[1]), // input[0:0] 
-        .dout(hact_out_start) // output[0:0] 
+        .dout(hact_out_start)               // output[0:0] 
     );
     
     // output clock domain
@@ -89,28 +94,28 @@ module  sensor_fifo #(
     assign sof = sof_r;
     assign eof = eof_r;
      
-    always @(posedge rst or posedge iclk) begin
-        if (rst) re_r <= 0;
-        else     re_r <= pre_re;
+    always @(posedge iclk) begin
+        if (irst) re_r <= 0;
+        else      re_r <= pre_re;
 
-        if     (rst) pre_hact[0] <= 0;
+        if    (irst) pre_hact[0] <= 0;
         else if (re) pre_hact[0] <= hact_w;
 
-        if     (rst) pre_hact[1] <= 0;
+        if    (irst) pre_hact[1] <= 0;
         else if (re) pre_hact[1] <= pre_hact[0];
 
-        if     (rst) pxd_r <= 0;
+        if    (irst) pxd_r <= 0;
         else if (re) pxd_r <= pxd_w;
 
-        if      (rst)            hact_out_r <= 0;
+        if      (irst)           hact_out_r <= 0;
         else if (hact_out_start) hact_out_r <= 1;
         else if (!hact_w)        hact_out_r <= 0;
 
-        if (rst) sof_r <= 0;
-        else     sof_r <= re && sof_w;
+        if (irst) sof_r <= 0;
+        else      sof_r <= re && sof_w;
 
-        if (rst) eof_r <= 0;
-        else     eof_r <= re && eof_w;
+        if (irst) eof_r <= 0;
+        else      eof_r <= re && eof_w;
 
     end
     

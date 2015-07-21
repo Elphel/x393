@@ -37,9 +37,9 @@ module  status_generate #(
 )(
     input                    rst,
     input                    clk,
+    input                    srst,   // @ posedge clk - sync reset
     input                    we,     // command strobe
     input              [7:0] wd,     // command data - 6 bits of sequence and 2 mode bits
-//    input [PAYLOAD_BITS-1:0] status, // parallel status data to be sent out, may come from different clock domain
     input     [ALL_BITS-1:0] status, // parallel status data to be sent out, may come from different clock domain
     output             [7:0] ad,     // byte-wide address/data
     output                   rq,     // request to send downstream (last byte with rq==0)
@@ -58,6 +58,7 @@ module  status_generate #(
             ) status_generate_extra_i (
                 .rst      (rst), // input
                 .clk      (clk), // input
+                .srst     (srst), // input
                 .we       (we), // input
                 .wd       (wd), // input[7:0] 
                 .status   (status), // input[46:0] 
@@ -74,6 +75,7 @@ module  status_generate #(
             ) status_generate_only_i (
                 .rst      (rst), // input
                 .clk      (clk), // input
+                .srst     (srst), // input
                 .we       (we), // input
                 .wd       (wd), // input[7:0] 
                 .status   (status[PAYLOAD_BITS-1:0]), // input[14:0] 
@@ -95,6 +97,7 @@ module  status_generate_only #(
 )(
     input                    rst,
     input                    clk,
+    input                    srst,   // @ posedge clk - sync reset
     input                    we,     // command strobe
     input              [7:0] wd,     // command data - 6 bits of sequence and 2 mode bits
     input [PAYLOAD_BITS-1:0] status, // parallel status data to be sent out, may come from different clock domain
@@ -138,35 +141,42 @@ module  status_generate_only #(
     always @ (posedge rst or posedge clk) begin
         
         if      (rst)       status_changed_r <= 0;
-//        else     status_changed_r <= (status_changed_r && !start) || (status_r != status);
+        else if (srst)      status_changed_r <= 0;
         else if (start)     status_changed_r <= 0;
         else                status_changed_r <= status_changed_r  || (status_r != status_r0);
         
-        if     (rst) mode <= 0;
-        else if (we) mode <= mode_w; // wd[7:6];
+        if      (rst)  mode <= 0;
+        else if (srst) mode <= 0;
+        else if (we)   mode <= mode_w; // wd[7:6];
         
-        if     (rst)                 seq <= 0;
+        if      (rst)                seq <= 0;
+        else if (srst)               seq <= 0;
         else if (we)                 seq <= wd[5:0];
         else if ((mode==3) && start) seq <= seq+1;
         
         if      (rst)               cmd_pend <= 0;
+        else if (srst)              cmd_pend <= 0;
         else if (we && (mode_w!=0)) cmd_pend <= 1;
         else if (start)             cmd_pend <= 0;
         
         if      (rst)   status_r0r <= 0;
+        else if (srst)  status_r0r <= 0;
         else            status_r0r <= status;
 
         if      (rst)   status_r<=0;
+        else if (srst)  status_r<=0;
         else if (start) status_r<=status_r0;
         
-        if (rst)                             data <= STATUS_REG_ADDR;
+        if      (rst)                        data <= STATUS_REG_ADDR;
+        else if (srst)                       data <= STATUS_REG_ADDR;
         else if (start)                      data <= (NUM_BYTES>2)?
                                                      {aligned_status[ALIGNED_STATUS_WIDTH-1:ALIGNED_STATUS_BIT_2],seq,status_r0[1:0]}:
                                                      {seq,status_r0[1:0]};
         else if ((NUM_BYTES>2) && snd_rest)  data <= data >> 8; // never happens with 2-byte packet
         else                                 data <= STATUS_REG_ADDR;
         
-        if (rst)                                                 rq_r <= 0;
+        if      (rst)                                            rq_r <= 0;
+        else if (srst)                                           rq_r <= 0;
         else if (need_to_send && !rq_r[0])                       rq_r <= {NUM_BYTES-1{1'b1}};
         else if (start || ((NUM_BYTES>2) && !rq_r[NUM_BYTES-2])) rq_r <= rq_r >> 1;
     end
@@ -186,6 +196,7 @@ module  status_generate_extra #(
 )(
     input                    rst,
     input                    clk,
+    input                    srst,   // @ posedge clk - sync reset
     input                    we,     // command strobe
     input              [7:0] wd,     // command data - 6 bits of sequence and 2 mode bits
 //    input [PAYLOAD_BITS-1:0] status, // parallel status data to be sent out, may come from different clock domain
@@ -271,45 +282,56 @@ module  status_generate_extra #(
     always @ (posedge rst or posedge clk) begin
         
         if      (rst)            status_changed_r <= 0;
+        else if (srst)           status_changed_r <= 0;
         else if (start_last)     status_changed_r <= 0;
         else                     status_changed_r <= status_changed_r  || (status_r != status_r0);
         
-        if     (rst) mode <= 0;
-        else if (we) mode <= mode_w; // wd[7:6];
+        if      (rst)            mode <= 0;
+        else if (srst)           mode <= 0;
+        else if (we)             mode <= mode_w; // wd[7:6];
         
-        if     (rst)                        seq <= 0;
+        if      (rst)                       seq <= 0;
+        else if (srst)                      seq <= 0;
         else if (we)                        seq <= wd[5:0];
         else if ((mode==3) && start_status) seq <= seq+1; // no need to increment sequence number if no status is sent
         
         if      (rst)               cmd_pend <= 0;
+        else if (srst)              cmd_pend <= 0;
         else if (we && (mode_w!=0)) cmd_pend <= 1;
         else if (start_last)        cmd_pend <= 0;
         
-        if      (rst)   status_r0r <= 0;
-        else            status_r0r <= status[STATUS_BITS-1:0];
+        if      (rst)               status_r0r <= 0;
+        else if (srst)              status_r0r <= 0;
+        else                        status_r0r <= status[STATUS_BITS-1:0];
 
         if      (rst)              status_r <= 0;
+        else if (srst)             status_r <= 0;
         else if (start_last)       status_r <= status_r0;
         
-        if      (!rst)                                  next_addr <= first_addr;
+        if      (rst)                                   next_addr <= first_addr;
+        else if (srst)                                  next_addr <= first_addr;
         else if (!need_to_send || start_last)           next_addr <= first_addr;
         else if (start && (msg1hot[EXTRA_WORDS -1:0]))  next_addr <= STATUS_REG_ADDR;
         else if (start)                                 next_addr <= next_addr + 1;
 
-        if      (!rst)                                  next_mask <= first_mask;
+        if      (rst)                                   next_mask <= first_mask;
+        else if (srst)                                  next_mask <= first_mask;
         else if (!need_to_send || start_last)           next_mask <= first_mask;
         else if (start && (msg1hot[EXTRA_WORDS -1 :0])) next_mask <= STATUS_MASK;
 
         if      (rst)                      rq_r <= 0;
+        else if (srst)                     rq_r <= 0;
         else if (need_to_send && !rq_r[0]) rq_r <= 1;
         else if (start)                    rq_r <= next_mask;
         else if (|rq_r)                    rq_r <= rq_r >> 1;
         
-        if (rst)                msg_num <= 0;
+        if      (rst)           msg_num <= 0;
+        else if (srst)          msg_num <= 0;
         else if (!need_to_send) msg_num <= 0;
         else if (start)         msg_num <= msg_num + 1;
 
-        if (rst)                msg1hot <= 0;
+        if      (rst)           msg1hot <= 0;
+        else if (srst)          msg1hot <= 0;
         else if (!need_to_send) msg1hot <= 0;
         else if (start)         msg1hot <= msg1hot >> 1;
         

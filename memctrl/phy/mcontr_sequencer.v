@@ -115,7 +115,10 @@ module  mcontr_sequencer   #(
     input                        clk_in,
     input                        rst_in,
     output                       mclk,     // global clock, half DDR3 clock, synchronizes all I/O through the command port
+    input                        mrst,     // @posedge mclk, sync reset (should not interrupt mclk!)
+    output                       locked,   // to generate sync reset
     output                       ref_clk,  // global clock for idelay_ctrl calibration
+    output                       idelay_ctrl_reset,
 // command port 0 (filled by software - 32w->32r) - used for mode set, refresh, write levelling, ...
     input                        cmd0_clk,
     input                        cmd0_we,
@@ -205,7 +208,7 @@ module  mcontr_sequencer   #(
 //    wire     [PHASE_WIDTH-1:0] ps_out;
     wire                 [7:0] ps_out;
     wire                       ps_rdy;
-    wire locked;
+//    wire locked;
     wire                [14:0] status_data;
     
 // temporary, debug
@@ -234,7 +237,7 @@ module  mcontr_sequencer   #(
     wire                         buf_rd; // read next 64 bits from the buffer, need one extra pre-read
     wire                         buf_rst; // reset buffer address to 
     wire                         buf_rst_d; //buf_rst delayed to match buf_wr 
-    wire                         rst=rst_in;
+//    wire                         rst=rst_in;
   
 //    wire                 [ 9:0]  next_cmd_addr;
     reg                  [ 9:0]  cmd_addr;      // command word address  
@@ -314,13 +317,14 @@ module  mcontr_sequencer   #(
         .ADDR_WIDTH (7),
         .DATA_WIDTH (8)
     ) cmd_deser_dly_i (
-        .rst        (rst), // input
-        .clk        (mclk), // input
-        .ad         (cmd_ad), // input[7:0] 
-        .stb        (cmd_stb), // input
-        .addr       (dly_addr), // output[15:0] 
-        .data       (dly_data), // output[31:0] 
-        .we(        ld_delay) // output
+        .rst        (1'b0),      // rst), // input
+        .clk        (mclk),      // input
+        .srst       (mrst),      // input
+        .ad         (cmd_ad),    // input[7:0] 
+        .stb        (cmd_stb),   // input
+        .addr       (dly_addr),  // output[15:0] 
+        .data       (dly_data),  // output[31:0] 
+        .we(        ld_delay)    // output
     );
 // generate on/off dependent on lsb and 0-bit commands
     cmd_deser #(
@@ -330,30 +334,31 @@ module  mcontr_sequencer   #(
         .ADDR_WIDTH (4),
         .DATA_WIDTH (0)
     ) cmd_deser_0bit_i (
-        .rst        (rst), // input
-        .clk        (mclk), // input
-        .ad         (cmd_ad), // input[7:0] 
-        .stb        (cmd_stb), // input
+        .rst        (1'b0),          // rst), // input
+        .clk        (mclk),          // input
+        .srst       (mrst),          // input
+        .ad         (cmd_ad),        // input[7:0] 
+        .stb        (cmd_stb),       // input
         .addr       (phy_0bit_addr), // output[15:0] 
-        .data       (), // output[31:0] 
-        .we         (phy_0bit_we) // output
+        .data       (),              // output[31:0] 
+        .we         (phy_0bit_we)    // output
     );
 
     assign   set= phy_0bit_we && (phy_0bit_addr==MCONTR_PHY_0BIT_DLY_SET);
-    always @ (posedge mclk or posedge rst) begin
-        if (rst)                                                  cmda_en <= 0;
+    always @ (posedge mclk) begin
+        if (mrst)                                                  cmda_en <= 0;
         else if (phy_0bit_we && (phy_0bit_addr[3:1]==(MCONTR_PHY_0BIT_CMDA_EN>>1))) cmda_en <= phy_0bit_addr[0];
         
-        if (rst)                                                  ddr_rst <= 1;
+        if (mrst)                                                  ddr_rst <= 1;
         else if (phy_0bit_we && (phy_0bit_addr[3:1]==(MCONTR_PHY_0BIT_SDRST_ACT>>1))) ddr_rst <= phy_0bit_addr[0];
         
-        if (rst)                                                  dci_rst <= 0;
+        if (mrst)                                                  dci_rst <= 0;
         else if (phy_0bit_we && (phy_0bit_addr[3:1]==(MCONTR_PHY_0BIT_DCI_RST>>1))) dci_rst <= phy_0bit_addr[0];
         
-        if (rst)                                                  dly_rst <= 0;
+        if (mrst)                                                  dly_rst <= 0;
         else if (phy_0bit_we && (phy_0bit_addr[3:1]==(MCONTR_PHY_0BIT_DLY_RST>>1))) dly_rst <= phy_0bit_addr[0];
         
-        if (rst)                                                  ddr_cke <= 0;
+        if (mrst)                                                  ddr_cke <= 0;
         else if (phy_0bit_we && (phy_0bit_addr[3:1]==(MCONTR_PHY_0BIT_CKE_EN>>1))) ddr_cke <= phy_0bit_addr[0];
     end
     
@@ -365,8 +370,9 @@ module  mcontr_sequencer   #(
         .ADDR_WIDTH (3),
         .DATA_WIDTH (16)
     ) cmd_deser_16bit_i (
-        .rst        (rst), // input
-        .clk        (mclk), // input
+        .rst        (1'b0),          // rst), // input
+        .clk        (mclk),          // input
+        .srst       (mrst),          // input
         .ad         (cmd_ad), // input[7:0] 
         .stb        (cmd_stb), // input
         .addr       (phy_16bit_addr), // output[15:0] 
@@ -388,8 +394,8 @@ module  mcontr_sequencer   #(
     assign control_status_we=  phy_16bit_we && (phy_16bit_addr[2:0]==MCONTR_PHY_STATUS_CNTRL);
     assign contral_status_data= phy_16bit_data[7:0];
 
-    always @ (posedge mclk or posedge rst) begin
-        if (rst) begin
+    always @ (posedge mclk) begin
+        if (mrst) begin
            dqm_pattern <=DFLT_DQM_PATTERN;
            dqs_pattern <=DFLT_DQS_PATTERN;
         end else if (set_patterns) begin
@@ -397,7 +403,7 @@ module  mcontr_sequencer   #(
            dqs_pattern <= phy_16bit_data[7:0];
         end
 
-        if (rst)  begin
+        if (mrst)  begin
            dqs_tri_off_pattern[3:0] <= DFLT_DQS_TRI_OFF_PATTERN;
            dqs_tri_on_pattern[3:0]  <= DFLT_DQS_TRI_ON_PATTERN;
            dq_tri_off_pattern[3:0]  <= DFLT_DQ_TRI_OFF_PATTERN;
@@ -408,10 +414,10 @@ module  mcontr_sequencer   #(
            dq_tri_off_pattern[3:0]  <= phy_16bit_data[ 7: 4];
            dq_tri_on_pattern[3:0]   <= phy_16bit_data[ 3: 0];
         end
-        if (rst)                 wbuf_delay <= DFLT_WBUF_DELAY;
+        if (mrst)                wbuf_delay <= DFLT_WBUF_DELAY;
         else if (set_wbuf_delay) wbuf_delay <= phy_16bit_data[ 3: 0];
 
-        if (rst)            inv_clk_div <= DFLT_INV_CLK_DIV;
+        if (mrst)           inv_clk_div <= DFLT_INV_CLK_DIV;
         else if (set_extra) inv_clk_div <= phy_16bit_data[0];
     end    
 
@@ -423,62 +429,61 @@ module  mcontr_sequencer   #(
         .STATUS_REG_ADDR  (MCONTR_PHY_STATUS_REG_ADDR),
         .PAYLOAD_BITS     (15)
     ) status_generate_i (
-        .rst              (rst), // input
-        .clk              (mclk), // input
-        .we               (control_status_we), // input
+        .rst              (1'b0),                // rst), // input
+        .clk              (mclk),                // input
+        .srst             (mrst),                // input
+        .we               (control_status_we),   // input
         .wd               (contral_status_data), // input[7:0] 
-        .status           (status_data), // input[25:0] 
-        .ad               (status_ad), // output[7:0] 
-        .rq               (status_rq), // output
-        .start            (status_start) // input
+        .status           (status_data),         // input[25:0] 
+        .ad               (status_ad),           // output[7:0] 
+        .rq               (status_rq),           // output
+        .start            (status_start)         // input
     );
     
     
-    always @ (posedge mclk or posedge rst) begin
-        if (rst)                cmd_busy <= 0;
-//        else if (sequence_done) cmd_busy <= 0;
-
+    always @ (posedge mclk) begin
+        if (mrst)         cmd_busy <= 0;
         else if (ddr_rst) cmd_busy <= 0; // *************** reset sequencer with DDR reset
         else if (sequence_done &&  cmd_busy[2]) cmd_busy <= 0;
         else cmd_busy <= {cmd_busy[1:0],run_seq | cmd_busy[0]}; 
         // Pause counter
-        if (rst)                           pause_cntr <= 0;
+        if (mrst)                          pause_cntr <= 0;
         else if (!cmd_busy[1])             pause_cntr <= 0; // not needed?
         else if (cmd_fetch && phy_cmd_nop) pause_cntr <= pause_len;
         else if (pause_cntr!=0)            pause_cntr <= pause_cntr-1; //SuppressThisWarning ISExst Result of 32-bit expression is truncated to fit in 10-bit target.
         // Fetch - command data valid
-        if (rst) cmd_fetch <= 0;
-        else     cmd_fetch <= cmd_busy[0] && !pause;
+        if (mrst) cmd_fetch <= 0;
+        else      cmd_fetch <= cmd_busy[0] && !pause;
 
-        if (rst) add_pause <= 0;
-        else     add_pause <= cmd_fetch && phy_cmd_add_pause;
+        if (mrst) add_pause <= 0;
+        else      add_pause <= cmd_fetch && phy_cmd_add_pause;
          
         // Command read address
-        if (rst)                        cmd_addr <= 0;
+        if (mrst)                       cmd_addr <= 0;
         else  if (run_seq)              cmd_addr <= run_addr[9:0];
         else if (cmd_busy[0] && !pause) cmd_addr <= cmd_addr + 1; //SuppressThisWarning ISExst Result of 11-bit expression is truncated to fit in 10-bit target.
         // command bank select (0 - "manual" (software programmed sequences), 1 - "auto" (normal block r/w)
-        if (rst)            cmd_sel <= 0;
+        if (mrst)           cmd_sel <= 0;
         else  if (run_seq)  cmd_sel <= run_addr[10];
    
 //        if (rst)                   buf_raddr <= 7'h0;
 //        else if (run_seq_d)        buf_raddr <= 7'h0;
 //        else if (buf_wr || buf_rd) buf_raddr <= buf_raddr +1; // Separate read/write address? read address re-registered @ negedge //SuppressThisWarning ISExst Result of 10-bit expression is truncated to fit in 9-bit target.
 
-        if (rst)          run_chn_d <= 0;
+        if (mrst)         run_chn_d <= 0;
         else if (run_seq) run_chn_d <= run_chn;
         
-        if (rst)          run_refresh_d <= 0;
+        if (mrst)         run_refresh_d <= 0;
         else if (run_seq) run_refresh_d <= run_refresh;
         
-        if (rst) run_seq_d <= 0;
-        else run_seq_d <= run_seq;
+        if (mrst) run_seq_d <= 0;
+        else      run_seq_d <= run_seq;
 
-        if (rst) buf_raddr_reset <= 0;
-        else     buf_raddr_reset<= buf_rst & ~mem_read_mode;
+        if (mrst) buf_raddr_reset <= 0;
+        else      buf_raddr_reset<= buf_rst & ~mem_read_mode;
 
-        if (rst) buf_addr_reset <= 0;
-        else     buf_addr_reset<= buf_rst;
+        if (mrst) buf_addr_reset <= 0;
+        else      buf_addr_reset<= buf_rst;
     end
     
     always @ (posedge mclk) begin
@@ -505,32 +510,32 @@ module  mcontr_sequencer   #(
     ram_1kx32_1kx32 #(
         .REGISTERS(1) // (0) // register output
     ) cmd0_buf_i (
-        .rclk     (mclk), // input
-        .raddr    (cmd_addr), // input[9:0]
-        .ren      (ren0), // input TODO: verify cmd_busy[0] is correct (was cmd_busy )
-        .regen    (ren0), // input
+        .rclk     (mclk),          // input
+        .raddr    (cmd_addr),      // input[9:0]
+        .ren      (ren0),          // input TODO: verify cmd_busy[0] is correct (was cmd_busy ). TODO: make cleaner ren/regen
+        .regen    (ren0),          // input
         .data_out (phy_cmd0_word), // output[31:0] 
-        .wclk     (cmd0_clk), // input
-        .waddr    (cmd0_addr), // input[9:0] 
-        .we       (cmd0_we), // input
-        .web      (4'hf), // input[3:0] 
-        .data_in  (cmd0_data) // input[31:0] 
+        .wclk     (cmd0_clk),      // input
+        .waddr    (cmd0_addr),     // input[9:0] 
+        .we       (cmd0_we),       // input
+        .web      (4'hf),          // input[3:0] 
+        .data_in  (cmd0_data)      // input[31:0] 
     );
 
 // Command sequence memory 0 ("manual"):
     ram_1kx32_1kx32 #(
-        .REGISTERS(1) // (0) // register output
+        .REGISTERS (1) // (0) // register output
     ) cmd1_buf_i (
-        .rclk     (mclk), // input
-        .raddr    (cmd_addr), // input[9:0]
-        .ren      ( ren1), // input
-        .regen    ( ren1), // input
+        .rclk     (mclk),          // input
+        .raddr    (cmd_addr),      // input[9:0]
+        .ren      ( ren1),         // input ???  TODO: make cleaner ren/regen
+        .regen    ( ren1),         // input ???
         .data_out (phy_cmd1_word), // output[31:0] 
-        .wclk     (cmd1_clk), // input
-        .waddr    (cmd1_addr), // input[9:0] 
-        .we       (cmd1_we), // input
-        .web      (4'hf), // input[3:0] 
-        .data_in  (cmd1_data) // input[31:0] 
+        .wclk     (cmd1_clk),      // input
+        .waddr    (cmd1_addr),     // input[9:0] 
+        .we       (cmd1_we),       // input
+        .web      (4'hf),          // input[3:0] 
+        .data_in  (cmd1_data)      // input[31:0] 
     );
     
     phy_cmd #(
@@ -549,7 +554,7 @@ module  mcontr_sequencer   #(
         .CLKFBOUT_DIV_REF      (CLKFBOUT_DIV_REF),
         .DIVCLK_DIVIDE         (DIVCLK_DIVIDE),
         .CLKFBOUT_PHASE        (CLKFBOUT_PHASE),
-        .SDCLK_PHASE           (SDCLK_PHASE),/// debugging
+        .SDCLK_PHASE           (SDCLK_PHASE), /// debugging
         
         .CLK_PHASE             (CLK_PHASE),
         .CLK_DIV_PHASE         (CLK_DIV_PHASE),
@@ -560,67 +565,68 @@ module  mcontr_sequencer   #(
         .SS_MOD_PERIOD         (SS_MOD_PERIOD),
         .CMD_PAUSE_BITS        (CMD_PAUSE_BITS), // numer of (address) bits to encode pause
         .CMD_DONE_BIT          (CMD_DONE_BIT)    // bit number (address) to signal sequence done
-        
     ) phy_cmd_i (
-        .SDRST               (SDRST), // output
-        .SDCLK               (SDCLK), // output
-        .SDNCLK              (SDNCLK), // output
+        .SDRST               (SDRST),                   // output
+        .SDCLK               (SDCLK),                   // output
+        .SDNCLK              (SDNCLK),                  // output
         .SDA                 (SDA[ADDRESS_NUMBER-1:0]), // output[14:0] 
-        .SDBA                (SDBA[2:0]), // output[2:0] 
-        .SDWE                (SDWE), // output
-        .SDRAS               (SDRAS), // output
-        .SDCAS               (SDCAS), // output
-        .SDCKE               (SDCKE), // output
-        .SDODT               (SDODT), // output
-        .SDD                 (SDD[15:0]), // inout[15:0] 
-        .SDDML               (SDDML), // inout
-        .DQSL                (DQSL), // inout
-        .NDQSL               (NDQSL), // inout
-        .SDDMU               (SDDMU), // inout
-        .DQSU                (DQSU), // inout
-        .NDQSU               (NDQSU), // inout
-        .clk_in              (clk_in), // input
-        .rst_in              (rst_in), // input
-        .mclk                (mclk), // output
-        .ref_clk             (ref_clk), // output
-        .dly_data            (dly_data[7:0]), // input[7:0] 
-        .dly_addr            (dly_addr[6:0]), // input[6:0] 
-        .ld_delay            (ld_delay), // input
-        .set                 (set), // input
+        .SDBA                (SDBA[2:0]),               // output[2:0] 
+        .SDWE                (SDWE),                    // output
+        .SDRAS               (SDRAS),                   // output
+        .SDCAS               (SDCAS),                   // output
+        .SDCKE               (SDCKE),                   // output
+        .SDODT               (SDODT),                   // output
+        .SDD                 (SDD[15:0]),               // inout[15:0] 
+        .SDDML               (SDDML),                   // inout
+        .DQSL                (DQSL),                    // inout
+        .NDQSL               (NDQSL),                   // inout
+        .SDDMU               (SDDMU),                   // inout
+        .DQSU                (DQSU),                    // inout
+        .NDQSU               (NDQSU),                   // inout
+        .clk_in              (clk_in),                  // input
+        .rst_in              (rst_in),                  // input
+        .mclk                (mclk),                    // output
+        .mrst                (mrst),                    // input
+        .ref_clk             (ref_clk),                 // output
+        .idelay_ctrl_reset   (idelay_ctrl_reset),       // output
+        .dly_data            (dly_data[7:0]),           // input[7:0] 
+        .dly_addr            (dly_addr[6:0]),           // input[6:0] 
+        .ld_delay            (ld_delay),                // input
+        .set                 (set),                     // input
 //        .locked              (locked), // output
-        .locked_mmcm         (locked_mmcm), // output
-        .locked_pll          (locked_pll), // output
-        .dly_ready           (dly_ready), // output
-        .dci_ready           (dci_ready), // output
+        .locked_mmcm         (locked_mmcm),             // output
+        .locked_pll          (locked_pll),              // output
+        .dly_ready           (dly_ready),               // output
+        .dci_ready           (dci_ready),               // output
         
-        .phy_locked_mmcm     (phy_locked_mmcm), // output
-        .phy_locked_pll      (phy_locked_pll), // output
-        .phy_dly_ready       (phy_dly_ready), // output
-        .phy_dci_ready       (phy_dci_ready), // output
+        .phy_locked_mmcm     (phy_locked_mmcm),         // output
+        .phy_locked_pll      (phy_locked_pll),          // output
+        .phy_dly_ready       (phy_dly_ready),           // output
+        .phy_dci_ready       (phy_dci_ready),           // output
         
         .tmp_debug           (tmp_debug_a[7:0]),
         
-        .ps_rdy              (ps_rdy), // output
-        .ps_out              (ps_out[7:0]), // output[7:0]
-        .phy_cmd_word        (phy_cmd_word[31:0]), // input[31:0]
-        .phy_cmd_nop         (phy_cmd_nop), // output
-        .phy_cmd_add_pause   (phy_cmd_add_pause), // one pause cycle (for 8-bursts)
-        .add_pause           (add_pause),
-        .pause_len           (pause_len),     // output  [CMD_PAUSE_BITS-1:0]
-        .sequence_done       (sequence_done), // output
-        .buf_wdata           (buf_wdata[63:0]), // output[63:0] 
-        .buf_rdata           (buf_rdata[63:0]), // input[63:0] 
-        .buf_wr              (buf_wr_ndly), // output
-        .buf_rd              (buf_rd),    // output
-        .buf_rst             (buf_rst),   // reset external buffer address to page start 
-        .cmda_en             (cmda_en), // input
-        .ddr_rst             (ddr_rst), // input
-        .dci_rst             (dci_rst), // input
-        .dly_rst             (dly_rst), // input
-        .ddr_cke             (ddr_cke), // input
-        .inv_clk_div         (inv_clk_div), // input
-        .dqs_pattern         (dqs_pattern), // input[7:0] 
-        .dqm_pattern         (dqm_pattern), // input[7:0]
+        .ps_rdy              (ps_rdy),                  // output
+        .ps_out              (ps_out[7:0]),             // output[7:0]
+        .phy_cmd_word        (phy_cmd_word[31:0]),      // input[31:0]
+        .phy_cmd_nop         (phy_cmd_nop),             // output
+        .phy_cmd_add_pause   (phy_cmd_add_pause),       // one pause cycle (for 8-bursts)
+        .add_pause           (add_pause),               // input
+        .pause_len           (pause_len),               // output  [CMD_PAUSE_BITS-1:0]
+        .sequence_done       (sequence_done),           // output
+        .buf_wdata           (buf_wdata[63:0]),         // output[63:0] 
+        .buf_rdata           (buf_rdata[63:0]),         // input[63:0] 
+        .buf_wr              (buf_wr_ndly),             // output
+        .buf_rd              (buf_rd),                  // output
+        .buf_rst             (buf_rst),                 // reset external buffer address to page start 
+        .cmda_en             (cmda_en),                 // input
+        .ddr_rst             (ddr_rst),                 // input
+        .dci_rst             (dci_rst),                 // input
+        .dly_rst             (dly_rst),                 // input
+        .ddr_cke             (ddr_cke),                 // input
+        .inv_clk_div         (inv_clk_div),             // input
+        .dqs_pattern         (dqs_pattern),             // input[7:0] 
+        .dqm_pattern         (dqm_pattern),             // input[7:0]
         .dq_tri_on_pattern   (dq_tri_on_pattern[3:0]),  // input[3:0] 
         .dq_tri_off_pattern  (dq_tri_off_pattern[3:0]), // input[3:0] 
         .dqs_tri_on_pattern  (dqs_tri_on_pattern[3:0]), // input[3:0] 
@@ -628,21 +634,21 @@ module  mcontr_sequencer   #(
     );
     // delay buf_wr by 1-16 cycles to compensate for DDR and HDL code latency (~7 cycles?)
     dly_16 #(2) buf_wr_dly_i (
-        .clk(mclk), // input
-        .rst(1'b0), // input
-        .dly(wbuf_delay[3:0]), // input[3:0] 
-        .din({mem_read_mode & buf_rst,buf_wr_ndly}), // input
-        .dout({buf_rst_d, buf_wr}) // output reg 
+        .clk  (mclk),                                  // input
+        .rst  (mrst),                                  // input
+        .dly  (wbuf_delay[3:0]),                       // input[3:0] 
+        .din  ({mem_read_mode & buf_rst,buf_wr_ndly}), // input
+        .dout ({buf_rst_d, buf_wr})                    // output reg 
     );
     assign wbuf_delay_m1=wbuf_delay-1;
 
     dly_16 #(6) buf_wchn_dly_i (
-        .clk(mclk), // input
-        .rst(1'b0), // input
-        .dly(wbuf_delay_m1), //wbuf_delay[3:0]-1), // input[3:0] 
-        .din({run_seq_d, run_refresh_d,   run_chn_d}), // input
-        .dout({run_w_d,run_refresh_w_d,run_chn_w_d}) // output reg 
+        .clk  (mclk),                                    // input
+        .rst  (mrst),                                    // input
+        .dly  (wbuf_delay_m1), //wbuf_delay[3:0]-1),     // input[3:0] 
+        .din  ({run_seq_d, run_refresh_d,   run_chn_d}), // input
+        .dout ({run_w_d,run_refresh_w_d,run_chn_w_d})    // output reg 
     );
-//run_chn_w_d
+
 endmodule
 

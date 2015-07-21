@@ -34,6 +34,7 @@ module  cmd_deser#(
 )(
     input                                               rst,
     input                                               clk,
+    input                                               srst, // sync reset
     input                                         [7:0] ad,
     input                                               stb,
     output                             [ADDR_WIDTH-1:0] addr,
@@ -57,6 +58,7 @@ module  cmd_deser#(
             ) i_cmd_deser_single (
                 .rst(rst),
                 .clk(clk),
+                .srst(srst),
                 .ad(ad),
                 .stb(stb),
                 .addr(addr),
@@ -78,6 +80,7 @@ module  cmd_deser#(
             ) i_cmd_deser_dual (
                 .rst(rst),
                 .clk(clk),
+                .srst(srst),
                 .ad(ad),
                 .stb(stb),
                 .addr(addr),
@@ -100,6 +103,7 @@ module  cmd_deser#(
             ) i_cmd_deser_multi (
                 .rst(rst),
                 .clk(clk),
+                .srst(srst),
                 .ad(ad),
                 .stb(stb),
                 .addr(addr),
@@ -126,6 +130,7 @@ module  cmd_deser_single#(
 )(
     input                   rst,
     input                   clk,
+    input                   srst, // sync reset
     input             [7:0] ad,
     input                   stb,
     output [ADDR_WIDTH-1:0] addr,
@@ -148,9 +153,11 @@ module  cmd_deser_single#(
      ((ad ^ ADDR_LOW1)  & (8'hff & ADDR_MASK_LOW1)) == 0,
      ((ad ^ ADDR_LOW )  & (8'hff & ADDR_MASK_LOW )) == 0};
     always @ (posedge rst or posedge clk) begin
-        if (rst) we_r <= 0; 
-        else we_r <= match_low & {3{stb}};
-        if (rst) deser_r <= 0; 
+        if      (rst)  we_r <= 0; 
+        else if (srst) we_r <= 0; 
+        else           we_r <= match_low & {3{stb}};
+        if (rst)      deser_r <= 0; 
+        else if (srst) deser_r <= 0; 
         else if ((|match_low) && stb) deser_r <= ad;
     end
     assign data={DATA_WIDTH{1'b0}};
@@ -172,6 +179,7 @@ module  cmd_deser_dual#(
 )(
     input                   rst,
     input                   clk,
+    input                   srst, // sync reset
     input             [7:0] ad,
     input                   stb,
     output [ADDR_WIDTH-1:0] addr,
@@ -215,14 +223,16 @@ module  cmd_deser_dual#(
                         ((ad ^ ADDR_HIGH ) & (8'hff & ADDR_MASK_HIGH )) == 0};
     
     always @ (posedge rst or posedge clk) begin
-        if (rst) stb_d <= 3'b0;
-//        else stb_d <= match_low && stb;
-        else stb_d <= stb?match_low:3'b0;
+        if      (rst)  stb_d <= 3'b0;
+        else if (srst) stb_d <= 3'b0;
+        else           stb_d <= stb?match_low:3'b0;
 
-        if (rst) we_r <= 3'b0;
-        else we_r  <= match_high & stb_d;
+        if      (rst)  we_r <= 3'b0;
+        else if (srst) we_r <= 3'b0;
+        else           we_r  <= match_high & stb_d;
         
         if      (rst)                                         deser_r[15:0]  <= 0;
+        else if (srst)                                        deser_r[15:0]  <= 0;
         else if ((match_low && stb) || (match_high && stb_d)) deser_r[15:0] <= {ad,deser_r[15:8]};
     end
     assign data=0; // {DATA_WIDTH{1'b0}};
@@ -245,6 +255,7 @@ module  cmd_deser_multi#(
 )(
     input                   rst,
     input                   clk,
+    input                   srst, // sync reset
     input             [7:0] ad,
     input                   stb,
     output [ADDR_WIDTH-1:0] addr,
@@ -287,22 +298,27 @@ module  cmd_deser_multi#(
                         ((ad ^ ADDR_HIGH1) & (8'hff & ADDR_MASK_HIGH1)) == 0,
                         ((ad ^ ADDR_HIGH ) & (8'hff & ADDR_MASK_HIGH )) == 0};
     always @ (posedge rst or posedge clk) begin
-        if (rst) stb_d <= 0;
-        else stb_d <= stb?match_low:3'b0;
+        if       (rst) stb_d <= 0;
+        else if (srst) stb_d <= 0;
+        else           stb_d <= stb?match_low:3'b0;
 
         if      (rst)                       sr <= 0;
+        else if (srst)                      sr <= 0;
         else if (match_high[0] && stb_d[0]) sr <= 1 << (NUM_CYCLES-2);
         else                                sr <= {1'b0,sr[NUM_CYCLES-2:1]};
 
-        if      (rst)                       sr1<= 0;
+        if      (rst)                       sr1 <= 0;
+        else if (srst)                      sr1 <= 0;
         else if (match_high[1] && stb_d[1]) sr1 <= 1 << (NUM_CYCLES-2);
         else                                sr1 <= {1'b0,sr1[NUM_CYCLES-2:1]};
 
         if      (rst)                       sr2 <= 0;
+        else if (srst)                      sr2 <= 0;
         else if (match_high[2] && stb_d[2]) sr2 <= 1 << (NUM_CYCLES-2);
         else                                sr2 <= {1'b0,sr2[NUM_CYCLES-2:1]};
         
         if      (rst)                       deser_r[8*NUM_CYCLES-1:0] <= 0;
+        else if (srst)                      deser_r[8*NUM_CYCLES-1:0] <= 0;
         else if ((match_low &&  (|stb)) ||
                  (match_high && (|stb_d)) ||
                  (|sr) || (|sr1) || (|sr2)) deser_r[8*NUM_CYCLES-1:0] <= {ad,deser_r[8*NUM_CYCLES-1:8]};

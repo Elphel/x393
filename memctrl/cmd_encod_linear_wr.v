@@ -29,7 +29,7 @@ module  cmd_encod_linear_wr #(
     parameter CMD_DONE_BIT=         10, // VDT BUG: CMD_DONE_BIT is used in a function call parameter!
     parameter WSEL=                 1'b0
 ) (
-    input                        rst,
+    input                        mrst,
     input                        clk,
 // programming interface
     input                  [2:0] bank_in,     // bank address
@@ -117,58 +117,39 @@ module  cmd_encod_linear_wr #(
         start_d <= start;
         cut_buf_rd <= rom_r[ENC_BUF_RD] && (cut_buf_rd || next_zero_w);
     end    
-    always @ (posedge rst or posedge clk) begin
+    always @ (posedge clk) begin
 
-        if (rst)           gen_run <= 0;
+        if      (mrst)     gen_run <= 0;
         else if (start)    gen_run<= 1;
         else if (pre_done) gen_run<= 0;
         
-//        if (rst)           gen_run_d <= 0;
-//        else               gen_run_d <= gen_run;
-
-        if (rst)                                                           gen_addr <= 0;
+        if      (mrst)                                                     gen_addr <= 0;
         else if (!start && !gen_run)                                       gen_addr <= 0;
         else if ((gen_addr==(REPEAT_ADDR-1)) && few_write)                 gen_addr <= jump_gen_addr;
-//        else if ((gen_addr !=REPEAT_ADDR) || (num128[NUM_XFER_BITS:1]==0)) gen_addr <= gen_addr+1; // not in a loop
-//      else if ((gen_addr !=REPEAT_ADDR) || (num128==2))                  gen_addr <= gen_addr+1; // not in a loop
         else if ((gen_addr !=REPEAT_ADDR) || (num128[NUM_XFER_BITS:2]==0)) gen_addr <= gen_addr+1; // not in a loop
 
 //counting loops        
-        if      (rst)          num128 <= 0;
+        if      (mrst)         num128 <= 0;
         else if (start)        num128 <= {(num128_in==0)?1'b1:1'b0,num128_in};
         else if (!gen_run)     num128 <= 0; //
-//        else if ((gen_addr == (REPEAT_ADDR-1)) || (gen_addr == REPEAT_ADDR))  num128 <= num128 -1; // ????? - FIXME
         else if (write_addr_w) num128 <= num128 -1;
         
-        if      (rst)        single_write <= 0;
+        if      (mrst)        single_write <= 0;
         else if (start_d)    single_write <= (num128[NUM_XFER_BITS:1]==0); // could not be 0
         
-        if      (rst)        dual_write <= 0;
+        if      (mrst)        dual_write <= 0;
         else if (start_d)    dual_write <= (num128==2);
 
-//        if      (rst)        triple_write <= 0;
-//        else if (start_d)    triple_write <= (num128==3);
-        
-        if      (rst)        few_write <= 0;
+        if      (mrst)        few_write <= 0;
         else if (start_d)    few_write <=(num128[NUM_XFER_BITS:2]==0); // (0,)1,2 or3
-//        
-//        if (rst) few_write <= 0;
-//        else     few_write <= single_write | dual_write | triple_write;
         
-        if (rst) jump_gen_addr <= 0;
-        else     jump_gen_addr <= single_write ? NO_WRITE_ADDR : (dual_write ? LAST_WRITE_ADDR : PRELAST_WRITE_ADDR);
-        
-
-//triple_write          
-//    reg                       single_write; // only one burst has to be written
-//    reg                       dual_write;   // Two bursts have to be written
-        
+        if (mrst) jump_gen_addr <= 0;
+        else      jump_gen_addr <= single_write ? NO_WRITE_ADDR : (dual_write ? LAST_WRITE_ADDR : PRELAST_WRITE_ADDR);
         
     end
     
     always @ (posedge clk) if (start) begin
         row<=row_in;
-//        col <= start_col;
         bank <= bank_in;
         skip_next_page <= skip_next_page_in;
     end
@@ -180,8 +161,8 @@ module  cmd_encod_linear_wr #(
     
     // ROM-based (registered output) encoded sequence
     // TODO: Remove last ENC_BUF_RD
-    always @ (posedge rst or posedge clk) begin
-        if (rst)           rom_r <= 0;
+    always @ (posedge clk) begin
+        if (mrst)          rom_r <= 0;
         else case (gen_addr)
             4'h0: rom_r <= (ENC_CMD_ACTIVATE <<  ENC_CMD_SHIFT) | (1 << ENC_BUF_RD);// | (1 << ENC_NOP); 
             4'h1: rom_r <= (ENC_CMD_NOP <<       ENC_CMD_SHIFT) | (1 << ENC_BUF_RD);
@@ -203,18 +184,16 @@ module  cmd_encod_linear_wr #(
             default:rom_r <= 0;
        endcase
     end
-    always @ (posedge rst or posedge clk) begin
-//        if (rst)           done <= 0;
-//        else               done <= pre_done;
+    always @ (posedge clk) begin
         
-        if (rst)           enc_wr <= 0;
+        if (mrst)          enc_wr <= 0;
         else               enc_wr <= gen_run; // || gen_run_d;
         
-        if (rst)           enc_done <= 0;
-//        else               enc_done <= enc_wr || !gen_run_d;
-        else               enc_done <= enc_wr && !gen_run; // !gen_run_d;
+        if (mrst)           enc_done <= 0;
+//        else              enc_done <= enc_wr || !gen_run_d;
+        else                enc_done <= enc_wr && !gen_run; // !gen_run_d;
         
-        if (rst)             enc_cmd <= 0;
+        if (mrst)         enc_cmd <= 0;
         else if (gen_run) begin
           if (rom_cmd==0) enc_cmd <= func_encode_skip ( // encode pause
             {{CMD_PAUSE_BITS-2{1'b0}},rom_skip[1:0]}, // skip;   // number of extra cycles to skip (and keep all the other outputs)

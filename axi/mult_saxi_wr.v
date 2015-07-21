@@ -39,9 +39,11 @@ module  mult_saxi_wr #(
     parameter MULT_SAXI_ADV_RD =          3 // number of clock cycles before end of write to genearte adv_wr_done
     
 ) (
-    input                      rst,           // global reset
+//    input                      rst,           // global reset
     input                      mclk,          // system clock
     input                      aclk,          // global clock to run s_axi (@150MHz?)
+    input                      mrst,          // @mclk sync reset
+    input                      arst,          // @aclk sync reset
     // command interface
     input                [7:0] cmd_ad,        // byte-serial command address/data (up to 6 bytes: AL-AH-D0-D1-D2-D3 
     input                      cmd_stb,       // strobe (with first byte) for the command a/d
@@ -161,8 +163,8 @@ module  mult_saxi_wr #(
     assign en_chn_mclk =  mode_reg[3:0];
     assign run_chn_mclk = mode_reg[7:4];
     
-    always @ (posedge rst or posedge mclk) begin
-        if      (rst)                  mode_reg <= 0;
+    always @ (posedge mclk) begin
+        if      (mrst)                 mode_reg <= 0;
         else if (we_ctrl && !cmd_a[0]) mode_reg <= cmd_data[7:0];
     end
 
@@ -420,15 +422,15 @@ module  mult_saxi_wr #(
         .DATA_WIDTH(35),
         .DATA_DEPTH(4)
     ) fifo_same_clock_i (
-        .rst       (rst),  // input
-        .clk       (aclk), // input
-        .sync_rst  (!en_aclk), // input
-        .we        (buf_re[2]), // input
-        .re        (fifo_re), // input 
+        .rst       (1'b0),             //   rst),  // input
+        .clk       (aclk),             // input
+        .sync_rst  (!en_aclk || arst), // input
+        .we        (buf_re[2]),        // input
+        .re        (fifo_re),          // input 
         .data_in   ({chn_rd_data,is_last_rd[1],inter_buf_data}), // input[31:0] 
         .data_out  ({chn_fifo_out,saxi_wlast, saxi_wdata}), // output[31:0] 
-        .nempty    (fifo_nempty), // output
-        .half_full (fifo_half_full) // output reg 
+        .nempty    (fifo_nempty),      // output
+        .half_full (fifo_half_full)   // output reg 
     );
 
     generate
@@ -481,8 +483,9 @@ module  mult_saxi_wr #(
         .ADDR2       (0),
         .ADDR_MASK2  (0)
     ) cmd_deser_sens_i2c_i (
-        .rst         (rst),                     // input
+        .rst         (1'b0), //rst),                     // input
         .clk         (mclk),                    // input
+        .srst        (mrst),                    // input
         .ad          (cmd_ad),                  // input[7:0] 
         .stb         (cmd_stb),                 // input
         .addr        (cmd_a),                   // output[3:0] 
@@ -509,7 +512,7 @@ module  mult_saxi_wr #(
         if (pntr_we_mclk && (pntr_wa == 2'h3)) status_pntr3 <= pntr_wd;
     end
     
-    pulse_cross_clock status_wr_i (.rst(rst), .src_clk(aclk), .dst_clk(mclk), .in_pulse(pntr_we), .out_pulse(pntr_we_mclk),.busy());
+    pulse_cross_clock status_wr_i (.rst(arst), .src_clk(aclk), .dst_clk(mclk), .in_pulse(pntr_we), .out_pulse(pntr_we_mclk),.busy());
 
     status_generate #(
         .STATUS_REG_ADDR   (MULT_SAXI_STATUS_REG+4), // not used
@@ -518,8 +521,9 @@ module  mult_saxi_wr #(
         .EXTRA_WORDS       (4),
         .EXTRA_REG_ADDR    (MULT_SAXI_STATUS_REG)
     ) status_generate_i (
-        .rst             (rst), // input
-        .clk             (mclk), // input
+        .rst             (1'b0),                //rst), // input
+        .clk             (mclk),                // input
+        .srst            (mrst),                // input
         .we              (we_ctrl && cmd_a[0]), // input
         .wd              (cmd_data[7:0]),       // input[7:0] 
         .status          (status_data),         // input[128:0] 

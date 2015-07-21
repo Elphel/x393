@@ -34,10 +34,10 @@ module  sensor_i2c_io#(
     parameter SENSI2C_IOSTANDARD = "DEFAULT",
     parameter SENSI2C_SLEW = "SLOW"
 )(
-    input         rst,
-    input         mclk,         // global clock, half DDR3 clock, synchronizes all I/O through the command port
-    input   [7:0] cmd_ad,       // byte-serial command address/data (up to 6 bytes: AL-AH-D0-D1-D2-D3 
-    input         cmd_stb,      // strobe (with first byte) for the command a/d
+    input         mrst,        // @mclk
+    input         mclk,        // global clock, half DDR3 clock, synchronizes all I/O through the command port
+    input   [7:0] cmd_ad,      // byte-serial command address/data (up to 6 bytes: AL-AH-D0-D1-D2-D3 
+    input         cmd_stb,     // strobe (with first byte) for the command a/d
     output  [7:0] status_ad,   // status address/data - up to 5 bytes: A - {seq,status[1:0]} - status[2:9] - status[10:17] - status[18:25]
     output        status_rq,   // input request to send status downstream
     input         status_start,// Acknowledge of the first status packet byte (address)
@@ -53,29 +53,29 @@ module  sensor_i2c_io#(
         wire sda_en;
 
     sensor_i2c #(
-        .SENSI2C_ABS_ADDR(SENSI2C_ABS_ADDR),
-        .SENSI2C_REL_ADDR(SENSI2C_REL_ADDR),
-        .SENSI2C_ADDR_MASK(SENSI2C_ADDR_MASK),
-        .SENSI2C_CTRL_ADDR(SENSI2C_CTRL_ADDR),
-        .SENSI2C_CTRL_MASK(SENSI2C_CTRL_MASK),
-        .SENSI2C_CTRL(SENSI2C_CTRL),
-        .SENSI2C_STATUS(SENSI2C_STATUS),
-        .SENSI2C_STATUS_REG(SENSI2C_STATUS_REG)
+        .SENSI2C_ABS_ADDR     (SENSI2C_ABS_ADDR),
+        .SENSI2C_REL_ADDR     (SENSI2C_REL_ADDR),
+        .SENSI2C_ADDR_MASK    (SENSI2C_ADDR_MASK),
+        .SENSI2C_CTRL_ADDR    (SENSI2C_CTRL_ADDR),
+        .SENSI2C_CTRL_MASK    (SENSI2C_CTRL_MASK),
+        .SENSI2C_CTRL         (SENSI2C_CTRL),
+        .SENSI2C_STATUS       (SENSI2C_STATUS),
+        .SENSI2C_STATUS_REG   (SENSI2C_STATUS_REG)
     ) sensor_i2c_i (
-        .rst(rst), // input
-        .mclk(mclk), // input
-        .cmd_ad(cmd_ad), // input[7:0] 
-        .cmd_stb(cmd_stb), // input
-        .status_ad(status_ad), // output[7:0] 
-        .status_rq(status_rq), // output
-        .status_start(status_start), // input
-        .frame_sync(frame_sync), // input
-        .scl_in(scl_in), // input
-        .sda_in(sda_in), // input
-        .scl_out(scl_out), // output
-        .sda_out(sda_out), // output
-        .scl_en(scl_en), // output
-        .sda_en(sda_en) // output
+        .mrst          (mrst),         // input
+        .mclk          (mclk),         // input
+        .cmd_ad        (cmd_ad),       // input[7:0] 
+        .cmd_stb       (cmd_stb),      // input
+        .status_ad     (status_ad),    // output[7:0] 
+        .status_rq     (status_rq),    // output
+        .status_start  (status_start), // input
+        .frame_sync    (frame_sync),   // input
+        .scl_in        (scl_in),       // input
+        .sda_in        (sda_in),       // input
+        .scl_out       (scl_out),      // output
+        .sda_out       (sda_out),      // output
+        .scl_en        (scl_en),       // output
+        .sda_en        (sda_en)        // output
     );
 
     iobuf #(
@@ -84,10 +84,10 @@ module  sensor_i2c_io#(
         .IOSTANDARD   (SENSI2C_IOSTANDARD),
         .SLEW         (SENSI2C_SLEW)
     ) iobuf_scl_i (
-        .O     (scl_in), // output
-        .IO    (scl), // inout
+        .O     (scl_in),  // output
+        .IO    (scl),     // inout
         .I     (scl_out), // input
-        .T     (!scl_en) // input
+        .T     (!scl_en)  // input
     );
 
     iobuf #(
@@ -96,10 +96,10 @@ module  sensor_i2c_io#(
         .IOSTANDARD   (SENSI2C_IOSTANDARD),
         .SLEW         (SENSI2C_SLEW)
     ) iobuf_sda_i (
-        .O     (sda_in), // output
-        .IO    (sda), // inout
+        .O     (sda_in),  // output
+        .IO    (sda),     // inout
         .I     (sda_out), // input
-        .T     (!sda_en) // input
+        .T     (!sda_en)  // input
     );
     mpullup i_scl_pullup(scl);
     mpullup i_sda_pullup(sda);

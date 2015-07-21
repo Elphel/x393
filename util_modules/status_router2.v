@@ -25,6 +25,7 @@
 module  status_router2 (
     input        rst,
     input        clk,
+    input        srst,      // sync reset
     // 2 input channels 
     input [7:0]  db_in0,
     input        rq_in0,
@@ -77,20 +78,24 @@ module  status_router2 (
     assign fifo_nempty=fifo_nempty_pre & ~fifo_last_byte;
     
     always @ (posedge rst or posedge clk) begin
-        if (rst) rcv_rest_r<= 0;
-        else rcv_rest_r <= (rcv_rest_r & rq_in) | start_rcv;
+        if      (rst)  rcv_rest_r<= 0;
+        else if (srst) rcv_rest_r<= 0;
+        else           rcv_rest_r <= (rcv_rest_r & rq_in) | start_rcv;
     
-        if (rst) next_chn<= 0;
+        if      (rst)      next_chn<= 0;
+        else if (srst)     next_chn<= 0;
         else if (|fifo_re) next_chn <= fifo_re[0]; // just to be fair
         
         if      (rst)                         current_chn_r <= 0;
+        else if (srst)                        current_chn_r <= 0;
         else if (set_other_only_w)            current_chn_r <= ~current_chn_r;
         else if (snd_pre_start)               current_chn_r <= chn_sel_w;
 ///        else if (|fifo_nempty && !snd_rest_r) current_chn_r <= chn_sel_w;
         //|fifo_nempty && (!snd_rest_r
 
-        if (rst) snd_rest_r<= 0;
-        else snd_rest_r <= (snd_rest_r & ~snd_last_byte) | start_out;
+        if (rst)       snd_rest_r<= 0;
+        else if (srst) snd_rest_r<= 0;
+        else           snd_rest_r <= (snd_rest_r & ~snd_last_byte) | start_out;
     end
     
 /* fifo_same_clock has currently latency of 2 cycles, use smth. faster here? - fifo_1cycle (but it has unregistered data output) */
@@ -98,8 +103,9 @@ module  status_router2 (
         .DATA_WIDTH(9),
         .DATA_DEPTH(4) // 16
     ) fifo_in0_i (
-        .rst       (rst), // input
+        .rst       (1'b0), // rst), // input
         .clk       (clk), // input
+        .srst      (srst), // input
         .we        (start_rcv[0] || rcv_rest_r[0]), // input
         .re        (fifo_re[0]), // input
         .data_in   ({rcv_rest_r[0] & ~rq_in[0], db_in0}), // input[8:0] MSB marks last byte
@@ -119,8 +125,9 @@ module  status_router2 (
         .DATA_WIDTH(9),
         .DATA_DEPTH(4) // 16
     ) fifo_in1_i (
-        .rst       (rst), // input
+        .rst       (1'b0), // rst), // input
         .clk       (clk), // input
+        .srst      (srst), // input
         .we        (start_rcv[1] || rcv_rest_r[1]), // input
         .re        (fifo_re[1]), // input
         .data_in   ({rcv_rest_r[1] & ~rq_in[1], db_in1}), // input[8:0] MSB marks last byte

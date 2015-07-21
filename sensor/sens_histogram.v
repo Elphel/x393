@@ -27,7 +27,9 @@ module  sens_histogram #(
     parameter HISTOGRAM_LEFT_TOP =     'h0,
     parameter HISTOGRAM_WIDTH_HEIGHT = 'h1 // 1.. 2^16, 0 - use HACT
 )(
-    input         rst,
+//    input         rst,
+    input         mrst,      // @posedge mclk, sync reset
+    input         prst,      // @posedge pclk, sync reset
     input         pclk,   // global clock input, pixel rate (96MHz for MT9P006)
     input         pclk2x,
     input         sof,
@@ -263,8 +265,9 @@ module  sens_histogram #(
         .ADDR2       (0),
         .ADDR_MASK2  (0)
     ) cmd_deser_sens_histogram_i (
-        .rst         (rst), // input
+        .rst         (1'b0), // input
         .clk         (mclk), // input
+        .srst        (mrst), // input
         .ad          (cmd_ad), // input[7:0] 
         .stb         (cmd_stb), // input
         .addr        (pio_addr), // output[15:0] 
@@ -273,7 +276,7 @@ module  sens_histogram #(
     );
     
     pulse_cross_clock pulse_cross_clock_lt_i (
-        .rst         (rst), // input
+        .rst         (mrst), // input
         .src_clk     (mclk), // input
         .dst_clk     (pclk), // input
         .in_pulse    (set_left_top_w), // input
@@ -282,7 +285,7 @@ module  sens_histogram #(
     );
     
     pulse_cross_clock pulse_cross_clock_wh_i (
-        .rst         (rst), // input
+        .rst         (mrst), // input
         .src_clk     (mclk), // input
         .dst_clk     (pclk), // input
         .in_pulse    (set_width_height_w), // input
@@ -291,7 +294,7 @@ module  sens_histogram #(
     );
     
     pulse_cross_clock pulse_cross_clock_hist_done_i (
-        .rst         (rst), // input
+        .rst         (prst), // input
         .src_clk     (pclk), // input
         .dst_clk     (mclk), // input
         .in_pulse    (hist_done), // input
@@ -300,7 +303,7 @@ module  sens_histogram #(
     );
 
     pulse_cross_clock pulse_cross_clock_hist_xfer_done_i (
-        .rst         (rst), // input
+        .rst         (mrst), // input
         .src_clk     (mclk), // input
         .dst_clk     (pclk), // input
         .in_pulse    (hist_xfer_done_mclk), // input

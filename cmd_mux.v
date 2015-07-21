@@ -61,7 +61,8 @@ module  cmd_mux #(
 ) (
     input                         axi_clk,
     input                         mclk,
-    input                         rst,
+    input                         mrst, // @posedge mclk - sync reset
+    input                         arst, // @posedge axi_clk - sync reset
     // direct commands from AXI. No wait but for multi-cycle output and command sequencer (having higher priority)
     input  [AXI_WR_ADDR_BITS-1:0] pre_waddr,     // AXI write address, before actual writes (to generate busy), valid@start_burst
     input                         start_wburst, // burst start - should generate ~ready (should be AND-ed with !busy internally) 
@@ -114,10 +115,10 @@ module  cmd_mux #(
     assign seq_length_rom_a=par_ad[NUM_CYCLES_LOW_BIT+:5];
     assign ss= seq_length[3];
 
-    always @ (posedge axi_clk or posedge rst) begin
-        if (rst)               selected <= 1'b0;
+    always @ (posedge axi_clk) begin
+        if (arst)              selected <= 1'b0;
         else if (start_wburst) selected <= selected_w;
-        if (rst)               busy_r <= 1'b0;
+        if (arst)              busy_r <= 1'b0;
         else                   busy_r <= !fifo_half_empty;
     end
     
@@ -158,8 +159,8 @@ module  cmd_mux #(
             5'h1e:seq_length <= NUM_CYCLES_30;
             5'h1f:seq_length <= NUM_CYCLES_31;
         endcase
-    always @ (posedge rst or posedge mclk) begin
-        if (rst) seq_busy_r<=0;
+    always @ (posedge mclk) begin
+        if (mrst) seq_busy_r<=0;
         else begin
             if (ad_stb) begin
                 case (seq_length)
@@ -177,9 +178,9 @@ module  cmd_mux #(
     assign can_start_w=  ad_stb_r? ss: !seq_busy_r[1];
     assign start_axi_w=  can_start_w && ~cmdseq_full_r && fifo_nempty;
     assign start_w=      can_start_w && (cmdseq_full_r || fifo_nempty);
-    always @ (posedge rst or posedge mclk) begin
-        if (rst) ad_stb_r <= 0;
-        else ad_stb_r <= start_w;
+    always @ (posedge mclk) begin
+        if (mrst) ad_stb_r <= 0;
+        else      ad_stb_r <= start_w;
     end
     always @ (posedge mclk) begin
         if (start_w) par_ad <={cmdseq_full_r?cseq_wdata_r:wdata_fifo_out,{(16-AXI_WR_ADDR_BITS){1'b0}},cmdseq_full_r?cseq_waddr_r:waddr_fifo_out};
@@ -188,8 +189,8 @@ module  cmd_mux #(
     
     assign  cseq_ackn= cseq_wr_en && (!cmdseq_full_r || can_start_w); // cmddseq_full has priority over axi, so (can_start_w && cmdseq_full_r)
     
-    always @ (posedge rst or posedge mclk) begin
-        if (rst) cmdseq_full_r <= 0;
+    always @ (posedge mclk) begin
+        if (mrst) cmdseq_full_r <= 0;
         else cmdseq_full_r <= cseq_ackn || (cmdseq_full_r && !can_start_w);
     end
     always @ (posedge mclk) begin
@@ -204,7 +205,9 @@ module  cmd_mux #(
         .DATA_WIDTH  (AXI_WR_ADDR_BITS+32),
         .DATA_DEPTH  (4)
     ) fifo_cross_clocks_i (
-        .rst         (rst), // input
+        .rst         (1'b0), // input
+        .rrst        (mrst), // input
+        .wrst        (arst), // input
         .rclk        (mclk), // input
         .wclk        (axi_clk), // input
         .we          (wr_en && selected), // input

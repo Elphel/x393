@@ -75,8 +75,12 @@ module  sens_parallel12 #(
     parameter SENS_SS_MOD_PERIOD =     10000        // integer 4000-40000 - SS modulation period in ns
     
 )(
-    input         rst,
+//    input         rst,
     input         pclk,   // global clock input, pixel rate (96MHz for MT9P006)
+    input         mclk_rst,
+    input         prst,
+    output        irst,
+    
     output        ipclk,  // re-generated sensor output clock (regional clock to drive external fifo) 
     output        ipclk2x,// twice frequency regenerated sensor clock (possibly to run external fifo)
 //    input         pclk2x, // maybe not needed here
@@ -117,10 +121,9 @@ module  sens_parallel12 #(
     input         status_start // Acknowledge of the first status packet byte (address)
 );
 
-//    wire tdi,tdo,done,tms,tck,ten;
+    reg  [2:0] irst_r;
     wire ibpf;
     wire ipclk_pre, ipclk2x_pre;
-//    wire ipclk, ipclk2x;
     
     reg  [31:0] data_r; 
     reg   [3:0] set_idelay;
@@ -182,76 +185,84 @@ module  sens_parallel12 #(
     assign hact_out = hact_r;
     assign iaro = trigger_mode?  ~trig : iaro_soft;
     
-    always @(posedge rst or posedge mclk) begin
-        if      (rst)     data_r <= 0;
-        else if (cmd_we)  data_r <= cmd_data;
-        if      (rst)     set_idelay <= 0;
-        else   set_idelay <=  {4{cmd_we}} & {(cmd_a==(SENSIO_DELAYS+3)),
+    assign     irst=irst_r[2];
+    always @ (posedge ipclk) begin
+        irst_r <= {irst_r[1:0], prst};
+    end
+    
+    always @(posedge mclk) begin
+        if      (mclk_rst) data_r <= 0;
+        else if (cmd_we)   data_r <= cmd_data;
+        
+        if      (mclk_rst) set_idelay <= 0;
+        else               set_idelay <=  {4{cmd_we}} & {(cmd_a==(SENSIO_DELAYS+3)),
                                              (cmd_a==(SENSIO_DELAYS+2)),
                                              (cmd_a==(SENSIO_DELAYS+1)),
                                              (cmd_a==(SENSIO_DELAYS+0))};
-        if (rst) set_status_r <=0;
-        else     set_status_r <= cmd_we && (cmd_a== SENSIO_STATUS);                             
-        if (rst) set_ctrl_r <=0;
-        else     set_ctrl_r <= cmd_we && (cmd_a== SENSIO_CTRL);                             
-        if (rst) set_jtag_r <=0;
-        else     set_jtag_r <= cmd_we && (cmd_a== SENSIO_JTAG);
+        if (mclk_rst) set_status_r <=0;
+        else          set_status_r <= cmd_we && (cmd_a== SENSIO_STATUS);                             
         
-        if      (rst)                                       xpgmen <= 0;
+        if (mclk_rst) set_ctrl_r <=0;
+        else          set_ctrl_r <= cmd_we && (cmd_a== SENSIO_CTRL);                             
+        
+        if (mclk_rst) set_jtag_r <=0;
+        else          set_jtag_r <= cmd_we && (cmd_a== SENSIO_JTAG);
+        
+        if      (mclk_rst)                                  xpgmen <= 0;
         else if (set_jtag_r && data_r[SENS_JTAG_PGMEN + 1]) xpgmen <= data_r[SENS_JTAG_PGMEN]; 
 
-        if      (rst)                                       xfpgaprog <= 0;
+        if      (mclk_rst)                                  xfpgaprog <= 0;
         else if (set_jtag_r && data_r[SENS_JTAG_PROG + 1])  xfpgaprog <= data_r[SENS_JTAG_PROG]; 
                                      
-        if      (rst)                                       xfpgatck <= 0;
+        if      (mclk_rst)                                  xfpgatck <= 0;
         else if (set_jtag_r && data_r[SENS_JTAG_TCK + 1])   xfpgatck <= data_r[SENS_JTAG_TCK]; 
 
-        if      (rst)                                       xfpgatms <= 0;
+        if      (mclk_rst)                                  xfpgatms <= 0;
         else if (set_jtag_r && data_r[SENS_JTAG_TMS + 1])   xfpgatms <= data_r[SENS_JTAG_TMS]; 
 
-        if      (rst)                                       xfpgatdi <= 0;
+        if      (mclk_rst)                                  xfpgatdi <= 0;
         else if (set_jtag_r && data_r[SENS_JTAG_TDI + 1])   xfpgatdi <= data_r[SENS_JTAG_TDI];
         
-        if      (rst)                                           imrst <= 0;
+        if      (mclk_rst)                                      imrst <= 0;
         else if (set_ctrl_r && data_r[SENS_CTRL_MRST + 1])      imrst <= data_r[SENS_CTRL_MRST]; 
          
-        if      (rst)                                           iarst <= 0;
+        if      (mclk_rst)                                      iarst <= 0;
         else if (set_ctrl_r && data_r[SENS_CTRL_ARST + 1])      iarst <= data_r[SENS_CTRL_ARST]; 
          
-        if      (rst)                                           iaro_soft <= 0;
+        if      (mclk_rst)                                      iaro_soft <= 0;
         else if (set_ctrl_r && data_r[SENS_CTRL_MRST + 1])      iaro_soft <= data_r[SENS_CTRL_ARO]; 
          
-        if      (rst)                                           rst_mmcm <= 0;
+        if      (mclk_rst)                                      rst_mmcm <= 0;
         else if (set_ctrl_r && data_r[SENS_CTRL_RST_MMCM + 1])  rst_mmcm <= data_r[SENS_CTRL_RST_MMCM]; 
          
-        if      (rst)                                           sel_ext_clk <= 0;
+        if      (mclk_rst)                                      sel_ext_clk <= 0;
         else if (set_ctrl_r && data_r[SENS_CTRL_EXT_CLK + 1])   sel_ext_clk <= data_r[SENS_CTRL_EXT_CLK]; 
          
-        if      (rst)                                           quadrants <= 0;
+        if      (mclk_rst)                                      quadrants <= 0;
         else if (set_ctrl_r && data_r[SENS_CTRL_QUADRANTS + 8]) quadrants <= data_r[SENS_CTRL_QUADRANTS+:6]; 
 
-        if  (rst) ld_idelay <= 0;
-        else      ld_idelay <= set_ctrl_r && data_r[SENS_CTRL_LD_DLY]; 
+        if  (mclk_rst) ld_idelay <= 0;
+        else           ld_idelay <= set_ctrl_r && data_r[SENS_CTRL_LD_DLY]; 
         
-        if  (rst) set_width_r <= 0;
-        else      set_width_r <= {set_width_r[0],cmd_we && (cmd_a== SENSIO_WIDTH)}; 
+        if  (mclk_rst) set_width_r <= 0;
+        else           set_width_r <= {set_width_r[0],cmd_we && (cmd_a== SENSIO_WIDTH)}; 
         
-        if      (rst)            line_width_m1 <= 0;
+        if      (mclk_rst)       line_width_m1 <= 0;
         else if (set_width_r[1]) line_width_m1 <= data_r[LINE_WIDTH_BITS-1:0] -1;
         
-        if      (rst)            line_width_internal <= 0;
+        if      (mclk_rst)       line_width_internal <= 0;
         else if (set_width_r[1]) line_width_internal <= ~ (|data_r[LINE_WIDTH_BITS:0]);
         
         // regenerate/propagate  HACT
         
-        if (rst) hact_ext_r <= 1'b0;
-        else     hact_ext_r <= hact_ext;
+        if (mclk_rst) hact_ext_r <= 1'b0;
+        else          hact_ext_r <= hact_ext;
         
-        if      (rst)                                                  hact_r <= 0;
+        if      (mclk_rst)                                             hact_r <= 0;
         else if (hact_ext && !hact_ext_r)                              hact_r <= 1;
         else if (line_width_internal?(hact_cntr == 0):( hact_ext ==0)) hact_r <= 0; 
         
-        if      (rst)                     hact_cntr <= 0;
+        if      (mclk_rst)                hact_cntr <= 0;
         else if (hact_ext && !hact_ext_r) hact_cntr <= line_width_m1;
         else if (hact_r)                  hact_cntr <= hact_cntr - 1;
         
@@ -296,27 +307,29 @@ module  sens_parallel12 #(
         .ADDR_WIDTH  (3),
         .DATA_WIDTH  (32)
     ) cmd_deser_sens_io_i (
-        .rst         (rst), // input
-        .clk         (mclk), // input
-        .ad          (cmd_ad), // input[7:0] 
-        .stb         (cmd_stb), // input
-        .addr        (cmd_a), // output[15:0] 
+        .rst         (1'b0),     // rst), // input
+        .clk         (mclk),     // input
+        .srst        (mclk_rst), // input
+        .ad          (cmd_ad),   // input[7:0] 
+        .stb         (cmd_stb),  // input
+        .addr        (cmd_a),    // output[15:0] 
         .data        (cmd_data), // output[31:0] 
-        .we          (cmd_we) // output
+        .we          (cmd_we)    // output
     );
 
     status_generate #(
         .STATUS_REG_ADDR(SENSIO_STATUS_REG),
         .PAYLOAD_BITS(15) // STATUS_PAYLOAD_BITS)
     ) status_generate_sens_io_i (
-        .rst        (rst), // input
-        .clk        (mclk), // input
+        .rst        (1'b0),         // rst), // input
+        .clk        (mclk),         // input
+        .srst       (mclk_rst),     // input
         .we         (set_status_r), // input
-        .wd         (data_r[7:0]), // input[7:0] 
-        .status     (status), // input[25:0] 
-        .ad         (status_ad), // output[7:0] 
-        .rq         (status_rq), // output
-        .start      (status_start) // input
+        .wd         (data_r[7:0]),  // input[7:0] 
+        .status     (status),       // input[25:0] 
+        .ad         (status_ad),    // output[7:0] 
+        .rq         (status_rq),    // output
+        .start      (status_start)  // input
     );
     
     
@@ -334,13 +347,14 @@ module  sens_parallel12 #(
         .HIGH_PERFORMANCE_MODE (SENS_HIGH_PERFORMANCE_MODE)
     ) pxd_pxd0_i (
         .pxd            (pxd[0]),          // inout
-        .pxd_out        (xfpgatdi),            // input
-        .pxd_en         (xpgmen),            // input
-        .pxd_async      (),             // output
+        .pxd_out        (xfpgatdi),        // input
+        .pxd_en         (xpgmen),          // input
+        .pxd_async      (),                // output
         .pxd_in         (pxd_out[0]),      // output
         .ipclk          (ipclk),           // input
         .ipclk2x        (ipclk2x),         // input
-        .rst            (rst),             // input
+        .mrst           (mclk_rst),        // input
+        .irst           (irst),            // input
         .mclk           (mclk),            // input
         .dly_data       (data_r[7:0]),          // input[7:0] 
         .set_idelay     (set_pxd_delay[0]),// input
@@ -365,7 +379,8 @@ module  sens_parallel12 #(
         .pxd_in         (pxd_out[1]),      // output
         .ipclk          (ipclk),           // input
         .ipclk2x        (ipclk2x),         // input
-        .rst            (rst),             // input
+        .mrst           (mclk_rst),        // input
+        .irst           (irst),            // input
         .mclk           (mclk),            // input
         .dly_data       (data_r[15:8]),          // input[7:0] 
         .set_idelay     (set_pxd_delay[0]),// input
@@ -393,7 +408,8 @@ module  sens_parallel12 #(
                 .pxd_in         (pxd_out[i]),      // output
                 .ipclk          (ipclk),           // input
                 .ipclk2x        (ipclk2x),         // input
-                .rst            (rst),             // input
+                .mrst           (mclk_rst),        // input
+                .irst           (irst),            // input
                 .mclk           (mclk),            // input
 //                .dly_data       (data_r[8*((i+2)&3)+:8]), // input[7:0] alternating bytes of 32-bit word
 //                .set_idelay     (set_pxd_delay[(i+2)>>2]),// input 0 for pxd[3:2], 1 for pxd[7:4], 2 for pxd [11:8]
@@ -422,9 +438,10 @@ module  sens_parallel12 #(
         .pxd_in         (hact_ext),      // output
         .ipclk          (ipclk),         // input
         .ipclk2x        (ipclk2x),       // input
-        .rst            (rst),           // input
+        .mrst           (mclk_rst),      // input
+        .irst           (irst),          // input
         .mclk           (mclk),          // input
-        .dly_data       (data_r[7:0]),        // input[7:0] 
+        .dly_data       (data_r[7:0]),    // input[7:0] 
         .set_idelay     (set_other_delay),// input
         .ld_idelay      (ld_idelay),     // input
         .quadrant       (quadrants[3:2]) // input[1:0] 
@@ -447,7 +464,8 @@ module  sens_parallel12 #(
         .pxd_in         (vact_out),      // output
         .ipclk          (ipclk),         // input
         .ipclk2x        (ipclk2x),       // input
-        .rst            (rst),           // input
+        .mrst           (mclk_rst),      // input
+        .irst           (irst),            // input
         .mclk           (mclk),          // input
         .dly_data       (data_r[15:8]),  // input[7:0] 
         .set_idelay     (set_other_delay),// input
@@ -469,7 +487,7 @@ module  sens_parallel12 #(
         .pxclk_out  (1'b0),            // input
         .pxclk_en   (1'b0),            // input
         .pxclk_in   (ibpf),            // output
-        .rst        (rst),             // input
+        .rst        (mclk_rst),        // input
         .mclk       (mclk),            // input
         .dly_data   (data_r[23:16]),   // input[7:0] 
         .set_idelay (set_other_delay), // input
@@ -485,7 +503,7 @@ module  sens_parallel12 #(
     ) dclk_i (
         .clk   (pclk), // input
         .ce    (1'b1), // input
-        .rst   (rst), // input
+        .rst   (prst), // input
         .set   (1'b0), // input
         .din   (2'b01), // input[1:0] 
         .tin   (1'b0), // input
@@ -549,11 +567,11 @@ module  sens_parallel12 #(
     // pullup for mrst (used as input for "DONE") and senspgm (grounded on sensor boards)
     mpullup i_mrst_pullup(mrst);
     mpullup i_senspgm_pullup(senspgm);
-    always @ (posedge mclk or posedge rst) begin
-        if      (rst)                  force_senspgm <= 0;
+    always @ (posedge mclk) begin
+        if      (mclk_rst)              force_senspgm <= 0;
         else if (xpgmen_d[1:0]==2'b10) force_senspgm <= senspgmin;
-        if      (rst) xpgmen_d <= 0;
-        else          xpgmen_d <= {xpgmen_d[0], xpgmen};
+        if      (mclk_rst) xpgmen_d <= 0;
+        else               xpgmen_d <= {xpgmen_d[0], xpgmen};
     end
 
     // generate phase-shifterd pixel clock (and 2x version) from either the internal clock (that is output to the sensor) or from the clock
@@ -627,7 +645,7 @@ module  sens_parallel12 #(
     generate
         if      (BUF_IPCLK == "BUFG")  BUFG  clk1x_i (.O(ipclk),   .I(ipclk_pre));
         else if (BUF_IPCLK == "BUFH")  BUFH  clk1x_i (.O(ipclk),   .I(ipclk_pre));
-        else if (BUF_IPCLK == "BUFR")  BUFR  clk1x_i (.O(ipclk),   .I(ipclk_pre), .CE(1'b1), .CLR(rst));
+        else if (BUF_IPCLK == "BUFR")  BUFR  clk1x_i (.O(ipclk),   .I(ipclk_pre), .CE(1'b1), .CLR(prst));
         else if (BUF_IPCLK == "BUFMR") BUFMR clk1x_i (.O(ipclk),   .I(ipclk_pre));
         else if (BUF_IPCLK == "BUFIO") BUFIO clk1x_i (.O(ipclk),   .I(ipclk_pre));
         else assign ipclk = ipclk_pre;
@@ -636,7 +654,7 @@ module  sens_parallel12 #(
     generate
         if      (BUF_IPCLK2X == "BUFG")  BUFG  clk2x_i (.O(ipclk2x), .I(ipclk2x_pre));
         else if (BUF_IPCLK2X == "BUFH")  BUFH  clk2x_i (.O(ipclk2x), .I(ipclk2x_pre));
-        else if (BUF_IPCLK2X == "BUFR")  BUFR  clk2x_i (.O(ipclk2x), .I(ipclk2x_pre), .CE(1'b1), .CLR(rst));
+        else if (BUF_IPCLK2X == "BUFR")  BUFR  clk2x_i (.O(ipclk2x), .I(ipclk2x_pre), .CE(1'b1), .CLR(prst));
         else if (BUF_IPCLK2X == "BUFMR") BUFMR clk2x_i (.O(ipclk2x), .I(ipclk2x_pre));
         else if (BUF_IPCLK2X == "BUFIO") BUFIO clk2x_i (.O(ipclk2x), .I(ipclk2x_pre));
         else assign ipclk2x = ipclk2x_pre;

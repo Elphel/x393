@@ -65,9 +65,9 @@ module  gpio393  #(
         parameter GPIO_PORTEN =                24  // bit number to control port enables (up from this) 
 
      )  (
-    input                         rst,          // global reset
+//    input                         rst,          // global reset
     input                         mclk,         // system clock
-
+    input                         mrst,         // @posedge mclk, sync reset
     input                   [7:0] cmd_ad,       // byte-serial command address/data (up to 6 bytes: AL-AH-D0-D1-D2-D3 
     input                         cmd_stb,      // strobe (with first byte) for the command a/d
     
@@ -124,17 +124,17 @@ module  gpio393  #(
 //   1     0      2      1      1
 //   1     1      3      0      0
 
-    always @ (posedge rst or posedge mclk) begin
-        if (rst)                                          ch_en[0] <= 0;
+    always @ (posedge mclk) begin
+        if (mrst)                                         ch_en[0] <= 0;
         else if (set_mode_w && cmd_data[GPIO_PORTEN + 1]) ch_en[0] <= cmd_data[GPIO_PORTEN + 0]; 
 
-        if (rst)                                          ch_en[1] <= 0;
+        if (mrst)                                         ch_en[1] <= 0;
         else if (set_mode_w && cmd_data[GPIO_PORTEN + 3]) ch_en[1] <= cmd_data[GPIO_PORTEN + 2]; 
 
-        if (rst)                                          ch_en[2] <= 0;
+        if (mrst)                                         ch_en[2] <= 0;
         else if (set_mode_w && cmd_data[GPIO_PORTEN + 5]) ch_en[2] <= cmd_data[GPIO_PORTEN + 4]; 
 
-        if (rst)                                          ch_en[3] <= 0;
+        if (mrst)                                         ch_en[3] <= 0;
         else if (set_mode_w && cmd_data[GPIO_PORTEN + 7]) ch_en[3] <= cmd_data[GPIO_PORTEN + 6]; 
 
     end
@@ -143,8 +143,9 @@ module  gpio393  #(
         genvar i;
         for (i=0; i < GPIO_N; i=i+1) begin: gpio_block
             gpio_bit gpio_bit_i (
-                .rst     (rst),                // input
+//                .rst     (rst),                // input
                 .clk     (mclk),               // input
+                .srst    (mrst),               // input
                 .we      (set_mode_w),         // input
                 .d_in    (cmd_data[2*i +: 2]), // input[1:0] 
                 .d_out   (ds[i]),              // output
@@ -158,8 +159,8 @@ module  gpio393  #(
             ) iobuf_gpio_i (
                 .O     (io_pins[i]),  // output
                 .IO    (ext_pins[i]), // inout
-                .I     (io_do[i]), // input
-                .T     (io_t[i]) // input
+                .I     (io_do[i]),    // input
+                .T     (io_t[i])      // input
             );
         
         end
@@ -173,8 +174,9 @@ module  gpio393  #(
         .ADDR_WIDTH (1),
         .DATA_WIDTH (32)
     ) cmd_deser_32bit_i (
-        .rst        (rst),      // input
+        .rst        (1'b0),     //rst),      // input
         .clk        (mclk),     // input
+        .srst       (mrst),     // input
         .ad         (cmd_ad),   // input[7:0] 
         .stb        (cmd_stb),  // input
         .addr       (cmd_a),    // output[0:0] 
@@ -187,22 +189,24 @@ module  gpio393  #(
         .PAYLOAD_BITS        (12),
         .REGISTER_STATUS     (1)
     ) status_generate_i (
-        .rst           (rst), // input
-        .clk           (mclk), // input
-        .we            (set_status_w), // input
-        .wd            (cmd_data[7:0]), // input[7:0] 
+        .rst           (1'b0),           // rst), // input
+        .clk           (mclk),           // input
+        .srst          (mrst),           // input
+        .we            (set_status_w),   // input
+        .wd            (cmd_data[7:0]),  // input[7:0] 
         .status        ({io_pins,2'b0}), // input[11:0] 
-        .ad            (status_ad), // output[7:0] 
-        .rq            (status_rq), // output
-        .start         (status_start) // input
+        .ad            (status_ad),      // output[7:0] 
+        .rq            (status_rq),      // output
+        .start         (status_start)    // input
     );
     
     
 endmodule
 
 module gpio_bit (
-    input         rst,          // global reset
+//    input         rst,          // global reset
     input         clk,          // system clock
+    input         srst,         // @posedge clk - sync reset
     input         we,
     input   [1:0] d_in,         // input bits
     output        d_out,        // output data
@@ -213,11 +217,11 @@ module gpio_bit (
     
     assign d_out = d_r;
     assign en_out = en_r;
-    always @ (posedge rst or posedge clk) begin
-        if (rst)                d_r <= 0;
+    always @ (posedge clk) begin
+        if (srst)               d_r <= 0;
         else if (we && (|d_in)) d_r <= !d_in[0];
 
-        if (rst)                en_r <= 0;
+        if (srst)               en_r <= 0;
         else if (we && (|d_in)) en_r <= !(&d_in);
     end 
     

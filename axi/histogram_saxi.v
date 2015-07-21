@@ -37,9 +37,12 @@ module  histogram_saxi#(
 //    parameter HIST_SAXI_STATUS_REG =     'h34,
     parameter NUM_FRAME_BITS = 4 // number of bits use for frame number 
 )(
-    input                      rst,
+//    input                      rst,
     input                      mclk,   // for command/status
     input                      aclk,   // global clock to run s_axi (@150MHz?)
+    input                      mrst,      // @posedge mclk, sync reset
+    input                      arst,      // @posedge aclk, sync reset
+    
     // sensor 0, data valid @posedge mclk
     input [NUM_FRAME_BITS-1:0] frame0, // frame number for which the histogram is provided
     input                      hist_request0, // request to transfer a burst
@@ -248,8 +251,8 @@ module  histogram_saxi#(
     assign page_sent_aclk = block_run[1] && !block_run[0]; 
               
     // command interface
-    always @(posedge rst or posedge mclk) begin
-        if      (rst)     mode <= 0;
+    always @(posedge mclk) begin
+        if      (mrst)     mode <= 0;
         else if (we_mode) mode <= cmd_data[HIST_SAXI_MODE_WIDTH-1:0];
     end
     always @(posedge mclk) begin
@@ -357,7 +360,7 @@ module  histogram_saxi#(
     
 
     pulse_cross_clock pulse_cross_clock_page_sent_i (
-        .rst         (rst), // input
+        .rst         (arst), // input
         .src_clk     (aclk), // input
         .dst_clk     (mclk), // input
         .in_pulse    (page_sent_aclk), // input
@@ -365,7 +368,7 @@ module  histogram_saxi#(
         .busy() // output
     );
     pulse_cross_clock pulse_cross_clock_page_written_aclk_i (
-        .rst         (rst), // input
+        .rst         (mrst), // input
         .src_clk     (mclk), // input
         .dst_clk     (aclk), // input
         .in_pulse    (burst_done_w), // input
@@ -384,12 +387,13 @@ module  histogram_saxi#(
         .ADDR2       (0),
         .ADDR_MASK2  (0)
     ) cmd_deser_sens_i2c_i (
-        .rst         (rst), // input
-        .clk         (mclk), // input
-        .ad          (cmd_ad), // input[7:0] 
-        .stb         (cmd_stb), // input
-        .addr        (cmd_wa), // output[3:0] 
-        .data        (cmd_data), // output[31:0] 
+        .rst         (1'b0),             // input
+        .clk         (mclk),             // input
+        .srst        (mrst),             // input
+        .ad          (cmd_ad),           // input[7:0] 
+        .stb         (cmd_stb),          // input
+        .addr        (cmd_wa),           // output[3:0] 
+        .data        (cmd_data),         // output[31:0] 
         .we          ({we_mode,we_addr}) // output
     );
 
@@ -399,31 +403,32 @@ module  histogram_saxi#(
         .LOG2WIDTH_RD(5),
         .DUMMY(0)
     ) ram_var_w_var_r_i (
-        .rclk      (aclk), // input
-        .raddr     ({page_rd[1:0],page_ra[7:0]}), // input[9:0] 
-        .ren       (buf_re[0]), // input
-        .regen     (buf_re[1]), // input
-        .data_out  (inter_buf_data), // output[31:0] 
-        .wclk      (mclk), // input
+        .rclk      (aclk),                         // input
+        .raddr     ({page_rd[1:0],page_ra[7:0]}),  // input[9:0] 
+        .ren       (buf_re[0]),                    // input
+        .regen     (buf_re[1]),                    // input
+        .data_out  (inter_buf_data),               // output[31:0] 
+        .wclk      (mclk),                         // input
         .waddr     ({page_wr[1:0], page_wa[7:0]}), // input[9:0] 
-        .we        (dav_r), // input
-        .web       (8'hff), // input[7:0] 
-        .data_in   (din_r) // input[31:0] 
+        .we        (dav_r),                        // input
+        .web       (8'hff),                        // input[7:0] 
+        .data_in   (din_r)                         // input[31:0] 
     );
     // Small extra FIFO to tolerate ram_var_w_var_r latency
     fifo_same_clock #(
         .DATA_WIDTH(32),
         .DATA_DEPTH(4)
     ) fifo_same_clock_i (
-        .rst       (rst),  // input
-        .clk       (aclk), // input
-        .sync_rst  (!en_aclk), // input
-        .we        (buf_re[2]), // input
-        .re        (fifo_re), // input 
+        .rst       (1'b0),           // input
+        .clk       (aclk),           // input
+        .sync_rst  (arst),           // input
+        .sync_rst  (!en_aclk),       // input
+        .we        (buf_re[2]),      // input
+        .re        (fifo_re),        // input 
         .data_in   (inter_buf_data), // input[31:0] 
-        .data_out  (saxi_wdata), // output[31:0] 
-        .nempty    (fifo_nempty), // output
-        .half_full (fifo_half_full) // output reg 
+        .data_out  (saxi_wdata),     // output[31:0] 
+        .nempty    (fifo_nempty),    // output
+        .half_full (fifo_half_full)  // output reg 
     );
 endmodule
 

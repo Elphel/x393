@@ -29,9 +29,11 @@ module  cmprs_afi_mux_status #(
     parameter CMPRS_AFIMUX_WIDTH =              26, // maximal for status: currently only works with 26)
     parameter CMPRS_AFIMUX_CYCBITS =            3
  ) (
-    input                          rst,
+//    input                          rst,
     input                          hclk,         // global clock to run axi_hp @ 150MHz, shared by all compressor channels
     input                          mclk,         // for command/status
+    input                          mrst,      // @posedge mclk, sync reset
+    input                          hrst,      // @posedge xclk, sync reset
     // mclk domain
     input                   [15:0] cmd_data,     //  
     input                   [ 1:0] cmd_a,        //
@@ -100,11 +102,12 @@ module  cmprs_afi_mux_status #(
         
     end
     
-    pulse_cross_clock mode_we_hclk_i (.rst(rst), .src_clk(mclk), .dst_clk(hclk), .in_pulse(mode_we), .out_pulse(mode_we_hclk),.busy());
-    pulse_cross_clock stb_mclk_i     (.rst(rst), .src_clk(hclk), .dst_clk(mclk), .in_pulse(stb_r),   .out_pulse(stb_mclk),    .busy());
+    pulse_cross_clock mode_we_hclk_i (.rst(mrst), .src_clk(mclk), .dst_clk(hclk), .in_pulse(mode_we), .out_pulse(mode_we_hclk),.busy());
+    pulse_cross_clock stb_mclk_i     (.rst(hrst), .src_clk(hclk), .dst_clk(mclk), .in_pulse(stb_r),   .out_pulse(stb_mclk),    .busy());
     status_router4 status_router4_i (
-        .rst       (rst),            // input
+        .rst       (1'b0), // rst),            // input
         .clk       (mclk),           // input
+        .srst      (mrst),            // input
         .db_in0    (ad[0 * 8 +: 8]), // input[7:0] 
         .rq_in0    (rq[0]),          // input
         .start_in0 (start[0]),       // output
@@ -127,8 +130,9 @@ module  cmprs_afi_mux_status #(
         .STATUS_REG_ADDR  (CMPRS_AFIMUX_STATUS_REG_ADDR+0),
         .PAYLOAD_BITS     (CMPRS_AFIMUX_WIDTH)
     ) status_generate0_i (
-        .rst     (rst),                                                       // input
+        .rst     (1'b0),             //rst),                                                       // input
         .clk     (mclk),                                                      // input
+        .srst    (mrst),                                                      // input
         .we      (status_we && (cmd_a==0)),                                   // input
         .wd      (cmd_data[7:0]),                                             // input[7:0] 
         .status  (status_data[0 * CMPRS_AFIMUX_WIDTH +: CMPRS_AFIMUX_WIDTH]), // input[25:0] 
@@ -141,8 +145,9 @@ module  cmprs_afi_mux_status #(
         .STATUS_REG_ADDR  (CMPRS_AFIMUX_STATUS_REG_ADDR+0),
         .PAYLOAD_BITS     (CMPRS_AFIMUX_WIDTH)
     ) status_generate1_i (
-        .rst     (rst),                                                       // input
+        .rst     (1'b0), //rst),                                                       // input
         .clk     (mclk),                                                      // input
+        .srst    (mrst),                                                      // input
         .we      (status_we && (cmd_a==1)),                                   // input
         .wd      (cmd_data[7:0]),                                             // input[7:0] 
         .status  (status_data[1 * CMPRS_AFIMUX_WIDTH +: CMPRS_AFIMUX_WIDTH]), // input[25:0] 
@@ -155,8 +160,9 @@ module  cmprs_afi_mux_status #(
         .STATUS_REG_ADDR  (CMPRS_AFIMUX_STATUS_REG_ADDR+0),
         .PAYLOAD_BITS     (CMPRS_AFIMUX_WIDTH)
     ) status_generate2_i (
-        .rst     (rst),                                                       // input
+        .rst     (1'b0), //rst),                                                       // input
         .clk     (mclk),                                                      // input
+        .srst    (mrst),                                                      // input
         .we      (status_we && (cmd_a==2)),                                   // input
         .wd      (cmd_data[7:0]),                                             // input[7:0] 
         .status  (status_data[2 * CMPRS_AFIMUX_WIDTH +: CMPRS_AFIMUX_WIDTH]), // input[25:0] 
@@ -169,8 +175,9 @@ module  cmprs_afi_mux_status #(
         .STATUS_REG_ADDR  (CMPRS_AFIMUX_STATUS_REG_ADDR+0),
         .PAYLOAD_BITS     (CMPRS_AFIMUX_WIDTH)
     ) status_generate3_i (
-        .rst     (rst),                                                       // input
+        .rst     (1'b0), // rst),                                                       // input
         .clk     (mclk),                                                      // input
+        .srst    (mrst),                                                      // input
         .we      (status_we && (cmd_a==3)),                                   // input
         .wd      (cmd_data[7:0]),                                             // input[7:0] 
         .status  (status_data[3 * CMPRS_AFIMUX_WIDTH +: CMPRS_AFIMUX_WIDTH]), // input[25:0] 

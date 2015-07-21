@@ -38,7 +38,8 @@ module  pxd_single#(
     output       pxd_in,       // data output (@posedge ipclk?)
     input        ipclk,        // restored clock from the sensor, phase-shifted
     input        ipclk2x,      // restored clock from the sensor, phase-shifted, twice frequency
-    input        rst,          // reset
+    input        mrst,         // reset @ posxedge mclk
+    input        irst,         // reset @ posxedge iclk
     input        mclk,         // clock for setting delay values
     input  [7:0] dly_data,     // delay value (3 LSB - fine delay) - @posedge mclk
     input        set_idelay,   // mclk synchronous load idelay value
@@ -52,9 +53,9 @@ module  pxd_single#(
     
     assign pxd_in=pxd_r;
     assign pxd_async = pxd_iobuf;
-    always @ (posedge rst or posedge mclk) begin
-        if (rst) pxd_r <= 0;
-        else     pxd_r <= quadrant[1]?(quadrant[0]? dout[3]: dout[2]) : (quadrant[0]? dout[1]: dout[0]);
+    always @ (posedge mclk) begin
+        if (mrst) pxd_r <= 0;
+        else      pxd_r <= quadrant[1]?(quadrant[0]? dout[3]: dout[2]) : (quadrant[0]? dout[1]: dout[0]);
     end
     
     iobuf #(
@@ -94,7 +95,7 @@ module  pxd_single#(
         .HIGH_PERFORMANCE_MODE (HIGH_PERFORMANCE_MODE)
     ) pxd_dly_i(
         .clk          (mclk),
-        .rst          (rst),
+        .rst          (mrst),
         .set          (set_idelay),
         .ld           (ld_idelay),
         .delay        (dly_data[7:3]),
@@ -109,7 +110,7 @@ module  pxd_single#(
         .oclk(ipclk2x),           // system clock, phase should allow iclk-to-oclk jitter with setup/hold margin
         .oclk_div(ipclk),         // oclk divided by 2, front aligned
         .inv_clk_div(1'b0),       // invert oclk_div (this clock is shared between iserdes and oserdes. Works only in MEMORY_DDR3 mode?
-        .rst(rst),                // reset
+        .rst(irst),                // reset
         .d_direct(1'b0),          // direct input from IOB, normally not used, controlled by IOBDELAY parameter (set to "NONE")
         .ddly(pxd_delayed),       // serial input from idelay 
         .dout(dout[3:0])          // parallel data out

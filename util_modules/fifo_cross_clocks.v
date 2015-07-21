@@ -25,7 +25,9 @@ module fifo_cross_clocks
   parameter integer DATA_WIDTH=16,
   parameter integer DATA_DEPTH=4 // >=3
 ) (
-    input                   rst,      // reset, active high
+    input                   rst,      // async reset, active high (global)
+    input                   rrst,     // @ posedge rclk - sync reset
+    input                   wrst,     // @ posedge wclk - sync reset
     input                   rclk,     // read clock - positive edge
     input                   wclk,     // write clock - positive edge
     input                   we,       // write enable
@@ -69,29 +71,32 @@ module fifo_cross_clocks
     assign nempty= (waddr_gray_rclk[3:0] ^ raddr_gray[3:0]) != 4'b0;
     assign data_out=ram[raddr];
     always @ (posedge  wclk or posedge rst) begin
-        if (rst)     waddr <= 0;
-        else if (we) waddr <= waddr_plus1;
-        if (rst)     waddr_gray <= 0;
- //       else if (we) waddr_gray <= waddr_plus1_gray;
-        else if (we) waddr_gray [3:0] <= waddr_plus1_gray[3:0];
+        if (rst)       waddr <= 0;
+        else if (wrst) waddr <= 0;
+        else if (we)   waddr <= waddr_plus1;
+        
+        if (rst)       waddr_gray <= 0;
+        else if (wrst) waddr_gray <= 0;
+        else if (we)   waddr_gray [3:0] <= waddr_plus1_gray[3:0];
         
     end
     
     always @ (posedge  rclk or posedge rst) begin
-        if (rst)     raddr <= 0;
-        else if (re) raddr <= raddr_plus1;
-        if (rst)     raddr_gray_top3 <= 0;
-        else if (re) raddr_gray_top3 <= raddr_plus1_gray_top3;
+        if (rst)       raddr <= 0;
+        else if (rrst) raddr <= 0;
+        else if (re)   raddr <= raddr_plus1;
+        
+        if (rst)       raddr_gray_top3 <= 0;
+        else if (rrst) raddr_gray_top3 <= 0;
+        else if (re)   raddr_gray_top3 <= raddr_plus1_gray_top3;
     end
     
     always @ (posedge  rclk) begin
- //       waddr_gray_rclk <= waddr_gray;
         waddr_gray_rclk[3:0] <= waddr_gray[3:0];
         
     end
 
     always @ (posedge  wclk) begin
- //         raddr_gray_top3_wclk <= raddr_gray_top3;
           raddr_gray_top3_wclk[2:0] <= raddr_gray_top3[2:0];
           if (we) ram[waddr] <= data_in;
     end

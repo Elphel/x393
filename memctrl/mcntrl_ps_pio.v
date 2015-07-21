@@ -30,7 +30,7 @@ module  mcntrl_ps_pio#(
     parameter MCNTRL_PS_CMD=                     'h1,
     parameter MCNTRL_PS_STATUS_CNTRL=            'h2
 )(
-    input                        rst,
+    input                        mrst,
     input                        mclk,
 // programming interface
     input                  [7:0] cmd_ad,      // byte-serial command address/data (up to 6 bytes: AL-AH-D0-D1-D2-D3 
@@ -136,21 +136,23 @@ reg           page_w_set_negedge;
  assign set_status_w = cmd_we && (cmd_a== MCNTRL_PS_STATUS_CNTRL);
  assign set_en_rst =   cmd_we && (cmd_a== MCNTRL_PS_EN_RST);
  //PAGE_CNTR_BITS
-    always @ (posedge rst or posedge mclk) begin
+    always @ (posedge mclk) begin
     
-        if      (rst)                   pending_pages <= 0;
+        if      (mrst)                  pending_pages <= 0;
         else if (chn_rst)               pending_pages <= 0;
         else if ( cmd_set && !seq_done) pending_pages <= pending_pages + 1;
         else if (!cmd_set &&  seq_done) pending_pages <= pending_pages - 1;
         
-        if (rst) nreset_page_fifo <= 0;
-        else     nreset_page_fifo <= cmd_nempty | busy;
-        if      (rst)            cmd_wait_r <= 0;
+        if (mrst) nreset_page_fifo <= 0;
+        else      nreset_page_fifo <= cmd_nempty | busy;
+        
+        if      (mrst)           cmd_wait_r <= 0;
         else if (channel_pgm_en) cmd_wait_r <= cmd_wait;
-        if (rst) en_reset <= 0;
+        
+        if (mrst)            en_reset <= 0;
         else if (set_en_rst) en_reset <= cmd_data[1:0];
         
-        if (rst) begin
+        if (mrst) begin
             want_rq <= 0;
             need_rq <= 0;
         end else if (chn_rst || channel_pgm_en) begin
@@ -162,13 +164,12 @@ reg           page_w_set_negedge;
         end
         
         
-        if (rst)          cmd_set <= 0;
+        if (mrst)          cmd_set <= 0;
         else if (chn_rst) cmd_set <= 0;
         else              cmd_set <= channel_pgm_en;
         
         
-        if (rst)          cmd_set_d <= 0;
-//        else              cmd_set_d <= {cmd_set_d[0],cmd_set& ~cmd_chn}; // only for channel0 (memory read)
+        if (mrst)          cmd_set_d <= 0;
         else              cmd_set_d <= {cmd_set_d[0],cmd_set & ~cmd_wr}; // only for channel0 (memory read)
     end
     
@@ -180,36 +181,38 @@ reg           page_w_set_negedge;
         .ADDR_WIDTH (5),
         .DATA_WIDTH (32)
     ) cmd_deser_mcontr_32bit_i (
-        .rst        (rst), // input
-        .clk        (mclk), // input
-        .ad         (cmd_ad), // input[7:0] 
-        .stb        (cmd_stb), // input
-        .addr       (cmd_a), // output[15:0] 
-        .data       (cmd_data), // output[31:0] 
-        .we         (cmd_we) // output
+        .rst        (1'b0),       // rst), // input
+        .clk        (mclk),       // input
+        .srst       (mrst),       // input
+        .ad         (cmd_ad),     // input[7:0] 
+        .stb        (cmd_stb),    // input
+        .addr       (cmd_a),      // output[15:0] 
+        .data       (cmd_data),   // output[31:0] 
+        .we         (cmd_we)      // output
     );
 
     status_generate #(
         .STATUS_REG_ADDR  (MCNTRL_PS_STATUS_REG_ADDR),
         .PAYLOAD_BITS     (2)
     ) status_generate_i (
-        .rst              (rst), // input
-        .clk              (mclk), // input
-        .we               (set_status_w), // input
+        .rst              (1'b0),          // rst), // input
+        .clk              (mclk),          // input
+        .srst             (mrst),          // input
+        .we               (set_status_w),  // input
         .wd               (cmd_data[7:0]), // input[7:0] 
-        .status           (status_data), // input[25:0] 
-        .ad               (status_ad), // output[7:0] 
-        .rq               (status_rq), // output
-        .start            (status_start) // input
+        .status           (status_data),   // input[25:0] 
+        .ad               (status_ad),     // output[7:0] 
+        .rq               (status_rq),     // output
+        .start            (status_start)   // input
     );
 
 fifo_same_clock   #(
     .DATA_WIDTH(CMD_WIDTH),
     .DATA_DEPTH(CMD_FIFO_DEPTH) 
     ) cmd_fifo_i (
-        .rst       (rst),
+        .rst       (1'b0),
         .clk       (mclk),
-        .sync_rst(chn_rst), // synchronously reset fifo;
+        .sync_rst  (chn_rst), // synchronously reset fifo;
         .we        (set_cmd_w),
         .re        (cmd_set),
         .data_in   (cmd_data[CMD_WIDTH-1:0]),
@@ -266,9 +269,9 @@ fifo_same_clock   #(
     .DATA_WIDTH(3),
     .DATA_DEPTH(PAGE_FIFO_DEPTH) 
     ) page_fifo1_i (
-        .rst       (rst),
+        .rst       (1'b0),
         .clk       (mclk), // posedge
-        .sync_rst  (!nreset_page_fifo), // synchronously reset fifo;
+        .sync_rst  (mrst || !nreset_page_fifo), // synchronously reset fifo;
         .we        (channel_pgm_en),
         .re        (buf_run),
         .data_in   ({cmd_wr,cmd_page}), //page),
@@ -277,8 +280,8 @@ fifo_same_clock   #(
         .half_full ()
     );
 
-always @ (posedge rst or posedge mclk) begin
-    if      (rst)     page_out_r <= 0;
+always @ (posedge mclk) begin
+    if      (mrst)    page_out_r <= 0;
     else if (buf_run) page_out_r <= page_out;
     
 

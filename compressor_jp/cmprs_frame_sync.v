@@ -27,10 +27,12 @@ module  cmprs_frame_sync#(
     parameter CMPRS_TIMEOUT=                   1000   // mclk cycles
 
 )(
-    input                         rst,
+//    input                         rst,
     input                         xclk,               // global clock input, compressor single clock rate
-//  input                         xclk2x,             // global clock input, compressor double clock rate, nominally rising edge aligned
     input                         mclk,               // global system/memory clock
+    input                         mrst,               // @posedge mclk, sync reset
+    input                         xrst,               // @posedge xclk, sync reset
+    
     input                         cmprs_en,           // @mclk 0 resets immediately
     output                        cmprs_en_extend,    // @mclk keep compressor enabled for graceful shutdown
     
@@ -90,9 +92,9 @@ module  cmprs_frame_sync#(
     assign stuffer_running_mclk = stuffer_running_mclk_r;
     assign reading_frame =        reading_frame_r;
     
-    always @ (posedge rst or posedge mclk) begin
-        if       (rst)                                      cmprs_en_extend_r <= 0;
-        else if  (cmprs_en)                                 cmprs_en_extend_r <= 1;
+    always @ (posedge mclk) begin
+        if       (mrst)                                       cmprs_en_extend_r <= 0;
+        else if  (cmprs_en)                                   cmprs_en_extend_r <= 1;
         else if  ((timeout == 0) || !stuffer_running_mclk_r)  cmprs_en_extend_r <= 0;
     end
     
@@ -132,8 +134,8 @@ module  cmprs_frame_sync#(
     
     end
     
-    pulse_cross_clock vsync_late_mclk_i (.rst(rst), .src_clk(xclk), .dst_clk(mclk), .in_pulse(vsync_late), .out_pulse(vsync_late_mclk),.busy());
-    pulse_cross_clock frame_started_i (.rst(rst), .src_clk(xclk), .dst_clk(mclk), .in_pulse(frame_started), .out_pulse(frame_started_mclk),.busy());
+    pulse_cross_clock vsync_late_mclk_i (.rst(xrst), .src_clk(xclk), .dst_clk(mclk), .in_pulse(vsync_late), .out_pulse(vsync_late_mclk),.busy());
+    pulse_cross_clock frame_started_i   (.rst(xrst), .src_clk(xclk), .dst_clk(mclk), .in_pulse(frame_started), .out_pulse(frame_started_mclk),.busy());
 
 endmodule
 
