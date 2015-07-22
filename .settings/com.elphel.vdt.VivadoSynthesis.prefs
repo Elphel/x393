@@ -4,6 +4,6 @@ VivadoSynthesis_115_flatten_hierarchy=none
 VivadoSynthesis_127_verbose=true
 VivadoSynthesis_81_parser_mode=1
 VivadoSynthesis_93_OtherProblems=Netlist 29-345<-@\#\#@->Board 49-26<-@\#\#@->
-VivadoSynthesis_95_ShowInfo=true
+VivadoSynthesis_95_ShowInfo=false
 com.elphel.store.context.VivadoSynthesis=VivadoSynthesis_102_ConstraintsFiles<-@\#\#@->VivadoSynthesis_95_ShowInfo<-@\#\#@->VivadoSynthesis_115_flatten_hierarchy<-@\#\#@->VivadoSynthesis_101_MaxMsg<-@\#\#@->VivadoSynthesis_127_verbose<-@\#\#@->VivadoSynthesis_93_OtherProblems<-@\#\#@->VivadoSynthesis_81_parser_mode<-@\#\#@->
 eclipse.preferences.version=1

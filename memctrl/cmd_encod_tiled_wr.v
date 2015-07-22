@@ -298,7 +298,7 @@ module  cmd_encod_tiled_wr #(
     fifo_2regs #(
         .WIDTH(COLADDR_NUMBER)
     ) fifo_2regs_i (
-        .mrst (rst), // input
+        .mrst (mrst), // input
         .clk (clk), // input
         .din (row_col_bank[COLADDR_NUMBER-1:0]), // input[15:0] 
         .wr(pre_act), // input

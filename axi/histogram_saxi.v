@@ -421,7 +421,6 @@ module  histogram_saxi#(
     ) fifo_same_clock_i (
         .rst       (1'b0),           // input
         .clk       (aclk),           // input
-        .sync_rst  (arst),           // input
         .sync_rst  (!en_aclk),       // input
         .we        (buf_re[2]),      // input
         .re        (fifo_re),        // input 

@@ -80,11 +80,11 @@ assign decode_addr24={
   (dly_addr[4:3] == 2'h2)?decode_sel[7:0]:8'h0,
   (dly_addr[4:3] == 2'h1)?decode_sel[7:0]:8'h0,
   (dly_addr[4:3] == 2'h0)?decode_sel[7:0]:8'h0};
-always @ (posedge clk_div or posedge rst) begin
+//always @ (posedge clk_div or posedge rst) begin
+always @ (posedge clk_div) begin
     if (rst) begin
         in_a_r <= 0; in_ba_r <= 6'b0;
         in_we_r <= 2'h3; in_ras_r <= 2'h3; in_cas_r <= 2'h3; in_cke_r <= 2'h3; in_odt_r <= 2'h0;
-//        in_tri_r <= 2'h0; // or tri-state on reset?
         in_tri_r <= 1'b1; // or tri-state on reset?
         dly_data_r<=8'b0;set_r<=1'b0;
         ld_dly_cmd <= 8'b0; ld_dly_addr <= 0;

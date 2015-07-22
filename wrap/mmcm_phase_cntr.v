@@ -116,7 +116,7 @@ module  mmcm_phase_cntr#(
 // made a difference, so it doesn't seem Vivado extends bits of operands "+", "-"
     wire [PHASE_WIDTH:0] diff= {ps_target[PHASE_WIDTH-1],ps_target}-{ps_dout_r[PHASE_WIDTH-1],ps_dout_r};
     assign  ps_dout = ps_dout_r; 
-    always @ (posedge psclk or posedge rst) begin
+    always @ (posedge psclk) begin
         if (rst) ps_start0 <= 0;
         else ps_start0 <= ps_we && ps_ready;
         

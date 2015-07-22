@@ -28,11 +28,17 @@ module  dly01_16(
     output reg  dout
 );
     reg [15:0] sr=0;
-    always @ (posedge rst or posedge clk) begin
+`ifdef SHREG_SEQUENTIAL_RESET
+    always @ (posedge clk) begin
+        sr <= {sr[14:0], din & ~rst}; 
+    end
+`else 
+//    always @ (posedge rst or posedge clk) begin
+    always @ (posedge clk) begin
        if (rst) sr <=0;
        else     sr <= {sr[14:0],din}; 
     end
-    
+`endif    
     always @ (sr or dly) case (dly)
         4'h0: dout <= sr[ 0];
         4'h1: dout <= sr[ 1];

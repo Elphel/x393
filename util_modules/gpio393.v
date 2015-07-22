@@ -87,8 +87,8 @@ module  gpio393  #(
     input            [GPIO_N-1:0] dc,           // port A data
     input            [GPIO_N-1:0] dc_en);        // port A data enable
          
-    wire   [GPIO_N-1:0] ds = 0;    // "software" data (programmed by lower 24 bits)
-    wire   [GPIO_N-1:0] ds_en = 0;    // "software" data enable (programmed by lower 24 bits)
+    wire   [GPIO_N-1:0] ds;        // "software" data (programmed by lower 24 bits)
+    wire   [GPIO_N-1:0] ds_en;     // "software" data enable (programmed by lower 24 bits)
     reg           [3:0] ch_en = 0; // channel enable
 
     wire         [31:0] cmd_data;
@@ -119,6 +119,7 @@ module  gpio393  #(
                    (da_en_m & da) |
                    (ds_en_m & ds);
     assign io_t = ~(dc_en_m | db_en_m | da_en_m | ds_en_m);
+  
 //   0     0      0    - no change -
 //   0     1      1      1      0
 //   1     0      2      1      1

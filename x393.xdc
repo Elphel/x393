@@ -21,6 +21,16 @@
 
 #http://forums.xilinx.com/t5/7-Series-FPGAs/MMCM-reference-clock-muxing/td-p/550622
 set_property is_enabled false [get_drc_checks REQP-119]
+#Input Buffer Connections .. has no loads. An input buffer must drive an internal load.
+set_property is_enabled false [get_drc_checks BUFC-1]
+#DSP Buffering:
+set_property is_enabled false [get_drc_checks DPIP-1]
+set_property is_enabled false [get_drc_checks DPOP-1]
+#MMCME2_ADV connectivity violation
+set_property is_enabled false [get_drc_checks REQP-1577]
+#Synchronous clocking for BRAM (mult_saxi_wr_inbuf_i/ram_var_w_var_r_i/ram_i/RAMB36E1_i) in SDP mode ...
+set_property is_enabled false [get_drc_checks REQP-165]
+
 
 
 #    output                       SDRST, // output SDRST, active low

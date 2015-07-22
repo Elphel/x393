@@ -36,9 +36,10 @@ module  odelay_fine_pipe
     output data_out
 );
     reg [2:0] fdly_pre=DELAY_VALUE[2:0], fdly=DELAY_VALUE[2:0];
-    always @ (posedge clk or posedge rst) begin
+    always @ (posedge clk) begin
         if (rst)      fdly_pre <= DELAY_VALUE[2:0];
         else if (ld)  fdly_pre <= delay[2:0];
+        
         if (rst)      fdly <= DELAY_VALUE[2:0];
         else if (set) fdly <= fdly_pre;
     end

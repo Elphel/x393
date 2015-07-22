@@ -29,41 +29,31 @@ module  mcont_from_chnbuf_reg #(
     input                       ext_buf_rd,
     input                 [3:0] ext_buf_rchn,  // ==run_chn_d valid 1 cycle ahead opf ext_buf_rd!, maybe not needed - will be generated externally
     input                       ext_buf_rrefresh,
-//    input                       ext_buf_rrun,
     input                       ext_buf_rpage_nxt,
     output reg           [63:0] ext_buf_rdata, // Latency of ram_1kx32w_512x64r plus 2
     output reg                  buf_rd_chn,
-//    output reg                  buf_run,
     output reg                  rpage_nxt,
     input                [63:0] buf_rdata_chn
 );
     reg                  [63:0] buf_rdata_chn_r; /// *** temporary register to delay buffer read data - may be used to implement multi-clock mux to ease timing
     reg                         buf_chn_sel;
     reg [CHN_LATENCY:0] latency_reg=0;
-    always @ (posedge rst or posedge clk) begin
+//    always @ (posedge rst or posedge clk) begin
+    always @ (posedge clk) begin
         if (rst) buf_chn_sel <= 0;
         else     buf_chn_sel <= (ext_buf_rchn==CHN_NUMBER) && !ext_buf_rrefresh;
         
         if (rst) buf_rd_chn <= 0;
         else     buf_rd_chn <= buf_chn_sel && ext_buf_rd;
-        
- //       if (rst) buf_run <= 0;
- //       else     buf_run <= (ext_buf_rchn==CHN_NUMBER) && !ext_buf_rrefresh && ext_buf_rrun;
-
+ 
         if (rst) latency_reg<= 0;
-//        else     latency_reg <= buf_rd_chn | (latency_reg << 1);
         else     latency_reg <= {latency_reg[CHN_LATENCY-1:0], buf_rd_chn};
         
-//        if (rst) buf_done <= 0;
-//        else     buf_done <= buf_chn_sel && seq_done;
     end
-//    always @ (posedge clk)  buf_raddr_rst_chn <= ext_buf_raddr_rst && (ext_buf_rchn==CHN_NUMBER);
-//    always @ (posedge clk) if (buf_chn_sel && ext_buf_rd) buf_raddr_chn <= ext_buf_raddr;
-//    always @ (posedge clk) if (latency_reg[CHN_LATENCY])  ext_buf_rdata <= buf_rdata_chn;
     always @ (posedge clk)  buf_rdata_chn_r <= buf_rdata_chn; // THIS WILL BE REPLACED BY MULTI-CYCLE MUX
     always @ (posedge clk) if (latency_reg[CHN_LATENCY])  ext_buf_rdata <= buf_rdata_chn_r;
     always @ (posedge clk)  rpage_nxt <= ext_buf_rpage_nxt && (ext_buf_rchn==CHN_NUMBER) && !ext_buf_rrefresh;
-    //buf_rdata_chn_r
+
     
 endmodule
 

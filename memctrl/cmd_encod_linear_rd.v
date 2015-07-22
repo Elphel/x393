@@ -180,5 +180,5 @@ module  cmd_encod_linear_rd #(
     
 // move to include?
 `include "includes/x393_mcontr_encode_cmd.vh" 
-/endmodule
+endmodule
 

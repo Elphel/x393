@@ -79,7 +79,8 @@ wire [9:0] decode_sel={
     (dly_addr[3:0]==1)?1'b1:1'b0,
     (dly_addr[3:0]==0)?1'b1:1'b0};
  
-always @ (posedge clk_div or posedge rst) begin
+//always @ (posedge clk_div or posedge rst) begin
+always @ (posedge clk_div) begin
     if (rst) begin
         din_r <= 32'b0; din_dm_r<=0; din_dqs_r<=0; tin_dq_r<=4'hf; tin_dqs_r<=4'hf;
         dly_data_r<=8'b0;set_r<=1'b0;
@@ -114,11 +115,8 @@ generate
         .dci_disable(dci_disable_dq_r), // disable DCI termination during writes and idle
         .dly_data(dly_data_r),          // delay value (3 LSB - fine delay)
         .din({din_r[i+24],din_r[i+16],din_r[i+8],din_r[i]}) ,        // parallel data to be sent out
-//        .din(din_r[4*i+3:4*i]) ,        // parallel data to be sent out
-//        .din(din_r[4*i+3-:4]) ,        // parallel data to be sent out
         .tin(tin_dq_r),                 // tristate for data out (sent out earlier than data!) 
         .dout({dout[i+24],dout[i+16],dout[i+8],dout[i]}),          // parallel data received from DDR3 memory
-//        .dout(dout[4*i+3:4*i]),          // parallel data received from DDR3 memory
         .set_odelay(set_r),             // clk_div synchronous load odelay value from dly_data
         .ld_odelay(ld_odly[i]),         // clk_div synchronous set odealy value from loaded
         .set_idelay(set_r),             // clk_div synchronous load idelay value from dly_data

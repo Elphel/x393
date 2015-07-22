@@ -2080,7 +2080,7 @@ assign axi_grst = axi_rst_pre;
         .WIDTH(7),
         .REGISTER(4)
     ) sync_resets_i (
-        .arst(), // input
+        .arst   (axi_rst_pre), // input
         .locked ({locked_hclk, 1'b1,     locked_sync_clk, locked_sync_clk, locked_xclk, locked_pclk, mcntrl_locked}), // input
         .clk    ({hclk,        axi_aclk, logger_clk,      camsync_clk,     xclk,        pclk,        mclk}),          // input[6:0] 
         .rst    ({hrst,        arst,     lrst,            crst,            xrst,        prst,        mrst})          // output[6:0] 

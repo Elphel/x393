@@ -455,8 +455,8 @@ module  cmprs_afi_mux#(
         .chunk_ptr_ra (chunk_ptr_ra), // output[3:0] reg 
         .chunk_ptr_rd (chunk_ptr_rd[CMPRS_AFIMUX_WIDTH-1:0]) // input[25:0] 
     );
-    pulse_cross_clock sa_len_we_i (.rst(rst), .src_clk(mclk), .dst_clk(hclk), .in_pulse(cmd_we_sa_len_w), .out_pulse(sa_len_we),.busy());
-    pulse_cross_clock en_we_i     (.rst(rst), .src_clk(mclk), .dst_clk(hclk), .in_pulse(cmd_we_en_w),     .out_pulse(en_we),    .busy());
-    pulse_cross_clock en_rst_i    (.rst(rst), .src_clk(mclk), .dst_clk(hclk), .in_pulse(cmd_we_rst_w),    .out_pulse(en_rst),.busy());
+    pulse_cross_clock sa_len_we_i (.rst(mrst), .src_clk(mclk), .dst_clk(hclk), .in_pulse(cmd_we_sa_len_w), .out_pulse(sa_len_we),.busy());
+    pulse_cross_clock en_we_i     (.rst(mrst), .src_clk(mclk), .dst_clk(hclk), .in_pulse(cmd_we_en_w),     .out_pulse(en_we),    .busy());
+    pulse_cross_clock en_rst_i    (.rst(mrst), .src_clk(mclk), .dst_clk(hclk), .in_pulse(cmd_we_rst_w),    .out_pulse(en_rst),.busy());
 
 endmodule

@@ -125,7 +125,8 @@ module  phy_top #(
 //    else        rst <= 1'b0;
 //  end
 
-  always @(negedge clk_div) begin // Why is it @ negedge clk_div?
+//  always @(negedge clk_div) begin // Why is it @ negedge clk_div?
+  always @(posedge clk_div) begin // Why is it @ negedge clk_div?
     if (mrst) rst <= 1'b1;
     else      rst <= 1'b0;
   end

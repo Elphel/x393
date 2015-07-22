@@ -458,12 +458,12 @@ module camsync393       #(
     end
  
  `ifdef GENERATE_TRIG_OVERDUE    
-     always @ (posedge rst or posedge mclk) begin
-        if      (rst)             trigger_r <= 0;
+     always @ (posedge mclk) begin
+        if      (mrst)             trigger_r <= 0;
         else if (!triggered_mode) trigger_r <= 0;
         else                      trigger_r <= ~frame_sync & (trig_r_mclk ^ trigger_r);
 
-        if      (rst)             overdue <= 0;
+        if      (mrst)             overdue <= 0;
         else if (!triggered_mode) overdue <= 0;
         else                      overdue <= ((overdue ^ trigger_r) & trig_r_mclk) ^ overdue;
         

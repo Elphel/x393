@@ -1,6 +1,8 @@
   // This file may be used to define same pre-processor macros to be included into each parsed file
 `ifndef SYSTEM_DEFINES
   `define SYSTEM_DEFINES
+// will not use simultaneous reset in shift registers, just and input data with ~rst  
+ `define SHREG_SEQUENTIAL_RESET 1
 //`define MEMBRIDGE_DEBUG_READ 1
   `define use200Mhz 1
   `define USE_CMD_ENCOD_TILED_32_RD 1  
