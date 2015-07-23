@@ -163,8 +163,19 @@ module  sensors393 #(
     parameter CLKFBOUT_PHASE_SENSOR =    0.000,  // CLOCK FEEDBACK phase in degrees (3 significant digits, -360.000...+360.000)
     parameter IPCLK_PHASE =              0.000,
     parameter IPCLK2X_PHASE =            0.000,
-    parameter BUF_IPCLK =                "BUFR",
-    parameter BUF_IPCLK2X =              "BUFR",  
+//    parameter BUF_IPCLK =                "BUFR",
+//    parameter BUF_IPCLK2X =              "BUFR",  
+    parameter BUF_IPCLK_SENS0 =          "BUFR", //G", // "BUFR", // BUFR fails for both clocks for sensors1 and 3
+    parameter BUF_IPCLK2X_SENS0 =        "BUFR", //G", // "BUFR",  
+
+    parameter BUF_IPCLK_SENS1 =          "BUFG", // "BUFR", // BUFR fails for both clocks for sensors1 and 3
+    parameter BUF_IPCLK2X_SENS1 =        "BUFG", // "BUFR",  
+
+    parameter BUF_IPCLK_SENS2 =          "BUFR", //G", // "BUFR", // BUFR fails for both clocks for sensors1 and 3
+    parameter BUF_IPCLK2X_SENS2 =        "BUFR", //G", // "BUFR",  
+
+    parameter BUF_IPCLK_SENS3 =          "BUFG", // "BUFR", // BUFR fails for both clocks for sensors1 and 3
+    parameter BUF_IPCLK2X_SENS3 =        "BUFG", // "BUFR",  
     
 
     parameter SENS_DIVCLK_DIVIDE =       1,            // Integer 1..106. Divides all outputs with respect to CLKIN
@@ -375,8 +386,8 @@ module  sensors393 #(
                 .CLKFBOUT_PHASE_SENSOR         (CLKFBOUT_PHASE_SENSOR),
                 .IPCLK_PHASE                   (IPCLK_PHASE),
                 .IPCLK2X_PHASE                 (IPCLK2X_PHASE),
-                .BUF_IPCLK                     (BUF_IPCLK),
-                .BUF_IPCLK2X                   (BUF_IPCLK2X),
+                .BUF_IPCLK                     ((i & 2) ? ((i & 1) ? BUF_IPCLK_SENS3 :   BUF_IPCLK_SENS2)   : ((i & 1) ?BUF_IPCLK_SENS1   :BUF_IPCLK_SENS0 )),
+                .BUF_IPCLK2X                   ((i & 2) ? ((i & 1) ? BUF_IPCLK2X_SENS3 : BUF_IPCLK2X_SENS2) : ((i & 1) ?BUF_IPCLK2X_SENS1 :BUF_IPCLK2X_SENS0 )),
                 .SENS_DIVCLK_DIVIDE            (SENS_DIVCLK_DIVIDE),
                 .SENS_REF_JITTER1              (SENS_REF_JITTER1),
                 .SENS_REF_JITTER2              (SENS_REF_JITTER2),

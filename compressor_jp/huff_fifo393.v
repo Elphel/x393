@@ -34,13 +34,16 @@ module huff_fifo393 (
     input             want_read,
     input             want_read_early, 
     output reg        dav,             // FIFO output latch has data (fifo_or_full)
-    output reg [15:0] q_latch);        // output data
+`ifdef INFER_LATCHES
+    output reg [15:0] q_latch
+`else
+    output     [15:0] q_latch
+`endif    
+    );        // output data
 
     reg     [9:0] wa;
     reg     [9:0] sync_wa;    // delayed wa, re_latch-calculated at output clock
     reg     [9:0] ra_r;
-    reg     [9:0] ra_latch;
-    reg           load_q;
     wire   [15:0] fifo_o;
     reg           ds1;    // ds delayed by one xclk to give time to block ram to write data. Not needed likely.
     reg           synci;
@@ -49,12 +52,20 @@ module huff_fifo393 (
     reg           en2x; // en sync to xclk2x;
 
     reg           re_r;
-    reg           re_latch;
     reg           fifo_dav; // RAM output reg has data
     reg           dav_and_fifo_dav;
     wire          ram_dav;  // RAM has data inside
     reg     [9:0] diff_a;
     wire          next_re;
+    reg           load_q;
+`ifdef INFER_LATCHES
+    reg     [9:0] ra_latch;
+    reg           re_latch;
+`else
+    wire    [9:0] ra_latch;
+    wire          re_latch;
+`endif    
+    
 
 
     always @ (posedge xclk) begin // input stage, no overrun detection
@@ -90,71 +101,58 @@ module huff_fifo393 (
         else if (!sync_we && next_re) diff_a[9:0] <= diff_a[9:0]-1; 
         
     end
-/*  
-  LD i_re  (.Q(re_latch),.G(xclk2x),.D(next_re));  
 
-  LD i_ra9 (.Q(ra_latch[9]),.G(xclk2x),.D(ra_r[9]));  
-  LD i_ra8 (.Q(ra_latch[8]),.G(xclk2x),.D(ra_r[8]));  
-  LD i_ra7 (.Q(ra_latch[7]),.G(xclk2x),.D(ra_r[7]));  
-  LD i_ra6 (.Q(ra_latch[6]),.G(xclk2x),.D(ra_r[6]));  
-  LD i_ra5 (.Q(ra_latch[5]),.G(xclk2x),.D(ra_r[5]));  
-  LD i_ra4 (.Q(ra_latch[4]),.G(xclk2x),.D(ra_r[4]));  
-  LD i_ra3 (.Q(ra_latch[3]),.G(xclk2x),.D(ra_r[3]));  
-  LD i_ra2 (.Q(ra_latch[2]),.G(xclk2x),.D(ra_r[2]));  
-  LD i_ra1 (.Q(ra_latch[1]),.G(xclk2x),.D(ra_r[1]));  
-  LD i_ra0 (.Q(ra_latch[0]),.G(xclk2x),.D(ra_r[0]));  
-*/  
-    always @* if (xclk2x) re_latch <= next_re;
-    always @* if (xclk2x) ra_latch <= ra_r;
-  
-  
     always @ (posedge xclk2x) begin
         load_q <= dav?want_read_early:re_r;
     end
-/*  
-  LD_1 i_q15 (.Q( q_latch[15]),.G(xclk2x),.D(load_q?fifo_o[15]:q_latch[15]));  
-  LD_1 i_q14 (.Q( q_latch[14]),.G(xclk2x),.D(load_q?fifo_o[14]:q_latch[14]));  
-  LD_1 i_q13 (.Q( q_latch[13]),.G(xclk2x),.D(load_q?fifo_o[13]:q_latch[13]));  
-  LD_1 i_q12 (.Q( q_latch[12]),.G(xclk2x),.D(load_q?fifo_o[12]:q_latch[12]));  
-  LD_1 i_q11 (.Q( q_latch[11]),.G(xclk2x),.D(load_q?fifo_o[11]:q_latch[11]));  
-  LD_1 i_q10 (.Q( q_latch[10]),.G(xclk2x),.D(load_q?fifo_o[10]:q_latch[10]));  
-  LD_1 i_q9  (.Q( q_latch[ 9]),.G(xclk2x),.D(load_q?fifo_o[ 9]:q_latch[ 9]));  
-  LD_1 i_q8  (.Q( q_latch[ 8]),.G(xclk2x),.D(load_q?fifo_o[ 8]:q_latch[ 8]));  
-  LD_1 i_q7  (.Q( q_latch[ 7]),.G(xclk2x),.D(load_q?fifo_o[ 7]:q_latch[ 7]));  
-  LD_1 i_q6  (.Q( q_latch[ 6]),.G(xclk2x),.D(load_q?fifo_o[ 6]:q_latch[ 6]));  
-  LD_1 i_q5  (.Q( q_latch[ 5]),.G(xclk2x),.D(load_q?fifo_o[ 5]:q_latch[ 5]));  
-  LD_1 i_q4  (.Q( q_latch[ 4]),.G(xclk2x),.D(load_q?fifo_o[ 4]:q_latch[ 4]));  
-  LD_1 i_q3  (.Q( q_latch[ 3]),.G(xclk2x),.D(load_q?fifo_o[ 3]:q_latch[ 3]));  
-  LD_1 i_q2  (.Q( q_latch[ 2]),.G(xclk2x),.D(load_q?fifo_o[ 2]:q_latch[ 2]));  
-  LD_1 i_q1  (.Q( q_latch[ 1]),.G(xclk2x),.D(load_q?fifo_o[ 1]:q_latch[ 1]));  
-  LD_1 i_q0  (.Q( q_latch[ 0]),.G(xclk2x),.D(load_q?fifo_o[ 0]:q_latch[ 0]));  
-*/
-    always @* if (~xclk2x) begin
+
+`ifdef INFER_LATCHES
+    always @* if (xclk2x) re_latch <= next_re;
+    always @* if (xclk2x) ra_latch <= ra_r;
+    always @* if (~xclk2x) 
         if (load_q) q_latch <= fifo_o;
     end
-/*
-   RAMB16_S18_S18 i_fifo (
-                          .DOA(),            // Port A 16-bit Data Output
-                          .DOPA(),           // Port A 2-bit Parity Output
-                          .ADDRA(wa[9:0]),   // Port A 10-bit Address Input
-                          .CLKA(xclk),       // Port A Clock
-                          .DIA(di[15:0]),    // Port A 16-bit Data Input
-                          .DIPA(2'b0),       // Port A 2-bit parity Input
-                          .ENA(ds),          // Port A RAM Enable Input
-                          .SSRA(1'b0),       // Port A Synchronous Set/Reset Input
-                          .WEA(1'b1),        // Port A Write Enable Input
+    
+`else 
+    latch_g_ce #(
+        .WIDTH           (1),
+        .INIT            (0),
+        .IS_CLR_INVERTED (0),
+        .IS_G_INVERTED   (0)
+    ) latch_re_i (
+        .rst     (1'b0),      // input
+        .g       (xclk2x),    // input
+        .ce      (1'b1),      // input
+        .d_in    (next_re),   // input[0:0] 
+        .q_out   (re_latch)   // output[0:0] 
+    );
 
-                          .DOB(fifo_o[15:0]),// Port B 16-bit Data Output
-                          .DOPB(),           // Port B 2-bit Parity Output
-                          .ADDRB(ra_latch[9:0]),   // Port B 10-bit Address Input
-                          .CLKB(xclk2x),        // Port B Clock
-                          .DIB(16'b0),       // Port B 16-bit Data Input
-                          .DIPB(2'b0),       // Port-B 2-bit parity Input
-                          .ENB(re_latch),          // PortB RAM Enable Input
-                          .SSRB(1'b0),       // Port B Synchronous Set/Reset Input
-                          .WEB(1'b0)         // Port B Write Enable Input
-                          );
-*/
+    latch_g_ce #(
+        .WIDTH           (10),
+        .INIT            (0),
+        .IS_CLR_INVERTED (0),
+        .IS_G_INVERTED   (0)
+    ) latch_ra_i (
+        .rst     (1'b0),      // input
+        .g       (xclk2x),    // input
+        .ce      (1'b1),      // input
+        .d_in    (ra_r),      // input[0:0] 
+        .q_out   (ra_latch)   // output[0:0] 
+    );
+   
+    latch_g_ce #(
+        .WIDTH           (16),
+        .INIT            (0),
+        .IS_CLR_INVERTED (0),
+        .IS_G_INVERTED   (1'b1) // inverted!
+    ) latch_q_i (
+        .rst     (1'b0),      // input
+        .g       (xclk2x),    // input
+        .ce      (load_q),      // input
+        .d_in    (fifo_o),      // input[0:0] 
+        .q_out   (q_latch)   // output[0:0] 
+    );
+`endif    
 
     ram18_var_w_var_r #(
         .REGISTERS    (0),

@@ -32,7 +32,8 @@ module  iserdes_mem #
     input        rst,      // reset
     input        d_direct, // direct input from IOB, normally not used, controlled by IOBDELAY parameter (set to "NONE")
     input        ddly,     // serial input from idelay 
-    output [3:0] dout
+    output [3:0] dout,
+    output       comb_out  // combinatorial output copies selected input to be used in the fabric     
 );
 
 `ifndef IVERILOG  // Not using simulator - instantiate actual ISERDESE2 (can not be simulated because of encrypted )           
@@ -58,7 +59,7 @@ module  iserdes_mem #
          )
          iserdes_i
          (
-         .O                          (),
+         .O                          (comb_out),
          .Q1                         (dout[3]),
          .Q2                         (dout[2]),
          .Q3                         (dout[1]),
@@ -109,7 +110,7 @@ module  iserdes_mem #
          )
          iserdes_i
          (
-         .O                          (),
+         .O                          (comb_out),
          .Q1                         (dout[3]),
          .Q2                         (dout[2]),
          .Q3                         (dout[1]),

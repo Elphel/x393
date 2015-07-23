@@ -79,6 +79,9 @@ create_generated_clock -name axihp_clk [get_nets clocks393_i/dual_clock_axihp_i/
 create_generated_clock -name xclk      [get_nets clocks393_i/dual_clock_xclk_i/clk1x_pre ]
 create_generated_clock -name xclk2x    [get_nets clocks393_i/dual_clock_xclk_i/clk2x_pre ]
 
+#clock for inter - camera synchronization and event logger
+create_generated_clock -name sclk      [get_nets clocks393_i/dual_clock_sync_clk_i/clk1x_pre ]
+
 create_clock -name ffclk0 -period 41.667 [get_ports {ffclk0p}]
 #Generated clocks are assumed to be tied to clkin1 (not 2), so until external ffclk0 is constrained, derivative clocks are not generated 
 create_generated_clock -name pclk      [get_nets clocks393_i/dual_clock_pclk_i/clk1x_pre ]
@@ -100,12 +103,16 @@ create_generated_clock -name iclk2x3  [get_nets sensors393_i/sensor_channel_bloc
 
 
 # do not check timing between axi_aclk and other clocks. Code should provide correct asynchronous crossing of the clock boundary.
-set_clock_groups -name ps_async_clock -asynchronous -group {axi_aclk}
+set_clock_groups -name ps_async_clock                 -asynchronous -group {axi_aclk}
 # do not check timing between clk_axihp_pre and other clocks. Code should provide correct asynchronous crossing of the clock boundary.
-set_clock_groups -name ps_async_clock_axihp -asynchronous -group {axihp_clk}
+set_clock_groups -name ps_async_clock_axihp          -asynchronous -group {axihp_clk}
 set_clock_groups -name compressor_clocks_xclk_xclk2x -asynchronous -group {xclk xclk2x}
-set_clock_groups -name sensor_clocks_pclk_pclk2x -asynchronous -group {pclk pclk2x}
+set_clock_groups -name sensor_clocks_pclk_pclk2x     -asynchronous -group {pclk pclk2x}
+set_clock_groups -name sync_logger_clocks_sclk       -asynchronous -group {sclk }
+
 set_clock_groups -name sensor0_clocks_iclk_pclk2x -asynchronous -group {iclk0 iclk2x0}
 set_clock_groups -name sensor1_clocks_iclk_pclk2x -asynchronous -group {iclk1 iclk2x1}
 set_clock_groups -name sensor2_clocks_iclk_pclk2x -asynchronous -group {iclk2 iclk2x2}
 set_clock_groups -name sensor3_clocks_iclk_pclk2x -asynchronous -group {iclk3 iclk2x3}
+
+set_clock_groups -name external_clock_ffclk0 -asynchronous -group {ffclk0}

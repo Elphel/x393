@@ -52,7 +52,7 @@ module  pxd_single#(
     reg        pxd_r;
     
     assign pxd_in=pxd_r;
-    assign pxd_async = pxd_iobuf;
+//    assign pxd_async = pxd_iobuf;
     always @ (posedge mclk) begin
         if (mrst) pxd_r <= 0;
         else      pxd_r <= quadrant[1]?(quadrant[0]? dout[3]: dout[2]) : (quadrant[0]? dout[1]: dout[0]);
@@ -70,8 +70,8 @@ module  pxd_single#(
         .T     (!pxd_en) // input
     );
 
-/*
 //finedelay not supported by HR banks?
+/*
     idelay_fine_pipe # (
         .IODELAY_GRP           (IODELAY_GRP),
         .DELAY_VALUE           (IDELAY_VALUE),
@@ -110,10 +110,11 @@ module  pxd_single#(
         .oclk(ipclk2x),           // system clock, phase should allow iclk-to-oclk jitter with setup/hold margin
         .oclk_div(ipclk),         // oclk divided by 2, front aligned
         .inv_clk_div(1'b0),       // invert oclk_div (this clock is shared between iserdes and oserdes. Works only in MEMORY_DDR3 mode?
-        .rst(irst),                // reset
+        .rst(irst),               // reset
         .d_direct(1'b0),          // direct input from IOB, normally not used, controlled by IOBDELAY parameter (set to "NONE")
         .ddly(pxd_delayed),       // serial input from idelay 
-        .dout(dout[3:0])          // parallel data out
+        .dout(dout[3:0]),         // parallel data out
+        .comb_out(pxd_async)      // output
     );
 
 endmodule

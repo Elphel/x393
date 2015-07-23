@@ -121,7 +121,8 @@ iserdes_mem #(
     .rst(rst),                // reset
     .d_direct(1'b0),          // direct input from IOB, normally not used, controlled by IOBDELAY parameter (set to "NONE")
     .ddly(dq_dly),            // serial input from idelay 
-    .dout(dout[3:0])          // parallel data out
+    .dout(dout[3:0]),          // parallel data out
+    .comb_out()      // output
 );
 
 endmodule

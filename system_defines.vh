@@ -3,6 +3,8 @@
   `define SYSTEM_DEFINES
 // will not use simultaneous reset in shift registers, just and input data with ~rst  
  `define SHREG_SEQUENTIAL_RESET 1
+// synthesis does to recognize global clock as G input of the primitive latch 
+ `undef INFER_LATCHES
 //`define MEMBRIDGE_DEBUG_READ 1
   `define use200Mhz 1
   `define USE_CMD_ENCOD_TILED_32_RD 1  

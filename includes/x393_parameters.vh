@@ -433,8 +433,20 @@
     parameter IPCLK_PHASE =              0.000,
     parameter IPCLK2X_PHASE =            0.000,
 
-    parameter BUF_IPCLK =                "BUFG", // "BUFR",
-    parameter BUF_IPCLK2X =              "BUFG", // "BUFR",  
+//    parameter BUF_IPCLK =                "BUFMR", //G", // "BUFR", // BUFR fails for both clocks for sensors1 and 3
+//    parameter BUF_IPCLK2X =              "BUFMR", //G", // "BUFR",  
+
+    parameter BUF_IPCLK_SENS0 =          "BUFR", //G", // "BUFR", // BUFR fails for both clocks for sensors1 and 3
+    parameter BUF_IPCLK2X_SENS0 =        "BUFR", //G", // "BUFR",  
+
+    parameter BUF_IPCLK_SENS1 =          "BUFG", // "BUFR", // BUFR fails for both clocks for sensors1 and 3
+    parameter BUF_IPCLK2X_SENS1 =        "BUFG", // "BUFR",  
+
+    parameter BUF_IPCLK_SENS2 =          "BUFR", //G", // "BUFR", // BUFR fails for both clocks for sensors1 and 3
+    parameter BUF_IPCLK2X_SENS2 =        "BUFR", //G", // "BUFR",  
+
+    parameter BUF_IPCLK_SENS3 =          "BUFG", // "BUFR", // BUFR fails for both clocks for sensors1 and 3
+    parameter BUF_IPCLK2X_SENS3 =        "BUFG", // "BUFR",  
 
     parameter SENS_DIVCLK_DIVIDE =       1,            // Integer 1..106. Divides all outputs with respect to CLKIN
     parameter SENS_REF_JITTER1   =       0.010,        // Expectet jitter on CLKIN1 (0.000..0.999)

@@ -361,7 +361,8 @@ module  sens_parallel12 #(
         .ld_idelay      (ld_idelay),       // input
         .quadrant       (quadrants[1:0])   // input[1:0] 
     );
-
+// debugging implementation
+//assign xfpgatdo = pxd_out[1];
     pxd_single #(
         .IODELAY_GRP           (IODELAY_GRP),
         .IDELAY_VALUE          (IDELAY_VALUE),
