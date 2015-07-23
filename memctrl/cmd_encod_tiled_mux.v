@@ -539,7 +539,7 @@ module  cmd_encod_tiled_mux #(
     ;
 
     `ifdef def_tiled_chn0
-        wire start0=0 |
+        wire start0=0
         `ifdef def_read_mem_chn0
             | start0_rd | start0_rd32
         `endif
@@ -549,7 +549,7 @@ module  cmd_encod_tiled_mux #(
         ;
     `endif
     `ifdef def_tiled_chn1
-        wire start1=0 |
+        wire start1=0
         `ifdef def_read_mem_chn1
             | start1_rd | start1_rd32
         `endif
@@ -559,7 +559,7 @@ module  cmd_encod_tiled_mux #(
         ;
     `endif
     `ifdef def_tiled_chn2
-        wire start2=0 |
+        wire start2=0
         `ifdef def_read_mem_chn2
             | start2_rd | start2_rd32
         `endif
@@ -569,7 +569,7 @@ module  cmd_encod_tiled_mux #(
         ;
     `endif
     `ifdef def_tiled_chn3
-        wire start3=0 |
+        wire start3=0
         `ifdef def_read_mem_chn3
             | start3_rd | start3_rd32
         `endif
@@ -579,7 +579,7 @@ module  cmd_encod_tiled_mux #(
         ;
     `endif
     `ifdef def_tiled_chn4
-        wire start4=0 |
+        wire start4=0
         `ifdef def_read_mem_chn4
             | start4_rd | start4_rd32
         `endif
@@ -589,7 +589,7 @@ module  cmd_encod_tiled_mux #(
         ;
     `endif
     `ifdef def_tiled_chn5
-        wire start5=0 |
+        wire start5=0
         `ifdef def_read_mem_chn5
             | start5_rd | start5_rd32
         `endif
@@ -599,7 +599,7 @@ module  cmd_encod_tiled_mux #(
         ;
     `endif
     `ifdef def_tiled_chn6
-        wire start6=0 |
+        wire start6=0
         `ifdef def_read_mem_chn6
             | start6_rd | start6_rd32
         `endif
@@ -609,7 +609,7 @@ module  cmd_encod_tiled_mux #(
         ;
     `endif
     `ifdef def_tiled_chn7
-        wire start7=0 |
+        wire start7=0
         `ifdef def_read_mem_chn7
             | start7_rd | start7_rd32
         `endif
@@ -619,7 +619,7 @@ module  cmd_encod_tiled_mux #(
         ;
     `endif
     `ifdef def_tiled_chn8
-        wire start8=0 |
+        wire start8=0
         `ifdef def_read_mem_chn8
             | start8_rd | start8_rd32
         `endif
@@ -629,7 +629,7 @@ module  cmd_encod_tiled_mux #(
         ;
     `endif
     `ifdef def_tiled_chn9
-        wire start9=0 |
+        wire start9=0
         `ifdef def_read_mem_chn9
             | start9_rd | start9_rd32
         `endif
@@ -639,7 +639,7 @@ module  cmd_encod_tiled_mux #(
         ;
     `endif
     `ifdef def_tiled_chn10
-        wire start10=0 |
+        wire start10=0
         `ifdef def_read_mem_chn10
             | start10_rd | start10_rd32
         `endif
@@ -649,7 +649,7 @@ module  cmd_encod_tiled_mux #(
         ;
     `endif
     `ifdef def_tiled_chn11
-        wire start11=0 |
+        wire start11=0
         `ifdef def_read_mem_chn11
             | start11_rd | start11_rd32
         `endif
@@ -659,7 +659,7 @@ module  cmd_encod_tiled_mux #(
         ;
     `endif
     `ifdef def_tiled_chn12
-        wire start12=0 |
+        wire start12=0
         `ifdef def_read_mem_chn12
             | start12_rd | start12_rd32
         `endif
@@ -669,7 +669,7 @@ module  cmd_encod_tiled_mux #(
         ;
     `endif
     `ifdef def_tiled_chn13
-        wire start13=0 |
+        wire start13=0
         `ifdef def_read_mem_chn13
             | start13_rd | start13_rd32
         `endif
@@ -679,7 +679,7 @@ module  cmd_encod_tiled_mux #(
         ;
     `endif
     `ifdef def_tiled_chn14
-        wire start14=0 |
+        wire start14=0
         `ifdef def_read_mem_chn14
             | start14_rd | start14_rd32
         `endif
@@ -689,7 +689,7 @@ module  cmd_encod_tiled_mux #(
         ;
     `endif
     `ifdef def_tiled_chn15
-        wire start15=0 |
+        wire start15=0
         `ifdef def_read_mem_chn15
             | start15_rd | start15_rd32
         `endif
