@@ -29,7 +29,9 @@ module  idelay_ctrl
     output rdy
 );
 
-(* IODELAY_GROUP = IODELAY_GRP *)
+`ifndef IGNORE_ATTR
+  (* IODELAY_GROUP = IODELAY_GRP *)
+`endif
 IDELAYCTRL idelay_ctrl_i(
     .RDY(rdy),
     .REFCLK(refclk),

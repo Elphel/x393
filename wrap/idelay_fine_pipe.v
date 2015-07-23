@@ -48,7 +48,10 @@ module  idelay_fine_pipe
             if (fdly_pre > 3'h4) $display ("ERROR: fine idelay value should be <5, specified %d @ %t", fdly_pre,$time);  
         end
     `endif
-(* IODELAY_GROUP = IODELAY_GRP *) IDELAYE2_FINEDELAY
+`ifndef IGNORE_ATTR
+  (* IODELAY_GROUP = IODELAY_GRP *) 
+`endif
+IDELAYE2_FINEDELAY
      #(
         .CINVCTRL_SEL("FALSE"),
         .DELAY_SRC("IDATAIN"),

@@ -51,9 +51,13 @@ module  x393 #(
 //    localparam ADDRESS_NUMBER=15;
 //    localparam COLADDR_NUMBER=10;
 // Source for reset and clock
-(* keep = "true" *)
+`ifndef IGNORE_ATTR
+  (* keep = "true" *)
+`endif
    wire    [3:0]     fclk;      // PL Clocks [3:0], output
-(* keep = "true" *)   
+`ifndef IGNORE_ATTR
+  (* keep = "true" *)   
+`endif
    wire    [3:0]     frst;      // PL Clocks [3:0], output
     
 // AXI write interface signals

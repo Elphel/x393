@@ -48,7 +48,10 @@ module  odelay_fine_pipe
         end
     `endif
  
- (* IODELAY_GROUP = IODELAY_GRP *) ODELAYE2_FINEDELAY
+`ifndef IGNORE_ATTR
+  (* IODELAY_GROUP = IODELAY_GRP *) 
+`endif
+ ODELAYE2_FINEDELAY
      #(
         .CINVCTRL_SEL("FALSE"),
         .DELAY_SRC("ODATAIN"),
