@@ -96,15 +96,17 @@ module  x393 #(
 //    localparam ADDRESS_NUMBER=15;
 //    localparam COLADDR_NUMBER=10;
 // Source for reset and clock
-(* keep = "true" *)
+`ifndef IGNORE_ATTR
+    (* KEEP = "TRUE" *)
+`endif    
     wire    [3:0]     fclk;           // PL Clocks [3:0], output
-(* keep = "true" *)   
+`ifndef IGNORE_ATTR
+    (* KEEP = "TRUE" *)
+`endif    
     wire    [3:0]     frst;           // PL Clocks [3:0], output
     
 // AXI write interface signals
-//(* keep = "true" *) 
     wire           axi_aclk;          // clock - should be buffered
-//(* dont_touch = "true" *)
     wire           axi_grst;          // reset, active high, global (try to get rid of) - trying, removed BUFG
 // AXI Write Address
     wire   [31:0]  maxi0_awaddr;      // AWADDR[31:0], input

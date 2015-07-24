@@ -55,15 +55,26 @@ module  byte_lane #(
     input         set              // clk_div synchronous set all delays from previously loaded values
 );
 
-//(* CLOCK_DEDICATED_ROUTE = "FALSE" *)  // does not seem to work
 wire dqs_read;
 wire  iclk;         // source-synchronous clock (BUFR from DQS)
 reg  [31:0] din_r=0;
 // Preventing register removal of equivalent registers
- (* keep = "true" *) reg  [3:0] din_dm_r=0, din_dqs_r=0, tin_dq_r=4'hf, tin_dqs_r=4'hf;
- (* keep = "true" *) reg  [7:0] dly_data_r=0; 
- (* keep = "true" *) reg        set_r=0;
- (* keep = "true" *) reg  dci_disable_dqs_r, dci_disable_dq_r;
+`ifndef IGNORE_ATTR
+    (* keep = "true" *)
+`endif    
+reg  [3:0] din_dm_r=0, din_dqs_r=0, tin_dq_r=4'hf, tin_dqs_r=4'hf;
+`ifndef IGNORE_ATTR
+    (* keep = "true" *)
+`endif    
+reg  [7:0] dly_data_r=0; 
+`ifndef IGNORE_ATTR
+    (* keep = "true" *)
+`endif    
+reg        set_r=0;
+`ifndef IGNORE_ATTR
+    (* keep = "true" *)
+`endif    
+reg  dci_disable_dqs_r, dci_disable_dq_r;
 reg  [7:0] ld_odly=8'b0, ld_idly=8'b0;
 reg        ld_odly_dqs,ld_idly_dqs,ld_odly_dm;
 BUFR                          iclk_i    (.O(iclk),.I(dqs_read), .CLR(1'b0),.CE(1'b1)); // OK, works with constraint? Seems now work w/o

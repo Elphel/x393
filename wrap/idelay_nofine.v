@@ -34,7 +34,10 @@ module  idelay_nofine
     input data_in,
     output data_out
 );
-(* IODELAY_GROUP = IODELAY_GRP *) IDELAYE2
+`ifndef IGNORE_ATTR
+(* IODELAY_GROUP = IODELAY_GRP *)
+`endif    
+ IDELAYE2
      #(
         .CINVCTRL_SEL("FALSE"),
         .DELAY_SRC("IDATAIN"),

@@ -33,8 +33,22 @@ module  pulse_cross_clock#(
     output busy
 );
     localparam EXTRA_DLY_SAFE=EXTRA_DLY ? 1 : 0;
-    reg       in_reg = 0;
+`ifndef IGNORE_ATTR
+    (* KEEP = "TRUE" *)
+`endif    
+    reg       in_reg = 0; // can not be  ASYNC_REG as it can not be put together with out_reg
+//WARNING: [Constraints 18-1079] Register sensors393_i/sensor_channel_block[0].sensor_channel_i/sens_sync_i/pulse_cross_clock_trig_in_pclk_i/in_reg_reg
+// and sensors393_i/sensor_channel_block[0].sensor_channel_i/sens_sync_i/pulse_cross_clock_trig_in_pclk_i/out_reg_reg[0] are
+//from the same synchronizer and have the ASYNC_REG property set, but could not be placed into the same slice due to constraints
+// or mismatched control signals on the registers.
+    
+`ifndef IGNORE_ATTR
+    (* ASYNC_REG = "TRUE" *)
+`endif    
     reg [2:0] out_reg = 0;
+`ifndef IGNORE_ATTR
+    (* ASYNC_REG = "TRUE" *)
+`endif    
     reg       busy_r = 0;
     assign out_pulse=out_reg[2];
     assign busy=busy_r; // in_reg;

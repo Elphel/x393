@@ -35,12 +35,6 @@ module huffman393    (
     input             tser_a_not_d, // address/not data distributed to submodules
     input      [ 7:0] tser_d,       // byte-wide serialized tables address/data to submodules
     
-//    input             sclk,            // clock to write tables (NOW posgedge) AF2015
-//    input             twe,             // enable write to a table - now the following will be valid ant negedge sclk
-//    input       [8:0] ta,              // [8:0]  table address
-//    input      [15:0] tdi,             // [15:0] table data in
-    
-    
     input      [15:0] di,              // [15:0]    specially RLL prepared 16-bit data (to FIFO) (sync to xclk)
     input             ds,              // di valid strobe  (sync to xclk)
     input             rdy,             // receiver (bit stuffer) is ready to accept data
@@ -50,41 +44,31 @@ module huffman393    (
     output reg        flush,           // last block done - flush the rest bits
     output reg        last_block,
     output reg        test_lbw,
-    output            gotLastBlock);   // last block done - flush the rest bits
-/*
-  huffman i_huffman  (.pclk(clk),      // pixel clock
-                      .clk(clk2x),     // twice frequency - uses negedge inside
-                      .en(cmprs_en),      // enable (0 resets counter) sync to .pclk(clk)
-                      .twe(twhe),      // enable write to a table
-                      .ta(ta[8:0]),      // [8:0]  table address
-                      .tdi(di[15:0]),      // [23:0] table data in (8 LSBs - quantization data, [13:9] zigzag address
-                      .di(enc_do[15:0]),      // [15:0]   specially RLL prepared 16-bit data (to FIFO)
-                      .ds(enc_dv),      // di valid strobe
-                      .rdy(stuffer_rdy),      // receiver (bit stuffer) is ready to accept data
-                      .do(huff_do),      // [15:0]   output data
-                      .dl(huff_dl),      // [3:0]   output width (0==16)
-                      .dv(huff_dv),      // output data bvalid
-                     .flush(flush),
-                     .last_block(last_block),
-                     .test_lbw(),
-                     .gotLastBlock(test_lbw));   // last block done - flush the rest bits
-
-                     
-*/
-
-    wire   [31:0] tables_out; // Only [19:0] are used
+    output            gotLastBlock   // last block done - flush the rest bits
+);
+`ifdef INFER_LATCHES
     reg    [15:0] hcode_latch;    // table output huffman code (1..16 bits)
     reg    [ 3:0] hlen_latch;        // table - code length only 4 LSBs are used
+    reg    [ 7:0] haddr70_latch;
+    reg           haddr8_latch;
+    reg           tables_re_latch;
+    reg           stuffer_was_rdy_early_latch;
+`else
+    wire   [15:0] hcode_latch;    // table output huffman code (1..16 bits)
+    wire   [ 3:0] hlen_latch;        // table - code length only 4 LSBs are used
+    wire   [ 7:0] haddr70_latch;
+    wire          haddr8_latch;
+    wire          tables_re_latch;
+    wire          stuffer_was_rdy_early_latch;
+`endif
+    wire   [31:0] tables_out; // Only [19:0] are used
     reg    [ 7:0] haddr_r;    // index in huffman table    
     wire   [ 7:0] haddr_next;
 
-    reg    [ 7:0] haddr70_latch;
-    reg           haddr8_latch;
     wire   [ 8:0] haddr = {haddr8_latch,haddr70_latch};    // index in huffman table     (after latches)
      
     wire   [15:0] fifo_o;
     reg           stuffer_was_rdy;
-    reg           tables_re_latch;
     wire          read_next;    // assigned depending on steps (each other cycle for normal codes, each for special 00/F0
 
     reg     [5:0] steps;
@@ -148,14 +132,7 @@ module huffman393    (
     assign gotColor= fifo_o[13];
 
     always @(negedge xclk2x) stuffer_was_rdy <= !en2x || rdy; // stuffer ready shoud be on if !en (move to register?)for now]
-    reg           stuffer_was_rdy_early_latch;
     wire          want_read_early;
-/*    
-  LD  i_stuffer_was_rdy_early (.Q(stuffer_was_rdy_early_latch),.G(xclk2x),.D(!en2x || rdy));
-  LD  i_tables_re (.Q(tables_re_latch),.G(xclk2x),.D(en2x && rdy));
-*/  
-    always @* if (xclk2x) stuffer_was_rdy_early_latch <= !en2x || rdy;
-    always @* if (xclk2x) tables_re_latch <= en2x && rdy;
    
 
 
@@ -210,18 +187,18 @@ module huffman393    (
     always @ (negedge xclk2x) if (stuffer_was_rdy && steps[2]) begin    // may be just if (stuffer_was_rdy)
         haddr_r[7:0]    <= haddr_next[7:0];
     end
-/*  
-  LD  i_haddr_8 (.Q(haddr[8]),.G(xclk2x),.D(stuffer_was_rdy?tbsel_YC2:tbsel_YC3));
-  LD  i_haddr_7 (.Q(haddr[7]),.G(xclk2x),.D((stuffer_was_rdy && steps[2])?haddr_next[7]:haddr_r[7]));
-  LD  i_haddr_6 (.Q(haddr[6]),.G(xclk2x),.D((stuffer_was_rdy && steps[2])?haddr_next[6]:haddr_r[6]));
-  LD  i_haddr_5 (.Q(haddr[5]),.G(xclk2x),.D((stuffer_was_rdy && steps[2])?haddr_next[5]:haddr_r[5]));
-  LD  i_haddr_4 (.Q(haddr[4]),.G(xclk2x),.D((stuffer_was_rdy && steps[2])?haddr_next[4]:haddr_r[4]));
-  LD  i_haddr_3 (.Q(haddr[3]),.G(xclk2x),.D((stuffer_was_rdy && steps[2])?haddr_next[3]:haddr_r[3]));
-  LD  i_haddr_2 (.Q(haddr[2]),.G(xclk2x),.D((stuffer_was_rdy && steps[2])?haddr_next[2]:haddr_r[2]));
-  LD  i_haddr_1 (.Q(haddr[1]),.G(xclk2x),.D((stuffer_was_rdy && steps[2])?haddr_next[1]:haddr_r[1]));
-  LD  i_haddr_0 (.Q(haddr[0]),.G(xclk2x),.D((stuffer_was_rdy && steps[2])?haddr_next[0]:haddr_r[0]));
-*/
-//     wire   [ 8:0] haddr = {haddr8_latch,haddr70_latch};    // index in huffman table     (after latches)
+
+
+    assign pre_dv =         steps[4] || (steps[5] && (var_dl_late[3:0]!=4'b0));
+    assign pre_bits[15:0]    = steps[5]?{5'b0,var_do[10:0]}:     hcode_latch[15:0];
+    assign pre_len [ 3:0]    = steps[5]?      var_dl_late[ 3:0]: hlen_latch  [3:0];
+
+`ifdef INFER_LATCHES
+    always @* if (~xclk2x) hlen_latch <=  tables_out[19:16];
+    always @* if (~xclk2x) hcode_latch <= tables_out[15:0];
+    always @* if (xclk2x)  stuffer_was_rdy_early_latch <= !en2x || rdy;
+    always @* if (xclk2x)  tables_re_latch <= en2x && rdy;
+
     always @* if (xclk2x) begin
         if (stuffer_was_rdy) haddr8_latch <= tbsel_YC2;
         else                 haddr8_latch <= tbsel_YC3;
@@ -232,10 +209,86 @@ module huffman393    (
         else                             haddr70_latch <= haddr_r;
     end
 
+`else
+    latch_g_ce #(
+        .WIDTH           (4),
+        .INIT            (0),
+        .IS_CLR_INVERTED (0),
+        .IS_G_INVERTED   (1) // inverted!
+    ) latch_hlen_i (
+        .rst     (1'b0),               // input
+        .g       (xclk2x),             // input
+        .ce      (1'b1),               // input
+        .d_in    (tables_out[19:16]),  // input[0:0] 
+        .q_out   (hlen_latch)          // output[0:0] 
+    );
 
-    assign pre_dv =         steps[4] || (steps[5] && (var_dl_late[3:0]!=4'b0));
-    assign pre_bits[15:0]    = steps[5]?{5'b0,var_do[10:0]}:     hcode_latch[15:0];
-    assign pre_len [ 3:0]    = steps[5]?      var_dl_late[ 3:0]: hlen_latch  [3:0];
+    latch_g_ce #(
+        .WIDTH           (16),
+        .INIT            (0),
+        .IS_CLR_INVERTED (0),
+        .IS_G_INVERTED   (1) // inverted!
+    ) latch_hcode_i (
+        .rst     (1'b0),               // input
+        .g       (xclk2x),             // input
+        .ce      (1'b1),               // input
+        .d_in    (tables_out[15:0]),   // input[0:0] 
+        .q_out   (hcode_latch)         // output[0:0] 
+    );
+
+    latch_g_ce #(
+        .WIDTH           (1),
+        .INIT            (0),
+        .IS_CLR_INVERTED (0),
+        .IS_G_INVERTED   (0) // non-inverted!
+    ) latch_stuffer_was_rdy_early_i (
+        .rst     (1'b0),                        // input
+        .g       (xclk2x),                      // input
+        .ce      (1'b1),                        // input
+        .d_in    (!en2x || rdy),                // input[0:0] 
+        .q_out   (stuffer_was_rdy_early_latch)  // output[0:0] 
+    );
+
+    latch_g_ce #(
+        .WIDTH           (1),
+        .INIT            (0),
+        .IS_CLR_INVERTED (0),
+        .IS_G_INVERTED   (0) // non-inverted!
+    ) latch_tables_re_i (
+        .rst     (1'b0),                        // input
+        .g       (xclk2x),                      // input
+        .ce      (1'b1),                        // input
+        .d_in    (en2x && rdy),                 // input[0:0] 
+        .q_out   (tables_re_latch)              // output[0:0] 
+    );
+
+    latch_g_ce #(
+        .WIDTH           (1),
+        .INIT            (0),
+        .IS_CLR_INVERTED (0),
+        .IS_G_INVERTED   (0) // non-inverted!
+    ) latch_haddr8_re_i (
+        .rst     (1'b0),                        // input
+        .g       (xclk2x),                      // input
+        .ce      (1'b1),                        // input
+        .d_in    (stuffer_was_rdy ? tbsel_YC2 : tbsel_YC3), // input[0:0] 
+        .q_out   (haddr8_latch)              // output[0:0] 
+    );
+
+    latch_g_ce #(
+        .WIDTH           (8),
+        .INIT            (0),
+        .IS_CLR_INVERTED (0),
+        .IS_G_INVERTED   (0) // non-inverted!
+    ) latch_haddr70_re_i (
+        .rst     (1'b0),                        // input
+        .g       (xclk2x),                      // input
+        .ce      (1'b1),                        // input
+        .d_in    ((stuffer_was_rdy && steps[2]) ? haddr_next : haddr_r), // input[0:0] 
+        .q_out   (haddr70_latch)              // output[0:0] 
+    );
+`endif
+
 
     always @ (negedge xclk2x) if (stuffer_was_rdy) begin
         dv0            <= pre_dv;
@@ -263,30 +316,7 @@ module huffman393    (
         tbsel_YC2      <= tbsel_YC1;
         tbsel_YC3      <= tbsel_YC2;
     end
-  /*
-  LD_1 i_hlen3  (.Q( hlen_latch[ 3]),.G(xclk2x),.D(tables_out[19]));  
-  LD_1 i_hlen2  (.Q( hlen_latch[ 2]),.G(xclk2x),.D(tables_out[18]));  
-  LD_1 i_hlen1  (.Q( hlen_latch[ 1]),.G(xclk2x),.D(tables_out[17]));  
-  LD_1 i_hlen0  (.Q( hlen_latch[ 0]),.G(xclk2x),.D(tables_out[16]));  
-  LD_1 i_hcode15(.Q(hcode_latch[15]),.G(xclk2x),.D(tables_out[15]));  
-  LD_1 i_hcode14(.Q(hcode_latch[14]),.G(xclk2x),.D(tables_out[14]));  
-  LD_1 i_hcode13(.Q(hcode_latch[13]),.G(xclk2x),.D(tables_out[13]));  
-  LD_1 i_hcode12(.Q(hcode_latch[12]),.G(xclk2x),.D(tables_out[12]));  
-  LD_1 i_hcode11(.Q(hcode_latch[11]),.G(xclk2x),.D(tables_out[11]));  
-  LD_1 i_hcode10(.Q(hcode_latch[10]),.G(xclk2x),.D(tables_out[10]));  
-  LD_1 i_hcode9 (.Q(hcode_latch[ 9]),.G(xclk2x),.D(tables_out[ 9]));  
-  LD_1 i_hcode8 (.Q(hcode_latch[ 8]),.G(xclk2x),.D(tables_out[ 8]));  
-  LD_1 i_hcode7 (.Q(hcode_latch[ 7]),.G(xclk2x),.D(tables_out[ 7]));  
-  LD_1 i_hcode6 (.Q(hcode_latch[ 6]),.G(xclk2x),.D(tables_out[ 6]));  
-  LD_1 i_hcode5 (.Q(hcode_latch[ 5]),.G(xclk2x),.D(tables_out[ 5]));  
-  LD_1 i_hcode4 (.Q(hcode_latch[ 4]),.G(xclk2x),.D(tables_out[ 4]));  
-  LD_1 i_hcode3 (.Q(hcode_latch[ 3]),.G(xclk2x),.D(tables_out[ 3]));  
-  LD_1 i_hcode2 (.Q(hcode_latch[ 2]),.G(xclk2x),.D(tables_out[ 2]));  
-  LD_1 i_hcode1 (.Q(hcode_latch[ 1]),.G(xclk2x),.D(tables_out[ 1]));  
-  LD_1 i_hcode0 (.Q(hcode_latch[ 0]),.G(xclk2x),.D(tables_out[ 0]));  
-*/  
-    always @* if (~xclk2x) hlen_latch <=  tables_out[19:16];
-    always @* if (~xclk2x) hcode_latch <= tables_out[15:0];
+   
     
     wire          twe;
     wire  [15:0]  tdi;

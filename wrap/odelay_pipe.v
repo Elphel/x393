@@ -36,8 +36,10 @@ module  odelay_pipe
     output data_out
 );
  
- (* IODELAY_GROUP = IODELAY_GRP *) ODELAYE2
-     #(
+`ifndef IGNORE_ATTR
+    (* IODELAY_GROUP = IODELAY_GRP *)
+`endif    
+  ODELAYE2 #(
         .CINVCTRL_SEL("FALSE"),
         .DELAY_SRC("ODATAIN"),
 //        .FINEDELAY("ADD_DLY"),

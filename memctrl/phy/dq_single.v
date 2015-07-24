@@ -51,7 +51,6 @@ wire dq_tri;
 wire dq_data_dly;
 wire dq_dly;
 // keep IOBUF_DCIEN.O to user as output only (UDM/LDM), so the rest of tyhe read channel will be optimized out, but I/O will stay the same
-//(* keep = "true" *)
 wire dq_di;
 
 

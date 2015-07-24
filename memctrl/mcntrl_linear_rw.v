@@ -96,7 +96,10 @@ module  mcntrl_linear_rw #(
 // WARNING: [Synth 8-3936] Found unconnected internal register 'frame_y_reg' and it is trimmed from '16' to '3' bits. [memctrl/mcntrl_linear_rw.v:268]
 // Throblem seems to be that frame_y8_r_reg (load of trimmed bits of the frame_y_reg) is (as intended) absorbed into DSP48. The lower 3 bits are used
 // outside of the DSP 48.  "dont_touch" seems to work here
- (* keep = "true" *) reg   [FRAME_HEIGHT_BITS-1:0] frame_y;     // current line number referenced to the frame top
+`ifndef IGNORE_ATTR
+    (* keep = "true" *)
+`endif    
+    reg   [FRAME_HEIGHT_BITS-1:0] frame_y;     // current line number referenced to the frame top
     reg    [FRAME_WIDTH_BITS-1:0] frame_x;     // current column number referenced to the frame left
     reg   [FRAME_HEIGHT_BITS-4:0] frame_y8_r;  // (13 bits) current row with bank removed, latency2 (to be absorbed when inferred DSP multipler)
     reg      [FRAME_WIDTH_BITS:0] frame_full_width_r;  // (14 bit) register to be absorbed by MPY

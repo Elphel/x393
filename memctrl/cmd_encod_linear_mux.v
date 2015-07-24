@@ -436,7 +436,7 @@ module  cmd_encod_linear_mux#(
     ;
 
     `ifdef def_scanline_chn0
-        wire start0=0 |
+        wire start0=0
         `ifdef def_read_mem_chn0
             | start0_rd
         `endif
@@ -446,7 +446,7 @@ module  cmd_encod_linear_mux#(
         ;
     `endif
     `ifdef def_scanline_chn1
-        wire start1=0 |
+        wire start1=0
         `ifdef def_read_mem_chn1
             | start1_rd
         `endif
@@ -456,7 +456,7 @@ module  cmd_encod_linear_mux#(
         ;
     `endif
     `ifdef def_scanline_chn2
-        wire start2=0 |
+        wire start2=0
         `ifdef def_read_mem_chn2
             | start2_rd
         `endif
@@ -466,7 +466,7 @@ module  cmd_encod_linear_mux#(
         ;
     `endif
     `ifdef def_scanline_chn3
-        wire start3=0 |
+        wire start3=0
         `ifdef def_read_mem_chn3
             | start3_rd
         `endif
@@ -476,7 +476,7 @@ module  cmd_encod_linear_mux#(
         ;
     `endif
     `ifdef def_scanline_chn4
-        wire start4=0 |
+        wire start4=0
         `ifdef def_read_mem_chn4
             | start4_rd
         `endif
@@ -486,7 +486,7 @@ module  cmd_encod_linear_mux#(
         ;
     `endif
     `ifdef def_scanline_chn5
-        wire start5=0 |
+        wire start5=0
         `ifdef def_read_mem_chn5
             | start5_rd
         `endif
@@ -496,7 +496,7 @@ module  cmd_encod_linear_mux#(
         ;
     `endif
     `ifdef def_scanline_chn6
-        wire start6=0 |
+        wire start6=0
         `ifdef def_read_mem_chn6
             | start6_rd
         `endif
@@ -506,7 +506,7 @@ module  cmd_encod_linear_mux#(
         ;
     `endif
     `ifdef def_scanline_chn7
-        wire start7=0 |
+        wire start7=0
         `ifdef def_read_mem_chn7
             | start7_rd
         `endif
@@ -516,7 +516,7 @@ module  cmd_encod_linear_mux#(
         ;
     `endif
     `ifdef def_scanline_chn8
-        wire start8=0 |
+        wire start8=0
         `ifdef def_read_mem_chn8
             | start8_rd
         `endif
@@ -526,7 +526,7 @@ module  cmd_encod_linear_mux#(
         ;
     `endif
     `ifdef def_scanline_chn9
-        wire start9=0 |
+        wire start9=0
         `ifdef def_read_mem_chn9
             | start9_rd
         `endif
@@ -536,7 +536,7 @@ module  cmd_encod_linear_mux#(
         ;
     `endif
     `ifdef def_scanline_chn10
-        wire start10=0 |
+        wire start10=0
         `ifdef def_read_mem_chn10
             | start10_rd
         `endif
@@ -546,7 +546,7 @@ module  cmd_encod_linear_mux#(
         ;
     `endif
     `ifdef def_scanline_chn11
-        wire start11=0 |
+        wire start11=0
         `ifdef def_read_mem_chn11
             | start11_rd
         `endif
@@ -556,7 +556,7 @@ module  cmd_encod_linear_mux#(
         ;
     `endif
     `ifdef def_scanline_chn12
-        wire start12=0 |
+        wire start12=0
         `ifdef def_read_mem_chn12
             | start12_rd
         `endif
@@ -566,7 +566,7 @@ module  cmd_encod_linear_mux#(
         ;
     `endif
     `ifdef def_scanline_chn13
-        wire start13=0 |
+        wire start13=0
         `ifdef def_read_mem_chn13
             | start13_rd
         `endif
@@ -576,7 +576,7 @@ module  cmd_encod_linear_mux#(
         ;
     `endif
     `ifdef def_scanline_chn14
-        wire start14=0 |
+        wire start14=0
         `ifdef def_read_mem_chn14
             | start14_rd
         `endif
@@ -586,7 +586,7 @@ module  cmd_encod_linear_mux#(
         ;
     `endif
     `ifdef def_scanline_chn15
-        wire start15=0 |
+        wire start15=0
         `ifdef def_read_mem_chn15
             | start15_rd
         `endif

@@ -61,8 +61,14 @@ reg  [1:0] in_we_r=2'h3, in_ras_r=2'h3, in_cas_r=2'h3, in_cke_r=2'h3, in_odt_r=2
 //reg  [1:0] in_tri_r=2'h0; // or tri-state on reset?
 reg  in_tri_r=1'b1; // or tri-state on reset?
 // Preventing register duplication
- (* keep = "true" *) reg  [7:0] dly_data_r=0; 
- (* keep = "true" *) reg        set_r=0;
+ `ifndef IGNORE_ATTR
+    (* keep = "true" *)
+`endif    
+reg  [7:0] dly_data_r=0; 
+`ifndef IGNORE_ATTR
+    (* keep = "true" *)
+`endif    
+reg        set_r=0;
 reg  [7:0] ld_dly_cmd=8'b0;
 reg  [ADDRESS_NUMBER-1:0] ld_dly_addr=0;
 //wire  [ADDRESS_NUMBER-1:0] decode_addr;

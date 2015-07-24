@@ -31,6 +31,8 @@ set_property is_enabled false [get_drc_checks REQP-1577]
 #Synchronous clocking for BRAM (mult_saxi_wr_inbuf_i/ram_var_w_var_r_i/ram_i/RAMB36E1_i) in SDP mode ...
 set_property is_enabled false [get_drc_checks REQP-165]
 
+#Useless input. The input pins CE and CLR are not used for BUFR_DIVIDE BYPASS.
+set_property is_enabled false [get_drc_checks REQP-14]
 
 
 #    output                       SDRST, // output SDRST, active low

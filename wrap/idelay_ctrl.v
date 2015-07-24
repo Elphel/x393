@@ -28,8 +28,10 @@ module  idelay_ctrl
     input rst,
     output rdy
 );
+`ifndef IGNORE_ATTR
+    (* IODELAY_GROUP = IODELAY_GRP *)
+`endif    
 
-(* IODELAY_GROUP = IODELAY_GRP *)
 IDELAYCTRL idelay_ctrl_i(
     .RDY(rdy),
     .REFCLK(refclk),
