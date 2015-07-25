@@ -20,13 +20,6 @@
  *******************************************************************************/
 `timescale 1ns/1ps
 //`define IVERILOG // uncomment just to chenck syntax (by the editor) in the corresponding branch
-`ifdef IVERILOG
-    `define IVERILOGorCVC
-`else
-`ifdef CVC
-    `define IVERILOGorCVC
-`endif
-`endif
 module  iserdes_mem #
 (
     parameter DYN_CLKDIV_INV_EN="FALSE",
@@ -42,7 +35,7 @@ module  iserdes_mem #
     output [3:0] dout
 );
 
-`ifndef IVERILOGorCVC  // Not using simulator - instantiate actual ISERDESE2 (can not be simulated because of encrypted )           
+`ifndef OPEN_SOURCE_ONLY  // Not using simulator - instantiate actual ISERDESE2 (can not be simulated because of encrypted )           
      ISERDESE2 #(
          .DATA_RATE                  ("DDR"),
          .DATA_WIDTH                 (4),

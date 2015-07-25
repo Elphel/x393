@@ -1,6 +1,18 @@
   // This file may be used to define same pre-processor macros to be included into each parsed file
 `ifndef SYSTEM_DEFINES
   `define SYSTEM_DEFINES
+
+// Enviroment-dependent options
+  `ifdef IVERILOG
+    `define SIMULATION
+    `define OPEN_SOURCE_ONLY
+  `else
+  `ifdef CVC
+    `define SIMULATION
+    `define OPEN_SOURCE_ONLY
+  `endif // CVC
+  `endif // IVERILOG
+
 //`define MEMBRIDGE_DEBUG_READ 1
   `define use200Mhz 1
   `define USE_CMD_ENCOD_TILED_32_RD 1  

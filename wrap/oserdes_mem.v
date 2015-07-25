@@ -20,13 +20,6 @@
  *******************************************************************************/
 `timescale 1ns/1ps
 //`define IVERILOG // uncomment just to chenck syntax (by the editor) in the corresponding branch
-`ifdef IVERILOG
-    `define IVERILOGorCVC
-`else
-`ifdef CVC
-    `define IVERILOGorCVC
-`endif
-`endif
 module  oserdes_mem #(
     parameter MODE_DDR="TRUE"
 ) (
@@ -53,7 +46,7 @@ localparam integer DATA_WIDTH_TRI=  (MODE_DDR=="TRUE")?4:1;
     seems to be OK.
 */
 
-`ifndef IVERILOGorCVC  // Not using simulator - instantiate actual ISERDESE2 (can not be simulated because of encrypted ) 
+`ifndef OPEN_SOURCE_ONLY  // Not using simulator - instantiate actual ISERDESE2 (can not be simulated because of encrypted ) 
            OSERDESE2 #(
                .DATA_RATE_OQ         (DATA_RATE),
                .DATA_RATE_TQ         (DATA_RATE),

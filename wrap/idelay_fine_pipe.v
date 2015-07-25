@@ -43,17 +43,11 @@ module  idelay_fine_pipe
         if (rst)      fdly <= DELAY_VALUE[2:0];
         else if (set) fdly <= fdly_pre;
     end
-    `ifdef IVERILOG
+    `ifdef SIMULATION
         always @ (fdly_pre) begin
             if (fdly_pre > 3'h4) $display ("ERROR: fine idelay value should be <5, specified %d @ %t", fdly_pre,$time);  
         end
-    `else // IVERILOG
-    `ifdef CVC
-        always @ (fdly_pre) begin
-            if (fdly_pre > 3'h4) $display ("ERROR: fine idelay value should be <5, specified %d @ %t", fdly_pre,$time);  
-        end
-    `endif //CVC
-    `endif //IVERILOG
+    `endif // SIMULATION
 `ifndef IGNORE_ATTR
   (* IODELAY_GROUP = IODELAY_GRP *) 
 `endif
