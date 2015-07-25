@@ -22,9 +22,7 @@
  *******************************************************************************/
 `timescale 1ns/1ps
 
-module  cmprs_macroblock_buf_iface #(
-
-    )(
+module  cmprs_macroblock_buf_iface (
 //    input         rst,
     input         xclk,               // global clock input, compressor single clock rate
     
