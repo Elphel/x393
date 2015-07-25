@@ -47,7 +47,13 @@ module  idelay_fine_pipe
         always @ (fdly_pre) begin
             if (fdly_pre > 3'h4) $display ("ERROR: fine idelay value should be <5, specified %d @ %t", fdly_pre,$time);  
         end
-    `endif
+    `else // IVERILOG
+    `ifdef CVC
+        always @ (fdly_pre) begin
+            if (fdly_pre > 3'h4) $display ("ERROR: fine idelay value should be <5, specified %d @ %t", fdly_pre,$time);  
+        end
+    `endif //CVC
+    `endif //IVERILOG
 `ifndef IGNORE_ATTR
   (* IODELAY_GROUP = IODELAY_GRP *) 
 `endif

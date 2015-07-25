@@ -58,14 +58,18 @@ module  x393_testbench01 #(
 `else
     `include "IVERILOG_INCLUDE.v"
 `endif // NON_VDT_ENVIROMENT
-`else
+`else // IVERILOG
 //    $display("IVERILOG is not defined");
 `ifdef CVC
+`ifdef NON_VDT_ENVIROMENT
     parameter lxtname = "x393.fst";
+`else // NON_VDT_ENVIROMENT
+    `include "IVERILOG_INCLUDE.v"
+`endif // NON_VDT_ENVIROMENT
 `else
     parameter lxtname = "x393.lxt";
 `endif // CVC
-`endif
+`endif // IVERILOG
 `define DEBUG_WR_SINGLE 1  
 `define DEBUG_RD_DATA 1  
 //`include "includes/x393_cur_params_sim.vh" // parameters that may need adjustment, should be before x393_localparams.vh
