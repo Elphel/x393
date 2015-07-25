@@ -528,10 +528,22 @@ module ddr3 (
     integer                rdqs_cntr;
     integer                rdqen_cntr;
     integer                rdq_cntr;
-
-    bufif1 buf_dqs    [DQS_BITS-1:0] (dqs,     dqs_out_dly,  dqs_out_en_dly & {DQS_BITS{out_en}});
-    bufif1 buf_dqs_n  [DQS_BITS-1:0] (dqs_n,   ~dqs_out_dly, dqs_out_en_dly & {DQS_BITS{out_en}});
-    bufif1 buf_dq     [DQ_BITS-1:0]  (dq,      dq_out_dly,   dq_out_en_dly  & {DQ_BITS {out_en}});
+    
+`ifdef CVC
+    wire [DQS_BITS-1:0] dqs_in0 = dqs_out_dly;
+    wire [DQS_BITS-1:0] dqs_in1 = ~dqs_out_dly;
+    wire [DQ_BITS-1:0] dq_in2 = dq_out_dly;
+    wire [DQS_BITS-1:0] dqs_en0 = dqs_out_en_dly & {DQS_BITS{out_en}};
+    wire [DQS_BITS-1:0] dqs_en1 = dqs_out_en_dly & {DQS_BITS{out_en}};
+    wire [DQ_BITS-1:0] dq_en2 = dq_out_en_dly & {DQS_BITS{out_en}};
+    bufif1 buf_dqs    [DQS_BITS-1:0] (dqs,   dqs_in0  ,dqs_en0  );
+    bufif1 buf_dqs_n  [DQS_BITS-1:0] (dqs_n, dqs_in1  ,dqs_en1 );
+    bufif1 buf_dq     [DQ_BITS-1:0]  (dq,  dq_in2    , dq_en2 );
+`else
+    bufif1 buf_dqs    [DQS_BITS-1:0] (dqs,     dqs_out_dly,  dqs_out_en_dly & {DQS_BITS{out_en}     }); 
+    bufif1 buf_dqs_n  [DQS_BITS-1:0] (dqs_n,   ~dqs_out_dly, dqs_out_en_dly & {DQS_BITS{out_en}     }); 
+    bufif1 buf_dq     [DQ_BITS-1:0]  (dq,      dq_out_dly,   dq_out_en_dly  & {DQ_BITS {out_en}     });
+`endif
     assign tdqs_n = {DQS_BITS{1'bz}};
 
     initial begin

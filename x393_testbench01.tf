@@ -23,7 +23,7 @@
 
 //`define use200Mhz 1
 //`define DEBUG_FIFO 1
-`undef WAIT_MRS
+//`undef WAIT_MRS
 `define SET_PER_PIN_DELAYS 1 // set individual (including per-DQ pin delays)
 `define READBACK_DELAYS 1
 `define PS_PIO_WAIT_COMPLETE 0 // wait until PS PIO module finished transaction before starting a new one
@@ -53,10 +53,18 @@ module  x393_testbench01 #(
 );
 `ifdef IVERILOG              
 //    $display("IVERILOG is defined");
+`ifdef NON_VDT_ENVIROMENT
+    parameter lxtname="x393.lxt";
+`else
     `include "IVERILOG_INCLUDE.v"
+`endif // NON_VDT_ENVIROMENT
 `else
 //    $display("IVERILOG is not defined");
+`ifdef CVC
+    parameter lxtname = "x393.fst";
+`else
     parameter lxtname = "x393.lxt";
+`endif // CVC
 `endif
 `define DEBUG_WR_SINGLE 1  
 `define DEBUG_RD_DATA 1  

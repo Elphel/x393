@@ -21,7 +21,9 @@
  *******************************************************************************/
 `timescale 1ns/1ps
 `include "system_defines.vh" 
-`undef DEBUG_FIFO
+`ifdef DEBUG_FIFO
+  `undef DEBUG_FIFO
+`endif
 module  mcntrl_ps_pio#(
     parameter MCNTRL_PS_ADDR=                    'h100,
     parameter MCNTRL_PS_MASK=                    'h3e0, // both channels 0 and 1

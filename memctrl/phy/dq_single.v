@@ -110,9 +110,15 @@ idelay_fine_pipe # (
     .data_in(dq_di),
     .data_out(dq_dly)
 );
-
+`ifdef CVC
+parameter FALSE_STING = "FALSE";
+`endif
 iserdes_mem #(
+`ifdef CVC
+    .DYN_CLKDIV_INV_EN(FALSE_STING)
+`else
     .DYN_CLKDIV_INV_EN("FALSE")
+`endif
 ) iserdes_mem_i (
     .iclk(iclk),              // source-synchronous clock
     .oclk(clk),               // system clock, phase should allow iclk-to-oclk jitter with setup/hold margin
