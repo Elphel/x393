@@ -296,11 +296,20 @@ BUFIO iclk_bufio_i (.O(sdclk), .I(sdclk_pre) );
 BUFG clk_ref_i (.O(clk_ref), .I(clk_ref_pre));
 BUFG mclk_i (.O(mclk),.I(mclk_pre) );
     /* Instance template for module mmcm_phase_cntr */
+`ifdef CVC
+localparam real CLKFBOUT_MULT_REAL = CLKFBOUT_MULT;
+localparam real CLKIN_PERIOD_REAL = CLKIN_PERIOD;
+`endif
     mmcm_phase_cntr #(
         .PHASE_WIDTH         (PHASE_WIDTH),
-        .CLKIN_PERIOD        (CLKIN_PERIOD),
         .BANDWIDTH           (BANDWIDTH),
+`ifdef CVC
+        .CLKFBOUT_MULT_F     (CLKFBOUT_MULT_REAL),
+        .CLKIN_PERIOD        (CLKIN_PERIOD_REAL),
+`else
         .CLKFBOUT_MULT_F     (CLKFBOUT_MULT),
+        .CLKIN_PERIOD        (CLKIN_PERIOD),
+`endif
         .DIVCLK_DIVIDE       (DIVCLK_DIVIDE),
         .CLKFBOUT_PHASE      (CLKFBOUT_PHASE),
         .CLKOUT0_PHASE       (SDCLK_PHASE),
