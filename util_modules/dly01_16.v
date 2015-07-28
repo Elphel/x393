@@ -25,7 +25,7 @@ module  dly01_16(
     input       rst,
     input [3:0] dly,
     input       din,
-    output reg  dout
+    output      dout
 );
     reg [15:0] sr=0;
 `ifdef SHREG_SEQUENTIAL_RESET
@@ -38,24 +38,11 @@ module  dly01_16(
        if (rst) sr <=0;
        else     sr <= {sr[14:0],din}; 
     end
-`endif    
-    always @ (sr or dly) case (dly)
-        4'h0: dout <= sr[ 0];
-        4'h1: dout <= sr[ 1];
-        4'h2: dout <= sr[ 2];
-        4'h3: dout <= sr[ 3];
-        4'h4: dout <= sr[ 4];
-        4'h5: dout <= sr[ 5];
-        4'h6: dout <= sr[ 6];
-        4'h7: dout <= sr[ 7];
-        4'h8: dout <= sr[ 8];
-        4'h9: dout <= sr[ 9];
-        4'ha: dout <= sr[10];
-        4'hb: dout <= sr[11];
-        4'hc: dout <= sr[12];
-        4'hd: dout <= sr[13];
-        4'he: dout <= sr[14];
-        4'hf: dout <= sr[15];
-        endcase
+`endif
+`ifdef SIMULATION
+    assign dout = (|sr) ? ((&sr) ? 1'b1 : sr[dly]) :  1'b0 ;
+`else
+    assign dout =sr[dly];
+`endif        
 endmodule
 

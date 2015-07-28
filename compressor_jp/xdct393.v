@@ -204,8 +204,8 @@ This value divided by 2raised to 8 is equivalent to ignoring the 8 lsb bits of t
     reg    [ 9:0] xa0_in, xa1_in, xa2_in, xa3_in, xa4_in, xa5_in, xa6_in, xa7_in;
     reg    [ 9:0] xa0_reg, xa1_reg, xa2_reg, xa3_reg, xa4_reg, xa5_reg, xa6_reg, xa7_reg;
 
-//    reg    [ 9:0] addsub1a_comp, addsub2a_comp, addsub3a_comp, addsub4a_comp;
-    reg    [10:0] addsub1a_comp, addsub2a_comp, addsub3a_comp, addsub4a_comp; // AF2015: increasing width - was limiting
+    reg    [ 9:0] addsub1a_comp, addsub2a_comp, addsub3a_comp, addsub4a_comp;
+//    reg    [10:0] addsub1a_comp, addsub2a_comp, addsub3a_comp, addsub4a_comp; // AF2015: increasing width - was limiting
 
     reg    [10:0] add_sub1a, add_sub2a, add_sub3a, add_sub4a;
     reg           save_sign1a, save_sign2a, save_sign3a, save_sign4a;
@@ -358,15 +358,22 @@ This value divided by 2raised to 8 is equivalent to ignoring the 8 lsb bits of t
 // 9th clk for registering shifted input and 10th clk for add_sub
 // to synchronize the i value to the add_sub value, i value is incremented
 // only after 10 clks
+
+// Adding these wires to get rid of the MSB that is always 0
+    wire [10:0] addsub1a_comp_w  = add_sub1a[10]? (-add_sub1a) : add_sub1a;
+    wire [10:0] addsub2a_comp_w  = add_sub2a[10]? (-add_sub2a) : add_sub2a;
+    wire [10:0] addsub3a_comp_w  = add_sub3a[10]? (-add_sub3a) : add_sub3a;
+    wire [10:0] addsub4a_comp_w  = add_sub4a[10]? (-add_sub4a) : add_sub4a;
+    
     always @ (posedge nclk) begin
          save_sign1a     <= add_sub1a[10];
          save_sign2a     <= add_sub2a[10];
          save_sign3a     <= add_sub3a[10];
          save_sign4a     <= add_sub4a[10];
-         addsub1a_comp   <= add_sub1a[10]? (-add_sub1a) : add_sub1a;
-         addsub2a_comp   <= add_sub2a[10]? (-add_sub2a) : add_sub2a;
-         addsub3a_comp   <= add_sub3a[10]? (-add_sub3a) : add_sub3a;
-         addsub4a_comp   <= add_sub4a[10]? (-add_sub4a) : add_sub4a;
+         addsub1a_comp	<= addsub1a_comp_w[9:0]; //add_sub1a[10]? (-add_sub1a) : add_sub1a;
+         addsub2a_comp	<= addsub2a_comp_w[9:0]; //add_sub2a[10]? (-add_sub2a) : add_sub2a;
+         addsub3a_comp	<= addsub3a_comp_w[9:0]; //add_sub3a[10]? (-add_sub3a) : add_sub3a;
+         addsub4a_comp	<= addsub4a_comp_w[9:0]; //add_sub4a[10]? (-add_sub4a) : add_sub4a;
     end
 
     assign p1a_all = addsub1a_comp * memory1a; //[15:0]; // TODO: Check - memory is [16:0] !
@@ -432,8 +439,7 @@ module dct393_stage2 (
     reg    [15:0] xb0_in, xb1_in, xb2_in, xb3_in, xb4_in, xb5_in, xb6_in, xb7_in;
     reg    [15:0] xb0_reg, xb1_reg, xb2_reg, xb3_reg, xb4_reg, xb5_reg, xb6_reg, xb7_reg;
     reg    [16:0] add_sub1b, add_sub2b, add_sub3b, add_sub4b;
-//    reg    [15:0] addsub1b_comp, addsub2b_comp, addsub3b_comp, addsub4b_comp;
-    reg    [16:0] addsub1b_comp, addsub2b_comp, addsub3b_comp, addsub4b_comp; // AF2015: increased to match result
+    reg    [15:0] addsub1b_comp, addsub2b_comp, addsub3b_comp, addsub4b_comp;
     reg           save_sign1b, save_sign2b, save_sign3b, save_sign4b;
     reg    [18:0] p1b, p2b, p3b, p4b;
     wire   [35:0] p1b_all, p2b_all, p3b_all, p4b_all;
@@ -571,16 +577,21 @@ module dct393_stage2 (
             add_sub3b <= {xb5_reg[15],xb5_reg[15:0]} - {xb2_reg[15],xb2_reg[15:0]};
             add_sub4b <= {xb4_reg[15],xb4_reg[15:0]} - {xb3_reg[15],xb3_reg[15:0]};
         end
+// Adding these wires to get rid of the MSB that is always 0
+    wire [16:0] addsub1b_comp_w  = add_sub1b[16]? (-add_sub1b) : add_sub1b;
+    wire [16:0] addsub2b_comp_w  = add_sub2b[16]? (-add_sub2b) : add_sub2b;
+    wire [16:0] addsub3b_comp_w  = add_sub3b[16]? (-add_sub3b) : add_sub3b;
+    wire [16:0] addsub4b_comp_w  = add_sub4b[16]? (-add_sub4b) : add_sub4b;
 
     always @ (posedge clk) begin
         save_sign1b    <= add_sub1b[16];
         save_sign2b    <= add_sub2b[16];
         save_sign3b    <= add_sub3b[16];
         save_sign4b    <= add_sub4b[16];
-        addsub1b_comp    <= add_sub1b[16]? (-add_sub1b) : add_sub1b;
-        addsub2b_comp    <= add_sub2b[16]? (-add_sub2b) : add_sub2b;
-        addsub3b_comp    <= add_sub3b[16]? (-add_sub3b) : add_sub3b;
-        addsub4b_comp    <= add_sub4b[16]? (-add_sub4b) : add_sub4b;
+        addsub1b_comp	<= addsub1b_comp_w[15:0]; // add_sub1b[16]? (-add_sub1b) : add_sub1b;
+        addsub2b_comp	<= addsub2b_comp_w[15:0]; // add_sub2b[16]? (-add_sub2b) : add_sub2b;
+        addsub3b_comp	<= addsub3b_comp_w[15:0]; // add_sub3b[16]? (-add_sub3b) : add_sub3b;
+        addsub4b_comp	<= addsub4b_comp_w[15:0]; // add_sub4b[16]? (-add_sub4b) : add_sub4b;
     end
 
 //    assign p1b_all = addsub1b_comp[15:0] * memory1a[15:0]; // TODO: Check - memory is 16:0

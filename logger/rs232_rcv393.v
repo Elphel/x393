@@ -106,6 +106,6 @@ module  rs232_rcv393(
         ser_do_stb <= sample_bit; 
         
     //    if (ser_rst) debug0[4:0] <=5'b0;
-    //    else debug0[4:0] <= debug | {ts_stb_r,start_r,error,ser_di_d,~ser_di_d};
+    //    else debug0[4:0] <= debug | {ts_stb_r,start_r,error,ser_di_d[0],~ser_di_d[0]};
     end
 endmodule
