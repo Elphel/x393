@@ -36,7 +36,7 @@ module  iserdes_mem #
     output       comb_out  // combinatorial output copies selected input to be used in the fabric     
 );
 
-`ifndef IVERILOG  // Not using simulator - instantiate actual ISERDESE2 (can not be simulated because of encrypted )           
+`ifndef OPEN_SOURCE_ONLY  // Not using simulator - instanciate actual ISERDESE2 (can not be simulated because of encrypted )           
      ISERDESE2 #(
          .DATA_RATE                  ("DDR"),
          .DATA_WIDTH                 (4),
@@ -88,7 +88,7 @@ module  iserdes_mem #
          .SHIFTIN1                   (1'b0),
          .SHIFTIN2                   (1'b0)
          );
-`else // Simulating, use Virtex 6 module that does not have encrypted functionality
+`else //  OPEN_SOURCE_ONLY : Simulating, use Virtex 6 module that does not have encrypted functionality
      ISERDESE1 #(
          .DATA_RATE                  ("DDR"),
          .DATA_WIDTH                 (4),

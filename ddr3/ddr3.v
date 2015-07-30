@@ -528,10 +528,22 @@ module ddr3 (
     integer                rdqs_cntr;
     integer                rdqen_cntr;
     integer                rdq_cntr;
-
-    bufif1 buf_dqs    [DQS_BITS-1:0] (dqs,     dqs_out_dly,  dqs_out_en_dly & {DQS_BITS{out_en}});
-    bufif1 buf_dqs_n  [DQS_BITS-1:0] (dqs_n,   ~dqs_out_dly, dqs_out_en_dly & {DQS_BITS{out_en}});
-    bufif1 buf_dq     [DQ_BITS-1:0]  (dq,      dq_out_dly,   dq_out_en_dly  & {DQ_BITS {out_en}});
+    
+`ifdef CVC
+    wire [DQS_BITS-1:0] dqs_in0 = dqs_out_dly;
+    wire [DQS_BITS-1:0] dqs_in1 = ~dqs_out_dly;
+    wire [DQ_BITS-1:0] dq_in2 = dq_out_dly;
+    wire [DQS_BITS-1:0] dqs_en0 = dqs_out_en_dly & {DQS_BITS{out_en}};
+    wire [DQS_BITS-1:0] dqs_en1 = dqs_out_en_dly & {DQS_BITS{out_en}};
+    wire [DQ_BITS-1:0] dq_en2 = dq_out_en_dly & {DQS_BITS{out_en}};
+    bufif1 buf_dqs    [DQS_BITS-1:0] (dqs,   dqs_in0  ,dqs_en0  );
+    bufif1 buf_dqs_n  [DQS_BITS-1:0] (dqs_n, dqs_in1  ,dqs_en1 );
+    bufif1 buf_dq     [DQ_BITS-1:0]  (dq,  dq_in2    , dq_en2 );
+`else
+    bufif1 buf_dqs    [DQS_BITS-1:0] (dqs,     dqs_out_dly,  dqs_out_en_dly & {DQS_BITS{out_en}     }); 
+    bufif1 buf_dqs_n  [DQS_BITS-1:0] (dqs_n,   ~dqs_out_dly, dqs_out_en_dly & {DQS_BITS{out_en}     }); 
+    bufif1 buf_dq     [DQ_BITS-1:0]  (dq,      dq_out_dly,   dq_out_en_dly  & {DQ_BITS {out_en}     });
+`endif
     assign tdqs_n = {DQS_BITS{1'bz}};
 
     initial begin
@@ -539,8 +551,11 @@ module ddr3 (
             $display("%m ERROR: BL_MAX parameter must be >= 2.  \nBL_MAX = %d", BL_MAX);
         if ((1<<BO_BITS) > BL_MAX) 
             $display("%m ERROR: 2^BO_BITS cannot be greater than BL_MAX parameter.");
-
+`ifdef CVC
+        $timeformat (-12, 1, " ps", 10);
+`else
         $timeformat (-12, 1, " ps", 1);
+`endif
         seed = RANDOM_SEED;
 
         ck_cntr = 0;
@@ -641,9 +656,12 @@ module ddr3 (
         input integer index 
     );
         integer code;
-        integer offset;
+        integer offset; 
         reg [1024:1] msg;
         reg [RFF_BITS:1] read_value;
+`ifdef CVC
+        reg [RFF_BITS*2+8:1] read_str;
+`endif
     
         begin
             offset = index * RFF_CHUNK;
@@ -654,8 +672,12 @@ module ddr3 (
                 $display("%m: at time %t ERROR: fseek to %d failed", $time, offset);
                 $finish;
             end
-        
+`ifdef CVC
+            code = $fgets(read_str, fd);
+            code = $sscanf(read_str, "%h", read_value);
+`else
             code = $fscanf(fd, "%z", read_value);
+`endif
             // $fscanf returns number of items read
             if (code != 1)
             begin
@@ -673,12 +695,21 @@ module ddr3 (
             * Use 0 in bit 1 as indicator that invalid data has been read.
             * A true 0 is encoded as Z.
             */
+`ifdef CVC
+            if (read_value[4:1] === 4'bzzzz)
+                // true 0 encoded as Z, data is valid
+                read_value[4:1] = 4'b0000;
+            else if (read_value[4:1] === 4'b0000)
+                // read from file section that has not been written
+                read_value = 'hx;
+`else
             if (read_value[1] === 1'bz)
                 // true 0 encoded as Z, data is valid
                 read_value[1] = 1'b0;
             else if (read_value[1] === 1'b0)
                 // read from file section that has not been written
                 read_value = 'hx;
+`endif
 
             read_from_file = read_value;
         end
@@ -708,6 +739,15 @@ module ddr3 (
                 $finish;
             end
         
+`ifdef CVC
+            // encode a valid data 
+            if (data[4:1] === 4'bzzzz)
+                data[4:1] = 4'bxxxx;
+            else if (data[4:1] === 4'b0000)
+                data[4:1] = 4'bzzzz;
+
+            $fwrite( fd, "%h", data );
+`else
             // encode a valid data 
             if (data[1] === 1'bz)
                 data[1] = 1'bx;
@@ -715,6 +755,7 @@ module ddr3 (
                 data[1] = 1'bz;
 
             $fwrite( fd, "%z", data );
+`endif
         end
     endtask
 `else
@@ -2229,7 +2270,11 @@ module ddr3 (
                             $display ("%m: at time %t ERROR: tCK(avg) maximum violation by %f ps.", $time, tck_avg - TCK_MAX);
 
                         // check tCL
+`ifdef CVC
+                        if ((tm_ck_neg - $time < TCL_ABS_MIN*tck_avg) && (tm_ck_neg > $time))
+`else
                         if (tm_ck_neg - $time < TCL_ABS_MIN*tck_avg) 
+`endif
                             $display ("%m: at time %t ERROR: tCL(abs) minimum violation on CLK by %t", $time, TCL_ABS_MIN*tck_avg - tm_ck_neg + $time);
                         if (tcl_avg < TCL_AVG_MIN*tck_avg) 
                             $display ("%m: at time %t ERROR: tCL(avg) minimum violation on CLK by %t", $time, TCL_AVG_MIN*tck_avg - tcl_avg);

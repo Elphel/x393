@@ -477,10 +477,22 @@
     parameter TDQSL            =    0.45; // tDQSL      tCK   DQS input Low Pulse Width
     parameter TWPRE            =    0.90; // tWPRE      tCK   DQS Write Preamble
     parameter TWPST            =    0.30; // tWPST      tCK   DQS Write Postamble
+`ifdef CVC
+    integer TZQCS;
+    integer TZQINIT;
+    integer TZQOPER;
+    initial
+    begin
+        TZQCS   =  max( 64, ceil( 80000/TCK_MIN)); // tZQCS      tCK   ZQ Cal (Short) time
+        TZQINIT =  max(512, ceil(640000/TCK_MIN)); // tZQinit    tCK   ZQ Cal (Long) time
+        TZQOPER =  max(256, ceil(320000/TCK_MIN)); // tZQoper    tCK   ZQ Cal (Long) time
+    end
+`else
     // Command and Address
     integer TZQCS              =  max( 64, ceil( 80000/TCK_MIN)); // tZQCS      tCK   ZQ Cal (Short) time
     integer TZQINIT            =  max(512, ceil(640000/TCK_MIN)); // tZQinit    tCK   ZQ Cal (Long) time
     integer TZQOPER            =  max(256, ceil(320000/TCK_MIN)); // tZQoper    tCK   ZQ Cal (Long) time
+`endif
     parameter TCCD             =       4; // tCCD       tCK   Cas to Cas command delay
     parameter TCCD_DG          =       2; // tCCD_DG    tCK   Cas to Cas command delay to different group
     parameter TRAS_MAX         =    60e9; // tRAS       ps    Maximum Active to Precharge command time

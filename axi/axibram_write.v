@@ -21,7 +21,9 @@
  *******************************************************************************/
 //`define DEBUG_FIFO 1 
 `include "system_defines.vh" 
-`undef DEBUG_FIFO
+`ifdef DEBUG_FIFO
+  `undef DEBUG_FIFO
+`endif
 module  axibram_write #(
     parameter ADDRESS_BITS = 10 // number of memory address bits
 )(

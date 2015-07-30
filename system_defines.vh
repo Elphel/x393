@@ -1,6 +1,18 @@
   // This file may be used to define same pre-processor macros to be included into each parsed file
 `ifndef SYSTEM_DEFINES
   `define SYSTEM_DEFINES
+  
+// Enviroment-dependent options
+  `ifdef IVERILOG
+    `define SIMULATION
+    `define OPEN_SOURCE_ONLY
+  `else
+    `ifdef CVC
+      `define SIMULATION
+      `define OPEN_SOURCE_ONLY
+    `endif // CVC
+  `endif // IVERILOG
+  
 // will not use simultaneous reset in shift registers, just and input data with ~rst  
  `define SHREG_SEQUENTIAL_RESET 1
 // synthesis does to recognize global clock as G input of the primitive latch 

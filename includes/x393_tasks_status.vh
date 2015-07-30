@@ -19,7 +19,41 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/> .
  *******************************************************************************/
 
- 
+// CVC bug that is supposed to be already fixed 
+`ifdef CVC 
+task wait_status_condition;
+    input [STATUS_DEPTH-1:0] status_address;
+    input [29:0] status_control_address;
+    input  [1:0] status_mode;
+    input [25:0] pattern;        // bits as in read registers
+    input [25:0] mask;           // which bits to compare
+    input        invert_match;   // 0 - wait until match to pattern (all bits), 1 - wait until no match (any of bits differ)
+    input        wait_seq;
+    reg          match;
+    reg    [5:0] seq_num;
+    reg [31:0] pattern1;
+    reg [31:0] mask1;
+    begin
+        WAITING_STATUS = 1;
+        pattern1 = {6'h0,pattern};
+        mask1 = {6'h0,mask};
+        for (match=0; !match; match = invert_match ^ (((registered_rdata ^ pattern1) & mask1)==0)) begin
+            read_status(status_address);
+            if (wait_seq) begin 
+                seq_num = (registered_rdata[STATUS_SEQ_SHFT+:6] ^ 6'h20)&'h30;
+                write_contol_register(status_control_address, {24'b0,status_mode,seq_num});
+                read_status(status_address);
+                while (((registered_rdata[STATUS_SEQ_SHFT+:6] ^ seq_num) & 6'h30)!=0) begin // match just 2 MSBs
+                    read_status(status_address);
+                end
+            end
+        pattern1 = {6'h0,pattern};
+        mask1 = {6'h0,mask};
+        end
+        WAITING_STATUS = 0;
+    end
+endtask
+`else
 task wait_status_condition;
     input [STATUS_DEPTH-1:0] status_address;
     input [29:0] status_control_address;
@@ -46,6 +80,7 @@ task wait_status_condition;
         WAITING_STATUS = 0;
     end
 endtask    
+`endif
 /*
 task wait_status_condition_auto; // assumes status is already updating
     input [STATUS_DEPTH-1:0] status_address;
