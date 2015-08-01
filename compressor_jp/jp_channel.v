@@ -702,7 +702,7 @@ module  jp_channel#(
         .d_out              (dct_out)              // output[12:0] 
     );
     wire          quant_start;
-    dly_16 #(.WIDTH(1)) i_quant_start (.clk(xclk),.rst(1'b0), .dly(0), .din(dct_pre_first_out), .dout(quant_start));    // dly=0+1
+    dly_16 #(.WIDTH(1)) i_quant_start (.clk(xclk),.rst(1'b0), .dly(4'd0), .din(dct_pre_first_out), .dout(quant_start));    // dly=0+1
  
     
     always @ (posedge xclk) begin

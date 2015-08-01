@@ -1050,6 +1050,16 @@ assign axi_grst = axi_rst_pre;
         .MCNTRL_TILED_STATUS_REG_CHN4_ADDR (MCNTRL_TILED_STATUS_REG_CHN4_ADDR),
         .MCNTRL_TILED_PENDING_CNTR_BITS    (MCNTRL_TILED_PENDING_CNTR_BITS),
         .MCNTRL_TILED_FRAME_PAGE_RESET     (MCNTRL_TILED_FRAME_PAGE_RESET),
+        .MCONTR_LINTILE_NRESET             (MCONTR_LINTILE_NRESET),
+        .MCONTR_LINTILE_EN                 (MCONTR_LINTILE_EN),
+        .MCONTR_LINTILE_WRITE              (MCONTR_LINTILE_WRITE),
+        .MCONTR_LINTILE_EXTRAPG            (MCONTR_LINTILE_EXTRAPG),
+        .MCONTR_LINTILE_EXTRAPG_BITS       (MCONTR_LINTILE_EXTRAPG_BITS),
+        .MCONTR_LINTILE_KEEP_OPEN          (MCONTR_LINTILE_KEEP_OPEN),
+        .MCONTR_LINTILE_BYTE32             (MCONTR_LINTILE_BYTE32),
+        .MCONTR_LINTILE_RST_FRAME          (MCONTR_LINTILE_RST_FRAME),
+        .MCONTR_LINTILE_SINGLE             (MCONTR_LINTILE_SINGLE),
+        .MCONTR_LINTILE_REPEAT             (MCONTR_LINTILE_REPEAT),
         .BUFFER_DEPTH32                    (BUFFER_DEPTH32),
         .RSEL                              (RSEL),
         .WSEL                              (WSEL)
@@ -1833,7 +1843,7 @@ assign axi_grst = axi_rst_pre;
         .status_rq      (status_timing_rq),      // output
         .status_start   (status_timing_start),   // input
         .gpio_in        (gpio_rd),               // input[9:0] 
-        .gpio_out       (gpio_camsync),          // output[9:0] 
+        .gpio_out       (gpio_camsync),          // output[9:0] ([6]-synco0,[7]-syncio0,[8]-synco1,[9]-syncio1)
         .gpio_out_en    (gpio_camsync_en),       // output[9:0] 
         .triggered_mode (trigger_mode),          // output
         .frsync_chn0    (sof_out_mclk[0]),       // input

@@ -412,7 +412,7 @@ end
     assign start_time_out= qv && trailer && (etrax_dma[3:0]== 4'h8) && !size_out_over;
     assign start_sizeout= time_out && (etrax_dma[3:0]== 4'hc);
 // SRL16_1 i_pre_flush_end_delayed (.D(size_out[1]),.Q(pre_flush_end_delayed), .A0(1'b0), .A1(1'b1), .A2(1'b1), .A3(1'b1), .CLK(clk)); // dly=3+1    // rather arbitrary?
-    dly_16 #(.WIDTH(1)) i_pre_flush_end_delayed(.clk(~clk),.rst(1'b0), .dly(14), .din(size_out[1]), .dout(pre_flush_end_delayed));    // dly=14+1 // rather arbitrary?
+    dly_16 #(.WIDTH(1)) i_pre_flush_end_delayed(.clk(~clk),.rst(1'b0), .dly(4'd14), .din(size_out[1]), .dout(pre_flush_end_delayed));    // dly=14+1 // rather arbitrary?
     assign done = flush_end_delayed;
 
     // extract strart of frame run from different clock, re-clock from the source

@@ -75,11 +75,11 @@ module camsync393       #(
                            //     256>=d - repetitive trigger
                            
                            // 4..7 - input trigger delay (in pclk periods) 
-    input                         pclk,    // pixel clock (global) - switch it to 100MHz (mclk/2)?
-    input                         prst,        // @ posedge pclk - sync reset
-    input                  [9:0]  gpio_in, // 12-bit input from GPIO pins -> 10 bit
-    output                 [9:0]  gpio_out,// 12-bit output to GPIO pins
-    output reg             [9:0]  gpio_out_en,// 12-bit output enable to GPIO pins
+    input                         pclk,           // pixel clock (global) - switch it to 100MHz (mclk/2)?
+    input                         prst,           // @ posedge pclk - sync reset
+    input                  [9:0]  gpio_in,        // 10-bit input from GPIO pins -> 10 bit
+    output                 [9:0]  gpio_out,       // 10-bit output to GPIO pins
+    output reg             [9:0]  gpio_out_en,    // 10-bit output enable to GPIO pins
 
     output                        triggered_mode, // use triggered mode (0 - sensors are free-running) @mclk
 

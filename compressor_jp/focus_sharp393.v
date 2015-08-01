@@ -218,8 +218,8 @@ module focus_sharp393(
 
 //    SRL16 i_out_mono   (.Q(out_mono),   .A0(1'b1), .A1(1'b1), .A2(1'b1), .A3(1'b1), .CLK(clk), .D(started_luma)); // timing not critical
 //    SRL16 i_out_window (.Q(out_window), .A0(1'b1), .A1(1'b1), .A2(1'b1), .A3(1'b1), .CLK(clk), .D(in_woi)); // timing not critical
-    dly_16 #(.WIDTH(1)) i_out_mono(.clk(clk),  .rst(1'b0), .dly(15), .din(started_luma), .dout(out_mono));    // timing not critical
-    dly_16 #(.WIDTH(1)) i_out_window(.clk(clk),.rst(1'b0), .dly(15), .din(in_woi),       .dout(out_window));    // timing not critical
+    dly_16 #(.WIDTH(1)) i_out_mono(.clk(clk),  .rst(1'b0), .dly(4'd15), .din(started_luma), .dout(out_mono));    // timing not critical
+    dly_16 #(.WIDTH(1)) i_out_window(.clk(clk),.rst(1'b0), .dly(4'd15), .din(in_woi),       .dout(out_window));    // timing not critical
     
     always @ (posedge clk) begin
         if (start) started_luma <= !tn[2];

@@ -66,16 +66,16 @@ module  timing393       #(
     input                         status_start, // Acknowledge of the first status packet byte (address)
 
     // connection to the general purpose I/O control    
-    input                  [9:0]  gpio_in, // 12-bit input from GPIO pins -> 10 bit
-    output                 [9:0]  gpio_out,// 12-bit output to GPIO pins
-    output                 [9:0]  gpio_out_en,// 12-bit output enable to GPIO pins
+    input                  [9:0]  gpio_in,        // 10-bit input from GPIO pins -> 10 bit
+    output                 [9:0]  gpio_out,       // 10-bit output to GPIO pins
+    output                 [9:0]  gpio_out_en,    // 10-bit output enable to GPIO pins
 
     // common for all sensors - use triggered mode (as opposed to a free-running mode)
     output                        triggered_mode, // use triggered mode (0 - sensors are free-running) @mclk - common to all sensors
 
     // per-channel frame sync inputs and trigger outputs. Both single-cycle mclk pulses
-    input                         frsync_chn0,  // @mclk trigrst,   // single-clock start of frame input (resets trigger output) posedge (@pclk)
-    output                        trig_chn0,    // @mclk 1 cycle-long trigger output
+    input                         frsync_chn0,    // @mclk trigrst,   // single-clock start of frame input (resets trigger output) posedge (@pclk)
+    output                        trig_chn0,      // @mclk 1 cycle-long trigger output
 
     input                         frsync_chn1,  // @mclk trigrst,   // single-clock start of frame input (resets trigger output) posedge (@pclk)
     output                        trig_chn1,    // 1 cycle-long trigger output

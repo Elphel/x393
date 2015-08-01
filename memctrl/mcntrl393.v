@@ -224,7 +224,19 @@ module  mcntrl393 #(
     parameter MCNTRL_TILED_FRAME_PAGE_RESET =1'b0, // reset internal page number to zero at the frame start (false - only when hard/soft reset)                                                     
     parameter BUFFER_DEPTH32=                10,    // Block RAM buffer depth on a 32-bit port
     parameter RSEL=                          1'b1, // late/early READ commands (to adjust timing by 1 SDCLK period)
-    parameter WSEL=                          1'b0  // late/early WRITE commands (to adjust timing by 1 SDCLK period)
+    parameter WSEL=                          1'b0,  // late/early WRITE commands (to adjust timing by 1 SDCLK period)
+    // bits in mode control word
+    parameter MCONTR_LINTILE_NRESET =        0, // reset if 0
+    parameter MCONTR_LINTILE_EN =            1, // enable requests 
+    parameter MCONTR_LINTILE_WRITE =         2, // write to memory mode
+    parameter MCONTR_LINTILE_EXTRAPG =       3, // extra pages (over 1) needed by the client simultaneously
+    parameter MCONTR_LINTILE_EXTRAPG_BITS =  2, // number of bits to use for extra pages
+    parameter MCONTR_LINTILE_KEEP_OPEN =     5, // keep banks open (will be used only if number of rows <= 8)
+    parameter MCONTR_LINTILE_BYTE32 =        6, // use 32-byte wide columns in each tile (false - 16-byte) 
+    parameter MCONTR_LINTILE_RST_FRAME =     8, // reset frame number 
+    parameter MCONTR_LINTILE_SINGLE =        9, // read/write a single page 
+    parameter MCONTR_LINTILE_REPEAT =       10  // read/write pages until disabled 
+    
     ) (
     input                        rst_in,
     input                        clk_in,
@@ -1030,7 +1042,15 @@ module  mcntrl393 #(
                 .MCNTRL_SCANLINE_WINDOW_STARTXY    (MCNTRL_SCANLINE_WINDOW_STARTXY),
                 .MCNTRL_SCANLINE_STATUS_REG_ADDR   (MCONTR_SENS_STATUS_BASE + MCONTR_SENS_STATUS_INC * i),
                 .MCNTRL_SCANLINE_PENDING_CNTR_BITS (MCNTRL_SCANLINE_PENDING_CNTR_BITS),
-                .MCNTRL_SCANLINE_FRAME_PAGE_RESET  (MCNTRL_SCANLINE_FRAME_PAGE_RESET)
+                .MCNTRL_SCANLINE_FRAME_PAGE_RESET  (MCNTRL_SCANLINE_FRAME_PAGE_RESET),
+                .MCONTR_LINTILE_NRESET             (MCONTR_LINTILE_NRESET),
+                .MCONTR_LINTILE_EN                 (MCONTR_LINTILE_EN),
+                .MCONTR_LINTILE_WRITE              (MCONTR_LINTILE_WRITE),
+                .MCONTR_LINTILE_EXTRAPG            (MCONTR_LINTILE_EXTRAPG),
+                .MCONTR_LINTILE_EXTRAPG_BITS       (MCONTR_LINTILE_EXTRAPG_BITS),
+                .MCONTR_LINTILE_RST_FRAME          (MCONTR_LINTILE_RST_FRAME),
+                .MCONTR_LINTILE_SINGLE             (MCONTR_LINTILE_SINGLE),
+                .MCONTR_LINTILE_REPEAT             (MCONTR_LINTILE_REPEAT)
             ) mcntrl_linear_wr_sensor_i (
                 .mrst             (mrst),                       // input
                 .mclk             (mclk),                       // input
@@ -1082,7 +1102,17 @@ module  mcntrl393 #(
                 .MCNTRL_TILED_TILE_WHS         (MCNTRL_TILED_TILE_WHS),
                 .MCNTRL_TILED_STATUS_REG_ADDR  (MCONTR_CMPRS_STATUS_BASE + MCONTR_CMPRS_STATUS_INC * i),
                 .MCNTRL_TILED_PENDING_CNTR_BITS(MCNTRL_TILED_PENDING_CNTR_BITS),
-                .MCNTRL_TILED_FRAME_PAGE_RESET (MCNTRL_TILED_FRAME_PAGE_RESET)
+                .MCNTRL_TILED_FRAME_PAGE_RESET (MCNTRL_TILED_FRAME_PAGE_RESET),
+                .MCONTR_LINTILE_NRESET         (MCONTR_LINTILE_NRESET),
+                .MCONTR_LINTILE_EN             (MCONTR_LINTILE_EN),
+                .MCONTR_LINTILE_WRITE          (MCONTR_LINTILE_WRITE),
+                .MCONTR_LINTILE_EXTRAPG        (MCONTR_LINTILE_EXTRAPG),
+                .MCONTR_LINTILE_EXTRAPG_BITS   (MCONTR_LINTILE_EXTRAPG_BITS),
+                .MCONTR_LINTILE_KEEP_OPEN      (MCONTR_LINTILE_KEEP_OPEN),
+                .MCONTR_LINTILE_BYTE32         (MCONTR_LINTILE_BYTE32),
+                .MCONTR_LINTILE_RST_FRAME      (MCONTR_LINTILE_RST_FRAME),
+                .MCONTR_LINTILE_SINGLE         (MCONTR_LINTILE_SINGLE),
+                .MCONTR_LINTILE_REPEAT         (MCONTR_LINTILE_REPEAT)
             ) mcntrl_tiled_rd_compressor_i ( 
                 .mrst                 (mrst),                         // input
                 .mclk                 (mclk),                        // input
@@ -1143,7 +1173,15 @@ module  mcntrl393 #(
         .MCNTRL_SCANLINE_WINDOW_STARTXY    (MCNTRL_SCANLINE_WINDOW_STARTXY),
         .MCNTRL_SCANLINE_STATUS_REG_ADDR   (MCNTRL_SCANLINE_STATUS_REG_CHN1_ADDR),
         .MCNTRL_SCANLINE_PENDING_CNTR_BITS (MCNTRL_SCANLINE_PENDING_CNTR_BITS),
-        .MCNTRL_SCANLINE_FRAME_PAGE_RESET  (MCNTRL_SCANLINE_FRAME_PAGE_RESET)
+        .MCNTRL_SCANLINE_FRAME_PAGE_RESET  (MCNTRL_SCANLINE_FRAME_PAGE_RESET),
+        .MCONTR_LINTILE_NRESET             (MCONTR_LINTILE_NRESET),
+        .MCONTR_LINTILE_EN                 (MCONTR_LINTILE_EN),
+        .MCONTR_LINTILE_WRITE              (MCONTR_LINTILE_WRITE),
+        .MCONTR_LINTILE_EXTRAPG            (MCONTR_LINTILE_EXTRAPG),
+        .MCONTR_LINTILE_EXTRAPG_BITS       (MCONTR_LINTILE_EXTRAPG_BITS),
+        .MCONTR_LINTILE_RST_FRAME          (MCONTR_LINTILE_RST_FRAME),
+        .MCONTR_LINTILE_SINGLE             (MCONTR_LINTILE_SINGLE),
+        .MCONTR_LINTILE_REPEAT             (MCONTR_LINTILE_REPEAT)
     ) mcntrl_linear_rw_chn1_i (
         .mrst             (mrst), // input
         .mclk             (mclk), // input
@@ -1193,7 +1231,15 @@ module  mcntrl393 #(
         .MCNTRL_SCANLINE_WINDOW_STARTXY    (MCNTRL_SCANLINE_WINDOW_STARTXY),
         .MCNTRL_SCANLINE_STATUS_REG_ADDR   (MCNTRL_SCANLINE_STATUS_REG_CHN3_ADDR),
         .MCNTRL_SCANLINE_PENDING_CNTR_BITS (MCNTRL_SCANLINE_PENDING_CNTR_BITS),
-        .MCNTRL_SCANLINE_FRAME_PAGE_RESET  (MCNTRL_SCANLINE_FRAME_PAGE_RESET)
+        .MCNTRL_SCANLINE_FRAME_PAGE_RESET  (MCNTRL_SCANLINE_FRAME_PAGE_RESET),
+        .MCONTR_LINTILE_NRESET             (MCONTR_LINTILE_NRESET),
+        .MCONTR_LINTILE_EN                 (MCONTR_LINTILE_EN),
+        .MCONTR_LINTILE_WRITE              (MCONTR_LINTILE_WRITE),
+        .MCONTR_LINTILE_EXTRAPG            (MCONTR_LINTILE_EXTRAPG),
+        .MCONTR_LINTILE_EXTRAPG_BITS       (MCONTR_LINTILE_EXTRAPG_BITS),
+        .MCONTR_LINTILE_RST_FRAME          (MCONTR_LINTILE_RST_FRAME),
+        .MCONTR_LINTILE_SINGLE             (MCONTR_LINTILE_SINGLE),
+        .MCONTR_LINTILE_REPEAT             (MCONTR_LINTILE_REPEAT)
     ) mcntrl_linear_rw_chn3_i (
         .mrst             (mrst), // input
         .mclk             (mclk), // input
@@ -1245,7 +1291,16 @@ module  mcntrl393 #(
         .MCNTRL_TILED_TILE_WHS         (MCNTRL_TILED_TILE_WHS),
         .MCNTRL_TILED_STATUS_REG_ADDR  (MCNTRL_TILED_STATUS_REG_CHN2_ADDR),
         .MCNTRL_TILED_PENDING_CNTR_BITS(MCNTRL_TILED_PENDING_CNTR_BITS),
-        .MCNTRL_TILED_FRAME_PAGE_RESET (MCNTRL_TILED_FRAME_PAGE_RESET)
+        .MCONTR_LINTILE_NRESET         (MCONTR_LINTILE_NRESET),
+        .MCONTR_LINTILE_EN             (MCONTR_LINTILE_EN),
+        .MCONTR_LINTILE_WRITE          (MCONTR_LINTILE_WRITE),
+        .MCONTR_LINTILE_EXTRAPG        (MCONTR_LINTILE_EXTRAPG),
+        .MCONTR_LINTILE_EXTRAPG_BITS   (MCONTR_LINTILE_EXTRAPG_BITS),
+        .MCONTR_LINTILE_KEEP_OPEN      (MCONTR_LINTILE_KEEP_OPEN),
+        .MCONTR_LINTILE_BYTE32         (MCONTR_LINTILE_BYTE32),
+        .MCONTR_LINTILE_RST_FRAME      (MCONTR_LINTILE_RST_FRAME),
+        .MCONTR_LINTILE_SINGLE         (MCONTR_LINTILE_SINGLE),
+        .MCONTR_LINTILE_REPEAT         (MCONTR_LINTILE_REPEAT)
     ) mcntrl_tiled_rw_chn2_i ( 
         .mrst                 (mrst),                       // input
         .mclk                 (mclk),                       // input
@@ -1301,7 +1356,16 @@ module  mcntrl393 #(
         .MCNTRL_TILED_TILE_WHS         (MCNTRL_TILED_TILE_WHS),
         .MCNTRL_TILED_STATUS_REG_ADDR  (MCNTRL_TILED_STATUS_REG_CHN4_ADDR),
         .MCNTRL_TILED_PENDING_CNTR_BITS(MCNTRL_TILED_PENDING_CNTR_BITS),
-        .MCNTRL_TILED_FRAME_PAGE_RESET (MCNTRL_TILED_FRAME_PAGE_RESET)
+        .MCONTR_LINTILE_NRESET         (MCONTR_LINTILE_NRESET),
+        .MCONTR_LINTILE_EN             (MCONTR_LINTILE_EN),
+        .MCONTR_LINTILE_WRITE          (MCONTR_LINTILE_WRITE),
+        .MCONTR_LINTILE_EXTRAPG        (MCONTR_LINTILE_EXTRAPG),
+        .MCONTR_LINTILE_EXTRAPG_BITS   (MCONTR_LINTILE_EXTRAPG_BITS),
+        .MCONTR_LINTILE_KEEP_OPEN      (MCONTR_LINTILE_KEEP_OPEN),
+        .MCONTR_LINTILE_BYTE32         (MCONTR_LINTILE_BYTE32),
+        .MCONTR_LINTILE_RST_FRAME      (MCONTR_LINTILE_RST_FRAME),
+        .MCONTR_LINTILE_SINGLE         (MCONTR_LINTILE_SINGLE),
+        .MCONTR_LINTILE_REPEAT         (MCONTR_LINTILE_REPEAT)
     ) mcntrl_tiled_rw_chn4_i ( 
         .mrst                 (mrst),                       // input
         .mclk                 (mclk),                       // input

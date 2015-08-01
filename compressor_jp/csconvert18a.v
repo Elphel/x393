@@ -272,15 +272,15 @@ module csconvert18a(
   assign caddr =    caddr_r;
   assign cwe =      cwe_r;
   
-    dly_16 #(.WIDTH(1)) i_strt_dly0 (.clk(CLK),.rst(1'b0), .dly(15), .din(pre_first_in), .dout(strt_dly[0]));
-    dly_16 #(.WIDTH(1)) i_strt_dly1 (.clk(CLK),.rst(1'b0), .dly(15), .din(strt_dly[0]),  .dout(strt_dly[1]));
-    dly_16 #(.WIDTH(1)) i_strt      (.clk(CLK),.rst(1'b0), .dly( 4), .din(strt_dly[1]),  .dout(strt));
+    dly_16 #(.WIDTH(1)) i_strt_dly0 (.clk(CLK),.rst(1'b0), .dly(4'd15), .din(pre_first_in), .dout(strt_dly[0]));
+    dly_16 #(.WIDTH(1)) i_strt_dly1 (.clk(CLK),.rst(1'b0), .dly(4'd15), .din(strt_dly[0]),  .dout(strt_dly[1]));
+    dly_16 #(.WIDTH(1)) i_strt      (.clk(CLK),.rst(1'b0), .dly( 4'd4), .din(strt_dly[1]),  .dout(strt));
   
 //  SRL16 i_strt_dly0  (.Q(strt_dly[0]),  .D(pre_first_in),                                  .CLK(CLK),   .A0(1'b1),  .A1(1'b1), .A2(1'b1), .A3(1'b1)); // dly=15+1
 //  SRL16 i_strt_dly1  (.Q(strt_dly[1]),  .D(strt_dly[0]),                                   .CLK(CLK),   .A0(1'b1),  .A1(1'b1), .A2(1'b1), .A3(1'b1)); // dly=15+1
 //  SRL16 i_strt       (.Q(strt),         .D(strt_dly[1]),                                   .CLK(CLK),   .A0(1'b0),  .A1(1'b0), .A2(1'b1), .A3(1'b0)); // dly=4+1
-    dly_16 #(.WIDTH(1)) i_ystrt   (.clk(CLK),.rst(1'b0), .dly(5), .din(strt), .dout(ystrt));
-    dly_16 #(.WIDTH(1)) i_nxtline (.clk(CLK),.rst(1'b0), .dly(1), .din(!RST && ywe_r && (yaddr_r[3:0]==4'hf) && (yaddr_r[7:4]!=4'hf)), .dout(nxtline));
+    dly_16 #(.WIDTH(1)) i_ystrt   (.clk(CLK),.rst(1'b0), .dly(4'd5), .din(strt), .dout(ystrt));
+    dly_16 #(.WIDTH(1)) i_nxtline (.clk(CLK),.rst(1'b0), .dly(4'd1), .din(!RST && ywe_r && (yaddr_r[3:0]==4'hf) && (yaddr_r[7:4]!=4'hf)), .dout(nxtline));
 
 //  SRL16 i_ystrt  (.Q(ystrt),  .D(strt),                                                    .CLK(CLK),   .A0(1'b1),  .A1(1'b0), .A2(1'b1), .A3(1'b0));	// dly=5+1
 //  SRL16 i_nxtline(.Q(nxtline),.D(!RST && ywe_r && (yaddr_r[3:0]==4'hf) && (yaddr_r[7:4]!=4'hf)), .CLK(CLK),   .A0(1'b1),  .A1(1'b0), .A2(1'b0), .A3(1'b0));	// dly=1+1
@@ -595,7 +595,7 @@ end
 // new, q is signed char
   assign q[8:0]=  ((cbcr[10]==cbcr[9]) && (!limit_diff || (cbcr[10]==cbcr[8])))? cbcr[9:1]: {cbcr[10],limit_diff?cbcr[10]:(~cbcr[10]),{7{~cbcr[10]}}};
 
-dly_16 #(.WIDTH(1)) i_cwe0 (.clk(CLK),.rst(1'b0), .dly(1), .din(ywe_r), .dout(cwe0));
+dly_16 #(.WIDTH(1)) i_cwe0 (.clk(CLK),.rst(1'b0), .dly(4'd1), .din(ywe_r), .dout(cwe0));
 //SRL16 i_cwe0    (.D(ywe_r ),  .Q(cwe0), .A0(1'b1), .A1(1'b0), .A2(1'b0), .A3(1'b0), .CLK(CLK)); // dly=2=1+1
 
 always @ (posedge CLK) begin

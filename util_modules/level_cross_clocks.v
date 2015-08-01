@@ -56,17 +56,18 @@ module  level_cross_clocks#(
 endmodule
 
 module  level_cross_clocks_single_bit#(
-    parameter REGISTER = 3 // number of registers (>3)
+    parameter REGISTER = 3 // number of registers (>=3)
 )(
     input   clk,
     input   d_in,
     output  d_out
 );
-    reg [REGISTER - 3 : 0] regs;
-    wire                   d_sync; // after a 2-bit synchronizer
+    reg  [REGISTER - 3 : 0] regs = 0;
+    wire                    d_sync; // after a 2-bit synchronizer
+    wire [REGISTER - 2 : 0] regs_next = {regs, d_sync};
     assign d_out = regs[REGISTER -3];
     always @ (posedge clk) begin
-        regs <= (regs << 1) + d_sync; // | d_in complains about widths mismatch
+        regs <= regs_next[REGISTER - 3 : 0]; // | d_in complains about widths mismatch
     end
     level_cross_clocks_sync_bit level_cross_clocks_sync_bit_i (
         .clk   (clk), // input

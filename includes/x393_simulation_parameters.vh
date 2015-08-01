@@ -25,4 +25,9 @@
     parameter integer AXI_TASK_HOLD=1.0,
     
 //    parameter [1:0] DEFAULT_STATUS_MODE=3,
-    parameter       SIMUL_AXI_READ_WIDTH=16
+    parameter       SIMUL_AXI_READ_WIDTH=16,
+    
+    parameter       MEMCLK_PERIOD = 5.0,
+    parameter       FCLK0_PERIOD = 10.417,
+    parameter       FCLK1_PERIOD =  0.0
+    

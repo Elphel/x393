@@ -32,7 +32,7 @@ module  cmprs_afi_mux#(
     parameter CMPRS_AFIMUX_STATUS_REG_ADDR=     'h20,  //Uses 4 locations TODO: assign valid address
     parameter CMPRS_AFIMUX_WIDTH =              26, // maximal for status: currently only works with 26)
     parameter CMPRS_AFIMUX_CYCBITS =            3,
-    parameter AFI_MUX_BUF_LATENCY =             2  // buffers read latency from fifo_ren* to fifo_rdata* valid : 2 if no register layers are used
+    parameter AFI_MUX_BUF_LATENCY =             4'd2  // buffers read latency from fifo_ren* to fifo_rdata* valid : 2 if no register layers are used
 )(
 //    input                         rst,
     input                         mclk, // for command/status
@@ -370,13 +370,13 @@ module  cmprs_afi_mux#(
         .din       ({    wvalid,     wlast, afi_awid}), // input[0:0] 
         .dout      ({afi_wvalid, afi_wlast, afi_wid}) // output[0:0] 
     );
-
+    localparam [3:0] AFI_MUX_BUF_LATENCYM1 = AFI_MUX_BUF_LATENCY - 1;
     dly_16 #(
         .WIDTH(3)
     ) afi_wdata_i (
         .clk       (hclk), // input
         .rst       (!en),  // input
-        .dly       (AFI_MUX_BUF_LATENCY-1), // input[3:0] will delay by AFI_MUX_BUF_LATENCY+1 (normally 3) 
+        .dly       (AFI_MUX_BUF_LATENCYM1), // input[3:0] will delay by AFI_MUX_BUF_LATENCY+1 (normally 3) 
         .din       ({wvalid, cur_chn}), // input[0:0] 
         .dout      ({wdata_en,wdata_sel}) // output[0:0] 
     );

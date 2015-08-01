@@ -110,7 +110,7 @@ module  compressor393 # (
     
         parameter CMPRS_AFIMUX_WIDTH =         26, // maximal for status: currently only works with 26)
         parameter CMPRS_AFIMUX_CYCBITS =        3,
-        parameter AFI_MUX_BUF_LATENCY =         2  // buffers read latency from fifo_ren* to fifo_rdata* valid : 2 if no register layers are used
+        parameter AFI_MUX_BUF_LATENCY =      4'd2  // buffers read latency from fifo_ren* to fifo_rdata* valid : 2 if no register layers are used
 
 )(
 //    input                         rst,    // global reset
@@ -275,12 +275,12 @@ module  compressor393 # (
         .rq_in5      (status_rq_mux[5]),        // input
         .start_in5   (status_start_mux[5]),     // output
         
-        .db_in6      (0),                       // input[7:0] 
-        .rq_in6      (0),                       // input
+        .db_in6      (8'b0),                    // input[7:0] 
+        .rq_in6      (1'b0),                    // input
         .start_in6   (),                        // output
         
-        .db_in7      (0),                       // input[7:0] 
-        .rq_in7      (0),                       // input
+        .db_in7      (8'b0),                    // input[7:0] 
+        .rq_in7      (1'b0),                    // input
         .start_in7   (),                        // output
         
         .db_out      (status_ad),               // output[7:0] 
@@ -451,16 +451,16 @@ module  compressor393 # (
                 .fifo_count1      (fifo_count[8 +: 8]),     // input[7:0] 
                 .fifo_rst2        (),                       // output
                 .fifo_ren2        (),                       // output
-                .fifo_rdata2      (0),                      // input[63:0] 
+                .fifo_rdata2      (64'b0),                  // input[63:0] 
                 .eof_written2     (),                       // output
-                .fifo_flush2      (0),                      // input
-                .fifo_count2      (0),                      // input[7:0] 
+                .fifo_flush2      (1'b0),                   // input
+                .fifo_count2      (8'b0),                   // input[7:0] 
                 .fifo_rst3        (),                       // output
                 .fifo_ren3        (),                       // output
-                .fifo_rdata3      (0),                      // input[63:0] 
+                .fifo_rdata3      (64'b0),                  // input[63:0] 
                 .eof_written3     (),                       // output
-                .fifo_flush3      (0),                      // input
-                .fifo_count3      (0),                      // input[7:0] 
+                .fifo_flush3      (1'b0),                   // input
+                .fifo_count3      (8'b0),                   // input[7:0] 
                 .afi_awaddr       (afi0_awaddr),            // output[31:0] 
                 .afi_awvalid      (afi0_awvalid),           // output
                 .afi_awready      (afi0_awready),           // input
@@ -524,16 +524,16 @@ module  compressor393 # (
                 .fifo_count1      (fifo_count[24 +: 8]),     // input[7:0] 
                 .fifo_rst2        (),                       // output
                 .fifo_ren2        (),                       // output
-                .fifo_rdata2      (0),                      // input[63:0] 
+                .fifo_rdata2      (64'b0),                  // input[63:0] 
                 .eof_written2     (),                       // output
-                .fifo_flush2      (0),                      // input
-                .fifo_count2      (0),                      // input[7:0] 
+                .fifo_flush2      (1'b0),                   // input
+                .fifo_count2      (8'b0),                   // input[7:0] 
                 .fifo_rst3        (),                       // output
                 .fifo_ren3        (),                       // output
-                .fifo_rdata3      (0),                      // input[63:0] 
+                .fifo_rdata3      (64'b0),                  // input[63:0] 
                 .eof_written3     (),                       // output
-                .fifo_flush3      (0),                      // input
-                .fifo_count3      (0),                      // input[7:0] 
+                .fifo_flush3      (1'b0),                   // input
+                .fifo_count3      (8'b0),                   // input[7:0] 
                 .afi_awaddr       (afi1_awaddr),            // output[31:0] 
                 .afi_awvalid      (afi1_awvalid),           // output
                 .afi_awready      (afi1_awready),           // input

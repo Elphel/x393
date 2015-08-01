@@ -295,7 +295,7 @@ module  sens_gamma #(
     ) dly_16_pxd_i (
         .clk (pclk),        // input
         .rst (prst),        // input
-        .dly (3),           // input[3:0] 
+        .dly (4'd3),           // input[3:0] 
         .din (pxd_in[7:0]), // input[0:0] 
         .dout(pxd_in_d3)    // output[0:0] 
     );
@@ -305,7 +305,7 @@ module  sens_gamma #(
     ) dly_16_sof_eof_i (
         .clk (pclk),        // input
         .rst (prst),         // input
-        .dly (4),           // input[3:0] 
+        .dly (4'd4),           // input[3:0] 
         .din ({eof_in, sof_masked}), // input[0:0] 
         .dout({eof_out,sof_out})    // output[0:0] 
     );

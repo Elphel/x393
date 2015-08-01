@@ -236,14 +236,14 @@ This value divided by 2raised to 8 is equivalent to ignoring the 8 lsb bits of t
     wire          sxregs_d8;
     reg           enable_toggle;
 //  SRL16_1 i_sxregs_d8   (.Q(sxregs_d8), .A0(1'b1), .A1(1'b1), .A2(1'b1), .A3(1'b0), .CLK(clk),.D(sxregs));    // dly=7+1
-    dly_16 #(.WIDTH(1)) i_sxregs_d8(.clk(nclk),.rst(1'b0), .dly(7), .din(sxregs), .dout(sxregs_d8));   // dly=7+1
+    dly_16 #(.WIDTH(1)) i_sxregs_d8(.clk(nclk),.rst(1'b0), .dly(4'd7), .din(sxregs), .dout(sxregs_d8));   // dly=7+1
     
     
 // SRL16_1 i_pre_sxregs (.Q(pre_sxregs), .A0(1'b0), .A1(1'b1), .A2(1'b1), .A3(1'b0), .CLK(clk), .D(start));    // dly=6+1
-    dly_16 #(.WIDTH(1)) i_pre_sxregs(.clk(nclk),.rst(1'b0), .dly(6), .din(start), .dout(pre_sxregs));    // dly=6+1
+    dly_16 #(.WIDTH(1)) i_pre_sxregs(.clk(nclk),.rst(1'b0), .dly(4'd6), .din(start), .dout(pre_sxregs));    // dly=6+1
     
 // SRL16_1 i_enwe       (.Q(enwe), .A0(1'b1), .A1(1'b0), .A2(1'b1), .A3(1'b0), .CLK(clk), .D(pre_sxregs));    // dly=5+1
-    dly_16 #(.WIDTH(1)) i_enwe(.clk(nclk),.rst(1'b0), .dly(5), .din(pre_sxregs), .dout(enwe));    // dly=5+1
+    dly_16 #(.WIDTH(1)) i_enwe(.clk(nclk),.rst(1'b0), .dly(4'd5), .din(pre_sxregs), .dout(enwe));    // dly=5+1
   
     always @ (posedge nclk) begin
         enable_toggle <= en && (sxregs || (enable_toggle && !sxregs_d8));
@@ -463,16 +463,16 @@ module dct393_stage2 (
     
 
 // SRL16 i_endv       (.Q(endv), .A0(1'b0), .A1(1'b1), .A2(1'b1), .A3(1'b1), .CLK(clk), .D(start));    // dly=14+1
-    dly_16 #(.WIDTH(1)) i_endv(.clk(clk),.rst(1'b0), .dly(14), .din(start), .dout(endv));    // dly=14+1
+    dly_16 #(.WIDTH(1)) i_endv(.clk(clk),.rst(1'b0), .dly(4'd14), .din(start), .dout(endv));    // dly=14+1
  
 // SRL16 i_disdv      (.Q(disdv), .A0(1'b0), .A1(1'b1), .A2(1'b1), .A3(1'b1), .CLK(clk), .D(rd_cntr[5:0]==6'h3f));    // dly=14+1
-    dly_16 #(.WIDTH(1)) i_disdv(.clk(clk),.rst(1'b0), .dly(14), .din(rd_cntr[5:0]==6'h3f), .dout(disdv));    // dly=14+1
+    dly_16 #(.WIDTH(1)) i_disdv(.clk(clk),.rst(1'b0), .dly(4'd14), .din(rd_cntr[5:0]==6'h3f), .dout(disdv));    // dly=14+1
 
 // SRL16 i_sxregs      (.Q(sxregs),    .A0(1'b0), .A1(1'b0), .A2(1'b0), .A3(1'b1), .CLK(clk),.D((rd_cntr[5:3]==3'h0) && en_started));    // dly=8+1
-    dly_16 #(.WIDTH(1)) i_sxregs(.clk(clk),.rst(1'b0), .dly(8), .din((rd_cntr[5:3]==3'h0) && en_started), .dout(sxregs));    // dly=8+1
+    dly_16 #(.WIDTH(1)) i_sxregs(.clk(clk),.rst(1'b0), .dly(4'd8), .din((rd_cntr[5:3]==3'h0) && en_started), .dout(sxregs));    // dly=8+1
 
 // SRL16 i_sxregs_d8   (.Q(sxregs_d8), .A0(1'b1), .A1(1'b1), .A2(1'b1), .A3(1'b0), .CLK(clk),.D(sxregs && en_started));    // dly=7+1
-    dly_16 #(.WIDTH(1)) i_sxregs_d8(.clk(clk),.rst(1'b0), .dly(7), .din(sxregs && en_started), .dout(sxregs_d8));    // dly=7+1
+    dly_16 #(.WIDTH(1)) i_sxregs_d8(.clk(clk),.rst(1'b0), .dly(4'd7), .din(sxregs && en_started), .dout(sxregs_d8));    // dly=7+1
 
     always @ (posedge clk) begin 
         enable_toggle <= en && (sxregs || (enable_toggle && !sxregs_d8));

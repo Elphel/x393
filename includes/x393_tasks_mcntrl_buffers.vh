@@ -69,7 +69,7 @@ task write_block_incremtal;
                     i,        // id
                     start_value+i+j,
                     4'hf, // wstrb
-                    (j == 15) ? 1 : 0 // last
+                    (j == 15) ? 1'b1 : 1'b0 // last
                     );
                 $display(" Write block incremental (addr:data): 0x%08x:0x%x @%t", (i + j), start_value+i+j, $time);
             end
@@ -122,7 +122,7 @@ task write_block_buf;
                     i,        // id
                     (i + j) | ((((i + j) + 7) & 'hff) << 8) | ((((i + j) + 23) & 'hff) << 16) | ((((i + j) + 31) & 'hff) << 24),
                     4'hf, // wstrb
-                    (j == 15) ? 1 : 0 // last
+                    (j == 15) ? 1'b1 : 1'b0 // last
                     );
                 $display(" Write block data (addr:data): 0x%08x:0x%x @%t", (i + j),
                     (i + j) | ((((i + j) + 7) & 'hff) << 8) | ((((i + j) + 23) & 'hff) << 16) | ((((i + j) + 31) & 'hff) << 24), $time);

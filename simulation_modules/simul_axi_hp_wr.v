@@ -36,7 +36,7 @@ module  simul_axi_hp_wr#(
     input  [ 3:0] awcache,  // verify the corerct values are here
     input  [ 2:0] awprot,   // verify the corerct values are here
     input  [ 3:0] awlen,
-    input  [ 2:0] awsize,
+    input  [ 1:0] awsize,
     input  [ 1:0] awburst,
     input  [ 3:0] awqos,    // verify the correct values are here
     // write data
@@ -117,7 +117,7 @@ Alex
 
     wire  [5:0] awid_out; // verify it matches wid_out when outputting data
     wire  [1:0] awburst_out;
-    wire  [2:0] awsize_out; // verify it is 3'h3
+    wire  [1:0] awsize_out; // verify it is 3'h3
     wire  [3:0] awlen_out;
     wire [31:0] awaddr_out;
     wire  [5:0] wid_out;
@@ -235,7 +235,7 @@ Alex
                 $stop;
             end
     
-            if (awsize_out != 3'h3) begin
+            if (awsize_out != 2'h3) begin
                 $display ("%m: at time %t ERROR: awsize_out=%h, currently only 'h3 (8 bytes) is valid",$time,awsize_out);
                 $stop;
             end
@@ -280,15 +280,15 @@ Alex
         
        
 
-fifo_same_clock_fill   #( .DATA_WIDTH(51),.DATA_DEPTH(5)) // read - 4, write - 32?
+fifo_same_clock_fill   #( .DATA_WIDTH(50),.DATA_DEPTH(5)) // read - 4, write - 32?
     waddr_i (
         .rst       (rst),
         .clk       (aclk),
         .sync_rst  (1'b0),
         .we        (awvalid && awready),
         .re        (start_write_burst_w),
-        .data_in   ({awid[5:0],     awburst[1:0],    awsize[2:0],    awlen[3:0],    awaddr[31:0],     wr_qos_in[3:0]}),
-        .data_out  ({awid_out[5:0], awburst_out[1:0],awsize_out[2:0],awlen_out[3:0],awaddr_out[31:0], wr_qos_out[3:0]}),
+        .data_in   ({awid[5:0],     awburst[1:0],    awsize[1:0],    awlen[3:0],    awaddr[31:0],     wr_qos_in[3:0]}),
+        .data_out  ({awid_out[5:0], awburst_out[1:0],awsize_out[1:0],awlen_out[3:0],awaddr_out[31:0], wr_qos_out[3:0]}),
         .nempty    (aw_nempty),
         .half_full (), //aw_half_full),
         .under      (), //waddr_under), // output reg 

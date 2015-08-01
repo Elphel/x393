@@ -36,7 +36,7 @@ module  simul_axi_hp_rd #(
     input  [ 3:0] arcache,
     input  [ 2:0] arprot,
     input  [ 3:0] arlen,
-    input  [ 2:0] arsize,
+    input  [ 1:0] arsize,
     input  [ 1:0] arburst,
     input  [ 3:0] arqos,
     // read data
@@ -104,7 +104,7 @@ module  simul_axi_hp_rd #(
 
     wire  [5:0] arid_out; // verify it matches wid_out when outputting data
     wire  [1:0] arburst_out;
-    wire  [2:0] arsize_out; // verify it is 3'h3
+    wire  [1:0] arsize_out; // verify it is 3'h3
     wire  [3:0] arlen_out;
     wire [31:0] araddr_out;
     wire        ar_nempty;
@@ -197,7 +197,7 @@ module  simul_axi_hp_rd #(
     
     always @ (posedge  aclk) begin
         if (start_read_burst_w) begin
-            if (arsize_out != 3'h3) begin
+            if (arsize_out != 2'h3) begin
                 $display ("%m: at time %t ERROR: arsize_out=%h, currently only 'h3 (8 bytes) is valid",$time,arsize_out);
                 $stop;
             end
@@ -254,15 +254,15 @@ module  simul_axi_hp_rd #(
     end
 
 
-fifo_same_clock_fill   #( .DATA_WIDTH(51),.DATA_DEPTH(2)) // read - 4, write - 32?
+fifo_same_clock_fill   #( .DATA_WIDTH(50),.DATA_DEPTH(2)) // read - 4, write - 32?
     raddr_i (
         .rst       (rst),
         .clk       (aclk),
         .sync_rst  (1'b0),
         .we        (arvalid && arready),
         .re        (start_read_burst_w),
-        .data_in   ({arid[5:0],     arburst[1:0],    arsize[2:0],    arlen[3:0],    araddr[31:0],     rd_qos_in[3:0]}),
-        .data_out  ({arid_out[5:0], arburst_out[1:0],arsize_out[2:0],arlen_out[3:0],araddr_out[31:0], rd_qos_out[3:0]}),
+        .data_in   ({arid[5:0],     arburst[1:0],    arsize[1:0],    arlen[3:0],    araddr[31:0],     rd_qos_in[3:0]}),
+        .data_out  ({arid_out[5:0], arburst_out[1:0],arsize_out[1:0],arlen_out[3:0],araddr_out[31:0], rd_qos_out[3:0]}),
         .nempty    (ar_nempty),
         .half_full (), //aw_half_full),
         .under      (), //waddr_under), // output reg 

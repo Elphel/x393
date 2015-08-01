@@ -30,13 +30,18 @@ module  sync_resets#(
     input  [WIDTH-1:0] clk,     // clk[0] - master clock generation should not depend on resets)
     output [WIDTH-1:0] rst       // resets matching input clocks
 );
+    reg                 en_locked=0; // mostly for simulation, locked[0] is 1'bx until the first clock[0] pulse
     wire    [WIDTH-1:0] rst_w;  // resets matching input clocks
     wire                rst_early_master;
     assign rst = rst_w;
     reg                mrst = 1;
     always @ (posedge arst or posedge clk[0]) begin
+    
+        if (arst) en_locked <= 0;
+        else      en_locked <= 1;
+    
         if (arst) mrst <= 1;
-        else      mrst <=  ~locked[0];
+        else      mrst <=  ~(locked[0] && en_locked);
     end
     level_cross_clocks #(
         .WIDTH      (1),

@@ -256,6 +256,17 @@
     parameter MCNTRL_TILED_FRAME_PAGE_RESET =1'b0, // reset internal page number to zero at the frame start (false - only when hard/soft reset)
     parameter BUFFER_DEPTH32=                10,   // Block rum buffer depth on a 32-bit port
 
+    // bits in mode control word
+    parameter MCONTR_LINTILE_NRESET =              0, // reset if 0
+    parameter MCONTR_LINTILE_EN =                  1, // enable requests 
+    parameter MCONTR_LINTILE_WRITE =               2, // write to memory mode
+    parameter MCONTR_LINTILE_EXTRAPG =             3, // extra pages (over 1) needed by the client simultaneously
+    parameter MCONTR_LINTILE_EXTRAPG_BITS =        2, // number of bits to use for extra pages
+    parameter MCONTR_LINTILE_KEEP_OPEN =           5, // keep banks open (will be used only if number of rows <= 8)
+    parameter MCONTR_LINTILE_BYTE32 =              6, // use 32-byte wide columns in each tile (false - 16-byte) 
+    parameter MCONTR_LINTILE_RST_FRAME =           8, // reset frame number 
+    parameter MCONTR_LINTILE_SINGLE =              9, // read/write a single page 
+    parameter MCONTR_LINTILE_REPEAT =             10,  // read/write pages until disabled 
 // Channel test module parameters
     parameter MCNTRL_TEST01_ADDR=                 'h0f0,
     parameter MCNTRL_TEST01_MASK=                 'h7f0,
@@ -389,7 +400,7 @@
     //sensor_fifo parameters
     parameter SENSOR_DATA_WIDTH =        12,
     parameter SENSOR_FIFO_2DEPTH =       4,
-    parameter SENSOR_FIFO_DELAY =        7,
+    parameter SENSOR_FIFO_DELAY =        4'd7,
     // other parameters for histogram_saxi module
     parameter HIST_SAXI_ADDR_MASK =      'h7f0,
       parameter HIST_SAXI_MODE_WIDTH =   8,
@@ -542,9 +553,9 @@
 
     parameter CMPRS_AFIMUX_WIDTH =         26, // maximal for status: currently only works with 26)
     parameter CMPRS_AFIMUX_CYCBITS =        3,
-    parameter AFI_MUX_BUF_LATENCY =         2,  // buffers read latency from fifo_ren* to fifo_rdata* valid : 2 if no register layers are used
+    parameter AFI_MUX_BUF_LATENCY =      4'd2,  // buffers read latency from fifo_ren* to fifo_rdata* valid : 2 if no register layers are used
     // GPIO control : 'h700..'h701, status: 'h30
-    parameter integer GPIO_DRIVE =        12,
+    parameter integer GPIO_DRIVE =         12,
     parameter GPIO_ADDR =                 'h700, // .701
     parameter GPIO_MASK =                 'h7fe,
     parameter GPIO_STATUS_REG_ADDR =      'h30,  // address where status can be read out (10 GPIO inputs)

@@ -60,7 +60,7 @@ module  table_ad_transmit#(
         if (we && a_not_d_in) sel_a <= din[24+:ADDR_BITS];
         
     end
-    dly_16 #(.WIDTH(1)) i_end_burst(.clk(clk),.rst(1'b0), .dly(2), .din(we), .dout(we3)); // dly=2+1=3
+    dly_16 #(.WIDTH(1)) i_end_burst(.clk(clk),.rst(1'b0), .dly(4'd2), .din(we), .dout(we3)); // dly=2+1=3
     
     genvar i;
     generate 

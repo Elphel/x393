@@ -253,7 +253,7 @@ module quantizer393(
     dly_16 #(.WIDTH(1)) i_hfc_en (
         .clk(clk),
         .rst(1'b0),
-        .dly(1),
+        .dly(4'd1),
         .din(((tba[2:0]>hfc_sel[2:0]) || (tba[5:3]>hfc_sel[2:0])) && dcc_run && !ctype_prev[0]),
         .dout(hfc_en));   // dly=1+1
 

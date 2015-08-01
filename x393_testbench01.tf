@@ -76,76 +76,148 @@ module  x393_testbench01 #(
 //`include "includes/x393_cur_params_sim.vh" // parameters that may need adjustment, should be before x393_localparams.vh
 `include "includes/x393_cur_params_target.vh" // SuppressThisWarning VEditor - not used parameters that may need adjustment, should be before x393_localparams.vh
 `include "includes/x393_localparams.vh" // SuppressThisWarning VEditor - not used
+
+// Sensor signals - as on sensor pads
+    wire        PX1_MCLK; // input sensor input clock
+    wire        PX1_MRST; // input 
+    wire        PX1_ARO;  // input 
+    wire        PX1_ARST; // input 
+    wire        PX1_OFST = 1'b1; // input // I2C address ofset by 2: for simulation 0 - still mode, 1 - video mode.
+    wire [11:0] PX1_D;    // output[11:0] 
+    wire        PX1_DCLK; // output sensor output clock (connect to sensor BPF output )
+    wire        PX1_HACT; // output 
+    wire        PX1_VACT; // output 
+
+// Sensor signals - as on FPGA pads
+    wire [ 7:0] sns1_dp;   // inout[7:0] {PX_MRST, PXD8, PXD6, PXD4, PXD2, PXD0, PX_HACT, PX_DCLK}
+    wire [ 7:0] sns1_dn;   // inout[7:0] {PX_ARST, PXD9, PXD7, PXD5, PXD3, PXD1, PX_VACT, PX_BPF}
+    wire        sns1_clkp; // inout CNVCLK/TDO
+    wire        sns1_clkn; // inout CNVSYNC/TDI
+    wire        sns1_scl;  // inout PX_SCL
+    wire        sns1_sda;  // inout PX_SDA
+    wire        sns1_ctl;  // inout PX_ARO/TCK
+    wire        sns1_pg;   // inout SENSPGM
+
+//connect sensor to sensor port 1
+assign sns1_dp[6:1] =  {PX1_D[10], PX1_D[8], PX1_D[6], PX1_D[4], PX1_D[2], PX1_HACT};
+assign PX1_MRST =       sns1_dp[7]; // from FPGA to sensor
+assign PX1_MCLK =       sns1_dp[0]; // from FPGA to sensor
+assign sns1_dn[6:0] =  {PX1_D[11], PX1_D[9], PX1_D[7], PX1_D[5], PX1_D[3], PX1_VACT, PX1_DCLK};
+assign PX1_ARST =       sns1_dn[7];
+assign sns1_clkn =     PX1_D[0];  // inout CNVSYNC/TDI
+assign sns1_scl =      PX1_D[1];  // inout PX_SCL
+assign PX1_ARO =       sns1_ctl;  // from FPGA to sensor
+
+
+    wire [ 7:0] sns2_dp;   // inout[7:0] {PX_MRST, PXD8, PXD6, PXD4, PXD2, PXD0, PX_HACT, PX_DCLK}
+    wire [ 7:0] sns2_dn;   // inout[7:0] {PX_ARST, PXD9, PXD7, PXD5, PXD3, PXD1, PX_VACT, PX_BPF}
+    wire        sns2_clkp; // inout CNVCLK/TDO
+    wire        sns2_clkn; // inout CNVSYNC/TDI
+    wire        sns2_scl;  // inout PX_SCL
+    wire        sns2_sda;  // inout PX_SDA
+    wire        sns2_ctl;  // inout PX_ARO/TCK
+    wire        sns2_pg;   // inout SENSPGM
+
+    wire [ 7:0] sns3_dp;   // inout[7:0] {PX_MRST, PXD8, PXD6, PXD4, PXD2, PXD0, PX_HACT, PX_DCLK}
+    wire [ 7:0] sns3_dn;   // inout[7:0] {PX_ARST, PXD9, PXD7, PXD5, PXD3, PXD1, PX_VACT, PX_BPF}
+    wire        sns3_clkp; // inout CNVCLK/TDO
+    wire        sns3_clkn; // inout CNVSYNC/TDI
+    wire        sns3_scl;  // inout PX_SCL
+    wire        sns3_sda;  // inout PX_SDA
+    wire        sns3_ctl;  // inout PX_ARO/TCK
+    wire        sns3_pg;   // inout SENSPGM
+
+    wire [ 7:0] sns4_dp;   // inout[7:0] {PX_MRST, PXD8, PXD6, PXD4, PXD2, PXD0, PX_HACT, PX_DCLK}
+    wire [ 7:0] sns4_dn;   // inout[7:0] {PX_ARST, PXD9, PXD7, PXD5, PXD3, PXD1, PX_VACT, PX_BPF}
+    wire        sns4_clkp; // inout CNVCLK/TDO
+    wire        sns4_clkn; // inout CNVSYNC/TDI
+    wire        sns4_scl;  // inout PX_SCL
+    wire        sns4_sda;  // inout PX_SDA
+    wire        sns4_ctl;  // inout PX_ARO/TCK
+    wire        sns4_pg;   // inout SENSPGM
+
+    wire [ 9:0] gpio_pins; // inout[9:0] ([6]-synco0,[7]-syncio0,[8]-synco1,[9]-syncio1)
+// Connect trigger outs to triggets in (#10 needed for Icarus)
+assign #10 gpio_pins[7] = gpio_pins[6];
+assign #10 gpio_pins[9] = gpio_pins[8];
+
   // DDR3 signals
-  wire        SDRST;
-  wire        SDCLK;  // output
-  wire        SDNCLK; // output
-  wire [ADDRESS_NUMBER-1:0] SDA;    // output[14:0] 
-  wire [ 2:0] SDBA;   // output[2:0] 
-  wire        SDWE;   // output
-  wire        SDRAS;  // output
-  wire        SDCAS;  // output
-  wire        SDCKE;  // output
-  wire        SDODT;  // output
-  wire [15:0] SDD;    // inout[15:0] 
-  wire        SDDML;  // inout
-  wire        DQSL;   // inout
-  wire        NDQSL;  // inout
-  wire        SDDMU;  // inout
-  wire        DQSU;   // inout
-  wire        NDQSU;  // inout
-  wire        DUMMY_TO_KEEP;  // output to keep PS7 signals from "optimization" // SuppressThisWarning all - not used
-//  wire        MEMCLK;
+    wire        SDRST;
+    wire        SDCLK;  // output
+    wire        SDNCLK; // output
+    wire [ADDRESS_NUMBER-1:0] SDA;    // output[14:0] 
+    wire [ 2:0] SDBA;   // output[2:0] 
+    wire        SDWE;   // output
+    wire        SDRAS;  // output
+    wire        SDCAS;  // output
+    wire        SDCKE;  // output
+    wire        SDODT;  // output
+    wire [15:0] SDD;    // inout[15:0] 
+    wire        SDDML;  // inout
+    wire        DQSL;   // inout
+    wire        NDQSL;  // inout
+    wire        SDDMU;  // inout
+    wire        DQSU;   // inout
+    wire        NDQSU;  // inout
+    wire        DUMMY_TO_KEEP;  // output to keep PS7 signals from "optimization" // SuppressThisWarning all - not used
+    wire        memclk;
+
+    wire        ffclk0p; // input
+    wire        ffclk0n; // input
+    wire        ffclk1p; // input
+    wire        ffclk1n;  // input
+
+
   
 // axi_hp simulation signals
-  wire HCLK;
-  wire [31:0] afi_sim_rd_address;    // output[31:0] 
-  wire [ 5:0] afi_sim_rid;           // output[5:0]  SuppressThisWarning VEditor - not used - just view
+    wire HCLK;
+    wire [31:0] afi_sim_rd_address;    // output[31:0] 
+    wire [ 5:0] afi_sim_rid;           // output[5:0]  SuppressThisWarning VEditor - not used - just view
 //  reg         afi_sim_rd_valid;      // input
-  wire        afi_sim_rd_valid;      // input
-  wire        afi_sim_rd_ready;      // output
+    wire        afi_sim_rd_valid;      // input
+    wire        afi_sim_rd_ready;      // output
 //  reg  [63:0] afi_sim_rd_data;       // input[63:0] 
-  wire [63:0] afi_sim_rd_data;       // input[63:0] 
-  wire [ 2:0] afi_sim_rd_cap;        // output[2:0]  SuppressThisWarning VEditor - not used - just view
-  wire [ 3:0] afi_sim_rd_qos;        // output[3:0]  SuppressThisWarning VEditor - not used - just view
-  wire  [ 1:0] afi_sim_rd_resp;       // input[1:0] 
+    wire [63:0] afi_sim_rd_data;       // input[63:0] 
+    wire [ 2:0] afi_sim_rd_cap;        // output[2:0]  SuppressThisWarning VEditor - not used - just view
+    wire [ 3:0] afi_sim_rd_qos;        // output[3:0]  SuppressThisWarning VEditor - not used - just view
+    wire  [ 1:0] afi_sim_rd_resp;       // input[1:0] 
 //  reg  [ 1:0] afi_sim_rd_resp;       // input[1:0] 
 
-  wire [31:0] afi_sim_wr_address;    // output[31:0] SuppressThisWarning VEditor - not used - just view
-  wire [ 5:0] afi_sim_wid;           // output[5:0]  SuppressThisWarning VEditor - not used - just view
-  wire        afi_sim_wr_valid;      // output
-  wire        afi_sim_wr_ready;      // input
+    wire [31:0] afi_sim_wr_address;    // output[31:0] SuppressThisWarning VEditor - not used - just view
+    wire [ 5:0] afi_sim_wid;           // output[5:0]  SuppressThisWarning VEditor - not used - just view
+    wire        afi_sim_wr_valid;      // output
+    wire        afi_sim_wr_ready;      // input
 //  reg         afi_sim_wr_ready;      // input
-  wire [63:0] afi_sim_wr_data;       // output[63:0] SuppressThisWarning VEditor - not used - just view
-  wire [ 7:0] afi_sim_wr_stb;        // output[7:0]  SuppressThisWarning VEditor - not used - just view
-  wire [ 3:0] afi_sim_bresp_latency; // input[3:0] 
+    wire [63:0] afi_sim_wr_data;       // output[63:0] SuppressThisWarning VEditor - not used - just view
+    wire [ 7:0] afi_sim_wr_stb;        // output[7:0]  SuppressThisWarning VEditor - not used - just view
+    wire [ 3:0] afi_sim_bresp_latency; // input[3:0] 
 //  reg  [ 3:0] afi_sim_bresp_latency; // input[3:0] 
-  wire [ 2:0] afi_sim_wr_cap;        // output[2:0]  SuppressThisWarning VEditor - not used - just view
-  wire [ 3:0] afi_sim_wr_qos;        // output[3:0]  SuppressThisWarning VEditor - not used - just view
+    wire [ 2:0] afi_sim_wr_cap;        // output[2:0]  SuppressThisWarning VEditor - not used - just view
+    wire [ 3:0] afi_sim_wr_qos;        // output[3:0]  SuppressThisWarning VEditor - not used - just view
 
-  assign HCLK = x393_i.ps7_i.SAXIHP0ACLK; // shortcut name
+    assign HCLK = x393_i.ps7_i.SAXIHP0ACLK; // shortcut name
 // afi loopback
-  assign #1 afi_sim_rd_data=  afi_sim_rd_ready?{2'h0,afi_sim_rd_address[31:3],1'h1,  2'h0,afi_sim_rd_address[31:3],1'h0}:64'bx;
-  assign #1 afi_sim_rd_valid = afi_sim_rd_ready;
-  assign #1 afi_sim_rd_resp = afi_sim_rd_ready?2'b0:2'bx;
-  assign #1 afi_sim_wr_ready = afi_sim_wr_valid;
-  assign #1 afi_sim_bresp_latency=4'h5; 
+    assign #1 afi_sim_rd_data=  afi_sim_rd_ready?{2'h0,afi_sim_rd_address[31:3],1'h1,  2'h0,afi_sim_rd_address[31:3],1'h0}:64'bx;
+    assign #1 afi_sim_rd_valid = afi_sim_rd_ready;
+    assign #1 afi_sim_rd_resp = afi_sim_rd_ready?2'b0:2'bx;
+    assign #1 afi_sim_wr_ready = afi_sim_wr_valid;
+    assign #1 afi_sim_bresp_latency=4'h5; 
   
 // axi_hp register access
   // PS memory mapped registers to read/write over a separate simulation bus running at HCLK, no waits
-  reg  [31:0] PS_REG_ADDR;
-  reg         PS_REG_WR;
-  reg         PS_REG_RD;
-  reg  [31:0] PS_REG_DIN;
-  wire [31:0] PS_REG_DOUT;
-  reg  [31:0] PS_RDATA;  // SuppressThisWarning VEditor - not used - just view
+    reg  [31:0] PS_REG_ADDR;
+    reg         PS_REG_WR;
+    reg         PS_REG_RD;
+    reg  [31:0] PS_REG_DIN;
+    wire [31:0] PS_REG_DOUT;
+    reg  [31:0] PS_RDATA;  // SuppressThisWarning VEditor - not used - just view
 /*  
-  reg  [31:0] afi_reg_addr; 
-  reg         afi_reg_wr;
-  reg         afi_reg_rd;
-  reg  [31:0] afi_reg_din;
+    reg  [31:0] afi_reg_addr; 
+    reg         afi_reg_wr;
+    reg         afi_reg_rd;
+    reg  [31:0] afi_reg_din;
   wire [31:0] afi_reg_dout;
-  reg  [31:0] AFI_REG_RD; // SuppressThisWarning VEditor - not used - just view
+    reg  [31:0] AFI_REG_RD; // SuppressThisWarning VEditor - not used - just view
 */  
   initial begin
     PS_REG_ADDR <= 'bx;
@@ -156,127 +228,127 @@ module  x393_testbench01 #(
   end 
   always @ (posedge HCLK) if (PS_REG_RD) PS_RDATA <= PS_REG_DOUT;
   
-  reg [639:0] TEST_TITLE;
+    reg [639:0] TEST_TITLE;
   // Simulation signals
-  reg [11:0] ARID_IN_r;
-  reg [31:0] ARADDR_IN_r;
-  reg  [3:0] ARLEN_IN_r;
-  reg  [2:0] ARSIZE_IN_r;
-  reg  [1:0] ARBURST_IN_r;
-  reg [11:0] AWID_IN_r;
-  reg [31:0] AWADDR_IN_r;
-  reg  [3:0] AWLEN_IN_r;
-  reg  [2:0] AWSIZE_IN_r;
-  reg  [1:0] AWBURST_IN_r;
+    reg [11:0] ARID_IN_r;
+    reg [31:0] ARADDR_IN_r;
+    reg  [3:0] ARLEN_IN_r;
+    reg  [2:0] ARSIZE_IN_r;
+    reg  [1:0] ARBURST_IN_r;
+    reg [11:0] AWID_IN_r;
+    reg [31:0] AWADDR_IN_r;
+    reg  [3:0] AWLEN_IN_r;
+    reg  [2:0] AWSIZE_IN_r;
+    reg  [1:0] AWBURST_IN_r;
 
-  reg [11:0] WID_IN_r;
-  reg [31:0] WDATA_IN_r;
-  reg [ 3:0] WSTRB_IN_r;
-  reg        WLAST_IN_r;
+    reg [11:0] WID_IN_r;
+    reg [31:0] WDATA_IN_r;
+    reg [ 3:0] WSTRB_IN_r;
+    reg        WLAST_IN_r;
   
-  reg [11:0] LAST_ARID; // last issued ARID
+    reg [11:0] LAST_ARID; // last issued ARID
 
   // SuppressWarnings VEditor : assigned in $readmem() system task
-  wire [SIMUL_AXI_READ_WIDTH-1:0] SIMUL_AXI_ADDR_W;
+    wire [SIMUL_AXI_READ_WIDTH-1:0] SIMUL_AXI_ADDR_W;
   // SuppressWarnings VEditor
-  wire        SIMUL_AXI_MISMATCH;
+    wire        SIMUL_AXI_MISMATCH;
   // SuppressWarnings VEditor
-  reg  [31:0] SIMUL_AXI_READ;
+    reg  [31:0] SIMUL_AXI_READ;
   // SuppressWarnings VEditor
-  reg  [SIMUL_AXI_READ_WIDTH-1:0] SIMUL_AXI_ADDR;
+    reg  [SIMUL_AXI_READ_WIDTH-1:0] SIMUL_AXI_ADDR;
   // SuppressWarnings VEditor
-  reg         SIMUL_AXI_FULL; // some data available
-  wire        SIMUL_AXI_EMPTY= ~rvalid && rready && (rid==LAST_ARID); //SuppressThisWarning VEditor : may be unused, just for simulation // use it to wait for?
-  reg  [31:0] registered_rdata; // here read data from tasks goes
+    reg         SIMUL_AXI_FULL; // some data available
+    wire        SIMUL_AXI_EMPTY= ~rvalid && rready && (rid==LAST_ARID); //SuppressThisWarning VEditor : may be unused, just for simulation // use it to wait for?
+    reg  [31:0] registered_rdata; // here read data from tasks goes
   // SuppressWarnings VEditor
-  reg         WAITING_STATUS;   // tasks are waiting for status
+    reg         WAITING_STATUS;   // tasks are waiting for status
 
-  reg        CLK;
-  reg        RST;
-  reg        AR_SET_CMD_r;
-  wire       AR_READY;
+    wire        CLK;
+    reg        RST;
+    reg        AR_SET_CMD_r;
+    wire       AR_READY;
 
-  reg        AW_SET_CMD_r;
-  wire       AW_READY;
+    reg        AW_SET_CMD_r;
+    wire       AW_READY;
 
-  reg        W_SET_CMD_r;
-  wire       W_READY;
+    reg        W_SET_CMD_r;
+    wire       W_READY;
 
-  wire [11:0]  #(AXI_TASK_HOLD) ARID_IN = ARID_IN_r;
-  wire [31:0]  #(AXI_TASK_HOLD) ARADDR_IN = ARADDR_IN_r;
-  wire  [3:0]  #(AXI_TASK_HOLD) ARLEN_IN = ARLEN_IN_r;
-  wire  [2:0]  #(AXI_TASK_HOLD) ARSIZE_IN = ARSIZE_IN_r;
-  wire  [1:0]  #(AXI_TASK_HOLD) ARBURST_IN = ARBURST_IN_r;
-  wire [11:0]  #(AXI_TASK_HOLD) AWID_IN = AWID_IN_r;
-  wire [31:0]  #(AXI_TASK_HOLD) AWADDR_IN = AWADDR_IN_r;
-  wire  [3:0]  #(AXI_TASK_HOLD) AWLEN_IN = AWLEN_IN_r;
-  wire  [2:0]  #(AXI_TASK_HOLD) AWSIZE_IN = AWSIZE_IN_r;
-  wire  [1:0]  #(AXI_TASK_HOLD) AWBURST_IN = AWBURST_IN_r;
-  wire [11:0]  #(AXI_TASK_HOLD) WID_IN = WID_IN_r;
-  wire [31:0]  #(AXI_TASK_HOLD) WDATA_IN = WDATA_IN_r;
-  wire [ 3:0]  #(AXI_TASK_HOLD) WSTRB_IN = WSTRB_IN_r;
-  wire         #(AXI_TASK_HOLD) WLAST_IN = WLAST_IN_r;
-  wire         #(AXI_TASK_HOLD) AR_SET_CMD = AR_SET_CMD_r;
-  wire         #(AXI_TASK_HOLD) AW_SET_CMD = AW_SET_CMD_r;
-  wire         #(AXI_TASK_HOLD) W_SET_CMD =  W_SET_CMD_r;
+    wire [11:0]  #(AXI_TASK_HOLD) ARID_IN = ARID_IN_r;
+    wire [31:0]  #(AXI_TASK_HOLD) ARADDR_IN = ARADDR_IN_r;
+    wire  [3:0]  #(AXI_TASK_HOLD) ARLEN_IN = ARLEN_IN_r;
+    wire  [2:0]  #(AXI_TASK_HOLD) ARSIZE_IN = ARSIZE_IN_r;
+    wire  [1:0]  #(AXI_TASK_HOLD) ARBURST_IN = ARBURST_IN_r;
+    wire [11:0]  #(AXI_TASK_HOLD) AWID_IN = AWID_IN_r;
+    wire [31:0]  #(AXI_TASK_HOLD) AWADDR_IN = AWADDR_IN_r;
+    wire  [3:0]  #(AXI_TASK_HOLD) AWLEN_IN = AWLEN_IN_r;
+    wire  [2:0]  #(AXI_TASK_HOLD) AWSIZE_IN = AWSIZE_IN_r;
+    wire  [1:0]  #(AXI_TASK_HOLD) AWBURST_IN = AWBURST_IN_r;
+    wire [11:0]  #(AXI_TASK_HOLD) WID_IN = WID_IN_r;
+    wire [31:0]  #(AXI_TASK_HOLD) WDATA_IN = WDATA_IN_r;
+    wire [ 3:0]  #(AXI_TASK_HOLD) WSTRB_IN = WSTRB_IN_r;
+    wire         #(AXI_TASK_HOLD) WLAST_IN = WLAST_IN_r;
+    wire         #(AXI_TASK_HOLD) AR_SET_CMD = AR_SET_CMD_r;
+    wire         #(AXI_TASK_HOLD) AW_SET_CMD = AW_SET_CMD_r;
+    wire         #(AXI_TASK_HOLD) W_SET_CMD =  W_SET_CMD_r;
 
-  reg  [3:0] RD_LAG;  // ready signal lag in axi read channel (0 - RDY=1, 1..15 - RDY is asserted N cycles after valid)   
-  reg  [3:0] B_LAG;   // ready signal lag in axi arete response channel (0 - RDY=1, 1..15 - RDY is asserted N cycles after valid)   
+    reg  [3:0] RD_LAG;  // ready signal lag in axi read channel (0 - RDY=1, 1..15 - RDY is asserted N cycles after valid)   
+    reg  [3:0] B_LAG;   // ready signal lag in axi arete response channel (0 - RDY=1, 1..15 - RDY is asserted N cycles after valid)   
 
 // Simulation modules interconnection
-  wire [11:0] arid;
-  wire [31:0] araddr;
-  wire [3:0]  arlen;
-  wire [2:0]  arsize;
-  wire [1:0]  arburst;
+    wire [11:0] arid;
+    wire [31:0] araddr;
+    wire [3:0]  arlen;
+    wire [2:0]  arsize;
+    wire [1:0]  arburst;
   // SuppressWarnings VEditor : assigned in $readmem(14) system task
-  wire [3:0]  arcache;
+    wire [3:0]  arcache;
   // SuppressWarnings VEditor : assigned in $readmem() system task
-  wire [2:0]  arprot;
-  wire        arvalid;
-  wire        arready;
+    wire [2:0]  arprot;
+    wire        arvalid;
+    wire        arready;
 
-  wire [11:0] awid;
-  wire [31:0] awaddr;
-  wire [3:0]  awlen;
-  wire [2:0]  awsize;
-  wire [1:0]  awburst;
+    wire [11:0] awid;
+    wire [31:0] awaddr;
+    wire [3:0]  awlen;
+    wire [2:0]  awsize;
+    wire [1:0]  awburst;
   // SuppressWarnings VEditor : assigned in $readmem() system task
-  wire [3:0]  awcache;
+    wire [3:0]  awcache;
   // SuppressWarnings VEditor : assigned in $readmem() system task
-  wire [2:0]  awprot;
-  wire        awvalid;
-  wire        awready;
+    wire [2:0]  awprot;
+    wire        awvalid;
+    wire        awready;
 
-  wire [11:0] wid;
-  wire [31:0] wdata;
-  wire [3:0]  wstrb;
-  wire        wlast;
-  wire        wvalid;
-  wire        wready;
+    wire [11:0] wid;
+    wire [31:0] wdata;
+    wire [3:0]  wstrb;
+    wire        wlast;
+    wire        wvalid;
+    wire        wready;
   
-  wire [31:0] rdata;
+    wire [31:0] rdata;
   // SuppressWarnings VEditor : assigned in $readmem() system task
-  wire [11:0] rid;
-  wire        rlast;
+    wire [11:0] rid;
+    wire        rlast;
   // SuppressWarnings VEditor : assigned in $readmem() system task
-  wire  [1:0] rresp;
-  wire        rvalid;
-  wire        rready;
-  wire        rstb=rvalid && rready;
+    wire  [1:0] rresp;
+    wire        rvalid;
+    wire        rready;
+    wire        rstb=rvalid && rready;
 
   // SuppressWarnings VEditor : assigned in $readmem() system task
-  wire  [1:0] bresp;
+    wire  [1:0] bresp;
   // SuppressWarnings VEditor : assigned in $readmem() system task
-  wire [11:0] bid;
-  wire        bvalid;
-  wire        bready;
-  integer     NUM_WORDS_READ;
-  integer     NUM_WORDS_EXPECTED;
-  reg  [15:0] ENABLED_CHANNELS = 0; // currently enabled memory channels
+    wire [11:0] bid;
+    wire        bvalid;
+    wire        bready;
+    integer     NUM_WORDS_READ;
+    integer     NUM_WORDS_EXPECTED;
+    reg  [15:0] ENABLED_CHANNELS = 0; // currently enabled memory channels
 //  integer     SCANLINE_CUR_X;
 //  integer     SCANLINE_CUR_Y;
-  wire AXI_RD_EMPTY=NUM_WORDS_READ==NUM_WORDS_EXPECTED; //SuppressThisWarning VEditor : may be unused, just for simulation
+    wire AXI_RD_EMPTY=NUM_WORDS_READ==NUM_WORDS_EXPECTED; //SuppressThisWarning VEditor : may be unused, just for simulation
   
   
   
@@ -293,7 +365,8 @@ module  x393_testbench01 #(
   
 //  integer ii;
 //  integer  SCANLINE_XFER_SIZE;
-always #(CLKIN_PERIOD/2) CLK = ~CLK;
+
+
   initial begin
 `ifdef IVERILOG              
     $display("IVERILOG is defined");
@@ -307,9 +380,11 @@ always #(CLKIN_PERIOD/2) CLK = ~CLK;
     $display("ICARUS is not defined");
 `endif
     $dumpfile(lxtname);
+
+
   // SuppressWarnings VEditor : assigned in $readmem() system task
     $dumpvars(0,x393_testbench01);
-    CLK =1'b0;
+//    CLK =1'b0;
     RST = 1'bx;
     AR_SET_CMD_r = 1'b0;
     AW_SET_CMD_r = 1'b0;
@@ -323,6 +398,8 @@ always #(CLKIN_PERIOD/2) CLK = ~CLK;
     #9000; // same as glbl
     repeat (20) @(posedge CLK) ;
     RST =1'b0;
+    while (x393_i.mrst) @(posedge CLK) ;
+//    repeat (4) @(posedge CLK) ;
 //set simulation-only parameters   
     axi_set_b_lag(0); //(1);
     axi_set_rd_lag(0);
@@ -334,7 +411,7 @@ always #(CLKIN_PERIOD/2) CLK = ~CLK;
     axi_set_wbuf_delay(WBUF_DLY_DFLT); //DFLT_WBUF_DELAY - used in synth. code
     
     wait_phase_shifter_ready;
-    read_all_status;
+    read_all_status; //stuck here
     
 // enable output for address/commands to DDR chip    
     enable_cmda(1);
@@ -838,25 +915,67 @@ assign bresp=                              x393_i.ps7_i.MAXIGP0BRESP;
         .MCNTRL_TEST01_STATUS_REG_CHN3_ADDR (MCNTRL_TEST01_STATUS_REG_CHN3_ADDR),
         .MCNTRL_TEST01_STATUS_REG_CHN4_ADDR (MCNTRL_TEST01_STATUS_REG_CHN4_ADDR)
     ) x393_i (
-        .SDRST   (SDRST), // DDR3 reset (active low)
-        .SDCLK   (SDCLK), // output 
-        .SDNCLK  (SDNCLK), // outputread_and_wait(BASEADDR_STATUS)
-        .SDA     (SDA[14:0]), // output[14:0] 
-        .SDBA    (SDBA[2:0]), // output[2:0] 
-        .SDWE    (SDWE), // output
-        .SDRAS   (SDRAS), // output
-        .SDCAS   (SDCAS), // output
-        .SDCKE   (SDCKE), // output
-        .SDODT   (SDODT), // output
-        .SDD     (SDD[15:0]), // inout[15:0] 
-        .SDDML   (SDDML), // inout
-        .DQSL    (DQSL), // inout
-        .NDQSL   (NDQSL), // inout
-        .SDDMU   (SDDMU), // inout
-        .DQSU    (DQSU), // inout
-        .NDQSU   (NDQSU), // inout
+        .sns1_dp   (sns1_dp),    // inout[7:0] {PX_MRST, PXD8, PXD6, PXD4, PXD2, PXD0, PX_HACT, PX_DCLK}
+        .sns1_dn   (sns1_dn),    // inout[7:0] {PX_ARST, PXD9, PXD7, PXD5, PXD3, PXD1, PX_VACT, PX_BPF}
+        .sns1_clkp (sns1_clkp),  // inout       CNVCLK/TDO
+        .sns1_clkn (sns1_clkn),  // inout       CNVSYNC/TDI
+        .sns1_scl  (sns1_scl),   // inout       PX_SCL
+        .sns1_sda  (sns1_sda),   // inout       PX_SDA
+        .sns1_ctl  (sns1_ctl),   // inout       PX_ARO/TCK
+        .sns1_pg   (sns1_pg),    // inout       SENSPGM
+        
+        .sns2_dp   (sns2_dp),    // inout[7:0] {PX_MRST, PXD8, PXD6, PXD4, PXD2, PXD0, PX_HACT, PX_DCLK}
+        .sns2_dn   (sns2_dn),    // inout[7:0] {PX_ARST, PXD9, PXD7, PXD5, PXD3, PXD1, PX_VACT, PX_BPF}
+        .sns2_clkp (sns2_clkp),  // inout       CNVCLK/TDO
+        .sns2_clkn (sns2_clkn),  // inout       CNVSYNC/TDI
+        .sns2_scl  (sns2_scl),   // inout       PX_SCL
+        .sns2_sda  (sns2_sda),   // inout       PX_SDA
+        .sns2_ctl  (sns2_ctl),   // inout       PX_ARO/TCK
+        .sns2_pg   (sns2_pg),    // inout       SENSPGM
+        
+        .sns3_dp   (sns3_dp),    // inout[7:0] {PX_MRST, PXD8, PXD6, PXD4, PXD2, PXD0, PX_HACT, PX_DCLK}
+        .sns3_dn   (sns3_dn),    // inout[7:0] {PX_ARST, PXD9, PXD7, PXD5, PXD3, PXD1, PX_VACT, PX_BPF}
+        .sns3_clkp (sns3_clkp),  // inout       CNVCLK/TDO
+        .sns3_clkn (sns3_clkn),  // inout       CNVSYNC/TDI
+        .sns3_scl  (sns3_scl),   // inout       PX_SCL
+        .sns3_sda  (sns3_sda),   // inout       PX_SDA
+        .sns3_ctl  (sns3_ctl),   // inout       PX_ARO/TCK
+        .sns3_pg   (sns3_pg),    // inout       SENSPGM
+        
+        .sns4_dp   (sns4_dp),    // inout[7:0] {PX_MRST, PXD8, PXD6, PXD4, PXD2, PXD0, PX_HACT, PX_DCLK}
+        .sns4_dn   (sns4_dn),    // inout[7:0] {PX_ARST, PXD9, PXD7, PXD5, PXD3, PXD1, PX_VACT, PX_BPF}
+        .sns4_clkp (sns4_clkp),  // inout       CNVCLK/TDO
+        .sns4_clkn (sns4_clkn),  // inout       CNVSYNC/TDI
+        .sns4_scl  (sns4_scl),   // inout       PX_SCL
+        .sns4_sda  (sns4_sda),   // inout       PX_SDA
+        .sns4_ctl  (sns4_ctl),   // inout       PX_ARO/TCK
+        .sns4_pg   (sns4_pg),    // inout       SENSPGM
+        
+        .gpio_pins (gpio_pins),  // inout[9:0] 
+    
+        .SDRST   (SDRST),        // DDR3 reset (active low)
+        .SDCLK   (SDCLK),        // output 
+        .SDNCLK  (SDNCLK),       // outputread_and_wait(BASEADDR_STATUS)
+        .SDA     (SDA[14:0]),    // output[14:0] 
+        .SDBA    (SDBA[2:0]),    // output[2:0] 
+        .SDWE    (SDWE),         // output
+        .SDRAS   (SDRAS),        // output
+        .SDCAS   (SDCAS),        // output
+        .SDCKE   (SDCKE),        // output
+        .SDODT   (SDODT),        // output
+        .SDD     (SDD[15:0]),    // inout[15:0] 
+        .SDDML   (SDDML),        // inout
+        .DQSL    (DQSL),         // inout
+        .NDQSL   (NDQSL),        // inout
+        .SDDMU   (SDDMU),        // inout
+        .DQSU    (DQSU),         // inout
+        .NDQSU   (NDQSU),        // inout
+        .memclk  (memclk),
+        .ffclk0p (ffclk0p),      // input
+        .ffclk0n (ffclk0n),      // input
+        .ffclk1p (ffclk1p),      // input
+        .ffclk1n (ffclk1n),      // input
         .DUMMY_TO_KEEP(DUMMY_TO_KEEP)  // to keep PS7 signals from "optimization"
-      ,.MEMCLK  (1'b0)
     );
     // just to simplify extra delays in tri-state memory bus - provide output enable
     wire WRAP_MCLK=x393_i.mclk;
@@ -1294,7 +1413,53 @@ simul_axi_hp_wr #(
         .reg_dout       (PS_REG_DOUT) // output[31:0] 
     );
 
+// Generate all clocks
+//always #(CLKIN_PERIOD/2) CLK = ~CLK;
+    simul_clk #(
+        .CLKIN_PERIOD  (CLKIN_PERIOD),
+        .MEMCLK_PERIOD (MEMCLK_PERIOD),
+        .FCLK0_PERIOD  (FCLK0_PERIOD),
+        .FCLK1_PERIOD  (FCLK1_PERIOD)
+    ) simul_clk_i (
+        .rst     (1'b0),               // input
+        .clk     (CLK),                // output
+        .memclk  (memclk),             // output
+        .ffclk0  ({ffclk0n, ffclk0p}), // output[1:0] 
+        .ffclk1  ({ffclk1n, ffclk1p})  // output[1:0] 
+    );
 
+    simul_sensor12bits #(
+        .lline(192),
+        .ncols(66),
+        .nrows(18),
+        .nrowb(1),
+        .nrowa(1),
+//        .nAV(24),
+        .nbpf(20),
+        .ngp1(8),
+        .nVLO(1),
+        .tMD(4),
+        .tDDO(2),
+        .tDDO1(5),
+        .trigdly(8),
+        .ramp(1),
+        .new_bayer(0)
+    ) simul_sensor12bits_i (
+        .MCLK  (PX1_MCLK), // input 
+        .MRST  (PX1_MRST), // input 
+        .ARO   (PX1_ARO),  // input 
+        .ARST  (PX1_ARST), // input 
+        .OE    (1'b0),     // input output enable active low
+        .SCL   (sns1_scl), // input 
+        .SDA   (sns1_sda), // inout 
+        .OFST  (PX1_OFST), // input 
+        .D     (PX1_D),    // output[11:0] 
+        .DCLK  (PX1_DCLK), // output 
+        .BPF   (),         // output 
+        .HACT  (PX1_HACT), // output 
+        .VACT  (PX1_VACT), // output 
+        .VACT1 () // output 
+    );
 
     
     //  wire [ 3:0] SIMUL_ADD_ADDR; 
@@ -1320,10 +1485,10 @@ simul_axi_hp_wr #(
     
     
 // SuppressWarnings VEditor all - these variables are just for viewing, not used anywhere else
-  reg DEBUG1, DEBUG2, DEBUG3;
-  reg [11:0] GLOBAL_WRITE_ID=0;
-  reg [11:0] GLOBAL_READ_ID=0;
-  reg [7:0] target_phase=0; // to compare/wait for phase shifter ready
+    reg DEBUG1, DEBUG2, DEBUG3;
+    reg [11:0] GLOBAL_WRITE_ID=0;
+    reg [11:0] GLOBAL_READ_ID=0;
+    reg [7:0] target_phase=0; // to compare/wait for phase shifter ready
   
    task set_up;
         begin
@@ -1463,7 +1628,14 @@ task test_afi_rw; // SuppressThisWarning VEditor - may be unused
 `ifdef MEMBRIDGE_DEBUG_READ    
     integer       ii;
 `endif    
+    reg           repetitive;
+    reg           single;
+    reg           reset_frame;
+    
     begin
+        repetitive =  1'b1;
+        single     =  1'b0;
+        reset_frame = 1'b0;
         $display("====== test_afi_rw: write=%d, extra_pages=%d,  frame_start= %x, window_full_width=%d, window_width=%d, window_height=%d, window_left=%d, window_top=%d,@%t",
                                       write_ddr3,  extra_pages, frame_start_addr, window_full_width,   window_width, window_height, window_left, window_top, $time);
         $display("len64=%x,  width64=%x, start64=%x, lo_addr64=%x, size64=%x,@%t",
@@ -1471,6 +1643,9 @@ task test_afi_rw; // SuppressThisWarning VEditor - may be unused
                   (window_width[12:0]==0)? 29'h4000 : {15'b0,window_width[12:0],1'b0},
                   start64, lo_addr64, size64, $time);
         mode=   func_encode_mode_scanline(
+                    repetitive,
+                    single,
+                    reset_frame,
                     extra_pages,
                     write_ddr3, // write_mem,
                     1, // enable
@@ -1533,7 +1708,14 @@ task test_scanline_write; // SuppressThisWarning VEditor - may be unused
     integer xfer_size;
     integer pages_per_row;
     integer startx,starty; // temporary - because of the vdt bug with integer ports
+    reg           repetitive;
+    reg           single;
+    reg           reset_frame;
+    
     begin
+        repetitive =  1'b1;
+        single     =  1'b0;
+        reset_frame = 1'b0;
         pages_per_row= (window_width>>NUM_XFER_BITS)+((window_width[NUM_XFER_BITS-1:0]==0)?0:1);
         $display("====== test_scanline_write: channel=%d, extra_pages=%d,  wait_done=%d @%t",
                                               channel,    extra_pages,     wait_done,   $time);
@@ -1559,6 +1741,9 @@ task test_scanline_write; // SuppressThisWarning VEditor - may be unused
             end
         endcase
         mode=   func_encode_mode_scanline(
+                    repetitive,
+                    single,
+                    reset_frame,
                     extra_pages,
                     1, // write_mem,
                     1, // enable
@@ -1661,7 +1846,14 @@ task test_scanline_read; // SuppressThisWarning VEditor - may be unused
     integer xfer_size;
     integer pages_per_row;
     
+    reg           repetitive;
+    reg           single;
+    reg           reset_frame;
+    
     begin
+        repetitive =  1'b1;
+        single     =  1'b0;
+        reset_frame = 1'b0;
         pages_per_row= (window_width>>NUM_XFER_BITS)+((window_width[NUM_XFER_BITS-1:0]==0)?0:1);
         $display("====== test_scanline_read: channel=%d, extra_pages=%d,  show_data=%d @%t",
                                              channel,    extra_pages,     show_data,    $time);
@@ -1687,6 +1879,9 @@ task test_scanline_read; // SuppressThisWarning VEditor - may be unused
             end
         endcase
         mode=   func_encode_mode_scanline(
+                    repetitive,
+                    single,
+                    reset_frame,
                     extra_pages,
                     0, // write_mem,
                     1, // enable
@@ -1760,7 +1955,15 @@ task test_tiled_write; // SuppressThisWarning VEditor - may be unused
     integer       tile_rows_per_window;
     integer       tile_size;
     integer startx,starty; // temporary - because of the vdt bug with integer ports
+    reg           repetitive;
+    reg           single;
+    reg           reset_frame;
+    
     begin
+        repetitive =  1'b1;
+        single     =  1'b0;
+        reset_frame = 1'b0;
+
         tiles_per_row= (window_width/tile_width)+  ((window_width % tile_width==0)?0:1);
         tile_rows_per_window= ((window_height-1)/tile_vstep) + 1;
         tile_size= tile_width*tile_height;
@@ -1788,6 +1991,9 @@ task test_tiled_write; // SuppressThisWarning VEditor - may be unused
             end
         endcase
         mode=   func_encode_mode_tiled(
+                    repetitive,
+                    single,
+                    reset_frame,
                     byte32,
                     keep_open,
                     extra_pages,
@@ -1881,7 +2087,15 @@ task test_tiled_read; // SuppressThisWarning VEditor - may be unused
     integer       tile_rows_per_window;
     integer       tile_size;
     
+    reg           repetitive;
+    reg           single;
+    reg           reset_frame;
+    
     begin
+        repetitive =  1'b1;
+        single     =  1'b0;
+        reset_frame = 1'b0;
+        
         tiles_per_row= (window_width/tile_width)+  ((window_width % tile_width==0)?0:1);
         tile_rows_per_window= ((window_height-1)/tile_vstep) + 1;
         tile_size= tile_width*tile_height;
@@ -1909,6 +2123,9 @@ task test_tiled_read; // SuppressThisWarning VEditor - may be unused
             end
         endcase
         mode=   func_encode_mode_tiled(
+                    repetitive,
+                    single,
+                    reset_frame,
                     byte32,
                     keep_open,
                     extra_pages,
@@ -2017,7 +2234,10 @@ task write_block_scanline_chn;  // S uppressThisWarning VEditor : may be unused
     end
 endtask
 
-function [6:0] func_encode_mode_tiled;
+function [10:0] func_encode_mode_tiled;
+    input       repetitive;
+    input       single;
+    input       reset_frame;
     input       byte32; // 32-byte columns (0 - 16-byte columns)
     input       keep_open; // for 8 or less rows - do not close page between accesses
     input [1:0] extra_pages; // number of extra pages that need to stay (not to be overwritten) in the buffer
@@ -2025,34 +2245,48 @@ function [6:0] func_encode_mode_tiled;
     input       write_mem;   // write to memory mode (0 - read from memory)
     input       enable;      // enable requests from this channel ( 0 will let current to finish, but not raise want/need)
     input       chn_reset;       // immediately reset al;l the internal circuitry
+
+    reg  [10:0] rslt;
     begin
-        func_encode_mode_tiled={byte32,keep_open,extra_pages,write_mem,enable,~chn_reset};
+        rslt = 0;
+        rslt[MCONTR_LINTILE_EN] =                                     ~chn_reset;
+        rslt[MCONTR_LINTILE_NRESET] =                                  enable;
+        rslt[MCONTR_LINTILE_WRITE] =                                   write_mem;
+        rslt[MCONTR_LINTILE_EXTRAPG +: MCONTR_LINTILE_EXTRAPG_BITS] =  extra_pages;
+        rslt[MCONTR_LINTILE_KEEP_OPEN] =                               keep_open;
+        rslt[MCONTR_LINTILE_BYTE32] =                                  byte32;
+        rslt[MCONTR_LINTILE_RST_FRAME] =                               reset_frame;
+        rslt[MCONTR_LINTILE_SINGLE] =                                  single;
+        rslt[MCONTR_LINTILE_REPEAT] =                                  repetitive;
+//        func_encode_mode_tiled={byte32,keep_open,extra_pages,write_mem,enable,~chn_reset};
+        func_encode_mode_tiled = rslt;
     end           
 endfunction
-function [4:0] func_encode_mode_scanline;
+function [10:0] func_encode_mode_scanline;
+    input       repetitive;
+    input       single;
+    input       reset_frame;
     input [1:0] extra_pages; // number of extra pages that need to stay (not to be overwritten) in the buffer
                              // can be used for overlapping tile read access
     input       write_mem;   // write to memory mode (0 - read from memory)
     input       enable;      // enable requests from this channel ( 0 will let current to finish, but not raise want/need)
     input       chn_reset;       // immediately reset al;l the internal circuitry
+    
+    reg  [10:0] rslt;
     begin
-        func_encode_mode_scanline={extra_pages,write_mem,enable,~chn_reset};
+        rslt = 0;
+        rslt[MCONTR_LINTILE_EN] =                                     ~chn_reset;
+        rslt[MCONTR_LINTILE_NRESET] =                                  enable;
+        rslt[MCONTR_LINTILE_WRITE] =                                   write_mem;
+        rslt[MCONTR_LINTILE_EXTRAPG +: MCONTR_LINTILE_EXTRAPG_BITS] =  extra_pages;
+        rslt[MCONTR_LINTILE_RST_FRAME] =                               reset_frame;
+        rslt[MCONTR_LINTILE_SINGLE] =                                  single;
+        rslt[MCONTR_LINTILE_REPEAT] =                                  repetitive;
+//        func_encode_mode_scanline={extra_pages,write_mem,enable,~chn_reset};
+        func_encode_mode_scanline = rslt;
     end           
 endfunction
-/*
-task enable_memcntrl_en_dis;
-    input [3:0] chn;
-    input       en;
-    begin
-        if (en) begin
-            ENABLED_CHANNELS = ENABLED_CHANNELS | (1<<chn);
-        end else begin
-            ENABLED_CHANNELS = ENABLED_CHANNELS & ~(1<<chn);
-        end
-        write_contol_register(MCONTR_TOP_16BIT_ADDR +  MCONTR_TOP_16BIT_CHN_EN, {16'b0,ENABLED_CHANNELS});
-    end
-endtask
-*/
+
 `include "includes/x393_tasks_afi.vh" // SuppressThisWarning VEditor - may be unused
 `include "includes/x393_tasks_mcntrl_en_dis_priority.vh"
 `include "includes/x393_tasks_mcntrl_buffers.vh"

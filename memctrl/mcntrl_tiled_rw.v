@@ -52,8 +52,18 @@ module  mcntrl_tiled_rw#(
                                                    // if memory controller will allow programming several sequences in advance to
                                                    // spread long-programming (tiled) over fast-programming (linear) requests.
                                                    // But that should not be too big to maintain 2-level priorities
-    parameter MCNTRL_TILED_FRAME_PAGE_RESET =1'b0 // reset internal page number to zero at the frame start (false - only when hard/soft reset)                                                     
-//    parameter MCNTRL_TILED_WRITE_MODE =      1'b0  // module is configured to write tiles to external memory (false - read tiles)                                                     
+    parameter MCNTRL_TILED_FRAME_PAGE_RESET =1'b0, // reset internal page number to zero at the frame start (false - only when hard/soft reset)                                                     
+    // bits in mode control word
+    parameter MCONTR_LINTILE_NRESET =        0, // reset if 0
+    parameter MCONTR_LINTILE_EN =            1, // enable requests 
+    parameter MCONTR_LINTILE_WRITE =         2, // write to memory mode
+    parameter MCONTR_LINTILE_EXTRAPG =       3, // extra pages (over 1) needed by the client simultaneously
+    parameter MCONTR_LINTILE_EXTRAPG_BITS =  2, // number of bits to use for extra pages
+    parameter MCONTR_LINTILE_KEEP_OPEN =     5, // keep banks open (will be used only if number of rows <= 8)
+    parameter MCONTR_LINTILE_BYTE32 =        6, // use 32-byte wide columns in each tile (false - 16-byte) 
+    parameter MCONTR_LINTILE_RST_FRAME =     8, // reset frame number 
+    parameter MCONTR_LINTILE_SINGLE =        9, // read/write a single page 
+    parameter MCONTR_LINTILE_REPEAT =       10  // read/write pages until disabled 
 )(
     input                          mrst,
     input                          mclk,
@@ -244,8 +254,8 @@ module  mcntrl_tiled_rw#(
     assign set_window_start_w = cmd_we && (cmd_a== MCNTRL_TILED_WINDOW_STARTXY);
     assign set_tile_whs_w =     cmd_we && (cmd_a== MCNTRL_TILED_TILE_WHS);
     
-    assign single_frame_w =  cmd_we && (cmd_a== MCNTRL_TILED_MODE) && cmd_data[9];
-    assign rst_frame_num_w = cmd_we && (cmd_a== MCNTRL_TILED_MODE) && cmd_data[8];
+    assign single_frame_w =  cmd_we && (cmd_a== MCNTRL_TILED_MODE) && cmd_data[MCONTR_LINTILE_SINGLE];
+    assign rst_frame_num_w = cmd_we && (cmd_a== MCNTRL_TILED_MODE) && cmd_data[MCONTR_LINTILE_RST_FRAME];
 
 
     //
@@ -359,14 +369,14 @@ module  mcntrl_tiled_rw#(
     assign xfer_row= row_col_r[NUM_RC_BURST_BITS-1:COLADDR_NUMBER-3] ;      // memory row
     assign xfer_col= row_col_r[COLADDR_NUMBER-4:0];    // start memory column in 8-bursts
     assign line_unfinished=line_unfinished_r[1];
-    assign chn_en =         &mode_reg[1:0];   // enable requests by channel (continue ones in progress)
-    assign chn_rst =        ~mode_reg[0]; // resets command, including fifo;
-    assign cmd_wrmem =       mode_reg[2];// 0: read from memory, 1:write to memory
-    assign cmd_extra_pages = mode_reg[4:3]; // external module needs more than 1 page
-    assign keep_open=        mode_reg[5]; // keep banks open (will be used only if number of rows <= 8
-    assign byte32=           mode_reg[6]; // use 32-byte wide columns in each tile (false - 16-byte) 
-    assign repeat_frames=    mode_reg[10];
-    
+
+    assign chn_en =         mode_reg[MCONTR_LINTILE_NRESET] & mode_reg[MCONTR_LINTILE_EN];   // enable requests by channel (continue ones in progress)
+    assign chn_rst =        ~mode_reg[MCONTR_LINTILE_NRESET]; // resets command, including fifo;
+    assign cmd_wrmem =       mode_reg[MCONTR_LINTILE_WRITE];// 0: read from memory, 1:write to memory
+    assign cmd_extra_pages = mode_reg[MCONTR_LINTILE_EXTRAPG+:MCONTR_LINTILE_EXTRAPG_BITS]; // external module needs more than 1 page
+    assign keep_open=        mode_reg[MCONTR_LINTILE_KEEP_OPEN]; // keep banks open (will be used only if number of rows <= 8
+    assign byte32=           mode_reg[MCONTR_LINTILE_BYTE32]; // use 32-byte wide columns in each tile (false - 16-byte) 
+    assign repeat_frames=    mode_reg[MCONTR_LINTILE_REPEAT];
     
     assign status_data=      {frame_finished_r, busy_r}; 
     assign pgm_param_w=      cmd_we;

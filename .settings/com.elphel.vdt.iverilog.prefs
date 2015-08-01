@@ -1,5 +1,8 @@
-com.elphel.store.context.iverilog=iverilog_81_TopModulesOther<-@\#\#@->iverilog_83_ExtraFiles<-@\#\#@->iverilog_88_ShowNoProblem<-@\#\#@->iverilog_77_Param_Exe<-@\#\#@->iverilog_78_VVP_Exe<-@\#\#@->iverilog_99_GrepFindErrWarn<-@\#\#@->iverilog_84_IncludeDir<-@\#\#@->iverilog_89_ShowNoProblem<-@\#\#@->iverilog_79_GtkWave_Exe<-@\#\#@->iverilog_98_GTKWaveSavFile<-@\#\#@->
+com.elphel.store.context.iverilog=iverilog_81_TopModulesOther<-@\#\#@->iverilog_83_ExtraFiles<-@\#\#@->iverilog_88_ShowNoProblem<-@\#\#@->iverilog_77_Param_Exe<-@\#\#@->iverilog_78_VVP_Exe<-@\#\#@->iverilog_99_GrepFindErrWarn<-@\#\#@->iverilog_84_IncludeDir<-@\#\#@->iverilog_89_ShowNoProblem<-@\#\#@->iverilog_79_GtkWave_Exe<-@\#\#@->iverilog_98_GTKWaveSavFile<-@\#\#@->iverilog_100_TopModulesOther<-@\#\#@->iverilog_102_ExtraFiles<-@\#\#@->iverilog_103_IncludeDir<-@\#\#@->
 eclipse.preferences.version=1
+iverilog_100_TopModulesOther=glbl<-@\#\#@->
+iverilog_102_ExtraFiles=glbl.v<-@\#\#@->
+iverilog_103_IncludeDir=${verilog_project_loc}/includes<-@\#\#@->${verilog_project_loc}/includes<-@\#\#@->
 iverilog_77_Param_Exe=/usr/local/bin/iverilog
 iverilog_78_VVP_Exe=/usr/local/bin/vvp
 iverilog_79_GtkWave_Exe=/usr/local/bin/gtkwave

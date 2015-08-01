@@ -295,10 +295,10 @@ module  cmprs_buf_average#(
     end    
     
     // delay from the start of data output from color converter to copy subtract_dc to be valid when average values are set
-    dly_16 #(.WIDTH(1)) i_cs_first_out_late (.clk(xclk),.rst(1'b0), .dly(15), .din(cs_first_out), .dout(cs_first_out_late));
-    dly_16 #(.WIDTH(1)) i_color_enable_d    (.clk(xclk),.rst(1'b0), .dly( 1), .din(color_enable), .dout(color_enable_d));
-    dly_16 #(.WIDTH(1)) i_dv                (.clk(xclk),.rst(1'b0), .dly( 2), .din(dv_pre3),      .dout(dv));
-    dly_16 #(.WIDTH(1)) i_ds                (.clk(xclk),.rst(1'b0), .dly( 2), .din(ds_pre3),      .dout(ds));
+    dly_16 #(.WIDTH(1)) i_cs_first_out_late (.clk(xclk),.rst(1'b0), .dly(4'd15), .din(cs_first_out), .dout(cs_first_out_late));
+    dly_16 #(.WIDTH(1)) i_color_enable_d    (.clk(xclk),.rst(1'b0), .dly( 4'd1), .din(color_enable), .dout(color_enable_d));
+    dly_16 #(.WIDTH(1)) i_dv                (.clk(xclk),.rst(1'b0), .dly( 4'd2), .din(dv_pre3),      .dout(dv));
+    dly_16 #(.WIDTH(1)) i_ds                (.clk(xclk),.rst(1'b0), .dly( 4'd2), .din(ds_pre3),      .dout(ds));
 
     cmprs_tile_mode2_decode #(
         .CMPRS_COLOR18   (CMPRS_COLOR18),
