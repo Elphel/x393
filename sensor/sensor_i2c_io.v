@@ -29,10 +29,24 @@ module  sensor_i2c_io#(
     parameter SENSI2C_CTRL =        'h0,
     parameter SENSI2C_STATUS =      'h1,
     parameter SENSI2C_STATUS_REG =  'h20,
+    // Control register bits
+    parameter SENSI2C_CMD_RESET =       14, // [14]   reset all FIFO (takes 16 clock pulses), also - stops i2c until run command
+    parameter SENSI2C_CMD_RUN =         13, // [13:12]3 - run i2c, 2 - stop i2c (needed before software i2c), 1,0 - no change to run state
+    parameter SENSI2C_CMD_RUN_PBITS =    1,
+    parameter SENSI2C_CMD_BYTES =       11, // if 1, use [10:9] to set command bytes to send after slave address (0..3)
+    parameter SENSI2C_CMD_BYTES_PBITS =  2,
+    parameter SENSI2C_CMD_DLY =          8, // [7:0]  - duration of quater i2c cycle (if 0, [3:0] control SCL+SDA)
+    parameter SENSI2C_CMD_DLY_PBITS =    8,
+// direct control of SDA/SCL mutually exclusive with DLY control, disabled by running i2c
+    parameter SENSI2C_CMD_SCL =          0, // [1:0] : 0: NOP, 1: 1'b0->SCL, 2: 1'b1->SCL, 3: 1'bz -> SCL 
+    parameter SENSI2C_CMD_SCL_WIDTH =    2,
+    parameter SENSI2C_CMD_SDA =          2, // [3:2] : 0: NOP, 1: 1'b0->SDA, 2: 1'b1->SDA, 3: 1'bz -> SDA,  
+    parameter SENSI2C_CMD_SDA_WIDTH =    2,
+// I/O parameters   
     parameter integer SENSI2C_DRIVE = 12,
     parameter SENSI2C_IBUF_LOW_PWR = "TRUE",
-    parameter SENSI2C_IOSTANDARD = "DEFAULT",
-    parameter SENSI2C_SLEW = "SLOW"
+    parameter SENSI2C_IOSTANDARD =  "DEFAULT",
+    parameter SENSI2C_SLEW =        "SLOW"
 )(
     input         mrst,        // @mclk
     input         mclk,        // global clock, half DDR3 clock, synchronizes all I/O through the command port
@@ -53,14 +67,26 @@ module  sensor_i2c_io#(
         wire sda_en;
 
     sensor_i2c #(
-        .SENSI2C_ABS_ADDR     (SENSI2C_ABS_ADDR),
-        .SENSI2C_REL_ADDR     (SENSI2C_REL_ADDR),
-        .SENSI2C_ADDR_MASK    (SENSI2C_ADDR_MASK),
-        .SENSI2C_CTRL_ADDR    (SENSI2C_CTRL_ADDR),
-        .SENSI2C_CTRL_MASK    (SENSI2C_CTRL_MASK),
-        .SENSI2C_CTRL         (SENSI2C_CTRL),
-        .SENSI2C_STATUS       (SENSI2C_STATUS),
-        .SENSI2C_STATUS_REG   (SENSI2C_STATUS_REG)
+        .SENSI2C_ABS_ADDR        (SENSI2C_ABS_ADDR),
+        .SENSI2C_REL_ADDR        (SENSI2C_REL_ADDR),
+        .SENSI2C_ADDR_MASK       (SENSI2C_ADDR_MASK),
+        .SENSI2C_CTRL_ADDR       (SENSI2C_CTRL_ADDR),
+        .SENSI2C_CTRL_MASK       (SENSI2C_CTRL_MASK),
+        .SENSI2C_CTRL            (SENSI2C_CTRL),
+        .SENSI2C_STATUS          (SENSI2C_STATUS),
+        .SENSI2C_STATUS_REG      (SENSI2C_STATUS_REG),
+        .SENSI2C_CMD_RESET       (SENSI2C_CMD_RESET),
+        .SENSI2C_CMD_RUN         (SENSI2C_CMD_RUN),
+        .SENSI2C_CMD_RUN_PBITS   (SENSI2C_CMD_RUN_PBITS),
+        .SENSI2C_CMD_BYTES       (SENSI2C_CMD_BYTES),
+        .SENSI2C_CMD_BYTES_PBITS (SENSI2C_CMD_BYTES_PBITS),
+        .SENSI2C_CMD_DLY         (SENSI2C_CMD_DLY),
+        .SENSI2C_CMD_DLY_PBITS   (SENSI2C_CMD_DLY_PBITS),
+        .SENSI2C_CMD_SCL         (SENSI2C_CMD_SCL),
+        .SENSI2C_CMD_SCL_WIDTH   (SENSI2C_CMD_SCL_WIDTH),
+        .SENSI2C_CMD_SDA         (SENSI2C_CMD_SDA),
+        .SENSI2C_CMD_SDA_WIDTH   (SENSI2C_CMD_SDA_WIDTH)
+        
     ) sensor_i2c_i (
         .mrst          (mrst),         // input
         .mclk          (mclk),         // input

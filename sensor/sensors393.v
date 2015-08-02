@@ -43,15 +43,30 @@ module  sensors393 #(
     parameter SENSOR_CTRL_RADDR =         0, // relative to SENSOR_GROUP_ADDR 
     parameter SENSOR_CTRL_ADDR_MASK =    'h7ff, //
         // bits of the SENSOR mode register
-        parameter SENSOR_MODE_WIDTH =     9,
-        parameter SENSOR_HIST_EN_BIT =    0, // 0..3 1 - enable histogram modules, disable after processing the started frame
-        parameter SENSOR_HIST_NRST_BIT =  4, // 0 - immediately reset all histogram modules 
-        parameter SENSOR_16BIT_BIT =      8, // 0 - 8 bpp mode, 1 - 16 bpp (bypass gamma). Gamma-processed data is still used for histograms
+        parameter SENSOR_MODE_WIDTH =     10,
+        parameter SENSOR_HIST_EN_BITS =    0,  // 0..3 1 - enable histogram modules, disable after processing the started frame
+        parameter SENSOR_HIST_NRST_BITS =  4,  // 0 - immediately reset all histogram modules 
+        parameter SENSOR_CHN_EN_BIT =      8,  // 1 - this enable channel
+        parameter SENSOR_16BIT_BIT =       9, // 0 - 8 bpp mode, 1 - 16 bpp (bypass gamma). Gamma-processed data is still used for histograms
     
     parameter SENSI2C_CTRL_RADDR =        2, // 302..'h303
     parameter SENSI2C_CTRL_MASK =     'h7fe,
       // sensor_i2c_io relative control register addresses
       parameter SENSI2C_CTRL =          'h0,
+    // Control register bits
+        parameter SENSI2C_CMD_RESET =       14, // [14]   reset all FIFO (takes 16 clock pulses), also - stops i2c until run command
+        parameter SENSI2C_CMD_RUN =         13, // [13:12]3 - run i2c, 2 - stop i2c (needed before software i2c), 1,0 - no change to run state
+        parameter SENSI2C_CMD_RUN_PBITS =    1,
+        parameter SENSI2C_CMD_BYTES =       11, // if 1, use [10:9] to set command bytes to send after slave address (0..3)
+        parameter SENSI2C_CMD_BYTES_PBITS =  2,
+        parameter SENSI2C_CMD_DLY =          8, // [7:0]  - duration of quater i2c cycle (if 0, [3:0] control SCL+SDA)
+        parameter SENSI2C_CMD_DLY_PBITS =    8,
+    // direct control of SDA/SCL mutually exclusive with DLY control, disabled by running i2c
+        parameter SENSI2C_CMD_SCL =          0, // [1:0] : 0: NOP, 1: 1'b0->SCL, 2: 1'b1->SCL, 3: 1'bz -> SCL 
+        parameter SENSI2C_CMD_SCL_WIDTH =    2,
+        parameter SENSI2C_CMD_SDA =          2, // [3:2] : 0: NOP, 1: 1'b0->SDA, 2: 1'b1->SDA, 3: 1'bz -> SDA 
+        parameter SENSI2C_CMD_SDA_WIDTH =    2,
+      
       parameter SENSI2C_STATUS =        'h1,
     
     parameter SENS_SYNC_RADDR  =        'h4,
@@ -315,12 +330,25 @@ module  sensors393 #(
                 .SENSOR_CTRL_RADDR             (SENSOR_CTRL_RADDR),
                 .SENSOR_CTRL_ADDR_MASK         (SENSOR_CTRL_ADDR_MASK),
                 .SENSOR_MODE_WIDTH             (SENSOR_MODE_WIDTH),
-                .SENSOR_HIST_EN_BIT            (SENSOR_HIST_EN_BIT),
-                .SENSOR_HIST_NRST_BIT          (SENSOR_HIST_NRST_BIT),
+                .SENSOR_CHN_EN_BIT             (SENSOR_CHN_EN_BIT),
+                .SENSOR_HIST_EN_BITS           (SENSOR_HIST_EN_BITS),
+                .SENSOR_HIST_NRST_BITS         (SENSOR_HIST_NRST_BITS),
                 .SENSOR_16BIT_BIT              (SENSOR_16BIT_BIT),
                 .SENSI2C_CTRL_RADDR            (SENSI2C_CTRL_RADDR),
                 .SENSI2C_CTRL_MASK             (SENSI2C_CTRL_MASK),
                 .SENSI2C_CTRL                  (SENSI2C_CTRL),
+                .SENSI2C_CMD_RESET             (SENSI2C_CMD_RESET),
+                .SENSI2C_CMD_RUN               (SENSI2C_CMD_RUN),
+                .SENSI2C_CMD_RUN_PBITS         (SENSI2C_CMD_RUN_PBITS),
+                .SENSI2C_CMD_BYTES             (SENSI2C_CMD_BYTES),
+                .SENSI2C_CMD_BYTES_PBITS       (SENSI2C_CMD_BYTES_PBITS),
+                .SENSI2C_CMD_DLY               (SENSI2C_CMD_DLY),
+                .SENSI2C_CMD_DLY_PBITS         (SENSI2C_CMD_DLY_PBITS),
+                .SENSI2C_CMD_SCL               (SENSI2C_CMD_SCL),
+                .SENSI2C_CMD_SCL_WIDTH         (SENSI2C_CMD_SCL_WIDTH),
+                .SENSI2C_CMD_SDA               (SENSI2C_CMD_SDA),
+                .SENSI2C_CMD_SDA_WIDTH         (SENSI2C_CMD_SDA_WIDTH),
+                
                 .SENSI2C_STATUS                (SENSI2C_STATUS),
                 .SENS_GAMMA_RADDR              (SENS_GAMMA_RADDR),
                 .SENS_GAMMA_ADDR_MASK          (SENS_GAMMA_ADDR_MASK),

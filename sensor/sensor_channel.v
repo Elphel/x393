@@ -52,15 +52,29 @@ module  sensor_channel#(
     parameter SENSOR_CTRL_ADDR_MASK = 'h7ff, //
         // bits of the SENSOR mode register
         parameter SENSOR_MODE_WIDTH =     10,
-        parameter SENSOR_HIST_EN_BIT =    4,  // 0..3 1 - enable histogram modules, disable after processing the started frame
-        parameter SENSOR_HIST_NRST_BIT =  8,  // 0 - immediately reset all histogram modules 
-        parameter SENSOR_CHN_EN_BIT =     8,  // 1 - this enable channel
-        parameter SENSOR_16BIT_BIT =      9, // 0 - 8 bpp mode, 1 - 16 bpp (bypass gamma). Gamma-processed data is still used for histograms
+        parameter SENSOR_HIST_EN_BITS =    0,  // 0..3 1 - enable histogram modules, disable after processing the started frame
+        parameter SENSOR_HIST_NRST_BITS =  4,  // 0 - immediately reset all histogram modules 
+        parameter SENSOR_CHN_EN_BIT =      8,  // 1 - this enable channel
+        parameter SENSOR_16BIT_BIT =       9, // 0 - 8 bpp mode, 1 - 16 bpp (bypass gamma). Gamma-processed data is still used for histograms
     
     parameter SENSI2C_CTRL_RADDR =    2, // 'h02..'h03
     parameter SENSI2C_CTRL_MASK =     'h7fe,
       // sensor_i2c_io relative control register addresses
       parameter SENSI2C_CTRL =          'h0,
+    // Control register bits
+        parameter SENSI2C_CMD_RESET =       14, // [14]   reset all FIFO (takes 16 clock pulses), also - stops i2c until run command
+        parameter SENSI2C_CMD_RUN =         13, // [13:12]3 - run i2c, 2 - stop i2c (needed before software i2c), 1,0 - no change to run state
+        parameter SENSI2C_CMD_RUN_PBITS =    1,
+        parameter SENSI2C_CMD_BYTES =       11, // if 1, use [10:9] to set command bytes to send after slave address (0..3)
+        parameter SENSI2C_CMD_BYTES_PBITS =  2,
+        parameter SENSI2C_CMD_DLY =          8, // [7:0]  - duration of quater i2c cycle (if 0, [3:0] control SCL+SDA)
+        parameter SENSI2C_CMD_DLY_PBITS =    8,
+    // direct control of SDA/SCL mutually exclusive with DLY control, disabled by running i2c
+        parameter SENSI2C_CMD_SCL =          0, // [1:0] : 0: NOP, 1: 1'b0->SCL, 2: 1'b1->SCL, 3: 1'bz -> SCL 
+        parameter SENSI2C_CMD_SCL_WIDTH =    2,
+        parameter SENSI2C_CMD_SDA =          2, // [3:2] : 0: NOP, 1: 1'b0->SDA, 2: 1'b1->SDA, 3: 1'bz -> SDA,  
+        parameter SENSI2C_CMD_SDA_WIDTH =    2,
+      
       parameter SENSI2C_STATUS =        'h1,
     
     parameter SENS_GAMMA_RADDR =       'h38, //4,  'h38..'h3b
@@ -263,7 +277,7 @@ module  sensor_channel#(
     wire   [3:0] hist_en;
     wire         en_mclk; // enable this channel
     wire         en_pclk; // enabole in pclk domain   
-    wire         hist_nrst;
+    wire   [3:0] hist_nrst;
     wire         bit16; // 16-bit mode, 0 - 8 bit mode
     wire   [3:0] hist_rq;
     wire   [3:0] hist_gr;
@@ -299,8 +313,8 @@ module  sensor_channel#(
     assign last_in_line = ! ( bit16 ? gamma_hact_in : gamma_hact_out);
      
     assign en_mclk =   mode[SENSOR_CHN_EN_BIT];
-    assign hist_en =   mode[SENSOR_HIST_EN_BIT+:4];
-    assign hist_nrst = mode[SENSOR_HIST_NRST_BIT];
+    assign hist_en =   mode[SENSOR_HIST_EN_BITS +: 4];
+    assign hist_nrst = mode[SENSOR_HIST_NRST_BITS +: 4];
     assign bit16 =     mode[SENSOR_16BIT_BIT];
     
     
@@ -362,18 +376,29 @@ module  sensor_channel#(
     );
 
     sensor_i2c_io #(
-        .SENSI2C_ABS_ADDR      (SENSI2C_ABS_ADDR),
-        .SENSI2C_REL_ADDR      (SENSI2C_REL_ADDR),
-        .SENSI2C_ADDR_MASK     (SENSI2C_ADDR_MASK),
-        .SENSI2C_CTRL_ADDR     (SENSI2C_CTRL_ADDR),
-        .SENSI2C_CTRL_MASK     (SENSI2C_CTRL_MASK),
-        .SENSI2C_CTRL          (SENSI2C_CTRL),
-        .SENSI2C_STATUS        (SENSI2C_STATUS),
-        .SENSI2C_STATUS_REG    (SENSI2C_STATUS_REG),
-        .SENSI2C_DRIVE         (SENSI2C_DRIVE),
-        .SENSI2C_IBUF_LOW_PWR  (SENSI2C_IBUF_LOW_PWR),
-        .SENSI2C_IOSTANDARD    (SENSI2C_IOSTANDARD),
-        .SENSI2C_SLEW          (SENSI2C_SLEW)
+        .SENSI2C_ABS_ADDR        (SENSI2C_ABS_ADDR),
+        .SENSI2C_REL_ADDR        (SENSI2C_REL_ADDR),
+        .SENSI2C_ADDR_MASK       (SENSI2C_ADDR_MASK),
+        .SENSI2C_CTRL_ADDR       (SENSI2C_CTRL_ADDR),
+        .SENSI2C_CTRL_MASK       (SENSI2C_CTRL_MASK),
+        .SENSI2C_CTRL            (SENSI2C_CTRL),
+        .SENSI2C_STATUS          (SENSI2C_STATUS),
+        .SENSI2C_STATUS_REG      (SENSI2C_STATUS_REG),
+        .SENSI2C_CMD_RESET       (SENSI2C_CMD_RESET),
+        .SENSI2C_CMD_RUN         (SENSI2C_CMD_RUN),
+        .SENSI2C_CMD_RUN_PBITS   (SENSI2C_CMD_RUN_PBITS),
+        .SENSI2C_CMD_BYTES       (SENSI2C_CMD_BYTES),
+        .SENSI2C_CMD_BYTES_PBITS (SENSI2C_CMD_BYTES_PBITS),
+        .SENSI2C_CMD_DLY         (SENSI2C_CMD_DLY),
+        .SENSI2C_CMD_DLY_PBITS   (SENSI2C_CMD_DLY_PBITS),
+        .SENSI2C_CMD_SCL         (SENSI2C_CMD_SCL),
+        .SENSI2C_CMD_SCL_WIDTH   (SENSI2C_CMD_SCL_WIDTH),
+        .SENSI2C_CMD_SDA         (SENSI2C_CMD_SDA),
+        .SENSI2C_CMD_SDA_WIDTH   (SENSI2C_CMD_SDA_WIDTH),
+        .SENSI2C_DRIVE           (SENSI2C_DRIVE),
+        .SENSI2C_IBUF_LOW_PWR    (SENSI2C_IBUF_LOW_PWR),
+        .SENSI2C_IOSTANDARD      (SENSI2C_IOSTANDARD),
+        .SENSI2C_SLEW            (SENSI2C_SLEW)
     ) sensor_i2c_io_i (
         .mrst                  (mrst),                   // input
         .mclk                  (mclk),                  // input
@@ -563,7 +588,7 @@ module  sensor_channel#(
                 .hist_di    (gamma_pxd_out),  // input[7:0] 
                 .mclk       (mclk),           // input
                 .hist_en    (hist_en[0]),     // input
-                .hist_rst   (!hist_nrst),     // input
+                .hist_rst   (!hist_nrst[0]),     // input
                 .hist_rq    (hist_rq[0]),     // output
                 .hist_grant (hist_gr[0]),     // input
                 .hist_do    (hist_do0),       // output[31:0] 
@@ -597,7 +622,7 @@ module  sensor_channel#(
                 .hist_di    (gamma_pxd_out),  // input[7:0] 
                 .mclk       (mclk),           // input
                 .hist_en    (hist_en[1]),     // input
-                .hist_rst   (!hist_nrst),     // input
+                .hist_rst   (!hist_nrst[1]),     // input
                 .hist_rq    (hist_rq[1]),     // output
                 .hist_grant (hist_gr[1]),     // input
                 .hist_do    (hist_do1),       // output[31:0] 
@@ -631,7 +656,7 @@ module  sensor_channel#(
                 .hist_di    (gamma_pxd_out),  // input[7:0] 
                 .mclk       (mclk),           // input
                 .hist_en    (hist_en[2]),     // input
-                .hist_rst   (!hist_nrst),     // input
+                .hist_rst   (!hist_nrst[2]),     // input
                 .hist_rq    (hist_rq[2]),     // output
                 .hist_grant (hist_gr[2]),     // input
                 .hist_do    (hist_do2),       // output[31:0] 
@@ -665,7 +690,7 @@ module  sensor_channel#(
                 .hist_di    (gamma_pxd_out),  // input[7:0] 
                 .mclk       (mclk),           // input
                 .hist_en    (hist_en[3]),     // input
-                .hist_rst   (!hist_nrst),     // input
+                .hist_rst   (!hist_nrst[3]),  // input
                 .hist_rq    (hist_rq[3]),     // output
                 .hist_grant (hist_gr[3]),     // input
                 .hist_do    (hist_do3),       // output[31:0] 
@@ -683,7 +708,7 @@ module  sensor_channel#(
     
     sens_histogram_mux sens_histogram_mux_i (
         .mclk   (mclk),          // input
-        .en     (!hist_nrst),    // input
+        .en     (!(|hist_nrst)), // input
         .rq0    (hist_rq[0]),    // input
         .grant0 (hist_gr[0]),    // output
         .dav0   (hist_dv[0]),    // input

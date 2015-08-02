@@ -35,8 +35,8 @@ module   simul_sensor12bits # (
     parameter tDDO   =      2,   //   some confusion here - let's assume that it is from DCLK to Data out
     parameter tDDO1 =       5,   //
     parameter trigdly =     8,   // delay between trigger input and start of output (VACT) in lines
-    parameter ramp  =       1    // 1 - ramp, 0 - random (now - sensor.dat)
-    
+    parameter ramp  =       1,   // 1 - ramp, 0 - random (now - sensor.dat)
+    parameter new_bayer =   0    // 0 - old (16x16), 1 - new (18x18)
 ) (
     input         MCLK,   // Master clock
     input         MRST,   // Master Reset - active low
@@ -94,7 +94,6 @@ wire   [3:0]   stated;
 wire   [15:0]   cntrd;
 wire         NMRST=!MRST;
 
-parameter new_bayer=0; // 0 - old (16x16), 1 - new (18x18)
 
 wire   [5:0] row_index=row[5:0]-new_bayer;
 wire   [5:0] col_index=col[5:0]-new_bayer;

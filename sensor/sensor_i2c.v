@@ -21,14 +21,27 @@
 `timescale 1ns/1ps
 
 module  sensor_i2c#(
-    parameter SENSI2C_ABS_ADDR =    'h300,
-    parameter SENSI2C_REL_ADDR =    'h310,
-    parameter SENSI2C_ADDR_MASK =   'h7f0, // both for SENSI2C_ABS_ADDR and SENSI2C_REL_ADDR
-    parameter SENSI2C_CTRL_ADDR =   'h320,
-    parameter SENSI2C_CTRL_MASK =   'h7fe,
-    parameter SENSI2C_CTRL =        'h0,
-    parameter SENSI2C_STATUS =      'h1,
-    parameter SENSI2C_STATUS_REG =  'h30
+    parameter SENSI2C_ABS_ADDR =       'h300,
+    parameter SENSI2C_REL_ADDR =       'h310,
+    parameter SENSI2C_ADDR_MASK =      'h7f0, // both for SENSI2C_ABS_ADDR and SENSI2C_REL_ADDR
+    parameter SENSI2C_CTRL_ADDR =      'h320,
+    parameter SENSI2C_CTRL_MASK =      'h7fe,
+    parameter SENSI2C_CTRL =           'h0,
+    parameter SENSI2C_STATUS =         'h1,
+    parameter SENSI2C_STATUS_REG =     'h30,
+    // Control register bits
+    parameter SENSI2C_CMD_RESET =       14, // [14]   reset all FIFO (takes 16 clock pulses), also - stops i2c until run command
+    parameter SENSI2C_CMD_RUN =         13, // [13:12]3 - run i2c, 2 - stop i2c (needed before software i2c), 1,0 - no change to run state
+    parameter SENSI2C_CMD_RUN_PBITS =    1,
+    parameter SENSI2C_CMD_BYTES =       11, // if 1, use [10:9] to set command bytes to send after slave address (0..3)
+    parameter SENSI2C_CMD_BYTES_PBITS =  2,
+    parameter SENSI2C_CMD_DLY =          8, // [7:0]  - duration of quater i2c cycle (if 0, [3:0] control SCL+SDA)
+    parameter SENSI2C_CMD_DLY_PBITS =    8,
+// direct control of SDA/SCL mutually exclusive with DLY control, disabled by running i2c
+    parameter SENSI2C_CMD_SCL =          0, // [1:0] : 0: NOP, 1: 1'b0->SCL, 2: 1'b1->SCL, 3: 1'bz -> SCL 
+    parameter SENSI2C_CMD_SCL_WIDTH =    2,
+    parameter SENSI2C_CMD_SDA =          2, // [3:2] : 0: NOP, 1: 1'b0->SDA, 2: 1'b1->SDA, 3: 1'bz -> SDA,  
+    parameter SENSI2C_CMD_SDA_WIDTH =    2
 )(
     input         mrst,         // @ posedge mclk
     input         mclk,         // global clock, half DDR3 clock, synchronizes all I/O through the command port
@@ -250,28 +263,31 @@ module  sensor_i2c#(
 //        wen_i2c_soft <= wen_d[0] && is_ctl;
 
 // decoded commands, valid next cycle after we_*     
-        reset_cmd <=  set_ctrl_w && di[14];
-        run_cmd   <=  set_ctrl_w && di[13];
-        bytes_cmd <=  set_ctrl_w && di[11];
-        dly_cmd   <=  set_ctrl_w && di[ 8];
+        reset_cmd <=  set_ctrl_w && di[SENSI2C_CMD_RESET];
+        run_cmd   <=  set_ctrl_w && di[SENSI2C_CMD_RUN];
+        bytes_cmd <=  set_ctrl_w && di[SENSI2C_CMD_BYTES];
+        dly_cmd   <=  set_ctrl_w && di[SENSI2C_CMD_DLY];
 
 // direct i2c control, valid 1 cycle after we_*
         if      (i2c_run)           scl_en_soft <= 1'b0;
-        else if (set_ctrl_w & |di[1:0]) scl_en_soft <= (di[1:0]!=2'h3); 
+        else if (set_ctrl_w && !di[SENSI2C_CMD_DLY] && |di[SENSI2C_CMD_SCL +: SENSI2C_CMD_SCL_WIDTH])
+                                    scl_en_soft <= (di[SENSI2C_CMD_SCL +: SENSI2C_CMD_SCL_WIDTH] != 2'h3); 
         if      (i2c_run)           scl_soft <= 1'b0;
-        else if (set_ctrl_w & |di[1:0]) scl_soft <= (di[1:0]==2'h2); 
+        else if (set_ctrl_w && !di[SENSI2C_CMD_DLY] && |di[SENSI2C_CMD_SCL +: SENSI2C_CMD_SCL_WIDTH])
+                                    scl_soft <= (di[SENSI2C_CMD_SCL +: SENSI2C_CMD_SCL_WIDTH] == 2'h2); 
         if      (i2c_run)           sda_en_soft <= 1'b0;
-        else if (set_ctrl_w & |di[3:2]) sda_en_soft <= (di[3:2]!=2'h3); 
+        else if (set_ctrl_w && !di[SENSI2C_CMD_DLY] && |di[SENSI2C_CMD_SDA +: SENSI2C_CMD_SDA_WIDTH])
+                                    sda_en_soft <= (di[SENSI2C_CMD_SDA +: SENSI2C_CMD_SDA_WIDTH] != 2'h3); 
         if      (i2c_run)           sda_soft <= 1'b0;
-        else if (set_ctrl_w & |di[3:2]) sda_soft <= (di[3:2]==2'h2); 
+        else if (set_ctrl_w && !di[SENSI2C_CMD_DLY] && |di[SENSI2C_CMD_SDA +: SENSI2C_CMD_SDA_WIDTH])
+                                    sda_soft <= (di[SENSI2C_CMD_SDA +: SENSI2C_CMD_SDA_WIDTH] == 2'h2); 
     
 // setting i2c control parameters, valid 2 cycles after we_*       
-        if (bytes_cmd) i2c_bytes[1:0] <= di_r[10:9];
-        if (dly_cmd)   i2c_dly[7:0]   <= di_r[ 7:0];
+        if (bytes_cmd) i2c_bytes[1:0] <= di_r[SENSI2C_CMD_BYTES - 1 -: SENSI2C_CMD_BYTES_PBITS]; //[10:9];
+        if (dly_cmd)   i2c_dly[7:0]   <= di_r[SENSI2C_CMD_DLY - 1 -: SENSI2C_CMD_DLY_PBITS]; //[ 7:0];
 
         if    (reset_cmd)         i2c_enrun <= 1'b0;
-        else if (run_cmd)         i2c_enrun <= di_r[12];
-
+        else if (run_cmd)         i2c_enrun <= di_r[SENSI2C_CMD_RUN - 1 -: SENSI2C_CMD_RUN_PBITS]; // [12];
 
 // write pointer memory
       wpage0_inc <= {wpage0_inc[0],pre_wpage0_inc};
