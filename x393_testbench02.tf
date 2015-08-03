@@ -1731,12 +1731,27 @@ task program_status_sensor_i2c;
     input [1:0] mode;
     input [5:0] seq_num;
     begin
-        program_status (SENSOR_GROUP_ADDR + num_sensor * SENSOR_BASE_INC,
+        program_status (SENSOR_GROUP_ADDR + num_sensor * SENSOR_BASE_INC + SENSI2C_CTRL_RADDR,
                         SENSI2C_STATUS,
                         mode,
                         seq_num);
     end
 endtask
+
+function [STATUS_DEPTH-1:0] func_status_addr_sensor_i2c;
+    input [1:0] num_sensor;
+    begin
+        func_status_addr_sensor_i2c = (SENSI2C_STATUS_REG_BASE + num_sensor * SENSI2C_STATUS_REG_INC + SENSI2C_STATUS_REG_REL);
+    end
+endfunction
+
+function [STATUS_DEPTH-1:0] func_status_addr_sensor_io;
+    input [1:0] num_sensor;
+    begin
+        func_status_addr_sensor_io = (SENSI2C_STATUS_REG_BASE + num_sensor * SENSI2C_STATUS_REG_INC + SENSIO_STATUS_REG_REL);
+    end
+endfunction
+
 
 function [SENSOR_MODE_WIDTH-1:0] func_sensor_mode;
     input  [3:0] hist_en;    // [0..3] 1 - enable histogram modules, disable after processing the started frame
@@ -1799,6 +1814,235 @@ function [SENSI2C_CMD_RESET : 0] func_sensor_i2c_command_dly;
         func_sensor_i2c_command_dly = tmp;
     end
 endfunction
+
+task    set_sensor_io_ctl;
+    input                            [1:0] num_sensor;
+    input                            [1:0] mrst;     // <2: keep MRST, 2 - MRST low (active),  3 - high (inactive)
+    input                            [1:0] arst;     // <2: keep ARST, 2 - ARST low (active),  3 - high (inactive)
+    input                            [1:0] aro;      // <2: keep ARO,  2 - set ARO (software controlled) low,  3 - set ARO  (software controlled) high
+    input                            [1:0] mmcm_rst; // <2: keep MMCM reset, 2 - MMCM reset off,  3 - MMCM reset on
+    input                            [1:0] clk_sel;  // <2: keep MMCM clock source, 2 - use internal pixel clock,  3 - use pixel clock from the sensor
+    input                                  set_delays; // (self-clearing) load all pre-programmed delays 
+    input                                  set_quadrants;  // 0 - keep quadrants settings, 1 - update quadrants
+    input  [SENS_CTRL_QUADRANTS_WIDTH-1:0] quadrants;  // 90-degree shifts for data [1:0], hact [3:2] and vact [5:4]
+    reg    [31:0] data;
+    reg    [29:0] reg_addr;
+    begin
+        data = func_sensor_io_ctl (
+                    mrst,
+                    arst,
+                    aro,
+                    mmcm_rst,
+                    clk_sel,
+                    set_delays,
+                    set_quadrants,
+                    quadrants);
+        reg_addr = (SENSOR_GROUP_ADDR + num_sensor * SENSOR_BASE_INC) + SENSIO_RADDR + SENSIO_CTRL;
+        write_contol_register(reg_addr, data);                   
+    end
+endtask
+
+task program_status_sensor_io;
+    input [1:0] num_sensor;
+    input [1:0] mode;
+    input [5:0] seq_num;
+    begin
+        program_status (SENSOR_GROUP_ADDR + num_sensor * SENSOR_BASE_INC + SENSIO_RADDR,
+                        SENSI2C_STATUS,
+                        mode,
+                        seq_num);
+    end
+endtask
+
+
+function                          [31 : 0] func_sensor_io_ctl;
+    input                            [1:0] mrst;     // <2: keep MRST, 2 - MRST low (active),  3 - high (inactive)
+    input                            [1:0] arst;     // <2: keep ARST, 2 - ARST low (active),  3 - high (inactive)
+    input                            [1:0] aro;      // <2: keep ARO,  2 - set ARO (software controlled) low,  3 - set ARO  (software controlled) high
+    input                            [1:0] mmcm_rst; // <2: keep MMCM reset, 2 - MMCM reset off,  3 - MMCM reset on
+    input                            [1:0] clk_sel;  // <2: keep MMCM clock source, 2 - use internal pixel clock,  3 - use pixel clock from the sensor
+    input                                  set_delays; // (self-clearing) load all pre-programmed delays 
+    input                                  set_guadrants;  // 0 - keep quadrants settings, 1 - update quadrants
+    input  [SENS_CTRL_QUADRANTS_WIDTH-1:0] quadrants;  // 90-degree shifts for data [1:0], hact [3:2] and vact [5:4]
+    reg  [31 : 0] tmp;
+    begin
+        tmp = 0;
+        
+        tmp [SENS_CTRL_MRST +: 2] =                               mrst;
+        tmp [SENS_CTRL_ARST +: 2] =                               arst;
+        tmp [SENS_CTRL_ARO  +: 2] =                               aro;
+        tmp [SENS_CTRL_RST_MMCM  +: 2] =                          mmcm_rst;
+        tmp [SENS_CTRL_EXT_CLK  +: 2] =                           clk_sel;
+        tmp [SENS_CTRL_LD_DLY] =                                  set_delays;
+        tmp [SENS_CTRL_QUADRANTS_EN] =                            set_guadrants;
+        tmp [SENS_CTRL_EXT_CLK  +: SENS_CTRL_QUADRANTS_WIDTH] =   quadrants;
+        func_sensor_io_ctl = tmp;
+    end
+endfunction
+
+function                          [31 : 0] func_sensor_jtag_ctl;
+    input                            [1:0] pgmen;    // <2: keep PGMEN, 2 - PGMEN low (inactive),  3 - high (active) enable JTAG control
+    input                            [1:0] prog;     // <2: keep prog, 2 - prog low (active),  3 - high (inactive) ("program" pin control)
+    input                            [1:0] tck;      // <2: keep TCK,  2 - set TCK low,  3 - set TCK high
+    input                            [1:0] tms;      // <2: keep TMS,  2 - set TMS low,  3 - set TMS high
+    input                            [1:0] tdi;      // <2: keep TDI,  2 - set TDI low,  3 - set TDI high
+
+    reg  [31 : 0] tmp;
+    begin
+        tmp = 0;
+        
+        tmp [SENS_JTAG_TDI +: 2] = pgmen;
+        tmp [SENS_JTAG_TMS +: 2] = prog;
+        tmp [SENS_JTAG_TCK +: 2] = tck;
+        tmp [SENS_JTAG_TMS +: 2] = tms;
+        tmp [SENS_JTAG_TDI +: 2] = tdi;
+        func_sensor_jtag_ctl = tmp;
+    end
+endfunction
+
+task set_sensor_gamma_table_addr;
+    input   [1:0] num_sensor;
+    input   [1:0] sub_channel;
+    input   [1:0] color;
+    input         page; // only used if SENS_GAMMA_BUFFER != 0
+
+    reg    [31:0] data;
+    reg    [29:0] reg_addr;
+    
+    begin
+        data =      0;
+        data [20] = 1'b1;
+        data [7:0] = 8'b0;
+        data [9:8] = color;
+        if (SENS_GAMMA_BUFFER) data[12:10] = {sub_channel[1:0], page};
+        else                   data[11:10] = sub_channel[1:0];
+
+        reg_addr = (SENSOR_GROUP_ADDR + num_sensor * SENSOR_BASE_INC) + SENS_GAMMA_RADDR + SENS_GAMMA_ADDR_DATA;
+        write_contol_register(reg_addr, data);                   
+
+    end
+
+endtask
+
+task set_sensor_gamma_table_data; // need 256 for a single color data
+    input   [1:0] num_sensor;
+    input  [17:0] data18; // 18-bit table data
+
+    reg    [29:0] reg_addr;
+    
+    begin
+        reg_addr = (SENSOR_GROUP_ADDR + num_sensor * SENSOR_BASE_INC) + SENS_GAMMA_RADDR + SENS_GAMMA_ADDR_DATA;
+        write_contol_register(reg_addr, {14'b0, data18});                   
+    end
+
+endtask
+
+task set_sensor_gamma_heights;
+    input   [1:0] num_sensor;
+    input  [15:0] height0_m1; // height of the first sub-frame minus 1
+    input  [15:0] height1_m1; // height of the second sub-frame minus 1
+    input  [15:0] height2_m1; // height of the third sub-frame minus 1 (no need for 4-th)
+    reg    [29:0] reg_addr;
+    begin
+        reg_addr = (SENSOR_GROUP_ADDR + num_sensor * SENSOR_BASE_INC) + SENS_GAMMA_RADDR + SENS_GAMMA_HEIGHT01;
+        write_contol_register(reg_addr, {height1_m1, height0_m1});                   
+
+        reg_addr = (SENSOR_GROUP_ADDR + num_sensor * SENSOR_BASE_INC) + SENS_GAMMA_RADDR + SENS_GAMMA_HEIGHT2;
+        write_contol_register(reg_addr, {16'b0,  height2_m1});                   
+    end
+endtask
+
+task set_sensor_gamma_ctl;
+    input   [1:0] num_sensor; // sensor channel number (0..3)
+    input   [1:0] bayer;      // bayer shift (0..3)
+    input         table_page; // table page (only used if SENS_GAMMA_BUFFER)
+    input         en_input;   // enable channel input
+    input         repet_mode; //  Normal mode, single trigger - just for debugging
+    input         trig;       // pass next frame
+    
+    reg    [31:0] data;
+    reg    [29:0] reg_addr;
+
+    begin
+        data = func_sensor_gamma_ctl (
+                    bayer,
+                    table_page,
+                    en_input,
+                    repet_mode,
+                    trig);
+        reg_addr = (SENSOR_GROUP_ADDR + num_sensor * SENSOR_BASE_INC) + SENS_GAMMA_RADDR + SENS_GAMMA_CTRL;
+        write_contol_register(reg_addr, data);                   
+    end
+    
+endtask
+
+task set_sensor_histogram_window;
+    input   [1:0] num_sensor; // sensor channel number (0..3)
+    input   [1:0] subchannel; // subchannel number (for multiplexed images)
+    input  [15:0] left;
+    input  [15:0] top;
+    input  [15:0] width_m1;  // one less than window width. If 0 - use frame right margin (end of HACT)
+    input  [15:0] height_m1; // one less than window height. If 0 - use frame bottom margin (end of VACT)
+//    reg    [31:0] data;
+    reg    [29:0] reg_addr;
+    
+    begin
+        reg_addr = (SENSOR_GROUP_ADDR + num_sensor * SENSOR_BASE_INC); // + HISTOGRAM_LEFT_TOP;
+        case (subchannel[1:0]) 
+            2'h0: reg_addr = reg_addr + HISTOGRAM_RADDR0;
+            2'h1: reg_addr = reg_addr + HISTOGRAM_RADDR1;
+            2'h2: reg_addr = reg_addr + HISTOGRAM_RADDR2;
+            2'h3: reg_addr = reg_addr + HISTOGRAM_RADDR3;
+        endcase
+        write_contol_register(reg_addr + HISTOGRAM_LEFT_TOP,     {top,    left});
+        write_contol_register(reg_addr + HISTOGRAM_WIDTH_HEIGHT, {height_m1, width_m1});
+    end
+endtask
+
+task set_sensor_histogram_saxi;
+    input         en;
+    input         nrst;
+    input         confirm_write; // wait for the write confirmed befoer swicthing channels
+    input   [3:0] cache_mode;    // default should be 4'h3
+    reg    [31:0] data;
+    begin
+        data = 0;
+        data [HIST_SAXI_EN] =     en;
+        data [HIST_SAXI_NRESET] = nrst;
+        data [HIST_CONFIRM_WRITE] = confirm_write;
+        data [HIST_SAXI_AWCACHE +: 4] = cache_mode;
+        write_contol_register(SENSOR_GROUP_ADDR + HIST_SAXI_MODE_ADDR_REL, data);
+    end
+endtask
+    
+task set_sensor_histogram_saxi_addr;
+    input   [1:0] num_sensor; // sensor channel number (0..3)
+    input   [1:0] subchannel; // subchannel number (for multiplexed images)
+    input  [19:0] page; //start address in 4KB pages (1 page - one subchannel histogram)
+    begin
+        write_contol_register(SENSOR_GROUP_ADDR + HIST_SAXI_ADDR_REL + (num_sensor << 2) + subchannel,{12'b0,page});
+    end
+endtask
+    
+function  [31 : 0] func_sensor_gamma_ctl;
+    input   [1:0] bayer;
+    input         table_page;
+    input         en_input;
+    input         repet_mode; //  Normal mode, single trigger - just for debugging  TODO: re-assign?
+    input         trig;
+    
+    reg  [31 : 0] tmp;
+    begin
+        tmp = 0;
+        tmp[SENS_GAMMA_MODE_BAYER +: 2] = bayer;
+        tmp [SENS_GAMMA_MODE_PAGE] =      table_page;
+        tmp [SENS_GAMMA_MODE_EN] =        en_input;
+        tmp [SENS_GAMMA_MODE_REPET] =     repet_mode;
+        tmp [SENS_GAMMA_MODE_TRIG] =      trig;
+        func_sensor_gamma_ctl =           tmp;
+    end
+endfunction
+
 
 
 

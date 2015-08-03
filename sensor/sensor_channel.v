@@ -104,6 +104,8 @@ module  sensor_channel#(
         parameter SENS_CTRL_EXT_CLK =     8,  //  9: 8
         parameter SENS_CTRL_LD_DLY =     10,  // 10
         parameter SENS_CTRL_QUADRANTS =  12,  // 17:12, enable - 20
+        parameter SENS_CTRL_QUADRANTS_WIDTH = 6,
+        parameter SENS_CTRL_QUADRANTS_EN =   20,  // 17:12, enable - 20 (2 bits reserved)
       parameter SENSIO_STATUS =         'h1,
       parameter SENSIO_JTAG =           'h2,
         // SENSIO_JTAG register bits
@@ -433,6 +435,8 @@ module  sensor_channel#(
         .SENS_CTRL_EXT_CLK     (SENS_CTRL_EXT_CLK),
         .SENS_CTRL_LD_DLY      (SENS_CTRL_LD_DLY),
         .SENS_CTRL_QUADRANTS   (SENS_CTRL_QUADRANTS),
+        .SENS_CTRL_QUADRANTS_WIDTH  (SENS_CTRL_QUADRANTS_WIDTH),
+        .SENS_CTRL_QUADRANTS_EN     (SENS_CTRL_QUADRANTS_EN),
         .IODELAY_GRP           (IODELAY_GRP),
         .IDELAY_VALUE          (IDELAY_VALUE),
         .PXD_DRIVE             (PXD_DRIVE),

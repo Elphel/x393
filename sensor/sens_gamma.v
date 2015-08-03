@@ -29,16 +29,12 @@ module  sens_gamma #(
     parameter SENS_GAMMA_ADDR_DATA =   'h1, // bit 20 ==1 - table address, bit 20==0 - table data (18 bits)
     parameter SENS_GAMMA_HEIGHT01 =    'h2, // bits [15:0] - height minus 1 of image 0, [31:16] - height-1 of image1
     parameter SENS_GAMMA_HEIGHT2 =     'h3, // bits [15:0] - height minus 1 of image 2 ( no need for image 3)
-//    parameter SENS_GAMMA_STATUS =      'h1,
-//    parameter SENS_GAMMA_TADDR =       'h2,
-//    parameter SENS_GAMMA_TDATA =       'h3, // 1.. 2^16, 0 - use HACT????
-//    parameter SENS_GAMMA_STATUS_REG =  'h32
-    parameter    SENS_GAMMA_MODE_WIDTH = 5, // does not include trig
-    parameter    SENS_GAMMA_MODE_BAYER = 0,
-    parameter    SENS_GAMMA_MODE_PAGE =  2,
-    parameter    SENS_GAMMA_MODE_EN =    3,
-    parameter    SENS_GAMMA_MODE_REPET = 4,
-    parameter    SENS_GAMMA_MODE_TRIG =  5
+    parameter SENS_GAMMA_MODE_WIDTH =  5, // does not include trig
+    parameter SENS_GAMMA_MODE_BAYER =  0,
+    parameter SENS_GAMMA_MODE_PAGE =   2,
+    parameter SENS_GAMMA_MODE_EN =     3,
+    parameter SENS_GAMMA_MODE_REPET =  4,
+    parameter SENS_GAMMA_MODE_TRIG =   5
 ) (
 //    input         rst,
     input         pclk,   // global clock input, pixel rate (96MHz for MT9P006)
@@ -346,12 +342,12 @@ module  sens_gamma #(
         .raddr        (table_raddr), // input[11:0] 
         .ren          (table_re[1]), // input TODO: add "en"?
         .regen        (table_regen[1]), // input
-        .data_out     (table_rdata1), // output[7:0] 
+        .data_out     (table_rdata1), // output[17:0] 
         .wclk         (mclk), // input
         .waddr        (taddr[10:0]), // input[9:0] 
         .we           (set_tdata_ram[1]), // input
         .web          (8'hff), // input[7:0] 
-        .data_in      (tdata) // input[31:0] 
+        .data_in      (tdata) // input[17:0] 
     );
 
     ramp_var_w_var_r #(

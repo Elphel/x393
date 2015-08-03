@@ -42,7 +42,10 @@ module  sens_parallel12 #(
     parameter SENS_CTRL_RST_MMCM=  6,  //  7: 6
     parameter SENS_CTRL_EXT_CLK=   8,  //  9: 8
     parameter SENS_CTRL_LD_DLY=   10,  // 10
-    parameter SENS_CTRL_QUADRANTS=12,  // 17:12, enable - 20
+    parameter SENS_CTRL_QUADRANTS =      12,  // 17:12, enable - 20
+    parameter SENS_CTRL_QUADRANTS_WIDTH = 6,
+    parameter SENS_CTRL_QUADRANTS_EN =   20,  // 17:12, enable - 20 (2 bits reserved)
+     
     
     parameter LINE_WIDTH_BITS =   16,
     
@@ -154,7 +157,7 @@ module  sens_parallel12 #(
     reg         iarst = 0;
     reg         imrst = 0;
     reg         rst_mmcm=1; // rst and command - en/dis 
-    reg  [5:0]  quadrants=0; //90-degree shifts for data {1:0], hact [3:2] and vact [5:4]
+    reg  [SENS_CTRL_QUADRANTS_WIDTH-1:0]  quadrants=0; //90-degree shifts for data {1:0], hact [3:2] and vact [5:4]
     reg         ld_idelay=0;
     reg         sel_ext_clk=0; // select clock source from the sensor (0 - use internal clock - to sensor)
 
@@ -239,7 +242,7 @@ module  sens_parallel12 #(
         else if (set_ctrl_r && data_r[SENS_CTRL_EXT_CLK + 1])   sel_ext_clk <= data_r[SENS_CTRL_EXT_CLK]; 
          
         if      (mclk_rst)                                      quadrants <= 0;
-        else if (set_ctrl_r && data_r[SENS_CTRL_QUADRANTS + 8]) quadrants <= data_r[SENS_CTRL_QUADRANTS+:6]; 
+        else if (set_ctrl_r && data_r[SENS_CTRL_QUADRANTS_EN])  quadrants <= data_r[SENS_CTRL_QUADRANTS +: SENS_CTRL_QUADRANTS_WIDTH]; 
 
         if  (mclk_rst) ld_idelay <= 0;
         else           ld_idelay <= set_ctrl_r && data_r[SENS_CTRL_LD_DLY]; 

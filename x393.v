@@ -1422,6 +1422,8 @@ assign axi_grst = axi_rst_pre;
         .SENS_CTRL_EXT_CLK          (SENS_CTRL_EXT_CLK),
         .SENS_CTRL_LD_DLY           (SENS_CTRL_LD_DLY),
         .SENS_CTRL_QUADRANTS        (SENS_CTRL_QUADRANTS),
+        .SENS_CTRL_QUADRANTS_WIDTH  (SENS_CTRL_QUADRANTS_WIDTH),
+        .SENS_CTRL_QUADRANTS_EN     (SENS_CTRL_QUADRANTS_EN),
         .SENSIO_STATUS              (SENSIO_STATUS),
         .SENSIO_JTAG                (SENSIO_JTAG),
         .SENS_JTAG_PGMEN            (SENS_JTAG_PGMEN),

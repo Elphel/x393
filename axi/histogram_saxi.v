@@ -24,14 +24,14 @@
 // keeping pointer locally)
 
 module  histogram_saxi#(
-    parameter HIST_SAXI_ADDR =           'h380,  // need to modify addresses and masks to fit into overall command range
+    parameter HIST_SAXI_ADDR =           'h380,  // 16 locations to write 20 bits of a 4KB page for the histogram
     parameter HIST_SAXI_ADDR_MASK =      'h7f0,
     parameter HIST_SAXI_MODE_ADDR =      'h390,
       parameter HIST_SAXI_MODE_WIDTH =   8,
       parameter HIST_SAXI_EN =           0,
       parameter HIST_SAXI_NRESET =       1,
       parameter HIST_CONFIRM_WRITE =     2, // wait write confirmation for each block
-      parameter HIST_SAXI_AWCACHE =      4'h3, //..7 cache mode (4 bits, default 4'h3)
+      parameter HIST_SAXI_AWCACHE =      4, // Write 4'h3 there, //..7 cache mode (4 bits, default 4'h3)
       
     parameter HIST_SAXI_MODE_ADDR_MASK = 'h7ff,
 //    parameter HIST_SAXI_STATUS_REG =     'h34,
@@ -386,7 +386,7 @@ module  histogram_saxi#(
         .ADDR_MASK1  (HIST_SAXI_MODE_ADDR_MASK),
         .ADDR2       (0),
         .ADDR_MASK2  (0)
-    ) cmd_deser_sens_i2c_i (
+    ) cmd_deser_histogram_saxi_i (
         .rst         (1'b0),             // input
         .clk         (mclk),             // input
         .srst        (mrst),             // input

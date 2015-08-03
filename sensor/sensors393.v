@@ -104,6 +104,8 @@ module  sensors393 #(
         parameter SENS_CTRL_EXT_CLK =     8,  //  9: 8
         parameter SENS_CTRL_LD_DLY =     10,  // 10
         parameter SENS_CTRL_QUADRANTS =  12,  // 17:12, enable - 20
+        parameter SENS_CTRL_QUADRANTS_WIDTH = 6,
+        parameter SENS_CTRL_QUADRANTS_EN =   20,  // 17:12, enable - 20 (2 bits reserved)
       parameter SENSIO_STATUS =         'h1,
       parameter SENSIO_JTAG =           'h2,
         // SENSIO_JTAG register bits
@@ -372,6 +374,8 @@ module  sensors393 #(
                 .SENS_CTRL_EXT_CLK             (SENS_CTRL_EXT_CLK),
                 .SENS_CTRL_LD_DLY              (SENS_CTRL_LD_DLY),
                 .SENS_CTRL_QUADRANTS           (SENS_CTRL_QUADRANTS),
+                .SENS_CTRL_QUADRANTS_WIDTH     (SENS_CTRL_QUADRANTS_WIDTH),
+                .SENS_CTRL_QUADRANTS_EN        (SENS_CTRL_QUADRANTS_EN),
                 .SENSIO_STATUS                 (SENSIO_STATUS),
                 .SENSIO_JTAG                   (SENSIO_JTAG),
                 .SENS_JTAG_PGMEN               (SENS_JTAG_PGMEN),
