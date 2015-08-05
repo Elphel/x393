@@ -36,8 +36,8 @@ module  timing393       #(
     parameter CAMSYNC_TRIG_DELAY2 =             'h6, // setup input trigger delay
     parameter CAMSYNC_TRIG_DELAY3 =             'h7, // setup input trigger delay
     parameter CAMSYNC_SNDEN_BIT =               'h1, // enable writing ts_snd_en
-    parameter CAMSYNC_EXTERNAL_BIT =            'h3, // enable writing ts_external
-    parameter CAMSYNC_TRIGGERED_BIT =           'h5, // enable writing ts_external
+    parameter CAMSYNC_EXTERNAL_BIT =            'h3, // enable writing ts_external (0 - local timestamp in the frame header)
+    parameter CAMSYNC_TRIGGERED_BIT =           'h5, // triggered mode ( 0- async)
     parameter CAMSYNC_MASTER_BIT =              'h8, // select a 2-bit master channel (master delay may be used as a flash delay)
     parameter CAMSYNC_CHN_EN_BIT =              'hd, // per-channel enable timestamp generation
     parameter CAMSYNC_PRE_MAGIC =               6'b110100,

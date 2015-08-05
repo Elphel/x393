@@ -31,7 +31,7 @@ module  rtc393 #(
         parameter RTC_MHZ =                      25, // RTC input clock in MHz (should be interger number)
         parameter RTC_BITC_PREDIV =              5, // number of bits to generate 2 MHz pulses counting refclk 
         parameter RTC_SET_USEC =                 0, // 20-bit number of microseconds
-        parameter RTC_SET_SEC =                  1, // 32-bit full number of seconds (und actually update timer)
+        parameter RTC_SET_SEC =                  1, // 32-bit full number of seconds (and actually update timer)
         parameter RTC_SET_CORR =                 2, // write correction 16-bit signed
         parameter RTC_SET_STATUS =               3  // set status mode, and take a time snapshot (wait response and read time)
 

@@ -32,9 +32,9 @@ module  simul_axi_hp_wr#(
     input         awvalid,
     output        awready,
     input  [ 5:0] awid,
-    input  [ 1:0] awlock,   // verify the corerct values are here
-    input  [ 3:0] awcache,  // verify the corerct values are here
-    input  [ 2:0] awprot,   // verify the corerct values are here
+    input  [ 1:0] awlock,   // verify the correct values are here
+    input  [ 3:0] awcache,  // verify the correct values are here
+    input  [ 2:0] awprot,   // verify the correct values are here
     input  [ 3:0] awlen,
     input  [ 1:0] awsize,
     input  [ 1:0] awburst,

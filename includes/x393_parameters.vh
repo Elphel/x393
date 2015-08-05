@@ -216,10 +216,12 @@
     parameter MCNTRL_SCANLINE_MODE=              'h0,   // set mode register: {extra_pages[1:0],enable,!reset}
     parameter MCNTRL_SCANLINE_STATUS_CNTRL=      'h1,   // control status reporting
     parameter MCNTRL_SCANLINE_STARTADDR=         'h2,   // 22-bit frame start address (3 CA LSBs==0. BA==0)
-    parameter MCNTRL_SCANLINE_FRAME_FULL_WIDTH=  'h3,   // Padded line length (8-row increment), in 8-bursts (16 bytes)
-    parameter MCNTRL_SCANLINE_WINDOW_WH=         'h4,   // low word - 13-bit window width (0->'h4000), high word - 16-bit frame height (0->'h10000)
-    parameter MCNTRL_SCANLINE_WINDOW_X0Y0=       'h5,   // low word - 13-bit window left, high word - 16-bit window top
-    parameter MCNTRL_SCANLINE_WINDOW_STARTXY=    'h6,   // low word - 13-bit start X (relative to window), high word - 16-bit start y
+    parameter MCNTRL_SCANLINE_FRAME_SIZE=        'h3,   // 22-bit frame start address increment (3 CA LSBs==0. BA==0)
+    parameter MCNTRL_SCANLINE_FRAME_LAST=        'h4,   // 16-bit last frame number in the buffer
+    parameter MCNTRL_SCANLINE_FRAME_FULL_WIDTH=  'h5,   // Padded line length (8-row increment), in 8-bursts (16 bytes)
+    parameter MCNTRL_SCANLINE_WINDOW_WH=         'h6,   // low word - 13-bit window width (0->'h4000), high word - 16-bit frame height (0->'h10000)
+    parameter MCNTRL_SCANLINE_WINDOW_X0Y0=       'h7,   // low word - 13-bit window left, high word - 16-bit window top
+    parameter MCNTRL_SCANLINE_WINDOW_STARTXY=    'h8,   // low word - 13-bit start X (relative to window), high word - 16-bit start y
                                                         // Start XY can be used when read command to start from the middle
                                                         // TODO: Add number of blocks to R/W? (blocks can be different) - total length?
                                                         // Read back current address (for debugging)?
@@ -239,14 +241,17 @@
     parameter MCNTRL_TILED_MODE=            'h0,   // set mode register: {extra_pages[1:0],write_mode,enable,!reset}
     parameter MCNTRL_TILED_STATUS_CNTRL=    'h1,   // control status reporting
     parameter MCNTRL_TILED_STARTADDR=       'h2,   // 22-bit frame start address (3 CA LSBs==0. BA==0)
-    parameter MCNTRL_TILED_FRAME_FULL_WIDTH='h3,   // Padded line length (8-row increment), in 8-bursts (16 bytes)
-    parameter MCNTRL_TILED_WINDOW_WH=       'h4,   // low word - 13-bit window width (0->'h4000), high word - 16-bit frame height (0->'h10000)
-    parameter MCNTRL_TILED_WINDOW_X0Y0=     'h5,   // low word - 13-bit window left, high word - 16-bit window top
-    parameter MCNTRL_TILED_WINDOW_STARTXY=  'h6,   // low word - 13-bit start X (relative to window), high word - 16-bit start y
+    parameter MCNTRL_TILED_FRAME_SIZE=      'h3,   // 22-bit frame start address increment (3 CA LSBs==0. BA==0)
+    parameter MCNTRL_TILED_FRAME_LAST=      'h4,   // 16-bit last frame number in the buffer
+    parameter MCNTRL_TILED_FRAME_FULL_WIDTH='h5,   // Padded line length (8-row increment), in 8-bursts (16 bytes)
+    parameter MCNTRL_TILED_WINDOW_WH=       'h6,   // low word - 13-bit window width (0->'h4000), high word - 16-bit frame height (0->'h10000)
+    parameter MCNTRL_TILED_WINDOW_X0Y0=     'h7,   // low word - 13-bit window left, high word - 16-bit window top
+    parameter MCNTRL_TILED_WINDOW_STARTXY=  'h8,   // low word - 13-bit start X (relative to window), high word - 16-bit start y
                                                       // Start XY can be used when read command to start from the middle
                                                       // TODO: Add number of blocks to R/W? (blocks can be different) - total length?
                                                       // Read back current address (for debugging)?
-    parameter MCNTRL_TILED_TILE_WHS=         'h7,   // low word - 6-bit tile width in 8-bursts, high - tile height (0 - > 64)
+    parameter MCNTRL_TILED_TILE_WHS=        'h9,   // low byte - 6-bit tile width in 8-bursts, second byte - tile height (0 - > 64),
+                                                   // 3-rd byte - vertical step (to control tile vertical overlap)
     parameter MCNTRL_TILED_STATUS_REG_CHN2_ADDR= 'h5,
     parameter MCNTRL_TILED_STATUS_REG_CHN4_ADDR= 'h7,
     parameter MCNTRL_TILED_PENDING_CNTR_BITS=2,    // Number of bits to count pending trasfers, currently 2 is enough, but may increase
@@ -282,6 +287,15 @@
     parameter MCNTRL_TEST01_STATUS_REG_CHN2_ADDR= 'h3d,  // status/readback register for channel 3
     parameter MCNTRL_TEST01_STATUS_REG_CHN3_ADDR= 'h3e,  // status/readback register for channel 4
     parameter MCNTRL_TEST01_STATUS_REG_CHN4_ADDR= 'h3f,  // status/readback register for channel 4
+    
+    parameter MCONTR_SENS_BASE =                  'h680, // .. 'h6bf
+    parameter MCONTR_SENS_INC =                   'h10,
+    parameter MCONTR_CMPRS_BASE =                 'h6c0, // .. 'h6ff
+    parameter MCONTR_CMPRS_INC =                  'h10,
+    parameter MCONTR_SENS_STATUS_BASE =           'h28, // .. 'h2b
+    parameter MCONTR_SENS_STATUS_INC =            'h1,
+    parameter MCONTR_CMPRS_STATUS_BASE =          'h2c, // .. 'h2f
+    parameter MCONTR_CMPRS_STATUS_INC =           'h1,
 
 // membridge module parameters    
     parameter MEMBRIDGE_ADDR=                     'h200,
@@ -338,9 +352,9 @@
         parameter SENSI2C_CMD_DLY =          8, // [7:0]  - duration of quater i2c cycle (if 0, [3:0] control SCL+SDA)
         parameter SENSI2C_CMD_DLY_PBITS =    8,
     // direct control of SDA/SCL mutually exclusive with DLY control, disabled by running i2c
-        parameter SENSI2C_CMD_SCL =          0, // [1:0] : 0: NOP, 1: 1'b0->SCL, 2: 1'b1->SCL, 3: 1'bz -> SCL 
+        parameter SENSI2C_CMD_SCL =         16, // [17:16] : 0: NOP, 1: 1'b0->SCL, 2: 1'b1->SCL, 3: 1'bz -> SCL 
         parameter SENSI2C_CMD_SCL_WIDTH =    2,
-        parameter SENSI2C_CMD_SDA =          2, // [3:2] : 0: NOP, 1: 1'b0->SDA, 2: 1'b1->SDA, 3: 1'bz -> SDA,
+        parameter SENSI2C_CMD_SDA =         18, // [19:18] : 0: NOP, 1: 1'b0->SDA, 2: 1'b1->SDA, 3: 1'bz -> SDA,
         parameter SENSI2C_CMD_SDA_WIDTH =    2,
       
       parameter SENSI2C_STATUS =        'h1,
@@ -602,8 +616,8 @@
     parameter CAMSYNC_TRIG_DELAY2 =        'h6, // setup input trigger delay
     parameter CAMSYNC_TRIG_DELAY3 =        'h7, // setup input trigger delay
     parameter CAMSYNC_SNDEN_BIT =          'h1, // enable writing ts_snd_en
-    parameter CAMSYNC_EXTERNAL_BIT =       'h3, // enable writing ts_external
-    parameter CAMSYNC_TRIGGERED_BIT =      'h5, // enable writing ts_external
+    parameter CAMSYNC_EXTERNAL_BIT =       'h3, // enable writing ts_external (0 - local timestamp in the frame header)
+    parameter CAMSYNC_TRIGGERED_BIT =      'h5, // triggered mode ( 0- async)
     parameter CAMSYNC_MASTER_BIT =         'h8, // select a 2-bit master channel (master delay may be used as a flash delay)
     parameter CAMSYNC_CHN_EN_BIT =         'hd, // per-channel enable timestamp generation
     parameter CAMSYNC_PRE_MAGIC =          6'b110100,

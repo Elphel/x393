@@ -116,8 +116,9 @@
     localparam STATUS_MSB_RSHFT=           2; // status bits [25:2] are read through [23:0]
     
     localparam STATUS_PSHIFTER_RDY_MASK = 1<<STATUS_2LSB_SHFT;
-  localparam       FRAME_START_ADDRESS= 'h1000; // RA=80, CA=0, BA=0 22-bit frame start address (3 CA LSBs==0. BA==0)
-  localparam       FRAME_FULL_WIDTH=    'h0c0;  // Padded line length (8-row increment), in 8-bursts (16 bytes)
+    localparam FRAME_START_ADDRESS=      'h1000; // RA=80, CA=0, BA=0 22-bit frame start address (3 CA LSBs==0. BA==0)
+    localparam FRAME_START_ADDRESS_INC=  'h 800;
+    localparam       FRAME_FULL_WIDTH=    'h0c0;  // Padded line length (8-row increment), in 8-bursts (16 bytes)
   
 //  localparam       AFI_LO_ADDR64=       'h4000; // start of the system memory range in 64-bit words
 //  localparam       AFI_SIZE64=          'h4000; // size of system memory range in 64-bit words

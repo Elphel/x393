@@ -42,8 +42,8 @@ module camsync393       #(
     parameter CAMSYNC_TRIG_DELAY3 =             'h7, // setup input trigger delay
     
     parameter CAMSYNC_SNDEN_BIT =               'h1, // enable writing ts_snd_en
-    parameter CAMSYNC_EXTERNAL_BIT =            'h3, // enable writing ts_external
-    parameter CAMSYNC_TRIGGERED_BIT =           'h5, // enable writing ts_external
+    parameter CAMSYNC_EXTERNAL_BIT =            'h3, // enable writing ts_external (0 - local timestamp in the frame header)
+    parameter CAMSYNC_TRIGGERED_BIT =           'h5, // triggered mode ( 0- async)
     parameter CAMSYNC_MASTER_BIT =              'h8, // select a 2-bit master channel (master delay may be used as a flash delay)
     parameter CAMSYNC_CHN_EN_BIT =              'hd, // per-channel enable timestamp generation
     
@@ -63,7 +63,7 @@ module camsync393       #(
                            //           [5:4] +'h20 - reset triggered mode (free running sensor), +'h30 - set sensor triggered mode
                            //           [8:6] +'h100 - set master channel (zero delay in internal trigger mode, delay used for flash output)
                            //          [13:9] +'h2000 - set which channels to generate timestamp mesages
-                           
+                           // UPDATE now di-bit "01" means "keep" (00 - do not use, 01 - keep, 10 set active 0, 11 - set active 1)
                            // 1 - source of trigger (10 bit pairs, LSB - level to trigger, MSB - use this bit). All 0 - internal trigger
                            //     in internal mode output has variable delay from the internal trigger (relative to sensor trigger)
                            // 2 - 10 bit pairs: MSB - enable selected line, LSB - level to send when trigger active
@@ -79,7 +79,7 @@ module camsync393       #(
     input                         prst,           // @ posedge pclk - sync reset
     input                  [9:0]  gpio_in,        // 10-bit input from GPIO pins -> 10 bit
     output                 [9:0]  gpio_out,       // 10-bit output to GPIO pins
-    output reg             [9:0]  gpio_out_en,    // 10-bit output enable to GPIO pins
+    output                 [9:0]  gpio_out_en,    // 10-bit output enable to GPIO pins
 
     output                        triggered_mode, // use triggered mode (0 - sensors are free-running) @mclk
 
@@ -197,6 +197,7 @@ module camsync393       #(
     reg           high_zero;       // 24 MSBs are zero 
     reg     [9:0] input_use;       // 1 - use this bit
     reg     [9:0] input_pattern;   // data to be compared for trigger event to take place
+    reg     [9:0] gpio_out_en_r;
     reg           pre_input_use_intern;// @(posedge mclk) Use internal trigger generator, 0 - use external trigger (also switches delay from input to output)
     reg           input_use_intern;//  @(posedge clk) 
     reg    [31:0] input_dly_chn0;  // delay value for the trigger
@@ -285,6 +286,8 @@ module camsync393       #(
     wire    [3:0] frame_sync;
     reg     [3:0] ts_snap_triggered;     // make a timestamp pulse  single @(posedge pclk)
     wire    [3:0] ts_snap_triggered_mclk;     // make a timestamp pulse  single @(posedge pclk)
+    assign gpio_out_en = gpio_out_en_r;
+    
 //! in testmode GPIO[9] and GPIO[8] use internal signals instead of the outsync:
 //! bit 11 - same as TRIGGER output to the sensor (signal to the sensor may be disabled externally)
 //!          then that bit will be still from internall trigger to frame valid
@@ -326,11 +329,27 @@ module camsync393       #(
     assign set_trig_delay2_w =  cmd_we && (cmd_a == CAMSYNC_TRIG_DELAY2);
     assign set_trig_delay3_w =  cmd_we && (cmd_a == CAMSYNC_TRIG_DELAY3);
     
-    assign pre_input_use = {cmd_data[19],cmd_data[17],cmd_data[15],cmd_data[13],cmd_data[11],cmd_data[9],cmd_data[7],cmd_data[5],cmd_data[3],cmd_data[1]};
-    assign pre_input_pattern = {cmd_data[18],cmd_data[16],cmd_data[14],cmd_data[12],cmd_data[10],cmd_data[8],cmd_data[6],cmd_data[4],cmd_data[2],cmd_data[0]};
+    assign pre_input_use = {cmd_data[19],cmd_data[17],cmd_data[15],cmd_data[13],cmd_data[11],
+                            cmd_data[9],cmd_data[7],cmd_data[5],cmd_data[3],cmd_data[1]};
+    assign pre_input_pattern = {cmd_data[18],cmd_data[16],cmd_data[14],cmd_data[12],cmd_data[10],
+                                cmd_data[8],cmd_data[6],cmd_data[4],cmd_data[2],cmd_data[0]};
     assign triggered_mode = triggered_mode_r;
     assign {ts_snap_mclk_chn3, ts_snap_mclk_chn2, ts_snap_mclk_chn1, ts_snap_mclk_chn0 } = triggered_mode? ts_snap_triggered_mclk: frame_sync;
-    
+     // keep previous value if 2'b01
+//    assign input_use_w = pre_input_use | (~pre_input_use & pre_input_pattern & input_use);
+    wire [9:0] input_mask = pre_input_pattern | ~pre_input_use;
+    wire [9:0] input_use_w =     ((input_use     ^ pre_input_use)     & input_mask) ^ input_use;
+    wire [9:0] input_pattern_w = ((input_pattern ^ pre_input_pattern) & input_mask) ^ input_pattern;
+
+    wire [9:0] pre_gpio_out_en = {cmd_data[19],cmd_data[17],cmd_data[15],cmd_data[13],cmd_data[11],
+                                 cmd_data[9],  cmd_data[7],  cmd_data[5], cmd_data[3], cmd_data[1]};
+    wire [9:0] pre_gpio_active = {cmd_data[18],cmd_data[16],cmd_data[14],cmd_data[12],cmd_data[10],
+                                  cmd_data[8], cmd_data[6], cmd_data[4], cmd_data[2], cmd_data[0]};
+
+    wire [9:0] output_mask = pre_gpio_out_en | ~pre_gpio_active;
+    wire [9:0] gpio_out_en_w =    ((gpio_out_en_r ^ pre_gpio_out_en) & output_mask) ^ gpio_out_en_r;
+    wire [9:0] gpio_active_w =    ((gpio_active ^ pre_gpio_active) & output_mask) ^ gpio_active;
+
     always @(posedge mclk) begin
         if (set_mode_reg_w) begin
             if (cmd_data[CAMSYNC_SNDEN_BIT])     ts_snd_en <=   cmd_data[CAMSYNC_SNDEN_BIT - 1];
@@ -339,11 +358,11 @@ module camsync393       #(
             if (cmd_data[CAMSYNC_MASTER_BIT])    master_chn <= cmd_data[CAMSYNC_MASTER_BIT - 1 -: 2];
             if (cmd_data[CAMSYNC_CHN_EN_BIT])    chn_en <= cmd_data[CAMSYNC_CHN_EN_BIT - 1 -: 4];
         end 
-
-        if (set_trig_src_w) begin
-            input_use <= pre_input_use;
-            input_pattern <= pre_input_pattern;        
-            pre_input_use_intern <= (pre_input_use == 0); // use internal source for triggering
+        if (mrst) input_use <= 0;
+        else if (set_trig_src_w) begin
+            input_use <= input_use_w;
+            input_pattern <= input_pattern_w;        
+            pre_input_use_intern <= (input_use_w == 0); // use internal source for triggering
         end
 
         if (set_trig_delay0_w) begin 
@@ -363,8 +382,8 @@ module camsync393       #(
         end
 
         if (set_trig_dst_w) begin
-            gpio_out_en[9:0] <= {cmd_data[19],cmd_data[17],cmd_data[15],cmd_data[13],cmd_data[11],cmd_data[9],cmd_data[7],cmd_data[5],cmd_data[3],cmd_data[1]};
-            gpio_active[9:0] <= {cmd_data[18],cmd_data[16],cmd_data[14],cmd_data[12],cmd_data[10],cmd_data[8],cmd_data[6],cmd_data[4],cmd_data[2],cmd_data[0]};
+            gpio_out_en_r[9:0] <= gpio_out_en_w;
+            gpio_active[9:0] <= gpio_active_w;
             testmode <= cmd_data[24];
         end
 

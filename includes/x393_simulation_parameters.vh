@@ -46,5 +46,14 @@
     parameter SENSOR12BITS_TDDO =        2,   //   some confusion here - let's assume that it is from DCLK to Data out
     parameter SENSOR12BITS_TDDO1 =       5,   //
     parameter SENSOR12BITS_TRIGDLY =     8,   // delay between trigger input and start of output (VACT) in lines
-    parameter SENSOR12BITS_RAMP =        1,    // 1 - ramp, 0 - random (now - sensor.dat)
-    parameter SENSOR12BITS_NEW_BAYER =   0    // 0 - "old" tiles (16x16, 1 - new - (18x18)   
+    parameter SENSOR12BITS_RAMP =        1,   // 1 - ramp, 0 - random (now - sensor.dat)
+    parameter SENSOR12BITS_NEW_BAYER =   0,   // 0 - "old" tiles (16x16, 1 - new - (18x18)   
+
+    parameter HISTOGRAM_LEFT =           0,   //2;   // left   
+    parameter HISTOGRAM_TOP =            2,   // top
+    parameter HISTOGRAM_WIDTH =          6,   // width
+    parameter HISTOGRAM_HEIGHT =         6,   // height
+    parameter HISTOGRAM_STRAT_PAGE =    20'h12345,
+    parameter WOI_WIDTH=                64
+    
+    

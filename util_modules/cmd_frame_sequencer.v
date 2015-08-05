@@ -27,12 +27,6 @@
 // It also reduces real-time requirements to the software, as it is possible to
 // program parameters related to the events several frames in the future.
 //
-// Commands related to the particular frames go to one of the 8 FIFO buffers (64 commands deep each),
-// each command is 32 bits wide, with 8MSBs being register address, and the remaining 24 bits - data
-// to be written.
-// That limits data that can be written to the FPGA registers compared to the direct register writes
-// (8MSBs are always zero), but all the relevant information can be written with just 24 data bits.
-//
 // 
 // Controller is programmed through 32 locations. Each registers but the control require two writes:
 // First write - register address (AXI_WR_ADDR_BITS bits), second - register data (32 bits)
@@ -57,7 +51,6 @@ module  cmd_frame_sequencer#(
     parameter CMDFRAMESEQ_CTRL =                31,
     parameter CMDFRAMESEQ_RST_BIT =             14,
     parameter CMDFRAMESEQ_RUN_BIT =             13
-    
 )(
     input                         mrst,
     input                         mclk, // for command/status

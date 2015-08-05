@@ -77,6 +77,68 @@ module  x393_testbench02 #(
 `include "includes/x393_cur_params_target.vh" // SuppressThisWarning VEditor - not used parameters that may need adjustment, should be before x393_localparams.vh
 `include "includes/x393_localparams.vh" // SuppressThisWarning VEditor - not used
 
+
+// ========================== parameters from x353 ===================================
+
+`ifdef SYNC_COMPRESS
+    parameter DEPEND=1'b1;
+`else  
+    parameter DEPEND=1'b0;
+`endif
+
+`ifdef TEST_ABORT
+`endif
+ 
+  parameter SYNC_BIT_LENGTH=8-1; /// 7 pixel clock pulses
+  parameter FPGA_XTRA_CYCLES= 1500; // 1072+;
+// moved to x393_simulation_parameters.vh
+//  parameter HISTOGRAM_LEFT=  0; //2;   // left   
+//  parameter HISTOGRAM_TOP =  2;   // top
+//  parameter HISTOGRAM_WIDTH= 6;  // width
+//  parameter HISTOGRAM_HEIGHT=6;  // height
+  
+  parameter CLK0_PER = 6.25;   //160MHz
+  parameter CLK1_PER = 10.4;     //96MHz
+  parameter CLK3_PER = 83.33;   //12MHz
+  parameter CPU_PER=10.4;
+  
+ parameter HBLANK=            12; /// 52;
+ parameter WOI_HEIGHT=        32;
+ parameter BLANK_ROWS_BEFORE= 1; //8; ///2+2 - a little faster than compressor
+ parameter BLANK_ROWS_AFTER=  1; //8;
+ parameter TRIG_LINES=        8;
+ parameter VBLANK=            2; /// 2 lines //SuppressThisWarning Veditor UNUSED
+ parameter CYCLES_PER_PIXEL=  3; /// 2 for JP4, 3 for JPEG
+
+`ifdef PF
+  parameter PF_HEIGHT=8;
+  parameter FULL_HEIGHT=WOI_HEIGHT;
+  parameter PF_STRIPES=WOI_HEIGHT/PF_HEIGHT;
+`else  
+  parameter PF_HEIGHT=0;
+  parameter FULL_HEIGHT=WOI_HEIGHT+4;
+  parameter PF_STRIPES=0;
+`endif
+
+ parameter VIRTUAL_WIDTH=    FULL_WIDTH + HBLANK;
+ parameter VIRTUAL_HEIGHT=   FULL_HEIGHT + BLANK_ROWS_BEFORE + BLANK_ROWS_AFTER;  //SuppressThisWarning Veditor UNUSED
+ 
+ parameter TRIG_INTERFRAME=  100; /// extra 100 clock cycles between frames  //SuppressThisWarning Veditor UNUSED
+
+/// parameter TRIG_OUT_DATA=        'h80000; // internal cable
+/// parameter TRIG_EXTERNAL_INPUT=  'h20000; // internal cable, low level on EXT[8]
+
+ parameter TRIG_DELAY=      200; /// delay in sensor clock cycles
+
+
+ parameter FULL_WIDTH=        WOI_WIDTH+4;
+
+
+
+// ========================== end of parameters from x353 ===================================
+
+
+
 // Sensor signals - as on sensor pads
     wire        PX1_MCLK; // input sensor input clock
     wire        PX1_MRST; // input 
@@ -196,12 +258,31 @@ assign #10 gpio_pins[9] = gpio_pins[8];
     wire [ 3:0] afi_sim_wr_qos;        // output[3:0]  SuppressThisWarning VEditor - not used - just view
 
     assign HCLK = x393_i.ps7_i.SAXIHP0ACLK; // shortcut name
+    
 // afi loopback
     assign #1 afi_sim_rd_data=  afi_sim_rd_ready?{2'h0,afi_sim_rd_address[31:3],1'h1,  2'h0,afi_sim_rd_address[31:3],1'h0}:64'bx;
     assign #1 afi_sim_rd_valid = afi_sim_rd_ready;
     assign #1 afi_sim_rd_resp = afi_sim_rd_ready?2'b0:2'bx;
     assign #1 afi_sim_wr_ready = afi_sim_wr_valid;
     assign #1 afi_sim_bresp_latency=4'h5; 
+
+// SAXI_GP0 - histograms to system memory
+    wire        SAXI_GP0_CLK; 
+    wire [31:0] saxi_gp0_sim_wr_address;    // output[31:0]   SuppressThisWarning VEditor - not used - just view 
+    wire [ 5:0] saxi_gp0_sim_wid;           // output[5:0]    SuppressThisWarning VEditor - not used - just view
+    wire        saxi_gp0_sim_wr_valid;      // output
+    wire        saxi_gp0_sim_wr_ready;      // input
+    wire [31:0] saxi_gp0_sim_wr_data;       // output[31:0]   SuppressThisWarning VEditor - not used - just view
+    wire [ 3:0] saxi_gp0_sim_wr_stb;        // output[3:0]    SuppressThisWarning VEditor - not used - just view
+    wire [ 1:0] saxi_gp0_sim_wr_size;       // output[1:0]    SuppressThisWarning VEditor - not used - just view
+    wire [ 3:0] saxi_gp0_sim_bresp_latency; // input[3:0] 
+    wire [ 3:0] saxi_gp0_sim_wr_qos;        // output[3:0]    SuppressThisWarning VEditor - not used - just view
+
+    assign SAXI_GP0_CLK = x393_i.ps7_i.SAXIGP0ACLK;
+    assign #1 saxi_gp0_sim_wr_ready = saxi_gp0_sim_wr_valid;
+    assign #1 saxi_gp0_sim_bresp_latency=4'h5; 
+
+
   
 // axi_hp register access
   // PS memory mapped registers to read/write over a separate simulation bus running at HCLK, no waits
@@ -1373,7 +1454,7 @@ simul_axi_hp_rd #(
 simul_axi_hp_wr #(
         .HP_PORT(0)
     ) simul_axi_hp_wr_i (
-        .rst            (RST), // input
+        .rst            (RST),                               // input
         .aclk           (x393_i.ps7_i.SAXIHP0ACLK),          // input
         .aresetn        (),                                  // output
         .awaddr         (x393_i.ps7_i.SAXIHP0AWADDR),        // input[31:0] 
@@ -1400,21 +1481,59 @@ simul_axi_hp_wr #(
         .wcount         (x393_i.ps7_i.SAXIHP0WCOUNT),        // output[7:0] 
         .wacount        (x393_i.ps7_i.SAXIHP0WACOUNT),       // output[5:0] 
         .wrissuecap1en  (x393_i.ps7_i.SAXIHP0WRISSUECAP1EN), // input
-        .sim_wr_address (afi_sim_wr_address), // output[31:0] 
-        .sim_wid        (afi_sim_wid), // output[5:0] 
-        .sim_wr_valid   (afi_sim_wr_valid), // output
-        .sim_wr_ready   (afi_sim_wr_ready), // input
-        .sim_wr_data    (afi_sim_wr_data), // output[63:0] 
-        .sim_wr_stb     (afi_sim_wr_stb), // output[7:0] 
-        .sim_bresp_latency(afi_sim_bresp_latency), // input[3:0] 
-        .sim_wr_cap     (afi_sim_wr_cap), // output[2:0] 
-        .sim_wr_qos     (afi_sim_wr_qos), // output[3:0] 
-        .reg_addr       (PS_REG_ADDR), // input[31:0] 
-        .reg_wr         (PS_REG_WR), // input
-        .reg_rd         (PS_REG_RD), // input
-        .reg_din        (PS_REG_DIN), // input[31:0] 
-        .reg_dout       (PS_REG_DOUT) // output[31:0] 
+        .sim_wr_address (afi_sim_wr_address),                // output[31:0] 
+        .sim_wid        (afi_sim_wid),                       // output[5:0] 
+        .sim_wr_valid   (afi_sim_wr_valid),                  // output
+        .sim_wr_ready   (afi_sim_wr_ready),                  // input
+        .sim_wr_data    (afi_sim_wr_data),                   // output[63:0] 
+        .sim_wr_stb     (afi_sim_wr_stb),                    // output[7:0] 
+        .sim_bresp_latency(afi_sim_bresp_latency),           // input[3:0] 
+        .sim_wr_cap     (afi_sim_wr_cap),                    // output[2:0] 
+        .sim_wr_qos     (afi_sim_wr_qos),                    // output[3:0] 
+        .reg_addr       (PS_REG_ADDR),                       // input[31:0] 
+        .reg_wr         (PS_REG_WR),                         // input
+        .reg_rd         (PS_REG_RD),                         // input
+        .reg_din        (PS_REG_DIN),                        // input[31:0] 
+        .reg_dout       (PS_REG_DOUT)                        // output[31:0] 
     );
+
+    // SAXI_GP0 - histograms to system memory
+    simul_saxi_gp_wr simul_saxi_gp0_wr_i (
+        .rst               (RST),                         // input
+        .aclk              (SAXI_GP0_CLK),                // input
+        .aresetn           (), // output
+        .awaddr            (x393_i.ps7_i.SAXIGP0AWADDR),  // input[31:0] 
+        .awvalid           (x393_i.ps7_i.SAXIGP0AWVALID), // input
+        .awready           (x393_i.ps7_i.SAXIGP0AWREADY), // output
+        .awid              (x393_i.ps7_i.SAXIGP0AWID),    // input[5:0] 
+        .awlock            (x393_i.ps7_i.SAXIGP0AWLOCK),  // input[1:0] 
+        .awcache           (x393_i.ps7_i.SAXIGP0AWCACHE), // input[3:0] 
+        .awprot            (x393_i.ps7_i.SAXIGP0AWPROT),  // input[2:0] 
+        .awlen             (x393_i.ps7_i.SAXIGP0AWLEN),   // input[3:0] 
+        .awsize            (x393_i.ps7_i.SAXIGP0AWSIZE),  // input[1:0] 
+        .awburst           (x393_i.ps7_i.SAXIGP0AWBURST), // input[1:0] 
+        .awqos             (x393_i.ps7_i.SAXIGP0AWQOS),   // input[3:0] 
+        .wdata             (x393_i.ps7_i.SAXIGP0WDATA),   // input[31:0] 
+        .wvalid            (x393_i.ps7_i.SAXIGP0WVALID),  // input
+        .wready            (x393_i.ps7_i.SAXIGP0WREADY),  // output
+        .wid               (x393_i.ps7_i.SAXIGP0WID),     // input[5:0] 
+        .wlast             (x393_i.ps7_i.SAXIGP0WLAST),   // input
+        .wstrb             (x393_i.ps7_i.SAXIGP0WSTRB),   // input[3:0] 
+        .bvalid            (x393_i.ps7_i.SAXIGP0BVALID),  // output
+        .bready            (x393_i.ps7_i.SAXIGP0BREADY),  // input
+        .bid               (x393_i.ps7_i.SAXIGP0BID),     // output[5:0] 
+        .bresp             (x393_i.ps7_i.SAXIGP0BRESP),   // output[1:0] 
+        .sim_wr_address    (saxi_gp0_sim_wr_address),     // output[31:0] 
+        .sim_wid           (saxi_gp0_sim_wid),            // output[5:0] 
+        .sim_wr_valid      (saxi_gp0_sim_wr_valid),       // output
+        .sim_wr_ready      (saxi_gp0_sim_wr_ready),       // input
+        .sim_wr_data       (saxi_gp0_sim_wr_data),        // output[31:0] 
+        .sim_wr_stb        (saxi_gp0_sim_wr_stb),         // output[3:0] 
+        .sim_wr_size       (saxi_gp0_sim_wr_size),        // output[1:0] 
+        .sim_bresp_latency (saxi_gp0_sim_bresp_latency),  // input[3:0] 
+        .sim_wr_qos        (saxi_gp0_sim_wr_qos)          // output[3:0] 
+    );
+
 
 // Generate all clocks
 //always #(CLKIN_PERIOD/2) CLK = ~CLK;
@@ -1430,40 +1549,28 @@ simul_axi_hp_wr #(
         .ffclk0  ({ffclk0n, ffclk0p}), // output[1:0] 
         .ffclk1  ({ffclk1n, ffclk1p})  // output[1:0] 
     );
-/*
-    parameter SENSOR12BITS_LLINE   =   192,   //   1664;//   line duration in clocks
-    parameter SENSOR12BITS_NCOLS   =    66,   //58; //56; // 129; //128;   //1288;
-    parameter SENSOR12BITS_NROWS   =    18,   // 16;   //   1032;
-    parameter SENSOR12BITS_NROWB   =     1,   // number of "blank rows" from vact to 1-st hact
-    parameter SENSOR12BITS_NROWA   =     1,   // number of "blank rows" from last hact to end of vact
-//    parameter nAV   =      24,   //240;   // clocks from ARO to VACT (actually from en_dclkd)
-    parameter SENSOR12BITS_NBPF =       20,   //16; // bpf length
-    parameter SENSOR12BITS_NGPL =        8,   // bpf to hact
-    parameter SENSOR12BITS_NVLO =        1,   // VACT=0 in video mode (clocks)
-    //parameter tMD   =   14;    //
-    //parameter tDDO   =   10;   //   some confusion here - let's assume that it is from DCLK to Data out
-    parameter SENSOR12BITS_TMD =         4,   //
-    parameter SENSOR12BITS_TDDO =        2,   //   some confusion here - let's assume that it is from DCLK to Data out
-    parameter SENSOR12BITS_TDDO1 =       5,   //
-    parameter SENSOR12BITS_TRIGDLY =     8,   // delay between trigger input and start of output (VACT) in lines
-    parameter SENSOR12BITS_RAMP  =       1    // 1 - ramp, 0 - random (now - sensor.dat)
-*/
+
+
     simul_sensor12bits #(
-        .lline     (SENSOR12BITS_LLINE),
-        .ncols     (SENSOR12BITS_NCOLS),
-        .nrows     (SENSOR12BITS_NROWS),
-        .nrowb     (SENSOR12BITS_NROWB),
-        .nrowa     (SENSOR12BITS_NROWA),
+        .lline     (VIRTUAL_WIDTH),     // SENSOR12BITS_LLINE),
+        .ncols     (FULL_WIDTH),        // (SENSOR12BITS_NCOLS),
+`ifdef PF
+        .nrows     (PF_HEIGHT),         // SENSOR12BITS_NROWS),
+`else
+        .nrows     (FULL_HEIGHT),       // SENSOR12BITS_NROWS),
+`endif        
+        .nrowb     (BLANK_ROWS_BEFORE), // SENSOR12BITS_NROWB),
+        .nrowa     (BLANK_ROWS_AFTER),  // SENSOR12BITS_NROWA),
 //        .nAV(24),
-        .nbpf      (SENSOR12BITS_NBPF),
+        .nbpf      (0), // SENSOR12BITS_NBPF),
         .ngp1      (SENSOR12BITS_NGPL),
         .nVLO      (SENSOR12BITS_NVLO),
         .tMD       (SENSOR12BITS_TMD),
         .tDDO      (SENSOR12BITS_TDDO),
         .tDDO1     (SENSOR12BITS_TDDO1),
-        .trigdly   (SENSOR12BITS_TRIGDLY),
-        .ramp      (SENSOR12BITS_RAMP),
-        .new_bayer (SENSOR12BITS_NEW_BAYER)
+        .trigdly   (TRIG_LINES), // SENSOR12BITS_TRIGDLY),
+        .ramp      (0), //SENSOR12BITS_RAMP),
+        .new_bayer (1) //SENSOR12BITS_NEW_BAYER)
     ) simul_sensor12bits_i (
         .MCLK  (PX1_MCLK), // input 
         .MRST  (PX1_MRST), // input 
@@ -1655,6 +1762,280 @@ endfunction
 
 // Sensor - related tasks and functions
 
+task setup_sensor_channel;
+    input        trigger_mode; // 0 - auto, 1 - triggered
+    input        ext_trigger_mode; // 0 - internal, 1 - external trigger (camsync)
+    input        external_timestamp; // embed local timestamp, 1 - embed received timestamp
+    input [31:0] camsync_period;
+    input [31:0] camsync_delay;
+    input [31:0] last_buf_frame;
+    input [31:0] frame_full_width; // 13-bit Padded line length (8-row increment), in 8-bursts (16 bytes)
+    input [31:0] window_width;    // 13 bit - in 8*16=128 bit bursts
+    input [31:0] window_height;   // 16 bit
+    input [31:0] window_left;
+    input [31:0] window_top;
+    
+// Setting up a single sensor channel 0, sunchannel 0
+    begin
+        program_curves(
+            0,  // input   [1:0] num_sensor;
+            0); // input   [1:0] sub_channel;    
+        program_status_sensor_i2c(
+            0, // input [1:0] num_sensor;
+            3, // input [1:0] mode;
+            0); //input [5:0] seq_num;
+        program_status_sensor_io(
+            0, // input [1:0] num_sensor;
+            3, // input [1:0] mode;
+            0); //input [5:0] seq_num;
+            
+        program_status_rtc( // also takes snapshot
+            3, // input [1:0] mode;
+            0); //input [5:0] seq_num;
+            
+        set_rtc (
+            32'h12345678, // input [31:0] sec;
+            0,           //input [19:0] usec;
+            16'h8000); // input [15:0] corr;  maximal correction to the rtc
+            
+            
+       set_sensor_io_dly (
+            0,                                          // input                            [1:0] num_sensor;
+            128'h33404850_58606870_78808890_98a0a8b0 ); //input [127:0] dly; // {mmsm_phase, bpf, vact, hact, pxd11,...,pxd0]
+            
+            
+        set_sensor_io_ctl (
+            0,  // input                            [1:0] num_sensor;
+            3,  // input                            [1:0] mrst;     // <2: keep MRST, 2 - MRST low (active),  3 - high (inactive)
+            3,  // input                            [1:0] arst;     // <2: keep ARST, 2 - ARST low (active),  3 - high (inactive)
+            3,  // input                            [1:0] aro;      // <2: keep ARO,  2 - set ARO (software controlled) low,  3 - set ARO  (software controlled) high
+            0,  // input                            [1:0] mmcm_rst; // <2: keep MMCM reset, 2 - MMCM reset off,  3 - MMCM reset on
+            3,  // input                            [1:0] clk_sel;  // <2: keep MMCM clock source, 2 - use internal pixel clock,  3 - use pixel clock from the sensor
+            0,  // input                                  set_delays; // (self-clearing) load all pre-programmed delays 
+            1'b1,  // input                                  set_quadrants;  // 0 - keep quadrants settings, 1 - update quadrants
+            6'h24); // data-0, hact - 1, vact - 2 input  [SENS_CTRL_QUADRANTS_WIDTH-1:0] quadrants;  // 90-degree shifts for data [1:0], hact [3:2] and vact [5:4]
+
+// setup camsync module
+        reset_camsync_inout (0);        // reset input selection
+        if (ext_trigger_mode)
+            set_camsync_inout   (0, 7, 1 ); // set input selection - ext[7], active high
+        reset_camsync_inout (1);        // reset output selection
+        set_camsync_inout   (1, 6, 1 ); // reset output selection - ext[6], active high
+        set_camsync_period  (camsync_period); // set period
+        set_camsync_delay (
+            0, // input  [1:0] sub_chn;
+            camsync_delay); // input [31:0] dly;          // 0 - input selection, 1 - output selection
+
+        set_camsync_mode (
+            {1'b1,1'b1},               // input [1:0] en_snd;         // <2 - NOP, 2 - disable, 3 - enable sending timestamp with sync pulse
+            {1'b1,external_timestamp}, // input [1:0] en_ts_external; // <2 - NOP, 2 - local timestamp in the frame header, 3 - use external timestamp
+            {1'b1,ext_trigger_mode},   // input [1:0] triggered_mode; // <2 - NOP, 2 - async sesnor mode, 3 - triggered sensor mode
+            {1'b1, 2'h0},              // input [2:0] master_chn;     // <4 - NOP, 4..7 - set master channel
+            {1'b1, 4'h3});             // input [4:0] chn_en;         // <16 - NOP, [3:0] - bit mask of enabled sensor channels
+
+        test_i2c_353; // test soft/sequencer i2c
+
+        set_sensor_gamma_heights (
+            0,      // input   [1:0] num_sensor;
+            'hffff, // input  [15:0] height0_m1; // height of the first sub-frame minus 1
+            0,      //input  [15:0] height1_m1; // height of the second sub-frame minus 1
+            0);     //input  [15:0] height2_m1; // height of the third sub-frame minus 1 (no need for 4-th)
+           
+        // Configure histograms
+        set_sensor_histogram_window ( // 353 did it using command sequencer)
+            0,                   // input   [1:0] num_sensor; // sensor channel number (0..3)
+            0,                   // input   [1:0] subchannel; // subchannel number (for multiplexed images)
+            HISTOGRAM_LEFT,      // input  [15:0] left;
+            HISTOGRAM_TOP,       // input  [15:0] top;
+            HISTOGRAM_WIDTH-2,   // input  [15:0] width_m1;  // one less than window width. If 0 - use frame right margin (end of HACT)
+            HISTOGRAM_HEIGHT-2); // input  [15:0] height_m1; // one less than window height. If 0 - use frame bottom margin (end of VACT)
+
+        set_sensor_histogram_saxi_addr (
+            0, // input   [1:0] num_sensor; // sensor channel number (0..3)
+            0, // input   [1:0] subchannel; // subchannel number (for multiplexed images)
+            HISTOGRAM_STRAT_PAGE); // input  [19:0] page; //start address in 4KB pages (1 page - one subchannel histogram)
+            
+         set_sensor_histogram_saxi (
+            1'b1,                // input         en;
+            1'b1,                // input         nrst;
+            1'b1,                // input         confirm_write; // wait for the write confirmed befoer swicthing channels
+            4'h3);               // input   [3:0] cache_mode;    // default should be 4'h3
+
+/*
+task    set_sensor_io_jtag;
+    input                            [1:0] num_sensor;
+    input                            [1:0] pgmen;    // <2: keep PGMEN, 2 - PGMEN low (inactive),  3 - high (active) enable JTAG control
+    input                            [1:0] prog;     // <2: keep prog, 2 - prog low (active),  3 - high (inactive) ("program" pin control)
+    input                            [1:0] tck;      // <2: keep TCK,  2 - set TCK low,  3 - set TCK high
+    input                            [1:0] tms;      // <2: keep TMS,  2 - set TMS low,  3 - set TMS high
+    input                            [1:0] tdi;      // <2: keep TDI,  2 - set TDI low,  3 - set TDI high
+
+task ctrl_cmd_frame_sequencer;
+    input [1:0] num_sensor; // sensor channel number
+    input       reset;      // reset sequencer (also stops)
+    input       start;      // start sequencer
+    input       stop;       // stop sequencer
+
+task write_cmd_frame_sequencer;
+    input                  [1:0] num_sensor; // sensor channel number
+    input                        relative;   // 0 - absolute (address = 0..f), 1 - relative (address= 0..e)
+    input                  [3:0] frame_addr;   // frame address (relative ort absolute)
+    input [AXI_WR_ADDR_BITS-1:0] addr;         // command address (register to which command should be applied)
+    input                 [31:0] data;         // command data
+
+*/            
+        set_sensor_io_width(
+            0, // input    [1:0] num_sensor;
+            FULL_WIDTH); // Or use 0 for sensor-generated HACT input   [15:0] width; // 0 - use HACT, >0 - generate HACT from start to specified width
+            
+        setup_sensor_memory (
+            0,                             // input  [1:0] num_sensor;
+            FRAME_START_ADDRESS,           // input [31:0] frame_sa;         // 22-bit frame start address ((3 CA LSBs==0. BA==0)
+            FRAME_START_ADDRESS_INC,       // input [31:0] frame_sa_inc;     // 22-bit frame start address increment  ((3 CA LSBs==0. BA==0)
+            last_buf_frame,                // input [31:0] last_frame_num;   // 16-bit number of the last frame in a buffer
+            frame_full_width,              // input [31:0] frame_full_width; // 13-bit Padded line length (8-row increment), in 8-bursts (16 bytes)
+            window_width,                  // input [31:0] window_width;    // 13 bit - in 8*16=128 bit bursts
+            window_height,                 // input [31:0] window_height;   // 16 bit
+            window_left,                   // input [31:0] window_left;
+            window_top);                   // input [31:0] window_top;
+            
+        // Run after histogram channel is set up?    
+        set_sensor_mode (
+            0, // input  [1:0] num_sensor;
+            4'h1,  // input  [3:0] hist_en;    // [0..3] 1 - enable histogram modules, disable after processing the started frame
+            4'h1,  // input  [3:0] hist_nrst;  // [4..7] 0 - immediately reset histogram module 
+            1'b1,  // input        chn_en;     // [8]    1 - enable sensor channel (0 - reset) 
+            1'b0); // input        bits16;     // [9]    0 - 8 bpp mode, 1 - 16 bpp (bypass gamma). Gamma-processed data is still used for histograms
+            // test i2c - manual and sequencer (same data as in 353 test fixture
+
+        set_sensor_gamma_ctl (// doing last to enable sesnor data when everything else is set up
+            0,     // input   [1:0] num_sensor; // sensor channel number (0..3)
+            2'h3,  // input   [1:0] bayer;      // bayer shift (0..3)
+            0,     // input         table_page; // table page (only used if SENS_GAMMA_BUFFER)
+            1'b1,  // input         en_input;   // enable channel input
+            1'b1,  // input         repet_mode; //  Normal mode, single trigger - just for debugging
+            1'b0); // input         trig;       // pass next frame
+
+    end
+endtask
+
+task setup_sensor_memory;
+    input  [1:0] num_sensor;
+    input [31:0]frame_sa;         // 22-bit frame start address ((3 CA LSBs==0. BA==0)
+    input [31:0] frame_sa_inc;     // 22-bit frame start address increment  ((3 CA LSBs==0. BA==0)
+    input [31:0] last_frame_num;   // 16-bit number of the last frame in a buffer
+    input [31:0] frame_full_width; // 13-bit Padded line length (8-row increment), in 8-bursts (16 bytes)
+    input [31:0] window_width;    // 13 bit - in 8*16=128 bit bursts
+    input [31:0] window_height;   // 16 bit
+    input [31:0] window_left;
+    input [31:0] window_top;
+/*   
+    input [NUM_RC_BURST_BITS-1:0] frame_sa;         // 22-bit frame start address ((3 CA LSBs==0. BA==0)
+    input [NUM_RC_BURST_BITS-1:0] frame_sa_inc;     // 22-bit frame start address increment  ((3 CA LSBs==0. BA==0)
+    input   [LAST_FRAME_BITS-1:0] last_frame_num;   // 16-bit number of the last frame in a buffer
+    input  [FRAME_WIDTH_BITS-1:0] frame_full_width; // 13-bit Padded line length (8-row increment), in 8-bursts (16 bytes)
+    input  [FRAME_WIDTH_BITS-1:0] window_width;  // 13 bit - in 8*16=128 bit bursts
+    input [FRAME_HEIGHT_BITS-1:0] window_height; // 16 bit
+    input  [FRAME_WIDTH_BITS-1:0] window_left;
+    input [FRAME_HEIGHT_BITS-1:0] window_top;
+*/
+    
+    reg [29:0] base_addr;
+    integer    mode;
+    begin
+        base_addr = MCONTR_SENS_BASE + MCONTR_SENS_INC * num_sensor;
+        mode=   func_encode_mode_scanline(
+                    1, // repetitive,
+                    0, // single,
+                    0, // reset_frame,
+                    0, // extra_pages,
+                    1, // write_mem,
+                    1, // enable
+                    0);  // chn_reset
+        write_contol_register(base_addr + MCNTRL_SCANLINE_STARTADDR,        frame_sa); // RA=80, CA=0, BA=0 22-bit frame start address (3 CA LSBs==0. BA==0)
+        write_contol_register(base_addr + MCNTRL_SCANLINE_FRAME_SIZE,       frame_sa_inc);
+        write_contol_register(base_addr + MCNTRL_SCANLINE_FRAME_LAST,       last_frame_num);
+        write_contol_register(base_addr + MCNTRL_SCANLINE_FRAME_FULL_WIDTH, frame_full_width);
+        write_contol_register(base_addr + MCNTRL_SCANLINE_WINDOW_WH,        {window_height[15:0],window_width[15:0]}); //WINDOW_WIDTH + (WINDOW_HEIGHT<<16));
+        write_contol_register(base_addr + MCNTRL_SCANLINE_WINDOW_X0Y0,      {window_top[15:0],window_left[15:0]}); //WINDOW_X0+ (WINDOW_Y0<<16));
+        write_contol_register(base_addr + MCNTRL_SCANLINE_WINDOW_STARTXY,   32'b0);
+        write_contol_register(base_addr + MCNTRL_SCANLINE_MODE,             mode); 
+    end
+endtask
+
+
+
+task test_i2c_353;
+    begin
+        set_sensor_i2c_command(
+            2'b0,   // input                             [1:0] num_sensor;
+            1'b1,   // input                                   rst_cmd;    // [14]   reset all FIFO (takes 16 clock pulses), also - stops i2c until run command
+            2'b0,   // input       [SENSI2C_CMD_RUN_PBITS : 0] run_cmd;    // [13:12]3 - run i2c, 2 - stop i2c (needed before software i2c), 1,0 - no change to run state
+            1'b1,   // input                                   set_bytes;  // [11] if 1, use bytes (below), 0 - nop
+            2'h3,   // input  [SENSI2C_CMD_BYTES_PBITS -1 : 0] bytes;      // [10:9] set command bytes to send after slave address (0..3)
+            1'b1,   // input                                   set_dly;    // [8] if 1, use dly (0 - ignore)
+            8'h0a,  // input   [SENSI2C_CMD_DLY_PBITS - 1 : 0] dly;        // [7:0]  - duration of quater i2c cycle (if 0, [3:0] control SCL+SDA)
+            2'b0,   // input    [SENSI2C_CMD_SCL_WIDTH -1 : 0] scl_ctl;    // [1:0] : 0: NOP, 1: 1'b0->SCL, 2: 1'b1->SCL, 3: 1'bz -> SCL 
+            2'b0);  // input    [SENSI2C_CMD_SDA_WIDTH -1 : 0] sda_ctl;    // [3:2] : 0: NOP, 1: 1'b0->SDA, 2: 1'b1->SDA, 3: 1'bz -> SDA  
+        repeat (10) @ (posedge CLK); // wait for initialization to be done TODO: use status
+        set_sensor_i2c_command (0, 0, 3, 0, 0, 0, 0, 0, 0); // run i2c - reset software bits
+        set_sensor_i2c_command (0, 0, 2, 0, 0, 0, 0, 0, 0); // stop i2c, enable software control
+
+        set_sensor_i2c_command (0, 0, 0, 0, 0, 0, 0, 0, 2); // SDA = 1 
+        set_sensor_i2c_command (0, 0, 0, 0, 0, 0, 0, 0, 1); // SDA = 0
+        set_sensor_i2c_command (0, 0, 0, 0, 0, 0, 0, 2, 0); // SCL = 1 
+        set_sensor_i2c_command (0, 0, 0, 0, 0, 0, 0, 1, 0); // SCL = 0 
+        set_sensor_i2c_command (0, 0, 0, 0, 0, 0, 0, 0, 2); // SDA = 1 
+        set_sensor_i2c_command (0, 0, 0, 0, 0, 0, 0, 2, 0); // SCL = 1 
+        set_sensor_i2c_command (0, 0, 0, 0, 0, 0, 0, 0, 3); // SDA = 'bz 
+        set_sensor_i2c_command (0, 0, 0, 0, 0, 0, 0, 3, 0); // SCL = 'bz 
+
+        set_sensor_i2c_command (0, 0, 3, 0, 0, 0, 0, 0, 0); // run i2c
+        write_sensor_i2c (
+            0,           // input   [1:0] num_sensor;
+            0,           // input         rel_addr; // 0 - absolute, 1 - relative
+            1,           // input integer addr;
+            'h90040793); // input  [31:0] data;
+                    
+        write_sensor_i2c (0, 0, 1,'h90050a23);        
+        write_sensor_i2c (0, 0, 2,'h90080001);        
+        write_sensor_i2c (0, 0, 3,'h90090123);        
+        write_sensor_i2c (0, 1, 2,'h90091234);        
+        write_sensor_i2c (0, 0, 4,'h9004001f);        
+        write_sensor_i2c (0, 0, 4,'h9005002f);        
+        write_sensor_i2c (0, 1, 3,'h90020013);        
+        write_sensor_i2c (0, 1, 3,'h90030017);        
+    
+    end
+endtask
+
+
+
+task program_status_sensor_i2c;
+    input [1:0] num_sensor;
+    input [1:0] mode;
+    input [5:0] seq_num;
+    begin
+        program_status (SENSOR_GROUP_ADDR + num_sensor * SENSOR_BASE_INC + SENSI2C_CTRL_RADDR,
+                        SENSI2C_STATUS,
+                        mode,
+                        seq_num);
+    end
+endtask
+
+task program_status_sensor_io;
+    input [1:0] num_sensor;
+    input [1:0] mode;
+    input [5:0] seq_num;
+    begin
+        program_status (SENSOR_GROUP_ADDR + num_sensor * SENSOR_BASE_INC + SENSIO_RADDR,
+                        SENSI2C_STATUS,
+                        mode,
+                        seq_num);
+    end
+endtask
+
+
 task set_sensor_mode;
     input  [1:0] num_sensor;
     input  [3:0] hist_en;    // [0..3] 1 - enable histogram modules, disable after processing the started frame
@@ -1675,33 +2056,19 @@ task set_sensor_i2c_command;
     input       [SENSI2C_CMD_RUN_PBITS : 0] run_cmd;    // [13:12]3 - run i2c, 2 - stop i2c (needed before software i2c), 1,0 - no change to run state
     input                                   set_bytes;  // [11] if 1, use bytes (below), 0 - nop
     input  [SENSI2C_CMD_BYTES_PBITS -1 : 0] bytes;      // [10:9] set command bytes to send after slave address (0..3)
+    input                                   set_dly;    // [8] if 1, use dly (0 - ignore)
+    input   [SENSI2C_CMD_DLY_PBITS - 1 : 0] dly;        // [7:0]  - duration of quater i2c cycle (if 0, [3:0] control SCL+SDA)
     input    [SENSI2C_CMD_SCL_WIDTH -1 : 0] scl_ctl;    // [1:0] : 0: NOP, 1: 1'b0->SCL, 2: 1'b1->SCL, 3: 1'bz -> SCL 
     input    [SENSI2C_CMD_SDA_WIDTH -1 : 0] sda_ctl;    // [3:2] : 0: NOP, 1: 1'b0->SDA, 2: 1'b1->SDA, 3: 1'bz -> SDA  
 
     reg                              [31:0] tmp;
 
     begin
-        tmp= {{(31-SENSI2C_CMD_RESET){1'b0}},func_sensor_i2c_command(rst_cmd, run_cmd, set_bytes, bytes, scl_ctl, sda_ctl)};
+        tmp= {func_sensor_i2c_command(rst_cmd, run_cmd, set_bytes, bytes, set_dly, dly, scl_ctl, sda_ctl)};
         write_contol_register( SENSOR_GROUP_ADDR + num_sensor * SENSOR_BASE_INC +SENSI2C_CTRL_RADDR, tmp);
     end
 endtask
 
-task set_sensor_i2c_command_dly;
-    input                             [1:0] num_sensor;
-    input                                   rst_cmd;    // [14]   reset all FIFO (takes 16 clock pulses), also - stops i2c until run command
-    input       [SENSI2C_CMD_RUN_PBITS : 0] run_cmd;    // [13:12]3 - run i2c, 2 - stop i2c (needed before software i2c), 1,0 - no change to run state
-    input                                   set_bytes;  // [11] if 1, use bytes (below), 0 - nop
-    input  [SENSI2C_CMD_BYTES_PBITS -1 : 0] bytes;      // [10:9] set command bytes to send after slave address (0..3)
-    input                                   set_dly;    // [8] if 1, use dly (0 - ignore)
-    input   [SENSI2C_CMD_DLY_PBITS - 1 : 0] dly;        // [7:0]  - duration of quater i2c cycle (if 0, [3:0] control SCL+SDA)
-
-    reg                              [31:0] tmp;
-
-    begin
-        tmp= {{(31-SENSI2C_CMD_RESET){1'b0}},func_sensor_i2c_command_dly(rst_cmd, run_cmd, set_bytes, bytes, set_dly, dly)};
-        write_contol_register( SENSOR_GROUP_ADDR + num_sensor * SENSOR_BASE_INC +SENSI2C_CTRL_RADDR, tmp);
-    end
-endtask
 
 task write_sensor_i2c;
     input   [1:0] num_sensor;
@@ -1716,104 +2083,8 @@ task write_sensor_i2c;
         write_contol_register(reg_addr, data);                   
     end
 endtask
-/*
-    parameter SENSI2C_ABS_ADDR =       'h300,
-    parameter SENSI2C_REL_ADDR =       'h310,
-    parameter SENSI2C_ADDR_MASK =      'h7f0, // both for SENSI2C_ABS_ADDR and SENSI2C_REL_ADDR
-    parameter SENSI2C_CTRL_ADDR =      'h320,
-    parameter SENSI2C_CTRL_MASK =      'h7fe,
-    parameter SENSI2C_CTRL =           'h0,
-    parameter SENSI2C_STATUS =         'h1,
-    parameter SENSI2C_STATUS_REG =     'h30,
-*/
-task program_status_sensor_i2c;
-    input [1:0] num_sensor;
-    input [1:0] mode;
-    input [5:0] seq_num;
-    begin
-        program_status (SENSOR_GROUP_ADDR + num_sensor * SENSOR_BASE_INC + SENSI2C_CTRL_RADDR,
-                        SENSI2C_STATUS,
-                        mode,
-                        seq_num);
-    end
-endtask
-
-function [STATUS_DEPTH-1:0] func_status_addr_sensor_i2c;
-    input [1:0] num_sensor;
-    begin
-        func_status_addr_sensor_i2c = (SENSI2C_STATUS_REG_BASE + num_sensor * SENSI2C_STATUS_REG_INC + SENSI2C_STATUS_REG_REL);
-    end
-endfunction
-
-function [STATUS_DEPTH-1:0] func_status_addr_sensor_io;
-    input [1:0] num_sensor;
-    begin
-        func_status_addr_sensor_io = (SENSI2C_STATUS_REG_BASE + num_sensor * SENSI2C_STATUS_REG_INC + SENSIO_STATUS_REG_REL);
-    end
-endfunction
 
 
-function [SENSOR_MODE_WIDTH-1:0] func_sensor_mode;
-    input  [3:0] hist_en;    // [0..3] 1 - enable histogram modules, disable after processing the started frame
-    input  [3:0] hist_nrst;  // [4..7] 0 - immediately reset histogram module 
-    input        chn_en;     // [8]    1 - enable sensor channel (0 - reset) 
-    input        bits16;     // [9]    0 - 8 bpp mode, 1 - 16 bpp (bypass gamma). Gamma-processed data is still used for histograms 
-    reg  [SENSOR_MODE_WIDTH-1:0] tmp;
-    begin
-        tmp = 0;
-        tmp [SENSOR_HIST_EN_BITS +: 4] =   hist_en;
-        tmp [SENSOR_HIST_NRST_BITS +: 4] = hist_nrst;
-        tmp [SENSOR_CHN_EN_BIT] =          chn_en;
-        tmp [SENSOR_16BIT_BIT] =           bits16;
-        func_sensor_mode = tmp;
-    end
-endfunction
-
-
-function [SENSI2C_CMD_RESET : 0] func_sensor_i2c_command;
-    input                                   rst_cmd;    // [14]   reset all FIFO (takes 16 clock pulses), also - stops i2c until run command
-    input       [SENSI2C_CMD_RUN_PBITS : 0] run_cmd;    // [13:12]3 - run i2c, 2 - stop i2c (needed before software i2c), 1,0 - no change to run state
-    input                                   set_bytes;  // [11] if 1, use bytes (below), 0 - nop
-    input  [SENSI2C_CMD_BYTES_PBITS -1 : 0] bytes;      // [10:9] set command bytes to send after slave address (0..3)
-    input    [SENSI2C_CMD_SCL_WIDTH -1 : 0] scl_ctl;    // [1:0] : 0: NOP, 1: 1'b0->SCL, 2: 1'b1->SCL, 3: 1'bz -> SCL 
-    input    [SENSI2C_CMD_SDA_WIDTH -1 : 0] sda_ctl;    // [3:2] : 0: NOP, 1: 1'b0->SDA, 2: 1'b1->SDA, 3: 1'bz -> SDA  
-    
-    reg  [SENSI2C_CMD_RESET : 0] tmp;
-    begin
-        tmp = 0;
-        tmp [SENSI2C_CMD_RESET] =                                 rst_cmd;
-        tmp [SENSI2C_CMD_RUN  -: SENSI2C_CMD_RUN_PBITS+1] =       run_cmd;
-        tmp [SENSI2C_CMD_BYTES] =                                 set_bytes;
-        tmp [SENSI2C_CMD_BYTES -1 -: SENSI2C_CMD_BYTES_PBITS ] =  bytes;
-        tmp [SENSI2C_CMD_SCL +: SENSI2C_CMD_SCL_WIDTH] =          scl_ctl;
-        tmp [SENSI2C_CMD_SDA +: SENSI2C_CMD_SDA_WIDTH] =          sda_ctl;
-
-        func_sensor_i2c_command = tmp;
-    end
-endfunction
-
-
-function [SENSI2C_CMD_RESET : 0] func_sensor_i2c_command_dly;
-    input                                   rst_cmd;    // [14]   reset all FIFO (takes 16 clock pulses), also - stops i2c until run command
-    input       [SENSI2C_CMD_RUN_PBITS : 0] run_cmd;    // [13:12]3 - run i2c, 2 - stop i2c (needed before software i2c), 1,0 - no change to run state
-    input                                   set_bytes;  // [11] if 1, use bytes (below), 0 - nop
-    input  [SENSI2C_CMD_BYTES_PBITS -1 : 0] bytes;      // [10:9] set command bytes to send after slave address (0..3)
-    input                                   set_dly;    // [8] if 1, use dly (0 - ignore)
-    input   [SENSI2C_CMD_DLY_PBITS - 1 : 0] dly;        // [7:0]  - duration of quater i2c cycle (if 0, [3:0] control SCL+SDA)
-    
-    reg  [SENSI2C_CMD_RESET : 0] tmp;
-    begin
-        tmp = 0;
-        tmp [SENSI2C_CMD_RESET] =                                 rst_cmd;
-        tmp [SENSI2C_CMD_RUN  -: SENSI2C_CMD_RUN_PBITS+1] =       run_cmd;
-        tmp [SENSI2C_CMD_BYTES] =                                 set_bytes;
-        tmp [SENSI2C_CMD_BYTES -1 -: SENSI2C_CMD_BYTES_PBITS ] =  bytes;
-        tmp [SENSI2C_CMD_DLY] =                                   set_dly;
-        tmp [SENSI2C_CMD_DLY -1 -: SENSI2C_CMD_DLY_PBITS ] =      dly;
-        
-        func_sensor_i2c_command_dly = tmp;
-    end
-endfunction
 
 task    set_sensor_io_ctl;
     input                            [1:0] num_sensor;
@@ -1842,63 +2113,99 @@ task    set_sensor_io_ctl;
     end
 endtask
 
-task program_status_sensor_io;
-    input [1:0] num_sensor;
-    input [1:0] mode;
-    input [5:0] seq_num;
+task    set_sensor_io_dly;
+    input                            [1:0] num_sensor;
+    input [127:0] dly; // {mmsm_phase, bpf, vact, hact, pxd11,...,pxd0]
+    reg    [29:0] reg_addr;
     begin
-        program_status (SENSOR_GROUP_ADDR + num_sensor * SENSOR_BASE_INC + SENSIO_RADDR,
-                        SENSI2C_STATUS,
-                        mode,
-                        seq_num);
+        reg_addr = (SENSOR_GROUP_ADDR + num_sensor * SENSOR_BASE_INC) + SENSIO_RADDR + SENSIO_DELAYS;
+        write_contol_register(reg_addr + 0, dly[ 31: 0]); // {pxd3,       pxd2,  pxd1, pxd0}
+        write_contol_register(reg_addr + 1, dly[ 63:32]); // {pxd7,       pxd6,  pxd5, pxd4}
+        write_contol_register(reg_addr + 2, dly[ 95:64]); // {pxd11,      pxd10, pxd9, pxd8}
+        write_contol_register(reg_addr + 3, dly[127:96]); // {mmcm_phase, bpf,   vact, hact}
+        set_sensor_io_ctl(
+            num_sensor,
+            0, // input                            [1:0] mrst;     // <2: keep MRST, 2 - MRST low (active),  3 - high (inactive)
+            0, // input                            [1:0] arst;     // <2: keep ARST, 2 - ARST low (active),  3 - high (inactive)
+            0, // input                            [1:0] aro;      // <2: keep ARO,  2 - set ARO (software controlled) low,  3 - set ARO  (software controlled) high
+            0, // input                            [1:0] mmcm_rst; // <2: keep MMCM reset, 2 - MMCM reset off,  3 - MMCM reset on
+            0, // input                            [1:0] clk_sel;  // <2: keep MMCM clock source, 2 - use internal pixel clock,  3 - use pixel clock from the sensor
+            1'b1, //input                                  set_delays; // (self-clearing) load all pre-programmed delays 
+            0,   // input                                  set_quadrants;  // 0 - keep quadrants settings, 1 - update quadrants
+            0); // input  [SENS_CTRL_QUADRANTS_WIDTH-1:0] quadrants;  // 90-degree shifts for data [1:0], hact [3:2] and vact [5:4]
+    
     end
 endtask
 
-
-function                          [31 : 0] func_sensor_io_ctl;
-    input                            [1:0] mrst;     // <2: keep MRST, 2 - MRST low (active),  3 - high (inactive)
-    input                            [1:0] arst;     // <2: keep ARST, 2 - ARST low (active),  3 - high (inactive)
-    input                            [1:0] aro;      // <2: keep ARO,  2 - set ARO (software controlled) low,  3 - set ARO  (software controlled) high
-    input                            [1:0] mmcm_rst; // <2: keep MMCM reset, 2 - MMCM reset off,  3 - MMCM reset on
-    input                            [1:0] clk_sel;  // <2: keep MMCM clock source, 2 - use internal pixel clock,  3 - use pixel clock from the sensor
-    input                                  set_delays; // (self-clearing) load all pre-programmed delays 
-    input                                  set_guadrants;  // 0 - keep quadrants settings, 1 - update quadrants
-    input  [SENS_CTRL_QUADRANTS_WIDTH-1:0] quadrants;  // 90-degree shifts for data [1:0], hact [3:2] and vact [5:4]
-    reg  [31 : 0] tmp;
-    begin
-        tmp = 0;
-        
-        tmp [SENS_CTRL_MRST +: 2] =                               mrst;
-        tmp [SENS_CTRL_ARST +: 2] =                               arst;
-        tmp [SENS_CTRL_ARO  +: 2] =                               aro;
-        tmp [SENS_CTRL_RST_MMCM  +: 2] =                          mmcm_rst;
-        tmp [SENS_CTRL_EXT_CLK  +: 2] =                           clk_sel;
-        tmp [SENS_CTRL_LD_DLY] =                                  set_delays;
-        tmp [SENS_CTRL_QUADRANTS_EN] =                            set_guadrants;
-        tmp [SENS_CTRL_EXT_CLK  +: SENS_CTRL_QUADRANTS_WIDTH] =   quadrants;
-        func_sensor_io_ctl = tmp;
-    end
-endfunction
-
-function                          [31 : 0] func_sensor_jtag_ctl;
+task    set_sensor_io_jtag; // SuppressThisWarning VEditor - may be unused
+    input                            [1:0] num_sensor;
     input                            [1:0] pgmen;    // <2: keep PGMEN, 2 - PGMEN low (inactive),  3 - high (active) enable JTAG control
     input                            [1:0] prog;     // <2: keep prog, 2 - prog low (active),  3 - high (inactive) ("program" pin control)
     input                            [1:0] tck;      // <2: keep TCK,  2 - set TCK low,  3 - set TCK high
     input                            [1:0] tms;      // <2: keep TMS,  2 - set TMS low,  3 - set TMS high
     input                            [1:0] tdi;      // <2: keep TDI,  2 - set TDI low,  3 - set TDI high
-
-    reg  [31 : 0] tmp;
+    reg    [29:0] reg_addr;
+    reg    [31:0] data;
     begin
-        tmp = 0;
-        
-        tmp [SENS_JTAG_TDI +: 2] = pgmen;
-        tmp [SENS_JTAG_TMS +: 2] = prog;
-        tmp [SENS_JTAG_TCK +: 2] = tck;
-        tmp [SENS_JTAG_TMS +: 2] = tms;
-        tmp [SENS_JTAG_TDI +: 2] = tdi;
-        func_sensor_jtag_ctl = tmp;
+        reg_addr = (SENSOR_GROUP_ADDR + num_sensor * SENSOR_BASE_INC) + SENSIO_RADDR + SENSIO_JTAG;
+        data = func_sensor_jtag_ctl (
+            pgmen,    // <2: keep PGMEN, 2 - PGMEN low (inactive),  3 - high (active) enable JTAG control
+            prog,     // <2: keep prog, 2 - prog low (active),  3 - high (inactive) ("program" pin control)
+            tck,      // <2: keep TCK,  2 - set TCK low,  3 - set TCK high
+            tms,      // <2: keep TMS,  2 - set TMS low,  3 - set TMS high
+            tdi);     // <2: keep TDI,  2 - set TDI low,  3 - set TDI high
+        write_contol_register(reg_addr, data);
     end
-endfunction
+endtask
+
+task    set_sensor_io_width;
+    input    [1:0] num_sensor;
+    input   [15:0] width; // 0 - use HACT, >0 - generate HACT from start to specified width
+    reg     [29:0] reg_addr;
+    begin
+        reg_addr = (SENSOR_GROUP_ADDR + num_sensor * SENSOR_BASE_INC) + SENSIO_RADDR + SENSIO_WIDTH;
+        write_contol_register(reg_addr, {16'b0, width});
+    end
+    
+
+endtask
+
+
+
+
+task program_curves;
+    input   [1:0] num_sensor;
+    input   [1:0] sub_channel;
+    reg   [9:0]   curves_data[0:1027];  // SuppressThisWarning VEditor : assigned in $readmem() system task
+    integer n,i,base,diff,diff1;
+//    reg [10:0] curv_diff;
+    reg    [17:0] data18;
+    begin
+        $readmemh("linear1028rgb.dat",curves_data);
+         set_sensor_gamma_table_addr (
+            num_sensor,
+            sub_channel,
+            2'b0,         //input   [1:0] color;
+            1'b0);        //input         page; // only used if SENS_GAMMA_BUFFER != 0
+        
+        for (n=0;n<4;n=n+1) begin
+          for (i=0;i<256;i=i+1) begin
+            base =curves_data[257*n+i];
+            diff =curves_data[257*n+i+1]-curves_data[257*n+i];
+            diff1=curves_data[257*n+i+1]-curves_data[257*n+i]+8;
+    //        $display ("%x %x %x %x %x %x",n,i,curves_data[257*n+i], base, diff, diff1);
+            #1;
+            if ((diff>63) || (diff < -64)) data18 = {1'b1,diff1[10:4],base[9:0]};
+            else                           data18 = {1'b0,diff [ 6:0],base[9:0]};
+            set_sensor_gamma_table_data ( // need 256 for a single color data
+                num_sensor,
+                data18); // 18-bit table data
+            
+          end
+        end  
+    end
+endtask
+
 
 task set_sensor_gamma_table_addr;
     input   [1:0] num_sensor;
@@ -2024,6 +2331,238 @@ task set_sensor_histogram_saxi_addr;
     end
 endtask
     
+function [STATUS_DEPTH-1:0] func_status_addr_sensor_i2c;
+    input [1:0] num_sensor;
+    begin
+        func_status_addr_sensor_i2c = (SENSI2C_STATUS_REG_BASE + num_sensor * SENSI2C_STATUS_REG_INC + SENSI2C_STATUS_REG_REL);
+    end
+endfunction
+
+function [STATUS_DEPTH-1:0] func_status_addr_sensor_io;
+    input [1:0] num_sensor;
+    begin
+        func_status_addr_sensor_io = (SENSI2C_STATUS_REG_BASE + num_sensor * SENSI2C_STATUS_REG_INC + SENSIO_STATUS_REG_REL);
+    end
+endfunction
+
+// RTC tasks
+task program_status_rtc; // set status mode, and take a time snapshot (wait response and read time)
+    input [1:0] mode;
+    input [5:0] seq_num;
+    begin
+        program_status (RTC_ADDR,
+                        RTC_SET_STATUS,
+                        mode,
+                        seq_num);
+    end
+endtask
+
+
+task set_rtc;
+    input [31:0] sec;
+    input [19:0] usec;
+    input [15:0] corr;
+    begin
+        write_contol_register(RTC_ADDR + RTC_SET_CORR,{16'b0,corr});
+        write_contol_register(RTC_ADDR + RTC_SET_USEC,{12'b0,usec});
+        write_contol_register(RTC_ADDR + RTC_SET_SEC, sec);
+    end
+endtask
+
+function [STATUS_DEPTH-1:0] func_status_addr_rtc_status;
+    begin
+        func_status_addr_rtc_status = RTC_STATUS_REG_ADDR;
+    end
+endfunction
+
+function [STATUS_DEPTH-1:0] func_status_addr_rtc_usec; // sec is in the next address
+    begin
+        func_status_addr_rtc_usec = RTC_SEC_USEC_ADDR;
+    end
+endfunction
+
+// camsync tasks 
+task set_camsync_mode;
+    input [1:0] en_snd;         // <2 - NOP, 2 - disable, 3 - enable sending timestamp with sync pulse
+    input [1:0] en_ts_external; // <2 - NOP, 2 - local timestamp in the frame header, 3 - use external timestamp
+    input [1:0] triggered_mode; // <2 - NOP, 2 - async sesnor mode, 3 - triggered sensor mode
+    input [2:0] master_chn;     // <4 - NOP, 4..7 - set master channel
+    input [4:0] chn_en;         // <16 - NOP, [3:0] - bit mask of enabled sensor channels
+    reg    [31:0] data;
+    begin
+        data = 0;
+        data [CAMSYNC_SNDEN_BIT     -: 2] = en_snd;
+        data [CAMSYNC_EXTERNAL_BIT  -: 2] = en_ts_external;
+        data [CAMSYNC_TRIGGERED_BIT -: 2] = triggered_mode;
+        data [CAMSYNC_MASTER_BIT    -: 3] = master_chn;
+        data [CAMSYNC_CHN_EN_BIT    -: 5] = chn_en;
+        write_contol_register(CAMSYNC_ADDR + CAMSYNC_MODE, data);
+    end
+endtask
+
+task set_camsync_inout; // set specified input bit, keep other ones
+    input         is_out;          // 0 - input selection, 1 - output selection
+    input integer bit_number;      // 0..9 - bit to use
+    input         active_positive; // 0 - active negative pulse, 1 - active positive pulse,
+    reg    [31:0] data;
+    begin
+        data = {32'h00055555};
+        data[2 * bit_number +: 2 ] = {1'b1, active_positive};
+        if (is_out) write_contol_register(CAMSYNC_ADDR + CAMSYNC_TRIG_DST, data);
+        else        write_contol_register(CAMSYNC_ADDR + CAMSYNC_TRIG_SRC, data);
+    end
+endtask
+
+task reset_camsync_inout; // disable all inputs
+    input         is_out;          // 0 - input selection, 1 - output selection
+    begin
+        if (is_out) write_contol_register(CAMSYNC_ADDR + CAMSYNC_TRIG_DST, 0);
+        else        write_contol_register(CAMSYNC_ADDR + CAMSYNC_TRIG_SRC, 0);
+    end
+endtask
+
+task set_camsync_period;
+    input [31:0] period;          // 0 - input selection, 1 - output selection
+    begin
+        write_contol_register(CAMSYNC_ADDR + CAMSYNC_TRIG_PERIOD, period);
+    end
+endtask
+
+task set_camsync_delay;
+    input  [1:0] sub_chn;
+    input [31:0] dly;          // 0 - input selection, 1 - output selection
+    begin
+        write_contol_register(CAMSYNC_ADDR + CAMSYNC_TRIG_DELAY0 + sub_chn, dly);
+    end
+endtask
+// command sequencer control
+
+// Functions used by sensor-related tasks
+task ctrl_cmd_frame_sequencer;
+    input [1:0] num_sensor; // sensor channel number
+    input       reset;      // reset sequencer (also stops)
+    input       start;      // start sequencer
+    input       stop;       // stop sequencer
+
+    reg    [31:0] data;
+    reg    [29:0] reg_addr;
+    begin
+        reg_addr= CMDFRAMESEQ_ADDR_BASE + num_sensor * CMDFRAMESEQ_ADDR_INC + CMDFRAMESEQ_CTRL;
+        data = 0;
+        data [CMDFRAMESEQ_RST_BIT] = reset;
+        data [CMDFRAMESEQ_RUN_BIT -:2] = {start | stop, start};
+        write_contol_register(reg_addr, data);
+    end
+endtask
+
+task write_cmd_frame_sequencer;
+    input                  [1:0] num_sensor; // sensor channel number
+    input                        relative;   // 0 - absolute (address = 0..f), 1 - relative (address= 0..e)
+    input                  [3:0] frame_addr;   // frame address (relative ort absolute)
+    input [AXI_WR_ADDR_BITS-1:0] addr;         // command address (register to which command should be applied)
+    input                 [31:0] data;         // command data
+           
+    reg [29:0] reg_addr;
+    begin
+        if (relative && (&frame_addr)) $display("task write_cmd_frame_sequencer(): relative adderss 'hf is invalid, it is reserved for module control");
+        else begin
+            reg_addr = CMDFRAMESEQ_ADDR_BASE + num_sensor * CMDFRAMESEQ_ADDR_INC + (relative ? CMDFRAMESEQ_REL : CMDFRAMESEQ_ABS) + frame_addr;
+            write_contol_register(reg_addr, {{32-AXI_WR_ADDR_BITS{1'b0}}, addr});
+            write_contol_register(reg_addr, data);
+        end
+    end
+endtask
+
+function [SENSOR_MODE_WIDTH-1:0] func_sensor_mode;
+    input  [3:0] hist_en;    // [0..3] 1 - enable histogram modules, disable after processing the started frame
+    input  [3:0] hist_nrst;  // [4..7] 0 - immediately reset histogram module 
+    input        chn_en;     // [8]    1 - enable sensor channel (0 - reset) 
+    input        bits16;     // [9]    0 - 8 bpp mode, 1 - 16 bpp (bypass gamma). Gamma-processed data is still used for histograms 
+    reg  [SENSOR_MODE_WIDTH-1:0] tmp;
+    begin
+        tmp = 0;
+        tmp [SENSOR_HIST_EN_BITS +: 4] =   hist_en;
+        tmp [SENSOR_HIST_NRST_BITS +: 4] = hist_nrst;
+        tmp [SENSOR_CHN_EN_BIT] =          chn_en;
+        tmp [SENSOR_16BIT_BIT] =           bits16;
+        func_sensor_mode = tmp;
+    end
+endfunction
+
+
+function [31 : 0] func_sensor_i2c_command;
+    input                                   rst_cmd;    // [14]   reset all FIFO (takes 16 clock pulses), also - stops i2c until run command
+    input       [SENSI2C_CMD_RUN_PBITS : 0] run_cmd;    // [13:12]3 - run i2c, 2 - stop i2c (needed before software i2c), 1,0 - no change to run state
+    input                                   set_bytes;  // [11] if 1, use bytes (below), 0 - nop
+    input  [SENSI2C_CMD_BYTES_PBITS -1 : 0] bytes;      // [10:9] set command bytes to send after slave address (0..3)
+    input                                   set_dly;    // [8] if 1, use dly (0 - ignore)
+    input   [SENSI2C_CMD_DLY_PBITS - 1 : 0] dly;        // [7:0]  - duration of quater i2c cycle (if 0, [3:0] control SCL+SDA)
+    input    [SENSI2C_CMD_SCL_WIDTH -1 : 0] scl_ctl;    // [17:16] : 0: NOP, 1: 1'b0->SCL, 2: 1'b1->SCL, 3: 1'bz -> SCL 
+    input    [SENSI2C_CMD_SDA_WIDTH -1 : 0] sda_ctl;    // [19:18] : 0: NOP, 1: 1'b0->SDA, 2: 1'b1->SDA, 3: 1'bz -> SDA  
+    
+    reg  [31 : 0] tmp;
+    begin
+        tmp = 0;
+        tmp [SENSI2C_CMD_RESET] =                                 rst_cmd;
+        tmp [SENSI2C_CMD_RUN  -: SENSI2C_CMD_RUN_PBITS+1] =       run_cmd;
+        tmp [SENSI2C_CMD_BYTES] =                                 set_bytes;
+        tmp [SENSI2C_CMD_BYTES -1 -: SENSI2C_CMD_BYTES_PBITS ] =  bytes;
+        tmp [SENSI2C_CMD_DLY] =                                   set_dly;
+        tmp [SENSI2C_CMD_DLY -1 -: SENSI2C_CMD_DLY_PBITS ] =      dly;
+        tmp [SENSI2C_CMD_SCL +: SENSI2C_CMD_SCL_WIDTH] =          scl_ctl;
+        tmp [SENSI2C_CMD_SDA +: SENSI2C_CMD_SDA_WIDTH] =          sda_ctl;
+
+        func_sensor_i2c_command = tmp;
+    end
+endfunction
+
+
+
+function                          [31 : 0] func_sensor_io_ctl;
+    input                            [1:0] mrst;     // <2: keep MRST, 2 - MRST low (active),  3 - high (inactive)
+    input                            [1:0] arst;     // <2: keep ARST, 2 - ARST low (active),  3 - high (inactive)
+    input                            [1:0] aro;      // <2: keep ARO,  2 - set ARO (software controlled) low,  3 - set ARO  (software controlled) high
+    input                            [1:0] mmcm_rst; // <2: keep MMCM reset, 2 - MMCM reset off,  3 - MMCM reset on
+    input                            [1:0] clk_sel;  // <2: keep MMCM clock source, 2 - use internal pixel clock,  3 - use pixel clock from the sensor
+    input                                  set_delays; // (self-clearing) load all pre-programmed delays 
+    input                                  set_guadrants;  // 0 - keep quadrants settings, 1 - update quadrants
+    input  [SENS_CTRL_QUADRANTS_WIDTH-1:0] quadrants;  // 90-degree shifts for data [1:0], hact [3:2] and vact [5:4]
+    reg  [31 : 0] tmp;
+    begin
+        tmp = 0;
+        
+        tmp [SENS_CTRL_MRST +: 2] =                               mrst;
+        tmp [SENS_CTRL_ARST +: 2] =                               arst;
+        tmp [SENS_CTRL_ARO  +: 2] =                               aro;
+        tmp [SENS_CTRL_RST_MMCM  +: 2] =                          mmcm_rst;
+        tmp [SENS_CTRL_EXT_CLK  +: 2] =                           clk_sel;
+        tmp [SENS_CTRL_LD_DLY] =                                  set_delays;
+        tmp [SENS_CTRL_QUADRANTS_EN] =                            set_guadrants;
+        tmp [SENS_CTRL_EXT_CLK  +: SENS_CTRL_QUADRANTS_WIDTH] =   quadrants;
+        func_sensor_io_ctl = tmp;
+    end
+endfunction
+
+function                          [31 : 0] func_sensor_jtag_ctl;
+    input                            [1:0] pgmen;    // <2: keep PGMEN, 2 - PGMEN low (inactive),  3 - high (active) enable JTAG control
+    input                            [1:0] prog;     // <2: keep prog, 2 - prog low (active),  3 - high (inactive) ("program" pin control)
+    input                            [1:0] tck;      // <2: keep TCK,  2 - set TCK low,  3 - set TCK high
+    input                            [1:0] tms;      // <2: keep TMS,  2 - set TMS low,  3 - set TMS high
+    input                            [1:0] tdi;      // <2: keep TDI,  2 - set TDI low,  3 - set TDI high
+
+    reg  [31 : 0] tmp;
+    begin
+        tmp = 0;
+        
+        tmp [SENS_JTAG_TDI +: 2] = pgmen;
+        tmp [SENS_JTAG_TMS +: 2] = prog;
+        tmp [SENS_JTAG_TCK +: 2] = tck;
+        tmp [SENS_JTAG_TMS +: 2] = tms;
+        tmp [SENS_JTAG_TDI +: 2] = tdi;
+        func_sensor_jtag_ctl = tmp;
+    end
+endfunction
+
 function  [31 : 0] func_sensor_gamma_ctl;
     input   [1:0] bayer;
     input         table_page;

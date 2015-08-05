@@ -37,10 +37,10 @@ module  sensor_i2c#(
     parameter SENSI2C_CMD_BYTES_PBITS =  2,
     parameter SENSI2C_CMD_DLY =          8, // [7:0]  - duration of quater i2c cycle (if 0, [3:0] control SCL+SDA)
     parameter SENSI2C_CMD_DLY_PBITS =    8,
-// direct control of SDA/SCL mutually exclusive with DLY control, disabled by running i2c
-    parameter SENSI2C_CMD_SCL =          0, // [1:0] : 0: NOP, 1: 1'b0->SCL, 2: 1'b1->SCL, 3: 1'bz -> SCL 
+
+    parameter SENSI2C_CMD_SCL =         16, // [17:16] : 0: NOP, 1: 1'b0->SCL, 2: 1'b1->SCL, 3: 1'bz -> SCL 
     parameter SENSI2C_CMD_SCL_WIDTH =    2,
-    parameter SENSI2C_CMD_SDA =          2, // [3:2] : 0: NOP, 1: 1'b0->SDA, 2: 1'b1->SDA, 3: 1'bz -> SDA,  
+    parameter SENSI2C_CMD_SDA =         18, // [19:18] : 0: NOP, 1: 1'b0->SDA, 2: 1'b1->SDA, 3: 1'bz -> SDA,  
     parameter SENSI2C_CMD_SDA_WIDTH =    2
 )(
     input         mrst,         // @ posedge mclk

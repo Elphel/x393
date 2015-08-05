@@ -182,10 +182,12 @@ module  mcntrl393 #(
     parameter MCNTRL_SCANLINE_MODE=              'h0,   // set mode register: {extra_pages[1:0],enable,!reset}
     parameter MCNTRL_SCANLINE_STATUS_CNTRL=      'h1,   // control status reporting
     parameter MCNTRL_SCANLINE_STARTADDR=         'h2,   // 22-bit frame start address (3 CA LSBs==0. BA==0)
-    parameter MCNTRL_SCANLINE_FRAME_FULL_WIDTH=  'h3,   // Padded line length (8-row increment), in 8-bursts (16 bytes)
-    parameter MCNTRL_SCANLINE_WINDOW_WH=         'h4,   // low word - 13-bit window width (0->'h4000), high word - 16-bit frame height (0->'h10000)
-    parameter MCNTRL_SCANLINE_WINDOW_X0Y0=       'h5,   // low word - 13-bit window left, high word - 16-bit window top
-    parameter MCNTRL_SCANLINE_WINDOW_STARTXY=    'h6,   // low word - 13-bit start X (relative to window), high word - 16-bit start y
+    parameter MCNTRL_SCANLINE_FRAME_SIZE=        'h3,   // 22-bit frame start address increment (3 CA LSBs==0. BA==0)
+    parameter MCNTRL_SCANLINE_FRAME_LAST=        'h4,   // 16-bit last frame number in the buffer
+    parameter MCNTRL_SCANLINE_FRAME_FULL_WIDTH=  'h5,   // Padded line length (8-row increment), in 8-bursts (16 bytes)
+    parameter MCNTRL_SCANLINE_WINDOW_WH=         'h6,   // low word - 13-bit window width (0->'h4000), high word - 16-bit frame height (0->'h10000)
+    parameter MCNTRL_SCANLINE_WINDOW_X0Y0=       'h7,   // low word - 13-bit window left, high word - 16-bit window top
+    parameter MCNTRL_SCANLINE_WINDOW_STARTXY=    'h8,   // low word - 13-bit start X (relative to window), high word - 16-bit start y
                                                         // Start XY can be used when read command to start from the middle
                                                         // TODO: Add number of blocks to R/W? (blocks can be different) - total length?
                                                         // Read back current address (for debugging)?
@@ -207,14 +209,17 @@ module  mcntrl393 #(
     parameter MCNTRL_TILED_MODE=            'h0,   // set mode register: {extra_pages[1:0],write_mode,enable,!reset}
     parameter MCNTRL_TILED_STATUS_CNTRL=    'h1,   // control status reporting
     parameter MCNTRL_TILED_STARTADDR=       'h2,   // 22-bit frame start address (3 CA LSBs==0. BA==0)
-    parameter MCNTRL_TILED_FRAME_FULL_WIDTH='h3,   // Padded line length (8-row increment), in 8-bursts (16 bytes)
-    parameter MCNTRL_TILED_WINDOW_WH=       'h4,   // low word - 13-bit window width (0->'h4000), high word - 16-bit frame height (0->'h10000)
-    parameter MCNTRL_TILED_WINDOW_X0Y0=     'h5,   // low word - 13-bit window left, high word - 16-bit window top
-    parameter MCNTRL_TILED_WINDOW_STARTXY=  'h6,   // low word - 13-bit start X (relative to window), high word - 16-bit start y
+    parameter MCNTRL_TILED_FRAME_SIZE=      'h3,   // 22-bit frame start address increment (3 CA LSBs==0. BA==0)
+    parameter MCNTRL_TILED_FRAME_LAST=      'h4,   // 16-bit last frame number in the buffer
+    parameter MCNTRL_TILED_FRAME_FULL_WIDTH='h5,   // Padded line length (8-row increment), in 8-bursts (16 bytes)
+    parameter MCNTRL_TILED_WINDOW_WH=       'h6,   // low word - 13-bit window width (0->'h4000), high word - 16-bit frame height (0->'h10000)
+    parameter MCNTRL_TILED_WINDOW_X0Y0=     'h7,   // low word - 13-bit window left, high word - 16-bit window top
+    parameter MCNTRL_TILED_WINDOW_STARTXY=  'h8,   // low word - 13-bit start X (relative to window), high word - 16-bit start y
                                                       // Start XY can be used when read command to start from the middle
                                                       // TODO: Add number of blocks to R/W? (blocks can be different) - total length?
                                                       // Read back current address (for debugging)?
-    parameter MCNTRL_TILED_TILE_WHS=         'h7,   // low word - 6-bit tile width in 8-bursts, high - tile height (0 - > 64)
+    parameter MCNTRL_TILED_TILE_WHS=        'h9,   // low byte - 6-bit tile width in 8-bursts, second byte - tile height (0 - > 64),
+                                                   // 3-rd byte - vertical step (to control tile vertical overlap)
     parameter MCNTRL_TILED_STATUS_REG_CHN2_ADDR= 'h5,
     parameter MCNTRL_TILED_STATUS_REG_CHN4_ADDR= 'h7,
     parameter MCNTRL_TILED_PENDING_CNTR_BITS=2,    // Number of bits to count pending trasfers, currently 2 is enough, but may increase
@@ -1036,6 +1041,8 @@ module  mcntrl393 #(
                 .MCNTRL_SCANLINE_MODE              (MCNTRL_SCANLINE_MODE),
                 .MCNTRL_SCANLINE_STATUS_CNTRL      (MCNTRL_SCANLINE_STATUS_CNTRL),
                 .MCNTRL_SCANLINE_STARTADDR         (MCNTRL_SCANLINE_STARTADDR),
+                .MCNTRL_SCANLINE_FRAME_SIZE        (MCNTRL_SCANLINE_FRAME_SIZE),
+                .MCNTRL_SCANLINE_FRAME_LAST        (MCNTRL_SCANLINE_FRAME_LAST),
                 .MCNTRL_SCANLINE_FRAME_FULL_WIDTH  (MCNTRL_SCANLINE_FRAME_FULL_WIDTH),
                 .MCNTRL_SCANLINE_WINDOW_WH         (MCNTRL_SCANLINE_WINDOW_WH),
                 .MCNTRL_SCANLINE_WINDOW_X0Y0       (MCNTRL_SCANLINE_WINDOW_X0Y0),
@@ -1095,6 +1102,8 @@ module  mcntrl393 #(
                 .MCNTRL_TILED_MODE             (MCNTRL_TILED_MODE),
                 .MCNTRL_TILED_STATUS_CNTRL     (MCNTRL_TILED_STATUS_CNTRL),
                 .MCNTRL_TILED_STARTADDR        (MCNTRL_TILED_STARTADDR),
+                .MCNTRL_TILED_FRAME_SIZE       (MCNTRL_TILED_FRAME_SIZE),
+                .MCNTRL_TILED_FRAME_LAST       (MCNTRL_TILED_FRAME_LAST),
                 .MCNTRL_TILED_FRAME_FULL_WIDTH (MCNTRL_TILED_FRAME_FULL_WIDTH),
                 .MCNTRL_TILED_WINDOW_WH        (MCNTRL_TILED_WINDOW_WH),
                 .MCNTRL_TILED_WINDOW_X0Y0      (MCNTRL_TILED_WINDOW_X0Y0),
@@ -1167,6 +1176,8 @@ module  mcntrl393 #(
         .MCNTRL_SCANLINE_MODE              (MCNTRL_SCANLINE_MODE),
         .MCNTRL_SCANLINE_STATUS_CNTRL      (MCNTRL_SCANLINE_STATUS_CNTRL),
         .MCNTRL_SCANLINE_STARTADDR         (MCNTRL_SCANLINE_STARTADDR),
+        .MCNTRL_SCANLINE_FRAME_SIZE        (MCNTRL_SCANLINE_FRAME_SIZE),
+        .MCNTRL_SCANLINE_FRAME_LAST        (MCNTRL_SCANLINE_FRAME_LAST),
         .MCNTRL_SCANLINE_FRAME_FULL_WIDTH  (MCNTRL_SCANLINE_FRAME_FULL_WIDTH),
         .MCNTRL_SCANLINE_WINDOW_WH         (MCNTRL_SCANLINE_WINDOW_WH),
         .MCNTRL_SCANLINE_WINDOW_X0Y0       (MCNTRL_SCANLINE_WINDOW_X0Y0),
@@ -1225,6 +1236,8 @@ module  mcntrl393 #(
         .MCNTRL_SCANLINE_MODE              (MCNTRL_SCANLINE_MODE),
         .MCNTRL_SCANLINE_STATUS_CNTRL      (MCNTRL_SCANLINE_STATUS_CNTRL),
         .MCNTRL_SCANLINE_STARTADDR         (MCNTRL_SCANLINE_STARTADDR),
+        .MCNTRL_SCANLINE_FRAME_SIZE        (MCNTRL_SCANLINE_FRAME_SIZE),
+        .MCNTRL_SCANLINE_FRAME_LAST        (MCNTRL_SCANLINE_FRAME_LAST),
         .MCNTRL_SCANLINE_FRAME_FULL_WIDTH  (MCNTRL_SCANLINE_FRAME_FULL_WIDTH),
         .MCNTRL_SCANLINE_WINDOW_WH         (MCNTRL_SCANLINE_WINDOW_WH),
         .MCNTRL_SCANLINE_WINDOW_X0Y0       (MCNTRL_SCANLINE_WINDOW_X0Y0),
@@ -1284,6 +1297,8 @@ module  mcntrl393 #(
         .MCNTRL_TILED_MODE             (MCNTRL_TILED_MODE),
         .MCNTRL_TILED_STATUS_CNTRL     (MCNTRL_TILED_STATUS_CNTRL),
         .MCNTRL_TILED_STARTADDR        (MCNTRL_TILED_STARTADDR),
+        .MCNTRL_TILED_FRAME_SIZE       (MCNTRL_TILED_FRAME_SIZE),
+        .MCNTRL_TILED_FRAME_LAST       (MCNTRL_TILED_FRAME_LAST),
         .MCNTRL_TILED_FRAME_FULL_WIDTH (MCNTRL_TILED_FRAME_FULL_WIDTH),
         .MCNTRL_TILED_WINDOW_WH        (MCNTRL_TILED_WINDOW_WH),
         .MCNTRL_TILED_WINDOW_X0Y0      (MCNTRL_TILED_WINDOW_X0Y0),
@@ -1349,6 +1364,8 @@ module  mcntrl393 #(
         .MCNTRL_TILED_MODE             (MCNTRL_TILED_MODE),
         .MCNTRL_TILED_STATUS_CNTRL     (MCNTRL_TILED_STATUS_CNTRL),
         .MCNTRL_TILED_STARTADDR        (MCNTRL_TILED_STARTADDR),
+        .MCNTRL_TILED_FRAME_SIZE       (MCNTRL_TILED_FRAME_SIZE),
+        .MCNTRL_TILED_FRAME_LAST       (MCNTRL_TILED_FRAME_LAST),
         .MCNTRL_TILED_FRAME_FULL_WIDTH (MCNTRL_TILED_FRAME_FULL_WIDTH),
         .MCNTRL_TILED_WINDOW_WH        (MCNTRL_TILED_WINDOW_WH),
         .MCNTRL_TILED_WINDOW_X0Y0      (MCNTRL_TILED_WINDOW_X0Y0),
