@@ -141,7 +141,7 @@ module  sensor_channel#(
     //sensor_fifo parameters
     parameter SENSOR_DATA_WIDTH =      12,
     parameter SENSOR_FIFO_2DEPTH =     4,
-    parameter SENSOR_FIFO_DELAY =      7,
+    parameter SENSOR_FIFO_DELAY =      5, // 7,
     
     
     // sens_parallel12 other parameters

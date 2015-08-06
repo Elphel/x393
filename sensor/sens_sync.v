@@ -113,7 +113,7 @@ module  sens_sync#(
         else if (!sof_dly)    lines_left <= line_dly_pclk;
         else if (hact_single) lines_left <= lines_left - 1;
         
-        trigger_mode_pclk <= trigger_mode;
+        trigger_mode_pclk <= trigger_mode; 
         
         if (!trigger_mode_pclk || !en) en_vacts_free<= 1'b1;
         else if (sof_in)               en_vacts_free<= 1'b0;
@@ -121,8 +121,8 @@ module  sens_sync#(
         if (pre_sof_out || !trigger_mode_pclk) overdue <= 1'b0;
         else if (trig_in_pclk)                 overdue <= trig_r;
         
-        if (!en || !trigger_mode_pclk) trig_r <=0;
-        else if (trig_in)              trig_r <= ~trig_r;
+        if (!en || !trigger_mode_pclk  || sof_in) trig_r <=0;
+        else if (trig_in_pclk)                    trig_r <= ~trig_r;
 
         // enforce minimal frame period (applies to both normal and delayed pulse (Make it only in free-running mode?)
         if (!en || !(&period_cntr)) period_dly <= 0;

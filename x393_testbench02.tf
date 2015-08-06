@@ -43,8 +43,11 @@
 //`define TEST_TILED_WRITE32  1
 //`define TEST_TILED_READ32  1
 
-`define TEST_AFI_WRITE 1
-`define TEST_AFI_READ 1
+//`define TEST_AFI_WRITE 1
+//`define TEST_AFI_READ 1
+
+`define TEST_SENSOR 0
+
 
 module  x393_testbench02 #(
 `include "includes/x393_parameters.vh" // SuppressThisWarning VEditor - not used
@@ -54,7 +57,7 @@ module  x393_testbench02 #(
 `ifdef IVERILOG              
 //    $display("IVERILOG is defined");
     `ifdef NON_VDT_ENVIROMENT
-        parameter lxtname="x393.lxt";
+        parameter fstname="x393.fst";
     `else
         `include "IVERILOG_INCLUDE.v"
     `endif // NON_VDT_ENVIROMENT
@@ -62,12 +65,12 @@ module  x393_testbench02 #(
 //    $display("IVERILOG is not defined");
     `ifdef CVC
         `ifdef NON_VDT_ENVIROMENT
-            parameter lxtname = "x393.fst";
+            parameter fstname = "x393.fst";
         `else // NON_VDT_ENVIROMENT
             `include "IVERILOG_INCLUDE.v"
         `endif // NON_VDT_ENVIROMENT
     `else
-        parameter lxtname = "x393.lxt";
+        parameter fstname = "x393.fst";
     `endif // CVC
 `endif // IVERILOG
 `define DEBUG_WR_SINGLE 1  
@@ -75,9 +78,14 @@ module  x393_testbench02 #(
 
 //`include "includes/x393_cur_params_sim.vh" // parameters that may need adjustment, should be before x393_localparams.vh
 `include "includes/x393_cur_params_target.vh" // SuppressThisWarning VEditor - not used parameters that may need adjustment, should be before x393_localparams.vh
+parameter TRIGGER_MODE =          1;     // 0 - auto, 1 - triggered
+parameter EXT_TRIGGER_MODE =      1 ;    // 0 - internal, 1 - external trigger (camsync)
+parameter EXTERNAL_TIMESTAMP =    1 ;    // embed local timestamp, 1 - embed received timestamp
+
 `include "includes/x393_localparams.vh" // SuppressThisWarning VEditor - not used
-
-
+// VDT - incorrect  real number calculation
+//  localparam       FRAME_COMPRESS_CYCLES_INPUT=(FRAME_COMPRESS_CYCLES * CLK0_PER) /CLK1_PER;  
+//  localparam  real FRAME_COMPRESS_CYCLES_INPUT=(CLK0_PER * CLK0_PER);  
 // ========================== parameters from x353 ===================================
 
 `ifdef SYNC_COMPRESS
@@ -133,7 +141,14 @@ module  x393_testbench02 #(
 
  parameter FULL_WIDTH=        WOI_WIDTH+4;
 
+  localparam       SENSOR_MEMORY_WIDTH_BURSTS = (FULL_WIDTH + 15) >> 4;
+  localparam       SENSOR_MEMORY_MASK = (1 << (FRAME_WIDTH_ROUND_BITS-4)) -1;
+  localparam       SENSOR_MEMORY_FULL_WIDTH_BURSTS = (SENSOR_MEMORY_WIDTH_BURSTS + SENSOR_MEMORY_MASK) & (~SENSOR_MEMORY_MASK); 
 
+//  localparam       FRAME_COMPRESS_CYCLES = (WOI_WIDTH &'h3fff0) * (WOI_HEIGHT &'h3fff0) * CYCLES_PER_PIXEL + FPGA_XTRA_CYCLES;
+// in pixel clocks (camsync now has different clock - 100MHz instead of the 96MHz
+//  localparam       TRIG_PERIOD =   VIRTUAL_WIDTH * (VIRTUAL_HEIGHT + TRIG_LINES + VBLANK); /// maximal sensor can do
+  localparam       TRIG_PERIOD =   5000 ;
 
 // ========================== end of parameters from x353 ===================================
 
@@ -166,8 +181,8 @@ assign PX1_MRST =       sns1_dp[7]; // from FPGA to sensor
 assign PX1_MCLK =       sns1_dp[0]; // from FPGA to sensor
 assign sns1_dn[6:0] =  {PX1_D[11], PX1_D[9], PX1_D[7], PX1_D[5], PX1_D[3], PX1_VACT, PX1_DCLK};
 assign PX1_ARST =       sns1_dn[7];
-assign sns1_clkn =     PX1_D[0];  // inout CNVSYNC/TDI
-assign sns1_scl =      PX1_D[1];  // inout PX_SCL
+assign sns1_clkn =      PX1_D[0];  // inout CNVSYNC/TDI
+assign sns1_clkp =      PX1_D[1];  // CNVCLK/TDO
 assign PX1_ARO =       sns1_ctl;  // from FPGA to sensor
 
 
@@ -460,7 +475,7 @@ assign #10 gpio_pins[9] = gpio_pins[8];
 `else
     $display("ICARUS is not defined");
 `endif
-    $dumpfile(lxtname);
+    $dumpfile(fstname);
 
 
   // SuppressWarnings VEditor : assigned in $readmem() system task
@@ -762,6 +777,14 @@ assign #10 gpio_pins[9] = gpio_pins[8];
        AFI_SIZE64,          // input [28:0] size64;    // size of the system memory range in 64-bit words
        0);                  // input        continue;    // 0 start from start64, 1 - continue from where it was
        
+`endif
+
+`ifdef TEST_SENSOR
+    TEST_TITLE = "TEST_SENSOR";
+    $display("===================== TEST_%s =========================",TEST_TITLE);
+    setup_sensor_channel (
+    0 ); // input  [1:0] num_sensor;
+    
 `endif
 
 `ifdef READBACK_DELAYS    
@@ -1763,49 +1786,123 @@ endfunction
 // Sensor - related tasks and functions
 
 task setup_sensor_channel;
-    input        trigger_mode; // 0 - auto, 1 - triggered
-    input        ext_trigger_mode; // 0 - internal, 1 - external trigger (camsync)
-    input        external_timestamp; // embed local timestamp, 1 - embed received timestamp
-    input [31:0] camsync_period;
-    input [31:0] camsync_delay;
-    input [31:0] last_buf_frame;
-    input [31:0] frame_full_width; // 13-bit Padded line length (8-row increment), in 8-bursts (16 bytes)
-    input [31:0] window_width;    // 13 bit - in 8*16=128 bit bursts
-    input [31:0] window_height;   // 16 bit
-    input [31:0] window_left;
-    input [31:0] window_top;
+    input  [1:0] num_sensor;
     
+    reg          trigger_mode; // 0 - auto, 1 - triggered
+    reg          ext_trigger_mode; // 0 - internal, 1 - external trigger (camsync)
+    reg          external_timestamp; // embed local timestamp, 1 - embed received timestamp
+    reg   [31:0] camsync_period;
+    reg   [31:0] frame_full_width; // 13-bit Padded line length (8-row increment), in 8-bursts (16 bytes)
+    reg   [31:0] window_width;    // 13 bit - in 8*16=128 bit bursts
+    reg   [31:0] window_height;   // 16 bit
+    reg   [31:0] window_left;
+    reg   [31:0] window_top;
+    reg   [31:0] last_buf_frame;
+    reg   [31:0] camsync_delay;
+    reg   [ 3:0] sensor_mask;
 // Setting up a single sensor channel 0, sunchannel 0
+// 
     begin
-        program_curves(
-            0,  // input   [1:0] num_sensor;
-            0); // input   [1:0] sub_channel;    
+        window_height = FULL_HEIGHT;
+        window_left = 0;
+        window_top = 0;
+        window_width =       SENSOR_MEMORY_WIDTH_BURSTS;
+        frame_full_width =   SENSOR_MEMORY_FULL_WIDTH_BURSTS;
+        camsync_period =     TRIG_PERIOD;
+        camsync_delay = CAMSYNC_DELAY;
+        trigger_mode =       TRIGGER_MODE;
+        ext_trigger_mode =   EXT_TRIGGER_MODE;
+        external_timestamp = EXTERNAL_TIMESTAMP;
+        last_buf_frame =     LAST_BUF_FRAME;
+        sensor_mask =        1 << num_sensor;
+//        program_curves(
+//            num_sensor,  // input   [1:0] num_sensor;
+//            0);          // input   [1:0] sub_channel;    
+        program_status_gpio (
+            3,          // input [1:0] mode;
+            0);         // input [5:0] seq_num;
+
         program_status_sensor_i2c(
-            0, // input [1:0] num_sensor;
-            3, // input [1:0] mode;
-            0); //input [5:0] seq_num;
+            num_sensor,  // input [1:0] num_sensor;
+            3,           // input [1:0] mode;
+            0);          //input [5:0] seq_num;
         program_status_sensor_io(
-            0, // input [1:0] num_sensor;
-            3, // input [1:0] mode;
-            0); //input [5:0] seq_num;
+            num_sensor,  // input [1:0] num_sensor;
+            3,           // input [1:0] mode;
+            0);          //input [5:0] seq_num;
             
         program_status_rtc( // also takes snapshot
-            3, // input [1:0] mode;
-            0); //input [5:0] seq_num;
+            3,         // input [1:0] mode;
+            0);        //input [5:0] seq_num;
             
         set_rtc (
             32'h12345678, // input [31:0] sec;
-            0,           //input [19:0] usec;
-            16'h8000); // input [15:0] corr;  maximal correction to the rtc
+            0,            //input [19:0] usec;
+            16'h8000);    // input [15:0] corr;  maximal correction to the rtc
+
+    // moved beore camsync to have a valid timestamo w/o special waiting            
+    TEST_TITLE = "MEMORY_SENSOR";
+    $display("===================== TEST_%s =========================",TEST_TITLE);
             
+        setup_sensor_memory (
+            num_sensor,                    // input  [1:0] num_sensor;
+            FRAME_START_ADDRESS,           // input [31:0] frame_sa;         // 22-bit frame start address ((3 CA LSBs==0. BA==0)
+            FRAME_START_ADDRESS_INC,       // input [31:0] frame_sa_inc;     // 22-bit frame start address increment  ((3 CA LSBs==0. BA==0)
+            last_buf_frame,                // input [31:0] last_frame_num;   // 16-bit number of the last frame in a buffer
+            frame_full_width,              // input [31:0] frame_full_width; // 13-bit Padded line length (8-row increment), in 8-bursts (16 bytes)
+            window_width,                  // input [31:0] window_width;    // 13 bit - in 8*16=128 bit bursts
+            window_height,                 // input [31:0] window_height;   // 16 bit
+            window_left,                   // input [31:0] window_left;
+            window_top);                   // input [31:0] window_top;
+            
+            
+    TEST_TITLE = "CAMSYNC_SETUP";
+    $display("===================== TEST_%s =========================",TEST_TITLE);
+            
+// setup camsync module
+        set_camsync_period  (0); // reset circuitry
+        set_gpio_ports (
+            0,  // input [1:0] port_soft; // <2 - unchanged, 2 - disable, 3 - enable
+            3,  // input [1:0] port_a; // camsync
+            0,  // input [1:0] port_b; // motors on 353
+            0); //input [1:0] port_c; // logger
+
+        set_camsync_mode (
+            1'b1,                      // input       en;             // 1 - enable module, 0 - reset
+            {1'b1,1'b1},               // input [1:0] en_snd;         // <2 - NOP, 2 - disable, 3 - enable sending timestamp with sync pulse
+            {1'b1,external_timestamp}, // input [1:0] en_ts_external; // <2 - NOP, 2 - local timestamp in the frame header, 3 - use external timestamp
+            {1'b1,trigger_mode},       // input [1:0] triggered_mode; // <2 - NOP, 2 - async sensor mode, 3 - triggered sensor mode
+            {1'b1, 2'h0},              // input [2:0] master_chn;     // <4 - NOP, 4..7 - set master channel
+            {1'b1, sensor_mask});      // input [4:0] chn_en;         // <16 - NOP, [3:0] - bit mask of enabled sensor channels
+    // setting I/Os after camsync is enabled
+        reset_camsync_inout (0);        // reset input selection
+        if (ext_trigger_mode)
+            set_camsync_inout   (0, 7, 1 ); // set input selection - ext[7], active high
+        reset_camsync_inout (1);        // reset output selection
+        set_camsync_inout   (1, 6, 1 ); // reset output selection - ext[6], active high
+        set_camsync_period  (SYNC_BIT_LENGTH); ///set (bit_length -1) (should be 2..255)
+        set_camsync_delay (
+            0, // input  [1:0] sub_chn;
+            camsync_delay); // input [31:0] dly;          // 0 - input selection, 1 - output selection
+
+
+        set_camsync_period  (camsync_period); // set period (start generating) - in 353 was after everything else was set
+
+    TEST_TITLE = "DELAYS_SETUP";
+    $display("===================== TEST_%s =========================",TEST_TITLE);
             
        set_sensor_io_dly (
-            0,                                          // input                            [1:0] num_sensor;
+            num_sensor,                                 // input                            [1:0] num_sensor;
             128'h33404850_58606870_78808890_98a0a8b0 ); //input [127:0] dly; // {mmsm_phase, bpf, vact, hact, pxd11,...,pxd0]
             
+    TEST_TITLE = "IO_SETUP";
+    $display("===================== TEST_%s =========================",TEST_TITLE);
+        set_sensor_io_width(
+            num_sensor, // input    [1:0] num_sensor;
+            FULL_WIDTH); // Or use 0 for sensor-generated HACT input   [15:0] width; // 0 - use HACT, >0 - generate HACT from start to specified width
             
         set_sensor_io_ctl (
-            0,  // input                            [1:0] num_sensor;
+            num_sensor,  // input                    [1:0] num_sensor;
             3,  // input                            [1:0] mrst;     // <2: keep MRST, 2 - MRST low (active),  3 - high (inactive)
             3,  // input                            [1:0] arst;     // <2: keep ARST, 2 - ARST low (active),  3 - high (inactive)
             3,  // input                            [1:0] aro;      // <2: keep ARO,  2 - set ARO (software controlled) low,  3 - set ARO  (software controlled) high
@@ -1814,7 +1911,7 @@ task setup_sensor_channel;
             0,  // input                                  set_delays; // (self-clearing) load all pre-programmed delays 
             1'b1,  // input                                  set_quadrants;  // 0 - keep quadrants settings, 1 - update quadrants
             6'h24); // data-0, hact - 1, vact - 2 input  [SENS_CTRL_QUADRANTS_WIDTH-1:0] quadrants;  // 90-degree shifts for data [1:0], hact [3:2] and vact [5:4]
-
+/*
 // setup camsync module
         reset_camsync_inout (0);        // reset input selection
         if (ext_trigger_mode)
@@ -1829,21 +1926,28 @@ task setup_sensor_channel;
         set_camsync_mode (
             {1'b1,1'b1},               // input [1:0] en_snd;         // <2 - NOP, 2 - disable, 3 - enable sending timestamp with sync pulse
             {1'b1,external_timestamp}, // input [1:0] en_ts_external; // <2 - NOP, 2 - local timestamp in the frame header, 3 - use external timestamp
-            {1'b1,ext_trigger_mode},   // input [1:0] triggered_mode; // <2 - NOP, 2 - async sesnor mode, 3 - triggered sensor mode
+            {1'b1,trigger_mode},       // input [1:0] triggered_mode; // <2 - NOP, 2 - async sensor mode, 3 - triggered sensor mode
             {1'b1, 2'h0},              // input [2:0] master_chn;     // <4 - NOP, 4..7 - set master channel
-            {1'b1, 4'h3});             // input [4:0] chn_en;         // <16 - NOP, [3:0] - bit mask of enabled sensor channels
+            {1'b1, sensor_mask});      // input [4:0] chn_en;         // <16 - NOP, [3:0] - bit mask of enabled sensor channels
+*/
+    TEST_TITLE = "I2C_TEST";
+    $display("===================== TEST_%s =========================",TEST_TITLE);
 
         test_i2c_353; // test soft/sequencer i2c
+    TEST_TITLE = "GAMMA_SETUP";
+    $display("===================== TEST_%s =========================",TEST_TITLE);
 
         set_sensor_gamma_heights (
-            0,      // input   [1:0] num_sensor;
-            'hffff, // input  [15:0] height0_m1; // height of the first sub-frame minus 1
-            0,      //input  [15:0] height1_m1; // height of the second sub-frame minus 1
-            0);     //input  [15:0] height2_m1; // height of the third sub-frame minus 1 (no need for 4-th)
+            num_sensor, // input   [1:0] num_sensor;
+            'hffff,     // input  [15:0] height0_m1; // height of the first sub-frame minus 1
+            0,          // input  [15:0] height1_m1; // height of the second sub-frame minus 1
+            0);         // input  [15:0] height2_m1; // height of the third sub-frame minus 1 (no need for 4-th)
            
         // Configure histograms
+    TEST_TITLE = "HISTOGRAMS_SETUP";
+    $display("===================== TEST_%s =========================",TEST_TITLE);
         set_sensor_histogram_window ( // 353 did it using command sequencer)
-            0,                   // input   [1:0] num_sensor; // sensor channel number (0..3)
+            num_sensor,          // input   [1:0] num_sensor; // sensor channel number (0..3)
             0,                   // input   [1:0] subchannel; // subchannel number (for multiplexed images)
             HISTOGRAM_LEFT,      // input  [15:0] left;
             HISTOGRAM_TOP,       // input  [15:0] top;
@@ -1851,8 +1955,8 @@ task setup_sensor_channel;
             HISTOGRAM_HEIGHT-2); // input  [15:0] height_m1; // one less than window height. If 0 - use frame bottom margin (end of VACT)
 
         set_sensor_histogram_saxi_addr (
-            0, // input   [1:0] num_sensor; // sensor channel number (0..3)
-            0, // input   [1:0] subchannel; // subchannel number (for multiplexed images)
+            num_sensor, // input   [1:0] num_sensor; // sensor channel number (0..3)
+            0,          // input   [1:0] subchannel; // subchannel number (for multiplexed images)
             HISTOGRAM_STRAT_PAGE); // input  [19:0] page; //start address in 4KB pages (1 page - one subchannel histogram)
             
          set_sensor_histogram_saxi (
@@ -1884,37 +1988,34 @@ task write_cmd_frame_sequencer;
     input                 [31:0] data;         // command data
 
 */            
-        set_sensor_io_width(
-            0, // input    [1:0] num_sensor;
-            FULL_WIDTH); // Or use 0 for sensor-generated HACT input   [15:0] width; // 0 - use HACT, >0 - generate HACT from start to specified width
+        // Run after histogram channel is set up?
+    TEST_TITLE = "SENSOR_SETUP";
+    $display("===================== TEST_%s =========================",TEST_TITLE);
             
-        setup_sensor_memory (
-            0,                             // input  [1:0] num_sensor;
-            FRAME_START_ADDRESS,           // input [31:0] frame_sa;         // 22-bit frame start address ((3 CA LSBs==0. BA==0)
-            FRAME_START_ADDRESS_INC,       // input [31:0] frame_sa_inc;     // 22-bit frame start address increment  ((3 CA LSBs==0. BA==0)
-            last_buf_frame,                // input [31:0] last_frame_num;   // 16-bit number of the last frame in a buffer
-            frame_full_width,              // input [31:0] frame_full_width; // 13-bit Padded line length (8-row increment), in 8-bursts (16 bytes)
-            window_width,                  // input [31:0] window_width;    // 13 bit - in 8*16=128 bit bursts
-            window_height,                 // input [31:0] window_height;   // 16 bit
-            window_left,                   // input [31:0] window_left;
-            window_top);                   // input [31:0] window_top;
-            
-        // Run after histogram channel is set up?    
         set_sensor_mode (
-            0, // input  [1:0] num_sensor;
-            4'h1,  // input  [3:0] hist_en;    // [0..3] 1 - enable histogram modules, disable after processing the started frame
-            4'h1,  // input  [3:0] hist_nrst;  // [4..7] 0 - immediately reset histogram module 
-            1'b1,  // input        chn_en;     // [8]    1 - enable sensor channel (0 - reset) 
-            1'b0); // input        bits16;     // [9]    0 - 8 bpp mode, 1 - 16 bpp (bypass gamma). Gamma-processed data is still used for histograms
+            num_sensor, // input  [1:0] num_sensor;
+            4'h1,       // input  [3:0] hist_en;    // [0..3] 1 - enable histogram modules, disable after processing the started frame
+            4'h1,       // input  [3:0] hist_nrst;  // [4..7] 0 - immediately reset histogram module 
+            1'b1,       // input        chn_en;     // [8]    1 - enable sensor channel (0 - reset) 
+            1'b0);      // input        bits16;     // [9]    0 - 8 bpp mode, 1 - 16 bpp (bypass gamma). Gamma-processed data is still used for histograms
             // test i2c - manual and sequencer (same data as in 353 test fixture
 
+    TEST_TITLE = "GAMMA_CTL";
+    $display("===================== TEST_%s =========================",TEST_TITLE);
         set_sensor_gamma_ctl (// doing last to enable sesnor data when everything else is set up
-            0,     // input   [1:0] num_sensor; // sensor channel number (0..3)
-            2'h3,  // input   [1:0] bayer;      // bayer shift (0..3)
-            0,     // input         table_page; // table page (only used if SENS_GAMMA_BUFFER)
-            1'b1,  // input         en_input;   // enable channel input
-            1'b1,  // input         repet_mode; //  Normal mode, single trigger - just for debugging
-            1'b0); // input         trig;       // pass next frame
+            num_sensor, // input   [1:0] num_sensor; // sensor channel number (0..3)
+            2'h3,       // input   [1:0] bayer;      // bayer shift (0..3)
+            0,          // input         table_page; // table page (only used if SENS_GAMMA_BUFFER)
+            1'b1,       // input         en_input;   // enable channel input
+            1'b1,       // input         repet_mode; //  Normal mode, single trigger - just for debugging
+            1'b0);      // input         trig;       // pass next frame
+    // temporarily putting in the very end as it takes about 30 usec to program curves (TODO: see how to make it faster for simulation)
+    TEST_TITLE = "GAMMA_LOAD";
+    $display("===================== TEST_%s =========================",TEST_TITLE);
+        program_curves(
+            num_sensor,  // input   [1:0] num_sensor;
+            0);          // input   [1:0] sub_channel;    
+            
 
     end
 endtask
@@ -2035,6 +2136,62 @@ task program_status_sensor_io;
     end
 endtask
 
+task program_status_gpio;
+    input [1:0] mode;
+    input [5:0] seq_num;
+    begin
+        program_status (GPIO_ADDR,
+                        GPIO_SET_STATUS,
+                        mode,
+                        seq_num);
+    end
+endtask
+
+task set_gpio_ports;
+    input [1:0] port_soft; // <2 - unchanged, 2 - disable, 3 - enable
+    input [1:0] port_a; // camsync
+    input [1:0] port_b; // motors on 353
+    input [1:0] port_c; // logger
+    
+    reg  [31:0] data;
+    begin
+        data = 0;
+        data [GPIO_PORTEN + 0 +:2] = port_soft;
+        data [GPIO_PORTEN + 2 +:2] = port_a;
+        data [GPIO_PORTEN + 4 +:2] = port_b;
+        data [GPIO_PORTEN + 6 +:2] = port_c;
+        write_contol_register( GPIO_ADDR + GPIO_SET_PINS, data);
+    end
+endtask
+    
+task set_gpio_pins;
+    input [1:0] ext0; // 0 - nop, 1 - set "0", 2 - set "1", 3 - set as input
+    input [1:0] ext1; // 0 - nop, 1 - set "0", 2 - set "1", 3 - set as input
+    input [1:0] ext2; // 0 - nop, 1 - set "0", 2 - set "1", 3 - set as input
+    input [1:0] ext3; // 0 - nop, 1 - set "0", 2 - set "1", 3 - set as input
+    input [1:0] ext4; // 0 - nop, 1 - set "0", 2 - set "1", 3 - set as input
+    input [1:0] ext5; // 0 - nop, 1 - set "0", 2 - set "1", 3 - set as input
+    input [1:0] ext6; // 0 - nop, 1 - set "0", 2 - set "1", 3 - set as input
+    input [1:0] ext7; // 0 - nop, 1 - set "0", 2 - set "1", 3 - set as input
+    input [1:0] ext8; // 0 - nop, 1 - set "0", 2 - set "1", 3 - set as input
+    input [1:0] ext9; // 0 - nop, 1 - set "0", 2 - set "1", 3 - set as input
+    
+    reg  [31:0] data;
+    begin
+        data = 0;
+        data [ 0 +:2] = ext0;
+        data [ 2 +:2] = ext1;
+        data [ 4 +:2] = ext2;
+        data [ 6 +:2] = ext3;
+        data [ 8 +:2] = ext4;
+        data [10 +:2] = ext5;
+        data [12 +:2] = ext6;
+        data [14 +:2] = ext7;
+        data [16 +:2] = ext8;
+        data [18 +:2] = ext9;
+        write_contol_register( GPIO_ADDR + GPIO_SET_PINS, data);
+    end
+endtask
 
 task set_sensor_mode;
     input  [1:0] num_sensor;
@@ -2181,7 +2338,7 @@ task program_curves;
 //    reg [10:0] curv_diff;
     reg    [17:0] data18;
     begin
-        $readmemh("linear1028rgb.dat",curves_data);
+        $readmemh("input_data/linear1028rgb.dat",curves_data);
          set_sensor_gamma_table_addr (
             num_sensor,
             sub_channel,
@@ -2369,6 +2526,7 @@ task set_rtc;
     end
 endtask
 
+/*
 function [STATUS_DEPTH-1:0] func_status_addr_rtc_status;
     begin
         func_status_addr_rtc_status = RTC_STATUS_REG_ADDR;
@@ -2380,9 +2538,10 @@ function [STATUS_DEPTH-1:0] func_status_addr_rtc_usec; // sec is in the next add
         func_status_addr_rtc_usec = RTC_SEC_USEC_ADDR;
     end
 endfunction
-
+*/
 // camsync tasks 
 task set_camsync_mode;
+    input       en;             // 1 - enable, 0 - reset module
     input [1:0] en_snd;         // <2 - NOP, 2 - disable, 3 - enable sending timestamp with sync pulse
     input [1:0] en_ts_external; // <2 - NOP, 2 - local timestamp in the frame header, 3 - use external timestamp
     input [1:0] triggered_mode; // <2 - NOP, 2 - async sesnor mode, 3 - triggered sensor mode
@@ -2391,6 +2550,7 @@ task set_camsync_mode;
     reg    [31:0] data;
     begin
         data = 0;
+        data [CAMSYNC_EN_BIT]             = en;
         data [CAMSYNC_SNDEN_BIT     -: 2] = en_snd;
         data [CAMSYNC_EXTERNAL_BIT  -: 2] = en_ts_external;
         data [CAMSYNC_TRIGGERED_BIT -: 2] = triggered_mode;

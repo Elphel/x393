@@ -54,7 +54,7 @@ module  rtc393 #(
 //    output reg                    snap);       // take a snapshot (externally)
     
     wire  [31:0] cmd_data;
-    wire   [2:0] cmd_a;
+    wire   [1:0] cmd_a;
     wire         cmd_we; 
 
     wire         set_usec_w;  
@@ -125,7 +125,7 @@ module  rtc393 #(
         else if (refclk2x_mclk)         pre_cntr <= pre_cntr - 1;
         
         if (!enable_rtc) halfusec <= 0;
-        else             halfusec <= {halfusec[2:0], (|pre_cntr)?1'b0:1'b1};
+        else             halfusec <= {halfusec[2:0], (|pre_cntr || !refclk2x_mclk)?1'b0:1'b1};
         
         if (set_usec_w)      pend_set_cntr <= 1'b0; // just to get rid of undefined
         if (set_sec_w)       pend_set_cntr <= 1'b1;
@@ -160,7 +160,7 @@ module  rtc393 #(
         .ADDR       (RTC_ADDR),
         .ADDR_MASK  (RTC_MASK),
         .NUM_CYCLES (6),
-        .ADDR_WIDTH (3),
+        .ADDR_WIDTH (2),
         .DATA_WIDTH (32)
     ) cmd_deser_32bit_i (
         .rst        (1'b0),     //rst),      // input

@@ -28,16 +28,16 @@
     parameter       SIMUL_AXI_READ_WIDTH=16,
     
     parameter       MEMCLK_PERIOD = 5.0,
-    parameter       FCLK0_PERIOD = 10.417,
+    parameter       FCLK0_PERIOD =  41.667, //  10.417, 24MHz
     parameter       FCLK1_PERIOD =  0.0,
     
-    parameter SENSOR12BITS_LLINE   =   192,   //   1664;//   line duration in clocks
-    parameter SENSOR12BITS_NCOLS   =    66,   //58; //56; // 129; //128;   //1288;
-    parameter SENSOR12BITS_NROWS   =    18,   // 16;   //   1032;
-    parameter SENSOR12BITS_NROWB   =     1,   // number of "blank rows" from vact to 1-st hact
-    parameter SENSOR12BITS_NROWA   =     1,   // number of "blank rows" from last hact to end of vact
+//    parameter SENSOR12BITS_LLINE   =   192,   //   1664;//   line duration in clocks
+//    parameter SENSOR12BITS_NCOLS   =    66,   //58; //56; // 129; //128;   //1288;
+//    parameter SENSOR12BITS_NROWS   =    18,   // 16;   //   1032;
+//    parameter SENSOR12BITS_NROWB   =     1,   // number of "blank rows" from vact to 1-st hact
+//    parameter SENSOR12BITS_NROWA   =     1,   // number of "blank rows" from last hact to end of vact
 //    parameter nAV   =      24,   //240;   // clocks from ARO to VACT (actually from en_dclkd)
-    parameter SENSOR12BITS_NBPF =       20,   //16; // bpf length
+//    parameter SENSOR12BITS_NBPF =       20,   //16; // bpf length
     parameter SENSOR12BITS_NGPL =        8,   // bpf to hact
     parameter SENSOR12BITS_NVLO =        1,   // VACT=0 in video mode (clocks)
     //parameter tMD   =   14;    //
@@ -45,15 +45,17 @@
     parameter SENSOR12BITS_TMD =         4,   //
     parameter SENSOR12BITS_TDDO =        2,   //   some confusion here - let's assume that it is from DCLK to Data out
     parameter SENSOR12BITS_TDDO1 =       5,   //
-    parameter SENSOR12BITS_TRIGDLY =     8,   // delay between trigger input and start of output (VACT) in lines
-    parameter SENSOR12BITS_RAMP =        1,   // 1 - ramp, 0 - random (now - sensor.dat)
-    parameter SENSOR12BITS_NEW_BAYER =   0,   // 0 - "old" tiles (16x16, 1 - new - (18x18)   
+//    parameter SENSOR12BITS_TRIGDLY =     8,   // delay between trigger input and start of output (VACT) in lines
+//    parameter SENSOR12BITS_RAMP =        1,   // 1 - ramp, 0 - random (now - sensor.dat)
+//    parameter SENSOR12BITS_NEW_BAYER =   0,   // 0 - "old" tiles (16x16, 1 - new - (18x18)   
 
     parameter HISTOGRAM_LEFT =           0,   //2;   // left   
     parameter HISTOGRAM_TOP =            2,   // top
     parameter HISTOGRAM_WIDTH =          6,   // width
     parameter HISTOGRAM_HEIGHT =         6,   // height
     parameter HISTOGRAM_STRAT_PAGE =    20'h12345,
+    parameter FRAME_WIDTH_ROUND_BITS =  9,  // multiple of 512 pixels (32 16-byte bursts) (11 - ful SDRAM page)
+    
     parameter WOI_WIDTH=                64
     
     

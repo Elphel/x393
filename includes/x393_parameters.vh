@@ -431,7 +431,7 @@
     //sensor_fifo parameters
     parameter SENSOR_DATA_WIDTH =        12,
     parameter SENSOR_FIFO_2DEPTH =       4,
-    parameter SENSOR_FIFO_DELAY =        4'd7,
+    parameter SENSOR_FIFO_DELAY =        4'd5, // 7,
     // other parameters for histogram_saxi module
     parameter HIST_SAXI_ADDR_MASK =      'h7f0,
       parameter HIST_SAXI_MODE_WIDTH =   8,
@@ -615,11 +615,13 @@
     parameter CAMSYNC_TRIG_DELAY1 =        'h5, // setup input trigger delay
     parameter CAMSYNC_TRIG_DELAY2 =        'h6, // setup input trigger delay
     parameter CAMSYNC_TRIG_DELAY3 =        'h7, // setup input trigger delay
-    parameter CAMSYNC_SNDEN_BIT =          'h1, // enable writing ts_snd_en
-    parameter CAMSYNC_EXTERNAL_BIT =       'h3, // enable writing ts_external (0 - local timestamp in the frame header)
-    parameter CAMSYNC_TRIGGERED_BIT =      'h5, // triggered mode ( 0- async)
-    parameter CAMSYNC_MASTER_BIT =         'h8, // select a 2-bit master channel (master delay may be used as a flash delay)
-    parameter CAMSYNC_CHN_EN_BIT =         'hd, // per-channel enable timestamp generation
+
+    parameter CAMSYNC_EN_BIT =             'h0, // enable module (0 - reset)
+    parameter CAMSYNC_SNDEN_BIT =          'h2, // enable writing ts_snd_en
+    parameter CAMSYNC_EXTERNAL_BIT =       'h4, // enable writing ts_external (0 - local timestamp in the frame header)
+    parameter CAMSYNC_TRIGGERED_BIT =      'h6, // triggered mode ( 0- async)
+    parameter CAMSYNC_MASTER_BIT =         'h9, // select a 2-bit master channel (master delay may be used as a flash delay)
+    parameter CAMSYNC_CHN_EN_BIT =         'he, // per-channel enable timestamp generation
     parameter CAMSYNC_PRE_MAGIC =          6'b110100,
     parameter CAMSYNC_POST_MAGIC =         6'b001101,
     

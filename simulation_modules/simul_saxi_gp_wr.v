@@ -163,10 +163,21 @@ Alex
             2'h0: next_wr_address_w[11:0] <= write_address[11:0];
             2'h1: next_wr_address_w[11:0] <= write_address[11:0] + (1 << wsize);
             2'h2:   case (wsize)
-                        2'h3:  next_wr_address_w[11:0] <= {(write_address[11:3] + 1) & {5'h1f, ~wlen[3:0]},write_address[2:0]}; 
-                        2'h2:  next_wr_address_w[11:0] <= {(write_address[11:2] + 1) & {6'h3f, ~wlen[3:0]},write_address[1:0]}; 
-                        2'h1:  next_wr_address_w[11:0] <= {(write_address[11:1] + 1) & {7'h7f, ~wlen[3:0]},write_address[0:0]}; 
-                        2'h0:  next_wr_address_w[11:0] <=  (write_address[11:0] + 1) & {8'hff, ~wlen[3:0]}; 
+                        2'h3:  begin
+                                   next_wr_address_w[11:3] <= (write_address[11:3] + 1) & {5'h1f, ~wlen[3:0]};
+                                   next_wr_address_w[ 2:0] <= write_address[2:0]; 
+                               end
+                        2'h2:  begin
+                                   next_wr_address_w[11:2] <= (write_address[11:2] + 1) & {6'h3f, ~wlen[3:0]};
+                                   next_wr_address_w[ 1:0] <=  write_address[1:0]; 
+                               end 
+                        2'h1:  begin
+                                   next_wr_address_w[11:1] <= (write_address[11:1] + 1) & {7'h7f, ~wlen[3:0]};
+                                   next_wr_address_w[0:0]    <= write_address[0:0];
+                               end  
+                        2'h0:  begin
+                                next_wr_address_w[11:0] <=  (write_address[11:0] + 1) & {8'hff, ~wlen[3:0]}; 
+                               end 
                     endcase
             2'h3: next_wr_address_w[11:0] <= 12'bx;          
         endcase

@@ -23,7 +23,7 @@
 module  sensor_fifo #(
     parameter SENSOR_DATA_WIDTH = 12,
     parameter SENSOR_FIFO_2DEPTH = 4, // 4-bit address
-    parameter SENSOR_FIFO_DELAY = 7 // approxiametly half (1 << SENSOR_FIFO_2DEPTH) - how long to wait after getting HACT on FIFO before stering it on output
+    parameter SENSOR_FIFO_DELAY = 5 // 7 // approxiametly half (1 << SENSOR_FIFO_2DEPTH) - how long to wait after getting HACT on FIFO before stering it on output
 )(
 //    input                          rst,
     input                          iclk, // input -synchronous clock
@@ -45,7 +45,8 @@ module  sensor_fifo #(
     reg                          sof_r,eof_r;
     wire we;
     // output clock domain
-    wire pre_re,re_w,re;
+//    wire                        pre_re;
+    wire                        re; // re_w,re;
     reg                         re_r;
     reg                   [1:0] pre_hact;
     reg                         hact_out_r;
@@ -86,14 +87,44 @@ module  sensor_fifo #(
     );
     
     // output clock domain
-    assign pre_re = nempty && !re_r;
-    assign re_w = re_r && nempty; // to protect from false positive on nempty
-    assign re = (re_w && !pre_hact) || hact_out_r;
+//    assign pre_re = nempty && !re_r;
+// Generating first read (for hact), then wait to fill half FIFO and continue continuous read until hact end
+//    assign re_w = re_r && nempty; // to protect from false positive on nempty
+//    assign re = (re_w && !pre_hact) || hact_out_r; // no check for nempty - producing un-interrupted stream
+    assign re = (re_r && nempty && !pre_hact[0]) || hact_out_r; // no check for nempty - producing un-interrupted stream
     assign pxd_out= pxd_r;
     assign data_valid = hact_out_r;
     assign sof = sof_r;
     assign eof = eof_r;
+
+    always @(posedge pclk) begin
+        if (prst) re_r <= 0;
+        else      re_r <= nempty && !re_r && !pre_hact[0]; // only generate one cycle (after SOF of HACT)
+
+        if    (prst) pre_hact[0] <= 0;
+        else if (re) pre_hact[0] <= hact_w;
+
+        if    (prst) pre_hact[1] <= 0;
+        else         pre_hact[1] <= pre_hact[0];
+
+
+        if    (prst) pxd_r <= 0;
+        else if (re) pxd_r <= pxd_w;
+
+        if      (prst)            hact_out_r <= 0;
+        else if (hact_out_start)  hact_out_r <= 1;
+//        else if (!hact_w)        hact_out_r <= 0;
+        else if (!(hact_w && re)) hact_out_r <= 0;
+
+        if (prst) sof_r <= 0;
+        else      sof_r <= re && sof_w;
+
+        if (prst) eof_r <= 0;
+        else      eof_r <= re && eof_w;
+
+    end
      
+/*
     always @(posedge iclk) begin
         if (irst) re_r <= 0;
         else      re_r <= pre_re;
@@ -118,7 +149,7 @@ module  sensor_fifo #(
         else      eof_r <= re && eof_w;
 
     end
-    
+*/    
 
 
 endmodule

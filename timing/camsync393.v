@@ -30,26 +30,27 @@
 //`define GENERATE_TRIG_OVERDUE 1
 `undef GENERATE_TRIG_OVERDUE
 module camsync393       #(
-    parameter CAMSYNC_ADDR =                    'h160, //TODO: assign valid address
-    parameter CAMSYNC_MASK =                    'h7f8,
-    parameter CAMSYNC_MODE =                    'h0,
-    parameter CAMSYNC_TRIG_SRC =                'h1, // setup trigger source
-    parameter CAMSYNC_TRIG_DST =                'h2, // setup trigger destination line(s)
-    parameter CAMSYNC_TRIG_PERIOD =             'h3, // setup output trigger period
-    parameter CAMSYNC_TRIG_DELAY0 =             'h4, // setup input trigger delay
-    parameter CAMSYNC_TRIG_DELAY1 =             'h5, // setup input trigger delay
-    parameter CAMSYNC_TRIG_DELAY2 =             'h6, // setup input trigger delay
-    parameter CAMSYNC_TRIG_DELAY3 =             'h7, // setup input trigger delay
+    parameter CAMSYNC_ADDR =               'h160, //TODO: assign valid address
+    parameter CAMSYNC_MASK =               'h7f8,
+    parameter CAMSYNC_MODE =               'h0,
+    parameter CAMSYNC_TRIG_SRC =           'h1, // setup trigger source
+    parameter CAMSYNC_TRIG_DST =           'h2, // setup trigger destination line(s)
+    parameter CAMSYNC_TRIG_PERIOD =        'h3, // setup output trigger period
+    parameter CAMSYNC_TRIG_DELAY0 =        'h4, // setup input trigger delay
+    parameter CAMSYNC_TRIG_DELAY1 =        'h5, // setup input trigger delay
+    parameter CAMSYNC_TRIG_DELAY2 =        'h6, // setup input trigger delay
+    parameter CAMSYNC_TRIG_DELAY3 =        'h7, // setup input trigger delay
     
-    parameter CAMSYNC_SNDEN_BIT =               'h1, // enable writing ts_snd_en
-    parameter CAMSYNC_EXTERNAL_BIT =            'h3, // enable writing ts_external (0 - local timestamp in the frame header)
-    parameter CAMSYNC_TRIGGERED_BIT =           'h5, // triggered mode ( 0- async)
-    parameter CAMSYNC_MASTER_BIT =              'h8, // select a 2-bit master channel (master delay may be used as a flash delay)
-    parameter CAMSYNC_CHN_EN_BIT =              'hd, // per-channel enable timestamp generation
+    parameter CAMSYNC_EN_BIT =             'h0, // enable module (0 - reset)
+    parameter CAMSYNC_SNDEN_BIT =          'h2, // enable writing ts_snd_en
+    parameter CAMSYNC_EXTERNAL_BIT =       'h4, // enable writing ts_external (0 - local timestamp in the frame header)
+    parameter CAMSYNC_TRIGGERED_BIT =      'h6, // triggered mode ( 0- async)
+    parameter CAMSYNC_MASTER_BIT =         'h9, // select a 2-bit master channel (master delay may be used as a flash delay)
+    parameter CAMSYNC_CHN_EN_BIT =         'he, // per-channel enable timestamp generation
     
     
-    parameter CAMSYNC_PRE_MAGIC =               6'b110100,
-    parameter CAMSYNC_POST_MAGIC =              6'b001101
+    parameter CAMSYNC_PRE_MAGIC =          6'b110100,
+    parameter CAMSYNC_POST_MAGIC =         6'b001101
 
     )(
 //    input                         rst,  // global reset
@@ -143,7 +144,10 @@ module camsync393       #(
     output                        ts_rcv_stb_chn3, // 1 clock before ts_rcv_data is valid
     output                  [7:0] ts_rcv_data_chn3 // byte-wide serialized timestamp message received or local
 );
-
+    reg           en = 0;       // enable camsync module
+//    wire          rst = mrst || !en;
+    wire          en_pclk;
+    wire          eprst = prst || !en_pclk;
     reg           ts_snd_en;   // enable sending timestamp over sync line
     reg           ts_external; // 1 - use external timestamp, if available. 0 - always use local ts
     reg           triggered_mode_r;
@@ -334,7 +338,7 @@ module camsync393       #(
     assign pre_input_pattern = {cmd_data[18],cmd_data[16],cmd_data[14],cmd_data[12],cmd_data[10],
                                 cmd_data[8],cmd_data[6],cmd_data[4],cmd_data[2],cmd_data[0]};
     assign triggered_mode = triggered_mode_r;
-    assign {ts_snap_mclk_chn3, ts_snap_mclk_chn2, ts_snap_mclk_chn1, ts_snap_mclk_chn0 } = triggered_mode? ts_snap_triggered_mclk: frame_sync;
+    assign {ts_snap_mclk_chn3, ts_snap_mclk_chn2, ts_snap_mclk_chn1, ts_snap_mclk_chn0 } = {4{en}} & (triggered_mode? ts_snap_triggered_mclk: frame_sync);
      // keep previous value if 2'b01
 //    assign input_use_w = pre_input_use | (~pre_input_use & pre_input_pattern & input_use);
     wire [9:0] input_mask = pre_input_pattern | ~pre_input_use;
@@ -352,6 +356,7 @@ module camsync393       #(
 
     always @(posedge mclk) begin
         if (set_mode_reg_w) begin
+            en <= cmd_data[CAMSYNC_EN_BIT]; 
             if (cmd_data[CAMSYNC_SNDEN_BIT])     ts_snd_en <=   cmd_data[CAMSYNC_SNDEN_BIT - 1];
             if (cmd_data[CAMSYNC_EXTERNAL_BIT])  ts_external <= cmd_data[CAMSYNC_EXTERNAL_BIT - 1];
             if (cmd_data[CAMSYNC_TRIGGERED_BIT]) triggered_mode_r <= cmd_data[CAMSYNC_TRIGGERED_BIT - 1];
@@ -359,7 +364,11 @@ module camsync393       #(
             if (cmd_data[CAMSYNC_CHN_EN_BIT])    chn_en <= cmd_data[CAMSYNC_CHN_EN_BIT - 1 -: 4];
         end 
         if (mrst) input_use <= 0;
-        else if (set_trig_src_w) begin
+        if (!en) begin
+            input_use <= 0;
+            input_pattern <= 0;        
+            pre_input_use_intern <= 0; // use internal source for triggering
+        end else if (set_trig_src_w) begin
             input_use <= input_use_w;
             input_pattern <= input_pattern_w;        
             pre_input_use_intern <= (input_use_w == 0); // use internal source for triggering
@@ -381,7 +390,11 @@ module camsync393       #(
             input_dly_chn3[31:0] <= cmd_data[31:0];
         end
 
-        if (set_trig_dst_w) begin
+        if (!en) begin
+            gpio_out_en_r[9:0] <= 0;
+            gpio_active[9:0] <= 0;
+            testmode <= 0;
+        end else  if (set_trig_dst_w) begin
             gpio_out_en_r[9:0] <= gpio_out_en_w;
             gpio_active[9:0] <= gpio_active_w;
             testmode <= cmd_data[24];
@@ -402,8 +415,9 @@ module camsync393       #(
         start  <= start0;
         start_d <= start;
 
-        start_en <= (repeat_period[31:0]!=0);
-        if (set_period) rep_en <= !high_zero;
+        start_en <= en && (repeat_period[31:0]!=0);
+        if (!en) rep_en <= 0;
+        else if (set_period) rep_en <= !high_zero;
     end
     always @ (posedge pclk) begin
         case (master_chn)
@@ -433,7 +447,8 @@ module camsync393       #(
         input_use_intern <= pre_input_use_intern;
         ts_external_pclk<= ts_external && !input_use_intern;
      
-        start_pclk[2:0] <= {(restart && rep_en) || (start_pclk[1] && !restart_cntr_run[1] && !restart_cntr_run[0] && !start_pclk[2]),
+        start_pclk[2:0] <= {(restart && rep_en) || 
+                            (start_pclk[1] && !restart_cntr_run[1] && !restart_cntr_run[0] && !start_pclk[2]),
                             start_pclk[0],
                             start_to_pclk && !start_pclk[0]};
         restart_cntr_run[1:0] <= {restart_cntr_run[0],start_en && (start_pclk[2] || (restart_cntr_run[0] && (restart_cntr[31:2] !=0)))};
@@ -466,7 +481,7 @@ module camsync393       #(
     end
  
     always @ (posedge pclk) begin
-        if      (prst)                 dly_cntr_run <= 0;
+        if      (eprst)                 dly_cntr_run <= 0;
         else if (!triggered_mode_pclk) dly_cntr_run <= 0;
         else if (start_dly)            dly_cntr_run <= 4'hf;
         else                           dly_cntr_run <= dly_cntr_run &
@@ -478,11 +493,11 @@ module camsync393       #(
  
  `ifdef GENERATE_TRIG_OVERDUE    
      always @ (posedge mclk) begin
-        if      (mrst)             trigger_r <= 0;
+        if      (rst)             trigger_r <= 0;
         else if (!triggered_mode) trigger_r <= 0;
         else                      trigger_r <= ~frame_sync & (trig_r_mclk ^ trigger_r);
 
-        if      (mrst)             overdue <= 0;
+        if      (rst)             overdue <= 0;
         else if (!triggered_mode) overdue <= 0;
         else                      overdue <= ((overdue ^ trigger_r) & trig_r_mclk) ^ overdue;
         
@@ -683,25 +698,35 @@ module camsync393       #(
         .tdata      (ts_rcv_data_chn3)  // output[7:0] reg 
     );
 
+    level_cross_clocks #(
+        .WIDTH(1),
+        .REGISTER(2)
+    ) level_cross_clocks_en_pclki (
+        .clk   (pclk),     // input
+        .d_in  (en),      // input[0:0] 
+        .d_out (en_pclk) // output[0:0] 
+    );
+
+
     assign {ts_rcv_stb_chn3, ts_rcv_stb_chn2, ts_rcv_stb_chn1, ts_rcv_stb_chn0}= ts_stb;
     pulse_cross_clock i_start_to_pclk (.rst(mrst), .src_clk(mclk), .dst_clk(pclk), .in_pulse(start_d && start_en), .out_pulse(start_to_pclk),.busy());
 
-    pulse_cross_clock i_ts_snap_mclk0 (.rst(prst), .src_clk(pclk), .dst_clk(mclk), .in_pulse(ts_snap_triggered[0]), .out_pulse(ts_snap_triggered_mclk[0]),.busy());
-    pulse_cross_clock i_ts_snap_mclk1 (.rst(prst), .src_clk(pclk), .dst_clk(mclk), .in_pulse(ts_snap_triggered[1]), .out_pulse(ts_snap_triggered_mclk[1]),.busy());
-    pulse_cross_clock i_ts_snap_mclk2 (.rst(prst), .src_clk(pclk), .dst_clk(mclk), .in_pulse(ts_snap_triggered[2]), .out_pulse(ts_snap_triggered_mclk[2]),.busy());
-    pulse_cross_clock i_ts_snap_mclk3 (.rst(prst), .src_clk(pclk), .dst_clk(mclk), .in_pulse(ts_snap_triggered[3]), .out_pulse(ts_snap_triggered_mclk[3]),.busy());
+    pulse_cross_clock i_ts_snap_mclk0 (.rst(eprst), .src_clk(pclk), .dst_clk(mclk), .in_pulse(ts_snap_triggered[0]), .out_pulse(ts_snap_triggered_mclk[0]),.busy());
+    pulse_cross_clock i_ts_snap_mclk1 (.rst(eprst), .src_clk(pclk), .dst_clk(mclk), .in_pulse(ts_snap_triggered[1]), .out_pulse(ts_snap_triggered_mclk[1]),.busy());
+    pulse_cross_clock i_ts_snap_mclk2 (.rst(eprst), .src_clk(pclk), .dst_clk(mclk), .in_pulse(ts_snap_triggered[2]), .out_pulse(ts_snap_triggered_mclk[2]),.busy());
+    pulse_cross_clock i_ts_snap_mclk3 (.rst(eprst), .src_clk(pclk), .dst_clk(mclk), .in_pulse(ts_snap_triggered[3]), .out_pulse(ts_snap_triggered_mclk[3]),.busy());
 
-    pulse_cross_clock i_rcv_done_mclk (.rst(prst), .src_clk(pclk), .dst_clk(mclk), .in_pulse(rcv_done), .out_pulse(rcv_done_mclk),.busy());
+    pulse_cross_clock i_rcv_done_mclk (.rst(eprst), .src_clk(pclk), .dst_clk(mclk), .in_pulse(rcv_done), .out_pulse(rcv_done_mclk),.busy());
 
     pulse_cross_clock i_local_got_pclk0(.rst(mrst), .src_clk(mclk), .dst_clk(pclk), .in_pulse(local_got[0]), .out_pulse(local_got_pclk[0]),.busy());
     pulse_cross_clock i_local_got_pclk1(.rst(mrst), .src_clk(mclk), .dst_clk(pclk), .in_pulse(local_got[1]), .out_pulse(local_got_pclk[1]),.busy());
     pulse_cross_clock i_local_got_pclk2(.rst(mrst), .src_clk(mclk), .dst_clk(pclk), .in_pulse(local_got[2]), .out_pulse(local_got_pclk[2]),.busy());
     pulse_cross_clock i_local_got_pclk3(.rst(mrst), .src_clk(mclk), .dst_clk(pclk), .in_pulse(local_got[3]), .out_pulse(local_got_pclk[3]),.busy());
 
-    pulse_cross_clock i_trig_r_mclk0 (.rst(prst), .src_clk(pclk), .dst_clk(mclk), .in_pulse(trig_r[0]), .out_pulse(trig_r_mclk[0]),.busy());
-    pulse_cross_clock i_trig_r_mclk1 (.rst(prst), .src_clk(pclk), .dst_clk(mclk), .in_pulse(trig_r[1]), .out_pulse(trig_r_mclk[1]),.busy());
-    pulse_cross_clock i_trig_r_mclk2 (.rst(prst), .src_clk(pclk), .dst_clk(mclk), .in_pulse(trig_r[2]), .out_pulse(trig_r_mclk[2]),.busy());
-    pulse_cross_clock i_trig_r_mclk3 (.rst(prst), .src_clk(pclk), .dst_clk(mclk), .in_pulse(trig_r[3]), .out_pulse(trig_r_mclk[3]),.busy());
+    pulse_cross_clock i_trig_r_mclk0 (.rst(eprst), .src_clk(pclk), .dst_clk(mclk), .in_pulse(trig_r[0]), .out_pulse(trig_r_mclk[0]),.busy());
+    pulse_cross_clock i_trig_r_mclk1 (.rst(eprst), .src_clk(pclk), .dst_clk(mclk), .in_pulse(trig_r[1]), .out_pulse(trig_r_mclk[1]),.busy());
+    pulse_cross_clock i_trig_r_mclk2 (.rst(eprst), .src_clk(pclk), .dst_clk(mclk), .in_pulse(trig_r[2]), .out_pulse(trig_r_mclk[2]),.busy());
+    pulse_cross_clock i_trig_r_mclk3 (.rst(eprst), .src_clk(pclk), .dst_clk(mclk), .in_pulse(trig_r[3]), .out_pulse(trig_r_mclk[3]),.busy());
     
 endmodule
 

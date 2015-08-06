@@ -181,7 +181,6 @@ module  sens_parallel12 #(
     wire           hact_ext;     // received hact signal
     reg            hact_ext_r;   // received hact signal, delayed by 1 clock
     reg            hact_r;       // received or regenerated hact  
-    
     assign set_pxd_delay =   set_idelay[2:0];
     assign set_other_delay = set_idelay[3];
     assign status = {locked_pxd_mmcm,clkin_pxd_stopped_mmcm,clkfb_pxd_stopped_mmcm,xfpgadone,ps_rdy, ps_out,xfpgatdo,senspgmin};
@@ -602,8 +601,8 @@ module  sens_parallel12 #(
 //        .CLKOUT4_USE_FINE_PS("FALSE"),
 //        .CLKOUT5_USE_FINE_PS("FALSE"),
 //        .CLKOUT6_USE_FINE_PS("FALSE"),
-        .CLKOUT0_DIVIDE_F    (4.000),
-        .CLKOUT1_DIVIDE      (8),
+        .CLKOUT0_DIVIDE_F    (8.000),
+        .CLKOUT1_DIVIDE      (4),
 //        .CLKOUT2_DIVIDE      (1),
 //        .CLKOUT3_DIVIDE      (1),
 //        .CLKOUT4_DIVIDE(1),

@@ -29,7 +29,7 @@ module  timestamp_snapshot(
     input                sclk,
     input                srst, // @ posedge sclk - sync reset
     input                snap,
-    output               pre_stb, // one clock pulse before sending TS data
+    output reg           pre_stb, // one clock pulse before sending TS data
     output reg     [7:0] ts_data  // timestamp data (s0,s1,s2,s3,u0,u1,u2,u3==0)
 );
     wire         snap_tclk;
@@ -38,8 +38,9 @@ module  timestamp_snapshot(
     reg          pulse_busy_r;
     reg    [2:0] cntr;
     reg          snd;
+    wire         pre_stb_w;
 
-    assign pre_stb = !pulse_busy && pulse_busy_r;
+    assign pre_stb_w = !pulse_busy && pulse_busy_r;
     
     always @ (posedge tclk) begin
         if (snap_tclk) sec_usec_snap <= {usec,sec};
@@ -49,6 +50,7 @@ module  timestamp_snapshot(
         if      (srst)                         snd <= 0;
         else if (!pulse_busy && pulse_busy_r)  snd <= 1;
         else if ((&cntr) || snap)              snd <= 0;
+        pre_stb <= pre_stb_w;
     end
 
     always @(posedge sclk) begin

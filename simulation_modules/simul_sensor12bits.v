@@ -174,7 +174,7 @@ end
 
 always @ (posedge MCLK) begin
 //   #1   stopped= !arst1 || (stoppedd  && !ARO) ;
-   #1   stopped= !arst1 || ((stoppedd || (state== s_frame_done)) && ARO) ; /// ARO tow TRIGGER, ective low
+   #1   stopped= !arst1 || ((stoppedd || (state== s_frame_done)) && ARO) ; /// ARO tow TRIGGER, active low
    #1   arst1=ARST;
 end
 

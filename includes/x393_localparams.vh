@@ -117,7 +117,11 @@
     
     localparam STATUS_PSHIFTER_RDY_MASK = 1<<STATUS_2LSB_SHFT;
     localparam FRAME_START_ADDRESS=      'h1000; // RA=80, CA=0, BA=0 22-bit frame start address (3 CA LSBs==0. BA==0)
-    localparam FRAME_START_ADDRESS_INC=  'h 800;
+    localparam FRAME_START_ADDRESS_INC=  'h800;
+    localparam LAST_BUF_FRAME =           1;
+    localparam CAMSYNC_DELAY =            200;  
+    
+    
     localparam       FRAME_FULL_WIDTH=    'h0c0;  // Padded line length (8-row increment), in 8-bursts (16 bytes)
   
 //  localparam       AFI_LO_ADDR64=       'h4000; // start of the system memory range in 64-bit words
@@ -156,4 +160,5 @@
   localparam       TEST01_SUSPEND=       4; // SuppressThisWarning VEditor - not used
   
   localparam       TEST_INITIAL_BURST=   4; // 3;
+  
     
