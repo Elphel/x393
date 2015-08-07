@@ -53,8 +53,8 @@ module  pxd_single#(
     
     assign pxd_in=pxd_r;
 //    assign pxd_async = pxd_iobuf;
-    always @ (posedge mclk) begin
-        if (mrst) pxd_r <= 0;
+    always @ (posedge ipclk) begin
+        if (irst) pxd_r <= 0;
         else      pxd_r <= quadrant[1]?(quadrant[0]? dout[3]: dout[2]) : (quadrant[0]? dout[1]: dout[0]);
     end
     

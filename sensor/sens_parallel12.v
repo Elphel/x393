@@ -101,9 +101,9 @@ module  sens_parallel12 #(
     inout         aro,
     output        dclk, // externally connected to inout port
     // output
-    output [11:0] pxd_out,
-    output        vact_out, 
-    output        hact_out, 
+    output reg [11:0] pxd_out,
+    output reg        vact_out, 
+    output            hact_out, 
 
     // JTAG to program 10359
 //    input          xpgmen,     // enable programming mode for external FPGA
@@ -124,6 +124,10 @@ module  sens_parallel12 #(
     input         status_start // Acknowledge of the first status packet byte (address)
 );
 
+    // delaying vact and pxd by one clock cycle to match hact register
+    wire [11:0] pxd_out_pre;
+    wire        vact_out_pre; 
+
     reg  [2:0] irst_r;
     wire ibpf;
     wire ipclk_pre, ipclk2x_pre;
@@ -133,10 +137,14 @@ module  sens_parallel12 #(
     reg         set_ctrl_r;
     reg         set_status_r;
     reg   [1:0] set_width_r; // to make double-cycle subtract
+    wire        set_width_ipclk; //re-clocked to pclk
     reg         set_jtag_r;
     
-    reg [LINE_WIDTH_BITS-1:0] line_width_m1;  // regenerated HACT duration; 
+    reg [LINE_WIDTH_BITS-1:0] line_width_m1;       // regenerated HACT duration;
+    reg [LINE_WIDTH_BITS-1:0] line_width_m1_ipclk;  // regenerated HACT duration;
+    
     reg                       line_width_internal; // use regenetrated ( 0 - use HACT as is)
+    reg                       line_width_internal_ipclk;
     reg [LINE_WIDTH_BITS-1:0] hact_cntr;
     
 //    reg         set_quad; // [1:0] - px, [3:2] - HACT, [5:4] - VACT,
@@ -254,19 +262,28 @@ module  sens_parallel12 #(
         
         if      (mclk_rst)       line_width_internal <= 0;
         else if (set_width_r[1]) line_width_internal <= ~ (|data_r[LINE_WIDTH_BITS:0]);
-        
+    end
+
+    always @(posedge ipclk) begin
+        if (irst)                 line_width_m1_ipclk <= 0;
+        else if (set_width_ipclk) line_width_m1_ipclk <= line_width_m1;
+    
+        if (irst)                 line_width_internal_ipclk <= 0;
+        else if (set_width_ipclk) line_width_internal_ipclk <= line_width_internal;
         // regenerate/propagate  HACT
+        if (irst) hact_ext_r <= 1'b0;
+        else      hact_ext_r <= hact_ext;
         
-        if (mclk_rst) hact_ext_r <= 1'b0;
-        else          hact_ext_r <= hact_ext;
+        if      (irst)                                                      hact_r <= 0;
+        else if (hact_ext && !hact_ext_r)                                   hact_r <= 1;
+        else if (line_width_internal_ipclk?(hact_cntr == 0):(hact_ext ==0)) hact_r <= 0; 
         
-        if      (mclk_rst)                                             hact_r <= 0;
-        else if (hact_ext && !hact_ext_r)                              hact_r <= 1;
-        else if (line_width_internal?(hact_cntr == 0):( hact_ext ==0)) hact_r <= 0; 
-        
-        if      (mclk_rst)                hact_cntr <= 0;
-        else if (hact_ext && !hact_ext_r) hact_cntr <= line_width_m1;
+        if      (irst)                    hact_cntr <= 0;
+        else if (hact_ext && !hact_ext_r) hact_cntr <= line_width_m1_ipclk; // from mclk
         else if (hact_r)                  hact_cntr <= hact_cntr - 1;
+        
+        pxd_out <=  pxd_out_pre;
+        vact_out <= vact_out_pre;
         
     end
     
@@ -299,6 +316,14 @@ module  sens_parallel12 #(
        
 */
     
+    pulse_cross_clock pulse_cross_clock_set_width_ipclk_i (
+        .rst         (mclk_rst),           // input
+        .src_clk     (mclk),          // input
+        .dst_clk     (ipclk),          // input
+        .in_pulse    (set_width_r[1]),      // input
+        .out_pulse   (set_width_ipclk),      // output
+        .busy() // output
+    );
     
     
     
@@ -352,7 +377,7 @@ module  sens_parallel12 #(
         .pxd_out        (xfpgatdi),        // input
         .pxd_en         (xpgmen),          // input
         .pxd_async      (),                // output
-        .pxd_in         (pxd_out[0]),      // output
+        .pxd_in         (pxd_out_pre[0]),  // output
         .ipclk          (ipclk),           // input
         .ipclk2x        (ipclk2x),         // input
         .mrst           (mclk_rst),        // input
@@ -379,7 +404,7 @@ module  sens_parallel12 #(
         .pxd_out        (1'b0),            // input
         .pxd_en         (1'b0),            // input
         .pxd_async      (xfpgatdo),        // output
-        .pxd_in         (pxd_out[1]),      // output
+        .pxd_in         (pxd_out_pre[1]),  // output
         .ipclk          (ipclk),           // input
         .ipclk2x        (ipclk2x),         // input
         .mrst           (mclk_rst),        // input
@@ -403,12 +428,12 @@ module  sens_parallel12 #(
                 .PXD_SLEW              (PXD_SLEW),
                 .REFCLK_FREQUENCY      (SENS_REFCLK_FREQUENCY),
                 .HIGH_PERFORMANCE_MODE (SENS_HIGH_PERFORMANCE_MODE)
-            ) pxd_pxd1_i (
+            ) pxd_pxd2_12_i (
                 .pxd            (pxd[i]),          // inout
                 .pxd_out        (1'b0),            // input
                 .pxd_en         (1'b0),            // input
                 .pxd_async      (),                // output
-                .pxd_in         (pxd_out[i]),      // output
+                .pxd_in         (pxd_out_pre[i]),  // output
                 .ipclk          (ipclk),           // input
                 .ipclk2x        (ipclk2x),         // input
                 .mrst           (mclk_rst),        // input
@@ -464,7 +489,7 @@ module  sens_parallel12 #(
         .pxd_out        (1'b0),          // input
         .pxd_en         (1'b0),          // input
         .pxd_async      (),              // output
-        .pxd_in         (vact_out),      // output
+        .pxd_in         (vact_out_pre),  // output
         .ipclk          (ipclk),         // input
         .ipclk2x        (ipclk2x),       // input
         .mrst           (mclk_rst),      // input

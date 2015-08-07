@@ -1909,8 +1909,10 @@ task setup_sensor_channel;
             0,  // input                            [1:0] mmcm_rst; // <2: keep MMCM reset, 2 - MMCM reset off,  3 - MMCM reset on
             3,  // input                            [1:0] clk_sel;  // <2: keep MMCM clock source, 2 - use internal pixel clock,  3 - use pixel clock from the sensor
             0,  // input                                  set_delays; // (self-clearing) load all pre-programmed delays 
-            1'b1,  // input                                  set_quadrants;  // 0 - keep quadrants settings, 1 - update quadrants
-            6'h24); // data-0, hact - 1, vact - 2 input  [SENS_CTRL_QUADRANTS_WIDTH-1:0] quadrants;  // 90-degree shifts for data [1:0], hact [3:2] and vact [5:4]
+            1'b1,  // input                               set_quadrants;  // 0 - keep quadrants settings, 1 - update quadrants
+//            6'h24); // data-0, hact - 1, vact - 2 input  [SENS_CTRL_QUADRANTS_WIDTH-1:0] quadrants;  // 90-degree shifts for data [1:0], hact [3:2] and vact [5:4]
+//            6'h01); // data-1, hact - 0, vact - 0 input  [SENS_CTRL_QUADRANTS_WIDTH-1:0] quadrants;  // 90-degree shifts for data [1:0], hact [3:2] and vact [5:4]
+            QUADRANTS_PXD_HACT_VACT); // data-0, hact - 1, vact - 2 input  [SENS_CTRL_QUADRANTS_WIDTH-1:0] quadrants;  // 90-degree shifts for data [1:0], hact [3:2] and vact [5:4]
 /*
 // setup camsync module
         reset_camsync_inout (0);        // reset input selection

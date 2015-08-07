@@ -47,11 +47,11 @@ module  sensor_fifo #(
     // output clock domain
 //    wire                        pre_re;
     wire                        re; // re_w,re;
-    reg                         re_r;
+//    reg                         re_r;
     reg                   [1:0] pre_hact;
-    reg                         hact_out_r;
+    reg                   [1:0] hact_out_r;
     reg [SENSOR_DATA_WIDTH-1:0] pxd_r;
-    wire                        hact_out_start;
+//    wire                        hact_out_start;
     
     assign we=sof_in || eof_in || hact || hact_r;
     always @(posedge iclk) begin
@@ -75,7 +75,7 @@ module  sensor_fifo #(
         .nempty     (nempty), // output
         .half_empty ()        // output
     );
-
+/*
     dly_16 #(
         .WIDTH(1)
     ) hact_dly_16_i (
@@ -85,21 +85,85 @@ module  sensor_fifo #(
         .din(pre_hact[0] && ! pre_hact[1]), // input[0:0] 
         .dout(hact_out_start)               // output[0:0] 
     );
+*/    
+    wire pre_sof_pclk;
+    wire pre_eof_pclk;
+    wire pre_sol_pclk;
+
+    wire sof_pclk;
+    wire eof_pclk;
+    wire sol_pclk;
+    
+    pulse_cross_clock pulse_cross_clock_sof_i (
+        .rst         (irst),           // input
+        .src_clk     (iclk),          // input
+        .dst_clk     (pclk),          // input
+        .in_pulse    (sof_in),  // input
+        .out_pulse   (pre_sof_pclk),      // output
+        .busy() // output
+    );
+
+    pulse_cross_clock pulse_cross_clock_eof_i (
+        .rst         (irst),           // input
+        .src_clk     (iclk),          // input
+        .dst_clk     (pclk),          // input
+        .in_pulse    (eof_in),  // input
+        .out_pulse   (pre_eof_pclk),      // output
+        .busy() // output
+    );
+
+    pulse_cross_clock pulse_cross_clock_sol_i (
+        .rst         (irst),           // input
+        .src_clk     (iclk),          // input
+        .dst_clk     (pclk),          // input
+        .in_pulse    (hact && !hact_r),  // input
+        .out_pulse   (pre_sol_pclk),      // output
+        .busy() // output
+    );
+
+    dly_16 #(
+        .WIDTH(3)
+    ) hact_dly_16_i (
+        .clk(pclk),                                       // input
+        .rst(prst),                                       // input
+        .dly(SENSOR_FIFO_DELAY),                          // input[3:0] 
+        .din({pre_sof_pclk, pre_eof_pclk, pre_sol_pclk}), // input[0:0] 
+        .dout({sof_pclk, eof_pclk, sol_pclk})             // output[0:0] 
+    );
+    
+    
+    
+    reg sof_rq;
+    reg eof_rq;
+    reg sol_rq;
+    always @ (posedge pclk) begin
+        if (prst || (re && sof_w)) sof_rq <= 0;
+        else if (sof_pclk)         sof_rq <= 1;
+
+        if (prst || (re && eof_w)) eof_rq <= 0;
+        else if (eof_pclk)         eof_rq <= 1;
+
+        if (prst || (re && hact_out_r[0] && !hact_out_r[1])) sol_rq <= 0;
+        else if (sol_pclk)                                   sol_rq <= 1;
+    end
+    
+    
     
     // output clock domain
 //    assign pre_re = nempty && !re_r;
 // Generating first read (for hact), then wait to fill half FIFO and continue continuous read until hact end
 //    assign re_w = re_r && nempty; // to protect from false positive on nempty
 //    assign re = (re_w && !pre_hact) || hact_out_r; // no check for nempty - producing un-interrupted stream
-    assign re = (re_r && nempty && !pre_hact[0]) || hact_out_r; // no check for nempty - producing un-interrupted stream
+//    assign re = (re_r && nempty && !pre_hact[0]) || hact_out_r[0]; // no check for nempty - producing un-interrupted stream
+    assign re = ((sof_rq || eof_rq || sol_rq) && nempty) || hact_out_r[0]; // no check for nempty - producing un-interrupted stream
     assign pxd_out= pxd_r;
-    assign data_valid = hact_out_r;
+    assign data_valid = hact_out_r[1];
     assign sof = sof_r;
     assign eof = eof_r;
 
     always @(posedge pclk) begin
-        if (prst) re_r <= 0;
-        else      re_r <= nempty && !re_r && !pre_hact[0]; // only generate one cycle (after SOF of HACT)
+//        if (prst) re_r <= 0;
+//        else      re_r <= nempty && !re_r && !pre_hact[0]; // only generate one cycle (after SOF of HACT)
 
         if    (prst) pre_hact[0] <= 0;
         else if (re) pre_hact[0] <= hact_w;
@@ -111,10 +175,12 @@ module  sensor_fifo #(
         if    (prst) pxd_r <= 0;
         else if (re) pxd_r <= pxd_w;
 
-        if      (prst)            hact_out_r <= 0;
-        else if (hact_out_start)  hact_out_r <= 1;
-//        else if (!hact_w)        hact_out_r <= 0;
-        else if (!(hact_w && re)) hact_out_r <= 0;
+        if      (prst)            hact_out_r[0] <= 0;
+        else if (sol_pclk)        hact_out_r[0] <= 1;
+        else if (!(hact_w) && re) hact_out_r[0] <= 0;
+        
+        if      (prst || (!(hact_w) && re)) hact_out_r[1] <= 0;
+        else                                hact_out_r[1] <= hact_out_r[0];
 
         if (prst) sof_r <= 0;
         else      sof_r <= re && sof_w;

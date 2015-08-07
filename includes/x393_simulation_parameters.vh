@@ -54,8 +54,10 @@
     parameter HISTOGRAM_WIDTH =          6,   // width
     parameter HISTOGRAM_HEIGHT =         6,   // height
     parameter HISTOGRAM_STRAT_PAGE =    20'h12345,
-    parameter FRAME_WIDTH_ROUND_BITS =  9,  // multiple of 512 pixels (32 16-byte bursts) (11 - ful SDRAM page)
+    parameter FRAME_WIDTH_ROUND_BITS =   9,  // multiple of 512 pixels (32 16-byte bursts) (11 - ful SDRAM page)
     
-    parameter WOI_WIDTH=                64
+    parameter WOI_WIDTH=                 64,
+    parameter QUADRANTS_PXD_HACT_VACT =  6'h01 // 2 bits each: data-0, hact - 1, vact - 2 
+                                               // 90-degree shifts for data [1:0], hact [3:2] and vact [5:4]
     
     
