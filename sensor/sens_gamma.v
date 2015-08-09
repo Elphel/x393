@@ -21,9 +21,9 @@
 `timescale 1ns/1ps
 
 module  sens_gamma #(
-    parameter SENS_GAMMA_NUM_CHN =     3, // number of subchannels for his sensor ports (1..4)
+    parameter SENS_NUM_SUBCHN =           3, // number of subchannels for his sensor ports (1..4)
     parameter SENS_GAMMA_BUFFER =      0, // 1 - use "shadow" table for clean switching, 0 - single table per channel
-    parameter SENS_GAMMA_ADDR =        'h338,
+    parameter SENS_GAMMA_ADDR =        'h438,
     parameter SENS_GAMMA_ADDR_MASK =   'h7fc,
     parameter SENS_GAMMA_CTRL =        'h0,
     parameter SENS_GAMMA_ADDR_DATA =   'h1, // bit 20 ==1 - table address, bit 20==0 - table data (18 bits)
@@ -65,7 +65,9 @@ module  sens_gamma #(
     // programming interface
     input         mclk,        // global clock, half DDR3 clock, synchronizes all I/O through the command port
     input   [7:0] cmd_ad,      // byte-serial command address/data (up to 6 bytes: AL-AH-D0-D1-D2-D3 
-    input         cmd_stb     // strobe (with first byte) for the command a/d
+    input         cmd_stb,     // strobe (with first byte) for the command a/d
+    
+    output  [1:0] bayer_out    // for lens_flat module - separate them?
 );
     wire    [1:0] cmd_a;
     wire   [31:0] cmd_data;
@@ -182,9 +184,13 @@ module  sens_gamma #(
     
     assign sof_masked= sof_in && (pend_trig || repet_mode) && en_input;
     assign trig = trig_in || trig_soft;
+    
+    assign bayer_out = bayer;
+    
     always @ (posedge mclk) begin
         if     (mrst)         tdata <= 0;
-        else if (set_taddr_w) tdata <= cmd_data[17:0];
+//        else if (set_taddr_w) tdata <= cmd_data[17:0];
+        else if (set_tdata_w) tdata <= cmd_data[17:0];
     
         if (mrst) set_tdata_r <= 0;
         else      set_tdata_r <= set_tdata_w;
@@ -256,7 +262,7 @@ module  sens_gamma #(
     ram_chn_d   <= ram_chn;
     ram_chn_d2  <= ram_chn_d;
     
-    inc_line <= hact_d[0] && !hact_in && (sensor_subchn < SENS_GAMMA_NUM_CHN);
+    inc_line <= hact_d[0] && !hact_in && (sensor_subchn < SENS_NUM_SUBCHN);
     
     sof_r <= sof_in;
     
@@ -265,6 +271,7 @@ module  sens_gamma #(
     
     if      (sof_r)                        line_cntr <= height0_m1;
     else if (inc_line && (line_cntr == 0)) line_cntr <= (sensor_subchn ==0)? height1_m1: height2_m1;
+    else if (inc_line)                     line_cntr <= line_cntr - 1;
     
   end
     
@@ -275,8 +282,8 @@ module  sens_gamma #(
         .NUM_CYCLES  (6),
         .ADDR_WIDTH  (2),
         .DATA_WIDTH  (32)
-    ) cmd_deser_sens_io_i (
-        .rst         (1'b0), // rst), // input
+    ) cmd_deser_sens_gamma_i (
+        .rst         (mrst), // rst), // input
         .clk         (mclk), // input
         .srst        (mrst), // input
         .ad          (cmd_ad), // input[7:0] 
@@ -336,7 +343,7 @@ module  sens_gamma #(
         .REGISTERS    (1), // try to delay i2c_byte_start by one more cycle
         .LOG2WIDTH_WR (4),
         .LOG2WIDTH_RD (4),
-        .DUMMY        (!((SENS_GAMMA_NUM_CHN > 1) && ((SENS_GAMMA_NUM_CHN > 2) || SENS_GAMMA_BUFFER)))
+        .DUMMY        (!((SENS_NUM_SUBCHN > 1) && ((SENS_NUM_SUBCHN > 2) || SENS_GAMMA_BUFFER)))
     ) gamma_table1_i (
         .rclk         (pclk), // input
         .raddr        (table_raddr), // input[11:0] 
@@ -354,7 +361,7 @@ module  sens_gamma #(
         .REGISTERS    (1), // try to delay i2c_byte_start by one more cycle
         .LOG2WIDTH_WR (4),
         .LOG2WIDTH_RD (4),
-        .DUMMY        (!(SENS_GAMMA_BUFFER && (SENS_GAMMA_NUM_CHN > 2)))
+        .DUMMY        (!(SENS_GAMMA_BUFFER && (SENS_NUM_SUBCHN > 2)))
     ) gamma_table2_i (
         .rclk         (pclk), // input
         .raddr        (table_raddr), // input[11:0] 
@@ -372,7 +379,7 @@ module  sens_gamma #(
         .REGISTERS    (1), // try to delay i2c_byte_start by one more cycle
         .LOG2WIDTH_WR (4),
         .LOG2WIDTH_RD (4),
-        .DUMMY        (!(SENS_GAMMA_BUFFER && (SENS_GAMMA_NUM_CHN > 3)))
+        .DUMMY        (!(SENS_GAMMA_BUFFER && (SENS_NUM_SUBCHN > 3)))
     ) gamma_table3_i (
         .rclk         (pclk), // input
         .raddr        (table_raddr), // input[11:0] 

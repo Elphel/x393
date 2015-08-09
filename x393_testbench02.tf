@@ -797,6 +797,9 @@ assign #10 gpio_pins[9] = gpio_pins[8];
   TEST_TITLE = "ALL_DONE";
   $display("===================== TEST_%s =========================",TEST_TITLE);
   #20000;
+  TEST_TITLE = "WAITING 30usec more";
+  $display("===================== TEST_%s =========================",TEST_TITLE);
+  #30000;
   $finish;
 end
 // protect from never end
@@ -1936,6 +1939,30 @@ task setup_sensor_channel;
     $display("===================== TEST_%s =========================",TEST_TITLE);
 
         test_i2c_353; // test soft/sequencer i2c
+        
+    TEST_TITLE = "LENS_FLAT_SETUP";
+    $display("===================== TEST_%s =========================",TEST_TITLE);
+        set_sensor_lens_flat_heights (
+            num_sensor, // input   [1:0] num_sensor;
+            'hffff,     // input  [15:0] height0_m1; // height of the first sub-frame minus 1
+            0,          // input  [15:0] height1_m1; // height of the second sub-frame minus 1
+            0);         // input  [15:0] height2_m1; // height of the third sub-frame minus 1 (no need for 4-th)
+        set_sensor_lens_flat_parameters(
+            num_sensor,
+// add mode "DIRECT", "ASAP", "RELATIVE", "ABSOLUTE" and frame number
+            0,      // input  [18:0] AX;
+            0,      // input  [18:0] AY;
+            0,      // input  [20:0] BX;
+            0,      // input  [20:0] BY;
+            'h8000, // input  [18:0] C;
+            32768,  // input  [16:0] scales0;
+            32768,  // input  [16:0] scales1;
+            32768,  // input  [16:0] scales2;
+            32768,  // input  [16:0] scales3;
+            0,      // input  [15:0] fatzero_in;
+            0,      // input  [15:0] fatzero_out;
+            1);      // input  [ 3:0] post_scale;
+        
     TEST_TITLE = "GAMMA_SETUP";
     $display("===================== TEST_%s =========================",TEST_TITLE);
 
@@ -2329,7 +2356,85 @@ task    set_sensor_io_width;
 
 endtask
 
+task set_sensor_lens_flat_heights;
+    input   [1:0] num_sensor;
+    input  [15:0] height0_m1; // height of the first sub-frame minus 1
+    input  [15:0] height1_m1; // height of the second sub-frame minus 1
+    input  [15:0] height2_m1; // height of the third sub-frame minus 1 (no need for 4-th)
+    reg    [29:0] reg_addr;
+    begin
+        reg_addr = (SENSOR_GROUP_ADDR + num_sensor * SENSOR_BASE_INC) + SENS_LENS_RADDR;
+        write_contol_register(reg_addr, {16'b0, height0_m1});                   
+        write_contol_register(reg_addr+1, {16'b0, height1_m1});                   
+        write_contol_register(reg_addr+2, {16'b0, height2_m1});                   
+    end
+endtask
 
+task set_sensor_lens_flat_parameters;
+    input   [1:0] num_sensor;
+// add mode "DIRECT", "ASAP", "RELATIVE", "ABSOLUTE" and frame number
+    input  [18:0] AX;
+    input  [18:0] AY;
+    input  [20:0] BX;
+    input  [20:0] BY;
+    input  [18:0] C;
+    input  [16:0] scales0;
+    input  [16:0] scales1;
+    input  [16:0] scales2;
+    input  [16:0] scales3;
+    input  [15:0] fatzero_in;
+    input  [15:0] fatzero_out;
+    input  [ 3:0] post_scale;
+    reg    [29:0] reg_addr;
+    reg    [31:0] data;
+    begin
+        reg_addr = (SENSOR_GROUP_ADDR + num_sensor * SENSOR_BASE_INC) + SENS_LENS_RADDR + SENS_LENS_COEFF;
+        data = func_lens_data(num_sensor, SENS_LENS_AX);
+        data[18:0] = AX;
+        write_contol_register(reg_addr, data);                   
+        data = func_lens_data(num_sensor, SENS_LENS_AY);
+        data[18:0]  = AY;
+        write_contol_register(reg_addr, data);                   
+        data = func_lens_data(num_sensor, SENS_LENS_C);
+        data[18:0]  = C;
+        write_contol_register(reg_addr, data);
+        data = func_lens_data(num_sensor, SENS_LENS_BX);
+        data[20:0]  = BX;
+        write_contol_register(reg_addr, data);                   
+        data = func_lens_data(num_sensor, SENS_LENS_BY);
+        data[20:0]  = BY;
+        write_contol_register(reg_addr, data);                   
+        data = func_lens_data(num_sensor, SENS_LENS_SCALES + 0);
+        data[16:0]  = scales0;
+        write_contol_register(reg_addr, data);                   
+        data = func_lens_data(num_sensor, SENS_LENS_SCALES + 2);
+        data[16:0]  = scales1;
+        write_contol_register(reg_addr, data);                   
+        data = func_lens_data(num_sensor, SENS_LENS_SCALES + 4);
+        data[16:0]  = scales2;
+        write_contol_register(reg_addr, data);                   
+        data = func_lens_data(num_sensor, SENS_LENS_SCALES + 6);
+        data[16:0]  = scales3;
+        write_contol_register(reg_addr, data);                   
+        data = func_lens_data(num_sensor, SENS_LENS_FAT0_IN);
+        data[15:0]  = fatzero_in;
+        write_contol_register(reg_addr, data);                   
+        data = func_lens_data(num_sensor, SENS_LENS_FAT0_OUT);
+        data[15:0]  = fatzero_out;
+        write_contol_register(reg_addr, data);                   
+        data = func_lens_data(num_sensor, SENS_LENS_POST_SCALE);
+        data[3:0]  = post_scale;
+        write_contol_register(reg_addr, data);                   
+    end
+endtask
+
+function [31:0] func_lens_data;
+    input   [1:0] num_sensor;
+    input   [7:0] addr;
+    begin
+        func_lens_data = {6'b0, num_sensor, addr,16'b0};
+    end
+endfunction
 
 
 task program_curves;

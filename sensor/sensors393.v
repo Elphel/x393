@@ -36,7 +36,7 @@ module  sensors393 #(
     parameter SENSIO_STATUS_REG_REL =     1,     // 4 locations" 'h21, 'h23, 'h25, 'h27
     parameter SENSOR_NUM_HISTOGRAM=       3,     // number of histogram channels
     parameter HISTOGRAM_RAM_MODE =        "NOBUF", // valid: "NOBUF" (32-bits, no buffering), "BUF18", "BUF32"
-    parameter SENS_GAMMA_NUM_CHN =        3,     // number of subchannels for his sensor ports (1..4)
+    parameter SENS_NUM_SUBCHN =           3,     // number of subchannels for his sensor ports (1..4)
     parameter SENS_GAMMA_BUFFER =         0,     // 1 - use "shadow" table for clean switching, 0 - single table per channel
     
     // parameters defining address map
@@ -91,7 +91,31 @@ module  sensors393 #(
         parameter SENS_GAMMA_MODE_REPET =  4,
         parameter SENS_GAMMA_MODE_TRIG =   5,
     
-    parameter SENSIO_RADDR =          8, //'h308  .. 'h30c
+// Vignetting correction / pixel value scaling - controlled via single data word (same as in 252), some of bits [23:16]
+// are used to select register, bits 25:24 - select sub-frame
+    parameter SENS_LENS_RADDR =             'h3c, 
+    parameter SENS_LENS_ADDR_MASK =         'h7fc,
+    parameter SENS_LENS_COEFF =             'h3, // set vignetting/scale coefficients (
+      parameter SENS_LENS_AX =              'h00, // 00000...
+      parameter SENS_LENS_AX_MASK =         'hf8,
+      parameter SENS_LENS_AY =              'h08, // 00001...
+      parameter SENS_LENS_AY_MASK =         'hf8,
+      parameter SENS_LENS_C =               'h10, // 00010...
+      parameter SENS_LENS_C_MASK =          'hf8,
+      parameter SENS_LENS_BX =              'h20, // 001.....
+      parameter SENS_LENS_BX_MASK =         'he0,
+      parameter SENS_LENS_BY =              'h40, // 010.....
+      parameter SENS_LENS_BY_MASK =         'he0,
+      parameter SENS_LENS_SCALES =          'h60, // 01100...
+      parameter SENS_LENS_SCALES_MASK =     'hf8,
+      parameter SENS_LENS_FAT0_IN =         'h68, // 01101000
+      parameter SENS_LENS_FAT0_IN_MASK =    'hff,
+      parameter SENS_LENS_FAT0_OUT =        'h69, // 01101001
+      parameter SENS_LENS_FAT0_OUT_MASK =   'hff,
+      parameter SENS_LENS_POST_SCALE =      'h6a, // 01101010
+      parameter SENS_LENS_POST_SCALE_MASK = 'hff,
+
+    parameter SENSIO_RADDR =          8,  //'h408  .. 'h40f
     parameter SENSIO_ADDR_MASK =      'h7f8,
       // sens_parallel12 registers
       parameter SENSIO_CTRL =           'h0,
@@ -117,8 +141,8 @@ module  sensors393 #(
       parameter SENSIO_DELAYS =         'h4, // 'h4..'h7
         // 4 of 8-bit delays per register
     // sensor_i2c_io command/data write registers s (relative to SENSOR_GROUP_ADDR)
-    parameter SENSI2C_ABS_RADDR =       'h10, // 'h310..'h31f
-    parameter SENSI2C_REL_RADDR =       'h20, // 'h320..'h32f
+    parameter SENSI2C_ABS_RADDR =       'h10, // 'h410..'h41f
+    parameter SENSI2C_REL_RADDR =       'h20, // 'h420..'h42f
     parameter SENSI2C_ADDR_MASK =       'h7f0, // both for SENSI2C_ABS_ADDR and SENSI2C_REL_ADDR
 
     // sens_hist registers (relative to SENSOR_GROUP_ADDR)
@@ -326,7 +350,7 @@ module  sensors393 #(
                 .SENS_SYNC_MINPER              (SENS_SYNC_MINPER),
                 .SENSOR_NUM_HISTOGRAM          (SENSOR_NUM_HISTOGRAM),
                 .HISTOGRAM_RAM_MODE            (HISTOGRAM_RAM_MODE),
-                .SENS_GAMMA_NUM_CHN            (SENS_GAMMA_NUM_CHN),
+                .SENS_NUM_SUBCHN            (SENS_NUM_SUBCHN),
                 .SENS_GAMMA_BUFFER             (SENS_GAMMA_BUFFER),
                 .SENSOR_CTRL_RADDR             (SENSOR_CTRL_RADDR),
                 .SENSOR_CTRL_ADDR_MASK         (SENSOR_CTRL_ADDR_MASK),
@@ -349,7 +373,6 @@ module  sensors393 #(
                 .SENSI2C_CMD_SCL_WIDTH         (SENSI2C_CMD_SCL_WIDTH),
                 .SENSI2C_CMD_SDA               (SENSI2C_CMD_SDA),
                 .SENSI2C_CMD_SDA_WIDTH         (SENSI2C_CMD_SDA_WIDTH),
-                
                 .SENSI2C_STATUS                (SENSI2C_STATUS),
                 .SENS_GAMMA_RADDR              (SENS_GAMMA_RADDR),
                 .SENS_GAMMA_ADDR_MASK          (SENS_GAMMA_ADDR_MASK),
@@ -363,6 +386,27 @@ module  sensors393 #(
                 .SENS_GAMMA_MODE_EN            (SENS_GAMMA_MODE_EN),
                 .SENS_GAMMA_MODE_REPET         (SENS_GAMMA_MODE_REPET),
                 .SENS_GAMMA_MODE_TRIG          (SENS_GAMMA_MODE_TRIG),
+                .SENS_LENS_RADDR               (SENS_LENS_RADDR),
+                .SENS_LENS_ADDR_MASK           (SENS_LENS_ADDR_MASK),
+                .SENS_LENS_COEFF               (SENS_LENS_COEFF),
+                .SENS_LENS_AX                  (SENS_LENS_AX),
+                .SENS_LENS_AX_MASK             (SENS_LENS_AX_MASK),
+                .SENS_LENS_AY                  (SENS_LENS_AY),
+                .SENS_LENS_AY_MASK             (SENS_LENS_AY_MASK),
+                .SENS_LENS_C                   (SENS_LENS_C),
+                .SENS_LENS_C_MASK              (SENS_LENS_C_MASK),
+                .SENS_LENS_BX                  (SENS_LENS_BX),
+                .SENS_LENS_BX_MASK             (SENS_LENS_BX_MASK),
+                .SENS_LENS_BY                  (SENS_LENS_BY),
+                .SENS_LENS_BY_MASK             (SENS_LENS_BY_MASK),
+                .SENS_LENS_SCALES              (SENS_LENS_SCALES),
+                .SENS_LENS_SCALES_MASK         (SENS_LENS_SCALES_MASK),
+                .SENS_LENS_FAT0_IN             (SENS_LENS_FAT0_IN),
+                .SENS_LENS_FAT0_IN_MASK        (SENS_LENS_FAT0_IN_MASK),
+                .SENS_LENS_FAT0_OUT            (SENS_LENS_FAT0_OUT),
+                .SENS_LENS_FAT0_OUT_MASK       (SENS_LENS_FAT0_OUT_MASK),
+                .SENS_LENS_POST_SCALE          (SENS_LENS_POST_SCALE),
+                .SENS_LENS_POST_SCALE_MASK     (SENS_LENS_POST_SCALE_MASK),
                 .SENSIO_RADDR                  (SENSIO_RADDR),
                 .SENSIO_ADDR_MASK              (SENSIO_ADDR_MASK),
                 .SENSIO_CTRL                   (SENSIO_CTRL),

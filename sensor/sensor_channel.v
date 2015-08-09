@@ -44,7 +44,7 @@ module  sensor_channel#(
 
     parameter SENSOR_NUM_HISTOGRAM=       3, // number of histogram channels
     parameter HISTOGRAM_RAM_MODE =        "NOBUF", // valid: "NOBUF" (32-bits, no buffering), "BUF18", "BUF32"
-    parameter SENS_GAMMA_NUM_CHN =        3, // number of subchannels for his sensor ports (1..4)
+    parameter SENS_NUM_SUBCHN =        3, // number of subchannels for his sensor ports (1..4)
     parameter SENS_GAMMA_BUFFER =         0, // 1 - use "shadow" table for clean switching, 0 - single table per channel
     
     // parameters defining address map
@@ -91,8 +91,31 @@ module  sensor_channel#(
         parameter SENS_GAMMA_MODE_EN =     3,
         parameter SENS_GAMMA_MODE_REPET =  4,
         parameter SENS_GAMMA_MODE_TRIG =   5,
+// Vignetting correction / pixel value scaling - controlled via single data word (same as in 252), some of bits [23:16]
+// are used to select register, bits 25:24 - select sub-frame
+    parameter SENS_LENS_RADDR =             'h3c, 
+    parameter SENS_LENS_ADDR_MASK =         'h7fc,
+    parameter SENS_LENS_COEFF =             'h3, // set vignetting/scale coefficients (
+      parameter SENS_LENS_AX =              'h00, // 00000...
+      parameter SENS_LENS_AX_MASK =         'hf8,
+      parameter SENS_LENS_AY =              'h08, // 00001...
+      parameter SENS_LENS_AY_MASK =         'hf8,
+      parameter SENS_LENS_C =               'h10, // 00010...
+      parameter SENS_LENS_C_MASK =          'hf8,
+      parameter SENS_LENS_BX =              'h20, // 001.....
+      parameter SENS_LENS_BX_MASK =         'he0,
+      parameter SENS_LENS_BY =              'h40, // 010.....
+      parameter SENS_LENS_BY_MASK =         'he0,
+      parameter SENS_LENS_SCALES =          'h60, // 01100...
+      parameter SENS_LENS_SCALES_MASK =     'hf8,
+      parameter SENS_LENS_FAT0_IN =         'h68, // 01101000
+      parameter SENS_LENS_FAT0_IN_MASK =    'hff,
+      parameter SENS_LENS_FAT0_OUT =        'h69, // 01101001
+      parameter SENS_LENS_FAT0_OUT_MASK =   'hff,
+      parameter SENS_LENS_POST_SCALE =      'h6a, // 01101010
+      parameter SENS_LENS_POST_SCALE_MASK = 'hff,
     
-    parameter SENSIO_RADDR =          8, //'h308  .. 'h30f
+    parameter SENSIO_RADDR =          8, //'h408  .. 'h40f
     parameter SENSIO_ADDR_MASK =      'h7f8,
       // sens_parallel12 registers
       parameter SENSIO_CTRL =           'h0,
@@ -118,8 +141,8 @@ module  sensor_channel#(
       parameter SENSIO_DELAYS =         'h4, // 'h4..'h7
         // 4 of 8-bit delays per register
     // sensor_i2c_io command/data write registers s (relative to SENSOR_BASE_ADDR)
-    parameter SENSI2C_ABS_RADDR =     'h10, // 'h310..'h31f
-    parameter SENSI2C_REL_RADDR =     'h20, // 'h320..'h32f
+    parameter SENSI2C_ABS_RADDR =       'h10, // 'h410..'h41f
+    parameter SENSI2C_REL_RADDR =       'h20, // 'h420..'h42f
     parameter SENSI2C_ADDR_MASK =     'h7f0, // both for SENSI2C_ABS_ADDR and SENSI2C_REL_ADDR
 
     // sens_hist registers (relative to SENSOR_BASE_ADDR)
@@ -228,6 +251,7 @@ module  sensor_channel#(
     localparam SENSI2C_CTRL_ADDR = SENSOR_BASE_ADDR + SENSI2C_CTRL_RADDR;
     localparam SENS_GAMMA_ADDR =   SENSOR_BASE_ADDR + SENS_GAMMA_RADDR;
     localparam SENSIO_ADDR =       SENSOR_BASE_ADDR + SENSIO_RADDR; 
+    localparam SENS_LENS_ADDR =    SENSOR_BASE_ADDR + SENS_LENS_RADDR; 
     localparam SENSI2C_ABS_ADDR =  SENSOR_BASE_ADDR + SENSI2C_ABS_RADDR;
     localparam SENSI2C_REL_ADDR =  SENSOR_BASE_ADDR + SENSI2C_REL_RADDR;
     localparam HISTOGRAM_ADDR0 =   (SENSOR_NUM_HISTOGRAM > 0)?(SENSOR_BASE_ADDR + HISTOGRAM_RADDR0):-1; //
@@ -261,11 +285,18 @@ module  sensor_channel#(
     
     wire         sof_out_sync; // sof filtetred, optionally decimated (for linescan mode)
     
+    wire  [15:0] lens_pxd_in; 
+    wire         lens_hact_in;
+    wire         lens_sof_in;
+    wire         lens_eof_in;
+
+
+
     wire  [15:0] gamma_pxd_in; 
     wire         gamma_hact_in;
     wire         gamma_sof_in;
     wire         gamma_eof_in;
-    
+    wire   [1:0] gamma_bayer; // gamma module mode register bits -> lens_flat module
     
     
     wire   [7:0] gamma_pxd_out; 
@@ -299,10 +330,10 @@ module  sensor_channel#(
     reg          eof_out_r;       
     
     // TODO: insert vignetting and/or flat field, pixel defects before gamma_*_in
-    assign gamma_pxd_in = {pxd[11:0],4'b0};
-    assign gamma_hact_in = hact;
-    assign gamma_sof_in =  sof_out_sync; // sof;
-    assign gamma_eof_in =  eof;
+    assign lens_pxd_in = {pxd[11:0],4'b0};
+    assign lens_hact_in = hact;
+    assign lens_sof_in =  sof_out_sync; // sof;
+    assign lens_eof_in =  eof;
     
     assign dout = dout_r;
     assign dout_valid = dav_r;
@@ -538,8 +569,56 @@ module  sensor_channel#(
         .cmd_stb      (cmd_stb)        // input
     );
 
+    lens_flat393 #(
+        .SENS_LENS_ADDR            (SENS_LENS_ADDR),
+        .SENS_LENS_ADDR_MASK       (SENS_LENS_ADDR_MASK),
+        .SENS_LENS_COEFF           (SENS_LENS_COEFF),
+        .SENS_LENS_AX              (SENS_LENS_AX),
+        .SENS_LENS_AX_MASK         (SENS_LENS_AX_MASK),
+        .SENS_LENS_AY              (SENS_LENS_AY),
+        .SENS_LENS_AY_MASK         (SENS_LENS_AY_MASK),
+        .SENS_LENS_C               (SENS_LENS_C),
+        .SENS_LENS_C_MASK          (SENS_LENS_C_MASK),
+        .SENS_LENS_BX              (SENS_LENS_BX),
+        .SENS_LENS_BX_MASK         (SENS_LENS_BX_MASK),
+        .SENS_LENS_BY              (SENS_LENS_BY),
+        .SENS_LENS_BY_MASK         (SENS_LENS_BY_MASK),
+        .SENS_LENS_SCALES          (SENS_LENS_SCALES),
+        .SENS_LENS_SCALES_MASK     (SENS_LENS_SCALES_MASK),
+        .SENS_LENS_FAT0_IN         (SENS_LENS_FAT0_IN),
+        .SENS_LENS_FAT0_IN_MASK    (SENS_LENS_FAT0_IN_MASK),
+        .SENS_LENS_FAT0_OUT        (SENS_LENS_FAT0_OUT),
+        .SENS_LENS_FAT0_OUT_MASK   (SENS_LENS_FAT0_OUT_MASK),
+        .SENS_LENS_POST_SCALE      (SENS_LENS_POST_SCALE),
+        .SENS_LENS_POST_SCALE_MASK (SENS_LENS_POST_SCALE_MASK),
+        .SENS_NUM_SUBCHN           (SENS_NUM_SUBCHN),
+        .SENS_LENS_F_WIDTH         (19),
+        .SENS_LENS_F_SHIFT         (22),
+        .SENS_LENS_B_SHIFT         (12),
+        .SENS_LENS_A_WIDTH         (19),
+        .SENS_LENS_B_WIDTH         (21)
+    ) lens_flat393_i (
+        .prst       (prst),          // input
+        .pclk       (pclk),          // input
+        .mrst       (mrst),          // input
+        .mclk       (mclk),          // input
+        .cmd_ad     (cmd_ad),        // input[7:0] 
+        .cmd_stb    (cmd_stb),       // input
+        .pxd_in     (lens_pxd_in),   // input[15:0] 
+        .hact_in    (lens_hact_in),  // input
+        .sof_in     (lens_sof_in),   // input
+        .eof_in     (lens_eof_in),   // input
+        .pxd_out    (gamma_pxd_in),  // output[15:0] reg 
+        .hact_out   (gamma_hact_in), // output
+        .sof_out    (gamma_sof_in),  // output
+        .eof_out    (gamma_eof_in),  // output
+        .bayer      (gamma_bayer), // input[1:0] // from gamma module
+        .subchannel(), // output[1:0] - RFU 
+        .last_in_sub() // output -    RFU
+    );
+
     sens_gamma #(
-        .SENS_GAMMA_NUM_CHN    (SENS_GAMMA_NUM_CHN),
+        .SENS_NUM_SUBCHN       (SENS_NUM_SUBCHN),
         .SENS_GAMMA_BUFFER     (SENS_GAMMA_BUFFER),
         .SENS_GAMMA_ADDR       (SENS_GAMMA_ADDR),
         .SENS_GAMMA_ADDR_MASK  (SENS_GAMMA_ADDR_MASK),
@@ -569,7 +648,8 @@ module  sensor_channel#(
         .eof_out     (gamma_eof_out),  // output
         .mclk        (mclk),           // input
         .cmd_ad      (cmd_ad),         // input[7:0] 
-        .cmd_stb     (cmd_stb)         // input
+        .cmd_stb     (cmd_stb),        // input
+        .bayer_out   (gamma_bayer)     // output [1:0]  
     );
 
     // TODO: Use generate to generate 1-4 histogram modules
