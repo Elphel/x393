@@ -112,7 +112,7 @@ module lens_flat393 #(
     reg     [3:0] sub_frame_late_d;    // add extra stages if needed 
     reg           pre_first_line;
     reg           inc_sub_frame;
-    reg    [ 8:0] hact_d;              // lens_corr_out; /// lens correction out valid (first clock from column0 )
+    reg    [ 9:0] hact_d;              // lens_corr_out; /// lens correction out valid (first clock from column0 )
     wire   [15:0] pxd_d;               // pxd_in delayed buy 4 clocks  
     reg    [ 2:0] newline;
     wire          sof_d; // delayed sof_in by 5 clocks to init first lens_flat393_line
@@ -158,10 +158,8 @@ module lens_flat393 #(
 //    wire          sync_bayer=linerun && ~lens_corr_out[0];
     wire          sync_bayer=hact_d[2] && ~hact_d[3];
     
-    // Has to be valid @ hact_d[4], using sub_frame_late_d (valid at hact_d[3] to ease timing (there is always >=1 hact gap)
-     
+// sub_frame_late_d[3:2] sets 1 cycle ahead of needed, OK to ease timing (there is always >=1 hact gap)
     wire   [17:0] pix_zero = {2'b0,pxd_d[15:0]}-{{2{fatzero_in_ram[sub_frame_late_d[3:2]][15]}},fatzero_in_ram[sub_frame_late_d[3:2]][15:0]};
-
 
     // Writing to register files @mclk (4 per-subframe registers for coefficients, 4x4 - for per-subframe per-color scales)
     // these registers  will be read out at other clock (pclk)
@@ -170,7 +168,7 @@ module lens_flat393 #(
     
     assign subchannel = sub_frame ; 
     assign last_in_sub = inc_sub_frame;
-    assign hact_out = hact_d[8];
+    assign hact_out = hact_d[9];
     
     always @(posedge mclk) begin
         cmd_data_r <= cmd_data;
@@ -199,22 +197,23 @@ module lens_flat393 #(
     end
 
     always @ (posedge pclk) begin
-        hact_d <= {hact_d[7:0],hact_in};
+        hact_d <= {hact_d[8:0],hact_in};
         newline <= {newline[1:0], hact_in && !hact_d[0]};
 //        line_start <= newline; // make it SR?
     
         if       (sof_in)                  pre_first_line <= 1;
-        else if (newline)                  pre_first_line <= 0;
+        else if (newline[0])               pre_first_line <= 0;
         
-        if (pre_first_line || newline)     inc_sub_frame <= (sub_frame != (SENS_NUM_SUBCHN - 1)) && (line_cntr == 0);
+        if (pre_first_line || newline[0])  inc_sub_frame <= (sub_frame != (SENS_NUM_SUBCHN - 1)) && (line_cntr == 0);
         
         sub_frame_early <= sub_frame + inc_sub_frame;
-        if      (pre_first_line)           sub_frame <= 0;
-        else if (newline) sub_frame <=     sub_frame_early;
+        if      (pre_first_line) sub_frame <= 0;
+        else if (newline[0])     sub_frame <=     sub_frame_early;
         
         if (pre_first_line || (newline[1] && inc_sub_frame))  line_cntr <= heights_m1_ram[sub_frame];
         
-        if (newline[2])   sub_frame_late <= sub_frame;
+//        if (newline[2])   sub_frame_late <= sub_frame;
+        if (newline[1])   sub_frame_late <= sub_frame;
         sub_frame_late_d <= {sub_frame_late_d[1:0],sub_frame_late}; // valid @ hact_d[3], use @hact_d[4] as there is always >= 1 clock HACT gap
         
     end
@@ -240,7 +239,7 @@ module lens_flat393 #(
         3'h7:mult_first_scaled[17:0]<=  (~mult_first_res[35] & |mult_first_res[34:26]) ? 18'h1ffff:mult_first_res[26: 9];
       endcase
 
-      if (hact_d[6]) pxd_out[15:0] <= pre_pixdo_with_zero[20]? 16'h0:   /// negative - use 0
+      if (hact_d[8]) pxd_out[15:0] <= pre_pixdo_with_zero[20]? 16'h0:   /// negative - use 0
                                            ((|pre_pixdo_with_zero[19:16])?16'hffff: ///>0xffff - limit by 0xffff
                                                                        pre_pixdo_with_zero[15:0]);
     end
@@ -254,13 +253,13 @@ module lens_flat393 #(
 //    wire [17:0] mul2_b = mult_first_scaled[17:0]; // TODO - delay to have a register!
     reg [35:0] mul2_p;
     always @ (posedge pclk) begin
-        if (hact_d[2]) mul1_a <= (FXY[18]==FXY[17])?FXY[17:0]:(FXY[18]?18'h20000:18'h1ffff);
-        if (hact_d[2]) mul1_b <= {1'b0,scales_ram[{sub_frame_late,~color[1:0]}]};        
-        if (hact_d[3]) mul1_p <= mul1_a * mul1_b;
+        if (hact_d[3]) mul1_a <= (FXY[18]==FXY[17])?FXY[17:0]:(FXY[18]?18'h20000:18'h1ffff);
+        if (hact_d[3]) mul1_b <= {1'b0,scales_ram[{sub_frame_late,~color[1:0]}]};        
+        if (hact_d[4]) mul1_p <= mul1_a * mul1_b;
         
-        if (hact_d[4]) mul2_a <= pix_zero[17:0];  // adjust sub_frame delay
-        if (hact_d[4]) mul2_b <= mult_first_scaled[17:0];  // 18-bit multiplier input - always positive       
-        if (hact_d[5]) mul2_p <= mul2_a * mul2_b;
+        if (hact_d[6]) mul2_a <= pix_zero[17:0];  // adjust sub_frame delay
+        if (hact_d[6]) mul2_b <= mult_first_scaled[17:0];  // 18-bit multiplier input - always positive       
+        if (hact_d[7]) mul2_p <= mul2_a * mul2_b;
     end
     assign mult_first_res =  mul1_p;
     assign mult_second_res = mul2_p;
@@ -288,7 +287,7 @@ module lens_flat393 #(
     ) dly_16_sof_eof_i (
         .clk         (pclk),              // input
         .rst         (prst),              // input
-        .dly         (4'd7),                 // input[3:0] 
+        .dly         (4'd8),              // input[3:0] 
         .din         ({sof_in,eof_in}),   // input[0:0] 
         .dout        ({sof_out,eof_out})  // output[0:0] 
     );
@@ -298,7 +297,7 @@ module lens_flat393 #(
     ) dly_16_pxd_i (
         .clk         (pclk),    // input
         .rst         (prst),    // input
-        .dly         (4'd4),       // input[3:0] 
+        .dly         (4'd6),    // input[3:0] 
         .din         (pxd_in),  // input[0:0] 
         .dout        (pxd_d)    // output[0:0] 
     );
@@ -339,12 +338,12 @@ module lens_flat393 #(
      i_fxy(
            .pclk     (pclk),                    // pixel clock
            .first    (newline[0]),              // initialize running parameters from the inputs (first column). Should be at least 1-cycle gap between "first" and first "next"
-           .next     (hact_d[1]),               // calcualte next pixel
+           .next     (hact_d[2]),               // calcualte next pixel
            .F0       (FY),                      // value of the output in the first column (before saturation), 18 bit, unsigned
            .ERR0     (ERR_Y),                   // initial value of the running error (-2.0<err<+2.0), scaled by 2^22, so 24 bits
            .A0       (AX_ram[sub_frame_early]), // Ax(Y),  signed 
            .B0       (BX_ram[sub_frame_early]), // Bx(Y),  signed
-           .F        (FXY),
+           .F        (FXY), // valid 2 clocks after next (for the second pixel), next cycle after next - for the first pixel
            .ERR());
 
 

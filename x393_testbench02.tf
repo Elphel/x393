@@ -1950,8 +1950,8 @@ task setup_sensor_channel;
         set_sensor_lens_flat_parameters(
             num_sensor,
 // add mode "DIRECT", "ASAP", "RELATIVE", "ABSOLUTE" and frame number
-            0,      // input  [18:0] AX;
-            0,      // input  [18:0] AY;
+            19'h20000, // 0,      // input  [18:0] AX;
+            19'h20000, // 0,      // input  [18:0] AY;
             0,      // input  [20:0] BX;
             0,      // input  [20:0] BY;
             'h8000, // input  [18:0] C;
@@ -1962,7 +1962,10 @@ task setup_sensor_channel;
             0,      // input  [15:0] fatzero_in;
             0,      // input  [15:0] fatzero_out;
             1);      // input  [ 3:0] post_scale;
-        
+/*
+   cpu_wr('h63,'h31020000); // [AX] => 0x20000
+   cpu_wr('h63,'h310a0000); // [AY] => 0x20000
+*/        
     TEST_TITLE = "GAMMA_SETUP";
     $display("===================== TEST_%s =========================",TEST_TITLE);
 
