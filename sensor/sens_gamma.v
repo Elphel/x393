@@ -19,7 +19,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/> .
  *******************************************************************************/
 `timescale 1ns/1ps
-
+// TODO - Add registers to MPY
 module  sens_gamma #(
     parameter SENS_NUM_SUBCHN =           3, // number of subchannels for his sensor ports (1..4)
     parameter SENS_GAMMA_BUFFER =      0, // 1 - use "shadow" table for clean switching, 0 - single table per channel
@@ -34,7 +34,9 @@ module  sens_gamma #(
     parameter SENS_GAMMA_MODE_PAGE =   2,
     parameter SENS_GAMMA_MODE_EN =     3,
     parameter SENS_GAMMA_MODE_REPET =  4,
-    parameter SENS_GAMMA_MODE_TRIG =   5
+    parameter SENS_GAMMA_MODE_TRIG =   5,
+    parameter [1:0] XOR_GAMMA_BAYER =  2'b11 // invert bayer setting - just for gamma tables (to match 353)
+    
 ) (
 //    input         rst,
     input         pclk,   // global clock input, pixel rate (96MHz for MT9P006)
@@ -105,12 +107,12 @@ module  sens_gamma #(
     reg     [1:0] ram_chn_d;
     reg     [1:0] ram_chn_d2;
     
-    reg           bayer_nset; // set color to bayer (start of frame up to first hact) when zero
-    wire          sync_bayer; // at the beginning of the line - sync color to bayer
+//AF2015    reg           bayer_nset; // set color to bayer (start of frame up to first hact), then zero
+//AF2015    wire          sync_bayer; // at the beginning of the line - sync color to bayer
     reg     [1:0] color; // for selecting page in a gamma table
-    reg           bayer0_latched; // latch bayer[0] at the beginning of first line
+//    reg           bayer0_latched; // latch bayer[0] at the beginning of first line
 //    reg           hact_m;
-    reg     [4:0] hact_d; // combine several delays?
+    reg     [5:0] hact_d; // combine several delays?
 //    reg           en_d;
     reg     [7:0] cdata;   //8-bit pixel data after "curves"
 // modified table data to increase precision. table_base[9:0] is now 10 bits (2 extra).
@@ -144,9 +146,11 @@ module  sens_gamma #(
     wire   [17:0] table_rdata2;
     wire   [17:0] table_rdata3;
     wire   [17:0] table_rdata;
+    
+//    reg           pre_first_line; // from start of frame until firat HACT
 
     assign        pxd_out = cdata;
-    assign        hact_out = hact_d[4];
+    assign        hact_out = hact_d[5];
     
     assign set_ctrl_w =   cmd_we && (cmd_a == SENS_GAMMA_CTRL );
 //    assign set_status_w = cmd_we && (cmd_a == SENS_GAMMA_STATUS );
@@ -178,8 +182,10 @@ module  sens_gamma #(
     assign en_input =     mode[SENS_GAMMA_MODE_EN]; 
     assign repet_mode =   mode[SENS_GAMMA_MODE_REPET]; // TODO: re-assign?
     
-    assign sync_bayer=hact_d[1] && ~hact_d[2];
+//AF2015  assign sync_bayer=hact_d[1] && ~hact_d[2];
     assign interp_data[9:0] = table_base_r[9:0]+table_mult_r[17:8]+table_mult_r[7]; //round
+    
+// MPY should be able to extract registers on A, B and P    
     assign table_mult=table_diff*{1'b0,pxd_in_r4[7:0]}; // 11 bits, signed* 9 bits, positive
     
     assign sof_masked= sof_in && (pend_trig || repet_mode) && en_input;
@@ -222,31 +228,35 @@ module  sens_gamma #(
 
     always @ (posedge pclk) begin
         if (prst) begin
-            mode <= 0;
-            hact_d[4:0] <= 0;
-            bayer_nset <= 0;
-            bayer0_latched <= 0;
-            color[1:0] <= 0;
-            cdata[7:0] <= 0;
-            vblank     <= 0;  // from sof to first hact
-            pend_trig  <= 0; // pending trigger (if trig came outside of vblank
-            frame_run <= 0; 
+            mode           <= 0;
+            hact_d         <= 0;
+//            bayer_nset     <= 0;
+//            bayer0_latched <= 0;
+//            color[1:0]     <= 0;
+            cdata[7:0]     <= 0;
+            vblank         <= 0;  // from sof to first hact
+            pend_trig      <= 0; // pending trigger (if trig came outside of vblank
+            frame_run      <= 0; 
             
         end else begin
-            mode <= mode_mclk;
-            hact_d[4:0] <= {hact_d[3:0],hact_in};
-            bayer_nset <= frame_run && (bayer_nset || hact_in);
-            bayer0_latched <= bayer_nset? bayer0_latched:bayer[0];
-            color[1:0] <= { bayer_nset? (sync_bayer ^ color[1]):bayer[1] ,
-                           (bayer_nset &&(~sync_bayer))?~color[0]:bayer0_latched };
-            pxd_in_r4 <= pxd_in_d3;
-            cdata[7:0] <= interp_data[9:2];
-            vblank <= sof_in || (vblank && !hact_in);
-            pend_trig <= (trig && !vblank) || (pend_trig && !sof_in);  
-            frame_run <= sof_masked || (frame_run && !eof_in);
+            mode           <= mode_mclk;
+            hact_d         <= {hact_d[4:0],hact_in};
+//            bayer_nset     <= frame_run && (bayer_nset || hact_in);
+//            bayer0_latched <= bayer_nset? bayer0_latched : bayer[0];
+//            color[1:0]     <= { bayer_nset? (sync_bayer ^ color[1]):bayer[1] ,
+//                               (bayer_nset &&(~sync_bayer))?~color[0]:bayer0_latched };
+            pxd_in_r4      <= pxd_in_d3;
+            cdata[7:0]     <= interp_data[9:2];
+            vblank         <= sof_in || (vblank && !hact_in);
+            pend_trig      <= (trig && !vblank) || (pend_trig && !sof_in);  
+            frame_run      <= sof_masked || (frame_run && !eof_in);
         end
-        
-        
+
+        if      (vblank && !hact_in)    color[1] <= bayer[1] ^ XOR_GAMMA_BAYER[1];
+        else if (hact_d[0] && !hact_in) color[1] <= ~color[1];
+
+        if      (!hact_in) color[0] <= bayer[0] ^ XOR_GAMMA_BAYER[0];
+        else               color[0] <= ~color[0];
     end
     
   always @ (posedge pclk) begin
@@ -298,7 +308,7 @@ module  sens_gamma #(
     ) dly_16_pxd_i (
         .clk (pclk),        // input
         .rst (prst),        // input
-        .dly (4'd3),           // input[3:0] 
+        .dly (4'd2),           // input[3:0] 
         .din (pxd_in[7:0]), // input[0:0] 
         .dout(pxd_in_d3)    // output[0:0] 
     );

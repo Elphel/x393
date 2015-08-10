@@ -2036,7 +2036,7 @@ task write_cmd_frame_sequencer;
     $display("===================== TEST_%s =========================",TEST_TITLE);
         set_sensor_gamma_ctl (// doing last to enable sesnor data when everything else is set up
             num_sensor, // input   [1:0] num_sensor; // sensor channel number (0..3)
-            2'h3,       // input   [1:0] bayer;      // bayer shift (0..3)
+            2'h0, // 2'h3,       // input   [1:0] bayer;      // bayer shift (0..3)
             0,          // input         table_page; // table page (only used if SENS_GAMMA_BUFFER)
             1'b1,       // input         en_input;   // enable channel input
             1'b1,       // input         repet_mode; //  Normal mode, single trigger - just for debugging
