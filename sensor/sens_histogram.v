@@ -132,7 +132,7 @@ module  sens_histogram #(
 
     assign hist_rq = hist_rq_r;
     assign hist_dv = hist_re[2];
-    assign hist_xfer_done_mclk = hist_out_d && !hist_out_d && hist_en;
+    assign hist_xfer_done_mclk = hist_out_d && !hist_out && hist_en;
 
 //AF2015-new mod
     wire       line_start_w = hact && !hact_d[0];
@@ -295,7 +295,8 @@ module  sens_histogram #(
 //        else                                     inc_r <= {14'b0,inc_w[17:0]};
         
     end
-
+    // after hist_out was off, require inactive grant before sending rq
+    reg en_rq_start;
     
     always @ (posedge mclk) begin
         en_mclk <= en;
@@ -305,14 +306,20 @@ module  sens_histogram #(
         else if (&hist_raddr)    hist_out <= 0;
         
         hist_out_d <= hist_out;
-        
-        if      (!en_mclk)       hist_raddr <= 0;
-        else if (hist_re)        hist_raddr <= hist_raddr + 1;
+        // reset address each time new transfer is started
+//        if      (!en_mclk || (hist_out && !hist_out_d)) hist_raddr <= 0;
+        if      (!hist_out)  hist_raddr <= 0;
+        else if (hist_re[0]) hist_raddr <= hist_raddr + 1;
         
 //        if      (!en_mclk)             hist_rq_r <= 0;
 //        else if (hist_out && !hist_re) hist_rq_r <= 1;
 
-        hist_rq_r <= en_mclk && hist_out && !(&hist_raddr);
+//        hist_rq_r <= en_mclk && hist_out && !(&hist_raddr);
+// prevent starting rq if grant is still on (back-to-back)
+        if      (!hist_out)   en_rq_start <= 0;
+        else if (!hist_grant) en_rq_start <= 1;
+//        hist_rq_r <= en_mclk && hist_out && !(&hist_raddr) && ((|hist_raddr[9:0]) || !hist_grant);
+        hist_rq_r <= en_mclk && hist_out && !(&hist_raddr) && en_rq_start;
         
         if      (!hist_out || (&hist_raddr[7:0])) hist_re[0] <= 0;
         else if (hist_grant && hist_out)          hist_re[0] <= 1;

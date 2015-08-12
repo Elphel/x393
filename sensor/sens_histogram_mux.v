@@ -45,7 +45,7 @@ module  sens_histogram_mux(
     input  [31:0] din3,
 
     output        rq,
-    input         grant,
+    input         grant, // grant may stay longer, not masked by rq?
     output  [1:0] chn,
     output        dv,
     output [31:0] dout
@@ -122,7 +122,8 @@ module  sens_histogram_mux(
         else if (burst_next[3]) burst3 <= burst3 + 1;
         
         if (!en) chn_grant <= 0;
-        else     chn_grant <= {4{grant}} & chn_sel;
+        else     chn_grant <= {4{grant & rq}} & chn_sel;
+//        else     chn_grant <= {4{grant & rq}} & chn_sel;
 //        start_r <= en & start_w;
         if (!en )         rq_out <= 0;
         else if (started) rq_out <= 1;
