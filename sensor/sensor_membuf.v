@@ -24,6 +24,8 @@ module  sensor_membuf #(
     parameter WADDR_WIDTH=9 // for 36Kb RAM
 )(
     input         pclk,
+    input         prst,         // reset @ posedge pclk
+    input         mrst,         // reset @ posedge mclk
     input  [15:0] px_data,      // @posedge pclk pixel (pixel pair) data from the sensor channel
     input         px_valid,     // px_data valid
     input         last_in_line, // valid with px_valid - last px_data in line
@@ -31,7 +33,7 @@ module  sensor_membuf #(
     input         mclk,         // memory interface clock
     input         rpage_set,    // set internal read page to rpage_in (reset pointers)
     input         rpage_next,   // advance to next page (and reset lower bits to 0)
-    input         buf_rd,       // read buffer to memory, increment read address (regester enable will be delayed)
+    input         buf_rd,       // read buffer to memory, increment read address (register enable will be delayed)
     output [63:0] buf_dout,     // data out
     output        page_written  // buffer page (full or partial) is written to the memory buffer 
               
@@ -41,7 +43,7 @@ module  sensor_membuf #(
     reg              [1:0] wpage;
     reg  [WADDR_WIDTH-1:0] waddr;
     
-    reg                    sim_rst = 1; // jsut for simulation - reset from system reset to the first rpage_set
+//    reg                    sim_rst = 1; // jsut for simulation - reset from system reset to the first rpage_set
     reg              [2:0] rst_pntr;
     wire                   rst_wpntr;
     wire                   inc_wpage_w;
@@ -49,19 +51,19 @@ module  sensor_membuf #(
     assign inc_wpage_w = px_valid && (last_in_line || (&waddr));
     always @ (posedge mclk) begin
         rst_pntr <= {rst_pntr[1] &~rst_pntr[0], rst_pntr[0], rpage_set};
-        if (rpage_set) sim_rst <= 0;
+//        if (rpage_set) sim_rst <= 0;
     end
     
     always @ (posedge pclk) begin
-        if (rst_wpntr || (px_valid && last_in_line)) waddr <= 0;
-        else if (px_valid)                           waddr <= waddr + 1;
+        if (prst || rst_wpntr || (px_valid && last_in_line)) waddr <= 0;
+        else if (px_valid)                                   waddr <= waddr + 1;
         
-        if      (rst_wpntr)   wpage <= 0;
-        else if (inc_wpage_w) wpage <=  wpage + 1;
+        if (prst || rst_wpntr) wpage <= 0;
+        else if (inc_wpage_w)  wpage <=  wpage + 1;
     end 
 
     pulse_cross_clock  rst_wpntr_i (
-            .rst        (sim_rst),
+            .rst        (mrst), // sim_rst),
             .src_clk    (mclk),
             .dst_clk    (pclk),
             .in_pulse   (rst_pntr[2]),
@@ -70,7 +72,7 @@ module  sensor_membuf #(
      );
 
     pulse_cross_clock  page_written_i (
-            .rst        (sim_rst),
+            .rst        (prst), // sim_rst || rpage_set),
             .src_clk    (pclk),
             .dst_clk    (mclk),
             .in_pulse   (inc_wpage_w),

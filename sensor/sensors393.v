@@ -512,6 +512,8 @@ module  sensors393 #(
                 .WADDR_WIDTH(9)
             ) sensor_membuf_i (
                 .pclk         (pclk),                    // input
+                .prst         (prst),                    // input
+                .mrst         (mrst),                    // input
                 .px_data      (px_data[16 * i +: 16]),   // input[15:0] 
                 .px_valid     (px_valid[i]),             // input
                 .last_in_line (last_in_line[i]),         // input

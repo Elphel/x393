@@ -241,6 +241,8 @@ module  sensor_channel#(
     output [31:0] hist_data     // output[31:0] histogram data
     
 );
+    localparam    HIST_MONOCHROME = 1'b0; // TODO:make it configurable (at expense of extra hardware)
+
 
     localparam SENSOR_BASE_ADDR =   (SENSOR_GROUP_ADDR + SENSOR_NUMBER * SENSOR_BASE_INC);
     localparam SENSI2C_STATUS_REG = (SENSI2C_STATUS_REG_BASE + SENSOR_NUMBER * SENSI2C_STATUS_REG_INC + SENSI2C_STATUS_REG_REL);
@@ -649,7 +651,7 @@ module  sensor_channel#(
         .mclk        (mclk),           // input
         .cmd_ad      (cmd_ad),         // input[7:0] 
         .cmd_stb     (cmd_stb),        // input
-        .bayer_out   (gamma_bayer)     // output [1:0]  
+        .bayer_out   (gamma_bayer)     // output [1:0]
     );
 
     // TODO: Use generate to generate 1-4 histogram modules
@@ -678,7 +680,8 @@ module  sensor_channel#(
                 .hist_do    (hist_do0),       // output[31:0] 
                 .hist_dv    (hist_dv[0]),     // output
                 .cmd_ad     (cmd_ad),         // input[7:0] 
-                .cmd_stb    (cmd_stb)         // input
+                .cmd_stb    (cmd_stb),        // input
+                .monochrome (HIST_MONOCHROME) // input  
             );
         else
             sens_histogram_dummy sens_histogram_dummy_i (
@@ -712,7 +715,8 @@ module  sensor_channel#(
                 .hist_do    (hist_do1),       // output[31:0] 
                 .hist_dv    (hist_dv[1]),     // output
                 .cmd_ad     (cmd_ad),         // input[7:0] 
-                .cmd_stb    (cmd_stb)         // input
+                .cmd_stb    (cmd_stb),        // input
+                .monochrome (HIST_MONOCHROME) // input  
             );
         else
             sens_histogram_dummy sens_histogram_dummy_i (
@@ -746,7 +750,8 @@ module  sensor_channel#(
                 .hist_do    (hist_do2),       // output[31:0] 
                 .hist_dv    (hist_dv[2]),     // output
                 .cmd_ad     (cmd_ad),         // input[7:0] 
-                .cmd_stb    (cmd_stb)         // input
+                .cmd_stb    (cmd_stb),        // input
+                .monochrome (HIST_MONOCHROME) // input  
             );
         else
             sens_histogram_dummy sens_histogram_dummy_i (
@@ -780,7 +785,8 @@ module  sensor_channel#(
                 .hist_do    (hist_do3),       // output[31:0] 
                 .hist_dv    (hist_dv[3]),     // output
                 .cmd_ad     (cmd_ad),         // input[7:0] 
-                .cmd_stb    (cmd_stb)         // input
+                .cmd_stb    (cmd_stb),        // input
+                .monochrome (HIST_MONOCHROME) // input  
             );
         else
             sens_histogram_dummy sens_histogram_dummy_i (
@@ -792,7 +798,7 @@ module  sensor_channel#(
     
     sens_histogram_mux sens_histogram_mux_i (
         .mclk   (mclk),          // input
-        .en     (!(|hist_nrst)), // input
+        .en     (|hist_nrst),    // input
         .rq0    (hist_rq[0]),    // input
         .grant0 (hist_gr[0]),    // output
         .dav0   (hist_dv[0]),    // input

@@ -1857,7 +1857,9 @@ task setup_sensor_channel;
             window_height,                 // input [31:0] window_height;   // 16 bit
             window_left,                   // input [31:0] window_left;
             window_top);                   // input [31:0] window_top;
-            
+
+    // Enable arbitration of sensor-to-memory controller
+    enable_memcntrl_en_dis(4'h8 + {2'b0,num_sensor}, 1);
             
     TEST_TITLE = "CAMSYNC_SETUP";
     $display("===================== TEST_%s =========================",TEST_TITLE);
@@ -1952,8 +1954,8 @@ task setup_sensor_channel;
 // add mode "DIRECT", "ASAP", "RELATIVE", "ABSOLUTE" and frame number
             19'h20000, // 0,      // input  [18:0] AX;
             19'h20000, // 0,      // input  [18:0] AY;
-            0,      // input  [20:0] BX;
-            0,      // input  [20:0] BY;
+            21'h180000, //0,      // input  [20:0] BX;
+            21'h180000, //0,      // input  [20:0] BY;
             'h8000, // input  [18:0] C;
             32768,  // input  [16:0] scales0;
             32768,  // input  [16:0] scales1;
@@ -1983,8 +1985,8 @@ task setup_sensor_channel;
             0,                   // input   [1:0] subchannel; // subchannel number (for multiplexed images)
             HISTOGRAM_LEFT,      // input  [15:0] left;
             HISTOGRAM_TOP,       // input  [15:0] top;
-            HISTOGRAM_WIDTH-2,   // input  [15:0] width_m1;  // one less than window width. If 0 - use frame right margin (end of HACT)
-            HISTOGRAM_HEIGHT-2); // input  [15:0] height_m1; // one less than window height. If 0 - use frame bottom margin (end of VACT)
+            HISTOGRAM_WIDTH-1,   // input  [15:0] width_m1;  // one less than window width. If 0 - use frame right margin (end of HACT)
+            HISTOGRAM_HEIGHT-1); // input  [15:0] height_m1; // one less than window height. If 0 - use frame bottom margin (end of VACT)
 
         set_sensor_histogram_saxi_addr (
             num_sensor, // input   [1:0] num_sensor; // sensor channel number (0..3)

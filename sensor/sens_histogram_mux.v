@@ -62,6 +62,7 @@ module  sens_histogram_mux(
     reg         busy_r;
     reg   [1:0] mux_sel;
     wire        start_w;
+//    reg         start_r;
     reg         started;
     wire        dav_in;
     reg         dav_out;
@@ -100,7 +101,7 @@ module  sens_histogram_mux(
         busy_r <= busy_w;
         if  (!en || busy_r) started <= 0;
         else if (enc_rq[2]) started <= 1;
-        if (start_w) mux_sel <= enc_rq[1:0];
+        if (start_w)        mux_sel <= enc_rq[1:0];
         dav_out <= dav_in;
         dout_r <= din;
         
@@ -122,8 +123,11 @@ module  sens_histogram_mux(
         
         if (!en) chn_grant <= 0;
         else     chn_grant <= {4{grant}} & chn_sel;
-        
-        rq_out <= en && rq_in;
+//        start_r <= en & start_w;
+        if (!en )         rq_out <= 0;
+        else if (started) rq_out <= 1;
+        else if (rq_out)  rq_out <= rq_in;
+//        rq_out <= en && rq_in;
     end
 
 endmodule

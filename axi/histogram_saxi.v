@@ -126,7 +126,7 @@ module  histogram_saxi#(
     reg                        [1:0] mux_sel;
     wire                             start_w;
     reg                              started;
-    reg          [ATTRIB_WIDTH -1:0] attrib; // to hold frame number, sensor number and burst (color) for the histograms in the buffer
+    reg        [4*ATTRIB_WIDTH -1:0] attrib; // to hold frame number, sensor number and burst (color) for the histograms in the buffer
     wire                             page_sent_mclk; // page sent over saxi - pulse in mclk domain
     reg                        [1:0] page_wr;         // page number being written
     reg                        [7:0] page_wa;         // 32-bit word address in page being written
@@ -201,7 +201,7 @@ module  histogram_saxi#(
     assign rq_in =        mux_sel[1] ? (mux_sel[0] ? hist_request3 : hist_request2)  : (mux_sel[0] ? hist_request1 :  hist_request0); 
     assign sub_chn_w =    mux_sel[1] ? (mux_sel[0] ? hist_chn3 :     hist_chn2)      : (mux_sel[0] ? hist_chn1     : hist_chn0); 
     assign frame_w =      mux_sel[1] ? (mux_sel[0] ? frame3 :        frame2)         : (mux_sel[0] ? frame1        : frame0); 
-    assign burst_done_w = dav_r && !dav;
+    assign burst_done_w = dav_r && !dav && en;
     assign hist_grant0 =  chn_grant[0];
     assign hist_grant1 =  chn_grant[1];
     assign hist_grant2 =  chn_grant[2];
@@ -288,7 +288,9 @@ module  histogram_saxi#(
         else if ( burst_done_w && !page_sent_mclk) pages_in_buf_wr <= pages_in_buf_wr + 1;
         else if (!burst_done_w &&  page_sent_mclk) pages_in_buf_wr <= pages_in_buf_wr - 1;
         
-        grant <= en && rq_in && !buf_full;
+//        grant <= en && rq_in && !buf_full && (!started || busy_r); // delay grant until chn_sel is set (first cycle of started)
+        grant <= en && rq_in && !buf_full && (grant || busy_r); // delay grant until chn_sel is set (first cycle of started)
+
         
         if (!en) chn_grant <= 0;
         else     chn_grant <= {4{grant}} & chn_sel;
@@ -323,7 +325,8 @@ module  histogram_saxi#(
         else               block_run <= {block_run[2:0],block_start_w | (block_run[0] & ~ block_end)};
         
         if (!en_aclk) block_start_r <= 0;
-        else          block_start_r <= {block_run[2:0], block_start_w};
+//        else          block_start_r <= {block_run[2:0], block_start_w};
+        else          block_start_r <= {block_start_r[2:0], block_start_w};
         
         if (block_start_r[0]) attrib_r <= attrib[page_rd * ATTRIB_WIDTH +: ATTRIB_WIDTH];
 
@@ -331,8 +334,8 @@ module  histogram_saxi#(
         if (block_start_r[2]) hist_start_addr[31:12] <= hist_start_page_r + attrib_frame; 
         if (block_start_r[2]) hist_start_addr[11:10]  <= attrib_color; 
         
-        if      (block_start_r[3])   start_addr_r[31:6] <= {hist_start_addr[31:10], 4'b0}; 
-        else if (saxi_start_burst_w) start_addr_r[31:6] <= start_addr_r[31:6] + 1;
+        if (arst || block_start_r[3]) start_addr_r[31:6] <= {hist_start_addr[31:10], 4'b0}; 
+        else if (saxi_start_burst_w)  start_addr_r[31:6] <= start_addr_r[31:6] + 1;
         
         if (!en_aclk)                first_burst <= 0;
         else if (block_start_r[3])   first_burst <=1; // block_start_r[3] - same as start_addr_r set
