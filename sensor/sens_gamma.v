@@ -84,7 +84,7 @@ module  sens_gamma #(
     reg    [3:0]  set_tdata_ram;
     reg    [17:0] tdata;
 //    wire          set_taddr_data_w;
-    reg    [12:0] taddr; // to high bits - select channnel (in buffered mode), in nion-buffered - 1 bit less, only 10 bits each table
+    reg    [12:0] taddr; // two high bits - select channnel (in buffered mode), in non-buffered - 1 bit less, only 10 bits each table
     reg [SENS_GAMMA_MODE_WIDTH-1:0] mode=0;
     reg [SENS_GAMMA_MODE_WIDTH-1:0] mode_mclk=0;
     
@@ -336,6 +336,9 @@ module  sens_gamma #(
         .LOG2WIDTH_WR (4),
         .LOG2WIDTH_RD (4),
         .DUMMY        (0)
+`ifdef PRELOAD_BRAMS
+    `include "includes/linear1028rgb.dat.vh"
+`endif
     ) gamma_table0_i (
         .rclk         (pclk), // input
         .raddr        (table_raddr), // input[11:0] 
@@ -354,6 +357,9 @@ module  sens_gamma #(
         .LOG2WIDTH_WR (4),
         .LOG2WIDTH_RD (4),
         .DUMMY        (!((SENS_NUM_SUBCHN > 1) && ((SENS_NUM_SUBCHN > 2) || SENS_GAMMA_BUFFER)))
+`ifdef PRELOAD_BRAMS
+    `include "includes/linear1028rgb.dat.vh"
+`endif
     ) gamma_table1_i (
         .rclk         (pclk), // input
         .raddr        (table_raddr), // input[11:0] 
@@ -372,6 +378,9 @@ module  sens_gamma #(
         .LOG2WIDTH_WR (4),
         .LOG2WIDTH_RD (4),
         .DUMMY        (!(SENS_GAMMA_BUFFER && (SENS_NUM_SUBCHN > 2)))
+`ifdef PRELOAD_BRAMS
+    `include "includes/linear1028rgb.dat.vh"
+`endif
     ) gamma_table2_i (
         .rclk         (pclk), // input
         .raddr        (table_raddr), // input[11:0] 
@@ -390,6 +399,9 @@ module  sens_gamma #(
         .LOG2WIDTH_WR (4),
         .LOG2WIDTH_RD (4),
         .DUMMY        (!(SENS_GAMMA_BUFFER && (SENS_NUM_SUBCHN > 3)))
+`ifdef PRELOAD_BRAMS
+    `include "includes/linear1028rgb.dat.vh"
+`endif
     ) gamma_table3_i (
         .rclk         (pclk), // input
         .raddr        (table_raddr), // input[11:0] 

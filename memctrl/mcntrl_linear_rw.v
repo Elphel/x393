@@ -113,7 +113,8 @@ module  mcntrl_linear_rw #(
     reg      [FRAME_WIDTH_BITS:0] frame_full_width_r;  // (14 bit) register to be absorbed by MPY
     reg           [MPY_WIDTH-1:0] mul_rslt;
     reg   [NUM_RC_BURST_BITS-1:0] start_addr_r;   // 22 bit - to be absorbed by DSP
-    reg                     [2:0] bank_reg [2:0];
+//    reg                     [2:0] bank_reg [2:0];
+    reg             [3 * 3 - 1:0] bank_reg;
     wire [FRAME_WIDTH_BITS+FRAME_HEIGHT_BITS-3:0] mul_rslt_w;
     reg      [FRAME_WIDTH_BITS:0] row_left;   // number of 8-bursts left in the current row
     reg                           last_in_row;
@@ -166,7 +167,10 @@ module  mcntrl_linear_rw #(
     reg                           last_block;
     reg [MCNTRL_SCANLINE_PENDING_CNTR_BITS-1:0] pending_xfers; // number of requested,. but not finished block transfers      
     reg   [NUM_RC_BURST_BITS-1:0] row_col_r;
-    reg   [FRAME_HEIGHT_BITS-1:0] line_unfinished_r [1:0];
+//    reg [2*FRAME_HEIGHT_BITS-1:0] line_unfinished_r;
+    reg   [FRAME_HEIGHT_BITS-1:0] line_unfinished_relw_r;
+    reg   [FRAME_HEIGHT_BITS-1:0] line_unfinished_r;
+    
     wire                          pre_want;
     wire                    [1:0] status_data;
     wire                    [3:0] cmd_a; 
@@ -322,10 +326,10 @@ module  mcntrl_linear_rw #(
     assign last_row_w=  next_y==window_height;
     assign xfer_want=   want_r;
     assign xfer_need=   need_r;
-    assign xfer_bank=   bank_reg[2]; // TODO: just a single reg layer
+    assign xfer_bank=   bank_reg[3 * 2 +: 3]; // TODO: just a single reg layer
     assign xfer_row= row_col_r[NUM_RC_BURST_BITS-1:COLADDR_NUMBER-3] ;      // memory row
     assign xfer_col= row_col_r[COLADDR_NUMBER-4:0];    // start memory column in 8-bursts
-    assign line_unfinished=line_unfinished_r[1];
+    assign line_unfinished = line_unfinished_r; // [FRAME_HEIGHT_BITS +: FRAME_HEIGHT_BITS];
     assign chn_en =         mode_reg[MCONTR_LINTILE_NRESET] & mode_reg[MCONTR_LINTILE_EN];   // enable requests by channel (continue ones in progress)
     assign chn_rst =        ~mode_reg[MCONTR_LINTILE_NRESET]; // resets command, including fifo;
     assign cmd_wrmem =       mode_reg[MCONTR_LINTILE_WRITE];// 0: read from memory, 1:write to memory
@@ -364,9 +368,9 @@ module  mcntrl_linear_rw #(
 //            line_start_page_left <= {COLADDR_NUMBER-3{1'b0}} - line_start_addr[COLADDR_NUMBER-4:0]; // 7 bits
             line_start_page_left <=  - line_start_addr[COLADDR_NUMBER-4:0]; // 7 bits
         end
-        bank_reg[0]   <= frame_y[2:0]; //TODO: is it needed - a pipeline for the bank? - remove! 
+        bank_reg[0 +:3]   <= frame_y[2:0]; //TODO: is it needed - a pipeline for the bank? - remove! 
         for (i=0;i<2; i = i+1)
-            bank_reg[i+1] <= bank_reg[i];
+            bank_reg[(i+1)*3 +:3] <= bank_reg[i * 3 +: 3];
             
             
         if (recalc_r[6]) begin // cycle 7
@@ -466,38 +470,52 @@ wire    start_not_partial= xfer_start_r[0] && !xfer_limited_by_mem_page_r;
 
         
 // increment x,y (two cycles)
-        if (mrst)                                  curr_x <= 0;
+        if (mrst)                                 curr_x <= 0;
         else if (chn_rst || frame_start_r[0])     curr_x <= start_x;
         else if (xfer_start_r[0])                 curr_x <= last_in_row?0: curr_x + xfer_num128_r;
         
-        if (mrst)                                  curr_y <= 0;
+        if (mrst)                                 curr_y <= 0;
         else if (chn_rst || frame_start_r[0])     curr_y <= start_y;
         else if (xfer_start_r[0] && last_in_row)  curr_y <= next_y[FRAME_HEIGHT_BITS-1:0];
                
-        if      (mrst)                         last_block <= 0;
-        else if (chn_rst || !busy_r)          last_block <= 0;
-        else if (xfer_start_r[0])             last_block <= last_row_w && last_in_row_w;
+        if      (mrst)                            last_block <= 0;
+        else if (chn_rst || !busy_r)              last_block <= 0;
+        else if (xfer_start_r[0])                 last_block <= last_row_w && last_in_row_w;
         
-        if      (mrst)                              pending_xfers <= 0;
-        else if (chn_rst || !busy_r)               pending_xfers <= 0;
+        if      (mrst)                           pending_xfers <= 0;
+        else if (chn_rst || !busy_r)             pending_xfers <= 0;
         else if ( xfer_start_r[0] && !xfer_done) pending_xfers <= pending_xfers + 1;     
         else if (!xfer_start_r[0] &&  xfer_done) pending_xfers <= pending_xfers - 1;
         
-        
-        
+/*        
         //line_unfinished_r cmd_wrmem
-        if (mrst)                              line_unfinished_r[0] <= 0; //{FRAME_HEIGHT_BITS{1'b0}};
-        else if (chn_rst || frame_start_r[0]) line_unfinished_r[0] <= window_y0+start_y;
-        else if (xfer_start_r[2])             line_unfinished_r[0] <= window_y0+next_y[FRAME_HEIGHT_BITS-1:0]; // latency 2 from xfer_start
+        if (mrst)                              line_unfinished_r[0 +: FRAME_HEIGHT_BITS] <= 0; //{FRAME_HEIGHT_BITS{1'b0}};
+        else if (chn_rst || frame_start_r[0]) line_unfinished_r[0 +: FRAME_HEIGHT_BITS] <= window_y0+start_y;
+        else if (xfer_start_r[2])             line_unfinished_r[0 +: FRAME_HEIGHT_BITS] <= window_y0+next_y[FRAME_HEIGHT_BITS-1:0]; // latency 2 from xfer_start
 
-        if (mrst)                              line_unfinished_r[1] <= 0; //{FRAME_HEIGHT_BITS{1'b0}};
+        if (mrst)                              line_unfinished_r[FRAME_HEIGHT_BITS +: FRAME_HEIGHT_BITS] <= 0; //{FRAME_HEIGHT_BITS{1'b0}};
 //        else if (chn_rst || frame_start_r[0]) line_unfinished_r[1] <= window_y0+start_y;
-        else if (chn_rst || frame_start_r[2]) line_unfinished_r[1] <= window_y0+start_y; // _r[0] -> _r[2] to make it simultaneous with frame_number
+        else if (chn_rst || frame_start_r[2]) line_unfinished_r[FRAME_HEIGHT_BITS +: FRAME_HEIGHT_BITS] <= window_y0+start_y; // _r[0] -> _r[2] to make it simultaneous with frame_number
         // in read mode advance line number ASAP
-        else if (xfer_start_r[2] && !cmd_wrmem) line_unfinished_r[1] <= window_y0+next_y[FRAME_HEIGHT_BITS-1:0]; // latency 2 from xfer_start
+        else if (xfer_start_r[2] && !cmd_wrmem) line_unfinished_r[FRAME_HEIGHT_BITS +: FRAME_HEIGHT_BITS] <= window_y0+next_y[FRAME_HEIGHT_BITS-1:0]; // latency 2 from xfer_start
         // in write mode advance line number only when it is guaranteed it will be the first to actually access memory
-        else if (xfer_grant      && cmd_wrmem)  line_unfinished_r[1] <=  line_unfinished_r[0];
+        else if (xfer_grant      && cmd_wrmem)  line_unfinished_r[FRAME_HEIGHT_BITS +: FRAME_HEIGHT_BITS] <= line_unfinished_r[0 +: FRAME_HEIGHT_BITS];
+*/        
+/* 
+        if (mrst)                                                line_unfinished_relw_r <= 0;
+        else if (cmd_wrmem && (frame_start_r[1] || !chn_en))     line_unfinished_relw_r <= start_y;
+        else if ((!cmd_wrmem && recalc_r[1]) || xfer_start_r[2]) line_unfinished_relw_r <= next_y[FRAME_HEIGHT_BITS-1:0];
+        //  xfer_start_r[2] and recalc_r[1] are at the same time
         
+        if (mrst || (frame_start || !chn_en))  line_unfinished_r <= {FRAME_HEIGHT_BITS{~cmd_wrmem}}; // lowest/highest value until valid
+        else if (recalc_r[2])                  line_unfinished_r <= line_unfinished_relw_r + window_y0;
+*/
+        if (recalc_r[0]) line_unfinished_relw_r <= curr_y + (cmd_wrmem ? 0: 1);
+        
+        if (mrst || (frame_start || !chn_en))  line_unfinished_r <= {FRAME_HEIGHT_BITS{~cmd_wrmem}}; // lowest/highest value until valid
+        else if (recalc_r[2])                  line_unfinished_r <= line_unfinished_relw_r + window_y0;
+
+
     end
     always @ (negedge mclk) begin
         xfer_page_rst_neg <= xfer_page_rst_pos;

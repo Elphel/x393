@@ -167,7 +167,7 @@ module  compressor393 # (
     output                  [3:0] stuffer_done_mclk,
     
     // frame input synchronization
-    input                   [3:0] vsync_late,         // delayed start of frame, @xclk. In 353 it was 16 lines after VACT active
+    input                   [3:0] vsync_late,         // delayed start of frame, @mclk. In 353 it was 16 lines after VACT active
                                                       // source channel should already start, some delay give time for sequencer commands
                                                       // that should arrive before it
     

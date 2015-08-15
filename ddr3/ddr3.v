@@ -669,8 +669,8 @@ module ddr3 (
             // $fseek returns 0 on success, -1 on failure
             if (code != 0)
             begin
-                $display("%m: at time %t ERROR: fseek to %d failed", $time, offset);
-                $finish;
+                $display("%m: at time %t ERROR: fseek to %d failed index=%d ", $time, offset, index);
+//                $finish;
             end
 `ifdef CVC
             code = $fgets(read_str, fd);

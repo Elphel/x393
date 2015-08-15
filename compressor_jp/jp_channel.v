@@ -156,7 +156,7 @@ module  jp_channel#(
     output                        stuffer_done_mclk,
     
 //    output                 [31:0] hifreq,             //  accumulated high frequency components in a frame sub-window
-    input                         vsync_late,         // delayed start of frame, @xclk. In 353 it was 16 lines after VACT active
+    input                         vsync_late,         // delayed start of frame, @mclk. In 353 it was 16 lines after VACT active
                                                       // source channel should already start, some delay give time for sequencer commands
                                                       // that should arrive before it
     
@@ -177,7 +177,8 @@ module  jp_channel#(
     
     // Control signals to be defined
     wire                             frame_en;           // if 0 - will reset logic immediately (but not page number)
-    wire                             stuffer_en;        //  extended enable to allow stuffer to gracefully finish 
+    wire                             frame_start_xclk;   // re-clocked, parameters are copied at this pulse
+    wire                             stuffer_en;         //  extended enable to allow stuffer to gracefully finish 
     
     wire                             frame_go=frame_en;  // start frame: if idle, will start reading data (if available),
                                       // if running - will not restart a new frame if 0.
@@ -200,9 +201,9 @@ module  jp_channel#(
     wire   [ 1:0] cmprs_fmode;        // focusing/overlay mode
 
     //TODO: assign next 5 values from converter_type[2:0]
-    wire   [ 5:0] mb_w_m1;            // macroblock width minus 1 // 3 LSB not used, SHOULD BE SET to 3'b111
-    wire   [ 5:0] mb_h_m1;            // macroblock horizontal period (8/16) // 3 LSB not used  SHOULD BE SET to 3'b111
-    wire   [ 4:0] mb_hper;            // macroblock horizontal period (8/16) // 3 LSB not used TODO: assign from converter_type[2:0]
+    wire   [ 5:0] mb_w_m1;            // macroblock width minus 1
+    wire   [ 5:0] mb_h_m1;            // macroblock height -1
+    wire   [ 4:0] mb_hper;            // macroblock horizontal period (8/16) // 3 LSB not used
     wire   [ 1:0] tile_width;         // memory tile width (can be 128 for monochrome JPEG)   Can be 32/64/128: 0 - 16, 1 - 32, 2 - 64, 3 - 128
     wire          tile_col_width;     // 0 - 16 pixels,  1 -32 pixels
     
@@ -450,6 +451,7 @@ module  jp_channel#(
         .coring_we          (set_coring_w),        // input - write color saturation values
         .di                 (cmd_data),            // input[31:0] - 32-bit data to write to control register (24LSB are used)
         .frame_start        (frame_start_dst),     // input @mclk
+        .frame_start_xclk   (frame_start_xclk),    // re-clocked, parameters are copied during this pulse
         .cmprs_en_mclk      (cmprs_en_mclk),       // output
         .cmprs_en_extend    (cmprs_en_extend),     // input
         .cmprs_run_mclk     (cmprs_run_mclk),      // output reg 
@@ -512,10 +514,10 @@ module  jp_channel#(
         .cmprs_standalone   (cmprs_standalone),    // input - @mclk single-cycle: generate a single frame_start_dst in unbonded (not synchronized) mode.
                                                    // cmprs_run should be off
         .sigle_frame_buf    (sigle_frame_buf),     // input - memory controller uses a single frame buffer (frame_number_* == 0), use other sync
-        .vsync_late         (vsync_late),          // input - @xclk delayed start of frame, @xclk. In 353 it was 16 lines after VACT active
+        .vsync_late         (vsync_late),          // input - @mclk delayed start of frame, @xclk. In 353 it was 16 lines after VACT active
                                                    // source channel should already start, some delay give time for sequencer commands
                                                    // that should arrive before it
-        .frame_started      (first_mb && mb_pre_start), // @xclk started first macroblock (checking fro broken frames)
+        .frame_started      (first_mb && mb_pre_start), // @xclk started first macroblock (checking for broken frames)
         .frame_start_dst    (frame_start_dst),     // output reg @mclk - trigger receive (tiled) memory channel (it will take care of
                                                    // single/repetitive modes itself this output either follows vsync_late (reclocks it)
                                                    // or generated in non-bonded mode (compress from memory once)
@@ -545,11 +547,12 @@ module  jp_channel#(
         .page_ready_chn     (page_ready_chn),     // input
         .next_page_chn      (next_page_chn),      // output
         .frame_en           (frame_en),           // input
+        .frame_start_xclk   (frame_start_xclk),   // input@posedge xclk - parameters are copied @ this pulse
         .frame_go           (frame_go),           // input - do not use - assign to frame_en? Running frames can be controlled by other means
         .left_marg          (left_marg),          // input[4:0] 
         .n_blocks_in_row_m1 (n_blocks_in_row_m1), // input[12:0] 
         .n_block_rows_m1    (n_block_rows_m1),    // input[12:0] 
-        .mb_w_m1            (mb_w_m1),            // input[5:0]   // macroblock width minus 1 // 3 LSB not used - set them to all 1
+        .mb_w_m1            (mb_w_m1),            // input[5:0]   // macroblock width minus 1 // 3 LSB not used here
         .mb_hper            (mb_hper),            // input[4:0]   // macroblock horizontal period (8/16) // 3 LSB not used (set them 0)
         .tile_width         (tile_width),         // input[1:0]   // memory tile width. Can be 32/64/128: 0 - 16, 1 - 32, 2 - 64, 3 - 128
         .mb_pre_end_in      (mb_pre_end),         // input

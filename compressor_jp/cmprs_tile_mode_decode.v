@@ -29,9 +29,9 @@ module  cmprs_tile_mode_decode #(
         parameter CMPRS_MONO8 =             7  // Regular JPEG monochrome with 8x8 macroblocks (not yet implemented)
 )(
     input          [2:0] converter_type,
-    output reg    [ 5:0] mb_w_m1,            // macroblock width minus 1 // 3 LSB not used, SHOULD BE SET to 3'b111
-    output reg    [ 5:0] mb_h_m1,            // macroblock horizontal period (8/16) // 3 LSB not used  SHOULD BE SET to 3'b111
-    output reg    [ 4:0] mb_hper,            // macroblock horizontal period (8/16) // 3 LSB not used TODO: assign from converter_type[2:0]
+    output reg    [ 5:0] mb_w_m1,            // macroblock width minus 1
+    output reg    [ 5:0] mb_h_m1,            // macroblock height minus 1
+    output reg    [ 4:0] mb_hper,            // macroblock horizontal period (8/16) // 3 LSB not used
     output reg    [ 1:0] tile_width,         // memory tile width (can be 128 for monochrome JPEG)   Can be 32/64/128: 0 - 16, 1 - 32, 2 - 64, 3 - 128
     output reg           tile_col_width      // 0 - 16 pixels,  1 -32 pixels
 );
@@ -40,51 +40,51 @@ module  cmprs_tile_mode_decode #(
     always @(converter_type) begin
         case (converter_type)
             CMPRS_COLOR18:    begin
-                        mb_w_m1 <=        17;            // macroblock width minus 1 // 3 LSB not used, SHOULD BE SET to 3'b111
-                        mb_h_m1 <=        17;            // macroblock horizontal period (8/16) // 3 LSB not used  SHOULD BE SET to 3'b111
-                        mb_hper <=        16;            // macroblock horizontal period (8/16) // 3 LSB not used TODO: assign from converter_type[2:0]
+                        mb_w_m1 <=        17;            // macroblock width minus 1 
+                        mb_h_m1 <=        17;            // macroblock height minus 1
+                        mb_hper <=        16;            // macroblock horizontal period (8/16) // 3 LSB not used
                         tile_width <=      1;            // memory tile width (can be 128 for monochrome JPEG)   Can be 32/64/128: 0 - 16, 1 - 32, 2 - 64, 3 - 128
                         tile_col_width <=  1;            // 0 - 16 pixels,  1 -32 pixels
                      end
             CMPRS_COLOR20:    begin
-                        mb_w_m1 <=        19;            // macroblock width minus 1 // 3 LSB not used, SHOULD BE SET to 3'b111
-                        mb_h_m1 <=        19;            // macroblock horizontal period (8/16) // 3 LSB not used  SHOULD BE SET to 3'b111
-                        mb_hper <=        16;            // macroblock horizontal period (8/16) // 3 LSB not used TODO: assign from converter_type[2:0]
+                        mb_w_m1 <=        19;            // macroblock width minus 1
+                        mb_h_m1 <=        19;            // macroblock height minus 1
+                        mb_hper <=        16;            // macroblock horizontal period (8/16) // 3 LSB not used
                         tile_width <=      1;            // memory tile width (can be 128 for monochrome JPEG)   Can be 32/64/128: 0 - 16, 1 - 32, 2 - 64, 3 - 128
                         tile_col_width <=  1;            // 0 - 16 pixels,  1 -32 pixels
                      end
             CMPRS_MONO16:    begin
-                        mb_w_m1 <=        15;            // macroblock width minus 1 // 3 LSB not used, SHOULD BE SET to 3'b111
-                        mb_h_m1 <=        15;            // macroblock horizontal period (8/16) // 3 LSB not used  SHOULD BE SET to 3'b111
-                        mb_hper <=        16;            // macroblock horizontal period (8/16) // 3 LSB not used TODO: assign from converter_type[2:0]
+                        mb_w_m1 <=        15;            // macroblock width minus 1
+                        mb_h_m1 <=        15;            // macroblock height minus 1
+                        mb_hper <=        16;            // macroblock horizontal period (8/16) // 3 LSB not used
                         tile_width <=      2;            // memory tile width (can be 128 for monochrome JPEG)   Can be 32/64/128: 0 - 16, 1 - 32, 2 - 64, 3 - 128
                         tile_col_width <=  1;            // 0 - 16 pixels,  1 -32 pixels
                      end
             CMPRS_JP4:    begin
-                        mb_w_m1 <=        15;            // macroblock width minus 1 // 3 LSB not used, SHOULD BE SET to 3'b111
-                        mb_h_m1 <=        15;            // macroblock horizontal period (8/16) // 3 LSB not used  SHOULD BE SET to 3'b111
-                        mb_hper <=        16;            // macroblock horizontal period (8/16) // 3 LSB not used TODO: assign from converter_type[2:0]
+                        mb_w_m1 <=        15;            // macroblock width minus 1
+                        mb_h_m1 <=        15;            // macroblock height minus 1
+                        mb_hper <=        16;            // macroblock horizontal period (8/16) // 3 LSB not used
                         tile_width <=      2;            // memory tile width (can be 128 for monochrome JPEG)   Can be 32/64/128: 0 - 16, 1 - 32, 2 - 64, 3 - 128
                         tile_col_width <=  1;            // 0 - 16 pixels,  1 -32 pixels
                      end
             CMPRS_JP4DIFF:    begin
-                        mb_w_m1 <=        15;            // macroblock width minus 1 // 3 LSB not used, SHOULD BE SET to 3'b111
-                        mb_h_m1 <=        15;            // macroblock horizontal period (8/16) // 3 LSB not used  SHOULD BE SET to 3'b111
-                        mb_hper <=        16;            // macroblock horizontal period (8/16) // 3 LSB not used TODO: assign from converter_type[2:0]
+                        mb_w_m1 <=        15;            // macroblock width minus 1
+                        mb_h_m1 <=        15;            // macroblock height minus 1
+                        mb_hper <=        16;            // macroblock horizontal period (8/16) // 3 LSB not used
                         tile_width <=      2;            // memory tile width (can be 128 for monochrome JPEG)   Can be 32/64/128: 0 - 16, 1 - 32, 2 - 64, 3 - 128
                         tile_col_width <=  1;            // 0 - 16 pixels,  1 -32 pixels
                      end
             CMPRS_MONO8:    begin
-                        mb_w_m1 <=         7;            // macroblock width minus 1 // 3 LSB not used, SHOULD BE SET to 3'b111
-                        mb_h_m1 <=         7;            // macroblock horizontal period (8/16) // 3 LSB not used  SHOULD BE SET to 3'b111
-                        mb_hper <=         8;            // macroblock horizontal period (8/16) // 3 LSB not used TODO: assign from converter_type[2:0]
+                        mb_w_m1 <=         7;            // macroblock width minus 1
+                        mb_h_m1 <=         7;            // macroblock height minus 1
+                        mb_hper <=         8;            // macroblock horizontal period (8/16) // 3 LSB not used
                         tile_width <=      3;            // memory tile width (can be 128 for monochrome JPEG)   Can be 32/64/128: 0 - 16, 1 - 32, 2 - 64, 3 - 128
                         tile_col_width <=  1;            // 0 - 16 pixels,  1 -32 pixels
                      end
             default: begin
-                        mb_w_m1 <=        'bx;            // macroblock width minus 1 // 3 LSB not used, SHOULD BE SET to 3'b111
-                        mb_h_m1 <=        'bx;            // macroblock horizontal period (8/16) // 3 LSB not used  SHOULD BE SET to 3'b111
-                        mb_hper <=        'bx;            // macroblock horizontal period (8/16) // 3 LSB not used TODO: assign from converter_type[2:0]
+                        mb_w_m1 <=        'bx;            // macroblock width minus 1
+                        mb_h_m1 <=        'bx;            // macroblock height minus 1
+                        mb_hper <=        'bx;            // macroblock horizontal period (8/16) // 3 LSB not used
                         tile_width <=     'bx;            // memory tile width (can be 128 for monochrome JPEG)   Can be 32/64/128: 0 - 16, 1 - 32, 2 - 64, 3 - 128
                         tile_col_width <= 'bx;            // 0 - 16 pixels,  1 -32 pixels
                      end

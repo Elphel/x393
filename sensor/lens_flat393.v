@@ -253,13 +253,13 @@ module lens_flat393 #(
     end
 
     // Replacing MULT18X18SIO of x353, registers on both inputs, outputs
-    reg [17:0] mul1_a;
-    reg [17:0] mul1_b;
-    reg [35:0] mul1_p;
-    reg [17:0] mul2_a;
-    reg [17:0] mul2_b;
+    reg signed [17:0] mul1_a;
+    reg signed [17:0] mul1_b;
+    reg signed [35:0] mul1_p;
+    reg signed [17:0] mul2_a;
+    reg signed [17:0] mul2_b;
 //    wire [17:0] mul2_b = mult_first_scaled[17:0]; // TODO - delay to have a register!
-    reg [35:0] mul2_p;
+    reg signed [35:0] mul2_p;
     always @ (posedge pclk) begin
         if (hact_d[7]) mul1_a <= (FXY[18]==FXY[17])?FXY[17:0]:(FXY[18]?18'h20000:18'h1ffff);
         if (hact_d[7]) mul1_b <= {1'b0,scales_ram[{sub_frame_late,~color[1:0]}]};        

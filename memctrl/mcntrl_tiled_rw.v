@@ -129,7 +129,8 @@ module  mcntrl_tiled_rw#(
     reg      [FRAME_WIDTH_BITS:0] frame_full_width_r;  // (14 bit) register to be absorbed by MPY
     reg           [MPY_WIDTH-1:0] mul_rslt;
     reg   [NUM_RC_BURST_BITS-1:0] start_addr_r;   // 22 bit - to be absorbed by DSP
-    reg                     [2:0] bank_reg [2:0];
+//    reg                     [2:0] bank_reg [2:0];
+    reg             [3 * 3 - 1:0] bank_reg;
     wire [FRAME_WIDTH_BITS+FRAME_HEIGHT_BITS-3:0] mul_rslt_w;
  //   wire                    [2:0] cur_bank;
     reg      [FRAME_WIDTH_BITS:0] row_left;   // number of 8-bursts left in the current row
@@ -180,7 +181,9 @@ module  mcntrl_tiled_rw#(
     reg   [NUM_RC_BURST_BITS-1:0] row_col_r;
 //    reg   [FRAME_HEIGHT_BITS-1:0] line_unfinished_r0;
 //    reg   [FRAME_HEIGHT_BITS-1:0] line_unfinished_r1;
-    reg   [FRAME_HEIGHT_BITS-1:0] line_unfinished_r [1:0];
+//    reg [2*FRAME_HEIGHT_BITS-1:0] line_unfinished_r;
+    reg   [FRAME_HEIGHT_BITS-1:0] line_unfinished_relw_r;
+    reg   [FRAME_HEIGHT_BITS-1:0] line_unfinished_r;
     
     wire                          pre_want;
     wire                    [1:0] status_data;
@@ -203,7 +206,7 @@ module  mcntrl_tiled_rw#(
 //    wire                          msw13_zero=!(|cmd_data[FRAME_WIDTH_BITS+15:16]); // MSW 13 (FRAME_WIDTH_BITS) low bits are all 0 - set carry bit
     wire                          msw_zero=  !(|cmd_data[31:16]); // MSW all bits are 0 - set carry bit
     wire                          tile_width_zero= !(|cmd_data[ 0+:MAX_TILE_WIDTH]);  
-//    wire                          tile_height_zero=!(|cmd_data[ 8+:MAX_TILE_HEIGHT]);  
+    wire                          tile_height_zero=!(|cmd_data[ 8+:MAX_TILE_HEIGHT]);  
     wire                          tile_vstep_zero= !(|cmd_data[16+:MAX_TILE_HEIGHT]);  
     
 //    reg                     [5:0] mode_reg;//mode register: {write_mode,keep_open,extra_pages[1:0],enable,!reset}
@@ -223,7 +226,8 @@ module  mcntrl_tiled_rw#(
     
     reg        [MAX_TILE_WIDTH:0] tile_cols;  // full number of columns in a tile
 //    reg       [MAX_TILE_HEIGHT:0] tile_rows;  // full number of rows in a tile
-    reg     [MAX_TILE_HEIGHT-1:0] tile_rows;  // full number of rows in a tile
+//    reg     [MAX_TILE_HEIGHT-1:0] tile_rows;  // full number of rows in a tile
+    reg       [MAX_TILE_HEIGHT:0] tile_rows;  // full number of rows in a tile
     reg       [MAX_TILE_HEIGHT:0] tile_vstep; // vertical step between rows of tiles
 
     reg        [MAX_TILE_WIDTH:0] num_cols_r; // full number of columns to transfer (not minus 1)
@@ -327,7 +331,7 @@ module  mcntrl_tiled_rw#(
                tile_vstep <= 0;
         end else if (set_tile_whs_w)  begin
                tile_cols <=  {tile_width_zero,  cmd_data[ 0+:MAX_TILE_WIDTH]};
-               tile_rows <=  {                  cmd_data[ 8+:MAX_TILE_HEIGHT]};
+               tile_rows <=  {tile_height_zero, cmd_data[ 8+:MAX_TILE_HEIGHT]};
                tile_vstep <= {tile_vstep_zero,  cmd_data[16+:MAX_TILE_HEIGHT]};
         end
 
@@ -365,10 +369,11 @@ module  mcntrl_tiled_rw#(
     //window_m_tile_height
     assign xfer_want=   want_r;
     assign xfer_need=   need_r;
-    assign xfer_bank=   bank_reg[2]; // TODO: just a single reg layer
+    assign xfer_bank=   bank_reg[2*3 +: 3]; // TODO: just a single reg layer
     assign xfer_row= row_col_r[NUM_RC_BURST_BITS-1:COLADDR_NUMBER-3] ;      // memory row
     assign xfer_col= row_col_r[COLADDR_NUMBER-4:0];    // start memory column in 8-bursts
-    assign line_unfinished=line_unfinished_r[1];
+//    assign line_unfinished = line_unfinished_r[FRAME_HEIGHT_BITS +: FRAME_HEIGHT_BITS];
+    assign line_unfinished = line_unfinished_r;
 
     assign chn_en =         mode_reg[MCONTR_LINTILE_NRESET] & mode_reg[MCONTR_LINTILE_EN];   // enable requests by channel (continue ones in progress)
     assign chn_rst =        ~mode_reg[MCONTR_LINTILE_NRESET]; // resets command, including fifo;
@@ -416,9 +421,9 @@ module  mcntrl_tiled_rw#(
             row_col_r <= line_start_addr+frame_x;
             line_start_page_left <=  - line_start_addr[COLADDR_NUMBER-4:0]; // 7 bits
         end
-        bank_reg[0]   <= frame_y[2:0]; //TODO: is it needed - a pipeline for the bank? - remove! 
-        for (i=0;i<2; i = i+1)
-            bank_reg[i+1] <= bank_reg[i];
+        bank_reg[0 +: 3]   <= frame_y[2:0]; //TODO: is it needed - a pipeline for the bank? - remove! 
+        for (i=0; i<2; i = i+1)
+            bank_reg[(i+1)*3 +: 3] <= bank_reg[i*3 +: 3];
      
         if (recalc_r[6]) begin    // cycle 7
             mem_page_left <= {1'b1,line_start_page_left} - frame_x[COLADDR_NUMBER-4:0];
@@ -535,18 +540,32 @@ wire    start_not_partial= xfer_start_r[0] && !xfer_limited_by_mem_page_r;
         else if (chn_rst || frame_start_r[0]) frame_finished_r <= 0;
         else if (frame_done_r)                frame_finished_r <= 1;
         //line_unfinished_r cmd_wrmem
-        if (mrst)                              line_unfinished_r[0] <= 0; //{FRAME_HEIGHT_BITS{1'b0}};
-        else if (chn_rst || frame_start_r[0]) line_unfinished_r[0] <= window_y0+start_y;
-        else if (xfer_start_r[2])             line_unfinished_r[0] <= window_y0+next_y[FRAME_HEIGHT_BITS-1:0]; // latency 2 from xfer_start
+/*       
+        if (mrst)                             line_unfinished_r[0 +: FRAME_HEIGHT_BITS] <= 0; //{FRAME_HEIGHT_BITS{1'b0}};
+        else if (chn_rst || frame_start_r[0]) line_unfinished_r[0 +: FRAME_HEIGHT_BITS] <= window_y0+start_y;
+        else if (xfer_start_r[2])             line_unfinished_r[0 +: FRAME_HEIGHT_BITS] <= window_y0+next_y[FRAME_HEIGHT_BITS-1:0]; // latency 2 from xfer_start
 
-        if (mrst)                              line_unfinished_r[1] <= 0; //{FRAME_HEIGHT_BITS{1'b0}};
-        else if (chn_rst || frame_start_r[2]) line_unfinished_r[1] <= window_y0+start_y; // _r[0] -> _r[2] to make it simultaneous with frame_number
+        if (mrst)                              line_unfinished_r[FRAME_HEIGHT_BITS +: FRAME_HEIGHT_BITS] <= 0; //{FRAME_HEIGHT_BITS{1'b0}};
+        else if (chn_rst || frame_start_r[2]) line_unfinished_r[FRAME_HEIGHT_BITS +: FRAME_HEIGHT_BITS] <= window_y0+start_y; // _r[0] -> _r[2] to make it simultaneous with frame_number
         
         // in read mode advance line number ASAP
-        else if (xfer_start_r[2] && !cmd_wrmem) line_unfinished_r[1] <= window_y0+next_y[FRAME_HEIGHT_BITS-1:0]; // latency 2 from xfer_start
+        else if (xfer_start_r[2] && !cmd_wrmem) line_unfinished_r[FRAME_HEIGHT_BITS +: FRAME_HEIGHT_BITS] <= window_y0+next_y[FRAME_HEIGHT_BITS-1:0]; // latency 2 from xfer_start
         // in write mode advance line number only when it is guaranteed it will be the first to actually access memory
-        else if (xfer_grant      && cmd_wrmem)  line_unfinished_r[1] <=  line_unfinished_r[0];
-
+        else if (xfer_grant      && cmd_wrmem)  line_unfinished_r[FRAME_HEIGHT_BITS +: FRAME_HEIGHT_BITS] <=  line_unfinished_r[0 +: FRAME_HEIGHT_BITS];
+*/
+/* 
+        if (mrst)                                                line_unfinished_relw_r <= 0;
+        else if (cmd_wrmem && (frame_start_r[1] || !chn_en))     line_unfinished_relw_r <= start_y;
+        else if ((!cmd_wrmem && recalc_r[1]) || xfer_start_r[2]) line_unfinished_relw_r <= next_y[FRAME_HEIGHT_BITS-1:0];
+        //  xfer_start_r[2] and recalc_r[1] are at the same time
+        
+        if (mrst || (frame_start || !chn_en))  line_unfinished_r <= {FRAME_HEIGHT_BITS{~cmd_wrmem}}; // lowest/highest value until valid
+        else if (recalc_r[2])                  line_unfinished_r <= line_unfinished_relw_r + window_y0;
+*/
+        if (recalc_r[0]) line_unfinished_relw_r <= curr_y + (cmd_wrmem ? 0: tile_rows);
+        
+        if (mrst || (frame_start || !chn_en))  line_unfinished_r <= {FRAME_HEIGHT_BITS{~cmd_wrmem}}; // lowest/highest value until valid
+        else if (recalc_r[2])                  line_unfinished_r <= line_unfinished_relw_r + window_y0;
         
     end
     always @ (negedge mclk) begin

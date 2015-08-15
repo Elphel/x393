@@ -92,6 +92,10 @@ module  ramp_var_w_var_r
       input                     [ 7:0] web,      // write byte enable
       input  [(9 << (LOG2WIDTH_WR-3))-1:0] data_in   // data out
     );
+`ifdef PRELOAD_BRAMS
+    `include "includes/ram36_declare_init.vh"
+`endif
+    
     generate
         if (DUMMY)
             ramp_dummy #(
@@ -102,6 +106,9 @@ module  ramp_var_w_var_r
         else if ((LOG2WIDTH_WR == 6) && (LOG2WIDTH_RD == 6))
             ramp_64w_64r #(
                 .REGISTERS    (REGISTERS)
+`ifdef PRELOAD_BRAMS
+    `include "includes/ram36_pass_init.vh"
+`endif
             ) ram_i (
                 .rclk         (rclk),     // input
                 .raddr        (raddr),    // input[8:0] 
@@ -118,6 +125,9 @@ module  ramp_var_w_var_r
             ramp_64w_lt64r #(
                 .REGISTERS    (REGISTERS),
                 .LOG2WIDTH_RD (LOG2WIDTH_RD)
+`ifdef PRELOAD_BRAMS
+    `include "includes/ram36_pass_init.vh"
+`endif
             ) ram_i (
                 .rclk         (rclk),     // input
                 .raddr        (raddr),    // input[(>8):0] 
@@ -134,6 +144,9 @@ module  ramp_var_w_var_r
             ramp_lt64w_64r #(
                 .REGISTERS    (REGISTERS),
                 .LOG2WIDTH_WR (LOG2WIDTH_WR)
+`ifdef PRELOAD_BRAMS
+    `include "includes/ram36_pass_init.vh"
+`endif
             ) ram_i (
                 .rclk         (rclk),     // input
                 .raddr        (raddr),    // input[8:0] 
@@ -151,6 +164,9 @@ module  ramp_var_w_var_r
                 .REGISTERS    (REGISTERS),
                 .LOG2WIDTH_WR (LOG2WIDTH_WR),
                 .LOG2WIDTH_RD (LOG2WIDTH_RD)
+`ifdef PRELOAD_BRAMS
+    `include "includes/ram36_pass_init.vh"
+`endif
             ) ram_i (
                 .rclk         (rclk),     // input
                 .raddr        (raddr),    // input[(>8):0] 
@@ -184,6 +200,10 @@ module  ramp_64w_64r
       input                  [ 7:0] web,      // write byte enable
       input                  [71:0] data_in  // data out
     );
+`ifdef PRELOAD_BRAMS
+    `include "includes/ram36_declare_init.vh"
+`endif
+    
     localparam  PWIDTH_WR=72;
     localparam  PWIDTH_RD=72;
     
@@ -208,6 +228,9 @@ module  ramp_64w_64r
     .SIM_DEVICE                ("7SERIES"),      // Simulation device family - "VIRTEX6", "VIRTEX5" and "7_SERIES" // "7SERIES"
     .EN_ECC_READ               ("FALSE"),        // Valid:"FALSE","TRUE" (ECC decoder circuitry)
     .EN_ECC_WRITE              ("FALSE")         // Valid:"FALSE","TRUE" (ECC decoder circuitry)
+`ifdef PRELOAD_BRAMS
+    `include "includes/ram36_pass_init.vh"
+`endif
     ) RAMB36E1_i
     (
         // Port A (Read port in SDP mode):
@@ -272,6 +295,10 @@ module  ramp_lt64w_lt64r
       input                         [ 7:0] web,      // write byte enable
       input  [(9 << (LOG2WIDTH_WR-3))-1:0] data_in   // data out
     );
+`ifdef PRELOAD_BRAMS
+    `include "includes/ram36_declare_init.vh"
+`endif
+    
     localparam  PWIDTH_WR = (LOG2WIDTH_WR > 2)? (9 << (LOG2WIDTH_WR - 3)): (1 << LOG2WIDTH_WR);
     localparam  PWIDTH_RD = (LOG2WIDTH_RD > 2)? (9 << (LOG2WIDTH_RD - 3)): (1 << LOG2WIDTH_RD);
     localparam  WIDTH_WR  = 1 << LOG2WIDTH_WR;
@@ -324,6 +351,9 @@ module  ramp_lt64w_lt64r
     parameter IS_RSTREGARSTREG_INVERTED = 1'b0;
     parameter IS_RSTREGB_INVERTED = 1'b0;
 */    
+`ifdef PRELOAD_BRAMS
+    `include "includes/ram36_pass_init.vh"
+`endif
     
     ) RAMB36E1_i
     (
@@ -387,6 +417,9 @@ module  ramp_lt64w_64r
       input                         [ 7:0] web,      // write byte enable
       input  [(9 << (LOG2WIDTH_WR-3))-1:0] data_in   // data out
     );
+`ifdef PRELOAD_BRAMS
+    `include "includes/ram36_declare_init.vh"
+`endif
     localparam  PWIDTH_WR = (LOG2WIDTH_WR > 2)? (9 << (LOG2WIDTH_WR - 3)): (1 << LOG2WIDTH_WR);
     localparam  PWIDTH_RD = 72;
     localparam  WIDTH_WR  = 1 << LOG2WIDTH_WR;
@@ -420,6 +453,9 @@ module  ramp_lt64w_64r
 
     .EN_ECC_READ               ("FALSE"),        // Valid:"FALSE","TRUE" (ECC decoder circuitry)
     .EN_ECC_WRITE              ("FALSE")         // Valid:"FALSE","TRUE" (ECC decoder circuitry)
+`ifdef PRELOAD_BRAMS
+    `include "includes/ram36_pass_init.vh"
+`endif
     ) RAMB36E1_i
     (
         // Port A (Read port in SDP mode):
@@ -482,6 +518,9 @@ module  ramp_64w_lt64r
       input                         [ 7:0] web,      // write byte enable
       input                         [71:0] data_in   // data out
     );
+  `ifdef PRELOAD_BRAMS
+    `include "includes/ram36_declare_init.vh"
+  `endif
     localparam  PWIDTH_WR = 72;
     localparam  PWIDTH_RD = (LOG2WIDTH_RD > 2)? (9 << (LOG2WIDTH_RD - 3)): (1 << LOG2WIDTH_RD);
     localparam  WIDTH_RD  = 1 << LOG2WIDTH_RD;
@@ -511,6 +550,10 @@ module  ramp_64w_lt64r
 
     .EN_ECC_READ               ("FALSE"),        // Valid:"FALSE","TRUE" (ECC decoder circuitry)
     .EN_ECC_WRITE              ("FALSE")         // Valid:"FALSE","TRUE" (ECC decoder circuitry)
+  `ifdef PRELOAD_BRAMS
+    `include "includes/ram36_pass_init.vh"
+  `endif
+    
     ) RAMB36E1_i
     (
         // Port A (Read port in SDP mode):

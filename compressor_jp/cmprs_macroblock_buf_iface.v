@@ -36,6 +36,7 @@ module  cmprs_macroblock_buf_iface (
     output        next_page_chn,      // single mclk (posedge): Done with the page in the  buffer, memory controller may read more data 
      
     input         frame_en,           // if 0 - will reset logic immediately (but not page number)
+    input         frame_start_xclk,   // frame parameters are valid after this pulse
     input         frame_go,           // start frame: if idle, will start reading data (if available),
                                       // if running - will not restart a new frame if 0.
     input  [ 4:0] left_marg,          // left margin (for not-yet-implemented) mono JPEG (8 lines tile row) can need 7 bits (mod 32 - tile)
@@ -92,7 +93,8 @@ module  cmprs_macroblock_buf_iface (
     reg           pre_first_mb;   // from frame start to mb_pre_start[2]
 //    reg           first_mb;       // from mb_pre_start[2]  to mb_pre_start[1]
     wire          starting;
-    reg frame_pre_run;
+    reg           frame_pre_run;
+    reg     [1:0] frame_may_start;
 
     assign frame_en_w = frame_en && frame_go;
     
@@ -106,13 +108,19 @@ module  cmprs_macroblock_buf_iface (
     assign last_mb = mb_last_row && mb_last_in_row;
     assign starting = |mb_pre_start;
 
-    assign mb_pre_start_w =  (mb_pre_end_in && (!last_mb || frame_en_w)) || (!frame_pre_run && frame_en_w && !frame_en_r && !starting);
-    assign frame_pre_start_w =  frame_en_w && ((mb_pre_end_in && last_mb) || (!frame_pre_run && !frame_en_r && !starting));
+//    assign mb_pre_start_w =  (mb_pre_end_in && (!last_mb || frame_en_w)) || (!frame_pre_run && frame_en_w && !frame_en_r && !starting);
+//    assign frame_pre_start_w =  frame_en_w && ((mb_pre_end_in && last_mb) || (!frame_pre_run && !frame_en_r && !starting));
+    assign mb_pre_start_w =  (mb_pre_end_in && (!last_mb || frame_may_start)) || ((frame_may_start==2'b1) && !frame_pre_run && !starting);
+    assign frame_pre_start_w =  frame_may_start[0] && ((mb_pre_end_in && last_mb) || (!frame_pre_run && !frame_may_start[1] && !starting));
     
     assign start_page = next_invalid[1:0]; // oldest page needed for this macroblock
     always @ (posedge xclk) begin
         if (!frame_en) frame_en_r <= 0;
         else           frame_en_r <= frame_en_w;
+        
+        if (!frame_en_w || starting) frame_may_start[0] <= 0;
+        else if (frame_start_xclk)   frame_may_start[0] <= 1;
+        frame_may_start[1] <= frame_may_start[0];
         
         frame_pre_start_r <= frame_pre_start_w; // same time as mb_pre_start
         
@@ -147,8 +155,10 @@ module  cmprs_macroblock_buf_iface (
          
         // calculate before starting each macroblock (will wait if buffer is not ready) (TODO: align mb_pre_start[0] to mb_pre_end[2] - same)
         //mb_pre_start_w
+        if      (!frame_en_r)                     mb_pre_start <= 0;
         if      (mb_pre_start_w)                  mb_pre_start <= 1;
         else if (!mb_pre_start[4] || buf_ready_w) mb_pre_start <= mb_pre_start << 1;
+        
         if (mb_pre_start[1]) mbl_x_r[6:3] <=      mb_first_in_row? {2'b0,left_marg[4:3]} : mbl_x_next_r[6:3];
         if (mb_pre_start[2]) mbl_x_last_r[7:3] <= {1'b0,mbl_x_r[6:3]} + {2'b0,mb_w_m1[5:3]};
         if (mb_pre_start[3]) begin
@@ -163,7 +173,7 @@ module  cmprs_macroblock_buf_iface (
         // at the end of each macroblock - calculate start page increment (and after delay - advance invalidate_next)
         // changed to after started:
         
-        // calculate next start X in page (regardless of emd of macroblock row - selection will be at macroblock start)
+        // calculate next start X in page (regardless of end of macroblock row - selection will be at macroblock start)
         
         if (mb_pre_start[5]) mbl_x_inc_r[7:3] <= {1'b0,mbl_x_r[6:3]} + {3'b0,mb_hper[4:3]};
         if  (mb_pre_start[6]) begin

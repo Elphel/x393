@@ -102,7 +102,9 @@ module  ramt_var_w_var_r
       output     [(1 << LOG2WIDTH_B)-1:0] data_out_b,// data out port B
       input      [(1 << LOG2WIDTH_B)-1:0] data_in_b  // data in port B
 );
-
+`ifdef PRELOAD_BRAMS
+    `include "includes/ram36_declare_init.vh"
+`endif
     localparam  PWIDTH_A = (LOG2WIDTH_A > 2)? (9 << (LOG2WIDTH_A - 3)): (1 << LOG2WIDTH_A);
     localparam  PWIDTH_B = (LOG2WIDTH_B > 2)? (9 << (LOG2WIDTH_B - 3)): (1 << LOG2WIDTH_B);
     localparam  WIDTH_A  = 1 << LOG2WIDTH_A;
@@ -143,20 +145,9 @@ module  ramt_var_w_var_r
 
     .EN_ECC_READ               ("FALSE"),        // Valid:"FALSE","TRUE" (ECC decoder circuitry)
     .EN_ECC_WRITE              ("FALSE")         // Valid:"FALSE","TRUE" (ECC decoder circuitry)
-//    .INIT_A(36'h0),               // Output latches initialization data
-//    .INIT_B(36'h0),               // Output latches initialization data
-//    .SRVAL_A(36'h0),              // Output latches initialization data (copied at when RSTRAM/RSTREG activated)    
-//    .SRVAL_B(36'h0)               // Output latches initialization data (copied at when RSTRAM/RSTREG activated)
-/*
-    parameter IS_CLKARDCLK_INVERTED = 1'b0;
-    parameter IS_CLKBWRCLK_INVERTED = 1'b0;
-    parameter IS_ENARDEN_INVERTED = 1'b0;
-    parameter IS_ENBWREN_INVERTED = 1'b0;
-    parameter IS_RSTRAMARSTRAM_INVERTED = 1'b0;
-    parameter IS_RSTRAMB_INVERTED = 1'b0;
-    parameter IS_RSTREGARSTREG_INVERTED = 1'b0;
-    parameter IS_RSTREGB_INVERTED = 1'b0;
-*/    
+`ifdef PRELOAD_BRAMS
+    `include "includes/ram36_pass_init.vh"
+`endif
     
     ) RAMB36E1_i
     (

@@ -96,6 +96,9 @@ module  ram18_var_w_var_r
       input                     [ 3:0] web,      // write byte enable
       input  [(1 << LOG2WIDTH_WR)-1:0] data_in   // data out
     );
+`ifdef PRELOAD_BRAMS
+    `include "includes/ram18_declare_init.vh"
+`endif
     generate
         if (DUMMY)
             ram18_dummy #(
@@ -106,6 +109,9 @@ module  ram18_var_w_var_r
         else if ((LOG2WIDTH_WR == 5) && (LOG2WIDTH_RD == 5))
             ram18_32w_32r #(
                 .REGISTERS    (REGISTERS)
+`ifdef PRELOAD_BRAMS
+    `include "includes/ram18_pass_init.vh"
+`endif
             ) ram_i (
                 .rclk         (rclk),     // input
                 .raddr        (raddr),    // input[8:0] 
@@ -122,6 +128,9 @@ module  ram18_var_w_var_r
             ram18_32w_lt32r #(
                 .REGISTERS    (REGISTERS),
                 .LOG2WIDTH_RD (LOG2WIDTH_RD)
+`ifdef PRELOAD_BRAMS
+    `include "includes/ram18_pass_init.vh"
+`endif
             ) ram_i (
                 .rclk         (rclk),     // input
                 .raddr        (raddr),    // input[(>8):0] 
@@ -138,6 +147,9 @@ module  ram18_var_w_var_r
             ram18_lt32w_32r #(
                 .REGISTERS    (REGISTERS),
                 .LOG2WIDTH_WR (LOG2WIDTH_WR)
+`ifdef PRELOAD_BRAMS
+    `include "includes/ram18_pass_init.vh"
+`endif
             ) ram_i (
                 .rclk         (rclk),     // input
                 .raddr        (raddr),    // input[8:0] 
@@ -155,6 +167,9 @@ module  ram18_var_w_var_r
                 .REGISTERS    (REGISTERS),
                 .LOG2WIDTH_WR (LOG2WIDTH_WR),
                 .LOG2WIDTH_RD (LOG2WIDTH_RD)
+`ifdef PRELOAD_BRAMS
+    `include "includes/ram18_pass_init.vh"
+`endif
             ) ram_i (
                 .rclk         (rclk),     // input
                 .raddr        (raddr),    // input[(>8):0] 
@@ -189,6 +204,9 @@ module  ram18_32w_32r
       input                  [ 3:0] web,      // write byte enable
       input                  [31:0] data_in  // data out
     );
+`ifdef PRELOAD_BRAMS
+    `include "includes/ram18_declare_init.vh"
+`endif
     localparam  PWIDTH_WR=36;
     localparam  PWIDTH_RD=36;
     
@@ -209,6 +227,9 @@ module  ram18_32w_32r
     .SIM_COLLISION_CHECK       ("ALL"),          // Valid: "ALL", "GENERATE_X_ONLY", "NONE", and "WARNING_ONLY"
     .INIT_FILE                 ("NONE"),         // "NONE" or filename with initialization data
     .SIM_DEVICE                ("7SERIES")       // Simulation device family - "VIRTEX6", "VIRTEX5" and "7_SERIES" // "7SERIES"
+`ifdef PRELOAD_BRAMS
+    `include "includes/ram18_pass_init.vh"
+`endif
     ) RAMB36E1_i
     (
         // Port A (Read port in SDP mode):
@@ -260,6 +281,9 @@ module  ram18_lt32w_lt32r
       input                         [ 3:0] web,      // write byte enable
       input      [(1 << LOG2WIDTH_WR)-1:0] data_in   // data out
     );
+`ifdef PRELOAD_BRAMS
+    `include "includes/ram18_declare_init.vh"
+`endif
     localparam  PWIDTH_WR = (LOG2WIDTH_WR > 2)? (9 << (LOG2WIDTH_WR - 3)): (1 << LOG2WIDTH_WR);
     localparam  PWIDTH_RD = (LOG2WIDTH_RD > 2)? (9 << (LOG2WIDTH_RD - 3)): (1 << LOG2WIDTH_RD);
     localparam  WIDTH_WR  = 1 << LOG2WIDTH_WR;
@@ -288,7 +312,9 @@ module  ram18_lt32w_lt32r
     .SIM_COLLISION_CHECK       ("ALL"),          // Valid: "ALL", "GENERATE_X_ONLY", "NONE", and "WARNING_ONLY"
     .INIT_FILE                 ("NONE"),         // "NONE" or filename with initialization data
     .SIM_DEVICE                ("7SERIES")       // Simulation device family - "VIRTEX6", "VIRTEX5" and "7_SERIES" // "7SERIES"
-    
+`ifdef PRELOAD_BRAMS
+    `include "includes/ram18_pass_init.vh"
+`endif
     ) RAMB36E1_i
     (
         // Port A (Read port in SDP mode):
@@ -338,6 +364,9 @@ module  ram18_lt32w_32r
       input                         [ 3:0] web,      // write byte enable
       input      [(1 << LOG2WIDTH_WR)-1:0] data_in   // data out
     );
+`ifdef PRELOAD_BRAMS
+    `include "includes/ram18_declare_init.vh"
+`endif
     localparam  PWIDTH_WR = (LOG2WIDTH_WR > 2)? (9 << (LOG2WIDTH_WR - 3)): (1 << LOG2WIDTH_WR);
     localparam  PWIDTH_RD = 36;
     localparam  WIDTH_WR  = 1 << LOG2WIDTH_WR;
@@ -362,6 +391,9 @@ module  ram18_lt32w_32r
     .SIM_COLLISION_CHECK       ("ALL"),          // Valid: "ALL", "GENERATE_X_ONLY", "NONE", and "WARNING_ONLY"
     .INIT_FILE                 ("NONE"),         // "NONE" or filename with initialization data
     .SIM_DEVICE                ("7SERIES")      // Simulation device family - "VIRTEX6", "VIRTEX5" and "7_SERIES" // "7SERIES"
+`ifdef PRELOAD_BRAMS
+    `include "includes/ram18_pass_init.vh"
+`endif
     ) RAMB36E1_i
     (
         // Port A (Read port in SDP mode):
@@ -412,6 +444,9 @@ module  ram18_32w_lt32r
       input                         [ 3:0] web,      // write byte enable
       input                         [31:0] data_in   // data out
     );
+`ifdef PRELOAD_BRAMS
+    `include "includes/ram18_declare_init.vh"
+`endif
     localparam  PWIDTH_WR = 36;
     localparam  PWIDTH_RD = (LOG2WIDTH_RD > 2)? (9 << (LOG2WIDTH_RD - 3)): (1 << LOG2WIDTH_RD);
     localparam  WIDTH_RD  = 1 << LOG2WIDTH_RD;
@@ -434,6 +469,9 @@ module  ram18_32w_lt32r
     .SIM_COLLISION_CHECK       ("ALL"),          // Valid: "ALL", "GENERATE_X_ONLY", "NONE", and "WARNING_ONLY"
     .INIT_FILE                 ("NONE"),         // "NONE" or filename with initialization data
     .SIM_DEVICE                ("7SERIES")       // Simulation device family - "VIRTEX6", "VIRTEX5" and "7_SERIES" // "7SERIES"
+`ifdef PRELOAD_BRAMS
+    `include "includes/ram18_pass_init.vh"
+`endif
     ) RAMB36E1_i
     (
         // Port A (Read port in SDP mode):

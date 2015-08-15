@@ -40,7 +40,7 @@ module  cmprs_frame_sync#(
     input                         cmprs_standalone,   // @mclk single-cycle: generate a single frame_start_dst in unbonded (not synchronized) mode.
                                                       // cmprs_run should be off
     input                         sigle_frame_buf,    // memory controller uses a single frame buffer (frame_number_* == 0), use other sync                                                      
-    input                         vsync_late,         // @xclk delayed start of frame, @xclk. In 353 it was 16 lines after VACT active
+    input                         vsync_late,         // @mclk delayed start of frame, @xclk. In 353 it was 16 lines after VACT active
                                                       // source channel should already start, some delay give time for sequencer commands
                                                       // that should arrive before it
     input                         frame_started,      // @xclk started first macroblock (checking for broken frames)
@@ -71,7 +71,7 @@ module  cmprs_frame_sync#(
  b) turned off enable while frame was being compressed
  Abort frame lasts until flush end or timeout expire
 */
-    wire   vsync_late_mclk; // single mclk cycle, reclocked from vsync_late
+//    wire   vsync_late_mclk; // single mclk cycle, reclocked from vsync_late
     wire   frame_started_mclk; 
     reg    bonded_mode;
     reg    frame_start_dst_r;
@@ -86,12 +86,16 @@ module  cmprs_frame_sync#(
     reg [CMPRS_TIMEOUT_BITS-1:0] timeout;
     reg    cmprs_en_extend_r=0;
     reg    cmprs_en_d;
+//    reg    cmprs_en_xclk;
     assign frame_start_dst = frame_start_dst_r;
     assign cmprs_en_extend = cmprs_en_extend_r;
     
     assign stuffer_running_mclk = stuffer_running_mclk_r;
     assign reading_frame =        reading_frame_r;
     
+//    always @ (posedge xclk) begin
+//        cmprs_en_xclk <=cmprs_en;
+//    end
     always @ (posedge mclk) begin
         if       (mrst)                                       cmprs_en_extend_r <= 0;
         else if  (cmprs_en)                                   cmprs_en_extend_r <= 1;
@@ -107,34 +111,35 @@ module  cmprs_frame_sync#(
         
         cmprs_en_d <= cmprs_en;
 
-        broken_frame <=  cmprs_en && cmprs_run && vsync_late_mclk && reading_frame_r; // single xclk pulse
+        broken_frame <=  cmprs_en && cmprs_run && vsync_late && reading_frame_r; // single xclk pulse
         aborted_frame <= cmprs_en_d && !cmprs_en && stuffer_running_mclk_r;
         
         if      (!stuffer_running_mclk_r ||!cmprs_en_extend_r) force_flush_long <= 0;
-        else if (broken_frame || aborted_frame)              force_flush_long <= 1;
+        else if (broken_frame || aborted_frame)                force_flush_long <= 1;
 
     
-        if (!cmprs_en || frame_done || (cmprs_run && vsync_late_mclk)) reading_frame_r <= 0;
-        else if (frame_started_mclk)                                   reading_frame_r <= 1;
+        if (!cmprs_en || frame_done || (cmprs_run && vsync_late)) reading_frame_r <= 0;
+        else if (frame_started_mclk)                              reading_frame_r <= 1;
 
-        frame_start_dst_r <= cmprs_en && (cmprs_run ? (vsync_late_mclk && !reading_frame_r) : cmprs_standalone);
+        frame_start_dst_r <= cmprs_en && (cmprs_run ? (vsync_late && !reading_frame_r) : cmprs_standalone);
         if      (!cmprs_en)        bonded_mode <= 0;
         else if (cmprs_run)        bonded_mode <= 1;
         else if (cmprs_standalone) bonded_mode <= 0;
         
-        if (!cmprs_en || !cmprs_run || vsync_late_mclk) frames_differ <= 0;
+        if (!cmprs_en || !cmprs_run || vsync_late) frames_differ <= 0;
         else if (frame_done_src)                        frames_differ <= 1'b1;
         
         frames_numbers_differ <= frame_number_src != frame_number;
         
         line_numbers_sync <= (line_unfinished_src > line_unfinished);
         
-        suspend <= !bonded_mode && ((sigle_frame_buf ? frames_differ : frames_numbers_differ) || line_numbers_sync);
+//        suspend <= !bonded_mode && ((sigle_frame_buf ? frames_differ : frames_numbers_differ) || line_numbers_sync);
+        suspend <= bonded_mode && ((sigle_frame_buf ? frames_differ : frames_numbers_differ) || !line_numbers_sync);
         
     
     end
     
-    pulse_cross_clock vsync_late_mclk_i (.rst(xrst), .src_clk(xclk), .dst_clk(mclk), .in_pulse(vsync_late), .out_pulse(vsync_late_mclk),.busy());
+//    pulse_cross_clock vsync_late_mclk_i (.rst(xrst), .src_clk(xclk), .dst_clk(mclk), .in_pulse(cmprs_en_xclk && vsync_late), .out_pulse(vsync_late_mclk),.busy());
     pulse_cross_clock frame_started_i   (.rst(xrst), .src_clk(xclk), .dst_clk(mclk), .in_pulse(frame_started), .out_pulse(frame_started_mclk),.busy());
 
 endmodule

@@ -36,28 +36,28 @@ module  cmprs_pixel_buf_iface #(
         parameter CMPRS_MONO8 =             7  // Regular JPEG monochrome with 8x8 macroblocks (not yet implemented)
         
     )(
-    input         xclk,               // global clock input, compressor single clock rate
-    input         frame_en,           // if 0 - will reset logic immediately (but not page number)
+    input             xclk,               // global clock input, compressor single clock rate
+    input             frame_en,           // if 0 - will reset logic immediately (but not page number)
     // buffer interface, DDR3 memory read
-    input  [ 7:0] buf_di,             // data from the buffer
-    output [11:0] buf_ra,             // buffer read address (2 MSB - page number)
-    output [ 1:0] buf_rd,             // buf {regen, re}
+    input      [ 7:0] buf_di,             // data from the buffer
+    output     [11:0] buf_ra,             // buffer read address (2 MSB - page number)
+    output     [ 1:0] buf_rd,             // buf {regen, re}
                                       // if running - will not restart a new frame if 0.
-    input  [ 2:0] converter_type,    // 0 - color18, 1 - color20, 2 - mono, 3 - jp4, 4 - jp4-diff, 7 - mono8 (not yet implemented)
-    input  [ 5:0] mb_w_m1,            // macroblock width minus 1 // 3 LSB not used, SHOULD BE SET to 3'b111
-    input  [ 5:0] mb_h_m1,            // macroblock horizontal period (8/16) // 3 LSB not used  SHOULD BE SET to 3'b111
-    input  [ 1:0] tile_width,         // memory tile width (can be 128 for monochrome JPEG)   Can be 32/64/128: 0 - 16, 1 - 32, 2 - 64, 3 - 128
-    input         tile_col_width,     // 0 - 16 pixels,  1 -32 pixels
+    input      [ 2:0] converter_type,    // 0 - color18, 1 - color20, 2 - mono, 3 - jp4, 4 - jp4-diff, 7 - mono8 (not yet implemented)
+    input      [ 5:0] mb_w_m1,            // macroblock width minus 1
+    input      [ 5:0] mb_h_m1,            // macroblock height minus 1
+    input      [ 1:0] tile_width,         // memory tile width (can be 128 for monochrome JPEG)   Can be 32/64/128: 0 - 16, 1 - 32, 2 - 64, 3 - 128
+    input             tile_col_width,     // 0 - 16 pixels,  1 -32 pixels
     // Tiles/macroblocks level (from cmprs_macroblock_buf_iface)
-    output        mb_pre_end,         // just in time to start a new macroblock w/o gaps
-    output        mb_release_buf,     // send required "next_page" pulses to buffer. Having rather long minimal latency in the memory
+    output            mb_pre_end,         // just in time to start a new macroblock w/o gaps
+    output            mb_release_buf,     // send required "next_page" pulses to buffer. Having rather long minimal latency in the memory
                                       // controller this can just be the same as mb_pre_end_in        
-    input         mb_pre_start,       // 1 clock cycle before stream of addresses to the buffer
-    input  [ 1:0] start_page,         // page to read next tile from (or first of several pages)
-    input  [ 6:0] macroblock_x,       // macroblock left pixel x relative to a tile (page) Maximal page - 128 bytes wide
-    output [ 7:0] data_out,           //
-    output        pre_first_out,      // For each macroblock in a frame
-    output        data_valid          //
+    input             mb_pre_start,       // 1 clock cycle before stream of addresses to the buffer
+    input      [ 1:0] start_page,         // page to read next tile from (or first of several pages)
+    input      [ 6:0] macroblock_x,       // macroblock left pixel x relative to a tile (page) Maximal page - 128 bytes wide
+    output reg [ 7:0] data_out,           //
+    output            pre_first_out,      // For each macroblock in a frame
+    output reg        data_valid          //
 );
     localparam PERIOD_COLOR18 = 384; // >18*18, limited by 6*64 (macroblocks)
     localparam PERIOD_COLOR20 = 400; // limited by the 20x20 padded macroblock
@@ -68,7 +68,7 @@ module  cmprs_pixel_buf_iface #(
     
 
     reg   [CMPRS_BUF_EXTRA_LATENCY+3:0] buf_re=0;
-    reg    [ 7:0] do_r;
+//    reg    [ 7:0] do_r;
     reg    [11:0] bufa_r;             // buffer read address (2 MSB - page number)
     reg    [11:0] row_sa;             // row start address
     reg    [ 9:0] tile_sa;            // tile start address for the same row (w/o page number) for continuing row
@@ -79,9 +79,9 @@ module  cmprs_pixel_buf_iface #(
     reg    [ 5:0] rows_left;
     reg    [ 6:0] tile_x;             // horizontal position in a tile
     reg    [ 4:0] column_x;           // horizontal position in a column (0..31 or 0..15)
-    reg           last_col;
-    reg           first_col;
-    reg           last_row;
+    reg           last_col;           // macroblock last column
+    reg           first_col;          // macroblock first column
+    reg           last_row;           // macroblock last row
     
     wire          addr_run_end; // generate last cycle of address run
     wire   [ 6:0] tile_width_or; // set unused msb to all 1
@@ -105,9 +105,8 @@ module  cmprs_pixel_buf_iface #(
     assign mb_pre_end =        mb_pre_end_r;
     assign mb_release_buf =    mb_release_buf_r;
     assign buf_rd =            buf_re[1:0];
-    assign data_out =          do_r;
+//    assign data_out =          do_r;
     assign pre_first_out =     pre_first_out_r;
-    assign data_valid =        buf_re[CMPRS_BUF_EXTRA_LATENCY+2];
 
     always @(posedge xclk) begin
         if      (!frame_en)     buf_re[0] <= 0;
@@ -118,7 +117,7 @@ module  cmprs_pixel_buf_iface #(
         else                    buf_re[CMPRS_BUF_EXTRA_LATENCY+3:1] <= {buf_re[CMPRS_BUF_EXTRA_LATENCY+2:0]};
 
         // Buffer data read:
-        if (buf_re[CMPRS_BUF_EXTRA_LATENCY+2]) do_r <= buf_di;
+        if (buf_re[CMPRS_BUF_EXTRA_LATENCY+2]) data_out <= buf_di;
         
         if (!frame_en) pre_first_out_r <= 0;
         else pre_first_out_r <= buf_re[CMPRS_BUF_EXTRA_LATENCY+1] && ! buf_re[CMPRS_BUF_EXTRA_LATENCY+2];
@@ -131,10 +130,12 @@ module  cmprs_pixel_buf_iface #(
         
         if      (!frame_en)     buf_re[CMPRS_BUF_EXTRA_LATENCY+2:1] <= 0;
         
-        if (buf_re[0]) last_col <= 0;
-        else           last_col <= (cols_left == 1);
+//        if (buf_re[0]) last_col <= 0; // ????
+        if (!buf_re[0]) last_col <= 0;
+        else            last_col <= (cols_left == 1);
         
-        if     (buf_re[0]) last_row <= 0;
+//        if     (buf_re[0]) last_row <= 0;
+        if    (!buf_re[0]) last_row <= 0;
         else if (last_col) last_row <= (rows_left == 1);
 
         first_col <= (mb_pre_start || (last_col && !last_row));
@@ -153,12 +154,13 @@ module  cmprs_pixel_buf_iface #(
         if  (mb_pre_start || last_col) tile_x <= {2'b0,macroblock_x[4:0]} | tile_width_or;
         else if (buf_re[0])            tile_x <= (tile_x+1)               | tile_width_or;
         
-        if  (mb_pre_start || last_col)  bufa_r[11:10] <= start_page;
+        if      (mb_pre_start)          bufa_r[11:10] <=  start_page;
+        else if (last_col)              bufa_r[11:10] <= row_sa[11:10]; // start_page;
         else if (last_in_tile)          bufa_r[11:10] <= bufa_r[11:10] + 1;
         
         // Most time critical - calculation of the buffer address
         if  (mb_pre_start)              bufa_r[9:0] <= {3'b0,macroblock_x};
-        else if (last_col)              bufa_r[9:0] <= row_sa[9:0];
+        else if (last_col)              bufa_r[9:0] <= row_sa[9:0]; // 'bx next cycle after AFTER mb_pre_start
         else if (last_in_tile)          bufa_r[9:0] <= tile_sa;
         else if (buf_re[0])             bufa_r[9:0] <= bufa_r[9:0] + {last_in_col?col_inc[9:4]:6'b0,4'b1};  
         
@@ -166,7 +168,7 @@ module  cmprs_pixel_buf_iface #(
         if      (!frame_en)     period_cntr <= 0;
         else if (mb_pre_start) begin
             case (converter_type[2:0])
-                CMPRS_COLOR18: period_cntr <= PERIOD_COLOR18 - 1;
+                CMPRS_COLOR18: period_cntr <= PERIOD_COLOR18 - 1; // period = 384 - limited by 6*64, not by 18x18
                 CMPRS_COLOR20: period_cntr <= PERIOD_COLOR20 - 1;
                 CMPRS_MONO16:  period_cntr <= PERIOD_MONO16  - 1;
                 CMPRS_JP4:     period_cntr <= PERIOD_JP4     - 1;
@@ -182,6 +184,18 @@ module  cmprs_pixel_buf_iface #(
         if (!frame_en) mb_release_buf_r <= 0;
         else           mb_release_buf_r <= (period_cntr == (CMPRS_RELEASE_EARLY+1));
         
+        data_valid <= buf_re[CMPRS_BUF_EXTRA_LATENCY+2];
+        
     end
+`ifdef SIMULATION
+     reg [8:0] sim_dout_cntr;
+     always @(posedge xclk)  begin
+        if (!data_valid) sim_dout_cntr <= 0;
+        else sim_dout_cntr <= sim_dout_cntr + 1;
+        if (data_valid) begin
+            $display("CMPRS INPUT %x:%x @ %t",sim_dout_cntr, data_out, $time);
+        end
+     end
+`endif    
     
 endmodule

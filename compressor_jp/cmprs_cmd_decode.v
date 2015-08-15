@@ -153,6 +153,8 @@ module  cmprs_cmd_decode#(
 //                    cr_w,   // data written to cr (1 cycle long) - just to reset legacy IRQ
 //                    ntiles,//[17:0] - number of tiles in a frame to process
     input                         frame_start,        // @mclk
+    output                        frame_start_xclk,   // frame start, parameters are copied at this pulse
+    
                                   //  outputs sync @ posedge mclk:
     output                        cmprs_en_mclk,      // @mclk 0 resets immediately
     input                         cmprs_en_extend,    // @mclk keep compressor enabled for graceful shutdown
@@ -162,7 +164,7 @@ module  cmprs_cmd_decode#(
                                                       // cmprs_run should be off
     output reg                    sigle_frame_buf,    // memory controller uses a single frame buffer (frame_number_* == 0), use other sync
                                   //  outputs sync @ posedge xclk:
-    output reg                    cmprs_en_xclk,      // enable compressor, turne off immedaitely
+    output reg                    cmprs_en_xclk,      // enable compressor, turn off immedaitely
     output reg                    cmprs_en_late_xclk, // enable stuffer, extends control fields for graceful shutdown
 //                    cmprs_start, // single cycle when single or constant compression is turned on
 //                    cmprs_repeat,// high in repetitive mode
@@ -283,7 +285,7 @@ module  cmprs_cmd_decode#(
         if      (mrst)           format_mclk <=  0;
         else if (format_we_r)    format_mclk <=  di_r[30:0];
         
-        if      (mrst)           color_sat_mclk <=  0;
+        if      (mrst)           color_sat_mclk <=  'h0b6090; // 'h16c120 - saturation = 2
         else if (color_sat_we_r) color_sat_mclk <=  di_r[23:0];
         
         if      (mrst)           coring_mclk <=  0;
@@ -292,10 +294,12 @@ module  cmprs_cmd_decode#(
     end
     
     // re-clock to compressor clock
-    
-    always @ (posedge xclk) if (ctrl_we_xclk) begin
+    always @ (posedge xclk)  begin
         cmprs_en_xclk   <=      cmprs_en_mclk_r;
         cmprs_en_late_xclk  <=  cmprs_en_mclk_r || cmprs_en_extend;
+    end    
+    always @ (posedge xclk) if (ctrl_we_xclk) begin
+//        cmprs_en_late_xclk  <=  cmprs_en_mclk_r || cmprs_en_extend;
         cmprs_qpage_xclk <=     cmprs_qpage_mclk;
         cmprs_dcsub_xclk <=     cmprs_dcsub_mclk;
         cmprs_mode_xclk <=      cmprs_mode_mclk;

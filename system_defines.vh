@@ -1,7 +1,7 @@
   // This file may be used to define same pre-processor macros to be included into each parsed file
 `ifndef SYSTEM_DEFINES
   `define SYSTEM_DEFINES
-  
+  `define PRELOAD_BRAMS
 // Enviroment-dependent options
   `ifdef IVERILOG
     `define SIMULATION

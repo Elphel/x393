@@ -41,12 +41,14 @@ module  multipulse_cross_clock#(
     wire              single_rq_w;
     reg               single_rq_r=0;
 
-    assign busy = busy_single && (|pend_cntr);
-    assign single_rq_w = busy_single && (|pend_cntr);
+//    assign busy = busy_single && (|pend_cntr);
+    assign busy = busy_single || (|pend_cntr);
+    assign single_rq_w = !busy_single && (|pend_cntr);
     
     always @(posedge src_clk) begin
         single_rq_r <= single_rq_w;
-        pend_cntr <= pend_cntr + (we ? num_pulses : {WIDTH{1'b0}}) + (single_rq_r ? {WIDTH{1'b1}}:{WIDTH{1'b0}});
+        if (rst) pend_cntr <= 0;
+        else pend_cntr <= pend_cntr + (we ? num_pulses : {WIDTH{1'b0}}) + (single_rq_r ? {WIDTH{1'b1}}:{WIDTH{1'b0}});
     end
     
     pulse_cross_clock #(
