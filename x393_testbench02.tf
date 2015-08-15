@@ -1888,8 +1888,8 @@ task setup_sensor_channel;
         3,                      // num_macro_cols_m1; // number of macroblock colums minus 1
         1,                      // num_macro_rows_m1; // number of macroblock rows minus 1
         1,                      // input [31:0] left_margin;       // left margin of the first pixel (0..31) for 32-pixel wide colums in memory access
-        'hc0,                   // input [31:0] colorsat_blue; //color saturation for blue (10 bits) //'h90 for 100%
-        'h90,                   // colorsat_red; //color saturation for red (10 bits)   // 'b6 for 100%
+        'h120,                  // input [31:0] colorsat_blue; //color saturation for blue (10 bits) //'h90 for 100%
+        'h16c,                  // colorsat_red; //color saturation for red (10 bits)   // 'b6 for 100%
         0);                     // input [31:0] coring;     // coring value
     // TODO: calculate widths correctly!
     setup_compressor_memory (
