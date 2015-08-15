@@ -120,35 +120,38 @@ module xdct393   (
     wire   [15:0] tm_out;
     wire   [15:0] tm_di;
 
-    reg           stage1_done_r; // delay by one clock to use memory output register
+//    reg           stage1_done_r; // delay by one clock to use memory output register
     
-    wire          tm_re=1'b1; // TODO: generate, for now just 1'b1
-    reg           tm_regen;
+    wire          tm_re; // =1'b1; // TODO: generate, for now just 1'b1
+    wire           tm_regen;
     always @ (posedge clk) begin
         last_in <=       (tm_wa[5:0]== 6'h30);
-        stage1_done_r <= stage1_done_r;
-        tm_regen <=      tm_re;
+//        stage1_done_r <= stage1_done;
+//        tm_regen <=      tm_re;
     end
     dct393_stage1 i_dct_stage1(
-        .clk(clk),
-        .en(en),
-        .start(start),
-        .xin(xin),      // [7:0]
-        .we(tm_we),          // write to transpose memory
-        .wr_cntr(tm_wa), // [6:0]    transpose memory write address
-        .z_out(tm_di[15:0]),
-        .page(tm_page),
-        .done(stage1_done));
+        .clk       (clk),
+        .en        (en),
+        .start     (start),
+        .xin       (xin),      // [7:0]
+        .we        (tm_we),          // write to transpose memory
+        .wr_cntr   (tm_wa), // [6:0]    transpose memory write address
+        .z_out     (tm_di[15:0]),
+        .page      (tm_page),
+        .done      (stage1_done));
+        
     dct393_stage2 i_dct_stage2(
-        .clk(clk),
-        .en(en),
-        .start(stage1_done),      // stage 1 finished, data available in transpose memory
-        .page(tm_page),      // transpose memory page finished, valid at start
-        .rd_cntr(tm_ra[6:0]), // [6:0]    transpose memory read address
-        .tdin(tm_out[15:0]),      // [7:0] - data from transpose memory
-        .endv(pre_first_out),
-        .dv(dv),          // data output valid
-        .dct2_out(d_out[12:0]));// [10:0]output data
+        .clk       (clk),
+        .en        (en),
+        .start     (stage1_done),      // stage 1 finished, data available in transpose memory (extra RAM latency)
+        .page      (tm_page),      // transpose memory page finished, valid at start
+        .rd_cntr   (tm_ra[6:0]), // [6:0]    transpose memory read address
+        .ren       (tm_re), // output
+        .regen     (tm_regen), // output reg 
+        .tdin      (tm_out[15:0]),      // [7:0] - data from transpose memory
+        .endv      (pre_first_out),
+        .dv        (dv),          // data output valid
+        .dct2_out  (d_out[12:0]));// [10:0]output data
 
     ram18_var_w_var_r #(
         .REGISTERS     (1),
@@ -419,6 +422,8 @@ module dct393_stage2 (
     input             start,      // stage 1 finished, data available in transpose memory
     input             page,      // transpose memory page finished, valid at start
     output      [6:0] rd_cntr, // [6:0]    transpose memory read address
+    output            ren,     // read enable transpose memory
+    output reg        regen,   // register enable in transpose memory
     input      [15:0] tdin,      // [15:0] - data from transpose memory, added 6 bit fractional part
     output            endv,        // one cycle ahead of starting (continuing) dv
     output reg        dv,          // data output valid
@@ -460,24 +465,32 @@ module dct393_stage2 (
     reg           enable_toggle;
     reg           en_started;
     wire          disdv; // AF2015: was missing
-    
-
 // SRL16 i_endv       (.Q(endv), .A0(1'b0), .A1(1'b1), .A2(1'b1), .A3(1'b1), .CLK(clk), .D(start));    // dly=14+1
-    dly_16 #(.WIDTH(1)) i_endv(.clk(clk),.rst(1'b0), .dly(4'd14), .din(start), .dout(endv));    // dly=14+1
+//    dly_16 #(.WIDTH(1)) i_endv(.clk(clk),.rst(1'b0), .dly(4'd14), .din(start), .dout(endv));    // dly=14+1
+    dly_16 #(.WIDTH(1)) i_endv(.clk(clk),.rst(1'b0), .dly(4'd15), .din(start), .dout(endv));    // dly=15+1
  
-// SRL16 i_disdv      (.Q(disdv), .A0(1'b0), .A1(1'b1), .A2(1'b1), .A3(1'b1), .CLK(clk), .D(rd_cntr[5:0]==6'h3f));    // dly=14+1
-    dly_16 #(.WIDTH(1)) i_disdv(.clk(clk),.rst(1'b0), .dly(4'd14), .din(rd_cntr[5:0]==6'h3f), .dout(disdv));    // dly=14+1
+// SRL16 i_disdv      (.Q(disdv), .A0(1'b0), .A1(1'b1), .A2(1'b1), .A3(1'b1), .CLK(clk), .D(rd_cntrs[5:0]==6'h3f));    // dly=14+1
+//    dly_16 #(.WIDTH(1)) i_disdv(.clk(clk),.rst(1'b0), .dly(4'd14), .din(rd_cntrs[5:0]==6'h3f), .dout(disdv));    // dly=14+1
+    dly_16 #(.WIDTH(1)) i_disdv(.clk(clk),.rst(1'b0), .dly(4'd15), .din(rd_cntrs[5:0]==6'h3f), .dout(disdv));    // dly=15+1
 
 // SRL16 i_sxregs      (.Q(sxregs),    .A0(1'b0), .A1(1'b0), .A2(1'b0), .A3(1'b1), .CLK(clk),.D((rd_cntr[5:3]==3'h0) && en_started));    // dly=8+1
-    dly_16 #(.WIDTH(1)) i_sxregs(.clk(clk),.rst(1'b0), .dly(4'd8), .din((rd_cntr[5:3]==3'h0) && en_started), .dout(sxregs));    // dly=8+1
+//    dly_16 #(.WIDTH(1)) i_sxregs(.clk(clk),.rst(1'b0), .dly(4'd8), .din((rd_cntr[5:3]==3'h0) && en_started), .dout(sxregs));    // dly=8+1
+    dly_16 #(.WIDTH(1)) i_sxregs(.clk(clk),.rst(1'b0), .dly(4'd9), .din((rd_cntrs[2:0]==3'h0) && en_started), .dout(sxregs));    // dly=9+1
 
 // SRL16 i_sxregs_d8   (.Q(sxregs_d8), .A0(1'b1), .A1(1'b1), .A2(1'b1), .A3(1'b0), .CLK(clk),.D(sxregs && en_started));    // dly=7+1
     dly_16 #(.WIDTH(1)) i_sxregs_d8(.clk(clk),.rst(1'b0), .dly(4'd7), .din(sxregs && en_started), .dout(sxregs_d8));    // dly=7+1
 
-    always @ (posedge clk) begin 
+    assign ren = en_started;
+    
+    always @ (posedge clk) begin
         enable_toggle <= en && (sxregs || (enable_toggle && !sxregs_d8));
         
-        en_started <= en && (start || en_started);
+//        en_started <= en && (start || en_started);
+        if      (!en)                   en_started <= 0;
+        else if (start)                 en_started <= 1;
+        else if (rd_cntrs[5:0] == 6'h3f) en_started <= 0; // should be after (start) as they happen simultaneously
+        
+        regen <= en_started;
 
         dv <= en && (endv || (dv && ~disdv));
 

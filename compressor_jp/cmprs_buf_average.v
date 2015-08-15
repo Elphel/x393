@@ -356,11 +356,11 @@ module  cmprs_buf_average#(
         .rclk         (xclk),                           // input
         .raddr        ({1'b0,rpage[1:0],raddr[7:0]}),  // input[11:0] 
         .ren          (c_ren[0]),                      // input // TODO: modify to read only when needed
-        .regen        (c_ren[0]),                      // input
+        .regen        (c_ren[1]),                      // input
         .data_out     (c_out[8:0]),                    // output[8:0] 
         .wclk         (xclk),                           // input
-        .waddr        ({1'b0,wpage[1:0],yaddrw[7:0]}), // input[11:0] 
-        .we           (ywe),                           // input
+        .waddr        ({1'b0,wpage[1:0],caddrw[7:0]}), // input[11:0] 
+        .we           (cwe),                           // input
         .web          (4'hf),                          // input[7:0] 
         .data_in      (signed_c[8:0])                      // input[71:0] 
     );
