@@ -379,10 +379,10 @@ This value divided by 2raised to 8 is equivalent to ignoring the 8 lsb bits of t
          addsub4a_comp	<= addsub4a_comp_w[9:0]; //add_sub4a[10]? (-add_sub4a) : add_sub4a;
     end
 
-    assign p1a_all = addsub1a_comp * memory1a; //[15:0]; // TODO: Check - memory is [16:0] !
-    assign p2a_all = addsub2a_comp * memory2a; //[15:0];
-    assign p3a_all = addsub3a_comp * memory3a; //[15:0];
-    assign p4a_all = addsub4a_comp * memory4a; //[15:0];
+    assign p1a_all = addsub1a_comp * memory1a[15:0]; // [16] is sign!
+    assign p2a_all = addsub2a_comp * memory2a[15:0];
+    assign p3a_all = addsub3a_comp * memory3a[15:0];
+    assign p4a_all = addsub4a_comp * memory4a[15:0];
 
 
     always @ (posedge nclk)
@@ -612,10 +612,10 @@ module dct393_stage2 (
 //    assign p3b_all = addsub3b_comp[15:0] * memory3a[15:0];
 //   assign p4b_all = addsub4b_comp[15:0] * memory4a[15:0];
 
-    assign p1b_all = addsub1b_comp * memory1a; // AF2015: TODO: Check - memory is 16:0
-    assign p2b_all = addsub2b_comp * memory2a;
-    assign p3b_all = addsub3b_comp * memory3a;
-    assign p4b_all = addsub4b_comp * memory4a;
+    assign p1b_all = addsub1b_comp * memory1a[15:0]; // MSB [16] is sign!
+    assign p2b_all = addsub2b_comp * memory2a[15:0];
+    assign p3b_all = addsub3b_comp * memory3a[15:0];
+    assign p4b_all = addsub4b_comp * memory4a[15:0];
 
 
     always @ (posedge clk) begin

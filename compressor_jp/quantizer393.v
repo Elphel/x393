@@ -267,6 +267,9 @@ module quantizer393(
         .LOG2WIDTH_WR (4),
         .LOG2WIDTH_RD (4),
         .DUMMY        (0)
+`ifdef PRELOAD_BRAMS
+    `include "includes/quantization_100.dat.vh"
+`endif
     ) i_quant_table (
         .rclk         (clk),                          // input
         .raddr        ({tba[9:6],tba[2:0],tba[5:3]}), // input[8:0] 
@@ -285,6 +288,9 @@ module quantizer393(
         .LOG2WIDTH_WR (4),
         .LOG2WIDTH_RD (2),
         .DUMMY        (0)
+`ifdef PRELOAD_BRAMS
+    `include "includes/coring.dat.vh"
+`endif
     ) i_coring_table (
         .rclk         (clk), // input
         .raddr        ({tbac[3:0],qmulr[11:4]}), // input[10:0] 

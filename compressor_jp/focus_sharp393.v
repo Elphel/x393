@@ -325,6 +325,9 @@ module focus_sharp393(
         .LOG2WIDTH_WR (4),
         .LOG2WIDTH_RD (4),
         .DUMMY        (0)
+`ifdef PRELOAD_BRAMS
+    `include "includes/focus_filt.dat.vh"
+`endif
     ) i_focus_dct_tab (
         .rclk         (clk), // input
         .raddr        ({filt_sel[3:0],tba[2:0],tba[5:3]}), // input[9:0] 

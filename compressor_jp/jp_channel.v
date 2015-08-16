@@ -34,7 +34,7 @@ module  jp_channel#(
         parameter CMPRS_FORMAT=               2,
         parameter CMPRS_COLOR_SATURATION=     3,
         parameter CMPRS_CORING_MODE=          4,
-        parameter CMPRS_TABLES=               6, // 6..7
+        parameter CMPRS_TABLES=               6, // 6(data)..7(address)
 
         parameter FRAME_HEIGHT_BITS=          16, // Maximal frame height 
         parameter LAST_FRAME_BITS=            16, // number of bits in frame counter (before rolls over)

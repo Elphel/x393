@@ -389,6 +389,9 @@ module huffman393    (
         .LOG2WIDTH_WR(4),
         .LOG2WIDTH_RD(5),
         .DUMMY(0)
+`ifdef PRELOAD_BRAMS
+    `include "includes/huffman.dat.vh"
+`endif
     ) i_htab (
         .rclk(xclk2x), // input
         .raddr(haddr[8:0]), // input[8:0] 
