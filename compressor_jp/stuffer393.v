@@ -158,20 +158,20 @@ module stuffer393 (
 //        ts_cycles <= {ts_cycles[6:0],ts_rstb};
         ts_cycles <= {ts_cycles[5:0],ts_rstb};
         if      (ts_cycles[0])  sec_r[ 7: 0] <= ts_dout;
-        else if (time_size_out) sec_r[ 7: 0] <= sec_r[23:16];
         else if (start_sizeout) sec_r[ 7: 0] <= size_count[ 7:0];
+        else if (time_size_out) sec_r[ 7: 0] <= sec_r[23:16];
         
         if      (ts_cycles[1])  sec_r[15: 8] <= ts_dout;
-        else if (time_size_out) sec_r[15: 8] <= sec_r[31:24];
         else if (start_sizeout) sec_r[15: 8] <= size_count[15:8];
+        else if (time_size_out) sec_r[15: 8] <= sec_r[31:24];
         
         if      (ts_cycles[2])  sec_r[23:16] <= ts_dout;
-        else if (time_size_out) sec_r[23:16] <= usec_r[ 7: 0];
         else if (start_sizeout) sec_r[23:16] <= size_count[23:16];
+        else if (time_size_out) sec_r[23:16] <= usec_r[ 7: 0];
 
         if      (ts_cycles[3])  sec_r[31:24] <= ts_dout;
-        else if (time_size_out) sec_r[31:24] <= usec_r[15: 8];
         else if (start_sizeout) sec_r[31:24] <= 8'hff;
+        else if (time_size_out) sec_r[31:24] <= usec_r[15: 8];
         
         if      (ts_cycles[4]) usec_r[ 7: 0] <= ts_dout;
         else if (time_out)     usec_r[ 7: 0] <= {4'h0, usec_r[19:16]};

@@ -772,7 +772,7 @@ module  jp_channel#(
     // focus sharp module calculates amount of high-frequency components and optioanlly overlays/replaces actual image
     wire   [12:0] focus_do;     // output[12:0] reg  pixel data out, make timing ignore (valid 1.5 clk earlier that Quantizer output)
     wire          focus_ds;     // output reg data out strobe (one ahead of the start of dv)
-    
+    // TODO: Verify focus_sharp393: quantizer output (with strobes) is now 2 cycles later than in 353 (relative to xdct out). Seems to be OK.
     focus_sharp393 focus_sharp393_i (
         .clk                (xclk),                   // input - pixel clock
         .clk2x              (xclk2x),                 // input 2x pixel clock

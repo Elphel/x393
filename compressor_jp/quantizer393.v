@@ -46,9 +46,9 @@ module quantizer393(
     input             first_in, // first block in (valid @ start)
     output reg        first_out, // valid @ ds
     input      [12:0] di,    // [11:0] pixel data in (signed)
-    output     [12:0] do,    // [11:0] pixel data out (AC is only 9 bits long?) - changed to 10
-    output reg        dv,    // data out valid
-    output reg        ds,  // data out strobe (one ahead of the start of dv)
+    output reg [12:0] do,    // [11:0] pixel data out (AC is only 9 bits long?) - changed to 10
+    output            dv,    // data out valid
+    output            ds,  // data out strobe (one ahead of the start of dv)
     output reg [15:0] dc_tdo, //[15:0], MSB aligned coefficient for the DC component (used in focus module)
     input             dcc_en,  // enable dcc (sync to beginning of a new frame)
     input      [ 2:0] hfc_sel, // hight frequency components select [2:0] (includes components with both numbers >=hfc_sel
@@ -87,8 +87,11 @@ module quantizer393(
 // for fifo for ctype, dc
     wire            ctype;
     wire     [ 8:0] dc;
-    wire            next_dv;
-
+//    wire            next_dv;
+//    reg      [ 2:0] last_dv; // last dv cycle (will turn of unless new ds)
+    reg      [ 2:0] ds_r;
+    reg      [ 3:0] ren;
+    
     reg      [ 5:0] start;
     wire            dcc_stb;
     reg             dcc_run;
@@ -123,7 +126,8 @@ module quantizer393(
     assign start_a = start[5];
     assign start_z = start[4];
     assign dcc_stb = start[2];
-
+    assign ds = ds_r[2];
+    assign dv = ren[3];
     always @ (posedge clk) begin
         if (stb) block_mem_ram[block_mem_wa[2:0]] <= {coring_num[2:0],tsi[2:0], ctypei, dci[8:0]};
 
@@ -141,13 +145,13 @@ module quantizer393(
     assign        dcc_data[15:0]=sel_satnum?
                     {n255[7:0],n000[7:0]}:
                     {dcc_first || (!dcc_Y && dcc_acc[12]) ,(!dcc_Y && dcc_acc[12]), (!dcc_Y && dcc_acc[12]), dcc_acc[12:0]};
-    assign         do[12:0]=zigzag_q[12:0];
+//    assign         do[12:0]=zigzag_q[12:0];
     assign        qmul[27:0]=tdor[15:0]*d3[11:0];
 
     assign         start_out =   zwe && (zwa[5:0]== 6'h3f);   //adjust?
     assign         copy_dc_tdo = zwe && (zwa[5:0]== 6'h37);   // not critical
 
-    assign next_dv=en && (ds || (dv && (zra[5:0]!=6'h00)));    
+//    assign next_dv=en && (ds || (dv && (zra[5:0]!=6'h00)));    
     always @ (posedge clk) begin
         d1[12:0]      <= di[12:0];
 //inv_sign
@@ -185,12 +189,24 @@ module quantizer393(
         qdo[11:0]   <= coring_range? (qdo0[12]?-{8'h0,tdco[3:0]}:{8'h0,tdco[3:0]}):(qdo0[12]?-qdo0[11:0]:qdo0[11:0]);
         qdo[12]     <= qdo0[12] && (!coring_range || (tdco[3:0]!=4'h0)); 
 
-        if (start_out) rpage <= wpage;
+        if (start_out)    rpage <= wpage;
+
+//        last_dv <= {last_dv[1:0], en && (zra[5:0] == 6'h3f)};
         
-        if              (start_out) zra[5:0] <= 6'b0;
-        else if (zra[5:0]!=6'h3f)   zra[5:0] <= zra[5:0]+1; // conserving energy
-        ds    <= start_out;
-        dv    <= next_dv;
+        if (start_out)    zra[5:0] <= 6'b0;
+//        else if (zra[5:0]!=6'h3f)   zra[5:0] <= zra[5:0]+1; // conserving energy
+        else if (ren[0])  zra[5:0] <= zra[5:0]+1; // conserving energy
+        
+        ds_r    <= {ds_r[1:0], en && start_out};
+        
+        if      (!en)                 ren[0] <= 0;
+        else if (start_out)           ren[0] <= 1;
+        else if ((zra[5:0] == 6'h3f)) ren[0] <= 0;
+        
+        if      (!en)                 ren[3:1] <= 0;
+        else                          ren[3:1] <= ren [2:0]; 
+        
+        if (ren[2])                   do[12:0] <= zigzag_q[12:0];
         
         if (start_a)   first_interm <= first_in;
         if (start_out) first_out    <=first_interm;
@@ -305,15 +321,15 @@ module quantizer393(
     );
 
     ram18_var_w_var_r #(
-        .REGISTERS    (0),
+        .REGISTERS    (1),
         .LOG2WIDTH_WR (4),
         .LOG2WIDTH_RD (4),
         .DUMMY        (0)
     ) i_zigzagbuf (
         .rclk         (clk),                     // input
         .raddr        ({3'b0,rpage,zra[5:0]}),   // input[9:0] 
-        .ren          (next_dv),                 // input
-        .regen        (1'b1),                    // input
+        .ren          (ren[0]),                  // input
+        .regen        (ren[1]),                  // input
         .data_out     (zigzag_q[15:0]),          // output[15:0] 
         .wclk         (clk),                     // input
         .waddr        ({3'b0,wpage,zwa[5:0]}),   // input[9:0] 

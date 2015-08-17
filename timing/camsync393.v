@@ -568,8 +568,11 @@ module camsync393       #(
             sr_rcv_first[31:0]  <={sr_rcv_first[30:0],sr_rcv_second[31]}; 
             sr_rcv_second[31:0] <={sr_rcv_second[30:0],trigger_condition_filtered};
         end
-
-        rcv_done_rq <= start_en && ((ts_external_pclk && local_got_pclk) || (rcv_done_rq && rcv_run));
+// Why was it local_got_pclk? Also, it is a multi-bit vector
+//        rcv_done_rq <= start_en && ((ts_external_pclk && local_got_pclk) || (rcv_done_rq && rcv_run));
+// TODO: think of disabling receiving sync if sesnor is not ready yet (not done with a previous frame)
+        rcv_done_rq <= start_en && ((ts_external_pclk && (rcv_run && !rcv_run_d)) || (rcv_done_rq && rcv_run));
+        //
         rcv_done_rq_d <= rcv_done_rq;
         rcv_done <= rcv_done_rq_d && !rcv_done_rq;
       

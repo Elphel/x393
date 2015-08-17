@@ -47,7 +47,8 @@ module  timestamp_fifo(
     reg          rcv;            // receive data
     reg    [3:0] rpntr;          // fifo read pointer
     reg    [1:0] advance_r;
-    reg          snd;            // receive data
+    reg          snd;            // send data
+    reg          snd_d;
     always @ (posedge sclk) begin
         if      (srst)        rcv <= 0; 
         else if (pre_stb)     rcv <= 1;
@@ -68,21 +69,23 @@ module  timestamp_fifo(
     end
 
     always @(posedge aclk) begin
-        if (advance_r[0] && !advance_r[1]) rpntr[3] <= wpntr[3];
+        if (advance_r[0] && !advance_r[1]) rpntr[3] <= ~wpntr[3]; // previous value (now wpntr[3] is already inverted
     end
     
     always @(posedge rclk) begin
-        if      (rrst)         snd <= 0; 
+        if      (rrst)        snd <= 0; 
         else if (rstb)        snd <= 1;
         else if (&rpntr[2:1]) snd <= 0; // at count 6 
     
-        if      (rrst)           rpntr[2:0] <= 0;
+        snd_d <= snd;
+        
+        if      (rrst)          rpntr[2:0] <= 0;
         else if (!snd && !rstb) rpntr[2:0] <= 0;
         else                    rpntr[2:0] <= rpntr[2:0] + 1;
     end
 
     always @(posedge rclk) begin
-        if (snd)          dout <= fifo_ram[rpntr];
+        if (rstb || snd || snd_d) dout <= fifo_ram[rpntr];
     end
 endmodule
 

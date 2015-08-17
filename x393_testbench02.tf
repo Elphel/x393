@@ -797,9 +797,9 @@ assign #10 gpio_pins[9] = gpio_pins[8];
   TEST_TITLE = "ALL_DONE";
   $display("===================== TEST_%s =========================",TEST_TITLE);
   #20000;
-  TEST_TITLE = "WAITING 30usec more";
+  TEST_TITLE = "WAITING 60usec more";
   $display("===================== TEST_%s =========================",TEST_TITLE);
-  #30000;
+  #60000;
   $finish;
 end
 // protect from never end

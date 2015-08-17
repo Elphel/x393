@@ -220,11 +220,14 @@ module  cmprs_buf_average#(
     always @(posedge xclk) begin
         if      (!frame_en)        wpage <= 0;
         else if (yc_pre_first_out) wpage <= wpage + 1; // will start from 1, not 0. Maybe changed to there strobe - end of writing
-        
+
+        if (!frame_en || pre_first_in) first <= 0;
+        else if (ccv_out_start)        first <= pre_first_mb;
+
         if (ccv_out_start) begin
             rpage[1:0]   <=   wpage[1:0];
             four_blocks_rd <= four_blocks;
-            first <=       pre_first_mb;
+//            first <=       pre_first_mb;
             last <=        pre_last_mb;
             color_enable <=  pre_color_enable; // valid with address
         end
@@ -235,7 +238,7 @@ module  cmprs_buf_average#(
         else if (ccv_out_start) raddr[8:0] <= 0;
         else if (!raddr[8] || (!four_blocks_rd && !raddr[7])) raddr[8:0] <= raddr[8:0]+1; // for 4 blocks - count for 0,1; 6 blocks - 0,1,2
         
-        // Reading output data and combining with the average values
+    // Reading output data and combining with the average values
 
         y_ren_r <= y_ren[0];                    
         c_ren_r <= c_ren[0];                    
