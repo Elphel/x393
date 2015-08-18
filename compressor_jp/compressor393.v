@@ -243,7 +243,8 @@ module  compressor393 # (
     wire  [255:0] fifo_rdata; 
     wire    [3:0] fifo_eof; //SuppressThisWarning VEditor : Not used?
     wire    [3:0] eof_written;
-    wire    [3:0] fifo_flush;
+    wire    [3:0] fifo_flush; // after last frame data was written
+    wire    [3:0] flush_hclk; // before last data was written
     wire   [31:0] fifo_count; 
 
     /* Instance template for module status_router8 */
@@ -405,6 +406,7 @@ module  compressor393 # (
                 .fifo_eof                             (fifo_eof[i]),               // output
                 .eof_written                          (eof_written[i]),            // input
                 .fifo_flush                           (fifo_flush[i]),             // output
+                .flush_hclk                           (flush_hclk[i]),             // output
                 .fifo_count                           (fifo_count[8* i +: 8])      // output[7:0] 
             );
         end
@@ -440,6 +442,7 @@ module  compressor393 # (
                 .fifo_rdata0      (fifo_rdata[0 +: 64]),    // input[63:0] 
                 
                 .eof_written0     (eof_written[0]),            // output //?
+                .pre_flush0       (flush_hclk[0]),          // input
                 .fifo_flush0      (fifo_flush[0]),          // input  
                 .fifo_count0      (fifo_count[0 +: 8]),     // input[7:0]
                  
@@ -447,18 +450,21 @@ module  compressor393 # (
                 .fifo_ren1        (fifo_ren[1]),            // output
                 .fifo_rdata1      (fifo_rdata[64 +: 64]),   // input[63:0] 
                 .eof_written1     (eof_written[1]),            // output
+                .pre_flush1       (flush_hclk[1]),          // input
                 .fifo_flush1      (fifo_flush[1]),          // input
                 .fifo_count1      (fifo_count[8 +: 8]),     // input[7:0] 
                 .fifo_rst2        (),                       // output
                 .fifo_ren2        (),                       // output
                 .fifo_rdata2      (64'b0),                  // input[63:0] 
                 .eof_written2     (),                       // output
+                .pre_flush2       (1'b0),                       // input
                 .fifo_flush2      (1'b0),                   // input
                 .fifo_count2      (8'b0),                   // input[7:0] 
                 .fifo_rst3        (),                       // output
                 .fifo_ren3        (),                       // output
                 .fifo_rdata3      (64'b0),                  // input[63:0] 
                 .eof_written3     (),                       // output
+                .pre_flush3       (1'b0),                   // input
                 .fifo_flush3      (1'b0),                   // input
                 .fifo_count3      (8'b0),                   // input[7:0] 
                 .afi_awaddr       (afi0_awaddr),            // output[31:0] 
@@ -514,24 +520,28 @@ module  compressor393 # (
                 .fifo_ren0        (fifo_ren[2]),            // output
                 .fifo_rdata0      (fifo_rdata[128 +: 64]),  // input[63:0] 
                 .eof_written0     (eof_written[2]),            // output
+                .pre_flush0       (flush_hclk[2]),          // input
                 .fifo_flush0      (fifo_flush[2]),          // input
                 .fifo_count0      (fifo_count[16 +: 8]),    // input[7:0] 
                 .fifo_rst1        (fifo_rst[3]),            // output
                 .fifo_ren1        (fifo_ren[3]),            // output
                 .fifo_rdata1      (fifo_rdata[192 +: 64]),  // input[63:0] 
-                .eof_written1     (eof_written[3]),            // output
+                .eof_written1     (eof_written[3]),         // output
+                .pre_flush1       (flush_hclk[3]),          // input
                 .fifo_flush1      (fifo_flush[3]),          // input
                 .fifo_count1      (fifo_count[24 +: 8]),     // input[7:0] 
                 .fifo_rst2        (),                       // output
                 .fifo_ren2        (),                       // output
                 .fifo_rdata2      (64'b0),                  // input[63:0] 
                 .eof_written2     (),                       // output
+                .pre_flush2       (1'b0),                   // input
                 .fifo_flush2      (1'b0),                   // input
                 .fifo_count2      (8'b0),                   // input[7:0] 
                 .fifo_rst3        (),                       // output
                 .fifo_ren3        (),                       // output
                 .fifo_rdata3      (64'b0),                  // input[63:0] 
                 .eof_written3     (),                       // output
+                .pre_flush3       (1'b0),                   // input
                 .fifo_flush3      (1'b0),                   // input
                 .fifo_count3      (8'b0),                   // input[7:0] 
                 .afi_awaddr       (afi1_awaddr),            // output[31:0] 
@@ -587,24 +597,28 @@ module  compressor393 # (
                 .fifo_ren0        (fifo_ren[0]),            // output
                 .fifo_rdata0      (fifo_rdata[0 +: 64]),    // input[63:0] 
                 .eof_written0     (eof_written[0]),            // output
+                .pre_flush0       (flush_hclk[0]),          // input
                 .fifo_flush0      (fifo_flush[0]),          // input
                 .fifo_count0      (fifo_count[0 +: 8]),     // input[7:0] 
                 .fifo_rst1        (fifo_rst[1]),            // output
                 .fifo_ren1        (fifo_ren[1]),            // output
                 .fifo_rdata1      (fifo_rdata[64 +: 64]),   // input[63:0] 
-                .eof_written1     (eof_written[1]),            // output
+                .eof_written1     (eof_written[1]),         // output
+                .pre_flush1       (flush_hclk[1]),          // input
                 .fifo_flush1      (fifo_flush[1]),          // input
                 .fifo_count1      (fifo_count[8 +: 8]),     // input[7:0] 
                 .fifo_rst2        (fifo_rst[2]),            // output
                 .fifo_ren2        (fifo_ren[2]),            // output
                 .fifo_rdata2      (fifo_rdata[128 +: 64]),  // input[63:0] 
-                .eof_written2     (eof_written[2]),            // output
+                .eof_written2     (eof_written[2]),         // output
+                .pre_flush2       (flush_hclk[2]),          // input
                 .fifo_flush2      (fifo_flush[2]),          // input
                 .fifo_count2      (fifo_count[16 +: 8]),    // input[7:0] 
                 .fifo_rst3        (fifo_rst[3]),            // output
                 .fifo_ren3        (fifo_ren[3]),            // output
                 .fifo_rdata3      (fifo_rdata[192 +: 64]),  // input[63:0] 
-                .eof_written3     (eof_written[3]),            // output
+                .eof_written3     (eof_written[3]),         // output
+                .pre_flush3       (flush_hclk[3]),          // input
                 .fifo_flush3      (fifo_flush[3]),          // input
                 .fifo_count3      (fifo_count[24 +: 8]),    // input[7:0] 
                 .afi_awaddr       (afi0_awaddr),            // output[31:0] 

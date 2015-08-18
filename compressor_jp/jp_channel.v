@@ -165,9 +165,11 @@ module  jp_channel#(
     input                         fifo_rst,      // reset FIFO (set read address to write, reset count)
     input                         fifo_ren,
     output                 [63:0] fifo_rdata,
-    output                        fifo_eof,        // single rclk pulse signalling EOF
+    output                        fifo_eof,      // single rclk pulse signalling EOF
     input                         eof_written,   // confirm frame written ofer AFI to the system memory (single rclk pulse)
     output                        fifo_flush,    // EOF, need to output all what is in FIFO (Stays active until enough data chunks are read)
+    output                        flush_hclk,    // output before writing last chunk - use it to suspend AFI to have
+                                                 // last burst marked as the last one (otherwise last may be empty if frame had %4==0 chunks) 
     output                 [7:0]  fifo_count     // number of 32-byte chunks in FIFO
 );
     localparam CMPRS_ADDR = CMPRS_GROUP_ADDR + CMPRS_NUMBER * CMPRS_BASE_INC;
@@ -855,15 +857,18 @@ module  jp_channel#(
         .di                 (enc_do[15:0]),           // input[15:0] - specially RLL prepared 16-bit data (to FIFO)
         .ds                 (enc_dv),                 // input -  di valid strobe
         .rdy                (stuffer_rdy),            // input - receiver (bit stuffer) is ready to accept data
-        .do(huff_do[15:0]), // output[15:0] reg 
-        .dl(huff_dl[3:0]), // output[3:0] reg 
-        .dv(huff_dv), // output reg 
-        .flush(flush), // output reg 
+        .do                 (huff_do[15:0]),          // output[15:0] reg 
+        .dl                 (huff_dl[3:0]),           // output[3:0] reg 
+        .dv                 (huff_dv),                // output reg 
+        .flush              (flush),                  // output reg 
 ///        .last_block(last_block), // output reg 
-        .last_block(), // output reg unused
-        .test_lbw(), // output reg ??
+        .last_block         (), // output reg unused
+        .test_lbw           (), // output reg ??
 ///        .gotLastBlock(test_lbw) // output ??
-        .gotLastBlock() // output ?? - unused (was for debug)
+        .gotLastBlock       (), // output ?? - unused (was for debug)
+        .clk_flush          (hclk), // input
+        .flush_clk          (flush_hclk) // output
+        
     );
     
 
@@ -911,9 +916,9 @@ module  jp_channel#(
         .wa_rst              (!stuffer_en),    // input reset low address bits when stuffer is disabled (to make sure it is multiple of 32 bytes
         .wlast               (stuffer_done),   // input - written last 32 bytes of a frame (flush FIFO) - stuffer_done (has to be later than we)
         .eof_written_wclk    (eof_written_xclk2xn),    // output - AFI had transferred frame data to the system memory
+        // AFI clock domain
         .rclk                (hclk),           // input - AFI clock
         .rrst                (hrst),           // input - AFI clock
-        // AFI clock domain
         .rst_fifo            (fifo_rst),       // input - reset FIFO (set read address to write, reset count)
         .ren                 (fifo_ren),       // input - fifo read from AFI channel mux
         .rdata               (fifo_rdata),     // output[63:0] - data to AFI channel mux (latency == 2 from fifo_ren)

@@ -44,7 +44,9 @@ module huffman393    (
     output reg        flush,           // last block done - flush the rest bits
     output reg        last_block,
     output reg        test_lbw,
-    output            gotLastBlock   // last block done - flush the rest bits
+    output            gotLastBlock,   // last block done - flush the rest bits
+    input             clk_flush,      // other clock to generate synchronized 1-cycle flush_clk output   
+    output            flush_clk       // 1-cycle flush output @ clk_flush
 );
 `ifdef INFER_LATCHES
     reg    [15:0] hcode_latch;    // table output huffman code (1..16 bits)
@@ -407,5 +409,14 @@ module huffman393    (
         .web(4'hf), // input[3:0] 
         .data_in(tdi[15:0]) // input[15:0] 
     );
+    
+    pulse_cross_clock flush_clk_i (
+        .rst       (!en2x),
+        .src_clk   (~xclk2x),
+        .dst_clk   (clk_flush),
+        .in_pulse  (flush),
+        .out_pulse (flush_clk),
+        .busy      ());
+    
 endmodule
 

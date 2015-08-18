@@ -74,8 +74,9 @@ each group of 4 bits per channel : bits [1:0] - select, bit[2] - sset (0 - nop),
     input                  [63:0] fifo_rdata0,
 //    input                         fifo_eof0,        // single rclk pulse signalling EOF
     output                        eof_written0,   // confirm frame written over AFI to the system memory (single hclk pulse)
+    input                         pre_flush0,     // before last data chunk was written to FIFO
     input                         fifo_flush0,    // EOF, need to output all what is in FIFO (Stays active until enough data chunks are read)
-    input                  [7:0]  fifo_count0,     // number of 32-byte chunks in FIFO
+    input                  [7:0]  fifo_count0,    // number of 32-byte chunks in FIFO
 
     // compressor channel 1
     output                        fifo_rst1,      // reset FIFO (set read address to write, reset count)
@@ -83,8 +84,9 @@ each group of 4 bits per channel : bits [1:0] - select, bit[2] - sset (0 - nop),
     input                  [63:0] fifo_rdata1,
 //    input                         fifo_eof1,        // single rclk pulse signalling EOF
     output                        eof_written1,   // confirm frame written over AFI to the system memory (single hclk pulse)
+    input                         pre_flush1,     // before last data chunk was written to FIFO
     input                         fifo_flush1,    // EOF, need to output all what is in FIFO (Stays active until enough data chunks are read)
-    input                  [7:0]  fifo_count1,     // number of 32-byte chunks in FIFO
+    input                  [7:0]  fifo_count1,    // number of 32-byte chunks in FIFO
 
     // compressor channel 2
     output                        fifo_rst2,      // reset FIFO (set read address to write, reset count)
@@ -92,8 +94,9 @@ each group of 4 bits per channel : bits [1:0] - select, bit[2] - sset (0 - nop),
     input                  [63:0] fifo_rdata2,
 //    input                         fifo_eof2,        // single rclk pulse signalling EOF
     output                        eof_written2,   // confirm frame written over AFI to the system memory (single hclk pulse)
+    input                         pre_flush2,     // before last data chunk was written to FIFO
     input                         fifo_flush2,    // EOF, need to output all what is in FIFO (Stays active until enough data chunks are read)
-    input                  [7:0]  fifo_count2,     // number of 32-byte chunks in FIFO
+    input                  [7:0]  fifo_count2,    // number of 32-byte chunks in FIFO
 
     // compressor channel 3
     output                        fifo_rst3,      // reset FIFO (set read address to write, reset count)
@@ -101,8 +104,9 @@ each group of 4 bits per channel : bits [1:0] - select, bit[2] - sset (0 - nop),
     input                  [63:0] fifo_rdata3,
 //    input                         fifo_eof3,        // single rclk pulse signalling EOF
     output                        eof_written3,   // confirm frame written over AFI to the system memory (single hclk pulse)
+    input                         pre_flush3,     // before last data chunk was written to FIFO
     input                         fifo_flush3,    // EOF, need to output all what is in FIFO (Stays active until enough data chunks are read)
-    input                  [7:0]  fifo_count3,     // number of 32-byte chunks in FIFO
+    input                  [7:0]  fifo_count3,    // number of 32-byte chunks in FIFO
     
     // axi_hp signals write channel
     // write address
@@ -160,8 +164,9 @@ each group of 4 bits per channel : bits [1:0] - select, bit[2] - sset (0 - nop),
     wire       en_we;
     wire       en_rst;
     
-    
-       
+    wire  [3:0] fifo_flush =     {fifo_flush3,     fifo_flush2,     fifo_flush1,     fifo_flush0};
+    wire  [3:0] pre_flush = {pre_flush3, pre_flush2, pre_flush1, pre_flush0};
+    reg   [3:0] ren_suspend_flush;  // suspend buffer read until flush is finished
     
 //    reg   [2:0] cur_chn;          // 'b0xx - none, 'b1** - ** - channel number (should match fifo_ren*)
     reg   [1:0] cur_chn;           // 'b0xx - none, 'b1** - ** - channel number (should match fifo_ren*)
@@ -185,7 +190,7 @@ each group of 4 bits per channel : bits [1:0] - select, bit[2] - sset (0 - nop),
     // See if we need to bother - any channel needs flushing or has >= 4 of 32-byte chunks to transfer in a single AXI 16-burst 64 bit wide (latency = 4)
     wire        need_to_bother = |counts_corr2[8:2];
     reg         ready_to_start; // TBD: either idle or soon will finish the previous burst (include AFI FIFO level here too?)
-    wire  [3:0] last_chunk_w;
+//    wire  [3:0] last_chunk_w;
     reg   [3:0] busy; // TODO: adjust number of bits. During continuous run busy is deasseted for 1 clock cycle
     wire        done_burst_w; // de-asset busy
     wire        pre_busy_w;
@@ -213,6 +218,7 @@ each group of 4 bits per channel : bits [1:0] - select, bit[2] - sset (0 - nop),
     
     wire [26:0] chunk_ptr_rd;
     wire [ 3:0] chunk_ptr_ra;
+    wire [ 7:0] items_left = counts_corr2[8] ? left_to_eof[(winner2 * 8)  +: 8] : counts_corr2[7:0];
     
     
     
@@ -228,11 +234,12 @@ each group of 4 bits per channel : bits [1:0] - select, bit[2] - sset (0 - nop),
     
     // use last_chunk_w to apply a special id to waddr and wdata and watch for it during readout
     // compose ID of channel number, frame bumber LSBs and last/not last chunk
+/*    
     assign last_chunk_w[3:0] = {(left_to_eof[3 * 8 +: 8]==1),
                                 (left_to_eof[2 * 8 +: 8]==1),
                                 (left_to_eof[1 * 8 +: 8]==1),
                                 (left_to_eof[0 * 8 +: 8]==1)};
-    
+*/    
     assign pre_busy_w = !busy[0] && ready_to_start && need_to_bother && !ptr_resetting;
     assign done_burst_w = busy[0] && !(|wleft[3:1]);  // when wleft[3:0] == 0, busy is 0
     assign {fifo_rst3, fifo_rst2, fifo_rst1, fifo_rst0} = reset_pointers;
@@ -302,33 +309,35 @@ each group of 4 bits per channel : bits [1:0] - select, bit[2] - sset (0 - nop),
                     
         // TODO: change &w64_cnt[1:0] so left_to_eof[*] will be updated earlier and valid at pre_busy_w       
         // Done, updating at the first (not last) word of 4
-        if (eof_stb[0])                      left_to_eof[0 * 8 +: 8] <= fifo_count0 - (fifo_ren0 & (&wleft[1:0]));
+        // Now seems that eof_stb[i] & fifo_ren{i} == 0
+        if (eof_stb[0])                      left_to_eof[0 * 8 +: 8] <= fifo_count0_m1 - (fifo_ren0 & (&wleft[1:0]));
         else if (fifo_ren0 & (&wleft[1:0]))  left_to_eof[0 * 8 +: 8] <= left_to_eof[0 * 8 +: 8] - 1;
     
-        if (eof_stb[1])                      left_to_eof[1 * 8 +: 8] <= fifo_count1 - (fifo_ren1 & (&wleft[1:0]));
+        if (eof_stb[1])                      left_to_eof[1 * 8 +: 8] <= fifo_count1_m1 - (fifo_ren1 & (&wleft[1:0]));
         else if (fifo_ren1 & (&wleft[1:0]))  left_to_eof[1 * 8 +: 8] <= left_to_eof[1 * 8 +: 8] - 1;
     
-        if (eof_stb[2])                      left_to_eof[2 * 8 +: 8] <= fifo_count2 - (fifo_ren2 & (&wleft[1:0]));
+        if (eof_stb[2])                      left_to_eof[2 * 8 +: 8] <= fifo_count2_m1 - (fifo_ren2 & (&wleft[1:0]));
         else if (fifo_ren2 & (&wleft[1:0]))  left_to_eof[2 * 8 +: 8] <= left_to_eof[2 * 8 +: 8] - 1;
     
-        if (eof_stb[3])                      left_to_eof[3 * 8 +: 8] <= fifo_count3 - (fifo_ren3 & (&wleft[1:0]));
+        if (eof_stb[3])                      left_to_eof[3 * 8 +: 8] <= fifo_count3_m1 - (fifo_ren3 & (&wleft[1:0]));
         else if (fifo_ren3 & (&wleft[1:0]))  left_to_eof[3 * 8 +: 8] <= left_to_eof[3 * 8 +: 8] - 1;
     
         // Calculate corrected values decrementing currently served channel (if any) values by 1 (latency 1 clk)
+        // During ren_suspend_flush (from pre_flush to flush) 0 - effectively disable, after flush - highest priority
         
-        if      ((fifo_count0 == 0) || !en_chn[0]) counts_corr0[0 * 9 +: 9] <= 0;
+        if ((fifo_count0 == 0) || !en_chn[0] ||ren_suspend_flush[0]) counts_corr0[0 * 9 +: 9] <= 0;
         else if (fifo_ren[0])                      counts_corr0[0 * 9 +: 9] <= (fifo_count0_m1 == 0)? 0 : {fifo_flush0,fifo_count0_m1};
         else                                       counts_corr0[0 * 9 +: 9] <= {fifo_flush0,fifo_count0};
 
-        if      ((fifo_count1 == 0) || !en_chn[1]) counts_corr0[1 * 9 +: 9] <= 0;
+        if ((fifo_count1 == 0) || !en_chn[1] ||ren_suspend_flush[1]) counts_corr0[1 * 9 +: 9] <= 0;
         else if (fifo_ren[1])                      counts_corr0[1 * 9 +: 9] <= (fifo_count1_m1 == 0)? 0 : {fifo_flush1,fifo_count1_m1};
         else                                       counts_corr0[1 * 9 +: 9] <= {fifo_flush1,fifo_count1};
 
-        if      ((fifo_count2 == 0) || !en_chn[2]) counts_corr0[2 * 9 +: 9] <= 0;
+        if ((fifo_count2 == 0) || !en_chn[2] ||ren_suspend_flush[2]) counts_corr0[2 * 9 +: 9] <= 0;
         else if (fifo_ren[2])                      counts_corr0[2 * 9 +: 9] <= (fifo_count2_m1 == 0)? 0 : {fifo_flush2,fifo_count2_m1};
         else                                       counts_corr0[2 * 9 +: 9] <= {fifo_flush2,fifo_count2};
 
-        if      ((fifo_count3 == 0) || !en_chn[3]) counts_corr0[3 * 9 +: 9] <= 0;
+        if ((fifo_count3 == 0) || !en_chn[3] ||ren_suspend_flush[3]) counts_corr0[3 * 9 +: 9] <= 0;
         else if (fifo_ren[3])                      counts_corr0[3 * 9 +: 9] <= (fifo_count3_m1 == 0)? 0 : {fifo_flush3,fifo_count3_m1};
         else                                       counts_corr0[3 * 9 +: 9] <= {fifo_flush3,fifo_count3};
 
@@ -374,9 +383,14 @@ each group of 4 bits per channel : bits [1:0] - select, bit[2] - sset (0 - nop),
 //pend_last        
         
         if      (!en)        wleft <= 0;
+        else if (pre_busy_w) wleft <= {(|items_left[7:2])? 2'b11 : items_left[1:0], 2'b11};
+        else if (wleft != 0) wleft <= wleft - 1;
+/* 
+counts_corr2[8]
+items_left       
         else if (pre_busy_w) wleft <= {(|counts_corr2[7:2])? 2'b11 : left_to_eof[winner2 * 8 +: 2], 2'b11};
         else if (wleft != 0) wleft <= wleft - 1;
-        
+*/        
 
         if      (!en)        wvalid <= 0;
         else if (pre_busy_w) wvalid <= 1;
@@ -389,11 +403,19 @@ each group of 4 bits per channel : bits [1:0] - select, bit[2] - sset (0 - nop),
                                             (winner2 == 0) ?1'b1:1'b0};
         else if (wlast)        fifo_ren <= 0;
         
+// new mods
+        if (!en) ren_suspend_flush <= 0;
+        else ren_suspend_flush <= pre_flush | (ren_suspend_flush & ~fifo_flush );
+        
+        
+        
+        
         awvalid <= {awvalid[0],pre_busy_w}; // no need to wait for afi_awready, will use fifo levels to enable pre_busy_w
         
         if (pre_busy_w)  begin
             cur_chn <= winner2;
-            last_burst_in_frame <= last_chunk_w[winner2] && pend_last[winner2];
+//            last_burst_in_frame <= last_chunk_w[winner2] && pend_last[winner2];
+            last_burst_in_frame <= counts_corr2[8] && (left_to_eof[winner2 * 8 + 2 +: 6] == 0) && pend_last[winner2];
         end
         
         wlast <= done_burst_w; // when wleft==4'h1
