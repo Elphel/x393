@@ -273,13 +273,30 @@ assign #10 gpio_pins[9] = gpio_pins[8];
     wire [ 3:0] afi_sim_wr_qos;        // output[3:0]  SuppressThisWarning VEditor - not used - just view
 
     assign HCLK = x393_i.ps7_i.SAXIHP0ACLK; // shortcut name
+
+    wire [31:0] afi1_sim_wr_address;    // output[31:0] SuppressThisWarning VEditor - not used - just view
+    wire [ 5:0] afi1_sim_wid;           // output[5:0]  SuppressThisWarning VEditor - not used - just view
+    wire        afi1_sim_wr_valid;      // output
+    wire        afi1_sim_wr_ready;      // input
+//  reg         afi1_sim_wr_ready;      // input
+    wire [63:0] afi1_sim_wr_data;       // output[63:0] SuppressThisWarning VEditor - not used - just view
+    wire [ 7:0] afi1_sim_wr_stb;        // output[7:0]  SuppressThisWarning VEditor - not used - just view
+    wire [ 3:0] afi1_sim_bresp_latency; // input[3:0] 
+//  reg  [ 3:0] afi1_sim_bresp_latency; // input[3:0] 
+    wire [ 2:0] afi1_sim_wr_cap;        // output[2:0]  SuppressThisWarning VEditor - not used - just view
+    wire [ 3:0] afi1_sim_wr_qos;        // output[3:0]  SuppressThisWarning VEditor - not used - just view
+
     
-// afi loopback
+// afi loopback (membridge)
     assign #1 afi_sim_rd_data=  afi_sim_rd_ready?{2'h0,afi_sim_rd_address[31:3],1'h1,  2'h0,afi_sim_rd_address[31:3],1'h0}:64'bx;
     assign #1 afi_sim_rd_valid = afi_sim_rd_ready;
     assign #1 afi_sim_rd_resp = afi_sim_rd_ready?2'b0:2'bx;
     assign #1 afi_sim_wr_ready = afi_sim_wr_valid;
     assign #1 afi_sim_bresp_latency=4'h5; 
+// afi1 (compressor) loopback
+    assign #1 afi1_sim_wr_ready = afi1_sim_wr_valid;
+    assign #1 afi1_sim_bresp_latency=4'h5; 
+
 
 // SAXI_GP0 - histograms to system memory
     wire        SAXI_GP0_CLK; 
@@ -304,9 +321,12 @@ assign #10 gpio_pins[9] = gpio_pins[8];
     reg  [31:0] PS_REG_ADDR;
     reg         PS_REG_WR;
     reg         PS_REG_RD;
+    reg         PS_REG_WR1;
+    reg         PS_REG_RD1;
     reg  [31:0] PS_REG_DIN;
     wire [31:0] PS_REG_DOUT;
     reg  [31:0] PS_RDATA;  // SuppressThisWarning VEditor - not used - just view
+    wire [31:0] PS_REG_DOUT1;
 /*  
     reg  [31:0] afi_reg_addr; 
     reg         afi_reg_wr;
@@ -319,10 +339,15 @@ assign #10 gpio_pins[9] = gpio_pins[8];
     PS_REG_ADDR <= 'bx;
     PS_REG_WR   <= 0;
     PS_REG_RD   <= 0;
+    PS_REG_WR1  <= 0;
+    PS_REG_RD1   <= 0;
     PS_REG_DIN  <= 'bx;
     PS_RDATA    <= 'bx;
   end 
-  always @ (posedge HCLK) if (PS_REG_RD) PS_RDATA <= PS_REG_DOUT;
+  always @ (posedge HCLK) begin
+      if      (PS_REG_RD)  PS_RDATA <= PS_REG_DOUT;
+      else if (PS_REG_RD1) PS_RDATA <= PS_REG_DOUT1;
+  end 
   
     reg [639:0] TEST_TITLE;
   // Simulation signals
@@ -1522,7 +1547,53 @@ simul_axi_hp_wr #(
         .reg_din        (PS_REG_DIN),                        // input[31:0] 
         .reg_dout       (PS_REG_DOUT)                        // output[31:0] 
     );
-
+    // afi1 - from compressor 
+simul_axi_hp_wr #(
+        .HP_PORT(1)
+    ) simul_axi_hp1_wr_i (
+        .rst            (RST),                               // input
+        .aclk           (x393_i.ps7_i.SAXIHP1ACLK),          // input
+        .aresetn        (),                                  // output
+        .awaddr         (x393_i.ps7_i.SAXIHP1AWADDR),        // input[31:0] 
+        .awvalid        (x393_i.ps7_i.SAXIHP1AWVALID),       // input
+        .awready        (x393_i.ps7_i.SAXIHP1AWREADY),       // output
+        .awid           (x393_i.ps7_i.SAXIHP1AWID),          // input[5:0] 
+        .awlock         (x393_i.ps7_i.SAXIHP1AWLOCK),        // input[1:0] 
+        .awcache        (x393_i.ps7_i.SAXIHP1AWCACHE),       // input[3:0] 
+        .awprot         (x393_i.ps7_i.SAXIHP1AWPROT),        // input[2:0] 
+        .awlen          (x393_i.ps7_i.SAXIHP1AWLEN),         // input[3:0] 
+        .awsize         (x393_i.ps7_i.SAXIHP1AWSIZE),        // input[2:0] 
+        .awburst        (x393_i.ps7_i.SAXIHP1AWBURST),       // input[1:0] 
+        .awqos          (x393_i.ps7_i.SAXIHP1AWQOS),         // input[3:0] 
+        .wdata          (x393_i.ps7_i.SAXIHP1WDATA),         // input[63:0] 
+        .wvalid         (x393_i.ps7_i.SAXIHP1WVALID),        // input
+        .wready         (x393_i.ps7_i.SAXIHP1WREADY),        // output
+        .wid            (x393_i.ps7_i.SAXIHP1WID),           // input[5:0] 
+        .wlast          (x393_i.ps7_i.SAXIHP1WLAST),         // input
+        .wstrb          (x393_i.ps7_i.SAXIHP1WSTRB),         // input[7:0] 
+        .bvalid         (x393_i.ps7_i.SAXIHP1BVALID),        // output
+        .bready         (x393_i.ps7_i.SAXIHP1BREADY),        // input
+        .bid            (x393_i.ps7_i.SAXIHP1BID),           // output[5:0] 
+        .bresp          (x393_i.ps7_i.SAXIHP1BRESP),         // output[1:0] 
+        .wcount         (x393_i.ps7_i.SAXIHP1WCOUNT),        // output[7:0] 
+        .wacount        (x393_i.ps7_i.SAXIHP1WACOUNT),       // output[5:0] 
+        .wrissuecap1en  (x393_i.ps7_i.SAXIHP1WRISSUECAP1EN), // input
+        .sim_wr_address (afi1_sim_wr_address),                // output[31:0] 
+        .sim_wid        (afi1_sim_wid),                       // output[5:0] 
+        .sim_wr_valid   (afi1_sim_wr_valid),                  // output
+        .sim_wr_ready   (afi1_sim_wr_ready),                  // input
+        .sim_wr_data    (afi1_sim_wr_data),                   // output[63:0] 
+        .sim_wr_stb     (afi1_sim_wr_stb),                    // output[7:0] 
+        .sim_bresp_latency(afi1_sim_bresp_latency),           // input[3:0] 
+        .sim_wr_cap     (afi1_sim_wr_cap),                    // output[2:0] 
+        .sim_wr_qos     (afi1_sim_wr_qos),                    // output[3:0] 
+        .reg_addr       (PS_REG_ADDR),                        // input[31:0] 
+        .reg_wr         (PS_REG_WR1),                         // input
+        .reg_rd         (PS_REG_RD1),                         // input
+        .reg_din        (PS_REG_DIN),                         // input[31:0] 
+        .reg_dout       (PS_REG_DOUT1)                        // output[31:0] 
+    );
+    
     // SAXI_GP0 - histograms to system memory
     simul_saxi_gp_wr simul_saxi_gp0_wr_i (
         .rst               (RST),                         // input
@@ -1803,6 +1874,10 @@ task setup_sensor_channel;
     reg   [31:0] last_buf_frame;
     reg   [31:0] camsync_delay;
     reg   [ 3:0] sensor_mask;
+    
+    reg   [26:0] afi_cmprs0_sa;
+    reg   [26:0] afi_cmprs0_len;
+    
 // Setting up a single sensor channel 0, sunchannel 0
 // 
     begin
@@ -1818,6 +1893,9 @@ task setup_sensor_channel;
         external_timestamp = EXTERNAL_TIMESTAMP;
         last_buf_frame =     LAST_BUF_FRAME;
         sensor_mask =        1 << num_sensor;
+        
+        afi_cmprs0_sa =      'h10000000 >> 5;
+        afi_cmprs0_len =     'h10000 >> 5; 
 //        program_curves(
 //            num_sensor,  // input   [1:0] num_sensor;
 //            0);          // input   [1:0] sub_channel;    
@@ -2086,6 +2164,59 @@ task write_cmd_frame_sequencer;
     // just temporarily - enable channel immediately    
     enable_memcntrl_en_dis(4'hc + {2'b0,num_sensor}, 1);
     
+    TEST_TITLE = "PROGRAM AFI_MUX";
+    $display("===================== TEST_%s =========================",TEST_TITLE);
+    
+    afi_mux_program_status ( 
+        0, // input [0:0] port_afi;    // number of AFI port (0 - afi 1, 1 - afi2) // configuration controlled by the code. currently
+                             // both AFI are used: ch0 - cmprs_afi_mux_1.0, ch1 - cmprs_afi_mux_1.1,
+                             //  ch2 - cmprs_afi_mux_2.0, ch3 - cmprs_afi_mux_2
+                             // May be chenged to ch0 - cmprs_afi_mux_1.0, ch1 -cmprs_afi_mux_1.1,
+                             //  ch2 - cmprs_afi_mux_1.2, ch3 - cmprs_afi_mux_1.3
+        num_sensor, // input [1:0] chn_afi;
+        3,   // input [1:0] mode;
+        0); // input [5:0] seq_num;
+    // reset all channels    
+    afi_mux_reset(
+        0, // input [0:0] port_afi;
+        4'hf); // input [3:0] rst_chn;
+    // release resets
+    afi_mux_reset(
+        0, // input [0:0] port_afi;
+        0); // input [3:0] rst_chn;
+        
+    // set report mode (pointer type) - per status    
+    afi_mux_mode_chn (
+        0,          //input [0:0] port_afi;    // number of AFI port.3
+        num_sensor, // input [1:0] chn;  // channel number to set mode for
+/*
+mode == 0 - show EOF pointer, internal
+mode == 1 - show EOF pointer, confirmed
+mode == 2 - show current pointer, internal
+mode == 3 - show current pointer, confirmed
+each group of 4 bits per channel : bits [1:0] - select, bit[2] - sset (0 - nop), bit[3] - not used
+ */    
+        0);         // input [1:0] mode;
+    
+    afi_mux_chn_start_length (
+        0,               // input [0:0] port_afi;    // number of AFI port
+        num_sensor,      // input [ 1:0] chn;  // channel number to set mode for
+        afi_cmprs0_sa,   // input [26:0] sa;   // start address in 32-byte chunks
+        afi_cmprs0_len); //  input [26:0] length;     // channel buffer length in 32-byte chunks
+
+    // enable channel 0 and the whole afi_mux module
+
+    afi_mux_enable_chn (
+        0,          // input [0:0] port_afi;    // number of AFI port
+        num_sensor, // input [1:0] en_chn;  // channel number to enable/disable;
+        1);         // input       en;
+
+    afi_mux_enable (
+        0,          // input [0:0] port_afi;    // number of AFI port
+        1);         // input       en;
+
+
+    
     TEST_TITLE = "GAMMA_CTL";
     $display("===================== TEST_%s =========================",TEST_TITLE);
         set_sensor_gamma_ctl (// doing last to enable sesnor data when everything else is set up
@@ -2103,7 +2234,6 @@ task write_cmd_frame_sequencer;
             0);          // input   [1:0] sub_channel;    
     // just temporarily - enable channel immediately    
 //    enable_memcntrl_en_dis(4'hc + {2'b0,num_sensor}, 1);
-            
 
     end
 endtask
@@ -2332,7 +2462,7 @@ task program_status_sensor_io;
     input [5:0] seq_num;
     begin
         program_status (SENSOR_GROUP_ADDR + num_sensor * SENSOR_BASE_INC + SENSIO_RADDR,
-                        SENSI2C_STATUS,
+                        SENSIO_STATUS,
                         mode,
                         seq_num);
     end
@@ -3185,6 +3315,118 @@ function [31 : 0] func_compressor_color_saturation;
     end
 endfunction
 
+// axi_hp channels for the compressed image data
+task afi_mux_program_status;
+    input [0:0] port_afi;    // number of AFI port (0 - afi 1, 1 - afi2) // configuration controlled by the code. currently
+                             // both AFI are used: ch0 - cmprs_afi_mux_1.0, ch1 - cmprs_afi_mux_1.1,
+                             //  ch2 - cmprs_afi_mux_2.0, ch3 - cmprs_afi_mux_2
+                             // May be chenged to ch0 - cmprs_afi_mux_1.0, ch1 -cmprs_afi_mux_1.1,
+                             //  ch2 - cmprs_afi_mux_1.2, ch3 - cmprs_afi_mux_1.3
+    input [1:0] chn_afi;
+    input [1:0] mode;
+    input [5:0] seq_num;
+    reg   [29:0] reg_addr;
+    begin
+        reg_addr = CMPRS_GROUP_ADDR + (port_afi ? CMPRS_AFIMUX_RADDR1 : CMPRS_AFIMUX_RADDR0) + chn_afi;
+        program_status (reg_addr,
+                        CMPRS_AFIMUX_STATUS_CNTRL,
+                        mode,
+                        seq_num);
+    end
+endtask
+
+task afi_mux_reset;
+    input [0:0] port_afi;    // number of AFI port (0 - afi 1, 1 - afi2) // configuration controlled by the code. currently
+                             // both AFI are used: ch0 - cmprs_afi_mux_1.0, ch1 - cmprs_afi_mux_1.1,
+                             //  ch2 - cmprs_afi_mux_2.0, ch3 - cmprs_afi_mux_2
+                             // May be chenged to ch0 - cmprs_afi_mux_1.0, ch1 -cmprs_afi_mux_1.1,
+                             //  ch2 - cmprs_afi_mux_1.2, ch3 - cmprs_afi_mux_1.3
+    input [3:0] rst_chn;
+    reg  [29:0] reg_addr;
+    begin
+        reg_addr = CMPRS_GROUP_ADDR + (port_afi ? CMPRS_AFIMUX_RADDR1 : CMPRS_AFIMUX_RADDR0) + CMPRS_AFIMUX_RST;
+        write_contol_register(reg_addr, {28'b0,rst_chn});                   
+    end
+endtask
+
+task afi_mux_enable_chn;
+    input [0:0] port_afi;    // number of AFI port (0 - afi 1, 1 - afi2) // configuration controlled by the code. currently
+                             // both AFI are used: ch0 - cmprs_afi_mux_1.0, ch1 - cmprs_afi_mux_1.1,
+                             //  ch2 - cmprs_afi_mux_2.0, ch3 - cmprs_afi_mux_2
+                             // May be chenged to ch0 - cmprs_afi_mux_1.0, ch1 -cmprs_afi_mux_1.1,
+                             //  ch2 - cmprs_afi_mux_1.2, ch3 - cmprs_afi_mux_1.3
+    input [1:0] en_chn;  // channel number to enable/disable;
+    input       en;
+    reg  [29:0] reg_addr;
+    reg [31:0] data;
+    begin
+        reg_addr = CMPRS_GROUP_ADDR + (port_afi ? CMPRS_AFIMUX_RADDR1 : CMPRS_AFIMUX_RADDR0) + CMPRS_AFIMUX_EN;
+        data = 0;
+        data[2 * en_chn +: 2] = {1'b1,en};
+        write_contol_register(reg_addr,data);                   
+    end
+endtask
+
+task afi_mux_enable;
+    input [0:0] port_afi;    // number of AFI port (0 - afi 1, 1 - afi2) // configuration controlled by the code. currently
+                             // both AFI are used: ch0 - cmprs_afi_mux_1.0, ch1 - cmprs_afi_mux_1.1,
+                             //  ch2 - cmprs_afi_mux_2.0, ch3 - cmprs_afi_mux_2
+                             // May be chenged to ch0 - cmprs_afi_mux_1.0, ch1 -cmprs_afi_mux_1.1,
+                             //  ch2 - cmprs_afi_mux_1.2, ch3 - cmprs_afi_mux_1.3
+    input       en;
+    reg  [29:0] reg_addr;
+    reg [31:0] data;
+    begin
+        reg_addr = CMPRS_GROUP_ADDR + (port_afi ? CMPRS_AFIMUX_RADDR1 : CMPRS_AFIMUX_RADDR0) + CMPRS_AFIMUX_EN;
+        data = 0;
+        data[2 * 4 +: 2] = {1'b1,en};
+        write_contol_register(reg_addr,data);                   
+    end
+endtask
+
+task afi_mux_mode_chn;
+    input [0:0] port_afi;    // number of AFI port (0 - afi 1, 1 - afi2) // configuration controlled by the code. currently
+                             // both AFI are used: ch0 - cmprs_afi_mux_1.0, ch1 - cmprs_afi_mux_1.1,
+                             //  ch2 - cmprs_afi_mux_2.0, ch3 - cmprs_afi_mux_2
+                             // May be chenged to ch0 - cmprs_afi_mux_1.0, ch1 -cmprs_afi_mux_1.1,
+                             //  ch2 - cmprs_afi_mux_1.2, ch3 - cmprs_afi_mux_1.3
+    input [1:0] mode;
+    input [1:0] chn;        // channel number to set mode for
+    reg  [29:0] reg_addr;
+/*
+mode == 0 - show EOF pointer, internal
+mode == 1 - show EOF pointer, confirmed
+mode == 2 - show current pointer, internal
+mode == 3 - show current pointer, confirmed
+each group of 4 bits per channel : bits [1:0] - select, bit[2] - sset (0 - nop), bit[3] - not used
+ */    
+    
+    reg [31:0] data;
+    begin
+        reg_addr = CMPRS_GROUP_ADDR + (port_afi ? CMPRS_AFIMUX_RADDR1 : CMPRS_AFIMUX_RADDR0) + CMPRS_AFIMUX_MODE;
+        data = 0;
+        data[4 * chn +: 4] = {2'b01, mode};
+        write_contol_register(reg_addr,data);                   
+    end
+endtask
+
+task afi_mux_chn_start_length;
+    input [0:0] port_afi;    // number of AFI port (0 - afi 1, 1 - afi2) // configuration controlled by the code. currently
+                             // both AFI are used: ch0 - cmprs_afi_mux_1.0, ch1 - cmprs_afi_mux_1.1,
+                             //  ch2 - cmprs_afi_mux_2.0, ch3 - cmprs_afi_mux_2
+                             // May be chenged to ch0 - cmprs_afi_mux_1.0, ch1 -cmprs_afi_mux_1.1,
+                             //  ch2 - cmprs_afi_mux_1.2, ch3 - cmprs_afi_mux_1.3
+    input [ 1:0] chn;  // channel number to set mode for
+    input [26:0] sa;   // start address in 32-byte chunks
+    input [26:0] length;     // channel buffer length in 32-byte chunks
+
+    reg  [29:0] reg_addr;
+    begin
+        reg_addr = CMPRS_GROUP_ADDR + (port_afi ? CMPRS_AFIMUX_RADDR1 : CMPRS_AFIMUX_RADDR0) + CMPRS_AFIMUX_SA_LEN + chn;
+        write_contol_register(reg_addr  , {5'b0, sa});                   
+        write_contol_register(reg_addr+4, {5'b0, length});                   
+    end
+endtask
 
 `include "includes/tasks_tests_memory.vh" // SuppressThisWarning VEditor - may be unused
 `include "includes/x393_tasks_afi.vh" // SuppressThisWarning VEditor - may be unused

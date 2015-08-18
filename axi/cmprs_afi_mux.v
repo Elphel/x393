@@ -23,11 +23,33 @@
 module  cmprs_afi_mux#(
     parameter CMPRS_AFIMUX_ADDR=                'h140, //TODO: assign valid address
     parameter CMPRS_AFIMUX_MASK=                'h7f0,
-    parameter CMPRS_AFIMUX_EN=                  'h0, // enables (gl;obal and per-channel)
+    parameter CMPRS_AFIMUX_EN=                  'h0, // enables (global and per-channel)
+/*
+used 10 bits, in each pair [0] - value, [1] - set (0 - nop). [7:0] - per-channel control, [9:8] - common enable/disable (independent)
+*/    
     parameter CMPRS_AFIMUX_RST=                 'h1, // per-channel resets
+/*
+bits [3:0] - persistent per-channel reset (0 - run, 1 - reset)
+ */    
     parameter CMPRS_AFIMUX_MODE=                'h2, // per-channel select - which register to return as status
+/*
+mode == 0 - show EOF pointer, internal
+mode == 1 - show EOF pointer, confirmed
+mode == 2 - show current pointer, internal
+mode == 3 - show current pointer, confirmed
+each group of 4 bits per channel : bits [1:0] - select, bit[2] - sset (0 - nop), bit[3] - not used
+ */    
     parameter CMPRS_AFIMUX_STATUS_CNTRL=        'h4, // .. 'h7
+/*
+    4 consecutive locations, per-channel status control 
+*/    
     parameter CMPRS_AFIMUX_SA_LEN=              'h8, // .. 'hf
+/*
+    27-bit "chunk" addresses and lengths. 1 chunk = 32 bytes, so 27 bit covers all 2^32 adderss range
+     8 .. 11 - per-channel start adddresses,
+    12 .. 15 - per-channel buffer lengths (will roll over to start address)
+(0..3 - start addresses, 4..7 - lengths)    
+*/    
 
     parameter CMPRS_AFIMUX_STATUS_REG_ADDR=     'h20,  //Uses 4 locations TODO: assign valid address
     parameter CMPRS_AFIMUX_WIDTH =              26, // maximal for status: currently only works with 26)
@@ -147,6 +169,7 @@ module  cmprs_afi_mux#(
     reg   [3:0] fifo_flush_d;      // fifo_flush* delayed by 1 clk (to detect rising edge
     reg   [3:0] eof_stb;           // single-cycle pulse after fifo_flush is asserted
 //    reg   [1:0] w64_cnt;           // count 64-bit words in a chunk
+// adjusted counters used for channel arbitration
     reg  [35:0] counts_corr0; // registers to hold corrected (decremented currently processed ones if any) fifo count values, MSB - needs flush
     reg  [17:0] counts_corr1; // first arbitration level winning values
     reg   [8:0] counts_corr2;      // second arbitration level winning values
@@ -166,6 +189,8 @@ module  cmprs_afi_mux#(
     reg   [3:0] busy; // TODO: adjust number of bits. During continuous run busy is deasseted for 1 clock cycle
     wire        done_burst_w; // de-asset busy
     wire        pre_busy_w;
+    reg         first_busy; // cycle after pre_busy_w
+    reg   [3:0] pend_last;  // waiting for last chunk
     reg         last_burst_in_frame;
 //    reg   [1:0] wlen32; // 2 high bits of burst len (LSB are always 2'b11)
     
@@ -235,17 +260,30 @@ module  cmprs_afi_mux#(
             sa_len_d <= cmd_data[26:0];
             sa_len_wa <= cmd_a[2:0];
         end
-        if (cmd_we_en_w)  en_mclk <=  cmd_data[9:0];
-        if (cmd_we_rst_w) rst_mclk <= cmd_data[3:0];
+        if      (mrst)         en_mclk <=  0;
+        else if (cmd_we_en_w)  en_mclk <=  cmd_data[9:0];
+        
+        if      (mrst)         rst_mclk <=  ~0;
+        else if (cmd_we_rst_w) rst_mclk <= cmd_data[3:0];
     end
 
     always @ (posedge hclk) begin
-        reset_pointers <= (en && !en_d)? 4'hf : (en_rst ? rst_mclk : 4'h0);
-        if (en_we && en_mclk[1]) en_chn[0] <= en_mclk[0];
-        if (en_we && en_mclk[3]) en_chn[1] <= en_mclk[2];
-        if (en_we && en_mclk[5]) en_chn[2] <= en_mclk[4];
-        if (en_we && en_mclk[7]) en_chn[3] <= en_mclk[6];
-        if (en_we && en_mclk[9]) en <=        en_mclk[8];
+        reset_pointers <= ((en && !en_d) || hrst)? 4'hf : (en_rst ? rst_mclk : 4'h0);
+        if      (hrst)                en_chn[0] <= 0;
+        else if (en_we && en_mclk[1]) en_chn[0] <= en_mclk[0];
+
+        if      (hrst)                en_chn[1] <= 0;
+        else if (en_we && en_mclk[3]) en_chn[1] <= en_mclk[2];
+
+        if      (hrst)                en_chn[2] <= 0;
+        else if (en_we && en_mclk[5]) en_chn[2] <= en_mclk[4];
+
+        if      (hrst)                en_chn[3] <= 0;
+        else if (en_we && en_mclk[7]) en_chn[3] <= en_mclk[6];
+
+        if      (hrst)                en        <= 0;
+        else if (en_we && en_mclk[9]) en        <= en_mclk[8];
+        
     end
 
     
@@ -323,8 +361,17 @@ module  cmprs_afi_mux#(
         //ready_to_start need_to_bother
         //done_burst
         if      (!en)          busy <= 0;
-        else if (pre_busy_w)   busy <= {busy[2:0],1'b1};
-        else if (done_burst_w) busy <= 0; // {busy[2:0],1'b0};
+//        else if (pre_busy_w)   busy <= {busy[2:0],1'b1};
+//        else if (done_burst_w) busy <= 0; // {busy[2:0],1'b0};
+        else   busy <= {busy[2:0], pre_busy_w | (busy[0] & ~done_burst_w)};
+        
+        if      (!en)          first_busy <= 0;
+        else                   first_busy <= pre_busy_w;
+        
+        if      (!en)          pend_last <= 0;
+        else pend_last <= eof_stb | (pend_last & ~({4{first_busy & last_burst_in_frame}} & fifo_ren )); 
+        
+//pend_last        
         
         if      (!en)        wleft <= 0;
         else if (pre_busy_w) wleft <= {(|counts_corr2[7:2])? 2'b11 : left_to_eof[winner2 * 8 +: 2], 2'b11};
@@ -346,7 +393,7 @@ module  cmprs_afi_mux#(
         
         if (pre_busy_w)  begin
             cur_chn <= winner2;
-            last_burst_in_frame <= last_chunk_w[winner2];
+            last_burst_in_frame <= last_chunk_w[winner2] && pend_last[winner2];
         end
         
         wlast <= done_burst_w; // when wleft==4'h1

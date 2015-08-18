@@ -232,26 +232,26 @@ Alex
         if (start_write_burst_w) begin
             if (awid_out != wid_out) begin
                 $display ("%m: at time %t ERROR: awid=%h, awid=%h",$time,awid_out,wid_out);
-                $stop;
+//                $stop;
             end
     
             if (awsize_out != 2'h3) begin
                 $display ("%m: at time %t ERROR: awsize_out=%h, currently only 'h3 (8 bytes) is valid",$time,awsize_out);
-                $stop;
+//                $stop;
             end
         end
         if (awvalid && awready) begin
             if (((awlock ^ VALID_AWLOCK) & VALID_AWLOCK_MASK) != 0) begin
                 $display ("%m: at time %t ERROR: awlock = %h, valid %h with mask %h",$time, awlock, VALID_AWLOCK, VALID_AWLOCK_MASK);
-                $stop;
+//                $stop;
             end
             if (((awcache ^ VALID_AWCACHE) & VALID_AWCACHE_MASK) != 0) begin
                 $display ("%m: at time %t ERROR: awcache = %h, valid %h with mask %h",$time, awcache, VALID_AWCACHE, VALID_AWCACHE_MASK);
-                $stop;
+//                $stop;
             end
             if (((awprot ^ VALID_AWPROT) & VALID_AWPROT_MASK) != 0) begin
                 $display ("%m: at time %t ERROR: awprot = %h, valid %h with mask %h",$time, awprot, VALID_AWPROT, VALID_AWPROT_MASK);
-                $stop;
+//                $stop;
             end
         end
     end

@@ -48,8 +48,8 @@ module  cmprs_afi_mux_status #(
     output reg               [3:0] chunk_ptr_ra, // full pointer address - {eof,wresp,chn[1:0]}
     input [CMPRS_AFIMUX_WIDTH-1:0] chunk_ptr_rd  // pointer data
 );
-   localparam MODE_IDTH = 15;
-    reg              [MODE_IDTH-1:0] mode_data_mclk; // some bits unused
+   localparam MODE_WIDTH = 15;
+    reg              [MODE_WIDTH-1:0] mode_data_mclk; // some bits unused
     wire                             mode_we_hclk;
     reg                        [7:0] mode_hclk;
     reg                        [1:0] index;
@@ -69,7 +69,7 @@ module  cmprs_afi_mux_status #(
     
     assign stb_w = en && (cntr==0);
     always @ (posedge mclk) begin
-        if (mode_we) mode_data_mclk <= cmd_data[MODE_IDTH-1:0];
+        if (mode_we) mode_data_mclk <= cmd_data[MODE_WIDTH-1:0];
     end
 
     always @ (posedge hclk) begin

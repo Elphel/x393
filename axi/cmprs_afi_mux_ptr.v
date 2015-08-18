@@ -51,11 +51,11 @@ module  cmprs_afi_mux_ptr(
     reg         ptr_we;                 // pointer memory write enable
     reg  [26:0] ptr_ram[0:7];           // pointer (current and eof) memory (in 32-byte chunks
     wire [26:0] ptr_ram_di;             // data to be written to ptr_ram
-    reg  [26:0] sa_len_ram[0:7];           // start chunk/num cunks in a buffer (write port @mclk)
+    reg  [26:0] sa_len_ram[0:7];        // start chunk/num cunks in a buffer (write port @mclk)
     reg  [26:0] chunk_ptr_inc;          // incremented by 1..4 chunk pointer
     reg  [27:0] chunk_ptr_rovr;         // incremented chunk pointer, decremented by length (MSB - sign)
     reg         en_d;                   //enable delayed by 1 cycle
-    wire [ 2:0] sa_len_ra;              // start/len read address
+    wire [ 2:0] sa_len_ra;              // start/len read address (0..3 - start addresses, 4..7 - lengths)
 
     
     assign ptr_resetting = resetting[0];
