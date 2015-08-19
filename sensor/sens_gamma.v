@@ -19,6 +19,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/> .
  *******************************************************************************/
 `timescale 1ns/1ps
+`include "system_defines.vh" 
 // TODO - Add registers to MPY
 module  sens_gamma #(
     parameter SENS_NUM_SUBCHN =           3, // number of subchannels for his sensor ports (1..4)

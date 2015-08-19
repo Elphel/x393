@@ -21,6 +21,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/> .
  *******************************************************************************/
 `timescale 1ns/1ps
+`include "system_defines.vh" 
 /*
    Address/data widths
    Connect unused data to 1b0, unused addresses - to 1'b1
@@ -85,6 +86,10 @@ module  ramtp_var_w_var_r
   parameter integer LOG2WIDTH_B = 5,  // WIDTH= 9  << (LOG2WIDTH - 3)
   parameter WRITE_MODE_A =        "NO_CHANGE", //Valid: "WRITE_FIRST", "READ_FIRST", "NO_CHANGE"
   parameter WRITE_MODE_B =        "NO_CHANGE"  //Valid: "WRITE_FIRST", "READ_FIRST", "NO_CHANGE"
+`ifdef PRELOAD_BRAMS
+    ,
+    `include "includes/ram36_declare_init.vh"
+`endif
  )(
       input                               clk_a,     // clock for port A
       input            [14-LOG2WIDTH_A:0] addr_a,    // address port A
@@ -102,9 +107,6 @@ module  ramtp_var_w_var_r
       output [(9 << (LOG2WIDTH_B-3))-1:0] data_out_b,// data out port B
       input  [(9 << (LOG2WIDTH_B-3))-1:0] data_in_b  // data in port B
 );
-`ifdef PRELOAD_BRAMS
-    `include "includes/ram36_declare_init.vh"
-`endif
     localparam  PWIDTH_A = (LOG2WIDTH_A > 2)? (9 << (LOG2WIDTH_A - 3)): (1 << LOG2WIDTH_A);
     localparam  PWIDTH_B = (LOG2WIDTH_B > 2)? (9 << (LOG2WIDTH_B - 3)): (1 << LOG2WIDTH_B);
     localparam  WIDTH_A  = 1 << LOG2WIDTH_A;

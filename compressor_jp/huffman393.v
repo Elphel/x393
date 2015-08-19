@@ -24,6 +24,7 @@
 ** -----------------------------------------------------------------------------**
 **
 */
+`include "system_defines.vh" 
 // 01/22/2004 - extended flush until ready (modified stuffer.v too)
 module huffman393    (
     input             xclk,            // pixel clock, sync to incoming data

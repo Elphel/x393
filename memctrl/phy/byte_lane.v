@@ -26,6 +26,7 @@ module  byte_lane #(
     parameter IODELAY_GRP ="IODELAY_MEMORY",
     parameter IBUF_LOW_PWR ="TRUE",
     parameter IOSTANDARD_DQ = "SSTL15_T_DCI",
+    parameter IOSTANDARD_DM = "SSTL15",
     parameter IOSTANDARD_DQS = "DIFF_SSTL15_T_DCI",
     parameter SLEW_DQ = "SLOW",
     parameter SLEW_DQS = "SLOW",
@@ -139,7 +140,7 @@ endgenerate
 dm_single #(
         .IODELAY_GRP(IODELAY_GRP),
         .IBUF_LOW_PWR(IBUF_LOW_PWR),
-        .IOSTANDARD(IOSTANDARD_DQ),
+        .IOSTANDARD(IOSTANDARD_DM),
         .SLEW(SLEW_DQ),
         .REFCLK_FREQUENCY(REFCLK_FREQUENCY),
         .HIGH_PERFORMANCE_MODE(HIGH_PERFORMANCE_MODE)

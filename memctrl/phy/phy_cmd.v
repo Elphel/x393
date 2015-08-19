@@ -359,6 +359,7 @@ module  phy_cmd#(
 
     phy_top #(
         .IOSTANDARD_DQ      ("SSTL15_T_DCI"),
+        .IOSTANDARD_DM      ("SSTL15"),
         .IOSTANDARD_DQS     ("DIFF_SSTL15_T_DCI"),
         .IOSTANDARD_CMDA    ("SSTL15"),
         .IOSTANDARD_CLK     ("DIFF_SSTL15"),

@@ -25,6 +25,7 @@
 ** -----------------------------------------------------------------------------**
 **
 */
+`include "system_defines.vh" 
 `timescale 1ns/1ps
 //TODO: Modify to work with other modes (now only on color)
 module focus_sharp393(

@@ -16,6 +16,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *******************************************************************************/
+`include "system_defines.vh" 
 /*
    Address/data widths
    Connect unused data to 1b0, unused addresses - to 1'b1
@@ -77,6 +78,10 @@ module  ramp_var_w_var_r
   parameter integer LOG2WIDTH_WR = 6, // WIDTH= 9  << (LOG2WIDTH - 3)
   parameter integer LOG2WIDTH_RD = 6, // WIDTH= 9  << (LOG2WIDTH - 3)
   parameter         DUMMY = 0
+`ifdef PRELOAD_BRAMS
+    ,
+    `include "includes/ram36_declare_init.vh"
+`endif
  )
    (
       input                            rclk,     // clock for read port
@@ -92,10 +97,6 @@ module  ramp_var_w_var_r
       input                     [ 7:0] web,      // write byte enable
       input  [(9 << (LOG2WIDTH_WR-3))-1:0] data_in   // data out
     );
-`ifdef PRELOAD_BRAMS
-    `include "includes/ram36_declare_init.vh"
-`endif
-    
     generate
         if (DUMMY)
             ramp_dummy #(
@@ -186,6 +187,10 @@ endmodule
 module  ramp_64w_64r
 #(
   parameter integer REGISTERS    = 0 // 1 - registered output
+`ifdef PRELOAD_BRAMS
+    ,
+    `include "includes/ram36_declare_init.vh"
+`endif
  )
    (
       input                         rclk,     // clock for read port
@@ -200,9 +205,6 @@ module  ramp_64w_64r
       input                  [ 7:0] web,      // write byte enable
       input                  [71:0] data_in  // data out
     );
-`ifdef PRELOAD_BRAMS
-    `include "includes/ram36_declare_init.vh"
-`endif
     
     localparam  PWIDTH_WR=72;
     localparam  PWIDTH_RD=72;
@@ -280,6 +282,10 @@ module  ramp_lt64w_lt64r
   parameter integer REGISTERS    = 0, // 1 - registered output
   parameter integer LOG2WIDTH_WR = 5,  // WIDTH= 1  << LOG2WIDTH
   parameter integer LOG2WIDTH_RD = 5   // WIDTH= 1  << LOG2WIDTH
+`ifdef PRELOAD_BRAMS
+    ,
+    `include "includes/ram36_declare_init.vh"
+`endif
  )
    (
       input                                rclk,     // clock for read port
@@ -295,9 +301,6 @@ module  ramp_lt64w_lt64r
       input                         [ 7:0] web,      // write byte enable
       input  [(9 << (LOG2WIDTH_WR-3))-1:0] data_in   // data out
     );
-`ifdef PRELOAD_BRAMS
-    `include "includes/ram36_declare_init.vh"
-`endif
     
     localparam  PWIDTH_WR = (LOG2WIDTH_WR > 2)? (9 << (LOG2WIDTH_WR - 3)): (1 << LOG2WIDTH_WR);
     localparam  PWIDTH_RD = (LOG2WIDTH_RD > 2)? (9 << (LOG2WIDTH_RD - 3)): (1 << LOG2WIDTH_RD);
@@ -402,6 +405,10 @@ module  ramp_lt64w_64r
 #(
   parameter integer REGISTERS    = 0, // 1 - registered output
   parameter integer LOG2WIDTH_WR = 5  // WIDTH= 1  << LOG2WIDTH
+`ifdef PRELOAD_BRAMS
+    ,
+    `include "includes/ram36_declare_init.vh"
+`endif
  )
    (
       input                                rclk,     // clock for read port
@@ -417,9 +424,6 @@ module  ramp_lt64w_64r
       input                         [ 7:0] web,      // write byte enable
       input  [(9 << (LOG2WIDTH_WR-3))-1:0] data_in   // data out
     );
-`ifdef PRELOAD_BRAMS
-    `include "includes/ram36_declare_init.vh"
-`endif
     localparam  PWIDTH_WR = (LOG2WIDTH_WR > 2)? (9 << (LOG2WIDTH_WR - 3)): (1 << LOG2WIDTH_WR);
     localparam  PWIDTH_RD = 72;
     localparam  WIDTH_WR  = 1 << LOG2WIDTH_WR;
@@ -504,6 +508,10 @@ module  ramp_64w_lt64r
   parameter integer REGISTERS    = 0, // 1 - registered output
 //  parameter integer LOG2WIDTH_WR = 5,  // WIDTH= 1  << LOG2WIDTH
   parameter integer LOG2WIDTH_RD = 5   // WIDTH= 1  << LOG2WIDTH
+`ifdef PRELOAD_BRAMS
+    ,
+    `include "includes/ram36_declare_init.vh"
+`endif
  )
    (
       input                                rclk,     // clock for read port
@@ -518,9 +526,6 @@ module  ramp_64w_lt64r
       input                         [ 7:0] web,      // write byte enable
       input                         [71:0] data_in   // data out
     );
-  `ifdef PRELOAD_BRAMS
-    `include "includes/ram36_declare_init.vh"
-  `endif
     localparam  PWIDTH_WR = 72;
     localparam  PWIDTH_RD = (LOG2WIDTH_RD > 2)? (9 << (LOG2WIDTH_RD - 3)): (1 << LOG2WIDTH_RD);
     localparam  WIDTH_RD  = 1 << LOG2WIDTH_RD;

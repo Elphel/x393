@@ -22,6 +22,7 @@
 
 module  phy_top #(
     parameter IOSTANDARD_DQ =   "SSTL15_T_DCI",
+    parameter IOSTANDARD_DM =   "SSTL15",
     parameter IOSTANDARD_DQS =  "DIFF_SSTL15_T_DCI",
     parameter IOSTANDARD_CMDA = "SSTL15",
     parameter IOSTANDARD_CLK = "DIFF_SSTL15",
@@ -226,6 +227,7 @@ module  phy_top #(
     .IODELAY_GRP     (IODELAY_GRP),
     .IBUF_LOW_PWR    (IBUF_LOW_PWR),
     .IOSTANDARD_DQ   (IOSTANDARD_DQ),
+    .IOSTANDARD_DM   (IOSTANDARD_DM),
     .IOSTANDARD_DQS  (IOSTANDARD_DQS),
     .SLEW_DQ         (SLEW_DQ),
     .SLEW_DQS        (SLEW_DQS),
@@ -258,6 +260,7 @@ module  phy_top #(
     .IODELAY_GRP     (IODELAY_GRP),
     .IBUF_LOW_PWR    (IBUF_LOW_PWR),
     .IOSTANDARD_DQ   (IOSTANDARD_DQ),
+    .IOSTANDARD_DM   (IOSTANDARD_DM),
     .IOSTANDARD_DQS  (IOSTANDARD_DQS),
     .SLEW_DQ         (SLEW_DQ),
     .SLEW_DQS        (SLEW_DQS),

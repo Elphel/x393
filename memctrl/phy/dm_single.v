@@ -27,7 +27,7 @@ module  dm_single #(
 //    parameter integer IDELAY_VALUE = 0,
     parameter integer ODELAY_VALUE = 0,
     parameter IBUF_LOW_PWR ="TRUE", //SuppressThisWarning VEditor not used in OBUF_DCIEN
-    parameter IOSTANDARD = "SSTL15_T_DCI",
+    parameter IOSTANDARD = "SSTL15",
     parameter SLEW = "SLOW",
     parameter real REFCLK_FREQUENCY = 300.0,
     parameter HIGH_PERFORMANCE_MODE = "FALSE"

@@ -24,7 +24,7 @@
 ** -----------------------------------------------------------------------------**
 **
 */
-
+`include "system_defines.vh" 
 `timescale 1ns/1ps
 
 // will add extracted DC (8 bits) to data from DCT here that will make data 12 bits (signed) long.
