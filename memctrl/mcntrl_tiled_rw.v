@@ -63,7 +63,9 @@ module  mcntrl_tiled_rw#(
     parameter MCONTR_LINTILE_BYTE32 =        6, // use 32-byte wide columns in each tile (false - 16-byte) 
     parameter MCONTR_LINTILE_RST_FRAME =     8, // reset frame number 
     parameter MCONTR_LINTILE_SINGLE =        9, // read/write a single page 
-    parameter MCONTR_LINTILE_REPEAT =       10  // read/write pages until disabled 
+    parameter MCONTR_LINTILE_REPEAT =       10,  // read/write pages until disabled
+    parameter MCONTR_LINTILE_DIS_NEED =     11   // disable 'need' request 
+     
 )(
     input                          mrst,
     input                          mclk,
@@ -161,7 +163,7 @@ module  mcntrl_tiled_rw#(
     wire                          cmd_wrmem; //= MCNTRL_TILED_WRITE_MODE; // 0: read from memory, 1:write to memory (change to parameter?)
     wire                    [1:0] cmd_extra_pages; // external module needs more than 1 page
     wire                          byte32; // use 32-byte wide colums in each tile (0 - use 16-byte ones)
-    
+    wire                          disable_need; // do not assert need, only want
     wire                          repeat_frames; // mode bit
     wire                          single_frame_w; // pulse
     wire                          rst_frame_num_w;
@@ -211,7 +213,7 @@ module  mcntrl_tiled_rw#(
     
 //    reg                     [5:0] mode_reg;//mode register: {write_mode,keep_open,extra_pages[1:0],enable,!reset}
 //    reg                     [6:0] mode_reg;//mode register: {byte32,keep_open,extra_pages[1:0],write_mode,enable,!reset}
-    reg                    [10:0] mode_reg;//mode register: {repet,single,rst_frame,na,byte32,keep_open,extra_pages[1:0],write_mode,enable,!reset}
+    reg                    [11:0] mode_reg;//mode register: {dis_need,repet,single,rst_frame,na,byte32,keep_open,extra_pages[1:0],write_mode,enable,!reset}
     reg   [NUM_RC_BURST_BITS-1:0] start_range_addr; // (programmed) First frame in range start (in {row,col8} in burst8, bank ==0
     reg   [NUM_RC_BURST_BITS-1:0] frame_size;       // (programmed) First frame in range start (in {row,col8} in burst8, bank ==0
     reg     [LAST_FRAME_BITS-1:0] last_frame_number; 
@@ -266,7 +268,7 @@ module  mcntrl_tiled_rw#(
     // Set parameter registers
     always @(posedge mclk) begin
         if      (mrst)               mode_reg <= 0;
-        else if (set_mode_w)         mode_reg <= cmd_data[10:0]; // [5:0];
+        else if (set_mode_w)         mode_reg <= cmd_data[11:0]; // [5:0];
         
         if (mrst) single_frame_r <= 0;
         else      single_frame_r <= single_frame_w;
@@ -382,7 +384,7 @@ module  mcntrl_tiled_rw#(
     assign keep_open=        mode_reg[MCONTR_LINTILE_KEEP_OPEN]; // keep banks open (will be used only if number of rows <= 8
     assign byte32=           mode_reg[MCONTR_LINTILE_BYTE32]; // use 32-byte wide columns in each tile (false - 16-byte) 
     assign repeat_frames=    mode_reg[MCONTR_LINTILE_REPEAT];
-    
+    assign disable_need =    mode_reg[MCONTR_LINTILE_DIS_NEED];
     assign status_data=      {frame_finished_r, busy_r}; 
     assign pgm_param_w=      cmd_we;
     assign rowcol_inc=       frame_full_width;
@@ -487,16 +489,16 @@ wire    start_not_partial= xfer_start_r[0] && !xfer_limited_by_mem_page_r;
         if (mrst) xfer_start32_wr_r <= 0;
         else     xfer_start32_wr_r <=  xfer_grant && !chn_rst && cmd_wrmem && byte32;
 
-        if (mrst)                   continued_tile <= 1'b0;
+        if (mrst)                  continued_tile <= 1'b0;
         else if (chn_rst)          continued_tile <= 1'b0;
         else if (frame_start_r[0]) continued_tile <= 1'b0;
         else if (xfer_start_r[0])  continued_tile <= xfer_limited_by_mem_page_r; // only set after actual start if it was partial, not after parameter change
         
-        if (mrst)                                          need_r <= 0;
+        if (mrst || disable_need)                         need_r <= 0;
         else if (chn_rst || xfer_grant)                   need_r <= 0;
         else if ((pre_want  || want_r) && (page_cntr>=3)) need_r <= 1; // may raise need if want was already set
 
-        if (mrst)                                                 want_r <= 0;
+        if (mrst)                                                want_r <= 0;
         else if (chn_rst || xfer_grant)                          want_r <= 0;
         else if (pre_want && (page_cntr>{1'b0,cmd_extra_pages})) want_r <= 1;
         

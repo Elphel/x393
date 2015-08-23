@@ -24,7 +24,7 @@ module  mcontr_sequencer   #(
 //command interface parameters
 //0x1080..10ff - 8- bit data - to set various delay values
     parameter DLY_LD =            'h080,  // address to generate delay load 
-    parameter DLY_LD_MASK =       'h380,  // address mask to generate delay load
+    parameter DLY_LD_MASK =       'h780,  // address mask to generate delay load
 //  0x1080..109f - set delay for SDD0-SDD7
 //  0x10a0..10bf - set delay for SDD8-SDD15
 //  0x10c0..10df - set delay for SD_CMDA

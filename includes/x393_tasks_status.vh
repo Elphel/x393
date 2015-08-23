@@ -113,6 +113,7 @@ endtask
  
  task read_all_status;
     begin
+        $display (" read_all_status @%t",$time);
         read_status (MCONTR_PHY_STATUS_REG_ADDR);
         read_status (MCONTR_TOP_STATUS_REG_ADDR);
         read_status (MCNTRL_PS_STATUS_REG_ADDR);

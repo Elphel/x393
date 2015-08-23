@@ -50,7 +50,7 @@ module  mcntrl393 #(
     
 //command interface parameters
     parameter DLY_LD =            'h080,  // address to generate delay load
-    parameter DLY_LD_MASK =       'h380,  // address mask to generate delay load
+    parameter DLY_LD_MASK =       'h780,  // address mask to generate delay load
 //0x1000..103f - 0- bit data (set/reset)
     parameter MCONTR_PHY_0BIT_ADDR =           'h020,  // address to set sequnecer channel and  run (4 LSB-s - channel)
     parameter MCONTR_PHY_0BIT_ADDR_MASK =      'h7f0,  // address mask to generate sequencer channel/run
@@ -166,7 +166,7 @@ module  mcntrl393 #(
     parameter CMD_DONE_BIT=         10,
 //    
     parameter MCNTRL_PS_ADDR=                    'h100,
-    parameter MCNTRL_PS_MASK=                    'h3e0, // both channels 0 and 1
+    parameter MCNTRL_PS_MASK=                    'h7e0, // both channels 0 and 1
     parameter MCNTRL_PS_STATUS_REG_ADDR=         'h2,
     parameter MCNTRL_PS_EN_RST=                  'h0,
     parameter MCNTRL_PS_CMD=                     'h1,
@@ -240,7 +240,8 @@ module  mcntrl393 #(
     parameter MCONTR_LINTILE_BYTE32 =        6, // use 32-byte wide columns in each tile (false - 16-byte) 
     parameter MCONTR_LINTILE_RST_FRAME =     8, // reset frame number 
     parameter MCONTR_LINTILE_SINGLE =        9, // read/write a single page 
-    parameter MCONTR_LINTILE_REPEAT =       10  // read/write pages until disabled 
+    parameter MCONTR_LINTILE_REPEAT =       10,  // read/write pages until disabled 
+    parameter MCONTR_LINTILE_DIS_NEED =     11   // disable 'need' request 
     
     ) (
     input                        rst_in,
@@ -1057,7 +1058,8 @@ module  mcntrl393 #(
                 .MCONTR_LINTILE_EXTRAPG_BITS       (MCONTR_LINTILE_EXTRAPG_BITS),
                 .MCONTR_LINTILE_RST_FRAME          (MCONTR_LINTILE_RST_FRAME),
                 .MCONTR_LINTILE_SINGLE             (MCONTR_LINTILE_SINGLE),
-                .MCONTR_LINTILE_REPEAT             (MCONTR_LINTILE_REPEAT)
+                .MCONTR_LINTILE_REPEAT             (MCONTR_LINTILE_REPEAT),
+                .MCONTR_LINTILE_DIS_NEED           (MCONTR_LINTILE_DIS_NEED) 
             ) mcntrl_linear_wr_sensor_i (
                 .mrst             (mrst),                       // input
                 .mclk             (mclk),                       // input
@@ -1121,7 +1123,8 @@ module  mcntrl393 #(
                 .MCONTR_LINTILE_BYTE32         (MCONTR_LINTILE_BYTE32),
                 .MCONTR_LINTILE_RST_FRAME      (MCONTR_LINTILE_RST_FRAME),
                 .MCONTR_LINTILE_SINGLE         (MCONTR_LINTILE_SINGLE),
-                .MCONTR_LINTILE_REPEAT         (MCONTR_LINTILE_REPEAT)
+                .MCONTR_LINTILE_REPEAT         (MCONTR_LINTILE_REPEAT),
+                .MCONTR_LINTILE_DIS_NEED       (MCONTR_LINTILE_DIS_NEED) 
             ) mcntrl_tiled_rd_compressor_i ( 
                 .mrst                 (mrst),                         // input
                 .mclk                 (mclk),                        // input
@@ -1192,7 +1195,8 @@ module  mcntrl393 #(
         .MCONTR_LINTILE_EXTRAPG_BITS       (MCONTR_LINTILE_EXTRAPG_BITS),
         .MCONTR_LINTILE_RST_FRAME          (MCONTR_LINTILE_RST_FRAME),
         .MCONTR_LINTILE_SINGLE             (MCONTR_LINTILE_SINGLE),
-        .MCONTR_LINTILE_REPEAT             (MCONTR_LINTILE_REPEAT)
+        .MCONTR_LINTILE_REPEAT             (MCONTR_LINTILE_REPEAT),
+        .MCONTR_LINTILE_DIS_NEED           (MCONTR_LINTILE_DIS_NEED) 
     ) mcntrl_linear_rw_chn1_i (
         .mrst             (mrst), // input
         .mclk             (mclk), // input
@@ -1252,7 +1256,8 @@ module  mcntrl393 #(
         .MCONTR_LINTILE_EXTRAPG_BITS       (MCONTR_LINTILE_EXTRAPG_BITS),
         .MCONTR_LINTILE_RST_FRAME          (MCONTR_LINTILE_RST_FRAME),
         .MCONTR_LINTILE_SINGLE             (MCONTR_LINTILE_SINGLE),
-        .MCONTR_LINTILE_REPEAT             (MCONTR_LINTILE_REPEAT)
+        .MCONTR_LINTILE_REPEAT             (MCONTR_LINTILE_REPEAT),
+        .MCONTR_LINTILE_DIS_NEED           (MCONTR_LINTILE_DIS_NEED) 
     ) mcntrl_linear_rw_chn3_i (
         .mrst             (mrst), // input
         .mclk             (mclk), // input
@@ -1315,7 +1320,8 @@ module  mcntrl393 #(
         .MCONTR_LINTILE_BYTE32         (MCONTR_LINTILE_BYTE32),
         .MCONTR_LINTILE_RST_FRAME      (MCONTR_LINTILE_RST_FRAME),
         .MCONTR_LINTILE_SINGLE         (MCONTR_LINTILE_SINGLE),
-        .MCONTR_LINTILE_REPEAT         (MCONTR_LINTILE_REPEAT)
+        .MCONTR_LINTILE_REPEAT         (MCONTR_LINTILE_REPEAT),
+        .MCONTR_LINTILE_DIS_NEED       (MCONTR_LINTILE_DIS_NEED) 
     ) mcntrl_tiled_rw_chn2_i ( 
         .mrst                 (mrst),                       // input
         .mclk                 (mclk),                       // input
@@ -1382,7 +1388,9 @@ module  mcntrl393 #(
         .MCONTR_LINTILE_BYTE32         (MCONTR_LINTILE_BYTE32),
         .MCONTR_LINTILE_RST_FRAME      (MCONTR_LINTILE_RST_FRAME),
         .MCONTR_LINTILE_SINGLE         (MCONTR_LINTILE_SINGLE),
-        .MCONTR_LINTILE_REPEAT         (MCONTR_LINTILE_REPEAT)
+        .MCONTR_LINTILE_REPEAT         (MCONTR_LINTILE_REPEAT),
+        .MCONTR_LINTILE_DIS_NEED       (MCONTR_LINTILE_DIS_NEED) 
+        
     ) mcntrl_tiled_rw_chn4_i ( 
         .mrst                 (mrst),                       // input
         .mclk                 (mclk),                       // input

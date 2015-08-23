@@ -110,7 +110,8 @@ parameter EXTERNAL_TIMESTAMP =    1 ;    // embed local timestamp, 1 - embed rec
   parameter CLK3_PER = 83.33;   //12MHz
   parameter CPU_PER=10.4;
   
- parameter HBLANK=            12; /// 52;
+ parameter TRIG_PERIOD =      6000 ;
+ parameter HBLANK=            52; // 12; /// 52; //*********************
  parameter WOI_HEIGHT=        32;
  parameter BLANK_ROWS_BEFORE= 1; //8; ///2+2 - a little faster than compressor
  parameter BLANK_ROWS_AFTER=  1; //8;
@@ -148,7 +149,6 @@ parameter EXTERNAL_TIMESTAMP =    1 ;    // embed local timestamp, 1 - embed rec
 //  localparam       FRAME_COMPRESS_CYCLES = (WOI_WIDTH &'h3fff0) * (WOI_HEIGHT &'h3fff0) * CYCLES_PER_PIXEL + FPGA_XTRA_CYCLES;
 // in pixel clocks (camsync now has different clock - 100MHz instead of the 96MHz
 //  localparam       TRIG_PERIOD =   VIRTUAL_WIDTH * (VIRTUAL_HEIGHT + TRIG_LINES + VBLANK); /// maximal sensor can do
-  localparam       TRIG_PERIOD =   5000 ;
 
 // ========================== end of parameters from x353 ===================================
 
@@ -164,6 +164,36 @@ parameter EXTERNAL_TIMESTAMP =    1 ;    // embed local timestamp, 1 - embed rec
     wire        PX1_DCLK; // output sensor output clock (connect to sensor BPF output )
     wire        PX1_HACT; // output 
     wire        PX1_VACT; // output 
+
+    wire        PX2_MCLK; // input sensor input clock
+    wire        PX2_MRST; // input 
+    wire        PX2_ARO;  // input 
+    wire        PX2_ARST; // input 
+    wire        PX2_OFST = 1'b1; // input // I2C address ofset by 2: for simulation 0 - still mode, 1 - video mode.
+    wire [11:0] PX2_D;    // output[11:0] 
+    wire        PX2_DCLK; // output sensor output clock (connect to sensor BPF output )
+    wire        PX2_HACT; // output 
+    wire        PX2_VACT; // output 
+
+    wire        PX3_MCLK; // input sensor input clock
+    wire        PX3_MRST; // input 
+    wire        PX3_ARO;  // input 
+    wire        PX3_ARST; // input 
+    wire        PX3_OFST = 1'b1; // input // I2C address ofset by 2: for simulation 0 - still mode, 1 - video mode.
+    wire [11:0] PX3_D;    // output[11:0] 
+    wire        PX3_DCLK; // output sensor output clock (connect to sensor BPF output )
+    wire        PX3_HACT; // output 
+    wire        PX3_VACT; // output 
+
+    wire        PX4_MCLK; // input sensor input clock
+    wire        PX4_MRST; // input 
+    wire        PX4_ARO;  // input 
+    wire        PX4_ARST; // input 
+    wire        PX4_OFST = 1'b1; // input // I2C address ofset by 2: for simulation 0 - still mode, 1 - video mode.
+    wire [11:0] PX4_D;    // output[11:0] 
+    wire        PX4_DCLK; // output sensor output clock (connect to sensor BPF output )
+    wire        PX4_HACT; // output 
+    wire        PX4_VACT; // output 
 
 // Sensor signals - as on FPGA pads
     wire [ 7:0] sns1_dp;   // inout[7:0] {PX_MRST, PXD8, PXD6, PXD4, PXD2, PXD0, PX_HACT, PX_DCLK}
@@ -195,6 +225,16 @@ assign PX1_ARO =       sns1_ctl;  // from FPGA to sensor
     wire        sns2_ctl;  // inout PX_ARO/TCK
     wire        sns2_pg;   // inout SENSPGM
 
+//connect sensor to sensor port 2 (all data rotated left by 1 bit)
+assign sns2_dp[6:1] =  {PX2_D[9], PX2_D[7], PX2_D[5], PX2_D[3], PX2_D[1], PX2_HACT};
+assign PX2_MRST =       sns2_dp[7]; // from FPGA to sensor
+assign PX2_MCLK =       sns2_dp[0]; // from FPGA to sensor
+assign sns2_dn[6:0] =  {PX2_D[10], PX2_D[8], PX2_D[6], PX2_D[4], PX2_D[2], PX2_VACT, PX2_DCLK};
+assign PX2_ARST =       sns2_dn[7];
+assign sns2_clkn =      PX2_D[11];  // inout CNVSYNC/TDI
+assign sns2_clkp =      PX2_D[0];  // CNVCLK/TDO
+assign PX2_ARO =       sns2_ctl;  // from FPGA to sensor
+
     wire [ 7:0] sns3_dp;   // inout[7:0] {PX_MRST, PXD8, PXD6, PXD4, PXD2, PXD0, PX_HACT, PX_DCLK}
     wire [ 7:0] sns3_dn;   // inout[7:0] {PX_ARST, PXD9, PXD7, PXD5, PXD3, PXD1, PX_VACT, PX_BPF}
     wire        sns3_clkp; // inout CNVCLK/TDO
@@ -203,6 +243,16 @@ assign PX1_ARO =       sns1_ctl;  // from FPGA to sensor
     wire        sns3_sda;  // inout PX_SDA
     wire        sns3_ctl;  // inout PX_ARO/TCK
     wire        sns3_pg;   // inout SENSPGM
+//connect sensor to sensor port 3  (all data rotated left by 2 bits
+assign sns3_dp[6:1] =  {PX3_D[8], PX3_D[6], PX3_D[4], PX3_D[2], PX3_D[0], PX3_HACT};
+assign PX3_MRST =       sns3_dp[7]; // from FPGA to sensor
+assign PX3_MCLK =       sns3_dp[0]; // from FPGA to sensor
+assign sns3_dn[6:0] =  {PX3_D[9], PX3_D[7], PX3_D[5], PX3_D[3], PX3_D[1], PX3_VACT, PX3_DCLK};
+assign PX3_ARST =       sns3_dn[7];
+assign sns3_clkn =      PX3_D[10];  // inout CNVSYNC/TDI
+assign sns3_clkp =      PX3_D[11];  // CNVCLK/TDO
+assign PX3_ARO =        sns3_ctl;  // from FPGA to sensor
+
 
     wire [ 7:0] sns4_dp;   // inout[7:0] {PX_MRST, PXD8, PXD6, PXD4, PXD2, PXD0, PX_HACT, PX_DCLK}
     wire [ 7:0] sns4_dn;   // inout[7:0] {PX_ARST, PXD9, PXD7, PXD5, PXD3, PXD1, PX_VACT, PX_BPF}
@@ -212,6 +262,17 @@ assign PX1_ARO =       sns1_ctl;  // from FPGA to sensor
     wire        sns4_sda;  // inout PX_SDA
     wire        sns4_ctl;  // inout PX_ARO/TCK
     wire        sns4_pg;   // inout SENSPGM
+
+//connect sensor to sensor port 4  (all data rotated left by 3 bits
+assign sns4_dp[6:1] =  {PX4_D[5], PX4_D[3], PX4_D[1], PX4_D[11], PX4_D[9], PX4_HACT};
+assign PX4_MRST =       sns4_dp[7]; // from FPGA to sensor
+assign PX4_MCLK =       sns4_dp[0]; // from FPGA to sensor
+assign sns4_dn[6:0] =  {PX4_D[6], PX4_D[4], PX4_D[2], PX4_D[0], PX4_D[10], PX4_VACT, PX4_DCLK};
+assign PX4_ARST =       sns4_dn[7];
+assign sns4_clkn =      PX4_D[7];  // inout CNVSYNC/TDI
+assign sns4_clkp =      PX4_D[8];  // CNVCLK/TDO
+assign PX4_ARO =        sns4_ctl;  // from FPGA to sensor
+
 
     wire [ 9:0] gpio_pins; // inout[9:0] ([6]-synco0,[7]-syncio0,[8]-synco1,[9]-syncio1)
 // Connect trigger outs to triggets in (#10 needed for Icarus)
@@ -805,10 +866,69 @@ assign #10 gpio_pins[9] = gpio_pins[8];
 `endif
 
 `ifdef TEST_SENSOR
-    TEST_TITLE = "TEST_SENSOR";
+    TEST_TITLE = "GPIO";
+    $display("===================== TEST_%s =========================",TEST_TITLE);
+
+        program_status_gpio (
+            3,          // input [1:0] mode;
+            0);         // input [5:0] seq_num;
+
+    TEST_TITLE = "RTC";
+    $display("===================== TEST_%s =========================",TEST_TITLE);
+        program_status_rtc( // also takes snapshot
+            3,         // input [1:0] mode;
+            0);        //input [5:0] seq_num;
+            
+        set_rtc (
+            32'h12345678, // input [31:0] sec;
+            0,            //input [19:0] usec;
+            16'h8000);    // input [15:0] corr;  maximal correction to the rtc
+
+//    camsync_setup (
+//        4'hf ); // sensor_mask); //
+
+    TEST_TITLE = "TEST_SENSOR1";
     $display("===================== TEST_%s =========================",TEST_TITLE);
     setup_sensor_channel (
-    0 ); // input  [1:0] num_sensor;
+        0 ); // input  [1:0] num_sensor;
+    
+    TEST_TITLE = "TEST_SENSOR2";
+    $display("===================== TEST_%s =========================",TEST_TITLE);
+    setup_sensor_channel (
+    1 ); // input  [1:0] num_sensor;
+
+    TEST_TITLE = "TEST_SENSOR3";
+    $display("===================== TEST_%s =========================",TEST_TITLE);
+    setup_sensor_channel (
+    2 ); // input  [1:0] num_sensor;
+
+    TEST_TITLE = "TEST_SENSOR4";
+    $display("===================== TEST_%s =========================",TEST_TITLE);
+    setup_sensor_channel (
+    3 ); // input  [1:0] num_sensor;
+
+    afi_mux_setup (
+        4'hf, // input  [3:0] chn_mask;
+        'h10000000 >> 5,  // input [26:0] afi_cmprs0_sa;   // input [26:0] sa;   // start address in 32-byte chunks
+           'h10000 >> 5,  // input [26:0] afi_cmprs0_len; //  input [26:0] length;     // channel buffer length in 32-byte chunks
+        'h10010000 >> 5,  // input [26:0] afi_cmprs1_sa;   // input [26:0] sa;   // start address in 32-byte chunks
+           'h10000 >> 5,  // input [26:0] afi_cmprs1_len; //  input [26:0] length;     // channel buffer length in 32-byte chunks
+        'h10020000 >> 5,  // input [26:0] afi_cmprs2_sa;   // input [26:0] sa;   // start address in 32-byte chunks
+           'h10000 >> 5,  // input [26:0] afi_cmprs2_len; //  input [26:0] length;     // channel buffer length in 32-byte chunks
+        'h10030000 >> 5,  // input [26:0] afi_cmprs3_sa;   // input [26:0] sa;   // start address in 32-byte chunks
+           'h10000 >> 5); // input [26:0] afi_cmprs3_len; //  input [26:0] length;     // channel buffer length in 32-byte chunks
+
+    camsync_setup (
+        4'hf ); // sensor_mask); //
+
+
+    TEST_TITLE = "GAMMA_LOAD";
+    $display("===================== TEST_%s =========================",TEST_TITLE);
+        program_curves(
+            0,  //num_sensor,  // input   [1:0] num_sensor;
+            0);          // input   [1:0] sub_channel;    
+    // just temporarily - enable channel immediately    
+//    enable_memcntrl_en_dis(4'hc + {2'b0,num_sensor}, 1);
     
 `endif
 
@@ -822,9 +942,9 @@ assign #10 gpio_pins[9] = gpio_pins[8];
   TEST_TITLE = "ALL_DONE";
   $display("===================== TEST_%s =========================",TEST_TITLE);
   #20000;
-  TEST_TITLE = "WAITING 60usec more";
+  TEST_TITLE = "WAITING 80usec more";
   $display("===================== TEST_%s =========================",TEST_TITLE);
-  #60000;
+  #80000;
   $finish;
 end
 // protect from never end
@@ -1685,6 +1805,119 @@ simul_axi_hp_wr #(
         .VACT1 () // output 
     );
 
+
+    simul_sensor12bits #(
+        .lline     (VIRTUAL_WIDTH),     // SENSOR12BITS_LLINE),
+        .ncols     (FULL_WIDTH),        // (SENSOR12BITS_NCOLS),
+`ifdef PF
+        .nrows     (PF_HEIGHT),         // SENSOR12BITS_NROWS),
+`else
+        .nrows     (FULL_HEIGHT),       // SENSOR12BITS_NROWS),
+`endif        
+        .nrowb     (BLANK_ROWS_BEFORE), // SENSOR12BITS_NROWB),
+        .nrowa     (BLANK_ROWS_AFTER),  // SENSOR12BITS_NROWA),
+//        .nAV(24),
+        .nbpf      (0), // SENSOR12BITS_NBPF),
+        .ngp1      (SENSOR12BITS_NGPL),
+        .nVLO      (SENSOR12BITS_NVLO),
+        .tMD       (SENSOR12BITS_TMD),
+        .tDDO      (SENSOR12BITS_TDDO),
+        .tDDO1     (SENSOR12BITS_TDDO1),
+        .trigdly   (TRIG_LINES), // SENSOR12BITS_TRIGDLY),
+        .ramp      (0), //SENSOR12BITS_RAMP),
+        .new_bayer (1) //SENSOR12BITS_NEW_BAYER)
+    ) simul_sensor12bits_2_i (
+        .MCLK  (PX2_MCLK), // input 
+        .MRST  (PX2_MRST), // input 
+        .ARO   (PX2_ARO),  // input 
+        .ARST  (PX2_ARST), // input 
+        .OE    (1'b0),     // input output enable active low
+        .SCL   (sns2_scl), // input 
+        .SDA   (sns2_sda), // inout 
+        .OFST  (PX2_OFST), // input 
+        .D     (PX2_D),    // output[11:0] 
+        .DCLK  (PX2_DCLK), // output 
+        .BPF   (),         // output 
+        .HACT  (PX2_HACT), // output 
+        .VACT  (PX2_VACT), // output 
+        .VACT1 () // output 
+    );
+
+    simul_sensor12bits #(
+        .lline     (VIRTUAL_WIDTH),     // SENSOR12BITS_LLINE),
+        .ncols     (FULL_WIDTH),        // (SENSOR12BITS_NCOLS),
+`ifdef PF
+        .nrows     (PF_HEIGHT),         // SENSOR12BITS_NROWS),
+`else
+        .nrows     (FULL_HEIGHT),       // SENSOR12BITS_NROWS),
+`endif        
+        .nrowb     (BLANK_ROWS_BEFORE), // SENSOR12BITS_NROWB),
+        .nrowa     (BLANK_ROWS_AFTER),  // SENSOR12BITS_NROWA),
+//        .nAV(24),
+        .nbpf      (0), // SENSOR12BITS_NBPF),
+        .ngp1      (SENSOR12BITS_NGPL),
+        .nVLO      (SENSOR12BITS_NVLO),
+        .tMD       (SENSOR12BITS_TMD),
+        .tDDO      (SENSOR12BITS_TDDO),
+        .tDDO1     (SENSOR12BITS_TDDO1),
+        .trigdly   (TRIG_LINES), // SENSOR12BITS_TRIGDLY),
+        .ramp      (0), //SENSOR12BITS_RAMP),
+        .new_bayer (1) //SENSOR12BITS_NEW_BAYER)
+    ) simul_sensor12bits_3_i (
+        .MCLK  (PX3_MCLK), // input 
+        .MRST  (PX3_MRST), // input 
+        .ARO   (PX3_ARO),  // input 
+        .ARST  (PX3_ARST), // input 
+        .OE    (1'b0),     // input output enable active low
+        .SCL   (sns3_scl), // input 
+        .SDA   (sns3_sda), // inout 
+        .OFST  (PX3_OFST), // input 
+        .D     (PX3_D),    // output[11:0] 
+        .DCLK  (PX3_DCLK), // output 
+        .BPF   (),         // output 
+        .HACT  (PX3_HACT), // output 
+        .VACT  (PX3_VACT), // output 
+        .VACT1 () // output 
+    );
+
+    simul_sensor12bits #(
+        .lline     (VIRTUAL_WIDTH),     // SENSOR12BITS_LLINE),
+        .ncols     (FULL_WIDTH),        // (SENSOR12BITS_NCOLS),
+`ifdef PF
+        .nrows     (PF_HEIGHT),         // SENSOR12BITS_NROWS),
+`else
+        .nrows     (FULL_HEIGHT),       // SENSOR12BITS_NROWS),
+`endif        
+        .nrowb     (BLANK_ROWS_BEFORE), // SENSOR12BITS_NROWB),
+        .nrowa     (BLANK_ROWS_AFTER),  // SENSOR12BITS_NROWA),
+//        .nAV(24),
+        .nbpf      (0), // SENSOR12BITS_NBPF),
+        .ngp1      (SENSOR12BITS_NGPL),
+        .nVLO      (SENSOR12BITS_NVLO),
+        .tMD       (SENSOR12BITS_TMD),
+        .tDDO      (SENSOR12BITS_TDDO),
+        .tDDO1     (SENSOR12BITS_TDDO1),
+        .trigdly   (TRIG_LINES), // SENSOR12BITS_TRIGDLY),
+        .ramp      (0), //SENSOR12BITS_RAMP),
+        .new_bayer (1) //SENSOR12BITS_NEW_BAYER)
+    ) simul_sensor12bits_4_i (
+        .MCLK  (PX4_MCLK), // input 
+        .MRST  (PX4_MRST), // input 
+        .ARO   (PX4_ARO),  // input 
+        .ARST  (PX4_ARST), // input 
+        .OE    (1'b0),     // input output enable active low
+        .SCL   (sns4_scl), // input 
+        .SDA   (sns4_sda), // inout 
+        .OFST  (PX4_OFST), // input 
+        .D     (PX4_D),    // output[11:0] 
+        .DCLK  (PX4_DCLK), // output 
+        .BPF   (),         // output 
+        .HACT  (PX4_HACT), // output 
+        .VACT  (PX4_VACT), // output 
+        .VACT1 () // output 
+    );
+
+
     
     //  wire [ 3:0] SIMUL_ADD_ADDR; 
     always @ (posedge CLK) begin
@@ -1804,7 +2037,8 @@ task write_block_scanline_chn;  // SuppressThisWarning VEditor : may be unused
     end
 endtask
 
-function [10:0] func_encode_mode_tiled;  // SuppressThisWarning VEditor - not used
+function [11:0] func_encode_mode_tiled;  // SuppressThisWarning VEditor - not used
+    input       disable_need;
     input       repetitive;
     input       single;
     input       reset_frame;
@@ -1816,7 +2050,7 @@ function [10:0] func_encode_mode_tiled;  // SuppressThisWarning VEditor - not us
     input       enable;      // enable requests from this channel ( 0 will let current to finish, but not raise want/need)
     input       chn_reset;       // immediately reset al;l the internal circuitry
 
-    reg  [10:0] rslt;
+    reg  [11:0] rslt;
     begin
         rslt = 0;
         rslt[MCONTR_LINTILE_EN] =                                     ~chn_reset;
@@ -1828,11 +2062,13 @@ function [10:0] func_encode_mode_tiled;  // SuppressThisWarning VEditor - not us
         rslt[MCONTR_LINTILE_RST_FRAME] =                               reset_frame;
         rslt[MCONTR_LINTILE_SINGLE] =                                  single;
         rslt[MCONTR_LINTILE_REPEAT] =                                  repetitive;
+        rslt[MCONTR_LINTILE_DIS_NEED] =                                disable_need;
 //        func_encode_mode_tiled={byte32,keep_open,extra_pages,write_mem,enable,~chn_reset};
         func_encode_mode_tiled = rslt;
     end           
 endfunction
-function [10:0] func_encode_mode_scanline; // SuppressThisWarning VEditor - not used
+function [11:0] func_encode_mode_scanline; // SuppressThisWarning VEditor - not used
+    input       disable_need;
     input       repetitive;
     input       single;
     input       reset_frame;
@@ -1842,7 +2078,7 @@ function [10:0] func_encode_mode_scanline; // SuppressThisWarning VEditor - not 
     input       enable;      // enable requests from this channel ( 0 will let current to finish, but not raise want/need)
     input       chn_reset;       // immediately reset al;l the internal circuitry
     
-    reg  [10:0] rslt;
+    reg  [11:0] rslt;
     begin
         rslt = 0;
         rslt[MCONTR_LINTILE_EN] =                                     ~chn_reset;
@@ -1852,6 +2088,7 @@ function [10:0] func_encode_mode_scanline; // SuppressThisWarning VEditor - not 
         rslt[MCONTR_LINTILE_RST_FRAME] =                               reset_frame;
         rslt[MCONTR_LINTILE_SINGLE] =                                  single;
         rslt[MCONTR_LINTILE_REPEAT] =                                  repetitive;
+        rslt[MCONTR_LINTILE_DIS_NEED] =                                disable_need;
 //        func_encode_mode_scanline={extra_pages,write_mem,enable,~chn_reset};
         func_encode_mode_scanline = rslt;
     end           
@@ -1862,21 +2099,23 @@ endfunction
 task setup_sensor_channel;
     input  [1:0] num_sensor;
     
-    reg          trigger_mode; // 0 - auto, 1 - triggered
-    reg          ext_trigger_mode; // 0 - internal, 1 - external trigger (camsync)
-    reg          external_timestamp; // embed local timestamp, 1 - embed received timestamp
-    reg   [31:0] camsync_period;
+//    reg          trigger_mode; // 0 - auto, 1 - triggered
+//    reg          ext_trigger_mode; // 0 - internal, 1 - external trigger (camsync)
+//    reg          external_timestamp; // embed local timestamp, 1 - embed received timestamp
+//    reg   [31:0] camsync_period;
     reg   [31:0] frame_full_width; // 13-bit Padded line length (8-row increment), in 8-bursts (16 bytes)
     reg   [31:0] window_width;    // 13 bit - in 8*16=128 bit bursts
     reg   [31:0] window_height;   // 16 bit
     reg   [31:0] window_left;
     reg   [31:0] window_top;
+    reg   [31:0] frame_start_address;
+    reg   [31:0] frame_start_address_inc;
     reg   [31:0] last_buf_frame;
-    reg   [31:0] camsync_delay;
-    reg   [ 3:0] sensor_mask;
+//    reg   [31:0] camsync_delay;
+//    reg   [ 3:0] sensor_mask;
     
-    reg   [26:0] afi_cmprs0_sa;
-    reg   [26:0] afi_cmprs0_len;
+//    reg   [26:0] afi_cmprs0_sa;
+//    reg   [26:0] afi_cmprs0_len;
     
 // Setting up a single sensor channel 0, sunchannel 0
 // 
@@ -1886,40 +2125,32 @@ task setup_sensor_channel;
         window_top = 0;
         window_width =       SENSOR_MEMORY_WIDTH_BURSTS;
         frame_full_width =   SENSOR_MEMORY_FULL_WIDTH_BURSTS;
-        camsync_period =     TRIG_PERIOD;
-        camsync_delay =      CAMSYNC_DELAY;
-        trigger_mode =       TRIGGER_MODE;
-        ext_trigger_mode =   EXT_TRIGGER_MODE;
-        external_timestamp = EXTERNAL_TIMESTAMP;
+//        camsync_period =     TRIG_PERIOD;
+//        camsync_delay =      CAMSYNC_DELAY;
+//        trigger_mode =       TRIGGER_MODE;
+//        ext_trigger_mode =   EXT_TRIGGER_MODE;
+//        external_timestamp = EXTERNAL_TIMESTAMP;
+        frame_start_address = FRAME_START_ADDRESS + num_sensor * FRAME_START_ADDRESS_INC * (LAST_BUF_FRAME + 1);
+        frame_start_address_inc = FRAME_START_ADDRESS_INC;
         last_buf_frame =     LAST_BUF_FRAME;
-        sensor_mask =        1 << num_sensor;
+//        sensor_mask =        1 << num_sensor;
         
-        afi_cmprs0_sa =      'h10000000 >> 5;
-        afi_cmprs0_len =     'h10000 >> 5; 
-//        program_curves(
-//            num_sensor,  // input   [1:0] num_sensor;
-//            0);          // input   [1:0] sub_channel;    
-        program_status_gpio (
-            3,          // input [1:0] mode;
-            0);         // input [5:0] seq_num;
+//        afi_cmprs0_sa =      'h10000000 >> 5;
+//        afi_cmprs0_len =     'h10000 >> 5; 
 
         program_status_sensor_i2c(
             num_sensor,  // input [1:0] num_sensor;
             3,           // input [1:0] mode;
-            0);          //input [5:0] seq_num;
+            0);          // input [5:0] seq_num;
         program_status_sensor_io(
             num_sensor,  // input [1:0] num_sensor;
             3,           // input [1:0] mode;
-            0);          //input [5:0] seq_num;
-            
-        program_status_rtc( // also takes snapshot
-            3,         // input [1:0] mode;
-            0);        //input [5:0] seq_num;
-            
-        set_rtc (
-            32'h12345678, // input [31:0] sec;
-            0,            //input [19:0] usec;
-            16'h8000);    // input [15:0] corr;  maximal correction to the rtc
+            0);          // input [5:0] seq_num;
+
+        program_status_compressor(
+            num_sensor,  // input [1:0] num_sensor;
+            3,           // input [1:0] mode;
+            0);          // input [5:0] seq_num;
 
     // moved before camsync to have a valid timestamo w/o special waiting            
     TEST_TITLE = "MEMORY_SENSOR";
@@ -1927,12 +2158,12 @@ task setup_sensor_channel;
             
         setup_sensor_memory (
             num_sensor,                    // input  [1:0] num_sensor;
-            FRAME_START_ADDRESS,           // input [31:0] frame_sa;         // 22-bit frame start address ((3 CA LSBs==0. BA==0)
-            FRAME_START_ADDRESS_INC,       // input [31:0] frame_sa_inc;     // 22-bit frame start address increment  ((3 CA LSBs==0. BA==0)
+            frame_start_address,           // input [31:0] frame_sa;         // 22-bit frame start address ((3 CA LSBs==0. BA==0)
+            frame_start_address_inc,       // input [31:0] frame_sa_inc;     // 22-bit frame start address increment  ((3 CA LSBs==0. BA==0)
             last_buf_frame,                // input [31:0] last_frame_num;   // 16-bit number of the last frame in a buffer
             frame_full_width,              // input [31:0] frame_full_width; // 13-bit Padded line length (8-row increment), in 8-bursts (16 bytes)
-            window_width,                  // input [31:0] window_width;    // 13 bit - in 8*16=128 bit bursts
-            window_height,                 // input [31:0] window_height;   // 16 bit
+            window_width,                  // input [31:0] window_width;     // 13 bit - in 8*16=128 bit bursts
+            window_height,                 // input [31:0] window_height;    // 16 bit
             window_left,                   // input [31:0] window_left;
             window_top);                   // input [31:0] window_top;
 
@@ -1982,10 +2213,11 @@ task setup_sensor_channel;
             window_top+1,                  // input [31:0] window_top; (to match 20x20 tiles in 353)
             1,   // input        byte32;     // == 1? 
             2,   //input [31:0] tile_width; // == 2
-            1);  // input [31:0] extra_pages; // 1
+            1,  // input [31:0] extra_pages; // 1
+            1); // disable "need" (yield to sensor channels)
     
     compressor_run (num_sensor, 3); // run repetitive mode
-            
+/*            
     TEST_TITLE = "CAMSYNC_SETUP";
     $display("===================== TEST_%s =========================",TEST_TITLE);
             
@@ -2018,6 +2250,7 @@ task setup_sensor_channel;
 
         set_camsync_period  (camsync_period); // set period (start generating) - in 353 was after everything else was set
 
+*/
     TEST_TITLE = "DELAYS_SETUP";
     $display("===================== TEST_%s =========================",TEST_TITLE);
             
@@ -2076,6 +2309,7 @@ task setup_sensor_channel;
             0);         // input  [15:0] height2_m1; // height of the third sub-frame minus 1 (no need for 4-th)
         set_sensor_lens_flat_parameters(
             num_sensor,
+            0, // num_sub_sensor
 // add mode "DIRECT", "ASAP", "RELATIVE", "ABSOLUTE" and frame number
             19'h20000, // 0,      // input  [18:0] AX;
             19'h20000, // 0,      // input  [18:0] AY;
@@ -2163,7 +2397,7 @@ task write_cmd_frame_sequencer;
     $display("===================== TEST_%s =========================",TEST_TITLE);
     // just temporarily - enable channel immediately    
     enable_memcntrl_en_dis(4'hc + {2'b0,num_sensor}, 1);
-    
+/*    
     TEST_TITLE = "PROGRAM AFI_MUX";
     $display("===================== TEST_%s =========================",TEST_TITLE);
     
@@ -2189,13 +2423,12 @@ task write_cmd_frame_sequencer;
     afi_mux_mode_chn (
         0,          //input [0:0] port_afi;    // number of AFI port.3
         num_sensor, // input [1:0] chn;  // channel number to set mode for
-/*
-mode == 0 - show EOF pointer, internal
-mode == 1 - show EOF pointer, confirmed
-mode == 2 - show current pointer, internal
-mode == 3 - show current pointer, confirmed
-each group of 4 bits per channel : bits [1:0] - select, bit[2] - sset (0 - nop), bit[3] - not used
- */    
+
+//mode == 0 - show EOF pointer, internal
+//mode == 1 - show EOF pointer, confirmed
+//mode == 2 - show current pointer, internal
+//mode == 3 - show current pointer, confirmed
+//each group of 4 bits per channel : bits [1:0] - select, bit[2] - sset (0 - nop), bit[3] - not used
         0);         // input [1:0] mode;
     
     afi_mux_chn_start_length (
@@ -2214,7 +2447,7 @@ each group of 4 bits per channel : bits [1:0] - select, bit[2] - sset (0 - nop),
     afi_mux_enable (
         0,          // input [0:0] port_afi;    // number of AFI port
         1);         // input       en;
-
+*/
 
     
     TEST_TITLE = "GAMMA_CTL";
@@ -2227,14 +2460,146 @@ each group of 4 bits per channel : bits [1:0] - select, bit[2] - sset (0 - nop),
             1'b1,       // input         repet_mode; //  Normal mode, single trigger - just for debugging
             1'b0);      // input         trig;       // pass next frame
     // temporarily putting in the very end as it takes about 30 usec to program curves (TODO: see how to make it faster for simulation)
-    TEST_TITLE = "GAMMA_LOAD";
-    $display("===================== TEST_%s =========================",TEST_TITLE);
-        program_curves(
-            num_sensor,  // input   [1:0] num_sensor;
-            0);          // input   [1:0] sub_channel;    
-    // just temporarily - enable channel immediately    
-//    enable_memcntrl_en_dis(4'hc + {2'b0,num_sensor}, 1);
+    end
+endtask
 
+task camsync_setup;
+    input [3:0]  sensor_mask;
+    reg          trigger_mode; // 0 - auto, 1 - triggered
+    reg          ext_trigger_mode; // 0 - internal, 1 - external trigger (camsync)
+    reg          external_timestamp; // embed local timestamp, 1 - embed received timestamp
+    reg   [31:0] camsync_period;
+    reg   [31:0] camsync_delay;
+//    reg   [ 3:0] sensor_mask;
+    integer i;
+    begin
+        TEST_TITLE = "CAMSYNC_SETUP";
+        $display("===================== TEST_%s =========================",TEST_TITLE);
+        camsync_period =     TRIG_PERIOD;
+        camsync_delay =      CAMSYNC_DELAY;
+        trigger_mode =       TRIGGER_MODE;
+        ext_trigger_mode =   EXT_TRIGGER_MODE;
+        external_timestamp = EXTERNAL_TIMESTAMP;
+//        sensor_mask =        4'hf; // All sensors // 1 << num_sensor;
+            
+// setup camsync module
+        set_camsync_period  (0); // reset circuitry
+        set_gpio_ports (
+            0,  // input [1:0] port_soft; // <2 - unchanged, 2 - disable, 3 - enable
+            3,  // input [1:0] port_a; // camsync
+            0,  // input [1:0] port_b; // motors on 353
+            0); //input [1:0] port_c; // logger
+
+        set_camsync_mode (
+            1'b1,                      // input       en;             // 1 - enable module, 0 - reset
+            {1'b1,1'b1},               // input [1:0] en_snd;         // <2 - NOP, 2 - disable, 3 - enable sending timestamp with sync pulse
+            {1'b1,external_timestamp}, // input [1:0] en_ts_external; // <2 - NOP, 2 - local timestamp in the frame header, 3 - use external timestamp
+            {1'b1,trigger_mode},       // input [1:0] triggered_mode; // <2 - NOP, 2 - async sensor mode, 3 - triggered sensor mode
+            {1'b1, 2'h0},              // input [2:0] master_chn;     // <4 - NOP, 4..7 - set master channel
+            {1'b1, sensor_mask});      // input [4:0] chn_en;         // <16 - NOP, [3:0] - bit mask of enabled sensor channels
+    // setting I/Os after camsync is enabled
+        reset_camsync_inout (0);        // reset input selection
+        if (ext_trigger_mode)
+            set_camsync_inout   (0, 7, 1 ); // set input selection - ext[7], active high
+        reset_camsync_inout (1);        // reset output selection
+        set_camsync_inout   (1, 6, 1 ); // reset output selection - ext[6], active high
+        set_camsync_period  (SYNC_BIT_LENGTH); ///set (bit_length -1) (should be 2..255)
+        for (i = 0; i < 4; i = i + 1) begin
+            set_camsync_delay (
+                i, // 0, // input  [1:0] sub_chn;
+                camsync_delay + 10 * i); // input [31:0] dly;          // 0 - input selection, 1 - output selection
+        end
+
+        set_camsync_period  (camsync_period); // set period (start generating) - in 353 was after everything else was set
+    
+    end
+endtask
+
+task afi_mux_setup;
+    input  [3:0] chn_mask;
+    input [26:0] afi_cmprs0_sa;   // input [26:0] sa;   // start address in 32-byte chunks
+    input [26:0] afi_cmprs0_len; //  input [26:0] length;     // channel buffer length in 32-byte chunks
+    input [26:0] afi_cmprs1_sa;   // input [26:0] sa;   // start address in 32-byte chunks
+    input [26:0] afi_cmprs1_len; //  input [26:0] length;     // channel buffer length in 32-byte chunks
+    input [26:0] afi_cmprs2_sa;   // input [26:0] sa;   // start address in 32-byte chunks
+    input [26:0] afi_cmprs2_len; //  input [26:0] length;     // channel buffer length in 32-byte chunks
+    input [26:0] afi_cmprs3_sa;   // input [26:0] sa;   // start address in 32-byte chunks
+    input [26:0] afi_cmprs3_len; //  input [26:0] length;     // channel buffer length in 32-byte chunks
+    integer i;
+    begin
+        TEST_TITLE = "PROGRAM AFI_MUX";
+        $display("===================== TEST_%s =========================",TEST_TITLE);
+        for (i = 0; i < 4; i = i+1) if (chn_mask & (1 << i)) begin
+            afi_mux_program_status ( 
+                0, // input [0:0] port_afi;    // number of AFI port (0 - afi 1, 1 - afi2) // configuration controlled by the code. currently
+                                     // both AFI are used: ch0 - cmprs_afi_mux_1.0, ch1 - cmprs_afi_mux_1.1,
+                                     //  ch2 - cmprs_afi_mux_2.0, ch3 - cmprs_afi_mux_2
+                                     // May be chenged to ch0 - cmprs_afi_mux_1.0, ch1 -cmprs_afi_mux_1.1,
+                                     //  ch2 - cmprs_afi_mux_1.2, ch3 - cmprs_afi_mux_1.3
+                i, // num_sensor, // input [1:0] chn_afi;
+                3,   // input [1:0] mode;
+                0); // input [5:0] seq_num;
+        end
+        // reset all channels    
+        afi_mux_reset(
+            0, // input [0:0] port_afi;
+            4'hf); // input [3:0] rst_chn;
+        // release resets
+        afi_mux_reset(
+            0, // input [0:0] port_afi;
+            0); // input [3:0] rst_chn;
+            
+        // set report mode (pointer type) - per status    
+        for (i = 0; i < 4; i = i+1) if (chn_mask & (1 << i)) begin
+            afi_mux_mode_chn (
+                0,          //input [0:0] port_afi;    // number of AFI port.3
+                i, // num_sensor, // input [1:0] chn;  // channel number to set mode for
+    /*
+    mode == 0 - show EOF pointer, internal
+    mode == 1 - show EOF pointer, confirmed
+    mode == 2 - show current pointer, internal
+    mode == 3 - show current pointer, confirmed
+    each group of 4 bits per channel : bits [1:0] - select, bit[2] - sset (0 - nop), bit[3] - not used
+     */    
+                0);         // input [1:0] mode;
+        end
+        afi_mux_chn_start_length (
+            0,               // input [0:0] port_afi;    // number of AFI port
+            0, // num_sensor,// input [ 1:0] chn;  // channel number to set mode for
+            afi_cmprs0_sa,   // input [26:0] sa;   // start address in 32-byte chunks
+            afi_cmprs0_len); //  input [26:0] length;     // channel buffer length in 32-byte chunks
+        
+        afi_mux_chn_start_length (
+            0,               // input [0:0] port_afi;    // number of AFI port
+            1, // num_sensor,// input [ 1:0] chn;  // channel number to set mode for
+            afi_cmprs1_sa,   // input [26:0] sa;   // start address in 32-byte chunks
+            afi_cmprs1_len); //  input [26:0] length;     // channel buffer length in 32-byte chunks
+// another option - 2 other channels with  port_afi == 1,    chn == [0,1]   
+        afi_mux_chn_start_length (
+            0,               // input [0:0] port_afi;    // number of AFI port
+            2,               // input [ 1:0] chn;  // channel number to set mode for
+            afi_cmprs2_sa,   // input [26:0] sa;   // start address in 32-byte chunks
+            afi_cmprs2_len); //  input [26:0] length;     // channel buffer length in 32-byte chunks
+        
+        afi_mux_chn_start_length (
+            0,               // input [0:0] port_afi;    // number of AFI port
+            3,               // input [ 1:0] chn;  // channel number to set mode for
+            afi_cmprs3_sa,   // input [26:0] sa;   // start address in 32-byte chunks
+            afi_cmprs3_len); //  input [26:0] length;     // channel buffer length in 32-byte chunks
+        
+        for (i = 0; i < 4; i = i+1) if (chn_mask & (1 << i)) begin
+            // enable channel i
+            afi_mux_enable_chn (
+                0,          // input [0:0] port_afi;    // number of AFI port
+                i, // num_sensor, // input [1:0] en_chn;  // channel number to enable/disable;
+                1);         // input       en;
+        end
+        // enable the whole afi_mux module
+    
+        afi_mux_enable (
+            0,          // input [0:0] port_afi;    // number of AFI port
+            1);         // input       en;
+    
     end
 endtask
 
@@ -2331,6 +2696,7 @@ task setup_sensor_memory;
     begin
         base_addr = MCONTR_SENS_BASE + MCONTR_SENS_INC * num_sensor;
         mode=   func_encode_mode_scanline(
+                    0, // disable_need
                     1, // repetitive,
                     0, // single,
                     0, // reset_frame,
@@ -2362,6 +2728,7 @@ task setup_compressor_memory;
     input        byte32;     // == 1? 
     input [31:0] tile_width; // == 2
     input [31:0] extra_pages; // 1
+    input        disable_need; // set to 1
     
     reg [29:0] base_addr;
     integer    mode;
@@ -2374,6 +2741,7 @@ task setup_compressor_memory;
         
         base_addr = MCONTR_CMPRS_BASE + MCONTR_CMPRS_INC * num_sensor;
         mode=   func_encode_mode_tiled(
+                    disable_need,
                     1,                // repetitive,
                     0,                // single,
                     0,                // reset_frame,
@@ -2687,6 +3055,7 @@ endtask
 
 task set_sensor_lens_flat_parameters;
     input   [1:0] num_sensor;
+    input   [1:0] num_sub_sensor;
 // add mode "DIRECT", "ASAP", "RELATIVE", "ABSOLUTE" and frame number
     input  [18:0] AX;
     input  [18:0] AY;
@@ -2704,40 +3073,40 @@ task set_sensor_lens_flat_parameters;
     reg    [31:0] data;
     begin
         reg_addr = (SENSOR_GROUP_ADDR + num_sensor * SENSOR_BASE_INC) + SENS_LENS_RADDR + SENS_LENS_COEFF;
-        data = func_lens_data(num_sensor, SENS_LENS_AX);
+        data = func_lens_data(num_sub_sensor, SENS_LENS_AX);
         data[18:0] = AX;
         write_contol_register(reg_addr, data);                   
-        data = func_lens_data(num_sensor, SENS_LENS_AY);
+        data = func_lens_data(num_sub_sensor, SENS_LENS_AY);
         data[18:0]  = AY;
         write_contol_register(reg_addr, data);                   
-        data = func_lens_data(num_sensor, SENS_LENS_C);
+        data = func_lens_data(num_sub_sensor, SENS_LENS_C);
         data[18:0]  = C;
         write_contol_register(reg_addr, data);
-        data = func_lens_data(num_sensor, SENS_LENS_BX);
+        data = func_lens_data(num_sub_sensor, SENS_LENS_BX);
         data[20:0]  = BX;
         write_contol_register(reg_addr, data);                   
-        data = func_lens_data(num_sensor, SENS_LENS_BY);
+        data = func_lens_data(num_sub_sensor, SENS_LENS_BY);
         data[20:0]  = BY;
         write_contol_register(reg_addr, data);                   
-        data = func_lens_data(num_sensor, SENS_LENS_SCALES + 0);
+        data = func_lens_data(num_sub_sensor, SENS_LENS_SCALES + 0);
         data[16:0]  = scales0;
         write_contol_register(reg_addr, data);                   
-        data = func_lens_data(num_sensor, SENS_LENS_SCALES + 2);
+        data = func_lens_data(num_sub_sensor, SENS_LENS_SCALES + 2);
         data[16:0]  = scales1;
         write_contol_register(reg_addr, data);                   
-        data = func_lens_data(num_sensor, SENS_LENS_SCALES + 4);
+        data = func_lens_data(num_sub_sensor, SENS_LENS_SCALES + 4);
         data[16:0]  = scales2;
         write_contol_register(reg_addr, data);                   
-        data = func_lens_data(num_sensor, SENS_LENS_SCALES + 6);
+        data = func_lens_data(num_sub_sensor, SENS_LENS_SCALES + 6);
         data[16:0]  = scales3;
         write_contol_register(reg_addr, data);                   
-        data = func_lens_data(num_sensor, SENS_LENS_FAT0_IN);
+        data = func_lens_data(num_sub_sensor, SENS_LENS_FAT0_IN);
         data[15:0]  = fatzero_in;
         write_contol_register(reg_addr, data);                   
-        data = func_lens_data(num_sensor, SENS_LENS_FAT0_OUT);
+        data = func_lens_data(num_sub_sensor, SENS_LENS_FAT0_OUT);
         data[15:0]  = fatzero_out;
         write_contol_register(reg_addr, data);                   
-        data = func_lens_data(num_sensor, SENS_LENS_POST_SCALE);
+        data = func_lens_data(num_sub_sensor, SENS_LENS_POST_SCALE);
         data[3:0]  = post_scale;
         write_contol_register(reg_addr, data);                   
     end
@@ -3390,8 +3759,8 @@ task afi_mux_mode_chn;
                              //  ch2 - cmprs_afi_mux_2.0, ch3 - cmprs_afi_mux_2
                              // May be chenged to ch0 - cmprs_afi_mux_1.0, ch1 -cmprs_afi_mux_1.1,
                              //  ch2 - cmprs_afi_mux_1.2, ch3 - cmprs_afi_mux_1.3
-    input [1:0] mode;
     input [1:0] chn;        // channel number to set mode for
+    input [1:0] mode;
     reg  [29:0] reg_addr;
 /*
 mode == 0 - show EOF pointer, internal

@@ -117,7 +117,7 @@ each group of 4 bits per channel : bits [1:0] - select, bit[2] - sset (0 - nop),
     output                 [ 1:0] afi_awlock,
     output                 [ 3:0] afi_awcache,
     output                 [ 2:0] afi_awprot,
-    output                 [ 3:0] afi_awlen,
+    output reg             [ 3:0] afi_awlen,
     output                 [ 1:0] afi_awsize,
     output                 [ 1:0] afi_awburst,
     output                 [ 3:0] afi_awqos,
@@ -220,6 +220,7 @@ each group of 4 bits per channel : bits [1:0] - select, bit[2] - sset (0 - nop),
     wire [ 3:0] chunk_ptr_ra;
     wire [ 7:0] items_left = counts_corr2[8] ? left_to_eof[(winner2 * 8)  +: 8] : counts_corr2[7:0];
     
+    reg   [5:0] afi_awid_r;
     
     
 
@@ -246,9 +247,9 @@ each group of 4 bits per channel : bits [1:0] - select, bit[2] - sset (0 - nop),
     assign {fifo_ren3, fifo_ren2, fifo_ren1, fifo_ren0} = fifo_ren;
     
     assign afi_awaddr =  {chunk_addr,5'b0};
-    assign afi_awid =    {1'b0,wleft[3:2],last_burst_in_frame,cur_chn}; 
+    assign afi_awid =    afi_awid_r; //  {1'b0,wleft[3:2],last_burst_in_frame,cur_chn}; 
     assign afi_awvalid = awvalid[1];
-    assign afi_awlen = {wleft[3:2],2'b11};
+//    assign afi_awlen = {wleft[3:2],2'b11};
     assign afi_wdata = wdata;
 //    assign afi_bready = 1'b1; // always ready
     
@@ -426,28 +427,33 @@ items_left
         if (pre_busy_w) chunk_inc <= (|counts_corr2[7:2])?
                                        3'h4 :
                                        ({1'b0,left_to_eof[winner2 * 8 +: 2]} + 3'h1);
+                                       
+        if (awvalid[0]) afi_awid_r <={1'b0,wleft[3:2],last_burst_in_frame,cur_chn};
+        
+        if (awvalid[0]) afi_awlen <= {wleft[3:2],2'b11};
+                                 
         
     end
 
     // delay write channel controls signal to match data latency. wid bits will be optimized (6 -> 3)    
     dly_16 #(
-        .WIDTH(8)
+        .WIDTH(2) // 8)
     ) afi_wx_i (
         .clk       (hclk), // input
         .rst       (!en),  // input
         .dly       (AFI_MUX_BUF_LATENCY), // input[3:0] will delay by AFI_MUX_BUF_LATENCY+1 (normally 3) 
-        .din       ({    wvalid,     wlast, afi_awid}), // input[0:0] 
-        .dout      ({afi_wvalid, afi_wlast, afi_wid}) // output[0:0] 
+        .din       ({    wvalid,     wlast}), // , afi_awid_r}), // afi_awid}), // input[0:0] 
+        .dout      ({afi_wvalid, afi_wlast}) //, afi_wid})     // output[0:0] 
     );
     localparam [3:0] AFI_MUX_BUF_LATENCYM1 = AFI_MUX_BUF_LATENCY - 1;
     dly_16 #(
-        .WIDTH(3)
+        .WIDTH(9) // 3)
     ) afi_wdata_i (
         .clk       (hclk), // input
         .rst       (!en),  // input
         .dly       (AFI_MUX_BUF_LATENCYM1), // input[3:0] will delay by AFI_MUX_BUF_LATENCY+1 (normally 3) 
-        .din       ({wvalid, cur_chn}), // input[0:0] 
-        .dout      ({wdata_en,wdata_sel}) // output[0:0] 
+        .din       ({wvalid,   cur_chn,   afi_awid_r}), //}), // input[0:0] 
+        .dout      ({wdata_en, wdata_sel, afi_wid})     // }) // output[0:0] 
     );
     
     cmd_deser #(
@@ -467,7 +473,7 @@ items_left
         .we         (cmd_we)    // output
     );
     
-    wire [53:0] chunk_ptr_rd01; // [0:1];
+    wire [53:0] chunk_ptr_rd01; // [0:1]; // combines 2 pointers - write one and write responce one
 
     cmprs_afi_mux_ptr cmprs_afi_mux_ptr_i (
         .hclk                (hclk),                // input

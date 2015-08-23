@@ -1064,6 +1064,7 @@ assign axi_grst = axi_rst_pre;
         .MCONTR_LINTILE_RST_FRAME          (MCONTR_LINTILE_RST_FRAME),
         .MCONTR_LINTILE_SINGLE             (MCONTR_LINTILE_SINGLE),
         .MCONTR_LINTILE_REPEAT             (MCONTR_LINTILE_REPEAT),
+        .MCONTR_LINTILE_DIS_NEED           (MCONTR_LINTILE_DIS_NEED),
         .BUFFER_DEPTH32                    (BUFFER_DEPTH32),
         .RSEL                              (RSEL),
         .WSEL                              (WSEL)
@@ -1964,7 +1965,7 @@ assign axi_grst = axi_rst_pre;
         .data_out_stb  (logger_stb),          // output @mclk
         .debug_state() // output[31:0] 
     );
-    /* Instance template for module mult_saxi_wr_inbuf */
+
     mult_saxi_wr_inbuf #(
         .MULT_SAXI_HALF_BRAM_IN  (MULT_SAXI_HALF_BRAM_IN),
         .MULT_SAXI_BSLOG         (MULT_SAXI_BSLOG0),

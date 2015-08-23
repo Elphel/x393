@@ -45,8 +45,13 @@ module  idelay_fine_pipe
         else if (set) fdly <= fdly_pre;
     end
     `ifdef SIMULATION
+        reg [7:0] delay_r;
+        always @ (posedge clk) begin
+            if (rst)      delay_r <= DELAY_VALUE;
+            else if (ld)  delay_r <= delay;
+        end
         always @ (fdly_pre) begin
-            if (fdly_pre > 3'h4) $display ("ERROR: fine idelay value should be <5, specified %d @ %t", fdly_pre,$time);  
+            if (fdly_pre > 3'h4) $display ("ERROR: fine idelay value should be <5, specified %d (0x%x) @ %t", delay_r, fdly_pre,$time);  
         end
     `endif // SIMULATION
 `ifndef IGNORE_ATTR

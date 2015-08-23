@@ -50,7 +50,7 @@
     
 //command interface parameters
     parameter DLY_LD =            'h080,  // address to generate delay load
-    parameter DLY_LD_MASK =       'h380,  // address mask to generate delay load
+    parameter DLY_LD_MASK =       'h780,  // address mask to generate delay load
 //0x1000..103f - 0- bit data (set/reset)
     parameter MCONTR_PHY_0BIT_ADDR =           'h020,  // address to set sequnecer channel and  run (4 LSB-s - channel)
     parameter MCONTR_PHY_0BIT_ADDR_MASK =      'h7f0,  // address mask to generate sequencer channel/run
@@ -200,7 +200,7 @@
 //    parameter CMD0_ADDR =           'h0800, // AXI write to command sequence memory
 //    parameter CMD0_ADDR_MASK =      'h1800, // AXI read address mask for the command sequence memory
     parameter MCNTRL_PS_ADDR=                    'h100,
-    parameter MCNTRL_PS_MASK=                    'h3e0, // both channels 0 and 1
+    parameter MCNTRL_PS_MASK=                    'h7e0, // both channels 0 and 1
     parameter MCNTRL_PS_STATUS_REG_ADDR=         'h2,
     parameter MCNTRL_PS_EN_RST=                  'h0,
     parameter MCNTRL_PS_CMD=                     'h1,
@@ -271,7 +271,9 @@
     parameter MCONTR_LINTILE_BYTE32 =              6, // use 32-byte wide columns in each tile (false - 16-byte) 
     parameter MCONTR_LINTILE_RST_FRAME =           8, // reset frame number 
     parameter MCONTR_LINTILE_SINGLE =              9, // read/write a single page 
-    parameter MCONTR_LINTILE_REPEAT =             10,  // read/write pages until disabled 
+    parameter MCONTR_LINTILE_REPEAT =             10,  // read/write pages until disabled
+    parameter MCONTR_LINTILE_DIS_NEED =           11,   // disable 'need' request 
+     
 // Channel test module parameters
     parameter MCNTRL_TEST01_ADDR=                 'h0f0,
     parameter MCNTRL_TEST01_MASK=                 'h7f0,
@@ -522,7 +524,7 @@
     parameter SENS_SS_MODE       =       "CENTER_HIGH",//"CENTER_HIGH","CENTER_LOW","DOWN_HIGH","DOWN_LOW"
     parameter SENS_SS_MOD_PERIOD =       10000,        // integer 4000-40000 - SS modulation period in ns
     
-    parameter CMPRS_NUM_AFI_CHN =         2, // 1 - multiplex all 4 compressors to a single AXI_HP, 2 - split between to AXI_HP
+    parameter CMPRS_NUM_AFI_CHN =         1, // 2, // 1 - multiplex all 4 compressors to a single AXI_HP, 2 - split between to AXI_HP
     parameter CMPRS_GROUP_ADDR =          'h600, // total of 'h60
     parameter CMPRS_BASE_INC =            'h10,
     parameter CMPRS_AFIMUX_RADDR0=        'h40,  // relative to CMPRS_NUM_AFI_CHN ( 16 addr)
@@ -658,7 +660,7 @@
     // Command sequencers parameters
     parameter CMDFRAMESEQ_ADDR_BASE=       'h780,
     parameter CMDFRAMESEQ_ADDR_INC=        'h20,
-    parameter CMDFRAMESEQ_MASK=            'h3e0,
+    parameter CMDFRAMESEQ_MASK=            'h7e0,
     parameter CMDFRAMESEQ_DEPTH =           64, // 32/64/128
     parameter CMDFRAMESEQ_ABS =             0,
     parameter CMDFRAMESEQ_REL =             16,

@@ -550,10 +550,10 @@ module camsync393       #(
         else                 dly_cntr_chn3[31:0] <= input_dly_chn3[31:0];
         
         /// bypass delay to trig_r in internal trigger mode
-        trig_r[0] <= (input_use_intern && (master_chn ==0)) ? (start_late && start_en):(dly_cntr_run_d[0] && !dly_cntr_run[0]);
-        trig_r[1] <= (input_use_intern && (master_chn ==1)) ? (start_late && start_en):(dly_cntr_run_d[1] && !dly_cntr_run[1]);
-        trig_r[2] <= (input_use_intern && (master_chn ==2)) ? (start_late && start_en):(dly_cntr_run_d[2] && !dly_cntr_run[2]);
-        trig_r[3] <= (input_use_intern && (master_chn ==3)) ? (start_late && start_en):(dly_cntr_run_d[3] && !dly_cntr_run[3]);
+        trig_r[0] <= (input_use_intern && (master_chn ==0)) ? (start_late && start_en): dly_cntr_end[0];
+        trig_r[1] <= (input_use_intern && (master_chn ==1)) ? (start_late && start_en): dly_cntr_end[1];
+        trig_r[2] <= (input_use_intern && (master_chn ==2)) ? (start_late && start_en): dly_cntr_end[2];
+        trig_r[3] <= (input_use_intern && (master_chn ==3)) ? (start_late && start_en): dly_cntr_end[3];
         
 /// 64-bit serial receiver (52 bit payload, 6 pre magic and 6 bits post magic for error checking
         if      (!rcv_run_or_deaf)         bit_rcv_duration[7:0] <= bit_length_short[7:0]; // 3/4 bit length-1

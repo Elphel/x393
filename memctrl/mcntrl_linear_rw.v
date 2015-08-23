@@ -56,7 +56,8 @@ module  mcntrl_linear_rw #(
     parameter MCONTR_LINTILE_EXTRAPG_BITS =     2, // number of bits to use for extra pages
     parameter MCONTR_LINTILE_RST_FRAME =        8, // reset frame number 
     parameter MCONTR_LINTILE_SINGLE =           9, // read/write a single page 
-    parameter MCONTR_LINTILE_REPEAT =          10  // read/write pages until disabled 
+    parameter MCONTR_LINTILE_REPEAT =          10,  // read/write pages until disabled 
+    parameter MCONTR_LINTILE_DIS_NEED =        11   // disable 'need' request 
 )(
     input                          mrst,
     input                          mclk,
@@ -149,7 +150,7 @@ module  mcntrl_linear_rw #(
     
 //    wire                          cmd_wrmem; //=MCNTRL_SCANLINE_WRITE_MODE; // 0: read from memory, 1:write to memory
     wire                    [1:0] cmd_extra_pages; // external module needs more than 1 page
-    
+    wire                          disable_need; // do not assert need, only want
     wire                          repeat_frames; // mode bit
     wire                          single_frame_w; // pulse
     wire                          rst_frame_num_w;
@@ -190,7 +191,7 @@ module  mcntrl_linear_rw #(
     wire                          msw_zero=  !(|cmd_data[31:16]); // MSW all bits are 0 - set carry bit
       
     
-    reg                    [10:0] mode_reg;//mode register: {repet,single,rst_frame,na[2:0],extra_pages[1:0],write_mode,enable,!reset}
+    reg                    [11:0] mode_reg;//mode register: {dis_need,repet,single,rst_frame,na[2:0],extra_pages[1:0],write_mode,enable,!reset}
     
     reg   [NUM_RC_BURST_BITS-1:0] start_range_addr; // (programmed) First frame in range start (in {row,col8} in burst8, bank ==0
     reg   [NUM_RC_BURST_BITS-1:0] frame_size;       // (programmed) First frame in range start (in {row,col8} in burst8, bank ==0
@@ -232,7 +233,7 @@ module  mcntrl_linear_rw #(
     // Set parameter registers
     always @(posedge mclk) begin
         if      (mrst)               mode_reg <= 0;
-        else if (set_mode_w)         mode_reg <= cmd_data[10:0]; // 4:0]; // [4:0];
+        else if (set_mode_w)         mode_reg <= cmd_data[11:0]; // 4:0]; // [4:0];
 
         if (mrst) single_frame_r <= 0;
         else      single_frame_r <= single_frame_w;
@@ -335,6 +336,7 @@ module  mcntrl_linear_rw #(
     assign cmd_wrmem =       mode_reg[MCONTR_LINTILE_WRITE];// 0: read from memory, 1:write to memory
     assign cmd_extra_pages = mode_reg[MCONTR_LINTILE_EXTRAPG+:MCONTR_LINTILE_EXTRAPG_BITS]; // external module needs more than 1 page
     assign repeat_frames=    mode_reg[MCONTR_LINTILE_REPEAT];
+    assign disable_need =    mode_reg[MCONTR_LINTILE_DIS_NEED];
     
     assign status_data= {frame_finished_r, busy_r};     // TODO: Add second bit?
     assign pgm_param_w=      cmd_we;
@@ -449,7 +451,7 @@ wire    start_not_partial= xfer_start_r[0] && !xfer_limited_by_mem_page_r;
         if (mrst) xfer_start_wr_r <= 0;
         else      xfer_start_wr_r <=  xfer_grant && !chn_rst && cmd_wrmem;
         
-        if (mrst)                                         need_r <= 0;
+        if (mrst || disable_need)                         need_r <= 0;
         else if (chn_rst || xfer_grant)                   need_r <= 0;
         else if ((pre_want  || want_r) && (page_cntr>=3)) need_r <= 1; // may raise need if want was already set
 

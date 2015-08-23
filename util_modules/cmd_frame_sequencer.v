@@ -43,7 +43,7 @@
 
 module  cmd_frame_sequencer#(
     parameter CMDFRAMESEQ_ADDR=                'h780,
-    parameter CMDFRAMESEQ_MASK=                'h3e0,
+    parameter CMDFRAMESEQ_MASK=                'h7e0,
     parameter AXI_WR_ADDR_BITS =                14,
     parameter CMDFRAMESEQ_DEPTH =               64, // 32/64/128
     parameter CMDFRAMESEQ_ABS =                 0,

@@ -111,6 +111,7 @@ Alex
     wire        enough_data; // enough data to start a new burst
     wire [11:3] next_wr_address; // bits that are incrtemented in 64-bit mode (higher are kept according to AXI 4KB inc. limit)
     reg  [31:0] write_address;
+    reg   [5:0] awid_r;          // awid registered with write_address
     wire        fifo_wd_rd; // read data fifo
     wire        last_confirmed_write;
 
@@ -131,6 +132,7 @@ Alex
     reg  [ 1:0] wburst;             // registered burst type
     reg  [ 3:0] wlen;               // registered awlen type (for wrapped over transfers)
     wire        start_write_burst_w;
+    reg         start_write_burst_r; // next after start_write_burst_w
     wire        write_in_progress_w; // should go inactive last confirmed upstream cycle
     reg         write_in_progress;
     reg  [ 7:0] num_full_data = 0; // Number of full data bursts in FIFO
@@ -229,29 +231,31 @@ Alex
     assign sim_wr_stb=wstrb_out;
     
     always @ (posedge  aclk) begin
-        if (start_write_burst_w) begin
-            if (awid_out != wid_out) begin
-                $display ("%m: at time %t ERROR: awid=%h, awid=%h",$time,awid_out,wid_out);
-//                $stop;
+        start_write_burst_r <= start_write_burst_w;
+        if (start_write_burst_r) begin
+            if (awid_r != wid_out) begin
+                $display ("%m: at time %t ERROR: awid=%h, wid=%h",$time,awid_out,wid_out);
+                $stop;
             end
-    
+        end
+        if (start_write_burst_w) begin
             if (awsize_out != 2'h3) begin
                 $display ("%m: at time %t ERROR: awsize_out=%h, currently only 'h3 (8 bytes) is valid",$time,awsize_out);
-//                $stop;
+                $stop;
             end
         end
         if (awvalid && awready) begin
             if (((awlock ^ VALID_AWLOCK) & VALID_AWLOCK_MASK) != 0) begin
                 $display ("%m: at time %t ERROR: awlock = %h, valid %h with mask %h",$time, awlock, VALID_AWLOCK, VALID_AWLOCK_MASK);
-//                $stop;
+                $stop;
             end
             if (((awcache ^ VALID_AWCACHE) & VALID_AWCACHE_MASK) != 0) begin
                 $display ("%m: at time %t ERROR: awcache = %h, valid %h with mask %h",$time, awcache, VALID_AWCACHE, VALID_AWCACHE_MASK);
-//                $stop;
+                $stop;
             end
             if (((awprot ^ VALID_AWPROT) & VALID_AWPROT_MASK) != 0) begin
                 $display ("%m: at time %t ERROR: awprot = %h, valid %h with mask %h",$time, awprot, VALID_AWPROT, VALID_AWPROT_MASK);
-//                $stop;
+                $stop;
             end
         end
     end
@@ -275,6 +279,9 @@ Alex
       if   (rst)                    write_address <= 32'bx;
       else if (start_write_burst_w) write_address <= awaddr_out; // precedence over inc
       else if (fifo_wd_rd)          write_address <= {write_address[31:12],next_wr_address[11:3],write_address[2:0]};
+      
+      if   (rst)                    awid_r <= 6'bx;
+      else if (start_write_burst_w) awid_r <= awid_out; // precedence over inc
       
     end
         
@@ -304,7 +311,7 @@ fifo_same_clock_fill   #( .DATA_WIDTH(79),.DATA_DEPTH(7))
         .sync_rst  (1'b0),
         .we(wvalid && wready),
         .re(fifo_wd_rd), //start_write_burst_w), // wrong
-        .data_in({wlast, wid[5:0],          wstrb[7:0],     wdata[63:0]}),
+        .data_in({wlast,     wid[5:0],          wstrb[7:0],     wdata[63:0]}),
         .data_out({wlast_out,wid_out[5:0],  wstrb_out[7:0], wdata_out[63:0]}),
         .nempty(w_nempty),
         .half_full(), //w_half_full),

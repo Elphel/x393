@@ -25,7 +25,7 @@
 module  memctrl16 #(
 //command interface parameters
     parameter DLY_LD =            'h080,  // address to generate delay load
-    parameter DLY_LD_MASK =       'h380,  // address mask to generate delay load
+    parameter DLY_LD_MASK =       'h780,  // address mask to generate delay load
 //0x1000..103f - 0- bit data (set/reset)
     parameter MCONTR_PHY_0BIT_ADDR =           'h020,  // address to set sequnecer channel and  run (4 LSB-s - channel)
     parameter MCONTR_PHY_0BIT_ADDR_MASK =      'h7f0,  // address mask to generate sequencer channel/run

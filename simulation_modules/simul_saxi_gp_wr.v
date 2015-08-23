@@ -191,7 +191,7 @@ Alex
     always @ (posedge  aclk) begin
         if (start_write_burst_w) begin
             if (awid_out != wid_out) begin
-                $display ("%m: at time %t ERROR: awid=%h, awid=%h",$time,awid_out,wid_out);
+                $display ("%m: at time %t ERROR: awid=%h, wid=%h",$time,awid_out,wid_out);
                 $stop;
             end
     
