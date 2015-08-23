@@ -422,7 +422,7 @@ items_left
         wlast <= done_burst_w; // when wleft==4'h1
 
         // wdata register mux
-        if (wdata_en) wdata <= wdata_sel[1]?(wdata_sel[1]?fifo_rdata3:fifo_rdata2):(wdata_sel[1]?fifo_rdata1:fifo_rdata0);
+        if (wdata_en) wdata <= wdata_sel[1]?(wdata_sel[1]?fifo_rdata3:fifo_rdata2):(wdata_sel[0]?fifo_rdata1:fifo_rdata0);
 
         if (pre_busy_w) chunk_inc <= (|counts_corr2[7:2])?
                                        3'h4 :
