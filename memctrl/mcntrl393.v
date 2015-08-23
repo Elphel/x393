@@ -1606,7 +1606,7 @@ module  mcntrl393 #(
         
         .bank13                  (cmprs_bank[1 * 3 +: 3]),                                    // input[2:0] 
         .row13                   (cmprs_row[1 * ADDRESS_NUMBER +: ADDRESS_NUMBER]),           // input[14:0] 
-        .col13                   (cmprs_col[0 * COL_WDTH +: COL_WDTH]),                       // input[6:0] 
+        .col13                   (cmprs_col[1 * COL_WDTH +: COL_WDTH]),                       // input[6:0] 
         .rowcol_inc13            (cmprs_rowcol_inc[1 * FRAME_WBP1 +: FRAME_WBP1]),            // input[13:0] 
         .num_rows13              (cmprs_num_rows_m1[1 * MAX_TILE_WIDTH +: MAX_TILE_WIDTH]),   // input[5:0] 
         .num_cols13              (cmprs_num_cols_m1[1 * MAX_TILE_HEIGHT +: MAX_TILE_HEIGHT]), // input[5:0] 

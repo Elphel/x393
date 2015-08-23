@@ -20,7 +20,7 @@
  *******************************************************************************/
 `timescale 1ns/1ps
 `include "system_defines.vh"
-
+`define SAME_SENSOR_DATA 1
 //`define use200Mhz 1
 //`define DEBUG_FIFO 1
 `undef WAIT_MRS
@@ -205,17 +205,6 @@ parameter EXTERNAL_TIMESTAMP =    1 ;    // embed local timestamp, 1 - embed rec
     wire        sns1_ctl;  // inout PX_ARO/TCK
     wire        sns1_pg;   // inout SENSPGM
 
-//connect sensor to sensor port 1
-assign sns1_dp[6:1] =  {PX1_D[10], PX1_D[8], PX1_D[6], PX1_D[4], PX1_D[2], PX1_HACT};
-assign PX1_MRST =       sns1_dp[7]; // from FPGA to sensor
-assign PX1_MCLK =       sns1_dp[0]; // from FPGA to sensor
-assign sns1_dn[6:0] =  {PX1_D[11], PX1_D[9], PX1_D[7], PX1_D[5], PX1_D[3], PX1_VACT, PX1_DCLK};
-assign PX1_ARST =       sns1_dn[7];
-assign sns1_clkn =      PX1_D[0];  // inout CNVSYNC/TDI
-assign sns1_clkp =      PX1_D[1];  // CNVCLK/TDO
-assign PX1_ARO =       sns1_ctl;  // from FPGA to sensor
-
-
     wire [ 7:0] sns2_dp;   // inout[7:0] {PX_MRST, PXD8, PXD6, PXD4, PXD2, PXD0, PX_HACT, PX_DCLK}
     wire [ 7:0] sns2_dn;   // inout[7:0] {PX_ARST, PXD9, PXD7, PXD5, PXD3, PXD1, PX_VACT, PX_BPF}
     wire        sns2_clkp; // inout CNVCLK/TDO
@@ -225,16 +214,6 @@ assign PX1_ARO =       sns1_ctl;  // from FPGA to sensor
     wire        sns2_ctl;  // inout PX_ARO/TCK
     wire        sns2_pg;   // inout SENSPGM
 
-//connect sensor to sensor port 2 (all data rotated left by 1 bit)
-assign sns2_dp[6:1] =  {PX2_D[9], PX2_D[7], PX2_D[5], PX2_D[3], PX2_D[1], PX2_HACT};
-assign PX2_MRST =       sns2_dp[7]; // from FPGA to sensor
-assign PX2_MCLK =       sns2_dp[0]; // from FPGA to sensor
-assign sns2_dn[6:0] =  {PX2_D[10], PX2_D[8], PX2_D[6], PX2_D[4], PX2_D[2], PX2_VACT, PX2_DCLK};
-assign PX2_ARST =       sns2_dn[7];
-assign sns2_clkn =      PX2_D[11];  // inout CNVSYNC/TDI
-assign sns2_clkp =      PX2_D[0];  // CNVCLK/TDO
-assign PX2_ARO =       sns2_ctl;  // from FPGA to sensor
-
     wire [ 7:0] sns3_dp;   // inout[7:0] {PX_MRST, PXD8, PXD6, PXD4, PXD2, PXD0, PX_HACT, PX_DCLK}
     wire [ 7:0] sns3_dn;   // inout[7:0] {PX_ARST, PXD9, PXD7, PXD5, PXD3, PXD1, PX_VACT, PX_BPF}
     wire        sns3_clkp; // inout CNVCLK/TDO
@@ -243,16 +222,6 @@ assign PX2_ARO =       sns2_ctl;  // from FPGA to sensor
     wire        sns3_sda;  // inout PX_SDA
     wire        sns3_ctl;  // inout PX_ARO/TCK
     wire        sns3_pg;   // inout SENSPGM
-//connect sensor to sensor port 3  (all data rotated left by 2 bits
-assign sns3_dp[6:1] =  {PX3_D[8], PX3_D[6], PX3_D[4], PX3_D[2], PX3_D[0], PX3_HACT};
-assign PX3_MRST =       sns3_dp[7]; // from FPGA to sensor
-assign PX3_MCLK =       sns3_dp[0]; // from FPGA to sensor
-assign sns3_dn[6:0] =  {PX3_D[9], PX3_D[7], PX3_D[5], PX3_D[3], PX3_D[1], PX3_VACT, PX3_DCLK};
-assign PX3_ARST =       sns3_dn[7];
-assign sns3_clkn =      PX3_D[10];  // inout CNVSYNC/TDI
-assign sns3_clkp =      PX3_D[11];  // CNVCLK/TDO
-assign PX3_ARO =        sns3_ctl;  // from FPGA to sensor
-
 
     wire [ 7:0] sns4_dp;   // inout[7:0] {PX_MRST, PXD8, PXD6, PXD4, PXD2, PXD0, PX_HACT, PX_DCLK}
     wire [ 7:0] sns4_dn;   // inout[7:0] {PX_ARST, PXD9, PXD7, PXD5, PXD3, PXD1, PX_VACT, PX_BPF}
@@ -263,16 +232,67 @@ assign PX3_ARO =        sns3_ctl;  // from FPGA to sensor
     wire        sns4_ctl;  // inout PX_ARO/TCK
     wire        sns4_pg;   // inout SENSPGM
 
-//connect sensor to sensor port 4  (all data rotated left by 3 bits
-assign sns4_dp[6:1] =  {PX4_D[5], PX4_D[3], PX4_D[1], PX4_D[11], PX4_D[9], PX4_HACT};
-assign PX4_MRST =       sns4_dp[7]; // from FPGA to sensor
-assign PX4_MCLK =       sns4_dp[0]; // from FPGA to sensor
-assign sns4_dn[6:0] =  {PX4_D[6], PX4_D[4], PX4_D[2], PX4_D[0], PX4_D[10], PX4_VACT, PX4_DCLK};
-assign PX4_ARST =       sns4_dn[7];
-assign sns4_clkn =      PX4_D[7];  // inout CNVSYNC/TDI
-assign sns4_clkp =      PX4_D[8];  // CNVCLK/TDO
-assign PX4_ARO =        sns4_ctl;  // from FPGA to sensor
+    //connect sensor to sensor port 1
+    assign sns1_dp[6:1] =  {PX1_D[10], PX1_D[8], PX1_D[6], PX1_D[4], PX1_D[2], PX1_HACT};
+    assign PX1_MRST =       sns1_dp[7]; // from FPGA to sensor
+    assign PX1_MCLK =       sns1_dp[0]; // from FPGA to sensor
+    assign sns1_dn[6:0] =  {PX1_D[11], PX1_D[9], PX1_D[7], PX1_D[5], PX1_D[3], PX1_VACT, PX1_DCLK};
+    assign PX1_ARST =       sns1_dn[7];
+    assign sns1_clkn =      PX1_D[0];  // inout CNVSYNC/TDI
+    assign sns1_clkp =      PX1_D[1];  // CNVCLK/TDO
+    assign PX1_ARO =       sns1_ctl;  // from FPGA to sensor
 
+    assign PX2_MRST =       sns2_dp[7]; // from FPGA to sensor
+    assign PX2_MCLK =       sns2_dp[0]; // from FPGA to sensor
+    assign PX2_ARST =       sns2_dn[7];
+    assign PX2_ARO =        sns2_ctl;  // from FPGA to sensor
+    
+    assign PX3_MRST =       sns3_dp[7]; // from FPGA to sensor
+    assign PX3_MCLK =       sns3_dp[0]; // from FPGA to sensor
+    assign PX3_ARST =       sns3_dn[7];
+    assign PX3_ARO =        sns3_ctl;  // from FPGA to sensor
+    
+    assign PX4_MRST =       sns4_dp[7]; // from FPGA to sensor
+    assign PX4_MCLK =       sns4_dp[0]; // from FPGA to sensor
+    assign PX4_ARST =       sns4_dn[7];
+    assign PX4_ARO =        sns4_ctl;  // from FPGA to sensor
+
+    
+`ifdef SAME_SENSOR_DATA
+    assign sns2_dp[6:1] =  {PX2_D[10], PX2_D[8], PX2_D[6], PX2_D[4], PX2_D[2], PX2_HACT};
+    assign sns2_dn[6:0] =  {PX2_D[11], PX2_D[9], PX2_D[7], PX2_D[5], PX2_D[3], PX2_VACT, PX2_DCLK};
+    assign sns2_clkn =      PX2_D[0];  // inout CNVSYNC/TDI
+    assign sns2_clkp =      PX2_D[1];  // CNVCLK/TDO
+
+    assign sns3_dp[6:1] =  {PX3_D[10], PX3_D[8], PX3_D[6], PX3_D[4], PX3_D[2], PX3_HACT};
+    assign sns3_dn[6:0] =  {PX3_D[11], PX3_D[9], PX3_D[7], PX3_D[5], PX3_D[3], PX3_VACT, PX3_DCLK};
+    assign sns3_clkn =      PX3_D[0];  // inout CNVSYNC/TDI
+    assign sns3_clkp =      PX3_D[1];  // CNVCLK/TDO
+
+    assign sns4_dp[6:1] =  {PX4_D[10], PX4_D[8], PX4_D[6], PX4_D[4], PX4_D[2], PX4_HACT};
+    assign sns4_dn[6:0] =  {PX4_D[11], PX4_D[9], PX4_D[7], PX4_D[5], PX4_D[3], PX4_VACT, PX4_DCLK};
+    assign sns4_clkn =      PX4_D[0];  // inout CNVSYNC/TDI
+    assign sns4_clkp =      PX4_D[1];  // CNVCLK/TDO
+
+`else    
+    //connect sensor to sensor port 2 (all data rotated left by 1 bit)
+    assign sns2_dp[6:1] =  {PX2_D[9], PX2_D[7], PX2_D[5], PX2_D[3], PX2_D[1], PX2_HACT};
+    assign sns2_dn[6:0] =  {PX2_D[10], PX2_D[8], PX2_D[6], PX2_D[4], PX2_D[2], PX2_VACT, PX2_DCLK};
+    assign sns2_clkn =      PX2_D[11];  // inout CNVSYNC/TDI
+    assign sns2_clkp =      PX2_D[0];  // CNVCLK/TDO
+    
+    //connect sensor to sensor port 3  (all data rotated left by 2 bits
+    assign sns3_dp[6:1] =  {PX3_D[8], PX3_D[6], PX3_D[4], PX3_D[2], PX3_D[0], PX3_HACT};
+    assign sns3_dn[6:0] =  {PX3_D[9], PX3_D[7], PX3_D[5], PX3_D[3], PX3_D[1], PX3_VACT, PX3_DCLK};
+    assign sns3_clkn =      PX3_D[10];  // inout CNVSYNC/TDI
+    assign sns3_clkp =      PX3_D[11];  // CNVCLK/TDO
+    
+    //connect sensor to sensor port 4  (all data rotated left by 3 bits
+    assign sns4_dp[6:1] =  {PX4_D[5], PX4_D[3], PX4_D[1], PX4_D[11], PX4_D[9], PX4_HACT};
+    assign sns4_dn[6:0] =  {PX4_D[6], PX4_D[4], PX4_D[2], PX4_D[0], PX4_D[10], PX4_VACT, PX4_DCLK};
+    assign sns4_clkn =      PX4_D[7];  // inout CNVSYNC/TDI
+    assign sns4_clkp =      PX4_D[8];  // CNVCLK/TDO
+`endif
 
     wire [ 9:0] gpio_pins; // inout[9:0] ([6]-synco0,[7]-syncio0,[8]-synco1,[9]-syncio1)
 // Connect trigger outs to triggets in (#10 needed for Icarus)
@@ -346,6 +366,16 @@ assign #10 gpio_pins[9] = gpio_pins[8];
 //  reg  [ 3:0] afi1_sim_bresp_latency; // input[3:0] 
     wire [ 2:0] afi1_sim_wr_cap;        // output[2:0]  SuppressThisWarning VEditor - not used - just view
     wire [ 3:0] afi1_sim_wr_qos;        // output[3:0]  SuppressThisWarning VEditor - not used - just view
+
+    wire [31:0] sim_cmprs0_addr = (afi1_sim_wr_valid && afi1_sim_wr_ready && (afi1_sim_wid[1:0] == 2'h0))?afi1_sim_wr_address:32'bz; // SuppressThisWarning VEditor - not used - just view
+    wire [31:0] sim_cmprs1_addr = (afi1_sim_wr_valid && afi1_sim_wr_ready && (afi1_sim_wid[1:0] == 2'h1))?afi1_sim_wr_address:32'bz; // SuppressThisWarning VEditor - not used - just view
+    wire [31:0] sim_cmprs2_addr = (afi1_sim_wr_valid && afi1_sim_wr_ready && (afi1_sim_wid[1:0] == 2'h2))?afi1_sim_wr_address:32'bz; // SuppressThisWarning VEditor - not used - just view
+    wire [31:0] sim_cmprs3_addr = (afi1_sim_wr_valid && afi1_sim_wr_ready && (afi1_sim_wid[1:0] == 2'h3))?afi1_sim_wr_address:32'bz; // SuppressThisWarning VEditor - not used - just view
+    wire [63:0] sim_cmprs0_data = (afi1_sim_wr_valid && afi1_sim_wr_ready && (afi1_sim_wid[1:0] == 2'h0))?afi1_sim_wr_data:64'bz;    // SuppressThisWarning VEditor - not used - just view
+    wire [63:0] sim_cmprs1_data = (afi1_sim_wr_valid && afi1_sim_wr_ready && (afi1_sim_wid[1:0] == 2'h1))?afi1_sim_wr_data:64'bz;    // SuppressThisWarning VEditor - not used - just view
+    wire [63:0] sim_cmprs2_data = (afi1_sim_wr_valid && afi1_sim_wr_ready && (afi1_sim_wid[1:0] == 2'h2))?afi1_sim_wr_data:64'bz;    // SuppressThisWarning VEditor - not used - just view
+    wire [63:0] sim_cmprs3_data = (afi1_sim_wr_valid && afi1_sim_wr_ready && (afi1_sim_wid[1:0] == 2'h3))?afi1_sim_wr_data:64'bz;    // SuppressThisWarning VEditor - not used - just view
+//x393_i.ps7_i.SAXIHP1ACLK
 
     
 // afi loopback (membridge)
@@ -2203,8 +2233,8 @@ task setup_sensor_channel;
     // TODO: calculate widths correctly!
     setup_compressor_memory (
             num_sensor,                    // input  [1:0] num_sensor;
-            FRAME_START_ADDRESS,           // input [31:0] frame_sa;         // 22-bit frame start address ((3 CA LSBs==0. BA==0)
-            FRAME_START_ADDRESS_INC,       // input [31:0] frame_sa_inc;     // 22-bit frame start address increment  ((3 CA LSBs==0. BA==0)
+            frame_start_address,           // input [31:0] frame_sa;         // 22-bit frame start address ((3 CA LSBs==0. BA==0)
+            frame_start_address_inc,       // input [31:0] frame_sa_inc;     // 22-bit frame start address increment  ((3 CA LSBs==0. BA==0)
             last_buf_frame,                // input [31:0] last_frame_num;   // 16-bit number of the last frame in a buffer
             frame_full_width,              // input [31:0] frame_full_width; // 13-bit Padded line length (8-row increment), in 8-bursts (16 bytes)
             window_width, //  & ~3,             // input [31:0] window_width;    // 13 bit - in 8*16=128 bit bursts
