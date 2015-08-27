@@ -1,4 +1,6 @@
 VivadoBitstream_103_PreBitstreamTCL=set_property BITSTREAM.STARTUP.MATCH_CYCLE NoWait [current_design]<-@\#\#@->
 VivadoBitstream_105_force=true
-com.elphel.store.context.VivadoBitstream=VivadoBitstream_105_force<-@\#\#@->VivadoBitstream_103_PreBitstreamTCL<-@\#\#@->
+VivadoBitstream_122_PreBitstreamTCL=set_property "BITSTREAM.STARTUP.MATCH_CYCLE" NoWait [current_design]<-@\#\#@->
+VivadoBitstream_124_force=true
+com.elphel.store.context.VivadoBitstream=VivadoBitstream_105_force<-@\#\#@->VivadoBitstream_103_PreBitstreamTCL<-@\#\#@->VivadoBitstream_124_force<-@\#\#@->VivadoBitstream_122_PreBitstreamTCL<-@\#\#@->
 eclipse.preferences.version=1
