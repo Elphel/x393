@@ -377,6 +377,12 @@ assign #10 gpio_pins[9] = gpio_pins[8];
     wire [63:0] sim_cmprs3_data = (afi1_sim_wr_valid && afi1_sim_wr_ready && (afi1_sim_wid[1:0] == 2'h3))?afi1_sim_wr_data:64'bz;    // SuppressThisWarning VEditor - not used - just view
 //x393_i.ps7_i.SAXIHP1ACLK
 
+    always @ (posedge x393_i.ps7_i.SAXIHP1ACLK) if (afi1_sim_wr_valid && afi1_sim_wr_ready) begin
+        if (afi1_sim_wid[1:0] == 2'h0) $display("---sim_cmprs0: %x:%x", afi1_sim_wr_address, afi1_sim_wr_data);
+        if (afi1_sim_wid[1:0] == 2'h1) $display("---sim_cmprs1: %x:%x", afi1_sim_wr_address, afi1_sim_wr_data);
+        if (afi1_sim_wid[1:0] == 2'h2) $display("---sim_cmprs2: %x:%x", afi1_sim_wr_address, afi1_sim_wr_data);
+        if (afi1_sim_wid[1:0] == 2'h3) $display("---sim_cmprs3: %x:%x", afi1_sim_wr_address, afi1_sim_wr_data);
+    end
     
 // afi loopback (membridge)
     assign #1 afi_sim_rd_data=  afi_sim_rd_ready?{2'h0,afi_sim_rd_address[31:3],1'h1,  2'h0,afi_sim_rd_address[31:3],1'h0}:64'bx;
