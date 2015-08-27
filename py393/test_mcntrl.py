@@ -58,6 +58,8 @@ import x393_mcntrl_eyepatterns
 import x393_mcntrl_adjust
 import x393_mcntrl_membridge
 import x393_sens_cmprs
+import x393_camsync
+import x393_gpio
 import vrlg
 __all__ = []
 __version__ = 0.1
@@ -333,7 +335,9 @@ USAGE
     x393Eyepatterns= x393_mcntrl_eyepatterns.X393McntrlEyepattern(verbose,args.simulated)
     x393Adjust=      x393_mcntrl_adjust.X393McntrlAdjust(verbose,args.simulated,args.localparams)
     X393Membridge=   x393_mcntrl_membridge.X393McntrlMembridge(verbose,args.simulated)
-    x393SensCmprs=   x393_sens_cmprs.x393SensCmprs(verbose,args.simulated,args.localparams)
+    x393SensCmprs=   x393_sens_cmprs.X393SensCmprs(verbose,args.simulated,args.localparams)
+    x393Camsync=     x393_camsync.X393Camsync(verbose,args.simulated,args.localparams)
+    x393GPIO=        x393_gpio.X393GPIO(verbose,args.simulated,args.localparams)
     '''
     print ("----------------------")
     print("x393_mem.__dict__="+str(x393_mem.__dict__))
@@ -349,16 +353,18 @@ USAGE
                 func_args=x393_mem.X393Mem.__dict__[name].func_code.co_varnames[1:x393_mem.X393Mem.__dict__[name].func_code.co_argcount]
                 print (name+": "+str(func_args))
     extractTasks(x393_mem.X393Mem,x393mem)
-    extractTasks(x393_utils.X393Utils,x393utils)
-    extractTasks(x393_axi_control_status.X393AxiControlStatus,x393tasks)
-    extractTasks(x393_pio_sequences.X393PIOSequences,x393Pio)
-    extractTasks(x393_mcntrl_timing.X393McntrlTiming,x393Timing)
-    extractTasks(x393_mcntrl_buffers.X393McntrlBuffers,x393Buffers)
-    extractTasks(x393_mcntrl_tests.X393McntrlTests,x393Tests)
-    extractTasks(x393_mcntrl_eyepatterns.X393McntrlEyepattern,x393Eyepatterns)
-    extractTasks(x393_mcntrl_adjust.X393McntrlAdjust,x393Adjust)
-    extractTasks(x393_mcntrl_membridge.X393McntrlMembridge,X393Membridge)
-    
+    extractTasks(x393_utils.X393Utils,                         x393utils)
+    extractTasks(x393_axi_control_status.X393AxiControlStatus, x393tasks)
+    extractTasks(x393_pio_sequences.X393PIOSequences,          x393Pio)
+    extractTasks(x393_mcntrl_timing.X393McntrlTiming,          x393Timing)
+    extractTasks(x393_mcntrl_buffers.X393McntrlBuffers,        x393Buffers)
+    extractTasks(x393_mcntrl_tests.X393McntrlTests,            x393Tests)
+    extractTasks(x393_mcntrl_eyepatterns.X393McntrlEyepattern, x393Eyepatterns)
+    extractTasks(x393_mcntrl_adjust.X393McntrlAdjust,          x393Adjust)
+    extractTasks(x393_mcntrl_membridge.X393McntrlMembridge,    X393Membridge)
+    extractTasks(x393_sens_cmprs.X393SensCmprs,                x393SensCmprs)
+    extractTasks(x393_camsync.X393Camsync,                     x393Camsync)
+    extractTasks(x393_gpio.X393GPIO,                           x393GPIO)
 
     for cmdLine in commands:
         print ('Running task: '+str(cmdLine))

@@ -297,12 +297,12 @@ class X393AxiControlStatus(object):
                             seq_num): # input [5:0] seq_num;
         """
         Set status generation mode for all defined modules
-        <mode> -       status generation mode:
+        @param mode -       status generation mode:
                                   0: disable status generation,
                                   1: single status request,
                                   2: auto status, keep specified seq number,
                                   4: auto, inc sequence number 
-        <seq_number> - 6-bit sequence number of the status message to be sent
+        @param seq_number - 6-bit sequence number of the status message to be sent
         """
 
         self.program_status (vrlg.MCONTR_PHY_16BIT_ADDR,     vrlg.MCONTR_PHY_STATUS_CNTRL,        mode,seq_num)# //MCONTR_PHY_STATUS_REG_ADDR=          'h0,
@@ -317,7 +317,86 @@ class X393AxiControlStatus(object):
         self.program_status (vrlg.MCNTRL_TEST01_ADDR,        vrlg.MCNTRL_TEST01_CHN3_STATUS_CNTRL,mode,seq_num)#; //MCNTRL_TEST01_STATUS_REG_CHN3_ADDR=  'h3d,
         self.program_status (vrlg.MCNTRL_TEST01_ADDR,        vrlg.MCNTRL_TEST01_CHN4_STATUS_CNTRL,mode,seq_num)#; //MCNTRL_TEST01_STATUS_REG_CHN4_ADDR=  'h3e,
         self.program_status (vrlg.MEMBRIDGE_ADDR,            vrlg.MEMBRIDGE_STATUS_CNTRL,         mode,seq_num)#; //MCNTRL_TEST01_STATUS_REG_CHN4_ADDR=  'h3e,
-        
+
+    def program_status_sensor_i2c( self,
+                                   num_sensor,
+                                   mode,     # input [1:0] mode;
+                                   seq_num): # input [5:0] seq_num;
+        """
+        Set status generation mode for selected sensor port i2c control
+        @param num_sensor - number of the sensor port (0..3)
+        @param mode -       status generation mode:
+                                  0: disable status generation,
+                                  1: single status request,
+                                  2: auto status, keep specified seq number,
+                                  4: auto, inc sequence number 
+        @param seq_number - 6-bit sequence number of the status message to be sent
+        """
+
+        self.program_status (vrlg.SENSOR_GROUP_ADDR  + num_sensor * vrlg.SENSOR_BASE_INC + vrlg.SENSI2C_CTRL_RADDR,
+                             vrlg.SENSI2C_STATUS,
+                             mode,
+                             seq_num)# //MCONTR_PHY_STATUS_REG_ADDR=          'h0,
+
+    def program_status_sensor_io( self,
+                                  num_sensor,
+                                  mode,     # input [1:0] mode;
+                                  seq_num): # input [5:0] seq_num;
+        """
+        Set status generation mode for selected sensor port io subsystem
+        @param num_sensor - number of the sensor port (0..3)
+        @param mode -       status generation mode:
+                                  0: disable status generation,
+                                  1: single status request,
+                                  2: auto status, keep specified seq number,
+                                  4: auto, inc sequence number 
+        @param seq_number - 6-bit sequence number of the status message to be sent
+        """
+
+        self.program_status (vrlg.SENSOR_GROUP_ADDR  + num_sensor * vrlg.SENSOR_BASE_INC + vrlg.SENSIO_RADDR,
+                             vrlg.SENSIO_STATUS,
+                             mode,
+                             seq_num)# //MCONTR_PHY_STATUS_REG_ADDR=          'h0,
+
+    def program_status_compressor(self,
+                                  cmprs_chn,
+                                  mode,     # input [1:0] mode;
+                                  seq_num): # input [5:0] seq_num;
+        """
+        Set status generation mode for selected compressor channel
+        @param cmprs_chn - number of the compressor channel (0..3)
+        @param mode -       status generation mode:
+                                  0: disable status generation,
+                                  1: single status request,
+                                  2: auto status, keep specified seq number,
+                                  4: auto, inc sequence number 
+        @param seq_number - 6-bit sequence number of the status message to be sent
+        """
+
+        self.program_status (vrlg.CMPRS_GROUP_ADDR  + cmprs_chn * vrlg.CMPRS_BASE_INC,
+                             vrlg.CMPRS_STATUS_CNTRL,
+                             mode,
+                             seq_num)# //MCONTR_PHY_STATUS_REG_ADDR=          'h0,
+    '''
+    def program_status_gpio(self,
+                            mode,     # input [1:0] mode;
+                            seq_num): # input [5:0] seq_num;
+        """
+        Set status generation mode for GPIO port
+        @param mode -       status generation mode:
+                                  0: disable status generation,
+                                  1: single status request,
+                                  2: auto status, keep specified seq number,
+                                  4: auto, inc sequence number 
+        @param seq_number - 6-bit sequence number of the status message to be sent
+        """
+
+        self.program_status (vrlg.GPIO_ADDR,
+                             vrlg.GPIO_SET_STATUS,
+                             mode,
+                             seq_num)# //MCONTR_PHY_STATUS_REG_ADDR=          'h0,
+
+    '''    
     def enable_cmda(self,
                     en): # input en;
         """
