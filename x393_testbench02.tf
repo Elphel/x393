@@ -2498,7 +2498,7 @@ task write_cmd_frame_sequencer;
     // temporarily putting in the very end as it takes about 30 usec to program curves (TODO: see how to make it faster for simulation)
     end
 endtask
-
+//x393_camsync.py
 task camsync_setup;
     input [3:0]  sensor_mask;
     reg          trigger_mode; // 0 - auto, 1 - triggered
@@ -2847,7 +2847,7 @@ task test_i2c_353;
 endtask
 
 
-
+//x393_axi_control_status.py
 task program_status_sensor_i2c;
     input [1:0] num_sensor;
     input [1:0] mode;
@@ -2860,6 +2860,7 @@ task program_status_sensor_i2c;
     end
 endtask
 
+//x393_axi_control_status.py
 task program_status_sensor_io;
     input [1:0] num_sensor;
     input [1:0] mode;
@@ -2872,6 +2873,7 @@ task program_status_sensor_io;
     end
 endtask
 
+//x393_axi_control_status.py
 task program_status_compressor;
     input [1:0] num_sensor;
     input [1:0] mode;
@@ -2884,6 +2886,7 @@ task program_status_compressor;
     end
 endtask
 
+//x393_gpio.py
 task program_status_gpio;
     input [1:0] mode;
     input [5:0] seq_num;
@@ -2895,6 +2898,7 @@ task program_status_gpio;
     end
 endtask
 
+//x393_gpio.py
 task set_gpio_ports;
     input [1:0] port_soft; // <2 - unchanged, 2 - disable, 3 - enable
     input [1:0] port_a; // camsync
@@ -2908,10 +2912,11 @@ task set_gpio_ports;
         data [GPIO_PORTEN + 2 +:2] = port_a;
         data [GPIO_PORTEN + 4 +:2] = port_b;
         data [GPIO_PORTEN + 6 +:2] = port_c;
-        write_contol_register( GPIO_ADDR + GPIO_SET_PINS, data);
+        write_contol_register( GPIO_ADDR + GPIO_SET_PINS, data << GPIO_PORTEN);
     end
 endtask
     
+//x393_gpio.py
 task set_gpio_pins;
     input [1:0] ext0; // 0 - nop, 1 - set "0", 2 - set "1", 3 - set as input
     input [1:0] ext1; // 0 - nop, 1 - set "0", 2 - set "1", 3 - set as input
@@ -3367,6 +3372,7 @@ function [STATUS_DEPTH-1:0] func_status_addr_rtc_usec; // sec is in the next add
 endfunction
 */
 // camsync tasks 
+//x393_camsync.py
 task set_camsync_mode;
     input       en;             // 1 - enable, 0 - reset module
     input [1:0] en_snd;         // <2 - NOP, 2 - disable, 3 - enable sending timestamp with sync pulse
@@ -3387,6 +3393,7 @@ task set_camsync_mode;
     end
 endtask
 
+//x393_camsync.py
 task set_camsync_inout; // set specified input bit, keep other ones
     input         is_out;          // 0 - input selection, 1 - output selection
     input integer bit_number;      // 0..9 - bit to use
