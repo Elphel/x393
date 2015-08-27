@@ -1108,6 +1108,8 @@ class X393McntrlAdjust(object):
         numPhaseSteps= int(dly_steps['SDCLK_PERIOD']/dly_steps['PHASE_STEP']+0.5)
         cmda_odly_data=self.adjustment_state['cmda_bspe'][phase % numPhaseSteps]
         if (not cmda_odly_data): # phase is invalid for CMDA
+            print ("phase=",phase)
+            print (self.adjustment_state['cmda_bspe'])
             return None
         cmda_odly_lin=cmda_odly_data['ldly']
         self.x393_axi_tasks.enable_refresh(0)
@@ -2862,6 +2864,8 @@ class X393McntrlAdjust(object):
                                quiet)
             if not phase_ok:
                 print ("Failed to set phase=%d for dly=%d- that should not happen (phase_dqso)- "%(phase,dqs_lin))
+                print (self.adjustment_state['cmda_bspe'])
+                
                 return None # no valid CMDA ODELAY exists for this phase
             #set DQS IDELAY and DQ IDELAY matching phase 
             dqs_idelay=dqsi_dqi_for_phase[phase][DQSI_KEY] # 2-element list
@@ -5000,7 +5004,7 @@ write_settings= {
                     prim_steps=1,
                     primary_set_in=2,
                     primary_set_out=2,
-                    dqs_pattern=0x55,
+                    dqs_pattern=0xaa,
                     rsel=None, # None (any) or 0/1
                     wsel=None, # None (any) or 0/1 # Seems wsel=0 has a better fit - consider changing
                     extraTgl=0,
@@ -5016,7 +5020,9 @@ write_settings= {
                              compare with one fine step lower
         @param primary_set_in -  which of the primary sets to use when processing DQi/DQSi results (2 - normal, 0 - other DQS phase)
         @param primary_set_out - which of the primary sets to use when processing DQo/DQSo results (2 - normal, 0 - other DQS phase)
-        @param dqs_pattern -     0x55/0xaa - DQS output toggle pattern. When it is 0x55 primary_set_out is reversed ? 
+        @param dqs_pattern -     0x55/0xaa - DQS output toggle pattern (DFLT_DQS_PATTERN). When it is 0x55 primary_set_out is reversed ? 
+        @param rsel - 0 - use first command time slot for READ, 1 uses second. Should match RSEL parameter
+        @param wsel - 0 - use first command time slot for WRITE, 1 uses second. Should match WSEL parameter
         @param extraTgl - add extra dqs toggle (2 clock cycles)
         @param quiet reduce output
         """

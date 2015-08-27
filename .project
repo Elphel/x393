@@ -62,42 +62,42 @@
 		<link>
 			<name>vivado_logs/VivadoBitstream.log</name>
 			<type>1</type>
-			<location>/home/andrey/git/x393/vivado_logs/VivadoBitstream-20150818191452916.log</location>
+			<location>/home/andrey/git/x393/vivado_logs/VivadoBitstream-20150826180314606.log</location>
 		</link>
 		<link>
 			<name>vivado_logs/VivadoOpt.log</name>
 			<type>1</type>
-			<location>/home/andrey/git/x393/vivado_logs/VivadoOpt-20150818190618667.log</location>
+			<location>/home/andrey/git/x393/vivado_logs/VivadoOpt-20150826180314606.log</location>
 		</link>
 		<link>
 			<name>vivado_logs/VivadoOptPhys.log</name>
 			<type>1</type>
-			<location>/home/andrey/git/x393/vivado_logs/VivadoOptPhys-20150818191452916.log</location>
+			<location>/home/andrey/git/x393/vivado_logs/VivadoOptPhys-20150826180314606.log</location>
 		</link>
 		<link>
 			<name>vivado_logs/VivadoOptPower.log</name>
 			<type>1</type>
-			<location>/home/andrey/git/x393/vivado_logs/VivadoOptPower-20150818190618667.log</location>
+			<location>/home/andrey/git/x393/vivado_logs/VivadoOptPower-20150826180314606.log</location>
 		</link>
 		<link>
 			<name>vivado_logs/VivadoPlace.log</name>
 			<type>1</type>
-			<location>/home/andrey/git/x393/vivado_logs/VivadoPlace-20150818190618667.log</location>
+			<location>/home/andrey/git/x393/vivado_logs/VivadoPlace-20150826180314606.log</location>
 		</link>
 		<link>
 			<name>vivado_logs/VivadoRoute.log</name>
 			<type>1</type>
-			<location>/home/andrey/git/x393/vivado_logs/VivadoRoute-20150818191452916.log</location>
+			<location>/home/andrey/git/x393/vivado_logs/VivadoRoute-20150826180314606.log</location>
 		</link>
 		<link>
 			<name>vivado_logs/VivadoSynthesis.log</name>
 			<type>1</type>
-			<location>/home/andrey/git/x393/vivado_logs/VivadoSynthesis-20150818185615292.log</location>
+			<location>/home/andrey/git/x393/vivado_logs/VivadoSynthesis-20150826175759893.log</location>
 		</link>
 		<link>
 			<name>vivado_logs/VivadoTimimgSummaryReportImplemented.log</name>
 			<type>1</type>
-			<location>/home/andrey/git/x393/vivado_logs/VivadoTimimgSummaryReportImplemented-20150818191452916.log</location>
+			<location>/home/andrey/git/x393/vivado_logs/VivadoTimimgSummaryReportImplemented-20150826180314606.log</location>
 		</link>
 		<link>
 			<name>vivado_logs/VivadoTimimgSummaryReportSynthesis.log</name>
@@ -107,32 +107,32 @@
 		<link>
 			<name>vivado_logs/VivadoTimingReportImplemented.log</name>
 			<type>1</type>
-			<location>/home/andrey/git/x393/vivado_logs/VivadoTimingReportImplemented-20150818191452916.log</location>
+			<location>/home/andrey/git/x393/vivado_logs/VivadoTimingReportImplemented-20150826180314606.log</location>
 		</link>
 		<link>
 			<name>vivado_logs/VivadoTimingReportSynthesis.log</name>
 			<type>1</type>
-			<location>/home/andrey/git/x393/vivado_logs/VivadoTimingReportSynthesis-20150818185615292.log</location>
+			<location>/home/andrey/git/x393/vivado_logs/VivadoTimingReportSynthesis-20150826175759893.log</location>
 		</link>
 		<link>
 			<name>vivado_state/x393-opt-phys.dcp</name>
 			<type>1</type>
-			<location>/home/andrey/git/x393/vivado_state/x393-opt-phys-20150818191452916.dcp</location>
+			<location>/home/andrey/git/x393/vivado_state/x393-opt-phys-20150826180314606.dcp</location>
 		</link>
 		<link>
 			<name>vivado_state/x393-place.dcp</name>
 			<type>1</type>
-			<location>/home/andrey/git/x393/vivado_state/x393-place-20150818190618667.dcp</location>
+			<location>/home/andrey/git/x393/vivado_state/x393-place-20150826180314606.dcp</location>
 		</link>
 		<link>
 			<name>vivado_state/x393-route.dcp</name>
 			<type>1</type>
-			<location>/home/andrey/git/x393/vivado_state/x393-route-20150818191452916.dcp</location>
+			<location>/home/andrey/git/x393/vivado_state/x393-route-20150826180314606.dcp</location>
 		</link>
 		<link>
 			<name>vivado_state/x393-synth.dcp</name>
 			<type>1</type>
-			<location>/home/andrey/git/x393/vivado_state/x393-synth-20150818185615292.dcp</location>
+			<location>/home/andrey/git/x393/vivado_state/x393-synth-20150826175759893.dcp</location>
 		</link>
 	</linkedResources>
 </projectDescription>
