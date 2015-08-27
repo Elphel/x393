@@ -91,6 +91,7 @@ module  x393 #(
     ,output                      DUMMY_TO_KEEP
     
 );
+`include "fpga_version.vh"
     assign DUMMY_TO_KEEP = frst[2] && fclk[1];
 
 //    localparam ADDRESS_NUMBER=15;
@@ -823,7 +824,8 @@ assign axi_grst = axi_rst_pre;
         .STATUS_ADDR      (STATUS_ADDR),
         .STATUS_ADDR_MASK (STATUS_ADDR_MASK),
         .AXI_RD_ADDR_BITS (AXI_RD_ADDR_BITS),
-        .STATUS_DEPTH     (STATUS_DEPTH)
+        .STATUS_DEPTH     (STATUS_DEPTH),
+        .FPGA_VERSION     (FPGA_VERSION)
     ) status_read_i (
         .mrst             (mrst),                          // input
         .arst             (arst),                          // input

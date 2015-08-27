@@ -663,6 +663,8 @@ module  compressor393 # (
             assign afi1_wstrb = 0; 
             assign afi1_bready = 0;
             assign afi1_wrissuecap1en = 0;
+            assign status_rq_mux[5] = 0;
+            assign status_ad_mux[40 +: 8] = 8'b0;
         end
     endgenerate
 

@@ -423,12 +423,12 @@ set_property PACKAGE_PIN Y18  [get_ports {sns4_pg}]
 # for this design, you may use the CLOCK_DEDICATED_ROUTE constraint in the .xdc file to demote this message to a WARNING.
 # However, the use of this override is highly discouraged. These examples can be used directly in the .xdc file to override this clock rule.
 
-set_property CLOCK_DEDICATED_ROUTE FALSE [get_nets sensors393_i/sensor_channel_block[0].sensor_channel_i/sens_parallel12_i/mmcm_phase_cntr_i/clkout0]
-set_property CLOCK_DEDICATED_ROUTE FALSE [get_nets sensors393_i/sensor_channel_block[1].sensor_channel_i/sens_parallel12_i/mmcm_phase_cntr_i/clkout0]
-set_property CLOCK_DEDICATED_ROUTE FALSE [get_nets sensors393_i/sensor_channel_block[2].sensor_channel_i/sens_parallel12_i/mmcm_phase_cntr_i/clkout0]
-set_property CLOCK_DEDICATED_ROUTE FALSE [get_nets sensors393_i/sensor_channel_block[3].sensor_channel_i/sens_parallel12_i/mmcm_phase_cntr_i/clkout0]
+#set_property CLOCK_DEDICATED_ROUTE FALSE [get_nets sensors393_i/sensor_channel_block[0].sensor_channel_i/sens_parallel12_i/mmcm_phase_cntr_i/clkout0]
+#set_property CLOCK_DEDICATED_ROUTE FALSE [get_nets sensors393_i/sensor_channel_block[1].sensor_channel_i/sens_parallel12_i/mmcm_phase_cntr_i/clkout0]
+#set_property CLOCK_DEDICATED_ROUTE FALSE [get_nets sensors393_i/sensor_channel_block[2].sensor_channel_i/sens_parallel12_i/mmcm_phase_cntr_i/clkout0]
+#set_property CLOCK_DEDICATED_ROUTE FALSE [get_nets sensors393_i/sensor_channel_block[3].sensor_channel_i/sens_parallel12_i/mmcm_phase_cntr_i/clkout0]
 
-set_property CLOCK_DEDICATED_ROUTE FALSE [get_nets sensors393_i/sensor_channel_block[0].sensor_channel_i/sens_parallel12_i/mmcm_phase_cntr_i/clkout1]
-set_property CLOCK_DEDICATED_ROUTE FALSE [get_nets sensors393_i/sensor_channel_block[1].sensor_channel_i/sens_parallel12_i/mmcm_phase_cntr_i/clkout1]
-set_property CLOCK_DEDICATED_ROUTE FALSE [get_nets sensors393_i/sensor_channel_block[2].sensor_channel_i/sens_parallel12_i/mmcm_phase_cntr_i/clkout1]
-set_property CLOCK_DEDICATED_ROUTE FALSE [get_nets sensors393_i/sensor_channel_block[3].sensor_channel_i/sens_parallel12_i/mmcm_phase_cntr_i/clkout1]
+#set_property CLOCK_DEDICATED_ROUTE FALSE [get_nets sensors393_i/sensor_channel_block[0].sensor_channel_i/sens_parallel12_i/mmcm_phase_cntr_i/clkout1]
+#set_property CLOCK_DEDICATED_ROUTE FALSE [get_nets sensors393_i/sensor_channel_block[1].sensor_channel_i/sens_parallel12_i/mmcm_phase_cntr_i/clkout1]
+#set_property CLOCK_DEDICATED_ROUTE FALSE [get_nets sensors393_i/sensor_channel_block[2].sensor_channel_i/sens_parallel12_i/mmcm_phase_cntr_i/clkout1]
+#set_property CLOCK_DEDICATED_ROUTE FALSE [get_nets sensors393_i/sensor_channel_block[3].sensor_channel_i/sens_parallel12_i/mmcm_phase_cntr_i/clkout1]

@@ -235,7 +235,7 @@ module  cmprs_cmd_decode#(
     reg   [23:0] color_sat_xclk; // color saturation values (only 10 LSB in each 12 are used
     reg   [ 2:0] coring_xclk; // color saturation values (only 10 LSB in each 12 are used
 
-    wire         frame_start_xclk;
+//    wire         frame_start_xclk;
     assign cmprs_en_mclk = cmprs_en_mclk_r;
     
     always @ (posedge mclk) begin

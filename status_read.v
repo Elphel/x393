@@ -32,8 +32,9 @@ module  status_read#(
     parameter STATUS_ADDR =           'h0800, // AXI read address of status read registers
     parameter STATUS_ADDR_MASK =      'h3c00, // AXI write address of status registers
     parameter AXI_RD_ADDR_BITS =      14,
-    parameter integer STATUS_DEPTH=   8 // 256 cells, maybe just 16..64 are enough?
-)(
+    parameter integer STATUS_DEPTH=   8, // 256 cells, maybe just 16..64 are enough?
+    parameter FPGA_VERSION =          32'h03930001
+    )(
     input                        mrst, // @posedge mclk - sync reset
     input                        arst, // @posedge axi_clk - sync reset
     input                        clk,
@@ -79,6 +80,9 @@ module  status_read#(
     assign start=rq && !rq_r;
     assign axird_rdata=axi_status_rdata_r;
     assign axird_selected = select_r; 
+    initial begin
+        ram [DATA_2DEPTH] = FPGA_VERSION;
+    end
     always @ (posedge axi_clk) begin
         if      (arst)              select_r <= 0;
         else if (axird_start_burst) select_r <= select_w;
