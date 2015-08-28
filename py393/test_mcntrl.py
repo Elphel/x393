@@ -61,6 +61,8 @@ import x393_sens_cmprs
 import x393_camsync
 import x393_gpio
 import x393_cmprs_afi
+import x393_cmprs
+
 import vrlg
 __all__ = []
 __version__ = 0.1
@@ -340,6 +342,7 @@ USAGE
     x393Camsync=     x393_camsync.X393Camsync(verbose,args.simulated,args.localparams)
     x393GPIO=        x393_gpio.X393GPIO(verbose,args.simulated,args.localparams)
     x393CmprsAfi=    x393_cmprs_afi.X393CmprsAfi(verbose,args.simulated,args.localparams)
+    x393Cmprs=       x393_cmprs.X393Cmprs(verbose,args.simulated,args.localparams)
     '''
     print ("----------------------")
     print("x393_mem.__dict__="+str(x393_mem.__dict__))
@@ -368,6 +371,7 @@ USAGE
     extractTasks(x393_camsync.X393Camsync,                     x393Camsync)
     extractTasks(x393_gpio.X393GPIO,                           x393GPIO)
     extractTasks(x393_cmprs_afi.X393CmprsAfi,                  x393CmprsAfi)
+    extractTasks(x393_cmprs.X393Cmprs,                         x393Cmprs)
 
     for cmdLine in commands:
         print ('Running task: '+str(cmdLine))

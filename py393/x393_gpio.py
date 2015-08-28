@@ -3,7 +3,7 @@ from __future__ import print_function
 
 '''
 # Copyright (C) 2015, Elphel.inc.
-# Class to control 10353 GPIO port  
+# Class to control 10393 GPIO port  
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or

@@ -3578,6 +3578,7 @@ function  [31 : 0] func_sensor_gamma_ctl;
 endfunction
 
 // ****************** compressor related tasks and functions *************************
+// x393_cmprs.py
 task compressor_control;
     input [ 1:0] num_sensor; // sensor channel number (0..3)
     input [31:0] run_mode; // [2:0] < 0: nop, 0 - reset, 2 - run single from memory, 3 - run repetitive
@@ -3617,6 +3618,7 @@ task compressor_control;
     end
 endtask
 
+// x393_cmprs.py
 task compressor_format;
     input [ 1:0] num_sensor; // sensor channel number (0..3)
     input [31:0] num_macro_cols_m1; // number of macroblock colums minus 1
@@ -3635,6 +3637,7 @@ task compressor_format;
     end
 endtask
 
+// x393_cmprs.py
 task compressor_color_saturation;
     input [ 1:0] num_sensor; // sensor channel number (0..3)
     input [31:0] colorsat_blue; //color saturation for blue (10 bits) //'h90 for 100%
@@ -3651,6 +3654,7 @@ task compressor_color_saturation;
     end
 endtask
 
+// x393_cmprs.py
 task compressor_coring;
     input [ 1:0] num_sensor; // sensor channel number (0..3)
     input [31:0] coring;     // coring value
@@ -3665,6 +3669,7 @@ task compressor_coring;
     end
 endtask
 
+// x393_cmprs.py
 function [31 : 0] func_compressor_control;
     // argument <0 - NOP 
     input [31:0] run_mode; // [2:0] < 0: nop, 0 - reset, 2 - run single from memory, 3 - run repetitive
@@ -3702,6 +3707,7 @@ function [31 : 0] func_compressor_control;
     end
 endfunction
 
+// x393_cmprs.py
 function [31 : 0] func_compressor_format;
     input [31:0] num_macro_cols_m1; // number of macroblock colums minus 1
     input [31:0] num_macro_rows_m1; // number of macroblock rows minus 1
@@ -3716,6 +3722,7 @@ function [31 : 0] func_compressor_format;
     end
 endfunction
 
+// x393_cmprs.py
 function [31 : 0] func_compressor_color_saturation;
     input [31:0] colorsat_blue; //color saturation for blue (10 bits) //'h90 for 100%
     input [31:0] colorsat_red; //color saturation for red (10 bits)   // 'b6 for 100%
