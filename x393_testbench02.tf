@@ -2441,7 +2441,7 @@ task write_cmd_frame_sequencer;
         0, // input [0:0] port_afi;    // number of AFI port (0 - afi 1, 1 - afi2) // configuration controlled by the code. currently
                              // both AFI are used: ch0 - cmprs_afi_mux_1.0, ch1 - cmprs_afi_mux_1.1,
                              //  ch2 - cmprs_afi_mux_2.0, ch3 - cmprs_afi_mux_2
-                             // May be chenged to ch0 - cmprs_afi_mux_1.0, ch1 -cmprs_afi_mux_1.1,
+                             // May be changed to ch0 - cmprs_afi_mux_1.0, ch1 -cmprs_afi_mux_1.1,
                              //  ch2 - cmprs_afi_mux_1.2, ch3 - cmprs_afi_mux_1.3
         num_sensor, // input [1:0] chn_afi;
         3,   // input [1:0] mode;
@@ -2551,6 +2551,7 @@ task camsync_setup;
     end
 endtask
 
+// x393_cmprs_afi.py
 task afi_mux_setup;
     input  [3:0] chn_mask;
     input [26:0] afi_cmprs0_sa;   // input [26:0] sa;   // start address in 32-byte chunks
@@ -2570,7 +2571,7 @@ task afi_mux_setup;
                 0, // input [0:0] port_afi;    // number of AFI port (0 - afi 1, 1 - afi2) // configuration controlled by the code. currently
                                      // both AFI are used: ch0 - cmprs_afi_mux_1.0, ch1 - cmprs_afi_mux_1.1,
                                      //  ch2 - cmprs_afi_mux_2.0, ch3 - cmprs_afi_mux_2
-                                     // May be chenged to ch0 - cmprs_afi_mux_1.0, ch1 -cmprs_afi_mux_1.1,
+                                     // May be changed to ch0 - cmprs_afi_mux_1.0, ch1 -cmprs_afi_mux_1.1,
                                      //  ch2 - cmprs_afi_mux_1.2, ch3 - cmprs_afi_mux_1.3
                 i, // num_sensor, // input [1:0] chn_afi;
                 3,   // input [1:0] mode;
@@ -3728,11 +3729,12 @@ function [31 : 0] func_compressor_color_saturation;
 endfunction
 
 // axi_hp channels for the compressed image data
+// x393_cmprs_afi.py
 task afi_mux_program_status;
     input [0:0] port_afi;    // number of AFI port (0 - afi 1, 1 - afi2) // configuration controlled by the code. currently
                              // both AFI are used: ch0 - cmprs_afi_mux_1.0, ch1 - cmprs_afi_mux_1.1,
                              //  ch2 - cmprs_afi_mux_2.0, ch3 - cmprs_afi_mux_2
-                             // May be chenged to ch0 - cmprs_afi_mux_1.0, ch1 -cmprs_afi_mux_1.1,
+                             // May be changed to ch0 - cmprs_afi_mux_1.0, ch1 -cmprs_afi_mux_1.1,
                              //  ch2 - cmprs_afi_mux_1.2, ch3 - cmprs_afi_mux_1.3
     input [1:0] chn_afi;
     input [1:0] mode;
@@ -3747,11 +3749,12 @@ task afi_mux_program_status;
     end
 endtask
 
+// x393_cmprs_afi.py
 task afi_mux_reset;
     input [0:0] port_afi;    // number of AFI port (0 - afi 1, 1 - afi2) // configuration controlled by the code. currently
                              // both AFI are used: ch0 - cmprs_afi_mux_1.0, ch1 - cmprs_afi_mux_1.1,
                              //  ch2 - cmprs_afi_mux_2.0, ch3 - cmprs_afi_mux_2
-                             // May be chenged to ch0 - cmprs_afi_mux_1.0, ch1 -cmprs_afi_mux_1.1,
+                             // May be changed to ch0 - cmprs_afi_mux_1.0, ch1 -cmprs_afi_mux_1.1,
                              //  ch2 - cmprs_afi_mux_1.2, ch3 - cmprs_afi_mux_1.3
     input [3:0] rst_chn;
     reg  [29:0] reg_addr;
@@ -3761,11 +3764,12 @@ task afi_mux_reset;
     end
 endtask
 
+// x393_cmprs_afi.py
 task afi_mux_enable_chn;
     input [0:0] port_afi;    // number of AFI port (0 - afi 1, 1 - afi2) // configuration controlled by the code. currently
                              // both AFI are used: ch0 - cmprs_afi_mux_1.0, ch1 - cmprs_afi_mux_1.1,
                              //  ch2 - cmprs_afi_mux_2.0, ch3 - cmprs_afi_mux_2
-                             // May be chenged to ch0 - cmprs_afi_mux_1.0, ch1 -cmprs_afi_mux_1.1,
+                             // May be changed to ch0 - cmprs_afi_mux_1.0, ch1 -cmprs_afi_mux_1.1,
                              //  ch2 - cmprs_afi_mux_1.2, ch3 - cmprs_afi_mux_1.3
     input [1:0] en_chn;  // channel number to enable/disable;
     input       en;
@@ -3779,11 +3783,12 @@ task afi_mux_enable_chn;
     end
 endtask
 
+// x393_cmprs_afi.py
 task afi_mux_enable;
     input [0:0] port_afi;    // number of AFI port (0 - afi 1, 1 - afi2) // configuration controlled by the code. currently
                              // both AFI are used: ch0 - cmprs_afi_mux_1.0, ch1 - cmprs_afi_mux_1.1,
                              //  ch2 - cmprs_afi_mux_2.0, ch3 - cmprs_afi_mux_2
-                             // May be chenged to ch0 - cmprs_afi_mux_1.0, ch1 -cmprs_afi_mux_1.1,
+                             // May be changed to ch0 - cmprs_afi_mux_1.0, ch1 -cmprs_afi_mux_1.1,
                              //  ch2 - cmprs_afi_mux_1.2, ch3 - cmprs_afi_mux_1.3
     input       en;
     reg  [29:0] reg_addr;
@@ -3796,11 +3801,12 @@ task afi_mux_enable;
     end
 endtask
 
+// x393_cmprs_afi.py
 task afi_mux_mode_chn;
     input [0:0] port_afi;    // number of AFI port (0 - afi 1, 1 - afi2) // configuration controlled by the code. currently
                              // both AFI are used: ch0 - cmprs_afi_mux_1.0, ch1 - cmprs_afi_mux_1.1,
                              //  ch2 - cmprs_afi_mux_2.0, ch3 - cmprs_afi_mux_2
-                             // May be chenged to ch0 - cmprs_afi_mux_1.0, ch1 -cmprs_afi_mux_1.1,
+                             // May be changed to ch0 - cmprs_afi_mux_1.0, ch1 -cmprs_afi_mux_1.1,
                              //  ch2 - cmprs_afi_mux_1.2, ch3 - cmprs_afi_mux_1.3
     input [1:0] chn;        // channel number to set mode for
     input [1:0] mode;
@@ -3822,11 +3828,12 @@ each group of 4 bits per channel : bits [1:0] - select, bit[2] - sset (0 - nop),
     end
 endtask
 
+// x393_cmprs_afi.py
 task afi_mux_chn_start_length;
     input [0:0] port_afi;    // number of AFI port (0 - afi 1, 1 - afi2) // configuration controlled by the code. currently
                              // both AFI are used: ch0 - cmprs_afi_mux_1.0, ch1 - cmprs_afi_mux_1.1,
                              //  ch2 - cmprs_afi_mux_2.0, ch3 - cmprs_afi_mux_2
-                             // May be chenged to ch0 - cmprs_afi_mux_1.0, ch1 -cmprs_afi_mux_1.1,
+                             // May be changed to ch0 - cmprs_afi_mux_1.0, ch1 -cmprs_afi_mux_1.1,
                              //  ch2 - cmprs_afi_mux_1.2, ch3 - cmprs_afi_mux_1.3
     input [ 1:0] chn;  // channel number to set mode for
     input [26:0] sa;   // start address in 32-byte chunks
