@@ -2072,7 +2072,7 @@ task write_block_scanline_chn;  // SuppressThisWarning VEditor : may be unused
 //        write_block_incremtal (start_addr, num_bursts << 2, (startX<<2) + (startY<<16)); // 1 of startX is 8x16 bit, 16 bytes or 4 32-bit words
     end
 endtask
-
+// x393_mcntrl (no class)
 function [11:0] func_encode_mode_tiled;  // SuppressThisWarning VEditor - not used
     input       disable_need;
     input       repetitive;
@@ -2103,6 +2103,7 @@ function [11:0] func_encode_mode_tiled;  // SuppressThisWarning VEditor - not us
         func_encode_mode_tiled = rslt;
     end           
 endfunction
+// x393_mcntrl (no class)
 function [11:0] func_encode_mode_scanline; // SuppressThisWarning VEditor - not used
     input       disable_need;
     input       repetitive;
@@ -2132,6 +2133,7 @@ endfunction
 
 // Sensor - related tasks and functions
 
+// x393_sens_cmprs.py
 task setup_sensor_channel;
     input  [1:0] num_sensor;
     
@@ -2205,6 +2207,7 @@ task setup_sensor_channel;
 
     // Enable arbitration of sensor-to-memory controller
     enable_memcntrl_en_dis(4'h8 + {2'b0,num_sensor}, 1);
+//            write_contol_register(MCONTR_TOP_16BIT_ADDR +  MCONTR_TOP_16BIT_CHN_EN, {16'b0,ENABLED_CHANNELS});
     
     compressor_run (num_sensor, 0); // reset compressor
     
@@ -2386,7 +2389,7 @@ task setup_sensor_channel;
         set_sensor_histogram_saxi_addr (
             num_sensor, // input   [1:0] num_sensor; // sensor channel number (0..3)
             0,          // input   [1:0] subchannel; // subchannel number (for multiplexed images)
-            HISTOGRAM_STRAT_PAGE); // input  [19:0] page; //start address in 4KB pages (1 page - one subchannel histogram)
+            HISTOGRAM_START_PAGE); // input  [19:0] page; //start address in 4KB pages (1 page - one subchannel histogram)
             
          set_sensor_histogram_saxi (
             1'b1,                // input         en;
@@ -2498,6 +2501,8 @@ task write_cmd_frame_sequencer;
     // temporarily putting in the very end as it takes about 30 usec to program curves (TODO: see how to make it faster for simulation)
     end
 endtask
+
+
 //x393_camsync.py
 task camsync_setup;
     input [3:0]  sensor_mask;
@@ -2640,6 +2645,7 @@ task afi_mux_setup;
     end
 endtask
 
+//x393_cmprs.py
 task setup_compressor_channel;
     input [ 1:0] num_sensor; // sensor channel number (0..3)
     input [31:0] qbank;    // [6:3] quantization table page
@@ -2699,9 +2705,10 @@ task setup_compressor_channel;
     end
 endtask
 
+// x393_cmprs.py
 task compressor_run;
     input [ 1:0] num_sensor; // sensor channel number (0..3)
-    input [31:0] run_mode;    // [6:3] quantization table page
+    input [31:0] run_mode;  //     input [31:0] run_mode; // [2:0] < 0: nop, 0 - reset, 2 - run single from memory, 3 - run repetitive
     begin
         compressor_control(
             num_sensor,   // sensor channel number (0..3)
@@ -2716,7 +2723,7 @@ task compressor_run;
 endtask
 
 
-
+// x393_sensor.py
 task setup_sensor_memory;
     input  [1:0] num_sensor;
     input [31:0] frame_sa;         // 22-bit frame start address ((3 CA LSBs==0. BA==0)
@@ -2751,7 +2758,7 @@ task setup_sensor_memory;
         write_contol_register(base_addr + MCNTRL_SCANLINE_MODE,             mode); 
     end
 endtask
-
+// x393_cmprs.py
 task setup_compressor_memory;
     input  [1:0] num_sensor;
     input [31:0]frame_sa;         // 22-bit frame start address ((3 CA LSBs==0. BA==0)

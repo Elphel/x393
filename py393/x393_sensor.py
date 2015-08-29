@@ -346,13 +346,13 @@ class X393Sensor(object):
         
     def set_sensor_io_ctl (self,
                            num_sensor,
-                           mrst = None,
-                           arst = None,
-                           aro  = None,
-                           mmcm_rst = None,
-                           clk_sel = None,
+                           mrst =       None,
+                           arst =       None,
+                           aro  =       None,
+                           mmcm_rst =   None,
+                           clk_sel =    None,
                            set_delays = False,
-                           quadrants = None):
+                           quadrants =  None):
         """
         Set sensor I/O controls, including I/O signals 
         @param num_sensor - sensor port number (0..3)
@@ -734,3 +734,5 @@ class X393Sensor(object):
                                                   ((window_top & 0xffff) << 16) | (window_left & 0xffff)) #WINDOW_X0+ (WINDOW_Y0<<16));
         self.x393_axi_tasks.write_contol_register(base_addr + vrlg.MCNTRL_SCANLINE_WINDOW_STARTXY,   0)
         self.x393_axi_tasks.write_contol_register(base_addr + vrlg.MCNTRL_SCANLINE_MODE,          mode) 
+
+

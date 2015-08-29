@@ -36,13 +36,13 @@ from verilog_utils import hx
 from time import time
 import vrlg
 
-enabled_channels=0 # currently enable channels
+#enabled_channels=0 # currently enable channels
 cke_en=0
 cmda_en=0
 sdrst_on=1
 mcntrl_en=0
 refresh_en=0
-channel_priority=[None]*16
+#channel_priority=[None]*16
 sequences_set=0
 class X393AxiControlStatus(object):
     DRY_MODE= True # True
@@ -68,16 +68,17 @@ class X393AxiControlStatus(object):
         
         # Use 'import pickle' (exists in the camera) to save/restore state
     def init_state(self):
-        global  enabled_channels, cke_en, cmda_en, sdrst_on, mcntrl_en, channel_priority, refresh_en, sequences_set
+#        global  enabled_channels, cke_en, cmda_en, sdrst_on, mcntrl_en, channel_priority, refresh_en, sequences_set
+        global  cke_en, cmda_en, sdrst_on, mcntrl_en, refresh_en, sequences_set
         """
         reset state (as after bitstream load)
         """
-        enabled_channels=0 # currently enable channels
+#        enabled_channels=0 # currently enable channels
         cke_en=0
         cmda_en=0
         sdrst_on=1
         mcntrl_en=0
-        channel_priority=[None]*16
+#        channel_priority=[None]*16
         refresh_en=0
         sequences_set=0
         if self.verbose>0:
@@ -122,20 +123,28 @@ class X393AxiControlStatus(object):
             print ("REFRESH EN =  %d"%refresh_en)
         return refresh_en
     def get_enabled_channels(self,quiet=1):
-        global  enabled_channels
+#        global  enabled_channels
+        enabled_channels = self.read_contol_register(vrlg.MCONTR_TOP_16BIT_ADDR + vrlg.MCONTR_TOP_16BIT_CHN_EN)        
         if quiet<2 :
             print ("ENABLED_CHANNELS =  0x%x"%enabled_channels)
         return enabled_channels
 
     def get_channel_priorities(self,quiet=1):
-        global channel_priority
+#        global channel_priority
+        channel_priority = []
         if quiet<2 :
             print ("CHANNEL PRIORITIES:",end=" ")
+            for chn in range (16):
+                v = self.read_contol_register(vrlg.MCONTR_ARBIT_ADDR + chn)
+                print ("%d"%v,end=" ")
+                channel_priority.append(v)
+            """                
             for v in channel_priority:
                 if v is None:
                     print (" - ",end=" ")
                 else:
                     print ("%d"%v,end=" ")
+            """        
             print()        
         return channel_priority
     
@@ -145,8 +154,8 @@ class X393AxiControlStatus(object):
         'cmda_en':            self.get_cmda_en(quiet),
         'sdrst_on':           self.get_sdrst_on(quiet),
         'mcntrl_en':          self.get_mcntrl_en(quiet),
-        'enabled_channels':   self.get_enabled_channels(quiet),
-        'channel_priorities': self.get_channel_priorities(quiet),
+        'enabled_channels':   self.get_enabled_channels(quiet),   # updated
+        'channel_priorities': self.get_channel_priorities(quiet), # updated
         'refresh_en':         self.get_refresh_en(quiet),
         'sequences_set':      self.get_sequences_set(quiet)
         }
@@ -388,7 +397,7 @@ class X393AxiControlStatus(object):
         Enable memory controller channels (all at once control) 
         <chnen> - 16-bit control word with per-channel enable bits (bit0 - chn0, ... bit15 - chn15)
         """
-        global  enabled_channels
+#        global  enabled_channels
         enabled_channels = chnen # currently enabled memory channels
         self.write_contol_register(vrlg.MCONTR_TOP_16BIT_ADDR +  vrlg.MCONTR_TOP_16BIT_CHN_EN, enabled_channels & 0xffff) # {16'b0,chnen});
         if self.verbose > 0:
@@ -402,7 +411,9 @@ class X393AxiControlStatus(object):
         <chn> - 4-bit channel select
         <en> -  1 - enable, 0 - disable of the selected channel
         """
-        global  enabled_channels
+#        global  enabled_channels
+# Adding readback register
+        enabled_channels = self.read_contol_register(vrlg.MCONTR_TOP_16BIT_ADDR + vrlg.MCONTR_TOP_16BIT_CHN_EN)        
         if en:
             enabled_channels |=  1<<chn;
         else:
@@ -419,9 +430,9 @@ class X393AxiControlStatus(object):
         <chn> -      4-bit channel select
         <priority> - 16-bit priority value (higher value means more important)
         """
-        global channel_priority
+#        global channel_priority
         self.write_contol_register(vrlg.MCONTR_ARBIT_ADDR + chn, priority  & 0xffff)# {16'b0,priority});
         if self.verbose > 0:
             print ("SET CHANNEL %d priority=0x%x"%(chn,priority))
-        channel_priority[chn]=priority
+#        channel_priority[chn]=priority
 

@@ -53,7 +53,7 @@
     parameter HISTOGRAM_TOP =            8,   // 2,   // top
     parameter HISTOGRAM_WIDTH =          6,   // width
     parameter HISTOGRAM_HEIGHT =         6,   // height
-    parameter HISTOGRAM_STRAT_PAGE =    20'h12345,
+    parameter HISTOGRAM_START_PAGE =    20'h12345,
     parameter FRAME_WIDTH_ROUND_BITS =   9,  // multiple of 512 pixels (32 16-byte bursts) (11 - ful SDRAM page)
     
     parameter WOI_WIDTH=                 64,

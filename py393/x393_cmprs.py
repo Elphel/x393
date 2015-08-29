@@ -324,3 +324,93 @@ class X393Cmprs(object):
         self.x393_axi_tasks.write_contol_register(
                                     base_addr + vrlg.MCNTRL_TILED_MODE,
                                     mode); 
+    def compressor_run(self, # may use compressor_control with the same arguments
+                       num_sensor,
+                       run_mode):
+        """
+        Compressor reset.run/single (alias of compressor_control) 
+        @param num_sensor -       sensor port number (0..3)
+        @param run_mode -    0 - reset, 2 - run single from memory, 3 - run repetitive
+        """
+        self.compressor_control(
+            num_sensor = num_sensor,  # sensor channel number (0..3)
+            run_mode = run_mode)      #0 - reset, 2 - run single from memory, 3 - run repetitive
+        
+    def setup_compressor_channel (self,
+                                  num_sensor,
+                                  qbank,
+                                  dc_sub,
+                                  cmode,
+                                  multi_frame,
+                                  bayer,
+                                  focus_mode,
+                                  num_macro_cols_m1,
+                                  num_macro_rows_m1,
+                                  left_margin,
+                                  colorsat_blue,
+                                  colorsat_red,
+                                  coring,
+                                  verbose=0):
+        """
+        @param num_sensor -       sensor port number (0..3)
+        @param qbank -       quantization table page (0..15)
+        @param dc_sub -      True - subtract DC before running DCT, False - no subtraction, convert as is,
+        @param cmode -       color mode:
+                                CMPRS_CBIT_CMODE_JPEG18 =          0 - color 4:2:0
+                                CMPRS_CBIT_CMODE_MONO6 =           1 - mono 4:2:0 (6 blocks)
+                                CMPRS_CBIT_CMODE_JP46 =            2 - jp4, 6 blocks, original
+                                CMPRS_CBIT_CMODE_JP46DC =          3 - jp4, 6 blocks, dc -improved
+                                CMPRS_CBIT_CMODE_JPEG20 =          4 - mono, 4 blocks (but still not actual monochrome JPEG as the blocks are scanned in 2x2 macroblocks)
+                                CMPRS_CBIT_CMODE_JP4 =             5 - jp4,  4 blocks, dc-improved
+                                CMPRS_CBIT_CMODE_JP4DC =           6 - jp4,  4 blocks, dc-improved
+                                CMPRS_CBIT_CMODE_JP4DIFF =         7 - jp4,  4 blocks, differential
+                                CMPRS_CBIT_CMODE_JP4DIFFHDR =      8 - jp4,  4 blocks, differential, hdr
+                                CMPRS_CBIT_CMODE_JP4DIFFDIV2 =     9 - jp4,  4 blocks, differential, divide by 2
+                                CMPRS_CBIT_CMODE_JP4DIFFHDRDIV2 = 10 - jp4,  4 blocks, differential, hdr,divide by 2
+                                CMPRS_CBIT_CMODE_MONO1 =          11 -  mono JPEG (not yet implemented)
+                                CMPRS_CBIT_CMODE_MONO4 =          14 -  mono 4 blocks
+        @param multi_frame -  False - single-frame buffer, True - multi-frame video memory buffer,
+        @param bayer -        Bayer shift (0..3)
+        @param focus_mode -   focus mode - how to combine image with "focus quality" in the result image 
+        @param num_macro_cols_m1 - number of macroblock colums minus 1
+        @param num_macro_rows_m1 - number of macroblock rows minus 1
+        @param left_margin - left margin of the first pixel (0..31) for 32-pixel wide colums in memory access
+        @param colorsat_blue - color saturation for blue (10 bits), 0x90 for 100%
+        @param colorsat_red -  color saturation for red (10 bits), 0xb6 for 100%
+        @param coring - coring value
+        @param verbose - verbose level
+        """
+        if verbose > 0:
+            print("COMPRESSOR_SETUP")
+            print (   "num_sensor = ",num_sensor)
+            print (   "qbank = ",qbank)
+            print (   "dc_sub = ",dc_sub)
+            print (   "cmode = ",cmode)
+            print (   "multi_frame = ",multi_frame)
+            print (   "bayer = ",bayer)
+            print (   "focus_mode = ",focus_mode)
+        self.compressor_control(
+            num_sensor =  num_sensor,  # sensor channel number (0..3)
+            qbank =       qbank,       # [6:3] quantization table page
+            dc_sub =      dc_sub,      # [8:7] subtract DC
+            cmode =       cmode,       #  [13:9] color mode:
+            multi_frame = multi_frame, # [15:14] 0 - single-frame buffer, 1 - multiframe video memory buffer
+            bayer =       bayer,       # [20:18] # Bayer shift
+            focus_mode =  focus_mode) # [23:21] Set focus mode
+            
+        self.compressor_format(
+            num_sensor =        num_sensor,        # sensor channel number (0..3)
+            num_macro_cols_m1 = num_macro_cols_m1, # number of macroblock colums minus 1
+            num_macro_rows_m1 = num_macro_rows_m1, # number of macroblock rows minus 1
+            left_margin =       left_margin)      # left margin of the first pixel (0..31) for 32-pixel wide colums in memory access
+    
+        self.compressor_color_saturation(
+            num_sensor =    num_sensor,    # sensor channel number (0..3)
+            colorsat_blue = colorsat_blue, # color saturation for blue (10 bits) #'h90 for 100%
+            colorsat_red =  colorsat_red) # color saturation for red (10 bits)   # 'b6 for 100%
+
+        self.compressor_coring(
+            num_sensor = num_sensor,    # sensor channel number (0..3)
+            coring =     coring);       # coring value
+
+

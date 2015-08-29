@@ -51,7 +51,7 @@ class X393Utils(object):
     DEBUG_MODE=1
 #    vpars=None
     x393_mem=None
-    enabled_channels=0 # currently enabled channels
+#    enabled_channels=0 # currently enabled channels
     saveFileName=None
     x393_axi_tasks=None
 #    verbose=1
