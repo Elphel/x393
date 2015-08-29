@@ -630,7 +630,7 @@
     parameter RTC_ADDR=                    'h704, // 'h707
     parameter CAMSYNC_ADDR =               'h708, // 'h70f
     parameter RTC_STATUS_REG_ADDR =        'h31,   // (1 loc) address where status can be read out (currently just sequence # and alternating bit) 
-    parameter RTC_SEC_USEC_ADDR =          'h32,  // ..'h33 address where seconds of the snapshot can be read (microseconds - next adderss)
+    parameter RTC_SEC_USEC_ADDR =          'h32,  // ..'h33 address where seconds of the snapshot can be read (microseconds - next address)
     parameter RTC_MASK =                   'h7fc,
     parameter CAMSYNC_MASK =               'h7f8,
     parameter CAMSYNC_MODE =               'h0,

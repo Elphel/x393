@@ -129,7 +129,7 @@ class X393PIOSequences(object):
     x393_mcontr_encode_cmd
     '''
     def func_encode_cmd(self,      # function [31:0] 
-                        addr,      # input               [14:0] addr;       // 15-bit row/column adderss
+                        addr,      # input               [14:0] addr;       // 15-bit row/column address
                         bank,      # input                [2:0] bank;       // bank (here OK to be any)
                         rcw,       # input                [2:0] rcw;        // RAS/CAS/WE, positive logic
                         odt_en,    # input                      odt_en;     // enable ODT
@@ -145,7 +145,7 @@ class X393PIOSequences(object):
                         buf_rst):  # input                      buf_rst;    // connect to external buffer (but only if not paused)
         """
         Encode data into memory controller sequencer word
-        <addr>       15-bit row/column adderss
+        <addr>       15-bit row/column address
         <bank>       3-bit bank address
         <rcw>        3-bit combined {RAS,CAS,WE}, positive logic
         <odt_en>     enable ODT
@@ -161,7 +161,7 @@ class X393PIOSequences(object):
         <buf_rst>    reset external buffer page address to 0, increment page number
         """
         return (
-            ((addr & 0x7fff) << 17) | # addr[14:0], // 15-bit row/column adderss
+            ((addr & 0x7fff) << 17) | # addr[14:0], // 15-bit row/column address
             ((bank & 0x7)    << 14) | # bank [2:0], // bank
             ((rcw  & 0x7)    << 11) | # rcw[2:0],   // RAS/CAS/WE
             ((0,1)[odt_en]   << 10) | # odt_en,     // enable ODT
@@ -829,7 +829,7 @@ class X393PIOSequences(object):
                 reset_dll, # input reset_dll;
                 verbose=0):
         """
-        Setup sequence (at paramter-defined adderss) to write MR0, MR1, MR2 and MR3 mode registers of DDR3 memory
+        Setup sequence (at paramter-defined address) to write MR0, MR1, MR2 and MR3 mode registers of DDR3 memory
         <reset_dll>    reset memory DLL when running this sequence
         <verbose> print data being written (default: False)
         """

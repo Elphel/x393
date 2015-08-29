@@ -57,6 +57,26 @@ class X393Cmprs(object):
         except:
             pass
     
+    def program_status_compressor(self,
+                                  cmprs_chn,
+                                  mode,     # input [1:0] mode;
+                                  seq_num): # input [5:0] seq_num;
+        """
+        Set status generation mode for selected compressor channel
+        @param cmprs_chn - number of the compressor channel (0..3)
+        @param mode -       status generation mode:
+                                  0: disable status generation,
+                                  1: single status request,
+                                  2: auto status, keep specified seq number,
+                                  4: auto, inc sequence number 
+        @param seq_number - 6-bit sequence number of the status message to be sent
+        """
+
+        self.x393_axi_tasks.program_status (
+                             vrlg.CMPRS_GROUP_ADDR  + cmprs_chn * vrlg.CMPRS_BASE_INC,
+                             vrlg.CMPRS_STATUS_CNTRL,
+                             mode,
+                             seq_num)# //MCONTR_PHY_STATUS_REG_ADDR=          'h0,
     def func_compressor_format (self,
                                 num_macro_cols_m1,
                                 num_macro_rows_m1,

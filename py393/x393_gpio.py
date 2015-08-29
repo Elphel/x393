@@ -125,9 +125,9 @@ class X393GPIO(object):
         data = 0
         for i, e in enumerate (ext):
             if not e is None:
-                if   (e == 0) or (e.upper() == "0") or (e.upper() == "L"):
+                if   (e is False) or (e == 0) or (e.upper() == "0") or (e.upper() == "L"):
                     data |= 1 << (2*i)
-                elif (e == 1) or (e.upper() == "1")  or (e.upper() == "H"):
+                elif (e is True) or (e == 1) or (e.upper() == "1")  or (e.upper() == "H"):
                     data |= 2 << (2*i)
                 elif e.upper() == "I":
                     data |= 3 << (2*i)

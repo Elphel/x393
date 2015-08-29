@@ -127,7 +127,7 @@ module  mult_saxi_wr #(
     wire               [127:0] data_in;
     wire                 [3:0] pre_valid;
     reg                  [3:0] valid;
-    reg      [BRAM_A_WDTH-1:0] buf_wa; // multiplexed buffer write adderss
+    reg      [BRAM_A_WDTH-1:0] buf_wa; // multiplexed buffer write address
     reg                 [31:0] buf_wd; // multiplexed buffer write data
     reg                        buf_we; // multiplexed buffer write enable
 
@@ -136,7 +136,7 @@ module  mult_saxi_wr #(
     wire                       en_out_arb;
     wire                 [1:0] re_cur_chn;
 
-    reg      [BRAM_A_WDTH-1:0] buf_ra; // multiplexed buffer write adderss
+    reg      [BRAM_A_WDTH-1:0] buf_ra; // multiplexed buffer write address
     wire                [31:0] inter_buf_data; // multiplexed buffer write data
     reg                  [2:0] buf_re; // multiplexed buffer write enable
     

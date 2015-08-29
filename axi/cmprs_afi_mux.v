@@ -45,7 +45,7 @@ each group of 4 bits per channel : bits [1:0] - select, bit[2] - sset (0 - nop),
 */    
     parameter CMPRS_AFIMUX_SA_LEN=              'h8, // .. 'hf
 /*
-    27-bit "chunk" addresses and lengths. 1 chunk = 32 bytes, so 27 bit covers all 2^32 adderss range
+    27-bit "chunk" addresses and lengths. 1 chunk = 32 bytes, so 27 bit covers all 2^32 address range
      8 .. 11 - per-channel start adddresses,
     12 .. 15 - per-channel buffer lengths (will roll over to start address)
 (0..3 - start addresses, 4..7 - lengths)    

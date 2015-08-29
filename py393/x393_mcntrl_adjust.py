@@ -3763,7 +3763,7 @@ class X393McntrlAdjust(object):
                 else:
                     raise Exception ("set_delays_with_reinit failed to read with safe delays for phase=%d after re-initializing device, wl_rslt=%s"%
                                      (phase,str(wl_rslt)))
-            return cmda_odly_early[phase] # safe command/adderss delay
+            return cmda_odly_early[phase] # safe command/address delay
                 
         def cmd_phase_step(phase):
             def measure_block(dly,

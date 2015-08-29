@@ -285,7 +285,7 @@ module  x393 #(
     wire                        status_compressor_start;  //
 
 
-// TODO: Add sequencer status (16+2) bits of current frame number. Ose 'h31 as the adderss, 'h702 (701..703 were empty) to program
+// TODO: Add sequencer status (16+2) bits of current frame number. Ose 'h31 as the address, 'h702 (701..703 were empty) to program
     wire                  [7:0] status_sequencer_ad; // Other status byte-wide address/data
     wire                        status_sequencer_rq; // Other status request   
     wire                        status_sequencer_start;  // S uppressThisWarning VEditor ****** Other status packet transfer start (currently with 0 latency from status_root_rq)

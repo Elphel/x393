@@ -2391,7 +2391,7 @@ task setup_sensor_channel;
          set_sensor_histogram_saxi (
             1'b1,                // input         en;
             1'b1,                // input         nrst;
-            1'b1,                // input         confirm_write; // wait for the write confirmed befoer swicthing channels
+            1'b1,                // input         confirm_write; // wait for the write confirmed before switching channels
             4'h3);               // input   [3:0] cache_mode;    // default should be 4'h3
 
 /*
@@ -2812,7 +2812,7 @@ task test_i2c_353;
             1'b1,   // input                                   set_bytes;  // [11] if 1, use bytes (below), 0 - nop
             2'h3,   // input  [SENSI2C_CMD_BYTES_PBITS -1 : 0] bytes;      // [10:9] set command bytes to send after slave address (0..3)
             1'b1,   // input                                   set_dly;    // [8] if 1, use dly (0 - ignore)
-            8'h0a,  // input   [SENSI2C_CMD_DLY_PBITS - 1 : 0] dly;        // [7:0]  - duration of quater i2c cycle (if 0, [3:0] control SCL+SDA)
+            8'h0a,  // input   [SENSI2C_CMD_DLY_PBITS - 1 : 0] dly;        // [7:0]  - duration of quarter i2c cycle (if 0, [3:0] control SCL+SDA)
             2'b0,   // input    [SENSI2C_CMD_SCL_WIDTH -1 : 0] scl_ctl;    // [1:0] : 0: NOP, 1: 1'b0->SCL, 2: 1'b1->SCL, 3: 1'bz -> SCL 
             2'b0);  // input    [SENSI2C_CMD_SDA_WIDTH -1 : 0] sda_ctl;    // [3:2] : 0: NOP, 1: 1'b0->SDA, 2: 1'b1->SDA, 3: 1'bz -> SDA  
         repeat (10) @ (posedge CLK); // wait for initialization to be done TODO: use status
@@ -2848,7 +2848,7 @@ task test_i2c_353;
 endtask
 
 
-//x393_axi_control_status.py
+//x393_sensor.py
 task program_status_sensor_i2c;
     input [1:0] num_sensor;
     input [1:0] mode;
@@ -2861,7 +2861,7 @@ task program_status_sensor_i2c;
     end
 endtask
 
-//x393_axi_control_status.py
+//x393_sensor.py
 task program_status_sensor_io;
     input [1:0] num_sensor;
     input [1:0] mode;
@@ -2874,7 +2874,7 @@ task program_status_sensor_io;
     end
 endtask
 
-//x393_axi_control_status.py
+//x393_cmprs.py
 task program_status_compressor;
     input [1:0] num_sensor;
     input [1:0] mode;
@@ -2968,7 +2968,7 @@ task set_sensor_i2c_command;
     input                                   set_bytes;  // [11] if 1, use bytes (below), 0 - nop
     input  [SENSI2C_CMD_BYTES_PBITS -1 : 0] bytes;      // [10:9] set command bytes to send after slave address (0..3)
     input                                   set_dly;    // [8] if 1, use dly (0 - ignore)
-    input   [SENSI2C_CMD_DLY_PBITS - 1 : 0] dly;        // [7:0]  - duration of quater i2c cycle (if 0, [3:0] control SCL+SDA)
+    input   [SENSI2C_CMD_DLY_PBITS - 1 : 0] dly;        // [7:0]  - duration of quarter i2c cycle (if 0, [3:0] control SCL+SDA)
     input    [SENSI2C_CMD_SCL_WIDTH -1 : 0] scl_ctl;    // [1:0] : 0: NOP, 1: 1'b0->SCL, 2: 1'b1->SCL, 3: 1'bz -> SCL 
     input    [SENSI2C_CMD_SDA_WIDTH -1 : 0] sda_ctl;    // [3:2] : 0: NOP, 1: 1'b0->SDA, 2: 1'b1->SDA, 3: 1'bz -> SDA  
 
@@ -3299,7 +3299,7 @@ endtask
 task set_sensor_histogram_saxi;
     input         en;
     input         nrst;
-    input         confirm_write; // wait for the write confirmed befoer swicthing channels
+    input         confirm_write; // wait for the write confirmed before switching channels
     input   [3:0] cache_mode;    // default should be 4'h3
     reg    [31:0] data;
     begin
@@ -3373,7 +3373,7 @@ function [STATUS_DEPTH-1:0] func_status_addr_rtc_usec; // sec is in the next add
 endfunction
 */
 // camsync tasks 
-//x393_camsync.py
+// x393_camsync.py
 task set_camsync_mode;
     input       en;             // 1 - enable, 0 - reset module
     input [1:0] en_snd;         // <2 - NOP, 2 - disable, 3 - enable sending timestamp with sync pulse
@@ -3394,7 +3394,7 @@ task set_camsync_mode;
     end
 endtask
 
-//x393_camsync.py
+// x393_camsync.py
 task set_camsync_inout; // set specified input bit, keep other ones
     input         is_out;          // 0 - input selection, 1 - output selection
     input integer bit_number;      // 0..9 - bit to use
@@ -3408,6 +3408,7 @@ task set_camsync_inout; // set specified input bit, keep other ones
     end
 endtask
 
+// x393_camsync.py
 task reset_camsync_inout; // disable all inputs
     input         is_out;          // 0 - input selection, 1 - output selection
     begin
@@ -3416,6 +3417,7 @@ task reset_camsync_inout; // disable all inputs
     end
 endtask
 
+// x393_camsync.py
 task set_camsync_period;
     input [31:0] period;          // 0 - input selection, 1 - output selection
     begin
@@ -3423,6 +3425,7 @@ task set_camsync_period;
     end
 endtask
 
+// x393_camsync.py
 task set_camsync_delay;
     input  [1:0] sub_chn;
     input [31:0] dly;          // 0 - input selection, 1 - output selection
@@ -3433,6 +3436,7 @@ endtask
 // command sequencer control
 
 // Functions used by sensor-related tasks
+// x393_frame_sequencer.py
 task ctrl_cmd_frame_sequencer;
     input [1:0] num_sensor; // sensor channel number
     input       reset;      // reset sequencer (also stops)
@@ -3450,16 +3454,17 @@ task ctrl_cmd_frame_sequencer;
     end
 endtask
 
+// x393_frame_sequencer.py
 task write_cmd_frame_sequencer;
     input                  [1:0] num_sensor; // sensor channel number
     input                        relative;   // 0 - absolute (address = 0..f), 1 - relative (address= 0..e)
-    input                  [3:0] frame_addr;   // frame address (relative ort absolute)
+    input                  [3:0] frame_addr;   // frame address (relative or absolute)
     input [AXI_WR_ADDR_BITS-1:0] addr;         // command address (register to which command should be applied)
     input                 [31:0] data;         // command data
            
     reg [29:0] reg_addr;
     begin
-        if (relative && (&frame_addr)) $display("task write_cmd_frame_sequencer(): relative adderss 'hf is invalid, it is reserved for module control");
+        if (relative && (&frame_addr)) $display("task write_cmd_frame_sequencer(): relative address 'hf is invalid, it is reserved for module control");
         else begin
             reg_addr = CMDFRAMESEQ_ADDR_BASE + num_sensor * CMDFRAMESEQ_ADDR_INC + (relative ? CMDFRAMESEQ_REL : CMDFRAMESEQ_ABS) + frame_addr;
             write_contol_register(reg_addr, {{32-AXI_WR_ADDR_BITS{1'b0}}, addr});
@@ -3467,7 +3472,7 @@ task write_cmd_frame_sequencer;
         end
     end
 endtask
-
+// x393_sensor.py
 function [SENSOR_MODE_WIDTH-1:0] func_sensor_mode;
     input  [3:0] hist_en;    // [0..3] 1 - enable histogram modules, disable after processing the started frame
     input  [3:0] hist_nrst;  // [4..7] 0 - immediately reset histogram module 
@@ -3485,13 +3490,14 @@ function [SENSOR_MODE_WIDTH-1:0] func_sensor_mode;
 endfunction
 
 
+// x393_sensor.py
 function [31 : 0] func_sensor_i2c_command;
     input                                   rst_cmd;    // [14]   reset all FIFO (takes 16 clock pulses), also - stops i2c until run command
     input       [SENSI2C_CMD_RUN_PBITS : 0] run_cmd;    // [13:12]3 - run i2c, 2 - stop i2c (needed before software i2c), 1,0 - no change to run state
     input                                   set_bytes;  // [11] if 1, use bytes (below), 0 - nop
     input  [SENSI2C_CMD_BYTES_PBITS -1 : 0] bytes;      // [10:9] set command bytes to send after slave address (0..3)
     input                                   set_dly;    // [8] if 1, use dly (0 - ignore)
-    input   [SENSI2C_CMD_DLY_PBITS - 1 : 0] dly;        // [7:0]  - duration of quater i2c cycle (if 0, [3:0] control SCL+SDA)
+    input   [SENSI2C_CMD_DLY_PBITS - 1 : 0] dly;        // [7:0]  - duration of quarter i2c cycle (if 0, [3:0] control SCL+SDA)
     input    [SENSI2C_CMD_SCL_WIDTH -1 : 0] scl_ctl;    // [17:16] : 0: NOP, 1: 1'b0->SCL, 2: 1'b1->SCL, 3: 1'bz -> SCL 
     input    [SENSI2C_CMD_SDA_WIDTH -1 : 0] sda_ctl;    // [19:18] : 0: NOP, 1: 1'b0->SDA, 2: 1'b1->SDA, 3: 1'bz -> SDA  
     
@@ -3513,6 +3519,7 @@ endfunction
 
 
 
+// x393_sensor.py
 function                          [31 : 0] func_sensor_io_ctl;
     input                            [1:0] mrst;     // <2: keep MRST, 2 - MRST low (active),  3 - high (inactive)
     input                            [1:0] arst;     // <2: keep ARST, 2 - ARST low (active),  3 - high (inactive)
@@ -3533,11 +3540,12 @@ function                          [31 : 0] func_sensor_io_ctl;
         tmp [SENS_CTRL_EXT_CLK  +: 2] =                           clk_sel;
         tmp [SENS_CTRL_LD_DLY] =                                  set_delays;
         tmp [SENS_CTRL_QUADRANTS_EN] =                            set_guadrants;
-        tmp [SENS_CTRL_EXT_CLK  +: SENS_CTRL_QUADRANTS_WIDTH] =   quadrants;
+        tmp [SENS_CTRL_QUADRANTS  +: SENS_CTRL_QUADRANTS_WIDTH] = quadrants;
         func_sensor_io_ctl = tmp;
     end
 endfunction
 
+// x393_sensor.py
 function                          [31 : 0] func_sensor_jtag_ctl;
     input                            [1:0] pgmen;    // <2: keep PGMEN, 2 - PGMEN low (inactive),  3 - high (active) enable JTAG control
     input                            [1:0] prog;     // <2: keep prog, 2 - prog low (active),  3 - high (inactive) ("program" pin control)
@@ -3548,16 +3556,16 @@ function                          [31 : 0] func_sensor_jtag_ctl;
     reg  [31 : 0] tmp;
     begin
         tmp = 0;
-        
-        tmp [SENS_JTAG_TDI +: 2] = pgmen;
-        tmp [SENS_JTAG_TMS +: 2] = prog;
-        tmp [SENS_JTAG_TCK +: 2] = tck;
-        tmp [SENS_JTAG_TMS +: 2] = tms;
-        tmp [SENS_JTAG_TDI +: 2] = tdi;
+        tmp [SENS_JTAG_PGMEN +: 2] = pgmen;
+        tmp [SENS_JTAG_PROG +: 2] =  prog;
+        tmp [SENS_JTAG_TCK +: 2] =   tck;
+        tmp [SENS_JTAG_TMS +: 2] =   tms;
+        tmp [SENS_JTAG_TDI +: 2] =   tdi;
         func_sensor_jtag_ctl = tmp;
     end
 endfunction
 
+// x393_sensor.py
 function  [31 : 0] func_sensor_gamma_ctl;
     input   [1:0] bayer;
     input         table_page;

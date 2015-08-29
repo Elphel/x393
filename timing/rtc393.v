@@ -25,7 +25,7 @@
 module  rtc393 #(
         parameter RTC_ADDR =                  'h704, //..'h707
         parameter RTC_STATUS_REG_ADDR =        'h31,  // address where status can be read out (currently just sequence # and alternating bit) 
-        parameter RTC_SEC_USEC_ADDR =          'h32,  //'h33 address where seconds of the snapshot can be read (microseconds - next adderss)
+        parameter RTC_SEC_USEC_ADDR =          'h32,  //'h33 address where seconds of the snapshot can be read (microseconds - next address)
         
         parameter RTC_MASK =                  'h7fc,
         parameter RTC_MHZ =                      25, // RTC input clock in MHz (should be interger number)

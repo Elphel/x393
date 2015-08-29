@@ -85,8 +85,8 @@ def print_params(data,out_file_name):
                 print (", .INITP_%02X (256'h%064X)"%(i,v), file=out_file)
 #print ('Number of arguments: %d'%(len(sys.argv)))
 #print ('Argument List:%s'%(str(sys.argv)))
-with open(sys.argv[1]) as file:
-    tokens=file.read().split()
+with open(sys.argv[1]) as f:
+    tokens=f.read().split()
 #    print(lines)
 #print (lines.split())
 values=[]

@@ -182,7 +182,7 @@ class X393McntrlMembridge(object):
     def membridge_setup (self,
                          len64,                         # input [28:0] len64;    # number of 64-bit words to transfer
                          width64,                       # input [28:0] width64;  # frame width in 64-bit words
-                         start64,                       # input [28:0] start64;  # relative start adderss of the transfer (set to 0 when writing lo_addr64)
+                         start64,                       # input [28:0] start64;  # relative start address of the transfer (set to 0 when writing lo_addr64)
                          lo_addr64 =       None,        # input [28:0] lo_addr64; # low address of the system memory range, in 64-bit words 
                          size64 =          None,        # input [28:0] size64;    # size of the system memory range in 64-bit words
                          cache = 0x3,

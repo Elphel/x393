@@ -62,7 +62,8 @@ import x393_camsync
 import x393_gpio
 import x393_cmprs_afi
 import x393_cmprs
-
+import x393_frame_sequencer
+import x393_sensor
 import vrlg
 __all__ = []
 __version__ = 0.1
@@ -328,21 +329,23 @@ USAGE
         print("vrlg.VERBOSE__TYPE="+str(vrlg.VERBOSE__TYPE))
         print("vrlg.VERBOSE__RAW="+str(vrlg.VERBOSE__RAW))
     
-    x393mem=         x393_mem.X393Mem(verbose,args.simulated) #add dry run parameter
-    x393utils=       x393_utils.X393Utils(verbose,args.simulated,args.localparams)
-    x393tasks=       x393_axi_control_status.X393AxiControlStatus(verbose,args.simulated)
-    x393Pio=         x393_pio_sequences.X393PIOSequences(verbose,args.simulated)
-    x393Timing=      x393_mcntrl_timing.X393McntrlTiming(verbose,args.simulated)
-    x393Buffers=     x393_mcntrl_buffers.X393McntrlBuffers(verbose,args.simulated)
-    x393Tests=       x393_mcntrl_tests.X393McntrlTests(verbose,args.simulated)
-    x393Eyepatterns= x393_mcntrl_eyepatterns.X393McntrlEyepattern(verbose,args.simulated)
-    x393Adjust=      x393_mcntrl_adjust.X393McntrlAdjust(verbose,args.simulated,args.localparams)
-    X393Membridge=   x393_mcntrl_membridge.X393McntrlMembridge(verbose,args.simulated)
-    x393SensCmprs=   x393_sens_cmprs.X393SensCmprs(verbose,args.simulated,args.localparams)
-    x393Camsync=     x393_camsync.X393Camsync(verbose,args.simulated,args.localparams)
-    x393GPIO=        x393_gpio.X393GPIO(verbose,args.simulated,args.localparams)
-    x393CmprsAfi=    x393_cmprs_afi.X393CmprsAfi(verbose,args.simulated,args.localparams)
-    x393Cmprs=       x393_cmprs.X393Cmprs(verbose,args.simulated,args.localparams)
+    x393mem =            x393_mem.X393Mem(verbose,args.simulated) #add dry run parameter
+    x393utils =          x393_utils.X393Utils(verbose,args.simulated,args.localparams)
+    x393tasks =          x393_axi_control_status.X393AxiControlStatus(verbose,args.simulated)
+    x393Pio =            x393_pio_sequences.X393PIOSequences(verbose,args.simulated)
+    x393Timing =         x393_mcntrl_timing.X393McntrlTiming(verbose,args.simulated)
+    x393Buffers =        x393_mcntrl_buffers.X393McntrlBuffers(verbose,args.simulated)
+    x393Tests =          x393_mcntrl_tests.X393McntrlTests(verbose,args.simulated)
+    x393Eyepatterns =    x393_mcntrl_eyepatterns.X393McntrlEyepattern(verbose,args.simulated)
+    x393Adjust =         x393_mcntrl_adjust.X393McntrlAdjust(verbose,args.simulated,args.localparams)
+    X393Membridge =      x393_mcntrl_membridge.X393McntrlMembridge(verbose,args.simulated)
+    x393SensCmprs =      x393_sens_cmprs.X393SensCmprs(verbose,args.simulated,args.localparams)
+    x393Camsync =        x393_camsync.X393Camsync(verbose,args.simulated,args.localparams)
+    x393GPIO =           x393_gpio.X393GPIO(verbose,args.simulated,args.localparams)
+    x393CmprsAfi =       x393_cmprs_afi.X393CmprsAfi(verbose,args.simulated,args.localparams)
+    x393Cmprs =          x393_cmprs.X393Cmprs(verbose,args.simulated,args.localparams)
+    x393FrameSequencer = x393_frame_sequencer.X393FrameSequencer(verbose,args.simulated,args.localparams)
+    x393Sensor =         x393_sensor.X393Sensor(verbose,args.simulated,args.localparams)
     '''
     print ("----------------------")
     print("x393_mem.__dict__="+str(x393_mem.__dict__))
@@ -372,6 +375,8 @@ USAGE
     extractTasks(x393_gpio.X393GPIO,                           x393GPIO)
     extractTasks(x393_cmprs_afi.X393CmprsAfi,                  x393CmprsAfi)
     extractTasks(x393_cmprs.X393Cmprs,                         x393Cmprs)
+    extractTasks(x393_frame_sequencer.X393FrameSequencer,      x393FrameSequencer)
+    extractTasks(x393_sensor.X393Sensor,                       x393Sensor)
 
     for cmdLine in commands:
         print ('Running task: '+str(cmdLine))

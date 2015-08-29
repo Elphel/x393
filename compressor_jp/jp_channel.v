@@ -228,7 +228,7 @@ module  jp_channel#(
 //    wire   [11:0] buf_ra;             // buffer read address (2 MSB - page number)
     wire   [ 1:0] buf_rd;             // buf {regen, re}
     wire   [ 7:0] buf_pxd;            // 8-bit pixel data from the memory buffer
-    wire   [11:0] buf_ra;             // Memory buffer read adderss
+    wire   [11:0] buf_ra;             // Memory buffer read address
     // signals connecting modules: chn_rd_buf_i and ???:
     wire   [ 7:0] mb_data_out;       // Macroblock data out in scanline order 
     wire          mb_pre_first_out;  // Macroblock data out strobe - 1 cycle just before data valid
