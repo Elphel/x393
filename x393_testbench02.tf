@@ -3356,6 +3356,7 @@ function [STATUS_DEPTH-1:0] func_status_addr_sensor_io;
 endfunction
 
 // RTC tasks
+// x393_rtc.py
 task program_status_rtc; // set status mode, and take a time snapshot (wait response and read time)
     input [1:0] mode;
     input [5:0] seq_num;
@@ -3368,6 +3369,7 @@ task program_status_rtc; // set status mode, and take a time snapshot (wait resp
 endtask
 
 
+// x393_rtc.py
 task set_rtc;
     input [31:0] sec;
     input [19:0] usec;

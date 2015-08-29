@@ -39,6 +39,7 @@ import x393_utils
 
 #import time
 import vrlg
+import x393_mcntrl
 class X393Sensor(object):
     DRY_MODE= True # True
     DEBUG_MODE=1
@@ -685,3 +686,51 @@ class X393Sensor(object):
         """ 
         channel = ((num_sensor & 3) << 2) + (subchannel & 3) 
         self.x393_axi_tasks.write_contol_register(vrlg.SENSOR_GROUP_ADDR + vrlg.HIST_SAXI_ADDR_REL + channel,page)
+
+    def setup_sensor_memory (self,
+                             num_sensor,
+                             frame_sa,
+                             frame_sa_inc,
+                             last_frame_num,
+                             frame_full_width,
+                             window_width,
+                             window_height,
+                             window_left,
+                             window_top):
+        """
+        Setup memory controller for a sensor channel
+        @param num_sensor -       sensor port number (0..3)
+        @param frame_sa -         22-bit frame start address ((3 CA LSBs==0. BA==0)
+        @param frame_sa_inc -     22-bit frame start address increment  ((3 CA LSBs==0. BA==0)
+        @param last_frame_num -   16-bit number of the last frame in a buffer
+        @param frame_full_width - 13-bit Padded line length (8-row increment), in 8-bursts (16 bytes)
+        @param window_width -     13-bit - in 8*16=128 bit bursts
+        @param window_height -    16-bit window height (in scan lines)
+        @param window_left -      13-bit window left margin in 8-bursts (16 bytes)
+        @param window_top -       16-bit window top margin (in scan lines
+        """
+        base_addr = vrlg.MCONTR_SENS_BASE + vrlg.MCONTR_SENS_INC * num_sensor;
+        mode=   x393_mcntrl.func_encode_mode_scan_tiled(
+                                   disable_need = False,
+                                   repetitive=    True,
+                                   single =       False,
+                                   reset_frame =  False,
+                                   extra_pages =  0,
+                                   write_mem =    True,
+                                   enable =       True,
+                                   chn_reset =    False)
+                    
+        self.x393_axi_tasks.write_contol_register(base_addr + vrlg.MCNTRL_SCANLINE_STARTADDR,
+                                                  frame_sa); # RA=80, CA=0, BA=0 22-bit frame start address (3 CA LSBs==0. BA==0)
+        self.x393_axi_tasks.write_contol_register(base_addr + vrlg.MCNTRL_SCANLINE_FRAME_SIZE,
+                                                  frame_sa_inc);
+        self.x393_axi_tasks.write_contol_register(base_addr + vrlg.MCNTRL_SCANLINE_FRAME_LAST,
+                                                  last_frame_num);
+        self.x393_axi_tasks.write_contol_register(base_addr + vrlg.MCNTRL_SCANLINE_FRAME_FULL_WIDTH,
+                                                  frame_full_width);
+        self.x393_axi_tasks.write_contol_register(base_addr + vrlg.MCNTRL_SCANLINE_WINDOW_WH,
+                                                  ((window_height & 0xffff) << 16) | (window_width & 0xffff)) #/WINDOW_WIDTH + (WINDOW_HEIGHT<<16));
+        self.x393_axi_tasks.write_contol_register(base_addr + vrlg.MCNTRL_SCANLINE_WINDOW_X0Y0,
+                                                  ((window_top & 0xffff) << 16) | (window_left & 0xffff)) #WINDOW_X0+ (WINDOW_Y0<<16));
+        self.x393_axi_tasks.write_contol_register(base_addr + vrlg.MCNTRL_SCANLINE_WINDOW_STARTXY,   0)
+        self.x393_axi_tasks.write_contol_register(base_addr + vrlg.MCNTRL_SCANLINE_MODE,          mode) 

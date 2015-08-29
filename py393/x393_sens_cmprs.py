@@ -34,6 +34,13 @@ __status__ = "Development"
 #import pickle
 from x393_mem                import X393Mem
 import x393_axi_control_status
+import x393_camsync
+import x393_gpio
+import x393_cmprs_afi
+import x393_cmprs
+import x393_frame_sequencer
+import x393_sensor
+import x393_rtc
 
 import x393_utils
 
@@ -42,18 +49,36 @@ import vrlg
 SI5338_PATH =   "/sys/devices/amba.0/e0004000.ps7-i2c/i2c-0/0-0070"
 POWER393_PATH = "/sys/devices/elphel393-pwr.1"
 class X393SensCmprs(object):
-    DRY_MODE= True # True
-    DEBUG_MODE=1
-    x393_mem=None
-    x393_axi_tasks=None #x393X393AxiControlStatus
-    x393_utils=None
-    verbose=1
+    DRY_MODE =           True # True
+    DEBUG_MODE =         1
+    x393_mem =           None
+    x393_axi_tasks =     None #x393X393AxiControlStatus
+    x393_utils =         None
+    verbose =            1
+
+    x393Camsync =        None
+    x393GPIO =           None
+    x393CmprsAfi =       None
+    x393Cmprs =          None
+    x393FrameSequencer = None
+    x393Sensor =         None
+    x393Rtc =            None
+    
     def __init__(self, debug_mode=1,dry_mode=True, saveFileName=None):
         self.DEBUG_MODE=  debug_mode
         self.DRY_MODE=    dry_mode
         self.x393_mem=            X393Mem(debug_mode,dry_mode)
         self.x393_axi_tasks=      x393_axi_control_status.X393AxiControlStatus(debug_mode,dry_mode)
         self.x393_utils=          x393_utils.X393Utils(debug_mode,dry_mode, saveFileName) # should not overwrite save file path
+        
+        self.x393Camsync =        x393_camsync.X393Camsync(debug_mode,dry_mode, saveFileName)
+        self.x393GPIO =           x393_gpio.X393GPIO(debug_mode,dry_mode, saveFileName)
+        self.x393CmprsAfi =       x393_cmprs_afi.X393CmprsAfi(debug_mode,dry_mode, saveFileName)
+        self.x393Cmprs =          x393_cmprs.X393Cmprs(debug_mode,dry_mode, saveFileName)
+        self.x393FrameSequencer = x393_frame_sequencer.X393FrameSequencer(debug_mode,dry_mode, saveFileName)
+        self.x393Sensor =         x393_sensor.X393Sensor(debug_mode,dry_mode, saveFileName)
+        self.x393Rtc =            x393_rtc.X393Rtc(debug_mode,dry_mode, saveFileName)
+        
         try:
             self.verbose=vrlg.VERBOSE
         except:

@@ -35,6 +35,7 @@ from x393_mcntrl_timing      import X393McntrlTiming
 from x393_mcntrl_buffers     import X393McntrlBuffers
 from verilog_utils import concat,convert_w32_to_mem16 #, getParWidth
 import vrlg
+import x393_mcntrl
 class X393McntrlTests(object):
     DRY_MODE= True # True
     DEBUG_MODE=1
@@ -57,7 +58,7 @@ class X393McntrlTests(object):
             self.verbose=vrlg.VERBOSE
         except:
             pass
-
+    '''
     def func_encode_mode_tiled(self,         # function [6:0] 
                                byte32,       # input       byte32; # 32-byte columns (0 - 16-byte columns)
                                keep_open,    # input       keep_open; # for 8 or less rows - do not close page between accesses
@@ -105,7 +106,7 @@ class X393McntrlTests(object):
                        ((0,1)[write_mem],1), # write_mem,
                        ((0,1)[enable],   1), #enable,
                        ((1,0)[chn_reset],1)))[0] # ~chn_reset};
-        
+    '''    
     def test_write_levelling(self,
                             dqs_odly= None,
                             wbuf_dly = None,
@@ -281,11 +282,24 @@ class X393McntrlTests(object):
             status_control_address= vrlg.MCNTRL_TEST01_ADDR + vrlg.MCNTRL_TEST01_CHN3_STATUS_CNTRL
             test_mode_address=      vrlg.MCNTRL_TEST01_ADDR + vrlg.MCNTRL_TEST01_CHN3_MODE
 
+        '''
         mode=   self.func_encode_mode_scanline(
                     extra_pages,
                     1,  # write_mem,
                     1,  # enable
                     0)  # chn_reset
+        '''
+        mode=   x393_mcntrl.func_encode_mode_scan_tiled(
+                                   disable_need = False,
+                                   repetitive=    True,
+                                   single =       False,
+                                   reset_frame =  False,
+                                   extra_pages =  extra_pages,
+                                   write_mem =    True,
+                                   enable =       True,
+                                   chn_reset =    False)
+            
+                                
         self.x393_axi_tasks.write_contol_register(start_addr + vrlg.MCNTRL_SCANLINE_MODE, 0); # reset channel, including page address
         self.x393_axi_tasks.write_contol_register(start_addr + vrlg.MCNTRL_SCANLINE_STARTADDR,        vrlg.FRAME_START_ADDRESS); # RA=80, CA=0, BA=0 22-bit frame start address (3 CA LSBs==0. BA==0) 
         self.x393_axi_tasks.write_contol_register(start_addr + vrlg.MCNTRL_SCANLINE_FRAME_FULL_WIDTH, vrlg.FRAME_FULL_WIDTH);
@@ -416,11 +430,23 @@ class X393McntrlTests(object):
             status_address=         vrlg.MCNTRL_TEST01_STATUS_REG_CHN3_ADDR
             status_control_address= vrlg.MCNTRL_TEST01_ADDR + vrlg.MCNTRL_TEST01_CHN3_STATUS_CNTRL
             test_mode_address=      vrlg.MCNTRL_TEST01_ADDR + vrlg.MCNTRL_TEST01_CHN3_MODE
+        '''    
         mode=   self.func_encode_mode_scanline(
                                                extra_pages,
                                                0, # write_mem,
                                                1, # enable
                                                0)  # chn_reset
+        '''
+        mode=   x393_mcntrl.func_encode_mode_scan_tiled(
+                                   disable_need = False,
+                                   repetitive=    True,
+                                   single =       False,
+                                   reset_frame =  False,
+                                   extra_pages =  extra_pages,
+                                   write_mem =    False,
+                                   enable =       True,
+                                   chn_reset =    False)
+            
 # program to the
         self.x393_axi_tasks.write_contol_register(start_addr + vrlg.MCNTRL_SCANLINE_MODE, 0); # reset channel, including page address
         self.x393_axi_tasks.write_contol_register(start_addr + vrlg.MCNTRL_SCANLINE_STARTADDR,        vrlg.FRAME_START_ADDRESS); # RA=80, CA=0, BA=0 22-bit frame start address (3 CA LSBs==0. BA==0) 
@@ -516,6 +542,7 @@ class X393McntrlTests(object):
             status_address=         vrlg.MCNTRL_TEST01_STATUS_REG_CHN2_ADDR;
             status_control_address= vrlg.MCNTRL_TEST01_ADDR + vrlg.MCNTRL_TEST01_CHN2_STATUS_CNTRL;
             test_mode_address=      vrlg.MCNTRL_TEST01_ADDR + vrlg.MCNTRL_TEST01_CHN2_MODE;
+        '''    
         mode=   self.func_encode_mode_tiled(
                                             byte32,
                                             keep_open,
@@ -523,6 +550,19 @@ class X393McntrlTests(object):
                                             1,           # write_mem,
                                             1,           # enable
                                             0)           # chn_reset
+        '''
+        mode=   x393_mcntrl.func_encode_mode_scan_tiled(
+                                   disable_need = False,
+                                   repetitive=    True,
+                                   single =       False,
+                                   reset_frame =  False,
+                                   byte32 =       byte32,
+                                   keep_open =    keep_open,
+                                   extra_pages =  extra_pages,
+                                   write_mem =    True,
+                                   enable =       True,
+                                   chn_reset =    False)
+                                                        
         self.x393_axi_tasks.write_contol_register(start_addr + vrlg.MCNTRL_TILED_MODE, 0); # reset channel, including page address
         self.x393_axi_tasks.write_contol_register(start_addr + vrlg.MCNTRL_TILED_STARTADDR,
                                                   vrlg.FRAME_START_ADDRESS) # RA=80, CA=0, BA=0 22-bit frame start address (3 CA LSBs==0. BA==0) 
@@ -644,6 +684,7 @@ class X393McntrlTests(object):
             status_control_address= vrlg.MCNTRL_TEST01_ADDR + vrlg.MCNTRL_TEST01_CHN2_STATUS_CNTRL;
             test_mode_address=      vrlg.MCNTRL_TEST01_ADDR + vrlg.MCNTRL_TEST01_CHN2_MODE;
 
+        '''
         mode=   self.func_encode_mode_tiled(
                                             byte32,
                                             keep_open,
@@ -651,6 +692,19 @@ class X393McntrlTests(object):
                                             0, # write_mem,
                                             1, # enable
                                             0)  # chn_reset
+        '''
+        mode=   x393_mcntrl.func_encode_mode_scan_tiled(
+                                   disable_need = False,
+                                   repetitive=    True,
+                                   single =       False,
+                                   reset_frame =  False,
+                                   byte32 =       byte32,
+                                   keep_open =    keep_open,
+                                   extra_pages =  extra_pages,
+                                   write_mem =    False,
+                                   enable =       True,
+                                   chn_reset =    False)
+            
         self.x393_axi_tasks.write_contol_register(start_addr + vrlg.MCNTRL_TILED_MODE, 0); # reset channel, including page address
         self.x393_axi_tasks.write_contol_register(start_addr + vrlg.MCNTRL_TILED_STARTADDR,
                                                   vrlg.FRAME_START_ADDRESS) # RA=80, CA=0, BA=0 22-bit frame start address (3 CA LSBs==0. BA==0) 

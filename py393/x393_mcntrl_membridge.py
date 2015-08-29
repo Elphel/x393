@@ -37,7 +37,7 @@ import x393_pio_sequences
 import x393_mcntrl_timing
 import x393_mcntrl_buffers 
 import verilog_utils 
-
+import x393_mcntrl
 MEM_PATH='/sys/devices/elphel393-mem.2/'
 BUFFER_ASSRESS_NAME='buffer_address'
 BUFFER_PAGES_NAME='buffer_pages'
@@ -61,6 +61,7 @@ BUFFER_ADDRESS=0x27900000
 BUFFER_LEN=0x6400000
 
 '''
+'''
 def func_encode_mode_scanline(extra_pages,  # input [1:0] extra_pages; # number of extra pages that need to stay (not to be overwritten) in the buffer
                                             # can be used for overlapping tile read access
                               write_mem,    # input       write_mem;   # write to memory mode (0 - read from memory)
@@ -68,18 +69,18 @@ def func_encode_mode_scanline(extra_pages,  # input [1:0] extra_pages; # number 
                               chn_reset):   # input       chn_reset;       # immediately reset all the internal circuitry
     """
     Combines arguments to create a 5-bit encoded data for scanline mode memory R/W
-    <extra_pages>,  2-bit number of extra pages that need to stay (not to be overwritten) in the buffer
+    @param extra_pages  2-bit number of extra pages that need to stay (not to be overwritten) in the buffer
                     This argument can be used for  read access with horizontal overlapping tiles
-    <write_mem>,    write to memory mode (0 - read from memory)
-    <enable>,       enable requests from this channel ( 0 will let current to finish, but not raise want/need)
-    <chn_reset>):   immediately reset all the internal circuitry
+    @param write_mem,    write to memory mode (0 - read from memory)
+    @param enable,       enable requests from this channel ( 0 will let current to finish, but not raise want/need)
+    @param chn_reset):   immediately reset all the internal circuitry
     
     """
     return verilog_utils.concat (((extra_pages,     2), # extra_pages,
                                  ((0,1)[write_mem],1), # write_mem,
                                  ((0,1)[enable],   1), #enable,
                                  ((1,0)[chn_reset],1)))[0] # ~chn_reset};
-
+'''
 class X393McntrlMembridge(object):
     DRY_MODE= True # True
     DEBUG_MODE=1
@@ -299,11 +300,23 @@ class X393McntrlMembridge(object):
                   (window_width << 1)*window_height,
                   (window_width << 1),
                   start64, lo_addr64, size64,cache))
+        '''    
         mode=   func_encode_mode_scanline(
                     0, # extra_pages,
                     write_ddr3, # write_mem,
                     1, # enable
                     0)  # chn_reset
+        '''
+        mode=   x393_mcntrl.func_encode_mode_scan_tiled(
+                                   disable_need = False,
+                                   repetitive=    True,
+                                   single =       False,
+                                   reset_frame =  False,
+                                   extra_pages =  0,
+                                   write_mem =    write_ddr3,
+                                   enable =       True,
+                                   chn_reset =    False)
+
 #        self.x393_axi_tasks.write_contol_register(vrlg.MEMBRIDGE_ADDR + vrlg.MEMBRIDGE_WIDTH64,    width64);    
 #        self.x393_axi_tasks.write_contol_register(vrlg.MCNTRL_SCANLINE_CHN1_ADDR + vrlg.MCNTRL_SCANLINE_MODE,             0); # reset channel, including page address
         self.x393_axi_tasks.write_contol_register(vrlg.MCNTRL_SCANLINE_CHN1_ADDR + vrlg.MCNTRL_SCANLINE_STARTADDR,        frame_start_addr) # RA=80, CA=0, BA=0 22-bit frame start address (3 CA LSBs==0. BA==0) 
