@@ -2947,6 +2947,7 @@ task set_gpio_pins;
     end
 endtask
 
+// x393_sensor.py
 task set_sensor_mode;
     input  [1:0] num_sensor;
     input  [3:0] hist_en;    // [0..3] 1 - enable histogram modules, disable after processing the started frame
@@ -2961,6 +2962,7 @@ task set_sensor_mode;
      
 endtask
     
+// x393_sensor.py
 task set_sensor_i2c_command;
     input                             [1:0] num_sensor;
     input                                   rst_cmd;    // [14]   reset all FIFO (takes 16 clock pulses), also - stops i2c until run command
@@ -2981,6 +2983,7 @@ task set_sensor_i2c_command;
 endtask
 
 
+// x393_sensor.py
 task write_sensor_i2c;
     input   [1:0] num_sensor;
     input         rel_addr; // 0 - absolute, 1 - relative
@@ -2997,6 +3000,7 @@ endtask
 
 
 
+// x393_sensor.py
 task    set_sensor_io_ctl;
     input                            [1:0] num_sensor;
     input                            [1:0] mrst;     // <2: keep MRST, 2 - MRST low (active),  3 - high (inactive)
@@ -3024,6 +3028,7 @@ task    set_sensor_io_ctl;
     end
 endtask
 
+// x393_sensor.py
 task    set_sensor_io_dly;
     input                            [1:0] num_sensor;
     input [127:0] dly; // {mmsm_phase, bpf, vact, hact, pxd11,...,pxd0]
@@ -3048,6 +3053,7 @@ task    set_sensor_io_dly;
     end
 endtask
 
+// x393_sensor.py
 task    set_sensor_io_jtag; // SuppressThisWarning VEditor - may be unused
     input                            [1:0] num_sensor;
     input                            [1:0] pgmen;    // <2: keep PGMEN, 2 - PGMEN low (inactive),  3 - high (active) enable JTAG control
@@ -3069,6 +3075,7 @@ task    set_sensor_io_jtag; // SuppressThisWarning VEditor - may be unused
     end
 endtask
 
+// x393_sensor.py
 task    set_sensor_io_width;
     input    [1:0] num_sensor;
     input   [15:0] width; // 0 - use HACT, >0 - generate HACT from start to specified width
@@ -3081,6 +3088,7 @@ task    set_sensor_io_width;
 
 endtask
 
+// x393_sensor.py
 task set_sensor_lens_flat_heights;
     input   [1:0] num_sensor;
     input  [15:0] height0_m1; // height of the first sub-frame minus 1
@@ -3095,6 +3103,7 @@ task set_sensor_lens_flat_heights;
     end
 endtask
 
+// x393_sensor.py
 task set_sensor_lens_flat_parameters;
     input   [1:0] num_sensor;
     input   [1:0] num_sub_sensor;
@@ -3154,6 +3163,7 @@ task set_sensor_lens_flat_parameters;
     end
 endtask
 
+// x393_sensor.py
 function [31:0] func_lens_data;
     input   [1:0] num_sensor;
     input   [7:0] addr;
@@ -3163,6 +3173,7 @@ function [31:0] func_lens_data;
 endfunction
 
 
+// x393_sensor.py
 task program_curves;
     input   [1:0] num_sensor;
     input   [1:0] sub_channel;
@@ -3197,6 +3208,7 @@ task program_curves;
 endtask
 
 
+// x393_sensor.py
 task set_sensor_gamma_table_addr;
     input   [1:0] num_sensor;
     input   [1:0] sub_channel;
@@ -3221,6 +3233,7 @@ task set_sensor_gamma_table_addr;
 
 endtask
 
+// x393_sensor.py
 task set_sensor_gamma_table_data; // need 256 for a single color data
     input   [1:0] num_sensor;
     input  [17:0] data18; // 18-bit table data
@@ -3234,6 +3247,7 @@ task set_sensor_gamma_table_data; // need 256 for a single color data
 
 endtask
 
+// x393_sensor.py
 task set_sensor_gamma_heights;
     input   [1:0] num_sensor;
     input  [15:0] height0_m1; // height of the first sub-frame minus 1
@@ -3249,6 +3263,7 @@ task set_sensor_gamma_heights;
     end
 endtask
 
+// x393_sensor.py
 task set_sensor_gamma_ctl;
     input   [1:0] num_sensor; // sensor channel number (0..3)
     input   [1:0] bayer;      // bayer shift (0..3)
@@ -3273,6 +3288,7 @@ task set_sensor_gamma_ctl;
     
 endtask
 
+// x393_sensor.py
 task set_sensor_histogram_window;
     input   [1:0] num_sensor; // sensor channel number (0..3)
     input   [1:0] subchannel; // subchannel number (for multiplexed images)
@@ -3296,6 +3312,7 @@ task set_sensor_histogram_window;
     end
 endtask
 
+// x393_sensor.py
 task set_sensor_histogram_saxi;
     input         en;
     input         nrst;
@@ -3312,6 +3329,7 @@ task set_sensor_histogram_saxi;
     end
 endtask
     
+// x393_sensor.py
 task set_sensor_histogram_saxi_addr;
     input   [1:0] num_sensor; // sensor channel number (0..3)
     input   [1:0] subchannel; // subchannel number (for multiplexed images)
@@ -3321,6 +3339,7 @@ task set_sensor_histogram_saxi_addr;
     end
 endtask
     
+// x393_sensor.py
 function [STATUS_DEPTH-1:0] func_status_addr_sensor_i2c;
     input [1:0] num_sensor;
     begin
@@ -3328,6 +3347,7 @@ function [STATUS_DEPTH-1:0] func_status_addr_sensor_i2c;
     end
 endfunction
 
+// x393_sensor.py
 function [STATUS_DEPTH-1:0] func_status_addr_sensor_io;
     input [1:0] num_sensor;
     begin
