@@ -77,7 +77,7 @@ class X393FrameSequencer(object):
             data |= 1 << (vrlg.CMDFRAMESEQ_RUN_BIT -1)
         if start or stop:
             data |= 1 <<  vrlg.CMDFRAMESEQ_RUN_BIT
-        self.x393_axi_tasks.write_contol_register(
+        self.x393_axi_tasks.write_control_register(
                 vrlg.CMDFRAMESEQ_ADDR_BASE + num_sensor * vrlg.CMDFRAMESEQ_ADDR_INC + vrlg.CMDFRAMESEQ_CTRL,
                 data)
 
@@ -100,6 +100,6 @@ class X393FrameSequencer(object):
         if relative and (frame_addr == 0xf):
             raise Exception ("task write_cmd_frame_sequencer(): relative address 0xf is invalid, it is reserved for module control")
         reg_addr = vrlg.CMDFRAMESEQ_ADDR_BASE + num_sensor * vrlg.CMDFRAMESEQ_ADDR_INC + (vrlg.CMDFRAMESEQ_ABS,vrlg.CMDFRAMESEQ_REL)[relative] + frame_addr
-        self.x393_axi_tasks.write_contol_register( reg_addr,  addr) # two writes to the same location - first is the register address
-        self.x393_axi_tasks.write_contol_register( reg_addr,  data) # second is data to write to that register
+        self.x393_axi_tasks.write_control_register( reg_addr,  addr) # two writes to the same location - first is the register address
+        self.x393_axi_tasks.write_control_register( reg_addr,  data) # second is data to write to that register
 

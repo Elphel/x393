@@ -93,7 +93,7 @@ class X393Camsync(object):
             data |=  (4 | (master_chn & 3)) << (vrlg.CAMSYNC_MASTER_BIT - 2)
         if not chn_en is None:
             data |=  (0x10 | (chn_en & 0xf)) << (vrlg.CAMSYNC_CHN_EN_BIT - 4)
-        self.x393_axi_tasks.write_contol_register(vrlg.CAMSYNC_ADDR + vrlg.CAMSYNC_MODE, data);
+        self.x393_axi_tasks.write_control_register(vrlg.CAMSYNC_ADDR + vrlg.CAMSYNC_MODE, data);
         
     def set_camsync_inout(self,
                           is_out,
@@ -111,7 +111,7 @@ class X393Camsync(object):
             db=(2,3)[active_positive]
         data &= ~(3 << (2 * bit_number))
         data |=  (db << (2 * bit_number))   
-        self.x393_axi_tasks.write_contol_register(vrlg.CAMSYNC_ADDR +
+        self.x393_axi_tasks.write_control_register(vrlg.CAMSYNC_ADDR +
                                                  (vrlg.CAMSYNC_TRIG_SRC,vrlg.CAMSYNC_TRIG_DST)[is_out], data)
             
     def reset_camsync_inout(self,
@@ -120,7 +120,7 @@ class X393Camsync(object):
         Reset camsync inputs or outputs to inactive/don't care state
         @param is_out - True for outputs, False for inputs
         """
-        self.x393_axi_tasks.write_contol_register(vrlg.CAMSYNC_ADDR +
+        self.x393_axi_tasks.write_control_register(vrlg.CAMSYNC_ADDR +
                                                  (vrlg.CAMSYNC_TRIG_SRC,vrlg.CAMSYNC_TRIG_DST)[is_out], 0)
 
     def set_camsync_period(self,
@@ -129,7 +129,7 @@ class X393Camsync(object):
         Set camsync period
         @param period - period value in 10 ns steps - max 42.95 sec
         """
-        self.x393_axi_tasks.write_contol_register(vrlg.CAMSYNC_ADDR + vrlg.CAMSYNC_TRIG_PERIOD, period)
+        self.x393_axi_tasks.write_control_register(vrlg.CAMSYNC_ADDR + vrlg.CAMSYNC_TRIG_PERIOD, period)
             
     def set_camsync_delay(self,
                           sub_chn,
@@ -139,7 +139,7 @@ class X393Camsync(object):
         @param sub_chn - sensor channel (0..3)
         @param delay -   delay value in 10 ns steps - max 42.95 sec
         """
-        self.x393_axi_tasks.write_contol_register(vrlg.CAMSYNC_ADDR + vrlg.CAMSYNC_TRIG_PERIOD, delay)
+        self.x393_axi_tasks.write_control_register(vrlg.CAMSYNC_ADDR + vrlg.CAMSYNC_TRIG_PERIOD, delay)
     
     def camsync_setup(self,
                       sensor_mask =        None,

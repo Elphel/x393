@@ -215,7 +215,7 @@ class X393Mem(object):
         <data> - 32-bit data to write
         <verbose> print data being written (default: 0)
         """
-        if verbose:
+        if verbose or self.DEBUG_MODE:
             print("axi_write_single_w(0x%x,0x%08x)"%(addr,data))
         self.axi_write_single(addr<<2,data)
 

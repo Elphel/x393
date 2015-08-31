@@ -91,7 +91,7 @@ class X393CmprsAfi(object):
         @param port_afi - number of AFI port (0 - afi 1, 1 - afi2)
         @param rst_chn  - bit mask of channels to reset (persistent, needs release)
         """
-        self.x393_axi_tasks.write_contol_register(
+        self.x393_axi_tasks.write_control_register(
                     vrlg.CMPRS_GROUP_ADDR + (vrlg.CMPRS_AFIMUX_RADDR0,vrlg.CMPRS_AFIMUX_RADDR1)[port_afi] + vrlg.CMPRS_AFIMUX_RST,
                     rst_chn)
     def  afi_mux_enable_chn (self,
@@ -104,7 +104,7 @@ class X393CmprsAfi(object):
         @param en_chn  -  number of afi input channel to enable/disable (0..3)
         @param en  -      number enable (True) or disable (False) selected AFI input
         """ 
-        self.x393_axi_tasks.write_contol_register(
+        self.x393_axi_tasks.write_control_register(
                     vrlg.CMPRS_GROUP_ADDR + (vrlg.CMPRS_AFIMUX_RADDR0,vrlg.CMPRS_AFIMUX_RADDR1)[port_afi] + vrlg.CMPRS_AFIMUX_EN,
                     (2,3)[en] << (2 * en_chn))
               
@@ -117,7 +117,7 @@ class X393CmprsAfi(object):
         @param en_chn  -  number of afi input channel to enable/disable (0..3)
         @param en  -      number enable (True) or disable (False) selected AFI input
         """ 
-        self.x393_axi_tasks.write_contol_register(
+        self.x393_axi_tasks.write_control_register(
                     vrlg.CMPRS_GROUP_ADDR + (vrlg.CMPRS_AFIMUX_RADDR0,vrlg.CMPRS_AFIMUX_RADDR1)[port_afi] + vrlg.CMPRS_AFIMUX_EN,
                     (2,3)[en] << (2 * 4))
 
@@ -135,7 +135,7 @@ class X393CmprsAfi(object):
                             mode == 2 - show current pointer, internal
                             mode == 3 - show current pointer, confirmed written to the system memory
         """ 
-        self.x393_axi_tasks.write_contol_register(
+        self.x393_axi_tasks.write_control_register(
                     vrlg.CMPRS_GROUP_ADDR + (vrlg.CMPRS_AFIMUX_RADDR0,vrlg.CMPRS_AFIMUX_RADDR1)[port_afi] + vrlg.CMPRS_AFIMUX_MODE,
                     (4 + (mode & 3)) << (4 * chn))
 
@@ -152,10 +152,10 @@ class X393CmprsAfi(object):
         @param length  -  channel buffer length in 32-byte chunks
         """
         reg_addr =  vrlg.CMPRS_GROUP_ADDR + (vrlg.CMPRS_AFIMUX_RADDR0,vrlg.CMPRS_AFIMUX_RADDR1)[port_afi] + vrlg.CMPRS_AFIMUX_SA_LEN + chn
-        self.x393_axi_tasks.write_contol_register(
+        self.x393_axi_tasks.write_control_register(
                     reg_addr,
                     sa)
-        self.x393_axi_tasks.write_contol_register(
+        self.x393_axi_tasks.write_control_register(
                     reg_addr + 4,
                     length)
         

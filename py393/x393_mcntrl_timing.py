@@ -90,8 +90,8 @@ class X393McntrlTiming(object):
         vrlg.DLY_PHASE=phase & ((1<<vrlg.PHASE_WIDTH)-1)
         if quiet<2:
             print("SET CLOCK PHASE=0x%x"%(vrlg.DLY_PHASE))
-        self.x393_axi_tasks.write_contol_register(vrlg.LD_DLY_PHASE,vrlg.DLY_PHASE) # {{(32-PHASE_WIDTH){1'b0}},phase}); // control register address
-        self.x393_axi_tasks.write_contol_register(vrlg.DLY_SET,0)
+        self.x393_axi_tasks.write_control_register(vrlg.LD_DLY_PHASE,vrlg.DLY_PHASE) # {{(32-PHASE_WIDTH){1'b0}},phase}); // control register address
+        self.x393_axi_tasks.write_control_register(vrlg.DLY_SET,0)
 #        self.target_phase = phase
         if wait_phase_en:
             return self.wait_phase(True, wait_seq)
@@ -160,9 +160,9 @@ class X393McntrlTiming(object):
         """
         self.axi_set_multiple_delays(vrlg.LD_DLY_LANE0_IDELAY, 8, 1, vrlg.DLY_LANE0_DQS_WLV_IDELAY, "DLY_LANE0_IDELAY")
         self.axi_set_multiple_delays(vrlg.LD_DLY_LANE1_IDELAY, 8, 1, vrlg.DLY_LANE1_DQS_WLV_IDELAY, "DLY_LANE1_IDELAY")
-#        self.x393_axi_tasks.write_contol_register(vrlg.LD_DLY_LANE0_IDELAY + 8,      vrlg.DLY_LANE0_DQS_WLV_IDELAY)
-#        self.x393_axi_tasks.write_contol_register(vrlg.LD_DLY_LANE1_IDELAY + 8,      vrlg.DLY_LANE1_DQS_WLV_IDELAY)
-        self.x393_axi_tasks.write_contol_register(vrlg.DLY_SET,0)
+#        self.x393_axi_tasks.write_control_register(vrlg.LD_DLY_LANE0_IDELAY + 8,      vrlg.DLY_LANE0_DQS_WLV_IDELAY)
+#        self.x393_axi_tasks.write_control_register(vrlg.LD_DLY_LANE1_IDELAY + 8,      vrlg.DLY_LANE1_DQS_WLV_IDELAY)
+        self.x393_axi_tasks.write_control_register(vrlg.DLY_SET,0)
 
     def axi_set_delays(self,quiet=1): #  set all individual delays
         """
@@ -206,7 +206,7 @@ class X393McntrlTiming(object):
             print("SET DQ IDELAY="+hexMultiple(delay)) # hexMultiple
         self.axi_set_multiple_delays(vrlg.LD_DLY_LANE0_IDELAY, 0, 8, delay[0], "DLY_LANE0_IDELAY")
         self.axi_set_multiple_delays(vrlg.LD_DLY_LANE1_IDELAY, 0, 8, delay[1], "DLY_LANE1_IDELAY")
-        self.x393_axi_tasks.write_contol_register  (vrlg.DLY_SET,0);# // set all delays
+        self.x393_axi_tasks.write_control_register  (vrlg.DLY_SET,0);# // set all delays
         
     def axi_set_dq_odelay(self,
                           delay=None, # input [7:0] delay;
@@ -236,7 +236,7 @@ class X393McntrlTiming(object):
             print("SET DQ ODELAY="+hexMultiple(delay)) # hexMultiple
         self.axi_set_multiple_delays(vrlg.LD_DLY_LANE0_ODELAY, 0, 8, delay[0], "DLY_LANE0_ODELAY");
         self.axi_set_multiple_delays(vrlg.LD_DLY_LANE1_ODELAY, 0, 8, delay[1], "DLY_LANE1_ODELAY");
-        self.x393_axi_tasks.write_contol_register(vrlg.DLY_SET,0); # set all delays
+        self.x393_axi_tasks.write_control_register(vrlg.DLY_SET,0); # set all delays
         
     def axi_set_dqs_idelay(self,
                            delay=None, # input [7:0] delay;
@@ -255,7 +255,7 @@ class X393McntrlTiming(object):
             print("SET DQS IDELAY="+hexMultiple(delay)) # hexMultiple
         self.axi_set_multiple_delays(vrlg.LD_DLY_LANE0_IDELAY, 8, 1, delay[0], "DLY_LANE0_IDELAY")
         self.axi_set_multiple_delays(vrlg.LD_DLY_LANE1_IDELAY, 8, 1, delay[1], "DLY_LANE1_IDELAY")
-        self.x393_axi_tasks.write_contol_register(vrlg.DLY_SET,0); # set all delays
+        self.x393_axi_tasks.write_control_register(vrlg.DLY_SET,0); # set all delays
 
     def axi_set_dqs_odelay(self,
                            delay=None, # input [7:0] delay;
@@ -275,7 +275,7 @@ class X393McntrlTiming(object):
             print("SET DQS ODELAY="+hexMultiple(delay)) # hexMultiple
         self.axi_set_multiple_delays(vrlg.LD_DLY_LANE0_ODELAY, 8, 1, delay[0], "DLY_LANE0_ODELAY")
         self.axi_set_multiple_delays(vrlg.LD_DLY_LANE1_ODELAY, 8, 1, delay[1], "DLY_LANE1_ODELAY")
-        self.x393_axi_tasks.write_contol_register(vrlg.DLY_SET,0); # set all delays
+        self.x393_axi_tasks.write_control_register(vrlg.DLY_SET,0); # set all delays
 
     def axi_set_dm_odelay (self,
                            delay=None, # input [7:0] delay;
@@ -294,7 +294,7 @@ class X393McntrlTiming(object):
             print("SET DQM IDELAY="+hexMultiple(delay)) # hexMultiple
         self.axi_set_multiple_delays(vrlg.LD_DLY_LANE0_ODELAY, 9, 1, delay[0], "DLY_LANE0_ODELAY")
         self.axi_set_multiple_delays(vrlg.LD_DLY_LANE1_ODELAY, 9, 1, delay[1], "DLY_LANE1_ODELAY")
-        self.x393_axi_tasks.write_contol_register(vrlg.DLY_SET,0) #  set all delays
+        self.x393_axi_tasks.write_control_register(vrlg.DLY_SET,0) #  set all delays
 
     def axi_set_cmda_odelay(self,
                                delay=None, # input [7:0] delay;
@@ -324,7 +324,7 @@ class X393McntrlTiming(object):
         if quiet < 2:
             print("SET COMMAND and ADDRESS ODELAY"+hexMultiple(delay))
         self.axi_set_multiple_delays(vrlg.LD_DLY_CMDA, 0, 32, delay, "DLY_CMDA");
-        self.x393_axi_tasks.write_contol_register(vrlg.DLY_SET,0)  # set all delays
+        self.x393_axi_tasks.write_control_register(vrlg.DLY_SET,0)  # set all delays
 
     def axi_set_address_odelay(self,
                                delay=None, # input [7:0] delay;
@@ -354,7 +354,7 @@ class X393McntrlTiming(object):
         if quiet < 2:
             print("SET ADDRESS ODELAY="+hexMultiple(delay))
         self.axi_set_multiple_delays(vrlg.LD_DLY_CMDA, 0, 0, delay, "DLY_CMDA") 
-        self.x393_axi_tasks.write_contol_register(vrlg.DLY_SET,0)  # set all delays
+        self.x393_axi_tasks.write_control_register(vrlg.DLY_SET,0)  # set all delays
         
     def axi_set_bank_odelay(self,
                             delay=None, # input [7:0] delay;
@@ -386,7 +386,7 @@ class X393McntrlTiming(object):
         if quiet < 2:
             print("SET BANK ODELAY="+hexMultiple(delay))
         self.axi_set_multiple_delays(vrlg.LD_DLY_CMDA, bank_offset, 0,delay, "DLY_CMDA")  # length will be determined by len(delay)
-        self.x393_axi_tasks.write_contol_register(vrlg.DLY_SET,0)  # set all delays
+        self.x393_axi_tasks.write_control_register(vrlg.DLY_SET,0)  # set all delays
 
     def axi_set_cmd_odelay(self,
                            delay=None, # input [7:0] delay;
@@ -417,7 +417,7 @@ class X393McntrlTiming(object):
         if quiet < 2:
             print("SET COMMAND ODELAY="+hexMultiple(delay))
         self.axi_set_multiple_delays(vrlg.LD_DLY_CMDA, command_offset, 0,delay, "DLY_CMDA")  # length will be determined by len(delay)
-        self.x393_axi_tasks.write_contol_register(vrlg.DLY_SET,0)  # set all delays
+        self.x393_axi_tasks.write_control_register(vrlg.DLY_SET,0)  # set all delays
         
         
     def axi_set_multiple_delays(self,
@@ -443,7 +443,7 @@ class X393McntrlTiming(object):
             delay= delay + [None]*(number-len(delay)) #
         for i, d in enumerate(delay):
             if not d is None:
-                self.x393_axi_tasks.write_contol_register(reg_addr + (offset + i), d)
+                self.x393_axi_tasks.write_control_register(reg_addr + (offset + i), d)
                 if vname:
                     vrlg.set_name_field(vname, offset + i, d)
 
@@ -469,7 +469,7 @@ class X393McntrlTiming(object):
         vrlg.DFLT_WBUF_DELAY=delay
         if self.DEBUG_MODE > 1:
             print("SET WBUF DELAY=0x%x"%delay)
-        self.x393_axi_tasks.write_contol_register(vrlg.MCONTR_PHY_16BIT_ADDR+vrlg.MCONTR_PHY_16BIT_WBUF_DELAY, delay & 0xf) # {28'h0, delay});
+        self.x393_axi_tasks.write_control_register(vrlg.MCONTR_PHY_16BIT_ADDR+vrlg.MCONTR_PHY_16BIT_WBUF_DELAY, delay & 0xf) # {28'h0, delay});
 #set dq /dqs tristate on/off patterns
 
     def axi_set_tristate_patterns(self,
@@ -529,7 +529,7 @@ class X393McntrlTiming(object):
         if self.DEBUG_MODE > 1:
             print("SET TRISTATE PATTERNS, combined delays=%s"%str(delays))    
             print("SET TRISTATE PATTERNS, combined delays=0x%x"%delays)    
-        self.x393_axi_tasks.write_contol_register(vrlg.MCONTR_PHY_16BIT_ADDR +vrlg.MCONTR_PHY_16BIT_PATTERNS_TRI, delays) #  DQSTRI_LAST, DQSTRI_FIRST, DQTRI_LAST, DQTRI_FIRST});
+        self.x393_axi_tasks.write_control_register(vrlg.MCONTR_PHY_16BIT_ADDR +vrlg.MCONTR_PHY_16BIT_PATTERNS_TRI, delays) #  DQSTRI_LAST, DQSTRI_FIRST, DQTRI_LAST, DQTRI_FIRST});
 
     def axi_set_dqs_dqm_patterns(self,
                                  dqs_patt=None,
@@ -550,7 +550,7 @@ class X393McntrlTiming(object):
         if quiet < 2 :
             print("axi_set_dqs_dqm_patterns(): SET DQS+DQM PATTERNS, patt= 0x%08x (TODO:reduce quiet threshold)"%patt)
 # set patterns for DM (always 0) and DQS - always the same (may try different for write lev.)        
-        self.x393_axi_tasks.write_contol_register(vrlg.MCONTR_PHY_16BIT_ADDR + vrlg.MCONTR_PHY_16BIT_PATTERNS, patt) # 32'h0055);
+        self.x393_axi_tasks.write_control_register(vrlg.MCONTR_PHY_16BIT_ADDR + vrlg.MCONTR_PHY_16BIT_PATTERNS, patt) # 32'h0055);
         
     def get_dqs_dqm_patterns(self):
         #print ('vrlg.dqs_dqm_patt=',vrlg.dqs_dqm_patt)

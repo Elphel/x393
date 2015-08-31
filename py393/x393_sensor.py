@@ -72,7 +72,7 @@ class X393Sensor(object):
         @param seq_number - 6-bit sequence number of the status message to be sent
         """
 
-        self.program_status (vrlg.SENSOR_GROUP_ADDR  + num_sensor * vrlg.SENSOR_BASE_INC + vrlg.SENSI2C_CTRL_RADDR,
+        self.x393_axi_tasks.program_status (vrlg.SENSOR_GROUP_ADDR  + num_sensor * vrlg.SENSOR_BASE_INC + vrlg.SENSI2C_CTRL_RADDR,
                              vrlg.SENSI2C_STATUS,
                              mode,
                              seq_num)# //MCONTR_PHY_STATUS_REG_ADDR=          'h0,
@@ -194,11 +194,11 @@ class X393Sensor(object):
         """
         rslt = 0
         if not mrst is None:
-            rslt |= (2,3)[mrst] <<     vrlg.SENS_CTRL_MRST
+            rslt |= (3,2)[mrst] <<     vrlg.SENS_CTRL_MRST
         if not arst is None:
-            rslt |= (2,3)[arst] <<     vrlg.SENS_CTRL_ARST
+            rslt |= (3,2)[arst] <<     vrlg.SENS_CTRL_ARST
         if not aro is None:
-            rslt |= (2,3)[aro]  <<     vrlg.SENS_CTRL_ARO
+            rslt |= (3,2)[aro]  <<     vrlg.SENS_CTRL_ARO
         if not mmcm_rst is None:
             rslt |= (2,3)[mmcm_rst] << vrlg.SENS_CTRL_RST_MMCM
         if not clk_sel is None:
@@ -292,7 +292,7 @@ class X393Sensor(object):
         @param bits16)   - True - 16 bpp mode, false - 8 bpp mode (bypass gamma). Gamma-processed data
                            is still used for histograms
         """
-        self.x393_axi_tasks.write_contol_register(vrlg.SENSOR_GROUP_ADDR + num_sensor * vrlg.SENSOR_BASE_INC + vrlg.SENSOR_CTRL_RADDR,
+        self.x393_axi_tasks.write_control_register(vrlg.SENSOR_GROUP_ADDR + num_sensor * vrlg.SENSOR_BASE_INC + vrlg.SENSOR_CTRL_RADDR,
                                                   self.func_sensor_mode(
                                                                    hist_en =   hist_en,
                                                                    hist_nrst = hist_nrst,
@@ -318,7 +318,7 @@ class X393Sensor(object):
                          1/True/'H' - high level
         @return: i2c control word
         """  
-        self.x393_axi_tasks.write_contol_register(vrlg.SENSOR_GROUP_ADDR + num_sensor * vrlg.SENSOR_BASE_INC + vrlg.SENSI2C_CTRL_RADDR,
+        self.x393_axi_tasks.write_control_register(vrlg.SENSOR_GROUP_ADDR + num_sensor * vrlg.SENSOR_BASE_INC + vrlg.SENSI2C_CTRL_RADDR,
                                                   self.func_sensor_i2c_command(
                                                        rst_cmd =   rst_cmd,
                                                        run_cmd =   run_cmd,
@@ -342,7 +342,7 @@ class X393Sensor(object):
         reg_addr =  (vrlg.SENSOR_GROUP_ADDR + num_sensor * vrlg.SENSOR_BASE_INC)
         reg_addr += ((vrlg.SENSI2C_ABS_RADDR,vrlg.SENSI2C_REL_RADDR)[rel_addr] )
         reg_addr += (addr & ~vrlg.SENSI2C_ADDR_MASK);
-        self.x393_axi_tasks.write_contol_register(reg_addr, data)
+        self.x393_axi_tasks.write_control_register(reg_addr, data)
         
     def set_sensor_io_ctl (self,
                            num_sensor,
@@ -373,7 +373,7 @@ class X393Sensor(object):
                     set_delays = set_delays,
                     quadrants =  quadrants)
         reg_addr = (vrlg.SENSOR_GROUP_ADDR + num_sensor * vrlg.SENSOR_BASE_INC) + vrlg.SENSIO_RADDR + vrlg.SENSIO_CTRL;
-        self.x393_axi_tasks.write_contol_register(reg_addr, data)
+        self.x393_axi_tasks.write_control_register(reg_addr, data)
 
     def set_sensor_io_dly (self,
                            num_sensor,
@@ -396,10 +396,10 @@ class X393Sensor(object):
               (pxd_dly[8] & 0xff) | ((pxd_dly[9] & 0xff) << 8) | ((pxd_dly[10] & 0xff) << 16) | ((pxd_dly[11] & 0xff) << 24),
               (hact_dly & 0xff) |   ((vact_dly & 0xff) <<   8) | ((iclk_dly & 0xff)    << 16) | ((mmcm_phase & 0xff) <<  24))                       
         reg_addr = (vrlg.SENSOR_GROUP_ADDR + num_sensor * vrlg.SENSOR_BASE_INC) + vrlg.SENSIO_RADDR + vrlg.SENSIO_DELAYS;
-        self.x393_axi_tasks.write_contol_register(reg_addr + 0, dlys[0]) # {pxd3,       pxd2,  pxd1, pxd0}
-        self.x393_axi_tasks.write_contol_register(reg_addr + 1, dlys[1]) # {pxd7,       pxd6,  pxd5, pxd4}
-        self.x393_axi_tasks.write_contol_register(reg_addr + 2, dlys[2]) # {pxd11,      pxd10, pxd9, pxd8}
-        self.x393_axi_tasks.write_contol_register(reg_addr + 3, dlys[3]) # {mmcm_phase, bpf,   vact, hact}
+        self.x393_axi_tasks.write_control_register(reg_addr + 0, dlys[0]) # {pxd3,       pxd2,  pxd1, pxd0}
+        self.x393_axi_tasks.write_control_register(reg_addr + 1, dlys[1]) # {pxd7,       pxd6,  pxd5, pxd4}
+        self.x393_axi_tasks.write_control_register(reg_addr + 2, dlys[2]) # {pxd11,      pxd10, pxd9, pxd8}
+        self.x393_axi_tasks.write_control_register(reg_addr + 3, dlys[3]) # {mmcm_phase, bpf,   vact, hact}
         self.set_sensor_io_ctl (num_sensor = num_sensor,
                                 set_delays = True)
 
@@ -426,7 +426,7 @@ class X393Sensor(object):
                             tck =   tck,
                             tms =   tms,
                             tdi =   tdi)
-        self.x393_axi_tasks.write_contol_register(reg_addr, data)
+        self.x393_axi_tasks.write_control_register(reg_addr, data)
 
     def set_sensor_io_width (
                              self,
@@ -438,7 +438,7 @@ class X393Sensor(object):
         @param width - sensor 16-bit frame width (0 - use sensor HACT signal) 
         """
         reg_addr = (vrlg.SENSOR_GROUP_ADDR + num_sensor * vrlg.SENSOR_BASE_INC) + vrlg.SENSIO_RADDR + vrlg.SENSIO_WIDTH;
-        self.x393_axi_tasks.write_contol_register(reg_addr, width)
+        self.x393_axi_tasks.write_control_register(reg_addr, width)
  
     def set_sensor_lens_flat_heights (self,
                                       num_sensor,
@@ -455,11 +455,11 @@ class X393Sensor(object):
         """
         reg_addr = (vrlg.SENSOR_GROUP_ADDR + num_sensor * vrlg.SENSOR_BASE_INC) + vrlg.SENS_LENS_RADDR;
         if not height0_m1 is None:
-            self.x393_axi_tasks.write_contol_register(reg_addr + 0, height0_m1)
+            self.x393_axi_tasks.write_control_register(reg_addr + 0, height0_m1)
         if not height1_m1 is None:
-            self.x393_axi_tasks.write_contol_register(reg_addr + 1, height1_m1)
+            self.x393_axi_tasks.write_control_register(reg_addr + 1, height1_m1)
         if not height2_m1 is None:
-            self.x393_axi_tasks.write_contol_register(reg_addr + 2, height2_m1)
+            self.x393_axi_tasks.write_control_register(reg_addr + 2, height2_m1)
 
 
     def set_sensor_lens_flat_parameters (self,
@@ -506,30 +506,30 @@ class X393Sensor(object):
             return ((num_sensor & 3) << 24) | ((addr & 0xff) << 16) | (data & ((1 << width) - 1))
         reg_addr = (vrlg.SENSOR_GROUP_ADDR + num_sensor * vrlg.SENSOR_BASE_INC) + vrlg.SENS_LENS_RADDR + vrlg.SENS_LENS_COEFF
         if not AX is None:
-            self.x393_axi_tasks.write_contol_register(reg_addr, func_lens_data(num_sub_sensor, vrlg.SENS_LENS_AX, AX, 19))
+            self.x393_axi_tasks.write_control_register(reg_addr, func_lens_data(num_sub_sensor, vrlg.SENS_LENS_AX, AX, 19))
         if not AY is None:
-            self.x393_axi_tasks.write_contol_register(reg_addr, func_lens_data(num_sub_sensor, vrlg.SENS_LENS_AY, AY, 19))
+            self.x393_axi_tasks.write_control_register(reg_addr, func_lens_data(num_sub_sensor, vrlg.SENS_LENS_AY, AY, 19))
         if not BX is None:
-            self.x393_axi_tasks.write_contol_register(reg_addr, func_lens_data(num_sub_sensor, vrlg.SENS_LENS_BX, BX, 21))
+            self.x393_axi_tasks.write_control_register(reg_addr, func_lens_data(num_sub_sensor, vrlg.SENS_LENS_BX, BX, 21))
         if not BY is None:
-            self.x393_axi_tasks.write_contol_register(reg_addr, func_lens_data(num_sub_sensor, vrlg.SENS_LENS_BY, BY, 21))
+            self.x393_axi_tasks.write_control_register(reg_addr, func_lens_data(num_sub_sensor, vrlg.SENS_LENS_BY, BY, 21))
         if not C is None:
-            self.x393_axi_tasks.write_contol_register(reg_addr, func_lens_data(num_sub_sensor, vrlg.SENS_LENS_C,   C, 19))
+            self.x393_axi_tasks.write_control_register(reg_addr, func_lens_data(num_sub_sensor, vrlg.SENS_LENS_C,   C, 19))
         if not scales0 is None:
-            self.x393_axi_tasks.write_contol_register(reg_addr, func_lens_data(num_sub_sensor, vrlg.SENS_LENS_SCALES + 0,   scales0, 17))
+            self.x393_axi_tasks.write_control_register(reg_addr, func_lens_data(num_sub_sensor, vrlg.SENS_LENS_SCALES + 0,   scales0, 17))
         if not scales1 is None:
-            self.x393_axi_tasks.write_contol_register(reg_addr, func_lens_data(num_sub_sensor, vrlg.SENS_LENS_SCALES + 2,   scales1, 17))
+            self.x393_axi_tasks.write_control_register(reg_addr, func_lens_data(num_sub_sensor, vrlg.SENS_LENS_SCALES + 2,   scales1, 17))
         if not scales2 is None:
-            self.x393_axi_tasks.write_contol_register(reg_addr, func_lens_data(num_sub_sensor, vrlg.SENS_LENS_SCALES + 4,   scales2, 17))
+            self.x393_axi_tasks.write_control_register(reg_addr, func_lens_data(num_sub_sensor, vrlg.SENS_LENS_SCALES + 4,   scales2, 17))
         if not scales3 is None:
-            self.x393_axi_tasks.write_contol_register(reg_addr, func_lens_data(num_sub_sensor, vrlg.SENS_LENS_SCALES + 6,   scales3, 17))
+            self.x393_axi_tasks.write_control_register(reg_addr, func_lens_data(num_sub_sensor, vrlg.SENS_LENS_SCALES + 6,   scales3, 17))
         if not fatzero_in is None:
-            self.x393_axi_tasks.write_contol_register(reg_addr, func_lens_data(num_sub_sensor, vrlg.SENS_LENS_FAT0_IN, fatzero_in, 16))
+            self.x393_axi_tasks.write_control_register(reg_addr, func_lens_data(num_sub_sensor, vrlg.SENS_LENS_FAT0_IN, fatzero_in, 16))
         if not fatzero_out is None:
-            self.x393_axi_tasks.write_contol_register(reg_addr, func_lens_data(num_sub_sensor, vrlg.SENS_LENS_FAT0_OUT, fatzero_out, 16))
+            self.x393_axi_tasks.write_control_register(reg_addr, func_lens_data(num_sub_sensor, vrlg.SENS_LENS_FAT0_OUT, fatzero_out, 16))
 
         if not post_scale is None:
-            self.x393_axi_tasks.write_contol_register(reg_addr, func_lens_data(num_sub_sensor, vrlg.SENS_LENS_POST_SCALE, post_scale, 4))
+            self.x393_axi_tasks.write_control_register(reg_addr, func_lens_data(num_sub_sensor, vrlg.SENS_LENS_POST_SCALE, post_scale, 4))
 
     def program_curves (self,
                         num_sensor,
@@ -557,12 +557,12 @@ class X393Sensor(object):
             else:
                 data |= (sub_channel & 3) << 10 # [11:10]
             reg_addr = (vrlg.SENSOR_GROUP_ADDR + num_sensor * vrlg.SENSOR_BASE_INC) + vrlg.SENS_GAMMA_RADDR + vrlg.SENS_GAMMA_ADDR_DATA
-            self.x393_axi_tasks.write_contol_register(reg_addr, data)                   
+            self.x393_axi_tasks.write_control_register(reg_addr, data)                   
         def set_sensor_gamma_table_data ( #; // need 256 for a single color data
                                           num_sensor,
                                           data18): # ; // 18-bit table data
             reg_addr = (vrlg.SENSOR_GROUP_ADDR + num_sensor * vrlg.SENSOR_BASE_INC) + vrlg.SENS_GAMMA_RADDR + vrlg.SENS_GAMMA_ADDR_DATA;
-            self.x393_axi_tasks.write_contol_register(reg_addr, data18 & ((1 << 18) - 1))                   
+            self.x393_axi_tasks.write_control_register(reg_addr, data18 & ((1 << 18) - 1))                   
 
                   
         if isinstance(curves_data, unicode):
@@ -605,10 +605,10 @@ class X393Sensor(object):
         (No need for the  4-th, as it will just go until end of the composite frame)
         """
         reg_addr = (vrlg.SENSOR_GROUP_ADDR + num_sensor * vrlg.SENSOR_BASE_INC) + vrlg.SENS_GAMMA_RADDR + vrlg.SENS_GAMMA_HEIGHT01
-        self.x393_axi_tasks.write_contol_register(reg_addr, (height0_m1 & 0xffff) | ((height1_m1 & 0xffff) << 16));                   
+        self.x393_axi_tasks.write_control_register(reg_addr, (height0_m1 & 0xffff) | ((height1_m1 & 0xffff) << 16));                   
 
         reg_addr = (vrlg.SENSOR_GROUP_ADDR + num_sensor * vrlg.SENSOR_BASE_INC) + vrlg.SENS_GAMMA_RADDR + vrlg.SENS_GAMMA_HEIGHT2;
-        self.x393_axi_tasks.write_contol_register(reg_addr, height2_m1 & 0xffff);                   
+        self.x393_axi_tasks.write_control_register(reg_addr, height2_m1 & 0xffff);                   
 
     def set_sensor_gamma_ctl (self,
                               num_sensor,
@@ -633,7 +633,7 @@ class X393Sensor(object):
                                             repet_mode = repet_mode,
                                             trig =       trig)
         reg_addr = (vrlg.SENSOR_GROUP_ADDR + num_sensor * vrlg.SENSOR_BASE_INC) + vrlg.SENS_GAMMA_RADDR + vrlg.SENS_GAMMA_CTRL;
-        self.x393_axi_tasks.write_contol_register(reg_addr, data);
+        self.x393_axi_tasks.write_control_register(reg_addr, data);
         
     def set_sensor_histogram_window (self,
                                      num_sensor,
@@ -653,8 +653,8 @@ class X393Sensor(object):
         """
         raddr = (vrlg.HISTOGRAM_RADDR0, vrlg.HISTOGRAM_RADDR1, vrlg.HISTOGRAM_RADDR2, vrlg.HISTOGRAM_RADDR3)
         reg_addr = (vrlg.SENSOR_GROUP_ADDR + num_sensor * vrlg.SENSOR_BASE_INC) + raddr[subchannel & 3]
-        self.x393_axi_tasks.write_contol_register(reg_addr + vrlg.HISTOGRAM_LEFT_TOP,     ((top & 0xffff) << 16) | (left & 0xff))
-        self.x393_axi_tasks.write_contol_register(reg_addr + vrlg.HISTOGRAM_WIDTH_HEIGHT, ((height_m1 & 0xffff) << 16) | (width_m1 & 0xff))
+        self.x393_axi_tasks.write_control_register(reg_addr + vrlg.HISTOGRAM_LEFT_TOP,     ((top & 0xffff) << 16) | (left & 0xff))
+        self.x393_axi_tasks.write_control_register(reg_addr + vrlg.HISTOGRAM_WIDTH_HEIGHT, ((height_m1 & 0xffff) << 16) | (width_m1 & 0xff))
     def set_sensor_histogram_saxi (self,
                                    en,
                                    nrst,
@@ -672,7 +672,7 @@ class X393Sensor(object):
         data |= (0,1)[nrst] <<          vrlg.HIST_SAXI_NRESET
         data |= (0,1)[confirm_write] << vrlg.HIST_CONFIRM_WRITE
         data |= (cache_mode & 0xf) <<   vrlg.HIST_SAXI_AWCACHE
-        self.x393_axi_tasks.write_contol_register(vrlg.SENSOR_GROUP_ADDR + vrlg.HIST_SAXI_MODE_ADDR_REL, data)
+        self.x393_axi_tasks.write_control_register(vrlg.SENSOR_GROUP_ADDR + vrlg.HIST_SAXI_MODE_ADDR_REL, data)
 
     def set_sensor_histogram_saxi_addr (self,
                                         num_sensor,
@@ -685,7 +685,7 @@ class X393Sensor(object):
         @param page -           system memory page address (in 4KB units)
         """ 
         channel = ((num_sensor & 3) << 2) + (subchannel & 3) 
-        self.x393_axi_tasks.write_contol_register(vrlg.SENSOR_GROUP_ADDR + vrlg.HIST_SAXI_ADDR_REL + channel,page)
+        self.x393_axi_tasks.write_control_register(vrlg.SENSOR_GROUP_ADDR + vrlg.HIST_SAXI_ADDR_REL + channel,page)
 
     def setup_sensor_memory (self,
                              num_sensor,
@@ -720,19 +720,19 @@ class X393Sensor(object):
                                    enable =       True,
                                    chn_reset =    False)
                     
-        self.x393_axi_tasks.write_contol_register(base_addr + vrlg.MCNTRL_SCANLINE_STARTADDR,
+        self.x393_axi_tasks.write_control_register(base_addr + vrlg.MCNTRL_SCANLINE_STARTADDR,
                                                   frame_sa); # RA=80, CA=0, BA=0 22-bit frame start address (3 CA LSBs==0. BA==0)
-        self.x393_axi_tasks.write_contol_register(base_addr + vrlg.MCNTRL_SCANLINE_FRAME_SIZE,
+        self.x393_axi_tasks.write_control_register(base_addr + vrlg.MCNTRL_SCANLINE_FRAME_SIZE,
                                                   frame_sa_inc);
-        self.x393_axi_tasks.write_contol_register(base_addr + vrlg.MCNTRL_SCANLINE_FRAME_LAST,
+        self.x393_axi_tasks.write_control_register(base_addr + vrlg.MCNTRL_SCANLINE_FRAME_LAST,
                                                   last_frame_num);
-        self.x393_axi_tasks.write_contol_register(base_addr + vrlg.MCNTRL_SCANLINE_FRAME_FULL_WIDTH,
+        self.x393_axi_tasks.write_control_register(base_addr + vrlg.MCNTRL_SCANLINE_FRAME_FULL_WIDTH,
                                                   frame_full_width);
-        self.x393_axi_tasks.write_contol_register(base_addr + vrlg.MCNTRL_SCANLINE_WINDOW_WH,
+        self.x393_axi_tasks.write_control_register(base_addr + vrlg.MCNTRL_SCANLINE_WINDOW_WH,
                                                   ((window_height & 0xffff) << 16) | (window_width & 0xffff)) #/WINDOW_WIDTH + (WINDOW_HEIGHT<<16));
-        self.x393_axi_tasks.write_contol_register(base_addr + vrlg.MCNTRL_SCANLINE_WINDOW_X0Y0,
+        self.x393_axi_tasks.write_control_register(base_addr + vrlg.MCNTRL_SCANLINE_WINDOW_X0Y0,
                                                   ((window_top & 0xffff) << 16) | (window_left & 0xffff)) #WINDOW_X0+ (WINDOW_Y0<<16));
-        self.x393_axi_tasks.write_contol_register(base_addr + vrlg.MCNTRL_SCANLINE_WINDOW_STARTXY,   0)
-        self.x393_axi_tasks.write_contol_register(base_addr + vrlg.MCNTRL_SCANLINE_MODE,          mode) 
+        self.x393_axi_tasks.write_control_register(base_addr + vrlg.MCNTRL_SCANLINE_WINDOW_STARTXY,   0)
+        self.x393_axi_tasks.write_control_register(base_addr + vrlg.MCNTRL_SCANLINE_MODE,          mode) 
 
 

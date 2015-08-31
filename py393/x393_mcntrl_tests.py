@@ -300,17 +300,17 @@ class X393McntrlTests(object):
                                    chn_reset =    False)
             
                                 
-        self.x393_axi_tasks.write_contol_register(start_addr + vrlg.MCNTRL_SCANLINE_MODE, 0); # reset channel, including page address
-        self.x393_axi_tasks.write_contol_register(start_addr + vrlg.MCNTRL_SCANLINE_STARTADDR,        vrlg.FRAME_START_ADDRESS); # RA=80, CA=0, BA=0 22-bit frame start address (3 CA LSBs==0. BA==0) 
-        self.x393_axi_tasks.write_contol_register(start_addr + vrlg.MCNTRL_SCANLINE_FRAME_FULL_WIDTH, vrlg.FRAME_FULL_WIDTH);
-        self.x393_axi_tasks.write_contol_register(start_addr + vrlg.MCNTRL_SCANLINE_WINDOW_WH,        (window_height<<16) | window_width); #WINDOW_WIDTH + (WINDOW_HEIGHT<<16));
-        self.x393_axi_tasks.write_contol_register(start_addr + vrlg.MCNTRL_SCANLINE_WINDOW_X0Y0,      (window_top<<16) | window_left); #WINDOW_X0+ (WINDOW_Y0<<16));
-        self.x393_axi_tasks.write_contol_register(start_addr + vrlg.MCNTRL_SCANLINE_WINDOW_STARTXY,   vrlg.SCANLINE_STARTX+(vrlg.SCANLINE_STARTY<<16));
-        self.x393_axi_tasks.write_contol_register(start_addr + vrlg.MCNTRL_SCANLINE_MODE,             mode); 
+        self.x393_axi_tasks.write_control_register(start_addr + vrlg.MCNTRL_SCANLINE_MODE, 0); # reset channel, including page address
+        self.x393_axi_tasks.write_control_register(start_addr + vrlg.MCNTRL_SCANLINE_STARTADDR,        vrlg.FRAME_START_ADDRESS); # RA=80, CA=0, BA=0 22-bit frame start address (3 CA LSBs==0. BA==0) 
+        self.x393_axi_tasks.write_control_register(start_addr + vrlg.MCNTRL_SCANLINE_FRAME_FULL_WIDTH, vrlg.FRAME_FULL_WIDTH);
+        self.x393_axi_tasks.write_control_register(start_addr + vrlg.MCNTRL_SCANLINE_WINDOW_WH,        (window_height<<16) | window_width); #WINDOW_WIDTH + (WINDOW_HEIGHT<<16));
+        self.x393_axi_tasks.write_control_register(start_addr + vrlg.MCNTRL_SCANLINE_WINDOW_X0Y0,      (window_top<<16) | window_left); #WINDOW_X0+ (WINDOW_Y0<<16));
+        self.x393_axi_tasks.write_control_register(start_addr + vrlg.MCNTRL_SCANLINE_WINDOW_STARTXY,   vrlg.SCANLINE_STARTX+(vrlg.SCANLINE_STARTY<<16));
+        self.x393_axi_tasks.write_control_register(start_addr + vrlg.MCNTRL_SCANLINE_MODE,             mode); 
         self.x393_axi_tasks.configure_channel_priority(channel,0);    # lowest priority channel 3
 #        enable_memcntrl_channels(16'h000b); # channels 0,1,3 are enabled
         self.x393_axi_tasks.enable_memcntrl_en_dis(channel,1);
-        self.x393_axi_tasks.write_contol_register(test_mode_address,            vrlg.TEST01_START_FRAME);
+        self.x393_axi_tasks.write_control_register(test_mode_address,            vrlg.TEST01_START_FRAME);
         for ii in range(0,vrlg.TEST_INITIAL_BURST): # for (ii=0;ii<TEST_INITIAL_BURST;ii=ii+1) begin
 # VDT bugs: 1:does not propagate undefined width through ?:, 2: - does not allow to connect it to task integer input, 3: shows integer input width as 1
             if   pages_per_row > 1:
@@ -358,7 +358,7 @@ class X393McntrlTests(object):
                                                                   xfer_size,
                                                                   startx,  # window_left + ((ii % pages_per_row)<<NUM_XFER_BITS),  # SCANLINE_CUR_X,
                                                                   starty) # window_top + (ii / pages_per_row)); # SCANLINE_CUR_Y);
-            self.x393_axi_tasks.write_contol_register(test_mode_address,            vrlg.TEST01_NEXT_PAGE)
+            self.x393_axi_tasks.write_control_register(test_mode_address,            vrlg.TEST01_NEXT_PAGE)
         if wait_done:
             self.x393_axi_tasks.wait_status_condition ( # may also be read directly from the same bit of mctrl_linear_rw (address=5) status
                                                         status_address, # MCNTRL_TEST01_STATUS_REG_CHN3_ADDR,
@@ -448,16 +448,16 @@ class X393McntrlTests(object):
                                    chn_reset =    False)
             
 # program to the
-        self.x393_axi_tasks.write_contol_register(start_addr + vrlg.MCNTRL_SCANLINE_MODE, 0); # reset channel, including page address
-        self.x393_axi_tasks.write_contol_register(start_addr + vrlg.MCNTRL_SCANLINE_STARTADDR,        vrlg.FRAME_START_ADDRESS); # RA=80, CA=0, BA=0 22-bit frame start address (3 CA LSBs==0. BA==0) 
-        self.x393_axi_tasks.write_contol_register(start_addr + vrlg.MCNTRL_SCANLINE_FRAME_FULL_WIDTH, vrlg.FRAME_FULL_WIDTH);
-        self.x393_axi_tasks.write_contol_register(start_addr + vrlg.MCNTRL_SCANLINE_WINDOW_WH,        (window_height << 16) | window_width); #WINDOW_WIDTH + (WINDOW_HEIGHT<<16));
-        self.x393_axi_tasks.write_contol_register(start_addr + vrlg.MCNTRL_SCANLINE_WINDOW_X0Y0,      (window_top    << 16) | window_left); #WINDOW_X0+ (WINDOW_Y0<<16));
-        self.x393_axi_tasks.write_contol_register(start_addr + vrlg.MCNTRL_SCANLINE_WINDOW_STARTXY,   vrlg.SCANLINE_STARTX+(vrlg.SCANLINE_STARTY<<16));
-        self.x393_axi_tasks.write_contol_register(start_addr + vrlg.MCNTRL_SCANLINE_MODE,             mode);# set mode register: {extra_pages[1:0],enable,!reset}
+        self.x393_axi_tasks.write_control_register(start_addr + vrlg.MCNTRL_SCANLINE_MODE, 0); # reset channel, including page address
+        self.x393_axi_tasks.write_control_register(start_addr + vrlg.MCNTRL_SCANLINE_STARTADDR,        vrlg.FRAME_START_ADDRESS); # RA=80, CA=0, BA=0 22-bit frame start address (3 CA LSBs==0. BA==0) 
+        self.x393_axi_tasks.write_control_register(start_addr + vrlg.MCNTRL_SCANLINE_FRAME_FULL_WIDTH, vrlg.FRAME_FULL_WIDTH);
+        self.x393_axi_tasks.write_control_register(start_addr + vrlg.MCNTRL_SCANLINE_WINDOW_WH,        (window_height << 16) | window_width); #WINDOW_WIDTH + (WINDOW_HEIGHT<<16));
+        self.x393_axi_tasks.write_control_register(start_addr + vrlg.MCNTRL_SCANLINE_WINDOW_X0Y0,      (window_top    << 16) | window_left); #WINDOW_X0+ (WINDOW_Y0<<16));
+        self.x393_axi_tasks.write_control_register(start_addr + vrlg.MCNTRL_SCANLINE_WINDOW_STARTXY,   vrlg.SCANLINE_STARTX+(vrlg.SCANLINE_STARTY<<16));
+        self.x393_axi_tasks.write_control_register(start_addr + vrlg.MCNTRL_SCANLINE_MODE,             mode);# set mode register: {extra_pages[1:0],enable,!reset}
         self.x393_axi_tasks.configure_channel_priority(channel,0);    # lowest priority channel 3
         self.x393_axi_tasks.enable_memcntrl_en_dis(channel,1);
-        self.x393_axi_tasks.write_contol_register(test_mode_address,            vrlg.TEST01_START_FRAME);
+        self.x393_axi_tasks.write_control_register(test_mode_address,            vrlg.TEST01_START_FRAME);
         for ii in range(window_height * pages_per_row): # for (ii=0;ii<(window_height * pages_per_row);ii = ii+1) begin
             if   pages_per_row > 1:
                 if (ii % pages_per_row) < (pages_per_row-1):
@@ -483,7 +483,7 @@ class X393McntrlTests(object):
                                                                        xfer_size <<2,
 #                                                                       1, # chn=0, page=3, number of 32-bit words=256, show_rslt
                                                                        show_data))
-            self.x393_axi_tasks.write_contol_register(test_mode_address,            vrlg.TEST01_NEXT_PAGE)
+            self.x393_axi_tasks.write_control_register(test_mode_address,            vrlg.TEST01_NEXT_PAGE)
         return result    
 
   
@@ -563,28 +563,28 @@ class X393McntrlTests(object):
                                    enable =       True,
                                    chn_reset =    False)
                                                         
-        self.x393_axi_tasks.write_contol_register(start_addr + vrlg.MCNTRL_TILED_MODE, 0); # reset channel, including page address
-        self.x393_axi_tasks.write_contol_register(start_addr + vrlg.MCNTRL_TILED_STARTADDR,
+        self.x393_axi_tasks.write_control_register(start_addr + vrlg.MCNTRL_TILED_MODE, 0); # reset channel, including page address
+        self.x393_axi_tasks.write_control_register(start_addr + vrlg.MCNTRL_TILED_STARTADDR,
                                                   vrlg.FRAME_START_ADDRESS) # RA=80, CA=0, BA=0 22-bit frame start address (3 CA LSBs==0. BA==0) 
-        self.x393_axi_tasks.write_contol_register(start_addr + vrlg.MCNTRL_TILED_FRAME_FULL_WIDTH,
+        self.x393_axi_tasks.write_control_register(start_addr + vrlg.MCNTRL_TILED_FRAME_FULL_WIDTH,
                                                   vrlg.FRAME_FULL_WIDTH)
-        self.x393_axi_tasks.write_contol_register(start_addr + vrlg.MCNTRL_TILED_WINDOW_WH,
+        self.x393_axi_tasks.write_control_register(start_addr + vrlg.MCNTRL_TILED_WINDOW_WH,
                                                   concat(((window_height,16),
                                                           (window_width, 16)))[0]) # {window_height,window_width});
-        self.x393_axi_tasks.write_contol_register(start_addr + vrlg.MCNTRL_TILED_WINDOW_X0Y0,
+        self.x393_axi_tasks.write_control_register(start_addr + vrlg.MCNTRL_TILED_WINDOW_X0Y0,
                                                   concat(((window_top,  16),
                                                           (window_left, 16)))[0])  #  {window_top,window_left});
-        self.x393_axi_tasks.write_contol_register(start_addr + vrlg.MCNTRL_TILED_WINDOW_STARTXY,
+        self.x393_axi_tasks.write_control_register(start_addr + vrlg.MCNTRL_TILED_WINDOW_STARTXY,
                                                   concat(((vrlg.TILED_STARTY, 16),
                                                           (vrlg.TILED_STARTX, 16)))[0])  #  TILED_STARTX+(TILED_STARTY<<16));
-        self.x393_axi_tasks.write_contol_register(start_addr + vrlg.MCNTRL_TILED_TILE_WHS,
+        self.x393_axi_tasks.write_control_register(start_addr + vrlg.MCNTRL_TILED_TILE_WHS,
                                                   concat(((tile_vstep, 8),
                                                           (tile_height, 8),
                                                           (tile_width, 8)))[0]) # {8'b0,tile_vstep,tile_height,tile_width});#tile_width+(tile_height<<8)+(tile_vstep<<16));
-        self.x393_axi_tasks.write_contol_register(start_addr + vrlg.MCNTRL_TILED_MODE, mode);# set mode register: {extra_pages[1:0],enable,!reset}
+        self.x393_axi_tasks.write_control_register(start_addr + vrlg.MCNTRL_TILED_MODE, mode);# set mode register: {extra_pages[1:0],enable,!reset}
         self.x393_axi_tasks.configure_channel_priority(channel,0)    # lowest priority channel 3
         self.x393_axi_tasks.enable_memcntrl_en_dis(channel,1);
-        self.x393_axi_tasks.write_contol_register(test_mode_address,            vrlg.TEST01_START_FRAME);
+        self.x393_axi_tasks.write_control_register(test_mode_address,            vrlg.TEST01_START_FRAME);
     
         for ii in range(vrlg.TEST_INITIAL_BURST): # for (ii=0;ii<TEST_INITIAL_BURST;ii=ii+1) begin
             print("########### test_tiled_write block %d: channel=%d"%( ii, channel))
@@ -616,7 +616,7 @@ class X393McntrlTests(object):
                                                                    tile_size,
                                                                    startx,   # window_left + ((ii % tiles_per_row) * tile_width),
                                                                    starty)   # window_top + (ii / tile_rows_per_window)); # SCANLINE_CUR_Y);\
-            self.x393_axi_tasks.write_contol_register(test_mode_address, vrlg.TEST01_NEXT_PAGE);
+            self.x393_axi_tasks.write_control_register(test_mode_address, vrlg.TEST01_NEXT_PAGE);
         if wait_done:
             self.x393_axi_tasks.wait_status_condition( # may also be read directly from the same bit of mctrl_linear_rw (address=5) status
                                                        status_address,             # MCNTRL_TEST01_STATUS_REG_CHN3_ADDR,
@@ -705,28 +705,28 @@ class X393McntrlTests(object):
                                    enable =       True,
                                    chn_reset =    False)
             
-        self.x393_axi_tasks.write_contol_register(start_addr + vrlg.MCNTRL_TILED_MODE, 0); # reset channel, including page address
-        self.x393_axi_tasks.write_contol_register(start_addr + vrlg.MCNTRL_TILED_STARTADDR,
+        self.x393_axi_tasks.write_control_register(start_addr + vrlg.MCNTRL_TILED_MODE, 0); # reset channel, including page address
+        self.x393_axi_tasks.write_control_register(start_addr + vrlg.MCNTRL_TILED_STARTADDR,
                                                   vrlg.FRAME_START_ADDRESS) # RA=80, CA=0, BA=0 22-bit frame start address (3 CA LSBs==0. BA==0) 
-        self.x393_axi_tasks.write_contol_register(start_addr + vrlg.MCNTRL_TILED_FRAME_FULL_WIDTH,
+        self.x393_axi_tasks.write_control_register(start_addr + vrlg.MCNTRL_TILED_FRAME_FULL_WIDTH,
                                                   vrlg.FRAME_FULL_WIDTH)
-        self.x393_axi_tasks.write_contol_register(start_addr + vrlg.MCNTRL_TILED_WINDOW_WH,
+        self.x393_axi_tasks.write_control_register(start_addr + vrlg.MCNTRL_TILED_WINDOW_WH,
                                                   concat(((window_height,16),
                                                           (window_width, 16)))[0]) # {window_height,window_width});
-        self.x393_axi_tasks.write_contol_register(start_addr + vrlg.MCNTRL_TILED_WINDOW_X0Y0,
+        self.x393_axi_tasks.write_control_register(start_addr + vrlg.MCNTRL_TILED_WINDOW_X0Y0,
                                                   concat(((window_top,  16),
                                                           (window_left, 16)))[0])  #  {window_top,window_left});
-        self.x393_axi_tasks.write_contol_register(start_addr + vrlg.MCNTRL_TILED_WINDOW_STARTXY,
+        self.x393_axi_tasks.write_control_register(start_addr + vrlg.MCNTRL_TILED_WINDOW_STARTXY,
                                                   concat(((vrlg.TILED_STARTY, 16),
                                                           (vrlg.TILED_STARTX, 16)))[0])  #  TILED_STARTX+(TILED_STARTY<<16));
-        self.x393_axi_tasks.write_contol_register(start_addr + vrlg.MCNTRL_TILED_TILE_WHS,
+        self.x393_axi_tasks.write_control_register(start_addr + vrlg.MCNTRL_TILED_TILE_WHS,
                                                   concat(((tile_vstep, 8),
                                                           (tile_height, 8),
                                                           (tile_width, 8)))[0]) # {8'b0,tile_vstep,tile_height,tile_width});#tile_width+(tile_height<<8)+(tile_vstep<<16));
-        self.x393_axi_tasks.write_contol_register(start_addr + vrlg.MCNTRL_TILED_MODE, mode);# set mode register: {extra_pages[1:0],enable,!reset}
+        self.x393_axi_tasks.write_control_register(start_addr + vrlg.MCNTRL_TILED_MODE, mode);# set mode register: {extra_pages[1:0],enable,!reset}
         self.x393_axi_tasks.configure_channel_priority(channel,0)    # lowest priority channel 3
         self.x393_axi_tasks.enable_memcntrl_en_dis(channel,1);
-        self.x393_axi_tasks.write_contol_register(test_mode_address,            vrlg.TEST01_START_FRAME);
+        self.x393_axi_tasks.write_control_register(test_mode_address,            vrlg.TEST01_START_FRAME);
         for ii in range(tiles_per_row * tile_rows_per_window): # (ii=0;ii<(tiles_per_row * tile_rows_per_window);ii = ii+1) begin
             self.x393_axi_tasks.wait_status_condition (
                                                        status_address, # MCNTRL_TEST01_STATUS_REG_CHN4_ADDR,
@@ -744,6 +744,6 @@ class X393McntrlTests(object):
                                                                        tile_size <<2,
 #                                                                       1, # chn=0, page=3, number of 32-bit words=256, show_rslt
                                                                        show_data))
-            self.x393_axi_tasks.write_contol_register(test_mode_address, vrlg.TEST01_NEXT_PAGE);
+            self.x393_axi_tasks.write_control_register(test_mode_address, vrlg.TEST01_NEXT_PAGE);
 #     enable_memcntrl_en_dis(channel,0); # disable channel
         return result    

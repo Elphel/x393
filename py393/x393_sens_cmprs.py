@@ -46,8 +46,15 @@ import x393_utils
 
 #import time
 import vrlg
-SI5338_PATH =   "/sys/devices/amba.0/e0004000.ps7-i2c/i2c-0/0-0070"
-POWER393_PATH = "/sys/devices/elphel393-pwr.1"
+PAGE_SIZE =           4096
+SI5338_PATH =         '/sys/devices/amba.0/e0004000.ps7-i2c/i2c-0/0-0070'
+POWER393_PATH =       '/sys/devices/elphel393-pwr.1'
+MEM_PATH =            '/sys/devices/elphel393-mem.2/'
+BUFFER_ASSRESS_NAME = 'buffer_address'
+BUFFER_PAGES_NAME =   'buffer_pages'
+BUFFER_ADDRESS =      None # in bytes
+BUFFER_LEN =          None # in bytes
+
 class X393SensCmprs(object):
     DRY_MODE =           True # True
     DEBUG_MODE =         1
@@ -65,6 +72,7 @@ class X393SensCmprs(object):
     x393Rtc =            None
     
     def __init__(self, debug_mode=1,dry_mode=True, saveFileName=None):
+        global BUFFER_ADDRESS, BUFFER_LEN
         self.DEBUG_MODE=  debug_mode
         self.DRY_MODE=    dry_mode
         self.x393_mem=            X393Mem(debug_mode,dry_mode)
@@ -83,6 +91,33 @@ class X393SensCmprs(object):
             self.verbose=vrlg.VERBOSE
         except:
             pass
+        if dry_mode:
+            BUFFER_ADDRESS=0x27900000
+            BUFFER_LEN=    0x6400000
+            print ("Running in simulated mode, using hard-coded addresses:")
+        else:
+            try:
+                with open(MEM_PATH + BUFFER_ASSRESS_NAME) as sysfile:
+                    BUFFER_ADDRESS = int(sysfile.read(),0)
+                with open(MEM_PATH + BUFFER_PAGES_NAME) as sysfile:
+                    BUFFER_LEN = PAGE_SIZE * int(sysfile.read(),0)
+            except:
+                print("Failed to get reserved physical memory range")
+                print('BUFFER_ADDRESS=', BUFFER_ADDRESS)    
+                print('BUFFER_LEN=', BUFFER_LEN)    
+                return
+        print('X393SensCmprs: BUFFER_ADDRESS=0x%x'%(BUFFER_ADDRESS))    
+        print('X393SensCmprs: BUFFER_LEN=0x%x'%(BUFFER_LEN))
+    def get_histogram_byte_start(self): # should be 4KB page aligned
+        global BUFFER_ADDRESS
+        return BUFFER_ADDRESS
+    def get_circbuf_byte_start(self): # should be 4KB page aligned
+        global BUFFER_ADDRESS
+        return BUFFER_ADDRESS + 16 * 4096
+    def get_circbuf_byte_end(self): # should be 4KB page aligned
+        global BUFFER_ADDRESS, BUFFER_LEN
+        return BUFFER_ADDRESS + BUFFER_LEN
+        
     def setSensorClock(self, freq_MHz = 24.0):
         """
         Set up external clock for sensor-synchronous circuitry (and sensor(s) themselves. 
@@ -90,8 +125,8 @@ class X393SensCmprs(object):
         @param freq_MHz - input clock frequency (MHz). Currently for 96MHZ sensor clock it should be 24.0 
         """
         with open ( SI5338_PATH + "/output_drivers/2V5_LVDS",      "w") as f:
-            print("1", file = f)
-        with open ( SI5338_PATH + "/output_clocks/out1_freq_fract","w") as f:
+            print("2", file = f)
+        with open ( SI5338_PATH + "/output_clocks/out2_freq_fract","w") as f:
             print("%d"%(round(1000000*freq_MHz)), file = f )
     def setSensorPower(self, sub_pair=0, power_on=0):
         """
@@ -102,48 +137,86 @@ class X393SensCmprs(object):
             print(("vcc_sens01 vp33sens01", "vcc_sens23 vp33sens23")[sub_pair], file = f)
 
     def setup_sensor_channel (self,
-                              num_sensor,
-                              frame_full_width, # 13-bit Padded line length (8-row increment), in 8-bursts (16 bytes)
-                              window_width,    # 13 bit - in 8*16=128 bit bursts
-                              window_height,   # 16 bit
-                              window_left,
-                              window_top,
-                              frame_start_address,
-                              frame_start_address_inc,
-                              last_buf_frame,
-                              colorsat_blue,
-                              colorsat_red,
-                              clk_sel,
-                              histogram_start_phys_page,
-                              histogram_left =      0,
-                              histogram_top =       0,
-                              histogram_width_m1 =  0,
-                              histogram_height_m1 = 0,
+                              exit_step =                 None,
+                              num_sensor =                0,
+#                              histogram_start_phys_page, # Calculate from?
+#                              frame_full_width, # 13-bit Padded line length (8-row increment), in 8-bursts (16 bytes)
+                              window_width =              2592,   # 2592
+                              window_height =             1944,   # 1944
+                              window_left =               0,     # 0
+                              window_top =                0, # 0? 1?
+                              compressor_left_margin =    0, #0?`1? 
+#                              frame_start_address, # calculate through num_sensor, num frames, frame size and start addr?
+#                              frame_start_address_inc,
+                              last_buf_frame =            1,  #  - just 2-frame buffer
+                              colorsat_blue =             0x180,     # 0x90 fo 1x
+                              colorsat_red =              0x16c,     # 0xb6 for x1
+                              clk_sel =                   1,         # 1
+                              histogram_left =            0,
+                              histogram_top =             0,
+                              histogram_width_m1 =        0,
+                              histogram_height_m1 =       0,
                               
-                              verbose = 1):
+                              verbose =                   1):
         """
         Setup one sensor+compressor channel (for one sub-channel only)
+        @param exit_step -         exit after executing specified step:
+                                 10 - just after printing calculated values
+                                 11 - after programming status
+                                 12 - after setup_sensor_memory
+                                 13 - after enabling memory controller for the sensor channel
+                                 14 - after setup_compressor_channel
+                                 15 - after setup_compressor_memory
+                                 16 - after compressor run
+                                 17 - removing MRST from the sensor
+                                 18 - after vignetting, gamma and histograms setup
+                                 19 - enabling sensor memory controller (histograms in not yet)
         @param num_sensor - sensor port number (0..3)
-        @param frame_full_width -  13-bit Padded line length (8-row increment), in 8-bursts (16 bytes)
         @param window_width -      (here - in pixels)
         @param window_height -     16-bit window height in scan lines
         @param window_left -       left margin of the window (here - in pixels)
         @param window_top -        top margin of the window (16 bit)
-        @param frame_start_address - 22-bit frame start address ((3 CA LSBs==0. BA==0)
-        @param frame_start_address_inc - 22-bit frame start address increment  ((3 CA LSBs==0. BA==0)
+        @param compressor_left_margin - 0..31 - left margin for compressor (to the nearest 32-byte column)
         @param last_buf_frame) -   16-bit number of the last frame in a buffer
         @param colorsat_blue - color saturation for blue (10 bits), 0x90 for 100%
         @param colorsat_red -  color saturation for red (10 bits), 0xb6 for 100%
         @param clk_sel - True - use pixel clock from the sensor, False - use internal clock (provided to the sensor), None - no chnage
-        @param histogram_start_phys_page - system memory 4K page number to start histogram
         @param histogram_left -      histogram window left margin
         @param histogram_top -       histogram window top margin
         @param histogram_width_m1 -  one less than window width. If 0 - use frame right margin (end of HACT)
         @param histogram_height_m1 - one less than window height. If 0 - use frame bottom margin (end of VACT)
         
         ???
-        @parame verbose - verbose level 
+        @parame verbose - verbose level
+        @return True if all done, False if exited prematurely through exit_step
         """
+        align_to_bursts = 64 # align full width to multiple of align_to_bursts. 64 is the size of memory access
+        width_in_bursts = window_width >> 4
+        if (window_width & 0xf):
+            width_in_bursts += 1
+            
+        num_burst_in_line = (window_left >> 4) + width_in_bursts
+        num_pages_in_line = num_burst_in_line // align_to_bursts;
+        if num_burst_in_line % align_to_bursts:
+            num_pages_in_line += 1
+#        frame_full_width -  13-bit Padded line length (8-row increment), in 8-bursts (16 bytes)
+#        frame_start_address_inc - 22-bit frame start address increment  ((3 CA LSBs==0. BA==0)
+        frame_full_width =  num_pages_in_line * align_to_bursts
+        num8rows=   (window_top + window_height) // 8
+        if (window_top + window_height) % 8:
+            num8rows += 1
+        frame_start_address_inc = num8rows * frame_full_width
+        """ TODO: Calculate tiles and mov e to initial print """
+        num_macro_cols_m1 = (window_width >> 4) - 1
+        num_macro_rows_m1 = (window_height >> 4) - 1
+
+#       frame_start_address, # calculate through num_sensor, num frames, frame size and start addr?
+#        rame_start_address - 22-bit frame start address ((3 CA LSBs==0. BA==0)
+        frame_start_address = (last_buf_frame + 1) * frame_start_address_inc * num_sensor
+#       histogram_start_phys_page - system memory 4K page number to start histogram
+
+        histogram_start_phys_page = self.get_histogram_byte_start() // 4096    
+        
         if verbose >0 :
             print ("setup_sensor_channel:")
             print ("num_sensor =              ", num_sensor)
@@ -155,7 +228,10 @@ class X393SensCmprs(object):
             print ("frame_start_address =     ", frame_start_address)
             print ("frame_start_address_inc = ", frame_start_address_inc)
             print ("last_buf_frame =          ", last_buf_frame)
+            print ("num_macro_cols_m1 =       ", num_macro_cols_m1)
+            print ("num_macro_rows_m1 =       ", num_macro_rows_m1)
             print ("verbose =                 ", verbose)
+        if exit_step == 10: return False
             
         self.x393Sensor.program_status_sensor_i2c(
             num_sensor = num_sensor,  # input [1:0] num_sensor;
@@ -170,6 +246,7 @@ class X393SensCmprs(object):
             num_sensor = num_sensor,  # input [1:0] num_sensor;
             mode =       3,           # input [1:0] mode;
             seq_num =    0);          # input [5:0] seq_num;
+        if exit_step == 11: return False
 
     # moved before camsync to have a valid timestamo w/o special waiting            
         if verbose >0 :
@@ -186,13 +263,14 @@ class X393SensCmprs(object):
             window_left =      window_left >> 4,        # input [31:0] window_left;
             window_top =       window_top);             # input [31:0] window_top;
     # Enable arbitration of sensor-to-memory controller
+        if exit_step == 12: return False
+
         self.x393_axi_tasks.enable_memcntrl_en_dis(8 + num_sensor, True);
+        if exit_step == 13: return False
+
         self.x393Cmprs.compressor_control(chn =  num_sensor,
                                           run_mode = 0) # reset compressor
         #TODO: Calculate from the image size?
-        num_macro_cols_m1 = 3
-        num_macro_rows_m1 = 1
-        left_margin = 1
         self.x393Cmprs.setup_compressor_channel (
                                   num_sensor = num_sensor,
                                   qbank =             0,
@@ -203,12 +281,14 @@ class X393SensCmprs(object):
                                   focus_mode  =       0,
                                   num_macro_cols_m1 = num_macro_cols_m1,
                                   num_macro_rows_m1 = num_macro_rows_m1,
-                                  left_margin =       left_margin,
+                                  left_margin =       compressor_left_margin,
                                   colorsat_blue =     colorsat_blue,
                                   colorsat_red =      colorsat_red,
                                   coring =            0,
                                   verbose =           verbose)
     # TODO: calculate widths correctly!
+        if exit_step == 14: return False
+
         self.x393Cmprs.setup_compressor_memory (
             num_sensor =       num_sensor,
             frame_sa =         frame_start_address,     # input [31:0] frame_sa;         # 22-bit frame start address ((3 CA LSBs==0. BA==0)
@@ -223,10 +303,14 @@ class X393SensCmprs(object):
             tile_width =       2,
             extra_pages =      1,
             disable_need =     1)
+
+        if exit_step == 15: return False
     
         self.x393Cmprs.compressor_control(
                        num_sensor = num_sensor,
                        run_mode =   3)  # run repetitive mode
+
+        if exit_step == 16: return False
         #Set up delays separately, outside of this method
         """   
         if verbose >0 :
@@ -264,6 +348,9 @@ class X393SensCmprs(object):
                            clk_sel =    clk_sel,
                            set_delays = False,
                            quadrants =  None)
+
+        if exit_step == 17: return False
+
         """
         if verbose >0 :
             print ("===================== I2C_TEST =========================")
@@ -322,6 +409,8 @@ class X393SensCmprs(object):
                                    confirm_write = True,
                                    cache_mode = 3)
 
+        if exit_step == 18: return False
+
         # Run after histogram channel is set up?
         if verbose >0 :
             print ("===================== SENSOR_SETUP =========================")
@@ -338,6 +427,8 @@ class X393SensCmprs(object):
     # just temporarily - enable channel immediately
         self.x393_axi_tasks.enable_memcntrl_en_dis(12 + num_sensor, True);
 
+        if exit_step == 19: return False
+
         if verbose >0 :
             print ("===================== GAMMA_CTL =========================")
         self.x393Sensor.set_sensor_gamma_ctl (# doing last to enable sesnor data when everything else is set up
@@ -347,5 +438,151 @@ class X393SensCmprs(object):
             en_input =   True,
             repet_mode = True, #  Normal mode, single trigger - just for debugging  TODO: re-assign?
             trig = False)
+        return True
+    def setup_all_sensors (self,
+                              exit_step =                 None,
+                              sensor_mask =               0x1, # channel 0 only
+                              gamma_load =                False,
+#                              histogram_start_phys_page, # Calculate from?
+#                              frame_full_width, # 13-bit Padded line length (8-row increment), in 8-bursts (16 bytes)
+                              window_width =              2592,   # 2592
+                              window_height =             1944,   # 1944
+                              window_left =               0,     # 0
+                              window_top =                0, # 0? 1?
+                              compressor_left_margin =    0, #0?`1? 
+#                              frame_start_address, # calculate through num_sensor, num frames, frame size and start addr?
+#                              frame_start_address_inc,
+                              last_buf_frame =            1,  #  - just 2-frame buffer
+                              colorsat_blue =             0x180,     # 0x90 fo 1x
+                              colorsat_red =              0x16c,     # 0xb6 for x1
+                              clk_sel =                   1,         # 1
+                              histogram_left =            0,
+                              histogram_top =             0,
+                              histogram_width_m1 =        0,
+                              histogram_height_m1 =       0,
+                              
+                              verbose =                   1):
+        """
+        Setup one sensor+compressor channel (for one sub-channel only)
+        @param exit_step -         exit after executing specified step:
+                                1 - after power and clock
+                                2 - exit after GPIO setup
+                                3 - exit after RTC setup
+                                10..19 - exit from setup_sensor_channel:
+                                   10 - just after printing calculated values
+                                   11 - after programming status
+                                   12 - after setup_sensor_memory
+                                   13 - after enabling memory controller for the sensor channel
+                                   14 - after setup_compressor_channel
+                                   15 - after setup_compressor_memory
+                                   16 - after compressor run
+                                   17 - removing MRST from the sensor
+                                   18 - after vignetting, gamma and histograms setup
+                                   19 - enabling sensor memory controller (histograms in not yet)
+                                20 - after setup_sensor_channel
+                                21 - after afi_mux_setup
+        @param sensor_mask -       bitmap of the selected channels (1 - only channel 0, 0xf - all channels)
+        @param gamma_load -        load gamma table TODO: Change to calculate and load table
+        @param window_width -      (here - in pixels)
+        @param window_height -     16-bit window height in scan lines
+        @param window_left -       left margin of the window (here - in pixels)
+        @param window_top -        top margin of the window (16 bit)
+        @param compressor_left_margin - 0..31 - left margin for compressor (to the nearest 32-byte column)
+        @param last_buf_frame) -   16-bit number of the last frame in a buffer
+        @param colorsat_blue - color saturation for blue (10 bits), 0x90 for 100%
+        @param colorsat_red -  color saturation for red (10 bits), 0xb6 for 100%
+        @param clk_sel - True - use pixel clock from the sensor, False - use internal clock (provided to the sensor), None - no chnage
+        @param histogram_left -      histogram window left margin
+        @param histogram_top -       histogram window top margin
+        @param histogram_width_m1 -  one less than window width. If 0 - use frame right margin (end of HACT)
+        @param histogram_height_m1 - one less than window height. If 0 - use frame bottom margin (end of VACT)
+        @parame verbose - verbose level
+        @return True if all done, False if exited prematurely by  exit_step
+        """
+        if sensor_mask & 3: # Need mower for sesns1 and sens 2
+            if verbose >0 :
+                print ("===================== Sensor power setup: sensor ports 0 and 1 =========================")
+            self.setSensorPower(sub_pair=0, power_on=1)
+        if sensor_mask & 0xc: # Need mower for sesns1 and sens 2
+            if verbose >0 :
+                print ("===================== Sensor power setup: sensor ports 2 and 3 =========================")
+            self.setSensorPower(sub_pair=1, power_on=1)
+        if verbose >0 :
+            print ("===================== Sensor clock setup 24MHz (will output 96MHz) =========================")
+        self.setSensorClock(freq_MHz = 24.0)
+        if exit_step == 1: return False
+        if verbose >0 :
+            print ("===================== GPIO_SETUP =========================")
+            
+        self.x393GPIO.program_status_gpio (
+                                       mode =    3,   # input [1:0] mode;
+                                       seq_num = 0)   # input [5:0] seq_num;
+
+        if exit_step == 2: return False
+        if verbose >0 :
+            print ("===================== RTC_SETUP =========================")
+        self.x393Rtc.program_status_rtc( # also takes snapshot
+                                     mode =    1, # 3,     # input [1:0] mode;
+                                     seq_num = 0)     #input [5:0] seq_num;
+            
+        self.x393Rtc.set_rtc () # no correction, use current system time
+        if exit_step == 3: return False
         
- 
+#    camsync_setup (
+#        4'hf ); # sensor_mask); #
+    #TODO: calculate addersses/lengths
+        afi_cmprs0_sa = 0 
+        afi_cmprs1_sa = 0
+        afi_cmprs2_sa = 0
+        afi_cmprs3_sa = 0
+        afi_cmprs_len = 0    
+
+        for num_sensor in range(4):
+            if sensor_mask & (1 << num_sensor):
+                if verbose >0 :
+                    print ("===================== SENSOR%d_SETUP ========================="%(num_sensor+1))
+                if gamma_load:    
+                    if verbose >0 :
+                        print ("===================== GAMMA_LOAD =========================")
+                    self.x393_sensor.program_curves(
+                                                    num_sensor = num_sensor,  #num_sensor,  # input   [1:0] num_sensor;
+                                                    sub_channel = 0)          # input   [1:0] sub_channel;    
+                rslt = self.setup_sensor_channel (
+                          exit_step =               exit_step,      # 10 .. 19
+                          num_sensor =              num_sensor,
+                          window_width =            window_width,   # 2592
+                          window_height =           window_height,   # 1944
+                          window_left =             window_left,     # 0
+                          window_top =              window_top, # 0? 1?
+                          compressor_left_margin =  compressor_left_margin, #0?`1? 
+                          last_buf_frame =          last_buf_frame,  #  - just 2-frame buffer
+                          colorsat_blue =           colorsat_blue,     # 0x90 fo 1x
+                          colorsat_red =            colorsat_red,     # 0xb6 for x1
+                          clk_sel =                 clk_sel,         # 1
+                          histogram_left =          histogram_left,
+                          histogram_top =           histogram_top,
+                          histogram_width_m1 =      histogram_width_m1,
+                          histogram_height_m1 =     histogram_height_m1,
+                          verbose =                 verbose)
+                if not rslt : return False
+                if exit_step == 20: return False
+                self.x393CmprsAfi.afi_mux_setup (
+                                       port_afi =       0,
+                                       chn_mask =       sensor_mask,
+                                       status_mode =    3, # = 3,
+                                        # mode == 0 - show EOF pointer, internal
+                                        # mode == 1 - show EOF pointer, confirmed written to the system memory
+                                        # mode == 2 - show current pointer, internal
+                                        # mode == 3 - show current pointer, confirmed written to the system memory
+                                       report_mode =    0, # = 0,
+                                       afi_cmprs0_sa =  afi_cmprs0_sa,
+                                       afi_cmprs0_len = afi_cmprs_len,
+                                       afi_cmprs1_sa =  afi_cmprs1_sa,
+                                       afi_cmprs1_len = afi_cmprs_len,
+                                       afi_cmprs2_sa =  afi_cmprs2_sa,
+                                       afi_cmprs2_len = afi_cmprs_len,
+                                       afi_cmprs3_sa =  afi_cmprs3_sa,
+                                       afi_cmprs3_len = afi_cmprs_len)    
+                if exit_step == 21: return False
+
+        self.x393_camsync_setup ( sensor_mask = sensor_mask ) # sensor_mask); #

@@ -37,7 +37,7 @@ import x393_axi_control_status
 
 import x393_utils
 
-#import time
+import time
 import vrlg
 class X393GPIO(object):
     DRY_MODE= True # True
@@ -95,7 +95,7 @@ class X393GPIO(object):
             data |= (2,3)[port_a] << 4
         if not port_c is None:
             data |= (2,3)[port_a] << 6
-        self.x393_axi_tasks.write_contol_register(vrlg.GPIO_ADDR +  vrlg.GPIO_SET_PINS, data << vrlg.GPIO_PORTEN)
+        self.x393_axi_tasks.write_control_register(vrlg.GPIO_ADDR +  vrlg.GPIO_SET_PINS, data << vrlg.GPIO_PORTEN)
         
     def set_gpio_pins(self,
                        ext0 = None,
@@ -133,5 +133,5 @@ class X393GPIO(object):
                     data |= 3 << (2*i)
                 else:
                     raise Exception ("Expecting one of 'L', 'H', 'I', got "+str(e)+" for ext"+str(i))
-        self.x393_axi_tasks.write_contol_register(vrlg.GPIO_ADDR +  vrlg.GPIO_SET_PINS, data)
+        self.x393_axi_tasks.write_control_register(vrlg.GPIO_ADDR +  vrlg.GPIO_SET_PINS, data)
 

@@ -80,7 +80,7 @@ class X393PIOSequences(object):
         <chn>            sub-channel to use: 0 - memory read, 1 - memory write
         <wait_complete>  Do not request a new transaction from the scheduler until previous memory transaction is finished
         """
-        self.x393_axi_tasks.write_contol_register(vrlg.MCNTRL_PS_ADDR + vrlg.MCNTRL_PS_CMD,
+        self.x393_axi_tasks.write_control_register(vrlg.MCNTRL_PS_ADDR + vrlg.MCNTRL_PS_CMD,
                                                   # {17'b0,
                                                   ((0,1)[wait_complete]<<14) |
                                                   ((0,1)[chn]<<13) |
@@ -435,7 +435,7 @@ class X393PIOSequences(object):
         <rst>  1 - reset active, 0 - reset off
         """
         
-        self.x393_axi_tasks.write_contol_register(vrlg.MCNTRL_PS_ADDR + vrlg.MCNTRL_PS_EN_RST,
+        self.x393_axi_tasks.write_control_register(vrlg.MCNTRL_PS_ADDR + vrlg.MCNTRL_PS_EN_RST,
                                    ((0,1)[en]<<1) | #{30'b0,en,
                                    (1,0)[rst])  #~rst});
    
@@ -817,12 +817,12 @@ class X393PIOSequences(object):
         data=self.func_encode_skip(  0,       1,           0,                        0,  0,  0,  0,    0,    0,    0,  0,   0,        0)
         self.x393_mem.axi_write_single_w(cmd_addr, data, verbose)
         cmd_addr += 1
-#            write_contol_register(DLY_SET,0);
-        self.x393_axi_tasks.write_contol_register(vrlg.MCONTR_TOP_16BIT_ADDR + vrlg.MCONTR_TOP_16BIT_REFRESH_ADDRESS, vrlg.REFRESH_OFFSET)
-        self.x393_axi_tasks.write_contol_register(vrlg.MCONTR_TOP_16BIT_ADDR + vrlg.MCONTR_TOP_16BIT_REFRESH_PERIOD, t_refi)
+#            write_control_register(DLY_SET,0);
+        self.x393_axi_tasks.write_control_register(vrlg.MCONTR_TOP_16BIT_ADDR + vrlg.MCONTR_TOP_16BIT_REFRESH_ADDRESS, vrlg.REFRESH_OFFSET)
+        self.x393_axi_tasks.write_control_register(vrlg.MCONTR_TOP_16BIT_ADDR + vrlg.MCONTR_TOP_16BIT_REFRESH_PERIOD, t_refi)
         # enable refresh - should it be done here?
         if en_refresh:
-            self.x393_axi_tasks.write_contol_register(vrlg.MCONTR_PHY_0BIT_ADDR +  vrlg.MCONTR_TOP_0BIT_REFRESH_EN + 1, 0)
+            self.x393_axi_tasks.write_control_register(vrlg.MCONTR_PHY_0BIT_ADDR +  vrlg.MCONTR_TOP_0BIT_REFRESH_EN + 1, 0)
 
 
     def set_mrs(self,       # will also calibrate ZQ

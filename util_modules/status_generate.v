@@ -218,7 +218,9 @@ module  status_generate_extra #(
     localparam ALIGNED_STATUS_WIDTH = ((NUM_BYTES - 2) << 3) + 2; // 2 ->2,
     // ugly solution to avoid warnings in unused "if" branch
     localparam ALIGNED_STATUS_BIT_2 = (ALIGNED_STATUS_WIDTH > 2) ? 2 : 0;
-    localparam STATUS_MASK = (1 << (NUM_BYTES) -1) - 1;   
+    localparam STATUS_MASK = (1 << (NUM_BYTES) -1) - 1;
+    
+//    localparam [EXTRA_WORDS:0] START1HOT = 1 << EXTRA_WORDS;   
     
     wire                [1:0] mode_w;
     reg                 [1:0] mode;
@@ -255,11 +257,14 @@ module  status_generate_extra #(
               {{(26-ALIGNED_STATUS_WIDTH){1'b0}},aligned_status[ALIGNED_STATUS_WIDTH-1:ALIGNED_STATUS_BIT_2],seq,aligned_status[1:0]}:
               {                                  aligned_status[ALIGNED_STATUS_WIDTH-1:ALIGNED_STATUS_BIT_2],seq,aligned_status[1:0]}):
               {24'b0,seq,aligned_status[1:0]};
+              
+    reg                        shift_data;          
     genvar i;
     generate
         for (i = 0; i <  (1<<EXTRA_WORDS_LN2); i=i+1) begin:gen_cyc1
             assign pre_mux[32 * i +: 32] = (i < EXTRA_WORDS)?  //status[PAYLOAD_BITS + 32*i +:32] : // actually change order!
-                                               {status[PAYLOAD_BITS + 32*i + 24 +:8],status[PAYLOAD_BITS + 32*i +:24] }:
+//                                               {status[PAYLOAD_BITS + 32*i + 24 +:8],status[PAYLOAD_BITS + 32*i +:24] }:
+                                               {status[PAYLOAD_BITS + 32*i +:24],status[PAYLOAD_BITS + 32*i + 24 +:8]}:
                                                (((i == EXTRA_WORDS) && (PAYLOAD_BITS > 0)) ? status32 : dont_care);
         end
     endgenerate
@@ -308,16 +313,18 @@ module  status_generate_extra #(
         else if (srst)             status_r <= 0;
         else if (start_last)       status_r <= status_r0;
         
-        if      (rst)                                   next_addr <= first_addr;
-        else if (srst)                                  next_addr <= first_addr;
-        else if (!need_to_send || start_last)           next_addr <= first_addr;
-        else if (start && (msg1hot[EXTRA_WORDS -1:0]))  next_addr <= STATUS_REG_ADDR;
-        else if (start)                                 next_addr <= next_addr + 1;
+        if      (rst)                                     next_addr <= first_addr;
+        else if (srst)                                    next_addr <= first_addr;
+        else if (!need_to_send || start_last)             next_addr <= first_addr;
+//        else if (start && (msg1hot[EXTRA_WORDS -1:0]))     next_addr <= STATUS_REG_ADDR;
+        else if (start && (msg1hot[EXTRA_WORDS -1]))      next_addr <= STATUS_REG_ADDR;
+        else if (start)                                   next_addr <= next_addr + 1;
 
-        if      (rst)                                   next_mask <= first_mask;
-        else if (srst)                                  next_mask <= first_mask;
-        else if (!need_to_send || start_last)           next_mask <= first_mask;
-        else if (start && (msg1hot[EXTRA_WORDS -1 :0])) next_mask <= STATUS_MASK;
+        if      (rst)                                     next_mask <= first_mask;
+        else if (srst)                                    next_mask <= first_mask;
+        else if (!need_to_send || start_last)             next_mask <= first_mask;
+//        else if (start && (msg1hot[EXTRA_WORDS -1 :0]))  next_mask <= STATUS_MASK;
+        else if (start && (msg1hot[EXTRA_WORDS -1]))      next_mask <= STATUS_MASK;
 
         if      (rst)                      rq_r <= 0;
         else if (srst)                     rq_r <= 0;
@@ -330,17 +337,24 @@ module  status_generate_extra #(
         else if (!need_to_send) msg_num <= 0;
         else if (start)         msg_num <= msg_num + 1;
 
-        if      (rst)           msg1hot <= 0;
-        else if (srst)          msg1hot <= 0;
-        else if (!need_to_send) msg1hot <= 0;
-        else if (start)         msg1hot <= msg1hot >> 1;
-        
-            
+        if      (rst)           msg1hot <= 1;
+        else if (srst)          msg1hot <= 1;
+        else if (!need_to_send) msg1hot <= 1;
+//        else if (start) begin
+//            if (|msg1hot)       msg1hot <= (msg1hot >> 1);
+//            else                msg1hot <= 1 << (NUM_MSG-1);
+//        end
+        else if (start)         if (|msg1hot)       msg1hot <= msg1hot << 1;
+
+        if      (rst)                shift_data <= 0;
+        else if (srst || !rq)        shift_data <= 0;
+        else if (start)              shift_data <= 1;     
     end
     
     always @ (posedge clk) begin
-        if      (!rq)            data <= {next_addr, pre_mux[32 * msg_num +:32]};
-        else if (start || start) data <= data >> 8;
+//        if      (!rq)                 data <= {next_addr, pre_mux[32 * msg_num +:32]};
+        if      (!rq)                 data <= {pre_mux[32 * msg_num +:32], next_addr};
+        else if (start || shift_data) data <= data >> 8;
     end
  //http://www.edaboard.com/thread177879.html
     function integer clogb2;

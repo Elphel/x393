@@ -182,7 +182,7 @@ class X393Cmprs(object):
         data = self.func_compressor_format (num_macro_cols_m1 = num_macro_cols_m1,
                                             num_macro_rows_m1 = num_macro_rows_m1,
                                             left_margin =       left_margin)
-        self.x393_axi_tasks.write_contol_register(vrlg.CMPRS_GROUP_ADDR +  chn * vrlg.CMPRS_BASE_INC + vrlg.CMPRS_FORMAT,
+        self.x393_axi_tasks.write_control_register(vrlg.CMPRS_GROUP_ADDR +  chn * vrlg.CMPRS_BASE_INC + vrlg.CMPRS_FORMAT,
                                                   data)
 
     def compressor_color_saturation (self,
@@ -196,7 +196,7 @@ class X393Cmprs(object):
         """
         data = self.func_compressor_color_saturation (colorsat_blue = colorsat_blue,
                                                       colorsat_red = colorsat_red)
-        self.x393_axi_tasks.write_contol_register(vrlg.CMPRS_GROUP_ADDR +  chn * vrlg.CMPRS_BASE_INC + vrlg.CMPRS_COLOR_SATURATION,
+        self.x393_axi_tasks.write_control_register(vrlg.CMPRS_GROUP_ADDR +  chn * vrlg.CMPRS_BASE_INC + vrlg.CMPRS_COLOR_SATURATION,
                                                   data)
 
     def compressor_coring (self,
@@ -207,7 +207,7 @@ class X393Cmprs(object):
         @param coring - coring value
         """
         data = coring & ((1 << vrlg.CMPRS_CORING_BITS) - 1)
-        self.x393_axi_tasks.write_contol_register(vrlg.CMPRS_GROUP_ADDR +  chn * vrlg.CMPRS_BASE_INC + vrlg.CMPRS_CORING_MODE,
+        self.x393_axi_tasks.write_control_register(vrlg.CMPRS_GROUP_ADDR +  chn * vrlg.CMPRS_BASE_INC + vrlg.CMPRS_CORING_MODE,
                                                   data)
 
     def compressor_control (self,
@@ -251,7 +251,7 @@ class X393Cmprs(object):
                             multi_frame = multi_frame,
                             bayer =       bayer,
                             focus_mode =  focus_mode)
-        self.x393_axi_tasks.write_contol_register(vrlg.CMPRS_GROUP_ADDR +  chn * vrlg.CMPRS_BASE_INC + vrlg.CMPRS_CONTROL_REG,
+        self.x393_axi_tasks.write_control_register(vrlg.CMPRS_GROUP_ADDR +  chn * vrlg.CMPRS_BASE_INC + vrlg.CMPRS_CONTROL_REG,
                                                   data)
     def setup_compressor_memory (self,
                                  num_sensor,
@@ -297,31 +297,31 @@ class X393Cmprs(object):
                                    write_mem =    False,
                                    enable =       True,
                                    chn_reset =    False)
-        self.x393_axi_tasks.write_contol_register(
+        self.x393_axi_tasks.write_control_register(
                                     base_addr + vrlg.MCNTRL_TILED_STARTADDR,
                                     frame_sa) # RA=80, CA=0, BA=0 22-bit frame start address (3 CA LSBs==0. BA==0)
-        self.x393_axi_tasks.write_contol_register(
+        self.x393_axi_tasks.write_control_register(
                                     base_addr + vrlg.MCNTRL_TILED_FRAME_SIZE,
                                     frame_sa_inc)
-        self.x393_axi_tasks.write_contol_register(
+        self.x393_axi_tasks.write_control_register(
                                     base_addr + vrlg.MCNTRL_TILED_FRAME_LAST,
                                     last_frame_num)
-        self.x393_axi_tasks.write_contol_register(
+        self.x393_axi_tasks.write_control_register(
                                     base_addr + vrlg.MCNTRL_TILED_FRAME_FULL_WIDTH,
                                     frame_full_width)
-        self.x393_axi_tasks.write_contol_register(
+        self.x393_axi_tasks.write_control_register(
                                     base_addr + vrlg.MCNTRL_TILED_WINDOW_WH,
                                     ((window_height & 0xffff) << 16) | (window_width & 0xffff)) #/WINDOW_WIDTH + (WINDOW_HEIGHT<<16));
-        self.x393_axi_tasks.write_contol_register(
+        self.x393_axi_tasks.write_control_register(
                                     base_addr + vrlg.MCNTRL_TILED_WINDOW_X0Y0,
                                     ((window_top & 0xffff) << 16) | (window_left & 0xffff)) #WINDOW_X0+ (WINDOW_Y0<<16));
-        self.x393_axi_tasks.write_contol_register(
+        self.x393_axi_tasks.write_control_register(
                                     base_addr + vrlg.MCNTRL_TILED_WINDOW_STARTXY,
                                     0)
-        self.x393_axi_tasks.write_contol_register(
+        self.x393_axi_tasks.write_control_register(
                                     base_addr + vrlg.MCNTRL_TILED_TILE_WHS,
                                     ((tile_vstep & 0xff) <<16) | ((tile_height & 0xff) <<8) | (tile_width & 0xff)) #//(tile_height<<8)+(tile_vstep<<16));
-        self.x393_axi_tasks.write_contol_register(
+        self.x393_axi_tasks.write_control_register(
                                     base_addr + vrlg.MCNTRL_TILED_MODE,
                                     mode); 
     def compressor_run(self, # may use compressor_control with the same arguments

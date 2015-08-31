@@ -36,7 +36,7 @@ import x393_axi_control_status
 import x393_pio_sequences
 import x393_mcntrl_timing
 import x393_mcntrl_buffers 
-import verilog_utils 
+#import verilog_utils 
 import x393_mcntrl
 MEM_PATH='/sys/devices/elphel393-mem.2/'
 BUFFER_ASSRESS_NAME='buffer_address'
@@ -118,7 +118,7 @@ class X393McntrlMembridge(object):
                 with open(MEM_PATH+BUFFER_PAGES_NAME) as sysfile:
                     BUFFER_LEN=PAGE_SIZE*int(sysfile.read(),0)
             except:
-                print("Failed to get resderved physical memory range")
+                print("Failed to get reserved physical memory range")
                 print('BUFFER_ADDRESS=',BUFFER_ADDRESS)    
                 print('BUFFER_LEN=',BUFFER_LEN)    
                 return
@@ -206,12 +206,12 @@ class X393McntrlMembridge(object):
         
         if quiet <2:
             print("membridge_setup(0x%08x,0x%0xx,0x%08x,0x%0xx,0x%08x,%d)"%(len64, width64, start64, lo_addr64, size64, quiet))
-        self.x393_axi_tasks.write_contol_register(vrlg.MEMBRIDGE_ADDR + vrlg.MEMBRIDGE_LO_ADDR64,  lo_addr64);    
-        self.x393_axi_tasks.write_contol_register(vrlg.MEMBRIDGE_ADDR + vrlg.MEMBRIDGE_SIZE64,     size64);    
-        self.x393_axi_tasks.write_contol_register(vrlg.MEMBRIDGE_ADDR + vrlg.MEMBRIDGE_START64,    start64);    
-        self.x393_axi_tasks.write_contol_register(vrlg.MEMBRIDGE_ADDR + vrlg.MEMBRIDGE_LEN64,      len64);    
-        self.x393_axi_tasks.write_contol_register(vrlg.MEMBRIDGE_ADDR + vrlg.MEMBRIDGE_WIDTH64,    width64);    
-        self.x393_axi_tasks.write_contol_register(vrlg.MEMBRIDGE_ADDR + vrlg.MEMBRIDGE_MODE,       cache);    
+        self.x393_axi_tasks.write_control_register(vrlg.MEMBRIDGE_ADDR + vrlg.MEMBRIDGE_LO_ADDR64,  lo_addr64);    
+        self.x393_axi_tasks.write_control_register(vrlg.MEMBRIDGE_ADDR + vrlg.MEMBRIDGE_SIZE64,     size64);    
+        self.x393_axi_tasks.write_control_register(vrlg.MEMBRIDGE_ADDR + vrlg.MEMBRIDGE_START64,    start64);    
+        self.x393_axi_tasks.write_control_register(vrlg.MEMBRIDGE_ADDR + vrlg.MEMBRIDGE_LEN64,      len64);    
+        self.x393_axi_tasks.write_control_register(vrlg.MEMBRIDGE_ADDR + vrlg.MEMBRIDGE_WIDTH64,    width64);    
+        self.x393_axi_tasks.write_control_register(vrlg.MEMBRIDGE_ADDR + vrlg.MEMBRIDGE_MODE,       cache);    
 
     def membridge_start(self,
                         cont=False,
@@ -221,8 +221,8 @@ class X393McntrlMembridge(object):
         @param cont - continue with the current system memory pointer, False - start with lo_addr64+start64
         @quiet reduce output (>=1 - silent)
         '''
-        self.x393_axi_tasks.write_contol_register(vrlg.MEMBRIDGE_ADDR + vrlg.MEMBRIDGE_CTRL,  (0x3,0x7)[cont]);    
-#        write_contol_register(MEMBRIDGE_ADDR + MEMBRIDGE_CTRL,         {29'b0,continue,2'b11});    
+        self.x393_axi_tasks.write_control_register(vrlg.MEMBRIDGE_ADDR + vrlg.MEMBRIDGE_CTRL,  (0x3,0x7)[cont]);    
+#        write_control_register(MEMBRIDGE_ADDR + MEMBRIDGE_CTRL,         {29'b0,continue,2'b11});    
 
     def membridge_en(self,
                      en=True,
@@ -232,8 +232,8 @@ class X393McntrlMembridge(object):
         @param en True - enable, False - disable AXI transfers (reset "Done" if AFI is idle
         @quiet reduce output (>=1 - silent)
         '''
-        self.x393_axi_tasks.write_contol_register(vrlg.MEMBRIDGE_ADDR + vrlg.MEMBRIDGE_CTRL,  (0,1)[en]);    
-#       write_contol_register(MEMBRIDGE_ADDR + MEMBRIDGE_CTRL,         {31'b0,en});
+        self.x393_axi_tasks.write_control_register(vrlg.MEMBRIDGE_ADDR + vrlg.MEMBRIDGE_CTRL,  (0,1)[en]);    
+#       write_control_register(MEMBRIDGE_ADDR + MEMBRIDGE_CTRL,         {31'b0,en});
 
     def membridge_rw (self,
                       write_ddr3,                                   # input        write_ddr3;
@@ -317,17 +317,17 @@ class X393McntrlMembridge(object):
                                    enable =       True,
                                    chn_reset =    False)
 
-#        self.x393_axi_tasks.write_contol_register(vrlg.MEMBRIDGE_ADDR + vrlg.MEMBRIDGE_WIDTH64,    width64);    
-#        self.x393_axi_tasks.write_contol_register(vrlg.MCNTRL_SCANLINE_CHN1_ADDR + vrlg.MCNTRL_SCANLINE_MODE,             0); # reset channel, including page address
-        self.x393_axi_tasks.write_contol_register(vrlg.MCNTRL_SCANLINE_CHN1_ADDR + vrlg.MCNTRL_SCANLINE_STARTADDR,        frame_start_addr) # RA=80, CA=0, BA=0 22-bit frame start address (3 CA LSBs==0. BA==0) 
-        self.x393_axi_tasks.write_contol_register(vrlg.MCNTRL_SCANLINE_CHN1_ADDR + vrlg.MCNTRL_SCANLINE_FRAME_FULL_WIDTH, window_full_width);
-        self.x393_axi_tasks.write_contol_register(vrlg.MCNTRL_SCANLINE_CHN1_ADDR + vrlg.MCNTRL_SCANLINE_WINDOW_WH,        (window_height << 16) | window_width) # WINDOW_WIDTH + (WINDOW_HEIGHT<<16));
-        self.x393_axi_tasks.write_contol_register(vrlg.MCNTRL_SCANLINE_CHN1_ADDR + vrlg.MCNTRL_SCANLINE_WINDOW_X0Y0,      (window_top << 16) | window_left)     # WINDOW_X0+ (WINDOW_Y0<<16));
-        self.x393_axi_tasks.write_contol_register(vrlg.MCNTRL_SCANLINE_CHN1_ADDR + vrlg.MCNTRL_SCANLINE_WINDOW_STARTXY,   0)
-        self.x393_axi_tasks.write_contol_register(vrlg.MCNTRL_SCANLINE_CHN1_ADDR + vrlg.MCNTRL_SCANLINE_MODE,             mode) 
+#        self.x393_axi_tasks.write_control_register(vrlg.MEMBRIDGE_ADDR + vrlg.MEMBRIDGE_WIDTH64,    width64);    
+#        self.x393_axi_tasks.write_control_register(vrlg.MCNTRL_SCANLINE_CHN1_ADDR + vrlg.MCNTRL_SCANLINE_MODE,             0); # reset channel, including page address
+        self.x393_axi_tasks.write_control_register(vrlg.MCNTRL_SCANLINE_CHN1_ADDR + vrlg.MCNTRL_SCANLINE_STARTADDR,        frame_start_addr) # RA=80, CA=0, BA=0 22-bit frame start address (3 CA LSBs==0. BA==0) 
+        self.x393_axi_tasks.write_control_register(vrlg.MCNTRL_SCANLINE_CHN1_ADDR + vrlg.MCNTRL_SCANLINE_FRAME_FULL_WIDTH, window_full_width);
+        self.x393_axi_tasks.write_control_register(vrlg.MCNTRL_SCANLINE_CHN1_ADDR + vrlg.MCNTRL_SCANLINE_WINDOW_WH,        (window_height << 16) | window_width) # WINDOW_WIDTH + (WINDOW_HEIGHT<<16));
+        self.x393_axi_tasks.write_control_register(vrlg.MCNTRL_SCANLINE_CHN1_ADDR + vrlg.MCNTRL_SCANLINE_WINDOW_X0Y0,      (window_top << 16) | window_left)     # WINDOW_X0+ (WINDOW_Y0<<16));
+        self.x393_axi_tasks.write_control_register(vrlg.MCNTRL_SCANLINE_CHN1_ADDR + vrlg.MCNTRL_SCANLINE_WINDOW_STARTXY,   0)
+        self.x393_axi_tasks.write_control_register(vrlg.MCNTRL_SCANLINE_CHN1_ADDR + vrlg.MCNTRL_SCANLINE_MODE,             mode) 
         self.x393_axi_tasks.configure_channel_priority(1,0);    # lowest priority channel 1
         self.x393_axi_tasks.enable_memcntrl_en_dis(1,1);
-#        write_contol_register(test_mode_address,            TEST01_START_FRAME);
+#        write_control_register(test_mode_address,            TEST01_START_FRAME);
         self.afi_setup(0)
         self.membridge_setup(
             (window_width << 1)*window_height, # ((window_width[12:0]==0)? 15'h4000 : {1'b0,window_width[12:0],1'b0})*window_height[13:0], #len64,

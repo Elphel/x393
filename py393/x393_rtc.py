@@ -37,7 +37,7 @@ import x393_axi_control_status
 
 import x393_utils
 
-#import time
+import time
 import vrlg
 class X393Rtc(object):
     DRY_MODE= True # True
@@ -76,17 +76,23 @@ class X393Rtc(object):
                                             mode,
                                             seq_num)
     def set_rtc(self,    
-                    sec,
-                    usec,
-                    corr):
+                    sec =  None,
+                    usec = 0,
+                    corr = 0):
         """
         Set RTC time and correction
         @param sec -  number of seconds (usually epoch)
         @param usec - number of microseconds
         @parame corr signed 16-bit correction (full range is +/- 1/256
         """
-        self.x393_axi_tasks.write_contol_register(vrlg.RTC_ADDR + vrlg.RTC_SET_CORR, corr);
-        self.x393_axi_tasks.write_contol_register(vrlg.RTC_ADDR + vrlg.RTC_SET_USEC, usec);
-        self.x393_axi_tasks.write_contol_register(vrlg.RTC_ADDR + vrlg.RTC_SET_SEC,  sec);
+#>>> time.time()
+#1440958713.117321
+        if sec is None:
+            t =  time.time()
+            sec = int (t)
+            usec = int (1000 * (t - sec))
+        self.x393_axi_tasks.write_control_register(vrlg.RTC_ADDR + vrlg.RTC_SET_CORR, corr);
+        self.x393_axi_tasks.write_control_register(vrlg.RTC_ADDR + vrlg.RTC_SET_USEC, usec);
+        self.x393_axi_tasks.write_control_register(vrlg.RTC_ADDR + vrlg.RTC_SET_SEC,  sec);
 
  

@@ -124,7 +124,7 @@ class X393AxiControlStatus(object):
         return refresh_en
     def get_enabled_channels(self,quiet=1):
 #        global  enabled_channels
-        enabled_channels = self.read_contol_register(vrlg.MCONTR_TOP_16BIT_ADDR + vrlg.MCONTR_TOP_16BIT_CHN_EN)        
+        enabled_channels = self.read_control_register(vrlg.MCONTR_TOP_16BIT_ADDR + vrlg.MCONTR_TOP_16BIT_CHN_EN)        
         if quiet<2 :
             print ("ENABLED_CHANNELS =  0x%x"%enabled_channels)
         return enabled_channels
@@ -135,7 +135,7 @@ class X393AxiControlStatus(object):
         if quiet<2 :
             print ("CHANNEL PRIORITIES:",end=" ")
             for chn in range (16):
-                v = self.read_contol_register(vrlg.MCONTR_ARBIT_ADDR + chn)
+                v = self.read_control_register(vrlg.MCONTR_ARBIT_ADDR + chn)
                 print ("%d"%v,end=" ")
                 channel_priority.append(v)
             """                
@@ -160,7 +160,7 @@ class X393AxiControlStatus(object):
         'sequences_set':      self.get_sequences_set(quiet)
         }
         
-    def write_contol_register(self, reg_addr, data):
+    def write_control_register(self, reg_addr, data):
         """
         Write 32-bit word to the control register
         @param addr - register address relative to the control register address space
@@ -168,7 +168,7 @@ class X393AxiControlStatus(object):
         """
         self.x393_mem.axi_write_single_w(vrlg.CONTROL_ADDR+reg_addr, data)
 
-    def read_contol_register(self, reg_addr=None, quiet=1):
+    def read_control_register(self, reg_addr=None, quiet=1):
         """
         Read 32-bit word from the control register (written by the software or the command sequencer)
         @param  addr - register address relative to the control register address space
@@ -240,7 +240,7 @@ class X393AxiControlStatus(object):
             data=self.read_status(status_address)
             if wait_seq:
                 seq_num = ((data >> vrlg.STATUS_SEQ_SHFT) ^ 0x20) & 0x30
-                self.write_contol_register(status_control_address, ((status_mode & 3) <<6) | (seq_num & 0x3f))
+                self.write_control_register(status_control_address, ((status_mode & 3) <<6) | (seq_num & 0x3f))
                 data=self.read_status(status_address)
                 while (((data >> vrlg.STATUS_SEQ_SHFT) ^ seq_num) & 0x30) !=0:
                     data=self.read_status(status_address)
@@ -281,7 +281,14 @@ class X393AxiControlStatus(object):
         print ("MCNTRL_TEST01_STATUS_REG_CHN3_ADDR:  %s"%(hx(self.read_status(vrlg.MCNTRL_TEST01_STATUS_REG_CHN3_ADDR),8)))
         print ("MCNTRL_TEST01_STATUS_REG_CHN4_ADDR:  %s"%(hx(self.read_status(vrlg.MCNTRL_TEST01_STATUS_REG_CHN4_ADDR),8)))
         print ("MEMBRIDGE_STATUS_REG:                %s"%(hx(self.read_status(vrlg.MEMBRIDGE_STATUS_REG),8)))
-
+        items_per_line = 8
+        for i in range (256):
+            if not i % items_per_line:
+                print ("\n0x%02x: "%(i), end = "") 
+            d=hx(self.read_status(i),8)
+            print ("%s "%(d), end = "")
+        print ()
+                 
     def program_status(self,
                        base_addr,   # input [29:0] base_addr;
                        reg_addr,    # input  [7:0] reg_addr;
@@ -298,7 +305,7 @@ class X393AxiControlStatus(object):
                                   4: auto, inc sequence number 
         <seq_number> - 6-bit sequence number of the status message to be sent
         """
-        self.write_contol_register(base_addr + reg_addr, ((mode & 3)<< 6) | (seq_number * 0x3f))
+        self.write_control_register(base_addr + reg_addr, ((mode & 3)<< 6) | (seq_number * 0x3f))
 
 
     def program_status_all( self,
@@ -337,7 +344,7 @@ class X393AxiControlStatus(object):
         en=(0,1)[en]
         if self.verbose>0:
             print ("ENABLE CMDA %s"%str(en))
-        self.write_contol_register(vrlg.MCONTR_PHY_0BIT_ADDR +  vrlg.MCONTR_PHY_0BIT_CMDA_EN + en, 0);
+        self.write_control_register(vrlg.MCONTR_PHY_0BIT_ADDR +  vrlg.MCONTR_PHY_0BIT_CMDA_EN + en, 0);
         cmda_en=en
             
     def enable_cke(self,
@@ -350,7 +357,7 @@ class X393AxiControlStatus(object):
         en=(0,1)[en]
         if self.verbose>0:
             print ("ENABLE CKE %s"%str(en))
-        self.write_contol_register(vrlg.MCONTR_PHY_0BIT_ADDR +  vrlg.MCONTR_PHY_0BIT_CKE_EN + en, 0);
+        self.write_control_register(vrlg.MCONTR_PHY_0BIT_ADDR +  vrlg.MCONTR_PHY_0BIT_CKE_EN + en, 0);
         cke_en=en
 
     def activate_sdrst(self,
@@ -363,7 +370,7 @@ class X393AxiControlStatus(object):
         en=(0,1)[en]
         if self.verbose>0:
             print ("ACTIVATE SDRST %s"%str(en))
-        self.write_contol_register(vrlg.MCONTR_PHY_0BIT_ADDR +  vrlg.MCONTR_PHY_0BIT_SDRST_ACT + en, 0);
+        self.write_control_register(vrlg.MCONTR_PHY_0BIT_ADDR +  vrlg.MCONTR_PHY_0BIT_SDRST_ACT + en, 0);
         sdrst_on=en
 
     def enable_refresh(self,
@@ -376,7 +383,7 @@ class X393AxiControlStatus(object):
         en=(0,1)[en]
         if self.verbose>0:
             print ("ENABLE REFRESH %s"%str(en))
-        self.write_contol_register(vrlg.MCONTR_TOP_0BIT_ADDR +  vrlg.MCONTR_TOP_0BIT_REFRESH_EN + en, 0);
+        self.write_control_register(vrlg.MCONTR_TOP_0BIT_ADDR +  vrlg.MCONTR_TOP_0BIT_REFRESH_EN + en, 0);
         refresh_en=en
         
     def enable_memcntrl(self,
@@ -389,7 +396,7 @@ class X393AxiControlStatus(object):
         en=(0,1)[en]
         if self.verbose > 0:
             print ("ENABLE MEMCTRL %s"%str(en))
-        self.write_contol_register(vrlg.MCONTR_TOP_0BIT_ADDR +  vrlg.MCONTR_TOP_0BIT_MCONTR_EN + en, 0);
+        self.write_control_register(vrlg.MCONTR_TOP_0BIT_ADDR +  vrlg.MCONTR_TOP_0BIT_MCONTR_EN + en, 0);
         mcntrl_en=en
     def enable_memcntrl_channels(self,
                                  chnen): # input [15:0] chnen; // bit-per-channel, 1 - enable;
@@ -399,7 +406,7 @@ class X393AxiControlStatus(object):
         """
 #        global  enabled_channels
         enabled_channels = chnen # currently enabled memory channels
-        self.write_contol_register(vrlg.MCONTR_TOP_16BIT_ADDR +  vrlg.MCONTR_TOP_16BIT_CHN_EN, enabled_channels & 0xffff) # {16'b0,chnen});
+        self.write_control_register(vrlg.MCONTR_TOP_16BIT_ADDR +  vrlg.MCONTR_TOP_16BIT_CHN_EN, enabled_channels & 0xffff) # {16'b0,chnen});
         if self.verbose > 0:
             print ("ENABLED MEMCTRL CHANNELS 0x%x (word), chnen=0x%x"%(enabled_channels,chnen))
 
@@ -413,12 +420,12 @@ class X393AxiControlStatus(object):
         """
 #        global  enabled_channels
 # Adding readback register
-        enabled_channels = self.read_contol_register(vrlg.MCONTR_TOP_16BIT_ADDR + vrlg.MCONTR_TOP_16BIT_CHN_EN)        
+        enabled_channels = self.read_control_register(vrlg.MCONTR_TOP_16BIT_ADDR + vrlg.MCONTR_TOP_16BIT_CHN_EN)        
         if en:
             enabled_channels |=  1<<chn;
         else:
             enabled_channels &= ~(1<<chn);
-        self.write_contol_register(vrlg.MCONTR_TOP_16BIT_ADDR + vrlg.MCONTR_TOP_16BIT_CHN_EN, enabled_channels & 0xffff) #  {16'b0,ENABLED_CHANNELS});
+        self.write_control_register(vrlg.MCONTR_TOP_16BIT_ADDR + vrlg.MCONTR_TOP_16BIT_CHN_EN, enabled_channels & 0xffff) #  {16'b0,ENABLED_CHANNELS});
         if self.verbose > 0:
             print ("ENABLED MEMCTRL CHANNELS 0x%x (en/dis)"%enabled_channels)
 
@@ -431,7 +438,7 @@ class X393AxiControlStatus(object):
         <priority> - 16-bit priority value (higher value means more important)
         """
 #        global channel_priority
-        self.write_contol_register(vrlg.MCONTR_ARBIT_ADDR + chn, priority  & 0xffff)# {16'b0,priority});
+        self.write_control_register(vrlg.MCONTR_ARBIT_ADDR + chn, priority  & 0xffff)# {16'b0,priority});
         if self.verbose > 0:
             print ("SET CHANNEL %d priority=0x%x"%(chn,priority))
 #        channel_priority[chn]=priority

@@ -965,6 +965,9 @@ assign #10 gpio_pins[9] = gpio_pins[8];
             0);          // input   [1:0] sub_channel;    
     // just temporarily - enable channel immediately    
 //    enable_memcntrl_en_dis(4'hc + {2'b0,num_sensor}, 1);
+        program_status_rtc( // also takes snapshot
+            3,         // input [1:0] mode;
+            0);        //input [5:0] seq_num;
     
 `endif
 
@@ -978,6 +981,9 @@ assign #10 gpio_pins[9] = gpio_pins[8];
   TEST_TITLE = "ALL_DONE";
   $display("===================== TEST_%s =========================",TEST_TITLE);
   #20000;
+        program_status_rtc( // also takes snapshot
+            3,         // input [1:0] mode;
+            0);        //input [5:0] seq_num;
   TEST_TITLE = "WAITING 80usec more";
   $display("===================== TEST_%s =========================",TEST_TITLE);
   #80000;
@@ -3021,17 +3027,43 @@ task    set_sensor_io_ctl;
     reg    [31:0] data;
     reg    [29:0] reg_addr;
     begin
+        reg_addr = (SENSOR_GROUP_ADDR + num_sensor * SENSOR_BASE_INC) + SENSIO_RADDR + SENSIO_CTRL;
+        if (clk_sel & 2) begin // reset MMCM before changing clock source
+            data = func_sensor_io_ctl (
+                        0, // mrst,
+                        0, // arst,
+                        0, // aro,
+                        3, // mmcm_rst,
+                        0, // clk_sel,
+                        0, // set_delays,
+                        0, // set_quadrants,
+                        0); // quadrants);
+            write_contol_register(reg_addr, data);                   
+        end
         data = func_sensor_io_ctl (
                     mrst,
                     arst,
                     aro,
-                    mmcm_rst,
+                    0, // mmcm_rst,
                     clk_sel,
                     set_delays,
                     set_quadrants,
                     quadrants);
-        reg_addr = (SENSOR_GROUP_ADDR + num_sensor * SENSOR_BASE_INC) + SENSIO_RADDR + SENSIO_CTRL;
         write_contol_register(reg_addr, data);                   
+
+        if ((clk_sel & 2) && !(mmcm_rst == 3)) begin // release reset MMCM after changing clock source (only if it was not requested on)
+            data = func_sensor_io_ctl (
+                        0, // mrst,
+                        0, // arst,
+                        0, // aro,
+                        2, // mmcm_rst,
+                        0, // clk_sel,
+                        0, // set_delays,
+                        0, // set_quadrants,
+                        0); // quadrants);
+            write_contol_register(reg_addr, data);                   
+        end
+
     end
 endtask
 
