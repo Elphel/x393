@@ -50,7 +50,7 @@ module  debug_master #(
     wire          cmd_we; 
     reg    [31:0] data_sr;
     reg           tgl;
-    reg    [ 5:0] cntr;
+    reg    [ 6:0] cntr;
     reg           ld_r;
     reg           cmd; //command stae (0 - idle)  
     reg [DEBUG_CMD_LATENCY : 0] cmd_reg;
@@ -59,6 +59,7 @@ module  debug_master #(
     wire          shift32_w =    cmd_we && (cmd_a == DEBUG_SHIFT_DATA);
     wire          load_w =       cmd_we && (cmd_a == DEBUG_LOAD);
     wire          cmd_reg_dly = cmd_reg[DEBUG_CMD_LATENCY];
+    wire          shift_done;
     
     assign debug_sl = cmd_reg[0];
     assign debug_do = data_sr[0];
@@ -68,8 +69,8 @@ module  debug_master #(
         else      ld_r <= load_w;
 
         if      (mrst)      cntr <= 0;
-        else if (shift32_w) cntr <= 6'h21;
-        else if (cntr[5])   cntr <= cntr + 1;
+        else if (shift32_w) cntr <= 7'h41;
+        else if (cntr[6])   cntr <= cntr + 1;
     
         if (mrst) cmd_reg <= 0;
         else      cmd_reg <= {cmd_reg[DEBUG_CMD_LATENCY - 1 : 0], load_w | ld_r | cntr[0]};
@@ -81,9 +82,20 @@ module  debug_master #(
         else if (cmd && !cmd_reg_dly) data_sr <= {debug_di, data_sr[31:1]};
         
         if (mrst) tgl <= 0;
-        else      tgl <= tgl & (&cntr); // When counter == 63 - toggle tgl to initiate status send
+        else      tgl <= tgl ^ shift_done; // When counter == 127 - toggle tgl to initiate status send
         
     end
+    
+    dly_16 #(
+        .WIDTH(1)
+    ) dly_16_i (
+        .clk   (mclk),                // input
+        .rst   (1'b0),                // input
+        .dly   (DEBUG_CMD_LATENCY+1), // input[3:0] 
+        .din   (&cntr),               // input[0:0] 
+        .dout  (shift_done)           // output[0:0] 
+    );
+    
     
     cmd_deser #(
         .ADDR       (DEBUG_ADDR),

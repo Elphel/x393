@@ -46,6 +46,7 @@ import x393_utils
 
 import time
 import vrlg
+from verilog_utils import hx
 
 
 PAGE_SIZE =           4096
@@ -528,7 +529,9 @@ class X393SensCmprs(object):
             print ("circbuf start 3 =           0x%x"%(circbuf_starts[3]))
             print ("circbuf end =               0x%x"%(circbuf_end))
             print ("memory buffer end =         0x%x"%(mem_end))
-        
+            
+        self.program_status_debug (3,0)
+                
         if sensor_mask & 3: # Need mower for sesns1 and sens 2
             if verbose >0 :
                 print ("===================== Sensor power setup: sensor ports 0 and 1 =========================")
@@ -669,3 +672,98 @@ class X393SensCmprs(object):
         for chn in sensors:
             self.x393Sensor.print_status_sensor_io (num_sensor = chn)
             self.x393Sensor.print_status_sensor_i2c (num_sensor = chn)
+            
+### Debug network methods
+    def program_status_debug( self,
+                              mode,     # input [1:0] mode;
+                              seq_num): # input [5:0] seq_num;
+        """
+        Set status generation mode for selected sensor port i2c control
+        @param mode -       status generation mode:
+                                  0: disable status generation,
+                                  1: single status request,
+                                  2: auto status, keep specified seq number,
+                                  4: auto, inc sequence number 
+        @param seq_number - 6-bit sequence number of the status message to be sent
+        """
+
+        self.x393_axi_tasks.program_status (vrlg.DEBUG_ADDR ,
+                             vrlg.DEBUG_SET_STATUS,
+                             mode,
+                             seq_num)
+            
+    def debug_read_ring(self,
+                        num32 = 32):
+        """
+        Read serial debug ring
+        @param num32 - number of 32-bit words to read
+        @return - list of the 32-bit words read
+        """
+        maxTimeout = 2.0 # sec
+        endTime=time.time() + maxTimeout
+        result = []
+        # load all shift registers from sources
+        self.x393_axi_tasks.write_control_register(vrlg.DEBUG_ADDR + vrlg.DEBUG_LOAD, 0); 
+        for _ in range (num32): 
+            seq_num = (self.x393_axi_tasks.read_status(vrlg.DEBUG_STATUS_REG_ADDR) >> vrlg.STATUS_SEQ_SHFT) & 0x3f;
+            self.x393_axi_tasks.write_control_register(vrlg.DEBUG_ADDR + vrlg.DEBUG_SHIFT_DATA, 0);
+            while seq_num == (self.x393_axi_tasks.read_status(vrlg.DEBUG_STATUS_REG_ADDR) >> vrlg.STATUS_SEQ_SHFT) & 0x3f:
+                if time.time() > endTime:
+                    return None 
+            result.append(self.x393_axi_tasks.read_status(vrlg.DEBUG_READ_REG_ADDR))
+        return result    
+            
+    def print_debug( self,
+                     num32 = 32):
+        """
+        Read and print serial debug ring as a sequence of 32-bit numbers
+        @param num32 - number of 32-bit words to read
+        @return - list of the 32-bit words read
+        """
+        status = self.debug_read_ring(num32)
+        numPerLine = 8
+        for i,d in enumerate (status):
+            if ( i % numPerLine) == 0:
+                print ("\n%2x: "%(i), end="")
+            print("%s "%(hx(d,8)), end = "") 
+        print()   
+        
+"""
+ tasks related to debug ring
+task debug_read_ring;
+    input integer num32;
+
+    reg    [5:0] seq_num;
+    integer i;
+    begin
+        // load all shift registers from sources
+        write_control_register(DEBUG_ADDR + DEBUG_LOAD, 0); 
+        for (i = 0; i < num32; i = i+1 ) begin
+            read_status(DEBUG_STATUS_REG_ADDR);
+            seq_num = (registered_rdata[STATUS_SEQ_SHFT+:6] ^ 6'h20) &'h3f; // &'h30;
+            write_control_register(DEBUG_ADDR + DEBUG_SHIFT_DATA, 0); 
+            while (((registered_rdata[STATUS_SEQ_SHFT+:6] ^ 6'h20) &'h3f) == seq_num) begin
+                read_status(DEBUG_STATUS_REG_ADDR);
+            end
+            read_status(DEBUG_READ_REG_ADDR);
+            DEBUG_ADDRESS = i;
+            DEBUG_DATA = registered_rdata;
+            
+            
+        end
+    
+    
+    end
+endtask
+`ifdef DEBUG_RING
+task program_status_debug;
+    input [1:0] mode;
+    input [5:0] seq_num;
+    begin
+        program_status (DEBUG_ADDR,
+                        DEBUG_SET_STATUS,
+                        mode,
+                        seq_num);
+    end
+endtask
+"""

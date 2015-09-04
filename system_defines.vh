@@ -2,7 +2,7 @@
 `ifndef SYSTEM_DEFINES
   `define SYSTEM_DEFINES
   `define PRELOAD_BRAMS
-  `define DEBUG_RING
+  `define DEBUG_RING 1
 // Enviroment-dependent options
   `ifdef IVERILOG
     `define SIMULATION

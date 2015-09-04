@@ -316,10 +316,10 @@ module  x393 #(
     wire                        status_debug_rq; // Other status request   
     wire                        status_debug_start;  // S uppressThisWarning VEditor ****** Other status packet transfer start (currently with 0 latency from status_root_rq)
     
-    localparam DEBUG_RING_LENGTH = 10;
+    localparam DEBUG_RING_LENGTH = 2; // increase here, insert new after master 
     
-    wire [DEBUG_RING_LENGTH-1:0] debug_ring; // TODO: adjust number of bits
-    wire                         debug_sl;   // debug shift/load:  0 - idle, (1,0) - shift, (1,1) - load
+    wire [DEBUG_RING_LENGTH:0]    debug_ring; // TODO: adjust number of bits
+    wire                          debug_sl;   // debug shift/load:  0 - idle, (1,0) - shift, (1,1) - load
 `endif    
     // Insert register layer if needed
     reg  [7:0] cmd_mcontr_ad;
@@ -910,11 +910,15 @@ assign axi_grst = axi_rst_pre;
         .db_in10   (status_clocks_ad),        // input[7:0] 
         .rq_in10   (status_clocks_rq),        // input
         .start_in10(status_clocks_start),     // output
-        
+`ifdef DEBUG_RING
         .db_in11   (status_debug_ad),         // input[7:0] 
         .rq_in11   (status_debug_rq),         // input
         .start_in11(status_debug_start),      // output
-        
+`else
+        .db_in11   (8'b0),                    // input[7:0] 
+        .rq_in11   (1'b0),                    // input
+        .start_in11(),                        // output
+`endif        
         .db_in12   (8'b0),                    // input[7:0] 
         .rq_in12   (1'b0),                    // input
         .start_in12(),                        // output
@@ -1609,9 +1613,9 @@ assign axi_grst = axi_rst_pre;
         .saxi_bid           (saxi0_bid),           // input[5:0] 
         .saxi_bresp         (saxi0_bresp)          // input[1:0]
 `ifdef DEBUG_RING       
-        ,.debug_do          (debug_ring[1]), // output
-        .debug_sl           (debug_sl), // output
-        .debug_di           (debug_ring[0]) // input
+        ,.debug_do          (debug_ring[0]),       // output
+        .debug_sl           (debug_sl),            // input
+        .debug_di           (debug_ring[1])        // input
 `endif         
     );
 
@@ -1841,9 +1845,9 @@ assign axi_grst = axi_rst_pre;
         .afi1_wacount              (afi2_wacount),               // input[5:0] 
         .afi1_wrissuecap1en        (afi2_wrissuecap1en)          // output
 `ifdef DEBUG_RING       
-        ,.debug_do          (debug_ring[DEBUG_RING_LENGTH-1]),   // output
-        .debug_sl           (debug_sl),                          // output
-        .debug_di           (debug_ring[1])                      // input
+        ,.debug_do                (debug_ring[1]),               // output
+        .debug_sl                 (debug_sl),                    // input
+        .debug_di                 (debug_ring[2])                // input
 `endif         
         
     );
@@ -2194,16 +2198,16 @@ assign axi_grst = axi_rst_pre;
         .DEBUG_SET_STATUS      (DEBUG_SET_STATUS),
         .DEBUG_CMD_LATENCY     (DEBUG_CMD_LATENCY)
     ) debug_master_i (
-        .mclk         (mclk), // input
-        .mrst         (mrst), // input
-        .cmd_ad       (cmd_debug_ad), // input[7:0] 
-        .cmd_stb      (cmd_debug_stb), // input
-        .status_ad    (status_debug_ad), // output[7:0] 
-        .status_rq    (status_debug_rq), // output
+        .mclk         (mclk),               // input
+        .mrst         (mrst),               // input
+        .cmd_ad       (cmd_debug_ad),       // input[7:0] 
+        .cmd_stb      (cmd_debug_stb),      // input
+        .status_ad    (status_debug_ad),    // output[7:0] 
+        .status_rq    (status_debug_rq),    // output
         .status_start (status_debug_start), // input
-        .debug_do     (debug_ring[0]), // output
-        .debug_sl     (debug_sl), // output
-        .debug_di     (debug_ring[DEBUG_RING_LENGTH-1]) // input
+        .debug_do     (debug_ring[2]),      // output
+        .debug_sl     (debug_sl),           // output
+        .debug_di     (debug_ring[0])       // DEBUG_RING_LENGTH-1]) // input
     );
 `endif
 

@@ -54,7 +54,7 @@ module  debug_slave#(
         if (mrst) cmd <= 0;
         else      cmd <= cmd_reg_dly & ~cmd;
 
-        if      (cmd && !cmd_reg_dly) data_sr <= {debug_di, data_sr[31:1]};
+        if      (cmd && !cmd_reg_dly) data_sr <= {debug_di, data_sr[SHIFT_WIDTH - 1 :1]};
         else if (cmd &&  cmd_reg_dly) data_sr <= ext_rdata[SHIFT_WIDTH - 1 : 0];
         
     end    

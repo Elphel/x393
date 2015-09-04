@@ -195,6 +195,9 @@ module  sensor_channel#(
     parameter SENS_SS_EN         =     "FALSE",      // Enables Spread Spectrum mode
     parameter SENS_SS_MODE       =     "CENTER_HIGH",//"CENTER_HIGH","CENTER_LOW","DOWN_HIGH","DOWN_LOW"
     parameter SENS_SS_MOD_PERIOD =     10000        // integer 4000-40000 - SS modulation period in ns
+`ifdef DEBUG_RING
+        ,parameter DEBUG_CMD_LATENCY = 2 
+`endif        
     
 ) (
 //    input         rst,
@@ -239,8 +242,21 @@ module  sensor_channel#(
     output  [1:0] hist_chn,     // output[1:0] histogram (sub) channel, valid with request and transfer
     output        hist_dvalid,  // output data valid - active when sending a burst
     output [31:0] hist_data     // output[31:0] histogram data
+`ifdef DEBUG_RING       
+    ,output                       debug_do, // output to the debug ring
+     input                        debug_sl, // 0 - idle, (1,0) - shift, (1,1) - load
+     input                        debug_di  // input from the debug ring
+`endif         
     
 );
+`ifdef DEBUG_RING
+    localparam DEBUG_RING_LENGTH = 4; // for now - just connect the histogram(s) module(s)
+    wire [DEBUG_RING_LENGTH:0] debug_ring; // TODO: adjust number of bits
+    assign debug_do = debug_ring[0];
+    assign debug_ring[DEBUG_RING_LENGTH] = debug_di;
+`endif    
+
+
     localparam    HIST_MONOCHROME = 1'b0; // TODO:make it configurable (at expense of extra hardware)
 
 
@@ -757,6 +773,9 @@ module  sensor_channel#(
                 .HISTOGRAM_ADDR_MASK    (HISTOGRAM_ADDR_MASK),
                 .HISTOGRAM_LEFT_TOP     (HISTOGRAM_LEFT_TOP),
                 .HISTOGRAM_WIDTH_HEIGHT (HISTOGRAM_WIDTH_HEIGHT)
+`ifdef DEBUG_RING
+                ,.DEBUG_CMD_LATENCY         (DEBUG_CMD_LATENCY) 
+`endif        
             ) sens_histogram_i (
 //                .rst        (rst),            // input
                 .mrst       (mrst),           // input
@@ -777,15 +796,31 @@ module  sensor_channel#(
                 .cmd_ad     (cmd_ad),         // input[7:0] 
                 .cmd_stb    (cmd_stb),        // input
                 .monochrome (HIST_MONOCHROME) // input
-                ,.debug_mclk(debug_hist_mclk[0])  
+                ,.debug_mclk(debug_hist_mclk[0])
+`ifdef DEBUG_RING       
+                ,.debug_do    (debug_ring[0]),         // output
+                .debug_sl     (debug_sl),              // input
+                .debug_di     (debug_ring[1])        // input
+`endif         
+                  
             );
         else
             sens_histogram_dummy sens_histogram_dummy_i (
-                .hist_rq(hist_rq[0]),         // output
-                .hist_do(hist_do0),           // output[31:0] 
-                .hist_dv(hist_dv[0])          // output
+                .hist_rq      (hist_rq[0]),         // output
+                .hist_do      (hist_do0),           // output[31:0] 
+                .hist_dv      (hist_dv[0])          // output
+`ifdef DEBUG_RING       
+                ,.debug_do    (debug_ring[0]),         // output
+                .debug_di     (debug_ring[1])          // input
+`endif         
             );
+//`ifdef DEBUG_RING       
+//            assign debug_ring[0] = debug_ring[1]; // just bypass
+//            assign tmp1 = debug_ring[1]; // just bypass
+//`endif
     endgenerate
+    
+    
     generate
         if (HISTOGRAM_ADDR1 >=0)
             sens_histogram #(
@@ -794,6 +829,9 @@ module  sensor_channel#(
                 .HISTOGRAM_ADDR_MASK    (HISTOGRAM_ADDR_MASK),
                 .HISTOGRAM_LEFT_TOP     (HISTOGRAM_LEFT_TOP),
                 .HISTOGRAM_WIDTH_HEIGHT (HISTOGRAM_WIDTH_HEIGHT)
+`ifdef DEBUG_RING
+                ,.DEBUG_CMD_LATENCY         (DEBUG_CMD_LATENCY) 
+`endif        
             ) sens_histogram_i (
 //                .rst        (rst),            // input
                 .mrst        (mrst),          // input
@@ -815,13 +853,26 @@ module  sensor_channel#(
                 .cmd_stb    (cmd_stb),        // input
                 .monochrome (HIST_MONOCHROME) // input 
                 ,.debug_mclk(debug_hist_mclk[1])  
+`ifdef DEBUG_RING       
+                ,.debug_do    (debug_ring[1]),         // output
+                .debug_sl     (debug_sl),              // input
+                .debug_di     (debug_ring[2])        // input
+`endif         
             );
         else
             sens_histogram_dummy sens_histogram_dummy_i (
-                .hist_rq(hist_rq[1]),   // output
-                .hist_do(hist_do1),     // output[31:0] 
-                .hist_dv(hist_dv[1])    // output
+                .hist_rq      (hist_rq[1]),   // output
+                .hist_do      (hist_do1),     // output[31:0] 
+                .hist_dv      (hist_dv[1])    // output
+            `ifdef DEBUG_RING       
+                ,.debug_do    (debug_ring[1]),         // output
+                .debug_di     (debug_ring[2])          // input
+`endif         
             );
+//`ifdef DEBUG_RING       
+//            assign debug_ring[1] = debug_ring[2]; // just bypass
+//`endif
+            
     endgenerate
     generate
         if (HISTOGRAM_ADDR2 >=0)
@@ -831,6 +882,9 @@ module  sensor_channel#(
                 .HISTOGRAM_ADDR_MASK    (HISTOGRAM_ADDR_MASK),
                 .HISTOGRAM_LEFT_TOP     (HISTOGRAM_LEFT_TOP),
                 .HISTOGRAM_WIDTH_HEIGHT (HISTOGRAM_WIDTH_HEIGHT)
+`ifdef DEBUG_RING
+                ,.DEBUG_CMD_LATENCY         (DEBUG_CMD_LATENCY) 
+`endif        
             ) sens_histogram_i (
 //                .rst        (rst),            // input
                 .mrst        (mrst),          // input
@@ -852,13 +906,25 @@ module  sensor_channel#(
                 .cmd_stb    (cmd_stb),        // input
                 .monochrome (HIST_MONOCHROME) // input  
                 ,.debug_mclk(debug_hist_mclk[2])  
+`ifdef DEBUG_RING       
+                ,.debug_do    (debug_ring[2]),         // output
+                .debug_sl     (debug_sl),              // input
+                .debug_di     (debug_ring[3])        // input
+`endif         
             );
         else
             sens_histogram_dummy sens_histogram_dummy_i (
                 .hist_rq(hist_rq[2]),        // output
                 .hist_do(hist_do2),          // output[31:0] 
                 .hist_dv(hist_dv[2])         // output
+`ifdef DEBUG_RING       
+                ,.debug_do    (debug_ring[2]),         // output
+                .debug_di     (debug_ring[3])          // input
+`endif         
             );
+//`ifdef DEBUG_RING       
+//            assign debug_ring[2] = debug_ring[3]; // just bypass
+//`endif
     endgenerate
     generate
         if (HISTOGRAM_ADDR3 >=0)
@@ -868,6 +934,9 @@ module  sensor_channel#(
                 .HISTOGRAM_ADDR_MASK    (HISTOGRAM_ADDR_MASK),
                 .HISTOGRAM_LEFT_TOP     (HISTOGRAM_LEFT_TOP),
                 .HISTOGRAM_WIDTH_HEIGHT (HISTOGRAM_WIDTH_HEIGHT)
+`ifdef DEBUG_RING
+                ,.DEBUG_CMD_LATENCY         (DEBUG_CMD_LATENCY) 
+`endif        
             ) sens_histogram_i (
 //                .rst        (rst),            // input
                 .mrst        (mrst),          // input
@@ -889,13 +958,25 @@ module  sensor_channel#(
                 .cmd_stb    (cmd_stb),        // input
                 .monochrome (HIST_MONOCHROME) // input  
                 ,.debug_mclk(debug_hist_mclk[3])  
+`ifdef DEBUG_RING       
+                ,.debug_do    (debug_ring[3]),         // output
+                .debug_sl     (debug_sl),              // input
+                .debug_di     (debug_ring[4])        // input
+`endif         
             );
         else
             sens_histogram_dummy sens_histogram_dummy_i (
                 .hist_rq(hist_rq[3]),  // output
                 .hist_do(hist_do3),    // output[31:0] 
                 .hist_dv(hist_dv[3])   // output
+`ifdef DEBUG_RING       
+                ,.debug_do    (debug_ring[3]),         // output
+                .debug_di     (debug_ring[4])          // input
+`endif         
             );
+//`ifdef DEBUG_RING       
+//            assign debug_ring[3] = debug_ring[4]; // just bypass
+//`endif
     endgenerate
     
     sens_histogram_mux sens_histogram_mux_i (

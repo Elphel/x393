@@ -314,6 +314,15 @@ module  sensors393 #(
 `endif         
     
 );
+
+`ifdef DEBUG_RING
+    localparam DEBUG_RING_LENGTH = 4;
+    wire [DEBUG_RING_LENGTH:0] debug_ring; // TODO: adjust number of bits
+    assign debug_do = debug_ring[0];
+    assign debug_ring[DEBUG_RING_LENGTH] = debug_di;
+`endif    
+
+
     wire               [1:0] idelay_ctrl_rdy;   // need to connect outputs to prevent optimizing out
     assign idelay_rdy = &idelay_ctrl_rdy;
     reg              [7:0] cmd_ad;    
@@ -477,6 +486,9 @@ module  sensors393 #(
                 .SENS_SS_EN                    (SENS_SS_EN),
                 .SENS_SS_MODE                  (SENS_SS_MODE),
                 .SENS_SS_MOD_PERIOD            (SENS_SS_MOD_PERIOD)
+`ifdef DEBUG_RING
+                ,.DEBUG_CMD_LATENCY   (DEBUG_CMD_LATENCY) 
+`endif        
             ) sensor_channel_i (
 //                .rst          (rst),                 // input
                 .pclk         (pclk),                  // input
@@ -514,6 +526,11 @@ module  sensors393 #(
                 .hist_chn     (hist_chn[2 * i +: 2]),  // output[1:0] 
                 .hist_dvalid  (hist_dvalid[i]),        // output
                 .hist_data    (hist_data[i * 32 +: 32])// output[31:0] 
+`ifdef DEBUG_RING       
+                ,.debug_do    (debug_ring[i]),         // output
+                .debug_sl     (debug_sl),              // input
+                .debug_di     (debug_ring[i+1])        // input
+`endif         
             );
 
             sensor_membuf #(

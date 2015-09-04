@@ -568,7 +568,8 @@ assign #10 gpio_pins[9] = gpio_pins[8];
 //  integer     SCANLINE_CUR_Y;
     wire AXI_RD_EMPTY=NUM_WORDS_READ==NUM_WORDS_EXPECTED; //SuppressThisWarning VEditor : may be unused, just for simulation
   
-  
+    reg  [31:0] DEBUG_DATA;
+    integer     DEBUG_ADDRESS; 
   
   //NUM_XFER_BITS=6
 //  localparam       SCANLINE_PAGES_PER_ROW= (WINDOW_WIDTH>>NUM_XFER_BITS)+((WINDOW_WIDTH[NUM_XFER_BITS-1:0]==0)?0:1);
@@ -902,6 +903,14 @@ assign #10 gpio_pins[9] = gpio_pins[8];
 `endif
 
 `ifdef TEST_SENSOR
+
+`ifdef DEBUG_RING
+    TEST_TITLE = "DEBUG_STATUS";
+    $display("===================== TEST_%s =========================",TEST_TITLE);
+        program_status_debug (
+            3,          // input [1:0] mode;
+            0);         // input [5:0] seq_num;
+`endif
     TEST_TITLE = "GPIO";
     $display("===================== TEST_%s =========================",TEST_TITLE);
 
@@ -1028,8 +1037,11 @@ assign #10 gpio_pins[9] = gpio_pins[8];
   $display("===================== TEST_%s =========================",TEST_TITLE);
     axi_get_delays;
 `endif    
-
-
+`ifdef DEBUG_RING
+  TEST_TITLE = "READING DEBUG DATA";
+  $display("===================== TEST_%s =========================",TEST_TITLE);
+    debug_read_ring (32); // read 32 of 32-bit words
+`endif
   TEST_TITLE = "ALL_DONE";
   $display("===================== TEST_%s =========================",TEST_TITLE);
   #20000;
@@ -1039,6 +1051,11 @@ assign #10 gpio_pins[9] = gpio_pins[8];
   TEST_TITLE = "WAITING 80usec more";
   $display("===================== TEST_%s =========================",TEST_TITLE);
   #80000;
+`ifdef DEBUG_RING
+  TEST_TITLE = "READING DEBUG DATA AGAIN";
+  $display("===================== TEST_%s =========================",TEST_TITLE);
+    debug_read_ring (32); // read 32 of 32-bit words
+`endif    
   $finish;
 end
 // protect from never end
@@ -3981,6 +3998,49 @@ task afi_mux_chn_start_length;
     end
 endtask
 
+// tasks related to debug ring
+`ifdef DEBUG_RING
+task program_status_debug;
+    input [1:0] mode;
+    input [5:0] seq_num;
+    begin
+        program_status (DEBUG_ADDR,
+                        DEBUG_SET_STATUS,
+                        mode,
+                        seq_num);
+    end
+endtask
+task debug_read_ring;
+    input integer num32;
+
+    reg    [5:0] seq_num;
+    integer i;
+    begin
+        // load all shift registers from sources
+        write_contol_register(DEBUG_ADDR + DEBUG_LOAD, 0); 
+        for (i = 0; i < num32; i = i+1 ) begin
+            read_status(DEBUG_STATUS_REG_ADDR);
+            seq_num = (registered_rdata[STATUS_SEQ_SHFT+:6] ^ 6'h20) &'h3f; // &'h30;
+            write_contol_register(DEBUG_ADDR + DEBUG_SHIFT_DATA, 0); 
+            while (((registered_rdata[STATUS_SEQ_SHFT+:6] ^ 6'h20) &'h3f) == seq_num) begin
+                read_status(DEBUG_STATUS_REG_ADDR);
+            end
+            read_status(DEBUG_READ_REG_ADDR);
+            DEBUG_ADDRESS = i;
+            DEBUG_DATA = registered_rdata;
+            
+            
+        end
+    
+    
+    end
+endtask
+`endif
+/*
+    reg  [31:0] DEBUG_DATA;
+    integer     DEBUG_ADDRESS; 
+
+*/
 `include "includes/tasks_tests_memory.vh" // SuppressThisWarning VEditor - may be unused
 `include "includes/x393_tasks_afi.vh" // SuppressThisWarning VEditor - may be unused
 `include "includes/x393_tasks_mcntrl_en_dis_priority.vh"
@@ -3991,5 +4051,7 @@ endtask
 `include "includes/x393_tasks_status.vh"
 `include "includes/x393_tasks01.vh"
 `include "includes/x393_mcontr_encode_cmd.vh"
+
+
 endmodule
 

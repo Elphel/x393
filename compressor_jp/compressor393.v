@@ -242,6 +242,13 @@ module  compressor393 # (
     
 );
 
+`ifdef DEBUG_RING
+    localparam DEBUG_RING_LENGTH = 4;
+    wire [DEBUG_RING_LENGTH:0] debug_ring; // TODO: adjust number of bits
+    assign debug_do = debug_ring[0];
+    assign debug_ring[DEBUG_RING_LENGTH] = debug_di;
+`endif    
+
     wire   [47:0] status_ad_mux; 
     wire    [5:0] status_rq_mux;
     wire    [5:0] status_start_mux;
@@ -368,6 +375,9 @@ module  compressor393 # (
                 .CMPRS_CORING_BITS               (CMPRS_CORING_BITS),
                 .CMPRS_TIMEOUT_BITS              (CMPRS_TIMEOUT_BITS),
                 .CMPRS_TIMEOUT                   (CMPRS_TIMEOUT)
+`ifdef DEBUG_RING
+        ,.DEBUG_CMD_LATENCY         (DEBUG_CMD_LATENCY) 
+`endif        
             ) jp_channel_i (
 //                .rst                                  (rst),                       // input
                 .xclk                                 (xclk),                      // input
@@ -416,7 +426,13 @@ module  compressor393 # (
                 .eof_written                          (eof_written[i]),            // input
                 .fifo_flush                           (fifo_flush[i]),             // output
                 .flush_hclk                           (flush_hclk[i]),             // output
-                .fifo_count                           (fifo_count[8* i +: 8])      // output[7:0] 
+                .fifo_count                           (fifo_count[8* i +: 8])      // output[7:0]
+ `ifdef DEBUG_RING       
+                ,.debug_do                            (debug_ring[i]),         // output
+                .debug_sl                             (debug_sl),              // output
+                .debug_di                             (debug_ring[i+1])        // input
+`endif         
+                 
             );
         end
     endgenerate

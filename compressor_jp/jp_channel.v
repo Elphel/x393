@@ -94,7 +94,9 @@ module  jp_channel#(
         
         parameter CMPRS_TIMEOUT_BITS=              12,
         parameter CMPRS_TIMEOUT=                   1000   // mclk cycles
-        
+`ifdef DEBUG_RING
+        ,parameter DEBUG_CMD_LATENCY = 2 //SuppressThisWarning VEditor - not used
+`endif        
         
 )(
 //    input                         rst,    // global reset
@@ -171,7 +173,16 @@ module  jp_channel#(
     output                        flush_hclk,    // output before writing last chunk - use it to suspend AFI to have
                                                  // last burst marked as the last one (otherwise last may be empty if frame had %4==0 chunks) 
     output                 [7:0]  fifo_count     // number of 32-byte chunks in FIFO
+`ifdef DEBUG_RING       
+    ,output                       debug_do, // output to the debug ring
+     input                        debug_sl, // 0 - idle, (1,0) - shift, (1,1) - load // SuppressThisWarning VEditor - not used
+     input                        debug_di  // input from the debug ring
+`endif         
 );
+`ifdef DEBUG_RING
+     assign  debug_do = debug_di; // just temporarily to short-circuit the ring
+`endif        
+
     localparam CMPRS_ADDR = CMPRS_GROUP_ADDR + CMPRS_NUMBER * CMPRS_BASE_INC;
     localparam CMPRS_STATUS_REG_ADDR = CMPRS_STATUS_REG_BASE + CMPRS_NUMBER *  CMPRS_STATUS_REG_INC;
     localparam CMPRS_HIFREQ_REG_ADDR = CMPRS_HIFREQ_REG_BASE + CMPRS_NUMBER *  CMPRS_HIFREQ_REG_INC;

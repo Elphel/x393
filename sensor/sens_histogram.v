@@ -27,6 +27,9 @@ module  sens_histogram #(
     parameter HISTOGRAM_LEFT_TOP =     'h0,
     parameter HISTOGRAM_WIDTH_HEIGHT = 'h1, // 1.. 2^16, 0 - use HACT
     parameter [1:0] XOR_HIST_BAYER =  2'b00// 11 // invert bayer setting
+`ifdef DEBUG_RING
+        ,parameter DEBUG_CMD_LATENCY = 2 // SuppressThisWarning VEditor - not used
+`endif        
     
 )(
 //    input         rst,
@@ -50,7 +53,16 @@ module  sens_histogram #(
     input         cmd_stb,      // strobe (with first byte) for the command a/d
     input         monochrome    // tie to 0 to reduce hardware
     ,output debug_mclk
+`ifdef DEBUG_RING       
+    ,output                       debug_do, // output to the debug ring
+     input                        debug_sl, // 0 - idle, (1,0) - shift, (1,1) - load // SuppressThisWarning VEditor - not used
+     input                        debug_di  // input from the debug ring
+`endif         
 );
+`ifdef DEBUG_RING
+//     assign  debug_do = debug_di;
+`endif        
+
     localparam PXD_2X_LATENCY = 2;
     reg         hist_bank_pclk;
     
@@ -347,6 +359,25 @@ module  sens_histogram #(
         else if (hist_xfer_done)                               wait_readout <= 0;
     
     end
+
+`ifdef DEBUG_RING
+    debug_slave #(
+        .SHIFT_WIDTH       (64),
+        .READ_WIDTH        (64),
+        .WRITE_WIDTH       (32),
+        .DEBUG_CMD_LATENCY (DEBUG_CMD_LATENCY)
+    ) debug_slave_i (
+        .mclk       (mclk),     // input
+        .mrst       (mrst),     // input
+        .debug_di   (debug_di), // input
+        .debug_sl   (debug_sl), // input
+        .debug_do   (debug_do), // output
+        .rd_data   ({height_m1[15:0], vcntr[15:0], width_m1[15:0],  hcntr[15:0]}), // input[31:0] 
+        .wr_data    (), // output[31:0]  - not used
+        .stb        () // output  - not used
+    );
+`endif
+
 
     pulse_cross_clock pulse_cross_clock_debug_mclk_i (
         .rst         (prst), // input
@@ -646,9 +677,16 @@ module  sens_histogram_dummy(
     output        hist_rq,
     output [31:0] hist_do,
     output        hist_dv
-
+`ifdef DEBUG_RING       
+    , output debug_do,
+    input    debug_di
+`endif         
 );
     assign         hist_rq = 0;
     assign         hist_do = 0;
     assign         hist_dv = 0;
+`ifdef DEBUG_RING       
+    assign  debug_do =  debug_di;
+`endif         
+    
 endmodule
