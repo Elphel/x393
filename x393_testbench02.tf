@@ -78,7 +78,7 @@ module  x393_testbench02 #(
 
 //`include "includes/x393_cur_params_sim.vh" // parameters that may need adjustment, should be before x393_localparams.vh
 `include "includes/x393_cur_params_target.vh" // SuppressThisWarning VEditor - not used parameters that may need adjustment, should be before x393_localparams.vh
-parameter TRIGGER_MODE =          1;     // 0 - auto, 1 - triggered
+parameter TRIGGER_MODE =          0; // 1;     // 0 - auto, 1 - triggered
 parameter EXT_TRIGGER_MODE =      1 ;    // 0 - internal, 1 - external trigger (camsync)
 parameter EXTERNAL_TIMESTAMP =    1 ;    // embed local timestamp, 1 - embed received timestamp
 
@@ -922,7 +922,59 @@ assign #10 gpio_pins[9] = gpio_pins[8];
 
 //    camsync_setup (
 //        4'hf ); // sensor_mask); //
+    TEST_TITLE = "RESEST_I2C_SEQUENCER0";
+    $display("===================== TEST_%s =========================",TEST_TITLE);
+        set_sensor_i2c_command(
+            0,   // input                             [1:0] num_sensor;
+            1'b1,   // input                                   rst_cmd;    // [14]   reset all FIFO (takes 16 clock pulses), also - stops i2c until run command
+            2'b0,   // input       [SENSI2C_CMD_RUN_PBITS : 0] run_cmd;    // [13:12]3 - run i2c, 2 - stop i2c (needed before software i2c), 1,0 - no change to run state
+            1'b1,   // input                                   set_bytes;  // [11] if 1, use bytes (below), 0 - nop
+            2'h3,   // input  [SENSI2C_CMD_BYTES_PBITS -1 : 0] bytes;      // [10:9] set command bytes to send after slave address (0..3)
+            1'b1,   // input                                   set_dly;    // [8] if 1, use dly (0 - ignore)
+            8'h0a,  // input   [SENSI2C_CMD_DLY_PBITS - 1 : 0] dly;        // [7:0]  - duration of quarter i2c cycle (if 0, [3:0] control SCL+SDA)
+            2'b0,   // input    [SENSI2C_CMD_SCL_WIDTH -1 : 0] scl_ctl;    // [1:0] : 0: NOP, 1: 1'b0->SCL, 2: 1'b1->SCL, 3: 1'bz -> SCL 
+            2'b0);  // input    [SENSI2C_CMD_SDA_WIDTH -1 : 0] sda_ctl;    // [3:2] : 0: NOP, 1: 1'b0->SDA, 2: 1'b1->SDA, 3: 1'bz -> SDA  
+    TEST_TITLE = "RESEST_I2C_SEQUENCER1";
+    $display("===================== TEST_%s =========================",TEST_TITLE);
+        set_sensor_i2c_command(
+            1,   // input                             [1:0] num_sensor;
+            1'b1,   // input                                   rst_cmd;    // [14]   reset all FIFO (takes 16 clock pulses), also - stops i2c until run command
+            2'b0,   // input       [SENSI2C_CMD_RUN_PBITS : 0] run_cmd;    // [13:12]3 - run i2c, 2 - stop i2c (needed before software i2c), 1,0 - no change to run state
+            1'b1,   // input                                   set_bytes;  // [11] if 1, use bytes (below), 0 - nop
+            2'h3,   // input  [SENSI2C_CMD_BYTES_PBITS -1 : 0] bytes;      // [10:9] set command bytes to send after slave address (0..3)
+            1'b1,   // input                                   set_dly;    // [8] if 1, use dly (0 - ignore)
+            8'h0a,  // input   [SENSI2C_CMD_DLY_PBITS - 1 : 0] dly;        // [7:0]  - duration of quarter i2c cycle (if 0, [3:0] control SCL+SDA)
+            2'b0,   // input    [SENSI2C_CMD_SCL_WIDTH -1 : 0] scl_ctl;    // [1:0] : 0: NOP, 1: 1'b0->SCL, 2: 1'b1->SCL, 3: 1'bz -> SCL 
+            2'b0);  // input    [SENSI2C_CMD_SDA_WIDTH -1 : 0] sda_ctl;    // [3:2] : 0: NOP, 1: 1'b0->SDA, 2: 1'b1->SDA, 3: 1'bz -> SDA  
+    TEST_TITLE = "RESEST_I2C_SEQUENCER2";
+    $display("===================== TEST_%s =========================",TEST_TITLE);
+        set_sensor_i2c_command(
+            2,   // input                             [1:0] num_sensor;
+            1'b1,   // input                                   rst_cmd;    // [14]   reset all FIFO (takes 16 clock pulses), also - stops i2c until run command
+            2'b0,   // input       [SENSI2C_CMD_RUN_PBITS : 0] run_cmd;    // [13:12]3 - run i2c, 2 - stop i2c (needed before software i2c), 1,0 - no change to run state
+            1'b1,   // input                                   set_bytes;  // [11] if 1, use bytes (below), 0 - nop
+            2'h3,   // input  [SENSI2C_CMD_BYTES_PBITS -1 : 0] bytes;      // [10:9] set command bytes to send after slave address (0..3)
+            1'b1,   // input                                   set_dly;    // [8] if 1, use dly (0 - ignore)
+            8'h0a,  // input   [SENSI2C_CMD_DLY_PBITS - 1 : 0] dly;        // [7:0]  - duration of quarter i2c cycle (if 0, [3:0] control SCL+SDA)
+            2'b0,   // input    [SENSI2C_CMD_SCL_WIDTH -1 : 0] scl_ctl;    // [1:0] : 0: NOP, 1: 1'b0->SCL, 2: 1'b1->SCL, 3: 1'bz -> SCL 
+            2'b0);  // input    [SENSI2C_CMD_SDA_WIDTH -1 : 0] sda_ctl;    // [3:2] : 0: NOP, 1: 1'b0->SDA, 2: 1'b1->SDA, 3: 1'bz -> SDA  
+    TEST_TITLE = "RESEST_I2C_SEQUENCER3";
+    $display("===================== TEST_%s =========================",TEST_TITLE);
+        set_sensor_i2c_command(
+            3,   // input                             [1:0] num_sensor;
+            1'b1,   // input                                   rst_cmd;    // [14]   reset all FIFO (takes 16 clock pulses), also - stops i2c until run command
+            2'b0,   // input       [SENSI2C_CMD_RUN_PBITS : 0] run_cmd;    // [13:12]3 - run i2c, 2 - stop i2c (needed before software i2c), 1,0 - no change to run state
+            1'b1,   // input                                   set_bytes;  // [11] if 1, use bytes (below), 0 - nop
+            2'h3,   // input  [SENSI2C_CMD_BYTES_PBITS -1 : 0] bytes;      // [10:9] set command bytes to send after slave address (0..3)
+            1'b1,   // input                                   set_dly;    // [8] if 1, use dly (0 - ignore)
+            8'h0a,  // input   [SENSI2C_CMD_DLY_PBITS - 1 : 0] dly;        // [7:0]  - duration of quarter i2c cycle (if 0, [3:0] control SCL+SDA)
+            2'b0,   // input    [SENSI2C_CMD_SCL_WIDTH -1 : 0] scl_ctl;    // [1:0] : 0: NOP, 1: 1'b0->SCL, 2: 1'b1->SCL, 3: 1'bz -> SCL 
+            2'b0);  // input    [SENSI2C_CMD_SDA_WIDTH -1 : 0] sda_ctl;    // [3:2] : 0: NOP, 1: 1'b0->SDA, 2: 1'b1->SDA, 3: 1'bz -> SDA  
 
+    TEST_TITLE = "DELAY_FOR_I2C_RESET";
+    $display("===================== TEST_%s =========================",TEST_TITLE);
+    
+    #1000; // Wait 1 usec
     TEST_TITLE = "TEST_SENSOR1";
     $display("===================== TEST_%s =========================",TEST_TITLE);
     setup_sensor_channel (
@@ -2313,7 +2365,7 @@ task setup_sensor_channel;
             num_sensor,  // input                    [1:0] num_sensor;
             3,  // input                            [1:0] mrst;     // <2: keep MRST, 2 - MRST low (active),  3 - high (inactive)
             3,  // input                            [1:0] arst;     // <2: keep ARST, 2 - ARST low (active),  3 - high (inactive)
-            3,  // input                            [1:0] aro;      // <2: keep ARO,  2 - set ARO (software controlled) low,  3 - set ARO  (software controlled) high
+            TRIGGER_MODE?3:2,   // input            [1:0] aro;      // <2: keep ARO,  2 - set ARO (software controlled) low,  3 - set ARO  (software controlled) high
             0,  // input                            [1:0] mmcm_rst; // <2: keep MMCM reset, 2 - MMCM reset off,  3 - MMCM reset on
             3,  // input                            [1:0] clk_sel;  // <2: keep MMCM clock source, 2 - use internal pixel clock,  3 - use pixel clock from the sensor
             0,  // input                                  set_delays; // (self-clearing) load all pre-programmed delays 
@@ -2343,7 +2395,7 @@ task setup_sensor_channel;
     TEST_TITLE = "I2C_TEST";
     $display("===================== TEST_%s =========================",TEST_TITLE);
 
-        test_i2c_353; // test soft/sequencer i2c
+        test_i2c_353 (num_sensor); // test soft/sequencer i2c
         
     TEST_TITLE = "LENS_FLAT_SETUP";
     $display("===================== TEST_%s =========================",TEST_TITLE);
@@ -2817,9 +2869,12 @@ endtask
 
 
 task test_i2c_353;
+    input [1:0] chn;
     begin
+    // Reset moved out, done for all channels, then 1 usec delay
+    /*
         set_sensor_i2c_command(
-            2'b0,   // input                             [1:0] num_sensor;
+            chn,   // input                             [1:0] num_sensor;
             1'b1,   // input                                   rst_cmd;    // [14]   reset all FIFO (takes 16 clock pulses), also - stops i2c until run command
             2'b0,   // input       [SENSI2C_CMD_RUN_PBITS : 0] run_cmd;    // [13:12]3 - run i2c, 2 - stop i2c (needed before software i2c), 1,0 - no change to run state
             1'b1,   // input                                   set_bytes;  // [11] if 1, use bytes (below), 0 - nop
@@ -2829,33 +2884,34 @@ task test_i2c_353;
             2'b0,   // input    [SENSI2C_CMD_SCL_WIDTH -1 : 0] scl_ctl;    // [1:0] : 0: NOP, 1: 1'b0->SCL, 2: 1'b1->SCL, 3: 1'bz -> SCL 
             2'b0);  // input    [SENSI2C_CMD_SDA_WIDTH -1 : 0] sda_ctl;    // [3:2] : 0: NOP, 1: 1'b0->SDA, 2: 1'b1->SDA, 3: 1'bz -> SDA  
         repeat (10) @ (posedge CLK); // wait for initialization to be done TODO: use status
-        set_sensor_i2c_command (0, 0, 3, 0, 0, 0, 0, 0, 0); // run i2c - reset software bits
-        set_sensor_i2c_command (0, 0, 2, 0, 0, 0, 0, 0, 0); // stop i2c, enable software control
+        */
+        set_sensor_i2c_command (chn, 0, 3, 0, 0, 0, 0, 0, 0); // run i2c - reset software bits
+        set_sensor_i2c_command (chn, 0, 2, 0, 0, 0, 0, 0, 0); // stop i2c, enable software control
 
-        set_sensor_i2c_command (0, 0, 0, 0, 0, 0, 0, 0, 2); // SDA = 1 
-        set_sensor_i2c_command (0, 0, 0, 0, 0, 0, 0, 0, 1); // SDA = 0
-        set_sensor_i2c_command (0, 0, 0, 0, 0, 0, 0, 2, 0); // SCL = 1 
-        set_sensor_i2c_command (0, 0, 0, 0, 0, 0, 0, 1, 0); // SCL = 0 
-        set_sensor_i2c_command (0, 0, 0, 0, 0, 0, 0, 0, 2); // SDA = 1 
-        set_sensor_i2c_command (0, 0, 0, 0, 0, 0, 0, 2, 0); // SCL = 1 
-        set_sensor_i2c_command (0, 0, 0, 0, 0, 0, 0, 0, 3); // SDA = 'bz 
-        set_sensor_i2c_command (0, 0, 0, 0, 0, 0, 0, 3, 0); // SCL = 'bz 
+        set_sensor_i2c_command (chn, 0, 0, 0, 0, 0, 0, 0, 2); // SDA = 1 
+        set_sensor_i2c_command (chn, 0, 0, 0, 0, 0, 0, 0, 1); // SDA = 0
+        set_sensor_i2c_command (chn, 0, 0, 0, 0, 0, 0, 2, 0); // SCL = 1 
+        set_sensor_i2c_command (chn, 0, 0, 0, 0, 0, 0, 1, 0); // SCL = 0 
+        set_sensor_i2c_command (chn, 0, 0, 0, 0, 0, 0, 0, 2); // SDA = 1 
+        set_sensor_i2c_command (chn, 0, 0, 0, 0, 0, 0, 2, 0); // SCL = 1 
+        set_sensor_i2c_command (chn, 0, 0, 0, 0, 0, 0, 0, 3); // SDA = 'bz 
+        set_sensor_i2c_command (chn, 0, 0, 0, 0, 0, 0, 3, 0); // SCL = 'bz 
 
-        set_sensor_i2c_command (0, 0, 3, 0, 0, 0, 0, 0, 0); // run i2c
+        set_sensor_i2c_command (chn, 0, 3, 0, 0, 0, 0, 0, 0); // run i2c
         write_sensor_i2c (
-            0,           // input   [1:0] num_sensor;
+            chn,           // input   [1:0] num_sensor;
             0,           // input         rel_addr; // 0 - absolute, 1 - relative
             1,           // input integer addr;
             'h90040793); // input  [31:0] data;
                     
-        write_sensor_i2c (0, 0, 1,'h90050a23);        
-        write_sensor_i2c (0, 0, 2,'h90080001);        
-        write_sensor_i2c (0, 0, 3,'h90090123);        
-        write_sensor_i2c (0, 1, 2,'h90091234);        
-        write_sensor_i2c (0, 0, 4,'h9004001f);        
-        write_sensor_i2c (0, 0, 4,'h9005002f);        
-        write_sensor_i2c (0, 1, 3,'h90020013);        
-        write_sensor_i2c (0, 1, 3,'h90030017);        
+        write_sensor_i2c (chn, 0, 1,'h90050a23);        
+        write_sensor_i2c (chn, 0, 2,'h90080001);        
+        write_sensor_i2c (chn, 0, 3,'h90090123);        
+        write_sensor_i2c (chn, 1, 2,'h90091234);        
+        write_sensor_i2c (chn, 0, 4,'h9004001f);        
+        write_sensor_i2c (chn, 0, 4,'h9005002f);        
+        write_sensor_i2c (chn, 1, 3,'h90020013);        
+        write_sensor_i2c (chn, 1, 3,'h90030017);        
     
     end
 endtask
@@ -2990,6 +3046,8 @@ task set_sensor_i2c_command;
     reg                              [31:0] tmp;
 
     begin
+    // only needs wait busy for software i2c
+//        #80; // instead of wait busy - check if it is needed
         tmp= {func_sensor_i2c_command(rst_cmd, run_cmd, set_bytes, bytes, set_dly, dly, scl_ctl, sda_ctl)};
         write_contol_register( SENSOR_GROUP_ADDR + num_sensor * SENSOR_BASE_INC +SENSI2C_CTRL_RADDR, tmp);
     end

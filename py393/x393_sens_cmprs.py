@@ -44,8 +44,10 @@ import x393_rtc
 
 import x393_utils
 
-#import time
+import time
 import vrlg
+
+
 PAGE_SIZE =           4096
 SI5338_PATH =         '/sys/devices/amba.0/e0004000.ps7-i2c/i2c-0/0-0070'
 POWER393_PATH =       '/sys/devices/elphel393-pwr.1'
@@ -154,9 +156,8 @@ class X393SensCmprs(object):
                               clk_sel =                   1,         # 1
                               histogram_left =            0,
                               histogram_top =             0,
-                              histogram_width_m1 =        0,
-                              histogram_height_m1 =       0,
-                              
+                              histogram_width_m1 =        2559, #0,
+                              histogram_height_m1 =       1935, #0,
                               verbose =                   1):
         """
         Setup one sensor+compressor channel (for one sub-channel only)
@@ -215,22 +216,25 @@ class X393SensCmprs(object):
         frame_start_address = (last_buf_frame + 1) * frame_start_address_inc * num_sensor
 #       histogram_start_phys_page - system memory 4K page number to start histogram
 
-        histogram_start_phys_page = self.get_histogram_byte_start() // 4096    
+        histogram_start_phys_page = self.get_histogram_byte_start() // 4096
         
         if verbose >0 :
             print ("setup_sensor_channel:")
-            print ("num_sensor =              ", num_sensor)
-            print ("frame_full_width =        ", frame_full_width)
-            print ("window_width =            ", window_width)
-            print ("window_height =           ", window_height)
-            print ("window_left =             ", window_left)
-            print ("window_top =              ", window_top)
-            print ("frame_start_address =     ", frame_start_address)
-            print ("frame_start_address_inc = ", frame_start_address_inc)
-            print ("last_buf_frame =          ", last_buf_frame)
-            print ("num_macro_cols_m1 =       ", num_macro_cols_m1)
-            print ("num_macro_rows_m1 =       ", num_macro_rows_m1)
-            print ("verbose =                 ", verbose)
+            print ("num_sensor =                ", num_sensor)
+            print ("frame_full_width =          ", frame_full_width)
+            print ("window_width =              ", window_width)
+            print ("window_height =             ", window_height)
+            print ("window_left =               ", window_left)
+            print ("window_top =                ", window_top)
+            print ("frame_start_address =       0x%x"%(frame_start_address))
+            print ("frame_start_address_inc =   0x%x"%(frame_start_address_inc))
+            print ("histogram_start_phys_page = 0x%x"%(histogram_start_phys_page))
+            print ("histogram start address =   0x%x"%(histogram_start_phys_page * 4096))
+            
+            print ("last_buf_frame =            ", last_buf_frame)
+            print ("num_macro_cols_m1 =         ", num_macro_cols_m1)
+            print ("num_macro_rows_m1 =         ", num_macro_rows_m1)
+            print ("verbose =                   ", verbose)
         if exit_step == 10: return False
             
         self.x393Sensor.program_status_sensor_i2c(
@@ -243,7 +247,7 @@ class X393SensCmprs(object):
             seq_num =    0);          # input [5:0] seq_num;
 
         self.x393Cmprs.program_status_compressor(
-            num_sensor = num_sensor,  # input [1:0] num_sensor;
+            cmprs_chn =  num_sensor,  # input [1:0] num_sensor;
             mode =       3,           # input [1:0] mode;
             seq_num =    0);          # input [5:0] seq_num;
         if exit_step == 11: return False
@@ -307,7 +311,7 @@ class X393SensCmprs(object):
         if exit_step == 15: return False
     
         self.x393Cmprs.compressor_control(
-                       num_sensor = num_sensor,
+                       chn = num_sensor,
                        run_mode =   3)  # run repetitive mode
 
         if exit_step == 16: return False
@@ -357,8 +361,8 @@ class X393SensCmprs(object):
         self.x393Sensor.test_i2c_353() # test soft/sequencer i2c
         """
         if verbose >0 :
-            print ("===================== LENS_FLAT_SETUP =========================")
-        self.x393Sensor.set_sensor_lens_flat_heights (self,
+            print ("===================== LENS_FLAT_SETUP ========================= num_sensor=",num_sensor)
+        self.x393Sensor.set_sensor_lens_flat_heights (
                                       num_sensor = num_sensor,
                                       height0_m1 = 0xffff,
                                       height1_m1 = None,
@@ -381,7 +385,7 @@ class X393SensCmprs(object):
         if verbose >0 :
             print ("===================== GAMMA_SETUP =========================")
 
-        self.x393Sensor.set_sensor_gamma_heights (self, 
+        self.x393Sensor.set_sensor_gamma_heights ( 
                                   num_sensor = num_sensor,
                                   height0_m1 = 0xffff,
                                   height1_m1 = 0,
@@ -392,7 +396,7 @@ class X393SensCmprs(object):
             print ("===================== HISTOGRAMS_SETUP =========================")
         self.x393Sensor.set_sensor_histogram_window ( # 353 did it using command sequencer)
                                     num_sensor =     num_sensor,
-                                    num_sub_sensor = 0,
+                                    subchannel =     0,
                                     left =           histogram_left,
                                     top =            histogram_top,
                                     width_m1 =       histogram_width_m1,
@@ -458,9 +462,9 @@ class X393SensCmprs(object):
                               clk_sel =                   1,         # 1
                               histogram_left =            0,
                               histogram_top =             0,
-                              histogram_width_m1 =        0,
-                              histogram_height_m1 =       0,
-                              
+                              histogram_width_m1 =        2559, #0,
+                              histogram_height_m1 =       799, #0,
+                              circbuf_chn_size=           0x1000000, #16777216
                               verbose =                   1):
         """
         Setup one sensor+compressor channel (for one sub-channel only)
@@ -496,9 +500,35 @@ class X393SensCmprs(object):
         @param histogram_top -       histogram window top margin
         @param histogram_width_m1 -  one less than window width. If 0 - use frame right margin (end of HACT)
         @param histogram_height_m1 - one less than window height. If 0 - use frame bottom margin (end of VACT)
+        @param circbuf_chn_size - circular buffer size for each channel, in bytes
         @parame verbose - verbose level
         @return True if all done, False if exited prematurely by  exit_step
         """
+#    camsync_setup (
+#        4'hf ); # sensor_mask); #
+        circbuf_start = self.get_circbuf_byte_start()
+        mem_end=        self.get_circbuf_byte_end()
+#circbuf_chn_size
+        circbuf_starts=[]
+        for i in range(16):
+            circbuf_starts.append(circbuf_start + i*circbuf_chn_size)
+        circbuf_end = circbuf_start + 4*circbuf_chn_size
+
+    #TODO: calculate addersses/lengths
+        afi_cmprs0_sa = circbuf_starts[0] // 4  
+        afi_cmprs1_sa = circbuf_starts[1] // 4
+        afi_cmprs2_sa = circbuf_starts[2] // 4
+        afi_cmprs3_sa = circbuf_starts[3] // 4
+        afi_cmprs_len = circbuf_chn_size  // 4    
+        if verbose >0 :
+            print ("compressor system memory buffers:")
+            print ("circbuf start 0 =           0x%x"%(circbuf_starts[0]))
+            print ("circbuf start 1 =           0x%x"%(circbuf_starts[1]))
+            print ("circbuf start 2 =           0x%x"%(circbuf_starts[2]))
+            print ("circbuf start 3 =           0x%x"%(circbuf_starts[3]))
+            print ("circbuf end =               0x%x"%(circbuf_end))
+            print ("memory buffer end =         0x%x"%(mem_end))
+        
         if sensor_mask & 3: # Need mower for sesns1 and sens 2
             if verbose >0 :
                 print ("===================== Sensor power setup: sensor ports 0 and 1 =========================")
@@ -528,14 +558,6 @@ class X393SensCmprs(object):
         self.x393Rtc.set_rtc () # no correction, use current system time
         if exit_step == 3: return False
         
-#    camsync_setup (
-#        4'hf ); # sensor_mask); #
-    #TODO: calculate addersses/lengths
-        afi_cmprs0_sa = 0 
-        afi_cmprs1_sa = 0
-        afi_cmprs2_sa = 0
-        afi_cmprs3_sa = 0
-        afi_cmprs_len = 0    
 
         for num_sensor in range(4):
             if sensor_mask & (1 << num_sensor):
@@ -583,6 +605,67 @@ class X393SensCmprs(object):
                                        afi_cmprs2_len = afi_cmprs_len,
                                        afi_cmprs3_sa =  afi_cmprs3_sa,
                                        afi_cmprs3_len = afi_cmprs_len)    
-                if exit_step == 21: return False
+                self.x393Sensor.print_status_sensor_io (num_sensor = num_sensor)
+                self.x393Sensor.print_status_sensor_i2c (num_sensor = num_sensor)
+                
+                self.x393Sensor.set_sensor_i2c_command (
+                                num_sensor = num_sensor,
+                                rst_cmd =   True)
+                self.x393Sensor.set_sensor_i2c_command (
+                                num_sensor = num_sensor,
+                                num_bytes = 3,
+                                dly =       100, # ??None,
+                                scl_ctl =   None, 
+                                sda_ctl =   None)
+                self.x393Sensor.set_sensor_i2c_command (
+                                num_sensor = num_sensor,
+                                rst_cmd =   False)
 
-        self.x393_camsync_setup ( sensor_mask = sensor_mask ) # sensor_mask); #
+                self.x393Sensor.set_sensor_i2c_command (
+                                num_sensor = num_sensor,
+                                run_cmd =   True)
+
+        if exit_step == 21: return False
+
+        self.x393Camsync.camsync_setup (
+                     sensor_mask =        sensor_mask,
+                      trigger_mode =       False, #False - async (free running) sensor mode, True - triggered (global reset) sensor mode
+                      ext_trigger_mode =   False, # True - external trigger source, 0 - local FPGA trigger source
+                      external_timestamp = False, # True - use received timestamp in the image file, False - use local timestamp 
+                      camsync_period =     None,
+                      camsync_delay =      None)
+        
+        
+    def print_status_sensor(self,
+                            restart = False,
+                            chn = None):
+        """
+        Decode and print channel-related status
+        @param restart - reset "alive" bits, wait 1 second, read status
+        @param chn - channel numberr or None - in that case print it for all channels
+        """
+        if chn is None:
+            sensors=range(4)
+        else:
+            sensors = [chn]
+
+        if restart:
+            for chn in sensors:
+
+                self.x393Sensor.program_status_sensor_i2c(
+                    num_sensor = chn,  # input [1:0] num_sensor;
+                    mode =       3,           # input [1:0] mode;
+                    seq_num =    0);          # input [5:0] seq_num;
+                self.x393Sensor.program_status_sensor_io(
+                    num_sensor = chn,  # input [1:0] num_sensor;
+                    mode =       3,           # input [1:0] mode;
+                    seq_num =    0);          # input [5:0] seq_num;
+        
+                self.x393Cmprs.program_status_compressor(
+                    cmprs_chn =  chn,  # input [1:0] num_sensor;
+                    mode =       3,           # input [1:0] mode;
+                    seq_num =    0);          # input [5:0] seq_num;
+            time.sleep(1)
+        for chn in sensors:
+            self.x393Sensor.print_status_sensor_io (num_sensor = chn)
+            self.x393Sensor.print_status_sensor_i2c (num_sensor = chn)

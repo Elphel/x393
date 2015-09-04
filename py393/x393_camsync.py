@@ -157,14 +157,15 @@ class X393Camsync(object):
         @param delay -              delay value in 10 ns steps - max 42.95 sec (or list/tuple if different for channels)
         """
         self.set_camsync_period  (0) # reset circuitry
-        self.set_gpio_ports (port_a = True)
+        self.X393_gpio.set_gpio_ports (port_a = True)
         self.set_camsync_mode (
                                en = True,
-                               snd_en = True,
+                               en_snd = True,
                                en_ts_external = external_timestamp,
                                triggered_mode = trigger_mode,
                                master_chn =     0,
                                chn_en = sensor_mask)
+        
         # setting I/Os after camsync is enabled
         self.reset_camsync_inout (is_out = 0)        # reset input selection
         if ext_trigger_mode :
@@ -179,7 +180,9 @@ class X393Camsync(object):
         self.set_camsync_period  (SYNC_BIT_LENGTH) #set (bit_length -1) (should be 2..255), not the period
         if not isinstance(camsync_delay,list) or isinstance(camsync_delay,tuple):
             camsync_delay = (camsync_delay, camsync_delay, camsync_delay, camsync_delay)
-            for i, dly in enumerate (camsync_delay): 
+        for i, dly in enumerate (camsync_delay): 
+            if not dly is None:
                 self.set_camsync_delay(sub_chn = i, delay = dly)
 
-        self.set_camsync_period  (period = camsync_period) # set period (start generating) - in 353 was after everything else was set
+        if not camsync_period is None:
+            self.set_camsync_period  (period = camsync_period) # set period (start generating) - in 353 was after everything else was set

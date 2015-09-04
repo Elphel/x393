@@ -21,14 +21,14 @@
 `timescale 1ns/1ps
 
 module  sensor_i2c#(
-    parameter SENSI2C_ABS_ADDR =       'h300,
-    parameter SENSI2C_REL_ADDR =       'h310,
+    parameter SENSI2C_ABS_ADDR =       'h410,
+    parameter SENSI2C_REL_ADDR =       'h420,
     parameter SENSI2C_ADDR_MASK =      'h7f0, // both for SENSI2C_ABS_ADDR and SENSI2C_REL_ADDR
-    parameter SENSI2C_CTRL_ADDR =      'h320,
+    parameter SENSI2C_CTRL_ADDR =      'h402,
     parameter SENSI2C_CTRL_MASK =      'h7fe,
     parameter SENSI2C_CTRL =           'h0,
     parameter SENSI2C_STATUS =         'h1,
-    parameter SENSI2C_STATUS_REG =     'h30,
+    parameter SENSI2C_STATUS_REG =     'h20,
     // Control register bits
     parameter SENSI2C_CMD_RESET =       14, // [14]   reset all FIFO (takes 16 clock pulses), also - stops i2c until run command
     parameter SENSI2C_CMD_RUN =         13, // [13:12]3 - run i2c, 2 - stop i2c (needed before software i2c), 1,0 - no change to run state
@@ -54,7 +54,7 @@ module  sensor_i2c#(
     output  [7:0] status_ad,   // status address/data - up to 5 bytes: A - {seq,status[1:0]} - status[2:9] - status[10:17] - status[18:25]
     output        status_rq,   // input request to send status downstream
     input         status_start,// Acknowledge of the first status packet byte (address)
-    input         frame_sync,  // increment/reset frame number 
+    input         frame_sync,  // @posedge mclk increment/reset frame number 
 //    input         frame_0,     // reset frame number to zero - can be done by soft reset before first enabled frame
 //    output        busy,        // busy (do not use software i2i)
     input         scl_in,      // i2c SCL input
@@ -121,7 +121,7 @@ module  sensor_i2c#(
      
      wire   [3:0]  frame_num=wpage0[3:0];
 //fifo write pointers (dual port distributed RAM)
-     reg    [5:0]  fifo_wr_pointers [0:15]; // dual ported read?
+     reg    [5:0]  fifo_wr_pointers_ram [0:15]; // dual ported read?
      wire   [5:0]  fifo_wr_pointers_outw; // pointer dual-ported RAM - write port out, valid next after command
      wire   [5:0]  fifo_wr_pointers_outr; // pointer dual-ported RAM - read port out
 
@@ -188,16 +188,16 @@ module  sensor_i2c#(
      reg            wen_fifo; // [1] was not used - we_fifo_wp was used instead
 
      
-     assign set_ctrl_w = we_cmd && (wa == SENSI2C_CTRL );// ==0
-     assign set_status_w = we_cmd && (wa == SENSI2C_STATUS );// ==0
+     assign set_ctrl_w = we_cmd && ((wa & ~SENSI2C_CTRL_MASK) == SENSI2C_CTRL );// ==0
+     assign set_status_w = we_cmd && ((wa & ~SENSI2C_CTRL_MASK) == SENSI2C_STATUS );// ==0
      assign          scl_out=i2c_run?    scl_hard:    scl_soft ;
      assign          sda_out=i2c_run?    sda_hard:    sda_soft ;
      assign          scl_en=i2c_run? 1'b1:        scl_en_soft  ;
      assign          sda_en=i2c_run? sda_en_hard: sda_en_soft ;
-     assign  pre_wpage0_inc = (!wen && !(|wen_r) && !wpage0_inc) && (req_clr || reset_on) ;
+     assign  pre_wpage0_inc = (!wen && !(|wen_r) && !wpage0_inc[0]) && (req_clr || reset_on) ;
 
-     assign  fifo_wr_pointers_outw = fifo_wr_pointers[wpage_wr[3:0]]; // valid next after command
-     assign  fifo_wr_pointers_outr = fifo_wr_pointers[page_r[3:0]];
+     assign  fifo_wr_pointers_outw = fifo_wr_pointers_ram[wpage_wr[3:0]]; // valid next after command
+     assign  fifo_wr_pointers_outr = fifo_wr_pointers_ram[page_r[3:0]];
      
      
 //    wire           we_abs;
@@ -207,7 +207,12 @@ module  sensor_i2c#(
 //    wire     [3:0] wa; 
 
      assign         wen=set_ctrl_w || we_rel || we_abs; //remove set_ctrl_w?
-
+    reg alive_fs;
+    always @ (posedge mclk) begin
+        if    (set_status_w) alive_fs <= 0;
+        else if (frame_sync) alive_fs <= 1;
+    end
+    
 
     cmd_deser #(
         .ADDR        (SENSI2C_ABS_ADDR),
@@ -232,14 +237,14 @@ module  sensor_i2c#(
 
     status_generate #(
         .STATUS_REG_ADDR(SENSI2C_STATUS_REG),
-        .PAYLOAD_BITS(7) // STATUS_PAYLOAD_BITS)
+        .PAYLOAD_BITS(7+3) // STATUS_PAYLOAD_BITS)
     ) status_generate_sens_i2c_i (
         .rst        (1'b0), // rst), // input
         .clk        (mclk), // input
         .srst       (mrst), // input
         .we         (set_status_w), // input
         .wd         (di[7:0]), // input[7:0] 
-        .status     ({busy, frame_num, sda_in, scl_in}), // input[25:0] 
+        .status     ({reset_on, req_clr, alive_fs,busy, frame_num, sda_in, scl_in}), // input[25:0] 
         .ad         (status_ad), // output[7:0] 
         .rq         (status_rq), // output
         .start      (status_start) // input
@@ -292,27 +297,28 @@ module  sensor_i2c#(
 // write pointer memory
       wpage0_inc <= {wpage0_inc[0],pre_wpage0_inc};
       // reset pointers in all 16 pages:      
-      reset_on <= reset_cmd  || (reset_on && !(wpage0_inc && ( wpage0[3:0] == 4'hf)));
+      reset_on <= reset_cmd  || (reset_on && !(wpage0_inc[0] && ( wpage0[3:0] == 4'hf)));
       // request to clear pointer(s)? for one page - during reset or delayed frame sync (if previous was not finished)
-      req_clr  <= frame_sync || (req_clr && !wpage0_inc);
+      req_clr  <= frame_sync || (req_clr && !wpage0_inc[0]);
 
-      if      (reset_cmd)  wpage0 <= 0;
+      if      (reset_cmd)     wpage0 <= 0;
 //      else if (frame_0)    wpage0 <= 0;
-      else if (wpage0_inc) wpage0<=wpage0+1;
+      else if (wpage0_inc[0]) wpage0<=wpage0+1;
       
-      if      (reset_cmd)  wpage_prev<=4'hf;
-      else if (wpage0_inc) wpage_prev<=wpage0;
+      if      (reset_cmd)     wpage_prev<=4'hf;
+      else if (wpage0_inc[0]) wpage_prev<=wpage0;
       
       
-      if      (we_abs)     wpage_wr <= ((wa==wpage_prev)? wpage0[3:0] : wa);
-      else if (we_rel)     wpage_wr <= wpage0+wa;
-      else if (wpage0_inc) wpage_wr <= wpage_prev; // only for erasing?
+      if      (we_abs)        wpage_wr <= ((wa==wpage_prev)? wpage0[3:0] : wa);
+      else if (we_rel)        wpage_wr <= wpage0+wa;
+      else if (wpage0_inc[0]) wpage_wr <= wpage_prev; // only for erasing?
       
 //      we_fifo_wp <= wen || wpage0_inc; // during commands and during reset?
 
 ///   we_fifo_wp <= wen_fifo[0] || wpage0_inc; // during commands and during reset?
 //      we_fifo_wp <= wen_fifo[0] || we_rel || we_abs; // ??
-      we_fifo_wp <= wen_fifo || we_rel || we_abs; // ??
+////      we_fifo_wp <= wen_fifo || we_rel || we_abs; // ??
+      we_fifo_wp <= wen_fifo || wpage0_inc[0];
       
 //     reg            [1:0] wen_r;
 //     reg            [1:0] wen_fifo;
@@ -322,7 +328,7 @@ module  sensor_i2c#(
        if (wen_fifo)  fifo_wr_pointers_outw_r[5:0] <= fifo_wr_pointers_outw[5:0];
        
        // write to dual-port pointer memory
-       if (we_fifo_wp) fifo_wr_pointers[wpage_wr] <= wpage0_inc[1]? 6'h0:(fifo_wr_pointers_outw_r[5:0]+1); 
+       if (we_fifo_wp) fifo_wr_pointers_ram[wpage_wr] <= wpage0_inc[1]? 6'h0:(fifo_wr_pointers_outw_r[5:0]+1); 
         
         fifo_wr_pointers_outr_r[5:0] <= fifo_wr_pointers_outr[5:0]; // just register distri
 // command i2c fifo (RAMB16_S9_S18)
@@ -342,7 +348,7 @@ module  sensor_i2c#(
       if      (reset_cmd || page_r_inc[0])  rpointer[5:0] <= 6'h0;
       else if (i2c_done)                    rpointer[5:0] <= rpointer[5:0] + 1;
 
-      i2c_run <= !reset_cmd && (i2c_start || (i2c_run && !i2c_done));
+      i2c_run <= !reset_cmd && !reset_on && (i2c_start || (i2c_run && !i2c_done));
       i2c_start <= i2c_enrun && !i2c_run && !i2c_start && (rpointer[5:0]!= fifo_wr_pointers_outr_r[5:0]) && !(|page_r_inc);
       page_r_inc[1:0] <= {page_r_inc[0],
                            !i2c_run &&                              // not i2c in progress
@@ -394,7 +400,7 @@ module  sensor_i2c#(
       scl_hard <= scl_0;
        sda_en_hard <= i2c_run && (!sda_0 || (!i2c_is_ackn && !sda_hard));   
 
-      if (wen) busy_cntr <= 4'hf;
+      if (wen)             busy_cntr <= 4'hf;
       else if (|busy_cntr) busy_cntr <= busy_cntr-1;
         
       busy <= (i2c_enrun && ((rpointer[5:0]!= fifo_wr_pointers_outr_r[5:0]) || (page_r!=wpage0))) ||

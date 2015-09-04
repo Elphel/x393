@@ -35,6 +35,7 @@ module  sens_histogram #(
     input         pclk,   // global clock input, pixel rate (96MHz for MT9P006)
     input         pclk2x,
     input         sof,
+    input         eof,
     input         hact,
     input   [7:0] hist_di, // 8-bit pixel data
     
@@ -48,6 +49,7 @@ module  sens_histogram #(
     input   [7:0] cmd_ad,      // byte-serial command address/data (up to 6 bytes: AL-AH-D0-D1-D2-D3 
     input         cmd_stb,      // strobe (with first byte) for the command a/d
     input         monochrome    // tie to 0 to reduce hardware
+    ,output debug_mclk
 );
     localparam PXD_2X_LATENCY = 2;
     reg         hist_bank_pclk;
@@ -101,7 +103,7 @@ module  sens_histogram #(
     reg           top_margin;   // above (before) active window
     reg           hist_done;    // @pclk single cycle
     wire          hist_done_mclk;
-    reg           vert_woi;     // vertically in window
+    reg           vert_woi;     // vertically in window TESTED ACTIVE
     reg           left_margin;  // left of (before) active window
     reg    [2:0]  woi;          // @ pclk2x - inside WOI (and delayed
     reg           hor_woi;      // vertically in window
@@ -123,6 +125,8 @@ module  sens_histogram #(
     reg           hist_xfer_busy; // @pclk, during histogram readout , immediately after woi (no gaps)
     reg           wait_readout;   // only used in NOBUF mode, in outher modes readout is expected to be always finished in time
     
+    reg           debug_vert_woi_r;
+    
     
     assign set_left_top_w =     pio_stb && (pio_addr == HISTOGRAM_LEFT_TOP );
     assign set_width_height_w = pio_stb && (pio_addr == HISTOGRAM_WIDTH_HEIGHT );
@@ -135,7 +139,7 @@ module  sens_histogram #(
     assign hist_xfer_done_mclk = hist_out_d && !hist_out && hist_en;
 
 //AF2015-new mod
-    wire       line_start_w = hact && !hact_d[0];
+    wire       line_start_w = hact && !hact_d[0]; // // tested active
     reg        pre_first_line;
     reg        frame_active; // until done
     reg        hist_en_pclk2x;
@@ -156,6 +160,9 @@ module  sens_histogram #(
     wire       hor_woi_2x=woi_ram[pxd_ra];
     reg        monochrome_pclk;
     reg        monochrome_2x;
+    
+//    assign debug_mclk = hist_done_mclk;
+//    assign debug_mclk = set_width_height_w;
     
     always @ (posedge pclk) begin
         if (!hact) pxd_wa <= 0;
@@ -196,7 +203,10 @@ module  sens_histogram #(
         if (!en ||(pre_first_line && !hact))  vert_woi <= 0;
         else if (vcntr_zero_w & line_start_w) vert_woi <= top_margin;
         
-        hist_done <= vcntr_zero_w && vert_woi && line_start_w;
+        debug_vert_woi_r <= vcntr_zero_w && vert_woi; // vert_woi;
+        
+//        hist_done <= vcntr_zero_w && vert_woi && line_start_w; // hist done never asserted, line_start_w - active
+        hist_done <= vert_woi && (eof || (vcntr_zero_w && line_start_w)); // hist done never asserted, line_start_w - active
         
         if   (!en || hist_done)               frame_active <= 0;
         else if (sof && en_new)               frame_active <= 1;
@@ -337,6 +347,17 @@ module  sens_histogram #(
         else if (hist_xfer_done)                               wait_readout <= 0;
     
     end
+
+    pulse_cross_clock pulse_cross_clock_debug_mclk_i (
+        .rst         (prst), // input
+        .src_clk     (pclk), // input
+        .dst_clk     (mclk), // input
+//        .in_pulse    (vert_woi && !debug_vert_woi_r), // line_start_w), // input vcntr_zero_w
+//        .in_pulse    (vcntr_zero_w && !debug_vert_woi_r), // line_start_w), // input 
+        .in_pulse    (vcntr_zero_w && vert_woi && !debug_vert_woi_r), // line_start_w), // input 
+        .out_pulse   (debug_mclk),    // output
+        .busy() // output
+    );
 
     
     cmd_deser #(

@@ -390,7 +390,7 @@ class X393Cmprs(object):
             print (   "bayer = ",bayer)
             print (   "focus_mode = ",focus_mode)
         self.compressor_control(
-            num_sensor =  num_sensor,  # sensor channel number (0..3)
+            chn =         num_sensor,  # sensor channel number (0..3)
             qbank =       qbank,       # [6:3] quantization table page
             dc_sub =      dc_sub,      # [8:7] subtract DC
             cmode =       cmode,       #  [13:9] color mode:
@@ -399,18 +399,18 @@ class X393Cmprs(object):
             focus_mode =  focus_mode) # [23:21] Set focus mode
             
         self.compressor_format(
-            num_sensor =        num_sensor,        # sensor channel number (0..3)
+            chn =               num_sensor,        # sensor channel number (0..3)
             num_macro_cols_m1 = num_macro_cols_m1, # number of macroblock colums minus 1
             num_macro_rows_m1 = num_macro_rows_m1, # number of macroblock rows minus 1
             left_margin =       left_margin)      # left margin of the first pixel (0..31) for 32-pixel wide colums in memory access
     
         self.compressor_color_saturation(
-            num_sensor =    num_sensor,    # sensor channel number (0..3)
+            chn =          num_sensor,    # sensor channel number (0..3)
             colorsat_blue = colorsat_blue, # color saturation for blue (10 bits) #'h90 for 100%
             colorsat_red =  colorsat_red) # color saturation for red (10 bits)   # 'b6 for 100%
 
         self.compressor_coring(
-            num_sensor = num_sensor,    # sensor channel number (0..3)
+            chn =        num_sensor,    # sensor channel number (0..3)
             coring =     coring);       # coring value
 
 

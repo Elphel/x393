@@ -224,6 +224,9 @@ module  sensors393 #(
     parameter SENS_SS_EN         =       "FALSE",      // Enables Spread Spectrum mode
     parameter SENS_SS_MODE       =       "CENTER_HIGH",//"CENTER_HIGH","CENTER_LOW","DOWN_HIGH","DOWN_LOW"
     parameter SENS_SS_MOD_PERIOD =       10000        // integer 4000-40000 - SS modulation period in ns
+`ifdef DEBUG_RING
+        ,parameter DEBUG_CMD_LATENCY = 2 
+`endif        
     
 ) (
 //    input         rst,
@@ -304,6 +307,11 @@ module  sensors393 #(
     output                     saxi_bready,            // AXI PS Slave GP0 BREADY, input
     input               [ 5:0] saxi_bid,               // AXI PS Slave GP0 BID[5:0], output
     input               [ 1:0] saxi_bresp              // AXI PS Slave GP0 BRESP[1:0], output
+`ifdef DEBUG_RING       
+    ,output                       debug_do, // output to the debug ring
+     input                        debug_sl, // 0 - idle, (1,0) - shift, (1,1) - load
+     input                        debug_di  // input from the debug ring
+`endif         
     
 );
     wire               [1:0] idelay_ctrl_rdy;   // need to connect outputs to prevent optimizing out

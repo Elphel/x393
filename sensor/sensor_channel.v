@@ -25,7 +25,7 @@ module  sensor_channel#(
     parameter SENSOR_NUMBER =             0,     // sensor number (0..3)
     parameter SENSOR_GROUP_ADDR =         'h400, // sensor registers base address
     parameter SENSOR_BASE_INC =           'h040, // increment for sesor channel
-    parameter SENSI2C_STATUS_REG_BASE =   'h30,  // 4 locations" x30, x32, x34, x36
+    parameter SENSI2C_STATUS_REG_BASE =   'h20,  // 4 locations" x30, x32, x34, x36
     parameter SENSI2C_STATUS_REG_INC =    2,     // increment to the next sensor
     parameter SENSI2C_STATUS_REG_REL =    0,     // 4 locations" 'h30, 'h32, 'h34, 'h36
     parameter SENSIO_STATUS_REG_REL =     1,     // 4 locations" 'h31, 'h33, 'h35, 'h37
@@ -311,7 +311,7 @@ module  sensor_channel#(
     reg    [SENSOR_MODE_WIDTH-1:0] mode;
     wire   [3:0] hist_en;
     wire         en_mclk; // enable this channel
-    wire         en_pclk; // enabole in pclk domain   
+    wire         en_pclk; // enable in pclk domain   
     wire   [3:0] hist_nrst;
     wire         bit16; // 16-bit mode, 0 - 8 bit mode
     wire   [3:0] hist_rq;
@@ -446,7 +446,99 @@ module  sensor_channel#(
         .scl                   (sns_scl),               // inout
         .sda                   (sns_sda)                // inout
     );
+    
+    wire [3:0] debug_hist_mclk;
     wire irst; // @ posedge ipclk
+    localparam STATUS_ALIVE_WIDTH = 8;
+    wire [STATUS_ALIVE_WIDTH - 1 : 0] status_alive;
+    reg  hact_r; // hact delayed by 1 cycle to generate start pulse
+    wire sol_mclk;
+    wire sof_mclk;
+    wire eof_mclk;
+    reg hist_rq0_r;
+///    reg hist_gr0_r;
+    wire alive_hist0_rq = hist_rq[0] && !hist_rq0_r;
+///    wire alive_hist0_gr = hist_gr[0] && !hist_gr0_r;
+    // sof_out_mclk - already exists
+    reg dout_valid_d_pclk; //@ pclk - delayed by 1 clk from dout_valid to detect edge
+    reg last_in_line_d_pclk; //@ pclk - delayed by 1 clk from last_in_line to detect edge
+    wire dout_valid_1cyc_mclk;
+    wire last_in_line_1cyc_mclk;
+// debug_hist_mclk is never active, alive_hist0_rq == 0
+//    assign status_alive = {last_in_line_1cyc_mclk, dout_valid_1cyc_mclk, alive_hist0_gr, alive_hist0_rq, sof_out_mclk, eof_mclk, sof_mclk, sol_mclk};
+    assign status_alive = {last_in_line_1cyc_mclk, dout_valid_1cyc_mclk, debug_hist_mclk[0], alive_hist0_rq, sof_out_mclk, eof_mclk, sof_mclk, sol_mclk};
+/*
+ sof, hact are tested to be active
+
+                .sof        (gamma_sof_out),  // input
+                .hact       (gamma_hact_out), // input
+
+*/    
+    always @ (posedge pclk) begin
+//        hact_r <= hact;
+        hact_r <= gamma_hact_out;
+        dout_valid_d_pclk <= dout_valid;
+        last_in_line_d_pclk <= last_in_line;
+    end
+    
+    always @ (posedge mclk) begin
+        hist_rq0_r <= en_mclk & (hist_rq[0] ^ hist_rq0_r);
+///        hist_gr0_r <= hist_gr[0];
+    end
+    
+    /*
+                .hist_rq    (hist_rq[0]),     // output
+                .hist_grant (hist_gr[0]),     // input
+    */
+// for debug/test alive   
+    pulse_cross_clock pulse_cross_clock_sol_mclk_i (
+        .rst         (prst),                  // input
+        .src_clk     (pclk),                  // input
+        .dst_clk     (mclk),                  // input
+//        .in_pulse    (hact && !hact_r),       // input
+        .in_pulse    (gamma_hact_out && !hact_r),       // input
+        .out_pulse   (sol_mclk),              // output
+        .busy() // output
+    );
+
+    pulse_cross_clock pulse_cross_clock_sof_mclk_i (
+        .rst         (prst),                  // input
+        .src_clk     (pclk),                  // input
+        .dst_clk     (mclk),                  // input
+//        .in_pulse    (sof),                   // input
+        .in_pulse    (gamma_sof_out),         // input
+        .out_pulse   (sof_mclk),              // output
+        .busy() // output
+    );
+
+    pulse_cross_clock pulse_cross_clock_eof_mclk_i (
+        .rst         (prst),                  // input
+        .src_clk     (pclk),                  // input
+        .dst_clk     (mclk),                  // input
+        .in_pulse    (eof),                   // input
+        .out_pulse   (eof_mclk),              // output
+        .busy() // output
+    );
+
+    pulse_cross_clock pulse_cross_clock_dout_valid_1cyc_mclk_i (
+        .rst         (prst),                             // input
+        .src_clk     (pclk),                             // input
+        .dst_clk     (mclk),                             // input
+        .in_pulse    (dout_valid && !dout_valid_d_pclk), // input
+        .out_pulse   (dout_valid_1cyc_mclk),             // output
+        .busy() // output
+    );
+
+    pulse_cross_clock pulse_cross_clock_last_in_line_1cyc_mclk_i (
+        .rst         (prst),                                 // input
+        .src_clk     (pclk),                                 // input
+        .dst_clk     (mclk),                                 // input
+        .in_pulse    (last_in_line && !last_in_line_d_pclk), // input
+        .out_pulse   (last_in_line_1cyc_mclk),               // output
+        .busy() // output
+    );
+
+    
     sens_parallel12 #(
         .SENSIO_ADDR           (SENSIO_ADDR),
         .SENSIO_ADDR_MASK      (SENSIO_ADDR_MASK),
@@ -492,7 +584,8 @@ module  sensor_channel#(
         .SENS_REF_JITTER2      (SENS_REF_JITTER2),
         .SENS_SS_EN            (SENS_SS_EN),
         .SENS_SS_MODE          (SENS_SS_MODE),
-        .SENS_SS_MOD_PERIOD    (SENS_SS_MOD_PERIOD)
+        .SENS_SS_MOD_PERIOD    (SENS_SS_MOD_PERIOD),
+        .STATUS_ALIVE_WIDTH    (STATUS_ALIVE_WIDTH)
     ) sens_parallel12_i (
 //        .rst                  (rst),                    // input
         .pclk                 (pclk),                   // input
@@ -512,9 +605,10 @@ module  sensor_channel#(
         .arst                 (sns_dn[7]),              // inout
         .aro                  (sns_ctl),                // inout
         .dclk                 (sns_dp[0]),              // output
-        .pxd_out              (pxd_to_fifo[11:0]),      // output[11:0] 
-        .vact_out             (vact_to_fifo),           // output
-        .hact_out             (hact_to_fifo),           // output: either delayed input, or regenerated from the leading edge and programmable duration
+        .pxd_out              (pxd_to_fifo[11:0]),      // output[11:0] @posedge ipclk
+        .vact_out             (vact_to_fifo),           // output @posedge ipclk
+        .hact_out             (hact_to_fifo),           // output @posedge ipclk: either delayed input, or regenerated from the leading edge and programmable duration
+        .status_alive_1cyc    (status_alive),           // input [3:0] @ posedge mclk, each bit single cycle pulse
         .mclk                 (mclk),                   // input
         .cmd_ad               (cmd_ad),                 // input[7:0] 
         .cmd_stb              (cmd_stb),                // input
@@ -536,10 +630,10 @@ module  sensor_channel#(
         .pxd_in      (pxd_to_fifo),  // input[11:0] 
         .vact        (vact_to_fifo), // input
         .hact        (hact_to_fifo), // input
-        .pxd_out     (pxd),          // output[11:0] 
-        .data_valid  (hact),         // output
-        .sof         (sof),          // output
-        .eof         (eof)           // output
+        .pxd_out     (pxd),          // output[11:0]  @posedge pclk
+        .data_valid  (hact),         // output @posedge pclk
+        .sof         (sof),          // output @posedge pclk
+        .eof         (eof)           // output @posedge pclk
     );
 
     sens_sync #(
@@ -563,10 +657,10 @@ module  sensor_channel#(
         .hact         (hact),          // input
         .trigger_mode (trigger_mode),  // input
         .trig_in      (trig_in),       // input
-        .trig         (trig),          // output
-        .sof_out_pclk (sof_out_sync),  // output reg 
-        .sof_out      (sof_out_mclk),  // output
-        .sof_late     (sof_late_mclk), // output
+        .trig         (trig),          // output      @pclk
+        .sof_out_pclk (sof_out_sync),  // output reg  @pclk
+        .sof_out      (sof_out_mclk),  // output      @mclk
+        .sof_late     (sof_late_mclk), // output      @mclk
         .cmd_ad       (cmd_ad),        // input[7:0] 
         .cmd_stb      (cmd_stb)        // input
     );
@@ -670,6 +764,7 @@ module  sensor_channel#(
                 .pclk       (pclk),           // input
                 .pclk2x     (pclk2x),         // input
                 .sof        (gamma_sof_out),  // input
+                .eof        (gamma_eof_out),  // input
                 .hact       (gamma_hact_out), // input
                 .hist_di    (gamma_pxd_out),  // input[7:0] 
                 .mclk       (mclk),           // input
@@ -681,7 +776,8 @@ module  sensor_channel#(
                 .hist_dv    (hist_dv[0]),     // output
                 .cmd_ad     (cmd_ad),         // input[7:0] 
                 .cmd_stb    (cmd_stb),        // input
-                .monochrome (HIST_MONOCHROME) // input  
+                .monochrome (HIST_MONOCHROME) // input
+                ,.debug_mclk(debug_hist_mclk[0])  
             );
         else
             sens_histogram_dummy sens_histogram_dummy_i (
@@ -705,6 +801,7 @@ module  sensor_channel#(
                 .pclk       (pclk),           // input
                 .pclk2x     (pclk2x),         // input
                 .sof        (gamma_sof_out),  // input
+                .eof        (gamma_eof_out),  // input
                 .hact       (gamma_hact_out), // input
                 .hist_di    (gamma_pxd_out),  // input[7:0] 
                 .mclk       (mclk),           // input
@@ -716,7 +813,8 @@ module  sensor_channel#(
                 .hist_dv    (hist_dv[1]),     // output
                 .cmd_ad     (cmd_ad),         // input[7:0] 
                 .cmd_stb    (cmd_stb),        // input
-                .monochrome (HIST_MONOCHROME) // input  
+                .monochrome (HIST_MONOCHROME) // input 
+                ,.debug_mclk(debug_hist_mclk[1])  
             );
         else
             sens_histogram_dummy sens_histogram_dummy_i (
@@ -740,6 +838,7 @@ module  sensor_channel#(
                 .pclk       (pclk),           // input
                 .pclk2x     (pclk2x),         // input
                 .sof        (gamma_sof_out),  // input
+                .eof        (gamma_eof_out),  // input
                 .hact       (gamma_hact_out), // input
                 .hist_di    (gamma_pxd_out),  // input[7:0] 
                 .mclk       (mclk),           // input
@@ -752,6 +851,7 @@ module  sensor_channel#(
                 .cmd_ad     (cmd_ad),         // input[7:0] 
                 .cmd_stb    (cmd_stb),        // input
                 .monochrome (HIST_MONOCHROME) // input  
+                ,.debug_mclk(debug_hist_mclk[2])  
             );
         else
             sens_histogram_dummy sens_histogram_dummy_i (
@@ -775,6 +875,7 @@ module  sensor_channel#(
                 .pclk       (pclk),           // input
                 .pclk2x     (pclk2x),         // input
                 .sof        (gamma_sof_out),  // input
+                .eof        (gamma_eof_out),  // input
                 .hact       (gamma_hact_out), // input
                 .hist_di    (gamma_pxd_out),  // input[7:0] 
                 .mclk       (mclk),           // input
@@ -787,6 +888,7 @@ module  sensor_channel#(
                 .cmd_ad     (cmd_ad),         // input[7:0] 
                 .cmd_stb    (cmd_stb),        // input
                 .monochrome (HIST_MONOCHROME) // input  
+                ,.debug_mclk(debug_hist_mclk[3])  
             );
         else
             sens_histogram_dummy sens_histogram_dummy_i (

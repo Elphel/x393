@@ -111,6 +111,9 @@ module  compressor393 # (
         parameter CMPRS_AFIMUX_WIDTH =         26, // maximal for status: currently only works with 26)
         parameter CMPRS_AFIMUX_CYCBITS =        3,
         parameter AFI_MUX_BUF_LATENCY =      4'd2  // buffers read latency from fifo_ren* to fifo_rdata* valid : 2 if no register layers are used
+`ifdef DEBUG_RING
+        ,parameter DEBUG_CMD_LATENCY = 2 
+`endif        
 
 )(
 //    input                         rst,    // global reset
@@ -231,6 +234,12 @@ module  compressor393 # (
     input                  [ 7:0] afi1_wcount,
     input                  [ 5:0] afi1_wacount,
     output                        afi1_wrissuecap1en
+`ifdef DEBUG_RING       
+    ,output                       debug_do, // output to the debug ring
+     input                        debug_sl, // 0 - idle, (1,0) - shift, (1,1) - load
+     input                        debug_di  // input from the debug ring
+`endif         
+    
 );
 
     wire   [47:0] status_ad_mux; 

@@ -75,8 +75,8 @@ module  sens_parallel12 #(
     parameter SENS_REF_JITTER2   =     0.010,
     parameter SENS_SS_EN         =     "FALSE",      // Enables Spread Spectrum mode
     parameter SENS_SS_MODE       =     "CENTER_HIGH",//"CENTER_HIGH","CENTER_LOW","DOWN_HIGH","DOWN_LOW"
-    parameter SENS_SS_MOD_PERIOD =     10000        // integer 4000-40000 - SS modulation period in ns
-    
+    parameter SENS_SS_MOD_PERIOD =     10000,        // integer 4000-40000 - SS modulation period in ns
+    parameter STATUS_ALIVE_WIDTH =     4
 )(
 //    input         rst,
     input         pclk,   // global clock input, pixel rate (96MHz for MT9P006)
@@ -103,7 +103,9 @@ module  sens_parallel12 #(
     // output
     output reg [11:0] pxd_out,
     output reg        vact_out, 
-    output            hact_out, 
+    output            hact_out,
+    
+    input [STATUS_ALIVE_WIDTH-1:0] status_alive_1cyc, //extra toggle @mclk bits to report with status 
 
     // JTAG to program 10359
 //    input          xpgmen,     // enable programming mode for external FPGA
@@ -171,7 +173,7 @@ module  sens_parallel12 #(
 
 
 
-    wire [14:0] status;
+    wire [17:0] status;
     
     wire        cmd_we;
     wire  [2:0] cmd_a;
@@ -188,10 +190,24 @@ module  sens_parallel12 #(
     reg            xfpgatdi=0;   // TDI to be sent to external FPGA
     wire           hact_ext;     // received hact signal
     reg            hact_ext_r;   // received hact signal, delayed by 1 clock
-    reg            hact_r;       // received or regenerated hact  
+    reg            hact_r;       // received or regenerated hact 
+
+// for debug/test alive    
+    reg            vact_r;       
+    reg            hact_r2;
+    wire           vact_a_mclk;
+    wire           hact_ext_a_mclk;
+    wire           hact_a_mclk;
+    reg            vact_alive;
+    reg            hact_ext_alive;
+    reg            hact_alive;
+    reg  [STATUS_ALIVE_WIDTH-1:0] status_alive;    
+     
     assign set_pxd_delay =   set_idelay[2:0];
     assign set_other_delay = set_idelay[3];
-    assign status = {locked_pxd_mmcm,clkin_pxd_stopped_mmcm,clkfb_pxd_stopped_mmcm,xfpgadone,ps_rdy, ps_out,xfpgatdo,senspgmin};
+    assign status = {vact_alive, hact_ext_alive, hact_alive, locked_pxd_mmcm, 
+                     clkin_pxd_stopped_mmcm, clkfb_pxd_stopped_mmcm, xfpgadone,
+                     ps_rdy, ps_out, xfpgatdo, senspgmin};
     assign hact_out = hact_r;
     assign iaro = trigger_mode?  ~trig : iaro_soft;
     
@@ -285,8 +301,28 @@ module  sens_parallel12 #(
         pxd_out <=  pxd_out_pre;
         vact_out <= vact_out_pre;
         
+        // for debug/test alive  
+        vact_r <= vact_out_pre;
+        hact_r2 <= hact_r;
+        
     end
     
+    // for debug/test alive  
+    always @(posedge mclk) begin
+        if (mclk_rst || set_status_r) vact_alive     <= 0;
+        else if (vact_a_mclk)         vact_alive     <= 1;
+        
+        if (mclk_rst || set_status_r) hact_ext_alive <= 0;
+        else if (hact_ext_a_mclk)     hact_ext_alive <= 1;
+        
+        if (mclk_rst || set_status_r) hact_alive     <= 0;
+        else if (hact_a_mclk)         hact_alive     <= 1;
+        
+        if (mclk_rst || set_status_r) status_alive     <= 0;
+        else                          status_alive     <= status_alive | status_alive_1cyc;
+        
+    end
+        
 /*
  Control programming of external FPGA on the sensor/sensor multiplexor board
  Mulptiplex status signals into a single line
@@ -346,14 +382,14 @@ module  sens_parallel12 #(
 
     status_generate #(
         .STATUS_REG_ADDR(SENSIO_STATUS_REG),
-        .PAYLOAD_BITS(15) // STATUS_PAYLOAD_BITS)
+        .PAYLOAD_BITS(15+3+STATUS_ALIVE_WIDTH) // STATUS_PAYLOAD_BITS)
     ) status_generate_sens_io_i (
         .rst        (1'b0),         // rst), // input
         .clk        (mclk),         // input
         .srst       (mclk_rst),     // input
         .we         (set_status_r), // input
         .wd         (data_r[7:0]),  // input[7:0] 
-        .status     (status),       // input[25:0] 
+        .status     ({status_alive,status}),       // input[25:0] 
         .ad         (status_ad),    // output[7:0] 
         .rq         (status_rq),    // output
         .start      (status_start)  // input
@@ -690,6 +726,34 @@ module  sens_parallel12 #(
 
 // BUFR ipclk_bufr_i   (.O(ipclk),   .CE(), .CLR(), .I(ipclk_pre));
 // BUFR ipclk2x_bufr_i (.O(ipclk2x), .CE(), .CLR(), .I(ipclk2x_pre));
+
+// for debug/test alive   
+    pulse_cross_clock pulse_cross_clock_vact_a_mclk_i (
+        .rst         (irst),                     // input
+        .src_clk     (ipclk),                    // input
+        .dst_clk     (mclk),                     // input
+        .in_pulse    (vact_out_pre && !vact_r),  // input
+        .out_pulse   (vact_a_mclk),              // output
+        .busy() // output
+    );
+
+    pulse_cross_clock pulse_cross_clock_hact_ext_a_mclk_i (
+        .rst         (irst),                     // input
+        .src_clk     (ipclk),                    // input
+        .dst_clk     (mclk),                     // input
+        .in_pulse    (hact_ext && !hact_ext_r),  // input
+        .out_pulse   (hact_ext_a_mclk),          // output
+        .busy() // output
+    );
+
+    pulse_cross_clock pulse_cross_clock_hact_a_mclk_i (
+        .rst         (irst),                     // input
+        .src_clk     (ipclk),                    // input
+        .dst_clk     (mclk),                     // input
+        .in_pulse    (hact_r && !hact_r2),       // input
+        .out_pulse   (hact_a_mclk),              // output
+        .busy() // output
+    );
 
 
 endmodule

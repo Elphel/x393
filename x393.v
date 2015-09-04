@@ -311,6 +311,16 @@ module  x393 #(
     wire                        status_clocks_rq; // Other status request   
     wire                        status_clocks_start;  // S uppressThisWarning VEditor ****** Other status packet transfer start (currently with 0 latency from status_root_rq)
 
+`ifdef DEBUG_RING
+    wire                  [7:0] status_debug_ad; // saxi1 - logger data Other status byte-wide address/data
+    wire                        status_debug_rq; // Other status request   
+    wire                        status_debug_start;  // S uppressThisWarning VEditor ****** Other status packet transfer start (currently with 0 latency from status_root_rq)
+    
+    localparam DEBUG_RING_LENGTH = 10;
+    
+    wire [DEBUG_RING_LENGTH-1:0] debug_ring; // TODO: adjust number of bits
+    wire                         debug_sl;   // debug shift/load:  0 - idle, (1,0) - shift, (1,1) - load
+`endif    
     // Insert register layer if needed
     reg  [7:0] cmd_mcontr_ad;
     reg        cmd_mcontr_stb;
@@ -345,6 +355,10 @@ module  x393 #(
     reg  [7:0] cmd_clocks_ad;
     reg        cmd_clocks_stb;
 
+`ifdef DEBUG_RING
+    reg  [7:0] cmd_debug_ad;
+    reg        cmd_debug_stb;
+`endif
 // membridge
     wire                        frame_start_chn1; // input
     wire                        next_page_chn1; // input
@@ -533,6 +547,11 @@ module  x393 #(
         
         cmd_clocks_ad <=      cmd_root_ad;
         cmd_clocks_stb <=     cmd_root_stb;
+
+`ifdef DEBUG_RING
+        cmd_debug_ad <=      cmd_root_ad;
+        cmd_debug_stb <=     cmd_root_stb;
+`endif        
     end
 
 // For now - connect status_test01 to status_other, if needed - increase number of multiplexer inputs)
@@ -892,9 +911,9 @@ assign axi_grst = axi_rst_pre;
         .rq_in10   (status_clocks_rq),        // input
         .start_in10(status_clocks_start),     // output
         
-        .db_in11   (8'b0),                    // input[7:0] 
-        .rq_in11   (1'b0),                    // input
-        .start_in11(),                        // output
+        .db_in11   (status_debug_ad),         // input[7:0] 
+        .rq_in11   (status_debug_rq),         // input
+        .start_in11(status_debug_start),      // output
         
         .db_in12   (8'b0),                    // input[7:0] 
         .rq_in12   (1'b0),                    // input
@@ -1518,6 +1537,9 @@ assign axi_grst = axi_rst_pre;
         .SENS_SS_EN                 (SENS_SS_EN),
         .SENS_SS_MODE               (SENS_SS_MODE),
         .SENS_SS_MOD_PERIOD         (SENS_SS_MOD_PERIOD)
+`ifdef DEBUG_RING
+        ,.DEBUG_CMD_LATENCY         (DEBUG_CMD_LATENCY) 
+`endif        
     ) sensors393_i (
 //        .rst                (axi_rst),           // input
         .pclk               (pclk),                //  input
@@ -1585,7 +1607,12 @@ assign axi_grst = axi_rst_pre;
         .saxi_bvalid        (saxi0_bvalid),        // input
         .saxi_bready        (saxi0_bready),        // output
         .saxi_bid           (saxi0_bid),           // input[5:0] 
-        .saxi_bresp         (saxi0_bresp)          // input[1:0] 
+        .saxi_bresp         (saxi0_bresp)          // input[1:0]
+`ifdef DEBUG_RING       
+        ,.debug_do          (debug_ring[1]), // output
+        .debug_sl           (debug_sl), // output
+        .debug_di           (debug_ring[0]) // input
+`endif         
     );
 
     // AFI1 (AXI_HP1) signals - write channels only
@@ -1720,6 +1747,10 @@ assign axi_grst = axi_rst_pre;
         .CMPRS_AFIMUX_WIDTH              (CMPRS_AFIMUX_WIDTH),
         .CMPRS_AFIMUX_CYCBITS            (CMPRS_AFIMUX_CYCBITS),
         .AFI_MUX_BUF_LATENCY             (AFI_MUX_BUF_LATENCY)
+`ifdef DEBUG_RING
+        ,.DEBUG_CMD_LATENCY   (DEBUG_CMD_LATENCY) 
+`endif        
+        
     ) compressor393_i (
 //        .rst                       (axi_rst),                    // input
         .xclk                      (xclk),                       // input
@@ -1809,6 +1840,12 @@ assign axi_grst = axi_rst_pre;
         .afi1_wcount               (afi2_wcount),                // input[7:0] 
         .afi1_wacount              (afi2_wacount),               // input[5:0] 
         .afi1_wrissuecap1en        (afi2_wrissuecap1en)          // output
+`ifdef DEBUG_RING       
+        ,.debug_do          (debug_ring[DEBUG_RING_LENGTH-1]),   // output
+        .debug_sl           (debug_sl),                          // output
+        .debug_di           (debug_ring[1])                      // input
+`endif         
+        
     );
 
     // general purpose I/Os, connected to the 10389 boards
@@ -2145,6 +2182,30 @@ assign axi_grst = axi_rst_pre;
         .clk    ({hclk,        axi_aclk, logger_clk,      camsync_clk,     xclk,        pclk,        mclk}),          // input[6:0] 
         .rst    ({hrst,        arst,     lrst,            crst,            xrst,        prst,        mrst})          // output[6:0] 
     );
+
+`ifdef DEBUG_RING
+    debug_master #(
+        .DEBUG_ADDR            (DEBUG_ADDR),
+        .DEBUG_MASK            (DEBUG_MASK),
+        .DEBUG_STATUS_REG_ADDR (DEBUG_STATUS_REG_ADDR),
+        .DEBUG_READ_REG_ADDR   (DEBUG_READ_REG_ADDR),
+        .DEBUG_SHIFT_DATA      (DEBUG_SHIFT_DATA),
+        .DEBUG_LOAD            (DEBUG_LOAD),
+        .DEBUG_SET_STATUS      (DEBUG_SET_STATUS),
+        .DEBUG_CMD_LATENCY     (DEBUG_CMD_LATENCY)
+    ) debug_master_i (
+        .mclk         (mclk), // input
+        .mrst         (mrst), // input
+        .cmd_ad       (cmd_debug_ad), // input[7:0] 
+        .cmd_stb      (cmd_debug_stb), // input
+        .status_ad    (status_debug_ad), // output[7:0] 
+        .status_rq    (status_debug_rq), // output
+        .status_start (status_debug_start), // input
+        .debug_do     (debug_ring[0]), // output
+        .debug_sl     (debug_sl), // output
+        .debug_di     (debug_ring[DEBUG_RING_LENGTH-1]) // input
+    );
+`endif
 
     axibram_write #(
         .ADDRESS_BITS(AXI_WR_ADDR_BITS)

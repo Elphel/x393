@@ -97,6 +97,72 @@ class X393Sensor(object):
                              vrlg.SENSIO_STATUS,
                              mode,
                              seq_num)# //MCONTR_PHY_STATUS_REG_ADDR=          'h0,
+    def get_status_sensor_io ( self,
+                              num_sensor):
+        """
+        Read sensor_io status word (no sync)
+        @param num_sensor - number of the sensor port (0..3)
+        @return sesnor_io status
+        """
+        return self.x393_axi_tasks.read_status(
+                    address=(vrlg.SENSI2C_STATUS_REG_BASE + num_sensor * vrlg.SENSI2C_STATUS_REG_INC + vrlg.SENSIO_STATUS_REG_REL))       
+
+    def print_status_sensor_io (self,
+                                num_sensor):
+        """
+        Print sensor_io status word (no sync)
+        @param num_sensor - number of the sensor port (0..3)
+        """
+        status= self.get_status_sensor_io(num_sensor)
+        print ("print_status_sensor_io(%d):"%(num_sensor))
+#last_in_line_1cyc_mclk, dout_valid_1cyc_mclk        
+        print ("   last_in_line_1cyc_mclk = %d"%((status>>23) & 1))        
+        print ("   dout_valid_1cyc_mclk =   %d"%((status>>22) & 1))        
+        print ("   alive_hist0_gr =         %d"%((status>>21) & 1))        
+        print ("   alive_hist0_rq =         %d"%((status>>20) & 1))        
+        print ("   sof_out_mclk =           %d"%((status>>19) & 1))        
+        print ("   eof_mclk =               %d"%((status>>18) & 1))        
+        print ("   sof_mclk =               %d"%((status>>17) & 1))        
+        print ("   sol_mclk =               %d"%((status>>16) & 1))        
+        print ("   vact_alive =             %d"%((status>>15) & 1))
+        print ("   hact_ext_alive =         %d"%((status>>14) & 1))
+        print ("   hact_alive =             %d"%((status>>13) & 1))
+        print ("   locked_pxd_mmcm =        %d"%((status>>12) & 1))
+        print ("   clkin_pxd_stopped_mmcm = %d"%((status>>11) & 1))
+        print ("   clkfb_pxd_stopped_mmcm = %d"%((status>>10) & 1))
+        print ("   ps_rdy =                 %d"%((status>> 9) & 1))
+        print ("   ps_out =                 %d"%((status>> 0)  & 0xff))
+        print ("   xfpgatdo =               %d"%((status>>25) & 1))
+        print ("   senspgmin =              %d"%((status>>24) & 1))
+        print ("   seq =                    %d"%((status>>26) & 0x3f))
+#vact_alive, hact_ext_alive, hact_alive
+    def get_status_sensor_i2c ( self,
+                              num_sensor):
+        """
+        Read sensor_i2c status word (no sync)
+        @param num_sensor - number of the sensor port (0..3)
+        @return sesnor_io status
+        """
+        return self.x393_axi_tasks.read_status(
+                    address=(vrlg.SENSI2C_STATUS_REG_BASE + num_sensor * vrlg.SENSI2C_STATUS_REG_INC + vrlg.SENSI2C_STATUS_REG_REL))       
+
+    def print_status_sensor_i2c (self,
+                                num_sensor):
+        """
+        Print sensor_i2c status word (no sync)
+        @param num_sensor - number of the sensor port (0..3)
+        """
+        status= self.get_status_sensor_i2c(num_sensor)
+        print ("print_status_sensor_i2c(%d):"%(num_sensor))
+        print ("   reset_on =               %d"%((status>> 7) & 1))
+        print ("   req_clr =                %d"%((status>> 6) & 1))
+        print ("   alive_fs =               %d"%((status>> 5) & 1))
+        
+        print ("   busy =                   %d"%((status>> 4) & 1))
+        print ("   frame_num =              %d"%((status>> 0)  & 0xf))
+        print ("   sda_in =                 %d"%((status>>25) & 1))
+        print ("   scl_in =                 %d"%((status>>24) & 1))
+        print ("   seq =                    %d"%((status>>26) & 0x3f))
 
 # Functions used by sensor-related tasks
     def func_sensor_mode (self,
@@ -497,7 +563,7 @@ class X393Sensor(object):
         @param fatzero_out (16 bits)
         @param post_scale (4 bits) - shift of the result
         """
-        def func_lens_data (self,
+        def func_lens_data (
                         num_sensor,
                         addr,
                         data,
@@ -653,8 +719,17 @@ class X393Sensor(object):
         """
         raddr = (vrlg.HISTOGRAM_RADDR0, vrlg.HISTOGRAM_RADDR1, vrlg.HISTOGRAM_RADDR2, vrlg.HISTOGRAM_RADDR3)
         reg_addr = (vrlg.SENSOR_GROUP_ADDR + num_sensor * vrlg.SENSOR_BASE_INC) + raddr[subchannel & 3]
-        self.x393_axi_tasks.write_control_register(reg_addr + vrlg.HISTOGRAM_LEFT_TOP,     ((top & 0xffff) << 16) | (left & 0xff))
-        self.x393_axi_tasks.write_control_register(reg_addr + vrlg.HISTOGRAM_WIDTH_HEIGHT, ((height_m1 & 0xffff) << 16) | (width_m1 & 0xff))
+        if self.DEBUG_MODE:
+            print("set_sensor_histogram_window():")
+            print("num_sensor = ", num_sensor)
+            print("subchannel = ", subchannel)
+            print("left =       ", left)
+            print("top =        ", top)
+            print("width_m1 =   ", width_m1)
+            print("height_m1 =  ", height_m1)
+            
+        self.x393_axi_tasks.write_control_register(reg_addr + vrlg.HISTOGRAM_LEFT_TOP,     ((top & 0xffff) << 16) | (left & 0xffff))
+        self.x393_axi_tasks.write_control_register(reg_addr + vrlg.HISTOGRAM_WIDTH_HEIGHT, ((height_m1 & 0xffff) << 16) | (width_m1 & 0xffff))
     def set_sensor_histogram_saxi (self,
                                    en,
                                    nrst,
@@ -667,6 +742,12 @@ class X393Sensor(object):
         @param confirm_write -  wait for the write confirmed (over B channel) before switching channels
         @param cache_mode AXI cache mode,  default should be 4'h3
         """ 
+        if self.DEBUG_MODE:
+            print("set_sensor_histogram_saxi():")
+            print("en =            ", en)
+            print("nrst =          ", nrst)
+            print("confirm_write = ", confirm_write)
+            print("cache_mode=     ", cache_mode)
         data = 0;
         data |= (0,1)[en] <<            vrlg.HIST_SAXI_EN
         data |= (0,1)[nrst] <<          vrlg.HIST_SAXI_NRESET
@@ -684,6 +765,11 @@ class X393Sensor(object):
         @param num_sub_sensor - sub-sensor attached to the same port through multiplexer (0..3)
         @param page -           system memory page address (in 4KB units)
         """ 
+        if self.DEBUG_MODE:
+            print("set_sensor_histogram_saxi_addr():")
+            print("num_sensor = ", num_sensor)
+            print("subchannel = ", subchannel)
+            print("page =       ", page)
         channel = ((num_sensor & 3) << 2) + (subchannel & 3) 
         self.x393_axi_tasks.write_control_register(vrlg.SENSOR_GROUP_ADDR + vrlg.HIST_SAXI_ADDR_REL + channel,page)
 

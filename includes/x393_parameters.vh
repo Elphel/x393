@@ -723,6 +723,18 @@
     parameter CLK_STATUS_REG_ADDR =       'h3a,  //  
     parameter CLK_CNTRL =                 0,
     parameter CLK_STATUS =                1,
+
+`ifdef DEBUG_RING
+// Debug module (read/write serial ring)
+    parameter DEBUG_ADDR =                'h710, //..'h713
+    parameter DEBUG_MASK =                'h7fc,
+    parameter DEBUG_STATUS_REG_ADDR =     'hfc,  // address where status can be read out 
+    parameter DEBUG_READ_REG_ADDR =       'hfd,  // read 32-bit received shifted data
+    parameter DEBUG_SHIFT_DATA =          'h0,   // shift i/o data by 32 bits
+    parameter DEBUG_LOAD =                'h1,   // parallel load of the distributed shift registe (both ways)
+    parameter DEBUG_SET_STATUS =          'h2,    // program status (mode 3?)
+    parameter DEBUG_CMD_LATENCY =          2, // >0 extra registers in the debug_sl (distriburted in parallel)
+`endif
     
     parameter CLKIN_PERIOD_AXIHP =        20, //ns >1.25, 600<Fvco<1200
     parameter DIVCLK_DIVIDE_AXIHP =       1,
