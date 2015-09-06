@@ -139,6 +139,9 @@ module  sens_histogram #(
     
     reg           debug_vert_woi_r;
     
+    reg    [15:0] debug_line_cntr;
+    reg    [15:0] debug_lines;
+    
     
     assign set_left_top_w =     pio_stb && (pio_addr == HISTOGRAM_LEFT_TOP );
     assign set_width_height_w = pio_stb && (pio_addr == HISTOGRAM_WIDTH_HEIGHT );
@@ -175,6 +178,14 @@ module  sens_histogram #(
     
 //    assign debug_mclk = hist_done_mclk;
 //    assign debug_mclk = set_width_height_w;
+
+    always @ (posedge pclk) begin
+        if      (sof)          debug_line_cntr <= 0;
+        else if (line_start_w) debug_line_cntr <= debug_line_cntr + 1;
+        
+        if      (sof)          debug_lines <= debug_line_cntr;
+    end
+    
     
     always @ (posedge pclk) begin
         if (!hact) pxd_wa <= 0;
@@ -372,7 +383,9 @@ module  sens_histogram #(
         .debug_di   (debug_di), // input
         .debug_sl   (debug_sl), // input
         .debug_do   (debug_do), // output
-        .rd_data   ({height_m1[15:0], vcntr[15:0], width_m1[15:0],  hcntr[15:0]}), // input[31:0] 
+//        .rd_data   ({height_m1[15:0], vcntr[15:0], width_m1[15:0],  hcntr[15:0]}), // input[31:0] 
+        .rd_data   ({debug_lines[15:0], debug_line_cntr[15:0], width_m1[15:0],  hcntr[15:0]}), // input[31:0] 
+//debug_lines <= debug_line_cntr        
         .wr_data    (), // output[31:0]  - not used
         .stb        () // output  - not used
     );

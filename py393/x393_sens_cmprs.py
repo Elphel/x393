@@ -704,9 +704,9 @@ class X393SensCmprs(object):
         result = []
         # load all shift registers from sources
         self.x393_axi_tasks.write_control_register(vrlg.DEBUG_ADDR + vrlg.DEBUG_LOAD, 0); 
-        for _ in range (num32): 
+        for i in range (num32): 
             seq_num = (self.x393_axi_tasks.read_status(vrlg.DEBUG_STATUS_REG_ADDR) >> vrlg.STATUS_SEQ_SHFT) & 0x3f;
-            self.x393_axi_tasks.write_control_register(vrlg.DEBUG_ADDR + vrlg.DEBUG_SHIFT_DATA, 0);
+            self.x393_axi_tasks.write_control_register(vrlg.DEBUG_ADDR + vrlg.DEBUG_SHIFT_DATA, (0,0xffffffff)[i==0]);
             while seq_num == (self.x393_axi_tasks.read_status(vrlg.DEBUG_STATUS_REG_ADDR) >> vrlg.STATUS_SEQ_SHFT) & 0x3f:
                 if time.time() > endTime:
                     return None 

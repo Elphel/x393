@@ -250,7 +250,7 @@ module  sensor_channel#(
     
 );
 `ifdef DEBUG_RING
-    localparam DEBUG_RING_LENGTH = 4; // for now - just connect the histogram(s) module(s)
+    localparam DEBUG_RING_LENGTH = 5; // for now - just connect the histogram(s) module(s)
     wire [DEBUG_RING_LENGTH:0] debug_ring; // TODO: adjust number of bits
     assign debug_do = debug_ring[0];
     assign debug_ring[DEBUG_RING_LENGTH] = debug_di;
@@ -367,6 +367,50 @@ module  sensor_channel#(
     assign hist_en =   mode[SENSOR_HIST_EN_BITS +: 4];
     assign hist_nrst = mode[SENSOR_HIST_NRST_BITS +: 4];
     assign bit16 =     mode[SENSOR_16BIT_BIT];
+    
+    
+`ifdef DEBUG_RING
+    reg vact_to_fifo_r;
+    reg hact_to_fifo_r;
+    reg [15:0] debug_line_cntr;
+    reg [15:0] debug_lines;
+    reg [15:0] hact_cntr;
+    reg [15:0] vact_cntr;
+    
+    always @(posedge ipclk) begin
+        vact_to_fifo_r <= vact_to_fifo;
+        hact_to_fifo_r <= hact_to_fifo;
+
+        if      (vact_to_fifo && !vact_to_fifo_r)  debug_line_cntr <= 0;
+        else if (hact_to_fifo && !hact_to_fifo_r)  debug_line_cntr <= debug_line_cntr + 1;
+
+        if      (vact_to_fifo && !vact_to_fifo_r)   debug_lines <= debug_line_cntr;
+        
+        if      (irst)                              hact_cntr <= 0;
+        else if (hact_to_fifo && !hact_to_fifo_r)   hact_cntr <= hact_cntr + 1;
+
+        if      (irst)                              vact_cntr <= 0;
+        else if (vact_to_fifo && !vact_to_fifo_r)   vact_cntr <= vact_cntr + 1;
+        
+    end
+    debug_slave #(
+        .SHIFT_WIDTH       (64),
+        .READ_WIDTH        (64),
+        .WRITE_WIDTH       (32),
+        .DEBUG_CMD_LATENCY (DEBUG_CMD_LATENCY)
+    ) debug_slave_i (
+        .mclk       (mclk),          // input
+        .mrst       (mrst),          // input
+        .debug_di   (debug_ring[5]), // input
+        .debug_sl   (debug_sl),      // input
+        .debug_do   (debug_ring[4]), // output
+//        .rd_data   ({height_m1[15:0], vcntr[15:0], width_m1[15:0],  hcntr[15:0]}), // input[31:0] 
+        .rd_data   ({vact_cntr[15:0], hact_cntr[15:0], debug_lines[15:0], debug_line_cntr[15:0]}), // input[31:0] 
+//debug_lines <= debug_line_cntr        
+        .wr_data    (), // output[31:0]  - not used
+        .stb        () // output  - not used
+    );
+`endif    
     
     
     always @ (posedge mclk) begin

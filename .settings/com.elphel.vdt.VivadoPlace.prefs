@@ -1,3 +1,5 @@
 VivadoPlace_111_verbose_place=true
-com.elphel.store.context.VivadoPlace=VivadoPlace_111_verbose_place<-@\#\#@->
+VivadoPlace_123_SkipSnapshotPlace=true
+VivadoPlace_124_SkipSnapshotPlace=true
+com.elphel.store.context.VivadoPlace=VivadoPlace_111_verbose_place<-@\#\#@->VivadoPlace_123_SkipSnapshotPlace<-@\#\#@->VivadoPlace_124_SkipSnapshotPlace<-@\#\#@->
 eclipse.preferences.version=1

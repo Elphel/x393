@@ -277,7 +277,7 @@ module  sens_parallel12 #(
         else if (set_width_r[1]) line_width_m1 <= data_r[LINE_WIDTH_BITS-1:0] -1;
         
         if      (mclk_rst)       line_width_internal <= 0;
-        else if (set_width_r[1]) line_width_internal <= ~ (|data_r[LINE_WIDTH_BITS:0]);
+        else if (set_width_r[1]) line_width_internal <= ~ (|data_r[LINE_WIDTH_BITS:0]); // line width is 0
     end
 
     always @(posedge ipclk) begin
@@ -292,11 +292,11 @@ module  sens_parallel12 #(
         
         if      (irst)                                                      hact_r <= 0;
         else if (hact_ext && !hact_ext_r)                                   hact_r <= 1;
-        else if (line_width_internal_ipclk?(hact_cntr == 0):(hact_ext ==0)) hact_r <= 0; 
+        else if (line_width_internal_ipclk?(hact_ext ==0):(hact_cntr == 0)) hact_r <= 0; 
         
-        if      (irst)                    hact_cntr <= 0;
-        else if (hact_ext && !hact_ext_r) hact_cntr <= line_width_m1_ipclk; // from mclk
-        else if (hact_r)                  hact_cntr <= hact_cntr - 1;
+        if      (irst)                                 hact_cntr <= 0;
+        else if (hact_ext && !hact_ext_r)              hact_cntr <= line_width_m1_ipclk; // from mclk
+        else if (hact_r && !line_width_internal_ipclk) hact_cntr <= hact_cntr - 1;
         
         pxd_out <=  pxd_out_pre;
         vact_out <= vact_out_pre;

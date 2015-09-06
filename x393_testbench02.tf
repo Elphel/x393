@@ -2376,7 +2376,7 @@ task setup_sensor_channel;
     $display("===================== TEST_%s =========================",TEST_TITLE);
         set_sensor_io_width(
             num_sensor, // input    [1:0] num_sensor;
-            FULL_WIDTH); // Or use 0 for sensor-generated HACT input   [15:0] width; // 0 - use HACT, >0 - generate HACT from start to specified width
+            0); // FULL_WIDTH); // Or use 0 for sensor-generated HACT input   [15:0] width; // 0 - use HACT, >0 - generate HACT from start to specified width
             
         set_sensor_io_ctl (
             num_sensor,  // input                    [1:0] num_sensor;

@@ -1,0 +1,4 @@
+VivadoRoute_122_SkipSnapshotRoute=true
+VivadoRoute_123_SkipSnapshotRoute=true
+com.elphel.store.context.VivadoRoute=VivadoRoute_122_SkipSnapshotRoute<-@\#\#@->VivadoRoute_123_SkipSnapshotRoute<-@\#\#@->
+eclipse.preferences.version=1
