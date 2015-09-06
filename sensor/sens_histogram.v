@@ -52,7 +52,7 @@ module  sens_histogram #(
     input   [7:0] cmd_ad,      // byte-serial command address/data (up to 6 bytes: AL-AH-D0-D1-D2-D3 
     input         cmd_stb,      // strobe (with first byte) for the command a/d
     input         monochrome    // tie to 0 to reduce hardware
-    ,output debug_mclk
+//    ,output debug_mclk
 `ifdef DEBUG_RING       
     ,output                       debug_do, // output to the debug ring
      input                        debug_sl, // 0 - idle, (1,0) - shift, (1,1) - load // SuppressThisWarning VEditor - not used
@@ -137,7 +137,7 @@ module  sens_histogram #(
     reg           hist_xfer_busy; // @pclk, during histogram readout , immediately after woi (no gaps)
     reg           wait_readout;   // only used in NOBUF mode, in outher modes readout is expected to be always finished in time
     
-    reg           debug_vert_woi_r;
+//    reg           debug_vert_woi_r;
     
     reg    [15:0] debug_line_cntr;
     reg    [15:0] debug_lines;
@@ -226,7 +226,7 @@ module  sens_histogram #(
         if (!en ||(pre_first_line && !hact))  vert_woi <= 0;
         else if (vcntr_zero_w & line_start_w) vert_woi <= top_margin;
         
-        debug_vert_woi_r <= vcntr_zero_w && vert_woi; // vert_woi;
+//        debug_vert_woi_r <= vcntr_zero_w && vert_woi; // vert_woi;
         
 //        hist_done <= vcntr_zero_w && vert_woi && line_start_w; // hist done never asserted, line_start_w - active
         hist_done <= vert_woi && (eof || (vcntr_zero_w && line_start_w)); // hist done never asserted, line_start_w - active
@@ -391,7 +391,7 @@ module  sens_histogram #(
     );
 `endif
 
-
+/*
     pulse_cross_clock pulse_cross_clock_debug_mclk_i (
         .rst         (prst), // input
         .src_clk     (pclk), // input
@@ -402,7 +402,7 @@ module  sens_histogram #(
         .out_pulse   (debug_mclk),    // output
         .busy() // output
     );
-
+*/
     
     cmd_deser #(
         .ADDR        (HISTOGRAM_ADDR),

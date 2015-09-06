@@ -507,7 +507,7 @@ module  sensor_channel#(
         .sda                   (sns_sda)                // inout
     );
     
-    wire [3:0] debug_hist_mclk;
+//    wire [3:0] debug_hist_mclk;
     wire irst; // @ posedge ipclk
     localparam STATUS_ALIVE_WIDTH = 8;
     wire [STATUS_ALIVE_WIDTH - 1 : 0] status_alive;
@@ -516,9 +516,9 @@ module  sensor_channel#(
     wire sof_mclk;
     wire eof_mclk;
     reg hist_rq0_r;
-///    reg hist_gr0_r;
+    reg hist_gr0_r;
     wire alive_hist0_rq = hist_rq[0] && !hist_rq0_r;
-///    wire alive_hist0_gr = hist_gr[0] && !hist_gr0_r;
+    wire alive_hist0_gr = hist_gr[0] && !hist_gr0_r;
     // sof_out_mclk - already exists
     reg dout_valid_d_pclk; //@ pclk - delayed by 1 clk from dout_valid to detect edge
     reg last_in_line_d_pclk; //@ pclk - delayed by 1 clk from last_in_line to detect edge
@@ -526,7 +526,8 @@ module  sensor_channel#(
     wire last_in_line_1cyc_mclk;
 // debug_hist_mclk is never active, alive_hist0_rq == 0
 //    assign status_alive = {last_in_line_1cyc_mclk, dout_valid_1cyc_mclk, alive_hist0_gr, alive_hist0_rq, sof_out_mclk, eof_mclk, sof_mclk, sol_mclk};
-    assign status_alive = {last_in_line_1cyc_mclk, dout_valid_1cyc_mclk, debug_hist_mclk[0], alive_hist0_rq, sof_out_mclk, eof_mclk, sof_mclk, sol_mclk};
+//    assign status_alive = {last_in_line_1cyc_mclk, dout_valid_1cyc_mclk, debug_hist_mclk[0], alive_hist0_rq, sof_out_mclk, eof_mclk, sof_mclk, sol_mclk};
+    assign status_alive = {last_in_line_1cyc_mclk, dout_valid_1cyc_mclk, alive_hist0_gr, alive_hist0_rq, sof_out_mclk, eof_mclk, sof_mclk, sol_mclk};
 /*
  sof, hact are tested to be active
 
@@ -543,7 +544,7 @@ module  sensor_channel#(
     
     always @ (posedge mclk) begin
         hist_rq0_r <= en_mclk & (hist_rq[0] ^ hist_rq0_r);
-///        hist_gr0_r <= hist_gr[0];
+        hist_gr0_r <= hist_gr[0];
     end
     
     /*
@@ -840,7 +841,7 @@ module  sensor_channel#(
                 .cmd_ad     (cmd_ad),         // input[7:0] 
                 .cmd_stb    (cmd_stb),        // input
                 .monochrome (HIST_MONOCHROME) // input
-                ,.debug_mclk(debug_hist_mclk[0])
+//                ,.debug_mclk(debug_hist_mclk[0])
 `ifdef DEBUG_RING       
                 ,.debug_do    (debug_ring[0]),         // output
                 .debug_sl     (debug_sl),              // input
@@ -896,7 +897,7 @@ module  sensor_channel#(
                 .cmd_ad     (cmd_ad),         // input[7:0] 
                 .cmd_stb    (cmd_stb),        // input
                 .monochrome (HIST_MONOCHROME) // input 
-                ,.debug_mclk(debug_hist_mclk[1])  
+//                ,.debug_mclk(debug_hist_mclk[1])  
 `ifdef DEBUG_RING       
                 ,.debug_do    (debug_ring[1]),         // output
                 .debug_sl     (debug_sl),              // input
@@ -949,7 +950,7 @@ module  sensor_channel#(
                 .cmd_ad     (cmd_ad),         // input[7:0] 
                 .cmd_stb    (cmd_stb),        // input
                 .monochrome (HIST_MONOCHROME) // input  
-                ,.debug_mclk(debug_hist_mclk[2])  
+//                ,.debug_mclk(debug_hist_mclk[2])  
 `ifdef DEBUG_RING       
                 ,.debug_do    (debug_ring[2]),         // output
                 .debug_sl     (debug_sl),              // input
@@ -1001,7 +1002,7 @@ module  sensor_channel#(
                 .cmd_ad     (cmd_ad),         // input[7:0] 
                 .cmd_stb    (cmd_stb),        // input
                 .monochrome (HIST_MONOCHROME) // input  
-                ,.debug_mclk(debug_hist_mclk[3])  
+//                ,.debug_mclk(debug_hist_mclk[3])  
 `ifdef DEBUG_RING       
                 ,.debug_do    (debug_ring[3]),         // output
                 .debug_sl     (debug_sl),              // input
