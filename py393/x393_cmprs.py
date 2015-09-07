@@ -140,31 +140,31 @@ class X393Cmprs(object):
         """
         data = 0;
         if not run_mode is None:
-            data |= (1 << vrlg.CMPRS_CBIT_RUN_BITS)
+            data |= (1 << vrlg.CMPRS_CBIT_RUN)
             data |= (run_mode & ((1 << vrlg.CMPRS_CBIT_RUN_BITS) - 1)) << (vrlg.CMPRS_CBIT_RUN - vrlg.CMPRS_CBIT_RUN_BITS)
                      
         if not qbank is None:
-            data |= (1 << vrlg.CMPRS_CBIT_QBANK_BITS)
+            data |= (1 << vrlg.CMPRS_CBIT_QBANK)
             data |= (qbank & ((1 << vrlg.CMPRS_CBIT_QBANK_BITS) - 1)) << (vrlg.CMPRS_CBIT_QBANK - vrlg.CMPRS_CBIT_QBANK_BITS)
 
         if not dc_sub is None:
-            data |= (1 << vrlg.CMPRS_CBIT_DCSUB_BITS)
+            data |= (1 << vrlg.CMPRS_CBIT_DCSUB)
             data |= (dc_sub & ((1 << vrlg.CMPRS_CBIT_DCSUB_BITS) - 1)) << (vrlg.CMPRS_CBIT_DCSUB - vrlg.CMPRS_CBIT_DCSUB_BITS)
 
         if not cmode is None:
-            data |= (1 << vrlg.CMPRS_CBIT_CMODE_BITS)
+            data |= (1 << vrlg.CMPRS_CBIT_CMODE)
             data |= (cmode & ((1 << vrlg.CMPRS_CBIT_CMODE_BITS) - 1)) << (vrlg.CMPRS_CBIT_CMODE - vrlg.CMPRS_CBIT_CMODE_BITS)
                      
         if not multi_frame is None:
-            data |= (1 << vrlg.CMPRS_CBIT_FRAMES_BITS)
+            data |= (1 << vrlg.CMPRS_CBIT_FRAMES)
             data |= (multi_frame & ((1 << vrlg.CMPRS_CBIT_FRAMES_BITS) - 1)) << (vrlg.CMPRS_CBIT_FRAMES - vrlg.CMPRS_CBIT_FRAMES_BITS)
                      
         if not bayer is None:
-            data |= (1 << vrlg.CMPRS_CBIT_BAYER_BITS)
+            data |= (1 << vrlg.CMPRS_CBIT_BAYER)
             data |= (bayer & ((1 << vrlg.CMPRS_CBIT_BAYER_BITS) - 1)) << (vrlg.CMPRS_CBIT_BAYER - vrlg.CMPRS_CBIT_BAYER_BITS)
                      
         if not focus_mode is None:
-            data |= (1 << vrlg.CMPRS_CBIT_FOCUS_BITS)
+            data |= (1 << vrlg.CMPRS_CBIT_FOCUS)
             data |= (focus_mode & ((1 << vrlg.CMPRS_CBIT_FOCUS_BITS) - 1)) << (vrlg.CMPRS_CBIT_FOCUS - vrlg.CMPRS_CBIT_FOCUS_BITS)
         return data
     
@@ -324,17 +324,17 @@ class X393Cmprs(object):
         self.x393_axi_tasks.write_control_register(
                                     base_addr + vrlg.MCNTRL_TILED_MODE,
                                     mode); 
-    def compressor_run(self, # may use compressor_control with the same arguments
-                       num_sensor,
-                       run_mode):
-        """
-        Compressor reset.run/single (alias of compressor_control) 
-        @param num_sensor -       sensor port number (0..3)
-        @param run_mode -    0 - reset, 2 - run single from memory, 3 - run repetitive
-        """
-        self.compressor_control(
-            num_sensor = num_sensor,  # sensor channel number (0..3)
-            run_mode = run_mode)      #0 - reset, 2 - run single from memory, 3 - run repetitive
+#    def compressor_run(self, # may use compressor_control with the same arguments
+#                       num_sensor,
+#                       run_mode):
+#        """
+#        Compressor reset.run/single (alias of compressor_control) 
+#        @param num_sensor -       sensor port number (0..3)
+#        @param run_mode -    0 - reset, 2 - run single from memory, 3 - run repetitive
+#        """
+#        self.compressor_control(
+#            num_sensor = num_sensor,  # sensor channel number (0..3)
+#            run_mode = run_mode)      #0 - reset, 2 - run single from memory, 3 - run repetitive
         
     def setup_compressor_channel (self,
                                   num_sensor,

@@ -127,14 +127,15 @@ module  cmprs_frame_sync#(
         else if (cmprs_standalone) bonded_mode <= 0;
         
         if (!cmprs_en || !cmprs_run || vsync_late) frames_differ <= 0;
-        else if (frame_done_src)                        frames_differ <= 1'b1;
+        else if (frame_done_src)                   frames_differ <= 1'b1;
         
         frames_numbers_differ <= frame_number_src != frame_number;
         
         line_numbers_sync <= (line_unfinished_src > line_unfinished);
         
 //        suspend <= !bonded_mode && ((sigle_frame_buf ? frames_differ : frames_numbers_differ) || line_numbers_sync);
-        suspend <= bonded_mode && ((sigle_frame_buf ? frames_differ : frames_numbers_differ) || !line_numbers_sync);
+//        suspend <= bonded_mode && ((sigle_frame_buf ? frames_differ : frames_numbers_differ) || !line_numbers_sync);
+        suspend <= bonded_mode && !((sigle_frame_buf ? frames_differ : frames_numbers_differ) || line_numbers_sync);
         
     
     end

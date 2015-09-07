@@ -345,8 +345,8 @@ module  jp_channel#(
 
 `ifdef DEBUG_RING
     debug_slave #(
-        .SHIFT_WIDTH       (32),
-        .READ_WIDTH        (32),
+        .SHIFT_WIDTH       (96),
+        .READ_WIDTH        (96),
         .WRITE_WIDTH       (32),
         .DEBUG_CMD_LATENCY (DEBUG_CMD_LATENCY)
     ) debug_slave_i (
@@ -356,8 +356,13 @@ module  jp_channel#(
         .debug_sl   (debug_sl),      // input
         .debug_do   (debug_do), // output
         .rd_data   ({
-        32'b0
-        
+        16'b0,
+        fifo_count[7:0],
+        6'b0, sigle_frame_buf, suspend,
+        frame_number_dst[15:0],
+        line_unfinished_dst[15:0],
+        frame_number_src[15:0],
+        line_unfinished_src[15:0]
         }), // input[31:0]
         .wr_data    (), // output[31:0]  - not used
         .stb        () // output  - not used

@@ -276,8 +276,8 @@ each group of 4 bits per channel : bits [1:0] - select, bit[2] - sset (0 - nop),
     assign afi_wrissuecap1en = 1'b0;
 `ifdef DEBUG_RING
     debug_slave #(
-        .SHIFT_WIDTH       (32),
-        .READ_WIDTH        (32),
+        .SHIFT_WIDTH       (64),
+        .READ_WIDTH        (64),
         .WRITE_WIDTH       (32),
         .DEBUG_CMD_LATENCY (DEBUG_CMD_LATENCY)
     ) debug_slave_i (
@@ -287,8 +287,9 @@ each group of 4 bits per channel : bits [1:0] - select, bit[2] - sset (0 - nop),
         .debug_sl   (debug_sl),      // input
         .debug_do   (debug_do), // output
         .rd_data   ({
-        32'b0
-        
+        left_to_eof[31:0],
+        24'b0,
+        fifo_count0[7:0]
         }), // input[31:0]
         .wr_data    (), // output[31:0]  - not used
         .stb        () // output  - not used
