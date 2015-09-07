@@ -344,9 +344,21 @@ module  jp_channel#(
 //    assign buf_regen = buf_rd[1];
 
 `ifdef DEBUG_RING
+    reg [15:0] debug_fifo_in;
+    reg [15:0] debug_fifo_out;
+    always @ (posedge ~xclk2x) begin
+        if      (xrst2xn)    debug_fifo_in <= 0;
+        else if (stuffer_dv) debug_fifo_in <= debug_fifo_in + 1;
+    end
+    always @ (posedge hclk) begin
+        if      (hrst)     debug_fifo_out <= 0;
+        else if (fifo_rst) debug_fifo_out <= debug_fifo_in;
+        else if (fifo_ren) debug_fifo_out <= debug_fifo_out + 1;
+    end
+
     debug_slave #(
-        .SHIFT_WIDTH       (96),
-        .READ_WIDTH        (96),
+        .SHIFT_WIDTH       (128),
+        .READ_WIDTH        (128),
         .WRITE_WIDTH       (32),
         .DEBUG_CMD_LATENCY (DEBUG_CMD_LATENCY)
     ) debug_slave_i (
@@ -356,6 +368,8 @@ module  jp_channel#(
         .debug_sl   (debug_sl),      // input
         .debug_do   (debug_do), // output
         .rd_data   ({
+        debug_fifo_out[15:0],
+        debug_fifo_in[15:0],
         16'b0,
         fifo_count[7:0],
         6'b0, sigle_frame_buf, suspend,
@@ -948,13 +962,13 @@ module  jp_channel#(
         .wclk                (~xclk2x),        // input source clock (2x pixel clock, inverted) - same as stuffer out
         .wrst                (xrst2xn),         // input mostly for simulation
         
-        .we                  (stuffer_dv),     // input write data from stuffer
+        .we                  (stuffer_dv),     // @ posedge(~xclk2x) input write data from stuffer
         .wdata               (stuffer_do),     // input[15:0] data from stuffer module;
         .wa_rst              (!stuffer_en),    // input reset low address bits when stuffer is disabled (to make sure it is multiple of 32 bytes
         .wlast               (stuffer_done),   // input - written last 32 bytes of a frame (flush FIFO) - stuffer_done (has to be later than we)
         .eof_written_wclk    (eof_written_xclk2xn),    // output - AFI had transferred frame data to the system memory
         // AFI clock domain
-        .rclk                (hclk),           // input - AFI clock
+        .rclk                (hclk),           // @posedge(hclk) input - AFI clock
         .rrst                (hrst),           // input - AFI clock
         .rst_fifo            (fifo_rst),       // input - reset FIFO (set read address to write, reset count)
         .ren                 (fifo_ren),       // input - fifo read from AFI channel mux

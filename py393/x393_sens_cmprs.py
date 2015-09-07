@@ -516,11 +516,14 @@ class X393SensCmprs(object):
         circbuf_end = circbuf_start + 4*circbuf_chn_size
 
     #TODO: calculate addersses/lengths
-        afi_cmprs0_sa = circbuf_starts[0] // 4  
-        afi_cmprs1_sa = circbuf_starts[1] // 4
-        afi_cmprs2_sa = circbuf_starts[2] // 4
-        afi_cmprs3_sa = circbuf_starts[3] // 4
-        afi_cmprs_len = circbuf_chn_size  // 4    
+        """
+        AFI mux is programmed in 32-byte chunks
+        """
+        afi_cmprs0_sa = circbuf_starts[0] // 32  
+        afi_cmprs1_sa = circbuf_starts[1] // 32
+        afi_cmprs2_sa = circbuf_starts[2] // 32
+        afi_cmprs3_sa = circbuf_starts[3] // 32
+        afi_cmprs_len = circbuf_chn_size  // 32    
         if verbose >0 :
             print ("compressor system memory buffers:")
             print ("circbuf start 0 =           0x%x"%(circbuf_starts[0]))
@@ -561,6 +564,26 @@ class X393SensCmprs(object):
         self.x393Rtc.set_rtc () # no correction, use current system time
         if exit_step == 3: return False
         
+        if verbose >0 :
+            print ("===================== AFI_MUX_SETUP =========================")
+        
+        self.x393CmprsAfi.afi_mux_setup (
+                               port_afi =       0,
+                               chn_mask =       sensor_mask,
+                               status_mode =    3, # = 3,
+                                # mode == 0 - show EOF pointer, internal
+                                # mode == 1 - show EOF pointer, confirmed written to the system memory
+                                # mode == 2 - show current pointer, internal
+                                # mode == 3 - show current pointer, confirmed written to the system memory
+                               report_mode =    0, # = 0,
+                               afi_cmprs0_sa =  afi_cmprs0_sa,
+                               afi_cmprs0_len = afi_cmprs_len,
+                               afi_cmprs1_sa =  afi_cmprs1_sa,
+                               afi_cmprs1_len = afi_cmprs_len,
+                               afi_cmprs2_sa =  afi_cmprs2_sa,
+                               afi_cmprs2_len = afi_cmprs_len,
+                               afi_cmprs3_sa =  afi_cmprs3_sa,
+                               afi_cmprs3_len = afi_cmprs_len)
 
         for num_sensor in range(4):
             if sensor_mask & (1 << num_sensor):
@@ -591,6 +614,10 @@ class X393SensCmprs(object):
                           verbose =                 verbose)
                 if not rslt : return False
                 if exit_step == 20: return False
+                """
+                if verbose >0 :
+                    print ("===================== AFI_MUX_SETUP =========================")
+                
                 self.x393CmprsAfi.afi_mux_setup (
                                        port_afi =       0,
                                        chn_mask =       sensor_mask,
@@ -607,10 +634,13 @@ class X393SensCmprs(object):
                                        afi_cmprs2_sa =  afi_cmprs2_sa,
                                        afi_cmprs2_len = afi_cmprs_len,
                                        afi_cmprs3_sa =  afi_cmprs3_sa,
-                                       afi_cmprs3_len = afi_cmprs_len)    
+                                       afi_cmprs3_len = afi_cmprs_len)
+                """                           
                 self.x393Sensor.print_status_sensor_io (num_sensor = num_sensor)
                 self.x393Sensor.print_status_sensor_i2c (num_sensor = num_sensor)
                 
+                if verbose >0 :
+                    print ("===================== AFI_MUX_SETUP =========================")
                 self.x393Sensor.set_sensor_i2c_command (
                                 num_sensor = num_sensor,
                                 rst_cmd =   True)

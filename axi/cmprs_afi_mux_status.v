@@ -49,7 +49,7 @@ module  cmprs_afi_mux_status #(
     input [CMPRS_AFIMUX_WIDTH-1:0] chunk_ptr_rd  // pointer data
 );
    localparam MODE_WIDTH = 15;
-    reg              [MODE_WIDTH-1:0] mode_data_mclk; // some bits unused
+    reg             [MODE_WIDTH-1:0] mode_data_mclk; // some bits unused
     wire                             mode_we_hclk;
     reg                        [7:0] mode_hclk;
     reg                        [1:0] index;
@@ -142,7 +142,7 @@ module  cmprs_afi_mux_status #(
     );
 
     status_generate #(
-        .STATUS_REG_ADDR  (CMPRS_AFIMUX_STATUS_REG_ADDR+0),
+        .STATUS_REG_ADDR  (CMPRS_AFIMUX_STATUS_REG_ADDR+1),
         .PAYLOAD_BITS     (CMPRS_AFIMUX_WIDTH)
     ) status_generate1_i (
         .rst     (1'b0), //rst),                                                       // input
@@ -157,7 +157,7 @@ module  cmprs_afi_mux_status #(
     );
 
     status_generate #(
-        .STATUS_REG_ADDR  (CMPRS_AFIMUX_STATUS_REG_ADDR+0),
+        .STATUS_REG_ADDR  (CMPRS_AFIMUX_STATUS_REG_ADDR+2),
         .PAYLOAD_BITS     (CMPRS_AFIMUX_WIDTH)
     ) status_generate2_i (
         .rst     (1'b0), //rst),                                                       // input
@@ -172,7 +172,7 @@ module  cmprs_afi_mux_status #(
     );
 
     status_generate #(
-        .STATUS_REG_ADDR  (CMPRS_AFIMUX_STATUS_REG_ADDR+0),
+        .STATUS_REG_ADDR  (CMPRS_AFIMUX_STATUS_REG_ADDR+3),
         .PAYLOAD_BITS     (CMPRS_AFIMUX_WIDTH)
     ) status_generate3_i (
         .rst     (1'b0), // rst),                                                       // input

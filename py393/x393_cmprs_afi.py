@@ -171,7 +171,8 @@ class X393CmprsAfi(object):
                        afi_cmprs2_sa,
                        afi_cmprs2_len,
                        afi_cmprs3_sa,
-                       afi_cmprs3_len):    
+                       afi_cmprs3_len,
+                       verbose = 1):    
 
         """
         Set mode of selected input channel of the selected AFI multiplexer
@@ -191,7 +192,20 @@ class X393CmprsAfi(object):
         @param afi_cmprs2_len - input channel 0 buffer length in 32-byte chunks
         @param afi_cmprs3_sa -  input channel 0 start address in 32-byte chunks
         @param afi_cmprs3_len - input channel 0 buffer length in 32-byte chunks
+        @param verbose - verbose level
         """
+        if verbose >0 :
+            print ("afi_mux_setup:")
+            print ("AFI port (0/1) =   ",port_afi)
+            print ("AFI channel mask = 0x%x"%(chn_mask))
+            print ("status mode =      ",status_mode)
+            print ("report mode =      ",report_mode)
+            
+            print ("channel 0 :        0x%08x/0x%08x"%(afi_cmprs0_sa * 32, afi_cmprs0_len * 32))
+            print ("channel 1 :        0x%08x/0x%08x"%(afi_cmprs1_sa * 32, afi_cmprs1_len * 32))
+            print ("channel 2 :        0x%08x/0x%08x"%(afi_cmprs2_sa * 32, afi_cmprs2_len * 32))
+            print ("channel 3 :        0x%08x/0x%08x"%(afi_cmprs3_sa * 32, afi_cmprs3_len * 32))
+        
         sa =     (afi_cmprs0_sa,  afi_cmprs1_sa,  afi_cmprs2_sa,  afi_cmprs3_sa)
         length = (afi_cmprs0_len, afi_cmprs1_len, afi_cmprs2_len, afi_cmprs3_len)
         for i in range(4):
