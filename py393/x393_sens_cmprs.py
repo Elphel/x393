@@ -116,7 +116,7 @@ class X393SensCmprs(object):
         return BUFFER_ADDRESS
     def get_circbuf_byte_start(self): # should be 4KB page aligned
         global BUFFER_ADDRESS
-        return BUFFER_ADDRESS + 16 * 4096
+        return BUFFER_ADDRESS + 4096* (1 << vrlg.NUM_FRAME_BITS)* 16 # 16 subchannels 
     def get_circbuf_byte_end(self): # should be 4KB page aligned
         global BUFFER_ADDRESS, BUFFER_LEN
         return BUFFER_ADDRESS + BUFFER_LEN
@@ -375,7 +375,7 @@ class X393SensCmprs(object):
                                          AY = 0, # 0x20000
                                          BX = 0, # 0x180000
                                          BY = 0, # 0x180000
-                                         C =  0, # 0x8000
+                                         C =  0x8000,
                                          scales0 =        0x8000,
                                          scales1 =        0x8000,
                                          scales2 =        0x8000,
@@ -406,12 +406,12 @@ class X393SensCmprs(object):
         self.x393Sensor.set_sensor_histogram_saxi_addr (
                                     num_sensor = num_sensor,
                                     subchannel = 0,
-                                    page = histogram_start_phys_page)
+                                    page = histogram_start_phys_page) # for the channel/subchannel = 0/0
             
         self.x393Sensor.set_sensor_histogram_saxi (
                                    en = True,
                                    nrst = True,
-                                   confirm_write = True,
+                                   confirm_write = False, # True,
                                    cache_mode = 3)
 
         if exit_step == 18: return False

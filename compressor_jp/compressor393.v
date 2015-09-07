@@ -243,7 +243,7 @@ module  compressor393 # (
 );
 
 `ifdef DEBUG_RING
-    localparam DEBUG_RING_LENGTH = 4;
+    localparam DEBUG_RING_LENGTH = 5 + ((CMPRS_NUM_AFI_CHN > 1)?1:0);
     wire [DEBUG_RING_LENGTH:0] debug_ring; // TODO: adjust number of bits
     assign debug_do = debug_ring[0];
     assign debug_ring[DEBUG_RING_LENGTH] = debug_di;
@@ -451,6 +451,10 @@ module  compressor393 # (
                 .CMPRS_AFIMUX_WIDTH           (CMPRS_AFIMUX_WIDTH),
                 .CMPRS_AFIMUX_CYCBITS         (CMPRS_AFIMUX_CYCBITS),
                 .AFI_MUX_BUF_LATENCY          (AFI_MUX_BUF_LATENCY)
+`ifdef DEBUG_RING
+                ,.DEBUG_CMD_LATENCY   (DEBUG_CMD_LATENCY) 
+`endif        
+                
             ) cmprs_afi0_mux_i (
 //                .rst              (rst),                    // input
                 .mclk             (mclk),                   // input
@@ -516,6 +520,12 @@ module  compressor393 # (
                 .afi_wcount       (afi0_wcount),            // input[7:0] 
                 .afi_wacount      (afi0_wacount),           // input[5:0] 
                 .afi_wrissuecap1en(afi0_wrissuecap1en)      // output
+`ifdef DEBUG_RING       
+                ,.debug_do    (debug_ring[4]),         // output
+                .debug_sl     (debug_sl),              // input
+                .debug_di     (debug_ring[5])        // input
+`endif         
+                
             );
         
             cmprs_afi_mux #(
@@ -530,6 +540,9 @@ module  compressor393 # (
                 .CMPRS_AFIMUX_WIDTH           (CMPRS_AFIMUX_WIDTH),
                 .CMPRS_AFIMUX_CYCBITS         (CMPRS_AFIMUX_CYCBITS),
                 .AFI_MUX_BUF_LATENCY          (AFI_MUX_BUF_LATENCY)
+`ifdef DEBUG_RING
+                ,.DEBUG_CMD_LATENCY   (DEBUG_CMD_LATENCY) 
+`endif        
             ) cmprs_afi1_mux_i (
 //                .rst              (rst),                    // input
                 .mclk             (mclk),                   // input
@@ -593,6 +606,11 @@ module  compressor393 # (
                 .afi_wcount       (afi1_wcount),            // input[7:0] 
                 .afi_wacount      (afi1_wacount),           // input[5:0] 
                 .afi_wrissuecap1en(afi1_wrissuecap1en)      // output
+`ifdef DEBUG_RING       
+                ,.debug_do    (debug_ring[5]),         // output
+                .debug_sl     (debug_sl),              // input
+                .debug_di     (debug_ring[DEBUG_RING_LENGTH])        // input
+`endif         
             );
         end else begin
             cmprs_afi_mux #(
@@ -607,6 +625,9 @@ module  compressor393 # (
                 .CMPRS_AFIMUX_WIDTH           (CMPRS_AFIMUX_WIDTH),
                 .CMPRS_AFIMUX_CYCBITS         (CMPRS_AFIMUX_CYCBITS),
                 .AFI_MUX_BUF_LATENCY          (AFI_MUX_BUF_LATENCY)
+`ifdef DEBUG_RING
+                ,.DEBUG_CMD_LATENCY   (DEBUG_CMD_LATENCY) 
+`endif        
             ) cmprs_afi0_mux_i (
 //                .rst              (rst),                    // input
                 .mclk             (mclk),                   // input
@@ -670,6 +691,11 @@ module  compressor393 # (
                 .afi_wcount       (afi0_wcount),            // input[7:0] 
                 .afi_wacount      (afi0_wacount),           // input[5:0] 
                 .afi_wrissuecap1en(afi0_wrissuecap1en)      // output
+`ifdef DEBUG_RING       
+                ,.debug_do    (debug_ring[4]),         // output
+                .debug_sl     (debug_sl),              // input
+                .debug_di     (debug_ring[5])        // input
+`endif         
             );
             assign afi1_awaddr = 0;
             assign afi1_awvalid = 0;

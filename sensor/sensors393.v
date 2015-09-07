@@ -316,7 +316,7 @@ module  sensors393 #(
 );
 
 `ifdef DEBUG_RING
-    localparam DEBUG_RING_LENGTH = 4;
+    localparam DEBUG_RING_LENGTH = 5;
     wire [DEBUG_RING_LENGTH:0] debug_ring; // TODO: adjust number of bits
     assign debug_do = debug_ring[0];
     assign debug_ring[DEBUG_RING_LENGTH] = debug_di;
@@ -563,6 +563,9 @@ module  sensors393 #(
         .HIST_SAXI_AWCACHE        (HIST_SAXI_AWCACHE),
         .HIST_SAXI_MODE_ADDR_MASK (HIST_SAXI_MODE_ADDR_MASK),
         .NUM_FRAME_BITS           (NUM_FRAME_BITS)
+`ifdef DEBUG_RING
+                ,.DEBUG_CMD_LATENCY   (DEBUG_CMD_LATENCY) 
+`endif        
     ) histogram_saxi_i (
 //        .rst            (rst),                    // input
         .mclk           (mclk),                   // input
@@ -616,6 +619,11 @@ module  sensors393 #(
         .saxi_bready    (saxi_bready),            // output
         .saxi_bid       (saxi_bid),               // input[5:0] 
         .saxi_bresp     (saxi_bresp)              // input[1:0] 
+`ifdef DEBUG_RING       
+       ,.debug_do       (debug_ring[4]),          // output
+        .debug_sl       (debug_sl),               // input
+        .debug_di       (debug_ring[5])           // input
+`endif         
     );
     
     status_router4 status_router4_i (

@@ -55,6 +55,10 @@ each group of 4 bits per channel : bits [1:0] - select, bit[2] - sset (0 - nop),
     parameter CMPRS_AFIMUX_WIDTH =              26, // maximal for status: currently only works with 26)
     parameter CMPRS_AFIMUX_CYCBITS =            3,
     parameter AFI_MUX_BUF_LATENCY =             4'd2  // buffers read latency from fifo_ren* to fifo_rdata* valid : 2 if no register layers are used
+`ifdef DEBUG_RING
+    ,parameter DEBUG_CMD_LATENCY = 2 
+`endif        
+    
 )(
 //    input                         rst,
     input                         mclk, // for command/status
@@ -137,7 +141,15 @@ each group of 4 bits per channel : bits [1:0] - select, bit[2] - sset (0 - nop),
     input                  [ 7:0] afi_wcount,
     input                  [ 5:0] afi_wacount,
     output                        afi_wrissuecap1en
+`ifdef DEBUG_RING       
+    ,output                       debug_do, // output to the debug ring
+     input                        debug_sl, // 0 - idle, (1,0) - shift, (1,1) - load // SuppressThisWarning VEditor - not used
+     input                        debug_di  // input from the debug ring
+`endif         
 );
+//`ifdef DEBUG_RING
+//    assign  debug_do = debug_di; // just temporarily to short-circuit the ring
+//`endif        
     reg         en;      // enable mux
     reg         en_d;    // or use it to reset all channels?
     reg   [3:0] en_chn;  // per-channel enable 
@@ -262,7 +274,26 @@ each group of 4 bits per channel : bits [1:0] - select, bit[2] - sset (0 - nop),
     assign afi_awqos =         4'h0;
     assign afi_wstrb =         8'hff;
     assign afi_wrissuecap1en = 1'b0;
-    
+`ifdef DEBUG_RING
+    debug_slave #(
+        .SHIFT_WIDTH       (32),
+        .READ_WIDTH        (32),
+        .WRITE_WIDTH       (32),
+        .DEBUG_CMD_LATENCY (DEBUG_CMD_LATENCY)
+    ) debug_slave_i (
+        .mclk       (mclk),          // input
+        .mrst       (mrst),          // input
+        .debug_di   (debug_di), // input
+        .debug_sl   (debug_sl),      // input
+        .debug_do   (debug_do), // output
+        .rd_data   ({
+        32'b0
+        
+        }), // input[31:0]
+        .wr_data    (), // output[31:0]  - not used
+        .stb        () // output  - not used
+    );
+`endif    
     always @ (posedge mclk) begin
         if (cmd_we_sa_len_w) begin
             sa_len_d <= cmd_data[26:0];

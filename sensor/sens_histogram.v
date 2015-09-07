@@ -482,7 +482,7 @@ module  sens_histogram #(
 
     // select between 18-bit wide histogram data using a single BRAM or 2 BRAMs having full 32 bits    
     generate
-        if (HISTOGRAM_RAM_MODE=="BUF18")
+        if (HISTOGRAM_RAM_MODE=="BUF32")
             sens_hist_ram_double sens_hist_ram_i (
                 .pclk2x     (pclk2x), // input
                 .addr_a     ({hist_bank_pclk,hist_rwaddr[9:0]}), // input[10:0] 
@@ -497,7 +497,7 @@ module  sens_histogram #(
                 .re_b       (hist_re[0]),    // input
                 .regen_b    (hist_re[1])     // input
             );
-        else if (HISTOGRAM_RAM_MODE=="BUF32")
+        else if (HISTOGRAM_RAM_MODE=="BUF18")
             sens_hist_ram_single sens_hist_ram_i (
                 .pclk2x     (pclk2x), // input
                 .addr_a     ({hist_bank_pclk,hist_rwaddr[9:0]}), // input[10:0] 

@@ -36,6 +36,9 @@ module  histogram_saxi#(
     parameter HIST_SAXI_MODE_ADDR_MASK = 'h7ff,
 //    parameter HIST_SAXI_STATUS_REG =     'h34,
     parameter NUM_FRAME_BITS = 4 // number of bits use for frame number 
+    `ifdef DEBUG_RING
+            ,parameter DEBUG_CMD_LATENCY = 2 
+    `endif        
 )(
 //    input                      rst,
     input                      mclk,   // for command/status
@@ -103,15 +106,26 @@ module  histogram_saxi#(
     output                     saxi_bready,            // AXI PS Slave GP0 BREADY, input
     input               [ 5:0] saxi_bid,               // AXI PS Slave GP0 BID[5:0], output //TODO:  Update range !!!  // @SuppressThisWarning VEditor unused
     input               [ 1:0] saxi_bresp              // AXI PS Slave GP0 BRESP[1:0], output    // @SuppressThisWarning VEditor unused
-    
-
+ `ifdef DEBUG_RING       
+    ,output                       debug_do, // output to the debug ring
+     input                        debug_sl, // 0 - idle, (1,0) - shift, (1,1) - load
+     input                        debug_di  // input from the debug ring
+`endif         
 );
+/*
+`ifdef DEBUG_RING
+    localparam DEBUG_RING_LENGTH = 1; // for now - just connect the histogram(s) module(s)
+    wire [DEBUG_RING_LENGTH:0] debug_ring; // TODO: adjust number of bits
+    assign debug_do = debug_ring[0];
+    assign debug_ring[DEBUG_RING_LENGTH] = debug_di;
+`endif    
+*/
     localparam ATTRIB_WIDTH = NUM_FRAME_BITS + 4 +2;
     reg  [HIST_SAXI_MODE_WIDTH-1:0]  mode;
     wire                             en =     mode[HIST_SAXI_EN] & mode[HIST_SAXI_NRESET];
     reg                        [3:0] awcache_mode;
     reg                              confirm_write;
-//    wire                             nreset = mode[HIST_SAXI_NRESET];
+    wire                             nreset = mode[HIST_SAXI_NRESET];
     wire                             we_mode;
     wire                             we_addr;
     wire                      [31:0] cmd_data;
@@ -154,6 +168,8 @@ module  histogram_saxi#(
     wire                             page_sent_aclk; // page sent over saxi
     reg                              preen_aclk;
     reg                              en_aclk;
+    reg                              prenreset_aclk;
+    reg                              nreset_aclk;
     wire                             page_written_aclk;
     reg                        [2:0] pages_in_buf_rd; // pages in buffer (as seen from read side), 0..4
     reg                        [1:0] page_rd;         // page number being read
@@ -188,6 +204,71 @@ module  histogram_saxi#(
     
 //    reg                        [9:0] buf_raddr; // nuffer read address {page[1:0], addr [7:0]}
     
+`ifdef DEBUG_RING
+    reg [7:0] extra_wa;
+    reg [7:0] extra_ra;
+    reg [15:0] num_addr_saxi;
+    reg [15:0] num_data_saxi;
+    always @ (posedge mclk) begin
+
+        if (!en)               extra_wa <= 0;
+        else if (burst_done_w) extra_wa <= extra_wa + 1;
+        
+    
+    end
+    always @ (posedge aclk) begin
+
+        if (!en_aclk)            extra_ra <= 0;
+        else if (page_sent_aclk) extra_ra <= extra_ra + 1;
+        
+        if (!nreset_aclk)                      num_addr_saxi <= 0;
+        else if (saxi_awvalid && saxi_awready) num_addr_saxi <= num_addr_saxi + 1;
+    
+        if (!nreset_aclk)                    num_data_saxi <= 0;
+        else if (saxi_wvalid && saxi_wready) num_data_saxi <= num_data_saxi + 1;
+    end
+    
+    debug_slave #(
+        .SHIFT_WIDTH       (160),
+        .READ_WIDTH        (160),
+        .WRITE_WIDTH       (32),
+        .DEBUG_CMD_LATENCY (DEBUG_CMD_LATENCY)
+    ) debug_slave_i (
+        .mclk       (mclk),          // input
+        .mrst       (mrst),          // input
+        .debug_di   (debug_di), // input
+        .debug_sl   (debug_sl),      // input
+        .debug_do   (debug_do), // output
+        .rd_data   ({
+          num_addr_saxi,
+          num_data_saxi,
+        
+          extra_wa[7:0],page_wa[7:0],
+          extra_ra[7:0],page_ra[7:0],
+//          16'b0,
+          
+          3'b0,num_bursts_in_buf,
+          3'b0,num_bursts_pending,
+          
+          page_wr[1:0],page_rd[1:0],3'b0, saxi_wlast,
+          saxi_wready, saxi_wvalid, saxi_wid[5:0],
+          
+          6'b0,saxi_awready,saxi_awvalid,
+          saxi_awlock[1:0], saxi_awid[5:0],
+          saxi_awcache[3:0], 1'b0,saxi_awprot[2:0],
+          saxi_awlen[3:0], saxi_awburst[1:0], saxi_awsize[1:0],
+           
+          2'b0 ,hist_chn0[1:0],frame0[3:0],
+          chn_grant[3:0],
+          1'b0, busy_w, busy_r, started,
+          1'b0, burst[2:0], 1'b0,pages_in_buf_wr[2:0],
+          start_w, enc_rq[2:0], pri_rq[3:0]  
+        }), // input[31:0]
+        .wr_data    (), // output[31:0]  - not used
+        .stb        () // output  - not used
+    );
+
+`endif
     
     assign pri_rq = {hist_request3 & ~hist_request2 & ~hist_request1 & ~hist_request0,
                      hist_request2 & ~hist_request1 & ~ hist_request0,
@@ -207,7 +288,7 @@ module  histogram_saxi#(
     assign hist_grant2 =  chn_grant[2];
     assign hist_grant3 =  chn_grant[3];
     
-    assign block_start_w = !(|block_run[2:0]) && !buf_empty;
+    assign block_start_w = !(|block_run[2:0]) && !buf_empty && en_aclk ; // make it finish all started transactions
 
     assign attrib_chn =   attrib_r[NUM_FRAME_BITS+2+:4];
     assign attrib_frame = attrib_r[2+:NUM_FRAME_BITS];
@@ -272,7 +353,8 @@ module  histogram_saxi#(
         
         if (start_w) mux_sel <= enc_rq[1:0];
         
-        dav_r <= dav;
+        if (!en) dav_r <= 0;
+        else     dav_r <= dav;
         din_r <= din;
         
         sub_chn_r <=sub_chn_w;
@@ -306,7 +388,10 @@ module  histogram_saxi#(
     // Buffer read, SAXI send logic
     always @(posedge aclk) begin
         preen_aclk <= en; 
-        en_aclk <=    preen_aclk; 
+        en_aclk <=    preen_aclk && en; 
+
+        prenreset_aclk <= nreset; 
+        nreset_aclk <=    prenreset_aclk && nreset; 
 
         if      (!en_aclk)                     page_rd <= 0;
         else if (page_sent_aclk)               page_rd <= page_rd + 1;
@@ -321,12 +406,12 @@ module  histogram_saxi#(
         else if ( page_written_aclk && !page_sent_aclk) pages_in_buf_rd <= pages_in_buf_rd + 1;
         else if (!page_written_aclk &&  page_sent_aclk) pages_in_buf_rd <= pages_in_buf_rd - 1;
         
-        if      (!en_aclk) block_run <= 0;
+        if  (!nreset_aclk) block_run <= 0;
         else               block_run <= {block_run[2:0],block_start_w | (block_run[0] & ~ block_end)};
         
-        if (!en_aclk) block_start_r <= 0;
+        if (!nreset_aclk) block_start_r <= 0;
 //        else          block_start_r <= {block_run[2:0], block_start_w};
-        else          block_start_r <= {block_start_r[2:0], block_start_w};
+        else            block_start_r <= {block_start_r[2:0], block_start_w};
         
         if (block_start_r[0]) attrib_r <= attrib[page_rd * ATTRIB_WIDTH +: ATTRIB_WIDTH];
 
@@ -337,9 +422,9 @@ module  histogram_saxi#(
         if (arst || block_start_r[3]) start_addr_r[31:6] <= {hist_start_addr[31:10], 4'b0}; 
         else if (saxi_start_burst_w)  start_addr_r[31:6] <= start_addr_r[31:6] + 1;
         
-        if (!en_aclk)                first_burst <= 0;
-        else if (block_start_r[3])   first_burst <=1; // block_start_r[3] - same as start_addr_r set
-        else if (saxi_start_burst_w) first_burst <=0;
+        if (!nreset_aclk)            first_burst <= 0;
+        else if (block_start_r[3])   first_burst <= 1; // block_start_r[3] - same as start_addr_r set
+        else if (saxi_start_burst_w) first_burst <= 0;
         
         if (block_start_r[0]) awcache_mode <= mode[HIST_SAXI_AWCACHE+:4];
         if (block_start_r[0]) confirm_write <= mode[HIST_CONFIRM_WRITE];
@@ -349,8 +434,8 @@ module  histogram_saxi#(
         saxi_bvalid_r <=saxi_bvalid; 
         buf_re <= {buf_re[1:0],buf_re_w};
         
-        if      (!en_aclk) wburst_cntr <= 0;
-        else if (fifo_re)  wburst_cntr <= wburst_cntr +1;
+        if      (!nreset_aclk) wburst_cntr <= 0;
+        else if (fifo_re)      wburst_cntr <= wburst_cntr +1;
         
         if      (block_start_r[0])      num_bursts_in_buf <= 5'h10; // change [2]?
         else if (saxi_wlast && fifo_re) num_bursts_in_buf <= num_bursts_in_buf - 1;

@@ -134,7 +134,8 @@ module  cmd_frame_sequencer#(
     
 //    assign pre_wpage_inc = (!cmd_we && !(|cmd_we_r) ) && (!wpage_inc[0] && !wpage_inc[1]) && ((next_frame_rq && initialized) || reset_on) ; 
     // During reset_on write pointer every cycle:
-    assign pre_wpage_inc = (!cmd_we && !(|cmd_we_r) ) && ((next_frame_rq && initialized) || reset_on) ;
+//    assign pre_wpage_inc = (!cmd_we && !(|cmd_we_r) ) && ((next_frame_rq && initialized) || reset_on) ;
+    assign pre_wpage_inc = (!cmd_we && !(|cmd_we_r) ) && ((next_frame_rq && !wpage_inc[0] && initialized) || reset_on) ;
     assign commands_pending = rpointer != fifo_wr_pointers_outr_r; // only look at the current page different pages will trigger page increment first
     assign pre_cmd_seq_w = commands_pending & ~(|page_r_inc) & seq_enrun;
     assign valid = valid_r;

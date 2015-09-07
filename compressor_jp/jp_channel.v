@@ -179,9 +179,9 @@ module  jp_channel#(
      input                        debug_di  // input from the debug ring
 `endif         
 );
-`ifdef DEBUG_RING
-     assign  debug_do = debug_di; // just temporarily to short-circuit the ring
-`endif        
+//`ifdef DEBUG_RING
+//     assign  debug_do = debug_di; // just temporarily to short-circuit the ring
+//`endif        
 
     localparam CMPRS_ADDR = CMPRS_GROUP_ADDR + CMPRS_NUMBER * CMPRS_BASE_INC;
     localparam CMPRS_STATUS_REG_ADDR = CMPRS_STATUS_REG_BASE + CMPRS_NUMBER *  CMPRS_STATUS_REG_INC;
@@ -342,6 +342,27 @@ module  jp_channel#(
     
 //    assign buf_ren =   buf_rd[0];
 //    assign buf_regen = buf_rd[1];
+
+`ifdef DEBUG_RING
+    debug_slave #(
+        .SHIFT_WIDTH       (32),
+        .READ_WIDTH        (32),
+        .WRITE_WIDTH       (32),
+        .DEBUG_CMD_LATENCY (DEBUG_CMD_LATENCY)
+    ) debug_slave_i (
+        .mclk       (mclk),          // input
+        .mrst       (mrst),          // input
+        .debug_di   (debug_di), // input
+        .debug_sl   (debug_sl),      // input
+        .debug_do   (debug_do), // output
+        .rd_data   ({
+        32'b0
+        
+        }), // input[31:0]
+        .wr_data    (), // output[31:0]  - not used
+        .stb        () // output  - not used
+    );
+`endif    
 
     cmd_deser #(
         .ADDR       (CMPRS_ADDR),

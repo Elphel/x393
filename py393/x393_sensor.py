@@ -770,8 +770,11 @@ class X393Sensor(object):
             print("num_sensor = ", num_sensor)
             print("subchannel = ", subchannel)
             print("page =       ", page)
-        channel = ((num_sensor & 3) << 2) + (subchannel & 3) 
-        self.x393_axi_tasks.write_control_register(vrlg.SENSOR_GROUP_ADDR + vrlg.HIST_SAXI_ADDR_REL + channel,page)
+        num_histogram_frames = 1 << vrlg.NUM_FRAME_BITS
+        channel = ((num_sensor & 3) << 2) + (subchannel & 3)
+        channel_page = page + num_histogram_frames * channel
+        self.x393_axi_tasks.write_control_register(vrlg.SENSOR_GROUP_ADDR + vrlg.HIST_SAXI_ADDR_REL + channel,
+                                                   channel_page)
 
     def setup_sensor_memory (self,
                              num_sensor,
