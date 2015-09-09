@@ -65,6 +65,7 @@ import x393_cmprs
 import x393_frame_sequencer
 import x393_sensor
 import x393_rtc
+import x393_jpeg
 import vrlg
 __all__ = []
 __version__ = 0.1
@@ -348,6 +349,7 @@ USAGE
     x393FrameSequencer = x393_frame_sequencer.X393FrameSequencer(verbose,args.simulated,args.localparams)
     x393Sensor =         x393_sensor.X393Sensor(verbose,args.simulated,args.localparams)
     x393Rtc =            x393_rtc.X393Rtc(verbose,args.simulated,args.localparams)
+    x393Jpeg =           x393_jpeg.X393Jpeg(verbose,args.simulated,args.localparams)
     '''
     print ("----------------------")
     print("x393_mem.__dict__="+str(x393_mem.__dict__))
@@ -380,6 +382,7 @@ USAGE
     extractTasks(x393_frame_sequencer.X393FrameSequencer,      x393FrameSequencer)
     extractTasks(x393_sensor.X393Sensor,                       x393Sensor)
     extractTasks(x393_rtc.X393Rtc,                             x393Rtc)
+    extractTasks(x393_jpeg.X393Jpeg,                           x393Jpeg)
 
     for cmdLine in commands:
         print ('Running task: '+str(cmdLine))

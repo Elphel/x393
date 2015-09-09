@@ -579,6 +579,7 @@
     parameter CMPRS_CBIT_CMODE_JP4DIFFHDRDIV2 = 4'ha, // jp4,  4 blocks, differential, hdr,divide by 2
     parameter CMPRS_CBIT_CMODE_MONO1 =     4'hb, // mono JPEG (not yet implemented)
     parameter CMPRS_CBIT_CMODE_MONO4 =     4'he, // mono 4 blocks
+    
     parameter CMPRS_CBIT_FRAMES_SINGLE =   0, //1, // use a single-frame buffer for images
 
     parameter CMPRS_COLOR18 =              0, // JPEG 4:2:0 with 18x18 overlapping tiles for de-bayer
