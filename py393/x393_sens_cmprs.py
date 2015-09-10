@@ -662,7 +662,7 @@ class X393SensCmprs(object):
 
         self.x393Camsync.camsync_setup (
                      sensor_mask =        sensor_mask,
-                      trigger_mode =       False, #False - async (free running) sensor mode, True - triggered (global reset) sensor mode
+                      trigger_mode =       False, # False - async (free running) sensor mode, True - triggered (global reset) sensor mode
                       ext_trigger_mode =   False, # True - external trigger source, 0 - local FPGA trigger source
                       external_timestamp = False, # True - use received timestamp in the image file, False - use local timestamp 
                       camsync_period =     None,

@@ -963,7 +963,7 @@ module  jp_channel#(
         .wrst                (xrst2xn),         // input mostly for simulation
         
         .we                  (stuffer_dv),     // @ posedge(~xclk2x) input write data from stuffer
-        .wdata               (stuffer_do),     // input[15:0] data from stuffer module;
+        .wdata               ({stuffer_do[7:0],stuffer_do[15:8]}),     // input[15:0] data from stuffer module;
         .wa_rst              (!stuffer_en),    // input reset low address bits when stuffer is disabled (to make sure it is multiple of 32 bytes
         .wlast               (stuffer_done),   // input - written last 32 bytes of a frame (flush FIFO) - stuffer_done (has to be later than we)
         .eof_written_wclk    (eof_written_xclk2xn),    // output - AFI had transferred frame data to the system memory

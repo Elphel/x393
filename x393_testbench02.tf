@@ -80,7 +80,7 @@ module  x393_testbench02 #(
 `include "includes/x393_cur_params_target.vh" // SuppressThisWarning VEditor - not used parameters that may need adjustment, should be before x393_localparams.vh
 parameter TRIGGER_MODE =          0; // 1;     // 0 - auto, 1 - triggered
 parameter EXT_TRIGGER_MODE =      1 ;    // 0 - internal, 1 - external trigger (camsync)
-parameter EXTERNAL_TIMESTAMP =    1 ;    // embed local timestamp, 1 - embed received timestamp
+parameter EXTERNAL_TIMESTAMP =    0; // 1 ;    // embed local timestamp, 1 - embed received timestamp
 
 `include "includes/x393_localparams.vh" // SuppressThisWarning VEditor - not used
 // VDT - incorrect  real number calculation
@@ -1006,6 +1006,7 @@ assign #10 gpio_pins[9] = gpio_pins[8];
 
     afi_mux_setup (
         4'hf, // input  [3:0] chn_mask;
+        /*
         'h10000000 >> 5,  // input [26:0] afi_cmprs0_sa;   // input [26:0] sa;   // start address in 32-byte chunks
            'h10000 >> 5,  // input [26:0] afi_cmprs0_len; //  input [26:0] length;     // channel buffer length in 32-byte chunks
         'h10010000 >> 5,  // input [26:0] afi_cmprs1_sa;   // input [26:0] sa;   // start address in 32-byte chunks
@@ -1014,7 +1015,15 @@ assign #10 gpio_pins[9] = gpio_pins[8];
            'h10000 >> 5,  // input [26:0] afi_cmprs2_len; //  input [26:0] length;     // channel buffer length in 32-byte chunks
         'h10030000 >> 5,  // input [26:0] afi_cmprs3_sa;   // input [26:0] sa;   // start address in 32-byte chunks
            'h10000 >> 5); // input [26:0] afi_cmprs3_len; //  input [26:0] length;     // channel buffer length in 32-byte chunks
-
+        */
+        'h10000000 >> 5,  // input [26:0] afi_cmprs0_sa;   // input [26:0] sa;   // start address in 32-byte chunks
+             'h800 >> 5,  // input [26:0] afi_cmprs0_len; //  input [26:0] length;     // channel buffer length in 32-byte chunks
+        'h10010000 >> 5,  // input [26:0] afi_cmprs1_sa;   // input [26:0] sa;   // start address in 32-byte chunks
+             'h400 >> 5,  // input [26:0] afi_cmprs1_len; //  input [26:0] length;     // channel buffer length in 32-byte chunks
+        'h10020000 >> 5,  // input [26:0] afi_cmprs2_sa;   // input [26:0] sa;   // start address in 32-byte chunks
+             'h200 >> 5,  // input [26:0] afi_cmprs2_len; //  input [26:0] length;     // channel buffer length in 32-byte chunks
+        'h10030000 >> 5,  // input [26:0] afi_cmprs3_sa;   // input [26:0] sa;   // start address in 32-byte chunks
+             'h100 >> 5); // input [26:0] afi_cmprs3_len; //  input [26:0] length;     // channel buffer length in 32-byte chunks
     camsync_setup (
         4'hf ); // sensor_mask); //
 
@@ -2583,7 +2592,7 @@ task camsync_setup;
     input [3:0]  sensor_mask;
     reg          trigger_mode; // 0 - auto, 1 - triggered
     reg          ext_trigger_mode; // 0 - internal, 1 - external trigger (camsync)
-    reg          external_timestamp; // embed local timestamp, 1 - embed received timestamp
+    reg          external_timestamp; // 0 - embed local timestamp, 1 - embed received timestamp
     reg   [31:0] camsync_period;
     reg   [31:0] camsync_delay;
 //    reg   [ 3:0] sensor_mask;
