@@ -54,10 +54,11 @@ module  cmprs_afi_mux_ptr_wresp(
     reg  [26:0] len_ram[0:3];           // start chunk/num cunks in a buffer (write port @mclk)
     reg  [26:0] chunk_ptr_inc;          // incremented by 1..4 chunk pointer
     reg  [27:0] chunk_ptr_rovr;         // incremented chunk pointer, decremented by length (MSB - sign)
-    reg  [ 3:0] busy;                   // one-hot busy stages (usually end with [3]   
-//    reg  [ 5:0] id_r;                   // registered ID data
+///    reg  [ 3:0] busy;                   // one-hot busy stages (usually end with [3]   
+    reg  [ 4:0] busy;                   // one-hot busy stages (usually end with [4]   
+
     reg  [ 4:0] id_r;                   // registered ID data - MSB is unused
-    reg   [1:0] chn;                    // selected channel
+    reg   [1:0] chn;                    // selected channel valid @busy[2]
     reg         eof;                    // eof register being written
     reg         last_burst_in_frame;    // this response is for eof
     reg   [2:0] chunk_inc;
@@ -71,14 +72,19 @@ module  cmprs_afi_mux_ptr_wresp(
                            reset_rq_pri[3] | reset_rq_pri[1]};
     assign ptr_ram_di= resetting[1] ? 27'b0 : (chunk_ptr_rovr[27] ? chunk_ptr_inc : chunk_ptr_rovr[26:0]);
     
-    assign ptr_wa = {eof,chn};
+    assign ptr_wa = {eof,chn}; // valid @busy[2]
     assign afi_bready = afi_bready_r;
     
+///    assign pre_we= resetting[0] ||                   //  a pair of cycles to reset chunk pointer and frame chunk pointer
+///                   busy[2] ||                        // always update chunk pointer
+///                  (busy[3] && last_burst_in_frame); // optionally update frame chunk pointer (same value)
     assign pre_we= resetting[0] ||                   //  a pair of cycles to reset chunk pointer and frame chunk pointer
-                   busy[2] ||                        // always update chunk pointer
-                  (busy[3] && last_burst_in_frame); // optionally update frame chunk pointer (same value)
-    assign pre_busy=             afi_bvalid_r && en && !(|busy[1:0]) && !pre_we;
-    assign start_resetting_w =  !afi_bvalid_r && en && !(|busy[1:0]) && !pre_we && (|reset_rq);
+                   busy[3] ||                        // always update chunk pointer
+                  (busy[4] && last_burst_in_frame); // optionally update frame chunk pointer (same value)
+///    assign pre_busy=             afi_bvalid_r && en && !(|busy[1:0]) && !pre_we;
+///    assign start_resetting_w =  !afi_bvalid_r && en && !(|busy[1:0]) && !pre_we && (|reset_rq);
+    assign pre_busy=             afi_bvalid_r && en && !(|busy[2:0]) && !pre_we;
+    assign start_resetting_w =  !afi_bvalid_r && en && !(|busy[2:0]) && !pre_we && (|reset_rq);
 
     assign chunk_ptr_rd = ptr_ram[chunk_ptr_ra];
         
@@ -89,10 +95,11 @@ module  cmprs_afi_mux_ptr_wresp(
         afi_bvalid_r <= afi_bvalid;
         
         afi_bready_r <= !en || pre_busy; // (!busy[0] && !pre_busy && !resetting[0] && !start_resetting_w);
-        busy <= {busy[2:0], pre_busy}; // adjust bits
+//        busy <= {busy[2:0], pre_busy}; // adjust bits
+        busy <= {busy[3:0], pre_busy}; // adjust bits
         
-//        id_r <= afi_bid;
-        id_r <= afi_bid[4:0]; // id_r[5] is never used - revoved
+//        id_r <= afi_bid[4:0]; // id_r[5] is never used - revoved
+        if (afi_bready && afi_bvalid) id_r <= afi_bid[4:0]; // id_r[5] is never used - revoved
         
         if (start_resetting_w)  reset_rq_pri <= {reset_rq[3] & ~(|reset_rq[2:0]),
                                                  reset_rq[2] & ~(|reset_rq[1:0]),
@@ -106,9 +113,11 @@ module  cmprs_afi_mux_ptr_wresp(
         else     resetting <= {resetting[0], start_resetting_w | (resetting[0] & ~resetting[1])};
         
         if      (resetting == 2'b01)  chn <= reset_rq_enc;
-        else if (busy[0])             chn <= id_r[0 +: 2];
+///        else if (busy[0])             chn <= id_r[0 +: 2];
+        else if (busy[1])             chn <= id_r[0 +: 2];
         
-        if (busy[0]) begin // first busy cycle
+///        if (busy[0]) begin // first busy cycle
+        if (busy[1]) begin // first busy cycle
             last_burst_in_frame <= id_r[2]; 
             chunk_inc <= {1'b0,id_r[3 +:2]} + 1; 
         end
@@ -118,10 +127,11 @@ module  cmprs_afi_mux_ptr_wresp(
         if ((resetting == 2'b01) || busy[0]) eof  <= 0;
         else if (ptr_we)                     eof  <= 1; // always second write cycle
         
-                  
-        if (busy[1]) chunk_ptr_inc <= ptr_ram[ptr_wa] + chunk_inc; // second clock of busy
-                          
-        if (busy[2]) chunk_ptr_rovr <={1'b0,chunk_ptr_inc} - {1'b0,len_ram[chn]}; // third clock of busy
+        // @@@ delay by 1 clk          
+///        if (busy[1]) chunk_ptr_inc <= ptr_ram[ptr_wa] + chunk_inc; // second clock of busy
+///        if (busy[2]) chunk_ptr_rovr <={1'b0,chunk_ptr_inc} - {1'b0,len_ram[chn]}; // third clock of busy
+        if (busy[2]) chunk_ptr_inc <= ptr_ram[ptr_wa] + chunk_inc; // second clock of busy
+        if (busy[3]) chunk_ptr_rovr <={1'b0,chunk_ptr_inc} - {1'b0,len_ram[chn]}; // third clock of busy
 
         // write to ptr_ram (1 or 2 locations - if eof)
         if (ptr_we) ptr_ram[ptr_wa] <= ptr_ram_di;

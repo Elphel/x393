@@ -345,6 +345,8 @@ class X393Jpeg(object):
             code <<= 1
             si += 1
         return hcodes
+    
+    
     def jpegheader_create (self,
                            y_quality = 80,
                            c_quality = None,
@@ -561,7 +563,44 @@ class X393Jpeg(object):
             print("\nNumber of bytes that differ = %d"%(diffs))    
         return {"header":buf,
                 "quantization":qtables["fpga"],
-                "huffman":  self.huff_tables[FPGA_HUFFMAN_TABLE]}  
+                "huffman":  self.huff_tables[FPGA_HUFFMAN_TABLE]}
+    def jpegheader_write  (self,
+                           file_path = "jpeg", 
+                           y_quality = 80,
+                           c_quality = None,
+                           portrait =  False,
+                           height =    1944,
+                           width =     2592,
+                           color_mode = 0,
+                           byrshift   = 0,
+                           verbose    = 1):
+        """
+        Create JPEG file header and trailer
+        @param file_path - file system path (will create two files *.head and *.tail
+        @param y_quality - 1..100 - quantization quality for Y component
+        @param c_quality - 1..100 - quantization quality for color components (None - use y_quality)
+        @param portrait - False - use normal order, True - transpose for portrait mode images
+        @param height - image height, pixels
+        @param width - image width, pixels
+        @param color_mode - one of the image formats (jpeg, jp4,)
+        @param byrshift - Bayer shift
+        @param verbose - verbose level
+        """
+        jpeg_data = self.jpegheader_create (
+                           y_quality = y_quality,
+                           c_quality = c_quality,
+                           portrait =  portrait,
+                           height =    height,
+                           width =     width,
+                           color_mode = color_mode,
+                           byrshift   = byrshift,
+                           verbose    = verbose - 1)
+
+        with open(file_path+".head", "w+b") as sf:
+            sf.write(jpeg_data["header"])
+        with open(file_path+".tail", "w+b") as sf:
+            sf.write(bytearray((0xff,0xd9)))
+          
     def jpeg_header_353 (self):
         return bytearray((
  0xfe, 0xd8, 0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46, 0x49, 0x46, 0x00, 0x01, 0x01, 0x00, 0x00, 0x01,
@@ -607,3 +646,4 @@ class X393Jpeg(object):
 """
 ff d9
 """        
+

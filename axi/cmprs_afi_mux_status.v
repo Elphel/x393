@@ -78,9 +78,13 @@ module  cmprs_afi_mux_status #(
             if (mode_data_mclk[ 6]) mode_hclk[3:2] <= mode_data_mclk[ 5: 4];
             if (mode_data_mclk[10]) mode_hclk[5:4] <= mode_data_mclk[ 9: 8];
             if (mode_data_mclk[14]) mode_hclk[7:6] <= mode_data_mclk[13:12];
-            
-            if (stb_mclk) status_data[chunk_chn_hclk * CMPRS_AFIMUX_WIDTH +: CMPRS_AFIMUX_WIDTH] <= chunk_ptr_hclk;
         end
+            
+       if (stb_mclk) status_data[chunk_chn_hclk * CMPRS_AFIMUX_WIDTH +: CMPRS_AFIMUX_WIDTH] <= chunk_ptr_hclk;
+//       if (stb_mclk && (chunk_chn_hclk == 2'h0)) status_data[0 * CMPRS_AFIMUX_WIDTH +: CMPRS_AFIMUX_WIDTH] <= chunk_ptr_hclk;
+//       if (stb_mclk && (chunk_chn_hclk == 2'h1)) status_data[1 * CMPRS_AFIMUX_WIDTH +: CMPRS_AFIMUX_WIDTH] <= chunk_ptr_hclk;
+//       if (stb_mclk && (chunk_chn_hclk == 2'h2)) status_data[2 * CMPRS_AFIMUX_WIDTH +: CMPRS_AFIMUX_WIDTH] <= chunk_ptr_hclk;
+//       if (stb_mclk && (chunk_chn_hclk == 2'h3)) status_data[3 * CMPRS_AFIMUX_WIDTH +: CMPRS_AFIMUX_WIDTH] <= chunk_ptr_hclk;
         
         if (!en) {index,cntr} <= 0;
         else     {index,cntr} <= {index,cntr} + 1;

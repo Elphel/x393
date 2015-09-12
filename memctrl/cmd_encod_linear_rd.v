@@ -98,7 +98,9 @@ module  cmd_encod_linear_rd #(
 
         if      (mrst)               gen_addr <= 0;
         else if (!start && !gen_run) gen_addr <= 0;
-        else if ((gen_addr==(REPEAT_ADDR-1)) && (num128[NUM_XFER_BITS-1:1]==0)) gen_addr <= REPEAT_ADDR+1; // skip loop alltogeter
+///        else if ((gen_addr==(REPEAT_ADDR-1)) && (num128[NUM_XFER_BITS-1:1]==0)) gen_addr <= REPEAT_ADDR+1; // skip loop alltogeter
+// AF 2015/09/12 : num128[NUM_XFER_BITS-1:0] == 0 for the full 64-bursts!
+        else if ((gen_addr==(REPEAT_ADDR-1)) && (num128[NUM_XFER_BITS-1:0] == 1)) gen_addr <= REPEAT_ADDR+1; // skip loop alltogeter
         else if ((gen_addr !=REPEAT_ADDR) || (num128[NUM_XFER_BITS-1:1]==0)) gen_addr <= gen_addr+1; // not in a loop
 //counting loops?        
         if      (mrst)         num128 <= 0;

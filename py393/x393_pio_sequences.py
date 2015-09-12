@@ -1084,7 +1084,7 @@ class X393PIOSequences(object):
                          quiet=1):       
         """
         Program sequencer, read block from memory,optionally print it
-        Epecting incremental 16-bit data block, calculate number of leading and trailing
+        Expecting incremental 16-bit data block, calculate number of leading and trailing
         non-consecutive words and return them as a tuple
         @param num8  number of 8-bursts (default=64, should be >2)
         @param ca  10-bit memory column address

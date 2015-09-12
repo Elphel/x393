@@ -212,7 +212,16 @@ each group of 4 bits per channel : bits [1:0] - select, bit[2] - sset (0 - nop),
 //    reg   [1:0] wlen32; // 2 high bits of burst len (LSB are always 2'b11)
     
     reg   [3:0] wleft; // number of 64-bit words left to be sent - also used as awlen (valid @ awvalid)
-    reg   [2:0] chunk_inc;              // how much to increment chunk pointer (1..4)
+//    reg   [2:0] chunk_inc;              // how much to increment chunk pointer (1..4)
+    
+//    wire  [2:0] pre_chunk_inc = (|counts_corr2[7:2])? // Would like to increment, if not roll-over
+//                                 3'h4 :
+//                                ({1'b0,left_to_eof[winner2 * 8 +: 2]} + 3'h1);
+
+    wire  [1:0] pre_chunk_inc_m1 = (|counts_corr2[7:2])? // Would like to increment, if not roll-over
+                                   2'h3 :
+                                   left_to_eof[winner2 * 8 +: 2];
+    
 
     reg [ 3:0] reset_pointers;         // per-channel - after chunk_start_hclk or chunk_len_hclk were written or  explicit fifo_rst*
     
@@ -234,7 +243,8 @@ each group of 4 bits per channel : bits [1:0] - select, bit[2] - sset (0 - nop),
     
     reg   [5:0] afi_awid_r;
     
-    
+    wire [2:0] max_wlen; // 0,1,2,3,7 (7 - not limited by rollover) - calculated by cmprs_afi_mux_ptr
+    wire [1:0] want_wleft32 = (|items_left[7:2])? 2'b11 : items_left[1:0]; // want to set wleft[3:2] if not roll-over
 
     assign cmd_we_status_w = cmd_we && ((cmd_a & 'hc) ==       CMPRS_AFIMUX_STATUS_CNTRL);    
     assign cmd_we_mode_w =   cmd_we && (cmd_a ==               CMPRS_AFIMUX_MODE);    
@@ -416,7 +426,9 @@ each group of 4 bits per channel : bits [1:0] - select, bit[2] - sset (0 - nop),
 //pend_last        
         
         if      (!en)        wleft <= 0;
-        else if (pre_busy_w) wleft <= {(|items_left[7:2])? 2'b11 : items_left[1:0], 2'b11};
+///        else if (pre_busy_w) wleft <= {(|items_left[7:2])? 2'b11 : items_left[1:0], 2'b11}; // @@@******* different for roll over
+///        else if (pre_busy_w) wleft <= {(max_wlen[2] || (max_wlen[1:0] > want_wleft32))? want_wleft32 : max_wlen[1:0], 2'b11};
+        else if (pre_busy_w) wleft <= {(max_wlen[1:0] > want_wleft32) ? want_wleft32 : max_wlen[1:0], 2'b11};
         else if (wleft != 0) wleft <= wleft - 1;
 /* 
 counts_corr2[8]
@@ -456,9 +468,9 @@ items_left
         // wdata register mux
         if (wdata_en) wdata <= wdata_sel[1]?(wdata_sel[0]?fifo_rdata3:fifo_rdata2):(wdata_sel[0]?fifo_rdata1:fifo_rdata0);
 
-        if (pre_busy_w) chunk_inc <= (|counts_corr2[7:2])?
-                                       3'h4 :
-                                       ({1'b0,left_to_eof[winner2 * 8 +: 2]} + 3'h1);
+//        if (pre_busy_w) chunk_inc <= (|counts_corr2[7:2])? // Would like to increment, if not roll-over
+//                                       3'h4 :
+//                                       ({1'b0,left_to_eof[winner2 * 8 +: 2]} + 3'h1);
                                        
         if (awvalid[0]) afi_awid_r <={1'b0,wleft[3:2],last_burst_in_frame,cur_chn};
         
@@ -517,13 +529,15 @@ items_left
         .pre_busy_w          (pre_busy_w),          // input
         .winner_channel      (winner2),             // input[1:0] 
         .need_to_bother      (need_to_bother),      // input
-        .chunk_inc           (chunk_inc),           // input[2:0] 
+//        .chunk_inc           (chunk_inc),           // input[2:0]
+        .chunk_inc_want_m1   (pre_chunk_inc_m1),    // input[1:0] Want to increment by this (0..3) + 1, if not roll over 
         .last_burst_in_frame (last_burst_in_frame), // input
         .busy                (busy),                // input[3:0] 
         .ptr_resetting       (ptr_resetting),       // output
         .chunk_addr          (chunk_addr),          // output[26:0] reg 
         .chunk_ptr_ra        (chunk_ptr_ra[2:0]),   // input[2:0] 
-        .chunk_ptr_rd        (chunk_ptr_rd01[0 * 27 +: 27])    // output[26:0] 
+        .chunk_ptr_rd        (chunk_ptr_rd01[0 * 27 +: 27]),    // output[26:0]
+        .max_wlen            (max_wlen)             // output[2:0]: msb - no rollover  (>3)
     );
     assign chunk_ptr_rd=chunk_ptr_ra[3]?chunk_ptr_rd01[1 * 27 +: 27]:chunk_ptr_rd01[0 * 27 +: 27];
     cmprs_afi_mux_ptr_wresp cmprs_afi_mux_ptr_wresp_i (

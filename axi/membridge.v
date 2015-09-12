@@ -30,11 +30,14 @@ module  membridge#(
     parameter MEMBRIDGE_START64=                  'h4, // start address relative to lo_addr
     parameter MEMBRIDGE_LEN64=                    'h5, // full length of transfer in 64-bit words
     parameter MEMBRIDGE_WIDTH64=                  'h6, // frame width in 64-bit words (partial last page in each line)
-    parameter MEMBRIDGE_MODE=                     'h7, // frame width in 64-bit words (partial last page in each line)
+    parameter MEMBRIDGE_MODE=                     'h7, // bits [3:0] - *_cache, bit [4] - cache debug
     parameter MEMBRIDGE_STATUS_REG=               'h3b,
     parameter FRAME_HEIGHT_BITS=                   16,   // Maximal frame height bits
     parameter FRAME_WIDTH_BITS=                    13
 //    ,parameter MCNTRL_SCANLINE_FRAME_PAGE_RESET=  1'b0 // reset internal page number to zero at the frame start (false - only when hard/soft reset)
+`ifdef DEBUG_RING
+    ,parameter DEBUG_CMD_LATENCY = 2 
+`endif        
     
 )(
 //    input         rst,
@@ -120,6 +123,11 @@ module  membridge#(
     input   [ 7:0] afi_rcount,
     input   [ 2:0] afi_racount,
     output         afi_rdissuecap1en
+`ifdef DEBUG_RING       
+    ,output                       debug_do, // output to the debug ring
+     input                        debug_sl, // 0 - idle, (1,0) - shift, (1,1) - load // SuppressThisWarning VEditor - not used
+     input                        debug_di  // input from the debug ring
+`endif         
     
 );
     localparam BUFWR_WE_WIDTH = 4; //2; // 4;
@@ -262,7 +270,7 @@ module  membridge#(
     reg        next_page_wr;
     
     wire       next_page; // @ posedge hclk - source 
-    wire       busy_next_page; // do not send next_page -previous is crossing clock boundaries
+//    wire       busy_next_page; // do not send next_page -previous is crossing clock boundaries
     
     assign next_page= next_page_wr | next_page_rd;
     
@@ -332,7 +340,20 @@ module  membridge#(
     pulse_cross_clock  reset_page_rd_i (.rst(mrstn), .src_clk(~mclk),.dst_clk(hclk), .in_pulse(xfer_reset_page_rd), .out_pulse(reset_page_rd),.busy());
     
     // hclk -> mclk
-    pulse_cross_clock next_page_i  (.rst(hrst), .src_clk(hclk), .dst_clk(mclk), .in_pulse(next_page), .out_pulse(next_page_chn),.busy(busy_next_page));
+//    pulse_cross_clock next_page_i  (.rst(hrst), .src_clk(hclk), .dst_clk(mclk), .in_pulse(next_page), .out_pulse(next_page_chn),.busy(busy_next_page));
+    
+    elastic_cross_clock #(
+        .WIDTH(2),
+        .EXTRA_DLY(0)
+    ) elastic_cross_clock_i (
+        .rst          (hrst),          // input
+        .src_clk      (hclk),          // input
+        .dst_clk      (mclk),          // input
+        .in_pulses    (next_page),     // input
+        .out_pulse    (next_page_chn), // output
+        .busy         ()               // output
+    );
+    
     
     // Common to both directions
     localparam DELAY_ADVANCE_ADDR=3;    
@@ -523,7 +544,8 @@ module  membridge#(
     wire                       is_last_in_page;
     wire                       next_page_rd_w;
     wire                       next_page_wr_w;
-    assign next_page_rd_w = read_started && !busy_next_page && is_last_in_page && bufrd_rd[0];
+//    assign next_page_rd_w = read_started && !busy_next_page && is_last_in_page && bufrd_rd[0];
+    assign next_page_rd_w = read_started && is_last_in_page && bufrd_rd[0];
     assign is_last_in_line = buf_in_line64 == last_in_line64;
     assign is_last_in_page = is_last_in_line || (&buf_in_line64[6:0]);
 `ifdef MEMBRIDGE_DEBUG_READ
@@ -577,7 +599,8 @@ module  membridge#(
     assign advance_rel_addr_rd = write_busy && afi_ra_safe_not_full && afi_safe_rd_pending && (|left64);
     assign afi_arvalid=advance_rel_addr && write_busy;
 
-    assign next_page_wr_w = write_busy && !busy_next_page && is_last_in_page && bufwr_we[0];
+//    assign next_page_wr_w = write_busy && !busy_next_page && is_last_in_page && bufwr_we[0];
+    assign next_page_wr_w = write_busy && is_last_in_page && bufwr_we[0];
     
     assign bufwr_we_w= afi_rd_safe_not_empty && !write_pages_ready[2] && (!(&write_pages_ready[1:0]) ||  !is_last_in_page);
     
@@ -631,12 +654,24 @@ module  membridge#(
         else if (!page_ready_wr &&  next_page_wr_w) write_pages_ready <= write_pages_ready +1; //-1;
 
     end
+`ifdef MEMBRIDGE_DEBUG_WRITE
+    reg [30:0] dbg_read_counter;
+    always @ (posedge hclk) begin
+        if     (!write_busy )  dbg_read_counter <= 0;
+        else if (bufwr_we[0])  dbg_read_counter <= dbg_read_counter + 1;
+    end
+`endif    
+    
     reg [63:0] rdata_r;        
     always @ (posedge hclk) begin
         write_page_r    <= write_page;
         buf_in_line64_r <= buf_in_line64[6:0];
 //        rdata_r <= afi_rdata;
+`ifdef MEMBRIDGE_DEBUG_WRITE
+        rdata_r <= cache_debug?{dbg_read_counter,1'h1,dbg_read_counter,1'h0}:afi_rdata[63:0]; // debugging
+`else        
         rdata_r <= cache_debug?{wr_id[3:0],2'b0,write_page_r[1:0],afi_rcount[7:0],afi_rdata[47:0]}:afi_rdata[63:0]; // debugging
+`endif        
     end    
         
     cmd_deser #(
@@ -680,6 +715,19 @@ module  membridge#(
     );
 
 // Port 1rd (read DDR to AFI) buffer, linear
+wire [63:0] afi_wdata0;
+`ifdef MEMBRIDGE_DEBUG_WRITE
+    reg [15:0] dbg_write_counter;
+    always @ (posedge hclk) begin
+        if (!read_busy || !cache_debug) dbg_write_counter <= 0;
+        else if (bufrd_rd[1])          dbg_write_counter <= dbg_write_counter + 1;
+    end
+    assign afi_wdata = {afi_wdata0[63:16], dbg_write_counter[0]? dbg_write_counter[15:0]: afi_wdata0[15:0]};
+`else
+    assign afi_wdata = afi_wdata0;
+`endif
+
+
     mcntrl_buf_rd #(
         .LOG2WIDTH_RD(6) // 64 bit external interface
     ) chn1rd_buf_i (
@@ -687,7 +735,7 @@ module  membridge#(
         .ext_raddr    ({read_page,buf_in_line64[6:0]}), // input[8:0] 
         .ext_rd       (bufrd_rd[0]),                    // input
         .ext_regen    (bufrd_rd[1]),                    // input
-        .ext_data_out (afi_wdata),                      // output[63:0] 
+        .ext_data_out (afi_wdata0),                      // output[63:0] 
         .wclk         (!mclk),                          // input
         .wpage_in     (2'b0),                           // input[1:0] 
         .wpage_set    (xfer_reset_page_rd),             // input  TODO: Generate @ negedge mclk on frame start
@@ -713,6 +761,29 @@ module  membridge#(
         .rd           (buf_rd),                               // input
         .data_out     (buf_rdata)                             // output[63:0] 
     );
+
+`ifdef DEBUG_RING
+    debug_slave #(
+        .SHIFT_WIDTH       (32),
+        .READ_WIDTH        (32),
+        .WRITE_WIDTH       (32),
+        .DEBUG_CMD_LATENCY (DEBUG_CMD_LATENCY)
+    ) debug_slave_i (
+        .mclk       (mclk),          // input
+        .mrst       (mrst),          // input
+        .debug_di   (debug_di), // input
+        .debug_sl   (debug_sl),      // input
+        .debug_do   (debug_do), // output
+        .rd_data   ({
+        5'b0, afi_racount[2:0],
+        afi_rcount[7:0],
+        2'b0, afi_wacount[5:0],
+        afi_wcount[7:0]
+        }), // input[31:0]
+        .wr_data    (), // output[31:0]  - not used
+        .stb        () // output  - not used
+    );
+`endif    
 
 endmodule
 

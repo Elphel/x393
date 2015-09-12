@@ -43,8 +43,8 @@
 //`define TEST_TILED_WRITE32  1
 //`define TEST_TILED_READ32  1
 
-//`define TEST_AFI_WRITE 1
-//`define TEST_AFI_READ 1
+`define TEST_AFI_WRITE 1
+`define TEST_AFI_READ 1
 
 `define TEST_SENSOR 0
 
@@ -856,16 +856,20 @@ assign #10 gpio_pins[9] = gpio_pins[8];
     test_afi_rw (
        1, // write_ddr3;
        SCANLINE_EXTRA_PAGES,//  extra_pages;
-       FRAME_START_ADDRESS, //  input [21:0] frame_start_addr;
+       0, //FRAME_START_ADDRESS, //  input [21:0] frame_start_addr;
        FRAME_FULL_WIDTH,    // input [15:0] window_full_width; // 13 bit - in 8*16=128 bit bursts
-       WINDOW_WIDTH,        // input [15:0] window_width;  // 13 bit - in 8*16=128 bit bursts
-       WINDOW_HEIGHT,       // input [15:0] window_height; // 16 bit (only 14 are used here)
-       WINDOW_X0,           // input [15:0] window_left;
-       WINDOW_Y0,           // input [15:0] window_top;
+       'h81, //'h8b,// WINDOW_WIDTH,        // input [15:0] window_width;  // 13 bit - in 8*16=128 bit bursts
+       'h2, // WINDOW_HEIGHT,       // input [15:0] window_height; // 16 bit (only 14 are used here)
+       'h1, //'h0, // WINDOW_X0,           // input [15:0] window_left;
+       'h0, // WINDOW_Y0,           // input [15:0] window_top;
        0,                   // input [28:0] start64;  // relative start address of the transfer (set to 0 when writing lo_addr64)
        AFI_LO_ADDR64,       // input [28:0] lo_addr64; // low address of the system memory range, in 64-bit words 
        AFI_SIZE64,          // input [28:0] size64;    // size of the system memory range in 64-bit words
-       0);                  // input        continue;    // 0 start from start64, 1 - continue from where it was
+       0,                  // input        continue;    // 0 start from start64, 1 - continue from where it was
+       0, // disable_need
+       'h13); //'h3);  // cache_mode;  // 'h3 - normal, 'h13 - debug
+       
+       
 `endif
 
 
@@ -875,30 +879,37 @@ assign #10 gpio_pins[9] = gpio_pins[8];
     test_afi_rw (
        0, // write_ddr3;
        SCANLINE_EXTRA_PAGES,//  extra_pages;
-       FRAME_START_ADDRESS, //  input [21:0] frame_start_addr;
+       0, //FRAME_START_ADDRESS, //  input [21:0] frame_start_addr;
        FRAME_FULL_WIDTH,    // input [15:0] window_full_width; // 13 bit - in 8*16=128 bit bursts
-       WINDOW_WIDTH,        // input [15:0] window_width;  // 13 bit - in 8*16=128 bit bursts
-       WINDOW_HEIGHT,       // input [15:0] window_height; // 16 bit (only 14 are used here)
-       WINDOW_X0,           // input [15:0] window_left;
-       WINDOW_Y0,           // input [15:0] window_top;
+       // Try a single-burst write
+       'h81, // 'h8b, // WINDOW_WIDTH,        // input [15:0] window_width;  // 13 bit - in 8*16=128 bit bursts
+       'h2, // WINDOW_HEIGHT,       // input [15:0] window_height; // 16 bit (only 14 are used here)
+       'h1, // 'h0, // WINDOW_X0,           // input [15:0] window_left;
+       'h0, // WINDOW_Y0,           // input [15:0] window_top;
        0,                   // input [28:0] start64;  // relative start address of the transfer (set to 0 when writing lo_addr64)
        AFI_LO_ADDR64,       // input [28:0] lo_addr64; // low address of the system memory range, in 64-bit words 
        AFI_SIZE64,          // input [28:0] size64;    // size of the system memory range in 64-bit words
-       0);                  // input        continue;    // 0 start from start64, 1 - continue from where it was
+       0,                  // input        continue;    // 0 start from start64, 1 - continue from where it was
+       0, // disable_need
+       'h13); //'h3); //  cache_mode;  // 'h3 - normal, 'h13 - debug
+
     $display("===================== #2 TEST_%s =========================",TEST_TITLE);
     test_afi_rw (
        0, // write_ddr3;
        SCANLINE_EXTRA_PAGES,//  extra_pages;
-       FRAME_START_ADDRESS, //  input [21:0] frame_start_addr;
+       0, //FRAME_START_ADDRESS, //  input [21:0] frame_start_addr;
        FRAME_FULL_WIDTH,    // input [15:0] window_full_width; // 13 bit - in 8*16=128 bit bursts
-       WINDOW_WIDTH,        // input [15:0] window_width;  // 13 bit - in 8*16=128 bit bursts
-       WINDOW_HEIGHT,       // input [15:0] window_height; // 16 bit (only 14 are used here)
-       WINDOW_X0,           // input [15:0] window_left;
-       WINDOW_Y0,           // input [15:0] window_top;
+       // Try a single-burst read
+       'h81, // 'h8b, // WINDOW_WIDTH,        // input [15:0] window_width;  // 13 bit - in 8*16=128 bit bursts
+       'h2, // WINDOW_HEIGHT,       // input [15:0] window_height; // 16 bit (only 14 are used here)
+       'h1, // 'h0, // WINDOW_X0,           // input [15:0] window_left;
+       'h0, // WINDOW_Y0,           // input [15:0] window_top;
        0,                   // input [28:0] start64;  // relative start address of the transfer (set to 0 when writing lo_addr64)
        AFI_LO_ADDR64,       // input [28:0] lo_addr64; // low address of the system memory range, in 64-bit words 
        AFI_SIZE64,          // input [28:0] size64;    // size of the system memory range in 64-bit words
-       0);                  // input        continue;    // 0 start from start64, 1 - continue from where it was
+       0,                  // input        continue;    // 0 start from start64, 1 - continue from where it was
+       0, // disable_need
+       'h13); //'h3); //  cache_mode;  // 'h3 - normal, 'h13 - debug
        
 `endif
 
@@ -1045,7 +1056,26 @@ assign #10 gpio_pins[9] = gpio_pins[8];
   TEST_TITLE = "READBACK";
   $display("===================== TEST_%s =========================",TEST_TITLE);
     axi_get_delays;
-`endif    
+`endif
+
+    compressor_run (0, 2); // run single
+    compressor_run (1, 2); // run single
+    compressor_run (2, 2); // run single
+    compressor_run (3, 2); // run single
+    TEST_TITLE = "MEMBRIDGE_READ # 1";
+    $display("===================== TEST_%s =========================",TEST_TITLE);
+  TEST_TITLE = "MEMBRIDGE READ #1";
+  $display("===================== TEST_%s =========================",TEST_TITLE);
+
+  setup_sensor_membridge (0,   // for sensor 0
+                          1) ; // disable_need
+    
+  TEST_TITLE = "MEMBRIDGE READ #2";
+  $display("===================== TEST_%s =========================",TEST_TITLE);
+
+  setup_sensor_membridge (0,   // for sensor 0
+                          1) ; // disable_need
+    
 `ifdef DEBUG_RING
   TEST_TITLE = "READING DEBUG DATA";
   $display("===================== TEST_%s =========================",TEST_TITLE);
@@ -2339,41 +2369,8 @@ task setup_sensor_channel;
             1,  // input [31:0] extra_pages; // 1
             1); // disable "need" (yield to sensor channels)
     
-    compressor_run (num_sensor, 3); // run repetitive mode
-/*            
-    TEST_TITLE = "CAMSYNC_SETUP";
-    $display("===================== TEST_%s =========================",TEST_TITLE);
-            
-// setup camsync module
-        set_camsync_period  (0); // reset circuitry
-        set_gpio_ports (
-            0,  // input [1:0] port_soft; // <2 - unchanged, 2 - disable, 3 - enable
-            3,  // input [1:0] port_a; // camsync
-            0,  // input [1:0] port_b; // motors on 353
-            0); //input [1:0] port_c; // logger
+//    compressor_run (num_sensor, 3); // run repetitive mode
 
-        set_camsync_mode (
-            1'b1,                      // input       en;             // 1 - enable module, 0 - reset
-            {1'b1,1'b1},               // input [1:0] en_snd;         // <2 - NOP, 2 - disable, 3 - enable sending timestamp with sync pulse
-            {1'b1,external_timestamp}, // input [1:0] en_ts_external; // <2 - NOP, 2 - local timestamp in the frame header, 3 - use external timestamp
-            {1'b1,trigger_mode},       // input [1:0] triggered_mode; // <2 - NOP, 2 - async sensor mode, 3 - triggered sensor mode
-            {1'b1, 2'h0},              // input [2:0] master_chn;     // <4 - NOP, 4..7 - set master channel
-            {1'b1, sensor_mask});      // input [4:0] chn_en;         // <16 - NOP, [3:0] - bit mask of enabled sensor channels
-    // setting I/Os after camsync is enabled
-        reset_camsync_inout (0);        // reset input selection
-        if (ext_trigger_mode)
-            set_camsync_inout   (0, 7, 1 ); // set input selection - ext[7], active high
-        reset_camsync_inout (1);        // reset output selection
-        set_camsync_inout   (1, 6, 1 ); // reset output selection - ext[6], active high
-        set_camsync_period  (SYNC_BIT_LENGTH); ///set (bit_length -1) (should be 2..255)
-        set_camsync_delay (
-            0, // input  [1:0] sub_chn;
-            camsync_delay); // input [31:0] dly;          // 0 - input selection, 1 - output selection
-
-
-        set_camsync_period  (camsync_period); // set period (start generating) - in 353 was after everything else was set
-
-*/
     TEST_TITLE = "DELAYS_SETUP";
     $display("===================== TEST_%s =========================",TEST_TITLE);
             
@@ -2399,25 +2396,6 @@ task setup_sensor_channel;
 //            6'h24); // data-0, hact - 1, vact - 2 input  [SENS_CTRL_QUADRANTS_WIDTH-1:0] quadrants;  // 90-degree shifts for data [1:0], hact [3:2] and vact [5:4]
 //            6'h01); // data-1, hact - 0, vact - 0 input  [SENS_CTRL_QUADRANTS_WIDTH-1:0] quadrants;  // 90-degree shifts for data [1:0], hact [3:2] and vact [5:4]
             QUADRANTS_PXD_HACT_VACT); // data-0, hact - 1, vact - 2 input  [SENS_CTRL_QUADRANTS_WIDTH-1:0] quadrants;  // 90-degree shifts for data [1:0], hact [3:2] and vact [5:4]
-/*
-// setup camsync module
-        reset_camsync_inout (0);        // reset input selection
-        if (ext_trigger_mode)
-            set_camsync_inout   (0, 7, 1 ); // set input selection - ext[7], active high
-        reset_camsync_inout (1);        // reset output selection
-        set_camsync_inout   (1, 6, 1 ); // reset output selection - ext[6], active high
-        set_camsync_period  (camsync_period); // set period
-        set_camsync_delay (
-            0, // input  [1:0] sub_chn;
-            camsync_delay); // input [31:0] dly;          // 0 - input selection, 1 - output selection
-
-        set_camsync_mode (
-            {1'b1,1'b1},               // input [1:0] en_snd;         // <2 - NOP, 2 - disable, 3 - enable sending timestamp with sync pulse
-            {1'b1,external_timestamp}, // input [1:0] en_ts_external; // <2 - NOP, 2 - local timestamp in the frame header, 3 - use external timestamp
-            {1'b1,trigger_mode},       // input [1:0] triggered_mode; // <2 - NOP, 2 - async sensor mode, 3 - triggered sensor mode
-            {1'b1, 2'h0},              // input [2:0] master_chn;     // <4 - NOP, 4..7 - set master channel
-            {1'b1, sensor_mask});      // input [4:0] chn_en;         // <16 - NOP, [3:0] - bit mask of enabled sensor channels
-*/
     TEST_TITLE = "I2C_TEST";
     $display("===================== TEST_%s =========================",TEST_TITLE);
 
@@ -2481,29 +2459,6 @@ task setup_sensor_channel;
             1'b1,                // input         confirm_write; // wait for the write confirmed before switching channels
             4'h3);               // input   [3:0] cache_mode;    // default should be 4'h3
 
-/*
-task    set_sensor_io_jtag;
-    input                            [1:0] num_sensor;
-    input                            [1:0] pgmen;    // <2: keep PGMEN, 2 - PGMEN low (inactive),  3 - high (active) enable JTAG control
-    input                            [1:0] prog;     // <2: keep prog, 2 - prog low (active),  3 - high (inactive) ("program" pin control)
-    input                            [1:0] tck;      // <2: keep TCK,  2 - set TCK low,  3 - set TCK high
-    input                            [1:0] tms;      // <2: keep TMS,  2 - set TMS low,  3 - set TMS high
-    input                            [1:0] tdi;      // <2: keep TDI,  2 - set TDI low,  3 - set TDI high
-
-task ctrl_cmd_frame_sequencer;
-    input [1:0] num_sensor; // sensor channel number
-    input       reset;      // reset sequencer (also stops)
-    input       start;      // start sequencer
-    input       stop;       // stop sequencer
-
-task write_cmd_frame_sequencer;
-    input                  [1:0] num_sensor; // sensor channel number
-    input                        relative;   // 0 - absolute (address = 0..f), 1 - relative (address= 0..e)
-    input                  [3:0] frame_addr;   // frame address (relative ort absolute)
-    input [AXI_WR_ADDR_BITS-1:0] addr;         // command address (register to which command should be applied)
-    input                 [31:0] data;         // command data
-
-*/            
         // Run after histogram channel is set up?
     TEST_TITLE = "SENSOR_SETUP";
     $display("===================== TEST_%s =========================",TEST_TITLE);
@@ -2520,58 +2475,6 @@ task write_cmd_frame_sequencer;
     $display("===================== TEST_%s =========================",TEST_TITLE);
     // just temporarily - enable channel immediately    
     enable_memcntrl_en_dis(4'hc + {2'b0,num_sensor}, 1);
-/*    
-    TEST_TITLE = "PROGRAM AFI_MUX";
-    $display("===================== TEST_%s =========================",TEST_TITLE);
-    
-    afi_mux_program_status ( 
-        0, // input [0:0] port_afi;    // number of AFI port (0 - afi 1, 1 - afi2) // configuration controlled by the code. currently
-                             // both AFI are used: ch0 - cmprs_afi_mux_1.0, ch1 - cmprs_afi_mux_1.1,
-                             //  ch2 - cmprs_afi_mux_2.0, ch3 - cmprs_afi_mux_2
-                             // May be changed to ch0 - cmprs_afi_mux_1.0, ch1 -cmprs_afi_mux_1.1,
-                             //  ch2 - cmprs_afi_mux_1.2, ch3 - cmprs_afi_mux_1.3
-        num_sensor, // input [1:0] chn_afi;
-        3,   // input [1:0] mode;
-        0); // input [5:0] seq_num;
-    // reset all channels    
-    afi_mux_reset(
-        0, // input [0:0] port_afi;
-        4'hf); // input [3:0] rst_chn;
-    // release resets
-    afi_mux_reset(
-        0, // input [0:0] port_afi;
-        0); // input [3:0] rst_chn;
-        
-    // set report mode (pointer type) - per status    
-    afi_mux_mode_chn (
-        0,          //input [0:0] port_afi;    // number of AFI port.3
-        num_sensor, // input [1:0] chn;  // channel number to set mode for
-
-//mode == 0 - show EOF pointer, internal
-//mode == 1 - show EOF pointer, confirmed
-//mode == 2 - show current pointer, internal
-//mode == 3 - show current pointer, confirmed
-//each group of 4 bits per channel : bits [1:0] - select, bit[2] - sset (0 - nop), bit[3] - not used
-        0);         // input [1:0] mode;
-    
-    afi_mux_chn_start_length (
-        0,               // input [0:0] port_afi;    // number of AFI port
-        num_sensor,      // input [ 1:0] chn;  // channel number to set mode for
-        afi_cmprs0_sa,   // input [26:0] sa;   // start address in 32-byte chunks
-        afi_cmprs0_len); //  input [26:0] length;     // channel buffer length in 32-byte chunks
-
-    // enable channel 0 and the whole afi_mux module
-
-    afi_mux_enable_chn (
-        0,          // input [0:0] port_afi;    // number of AFI port
-        num_sensor, // input [1:0] en_chn;  // channel number to enable/disable;
-        1);         // input       en;
-
-    afi_mux_enable (
-        0,          // input [0:0] port_afi;    // number of AFI port
-        1);         // input       en;
-*/
-
     
     TEST_TITLE = "GAMMA_CTL";
     $display("===================== TEST_%s =========================",TEST_TITLE);
@@ -2584,8 +2487,47 @@ task write_cmd_frame_sequencer;
             1'b0);      // input         trig;       // pass next frame
     // temporarily putting in the very end as it takes about 30 usec to program curves (TODO: see how to make it faster for simulation)
     end
-endtask
+endtask // setup_sensor_channel
 
+task setup_sensor_membridge;
+    input  [1:0] num_sensor;
+    input        disable_need;
+     
+    reg   [31:0] frame_full_width; // 13-bit Padded line length (8-row increment), in 8-bursts (16 bytes)
+    reg   [31:0] window_width;    // 13 bit - in 8*16=128 bit bursts
+    reg   [31:0] window_height;   // 16 bit
+    reg   [31:0] window_left;
+    reg   [31:0] window_top;
+    reg   [31:0] frame_start_address;
+//    reg   [31:0] frame_start_address_inc;
+    begin
+        window_height = FULL_HEIGHT;
+        window_left = 0;
+        window_top = 0;
+        window_width =       SENSOR_MEMORY_WIDTH_BURSTS;
+        frame_full_width =   SENSOR_MEMORY_FULL_WIDTH_BURSTS;
+        frame_start_address = FRAME_START_ADDRESS + num_sensor * FRAME_START_ADDRESS_INC * (LAST_BUF_FRAME + 1);
+//        frame_start_address_inc = FRAME_START_ADDRESS_INC;
+       test_afi_rw (
+           0,                         // write_ddr3;
+           SCANLINE_EXTRA_PAGES,      //  extra_pages;
+           frame_start_address[21:0], //  input [21:0] frame_start_addr;
+           frame_full_width[15:0],    // input [15:0] window_full_width; // 13 bit - in 8*16=128 bit bursts
+           window_width[15:0],        // input [15:0] window_width;  // 13 bit - in 8*16=128 bit bursts
+           window_height[15:0],       // input [15:0] window_height; // 16 bit (only 14 are used here)
+           window_left[15:0],         // input [15:0] window_left;
+           window_top[15:0],          // input [15:0] window_top;
+           0,                         // input [28:0] start64;  // relative start address of the transfer (set to 0 when writing lo_addr64)
+           AFI_LO_ADDR64,             // input [28:0] lo_addr64; // low address of the system memory range, in 64-bit words 
+           AFI_SIZE64,                // input [28:0] size64;    // size of the system memory range in 64-bit words
+           0,                         // input        continue;    // 0 start from start64, 1 - continue from where it was
+           disable_need,
+          'h13); //   cache_mode;  // 'h3 - normal, 'h13 - debug
+        
+    
+    end
+     
+endtask
 
 //x393_camsync.py
 task camsync_setup;

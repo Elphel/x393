@@ -377,16 +377,20 @@ class X393McntrlTests(object):
                             window_width,  # input [15:0]           window_width;
                             window_height, # input [15:0]           window_height;
                             window_left,   # input [15:0]           window_left;
-                            window_top):   # input [15:0]           window_top;
+                            window_top,    # input [15:0]           window_top;
+                            frame_start_addr = 0x0, # 1000,
+                            frame_full_width = 0xc0):
         """
         Test scanline read (frame size/row increment is set in parameters) 
         @param channel channel number to use. Valid values: 1, 3
         @param extra_pages    2-bit number of extra pages that need to stay (not to be overwritten) in the buffer
-        @param show_data      print read data
+        @param show_data      print read data 
         @param window_width   13-bit window width in 8-bursts (16 bytes)
         @param window_height  16 bit window height
         @param window_left,   13-bit window left margin in 8-bursts (16 bytes)
         @param window_top     16-bit window top margin
+        @param frame_start_addr - frame start address (was 0x1000)
+        @param frame_full_width - frame full width in bursts (16 bytes) - was 0xc0
         @return read data as list
         """
         if show_data==2:
@@ -449,8 +453,8 @@ class X393McntrlTests(object):
             
 # program to the
         self.x393_axi_tasks.write_control_register(start_addr + vrlg.MCNTRL_SCANLINE_MODE, 0); # reset channel, including page address
-        self.x393_axi_tasks.write_control_register(start_addr + vrlg.MCNTRL_SCANLINE_STARTADDR,        vrlg.FRAME_START_ADDRESS); # RA=80, CA=0, BA=0 22-bit frame start address (3 CA LSBs==0. BA==0) 
-        self.x393_axi_tasks.write_control_register(start_addr + vrlg.MCNTRL_SCANLINE_FRAME_FULL_WIDTH, vrlg.FRAME_FULL_WIDTH);
+        self.x393_axi_tasks.write_control_register(start_addr + vrlg.MCNTRL_SCANLINE_STARTADDR,        frame_start_addr); # RA=80, CA=0, BA=0 22-bit frame start address (3 CA LSBs==0. BA==0) 
+        self.x393_axi_tasks.write_control_register(start_addr + vrlg.MCNTRL_SCANLINE_FRAME_FULL_WIDTH, frame_full_width);
         self.x393_axi_tasks.write_control_register(start_addr + vrlg.MCNTRL_SCANLINE_WINDOW_WH,        (window_height << 16) | window_width); #WINDOW_WIDTH + (WINDOW_HEIGHT<<16));
         self.x393_axi_tasks.write_control_register(start_addr + vrlg.MCNTRL_SCANLINE_WINDOW_X0Y0,      (window_top    << 16) | window_left); #WINDOW_X0+ (WINDOW_Y0<<16));
         self.x393_axi_tasks.write_control_register(start_addr + vrlg.MCNTRL_SCANLINE_WINDOW_STARTXY,   vrlg.SCANLINE_STARTX+(vrlg.SCANLINE_STARTY<<16));

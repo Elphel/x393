@@ -165,7 +165,7 @@ class X393McntrlMembridge(object):
                    port_num,
                    quiet=1):
         '''
-        Write defualt parameters to AFI port registers
+        Write default parameters to AFI port registers
         @param port_num - AXI_HP port number (0..3)
         @param quiet - reduce output (>=1 - silent)
         '''

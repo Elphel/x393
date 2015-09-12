@@ -41,11 +41,13 @@ import x393_cmprs
 import x393_frame_sequencer
 import x393_sensor
 import x393_rtc
-
+import x393_mcntrl_membridge
 import x393_utils
 
 import time
 import vrlg
+import x393_mcntrl
+
 from verilog_utils import hx
 
 
@@ -73,6 +75,7 @@ class X393SensCmprs(object):
     x393FrameSequencer = None
     x393Sensor =         None
     x393Rtc =            None
+    x393Membridge =      None
     
     def __init__(self, debug_mode=1,dry_mode=True, saveFileName=None):
         global BUFFER_ADDRESS, BUFFER_LEN
@@ -89,7 +92,7 @@ class X393SensCmprs(object):
         self.x393FrameSequencer = x393_frame_sequencer.X393FrameSequencer(debug_mode,dry_mode, saveFileName)
         self.x393Sensor =         x393_sensor.X393Sensor(debug_mode,dry_mode, saveFileName)
         self.x393Rtc =            x393_rtc.X393Rtc(debug_mode,dry_mode, saveFileName)
-        
+        self.x393Membridge =      x393_mcntrl_membridge.X393McntrlMembridge(debug_mode,dry_mode)
         try:
             self.verbose=vrlg.VERBOSE
         except:
@@ -445,6 +448,7 @@ class X393SensCmprs(object):
             trig = False)
         return True
     def setup_all_sensors (self,
+                              setup_membridge =           False,
                               exit_step =                 None,
                               sensor_mask =               0x1, # channel 0 only
                               gamma_load =                False,
@@ -514,6 +518,8 @@ class X393SensCmprs(object):
         for i in range(16):
             circbuf_starts.append(circbuf_start + i*circbuf_chn_size)
         circbuf_end = circbuf_start + 4*circbuf_chn_size
+        membridge_start = circbuf_end
+        membridge_end = mem_end
 
     #TODO: calculate addersses/lengths
         """
@@ -531,15 +537,28 @@ class X393SensCmprs(object):
             print ("circbuf start 2 =           0x%x"%(circbuf_starts[2]))
             print ("circbuf start 3 =           0x%x"%(circbuf_starts[3]))
             print ("circbuf end =               0x%x"%(circbuf_end))
+            print ("membridge start =           0x%x"%(membridge_start))
+            print ("membridge end =             0x%x"%(membridge_end))
+            print ("membridge size =            %d bytes"%(membridge_end - membridge_start))
             print ("memory buffer end =         0x%x"%(mem_end))
             
         self.program_status_debug (3,0)
+        if setup_membridge:
+            self.setup_membridge_sensor(
+                               write_mem       = False,
+                               window_width    = window_width,
+                               window_height   = window_height,
+                               window_left     = window_left,
+                               window_top      = window_top,
+                               membridge_start = membridge_start,
+                               membridge_end   = membridge_end,
+                               verbose         = verbose)
                 
-        if sensor_mask & 3: # Need mower for sesns1 and sens 2
+        if sensor_mask & 3: # Need power for sens1 and sens 2
             if verbose >0 :
                 print ("===================== Sensor power setup: sensor ports 0 and 1 =========================")
             self.setSensorPower(sub_pair=0, power_on=1)
-        if sensor_mask & 0xc: # Need mower for sesns1 and sens 2
+        if sensor_mask & 0xc: # Need power for sens1 and sens 2
             if verbose >0 :
                 print ("===================== Sensor power setup: sensor ports 2 and 3 =========================")
             self.setSensorPower(sub_pair=1, power_on=1)
@@ -757,43 +776,108 @@ class X393SensCmprs(object):
                 print ("\n%2x: "%(i), end="")
             print("%s "%(hx(d,8)), end = "") 
         print()   
-        
-"""
- tasks related to debug ring
-task debug_read_ring;
-    input integer num32;
 
-    reg    [5:0] seq_num;
-    integer i;
-    begin
-        // load all shift registers from sources
-        write_control_register(DEBUG_ADDR + DEBUG_LOAD, 0); 
-        for (i = 0; i < num32; i = i+1 ) begin
-            read_status(DEBUG_STATUS_REG_ADDR);
-            seq_num = (registered_rdata[STATUS_SEQ_SHFT+:6] ^ 6'h20) &'h3f; // &'h30;
-            write_control_register(DEBUG_ADDR + DEBUG_SHIFT_DATA, 0); 
-            while (((registered_rdata[STATUS_SEQ_SHFT+:6] ^ 6'h20) &'h3f) == seq_num) begin
-                read_status(DEBUG_STATUS_REG_ADDR);
-            end
-            read_status(DEBUG_READ_REG_ADDR);
-            DEBUG_ADDRESS = i;
-            DEBUG_DATA = registered_rdata;
+    def setup_membridge_sensor(self,
+                               write_mem       = False,
+                               cache_mode      = 0x3, # 0x13 for debug mode
+                               window_width    = 2592,
+                               window_height   = 1944,
+                               window_left     = 0,
+                               window_top      = 0,
+                               membridge_start = 0x2ba00000,
+                               membridge_end   = 0x2dd00000,
+                               verbose         = 1):
+        """
+        Configure membridge to read/write to the sensor 0 area in the video memory
+        @param write_mem - Write to video memory (Flase - read from)
+        @param cache_mode - lower 4 bits, axi cache mode (default 3), bit [4] - debug mode (replace data)
+        @param window_width -  window width in pixels (bytes) (TODO: add 16-bit mode)
+        @param window_height - window height in lines
+        @param window_left -   window left margin
+        @param window_top -    window top margin
+        @param membridge_start system memory low address (bytes) 0x2ba00000,
+        @param membridge_end   system memory buffer length (bytes)= 0x2dd00000,
+        @param verbose         verbose level):
+        """
+        if verbose >0 :
+            print ("===================== Setting membridge for sensor 0 =========================")
+            print ("Write to video buffer =     %s"%(("False","True")[write_mem]))
+            print ("Window width =              %d(0x%x)"%(window_width,window_width))
+            print ("Window height =             %d(0x%x)"%(window_height,window_height))
+            print ("Window left =               %d(0x%x)"%(window_left,window_left))
+            print ("Window top =                %d(0x%x)"%(window_top,window_top))
+            print ("membridge start =           0x%x"%(membridge_start))
+            print ("membridge end =             0x%x"%(membridge_end))
+            print ("membridge size =            %d bytes"%(membridge_end - membridge_start))
+            print ("cache/debug mode =          0x%x bytes"%(cache_mode))
             
             
-        end
-    
-    
-    end
-endtask
-`ifdef DEBUG_RING
-task program_status_debug;
-    input [1:0] mode;
-    input [5:0] seq_num;
-    begin
-        program_status (DEBUG_ADDR,
-                        DEBUG_SET_STATUS,
-                        mode,
-                        seq_num);
-    end
-endtask
-"""
+        # Copied from setup_sensor    
+        align_to_bursts = 64 # align full width to multiple of align_to_bursts. 64 is the size of memory access
+        width_in_bursts = window_width >> 4
+        if (window_width & 0xf):
+            width_in_bursts += 1
+        num_burst_in_line = (window_left >> 4) + width_in_bursts
+        num_pages_in_line = num_burst_in_line // align_to_bursts;
+        if num_burst_in_line % align_to_bursts:
+            num_pages_in_line += 1
+        frame_full_width =  num_pages_in_line * align_to_bursts
+        num8rows=   (window_top + window_height) // 8
+        if (window_top + window_height) % 8:
+            num8rows += 1
+        frame_start_addr = 0 # for sensor 0
+#        frame_start_address_inc = num8rows * frame_full_width
+#        len64 = num_burst_in_line * 2 * window_height    
+  
+        """
+        Setup video memory
+        """
+        mode=   x393_mcntrl.func_encode_mode_scan_tiled(
+                                   disable_need = False,
+                                   repetitive=    True,
+                                   single =       False,
+                                   reset_frame =  False,
+                                   extra_pages =  0,
+                                   write_mem =    write_mem,
+                                   enable =       True,
+                                   chn_reset =    False)
+
+        self.x393_axi_tasks.write_control_register(vrlg.MCNTRL_SCANLINE_CHN1_ADDR + vrlg.MCNTRL_SCANLINE_STARTADDR,        frame_start_addr) # RA=80, CA=0, BA=0 22-bit frame start address (3 CA LSBs==0. BA==0) 
+        self.x393_axi_tasks.write_control_register(vrlg.MCNTRL_SCANLINE_CHN1_ADDR + vrlg.MCNTRL_SCANLINE_FRAME_FULL_WIDTH, frame_full_width)
+        self.x393_axi_tasks.write_control_register(vrlg.MCNTRL_SCANLINE_CHN1_ADDR + vrlg.MCNTRL_SCANLINE_WINDOW_WH,        (window_height << 16) | (window_width >> 4)) # WINDOW_WIDTH + (WINDOW_HEIGHT<<16));
+        self.x393_axi_tasks.write_control_register(vrlg.MCNTRL_SCANLINE_CHN1_ADDR + vrlg.MCNTRL_SCANLINE_WINDOW_X0Y0,      (window_top << 16) | (window_left >> 4))     # WINDOW_X0+ (WINDOW_Y0<<16));
+        self.x393_axi_tasks.write_control_register(vrlg.MCNTRL_SCANLINE_CHN1_ADDR + vrlg.MCNTRL_SCANLINE_WINDOW_STARTXY,   0)
+        self.x393_axi_tasks.write_control_register(vrlg.MCNTRL_SCANLINE_CHN1_ADDR + vrlg.MCNTRL_SCANLINE_MODE,             mode) 
+        self.x393_axi_tasks.configure_channel_priority(1,0);    # lowest priority channel 1
+        self.x393_axi_tasks.enable_memcntrl_en_dis(1,1);
+        self.x393Membridge.afi_setup(0)
+        """
+        self.afi_write_reg(port_num, 0x0,      0) # AFI_RDCHAN_CTRL
+        self.afi_write_reg(port_num, 0x04,   0x7) # AFI_RDCHAN_ISSUINGCAP
+        self.afi_write_reg(port_num, 0x08,     0) # AFI_RDQOS
+        #self.afi_write_reg(port_num,0x0c,     0) # AFI_RDDATAFIFO_LEVEL
+        #self.afi_write_reg(port_num,0x10,     0) # AFI_RDDEBUG
+        self.afi_write_reg(port_num, 0x14, 0xf00) # AFI_WRCHAN_CTRL
+        self.afi_write_reg(port_num, 0x18,   0x7) # AFI_WRCHAN_ISSUINGCAP
+        self.afi_write_reg(port_num, 0x1c,     0) # AFI_WRQOS
+        #self.afi_write_reg(port_num,0x20,     0) # AFI_WRDATAFIFO_LEVEL
+        #self.afi_write_reg(port_num,0x24,     0) # AFI_WRDEBUG
+        """
+        self.x393Membridge.membridge_setup(
+                                           len64 =     num_burst_in_line * 2 * window_height,
+                                           width64 =   num_burst_in_line * 2, # 0,
+                                           start64 =   0,
+                                           lo_addr64 = membridge_start // 8,
+                                           size64 =    (membridge_end - membridge_start) // 8,
+                                           cache =     cache_mode,
+                                           quiet = 1 - verbose)
+        
+        self.x393Membridge.membridge_en( # enable membridge
+                                        en =     True,
+                                        quiet = 1 - verbose)
+        
+        if verbose >0 :
+            print ("Run 'membridge_start' to initiate data transfer")
+            print ("Use 'mem_dump 0x%x <length>' to view data"%(membridge_start))
+            print ("Use 'mem_save \"/usr/local/verilog/memdumpXX\" 0x%x 0x%x' to save data"%(membridge_start,(membridge_end - membridge_start)))
+        

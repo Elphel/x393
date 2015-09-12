@@ -33,14 +33,17 @@ module  cmprs_afi_mux_ptr(
     input                         pre_busy_w,         // combinatorial signal - one before busy[0] (depends on ptr_resetting)
     input                  [ 1:0] winner_channel,     // channel that won arbitration for AXI access, valid @ pre_busy_w
     input                         need_to_bother,     // whants to start access if address and data FIFO permit
-    input                   [2:0] chunk_inc,          // how much to increment chunk pointer (1..4) - valid witrh busy[0]
+    input                   [1:0] chunk_inc_want_m1,  // how much to increment chunk pointer (0..3) +1 - valid with busy[0] (w/o rollover)
     
     input                         last_burst_in_frame, // valid with busy[0] (last_burst_in_frame<=last_chunk_w[winner2])
     input                  [ 3:0] busy,               // one cycle less than sending 1-4 bursts, [1] - delayed by 1, [2] - by 2 
     output                        ptr_resetting,      // pointers will be reset next cycle (2-cycle-long pulse)
     output reg             [26:0] chunk_addr,         // chunk absolute address, valid with busy[1]
     input                  [ 2:0] chunk_ptr_ra,       // chunk pointer read address {eof, chn[1:0]}
-    output                 [26:0] chunk_ptr_rd        // chunk pointer read data (non-registered
+    output                 [26:0] chunk_ptr_rd,       // chunk pointer read data (non-registered
+//    output                 [ 2:0] max_inc             // maximal increment to rollover (limited by 4)        
+    output                 [ 2:0] max_wlen            // maximal wlen[3:2], MSB - limited by rollover        
+
 );
     reg   [3:0] reset_rq;               // request to reset pointers when ready
     reg   [3:0] reset_rq_pri;           // one-hot reset rq 
@@ -53,21 +56,45 @@ module  cmprs_afi_mux_ptr(
     wire [26:0] ptr_ram_di;             // data to be written to ptr_ram
     reg  [26:0] sa_len_ram[0:7];        // start chunk/num cunks in a buffer (write port @mclk)
     reg  [26:0] chunk_ptr_inc;          // incremented by 1..4 chunk pointer
-    reg  [27:0] chunk_ptr_rovr;         // incremented chunk pointer, decremented by length (MSB - sign)
+//    reg  [27:0] rollover_r;         // incremented chunk pointer, decremented by length (MSB - sign)
     reg         en_d;                   //enable delayed by 1 cycle
     wire [ 2:0] sa_len_ra;              // start/len read address (0..3 - start addresses, 4..7 - lengths)
 
+    reg  [ 2:0] max_inc_ram[0:3];       // maximal increment to rollover (limited by 4)     
+    wire [ 1:0] pre_chunk_inc_m1;
+    reg  [ 2:0] chunk_inc;
+    wire [26:0] chunks_to_rollover;
+    
+    reg   [3:0] chunks_to_rollover_r;   // [3] >=8 
+    wire  [3:0] chunks_to_rollover_m1;
+    reg         max_inc_ram_we;
+    reg   [1:0] max_inc_ram_wa;
+    wire        rollover_w; // this cycle causes rollover - valid at pre_busy_w
+    reg         rollover_r; // this cycle causes rollover - valid at busy[0] and late
+    
+    wire        ptr_ram_wa = ptr_ram[ptr_wa]; // SuppressThisWarning VEditor debug - just to view 
     
     assign ptr_resetting = resetting[0];
     assign sa_len_ra= {busy[1],ptr_wa[1:0]};
     
     assign reset_rq_enc = {reset_rq_pri[3] | reset_rq_pri[2],
                            reset_rq_pri[3] | reset_rq_pri[1]};
-    assign ptr_ram_di= resetting[1] ? 27'b0 : (chunk_ptr_rovr[27] ? chunk_ptr_inc : chunk_ptr_rovr[26:0]);
+//    assign ptr_ram_di= resetting[1] ? 27'b0 : (chunk_ptr_rovr[27] ? chunk_ptr_inc : chunk_ptr_rovr[26:0]);
+    assign ptr_ram_di= (resetting[1] ||rollover_r)  ? 27'b0 : chunk_ptr_inc ;
 
     assign chunk_ptr_rd = ptr_ram[chunk_ptr_ra];
     assign start_resetting_w = en && !busy[0] && !resetting[0] && (|reset_rq) && !need_to_bother;
-        
+    
+//    assign max_inc = max_inc_ram[winner_channel];
+    assign max_wlen = max_inc_ram[winner_channel]; // valid @pre_busy_w
+    
+//chunk_inc_want_m1
+    assign pre_chunk_inc_m1 = (max_wlen[1:0] >= chunk_inc_want_m1)? chunk_inc_want_m1 : max_wlen[1:0];
+    assign rollover_w =       !max_wlen[2] && (max_wlen[1:0] <= chunk_inc_want_m1);
+    
+    assign chunks_to_rollover = sa_len_ram[sa_len_ra] -  ptr_ram_di;
+    assign chunks_to_rollover_m1 = chunks_to_rollover_r -1;
+       
     always @ (posedge hclk) begin
         en_d <= en;
         // ===== calculate and rollover channel addresses ====
@@ -103,11 +130,25 @@ module  cmprs_afi_mux_ptr(
             chunk_addr <= ptr_ram[ptr_wa] + sa_len_ram[sa_len_ra];
             chunk_ptr_inc <= ptr_ram[ptr_wa] + chunk_inc;
         end                  
-        if (busy[1] && !busy[2]) begin // first clock of busy
-            chunk_ptr_rovr <={1'b0,chunk_ptr_inc} - {1'b0,sa_len_ram[sa_len_ra]}; // sa_len_ra now points at length
-        end
+//        if (busy[1] && !busy[2]) begin // first clock of busy
+//            chunk_ptr_rovr <={1'b0,chunk_ptr_inc} - {1'b0,sa_len_ram[sa_len_ra]}; // sa_len_ra now points at length
+//        end
         // write to ptr_ram (1 or 2 locations - if eof)
         if (ptr_we) ptr_ram[ptr_wa] <= ptr_ram_di;
+        
+        if (pre_busy_w) chunk_inc <= {1'b0, pre_chunk_inc_m1} + 1;
+        
+        if (pre_busy_w) rollover_r <= rollover_w;
+        
+//    wire [26:0] chunks_to_rollover;
+    
+//    reg   [3:0] chunks_to_rollover_r;   // [3] >=8 
+        if (ptr_we) chunks_to_rollover_r <= {|chunks_to_rollover[26:3],chunks_to_rollover[2:0]};
+        
+        max_inc_ram_we <= ptr_we & ~ptr_wa[2];
+        max_inc_ram_wa <= ptr_wa[1:0];
+
+        if (max_inc_ram_we) max_inc_ram[max_inc_ram_wa] <= (|chunks_to_rollover_m1[3:2])?3'h7:{1'b0,chunks_to_rollover_m1[1:0]};
     end
 endmodule
 

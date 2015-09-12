@@ -316,7 +316,7 @@ module  x393 #(
     wire                        status_debug_rq; // Other status request   
     wire                        status_debug_start;  // S uppressThisWarning VEditor ****** Other status packet transfer start (currently with 0 latency from status_root_rq)
     
-    localparam DEBUG_RING_LENGTH = 2; // increase here, insert new after master 
+    localparam DEBUG_RING_LENGTH = 3; // increase here, insert new after master 
     
     wire [DEBUG_RING_LENGTH:0]    debug_ring; // TODO: adjust number of bits
     wire                          debug_sl;   // debug shift/load:  0 - idle, (1,0) - shift, (1,1) - load
@@ -1272,6 +1272,9 @@ assign axi_grst = axi_rst_pre;
         .MEMBRIDGE_STATUS_REG   (MEMBRIDGE_STATUS_REG),
         .FRAME_HEIGHT_BITS      (FRAME_HEIGHT_BITS),
         .FRAME_WIDTH_BITS       (FRAME_WIDTH_BITS)
+`ifdef DEBUG_RING
+        ,.DEBUG_CMD_LATENCY   (DEBUG_CMD_LATENCY) 
+`endif        
     ) membridge_i (
         .mrst                   (mrst),                     // input
         .hrst                   (hrst),                     // input
@@ -1341,6 +1344,11 @@ assign axi_grst = axi_rst_pre;
         .afi_rcount             (afi0_rcount),              // input[7:0] 
         .afi_racount            (afi0_racount),             // input[2:0] 
         .afi_rdissuecap1en      (afi0_rdissuecap1en)        // output
+`ifdef DEBUG_RING       
+        ,.debug_do                (debug_ring[2]),               // output
+        .debug_sl                 (debug_sl),                    // input
+        .debug_di                 (debug_ring[3])                // input
+`endif         
     );
     
     // SAXIGP0 signals (read unused)  (for the histograms)
@@ -2205,7 +2213,7 @@ assign axi_grst = axi_rst_pre;
         .status_ad    (status_debug_ad),    // output[7:0] 
         .status_rq    (status_debug_rq),    // output
         .status_start (status_debug_start), // input
-        .debug_do     (debug_ring[2]),      // output
+        .debug_do     (debug_ring[3]),      // output
         .debug_sl     (debug_sl),           // output
         .debug_di     (debug_ring[0])       // DEBUG_RING_LENGTH-1]) // input
     );

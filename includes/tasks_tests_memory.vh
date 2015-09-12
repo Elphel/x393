@@ -124,6 +124,9 @@ task test_afi_rw; // SuppressThisWarning VEditor - may be unused
     input [28:0] lo_addr64; // low address of the system memory range, in 64-bit words 
     input [28:0] size64;    // size of the system memory range in 64-bit words
     input        continue;    // 0 start from start64, 1 - continue from where it was
+    input        disable_need;
+    input  [4:0] cache_mode;  // 'h3 - normal, 'h13 - debug
+    
     
 // -----------------------------------------
     integer mode;
@@ -135,7 +138,7 @@ task test_afi_rw; // SuppressThisWarning VEditor - may be unused
     reg           reset_frame;
     reg           disable_need; 
     begin
-        disable_need = 1'b0;
+//        disable_need = 1'b0;
         repetitive =  1'b1;
         single     =  1'b0;
         reset_frame = 1'b0;
@@ -169,7 +172,8 @@ task test_afi_rw; // SuppressThisWarning VEditor - may be unused
             (window_width[12:0]==0)? 29'h4000 : {15'b0,window_width[12:0],1'b0}, // width64,
             start64,
             lo_addr64,
-            size64);
+            size64,
+            cache_mode);
         membridge_start (continue);
 `ifdef MEMBRIDGE_DEBUG_READ    
         // debugging

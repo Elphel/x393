@@ -261,7 +261,8 @@ module  cmprs_cmd_decode#(
         else if (ctrl_we_r && di_r[CMPRS_CBIT_RUN]) cmprs_run_mclk <= (di_r[CMPRS_CBIT_RUN-1 -:CMPRS_CBIT_RUN_BITS] == CMPRS_CBIT_RUN_ENABLE);
         
         if      (mrst)      cmprs_standalone <= 0;
-        else if (ctrl_we_r) cmprs_standalone <=  ctrl_we_r && di_r[CMPRS_CBIT_RUN] && (di_r[CMPRS_CBIT_RUN-1 -:CMPRS_CBIT_RUN_BITS] == CMPRS_CBIT_RUN_STANDALONE);
+//        else if (ctrl_we_r) cmprs_standalone <=  ctrl_we_r && di_r[CMPRS_CBIT_RUN] && (di_r[CMPRS_CBIT_RUN-1 -:CMPRS_CBIT_RUN_BITS] == CMPRS_CBIT_RUN_STANDALONE);
+        else cmprs_standalone <=  ctrl_we_r && di_r[CMPRS_CBIT_RUN] && (di_r[CMPRS_CBIT_RUN-1 -:CMPRS_CBIT_RUN_BITS] == CMPRS_CBIT_RUN_STANDALONE);
 
         if      (mrst)                                 sigle_frame_buf <= 0;
         else if (ctrl_we_r && di_r[CMPRS_CBIT_FRAMES]) sigle_frame_buf <= (di_r[CMPRS_CBIT_FRAMES-1 -:CMPRS_CBIT_FRAMES_BITS] == CMPRS_CBIT_FRAMES_SINGLE);
