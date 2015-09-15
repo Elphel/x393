@@ -569,7 +569,7 @@ class X393Jpeg(object):
                            y_quality = 80,
                            c_quality = None,
                            portrait =  False,
-                           height =    1944,
+                           height =    1936,
                            width =     2592,
                            color_mode = 0,
                            byrshift   = 0,

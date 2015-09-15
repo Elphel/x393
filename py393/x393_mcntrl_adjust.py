@@ -5266,6 +5266,13 @@ write_settings= {
                 # TODO: print function name and used arguments
                 task_item['func'](**task_item['params'])
                 last_task_start_time=tim
+        if any (x in "CWARPOB" for x in tasks):
+            print ("Restoring delays after running adjustments")
+#            self.x393_mcntrl_timing.axi_set_delays() # set all individual delays, aslo runs axi_set_phase()
+#            self.x393_mcntrl_timing.axi_set_wbuf_delay(vrlg.WBUF_DLY_DFLT)
+            #TODO: find why the 2 calls above are not enough (memory read gets 4 leading garbage bytes)
+            #The one below seems enough
+            self.x393_pio_sequences.task_set_up(dqs_pattern = dqs_pattern)
         tim=time.time()
         if quiet < 5:
             print ("[%.3f/+%.3f] %s"%(tim-start_time,tim-last_task_start_time,"All Done"))

@@ -71,13 +71,17 @@ module stuffer393 (
 ///    output reg  [23:0] imgptr,      // [23:0]image pointer in 32-byte chunks 
     output reg         flushing,
     output reg         running      // from registering timestamp until done
+`ifdef DEBUG_RING
+,   output reg [3:0]  dbg_etrax_dma
+`endif        
+    
 `ifdef debug_stuffer
-,      output reg   [3:0] etrax_dma_r, // [3:0] just for testing
-       output reg   [3:0] test_cntr,
+,      output reg   [3:0] etrax_dma_r // [3:0] just for testing
+,       output reg   [3:0] test_cntr,
        output reg   [7:0] test_cntr1
 `endif
 );
-
+//etrax_dma[3:0]
 `ifdef debug_stuffer
     reg           en_d;
 `endif
@@ -364,6 +368,10 @@ end
         else if (qv) etrax_dma[3:0] <= etrax_dma[3:0] + 1;
 
 // just for testing
+`ifdef DEBUG_RING
+   dbg_etrax_dma <= etrax_dma[3:0];
+`endif        
+
 `ifdef debug_stuffer
         en_d<= en;
         if (en) etrax_dma_r[3:0] <= etrax_dma[3:0];

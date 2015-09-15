@@ -240,8 +240,8 @@ module  histogram_saxi#(
         .debug_sl   (debug_sl),      // input
         .debug_do   (debug_do), // output
         .rd_data   ({
-          num_addr_saxi,
-          num_data_saxi,
+          num_addr_saxi[15:0],
+          num_data_saxi[15:0],
         
           extra_wa[7:0],page_wa[7:0],
           extra_ra[7:0],page_ra[7:0],

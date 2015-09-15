@@ -344,21 +344,114 @@ module  jp_channel#(
 //    assign buf_regen = buf_rd[1];
 
 `ifdef DEBUG_RING
-    reg [15:0] debug_fifo_in;
-    reg [15:0] debug_fifo_out;
+    reg [31:0] debug_fifo_in;
+    reg [31:0] debug_fifo_out;
+    reg [15:0] pre_start_cntr;
+    reg [15:0] pre_end_cntr;
+    reg        debug_frame_done;
+    reg [15:0] pages_requested;
+    reg [15:0] pages_got;
+    wire [1:0] dbg_add_invalid;
+    wire       dbg_mb_release_buf;
+    reg [15:0] pages_needed;  // count number requested
+    reg [15:0] page_requests; // count regardless of how many requested
+    reg        dbg_stuffer_ext_running;
+    reg        dbg_reset_fifo;
+    wire [3:0] etrax_dma;
+    wire       dbg_flushing;
+    reg        dbg_flush_hclk;
+    reg        dbg_en_hclk;
+    
+    wire       dbg_last_block;
+    reg        dbg_en_n2x;
+    reg        dbg_last_block_persist;
+    wire       dbg_test_lbw;
+    wire       dbg_gotLastBlock;
+    wire       dbg_frame_start_hclk;
+    wire       dbg_last_DCAC;
+    reg        dbg_gotLastBlock_persist;
+    reg        dbg_lastBlock_sent;
+    wire       dbg_fifo_or_full;
+    wire       dbg_comp_lastinmbo;
+    wire [2:0] dbg_block_mem_ra;
+    reg [15:0] dbg_stb_cntr;
+    reg [15:0] dbg_zds_cntr;
+    wire [2:0] dbg_block_mem_wa;
+    wire [2:0] dbg_block_mem_wa_save;
+    
+    
+    
+// cmprs_standalone - use to reset flush     
     always @ (posedge ~xclk2x) begin
-        if      (xrst2xn)    debug_fifo_in <= 0;
-        else if (stuffer_dv) debug_fifo_in <= debug_fifo_in + 1;
+        dbg_reset_fifo <= fifo_rst;
+        if (xrst2xn || dbg_reset_fifo) debug_fifo_in <= 0;
+        else if (stuffer_dv)           debug_fifo_in <= debug_fifo_in + 1;
+        
+        dbg_en_n2x <= stuffer_en;
+        
+        if      (!dbg_en_n2x)    dbg_last_block_persist <= 0;
+        else if (dbg_last_block) dbg_last_block_persist <= 1;
+
+        if      (!dbg_en_n2x)      dbg_gotLastBlock_persist <= 0;
+        else if (dbg_gotLastBlock) dbg_gotLastBlock_persist <= 1;
+        
+//dbg_last_block_persist        
     end
     always @ (posedge hclk) begin
         if      (hrst)     debug_fifo_out <= 0;
-        else if (fifo_rst) debug_fifo_out <= debug_fifo_in;
+        else if (fifo_rst) debug_fifo_out <= 0; // debug_fifo_in >> 2;
         else if (fifo_ren) debug_fifo_out <= debug_fifo_out + 1;
+        
+        dbg_en_hclk <= cmprs_en_mclk;
+        
+        if (!dbg_en_hclk || dbg_frame_start_hclk) dbg_flush_hclk <= 0;
+        else if (flush_hclk)                      dbg_flush_hclk <= 1;
     end
+    
+    always @ (posedge mclk) begin
+        if      (!cmprs_en_mclk) pages_requested <= 0;
+        else if  (next_page_chn) pages_requested <= pages_requested + 1;
+        
+        if      (!cmprs_en_mclk) pages_got <= 0;
+        else if (page_ready_chn) pages_got <= pages_got + 1;
+        
+        if      (!cmprs_en_mclk) debug_frame_done <= 0;
+        else if (frame_done_dst) debug_frame_done <= 1;
+        
+        if      (!cmprs_en_mclk || stuffer_done_mclk) dbg_stuffer_ext_running <= 0;
+        else if (stuffer_running_mclk)                dbg_stuffer_ext_running <= 1;
+        
+    end
+    
+    always @ (posedge xclk) begin
+        if         (!frame_en) pre_start_cntr <= 0;
+        else if (mb_pre_start) pre_start_cntr <= pre_start_cntr + 1;
 
+        if       (!frame_en) pre_end_cntr <= 0;
+        else if (mb_pre_end) pre_end_cntr <= pre_end_cntr + 1;
+        
+        if      (!frame_en)          pages_needed <= 0;
+        else if (dbg_mb_release_buf) pages_needed <= pages_needed + {14'b0,dbg_add_invalid};
+        
+        if      (!frame_en)          page_requests <= 0;
+        else if (dbg_mb_release_buf) page_requests <= page_requests + 1;
+        
+        if (!frame_en)                                              dbg_lastBlock_sent <= 0;
+        else if (enc_dv && enc_do[15] && enc_do[14] && enc_do[12] ) dbg_lastBlock_sent <= 1;
+//        else if enc_do[15:0]
+        
+        if      (!frame_en) dbg_stb_cntr <= 0;
+        else if (dct_start) dbg_stb_cntr <= dbg_stb_cntr + 1;
+        
+        if      (!frame_en) dbg_zds_cntr <= 0;
+        else if  (focus_ds) dbg_zds_cntr <= dbg_zds_cntr + 1;
+
+    end
+//frame_start_dst
+    
     debug_slave #(
-        .SHIFT_WIDTH       (128),
-        .READ_WIDTH        (128),
+        .SHIFT_WIDTH       (320),
+        .READ_WIDTH        (320),
         .WRITE_WIDTH       (32),
         .DEBUG_CMD_LATENCY (DEBUG_CMD_LATENCY)
     ) debug_slave_i (
@@ -368,11 +461,21 @@ module  jp_channel#(
         .debug_sl   (debug_sl),      // input
         .debug_do   (debug_do), // output
         .rd_data   ({
-        debug_fifo_out[15:0],
-        debug_fifo_in[15:0],
-        16'b0,
+        26'h0, dbg_block_mem_wa_save[2:0],dbg_block_mem_wa[2:0],
+        dbg_zds_cntr[15:0],
+        dbg_stb_cntr[15:0],
+        pages_needed[15:0],
+        page_requests[15:0],
+        pre_end_cntr[15:0],
+        pre_start_cntr[15:0],
+        pages_got[15:0],
+        pages_requested[15:0],
+        dbg_comp_lastinmbo, dbg_block_mem_ra[2:0], debug_fifo_out[27:0],
+        debug_fifo_in[31:0],
+        color_last, dbg_last_block_persist, dbg_gotLastBlock, dbg_test_lbw, dbg_last_block,
+         dbg_flush_hclk, dbg_flushing, stuffer_rdy, etrax_dma[3:0], dbg_stuffer_ext_running, stuffer_running_mclk, debug_frame_done, reading_frame,
         fifo_count[7:0],
-        6'b0, sigle_frame_buf, suspend,
+        2'b0, dbg_fifo_or_full, dbg_gotLastBlock_persist, dbg_lastBlock_sent, dbg_last_DCAC, sigle_frame_buf, suspend,
         frame_number_dst[15:0],
         line_unfinished_dst[15:0],
         frame_number_src[15:0],
@@ -381,6 +484,18 @@ module  jp_channel#(
         .wr_data    (), // output[31:0]  - not used
         .stb        () // output  - not used
     );
+//    wire [2:0] dbg_block_mem_wa;
+//    wire [2:0] dbg_block_mem_wa_save;
+    
+    pulse_cross_clock dbg_fs_hclk_i (
+        .rst       (!cmprs_en_mclk),
+        .src_clk   (mclk),
+        .dst_clk   (hclk),
+        .in_pulse  (frame_start_dst),
+        .out_pulse (dbg_frame_start_hclk),
+        .busy      ());
+    
+    
 `endif    
 
     cmd_deser #(
@@ -615,7 +730,10 @@ module  jp_channel#(
         .macroblock_x       (macroblock_x),       // output[6:0] 
         .first_mb           (first_mb),           // output reg 
         .last_mb            (last_mb)             // output
-        
+`ifdef DEBUG_RING
+        ,.dbg_add_invalid   (dbg_add_invalid),
+        .dbg_mb_release_buf (dbg_mb_release_buf)
+`endif        
     );
 
     cmprs_pixel_buf_iface #(
@@ -890,12 +1008,28 @@ module  jp_channel#(
         .zdi                (focus_do[12:0]),         // input[12:0] - zigzag-reordered data input
         .first_blockz       (first_block_quant),      // input - first block input (@zds)
         .zds                (focus_ds),               // input - strobe - one ahead of the DC component output
-///        .last               (enc_last),               // output reg 
+`ifdef DEBUG_RING
+        .last               (dbg_last_DCAC),                       // output reg - not used
+`else
         .last               (),                       // output reg - not used
+`endif
         .do                 (enc_do[15:0]),           // output[15:0] reg 
         .dv                 (enc_dv)                  // output reg 
+`ifdef DEBUG_RING
+        ,.comp_lastinmbo               (dbg_comp_lastinmbo)
+        ,.dbg_block_mem_ra             (dbg_block_mem_ra)
+        ,.dbg_block_mem_wa             (dbg_block_mem_wa)
+        ,.dbg_block_mem_wa_save        (dbg_block_mem_wa_save)
+`else
+        ,.comp_lastinmbo               ()
+        ,.dbg_block_mem_ra             ()
+       ,.dbg_block_mem_wa              ()
+        ,.dbg_block_mem_wa_save        ()
+`endif
     );
 
+//    wire [2:0] dbg_block_mem_wa;
+//    wire [2:0] dbg_block_mem_wa_save;
 
     huffman393 i_huffman (
         .xclk               (xclk),                   // input
@@ -912,14 +1046,22 @@ module  jp_channel#(
         .dl                 (huff_dl[3:0]),           // output[3:0] reg 
         .dv                 (huff_dv),                // output reg 
         .flush              (flush),                  // output reg 
-///        .last_block(last_block), // output reg 
+`ifdef DEBUG_RING
+        .last_block         (dbg_last_block), // output reg unused does not get out
+        .test_lbw           (dbg_test_lbw), // output reg ??
+        .gotLastBlock       (dbg_gotLastBlock), // output ?? - unused (was for debug)
+`else
         .last_block         (), // output reg unused
         .test_lbw           (), // output reg ??
-///        .gotLastBlock(test_lbw) // output ??
         .gotLastBlock       (), // output ?? - unused (was for debug)
+`endif        
         .clk_flush          (hclk), // input
-        .flush_clk          (flush_hclk) // output
-        
+        .flush_clk          (flush_hclk), // output
+`ifdef DEBUG_RING
+        .fifo_or_full       (dbg_fifo_or_full)     // FIFO output register full - just for debuging
+`else        
+        .fifo_or_full       ()     // FIFO output register full - just for debuging
+`endif        
     );
     
 
@@ -945,9 +1087,15 @@ module  jp_channel#(
         .q                   (stuffer_do),             // output[15:0] reg - output data
         .qv                  (stuffer_dv),             // output reg - output data valid
         .done                (stuffer_done),           // output 
+`ifdef DEBUG_RING
+        .flushing            (dbg_flushing),                       // output reg Not used?
+`else
         .flushing            (),                       // output reg Not used?
+`endif        
         .running             (stuffer_running)         // from registering timestamp until done
-        
+`ifdef DEBUG_RING
+,        .dbg_etrax_dma     (etrax_dma)
+`endif        
 `ifdef debug_stuffer
        ,.etrax_dma_r(tst_stuf_etrax[3:0]) // [3:0] just for testing
        ,.test_cntr(test_cntr[3:0])

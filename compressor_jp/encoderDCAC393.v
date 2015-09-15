@@ -42,7 +42,13 @@ module encoderDCAC393(
     input             zds,            // strobe - one ahead of the DC component output
     output reg        last,           //
     output reg [15:0] do,
-    output reg        dv);
+    output reg        dv,
+    // just for debug
+    output comp_lastinmbo,
+    output [2:0] dbg_block_mem_ra,
+    output [2:0] dbg_block_mem_wa,
+    output [2:0] dbg_block_mem_wa_save
+    );
 
 
 // 8x13  DC storage memory
@@ -72,7 +78,7 @@ module encoderDCAC393(
     wire    [2:0] comp_numbero;   // [2:0] component number 0..2 in color, 0..3 - in jp4diff, >= 4 - don't use
     wire          comp_firsto;    // first this component in a frame (reset DC)
     wire          comp_coloro;    // use color - huffman?
-    wire          comp_lastinmbo; // last component in a macroblock
+//    wire          comp_lastinmbo; // last component in a macroblock
     wire          lasto;          // last macroblock in a frame
     reg     [2:0] block_mem_ra;
     reg     [2:0] block_mem_wa;
@@ -85,6 +91,11 @@ module encoderDCAC393(
     assign comp_coloro=       block_mem_o[4];
     assign comp_lastinmbo=    block_mem_o[5];
     assign lasto=             block_mem_o[6];
+    
+    assign dbg_block_mem_ra = block_mem_ra;
+    assign dbg_block_mem_wa = block_mem_wa;
+    assign dbg_block_mem_wa_save = block_mem_wa_save;
+    
     always @ (posedge clk) begin
         if (stb) block_mem_ram[block_mem_wa[2:0]] <= {lasti, comp_lastinmbi, comp_colori,comp_firsti,comp_numberi[2:0]};
         if      (!en) block_mem_wa[2:0] <= 3'h0;

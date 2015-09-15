@@ -151,7 +151,7 @@ class X393SensCmprs(object):
                               window_height =             1944,   # 1944
                               window_left =               0,     # 0
                               window_top =                0, # 0? 1?
-                              compressor_left_margin =    0, #0?`1? 
+#                              compressor_left_margin =    0, #0?`1? 
 #                              frame_start_address, # calculate through num_sensor, num frames, frame size and start addr?
 #                              frame_start_address_inc,
                               last_buf_frame =            1,  #  - just 2-frame buffer
@@ -181,7 +181,6 @@ class X393SensCmprs(object):
         @param window_height -     16-bit window height in scan lines
         @param window_left -       left margin of the window (here - in pixels)
         @param window_top -        top margin of the window (16 bit)
-        @param compressor_left_margin - 0..31 - left margin for compressor (to the nearest 32-byte column)
         @param last_buf_frame) -   16-bit number of the last frame in a buffer
         @param colorsat_blue - color saturation for blue (10 bits), 0x90 for 100%
         @param colorsat_red -  color saturation for red (10 bits), 0xb6 for 100%
@@ -192,14 +191,17 @@ class X393SensCmprs(object):
         @param histogram_height_m1 - one less than window height. If 0 - use frame bottom margin (end of VACT)
         
         ???
-        @parame verbose - verbose level
+        @param verbose - verbose level
         @return True if all done, False if exited prematurely through exit_step
         """
+#        @param compressor_left_margin - 0..31 - left margin for compressor (to the nearest 32-byte column)
+        
         align_to_bursts = 64 # align full width to multiple of align_to_bursts. 64 is the size of memory access
         width_in_bursts = window_width >> 4
         if (window_width & 0xf):
             width_in_bursts += 1
-            
+        compressor_left_margin = window_left % 32
+    
         num_burst_in_line = (window_left >> 4) + width_in_bursts
         num_pages_in_line = num_burst_in_line // align_to_bursts;
         if num_burst_in_line % align_to_bursts:
@@ -296,17 +298,38 @@ class X393SensCmprs(object):
                                   verbose =           verbose)
     # TODO: calculate widths correctly!
         if exit_step == 14: return False
+        tile_margin = 2 # 18x18 instead of 16x16
+        left_tiles32 = window_left // 32
+#        last_tile32 = (window_left + (window_width & ~0xf) + tile_margin - 1) // 32
+        last_tile32 = (window_left + ((num_macro_cols_m1 + 1) * 16) + tile_margin - 1) // 32
+        width32 = last_tile32 - left_tiles32 + 1 # number of 32-wide tiles needed in each row
+        
+        if (verbose > 0) :
+            print ("setup_compressor_memory:")
+            print ("num_sensor =       ", num_sensor)
+            print ("frame_sa =         0x%x"%(frame_start_address))
+            print ("frame_sa_inc =     0x%x"%(frame_start_address_inc))
+            print ("last_frame_num =   0x%x"%(last_buf_frame))
+            print ("frame_full_width = 0x%x"%(frame_full_width))
+            print ("window_width =     0x%x"%(width32 * 2 )) # window_width >> 4)) # width in 16 - bursts, made evem
+            print ("window_height =    0x%x"%(window_height & 0xfffffff0))
+            print ("window_left =      0x%x"%(left_tiles32 * 2)) # window_left >> 4)) # lext in 16-byte bursts, made even
+            print ("window_top =       0x%x"%(window_top))
+            print ("byte32 =           1")
+            print ("tile_width =       2")
+            print ("extra_pages =      1")
+            print ("disable_need =     1")
 
         self.x393Cmprs.setup_compressor_memory (
             num_sensor =       num_sensor,
-            frame_sa =         frame_start_address,     # input [31:0] frame_sa;         # 22-bit frame start address ((3 CA LSBs==0. BA==0)
-            frame_sa_inc =     frame_start_address_inc, # input [31:0] frame_sa_inc;     # 22-bit frame start address increment  ((3 CA LSBs==0. BA==0)
-            last_frame_num =   last_buf_frame,          # input [31:0] last_frame_num;   # 16-bit number of the last frame in a buffer
-            frame_full_width = frame_full_width,        # input [31:0] frame_full_width; # 13-bit Padded line length (8-row increment), in 8-bursts (16 bytes)
-            window_width =     window_width >> 4,       # input [31:0] window_width;     # 13 bit - in 8*16=128 bit bursts
-            window_height =    window_height,           # input [31:0] window_height;    # 16 bit
-            window_left =      window_left >> 4,        # input [31:0] window_left;
-            window_top =       window_top,              # input [31:0] window_top;
+            frame_sa =         frame_start_address,         # input [31:0] frame_sa;         # 22-bit frame start address ((3 CA LSBs==0. BA==0)
+            frame_sa_inc =     frame_start_address_inc,     # input [31:0] frame_sa_inc;     # 22-bit frame start address increment  ((3 CA LSBs==0. BA==0)
+            last_frame_num =   last_buf_frame,              # input [31:0] last_frame_num;   # 16-bit number of the last frame in a buffer
+            frame_full_width = frame_full_width,            # input [31:0] frame_full_width; # 13-bit Padded line length (8-row increment), in 8-bursts (16 bytes)
+            window_width =     (width32 * 2 ),              # input [31:0] window_width;     # 13 bit - in 8*16=128 bit bursts
+            window_height =    window_height & 0xfffffff0,  # input [31:0] window_height;    # 16 bit
+            window_left =      left_tiles32 * 2,            # input [31:0] window_left;
+            window_top =       window_top,                  # input [31:0] window_top;
             byte32 =           1,
             tile_width =       2,
             extra_pages =      1,
@@ -316,7 +339,7 @@ class X393SensCmprs(object):
     
         self.x393Cmprs.compressor_control(
                        chn = num_sensor,
-                       run_mode =   3)  # run repetitive mode
+                       run_mode =  0) #  3)  # run repetitive mode
 
         if exit_step == 16: return False
         #Set up delays separately, outside of this method
@@ -521,7 +544,7 @@ class X393SensCmprs(object):
         membridge_start = circbuf_end
         membridge_end = mem_end
 
-    #TODO: calculate addersses/lengths
+    #TODO: calculate addresses/lengths
         """
         AFI mux is programmed in 32-byte chunks
         """
@@ -621,7 +644,7 @@ class X393SensCmprs(object):
                           window_height =           window_height,   # 1944
                           window_left =             window_left,     # 0
                           window_top =              window_top, # 0? 1?
-                          compressor_left_margin =  compressor_left_margin, #0?`1? 
+#                          compressor_left_margin =  compressor_left_margin, #0?`1? 
                           last_buf_frame =          last_buf_frame,  #  - just 2-frame buffer
                           colorsat_blue =           colorsat_blue,     # 0x90 fo 1x
                           colorsat_red =            colorsat_red,     # 0xb6 for x1
@@ -762,20 +785,6 @@ class X393SensCmprs(object):
             result.append(self.x393_axi_tasks.read_status(vrlg.DEBUG_READ_REG_ADDR))
         return result    
             
-    def print_debug( self,
-                     num32 = 32):
-        """
-        Read and print serial debug ring as a sequence of 32-bit numbers
-        @param num32 - number of 32-bit words to read
-        @return - list of the 32-bit words read
-        """
-        status = self.debug_read_ring(num32)
-        numPerLine = 8
-        for i,d in enumerate (status):
-            if ( i % numPerLine) == 0:
-                print ("\n%2x: "%(i), end="")
-            print("%s "%(hx(d,8)), end = "") 
-        print()   
 
     def setup_membridge_sensor(self,
                                write_mem       = False,
@@ -880,4 +889,216 @@ class X393SensCmprs(object):
             print ("Run 'membridge_start' to initiate data transfer")
             print ("Use 'mem_dump 0x%x <length>' to view data"%(membridge_start))
             print ("Use 'mem_save \"/usr/local/verilog/memdumpXX\" 0x%x 0x%x' to save data"%(membridge_start,(membridge_end - membridge_start)))
+
+    def print_debug( self,
+                     first = None,
+                     last = None,
+                     num32 = 100):
+        """
+        Read and print serial debug ring as a sequence of 32-bit numbers
+        @parame first - index of the first 32-bit debug word to decode
+                       also valid: "list" - print list of all fields,
+                       "raw" - print 32-bit hex data only
+        @parame last - index of the last 32-bit debug word to decode
+        @param num32 - number of 32-bit words to read
+        @return - list of the 32-bit words read
+        """
+        debug_dict = {"x393":          (("sensors393_i",       "sensors393"),
+                                        ("compressors393_i",   "compressors393"),
+                                        ("membridge_i",        "membridge")),
+                      "sensors393":    (("sensor_channel0_i",  "sensor_channel"),
+                                        ("sensor_channel1_i",  "sensor_channel"),
+                                        ("sensor_channel2_i",  "sensor_channel"),
+                                        ("sensor_channel3_i",  "sensor_channel"),
+                                        ("histogram_saxi_i",   "histogram_saxi")),
+                      "sensor_channel":(("sens_histogram0_i",  "sens_histogram"),
+                                        ("sens_histogram1_i",  "sens_histogram"),
+                                        ("sens_histogram2_i",  "sens_histogram"),
+                                        ("sens_histogram3_i",  "sens_histogram"),
+                                        
+                                        ("debug_line_cntr",    16),
+                                        ("debug_lines",        16),
+                                        ("hact_cntr",          16),
+                                        ("hist_rq",            4),
+                                        ("hist_gr",            4),
+                                        ("hist_request",       1),
+                                        ("hist_grant",         1),
+                                        (None,                 6),
+                                        ("gamma_pxd_out",      8),
+                                        ("pxd",                12),
+                                        ("pxd_to_fifo",        12),
+                                        ("gamma_pxd_in",       16),
+                                         ("lens_pxd_in",       16)),
+                      "sens_histogram":(("hcntr",              16),
+                                        ("width_m1",           16),
+                                        ("debug_line_cntr",    16),
+                                        ("debug_lines",        16)),
+                      "histogram_saxi":(("pri_rq",             4),
+                                        ("enc_rq",             3),
+                                        ("start_w",            1), # 8
+                                        ("pages_in_buf_wr",    3),
+                                        (None,                 1),
+                                        ("burst",              3 ), 
+                                        (None,                 1), # 16
+                                        ("started",            1),
+                                        ("busy_r",             1),
+                                        ("busy_w",             1),
+                                        (None,                 1),
+                                        ("chn_grant",          4), # 24
+                                        ("frame0",             4),
+                                        ("hist_chn0",          2),
+                                        (None,                 2), # 32
+                                        ("saxi_awsize",        2),
+                                        ("saxi_awburst",       2),
+                                        ("saxi_awlen",         4), # 40
+                                        ("saxi_awprot",        3),
+                                        (None,                 1),
+                                        ("saxi_awcache",       4), # 48
+                                        ("saxi_awid",          6),
+                                        ("saxi_awlock",        2), # 56
+                                        ("saxi_awvalid",       1),
+                                        ("saxi_awready",       1),
+                                        (None,                 6), # 64
+                                        ("saxi_wid",           6),
+                                        ("saxi_wvalid",        1),
+                                        ("saxi_wready",        1), # 72
+                                        ("saxi_wlast",         1),
+                                        (None,                 3),
+                                        ("page_rd",            2),
+                                        ("page_wr",            2), # 80
+                                        ("num_bursts_pending", 5),
+                                        (None,                 3), # 88
+                                        ("num_bursts_in_buf",  5),
+                                        (None,                 3), # 96
+                                        ("page_ra",            8), # 104
+                                        ("extra_ra",           8), # 112
+                                        ("page_wa",            8), # 120
+                                        ("extra_wa",           8), # 128
+                                        ("num_addr_saxi",     16), # 144
+                                        ("num_addr_saxi",     16), # 160
+                                        ),
+                      "compressors393":(("jp_channel0_i",      "jp_channel"),
+                                        ("jp_channel1_i",      "jp_channel"),
+                                        ("jp_channel2_i",      "jp_channel"),
+                                        ("jp_channel3_i",      "jp_channel"),
+                                        ("cmprs_afi0_mux_i",   "cmprs_afi_mux")),
+                      "jp_channel":    (("line_unfinished_src",16),
+                                        ("frame_number_src",   16),
+                                        ("line_unfinished_dst",16),
+                                        ("frame_number_dst",   16),
+                                        ("suspend",            1),
+                                        ("sigle_frame_buf",    1),
+                                        ("dbg_last_DCAC",      1),
+                                        ("dbg_lastBlock_sent", 1),
+                                        ("dbg_gotLastBlock_persist",1),
+                                        ("dbg_fifo_or_full",   1),
+                                        (None,                 2),
+                                        ("fifo_count",         8),
+                                        ("reading_frame",      1),
+                                        ("debug_frame_done",   1),
+                                        ("stuffer_running_mclk",1),
+                                        ("dbg_stuffer_ext_running",1),
+                                        ("etrax_dma",          4),
+                                        ("stuffer_rdy",        1),
+                                        ("dbg_flushing",       1),
+                                        ("dbg_flush_hclk",     1),
+                                        ("dbg_last_block",     1),
+                                        ("dbg_test_lbw",       1),
+                                        ("dbg_gotLastBlock",   1),
+                                        ("dbg_last_block_persist",1),
+                                        ("color_last",         1),
+#                                        (None,                 2),
+                                        ("debug_fifo_in",      32),
+                                        ("debug_fifo_out",     28),
+                                        ("dbg_block_mem_ra",    3),
+                                        ("dbg_comp_lastinmbo",  1),
+                                        ("pages_requested",    16),
+                                        ("pages_got",          16),
+                                        ("pre_start_cntr",     16),
+                                        ("pre_end_cntr",       16),
+                                        ("page_requests",      16),
+                                        ("pages_needed",       16),
+                                        ("dbg_stb_cntr",       16),
+                                        ("dbg_zds_cntr",       16),
+                                        ("dbg_block_mem_wa",   3),
+                                        ("dbg_block_mem_wa_save",3),
+                                        (None,                 26)
+                                        ),
+                      "cmprs_afi_mux": (("fifo_count0",        8),
+                                        (None,                 24),
+                                        ("left_to_eof",        32)),
+                      "membridge":     (("afi_wcount",         8),
+                                        ("afi_wacount",        6),
+                                        (None,                 2),
+                                        ("afi_rcount",         8),
+                                        ("afi_racount",        3),
+                                        (None,                 5))       
+                      }
+        def flatten_debug(inst,item):
+            if (isinstance(item,str)):
+                mod_struct=debug_dict[item]
+                result = []
+                for node in mod_struct:
+                    sub_inst = node[0]
+                    if not ((inst is None) or (node[0] is None)):
+                        sub_inst= inst+"."+node[0]
+                    result += flatten_debug(sub_inst,node[1])    
+            else: # value
+                result = [(inst, item)]
+            return result
+
+        flat =  flatten_debug(None,"x393")
+        maximal_name_length = max([len(f[0]) for f in flat if f[0] is not None])
+        if first == "list":
+            l=0;
+            for p in flat:
+                print (("%03x.%02x: %"+str(maximal_name_length)+"s")%(l // 32, l % 32, p[0]))
+                l += p[1]
+            print("total bits: ", l)    
+            print("total words32: ", l / 32) 
+            return
+        
+        if (self.DRY_MODE):
+            status = [0xaaaaaaaa,0x55555555]*(num32 // 2)
+            if (num32 % 2) !=0:
+                status += [0xaaaaaaaa]
+            status.append(0xffffffff)
+        else:
+            status = self.debug_read_ring(num32)
+        if first == "raw":
+            numPerLine = 8
+            for i,d in enumerate (status):
+                if ( i % numPerLine) == 0:
+                    print ("\n%2x: "%(i), end="")
+                print("%s "%(hx(d,8)), end = "") 
+            print()   
+            return
+        
+        if not (first is None) and (last is None):
+            last=first
+        if first is None:
+            first = 0
+            
+        if (last is None) or (last > (num32-1)):
+            last = (num32-1)
+        for i,d in enumerate (status):
+            if d == 0xffffffff:
+                if i <= last:
+                    last = i - 1
+                break
+#        print("first = ",first)
+#        print ("last = ",last)    
+        l=0;
+        long_status = 0;
+        for i,s in enumerate(status):
+            long_status |= s << (32*i)
+#        print (long_status)
+#       print (hex(long_status))        
+        for p in flat:
+            if ((l // 32) >= first) and ((l // 32) <= last) and (not p[0] is None):
+                d = (long_status >> l) & ((1 << p[1]) - 1)
+                print (("%03x.%02x: %"+str(maximal_name_length)+"s [%2d] = 0x%x (%d)")%(l // 32, l % 32, p[0],p[1],d,d))
+            l += p[1]
+            
+
         

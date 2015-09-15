@@ -54,7 +54,10 @@ module  cmprs_macroblock_buf_iface (
     output [ 6:0] macroblock_x,       // macroblock left pixel x relative to a tile (page) Maximal page - 128 bytes wide
     output reg    first_mb,           // during first macroblock (valid @mb_pre_start_out)
     output        last_mb             // during last macroblock (valid @mb_pre_start_out)
-    
+`ifdef DEBUG_RING
+    ,output [ 1:0] dbg_add_invalid,
+    output         dbg_mb_release_buf
+`endif    
 );
 
     wire          reset_page_rd;
@@ -95,7 +98,11 @@ module  cmprs_macroblock_buf_iface (
     wire          starting;
     reg           frame_pre_run;
     reg     [1:0] frame_may_start;
-
+    
+`ifdef DEBUG_RING
+    assign  dbg_add_invalid = add_invalid;
+    assign  dbg_mb_release_buf = mb_release_buf;
+`endif
     assign frame_en_w = frame_en && frame_go;
     
     assign mbl_x={mbl_x_r[6:3], left_marg[2:0]};

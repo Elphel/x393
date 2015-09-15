@@ -47,7 +47,8 @@ module huffman393    (
     output reg        test_lbw,
     output            gotLastBlock,   // last block done - flush the rest bits
     input             clk_flush,      // other clock to generate synchronized 1-cycle flush_clk output   
-    output            flush_clk       // 1-cycle flush output @ clk_flush
+    output            flush_clk,       // 1-cycle flush output @ clk_flush
+    output            fifo_or_full     // FIFO output register full - just for debuging
 );
 `ifdef INFER_LATCHES
     reg    [15:0] hcode_latch;    // table output huffman code (1..16 bits)
@@ -55,14 +56,14 @@ module huffman393    (
     reg    [ 7:0] haddr70_latch;
     reg           haddr8_latch;
     reg           tables_re_latch;
-    reg           stuffer_was_rdy_early_latch;
+//    reg           stuffer_was_rdy_early_latch;
 `else
     wire   [15:0] hcode_latch;    // table output huffman code (1..16 bits)
     wire   [ 3:0] hlen_latch;        // table - code length only 4 LSBs are used
     wire   [ 7:0] haddr70_latch;
     wire          haddr8_latch;
     wire          tables_re_latch;
-    wire          stuffer_was_rdy_early_latch;
+//    wire          stuffer_was_rdy_early_latch;
 `endif
     wire   [31:0] tables_out; // Only [19:0] are used
     reg    [ 7:0] haddr_r;    // index in huffman table    
@@ -97,7 +98,7 @@ module huffman393    (
 
     reg    [15:0] out_bits;    // bits to send
     reg     [3:0] out_len;        // length of bits to send (4'h0 means 16)
-    wire          fifo_or_full;    // fifo output register full read_next
+//    wire          fifo_or_full;    // fifo output register full read_next
     wire          will_read;
     wire   [10:0] var_do;
     wire    [3:0] var_dl;
@@ -135,14 +136,14 @@ module huffman393    (
     assign gotColor= fifo_o[13];
 
     always @(negedge xclk2x) stuffer_was_rdy <= !en2x || rdy; // stuffer ready shoud be on if !en (move to register?)for now]
-    wire          want_read_early;
+//    wire          want_read_early;
    
 
 
     assign read_next= en2x && ((!steps[0] && !rll[5]) || eob ) && fifo_or_full; // fifo will never have data after the last block...
     assign will_read= stuffer_was_rdy && fifo_or_full && en2x && ((!steps[0] && !rll[5]) || eob ); // fifo will never have data after the last block...
-    assign want_read= stuffer_was_rdy && ((!steps[0] && !rll[5]) || eob ); // for FIFO
-    assign want_read_early= stuffer_was_rdy_early_latch && ((!steps[0] && !rll[5]) || eob ); // for FIFO
+    assign want_read= stuffer_was_rdy &&                         ((!steps[0] && !rll[5]) || eob ); // for FIFO
+//    assign want_read_early= stuffer_was_rdy_early_latch && ((!steps[0] && !rll[5]) || eob ); // for FIFO
 
     always @ (negedge xclk2x) if (stuffer_was_rdy) begin
         eob <= read_next && gotEOB;// will be 1 only during step[0]
@@ -153,7 +154,11 @@ module huffman393    (
                                    (read_next && !(gotRLL && (fifo_o[5:4]==2'b00))) || rll[5] }; // will not start if it was <16, waiting for AC
     end
     always @ (negedge xclk2x)    begin
-        last_block <= en2x && (last_block?(!flush):(stuffer_was_rdy && will_read && gotLastBlock));
+//        last_block <= en2x && (last_block?(!flush):(stuffer_was_rdy && will_read && gotLastBlock));
+        
+        if      (!en2x || flush)                               last_block <= 0;
+        else if (stuffer_was_rdy && will_read && gotLastBlock) last_block <= 1;
+        
         ready_to_flush <= en2x && (ready_to_flush?(!flush):(stuffer_was_rdy && last_block &&  will_read && gotLastWord));
         test_lbw <= en2x && last_block &&  gotLastWord;
 // did not work if flush was just after not ready?
@@ -199,7 +204,7 @@ module huffman393    (
 `ifdef INFER_LATCHES
     always @* if (~xclk2x) hlen_latch <=  tables_out[19:16];
     always @* if (~xclk2x) hcode_latch <= tables_out[15:0];
-    always @* if (xclk2x)  stuffer_was_rdy_early_latch <= !en2x || rdy;
+//    always @* if (xclk2x)  stuffer_was_rdy_early_latch <= !en2x || rdy;
     always @* if (xclk2x)  tables_re_latch <= en2x && rdy;
 
     always @* if (xclk2x) begin
@@ -238,7 +243,7 @@ module huffman393    (
         .d_in    (tables_out[15:0]),   // input[0:0] 
         .q_out   (hcode_latch)         // output[0:0] 
     );
-
+/*
     latch_g_ce #(
         .WIDTH           (1),
         .INIT            (0),
@@ -251,7 +256,7 @@ module huffman393    (
         .d_in    (!en2x || rdy),                // input[0:0] 
         .q_out   (stuffer_was_rdy_early_latch)  // output[0:0] 
     );
-
+*/
     latch_g_ce #(
         .WIDTH           (1),
         .INIT            (0),
@@ -342,15 +347,16 @@ module huffman393    (
   
 
     huff_fifo393 i_huff_fifo (
-        .xclk(xclk), // input
-        .xclk2x(xclk2x), // input
-        .en(en), // input
-        .di(di[15:0]), // input[15:0] data in (sync to xclk)
-        .ds(ds), // input din valid (sync to xclk)
-        .want_read(want_read), // input
-        .want_read_early(want_read_early), // input
-        .dav(fifo_or_full), // output reg FIFO output register has data 
-        .q_latch(fifo_o[15:0])); // output[15:0] reg data (will add extra buffering if needed)
+        .xclk            (xclk),            // input
+        .xclk2x          (xclk2x),          // input
+        .en              (en),              // input
+        .di              (di[15:0]),        // input[15:0] data in (sync to xclk)
+        .ds              (ds),              // input din valid (sync to xclk)
+        .want_read       (want_read),       // input
+//        .want_read_early (want_read_early), // input
+        .dav             (fifo_or_full),    // output reg FIFO output register has data 
+//        .q_latch         (fifo_o[15:0]));   // output[15:0] reg data (will add extra buffering if needed)
+        .q               (fifo_o[15:0]));   // output[15:0] reg data (will add extra buffering if needed)
 
     varlen_encode393 i_varlen_encode(
         .clk      (xclk2x),           // input
