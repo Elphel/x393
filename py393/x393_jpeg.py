@@ -38,6 +38,8 @@ from x393_mem                import X393Mem
 import x393_axi_control_status
 import x393_utils
 #import time
+import x393_sens_cmprs
+import x393_cmprs_afi
 import vrlg
 STD_QUANT_TBLS = {
                   "Y_landscape":( 16,  11,  10,  16,  24,  40,  51,  61,
@@ -158,12 +160,16 @@ class X393Jpeg(object):
     x393_mem=None
     x393_axi_tasks=None #x393X393AxiControlStatus
     x393_utils=None
+    x393_cmprs_afi = None
+    
     verbose=1
     def __init__(self, debug_mode=1,dry_mode=True, saveFileName=None):
         self.DEBUG_MODE=  debug_mode
         self.DRY_MODE=    dry_mode
         self.x393_mem=            X393Mem(debug_mode,dry_mode)
+        
         self.x393_axi_tasks=      x393_axi_control_status.X393AxiControlStatus(debug_mode,dry_mode)
+        self.x393_cmprs_afi =     x393_cmprs_afi.X393CmprsAfi(debug_mode,dry_mode)
         self.x393_utils=          x393_utils.X393Utils(debug_mode,dry_mode, saveFileName) # should not overwrite save file path
         try:
             self.verbose=vrlg.VERBOSE
@@ -564,6 +570,57 @@ class X393Jpeg(object):
         return {"header":buf,
                 "quantization":qtables["fpga"],
                 "huffman":  self.huff_tables[FPGA_HUFFMAN_TABLE]}
+        
+    def jpeg_write(self,
+                   file_path = "/www/pages/img.jpeg", 
+                   channel =   0, 
+                   y_quality = 100, #80,
+                   c_quality = None,
+                   portrait =  False,
+                   color_mode = 0,
+                   byrshift   = 0,
+                   verbose    = 1):
+        """
+        Create JPEG image from the latest acquired in the camera
+        @param file_path - camera file system path
+        @param channel -   compressor channel
+        @param y_quality - 1..100 - quantization quality for Y component
+        @param c_quality - 1..100 - quantization quality for color components (None - use y_quality)
+        @param portrait - False - use normal order, True - transpose for portrait mode images
+        @param color_mode - one of the image formats (jpeg, jp4,)
+        @param byrshift - Bayer shift
+        @param verbose - verbose level
+        """
+        jpeg_data = self.jpegheader_create (
+                           y_quality = y_quality,
+                           c_quality = c_quality,
+                           portrait =  portrait,
+                           height =    x393_sens_cmprs.GLBL_WINDOW["height"],
+                           width =     x393_sens_cmprs.GLBL_WINDOW["width"],
+                           color_mode = color_mode,
+                           byrshift   = byrshift,
+                           verbose    = verbose - 1)
+        meta = self.x393_cmprs_afi.afi_mux_get_image_meta(
+                          port_afi =     0,
+                          channel =      channel,
+                          cirbuf_start = x393_sens_cmprs.GLBL_CIRCBUF_STARTS[channel],
+                          circbuf_len =  x393_sens_cmprs.GLBL_CIRCBUF_CHN_SIZE,
+                          verbose = 1)
+        print ("meta = ",meta)
+        for s in meta["segments"]:
+            print ("start_address = 0x%x, length = 0x%x"%(s[0],s[1]))
+        with open (file_path, "w+b") as bf:
+            bf.write(jpeg_data["header"])
+            for s in meta["segments"]:
+                print ("start_address = 0x%x, length = 0x%x"%(s[0],s[1]))
+                self.x393_mem._mem_write_to_file (bf =         bf,
+                                                  start_addr = s[0],
+                                                  length =     s[1])
+            bf.write(bytearray((0xff,0xd9)))
+                
+        
+        
+        
     def jpegheader_write  (self,
                            file_path = "jpeg", 
                            y_quality = 80,

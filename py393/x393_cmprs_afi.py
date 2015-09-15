@@ -34,10 +34,10 @@ __status__ = "Development"
 #import pickle
 from x393_mem                import X393Mem
 import x393_axi_control_status
-
+import x393_sens_cmprs
 import x393_utils
 
-#import time
+import time
 import vrlg
 class X393CmprsAfi(object):
     DRY_MODE= True # True
@@ -82,6 +82,131 @@ class X393CmprsAfi(object):
                         vrlg.CMPRS_AFIMUX_STATUS_CNTRL,
                         mode,
                         seq_num)
+    def afi_mux_get_image_pointer(self,
+                          port_afi,
+                          channel):
+        """
+        Returns image pointer in bytes inside the circbuf. Status autoupdate should be already set up, mode = 0
+        @param port_afi - AFI port (0/1), currently only 0
+        @param channel - AFI input channel (0..3) - with 2 AFIs - 0..1 only
+        @return - displacement to current image pointer in bytes
+        """
+#        print ("status reg =      0x%x"%(((vrlg.CMPRS_AFIMUX_REG_ADDR0, vrlg.CMPRS_AFIMUX_REG_ADDR1)[port_afi]+channel) ))
+#        print ("status reg data = 0x%x"%(self.x393_axi_tasks.read_status((vrlg.CMPRS_AFIMUX_REG_ADDR0, vrlg.CMPRS_AFIMUX_REG_ADDR1)[port_afi]+channel) ))
+        if (self.DRY_MODE):
+            return None
+        return 32*(self.x393_axi_tasks.read_status((vrlg.CMPRS_AFIMUX_REG_ADDR0, vrlg.CMPRS_AFIMUX_REG_ADDR1)[port_afi]+channel) & 0x3ffffff)
+    
+    def afi_mux_get_image_meta(self,
+                          port_afi,
+                          channel,
+                          cirbuf_start = 0x27a00000,
+                          circbuf_len =  0x1000000,
+                          verbose = 1):
+        """
+        Returns image metadata (start, length,timestamp) or null
+        @param port_afi - AFI port (0/1), currently only 0
+        @param channel - AFI input channel (0..3) - with 2 AFIs - 0..1 only
+        @return - memory segments (1 or two) with image data, timestamp in numeric and string format
+        """
+        print ("x393_sens_cmprs.GLBL_WINDOW = ", x393_sens_cmprs.GLBL_WINDOW)
+        if (self.DRY_MODE):
+            return None
+        CCAM_MMAP_META        = 12 # extra bytes included at the end of each frame (last aligned to 32 bytes)
+        CCAM_MMAP_META_LENGTH =  4 # displacement to length frame length data from the end of the 32-byte aligned frame slot
+        CCAM_MMAP_META_USEC   =  8 # // (negative) displacement to USEC data - 20 bits (frame timestamp)
+        CCAM_MMAP_META_SEC    = 12 # // (negative) displacement to SEC data - 32 bits (frame timestamp)
+        
+        
+#        offs_len32 = 0x20 - CCAM_MMAP_META_LENGTH # 0x1c #from last image 32-byte chunk to lower of 3-byte image length (MSB == 0xff)
+        next_image = self.afi_mux_get_image_pointer(port_afi = port_afi,
+                                                    channel = channel)
+        last_image_chunk = next_image - 0x40
+        if last_image_chunk < 0:
+            last_image_chunk += circbuf_len
+        len32 = self.x393_mem.read_mem(cirbuf_start + last_image_chunk + (0x20 - CCAM_MMAP_META_LENGTH))
+        markerFF = len32 >> 24
+        if (markerFF != 0xff):
+            print ("Failed to get 0xff marker at offset 0x%08x - length word = 0x%08x)"%(cirbuf_start + last_image_chunk + (0x20 - CCAM_MMAP_META_LENGTH) + 3,len32))
+            return None
+        len32 &= 0xffffff
+        inserted_bytes = (32 - (((len32 % 32) + CCAM_MMAP_META) % 32)) % 32
+        img_start = last_image_chunk + 32 - CCAM_MMAP_META  - inserted_bytes - len32
+        if img_start < 0:
+            img_start += circbuf_len
+        sec  = self.x393_mem.read_mem(cirbuf_start + last_image_chunk + (0x20 - CCAM_MMAP_META_SEC))
+        usec = self.x393_mem.read_mem(cirbuf_start + last_image_chunk + (0x20 - CCAM_MMAP_META_USEC))
+        fsec=sec + usec/1000000.0
+        tstr = time.strftime("%b %d %Y %H:%M:%S", time.gmtime(fsec))
+        segments = ((cirbuf_start + img_start, len32 ),)    
+        if (img_start + len32) > circbuf_len: # split in two segments
+            segments = ((cirbuf_start + img_start, circbuf_len - img_start),
+                        (cirbuf_start, len32 - (circbuf_len - img_start)))
+        result = {"timestamp": fsec,
+                  "timestring": tstr,
+                  "segments":segments}
+        if verbose >0 :
+            print ("Inserted bytes after image before meta = 0x%x"%(inserted_bytes))
+            print ("Image start (relative to cirbuf) = 0x%x"%(img_start))
+            print ("Image time stamp = %s (%f)"%(tstr, fsec))
+            for s in segments:
+                print ("start_address = 0x%x, length = 0x%x"%(s[0],s[1]))
+        return result    
+        
+        
+    """
+>>> hex (0x3dacb * 32)
+'0x7b5960'
+>>> hex (0x3dacb * 32 + 0x27a00000)
+'0x281b5960'
+    
+    
+print time.strftime("%b %d %Y %H:%M:%S", time.gmtime(1442344402.605793))
+
+#define CCAM_MMAP_META 12 // extra bytes included at the end of each frame (last aligned to 32 bytes)
+#define CCAM_MMAP_META_LENGTH 4 // displacement to length frame length data from the end of the 32-byte aligned frame slot
+#define CCAM_MMAP_META_USEC 8 // (negative) displacement to USEC data - 20 bits (frame timestamp)
+#define CCAM_MMAP_META_SEC 12 // (negative) displacement to SEC data - 32 bits (frame timestamp)
+
+**
+ * @brief Locate area between frames in the circular buffer
+ * @return pointer to interframe parameters structure
+ */
+inline struct interframe_params_t* updateIRQ_interframe(void) {
+   int circbuf_size=get_globalParam (G_CIRCBUFSIZE)>>2;
+   int alen = JPEG_wp-9; if (alen<0) alen+=circbuf_size;
+   int jpeg_len=ccam_dma_buf_ptr[alen] & 0xffffff;
+   set_globalParam(G_FRAME_SIZE,jpeg_len);
+   int aframe_params=(alen & 0xfffffff8)-
+                     (((jpeg_len + CCAM_MMAP_META + 3) & 0xffffffe0)>>2) /// multiple of 32-byte chunks to subtract
+                     -8; /// size of the storage area to be filled before the frame
+   if(aframe_params < 0) aframe_params += circbuf_size;
+   struct interframe_params_t* interframe= (struct interframe_params_t*) &ccam_dma_buf_ptr[aframe_params];
+/// should we use memcpy as before here?
+   interframe->frame_length=jpeg_len;
+   interframe->signffff=0xffff;
+#if ELPHEL_DEBUG_THIS
+    set_globalParam          (0x306,get_globalParam (0x306)+1);
+#endif
+
+   return interframe;
+}
+
+/**
+ * @brief Fill exif data with the current frame data, save pointer to Exif page in the interframe area
+
+    """
+
+#    def read_mem (self,addr,quiet=1):
+#        '''
+#        Read 32-bit word from physical memory
+#        @param addr  physical byte address
+#        @param quiet - reduce output
+#self.x393_mem
+
+#0x27a00000
+#    parameter CMPRS_AFIMUX_REG_ADDR0=     'h18,  // Uses 4 locations
+#    parameter CMPRS_AFIMUX_REG_ADDR1=     'h1c,  // Uses 4 locations
 
     def afi_mux_reset (self,
                        port_afi,

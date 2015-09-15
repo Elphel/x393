@@ -155,22 +155,36 @@ class X393Mem(object):
         if self.DRY_MODE:
             print ("Write memory to file is not implemented in non-target mode")
             return
-        with open(filename, "w+b") as sf:
-            with open("/dev/mem", "r+b") as f:
-                first_page = start_addr // self.PAGE_SIZE
-                last_page = (start_addr + length - 1) // self.PAGE_SIZE
-                for page_num in range(first_page, last_page+1):
-                    start_offset = 0
-                    if page_num == first_page:
-                        start_offset = start_addr - self.PAGE_SIZE * page_num
-                    end_offset =  self.PAGE_SIZE
-                    if page_num == last_page:
-                        end_offset = start_addr + length - self.PAGE_SIZE * page_num
-                    page_addr = page_num * self.PAGE_SIZE 
-                    if (page_addr>=0x80000000):
-                        page_addr-= (1<<32)
-                    mm = mmap.mmap(f.fileno(), self.PAGE_SIZE, offset=page_addr)
-                    sf.write(mm[start_offset:end_offset])
+        with open(filename, "w+b") as bf:
+            self._mem_write_to_file (bf =         bf,
+                                     start_addr = start_addr,
+                                     length =     length)
+
+    def _mem_write_to_file (self, bf, start_addr, length):
+        '''
+         Save physical memory content to a file
+         @param bf - file open in write mode
+         @param start_addr physical byte start address
+         @param length - number of bytes to save
+        '''
+        if self.DRY_MODE:
+            print ("Write memory to file is not implemented in non-target mode")
+            return
+        with open("/dev/mem", "r+b") as f:
+            first_page = start_addr // self.PAGE_SIZE
+            last_page = (start_addr + length - 1) // self.PAGE_SIZE
+            for page_num in range(first_page, last_page+1):
+                start_offset = 0
+                if page_num == first_page:
+                    start_offset = start_addr - self.PAGE_SIZE * page_num
+                end_offset =  self.PAGE_SIZE
+                if page_num == last_page:
+                    end_offset = start_addr + length - self.PAGE_SIZE * page_num
+                page_addr = page_num * self.PAGE_SIZE 
+                if (page_addr>=0x80000000):
+                    page_addr-= (1<<32)
+                mm = mmap.mmap(f.fileno(), self.PAGE_SIZE, offset=page_addr)
+                bf.write(mm[start_offset:end_offset])
 
     def mem_clear (self, start_addr, length, word32):
         '''

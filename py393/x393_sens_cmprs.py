@@ -60,6 +60,14 @@ BUFFER_PAGES_NAME =   'buffer_pages'
 BUFFER_ADDRESS =      None # in bytes
 BUFFER_LEN =          None # in bytes
 
+GLBL_CIRCBUF_CHN_SIZE = None
+GLBL_CIRCBUF_STARTS =   None
+GLBL_CIRCBUF_END =      None
+GLBL_MEMBRIDGE_START =  None
+GLBL_MEMBRIDGE_END =    None
+GLBL_BUFFER_END =       None
+GLBL_WINDOW =           None
+
 class X393SensCmprs(object):
     DRY_MODE =           True # True
     DEBUG_MODE =         1
@@ -470,6 +478,47 @@ class X393SensCmprs(object):
             repet_mode = True, #  Normal mode, single trigger - just for debugging  TODO: re-assign?
             trig = False)
         return True
+    def specify_window (self,
+                        window_width =              2592,   # 2592
+                        window_height =             1944,   # 1944
+                        window_left =               0,     # 0
+                        window_top =                0, # 0? 1?
+                        ):
+        global GLBL_WINDOW
+        GLBL_WINDOW = {"width":  window_width,
+                       "height": window_height,
+                       "left":   window_left,
+                       "top":    window_top}        
+    def specify_phys_memory(self,
+                            circbuf_chn_size= 0x1000000,
+                            verbose =         1):
+        """
+        @param circbuf_chn_size - circular buffer size for each channel, in bytes
+        """
+        global GLBL_CIRCBUF_CHN_SIZE, GLBL_CIRCBUF_STARTS, GLBL_CIRCBUF_END, GLBL_MEMBRIDGE_START, GLBL_MEMBRIDGE_END, GLBL_BUFFER_END
+        
+        circbuf_start =   self.get_circbuf_byte_start()
+        GLBL_BUFFER_END=  self.get_circbuf_byte_end()
+        GLBL_CIRCBUF_CHN_SIZE = circbuf_chn_size
+        GLBL_CIRCBUF_STARTS=[]
+        for i in range(16):
+            GLBL_CIRCBUF_STARTS.append(circbuf_start + i*circbuf_chn_size)
+        GLBL_CIRCBUF_END =     circbuf_start + 4*GLBL_CIRCBUF_CHN_SIZE
+        GLBL_MEMBRIDGE_START = GLBL_CIRCBUF_END
+        GLBL_MEMBRIDGE_END =   GLBL_BUFFER_END
+        if verbose >0 :
+            print ("compressor system memory buffers:")
+            print ("circbuf start 0 =           0x%x"%(GLBL_CIRCBUF_STARTS[0]))
+            print ("circbuf start 1 =           0x%x"%(GLBL_CIRCBUF_STARTS[1]))
+            print ("circbuf start 2 =           0x%x"%(GLBL_CIRCBUF_STARTS[2]))
+            print ("circbuf start 3 =           0x%x"%(GLBL_CIRCBUF_STARTS[3]))
+            print ("circbuf end =               0x%x"%(GLBL_BUFFER_END))
+            print ("membridge start =           0x%x"%(GLBL_MEMBRIDGE_START))
+            print ("membridge end =             0x%x"%(GLBL_MEMBRIDGE_END))
+            print ("membridge size =            %d bytes"%(GLBL_MEMBRIDGE_END - GLBL_MEMBRIDGE_START))
+            print ("memory buffer end =         0x%x"%(GLBL_BUFFER_END))
+        
+                                
     def setup_all_sensors (self,
                               setup_membridge =           False,
                               exit_step =                 None,
@@ -532,38 +581,37 @@ class X393SensCmprs(object):
         @parame verbose - verbose level
         @return True if all done, False if exited prematurely by  exit_step
         """
+        global GLBL_CIRCBUF_CHN_SIZE, GLBL_CIRCBUF_STARTS, GLBL_CIRCBUF_END, GLBL_MEMBRIDGE_START, GLBL_MEMBRIDGE_END, GLBL_BUFFER_END, GLBL_WINDOW
 #    camsync_setup (
 #        4'hf ); # sensor_mask); #
-        circbuf_start = self.get_circbuf_byte_start()
-        mem_end=        self.get_circbuf_byte_end()
-#circbuf_chn_size
-        circbuf_starts=[]
-        for i in range(16):
-            circbuf_starts.append(circbuf_start + i*circbuf_chn_size)
-        circbuf_end = circbuf_start + 4*circbuf_chn_size
-        membridge_start = circbuf_end
-        membridge_end = mem_end
+
+
+        self.specify_phys_memory(circbuf_chn_size = circbuf_chn_size)
+        self.specify_window (window_width =  window_width,
+                             window_height = window_height,
+                             window_left =   window_left,
+                             window_top =    window_top)
 
     #TODO: calculate addresses/lengths
         """
         AFI mux is programmed in 32-byte chunks
         """
-        afi_cmprs0_sa = circbuf_starts[0] // 32  
-        afi_cmprs1_sa = circbuf_starts[1] // 32
-        afi_cmprs2_sa = circbuf_starts[2] // 32
-        afi_cmprs3_sa = circbuf_starts[3] // 32
-        afi_cmprs_len = circbuf_chn_size  // 32    
+        afi_cmprs0_sa = GLBL_CIRCBUF_STARTS[0] // 32  
+        afi_cmprs1_sa = GLBL_CIRCBUF_STARTS[1] // 32
+        afi_cmprs2_sa = GLBL_CIRCBUF_STARTS[2] // 32
+        afi_cmprs3_sa = GLBL_CIRCBUF_STARTS[3] // 32
+        afi_cmprs_len = GLBL_CIRCBUF_CHN_SIZE  // 32    
         if verbose >0 :
             print ("compressor system memory buffers:")
-            print ("circbuf start 0 =           0x%x"%(circbuf_starts[0]))
-            print ("circbuf start 1 =           0x%x"%(circbuf_starts[1]))
-            print ("circbuf start 2 =           0x%x"%(circbuf_starts[2]))
-            print ("circbuf start 3 =           0x%x"%(circbuf_starts[3]))
-            print ("circbuf end =               0x%x"%(circbuf_end))
-            print ("membridge start =           0x%x"%(membridge_start))
-            print ("membridge end =             0x%x"%(membridge_end))
-            print ("membridge size =            %d bytes"%(membridge_end - membridge_start))
-            print ("memory buffer end =         0x%x"%(mem_end))
+            print ("circbuf start 0 =           0x%x"%(GLBL_CIRCBUF_STARTS[0]))
+            print ("circbuf start 1 =           0x%x"%(GLBL_CIRCBUF_STARTS[1]))
+            print ("circbuf start 2 =           0x%x"%(GLBL_CIRCBUF_STARTS[2]))
+            print ("circbuf start 3 =           0x%x"%(GLBL_CIRCBUF_STARTS[3]))
+            print ("circbuf end =               0x%x"%(GLBL_BUFFER_END))
+            print ("membridge start =           0x%x"%(GLBL_MEMBRIDGE_START))
+            print ("membridge end =             0x%x"%(GLBL_MEMBRIDGE_END))
+            print ("membridge size =            %d bytes"%(GLBL_MEMBRIDGE_END - GLBL_MEMBRIDGE_START))
+            print ("memory buffer end =         0x%x"%(GLBL_BUFFER_END))
             
         self.program_status_debug (3,0)
         if setup_membridge:
@@ -573,8 +621,8 @@ class X393SensCmprs(object):
                                window_height   = window_height,
                                window_left     = window_left,
                                window_top      = window_top,
-                               membridge_start = membridge_start,
-                               membridge_end   = membridge_end,
+                               membridge_start = GLBL_MEMBRIDGE_START,
+                               membridge_end   = GLBL_MEMBRIDGE_END,
                                verbose         = verbose)
                 
         if sensor_mask & 3: # Need power for sens1 and sens 2
