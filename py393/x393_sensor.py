@@ -205,6 +205,7 @@ class X393Sensor(object):
                          1/True/'H' - high level
         @return: i2c control word
         """  
+        print ("func_sensor_i2c_command(): rst_cmd= ",rst_cmd,", run_cmd=",run_cmd,", num_bytes = ",num_bytes,", dly = ",dly)
         rslt = 0
         rslt |= (0,1)[rst_cmd] << vrlg.SENSI2C_CMD_RESET
         if not run_cmd is None:
@@ -215,9 +216,10 @@ class X393Sensor(object):
             rslt |= 1 <<          vrlg.SENSI2C_CMD_BYTES
             rslt |= num_bytes << (vrlg.SENSI2C_CMD_BYTES - vrlg.SENSI2C_CMD_BYTES_PBITS)
         if not dly is None:
-            dly &= (1 <<    vrlg.SENSI2C_CMD_BYTES_PBITS) -1
-            rslt |= 1 <<    vrlg.SENSI2C_CMD_BYTES            
-            rslt |= dly << (vrlg.SENSI2C_CMD_BYTES - vrlg.SENSI2C_CMD_BYTES_PBITS)
+            dly &= (1 <<    vrlg.SENSI2C_CMD_DLY_PBITS) -1
+            rslt |= 1 <<    vrlg.SENSI2C_CMD_DLY            
+            rslt |= dly << (vrlg.SENSI2C_CMD_DLY - vrlg.SENSI2C_CMD_DLY_PBITS)
+            print ("func_sensor_i2c_command(): dly = ",dly," rslt=",rslt)
         scl=0
         if not scl_ctl is None:
             if   (scl_ctl is False) or (scl_ctl == 0) or (scl_ctl == "0") or (scl_ctl.upper() == "L"):
@@ -597,6 +599,27 @@ class X393Sensor(object):
         if not post_scale is None:
             self.x393_axi_tasks.write_control_register(reg_addr, func_lens_data(num_sub_sensor, vrlg.SENS_LENS_POST_SCALE, post_scale, 4))
 
+    def program_gamma (self,
+                       num_sensor,
+                       sub_channel,
+                       gamma = 0.57,
+                       black = 0.04,
+                       page = 0):
+        """
+        Program gamma tables for specified sensor port and subchannel
+        @param num_sensor -     sensor port number (0..3)
+        @param num_sub_sensor - sub-sensor attached to the same port through multiplexer (0..3)
+        @param gamma - gamma value (1.0 - linear)
+        @param black - black level, 1.0 corresponds to 256 for 8bit values
+        @param page - gamma table page number (only used if SENS_GAMMA_BUFFER > 0
+        """  
+        self.program_curves(num_sensor = num_sensor,
+                        sub_channel = sub_channel,
+                        curves_data = self.calc_gamma257(gamma = gamma,
+                                                         black = black,
+                                                         rshift = 6) * 4,
+                        page = page)
+
     def program_curves (self,
                         num_sensor,
                         sub_channel,
@@ -608,7 +631,7 @@ class X393Sensor(object):
         @param num_sub_sensor - sub-sensor attached to the same port through multiplexer (0..3)
         @param curves_data - either 1028-element list (257 per color component) or a file path
                              with the same data, same as for Verilog $readmemh
-        @param page - gammma table page number (only used if SENS_GAMMA_BUFFER > 0
+        @param page - gamma table page number (only used if SENS_GAMMA_BUFFER > 0
         """  
         def set_sensor_gamma_table_addr (
                                          num_sensor,
@@ -656,7 +679,31 @@ class X393Sensor(object):
                 set_sensor_gamma_table_data (
                     num_sensor = num_sensor,
                     data18 = data18)
-            
+
+    def calc_gamma257(self,
+                      gamma,
+                      black,
+                      rshift = 6
+                      ):
+        """
+        @brief Calculate gamma table (as array of 257 unsigned short values)
+        @param gamma - gamma value (1.0 - linear)
+        @param black - black level, 1.0 corresponds to 256 for 8bit values
+        @return array of 257 int elements (for a single color), right-shifted to match original 0..0x3ff range
+        """
+        black256 =  max(0.0, min(255, black * 256.0))
+        k=  1.0 / (256.0 - black256)
+        gamma =max(0.13, min(gamma, 10.0))
+        gtable = []
+        for i in range (257):
+            x=k * (i - black256)
+            x = max(x, 0.0)
+            ig = int (0.5 + 65535.0 * pow(x, gamma))
+            ig = min(ig, 0xffff)
+            gtable.append(ig >> rshift)
+        return gtable    
+
+        
     def set_sensor_gamma_heights (self, 
                                   num_sensor,
                                   height0_m1,

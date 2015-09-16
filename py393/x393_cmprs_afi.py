@@ -137,7 +137,11 @@ class X393CmprsAfi(object):
         sec  = self.x393_mem.read_mem(cirbuf_start + last_image_chunk + (0x20 - CCAM_MMAP_META_SEC))
         usec = self.x393_mem.read_mem(cirbuf_start + last_image_chunk + (0x20 - CCAM_MMAP_META_USEC))
         fsec=sec + usec/1000000.0
-        tstr = time.strftime("%b %d %Y %H:%M:%S", time.gmtime(fsec))
+        try:
+            tstr = time.strftime("%b %d %Y %H:%M:%S", time.gmtime(fsec))
+        except:
+            tstr = "%f (0x%x, 0x%x)"%(fsec, sec,usec)
+            print ("**** Bad timestamp = ",tstr)
         segments = ((cirbuf_start + img_start, len32 ),)    
         if (img_start + len32) > circbuf_len: # split in two segments
             segments = ((cirbuf_start + img_start, circbuf_len - img_start),

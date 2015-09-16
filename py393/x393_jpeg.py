@@ -595,8 +595,8 @@ class X393Jpeg(object):
                            y_quality = y_quality,
                            c_quality = c_quality,
                            portrait =  portrait,
-                           height =    x393_sens_cmprs.GLBL_WINDOW["height"],
-                           width =     x393_sens_cmprs.GLBL_WINDOW["width"],
+                           height =    x393_sens_cmprs.GLBL_WINDOW["height"] & 0xfff0,
+                           width =     x393_sens_cmprs.GLBL_WINDOW["width"] & 0xfff0,
                            color_mode = color_mode,
                            byrshift   = byrshift,
                            verbose    = verbose - 1)
@@ -703,4 +703,108 @@ class X393Jpeg(object):
 """
 ff d9
 """        
+"""
+Camera compressors testing sequence
+cd /usr/local/verilog/; test_mcntrl.py @hargs -x -v
 
+Next 2 lines needed to use jpeg functionality if the program was started w/o setup_all_sensors True None 0xf
+specify_phys_memory
+specify_window
+
+# Initialize memory with current calibration.
+measure_all "*DI"
+# Run 'measure_all' again (but w/o arguments) to perform full calibration (~10 minutes) and save results.
+# Needed after new bitstream
+# setup_all_sensors , 3-rd argument - bitmask of sesnors to initialize
+setup_all_sensors True None 0xf
+
+#reset all compressors
+compressor_control 0 0
+compressor_control 1 0
+compressor_control 2 0
+compressor_control 3 0
+
+#next line to make compressor aways use the same input video frame buffer (default - 2 ping-pong frame buffers)
+#axi_write_single_w 0x6c4 0
+
+# Set Bayer = 3 (probably #1 and #3 need different hact/pxd delays to use the same compressor bayer for all channels)
+compressor_control  0  None  None  None None None  3
+compressor_control  1  None  None  None None None  2
+compressor_control  2  None  None  None None None  3
+compressor_control  3  None  None  None None None  2
+
+
+
+#Gamma 0.57
+program_gamma 0 0 0.57 0.04
+program_gamma 1 0 0.57 0.04
+program_gamma 2 0 0.57 0.04
+program_gamma 3 0 0.57 0.04
+
+#colors - outdoor
+write_sensor_i2c  0 1 0 0x9035000a
+write_sensor_i2c  0 1 0 0x902c000e
+write_sensor_i2c  0 1 0 0x902d000d
+write_sensor_i2c  1 1 0 0x9035000a
+write_sensor_i2c  1 1 0 0x902c000e
+write_sensor_i2c  1 1 0 0x902d000d
+write_sensor_i2c  2 1 0 0x9035000a
+write_sensor_i2c  2 1 0 0x902c000e
+write_sensor_i2c  2 1 0 0x902d000d
+write_sensor_i2c  3 1 0 0x9035000a
+write_sensor_i2c  3 1 0 0x902c000e
+write_sensor_i2c  3 1 0 0x902d000d
+
+#colors indoor
+write_sensor_i2c  0 1 0 0x90350009
+write_sensor_i2c  0 1 0 0x902c000f
+write_sensor_i2c  0 1 0 0x902d000a
+write_sensor_i2c  1 1 0 0x90350009
+write_sensor_i2c  1 1 0 0x902c000f
+write_sensor_i2c  1 1 0 0x902d000a
+write_sensor_i2c  2 1 0 0x90350009
+write_sensor_i2c  2 1 0 0x902c000f
+write_sensor_i2c  2 1 0 0x902d000a
+write_sensor_i2c  3 1 0 0x90350009
+write_sensor_i2c  3 1 0 0x902c000f
+write_sensor_i2c  3 1 0 0x902d000a
+
+#exposure 0x400 lines (default was 0x797)
+write_sensor_i2c  0 1 0 0x90090400
+write_sensor_i2c  1 1 0 0x90090400
+write_sensor_i2c  2 1 0 0x90090400
+write_sensor_i2c  3 1 0 0x90090400
+
+#exposure 0x500 lines (default was 0x797)
+write_sensor_i2c  0 1 0 0x90090500
+write_sensor_i2c  1 1 0 0x90090500
+write_sensor_i2c  2 1 0 0x90090500
+write_sensor_i2c  3 1 0 0x90090500
+
+#Get rid of the corrupted last pixel column
+#longer line (default 0xa1f)
+write_sensor_i2c  0 1 0 0x90040a23
+write_sensor_i2c  1 1 0 0x90040a23
+write_sensor_i2c  2 1 0 0x90040a23
+write_sensor_i2c  3 1 0 0x90040a23
+
+#increase scanline write (memory controller) width in 16-bursts (was 0xa2)
+axi_write_single_w 0x696 0x079800a3
+axi_write_single_w 0x686 0x079800a3
+axi_write_single_w 0x6a6 0x079800a3
+axi_write_single_w 0x6b6 0x079800a3
+
+#run copmpressors once (#1 - stop gracefully, 0 - reset, 2 - single, 3 - repetitive with sync to sensors)
+compressor_control 0 2
+compressor_control 1 2
+compressor_control 2 2
+compressor_control 3 2
+
+
+jpeg_write  "/www/pages/img0.jpeg" 0
+jpeg_write  "/www/pages/img1.jpeg" 1
+jpeg_write  "/www/pages/img2.jpeg" 2
+jpeg_write  "/www/pages/img3.jpeg" 3
+
+
+"""

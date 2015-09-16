@@ -1112,6 +1112,8 @@ class X393McntrlAdjust(object):
             print (self.adjustment_state['cmda_bspe'])
             return None
         cmda_odly_lin=cmda_odly_data['ldly']
+        
+        
         self.x393_axi_tasks.enable_refresh(0)
         self.x393_mcntrl_timing.axi_set_phase(phase,quiet=quiet)
         self.x393_mcntrl_timing.axi_set_cmda_odelay(combine_delay(cmda_odly_lin),quiet=quiet)
@@ -2864,9 +2866,11 @@ class X393McntrlAdjust(object):
                                quiet)
             if not phase_ok:
                 print ("Failed to set phase=%d for dly=%d- that should not happen (phase_dqso)- "%(phase,dqs_lin))
-                print (self.adjustment_state['cmda_bspe'])
-                
-                return None # no valid CMDA ODELAY exists for this phase
+                # See if it was meant "not phase_ok", not "phase_ok is None":
+                print ("phase_ok = ",phase_ok)
+                if phase_ok is None: 
+                    print (self.adjustment_state['cmda_bspe'])
+                    return None # no valid CMDA ODELAY exists for this phase
             #set DQS IDELAY and DQ IDELAY matching phase 
             dqs_idelay=dqsi_dqi_for_phase[phase][DQSI_KEY] # 2-element list
             dq_idelay= dqsi_dqi_for_phase[phase][DQI_KEY]  # 16-element list

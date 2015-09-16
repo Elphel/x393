@@ -488,7 +488,9 @@ class X393SensCmprs(object):
         GLBL_WINDOW = {"width":  window_width,
                        "height": window_height,
                        "left":   window_left,
-                       "top":    window_top}        
+                       "top":    window_top}
+        
+                
     def specify_phys_memory(self,
                             circbuf_chn_size= 0x1000000,
                             verbose =         1):
@@ -737,7 +739,7 @@ class X393SensCmprs(object):
                 self.x393Sensor.set_sensor_i2c_command (
                                 num_sensor = num_sensor,
                                 num_bytes = 3,
-                                dly =       100, # ??None,
+                                dly =       100, # ??None, # 20 ns per 1 of cycle duration. Standard i2c - dly = 125
                                 scl_ctl =   None, 
                                 sda_ctl =   None)
                 self.x393Sensor.set_sensor_i2c_command (

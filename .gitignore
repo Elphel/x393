@@ -4,6 +4,7 @@ syntax_*
 simulation/*
 ise_*
 attic/*
+hardware_tests/*
 IVERILOG_INCLUDE.v
 x393.prj
 *DEBUG_VDT*
@@ -13,14 +14,16 @@ x393.prj
 *.pickle
 py393/dbg/*
 includes/x393_cur_params_sim.vh
-includes/x393_cur_params_target_gen.vh
+includes/x393_cur_params_target_*.vh
 py393/exp_gpio.py
 py393/mon_gpio.py
 savefile01.sav
 x353
+compressor_jp/huff_fifo353.v
 x393_testbench0-a1.sav
 x393_testbench01-*.sav
 x393_testbench01.gtkw
 x393_testbench01_backup.sav
 x393_testbench01_debug_membridge.sav
 x393_testbench02.sav
+x393_testbench02-0.sav
