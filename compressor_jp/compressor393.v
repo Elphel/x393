@@ -42,7 +42,10 @@ module  compressor393 # (
         parameter CMPRS_COLOR_SATURATION=      3,
         parameter CMPRS_CORING_MODE=           4,
         parameter CMPRS_TABLES=                6, // 6..7
-
+        parameter TABLE_QUANTIZATION_INDEX =   0,
+        parameter TABLE_CORING_INDEX =         1,
+        parameter TABLE_FOCUS_INDEX =          2,
+        parameter TABLE_HUFFMAN_INDEX =        3,
         parameter FRAME_HEIGHT_BITS=          16, // Maximal frame height 
         parameter LAST_FRAME_BITS=            16, // number of bits in frame counter (before rolls over)
         // Bit-fields in compressor control word
@@ -323,6 +326,10 @@ module  compressor393 # (
                 .CMPRS_COLOR_SATURATION          (CMPRS_COLOR_SATURATION),
                 .CMPRS_CORING_MODE               (CMPRS_CORING_MODE),
                 .CMPRS_TABLES                    (CMPRS_TABLES),
+                .TABLE_QUANTIZATION_INDEX        (TABLE_QUANTIZATION_INDEX),
+                .TABLE_CORING_INDEX              (TABLE_CORING_INDEX),
+                .TABLE_FOCUS_INDEX               (TABLE_FOCUS_INDEX),
+                .TABLE_HUFFMAN_INDEX             (TABLE_HUFFMAN_INDEX),
                 .FRAME_HEIGHT_BITS               (FRAME_HEIGHT_BITS),
                 .LAST_FRAME_BITS                 (LAST_FRAME_BITS),
                 .CMPRS_CBIT_RUN                  (CMPRS_CBIT_RUN),

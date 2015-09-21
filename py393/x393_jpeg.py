@@ -161,6 +161,7 @@ class X393Jpeg(object):
     x393_axi_tasks=None #x393X393AxiControlStatus
     x393_utils=None
     x393_cmprs_afi = None
+    x393_sens_cmprs = None
     
     verbose=1
     def __init__(self, debug_mode=1,dry_mode=True, saveFileName=None):
@@ -171,11 +172,66 @@ class X393Jpeg(object):
         self.x393_axi_tasks=      x393_axi_control_status.X393AxiControlStatus(debug_mode,dry_mode)
         self.x393_cmprs_afi =     x393_cmprs_afi.X393CmprsAfi(debug_mode,dry_mode)
         self.x393_utils=          x393_utils.X393Utils(debug_mode,dry_mode, saveFileName) # should not overwrite save file path
+        self.x393_sens_cmprs =    x393_sens_cmprs.X393SensCmprs(debug_mode,dry_mode, saveFileName)
+
         try:
             self.verbose=vrlg.VERBOSE
         except:
             pass
-        self.huff_tables=None  
+        self.huff_tables=None
+
+    def set_qtables(self,
+                    chn,
+                    index =     0, # index of a table pair
+                    y_quality = 80,
+                    c_quality = None,
+                    portrait =  False,
+                    verbose =   1
+                    ):
+        """
+        Set a pair of quantization tables to FPGA
+        @param chn - compressor channel number, "a" or "all" - same for all 4 channels
+        @param y_quality - 1..100 - quantization quality for Y component
+        @param c_quality - 1..100 - quantization quality for color components (None - use y_quality)
+        @param portrait - False - use normal order, True - transpose for portrait mode images
+        @param verbose - verbose level
+        @return dictionary{"header","fpga"} each with a list of 2 lists of the 64 quantization
+                table values [[y-table],[c-table]]
+                'header' points to a pair of tables for the file header, 'fpga' - tables to be
+                sent to the fpga 
+        """
+        try:
+            if (chn == all) or (chn[0].upper() == "A"): #all is a built-in function
+                for chn in range(4):
+                    self.set_qtables (chn =       chn,
+                                      index =     index,
+                                      y_quality = y_quality,
+                                      c_quality = c_quality,
+                                      portrait =  portrait,
+                                      verbose =   verbose)
+                return
+        except:
+            pass
+        quantization_data = self.get_qtables(y_quality = y_quality,
+                                             c_quality = c_quality,
+                                             portrait =  portrait,
+                                             verbose = verbose - 1)
+        quantization_data = quantization_data['fpga'][0] + quantization_data['fpga'][1]
+        
+        if verbose > 1:
+            items_per_line = 8
+            print("quantization_data:")
+            for i, qd in enumerate(quantization_data):
+                if (i % items_per_line) == 0:
+                    print("%04x: "%(i), end = "")
+                print ("%04x"%(qd), end = (", ","\n")[((i+1) % items_per_line) == 0])
+        
+        self.x393_sens_cmprs.program_quantization (chn =               chn,
+                                                   index =             index,
+                                                   quantization_data = quantization_data,
+                                                   verbose =           verbose)
+
+          
     def get_qtables(self,
                     y_quality = 80,
                     c_quality = None,
@@ -209,7 +265,8 @@ class X393Jpeg(object):
             for i,t in enumerate(STD_QUANT_TBLS[t_name]):
                 d = max(1,min((t * q + 50) // 100, 255))
                 tbl[ZIG_ZAG[i]] = d
-                fpga_tbl[i] = min(((0x20000 // d) + 1) >> 1, 0xffff)   
+#                fpga_tbl[i] = min(((0x20000 // d) + 1) >> 1, 0xffff)   
+                fpga_tbl[ZIG_ZAG[i]] = min(((0x20000 // d) + 1) >> 1, 0xffff)   
             rslt.append(tbl)
             fpga.append(fpga_tbl)
         if verbose > 0:
@@ -570,7 +627,6 @@ class X393Jpeg(object):
         return {"header":buf,
                 "quantization":qtables["fpga"],
                 "huffman":  self.huff_tables[FPGA_HUFFMAN_TABLE]}
-        
     def jpeg_write(self,
                    file_path = "/www/pages/img.jpeg", 
                    channel =   0, 
@@ -591,6 +647,21 @@ class X393Jpeg(object):
         @param byrshift - Bayer shift
         @param verbose - verbose level
         """
+        try:
+            if (channel == all) or (channel[0].upper() == "A"): #all is a built-in function
+                for channel in range(4):
+                    self.jpeg_write (file_path = file_path.replace(".","_%d."%channel), 
+                                     channel =   channel, 
+                                     y_quality = y_quality, #80,
+                                     c_quality = c_quality,
+                                     portrait =  portrait,
+                                     color_mode = color_mode,
+                                     byrshift   = byrshift,
+                                     verbose    = verbose)
+                return
+        except:
+            pass
+        
         jpeg_data = self.jpegheader_create (
                            y_quality = y_quality,
                            c_quality = c_quality,
@@ -719,20 +790,27 @@ measure_all "*DI"
 setup_all_sensors True None 0xf
 
 #reset all compressors
-compressor_control 0 0
-compressor_control 1 0
-compressor_control 2 0
-compressor_control 3 0
+#compressor_control 0 0
+#compressor_control 1 0
+#compressor_control 2 0
+#compressor_control 3 0
+compressor_control all 0
 
 #next line to make compressor aways use the same input video frame buffer (default - 2 ping-pong frame buffers)
 #axi_write_single_w 0x6c4 0
+#set quadrants
+set_sensor_io_ctl 0 None None None None None 0 0x4
+set_sensor_io_ctl 1 None None None None None 0 0xe
+set_sensor_io_ctl 2 None None None None None 0 0x4
+set_sensor_io_ctl 3 None None None None None 0 0xe
 
 # Set Bayer = 3 (probably #1 and #3 need different hact/pxd delays to use the same compressor bayer for all channels)
-compressor_control  0  None  None  None None None  3
-compressor_control  1  None  None  None None None  2
-compressor_control  2  None  None  None None None  3
-compressor_control  3  None  None  None None None  2
+#compressor_control  0  None  None  None None None  3
+#compressor_control  1  None  None  None None None  3
+#compressor_control  2  None  None  None None None  3
+#compressor_control  3  None  None  None None None  3
 
+compressor_control  all  None  None  None None None  3
 
 
 #Gamma 0.57
@@ -795,16 +873,66 @@ axi_write_single_w 0x6a6 0x079800a3
 axi_write_single_w 0x6b6 0x079800a3
 
 #run copmpressors once (#1 - stop gracefully, 0 - reset, 2 - single, 3 - repetitive with sync to sensors)
-compressor_control 0 2
-compressor_control 1 2
-compressor_control 2 2
-compressor_control 3 2
+#compressor_control 0 2
+#compressor_control 1 2
+#compressor_control 2 2
+#compressor_control 3 2
+compressor_control all 2
 
 
-jpeg_write  "/www/pages/img0.jpeg" 0
-jpeg_write  "/www/pages/img1.jpeg" 1
-jpeg_write  "/www/pages/img2.jpeg" 2
-jpeg_write  "/www/pages/img3.jpeg" 3
+#jpeg_write  "/www/pages/img0.jpeg" 0
+#jpeg_write  "/www/pages/img1.jpeg" 1
+#jpeg_write  "/www/pages/img2.jpeg" 2
+#jpeg_write  "/www/pages/img3.jpeg" 3
+
+jpeg_write  "/www/pages/img.jpeg" all
+
+    Usage: set_qtables  <chn>  <index=0>  <y_quality=80>  <c_quality=None>  <portrait=False>  <verbose=1>
+specify_phys_memory
+specify_window
+    
+     
+set_qtables  all  0  80 
+
+compressor_control all 2
+jpeg_write  "/www/pages/img.jpeg" all 80
 
 
+-----
+
+setup_membridge_sensor  <write_mem=False>  <cache_mode=3>  <window_width=2592>  <window_height=1944>  <window_left=0>  <window_top=0>  <membridge_start=731906048>  <membridge_end=768606208>  <verbose=1> 
+setup_membridge_sensor  0  3  2608  1936 
+setup_membridge_sensor  <num_sensor=0>  <write_mem=False>  <cache_mode=3>  <window_width=2592>  <window_height=1944>  <window_left=0>  <window_top=0>  <last_buf_frame=1>  <membridge_start=731906048>  <membridge_end=768606208>  <verbose=1> 
+setup_membridge_sensor  0 0  3  2608  1936 
+setup_membridge_sensor  1 0  3  2608  1936 
+
+
+# Trying quadrants @param quadrants -  90-degree shifts for data [1:0], hact [3:2] and vact [5:4] (6'h01), None - no change
+# set_sensor_io_ctl  <num_sensor>  <mrst=None>  <arst=None>  <aro=None>  <mmcm_rst=None>  <clk_sel=None>  <set_delays=False>  <quadrants=None> 
+
+set_sensor_io_ctl 0 None None None None None 0 1 
+set_sensor_io_ctl 1 None None None None None 0 1
+
+#make all reddish
+write_sensor_i2c  0 1 0 0x90350008
+write_sensor_i2c  0 1 0 0x902c0008
+write_sensor_i2c  0 1 0 0x902d001f
+
+write_sensor_i2c  1 1 0 0x90350008
+write_sensor_i2c  1 1 0 0x902c0008
+write_sensor_i2c  1 1 0 0x902d001f
+
+write_sensor_i2c  2 1 0 0x90350008
+write_sensor_i2c  2 1 0 0x902c0008
+write_sensor_i2c  2 1 0 0x902d001f
+
+write_sensor_i2c  3 1 0 0x90350008
+write_sensor_i2c  3 1 0 0x902c0008
+write_sensor_i2c  3 1 0 0x902d001f
+
+
+set_qtables all 0 90
+jpeg_write  "/www/pages/img.jpeg" all
+compressor_control  all  None  1
+compressor_control  all  None  0
 """

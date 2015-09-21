@@ -27,6 +27,7 @@ module  table_ad_transmit#(
     parameter ADDR_BITS=4
 )(
     input                         clk,        // posedge mclk
+    input                         srst,       // reset @posedge clk
     input                         a_not_d_in, // address/not data input (valid @ we)
     input                         we,         // write address/data (single cycle) with at least 5 inactive between
     input                  [31:0] din,        // 32 bit data to send or 8-bit channel select concatenated with 24-bit byte address (@we)
@@ -44,23 +45,26 @@ module  table_ad_transmit#(
     assign ser_d = d_r[7:0];
     
     always @ (posedge clk) begin
-        if (we)        d_r <= din;
+        if (we)          d_r <= din;
         else if (any_en) d_r <= d_r >> 8;
         
         if (we)          a_not_d <= a_not_d_in;
         
         we_r <= we && a_not_d_in;
         
-        if ((we && !a_not_d_in) || we_r) any_en <= 1;
-        else if (we3)                    any_en <= 0;
+        if      (srst)                        any_en <= 0; 
+        else if ((we && !a_not_d_in) || we_r) any_en <= 1;
+        else if (we3)                         any_en <= 0;
 
-        if ((we && !a_not_d_in) || we_r) chn_en <= sel;
-        else if (we3)                    chn_en <= 0;
+        if      (srst)                        chn_en <= 0; 
+        else if ((we && !a_not_d_in) || we_r) chn_en <= sel;
+        else if (we3)                         chn_en <= 0;
 
         if (we && a_not_d_in) sel_a <= din[24+:ADDR_BITS];
         
     end
-    dly_16 #(.WIDTH(1)) i_end_burst(.clk(clk),.rst(1'b0), .dly(4'd2), .din(we), .dout(we3)); // dly=2+1=3
+//    dly_16 #(.WIDTH(1)) i_end_burst(.clk(clk),.rst(1'b0), .dly(4'd2), .din(we), .dout(we3)); // dly=2+1=3
+    dly_16 #(.WIDTH(1)) i_end_burst(.clk(clk),.rst(1'b0), .dly(4'd3), .din(we), .dout(we3)); // dly=3+1=4
     
     genvar i;
     generate 

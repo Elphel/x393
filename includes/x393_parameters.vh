@@ -545,6 +545,11 @@
     parameter CMPRS_COLOR_SATURATION=      3,
     parameter CMPRS_CORING_MODE=           4,
     parameter CMPRS_TABLES=                6, // 6..7
+    parameter TABLE_QUANTIZATION_INDEX =   0,
+    parameter TABLE_CORING_INDEX =         1,
+    parameter TABLE_FOCUS_INDEX =          2,
+    parameter TABLE_HUFFMAN_INDEX =        3,
+    
 
     // Bit-fields in compressor control word
     parameter CMPRS_CBIT_RUN =             2, // bit # to control compressor run modes
@@ -725,17 +730,18 @@
     parameter CLK_CNTRL =                 0,
     parameter CLK_STATUS =                1,
 
-`ifdef DEBUG_RING
+// These are needed for Python:
+//`ifdef DEBUG_RING
 // Debug module (read/write serial ring)
-    parameter DEBUG_ADDR =                'h710, //..'h713
+    parameter DEBUG_ADDR =                'h710, //..'h713 // SuppressThisWarning VEditor 
     parameter DEBUG_MASK =                'h7fc,
-    parameter DEBUG_STATUS_REG_ADDR =     'hfc,  // address where status can be read out 
-    parameter DEBUG_READ_REG_ADDR =       'hfd,  // read 32-bit received shifted data
-    parameter DEBUG_SHIFT_DATA =          'h0,   // shift i/o data by 32 bits
-    parameter DEBUG_LOAD =                'h1,   // parallel load of the distributed shift registe (both ways)
-    parameter DEBUG_SET_STATUS =          'h2,    // program status (mode 3?)
-    parameter DEBUG_CMD_LATENCY =          2, // >0 extra registers in the debug_sl (distriburted in parallel)
-`endif
+    parameter DEBUG_STATUS_REG_ADDR =     'hfc,  // address where status can be read out // SuppressThisWarning VEditor
+    parameter DEBUG_READ_REG_ADDR =       'hfd,  // read 32-bit received shifted data// SuppressThisWarning VEditor
+    parameter DEBUG_SHIFT_DATA =          'h0,   // shift i/o data by 32 bits// SuppressThisWarning VEditor
+    parameter DEBUG_LOAD =                'h1,   // parallel load of the distributed shift registe (both ways)// SuppressThisWarning VEditor
+    parameter DEBUG_SET_STATUS =          'h2,    // program status (mode 3?)// SuppressThisWarning VEditor
+    parameter DEBUG_CMD_LATENCY =          2, // >0 extra registers in the debug_sl (distriburted in parallel)// SuppressThisWarning VEditor
+//`endif
     
     parameter CLKIN_PERIOD_AXIHP =        20, //ns >1.25, 600<Fvco<1200
     parameter DIVCLK_DIVIDE_AXIHP =       1,

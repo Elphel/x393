@@ -1037,8 +1037,21 @@ assign #10 gpio_pins[9] = gpio_pins[8];
              'h100 >> 5); // input [26:0] afi_cmprs3_len; //  input [26:0] length;     // channel buffer length in 32-byte chunks
     camsync_setup (
         4'hf ); // sensor_mask); //
+/*
+    TEST_TITLE = "HUFFMAN_LOAD_CHN0";
+    $display("===================== TEST_%s =========================",TEST_TITLE);
+   program_huffman (0 );
+    
 
+    TEST_TITLE = "QUANTIZATION_LOAD_CHN0";
+    $display("===================== TEST_%s =========================",TEST_TITLE);
+    program_quantization (0);
 
+    TEST_TITLE = "FOCUS_FILTER_LOAD_CHN0";
+    $display("===================== TEST_%s =========================",TEST_TITLE);
+    program_focus_filt (0);
+
+*/
     TEST_TITLE = "GAMMA_LOAD";
     $display("===================== TEST_%s =========================",TEST_TITLE);
         program_curves(
@@ -1057,11 +1070,12 @@ assign #10 gpio_pins[9] = gpio_pins[8];
   $display("===================== TEST_%s =========================",TEST_TITLE);
     axi_get_delays;
 `endif
-
+/*
     compressor_run (0, 2); // run single
     compressor_run (1, 2); // run single
     compressor_run (2, 2); // run single
     compressor_run (3, 2); // run single
+*/    
     TEST_TITLE = "MEMBRIDGE_READ # 1";
     $display("===================== TEST_%s =========================",TEST_TITLE);
   TEST_TITLE = "MEMBRIDGE READ #1";
@@ -1101,6 +1115,7 @@ end
   initial begin
 //       #30000;
      #200000;
+//     #250000;
 //     #60000;
     $display("finish testbench 2");
   $finish;
@@ -2328,7 +2343,8 @@ task setup_sensor_channel;
     
     setup_compressor_channel(
         num_sensor,              // sensor channel number (0..3)
-        0,                       // qbank;    // [6:3] quantization table page
+//        0,                       // qbank;    // [6:3] quantization table page - 100% quality
+        1,                       // qbank;    // [6:3] quantization table page - 85%? quality
         1,                       // dc_sub;   // [8:7] subtract DC
         CMPRS_CBIT_CMODE_JPEG18, //input [31:0] cmode;   //  [13:9] color mode:
 //        parameter CMPRS_CBIT_CMODE_JPEG18 =   4'h0, // color 4:2:0
@@ -2370,6 +2386,7 @@ task setup_sensor_channel;
             1); // disable "need" (yield to sensor channels)
     
 //    compressor_run (num_sensor, 3); // run repetitive mode
+    compressor_run (num_sensor, 3); // run repetitive mode
 
     TEST_TITLE = "DELAYS_SETUP";
     $display("===================== TEST_%s =========================",TEST_TITLE);
@@ -3271,6 +3288,71 @@ task program_curves;
         end  
     end
 endtask
+
+task program_huffman;
+    input   [1:0] chn;
+    reg    [29:0] reg_addr;
+    reg    [23:0]   huff_data[0:511]; // SuppressThisWarning VEditor : assigned in $readmem() system task
+    integer i;
+    begin
+        $readmemh("input_data/huffman.dat",huff_data);
+        reg_addr = (CMPRS_GROUP_ADDR + chn * CMPRS_BASE_INC) + CMPRS_TABLES; // for data, adderss is "reg_addr + 1"
+        write_contol_register(reg_addr + 1, (TABLE_HUFFMAN_INDEX << 24) + 0);                   
+        for (i=0;i<512;i=i+1) begin
+            write_contol_register(reg_addr, {8'b0, huff_data[i]});
+        end
+    end
+endtask
+    
+task program_quantization;
+    input   [1:0] chn;
+    reg    [29:0] reg_addr;
+    reg    [15:0]   quant_data[0:255]; //  Actually 4 pairs of tables, 1 table is just 64 words SuppressThisWarning VEditor : assigned in $readmem() system task
+    integer i;
+    begin
+        $readmemh("input_data/quantization_100.dat",quant_data);
+        reg_addr = (CMPRS_GROUP_ADDR + chn * CMPRS_BASE_INC) + CMPRS_TABLES;       // for data, adderss is "reg_addr + 1"
+        write_contol_register(reg_addr + 1, (TABLE_QUANTIZATION_INDEX << 24) + 0); // 64*table_number                 
+        for (i=0;i<256;i=i+2) begin
+            write_contol_register(reg_addr, {quant_data[i+1],quant_data[i]});
+        end
+    end
+endtask
+
+task program_coring;
+    input  [1:0] chn;
+    reg   [29:0] reg_addr;
+    reg   [15:0] coring_data[0:1023]; // SuppressThisWarning VEditor : assigned in $readmem() system task
+    integer i;
+    begin
+        $readmemh("input_data/coring.dat",coring_data);
+        reg_addr = (CMPRS_GROUP_ADDR + chn * CMPRS_BASE_INC) + CMPRS_TABLES; // for data, adderss is "reg_addr + 1"
+        write_contol_register(reg_addr + 1, (TABLE_CORING_INDEX << 24) + 0); // start address of coring tables
+        for (i=0;i<1024;i=i+2) begin
+          write_contol_register(reg_addr, {coring_data[i+1], coring_data[i]});
+        end
+    end
+endtask
+
+
+
+task program_focus_filt;
+    input  [1:0] chn;
+    reg   [29:0] reg_addr;
+    reg   [15:0] filt_data[0:127]; // SuppressThisWarning VEditor : assigned in $readmem() system task
+    integer i;
+    begin
+        $readmemh("input_data/focus_filt.dat",filt_data);
+        reg_addr = (CMPRS_GROUP_ADDR + chn * CMPRS_BASE_INC) + CMPRS_TABLES; // for data, adderss is "reg_addr + 1"
+        write_contol_register(reg_addr + 1, (TABLE_FOCUS_INDEX << 24) + 0);  // start address of focus filter tables
+        for (i=0;i<128;i=i+2) begin
+            write_contol_register(reg_addr, {filt_data[i+1], filt_data[i]});
+        end
+    end
+endtask
+
+
+
 
 
 // x393_sensor.py

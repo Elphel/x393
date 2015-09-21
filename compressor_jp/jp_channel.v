@@ -35,6 +35,10 @@ module  jp_channel#(
         parameter CMPRS_COLOR_SATURATION=     3,
         parameter CMPRS_CORING_MODE=          4,
         parameter CMPRS_TABLES=               6, // 6(data)..7(address)
+        parameter TABLE_QUANTIZATION_INDEX =  0,
+        parameter TABLE_CORING_INDEX =        1,
+        parameter TABLE_FOCUS_INDEX =         2,
+        parameter TABLE_HUFFMAN_INDEX =       3,
 
         parameter FRAME_HEIGHT_BITS=          16, // Maximal frame height 
         parameter LAST_FRAME_BITS=            16, // number of bits in frame counter (before rolls over)
@@ -889,22 +893,26 @@ module  jp_channel#(
 //  wire          table_we;      // writing to tables               (decoded stb from cmd_deser)
     wire          tser_a_not_d;  // address/not data distributed to submodules
     wire   [ 7:0] tser_d;        // byte-wide serialized tables address/data to submodules
-    wire          tser_qe;       // write serialized table data to quantizer
-    wire          tser_ce;       // write serialized table data to coring
-    wire          tser_fe;       // write serialized table data to focusing
-    wire          tser_he;       // write serialized table data to Huffman
-    
+    wire   [ 3:0] tser_sel;      // vector of individual table selects (decoded from the 8 MSBs of the table address)
+    wire          tser_qe = tser_sel[TABLE_QUANTIZATION_INDEX];  // write serialized table data to quantizer
+    wire          tser_ce = tser_sel[TABLE_CORING_INDEX];        // write serialized table data to coring
+    wire          tser_fe = tser_sel[TABLE_FOCUS_INDEX];         // write serialized table data to focusing
+    wire          tser_he = tser_sel[TABLE_HUFFMAN_INDEX];       // write serialized table data to Huffman
+//{tser_he,tser_fe,tser_ce,tser_qe}
+// As all commands are 32-bit data, all 4 bytes will be written to a designated table (usually 2 of 16-bit writes)    
     table_ad_transmit #(
         .NUM_CHANNELS(4),
         .ADDR_BITS(3)
     ) table_ad_transmit_i (
         .clk             (mclk),                  // input @posedge
+        .srst             (mrst),                  // @posedge mclk
         .a_not_d_in      (cmd_a[0]),              // input writing table address /not data (a[0] from cmd_deser)
         .we              (set_tables_w),          // input writing to tables               (decoded stb from cmd_deser)
         .din             (cmd_data),              // input[31:0] 32-bit data to serialize/write to tables (LSB first) - from cmd_deser
         .ser_d           (tser_d),                // output[7:0] byte-wide serialized tables address/data to submodules
         .a_not_d         (tser_a_not_d),          // output reg address/not data distributed to submodules
-        .chn_en          ({tser_he,tser_fe,tser_ce,tser_qe}) // output[0:0] reg - table 1-hot select outputs
+//        .chn_en          ({tser_he,tser_fe,tser_ce,tser_qe}) // output[0:0] reg - table 1-hot select outputs
+        .chn_en          (tser_sel) // output[0:0] reg - table 1-hot select outputs
     );
     
     
@@ -950,7 +958,7 @@ module  jp_channel#(
         .en                 (frame_en),               // input 
 
         .mclk               (mclk),                   // input system clock to write tables
-        .tser_we            (tser_fe),                // input - write to a quantization table
+        .tser_we            (tser_fe),                // input - write to a focus sharpness table
         .tser_a_not_d       (tser_a_not_d),           // input - address/not data to tables
         .tser_d             (tser_d),                 // input[7:0] - byte-wide data to tables
         

@@ -654,7 +654,7 @@ class X393Sensor(object):
             self.x393_axi_tasks.write_control_register(reg_addr, data18 & ((1 << 18) - 1))                   
 
                   
-        if isinstance(curves_data, unicode):
+        if isinstance(curves_data, (unicode,str)):
             with open(curves_data) as f:
                 tokens=f.read().split()
             curves_data = []

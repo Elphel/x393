@@ -52,7 +52,7 @@ module huffman393    (
 );
 `ifdef INFER_LATCHES
     reg    [15:0] hcode_latch;    // table output huffman code (1..16 bits)
-    reg    [ 3:0] hlen_latch;        // table - code length only 4 LSBs are used
+    reg    [ 3:0] hlen_latch;        // table - code length only 4 LSBs are used, so 0 means 16
     reg    [ 7:0] haddr70_latch;
     reg           haddr8_latch;
     reg           tables_re_latch;

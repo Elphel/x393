@@ -618,11 +618,13 @@ class X393SensCmprs(object):
         self.program_status_debug (3,0)
         if setup_membridge:
             self.setup_membridge_sensor(
+                               num_sensor      = 0,         
                                write_mem       = False,
                                window_width    = window_width,
                                window_height   = window_height,
                                window_left     = window_left,
                                window_top      = window_top,
+                               last_buf_frame  = last_buf_frame,
                                membridge_start = GLBL_MEMBRIDGE_START,
                                membridge_end   = GLBL_MEMBRIDGE_END,
                                verbose         = verbose)
@@ -809,7 +811,7 @@ class X393SensCmprs(object):
         @param seq_number - 6-bit sequence number of the status message to be sent
         """
 
-        self.x393_axi_tasks.program_status (vrlg.DEBUG_ADDR ,
+        self.x393_axi_tasks.program_status (vrlg.DEBUG_ADDR,
                              vrlg.DEBUG_SET_STATUS,
                              mode,
                              seq_num)
@@ -837,34 +839,57 @@ class X393SensCmprs(object):
             
 
     def setup_membridge_sensor(self,
+                               num_sensor      = 0,
                                write_mem       = False,
                                cache_mode      = 0x3, # 0x13 for debug mode
                                window_width    = 2592,
                                window_height   = 1944,
                                window_left     = 0,
                                window_top      = 0,
+                               last_buf_frame =  1,  #  - just 2-frame buffer
                                membridge_start = 0x2ba00000,
                                membridge_end   = 0x2dd00000,
                                verbose         = 1):
         """
         Configure membridge to read/write to the sensor 0 area in the video memory
+        @param num_sensor - sensor port number (0..3)
         @param write_mem - Write to video memory (Flase - read from)
         @param cache_mode - lower 4 bits, axi cache mode (default 3), bit [4] - debug mode (replace data)
         @param window_width -  window width in pixels (bytes) (TODO: add 16-bit mode)
         @param window_height - window height in lines
         @param window_left -   window left margin
         @param window_top -    window top margin
+        @param last_buf_frame) -   16-bit number of the last frame in a buffer
         @param membridge_start system memory low address (bytes) 0x2ba00000,
         @param membridge_end   system memory buffer length (bytes)= 0x2dd00000,
         @param verbose         verbose level):
         """
+#copied from setup_sensor_channel()
+        align_to_bursts = 64 # align full width to multiple of align_to_bursts. 64 is the size of memory access
+        width_in_bursts = window_width >> 4
+        if (window_width & 0xf):
+            width_in_bursts += 1
+        num_burst_in_line = (window_left >> 4) + width_in_bursts
+        num_pages_in_line = num_burst_in_line // align_to_bursts;
+        if num_burst_in_line % align_to_bursts:
+            num_pages_in_line += 1
+        frame_full_width =  num_pages_in_line * align_to_bursts
+        num8rows=   (window_top + window_height) // 8
+        if (window_top + window_height) % 8:
+            num8rows += 1
+        frame_start_address_inc = num8rows * frame_full_width
+        frame_start_address = (last_buf_frame + 1) * frame_start_address_inc * num_sensor
+        
         if verbose >0 :
             print ("===================== Setting membridge for sensor 0 =========================")
             print ("Write to video buffer =     %s"%(("False","True")[write_mem]))
+            print ("num_sensor =                ", num_sensor)
             print ("Window width =              %d(0x%x)"%(window_width,window_width))
             print ("Window height =             %d(0x%x)"%(window_height,window_height))
             print ("Window left =               %d(0x%x)"%(window_left,window_left))
             print ("Window top =                %d(0x%x)"%(window_top,window_top))
+            print ("frame_start_address =       0x%x"%(frame_start_address))
+            print ("frame_start_address_inc =   0x%x"%(frame_start_address_inc))
             print ("membridge start =           0x%x"%(membridge_start))
             print ("membridge end =             0x%x"%(membridge_end))
             print ("membridge size =            %d bytes"%(membridge_end - membridge_start))
@@ -884,7 +909,7 @@ class X393SensCmprs(object):
         num8rows=   (window_top + window_height) // 8
         if (window_top + window_height) % 8:
             num8rows += 1
-        frame_start_addr = 0 # for sensor 0
+#        frame_start_addr = 0 # for sensor 0
 #        frame_start_address_inc = num8rows * frame_full_width
 #        len64 = num_burst_in_line * 2 * window_height    
   
@@ -901,7 +926,7 @@ class X393SensCmprs(object):
                                    enable =       True,
                                    chn_reset =    False)
 
-        self.x393_axi_tasks.write_control_register(vrlg.MCNTRL_SCANLINE_CHN1_ADDR + vrlg.MCNTRL_SCANLINE_STARTADDR,        frame_start_addr) # RA=80, CA=0, BA=0 22-bit frame start address (3 CA LSBs==0. BA==0) 
+        self.x393_axi_tasks.write_control_register(vrlg.MCNTRL_SCANLINE_CHN1_ADDR + vrlg.MCNTRL_SCANLINE_STARTADDR,        frame_start_address) # RA=80, CA=0, BA=0 22-bit frame start address (3 CA LSBs==0. BA==0) 
         self.x393_axi_tasks.write_control_register(vrlg.MCNTRL_SCANLINE_CHN1_ADDR + vrlg.MCNTRL_SCANLINE_FRAME_FULL_WIDTH, frame_full_width)
         self.x393_axi_tasks.write_control_register(vrlg.MCNTRL_SCANLINE_CHN1_ADDR + vrlg.MCNTRL_SCANLINE_WINDOW_WH,        (window_height << 16) | (window_width >> 4)) # WINDOW_WIDTH + (WINDOW_HEIGHT<<16));
         self.x393_axi_tasks.write_control_register(vrlg.MCNTRL_SCANLINE_CHN1_ADDR + vrlg.MCNTRL_SCANLINE_WINDOW_X0Y0,      (window_top << 16) | (window_left >> 4))     # WINDOW_X0+ (WINDOW_Y0<<16));
@@ -1149,6 +1174,136 @@ class X393SensCmprs(object):
                 d = (long_status >> l) & ((1 << p[1]) - 1)
                 print (("%03x.%02x: %"+str(maximal_name_length)+"s [%2d] = 0x%x (%d)")%(l // 32, l % 32, p[0],p[1],d,d))
             l += p[1]
+    def program_huffman(self,
+                        chn,
+                        index,
+                        huffman_data):
+        """
+        @brief Program data to compressor Huffman table
+        @param chn - compressor channel (0..3)
+        @param index offset address by multiple input data sizes
+        @param huffman_data - list of table 512 items or a file path
+                             with the same data, same as for Verilog $readmemh
+        """
+        if isinstance(huffman_data, (unicode,str)):
+            with open(huffman_data) as f:
+                tokens=f.read().split()
+            huffman_data = []
+            for w in tokens:
+                huffman_data.append(int(w,16))
+        self.program_table(chn =        chn,
+                           table_type = "huffman",
+                           index =      index,
+                           data =       huffman_data)                
+                
+    def program_quantization(self,
+                             chn,
+                             index,
+                             quantization_data,
+                             verbose = 1):
+        """
+        @brief Program data to quantization table ( a pair or four of Y/C 64-element tables)
+        @param chn - compressor channel (0..3)
+        @param index offset address by multiple input data sizes
+        @param quantization_data - list of table 64/128/256 items or a file path (file has 256-entry table)
+        @param verbose - verbose level
+                             with the same data, same as for Verilog $readmemh
+        """
+        if isinstance(quantization_data, (unicode,str)):
+            with open(quantization_data) as f:
+                tokens=f.read().split()
+            quantization_data = []
+            for w in tokens:
+                quantization_data.append(int(w,16))
+        self.program_table(chn =        chn,
+                           table_type = "quantization",
+                           index =      index,
+                           data =       quantization_data,
+                           verbose =    verbose)                
+    def program_coring(self,
+                       chn,
+                       index,
+                       coring_data):
+        """
+        @brief Program data to quantization table ( a pair or four of Y/C 64-element tables)
+        @param chn - compressor channel (0..3)
+        @param index offset address by multiple input data sizes
+        @param coring_data - list of table 64/128/256 items or a file path (file has 256-entry table)
+                             with the same data, same as for Verilog $readmemh
+        """
+        if isinstance(coring_data, (unicode,str)):
+            with open(coring_data) as f:
+                tokens=f.read().split()
+            coring_data = []
+            for w in tokens:
+                coring_data.append(int(w,16))
+        self.program_table(chn =        chn,
+                           table_type = "coring",
+                           index =      index,
+                           data =       coring_data)
+        
+    def program_focus(self,
+                      chn,
+                      index,
+                      focus_data):
+        """
+        @brief Program data to focus sharpness weight table
+        @param chn - compressor channel (0..3)
+        @param index offset address by multiple input data sizes
+        @param focus_data - list of table 128 items or a file path
+                             with the same data, same as for Verilog $readmemh
+        """
+        if isinstance(focus_data, (unicode,str)):
+            with open(focus_data) as f:
+                tokens=f.read().split()
+            focus_data = []
+            for w in tokens:
+                focus_data.append(int(w,16))
+        self.program_table(chn =        chn,
+                           table_type = "focus",
+                           index =      index,
+                           data =       focus_data)                
+                
+    
+    def program_table(self,
+                      chn,
+                      table_type,
+                      index,
+                      data,
+                      verbose = 0):
+        """
+        @brief Program data to compressor table
+        @param chn - compressor channel (0..3)
+        @param table_type : one of "quantization", "coring","focus","huffman"
+        @param index offset address as index*len(data32) = index*len(data)*merge_num
+        @param data - list of table items
+        """
+        table_types = [{"name":"quantization", "merge":2, "t_num": vrlg.TABLE_QUANTIZATION_INDEX},
+                       {"name":"coring",       "merge":2, "t_num": vrlg.TABLE_CORING_INDEX},
+                       {"name":"focus",        "merge":2, "t_num": vrlg.TABLE_FOCUS_INDEX},
+                       {"name":"huffman",      "merge":1, "t_num": vrlg.TABLE_HUFFMAN_INDEX}]
+        
+        for item in table_types:
+            if (table_type == item['name']):
+                merge_num =   item["merge"];
+                t_num =       item["t_num"];
+                break;
+        else:
+            raise Exception ("Invalid table type :",table_type," table_types=",table_types)
+        reg_addr = (vrlg.CMPRS_GROUP_ADDR + chn * vrlg.CMPRS_BASE_INC) + vrlg.CMPRS_TABLES # for data, adderss is "reg_addr + 1"
+        if merge_num == 1:
+            data32 = data
+        else:
+            data32 = []
+            for i in range(len(data) // merge_num):
+                d = 0;
+                for j in range (merge_num):
+                    d |=  data[2* i + j] << (j * (32 // merge_num))   
+                data32.append(d)
+        t_addr = (t_num << 24) + index* len(data32)
+        self.x393_axi_tasks.write_control_register(reg_addr + 1, t_addr)
+        for d in data32:
+            self.x393_axi_tasks.write_control_register(reg_addr, d)
+                               
             
-
         

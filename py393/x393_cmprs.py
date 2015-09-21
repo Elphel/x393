@@ -221,7 +221,7 @@ class X393Cmprs(object):
                             focus_mode =  None):
         """
         Combine compressor control parameters into a single word. None value preserves old setting for the parameter
-        @param chn -           compressor channel number
+        @param chn -         compressor channel number, "a" or "all" - same for all 4 channels
         @param run_mode -    0 - reset, 2 - run single from memory, 3 - run repetitive
         @param qbank -       quantization table page (0..15)
         @param dc_sub -      True - subtract DC before running DCT, False - no subtraction, convert as is,
@@ -243,6 +243,20 @@ class X393Cmprs(object):
         @param bayer -        Bayer shift (0..3)
         @param focus_mode -   focus mode - how to combine image with "focus quality" in the result image 
         """
+        try:
+            if (chn == all) or (chn[0].upper() == "A"): #all is a built-in function
+                for chn in range(4):
+                    self.compressor_control (chn =         chn,
+                                             run_mode =    run_mode,
+                                             qbank =       qbank,
+                                             dc_sub =      dc_sub,
+                                             cmode =       cmode,
+                                             multi_frame = multi_frame,
+                                             bayer =       bayer,
+                                             focus_mode =  focus_mode)
+                return
+        except:
+            pass
         data = self.func_compressor_control(
                             run_mode =    run_mode,
                             qbank =       qbank,
