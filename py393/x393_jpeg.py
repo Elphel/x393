@@ -887,16 +887,10 @@ compressor_control all 2
 
 jpeg_write  "/www/pages/img.jpeg" all
 
-    Usage: set_qtables  <chn>  <index=0>  <y_quality=80>  <c_quality=None>  <portrait=False>  <verbose=1>
-specify_phys_memory
-specify_window
-    
-     
-set_qtables  all  0  80 
-
+#changing quality (example 85%):
+set_qtables all 0 85
 compressor_control all 2
-jpeg_write  "/www/pages/img.jpeg" all 80
-
+jpeg_write  "/www/pages/img.jpeg" all 85
 
 -----
 
