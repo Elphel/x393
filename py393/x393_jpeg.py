@@ -628,39 +628,83 @@ class X393Jpeg(object):
                 "quantization":qtables["fpga"],
                 "huffman":  self.huff_tables[FPGA_HUFFMAN_TABLE]}
     def jpeg_write(self,
-                   file_path = "/www/pages/img.jpeg", 
+                   file_path = "img.jpeg", 
                    channel =   0, 
                    y_quality = 100, #80,
                    c_quality = None,
                    portrait =  False,
                    color_mode = 0,
                    byrshift   = 0,
+                   server_root = "/www/pages/",
                    verbose    = 1):
         """
         Create JPEG image from the latest acquired in the camera
-        @param file_path - camera file system path
+        @param file_path - camera file system path (starts with "/") or relative to web server root 
         @param channel -   compressor channel
         @param y_quality - 1..100 - quantization quality for Y component
         @param c_quality - 1..100 - quantization quality for color components (None - use y_quality)
         @param portrait - False - use normal order, True - transpose for portrait mode images
         @param color_mode - one of the image formats (jpeg, jp4,)
         @param byrshift - Bayer shift
+        @param server_root - files ystem path to the web server root directory
         @param verbose - verbose level
         """
+        allFiles = False
+        if file_path[0] == "/":
+            server_root = "" # just do not add anything 
         try:
             if (channel == all) or (channel[0].upper() == "A"): #all is a built-in function
-                for channel in range(4):
-                    self.jpeg_write (file_path = file_path.replace(".","_%d."%channel), 
-                                     channel =   channel, 
-                                     y_quality = y_quality, #80,
-                                     c_quality = c_quality,
-                                     portrait =  portrait,
-                                     color_mode = color_mode,
-                                     byrshift   = byrshift,
-                                     verbose    = verbose)
-                return
+                allFiles = True
         except:
             pass
+        if allFiles:        
+            html_text = """
+<html>
+  <head>
+    <title></title>
+    <meta content="">
+    <style>
+      table { border-collapse: collapse;}
+      table td, table th {padding: 0;}
+    </style>
+  </head>
+  <body>
+     <table> 
+       <tr>"""
+            html_text_td = """
+         <td><a href="%s"><img src="%s" style="image-orientation: 270deg; width:100%%; height:auto;" /></a></td>"""
+            html_text_finish = """
+       </tr>
+     </table>
+  </body>
+</html>"""
+                
+            for channel in (3,2,0,1): #range(4):
+                file_path_mod = file_path.replace(".","_%d."%channel)
+                if verbose > 1:
+                    print(html_text_td)
+                html_text += html_text_td%(file_path_mod,file_path_mod) 
+                self.jpeg_write (file_path = file_path_mod, 
+                                 channel =   channel, 
+                                 y_quality = y_quality, #80,
+                                 c_quality = c_quality,
+                                 portrait =  portrait,
+                                 color_mode = color_mode,
+                                 byrshift   = byrshift,
+                                 verbose    = verbose)
+            html_text += html_text_finish
+            if server_root:
+                dotpos = file_path.rfind(".")
+                if dotpos <0:
+                    html_name = file_path + ".html"
+                else:     
+                    html_name = file_path[:dotpos] + ".html"
+                if verbose > 1:
+                    print ("path = ",server_root+html_name)
+                    print ("text = ",html_text)    
+                with open (server_root+html_name, "w+b") as bf:
+                    bf.write(html_text)
+            return
         
         jpeg_data = self.jpegheader_create (
                            y_quality = y_quality,
@@ -680,7 +724,7 @@ class X393Jpeg(object):
         print ("meta = ",meta)
         for s in meta["segments"]:
             print ("start_address = 0x%x, length = 0x%x"%(s[0],s[1]))
-        with open (file_path, "w+b") as bf:
+        with open (server_root+file_path, "w+b") as bf:
             bf.write(jpeg_data["header"])
             for s in meta["segments"]:
                 print ("start_address = 0x%x, length = 0x%x"%(s[0],s[1]))
@@ -885,12 +929,14 @@ compressor_control all 2
 #jpeg_write  "/www/pages/img2.jpeg" 2
 #jpeg_write  "/www/pages/img3.jpeg" 3
 
+jpeg_write  "img.jpeg" all
+
 jpeg_write  "/www/pages/img.jpeg" all
 
 #changing quality (example 85%):
 set_qtables all 0 85
 compressor_control all 2
-jpeg_write  "/www/pages/img.jpeg" all 85
+jpeg_write  "img.jpeg" all 85
 
 -----
 
@@ -924,9 +970,12 @@ write_sensor_i2c  3 1 0 0x90350008
 write_sensor_i2c  3 1 0 0x902c0008
 write_sensor_i2c  3 1 0 0x902d001f
 
+print_debug 0x35 ox66
 
 set_qtables all 0 90
 jpeg_write  "/www/pages/img.jpeg" all
 compressor_control  all  None  1
 compressor_control  all  None  0
+
+mem_save "/usr/local/verilog/memdump_chn0" 0x27a00000 0x01001000
 """

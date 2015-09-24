@@ -42,10 +42,12 @@
 // Or make FIFO outside of the stuffer?
 
 module stuffer393 (
-//    input              rst,         // global reset
+//    input              rst,       // global reset
     input              mclk,
-    input              mrst,      // @posedge mclk, sync reset
-    input              xrst,      // @posedge xclk, sync reset
+    input              mrst,       // @posedge mclk, sync reset
+    input              xrst,       // @posedge xclk, sync reset
+    input              last_block, //  use it to copy timestamp from fifo 
+    
     
 // time stamping - will copy time at the end of color_first (later than the first hact after vact in the current frame, but before the next one
 // and before the data is needed for output 
@@ -73,14 +75,24 @@ module stuffer393 (
     output reg         running      // from registering timestamp until done
 `ifdef DEBUG_RING
 ,   output reg [3:0]  dbg_etrax_dma
+   ,output            dbg_ts_rstb
+   ,output [7:0]      dbg_ts_dout
+
 `endif        
     
 `ifdef debug_stuffer
 ,      output reg   [3:0] etrax_dma_r // [3:0] just for testing
 ,       output reg   [3:0] test_cntr,
        output reg   [7:0] test_cntr1
+       
 `endif
 );
+
+`ifdef DEBUG_RING
+   assign dbg_ts_rstb = ts_rstb; 
+   assign dbg_ts_dout = ts_dout;
+`endif   
+
 //etrax_dma[3:0]
 `ifdef debug_stuffer
     reg           en_d;
@@ -120,7 +132,7 @@ module stuffer393 (
     reg           busy_eob;     // flushing and sending length
     reg           trailer;      // sending out data length and 32 bytes for ETRAX
     reg           was_trailer;  // sending out data length and 32 bytes for ETRAX
-
+    reg           last_block_d; // last_block delayed by one clock
     reg    [ 3:0] etrax_dma;    // count words to make total size multiple of 32 bytes.
                                 // Last 4 bytes of data will have actual length in bytes
                                 // There will always be at least 4 more bytes (0-es) before length - needed for software
@@ -157,9 +169,10 @@ module stuffer393 (
     wire          stb_start; // re-clocked  color_first
     
     
-    assign ts_rstb = trailer && !was_trailer;  // enough time to have timestamp data
+//    assign ts_rstb = trailer && !was_trailer;  // enough time to have timestamp data
+    assign ts_rstb = last_block && !last_block_d;  // enough time to have timestamp data
     always @ (negedge clk) begin
-//        ts_cycles <= {ts_cycles[6:0],ts_rstb};
+        last_block_d <= last_block;
         ts_cycles <= {ts_cycles[5:0],ts_rstb};
         if      (ts_cycles[0])  sec_r[ 7: 0] <= ts_dout;
         else if (start_sizeout) sec_r[ 7: 0] <= size_count[ 7:0];

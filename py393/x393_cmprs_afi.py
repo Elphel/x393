@@ -109,6 +109,7 @@ class X393CmprsAfi(object):
         @param channel - AFI input channel (0..3) - with 2 AFIs - 0..1 only
         @return - memory segments (1 or two) with image data, timestamp in numeric and string format
         """
+        print ("\n------------ channel %d --------------"%(channel))
         print ("x393_sens_cmprs.GLBL_WINDOW = ", x393_sens_cmprs.GLBL_WINDOW)
         if (self.DRY_MODE):
             return None
@@ -130,10 +131,31 @@ class X393CmprsAfi(object):
             print ("Failed to get 0xff marker at offset 0x%08x - length word = 0x%08x)"%(cirbuf_start + last_image_chunk + (0x20 - CCAM_MMAP_META_LENGTH) + 3,len32))
             return None
         len32 &= 0xffffff
-        inserted_bytes = (32 - (((len32 % 32) + CCAM_MMAP_META) % 32)) % 32
+#        inserted_bytes = (32 - (((len32 % 32) + CCAM_MMAP_META) % 32)) % 32
+        #adjusting to actual...
+#        ADJUSTMENT = 2
+        ADJUSTMENT = 4 # ???
+        inserted_bytes = ((32 - (((len32 % 32) + CCAM_MMAP_META) % 32) - ADJUSTMENT) % 32 ) + ADJUSTMENT
         img_start = last_image_chunk + 32 - CCAM_MMAP_META  - inserted_bytes - len32
         if img_start < 0:
             img_start += circbuf_len
+        if verbose >0:
+            for a in range ( img_start,  img_start + 0x10, 4):
+                d = self.x393_mem.read_mem(cirbuf_start + a)
+                if (a % 16) == 0:
+                    print ("\n%08x: "%(a),end ="" )
+                print("%02x %02x %02x %02x "%(d & 0xff, (d >> 8) & 0xff, (d >> 16) & 0xff, (d >> 24) & 0xff), end = "")
+            print("\n...",end="")
+            for a0 in range ( last_image_chunk - 0x10,  last_image_chunk + 0x20, 4):
+                a = a0
+                if (a < 0):
+                    a -=circbuf_len
+                d = self.x393_mem.read_mem(cirbuf_start + a)
+                if (a % 16) == 0:
+                    print ("\n%08x: "%(a),end ="" )
+                print("%02x %02x %02x %02x "%(d & 0xff, (d >> 8) & 0xff, (d >> 16) & 0xff, (d >> 24) & 0xff), end = "")
+            print()    
+
         sec  = self.x393_mem.read_mem(cirbuf_start + last_image_chunk + (0x20 - CCAM_MMAP_META_SEC))
         usec = self.x393_mem.read_mem(cirbuf_start + last_image_chunk + (0x20 - CCAM_MMAP_META_USEC))
         fsec=sec + usec/1000000.0

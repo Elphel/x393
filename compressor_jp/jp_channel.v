@@ -311,7 +311,7 @@ module  jp_channel#(
     wire    [3:0] huff_dl;     // output[3:0] reg 
     wire          huff_dv;     // output reg 
     wire          flush;       // output reg @ negedge xclk2x
-    
+    wire          last_block;  // @negedge xxlk2x - used to copy timestamp in stuffer
 
 
     wire   [31:0] cmd_data;       // 32-bit data to write to tables and registers(LSB first) - from cmd_deser
@@ -362,11 +362,15 @@ module  jp_channel#(
     reg        dbg_stuffer_ext_running;
     reg        dbg_reset_fifo;
     wire [3:0] etrax_dma;
+    wire       dbg_ts_rstb; // output
+    wire [7:0] dbg_ts_dout; //output [7:0]
+    wire [31:0] dbg_sec;
+    wire [31:0] dbg_usec;
+    
     wire       dbg_flushing;
     reg        dbg_flush_hclk;
     reg        dbg_en_hclk;
     
-    wire       dbg_last_block;
     reg        dbg_en_n2x;
     reg        dbg_last_block_persist;
     wire       dbg_test_lbw;
@@ -383,6 +387,14 @@ module  jp_channel#(
     wire [2:0] dbg_block_mem_wa;
     wire [2:0] dbg_block_mem_wa_save;
     
+    timestamp_to_parallel dbg_timestamp_to_parallel_i (
+        .clk      (~xclk2x), // input
+        .pre_stb  (dbg_ts_rstb), // input
+        .tdata    (dbg_ts_dout), // input[7:0] 
+        .sec      (dbg_sec), // output[31:0] reg 
+        .usec     (dbg_usec), // output[19:0] reg 
+        .done() // output
+    );
     
     
 // cmprs_standalone - use to reset flush     
@@ -393,8 +405,8 @@ module  jp_channel#(
         
         dbg_en_n2x <= stuffer_en;
         
-        if      (!dbg_en_n2x)    dbg_last_block_persist <= 0;
-        else if (dbg_last_block) dbg_last_block_persist <= 1;
+        if      (!dbg_en_n2x) dbg_last_block_persist <= 0;
+        else if (last_block)  dbg_last_block_persist <= 1;
 
         if      (!dbg_en_n2x)      dbg_gotLastBlock_persist <= 0;
         else if (dbg_gotLastBlock) dbg_gotLastBlock_persist <= 1;
@@ -454,8 +466,8 @@ module  jp_channel#(
 //frame_start_dst
     
     debug_slave #(
-        .SHIFT_WIDTH       (320),
-        .READ_WIDTH        (320),
+        .SHIFT_WIDTH       (384),
+        .READ_WIDTH        (384),
         .WRITE_WIDTH       (32),
         .DEBUG_CMD_LATENCY (DEBUG_CMD_LATENCY)
     ) debug_slave_i (
@@ -465,6 +477,8 @@ module  jp_channel#(
         .debug_sl   (debug_sl),      // input
         .debug_do   (debug_do), // output
         .rd_data   ({
+        dbg_usec,
+        dbg_sec,
         26'h0, dbg_block_mem_wa_save[2:0],dbg_block_mem_wa[2:0],
         dbg_zds_cntr[15:0],
         dbg_stb_cntr[15:0],
@@ -476,7 +490,7 @@ module  jp_channel#(
         pages_requested[15:0],
         dbg_comp_lastinmbo, dbg_block_mem_ra[2:0], debug_fifo_out[27:0],
         debug_fifo_in[31:0],
-        color_last, dbg_last_block_persist, dbg_gotLastBlock, dbg_test_lbw, dbg_last_block,
+        color_last, dbg_last_block_persist, dbg_gotLastBlock, dbg_test_lbw, last_block,
          dbg_flush_hclk, dbg_flushing, stuffer_rdy, etrax_dma[3:0], dbg_stuffer_ext_running, stuffer_running_mclk, debug_frame_done, reading_frame,
         fifo_count[7:0],
         2'b0, dbg_fifo_or_full, dbg_gotLastBlock_persist, dbg_lastBlock_sent, dbg_last_DCAC, sigle_frame_buf, suspend,
@@ -1053,13 +1067,12 @@ module  jp_channel#(
         .do                 (huff_do[15:0]),          // output[15:0] reg 
         .dl                 (huff_dl[3:0]),           // output[3:0] reg 
         .dv                 (huff_dv),                // output reg 
-        .flush              (flush),                  // output reg 
+        .flush              (flush),                  // output reg
+        .last_block         (last_block),             // output reg
 `ifdef DEBUG_RING
-        .last_block         (dbg_last_block), // output reg unused does not get out
         .test_lbw           (dbg_test_lbw), // output reg ??
         .gotLastBlock       (dbg_gotLastBlock), // output ?? - unused (was for debug)
 `else
-        .last_block         (), // output reg unused
         .test_lbw           (), // output reg ??
         .gotLastBlock       (), // output ?? - unused (was for debug)
 `endif        
@@ -1074,11 +1087,11 @@ module  jp_channel#(
     
 
     stuffer393 stuffer393_i (
-//        .rst                 (rst),                    // input
+//        .rst                 (rst),                  // input
         .mclk                (mclk),                   // input
-        .mrst                (mrst),                    // input
-        .xrst                (xrst),                    // input
-        
+        .mrst                (mrst),                   // input
+        .xrst                (xrst),                   // input
+        .last_block          (last_block),             // input @negedge xclk2x - use it to copy timestamp from fifo 
         .ts_pre_stb          (ts_pre_stb),             // input      1 cycle before timestamp data, @mclk
         .ts_data             (ts_data),                // input[7:0] 8-byte timestamp data (s0,s1,s2,s3,us0,us1,us2,us3==0)
         .color_first         (color_first),            // input valid @xclk - only for sec/usec
@@ -1102,7 +1115,10 @@ module  jp_channel#(
 `endif        
         .running             (stuffer_running)         // from registering timestamp until done
 `ifdef DEBUG_RING
-,        .dbg_etrax_dma     (etrax_dma)
+   ,    .dbg_etrax_dma     (etrax_dma)
+   ,.dbg_ts_rstb           (dbg_ts_rstb) // output
+   ,.dbg_ts_dout           (dbg_ts_dout) //output [7:0]
+
 `endif        
 `ifdef debug_stuffer
        ,.etrax_dma_r(tst_stuf_etrax[3:0]) // [3:0] just for testing
@@ -1110,7 +1126,11 @@ module  jp_channel#(
        ,.test_cntr1(test_cntr1[7:0])
 `endif
     );
+    /*
+   ,output            dbg_ts_rstb
+   ,output [7:0]      dbg_ts_dout
     
+    */
     pulse_cross_clock stuffer_done_mclk_i (.rst(xrst2xn), .src_clk(~xclk2x), .dst_clk(mclk), .in_pulse(stuffer_done), .out_pulse(stuffer_done_mclk),.busy());
     cmprs_out_fifo cmprs_out_fifo_i (
 //        .rst                 (rst),            // input mostly for simulation

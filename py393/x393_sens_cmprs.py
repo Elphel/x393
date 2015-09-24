@@ -968,7 +968,7 @@ class X393SensCmprs(object):
     def print_debug( self,
                      first = None,
                      last = None,
-                     num32 = 100):
+                     num32 = 200):
         """
         Read and print serial debug ring as a sequence of 32-bit numbers
         @parame first - index of the first 32-bit debug word to decode
@@ -1097,7 +1097,9 @@ class X393SensCmprs(object):
                                         ("dbg_zds_cntr",       16),
                                         ("dbg_block_mem_wa",   3),
                                         ("dbg_block_mem_wa_save",3),
-                                        (None,                 26)
+                                        (None,                 26),
+                                        ("dbg_sec",            32),
+                                        ("dbg_usec",           32)
                                         ),
                       "cmprs_afi_mux": (("fifo_count0",        8),
                                         (None,                 24),
@@ -1124,7 +1126,13 @@ class X393SensCmprs(object):
 
         flat =  flatten_debug(None,"x393")
         maximal_name_length = max([len(f[0]) for f in flat if f[0] is not None])
-        if first == "list":
+        num_bits=0;
+        for p in flat:
+            num_bits += p[1]
+        num_words = num_bits// 32
+        if num_bits % 32:
+            num_words += 1
+        if (first == list) or (first == "list"):
             l=0;
             for p in flat:
                 print (("%03x.%02x: %"+str(maximal_name_length)+"s")%(l // 32, l % 32, p[0]))
@@ -1156,13 +1164,18 @@ class X393SensCmprs(object):
             
         if (last is None) or (last > (num32-1)):
             last = (num32-1)
-        for i,d in enumerate (status):
-            if d == 0xffffffff:
-                if i <= last:
-                    last = i - 1
-                break
+        if (last is None) or (last > (num_words-1)):
+            last = (num_words-1)
+#        if (num_words)    
+#        for i,d in enumerate (status):
+#            if d == 0xffffffff:
+#                if i <= last:
+#                   last = i - 1
+#                break
 #        print("first = ",first)
 #        print ("last = ",last)    
+#        print("total bits: ", l)    
+#        print("total words32: ", l // 32) 
         l=0;
         long_status = 0;
         for i,s in enumerate(status):

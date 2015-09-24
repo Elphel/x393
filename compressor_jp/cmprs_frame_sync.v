@@ -35,7 +35,9 @@ module  cmprs_frame_sync#(
     
     input                         cmprs_en,           // @mclk 0 resets immediately
     output                        cmprs_en_extend,    // @mclk keep compressor enabled for graceful shutdown
-    
+
+// TODO: delay vsync_late if still compressing previous frame in multi-frame buffer mode
+     
     input                         cmprs_run,          // @mclk enable propagation of vsync_late to frame_start_dst in bonded(sync to src) mode
     input                         cmprs_standalone,   // @mclk single-cycle: generate a single frame_start_dst in unbonded (not synchronized) mode.
                                                       // cmprs_run should be off
