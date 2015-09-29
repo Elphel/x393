@@ -402,11 +402,21 @@ class X393Sensor(object):
                           data):
         """
         Write i2c command to the i2c command sequencer
-        @param num_sensor - sensor port number (0..3)
+        @param num_sensor - sensor port number (0..3), or "all" - same to all sensors
         @param rel_addr - True - relative frame address, False - absolute frame address
         @param addr - frame address (0..15)
         @param data - Combine slave address/register address/ register data for the i2c command
         """
+        try:
+            if (num_sensor == all) or (num_sensor[0].upper() == "A"): #all is a built-in function
+                for num_sensor in range(4):
+                    self.write_sensor_i2c (num_sensor = num_sensor,
+                                           rel_addr =   rel_addr,
+                                           addr =       addr,
+                                           data =       data)
+                return
+        except:
+            pass
         reg_addr =  (vrlg.SENSOR_GROUP_ADDR + num_sensor * vrlg.SENSOR_BASE_INC)
         reg_addr += ((vrlg.SENSI2C_ABS_RADDR,vrlg.SENSI2C_REL_RADDR)[rel_addr] )
         reg_addr += (addr & ~vrlg.SENSI2C_ADDR_MASK);
@@ -606,18 +616,32 @@ class X393Sensor(object):
                        black = 0.04,
                        page = 0):
         """
-        Program gamma tables for specified sensor port and subchannel
-        @param num_sensor -     sensor port number (0..3)
+        Program gamma tables for specified sensor port and subchannel 
+        @param num_sensor -     sensor port number (0..3), all - all sensors
         @param num_sub_sensor - sub-sensor attached to the same port through multiplexer (0..3)
         @param gamma - gamma value (1.0 - linear)
         @param black - black level, 1.0 corresponds to 256 for 8bit values
         @param page - gamma table page number (only used if SENS_GAMMA_BUFFER > 0
         """  
+        curves_data = self.calc_gamma257(gamma = gamma,
+                                         black = black,
+                                         rshift = 6) * 4
+                                         
+        try:
+            if (num_sensor == all) or (num_sensor[0].upper() == "A"): #all is a built-in function
+                for num_sensor in range(4):
+                    self.program_gamma ( num_sensor =  num_sensor,
+                                         sub_channel = sub_channel,
+                                         gamma =       gamma,
+                                         black =       black,
+                                         page =        page)
+                return
+        except:
+            pass
+        
         self.program_curves(num_sensor = num_sensor,
                         sub_channel = sub_channel,
-                        curves_data = self.calc_gamma257(gamma = gamma,
-                                                         black = black,
-                                                         rshift = 6) * 4,
+                        curves_data = curves_data,
                         page = page)
 
     def program_curves (self,

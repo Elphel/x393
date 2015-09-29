@@ -833,12 +833,8 @@ measure_all "*DI"
 # setup_all_sensors , 3-rd argument - bitmask of sesnors to initialize
 setup_all_sensors True None 0xf
 
-#reset all compressors
-#compressor_control 0 0
-#compressor_control 1 0
-#compressor_control 2 0
-#compressor_control 3 0
-compressor_control all 0
+#reset all compressors - NOT NEEDED
+#compressor_control all 0
 
 #next line to make compressor aways use the same input video frame buffer (default - 2 ping-pong frame buffers)
 #axi_write_single_w 0x6c4 0
@@ -849,66 +845,40 @@ set_sensor_io_ctl 2 None None None None None 0 0x4
 set_sensor_io_ctl 3 None None None None None 0 0xe
 
 # Set Bayer = 3 (probably #1 and #3 need different hact/pxd delays to use the same compressor bayer for all channels)
-#compressor_control  0  None  None  None None None  3
-#compressor_control  1  None  None  None None None  3
-#compressor_control  2  None  None  None None None  3
-#compressor_control  3  None  None  None None None  3
-
 compressor_control  all  None  None  None None None  3
 
-
 #Gamma 0.57
-program_gamma 0 0 0.57 0.04
-program_gamma 1 0 0.57 0.04
-program_gamma 2 0 0.57 0.04
-program_gamma 3 0 0.57 0.04
+program_gamma all 0 0.57 0.04
 
 #colors - outdoor
-write_sensor_i2c  0 1 0 0x9035000a
-write_sensor_i2c  0 1 0 0x902c000e
-write_sensor_i2c  0 1 0 0x902d000d
-write_sensor_i2c  1 1 0 0x9035000a
-write_sensor_i2c  1 1 0 0x902c000e
-write_sensor_i2c  1 1 0 0x902d000d
-write_sensor_i2c  2 1 0 0x9035000a
-write_sensor_i2c  2 1 0 0x902c000e
-write_sensor_i2c  2 1 0 0x902d000d
-write_sensor_i2c  3 1 0 0x9035000a
-write_sensor_i2c  3 1 0 0x902c000e
-write_sensor_i2c  3 1 0 0x902d000d
+write_sensor_i2c  all 1 0 0x9035000a
+write_sensor_i2c  all 1 0 0x902c000e
+write_sensor_i2c  all 1 0 0x902d000d
 
 #colors indoor
-write_sensor_i2c  0 1 0 0x90350009
-write_sensor_i2c  0 1 0 0x902c000f
-write_sensor_i2c  0 1 0 0x902d000a
-write_sensor_i2c  1 1 0 0x90350009
-write_sensor_i2c  1 1 0 0x902c000f
-write_sensor_i2c  1 1 0 0x902d000a
-write_sensor_i2c  2 1 0 0x90350009
-write_sensor_i2c  2 1 0 0x902c000f
-write_sensor_i2c  2 1 0 0x902d000a
-write_sensor_i2c  3 1 0 0x90350009
-write_sensor_i2c  3 1 0 0x902c000f
-write_sensor_i2c  3 1 0 0x902d000a
+write_sensor_i2c  all 1 0 0x90350009
+write_sensor_i2c  all 1 0 0x902c000f
+write_sensor_i2c  all 1 0 0x902d000a
+
+#exposure 0x100 lines (default was 0x797)
+write_sensor_i2c  all 1 0 0x90090100
+
+#exposure 0x200 lines (default was 0x797)
+write_sensor_i2c  all 1 0 0x90090200
 
 #exposure 0x400 lines (default was 0x797)
-write_sensor_i2c  0 1 0 0x90090400
-write_sensor_i2c  1 1 0 0x90090400
-write_sensor_i2c  2 1 0 0x90090400
-write_sensor_i2c  3 1 0 0x90090400
+write_sensor_i2c  all 1 0 0x90090400
 
 #exposure 0x500 lines (default was 0x797)
-write_sensor_i2c  0 1 0 0x90090500
-write_sensor_i2c  1 1 0 0x90090500
-write_sensor_i2c  2 1 0 0x90090500
-write_sensor_i2c  3 1 0 0x90090500
+write_sensor_i2c  all 1 0 0x90090500
+
+#exposure 0x797 (default)
+write_sensor_i2c  all 1 0 0x90090797
+
 
 #Get rid of the corrupted last pixel column
 #longer line (default 0xa1f)
-write_sensor_i2c  0 1 0 0x90040a23
-write_sensor_i2c  1 1 0 0x90040a23
-write_sensor_i2c  2 1 0 0x90040a23
-write_sensor_i2c  3 1 0 0x90040a23
+write_sensor_i2c  all 1 0 0x90040a23
 
 #increase scanline write (memory controller) width in 16-bursts (was 0xa2)
 axi_write_single_w 0x696 0x079800a3
@@ -917,21 +887,10 @@ axi_write_single_w 0x6a6 0x079800a3
 axi_write_single_w 0x6b6 0x079800a3
 
 #run copmpressors once (#1 - stop gracefully, 0 - reset, 2 - single, 3 - repetitive with sync to sensors)
-#compressor_control 0 2
-#compressor_control 1 2
-#compressor_control 2 2
-#compressor_control 3 2
 compressor_control all 2
-
-
-#jpeg_write  "/www/pages/img0.jpeg" 0
-#jpeg_write  "/www/pages/img1.jpeg" 1
-#jpeg_write  "/www/pages/img2.jpeg" 2
-#jpeg_write  "/www/pages/img3.jpeg" 3
 
 jpeg_write  "img.jpeg" all
 
-jpeg_write  "/www/pages/img.jpeg" all
 
 #changing quality (example 85%):
 set_qtables all 0 85

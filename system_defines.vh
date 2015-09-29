@@ -2,7 +2,7 @@
 `ifndef SYSTEM_DEFINES
   `define SYSTEM_DEFINES
   `define PRELOAD_BRAMS
-  `define DEBUG_RING 1
+//  `define DEBUG_RING 1
   `define MEMBRIDGE_DEBUG_WRITE 1
 // Enviroment-dependent options
   `ifdef IVERILOG
