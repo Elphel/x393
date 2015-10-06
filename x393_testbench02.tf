@@ -951,7 +951,7 @@ assign #10 gpio_pins[9] = gpio_pins[8];
             1'b1,   // input                                   set_bytes;  // [11] if 1, use bytes (below), 0 - nop
             2'h3,   // input  [SENSI2C_CMD_BYTES_PBITS -1 : 0] bytes;      // [10:9] set command bytes to send after slave address (0..3)
             1'b1,   // input                                   set_dly;    // [8] if 1, use dly (0 - ignore)
-            8'h0a,  // input   [SENSI2C_CMD_DLY_PBITS - 1 : 0] dly;        // [7:0]  - duration of quarter i2c cycle (if 0, [3:0] control SCL+SDA)
+            8'h02, //a,  // input   [SENSI2C_CMD_DLY_PBITS - 1 : 0] dly;        // [7:0]  - duration of quarter i2c cycle (if 0, [3:0] control SCL+SDA)
             2'b0,   // input    [SENSI2C_CMD_SCL_WIDTH -1 : 0] scl_ctl;    // [1:0] : 0: NOP, 1: 1'b0->SCL, 2: 1'b1->SCL, 3: 1'bz -> SCL 
             2'b0);  // input    [SENSI2C_CMD_SDA_WIDTH -1 : 0] sda_ctl;    // [3:2] : 0: NOP, 1: 1'b0->SDA, 2: 1'b1->SDA, 3: 1'bz -> SDA  
     TEST_TITLE = "RESEST_I2C_SEQUENCER1";
@@ -963,7 +963,7 @@ assign #10 gpio_pins[9] = gpio_pins[8];
             1'b1,   // input                                   set_bytes;  // [11] if 1, use bytes (below), 0 - nop
             2'h3,   // input  [SENSI2C_CMD_BYTES_PBITS -1 : 0] bytes;      // [10:9] set command bytes to send after slave address (0..3)
             1'b1,   // input                                   set_dly;    // [8] if 1, use dly (0 - ignore)
-            8'h0a,  // input   [SENSI2C_CMD_DLY_PBITS - 1 : 0] dly;        // [7:0]  - duration of quarter i2c cycle (if 0, [3:0] control SCL+SDA)
+            8'h02, //a,  // input   [SENSI2C_CMD_DLY_PBITS - 1 : 0] dly;        // [7:0]  - duration of quarter i2c cycle (if 0, [3:0] control SCL+SDA)
             2'b0,   // input    [SENSI2C_CMD_SCL_WIDTH -1 : 0] scl_ctl;    // [1:0] : 0: NOP, 1: 1'b0->SCL, 2: 1'b1->SCL, 3: 1'bz -> SCL 
             2'b0);  // input    [SENSI2C_CMD_SDA_WIDTH -1 : 0] sda_ctl;    // [3:2] : 0: NOP, 1: 1'b0->SDA, 2: 1'b1->SDA, 3: 1'bz -> SDA  
     TEST_TITLE = "RESEST_I2C_SEQUENCER2";
@@ -975,7 +975,7 @@ assign #10 gpio_pins[9] = gpio_pins[8];
             1'b1,   // input                                   set_bytes;  // [11] if 1, use bytes (below), 0 - nop
             2'h3,   // input  [SENSI2C_CMD_BYTES_PBITS -1 : 0] bytes;      // [10:9] set command bytes to send after slave address (0..3)
             1'b1,   // input                                   set_dly;    // [8] if 1, use dly (0 - ignore)
-            8'h0a,  // input   [SENSI2C_CMD_DLY_PBITS - 1 : 0] dly;        // [7:0]  - duration of quarter i2c cycle (if 0, [3:0] control SCL+SDA)
+            8'h02, //a,  // input   [SENSI2C_CMD_DLY_PBITS - 1 : 0] dly;        // [7:0]  - duration of quarter i2c cycle (if 0, [3:0] control SCL+SDA)
             2'b0,   // input    [SENSI2C_CMD_SCL_WIDTH -1 : 0] scl_ctl;    // [1:0] : 0: NOP, 1: 1'b0->SCL, 2: 1'b1->SCL, 3: 1'bz -> SCL 
             2'b0);  // input    [SENSI2C_CMD_SDA_WIDTH -1 : 0] sda_ctl;    // [3:2] : 0: NOP, 1: 1'b0->SDA, 2: 1'b1->SDA, 3: 1'bz -> SDA  
     TEST_TITLE = "RESEST_I2C_SEQUENCER3";
@@ -987,7 +987,7 @@ assign #10 gpio_pins[9] = gpio_pins[8];
             1'b1,   // input                                   set_bytes;  // [11] if 1, use bytes (below), 0 - nop
             2'h3,   // input  [SENSI2C_CMD_BYTES_PBITS -1 : 0] bytes;      // [10:9] set command bytes to send after slave address (0..3)
             1'b1,   // input                                   set_dly;    // [8] if 1, use dly (0 - ignore)
-            8'h0a,  // input   [SENSI2C_CMD_DLY_PBITS - 1 : 0] dly;        // [7:0]  - duration of quarter i2c cycle (if 0, [3:0] control SCL+SDA)
+            8'h02, //a,  // input   [SENSI2C_CMD_DLY_PBITS - 1 : 0] dly;        // [7:0]  - duration of quarter i2c cycle (if 0, [3:0] control SCL+SDA)
             2'b0,   // input    [SENSI2C_CMD_SCL_WIDTH -1 : 0] scl_ctl;    // [1:0] : 0: NOP, 1: 1'b0->SCL, 2: 1'b1->SCL, 3: 1'bz -> SCL 
             2'b0);  // input    [SENSI2C_CMD_SDA_WIDTH -1 : 0] sda_ctl;    // [3:2] : 0: NOP, 1: 1'b0->SDA, 2: 1'b1->SDA, 3: 1'bz -> SDA  
 

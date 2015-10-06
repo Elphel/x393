@@ -389,16 +389,16 @@ module  sensor_i2c#(
         
 // now creating output signals
       scl_0 <= (i2c_is_start && (i2c_state[1:0]!=2'h0)) ||
-                 (i2c_is_stop  && !i2c_state[1]) ||
-                   (i2c_is_data  && (i2c_state[1] ^i2c_state[0])) ||
+               (i2c_is_stop  && !i2c_state[1]) ||
+               (i2c_is_data  && (i2c_state[1] ^i2c_state[0])) ||
                      !i2c_run;
-       sda_0 <= (i2c_is_start &&  i2c_state[1]) ||
-                 (i2c_is_stop  && (i2c_state[1:0]==2'h0)) ||
-                   (i2c_is_data  && i2c_sr[8]) ||
+      sda_0 <= (i2c_is_start &&  i2c_state[1]) ||
+               (i2c_is_stop  && (i2c_state[1:0]==2'h0)) ||
+               (i2c_is_data  && i2c_sr[8]) ||
                !i2c_run;
-        sda_hard <= sda_0;
+      sda_hard <= sda_0;
       scl_hard <= scl_0;
-       sda_en_hard <= i2c_run && (!sda_0 || (!i2c_is_ackn && !sda_hard));   
+      sda_en_hard <= i2c_run && (!sda_0 || (!i2c_is_ackn && !sda_hard));   
 
       if (wen)             busy_cntr <= 4'hf;
       else if (|busy_cntr) busy_cntr <= busy_cntr-1;
@@ -424,33 +424,6 @@ module  sensor_i2c#(
         .web(8'hff), // input[7:0] 
         .data_in(di_r) // input[31:0] 
     );
-/*
-   RAMB16_S9_S18 i_fifo (
-                          .DOA(i2c_data[7:0]),     // Port A 8-bit Data Output
-                          .DOPA(),                 // Port A 1-bit Parity Output
-                          .ADDRA({page_r[2:0],
-                                          rpointer[5:0],
-                                             byte_number[1:0]}),       // Port A 11-bit Address Input
-                          .CLKA(mclk),            // Port A Clock
-                          .DIA(8'h0),              // Port A 8-bit Data Input
-                          .DIPA(1'b0),             // Port A 1-bit parity Input
-                          .ENA(i2c_byte_start[0]), // Port A RAM Enable Input
-                          .SSRA(1'b0),             // Port A Synchronous Set/Reset Input
-                          .WEA(1'b0),              // Port A Write Enable Input
-
-                          .DOB(),                  // Port B 16-bit Data Output
-                          .DOPB(),                 // Port B 2-bit Parity Output
-                          .ADDRB(i2c_cmd_wa[9:0]), // Port B 10-bit Address Input
-                          .CLKB(mclk),            // Port B Clock
-                          .DIB(di_3[15:0]),        // Port B 16-bit Data Input
-                          .DIPB(2'b0),             // Port-B 2-bit parity Input
-                          .ENB(i2c_cmd_we),        // PortB RAM Enable Input
-                          .SSRB(1'b0),             // Port B Synchronous Set/Reset Input
-                          .WEB(1'b1)               // Port B Write Enable Input
-                          );
-     
-*/
-
 
 endmodule
 

@@ -1,1 +1,1 @@
-    parameter FPGA_VERSION =          32'h03930039;
+    parameter FPGA_VERSION =          32'h0393003a;

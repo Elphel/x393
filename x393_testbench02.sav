@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.3.66 (w)1999-2015 BSI
-[*] Wed Sep 23 22:29:52 2015
+[*] Tue Oct  6 05:07:11 2015
 [*]
-[dumpfile] "/home/andrey/git/x393/simulation/x393_testbench02-20150921133644892.fst"
-[dumpfile_mtime] "Mon Sep 21 20:13:54 2015"
-[dumpfile_size] 161398701
+[dumpfile] "/home/andrey/git/x393/simulation/x393_testbench02-20151005131204826.fst"
+[dumpfile_mtime] "Mon Oct  5 19:34:17 2015"
+[dumpfile_size] 84326452
 [savefile] "/home/andrey/git/x393/x393_testbench02.sav"
-[timestart] 135916400
+[timestart] 73479300
 [size] 1823 1180
 [pos] 1922 0
-*-16.146479 136112500 102872500 116192500 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-15.146479 73577388 102872500 116192500 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] x393_testbench02.
 [treeopen] x393_testbench02.compressor_control.
 [treeopen] x393_testbench02.simul_axi_hp1_wr_i.
@@ -63,6 +63,7 @@
 [treeopen] x393_testbench02.x393_i.mcntrl393_i.sens_comp_block[3].
 [treeopen] x393_testbench02.x393_i.mcntrl393_i.status_router16_mctrl_top_i.
 [treeopen] x393_testbench02.x393_i.membridge_i.
+[treeopen] x393_testbench02.x393_i.sensors393_i.
 [treeopen] x393_testbench02.x393_i.sensors393_i.histogram_saxi_i.
 [treeopen] x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].
 [treeopen] x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.
@@ -72,6 +73,7 @@
 [treeopen] x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_parallel12_i.pxd_block[2].
 [treeopen] x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_fifo_i.hact_dly_16_i.
 [treeopen] x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_fifo_i.hact_dly_16_i.bit_block[0].
+[treeopen] x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.
 [treeopen] x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.
 [treeopen] x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_membuf_i.
 [treeopen] x393_testbench02.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.
@@ -1289,9 +1291,8 @@ x393_testbench02.x393_i.membridge_i.status_generate_i.wd[7:0]
 @1401200
 -membridge_status
 -membridge
-@800200
--compressor0
 @c00200
+-compressor0
 -func_compressor_control
 @22
 x393_testbench02.func_compressor_control.bayer[31:0]
@@ -1694,10 +1695,45 @@ x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmpr
 x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_frame_sync_i.broken_frame
 x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_frame_sync_i.aborted_frame
 x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_frame_sync_i.reading_frame_r
-@29
 x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_frame_sync_i.cmprs_run
+x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.qv
+@22
+x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.etrax_dma[3:0]
+@800200
+-timestamp_fifo
+@28
+x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.timestamp_fifo_i.aclk
+x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.timestamp_fifo_i.advance
+x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.timestamp_fifo_i.advance_r[1:0]
+x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.timestamp_fifo_i.arst
+@22
+x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.timestamp_fifo_i.din[7:0]
+x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.timestamp_fifo_i.dout[7:0]
+@28
+x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.timestamp_fifo_i.pre_stb
+x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.timestamp_fifo_i.rclk
+x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.timestamp_fifo_i.rcv
+@22
+x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.timestamp_fifo_i.rpntr[3:0]
+@28
+x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.timestamp_fifo_i.rrst
+x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.timestamp_fifo_i.rstb
+x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.timestamp_fifo_i.sclk
+x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.timestamp_fifo_i.snd
+x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.timestamp_fifo_i.snd_d
+x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.timestamp_fifo_i.srst
+@c00022
+x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.timestamp_fifo_i.wpntr[3:0]
+@28
+(0)x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.timestamp_fifo_i.wpntr[3:0]
+(1)x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.timestamp_fifo_i.wpntr[3:0]
+(2)x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.timestamp_fifo_i.wpntr[3:0]
+(3)x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.timestamp_fifo_i.wpntr[3:0]
+@1401200
+-group_end
+@1000200
+-timestamp_fifo
 @200
--
 -other
 @28
 x393_testbench02.x393_i.timing393_i.ts_stb_chn0
@@ -1938,9 +1974,9 @@ x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.yc_n
 @28
 x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.yc_pre_first_out
 x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.ywe
-@1000200
+@1401200
 -compressor0
-@800200
+@c00200
 -sim_cmprs_output
 @22
 x393_testbench02.sim_cmprs0_addr[31:0]
@@ -2020,7 +2056,7 @@ x393_testbench02.sim_cmprs2_addr[31:0]
 x393_testbench02.sim_cmprs2_data[63:0]
 x393_testbench02.sim_cmprs3_addr[31:0]
 x393_testbench02.sim_cmprs3_data[63:0]
-@1000200
+@1401200
 -sim_cmprs_output
 @c00200
 -cmprs_afi0_mux
@@ -3866,6 +3902,203 @@ x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.se
 x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.hact_to_fifo
 @200
 -
+@800200
+-sens_i2c_io
+@22
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.cmd_ad[7:0]
+@28
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.cmd_stb
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.frame_sync
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.mclk
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.mrst
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.scl
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.scl_en
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.scl_in
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.scl_out
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sda
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sda_en
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sda_in
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sda_out
+@22
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.status_ad[7:0]
+@28
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.status_rq
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.status_start
+@800200
+-sens_i2c_selected
+@28
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.mclk
+@22
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.i2c_dly[7:0]
+@28
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.i2c_start
+@29
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.i2c_run
+@28
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.i2c_done
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.busy
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.scl_out
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.scl_en
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.sda_out
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.sda_en
+@200
+-i2c sequence
+@22
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.bytes_left[1:0]
+@28
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.i2c_startseq_last
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.i2c_stopseq_last
+@800028
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.i2c_byte_start[2:0]
+@28
+(0)x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.i2c_byte_start[2:0]
+(1)x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.i2c_byte_start[2:0]
+(2)x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.i2c_byte_start[2:0]
+@800022
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.i2c_state[5:0]
+@28
+(0)x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.i2c_state[5:0]
+(1)x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.i2c_state[5:0]
+(2)x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.i2c_state[5:0]
+(3)x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.i2c_state[5:0]
+(4)x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.i2c_state[5:0]
+(5)x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.i2c_state[5:0]
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.i2c_dly_over
+@22
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.i2c_dly[7:0]
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.i2c_data[7:0]
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.i2c_sr[8:0]
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.byte_number[1:0]
+@1001200
+-group_end
+-group_end
+@200
+-
+-
+@1000200
+-sens_i2c_selected
+@800200
+-sens_i2c
+@28
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.alive_fs
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.busy
+@22
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.busy_cntr[3:0]
+@28
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.byte_number[1:0]
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.byte_sending[1:0]
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.bytes_cmd
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.bytes_left[1:0]
+@22
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.cmd_ad[7:0]
+@28
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.cmd_stb
+@22
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.di[31:0]
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.di_r[31:0]
+@28
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.dly_cmd
+@22
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.dly_cntr[7:0]
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.fifo_wr_pointers_outr[5:0]
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.fifo_wr_pointers_outr_r[5:0]
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.fifo_wr_pointers_outw[5:0]
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.fifo_wr_pointers_outw_r[5:0]
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.frame_num[3:0]
+@28
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.frame_sync
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.i2c_bit_last
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.i2c_byte_start[2:0]
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.i2c_bytes[1:0]
+@22
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.i2c_cmd_wa[9:0]
+@28
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.i2c_cmd_we
+@22
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.i2c_data[7:0]
+@28
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.i2c_dataseq_done
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.i2c_dataseq_last
+@22
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.i2c_dly[7:0]
+@28
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.i2c_dly_over
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.i2c_dly_pre2_over
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.i2c_dly_pre_over
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.i2c_done
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.i2c_enrun
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.i2c_is_ackn
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.i2c_is_data
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.i2c_is_start
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.i2c_is_stop
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.i2c_run
+@22
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.i2c_sr[8:0]
+@28
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.i2c_sr_shift
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.i2c_start
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.i2c_startseq_last
+@22
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.i2c_state[5:0]
+@28
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.i2c_stop_start
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.i2c_stopseq_last
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.mclk
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.mrst
+@22
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.page_r[3:0]
+@28
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.page_r_inc[1:0]
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.pre_wpage0_inc
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.req_clr
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.reset_cmd
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.reset_on
+@22
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.rpointer[5:0]
+@28
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.run_cmd
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.scl_0
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.scl_en
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.scl_en_soft
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.scl_hard
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.scl_in
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.scl_out
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.scl_soft
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.sda_0
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.sda_en
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.sda_en_hard
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.sda_en_soft
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.sda_hard
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.sda_in
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.sda_out
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.sda_soft
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.set_ctrl_w
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.set_status_w
+@22
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.status_ad[7:0]
+@28
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.status_rq
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.status_start
+@22
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.wa[3:0]
+@28
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.we_abs
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.we_cmd
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.we_fifo_wp
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.we_rel
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.wen
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.wen_fifo
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.wen_r[1:0]
+@22
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.wpage0[3:0]
+@28
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.wpage0_inc[1:0]
+@22
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.wpage_prev[3:0]
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.wpage_wr[3:0]
+@1000200
+-sens_i2c
+-sens_i2c_io
 @c00200
 -sensor_fifo
 @22
