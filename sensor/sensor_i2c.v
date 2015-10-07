@@ -30,18 +30,16 @@ module  sensor_i2c#(
     parameter SENSI2C_STATUS =         'h1,
     parameter SENSI2C_STATUS_REG =     'h20,
     // Control register bits
+    parameter SENSI2C_CMD_TABLE =       29, // [29]: 1 - write to translation table (ignore any other fields), 0 - write other fields
+    parameter SENSI2C_CMD_TAND =        28, // [28]: 1 - write table address (8 bits), 0 - write table data (28 bits)
     parameter SENSI2C_CMD_RESET =       14, // [14]   reset all FIFO (takes 16 clock pulses), also - stops i2c until run command
     parameter SENSI2C_CMD_RUN =         13, // [13:12]3 - run i2c, 2 - stop i2c (needed before software i2c), 1,0 - no change to run state
     parameter SENSI2C_CMD_RUN_PBITS =    1,
-    parameter SENSI2C_CMD_BYTES =       11, // if 1, use [10:9] to set command bytes to send after slave address (0..3)
-    parameter SENSI2C_CMD_BYTES_PBITS =  2,
-    parameter SENSI2C_CMD_DLY =          8, // [7:0]  - duration of quater i2c cycle (if 0, [3:0] control SCL+SDA)
-    parameter SENSI2C_CMD_DLY_PBITS =    8,
-
-    parameter SENSI2C_CMD_SCL =         16, // [17:16] : 0: NOP, 1: 1'b0->SCL, 2: 1'b1->SCL, 3: 1'bz -> SCL 
-    parameter SENSI2C_CMD_SCL_WIDTH =    2,
-    parameter SENSI2C_CMD_SDA =         18, // [19:18] : 0: NOP, 1: 1'b0->SDA, 2: 1'b1->SDA, 3: 1'bz -> SDA,  
-    parameter SENSI2C_CMD_SDA_WIDTH =    2
+    
+    parameter SENSI2C_CMD_FIFO_RD =      3, // advane I2C read data FIFO by 1  
+    parameter SENSI2C_CMD_ACIVE =        2, // [2] - SENSI2C_CMD_ACIVE_EARLY0, SENSI2C_CMD_ACIVE_SDA
+    parameter SENSI2C_CMD_ACIVE_EARLY0 = 1, // release SDA==0 early if next bit ==1
+    parameter SENSI2C_CMD_ACIVE_SDA =    0  // drive SDA=1 during the second half of SCL=1
 )(
     input         mrst,         // @ posedge mclk
     input         mclk,         // global clock, half DDR3 clock, synchronizes all I/O through the command port
@@ -55,12 +53,10 @@ module  sensor_i2c#(
     output        status_rq,   // input request to send status downstream
     input         status_start,// Acknowledge of the first status packet byte (address)
     input         frame_sync,  // @posedge mclk increment/reset frame number 
-//    input         frame_0,     // reset frame number to zero - can be done by soft reset before first enabled frame
-//    output        busy,        // busy (do not use software i2i)
-    input         scl_in,      // i2c SCL input
     input         sda_in,      // i2c SDA input
-    output        scl_out,         // i2c SCL output
-    output        sda_out,         // i2c SDA output
+    input         scl_in,      // i2c SCL input
+    output        scl_out,     // i2c SCL output
+    output        sda_out,     // i2c SDA output
     output        scl_en,      // i2c SCL enable
     output        sda_en       // i2c SDA enable
 //    output        busy,
@@ -106,12 +102,16 @@ module  sensor_i2c#(
      reg    [3:0]  wpage_wr;    // FIFO page where current write goes (reading from write address) 
      reg    [1:0]  wpage0_inc; // increment wpage0 (after frame sync or during reset)
      reg           reset_cmd;
-     reg           dly_cmd;
-     reg           bytes_cmd;
+//     reg           dly_cmd;
+//     reg           bytes_cmd;
      reg           run_cmd;
+     reg           twe;
+     reg           active_cmd;
+     reg           active_sda;
+     reg           early_release_0;
      reg           reset_on;   // reset FIFO in progress
-     reg    [1:0]  i2c_bytes;
-     reg    [7:0]  i2c_dly;
+//     reg    [1:0]  i2c_bytes;
+//     reg    [7:0]  i2c_dly;
      reg           i2c_enrun;     // enable i2c
      reg           we_fifo_wp; // enable writing to fifo write pointer memory
      reg           req_clr;    // request for clearing fifo_wp (delay frame sync if previous is not yet sent out), also used for clearing all
@@ -136,49 +136,20 @@ module  sensor_i2c#(
      reg    [5:0]  rpointer;    // FIFO read pointer for current page
 
      reg           i2c_start; // initiate i2c register write sequence
-     reg           i2c_run;   // i2c sequence is in progress
-     reg           i2c_done;  // i2c sequence is over
-     reg    [1:0]  bytes_left; // bytes left to send after this one
-     reg    [1:0]  byte_number;  // byte number to send next (3-2-1-0)
-     reg    [1:0]  byte_sending; // byte number currently sending (3-2-1-0)
-     reg    [5:0]  i2c_state;  // 0x2b..0x28 - sending start, 0x27..0x24 - stop, 0x23..0x4 - data, 0x03..0x00 - ACKN
-     reg    [7:0]  dly_cntr;   // bit delay down counter
-
-
-     reg           scl_hard;
-     reg           sda_hard;
-     reg           sda_en_hard;
-//     reg           wen_i2c_soft; // write software-contrlolles SDA, SCL state
-     reg           scl_en_soft;  // software i2c control signals (used when i2c controller is disabled)
-     reg           scl_soft;
-     reg           sda_en_soft;
-     reg           sda_soft;
-
-    wire   [7:0]  i2c_data;
-     reg    [8:0]  i2c_sr;
-     reg           i2c_dly_pre_over; 
-     wire          i2c_dly_pre2_over;
-     reg           i2c_dly_over;
-     wire          i2c_startseq_last=(i2c_state[5:0]==6'h28);
-     wire          i2c_stopseq_last= (i2c_state[5:0]==6'h24);
-     wire          i2c_dataseq_last= (i2c_state[5:0]==6'h00);
-     wire          i2c_bit_last    = (i2c_state[1:0]==2'h0);
-     wire          i2c_is_ackn     = (i2c_state[5:2]==4'h0);
-     wire          i2c_is_start    = i2c_state[5] && i2c_state[3];
-     wire          i2c_is_stop     = i2c_state[5] && i2c_state[2];
-     wire          i2c_is_data     = !i2c_state[5] || (!i2c_state[3] && !i2c_state[2]); // including ackn
-
-//   reg           i2c_startseq_done; // last cycle of start sequence
-     reg           i2c_dataseq_done;  // last cycle of each byte sequence
-//   reg           i2c_dataseq_all_done; // last cycle of the last byte sequence
-     reg    [2:0]  i2c_byte_start;
-     reg           i2c_sr_shift;
-     reg           i2c_stop_start;
-     reg           sda_0;
-     reg           scl_0;
+     wire          i2c_run;   // i2c sequence is in progress (early end)
+     reg           i2c_run_d;   // i2c sequence is in progress (early end)
+//     wire          i2c_busy;  // i2c sequence is in progress (until bus is free and stop finished)
+     wire   [1:0]  byte_number;  // byte number to send next (3-2-1-0)
+     wire   [1:0]  seq_mem_re;
+     wire   [7:0]  i2c_data;
+     wire   [7:0]  i2c_rdata;        // data read over i2c bus
+     wire          i2c_rvalid;      // i2c_rdata single-cycle strobe
+     wire          i2c_fifo_nempty; // i2c read fifo has data
+     reg           i2c_fifo_rd;     // read i2c FIFO
+     reg           i2c_fifo_cntrl;  // i2c FIFO odd/even byte
+     wire   [7:0]  i2c_fifo_dout;   // i2c FIFO data out
      reg           busy;
      reg    [3:0]  busy_cntr;
-     assign  i2c_dly_pre2_over=(dly_cntr[7:0]==8'h2);
      
      wire          set_ctrl_w;
      wire          set_status_w;
@@ -190,23 +161,17 @@ module  sensor_i2c#(
      
      assign set_ctrl_w = we_cmd && ((wa & ~SENSI2C_CTRL_MASK) == SENSI2C_CTRL );// ==0
      assign set_status_w = we_cmd && ((wa & ~SENSI2C_CTRL_MASK) == SENSI2C_STATUS );// ==0
-     assign          scl_out=i2c_run?    scl_hard:    scl_soft ;
-     assign          sda_out=i2c_run?    sda_hard:    sda_soft ;
-     assign          scl_en=i2c_run? 1'b1:        scl_en_soft  ;
-     assign          sda_en=i2c_run? sda_en_hard: sda_en_soft ;
      assign  pre_wpage0_inc = (!wen && !(|wen_r) && !wpage0_inc[0]) && (req_clr || reset_on) ;
 
      assign  fifo_wr_pointers_outw = fifo_wr_pointers_ram[wpage_wr[3:0]]; // valid next after command
      assign  fifo_wr_pointers_outr = fifo_wr_pointers_ram[page_r[3:0]];
      
-     
-//    wire           we_abs;
-//    wire           we_rel;
-//    wire           we_cmd;
-//    wire    [15:0] di;
-//    wire     [3:0] wa; 
 
      assign         wen=set_ctrl_w || we_rel || we_abs; //remove set_ctrl_w?
+     
+     assign scl_en = i2c_enrun;
+     
+     
     reg alive_fs;
     always @ (posedge mclk) begin
         if    (set_status_w) alive_fs <= 0;
@@ -237,17 +202,35 @@ module  sensor_i2c#(
 
     status_generate #(
         .STATUS_REG_ADDR(SENSI2C_STATUS_REG),
-        .PAYLOAD_BITS(7+3) // STATUS_PAYLOAD_BITS)
+        .PAYLOAD_BITS(7+3+10) // STATUS_PAYLOAD_BITS)
     ) status_generate_sens_i2c_i (
         .rst        (1'b0), // rst), // input
         .clk        (mclk), // input
         .srst       (mrst), // input
         .we         (set_status_w), // input
         .wd         (di[7:0]), // input[7:0] 
-        .status     ({reset_on, req_clr, alive_fs,busy, frame_num, sda_in, scl_in}), // input[25:0] 
+        .status     ({reset_on, req_clr,
+                      frame_num[3:0],
+                      alive_fs,busy, i2c_fifo_cntrl, i2c_fifo_nempty,
+                      i2c_fifo_dout[7:0],
+                      sda_in, scl_in}), // input[25:0] 
         .ad         (status_ad), // output[7:0] 
         .rq         (status_rq), // output
         .start      (status_start) // input
+    );
+    fifo_same_clock #(
+        .DATA_WIDTH(8),
+        .DATA_DEPTH(4)
+    ) fifo_same_clock_i2c_rdata_i (
+        .rst        (1'b0),             // input
+        .clk        (mclk),            // input
+        .sync_rst   (mrst),            // input
+        .we         (i2c_rvalid),      // input
+        .re         (i2c_fifo_rd),     // input
+        .data_in    (i2c_rdata),       // input[15:0] 
+        .data_out   (i2c_fifo_dout),   // output[15:0] 
+        .nempty     (i2c_fifo_nempty), // output
+        .half_full  () // output reg 
     );
      
     always @ (posedge mclk) begin
@@ -268,31 +251,19 @@ module  sensor_i2c#(
 //        wen_i2c_soft <= wen_d[0] && is_ctl;
 
 // decoded commands, valid next cycle after we_*     
-        reset_cmd <=  set_ctrl_w && di[SENSI2C_CMD_RESET];
-        run_cmd   <=  set_ctrl_w && di[SENSI2C_CMD_RUN];
-        bytes_cmd <=  set_ctrl_w && di[SENSI2C_CMD_BYTES];
-        dly_cmd   <=  set_ctrl_w && di[SENSI2C_CMD_DLY];
-
-// direct i2c control, valid 1 cycle after we_*
-        if      (i2c_run)           scl_en_soft <= 1'b0;
-        else if (set_ctrl_w && !di[SENSI2C_CMD_DLY] && |di[SENSI2C_CMD_SCL +: SENSI2C_CMD_SCL_WIDTH])
-                                    scl_en_soft <= (di[SENSI2C_CMD_SCL +: SENSI2C_CMD_SCL_WIDTH] != 2'h3); 
-        if      (i2c_run)           scl_soft <= 1'b0;
-        else if (set_ctrl_w && !di[SENSI2C_CMD_DLY] && |di[SENSI2C_CMD_SCL +: SENSI2C_CMD_SCL_WIDTH])
-                                    scl_soft <= (di[SENSI2C_CMD_SCL +: SENSI2C_CMD_SCL_WIDTH] == 2'h2); 
-        if      (i2c_run)           sda_en_soft <= 1'b0;
-        else if (set_ctrl_w && !di[SENSI2C_CMD_DLY] && |di[SENSI2C_CMD_SDA +: SENSI2C_CMD_SDA_WIDTH])
-                                    sda_en_soft <= (di[SENSI2C_CMD_SDA +: SENSI2C_CMD_SDA_WIDTH] != 2'h3); 
-        if      (i2c_run)           sda_soft <= 1'b0;
-        else if (set_ctrl_w && !di[SENSI2C_CMD_DLY] && |di[SENSI2C_CMD_SDA +: SENSI2C_CMD_SDA_WIDTH])
-                                    sda_soft <= (di[SENSI2C_CMD_SDA +: SENSI2C_CMD_SDA_WIDTH] == 2'h2); 
-    
-// setting i2c control parameters, valid 2 cycles after we_*       
-        if (bytes_cmd) i2c_bytes[1:0] <= di_r[SENSI2C_CMD_BYTES - 1 -: SENSI2C_CMD_BYTES_PBITS]; //[10:9];
-        if (dly_cmd)   i2c_dly[7:0]   <= di_r[SENSI2C_CMD_DLY - 1 -: SENSI2C_CMD_DLY_PBITS]; //[ 7:0];
-
-        if    (reset_cmd)         i2c_enrun <= 1'b0;
+        reset_cmd <=   set_ctrl_w && di[SENSI2C_CMD_RESET] && !di[SENSI2C_CMD_TABLE];
+        run_cmd <=     set_ctrl_w && di[SENSI2C_CMD_RUN]   && !di[SENSI2C_CMD_TABLE];
+        active_cmd <=  set_ctrl_w && di[SENSI2C_CMD_ACIVE] && !di[SENSI2C_CMD_TABLE];
+        twe <=         set_ctrl_w && di[SENSI2C_CMD_TABLE];
+        i2c_fifo_rd <= set_ctrl_w && di[SENSI2C_CMD_FIFO_RD] && !di[SENSI2C_CMD_TABLE];
+        
+        if    (reset_cmd || mrst) i2c_enrun <= 1'b0;
         else if (run_cmd)         i2c_enrun <= di_r[SENSI2C_CMD_RUN - 1 -: SENSI2C_CMD_RUN_PBITS]; // [12];
+        
+        if (active_cmd) begin
+            early_release_0 <= di_r[SENSI2C_CMD_ACIVE_EARLY0];
+            active_sda <=      di_r[SENSI2C_CMD_ACIVE_SDA];
+        end
 
 // write pointer memory
       wpage0_inc <= {wpage0_inc[0],pre_wpage0_inc};
@@ -313,31 +284,16 @@ module  sensor_i2c#(
       else if (we_rel)        wpage_wr <= wpage0+wa;
       else if (wpage0_inc[0]) wpage_wr <= wpage_prev; // only for erasing?
       
-//      we_fifo_wp <= wen || wpage0_inc; // during commands and during reset?
-
-///   we_fifo_wp <= wen_fifo[0] || wpage0_inc; // during commands and during reset?
-//      we_fifo_wp <= wen_fifo[0] || we_rel || we_abs; // ??
-////      we_fifo_wp <= wen_fifo || we_rel || we_abs; // ??
       we_fifo_wp <= wen_fifo || wpage0_inc[0];
       
-//     reg            [1:0] wen_r;
-//     reg            [1:0] wen_fifo;
       
-      
-//       if (wen_fifo[0])  fifo_wr_pointers_outw_r[5:0] <= fifo_wr_pointers_outw[5:0];
-       if (wen_fifo)  fifo_wr_pointers_outw_r[5:0] <= fifo_wr_pointers_outw[5:0];
+      if (wen_fifo)  fifo_wr_pointers_outw_r[5:0] <= fifo_wr_pointers_outw[5:0];
        
        // write to dual-port pointer memory
-       if (we_fifo_wp) fifo_wr_pointers_ram[wpage_wr] <= wpage0_inc[1]? 6'h0:(fifo_wr_pointers_outw_r[5:0]+1); 
+      if (we_fifo_wp) fifo_wr_pointers_ram[wpage_wr] <= wpage0_inc[1]? 6'h0:(fifo_wr_pointers_outw_r[5:0]+1); 
         
-        fifo_wr_pointers_outr_r[5:0] <= fifo_wr_pointers_outr[5:0]; // just register distri
-// command i2c fifo (RAMB16_S9_S18)
-
-//      if (wen_fifo[0]) i2c_cmd_wa <= {wpage_wr[3:0],fifo_wr_pointers_outw[5:0]};
+      fifo_wr_pointers_outr_r[5:0] <= fifo_wr_pointers_outr[5:0]; // just register distri
       if (wen_fifo) i2c_cmd_wa <= {wpage_wr[3:0],fifo_wr_pointers_outw[5:0]};
-//      if (wen_d[1]) i2c_cmd_wa[10:1] <= {wpage_wr[3:0],fifo_wr_pointers_outw[5:0]};
-//        i2c_cmd_wa[0] <= !wen_d[1]; // 0 for the first in a pair, 1 - for the second
-  //    i2c_cmd_we    <=  !reset_cmd && (wen_d[1]  || (i2c_cmd_we && !wen_d[3])); //reset_cmd added to keep simulator happy
       i2c_cmd_we    <=  !reset_cmd && wen_fifo; // [0];
         
 // signals related to reading from i2c FIFO
@@ -346,60 +302,14 @@ module  sensor_i2c#(
 
 
       if      (reset_cmd || page_r_inc[0])  rpointer[5:0] <= 6'h0;
-      else if (i2c_done)                    rpointer[5:0] <= rpointer[5:0] + 1;
+      else if (i2c_run_d && ! i2c_run)      rpointer[5:0] <= rpointer[5:0] + 1;
 
-      i2c_run <= !reset_cmd && !reset_on && (i2c_start || (i2c_run && !i2c_done));
       i2c_start <= i2c_enrun && !i2c_run && !i2c_start && (rpointer[5:0]!= fifo_wr_pointers_outr_r[5:0]) && !(|page_r_inc);
       page_r_inc[1:0] <= {page_r_inc[0],
                            !i2c_run &&                              // not i2c in progress
                            !page_r_inc[0] &&                        // was not incrementing in previous cycle
                            (rpointer == fifo_wr_pointers_outr_r) && // nothing left for this page
                            (page_r !=  wpage0)};                    // not already the write-open current page
-//i2c sequence generation       
-        if      (!i2c_run)         bytes_left[1:0] <= i2c_bytes[1:0];
-        else if (i2c_dataseq_done) bytes_left[1:0] <= bytes_left[1:0] -1;
-
-        if (!i2c_run)              byte_sending[1:0] <= 2'h3;
-        else if (i2c_dataseq_done) byte_sending[1:0] <= byte_sending[1:0] + 1;
-
-        if (!i2c_run)              byte_number[1:0] <= 2'h3;
-        else if (i2c_byte_start[2])byte_number[1:0] <= byte_number[1:0] - 1;
-
-        if (!i2c_run || i2c_dly_over) dly_cntr[7:0] <= i2c_dly[7:0];
-        else dly_cntr[7:0] <= dly_cntr[7:0] - 1;
-        i2c_dly_pre_over <= i2c_dly_pre2_over; // period = 3..258
-        i2c_dly_over <=i2c_dly_pre_over;
-        
-        i2c_dataseq_done     <= i2c_dataseq_last &&  i2c_dly_pre_over;
-
-        i2c_byte_start[2:0]  <= {i2c_byte_start[1:0],
-                        (i2c_startseq_last || (i2c_dataseq_last && (bytes_left[1:0] != 2'h0))) && i2c_dly_pre2_over };
-        i2c_sr_shift    <=   i2c_bit_last && !(i2c_dataseq_last) && i2c_dly_pre_over;
-        i2c_stop_start  <=   i2c_dataseq_last && (bytes_left[1:0] == 2'h0) && i2c_dly_pre_over ;
-
-        i2c_done     <=  i2c_stopseq_last && i2c_dly_pre_over;
-        if    (i2c_byte_start[2]) i2c_sr[8:0] <= {i2c_data[7:0], 1'b1};
-        else if (i2c_sr_shift)    i2c_sr[8:0] <= {i2c_sr[7:0],   1'b1};
-        
-        if      (!i2c_run)          i2c_state[5:0] <= 6'h2a; // start of start seq
-        else if (i2c_stop_start)    i2c_state[5:0] <= 6'h26; // start of stop  seq
-        else if (i2c_byte_start[2]) i2c_state[5:0] <= 6'h23; // start of data  seq
-        else if (i2c_dly_over)      i2c_state[5:0] <= i2c_state[5:0] - 1;
-        
-        
-// now creating output signals
-      scl_0 <= (i2c_is_start && (i2c_state[1:0]!=2'h0)) ||
-               (i2c_is_stop  && !i2c_state[1]) ||
-               (i2c_is_data  && (i2c_state[1] ^i2c_state[0])) ||
-                     !i2c_run;
-      sda_0 <= (i2c_is_start &&  i2c_state[1]) ||
-               (i2c_is_stop  && (i2c_state[1:0]==2'h0)) ||
-               (i2c_is_data  && i2c_sr[8]) ||
-               !i2c_run;
-      sda_hard <= sda_0;
-      scl_hard <= scl_0;
-      sda_en_hard <= i2c_run && (!sda_0 || (!i2c_is_ackn && !sda_hard));   
-
       if (wen)             busy_cntr <= 4'hf;
       else if (|busy_cntr) busy_cntr <= busy_cntr-1;
         
@@ -407,22 +317,55 @@ module  sensor_i2c#(
                 (|busy_cntr) ||
                   i2c_run ||
                   reset_on;
+                  
+      i2c_run_d <= i2c_run;
+     
+     if      (mrst)        i2c_fifo_cntrl <= 0;
+     else if (i2c_fifo_rd) i2c_fifo_cntrl <= ~i2c_fifo_cntrl;
+     
+     
     end
+    
+    sensor_i2c_prot sensor_i2c_prot_i (
+        .mrst            (mrst),            // input
+        .mclk            (mclk),            // input
+        .i2c_rst         (reset_cmd),       // input
+        .i2c_start       (i2c_start),       // input
+        .active_sda      (active_sda),      // input
+        .early_release_0 (early_release_0), // input
+        .tand            (di_r[SENSI2C_CMD_TAND]),        // input
+        .td              (di_r[SENSI2C_CMD_TAND-1:0]),      // input[27:0] 
+        .twe             (twe),             // input
+        .sda_in          (sda_in),          // input
+        .sda             (sda_out),         // output
+        .sda_en          (sda_en),          // output
+        .scl             (scl_out),         // output
+        .i2c_run         (i2c_run),         // output reg 
+        .i2c_busy        (), //i2c_busy),   // output reg 
+        .seq_mem_ra      (byte_number),     // output[1:0] reg 
+        .seq_mem_re      (seq_mem_re),      // output[1:0] 
+        .seq_rd          (i2c_data),        // input[7:0] 
+        .rdata           (i2c_rdata),       // output[7:0] 
+        .rvalid          (i2c_rvalid)       // output
+    );
+    
+    
+    
     ram_var_w_var_r #(
         .REGISTERS(1), // try to delay i2c_byte_start by one more cycle
         .LOG2WIDTH_WR(5),
         .LOG2WIDTH_RD(3)
     ) i_fifo (
-        .rclk(mclk), // input
-        .raddr({page_r[3:0],  rpointer[5:0], byte_number[1:0]}), // input[11:0] 
-        .ren(i2c_byte_start[0]), // input
-        .regen(i2c_byte_start[1]), // input
-        .data_out(i2c_data[7:0]), // output[7:0] 
-        .wclk(mclk), // input
-        .waddr(i2c_cmd_wa), // input[9:0] 
-        .we(i2c_cmd_we), // input
-        .web(8'hff), // input[7:0] 
-        .data_in(di_r) // input[31:0] 
+        .rclk     (mclk), // input
+        .raddr    ({page_r[3:0],  rpointer[5:0], byte_number[1:0]}), // input[11:0] 
+        .ren      (seq_mem_re[0]), // input
+        .regen    (seq_mem_re[1]), // input
+        .data_out (i2c_data[7:0]), // output[7:0] 
+        .wclk     (mclk), // input
+        .waddr    (i2c_cmd_wa), // input[9:0] 
+        .we       (i2c_cmd_we), // input
+        .web      (8'hff), // input[7:0] 
+        .data_in  (di_r) // input[31:0] 
     );
 
 endmodule

@@ -21,19 +21,23 @@
 `timescale 1ns/1ps
 
 module  sensor_i2c_scl_sda(
-    input         mrst,         // @ posedge mclk
-    input         mclk,         // global clock
+    input         mrst,           // @ posedge mclk
+    input         mclk,           // global clock
     input         i2c_rst,
-    input  [ 7:0] i2c_dly,      // bit duration-1 (>=2?), 1 unit - 4 mclk periods
+    input  [ 7:0] i2c_dly,        // bit duration-1 (>=2?), 1 unit - 4 mclk periods
+    input         active_sda,     // active pull SDA 
+    input         early_release_0,// release SDA immediately after end of SCL if next bit is 1 (for ACKN). Data hold time by slow 0->1 
     input         snd_start,
     input         snd_stop,
     input         snd9,
+//    input         rcv,         // recieve mode (valid with snd9) - master receives, slave - sends
     input  [ 8:0] din,
     output [ 8:0] dout,        //
     output reg    dout_stb,    // dout contains valid data
     output reg    scl,         // i2c SCL signal
     input         sda_in,      // i2c SDA signal form I/O pad           
-    output reg    sda,         // i2c SDA signal           
+    output reg    sda,         // i2c SDA signal
+    output reg    sda_en,      // drive SDA when SDA=0 and during second half of SCL = 0 interval (also during stop) 
     output        ready,       // ready to accept commands
     output reg    bus_busy,    // i2c bus busy (1 cycle behind !ready)
     output        is_open      // i2c channel is open (started, no stop yet)
@@ -119,6 +123,14 @@ module  sensor_i2c_scl_sda(
                                      seq_start_restart[3] ||  seq_start_restart[2] ||
                                      seq_stop[0] ||
                                      (sr[8] && (|seq_bit));
+
+        if      (rst)        sda_en <= 1;
+        else if (first_cyc)  sda_en <= busy_r && (
+                                     (active_sda && (seq_start_restart[3] || seq_stop[0] || (sr[8] && seq_bit[3]))) ||
+                                     (|seq_start_restart[1:0]) ||
+                                     (|seq_stop[2:1]) ||
+                                     (!sr[8] && (|seq_bit[3:1])) ||
+                                     (!sr[8] && seq_bit[0] && (!early_release_0 || !sr[7])));
        bus_busy <= busy_r;
     end
 

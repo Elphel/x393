@@ -25,41 +25,76 @@ module  sensor_i2c_prot(
     input            mclk,         // global clock
     input            i2c_rst,
     input            i2c_start,
-    input     [ 7:0] i2c_dly,      // bit duration-1 (>=2?), 1 unit - 4 mclk periods
+    input            active_sda,     // global config bit: active pull SDA
+    input            early_release_0,// global config bit: release SDA immediately after end of SCL if next bit is 1 (for ACKN). Data hold time by slow 0->1 
     // setup LUT to translate address page into SA, actual address MSB and number of bytes to write (second word bypasses translation)
     input            tand,         // table address/not data
-    input     [19:0] td,           // table address/data in            
+    input     [27:0] td,           // table address/data in            
     input            twe,          // table write enable
     input            sda_in,       // data from sda pad
-    output reg       sda,
-    output reg       sda_en,
-    output reg       scl,
-    output           i2c_run,
+    output           sda,
+    output           sda_en,
+    output           scl,
+    output reg       i2c_run,      // released as soon as the last command (usually STOP) gets to the i2c start/stop/shift module
+    output reg       i2c_busy,     // released when !i2c_run and all i2c activity is over 
     output reg [1:0] seq_mem_ra, // number of byte to read from the sequencer memory
     output    [ 1:0] seq_mem_re, // [0] - re, [1] - regen to teh sequencer memory
     input     [ 7:0] seq_rd,     // data from the sequencer memory 
     output    [ 7:0] rdata,
     output           rvalid
 );
+/*
+    Sequencer provides 4 bytes per command, read one byte at a time as seq_rd[7:0] with byte address provided by seq_mem_ra[1:0],
+    seq_mem_re[0] external memory re, seq_mem_re[1] - regen
+    MSB (byte 3) is used as index in the table that provides for register writes (tdout[8] == 0):
+        high byte of the register address (if used) - tdout[7:0]
+        slave address - tdout[15:9],
+        number of bytes to send after SA - tdout[19:16] (includes both adderss and data bytes, aligned to the MSB)
+        bit delay - tdout[27:20] (periods of mclk for 1/4 of the SCL period), should be >2(?)
+        
+        if number of bytes to send (including address) >4, there will be no stop and the next command will bypass MSB decoding through table
+        and be sent out as data bytes (MSB first, aligned to the LSB (byte[0]), so if only one byte is to be sent bytes[3:1] will be skipped.
+   In read mode (tdout[8] == 1) it is possible to use 1 or 2 byte register address and read 1..8 bytes
+        bit delay - tdout[27:20] (same as for register writes - see above)
+        Slave address in the read mode is provided as byte[2], register adderss in bytes[1:0] (byte[1] is skipped for 1-byte addresses)
+        Number of data bytes to read is provided as tdout[18:16], with 0 meaning 8 bytes
+        Nuber of register address bytes is defined by tdout[19]: 0 - one byte, 1 - 2 bytes address
+   "active_sda" (configuration bit enables active pull-up on SDA line by the master for faster communication, it is active during second
+        half of the SCL=0 for the data bits and also for the first interval of the RESTART sequence and for the last of the STOP one.
+   "early_release_0" - when sending data bit "0" over the SDA line, release SDA=0 immediately after SCL: 1->0 if the next bit to send is "1".
+        This is OK as the SDA 0->1 transition will be slower than SCL 1->0 (only pulled up by a resistor), so there will be positive hold time
+        on SDA line. This is done so for communications with 10359 (or similar) board where FPGA can also actively drive SDA line for faster
+        communication.
+   Active driving of the SDA line increases only master send communication, so ACKN may be missed, but it is not used in this implementation.
+   Reading registers is less used operation than write and can use slower communication spped (provided through the table)      
+*/
     reg    [ 7:0] twa;
     wire   [31:0] tdout;
     reg    [ 7:0] reg_ah;   // MSB of the register address (instead of the byte 2)
     reg    [ 7:0] slave_a_rah;    // 8-bit slave address , used instead of the byte 3, later replaced with reg_ah
     reg    [ 3:0] num_bytes_send; // number of bytes to send (if more than 4 will skip stop and continue with next data
+    reg    [ 7:0] i2c_dly;      // bit duration-1 (>=2?), 1 unit - 4 mclk periods
+    
+    
     reg    [ 3:0] bytes_left_send; // Number of bytes left in register write sequence (not counting sa?)
     reg    [ 6:0] run_reg_wr;      // run register write [6] - start, [5] - send sa, [4] - send high byte (from table),..[0] - send stop 
     reg    [ 4:0] run_extra_wr;    // continue register write (if more than sa + 4bytes) [4] - byte 3, .. [1]- byte0,  [0] - stop
-    reg           run_extra_wr_d;  // any of run_extra_wr bits, delayed by 1
     reg    [ 7:0] run_reg_rd; // [7] - start, [6] SA (byte 3), [5] (optional) - RA_msb, [4] - RA_lsb, [3] - restart, [2] - SA, [1] - read bytes, [0] - stop
-    reg           i2c_done;
-    wire          i2c_next_byte;
+    reg           run_extra_wr_d;  // any of run_extra_wr bits, delayed by 1
+    reg           run_any_d;       // any of command states, delayed by 1
+    reg    [1:0]  pre_cmd;         // from i2c_start until run_any_d will be active
+//    reg           i2c_done;
+//    wire          i2c_next_byte;
     reg    [ 2:0] mem_re;
     reg           mem_valid;
     reg    [ 3:0] table_re;
     
-    reg           read_mem_msb;
-    wire          decode_reg_rd = &seq_rd[7:4];
-    wire          start_wr_seq_w = !run_extra_wr_d && !decode_reg_rd && read_mem_msb;
+//    reg           read_mem_msb;
+//    wire          decode_reg_rd = &seq_rd[7:4];
+//    wire          start_wr_seq_w = !run_extra_wr_d && !decode_reg_rd && read_mem_msb;
+    wire          start_wr_seq_w = table_re[2] && !tdout[8];
+    wire          start_rd_seq_w = table_re[2] &&  tdout[8];
+    wire          start_extra_seq_w = i2c_start && (bytes_left_send !=0);
     
     wire          snd_start_w = run_reg_wr[6] || 1'b0; // add start & restart of read
     wire          snd_stop_w =  run_reg_wr[0] || 1'b0; // add stop of read
@@ -74,13 +109,12 @@ module  sensor_i2c_prot(
     reg           send_sa_rah;   // send slave address/ high address from the table
     reg           send_rd;       // send 1fe/1ff to read data
     reg     [6:0] rd_sa;         // 7-bit slave address for reading
-    wire    [1:0] sel_sr_in = { // select source for the shift register
+    wire    [1:0] sel_sr_in = {  // select source for the shift register
                   send_sa_rah | send_rd,
                   send_rd_sa | send_rd};
-    reg     [8:0] sr_in; // input data for the shift register
-   
-    
-    
+    reg     [8:0] sr_in;         // input data for the shift register
+    wire          bus_busy;      // i2c bus is active
+    wire          bus_open;      // i2c bus is "open" (START-ed but not STOP-ed) - between multi-byte write if it spans >1 32-bit comands
 
     wire          i2c_rdy;
     reg           next_cmd; // i2c command (start/stop/data) accepted, proceed to the next stage
@@ -93,20 +127,38 @@ module  sensor_i2c_prot(
     
     reg    [ 1:0] initial_address; // initial data byte to read: usually 3  but for extra write may be different
     wire   [ 3:0] initial_address_w =  bytes_left_send - 1; // if bytes left to send == 0 - will be 3                      
-    wire          unused;            // unused ackn signal  
+    wire          unused;            // unused ackn signal SuppressThisWarning VEditor
+    
+    wire          pre_table_re = !run_extra_wr_d && (&seq_mem_ra[1:0]) && mem_re[1];
+    
+    
+      
     assign seq_mem_re = mem_re[1:0];
     
     always @ (posedge mclk) begin
         run_extra_wr_d <= |run_extra_wr;
-        read_mem_msb <= mem_re[1] && (seq_mem_ra == 3); // reading sequencer data MSB - change to other one-hot?
         
-        table_re <= {table_re[2:0], start_wr_seq_w};
+        run_any_d <= (|run_reg_wr) || (|run_extra_wr) || (|run_reg_rd);
+        
+        if (mrst || i2c_rst) pre_cmd <= 0;
+        else if (i2c_start)  pre_cmd <= 1;
+        else if (run_any_d)  pre_cmd <= 0;
+        
+        if (mrst || i2c_rst) i2c_run <= 0;
+        else                 i2c_run <=  i2c_start || pre_cmd || run_any_d;
+
+        if (mrst || i2c_rst) i2c_busy <= 0;
+        else                 i2c_busy <= i2c_start || pre_cmd || run_any_d || bus_busy || bus_open;
+        
+        
+        table_re <= {table_re[2:0], pre_table_re}; // start_wr_seq_w};
         
         if (table_re[2]) begin
             reg_ah <=         tdout[7:0];   // MSB of the register address (instead of the byte 2)
             num_bytes_send <= tdout[19:16]; // number of bytes to send (if more than 4 will skip stop and continue with next data
+            i2c_dly <=        tdout[27:20];
         end
-        if      (table_re[2])               slave_a_rah <= {tdout[14:8], 1'b0};
+        if      (table_re[2])               slave_a_rah <= {tdout[15:9], 1'b0};
         else if (next_cmd && run_reg_wr[6]) slave_a_rah <= reg_ah; // will copy even if not used
         
         next_cmd <= pre_next_cmd;
@@ -136,31 +188,36 @@ module  sensor_i2c_prot(
                                                 run_reg_wr[1] & (bytes_left_send == 4'h1)
                                                 };
         // send just bytes (up to 4), stop if nothing left 
-        if      (mrst || i2c_rst)                    run_extra_wr <= 0;
-        else if (i2c_start && (bytes_left_send !=0)) run_extra_wr <= {
+        if      (mrst || i2c_rst)               run_extra_wr <= 0;
+        else if (start_extra_seq_w)             run_extra_wr <= {
                                                         |bytes_left_send[3:2], // >= 4 bytes left
                                                         (bytes_left_send == 3), // exactly 3 bytes left
                                                         (bytes_left_send == 2), // exactly 2 bytes left
                                                         (bytes_left_send == 1), // exactly 1 bytes left (zero should never be left)
                                                         1'b0
                                                      };
-        else if (next_cmd)                          run_extra_wr <= {
+        else if (next_cmd)                      run_extra_wr <= {
                                                         1'b0,
                                                         run_extra_wr[4],
                                                         run_extra_wr[3],
                                                         run_extra_wr[2],
                                                         run_extra_wr[1] & (bytes_left_send == 4'h1)
-                                                     };
+                                                };
 
 //     reg    [ 7:0] run_reg_rd; // [7] - start, [6] SA (byte 3), [5] (optional) - RA_msb, [4] - RA_lsb, [3] - restart, [2] - SA, [1] - read bytes, [0] - stop
 
-        if (!run_extra_wr &&  decode_reg_rd && read_mem_msb) read_address_bytes <= seq_rd[3];
+//        if (!run_extra_wr &&  decode_reg_rd && read_mem_msb) read_address_bytes <= seq_rd[3];
+//        if (!run_extra_wr &&  decode_reg_rd && read_mem_msb) read_data_bytes <= seq_rd[2:0];
+
+        if      (table_re[2] &&  tdout[8])  read_address_bytes <= tdout[19];
+
+        if      (table_re[2] &&  tdout[8])  read_data_bytes <= tdout[18:16];
+        else if (run_reg_rd[1] && next_cmd) read_data_bytes <= read_data_bytes - 1;
         
-        if (!run_extra_wr &&  decode_reg_rd && read_mem_msb) read_data_bytes <= seq_rd[2:0];
-        else if (run_reg_rd[1] && next_cmd)                  read_data_bytes <= read_data_bytes - 1;
         // read i2c data
-        if      (mrst || i2c_rst)                                  run_reg_rd <= 0;
-        else if (!run_extra_wr_d &&  decode_reg_rd && read_mem_msb)  run_reg_rd <= 8'h80;
+        if      (mrst || i2c_rst) run_reg_rd <= 0;
+//        else if (!run_extra_wr_d &&  decode_reg_rd && read_mem_msb)  run_reg_rd <= 8'h80;
+        else if (start_rd_seq_w)  run_reg_rd <= 8'h80;
         else if (next_cmd)        run_reg_rd <= {1'b0,         // first "start"
                                                 run_reg_rd[7], // slave_addr - always after start (bit0 = 0)
                                                 run_reg_rd[6] & read_address_bytes, // optional MSB of the register address
@@ -203,24 +260,26 @@ module  sensor_i2c_prot(
     end    
 
     sensor_i2c_scl_sda sensor_i2c_scl_sda_i (
-        .mrst      (mrst),          // input
-        .mclk      (mclk),          // input
-        .i2c_rst   (i2c_rst),       // input
-        .i2c_dly   (i2c_dly),       // input[7:0] 
-        .snd_start (snd_start),     // input
-        .snd_stop  (snd_stop),      // input
-        .snd9      (snd9),          // input
-        .din       (sr_in),         // input[8:0] 
-        .dout      ({rdata,unused}),// output[8:0] 
-        .dout_stb  (rvalid),        // output reg 
-        .scl       (), // output reg 
-        .sda_in    (sda_in),        // input
-        .sda       (), // output reg 
-        .ready     (i2c_rdy),       // output register
-        .bus_busy  (), // output reg 
-        .is_open   () // output
+        .mrst            (mrst),          // input
+        .mclk            (mclk),          // input
+        .i2c_rst         (i2c_rst),       // input
+        .i2c_dly         (i2c_dly),       // input[7:0] 
+        .active_sda      (active_sda), // input
+        .early_release_0 (early_release_0), // input
+        .snd_start       (snd_start),     // input
+        .snd_stop        (snd_stop),      // input
+        .snd9            (snd9),          // input
+        .din             (sr_in),         // input[8:0] 
+        .dout            ({rdata,unused}),// output[8:0] 
+        .dout_stb        (rvalid),        // output reg 
+        .scl             (scl),           // output reg 
+        .sda_in          (sda_in),        // input
+        .sda             (sda),           // output reg 
+        .sda_en          (sda_en),        // output reg 
+        .ready           (i2c_rdy),       // output register
+        .bus_busy        (bus_busy),      // output reg 
+        .is_open         (bus_open)       // output
     );
-     
      
     // table write  
     always @ (posedge mclk) begin
@@ -243,7 +302,7 @@ module  sensor_i2c_prot(
         .waddr       ({1'b0, twa}), // input[8:0] 
         .we          (twe && !tand), // input
         .web         (4'hf), // input[3:0] 
-        .data_in     ({12'b0, td}) // input[31:0] 
+        .data_in     ({4'b0, td}) // input[31:0] 
     );
 
 
