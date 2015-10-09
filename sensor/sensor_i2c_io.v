@@ -40,6 +40,19 @@ module  sensor_i2c_io#(
     parameter SENSI2C_CMD_ACIVE =        2, // [2] - SENSI2C_CMD_ACIVE_EARLY0, SENSI2C_CMD_ACIVE_SDA
     parameter SENSI2C_CMD_ACIVE_EARLY0 = 1, // release SDA==0 early if next bit ==1
     parameter SENSI2C_CMD_ACIVE_SDA =    0,  // drive SDA=1 during the second half of SCL=1
+    //i2c page table bit fields
+    parameter SENSI2C_TBL_RAH =          0, // high byte of the register address 
+    parameter SENSI2C_TBL_RAH_BITS =     8,
+    parameter SENSI2C_TBL_RNWREG =       8, // read register (when 0 - write register
+    parameter SENSI2C_TBL_SA =           9, // Slave address in write mode
+    parameter SENSI2C_TBL_SA_BITS =      7,
+    parameter SENSI2C_TBL_NBWR =        16, // number of bytes to write (1..10)
+    parameter SENSI2C_TBL_NBWR_BITS =    4,
+    parameter SENSI2C_TBL_NBRD =        16, // number of bytes to read (1 - 8) "0" means "8"
+    parameter SENSI2C_TBL_NBRD_BITS =    3,
+    parameter SENSI2C_TBL_NABRD =       19, // number of address bytes for read (0 - 1 byte, 1 - 2 bytes)
+    parameter SENSI2C_TBL_DLY =         20, // bit delay (number of mclk periods in 1/4 of SCL period)
+    parameter SENSI2C_TBL_DLY_BITS=      8,
 // I/O parameters   
     parameter integer SENSI2C_DRIVE = 12,
     parameter SENSI2C_IBUF_LOW_PWR = "TRUE",
@@ -81,8 +94,19 @@ module  sensor_i2c_io#(
         .SENSI2C_CMD_FIFO_RD     (SENSI2C_CMD_FIFO_RD),
         .SENSI2C_CMD_ACIVE       (SENSI2C_CMD_ACIVE),
         .SENSI2C_CMD_ACIVE_EARLY0(SENSI2C_CMD_ACIVE_EARLY0),
-        .SENSI2C_CMD_ACIVE_SDA   (SENSI2C_CMD_ACIVE_SDA)
-        
+        .SENSI2C_CMD_ACIVE_SDA   (SENSI2C_CMD_ACIVE_SDA),
+        .SENSI2C_TBL_RAH         (SENSI2C_TBL_RAH), // high byte of the register address 
+        .SENSI2C_TBL_RAH_BITS    (SENSI2C_TBL_RAH_BITS),
+        .SENSI2C_TBL_RNWREG      (SENSI2C_TBL_RNWREG), // read register (when 0 - write register
+        .SENSI2C_TBL_SA          (SENSI2C_TBL_SA), // Slave address in write mode
+        .SENSI2C_TBL_SA_BITS     (SENSI2C_TBL_SA_BITS),
+        .SENSI2C_TBL_NBWR        (SENSI2C_TBL_NBWR), // number of bytes to write (1..10)
+        .SENSI2C_TBL_NBWR_BITS   (SENSI2C_TBL_NBWR_BITS),
+        .SENSI2C_TBL_NBRD        (SENSI2C_TBL_NBRD), // number of bytes to read (1 - 8) "0" means "8"
+        .SENSI2C_TBL_NBRD_BITS   (SENSI2C_TBL_NBRD_BITS),
+        .SENSI2C_TBL_NABRD       (SENSI2C_TBL_NABRD), // number of address bytes for read (0 - 1 byte, 1 - 2 bytes)
+        .SENSI2C_TBL_DLY         (SENSI2C_TBL_DLY),   // bit delay (number of mclk periods in 1/4 of SCL period)
+        .SENSI2C_TBL_DLY_BITS    (SENSI2C_TBL_DLY_BITS)
     ) sensor_i2c_i (
         .mrst          (mrst),         // input
         .mclk          (mclk),         // input

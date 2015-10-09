@@ -30,7 +30,7 @@ module  sensor_i2c_scl_sda(
     input         snd_start,
     input         snd_stop,
     input         snd9,
-//    input         rcv,         // recieve mode (valid with snd9) - master receives, slave - sends
+    input         rcv,         // receive mode (valid with snd9) - master receives, slave - sends
     input  [ 8:0] din,
     output [ 8:0] dout,        //
     output reg    dout_stb,    // dout contains valid data
@@ -47,12 +47,13 @@ module  sensor_i2c_scl_sda(
     reg    [8:0] sr;
     reg    [7:0] dly_cntr;
     reg          busy_r;
-    wire         snd_start_w =  snd_start && !busy_r;
-    wire         snd_stop_w =   snd_stop && !busy_r;
-    wire         snd9_w =       snd9 && !busy_r;
-    wire         start_w =      (snd_start || snd_stop || snd9_w) && !busy_r;
+    wire         snd_start_w =  snd_start && ready; //!busy_r;
+    wire         snd_stop_w =   snd_stop && ready; // !busy_r;
+    wire         snd9_w =       snd9 && ready; //!busy_r;
+    wire         start_w =      (snd_start || snd_stop || snd9_w) && ready; //!busy_r;
     reg          pre_dly_over;
     reg          dly_over;
+//    reg          dly_over_d;
     reg    [3:0] seq_start_restart;
     reg    [2:0] seq_stop;
     reg    [3:0] seq_bit;
@@ -60,48 +61,66 @@ module  sensor_i2c_scl_sda(
     reg          done_r;
     reg          sda_r;
     reg          first_cyc; // first clock cycle for the delay interval - update SCL/SDA outputs
-    assign ready = !busy_r;
+    reg          active_sda_r; // registered @ snd9, disable in rcv mode
+    reg          active_sda_was_0; // only use active SDA if previous bit was 0 or it is receive mode
+    reg          rcv_r;
+    wire         busy_w = busy_r && ! done_r; 
+//    assign ready = !busy_r;
+    assign ready = !busy_w;
+    
     assign is_open =  is_open_r;
     assign dout =     sr;
     always @ (posedge mclk) begin
+        active_sda_was_0 <= !sda || rcv_r;
+        if (snd9_w) rcv_r <= rcv;
+
+        // disable active_sda in send messages for the last (ACKN) bit, for the receive - all but ACKN
+        if      (snd9_w)                    active_sda_r <= active_sda && !rcv;
+        else if (snd_start_w || snd_stop_w) active_sda_r <= active_sda;
+        else if (dly_over && seq_bit[0])    active_sda_r <= active_sda && ((bits_left != 1) ^ rcv_r);
+//active_sda_r && !sda    
         if      (rst)         seq_start_restart <= 0;
-        else if (snd_start_w) seq_start_restart <= is_open_r ? 4'h8 : 4'h4;
+        else if (snd_start_w) seq_start_restart <= (is_open_r && !seq_stop[0]) ? 4'h8 : 4'h4;
         else if (dly_over)    seq_start_restart <= {1'b0,seq_start_restart[3:1]};
     
         if      (rst)         seq_stop <= 0;
         else if (snd_stop_w)  seq_stop <= 3'h4;
         else if (dly_over)    seq_stop <= {1'b0,seq_stop[2:1]};
 
-        if      (rst)                                             seq_bit <= 0;
-        else if (snd_start_w || (seq_bit[0] && (bits_left != 0))) seq_bit <= 4'h8;
-        else if (dly_over)                                        seq_bit <= {1'b0,seq_bit[3:1]};
+        if      (rst)                                                    seq_bit <= 0;
+        else if (snd9_w || (seq_bit[0] && (bits_left != 0) && dly_over)) seq_bit <= 4'h8;
+        else if (dly_over)                                               seq_bit <= {1'b0,seq_bit[3:1]};
         
-        if      (rst)                                             bits_left <= 0;
+        if      (rst)                                             bits_left <= 4'h0;
         else if (snd9_w)                                          bits_left <= 4'h8;
-        else if (dly_over && seq_bit[0])                          bits_left <= bits_left - 1;
+        else if (dly_over && seq_bit[0] && (|bits_left))          bits_left <= bits_left - 1;
 
 
         if      (rst)     busy_r <= 0;
         else if (start_w) busy_r <= 1;
         else if (done_r)  busy_r <= 0;
         
+//        pre_dly_over <=  (dly_cntr == 3);
         pre_dly_over <=  (dly_cntr == 2);
         
         dly_over <=      pre_dly_over;
-        
+//        dly_over_d <=    dly_over;
         if      (rst)     done_r <= 0;
         else              done_r <= pre_dly_over &&
                                    (bits_left == 0) &&
                                    (seq_start_restart[3:1] == 0) &&
                                    (seq_stop[2:1] == 0) &&
-                                   (bits_left[3:1] == 0);
+                                   (seq_bit[3:1] == 0);
                                    
-        if (!busy_r || dly_over) dly_cntr <= i2c_dly;
+//        if (!busy_r || dly_over_d) dly_cntr <= i2c_dly;
+//        else                       dly_cntr <= dly_cntr - 1;
+        
+        if (!busy_w || dly_over) dly_cntr <= i2c_dly;
         else                     dly_cntr <= dly_cntr - 1;
         
         if (dly_over && seq_bit[1]) sda_r <= sda_in; // just before the end of SCL pulse - delay it by a few clocks to match external latencies?
         
-        if      (snd_start_w)            sr <= din;
+        if      (snd9_w)                 sr <= din;
         else if (dly_over && seq_bit[0]) sr <= {sr[7:0], sda_r};
         
         dout_stb <= dly_over && seq_bit[0] && (bits_left == 0);
@@ -113,20 +132,24 @@ module  sensor_i2c_scl_sda(
         first_cyc <= start_w || dly_over;
 
         if      (rst)        scl <= 1;
-        else if (first_cyc)  scl <= !busy_r ||
+//        else if (first_cyc)  scl <= !busy_r || // Wrong whe "open"?
+        else if (first_cyc)  scl <= (scl && !busy_w) || // Wrong whe "open"?
                                      seq_start_restart[2] ||  seq_start_restart[1] ||
                                      seq_stop[1] || seq_stop[0] ||
                                      seq_bit[2] || seq_bit[1];
                                                        
         if      (rst)        sda <= 1;
-        else if (first_cyc)  sda <= !busy_r ||
+//        else if (first_cyc)  sda <= !busy_r ||
+        else if (first_cyc)  sda <= (sda && !busy_w) ||
                                      seq_start_restart[3] ||  seq_start_restart[2] ||
                                      seq_stop[0] ||
                                      (sr[8] && (|seq_bit));
 
         if      (rst)        sda_en <= 1;
-        else if (first_cyc)  sda_en <= busy_r && (
-                                     (active_sda && (seq_start_restart[3] || seq_stop[0] || (sr[8] && seq_bit[3]))) ||
+//        else if (first_cyc)  sda_en <= busy_r && (
+// TODO: no active SDA if previous SDA was 1
+        else if (first_cyc)  sda_en <= busy_w && (
+                                     (active_sda_r && active_sda_was_0 && (seq_start_restart[3] || seq_stop[0] || (sr[8] && seq_bit[3]))) || // !sda uses output reg
                                      (|seq_start_restart[1:0]) ||
                                      (|seq_stop[2:1]) ||
                                      (!sr[8] && (|seq_bit[3:1])) ||

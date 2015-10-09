@@ -1410,7 +1410,7 @@ assign axi_grst = axi_rst_pre;
         .SENSIO_STATUS_REG_REL      (SENSIO_STATUS_REG_REL),
         .SENSOR_NUM_HISTOGRAM       (SENSOR_NUM_HISTOGRAM),
         .HISTOGRAM_RAM_MODE         (HISTOGRAM_RAM_MODE),
-        .SENS_NUM_SUBCHN         (SENS_NUM_SUBCHN),
+        .SENS_NUM_SUBCHN            (SENS_NUM_SUBCHN),
         .SENS_GAMMA_BUFFER          (SENS_GAMMA_BUFFER),
         .SENSOR_CTRL_RADDR          (SENSOR_CTRL_RADDR),
         .SENSOR_CTRL_ADDR_MASK      (SENSOR_CTRL_ADDR_MASK),
@@ -1431,6 +1431,18 @@ assign axi_grst = axi_rst_pre;
         .SENSI2C_CMD_ACIVE          (SENSI2C_CMD_ACIVE),
         .SENSI2C_CMD_ACIVE_EARLY0   (SENSI2C_CMD_ACIVE_EARLY0),
         .SENSI2C_CMD_ACIVE_SDA      (SENSI2C_CMD_ACIVE_SDA),
+        .SENSI2C_TBL_RAH            (SENSI2C_TBL_RAH),      // high byte of the register address 
+        .SENSI2C_TBL_RAH_BITS       (SENSI2C_TBL_RAH_BITS),
+        .SENSI2C_TBL_RNWREG         (SENSI2C_TBL_RNWREG),   // read register (when 0 - write register
+        .SENSI2C_TBL_SA             (SENSI2C_TBL_SA),       // Slave address in write mode
+        .SENSI2C_TBL_SA_BITS        (SENSI2C_TBL_SA_BITS),
+        .SENSI2C_TBL_NBWR           (SENSI2C_TBL_NBWR),     // number of bytes to write (1..10)
+        .SENSI2C_TBL_NBWR_BITS      (SENSI2C_TBL_NBWR_BITS),
+        .SENSI2C_TBL_NBRD           (SENSI2C_TBL_NBRD),     // number of bytes to read (1 - 8) "0" means "8"
+        .SENSI2C_TBL_NBRD_BITS      (SENSI2C_TBL_NBRD_BITS),
+        .SENSI2C_TBL_NABRD          (SENSI2C_TBL_NABRD),    // number of address bytes for read (0 - 1 byte, 1 - 2 bytes)
+        .SENSI2C_TBL_DLY            (SENSI2C_TBL_DLY),      // bit delay (number of mclk periods in 1/4 of SCL period)
+        .SENSI2C_TBL_DLY_BITS       (SENSI2C_TBL_DLY_BITS),
         .SENSI2C_STATUS             (SENSI2C_STATUS),
         .SENS_SYNC_RADDR            (SENS_SYNC_RADDR),
         .SENS_SYNC_MASK             (SENS_SYNC_MASK),

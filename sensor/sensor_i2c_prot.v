@@ -20,7 +20,20 @@
  *******************************************************************************/
 `timescale 1ns/1ps
 
-module  sensor_i2c_prot(
+module  sensor_i2c_prot#(
+    parameter SENSI2C_TBL_RAH =          0, // high byte of the register address 
+    parameter SENSI2C_TBL_RAH_BITS =     8,
+    parameter SENSI2C_TBL_RNWREG =       8, // read register (when 0 - write register
+    parameter SENSI2C_TBL_SA =           9, // Slave address in write mode
+    parameter SENSI2C_TBL_SA_BITS =      7,
+    parameter SENSI2C_TBL_NBWR =        16, // number of bytes to write (1..10)
+    parameter SENSI2C_TBL_NBWR_BITS =    4,
+    parameter SENSI2C_TBL_NBRD =        16, // number of bytes to read (1 - 8) "0" means "8"
+    parameter SENSI2C_TBL_NBRD_BITS =    3,
+    parameter SENSI2C_TBL_NABRD =       19, // number of address bytes for read (0 - 1 byte, 1 - 2 bytes)
+    parameter SENSI2C_TBL_DLY =         20, // bit delay (number of mclk periods in 1/4 of SCL period)
+    parameter SENSI2C_TBL_DLY_BITS=      8
+)(
     input            mrst,         // @ posedge mclk
     input            mclk,         // global clock
     input            i2c_rst,
@@ -83,6 +96,7 @@ module  sensor_i2c_prot(
     reg           run_extra_wr_d;  // any of run_extra_wr bits, delayed by 1
     reg           run_any_d;       // any of command states, delayed by 1
     reg    [1:0]  pre_cmd;         // from i2c_start until run_any_d will be active
+    reg           first_mem_re;
 //    reg           i2c_done;
 //    wire          i2c_next_byte;
     reg    [ 2:0] mem_re;
@@ -92,13 +106,13 @@ module  sensor_i2c_prot(
 //    reg           read_mem_msb;
 //    wire          decode_reg_rd = &seq_rd[7:4];
 //    wire          start_wr_seq_w = !run_extra_wr_d && !decode_reg_rd && read_mem_msb;
-    wire          start_wr_seq_w = table_re[2] && !tdout[8];
-    wire          start_rd_seq_w = table_re[2] &&  tdout[8];
+    wire          start_wr_seq_w = table_re[2] && !tdout[SENSI2C_TBL_RNWREG];
+    wire          start_rd_seq_w = table_re[2] &&  tdout[SENSI2C_TBL_RNWREG];
     wire          start_extra_seq_w = i2c_start && (bytes_left_send !=0);
     
-    wire          snd_start_w = run_reg_wr[6] || 1'b0; // add start & restart of read
-    wire          snd_stop_w =  run_reg_wr[0] || 1'b0; // add stop of read
-    wire          snd9_w     =  (|run_reg_wr[5:1]) || 1'b0; // add for read and extra write;
+ //   wire          snd_start_w = run_reg_wr[6] || 1'b0; // add start & restart of read
+ //   wire          snd_stop_w =  run_reg_wr[0] || 1'b0; // add stop of read
+ //   wire          snd9_w     =  (|run_reg_wr[5:1]) || 1'b0; // add for read and extra write;
 
     reg           snd_start;
     reg           snd_stop;
@@ -129,7 +143,7 @@ module  sensor_i2c_prot(
     wire   [ 3:0] initial_address_w =  bytes_left_send - 1; // if bytes left to send == 0 - will be 3                      
     wire          unused;            // unused ackn signal SuppressThisWarning VEditor
     
-    wire          pre_table_re = !run_extra_wr_d && (&seq_mem_ra[1:0]) && mem_re[1];
+    wire          pre_table_re = !run_extra_wr_d && first_mem_re && mem_re[1];
     
     
       
@@ -140,10 +154,14 @@ module  sensor_i2c_prot(
         
         run_any_d <= (|run_reg_wr) || (|run_extra_wr) || (|run_reg_rd);
         
+        if (mrst || i2c_rst)  first_mem_re <= 0;
+        else if (i2c_start)   first_mem_re <= 1;
+        else if (mem_re[2])   first_mem_re <= 0;
+        
         if (mrst || i2c_rst) pre_cmd <= 0;
         else if (i2c_start)  pre_cmd <= 1;
         else if (run_any_d)  pre_cmd <= 0;
-        
+
         if (mrst || i2c_rst) i2c_run <= 0;
         else                 i2c_run <=  i2c_start || pre_cmd || run_any_d;
 
@@ -154,25 +172,25 @@ module  sensor_i2c_prot(
         table_re <= {table_re[2:0], pre_table_re}; // start_wr_seq_w};
         
         if (table_re[2]) begin
-            reg_ah <=         tdout[7:0];   // MSB of the register address (instead of the byte 2)
-            num_bytes_send <= tdout[19:16]; // number of bytes to send (if more than 4 will skip stop and continue with next data
-            i2c_dly <=        tdout[27:20];
+            reg_ah <=         tdout[SENSI2C_TBL_RAH +: SENSI2C_TBL_RAH_BITS]; //[ 7:0];   // MSB of the register address (instead of the byte 2)
+            num_bytes_send <= tdout[SENSI2C_TBL_NBWR +: SENSI2C_TBL_NBWR_BITS] ; // [19:16]; // number of bytes to send (if more than 4 will skip stop and continue with next data
+            i2c_dly <=        tdout[SENSI2C_TBL_DLY +: SENSI2C_TBL_DLY_BITS]; //[27:20];
         end
-        if      (table_re[2])               slave_a_rah <= {tdout[15:9], 1'b0};
-        else if (next_cmd && run_reg_wr[6]) slave_a_rah <= reg_ah; // will copy even if not used
+        if      (table_re[2])               slave_a_rah <= {tdout[SENSI2C_TBL_SA +: SENSI2C_TBL_SA_BITS], 1'b0}; // {tdout[15:9], 1'b0};
+        else if (next_cmd && run_reg_wr[5]) slave_a_rah <= reg_ah; // will copy even if not used
         
         next_cmd <= pre_next_cmd;
         
         next_cmd_d <= next_cmd;
         
-        next_byte_wr <= snd9 && i2c_rdy; // same time as next_cmd
+        next_byte_wr <= snd9 && i2c_rdy && !run_reg_wr[5]; // same time as next_cmd, no pulse when sending SA during write
 
-        snd_start <= snd_start_w; // add & i2c_ready? Not really needed as any i2c stage will be busy for long enough
-        snd_stop <=  snd_stop_w;
-        snd9 <=      snd9_w;
+//        snd_start <= snd_start_w; // add & i2c_ready? Not really needed as any i2c stage will be busy for long enough
+//        snd_stop <=  snd_stop_w;
+//        snd9 <=      snd9_w;
         
         if     (mrst || i2c_rst) bytes_left_send <= 0;
-        else if (start_wr_seq_w) bytes_left_send <= num_bytes_send;
+        else if (start_wr_seq_w) bytes_left_send <= tdout[SENSI2C_TBL_NBWR +: SENSI2C_TBL_NBWR_BITS]; // num_bytes_send;
         else if (next_byte_wr)   bytes_left_send <= bytes_left_send - 1;
 
         // calculate stages for each type of commands
@@ -206,12 +224,11 @@ module  sensor_i2c_prot(
 
 //     reg    [ 7:0] run_reg_rd; // [7] - start, [6] SA (byte 3), [5] (optional) - RA_msb, [4] - RA_lsb, [3] - restart, [2] - SA, [1] - read bytes, [0] - stop
 
-//        if (!run_extra_wr &&  decode_reg_rd && read_mem_msb) read_address_bytes <= seq_rd[3];
-//        if (!run_extra_wr &&  decode_reg_rd && read_mem_msb) read_data_bytes <= seq_rd[2:0];
-
-        if      (table_re[2] &&  tdout[8])  read_address_bytes <= tdout[19];
-
-        if      (table_re[2] &&  tdout[8])  read_data_bytes <= tdout[18:16];
+//        if      (table_re[2] &&  tdout[8])  read_address_bytes <= tdout[19];
+        if      (table_re[2] &&  tdout[SENSI2C_TBL_RNWREG])  read_address_bytes <= tdout[SENSI2C_TBL_NABRD]; // [19];
+        
+//        if      (table_re[2] &&  tdout[8])  read_data_bytes <= tdout[18:16];
+        if      (table_re[2] &&  tdout[SENSI2C_TBL_RNWREG])  read_data_bytes <= tdout[SENSI2C_TBL_NBRD +: SENSI2C_TBL_NBRD_BITS];
         else if (run_reg_rd[1] && next_cmd) read_data_bytes <= read_data_bytes - 1;
         
         // read i2c data
@@ -245,11 +262,18 @@ module  sensor_i2c_prot(
         
         send_seq_data <= !next_cmd && mem_valid && ((|run_reg_wr[3:1]) || (|run_extra_wr[4:1]) || (|run_reg_rd[6:4])); 
         send_rd_sa <=    !next_cmd && run_reg_rd[2];
-        send_sa_rah <=   !next_cmd && (|run_reg_wr[6:5]);
+        send_sa_rah <=   !next_cmd && (|run_reg_wr[5:4]);
         send_rd <=       !next_cmd && run_reg_rd[1];
         
-        if (mrst || i2c_rst) snd9 <= 0;
-        else snd9 <= snd9 ? (!i2c_rdy) : ((send_seq_data || send_rd_sa || send_sa_rah || send_rd) && !next_cmd);
+        if (mrst || i2c_rst || next_cmd) snd9 <= 0;
+        else                             snd9 <= snd9 ? (!i2c_rdy) : ((send_seq_data || send_rd_sa || send_sa_rah || send_rd) && !next_cmd);
+
+        if (mrst || i2c_rst || next_cmd) snd_start <= 0;
+        else                             snd_start <= snd_start? (!i2c_rdy) : (run_reg_wr[6] || run_reg_rd[7] || run_reg_rd[3]);
+
+        if (mrst || i2c_rst || next_cmd) snd_stop <= 0;
+        else                             snd_stop <= snd_stop? (!i2c_rdy) : (run_reg_wr[0] || run_extra_wr[0] || run_reg_rd[0]);
+        
         case (sel_sr_in)
             2'h0: sr_in <= {seq_rd, 1'b1};
             2'h1: sr_in <= {rd_sa, 2'b11};
@@ -269,6 +293,7 @@ module  sensor_i2c_prot(
         .snd_start       (snd_start),     // input
         .snd_stop        (snd_stop),      // input
         .snd9            (snd9),          // input
+        .rcv             (run_reg_rd[1]), // input       
         .din             (sr_in),         // input[8:0] 
         .dout            ({rdata,unused}),// output[8:0] 
         .dout_stb        (rvalid),        // output reg 

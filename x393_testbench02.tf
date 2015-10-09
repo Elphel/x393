@@ -948,48 +948,92 @@ assign #10 gpio_pins[9] = gpio_pins[8];
             0,   // input                             [1:0] num_sensor;
             1'b1,   // input                                   rst_cmd;    // [14]   reset all FIFO (takes 16 clock pulses), also - stops i2c until run command
             2'b0,   // input       [SENSI2C_CMD_RUN_PBITS : 0] run_cmd;    // [13:12]3 - run i2c, 2 - stop i2c (needed before software i2c), 1,0 - no change to run state
-            1'b1,   // input                                   set_bytes;  // [11] if 1, use bytes (below), 0 - nop
-            2'h3,   // input  [SENSI2C_CMD_BYTES_PBITS -1 : 0] bytes;      // [10:9] set command bytes to send after slave address (0..3)
-            1'b1,   // input                                   set_dly;    // [8] if 1, use dly (0 - ignore)
-            8'h02, //a,  // input   [SENSI2C_CMD_DLY_PBITS - 1 : 0] dly;        // [7:0]  - duration of quarter i2c cycle (if 0, [3:0] control SCL+SDA)
-            2'b0,   // input    [SENSI2C_CMD_SCL_WIDTH -1 : 0] scl_ctl;    // [1:0] : 0: NOP, 1: 1'b0->SCL, 2: 1'b1->SCL, 3: 1'bz -> SCL 
-            2'b0);  // input    [SENSI2C_CMD_SDA_WIDTH -1 : 0] sda_ctl;    // [3:2] : 0: NOP, 1: 1'b0->SDA, 2: 1'b1->SDA, 3: 1'bz -> SDA  
+            1'b1,   // input                                   set_active; 
+            1'b1,   // input                                   active_sda; 
+            1'b1);  // input                                   early_release_0;
+        set_sensor_i2c_table_reg_wr(
+            0,     // input                             [1:0] num_sensor;
+            8'h90, // input                             [7:0] page;       // set parameters for 32-bit command with this MSB
+            7'h48, // input                             [6:0] slave_addr; // 7-bit slave address
+            8'h0,  // input                             [7:0] rah;        // register address high byte
+            4'h3,  // input                             [3:0] num_bytes;  // number of bytes to send
+            8'h4); // input                             [7:0] bit_delay;
+        set_sensor_i2c_table_reg_rd(
+            0,     // input                             [1:0] num_sensor;
+            8'h91, // input                             [7:0] page;       // set parameters for 32-bit command with this MSB
+            1'b0,  // input                                   num_bytes_addr; // number of address bytes (0 - 1, 1 - 2)
+            3'h2,  // input                             [2:0] num_bytes_rd;  // number of bytes to read, with "0" meaning all 8
+            8'h5); // input                             [7:0] bit_delay;
+
+             
     TEST_TITLE = "RESEST_I2C_SEQUENCER1";
     $display("===================== TEST_%s =========================",TEST_TITLE);
         set_sensor_i2c_command(
             1,   // input                             [1:0] num_sensor;
             1'b1,   // input                                   rst_cmd;    // [14]   reset all FIFO (takes 16 clock pulses), also - stops i2c until run command
             2'b0,   // input       [SENSI2C_CMD_RUN_PBITS : 0] run_cmd;    // [13:12]3 - run i2c, 2 - stop i2c (needed before software i2c), 1,0 - no change to run state
-            1'b1,   // input                                   set_bytes;  // [11] if 1, use bytes (below), 0 - nop
-            2'h3,   // input  [SENSI2C_CMD_BYTES_PBITS -1 : 0] bytes;      // [10:9] set command bytes to send after slave address (0..3)
-            1'b1,   // input                                   set_dly;    // [8] if 1, use dly (0 - ignore)
-            8'h02, //a,  // input   [SENSI2C_CMD_DLY_PBITS - 1 : 0] dly;        // [7:0]  - duration of quarter i2c cycle (if 0, [3:0] control SCL+SDA)
-            2'b0,   // input    [SENSI2C_CMD_SCL_WIDTH -1 : 0] scl_ctl;    // [1:0] : 0: NOP, 1: 1'b0->SCL, 2: 1'b1->SCL, 3: 1'bz -> SCL 
-            2'b0);  // input    [SENSI2C_CMD_SDA_WIDTH -1 : 0] sda_ctl;    // [3:2] : 0: NOP, 1: 1'b0->SDA, 2: 1'b1->SDA, 3: 1'bz -> SDA  
+            1'b1,   // input                                   set_active; 
+            1'b0,   // input                                   active_sda; 
+            1'b1);  // input                                   early_release_0; 
+        set_sensor_i2c_table_reg_wr(
+            1,     // input                             [1:0] num_sensor;
+            8'h90, // input                             [7:0] page;       // set parameters for 32-bit command with this MSB
+            7'h48, // input                             [6:0] slave_addr; // 7-bit slave address
+            8'h12, // input                             [7:0] rah;        // register address high byte
+            4'ha,  // input                             [3:0] num_bytes;  // number of bytes to send
+            8'h4); // input                             [7:0] bit_delay;
+        set_sensor_i2c_table_reg_rd(
+            1,     // input                             [1:0] num_sensor;
+            8'h91, // input                             [7:0] page;       // set parameters for 32-bit command with this MSB
+            1'b1,  // input                                   num_bytes_addr; // number of address bytes (0 - 1, 1 - 2)
+            3'h0,  // input                             [2:0] num_bytes_rd;  // number of bytes to read, with "0" meaning all 8
+            8'h4); // input                             [7:0] bit_delay;
+
     TEST_TITLE = "RESEST_I2C_SEQUENCER2";
     $display("===================== TEST_%s =========================",TEST_TITLE);
         set_sensor_i2c_command(
             2,   // input                             [1:0] num_sensor;
             1'b1,   // input                                   rst_cmd;    // [14]   reset all FIFO (takes 16 clock pulses), also - stops i2c until run command
             2'b0,   // input       [SENSI2C_CMD_RUN_PBITS : 0] run_cmd;    // [13:12]3 - run i2c, 2 - stop i2c (needed before software i2c), 1,0 - no change to run state
-            1'b1,   // input                                   set_bytes;  // [11] if 1, use bytes (below), 0 - nop
-            2'h3,   // input  [SENSI2C_CMD_BYTES_PBITS -1 : 0] bytes;      // [10:9] set command bytes to send after slave address (0..3)
-            1'b1,   // input                                   set_dly;    // [8] if 1, use dly (0 - ignore)
-            8'h02, //a,  // input   [SENSI2C_CMD_DLY_PBITS - 1 : 0] dly;        // [7:0]  - duration of quarter i2c cycle (if 0, [3:0] control SCL+SDA)
-            2'b0,   // input    [SENSI2C_CMD_SCL_WIDTH -1 : 0] scl_ctl;    // [1:0] : 0: NOP, 1: 1'b0->SCL, 2: 1'b1->SCL, 3: 1'bz -> SCL 
-            2'b0);  // input    [SENSI2C_CMD_SDA_WIDTH -1 : 0] sda_ctl;    // [3:2] : 0: NOP, 1: 1'b0->SDA, 2: 1'b1->SDA, 3: 1'bz -> SDA  
+            1'b1,   // input                                   set_active; 
+            1'b1,   // input                                   active_sda; 
+            1'b0);  // input                                   early_release_0; 
+        set_sensor_i2c_table_reg_wr(
+            2,     // input                             [1:0] num_sensor;
+            8'h90, // input                             [7:0] page;       // set parameters for 32-bit command with this MSB
+            7'h48, // input                             [6:0] slave_addr; // 7-bit slave address
+            8'h34, // input                             [7:0] rah;        // register address high byte
+            4'h4,  // input                             [3:0] num_bytes;  // number of bytes to send
+            8'h4); // input                             [7:0] bit_delay;
+        set_sensor_i2c_table_reg_rd(
+            2,     // input                             [1:0] num_sensor;
+            8'h91, // input                             [7:0] page;       // set parameters for 32-bit command with this MSB
+            1'b1,  // input                                   num_bytes_addr; // number of address bytes (0 - 1, 1 - 2)
+            3'h2,  // input                             [2:0] num_bytes_rd;  // number of bytes to read, with "0" meaning all 8
+            8'h4); // input                             [7:0] bit_delay;
+
     TEST_TITLE = "RESEST_I2C_SEQUENCER3";
     $display("===================== TEST_%s =========================",TEST_TITLE);
         set_sensor_i2c_command(
             3,   // input                             [1:0] num_sensor;
             1'b1,   // input                                   rst_cmd;    // [14]   reset all FIFO (takes 16 clock pulses), also - stops i2c until run command
             2'b0,   // input       [SENSI2C_CMD_RUN_PBITS : 0] run_cmd;    // [13:12]3 - run i2c, 2 - stop i2c (needed before software i2c), 1,0 - no change to run state
-            1'b1,   // input                                   set_bytes;  // [11] if 1, use bytes (below), 0 - nop
-            2'h3,   // input  [SENSI2C_CMD_BYTES_PBITS -1 : 0] bytes;      // [10:9] set command bytes to send after slave address (0..3)
-            1'b1,   // input                                   set_dly;    // [8] if 1, use dly (0 - ignore)
-            8'h02, //a,  // input   [SENSI2C_CMD_DLY_PBITS - 1 : 0] dly;        // [7:0]  - duration of quarter i2c cycle (if 0, [3:0] control SCL+SDA)
-            2'b0,   // input    [SENSI2C_CMD_SCL_WIDTH -1 : 0] scl_ctl;    // [1:0] : 0: NOP, 1: 1'b0->SCL, 2: 1'b1->SCL, 3: 1'bz -> SCL 
-            2'b0);  // input    [SENSI2C_CMD_SDA_WIDTH -1 : 0] sda_ctl;    // [3:2] : 0: NOP, 1: 1'b0->SDA, 2: 1'b1->SDA, 3: 1'bz -> SDA  
+            1'b1,   // input                                   set_active; 
+            1'b0,   // input                                   active_sda; 
+            1'b0);  // input                                   early_release_0; 
+        set_sensor_i2c_table_reg_wr(
+            3,     // input                             [1:0] num_sensor;
+            8'h90, // input                             [7:0] page;       // set parameters for 32-bit command with this MSB
+            7'h48, // input                             [6:0] slave_addr; // 7-bit slave address
+            8'h0,  // input                             [7:0] rah;        // register address high byte
+            4'h2,  // input                             [3:0] num_bytes;  // number of bytes to send
+            8'h5); // input                             [7:0] bit_delay;
+        set_sensor_i2c_table_reg_rd(
+            3,     // input                             [1:0] num_sensor;
+            8'h91, // input                             [7:0] page;       // set parameters for 32-bit command with this MSB
+            1'b0,  // input                                   num_bytes_addr; // number of address bytes (0 - 1, 1 - 2)
+            3'h1,  // input                             [2:0] num_bytes_rd;  // number of bytes to read, with "0" meaning all 8
+            8'h5); // input                             [7:0] bit_delay;
 
     TEST_TITLE = "DELAY_FOR_I2C_RESET";
     $display("===================== TEST_%s =========================",TEST_TITLE);
@@ -2415,8 +2459,12 @@ task setup_sensor_channel;
             QUADRANTS_PXD_HACT_VACT); // data-0, hact - 1, vact - 2 input  [SENS_CTRL_QUADRANTS_WIDTH-1:0] quadrants;  // 90-degree shifts for data [1:0], hact [3:2] and vact [5:4]
     TEST_TITLE = "I2C_TEST";
     $display("===================== TEST_%s =========================",TEST_TITLE);
-
-        test_i2c_353 (num_sensor); // test soft/sequencer i2c
+        case (num_sensor)
+        2'h0: test_i2c_353 (num_sensor,0); // test soft/sequencer i2c
+        2'h1: test_i2c_353 (num_sensor,2); // test soft/sequencer i2c
+        2'h2: test_i2c_353 (num_sensor,0); // test soft/sequencer i2c
+        2'h3: test_i2c_353 (num_sensor,0); // test soft/sequencer i2c
+        endcase
         
     TEST_TITLE = "LENS_FLAT_SETUP";
     $display("===================== TEST_%s =========================",TEST_TITLE);
@@ -2855,48 +2903,37 @@ endtask
 
 task test_i2c_353;
     input [1:0] chn;
+    input integer num_extra;
+    integer i;
     begin
     // Reset moved out, done for all channels, then 1 usec delay
-    /*
-        set_sensor_i2c_command(
-            chn,   // input                             [1:0] num_sensor;
-            1'b1,   // input                                   rst_cmd;    // [14]   reset all FIFO (takes 16 clock pulses), also - stops i2c until run command
-            2'b0,   // input       [SENSI2C_CMD_RUN_PBITS : 0] run_cmd;    // [13:12]3 - run i2c, 2 - stop i2c (needed before software i2c), 1,0 - no change to run state
-            1'b1,   // input                                   set_bytes;  // [11] if 1, use bytes (below), 0 - nop
-            2'h3,   // input  [SENSI2C_CMD_BYTES_PBITS -1 : 0] bytes;      // [10:9] set command bytes to send after slave address (0..3)
-            1'b1,   // input                                   set_dly;    // [8] if 1, use dly (0 - ignore)
-            8'h0a,  // input   [SENSI2C_CMD_DLY_PBITS - 1 : 0] dly;        // [7:0]  - duration of quarter i2c cycle (if 0, [3:0] control SCL+SDA)
-            2'b0,   // input    [SENSI2C_CMD_SCL_WIDTH -1 : 0] scl_ctl;    // [1:0] : 0: NOP, 1: 1'b0->SCL, 2: 1'b1->SCL, 3: 1'bz -> SCL 
-            2'b0);  // input    [SENSI2C_CMD_SDA_WIDTH -1 : 0] sda_ctl;    // [3:2] : 0: NOP, 1: 1'b0->SDA, 2: 1'b1->SDA, 3: 1'bz -> SDA  
-        repeat (10) @ (posedge CLK); // wait for initialization to be done TODO: use status
-        */
-        set_sensor_i2c_command (chn, 0, 3, 0, 0, 0, 0, 0, 0); // run i2c - reset software bits
-        set_sensor_i2c_command (chn, 0, 2, 0, 0, 0, 0, 0, 0); // stop i2c, enable software control
+        set_sensor_i2c_command (chn, 0, 3, 0, 0, 0); // run i2c
+        write_sensor_i2c (chn, 1, 0,'h90050922);
+        for (i=0; i<num_extra; i=i+1) write_sensor_i2c (chn, 1, 0, i+ 'h12);
+        write_sensor_i2c (chn, 1, 0,'h91123456);
 
-        set_sensor_i2c_command (chn, 0, 0, 0, 0, 0, 0, 0, 2); // SDA = 1 
-        set_sensor_i2c_command (chn, 0, 0, 0, 0, 0, 0, 0, 1); // SDA = 0
-        set_sensor_i2c_command (chn, 0, 0, 0, 0, 0, 0, 2, 0); // SCL = 1 
-        set_sensor_i2c_command (chn, 0, 0, 0, 0, 0, 0, 1, 0); // SCL = 0 
-        set_sensor_i2c_command (chn, 0, 0, 0, 0, 0, 0, 0, 2); // SDA = 1 
-        set_sensor_i2c_command (chn, 0, 0, 0, 0, 0, 0, 2, 0); // SCL = 1 
-        set_sensor_i2c_command (chn, 0, 0, 0, 0, 0, 0, 0, 3); // SDA = 'bz 
-        set_sensor_i2c_command (chn, 0, 0, 0, 0, 0, 0, 3, 0); // SCL = 'bz 
-
-        set_sensor_i2c_command (chn, 0, 3, 0, 0, 0, 0, 0, 0); // run i2c
         write_sensor_i2c (
             chn,           // input   [1:0] num_sensor;
             0,           // input         rel_addr; // 0 - absolute, 1 - relative
             1,           // input integer addr;
             'h90040793); // input  [31:0] data;
-                    
-        write_sensor_i2c (chn, 0, 1,'h90050a23);        
+        for (i=0; i<num_extra; i=i+1) write_sensor_i2c (chn, 0, 1, i+ 'h1);
+        write_sensor_i2c (chn, 0, 1,'h90050a23);
+        for (i=0; i<num_extra; i=i+1) write_sensor_i2c (chn, 0, 1, i+ 'h123);
         write_sensor_i2c (chn, 0, 2,'h90080001);        
+        for (i=0; i<num_extra; i=i+1) write_sensor_i2c (chn, 0, 2, i+ 'h1234);
         write_sensor_i2c (chn, 0, 3,'h90090123);        
+        for (i=0; i<num_extra; i=i+1) write_sensor_i2c (chn, 0, 3, i+ 'h12345);
         write_sensor_i2c (chn, 1, 2,'h90091234);        
+        for (i=0; i<num_extra; i=i+1) write_sensor_i2c (chn, 1, 2, i+ 'h123456);
         write_sensor_i2c (chn, 0, 4,'h9004001f);        
+        for (i=0; i<num_extra; i=i+1) write_sensor_i2c (chn, 0, 4, i+ 'h1234567);
         write_sensor_i2c (chn, 0, 4,'h9005002f);        
+        for (i=0; i<num_extra; i=i+1) write_sensor_i2c (chn, 0, 4, i+ 'h12345678);
         write_sensor_i2c (chn, 1, 3,'h90020013);        
+        for (i=0; i<num_extra; i=i+1) write_sensor_i2c (chn, 1, 3, i+ 'h4567);
         write_sensor_i2c (chn, 1, 3,'h90030017);        
+        for (i=0; i<num_extra; i=i+1) write_sensor_i2c (chn, 1, 3, i+ 'h456789);
     
     end
 endtask
@@ -3021,19 +3058,63 @@ task set_sensor_i2c_command;
     input                             [1:0] num_sensor;
     input                                   rst_cmd;    // [14]   reset all FIFO (takes 16 clock pulses), also - stops i2c until run command
     input       [SENSI2C_CMD_RUN_PBITS : 0] run_cmd;    // [13:12]3 - run i2c, 2 - stop i2c (needed before software i2c), 1,0 - no change to run state
-    input                                   set_bytes;  // [11] if 1, use bytes (below), 0 - nop
-    input  [SENSI2C_CMD_BYTES_PBITS -1 : 0] bytes;      // [10:9] set command bytes to send after slave address (0..3)
-    input                                   set_dly;    // [8] if 1, use dly (0 - ignore)
-    input   [SENSI2C_CMD_DLY_PBITS - 1 : 0] dly;        // [7:0]  - duration of quarter i2c cycle (if 0, [3:0] control SCL+SDA)
-    input    [SENSI2C_CMD_SCL_WIDTH -1 : 0] scl_ctl;    // [1:0] : 0: NOP, 1: 1'b0->SCL, 2: 1'b1->SCL, 3: 1'bz -> SCL 
-    input    [SENSI2C_CMD_SDA_WIDTH -1 : 0] sda_ctl;    // [3:2] : 0: NOP, 1: 1'b0->SDA, 2: 1'b1->SDA, 3: 1'bz -> SDA  
+    input                                   set_active; 
+    input                                   active_sda; 
+    input                                   early_release_0; 
 
     reg                              [31:0] tmp;
 
     begin
     // only needs wait busy for software i2c
 //        #80; // instead of wait busy - check if it is needed
-        tmp= {func_sensor_i2c_command(rst_cmd, run_cmd, set_bytes, bytes, set_dly, dly, scl_ctl, sda_ctl)};
+        tmp= {func_sensor_i2c_command(rst_cmd, run_cmd, set_active, active_sda, early_release_0)};
+        write_contol_register( SENSOR_GROUP_ADDR + num_sensor * SENSOR_BASE_INC +SENSI2C_CTRL_RADDR, tmp);
+    end
+endtask
+
+task set_sensor_i2c_table_reg_wr;
+    input                             [1:0] num_sensor;
+    input                             [7:0] page;       // set parameters for 32-bit command with this MSB
+    input                             [6:0] slave_addr; // 7-bit slave address
+    input                             [7:0] rah;        // register address high byte
+    input                             [3:0] num_bytes;  // number of bytes to send
+    input                             [7:0] bit_delay;
+
+    reg                              [31:0] tmp;
+
+    begin
+    // set table address
+        tmp = 0;
+        tmp [SENSI2C_CMD_TABLE] = 1;
+        tmp [SENSI2C_CMD_TAND] =  1;
+        tmp [7:0]              =  page;
+        write_contol_register( SENSOR_GROUP_ADDR + num_sensor * SENSOR_BASE_INC +SENSI2C_CTRL_RADDR, tmp);
+        // write table entry
+        tmp = {4'b0, func_sensor_i2c_table_reg_wr(slave_addr, rah, num_bytes, bit_delay)};
+        tmp [SENSI2C_CMD_TABLE] = 1;
+        write_contol_register( SENSOR_GROUP_ADDR + num_sensor * SENSOR_BASE_INC +SENSI2C_CTRL_RADDR, tmp);
+    end
+endtask
+
+task set_sensor_i2c_table_reg_rd;
+    input                             [1:0] num_sensor;
+    input                             [7:0] page;       // set parameters for 32-bit command with this MSB
+    input                                   num_bytes_addr; // number of address bytes (0 - 1, 1 - 2)
+    input                             [2:0] num_bytes_rd;  // number of bytes to read, with "0" meaning all 8
+    input                             [7:0] bit_delay;
+
+    reg                              [31:0] tmp;
+
+    begin
+    // set table address
+        tmp = 0;
+        tmp [SENSI2C_CMD_TABLE] = 1;
+        tmp [SENSI2C_CMD_TAND] =  1;
+        tmp [7:0]              =  page;
+        write_contol_register( SENSOR_GROUP_ADDR + num_sensor * SENSOR_BASE_INC +SENSI2C_CTRL_RADDR, tmp);
+        // write table entry
+        tmp = {4'b0, func_sensor_i2c_table_reg_rd(num_bytes_addr, num_bytes_rd, bit_delay)};
+        tmp [SENSI2C_CMD_TABLE] = 1;
         write_contol_register( SENSOR_GROUP_ADDR + num_sensor * SENSOR_BASE_INC +SENSI2C_CTRL_RADDR, tmp);
     end
 endtask
@@ -3663,26 +3744,53 @@ endfunction
 function [31 : 0] func_sensor_i2c_command;
     input                                   rst_cmd;    // [14]   reset all FIFO (takes 16 clock pulses), also - stops i2c until run command
     input       [SENSI2C_CMD_RUN_PBITS : 0] run_cmd;    // [13:12]3 - run i2c, 2 - stop i2c (needed before software i2c), 1,0 - no change to run state
-    input                                   set_bytes;  // [11] if 1, use bytes (below), 0 - nop
-    input  [SENSI2C_CMD_BYTES_PBITS -1 : 0] bytes;      // [10:9] set command bytes to send after slave address (0..3)
-    input                                   set_dly;    // [8] if 1, use dly (0 - ignore)
-    input   [SENSI2C_CMD_DLY_PBITS - 1 : 0] dly;        // [7:0]  - duration of quarter i2c cycle (if 0, [3:0] control SCL+SDA)
-    input    [SENSI2C_CMD_SCL_WIDTH -1 : 0] scl_ctl;    // [17:16] : 0: NOP, 1: 1'b0->SCL, 2: 1'b1->SCL, 3: 1'bz -> SCL 
-    input    [SENSI2C_CMD_SDA_WIDTH -1 : 0] sda_ctl;    // [19:18] : 0: NOP, 1: 1'b0->SDA, 2: 1'b1->SDA, 3: 1'bz -> SDA  
+    input                                   set_active; 
+    input                                   active_sda; 
+    input                                   early_release_0; 
     
     reg  [31 : 0] tmp;
     begin
         tmp = 0;
         tmp [SENSI2C_CMD_RESET] =                                 rst_cmd;
         tmp [SENSI2C_CMD_RUN  -: SENSI2C_CMD_RUN_PBITS+1] =       run_cmd;
-        tmp [SENSI2C_CMD_BYTES] =                                 set_bytes;
-        tmp [SENSI2C_CMD_BYTES -1 -: SENSI2C_CMD_BYTES_PBITS ] =  bytes;
-        tmp [SENSI2C_CMD_DLY] =                                   set_dly;
-        tmp [SENSI2C_CMD_DLY -1 -: SENSI2C_CMD_DLY_PBITS ] =      dly;
-        tmp [SENSI2C_CMD_SCL +: SENSI2C_CMD_SCL_WIDTH] =          scl_ctl;
-        tmp [SENSI2C_CMD_SDA +: SENSI2C_CMD_SDA_WIDTH] =          sda_ctl;
-
+        tmp [SENSI2C_CMD_ACIVE] =                                 set_active;
+        tmp [SENSI2C_CMD_ACIVE_EARLY0] =                          active_sda;
+        tmp [SENSI2C_CMD_ACIVE_SDA] =                             early_release_0;
         func_sensor_i2c_command = tmp;
+    end
+endfunction
+
+function [27:0] func_sensor_i2c_table_reg_wr; //
+    input                             [6:0] slave_addr; // 7-bit slave address
+    input                             [7:0] rah;        // register address high byte
+    input                             [3:0] num_bytes;  // number of bytes to send
+    input                             [7:0] bit_delay;
+
+    reg  [27 : 0] tmp;
+    begin
+        tmp = 0;
+        tmp[SENSI2C_TBL_RAH +:  SENSI2C_TBL_RAH_BITS] =  rah;
+        tmp[SENSI2C_TBL_RNWREG] =                        1'b0; // write register
+        tmp[SENSI2C_TBL_SA +:   SENSI2C_TBL_SA_BITS] =   slave_addr;
+        tmp[SENSI2C_TBL_NBWR +: SENSI2C_TBL_NBWR_BITS] = num_bytes;
+        tmp[SENSI2C_TBL_DLY +:  SENSI2C_TBL_DLY_BITS] =  bit_delay;
+        func_sensor_i2c_table_reg_wr =tmp;
+    end
+endfunction
+
+function [27:0] func_sensor_i2c_table_reg_rd; //
+    input                                   num_bytes_addr; // number of address bytes (0 - 1, 1 - 2)
+    input                             [2:0] num_bytes_rd;  // number of bytes to read, with "0" meaning all 8
+    input                             [7:0] bit_delay;
+
+    reg  [27 : 0] tmp;
+    begin
+        tmp = 0;
+        tmp[SENSI2C_TBL_RNWREG] =                        1'b1; // read register
+        tmp[SENSI2C_TBL_NBRD +: SENSI2C_TBL_NBRD_BITS] = num_bytes_rd;
+        tmp[SENSI2C_TBL_NABRD] =                         num_bytes_addr;
+        tmp[SENSI2C_TBL_DLY +:  SENSI2C_TBL_DLY_BITS] =  bit_delay;
+        func_sensor_i2c_table_reg_rd =tmp;
     end
 endfunction
 

@@ -352,10 +352,24 @@
         parameter SENSI2C_CMD_RESET =       14, // [14]   reset all FIFO (takes 16 clock pulses), also - stops i2c until run command
         parameter SENSI2C_CMD_RUN =         13, // [13:12]3 - run i2c, 2 - stop i2c (needed before software i2c), 1,0 - no change to run state
         parameter SENSI2C_CMD_RUN_PBITS =    1,
-        parameter SENSI2C_CMD_FIFO_RD =      3, // advane I2C read data FIFO by 1  
+        parameter SENSI2C_CMD_FIFO_RD =      3, // advance I2C read data FIFO by 1  
         parameter SENSI2C_CMD_ACIVE =        2, // [2] - SENSI2C_CMD_ACIVE_EARLY0, SENSI2C_CMD_ACIVE_SDA
         parameter SENSI2C_CMD_ACIVE_EARLY0 = 1, // release SDA==0 early if next bit ==1
         parameter SENSI2C_CMD_ACIVE_SDA =    0,  // drive SDA=1 during the second half of SCL=1
+    //i2c page table bit fields
+        parameter SENSI2C_TBL_RAH =          0, // high byte of the register address 
+        parameter SENSI2C_TBL_RAH_BITS =     8,
+        parameter SENSI2C_TBL_RNWREG =       8, // read register (when 0 - write register
+        parameter SENSI2C_TBL_SA =           9, // Slave address in write mode
+        parameter SENSI2C_TBL_SA_BITS =      7,
+        parameter SENSI2C_TBL_NBWR =        16, // number of bytes to write (1..10)
+        parameter SENSI2C_TBL_NBWR_BITS =    4,
+        parameter SENSI2C_TBL_NBRD =        16, // number of bytes to read (1 - 8) "0" means "8"
+        parameter SENSI2C_TBL_NBRD_BITS =    3,
+        parameter SENSI2C_TBL_NABRD =       19, // number of address bytes for read (0 - 1 byte, 1 - 2 bytes)
+        parameter SENSI2C_TBL_DLY =         20, // bit delay (number of mclk periods in 1/4 of SCL period)
+        parameter SENSI2C_TBL_DLY_BITS=      8,
+        
       
       parameter SENSI2C_STATUS =        'h1,
     
