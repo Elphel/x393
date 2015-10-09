@@ -144,12 +144,14 @@ module  sensor_i2c_prot#(
     wire          unused;            // unused ackn signal SuppressThisWarning VEditor
     
     wire          pre_table_re = !run_extra_wr_d && first_mem_re && mem_re[1];
-    
+    reg           rnw;  // last command was read (not write) - do not increment bytes_left_send
     
       
     assign seq_mem_re = mem_re[1:0];
     
     always @ (posedge mclk) begin
+        if (mrst || i2c_rst || start_wr_seq_w) rnw <= 0;
+        else if (start_rd_seq_w)               rnw <= 1;
         run_extra_wr_d <= |run_extra_wr;
         
         run_any_d <= (|run_reg_wr) || (|run_extra_wr) || (|run_reg_rd);
@@ -178,12 +180,12 @@ module  sensor_i2c_prot#(
         end
         if      (table_re[2])               slave_a_rah <= {tdout[SENSI2C_TBL_SA +: SENSI2C_TBL_SA_BITS], 1'b0}; // {tdout[15:9], 1'b0};
         else if (next_cmd && run_reg_wr[5]) slave_a_rah <= reg_ah; // will copy even if not used
-        
+ //    wire          pre_next_cmd = (snd_start || snd_stop || snd9) && i2c_rdy;
         next_cmd <= pre_next_cmd;
         
         next_cmd_d <= next_cmd;
         
-        next_byte_wr <= snd9 && i2c_rdy && !run_reg_wr[5]; // same time as next_cmd, no pulse when sending SA during write
+        next_byte_wr <= snd9 && i2c_rdy && !run_reg_wr[5] && !rnw; // (|run_reg_rd); // same time as next_cmd, no pulse when sending SA during write
 
 //        snd_start <= snd_start_w; // add & i2c_ready? Not really needed as any i2c stage will be busy for long enough
 //        snd_stop <=  snd_stop_w;

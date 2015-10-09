@@ -2910,7 +2910,7 @@ task test_i2c_353;
         set_sensor_i2c_command (chn, 0, 3, 0, 0, 0); // run i2c
         write_sensor_i2c (chn, 1, 0,'h90050922);
         for (i=0; i<num_extra; i=i+1) write_sensor_i2c (chn, 1, 0, i+ 'h12);
-        write_sensor_i2c (chn, 1, 0,'h91123456);
+        write_sensor_i2c (chn, 1, 0,'h91901234);
 
         write_sensor_i2c (
             chn,           // input   [1:0] num_sensor;
