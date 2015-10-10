@@ -514,11 +514,13 @@ class X393Sensor(object):
 
     def read_sensor_i2c (self,
                          num_sensor,
-                         num_bytes = None):
+                         num_bytes = None,
+                         verbose = 0):
         """
         Read sequence of bytes available
         @param num_sensor - sensor port number (0..3), or "all" - same to all sensors
         @param num_bytes - number of bytes to read (None - all in FIFO)
+        @verbose - verbose level
         @return list of read bytes
         """
         ODDEVEN="ODDEVEN"
@@ -547,7 +549,7 @@ class X393Sensor(object):
             self. set_sensor_i2c_command (
                                 num_sensor =   num_sensor,
                                 advance_FIFO = True,
-                                verbose =      1)
+                                verbose =      verbose)
             # wait until odd/even bit reverses (no timeout here)
             while d[ODDEVEN] == oddeven:
                 d = read_i2c_data(num_sensor)
@@ -555,6 +557,52 @@ class X393Sensor(object):
                 break # read all that was requested (num_bytes == None will not get here)
         return  rslt
             
+    def print_sensor_i2c (self,
+                          num_sensor,
+                          reg_addr,
+                          indx =  1,
+                          sa7   = 0x48,
+                          verbose = 0):
+        """
+        Read sequence of bytes available and print the result as a single hex number
+        @param num_sensor - sensor port number (0..3), or "all" - same to all sensors
+        @param reg_addr - register to read address 1/2 bytes (defined by previously set format)
+        @param indx - i2c command index in 1 256-entry table (defines here i2c delay, number of address bytes and number of data bytes)
+        @param sa7 - 7-bit i2c slave address
+        @param verbose - verbose level
+        """
+        #clean up FIFO
+        dl = self.read_sensor_i2c (num_sensor = num_sensor,
+                                   num_bytes = None,
+                                   verbose = verbose)
+        if len(dl):
+            d = 0
+            for b in dl:
+                d = (d << 8) | (b & 0xff)
+            fmt="FIFO contained %d bytes i2c data = 0x%%0%dx"%(len(dl),len(dl*2))
+            print (fmt%(d))    
+        #create and send i2c command in ASAP mode:
+        i2c_cmd = ((indx & 0xff) << 24) | (sa7 <<17) | (reg_addr & 0xffff)
+        #write_sensor_i2c  0 1 0 0x91900004
+        self.write_sensor_i2c(num_sensor = num_sensor,
+                              rel_addr = 1,
+                              addr = 0,
+                              data = i2c_cmd)
+        time.sleep(0.05) # We do not know how many bytes are expected, so just wait long enough and hope all bytes are in fifo already
+
+        
+        
+        dl = self.read_sensor_i2c (num_sensor = num_sensor,
+                                   num_bytes = None,
+                                   verbose = verbose)
+        if len(dl):
+            d = 0
+            for b in dl:
+                d = (d << 8) | (b & 0xff)
+            fmt="i2c data[0x%02x:0x%x] = 0x%%0%dx"%(sa7,reg_addr,len(dl)*2)
+            print (fmt%(d))    
+
+    
     def set_sensor_io_ctl (self,
                            num_sensor,
                            mrst =       None,
