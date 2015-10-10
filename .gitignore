@@ -12,8 +12,7 @@ x393.prj
 *.old
 *.pyc
 *.pickle
-py393/dbg/*
-py393/dbg/x393_mcntrl.pickle
+py393/dbg
 
 includes/x393_cur_params_sim.vh
 includes/x393_cur_params_target_*.vh
