@@ -101,7 +101,7 @@ module  sensor_i2c_prot#(
 //    wire          i2c_next_byte;
     reg    [ 2:0] mem_re;
     reg           mem_valid;
-    reg    [ 3:0] table_re;
+    reg    [ 2:0] table_re;
     
 //    reg           read_mem_msb;
 //    wire          decode_reg_rd = &seq_rd[7:4];
@@ -146,9 +146,10 @@ module  sensor_i2c_prot#(
     wire          pre_table_re = !run_extra_wr_d && first_mem_re && mem_re[1];
     reg           rnw;  // last command was read (not write) - do not increment bytes_left_send
     
+//    wire          dout_stb; // rvalid
       
     assign seq_mem_re = mem_re[1:0];
-    
+//    assign rvalid = dout_stb && run_reg_rd[1];
     always @ (posedge mclk) begin
         if (mrst || i2c_rst || start_wr_seq_w) rnw <= 0;
         else if (start_rd_seq_w)               rnw <= 1;
@@ -171,7 +172,7 @@ module  sensor_i2c_prot#(
         else                 i2c_busy <= i2c_start || pre_cmd || run_any_d || bus_busy || bus_open;
         
         
-        table_re <= {table_re[2:0], pre_table_re}; // start_wr_seq_w};
+        table_re <= {table_re[1:0], pre_table_re}; // start_wr_seq_w};
         
         if (table_re[2]) begin
             reg_ah <=         tdout[SENSI2C_TBL_RAH +: SENSI2C_TBL_RAH_BITS]; //[ 7:0];   // MSB of the register address (instead of the byte 2)

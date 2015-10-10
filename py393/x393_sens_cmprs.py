@@ -734,20 +734,56 @@ class X393SensCmprs(object):
                 self.x393Sensor.print_status_sensor_i2c (num_sensor = num_sensor)
                 
                 if verbose >0 :
-                    print ("===================== AFI_MUX_SETUP =========================")
+                    print ("===================== I2C_SETUP =========================")
                 self.x393Sensor.set_sensor_i2c_command (
                                 num_sensor = num_sensor,
-                                rst_cmd =   True)
+                                rst_cmd =   True,
+                                verbose = verbose)
+
                 self.x393Sensor.set_sensor_i2c_command (
+                                num_sensor =      num_sensor,
+                                active_sda =      True,
+                                early_release_0 = True,
+                                verbose = verbose)
+
+                self.x393Sensor.set_sensor_i2c_table_reg_wr (
                                 num_sensor = num_sensor,
-                                num_bytes = 3,
-                                dly =       100, # ??None, # 20 ns per 1 of cycle duration. Standard i2c - dly = 125
-                                scl_ctl =   None, 
-                                sda_ctl =   None)
+                                page       = 0,
+                                slave_addr = 0x48,
+                                rah        = 0,
+                                num_bytes  = 3, 
+                                bit_delay  = 100,
+                                verbose = verbose)
+                 
+                self.x393Sensor.set_sensor_i2c_table_reg_rd (
+                                num_sensor =    num_sensor,
+                                page       =    1,
+                                two_byte_addr = 0,
+                                num_bytes_rd =  2,
+                                bit_delay  =    100,
+                                verbose =       verbose)
+# aliases for indices 0x90 and 0x91
+                self.x393Sensor.set_sensor_i2c_table_reg_wr (
+                                num_sensor = num_sensor,
+                                page       = 0x90,
+                                slave_addr = 0x48,
+                                rah        = 0,
+                                num_bytes  = 3, 
+                                bit_delay  = 100,
+                                verbose = verbose)
+                 
+                self.x393Sensor.set_sensor_i2c_table_reg_rd (
+                                num_sensor =    num_sensor,
+                                page       =    0x91,
+                                two_byte_addr = 0,
+                                num_bytes_rd =  2,
+                                bit_delay  =    100,
+                                verbose =       verbose)
+# Turn off reset (is it needed?)
                 self.x393Sensor.set_sensor_i2c_command (
                                 num_sensor = num_sensor,
                                 rst_cmd =   False)
-
+# Turn on sequencer
                 self.x393Sensor.set_sensor_i2c_command (
                                 num_sensor = num_sensor,
                                 run_cmd =   True)

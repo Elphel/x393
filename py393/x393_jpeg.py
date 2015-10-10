@@ -937,4 +937,33 @@ compressor_control  all  None  1
 compressor_control  all  None  0
 
 mem_save "/usr/local/verilog/memdump_chn0" 0x27a00000 0x01001000
+
+write_sensor_i2c  0 1 0 0x91900004
+read_sensor_i2c 0
+
+set_sensor_i2c_table_reg_wr  0 0x00 0x48 3 100 1
+set_sensor_i2c_table_reg_wr  0 0x90 0x48 3 100 1
+set_sensor_i2c_table_reg_rd  0 0x01 0 2 100 1
+set_sensor_i2c_table_reg_rd  0 0x91 0 2 100 1
+
+========
+measure_all "*DI"
+setup_all_sensors True None 0xf
+set_sensor_io_ctl 0 None None None None None 0 0x4
+set_sensor_io_ctl 1 None None None None None 0 0xe
+set_sensor_io_ctl 2 None None None None None 0 0x4
+set_sensor_io_ctl 3 None None None None None 0 0xe
+compressor_control  all  None  None  None None None  3
+program_gamma all 0 0.57 0.04
+write_sensor_i2c  all 1 0 0x90350009
+write_sensor_i2c  all 1 0 0x902c000f
+write_sensor_i2c  all 1 0 0x902d000a
+write_sensor_i2c  all 1 0 0x90040a23
+axi_write_single_w 0x696 0x079800a3
+axi_write_single_w 0x686 0x079800a3
+axi_write_single_w 0x6a6 0x079800a3
+axi_write_single_w 0x6b6 0x079800a3
+r
+
+
 """

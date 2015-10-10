@@ -32,7 +32,7 @@ module  sensor_i2c_scl_sda(
     input         snd9,
     input         rcv,         // receive mode (valid with snd9) - master receives, slave - sends
     input  [ 8:0] din,
-    output [ 8:0] dout,        //
+    output reg [ 8:0] dout,        //
     output reg    dout_stb,    // dout contains valid data
     output reg    scl,         // i2c SCL signal
     input         sda_in,      // i2c SDA signal form I/O pad           
@@ -63,16 +63,20 @@ module  sensor_i2c_scl_sda(
     reg          first_cyc; // first clock cycle for the delay interval - update SCL/SDA outputs
     reg          active_sda_r; // registered @ snd9, disable in rcv mode
     reg          active_sda_was_0; // only use active SDA if previous bit was 0 or it is receive mode
+    reg          early_release_r;  // to enable it only for LSB before ACKN during send
     reg          rcv_r;
-    wire         busy_w = busy_r && ! done_r; 
+    wire         busy_w = busy_r && ! done_r;
+//    wire         pre_dout_stb = dly_over && seq_bit[0] && (bits_left == 0); 
 //    assign ready = !busy_r;
     assign ready = !busy_w;
     
     assign is_open =  is_open_r;
-    assign dout =     sr;
+//    assign dout =     sr;
     always @ (posedge mclk) begin
         active_sda_was_0 <= !sda || rcv_r;
         if (snd9_w) rcv_r <= rcv;
+        
+        early_release_r <= early_release_0 && !rcv_r && (bits_left == 1); // only before ACN during master send
 
         // disable active_sda in send messages for the last (ACKN) bit, for the receive - all but ACKN
         if      (snd9_w)                    active_sda_r <= active_sda && !rcv;
@@ -123,7 +127,10 @@ module  sensor_i2c_scl_sda(
         if      (snd9_w)                 sr <= din;
         else if (dly_over && seq_bit[0]) sr <= {sr[7:0], sda_r};
         
-        dout_stb <= dly_over && seq_bit[0] && (bits_left == 0);
+        dout_stb <= dly_over && seq_bit[0] && (bits_left == 0) && rcv_r;
+//        dout_stb <= pre_dout_stb;
+//        if (pre_dout_stb) dout <= {sr[7:0],sda_r};
+        if (done_r) dout <= {sr[7:0],sda_r};
         
         if      (rst)                              is_open_r <= 0;
         else if (dly_over && seq_start_restart[0]) is_open_r <= 1;                       
@@ -153,7 +160,8 @@ module  sensor_i2c_scl_sda(
                                      (|seq_start_restart[1:0]) ||
                                      (|seq_stop[2:1]) ||
                                      (!sr[8] && (|seq_bit[3:1])) ||
-                                     (!sr[8] && seq_bit[0] && (!early_release_0 || !sr[7])));
+//                                     (!sr[8] && seq_bit[0] && (!early_release_0 || !sr[7])));
+                                     (!sr[8] && seq_bit[0] && (!early_release_r || !sr[7])));
        bus_busy <= busy_r;
     end
 

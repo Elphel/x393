@@ -37,9 +37,10 @@ import x393_axi_control_status
 
 import x393_utils
 
-#import time
+import time
 import vrlg
 import x393_mcntrl
+
 class X393Sensor(object):
     DRY_MODE= True # True
     DEBUG_MODE=1
@@ -190,55 +191,80 @@ class X393Sensor(object):
     def func_sensor_i2c_command (self,
                                  rst_cmd =   False,
                                  run_cmd =   None,
-                                 num_bytes = None,
-                                 dly =       None,
-                                 scl_ctl =   None, 
-                                 sda_ctl =   None):
+                                 active_sda = None, 
+                                 early_release_0 = None,
+                                 advance_FIFO = None,
+                                 verbose = 1):
         """
         @param rst_cmd - reset all FIFO (takes 16 clock pulses), also - stops i2c until run command
         @param run_cmd - True - run i2c, False - stop i2c (needed before software i2c), None - no change
-        @param num_bytes - set number of i2c bytes after slave address  (0..3), None - no change
-        @param dly - set duration of quarter i2c cycle (if 0, [3:0] control SCL+SDA??? obsolete)
-        @param scl_ctl - directly control SCL line: None - NOP, 'Z' - high Z, 0/False/'L' - low level,
-                         1/True/'H' - high level 
-        @param sda_ctl - directly control SDA line: None - NOP, 'Z' - high Z, 0/False/'L' - low level,
-                         1/True/'H' - high level
-        @return: i2c control word
+        @param active_sda - pull-up SDA line during second half of SCL=0, when needed and possible 
+        @param early_release_0 -  release SDA=0 immediately after the end of SCL=1 (SDA hold will be provided by week pullup)
+        @param advance_FIFO - advance i2c read FIFO
+        @param verbose -          verbose level
+        @return combined command word.
+        active_sda and early_release_0 should be defined both to take effect (any of the None skips setting these parameters)
         """  
-        print ("func_sensor_i2c_command(): rst_cmd= ",rst_cmd,", run_cmd=",run_cmd,", num_bytes = ",num_bytes,", dly = ",dly)
+        if verbose>0:
+            print ("func_sensor_i2c_command(): rst_cmd= ",rst_cmd,", run_cmd=",run_cmd,", active_sda = ",active_sda,", early_release_0 = ",early_release_0)
         rslt = 0
         rslt |= (0,1)[rst_cmd] << vrlg.SENSI2C_CMD_RESET
         if not run_cmd is None:
             rslt |= 1 <<                 vrlg.SENSI2C_CMD_RUN
             rslt |= (0,1)[run_cmd] <<    (vrlg.SENSI2C_CMD_RUN - vrlg.SENSI2C_CMD_RUN_PBITS)
-        if not num_bytes is None:
-            num_bytes &= (1 << vrlg.SENSI2C_CMD_BYTES_PBITS) -1
-            rslt |= 1 <<          vrlg.SENSI2C_CMD_BYTES
-            rslt |= num_bytes << (vrlg.SENSI2C_CMD_BYTES - vrlg.SENSI2C_CMD_BYTES_PBITS)
-        if not dly is None:
-            dly &= (1 <<    vrlg.SENSI2C_CMD_DLY_PBITS) -1
-            rslt |= 1 <<    vrlg.SENSI2C_CMD_DLY            
-            rslt |= dly << (vrlg.SENSI2C_CMD_DLY - vrlg.SENSI2C_CMD_DLY_PBITS)
-            print ("func_sensor_i2c_command(): dly = ",dly," rslt=",rslt)
-        scl=0
-        if not scl_ctl is None:
-            if   (scl_ctl is False) or (scl_ctl == 0) or (scl_ctl == "0") or (scl_ctl.upper() == "L"):
-                scl = 1
-            elif (scl_ctl is True) or  (scl_ctl == 1) or (scl_ctl == "1") or (scl_ctl.upper() == "H"):   
-                scl = 2
-            elif scl_ctl.upper() == "Z":   
-                scl = 3
-        rslt |= scl << vrlg.SENSI2C_CMD_SCL        
-              
-        sda=0
-        if not sda_ctl is None:
-            if   (sda_ctl is False) or (sda_ctl == 0) or (sda_ctl == "0") or (sda_ctl.upper() == "L"):
-                sda = 1
-            elif (sda_ctl is True) or  (sda_ctl == 1) or (sda_ctl == "1") or (sda_ctl.upper() == "H"):   
-                sda = 2
-            elif sda_ctl.upper() == "Z":   
-                sda = 3
-        rslt |= sda << vrlg.SENSI2C_CMD_SDA
+        if (not active_sda is None) and (not early_release_0 is None):
+            rslt |= (0,1)[early_release_0] << vrlg.SENSI2C_CMD_ACIVE_EARLY0
+            rslt |= (0,1)[active_sda] << vrlg.SENSI2C_CMD_ACIVE_SDA
+            rslt |= 1 <<                 vrlg.SENSI2C_CMD_ACIVE
+        if advance_FIFO:
+            rslt |= 1 << vrlg.SENSI2C_CMD_FIFO_RD
+
+        return rslt        
+
+    def func_sensor_i2c_table_reg_wr (self,
+                                 slave_addr,
+                                 rah,
+                                 num_bytes, 
+                                 bit_delay,
+                                 verbose = 1):
+        """
+        @param slave_addr - 7-bit i2c slave address
+        @param rah -        register address high byte (bits [15:8]) optionally used for register write commands
+        @param num_bytes -  number of bytes to send (including register address bytes) 1..10 
+        @param bit_delay -  number of mclk clock cycle in 1/4 of the SCL period
+        @param verbose -    verbose level
+        @return combined table data word.
+        """  
+        if verbose>0:
+            print ("func_sensor_i2c_table_reg_wr(): slave_addr= ",slave_addr,", rah=",rah,", num_bytes = ",num_bytes,", bit_delay = ",bit_delay)
+        rslt = 0
+        rslt |= (slave_addr & ((1 << vrlg.SENSI2C_TBL_SA_BITS)   - 1)) << vrlg.SENSI2C_TBL_SA
+        rslt |= (rah &        ((1 << vrlg.SENSI2C_TBL_RAH_BITS)  - 1)) << vrlg.SENSI2C_TBL_RAH
+        rslt |= (num_bytes &  ((1 << vrlg.SENSI2C_TBL_NBWR_BITS) - 1)) << vrlg.SENSI2C_TBL_NBWR
+        rslt |= (bit_delay &  ((1 << vrlg.SENSI2C_TBL_DLY_BITS)  - 1)) << vrlg.SENSI2C_TBL_DLY
+        return rslt        
+
+    def func_sensor_i2c_table_reg_rd (self,
+                                 two_byte_addr,
+                                 num_bytes_rd,
+                                 bit_delay,
+                                 verbose = 1):
+        """
+        @param two_byte_addr - Use a 2-byte register address for read command (False - single byte)
+        @param num_bytes_rd -  Number of bytes to read (1..8)
+        @param bit_delay -     number of mclk clock cycle in 1/4 of the SCL period
+        @param verbose -       verbose level
+        @return combined table data word.
+        """  
+        if verbose>0:
+            print ("func_sensor_i2c_table_reg_rd(): two_byte_addr= ",two_byte_addr,", num_bytes_rd=",num_bytes_rd,", bit_delay = ",bit_delay)
+        rslt = 0
+        rslt |= 1 << vrlg.SENSI2C_TBL_RNWREG # this is read register command (0 - write register)
+        if two_byte_addr > 1:
+            two_byte_addr = 1
+        rslt |= (0,1)[two_byte_addr]                                      << vrlg.SENSI2C_TBL_SA
+        rslt |= (num_bytes_rd &  ((1 << vrlg.SENSI2C_TBL_NBRD_BITS) - 1)) << vrlg.SENSI2C_TBL_NBRD
+        rslt |= (bit_delay &     ((1 << vrlg.SENSI2C_TBL_DLY_BITS)  - 1)) << vrlg.SENSI2C_TBL_DLY
         return rslt        
 
     def func_sensor_io_ctl (self,
@@ -371,29 +397,83 @@ class X393Sensor(object):
                                 num_sensor,
                                 rst_cmd =   False,
                                 run_cmd =   None,
-                                num_bytes = None,
-                                dly =       None,
-                                scl_ctl =   None, 
-                                sda_ctl =   None):
+                                active_sda = None, 
+                                early_release_0 = None,
+                                advance_FIFO = None,
+                                verbose = 1):
         """
+        @param num_sensor - sensor port number (0..3)
         @param rst_cmd - reset all FIFO (takes 16 clock pulses), also - stops i2c until run command
         @param run_cmd - True - run i2c, False - stop i2c (needed before software i2c), None - no change
-        @param num_bytes - set number of i2c bytes after slave address  (0..3), None - no change
-        @param dly - set duration of quarter i2c cycle (if 0, [3:0] control SCL+SDA??? obsolete)
-        @param scl_ctl - directly control SCL line: None - NOP, 'Z' - high Z, 0/False/'L' - low level,
-                         1/True/'H' - high level 
-        @param sda_ctl - directly control SDA line: None - NOP, 'Z' - high Z, 0/False/'L' - low level,
-                         1/True/'H' - high level
-        @return: i2c control word
+        @param active_sda - pull-up SDA line during second half of SCL=0, when needed and possible 
+        @param early_release_0 -  release SDA=0 immediately after the end of SCL=1 (SDA hold will be provided by week pullup)
+        @param advance_FIFO -     advance i2c read FIFO
+        @param verbose -          verbose level
+        active_sda and early_release_0 should be defined both to take effect (any of the None skips setting these parameters)
+
         """  
         self.x393_axi_tasks.write_control_register(vrlg.SENSOR_GROUP_ADDR + num_sensor * vrlg.SENSOR_BASE_INC + vrlg.SENSI2C_CTRL_RADDR,
                                                   self.func_sensor_i2c_command(
-                                                       rst_cmd =   rst_cmd,
-                                                       run_cmd =   run_cmd,
-                                                       num_bytes = num_bytes,
-                                                       dly =       dly,
-                                                       scl_ctl =   scl_ctl, 
-                                                       sda_ctl =   sda_ctl))
+                                                       rst_cmd =         rst_cmd,
+                                                       run_cmd =         run_cmd,
+                                                       active_sda =      active_sda,
+                                                       early_release_0 = early_release_0,
+                                                       advance_FIFO =    advance_FIFO,
+                                                       verbose =         verbose))
+
+    def set_sensor_i2c_table_reg_wr (self,
+                                     num_sensor,
+                                     page,
+                                     slave_addr,
+                                     rah,
+                                     num_bytes, 
+                                     bit_delay,
+                                     verbose = 1):
+        """
+        Set table entry for a single index for register write
+        @param num_sensor - sensor port number (0..3)
+        @param page -       1 byte table index (later provided as high byte of the 32-bit command)
+        @param slave_addr - 7-bit i2c slave address
+        @param rah -        register address high byte (bits [15:8]) optionally used for register write commands
+        @param num_bytes -  number of bytes to send (including register address bytes) 1..10 
+        @param bit_delay -  number of mclk clock cycle in 1/4 of the SCL period
+        @param verbose -    verbose level
+        """
+        ta = (1 << vrlg.SENSI2C_CMD_TABLE) | (1 << vrlg.SENSI2C_CMD_TAND) | (page & 0xff)
+        td = (1 << vrlg.SENSI2C_CMD_TABLE) | self.func_sensor_i2c_table_reg_wr(
+                                               slave_addr = slave_addr,
+                                               rah =        rah,
+                                               num_bytes =  num_bytes, 
+                                               bit_delay =  bit_delay,
+                                               verbose =    verbose) 
+
+        self.x393_axi_tasks.write_control_register(vrlg.SENSOR_GROUP_ADDR + num_sensor * vrlg.SENSOR_BASE_INC + vrlg.SENSI2C_CTRL_RADDR, ta)
+        self.x393_axi_tasks.write_control_register(vrlg.SENSOR_GROUP_ADDR + num_sensor * vrlg.SENSOR_BASE_INC + vrlg.SENSI2C_CTRL_RADDR, td)
+
+    def set_sensor_i2c_table_reg_rd (self,
+                                     num_sensor,
+                                     page,
+                                     two_byte_addr,
+                                     num_bytes_rd,
+                                     bit_delay,
+                                     verbose = 1):
+        """
+        Set table entry for a single index for register write
+        @param num_sensor -    sensor port number (0..3)
+        @param page -          1 byte table index (later provided as high byte of the 32-bit command)
+        @param two_byte_addr - Use a 2-byte register address for read command (False - single byte)
+        @param num_bytes_rd -  Number of bytes to read (1..8)
+        @param bit_delay -     number of mclk clock cycle in 1/4 of the SCL period
+        @param verbose -       verbose level
+        """
+        ta = (1 << vrlg.SENSI2C_CMD_TABLE) | (1 << vrlg.SENSI2C_CMD_TAND) | (page & 0xff)
+        td = (1 << vrlg.SENSI2C_CMD_TABLE) | self.func_sensor_i2c_table_reg_rd(
+                                               two_byte_addr = two_byte_addr,
+                                               num_bytes_rd = num_bytes_rd,
+                                               bit_delay =  bit_delay,
+                                               verbose =    verbose) 
+        self.x393_axi_tasks.write_control_register(vrlg.SENSOR_GROUP_ADDR + num_sensor * vrlg.SENSOR_BASE_INC + vrlg.SENSI2C_CTRL_RADDR, ta)
+        self.x393_axi_tasks.write_control_register(vrlg.SENSOR_GROUP_ADDR + num_sensor * vrlg.SENSOR_BASE_INC + vrlg.SENSI2C_CTRL_RADDR, td)
 
     def write_sensor_i2c (self,
                           num_sensor,
@@ -405,7 +485,17 @@ class X393Sensor(object):
         @param num_sensor - sensor port number (0..3), or "all" - same to all sensors
         @param rel_addr - True - relative frame address, False - absolute frame address
         @param addr - frame address (0..15)
-        @param data - Combine slave address/register address/ register data for the i2c command
+        @param data - depends on context:
+                      1 - register write: index page, 3 payload bytes. Payload bytes are used according to table and sent
+                          after the slave address and optional high address byte other bytes are sent in descending order (LSB- last).
+                          If less than 4 bytes are programmed in the table the high bytes (starting with the one from the table) are
+                          skipped.
+                          If more than 4 bytes are programmed in the table for the page (high byte), one or two next 32-bit words 
+                          bypass the index table and all 4 bytes are considered payload ones. If less than 4 extra bytes are to be
+                          sent for such extra word, only the lower bytes are sent.
+                      2 - register read: index page, slave address (8-bit, with lower bit 0) and one or 2 address bytes (as programmed
+                          in the table. Slave address is always in byte 2 (bits 23:16), byte1 (high register address) is skipped if
+                          read address in teh table is programmed to be a single-byte one    
         """
         try:
             if (num_sensor == all) or (num_sensor[0].upper() == "A"): #all is a built-in function
@@ -421,7 +511,50 @@ class X393Sensor(object):
         reg_addr += ((vrlg.SENSI2C_ABS_RADDR,vrlg.SENSI2C_REL_RADDR)[rel_addr] )
         reg_addr += (addr & ~vrlg.SENSI2C_ADDR_MASK);
         self.x393_axi_tasks.write_control_register(reg_addr, data)
-        
+
+    def read_sensor_i2c (self,
+                         num_sensor,
+                         num_bytes = None):
+        """
+        Read sequence of bytes available
+        @param num_sensor - sensor port number (0..3), or "all" - same to all sensors
+        @param num_bytes - number of bytes to read (None - all in FIFO)
+        @return list of read bytes
+        """
+        ODDEVEN="ODDEVEN"
+        DAV = "DAV"
+        DATA = "DATA"
+        def read_i2c_data(num_sensor):
+            addr = vrlg.SENSI2C_STATUS_REG_BASE + num_sensor * vrlg.SENSI2C_STATUS_REG_INC + vrlg.SENSI2C_STATUS_REG_REL
+            d = self.x393_axi_tasks.read_status(addr)
+            return {ODDEVEN : (d >> 9) & 1, DAV : (d >> 8) & 1, DATA : d & 0xff}
+
+        timeout = 1.0 # sec
+        end_time = time.time() + timeout
+        rslt = []
+        while True:
+            d = read_i2c_data(num_sensor)
+            if not d[DAV]:
+                if num_bytes is None:
+                    break # no data available in FIFO and number of bytes is not specified
+                while (time.time() < end_time) and (not d[DAV]): # wait for data available
+                    d = read_i2c_data(num_sensor)
+                if not d[DAV]:
+                    break # no data available - timeout
+            rslt.append(d[DATA])
+            # advance to the next data byte
+            oddeven = d[ODDEVEN]
+            self. set_sensor_i2c_command (
+                                num_sensor =   num_sensor,
+                                advance_FIFO = True,
+                                verbose =      1)
+            # wait until odd/even bit reverses (no timeout here)
+            while d[ODDEVEN] == oddeven:
+                d = read_i2c_data(num_sensor)
+            if len(rslt) == num_bytes:
+                break # read all that was requested (num_bytes == None will not get here)
+        return  rslt
+            
     def set_sensor_io_ctl (self,
                            num_sensor,
                            mrst =       None,

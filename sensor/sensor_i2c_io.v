@@ -147,8 +147,11 @@ module  sensor_i2c_io#(
         .I     (sda_out), // input
         .T     (!sda_en)  // input
     );
+// So simulation will show different when SDA is not driven
+`ifndef SIMULATION
     mpullup i_scl_pullup(scl);
     mpullup i_sda_pullup(sda);
+`endif    
 
 endmodule
 
