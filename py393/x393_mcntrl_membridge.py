@@ -39,7 +39,7 @@ import x393_mcntrl_buffers
 #import verilog_utils 
 import x393_mcntrl
 MEM_PATH='/sys/devices/elphel393-mem.2/'
-BUFFER_ASSRESS_NAME='buffer_address'
+BUFFER_ADDRESS_NAME='buffer_address'
 BUFFER_PAGES_NAME='buffer_pages'
 BUFFER_ADDRESS=None
 BUFFER_LEN=None
@@ -113,7 +113,7 @@ class X393McntrlMembridge(object):
             print ("Running in simulated mode, using hard-coded addresses:")
         else:
             try:
-                with open(MEM_PATH+BUFFER_ASSRESS_NAME) as sysfile:
+                with open(MEM_PATH+BUFFER_ADDRESS_NAME) as sysfile:
                     BUFFER_ADDRESS=int(sysfile.read(),0)
                 with open(MEM_PATH+BUFFER_PAGES_NAME) as sysfile:
                     BUFFER_LEN=PAGE_SIZE*int(sysfile.read(),0)

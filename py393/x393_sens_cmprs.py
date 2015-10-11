@@ -55,7 +55,7 @@ PAGE_SIZE =           4096
 SI5338_PATH =         '/sys/devices/amba.0/e0004000.ps7-i2c/i2c-0/0-0070'
 POWER393_PATH =       '/sys/devices/elphel393-pwr.1'
 MEM_PATH =            '/sys/devices/elphel393-mem.2/'
-BUFFER_ASSRESS_NAME = 'buffer_address'
+BUFFER_ADDRESS_NAME = 'buffer_address'
 BUFFER_PAGES_NAME =   'buffer_pages'
 BUFFER_ADDRESS =      None # in bytes
 BUFFER_LEN =          None # in bytes
@@ -111,7 +111,7 @@ class X393SensCmprs(object):
             print ("Running in simulated mode, using hard-coded addresses:")
         else:
             try:
-                with open(MEM_PATH + BUFFER_ASSRESS_NAME) as sysfile:
+                with open(MEM_PATH + BUFFER_ADDRESS_NAME) as sysfile:
                     BUFFER_ADDRESS = int(sysfile.read(),0)
                 with open(MEM_PATH + BUFFER_PAGES_NAME) as sysfile:
                     BUFFER_LEN = PAGE_SIZE * int(sysfile.read(),0)

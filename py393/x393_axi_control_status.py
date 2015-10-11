@@ -159,7 +159,31 @@ class X393AxiControlStatus(object):
         'refresh_en':         self.get_refresh_en(quiet),
         'sequences_set':      self.get_sequences_set(quiet)
         }
-        
+    def hwmon(self):
+        """
+        Read current temperature and supply voltages
+        """
+        HWMON_PATH = "/sys/devices/amba.0/f8007100.ps7-xadc/"
+        FILE = "file"
+        ITEM = "item"
+        UNITS = "units"
+        SCALE = "scale"
+        HWMON_ITEMS= [{FILE:"temp",    ITEM:"Temperature", UNITS:"C", SCALE: 1.0},
+                      {FILE:"vccaux",  ITEM:"VCCaux",      UNITS:"V", SCALE: 0.001},
+                      {FILE:"vccint",  ITEM:"VCCint",      UNITS:"V", SCALE: 0.001},
+                      {FILE:"vccbram", ITEM:"VCCbram",     UNITS:"V", SCALE: 0.001}]
+        print("hwmon:")
+        for par in HWMON_ITEMS:
+            with open(HWMON_PATH + par[FILE]) as f:
+                d=int(f.read())
+            num_digits=0
+            s = par[SCALE]
+            while s < 1:
+                s *= 10
+                num_digits += 1
+            w = 2+num_digits + (0,1)[num_digits > 0]    
+            frmt = "%%12s = %%%d.%df %%s"%(w,num_digits)    
+            print(frmt%(par[ITEM],(d*par[SCALE]),par[UNITS]))
     def write_control_register(self, reg_addr, data):
         """
         Write 32-bit word to the control register

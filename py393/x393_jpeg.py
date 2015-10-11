@@ -976,6 +976,21 @@ print_sensor_i2c 0
 
 
 #r
+add hwmon:
+root@elphel393:/sys/devices/amba.0/f8007100.ps7-xadc# cat /sys/devices/amba.0/f8007100.ps7-xadc/temp
+47
+root@elphel393:/sys/devices/amba.0/f8007100.ps7-xadc# cat /sys/devices/amba.0/f8007100.ps7-xadc/temp_max
+48
+root@elphel393:/sys/devices/amba.0/f8007100.ps7-xadc# cat /sys/devices/amba.0/f8007100.ps7-xadc/temp_min
+41
+root@elphel393:/sys/devices/amba.0/f8007100.ps7-xadc# cat /sys/devices/amba.0/f8007100.ps7-xadc/v
+0
+root@elphel393:/sys/devices/amba.0/f8007100.ps7-xadc# cat /sys/devices/amba.0/f8007100.ps7-xadc/vccaux
+1808
+root@elphel393:/sys/devices/amba.0/f8007100.ps7-xadc# cat /sys/devices/amba.0/f8007100.ps7-xadc/vccbram
+967
+root@elphel393:/sys/devices/amba.0/f8007100.ps7-xadc# cat /sys/devices/amba.0/f8007100.ps7-xadc/vccint
+966
 
 
 """
