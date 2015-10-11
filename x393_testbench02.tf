@@ -1976,6 +1976,46 @@ simul_axi_hp_wr #(
         .ffclk1  ({ffclk1n, ffclk1p})  // output[1:0] 
     );
 
+    wire PX1_MCLK_MULT;
+    wire PX1_MCLK_MULT_DIV;
+    reg  [7:0] PX1_DIV_CNTR = 0;
+    wire [1:0] TEST_DLY;
+    
+    simul_clk_mult #(
+        .MULTIPLIER(3)
+    ) simul_clk_mult_i (
+        .clk_in  (PX1_MCLK), // input
+        .en      (1'b1), // input
+        .clk_out (PX1_MCLK_MULT) // output reg 
+    );
+
+    sim_clk_div #(
+        .DIVISOR (5)
+    ) sim_clk_div_i (
+        .clk_in  (PX1_MCLK_MULT), // input
+        .en      (1'b1), // input
+        .clk_out (PX1_MCLK_MULT_DIV) // output
+    );
+    
+    always @ (posedge PX1_MCLK_MULT_DIV) PX1_DIV_CNTR <= PX1_DIV_CNTR + 1;
+
+    sim_frac_clk_delay #(
+        .FRAC_DELAY(2.1),
+        .SKIP_FIRST(5)
+    ) sim_frac_clk_delay1_i (
+        .clk(PX1_MCLK_MULT_DIV), // input
+        .din(PX1_DIV_CNTR[3]), // input
+        .dout(TEST_DLY[0]) // output
+    );
+
+    sim_frac_clk_delay #(
+        .FRAC_DELAY(2.9),
+        .SKIP_FIRST(5)
+    ) sim_frac_clk_delay2_i (
+        .clk(PX1_MCLK_MULT_DIV), // input
+        .din(PX1_DIV_CNTR[3]), // input
+        .dout(TEST_DLY[1]) // output
+    );
 
     simul_sensor12bits #(
         .lline     (VIRTUAL_WIDTH),     // SENSOR12BITS_LLINE),
