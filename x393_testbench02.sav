@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.3.66 (w)1999-2015 BSI
-[*] Mon Oct 12 05:49:01 2015
+[*] Mon Oct 12 22:20:36 2015
 [*]
-[dumpfile] "/home/andrey/git/x393/simulation/x393_testbench02-20151011232311425.fst"
-[dumpfile_mtime] "Mon Oct 12 05:45:31 2015"
-[dumpfile_size] 86140185
+[dumpfile] "/home/andrey/git/x393/simulation/x393_testbench02-20151012155137508.fst"
+[dumpfile_mtime] "Mon Oct 12 22:13:21 2015"
+[dumpfile_size] 76289545
 [savefile] "/home/andrey/git/x393/x393_testbench02.sav"
-[timestart] 74012100
+[timestart] 107560000
 [size] 1823 1180
 [pos] 1922 0
-*-17.205360 74450000 102872500 116192500 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-18.415243 108503491 102872500 116192500 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] x393_testbench02.
 [treeopen] x393_testbench02.compressor_control.
 [treeopen] x393_testbench02.par12_hispi_psp4l_i.
@@ -101,7 +101,7 @@
 [treeopen] x393_testbench02.x393_i.timing393_i.camsync393_i.
 [treeopen] x393_testbench02.x393_i.timing393_i.rtc393_i.
 [sst_width] 382
-[signals_width] 388
+[signals_width] 318
 [sst_expanded] 1
 [sst_vpaned_height] 611
 @820
@@ -248,43 +248,107 @@ x393_testbench02.par12_hispi_psp4l_i.fifo_we
 x393_testbench02.par12_hispi_psp4l_i.fifo_di[48:0]
 x393_testbench02.par12_hispi_psp4l_i.fifo_ra[11:0]
 x393_testbench02.par12_hispi_psp4l_i.rdy[3:0]
+@28
+x393_testbench02.par12_hispi_psp4l_i.fifo_dav
+@800022
+x393_testbench02.par12_hispi_psp4l_i.frames_open[1:0]
+@28
+(0)x393_testbench02.par12_hispi_psp4l_i.frames_open[1:0]
+(1)x393_testbench02.par12_hispi_psp4l_i.frames_open[1:0]
+@1001200
+-group_end
 @200
 -
+@28
+x393_testbench02.par12_hispi_psp4l_i.next_frame_pclk
+x393_testbench02.par12_hispi_psp4l_i.next_frame_oclk
+x393_testbench02.par12_hispi_psp4l_i.next_line_pclk
+x393_testbench02.par12_hispi_psp4l_i.next_line_oclk
+@22
+x393_testbench02.par12_hispi_psp4l_i.lines_available[1:0]
+@28
+x393_testbench02.par12_hispi_psp4l_i.line_available
+@22
+x393_testbench02.par12_hispi_psp4l_i.fifo_out[48:0]
 @1000200
 -par12_hispi_sel
 @200
 -
-@800201
+@800200
 -hispi_lane0
-@23
+@22
 x393_testbench02.par12_hispi_psp4l_i.cmprs_channel_block[0].par12_hispi_psp4l_lane_i.bcntr[3:0]
-@29
+@28
 x393_testbench02.par12_hispi_psp4l_i.cmprs_channel_block[0].par12_hispi_psp4l_lane_i.clk
 x393_testbench02.par12_hispi_psp4l_i.cmprs_channel_block[0].par12_hispi_psp4l_lane_i.dav
 x393_testbench02.par12_hispi_psp4l_i.cmprs_channel_block[0].par12_hispi_psp4l_lane_i.dav_rdy
-@23
+@22
 x393_testbench02.par12_hispi_psp4l_i.cmprs_channel_block[0].par12_hispi_psp4l_lane_i.din[12:0]
 x393_testbench02.par12_hispi_psp4l_i.cmprs_channel_block[0].par12_hispi_psp4l_lane_i.din_filt[11:0]
-@29
+@28
 x393_testbench02.par12_hispi_psp4l_i.cmprs_channel_block[0].par12_hispi_psp4l_lane_i.embed
 x393_testbench02.par12_hispi_psp4l_i.cmprs_channel_block[0].par12_hispi_psp4l_lane_i.is_sync
 x393_testbench02.par12_hispi_psp4l_i.cmprs_channel_block[0].par12_hispi_psp4l_lane_i.next_line
 x393_testbench02.par12_hispi_psp4l_i.cmprs_channel_block[0].par12_hispi_psp4l_lane_i.pause
 x393_testbench02.par12_hispi_psp4l_i.cmprs_channel_block[0].par12_hispi_psp4l_lane_i.rdy
 x393_testbench02.par12_hispi_psp4l_i.cmprs_channel_block[0].par12_hispi_psp4l_lane_i.rst
-@23
+@800022
 x393_testbench02.par12_hispi_psp4l_i.cmprs_channel_block[0].par12_hispi_psp4l_lane_i.seq_eof[3:0]
+@28
+(0)x393_testbench02.par12_hispi_psp4l_i.cmprs_channel_block[0].par12_hispi_psp4l_lane_i.seq_eof[3:0]
+(1)x393_testbench02.par12_hispi_psp4l_i.cmprs_channel_block[0].par12_hispi_psp4l_lane_i.seq_eof[3:0]
+(2)x393_testbench02.par12_hispi_psp4l_i.cmprs_channel_block[0].par12_hispi_psp4l_lane_i.seq_eof[3:0]
+(3)x393_testbench02.par12_hispi_psp4l_i.cmprs_channel_block[0].par12_hispi_psp4l_lane_i.seq_eof[3:0]
+@1001200
+-group_end
+@800022
 x393_testbench02.par12_hispi_psp4l_i.cmprs_channel_block[0].par12_hispi_psp4l_lane_i.seq_eol_sol[7:0]
+@28
+(0)x393_testbench02.par12_hispi_psp4l_i.cmprs_channel_block[0].par12_hispi_psp4l_lane_i.seq_eol_sol[7:0]
+(1)x393_testbench02.par12_hispi_psp4l_i.cmprs_channel_block[0].par12_hispi_psp4l_lane_i.seq_eol_sol[7:0]
+(2)x393_testbench02.par12_hispi_psp4l_i.cmprs_channel_block[0].par12_hispi_psp4l_lane_i.seq_eol_sol[7:0]
+(3)x393_testbench02.par12_hispi_psp4l_i.cmprs_channel_block[0].par12_hispi_psp4l_lane_i.seq_eol_sol[7:0]
+(4)x393_testbench02.par12_hispi_psp4l_i.cmprs_channel_block[0].par12_hispi_psp4l_lane_i.seq_eol_sol[7:0]
+(5)x393_testbench02.par12_hispi_psp4l_i.cmprs_channel_block[0].par12_hispi_psp4l_lane_i.seq_eol_sol[7:0]
+(6)x393_testbench02.par12_hispi_psp4l_i.cmprs_channel_block[0].par12_hispi_psp4l_lane_i.seq_eol_sol[7:0]
+(7)x393_testbench02.par12_hispi_psp4l_i.cmprs_channel_block[0].par12_hispi_psp4l_lane_i.seq_eol_sol[7:0]
+@1001200
+-group_end
+@800022
 x393_testbench02.par12_hispi_psp4l_i.cmprs_channel_block[0].par12_hispi_psp4l_lane_i.seq_sof[3:0]
-@29
+@28
+(0)x393_testbench02.par12_hispi_psp4l_i.cmprs_channel_block[0].par12_hispi_psp4l_lane_i.seq_sof[3:0]
+(1)x393_testbench02.par12_hispi_psp4l_i.cmprs_channel_block[0].par12_hispi_psp4l_lane_i.seq_sof[3:0]
+(2)x393_testbench02.par12_hispi_psp4l_i.cmprs_channel_block[0].par12_hispi_psp4l_lane_i.seq_sof[3:0]
+(3)x393_testbench02.par12_hispi_psp4l_i.cmprs_channel_block[0].par12_hispi_psp4l_lane_i.seq_sof[3:0]
+@1001200
+-group_end
+@28
 x393_testbench02.par12_hispi_psp4l_i.cmprs_channel_block[0].par12_hispi_psp4l_lane_i.sof_sol_sent
-x393_testbench02.par12_hispi_psp4l_i.cmprs_channel_block[0].par12_hispi_psp4l_lane_i.sout
-@23
-x393_testbench02.par12_hispi_psp4l_i.cmprs_channel_block[0].par12_hispi_psp4l_lane_i.sr[11:0]
-x393_testbench02.par12_hispi_psp4l_i.cmprs_channel_block[0].par12_hispi_psp4l_lane_i.sr_in[11:0]
 @29
+x393_testbench02.par12_hispi_psp4l_i.cmprs_channel_block[0].par12_hispi_psp4l_lane_i.sout
+@22
+x393_testbench02.par12_hispi_psp4l_i.cmprs_channel_block[0].par12_hispi_psp4l_lane_i.sr_in[11:0]
+@800022
+x393_testbench02.par12_hispi_psp4l_i.cmprs_channel_block[0].par12_hispi_psp4l_lane_i.sr[11:0]
+@28
+(0)x393_testbench02.par12_hispi_psp4l_i.cmprs_channel_block[0].par12_hispi_psp4l_lane_i.sr[11:0]
+(1)x393_testbench02.par12_hispi_psp4l_i.cmprs_channel_block[0].par12_hispi_psp4l_lane_i.sr[11:0]
+(2)x393_testbench02.par12_hispi_psp4l_i.cmprs_channel_block[0].par12_hispi_psp4l_lane_i.sr[11:0]
+(3)x393_testbench02.par12_hispi_psp4l_i.cmprs_channel_block[0].par12_hispi_psp4l_lane_i.sr[11:0]
+(4)x393_testbench02.par12_hispi_psp4l_i.cmprs_channel_block[0].par12_hispi_psp4l_lane_i.sr[11:0]
+(5)x393_testbench02.par12_hispi_psp4l_i.cmprs_channel_block[0].par12_hispi_psp4l_lane_i.sr[11:0]
+(6)x393_testbench02.par12_hispi_psp4l_i.cmprs_channel_block[0].par12_hispi_psp4l_lane_i.sr[11:0]
+(7)x393_testbench02.par12_hispi_psp4l_i.cmprs_channel_block[0].par12_hispi_psp4l_lane_i.sr[11:0]
+(8)x393_testbench02.par12_hispi_psp4l_i.cmprs_channel_block[0].par12_hispi_psp4l_lane_i.sr[11:0]
+(9)x393_testbench02.par12_hispi_psp4l_i.cmprs_channel_block[0].par12_hispi_psp4l_lane_i.sr[11:0]
+(10)x393_testbench02.par12_hispi_psp4l_i.cmprs_channel_block[0].par12_hispi_psp4l_lane_i.sr[11:0]
+(11)x393_testbench02.par12_hispi_psp4l_i.cmprs_channel_block[0].par12_hispi_psp4l_lane_i.sr[11:0]
+@1001200
+-group_end
+@28
 x393_testbench02.par12_hispi_psp4l_i.cmprs_channel_block[0].par12_hispi_psp4l_lane_i.sr_in_av
-@1000201
+@1000200
 -hispi_lane0
 @800200
 -par12_hspi
@@ -335,8 +399,16 @@ x393_testbench02.par12_hispi_psp4l_i.pxd_d[47:0]
 x393_testbench02.par12_hispi_psp4l_i.rdy[3:0]
 @28
 x393_testbench02.par12_hispi_psp4l_i.rst
-@22
+@c00022
 x393_testbench02.par12_hispi_psp4l_i.sdata[3:0]
+@28
+(0)x393_testbench02.par12_hispi_psp4l_i.sdata[3:0]
+(1)x393_testbench02.par12_hispi_psp4l_i.sdata[3:0]
+(2)x393_testbench02.par12_hispi_psp4l_i.sdata[3:0]
+(3)x393_testbench02.par12_hispi_psp4l_i.sdata[3:0]
+@1401200
+-group_end
+@22
 x393_testbench02.par12_hispi_psp4l_i.sdata_dly[3:0]
 @28
 x393_testbench02.par12_hispi_psp4l_i.sof_sol_sent

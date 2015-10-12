@@ -83,7 +83,7 @@ module  par12_hispi_psp4l#(
         if      (!vact)  next_sof <= 1;
         else if (hact_d) next_sof <= 0;
         
-        if (!vact_d) next_line_pclk <= 1;
+        if (!vact_d) next_line_pclk <= 0;
         else         next_line_pclk <= !vact || (hact && !hact_d && !next_sof);
 
         next_frame_pclk <= vact_d && hact && !hact_d && next_sof;
@@ -288,9 +288,10 @@ module  par12_hispi_psp4l_lane#(
     reg   [ 7:0] seq_eol_sol;
     reg          embed; 
     wire         dav_rdy = dav && rdy;
-    wire         is_sync = din[11];
+    wire         is_sync = din[12];
     wire  [11:0] din_filt = (din[11:1] == 11'h0)? 12'h001 : din[11:0]; 
-    wire         pause = seq_eol_sol[4] && !next_line; 
+//    wire         pause = seq_eol_sol[4] && !next_line; 
+    wire         pause = seq_eol_sol[3] && !next_line; 
     assign rdy = !sr_in_av;
 
     always @ (posedge clk) begin
@@ -298,7 +299,7 @@ module  par12_hispi_psp4l_lane#(
         else                      bcntr <= bcntr + 1;
 
         if      (rst)        sr <= 'bx;
-        else if (bcntr == 0) sr <= sr_in_av ? sr_in : IDL;
+        else if (bcntr == 0) sr <= (sr_in_av && !pause) ? sr_in : IDL;
         else                 sr <= MSB_FIRST ? {sr[10:0],1'b0} : {1'b0,sr[11:1]}; 
         
         sout <= MSB_FIRST ? sr[11] : sr[0];
@@ -315,7 +316,7 @@ module  par12_hispi_psp4l_lane#(
         else if (bcntr == 0)                                         seq_eof <= seq_eof >> 1;
         
         if      (rst)                                               seq_eol_sol <= 0;
-        else if (dav_rdy && is_sync && (din[3:0] == SYNC_SOL ))     seq_eol_sol <= 80;
+        else if (dav_rdy && is_sync && (din[3:0] == SYNC_SOL ))     seq_eol_sol <= 'h80;
         else if ((bcntr == 0) && !pause)                            seq_eol_sol <= seq_eol_sol >> 1;
         
         if (dav_rdy)                                                          sr_in <=  is_sync ? 12'hfff :  din_filt;
@@ -329,8 +330,9 @@ module  par12_hispi_psp4l_lane#(
         end
         
         if      (rst)        sr_in_av <= 0;
-        else if (dav_rdy)    sr_in_av <= 0;
-        else if (bcntr == 0) sr_in_av <= (|seq_sof[3:1]) || (|seq_eof[3:1]) || ((|seq_eol_sol[7:1]) && !pause);
+        else if (dav_rdy)    sr_in_av <= 1;
+//        else if (bcntr == 0) sr_in_av <= (|seq_sof[3:1]) || (|seq_eof[3:1]) || ((|seq_eol_sol[7:1]) && !pause);
+        else if (bcntr == 0) sr_in_av <= (|seq_sof[3:1]) || (|seq_eof[3:1]) || (|seq_eol_sol[7:1]);
         
         sof_sol_sent <= (bcntr == 0) && (seq_sof[1] || seq_eol_sol[1]);
     end
