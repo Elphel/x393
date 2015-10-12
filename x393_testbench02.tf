@@ -2016,6 +2016,35 @@ simul_axi_hp_wr #(
         .din(PX1_DIV_CNTR[3]), // input
         .dout(TEST_DLY[1]) // output
     );
+    wire [3:0] PX1_LANE_P;
+    wire [3:0] PX1_LANE_N;
+    wire       PX1_CLK_P;
+    wire       PX1_CLK_N;
+    
+    par12_hispi_psp4l #(
+        .CLOCK_MPY(10),
+        .CLOCK_DIV(3),
+        .LANE0_DLY(1.3),
+        .LANE1_DLY(2.7),
+        .LANE2_DLY(0.2),
+        .LANE3_DLY(3.3),
+        .CLK_DLY(2.3),
+        .EMBED_LINES(2),
+        .MSB_FIRST(0),
+        .FIFO_LOGDEPTH(12)
+    ) par12_hispi_psp4l_i (
+        .pclk    ( PX1_MCLK), // input
+        .rst     (!PX1_MRST), // input
+        .pxd     (PX1_D),     // input[11:0] 
+        .vact    (PX1_VACT), // input
+        .hact_in (PX1_HACT), // input
+        .lane_p  (PX1_LANE_P), // output[3:0] 
+        .lane_n  (PX1_LANE_N), // output[3:0] 
+        .clk_p   (PX1_CLK_P), // output
+        .clk_n   (PX1_CLK_N) // output
+    );
+    
+    
 
     simul_sensor12bits #(
         .lline     (VIRTUAL_WIDTH),     // SENSOR12BITS_LLINE),
