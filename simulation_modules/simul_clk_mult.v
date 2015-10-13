@@ -34,7 +34,7 @@ module  simul_clk_mult#(
     integer num_period = 0;
     reg en1 = 0;
     reg clk_out_r = 0;
-    assign clk_out = clk_out_r;
+    assign clk_out = (MULTIPLIER == 1)? clk_in: clk_out_r;
     always @ (posedge clk_in) begin
         phase = $realtime;
         if (num_period >= SKIP_FIRST) begin

@@ -29,7 +29,7 @@ module  sim_clk_div#(
     );
     integer cntr = 0;
     reg clk_out_r = 0;
-    assign clk_out = clk_out_r;
+    assign clk_out = (DIVISOR == 1) ? clk_in: clk_out_r;
     always @(clk_in) if (en) begin
         if (cntr == 0) begin
             cntr = DIVISOR - 1;

@@ -107,11 +107,21 @@ module  par12_hispi_psp4l#(
 
     // generate output clock (normally multiplier first, but in simulation there will be less calculations if division is first)
     wire         oclk;
-    wire         int_clk;
+//    wire         int_clk;
     wire         next_line_oclk; 
     wire         next_frame_oclk ;
     reg          orst_r = 1;
     wire         orst = rst || orst_r;
+    simul_clk_mult_div #(
+        .MULTIPLIER(CLOCK_MPY),
+        .DIVISOR(CLOCK_DIV),
+        .SKIP_FIRST(5)
+    ) simul_clk_div_mult_i (
+        .clk_in(pclk), // input
+        .en(1'b1), // input
+        .clk_out(oclk) // output
+    );
+/*   
     simul_clk_mult #(
         .MULTIPLIER(CLOCK_MPY)
     ) simul_clk_mult_i (
@@ -127,7 +137,7 @@ module  par12_hispi_psp4l#(
         .en      (1'b1), // input
         .clk_out (oclk) // output
     );
-    
+*/    
     pulse_cross_clock #(
         .EXTRA_DLY(0)
     ) pulse_cross_clock_sof_sol_i (
