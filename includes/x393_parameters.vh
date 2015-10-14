@@ -760,12 +760,19 @@
     parameter CLKFBOUT_MULT_AXIHP =       18, // Fvco=Fclkin*CLKFBOUT_MULT_F/DIVCLK_DIVIDE, Fout=Fvco/CLKOUT#_DIVIDE
     parameter CLKOUT_DIV_AXIHP =           6,   // To get 150MHz for the reference clock
     parameter BUF_CLK1X_AXIHP =           "BUFG", // "BUFG", "BUFH", "BUFR", "NONE"
-    
+`ifdef HISPI
+    parameter CLKIN_PERIOD_PCLK =         42, // 24MHz (actually needed is 24.4444
+    parameter DIVCLK_DIVIDE_PCLK =         1,
+    parameter CLKFBOUT_MULT_PCLK =        36, // 880 MHz
+    parameter CLKOUT_DIV_PCLK =            4, // 220 MHz 
+    parameter CLKOUT_DIV_PCLK2X =          2, // 440 MHz
+`else    
     parameter CLKIN_PERIOD_PCLK =         42, // 24MHz 
     parameter DIVCLK_DIVIDE_PCLK =         1,
     parameter CLKFBOUT_MULT_PCLK =        40, // 960 MHz
     parameter CLKOUT_DIV_PCLK =           10, // 96MHz 
     parameter CLKOUT_DIV_PCLK2X =          5, // 192 MHz
+`endif    
     parameter PHASE_CLK2X_PCLK =           0.000, 
     parameter BUF_CLK1X_PCLK =            "BUFG",
     parameter BUF_CLK1X_PCLK2X =          "BUFG",  

@@ -214,7 +214,11 @@ module  sensor_channel#(
 ) (
 //    input         rst,
     input         pclk,   // global clock input, pixel rate (96MHz for MT9P006)
+    // TODO: get rid of pclk2x in histograms by doubling memories (making 1 write port and 2 read ones)
+    // How to erase?
+    // Alternative: copy/erase to a separate buffer in the beginning/end of a frame?
     input         pclk2x, // global clock input, double pixel rate (192MHz for MT9P006)
+    
     input         mrst,      // @posedge mclk, sync reset
     input         prst,      // @posedge pclk, sync reset
     

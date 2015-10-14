@@ -38,8 +38,8 @@ module  pxd_single#(
     output       pxd_in,       // data output (@posedge ipclk?)
     input        ipclk,        // restored clock from the sensor, phase-shifted
     input        ipclk2x,      // restored clock from the sensor, phase-shifted, twice frequency
-    input        mrst,         // reset @ posxedge mclk
-    input        irst,         // reset @ posxedge iclk
+    input        mrst,         // reset @ posedge mclk
+    input        irst,         // reset @ posedge iclk
     input        mclk,         // clock for setting delay values
     input  [7:0] dly_data,     // delay value (3 LSB - fine delay) - @posedge mclk
     input        set_idelay,   // mclk synchronous load idelay value

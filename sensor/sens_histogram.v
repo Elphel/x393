@@ -19,6 +19,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/> .
  *******************************************************************************/
 `timescale 1ns/1ps
+    // TODO: get rid of pclk2x by doubling memories (making 1 write port and 2 read ones)
+    // How to erase?
+    // Alternative: copy/erase to a separate buffer in the beginning/end of a frame?
 
 module  sens_histogram #(
     parameter HISTOGRAM_RAM_MODE =     "NOBUF", // valid: "NOBUF" (32-bits, no buffering), "BUF18", "BUF32"
