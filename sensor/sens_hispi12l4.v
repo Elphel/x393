@@ -43,6 +43,7 @@ module  sens_hispi12l4#(
     parameter SENS_SS_MODE       =        "CENTER_HIGH",//"CENTER_HIGH","CENTER_LOW","DOWN_HIGH","DOWN_LOW"
     parameter SENS_SS_MOD_PERIOD =         10000,        // integer 4000-40000 - SS modulation period in ns
 
+    parameter HISPI_MSB_FIRST =            0,
     parameter HISPI_NUMLANES =             4,
     parameter HISPI_CAPACITANCE =         "DONT_CARE",
     parameter HISPI_DIFF_TERM =           "TRUE",
@@ -74,8 +75,9 @@ module  sens_hispi12l4#(
     input  [HISPI_NUMLANES * 8-1:0] dly_data,        // delay value (3 LSB - fine delay) - @posedge mclk
     input      [HISPI_NUMLANES-1:0] set_idelay,      // mclk synchronous load idelay value
     input                           ld_idelay,       // mclk synchronous set idealy value
-    input                           set_clk_phase,    // mclk synchronous set idealy value
+    input                           set_clk_phase,   // mclk synchronous set idealy value
     input                           rst_mmcm,
+//    input                           wait_all_lanes,  // when 0 allow some lanes missing sync (for easier phase adjustment)
     // MMCP output status
     output       ps_rdy,          // output
     output [7:0] ps_out,          // output[7:0] reg 
@@ -153,8 +155,149 @@ module  sens_hispi12l4#(
         .din_n        (sns_dn), // input[3:0] 
         .dout         (sns_d) // output[15:0] 
     );
+    
+    localparam WAIT_ALL_LANES = 8; // number of output pixel cycles to wait after the earliest lane
+    localparam FIFO_DEPTH = 4;
 
+    wire [HISPI_NUMLANES * 12-1:0] hispi_aligned;
+    wire      [HISPI_NUMLANES-1:0] hispi_dv;
+    wire      [HISPI_NUMLANES-1:0] hispi_embed;
+    wire      [HISPI_NUMLANES-1:0] hispi_sof;
+    wire      [HISPI_NUMLANES-1:0] hispi_eof;
+    wire      [HISPI_NUMLANES-1:0] hispi_sol;
+    wire      [HISPI_NUMLANES-1:0] hispi_eol;
+   // TODO - try to make that something will be recorded even if some lanes are bad (to simplify phase adjust
+   // possibly - extra control bit (wait_all_lanes)
+   //    use earliest SOF
+    reg                             vact_ipclk;
+    reg                       [1:0] vact_pclk_strt;
+    wire       [HISPI_NUMLANES-1:0] rd_run;
+    reg                             rd_line; // combine all lanes
+    reg                             rd_line_r;
+    wire                            sol_all_dly;
+    reg        [HISPI_NUMLANES-1:0] rd_run_d;
+    reg                             sof_pclk;
+//    wire       [HISPI_NUMLANES-1:0] sol_pclk = rd_run & ~rd_run_d;
+    wire                            sol_pclk = |(rd_run & ~rd_run_d); // possibly multi-cycle
+    reg        [HISPI_NUMLANES-1:0] good_lanes; // lanes that started active line OK   
+    reg        [HISPI_NUMLANES-1:0] fifo_re;
+    reg        [HISPI_NUMLANES-1:0] fifo_re_r;
+    reg                             hact_r;
+    wire  [HISPI_NUMLANES * 12-1:0] fifo_out;
+    wire                            hact_on;
+    wire                            hact_off;
 
+    assign hact_out = hact_r;
+    
+    always @(posedge ipclk) begin
+       if (irst || (|hispi_eof[i])) vact_ipclk <= 0; // extend output if hact active
+       else if (|hispi_sof)         vact_ipclk <= 1;
+    
+    end
+    
+    always @(posedge pclk) begin
+        vact_pclk_strt <= {vact_pclk_strt[0],vact_ipclk};
+
+        rd_run_d <= rd_run;
+       
+        sof_pclk <= vact_pclk_strt[0] && ! vact_pclk_strt[1];
+       
+        if      (prst || sof_pclk) rd_line <= 0;
+        else if (sol_pclk)         rd_line <= 1;
+        else                       rd_line <= rd_line & (&(~good_lanes | rd_run)); // Off when first of the good lanes goes off      
+       
+        rd_line_r <= rd_line;
+        
+        if (sol_pclk && !rd_line) good_lanes <= ~rd_run;             // should be off before start
+        else if (sol_all_dly)     good_lanes <= good_lanes & rd_run; // and now they should be on
+        
+        fifo_re_r <= fifo_re & rd_run; // when data out is ready, mask if not running
+        
+        // not using HISPI_NUMLANES here - fix? Will be 0 (not possible in hispi) when no data
+        pxd_out <= ({12 {fifo_re_r[0]}} & fifo_out[0 * 12 +:12]) |
+                   ({12 {fifo_re_r[1]}} & fifo_out[1 * 12 +:12]) |
+                   ({12 {fifo_re_r[2]}} & fifo_out[2 * 12 +:12]) |
+                   ({12 {fifo_re_r[3]}} & fifo_out[3 * 12 +:12]);
+       
+       if      (prst)                                                 fifo_re <= 0;
+       else if (sol_pclk || (rd_line && fifo_re[HISPI_NUMLANES - 1])) fifo_re <= 1;
+       else                                                           fifo_re <= fifo_re << 1;
+       
+       if (prst || hact_off) hact_r <= 0;
+       else if (hact_on)     hact_r <= 1;
+       
+       vact_out <= vact_pclk_strt [0] || hact_r;
+    end
+
+    dly_16 #(
+        .WIDTH(1)
+    ) dly_16_start_line_i (
+        .clk  (pclk),                  // input
+        .rst  (1'b0),                  // input
+        .dly  (WAIT_ALL_LANES),        // input[3:0] 
+        .din  (rd_line && !rd_line_r), // input[0:0] 
+        .dout (sol_all_dly)            // output[0:0] 
+    );
+
+    dly_16 #(
+        .WIDTH(1)
+    ) dly_16_hact_on_i (
+        .clk  (pclk),                        // input
+        .rst  (1'b0),                        // input
+        .dly  (2),                           // input[3:0] 
+        .din  (sol_pclk),                    // input[0:0] 
+        .dout (hact_on)                      // output[0:0] 
+    );
+
+    dly_16 #(
+        .WIDTH(1)
+    ) dly_16_hact_off_i (
+        .clk  (pclk),                        // input
+        .rst  (1'b0),                        // input
+        .dly  (2),                           // input[3:0] 
+        .din  (fifo_re[HISPI_NUMLANES - 1]), // input[0:0] 
+        .dout (hact_off)                     // output[0:0] 
+    );
+
+   
+    generate
+        genvar i;
+        for (i=0; i < 4; i=i+1) begin: hispi_lane
+            sens_hispi_lane #(
+                .HISPI_MSB_FIRST(HISPI_MSB_FIRST)
+            ) sens_hispi_lane_i (
+                .ipclk    (ipclk),                     // input
+                .irst     (irst),                      // input
+                .din      (sns_d[4*i +: 4]),           // input[3:0] 
+                .dout     (hispi_aligned[12*i +: 12]), // output[3:0] reg 
+                .dv       (hispi_dv[i]),               // output reg 
+                .embed    (hispi_embed[i]),            // output reg 
+                .sof      (hispi_sof[i]),              // output reg 
+                .eof      (hispi_eof[i]),              // output reg 
+                .sol      (hispi_sol[i]),              // output reg 
+                .eol      (hispi_eol[i])               // output reg 
+            );
+            sens_hispi_fifo #(
+                .COUNT_START  (7),
+                .DATA_WIDTH  (12),
+                .DATA_DEPTH  (FIFO_DEPTH)
+            ) sens_hispi_fifo_i (
+                .ipclk    (ipclk),                     // input
+                .irst     (irst),                      // input
+                .we       (hispi_dv[i]),               // input
+                .sol      (hispi_sol[i]),              // input
+                .eol      (hispi_eol[i]),              // input
+                .din      (hispi_aligned[12*i +: 12]), // input[11:0] 
+                .pclk     (pclk),                      // input
+                .prst     (prst),                      // input
+                .re       (fifo_re[i]),                // input
+                .dout     (fifo_out[12*i +: 12]),      // output[11:0] reg 
+                .run      (rd_run[i])                  // output
+            );
+        
+        
+        end
+    endgenerate        
 
 endmodule
 

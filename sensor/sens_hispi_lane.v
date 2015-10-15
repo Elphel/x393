@@ -23,16 +23,16 @@
 module  sens_hispi_lane#(
     parameter HISPI_MSB_FIRST = 0
 )(
-    input            ipclk,   // half HiSPi recovered clock (165 MHz for 660 bps of MT9F002)
-    input            irst,    // reset sync to ipclk 
-    input      [3:0] din,     // @posedge ipclk, din[3] came first
-    output reg [3:0] dout,  // data output, aligned (decide about bit order)
-    output reg       dv,      // data valid - continuous marks line
-    output reg       embed,   // valid @sol and up through all dv
-    output reg       sof,     // always before first sol - not instead of
-    output reg       eof,     // always after last eol (not instead of)
-    output reg       sol,     // start of line - 1 cycle before dv
-    output reg       eol      // end of line - last dv 
+    input             ipclk,   // half HiSPi recovered clock (165 MHz for 660 bps of MT9F002)
+    input             irst,    // reset sync to ipclk 
+    input       [3:0] din,     // @posedge ipclk, din[3] came first
+    output reg [11:0] dout,    // 12-bit data output
+    output reg        dv,      // data valid - continuous marks line
+    output reg        embed,   // valid @sol and up through all dv
+    output reg        sof,     // always before first sol - not instead of
+    output reg        eof,     // always after last eol (not instead of)
+    output reg        sol,     // start of line - 1 cycle before dv
+    output reg        eol      // end of line - last dv 
 );
     localparam  [3:0] SYNC_SOF = HISPI_MSB_FIRST ? 4'h3 : 4'hc;
     localparam  [3:0] SYNC_SOL = HISPI_MSB_FIRST ? 4'h1 : 4'h8;
@@ -40,7 +40,10 @@ module  sens_hispi_lane#(
 //    localparam  [3:0] SYNC_EOL = 6;
     
     localparam  [3:0] SYNC_EMBED  = HISPI_MSB_FIRST ? 4'h1 : 4'h8; // other nibble (bit 4)
-    localparam        SYNC_NIBBLE = HISPI_MSB_FIRST ? 2 : 0; // decode which nibble of the last sync word
+
+    localparam        LSB_INDEX =   HISPI_MSB_FIRST ? 2 : 0; // nibble number in 12-bit word
+    localparam        MSB_INDEX =   HISPI_MSB_FIRST ? 0 : 2; // nibble number in 12-bit word
+    
     
     reg   [3:0] d_r; // rehistered input data
     wire   [2:0] num_trail_0_w; // number of trailing 0-s in the last nibble
@@ -64,7 +67,7 @@ module  sens_hispi_lane#(
 //    reg          got_eol;
     reg          got_embed;
     
-    reg          pre_dv;
+    reg    [2:0] pre_dv;
     wire   [3:0] dout_w;
     wire   [4:0] num_running_zeros_w = num_running_zeros + {1'b0, num_lead_0_w};
     wire         start_line =  sync_decode[3] && (got_sol || got_sof);
@@ -119,35 +122,42 @@ module  sens_hispi_lane#(
         else if (got_sync) sync_decode <= 4'h1;
         else               sync_decode <= sync_decode << 1;
         
-        if      (got_sync)                                         got_sof <= 0;
-        else if (sync_decode[SYNC_NIBBLE] && (barrel == SYNC_SOF)) got_sof <= 1;
+        if      (got_sync)                                       got_sof <= 0;
+        else if (sync_decode[LSB_INDEX] && (barrel == SYNC_SOF)) got_sof <= 1;
         
-        if      (got_sync)                                         got_eof <= 0;
-        else if (sync_decode[SYNC_NIBBLE] && (barrel == SYNC_EOF)) got_eof <= 1;
+        if      (got_sync)                                       got_eof <= 0;
+        else if (sync_decode[LSB_INDEX] && (barrel == SYNC_EOF)) got_eof <= 1;
         
-        if      (got_sync)                                         got_sol <= 0;
-        else if (sync_decode[SYNC_NIBBLE] && (barrel == SYNC_SOL)) got_sol <= 1;
+        if      (got_sync)                                       got_sol <= 0;
+        else if (sync_decode[LSB_INDEX] && (barrel == SYNC_SOL)) got_sol <= 1;
         
-//        if      (got_sync)                                         got_eol <= 0;
-//        else if (sync_decode[SYNC_NIBBLE] && (barrel == SYNC_EOL)) got_eol <= 1;
+//        if      (got_sync)                                       got_eol <= 0;
+//        else if (sync_decode[LSB_INDEX] && (barrel == SYNC_EOL)) got_eol <= 1;
 
-        if      (got_sync)                                         got_embed <= 0;
-        else if (sync_decode[1] && (barrel == SYNC_EMBED))         got_embed <= 1;
+        if      (got_sync)                                       got_embed <= 0;
+        else if (sync_decode[1] && (barrel == SYNC_EMBED))       got_embed <= 1;
         
-        if (irst) dout <= 0; 
-        else      dout <= dout_w;
+        if      (irst)              dout[ 3:0] <= 0; 
+        else if (pre_dv[LSB_INDEX]) dout[ 3:0] <= dout_w;
+
+        if      (irst)              dout[ 7:4] <= 0; 
+        else if (pre_dv[1])         dout[ 7:4] <= dout_w;
         
+        if      (irst)              dout[11:8] <= 0; 
+        else if (pre_dv[MSB_INDEX]) dout[11:8] <= dout_w;
+
         if  (irst || got_sync) pre_dv <= 0;
         else if (start_line_d) pre_dv <= 1;
+        else                   pre_dv <= {pre_dv[1:0],pre_dv[2]};
         
         if (irst) dv <= 0;
-        else      dv <= pre_dv;
+        else      dv <= pre_dv[2];
 
         if (irst) sol <= 0;
         else      sol <= start_line_d;
 
         if (irst) eol <= 0;
-        else      eol <= got_sync && pre_dv;
+        else      eol <= got_sync && (|pre_dv);
         
         if (irst) sof <= 0;
         else      sof <= sync_decode[3] && got_sof;
@@ -180,4 +190,3 @@ module  sens_hispi_lane#(
 
 
 endmodule
-
