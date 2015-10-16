@@ -530,7 +530,7 @@
     parameter BUF_IPCLK2X_SENS3 =        "BUFG", // "BUFR",  
 
     parameter SENS_DIVCLK_DIVIDE =       1,            // Integer 1..106. Divides all outputs with respect to CLKIN
-    parameter SENS_REF_JITTER1   =       0.010,        // Expectet jitter on CLKIN1 (0.000..0.999)
+    parameter SENS_REF_JITTER1   =       0.010,        // Expected jitter on CLKIN1 (0.000..0.999)
     parameter SENS_REF_JITTER2   =       0.010,
     parameter SENS_SS_EN         =       "FALSE",      // Enables Spread Spectrum mode
     parameter SENS_SS_MODE       =       "CENTER_HIGH",//"CENTER_HIGH","CENTER_LOW","DOWN_HIGH","DOWN_LOW"

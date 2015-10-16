@@ -300,7 +300,7 @@ parameter EXTERNAL_TIMESTAMP =    0; // 1 ;    // embed local timestamp, 1 - emb
     assign PX1_MCLK_PRE =  sns1_dp[6]; // from FPGA to sensor
     assign PX1_MRST =      sns1_dp[7]; // from FPGA to sensor
     assign PX1_ARST =      sns1_dn[7]; // same as GP[3]
-    assign PX1_ARO =       sns1_dn[5]; // same as GP[2]
+    assign PX1_ARO =       sns1_dn[5]; // same as GP[1]
     
     assign sns2_dp[3:0] =  PX2_LANE_P;
     assign sns2_dn[3:0] =  PX2_LANE_N;
@@ -313,7 +313,7 @@ parameter EXTERNAL_TIMESTAMP =    0; // 1 ;    // embed local timestamp, 1 - emb
     assign PX2_MCLK_PRE =  sns2_dp[6]; // from FPGA to sensor
     assign PX2_MRST =      sns2_dp[7]; // from FPGA to sensor
     assign PX2_ARST =      sns2_dn[7]; // same as GP[3]
-    assign PX2_ARO =       sns2_dn[5]; // same as GP[2]
+    assign PX2_ARO =       sns2_dn[5]; // same as GP[1]
     
     assign sns3_dp[3:0] =  PX3_LANE_P;
     assign sns3_dn[3:0] =  PX3_LANE_N;
@@ -326,7 +326,7 @@ parameter EXTERNAL_TIMESTAMP =    0; // 1 ;    // embed local timestamp, 1 - emb
     assign PX3_MCLK_PRE =  sns3_dp[6]; // from FPGA to sensor
     assign PX3_MRST =      sns3_dp[7]; // from FPGA to sensor
     assign PX3_ARST =      sns3_dn[7]; // same as GP[3]
-    assign PX3_ARO =       sns3_dn[5]; // same as GP[2]
+    assign PX3_ARO =       sns3_dn[5]; // same as GP[1]
     
     assign sns4_dp[3:0] =  PX4_LANE_P;
     assign sns4_dn[3:0] =  PX4_LANE_N;
@@ -339,7 +339,7 @@ parameter EXTERNAL_TIMESTAMP =    0; // 1 ;    // embed local timestamp, 1 - emb
     assign PX4_MCLK_PRE =  sns4_dp[6]; // from FPGA to sensor
     assign PX4_MRST =      sns4_dp[7]; // from FPGA to sensor
     assign PX4_ARST =      sns4_dn[7]; // same as GP[3]
-    assign PX4_ARO =       sns4_dn[5]; // same as GP[2]
+    assign PX4_ARO =       sns4_dn[5]; // same as GP[1]
 `else
     //connect parallel12 sensor to sensor port 1
     assign sns1_dp[6:1] =  {PX1_D[10], PX1_D[8], PX1_D[6], PX1_D[4], PX1_D[2], PX1_HACT};
@@ -349,7 +349,7 @@ parameter EXTERNAL_TIMESTAMP =    0; // 1 ;    // embed local timestamp, 1 - emb
     assign PX1_ARST =       sns1_dn[7];
     assign sns1_clkn =      PX1_D[0];  // inout CNVSYNC/TDI
     assign sns1_clkp =      PX1_D[1];  // CNVCLK/TDO
-    assign PX1_ARO =       sns1_ctl;  // from FPGA to sensor
+    assign PX1_ARO =        sns1_ctl;  // from FPGA to sensor
 
     assign PX2_MRST =       sns2_dp[7]; // from FPGA to sensor
     assign PX2_MCLK_PRE =   sns2_dp[0]; // from FPGA to sensor

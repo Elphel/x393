@@ -37,7 +37,7 @@ module  sens_hispi12l4#(
     parameter BUF_IPCLK2X =               "BUFR",  
 
     parameter SENS_DIVCLK_DIVIDE =         1,            // Integer 1..106. Divides all outputs with respect to CLKIN
-    parameter SENS_REF_JITTER1   =         0.010,        // Expectet jitter on CLKIN1 (0.000..0.999)
+    parameter SENS_REF_JITTER1   =         0.010,        // Expected jitter on CLKIN1 (0.000..0.999)
     parameter SENS_REF_JITTER2   =         0.010,
     parameter SENS_SS_EN         =        "FALSE",      // Enables Spread Spectrum mode
     parameter SENS_SS_MODE       =        "CENTER_HIGH",//"CENTER_HIGH","CENTER_LOW","DOWN_HIGH","DOWN_LOW"
@@ -55,10 +55,6 @@ module  sens_hispi12l4#(
 )(
     input             pclk,   // global clock input, pixel rate (220MHz for MT9F002)
     input             prst,
-    output            irst,
-    
-    input             trigger_mode, // running in triggered mode (0 - free running mode)
-    input             trig,      // per-sensor trigger input
     // I/O pads
     input [HISPI_NUMLANES-1:0] sns_dp,
     input [HISPI_NUMLANES-1:0] sns_dn,
@@ -77,6 +73,7 @@ module  sens_hispi12l4#(
     input                           ld_idelay,       // mclk synchronous set idealy value
     input                           set_clk_phase,   // mclk synchronous set idealy value
     input                           rst_mmcm,
+    input                           ignore_embedded, // ignore lines with embedded data
 //    input                           wait_all_lanes,  // when 0 allow some lanes missing sync (for easier phase adjustment)
     // MMCP output status
     output       ps_rdy,          // output
@@ -159,6 +156,10 @@ module  sens_hispi12l4#(
     localparam WAIT_ALL_LANES = 8; // number of output pixel cycles to wait after the earliest lane
     localparam FIFO_DEPTH = 4;
 
+    reg       [2:0] irst_r;
+    wire            irst = irst_r[2];
+    
+
     wire [HISPI_NUMLANES * 12-1:0] hispi_aligned;
     wire      [HISPI_NUMLANES-1:0] hispi_dv;
     wire      [HISPI_NUMLANES-1:0] hispi_embed;
@@ -186,13 +187,16 @@ module  sens_hispi12l4#(
     wire  [HISPI_NUMLANES * 12-1:0] fifo_out;
     wire                            hact_on;
     wire                            hact_off;
-
+    reg                             ignore_embedded_ipclk;
     assign hact_out = hact_r;
     
     always @(posedge ipclk) begin
-       if (irst || (|hispi_eof[i])) vact_ipclk <= 0; // extend output if hact active
-       else if (|hispi_sof)         vact_ipclk <= 1;
+        irst_r <= {irst_r[1:0], prst};
     
+        if (irst || (|hispi_eof[i])) vact_ipclk <= 0; // extend output if hact active
+        else if (|hispi_sof)         vact_ipclk <= 1;
+    
+        ignore_embedded_ipclk <= ignore_embedded;
     end
     
     always @(posedge pclk) begin
@@ -285,7 +289,7 @@ module  sens_hispi12l4#(
                 .ipclk    (ipclk),                     // input
                 .irst     (irst),                      // input
                 .we       (hispi_dv[i]),               // input
-                .sol      (hispi_sol[i]),              // input
+                .sol      (hispi_sol[i] && (hispi_embed[i] || !ignore_embedded_ipclk)), // input
                 .eol      (hispi_eol[i]),              // input
                 .din      (hispi_aligned[12*i +: 12]), // input[11:0] 
                 .pclk     (pclk),                      // input
@@ -294,7 +298,6 @@ module  sens_hispi12l4#(
                 .dout     (fifo_out[12*i +: 12]),      // output[11:0] reg 
                 .run      (rd_run[i])                  // output
             );
-        
         
         end
     endgenerate        

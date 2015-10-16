@@ -62,7 +62,7 @@ module  mmcm_adv#(
                                                // EXTERNAL - external to the FPGA network is being compensated
                                                // BUF_IN - no compensation when clock input is driveen by BUFG/BUFH/BUFR or GT
     parameter DIVCLK_DIVIDE =         1,            // Integer 1..106. Divides all outputs with respect to CLKIN
-    parameter REF_JITTER1   =         0.010,        // Expectet jitter on CLKIN1 (0.000..0.999)
+    parameter REF_JITTER1   =         0.010,        // Expected jitter on CLKIN1 (0.000..0.999)
     parameter REF_JITTER2   =         0.010,
     parameter SS_EN         =         "FALSE",      // Enables Spread Spectrum mode
     parameter SS_MODE       =         "CENTER_HIGH",//"CENTER_HIGH","CENTER_LOW","DOWN_HIGH","DOWN_LOW"
