@@ -136,11 +136,20 @@ module  sensor_channel#(
         parameter SENS_CTRL_ARST =        2,  //  3: 2
         parameter SENS_CTRL_ARO =         4,  //  5: 4
         parameter SENS_CTRL_RST_MMCM =    6,  //  7: 6
+`ifdef HISPI
+        parameter SENS_CTRL_IGNORE_EMBED =8,  //  9: 8
+`else        
         parameter SENS_CTRL_EXT_CLK =     8,  //  9: 8
+`endif        
         parameter SENS_CTRL_LD_DLY =     10,  // 10
+`ifdef HISPI
+        parameter SENS_CTRL_GP0=      12,  // 13:12
+        parameter SENS_CTRL_GP1=      14,  // 15:14
+`else        
         parameter SENS_CTRL_QUADRANTS =  12,  // 17:12, enable - 20
         parameter SENS_CTRL_QUADRANTS_WIDTH = 6,
         parameter SENS_CTRL_QUADRANTS_EN =   20,  // 17:12, enable - 20 (2 bits reserved)
+`endif        
       parameter SENSIO_STATUS =         'h1,
       parameter SENSIO_JTAG =           'h2,
         // SENSIO_JTAG register bits
@@ -149,7 +158,9 @@ module  sensor_channel#(
         parameter SENS_JTAG_TCK =         4,
         parameter SENS_JTAG_TMS =         2,
         parameter SENS_JTAG_TDI =         0,
+`ifndef HISPI
       parameter SENSIO_WIDTH =          'h3, // 1.. 2^16, 0 - use HACT
+`endif      
       parameter SENSIO_DELAYS =         'h4, // 'h4..'h7
         // 4 of 8-bit delays per register
     // sensor_i2c_io command/data write registers s (relative to SENSOR_BASE_ADDR)
@@ -173,11 +184,12 @@ module  sensor_channel#(
     parameter SENSI2C_IOSTANDARD =    "DEFAULT",
     parameter SENSI2C_SLEW =          "SLOW",
     
+`ifndef HISPI
     //sensor_fifo parameters
     parameter SENSOR_DATA_WIDTH =      12,
     parameter SENSOR_FIFO_2DEPTH =     4,
     parameter SENSOR_FIFO_DELAY =      5, // 7,
-    
+`endif    
     
     // sens_parallel12 other parameters
     
@@ -189,15 +201,31 @@ module  sensor_channel#(
     parameter PXD_SLEW = "SLOW",
     parameter real SENS_REFCLK_FREQUENCY =    300.0,
     parameter SENS_HIGH_PERFORMANCE_MODE =    "FALSE",
+`ifdef HISPI
+    parameter PXD_CAPACITANCE =          "DONT_CARE",
+    parameter PXD_CLK_DIV =              10, // 220MHz -> 22MHz
+    parameter PXD_CLK_DIV_BITS =          4,
+`endif    
     
     parameter SENS_PHASE_WIDTH=        8,      // number of bits for te phase counter (depends on divisors)
     parameter SENS_PCLK_PERIOD =       10.000,  // input period in ns, 0..100.000 - MANDATORY, resolution down to 1 ps
     parameter SENS_BANDWIDTH =         "OPTIMIZED",  //"OPTIMIZED", "HIGH","LOW"
 
-    parameter CLKFBOUT_MULT_SENSOR =   8,  // 100 MHz --> 800 MHz
-    parameter CLKFBOUT_PHASE_SENSOR =  0.000,  // CLOCK FEEDBACK phase in degrees (3 significant digits, -360.000...+360.000)
-    parameter IPCLK_PHASE =            0.000,
-    parameter IPCLK2X_PHASE =          0.000,
+    // parameters for the sensor-synchronous clock PLL
+`ifdef HISPI    
+    parameter CLKIN_PERIOD_SENSOR =      3.000,  // input period in ns, 0..100.000 - MANDATORY, resolution down to 1 ps
+    parameter CLKFBOUT_MULT_SENSOR =     3,      // 330 MHz --> 990 MHz
+    parameter CLKFBOUT_PHASE_SENSOR =    0.000,  // CLOCK FEEDBACK phase in degrees (3 significant digits, -360.000...+360.000)
+    parameter IPCLK_PHASE =              0.000,
+    parameter IPCLK2X_PHASE =            0.000,
+`else    
+    parameter CLKIN_PERIOD_SENSOR =      10.000, // input period in ns, 0..100.000 - MANDATORY, resolution down to 1 ps
+    parameter CLKFBOUT_MULT_SENSOR =     8,      // 100 MHz --> 800 MHz
+    parameter CLKFBOUT_PHASE_SENSOR =    0.000,  // CLOCK FEEDBACK phase in degrees (3 significant digits, -360.000...+360.000)
+    parameter IPCLK_PHASE =              0.000,
+    parameter IPCLK2X_PHASE =            0.000,
+`endif
+    
     parameter BUF_IPCLK =             "BUFR",
     parameter BUF_IPCLK2X =           "BUFR",  
 
@@ -207,12 +235,25 @@ module  sensor_channel#(
     parameter SENS_SS_EN         =     "FALSE",      // Enables Spread Spectrum mode
     parameter SENS_SS_MODE       =     "CENTER_HIGH",//"CENTER_HIGH","CENTER_LOW","DOWN_HIGH","DOWN_LOW"
     parameter SENS_SS_MOD_PERIOD =     10000        // integer 4000-40000 - SS modulation period in ns
+    
+`ifdef HISPI
+   ,parameter HISPI_MSB_FIRST =            0,
+    parameter HISPI_NUMLANES =             4,
+    parameter HISPI_CAPACITANCE =         "DONT_CARE",
+    parameter HISPI_DIFF_TERM =           "TRUE",
+    parameter HISPI_DQS_BIAS =            "TRUE",
+    parameter HISPI_IBUF_DELAY_VALUE =    "0",
+    parameter HISPI_IBUF_LOW_PWR =        "TRUE",
+    parameter HISPI_IFD_DELAY_VALUE =     "AUTO",
+    parameter HISPI_IOSTANDARD =          "DEFAULT"
+`endif    
+    
 `ifdef DEBUG_RING
         ,parameter DEBUG_CMD_LATENCY = 2 
 `endif        
     
 ) (
-//    input         rst,
+
     input         pclk,   // global clock input, pixel rate (96MHz for MT9P006)
     // TODO: get rid of pclk2x in histograms by doubling memories (making 1 write port and 2 read ones)
     // How to erase?
@@ -225,11 +266,20 @@ module  sensor_channel#(
     // I/O pads, pin names match circuit diagram
     inout   [7:0] sns_dp,
     inout   [7:0] sns_dn,
+`ifdef HISPI   
+    input         sns_clkp,
+    input         sns_clkn,
+`else
     inout         sns_clkp,
     inout         sns_clkn,
+`endif    
     inout         sns_scl,
     inout         sns_sda,
+`ifdef HISPI   
+    output        sns_ctl,
+`else    
     inout         sns_ctl,
+`endif    
     inout         sns_pg,
     // programming interface
     input         mclk,     // global clock, half DDR3 clock, synchronizes all I/O through the command port
@@ -301,16 +351,16 @@ module  sensor_channel#(
     wire   [7:0] sens_i2c_status_ad;
     wire         sens_i2c_status_rq;
     wire         sens_i2c_status_start;
-    wire   [7:0] sens_par12_status_ad;
-    wire         sens_par12_status_rq;
-    wire         sens_par12_status_start;
+    wire   [7:0] sens_phys_status_ad;
+    wire         sens_phys_status_rq;
+    wire         sens_phys_status_start;
     
+`ifndef HISPI        
     wire         ipclk;   // Use in FIFO
-//    wire         ipclk2x; // Use in FIFO?
     wire  [11:0] pxd_to_fifo;
     wire         vact_to_fifo;    // frame active @posedge  ipclk
     wire         hact_to_fifo;    // line active @posedge  ipclk
-    
+`endif    
     // data from FIFO
     wire  [11:0] pxd;     // TODO: align MSB? parallel data, @posedge  ipclk
     wire         hact;    // line active @posedge  ipclk
@@ -468,9 +518,9 @@ module  sensor_channel#(
         .db_in0    (sens_i2c_status_ad),      // input[7:0] 
         .rq_in0    (sens_i2c_status_rq),      // input
         .start_in0 (sens_i2c_status_start),   // output
-        .db_in1    (sens_par12_status_ad),    // input[7:0] 
-        .rq_in1    (sens_par12_status_rq),    // input
-        .start_in1 (sens_par12_status_start), // output
+        .db_in1    (sens_phys_status_ad),    // input[7:0] 
+        .rq_in1    (sens_phys_status_rq),    // input
+        .start_in1 (sens_phys_status_start), // output
         .db_out    (status_ad),               // output[7:0] 
         .rq_out    (status_rq),               // output
         .start_out (status_start)             // input
@@ -539,198 +589,284 @@ module  sensor_channel#(
         .scl                   (sns_scl),               // inout
         .sda                   (sns_sda)                // inout
     );
-    
+
+// debug_hist_mclk is never active, alive_hist0_rq == 0
+//    assign status_alive = {last_in_line_1cyc_mclk, dout_valid_1cyc_mclk, alive_hist0_gr, alive_hist0_rq, sof_out_mclk, eof_mclk, sof_mclk, sol_mclk};
+//    assign status_alive = {last_in_line_1cyc_mclk, dout_valid_1cyc_mclk, debug_hist_mclk[0], alive_hist0_rq, sof_out_mclk, eof_mclk, sof_mclk, sol_mclk};
+`ifndef HISPI    
+    reg  hact_r; // hact delayed by 1 cycle to generate start pulse
+    reg dout_valid_d_pclk; //@ pclk - delayed by 1 clk from dout_valid to detect edge
+    reg last_in_line_d_pclk; //@ pclk - delayed by 1 clk from last_in_line to detect edge
+    reg hist_rq0_r;
+    reg hist_gr0_r;
+    wire sol_mclk;
+    wire sof_mclk;
+    wire eof_mclk;
+    wire alive_hist0_rq = hist_rq[0] && !hist_rq0_r;
+    wire alive_hist0_gr = hist_gr[0] && !hist_gr0_r;
+    // sof_out_mclk - already exists
+    wire dout_valid_1cyc_mclk;
+    wire last_in_line_1cyc_mclk;
 //    wire [3:0] debug_hist_mclk;
     wire irst; // @ posedge ipclk
     localparam STATUS_ALIVE_WIDTH = 8;
     wire [STATUS_ALIVE_WIDTH - 1 : 0] status_alive;
-    reg  hact_r; // hact delayed by 1 cycle to generate start pulse
-    wire sol_mclk;
-    wire sof_mclk;
-    wire eof_mclk;
-    reg hist_rq0_r;
-    reg hist_gr0_r;
-    wire alive_hist0_rq = hist_rq[0] && !hist_rq0_r;
-    wire alive_hist0_gr = hist_gr[0] && !hist_gr0_r;
-    // sof_out_mclk - already exists
-    reg dout_valid_d_pclk; //@ pclk - delayed by 1 clk from dout_valid to detect edge
-    reg last_in_line_d_pclk; //@ pclk - delayed by 1 clk from last_in_line to detect edge
-    wire dout_valid_1cyc_mclk;
-    wire last_in_line_1cyc_mclk;
-// debug_hist_mclk is never active, alive_hist0_rq == 0
-//    assign status_alive = {last_in_line_1cyc_mclk, dout_valid_1cyc_mclk, alive_hist0_gr, alive_hist0_rq, sof_out_mclk, eof_mclk, sof_mclk, sol_mclk};
-//    assign status_alive = {last_in_line_1cyc_mclk, dout_valid_1cyc_mclk, debug_hist_mclk[0], alive_hist0_rq, sof_out_mclk, eof_mclk, sof_mclk, sol_mclk};
-    assign status_alive = {last_in_line_1cyc_mclk, dout_valid_1cyc_mclk, alive_hist0_gr, alive_hist0_rq, sof_out_mclk, eof_mclk, sof_mclk, sol_mclk};
-/*
- sof, hact are tested to be active
+    assign status_alive = {last_in_line_1cyc_mclk, dout_valid_1cyc_mclk, alive_hist0_gr, alive_hist0_rq,
+                            sof_out_mclk, eof_mclk, sof_mclk, sol_mclk};
+    always @ (posedge mclk) begin
+        hist_rq0_r <= hist_rq[0];
+        hist_gr0_r <= hist_gr[0];
+    end
 
-                .sof        (gamma_sof_out),  // input
-                .hact       (gamma_hact_out), // input
-
-*/    
     always @ (posedge pclk) begin
-//        hact_r <= hact;
         hact_r <= gamma_hact_out;
         dout_valid_d_pclk <= dout_valid;
         last_in_line_d_pclk <= last_in_line;
     end
     
-    always @ (posedge mclk) begin
-//        hist_rq0_r <= en_mclk & (hist_rq[0] ^ hist_rq0_r);
-        hist_rq0_r <= hist_rq[0];
-        hist_gr0_r <= hist_gr[0];
-    end
+
+    // for debug/test alive   
+        pulse_cross_clock pulse_cross_clock_sol_mclk_i (
+            .rst         (prst),                  // input
+            .src_clk     (pclk),                  // input
+            .dst_clk     (mclk),                  // input
+    //        .in_pulse    (hact && !hact_r),       // input
+            .in_pulse    (gamma_hact_out && !hact_r),       // input
+            .out_pulse   (sol_mclk),              // output
+            .busy() // output
+        );
     
-    /*
-                .hist_rq    (hist_rq[0]),     // output
-                .hist_grant (hist_gr[0]),     // input
-    */
-// for debug/test alive   
-    pulse_cross_clock pulse_cross_clock_sol_mclk_i (
-        .rst         (prst),                  // input
-        .src_clk     (pclk),                  // input
-        .dst_clk     (mclk),                  // input
-//        .in_pulse    (hact && !hact_r),       // input
-        .in_pulse    (gamma_hact_out && !hact_r),       // input
-        .out_pulse   (sol_mclk),              // output
-        .busy() // output
-    );
-
-    pulse_cross_clock pulse_cross_clock_sof_mclk_i (
-        .rst         (prst),                  // input
-        .src_clk     (pclk),                  // input
-        .dst_clk     (mclk),                  // input
-//        .in_pulse    (sof),                   // input
-        .in_pulse    (gamma_sof_out),         // input
-        .out_pulse   (sof_mclk),              // output
-        .busy() // output
-    );
-
-    pulse_cross_clock pulse_cross_clock_eof_mclk_i (
-        .rst         (prst),                  // input
-        .src_clk     (pclk),                  // input
-        .dst_clk     (mclk),                  // input
-        .in_pulse    (eof),                   // input
-        .out_pulse   (eof_mclk),              // output
-        .busy() // output
-    );
-
-    pulse_cross_clock pulse_cross_clock_dout_valid_1cyc_mclk_i (
-        .rst         (prst),                             // input
-        .src_clk     (pclk),                             // input
-        .dst_clk     (mclk),                             // input
-        .in_pulse    (dout_valid && !dout_valid_d_pclk), // input
-        .out_pulse   (dout_valid_1cyc_mclk),             // output
-        .busy() // output
-    );
-
-    pulse_cross_clock pulse_cross_clock_last_in_line_1cyc_mclk_i (
-        .rst         (prst),                                 // input
-        .src_clk     (pclk),                                 // input
-        .dst_clk     (mclk),                                 // input
-        .in_pulse    (last_in_line && !last_in_line_d_pclk), // input
-        .out_pulse   (last_in_line_1cyc_mclk),               // output
-        .busy() // output
-    );
+        pulse_cross_clock pulse_cross_clock_sof_mclk_i (
+            .rst         (prst),                  // input
+            .src_clk     (pclk),                  // input
+            .dst_clk     (mclk),                  // input
+    //        .in_pulse    (sof),                   // input
+            .in_pulse    (gamma_sof_out),         // input
+            .out_pulse   (sof_mclk),              // output
+            .busy() // output
+        );
+    
+        pulse_cross_clock pulse_cross_clock_eof_mclk_i (
+            .rst         (prst),                  // input
+            .src_clk     (pclk),                  // input
+            .dst_clk     (mclk),                  // input
+            .in_pulse    (eof),                   // input
+            .out_pulse   (eof_mclk),              // output
+            .busy() // output
+        );
+    
+        pulse_cross_clock pulse_cross_clock_dout_valid_1cyc_mclk_i (
+            .rst         (prst),                             // input
+            .src_clk     (pclk),                             // input
+            .dst_clk     (mclk),                             // input
+            .in_pulse    (dout_valid && !dout_valid_d_pclk), // input
+            .out_pulse   (dout_valid_1cyc_mclk),             // output
+            .busy() // output
+        );
+    
+        pulse_cross_clock pulse_cross_clock_last_in_line_1cyc_mclk_i (
+            .rst         (prst),                                 // input
+            .src_clk     (pclk),                                 // input
+            .dst_clk     (mclk),                                 // input
+            .in_pulse    (last_in_line && !last_in_line_d_pclk), // input
+            .out_pulse   (last_in_line_1cyc_mclk),               // output
+            .busy() // output
+        );
+    
+`endif    
 
     
-    sens_parallel12 #(
-        .SENSIO_ADDR           (SENSIO_ADDR),
-        .SENSIO_ADDR_MASK      (SENSIO_ADDR_MASK),
-        .SENSIO_CTRL           (SENSIO_CTRL),
-        .SENSIO_STATUS         (SENSIO_STATUS),
-        .SENSIO_JTAG           (SENSIO_JTAG),
-        .SENSIO_WIDTH          (SENSIO_WIDTH),
-        .SENSIO_DELAYS         (SENSIO_DELAYS),
-        .SENSIO_STATUS_REG     (SENSIO_STATUS_REG),
-        .SENS_JTAG_PGMEN       (SENS_JTAG_PGMEN),
-        .SENS_JTAG_PROG        (SENS_JTAG_PROG),
-        .SENS_JTAG_TCK         (SENS_JTAG_TCK),
-        .SENS_JTAG_TMS         (SENS_JTAG_TMS),
-        .SENS_JTAG_TDI         (SENS_JTAG_TDI),
-        .SENS_CTRL_MRST        (SENS_CTRL_MRST),
-        .SENS_CTRL_ARST        (SENS_CTRL_ARST),
-        .SENS_CTRL_ARO         (SENS_CTRL_ARO),
-        .SENS_CTRL_RST_MMCM    (SENS_CTRL_RST_MMCM),
-        .SENS_CTRL_EXT_CLK     (SENS_CTRL_EXT_CLK),
-        .SENS_CTRL_LD_DLY      (SENS_CTRL_LD_DLY),
-        .SENS_CTRL_QUADRANTS   (SENS_CTRL_QUADRANTS),
-        .SENS_CTRL_QUADRANTS_WIDTH  (SENS_CTRL_QUADRANTS_WIDTH),
-        .SENS_CTRL_QUADRANTS_EN     (SENS_CTRL_QUADRANTS_EN),
-        .IODELAY_GRP           (IODELAY_GRP),
-        .IDELAY_VALUE          (IDELAY_VALUE),
-        .PXD_DRIVE             (PXD_DRIVE),
-        .PXD_IBUF_LOW_PWR      (PXD_IBUF_LOW_PWR),
-        .PXD_IOSTANDARD        (PXD_IOSTANDARD),
-        .PXD_SLEW              (PXD_SLEW),
-        .SENS_REFCLK_FREQUENCY (SENS_REFCLK_FREQUENCY),
-        .SENS_HIGH_PERFORMANCE_MODE (SENS_HIGH_PERFORMANCE_MODE),
-        .SENS_PHASE_WIDTH      (SENS_PHASE_WIDTH),
-        .SENS_PCLK_PERIOD      (SENS_PCLK_PERIOD),
-        .SENS_BANDWIDTH        (SENS_BANDWIDTH),
-        .CLKFBOUT_MULT_SENSOR  (CLKFBOUT_MULT_SENSOR),
-        .CLKFBOUT_PHASE_SENSOR (CLKFBOUT_PHASE_SENSOR),
-        .IPCLK_PHASE           (IPCLK_PHASE),
-        .IPCLK2X_PHASE         (IPCLK2X_PHASE),
-        .BUF_IPCLK             (BUF_IPCLK),
-        .BUF_IPCLK2X           (BUF_IPCLK2X),
-        .SENS_DIVCLK_DIVIDE    (SENS_DIVCLK_DIVIDE),
-        .SENS_REF_JITTER1      (SENS_REF_JITTER1),
-        .SENS_REF_JITTER2      (SENS_REF_JITTER2),
-        .SENS_SS_EN            (SENS_SS_EN),
-        .SENS_SS_MODE          (SENS_SS_MODE),
-        .SENS_SS_MOD_PERIOD    (SENS_SS_MOD_PERIOD),
-        .STATUS_ALIVE_WIDTH    (STATUS_ALIVE_WIDTH)
-    ) sens_parallel12_i (
-//        .rst                  (rst),                    // input
-        .pclk                 (pclk),                   // input
-        .mclk_rst             (mrst),                   // input
-        .prst                 (prst),                   // input
-        .irst                 (irst),                   // output
-        .ipclk                (ipclk),                  // output
-        .ipclk2x              (), // ipclk2x),          // output
-        .trigger_mode         (trigger_mode), // input
-        .trig                 (trig),                   // input
-        .vact                 (sns_dn[1]),              // input
-        .hact                 (sns_dp[1]),              // input
-        .bpf                  (sns_dn[0]),              // inout
-        .pxd                  ({sns_dn[6],sns_dp[6],sns_dn[5],sns_dp[5],sns_dn[4],sns_dp[4],sns_dn[3],sns_dp[3],sns_dn[2],sns_dp[2],sns_clkp,sns_clkn}), // inout[11:0] 
-        .mrst                 (sns_dp[7]),              // inout
-        .senspgm              (sns_pg),                 // inout
-        .arst                 (sns_dn[7]),              // inout
-        .aro                  (sns_ctl),                // inout
-        .dclk                 (sns_dp[0]),              // output
-        .pxd_out              (pxd_to_fifo[11:0]),      // output[11:0] @posedge ipclk
-        .vact_out             (vact_to_fifo),           // output @posedge ipclk
-        .hact_out             (hact_to_fifo),           // output @posedge ipclk: either delayed input, or regenerated from the leading edge and programmable duration
-        .status_alive_1cyc    (status_alive),           // input [3:0] @ posedge mclk, each bit single cycle pulse
-        .mclk                 (mclk),                   // input
-        .cmd_ad               (cmd_ad),                 // input[7:0] 
-        .cmd_stb              (cmd_stb),                // input
-        .status_ad            (sens_par12_status_ad),   // output[7:0] 
-        .status_rq            (sens_par12_status_rq),   // output
-        .status_start         (sens_par12_status_start) // input
-    );
 
-    sensor_fifo #(
-        .SENSOR_DATA_WIDTH  (SENSOR_DATA_WIDTH),
-        .SENSOR_FIFO_2DEPTH (SENSOR_FIFO_2DEPTH),
-        .SENSOR_FIFO_DELAY  (SENSOR_FIFO_DELAY)
-    ) sensor_fifo_i (
-//        .rst         (rst),        // input
-        .iclk        (ipclk),        // input
-        .pclk        (pclk),         // input
-        .prst        (prst),         // input
-        .irst        (irst),         // input
-        .pxd_in      (pxd_to_fifo),  // input[11:0] 
-        .vact        (vact_to_fifo), // input
-        .hact        (hact_to_fifo), // input
-        .pxd_out     (pxd),          // output[11:0]  @posedge pclk
-        .data_valid  (hact),         // output @posedge pclk
-        .sof         (sof),          // output @posedge pclk
-        .eof         (eof)           // output @posedge pclk
-    );
 
+`ifdef HISPI
+        sens_10398 #(
+            .SENSIO_ADDR            (SENSIO_ADDR),
+            .SENSIO_ADDR_MASK       (SENSIO_ADDR_MASK),
+            .SENSIO_CTRL            (SENSIO_CTRL),
+            .SENSIO_STATUS          (SENSIO_STATUS),
+            .SENSIO_JTAG            (SENSIO_JTAG),
+            .SENSIO_DELAYS          (SENSIO_DELAYS),
+            .SENSIO_STATUS_REG      (SENSIO_STATUS_REG),
+            .SENS_JTAG_PGMEN        (SENS_JTAG_PGMEN),
+            .SENS_JTAG_PROG         (SENS_JTAG_PROG),
+            .SENS_JTAG_TCK          (SENS_JTAG_TCK),
+            .SENS_JTAG_TMS          (SENS_JTAG_TMS),
+            .SENS_JTAG_TDI          (SENS_JTAG_TDI),
+            .SENS_CTRL_MRST         (SENS_CTRL_MRST),
+            .SENS_CTRL_ARST         (SENS_CTRL_ARST),
+            .SENS_CTRL_ARO          (SENS_CTRL_ARO),
+            .SENS_CTRL_RST_MMCM     (SENS_CTRL_RST_MMCM),
+            .SENS_CTRL_IGNORE_EMBED (SENS_CTRL_IGNORE_EMBED),
+            .SENS_CTRL_LD_DLY       (SENS_CTRL_LD_DLY),
+            .SENS_CTRL_GP0          (SENS_CTRL_GP0),
+            .SENS_CTRL_GP1          (SENS_CTRL_GP1),
+            .IODELAY_GRP            (IODELAY_GRP),
+            .IDELAY_VALUE           (IDELAY_VALUE),
+            .REFCLK_FREQUENCY       (SENS_REFCLK_FREQUENCY),
+            .HIGH_PERFORMANCE_MODE  (SENS_HIGH_PERFORMANCE_MODE),
+            .SENS_PHASE_WIDTH       (SENS_PHASE_WIDTH),
+//            .SENS_PCLK_PERIOD       (SENS_PCLK_PERIOD),
+            .SENS_BANDWIDTH         (SENS_BANDWIDTH),
+            .CLKIN_PERIOD_SENSOR    (CLKIN_PERIOD_SENSOR),
+            .CLKFBOUT_MULT_SENSOR   (CLKFBOUT_MULT_SENSOR),
+            .CLKFBOUT_PHASE_SENSOR  (CLKFBOUT_PHASE_SENSOR),
+            .IPCLK_PHASE            (IPCLK_PHASE),
+            .IPCLK2X_PHASE          (IPCLK2X_PHASE),
+            .BUF_IPCLK              (BUF_IPCLK),
+            .BUF_IPCLK2X            (BUF_IPCLK2X),
+            .SENS_DIVCLK_DIVIDE     (SENS_DIVCLK_DIVIDE),
+            .SENS_REF_JITTER1       (SENS_REF_JITTER1),
+            .SENS_REF_JITTER2       (SENS_REF_JITTER2),
+            .SENS_SS_EN             (SENS_SS_EN),
+            .SENS_SS_MODE           (SENS_SS_MODE),
+            .SENS_SS_MOD_PERIOD     (SENS_SS_MOD_PERIOD),
+            .HISPI_MSB_FIRST        (HISPI_MSB_FIRST),
+            .HISPI_NUMLANES         (HISPI_NUMLANES),
+            .HISPI_CAPACITANCE      (HISPI_CAPACITANCE),
+            .HISPI_DIFF_TERM        (HISPI_DIFF_TERM),
+            .HISPI_DQS_BIAS         (HISPI_DQS_BIAS),
+            .HISPI_IBUF_DELAY_VALUE (HISPI_IBUF_DELAY_VALUE),
+            .HISPI_IBUF_LOW_PWR     (HISPI_IBUF_LOW_PWR),
+            .HISPI_IFD_DELAY_VALUE  (HISPI_IFD_DELAY_VALUE),
+            .HISPI_IOSTANDARD       (HISPI_IOSTANDARD),
+            .PXD_DRIVE              (PXD_DRIVE),
+            .PXD_IBUF_LOW_PWR       (PXD_IBUF_LOW_PWR),
+            .PXD_IOSTANDARD         (PXD_IOSTANDARD),
+            .PXD_SLEW               (PXD_SLEW),
+            .PXD_CAPACITANCE        (PXD_CAPACITANCE),
+            .PXD_CLK_DIV            (PXD_CLK_DIV),
+            .PXD_CLK_DIV_BITS       (PXD_CLK_DIV_BITS)
+        ) sens_10398_i (
+            .pclk             (pclk),                   // input
+            .prst             (prst),                   // input
+            .mclk             (mclk),                   // input
+            .mrst             (mrst),                   // input
+            .cmd_ad           (cmd_ad),                 // input[7:0] 
+            .cmd_stb          (cmd_stb),                // input
+            .status_ad        (sens_phys_status_ad),    // output[7:0] 
+            .status_rq        (sens_phys_status_rq),    // output
+            .status_start     (sens_phys_status_start), // input
+            .trigger_mode     (trigger_mode),           // input
+            .trig             (trig),                   // input
+            .sns_dp           (sns_dp[3:0]),            // input[3:0] 
+            .sns_dn           (sns_dn[3:0]),            // input[3:0] 
+            .sns_clkp         (sns_clkp),               // input
+            .sns_clkn         (sns_clkn),               // input
+            .sens_ext_clk_p   (sns_dp[6]),              // output
+            .sens_ext_clk_n   (sns_dn[6]),              // output
+            .sns_pgm          (sns_pg),                 // inout
+            .sns_ctl_tck      (sns_ctl),                // output
+            .sns_mrst         (sns_dp[7]),              // output
+            .sns_arst_tms     (sns_dn[7]),              // output
+            .sns_gp0_tdi      (sns_dp[5]),              // output
+            .sns_gp1          (sns_dn[5]),              // output
+            .sns_flash_tdo    (sns_dp[4]),              // input
+            .sns_shutter_done (sns_dn[4]),              // input
+            .pxd              (pxd),                    // output[11:0] 
+            .hact             (hact),                   // output
+            .sof              (sof),                    // output
+            .eof              (eof)                     // output
+        );
+
+`else    
+        sens_parallel12 #(
+            .SENSIO_ADDR           (SENSIO_ADDR),
+            .SENSIO_ADDR_MASK      (SENSIO_ADDR_MASK),
+            .SENSIO_CTRL           (SENSIO_CTRL),
+            .SENSIO_STATUS         (SENSIO_STATUS),
+            .SENSIO_JTAG           (SENSIO_JTAG),
+            .SENSIO_WIDTH          (SENSIO_WIDTH),
+            .SENSIO_DELAYS         (SENSIO_DELAYS),
+            .SENSIO_STATUS_REG     (SENSIO_STATUS_REG),
+            .SENS_JTAG_PGMEN       (SENS_JTAG_PGMEN),
+            .SENS_JTAG_PROG        (SENS_JTAG_PROG),
+            .SENS_JTAG_TCK         (SENS_JTAG_TCK),
+            .SENS_JTAG_TMS         (SENS_JTAG_TMS),
+            .SENS_JTAG_TDI         (SENS_JTAG_TDI),
+            .SENS_CTRL_MRST        (SENS_CTRL_MRST),
+            .SENS_CTRL_ARST        (SENS_CTRL_ARST),
+            .SENS_CTRL_ARO         (SENS_CTRL_ARO),
+            .SENS_CTRL_RST_MMCM    (SENS_CTRL_RST_MMCM),
+            .SENS_CTRL_EXT_CLK     (SENS_CTRL_EXT_CLK),
+            .SENS_CTRL_LD_DLY      (SENS_CTRL_LD_DLY),
+            .SENS_CTRL_QUADRANTS   (SENS_CTRL_QUADRANTS),
+            .SENS_CTRL_QUADRANTS_WIDTH  (SENS_CTRL_QUADRANTS_WIDTH),
+            .SENS_CTRL_QUADRANTS_EN     (SENS_CTRL_QUADRANTS_EN),
+            .IODELAY_GRP           (IODELAY_GRP),
+            .IDELAY_VALUE          (IDELAY_VALUE),
+            .PXD_DRIVE             (PXD_DRIVE),
+            .PXD_IBUF_LOW_PWR      (PXD_IBUF_LOW_PWR),
+            .PXD_IOSTANDARD        (PXD_IOSTANDARD),
+            .PXD_SLEW              (PXD_SLEW),
+            .SENS_REFCLK_FREQUENCY (SENS_REFCLK_FREQUENCY),
+            .SENS_HIGH_PERFORMANCE_MODE (SENS_HIGH_PERFORMANCE_MODE),
+            .SENS_PHASE_WIDTH      (SENS_PHASE_WIDTH),
+//            .SENS_PCLK_PERIOD      (SENS_PCLK_PERIOD),
+            .SENS_BANDWIDTH        (SENS_BANDWIDTH),
+            .CLKIN_PERIOD_SENSOR   (CLKIN_PERIOD_SENSOR),
+            .CLKFBOUT_MULT_SENSOR  (CLKFBOUT_MULT_SENSOR),
+            .CLKFBOUT_PHASE_SENSOR (CLKFBOUT_PHASE_SENSOR),
+            .IPCLK_PHASE           (IPCLK_PHASE),
+            .IPCLK2X_PHASE         (IPCLK2X_PHASE),
+            .BUF_IPCLK             (BUF_IPCLK),
+            .BUF_IPCLK2X           (BUF_IPCLK2X),
+            .SENS_DIVCLK_DIVIDE    (SENS_DIVCLK_DIVIDE),
+            .SENS_REF_JITTER1      (SENS_REF_JITTER1),
+            .SENS_REF_JITTER2      (SENS_REF_JITTER2),
+            .SENS_SS_EN            (SENS_SS_EN),
+            .SENS_SS_MODE          (SENS_SS_MODE),
+            .SENS_SS_MOD_PERIOD    (SENS_SS_MOD_PERIOD),
+            .STATUS_ALIVE_WIDTH    (STATUS_ALIVE_WIDTH)
+        ) sens_parallel12_i (
+//            .rst                  (rst),                    // input
+            .pclk                 (pclk),                   // input
+            .mclk_rst             (mrst),                   // input
+            .prst                 (prst),                   // input
+            .irst                 (irst),                   // output
+            .ipclk                (ipclk),                  // output
+            .ipclk2x              (), // ipclk2x),          // output
+            .trigger_mode         (trigger_mode), // input
+            .trig                 (trig),                   // input
+            .vact                 (sns_dn[1]),              // input
+            .hact                 (sns_dp[1]),              // input
+            .bpf                  (sns_dn[0]),              // inout
+            .pxd                  ({sns_dn[6],sns_dp[6],sns_dn[5],sns_dp[5],sns_dn[4],sns_dp[4],sns_dn[3],sns_dp[3],sns_dn[2],sns_dp[2],sns_clkp,sns_clkn}), // inout[11:0] 
+            .mrst                 (sns_dp[7]),              // inout
+            .senspgm              (sns_pg),                 // inout
+            .arst                 (sns_dn[7]),              // inout
+            .aro                  (sns_ctl),                // inout
+            .dclk                 (sns_dp[0]),              // output
+            .pxd_out              (pxd_to_fifo[11:0]),      // output[11:0] @posedge ipclk
+            .vact_out             (vact_to_fifo),           // output @posedge ipclk
+            .hact_out             (hact_to_fifo),           // output @posedge ipclk: either delayed input, or regenerated from the leading edge and programmable duration
+            .status_alive_1cyc    (status_alive),           // input [3:0] @ posedge mclk, each bit single cycle pulse
+            .mclk                 (mclk),                   // input
+            .cmd_ad               (cmd_ad),                 // input[7:0] 
+            .cmd_stb              (cmd_stb),                // input
+            .status_ad            (sens_phys_status_ad),   // output[7:0] 
+            .status_rq            (sens_phys_status_rq),   // output
+            .status_start         (sens_phys_status_start) // input
+        );
+    
+        sensor_fifo #(
+            .SENSOR_DATA_WIDTH  (SENSOR_DATA_WIDTH),
+            .SENSOR_FIFO_2DEPTH (SENSOR_FIFO_2DEPTH),
+            .SENSOR_FIFO_DELAY  (SENSOR_FIFO_DELAY)
+        ) sensor_fifo_i (
+    //        .rst         (rst),        // input
+            .iclk        (ipclk),        // input
+            .pclk        (pclk),         // input
+            .prst        (prst),         // input
+            .irst        (irst),         // input
+            .pxd_in      (pxd_to_fifo),  // input[11:0] 
+            .vact        (vact_to_fifo), // input
+            .hact        (hact_to_fifo), // input
+            .pxd_out     (pxd),          // output[11:0]  @posedge pclk
+            .data_valid  (hact),         // output @posedge pclk
+            .sof         (sof),          // output @posedge pclk
+            .eof         (eof)           // output @posedge pclk
+        );
+`endif
     sens_sync #(
         .SENS_SYNC_ADDR       (SENS_SYNC_ADDR),
         .SENS_SYNC_MASK       (SENS_SYNC_MASK),
@@ -893,10 +1029,7 @@ module  sensor_channel#(
                 .debug_di     (debug_ring[1])          // input
 `endif         
             );
-//`ifdef DEBUG_RING       
-//            assign debug_ring[0] = debug_ring[1]; // just bypass
-//            assign tmp1 = debug_ring[1]; // just bypass
-//`endif
+
     endgenerate
     
     

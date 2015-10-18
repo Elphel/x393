@@ -48,7 +48,7 @@ module  simul_clk_mult_div#(
             sim_clk_div #(
                 .DIVISOR   (DIVISOR)
             ) sim_clk_div_i (
-                .clk_in   (clk_in), // input
+                .clk_in   (clk_int), // input
                 .en       (en), // input
                 .clk_out  (clk_out) // output
             );

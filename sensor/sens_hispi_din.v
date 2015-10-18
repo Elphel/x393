@@ -53,7 +53,7 @@ module  sens_hispi_din #(
 
     generate
         genvar i;
-        for (i=1; i < HISPI_NUMLANES; i=i+1) begin: din_block
+        for (i=0; i < HISPI_NUMLANES; i=i+1) begin: din_block
             ibufds_ibufgds #(
                 .CAPACITANCE      (HISPI_CAPACITANCE),
                 .DIFF_TERM        (HISPI_DIFF_TERM),
@@ -84,17 +84,18 @@ module  sens_hispi_din #(
             );
             
             iserdes_mem #(
-                .DYN_CLKDIV_INV_EN("FALSE")
+                .DYN_CLKDIV_INV_EN ("FALSE"),
+                .MSB_FIRST         (1)          // MSB is received first
             ) iserdes_pxd_i (
-                .iclk(ipclk2x),           // source-synchronous clock
-                .oclk(ipclk2x),           // system clock, phase should allow iclk-to-oclk jitter with setup/hold margin
-                .oclk_div(ipclk),         // oclk divided by 2, front aligned
-                .inv_clk_div(1'b0),       // invert oclk_div (this clock is shared between iserdes and oserdes. Works only in MEMORY_DDR3 mode?
-                .rst(irst),               // reset
-                .d_direct(1'b0),          // direct input from IOB, normally not used, controlled by IOBDELAY parameter (set to "NONE")
-                .ddly(din_dly[i]),        // serial input from idelay 
-                .dout(dout[4*i +:4]),     // parallel data out
-                .comb_out()               // output
+                .iclk         (ipclk2x),       // source-synchronous clock
+                .oclk         (ipclk2x),       // system clock, phase should allow iclk-to-oclk jitter with setup/hold margin
+                .oclk_div     (ipclk),         // oclk divided by 2, front aligned
+                .inv_clk_div  (1'b0),          // invert oclk_div (this clock is shared between iserdes and oserdes. Works only in MEMORY_DDR3 mode?
+                .rst          (irst),          // reset
+                .d_direct     (1'b0),          // direct input from IOB, normally not used, controlled by IOBDELAY parameter (set to "NONE")
+                .ddly         (din_dly[i]),    // serial input from idelay 
+                .dout         (dout[4*i +:4]), // parallel data out
+                .comb_out()                    // output
             );
         
         end

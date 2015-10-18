@@ -429,11 +429,20 @@
         parameter SENS_CTRL_ARST =        2,  //  3: 2
         parameter SENS_CTRL_ARO =         4,  //  5: 4
         parameter SENS_CTRL_RST_MMCM =    6,  //  7: 6
+//`ifdef HISPI
+        parameter SENS_CTRL_IGNORE_EMBED =8,  //  9: 8
+//`else        
         parameter SENS_CTRL_EXT_CLK =     8,  //  9: 8
+//`endif        
         parameter SENS_CTRL_LD_DLY =     10,  // 10
+//`ifdef HISPI
+        parameter SENS_CTRL_GP0=      12,  // 13:12
+        parameter SENS_CTRL_GP1=      14,  // 15:14
+//`else        
         parameter SENS_CTRL_QUADRANTS =  12,  // 17:12, enable - 20
         parameter SENS_CTRL_QUADRANTS_WIDTH = 6,
         parameter SENS_CTRL_QUADRANTS_EN =   20,  // 17:12, enable - 20 (2 bits reserved)
+//`endif        
       parameter SENSIO_STATUS =         'h1,
       parameter SENSIO_JTAG =           'h2,
         // SENSIO_JTAG register bits
@@ -442,7 +451,9 @@
         parameter SENS_JTAG_TCK =         4,
         parameter SENS_JTAG_TMS =         2,
         parameter SENS_JTAG_TDI =         0,
+//`ifndef HISPI
       parameter SENSIO_WIDTH =          'h3, // 1.. 2^16, 0 - use HACT
+//`endif      
       parameter SENSIO_DELAYS =         'h4, // 'h4..'h7
         // 4 of 8-bit delays per register
     // sensor_i2c_io command/data write registers s (relative to SENSOR_GROUP_ADDR)
@@ -466,10 +477,13 @@
     parameter SENSI2C_IOSTANDARD =       "LVCMOS25",
     parameter SENSI2C_SLEW =             "SLOW",
     
+//`ifndef HISPI
     //sensor_fifo parameters
-    parameter SENSOR_DATA_WIDTH =        12,
-    parameter SENSOR_FIFO_2DEPTH =       4,
-    parameter SENSOR_FIFO_DELAY =        4'd5, // 7,
+    parameter SENSOR_DATA_WIDTH =      12,
+    parameter SENSOR_FIFO_2DEPTH =     4,
+    parameter SENSOR_FIFO_DELAY =      5, // 7,
+//`endif    
+
     // other parameters for histogram_saxi module
     parameter HIST_SAXI_ADDR_MASK =      'h7f0,
       parameter HIST_SAXI_MODE_WIDTH =   8,
@@ -504,16 +518,31 @@
     parameter real SENS_REFCLK_FREQUENCY = 200.0,
 `endif    
     parameter SENS_HIGH_PERFORMANCE_MODE = "FALSE",
+
+//`ifdef HISPI
+    parameter PXD_CAPACITANCE =          "DONT_CARE",
+    parameter PXD_CLK_DIV =              10, // 220MHz -> 22MHz
+    parameter PXD_CLK_DIV_BITS =          4,
+//`endif    
     
     parameter SENS_PHASE_WIDTH=          8,      // number of bits for te phase counter (depends on divisors)
     parameter SENS_PCLK_PERIOD =         10.000,  // input period in ns, 0..100.000 - MANDATORY, resolution down to 1 ps
     parameter SENS_BANDWIDTH =           "OPTIMIZED",  //"OPTIMIZED", "HIGH","LOW"
 
-    parameter CLKFBOUT_MULT_SENSOR =     8,  // 100 MHz --> 800 MHz
+    // parameters for the sensor-synchronous clock PLL
+`ifdef HISPI    
+    parameter CLKIN_PERIOD_SENSOR =      3.000, // input period in ns, 0..100.000 - MANDATORY, resolution down to 1 ps
+    parameter CLKFBOUT_MULT_SENSOR =     3,      // 330 MHz --> 990 MHz
     parameter CLKFBOUT_PHASE_SENSOR =    0.000,  // CLOCK FEEDBACK phase in degrees (3 significant digits, -360.000...+360.000)
     parameter IPCLK_PHASE =              0.000,
     parameter IPCLK2X_PHASE =            0.000,
-
+`else    
+    parameter CLKIN_PERIOD_SENSOR =      10.000, // input period in ns, 0..100.000 - MANDATORY, resolution down to 1 ps
+    parameter CLKFBOUT_MULT_SENSOR =     8,      // 100 MHz --> 800 MHz
+    parameter CLKFBOUT_PHASE_SENSOR =    0.000,  // CLOCK FEEDBACK phase in degrees (3 significant digits, -360.000...+360.000)
+    parameter IPCLK_PHASE =              0.000,
+    parameter IPCLK2X_PHASE =            0.000,
+`endif
 //    parameter BUF_IPCLK =                "BUFMR", //G", // "BUFR", // BUFR fails for both clocks for sensors1 and 3
 //    parameter BUF_IPCLK2X =              "BUFMR", //G", // "BUFR",  
 
@@ -535,6 +564,18 @@
     parameter SENS_SS_EN         =       "FALSE",      // Enables Spread Spectrum mode
     parameter SENS_SS_MODE       =       "CENTER_HIGH",//"CENTER_HIGH","CENTER_LOW","DOWN_HIGH","DOWN_LOW"
     parameter SENS_SS_MOD_PERIOD =       10000,        // integer 4000-40000 - SS modulation period in ns
+
+//`ifdef HISPI
+    parameter HISPI_MSB_FIRST =            0,
+    parameter HISPI_NUMLANES =             4,
+    parameter HISPI_CAPACITANCE =         "DONT_CARE",
+    parameter HISPI_DIFF_TERM =           "TRUE",
+    parameter HISPI_DQS_BIAS =            "TRUE",
+    parameter HISPI_IBUF_DELAY_VALUE =    "0",
+    parameter HISPI_IBUF_LOW_PWR =        "TRUE",
+    parameter HISPI_IFD_DELAY_VALUE =     "AUTO",
+    parameter HISPI_IOSTANDARD =          "DEFAULT",
+//`endif    
     
     parameter CMPRS_NUM_AFI_CHN =         1, // 2, // 1 - multiplex all 4 compressors to a single AXI_HP, 2 - split between to AXI_HP
     parameter CMPRS_GROUP_ADDR =          'h600, // total of 'h60

@@ -59,9 +59,10 @@ module  sens_parallel12 #(
     parameter SENS_HIGH_PERFORMANCE_MODE =    "FALSE",
     
     parameter SENS_PHASE_WIDTH=               8,      // number of bits for te phase counter (depends on divisors)
-    parameter SENS_PCLK_PERIOD =              10.000,  // input period in ns, 0..100.000 - MANDATORY, resolution down to 1 ps
+//    parameter SENS_PCLK_PERIOD =              10.000,  // input period in ns, 0..100.000 - MANDATORY, resolution down to 1 ps
     parameter SENS_BANDWIDTH =                "OPTIMIZED",  //"OPTIMIZED", "HIGH","LOW"
 
+    parameter CLKIN_PERIOD_SENSOR =   10.000, // input period in ns, 0..100.000 - MANDATORY, resolution down to 1 ps
     parameter CLKFBOUT_MULT_SENSOR =   8,  // 100 MHz --> 800 MHz
     parameter CLKFBOUT_PHASE_SENSOR =  0.000,  // CLOCK FEEDBACK phase in degrees (3 significant digits, -360.000...+360.000)
     parameter IPCLK_PHASE =            0.000,
@@ -642,7 +643,7 @@ module  sens_parallel12 #(
     // received from the sensor (may need to reset MMCM after resetting sensor)
     mmcm_phase_cntr #(
         .PHASE_WIDTH         (SENS_PHASE_WIDTH),
-        .CLKIN_PERIOD        (SENS_PCLK_PERIOD),
+        .CLKIN_PERIOD        (CLKIN_PERIOD_SENSOR), // SENS_PCLK_PERIOD), assuming both sources have the same frequency!
         .BANDWIDTH           (SENS_BANDWIDTH),
         .CLKFBOUT_MULT_F     (CLKFBOUT_MULT_SENSOR), //8
         .DIVCLK_DIVIDE       (SENS_DIVCLK_DIVIDE),

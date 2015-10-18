@@ -1,16 +1,16 @@
 /*******************************************************************************
- * Module: x393_testbench02
+ * Module: x393_testbench03
  * Date:2015-02-06  
  * Author: Andrey Filippov     
  * Description: testbench for the initial x393.v simulation
  *
  * Copyright (c) 2015 Elphel, Inc.
- * x393_testbench02.v is free software; you can redistribute it and/or modify
+ * x393_testbench03.v is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- *  x393_testbench02.tf is distributed in the hope that it will be useful,
+ *  x393_testbench03.tf is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
@@ -49,7 +49,7 @@
 `define TEST_SENSOR 0
 
 
-module  x393_testbench02 #(
+module  x393_testbench03 #(
 `include "includes/x393_parameters.vh" // SuppressThisWarning VEditor - not used
 `include "includes/x393_simulation_parameters.vh"
 )(
@@ -714,7 +714,7 @@ assign #10 gpio_pins[9] = gpio_pins[8];
 
 
   // SuppressWarnings VEditor : assigned in $readmem() system task
-    $dumpvars(0,x393_testbench02);
+    $dumpvars(0,x393_testbench03);
 //    CLK =1'b0;
     RST = 1'bx;
     AR_SET_CMD_r = 1'b0;

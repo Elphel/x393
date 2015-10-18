@@ -56,10 +56,11 @@ module  sens_10398 #(
     parameter real REFCLK_FREQUENCY =      200.0,
     parameter HIGH_PERFORMANCE_MODE =     "FALSE",
     parameter SENS_PHASE_WIDTH=            8,      // number of bits for te phase counter (depends on divisors)
-    parameter SENS_PCLK_PERIOD =           3.000,  // input period in ns, 0..100.000 - MANDATORY, resolution down to 1 ps
+//    parameter SENS_PCLK_PERIOD =           3.000,  // input period in ns, 0..100.000 - MANDATORY, resolution down to 1 ps
     parameter SENS_BANDWIDTH =             "OPTIMIZED",  //"OPTIMIZED", "HIGH","LOW"
 
-    parameter CLKFBOUT_MULT_SENSOR =       4,  // 220 MHz --> 880 MHz
+    parameter CLKIN_PERIOD_SENSOR =        3.000, // input period in ns, 0..100.000 - MANDATORY, resolution down to 1 ps
+    parameter CLKFBOUT_MULT_SENSOR =       3,      // 330 MHz --> 990 MHz
     parameter CLKFBOUT_PHASE_SENSOR =      0.000,  // CLOCK FEEDBACK phase in degrees (3 significant digits, -360.000...+360.000)
     parameter IPCLK_PHASE =                0.000,
     parameter IPCLK2X_PHASE =              0.000,
@@ -127,10 +128,11 @@ module  sens_10398 #(
 
     input                      sns_flash_tdo,   // sns_dp[4]           TDO  (differs from 10353)
     input                      sns_shutter_done,// sns_dn[4]           DONE (differs from 10353)
-    // output
+
     output              [11:0] pxd,
-    output                     vact, 
-    output                     hact
+    output                     hact,
+    output                     sof, // @pclk
+    output                     eof // @pclk
     
 
 );
@@ -145,18 +147,6 @@ module  sens_10398 #(
     reg         set_status_r;
     reg         set_jtag_r;
     
-//    reg [LINE_WIDTH_BITS-1:0] line_width_m1;       // regenerated HACT duration;
-//    reg [LINE_WIDTH_BITS-1:0] line_width_m1_ipclk;  // regenerated HACT duration;
-    
-//    reg                       line_width_internal; // use regenetrated ( 0 - use HACT as is)
-//    reg                       line_width_internal_ipclk;
-//    reg [LINE_WIDTH_BITS-1:0] hact_cntr;
-    
-//    reg         set_quad; // [1:0] - px, [3:2] - HACT, [5:4] - VACT,
-    
-//    wire  [2:0] set_pxd_delay;
-//    wire        set_other_delay;
-    
     wire        ps_rdy;
     wire  [7:0] ps_out;      
     wire        locked_pxd_mmcm;
@@ -167,17 +157,11 @@ module  sens_10398 #(
     reg         iaro_soft  = 0;
     wire        iaro;
     reg         iarst = 0;
-    reg         imrst = 0;
+    reg         imrst = 0;  // active low 
     reg         rst_mmcm=1; // rst and command - en/dis 
-//    reg  [SENS_CTRL_QUADRANTS_WIDTH-1:0]  quadrants=0; //90-degree shifts for data {1:0], hact [3:2] and vact [5:4]
     reg         ld_idelay=0;
-//    reg         sel_ext_clk=0; // select clock source from the sensor (0 - use internal clock - to sensor)
-
     reg         ignore_embed=0; // do not process sensor data marked as "embedded"
 
-
-
-//    wire [17:0] status;
     wire [14:0] status;
     
     wire        cmd_we;
@@ -195,30 +179,10 @@ module  sens_10398 #(
     reg            xfpgatdi=0;   // TDI to be sent to external FPGA
     
     reg      [1:0] gp_r;         // sensor GP0, GP1. For now just software control, later use for something else
-//    wire           hact_ext;     // received hact signal
-//    reg            hact_ext_r;   // received hact signal, delayed by 1 clock
-//    reg            hact_r;       // received or regenerated hact 
-
-// for debug/test alive    
-/*
-    reg            vact_r;       
-    reg            hact_r2;
-    wire           vact_a_mclk;
-    wire           hact_ext_a_mclk;
-    wire           hact_a_mclk;
-    reg            vact_alive;
-    reg            hact_ext_alive;
-    reg            hact_alive;
-    reg  [STATUS_ALIVE_WIDTH-1:0] status_alive; 
-*/    
     reg [ PXD_CLK_DIV_BITS-1:0] pxd_clk_cntr;
-//        parameter PXD_CLK_DIV =              10, // 220MHz -> 22MHz
-//    parameter PXD_CLK_DIV_BITS =          4,
-       
-     
-//    assign set_pxd_delay =   set_idelay[2:0];
-//    assign set_other_delay = set_idelay[3];
-//    assign status = {vact_alive, hact_ext_alive, hact_alive, locked_pxd_mmcm, 
+    reg      [1:0] prst_with_sens_mrst = 2'h3; // prst extended to include sensor reset and rst_mmcm
+    wire           async_prst_with_sens_mrst =  ~imrst | rst_mmcm; // mclk domain   
+
     assign status = { locked_pxd_mmcm, 
                      clkin_pxd_stopped_mmcm, clkfb_pxd_stopped_mmcm, xfpgadone,
                      ps_rdy, ps_out, xfpgatdo, senspgmin};
@@ -228,7 +192,7 @@ module  sens_10398 #(
 
 
     always @(posedge mclk) begin
-        if      (mrst) data_r <= 0;
+        if      (mrst)     data_r <= 0;
         else if (cmd_we)   data_r <= cmd_data;
         
         if      (mrst) set_idelays <= 0;
@@ -237,51 +201,45 @@ module  sens_10398 #(
         if      (mrst) set_iclk_phase <= 0;
         else           set_iclk_phase <=  cmd_we & (cmd_a==(SENSIO_DELAYS+3));
                                              
-        if (mrst) set_status_r <=0;
+        if (mrst)     set_status_r <=0;
         else          set_status_r <= cmd_we && (cmd_a== SENSIO_STATUS);                             
         
-        if (mrst) set_ctrl_r <=0;
+        if (mrst)     set_ctrl_r <=0;
         else          set_ctrl_r <= cmd_we && (cmd_a== SENSIO_CTRL);                             
         
-        if (mrst) set_jtag_r <=0;
+        if (mrst)     set_jtag_r <=0;
         else          set_jtag_r <= cmd_we && (cmd_a== SENSIO_JTAG);
         
-        if      (mrst)                                  xpgmen <= 0;
+        if      (mrst)                                      xpgmen <= 0;
         else if (set_jtag_r && data_r[SENS_JTAG_PGMEN + 1]) xpgmen <= data_r[SENS_JTAG_PGMEN]; 
 
-        if      (mrst)                                  xfpgaprog <= 0;
+        if      (mrst)                                      xfpgaprog <= 0;
         else if (set_jtag_r && data_r[SENS_JTAG_PROG + 1])  xfpgaprog <= data_r[SENS_JTAG_PROG]; 
                                      
-        if      (mrst)                                  xfpgatck <= 0;
+        if      (mrst)                                      xfpgatck <= 0;
         else if (set_jtag_r && data_r[SENS_JTAG_TCK + 1])   xfpgatck <= data_r[SENS_JTAG_TCK]; 
 
-        if      (mrst)                                  xfpgatms <= 0;
+        if      (mrst)                                      xfpgatms <= 0;
         else if (set_jtag_r && data_r[SENS_JTAG_TMS + 1])   xfpgatms <= data_r[SENS_JTAG_TMS]; 
 
-        if      (mrst)                                  xfpgatdi <= 0;
+        if      (mrst)                                      xfpgatdi <= 0;
         else if (set_jtag_r && data_r[SENS_JTAG_TDI + 1])   xfpgatdi <= data_r[SENS_JTAG_TDI];
         
-        if      (mrst)                                      imrst <= 0;
-        else if (set_ctrl_r && data_r[SENS_CTRL_MRST + 1])      imrst <= data_r[SENS_CTRL_MRST]; 
+        if      (mrst)                                      imrst <= 0; 
+        else if (set_ctrl_r && data_r[SENS_CTRL_MRST + 1])  imrst <= data_r[SENS_CTRL_MRST]; 
          
         if      (mrst)                                      iarst <= 0;
-        else if (set_ctrl_r && data_r[SENS_CTRL_ARST + 1])      iarst <= data_r[SENS_CTRL_ARST]; 
+        else if (set_ctrl_r && data_r[SENS_CTRL_ARST + 1])  iarst <= data_r[SENS_CTRL_ARST]; 
          
         if      (mrst)                                      iaro_soft <= 0;
-        else if (set_ctrl_r && data_r[SENS_CTRL_MRST + 1])      iaro_soft <= data_r[SENS_CTRL_ARO]; 
+        else if (set_ctrl_r && data_r[SENS_CTRL_MRST + 1])  iaro_soft <= data_r[SENS_CTRL_ARO]; 
          
-        if      (mrst)                                      rst_mmcm <= 0;
+        if      (mrst)                                          rst_mmcm <= 0;
         else if (set_ctrl_r && data_r[SENS_CTRL_RST_MMCM + 1])  rst_mmcm <= data_r[SENS_CTRL_RST_MMCM]; 
          
-//        if      (mrst)                                      sel_ext_clk <= 0;
-//        else if (set_ctrl_r && data_r[SENS_CTRL_EXT_CLK + 1])   sel_ext_clk <= data_r[SENS_CTRL_EXT_CLK]; 
         if      (mrst)                                               ignore_embed <= 0;
         else if (set_ctrl_r && data_r[SENS_CTRL_IGNORE_EMBED + 1])   ignore_embed <= data_r[SENS_CTRL_IGNORE_EMBED]; 
          
-         
-//        if      (mrst)                                         quadrants <= 0;
-//        else if (set_ctrl_r && data_r[SENS_CTRL_QUADRANTS_EN])  quadrants <= data_r[SENS_CTRL_QUADRANTS +: SENS_CTRL_QUADRANTS_WIDTH]; 
-
         if  (mrst) ld_idelay <= 0;
         else       ld_idelay <= set_ctrl_r && data_r[SENS_CTRL_LD_DLY]; 
 
@@ -291,27 +249,22 @@ module  sens_10398 #(
         if      (mrst)                                      gp_r[1] <= 0;
         else if (set_ctrl_r && data_r[SENS_CTRL_GP1 + 1])   gp_r[1] <= data_r[SENS_CTRL_GP1]; 
 
-
-
-        
-//        if  (mrst) set_width_r <= 0;
-//        else           set_width_r <= {set_width_r[0],cmd_we && (cmd_a== SENSIO_WIDTH)}; 
-        
-//        if      (mrst)       line_width_m1 <= 0;
-//        else if (set_width_r[1]) line_width_m1 <= data_r[LINE_WIDTH_BITS-1:0] -1;
-        
-//        if      (mrst)       line_width_internal <= 0;
-//        else if (set_width_r[1]) line_width_internal <= ~ (|data_r[LINE_WIDTH_BITS:0]); // line width is 0
     end
 
+    // generate (slow) clock for the sensor - it will be multiplied by the sensor VCO
     always @(posedge pclk) begin
-    if (prst || (pxd_clk_cntr[PXD_CLK_DIV_BITS-2:0] == 0)) pxd_clk_cntr[PXD_CLK_DIV_BITS-2:0] <= (PXD_CLK_DIV / 2);
-    else                                                   pxd_clk_cntr[PXD_CLK_DIV_BITS-2:0] <= pxd_clk_cntr[PXD_CLK_DIV_BITS-2:0] - 1;
+        if (prst || (pxd_clk_cntr[PXD_CLK_DIV_BITS-2:0] == 0)) pxd_clk_cntr[PXD_CLK_DIV_BITS-2:0] <= (PXD_CLK_DIV / 2);
+        else                                                   pxd_clk_cntr[PXD_CLK_DIV_BITS-2:0] <= pxd_clk_cntr[PXD_CLK_DIV_BITS-2:0] - 1;
+        // treat MSB separately to make 50% duty cycle
+        if      (prst)                                         pxd_clk_cntr[PXD_CLK_DIV_BITS-1] <=   0;
+        else if (pxd_clk_cntr[PXD_CLK_DIV_BITS-2:0] == 0)      pxd_clk_cntr[PXD_CLK_DIV_BITS-1] <=  ~pxd_clk_cntr[PXD_CLK_DIV_BITS-1];
     
-    if      (prst)                                    pxd_clk_cntr[PXD_CLK_DIV_BITS-1] <= 0;
-    else if (pxd_clk_cntr[PXD_CLK_DIV_BITS-2:0] == 0) pxd_clk_cntr[PXD_CLK_DIV_BITS-1] <=  ~pxd_clk_cntr[PXD_CLK_DIV_BITS-1];
-    
-//    reg [ PXD_CLK_DIV_BITS-1:0] pxd_clk_cntr;
+    end
+
+    always @(posedge pclk or posedge async_prst_with_sens_mrst) begin
+        if (async_prst_with_sens_mrst) prst_with_sens_mrst <=  2'h3;
+        else if (prst)                 prst_with_sens_mrst <=  2'h3;
+        else                           prst_with_sens_mrst <= prst_with_sens_mrst >> 1;
     
     end
     cmd_deser #(
@@ -353,8 +306,8 @@ module  sens_10398 #(
         .REFCLK_FREQUENCY       (REFCLK_FREQUENCY),
         .HIGH_PERFORMANCE_MODE  (HIGH_PERFORMANCE_MODE),
         .SENS_PHASE_WIDTH       (SENS_PHASE_WIDTH),
-        .SENS_PCLK_PERIOD       (SENS_PCLK_PERIOD),
         .SENS_BANDWIDTH         (SENS_BANDWIDTH),
+        .CLKIN_PERIOD_SENSOR    (CLKIN_PERIOD_SENSOR),
         .CLKFBOUT_MULT_SENSOR   (CLKFBOUT_MULT_SENSOR),
         .CLKFBOUT_PHASE_SENSOR  (CLKFBOUT_PHASE_SENSOR),
         .IPCLK_PHASE            (IPCLK_PHASE),
@@ -378,14 +331,15 @@ module  sens_10398 #(
         .HISPI_IOSTANDARD       (HISPI_IOSTANDARD)
     ) sens_hispi12l4_i (
         .pclk                   (pclk),                   // input
-        .prst                   (prst),                   // input
+        .prst                   (prst_with_sens_mrst[0]), //prst),                   // input
         .sns_dp                 (sns_dp[3:0]),            // input[3:0] 
         .sns_dn                 (sns_dn[3:0]),            // input[3:0] 
         .sns_clkp               (sns_clkp),               // input
         .sns_clkn               (sns_clkn),               // input
         .pxd_out                (pxd),                    // output[11:0] reg 
-        .vact_out               (vact),                   // output reg 
         .hact_out               (hact),                   // output
+        .sof                    (sof),                    // output
+        .eof                    (eof),                    // output reg 
         .mclk                   (mclk),                   // input
         .mrst                   (mrst),                   // input
         .dly_data               (data_r),                 // input[31:0] 

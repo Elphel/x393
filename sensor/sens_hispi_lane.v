@@ -79,7 +79,8 @@ module  sens_hispi_lane#(
 
     assign num_trail_1_w = (&din) ? 3'h4 : ((&din[2:0]) ? 3'h3 : ((&din[1:0]) ? 3'h2 :((&din[0]) ? 3'h1 : 3'h0)));
     assign num_lead_1_w =  (&din) ? 3'h4 : ((&din[3:1]) ? 3'h3 : ((&din[3:2]) ? 3'h2 :((&din[3]) ? 3'h1 : 3'h0)));
-    assign zero_after_ones_w = !((din[0] && !din[1]) || (din[1] && !din[2]) || (din[2] && !din[3]) || (d_r[3] && !din[0]));
+//    assign zero_after_ones_w = !((din[0] && !din[1]) || (din[1] && !din[2]) || (din[2] && !din[3]) || (d_r[3] && !din[0]));
+    assign zero_after_ones_w = !((din[0] && !din[1]) || (din[1] && !din[2]) || (din[2] && !din[3]) || (din[3] && !d_r[0]));
     
     always @(posedge ipclk) begin
         d_r <= din;
@@ -100,7 +101,8 @@ module  sens_hispi_lane#(
         // Saturate number with 24 (5'h18), but only first transition from <24 to >=24 is used for sync
         // detection.
         if      (irst || !num_running_ones[3]) num_running_zeros <= 0;
-        else if (!num_running_ones[2])         num_running_zeros <= {2'b0,num_trail_0_w};
+//        else if (!num_running_ones[2])         num_running_zeros <= {2'b0,num_trail_0_w};
+        else if (prev4ones)                    num_running_zeros <= {2'b0,num_trail_0_w};
         else                                   num_running_zeros <= (&num_running_zeros[4:3])? 5'h18 : num_running_zeros_w;
 
         if (irst) got_sync <= 0;
@@ -108,14 +110,17 @@ module  sens_hispi_lane#(
 
         // got_sync should also abort data run - delayed by 10 clocks
         
-        if      (irst)     shift_val <= 0;
-        else if (got_sync) shift_val <= num_first_zeros;
+        if      (irst)       shift_val <= 0;
+//      else if (got_sync)   shift_val <= num_first_zeros;
+        else if (got_sync_w) shift_val <= num_first_zeros;
         
         case (shift_val)
             2'h0: barrel <= din;
-            2'h1: barrel <= {d_r[2:0], din[3]};
+//            2'h1: barrel <= {d_r[2:0], din[3]};
+            2'h1: barrel <= {d_r[0],   din[3:1]};
             2'h2: barrel <= {d_r[1:0], din[3:2]};
-            2'h3: barrel <= {d_r[0],   din[3:1]};
+//            2'h3: barrel <= {d_r[0],   din[3:1]};
+            2'h3: barrel <= {d_r[2:0], din[3]};
         endcase
 
         if      (irst)     sync_decode <= 0;
@@ -174,7 +179,7 @@ module  sens_hispi_lane#(
     ) dly_16_dout_i (
         .clk  (ipclk), // input
         .rst  (1'b0),  // input
-        .dly  (8),     // input[3:0] 
+        .dly  (4'h8),     // input[3:0] 
         .din  (HISPI_MSB_FIRST ? barrel :{barrel[0],barrel[1],barrel[2],barrel[3]}), // input[0:0] 
         .dout (dout_w) // output[0:0] 
     );
@@ -183,7 +188,7 @@ module  sens_hispi_lane#(
     ) dly_16_pre_start_line_i (
         .clk  (ipclk), // input
         .rst  (1'b0),  // input
-        .dly  (7),     // input[3:0] 
+        .dly  (4'h7),     // input[3:0] 
         .din  (start_line), // input[0:0] 
         .dout (start_line_d) // output[0:0] 
     );

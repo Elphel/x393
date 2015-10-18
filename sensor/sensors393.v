@@ -136,11 +136,20 @@ module  sensors393 #(
         parameter SENS_CTRL_ARST =        2,  //  3: 2
         parameter SENS_CTRL_ARO =         4,  //  5: 4
         parameter SENS_CTRL_RST_MMCM =    6,  //  7: 6
+`ifdef HISPI
+        parameter SENS_CTRL_IGNORE_EMBED =8,  //  9: 8
+`else        
         parameter SENS_CTRL_EXT_CLK =     8,  //  9: 8
+`endif        
         parameter SENS_CTRL_LD_DLY =     10,  // 10
+`ifdef HISPI
+        parameter SENS_CTRL_GP0=      12,  // 13:12
+        parameter SENS_CTRL_GP1=      14,  // 15:14
+`else        
         parameter SENS_CTRL_QUADRANTS =  12,  // 17:12, enable - 20
         parameter SENS_CTRL_QUADRANTS_WIDTH = 6,
         parameter SENS_CTRL_QUADRANTS_EN =   20,  // 17:12, enable - 20 (2 bits reserved)
+`endif        
       parameter SENSIO_STATUS =         'h1,
       parameter SENSIO_JTAG =           'h2,
         // SENSIO_JTAG register bits
@@ -149,7 +158,9 @@ module  sensors393 #(
         parameter SENS_JTAG_TCK =         4,
         parameter SENS_JTAG_TMS =         2,
         parameter SENS_JTAG_TDI =         0,
+`ifndef HISPI
       parameter SENSIO_WIDTH =          'h3, // 1.. 2^16, 0 - use HACT
+`endif      
       parameter SENSIO_DELAYS =         'h4, // 'h4..'h7
         // 4 of 8-bit delays per register
     // sensor_i2c_io command/data write registers s (relative to SENSOR_GROUP_ADDR)
@@ -173,10 +184,12 @@ module  sensors393 #(
     parameter SENSI2C_IOSTANDARD =       "DEFAULT",
     parameter SENSI2C_SLEW =             "SLOW",
     
+`ifndef HISPI
     //sensor_fifo parameters
-    parameter SENSOR_DATA_WIDTH =        12,
-    parameter SENSOR_FIFO_2DEPTH =       4,
-    parameter SENSOR_FIFO_DELAY =        5, // 7,
+    parameter SENSOR_DATA_WIDTH =      12,
+    parameter SENSOR_FIFO_2DEPTH =     4,
+    parameter SENSOR_FIFO_DELAY =      5, // 7,
+`endif    
     // other parameters for histogram_saxi module
     parameter HIST_SAXI_ADDR_MASK =      'h7f0,
       parameter HIST_SAXI_MODE_WIDTH =   8,
@@ -206,15 +219,29 @@ module  sensors393 #(
     parameter PXD_SLEW =                 "SLOW",
     parameter real SENS_REFCLK_FREQUENCY =    300.0,
     parameter SENS_HIGH_PERFORMANCE_MODE =    "FALSE",
-    
+`ifdef HISPI
+    parameter PXD_CAPACITANCE =          "DONT_CARE",
+    parameter PXD_CLK_DIV =              10, // 220MHz -> 22MHz
+    parameter PXD_CLK_DIV_BITS =          4,
+`endif    
     parameter SENS_PHASE_WIDTH=               8,      // number of bits for te phase counter (depends on divisors)
     parameter SENS_PCLK_PERIOD =              10.000,  // input period in ns, 0..100.000 - MANDATORY, resolution down to 1 ps
     parameter SENS_BANDWIDTH =                "OPTIMIZED",  //"OPTIMIZED", "HIGH","LOW"
 
-    parameter CLKFBOUT_MULT_SENSOR =     8,  // 100 MHz --> 800 MHz
+    // parameters for the sensor-synchronous clock PLL
+`ifdef HISPI    
+    parameter CLKIN_PERIOD_SENSOR =      3.000,  // input period in ns, 0..100.000 - MANDATORY, resolution down to 1 ps
+    parameter CLKFBOUT_MULT_SENSOR =     3,      // 330 MHz --> 990 MHz
     parameter CLKFBOUT_PHASE_SENSOR =    0.000,  // CLOCK FEEDBACK phase in degrees (3 significant digits, -360.000...+360.000)
     parameter IPCLK_PHASE =              0.000,
     parameter IPCLK2X_PHASE =            0.000,
+`else    
+    parameter CLKIN_PERIOD_SENSOR =      10.000, // input period in ns, 0..100.000 - MANDATORY, resolution down to 1 ps
+    parameter CLKFBOUT_MULT_SENSOR =     8,      // 100 MHz --> 800 MHz
+    parameter CLKFBOUT_PHASE_SENSOR =    0.000,  // CLOCK FEEDBACK phase in degrees (3 significant digits, -360.000...+360.000)
+    parameter IPCLK_PHASE =              0.000,
+    parameter IPCLK2X_PHASE =            0.000,
+`endif
 //    parameter BUF_IPCLK =                "BUFR",
 //    parameter BUF_IPCLK2X =              "BUFR",  
     parameter BUF_IPCLK_SENS0 =          "BUFR", //G", // "BUFR", // BUFR fails for both clocks for sensors1 and 3
@@ -236,6 +263,18 @@ module  sensors393 #(
     parameter SENS_SS_EN         =       "FALSE",      // Enables Spread Spectrum mode
     parameter SENS_SS_MODE       =       "CENTER_HIGH",//"CENTER_HIGH","CENTER_LOW","DOWN_HIGH","DOWN_LOW"
     parameter SENS_SS_MOD_PERIOD =       10000        // integer 4000-40000 - SS modulation period in ns
+`ifdef HISPI
+   ,parameter HISPI_MSB_FIRST =            0,
+    parameter HISPI_NUMLANES =             4,
+    parameter HISPI_CAPACITANCE =         "DONT_CARE",
+    parameter HISPI_DIFF_TERM =           "TRUE",
+    parameter HISPI_DQS_BIAS =            "TRUE",
+    parameter HISPI_IBUF_DELAY_VALUE =    "0",
+    parameter HISPI_IBUF_LOW_PWR =        "TRUE",
+    parameter HISPI_IFD_DELAY_VALUE =     "AUTO",
+    parameter HISPI_IOSTANDARD =          "DEFAULT"
+`endif    
+    
 `ifdef DEBUG_RING
         ,parameter DEBUG_CMD_LATENCY = 2 
 `endif        
@@ -262,11 +301,21 @@ module  sensors393 #(
     // I/O pads, pin names match circuit diagram (each sensor)
     inout  [31:0] sns_dp,
     inout  [31:0] sns_dn,
+`ifdef HISPI    
+    inout   [3:0] sns_clkp, // SuppressThisWarning all - input-only in HiSPi mode
+    inout   [3:0] sns_clkn, // SuppressThisWarning all - input-only in HiSPi mode
+`else
     inout   [3:0] sns_clkp,
     inout   [3:0] sns_clkn,
+`endif    
     inout   [3:0] sns_scl,
     inout   [3:0] sns_sda,
+    
+`ifdef HISPI    
+    inout   [3:0] sns_ctl, // SuppressThisWarning all - output-only in HiSPi mode
+`else    
     inout   [3:0] sns_ctl,
+`endif    
     inout   [3:0] sns_pg,
     
     // Memory interface (4 channels)
@@ -453,11 +502,20 @@ module  sensors393 #(
                 .SENS_CTRL_ARST                (SENS_CTRL_ARST),
                 .SENS_CTRL_ARO                 (SENS_CTRL_ARO),
                 .SENS_CTRL_RST_MMCM            (SENS_CTRL_RST_MMCM),
+`ifdef HISPI                
+                .SENS_CTRL_IGNORE_EMBED        (SENS_CTRL_IGNORE_EMBED),
+`else                
                 .SENS_CTRL_EXT_CLK             (SENS_CTRL_EXT_CLK),
+`endif                
                 .SENS_CTRL_LD_DLY              (SENS_CTRL_LD_DLY),
+`ifdef HISPI
+                .SENS_CTRL_GP0                 (SENS_CTRL_GP0),
+                .SENS_CTRL_GP1                 (SENS_CTRL_GP1),
+`else        
                 .SENS_CTRL_QUADRANTS           (SENS_CTRL_QUADRANTS),
                 .SENS_CTRL_QUADRANTS_WIDTH     (SENS_CTRL_QUADRANTS_WIDTH),
                 .SENS_CTRL_QUADRANTS_EN        (SENS_CTRL_QUADRANTS_EN),
+`endif                
                 .SENSIO_STATUS                 (SENSIO_STATUS),
                 .SENSIO_JTAG                   (SENSIO_JTAG),
                 .SENS_JTAG_PGMEN               (SENS_JTAG_PGMEN),
@@ -465,7 +523,9 @@ module  sensors393 #(
                 .SENS_JTAG_TCK                 (SENS_JTAG_TCK),
                 .SENS_JTAG_TMS                 (SENS_JTAG_TMS),
                 .SENS_JTAG_TDI                 (SENS_JTAG_TDI),
+`ifndef HISPI
                 .SENSIO_WIDTH                  (SENSIO_WIDTH),
+`endif                
                 .SENSIO_DELAYS                 (SENSIO_DELAYS),
                 .SENSI2C_ABS_RADDR             (SENSI2C_ABS_RADDR),
                 .SENSI2C_REL_RADDR             (SENSI2C_REL_RADDR),
@@ -477,14 +537,15 @@ module  sensors393 #(
                 .HISTOGRAM_ADDR_MASK           (HISTOGRAM_ADDR_MASK),
                 .HISTOGRAM_LEFT_TOP            (HISTOGRAM_LEFT_TOP),
                 .HISTOGRAM_WIDTH_HEIGHT        (HISTOGRAM_WIDTH_HEIGHT),
-                
                 .SENSI2C_DRIVE                 (SENSI2C_DRIVE),
                 .SENSI2C_IBUF_LOW_PWR          (SENSI2C_IBUF_LOW_PWR),
                 .SENSI2C_IOSTANDARD            (SENSI2C_IOSTANDARD),
                 .SENSI2C_SLEW                  (SENSI2C_SLEW),
+`ifndef HISPI
                 .SENSOR_DATA_WIDTH             (SENSOR_DATA_WIDTH),
                 .SENSOR_FIFO_2DEPTH            (SENSOR_FIFO_2DEPTH),
                 .SENSOR_FIFO_DELAY             (SENSOR_FIFO_DELAY),
+`endif                
                 .IODELAY_GRP                   ((i & 2)?"IODELAY_SENSOR_34":"IODELAY_SENSOR_12"),
                 .IDELAY_VALUE                  (IDELAY_VALUE),
                 .PXD_DRIVE                     (PXD_DRIVE),
@@ -493,9 +554,15 @@ module  sensors393 #(
                 .PXD_SLEW                      (PXD_SLEW),
                 .SENS_REFCLK_FREQUENCY         (SENS_REFCLK_FREQUENCY),
                 .SENS_HIGH_PERFORMANCE_MODE    (SENS_HIGH_PERFORMANCE_MODE),
+`ifdef HISPI
+                .PXD_CAPACITANCE               (PXD_CAPACITANCE),
+                .PXD_CLK_DIV                   (PXD_CLK_DIV),
+                .PXD_CLK_DIV_BITS              (PXD_CLK_DIV_BITS),
+`endif
                 .SENS_PHASE_WIDTH              (SENS_PHASE_WIDTH),
                 .SENS_PCLK_PERIOD              (SENS_PCLK_PERIOD),
                 .SENS_BANDWIDTH                (SENS_BANDWIDTH),
+                .CLKIN_PERIOD_SENSOR        (CLKIN_PERIOD_SENSOR),
                 .CLKFBOUT_MULT_SENSOR          (CLKFBOUT_MULT_SENSOR),
                 .CLKFBOUT_PHASE_SENSOR         (CLKFBOUT_PHASE_SENSOR),
                 .IPCLK_PHASE                   (IPCLK_PHASE),
@@ -508,11 +575,22 @@ module  sensors393 #(
                 .SENS_SS_EN                    (SENS_SS_EN),
                 .SENS_SS_MODE                  (SENS_SS_MODE),
                 .SENS_SS_MOD_PERIOD            (SENS_SS_MOD_PERIOD)
+`ifdef HISPI
+               ,.HISPI_MSB_FIRST               (HISPI_MSB_FIRST),
+                .HISPI_NUMLANES                (HISPI_NUMLANES),
+                .HISPI_CAPACITANCE             (HISPI_CAPACITANCE),
+                .HISPI_DIFF_TERM               (HISPI_DIFF_TERM),
+                .HISPI_DQS_BIAS                (HISPI_DQS_BIAS),
+                .HISPI_IBUF_DELAY_VALUE        (HISPI_IBUF_DELAY_VALUE),
+                .HISPI_IBUF_LOW_PWR            (HISPI_IBUF_LOW_PWR),
+                .HISPI_IFD_DELAY_VALUE         (HISPI_IFD_DELAY_VALUE),
+                .HISPI_IOSTANDARD              (HISPI_IOSTANDARD)
+`endif    
+                
 `ifdef DEBUG_RING
                 ,.DEBUG_CMD_LATENCY   (DEBUG_CMD_LATENCY) 
 `endif        
             ) sensor_channel_i (
-//                .rst          (rst),                 // input
                 .pclk         (pclk),                  // input
                 .pclk2x       (pclk2x),                // input
                 .mrst         (mrst),                  // input

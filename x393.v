@@ -1487,11 +1487,20 @@ assign axi_grst = axi_rst_pre;
         .SENS_CTRL_ARST             (SENS_CTRL_ARST),
         .SENS_CTRL_ARO              (SENS_CTRL_ARO),
         .SENS_CTRL_RST_MMCM         (SENS_CTRL_RST_MMCM),
+`ifdef HISPI                
+        .SENS_CTRL_IGNORE_EMBED     (SENS_CTRL_IGNORE_EMBED),
+`else                
         .SENS_CTRL_EXT_CLK          (SENS_CTRL_EXT_CLK),
+`endif                
         .SENS_CTRL_LD_DLY           (SENS_CTRL_LD_DLY),
+`ifdef HISPI
+        .SENS_CTRL_GP0              (SENS_CTRL_GP0),
+        .SENS_CTRL_GP1              (SENS_CTRL_GP1),
+`else        
         .SENS_CTRL_QUADRANTS        (SENS_CTRL_QUADRANTS),
         .SENS_CTRL_QUADRANTS_WIDTH  (SENS_CTRL_QUADRANTS_WIDTH),
         .SENS_CTRL_QUADRANTS_EN     (SENS_CTRL_QUADRANTS_EN),
+`endif                
         .SENSIO_STATUS              (SENSIO_STATUS),
         .SENSIO_JTAG                (SENSIO_JTAG),
         .SENS_JTAG_PGMEN            (SENS_JTAG_PGMEN),
@@ -1499,7 +1508,9 @@ assign axi_grst = axi_rst_pre;
         .SENS_JTAG_TCK              (SENS_JTAG_TCK),
         .SENS_JTAG_TMS              (SENS_JTAG_TMS),
         .SENS_JTAG_TDI              (SENS_JTAG_TDI),
+`ifndef HISPI
         .SENSIO_WIDTH               (SENSIO_WIDTH),
+`endif        
         .SENSIO_DELAYS              (SENSIO_DELAYS),
         .SENSI2C_ABS_RADDR          (SENSI2C_ABS_RADDR),
         .SENSI2C_REL_RADDR          (SENSI2C_REL_RADDR),
@@ -1515,9 +1526,11 @@ assign axi_grst = axi_rst_pre;
         .SENSI2C_IBUF_LOW_PWR       (SENSI2C_IBUF_LOW_PWR),
         .SENSI2C_IOSTANDARD         (SENSI2C_IOSTANDARD),
         .SENSI2C_SLEW               (SENSI2C_SLEW),
+`ifndef HISPI
         .SENSOR_DATA_WIDTH          (SENSOR_DATA_WIDTH),
         .SENSOR_FIFO_2DEPTH         (SENSOR_FIFO_2DEPTH),
-        .SENSOR_FIFO_DELAY          (SENSOR_FIFO_DELAY),
+        .SENSOR_FIFO_DELAY         (SENSOR_FIFO_DELAY),
+`endif                
         .HIST_SAXI_ADDR_MASK        (HIST_SAXI_ADDR_MASK),
         .HIST_SAXI_MODE_WIDTH       (HIST_SAXI_MODE_WIDTH),
         .HIST_SAXI_EN               (HIST_SAXI_EN),
@@ -1538,9 +1551,15 @@ assign axi_grst = axi_rst_pre;
         .PXD_SLEW                   (PXD_SLEW),
         .SENS_REFCLK_FREQUENCY      (SENS_REFCLK_FREQUENCY),
         .SENS_HIGH_PERFORMANCE_MODE (SENS_HIGH_PERFORMANCE_MODE),
+`ifdef HISPI
+        .PXD_CAPACITANCE            (PXD_CAPACITANCE),
+        .PXD_CLK_DIV                (PXD_CLK_DIV),
+        .PXD_CLK_DIV_BITS           (PXD_CLK_DIV_BITS),
+`endif
         .SENS_PHASE_WIDTH           (SENS_PHASE_WIDTH),
         .SENS_PCLK_PERIOD           (SENS_PCLK_PERIOD),
         .SENS_BANDWIDTH             (SENS_BANDWIDTH),
+        .CLKIN_PERIOD_SENSOR        (CLKIN_PERIOD_SENSOR),
         .CLKFBOUT_MULT_SENSOR       (CLKFBOUT_MULT_SENSOR),
         .CLKFBOUT_PHASE_SENSOR      (CLKFBOUT_PHASE_SENSOR),
         .IPCLK_PHASE                (IPCLK_PHASE),
@@ -1559,6 +1578,17 @@ assign axi_grst = axi_rst_pre;
         .SENS_SS_EN                 (SENS_SS_EN),
         .SENS_SS_MODE               (SENS_SS_MODE),
         .SENS_SS_MOD_PERIOD         (SENS_SS_MOD_PERIOD)
+`ifdef HISPI
+       ,.HISPI_MSB_FIRST               (HISPI_MSB_FIRST),
+        .HISPI_NUMLANES                (HISPI_NUMLANES),
+        .HISPI_CAPACITANCE             (HISPI_CAPACITANCE),
+        .HISPI_DIFF_TERM               (HISPI_DIFF_TERM),
+        .HISPI_DQS_BIAS                (HISPI_DQS_BIAS),
+        .HISPI_IBUF_DELAY_VALUE        (HISPI_IBUF_DELAY_VALUE),
+        .HISPI_IBUF_LOW_PWR            (HISPI_IBUF_LOW_PWR),
+        .HISPI_IFD_DELAY_VALUE         (HISPI_IFD_DELAY_VALUE),
+        .HISPI_IOSTANDARD              (HISPI_IOSTANDARD)
+`endif    
 `ifdef DEBUG_RING
         ,.DEBUG_CMD_LATENCY         (DEBUG_CMD_LATENCY) 
 `endif        

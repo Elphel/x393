@@ -26,7 +26,7 @@ module  par12_hispi_psp4l#(
     parameter LANE0_DLY =      1.3,
     parameter LANE1_DLY =      2.7,
     parameter LANE2_DLY =      0.2,
-    parameter LANE3_DLY =      3.3,
+    parameter LANE3_DLY =      1.8,
     parameter CLK_DLY =        2.3,
     parameter EMBED_LINES =    2,   // number of first lines containing embedded (non-image) data
     parameter MSB_FIRST =      0,
@@ -69,7 +69,9 @@ module  par12_hispi_psp4l#(
     
         vact_d <= vact;
         hact_d <= hact;
-        pxd_d <=  {pxd_d[35:0],pxd};
+//        pxd_d <=  {pxd_d[35:0],pxd};
+        pxd_d <=  {pxd, pxd_d[47:12]};
+        
         
         if     (!vact) lane_pcntr <= 0;
         else if (hact) lane_pcntr <= lane_pcntr + 1;

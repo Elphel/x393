@@ -23,10 +23,11 @@
 module  sens_hispi_clock#(
     
     parameter SENS_PHASE_WIDTH=            8,      // number of bits for te phase counter (depends on divisors)
-    parameter SENS_PCLK_PERIOD =           3.000,  // input period in ns, 0..100.000 - MANDATORY, resolution down to 1 ps
+//    parameter SENS_PCLK_PERIOD =           3.000,  // input period in ns, 0..100.000 - MANDATORY, resolution down to 1 ps
     parameter SENS_BANDWIDTH =             "OPTIMIZED",  //"OPTIMIZED", "HIGH","LOW"
 
-    parameter CLKFBOUT_MULT_SENSOR =       4,  // 220 MHz --> 880 MHz
+    parameter CLKIN_PERIOD_SENSOR =        3.000, // input period in ns, 0..100.000 - MANDATORY, resolution down to 1 ps
+    parameter CLKFBOUT_MULT_SENSOR =       3,      // 330 MHz --> 990 MHz
     parameter CLKFBOUT_PHASE_SENSOR =      0.000,  // CLOCK FEEDBACK phase in degrees (3 significant digits, -360.000...+360.000)
     parameter IPCLK_PHASE =                0.000,
     parameter IPCLK2X_PHASE =              0.000,
@@ -91,7 +92,7 @@ module  sens_hispi_clock#(
     // received from the sensor (may need to reset MMCM after resetting sensor)
     mmcm_phase_cntr #(
         .PHASE_WIDTH         (SENS_PHASE_WIDTH),
-        .CLKIN_PERIOD        (SENS_PCLK_PERIOD),
+        .CLKIN_PERIOD        (CLKIN_PERIOD_SENSOR),
         .BANDWIDTH           (SENS_BANDWIDTH),
         .CLKFBOUT_MULT_F     (CLKFBOUT_MULT_SENSOR), // 4
         .DIVCLK_DIVIDE       (SENS_DIVCLK_DIVIDE),
@@ -101,8 +102,8 @@ module  sens_hispi_clock#(
         .CLKFBOUT_USE_FINE_PS("FALSE"),
         .CLKOUT0_USE_FINE_PS ("TRUE"),
         .CLKOUT1_USE_FINE_PS ("TRUE"),
-        .CLKOUT0_DIVIDE_F    (CLKFBOUT_MULT_SENSOR),  // 4  // 8.000),
-        .CLKOUT1_DIVIDE      (CLKFBOUT_MULT_SENSOR / 2), //2 // 4),
+        .CLKOUT0_DIVIDE_F    (CLKFBOUT_MULT_SENSOR * 2),  // 6  // 8.000),
+        .CLKOUT1_DIVIDE      (CLKFBOUT_MULT_SENSOR ), // 3 // 4),
         .COMPENSATION        ("ZHOLD"),
         .REF_JITTER1         (SENS_REF_JITTER1),
         .REF_JITTER2         (SENS_REF_JITTER2),

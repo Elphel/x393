@@ -46,13 +46,13 @@ module  sens_hispi_fifo#(
     reg                  run_r;
     
     assign run = run_r;
-    
+    // TODO: generate early done by comparing ra with (wa-1) - separate counter
     
     always @ (posedge ipclk) begin
         if      (irst ||sol)           wa <= 0;
         else if (we && line_run_ipclk) wa <= wa + 1;
         
-        if (we && line_run_ipclk) fifo_ram[wa] <= din;
+        if (we && line_run_ipclk) fifo_ram[wa[DATA_DEPTH-1:0]] <= din;
         
         if (irst || eol) line_run_ipclk <= 0;
         else if (sol)    line_run_ipclk <= 1;
@@ -68,7 +68,7 @@ module  sens_hispi_fifo#(
         if (prst ||line_start_pclk) ra <= 0;
         else if (re)                ra <= ra + 1;
         
-        if (re) dout <= fifo_ram[ra];
+        if (re) dout <= fifo_ram[ra[DATA_DEPTH-1:0]];
         
     end
     

@@ -26,10 +26,11 @@ module  sens_hispi12l4#(
     parameter real REFCLK_FREQUENCY =      200.0,
     parameter HIGH_PERFORMANCE_MODE =     "FALSE",
     parameter SENS_PHASE_WIDTH=            8,      // number of bits for te phase counter (depends on divisors)
-    parameter SENS_PCLK_PERIOD =           3.000,  // input period in ns, 0..100.000 - MANDATORY, resolution down to 1 ps
+//    parameter SENS_PCLK_PERIOD =           3.000,  // input period in ns, 0..100.000 - MANDATORY, resolution down to 1 ps
     parameter SENS_BANDWIDTH =             "OPTIMIZED",  //"OPTIMIZED", "HIGH","LOW"
 
-    parameter CLKFBOUT_MULT_SENSOR =       4,  // 220 MHz --> 880 MHz
+    parameter CLKIN_PERIOD_SENSOR =        3.000, // input period in ns, 0..100.000 - MANDATORY, resolution down to 1 ps
+    parameter CLKFBOUT_MULT_SENSOR =       3,      // 330 MHz --> 990 MHz
     parameter CLKFBOUT_PHASE_SENSOR =      0.000,  // CLOCK FEEDBACK phase in degrees (3 significant digits, -360.000...+360.000)
     parameter IPCLK_PHASE =                0.000,
     parameter IPCLK2X_PHASE =              0.000,
@@ -51,19 +52,23 @@ module  sens_hispi12l4#(
     parameter HISPI_IBUF_DELAY_VALUE =    "0",
     parameter HISPI_IBUF_LOW_PWR =        "TRUE",
     parameter HISPI_IFD_DELAY_VALUE =     "AUTO",
-    parameter HISPI_IOSTANDARD =          "DEFAULT"
+    parameter HISPI_IOSTANDARD =          "DEFAULT",
+    parameter HISPI_KEEP_IRST =           5 // number of cycles to keep irst on after release of prst (small number - use 1 hot)
 )(
     input             pclk,   // global clock input, pixel rate (220MHz for MT9F002)
-    input             prst,
+    input             prst,   // reset @pclk (add sensor reset here)
     // I/O pads
     input [HISPI_NUMLANES-1:0] sns_dp,
     input [HISPI_NUMLANES-1:0] sns_dn,
     input                      sns_clkp,
     input                      sns_clkn,
     // output
-    output reg          [11:0] pxd_out,
-    output reg                 vact_out, 
+//    output reg          [11:0] pxd_out,
+    output              [11:0] pxd_out,
+//    output reg                 vact_out, 
     output                     hact_out,
+    output                     sof, // @pclk
+    output reg                 eof, // @pclk
     
     // delay control inputs
     input                           mclk,
@@ -76,20 +81,25 @@ module  sens_hispi12l4#(
     input                           ignore_embedded, // ignore lines with embedded data
 //    input                           wait_all_lanes,  // when 0 allow some lanes missing sync (for easier phase adjustment)
     // MMCP output status
-    output       ps_rdy,          // output
-    output [7:0] ps_out,          // output[7:0] reg 
-    output       locked_pxd_mmcm,
-    output       clkin_pxd_stopped_mmcm, // output
-    output       clkfb_pxd_stopped_mmcm // output
+    output                         ps_rdy,          // output
+    output                   [7:0] ps_out,          // output[7:0] reg 
+    output                         locked_pxd_mmcm,
+    output                         clkin_pxd_stopped_mmcm, // output
+    output                         clkfb_pxd_stopped_mmcm // output
     
 );
     wire                          ipclk;  // re-generated half HiSPi clock (165 MHz) 
     wire                          ipclk2x;// re-generated HiSPi clock (330 MHz)
     wire [HISPI_NUMLANES * 4-1:0] sns_d;
+    localparam WAIT_ALL_LANES = 4'h8; // number of output pixel cycles to wait after the earliest lane
+    localparam FIFO_DEPTH = 4;
+    reg      [HISPI_KEEP_IRST-1:0] irst_r;
+    wire                         irst = irst_r[0];
+    
     sens_hispi_clock #(
         .SENS_PHASE_WIDTH       (SENS_PHASE_WIDTH),
-        .SENS_PCLK_PERIOD       (SENS_PCLK_PERIOD),
         .SENS_BANDWIDTH         (SENS_BANDWIDTH),
+        .CLKIN_PERIOD_SENSOR    (CLKIN_PERIOD_SENSOR),
         .CLKFBOUT_MULT_SENSOR   (CLKFBOUT_MULT_SENSOR),
         .CLKFBOUT_PHASE_SENSOR  (CLKFBOUT_PHASE_SENSOR),
         .IPCLK_PHASE            (IPCLK_PHASE),
@@ -153,11 +163,6 @@ module  sens_hispi12l4#(
         .dout         (sns_d) // output[15:0] 
     );
     
-    localparam WAIT_ALL_LANES = 8; // number of output pixel cycles to wait after the earliest lane
-    localparam FIFO_DEPTH = 4;
-
-    reg       [2:0] irst_r;
-    wire            irst = irst_r[2];
     
 
     wire [HISPI_NUMLANES * 12-1:0] hispi_aligned;
@@ -188,13 +193,30 @@ module  sens_hispi12l4#(
     wire                            hact_on;
     wire                            hact_off;
     reg                             ignore_embedded_ipclk;
+    reg                       [1:0] vact_pclk;
+    wire                     [11:0] pxd_out_pre = ({12 {fifo_re_r[0] & rd_run[0]}} & fifo_out[0 * 12 +:12]) |
+                                                  ({12 {fifo_re_r[1] & rd_run[1]}} & fifo_out[1 * 12 +:12]) |
+                                                  ({12 {fifo_re_r[2] & rd_run[2]}} & fifo_out[2 * 12 +:12]) |
+                                                  ({12 {fifo_re_r[3] & rd_run[3]}} & fifo_out[3 * 12 +:12]);
+       
+    
+    
     assign hact_out = hact_r;
+    assign sof =      sof_pclk;
+    
+    // async reset
+    always @ (posedge ipclk or posedge prst) begin
+        if (prst) irst_r <= {HISPI_KEEP_IRST{1'b1}}; // HISPI_KEEP_IRST-1
+        else      irst_r <= irst_r >> 1; 
+    end
+    
+    
     
     always @(posedge ipclk) begin
-        irst_r <= {irst_r[1:0], prst};
+//        irst_r <= {irst_r[1:0], prst};
     
-        if (irst || (|hispi_eof[i])) vact_ipclk <= 0; // extend output if hact active
-        else if (|hispi_sof)         vact_ipclk <= 1;
+        if (irst || (|hispi_eof)) vact_ipclk <= 0; // extend output if hact active
+        else if (|hispi_sof)      vact_ipclk <= 1;
     
         ignore_embedded_ipclk <= ignore_embedded;
     end
@@ -212,25 +234,28 @@ module  sens_hispi12l4#(
        
         rd_line_r <= rd_line;
         
-        if (sol_pclk && !rd_line) good_lanes <= ~rd_run;             // should be off before start
+        if (sol_pclk && !rd_line) good_lanes <= ~rd_run_d;             // should be off before start
         else if (sol_all_dly)     good_lanes <= good_lanes & rd_run; // and now they should be on
         
         fifo_re_r <= fifo_re & rd_run; // when data out is ready, mask if not running
         
         // not using HISPI_NUMLANES here - fix? Will be 0 (not possible in hispi) when no data
-        pxd_out <= ({12 {fifo_re_r[0]}} & fifo_out[0 * 12 +:12]) |
-                   ({12 {fifo_re_r[1]}} & fifo_out[1 * 12 +:12]) |
-                   ({12 {fifo_re_r[2]}} & fifo_out[2 * 12 +:12]) |
-                   ({12 {fifo_re_r[3]}} & fifo_out[3 * 12 +:12]);
+/*        pxd_out <= ({12 {fifo_re_r[0] & rd_run[0]}} & fifo_out[0 * 12 +:12]) |
+                   ({12 {fifo_re_r[1] & rd_run[1]}} & fifo_out[1 * 12 +:12]) |
+                   ({12 {fifo_re_r[2] & rd_run[2]}} & fifo_out[2 * 12 +:12]) |
+                   ({12 {fifo_re_r[3] & rd_run[3]}} & fifo_out[3 * 12 +:12]); */
        
        if      (prst)                                                 fifo_re <= 0;
        else if (sol_pclk || (rd_line && fifo_re[HISPI_NUMLANES - 1])) fifo_re <= 1;
        else                                                           fifo_re <= fifo_re << 1;
        
-       if (prst || hact_off) hact_r <= 0;
-       else if (hact_on)     hact_r <= 1;
+//       if (prst || (hact_off && (|(good_lanes & ~rd_run)))) hact_r <= 0;
+       if (prst || (hact_off && (!rd_line || (good_lanes[3] & ~rd_run[3])))) hact_r <= 0;
+       else if (hact_on)                                    hact_r <= 1;
        
-       vact_out <= vact_pclk_strt [0] || hact_r;
+       vact_pclk <= {vact_pclk[0],vact_pclk_strt [0] || hact_r};
+       eof <= vact_pclk[1] && !vact_pclk[0]; 
+//       vact_out <= vact_pclk_strt [0] || hact_r;
     end
 
     dly_16 #(
@@ -248,7 +273,10 @@ module  sens_hispi12l4#(
     ) dly_16_hact_on_i (
         .clk  (pclk),                        // input
         .rst  (1'b0),                        // input
-        .dly  (2),                           // input[3:0] 
+//        .dly  (4'h2),                        // input[3:0] 
+//        .dly  (4'h3),                        // input[3:0] 
+//        .dly  (4'h1),                        // input[3:0] 
+        .dly  (4'h2),                        // input[3:0] 
         .din  (sol_pclk),                    // input[0:0] 
         .dout (hact_on)                      // output[0:0] 
     );
@@ -258,11 +286,25 @@ module  sens_hispi12l4#(
     ) dly_16_hact_off_i (
         .clk  (pclk),                        // input
         .rst  (1'b0),                        // input
-        .dly  (2),                           // input[3:0] 
+//        .dly  (4'h2),                        // input[3:0] 
+//        .dly  (4'h0),                        // input[3:0] 
+//        .dly  (4'h1),                        // input[3:0] 
+        .dly  (4'h2),                        // input[3:0] 
         .din  (fifo_re[HISPI_NUMLANES - 1]), // input[0:0] 
         .dout (hact_off)                     // output[0:0] 
     );
 
+    dly_16 #(
+        .WIDTH(12)
+    ) dly_16_pxd_out_i (
+        .clk  (pclk),                        // input
+        .rst  (1'b0),                        // input
+//        .dly  (4'h2),                        // input[3:0] 
+//        .dly  (4'h0),                        // input[3:0] 
+        .dly  (4'h1),                        // input[3:0] 
+        .din  (pxd_out_pre),                 // input[0:0] 
+        .dout (pxd_out)                      // output[0:0] 
+    );
    
     generate
         genvar i;
@@ -289,7 +331,7 @@ module  sens_hispi12l4#(
                 .ipclk    (ipclk),                     // input
                 .irst     (irst),                      // input
                 .we       (hispi_dv[i]),               // input
-                .sol      (hispi_sol[i] && (hispi_embed[i] || !ignore_embedded_ipclk)), // input
+                .sol      (hispi_sol[i] && !(hispi_embed[i] && ignore_embedded_ipclk)), // input
                 .eol      (hispi_eol[i]),              // input
                 .din      (hispi_aligned[12*i +: 12]), // input[11:0] 
                 .pclk     (pclk),                      // input
