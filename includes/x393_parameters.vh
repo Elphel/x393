@@ -273,6 +273,7 @@
     parameter MCONTR_LINTILE_SINGLE =              9, // read/write a single page 
     parameter MCONTR_LINTILE_REPEAT =             10,  // read/write pages until disabled
     parameter MCONTR_LINTILE_DIS_NEED =           11,   // disable 'need' request 
+    parameter MCONTR_LINTILE_SKIP_LATE =          12,  // skip actual R/W operation when it is too late, advance pointers
      
 // Channel test module parameters
     parameter MCNTRL_TEST01_ADDR=                 'h0f0,
@@ -526,7 +527,7 @@
 //`endif    
     
     parameter SENS_PHASE_WIDTH=          8,      // number of bits for te phase counter (depends on divisors)
-    parameter SENS_PCLK_PERIOD =         10.000,  // input period in ns, 0..100.000 - MANDATORY, resolution down to 1 ps
+//    parameter SENS_PCLK_PERIOD =         10.000,  // input period in ns, 0..100.000 - MANDATORY, resolution down to 1 ps
     parameter SENS_BANDWIDTH =           "OPTIMIZED",  //"OPTIMIZED", "HIGH","LOW"
 
     // parameters for the sensor-synchronous clock PLL

@@ -224,9 +224,9 @@ module  sensors393 #(
     parameter PXD_CLK_DIV =              10, // 220MHz -> 22MHz
     parameter PXD_CLK_DIV_BITS =          4,
 `endif    
-    parameter SENS_PHASE_WIDTH=               8,      // number of bits for te phase counter (depends on divisors)
-    parameter SENS_PCLK_PERIOD =              10.000,  // input period in ns, 0..100.000 - MANDATORY, resolution down to 1 ps
-    parameter SENS_BANDWIDTH =                "OPTIMIZED",  //"OPTIMIZED", "HIGH","LOW"
+    parameter SENS_PHASE_WIDTH=           8,      // number of bits for te phase counter (depends on divisors)
+//    parameter SENS_PCLK_PERIOD =          10.000,  // input period in ns, 0..100.000 - MANDATORY, resolution down to 1 ps
+    parameter SENS_BANDWIDTH =            "OPTIMIZED",  //"OPTIMIZED", "HIGH","LOW"
 
     // parameters for the sensor-synchronous clock PLL
 `ifdef HISPI    
@@ -560,7 +560,7 @@ module  sensors393 #(
                 .PXD_CLK_DIV_BITS              (PXD_CLK_DIV_BITS),
 `endif
                 .SENS_PHASE_WIDTH              (SENS_PHASE_WIDTH),
-                .SENS_PCLK_PERIOD              (SENS_PCLK_PERIOD),
+//                .SENS_PCLK_PERIOD              (SENS_PCLK_PERIOD),
                 .SENS_BANDWIDTH                (SENS_BANDWIDTH),
                 .CLKIN_PERIOD_SENSOR        (CLKIN_PERIOD_SENSOR),
                 .CLKFBOUT_MULT_SENSOR          (CLKFBOUT_MULT_SENSOR),

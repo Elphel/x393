@@ -149,6 +149,7 @@ task test_afi_rw; // SuppressThisWarning VEditor - may be unused
                   (window_width[12:0]==0)? 29'h4000 : {15'b0,window_width[12:0],1'b0},
                   start64, lo_addr64, size64, $time);
         mode=   func_encode_mode_scanline(
+                    1'b0, // skip_too_late
                     disable_need,
                     repetitive,
                     single,
@@ -250,6 +251,7 @@ task test_scanline_write; // SuppressThisWarning VEditor - may be unused
             end
         endcase
         mode=   func_encode_mode_scanline(
+                    1'b0, // skip_too_late
                     disable_need,
                     repetitive,
                     single,
@@ -391,6 +393,7 @@ task test_scanline_read; // SuppressThisWarning VEditor - may be unused
             end
         endcase
         mode=   func_encode_mode_scanline(
+                    1'b0, // skip_too_late
                     disable_need,
                     repetitive,
                     single,
@@ -505,6 +508,7 @@ task test_tiled_write; // SuppressThisWarning VEditor - may be unused
             end
         endcase
         mode=   func_encode_mode_tiled(
+                    1'b0, // skip_too_late
                     disable_need,
                     repetitive,
                     single,
@@ -637,6 +641,7 @@ task test_tiled_read; // SuppressThisWarning VEditor - may be unused
             end
         endcase
         mode=   func_encode_mode_tiled(
+                    1'b0, // skip_too_late
                     disable_need,
                     repetitive,
                     single,

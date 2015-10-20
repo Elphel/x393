@@ -83,6 +83,7 @@ module  sens_parallel12 #(
     input         pclk,   // global clock input, pixel rate (96MHz for MT9P006)
     input         mclk_rst,
     input         prst,
+    output        prsts,  // @pclk - includes sensor reset and sensor PLL reset
     output        irst,
     
     output        ipclk,  // re-generated sensor output clock (regional clock to drive external fifo) 
@@ -203,6 +204,12 @@ module  sens_parallel12 #(
     reg            hact_ext_alive;
     reg            hact_alive;
     reg  [STATUS_ALIVE_WIDTH-1:0] status_alive;    
+
+    reg      [1:0] prst_with_sens_mrst = 2'h3; // prst extended to include sensor reset and rst_mmcm
+    wire           async_prst_with_sens_mrst =  ~imrst | rst_mmcm; // mclk domain   
+
+    assign  prsts = prst_with_sens_mrst[0];  // @pclk - includes sensor reset and sensor PLL reset
+    
      
     assign set_pxd_delay =   set_idelay[2:0];
     assign set_other_delay = set_idelay[3];
@@ -213,8 +220,16 @@ module  sens_parallel12 #(
     assign iaro = trigger_mode?  ~trig : iaro_soft;
     
     assign     irst=irst_r[2];
+    
     always @ (posedge ipclk) begin
-        irst_r <= {irst_r[1:0], prst};
+//        irst_r <= {irst_r[1:0], prst};
+        irst_r <= {irst_r[1:0], prsts}; // extended reset that includes sensor reset and rst_mmcm
+    end
+
+    always @(posedge pclk or posedge async_prst_with_sens_mrst) begin
+        if (async_prst_with_sens_mrst) prst_with_sens_mrst <=  2'h3;
+        else if (prst)                 prst_with_sens_mrst <=  2'h3;
+        else                           prst_with_sens_mrst <= prst_with_sens_mrst >> 1;
     end
     
     always @(posedge mclk) begin

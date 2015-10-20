@@ -97,6 +97,7 @@ module  sens_10398 #(
 )(
     input                      pclk,   // global clock input, pixel rate (220MHz for MT9F002)
     input                      prst,
+    output                     prsts,  // @pclk - includes sensor reset and sensor PLL reset
     // delay control inputs
     input                      mclk,
     input                      mrst,
@@ -189,7 +190,8 @@ module  sens_10398 #(
 
     assign iaro = trigger_mode?  ~trig : iaro_soft;
 
-
+    assign  prsts = prst_with_sens_mrst[0];  // @pclk - includes sensor reset and sensor PLL reset
+    
 
     always @(posedge mclk) begin
         if      (mrst)     data_r <= 0;
@@ -265,8 +267,8 @@ module  sens_10398 #(
         if (async_prst_with_sens_mrst) prst_with_sens_mrst <=  2'h3;
         else if (prst)                 prst_with_sens_mrst <=  2'h3;
         else                           prst_with_sens_mrst <= prst_with_sens_mrst >> 1;
-    
     end
+
     cmd_deser #(
         .ADDR        (SENSIO_ADDR),
         .ADDR_MASK   (SENSIO_ADDR_MASK),
@@ -331,7 +333,7 @@ module  sens_10398 #(
         .HISPI_IOSTANDARD       (HISPI_IOSTANDARD)
     ) sens_hispi12l4_i (
         .pclk                   (pclk),                   // input
-        .prst                   (prst_with_sens_mrst[0]), //prst),                   // input
+        .prst                   (prsts),                  //prst),                   // input
         .sns_dp                 (sns_dp[3:0]),            // input[3:0] 
         .sns_dn                 (sns_dn[3:0]),            // input[3:0] 
         .sns_clkp               (sns_clkp),               // input

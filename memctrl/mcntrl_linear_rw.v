@@ -56,8 +56,9 @@ module  mcntrl_linear_rw #(
     parameter MCONTR_LINTILE_EXTRAPG_BITS =     2, // number of bits to use for extra pages
     parameter MCONTR_LINTILE_RST_FRAME =        8, // reset frame number 
     parameter MCONTR_LINTILE_SINGLE =           9, // read/write a single page 
-    parameter MCONTR_LINTILE_REPEAT =          10,  // read/write pages until disabled 
-    parameter MCONTR_LINTILE_DIS_NEED =        11   // disable 'need' request 
+    parameter MCONTR_LINTILE_REPEAT =          10, // read/write pages until disabled 
+    parameter MCONTR_LINTILE_DIS_NEED =        11, // disable 'need' request 
+    parameter MCONTR_LINTILE_SKIP_LATE =       12  // skip actual R/W operation when it is too late, advance pointers
 )(
     input                          mrst,
     input                          mclk,
@@ -82,6 +83,7 @@ module  mcntrl_linear_rw #(
     output                         xfer_want,     // "want" data transfer
     output                         xfer_need,     // "need" - really need a transfer (only 1 page/ room for 1 page left in a buffer), want should still be set.
     input                          xfer_grant,    // sequencer programming access granted, deassert wait/need 
+    output                         xfer_reject,   // reject granted access (when skipping)
     output                         xfer_start_rd, // initiate a transfer (next cycle after xfer_grant)
     output                         xfer_start_wr, // initiate a transfer (next cycle after xfer_grant)
     output                   [2:0] xfer_bank,     // bank address
@@ -150,6 +152,7 @@ module  mcntrl_linear_rw #(
     
 //    wire                          cmd_wrmem; //=MCNTRL_SCANLINE_WRITE_MODE; // 0: read from memory, 1:write to memory
     wire                    [1:0] cmd_extra_pages; // external module needs more than 1 page
+    wire                          skip_too_late;
     wire                          disable_need; // do not assert need, only want
     wire                          repeat_frames; // mode bit
     wire                          single_frame_w; // pulse
@@ -191,7 +194,7 @@ module  mcntrl_linear_rw #(
     wire                          msw_zero=  !(|cmd_data[31:16]); // MSW all bits are 0 - set carry bit
       
     
-    reg                    [11:0] mode_reg;//mode register: {dis_need,repet,single,rst_frame,na[2:0],extra_pages[1:0],write_mode,enable,!reset}
+    reg                    [12:0] mode_reg;//mode register: {dis_need,repet,single,rst_frame,na[2:0],extra_pages[1:0],write_mode,enable,!reset}
     
     reg   [NUM_RC_BURST_BITS-1:0] start_range_addr; // (programmed) First frame in range start (in {row,col8} in burst8, bank ==0
     reg   [NUM_RC_BURST_BITS-1:0] frame_size;       // (programmed) First frame in range start (in {row,col8} in burst8, bank ==0
@@ -233,7 +236,7 @@ module  mcntrl_linear_rw #(
     // Set parameter registers
     always @(posedge mclk) begin
         if      (mrst)               mode_reg <= 0;
-        else if (set_mode_w)         mode_reg <= cmd_data[11:0]; // 4:0]; // [4:0];
+        else if (set_mode_w)         mode_reg <= cmd_data[12:0]; // 4:0]; // [4:0];
 
         if (mrst) single_frame_r <= 0;
         else      single_frame_r <= single_frame_w;
@@ -337,19 +340,51 @@ module  mcntrl_linear_rw #(
     assign cmd_extra_pages = mode_reg[MCONTR_LINTILE_EXTRAPG+:MCONTR_LINTILE_EXTRAPG_BITS]; // external module needs more than 1 page
     assign repeat_frames=    mode_reg[MCONTR_LINTILE_REPEAT];
     assign disable_need =    mode_reg[MCONTR_LINTILE_DIS_NEED];
-    
+    assign skip_too_late =   mode_reg[MCONTR_LINTILE_SKIP_LATE];
     assign status_data= {frame_finished_r, busy_r};     // TODO: Add second bit?
     assign pgm_param_w=      cmd_we;
     localparam [COLADDR_NUMBER-3-NUM_XFER_BITS-1:0] EXTRA_BITS=0;
     assign remainder_in_xfer = {EXTRA_BITS, lim_by_xfer}-mem_page_left;
     
     integer i;
-    wire xfer_limited_by_mem_page;
+    wire xfer_limited_by_mem_page= mem_page_left < {EXTRA_BITS,lim_by_xfer};
     reg  xfer_limited_by_mem_page_r;
-    assign xfer_limited_by_mem_page= mem_page_left < {EXTRA_BITS,lim_by_xfer};
+//  skipping pages that did not make it
+//    reg    skip_tail; // skip end of frame if the next frame started (TBD)
+// Now skip if write and >=4 or read and >=5 (read starts with 4 and may end with 4)
+// Also if the next page signal is used by the source/dest of data, it should use reject pulse to advance external
+// page counter 
+    wire   start_skip_w = skip_too_late && want_r && (page_cntr >= 4) && !xfer_grant && (cmd_wrmem || page_cntr[0]); //&& busy_r && skip_run;
+    reg    start_skip_r;
+    reg    skip_run = 0;    // run "skip" - advance addresses, but no actual read/write
+    reg    xfer_reject_r;
+    assign xfer_reject = xfer_reject_r;
+    
+    always @(posedge mclk) begin // Handling skip/reject
+        if (mrst) xfer_reject_r <= 0;
+        else      xfer_reject_r <= xfer_grant && !chn_rst && skip_run;
+    
 
+        if (mrst) xfer_start_r <= 0;
+        else      xfer_start_r <= {xfer_start_r[1:0], (xfer_grant & ~chn_rst & ~skip_run) | start_skip_r};
+
+        if (mrst) xfer_start_rd_r <= 0;
+        else      xfer_start_rd_r <=  xfer_grant && !chn_rst && !cmd_wrmem && !skip_run;
+
+        if (mrst) xfer_start_wr_r <= 0;
+        else      xfer_start_wr_r <=  xfer_grant && !chn_rst && cmd_wrmem  && !skip_run;
+        
+        if (mrst || recalc_r[PAR_MOD_LATENCY-1]) skip_run <= 0;
+        else if (start_skip_w)                   skip_run <= 1;
+
+        if (mrst) start_skip_r <= 0;
+        else      start_skip_r <= start_skip_w;
+        
+    
+    end    
+    
 /// Recalcualting just after starting request - preparing for the next one. Also happens after parameter change.
-/// Should dpepend only on the parameters updated separately (curr_x, curr_y)
+/// Should dppend only on the parameters updated separately (curr_x, curr_y)
     always @(posedge mclk) begin // TODO: Match latencies (is it needed?) Reduce consumption by CE?
         if (recalc_r[0]) begin // cycle 1
             frame_x <= curr_x + window_x0;
@@ -442,14 +477,6 @@ wire    start_not_partial= xfer_start_r[0] && !xfer_limited_by_mem_page_r;
         else if (chn_rst || frame_start_r[0]) frame_finished_r <= 0;
         else if (frame_done_r)                frame_finished_r <= 1;
         
-        if (mrst) xfer_start_r <= 0;
-        else      xfer_start_r <= {xfer_start_r[1:0],xfer_grant && !chn_rst};
-
-        if (mrst) xfer_start_rd_r <= 0;
-        else      xfer_start_rd_r <=  xfer_grant && !chn_rst && !cmd_wrmem;
-
-        if (mrst) xfer_start_wr_r <= 0;
-        else      xfer_start_wr_r <=  xfer_grant && !chn_rst && cmd_wrmem;
         
         if (mrst || disable_need)                         need_r <= 0;
         else if (chn_rst || xfer_grant)                   need_r <= 0;

@@ -2492,7 +2492,8 @@ task write_block_scanline_chn;  // SuppressThisWarning VEditor : may be unused
     end
 endtask
 // x393_mcntrl (no class)
-function [11:0] func_encode_mode_tiled;  // SuppressThisWarning VEditor - not used
+function [12:0] func_encode_mode_tiled;  // SuppressThisWarning VEditor - not used
+    input       skip_too_late;
     input       disable_need;
     input       repetitive;
     input       single;
@@ -2505,7 +2506,7 @@ function [11:0] func_encode_mode_tiled;  // SuppressThisWarning VEditor - not us
     input       enable;      // enable requests from this channel ( 0 will let current to finish, but not raise want/need)
     input       chn_reset;       // immediately reset al;l the internal circuitry
 
-    reg  [11:0] rslt;
+    reg  [12:0] rslt;
     begin
         rslt = 0;
         rslt[MCONTR_LINTILE_EN] =                                     ~chn_reset;
@@ -2518,12 +2519,14 @@ function [11:0] func_encode_mode_tiled;  // SuppressThisWarning VEditor - not us
         rslt[MCONTR_LINTILE_SINGLE] =                                  single;
         rslt[MCONTR_LINTILE_REPEAT] =                                  repetitive;
         rslt[MCONTR_LINTILE_DIS_NEED] =                                disable_need;
+        rslt[MCONTR_LINTILE_SKIP_LATE] =                               skip_too_late;
 //        func_encode_mode_tiled={byte32,keep_open,extra_pages,write_mem,enable,~chn_reset};
         func_encode_mode_tiled = rslt;
     end           
 endfunction
 // x393_mcntrl (no class)
-function [11:0] func_encode_mode_scanline; // SuppressThisWarning VEditor - not used
+function [12:0] func_encode_mode_scanline; // SuppressThisWarning VEditor - not used
+    input       skip_too_late;
     input       disable_need;
     input       repetitive;
     input       single;
@@ -2534,7 +2537,7 @@ function [11:0] func_encode_mode_scanline; // SuppressThisWarning VEditor - not 
     input       enable;      // enable requests from this channel ( 0 will let current to finish, but not raise want/need)
     input       chn_reset;       // immediately reset al;l the internal circuitry
     
-    reg  [11:0] rslt;
+    reg  [12:0] rslt;
     begin
         rslt = 0;
         rslt[MCONTR_LINTILE_EN] =                                     ~chn_reset;
@@ -2545,6 +2548,8 @@ function [11:0] func_encode_mode_scanline; // SuppressThisWarning VEditor - not 
         rslt[MCONTR_LINTILE_SINGLE] =                                  single;
         rslt[MCONTR_LINTILE_REPEAT] =                                  repetitive;
         rslt[MCONTR_LINTILE_DIS_NEED] =                                disable_need;
+        rslt[MCONTR_LINTILE_SKIP_LATE] =                               skip_too_late;
+        
 //        func_encode_mode_scanline={extra_pages,write_mem,enable,~chn_reset};
         func_encode_mode_scanline = rslt;
     end           
@@ -3077,6 +3082,7 @@ task setup_sensor_memory;
     begin
         base_addr = MCONTR_SENS_BASE + MCONTR_SENS_INC * num_sensor;
         mode=   func_encode_mode_scanline(
+                    1, // skip_too_late              
                     0, // disable_need
                     1, // repetitive,
                     0, // single,
@@ -3122,6 +3128,7 @@ task setup_compressor_memory;
         
         base_addr = MCONTR_CMPRS_BASE + MCONTR_CMPRS_INC * num_sensor;
         mode=   func_encode_mode_tiled(
+                    1'b0,             // skip too late
                     disable_need,
                     1,                // repetitive,
                     0,                // single,

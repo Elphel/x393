@@ -21,6 +21,7 @@
 `timescale 1ns/1ps
 
 module  par12_hispi_psp4l#(
+    parameter FULL_HEIGHT =    0, // number of lines in a frame. If 0 - wait to the VACT end, if > 0 - output immediately
     parameter CLOCK_MPY =     10,
     parameter CLOCK_DIV =      3,
     parameter LANE0_DLY =      1.3,
@@ -49,6 +50,7 @@ module  par12_hispi_psp4l#(
     localparam  [3:0] SYNC_EOL = 6;
 //    localparam  SYNC_EMBED = 4;
 
+    integer      lines_left; // number of lines left in a frame
     integer      pre_lines; // Number of lines left with "embedded" (not image) data
     reg   [ 1:0] lane_pcntr; // count input pixels to extend hact to 4*n if needed
     wire         hact = hact_in ||  (|lane_pcntr);
@@ -61,10 +63,18 @@ module  par12_hispi_psp4l#(
     reg          next_sof;
     reg          next_line_pclk; // triggers serial output of a line (generated at SOL and EOF, wait full line)
     reg          next_frame_pclk; // start of a new frame on input
-    wire         pre_fifo_we_eof_w =     vact_d && !vact;
-    wire         pre_fifo_we_sof_sol_w = vact_d && hact && !hact_d;
+    wire         pre_fifo_we_eof_w =     (FULL_HEIGHT > 0) ? (next_line_pclk && (lines_left == 0)) : (vact_d && !vact);
+//    wire         pre_fifo_we_sof_sol_w = vact_d && ((FULL_HEIGHT > 0) ? ((next_sof && hact && !hact_d) || (hact_d && ! hact && (lines_left > 1)))
+    wire         pre_fifo_we_sof_sol_w = vact_d && ((FULL_HEIGHT > 0) ? ((next_sof && hact && !hact_d) || (next_line_pclk && (lines_left != 0)))
+     : (hact && !hact_d));
     wire         pre_fifo_we_data_w =    vact_d && hact_d && (lane_pcntr == 0);
     wire         pre_fifo_we_w = pre_fifo_we_eof_w || pre_fifo_we_sof_sol_w || pre_fifo_we_data_w;
+    
+    always @(posedge pclk) begin
+        if      (!vact)            lines_left <= FULL_HEIGHT;
+        else if (hact_d && ! hact) lines_left <= lines_left - 1;
+    end    
+    
     always @(posedge pclk) begin
     
         vact_d <= vact;
@@ -86,7 +96,7 @@ module  par12_hispi_psp4l#(
         else if (hact_d) next_sof <= 0;
         
         if (!vact_d) next_line_pclk <= 0;
-        else         next_line_pclk <= !vact || (hact && !hact_d && !next_sof);
+        else         next_line_pclk <= (FULL_HEIGHT >0)? (hact_d && !hact): (!vact || (hact && !hact_d && !next_sof));
 
         next_frame_pclk <= vact_d && hact && !hact_d && next_sof;
         
@@ -123,23 +133,7 @@ module  par12_hispi_psp4l#(
         .en(1'b1), // input
         .clk_out(oclk) // output
     );
-/*   
-    simul_clk_mult #(
-        .MULTIPLIER(CLOCK_MPY)
-    ) simul_clk_mult_i (
-        .clk_in  (pclk), // input
-        .en      (1'b1), // input
-        .clk_out (int_clk) // output reg 
-    );
 
-    sim_clk_div #(
-        .DIVISOR (CLOCK_DIV)
-    ) sim_clk_div_i (
-        .clk_in  (int_clk), // input
-        .en      (1'b1), // input
-        .clk_out (oclk) // output
-    );
-*/    
     pulse_cross_clock #(
         .EXTRA_DLY(0)
     ) pulse_cross_clock_sof_sol_i (
@@ -176,7 +170,6 @@ module  par12_hispi_psp4l#(
     wire                       sof_sol_sent;
     reg                  [1:0] lines_available; // number of lines ready in FIFO
     wire                       line_available = |lines_available;
-    
     generate
         genvar i;
         for (i=0; i < 4; i=i+1) begin: cmprs_channel_block

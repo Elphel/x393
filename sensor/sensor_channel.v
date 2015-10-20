@@ -205,10 +205,11 @@ module  sensor_channel#(
     parameter PXD_CAPACITANCE =          "DONT_CARE",
     parameter PXD_CLK_DIV =              10, // 220MHz -> 22MHz
     parameter PXD_CLK_DIV_BITS =          4,
+//`else    
+//    parameter SENS_PCLK_PERIOD =        10.000,  // input period in ns, 0..100.000 - MANDATORY, resolution down to 1 ps
 `endif    
     
     parameter SENS_PHASE_WIDTH=        8,      // number of bits for te phase counter (depends on divisors)
-    parameter SENS_PCLK_PERIOD =       10.000,  // input period in ns, 0..100.000 - MANDATORY, resolution down to 1 ps
     parameter SENS_BANDWIDTH =         "OPTIMIZED",  //"OPTIMIZED", "HIGH","LOW"
 
     // parameters for the sensor-synchronous clock PLL
@@ -412,6 +413,7 @@ module  sensor_channel#(
     wire         trig;
     reg          sof_out_r;       
     reg          eof_out_r;       
+    wire         prsts;  // @pclk - includes sensor reset and sensor PLL reset
     
     // TODO: insert vignetting and/or flat field, pixel defects before gamma_*_in
     assign lens_pxd_in = {pxd[11:0],4'b0};
@@ -627,7 +629,8 @@ module  sensor_channel#(
 
     // for debug/test alive   
         pulse_cross_clock pulse_cross_clock_sol_mclk_i (
-            .rst         (prst),                  // input
+//            .rst         (prst),                  // input
+            .rst         (prsts),                  // input extended to include sensor reset and rst_mmcm
             .src_clk     (pclk),                  // input
             .dst_clk     (mclk),                  // input
     //        .in_pulse    (hact && !hact_r),       // input
@@ -637,7 +640,8 @@ module  sensor_channel#(
         );
     
         pulse_cross_clock pulse_cross_clock_sof_mclk_i (
-            .rst         (prst),                  // input
+//            .rst         (prst),                  // input
+            .rst         (prsts),                  // input extended to include sensor reset and rst_mmcm
             .src_clk     (pclk),                  // input
             .dst_clk     (mclk),                  // input
     //        .in_pulse    (sof),                   // input
@@ -647,7 +651,8 @@ module  sensor_channel#(
         );
     
         pulse_cross_clock pulse_cross_clock_eof_mclk_i (
-            .rst         (prst),                  // input
+//            .rst         (prst),                  // input
+            .rst         (prsts),                  // input extended to include sensor reset and rst_mmcm
             .src_clk     (pclk),                  // input
             .dst_clk     (mclk),                  // input
             .in_pulse    (eof),                   // input
@@ -656,7 +661,8 @@ module  sensor_channel#(
         );
     
         pulse_cross_clock pulse_cross_clock_dout_valid_1cyc_mclk_i (
-            .rst         (prst),                             // input
+//            .rst         (prst),                  // input
+            .rst         (prsts),                  // input extended to include sensor reset and rst_mmcm
             .src_clk     (pclk),                             // input
             .dst_clk     (mclk),                             // input
             .in_pulse    (dout_valid && !dout_valid_d_pclk), // input
@@ -665,7 +671,8 @@ module  sensor_channel#(
         );
     
         pulse_cross_clock pulse_cross_clock_last_in_line_1cyc_mclk_i (
-            .rst         (prst),                                 // input
+//            .rst         (prst),                  // input
+            .rst         (prsts),                  // input extended to include sensor reset and rst_mmcm
             .src_clk     (pclk),                                 // input
             .dst_clk     (mclk),                                 // input
             .in_pulse    (last_in_line && !last_in_line_d_pclk), // input
@@ -739,6 +746,7 @@ module  sensor_channel#(
         ) sens_10398_i (
             .pclk             (pclk),                   // input
             .prst             (prst),                   // input
+            .prsts            (prsts),                  // output
             .mclk             (mclk),                   // input
             .mrst             (mrst),                   // input
             .cmd_ad           (cmd_ad),                 // input[7:0] 
@@ -822,6 +830,7 @@ module  sensor_channel#(
             .pclk                 (pclk),                   // input
             .mclk_rst             (mrst),                   // input
             .prst                 (prst),                   // input
+            .prsts                (prsts),                  // output
             .irst                 (irst),                   // output
             .ipclk                (ipclk),                  // output
             .ipclk2x              (), // ipclk2x),          // output
@@ -856,7 +865,9 @@ module  sensor_channel#(
     //        .rst         (rst),        // input
             .iclk        (ipclk),        // input
             .pclk        (pclk),         // input
-            .prst        (prst),         // input
+//            .prst        (prst),                  // input
+            .prst        (prsts),                  // input extended to include sensor reset and rst_mmcm
+            
             .irst        (irst),         // input
             .pxd_in      (pxd_to_fifo),  // input[11:0] 
             .vact        (vact_to_fifo), // input
@@ -881,7 +892,8 @@ module  sensor_channel#(
         .pclk         (pclk),          // input
         .mclk         (mclk),          // input
         .mrst         (mrst),          // input
-        .prst         (prst),          // input
+//        .prst         (prst),          // input
+        .prst         (prsts),         // input extended to include sensor reset and rst_mmcm
         .en           (en_pclk),       // input @pclk
         .sof_in       (sof),           // input
         .eof_in       (eof),           // input
@@ -925,7 +937,8 @@ module  sensor_channel#(
         .SENS_LENS_A_WIDTH         (19),
         .SENS_LENS_B_WIDTH         (21)
     ) lens_flat393_i (
-        .prst       (prst),          // input
+//        .prst       (prst),          // input
+        .prst       (prsts),         // input extended to include sensor reset and rst_mmcm
         .pclk       (pclk),          // input
         .mrst       (mrst),          // input
         .mclk       (mclk),          // input
@@ -963,7 +976,8 @@ module  sensor_channel#(
 //        .rst         (rst),            // input
         .pclk        (pclk),           // input
         .mrst        (mrst),          // input
-        .prst        (prst),          // input
+//        .prst        (prst),          // input
+        .prst        (prsts),         // input extended to include sensor reset and rst_mmcm
         .pxd_in      (gamma_pxd_in),   // input[15:0] 
         .hact_in     (gamma_hact_in),  // input
         .sof_in      (gamma_sof_in),   // input
@@ -994,7 +1008,8 @@ module  sensor_channel#(
             ) sens_histogram_i (
 //                .rst        (rst),            // input
                 .mrst       (mrst),           // input
-                .prst       (prst),           // input
+//                .prst       (prst),          // input
+                .prst       (prsts),         // input extended to include sensor reset and rst_mmcm
                 .pclk       (pclk),           // input
                 .pclk2x     (pclk2x),         // input
                 .sof        (gamma_sof_out),  // input
@@ -1047,7 +1062,8 @@ module  sensor_channel#(
             ) sens_histogram_i (
 //                .rst        (rst),            // input
                 .mrst        (mrst),          // input
-                .prst        (prst),          // input
+//                .prst       (prst),          // input
+                .prst       (prsts),         // input extended to include sensor reset and rst_mmcm
                 .pclk       (pclk),           // input
                 .pclk2x     (pclk2x),         // input
                 .sof        (gamma_sof_out),  // input
@@ -1100,7 +1116,8 @@ module  sensor_channel#(
             ) sens_histogram_i (
 //                .rst        (rst),            // input
                 .mrst        (mrst),          // input
-                .prst        (prst),          // input
+//                .prst       (prst),          // input
+                .prst       (prsts),         // input extended to include sensor reset and rst_mmcm
                 .pclk       (pclk),           // input
                 .pclk2x     (pclk2x),         // input
                 .sof        (gamma_sof_out),  // input
@@ -1152,7 +1169,8 @@ module  sensor_channel#(
             ) sens_histogram_i (
 //                .rst        (rst),            // input
                 .mrst        (mrst),          // input
-                .prst        (prst),          // input
+//                .prst       (prst),          // input
+                .prst       (prsts),         // input extended to include sensor reset and rst_mmcm
                 .pclk       (pclk),           // input
                 .pclk2x     (pclk2x),         // input
                 .sof        (gamma_sof_out),  // input

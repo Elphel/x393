@@ -26,6 +26,7 @@
 `undef WAIT_MRS
 `define SET_PER_PIN_DELAYS 1 // set individual (including per-DQ pin delays)
 `define READBACK_DELAYS 1
+//`define TEST_MEMBRIDGE 1
 `define PS_PIO_WAIT_COMPLETE 0 // wait until PS PIO module finished transaction before starting a new one
 // Disabled already passed test to speedup simulation
 //`define TEST_WRITE_LEVELLING 1
@@ -111,10 +112,17 @@ parameter EXTERNAL_TIMESTAMP =    0; // 1 ;    // embed local timestamp, 1 - emb
   parameter CPU_PER=10.4;
   
  parameter TRIG_PERIOD =      6000 ;
- parameter HBLANK=            52; // 12; /// 52; //*********************
+`ifdef HISPI 
+    parameter HBLANK=            90; // 12; /// 52; //*********************
+    parameter BLANK_ROWS_BEFORE= 9; // 3; //8; ///2+2 - a little faster than compressor
+    parameter BLANK_ROWS_AFTER=  1; //8;
+    
+`else
+    parameter HBLANK=            12; // 52; // 12; /// 52; //*********************
+    parameter BLANK_ROWS_BEFORE= 1; //8; ///2+2 - a little faster than compressor
+    parameter BLANK_ROWS_AFTER=  1; //8;
+`endif 
  parameter WOI_HEIGHT=        32;
- parameter BLANK_ROWS_BEFORE= 1; //8; ///2+2 - a little faster than compressor
- parameter BLANK_ROWS_AFTER=  1; //8;
  parameter TRIG_LINES=        8;
  parameter VBLANK=            2; /// 2 lines //SuppressThisWarning Veditor UNUSED
  parameter CYCLES_PER_PIXEL=  3; /// 2 for JP4, 3 for JPEG
@@ -246,6 +254,7 @@ parameter EXTERNAL_TIMESTAMP =    0; // 1 ;    // embed local timestamp, 1 - emb
     localparam PIX_CLK_MULT =         1; // scale clock from FPGA to sensor pixel clock
 `endif
 `ifdef HISPI
+    localparam HISPI_FULL_HEIGHT =    FULL_HEIGHT;  // >0 - count lines, ==0 - wait for the end of VACT
     localparam HISPI_CLK_DIV =        3; // from pixel clock to serial output pixel rate TODO: Set real ones, adjsut sensor clock too
     localparam HISPI_CLK_MULT =      10; // from pixel clock to serial output pixel rate TODO: Set real ones, adjsut sensor clock too
 
@@ -1232,6 +1241,8 @@ assign #10 gpio_pins[9] = gpio_pins[8];
     compressor_run (2, 2); // run single
     compressor_run (3, 2); // run single
 */    
+
+`ifdef TEST_MEMBRIDGE    
     TEST_TITLE = "MEMBRIDGE_READ # 1";
     $display("===================== TEST_%s =========================",TEST_TITLE);
   TEST_TITLE = "MEMBRIDGE READ #1";
@@ -1245,7 +1256,8 @@ assign #10 gpio_pins[9] = gpio_pins[8];
 
   setup_sensor_membridge (0,   // for sensor 0
                           1) ; // disable_need
-    
+`endif  
+  
 `ifdef DEBUG_RING
   TEST_TITLE = "READING DEBUG DATA";
   $display("===================== TEST_%s =========================",TEST_TITLE);
@@ -2091,6 +2103,7 @@ simul_axi_hp_wr #(
 // Testing parallel12 -> HiSPi simulation converter
  `ifdef HISPI   
     par12_hispi_psp4l #(
+        .FULL_HEIGHT   (HISPI_FULL_HEIGHT),
         .CLOCK_MPY     (HISPI_CLK_MULT),
         .CLOCK_DIV     (HISPI_CLK_DIV),
         .LANE0_DLY     (1.3),
@@ -2114,6 +2127,7 @@ simul_axi_hp_wr #(
     );
 
     par12_hispi_psp4l #(
+        .FULL_HEIGHT   (HISPI_FULL_HEIGHT),
         .CLOCK_MPY     (HISPI_CLK_MULT),
         .CLOCK_DIV     (HISPI_CLK_DIV),
         .LANE0_DLY     (1.3),
@@ -2137,6 +2151,7 @@ simul_axi_hp_wr #(
     );
 
     par12_hispi_psp4l #(
+        .FULL_HEIGHT   (HISPI_FULL_HEIGHT),
         .CLOCK_MPY     (HISPI_CLK_MULT),
         .CLOCK_DIV     (HISPI_CLK_DIV),
         .LANE0_DLY     (1.3),
@@ -2160,6 +2175,7 @@ simul_axi_hp_wr #(
     );
 
     par12_hispi_psp4l #(
+        .FULL_HEIGHT   (HISPI_FULL_HEIGHT),
         .CLOCK_MPY     (HISPI_CLK_MULT),
         .CLOCK_DIV     (HISPI_CLK_DIV),
         .LANE0_DLY     (1.3),
@@ -2492,7 +2508,8 @@ task write_block_scanline_chn;  // SuppressThisWarning VEditor : may be unused
     end
 endtask
 // x393_mcntrl (no class)
-function [11:0] func_encode_mode_tiled;  // SuppressThisWarning VEditor - not used
+function [12:0] func_encode_mode_tiled;  // SuppressThisWarning VEditor - not used
+    input       skip_too_late;
     input       disable_need;
     input       repetitive;
     input       single;
@@ -2505,7 +2522,7 @@ function [11:0] func_encode_mode_tiled;  // SuppressThisWarning VEditor - not us
     input       enable;      // enable requests from this channel ( 0 will let current to finish, but not raise want/need)
     input       chn_reset;       // immediately reset al;l the internal circuitry
 
-    reg  [11:0] rslt;
+    reg  [12:0] rslt;
     begin
         rslt = 0;
         rslt[MCONTR_LINTILE_EN] =                                     ~chn_reset;
@@ -2518,12 +2535,15 @@ function [11:0] func_encode_mode_tiled;  // SuppressThisWarning VEditor - not us
         rslt[MCONTR_LINTILE_SINGLE] =                                  single;
         rslt[MCONTR_LINTILE_REPEAT] =                                  repetitive;
         rslt[MCONTR_LINTILE_DIS_NEED] =                                disable_need;
+        rslt[MCONTR_LINTILE_SKIP_LATE] =                               skip_too_late;
+        
 //        func_encode_mode_tiled={byte32,keep_open,extra_pages,write_mem,enable,~chn_reset};
         func_encode_mode_tiled = rslt;
     end           
 endfunction
 // x393_mcntrl (no class)
-function [11:0] func_encode_mode_scanline; // SuppressThisWarning VEditor - not used
+function [12:0] func_encode_mode_scanline; // SuppressThisWarning VEditor - not used
+    input       skip_too_late;
     input       disable_need;
     input       repetitive;
     input       single;
@@ -2534,7 +2554,7 @@ function [11:0] func_encode_mode_scanline; // SuppressThisWarning VEditor - not 
     input       enable;      // enable requests from this channel ( 0 will let current to finish, but not raise want/need)
     input       chn_reset;       // immediately reset al;l the internal circuitry
     
-    reg  [11:0] rslt;
+    reg  [12:0] rslt;
     begin
         rslt = 0;
         rslt[MCONTR_LINTILE_EN] =                                     ~chn_reset;
@@ -2545,6 +2565,7 @@ function [11:0] func_encode_mode_scanline; // SuppressThisWarning VEditor - not 
         rslt[MCONTR_LINTILE_SINGLE] =                                  single;
         rslt[MCONTR_LINTILE_REPEAT] =                                  repetitive;
         rslt[MCONTR_LINTILE_DIS_NEED] =                                disable_need;
+        rslt[MCONTR_LINTILE_SKIP_LATE] =                               skip_too_late;
 //        func_encode_mode_scanline={extra_pages,write_mem,enable,~chn_reset};
         func_encode_mode_scanline = rslt;
     end           
@@ -3077,6 +3098,7 @@ task setup_sensor_memory;
     begin
         base_addr = MCONTR_SENS_BASE + MCONTR_SENS_INC * num_sensor;
         mode=   func_encode_mode_scanline(
+                    1, // skip_too_late              
                     0, // disable_need
                     1, // repetitive,
                     0, // single,
@@ -3122,6 +3144,7 @@ task setup_compressor_memory;
         
         base_addr = MCONTR_CMPRS_BASE + MCONTR_CMPRS_INC * num_sensor;
         mode=   func_encode_mode_tiled(
+                    1'b0,             // skip too late
                     disable_need,
                     1,                // repetitive,
                     0,                // single,

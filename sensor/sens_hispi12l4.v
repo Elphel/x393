@@ -222,7 +222,8 @@ module  sens_hispi12l4#(
     end
     
     always @(posedge pclk) begin
-        vact_pclk_strt <= {vact_pclk_strt[0],vact_ipclk};
+    if (prst || !vact_ipclk) vact_pclk_strt <= 0;
+    else                     vact_pclk_strt <= {vact_pclk_strt[0], 1'b1};
 
         rd_run_d <= rd_run;
        
@@ -275,8 +276,8 @@ module  sens_hispi12l4#(
         .rst  (1'b0),                        // input
 //        .dly  (4'h2),                        // input[3:0] 
 //        .dly  (4'h3),                        // input[3:0] 
-//        .dly  (4'h1),                        // input[3:0] 
-        .dly  (4'h2),                        // input[3:0] 
+        .dly  (4'h1),                        // input[3:0] 
+//        .dly  (4'h2),                        // input[3:0] 
         .din  (sol_pclk),                    // input[0:0] 
         .dout (hact_on)                      // output[0:0] 
     );
@@ -288,8 +289,8 @@ module  sens_hispi12l4#(
         .rst  (1'b0),                        // input
 //        .dly  (4'h2),                        // input[3:0] 
 //        .dly  (4'h0),                        // input[3:0] 
-//        .dly  (4'h1),                        // input[3:0] 
-        .dly  (4'h2),                        // input[3:0] 
+        .dly  (4'h1),                        // input[3:0] 
+//        .dly  (4'h2),                        // input[3:0] 
         .din  (fifo_re[HISPI_NUMLANES - 1]), // input[0:0] 
         .dout (hact_off)                     // output[0:0] 
     );
@@ -300,8 +301,8 @@ module  sens_hispi12l4#(
         .clk  (pclk),                        // input
         .rst  (1'b0),                        // input
 //        .dly  (4'h2),                        // input[3:0] 
-//        .dly  (4'h0),                        // input[3:0] 
-        .dly  (4'h1),                        // input[3:0] 
+        .dly  (4'h0),                        // input[3:0] 
+//        .dly  (4'h1),                        // input[3:0] 
         .din  (pxd_out_pre),                 // input[0:0] 
         .dout (pxd_out)                      // output[0:0] 
     );

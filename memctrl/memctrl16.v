@@ -168,6 +168,7 @@ module  memctrl16 #(
     input                        want_rq0,   // both want_rq and need_rq should go inactive after being granted  
     input                        need_rq0,   // want_rq should be active when need_rq is.
     output reg                   channel_pgm_en0, // channel can program sequence data
+    input                        reject0,    // reject grant
     output                       seq_done0,  // sequencer finished executing sequence for this channel 
     output                       page_nxt_chn0,
     output                       buf_run0,   // external buffer run (may be used to force page) @posedge mclk
@@ -189,6 +190,7 @@ module  memctrl16 #(
     input                        want_rq1,   // both want_rq and need_rq should go inactive after being granted  
     input                        need_rq1,
     output reg                   channel_pgm_en1, // channel can program sequence data
+    input                        reject1,    // reject grant
     output                       seq_done1,  // sequencer finished executing sequence for this channel 
     output                       page_nxt_chn1,
     output                       buf_run1,   // external buffer run (may be used to force page) @posedge mclk
@@ -210,6 +212,7 @@ module  memctrl16 #(
     input                        want_rq2,   // both want_rq and need_rq should go inactive after being granted  
     input                        need_rq2,
     output reg                   channel_pgm_en2, // channel can program sequence data
+    input                        reject2,    // reject grant
     output                       seq_done2,  // sequencer finished executing sequence for this channel 
     output                       page_nxt_chn2,
     output                       buf_run2,   // external buffer run (may be used to force page) @posedge mclk
@@ -231,6 +234,7 @@ module  memctrl16 #(
     input                        want_rq3,   // both want_rq and need_rq should go inactive after being granted  
     input                        need_rq3,
     output reg                   channel_pgm_en3, // channel can program sequence data
+    input                        reject3,    // reject grant
     output                       seq_done3,  // sequencer finished executing sequence for this channel 
     output                       page_nxt_chn3,
     output                       buf_run3,   // external buffer run (may be used to force page) @posedge mclk
@@ -252,6 +256,7 @@ module  memctrl16 #(
     input                        want_rq4,   // both want_rq and need_rq should go inactive after being granted  
     input                        need_rq4,
     output reg                   channel_pgm_en4, // channel can program sequence data
+    input                        reject4,    // reject grant
     output                       seq_done4,  // sequencer finished executing sequence for this channel 
     output                       page_nxt_chn4,
     output                       buf_run4,   // external buffer run (may be used to force page) @posedge mclk
@@ -273,6 +278,7 @@ module  memctrl16 #(
     input                        want_rq5,   // both want_rq and need_rq should go inactive after being granted  
     input                        need_rq5,
     output reg                   channel_pgm_en5, // channel can program sequence data
+    input                        reject5,    // reject grant
     output                       seq_done5,  // sequencer finished executing sequence for this channel 
     output                       page_nxt_chn5,
     output                       buf_run5,   // external buffer run (may be used to force page) @posedge mclk
@@ -294,6 +300,7 @@ module  memctrl16 #(
     input                        want_rq6,   // both want_rq and need_rq should go inactive after being granted  
     input                        need_rq6,
     output reg                   channel_pgm_en6, // channel can program sequence data
+    input                        reject6,    // reject grant
     output                       seq_done6,  // sequencer finished executing sequence for this channel 
     output                       page_nxt_chn6,
     output                       buf_run6,   // external buffer run (may be used to force page) @posedge mclk
@@ -315,6 +322,7 @@ module  memctrl16 #(
     input                        want_rq7,   // both want_rq and need_rq should go inactive after being granted  
     input                        need_rq7,
     output reg                   channel_pgm_en7, // channel can program sequence data
+    input                        reject7,    // reject grant
     output                       seq_done7,  // sequencer finished executing sequence for this channel 
     output                       page_nxt_chn7,
     output                       buf_run7,   // external buffer run (may be used to force page) @posedge mclk
@@ -336,6 +344,7 @@ module  memctrl16 #(
     input                        want_rq8,   // both want_rq and need_rq should go inactive after being granted  
     input                        need_rq8,
     output reg                   channel_pgm_en8, // channel can program sequence data
+    input                        reject8,    // reject grant
     output                       seq_done8,  // sequencer finished executing sequence for this channel 
     output                       page_nxt_chn8,
     output                       buf_run8,   // external buffer run (may be used to force page) @posedge mclk
@@ -357,6 +366,7 @@ module  memctrl16 #(
     input                        want_rq9,   // both want_rq and need_rq should go inactive after being granted  
     input                        need_rq9,
     output reg                   channel_pgm_en9, // channel can program sequence data
+    input                        reject9,    // reject grant
     output                       seq_done9,  // sequencer finished executing sequence for this channel 
     output                       page_nxt_chn9,
     output                       buf_run9,   // external buffer run (may be used to force page) @posedge mclk
@@ -378,6 +388,7 @@ module  memctrl16 #(
     input                        want_rq10,   // both want_rq and need_rq should go inactive after being granted  
     input                        need_rq10,
     output reg                   channel_pgm_en10, // channel can program sequence data
+    input                        reject10,    // reject grant
     output                       seq_done10,  // sequencer finished executing sequence for this channel 
     output                       page_nxt_chn10,
     output                       buf_run10,   // external buffer run (may be used to force page) @posedge mclk
@@ -399,6 +410,7 @@ module  memctrl16 #(
     input                        want_rq11,   // both want_rq and need_rq should go inactive after being granted  
     input                        need_rq11,
     output reg                   channel_pgm_en11, // channel can program sequence data
+    input                        reject11,    // reject grant
     output                       seq_done11,  // sequencer finished executing sequence for this channel 
     output                       page_nxt_chn11,
     output                       buf_run11,   // external buffer run (may be used to force page) @posedge mclk
@@ -420,6 +432,7 @@ module  memctrl16 #(
     input                        want_rq12,   // both want_rq and need_rq should go inactive after being granted  
     input                        need_rq12,
     output reg                   channel_pgm_en12, // channel can program sequence data
+    input                        reject12,    // reject grant
     output                       seq_done12,  // sequencer finished executing sequence for this channel 
     output                       page_nxt_chn12,
     output                       buf_run12,   // external buffer run (may be used to force page) @posedge mclk
@@ -441,6 +454,7 @@ module  memctrl16 #(
     input                        want_rq13,   // both want_rq and need_rq should go inactive after being granted  
     input                        need_rq13,
     output reg                   channel_pgm_en13, // channel can program sequence data
+    input                        reject13,    // reject grant
     output                       seq_done13,  // sequencer finished executing sequence for this channel 
     output                       page_nxt_chn13,
     output                       buf_run13,   // external buffer run (may be used to force page) @posedge mclk
@@ -462,6 +476,7 @@ module  memctrl16 #(
     input                        want_rq14,   // both want_rq and need_rq should go inactive after being granted  
     input                        need_rq14,
     output reg                   channel_pgm_en14, // channel can program sequence data
+    input                        reject14,    // reject grant
     output                       seq_done14,  // sequencer finished executing sequence for this channel 
     output                       page_nxt_chn14,
     output                       buf_run14,   // external buffer run (may be used to force page) @posedge mclk
@@ -483,6 +498,7 @@ module  memctrl16 #(
     input                        want_rq15,   // both want_rq and need_rq should go inactive after being granted  
     input                        need_rq15,
     output reg                   channel_pgm_en15, // channel can program sequence data
+    input                        reject15,    // reject grant
     output                       seq_done15,  // sequencer finished executing sequence for this channel 
     output                       page_nxt_chn15,
     output                       buf_run15,   // external buffer run (may be used to force page) @posedge mclk
@@ -529,7 +545,7 @@ module  memctrl16 #(
 // temporary debug data    
     ,output                [11:0] tmp_debug // add some signals generated here?
 );
-
+    wire        reject;     // OR-ed reject from all channels
     wire        ext_buf_rd;
     wire        ext_buf_rpage_nxt;
     wire        ext_buf_page_nxt;
@@ -779,11 +795,14 @@ assign pre_run_seq_w= mcontr_enabled && !sequencer_run_busy && !cmd_seq_run && (
 
 assign pre_run_chn_w= pre_run_seq_w && !sel_refresh_w;
 assign en_schedul= mcontr_enabled && !cmd_seq_fill && !cmd_seq_full;
-
+    reg reject_r;
 // sequential logic for commands transfer to the sequencer 
 always @ (posedge mclk) begin
     if (mrst) grant_r <= 0;
     else      grant_r <= grant;
+
+    if (mrst) reject_r <= 0;
+    else      reject_r <= reject;
     
     if (mrst)          cmd_seq_set <= 0;
     else if (grant_r)  cmd_seq_set <= 0;
@@ -794,9 +813,9 @@ always @ (posedge mclk) begin
 
 
 //TODO: Modify,cmd_seq_fill was initially used to see if any sequaence data was written (or PS is used), now it is cmd_seq_set
-    if (mrst)                                             cmd_seq_fill <= 0;
-    else if (!mcontr_enabled || seq_set || cmd_seq_full ) cmd_seq_fill <= 0;
-    else if (grant)                                       cmd_seq_fill <= 1;
+    if (mrst)                                                        cmd_seq_fill <= 0;
+    else if (!mcontr_enabled || seq_set || cmd_seq_full || reject_r) cmd_seq_fill <= 0;
+    else if (grant)                                                  cmd_seq_fill <= 1;
 
     if (mrst)                                   cmd_seq_full <= 0;
     else if (!mcontr_enabled || pre_run_chn_w ) cmd_seq_full <= 0;
@@ -1456,6 +1475,59 @@ assign need_rq[15:0]=   {need_rq15,need_rq14,need_rq13,need_rq12,need_rq11,need_
 `ifdef def_enable_mem_chn15
     always @ (posedge mclk) channel_pgm_en15 <= grant && (grant_chn == 15);
 `endif
+
+//    input                        reject0,    // reject grant
+    assign reject = 1'b0
+`ifdef def_enable_mem_chn0
+    || reject0
+`endif
+`ifdef def_enable_mem_chn1
+    || reject1
+`endif
+`ifdef def_enable_mem_chn2
+    || reject2
+`endif
+`ifdef def_enable_mem_chn3
+    || reject3
+`endif
+`ifdef def_enable_mem_chn4
+    || reject4
+`endif
+`ifdef def_enable_mem_chn5
+    || reject5
+`endif
+`ifdef def_enable_mem_chn6
+    || reject6
+`endif
+`ifdef def_enable_mem_chn7
+    || reject7
+`endif
+`ifdef def_enable_mem_chn8
+    || reject8
+`endif
+`ifdef def_enable_mem_chn9
+    || reject9
+`endif
+`ifdef def_enable_mem_chn10
+    || reject10
+`endif
+`ifdef def_enable_mem_chn11
+    || reject11
+`endif
+`ifdef def_enable_mem_chn12
+    || reject12
+`endif
+`ifdef def_enable_mem_chn13
+    || reject13
+`endif
+`ifdef def_enable_mem_chn14
+    || reject14
+`endif
+`ifdef def_enable_mem_chn15
+    || reject15
+`endif
+    ;    
+
 
 endmodule
 

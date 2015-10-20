@@ -1090,6 +1090,7 @@ assign axi_grst = axi_rst_pre;
         .MCONTR_LINTILE_SINGLE             (MCONTR_LINTILE_SINGLE),
         .MCONTR_LINTILE_REPEAT             (MCONTR_LINTILE_REPEAT),
         .MCONTR_LINTILE_DIS_NEED           (MCONTR_LINTILE_DIS_NEED),
+        .MCONTR_LINTILE_SKIP_LATE          (MCONTR_LINTILE_SKIP_LATE),
         .BUFFER_DEPTH32                    (BUFFER_DEPTH32),
         .RSEL                              (RSEL),
         .WSEL                              (WSEL)
@@ -1557,7 +1558,7 @@ assign axi_grst = axi_rst_pre;
         .PXD_CLK_DIV_BITS           (PXD_CLK_DIV_BITS),
 `endif
         .SENS_PHASE_WIDTH           (SENS_PHASE_WIDTH),
-        .SENS_PCLK_PERIOD           (SENS_PCLK_PERIOD),
+//        .SENS_PCLK_PERIOD           (SENS_PCLK_PERIOD),
         .SENS_BANDWIDTH             (SENS_BANDWIDTH),
         .CLKIN_PERIOD_SENSOR        (CLKIN_PERIOD_SENSOR),
         .CLKFBOUT_MULT_SENSOR       (CLKFBOUT_MULT_SENSOR),
