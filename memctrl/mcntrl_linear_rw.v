@@ -94,6 +94,7 @@ module  mcntrl_linear_rw #(
     input                          xfer_done,     // transfer to/from the buffer finished
     output                         xfer_page_rst_wr, // reset buffer internal page - at each frame start or when specifically reset (write to memory channel), @posedge
     output                         xfer_page_rst_rd, // reset buffer internal page - at each frame start or when specifically reset (read memory channel), @negedge
+    output reg                     xfer_skipped,
     output                         cmd_wrmem
 );
     localparam NUM_RC_BURST_BITS=ADDRESS_NUMBER+COLADDR_NUMBER-3;  //to spcify row and col8 == 22
@@ -217,7 +218,7 @@ module  mcntrl_linear_rw #(
     reg   [FRAME_HEIGHT_BITS-1:0] window_y0;      // (programmed) window top
     reg    [FRAME_WIDTH_BITS-1:0] start_x;        // (programmed) normally 0, copied to curr_x on frame_start  
     reg   [FRAME_HEIGHT_BITS-1:0] start_y;        // (programmed) normally 0, copied to curr_y on frame_start 
-    reg                           xfer_done_d;    // xfer_done delayed by 1 cycle;
+    reg                           xfer_done_d;    // xfer_done delayed by 1 cycle (also includes xfer_skipped)
     assign frame_number =       frame_number_current;
     
     assign set_mode_w =         cmd_we && (cmd_a== MCNTRL_SCANLINE_MODE);
@@ -264,8 +265,8 @@ module  mcntrl_linear_rw #(
         if (mrst) is_last_frame <= 0;
         else      is_last_frame <= frame_number_cntr == last_frame_number;
         
-        if (mrst) frame_start_r <= 0;
-        else      frame_start_r <= {frame_start_r[3:0], frame_start & frame_en};
+//        if (mrst) frame_start_r <= 0;
+//        else      frame_start_r <= {frame_start_r[3:0], frame_start & frame_en};
 
         if      (mrst)                            frame_en <= 0;
         else if (single_frame_r || repeat_frames) frame_en <= 1;
@@ -354,12 +355,19 @@ module  mcntrl_linear_rw #(
 // Now skip if write and >=4 or read and >=5 (read starts with 4 and may end with 4)
 // Also if the next page signal is used by the source/dest of data, it should use reject pulse to advance external
 // page counter 
-    wire   start_skip_w = skip_too_late && want_r && (page_cntr >= 4) && !xfer_grant && (cmd_wrmem || page_cntr[0]); //&& busy_r && skip_run;
-    reg    start_skip_r;
-    reg    skip_run = 0;    // run "skip" - advance addresses, but no actual read/write
-    reg    xfer_reject_r;
-    assign xfer_reject = xfer_reject_r;
+    wire         start_skip_w;
+    reg          start_skip_r;
+    reg          skip_run = 0;    // run "skip" - advance addresses, but no actual read/write
+    reg          xfer_reject_r;
+    reg          frame_start_pending; // frame_start came before previous one was finished
+    reg    [1:0] frame_start_pending_long;
+    wire         xfer_done_skipped = xfer_skipped || xfer_done;
     
+    wire         frame_start_delayed = frame_start_pending_long[1] && !frame_start_pending_long[0];
+    wire         frame_start_mod = (frame_start && !busy_r) || frame_start_delayed; // when frame_start_delayed it will completely miss a frame_start
+    assign xfer_reject = xfer_reject_r;
+    assign  start_skip_w = skip_too_late && want_r && !xfer_grant && !skip_run &&
+                          (((|page_cntr) && frame_start_pending) || ((page_cntr >= 4) && (cmd_wrmem || page_cntr[0]))); //&& busy_r && skip_run;
     always @(posedge mclk) begin // Handling skip/reject
         if (mrst) xfer_reject_r <= 0;
         else      xfer_reject_r <= xfer_grant && !chn_rst && skip_run;
@@ -380,7 +388,29 @@ module  mcntrl_linear_rw #(
         if (mrst) start_skip_r <= 0;
         else      start_skip_r <= start_skip_w;
         
-    
+        if (mrst) xfer_skipped <= 0;
+        else      xfer_skipped <= start_not_partial && skip_run;
+        
+//        if  (mrst || frame_start_delayed) frame_start_pending <= 0;
+        if  (mrst) frame_start_pending <= 0;
+//        else       frame_start_pending <= {frame_start_pending[0], busy_r && (frame_start_pending[0] | frame_start)};
+        else       frame_start_pending <= busy_r && (frame_start_pending | frame_start);
+
+        if  (mrst) frame_start_pending_long <= 0;
+        else       frame_start_pending_long <= {frame_start_pending_long[0], (busy_r || skip_run) && (frame_start_pending_long[0] | frame_start)};
+
+        if (mrst) frame_start_r <= 0;
+//        else      frame_start_r <= {frame_start_r[3:0], frame_start & frame_en};
+        else      frame_start_r <= {frame_start_r[3:0], frame_start_mod & frame_en};        
+
+        if (mrst || disable_need)                         need_r <= 0;
+        else if (chn_rst || xfer_grant || start_skip_r)   need_r <= 0;
+        else if ((pre_want  || want_r) && (page_cntr>=3)) need_r <= 1; // may raise need if want was already set
+
+        if (mrst)                                                want_r <= 0;
+        else if (chn_rst || xfer_grant || start_skip_r)          want_r <= 0;
+        else if (pre_want && (page_cntr>{1'b0,cmd_extra_pages})) want_r <= 1;
+        
     end    
     
 /// Recalcualting just after starting request - preparing for the next one. Also happens after parameter change.
@@ -460,7 +490,7 @@ wire    start_not_partial= xfer_start_r[0] && !xfer_limited_by_mem_page_r;
         else if (frame_done_r)      busy_r <= 0;
         
         if (mrst)         xfer_done_d <= 0;
-        else              xfer_done_d <= xfer_done;
+        else              xfer_done_d <= xfer_done_skipped;
         
         
         if (mrst)                   continued_xfer <= 1'b0;
@@ -478,13 +508,13 @@ wire    start_not_partial= xfer_start_r[0] && !xfer_limited_by_mem_page_r;
         else if (frame_done_r)                frame_finished_r <= 1;
         
         
-        if (mrst || disable_need)                         need_r <= 0;
-        else if (chn_rst || xfer_grant)                   need_r <= 0;
-        else if ((pre_want  || want_r) && (page_cntr>=3)) need_r <= 1; // may raise need if want was already set
+//        if (mrst || disable_need)                         need_r <= 0;
+//        else if (chn_rst || xfer_grant || start_skip_r)   need_r <= 0;
+//        else if ((pre_want  || want_r) && (page_cntr>=3)) need_r <= 1; // may raise need if want was already set
 
-        if (mrst)                                                want_r <= 0;
-        else if (chn_rst || xfer_grant)                          want_r <= 0;
-        else if (pre_want && (page_cntr>{1'b0,cmd_extra_pages})) want_r <= 1;
+//        if (mrst)                                                want_r <= 0;
+//        else if (chn_rst || xfer_grant || start_skip_r)          want_r <= 0;
+//        else if (pre_want && (page_cntr>{1'b0,cmd_extra_pages})) want_r <= 1;
         
         if (mrst)                                  page_cntr <= 0;
         else if (frame_start_r[0])                 page_cntr <= cmd_wrmem?0:4; // What about last pages (like if only 1 page is needed)? Early frame end?
@@ -511,38 +541,16 @@ wire    start_not_partial= xfer_start_r[0] && !xfer_limited_by_mem_page_r;
         else if (chn_rst || !busy_r)              last_block <= 0;
         else if (xfer_start_r[0])                 last_block <= last_row_w && last_in_row_w;
         
-        if      (mrst)                           pending_xfers <= 0;
-        else if (chn_rst || !busy_r)             pending_xfers <= 0;
-        else if ( xfer_start_r[0] && !xfer_done) pending_xfers <= pending_xfers + 1;     
-        else if (!xfer_start_r[0] &&  xfer_done) pending_xfers <= pending_xfers - 1;
+        if      (mrst)                                   pending_xfers <= 0;
+        else if (chn_rst || !busy_r)                     pending_xfers <= 0;
+        else if ( xfer_start_r[0] && !xfer_done_skipped) pending_xfers <= pending_xfers + 1;     
+        else if (!xfer_start_r[0] &&  xfer_done_skipped) pending_xfers <= pending_xfers - 1;
         
-/*        
-        //line_unfinished_r cmd_wrmem
-        if (mrst)                              line_unfinished_r[0 +: FRAME_HEIGHT_BITS] <= 0; //{FRAME_HEIGHT_BITS{1'b0}};
-        else if (chn_rst || frame_start_r[0]) line_unfinished_r[0 +: FRAME_HEIGHT_BITS] <= window_y0+start_y;
-        else if (xfer_start_r[2])             line_unfinished_r[0 +: FRAME_HEIGHT_BITS] <= window_y0+next_y[FRAME_HEIGHT_BITS-1:0]; // latency 2 from xfer_start
-
-        if (mrst)                              line_unfinished_r[FRAME_HEIGHT_BITS +: FRAME_HEIGHT_BITS] <= 0; //{FRAME_HEIGHT_BITS{1'b0}};
-//        else if (chn_rst || frame_start_r[0]) line_unfinished_r[1] <= window_y0+start_y;
-        else if (chn_rst || frame_start_r[2]) line_unfinished_r[FRAME_HEIGHT_BITS +: FRAME_HEIGHT_BITS] <= window_y0+start_y; // _r[0] -> _r[2] to make it simultaneous with frame_number
-        // in read mode advance line number ASAP
-        else if (xfer_start_r[2] && !cmd_wrmem) line_unfinished_r[FRAME_HEIGHT_BITS +: FRAME_HEIGHT_BITS] <= window_y0+next_y[FRAME_HEIGHT_BITS-1:0]; // latency 2 from xfer_start
-        // in write mode advance line number only when it is guaranteed it will be the first to actually access memory
-        else if (xfer_grant      && cmd_wrmem)  line_unfinished_r[FRAME_HEIGHT_BITS +: FRAME_HEIGHT_BITS] <= line_unfinished_r[0 +: FRAME_HEIGHT_BITS];
-*/        
-/* 
-        if (mrst)                                                line_unfinished_relw_r <= 0;
-        else if (cmd_wrmem && (frame_start_r[1] || !chn_en))     line_unfinished_relw_r <= start_y;
-        else if ((!cmd_wrmem && recalc_r[1]) || xfer_start_r[2]) line_unfinished_relw_r <= next_y[FRAME_HEIGHT_BITS-1:0];
-        //  xfer_start_r[2] and recalc_r[1] are at the same time
-        
-        if (mrst || (frame_start || !chn_en))  line_unfinished_r <= {FRAME_HEIGHT_BITS{~cmd_wrmem}}; // lowest/highest value until valid
-        else if (recalc_r[2])                  line_unfinished_r <= line_unfinished_relw_r + window_y0;
-*/
         if (recalc_r[0]) line_unfinished_relw_r <= curr_y + (cmd_wrmem ? 0: 1);
         
-        if (mrst || (frame_start || !chn_en))  line_unfinished_r <= {FRAME_HEIGHT_BITS{~cmd_wrmem}}; // lowest/highest value until valid
-        else if (recalc_r[2])                  line_unfinished_r <= line_unfinished_relw_r + window_y0;
+//        if (mrst || (frame_start || !chn_en))  line_unfinished_r <= {FRAME_HEIGHT_BITS{~cmd_wrmem}}; // lowest/highest value until valid
+        if (mrst || (frame_start_mod || !chn_en))  line_unfinished_r <= {FRAME_HEIGHT_BITS{~cmd_wrmem}}; // lowest/highest value until valid
+        else if (recalc_r[2])                      line_unfinished_r <= line_unfinished_relw_r + window_y0;
 
 
     end

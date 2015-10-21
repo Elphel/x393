@@ -413,6 +413,7 @@ module  x393 #(
     wire                  [3:0] sens_buf_rd;     //    (), // input
     wire                [255:0] sens_buf_dout;   //    (), // output[63:0] 
     wire                  [3:0] sens_page_written;     //   single mclk pulse: buffer page (full or partial) is written to the memory buffer 
+    wire                  [3:0] sens_xfer_skipped;     // single mclk pulse on every skipped (not written) block to record error statistics
     wire                        trigger_mode; //       (), // input
     wire                  [3:0] trig_in;                  // input[3:0] 
         
@@ -1131,7 +1132,7 @@ assign axi_grst = axi_rst_pre;
         .sens_buf_rd               (sens_buf_rd),                // output[3:0] 
         .sens_buf_dout             (sens_buf_dout),              // input[255:0] 
         .sens_page_written         (sens_page_written),          // input [3:0] single mclk pulse: buffer page (full or partial) is written to the memory buffer 
-
+        .sens_xfer_skipped         (sens_xfer_skipped),          // output reg
 // compressor interface
         .cmprs_xfer_reset_page_rd  (cmprs_xfer_reset_page_rd),   // output[3:0] 
         .cmprs_buf_wpage_nxt       (cmprs_buf_wpage_nxt),        // output[3:0] 

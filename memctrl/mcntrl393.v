@@ -300,6 +300,7 @@ module  mcntrl393 #(
     output                     [3:0] sens_buf_rd,     //    (), // input
     input                    [255:0] sens_buf_dout,   //    (), // output[63:0]
     input                      [3:0] sens_page_written, //  single mclk pulse: buffer page (full or partial) is written to the memory buffer 
+    output                     [3:0] sens_xfer_skipped, // single mclk pulse on each bit indicating one skipped (not written) block.
     // compressor subsystem interface
     // Buffer interfaces, combined for 4 channels 
     output                     [3:0] cmprs_xfer_reset_page_rd, // from mcntrl_tiled_rw (
@@ -1098,6 +1099,7 @@ module  mcntrl393 #(
                 .xfer_done        (sens_seq_done[i]),           // input : page sequence over
                 .xfer_page_rst_wr (sens_rpage_set[i]),          // output @ posedge mclk
                 .xfer_page_rst_rd (), // output @ negedge mclk
+                .xfer_skipped     (sens_xfer_skipped[i]),       // output reg
                 .cmd_wrmem        () // output
             );
             
@@ -1237,6 +1239,7 @@ module  mcntrl393 #(
         .xfer_done        (seq_done1), // input : sequence over
         .xfer_page_rst_wr (xfer_reset_page1_wr), // output
         .xfer_page_rst_rd (xfer_reset_page1_rd), // output
+        .xfer_skipped     (), // output reg
         .cmd_wrmem        (cmd_wrmem_chn1) // output
     );
 
@@ -1300,6 +1303,7 @@ module  mcntrl393 #(
         .xfer_done        (seq_done3), // input : sequence over
         .xfer_page_rst_wr (xfer_reset_page3_wr), // output
         .xfer_page_rst_rd (xfer_reset_page3_rd), // output
+        .xfer_skipped     (), // output reg
         .cmd_wrmem        () // output
     );
     

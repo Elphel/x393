@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.3.66 (w)1999-2015 BSI
-[*] Tue Oct 20 00:35:32 2015
+[*] Wed Oct 21 03:45:23 2015
 [*]
-[dumpfile] "/home/andrey/git/x393/simulation/x393_testbench03-20151019173150201.fst"
-[dumpfile_mtime] "Tue Oct 20 00:11:59 2015"
-[dumpfile_size] 246875731
+[dumpfile] "/home/andrey/git/x393/simulation/x393_testbench03-20151020195643294.fst"
+[dumpfile_mtime] "Wed Oct 21 02:34:57 2015"
+[dumpfile_size] 269754303
 [savefile] "/home/andrey/git/x393/x393_testbench03.sav"
-[timestart] 0
+[timestart] 93798600
 [size] 1823 1180
 [pos] 1917 0
-*-25.380077 116922388 99347388 99907388 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-16.380077 94047388 178682388 184032388 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] x393_testbench03.
 [treeopen] x393_testbench03.par12_hispi_psp4l0_i.
 [treeopen] x393_testbench03.par12_hispi_psp4l0_i.cmprs_channel_block[0].
@@ -49,11 +49,11 @@
 [treeopen] x393_testbench03.x393_i.sensors393_i.sensor_channel_block[2].sensor_channel_i.genblk1.
 [treeopen] x393_testbench03.x393_i.sensors393_i.sensor_channel_block[3].sensor_channel_i.
 [treeopen] x393_testbench03.x393_i.sensors393_i.sensor_channel_block[3].sensor_channel_i.genblk1.
-[sst_width] 512
-[signals_width] 347
+[sst_width] 280
+[signals_width] 262
 [sst_expanded] 1
 [sst_vpaned_height] 670
-@821
+@820
 x393_testbench03.TEST_TITLE[639:0]
 @800200
 -x393_top
@@ -853,7 +853,7 @@ x393_testbench03.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_linear_wr_sensor_i
 (1)x393_testbench03.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_linear_wr_sensor_i.pending_xfers[1:0]
 @1401200
 -group_end
-@c00022
+@800022
 x393_testbench03.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_linear_wr_sensor_i.recalc_r[8:0]
 @28
 (0)x393_testbench03.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_linear_wr_sensor_i.recalc_r[8:0]
@@ -865,7 +865,7 @@ x393_testbench03.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_linear_wr_sensor_i
 (6)x393_testbench03.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_linear_wr_sensor_i.recalc_r[8:0]
 (7)x393_testbench03.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_linear_wr_sensor_i.recalc_r[8:0]
 (8)x393_testbench03.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_linear_wr_sensor_i.recalc_r[8:0]
-@1401200
+@1001200
 -group_end
 @c00022
 x393_testbench03.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_linear_wr_sensor_i.par_mod_r[8:0]
@@ -883,7 +883,26 @@ x393_testbench03.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_linear_wr_sensor_i
 -group_end
 @28
 x393_testbench03.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_linear_wr_sensor_i.calc_valid
+@29
 x393_testbench03.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_linear_wr_sensor_i.skip_run
+@28
+x393_testbench03.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_linear_wr_sensor_i.frame_start
+x393_testbench03.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_linear_wr_sensor_i.frame_start_delayed
+x393_testbench03.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_linear_wr_sensor_i.frame_start_mod
+@22
+x393_testbench03.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_linear_wr_sensor_i.page_cntr[2:0]
+@28
+x393_testbench03.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_linear_wr_sensor_i.busy_r
+x393_testbench03.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_linear_wr_sensor_i.pre_want
+x393_testbench03.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_linear_wr_sensor_i.want_r
+x393_testbench03.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_linear_wr_sensor_i.frame_start_pending
+@800028
+x393_testbench03.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_linear_wr_sensor_i.frame_start_pending_long[1:0]
+@28
+(0)x393_testbench03.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_linear_wr_sensor_i.frame_start_pending_long[1:0]
+(1)x393_testbench03.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_linear_wr_sensor_i.frame_start_pending_long[1:0]
+@1001200
+-group_end
 @200
 -
 @1000200

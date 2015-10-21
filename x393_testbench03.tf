@@ -113,8 +113,8 @@ parameter EXTERNAL_TIMESTAMP =    0; // 1 ;    // embed local timestamp, 1 - emb
   
  parameter TRIG_PERIOD =      6000 ;
 `ifdef HISPI 
-    parameter HBLANK=            90; // 12; /// 52; //*********************
-    parameter BLANK_ROWS_BEFORE= 9; // 3; //8; ///2+2 - a little faster than compressor
+    parameter HBLANK=            52; // 90; // 12; /// 52; //*********************
+    parameter BLANK_ROWS_BEFORE= 3; // 9; // 3; //8; ///2+2 - a little faster than compressor
     parameter BLANK_ROWS_AFTER=  1; //8;
     
 `else
@@ -2648,6 +2648,8 @@ task setup_sensor_channel;
     // Enable arbitration of sensor-to-memory controller
     enable_memcntrl_en_dis(4'h8 + {2'b0,num_sensor}, 1);
 //            write_contol_register(MCONTR_TOP_16BIT_ADDR +  MCONTR_TOP_16BIT_CHN_EN, {16'b0,ENABLED_CHANNELS});
+    // Set sesnor channel priority - 5 usec bonus to compressor/other channels
+    configure_channel_priority(4'h8 + {2'b0,num_sensor}, SENSOR_PRIORITY);    // lowest priority channel 1
     
     compressor_run (num_sensor, 0); // reset compressor
     
