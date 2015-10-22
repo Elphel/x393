@@ -43,7 +43,7 @@ module  sensor_channel#(
     
 
     parameter SENSOR_NUM_HISTOGRAM=       3, // number of histogram channels
-    parameter HISTOGRAM_RAM_MODE =        "NOBUF", // valid: "NOBUF" (32-bits, no buffering), "BUF18", "BUF32"
+    parameter HISTOGRAM_RAM_MODE =        "BUF32", // "NOBUF", // valid: "NOBUF" (32-bits, no buffering), "BUF18", "BUF32"
     parameter SENS_NUM_SUBCHN =        3, // number of subchannels for his sensor ports (1..4)
     parameter SENS_GAMMA_BUFFER =         0, // 1 - use "shadow" table for clean switching, 0 - single table per channel
     

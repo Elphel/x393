@@ -37,7 +37,7 @@ module  sens_histogram_snglclk #(
     input         mrst,      // @posedge mclk, sync reset
     input         prst,      // @posedge pclk, sync reset
     input         pclk,   // global clock input, pixel rate (96MHz for MT9P006)
-//    input         pclk2x,
+//  input         pclk2x,
     input         sof,
     input         eof,
     input         hact,
@@ -113,7 +113,8 @@ module  sens_histogram_snglclk #(
     reg           hist_out; // some data yet to be sent out
     reg           hist_out_d;
     reg     [2:0] hist_re;
-    reg     [1:0] hist_re_even_odd;
+    reg           hist_re_even;
+    reg           hist_re_odd;
     reg     [9:0] hist_raddr;
     reg           hist_rq_r;
     wire          hist_xfer_done_mclk; //@ mclk
@@ -146,20 +147,6 @@ module  sens_histogram_snglclk #(
         if      (sof)          debug_lines <= debug_line_cntr;
     end
 `endif    
-/*    
-    always @ (posedge pclk) begin
-        if (!hact) pxd_wa <= 0;
-        else pxd_wa <= pxd_wa + 1;
-        
-        if (!hact) pxd_wa_woi <= -PXD_2X_LATENCY;
-        else       pxd_wa_woi <= pxd_wa_woi + 1;
-        
-        if (hist_en_pclk && hact)      pxd_ram[pxd_wa] <= hist_di;
-        if (hist_en_pclk && hact)      bayer_ram[pxd_wa] <= bayer_pclk;
-        if (hist_en_pclk && hact_d[1]) woi_ram[pxd_wa_woi] <= hor_woi;          // PXD_2X_LATENCY;
-        
-    end
-*/    
     
     always @ (posedge mclk) begin
         if (set_left_top_w)     lt_mclk <= pio_data;
@@ -210,7 +197,8 @@ module  sens_histogram_snglclk #(
         else if (left_margin || hor_woi[0])      hcntr <= hcntr - 1;
         
         if      (!en)                                          hist_bank_pclk <= 0;
-        else if (hist_done && (HISTOGRAM_RAM_MODE != "NOBUF")) hist_bank_pclk <= !hist_bank_pclk;
+       //else if (hist_done && (HISTOGRAM_RAM_MODE != "NOBUF")) hist_bank_pclk <= !hist_bank_pclk;// NOT applicable in this module
+        else  if (hist_done)                                   hist_bank_pclk <= !hist_bank_pclk;
         // hist_xfer_busy to extend en
         if      (!en)                      hist_xfer_busy <= 0;
         else if (hist_xfer_done)           hist_xfer_busy <= 0;
@@ -266,7 +254,7 @@ module  sens_histogram_snglclk #(
     wire                    eq_prev_prev_d2; // eq_prev_prev delayed by 2 clocks to select r1 source
     reg                     eq_prev;         // pixel equals  previous of the same color
     wire                    eq_prev_d3;      // eq_prev delayed by 3 clocks to select r1 source
-    wire                    start_hor_woi = hcntr_zero_w && left_margin && vert_woi;
+//    wire                    start_hor_woi = hcntr_zero_w && left_margin && vert_woi;
         
     
     // hist_di is 2 cycles ahead of hor_woi
@@ -339,14 +327,22 @@ module  sens_histogram_snglclk #(
         else if (hist_grant)                      hist_re[0] <= 1;
         
         hist_re[2:1] <= hist_re[1:0];
+//    reg           hist_re_even;
+//    reg           hist_re_odd;
+
+        if      (!hist_out || (&hist_raddr[7:0])) hist_re_even <= 0;
+        else if (hist_grant && !hist_re[0])       hist_re_even <= !hist_raddr[8];
         
-        //    reg     [2:0] hist_re_even_odd;
-        if      (!hist_out || (&hist_raddr[7:1])) hist_re_even_odd[0] <= 0;
-        else if (hist_re[0])                      hist_re_even_odd[0] <= ~hist_re_even_odd[0];
-        else if (hist_grant)                      hist_re_even_odd[0] <= 1; // hist_re[0] == 0 here
+        if      (!hist_out || (&hist_raddr[7:0])) hist_re_odd <=  0;
+        else if (hist_grant && !hist_re[0])       hist_re_odd <=  hist_raddr[8];
+
+//        if      (!hist_out || (&hist_raddr[7:1])) hist_re_even_odd[0] <= 0;
+//        else if (hist_re[0])                      hist_re_even_odd[0] <= ~hist_re_even_odd[0];
+//        else if (hist_grant)                      hist_re_even_odd[0] <= 1; // hist_re[0] == 0 here
         
         if      (!en_mclk)                                               hist_bank_mclk <= 0;
-        else if (hist_xfer_done_mclk && (HISTOGRAM_RAM_MODE != "NOBUF")) hist_bank_mclk <= !hist_bank_mclk;
+        // else if (hist_xfer_done_mclk && (HISTOGRAM_RAM_MODE != "NOBUF")) hist_bank_mclk <= !hist_bank_mclk; // Not applicable in this module
+        else if (hist_xfer_done_mclk)                                   hist_bank_mclk <= !hist_bank_mclk;
     
         hist_dv <= hist_re[2];
     
@@ -354,7 +350,7 @@ module  sens_histogram_snglclk #(
     
     always @ (posedge pclk) begin
         if      (!en)                                          wait_readout <= 0;
-        else if ((HISTOGRAM_RAM_MODE == "NOBUF") && hist_done) wait_readout <= 1;
+        // else if ((HISTOGRAM_RAM_MODE == "NOBUF") && hist_done) wait_readout <= 1; // Not applicable in this module
         else if (hist_xfer_done)                               wait_readout <= 0;
     
     end
@@ -501,40 +497,42 @@ module  sens_histogram_snglclk #(
         if ((HISTOGRAM_RAM_MODE=="BUF32") || (HISTOGRAM_RAM_MODE=="NOBUF"))// impossible to use a two RAMB18E1 32-bit wide
             sens_hist_ram_snglclk_32 sens_hist_ram_snglclk_32_i (
                 .pclk            (pclk), // input
-                .addr_a_even     ({hist_bank_pclk, hist_rwaddr_even}), // input[9:0] 
-                .addr_a_odd      ({hist_bank_pclk, hist_rwaddr_odd}),  // input[9:0] 
-                .data_in_a       (r2),                                 // input[31:0] 
-                .data_out_a_even (hist_new_even),                      // output[31:0] 
-                .data_out_a_odd  (hist_new_odd),                       // output[31:0] 
-                .en_a_even       (rwen_even),                          // input
-                .en_a_odd        (rwen_odd),                           // input
-                .regen_a_even    (regen_even),                         // input
-                .regen_a_odd     (regen_odd),                          // input
-                .we_a_even       (we_even),                            // input
-                .we_a_odd        (we_odd),                             // input
-                .mclk            (mclk),                               // input
-                .addr_b          ({hist_bank_mclk,hist_raddr[9:1]}),   // input[9:0] 
-                .data_out_b      (hist_do),                            // output[31:0] reg 
-                .re_b            (hist_re_even_odd[0])                 // input
+                .addr_a_even     ({hist_bank_pclk, hist_rwaddr_even}),             // input[9:0] 
+                .addr_a_odd      ({hist_bank_pclk, hist_rwaddr_odd}),              // input[9:0] 
+                .data_in_a       (r2),                                             // input[31:0] 
+                .data_out_a_even (hist_new_even),                                  // output[31:0] 
+                .data_out_a_odd  (hist_new_odd),                                   // output[31:0] 
+                .en_a_even       (rwen_even),                                      // input
+                .en_a_odd        (rwen_odd),                                       // input
+                .regen_a_even    (regen_even),                                     // input
+                .regen_a_odd     (regen_odd),                                      // input
+                .we_a_even       (we_even),                                        // input
+                .we_a_odd        (we_odd),                                         // input
+                .mclk            (mclk),                                           // input
+                .addr_b          ({hist_bank_mclk,hist_raddr[9],hist_raddr[7:0]}), // input[9:0] 
+                .data_out_b      (hist_do),                                        // output[31:0] reg 
+                .re_even         (hist_re_even),                                   // input
+                .re_odd          (hist_re_odd)                                     // input
             );
         else if (HISTOGRAM_RAM_MODE=="BUF18")
             sens_hist_ram_snglclk_18 sens_hist_ram_snglclk_18_i (
                 .pclk            (pclk), // input
-                .addr_a_even     ({hist_bank_pclk, hist_rwaddr_even}), // input[9:0] 
-                .addr_a_odd      ({hist_bank_pclk, hist_rwaddr_odd}),  // input[9:0] 
-                .data_in_a       (r2[17:0]),                           // input[31:0] 
-                .data_out_a_even (hist_new_even[17:0]),                // output[31:0] 
-                .data_out_a_odd  (hist_new_odd[17:0]),                 // output[31:0] 
-                .en_a_even       (rwen_even),                          // input
-                .en_a_odd        (rwen_odd),                           // input
-                .regen_a_even    (regen_even),                         // input
-                .regen_a_odd     (regen_odd),                          // input
-                .we_a_even       (we_even),                            // input
-                .we_a_odd        (we_odd),                             // input
-                .mclk            (mclk),                               // input
-                .addr_b          ({hist_bank_mclk,hist_raddr[9:1]}),   // input[9:0] 
-                .data_out_b      (hist_do),                            // output[31:0] reg 
-                .re_b            (hist_re_even_odd[0])                 // input
+                .addr_a_even     ({hist_bank_pclk, hist_rwaddr_even}),             // input[9:0] 
+                .addr_a_odd      ({hist_bank_pclk, hist_rwaddr_odd}),              // input[9:0] 
+                .data_in_a       (r2[17:0]),                                       // input[31:0] 
+                .data_out_a_even (hist_new_even[17:0]),                            // output[31:0] 
+                .data_out_a_odd  (hist_new_odd[17:0]),                             // output[31:0] 
+                .en_a_even       (rwen_even),                                      // input
+                .en_a_odd        (rwen_odd),                                       // input
+                .regen_a_even    (regen_even),                                     // input
+                .regen_a_odd     (regen_odd),                                      // input
+                .we_a_even       (we_even),                                        // input
+                .we_a_odd        (we_odd),                                         // input
+                .mclk            (mclk),                                           // input
+                .addr_b          ({hist_bank_mclk,hist_raddr[9],hist_raddr[7:0]}), // input[9:0] 
+                .data_out_b      (hist_do),                                        // output[31:0] reg 
+                .re_even         (hist_re_even),                                   // input
+                .re_odd          (hist_re_odd)                                     // input
             );
         
     endgenerate
@@ -559,14 +557,19 @@ module sens_hist_ram_snglclk_32(
     input             mclk,
     input       [9:0] addr_b,
     output reg [31:0] data_out_b,
-    input             re_b
+    input             re_even,
+    input             re_odd
 );
-    reg   [1:0] re_b_r;
+    reg   re_even_d;
+    reg   re_odd_d;
+    reg   odd;
     wire [31:0] data_out_b_w_even;
     wire [31:0] data_out_b_w_odd;
     always @(posedge mclk) begin
-        re_b_r <= {re_b_r[0], re_b};
-        data_out_b <= re_b_r[1] ? data_out_b_w_even : data_out_b_w_odd;
+        re_even_d <=  re_even;
+        re_odd_d <=   re_odd;
+        odd <=        re_odd;
+        data_out_b <= odd ? data_out_b_w_odd : data_out_b_w_even;
     end
     
     ramt_var_w_var_r #(
@@ -586,8 +589,8 @@ module sens_hist_ram_snglclk_32(
         .data_in_a  (data_in_a),                            // input[15:0] 
         .clk_b      (mclk),                                 // input
         .addr_b     (addr_b),     // input[10:0] 
-        .en_b       (re_b),                                 // input FIXME: read (and write!) only when needed odd/even
-        .regen_b    (re_b_r[0]),                            // input FIXME: read only when needed odd/even
+        .en_b       (re_even),                              // input
+        .regen_b    (re_even_d),                            // input
         .we_b       (1'b1),                                 // input
         .data_out_b (data_out_b_w_even),                    // output[15:0] 
         .data_in_b  (32'b0)                                 // input[15:0] 
@@ -610,8 +613,8 @@ module sens_hist_ram_snglclk_32(
         .data_in_a  (data_in_a),                            // input[15:0] 
         .clk_b      (mclk),                                 // input
         .addr_b     (addr_b),                               // input[10:0] 
-        .en_b       (re_b_r[0]),                            // input
-        .regen_b    (re_b_r[1]),                            // input
+        .en_b       (re_odd),                               // input
+        .regen_b    (re_odd_d),                             // input
         .we_b       (1'b1),                                 // input
         .data_out_b (data_out_b_w_odd),                     // output[15:0] 
         .data_in_b  (32'b0)                                 // input[15:0] 
@@ -637,14 +640,19 @@ module sens_hist_ram_snglclk_18(
     input             mclk,
     input       [9:0] addr_b,
     output reg [31:0] data_out_b,
-    input             re_b
+    input             re_even,
+    input             re_odd
 );
-    reg   [1:0] re_b_r;
+    reg   re_even_d;
+    reg   re_odd_d;
+    reg   odd;
     wire [17:0] data_out_b_w_even;
     wire [17:0] data_out_b_w_odd;
     always @(posedge mclk) begin
-        re_b_r <= {re_b_r[0], re_b};
-        data_out_b <= {14'b0,(re_b_r[1] ? data_out_b_w_even : data_out_b_w_odd)};
+        re_even_d <=  re_even;
+        re_odd_d <=   re_odd;
+        odd <=        re_odd;
+        data_out_b <= {14'b0,(odd ? data_out_b_w_odd : data_out_b_w_even)};
     end
     
     ram18tp_var_w_var_r #(
@@ -664,8 +672,8 @@ module sens_hist_ram_snglclk_18(
         .data_in_a  (data_in_a),                            // input[15:0] 
         .clk_b      (mclk),                                 // input
         .addr_b     (addr_b),                               // input[10:0] 
-        .en_b       (re_b),                                 // input
-        .regen_b    (re_b_r[0]),                            // input
+        .en_b       (re_even),                              // input
+        .regen_b    (re_even_d),                            // input
         .we_b       (1'b1),                                 // input
         .data_out_b (data_out_b_w_even),                    // output[15:0] 
         .data_in_b  (18'b0)                                 // input[15:0] 
@@ -688,8 +696,8 @@ module sens_hist_ram_snglclk_18(
         .data_in_a  (data_in_a),                            // input[15:0] 
         .clk_b      (mclk),                                 // input
         .addr_b     (addr_b),                               // input[10:0] 
-        .en_b       (re_b_r[0]),                            // input
-        .regen_b    (re_b_r[1]),                            // input
+        .en_b       (re_odd),                               // input
+        .regen_b    (re_odd_d),                             // input
         .we_b       (1'b1),                                 // input
         .data_out_b (data_out_b_w_odd),                     // output[15:0] 
         .data_in_b  (18'b0)                                 // input[15:0] 
