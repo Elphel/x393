@@ -259,8 +259,9 @@ module  sensor_channel#(
     // TODO: get rid of pclk2x in histograms by doubling memories (making 1 write port and 2 read ones)
     // How to erase?
     // Alternative: copy/erase to a separate buffer in the beginning/end of a frame?
+`ifdef USE_PCLK2X    
     input         pclk2x, // global clock input, double pixel rate (192MHz for MT9P006)
-    
+`endif    
     input         mrst,      // @posedge mclk, sync reset
     input         prst,      // @posedge pclk, sync reset
     
@@ -323,9 +324,11 @@ module  sensor_channel#(
     assign debug_ring[DEBUG_RING_LENGTH] = debug_di;
 `endif    
 
-
-    localparam    HIST_MONOCHROME = 1'b0; // TODO:make it configurable (at expense of extra hardware)
-
+`ifdef USE_PCLK2X    
+    localparam    HIST_MONOCHROME = 1'b0; // TODO:make it configurable (at expense of extra hardware). 
+                                          // No, will not use it - monochrome is rare, can combine
+                                          // 4 (color) histograms by the software.  
+`endif
 
     localparam SENSOR_BASE_ADDR =   (SENSOR_GROUP_ADDR + SENSOR_NUMBER * SENSOR_BASE_INC);
     localparam SENSI2C_STATUS_REG = (SENSI2C_STATUS_REG_BASE + SENSOR_NUMBER * SENSI2C_STATUS_REG_INC + SENSI2C_STATUS_REG_REL);
@@ -993,57 +996,22 @@ module  sensor_channel#(
         .bayer_out   (gamma_bayer)     // output [1:0]
     );
 
-// Debugging - adding a parallel to 0:0 module
-        wire        hist_rq_debug;
-        wire [31:0] hist_do_debug; 
-        wire        hist_dv_debug; 
-
-    sens_histogram_snglclk #(
-                .HISTOGRAM_RAM_MODE     ("BUF32"),
-//                .HISTOGRAM_RAM_MODE     (HISTOGRAM_RAM_MODE),
-                .HISTOGRAM_ADDR         (HISTOGRAM_ADDR0),
-                .HISTOGRAM_ADDR_MASK    (HISTOGRAM_ADDR_MASK),
-                .HISTOGRAM_LEFT_TOP     (HISTOGRAM_LEFT_TOP),
-                .HISTOGRAM_WIDTH_HEIGHT (HISTOGRAM_WIDTH_HEIGHT)
-`ifdef DEBUG_RING
-                ,.DEBUG_CMD_LATENCY     (DEBUG_CMD_LATENCY) 
-`endif        
-    ) sens_histogram_snglclk_chn0_0_i (
-                .mrst       (mrst), // input
-                .prst       (prsts), // input
-                .pclk       (pclk), // input
-                .sof        (gamma_sof_out), // input
-                .eof        (gamma_eof_out), // input
-                .hact       (gamma_hact_out), // input
-                .hist_di    (gamma_pxd_out), // input[7:0] 
-                .mclk       (mclk), // input
-                .hist_en    (hist_en[0]), // input
-                .hist_rst   (!hist_nrst[0]), // input
-                .hist_rq    (hist_rq_debug), // output
-                .hist_grant (hist_gr[0]), // input
-                .hist_do    (hist_do_debug), // output[31:0] 
-                .hist_dv    (hist_dv_debug), // output reg 
-                .cmd_ad     (cmd_ad), // input[7:0] 
-                .cmd_stb    (cmd_stb) // input
-    );
-
     // TODO: Use generate to generate 1-4 histogram modules
     generate
         if (HISTOGRAM_ADDR0 >=0)
+`ifdef USE_PCLK2X    
             sens_histogram #(
                 .HISTOGRAM_RAM_MODE     (HISTOGRAM_RAM_MODE),
                 .HISTOGRAM_ADDR         (HISTOGRAM_ADDR0),
                 .HISTOGRAM_ADDR_MASK    (HISTOGRAM_ADDR_MASK),
                 .HISTOGRAM_LEFT_TOP     (HISTOGRAM_LEFT_TOP),
                 .HISTOGRAM_WIDTH_HEIGHT (HISTOGRAM_WIDTH_HEIGHT)
-`ifdef DEBUG_RING
+    `ifdef DEBUG_RING
                 ,.DEBUG_CMD_LATENCY         (DEBUG_CMD_LATENCY) 
-`endif        
-            ) sens_histogram_i (
-//                .rst        (rst),            // input
-                .mrst       (mrst),           // input
-//                .prst       (prst),          // input
-                .prst       (prsts),         // input extended to include sensor reset and rst_mmcm
+    `endif        
+            ) sens_histogram_0_i (
+                .mrst       (mrst),            // input
+                .prst       (prsts),          // input extended to include sensor reset and rst_mmcm
                 .pclk       (pclk),           // input
                 .pclk2x     (pclk2x),         // input
                 .sof        (gamma_sof_out),  // input
@@ -1061,42 +1029,87 @@ module  sensor_channel#(
                 .cmd_stb    (cmd_stb),        // input
                 .monochrome (HIST_MONOCHROME) // input
 //                ,.debug_mclk(debug_hist_mclk[0])
-`ifdef DEBUG_RING       
+    `ifdef DEBUG_RING       
                 ,.debug_do    (debug_ring[0]),         // output
                 .debug_sl     (debug_sl),              // input
                 .debug_di     (debug_ring[1])        // input
-`endif         
+    `endif         
                   
             );
         else
-            sens_histogram_dummy sens_histogram_dummy_i (
+            sens_histogram_dummy sens_histogram_0_i (
                 .hist_rq      (hist_rq[0]),         // output
                 .hist_do      (hist_do0),           // output[31:0] 
                 .hist_dv      (hist_dv[0])          // output
-`ifdef DEBUG_RING       
+    `ifdef DEBUG_RING       
                 ,.debug_do    (debug_ring[0]),         // output
                 .debug_di     (debug_ring[1])          // input
-`endif         
+    `endif         
             );
-
+// `ifdef USE_PCLK2X    
+`else
+            sens_histogram_snglclk #(
+                .HISTOGRAM_RAM_MODE     (HISTOGRAM_RAM_MODE),
+                .HISTOGRAM_ADDR         (HISTOGRAM_ADDR0),
+                .HISTOGRAM_ADDR_MASK    (HISTOGRAM_ADDR_MASK),
+                .HISTOGRAM_LEFT_TOP     (HISTOGRAM_LEFT_TOP),
+                .HISTOGRAM_WIDTH_HEIGHT (HISTOGRAM_WIDTH_HEIGHT)
+    `ifdef DEBUG_RING
+                ,.DEBUG_CMD_LATENCY         (DEBUG_CMD_LATENCY) 
+    `endif        
+            ) sens_histogram_0_i (
+                .mrst       (mrst),            // input
+                .prst       (prsts),          // input extended to include sensor reset and rst_mmcm
+                .pclk       (pclk),           // input
+                .sof        (gamma_sof_out),  // input
+                .eof        (gamma_eof_out),  // input
+                .hact       (gamma_hact_out), // input
+                .hist_di    (gamma_pxd_out),  // input[7:0] 
+                .mclk       (mclk),           // input
+                .hist_en    (hist_en[0]),     // input
+                .hist_rst   (!hist_nrst[0]),     // input
+                .hist_rq    (hist_rq[0]),     // output
+                .hist_grant (hist_gr[0]),     // input
+                .hist_do    (hist_do0),       // output[31:0] 
+                .hist_dv    (hist_dv[0]),     // output
+                .cmd_ad     (cmd_ad),         // input[7:0] 
+                .cmd_stb    (cmd_stb)        // input
+    `ifdef DEBUG_RING       
+                ,.debug_do    (debug_ring[0]),         // output
+                .debug_sl     (debug_sl),              // input
+                .debug_di     (debug_ring[1])        // input
+    `endif         
+                  
+            );
+        else
+            sens_histogram_snglclk_dummy sens_histogram_0_i (
+                .hist_rq      (hist_rq[0]),         // output
+                .hist_do      (hist_do0),           // output[31:0] 
+                .hist_dv      (hist_dv[0])          // output
+    `ifdef DEBUG_RING       
+                ,.debug_do    (debug_ring[0]),         // output
+                .debug_di     (debug_ring[1])          // input
+    `endif         
+            );
+// `ifdef USE_PCLK2X    
+`endif
     endgenerate
     
     
     generate
         if (HISTOGRAM_ADDR1 >=0)
+`ifdef USE_PCLK2X    
             sens_histogram #(
                 .HISTOGRAM_RAM_MODE     (HISTOGRAM_RAM_MODE),
                 .HISTOGRAM_ADDR         (HISTOGRAM_ADDR1),
                 .HISTOGRAM_ADDR_MASK    (HISTOGRAM_ADDR_MASK),
                 .HISTOGRAM_LEFT_TOP     (HISTOGRAM_LEFT_TOP),
                 .HISTOGRAM_WIDTH_HEIGHT (HISTOGRAM_WIDTH_HEIGHT)
-`ifdef DEBUG_RING
+    `ifdef DEBUG_RING
                 ,.DEBUG_CMD_LATENCY         (DEBUG_CMD_LATENCY) 
-`endif        
-            ) sens_histogram_i (
-//                .rst        (rst),            // input
+    `endif        
+            ) sens_histogram_1_i (
                 .mrst        (mrst),          // input
-//                .prst       (prst),          // input
                 .prst       (prsts),         // input extended to include sensor reset and rst_mmcm
                 .pclk       (pclk),           // input
                 .pclk2x     (pclk2x),         // input
@@ -1114,30 +1127,73 @@ module  sensor_channel#(
                 .cmd_ad     (cmd_ad),         // input[7:0] 
                 .cmd_stb    (cmd_stb),        // input
                 .monochrome (HIST_MONOCHROME) // input 
-//                ,.debug_mclk(debug_hist_mclk[1])  
-`ifdef DEBUG_RING       
+    `ifdef DEBUG_RING       
                 ,.debug_do    (debug_ring[1]),         // output
                 .debug_sl     (debug_sl),              // input
                 .debug_di     (debug_ring[2])        // input
-`endif         
+    `endif         
             );
         else
-            sens_histogram_dummy sens_histogram_dummy_i (
+            sens_histogram_dummy sens_histogram_1_i (
                 .hist_rq      (hist_rq[1]),   // output
                 .hist_do      (hist_do1),     // output[31:0] 
                 .hist_dv      (hist_dv[1])    // output
             `ifdef DEBUG_RING       
                 ,.debug_do    (debug_ring[1]),         // output
                 .debug_di     (debug_ring[2])          // input
-`endif         
+    `endif         
             );
-//`ifdef DEBUG_RING       
-//            assign debug_ring[1] = debug_ring[2]; // just bypass
-//`endif
-            
+// `ifdef USE_PCLK2X    
+`else
+            sens_histogram_snglclk #(
+                .HISTOGRAM_RAM_MODE     (HISTOGRAM_RAM_MODE),
+                .HISTOGRAM_ADDR         (HISTOGRAM_ADDR1),
+                .HISTOGRAM_ADDR_MASK    (HISTOGRAM_ADDR_MASK),
+                .HISTOGRAM_LEFT_TOP     (HISTOGRAM_LEFT_TOP),
+                .HISTOGRAM_WIDTH_HEIGHT (HISTOGRAM_WIDTH_HEIGHT)
+    `ifdef DEBUG_RING
+                ,.DEBUG_CMD_LATENCY         (DEBUG_CMD_LATENCY) 
+    `endif        
+            ) sens_histogram_1_i (
+                .mrst        (mrst),          // input
+                .prst       (prsts),         // input extended to include sensor reset and rst_mmcm
+                .pclk       (pclk),           // input
+                .sof        (gamma_sof_out),  // input
+                .eof        (gamma_eof_out),  // input
+                .hact       (gamma_hact_out), // input
+                .hist_di    (gamma_pxd_out),  // input[7:0] 
+                .mclk       (mclk),           // input
+                .hist_en    (hist_en[1]),     // input
+                .hist_rst   (!hist_nrst[1]),     // input
+                .hist_rq    (hist_rq[1]),     // output
+                .hist_grant (hist_gr[1]),     // input
+                .hist_do    (hist_do1),       // output[31:0] 
+                .hist_dv    (hist_dv[1]),     // output
+                .cmd_ad     (cmd_ad),         // input[7:0] 
+                .cmd_stb    (cmd_stb)        // input
+    `ifdef DEBUG_RING       
+                ,.debug_do    (debug_ring[1]),         // output
+                .debug_sl     (debug_sl),              // input
+                .debug_di     (debug_ring[2])        // input
+    `endif         
+            );
+        else
+            sens_histogram_snglclk_dummy sens_histogram_1_i (
+                .hist_rq      (hist_rq[1]),   // output
+                .hist_do      (hist_do1),     // output[31:0] 
+                .hist_dv      (hist_dv[1])    // output
+            `ifdef DEBUG_RING       
+                ,.debug_do    (debug_ring[1]),         // output
+                .debug_di     (debug_ring[2])          // input
+    `endif         
+            );
+// `ifdef USE_PCLK2X    
+`endif
     endgenerate
+
     generate
         if (HISTOGRAM_ADDR2 >=0)
+`ifdef USE_PCLK2X    
             sens_histogram #(
                 .HISTOGRAM_RAM_MODE     (HISTOGRAM_RAM_MODE),
                 .HISTOGRAM_ADDR         (HISTOGRAM_ADDR2),
@@ -1147,10 +1203,8 @@ module  sensor_channel#(
 `ifdef DEBUG_RING
                 ,.DEBUG_CMD_LATENCY         (DEBUG_CMD_LATENCY) 
 `endif        
-            ) sens_histogram_i (
-//                .rst        (rst),            // input
+            ) sens_histogram_2_i (
                 .mrst        (mrst),          // input
-//                .prst       (prst),          // input
                 .prst       (prsts),         // input extended to include sensor reset and rst_mmcm
                 .pclk       (pclk),           // input
                 .pclk2x     (pclk2x),         // input
@@ -1168,7 +1222,6 @@ module  sensor_channel#(
                 .cmd_ad     (cmd_ad),         // input[7:0] 
                 .cmd_stb    (cmd_stb),        // input
                 .monochrome (HIST_MONOCHROME) // input  
-//                ,.debug_mclk(debug_hist_mclk[2])  
 `ifdef DEBUG_RING       
                 ,.debug_do    (debug_ring[2]),         // output
                 .debug_sl     (debug_sl),              // input
@@ -1176,7 +1229,7 @@ module  sensor_channel#(
 `endif         
             );
         else
-            sens_histogram_dummy sens_histogram_dummy_i (
+            sens_histogram_dummy sens_histogram_2_i (
                 .hist_rq(hist_rq[2]),        // output
                 .hist_do(hist_do2),          // output[31:0] 
                 .hist_dv(hist_dv[2])         // output
@@ -1185,25 +1238,68 @@ module  sensor_channel#(
                 .debug_di     (debug_ring[3])          // input
 `endif         
             );
-//`ifdef DEBUG_RING       
-//            assign debug_ring[2] = debug_ring[3]; // just bypass
-//`endif
-    endgenerate
-    generate
-        if (HISTOGRAM_ADDR3 >=0)
-            sens_histogram #(
+// `ifdef USE_PCLK2X    
+`else
+            sens_histogram_snglclk #(
                 .HISTOGRAM_RAM_MODE     (HISTOGRAM_RAM_MODE),
-                .HISTOGRAM_ADDR         (HISTOGRAM_ADDR3),
+                .HISTOGRAM_ADDR         (HISTOGRAM_ADDR2),
                 .HISTOGRAM_ADDR_MASK    (HISTOGRAM_ADDR_MASK),
                 .HISTOGRAM_LEFT_TOP     (HISTOGRAM_LEFT_TOP),
                 .HISTOGRAM_WIDTH_HEIGHT (HISTOGRAM_WIDTH_HEIGHT)
 `ifdef DEBUG_RING
                 ,.DEBUG_CMD_LATENCY         (DEBUG_CMD_LATENCY) 
 `endif        
-            ) sens_histogram_i (
-//                .rst        (rst),            // input
+            ) sens_histogram_2_i (
                 .mrst        (mrst),          // input
-//                .prst       (prst),          // input
+                .prst       (prsts),         // input extended to include sensor reset and rst_mmcm
+                .pclk       (pclk),           // input
+                .sof        (gamma_sof_out),  // input
+                .eof        (gamma_eof_out),  // input
+                .hact       (gamma_hact_out), // input
+                .hist_di    (gamma_pxd_out),  // input[7:0] 
+                .mclk       (mclk),           // input
+                .hist_en    (hist_en[2]),     // input
+                .hist_rst   (!hist_nrst[2]),     // input
+                .hist_rq    (hist_rq[2]),     // output
+                .hist_grant (hist_gr[2]),     // input
+                .hist_do    (hist_do2),       // output[31:0] 
+                .hist_dv    (hist_dv[2]),     // output
+                .cmd_ad     (cmd_ad),         // input[7:0] 
+                .cmd_stb    (cmd_stb)         // input
+`ifdef DEBUG_RING       
+                ,.debug_do    (debug_ring[2]),         // output
+                .debug_sl     (debug_sl),              // input
+                .debug_di     (debug_ring[3])        // input
+`endif         
+            );
+        else
+            sens_histogram_snglclk_dummy sens_histogram_2_i (
+                .hist_rq(hist_rq[2]),        // output
+                .hist_do(hist_do2),          // output[31:0] 
+                .hist_dv(hist_dv[2])         // output
+`ifdef DEBUG_RING       
+                ,.debug_do    (debug_ring[2]),         // output
+                .debug_di     (debug_ring[3])          // input
+`endif         
+            );
+// `ifdef USE_PCLK2X    
+`endif
+    endgenerate
+
+    generate
+        if (HISTOGRAM_ADDR3 >=0)
+`ifdef USE_PCLK2X    
+            sens_histogram #(
+                .HISTOGRAM_RAM_MODE     (HISTOGRAM_RAM_MODE),
+                .HISTOGRAM_ADDR         (HISTOGRAM_ADDR3),
+                .HISTOGRAM_ADDR_MASK    (HISTOGRAM_ADDR_MASK),
+                .HISTOGRAM_LEFT_TOP     (HISTOGRAM_LEFT_TOP),
+                .HISTOGRAM_WIDTH_HEIGHT (HISTOGRAM_WIDTH_HEIGHT)
+    `ifdef DEBUG_RING
+                ,.DEBUG_CMD_LATENCY         (DEBUG_CMD_LATENCY) 
+    `endif        
+            ) sens_histogram_3_i (
+                .mrst        (mrst),          // input
                 .prst       (prsts),         // input extended to include sensor reset and rst_mmcm
                 .pclk       (pclk),           // input
                 .pclk2x     (pclk2x),         // input
@@ -1221,26 +1317,68 @@ module  sensor_channel#(
                 .cmd_ad     (cmd_ad),         // input[7:0] 
                 .cmd_stb    (cmd_stb),        // input
                 .monochrome (HIST_MONOCHROME) // input  
-//                ,.debug_mclk(debug_hist_mclk[3])  
-`ifdef DEBUG_RING       
+    `ifdef DEBUG_RING       
                 ,.debug_do    (debug_ring[3]),         // output
                 .debug_sl     (debug_sl),              // input
                 .debug_di     (debug_ring[4])        // input
-`endif         
+    `endif         
             );
         else
-            sens_histogram_dummy sens_histogram_dummy_i (
+            sens_histogram_dummy sens_histogram_3_i (
                 .hist_rq(hist_rq[3]),  // output
                 .hist_do(hist_do3),    // output[31:0] 
                 .hist_dv(hist_dv[3])   // output
-`ifdef DEBUG_RING       
+    `ifdef DEBUG_RING       
                 ,.debug_do    (debug_ring[3]),         // output
                 .debug_di     (debug_ring[4])          // input
-`endif         
+    `endif         
             );
-//`ifdef DEBUG_RING       
-//            assign debug_ring[3] = debug_ring[4]; // just bypass
-//`endif
+// `ifdef USE_PCLK2X    
+`else
+// `ifdef USE_PCLK2X    
+            sens_histogram_snglclk #(
+                .HISTOGRAM_RAM_MODE     (HISTOGRAM_RAM_MODE),
+                .HISTOGRAM_ADDR         (HISTOGRAM_ADDR3),
+                .HISTOGRAM_ADDR_MASK    (HISTOGRAM_ADDR_MASK),
+                .HISTOGRAM_LEFT_TOP     (HISTOGRAM_LEFT_TOP),
+                .HISTOGRAM_WIDTH_HEIGHT (HISTOGRAM_WIDTH_HEIGHT)
+    `ifdef DEBUG_RING
+                ,.DEBUG_CMD_LATENCY         (DEBUG_CMD_LATENCY) 
+    `endif        
+            ) sens_histogram_3_i (
+                .mrst        (mrst),          // input
+                .prst       (prsts),         // input extended to include sensor reset and rst_mmcm
+                .pclk       (pclk),           // input
+                .sof        (gamma_sof_out),  // input
+                .eof        (gamma_eof_out),  // input
+                .hact       (gamma_hact_out), // input
+                .hist_di    (gamma_pxd_out),  // input[7:0] 
+                .mclk       (mclk),           // input
+                .hist_en    (hist_en[3]),     // input
+                .hist_rst   (!hist_nrst[3]),  // input
+                .hist_rq    (hist_rq[3]),     // output
+                .hist_grant (hist_gr[3]),     // input
+                .hist_do    (hist_do3),       // output[31:0] 
+                .hist_dv    (hist_dv[3]),     // output
+                .cmd_ad     (cmd_ad),         // input[7:0] 
+                .cmd_stb    (cmd_stb)         // input
+    `ifdef DEBUG_RING       
+                ,.debug_do    (debug_ring[3]),         // output
+                .debug_sl     (debug_sl),              // input
+                .debug_di     (debug_ring[4])        // input
+    `endif         
+            );
+        else
+            sens_histogram_snglclk_dummy sens_histogram_3_i (
+                .hist_rq(hist_rq[3]),  // output
+                .hist_do(hist_do3),    // output[31:0] 
+                .hist_dv(hist_dv[3])   // output
+    `ifdef DEBUG_RING       
+                ,.debug_do    (debug_ring[3]),         // output
+                .debug_di     (debug_ring[4])          // input
+    `endif         
+            );
+`endif
     endgenerate
     
     sens_histogram_mux sens_histogram_mux_i (

@@ -283,7 +283,9 @@ module  sensors393 #(
 //    input         rst,
 // will generate it here
     input         pclk,    // global clock input, pixel rate (96MHz for MT9P006)
+`ifdef USE_PCLK2X    
     input         pclk2x,  // global clock input, double pixel rate (192MHz for MT9P006)
+`endif
     input         ref_clk, // IODELAY calibration 
     input         dly_rst,       
     input         mrst,      // @posedge mclk, sync reset
@@ -592,7 +594,9 @@ module  sensors393 #(
 `endif        
             ) sensor_channel_i (
                 .pclk         (pclk),                  // input
+`ifdef USE_PCLK2X    
                 .pclk2x       (pclk2x),                // input
+`endif                
                 .mrst         (mrst),                  // input
                 .prst         (prst),                  // input
                 

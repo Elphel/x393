@@ -40,11 +40,12 @@ module  clocks393#(
         parameter DIVCLK_DIVIDE_PCLK =         1,
         parameter CLKFBOUT_MULT_PCLK =        40, // 960 MHz
         parameter CLKOUT_DIV_PCLK =           10, // 96MHz 
+        parameter BUF_CLK1X_PCLK =            "BUFG",
+`ifdef USE_PCLK2X    
         parameter CLKOUT_DIV_PCLK2X =          5, // 192 MHz
         parameter PHASE_CLK2X_PCLK =           0.000, 
-        parameter BUF_CLK1X_PCLK =            "BUFG",
         parameter BUF_CLK1X_PCLK2X =          "BUFG",  
-        
+`endif        
         parameter CLKIN_PERIOD_XCLK =         20, // 50MHz 
         parameter DIVCLK_DIVIDE_XCLK =         1,
         parameter CLKFBOUT_MULT_XCLK =        20, // 50*20=1000 MHz
@@ -101,7 +102,9 @@ module  clocks393#(
     output      aclk,        // global clock 50 MHz (used for maxi0)
     output      hclk,        // global clock 150MHz (used for afi*, saxi*)
     output      pclk,        // global clock for sensors (now 96MHz), based on external clock generator
+`ifdef USE_PCLK2X    
     output      pclk2x,      // global clock for sennors, 2x frequency (now 192MHz)
+`endif
     output      xclk,        // global clock for compressor (now 100MHz) 
     output      xclk2x,      // global clock for compressor, 2x frequency (now 200MHz)
     output      sync_clk,    // global clock for camsync module (96 MHz for 353 compatibility - switch to 100MHz)?
@@ -203,16 +206,24 @@ module  clocks393#(
         .DIVCLK_DIVIDE    (DIVCLK_DIVIDE_PCLK),
         .CLKFBOUT_MULT    (CLKFBOUT_MULT_PCLK),
         .CLKOUT_DIV_CLK1X (CLKOUT_DIV_PCLK),
-        .CLKOUT_DIV_CLK2X (CLKOUT_DIV_PCLK2X),
+        .BUF_CLK1X        (BUF_CLK1X_PCLK)
+`ifdef USE_PCLK2X    
+       ,.CLKOUT_DIV_CLK2X (CLKOUT_DIV_PCLK2X),
         .PHASE_CLK2X      (PHASE_CLK2X_PCLK),
-        .BUF_CLK1X        (BUF_CLK1X_PCLK),
         .BUF_CLK2X        (BUF_CLK1X_PCLK2X)
+`else
+       ,.BUF_CLK2X        ("NONE")
+`endif        
     ) dual_clock_pclk_i (
         .rst              (async_rst || reset_clk[1]),     // input
         .clk_in           (ffclk0),           // input
         .pwrdwn           (pwrdwn_clk[1]),    // input
         .clk1x            (pclk),             // output
+`ifdef USE_PCLK2X    
         .clk2x            (pclk2x),           // output
+`else        
+        .clk2x            (),                 // output not connected
+`endif        
         .locked           (locked[1])         // output
     );
     

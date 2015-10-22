@@ -4,6 +4,8 @@
   `define PRELOAD_BRAMS
   // if HISPI is not defined, parallel sensor interface is used for all channels
   `define HISPI
+  
+//  `define USE_PCLK2X
 //  `define DEBUG_RING 1
   `define MEMBRIDGE_DEBUG_WRITE 1
 // Enviroment-dependent options

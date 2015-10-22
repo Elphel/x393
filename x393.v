@@ -196,8 +196,9 @@ module  x393 #(
  //TODO: Create missing clocks   
     
     wire           pclk;   // global clock, sensor pixel rate (96 MHz)
+`ifdef USE_PCLK2X    
     wire           pclk2x; // global clock, sensor double pixel rate (192 MHz)
-   
+`endif   
    // compressor pixel rate can be adjusted independently
     wire           xclk;   // global clock, compressor pixel rate (100 MHz)?
     wire           xclk2x; // global clock, compressor double pixel rate (200 MHz)
@@ -413,6 +414,7 @@ module  x393 #(
     wire                  [3:0] sens_buf_rd;     //    (), // input
     wire                [255:0] sens_buf_dout;   //    (), // output[63:0] 
     wire                  [3:0] sens_page_written;     //   single mclk pulse: buffer page (full or partial) is written to the memory buffer 
+// TODO: Add counter(s) to count sens_xfer_skipped pulses    
     wire                  [3:0] sens_xfer_skipped;     // single mclk pulse on every skipped (not written) block to record error statistics
     wire                        trigger_mode; //       (), // input
     wire                  [3:0] trig_in;                  // input[3:0] 
@@ -1597,7 +1599,9 @@ assign axi_grst = axi_rst_pre;
     ) sensors393_i (
 //        .rst                (axi_rst),           // input
         .pclk               (pclk),                //  input
+`ifdef USE_PCLK2X    
         .pclk2x             (pclk2x),              // input
+`endif        
         .ref_clk            (ref_clk),             // input
         .dly_rst            (idelay_ctrl_reset),   // input 
         .mrst               (mrst),                // input
@@ -2164,10 +2168,12 @@ assign axi_grst = axi_rst_pre;
         .DIVCLK_DIVIDE_PCLK      (DIVCLK_DIVIDE_PCLK),
         .CLKFBOUT_MULT_PCLK      (CLKFBOUT_MULT_PCLK),
         .CLKOUT_DIV_PCLK         (CLKOUT_DIV_PCLK),
+        .BUF_CLK1X_PCLK          (BUF_CLK1X_PCLK),
+`ifdef USE_PCLK2X    
         .CLKOUT_DIV_PCLK2X       (CLKOUT_DIV_PCLK2X),
         .PHASE_CLK2X_PCLK        (PHASE_CLK2X_PCLK),
-        .BUF_CLK1X_PCLK          (BUF_CLK1X_PCLK),
         .BUF_CLK1X_PCLK2X        (BUF_CLK1X_PCLK2X),
+`endif        
         .CLKIN_PERIOD_XCLK       (CLKIN_PERIOD_XCLK),
         .DIVCLK_DIVIDE_XCLK      (DIVCLK_DIVIDE_XCLK),
         .CLKFBOUT_MULT_XCLK      (CLKFBOUT_MULT_XCLK),
@@ -2218,7 +2224,9 @@ assign axi_grst = axi_rst_pre;
         .aclk            (axi_aclk),            // output
         .hclk            (hclk),                // output
         .pclk            (pclk),                // output
+`ifdef USE_PCLK2X    
         .pclk2x          (pclk2x),              // output
+`endif    
         .xclk            (xclk),                // output
         .xclk2x          (xclk2x),              // output
         .sync_clk        (camsync_clk),         // output
