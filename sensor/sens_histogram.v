@@ -35,7 +35,6 @@ module  sens_histogram #(
 `endif        
     
 )(
-//    input         rst,
     input         mrst,      // @posedge mclk, sync reset
     input         prst,      // @posedge pclk, sync reset
     input         pclk,   // global clock input, pixel rate (96MHz for MT9P006)
@@ -55,16 +54,12 @@ module  sens_histogram #(
     input   [7:0] cmd_ad,      // byte-serial command address/data (up to 6 bytes: AL-AH-D0-D1-D2-D3 
     input         cmd_stb,      // strobe (with first byte) for the command a/d
     input         monochrome    // tie to 0 to reduce hardware
-//    ,output debug_mclk
 `ifdef DEBUG_RING       
     ,output                       debug_do, // output to the debug ring
      input                        debug_sl, // 0 - idle, (1,0) - shift, (1,1) - load // SuppressThisWarning VEditor - not used
      input                        debug_di  // input from the debug ring
 `endif         
 );
-`ifdef DEBUG_RING
-//     assign  debug_do = debug_di;
-`endif        
 
     localparam PXD_2X_LATENCY = 2;
     reg         hist_bank_pclk;
@@ -140,11 +135,10 @@ module  sens_histogram #(
     reg           hist_xfer_busy; // @pclk, during histogram readout , immediately after woi (no gaps)
     reg           wait_readout;   // only used in NOBUF mode, in outher modes readout is expected to be always finished in time
     
-//    reg           debug_vert_woi_r;
-    
+`ifdef DEBUG_RING
     reg    [15:0] debug_line_cntr;
     reg    [15:0] debug_lines;
-    
+`endif    
     
     assign set_left_top_w =     pio_stb && (pio_addr == HISTOGRAM_LEFT_TOP );
     assign set_width_height_w = pio_stb && (pio_addr == HISTOGRAM_WIDTH_HEIGHT );
@@ -179,16 +173,14 @@ module  sens_histogram #(
     reg        monochrome_pclk;
     reg        monochrome_2x;
     
-//    assign debug_mclk = hist_done_mclk;
-//    assign debug_mclk = set_width_height_w;
-
+`ifdef DEBUG_RING
     always @ (posedge pclk) begin
         if      (sof)          debug_line_cntr <= 0;
         else if (line_start_w) debug_line_cntr <= debug_line_cntr + 1;
         
         if      (sof)          debug_lines <= debug_line_cntr;
     end
-    
+`endif    
     
     always @ (posedge pclk) begin
         if (!hact) pxd_wa <= 0;
@@ -215,7 +207,6 @@ module  sens_histogram #(
     end
     
     // process WOI
-//    wire  eol = !hact && hact_d[0];
     always @ (posedge pclk) begin
         hact_d <= {hact_d[0],hact};
         if      (!en)           pre_first_line <= 0;
@@ -229,9 +220,6 @@ module  sens_histogram #(
         if (!en ||(pre_first_line && !hact))  vert_woi <= 0;
         else if (vcntr_zero_w & line_start_w) vert_woi <= top_margin;
         
-//        debug_vert_woi_r <= vcntr_zero_w && vert_woi; // vert_woi;
-        
-//        hist_done <= vcntr_zero_w && vert_woi && line_start_w; // hist done never asserted, line_start_w - active
         hist_done <= vert_woi && (eof || (vcntr_zero_w && line_start_w)); // hist done never asserted, line_start_w - active
         
         if   (!en || hist_done)               frame_active <= 0;
@@ -252,8 +240,6 @@ module  sens_histogram #(
         if      (!hact_d[0])                  hcntr <= left;
         else if (hcntr_zero_w && left_margin) hcntr <= width_m1;
         else if (left_margin || hor_woi)      hcntr <= hcntr - 1;
-        
-//        if (hor_woi) hist_d <= hist_di;
         
         if      (!en)                                          hist_bank_pclk <= 0;
         else if (hist_done && (HISTOGRAM_RAM_MODE != "NOBUF")) hist_bank_pclk <= !hist_bank_pclk;
@@ -279,13 +265,11 @@ module  sens_histogram #(
         else if (!hact)                   bayer_pclk[0] <= XOR_HIST_BAYER[0];
         else                              bayer_pclk[0] <= ~bayer_pclk[0]; 
 
-//line_start_w        
     end
 
     always @(posedge pclk2x) begin
         monochrome_2x <= monochrome;
         hist_en_pclk2x <= hist_en;
-//        hist_rst_pclk2x <= hist_rst;
         pxd_ra_start <= left[3:0];
         
         if (!hist_en_pclk2x || hlstart || !(hor_woi_2x || (|woi)))  pclk_sync <= 0;
@@ -306,8 +290,6 @@ module  sens_histogram #(
             hist_addr_d2 <= hist_addr_d;
             same_addr1 <= monochrome_2x && woi[0] && woi[1] && (hist_addr_d  == hist_addr); // reduce hardware if hard-wire to gnd
             same_addr2 <=                  woi[0] && woi[2] && (hist_addr_d2 == hist_addr);
-//            if (same_addr) to_inc <= inc_r;
-//            else           to_inc <= hist_new;
             if      (same_addr1) to_inc <= inc_r; // only used in monochrome mode
             else if (same_addr2) to_inc <= inc_sat;
             else                 to_inc <= hist_new;
@@ -317,7 +299,6 @@ module  sens_histogram #(
             else                                     inc_sat <= {14'b0,inc_r[17:0]};
         end
         hist_rwen <= (woi[0] & ~pclk_sync) || (woi[2] & pclk_sync);
-//        hist_regen <= {hist_regen[1:0], woi[0] & ~pclk_sync};
         hist_regen <= {hist_regen[0], woi[0] & ~pclk_sync};
         hist_we <= woi[2] & pclk_sync;
         
@@ -325,10 +306,6 @@ module  sens_histogram #(
         else if (woi[2] & pclk_sync) hist_rwaddr <= hist_addr_d2;
         
         inc_r <= to_inc + 1;
-
-//        if      (HISTOGRAM_RAM_MODE != "BUF18")  inc_r <= inc_w;
-//        else if (inc_w[18])                      inc_r <= 32'h3fff; // maximal value
-//        else                                     inc_r <= {14'b0,inc_w[17:0]};
         
     end
     // after hist_out was off, require inactive grant before sending rq
@@ -336,25 +313,19 @@ module  sens_histogram #(
     
     always @ (posedge mclk) begin
         en_mclk <= en;
-        monochrome_pclk <= monochrome;
+//        monochrome_pclk <= monochrome;
         if      (!en_mclk)       hist_out <= 0;
         else if (hist_done_mclk) hist_out <= 1;
         else if (&hist_raddr)    hist_out <= 0;
         
         hist_out_d <= hist_out;
         // reset address each time new transfer is started
-//        if      (!en_mclk || (hist_out && !hist_out_d)) hist_raddr <= 0;
         if      (!hist_out)  hist_raddr <= 0;
         else if (hist_re[0]) hist_raddr <= hist_raddr + 1;
         
-//        if      (!en_mclk)             hist_rq_r <= 0;
-//        else if (hist_out && !hist_re) hist_rq_r <= 1;
-
-//        hist_rq_r <= en_mclk && hist_out && !(&hist_raddr);
 // prevent starting rq if grant is still on (back-to-back)
         if      (!hist_out)   en_rq_start <= 0;
         else if (!hist_grant) en_rq_start <= 1;
-//        hist_rq_r <= en_mclk && hist_out && !(&hist_raddr) && ((|hist_raddr[9:0]) || !hist_grant);
         hist_rq_r <= en_mclk && hist_out && !(&hist_raddr) && en_rq_start;
         
         if      (!hist_out || (&hist_raddr[7:0])) hist_re[0] <= 0;
@@ -372,6 +343,7 @@ module  sens_histogram #(
         else if ((HISTOGRAM_RAM_MODE == "NOBUF") && hist_done) wait_readout <= 1;
         else if (hist_xfer_done)                               wait_readout <= 0;
     
+        monochrome_pclk <= monochrome;
     end
 
 `ifdef DEBUG_RING
@@ -386,26 +358,11 @@ module  sens_histogram #(
         .debug_di   (debug_di), // input
         .debug_sl   (debug_sl), // input
         .debug_do   (debug_do), // output
-//        .rd_data   ({height_m1[15:0], vcntr[15:0], width_m1[15:0],  hcntr[15:0]}), // input[31:0] 
         .rd_data   ({debug_lines[15:0], debug_line_cntr[15:0], width_m1[15:0],  hcntr[15:0]}), // input[31:0] 
-//debug_lines <= debug_line_cntr        
         .wr_data    (), // output[31:0]  - not used
         .stb        () // output  - not used
     );
 `endif
-
-/*
-    pulse_cross_clock pulse_cross_clock_debug_mclk_i (
-        .rst         (prst), // input
-        .src_clk     (pclk), // input
-        .dst_clk     (mclk), // input
-//        .in_pulse    (vert_woi && !debug_vert_woi_r), // line_start_w), // input vcntr_zero_w
-//        .in_pulse    (vcntr_zero_w && !debug_vert_woi_r), // line_start_w), // input 
-        .in_pulse    (vcntr_zero_w && vert_woi && !debug_vert_woi_r), // line_start_w), // input 
-        .out_pulse   (debug_mclk),    // output
-        .busy() // output
-    );
-*/
     
     cmd_deser #(
         .ADDR        (HISTOGRAM_ADDR),
@@ -474,13 +431,6 @@ module  sens_histogram #(
         .out_pulse   (hist_xfer_done),    // output
         .busy() // output
     );
-/*   
-    clk_to_clk2x clk_to_clk2x_i (
-        .clk         (pclk), // input
-        .clk2x       (pclk2x), // input
-        .clk_sync    (pclk_sync) // output
-    );
-*/    
     //TODO:  make it double cycle in timing
 
     // select between 18-bit wide histogram data using a single BRAM or 2 BRAMs having full 32 bits    

@@ -390,7 +390,7 @@ module  mcntrl_linear_rw #(
         
         if (mrst) xfer_skipped <= 0;
         else      xfer_skipped <= start_not_partial && skip_run;
-        
+            
 //        if  (mrst || frame_start_delayed) frame_start_pending <= 0;
         if  (mrst) frame_start_pending <= 0;
 //        else       frame_start_pending <= {frame_start_pending[0], busy_r && (frame_start_pending[0] | frame_start)};

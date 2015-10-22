@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.3.66 (w)1999-2015 BSI
-[*] Wed Oct 21 03:45:23 2015
+[*] Thu Oct 22 02:28:16 2015
 [*]
-[dumpfile] "/home/andrey/git/x393/simulation/x393_testbench03-20151020195643294.fst"
-[dumpfile_mtime] "Wed Oct 21 02:34:57 2015"
-[dumpfile_size] 269754303
+[dumpfile] "/home/andrey/git/x393/simulation/x393_testbench03-20151021192628858.fst"
+[dumpfile_mtime] "Thu Oct 22 01:43:50 2015"
+[dumpfile_size] 66340427
 [savefile] "/home/andrey/git/x393/x393_testbench03.sav"
-[timestart] 93798600
+[timestart] 75068830
 [size] 1823 1180
 [pos] 1917 0
-*-16.380077 94047388 178682388 184032388 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-14.020046 75115830 178682388 184032388 75106570 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] x393_testbench03.
 [treeopen] x393_testbench03.par12_hispi_psp4l0_i.
 [treeopen] x393_testbench03.par12_hispi_psp4l0_i.cmprs_channel_block[0].
@@ -30,7 +30,6 @@
 [treeopen] x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.
 [treeopen] x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.
 [treeopen] x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.
-[treeopen] x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_10398_i.
 [treeopen] x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.
 [treeopen] x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[0].
 [treeopen] x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[0].sens_hispi_fifo_i.
@@ -41,6 +40,7 @@
 [treeopen] x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[3].
 [treeopen] x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.sens_hispi_din_i.
 [treeopen] x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.sens_hispi_din_i.din_block[0].
+[treeopen] x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.
 [treeopen] x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_sync_i.
 [treeopen] x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_membuf_i.
 [treeopen] x393_testbench03.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.
@@ -49,8 +49,8 @@
 [treeopen] x393_testbench03.x393_i.sensors393_i.sensor_channel_block[2].sensor_channel_i.genblk1.
 [treeopen] x393_testbench03.x393_i.sensors393_i.sensor_channel_block[3].sensor_channel_i.
 [treeopen] x393_testbench03.x393_i.sensors393_i.sensor_channel_block[3].sensor_channel_i.genblk1.
-[sst_width] 280
-[signals_width] 262
+[sst_width] 437
+[signals_width] 322
 [sst_expanded] 1
 [sst_vpaned_height] 670
 @820
@@ -883,9 +883,7 @@ x393_testbench03.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_linear_wr_sensor_i
 -group_end
 @28
 x393_testbench03.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_linear_wr_sensor_i.calc_valid
-@29
 x393_testbench03.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_linear_wr_sensor_i.skip_run
-@28
 x393_testbench03.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_linear_wr_sensor_i.frame_start
 x393_testbench03.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_linear_wr_sensor_i.frame_start_delayed
 x393_testbench03.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_linear_wr_sensor_i.frame_start_mod
@@ -1551,6 +1549,8 @@ x393_testbench03.x393_i.mcntrl393_i.memctrl16_i.seq_wr
 -mcntr_linear_rw_chn1
 @28
 x393_testbench03.x393_i.mcntrl393_i.mcntrl_linear_rw_chn1_i.frame_start
+x393_testbench03.x393_i.mcntrl393_i.mcntrl_linear_rw_chn1_i.frame_done
+x393_testbench03.x393_i.mcntrl393_i.mcntrl_linear_rw_chn1_i.frame_finished
 @800022
 x393_testbench03.x393_i.mcntrl393_i.mcntrl_linear_rw_chn1_i.page_cntr[2:0]
 @28
@@ -1565,15 +1565,258 @@ x393_testbench03.x393_i.mcntrl393_i.mcntrl_linear_rw_chn1_i.xfer_want
 x393_testbench03.x393_i.mcntrl393_i.mcntrl_linear_rw_chn1_i.xfer_grant
 x393_testbench03.x393_i.mcntrl393_i.mcntrl_linear_rw_chn1_i.xfer_reject_r
 x393_testbench03.x393_i.mcntrl393_i.mcntrl_linear_rw_chn1_i.skip_run
+x393_testbench03.x393_i.mcntrl393_i.mcntrl_linear_rw_chn1_i.cmd_wrmem
+x393_testbench03.x393_i.mcntrl393_i.mcntrl_linear_rw_chn1_i.next_page
+@22
+x393_testbench03.x393_i.mcntrl393_i.mcntrl_linear_rw_chn1_i.pending_xfers[1:0]
+@28
+x393_testbench03.x393_i.mcntrl393_i.mcntrl_linear_rw_chn1_i.xfer_done
 @800200
 -membridge
 @28
 x393_testbench03.x393_i.membridge_i.start_mclk
-@200
--
 @1000200
 -membridge
 -mcntr_linear_rw_chn1
+@200
+-
+@800200
+-sens_hist_sngl0
+@28
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.bayer_pclk[1:0]
+@22
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.cmd_ad[7:0]
+@28
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.cmd_stb
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.en
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.en_mclk
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.en_new
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.en_rq_start
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.eof
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.eq_prev
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.eq_prev_d3
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.eq_prev_prev
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.eq_prev_prev_d2
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.frame_active
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.hact
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.hact_d[1:0]
+@22
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.hcntr[15:0]
+@28
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.hcntr_zero_w
+@22
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.height_m1[15:0]
+@28
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.hist_bank_mclk
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.hist_bank_pclk
+@22
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.hist_do[31:0]
+@28
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.hist_done
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.hist_done_mclk
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.hist_dv
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.hist_en
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.hist_en_pclk
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.hist_grant
+@22
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.hist_new_even[31:0]
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.hist_new_odd[31:0]
+@28
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.hist_out
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.hist_out_d
+@22
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.hist_raddr[9:0]
+@28
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.hist_re[2:0]
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.hist_re_even_odd[1:0]
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.hist_rq
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.hist_rq_r
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.hist_rst
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.hist_rst_pclk
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.hist_xfer_busy
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.hist_xfer_done
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.hist_xfer_done_mclk
+@800022
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.hor_woi[6:0]
+@28
+(0)x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.hor_woi[6:0]
+(1)x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.hor_woi[6:0]
+(2)x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.hor_woi[6:0]
+(3)x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.hor_woi[6:0]
+(4)x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.hor_woi[6:0]
+(5)x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.hor_woi[6:0]
+(6)x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.hor_woi[6:0]
+@1001200
+-group_end
+@22
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.left[15:0]
+@28
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.left_margin
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.line_start_w
+@22
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.lt_mclk[31:0]
+@28
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.mclk
+@800022
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.memen_even[6:0]
+@28
+(0)x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.memen_even[6:0]
+(1)x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.memen_even[6:0]
+(2)x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.memen_even[6:0]
+(3)x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.memen_even[6:0]
+(4)x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.memen_even[6:0]
+(5)x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.memen_even[6:0]
+(6)x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.memen_even[6:0]
+@1001200
+-group_end
+@800022
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.memen_odd[6:0]
+@28
+(0)x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.memen_odd[6:0]
+(1)x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.memen_odd[6:0]
+(2)x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.memen_odd[6:0]
+(3)x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.memen_odd[6:0]
+(4)x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.memen_odd[6:0]
+(5)x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.memen_odd[6:0]
+(6)x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.memen_odd[6:0]
+@1001200
+-group_end
+@28
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.mrst
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.odd_pix
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.pclk
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.pio_addr[1:0]
+@22
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.pio_data[31:0]
+@28
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.pio_stb
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.pre_first_line
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.prst
+@22
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.hist_di[7:0]
+@23
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.px_d0[7:0]
+@22
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.px_d2[7:0]
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.px_d4[7:0]
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.px_d5[7:0]
+@800022
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.hist_rwaddr_even[8:0]
+@28
+(0)x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.hist_rwaddr_even[8:0]
+(1)x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.hist_rwaddr_even[8:0]
+(2)x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.hist_rwaddr_even[8:0]
+(3)x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.hist_rwaddr_even[8:0]
+(4)x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.hist_rwaddr_even[8:0]
+(5)x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.hist_rwaddr_even[8:0]
+(6)x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.hist_rwaddr_even[8:0]
+(7)x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.hist_rwaddr_even[8:0]
+(8)x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.hist_rwaddr_even[8:0]
+@1001200
+-group_end
+@22
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.hist_rwaddr_odd[8:0]
+@800028
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.bayer_pclk[1:0]
+@28
+(0)x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.bayer_pclk[1:0]
+(1)x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.bayer_pclk[1:0]
+@1001200
+-group_end
+@22
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.r0[31:0]
+@28
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.r0_sel
+@22
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.r1[31:0]
+@28
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.r1_sat
+@22
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.r2[31:0]
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.r3[31:0]
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.r_load[3:0]
+@28
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.regen_even
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.regen_odd
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.rwen_even
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.rwen_odd
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.set_left_top_pclk
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.set_left_top_w
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.set_ra_even
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.set_ra_odd
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.set_wa_even
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.set_wa_odd
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.set_width_height_pclk
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.set_width_height_w
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.sof
+@22
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.top[15:0]
+@28
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.top_margin
+@22
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.vcntr[15:0]
+@28
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.vcntr_zero_w
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.vert_woi
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.wait_readout
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.we_even
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.we_odd
+@22
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.wh_mclk[31:0]
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_snglclk_chn0_0_i.width_m1[15:0]
+@1000200
+-sens_hist_sngl0
+@800200
+-histogram_chn0
+@28
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.pclk2x
+@22
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hist_di[7:0]
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.left[15:0]
+@28
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.left_margin
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hcntr_zero_w
+@800028
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hact_d[1:0]
+@28
+(0)x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hact_d[1:0]
+(1)x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hact_d[1:0]
+@1001200
+-group_end
+@28
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hor_woi
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.pulse_cross_clock_hlstart_start_i.in_pulse
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hlstart
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hor_woi_2x
+@800022
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.woi[2:0]
+@22
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.pxd_2x[7:0]
+@28
+(0)x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.woi[2:0]
+(1)x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.woi[2:0]
+(2)x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.woi[2:0]
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.bayer_pclk[1:0]
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.mclk
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hist_rq
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hist_grant
+@800028
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hist_re[2:0]
+@28
+(0)x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hist_re[2:0]
+(1)x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hist_re[2:0]
+(2)x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hist_re[2:0]
+@1001200
+-group_end
+@22
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hist_raddr[9:0]
+@28
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hist_dv
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hist_out
+@1001200
+-group_end
+@1000200
+-histogram_chn0
 @200
 -
 [pattern_trace] 1

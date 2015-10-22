@@ -993,6 +993,40 @@ module  sensor_channel#(
         .bayer_out   (gamma_bayer)     // output [1:0]
     );
 
+// Debugging - adding a parallel to 0:0 module
+        wire        hist_rq_debug;
+        wire [31:0] hist_do_debug; 
+        wire        hist_dv_debug; 
+
+    sens_histogram_snglclk #(
+                .HISTOGRAM_RAM_MODE     ("BUF32"),
+//                .HISTOGRAM_RAM_MODE     (HISTOGRAM_RAM_MODE),
+                .HISTOGRAM_ADDR         (HISTOGRAM_ADDR0),
+                .HISTOGRAM_ADDR_MASK    (HISTOGRAM_ADDR_MASK),
+                .HISTOGRAM_LEFT_TOP     (HISTOGRAM_LEFT_TOP),
+                .HISTOGRAM_WIDTH_HEIGHT (HISTOGRAM_WIDTH_HEIGHT)
+`ifdef DEBUG_RING
+                ,.DEBUG_CMD_LATENCY     (DEBUG_CMD_LATENCY) 
+`endif        
+    ) sens_histogram_snglclk_chn0_0_i (
+                .mrst       (mrst), // input
+                .prst       (prsts), // input
+                .pclk       (pclk), // input
+                .sof        (gamma_sof_out), // input
+                .eof        (gamma_eof_out), // input
+                .hact       (gamma_hact_out), // input
+                .hist_di    (gamma_pxd_out), // input[7:0] 
+                .mclk       (mclk), // input
+                .hist_en    (hist_en[0]), // input
+                .hist_rst   (!hist_nrst[0]), // input
+                .hist_rq    (hist_rq_debug), // output
+                .hist_grant (hist_gr[0]), // input
+                .hist_do    (hist_do_debug), // output[31:0] 
+                .hist_dv    (hist_dv_debug), // output reg 
+                .cmd_ad     (cmd_ad), // input[7:0] 
+                .cmd_stb    (cmd_stb) // input
+    );
+
     // TODO: Use generate to generate 1-4 histogram modules
     generate
         if (HISTOGRAM_ADDR0 >=0)
