@@ -1,13 +1,13 @@
 /*
 ** -----------------------------------------------------------------------------**
-** varlen_encode393.v
+** varlen_encode_snglclk.v
 **
 ** Part of the Huffman encoder for JPEG compressor - variable length encoder
 **
 ** Copyright (C) 2002-2015 Elphel, Inc
 **
 ** -----------------------------------------------------------------------------**
-**  varlen_encode393.v is free software - hardware description language (HDL) code.
+**  varlen_encode_snglclk.v is free software - hardware description language (HDL) code.
 ** 
 **  This program is free software: you can redistribute it and/or modify
 **  it under the terms of the GNU General Public License as published by
@@ -24,25 +24,14 @@
 ** -----------------------------------------------------------------------------**
 **
 */
-//used the other edge of the clk2x
 
-// Encoder will work 2 cycles/"normal" word, 1 cycle for codes "00" and "f0",
-// only magnitude output is needed ASAP (2 cycles, the value out should be
-// valid on the 5-th cycle - it will latency 4 cycles run each other cycle
-// I'll make a shortcut - all codes processed in 2 cycles.
-
-module    varlen_encode393 (
-    input             clk,       // twice frequency - uses negedge inside
-    input              en,       // will enable registers. 0 - freeze at once
-    input              start, // (not faster than each other cycle)
-    input       [11:0] d,        // 12-bit signed
-    output reg   [3:0] l,        // [3:0] code length
-    output reg   [3:0] l_late,// delayed l (sync to q)
-    output reg  [10:0] q);    // [10:0]code
+module    varlen_encode_snglclk (
+    input             clk,       // posedge
+    input       [11:0] d,        // 12-bit 2-s complement
+    output reg   [3:0] l,        // [3:0] code length, latency 2 clocks
+    output reg  [10:0] q);       // [10:0] literal, latency = 2 clocks
 
     reg    [11:0] d1;
-    reg    [10:0] q0;
-    reg     [2:0] cycles;
 
     wire          this0 =  |d1[ 3:0];
     wire          this1 =  |d1[ 7:4];
@@ -54,23 +43,13 @@ module    varlen_encode393 (
                      (this1? {2'b01, codel1[1:0]} :
                              (this0 ? {2'b00,codel0[1:0]} : 4'b1111));    // after +1 will be 0;
 
-    always @ (negedge clk)  if (en) begin
-        cycles[2:0]    <= {cycles[1:0],start};
-    end
-
-    always @ (negedge clk) if (en && start) begin
+    always @(posedge clk) begin
         d1[  11]    <=  d[11];
-        d1[10:0]    <=  d[11]?-d[10:0]:d[10:0];
-    end
-
-    always @ (negedge clk) if (en & cycles[0]) begin
-        q0[10:0]    <= d1[11]?~d1[10:0]:d1[10:0];
-        l    <= codel[3:0]+1;    // needed only ASAP, valid only 2 cycles after start
-    end
+        d1[10:0]    <=  d[11] ? -d[10:0] : d[10:0];
     
-    always @ (negedge clk) if (en & cycles[2]) begin
-        q[10:0]    <= q0[10:0];
-        l_late[3:0]    <= l[3:0];
+        q[10:0]     <= d1[11] ? ~d1[10:0] : d1[10:0];
+        l    <= codel[3:0]+1;    // needed only ASAP, valid only 2 cycles after start
+
     end
 
 endmodule

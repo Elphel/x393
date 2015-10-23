@@ -27,7 +27,8 @@
 */
 `include "system_defines.vh" 
 `timescale 1ns/1ps
-//TODO: Modify to work with other modes (now only on color)
+// TODO: Modify to work with other modes (now only on color)
+// NOTE: when removing clk2x, temporarily use clk here, just keep mode ==0 (disabled)
 module focus_sharp393(
     input             clk,          // pixel clock, posedge
     input             clk2x,        // 2x pixel clock
