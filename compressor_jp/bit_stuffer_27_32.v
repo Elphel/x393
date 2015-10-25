@@ -28,11 +28,11 @@ module  bit_stuffer_27_32#(
     input     [DIN_LEN-1:0] din,             // input data, MSB aligned
     input             [4:0] dlen,            // input data width
     input                   ds,              // input data valid
-    input                   flush_in,        // flush remaining data
+    input                   flush_in,        // flush remaining data - should be after last ds. Also prepares for the next block
     output           [31:0] d_out,           // outpt 32-bit data
-    output reg        [2:0] bytes_out,       // bytes left when flush?
+    output reg        [1:0] bytes_out,       // (0 means 4) valid with dv
     output reg              dv,              // output data valid
-    output                  flush_out        // delayed flush in matching the data latency
+    output reg              flush_out        // delayed flush in matching the data latency
 );
     localparam  DATA1_LEN = DIN_LEN + 32 - 8;
     localparam  DATA2_LEN = DIN_LEN + 32 - 2;
@@ -40,31 +40,33 @@ module  bit_stuffer_27_32#(
     reg  [DATA1_LEN-1:0] data1;   // first stage of the barrel shifter
     reg  [DATA2_LEN-1:0] data2;   // second stage of the barrel shifter
     reg  [DATA3_LEN-1:0] data3;   // second stage of the barrel shifter/ output register
-//    reg               dv_r;
-
-
-//    assign dv =    dv_r;
     
     reg         [5:0] early_length; // number of bits in the last word (mod 32)
     reg         [5:0] dlen1; // use for the stage 2, MSB - carry out
-    reg         [5:0] dlen2; // use for the satge 3
+    reg         [5:0] dlen2; // use for the stege 3
+    
     reg        [31:0] dmask2_rom; // data mask (sync with data2) - 1 use new data, 0 - use old data. Use small ROM?
     
-    reg         [2:0] stage; // enable shifter stage
-    wire        [5:0] pre_bits_out_w = dlen2[4:0] + 5'h7; 
+    reg         [1:0] stage; // delayed ds or flush
+    reg         [1:0] ds_stage;
+    reg         [2:0] flush_stage;
+    wire        [4:0] pre_bits_out_w = dlen2[4:0] + 5'h7; 
 
     assign d_out = data3[DATA3_LEN-1 -: 32];
     
     always @ (posedge xclk) begin
     
-        if      (rst)      bytes_out <= 0;
-        else if (stage[1]) bytes_out <= pre_bits_out_w[5:3];
-    
         if (rst) stage <= 0;
-        else     stage <= {stage[1:0], ds};
+        else     stage <= {stage[0], ds | flush_in};
+
+        if (rst) ds_stage <= 0;
+        else     ds_stage <= {ds_stage[0], ds};
+
+        if (rst) flush_stage <= 0;
+        else     flush_stage <= {flush_stage[1:0], ds};
         
-        if     (rst) early_length <= 0;
-        else if (ds) early_length <= early_length[4:0] + dlen; // early_length[5] is not used in calculations, it is just carry out
+        if (rst || flush_in) early_length <= 0;
+        else if (ds)         early_length <= early_length[4:0] + dlen; // early_length[5] is not used in calculations, it is just carry out
         
         if     (rst)       dlen1 <= 0;
         else if (ds)       dlen1 <= early_length; // previous value
@@ -72,6 +74,7 @@ module  bit_stuffer_27_32#(
         if      (rst)      dlen2 <= 0;
         else if (stage[0]) dlen2 <= dlen1; // previous value (position)
         
+
         // barrel shifter stage 1 (0/8/16/24)
         if (ds) case (early_length[4:3])
             2'h0: data1 <= {      din, 24'b0};
@@ -122,13 +125,18 @@ module  bit_stuffer_27_32#(
             5'h1f: dmask2_rom <= 32'h80000000;
         endcase
         // barrel shifter stage 3 (0/1), combined with output/hold register
-        if (stage[1]) begin
+        if (ds_stage[1]) begin
             data3[DATA3_LEN-1 -: 32] <= (~dmask2_rom & (dlen2[5] ? {data3[DATA3_LEN-1-32 : 0],6'b0}: data3[DATA3_LEN-1 -: 32])) |
                                ( dmask2_rom & (dlen2[0] ? {1'b0,data2[DATA2_LEN-1 -: 31]} : data2[DATA2_LEN-1 -: 32]));
             data3[DATA3_LEN-1-32: 0] <= dlen2[0] ? data2[DATA2_LEN-31-1 : 0] : {data2[DATA2_LEN-32-1 : 0], 1'b0};
             
         end
-        dv <= stage[1] && dlen2[5];
+        dv <= (ds_stage[1] && dlen2[5]) || (flush_stage[1] && !(|data3[DATA3_LEN-1 -: 32]));
+
+        if  (rst || ds_stage[1]) bytes_out <= 0; // if the dv was caused by 32 bits full - output 4 bytes
+        else if (flush_stage[1]) bytes_out <= pre_bits_out_w[4:3];
+    
+        flush_out <= flush_stage[2];
 
     end
 
