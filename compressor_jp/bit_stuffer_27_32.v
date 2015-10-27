@@ -91,40 +91,6 @@ module  bit_stuffer_27_32#(
             2'h3: data2 <= { 6'b0,data1      };
         endcase
         if (stage[0]) case (dlen1[4:0])
-/*        
-            5'h00: dmask2_rom <= 32'hffffffff;
-            5'h01: dmask2_rom <= 32'hfffffffe;
-            5'h02: dmask2_rom <= 32'hfffffffc;
-            5'h03: dmask2_rom <= 32'hfffffff8;
-            5'h04: dmask2_rom <= 32'hfffffff0;
-            5'h05: dmask2_rom <= 32'hffffffe0;
-            5'h06: dmask2_rom <= 32'hffffffc0;
-            5'h07: dmask2_rom <= 32'hffffff80;
-            5'h08: dmask2_rom <= 32'hffffff00;
-            5'h09: dmask2_rom <= 32'hfffffe00;
-            5'h0a: dmask2_rom <= 32'hfffffc00;
-            5'h0b: dmask2_rom <= 32'hfffff800;
-            5'h0c: dmask2_rom <= 32'hfffff000;
-            5'h0d: dmask2_rom <= 32'hffffe000;
-            5'h0e: dmask2_rom <= 32'hffffc000;
-            5'h0f: dmask2_rom <= 32'hffff8000;
-            5'h10: dmask2_rom <= 32'hffff0000;
-            5'h11: dmask2_rom <= 32'hfffe0000;
-            5'h12: dmask2_rom <= 32'hfffc0000;
-            5'h13: dmask2_rom <= 32'hfff80000;
-            5'h14: dmask2_rom <= 32'hfff00000;
-            5'h15: dmask2_rom <= 32'hffe00000;
-            5'h16: dmask2_rom <= 32'hffc00000;
-            5'h17: dmask2_rom <= 32'hff800000;
-            5'h18: dmask2_rom <= 32'hff000000;
-            5'h19: dmask2_rom <= 32'hfe000000;
-            5'h1a: dmask2_rom <= 32'hfc000000;
-            5'h1b: dmask2_rom <= 32'hf8000000;
-            5'h1c: dmask2_rom <= 32'hf0000000;
-            5'h1d: dmask2_rom <= 32'he0000000;
-            5'h1e: dmask2_rom <= 32'hc0000000;
-            5'h1f: dmask2_rom <= 32'h80000000;
-*/
             5'h00: dmask2_rom <= 32'hffffffff;
             5'h01: dmask2_rom <= 32'h7fffffff;
             5'h02: dmask2_rom <= 32'h3fffffff;

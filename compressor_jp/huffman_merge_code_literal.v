@@ -25,7 +25,7 @@ module  huffman_merge_code_literal(
     input             clk,
     input             in_valid,
     input      [15:0] huff_code,
-    input      [ 3:0] huff_code_len,
+    input      [ 3:0] huff_code_len, // 0 means 16
     input      [10:0] literal,
     input      [ 3:0] literal_len,
     output reg        out_valid, // latency 5 from input
@@ -45,7 +45,7 @@ module  huffman_merge_code_literal(
     reg         [4:0] olen3;
     reg         [3:0] hlen0;
     reg         [3:0] hlen1;
-    reg         [3:0] hlen2;
+    reg         [4:0] hlen2;
     reg         [3:0] hlen2m1;
     reg         [1:0] hlen3m1;
     reg         [3:0] valid;
@@ -76,7 +76,7 @@ module  huffman_merge_code_literal(
         endcase
         llen2 <= llen1;
         huff2 <= huff1;
-        hlen2 <= hlen1;
+        hlen2 <= {~(|hlen1),hlen1};
         hlen2m1 <= hlen1 - 1; // s0 
         valid[2] <= valid[1];
         // layer 3

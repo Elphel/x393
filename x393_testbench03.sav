@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.3.66 (w)1999-2015 BSI
-[*] Tue Oct 27 05:53:02 2015
+[*] Tue Oct 27 07:42:39 2015
 [*]
 [dumpfile] "/home/andrey/git/x393/simulation/x393_testbench03-20151026231135006.fst"
 [dumpfile_mtime] "Tue Oct 27 05:52:50 2015"
 [dumpfile_size] 257666662
 [savefile] "/home/andrey/git/x393/x393_testbench03.sav"
-[timestart] 147990400
+[timestart] 147873900
 [size] 1823 1180
 [pos] 1920 0
-*-15.037372 148077500 108390000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-16.209452 148132600 108390000 148070000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] x393_testbench03.
 [treeopen] x393_testbench03.par12_hispi_psp4l0_i.
 [treeopen] x393_testbench03.par12_hispi_psp4l0_i.cmprs_channel_block[0].
@@ -64,7 +64,7 @@
 [treeopen] x393_testbench03.x393_i.sensors393_i.sensor_channel_block[3].sensor_channel_i.
 [treeopen] x393_testbench03.x393_i.sensors393_i.sensor_channel_block[3].sensor_channel_i.genblk1.
 [sst_width] 340
-[signals_width] 404
+[signals_width] 342
 [sst_expanded] 1
 [sst_vpaned_height] 514
 @820
@@ -1955,6 +1955,7 @@ x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_hu
 x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.gotEOB
 x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.gotLastBlock
 x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.gotLastWord
+x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.ready_to_flush
 x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.typeDC
 x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.typeAC
 x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.tbsel_YC0
@@ -2019,6 +2020,8 @@ x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuf
 @22
 [color] 2
 x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.q[15:0]
+x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.imgsz32[19:0]
+x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.etrax_dma[3:0]
 @28
 x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.start_time_out
 @22
@@ -2056,8 +2059,8 @@ x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuf
 @28
 x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.send8
 x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.send8h
-@29
 x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.send8l
+x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.bit_stuffer_metadata_i.running
 @1000200
 -stuffer
 @800200
@@ -2134,7 +2137,7 @@ x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huff
 -
 @1000200
 -huffman_singleclk
-@c00200
+@800200
 -stuffer32
 @28
 x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.bit_stuffer_27_32_i.ds
@@ -2169,7 +2172,7 @@ x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huff
 -group_end
 @200
 -
-@1401200
+@1000200
 -stuffer32
 @800200
 -new_compressor
@@ -2200,11 +2203,14 @@ x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huff
 @22
 [color] 2
 x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.data_out[31:0]
-@28
+@29
 [color] 2
 x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.data_out_valid
+@28
 x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.done
 x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.running
+@22
+x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.bit_stuffer_metadata_i.imgsz4[21:0]
 @200
 -
 @1000200
