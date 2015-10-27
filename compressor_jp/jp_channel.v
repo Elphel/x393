@@ -1126,6 +1126,44 @@ module  jp_channel#(
        ,.test_cntr1(test_cntr1[7:0])
 `endif
     );
+
+// Debugging - attaching new compressor module in parallel to the existing one    
+    wire [31:0] alt_stuffer_do;             // SuppressThisWarning VEditor Unused
+    wire        alt_stuffer_dv;             // SuppressThisWarning VEditor Unused
+    wire        alt_stuffer_done;           // SuppressThisWarning VEditor Unused
+    wire        alt_stuffer_running;        // SuppressThisWarning VEditor Unused
+    
+
+    huffman_stuffer_meta huffman_stuffer_meta_i (
+        .mclk              (mclk), // input
+        .mrst              (mrst), // input
+        .xclk              (xclk), // input
+        .en_huffman        (frame_en), // input
+        .en_stuffer        (stuffer_en), // input
+        .abort_stuffer     (force_flush_long), // input
+        .tser_we           (tser_he), // input
+        .tser_a_not_d      (tser_a_not_d), // input
+        .tser_d            (tser_d), // input[7:0] 
+        .di                (enc_do[15:0]), // input[15:0] 
+        .ds                (enc_dv), // input
+        .ts_pre_stb        (ts_pre_stb), // input
+        .ts_data           (ts_data), // input[7:0] 
+        .color_first       (color_first), // input valid @xclk - only for sec/usec
+        .data_out          (alt_stuffer_do), // output[31:0] 
+        .data_out_valid    (alt_stuffer_dv), // output
+        .done              (alt_stuffer_done), // output
+        .running           (alt_stuffer_running) // output
+`ifdef DEBUG_RING
+       ,.test_lbw          (), // output
+        .gotLastBlock      (), // output   // last block done - flush the rest bits
+        .dbg_etrax_dma     (), // output[3:0]
+        .dbg_ts_rstb       (), // output             
+        .dbg_ts_dout       () //output[7:0]
+`endif        
+    );
+    
+    
+    
     /*
    ,output            dbg_ts_rstb
    ,output [7:0]      dbg_ts_dout

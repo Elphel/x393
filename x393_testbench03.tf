@@ -21,6 +21,7 @@
 `timescale 1ns/1ps
 `include "system_defines.vh"
 `define SAME_SENSOR_DATA 1
+`define COMPRESS_SINGLE
 //`define use200Mhz 1
 //`define DEBUG_FIFO 1
 `undef WAIT_MRS
@@ -1230,17 +1231,20 @@ assign #10 gpio_pins[9] = gpio_pins[8];
     
 `endif
 
+`ifdef COMPRESS_SINGLE
+  TEST_TITLE = "COMPRESS_FRAME";
+  $display("===================== TEST_%s =========================",TEST_TITLE);
+    compressor_run (0, 2); // run single
+    compressor_run (1, 2); // run single
+    compressor_run (2, 2); // run single
+    compressor_run (3, 2); // run single
+`endif
+
 `ifdef READBACK_DELAYS    
   TEST_TITLE = "READBACK";
   $display("===================== TEST_%s =========================",TEST_TITLE);
     axi_get_delays;
 `endif
-/*
-    compressor_run (0, 2); // run single
-    compressor_run (1, 2); // run single
-    compressor_run (2, 2); // run single
-    compressor_run (3, 2); // run single
-*/    
 
 `ifdef TEST_MEMBRIDGE    
     TEST_TITLE = "MEMBRIDGE_READ # 1";
@@ -2699,8 +2703,9 @@ task setup_sensor_channel;
             1); // disable "need" (yield to sensor channels)
     
 //    compressor_run (num_sensor, 3); // run repetitive mode
+`ifndef COMPRESS_SINGLE
     compressor_run (num_sensor, 3); // run repetitive mode
-
+`endif
     TEST_TITLE = "DELAYS_SETUP";
     $display("===================== TEST_%s =========================",TEST_TITLE);
             

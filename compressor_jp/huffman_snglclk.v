@@ -25,7 +25,6 @@
 **
 */
 `include "system_defines.vh" 
-// 01/22/2004 - extended flush until ready (modified stuffer.v too)
 module huffman_snglclk    (
     input             xclk,            // pixel clock, sync to incoming data
     input             rst,             // @xclk
@@ -46,16 +45,17 @@ module huffman_snglclk    (
     output            flush,           // last block done - flush the rest bits
     output            last_block,
     output reg        test_lbw,
-    output            gotLastBlock,   // last block done - flush the rest bits
-    input             clk_flush,      // other clock to generate synchronized 1-cycle flush_clk output   
-    output            flush_clk,       // 1-cycle flush output @ clk_flush
+    output            gotLastBlock,    // last block done - flush the rest bits
+//    input             clk_flush,      // other clock to generate synchronized 1-cycle flush_clk output   
+//    output            flush_clk,       // 1-cycle flush output @ clk_flush
     output            fifo_or_full     // FIFO output register full - just for debuging
 );
 
 // A small input FIFO, only needed for RLL >16 that require several clock cycles to output
 
-    reg         fifo_re;
+    reg         fifo_re_r;
     wire        fifo_rdy;
+    wire        fifo_re = fifo_re_r && fifo_rdy;
     wire [15:0] fifo_out;
     fifo_same_clock #(
         .DATA_WIDTH(16),
@@ -79,9 +79,9 @@ module huffman_snglclk    (
     assign gotLastBlock=  fifo_out[15] &&  fifo_out[14] && fifo_out[12] && fifo_re;
     wire gotLastWord=    !fifo_out[14] &&  fifo_out[12] && fifo_re;    // (AC or RLL) and last bit set
     wire gotColor=        fifo_out[13];
-    reg     [5:0] rll;    // 2 MSBs - counter to send "f0" codes
-    reg     [3:0] rll1;   // valid at cycle "1"
-    reg     [3:0] rll2;   // valid at cycle "1"
+    reg     [5:0] rll;      // 2 MSBs - counter to send "f0" codes
+//    reg     [3:0] rll1;     // valid at cycle "1"
+    wire    [3:0] rll_late; // match AC's length timing
     reg     [2:0] gotAC_r;
     reg     [2:0] gotDC_r;
     reg     [2:0] gotEOB_r;
@@ -109,8 +109,8 @@ module huffman_snglclk    (
     assign fifo_or_full = fifo_rdy;
     
     always @(posedge xclk) begin
-        if (rst) fifo_re <= 0;
-        else     fifo_re <= fifo_rdy && !(fifo_re && gotRLL) && !(|rll[5:4]);
+        if (rst) fifo_re_r <= 0;
+        else     fifo_re_r <= fifo_rdy && !(fifo_re && gotRLL) && !(|rll[5:4]);
     
         if (rst) gotAC_r <= 0;
         else     gotAC_r <= {gotAC_r[1:0], gotAC && fifo_re};
@@ -132,8 +132,8 @@ module huffman_snglclk    (
         if      (rst)               rll[3:0] <= 0;
         else if (fifo_re)           rll[3:0] <= gotRLL ? fifo_out[3:0] : 4'b0;
         
-        rll1 <= rll[3:0];
-        rll2 <= rll1;
+//        rll1 <= rll[3:0];
+//        rll_late <= rll1;
         
         if (rst) gotF0_r[2:1] <= 0;
         else     gotF0_r[2:1] <= {gotF0_r[1], (|rll[5:4])};
@@ -145,7 +145,7 @@ module huffman_snglclk    (
         htable_addr[7:0] <= ({8{gotEOB_r[2]}} & 8'h0 )   | // generate 00 code (end of block)
                       ({8{gotF0_r[2]}}  & 8'hf0 )  | // generate f0 code (16 zeros)
                       ({8{gotDC_r[2]}}  & {val_length[3:0], 4'hf}) |
-                      ({8{gotAC_r[2]}}  & {rll2[3:0],       val_length[3:0]});
+                      ({8{gotAC_r[2]}}  & {rll_late[3:0],       val_length[3:0]});
        
        if (rst)  htable_re <= 0;
        else      htable_re <= {htable_re[1:0], gotEOB_r[2] | gotF0_r[2] | gotDC_r[2] | gotAC_r[2]};
@@ -195,7 +195,7 @@ module huffman_snglclk    (
     );
 
     ram18_var_w_var_r #(
-        .REGISTERS(0),
+        .REGISTERS(1),
         .LOG2WIDTH_WR(4),
         .LOG2WIDTH_RD(5),
         .DUMMY(0)
@@ -235,6 +235,16 @@ module huffman_snglclk    (
         .dout     (val_length_late)                                  // output[0:0] 
     );
 
+    dly_16 #(
+        .WIDTH(4)
+    ) dly_16_rll_late_i (
+        .clk      (xclk),                                            // input
+        .rst      (rst),                                             // input
+        .dly      (4'h2),                                            // input[3:0] 
+        .din      (rll[3:0]),                                        // input[0:0] 
+        .dout     (rll_late)                                         // output[0:0] 
+    );
+
     huffman_merge_code_literal huffman_merge_code_literal_i (
         .clk           (xclk),              // input
         .in_valid      (htable_re[2]),      // input
@@ -246,7 +256,7 @@ module huffman_snglclk    (
         .out_bits      (do27),              // output[26:0] reg 
         .out_len       (dl)                 // output[4:0] reg 
     );
-
+/*
     pulse_cross_clock flush_clk_i (
         .rst       (rst),
         .src_clk   (xclk),
@@ -255,6 +265,6 @@ module huffman_snglclk    (
         .out_pulse (flush_clk),
         .busy      ());
 
-    
+*/    
 endmodule
 

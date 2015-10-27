@@ -23,11 +23,11 @@
 module  bit_stuffer_escape(
     input                   xclk,            // pixel clock, sync to incoming data
     input                   rst,             // @xclk
-    // data from external FIFO (35x16 should be OK)
+
     input            [31:0] din,             // input data, MSB aligned
     input             [1:0] bytes_in,        // number of bytes, valid @ ds (0 means 4)
-    input                   flush_in,        // end of input data (ignore din/bytes_in)
-    input                   in_stb,          // input data/bytes_in/flush_in strobe
+    input                   in_stb,          // input data/bytes_in strobe
+    input                   flush_in,        // end of input data 
     output reg       [31:0] d_out,           // output 32-bit data
     output reg        [1:0] bytes_out,       // valid @dv(only), 0 means 4 bytes 
     output reg              dv,              // output data valid

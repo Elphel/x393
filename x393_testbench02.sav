@@ -1,26 +1,22 @@
 [*]
 [*] GTKWave Analyzer v3.3.66 (w)1999-2015 BSI
-[*] Tue Oct 13 02:08:59 2015
+[*] Mon Oct 26 23:54:57 2015
 [*]
-[dumpfile] "/home/andrey/git/x393/simulation/x393_testbench02-20151012161611192.fst"
-[dumpfile_mtime] "Mon Oct 12 22:50:38 2015"
-[dumpfile_size] 172697643
+[dumpfile] "/home/andrey/git/x393/simulation/x393_testbench02-20151012200650115.fst"
+[dumpfile_mtime] "Tue Oct 13 02:42:50 2015"
+[dumpfile_size] 166114960
 [savefile] "/home/andrey/git/x393/x393_testbench02.sav"
-[timestart] 0
+[timestart] 136579500
 [size] 1823 1180
 [pos] 1922 0
-*-25.149160 71803197 102872500 116192500 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-15.149160 136632388 102872500 116192500 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] x393_testbench02.
 [treeopen] x393_testbench02.compressor_control.
-[treeopen] x393_testbench02.par12_hispi_psp4l_i.
-[treeopen] x393_testbench02.par12_hispi_psp4l_i.cmprs_channel_block[0].
 [treeopen] x393_testbench02.simul_axi_hp1_wr_i.
 [treeopen] x393_testbench02.simul_axi_hp1_wr_i.waddr_i.
-[treeopen] x393_testbench02.simul_clk_mult_i.
 [treeopen] x393_testbench02.simul_saxi_gp0_wr_i.waddr_i.
 [treeopen] x393_testbench02.simul_sensor12bits_i.
 [treeopen] x393_testbench02.x393_i.
-[treeopen] x393_testbench02.x393_i.compressor393_i.
 [treeopen] x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].
 [treeopen] x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.
 [treeopen] x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.chn_rd_buf_i.
@@ -32,9 +28,7 @@
 [treeopen] x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_out_fifo_i.
 [treeopen] x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_pixel_buf_iface_i.
 [treeopen] x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.csconvert_i.
-[treeopen] x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.
 [treeopen] x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.i_huff_fifo.
-[treeopen] x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.quantizer393_i.
 [treeopen] x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.
 [treeopen] x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.table_ad_transmit_i.
 [treeopen] x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.table_ad_transmit_i.i_end_burst.
@@ -56,6 +50,7 @@
 [treeopen] x393_testbench02.x393_i.mcntrl393_i.
 [treeopen] x393_testbench02.x393_i.mcntrl393_i.cmd_encod_linear_rw_i.cmd_encod_linear_wr_i.
 [treeopen] x393_testbench02.x393_i.mcntrl393_i.mcntrl_linear_rw_chn1_i.
+[treeopen] x393_testbench02.x393_i.mcntrl393_i.memctrl16_i.
 [treeopen] x393_testbench02.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.
 [treeopen] x393_testbench02.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.phy_top_i.
 [treeopen] x393_testbench02.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_linear_wr_sensor_i.
@@ -106,8 +101,25 @@
 [sst_vpaned_height] 611
 @820
 x393_testbench02.TEST_TITLE[639:0]
+@800200
+-memcntrl_debug
+@29
+x393_testbench02.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.sequence_done
+@22
+x393_testbench02.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.cmd_addr[9:0]
+@28
+x393_testbench02.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.pause
+x393_testbench02.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.ren1
+@22
+x393_testbench02.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.cmd1_addr[9:0]
+@28
+x393_testbench02.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.cmd1_we
+x393_testbench02.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.cmd_sel
+x393_testbench02.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.cmd_busy[2:0]
 @200
 -
+@1000200
+-memcntrl_debug
 @c00200
 -debug_ring
 @200
@@ -1240,8 +1252,9 @@ x393_testbench02.x393_i.membridge_i.status_generate_i.wd[7:0]
 @1401200
 -membridge_status
 -membridge
-@c00200
+@800200
 -compressor0
+@c00200
 -func_compressor_control
 @22
 x393_testbench02.func_compressor_control.bayer[31:0]
@@ -1581,8 +1594,65 @@ x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.enco
 -
 @1000200
 -encoder_DCAC
-@800200
+@c00200
 -stuffer
+@28
+x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.stb_start
+x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.ts_rstb
+@22
+x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.ts_dout[7:0]
+@800022
+x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.ts_cycles[6:0]
+@28
+(0)x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.ts_cycles[6:0]
+(1)x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.ts_cycles[6:0]
+(2)x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.ts_cycles[6:0]
+(3)x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.ts_cycles[6:0]
+(4)x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.ts_cycles[6:0]
+(5)x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.ts_cycles[6:0]
+(6)x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.ts_cycles[6:0]
+@1001200
+-group_end
+@28
+x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.last_block
+@22
+x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.dl[3:0]
+x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.d[15:0]
+@28
+x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.stb
+x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.stb_start
+x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.abort
+@22
+x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.q[15:0]
+@28
+x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.qv
+x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.flush
+x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.flush_now
+x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.flushing
+@22
+x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.etrax_dma[3:0]
+@28
+x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.inc_imgsz32
+@22
+x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.imgsz32[19:0]
+@28
+x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.start_time_out
+x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.start_sizeout
+@22
+x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.size_count[23:0]
+@28
+x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.time_out
+x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.time_size_out
+x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.size_out[2:0]
+x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.size_out_over
+x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.flush_end
+x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.trailer
+x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.flush_end_delayed
+x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.done
+x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.running
+x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.flushing
+@200
+-
 @28
 x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.ts_pre_stb
 @22
@@ -1690,7 +1760,7 @@ x393_testbench02.x393_i.timing393_i.ts_stb_chn0
 x393_testbench02.x393_i.timing393_i.ts_stb[3:0]
 @200
 -
-@1000200
+@1401200
 -stuffer
 @22
 x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer_do[15:0]
@@ -1923,8 +1993,10 @@ x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.yc_n
 @28
 x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.yc_pre_first_out
 x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.ywe
-@1401200
+@1000200
 -compressor0
+@200
+-
 @c00200
 -sim_cmprs_output
 @22
@@ -3851,7 +3923,7 @@ x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.se
 x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.hact_to_fifo
 @200
 -
-@800200
+@c00200
 -sens_i2c_io
 @22
 x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.cmd_ad[7:0]
@@ -4474,6 +4546,7 @@ x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.se
 x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.wpage_wr[3:0]
 @1000200
 -sens_i2c
+@1401200
 -sens_i2c_io
 @c00200
 -sensor_fifo

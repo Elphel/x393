@@ -63,7 +63,7 @@ module  bit_stuffer_27_32#(
         else     ds_stage <= {ds_stage[0], ds};
 
         if (rst) flush_stage <= 0;
-        else     flush_stage <= {flush_stage[1:0], ds};
+        else     flush_stage <= {flush_stage[1:0], flush_in};
         
         if (rst || flush_in) early_length <= 0;
         else if (ds)         early_length <= early_length[4:0] + dlen; // early_length[5] is not used in calculations, it is just carry out
@@ -91,6 +91,7 @@ module  bit_stuffer_27_32#(
             2'h3: data2 <= { 6'b0,data1      };
         endcase
         if (stage[0]) case (dlen1[4:0])
+/*        
             5'h00: dmask2_rom <= 32'hffffffff;
             5'h01: dmask2_rom <= 32'hfffffffe;
             5'h02: dmask2_rom <= 32'hfffffffc;
@@ -123,6 +124,39 @@ module  bit_stuffer_27_32#(
             5'h1d: dmask2_rom <= 32'he0000000;
             5'h1e: dmask2_rom <= 32'hc0000000;
             5'h1f: dmask2_rom <= 32'h80000000;
+*/
+            5'h00: dmask2_rom <= 32'hffffffff;
+            5'h01: dmask2_rom <= 32'h7fffffff;
+            5'h02: dmask2_rom <= 32'h3fffffff;
+            5'h03: dmask2_rom <= 32'h1fffffff;
+            5'h04: dmask2_rom <= 32'h0fffffff;
+            5'h05: dmask2_rom <= 32'h07ffffff;
+            5'h06: dmask2_rom <= 32'h03ffffff;
+            5'h07: dmask2_rom <= 32'h01ffffff;
+            5'h08: dmask2_rom <= 32'h00ffffff;
+            5'h09: dmask2_rom <= 32'h007fffff;
+            5'h0a: dmask2_rom <= 32'h003fffff;
+            5'h0b: dmask2_rom <= 32'h001fffff;
+            5'h0c: dmask2_rom <= 32'h000fffff;
+            5'h0d: dmask2_rom <= 32'h0007ffff;
+            5'h0e: dmask2_rom <= 32'h0003ffff;
+            5'h0f: dmask2_rom <= 32'h0001ffff;
+            5'h10: dmask2_rom <= 32'h0000ffff;
+            5'h11: dmask2_rom <= 32'h00007fff;
+            5'h12: dmask2_rom <= 32'h00003fff;
+            5'h13: dmask2_rom <= 32'h00001fff;
+            5'h14: dmask2_rom <= 32'h00000fff;
+            5'h15: dmask2_rom <= 32'h000007ff;
+            5'h16: dmask2_rom <= 32'h000003ff;
+            5'h17: dmask2_rom <= 32'h000001ff;
+            5'h18: dmask2_rom <= 32'h000000ff;
+            5'h19: dmask2_rom <= 32'h0000007f;
+            5'h1a: dmask2_rom <= 32'h0000003f;
+            5'h1b: dmask2_rom <= 32'h0000001f;
+            5'h1c: dmask2_rom <= 32'h0000000f;
+            5'h1d: dmask2_rom <= 32'h00000007;
+            5'h1e: dmask2_rom <= 32'h00000003;
+            5'h1f: dmask2_rom <= 32'h00000001;
         endcase
         // barrel shifter stage 3 (0/1), combined with output/hold register
         if (ds_stage[1]) begin
@@ -131,7 +165,9 @@ module  bit_stuffer_27_32#(
             data3[DATA3_LEN-1-32: 0] <= dlen2[0] ? data2[DATA2_LEN-31-1 : 0] : {data2[DATA2_LEN-32-1 : 0], 1'b0};
             
         end
-        dv <= (ds_stage[1] && dlen2[5]) || (flush_stage[1] && !(|data3[DATA3_LEN-1 -: 32]));
+//        dv <= (ds_stage[1] && dlen2[5]) || (flush_stage[1] && !(|data3[DATA3_LEN-1 -: 32]));
+//        dv <= (ds_stage[1] && dlen1[5]) || (flush_stage[1] && !(|data3[DATA3_LEN-1 -: 32]));
+        dv <= (ds_stage[0] && dlen1[5]) || (flush_stage[1] && !(|data3[DATA3_LEN-1 -: 32]));
 
         if  (rst || ds_stage[1]) bytes_out <= 0; // if the dv was caused by 32 bits full - output 4 bytes
         else if (flush_stage[1]) bytes_out <= pre_bits_out_w[4:3];
