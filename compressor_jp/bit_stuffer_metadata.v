@@ -95,18 +95,18 @@ module  bit_stuffer_metadata(
         else if (ts_rstb)    ts_in <= 0;
         else if (!ts_in[3])  ts_in <= ts_in + 1;
         
-        if ((ts_in[3] && (ts_in[1:0] == 0)) || write_size) time_ram0[ts_in[3:2]] <= ts_in[3]? ({imgsz4[5:0],flush?2'b0:bytes_in}):ts_dout; //ts_in[3:2] == 2'b10 when write_size
-        if ((ts_in[3] && (ts_in[1:0] == 1)) || write_size) time_ram1[ts_in[3:2]] <= ts_in[3]? (imgsz4[13:6]):ts_dout;
-        if ((ts_in[3] && (ts_in[1:0] == 2)) || write_size) time_ram2[ts_in[3:2]] <= ts_in[3]? (imgsz4[21:14]):ts_dout;
-        if ((ts_in[3] && (ts_in[1:0] == 3)) || write_size) time_ram3[ts_in[3:2]] <= ts_in[3]? (8'hff):ts_dout;
+        if ((!ts_in[3] && (ts_in[1:0] == 0)) || write_size) time_ram0[ts_in[3:2]] <= ts_in[3]? ({imgsz4[5:0],flush?2'b0:bytes_in}):ts_dout; //ts_in[3:2] == 2'b10 when write_size
+        if ((!ts_in[3] && (ts_in[1:0] == 1)) || write_size) time_ram1[ts_in[3:2]] <= ts_in[3]? (imgsz4[13:6]):ts_dout;
+        if ((!ts_in[3] && (ts_in[1:0] == 2)) || write_size) time_ram2[ts_in[3:2]] <= ts_in[3]? (imgsz4[21:14]):ts_dout;
+        if ((!ts_in[3] && (ts_in[1:0] == 3)) || write_size) time_ram3[ts_in[3:2]] <= ts_in[3]? (8'hff):ts_dout;
         
         if      (xrst)                 trailer <= 0;
         else if (flush || force_flush) trailer <= 1;
         else if (trailer_done)         trailer <= 0;
 
-        if      (xrst)                                     meta_out <= 0;
-        else if ((flush || trailer) && (imgsz4[2:0] == 4)) meta_out <= 1;
-        else if (meta_last)                                meta_out <= 0;
+        if      (xrst)                                       meta_out <= 0;
+        else if (trailer && (imgsz4[2:0] == 4) &&!zeros_out) meta_out <= 1;
+        else if (meta_last)                                  meta_out <= 0;
         
         if (!meta_out) meta_word <= 0;
         else           meta_word <= meta_word + 1;

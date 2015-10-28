@@ -133,7 +133,8 @@ module  bit_stuffer_27_32#(
         end
 //        dv <= (ds_stage[1] && dlen2[5]) || (flush_stage[1] && !(|data3[DATA3_LEN-1 -: 32]));
 //        dv <= (ds_stage[1] && dlen1[5]) || (flush_stage[1] && !(|data3[DATA3_LEN-1 -: 32]));
-        dv <= (ds_stage[0] && dlen1[5]) || (flush_stage[1] && !(|data3[DATA3_LEN-1 -: 32]));
+//        dv <= (ds_stage[0] && dlen1[5]) || (flush_stage[1] && !(|data3[DATA3_LEN-1 -: 32]));
+        dv <= (ds_stage[0] && dlen1[5]) || (flush_stage[1] && (|data3[DATA3_LEN-1 -: 32]));
 
         if  (rst || ds_stage[1]) bytes_out <= 0; // if the dv was caused by 32 bits full - output 4 bytes
         else if (flush_stage[1]) bytes_out <= pre_bits_out_w[4:3];

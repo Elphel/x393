@@ -2,6 +2,7 @@
 `ifndef SYSTEM_DEFINES
   `define SYSTEM_DEFINES
   `define PRELOAD_BRAMS
+  `define DISPLAY_COMPRESSED_DATA  
   // if HISPI is not defined, parallel sensor interface is used for all channels
   `define HISPI
   

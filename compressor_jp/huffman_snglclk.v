@@ -165,7 +165,7 @@ module huffman_snglclk    (
         else              active_r <= active_r >> 1;
         
         if (rst) flush_r <= 0;
-        else     flush_r <= ready_to_flush && !active;
+        else     flush_r <= ready_to_flush && !active && !flush_r;
         
     end
 

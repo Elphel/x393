@@ -1126,6 +1126,31 @@ module  jp_channel#(
        ,.test_cntr1(test_cntr1[7:0])
 `endif
     );
+`ifdef DISPLAY_COMPRESSED_DATA
+    integer dbg_stuffer_word_number;
+    reg         dbg_odd_stuffer_dv;
+    reg  [15:0] dbg_even_stuffer_do;
+    wire [31:0] dbg_stuffer_do32 = {dbg_even_stuffer_do, stuffer_do};
+    always @ (negedge xclk2x) begin
+
+        if (stuffer_dv && dbg_odd_stuffer_dv) begin
+            $display ("COMPRESSOR CHN%d 0x%x -> 0x%x", CMPRS_NUMBER, dbg_stuffer_word_number, dbg_stuffer_do32);
+        end
+        
+        if (stuffer_done) begin
+            $display ("COMPRESSOR CHN%d ***** DONE *****",CMPRS_NUMBER);
+        end
+
+        if (stuffer_dv && !dbg_odd_stuffer_dv)     dbg_even_stuffer_do = stuffer_do;
+
+        if      (!stuffer_en || stuffer_done)      dbg_stuffer_word_number = 0;
+        else if (stuffer_dv && dbg_odd_stuffer_dv) dbg_stuffer_word_number = dbg_stuffer_word_number + 1;
+
+        if     (!stuffer_en)                       dbg_odd_stuffer_dv = 0;
+        else if (stuffer_dv)                       dbg_odd_stuffer_dv = ~dbg_odd_stuffer_dv;
+
+    end
+`endif
 
 // Debugging - attaching new compressor module in parallel to the existing one    
     wire [31:0] alt_stuffer_do;             // SuppressThisWarning VEditor Unused
@@ -1162,7 +1187,22 @@ module  jp_channel#(
 `endif        
     );
     
+`ifdef DISPLAY_COMPRESSED_DATA
+    integer alt_stuffer_word_number;
+    always @ (posedge xclk) begin
+        if (alt_stuffer_dv) begin
+            $display ("COMPRESSOR32 CHN%d 0x%x -> 0x%x", CMPRS_NUMBER, alt_stuffer_word_number, alt_stuffer_do);
+        end
+        if (alt_stuffer_done) begin
+            $display ("COMPRESSOR32 CHN%d ***** DONE *****",CMPRS_NUMBER);
+        end
+        if (!stuffer_en || alt_stuffer_done) alt_stuffer_word_number = 0;
+        else if (alt_stuffer_dv)  alt_stuffer_word_number =  alt_stuffer_word_number + 1;
+    end
     
+//CMPRS_NUMBER
+`endif
+//cat x393_testbench03-latest.log | grep "COMPRESSOR[32 ]*CHN" > compressors_out32.log    
     
     /*
    ,output            dbg_ts_rstb
