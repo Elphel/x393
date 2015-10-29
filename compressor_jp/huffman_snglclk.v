@@ -46,8 +46,8 @@ module huffman_snglclk    (
     output            last_block,
     output reg        test_lbw,
     output            gotLastBlock,    // last block done - flush the rest bits
-//    input             clk_flush,      // other clock to generate synchronized 1-cycle flush_clk output   
-//    output            flush_clk,       // 1-cycle flush output @ clk_flush
+    input             clk_flush,      // other clock to generate synchronized 1-cycle flush_clk output   
+    output            flush_clk,       // 1-cycle flush output @ clk_flush
     output            fifo_or_full     // FIFO output register full - just for debuging
 );
 
@@ -256,7 +256,6 @@ module huffman_snglclk    (
         .out_bits      (do27),              // output[26:0] reg 
         .out_len       (dl)                 // output[4:0] reg 
     );
-/*
     pulse_cross_clock flush_clk_i (
         .rst       (rst),
         .src_clk   (xclk),
@@ -264,7 +263,5 @@ module huffman_snglclk    (
         .in_pulse  (flush),
         .out_pulse (flush_clk),
         .busy      ());
-
-*/    
 endmodule
 

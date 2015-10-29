@@ -4,10 +4,12 @@
   `define PRELOAD_BRAMS
   `define DISPLAY_COMPRESSED_DATA  
   // if HISPI is not defined, parallel sensor interface is used for all channels
-  `define HISPI
+//  `define HISPI
   
-//  `define USE_PCLK2X
-//  `define DEBUG_RING 1
+  `define USE_PCLK2X
+  `define USE_XCLK2X
+  `define DEBUG_RING 1
+  
   `define MEMBRIDGE_DEBUG_WRITE 1
 // Enviroment-dependent options
   `ifdef IVERILOG

@@ -198,11 +198,12 @@ module  x393 #(
     wire           pclk;   // global clock, sensor pixel rate (96 MHz)
 `ifdef USE_PCLK2X    
     wire           pclk2x; // global clock, sensor double pixel rate (192 MHz)
-`endif   
+`endif
    // compressor pixel rate can be adjusted independently
     wire           xclk;   // global clock, compressor pixel rate (100 MHz)?
+`ifdef  USE_XCLK2X     
     wire           xclk2x; // global clock, compressor double pixel rate (200 MHz)
-   
+`endif   
     wire           camsync_clk; // global clock used for external synchronization. 96MHz in x353.
                                //  Make it independent of pixel, compressor and mclk so it can be frozen
     wire           logger_clk;  // global clock for the event logger. Use 100 MHz, shared with camsync_clk
@@ -1814,9 +1815,10 @@ assign axi_grst = axi_rst_pre;
 `endif        
         
     ) compressor393_i (
-//        .rst                       (axi_rst),                    // input
         .xclk                      (xclk),                       // input
+`ifdef  USE_XCLK2X     
         .xclk2x                    (xclk2x),                     // input
+`endif        
         .mclk                      (mclk),                       // input
         .mrst                      (mrst),                       // input
         .xrst                      (xrst),                       // input
@@ -2178,10 +2180,12 @@ assign axi_grst = axi_rst_pre;
         .DIVCLK_DIVIDE_XCLK      (DIVCLK_DIVIDE_XCLK),
         .CLKFBOUT_MULT_XCLK      (CLKFBOUT_MULT_XCLK),
         .CLKOUT_DIV_XCLK         (CLKOUT_DIV_XCLK),
+        .BUF_CLK1X_XCLK          (BUF_CLK1X_XCLK),
+`ifdef  USE_XCLK2X     
         .CLKOUT_DIV_XCLK2X       (CLKOUT_DIV_XCLK2X),
         .PHASE_CLK2X_XCLK        (PHASE_CLK2X_XCLK),
-        .BUF_CLK1X_XCLK          (BUF_CLK1X_XCLK),
         .BUF_CLK1X_XCLK2X        (BUF_CLK1X_XCLK2X),
+`endif        
         .CLKIN_PERIOD_SYNC       (CLKIN_PERIOD_SYNC),
         .DIVCLK_DIVIDE_SYNC      (DIVCLK_DIVIDE_SYNC),
         .CLKFBOUT_MULT_SYNC      (CLKFBOUT_MULT_SYNC),
@@ -2228,7 +2232,9 @@ assign axi_grst = axi_rst_pre;
         .pclk2x          (pclk2x),              // output
 `endif    
         .xclk            (xclk),                // output
+`ifdef  USE_XCLK2X     
         .xclk2x          (xclk2x),              // output
+`endif        
         .sync_clk        (camsync_clk),         // output
         .time_ref        (time_ref),            // output
         .extra_status    ({1'b0,idelay_ctrl_rdy}), // input[1:0] 

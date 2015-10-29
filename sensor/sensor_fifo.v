@@ -23,7 +23,7 @@
 module  sensor_fifo #(
     parameter SENSOR_DATA_WIDTH = 12,
     parameter SENSOR_FIFO_2DEPTH = 4, // 4-bit address
-    parameter SENSOR_FIFO_DELAY = 5 // 7 // approxiametly half (1 << SENSOR_FIFO_2DEPTH) - how long to wait after getting HACT on FIFO before stering it on output
+    parameter [3:0] SENSOR_FIFO_DELAY = 5 // 7 // approxiametly half (1 << SENSOR_FIFO_2DEPTH) - how long to wait after getting HACT on FIFO before stering it on output
 )(
 //    input                          rst,
     input                          iclk, // input -synchronous clock

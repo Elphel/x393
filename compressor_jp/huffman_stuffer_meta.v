@@ -47,7 +47,10 @@ module  huffman_stuffer_meta(
     output      [31:0] data_out,      // [31:0] output data
     output             data_out_valid,// output data valid
     output             done,        // reset by !en, goes high after some delay after flushing
-    output             running      // from registering timestamp until done
+    output             running,      // from registering timestamp until done
+    input              clk_flush,      // other clock to generate synchronized 1-cycle flush_clk output   
+    output             flush_clk       // 1-cycle flush output @ clk_flush
+    
 `ifdef DEBUG_RING
     ,output            test_lbw,
     output             gotLastBlock,   // last block done - flush the rest bits
@@ -93,8 +96,8 @@ module  huffman_stuffer_meta(
         .test_lbw     (),
         .gotLastBlock (),              // last block done - flush the rest bits
 `endif        
-//        .clk_flush(), // input
-//        .flush_clk(), // output
+        .clk_flush    (clk_flush), // input
+        .flush_clk    (flush_clk), // output
         .fifo_or_full() // output
     );
 

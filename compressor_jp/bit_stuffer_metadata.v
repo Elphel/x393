@@ -119,9 +119,8 @@ module  bit_stuffer_metadata(
         data_out_valid <= stb || trailer;
         
         
-        if      (xrst)        running <= 0;
-        else if (stb_start)   running <= 1;
-        else if (trailer)     running <= 0;
+        if      (xrst || trailer) running <= 0;
+        else if (stb_start)       running <= 1;
         
         done <= trailer_done;
         // re-clock abort, extract leading edge

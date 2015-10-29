@@ -188,7 +188,7 @@ module  sensors393 #(
     //sensor_fifo parameters
     parameter SENSOR_DATA_WIDTH =      12,
     parameter SENSOR_FIFO_2DEPTH =     4,
-    parameter SENSOR_FIFO_DELAY =      5, // 7,
+    parameter [3:0] SENSOR_FIFO_DELAY =      5, // 7,
 `endif    
     // other parameters for histogram_saxi module
     parameter HIST_SAXI_ADDR_MASK =      'h7f0,

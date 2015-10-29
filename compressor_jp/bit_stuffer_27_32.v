@@ -76,7 +76,8 @@ module  bit_stuffer_27_32#(
         
 
         // barrel shifter stage 1 (0/8/16/24)
-        if (ds) case (early_length[4:3])
+        if (rst) data1 <= 'bx;
+        else if (ds) case (early_length[4:3])
             2'h0: data1 <= {      din, 24'b0};
             2'h1: data1 <= { 8'b0,din, 16'b0};
             2'h2: data1 <= {16'b0,din,  8'b0};
@@ -84,13 +85,16 @@ module  bit_stuffer_27_32#(
         endcase
     
         // barrel shifter stage 2 (0/2/4/6)
-        if (stage[0]) case (dlen1[2:1])
+        if (rst) data2 <= 'bx;
+        else if (stage[0]) case (dlen1[2:1])
             2'h0: data2 <= {      data1, 6'b0};
             2'h1: data2 <= { 2'b0,data1, 4'b0};
             2'h2: data2 <= { 4'b0,data1, 2'b0};
             2'h3: data2 <= { 6'b0,data1      };
         endcase
-        if (stage[0]) case (dlen1[4:0])
+        
+        if (rst) dmask2_rom <= 'bx;
+        else if (stage[0]) case (dlen1[4:0])
             5'h00: dmask2_rom <= 32'hffffffff;
             5'h01: dmask2_rom <= 32'h7fffffff;
             5'h02: dmask2_rom <= 32'h3fffffff;
@@ -125,7 +129,8 @@ module  bit_stuffer_27_32#(
             5'h1f: dmask2_rom <= 32'h00000001;
         endcase
         // barrel shifter stage 3 (0/1), combined with output/hold register
-        if (ds_stage[1]) begin
+        if (rst) data3 <= 'bx;
+        else if (ds_stage[1]) begin
             data3[DATA3_LEN-1 -: 32] <= (~dmask2_rom & (dlen2[5] ? {data3[DATA3_LEN-1-32 : 0],6'b0}: data3[DATA3_LEN-1 -: 32])) |
                                ( dmask2_rom & (dlen2[0] ? {1'b0,data2[DATA2_LEN-1 -: 31]} : data2[DATA2_LEN-1 -: 32]));
             data3[DATA3_LEN-1-32: 0] <= dlen2[0] ? data2[DATA2_LEN-31-1 : 0] : {data2[DATA2_LEN-32-1 : 0], 1'b0};
@@ -135,9 +140,11 @@ module  bit_stuffer_27_32#(
 //        dv <= (ds_stage[1] && dlen1[5]) || (flush_stage[1] && !(|data3[DATA3_LEN-1 -: 32]));
 //        dv <= (ds_stage[0] && dlen1[5]) || (flush_stage[1] && !(|data3[DATA3_LEN-1 -: 32]));
         dv <= (ds_stage[0] && dlen1[5]) || (flush_stage[1] && (|data3[DATA3_LEN-1 -: 32]));
-
+// no difference in number of cells
+//        if      (rst )                bytes_out <= 0; // if the dv was caused by 32 bits full - output 4 bytes
+//        else if (ds_stage[1])         bytes_out <= 0; // if the dv was caused by 32 bits full - output 4 bytes
         if  (rst || ds_stage[1]) bytes_out <= 0; // if the dv was caused by 32 bits full - output 4 bytes
-        else if (flush_stage[1]) bytes_out <= pre_bits_out_w[4:3];
+        else if (flush_stage[1])      bytes_out <= pre_bits_out_w[4:3];
     
         flush_out <= flush_stage[2];
 

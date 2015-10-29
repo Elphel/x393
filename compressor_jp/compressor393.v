@@ -119,9 +119,10 @@ module  compressor393 # (
 `endif        
 
 )(
-//    input                         rst,    // global reset
     input                         xclk,   // global clock input, compressor single clock rate
+`ifdef  USE_XCLK2X    
     input                         xclk2x, // global clock input, compressor double clock rate, nominally rising edge aligned
+`endif    
     input                         mrst,      // @posedge mclk, sync reset
     input                         xrst,      // @posedge xclk, sync reset
     input                         hrst,      // @posedge hclk, sync reset
@@ -388,7 +389,9 @@ module  compressor393 # (
             ) jp_channel_i (
 //                .rst                                  (rst),                       // input
                 .xclk                                 (xclk),                      // input
+`ifdef  USE_XCLK2X                
                 .xclk2x                               (xclk2x),                    // input
+`endif
                 .mrst                                 (mrst),                      // input
                 .xrst                                 (xrst),                      // input
                 .hrst                                 (hrst),                      // input

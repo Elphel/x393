@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.3.66 (w)1999-2015 BSI
-[*] Wed Oct 28 00:25:39 2015
+[*] Wed Oct 28 16:58:42 2015
 [*]
-[dumpfile] "/home/andrey/git/x393/simulation/x393_testbench03-20151027170822692.fst"
-[dumpfile_mtime] "Tue Oct 27 23:44:43 2015"
-[dumpfile_size] 257689299
+[dumpfile] "/home/andrey/git/x393/simulation/x393_testbench03-20151028094057171.fst"
+[dumpfile_mtime] "Wed Oct 28 16:18:25 2015"
+[dumpfile_size] 255725225
 [savefile] "/home/andrey/git/x393/x393_testbench03.sav"
-[timestart] 174721900
-[size] 1823 1180
+[timestart] 174980000
+[size] 1823 1173
 [pos] 1920 0
-*-15.125204 174828500 108390000 148070000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-13.073349 175004500 108390000 148070000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] x393_testbench03.
 [treeopen] x393_testbench03.par12_hispi_psp4l0_i.
 [treeopen] x393_testbench03.par12_hispi_psp4l0_i.cmprs_channel_block[0].
@@ -20,15 +20,14 @@
 [treeopen] x393_testbench03.simul_sensor12bits_2_i.
 [treeopen] x393_testbench03.x393_i.
 [treeopen] x393_testbench03.x393_i.compressor393_i.
-[treeopen] x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].
 [treeopen] x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.
 [treeopen] x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.
 [treeopen] x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.bit_stuffer_27_32_i.
 [treeopen] x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.bit_stuffer_metadata_i.
 [treeopen] x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.huffman_snglclk_i.
 [treeopen] x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.huffman_snglclk_i.huffman_merge_code_literal_i.
-[treeopen] x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.
-[treeopen] x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.
+[treeopen] x393_testbench03.x393_i.compressor393_i.genblk3.
+[treeopen] x393_testbench03.x393_i.compressor393_i.genblk3.cmprs_afi0_mux_i.
 [treeopen] x393_testbench03.x393_i.mcntrl393_i.
 [treeopen] x393_testbench03.x393_i.mcntrl393_i.mcntrl_linear_rw_chn1_i.
 [treeopen] x393_testbench03.x393_i.mcntrl393_i.memctrl16_i.
@@ -64,8 +63,8 @@
 [treeopen] x393_testbench03.x393_i.sensors393_i.sensor_channel_block[3].
 [treeopen] x393_testbench03.x393_i.sensors393_i.sensor_channel_block[3].sensor_channel_i.
 [treeopen] x393_testbench03.x393_i.sensors393_i.sensor_channel_block[3].sensor_channel_i.genblk1.
-[sst_width] 244
-[signals_width] 342
+[sst_width] 294
+[signals_width] 348
 [sst_expanded] 1
 [sst_vpaned_height] 514
 @820
@@ -1917,154 +1916,9 @@ x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.enco
 -
 @1401200
 -encoderDCAC393
-@800200
--huffman
-@28
-x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.en
-@22
-x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.di[15:0]
-@28
-x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.ds
-x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.rdy
-x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.fifo_or_full
-@c00022
-x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.fifo_o[15:0]
-@28
-(0)x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.fifo_o[15:0]
-(1)x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.fifo_o[15:0]
-(2)x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.fifo_o[15:0]
-(3)x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.fifo_o[15:0]
-(4)x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.fifo_o[15:0]
-(5)x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.fifo_o[15:0]
-(6)x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.fifo_o[15:0]
-(7)x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.fifo_o[15:0]
-(8)x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.fifo_o[15:0]
-(9)x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.fifo_o[15:0]
-(10)x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.fifo_o[15:0]
-(11)x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.fifo_o[15:0]
-(12)x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.fifo_o[15:0]
-(13)x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.fifo_o[15:0]
-(14)x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.fifo_o[15:0]
-(15)x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.fifo_o[15:0]
-@1401200
--group_end
-@28
-x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.gotAC
-x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.gotDC
-x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.gotRLL
-x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.gotColor
-x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.gotEOB
-x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.gotLastBlock
-x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.gotLastWord
-x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.ready_to_flush
-x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.typeDC
-x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.typeAC
-x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.tbsel_YC0
-x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.tbsel_YC1
-x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.tbsel_YC2
-x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.tbsel_YC3
-x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.code_typ0[1:0]
-x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.code_typ1[1:0]
-x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.code_typ2[1:0]
-x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.code_typ3
-x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.code_typ4
-@22
-x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.sval[11:0]
-@28
-(5)x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.steps[5:0]
-@22
-x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.var_dl[3:0]
-x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.var_dl_late[3:0]
-x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.var_do[10:0]
-@200
--table
-@28
-x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.tables_re_latch
-@22
-x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.haddr[8:0]
-x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.tables_out[31:0]
-x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.hlen_latch[3:0]
-x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.hcode_latch[15:0]
-x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.haddr_r[7:0]
-@c00022
-x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.steps[5:0]
-@28
-(0)x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.steps[5:0]
-(1)x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.steps[5:0]
-(2)x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.steps[5:0]
-(3)x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.steps[5:0]
-(4)x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.steps[5:0]
-(5)x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.steps[5:0]
-@1401200
--group_end
 @200
 -
-@28
-x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.dv
-@22
-x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.dl[3:0]
-x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.do[15:0]
-@1000200
--huffman
-@800200
--stuffer
-@200
--
-@28
-x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.stb
-@22
-x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.dl[3:0]
-x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.d[15:0]
-@28
-[color] 2
-x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.qv
-@22
-[color] 2
-x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.q[15:0]
-x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.imgsz32[19:0]
-x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.etrax_dma[3:0]
-@28
-x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.start_time_out
-@22
-x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.etrax_dma[3:0]
-x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.size_count[23:0]
-@28
-x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.time_out
-x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.time_size_out
-@800028
-x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.size_out[2:0]
-@28
-(0)x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.size_out[2:0]
-(1)x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.size_out[2:0]
-(2)x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.size_out[2:0]
-@1001200
--group_end
-@28
-x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.size_out_over
-x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.abort
-@c00022
-x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.byteMask[7:0]
-@28
-(0)x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.byteMask[7:0]
-(1)x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.byteMask[7:0]
-(2)x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.byteMask[7:0]
-(3)x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.byteMask[7:0]
-(4)x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.byteMask[7:0]
-(5)x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.byteMask[7:0]
-(6)x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.byteMask[7:0]
-(7)x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.byteMask[7:0]
-@1401200
--group_end
-@22
-x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.longMask[31:1]
-@28
-x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.send8
-x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.send8h
-x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.send8l
-x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.bit_stuffer_metadata_i.running
-@1000200
--stuffer
-@800200
+@c00200
 -huffman_singleclk
 @22
 x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.huffman_snglclk_i.di[15:0]
@@ -2136,9 +1990,9 @@ x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huff
 x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.huffman_snglclk_i.dv
 @200
 -
-@1000200
+@1401200
 -huffman_singleclk
-@800200
+@c00200
 -stuffer32
 @28
 x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.bit_stuffer_27_32_i.ds
@@ -2177,9 +2031,9 @@ x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huff
 x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.bit_stuffer_27_32_i.flush_out
 @1001200
 -group_end
-@1000200
+@1401200
 -stuffer32
-@800200
+@c00200
 -stuffer_metadata
 @22
 x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.bit_stuffer_metadata_i.ts_data[7:0]
@@ -2206,14 +2060,12 @@ x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huff
 x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.bit_stuffer_metadata_i.imgsz4[21:0]
 @28
 x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.bit_stuffer_metadata_i.meta_out
-@29
 x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.bit_stuffer_metadata_i.meta_word[1:0]
-@28
 x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.bit_stuffer_metadata_i.zeros_out
 x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.bit_stuffer_metadata_i.trailer_done
 @200
 -
-@1000200
+@1401200
 -stuffer_metadata
 @800200
 -new_compressor
@@ -2251,40 +2103,19 @@ x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huff
 x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.running
 @22
 x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.bit_stuffer_metadata_i.imgsz4[21:0]
-@200
--
 @1000200
 -new_compressor
+@22
+x393_testbench03.x393_i.compressor393_i.genblk3.cmprs_afi0_mux_i.fifo_rdata0[63:0]
+@29
+x393_testbench03.x393_i.compressor393_i.genblk3.cmprs_afi0_mux_i.fifo_ren0
+@200
+-
 @c00200
 -varlen_encode_0
 @200
 -
-@28
-x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.i_varlen_encode.clk
-x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.i_varlen_encode.en
-x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.i_varlen_encode.start
-@22
-x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.i_varlen_encode.d[11:0]
-x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.i_varlen_encode.l[3:0]
-x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.i_varlen_encode.l_late[3:0]
-x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.i_varlen_encode.d1[11:0]
-@200
 -
-@28
-x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.i_varlen_encode.codel0[1:0]
-x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.i_varlen_encode.codel1[1:0]
-x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.i_varlen_encode.codel2[1:0]
-@22
-x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.i_varlen_encode.codel[3:0]
-@28
-x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.i_varlen_encode.cycles[2:0]
-@22
-x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.i_varlen_encode.q0[10:0]
-x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.i_varlen_encode.q[10:0]
-@28
-x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.i_varlen_encode.this0
-x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.i_varlen_encode.this1
-x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.i_varlen_encode.this2
 @1401200
 -varlen_encode_0
 @c00200

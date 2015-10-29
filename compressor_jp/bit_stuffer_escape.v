@@ -215,7 +215,7 @@ module  bit_stuffer_escape(
             case (sel0_w)
                 2'b00 :   d_out[ 7: 0] <= fifo_out_barrel_w[ 7: 0];
                 2'b01 :   d_out[ 7: 0] <= fifo_out_barrel_w[15: 8]; 
-                2'b01 :   d_out[ 7: 0] <= fifo_out_barrel_w[23:16]; 
+                2'b10 :   d_out[ 7: 0] <= fifo_out_barrel_w[23:16]; 
                 2'b11 :   d_out[ 7: 0] <= 8'b0;
                 default : d_out[ 7: 0] <= 'bx;
             endcase
@@ -228,11 +228,14 @@ module  bit_stuffer_escape(
         if (rst) flush_pend[1] <= 0;
         else     flush_pend[1] <= flush_pend[0] &&!flush_pend[1] && !rdy_w;
         
-        flush_pend[2] <= flush_pend[1];
+        if (rst) flush_pend[2] <= 0;
+        else     flush_pend[2] <= flush_pend[1];
         
-        flush_out <= flush_pend[2]; 
+        if (rst) flush_out <=  0;
+        else     flush_out <= flush_pend[2]; 
         
-        if ( rdy_w || flush_pend[1]) casex(bytes_rdy_w[3:0])
+        if (rst) bytes_out <= 'bx;
+        else if ( rdy_w || flush_pend[1]) casex(bytes_rdy_w[3:0])
             4'b10xx :  bytes_out <= 1;
             4'b110x :  bytes_out <= 2;
             4'b1110 :  bytes_out <= 3;
