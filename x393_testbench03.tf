@@ -2652,7 +2652,7 @@ task setup_sensor_channel;
     // Enable arbitration of sensor-to-memory controller
     enable_memcntrl_en_dis(4'h8 + {2'b0,num_sensor}, 1);
 //            write_contol_register(MCONTR_TOP_16BIT_ADDR +  MCONTR_TOP_16BIT_CHN_EN, {16'b0,ENABLED_CHANNELS});
-    // Set sesnor channel priority - 5 usec bonus to compressor/other channels
+    // Set sensor channel priority - 5 usec bonus to compressor/other channels
     configure_channel_priority(4'h8 + {2'b0,num_sensor}, SENSOR_PRIORITY);    // lowest priority channel 1
     
     compressor_run (num_sensor, 0); // reset compressor
@@ -2817,7 +2817,7 @@ task setup_sensor_channel;
     
     TEST_TITLE = "GAMMA_CTL";
     $display("===================== TEST_%s =========================",TEST_TITLE);
-        set_sensor_gamma_ctl (// doing last to enable sesnor data when everything else is set up
+        set_sensor_gamma_ctl (// doing last to enable sensor data when everything else is set up
             num_sensor, // input   [1:0] num_sensor; // sensor channel number (0..3)
             2'h0, // 2'h3,       // input   [1:0] bayer;      // bayer shift (0..3)
             0,          // input         table_page; // table page (only used if SENS_GAMMA_BUFFER)
@@ -3906,7 +3906,7 @@ task set_camsync_mode;
     input       en;             // 1 - enable, 0 - reset module
     input [1:0] en_snd;         // <2 - NOP, 2 - disable, 3 - enable sending timestamp with sync pulse
     input [1:0] en_ts_external; // <2 - NOP, 2 - local timestamp in the frame header, 3 - use external timestamp
-    input [1:0] triggered_mode; // <2 - NOP, 2 - async sesnor mode, 3 - triggered sensor mode
+    input [1:0] triggered_mode; // <2 - NOP, 2 - async sensor mode, 3 - triggered sensor mode
     input [2:0] master_chn;     // <4 - NOP, 4..7 - set master channel
     input [4:0] chn_en;         // <16 - NOP, [3:0] - bit mask of enabled sensor channels
     reg    [31:0] data;

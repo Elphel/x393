@@ -62,42 +62,42 @@
 		<link>
 			<name>vivado_logs/VivadoBitstream.log</name>
 			<type>1</type>
-			<location>/home/andrey/git/x393/vivado_logs/VivadoBitstream-20151028193641990.log</location>
+			<location>/home/andrey/git/x393/vivado_logs/VivadoBitstream-20151031114347621.log</location>
 		</link>
 		<link>
 			<name>vivado_logs/VivadoOpt.log</name>
 			<type>1</type>
-			<location>/home/andrey/git/x393/vivado_logs/VivadoOpt-20151028193641990.log</location>
+			<location>/home/andrey/git/x393/vivado_logs/VivadoOpt-20151031114347621.log</location>
 		</link>
 		<link>
 			<name>vivado_logs/VivadoOptPhys.log</name>
 			<type>1</type>
-			<location>/home/andrey/git/x393/vivado_logs/VivadoOptPhys-20151028193641990.log</location>
+			<location>/home/andrey/git/x393/vivado_logs/VivadoOptPhys-20151031114347621.log</location>
 		</link>
 		<link>
 			<name>vivado_logs/VivadoOptPower.log</name>
 			<type>1</type>
-			<location>/home/andrey/git/x393/vivado_logs/VivadoOptPower-20151028193641990.log</location>
+			<location>/home/andrey/git/x393/vivado_logs/VivadoOptPower-20151031114347621.log</location>
 		</link>
 		<link>
 			<name>vivado_logs/VivadoPlace.log</name>
 			<type>1</type>
-			<location>/home/andrey/git/x393/vivado_logs/VivadoPlace-20151028193641990.log</location>
+			<location>/home/andrey/git/x393/vivado_logs/VivadoPlace-20151031114347621.log</location>
 		</link>
 		<link>
 			<name>vivado_logs/VivadoRoute.log</name>
 			<type>1</type>
-			<location>/home/andrey/git/x393/vivado_logs/VivadoRoute-20151028193641990.log</location>
+			<location>/home/andrey/git/x393/vivado_logs/VivadoRoute-20151031114347621.log</location>
 		</link>
 		<link>
 			<name>vivado_logs/VivadoSynthesis.log</name>
 			<type>1</type>
-			<location>/home/andrey/git/x393/vivado_logs/VivadoSynthesis-20151028193155597.log</location>
+			<location>/home/andrey/git/x393/vivado_logs/VivadoSynthesis-20151031113658557.log</location>
 		</link>
 		<link>
 			<name>vivado_logs/VivadoTimimgSummaryReportImplemented.log</name>
 			<type>1</type>
-			<location>/home/andrey/git/x393/vivado_logs/VivadoTimimgSummaryReportImplemented-20151028193641990.log</location>
+			<location>/home/andrey/git/x393/vivado_logs/VivadoTimimgSummaryReportImplemented-20151031114347621.log</location>
 		</link>
 		<link>
 			<name>vivado_logs/VivadoTimimgSummaryReportSynthesis.log</name>

@@ -110,7 +110,7 @@ module huffman_snglclk    (
     
     always @(posedge xclk) begin
         if (rst) fifo_re_r <= 0;
-        else     fifo_re_r <= fifo_rdy && !(fifo_re && gotRLL) && !(|rll[5:4]);
+        else     fifo_re_r <= fifo_rdy && !(fifo_re && gotRLL && (|fifo_out[5:4])) && !(|rll[5:4]);
     
         if (rst) gotAC_r <= 0;
         else     gotAC_r <= {gotAC_r[1:0], gotAC && fifo_re};

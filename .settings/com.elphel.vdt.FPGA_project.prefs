@@ -1,5 +1,5 @@
-FPGA_project_0_SimulationTopFile=x393_testbench03.tf
-FPGA_project_1_SimulationTopModule=x393_testbench03
+FPGA_project_0_SimulationTopFile=x393_testbench02.tf
+FPGA_project_1_SimulationTopModule=x393_testbench02
 FPGA_project_2_ImplementationTopFile=x393.v
 FPGA_project_4_part=xc7z030fbg484-1
 FPGA_project_5_part=xc7z030fbg484-1

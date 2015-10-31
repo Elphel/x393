@@ -40,7 +40,7 @@ module  bit_stuffer_escape(
     wire  [31:0] fifo_pre_out;
     // mask output for flushing
     wire  [31:0] fifo_out = fifo_pre_out & {{8{fifo_nempty[3]}},{8{fifo_nempty[2]}},{8{fifo_nempty[1]}},{8{fifo_nempty[0]}}};
-    reg    [2:0] flush_pend;
+    reg    [3:0] flush_pend;
     
     reg    [3:0] bytes_in_mask_w;
     always @* case (bytes_in)
@@ -185,17 +185,17 @@ module  bit_stuffer_escape(
         default: fifo_re_mask_w <= 'bx; // impossible num_zeros_w 
     endcase
 
-    assign fifo_re = flush_pend[1]? fifo_nempty : (rdy_w ? fifo_re_mask_w : 4'b0); // when flushing read whatever is left
+    assign fifo_re = flush_pend[2]? fifo_nempty : (rdy_w ? fifo_re_mask_w : 4'b0); // when flushing read whatever is left
 
     always @(posedge xclk) begin
-        if      (rst)   cry_ff <= 0;
-        else if (rdy_w) cry_ff <=cry_ff_w;
+        if (rst || flush_pend[2])   cry_ff <= 0;
+        else if (rdy_w)             cry_ff <= cry_ff_w;
         
-        if (rst) fifo_byte_pntr <= 0;
-        else if (rdy_w) fifo_byte_pntr <= fifo_byte_pntr - num_zeros_w;
+        if (rst || flush_pend[2]) fifo_byte_pntr <= 0; // flush reads all the remaining data from FIFO, byte pointer should be reset too
+        else if (rdy_w)           fifo_byte_pntr <= fifo_byte_pntr - num_zeros_w;
         
-        dv <= rdy_w || (flush_pend[1] && (cry_ff || (|fifo_nempty)));
-        if (rdy_w || (flush_pend[1] && (cry_ff || (|fifo_nempty)))) begin
+        dv <= rdy_w || (flush_pend[2] && (cry_ff || (|fifo_nempty)));
+        if (rdy_w || (flush_pend[2] && (cry_ff || (|fifo_nempty)))) begin
             case (sel3_w)
                 1'b0 :    d_out[31:24] <= fifo_out_barrel_w[31:24];
                 1'b1 :    d_out[31:24] <= 8'b0; 
@@ -228,14 +228,14 @@ module  bit_stuffer_escape(
         if (rst) flush_pend[1] <= 0;
         else     flush_pend[1] <= flush_pend[0] &&!flush_pend[1] && !rdy_w;
         
-        if (rst) flush_pend[2] <= 0;
-        else     flush_pend[2] <= flush_pend[1];
+        if (rst) flush_pend[3:2] <= 0;
+        else     flush_pend[3:2] <= {flush_pend[2:1]};
         
         if (rst) flush_out <=  0;
-        else     flush_out <= flush_pend[2]; 
+        else     flush_out <= flush_pend[3]; 
         
         if (rst) bytes_out <= 'bx;
-        else if ( rdy_w || flush_pend[1]) casex(bytes_rdy_w[3:0])
+        else if ( rdy_w || flush_pend[2]) casex(bytes_rdy_w[3:0])
             4'b10xx :  bytes_out <= 1;
             4'b110x :  bytes_out <= 2;
             4'b1110 :  bytes_out <= 3;

@@ -195,11 +195,6 @@ parameter EXTERNAL_TIMESTAMP =    0; // 1 ;    // embed local timestamp, 1 - emb
     wire        PX4_HACT; // output 
     wire        PX4_VACT; // output 
 
-    wire       PX1_MCLK_PRE;       // input to pixel clock mult/divisor       // SuppressThisWarning VEditor - may be unused
-    wire       PX2_MCLK_PRE;       // input to pixel clock mult/divisor       // SuppressThisWarning VEditor - may be unused
-    wire       PX3_MCLK_PRE;       // input to pixel clock mult/divisor       // SuppressThisWarning VEditor - may be unused
-    wire       PX4_MCLK_PRE;       // input to pixel clock mult/divisor       // SuppressThisWarning VEditor - may be unused
-
 // Sensor signals - as on FPGA pads
     wire [ 7:0] sns1_dp;   // inout[7:0] {PX_MRST, PXD8, PXD6, PXD4, PXD2, PXD0, PX_HACT, PX_DCLK}
     wire [ 7:0] sns1_dn;   // inout[7:0] {PX_ARST, PXD9, PXD7, PXD5, PXD3, PXD1, PX_VACT, PX_BPF}
@@ -237,132 +232,28 @@ parameter EXTERNAL_TIMESTAMP =    0; // 1 ;    // embed local timestamp, 1 - emb
     wire        sns4_ctl;  // inout PX_ARO/TCK
     wire        sns4_pg;   // inout SENSPGM
 
-// Keep signals defined even if HISPI is not, to preserve non-existing signals in .sav files of gtkwave    
-`ifdef HISPI
-    localparam PIX_CLK_DIV =          1; // scale clock from FPGA to sensor pixel clock
-    localparam PIX_CLK_MULT =        11; // scale clock from FPGA to sensor pixel clock
-`else    
-    localparam PIX_CLK_DIV =          1; // scale clock from FPGA to sensor pixel clock
-    localparam PIX_CLK_MULT =         1; // scale clock from FPGA to sensor pixel clock
-`endif
-`ifdef HISPI
-    localparam HISPI_CLK_DIV =        3; // from pixel clock to serial output pixel rate TODO: Set real ones, adjsut sensor clock too
-    localparam HISPI_CLK_MULT =      10; // from pixel clock to serial output pixel rate TODO: Set real ones, adjsut sensor clock too
-
-    localparam HISPI_EMBED_LINES =    2; // first lines will be marked as "embedded" (non-image data)
-//    localparam HISPI_MSB_FIRST =      0; // 0 - serialize LSB first, 1 - MSB first
-    localparam HISPI_FIFO_LOGDEPTH = 12; // 49-bit wide FIFO address bits (>log (line_length + 2)
-`endif    
-    
-//`ifdef HISPI
-    wire [3:0] PX1_LANE_P;         // SuppressThisWarning VEditor - may be unused
-    wire [3:0] PX1_LANE_N;         // SuppressThisWarning VEditor - may be unused
-    wire       PX1_CLK_P;          // SuppressThisWarning VEditor - may be unused
-    wire       PX1_CLK_N;          // SuppressThisWarning VEditor - may be unused
-    wire [3:0] PX1_GP;             // Sensor input          // SuppressThisWarning VEditor - may be unused
-    wire       PX1_FLASH = 1'bx;   // Sensor output - not yet defined          // SuppressThisWarning VEditor - may be unused
-    wire       PX1_SHUTTER = 1'bx; // Sensor output - not yet defined         // SuppressThisWarning VEditor - may be unused
-
-    wire [3:0] PX2_LANE_P;         // SuppressThisWarning VEditor - may be unused
-    wire [3:0] PX2_LANE_N;         // SuppressThisWarning VEditor - may be unused
-    wire       PX2_CLK_P;          // SuppressThisWarning VEditor - may be unused
-    wire       PX2_CLK_N;          // SuppressThisWarning VEditor - may be unused
-    wire [3:0] PX2_GP;             // Sensor input          // SuppressThisWarning VEditor - may be unused
-    wire       PX2_FLASH = 1'bx;   // Sensor output - not yet defined          // SuppressThisWarning VEditor - may be unused
-    wire       PX2_SHUTTER = 1'bx; // Sensor output - not yet defined         // SuppressThisWarning VEditor - may be unused
-
-    wire [3:0] PX3_LANE_P;         // SuppressThisWarning VEditor - may be unused
-    wire [3:0] PX3_LANE_N;         // SuppressThisWarning VEditor - may be unused
-    wire       PX3_CLK_P;          // SuppressThisWarning VEditor - may be unused
-    wire       PX3_CLK_N;          // SuppressThisWarning VEditor - may be unused
-    wire [3:0] PX3_GP;             // Sensor input          // SuppressThisWarning VEditor - may be unused
-    wire       PX3_FLASH = 1'bx;   // Sensor output - not yet defined          // SuppressThisWarning VEditor - may be unused
-    wire       PX3_SHUTTER = 1'bx; // Sensor output - not yet defined         // SuppressThisWarning VEditor - may be unused
-    
-    wire [3:0] PX4_LANE_P;         // SuppressThisWarning VEditor - may be unused
-    wire [3:0] PX4_LANE_N;         // SuppressThisWarning VEditor - may be unused
-    wire       PX4_CLK_P;          // SuppressThisWarning VEditor - may be unused
-    wire       PX4_CLK_N;          // SuppressThisWarning VEditor - may be unused
-    wire [3:0] PX4_GP;             // Sensor input          // SuppressThisWarning VEditor - may be unused
-    wire       PX4_FLASH = 1'bx;   // Sensor output - not yet defined          // SuppressThisWarning VEditor - may be unused
-    wire       PX4_SHUTTER = 1'bx; // Sensor output - not yet defined         // SuppressThisWarning VEditor - may be unused
-//`endif    
-
-`ifdef HISPI
-    assign sns1_dp[3:0] =  PX1_LANE_P;
-    assign sns1_dn[3:0] =  PX1_LANE_N;
-    assign sns1_clkp =     PX1_CLK_P;
-    assign sns1_clkn =     PX1_CLK_N;
-    // non-HiSPi signals
-    assign sns1_dp[4] =    PX1_FLASH;
-    assign sns1_dn[4] =    PX1_SHUTTER;
-    assign PX1_GP[3:0] = {sns1_dn[7],sns1_dn[6], sns1_dn[5], sns1_dp[5]};
-    assign PX1_MCLK_PRE =  sns1_dp[6]; // from FPGA to sensor
-    assign PX1_MRST =      sns1_dp[7]; // from FPGA to sensor
-    assign PX1_ARST =      sns1_dn[7]; // same as GP[3]
-    assign PX1_ARO =       sns1_dn[5]; // same as GP[1]
-    
-    assign sns2_dp[3:0] =  PX2_LANE_P;
-    assign sns2_dn[3:0] =  PX2_LANE_N;
-    assign sns2_clkp =     PX2_CLK_P;
-    assign sns2_clkn =     PX2_CLK_N;
-    // non-HiSPi signals
-    assign sns2_dp[4] =    PX1_FLASH;
-    assign sns2_dn[4] =    PX2_SHUTTER;
-    assign PX2_GP[3:0] = {sns2_dn[7],sns2_dn[6], sns2_dn[5], sns2_dp[5]};
-    assign PX2_MCLK_PRE =  sns2_dp[6]; // from FPGA to sensor
-    assign PX2_MRST =      sns2_dp[7]; // from FPGA to sensor
-    assign PX2_ARST =      sns2_dn[7]; // same as GP[3]
-    assign PX2_ARO =       sns2_dn[5]; // same as GP[1]
-    
-    assign sns3_dp[3:0] =  PX3_LANE_P;
-    assign sns3_dn[3:0] =  PX3_LANE_N;
-    assign sns3_clkp =     PX3_CLK_P;
-    assign sns3_clkn =     PX3_CLK_N;
-    // non-HiSPi signals
-    assign sns3_dp[4] =    PX3_FLASH;
-    assign sns3_dn[4] =    PX3_SHUTTER;
-    assign PX3_GP[3:0] = {sns3_dn[7],sns3_dn[6], sns3_dn[5], sns3_dp[5]};
-    assign PX3_MCLK_PRE =  sns3_dp[6]; // from FPGA to sensor
-    assign PX3_MRST =      sns3_dp[7]; // from FPGA to sensor
-    assign PX3_ARST =      sns3_dn[7]; // same as GP[3]
-    assign PX3_ARO =       sns3_dn[5]; // same as GP[1]
-    
-    assign sns4_dp[3:0] =  PX4_LANE_P;
-    assign sns4_dn[3:0] =  PX4_LANE_N;
-    assign sns4_clkp =     PX4_CLK_P;
-    assign sns4_clkn =     PX4_CLK_N;
-    // non-HiSPi signals
-    assign sns4_dp[4] =    PX4_FLASH;
-    assign sns4_dn[4] =    PX4_SHUTTER;
-    assign PX4_GP[3:0] = {sns4_dn[7],sns4_dn[6], sns4_dn[5], sns4_dp[5]};
-    assign PX4_MCLK_PRE =  sns4_dp[6]; // from FPGA to sensor
-    assign PX4_MRST =      sns4_dp[7]; // from FPGA to sensor
-    assign PX4_ARST =      sns4_dn[7]; // same as GP[3]
-    assign PX4_ARO =       sns4_dn[5]; // same as GP[1]
-`else
-    //connect parallel12 sensor to sensor port 1
+    //connect sensor to sensor port 1
     assign sns1_dp[6:1] =  {PX1_D[10], PX1_D[8], PX1_D[6], PX1_D[4], PX1_D[2], PX1_HACT};
     assign PX1_MRST =       sns1_dp[7]; // from FPGA to sensor
-    assign PX1_MCLK_PRE =   sns1_dp[0]; // from FPGA to sensor
+    assign PX1_MCLK =       sns1_dp[0]; // from FPGA to sensor
     assign sns1_dn[6:0] =  {PX1_D[11], PX1_D[9], PX1_D[7], PX1_D[5], PX1_D[3], PX1_VACT, PX1_DCLK};
     assign PX1_ARST =       sns1_dn[7];
     assign sns1_clkn =      PX1_D[0];  // inout CNVSYNC/TDI
     assign sns1_clkp =      PX1_D[1];  // CNVCLK/TDO
-    assign PX1_ARO =        sns1_ctl;  // from FPGA to sensor
+    assign PX1_ARO =       sns1_ctl;  // from FPGA to sensor
 
     assign PX2_MRST =       sns2_dp[7]; // from FPGA to sensor
-    assign PX2_MCLK_PRE =   sns2_dp[0]; // from FPGA to sensor
+    assign PX2_MCLK =       sns2_dp[0]; // from FPGA to sensor
     assign PX2_ARST =       sns2_dn[7];
     assign PX2_ARO =        sns2_ctl;  // from FPGA to sensor
     
     assign PX3_MRST =       sns3_dp[7]; // from FPGA to sensor
-    assign PX3_MCLK_PRE =   sns3_dp[0]; // from FPGA to sensor
+    assign PX3_MCLK =       sns3_dp[0]; // from FPGA to sensor
     assign PX3_ARST =       sns3_dn[7];
     assign PX3_ARO =        sns3_ctl;  // from FPGA to sensor
     
     assign PX4_MRST =       sns4_dp[7]; // from FPGA to sensor
-    assign PX4_MCLK_PRE =   sns4_dp[0]; // from FPGA to sensor
+    assign PX4_MCLK =       sns4_dp[0]; // from FPGA to sensor
     assign PX4_ARST =       sns4_dn[7];
     assign PX4_ARO =        sns4_ctl;  // from FPGA to sensor
 
@@ -384,27 +275,24 @@ parameter EXTERNAL_TIMESTAMP =    0; // 1 ;    // embed local timestamp, 1 - emb
     assign sns4_clkp =      PX4_D[1];  // CNVCLK/TDO
 
 `else    
-    //connect parallel12 sensor to sensor port 2 (all data rotated left by 1 bit)
+    //connect sensor to sensor port 2 (all data rotated left by 1 bit)
     assign sns2_dp[6:1] =  {PX2_D[9], PX2_D[7], PX2_D[5], PX2_D[3], PX2_D[1], PX2_HACT};
     assign sns2_dn[6:0] =  {PX2_D[10], PX2_D[8], PX2_D[6], PX2_D[4], PX2_D[2], PX2_VACT, PX2_DCLK};
     assign sns2_clkn =      PX2_D[11];  // inout CNVSYNC/TDI
     assign sns2_clkp =      PX2_D[0];  // CNVCLK/TDO
     
-    //connect parallel12 sensor to sensor port 3  (all data rotated left by 2 bits
+    //connect sensor to sensor port 3  (all data rotated left by 2 bits
     assign sns3_dp[6:1] =  {PX3_D[8], PX3_D[6], PX3_D[4], PX3_D[2], PX3_D[0], PX3_HACT};
     assign sns3_dn[6:0] =  {PX3_D[9], PX3_D[7], PX3_D[5], PX3_D[3], PX3_D[1], PX3_VACT, PX3_DCLK};
     assign sns3_clkn =      PX3_D[10];  // inout CNVSYNC/TDI
     assign sns3_clkp =      PX3_D[11];  // CNVCLK/TDO
     
-    //connect parallel12 sensor to sensor port 4  (all data rotated left by 3 bits
+    //connect sensor to sensor port 4  (all data rotated left by 3 bits
     assign sns4_dp[6:1] =  {PX4_D[5], PX4_D[3], PX4_D[1], PX4_D[11], PX4_D[9], PX4_HACT};
     assign sns4_dn[6:0] =  {PX4_D[6], PX4_D[4], PX4_D[2], PX4_D[0], PX4_D[10], PX4_VACT, PX4_DCLK};
     assign sns4_clkn =      PX4_D[7];  // inout CNVSYNC/TDI
     assign sns4_clkp =      PX4_D[8];  // CNVCLK/TDO
 `endif
-`endif
-
-
 
     wire [ 9:0] gpio_pins; // inout[9:0] ([6]-synco0,[7]-syncio0,[8]-synco1,[9]-syncio1)
 // Connect trigger outs to triggets in (#10 needed for Icarus)
@@ -2088,140 +1976,6 @@ simul_axi_hp_wr #(
         .ffclk1  ({ffclk1n, ffclk1p})  // output[1:0] 
     );
 
-// Testing parallel12 -> HiSPi simulation converter
- `ifdef HISPI   
-    par12_hispi_psp4l #(
-        .CLOCK_MPY     (HISPI_CLK_MULT),
-        .CLOCK_DIV     (HISPI_CLK_DIV),
-        .LANE0_DLY     (1.3),
-        .LANE1_DLY     (2.7),
-        .LANE2_DLY     (0.2),
-        .LANE3_DLY     (1.8),
-        .CLK_DLY       (2.3),
-        .EMBED_LINES   (HISPI_EMBED_LINES),
-        .MSB_FIRST     (HISPI_MSB_FIRST),
-        .FIFO_LOGDEPTH (HISPI_FIFO_LOGDEPTH)
-    ) par12_hispi_psp4l0_i (
-        .pclk    ( PX1_MCLK), // input
-        .rst     (!PX1_MRST), // input
-        .pxd     (PX1_D),     // input[11:0] 
-        .vact    (PX1_VACT), // input
-        .hact_in (PX1_HACT), // input
-        .lane_p  (PX1_LANE_P), // output[3:0] 
-        .lane_n  (PX1_LANE_N), // output[3:0] 
-        .clk_p   (PX1_CLK_P), // output
-        .clk_n   (PX1_CLK_N) // output
-    );
-
-    par12_hispi_psp4l #(
-        .CLOCK_MPY     (HISPI_CLK_MULT),
-        .CLOCK_DIV     (HISPI_CLK_DIV),
-        .LANE0_DLY     (1.3),
-        .LANE1_DLY     (2.7),
-        .LANE2_DLY     (0.2),
-        .LANE3_DLY     (1.8),
-        .CLK_DLY       (2.3),
-        .EMBED_LINES   (HISPI_EMBED_LINES),
-        .MSB_FIRST     (HISPI_MSB_FIRST),
-        .FIFO_LOGDEPTH (HISPI_FIFO_LOGDEPTH)
-    ) par12_hispi_psp4l1_i (
-        .pclk    ( PX2_MCLK), // input
-        .rst     (!PX2_MRST), // input
-        .pxd     (PX2_D),     // input[11:0] 
-        .vact    (PX2_VACT), // input
-        .hact_in (PX2_HACT), // input
-        .lane_p  (PX2_LANE_P), // output[3:0] 
-        .lane_n  (PX2_LANE_N), // output[3:0] 
-        .clk_p   (PX2_CLK_P), // output
-        .clk_n   (PX2_CLK_N) // output
-    );
-
-    par12_hispi_psp4l #(
-        .CLOCK_MPY     (HISPI_CLK_MULT),
-        .CLOCK_DIV     (HISPI_CLK_DIV),
-        .LANE0_DLY     (1.3),
-        .LANE1_DLY     (2.7),
-        .LANE2_DLY     (0.2),
-        .LANE3_DLY     (1.8),
-        .CLK_DLY       (2.3),
-        .EMBED_LINES   (HISPI_EMBED_LINES),
-        .MSB_FIRST     (HISPI_MSB_FIRST),
-        .FIFO_LOGDEPTH (HISPI_FIFO_LOGDEPTH)
-    ) par12_hispi_psp4l2_i (
-        .pclk    ( PX3_MCLK), // input
-        .rst     (!PX3_MRST), // input
-        .pxd     (PX3_D),     // input[11:0] 
-        .vact    (PX3_VACT), // input
-        .hact_in (PX3_HACT), // input
-        .lane_p  (PX3_LANE_P), // output[3:0] 
-        .lane_n  (PX3_LANE_N), // output[3:0] 
-        .clk_p   (PX3_CLK_P), // output
-        .clk_n   (PX3_CLK_N) // output
-    );
-
-    par12_hispi_psp4l #(
-        .CLOCK_MPY     (HISPI_CLK_MULT),
-        .CLOCK_DIV     (HISPI_CLK_DIV),
-        .LANE0_DLY     (1.3),
-        .LANE1_DLY     (2.7),
-        .LANE2_DLY     (0.2),
-        .LANE3_DLY     (1.8),
-        .CLK_DLY       (2.3),
-        .EMBED_LINES   (HISPI_EMBED_LINES),
-        .MSB_FIRST     (HISPI_MSB_FIRST),
-        .FIFO_LOGDEPTH (HISPI_FIFO_LOGDEPTH)
-    ) par12_hispi_psp4l3_i (
-        .pclk    ( PX4_MCLK), // input
-        .rst     (!PX4_MRST), // input
-        .pxd     (PX4_D),     // input[11:0] 
-        .vact    (PX4_VACT), // input
-        .hact_in (PX4_HACT), // input
-        .lane_p  (PX4_LANE_P), // output[3:0] 
-        .lane_n  (PX4_LANE_N), // output[3:0] 
-        .clk_p   (PX4_CLK_P), // output
-        .clk_n   (PX4_CLK_N) // output
-    );
-`endif    
-
-    simul_clk_mult_div #(
-        .MULTIPLIER (PIX_CLK_MULT),
-        .DIVISOR    (PIX_CLK_DIV),
-        .SKIP_FIRST (5)
-    ) simul_clk_div_mult_pix1_i (
-        .clk_in     (PX1_MCLK_PRE), // input
-        .en         (1'b1), // input
-        .clk_out    (PX1_MCLK) // output
-    );
-
-    simul_clk_mult_div #(
-        .MULTIPLIER (PIX_CLK_MULT),
-        .DIVISOR    (PIX_CLK_DIV),
-        .SKIP_FIRST (5)
-    ) simul_clk_div_mult_pix2_i (
-        .clk_in     (PX2_MCLK_PRE), // input
-        .en         (1'b1), // input
-        .clk_out    (PX2_MCLK) // output
-    );
-
-    simul_clk_mult_div #(
-        .MULTIPLIER (PIX_CLK_MULT),
-        .DIVISOR    (PIX_CLK_DIV),
-        .SKIP_FIRST (5)
-    ) simul_clk_div_mult_pix3_i (
-        .clk_in     (PX3_MCLK_PRE), // input
-        .en         (1'b1), // input
-        .clk_out    (PX3_MCLK) // output
-    );
-
-    simul_clk_mult_div #(
-        .MULTIPLIER (PIX_CLK_MULT),
-        .DIVISOR    (PIX_CLK_DIV),
-        .SKIP_FIRST (5)
-    ) simul_clk_div_mult_pix4_i (
-        .clk_in     (PX4_MCLK_PRE), // input
-        .en         (1'b1), // input
-        .clk_out    (PX4_MCLK) // output
-    );
 
     simul_sensor12bits #(
         .lline     (VIRTUAL_WIDTH),     // SENSOR12BITS_LLINE),
@@ -2242,7 +1996,7 @@ simul_axi_hp_wr #(
         .tDDO1     (SENSOR12BITS_TDDO1),
         .trigdly   (TRIG_LINES), // SENSOR12BITS_TRIGDLY),
         .ramp      (0), //SENSOR12BITS_RAMP),
-        .new_bayer (1) //SENSOR12BITS_NEW_BAYER)
+        .new_bayer (0) // was 1 SENSOR12BITS_NEW_BAYER)
     ) simul_sensor12bits_i (
         .MCLK  (PX1_MCLK), // input 
         .MRST  (PX1_MRST), // input 
@@ -2280,7 +2034,7 @@ simul_axi_hp_wr #(
         .tDDO1     (SENSOR12BITS_TDDO1),
         .trigdly   (TRIG_LINES), // SENSOR12BITS_TRIGDLY),
         .ramp      (0), //SENSOR12BITS_RAMP),
-        .new_bayer (1) //SENSOR12BITS_NEW_BAYER)
+        .new_bayer (0) //SENSOR12BITS_NEW_BAYER) was 1
     ) simul_sensor12bits_2_i (
         .MCLK  (PX2_MCLK), // input 
         .MRST  (PX2_MRST), // input 
@@ -2316,8 +2070,8 @@ simul_axi_hp_wr #(
         .tDDO      (SENSOR12BITS_TDDO),
         .tDDO1     (SENSOR12BITS_TDDO1),
         .trigdly   (TRIG_LINES), // SENSOR12BITS_TRIGDLY),
-        .ramp      (0), //SENSOR12BITS_RAMP),
-        .new_bayer (1) //SENSOR12BITS_NEW_BAYER)
+        .ramp      (0), // SENSOR12BITS_RAMP),
+        .new_bayer (0)  // was 1SENSOR12BITS_NEW_BAYER)
     ) simul_sensor12bits_3_i (
         .MCLK  (PX3_MCLK), // input 
         .MRST  (PX3_MRST), // input 
@@ -2353,8 +2107,8 @@ simul_axi_hp_wr #(
         .tDDO      (SENSOR12BITS_TDDO),
         .tDDO1     (SENSOR12BITS_TDDO1),
         .trigdly   (TRIG_LINES), // SENSOR12BITS_TRIGDLY),
-        .ramp      (0), //SENSOR12BITS_RAMP),
-        .new_bayer (1) //SENSOR12BITS_NEW_BAYER)
+        .ramp      (0),// SENSOR12BITS_RAMP),
+        .new_bayer (0) // was 1SENSOR12BITS_NEW_BAYER)
     ) simul_sensor12bits_4_i (
         .MCLK  (PX4_MCLK), // input 
         .MRST  (PX4_MRST), // input 
@@ -2492,8 +2246,7 @@ task write_block_scanline_chn;  // SuppressThisWarning VEditor : may be unused
     end
 endtask
 // x393_mcntrl (no class)
-function [12:0] func_encode_mode_tiled;  // SuppressThisWarning VEditor - not used
-    input       skip_too_late;
+function [11:0] func_encode_mode_tiled;  // SuppressThisWarning VEditor - not used
     input       disable_need;
     input       repetitive;
     input       single;
@@ -2506,7 +2259,7 @@ function [12:0] func_encode_mode_tiled;  // SuppressThisWarning VEditor - not us
     input       enable;      // enable requests from this channel ( 0 will let current to finish, but not raise want/need)
     input       chn_reset;       // immediately reset al;l the internal circuitry
 
-    reg  [12:0] rslt;
+    reg  [11:0] rslt;
     begin
         rslt = 0;
         rslt[MCONTR_LINTILE_EN] =                                     ~chn_reset;
@@ -2519,14 +2272,12 @@ function [12:0] func_encode_mode_tiled;  // SuppressThisWarning VEditor - not us
         rslt[MCONTR_LINTILE_SINGLE] =                                  single;
         rslt[MCONTR_LINTILE_REPEAT] =                                  repetitive;
         rslt[MCONTR_LINTILE_DIS_NEED] =                                disable_need;
-        rslt[MCONTR_LINTILE_SKIP_LATE] =                               skip_too_late;
 //        func_encode_mode_tiled={byte32,keep_open,extra_pages,write_mem,enable,~chn_reset};
         func_encode_mode_tiled = rslt;
     end           
 endfunction
 // x393_mcntrl (no class)
-function [12:0] func_encode_mode_scanline; // SuppressThisWarning VEditor - not used
-    input       skip_too_late;
+function [11:0] func_encode_mode_scanline; // SuppressThisWarning VEditor - not used
     input       disable_need;
     input       repetitive;
     input       single;
@@ -2537,7 +2288,7 @@ function [12:0] func_encode_mode_scanline; // SuppressThisWarning VEditor - not 
     input       enable;      // enable requests from this channel ( 0 will let current to finish, but not raise want/need)
     input       chn_reset;       // immediately reset al;l the internal circuitry
     
-    reg  [12:0] rslt;
+    reg  [11:0] rslt;
     begin
         rslt = 0;
         rslt[MCONTR_LINTILE_EN] =                                     ~chn_reset;
@@ -2548,8 +2299,6 @@ function [12:0] func_encode_mode_scanline; // SuppressThisWarning VEditor - not 
         rslt[MCONTR_LINTILE_SINGLE] =                                  single;
         rslt[MCONTR_LINTILE_REPEAT] =                                  repetitive;
         rslt[MCONTR_LINTILE_DIS_NEED] =                                disable_need;
-        rslt[MCONTR_LINTILE_SKIP_LATE] =                               skip_too_late;
-        
 //        func_encode_mode_scanline={extra_pages,write_mem,enable,~chn_reset};
         func_encode_mode_scanline = rslt;
     end           
@@ -2638,8 +2387,8 @@ task setup_sensor_channel;
     
     setup_compressor_channel(
         num_sensor,              // sensor channel number (0..3)
-//        0,                       // qbank;    // [6:3] quantization table page - 100% quality
-        1,                       // qbank;    // [6:3] quantization table page - 85%? quality
+        0,                       // qbank;    // [6:3] quantization table page - 100% quality
+//        1,                       // qbank;    // [6:3] quantization table page - 85%? quality
         1,                       // dc_sub;   // [8:7] subtract DC
         CMPRS_CBIT_CMODE_JPEG18, //input [31:0] cmode;   //  [13:9] color mode:
 //        parameter CMPRS_CBIT_CMODE_JPEG18 =   4'h0, // color 4:2:0
@@ -2656,7 +2405,7 @@ task setup_sensor_channel;
 //        parameter CMPRS_CBIT_CMODE_MONO1 =    4'hb, // mono JPEG (not yet implemented)
 //        parameter CMPRS_CBIT_CMODE_MONO4 =    4'he, // mono 4 blocks
         1,                      // input [31:0] multi_frame;   // [15:14] 0 - single-frame buffer, 1 - multiframe video memory buffer
-        0,                      // input [31:0] bayer;         // [20:18] // Bayer shift
+        3,  // 0,               // input [31:0] bayer;         // [20:18] // Bayer shift
         0,                      // input [31:0] focus_mode;    // [23:21] Set focus mode
         3,                      // num_macro_cols_m1; // number of macroblock colums minus 1
         1,                      // num_macro_rows_m1; // number of macroblock rows minus 1
@@ -2728,10 +2477,10 @@ task setup_sensor_channel;
             num_sensor,
             0, // num_sub_sensor
 // add mode "DIRECT", "ASAP", "RELATIVE", "ABSOLUTE" and frame number
-            19'h20000, // 0,      // input  [18:0] AX;
-            19'h20000, // 0,      // input  [18:0] AY;
-            21'h180000, //0,      // input  [20:0] BX;
-            21'h180000, //0,      // input  [20:0] BY;
+            19'h0, // 19'h20000, // 0,      // input  [18:0] AX;
+            19'h0, // 19'h20000, // 0,      // input  [18:0] AY;
+            21'h0, // 21'h180000, //0,      // input  [20:0] BX;
+            21'h0, // 21'h180000, //0,      // input  [20:0] BY;
             'h8000, // input  [18:0] C;
             32768,  // input  [16:0] scales0;
             32768,  // input  [16:0] scales1;
@@ -3082,7 +2831,6 @@ task setup_sensor_memory;
     begin
         base_addr = MCONTR_SENS_BASE + MCONTR_SENS_INC * num_sensor;
         mode=   func_encode_mode_scanline(
-                    1, // skip_too_late              
                     0, // disable_need
                     1, // repetitive,
                     0, // single,
@@ -3128,7 +2876,6 @@ task setup_compressor_memory;
         
         base_addr = MCONTR_CMPRS_BASE + MCONTR_CMPRS_INC * num_sensor;
         mode=   func_encode_mode_tiled(
-                    1'b0,             // skip too late
                     disable_need,
                     1,                // repetitive,
                     0,                // single,

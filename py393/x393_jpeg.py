@@ -820,6 +820,8 @@ ff d9
 """        
 """
 Camera compressors testing sequence
+cd /usr/local/verilog/; test_mcntrl.py @hargs
+#or (for debug)
 cd /usr/local/verilog/; test_mcntrl.py @hargs -x -v
 
 Next 2 lines needed to use jpeg functionality if the program was started w/o setup_all_sensors True None 0xf
@@ -830,7 +832,7 @@ specify_window
 measure_all "*DI"
 # Run 'measure_all' again (but w/o arguments) to perform full calibration (~10 minutes) and save results.
 # Needed after new bitstream
-# setup_all_sensors , 3-rd argument - bitmask of sesnors to initialize
+# setup_all_sensors , 3-rd argument - bitmask of sensors to initialize
 setup_all_sensors True None 0xf
 
 #reset all compressors - NOT NEEDED
@@ -849,7 +851,7 @@ compressor_control  all  None  None  None None None  3
 
 #Gamma 0.57
 program_gamma all 0 0.57 0.04
-
+program_gamma all 0 1.0 0.04
 #colors - outdoor
 write_sensor_i2c  all 1 0 0x9035000a
 write_sensor_i2c  all 1 0 0x902c000e
@@ -875,6 +877,20 @@ write_sensor_i2c  all 1 0 0x90090500
 #exposure 0x797 (default)
 write_sensor_i2c  all 1 0 0x90090797
 
+#color pattern:
+#turn off black shift (normally 0xa8)
+write_sensor_i2c  all 1 0 0x90490000
+ 
+write_sensor_i2c  all 1 0 0x90a00001
+write_sensor_i2c  all 1 0 0x90a00009
+write_sensor_i2c  all 1 0 0x90a00019
+#running 1:
+write_sensor_i2c  all 1 0 0x90a00029
+...
+write_sensor_i2c  all 1 0 0x90a00041
+
+#color pattern off: 
+write_sensor_i2c  all 1 0 0x90a00000
 
 #Get rid of the corrupted last pixel column
 #longer line (default 0xa1f)
@@ -886,7 +902,7 @@ axi_write_single_w 0x686 0x079800a3
 axi_write_single_w 0x6a6 0x079800a3
 axi_write_single_w 0x6b6 0x079800a3
 
-#run copmpressors once (#1 - stop gracefully, 0 - reset, 2 - single, 3 - repetitive with sync to sensors)
+#run compressors once (#1 - stop gracefully, 0 - reset, 2 - single, 3 - repetitive with sync to sensors)
 compressor_control all 2
 
 jpeg_write  "img.jpeg" all
@@ -898,13 +914,20 @@ compressor_control all 2
 jpeg_write  "img.jpeg" all 85
 
 -----
+#turn off black shift (normally 0xa8)
+write_sensor_i2c  all 1 0 0x90490000
+program_gamma all 0 1.0 0.00                                       
+membridge_start                                                      
+mem_dump 0x2ba00000 0x100                                            
+mem_save "/usr/local/verilog/sensor_dump_01" 0x2ba00000 0x2300000
+#scp -p root@192.168.0.8:/mnt/mmc/local/verilog/sensor_dump_01 /home/andrey/git/x393/py393/dbg1
+
 
 setup_membridge_sensor  <write_mem=False>  <cache_mode=3>  <window_width=2592>  <window_height=1944>  <window_left=0>  <window_top=0>  <membridge_start=731906048>  <membridge_end=768606208>  <verbose=1> 
 setup_membridge_sensor  0  3  2608  1936 
 setup_membridge_sensor  <num_sensor=0>  <write_mem=False>  <cache_mode=3>  <window_width=2592>  <window_height=1944>  <window_left=0>  <window_top=0>  <last_buf_frame=1>  <membridge_start=731906048>  <membridge_end=768606208>  <verbose=1> 
 setup_membridge_sensor  0 0  3  2608  1936 
 setup_membridge_sensor  1 0  3  2608  1936 
-
 
 # Trying quadrants @param quadrants -  90-degree shifts for data [1:0], hact [3:2] and vact [5:4] (6'h01), None - no change
 # set_sensor_io_ctl  <num_sensor>  <mrst=None>  <arst=None>  <aro=None>  <mmcm_rst=None>  <clk_sel=None>  <set_delays=False>  <quadrants=None> 

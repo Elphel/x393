@@ -440,7 +440,7 @@ module  x393 #(
     wire   [3:0] cmprs_page_ready;          // input
     wire   [3:0] cmprs_next_page;           // output
 
-// per-channel master (sesnor)/slave (compressor) synchronization (compressor wait until sesnor provided data)
+// per-channel master (sensor)/slave (compressor) synchronization (compressor wait until sensor provided data)
     wire                     [3:0] cmprs_frame_start_dst; // output - trigger receive (tiledc) memory channel (it will take care of single/repetitive
                                                           // these output either follows vsync_late (reclocks it) or generated in non-bonded mode
                                                           // (compress from memory)

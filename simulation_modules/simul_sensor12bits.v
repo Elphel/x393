@@ -143,7 +143,8 @@ initial begin
    $display ("    -- new_bayer = %d ",new_bayer);
 
 //  reg   [15:0]   sensor_data[0:4095]; // up to 64 x 64 pixels
-    $readmemh("input_data/sensor.dat",sensor_data);
+//    $readmemh("input_data/sensor.dat",sensor_data);
+    $readmemh("input_data/sensor_run1.dat",sensor_data);
    c=0;
 //   {ibpf,ihact,ivact}=0;
    stopped=1;

@@ -141,7 +141,9 @@ module  sens_parallel12 #(
     reg         set_ctrl_r;
     reg         set_status_r;
     reg   [1:0] set_width_r; // to make double-cycle subtract
-    wire        set_width_ipclk; //re-clocked to pclk
+    wire        set_width_ipclk_w; //re-clocked to ipclk
+    reg         set_width_ipclk_r; // copy from mclk domain when reset is off
+    wire        set_width_ipclk = set_width_ipclk_w || set_width_ipclk_r; //re-clocked to ipclk
     reg         set_jtag_r;
     
     reg [LINE_WIDTH_BITS-1:0] line_width_m1;       // regenerated HACT duration;
@@ -224,6 +226,7 @@ module  sens_parallel12 #(
     always @ (posedge ipclk) begin
 //        irst_r <= {irst_r[1:0], prst};
         irst_r <= {irst_r[1:0], prsts}; // extended reset that includes sensor reset and rst_mmcm
+        set_width_ipclk_r <= irst_r[2] && !irst_r[1];
     end
 
     always @(posedge pclk or posedge async_prst_with_sens_mrst) begin
@@ -369,11 +372,11 @@ module  sens_parallel12 #(
 */
     
     pulse_cross_clock pulse_cross_clock_set_width_ipclk_i (
-        .rst         (mclk_rst),           // input
-        .src_clk     (mclk),          // input
-        .dst_clk     (ipclk),          // input
-        .in_pulse    (set_width_r[1]),      // input
-        .out_pulse   (set_width_ipclk),      // output
+        .rst         (mclk_rst),          // input
+        .src_clk     (mclk),              // input
+        .dst_clk     (ipclk),             // input
+        .in_pulse    (set_width_r[1]),    // input
+        .out_pulse   (set_width_ipclk_w), // output
         .busy() // output
     );
     

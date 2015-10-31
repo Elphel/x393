@@ -1,22 +1,24 @@
 [*]
 [*] GTKWave Analyzer v3.3.66 (w)1999-2015 BSI
-[*] Mon Oct 26 23:54:57 2015
+[*] Sat Oct 31 16:28:08 2015
 [*]
-[dumpfile] "/home/andrey/git/x393/simulation/x393_testbench02-20151012200650115.fst"
-[dumpfile_mtime] "Tue Oct 13 02:42:50 2015"
-[dumpfile_size] 166114960
+[dumpfile] "/home/andrey/git/x393/simulation/x393_testbench02-20151031011310189.fst"
+[dumpfile_mtime] "Sat Oct 31 07:46:14 2015"
+[dumpfile_size] 143173820
 [savefile] "/home/andrey/git/x393/x393_testbench02.sav"
-[timestart] 136579500
+[timestart] 100180000
 [size] 1823 1180
 [pos] 1922 0
-*-15.149160 136632388 102872500 116192500 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-22.866709 102806800 111045900 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] x393_testbench02.
 [treeopen] x393_testbench02.compressor_control.
 [treeopen] x393_testbench02.simul_axi_hp1_wr_i.
 [treeopen] x393_testbench02.simul_axi_hp1_wr_i.waddr_i.
+[treeopen] x393_testbench02.simul_saxi_gp0_wr_i.
 [treeopen] x393_testbench02.simul_saxi_gp0_wr_i.waddr_i.
 [treeopen] x393_testbench02.simul_sensor12bits_i.
 [treeopen] x393_testbench02.x393_i.
+[treeopen] x393_testbench02.x393_i.compressor393_i.
 [treeopen] x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].
 [treeopen] x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.
 [treeopen] x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.chn_rd_buf_i.
@@ -24,12 +26,16 @@
 [treeopen] x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_buf_average_i.i_CrCb_buff.
 [treeopen] x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_buf_average_i.i_CrCb_buff.genblk9.
 [treeopen] x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_cmd_decode_i.
+[treeopen] x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_frame_sync_i.
 [treeopen] x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_macroblock_buf_iface_i.
 [treeopen] x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_out_fifo_i.
 [treeopen] x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_pixel_buf_iface_i.
 [treeopen] x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.csconvert_i.
-[treeopen] x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.i_huff_fifo.
-[treeopen] x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.
+[treeopen] x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.
+[treeopen] x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.bit_stuffer_escape_i.
+[treeopen] x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.bit_stuffer_escape_i.byte_fifo_block[0].
+[treeopen] x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.huffman_snglclk_i.
+[treeopen] x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.quantizer393_i.
 [treeopen] x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.table_ad_transmit_i.
 [treeopen] x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.table_ad_transmit_i.i_end_burst.
 [treeopen] x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.table_ad_transmit_i.i_end_burst.bit_block[0].
@@ -50,7 +56,6 @@
 [treeopen] x393_testbench02.x393_i.mcntrl393_i.
 [treeopen] x393_testbench02.x393_i.mcntrl393_i.cmd_encod_linear_rw_i.cmd_encod_linear_wr_i.
 [treeopen] x393_testbench02.x393_i.mcntrl393_i.mcntrl_linear_rw_chn1_i.
-[treeopen] x393_testbench02.x393_i.mcntrl393_i.memctrl16_i.
 [treeopen] x393_testbench02.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.
 [treeopen] x393_testbench02.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.phy_top_i.
 [treeopen] x393_testbench02.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_linear_wr_sensor_i.
@@ -64,8 +69,7 @@
 [treeopen] x393_testbench02.x393_i.sensors393_i.histogram_saxi_i.
 [treeopen] x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].
 [treeopen] x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.
-[treeopen] x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.
-[treeopen] x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk7.sens_histogram_i.
+[treeopen] x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_parallel12_i.
 [treeopen] x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_parallel12_i.pxd_block[2].
 [treeopen] x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_fifo_i.hact_dly_16_i.
 [treeopen] x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_fifo_i.hact_dly_16_i.bit_block[0].
@@ -85,9 +89,7 @@
 [treeopen] x393_testbench02.x393_i.sensors393_i.sensor_channel_block[3].
 [treeopen] x393_testbench02.x393_i.sensors393_i.sensor_channel_block[3].sensor_channel_i.
 [treeopen] x393_testbench02.x393_i.sensors393_i.sensor_channel_block[3].sensor_channel_i.genblk1.
-[treeopen] x393_testbench02.x393_i.sensors393_i.sensor_channel_block[3].sensor_channel_i.genblk1.sens_histogram_i.
 [treeopen] x393_testbench02.x393_i.sensors393_i.sensor_channel_block[3].sensor_channel_i.genblk7.
-[treeopen] x393_testbench02.x393_i.sensors393_i.sensor_channel_block[3].sensor_channel_i.genblk7.sens_histogram_i.
 [treeopen] x393_testbench02.x393_i.sync_resets_i.level_cross_clocks_mrst_i.
 [treeopen] x393_testbench02.x393_i.sync_resets_i.level_cross_clocks_mrst_i.level_cross_clock_block[0].
 [treeopen] x393_testbench02.x393_i.sync_resets_i.level_cross_clocks_mrst_i.level_cross_clock_block[0].genblk5.
@@ -95,31 +97,14 @@
 [treeopen] x393_testbench02.x393_i.timing393_i.
 [treeopen] x393_testbench02.x393_i.timing393_i.camsync393_i.
 [treeopen] x393_testbench02.x393_i.timing393_i.rtc393_i.
-[sst_width] 382
-[signals_width] 318
+[sst_width] 335
+[signals_width] 351
 [sst_expanded] 1
 [sst_vpaned_height] 611
 @820
 x393_testbench02.TEST_TITLE[639:0]
-@800200
--memcntrl_debug
-@29
-x393_testbench02.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.sequence_done
-@22
-x393_testbench02.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.cmd_addr[9:0]
-@28
-x393_testbench02.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.pause
-x393_testbench02.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.ren1
-@22
-x393_testbench02.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.cmd1_addr[9:0]
-@28
-x393_testbench02.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.cmd1_we
-x393_testbench02.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.cmd_sel
-x393_testbench02.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.cmd_busy[2:0]
 @200
 -
-@1000200
--memcntrl_debug
 @c00200
 -debug_ring
 @200
@@ -205,7 +190,7 @@ x393_testbench02.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.cmd_busy[2:0]
 -
 @1401200
 -debug_ring
-@c00200
+@800200
 -PX1
 @28
 x393_testbench02.simul_sensor12bits_i.MRST
@@ -237,7 +222,7 @@ x393_testbench02.simul_sensor12bits_i.ARO
 x393_testbench02.simul_sensor12bits_i.DCLK
 @28
 x393_testbench02.simul_sensor12bits_i.OFST
-@1401200
+@1000200
 -PX1
 @c00200
 -PX2
@@ -286,8 +271,15 @@ x393_testbench02.simul_sensor12bits_4_i.DCLK
 -PX4
 @c00200
 -sensor_channel
+@28
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.prst
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.prsts
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.irst
 @200
 -parallel12
+@28
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_parallel12_i.irst
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_parallel12_i.ipclk
 @22
 x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_parallel12_i.data_r[31:0]
 @800028
@@ -295,6 +287,7 @@ x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.se
 @28
 (0)x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_parallel12_i.set_width_r[1:0]
 (1)x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_parallel12_i.set_width_r[1:0]
+x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_parallel12_i.set_width_ipclk
 @1001200
 -group_end
 @c00022
@@ -556,10 +549,8 @@ x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.se
 -group_end
 @1401200
 -sensor_channel
-@800200
--sim_clk_tests
-@1000200
--sim_clk_tests
+@200
+-
 @c00200
 -sensor_channel_2
 @28
@@ -682,10 +673,6 @@ x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.comp
 x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[1].jp_channel_i.component_color
 x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[2].jp_channel_i.component_color
 x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[3].jp_channel_i.component_color
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.flush
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[1].jp_channel_i.flush
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[2].jp_channel_i.flush
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[3].jp_channel_i.flush
 x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.fifo_ren
 x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[1].jp_channel_i.fifo_ren
 x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[2].jp_channel_i.fifo_ren
@@ -756,7 +743,7 @@ x393_testbench02.x393_i.membridge_i.chn1wr_buf_i.rpage_in[1:0]
 x393_testbench02.x393_i.membridge_i.chn1wr_buf_i.rpage_set
 @1401200
 -membridge_buf_wr
-@c00200
+@800200
 -membridge_buf_rd
 @22
 x393_testbench02.x393_i.membridge_i.chn1rd_buf_i.data_in[63:0]
@@ -778,7 +765,7 @@ x393_testbench02.x393_i.membridge_i.chn1rd_buf_i.wclk
 x393_testbench02.x393_i.membridge_i.chn1rd_buf_i.we
 x393_testbench02.x393_i.membridge_i.chn1rd_buf_i.wpage_in[1:0]
 x393_testbench02.x393_i.membridge_i.chn1rd_buf_i.wpage_set
-@1401200
+@1000200
 -membridge_buf_rd
 @c00200
 -linear_rw_1_sel
@@ -1011,7 +998,6 @@ x393_testbench02.x393_i.mcntrl393_i.mcntrl_linear_rw_chn1_i.lsw13_zero
 x393_testbench02.x393_i.mcntrl393_i.mcntrl_linear_rw_chn1_i.mclk
 @22
 x393_testbench02.x393_i.mcntrl393_i.mcntrl_linear_rw_chn1_i.mem_page_left[7:0]
-x393_testbench02.x393_i.mcntrl393_i.mcntrl_linear_rw_chn1_i.mode_reg[11:0]
 @28
 x393_testbench02.x393_i.mcntrl393_i.mcntrl_linear_rw_chn1_i.mrst
 x393_testbench02.x393_i.mcntrl393_i.mcntrl_linear_rw_chn1_i.msw_zero
@@ -1254,6 +1240,21 @@ x393_testbench02.x393_i.membridge_i.status_generate_i.wd[7:0]
 -membridge
 @800200
 -compressor0
+@22
+x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.yc_nodc[9:0]
+@28
+x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.dct_start
+@22
+x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.dct_out[12:0]
+@28
+x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.xdct393_i.pre_first_out
+@22
+x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.xdct393_i.tm_out[15:0]
+@28
+x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.xdct393_i.i_dct_stage2.endv
+x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.xdct393_i.dv
+@200
+-
 @c00200
 -func_compressor_control
 @22
@@ -1268,8 +1269,6 @@ x393_testbench02.func_compressor_control.run_mode[31:0]
 x393_testbench02.func_compressor_control.tmp[31:0]
 @1401200
 -func_compressor_control
-@200
--
 @800200
 -compressor_control
 @22
@@ -1314,7 +1313,7 @@ x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmpr
 -
 @1000200
 -cmprs_frame_sync
-@800200
+@c00200
 -quantizer
 @28
 x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.quantizer393_i.ds
@@ -1335,7 +1334,7 @@ x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.quan
 x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.quantizer393_i.i_coring_table.raddr[11:0]
 x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.quantizer393_i.tdco[3:0]
 x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.quantizer393_i.qdo[12:0]
-@1000200
+@1401200
 -quantizer
 @200
 -
@@ -1343,29 +1342,9 @@ x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.quan
 -huffman
 @800200
 -huff_fifo
-@28
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.i_huff_fifo.en
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.i_huff_fifo.synci
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.i_huff_fifo.ds
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.i_huff_fifo.ds1
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.i_huff_fifo.sync_we
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.i_huff_fifo.dav
-@22
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.i_huff_fifo.wa[9:0]
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.i_huff_fifo.diff_a[9:0]
-@c00022
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.i_huff_fifo.re[3:0]
-@28
-(0)x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.i_huff_fifo.re[3:0]
-(1)x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.i_huff_fifo.re[3:0]
-(2)x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.i_huff_fifo.re[3:0]
-(3)x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.i_huff_fifo.re[3:0]
-@c00028
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.i_huff_fifo.nempty_r[2:0]
-@28
-(0)x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.i_huff_fifo.nempty_r[2:0]
-(1)x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.i_huff_fifo.nempty_r[2:0]
-(2)x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.i_huff_fifo.nempty_r[2:0]
+@c00200
+-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.i_huff_fifo.re
+-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.i_huff_fifo.nempty_r
 @1401200
 -group_end
 -group_end
@@ -1375,127 +1354,127 @@ x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_hu
 -huff_fifo
 @c00200
 -varlen_encode
-@28
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.i_varlen_encode.clk
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.i_varlen_encode.codel0[1:0]
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.i_varlen_encode.codel1[1:0]
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.i_varlen_encode.codel2[1:0]
-@22
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.i_varlen_encode.codel[3:0]
-@28
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.i_varlen_encode.cycles[2:0]
-@22
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.i_varlen_encode.d1[11:0]
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.i_varlen_encode.d[11:0]
-@28
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.i_varlen_encode.en
-@22
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.i_varlen_encode.l[3:0]
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.i_varlen_encode.l_late[3:0]
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.i_varlen_encode.q0[10:0]
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.i_varlen_encode.q[10:0]
-@28
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.i_varlen_encode.start
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.i_varlen_encode.this0
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.i_varlen_encode.this1
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.i_varlen_encode.this2
 @1401200
 -varlen_encode
-@28
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.xclk
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.xclk2x
-@c00022
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.fifo_o[15:0]
-@28
-(0)x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.fifo_o[15:0]
-(1)x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.fifo_o[15:0]
-(2)x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.fifo_o[15:0]
-(3)x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.fifo_o[15:0]
-(4)x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.fifo_o[15:0]
-(5)x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.fifo_o[15:0]
-(6)x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.fifo_o[15:0]
-(7)x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.fifo_o[15:0]
-(8)x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.fifo_o[15:0]
-(9)x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.fifo_o[15:0]
-(10)x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.fifo_o[15:0]
-(11)x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.fifo_o[15:0]
-(12)x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.fifo_o[15:0]
-(13)x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.fifo_o[15:0]
-(14)x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.fifo_o[15:0]
-(15)x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.fifo_o[15:0]
+@c00200
+-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.fifo_o
 @1401200
 -group_end
-@28
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.fifo_or_full
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.gotLastBlock
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.last_block
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.test_lbw
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.rdy
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.stuffer_was_rdy
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.will_read
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.want_read
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.fifo_or_full
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.eob
 @200
 -
-@28
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.en2x
-@c00022
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.steps[5:0]
-@28
-(0)x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.steps[5:0]
-(1)x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.steps[5:0]
-(2)x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.steps[5:0]
-(3)x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.steps[5:0]
-(4)x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.steps[5:0]
-(5)x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.steps[5:0]
+@c00200
+-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.steps
 @1401200
 -group_end
-@28
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.read_next
 @200
 -
-@28
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.tser_a_not_d
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.tser_we
-@22
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.tdi[15:0]
-@200
 -
-@c00022
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.ta[22:0]
-@28
-(0)x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.ta[22:0]
-(1)x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.ta[22:0]
-(2)x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.ta[22:0]
-(3)x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.ta[22:0]
-(4)x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.ta[22:0]
-(5)x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.ta[22:0]
-(6)x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.ta[22:0]
-(7)x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.ta[22:0]
-(8)x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.ta[22:0]
-(9)x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.ta[22:0]
-(10)x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.ta[22:0]
-(11)x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.ta[22:0]
-(12)x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.ta[22:0]
-(13)x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.ta[22:0]
-(14)x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.ta[22:0]
-(15)x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.ta[22:0]
-(16)x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.ta[22:0]
-(17)x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.ta[22:0]
-(18)x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.ta[22:0]
-(19)x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.ta[22:0]
-(20)x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.ta[22:0]
-(21)x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.ta[22:0]
-(22)x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.ta[22:0]
+@c00200
+-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.ta
 @1401200
 -group_end
-@28
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.twe
-@22
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.tdi[15:0]
-@1401200
 -huffman
+@800200
+-huffman_snglclk
+@22
+x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.huffman_snglclk_i.di[15:0]
+@28
+x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.huffman_snglclk_i.ds
+@22
+x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.huffman_snglclk_i.dl[4:0]
+x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.huffman_snglclk_i.do27[26:0]
+@28
+x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.huffman_snglclk_i.dv
+@800200
+-merge
+@28
+x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.huffman_snglclk_i.huffman_merge_code_literal_i.in_valid
+@22
+x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.huffman_snglclk_i.huffman_merge_code_literal_i.huff_code[15:0]
+x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.huffman_snglclk_i.huffman_merge_code_literal_i.huff_code_len[3:0]
+x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.huffman_snglclk_i.huffman_merge_code_literal_i.literal[10:0]
+x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.huffman_snglclk_i.huffman_merge_code_literal_i.literal_len[3:0]
+x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.huffman_snglclk_i.huffman_merge_code_literal_i.out_bits[26:0]
+x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.huffman_snglclk_i.huffman_merge_code_literal_i.out_len[4:0]
+@28
+x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.huffman_snglclk_i.huffman_merge_code_literal_i.out_valid
+@1000200
+-merge
+@28
+x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.huffman_snglclk_i.fifo_re_r
+x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.huffman_snglclk_i.fifo_rdy
+x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.huffman_snglclk_i.gotDC
+@800028
+x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.huffman_snglclk_i.gotDC_r[2:0]
+@28
+(0)x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.huffman_snglclk_i.gotDC_r[2:0]
+(1)x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.huffman_snglclk_i.gotDC_r[2:0]
+(2)x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.huffman_snglclk_i.gotDC_r[2:0]
+@1001200
+-group_end
+@28
+x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.huffman_snglclk_i.gotAC
+@800028
+x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.huffman_snglclk_i.gotAC_r[2:0]
+@28
+(0)x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.huffman_snglclk_i.gotAC_r[2:0]
+(1)x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.huffman_snglclk_i.gotAC_r[2:0]
+(2)x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.huffman_snglclk_i.gotAC_r[2:0]
+@1001200
+-group_end
+@28
+x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.huffman_snglclk_i.gotRLL
+@c00023
+x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.huffman_snglclk_i.rll[5:0]
+@29
+(0)x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.huffman_snglclk_i.rll[5:0]
+(1)x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.huffman_snglclk_i.rll[5:0]
+(2)x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.huffman_snglclk_i.rll[5:0]
+(3)x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.huffman_snglclk_i.rll[5:0]
+(4)x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.huffman_snglclk_i.rll[5:0]
+(5)x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.huffman_snglclk_i.rll[5:0]
+@1401201
+-group_end
+@28
+x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.huffman_snglclk_i.gotEOB
+x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.huffman_snglclk_i.gotLastBlock
+@200
+-huffman_fifo
+@28
+x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.huffman_snglclk_i.xclk
+x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.huffman_snglclk_i.gotLastWord
+x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.huffman_snglclk_i.fifo_same_clock_i.we
+x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.huffman_snglclk_i.fifo_same_clock_i.re
+@800022
+x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.huffman_snglclk_i.active_r[9:0]
+@28
+(0)x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.huffman_snglclk_i.active_r[9:0]
+(1)x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.huffman_snglclk_i.active_r[9:0]
+(2)x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.huffman_snglclk_i.active_r[9:0]
+(3)x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.huffman_snglclk_i.active_r[9:0]
+(4)x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.huffman_snglclk_i.active_r[9:0]
+(5)x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.huffman_snglclk_i.active_r[9:0]
+(6)x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.huffman_snglclk_i.active_r[9:0]
+(7)x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.huffman_snglclk_i.active_r[9:0]
+(8)x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.huffman_snglclk_i.active_r[9:0]
+(9)x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.huffman_snglclk_i.active_r[9:0]
+@1001200
+-group_end
+@28
+x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.huffman_snglclk_i.active
+@800022
+x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.huffman_snglclk_i.fifo_same_clock_i.fill[3:0]
+@28
+(0)x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.huffman_snglclk_i.fifo_same_clock_i.fill[3:0]
+(1)x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.huffman_snglclk_i.fifo_same_clock_i.fill[3:0]
+(2)x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.huffman_snglclk_i.fifo_same_clock_i.fill[3:0]
+(3)x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.huffman_snglclk_i.fifo_same_clock_i.fill[3:0]
+@1001200
+-group_end
+@1000200
+-huffman_snglclk
+@200
+-
 @c00200
 -table_ad_transmit
 @200
@@ -1535,7 +1514,7 @@ x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.tabl
 x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.table_ad_transmit_i.we_r
 @1401200
 -table_ad_transmit
-@800200
+@c00200
 -encoder_DCAC
 @28
 x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.encoderDCAC393_i.lasti
@@ -1592,120 +1571,12 @@ x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.enco
 -group_end
 @200
 -
-@1000200
+@1401200
 -encoder_DCAC
 @c00200
 -stuffer
 @28
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.stb_start
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.ts_rstb
-@22
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.ts_dout[7:0]
-@800022
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.ts_cycles[6:0]
-@28
-(0)x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.ts_cycles[6:0]
-(1)x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.ts_cycles[6:0]
-(2)x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.ts_cycles[6:0]
-(3)x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.ts_cycles[6:0]
-(4)x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.ts_cycles[6:0]
-(5)x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.ts_cycles[6:0]
-(6)x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.ts_cycles[6:0]
-@1001200
--group_end
-@28
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.last_block
-@22
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.dl[3:0]
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.d[15:0]
-@28
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.stb
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.stb_start
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.abort
-@22
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.q[15:0]
-@28
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.qv
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.flush
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.flush_now
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.flushing
-@22
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.etrax_dma[3:0]
-@28
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.inc_imgsz32
-@22
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.imgsz32[19:0]
-@28
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.start_time_out
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.start_sizeout
-@22
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.size_count[23:0]
-@28
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.time_out
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.time_size_out
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.size_out[2:0]
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.size_out_over
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.flush_end
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.trailer
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.flush_end_delayed
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.done
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.running
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.flushing
-@200
--
-@28
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.ts_pre_stb
-@22
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.ts_data[7:0]
-@28
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.clk
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.stb_start
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.trailer
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.ts_rstb
-@22
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.ts_dout[7:0]
-@28
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.trailer
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.was_trailer
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.flush_end
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.flush_end_delayed
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.will_flush
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.flush
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.force_flush
-@c00028
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.abort_r[2:0]
-@28
-(0)x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.abort_r[2:0]
-(1)x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.abort_r[2:0]
-(2)x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.abort_r[2:0]
-@1401200
--group_end
-@28
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.abort
-@800022
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.ts_cycles[6:0]
-@28
-(0)x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.ts_cycles[6:0]
-(1)x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.ts_cycles[6:0]
-(2)x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.ts_cycles[6:0]
-(3)x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.ts_cycles[6:0]
-(4)x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.ts_cycles[6:0]
-(5)x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.ts_cycles[6:0]
-(6)x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.ts_cycles[6:0]
-@1001200
--group_end
-@28
 x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_frame_sync_i.vsync_late
-@22
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.sec_r[31:0]
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.usec_r[19:0]
-@28
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.start_time_out
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.time_out
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.time_size_out
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.start_sizeout
-@22
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.size_count[23:0]
 @200
 -other_module
 @28
@@ -1715,42 +1586,12 @@ x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmpr
 x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_frame_sync_i.aborted_frame
 x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_frame_sync_i.reading_frame_r
 x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_frame_sync_i.cmprs_run
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.qv
-@22
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.etrax_dma[3:0]
-@800200
+x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer_dv
+@c00200
 -timestamp_fifo
-@28
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.timestamp_fifo_i.aclk
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.timestamp_fifo_i.advance
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.timestamp_fifo_i.advance_r[1:0]
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.timestamp_fifo_i.arst
-@22
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.timestamp_fifo_i.din[7:0]
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.timestamp_fifo_i.dout[7:0]
-@28
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.timestamp_fifo_i.pre_stb
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.timestamp_fifo_i.rclk
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.timestamp_fifo_i.rcv
-@22
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.timestamp_fifo_i.rpntr[3:0]
-@28
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.timestamp_fifo_i.rrst
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.timestamp_fifo_i.rstb
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.timestamp_fifo_i.sclk
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.timestamp_fifo_i.snd
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.timestamp_fifo_i.snd_d
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.timestamp_fifo_i.srst
-@c00022
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.timestamp_fifo_i.wpntr[3:0]
-@28
-(0)x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.timestamp_fifo_i.wpntr[3:0]
-(1)x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.timestamp_fifo_i.wpntr[3:0]
-(2)x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.timestamp_fifo_i.wpntr[3:0]
-(3)x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.timestamp_fifo_i.wpntr[3:0]
+-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.timestamp_fifo_i.wpntr
 @1401200
 -group_end
-@1000200
 -timestamp_fifo
 @200
 -other
@@ -1762,8 +1603,6 @@ x393_testbench02.x393_i.timing393_i.ts_stb[3:0]
 -
 @1401200
 -stuffer
-@22
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer_do[15:0]
 @28
 x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.page_ready_chn
 x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.next_page_chn
@@ -1774,22 +1613,32 @@ x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmpr
 x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_cmd_decode_i.cmprs_run_mclk
 x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.sigle_frame_buf
 x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.suspend
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.flush
 x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.flush_hclk
 x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer_done
 x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer_done_mclk
 x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer_running_mclk
 x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.fifo_flush
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer_rdy
-@22
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.etrax_dma[3:0]
-@28
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer393_i.flushing
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.gotLastBlock
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.i_huffman.gotLastWord
 x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer_en
+@800200
+-huffman_stuffer_meta
+@200
+-caller module
+@22
+x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer_do[31:0]
+x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer_word_number
+@28
+x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer_dv
 @200
 -
+@800200
+-escape
+@200
+-
+@1000200
+-escape
+-huffman_stuffer_meta
+@c00200
+-compressor0_other
 @28
 x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.bayer_phase[1:0]
 @22
@@ -1844,7 +1693,6 @@ x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.enc_
 x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.enc_dv
 x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.eof_written
 x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.eof_written_mclk
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.eof_written_xclk2xn
 @22
 x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.fifo_count[7:0]
 @28
@@ -1861,7 +1709,6 @@ x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.firs
 x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.first_block_dct
 x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.first_block_quant
 x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.first_mb
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.flush
 x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.flush_hclk
 @22
 x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.focus_do[12:0]
@@ -1885,11 +1732,6 @@ x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.hfc_
 x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.hifreq[31:0]
 @28
 x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.hrst
-@22
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huff_dl[3:0]
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huff_do[15:0]
-@28
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huff_dv
 x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.ignore_color
 x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.jp4_dc_improved
 x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.last_mb
@@ -1954,14 +1796,10 @@ x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stat
 x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.status_data[2:0]
 x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.status_rq
 x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.status_start
-@22
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer_do[15:0]
-@28
 x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer_done
 x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer_done_mclk
 x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer_dv
 x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer_en
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer_rdy
 x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer_running
 x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer_running_mclk
 x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.subtract_dc
@@ -1982,10 +1820,8 @@ x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.tser
 x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.tser_qe
 x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.vsync_late
 x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.xclk
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.xclk2x
 x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.xfer_reset_page_rd
 x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.xrst
-x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.xrst2xn
 @22
 x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.yaddrw[7:0]
 x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.yc_avr[8:0]
@@ -1993,10 +1829,10 @@ x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.yc_n
 @28
 x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.yc_pre_first_out
 x393_testbench02.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.ywe
+@1401200
+-compressor0_other
 @1000200
 -compressor0
-@200
--
 @c00200
 -sim_cmprs_output
 @22
@@ -2977,60 +2813,16 @@ x393_testbench02.simul_saxi_gp0_wr_i.sim_wr_valid
 @200
 -hist-out OK
 @22
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.en_mclk
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hist_out
 x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_mux_i.rq
 x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_mux_i.grant
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hist_rq_r
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hist_grant
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hist_raddr[9:0]
-@800022
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hist_re[2:0]
-@28
-(0)x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hist_re[2:0]
-(1)x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hist_re[2:0]
-(2)x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hist_re[2:0]
+@800200
+-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hist_re
 @1001200
 -group_end
-@c00022
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hist_do[31:0]
-@28
-(0)x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hist_do[31:0]
-(1)x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hist_do[31:0]
-(2)x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hist_do[31:0]
-(3)x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hist_do[31:0]
-(4)x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hist_do[31:0]
-(5)x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hist_do[31:0]
-(6)x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hist_do[31:0]
-(7)x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hist_do[31:0]
-(8)x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hist_do[31:0]
-(9)x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hist_do[31:0]
-(10)x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hist_do[31:0]
-(11)x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hist_do[31:0]
-(12)x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hist_do[31:0]
-(13)x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hist_do[31:0]
-(14)x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hist_do[31:0]
-(15)x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hist_do[31:0]
-(16)x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hist_do[31:0]
-(17)x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hist_do[31:0]
-(18)x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hist_do[31:0]
-(19)x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hist_do[31:0]
-(20)x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hist_do[31:0]
-(21)x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hist_do[31:0]
-(22)x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hist_do[31:0]
-(23)x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hist_do[31:0]
-(24)x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hist_do[31:0]
-(25)x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hist_do[31:0]
-(26)x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hist_do[31:0]
-(27)x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hist_do[31:0]
-(28)x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hist_do[31:0]
-(29)x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hist_do[31:0]
-(30)x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hist_do[31:0]
-(31)x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hist_do[31:0]
+@c00200
+-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hist_do
 @1401200
 -group_end
-@22
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hist_dv
 @c00022
 x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_mux_i.burst0[2:0]
 @28
@@ -3611,124 +3403,29 @@ x393_testbench02.x393_i.sensors393_i.histogram_saxi_i.wr_attr
 -histogram_saxi
 @c00200
 -histogram01
-@22
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hist_out
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hist_out_d
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hist_en
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.vert_woi
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.vcntr_zero_w
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hist_xfer_busy
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hist_xfer_done_mclk
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hist_xfer_done
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hist_bank_mclk
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hist_done
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hist_bank_pclk
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hist_do[31:0]
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.monochrome
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.monochrome_pclk
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.pre_first_line
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hact
-@800022
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hact_d[1:0]
-@28
-(0)x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hact_d[1:0]
-(1)x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hact_d[1:0]
+@800200
+-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hact_d
 @1001200
 -group_end
-@22
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hist_en_pclk2x
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.wait_readout
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.en
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.pclk
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.pclk2x
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.line_start_w
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.sof
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hact
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hist_di[7:0]
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.pre_first_line
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.top_margin
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.left_margin
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.left[15:0]
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.top[15:0]
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.width_m1[15:0]
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.height_m1[15:0]
-@c00022
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.vcntr[15:0]
-@28
-(0)x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.vcntr[15:0]
-(1)x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.vcntr[15:0]
-(2)x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.vcntr[15:0]
-(3)x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.vcntr[15:0]
-(4)x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.vcntr[15:0]
-(5)x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.vcntr[15:0]
-(6)x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.vcntr[15:0]
-(7)x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.vcntr[15:0]
-(8)x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.vcntr[15:0]
-(9)x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.vcntr[15:0]
-(10)x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.vcntr[15:0]
-(11)x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.vcntr[15:0]
-(12)x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.vcntr[15:0]
-(13)x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.vcntr[15:0]
-(14)x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.vcntr[15:0]
-(15)x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.vcntr[15:0]
+@c00200
+-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.vcntr
 @1401200
 -group_end
-@22
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.vcntr_zero_w
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.top_margin
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.vert_woi
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hor_woi
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hist_done
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.frame_active
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hcntr[15:0]
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hcntr_zero_w
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.left_margin
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hist_we
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hist_rwen
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hist_rwaddr[9:0]
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.to_inc[31:0]
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.same_addr1
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.same_addr2
 @200
 -
-@c00022
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.woi[2:0]
-@28
-(0)x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.woi[2:0]
-(1)x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.woi[2:0]
-(2)x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.woi[2:0]
+@c00200
+-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.woi
 @1401200
 -group_end
 @22
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.pxd_wa[3:0]
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.pxd_wa_woi[3:0]
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.pxd_ra[3:0]
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.pulse_cross_clock_hlstart_start_i.in_pulse
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hlstart
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.pxd_2x[7:0]
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hor_woi_2x
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.pclk_sync
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hist_rq
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hist_grant
 x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.hist_rq[3:0]
 x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.hist_request
 x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.hist_grant
 x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_mux_i.en
-@800022
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hist_re[2:0]
-@28
-(0)x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hist_re[2:0]
-(1)x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hist_re[2:0]
-(2)x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hist_re[2:0]
+@800200
+-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hist_re
 @1001200
 -group_end
-@22
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hist_raddr[9:0]
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hist_out
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hist_do[31:0]
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hist_dv
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hist_rq_r
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hist_out
 @200
 -
 @c00200
@@ -3792,87 +3489,6 @@ x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.se
 -hist_mux
 @200
 -
-@22
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.bayer_2x[1:0]
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.cmd_ad[7:0]
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.cmd_stb
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.en
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.en_mclk
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.en_new
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.frame_active
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hact
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hact_d[1:0]
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hcntr[15:0]
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hcntr_zero_w
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.height_m1[15:0]
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hist_addr[9:0]
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hist_addr_d2[9:0]
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hist_addr_d[9:0]
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hist_bank_mclk
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hist_bank_pclk
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hist_di[7:0]
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hist_do[31:0]
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hist_done
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hist_done_mclk
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hist_dv
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hist_en
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hist_en_pclk
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hist_en_pclk2x
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hist_grant
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hist_new[31:0]
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hist_out
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hist_out_d
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hist_raddr[9:0]
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hist_re[2:0]
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hist_regen[1:0]
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hist_rq
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hist_rq_r
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hist_rst
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hist_rst_pclk
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hist_rwaddr[9:0]
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hist_rwen
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hist_we
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hist_xfer_busy
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hist_xfer_done
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hist_xfer_done_mclk
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hlstart
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hor_woi
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.hor_woi_2x
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.inc_r[31:0]
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.left[15:0]
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.left_margin
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.line_start_w
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.lt_mclk[31:0]
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.mclk
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.mrst
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.pclk
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.pclk2x
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.pclk_sync
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.pio_addr[1:0]
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.pio_data[31:0]
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.pio_stb
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.pre_first_line
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.prst
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.pxd_2x[7:0]
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.pxd_ra[3:0]
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.pxd_ra_start[3:0]
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.pxd_wa[3:0]
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.pxd_wa_woi[3:0]
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.set_left_top_pclk
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.set_left_top_w
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.set_width_height_pclk
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.set_width_height_w
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.sof
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.to_inc[31:0]
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.top[15:0]
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.top_margin
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.vcntr[15:0]
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.vcntr_zero_w
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.vert_woi
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.wait_readout
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.wh_mclk[31:0]
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.width_m1[15:0]
-x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.genblk1.sens_histogram_i.woi[2:0]
 @1401200
 -histogram01
 @c00200
@@ -3983,7 +3599,7 @@ x393_testbench02.x393_i.sensors393_i.sensor_channel_block[3].sensor_channel_i.se
 -chn3
 @200
 -
-@800200
+@c00200
 -sens_i2c_selected
 @28
 x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.mclk
@@ -4032,12 +3648,12 @@ x393_testbench02.set_sensor_i2c_command.tmp[31:0]
 -task_set_sensor_i2c_cmd
 @200
 -
-@1000200
+@1401200
 -sens_i2c_selected
 @800200
 -sens_i2c
--i2c_prot_sel
 @c00200
+-i2c_prot_sel
 -chn1
 @28
 x393_testbench02.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.sensor_i2c_prot_i.i2c_start
@@ -4213,7 +3829,7 @@ x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.se
 x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.sensor_i2c_prot_i.send_rd
 @22
 x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.sensor_i2c_prot_i.sel_sr_in[1:0]
-@1000200
+@1401200
 -i2c_prot_sel
 @c00200
 -sensor_i2c_prot
@@ -4303,8 +3919,9 @@ x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.se
 x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.sensor_i2c_prot_i.unused
 @1401200
 -sensor_i2c_prot
-@800200
+@c00200
 -scl_sda_selected
+@800200
 -chn1
 @22
 x393_testbench02.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.sensor_i2c_prot_i.sensor_i2c_scl_sda_i.i2c_dly[7:0]
@@ -4390,9 +4007,9 @@ x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.se
 (3)x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.sensor_i2c_prot_i.sensor_i2c_scl_sda_i.seq_start_restart[3:0]
 @1001200
 -group_end
-@1000200
+@1401200
 -scl_sda_selected
-@800200
+@c00200
 -scl_sda
 @200
 -
@@ -4449,7 +4066,7 @@ x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.se
 x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.sensor_i2c_prot_i.sensor_i2c_scl_sda_i.sr[8:0]
 @28
 x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.sensor_i2c_prot_i.sensor_i2c_scl_sda_i.start_w
-@1000200
+@1401200
 -scl_sda
 @28
 x393_testbench02.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.active_cmd

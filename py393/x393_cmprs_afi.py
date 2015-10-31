@@ -102,7 +102,8 @@ class X393CmprsAfi(object):
                           channel,
                           cirbuf_start = 0x27a00000,
                           circbuf_len =  0x1000000,
-                          verbose = 1):
+                          verbose = 1,
+                          num_lines_print = 20):
         """
         Returns image metadata (start, length,timestamp) or null
         @param port_afi - AFI port (0/1), currently only 0
@@ -140,13 +141,13 @@ class X393CmprsAfi(object):
         if img_start < 0:
             img_start += circbuf_len
         if verbose >0:
-            for a in range ( img_start,  img_start + 0x10, 4):
+            for a in range ( img_start,  img_start + (0x10 * num_lines_print), 4):
                 d = self.x393_mem.read_mem(cirbuf_start + a)
                 if (a % 16) == 0:
                     print ("\n%08x: "%(a),end ="" )
                 print("%02x %02x %02x %02x "%(d & 0xff, (d >> 8) & 0xff, (d >> 16) & 0xff, (d >> 24) & 0xff), end = "")
             print("\n...",end="")
-            for a0 in range ( last_image_chunk - 0x10,  last_image_chunk + 0x20, 4):
+            for a0 in range ( last_image_chunk - (0x10 * num_lines_print),  last_image_chunk + 0x20, 4):
                 a = a0
                 if (a < 0):
                     a -=circbuf_len

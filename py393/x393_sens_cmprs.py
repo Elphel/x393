@@ -470,7 +470,7 @@ class X393SensCmprs(object):
 
         if verbose >0 :
             print ("===================== GAMMA_CTL =========================")
-        self.x393Sensor.set_sensor_gamma_ctl (# doing last to enable sesnor data when everything else is set up
+        self.x393Sensor.set_sensor_gamma_ctl (# doing last to enable sensor data when everything else is set up
             num_sensor = num_sensor, # input   [1:0] num_sensor; # sensor channel number (0..3)
             bayer =      0,
             table_page = 0,
