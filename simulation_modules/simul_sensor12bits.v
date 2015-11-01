@@ -20,6 +20,7 @@
  *******************************************************************************/
 
 module   simul_sensor12bits # (
+    parameter SENSOR_IMAGE_TYPE =        "NORM", // "RUN1",
     parameter lline   =   192,   //   1664;//   line duration in clocks
     parameter ncols   =    66,   //58; //56; // 129; //128;   //1288;
     parameter nrows   =    18,   // 16;   //   1032;
@@ -134,6 +135,7 @@ initial begin
 //parameter nrows   =   16;   //   1032;
 
    $display ("sensor parameters");
+   $display ("    -- image type = %s",SENSOR_IMAGE_TYPE);
    $display ("    -- ramp  = %d (0 - random, 1 - ramp)",ramp);
    $display ("    -- lline = %d (line duration in clocks)",lline);
    $display ("    -- ncols = %d (numer of clocks in HACT)",ncols);
@@ -143,8 +145,12 @@ initial begin
    $display ("    -- new_bayer = %d ",new_bayer);
 
 //  reg   [15:0]   sensor_data[0:4095]; // up to 64 x 64 pixels
-//    $readmemh("input_data/sensor.dat",sensor_data);
-    $readmemh("input_data/sensor_run1.dat",sensor_data);
+    if      (SENSOR_IMAGE_TYPE == "NORM") $readmemh("input_data/sensor.dat",sensor_data);
+    else if (SENSOR_IMAGE_TYPE == "RUN1") $readmemh("input_data/sensor_run1.dat",sensor_data);
+    else begin
+       $display ("WARNING: Unrecognized sensor image :'%s', using default 'NORM': input_data/sensor.dat",SENSOR_IMAGE_TYPE);
+       $readmemh("input_data/sensor.dat",sensor_data);
+    end
    c=0;
 //   {ibpf,ihact,ivact}=0;
    stopped=1;

@@ -877,6 +877,17 @@ write_sensor_i2c  all 1 0 0x90090500
 #exposure 0x797 (default)
 write_sensor_i2c  all 1 0 0x90090797
 
+
+#Get rid of the corrupted last pixel column
+#longer line (default 0xa1f)
+write_sensor_i2c  all 1 0 0x90040a23
+
+#increase scanline write (memory controller) width in 16-bursts (was 0xa2)
+axi_write_single_w 0x696 0x079800a3
+axi_write_single_w 0x686 0x079800a3
+axi_write_single_w 0x6a6 0x079800a3
+axi_write_single_w 0x6b6 0x079800a3
+
 #color pattern:
 #turn off black shift (normally 0xa8)
 write_sensor_i2c  all 1 0 0x90490000
@@ -892,15 +903,7 @@ write_sensor_i2c  all 1 0 0x90a00041
 #color pattern off: 
 write_sensor_i2c  all 1 0 0x90a00000
 
-#Get rid of the corrupted last pixel column
-#longer line (default 0xa1f)
-write_sensor_i2c  all 1 0 0x90040a23
 
-#increase scanline write (memory controller) width in 16-bursts (was 0xa2)
-axi_write_single_w 0x696 0x079800a3
-axi_write_single_w 0x686 0x079800a3
-axi_write_single_w 0x6a6 0x079800a3
-axi_write_single_w 0x6b6 0x079800a3
 
 #run compressors once (#1 - stop gracefully, 0 - reset, 2 - single, 3 - repetitive with sync to sensors)
 compressor_control all 2

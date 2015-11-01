@@ -5,7 +5,7 @@
   `define DISPLAY_COMPRESSED_DATA  
   // if HISPI is not defined, parallel sensor interface is used for all channels
 //  `define HISPI
-  
+//    `define USE_OLD_XDCT393  
 //  `define USE_PCLK2X
 //  `define USE_XCLK2X
 //  `define DEBUG_RING 1

@@ -38,6 +38,10 @@
 //    parameter SENSOR12BITS_NROWA   =     1,   // number of "blank rows" from last hact to end of vact
 //    parameter nAV   =      24,   //240;   // clocks from ARO to VACT (actually from en_dclkd)
 //    parameter SENSOR12BITS_NBPF =       20,   //16; // bpf length
+    parameter SENSOR_IMAGE_TYPE0 =        "NORM", // "RUN1",
+    parameter SENSOR_IMAGE_TYPE1 =        "RUN1",
+    parameter SENSOR_IMAGE_TYPE2 =        "NORM", // "RUN1",
+    parameter SENSOR_IMAGE_TYPE3 =        "RUN1",
     parameter SENSOR12BITS_NGPL =        8,   // bpf to hact
     parameter SENSOR12BITS_NVLO =        1,   // VACT=0 in video mode (clocks)
     //parameter tMD   =   14;    //

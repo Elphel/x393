@@ -185,7 +185,8 @@ module  bit_stuffer_escape(
         default: fifo_re_mask_w <= 'bx; // impossible num_zeros_w 
     endcase
 
-    assign fifo_re = flush_pend[2]? fifo_nempty : (rdy_w ? fifo_re_mask_w : 4'b0); // when flushing read whatever is left
+//    assign fifo_re = flush_pend[2]? fifo_nempty : (rdy_w ? fifo_re_mask_w : 4'b0); // when flushing read whatever is left
+    assign fifo_re = fifo_nempty & (({4{rdy_w}} & fifo_re_mask_w) | {4{flush_pend[2]}});// when flushing read whatever is left
 
     always @(posedge xclk) begin
         if (rst || flush_pend[2])   cry_ff <= 0;

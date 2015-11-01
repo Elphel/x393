@@ -822,7 +822,11 @@
     parameter CLKIN_PERIOD_XCLK =         20, // 50MHz 
     parameter DIVCLK_DIVIDE_XCLK =         1,
     parameter CLKFBOUT_MULT_XCLK =        20, // 50*20=1000 MHz
+`ifdef USE_XCLK2X
     parameter CLKOUT_DIV_XCLK =           10, // 100 MHz 
+`else
+    parameter CLKOUT_DIV_XCLK =           4, // 250 MHz 
+`endif    
     parameter CLKOUT_DIV_XCLK2X =          5, // 200 MHz
     parameter PHASE_CLK2X_XCLK =           0.000, 
     parameter BUF_CLK1X_XCLK =            "BUFG",

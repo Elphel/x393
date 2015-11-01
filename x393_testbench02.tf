@@ -1978,6 +1978,7 @@ simul_axi_hp_wr #(
 
 
     simul_sensor12bits #(
+        .SENSOR_IMAGE_TYPE (SENSOR_IMAGE_TYPE0),
         .lline     (VIRTUAL_WIDTH),     // SENSOR12BITS_LLINE),
         .ncols     (FULL_WIDTH),        // (SENSOR12BITS_NCOLS),
 `ifdef PF
@@ -2016,6 +2017,7 @@ simul_axi_hp_wr #(
 
 
     simul_sensor12bits #(
+        .SENSOR_IMAGE_TYPE (SENSOR_IMAGE_TYPE1),
         .lline     (VIRTUAL_WIDTH),     // SENSOR12BITS_LLINE),
         .ncols     (FULL_WIDTH),        // (SENSOR12BITS_NCOLS),
 `ifdef PF
@@ -2053,6 +2055,7 @@ simul_axi_hp_wr #(
     );
 
     simul_sensor12bits #(
+        .SENSOR_IMAGE_TYPE (SENSOR_IMAGE_TYPE2),
         .lline     (VIRTUAL_WIDTH),     // SENSOR12BITS_LLINE),
         .ncols     (FULL_WIDTH),        // (SENSOR12BITS_NCOLS),
 `ifdef PF
@@ -2090,6 +2093,7 @@ simul_axi_hp_wr #(
     );
 
     simul_sensor12bits #(
+        .SENSOR_IMAGE_TYPE (SENSOR_IMAGE_TYPE3),
         .lline     (VIRTUAL_WIDTH),     // SENSOR12BITS_LLINE),
         .ncols     (FULL_WIDTH),        // (SENSOR12BITS_NCOLS),
 `ifdef PF

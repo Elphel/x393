@@ -583,10 +583,13 @@ always @ (posedge CLK) begin
   cbcrmult1 <= sel_cbcrmult1?y[7:0]:pdc[7:0];
   if (~ywe_r) use_cr <= ~(bayer_phase[1] ^ odd_line);
 end
-assign      cbcrmult2=use_cr?m_cr:m_cb;  // maybe will need a register? (use_cr will still be good as it is valid early)
-assign      cbcrmulto=cbcrmult1*cbcrmult2;
+assign      cbcrmult2 = use_cr?m_cr:m_cb;  // maybe will need a register? (use_cr will still be good as it is valid early)
+//assign      cbcrmulto = cbcrmult1*cbcrmult2;
+assign      cbcrmulto = cbcrmult1*cbcrmult2_r;
+reg [9:0] cbcrmult2_r; // will be one cycle later than cbcrmult2, but is still OK. Will be absorbed into the DSP block
 // will preserve extra bit, but do not need to add half of the truncated MSB - on average there will be no shift after subtraction
 always @ (posedge CLK) begin
+  cbcrmult2_r <= cbcrmult2;
   cbcrmultr[10:0] <= cbcrmulto[17:7];
   cbcr[10:0] <= sub_y? (cbcr[10:0]-cbcrmultr[10:0]+ 1'b1):cbcrmultr[10:0];
 end

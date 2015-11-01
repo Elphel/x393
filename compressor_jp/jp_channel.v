@@ -907,7 +907,7 @@ module  jp_channel#(
     end
     
     
-    
+`ifdef USE_OLD_XDCT393    
     
     xdct393 xdct393_i (
         .clk                (xclk),                // input
@@ -920,6 +920,20 @@ module  jp_channel#(
         .dv                 (),  // not used: output data output valid. Will go high on the 94-th cycle after the start (now - on 95-th?)
         .d_out              (dct_out)              // output[12:0] 
     );
+`else
+    xdct393r xdct393_i (
+        .clk                (xclk),                // input
+        .en                 (frame_en),            // input  if zero will reset transpose memory page numbers
+        .start              (dct_start),           // input  single-cycle start pulse that goes with the first pixel data. Other 63 should follow
+        .xin                (yc_nodc),             // input[9:0] 
+        .last_in            (dct_last_in),         // output reg  output high during input of the last of 64 pixels in a 8x8 block //
+        .pre_first_out      (dct_pre_first_out),   // outpu 1 cycle ahead of the first output in a 64 block
+///        .dv                 (dct_dv),           // output data output valid. Will go high on the 94-th cycle after the start (now - on 95-th?)
+        .dv                 (),  // not used: output data output valid. Will go high on the 94-th cycle after the start (now - on 95-th?)
+        .d_out              (dct_out)              // output[12:0] 
+    );
+`endif    
+    
     wire          quant_start;
     dly_16 #(.WIDTH(1)) i_quant_start (.clk(xclk),.rst(1'b0), .dly(4'd0), .din(dct_pre_first_out), .dout(quant_start));    // dly=0+1
  
