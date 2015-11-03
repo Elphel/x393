@@ -138,7 +138,11 @@
     parameter real REFCLK_FREQUENCY = 200.0, // 300.0,
     parameter HIGH_PERFORMANCE_MODE = "FALSE",
     parameter CLKIN_PERIOD =        20, // 10, //ns >1.25, 600<Fvco<1200 // Hardware 150MHz , change to             | 6.667
+`ifdef MCLK_VCO_MULT    
+    parameter CLKFBOUT_MULT =       `MCLK_VCO_MULT ,
+`else    
     parameter CLKFBOUT_MULT =       16,   // 8, // Fvco=Fclkin*CLKFBOUT_MULT_F/DIVCLK_DIVIDE, Fout=Fvco/CLKOUT#_DIVIDE  | 16
+`endif    
     parameter CLKFBOUT_MULT_REF =   16,   // 18,   // 9, // Fvco=Fclkin*CLKFBOUT_MULT_F/DIVCLK_DIVIDE, Fout=Fvco/CLKOUT#_DIVIDE  | 6
     parameter CLKFBOUT_DIV_REF =    4, // 200Mhz 3, // To get 300MHz for the reference clock
 `else
@@ -150,11 +154,12 @@
     parameter CLKFBOUT_DIV_REF =    3, // To get 300MHz for the reference clock
 `endif    
     parameter DIVCLK_DIVIDE=        1,
+    parameter CLKFBOUT_USE_FINE_PS= 0, //1, // 0 - old, 1 - new 
     parameter CLKFBOUT_PHASE =      0.000,
     parameter SDCLK_PHASE =         0.000,
-    parameter CLK_PHASE =           0.000,
+    parameter CLK_PHASE =           0.000, //11.25, /// 0.000,
     parameter CLK_DIV_PHASE =       0.000,
-    parameter MCLK_PHASE =          90.000,
+    parameter MCLK_PHASE =          90.000, //78.75, // 90.000,
     parameter REF_JITTER1 =         0.010,
     parameter SS_EN =              "FALSE",
     parameter SS_MODE =      "CENTER_HIGH",

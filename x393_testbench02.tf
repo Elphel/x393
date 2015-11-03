@@ -1296,6 +1296,7 @@ assign bresp=                              x393_i.ps7_i.MAXIGP0BRESP;
         .CLKFBOUT_DIV_REF                  (CLKFBOUT_DIV_REF),
         .DIVCLK_DIVIDE                     (DIVCLK_DIVIDE),
         .CLKFBOUT_PHASE                    (CLKFBOUT_PHASE),
+        .CLKFBOUT_USE_FINE_PS              (CLKFBOUT_USE_FINE_PS),
         .SDCLK_PHASE                       (SDCLK_PHASE),
         .CLK_PHASE                         (CLK_PHASE),
         .CLK_DIV_PHASE                     (CLK_DIV_PHASE),

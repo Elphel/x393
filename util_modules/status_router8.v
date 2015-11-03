@@ -59,7 +59,9 @@ module  status_router8(
     wire   [1:0] rq_int;
     wire   [1:0] start_int;  // only for the first cycle, combinatorial
 
-    status_router2 status_router2_top_i (
+    status_router2 #(
+        .FIFO_TYPE ("ONE_CYCLE") //= "ONE_CYCLE" // higher latency, but easier timing - use on some levels (others - default "ONE_CYCLE")
+    ) status_router2_top_i  (
         .rst       (rst), // input
         .clk       (clk), // input
         .srst      (srst), // input

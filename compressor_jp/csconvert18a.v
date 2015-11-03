@@ -249,7 +249,7 @@ module csconvert18a(
 
   wire        ystrt,nxtline;
   reg	[7:0] yaddr_r; // address for the external buffer memory to write 16x16x8bit Y data
-  reg         ywe_r;	 // wrire enable of Y data
+  reg         ywe_r;	 // write enable of Y data
   reg   [6:0] caddr_r; // address for the external buffer memory 2x8x8x8bit Cb+Cr data (MSB=0 - Cb, 1 - Cr)
   reg         cwe_r;	 // write enable for CbCr data 
   reg         odd_pix;  // odd pixel (assumes even number of pixels in a line
@@ -267,10 +267,10 @@ module csconvert18a(
   assign n000 =     n000_r;
   assign n255 =     n255_r;
   assign signed_y = signed_y_r;     //  - now signed char, -128(black) to +127 (white)
-  assign yaddr =    yaddr_r;
-  assign ywe =      ywe_r;
-  assign caddr =    caddr_r;
-  assign cwe =      cwe_r;
+  assign yaddr =    yaddr_r2;
+  assign ywe =      ywe_r2;
+  assign caddr =    caddr_r2;
+  assign cwe =      cwe_r2;
   
     dly_16 #(.WIDTH(1)) i_strt_dly0 (.clk(CLK),.rst(1'b0), .dly(4'd15), .din(pre_first_in), .dout(strt_dly[0]));
     dly_16 #(.WIDTH(1)) i_strt_dly1 (.clk(CLK),.rst(1'b0), .dly(4'd15), .din(strt_dly[0]),  .dout(strt_dly[1]));
@@ -532,20 +532,28 @@ Y[1,1]=(0x96*P[1,1]+   0x1d*((P[1,0]+P[1,2])/2 +                 0x4d*((P[0,1] +
 
   reg   [7:0] y;
 //  reg   [7:0] y0;	// bypass in monochrome mode
-  wire  [7:0] y0 = pdc;
+//  wire  [7:0] y0 = pdc;
+  reg  [7:0] y0_r;
 //  wire   [7:0] y0;	// bypass in monochrome mode
-  reg   [15:0] y1,y2,y3; 
-  wire	[15:0] y_sum =y1+y2+y3;
+  reg   [15:0] y1,y2,y3;
+  
+// TODO: insert register to ease mm1..3 -> y (OK to delay all outputs). Or is it not using DSP at all?   
+//  wire	[15:0] y_sum =y1+y2+y3;
+  reg   [15:0] y_sum_r;
 //  always @ (posedge CLK) y0 <= pd1_dly; // m1; // equivalent
-  always @ (posedge CLK) y1 <= mm1;
-  always @ (posedge CLK) y2 <= mm2;
-  always @ (posedge CLK) y3 <= mm3;
+//  wire   [7:0] pre_y= mono ? y0 : (y_sum[15:8]+y_sum[7]);
+  wire   [7:0] pre_y= mono ? y0_r : (y_sum_r[15:8]+y_sum_r[7]);
 // making y output signed -128..+127
-  wire   [7:0] pre_y= mono ? y0 : (y_sum[15:8]+y_sum[7]);
 
-  always @ (posedge CLK) y[7:0] <= pre_y[7:0];
-
-  always @ (posedge CLK) signed_y_r[7:0] <= {~pre_y[7], pre_y[6:0]};
+  always @ (posedge CLK) begin
+      y1 <= mm1;
+      y2 <= mm2;
+      y3 <= mm3;
+      y0_r <= pdc;
+      y_sum_r <= y1+y2+y3;
+      y[7:0] <= pre_y[7:0];
+      signed_y_r[7:0] <= {~pre_y[7], pre_y[6:0]};
+  end
 
 
 // Try easier and hope better algorithm of color extractions that should perform better on gradients.
@@ -574,13 +582,22 @@ reg         use_cr;        // in this line cr is calculated. Valid during ywe_r 
 reg         sub_y;         // output accumulator/subtractor. 0 - load new data, 1 - subtract. Walid 2 cycles after ywe_r
 wire        cwe0;          // preliminary cwe_r (to be modulated by odd/even pixels)
 reg         cstrt;         //ystrt dealyed by 1
-reg         cnxt;          // nxtline delayed by 1 
+reg         cnxt;          // nxtline delayed by 1
+reg         pre_sel_cbcrmult1;
+// delaying, for now uing "old" ywe,cwe, yaddr,caddr - registering them on the output
+ 
 always @ (posedge CLK) begin
-  if (~(ywe_r || ystrt || nxtline)) sel_cbcrmult1 <= ~(bayer_phase[1] ^ bayer_phase[0] ^ odd_line);
-  else      sel_cbcrmult1 <= ~sel_cbcrmult1;
+//  if (~(ywe_r || ystrt || nxtline)) sel_cbcrmult1 <= ~(bayer_phase[1] ^ bayer_phase[0] ^ odd_line);
+//  else      sel_cbcrmult1 <= ~sel_cbcrmult1;
+  if (~(ywe_r || ystrt || nxtline)) pre_sel_cbcrmult1 <= ~(bayer_phase[1] ^ bayer_phase[0] ^ odd_line);
+  else      pre_sel_cbcrmult1 <= ~pre_sel_cbcrmult1;
+  
+  sel_cbcrmult1 <=pre_sel_cbcrmult1;
+  
   sub_y <= ~sel_cbcrmult1;
-  cbcrmult1 <= sel_cbcrmult1?y[7:0]:pdc[7:0];
-  cbcrmult1 <= sel_cbcrmult1?y[7:0]:pdc[7:0];
+//  cbcrmult1 <= sel_cbcrmult1?y[7:0]:pdc[7:0];
+  cbcrmult1 <= sel_cbcrmult1?y[7:0]:y0_r[7:0]; // delayed by 1 clock
+  
   if (~ywe_r) use_cr <= ~(bayer_phase[1] ^ odd_line);
 end
 assign      cbcrmult2 = use_cr?m_cr:m_cb;  // maybe will need a register? (use_cr will still be good as it is valid early)
@@ -601,23 +618,38 @@ end
 dly_16 #(.WIDTH(1)) i_cwe0 (.clk(CLK),.rst(1'b0), .dly(4'd1), .din(ywe_r), .dout(cwe0));
 //SRL16 i_cwe0    (.D(ywe_r ),  .Q(cwe0), .A0(1'b1), .A1(1'b0), .A2(1'b0), .A3(1'b0), .CLK(CLK)); // dly=2=1+1
 
-always @ (posedge CLK) begin
-      cstrt <= ystrt;
-      cnxt  <= nxtline;
-      cwe_r <= cwe0 && sub_y; 
-      caddr_r[2:0]<= cwe0?(caddr_r[2:0]+cwe_r):3'b0;
-      if (cstrt)     caddr_r[6] <= ~bayer_phase[1];
-      else if (cnxt) caddr_r[6] <= ~caddr_r[6];
-      if (cstrt)     caddr_r[5:3] <=3'b0;
-      else if (cnxt) caddr_r[5:3] <=(bayer_phase[1]^caddr_r[6])? caddr_r[5:3]:(caddr_r[5:3]+1);
-end
+
+
+    always @ (posedge CLK) begin
+        cstrt <= ystrt;
+        cnxt  <= nxtline;
+//        cwe_r <= cwe0 && sub_y;
+        cwe_r <= cwe0 && !sel_cbcrmult1;
+        caddr_r[2:0]<= cwe0?(caddr_r[2:0]+cwe_r):3'b0;
+        if (cstrt)     caddr_r[6] <= ~bayer_phase[1];
+        else if (cnxt) caddr_r[6] <= ~caddr_r[6];
+        if (cstrt)     caddr_r[5:3] <=3'b0;
+        else if (cnxt) caddr_r[5:3] <=(bayer_phase[1]^caddr_r[6])? caddr_r[5:3]:(caddr_r[5:3]+1);
+    end
+// extra signals delayed by 1 clock
+    reg ywe_r2, cwe_r2;
+    reg [6:0] caddr_r2;
+    reg [7:0] yaddr_r2;
+    always @ (posedge CLK) begin
+        ywe_r2 <= ywe_r;
+        cwe_r2 <= cwe_r;
+        yaddr_r2 <= yaddr_r;
+        caddr_r2 <= caddr_r;
+    end
+
+
   always @ (posedge CLK) begin
-    y_eq_0   <= (y0[7:0] == 8'h0);
-    y_eq_255 <= (y0[7:0] == 8'hff);
+    y_eq_0   <= (y0_r[7:0] == 8'h0);
+    y_eq_255 <= (y0_r[7:0] == 8'hff);
     if (strt) n000_r[7:0] <= 8'h0;
-    else if ((n000_r[7:0]!=8'hff) && y_eq_0 && ywe_r) n000_r[7:0] <= n000_r[7:0]+1;
+    else if ((n000_r[7:0]!=8'hff) && y_eq_0 && ywe_r2) n000_r[7:0] <= n000_r[7:0]+1;
     if (strt) n255_r[7:0] <= 8'h0;
-    else if ((n255_r[7:0]!=8'hff) && y_eq_255 && ywe_r) n255_r[7:0] <= n255_r[7:0]+1;
+    else if ((n255_r[7:0]!=8'hff) && y_eq_255 && ywe_r2) n255_r[7:0] <= n255_r[7:0]+1;
   end
 
 

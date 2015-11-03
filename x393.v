@@ -1026,6 +1026,7 @@ assign axi_grst = axi_rst_pre;
         .CLKFBOUT_MULT_REF                 (CLKFBOUT_MULT_REF),
         .CLKFBOUT_DIV_REF                  (CLKFBOUT_DIV_REF),
         .DIVCLK_DIVIDE                     (DIVCLK_DIVIDE),
+        .CLKFBOUT_USE_FINE_PS              (CLKFBOUT_USE_FINE_PS),
         .CLKFBOUT_PHASE                    (CLKFBOUT_PHASE),
         .SDCLK_PHASE                       (SDCLK_PHASE),
         .CLK_PHASE                         (CLK_PHASE),

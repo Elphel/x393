@@ -153,6 +153,7 @@ module  mcntrl393 #(
     parameter CLKFBOUT_DIV_REF =    3, // To get 300MHz for the reference clock
 `endif    
     parameter DIVCLK_DIVIDE=        1,
+    parameter CLKFBOUT_USE_FINE_PS= 1, // 0 - old, 1 - new 
     parameter CLKFBOUT_PHASE =      0.000,
     parameter SDCLK_PHASE =         0.000,
     parameter CLK_PHASE =           0.000,
@@ -1816,6 +1817,7 @@ module  mcntrl393 #(
         .CLKFBOUT_MULT_REF     (CLKFBOUT_MULT_REF),
         .CLKFBOUT_DIV_REF      (CLKFBOUT_DIV_REF),
         .DIVCLK_DIVIDE         (DIVCLK_DIVIDE),
+        .CLKFBOUT_USE_FINE_PS  (CLKFBOUT_USE_FINE_PS),
         .CLKFBOUT_PHASE        (CLKFBOUT_PHASE),
         .SDCLK_PHASE           (SDCLK_PHASE),
         .CLK_PHASE             (CLK_PHASE),

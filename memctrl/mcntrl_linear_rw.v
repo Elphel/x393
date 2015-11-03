@@ -177,6 +177,7 @@ module  mcntrl_linear_rw #(
     reg   [FRAME_HEIGHT_BITS-1:0] line_unfinished_r;
     
     wire                          pre_want;
+    reg                           pre_want_r1;
     wire                    [1:0] status_data;
     wire                    [3:0] cmd_a; 
     wire                   [31:0] cmd_data; 
@@ -324,8 +325,9 @@ module  mcntrl_linear_rw #(
     assign frame_done=  frame_done_r;
     assign frame_finished=  frame_finished_r;
     
-//    assign pre_want=    chn_en && busy_r && !want_r && !xfer_start_r[0] && calc_valid && !last_block && !suspend && !frame_start_r[0];
-    assign pre_want=    chn_en && busy_r && !want_r && !xfer_start_r[0] && calc_valid && !last_block && !suspend && !(|frame_start_r);
+//    assign pre_want=    chn_en && busy_r && !want_r && !xfer_start_r[0] && calc_valid && !last_block && !suspend && !(|frame_start_r);
+    // accelerating pre_want:
+    assign pre_want= pre_want_r1 && !want_r && !xfer_start_r[0] && !suspend ;
 
     assign last_in_row_w=(row_left=={{(FRAME_WIDTH_BITS-NUM_XFER_BITS){1'b0}},xfer_num128_r});
     assign last_row_w=  next_y==window_height;
@@ -407,9 +409,9 @@ module  mcntrl_linear_rw #(
         else if (chn_rst || xfer_grant || start_skip_r)   need_r <= 0;
         else if ((pre_want  || want_r) && (page_cntr>=3)) need_r <= 1; // may raise need if want was already set
 
-        if (mrst)                                                want_r <= 0;
-        else if (chn_rst || xfer_grant || start_skip_r)          want_r <= 0;
-        else if (pre_want && (page_cntr>{1'b0,cmd_extra_pages})) want_r <= 1;
+        if (mrst)                                                  want_r <= 0;
+        else if (chn_rst || xfer_grant || start_skip_r)            want_r <= 0;
+        else if (pre_want && (page_cntr > {1'b0,cmd_extra_pages})) want_r <= 1;
         
     end    
     
@@ -469,6 +471,9 @@ wire    start_not_partial= xfer_start_r[0] && !xfer_limited_by_mem_page_r;
 // now have row start address, bank and row_left ;
 // calculate number to read (min of row_left, maximal xfer and what is left in the DDR3 page    
     always @(posedge mclk) begin
+        // acceletaring pre_want
+        pre_want_r1 <= chn_en &&  !frame_done_r && busy_r && par_mod_r[PAR_MOD_LATENCY-2] && !(|frame_start_r[4:1]) && !last_block;
+    
         if      (mrst)                par_mod_r<=0;
         else if (pgm_param_w ||
                  xfer_start_r[0] ||

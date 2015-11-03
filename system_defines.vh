@@ -9,7 +9,17 @@
 //  `define USE_PCLK2X
 //  `define USE_XCLK2X
 //  `define DEBUG_RING 1
+//  `define MCLK_VCO_MULT 16
+// DDR3 memory speed grade and density
+    `define sg25 1
+//  `define sg15E  1
+//  `define sg187E  1
+  `define den4096Mb 1  
   
+  `define MCLK_VCO_MULT 16
+//  `define MCLK_VCO_MULT 18
+//  `define MCLK_VCO_MULT 20
+    
   `define MEMBRIDGE_DEBUG_WRITE 1
 // Enviroment-dependent options
   `ifdef IVERILOG

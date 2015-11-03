@@ -78,7 +78,27 @@ reg        set_r=0;
 reg  dci_disable_dqs_r, dci_disable_dq_r;
 reg  [7:0] ld_odly=8'b0, ld_idly=8'b0;
 reg        ld_odly_dqs,ld_idly_dqs,ld_odly_dm;
-BUFR                          iclk_i    (.O(iclk),.I(dqs_read), .CLR(1'b0),.CE(1'b1)); // OK, works with constraint? Seems now work w/o
+
+BUFR  iclk_i    (.O(iclk),.I(dqs_read), .CLR(1'b0),.CE(1'b1)); // OK, works with constraint? Seems now work w/o
+/*
+wire iclk_int;
+//BUFR     iclk_int_i (.O(iclk_int), .I(dqs_read), .CLR(1'b0),.CE(1'b1));
+    assign iclk_int = dqs_read && !rst;
+BUFIO    iclk_i     (.O(iclk),     .I(iclk_int));
+CRITICAL WARNING: [Vivado 12-1411] Cannot set LOC property of ports, Could not legally place instance
+mcntrl393_i/memctrl16_i/mcontr_sequencer_i/phy_cmd_i/phy_top_i/byte_lane0_i/dqs_i/iobufs_dqs_i/IBUFDS/IBUFDS_M at N7 (IOB_X1Y120
+since it belongs to a shape containing instance mcntrl393_i/memctrl16_i/mcontr_sequencer_i/phy_cmd_i/phy_top_i/byte_lane0_i/iclk_i.
+The shape requires relative placement between 
+mcntrl393_i/memctrl16_i/mcontr_sequencer_i/phy_cmd_i/phy_top_i/byte_lane0_i/dqs_i/iobufs_dqs_i/IBUFDS/IBUFDS_M and
+mcntrl393_i/memctrl16_i/mcontr_sequencer_i/phy_cmd_i/phy_top_i/byte_lane0_i/iclk_i that cannnot be honored because it would result in
+an invalid location for mcntrl393_i/memctrl16_i/mcontr_sequencer_i/phy_cmd_i/phy_top_i/byte_lane0_i/iclk_i. [x393.xdc:193]
+----------
+ERROR: [DRC 23-20] Rule violation (RTSTAT-1) Unrouted net - 2 net(s) are unrouted. The problem bus(es) and/or net(s) are 
+mcntrl393_i/memctrl16_i/mcontr_sequencer_i/phy_cmd_i/phy_top_i/byte_lane1_i/iclk_int,
+mcntrl393_i/memctrl16_i/mcontr_sequencer_i/phy_cmd_i/phy_top_i/byte_lane0_i/iclk_int.
+
+
+*/
 wire [9:0] decode_sel={
     (dly_addr[3:0]==9)?1'b1:1'b0,
     (dly_addr[3:0]==8)?1'b1:1'b0,

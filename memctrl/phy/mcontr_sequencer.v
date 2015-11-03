@@ -80,6 +80,7 @@ module  mcontr_sequencer   #(
     parameter CLKFBOUT_MULT_REF =   9, // Fvco=Fclkin*CLKFBOUT_MULT_F/DIVCLK_DIVIDE, Fout=Fvco/CLKOUT#_DIVIDE
     parameter CLKFBOUT_DIV_REF =    3, // To get 300MHz for the reference clock
     parameter DIVCLK_DIVIDE=        1,
+    parameter CLKFBOUT_USE_FINE_PS= 1, // 0 - old, 1 - new 
     parameter CLKFBOUT_PHASE =      0.000,
     parameter SDCLK_PHASE =         0.000,
     parameter CLK_PHASE =           0.000,
@@ -551,9 +552,9 @@ module  mcontr_sequencer   #(
         .CLKFBOUT_MULT_REF     (CLKFBOUT_MULT_REF),
         .CLKFBOUT_DIV_REF      (CLKFBOUT_DIV_REF),
         .DIVCLK_DIVIDE         (DIVCLK_DIVIDE),
+        .CLKFBOUT_USE_FINE_PS (CLKFBOUT_USE_FINE_PS),
         .CLKFBOUT_PHASE        (CLKFBOUT_PHASE),
         .SDCLK_PHASE           (SDCLK_PHASE), /// debugging
-        
         .CLK_PHASE             (CLK_PHASE),
         .CLK_DIV_PHASE         (CLK_DIV_PHASE),
         .MCLK_PHASE            (MCLK_PHASE),
