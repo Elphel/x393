@@ -1,4 +1,6 @@
-      parameter FPGA_VERSION =          32'h03930065; // (same rev) all met,  using "old" (non-inverted) phase - OK (full phase range)
+
+      parameter FPGA_VERSION =          32'h03930066; // trying just one histogram to watch utilization - with 4 was: Slice 15913 (80.98%), now Slice = 14318 (72.87%)
+//      parameter FPGA_VERSION =          32'h03930065; // (same rev) all met,  using "old" (non-inverted) phase - OK (full phase range)
 //      parameter FPGA_VERSION =          32'h03930065; // switch phy_top.v (all met) - OK with inverted phase control (reduced phase range)
 //      parameter FPGA_VERSION =          32'h03930064; // switch mcomtr_sequencer.v  (xclk not met) - wrong!
 //      parameter FPGA_VERSION =          32'h03930063; // switch mcntrl_linear_rw.v (met) good, worse mem valid phases 

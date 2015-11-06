@@ -332,7 +332,7 @@
     parameter SENSI2C_STATUS_REG_INC =    2,     // increment to the next sensor
     parameter SENSI2C_STATUS_REG_REL =    0,     // 4 locations" 'h20, 'h22, 'h24, 'h26
     parameter SENSIO_STATUS_REG_REL =     1,     // 4 locations" 'h21, 'h23, 'h25, 'h27
-    parameter SENSOR_NUM_HISTOGRAM=       3,     // number of histogram channels
+    parameter SENSOR_NUM_HISTOGRAM=       1, //was 3  trying just one histogram (see utilization) 3,     // number of histogram channels
     parameter HISTOGRAM_RAM_MODE =        "BUF32", // "NOBUF", // valid: "NOBUF" (32-bits, no buffering), "BUF18", "BUF32"
     parameter SENS_NUM_SUBCHN =           3,     // number of subchannels for his sensor ports (1..4)
     parameter SENS_GAMMA_BUFFER =         0,     // 1 - use "shadow" table for clean switching, 0 - single table per channel
