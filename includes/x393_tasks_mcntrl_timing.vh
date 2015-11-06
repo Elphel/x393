@@ -193,11 +193,19 @@
 
     task axi_set_phase;
         input [PHASE_WIDTH-1:0] phase;
+        reg   [PHASE_WIDTH-1:0] inverted_phase;
         begin
-            $display("SET CLOCK PHASE to 0x%x @ %t",phase,$time);
-            write_contol_register(LD_DLY_PHASE, {{(32-PHASE_WIDTH){1'b0}},phase}); // control regiter address
+            if (CLKFBOUT_USE_FINE_PS) begin
+                inverted_phase = -phase;
+                $display("SET CLOCK INVERTED PHASE (0x%x) to 0x%x @ %t",phase,inverted_phase,$time);
+                write_contol_register(LD_DLY_PHASE, {{(32-PHASE_WIDTH){1'b0}},inverted_phase}); // control regiter address
+                target_phase <= inverted_phase;
+            end else begin
+                $display("SET CLOCK PHASE to 0x%x @ %t",phase,$time);
+                write_contol_register(LD_DLY_PHASE, {{(32-PHASE_WIDTH){1'b0}},phase}); // control regiter address
+                target_phase <= phase;
+            end
             write_contol_register(DLY_SET,0);
-            target_phase <= phase;
         end
     endtask
  

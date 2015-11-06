@@ -892,20 +892,25 @@ class X393Sensor(object):
                       ):
         """
         @brief Calculate gamma table (as array of 257 unsigned short values)
-        @param gamma - gamma value (1.0 - linear)
+        @param gamma - gamma value (1.0 - linear), 0 - linear as a special case
         @param black - black level, 1.0 corresponds to 256 for 8bit values
         @return array of 257 int elements (for a single color), right-shifted to match original 0..0x3ff range
         """
-        black256 =  max(0.0, min(255, black * 256.0))
-        k=  1.0 / (256.0 - black256)
-        gamma =max(0.13, min(gamma, 10.0))
         gtable = []
-        for i in range (257):
-            x=k * (i - black256)
-            x = max(x, 0.0)
-            ig = int (0.5 + 65535.0 * pow(x, gamma))
-            ig = min(ig, 0xffff)
-            gtable.append(ig >> rshift)
+        if gamma <= 0: # special case
+            for i in range (257):
+                ig = min(i*256, 0xffff)
+                gtable.append(ig >> rshift)
+        else:    
+            black256 =  max(0.0, min(255, black * 256.0))
+            k=  1.0 / (256.0 - black256)
+            gamma =max(0.13, min(gamma, 10.0))
+            for i in range (257):
+                x=k * (i - black256)
+                x = max(x, 0.0)
+                ig = int (0.5 + 65535.0 * pow(x, gamma))
+                ig = min(ig, 0xffff)
+                gtable.append(ig >> rshift)
         return gtable    
 
         

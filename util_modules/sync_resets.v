@@ -32,7 +32,8 @@ module  sync_resets#(
 );
     reg                 en_locked=0; // mostly for simulation, locked[0] is 1'bx until the first clock[0] pulse
     wire    [WIDTH-1:0] rst_w;  // resets matching input clocks
-    wire                rst_early_master;
+    wire                rst_early_master_w;
+    reg                 rst_early_master;
     assign rst = rst_w;
     reg                mrst = 1;
     always @ (posedge arst or posedge clk[0]) begin
@@ -43,13 +44,16 @@ module  sync_resets#(
         if (arst) mrst <= 1;
         else      mrst <=  ~(locked[0] && en_locked);
     end
+    always @(posedge clk[0]) begin
+        rst_early_master <= rst_early_master_w;
+    end
     level_cross_clocks #(
         .WIDTH      (1),
         .REGISTER   (REGISTER)
     ) level_cross_clocks_mrst_i (
         .clk   (clk[0]),  // input
         .d_in  (mrst),    // input[0:0] 
-        .d_out (rst_early_master) // output[0:0] 
+        .d_out (rst_early_master_w) // output[0:0] 
     );
     
     generate
@@ -57,7 +61,7 @@ module  sync_resets#(
         for (i = 1; i < WIDTH; i = i + 1) begin: rst_block
             level_cross_clocks #(
                 .WIDTH      (1),
-                .REGISTER   (REGISTER)
+                .REGISTER   ((i==5) ? 1: REGISTER) // disable for aclk
             ) level_cross_clocks_rst_i (
                 .clk   (clk[i]),                                  // input
                 .d_in  (mrst || rst_early_master || ~locked[i] ), // input[0:0] 

@@ -2,9 +2,9 @@
 ** -----------------------------------------------------------------------------**
 ** huffman333.v
 **
-** Huffman encoder for JPEG compressorrdy
+** Huffman encoder for JPEG compressor
 **
-** Copyright (C) 2002-20015 Elphelk, Inc
+** Copyright (C) 2002-20015 Elphel, Inc
 **
 ** -----------------------------------------------------------------------------**
 **  huffman393 is free software - hardware description language (HDL) code.

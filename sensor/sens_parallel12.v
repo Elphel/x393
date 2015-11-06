@@ -59,9 +59,10 @@ module  sens_parallel12 #(
     parameter SENS_HIGH_PERFORMANCE_MODE =    "FALSE",
     
     parameter SENS_PHASE_WIDTH=               8,      // number of bits for te phase counter (depends on divisors)
-    parameter SENS_PCLK_PERIOD =              10.000,  // input period in ns, 0..100.000 - MANDATORY, resolution down to 1 ps
+//    parameter SENS_PCLK_PERIOD =              10.000,  // input period in ns, 0..100.000 - MANDATORY, resolution down to 1 ps
     parameter SENS_BANDWIDTH =                "OPTIMIZED",  //"OPTIMIZED", "HIGH","LOW"
 
+    parameter CLKIN_PERIOD_SENSOR =   10.000, // input period in ns, 0..100.000 - MANDATORY, resolution down to 1 ps
     parameter CLKFBOUT_MULT_SENSOR =   8,  // 100 MHz --> 800 MHz
     parameter CLKFBOUT_PHASE_SENSOR =  0.000,  // CLOCK FEEDBACK phase in degrees (3 significant digits, -360.000...+360.000)
     parameter IPCLK_PHASE =            0.000,
@@ -71,7 +72,7 @@ module  sens_parallel12 #(
     
 
     parameter SENS_DIVCLK_DIVIDE =     1,            // Integer 1..106. Divides all outputs with respect to CLKIN
-    parameter SENS_REF_JITTER1   =     0.010,        // Expectet jitter on CLKIN1 (0.000..0.999)
+    parameter SENS_REF_JITTER1   =     0.010,        // Expected jitter on CLKIN1 (0.000..0.999)
     parameter SENS_REF_JITTER2   =     0.010,
     parameter SENS_SS_EN         =     "FALSE",      // Enables Spread Spectrum mode
     parameter SENS_SS_MODE       =     "CENTER_HIGH",//"CENTER_HIGH","CENTER_LOW","DOWN_HIGH","DOWN_LOW"
@@ -82,6 +83,7 @@ module  sens_parallel12 #(
     input         pclk,   // global clock input, pixel rate (96MHz for MT9P006)
     input         mclk_rst,
     input         prst,
+    output        prsts,  // @pclk - includes sensor reset and sensor PLL reset
     output        irst,
     
     output        ipclk,  // re-generated sensor output clock (regional clock to drive external fifo) 
@@ -139,7 +141,9 @@ module  sens_parallel12 #(
     reg         set_ctrl_r;
     reg         set_status_r;
     reg   [1:0] set_width_r; // to make double-cycle subtract
-    wire        set_width_ipclk; //re-clocked to pclk
+    wire        set_width_ipclk_w; //re-clocked to ipclk
+    reg         set_width_ipclk_r; // copy from mclk domain when reset is off
+    wire        set_width_ipclk = set_width_ipclk_w || set_width_ipclk_r; //re-clocked to ipclk
     reg         set_jtag_r;
     
     reg [LINE_WIDTH_BITS-1:0] line_width_m1;       // regenerated HACT duration;
@@ -202,6 +206,12 @@ module  sens_parallel12 #(
     reg            hact_ext_alive;
     reg            hact_alive;
     reg  [STATUS_ALIVE_WIDTH-1:0] status_alive;    
+
+    reg      [1:0] prst_with_sens_mrst = 2'h3; // prst extended to include sensor reset and rst_mmcm
+    wire           async_prst_with_sens_mrst =  ~imrst | rst_mmcm; // mclk domain   
+
+    assign  prsts = prst_with_sens_mrst[0];  // @pclk - includes sensor reset and sensor PLL reset
+    
      
     assign set_pxd_delay =   set_idelay[2:0];
     assign set_other_delay = set_idelay[3];
@@ -212,8 +222,17 @@ module  sens_parallel12 #(
     assign iaro = trigger_mode?  ~trig : iaro_soft;
     
     assign     irst=irst_r[2];
+    
     always @ (posedge ipclk) begin
-        irst_r <= {irst_r[1:0], prst};
+//        irst_r <= {irst_r[1:0], prst};
+        irst_r <= {irst_r[1:0], prsts}; // extended reset that includes sensor reset and rst_mmcm
+        set_width_ipclk_r <= irst_r[2] && !irst_r[1];
+    end
+
+    always @(posedge pclk or posedge async_prst_with_sens_mrst) begin
+        if (async_prst_with_sens_mrst) prst_with_sens_mrst <=  2'h3;
+        else if (prst)                 prst_with_sens_mrst <=  2'h3;
+        else                           prst_with_sens_mrst <= prst_with_sens_mrst >> 1;
     end
     
     always @(posedge mclk) begin
@@ -353,11 +372,11 @@ module  sens_parallel12 #(
 */
     
     pulse_cross_clock pulse_cross_clock_set_width_ipclk_i (
-        .rst         (mclk_rst),           // input
-        .src_clk     (mclk),          // input
-        .dst_clk     (ipclk),          // input
-        .in_pulse    (set_width_r[1]),      // input
-        .out_pulse   (set_width_ipclk),      // output
+        .rst         (mclk_rst),          // input
+        .src_clk     (mclk),              // input
+        .dst_clk     (ipclk),             // input
+        .in_pulse    (set_width_r[1]),    // input
+        .out_pulse   (set_width_ipclk_w), // output
         .busy() // output
     );
     
@@ -642,7 +661,7 @@ module  sens_parallel12 #(
     // received from the sensor (may need to reset MMCM after resetting sensor)
     mmcm_phase_cntr #(
         .PHASE_WIDTH         (SENS_PHASE_WIDTH),
-        .CLKIN_PERIOD        (SENS_PCLK_PERIOD),
+        .CLKIN_PERIOD        (CLKIN_PERIOD_SENSOR), // SENS_PCLK_PERIOD), assuming both sources have the same frequency!
         .BANDWIDTH           (SENS_BANDWIDTH),
         .CLKFBOUT_MULT_F     (CLKFBOUT_MULT_SENSOR), //8
         .DIVCLK_DIVIDE       (SENS_DIVCLK_DIVIDE),

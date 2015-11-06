@@ -23,7 +23,8 @@
 module  iserdes_mem #
 (
     parameter DYN_CLKDIV_INV_EN="FALSE",
-    parameter IOBDELAY = "IFD"  // "NONE", "IBUF", "IFD", "BOTH"
+    parameter IOBDELAY = "IFD",  // "NONE", "IBUF", "IFD", "BOTH"
+    parameter MSB_FIRST = 0      // 0 - lowest bit is received first, 1 - highest is received first
 ) (
     input        iclk,     // source-synchronous clock
     input        oclk,     // system clock, phase should allow iclk-to-oclk jitter with setup/hold margin
@@ -35,7 +36,8 @@ module  iserdes_mem #
     output [3:0] dout,
     output       comb_out  // combinatorial output copies selected input to be used in the fabric     
 );
-
+    wire   [3:0] dout_le;
+    assign dout = MSB_FIRST ? {dout_le[0], dout_le[1], dout_le[2], dout_le[3]} : dout_le;
 `ifndef OPEN_SOURCE_ONLY  // Not using simulator - instanciate actual ISERDESE2 (can not be simulated because of encrypted )           
      ISERDESE2 #(
          .DATA_RATE                  ("DDR"),
@@ -60,10 +62,10 @@ module  iserdes_mem #
          iserdes_i
          (
          .O                          (comb_out),
-         .Q1                         (dout[3]),
-         .Q2                         (dout[2]),
-         .Q3                         (dout[1]),
-         .Q4                         (dout[0]),
+         .Q1                         (dout_le[3]),
+         .Q2                         (dout_le[2]),
+         .Q3                         (dout_le[1]),
+         .Q4                         (dout_le[0]),
          .Q5                         (),
          .Q6                         (),
          .Q7                         (),
@@ -111,10 +113,10 @@ module  iserdes_mem #
          iserdes_i
          (
          .O                          (comb_out),
-         .Q1                         (dout[3]),
-         .Q2                         (dout[2]),
-         .Q3                         (dout[1]),
-         .Q4                         (dout[0]),
+         .Q1                         (dout_le[3]),
+         .Q2                         (dout_le[2]),
+         .Q3                         (dout_le[1]),
+         .Q4                         (dout_le[0]),
          .Q5                         (),
          .Q6                         (),
          .SHIFTOUT1                  (),

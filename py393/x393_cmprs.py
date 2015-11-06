@@ -295,7 +295,7 @@ class X393Cmprs(object):
         @param byte32 -           32-byte columns
         @param tile_width         tile width,
         @param extra_pages        extra pages needed (1)
-        @param disable_need       disable need (preference to sesnor channels - they can not wait
+        @param disable_need       disable need (preference to sensor channels - they can not wait
         """
         tile_vstep = 16
         tile_height= 18

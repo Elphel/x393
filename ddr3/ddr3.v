@@ -85,7 +85,7 @@
 * 1.69  SPH      03/19/13    Update tZQCS, tZQinit, tZQoper timing parameters
 * 1.70  SPH      04/08/14    Update tRFC to PRECARGE check
 *****************************************************************************************/
-`define den4096Mb 1
+`include "system_defines.vh" 
 // DO NOT CHANGE THE TIMESCALE
 // MAKE SURE YOUR SIMULATOR USES "PS" RESOLUTION
 `timescale 1ps / 1ps
@@ -121,6 +121,19 @@ module ddr3 (
     //       to select the correct component density before continuing
     ERROR: You must specify component density with +define+den____Mb.
 `endif
+    initial begin
+        $display ("TCK_MIN = %d", TCK_MIN);
+`ifdef sg15E
+        $display ("sg15E = `sg15E");
+`endif  
+    
+`ifdef sg093                              // sg093  is equivalent to the JEDEC DDR3-2133 (14-14-14) speed bin
+        $display ("sg093");
+`elsif sg15E
+        $display ("sg15E");
+`endif          
+    end
+    
     parameter check_strict_mrbits = 1;
     parameter check_strict_timing = 1;
     parameter feature_pasr = 1;

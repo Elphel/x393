@@ -105,7 +105,9 @@ module  jp_channel#(
 )(
 //    input                         rst,    // global reset
     input                         xclk,   // global clock input, compressor single clock rate
+`ifdef  USE_XCLK2X    
     input                         xclk2x, // global clock input, compressor double clock rate, nominally rising edge aligned
+`endif    
     input                         mrst,      // @posedge mclk, sync reset
     input                         xrst,      // @posedge xclk, sync reset
     input                         hrst,      // @posedge xclk, sync reset
@@ -306,13 +308,16 @@ module  jp_channel#(
 ///    wire          test_lbw; 
 
 
-    wire          stuffer_rdy; // receiver (bit stuffer) is ready to accept data;
+    
+`ifdef   USE_XCLK2X
     wire   [15:0] huff_do;     // output[15:0] reg 
     wire    [3:0] huff_dl;     // output[3:0] reg 
     wire          huff_dv;     // output reg 
     wire          flush;       // output reg @ negedge xclk2x
     wire          last_block;  // @negedge xxlk2x - used to copy timestamp in stuffer
-
+    wire          stuffer_rdy; // receiver (bit stuffer) is ready to accept data;
+`endif
+    
 
     wire   [31:0] cmd_data;       // 32-bit data to write to tables and registers(LSB first) - from cmd_deser
     wire          cmd_we;         // control register write enable
@@ -344,10 +349,24 @@ module  jp_channel#(
     assign set_coring_w =            cmd_we && (cmd_a==       CMPRS_CORING_MODE);
     assign set_tables_w =            cmd_we && ((cmd_a & 6)== CMPRS_TABLES);
     
-//    assign buf_ren =   buf_rd[0];
-//    assign buf_regen = buf_rd[1];
+`ifdef  USE_XCLK2X
+      // re-sync to posedge xclk2x
+    reg           xrst2xn;
+    always @ (negedge xclk2x) xrst2xn <= xrst;
+`endif    
 
 `ifdef DEBUG_RING
+    `ifndef   USE_XCLK2X
+//        wire   [15:0] huff_do;     // output[15:0] reg 
+//        wire    [3:0] huff_dl;     // output[3:0] reg 
+//        wire          huff_dv;     // output reg 
+//        wire          flush;       // output reg @ negedge xclk2x
+        wire          last_block =  0;  // @negedge xxlk2x - used to copy timestamp in stuffer
+        wire          stuffer_rdy = 1; // receiver (bit stuffer) is ready to accept data;
+    `endif
+
+
+
     reg [31:0] debug_fifo_in;
     reg [31:0] debug_fifo_out;
     reg [15:0] pre_start_cntr;
@@ -388,17 +407,25 @@ module  jp_channel#(
     wire [2:0] dbg_block_mem_wa_save;
     
     timestamp_to_parallel dbg_timestamp_to_parallel_i (
-        .clk      (~xclk2x), // input
+  `ifdef  USE_XCLK2X     
+        .clk      (~xclk2x),     // input
+  `else
+        .clk      (xclk),        // input
+  `endif        
         .pre_stb  (dbg_ts_rstb), // input
         .tdata    (dbg_ts_dout), // input[7:0] 
-        .sec      (dbg_sec), // output[31:0] reg 
-        .usec     (dbg_usec), // output[19:0] reg 
-        .done() // output
+        .sec      (dbg_sec),     // output[31:0] reg 
+        .usec     (dbg_usec),    // output[19:0] reg 
+        .done()                  // output
     );
     
     
 // cmprs_standalone - use to reset flush     
+  `ifdef  USE_XCLK2X
     always @ (posedge ~xclk2x) begin
+  `else  
+    always @ (posedge xclk) begin
+  `endif  
         dbg_reset_fifo <= fifo_rst;
         if (xrst2xn || dbg_reset_fifo) debug_fifo_in <= 0;
         else if (stuffer_dv)           debug_fifo_in <= debug_fifo_in + 1;
@@ -880,7 +907,7 @@ module  jp_channel#(
     end
     
     
-    
+`ifdef USE_OLD_XDCT393    
     
     xdct393 xdct393_i (
         .clk                (xclk),                // input
@@ -893,6 +920,20 @@ module  jp_channel#(
         .dv                 (),  // not used: output data output valid. Will go high on the 94-th cycle after the start (now - on 95-th?)
         .d_out              (dct_out)              // output[12:0] 
     );
+`else
+    xdct393r xdct393_i (
+        .clk                (xclk),                // input
+        .en                 (frame_en),            // input  if zero will reset transpose memory page numbers
+        .start              (dct_start),           // input  single-cycle start pulse that goes with the first pixel data. Other 63 should follow
+        .xin                (yc_nodc),             // input[9:0] 
+        .last_in            (dct_last_in),         // output reg  output high during input of the last of 64 pixels in a 8x8 block //
+        .pre_first_out      (dct_pre_first_out),   // outpu 1 cycle ahead of the first output in a 64 block
+///        .dv                 (dct_dv),           // output data output valid. Will go high on the 94-th cycle after the start (now - on 95-th?)
+        .dv                 (),  // not used: output data output valid. Will go high on the 94-th cycle after the start (now - on 95-th?)
+        .d_out              (dct_out)              // output[12:0] 
+    );
+`endif    
+    
     wire          quant_start;
     dly_16 #(.WIDTH(1)) i_quant_start (.clk(xclk),.rst(1'b0), .dly(4'd0), .din(dct_pre_first_out), .dout(quant_start));    // dly=0+1
  
@@ -968,7 +1009,11 @@ module  jp_channel#(
     // TODO: Verify focus_sharp393: quantizer output (with strobes) is now 2 cycles later than in 353 (relative to xdct out). Seems to be OK.
     focus_sharp393 focus_sharp393_i (
         .clk                (xclk),                   // input - pixel clock
+`ifdef  USE_XCLK2X        
         .clk2x              (xclk2x),                 // input 2x pixel clock
+`else
+        .clk2x              (xclk),                   // FIXME: fix the module not to use xclk2x
+`endif        
         .en                 (frame_en),               // input 
 
         .mclk               (mclk),                   // input system clock to write tables
@@ -991,21 +1036,28 @@ module  jp_channel#(
         .hifreq             (hifreq[31:0])            // output[31:0] reg accumulated high frequency components in a frame sub-window
     );
 
-    // Format DC components to be output as a mini-frame. Was not used in the late NC353 as the dma1 channel was use3d for IMU instead of dcc
+    // Format DC components to be output as a mini-frame. Was not used in the late NC353 as the dma1 channel was used for IMU instead of dcc
     wire          finish_dcc;
+`ifdef  USE_XCLK2X    
     wire   [15:0] stuffer_do;
+`else
+    wire   [31:0] stuffer_do;
+`endif    
     wire          stuffer_dv;
     wire          stuffer_done;
-    wire          eof_written_xclk2xn;
     
-    // re-sync to posedge xclk2x
-    reg           xrst2xn;
-    always @ (negedge xclk2x) xrst2xn <= xrst;
-    
+`ifdef  USE_XCLK2X    
     pulse_cross_clock finish_dcc_i (.rst(xrst2xn), .src_clk(~xclk2x), .dst_clk(xclk2x), .in_pulse(stuffer_done), .out_pulse(finish_dcc),.busy());
-    
+`else
+    assign finish_dcc = stuffer_done;
+`endif    
+
     dcc_sync393 dcc_sync393_i (
+`ifdef  USE_XCLK2X    
         .sclk               (xclk2x),                // input
+`else
+        .sclk               (xclk),                  // input
+`endif        
         .dcc_en             (dcc_en),                // input xclk rising, sync with start of the frame
         .finish_dcc         (finish_dcc),            // input @ sclk rising
         .dcc_vld            (dccvld),                // input xclk rising
@@ -1053,6 +1105,7 @@ module  jp_channel#(
 //    wire [2:0] dbg_block_mem_wa;
 //    wire [2:0] dbg_block_mem_wa_save;
 
+`ifdef  USE_XCLK2X
     huffman393 i_huffman (
         .xclk               (xclk),                   // input
         .xclk2x             (xclk2x),                 // input
@@ -1126,14 +1179,11 @@ module  jp_channel#(
        ,.test_cntr1(test_cntr1[7:0])
 `endif
     );
-    /*
-   ,output            dbg_ts_rstb
-   ,output [7:0]      dbg_ts_dout
     
-    */
+//cat x393_testbench03-latest.log | grep "COMPRESSOR[32 ]*CHN" > compressors_out32.log    
+    wire          eof_written_xclk2xn;
     pulse_cross_clock stuffer_done_mclk_i (.rst(xrst2xn), .src_clk(~xclk2x), .dst_clk(mclk), .in_pulse(stuffer_done), .out_pulse(stuffer_done_mclk),.busy());
     cmprs_out_fifo cmprs_out_fifo_i (
-//        .rst                 (rst),            // input mostly for simulation
         // source (stuffer) clock domain
         .wclk                (~xclk2x),        // input source clock (2x pixel clock, inverted) - same as stuffer out
         .wrst                (xrst2xn),         // input mostly for simulation
@@ -1155,6 +1205,103 @@ module  jp_channel#(
         .fifo_count          (fifo_count)      // output[7:0] - number of 32-byte chunks available in FIFO
     );
     pulse_cross_clock eof_written_mclk_i (.rst(xrst2xn), .src_clk(~xclk2x), .dst_clk(mclk), .in_pulse(eof_written_xclk2xn), .out_pulse(eof_written_mclk),.busy());
+  `ifdef DISPLAY_COMPRESSED_DATA
+    integer dbg_stuffer_word_number;
+    reg         dbg_odd_stuffer_dv;
+    reg  [15:0] dbg_even_stuffer_do;
+    wire [31:0] dbg_stuffer_do32 = {dbg_even_stuffer_do, stuffer_do};
+    always @ (negedge xclk2x) begin
+
+        if (stuffer_dv && dbg_odd_stuffer_dv) begin
+            $display ("COMPRESSOR CHN%d 0x%x -> 0x%x", CMPRS_NUMBER, dbg_stuffer_word_number, dbg_stuffer_do32);
+        end
+        
+        if (stuffer_done) begin
+            $display ("COMPRESSOR CHN%d ***** DONE *****",CMPRS_NUMBER);
+        end
+
+        if (stuffer_dv && !dbg_odd_stuffer_dv)     dbg_even_stuffer_do = stuffer_do;
+
+        if      (!stuffer_en || stuffer_done)      dbg_stuffer_word_number = 0;
+        else if (stuffer_dv && dbg_odd_stuffer_dv) dbg_stuffer_word_number = dbg_stuffer_word_number + 1;
+
+        if     (!stuffer_en)                       dbg_odd_stuffer_dv = 0;
+        else if (stuffer_dv)                       dbg_odd_stuffer_dv = ~dbg_odd_stuffer_dv;
+
+    end
+  `endif
+    
+`else
+    huffman_stuffer_meta huffman_stuffer_meta_i (
+        .mclk              (mclk),             // input
+        .mrst              (mrst),             // input
+        .xclk              (xclk),             // input
+        .en_huffman        (frame_en),         // input
+        .en_stuffer        (stuffer_en),       // input
+        .abort_stuffer     (force_flush_long), // input
+        .tser_we           (tser_he),          // input
+        .tser_a_not_d      (tser_a_not_d),     // input
+        .tser_d            (tser_d),           // input[7:0] 
+        .di                (enc_do[15:0]),     // input[15:0] 
+        .ds                (enc_dv),           // input
+        .ts_pre_stb        (ts_pre_stb),       // input
+        .ts_data           (ts_data),          // input[7:0] 
+        .color_first       (color_first),      // input valid @xclk - only for sec/usec
+        .data_out          (stuffer_do),       // output[31:0] 
+        .data_out_valid    (stuffer_dv),       // output
+        .done              (stuffer_done),     // output
+        .running           (stuffer_running),  // output
+        .clk_flush          (hclk),            // input
+        .flush_clk          (flush_hclk)       // output
+        
+    `ifdef DEBUG_RING
+       ,.test_lbw          (dbg_test_lbw),     // output reg ??
+        .gotLastBlock      (dbg_gotLastBlock), // output ?? - unused (was for debug)
+        .dbg_etrax_dma     (etrax_dma),        // output[3:0]
+        .dbg_ts_rstb       (dbg_ts_rstb),      // output             
+        .dbg_ts_dout       (dbg_ts_dout)       //output[7:0]
+    `endif        
+    );
+    wire          eof_written_xclk;
+    pulse_cross_clock stuffer_done_mclk_i (.rst(xrst), .src_clk(xclk), .dst_clk(mclk), .in_pulse(stuffer_done), .out_pulse(stuffer_done_mclk),.busy());
+    cmprs_out_fifo32 cmprs_out_fifo_i (
+        // source (stuffer) clock domain
+        .wclk                (xclk),        // input source clock (1x pixel clock, inverted) - same as stuffer out
+        .wrst                (xrst),         // input mostly for simulation
+        
+        .we                  (stuffer_dv),     // @ posedge(~xclk2x) input write data from stuffer
+        .wdata               ({stuffer_do[7:0],stuffer_do[15:8],stuffer_do[23:16],stuffer_do[31:24]}),     // input[15:0] data from stuffer module;
+        .wa_rst              (!stuffer_en),    // input reset low address bits when stuffer is disabled (to make sure it is multiple of 32 bytes
+        .wlast               (stuffer_done),   // input - written last 32 bytes of a frame (flush FIFO) - stuffer_done (has to be later than we)
+        .eof_written_wclk    (eof_written_xclk),    // output - AFI had transferred frame data to the system memory
+        // AFI clock domain
+        .rclk                (hclk),           // @posedge(hclk) input - AFI clock
+        .rrst                (hrst),           // input - AFI clock
+        .rst_fifo            (fifo_rst),       // input - reset FIFO (set read address to write, reset count)
+        .ren                 (fifo_ren),       // input - fifo read from AFI channel mux
+        .rdata               (fifo_rdata),     // output[63:0] - data to AFI channel mux (latency == 2 from fifo_ren)
+        .eof                 (fifo_eof),       // output single hclk pulse signalling EOF
+        .eof_written         (eof_written),    // input single hclk pulse confirming frame data is written to the system memory
+        .flush_fifo          (fifo_flush),     // output level signalling that FIFO has data from the current frame (use short AXI burst if needed)
+        .fifo_count          (fifo_count)      // output[7:0] - number of 32-byte chunks available in FIFO
+    );
+    pulse_cross_clock eof_written_mclk_i (.rst(xrst), .src_clk(xclk), .dst_clk(mclk), .in_pulse(eof_written_xclk), .out_pulse(eof_written_mclk),.busy());
+    
+  `ifdef DISPLAY_COMPRESSED_DATA
+    integer stuffer_word_number;
+    always @ (posedge xclk) begin
+        if (stuffer_dv) begin
+            $display ("COMPRESSOR CHN%d 0x%x -> 0x%x", CMPRS_NUMBER, stuffer_word_number, stuffer_do);
+        end
+        if (stuffer_done) begin
+            $display ("COMPRESSOR CHN%d ***** DONE *****",CMPRS_NUMBER);
+        end
+        if (!stuffer_en || stuffer_done) stuffer_word_number = 0;
+        else if (stuffer_dv)             stuffer_word_number =  stuffer_word_number + 1;
+    end
+  `endif
+    
+`endif
 
 // TODO: Add status module to combine/FF, re-clock status signals
 

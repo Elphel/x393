@@ -1361,6 +1361,8 @@ class X393McntrlAdjust(object):
             y=a*phase+b
             y0=y
             #find the lowest approximate solution to consider
+            if (quiet <2):
+                print("phase= %d, y=%f, variantStep=%f"%(phase,y,variantStep))
             if y0 > (-max_dly_err):
                 while (y0 >= (variantStep-max_dly_err)):
                     y0 -= variantStep
@@ -1369,6 +1371,8 @@ class X393McntrlAdjust(object):
                 while (y0<(-max_dly_err)):
                     y0 += variantStep
                     periods += 1
+            if (quiet <2):
+                print("y0=%f"%(y0))
             dly_min= max(0,int(y0-4.5))
             dly_max= min(max_lin_dly,int(y0+5.5))
             dly_to_try=[]

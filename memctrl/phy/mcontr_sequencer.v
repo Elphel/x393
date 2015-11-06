@@ -80,6 +80,7 @@ module  mcontr_sequencer   #(
     parameter CLKFBOUT_MULT_REF =   9, // Fvco=Fclkin*CLKFBOUT_MULT_F/DIVCLK_DIVIDE, Fout=Fvco/CLKOUT#_DIVIDE
     parameter CLKFBOUT_DIV_REF =    3, // To get 300MHz for the reference clock
     parameter DIVCLK_DIVIDE=        1,
+    parameter CLKFBOUT_USE_FINE_PS= 1, // 0 - old, 1 - new 
     parameter CLKFBOUT_PHASE =      0.000,
     parameter SDCLK_PHASE =         0.000,
     parameter CLK_PHASE =           0.000,
@@ -505,6 +506,7 @@ module  mcontr_sequencer   #(
         .rclk     (mclk),          // input
         .raddr    (cmd_addr),      // input[9:0]
         .ren      (ren0),          // input TODO: verify cmd_busy[0] is correct (was cmd_busy ). TODO: make cleaner ren/regen
+//        .ren      (ren0 && !sequence_done),  // input TODO: verify cmd_busy[0] is correct (was cmd_busy ). TODO: make cleaner ren/regen
         .regen    (ren0),          // input
         .data_out (phy_cmd0_word), // output[31:0] 
         .wclk     (cmd0_clk),      // input
@@ -513,14 +515,19 @@ module  mcontr_sequencer   #(
         .web      (4'hf),          // input[3:0] 
         .data_in  (cmd0_data)      // input[31:0] 
     );
+// NOTE: Simulation sometimes may show:
+// Memory Collision Error on RAMB36E1 : x393_testbench03.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.cmd1_buf_i.RAMB36E1_i.genblk1.INT_RAMB_TDP.chk_for_col_msg
+// It is OK, as the sequencer reads 2 extra (unused) locations before it stops at the end of block (stop depends on the read memory that has latency)
 
-// Command sequence memory 0 ("manual"):
+
+// Command sequence memory 1
     ram_1kx32_1kx32 #(
         .REGISTERS (1) // (0) // register output
     ) cmd1_buf_i (
         .rclk     (mclk),          // input
         .raddr    (cmd_addr),      // input[9:0]
         .ren      ( ren1),         // input ???  TODO: make cleaner ren/regen
+//        .ren      ( ren1 && !sequence_done),  // input ???  TODO: make cleaner ren/regen
         .regen    ( ren1),         // input ???
         .data_out (phy_cmd1_word), // output[31:0] 
         .wclk     (cmd1_clk),      // input
@@ -545,9 +552,9 @@ module  mcontr_sequencer   #(
         .CLKFBOUT_MULT_REF     (CLKFBOUT_MULT_REF),
         .CLKFBOUT_DIV_REF      (CLKFBOUT_DIV_REF),
         .DIVCLK_DIVIDE         (DIVCLK_DIVIDE),
+        .CLKFBOUT_USE_FINE_PS (CLKFBOUT_USE_FINE_PS),
         .CLKFBOUT_PHASE        (CLKFBOUT_PHASE),
         .SDCLK_PHASE           (SDCLK_PHASE), /// debugging
-        
         .CLK_PHASE             (CLK_PHASE),
         .CLK_DIV_PHASE         (CLK_DIV_PHASE),
         .MCLK_PHASE            (MCLK_PHASE),

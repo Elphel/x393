@@ -196,12 +196,14 @@ module  x393 #(
  //TODO: Create missing clocks   
     
     wire           pclk;   // global clock, sensor pixel rate (96 MHz)
+`ifdef USE_PCLK2X    
     wire           pclk2x; // global clock, sensor double pixel rate (192 MHz)
-   
+`endif
    // compressor pixel rate can be adjusted independently
     wire           xclk;   // global clock, compressor pixel rate (100 MHz)?
+`ifdef  USE_XCLK2X     
     wire           xclk2x; // global clock, compressor double pixel rate (200 MHz)
-   
+`endif   
     wire           camsync_clk; // global clock used for external synchronization. 96MHz in x353.
                                //  Make it independent of pixel, compressor and mclk so it can be frozen
     wire           logger_clk;  // global clock for the event logger. Use 100 MHz, shared with camsync_clk
@@ -413,6 +415,8 @@ module  x393 #(
     wire                  [3:0] sens_buf_rd;     //    (), // input
     wire                [255:0] sens_buf_dout;   //    (), // output[63:0] 
     wire                  [3:0] sens_page_written;     //   single mclk pulse: buffer page (full or partial) is written to the memory buffer 
+// TODO: Add counter(s) to count sens_xfer_skipped pulses    
+    wire                  [3:0] sens_xfer_skipped;     // single mclk pulse on every skipped (not written) block to record error statistics
     wire                        trigger_mode; //       (), // input
     wire                  [3:0] trig_in;                  // input[3:0] 
         
@@ -436,7 +440,7 @@ module  x393 #(
     wire   [3:0] cmprs_page_ready;          // input
     wire   [3:0] cmprs_next_page;           // output
 
-// per-channel master (sesnor)/slave (compressor) synchronization (compressor wait until sesnor provided data)
+// per-channel master (sensor)/slave (compressor) synchronization (compressor wait until sensor provided data)
     wire                     [3:0] cmprs_frame_start_dst; // output - trigger receive (tiledc) memory channel (it will take care of single/repetitive
                                                           // these output either follows vsync_late (reclocks it) or generated in non-bonded mode
                                                           // (compress from memory)
@@ -1022,6 +1026,7 @@ assign axi_grst = axi_rst_pre;
         .CLKFBOUT_MULT_REF                 (CLKFBOUT_MULT_REF),
         .CLKFBOUT_DIV_REF                  (CLKFBOUT_DIV_REF),
         .DIVCLK_DIVIDE                     (DIVCLK_DIVIDE),
+        .CLKFBOUT_USE_FINE_PS              (CLKFBOUT_USE_FINE_PS),
         .CLKFBOUT_PHASE                    (CLKFBOUT_PHASE),
         .SDCLK_PHASE                       (SDCLK_PHASE),
         .CLK_PHASE                         (CLK_PHASE),
@@ -1090,6 +1095,7 @@ assign axi_grst = axi_rst_pre;
         .MCONTR_LINTILE_SINGLE             (MCONTR_LINTILE_SINGLE),
         .MCONTR_LINTILE_REPEAT             (MCONTR_LINTILE_REPEAT),
         .MCONTR_LINTILE_DIS_NEED           (MCONTR_LINTILE_DIS_NEED),
+        .MCONTR_LINTILE_SKIP_LATE          (MCONTR_LINTILE_SKIP_LATE),
         .BUFFER_DEPTH32                    (BUFFER_DEPTH32),
         .RSEL                              (RSEL),
         .WSEL                              (WSEL)
@@ -1130,7 +1136,7 @@ assign axi_grst = axi_rst_pre;
         .sens_buf_rd               (sens_buf_rd),                // output[3:0] 
         .sens_buf_dout             (sens_buf_dout),              // input[255:0] 
         .sens_page_written         (sens_page_written),          // input [3:0] single mclk pulse: buffer page (full or partial) is written to the memory buffer 
-
+        .sens_xfer_skipped         (sens_xfer_skipped),          // output reg
 // compressor interface
         .cmprs_xfer_reset_page_rd  (cmprs_xfer_reset_page_rd),   // output[3:0] 
         .cmprs_buf_wpage_nxt       (cmprs_buf_wpage_nxt),        // output[3:0] 
@@ -1487,11 +1493,20 @@ assign axi_grst = axi_rst_pre;
         .SENS_CTRL_ARST             (SENS_CTRL_ARST),
         .SENS_CTRL_ARO              (SENS_CTRL_ARO),
         .SENS_CTRL_RST_MMCM         (SENS_CTRL_RST_MMCM),
+`ifdef HISPI                
+        .SENS_CTRL_IGNORE_EMBED     (SENS_CTRL_IGNORE_EMBED),
+`else                
         .SENS_CTRL_EXT_CLK          (SENS_CTRL_EXT_CLK),
+`endif                
         .SENS_CTRL_LD_DLY           (SENS_CTRL_LD_DLY),
+`ifdef HISPI
+        .SENS_CTRL_GP0              (SENS_CTRL_GP0),
+        .SENS_CTRL_GP1              (SENS_CTRL_GP1),
+`else        
         .SENS_CTRL_QUADRANTS        (SENS_CTRL_QUADRANTS),
         .SENS_CTRL_QUADRANTS_WIDTH  (SENS_CTRL_QUADRANTS_WIDTH),
         .SENS_CTRL_QUADRANTS_EN     (SENS_CTRL_QUADRANTS_EN),
+`endif                
         .SENSIO_STATUS              (SENSIO_STATUS),
         .SENSIO_JTAG                (SENSIO_JTAG),
         .SENS_JTAG_PGMEN            (SENS_JTAG_PGMEN),
@@ -1499,7 +1514,9 @@ assign axi_grst = axi_rst_pre;
         .SENS_JTAG_TCK              (SENS_JTAG_TCK),
         .SENS_JTAG_TMS              (SENS_JTAG_TMS),
         .SENS_JTAG_TDI              (SENS_JTAG_TDI),
+`ifndef HISPI
         .SENSIO_WIDTH               (SENSIO_WIDTH),
+`endif        
         .SENSIO_DELAYS              (SENSIO_DELAYS),
         .SENSI2C_ABS_RADDR          (SENSI2C_ABS_RADDR),
         .SENSI2C_REL_RADDR          (SENSI2C_REL_RADDR),
@@ -1515,9 +1532,11 @@ assign axi_grst = axi_rst_pre;
         .SENSI2C_IBUF_LOW_PWR       (SENSI2C_IBUF_LOW_PWR),
         .SENSI2C_IOSTANDARD         (SENSI2C_IOSTANDARD),
         .SENSI2C_SLEW               (SENSI2C_SLEW),
+`ifndef HISPI
         .SENSOR_DATA_WIDTH          (SENSOR_DATA_WIDTH),
         .SENSOR_FIFO_2DEPTH         (SENSOR_FIFO_2DEPTH),
-        .SENSOR_FIFO_DELAY          (SENSOR_FIFO_DELAY),
+        .SENSOR_FIFO_DELAY         (SENSOR_FIFO_DELAY),
+`endif                
         .HIST_SAXI_ADDR_MASK        (HIST_SAXI_ADDR_MASK),
         .HIST_SAXI_MODE_WIDTH       (HIST_SAXI_MODE_WIDTH),
         .HIST_SAXI_EN               (HIST_SAXI_EN),
@@ -1538,9 +1557,15 @@ assign axi_grst = axi_rst_pre;
         .PXD_SLEW                   (PXD_SLEW),
         .SENS_REFCLK_FREQUENCY      (SENS_REFCLK_FREQUENCY),
         .SENS_HIGH_PERFORMANCE_MODE (SENS_HIGH_PERFORMANCE_MODE),
+`ifdef HISPI
+        .PXD_CAPACITANCE            (PXD_CAPACITANCE),
+        .PXD_CLK_DIV                (PXD_CLK_DIV),
+        .PXD_CLK_DIV_BITS           (PXD_CLK_DIV_BITS),
+`endif
         .SENS_PHASE_WIDTH           (SENS_PHASE_WIDTH),
-        .SENS_PCLK_PERIOD           (SENS_PCLK_PERIOD),
+//        .SENS_PCLK_PERIOD           (SENS_PCLK_PERIOD),
         .SENS_BANDWIDTH             (SENS_BANDWIDTH),
+        .CLKIN_PERIOD_SENSOR        (CLKIN_PERIOD_SENSOR),
         .CLKFBOUT_MULT_SENSOR       (CLKFBOUT_MULT_SENSOR),
         .CLKFBOUT_PHASE_SENSOR      (CLKFBOUT_PHASE_SENSOR),
         .IPCLK_PHASE                (IPCLK_PHASE),
@@ -1559,13 +1584,26 @@ assign axi_grst = axi_rst_pre;
         .SENS_SS_EN                 (SENS_SS_EN),
         .SENS_SS_MODE               (SENS_SS_MODE),
         .SENS_SS_MOD_PERIOD         (SENS_SS_MOD_PERIOD)
+`ifdef HISPI
+       ,.HISPI_MSB_FIRST               (HISPI_MSB_FIRST),
+        .HISPI_NUMLANES                (HISPI_NUMLANES),
+        .HISPI_CAPACITANCE             (HISPI_CAPACITANCE),
+        .HISPI_DIFF_TERM               (HISPI_DIFF_TERM),
+        .HISPI_DQS_BIAS                (HISPI_DQS_BIAS),
+        .HISPI_IBUF_DELAY_VALUE        (HISPI_IBUF_DELAY_VALUE),
+        .HISPI_IBUF_LOW_PWR            (HISPI_IBUF_LOW_PWR),
+        .HISPI_IFD_DELAY_VALUE         (HISPI_IFD_DELAY_VALUE),
+        .HISPI_IOSTANDARD              (HISPI_IOSTANDARD)
+`endif    
 `ifdef DEBUG_RING
         ,.DEBUG_CMD_LATENCY         (DEBUG_CMD_LATENCY) 
 `endif        
     ) sensors393_i (
 //        .rst                (axi_rst),           // input
         .pclk               (pclk),                //  input
+`ifdef USE_PCLK2X    
         .pclk2x             (pclk2x),              // input
+`endif        
         .ref_clk            (ref_clk),             // input
         .dly_rst            (idelay_ctrl_reset),   // input 
         .mrst               (mrst),                // input
@@ -1778,9 +1816,10 @@ assign axi_grst = axi_rst_pre;
 `endif        
         
     ) compressor393_i (
-//        .rst                       (axi_rst),                    // input
         .xclk                      (xclk),                       // input
+`ifdef  USE_XCLK2X     
         .xclk2x                    (xclk2x),                     // input
+`endif        
         .mclk                      (mclk),                       // input
         .mrst                      (mrst),                       // input
         .xrst                      (xrst),                       // input
@@ -2132,18 +2171,22 @@ assign axi_grst = axi_rst_pre;
         .DIVCLK_DIVIDE_PCLK      (DIVCLK_DIVIDE_PCLK),
         .CLKFBOUT_MULT_PCLK      (CLKFBOUT_MULT_PCLK),
         .CLKOUT_DIV_PCLK         (CLKOUT_DIV_PCLK),
+        .BUF_CLK1X_PCLK          (BUF_CLK1X_PCLK),
+`ifdef USE_PCLK2X    
         .CLKOUT_DIV_PCLK2X       (CLKOUT_DIV_PCLK2X),
         .PHASE_CLK2X_PCLK        (PHASE_CLK2X_PCLK),
-        .BUF_CLK1X_PCLK          (BUF_CLK1X_PCLK),
         .BUF_CLK1X_PCLK2X        (BUF_CLK1X_PCLK2X),
+`endif        
         .CLKIN_PERIOD_XCLK       (CLKIN_PERIOD_XCLK),
         .DIVCLK_DIVIDE_XCLK      (DIVCLK_DIVIDE_XCLK),
         .CLKFBOUT_MULT_XCLK      (CLKFBOUT_MULT_XCLK),
         .CLKOUT_DIV_XCLK         (CLKOUT_DIV_XCLK),
+        .BUF_CLK1X_XCLK          (BUF_CLK1X_XCLK),
+`ifdef  USE_XCLK2X     
         .CLKOUT_DIV_XCLK2X       (CLKOUT_DIV_XCLK2X),
         .PHASE_CLK2X_XCLK        (PHASE_CLK2X_XCLK),
-        .BUF_CLK1X_XCLK          (BUF_CLK1X_XCLK),
         .BUF_CLK1X_XCLK2X        (BUF_CLK1X_XCLK2X),
+`endif        
         .CLKIN_PERIOD_SYNC       (CLKIN_PERIOD_SYNC),
         .DIVCLK_DIVIDE_SYNC      (DIVCLK_DIVIDE_SYNC),
         .CLKFBOUT_MULT_SYNC      (CLKFBOUT_MULT_SYNC),
@@ -2186,9 +2229,13 @@ assign axi_grst = axi_rst_pre;
         .aclk            (axi_aclk),            // output
         .hclk            (hclk),                // output
         .pclk            (pclk),                // output
+`ifdef USE_PCLK2X    
         .pclk2x          (pclk2x),              // output
+`endif    
         .xclk            (xclk),                // output
+`ifdef  USE_XCLK2X     
         .xclk2x          (xclk2x),              // output
+`endif        
         .sync_clk        (camsync_clk),         // output
         .time_ref        (time_ref),            // output
         .extra_status    ({1'b0,idelay_ctrl_rdy}), // input[1:0] 

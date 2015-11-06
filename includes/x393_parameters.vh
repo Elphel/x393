@@ -138,7 +138,11 @@
     parameter real REFCLK_FREQUENCY = 200.0, // 300.0,
     parameter HIGH_PERFORMANCE_MODE = "FALSE",
     parameter CLKIN_PERIOD =        20, // 10, //ns >1.25, 600<Fvco<1200 // Hardware 150MHz , change to             | 6.667
+`ifdef MCLK_VCO_MULT    
+    parameter CLKFBOUT_MULT =       `MCLK_VCO_MULT ,
+`else    
     parameter CLKFBOUT_MULT =       16,   // 8, // Fvco=Fclkin*CLKFBOUT_MULT_F/DIVCLK_DIVIDE, Fout=Fvco/CLKOUT#_DIVIDE  | 16
+`endif    
     parameter CLKFBOUT_MULT_REF =   16,   // 18,   // 9, // Fvco=Fclkin*CLKFBOUT_MULT_F/DIVCLK_DIVIDE, Fout=Fvco/CLKOUT#_DIVIDE  | 6
     parameter CLKFBOUT_DIV_REF =    4, // 200Mhz 3, // To get 300MHz for the reference clock
 `else
@@ -150,11 +154,12 @@
     parameter CLKFBOUT_DIV_REF =    3, // To get 300MHz for the reference clock
 `endif    
     parameter DIVCLK_DIVIDE=        1,
+    parameter CLKFBOUT_USE_FINE_PS= 0, //1, // 0 - old, 1 - new 
     parameter CLKFBOUT_PHASE =      0.000,
     parameter SDCLK_PHASE =         0.000,
-    parameter CLK_PHASE =           0.000,
+    parameter CLK_PHASE =           0.000, //11.25, /// 0.000,
     parameter CLK_DIV_PHASE =       0.000,
-    parameter MCLK_PHASE =          90.000,
+    parameter MCLK_PHASE =          90.000, //78.75, // 90.000,
     parameter REF_JITTER1 =         0.010,
     parameter SS_EN =              "FALSE",
     parameter SS_MODE =      "CENTER_HIGH",
@@ -273,6 +278,7 @@
     parameter MCONTR_LINTILE_SINGLE =              9, // read/write a single page 
     parameter MCONTR_LINTILE_REPEAT =             10,  // read/write pages until disabled
     parameter MCONTR_LINTILE_DIS_NEED =           11,   // disable 'need' request 
+    parameter MCONTR_LINTILE_SKIP_LATE =          12,  // skip actual R/W operation when it is too late, advance pointers
      
 // Channel test module parameters
     parameter MCNTRL_TEST01_ADDR=                 'h0f0,
@@ -429,11 +435,20 @@
         parameter SENS_CTRL_ARST =        2,  //  3: 2
         parameter SENS_CTRL_ARO =         4,  //  5: 4
         parameter SENS_CTRL_RST_MMCM =    6,  //  7: 6
+//`ifdef HISPI
+        parameter SENS_CTRL_IGNORE_EMBED =8,  //  9: 8
+//`else        
         parameter SENS_CTRL_EXT_CLK =     8,  //  9: 8
+//`endif        
         parameter SENS_CTRL_LD_DLY =     10,  // 10
+//`ifdef HISPI
+        parameter SENS_CTRL_GP0=      12,  // 13:12
+        parameter SENS_CTRL_GP1=      14,  // 15:14
+//`else        
         parameter SENS_CTRL_QUADRANTS =  12,  // 17:12, enable - 20
         parameter SENS_CTRL_QUADRANTS_WIDTH = 6,
         parameter SENS_CTRL_QUADRANTS_EN =   20,  // 17:12, enable - 20 (2 bits reserved)
+//`endif        
       parameter SENSIO_STATUS =         'h1,
       parameter SENSIO_JTAG =           'h2,
         // SENSIO_JTAG register bits
@@ -442,7 +457,9 @@
         parameter SENS_JTAG_TCK =         4,
         parameter SENS_JTAG_TMS =         2,
         parameter SENS_JTAG_TDI =         0,
+//`ifndef HISPI
       parameter SENSIO_WIDTH =          'h3, // 1.. 2^16, 0 - use HACT
+//`endif      
       parameter SENSIO_DELAYS =         'h4, // 'h4..'h7
         // 4 of 8-bit delays per register
     // sensor_i2c_io command/data write registers s (relative to SENSOR_GROUP_ADDR)
@@ -466,10 +483,13 @@
     parameter SENSI2C_IOSTANDARD =       "LVCMOS25",
     parameter SENSI2C_SLEW =             "SLOW",
     
+//`ifndef HISPI
     //sensor_fifo parameters
-    parameter SENSOR_DATA_WIDTH =        12,
-    parameter SENSOR_FIFO_2DEPTH =       4,
-    parameter SENSOR_FIFO_DELAY =        4'd5, // 7,
+    parameter SENSOR_DATA_WIDTH =      12,
+    parameter SENSOR_FIFO_2DEPTH =     4,
+    parameter [3:0] SENSOR_FIFO_DELAY =      5, // 7,
+//`endif    
+
     // other parameters for histogram_saxi module
     parameter HIST_SAXI_ADDR_MASK =      'h7f0,
       parameter HIST_SAXI_MODE_WIDTH =   8,
@@ -504,16 +524,31 @@
     parameter real SENS_REFCLK_FREQUENCY = 200.0,
 `endif    
     parameter SENS_HIGH_PERFORMANCE_MODE = "FALSE",
+
+//`ifdef HISPI
+    parameter PXD_CAPACITANCE =          "DONT_CARE",
+    parameter PXD_CLK_DIV =              10, // 220MHz -> 22MHz
+    parameter PXD_CLK_DIV_BITS =          4,
+//`endif    
     
     parameter SENS_PHASE_WIDTH=          8,      // number of bits for te phase counter (depends on divisors)
-    parameter SENS_PCLK_PERIOD =         10.000,  // input period in ns, 0..100.000 - MANDATORY, resolution down to 1 ps
+//    parameter SENS_PCLK_PERIOD =         10.000,  // input period in ns, 0..100.000 - MANDATORY, resolution down to 1 ps
     parameter SENS_BANDWIDTH =           "OPTIMIZED",  //"OPTIMIZED", "HIGH","LOW"
 
-    parameter CLKFBOUT_MULT_SENSOR =     8,  // 100 MHz --> 800 MHz
+    // parameters for the sensor-synchronous clock PLL
+`ifdef HISPI    
+    parameter CLKIN_PERIOD_SENSOR =      3.000, // input period in ns, 0..100.000 - MANDATORY, resolution down to 1 ps
+    parameter CLKFBOUT_MULT_SENSOR =     3,      // 330 MHz --> 990 MHz
     parameter CLKFBOUT_PHASE_SENSOR =    0.000,  // CLOCK FEEDBACK phase in degrees (3 significant digits, -360.000...+360.000)
     parameter IPCLK_PHASE =              0.000,
     parameter IPCLK2X_PHASE =            0.000,
-
+`else    
+    parameter CLKIN_PERIOD_SENSOR =      10.000, // input period in ns, 0..100.000 - MANDATORY, resolution down to 1 ps
+    parameter CLKFBOUT_MULT_SENSOR =     8,      // 100 MHz --> 800 MHz
+    parameter CLKFBOUT_PHASE_SENSOR =    0.000,  // CLOCK FEEDBACK phase in degrees (3 significant digits, -360.000...+360.000)
+    parameter IPCLK_PHASE =              0.000,
+    parameter IPCLK2X_PHASE =            0.000,
+`endif
 //    parameter BUF_IPCLK =                "BUFMR", //G", // "BUFR", // BUFR fails for both clocks for sensors1 and 3
 //    parameter BUF_IPCLK2X =              "BUFMR", //G", // "BUFR",  
 
@@ -530,11 +565,23 @@
     parameter BUF_IPCLK2X_SENS3 =        "BUFG", // "BUFR",  
 
     parameter SENS_DIVCLK_DIVIDE =       1,            // Integer 1..106. Divides all outputs with respect to CLKIN
-    parameter SENS_REF_JITTER1   =       0.010,        // Expectet jitter on CLKIN1 (0.000..0.999)
+    parameter SENS_REF_JITTER1   =       0.010,        // Expected jitter on CLKIN1 (0.000..0.999)
     parameter SENS_REF_JITTER2   =       0.010,
     parameter SENS_SS_EN         =       "FALSE",      // Enables Spread Spectrum mode
     parameter SENS_SS_MODE       =       "CENTER_HIGH",//"CENTER_HIGH","CENTER_LOW","DOWN_HIGH","DOWN_LOW"
     parameter SENS_SS_MOD_PERIOD =       10000,        // integer 4000-40000 - SS modulation period in ns
+
+//`ifdef HISPI
+    parameter HISPI_MSB_FIRST =            0,
+    parameter HISPI_NUMLANES =             4,
+    parameter HISPI_CAPACITANCE =         "DONT_CARE",
+    parameter HISPI_DIFF_TERM =           "TRUE",
+    parameter HISPI_DQS_BIAS =            "TRUE",
+    parameter HISPI_IBUF_DELAY_VALUE =    "0",
+    parameter HISPI_IBUF_LOW_PWR =        "TRUE",
+    parameter HISPI_IFD_DELAY_VALUE =     "AUTO",
+    parameter HISPI_IOSTANDARD =          "DEFAULT",
+//`endif    
     
     parameter CMPRS_NUM_AFI_CHN =         1, // 2, // 1 - multiplex all 4 compressors to a single AXI_HP, 2 - split between to AXI_HP
     parameter CMPRS_GROUP_ADDR =          'h600, // total of 'h60
@@ -760,12 +807,19 @@
     parameter CLKFBOUT_MULT_AXIHP =       18, // Fvco=Fclkin*CLKFBOUT_MULT_F/DIVCLK_DIVIDE, Fout=Fvco/CLKOUT#_DIVIDE
     parameter CLKOUT_DIV_AXIHP =           6,   // To get 150MHz for the reference clock
     parameter BUF_CLK1X_AXIHP =           "BUFG", // "BUFG", "BUFH", "BUFR", "NONE"
-    
+`ifdef HISPI
+    parameter CLKIN_PERIOD_PCLK =         42, // 24MHz (actually needed is 24.4444
+    parameter DIVCLK_DIVIDE_PCLK =         1,
+    parameter CLKFBOUT_MULT_PCLK =        36, // 880 MHz
+    parameter CLKOUT_DIV_PCLK =            4, // 220 MHz 
+    parameter CLKOUT_DIV_PCLK2X =          2, // 440 MHz
+`else    
     parameter CLKIN_PERIOD_PCLK =         42, // 24MHz 
     parameter DIVCLK_DIVIDE_PCLK =         1,
     parameter CLKFBOUT_MULT_PCLK =        40, // 960 MHz
     parameter CLKOUT_DIV_PCLK =           10, // 96MHz 
     parameter CLKOUT_DIV_PCLK2X =          5, // 192 MHz
+`endif    
     parameter PHASE_CLK2X_PCLK =           0.000, 
     parameter BUF_CLK1X_PCLK =            "BUFG",
     parameter BUF_CLK1X_PCLK2X =          "BUFG",  
@@ -773,7 +827,11 @@
     parameter CLKIN_PERIOD_XCLK =         20, // 50MHz 
     parameter DIVCLK_DIVIDE_XCLK =         1,
     parameter CLKFBOUT_MULT_XCLK =        20, // 50*20=1000 MHz
+`ifdef USE_XCLK2X
     parameter CLKOUT_DIV_XCLK =           10, // 100 MHz 
+`else
+    parameter CLKOUT_DIV_XCLK =           4, // 250 MHz 
+`endif    
     parameter CLKOUT_DIV_XCLK2X =          5, // 200 MHz
     parameter PHASE_CLK2X_XCLK =           0.000, 
     parameter BUF_CLK1X_XCLK =            "BUFG",

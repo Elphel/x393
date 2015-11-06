@@ -40,20 +40,22 @@ module  clocks393#(
         parameter DIVCLK_DIVIDE_PCLK =         1,
         parameter CLKFBOUT_MULT_PCLK =        40, // 960 MHz
         parameter CLKOUT_DIV_PCLK =           10, // 96MHz 
+        parameter BUF_CLK1X_PCLK =            "BUFG",
+`ifdef USE_PCLK2X    
         parameter CLKOUT_DIV_PCLK2X =          5, // 192 MHz
         parameter PHASE_CLK2X_PCLK =           0.000, 
-        parameter BUF_CLK1X_PCLK =            "BUFG",
         parameter BUF_CLK1X_PCLK2X =          "BUFG",  
-        
+`endif        
         parameter CLKIN_PERIOD_XCLK =         20, // 50MHz 
         parameter DIVCLK_DIVIDE_XCLK =         1,
         parameter CLKFBOUT_MULT_XCLK =        20, // 50*20=1000 MHz
-        parameter CLKOUT_DIV_XCLK =           10, // 100 MHz 
+        parameter CLKOUT_DIV_XCLK =           10, // 100 MHz
+        parameter BUF_CLK1X_XCLK =            "BUFG",
+`ifdef  USE_XCLK2X     
         parameter CLKOUT_DIV_XCLK2X =          5, // 200 MHz
         parameter PHASE_CLK2X_XCLK =           0.000, 
-        parameter BUF_CLK1X_XCLK =            "BUFG",
         parameter BUF_CLK1X_XCLK2X =          "BUFG",  
-        
+`endif        
         parameter CLKIN_PERIOD_SYNC =         20, // 50MHz 
         parameter DIVCLK_DIVIDE_SYNC =         1,
         parameter CLKFBOUT_MULT_SYNC =        20, // 50*20=1000 MHz
@@ -101,9 +103,13 @@ module  clocks393#(
     output      aclk,        // global clock 50 MHz (used for maxi0)
     output      hclk,        // global clock 150MHz (used for afi*, saxi*)
     output      pclk,        // global clock for sensors (now 96MHz), based on external clock generator
+`ifdef USE_PCLK2X    
     output      pclk2x,      // global clock for sennors, 2x frequency (now 192MHz)
+`endif
     output      xclk,        // global clock for compressor (now 100MHz) 
+`ifdef  USE_XCLK2X     
     output      xclk2x,      // global clock for compressor, 2x frequency (now 200MHz)
+`endif    
     output      sync_clk,    // global clock for camsync module (96 MHz for 353 compatibility - switch to 100MHz)?
     output      time_ref,     // non-global, just RTC (currently just mclk/8 = 25 MHz)
     input [1:0] extra_status, // just extra two status bits from the top module
@@ -203,16 +209,24 @@ module  clocks393#(
         .DIVCLK_DIVIDE    (DIVCLK_DIVIDE_PCLK),
         .CLKFBOUT_MULT    (CLKFBOUT_MULT_PCLK),
         .CLKOUT_DIV_CLK1X (CLKOUT_DIV_PCLK),
-        .CLKOUT_DIV_CLK2X (CLKOUT_DIV_PCLK2X),
+        .BUF_CLK1X        (BUF_CLK1X_PCLK)
+`ifdef USE_PCLK2X    
+       ,.CLKOUT_DIV_CLK2X (CLKOUT_DIV_PCLK2X),
         .PHASE_CLK2X      (PHASE_CLK2X_PCLK),
-        .BUF_CLK1X        (BUF_CLK1X_PCLK),
         .BUF_CLK2X        (BUF_CLK1X_PCLK2X)
+`else
+       ,.BUF_CLK2X        ("NONE")
+`endif        
     ) dual_clock_pclk_i (
         .rst              (async_rst || reset_clk[1]),     // input
         .clk_in           (ffclk0),           // input
         .pwrdwn           (pwrdwn_clk[1]),    // input
         .clk1x            (pclk),             // output
+`ifdef USE_PCLK2X    
         .clk2x            (pclk2x),           // output
+`else        
+        .clk2x            (),                 // output not connected
+`endif        
         .locked           (locked[1])         // output
     );
     
@@ -221,16 +235,24 @@ module  clocks393#(
         .DIVCLK_DIVIDE    (DIVCLK_DIVIDE_XCLK),
         .CLKFBOUT_MULT    (CLKFBOUT_MULT_XCLK),
         .CLKOUT_DIV_CLK1X (CLKOUT_DIV_XCLK),
+        .BUF_CLK1X        (BUF_CLK1X_XCLK),
+`ifdef  USE_XCLK2X     
         .CLKOUT_DIV_CLK2X (CLKOUT_DIV_XCLK2X),
         .PHASE_CLK2X      (PHASE_CLK2X_XCLK),
-        .BUF_CLK1X        (BUF_CLK1X_XCLK),
         .BUF_CLK2X        (BUF_CLK1X_XCLK2X)
+`else
+        .BUF_CLK2X        ("NONE")
+`endif        
     ) dual_clock_xclk_i (
         .rst              (async_rst || reset_clk[2]),     // input
         .clk_in           (aclk),             // input
         .pwrdwn           (pwrdwn_clk[2]),    // input
         .clk1x            (xclk),             // output
+`ifdef  USE_XCLK2X     
         .clk2x            (xclk2x),           // output
+`else
+        .clk2x            (),                 // output
+`endif        
         .locked           (locked[2])         // output
     );
     

@@ -2,7 +2,24 @@
 `ifndef SYSTEM_DEFINES
   `define SYSTEM_DEFINES
   `define PRELOAD_BRAMS
+  `define DISPLAY_COMPRESSED_DATA  
+  // if HISPI is not defined, parallel sensor interface is used for all channels
+//  `define HISPI
+//    `define USE_OLD_XDCT393  
+//  `define USE_PCLK2X
+//  `define USE_XCLK2X
 //  `define DEBUG_RING 1
+//  `define MCLK_VCO_MULT 16
+// DDR3 memory speed grade and density
+    `define sg25 1
+//  `define sg15E  1
+//  `define sg187E  1
+  `define den4096Mb 1  
+  
+  `define MCLK_VCO_MULT 16
+//  `define MCLK_VCO_MULT 18
+//  `define MCLK_VCO_MULT 20
+    
   `define MEMBRIDGE_DEBUG_WRITE 1
 // Enviroment-dependent options
   `ifdef IVERILOG

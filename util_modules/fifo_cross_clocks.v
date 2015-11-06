@@ -82,12 +82,13 @@ module fifo_cross_clocks
     end
     
     always @ (posedge  rclk or posedge rst) begin
-        if (rst)       raddr <= 0;
-        else if (rrst) raddr <= 0;
+// making rrst set FIFO to empty regardless of current  waddr (write should be stopped)        
+        if (rst)       raddr <= waddr; // 0;
+        else if (rrst) raddr <= waddr; // 0;
         else if (re)   raddr <= raddr_plus1;
-        
-        if (rst)       raddr_gray_top3 <= 0;
-        else if (rrst) raddr_gray_top3 <= 0;
+
+        if (rst)       raddr_gray_top3 <= waddr[DATA_DEPTH-1 -: 3] ^ {1'b0,waddr[DATA_DEPTH-1 -: 2]}; // 0;
+        else if (rrst) raddr_gray_top3 <= waddr[DATA_DEPTH-1 -: 3] ^ {1'b0,waddr[DATA_DEPTH-1 -: 2]}; // 0;
         else if (re)   raddr_gray_top3 <= raddr_plus1_gray_top3;
     end
     

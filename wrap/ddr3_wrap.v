@@ -276,7 +276,8 @@ module  ddr3_wrap#(
     assign #(DQS_IN_DELAY_H) DQSU =  en_dqs_in[1]? DQSU_DH3:  1'bz;
     assign #(DQS_IN_DELAY_H) NDQSU = en_dqs_in[1]? NDQSU_DH3: 1'bz;
 
-    ddr3 #(
+    ddr3
+     /*#(
         .TCK_MIN             (2500), 
         .TJIT_PER            (100),
         .TJIT_CC             (200),
@@ -444,7 +445,8 @@ module  ddr3_wrap#(
         .DIFF_GROUP          (2'd2),
         .SIMUL_500US         (5),
         .SIMUL_200US         (2)
-    ) ddr3_i (
+    ) */        
+    ddr3_i (
         .rst_n   (SDRST_D),         // input 
         .ck      (SDCLK_D),         // input 
         .ck_n    (SDNCLK_D),        // input 

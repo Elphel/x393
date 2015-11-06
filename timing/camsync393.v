@@ -570,7 +570,7 @@ module camsync393       #(
         end
 // Why was it local_got_pclk? Also, it is a multi-bit vector
 //        rcv_done_rq <= start_en && ((ts_external_pclk && local_got_pclk) || (rcv_done_rq && rcv_run));
-// TODO: think of disabling receiving sync if sesnor is not ready yet (not done with a previous frame)
+// TODO: think of disabling receiving sync if sensor is not ready yet (not done with a previous frame)
         rcv_done_rq <= start_en && ((ts_external_pclk && (rcv_run && !rcv_run_d)) || (rcv_done_rq && rcv_run));
         //
         rcv_done_rq_d <= rcv_done_rq;

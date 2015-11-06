@@ -88,9 +88,15 @@ class X393McntrlTiming(object):
         if phase is None:
             phase= vrlg.get_default("DLY_PHASE") 
         vrlg.DLY_PHASE=phase & ((1<<vrlg.PHASE_WIDTH)-1)
-        if quiet<2:
-            print("SET CLOCK PHASE=0x%x"%(vrlg.DLY_PHASE))
-        self.x393_axi_tasks.write_control_register(vrlg.LD_DLY_PHASE,vrlg.DLY_PHASE) # {{(32-PHASE_WIDTH){1'b0}},phase}); // control register address
+        if vrlg.CLKFBOUT_USE_FINE_PS:
+            phase_value = (-vrlg.DLY_PHASE) & ((1<<vrlg.PHASE_WIDTH)-1)
+            if quiet<2:
+                print("SET INVERTED CLOCK PHASE=0x%x (actual value is 0x%x)"%(vrlg.DLY_PHASE, phase_value))
+            self.x393_axi_tasks.write_control_register(vrlg.LD_DLY_PHASE, phase_value) # {{(32-PHASE_WIDTH){1'b0}},phase}); // control register address
+        else:    
+            if quiet<2:
+                print("SET CLOCK PHASE=0x%x"%(vrlg.DLY_PHASE))
+            self.x393_axi_tasks.write_control_register(vrlg.LD_DLY_PHASE,vrlg.DLY_PHASE) # {{(32-PHASE_WIDTH){1'b0}},phase}); // control register address
         self.x393_axi_tasks.write_control_register(vrlg.DLY_SET,0)
 #        self.target_phase = phase
         if wait_phase_en:
@@ -106,7 +112,10 @@ class X393McntrlTiming(object):
         <wait_seq> read and re-send status request to make sure status reflects new data (just for testing, too fast for Python)
         Returns 1 if success, 0 if timeout
         """
-        patt = 0x3000000 | vrlg.DLY_PHASE
+        if vrlg.CLKFBOUT_USE_FINE_PS:
+            patt = 0x3000000 | ((-vrlg.DLY_PHASE) & 0xff)
+        else:    
+            patt = 0x3000000 | vrlg.DLY_PHASE
         mask = 0x3000100
         if check_phase_value:
             mask |= 0xff
@@ -452,6 +461,9 @@ class X393McntrlTiming(object):
         Wait until clock phase shifter is ready
         """
         data=self.x393_axi_tasks.read_status(vrlg.MCONTR_PHY_STATUS_REG_ADDR)
+        expected_phase = vrlg.DLY_PHASE
+        if (vrlg.CLKFBOUT_USE_FINE_PS):
+            expected_phase = (-expected_phase) & 0xff;
         while (((data & vrlg.STATUS_PSHIFTER_RDY_MASK) == 0) or (((data ^ vrlg.DLY_PHASE) & 0xff) != 0)):
             data=self.x393_axi_tasks.read_status(vrlg.MCONTR_PHY_STATUS_REG_ADDR)
             if self.DRY_MODE: break

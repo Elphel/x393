@@ -1296,6 +1296,7 @@ assign bresp=                              x393_i.ps7_i.MAXIGP0BRESP;
         .CLKFBOUT_DIV_REF                  (CLKFBOUT_DIV_REF),
         .DIVCLK_DIVIDE                     (DIVCLK_DIVIDE),
         .CLKFBOUT_PHASE                    (CLKFBOUT_PHASE),
+        .CLKFBOUT_USE_FINE_PS              (CLKFBOUT_USE_FINE_PS),
         .SDCLK_PHASE                       (SDCLK_PHASE),
         .CLK_PHASE                         (CLK_PHASE),
         .CLK_DIV_PHASE                     (CLK_DIV_PHASE),
@@ -1978,6 +1979,7 @@ simul_axi_hp_wr #(
 
 
     simul_sensor12bits #(
+        .SENSOR_IMAGE_TYPE (SENSOR_IMAGE_TYPE0),
         .lline     (VIRTUAL_WIDTH),     // SENSOR12BITS_LLINE),
         .ncols     (FULL_WIDTH),        // (SENSOR12BITS_NCOLS),
 `ifdef PF
@@ -1996,7 +1998,7 @@ simul_axi_hp_wr #(
         .tDDO1     (SENSOR12BITS_TDDO1),
         .trigdly   (TRIG_LINES), // SENSOR12BITS_TRIGDLY),
         .ramp      (0), //SENSOR12BITS_RAMP),
-        .new_bayer (1) //SENSOR12BITS_NEW_BAYER)
+        .new_bayer (0) // was 1 SENSOR12BITS_NEW_BAYER)
     ) simul_sensor12bits_i (
         .MCLK  (PX1_MCLK), // input 
         .MRST  (PX1_MRST), // input 
@@ -2016,6 +2018,7 @@ simul_axi_hp_wr #(
 
 
     simul_sensor12bits #(
+        .SENSOR_IMAGE_TYPE (SENSOR_IMAGE_TYPE1),
         .lline     (VIRTUAL_WIDTH),     // SENSOR12BITS_LLINE),
         .ncols     (FULL_WIDTH),        // (SENSOR12BITS_NCOLS),
 `ifdef PF
@@ -2034,7 +2037,7 @@ simul_axi_hp_wr #(
         .tDDO1     (SENSOR12BITS_TDDO1),
         .trigdly   (TRIG_LINES), // SENSOR12BITS_TRIGDLY),
         .ramp      (0), //SENSOR12BITS_RAMP),
-        .new_bayer (1) //SENSOR12BITS_NEW_BAYER)
+        .new_bayer (0) //SENSOR12BITS_NEW_BAYER) was 1
     ) simul_sensor12bits_2_i (
         .MCLK  (PX2_MCLK), // input 
         .MRST  (PX2_MRST), // input 
@@ -2053,6 +2056,7 @@ simul_axi_hp_wr #(
     );
 
     simul_sensor12bits #(
+        .SENSOR_IMAGE_TYPE (SENSOR_IMAGE_TYPE2),
         .lline     (VIRTUAL_WIDTH),     // SENSOR12BITS_LLINE),
         .ncols     (FULL_WIDTH),        // (SENSOR12BITS_NCOLS),
 `ifdef PF
@@ -2070,8 +2074,8 @@ simul_axi_hp_wr #(
         .tDDO      (SENSOR12BITS_TDDO),
         .tDDO1     (SENSOR12BITS_TDDO1),
         .trigdly   (TRIG_LINES), // SENSOR12BITS_TRIGDLY),
-        .ramp      (0), //SENSOR12BITS_RAMP),
-        .new_bayer (1) //SENSOR12BITS_NEW_BAYER)
+        .ramp      (0), // SENSOR12BITS_RAMP),
+        .new_bayer (0)  // was 1SENSOR12BITS_NEW_BAYER)
     ) simul_sensor12bits_3_i (
         .MCLK  (PX3_MCLK), // input 
         .MRST  (PX3_MRST), // input 
@@ -2090,6 +2094,7 @@ simul_axi_hp_wr #(
     );
 
     simul_sensor12bits #(
+        .SENSOR_IMAGE_TYPE (SENSOR_IMAGE_TYPE3),
         .lline     (VIRTUAL_WIDTH),     // SENSOR12BITS_LLINE),
         .ncols     (FULL_WIDTH),        // (SENSOR12BITS_NCOLS),
 `ifdef PF
@@ -2107,8 +2112,8 @@ simul_axi_hp_wr #(
         .tDDO      (SENSOR12BITS_TDDO),
         .tDDO1     (SENSOR12BITS_TDDO1),
         .trigdly   (TRIG_LINES), // SENSOR12BITS_TRIGDLY),
-        .ramp      (0), //SENSOR12BITS_RAMP),
-        .new_bayer (1) //SENSOR12BITS_NEW_BAYER)
+        .ramp      (0),// SENSOR12BITS_RAMP),
+        .new_bayer (0) // was 1SENSOR12BITS_NEW_BAYER)
     ) simul_sensor12bits_4_i (
         .MCLK  (PX4_MCLK), // input 
         .MRST  (PX4_MRST), // input 
@@ -2387,8 +2392,8 @@ task setup_sensor_channel;
     
     setup_compressor_channel(
         num_sensor,              // sensor channel number (0..3)
-//        0,                       // qbank;    // [6:3] quantization table page - 100% quality
-        1,                       // qbank;    // [6:3] quantization table page - 85%? quality
+        0,                       // qbank;    // [6:3] quantization table page - 100% quality
+//        1,                       // qbank;    // [6:3] quantization table page - 85%? quality
         1,                       // dc_sub;   // [8:7] subtract DC
         CMPRS_CBIT_CMODE_JPEG18, //input [31:0] cmode;   //  [13:9] color mode:
 //        parameter CMPRS_CBIT_CMODE_JPEG18 =   4'h0, // color 4:2:0
@@ -2405,7 +2410,7 @@ task setup_sensor_channel;
 //        parameter CMPRS_CBIT_CMODE_MONO1 =    4'hb, // mono JPEG (not yet implemented)
 //        parameter CMPRS_CBIT_CMODE_MONO4 =    4'he, // mono 4 blocks
         1,                      // input [31:0] multi_frame;   // [15:14] 0 - single-frame buffer, 1 - multiframe video memory buffer
-        0,                      // input [31:0] bayer;         // [20:18] // Bayer shift
+        3,  // 0,               // input [31:0] bayer;         // [20:18] // Bayer shift
         0,                      // input [31:0] focus_mode;    // [23:21] Set focus mode
         3,                      // num_macro_cols_m1; // number of macroblock colums minus 1
         1,                      // num_macro_rows_m1; // number of macroblock rows minus 1
@@ -2477,10 +2482,10 @@ task setup_sensor_channel;
             num_sensor,
             0, // num_sub_sensor
 // add mode "DIRECT", "ASAP", "RELATIVE", "ABSOLUTE" and frame number
-            19'h20000, // 0,      // input  [18:0] AX;
-            19'h20000, // 0,      // input  [18:0] AY;
-            21'h180000, //0,      // input  [20:0] BX;
-            21'h180000, //0,      // input  [20:0] BY;
+            19'h0, // 19'h20000, // 0,      // input  [18:0] AX;
+            19'h0, // 19'h20000, // 0,      // input  [18:0] AY;
+            21'h0, // 21'h180000, //0,      // input  [20:0] BX;
+            21'h0, // 21'h180000, //0,      // input  [20:0] BY;
             'h8000, // input  [18:0] C;
             32768,  // input  [16:0] scales0;
             32768,  // input  [16:0] scales1;

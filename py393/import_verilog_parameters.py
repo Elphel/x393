@@ -393,6 +393,11 @@ class ImportVerilogParameters(object):
         # Try binary operation 
         # repeat until end of line or ')'
             while True:
+                try:
+                    opStart=skipWS(operand1[2])
+                except:
+                    print("line=\n",line)
+                    print("defines=\n",self.defines)
                 opStart=skipWS(operand1[2])
                 if (opStart == len(line)) : # or (line[opStart] == ')'): # just primary
                     return operand1
@@ -485,7 +490,7 @@ class ImportVerilogParameters(object):
 # Macro substitution excluding the very first character
             if "`" in line [1:]:
                 for define in self.defines:
-                    line.replace("`"+define,self.defines[define])
+                    line = line.replace("`"+define,self.defines[define])
             if line[0]== "`":
                 tokens=line[1:].replace("\t"," ").split(" ",1) #second tokens
                 for i in (1,2): 

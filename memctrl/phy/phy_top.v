@@ -43,8 +43,9 @@ module  phy_top #(
     parameter CLKFBOUT_MULT_REF =   9, // Fvco=Fclkin*CLKFBOUT_MULT_F/DIVCLK_DIVIDE, Fout=Fvco/CLKOUT#_DIVIDE
     parameter CLKFBOUT_DIV_REF =    3, // To get 300MHz for the reference clock
     parameter DIVCLK_DIVIDE=        1,
+    parameter CLKFBOUT_USE_FINE_PS =1, // if 1 move CLKFBOUT_PHASE and SDCLK_PHASE, if 0 - other outputs (moved phases should be 0/same)
     parameter CLKFBOUT_PHASE =      0.000,
-    parameter SDCLK_PHASE =          0.000,
+    parameter SDCLK_PHASE =         0.000,
     parameter CLK_PHASE =           0.000,
     parameter CLK_DIV_PHASE =       0.000,
     parameter MCLK_PHASE =          90.000,  
@@ -312,6 +313,7 @@ wire sdclk; // BUFIO
 // So shifting phase dynamically by plus/- 113 moves SDCLK by a full period (2.5ns) forward and backward (113= 0x71)
 wire clk_pre, clk_div_pre, sdclk_pre, mclk_pre, clk_fb;
 BUFR clk_bufr_i (.O(clk), .CE(), .CLR(), .I(clk_pre));
+//BUFIO clk_buf_i (.O(clk), .I(clk_pre));
 BUFR clk_div_bufr_i (.O(clk_div), .CE(), .CLR(), .I(clk_div_pre));
 BUFIO iclk_bufio_i (.O(sdclk), .I(sdclk_pre) );
 //BUFIO clk_ref_i (.O(ref_clk), .I(clk_ref_pre));
@@ -325,19 +327,21 @@ BUFG mclk_i (.O(mclk),.I(mclk_pre) );
         .BANDWIDTH           (BANDWIDTH),
         .CLKFBOUT_MULT_F     (CLKFBOUT_MULT),
         .DIVCLK_DIVIDE       (DIVCLK_DIVIDE),
-        .CLKFBOUT_PHASE      (CLKFBOUT_PHASE),
-        .CLKOUT0_PHASE       (SDCLK_PHASE),
-        .CLKOUT1_PHASE       (CLK_PHASE),
-        .CLKOUT2_PHASE       (CLK_DIV_PHASE),
-        .CLKOUT3_PHASE       (MCLK_PHASE),
+        .CLKFBOUT_PHASE      (CLKFBOUT_USE_FINE_PS? 0.0 :           CLKFBOUT_PHASE),
+        .CLKOUT0_PHASE       (CLKFBOUT_USE_FINE_PS? 0.0 :           SDCLK_PHASE),
+        .CLKOUT1_PHASE       (CLKFBOUT_USE_FINE_PS? CLK_PHASE :     0.0),
+        .CLKOUT2_PHASE       (CLKFBOUT_USE_FINE_PS? CLK_DIV_PHASE : 0.0),
+        .CLKOUT3_PHASE       (CLKFBOUT_USE_FINE_PS? MCLK_PHASE :   90.000), // (78.75), // (MCLK_PHASE), // should be multiple of 11.25 (90.000/8)
+//ERROR: [DRC 23-20] Rule violation (AVAL-139) Phase shift check - The MMCME2_ADV cell mcntrl393_i/memctrl16_i/mcontr_sequencer_i/phy_cmd_i/phy_top_i/mmcm_phase_cntr_i/MMCME2_ADV_i has a fractional CLKOUT3_PHASE value (75.000)  with CLKOUT3_USE_FINE_PS set to FALSE. It should be a multiple of [45 / CLKOUT3_DIVIDE] = [45 / 4] = 11.250.
+        
 //        .CLKOUT4_PHASE          (0.000),
 //        .CLKOUT5_PHASE          (0.000),
 //        .CLKOUT6_PHASE          (0.000),
-        .CLKFBOUT_USE_FINE_PS     ("FALSE"),
-        .CLKOUT0_USE_FINE_PS      ("FALSE"),
-        .CLKOUT1_USE_FINE_PS ("TRUE"),
-        .CLKOUT2_USE_FINE_PS ("TRUE"),
-        .CLKOUT3_USE_FINE_PS ("TRUE"),
+        .CLKFBOUT_USE_FINE_PS (CLKFBOUT_USE_FINE_PS? "TRUE" : "FALSE"),
+        .CLKOUT0_USE_FINE_PS  (CLKFBOUT_USE_FINE_PS? "TRUE" : "FALSE"),
+        .CLKOUT1_USE_FINE_PS  (CLKFBOUT_USE_FINE_PS? "FALSE" : "TRUE"),
+        .CLKOUT2_USE_FINE_PS  (CLKFBOUT_USE_FINE_PS? "FALSE" : "TRUE"),
+        .CLKOUT3_USE_FINE_PS  (CLKFBOUT_USE_FINE_PS? "FALSE" : "TRUE"),
 //        .CLKOUT4_USE_FINE_PS("FALSE"),
 //        .CLKOUT5_USE_FINE_PS("FALSE"),
 //        .CLKOUT6_USE_FINE_PS("FALSE"),

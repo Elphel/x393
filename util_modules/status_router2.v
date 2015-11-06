@@ -22,7 +22,9 @@
 `timescale 1ns/1ps
 `include "system_defines.vh" 
 //`define DEBUG_FIFO 1
-module  status_router2 (
+module  status_router2 #(
+    parameter FIFO_TYPE = "ONE_CYCLE" // "TWO_CYCLE"
+)(
     input        rst,
     input        clk,
     input        srst,      // sync reset
@@ -99,50 +101,98 @@ module  status_router2 (
     end
     
 /* fifo_same_clock has currently latency of 2 cycles, use smth. faster here? - fifo_1cycle (but it has unregistered data output) */
-    fifo_1cycle #(
-        .DATA_WIDTH(9),
-        .DATA_DEPTH(4) // 16
-    ) fifo_in0_i (
-        .rst       (1'b0), // rst), // input
-        .clk       (clk), // input
-        .srst      (srst), // input
-        .we        (start_rcv[0] || rcv_rest_r[0]), // input
-        .re        (fifo_re[0]), // input
-        .data_in   ({rcv_rest_r[0] & ~rq_in[0], db_in0}), // input[8:0] MSB marks last byte
-        .data_out  ({fifo_last_byte[0],fifo0_out}), // output[8:0]
-        .nempty    (fifo_nempty_pre[0]), // output
-        .half_full (fifo_half_full[0]) // output reg 
-`ifdef DEBUG_FIFO
-        ,.under(), // output reg 
-        .over(), // output reg 
-        .wcount(), // output[3:0] reg 
-        .rcount(), // output[3:0] reg 
-        .num_in_fifo() // output[3:0]
-`endif         
-    );
-
-    fifo_1cycle #(
-        .DATA_WIDTH(9),
-        .DATA_DEPTH(4) // 16
-    ) fifo_in1_i (
-        .rst       (1'b0), // rst), // input
-        .clk       (clk), // input
-        .srst      (srst), // input
-        .we        (start_rcv[1] || rcv_rest_r[1]), // input
-        .re        (fifo_re[1]), // input
-        .data_in   ({rcv_rest_r[1] & ~rq_in[1], db_in1}), // input[8:0] MSB marks last byte
-        .data_out  ({fifo_last_byte[1],fifo1_out}), // output[8:0]
-        .nempty    (fifo_nempty_pre[1]), // output
-        .half_full (fifo_half_full[1]) // output reg 
-`ifdef DEBUG_FIFO
-        ,.under(), // output reg 
-        .over(), // output reg 
-        .wcount(), // output[3:0] reg 
-        .rcount(), // output[3:0] reg 
-        .num_in_fifo() // output[3:0]
-`endif         
-    );
-      
+    generate
+        if (FIFO_TYPE == "ONE_CYCLE") begin
+            fifo_1cycle #(
+                .DATA_WIDTH(9),
+                .DATA_DEPTH(4) // 16
+            ) fifo_in0_i (
+                .rst       (1'b0),                                // rst), // input
+                .clk       (clk),                                 // input
+                .sync_rst  (srst),                                // input
+                .we        (start_rcv[0] || rcv_rest_r[0]),       // input
+                .re        (fifo_re[0]),                          // input
+                .data_in   ({rcv_rest_r[0] & ~rq_in[0], db_in0}), // input[8:0] MSB marks last byte
+                .data_out  ({fifo_last_byte[0],fifo0_out}),       // output[8:0]
+                .nempty    (fifo_nempty_pre[0]),                  // output reg
+                .half_full (fifo_half_full[0])                    // output reg 
+        `ifdef DEBUG_FIFO
+                ,.under(),     // output reg 
+                .over(),       // output reg 
+                .wcount(),     // output[3:0] reg 
+                .rcount(),     // output[3:0] reg 
+                .num_in_fifo() // output[3:0]
+        `endif         
+            );
+        
+            fifo_1cycle #(
+                .DATA_WIDTH(9),
+                .DATA_DEPTH(4) // 16
+            ) fifo_in1_i (
+                .rst       (1'b0),                                // rst), // input
+                .clk       (clk),                                 // input
+                .sync_rst  (srst),                                // input
+                .we        (start_rcv[1] || rcv_rest_r[1]),       // input
+                .re        (fifo_re[1]),                          // input
+                .data_in   ({rcv_rest_r[1] & ~rq_in[1], db_in1}), // input[8:0] MSB marks last byte
+                .data_out  ({fifo_last_byte[1],fifo1_out}),       // output[8:0]
+                .nempty    (fifo_nempty_pre[1]),                  // output reg
+                .half_full (fifo_half_full[1])                    // output reg 
+        `ifdef DEBUG_FIFO
+                ,.under(),     // output reg 
+                .over(),       // output reg 
+                .wcount(),     // output[3:0] reg 
+                .rcount(),     // output[3:0] reg 
+                .num_in_fifo() // output[3:0]
+        `endif         
+            );
+        end else begin
+            fifo_same_clock #(
+                .DATA_WIDTH(9),
+                .DATA_DEPTH(4) // 16
+            ) fifo_in0_i (
+                .rst       (1'b0),                                // rst), // input
+                .clk       (clk),                                 // input
+                .sync_rst  (srst),                                // input
+                .we        (start_rcv[0] || rcv_rest_r[0]),       // input
+                .re        (fifo_re[0]),                          // input
+                .data_in   ({rcv_rest_r[0] & ~rq_in[0], db_in0}), // input[8:0] MSB marks last byte
+                .data_out  ({fifo_last_byte[0],fifo0_out}),       // output[8:0]
+                .nempty    (fifo_nempty_pre[0]),                  // output reg
+                .half_full (fifo_half_full[0])                    // output reg 
+        `ifdef DEBUG_FIFO
+                ,.under(),     // output reg 
+                .over(),       // output reg 
+                .wcount(),     // output[3:0] reg 
+                .rcount(),     // output[3:0] reg 
+                .num_in_fifo() // output[3:0]
+        `endif         
+            );
+        
+            fifo_same_clock #(
+                .DATA_WIDTH(9),
+                .DATA_DEPTH(4) // 16
+            ) fifo_in1_i (
+                .rst       (1'b0),                                // rst), // input
+                .clk       (clk),                                 // input
+                .sync_rst  (srst),                                // input
+                .we        (start_rcv[1] || rcv_rest_r[1]),       // input
+                .re        (fifo_re[1]),                          // input
+                .data_in   ({rcv_rest_r[1] & ~rq_in[1], db_in1}), // input[8:0] MSB marks last byte
+                .data_out  ({fifo_last_byte[1],fifo1_out}),       // output[8:0]
+                .nempty    (fifo_nempty_pre[1]),                  // output reg
+                .half_full (fifo_half_full[1])                    // output reg 
+        `ifdef DEBUG_FIFO
+                ,.under(),     // output reg 
+                .over(),       // output reg 
+                .wcount(),     // output[3:0] reg 
+                .rcount(),     // output[3:0] reg 
+                .num_in_fifo() // output[3:0]
+        `endif         
+            );
+        end
+    endgenerate
+    
 // one car per green (round robin priority)
 // start sending out with  with one cycle latency - now 2 cycles because of the FIFO
 

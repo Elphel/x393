@@ -153,6 +153,7 @@ module  mcntrl393 #(
     parameter CLKFBOUT_DIV_REF =    3, // To get 300MHz for the reference clock
 `endif    
     parameter DIVCLK_DIVIDE=        1,
+    parameter CLKFBOUT_USE_FINE_PS= 1, // 0 - old, 1 - new 
     parameter CLKFBOUT_PHASE =      0.000,
     parameter SDCLK_PHASE =         0.000,
     parameter CLK_PHASE =           0.000,
@@ -241,7 +242,8 @@ module  mcntrl393 #(
     parameter MCONTR_LINTILE_RST_FRAME =     8, // reset frame number 
     parameter MCONTR_LINTILE_SINGLE =        9, // read/write a single page 
     parameter MCONTR_LINTILE_REPEAT =       10,  // read/write pages until disabled 
-    parameter MCONTR_LINTILE_DIS_NEED =     11   // disable 'need' request 
+    parameter MCONTR_LINTILE_DIS_NEED =     11,   // disable 'need' request 
+    parameter MCONTR_LINTILE_SKIP_LATE =    12  // skip actual R/W operation when it is too late, advance pointers
     
     ) (
     input                        rst_in,
@@ -299,6 +301,7 @@ module  mcntrl393 #(
     output                     [3:0] sens_buf_rd,     //    (), // input
     input                    [255:0] sens_buf_dout,   //    (), // output[63:0]
     input                      [3:0] sens_page_written, //  single mclk pulse: buffer page (full or partial) is written to the memory buffer 
+    output                     [3:0] sens_xfer_skipped, // single mclk pulse on each bit indicating one skipped (not written) block.
     // compressor subsystem interface
     // Buffer interfaces, combined for 4 channels 
     output                     [3:0] cmprs_xfer_reset_page_rd, // from mcntrl_tiled_rw (
@@ -411,7 +414,8 @@ module  mcntrl393 #(
 
     wire        want_rq0;
     wire        need_rq0;
-    wire        channel_pgm_en0; 
+    wire        channel_pgm_en0;
+    wire        reject0 = 1'b0; 
     wire  [9:0] seq_data0; // only 10 bits used
 //    wire        seq_wr0; // not used
     wire        seq_set0;
@@ -428,6 +432,7 @@ module  mcntrl393 #(
     wire        want_rq1;
     wire        need_rq1;
     wire        channel_pgm_en1; 
+    wire        reject1; // = 1'b0; 
     wire        seq_done1;
 // routed outside to membredge module    
 /*
@@ -441,6 +446,7 @@ module  mcntrl393 #(
     wire        want_rq2;
     wire        need_rq2;
     wire        channel_pgm_en2; 
+    wire        reject2 = 1'b0; 
     wire        seq_done2;
     wire        buf_wr_chn2;
     wire        buf_wpage_nxt_chn2;
@@ -452,6 +458,7 @@ module  mcntrl393 #(
     wire        want_rq3;
     wire        need_rq3;
     wire        channel_pgm_en3; 
+    wire        reject3; // = 1'b0; 
     wire        seq_done3;
     wire        buf_wr_chn3;
     wire        buf_wpage_nxt_chn3;
@@ -462,7 +469,8 @@ module  mcntrl393 #(
 
     wire        want_rq4;
     wire        need_rq4;
-    wire        channel_pgm_en4; 
+    wire        channel_pgm_en4;
+    wire        reject4 = 1'b0; 
     wire        seq_done4;
     wire        buf_wr_chn4;
     wire        buf_wpage_nxt_chn4;
@@ -538,6 +546,7 @@ module  mcntrl393 #(
     wire                   [3:0] cmprs_need;
 
     wire                   [3:0] sens_channel_pgm_en;
+    wire                   [3:0] sens_reject; 
     wire                   [3:0] sens_start_wr;
     wire                  [11:0] sens_bank;   // output[2:0] 
     wire  [4*ADDRESS_NUMBER-1:0] sens_row;    // output[14:0] 
@@ -547,6 +556,7 @@ module  mcntrl393 #(
     wire                   [3:0] sens_seq_done; // input : sequence over
 
     wire                   [3:0] cmprs_channel_pgm_en;
+    wire                   [3:0] cmprs_reject = 4'h0; 
     wire                   [3:0] cmprs_start_rd16;
     wire                   [3:0] cmprs_start_rd32;
     wire                  [11:0] cmprs_bank;   // output[2:0] 
@@ -1059,7 +1069,8 @@ module  mcntrl393 #(
                 .MCONTR_LINTILE_RST_FRAME          (MCONTR_LINTILE_RST_FRAME),
                 .MCONTR_LINTILE_SINGLE             (MCONTR_LINTILE_SINGLE),
                 .MCONTR_LINTILE_REPEAT             (MCONTR_LINTILE_REPEAT),
-                .MCONTR_LINTILE_DIS_NEED           (MCONTR_LINTILE_DIS_NEED) 
+                .MCONTR_LINTILE_DIS_NEED           (MCONTR_LINTILE_DIS_NEED),
+                .MCONTR_LINTILE_SKIP_LATE          (MCONTR_LINTILE_SKIP_LATE) 
             ) mcntrl_linear_wr_sensor_i (
                 .mrst             (mrst),                       // input
                 .mclk             (mclk),                       // input
@@ -1078,6 +1089,7 @@ module  mcntrl393 #(
                 .xfer_want        (sens_want[i]),               // output
                 .xfer_need        (sens_need[i]),               // output
                 .xfer_grant       (sens_channel_pgm_en[i]),     // input
+                .xfer_reject      (sens_reject[i]),             // output
                 .xfer_start_rd    (),                           // output
                 .xfer_start_wr    (sens_start_wr[i]),           // output
                 .xfer_bank        (sens_bank[3 * i +: 3]),      // output[2:0] 
@@ -1088,6 +1100,7 @@ module  mcntrl393 #(
                 .xfer_done        (sens_seq_done[i]),           // input : page sequence over
                 .xfer_page_rst_wr (sens_rpage_set[i]),          // output @ posedge mclk
                 .xfer_page_rst_rd (), // output @ negedge mclk
+                .xfer_skipped     (sens_xfer_skipped[i]),       // output reg
                 .cmd_wrmem        () // output
             );
             
@@ -1124,7 +1137,7 @@ module  mcntrl393 #(
                 .MCONTR_LINTILE_RST_FRAME      (MCONTR_LINTILE_RST_FRAME),
                 .MCONTR_LINTILE_SINGLE         (MCONTR_LINTILE_SINGLE),
                 .MCONTR_LINTILE_REPEAT         (MCONTR_LINTILE_REPEAT),
-                .MCONTR_LINTILE_DIS_NEED       (MCONTR_LINTILE_DIS_NEED) 
+                .MCONTR_LINTILE_DIS_NEED       (MCONTR_LINTILE_DIS_NEED)
             ) mcntrl_tiled_rd_compressor_i ( 
                 .mrst                 (mrst),                         // input
                 .mclk                 (mclk),                        // input
@@ -1196,7 +1209,8 @@ module  mcntrl393 #(
         .MCONTR_LINTILE_RST_FRAME          (MCONTR_LINTILE_RST_FRAME),
         .MCONTR_LINTILE_SINGLE             (MCONTR_LINTILE_SINGLE),
         .MCONTR_LINTILE_REPEAT             (MCONTR_LINTILE_REPEAT),
-        .MCONTR_LINTILE_DIS_NEED           (MCONTR_LINTILE_DIS_NEED) 
+        .MCONTR_LINTILE_DIS_NEED           (MCONTR_LINTILE_DIS_NEED),
+        .MCONTR_LINTILE_SKIP_LATE          (MCONTR_LINTILE_SKIP_LATE) 
     ) mcntrl_linear_rw_chn1_i (
         .mrst             (mrst), // input
         .mclk             (mclk), // input
@@ -1215,6 +1229,7 @@ module  mcntrl393 #(
         .xfer_want        (want_rq1), // output
         .xfer_need        (need_rq1), // output
         .xfer_grant       (channel_pgm_en1), // input
+        .xfer_reject      (reject1),              //input
         .xfer_start_rd    (lin_rw_chn1_start_rd), // output
         .xfer_start_wr    (lin_rw_chn1_start_wr), // output
         .xfer_bank        (lin_rw_chn1_bank), // output[2:0] 
@@ -1225,6 +1240,7 @@ module  mcntrl393 #(
         .xfer_done        (seq_done1), // input : sequence over
         .xfer_page_rst_wr (xfer_reset_page1_wr), // output
         .xfer_page_rst_rd (xfer_reset_page1_rd), // output
+        .xfer_skipped     (), // output reg
         .cmd_wrmem        (cmd_wrmem_chn1) // output
     );
 
@@ -1257,7 +1273,8 @@ module  mcntrl393 #(
         .MCONTR_LINTILE_RST_FRAME          (MCONTR_LINTILE_RST_FRAME),
         .MCONTR_LINTILE_SINGLE             (MCONTR_LINTILE_SINGLE),
         .MCONTR_LINTILE_REPEAT             (MCONTR_LINTILE_REPEAT),
-        .MCONTR_LINTILE_DIS_NEED           (MCONTR_LINTILE_DIS_NEED) 
+        .MCONTR_LINTILE_DIS_NEED           (MCONTR_LINTILE_DIS_NEED),
+        .MCONTR_LINTILE_SKIP_LATE          (MCONTR_LINTILE_SKIP_LATE) 
     ) mcntrl_linear_rw_chn3_i (
         .mrst             (mrst), // input
         .mclk             (mclk), // input
@@ -1276,6 +1293,7 @@ module  mcntrl393 #(
         .xfer_want        (want_rq3), // output
         .xfer_need        (need_rq3), // output
         .xfer_grant       (channel_pgm_en3), // input
+        .xfer_reject      (reject3),              //input
         .xfer_start_rd    (lin_rw_chn3_start_rd), // output
         .xfer_start_wr    (lin_rw_chn3_start_wr), // output
         .xfer_bank        (lin_rw_chn3_bank), // output[2:0] 
@@ -1286,6 +1304,7 @@ module  mcntrl393 #(
         .xfer_done        (seq_done3), // input : sequence over
         .xfer_page_rst_wr (xfer_reset_page3_wr), // output
         .xfer_page_rst_rd (xfer_reset_page3_rd), // output
+        .xfer_skipped     (), // output reg
         .cmd_wrmem        () // output
     );
     
@@ -1389,8 +1408,7 @@ module  mcntrl393 #(
         .MCONTR_LINTILE_RST_FRAME      (MCONTR_LINTILE_RST_FRAME),
         .MCONTR_LINTILE_SINGLE         (MCONTR_LINTILE_SINGLE),
         .MCONTR_LINTILE_REPEAT         (MCONTR_LINTILE_REPEAT),
-        .MCONTR_LINTILE_DIS_NEED       (MCONTR_LINTILE_DIS_NEED) 
-        
+        .MCONTR_LINTILE_DIS_NEED       (MCONTR_LINTILE_DIS_NEED)
     ) mcntrl_tiled_rw_chn4_i ( 
         .mrst                 (mrst),                       // input
         .mclk                 (mclk),                       // input
@@ -1799,6 +1817,7 @@ module  mcntrl393 #(
         .CLKFBOUT_MULT_REF     (CLKFBOUT_MULT_REF),
         .CLKFBOUT_DIV_REF      (CLKFBOUT_DIV_REF),
         .DIVCLK_DIVIDE         (DIVCLK_DIVIDE),
+        .CLKFBOUT_USE_FINE_PS  (CLKFBOUT_USE_FINE_PS),
         .CLKFBOUT_PHASE        (CLKFBOUT_PHASE),
         .SDCLK_PHASE           (SDCLK_PHASE),
         .CLK_PHASE             (CLK_PHASE),
@@ -1836,6 +1855,7 @@ module  mcntrl393 #(
         .want_rq0           (want_rq0),                   // input
         .need_rq0           (need_rq0),                   // input
         .channel_pgm_en0    (channel_pgm_en0),            // output reg 
+        .reject0            (reject0),                    // input
         .seq_done0          (seq_done0),                  // output
         .page_nxt_chn0      (),                           //rpage_nxt_chn0), not used
         .buf_run0           (buf_run0),                   // output
@@ -1850,6 +1870,7 @@ module  mcntrl393 #(
         .want_rq1           (want_rq1),                   // input
         .need_rq1           (need_rq1),                   // input
         .channel_pgm_en1    (channel_pgm_en1),            // output reg 
+        .reject1            (reject1),                    // input
         .seq_done1          (seq_done1),                  // output
         .page_nxt_chn1      (page_ready_chn1),            //rpage_nxt_chn0), not used
         .buf_run1           (),                           // output
@@ -1864,6 +1885,7 @@ module  mcntrl393 #(
         .want_rq2           (want_rq2),                   // input
         .need_rq2           (need_rq2),                   // input
         .channel_pgm_en2    (channel_pgm_en2),            // output reg 
+        .reject2            (reject2),                    // input
         .seq_done2          (seq_done2),                  // output
         .page_nxt_chn2      (page_ready_chn2),            //rpage_nxt_chn0), not used
         .buf_run2           (),                           // output //buf_run2),
@@ -1878,6 +1900,7 @@ module  mcntrl393 #(
         .want_rq3           (want_rq3),                   // input
         .need_rq3           (need_rq3),                   // input
         .channel_pgm_en3    (channel_pgm_en3),            // output reg 
+        .reject3            (reject3),                    // input
         .seq_done3          (seq_done3),                  // output
         .page_nxt_chn3      (page_ready_chn3),            //rpage_nxt_chn0), not used
         .buf_run3           (),                           // output//buf_run3),
@@ -1892,6 +1915,7 @@ module  mcntrl393 #(
         .want_rq4           (want_rq4),                   // input
         .need_rq4           (need_rq4),                   // input
         .channel_pgm_en4    (channel_pgm_en4),            // output reg 
+        .reject4            (reject4),                    // input
         .seq_done4          (seq_done4),                  // output
         .page_nxt_chn4      (page_ready_chn4),            //rpage_nxt_chn0), not used
         .buf_run4           (),                           // output //buf_run4),
@@ -1906,6 +1930,7 @@ module  mcntrl393 #(
         .want_rq8           (sens_want[0]),                // input
         .need_rq8           (sens_need[0]),                // input
         .channel_pgm_en8    (sens_channel_pgm_en[0]),      // output reg 
+        .reject8            (sens_reject[0]),              // input
         .seq_done8          (sens_seq_done[0]),            // output
         .page_nxt_chn8      (),                            // output ?
         .buf_run8           (),                            // output
@@ -1916,6 +1941,7 @@ module  mcntrl393 #(
         .want_rq9           (sens_want[1]),                // input
         .need_rq9           (sens_need[1]),                // input
         .channel_pgm_en9    (sens_channel_pgm_en[1]),      // output reg 
+        .reject9            (sens_reject[1]),              // input
         .seq_done9          (sens_seq_done[1]),            // output
         .page_nxt_chn9      (),                            // output ?
         .buf_run9           (),                            // output
@@ -1926,6 +1952,7 @@ module  mcntrl393 #(
         .want_rq10          (sens_want[2]),                // input
         .need_rq10          (sens_need[2]),                // input
         .channel_pgm_en10   (sens_channel_pgm_en[2]),      // output reg 
+        .reject10           (sens_reject[2]),              // input
         .seq_done10         (sens_seq_done[2]),            // output
         .page_nxt_chn10     (),                            // output
         .buf_run10          (),                            // output
@@ -1936,6 +1963,7 @@ module  mcntrl393 #(
         .want_rq11          (sens_want[3]),                // input
         .need_rq11          (sens_need[3]),                // input
         .channel_pgm_en11   (sens_channel_pgm_en[3]),      // output reg 
+        .reject11           (sens_reject[3]),              // input
         .seq_done11         (sens_seq_done[3]),            // output
         .page_nxt_chn11     (),                            // output
         .buf_run11          (),                            // output
@@ -1946,6 +1974,7 @@ module  mcntrl393 #(
         .want_rq12          (cmprs_want[0]),               // input
         .need_rq12          (cmprs_need[0]),               // input
         .channel_pgm_en12   (cmprs_channel_pgm_en[0]),     // output reg 
+        .reject12           (cmprs_reject[0]),             // input
         .seq_done12         (cmprs_seq_done[0]),           // output
         .page_nxt_chn12     (cmprs_page_ready[0]),         // output ???
         .buf_run12          (),                            // output
@@ -1957,6 +1986,7 @@ module  mcntrl393 #(
         .want_rq13          (cmprs_want[1]),               // input
         .need_rq13          (cmprs_need[1]),               // input
         .channel_pgm_en13   (cmprs_channel_pgm_en[1]),     // output reg 
+        .reject13           (cmprs_reject[1]),             // input
         .seq_done13         (cmprs_seq_done[1]),           // output
         .page_nxt_chn13     (cmprs_page_ready[1]),         // output ???
         .buf_run13          (),                            // output
@@ -1968,6 +1998,7 @@ module  mcntrl393 #(
         .want_rq14          (cmprs_want[2]),               // input
         .need_rq14          (cmprs_need[2]),               // input
         .channel_pgm_en14   (cmprs_channel_pgm_en[2]),     // output reg 
+        .reject14           (cmprs_reject[2]),             // input
         .seq_done14         (cmprs_seq_done[2]),           // output
         .page_nxt_chn14     (cmprs_page_ready[2]),         // output ???
         .buf_run14          (),                            // output
@@ -1979,6 +2010,7 @@ module  mcntrl393 #(
         .want_rq15          (cmprs_want[3]),               // input
         .need_rq15          (cmprs_need[3]),               // input
         .channel_pgm_en15   (cmprs_channel_pgm_en[3]),     // output reg 
+        .reject15           (cmprs_reject[3]),             // input
         .seq_done15         (cmprs_seq_done[3]),           // output
         .page_nxt_chn15     (cmprs_page_ready[3]),         // output ???
         .buf_run15          (),                            // output

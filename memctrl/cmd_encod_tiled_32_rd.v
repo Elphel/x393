@@ -224,7 +224,7 @@ module  cmd_encod_tiled_32_rd #(
     
     // ROM-based (registered output) encoded sequence
     always @ (posedge clk) begin
-        if (mrst)           rom_r <= 0;
+        if (mrst)           rom_r <= 0; // TODO: make mrst cause gen_addr = 4'hf?
         else case (gen_addr)
             4'h0: rom_r <= (ENC_CMD_ACTIVATE <<  ENC_CMD_SHIFT)  | (1 << ENC_NOP) | (1 << ENC_PAUSE_SHIFT); // here does not matter, just to work with masked ACTIVATE
             4'h1: rom_r <= (ENC_CMD_ACTIVATE <<  ENC_CMD_SHIFT);

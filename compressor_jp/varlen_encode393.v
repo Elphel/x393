@@ -39,15 +39,7 @@ module    varlen_encode393 (
     output reg   [3:0] l,        // [3:0] code length
     output reg   [3:0] l_late,// delayed l (sync to q)
     output reg  [10:0] q);    // [10:0]code
-/*
-    varlen_encode393 i_varlen_encode(.clk(clk),
-                                        .en(stuffer_was_rdy), //will enable registers. 0 - freeze
-                                        .start(steps[0]),
-                                        .d(sval[11:0]),        // 12-bit signed
-                                        .l(var_dl[ 3:0]),        // [3:0] code length
-                                        .l_late(var_dl_late[3:0]),
-                                        .q(var_do[10:0]));    // [10:0]code
-*/                                
+
     reg    [11:0] d1;
     reg    [10:0] q0;
     reg     [2:0] cycles;
