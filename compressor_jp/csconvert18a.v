@@ -537,7 +537,8 @@ Y[1,1]=(0x96*P[1,1]+   0x1d*((P[1,0]+P[1,2])/2 +                 0x4d*((P[0,1] +
 //  wire   [7:0] y0;	// bypass in monochrome mode
   reg   [15:0] y1,y2,y3;
   
-// TODO: insert register to ease mm1..3 -> y (OK to delay all outputs). Or is it not using DSP at all?   
+// TODO: insert register to ease mm1..3 -> y (OK to delay all outputs).
+// TODO: reduce width of y1,y2,y3 and correctly round   
 //  wire	[15:0] y_sum =y1+y2+y3;
   reg   [15:0] y_sum_r;
 //  always @ (posedge CLK) y0 <= pd1_dly; // m1; // equivalent
