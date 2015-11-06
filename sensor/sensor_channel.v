@@ -998,7 +998,7 @@ module  sensor_channel#(
 
     // TODO: Use generate to generate 1-4 histogram modules
     generate
-        if (HISTOGRAM_ADDR0 >=0)
+        if (HISTOGRAM_ADDR0 != -1)
 `ifdef USE_PCLK2X    
             sens_histogram #(
                 .HISTOGRAM_RAM_MODE     (HISTOGRAM_RAM_MODE),
@@ -1097,7 +1097,7 @@ module  sensor_channel#(
     
     
     generate
-        if (HISTOGRAM_ADDR1 >=0)
+        if (HISTOGRAM_ADDR1  != -1)
 `ifdef USE_PCLK2X    
             sens_histogram #(
                 .HISTOGRAM_RAM_MODE     (HISTOGRAM_RAM_MODE),
@@ -1192,7 +1192,7 @@ module  sensor_channel#(
     endgenerate
 
     generate
-        if (HISTOGRAM_ADDR2 >=0)
+        if (HISTOGRAM_ADDR2  != -1)
 `ifdef USE_PCLK2X    
             sens_histogram #(
                 .HISTOGRAM_RAM_MODE     (HISTOGRAM_RAM_MODE),
@@ -1287,7 +1287,7 @@ module  sensor_channel#(
     endgenerate
 
     generate
-        if (HISTOGRAM_ADDR3 >=0)
+        if (HISTOGRAM_ADDR3  != -1)
 `ifdef USE_PCLK2X    
             sens_histogram #(
                 .HISTOGRAM_RAM_MODE     (HISTOGRAM_RAM_MODE),
