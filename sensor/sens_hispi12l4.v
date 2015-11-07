@@ -46,13 +46,15 @@ module  sens_hispi12l4#(
 
     parameter HISPI_MSB_FIRST =            0,
     parameter HISPI_NUMLANES =             4,
+    parameter HISPI_DELAY_CLK =           "FALSE",      
+    parameter HISPI_MMCM =                "TRUE",
     parameter HISPI_CAPACITANCE =         "DONT_CARE",
     parameter HISPI_DIFF_TERM =           "TRUE",
     parameter HISPI_DQS_BIAS =            "TRUE",
     parameter HISPI_IBUF_DELAY_VALUE =    "0",
     parameter HISPI_IBUF_LOW_PWR =        "TRUE",
     parameter HISPI_IFD_DELAY_VALUE =     "AUTO",
-    parameter HISPI_IOSTANDARD =          "DEFAULT",
+    parameter HISPI_IOSTANDARD =          "DIFF_SSTL18_I", //"DIFF_SSTL18_II" for high current (13.4mA vs 8mA),
     parameter HISPI_KEEP_IRST =           5 // number of cycles to keep irst on after release of prst (small number - use 1 hot)
 )(
     input             pclk,   // global clock input, pixel rate (220MHz for MT9F002)
@@ -112,6 +114,14 @@ module  sens_hispi12l4#(
         .SENS_SS_EN             (SENS_SS_EN),
         .SENS_SS_MODE           (SENS_SS_MODE),
         .SENS_SS_MOD_PERIOD     (SENS_SS_MOD_PERIOD),
+        .IODELAY_GRP            (IODELAY_GRP),
+        .IDELAY_VALUE           (IDELAY_VALUE),
+        .REFCLK_FREQUENCY       (REFCLK_FREQUENCY),
+        .HIGH_PERFORMANCE_MODE  (HIGH_PERFORMANCE_MODE),
+
+        .HISPI_DELAY_CLK        (HISPI_DELAY_CLK),
+        .HISPI_MMCM             (HISPI_MMCM),
+        
         .HISPI_CAPACITANCE      (HISPI_CAPACITANCE),
         .HISPI_DIFF_TERM        (HISPI_DIFF_TERM),
         .HISPI_DQS_BIAS         (HISPI_DQS_BIAS),
@@ -124,6 +134,7 @@ module  sens_hispi12l4#(
         .mrst                   (mrst),                   // input
         .phase                  (dly_data[7:0]),          // input[7:0] 
         .set_phase              (set_clk_phase),          // input
+        .load                   (ld_idelay),              // input
         .rst_mmcm               (rst_mmcm),               // input
         .clp_p                  (sns_clkp),               // input
         .clk_n                  (sns_clkn),               // input

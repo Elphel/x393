@@ -1,16 +1,16 @@
 /*******************************************************************************
- * Module: ibuf_ibufg
+ * Module: ibufg
  * Date:2015-07-17  
  * Author: Andrey Filippov
  * Description: Wrapper for IBUFG primitive
  *
  * Copyright (c) 2015 Elphel, Inc .
- * ibuf_ibufg.v is free software; you can redistribute it and/or modify
+ * ibufg.v is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- *  ibuf_ibufg.v is distributed in the hope that it will be useful,
+ *  ibufg.v is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
@@ -26,27 +26,27 @@ clock input sites.
 
 Actually, it still complains:
 
-WARNING: [DRC 23-20] Rule violation (CKLD-2) Clock Net has direct IO Driver - Clock net clocks393_i/ibuf_ibufg_i/memclk_0 is directly
-         driven by an IO rather than a Clock Buffer. Driverx393.s: clocks393_i/ibuf_ibufg_i/IBUF_i/O[VivadoPlace:0000]
+WARNING: [DRC 23-20] Rule violation (CKLD-2) Clock Net has direct IO Driver - Clock net clocks393_i/ibufg_i/memclk_0 is directly
+         driven by an IO rather than a Clock Buffer. Driverx393.s: clocks393_i/ibufg_i/IBUF_i/O[VivadoPlace:0000]
 
 */
-module  ibuf_ibufg  #(
+module  ibufg  #(
         parameter CAPACITANCE =      "DONT_CARE",
-        parameter IBUF_DELAY_VALUE = "0",
+//        parameter IBUF_DELAY_VALUE = "0",
         parameter IBUF_LOW_PWR =     "TRUE",
-        parameter IFD_DELAY_VALUE =  "AUTO",
+//        parameter IFD_DELAY_VALUE =  "AUTO",
         parameter IOSTANDARD =       "DEFAULT" 
     )(
         output O,
         input  I
 );
-    IBUF #(
+    IBUFG #(
         .CAPACITANCE       (CAPACITANCE),
-        .IBUF_DELAY_VALUE  (IBUF_DELAY_VALUE),
+//        .IBUF_DELAY_VALUE  (IBUF_DELAY_VALUE),
         .IBUF_LOW_PWR      (IBUF_LOW_PWR),
-        .IFD_DELAY_VALUE   (IFD_DELAY_VALUE),
+//        .IFD_DELAY_VALUE   (IFD_DELAY_VALUE),
         .IOSTANDARD        (IOSTANDARD)
-    ) IBUF_i (
+    ) IBUFG_i (
         .O    (O), // output 
         .I    (I) // input 
     );

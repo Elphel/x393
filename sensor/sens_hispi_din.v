@@ -33,7 +33,7 @@ module  sens_hispi_din #(
     parameter HISPI_IBUF_DELAY_VALUE =   "0",
     parameter HISPI_IBUF_LOW_PWR =       "TRUE",
     parameter HISPI_IFD_DELAY_VALUE =    "AUTO",
-    parameter HISPI_IOSTANDARD =         "DEFAULT"
+    parameter HISPI_IOSTANDARD =         "DIFF_SSTL18_I" //"DIFF_SSTL18_II" for high current (13.4mA vs 8mA)
 )(
     input                           mclk,
     input                           mrst,

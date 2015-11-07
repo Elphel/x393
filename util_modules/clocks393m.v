@@ -1,16 +1,16 @@
 /*******************************************************************************
- * Module: clocks393
+ * Module: clocks393m
  * Date:2015-07-17  
  * Author: Andrey  Filippov   
  * Description: Generating global clocks for x393 (excluding memcntrl and SATA)
  *
  * Copyright (c) 2015 Elphel, Inc .
- * clocks393.v is free software; you can redistribute it and/or modify
+ * clocks393m.v is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- *  clocks393.v is distributed in the hope that it will be useful,
+ *  clocks393m.v is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
@@ -20,7 +20,7 @@
  *******************************************************************************/
 `timescale 1ns/1ps
 
-module  clocks393#(
+module  clocks393m#(
         parameter CLK_ADDR =                  'h728, // ..'h729
         parameter CLK_MASK =                  'h7fe, //
         parameter CLK_STATUS_REG_ADDR =       'h3a,  //  
@@ -30,12 +30,7 @@ module  clocks393#(
         parameter CLK_RESET =                'h0, // which clocks should stay reset after release of masrter reset {ff1,ff0,mem,sync,xclk,pclk,xclk}
         parameter CLK_PWDWN =                'h0, // which clocks should stay powered down  after release of masrter reset {sync,xclk,pclk,xclk}
         
-        parameter CLKIN_PERIOD_AXIHP =        20, //ns >1.25, 600<Fvco<1200
-        parameter DIVCLK_DIVIDE_AXIHP =       1,
-        parameter CLKFBOUT_MULT_AXIHP =       18, // Fvco=Fclkin*CLKFBOUT_MULT_F/DIVCLK_DIVIDE, Fout=Fvco/CLKOUT#_DIVIDE
-        parameter CLKOUT_DIV_AXIHP =           6,   // To get 150MHz for the reference clock
-        parameter BUF_CLK1X_AXIHP =           "BUFG", // "BUFG", "BUFH", "BUFR", "NONE"
-        
+// CLocks derived from external clock source (for sesnors        
         parameter CLKIN_PERIOD_PCLK =         42, // 24MHz 
         parameter DIVCLK_DIVIDE_PCLK =         1,
         parameter CLKFBOUT_MULT_PCLK =        40, // 960 MHz
@@ -45,23 +40,38 @@ module  clocks393#(
         parameter CLKOUT_DIV_PCLK2X =          5, // 192 MHz
         parameter PHASE_CLK2X_PCLK =           0.000, 
         parameter BUF_CLK1X_PCLK2X =          "BUFG",  
+`endif
+/*
+ Mutltiple clocks derived from PS source (excluding memory controller) using a single PLL
+ Fvco = 1200Mhz - maximal for spped grade -1
+*/
+        parameter MULTICLK_IN_PERIOD =        20, // 50MHz
+        parameter MULTICLK_DIVCLK =            1, //
+        parameter MULTICLK_MULT =             24, //1200MHz
+        parameter MULTICLK_DIV_DLYREF =        6, // 6 - 200MHz I/O delay reference clock (4 - 300MHz)
+        parameter MULTICLK_DIV_AXIHP =         8, // 150 MHz for AXI HP
+        parameter MULTICLK_DIV_XCLK =          5, // 240 MHz for compressor (12 for 100 MHz)
+`ifdef  USE_XCLK2X
+        parameter MULTICLK_DIV_XCLK2X =        6, // 200 MHz for compressor (when MULTICLK_DIV_XCLK uses 100 MHz)
 `endif        
-        parameter CLKIN_PERIOD_XCLK =         20, // 50MHz 
-        parameter DIVCLK_DIVIDE_XCLK =         1,
-        parameter CLKFBOUT_MULT_XCLK =        20, // 50*20=1000 MHz
-        parameter CLKOUT_DIV_XCLK =           10, // 100 MHz
-        parameter BUF_CLK1X_XCLK =            "BUFG",
-`ifdef  USE_XCLK2X     
-        parameter CLKOUT_DIV_XCLK2X =          5, // 200 MHz
-        parameter PHASE_CLK2X_XCLK =           0.000, 
-        parameter BUF_CLK1X_XCLK2X =          "BUFG",  
+        parameter MULTICLK_DIV_SYNC =         12, // 100 MHz for inter-camera synchronization and time keeping
+
+// Additional parameters for multi-clock PLL (phases and buffer types)
+
+        parameter MULTICLK_PHASE_FB =          0.0,
+        parameter MULTICLK_PHASE_DLYREF =      0.0,
+        parameter MULTICLK_BUF_DLYREF =        "BUFG",
+        parameter MULTICLK_PHASE_AXIHP =       0.0,
+        parameter MULTICLK_BUF_AXIHP =         "BUFG",
+        parameter MULTICLK_PHASE_XCLK =        0.0,
+        parameter MULTICLK_BUF_XCLK =          "BUFG",
+`ifdef  USE_XCLK2X
+        parameter MULTICLK_PHASE_XCLK2X =      0.0,
+        parameter MULTICLK_BUF_XCLK2X =        "BUFG",
 `endif        
-        parameter CLKIN_PERIOD_SYNC =         20, // 50MHz 
-        parameter DIVCLK_DIVIDE_SYNC =         1,
-        parameter CLKFBOUT_MULT_SYNC =        20, // 50*20=1000 MHz
-        parameter CLKOUT_DIV_SYNC =           10, // 100 MHz 
-        parameter BUF_CLK1X_SYNC =            "BUFG",
-        
+        parameter MULTICLK_PHASE_SYNC =        0.0,
+        parameter MULTICLK_BUF_SYNC =          "BUFG",
+
         parameter MEMCLK_CAPACITANCE =        "DONT_CARE",
         parameter MEMCLK_IBUF_LOW_PWR =       "TRUE",
         parameter MEMCLK_IOSTANDARD =         "DEFAULT",
@@ -96,7 +106,7 @@ module  clocks393#(
     output      hclk,        // global clock 150MHz (used for afi*, saxi*)
     output      pclk,        // global clock for sensors (now 96MHz), based on external clock generator
 `ifdef USE_PCLK2X    
-    output      pclk2x,      // global clock for sennors, 2x frequency (now 192MHz)
+    output      pclk2x,      // global clock for sensors, 2x frequency (now 192MHz)
 `endif
     output      xclk,        // global clock for compressor (now 100MHz) 
 `ifdef  USE_XCLK2X     
@@ -104,6 +114,7 @@ module  clocks393#(
 `endif    
     output      sync_clk,    // global clock for camsync module (96 MHz for 353 compatibility - switch to 100MHz)?
     output      time_ref,     // non-global, just RTC (currently just mclk/8 = 25 MHz)
+    output      dly_ref_clk,  // global clock for I/O delays calibration
     input [1:0] extra_status, // just extra two status bits from the top module
     output      locked_sync_clk,
     output      locked_xclk,
@@ -128,6 +139,7 @@ module  clocks393#(
     wire ffclk0_rst = reset_clk[5];
     wire ffclk1_rst = reset_clk[6];
 
+    assign locked[3:2] =     3; // for compatibility with previous clocks393.v module
     assign locked_sync_clk = locked[3];
     assign locked_xclk =     locked[2];
     assign locked_pclk =     locked[1];
@@ -178,24 +190,9 @@ module  clocks393#(
         .start         (status_start)   // input
     );
     
-    BUFG bufg_axi_aclk_i  (.O(aclk), .I(fclk[0]));
+    BUFG bufg_axi_aclk_i  (.O(aclk), .I(fclk[0])); // PS clock, 50MHz
 
-    dual_clock_source #(
-        .CLKIN_PERIOD     (CLKIN_PERIOD_AXIHP),
-        .DIVCLK_DIVIDE    (DIVCLK_DIVIDE_AXIHP),
-        .CLKFBOUT_MULT    (CLKFBOUT_MULT_AXIHP),
-        .CLKOUT_DIV_CLK1X (CLKOUT_DIV_AXIHP),
-        .BUF_CLK1X        (BUF_CLK1X_AXIHP),
-        .BUF_CLK2X        ("NONE")
-    ) dual_clock_axihp_i (
-        .rst              (async_rst || reset_clk[0]), // input
-        .clk_in           (aclk),         // input
-        .pwrdwn           (pwrdwn_clk[0]), // input
-        .clk1x            (hclk), // output
-        .clk2x            (), // output
-        .locked           (locked[0]) // output
-    );
-    
+// from external clock sourec
     dual_clock_source #(
         .CLKIN_PERIOD     (CLKIN_PERIOD_PCLK),
         .DIVCLK_DIVIDE    (DIVCLK_DIVIDE_PCLK),
@@ -221,49 +218,63 @@ module  clocks393#(
 `endif        
         .locked           (locked[1])         // output
     );
-    
-    dual_clock_source #(
-        .CLKIN_PERIOD     (CLKIN_PERIOD_XCLK),
-        .DIVCLK_DIVIDE    (DIVCLK_DIVIDE_XCLK),
-        .CLKFBOUT_MULT    (CLKFBOUT_MULT_XCLK),
-        .CLKOUT_DIV_CLK1X (CLKOUT_DIV_XCLK),
-        .BUF_CLK1X        (BUF_CLK1X_XCLK),
-`ifdef  USE_XCLK2X     
-        .CLKOUT_DIV_CLK2X (CLKOUT_DIV_XCLK2X),
-        .PHASE_CLK2X      (PHASE_CLK2X_XCLK),
-        .BUF_CLK2X        (BUF_CLK1X_XCLK2X)
+    wire multi_clkfb;
+    wire hclk_pre;
+    wire dly_ref_clk_pre;
+    wire xclk_pre;
+    wire sync_clk_pre;
+`ifdef USE_PCLK2X    
+    wire xclk2x_pre;
+`endif    
+
+    pll_base #(
+        .CLKIN_PERIOD   (MULTICLK_IN_PERIOD), // 20
+        .BANDWIDTH      ("OPTIMIZED"),
+        .DIVCLK_DIVIDE  (MULTICLK_DIVCLK),
+        .CLKFBOUT_MULT  (MULTICLK_MULT), // 2..64, // Fvco=Fclkin*CLKFBOUT_MULT_F/DIVCLK_DIVIDE, Fout=Fvco/CLKOUT#_DIVIDE
+        .CLKFBOUT_PHASE (MULTICLK_PHASE_FB),
+        .CLKOUT0_DIVIDE (MULTICLK_DIV_AXIHP),
+        .CLKOUT0_PHASE  (MULTICLK_PHASE_AXIHP),
+        .CLKOUT1_DIVIDE (MULTICLK_DIV_XCLK),
+        .CLKOUT1_PHASE  (MULTICLK_PHASE_XCLK),
+`ifdef  USE_XCLK2X
+        .CLKOUT2_DIVIDE (MULTICLK_DIV_XCLK2X),
+        .CLKOUT2_PHASE  (MULTICLK_PHASE_XCLK2X),
+`endif
+        .CLKOUT3_DIVIDE (MULTICLK_DIV_SYNC),
+        .CLKOUT3_PHASE  (MULTICLK_PHASE_SYNC),
+        .CLKOUT5_DIVIDE (MULTICLK_DIV_DLYREF),
+        .CLKOUT5_PHASE  (MULTICLK_PHASE_DLYREF),
+        .REF_JITTER1    (0.010),
+        .STARTUP_WAIT   ("FALSE")
+    ) pll_base_i (
+        .clkin(aclk), // input
+        .clkfbin        (multi_clkfb), // input
+        .rst            (async_rst || reset_clk[0]), // input TODO: check resets/
+
+        .pwrdwn         (pwrdwn_clk[0]), // input
+        .clkout0        (hclk_pre), // output
+        .clkout1        (xclk_pre), // output
+`ifdef USE_PCLK2X    
+        .clkout2        (xclk2x_pre), // output
 `else
-        .BUF_CLK2X        ("NONE")
+        .clkout2        (), // output
 `endif        
-    ) dual_clock_xclk_i (
-        .rst              (async_rst || reset_clk[2]),     // input
-        .clk_in           (aclk),             // input
-        .pwrdwn           (pwrdwn_clk[2]),    // input
-        .clk1x            (xclk),             // output
+        .clkout3        (sync_clk_pre), // output
+        .clkout4        (), // output
+        .clkout5        (dly_ref_clk_pre), // output
+        .clkfbout       (multi_clkfb), // output
+        .locked         (locked[0]) // output
+    );
+
+// Buffering clocks outputs
+    select_clk_buf #(.BUFFER_TYPE(MULTICLK_BUF_DLYREF)) dly_ref_clk_i (.o(dly_ref_clk), .i(dly_ref_clk_pre), .clr(async_rst));
+    select_clk_buf #(.BUFFER_TYPE(MULTICLK_BUF_AXIHP))  hclk_i        (.o(hclk),        .i(hclk_pre),        .clr(async_rst));
+    select_clk_buf #(.BUFFER_TYPE(MULTICLK_BUF_XCLK))   xclk_i        (.o(xclk),        .i(xclk_pre),        .clr(async_rst)); // locked[2],pwrdwn_clk[2],reset_clk[2]
 `ifdef  USE_XCLK2X     
-        .clk2x            (xclk2x),           // output
-`else
-        .clk2x            (),                 // output
-`endif        
-        .locked           (locked[2])         // output
-    );
-    
-    dual_clock_source #(
-        .CLKIN_PERIOD     (CLKIN_PERIOD_SYNC),
-        .DIVCLK_DIVIDE    (DIVCLK_DIVIDE_SYNC),
-        .CLKFBOUT_MULT    (CLKFBOUT_MULT_SYNC),
-        .CLKOUT_DIV_CLK1X (CLKOUT_DIV_SYNC),
-        .BUF_CLK1X        (BUF_CLK1X_SYNC),
-        .BUF_CLK2X        ("NONE")
-    ) dual_clock_sync_clk_i (
-        .rst              (async_rst || reset_clk[3]),     // input
-        .clk_in           (aclk),             // input
-        .pwrdwn           (pwrdwn_clk[3]),    // input
-        .clk1x            (sync_clk),         // output
-        .clk2x            (),                 // output
-        .locked           (locked[3])         // output
-    );
-    
+    select_clk_buf #(.BUFFER_TYPE(MULTICLK_BUF_XCLK2X)) xclk2x_i      (.o(xclk2x),      .i(xclk2x_pre),      .clr(async_rst));
+`endif    
+    select_clk_buf #(.BUFFER_TYPE(MULTICLK_BUF_SYNC))   sync_clk_i    (.o(sync_clk),    .i(sync_clk_pre),     .clr(async_rst)); // locked[3],pwrdwn_clk[3],reset_clk[3]
 
     ibuf_ibufg #(
         .CAPACITANCE      (MEMCLK_CAPACITANCE),

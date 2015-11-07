@@ -56,7 +56,11 @@ module  sensor_i2c_io#(
 // I/O parameters   
     parameter integer SENSI2C_DRIVE = 12,
     parameter SENSI2C_IBUF_LOW_PWR = "TRUE",
-    parameter SENSI2C_IOSTANDARD =  "DEFAULT",
+`ifdef HISPI    
+    parameter SENSI2C_IOSTANDARD =  "LVCMOS18",
+`else
+    parameter SENSI2C_IOSTANDARD =  "LVCMOS25",
+`endif    
     parameter SENSI2C_SLEW =        "SLOW"
 )(
     input         mrst,        // @mclk

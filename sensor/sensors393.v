@@ -181,7 +181,6 @@ module  sensors393 #(
     //sensor_i2c_io other parameters
     parameter integer SENSI2C_DRIVE=     12,
     parameter SENSI2C_IBUF_LOW_PWR=      "TRUE",
-    parameter SENSI2C_IOSTANDARD =       "DEFAULT",
     parameter SENSI2C_SLEW =             "SLOW",
     
 `ifndef HISPI
@@ -215,7 +214,6 @@ module  sensors393 #(
     parameter integer IDELAY_VALUE =     0,
     parameter integer PXD_DRIVE =        12,
     parameter PXD_IBUF_LOW_PWR =         "TRUE",
-    parameter PXD_IOSTANDARD =           "DEFAULT",
     parameter PXD_SLEW =                 "SLOW",
     parameter real SENS_REFCLK_FREQUENCY =    300.0,
     parameter SENS_HIGH_PERFORMANCE_MODE =    "FALSE",
@@ -235,12 +233,16 @@ module  sensors393 #(
     parameter CLKFBOUT_PHASE_SENSOR =    0.000,  // CLOCK FEEDBACK phase in degrees (3 significant digits, -360.000...+360.000)
     parameter IPCLK_PHASE =              0.000,
     parameter IPCLK2X_PHASE =            0.000,
+    parameter PXD_IOSTANDARD =           "LVCMOS18",
+    parameter SENSI2C_IOSTANDARD =       "LVCMOS18",
 `else    
     parameter CLKIN_PERIOD_SENSOR =      10.000, // input period in ns, 0..100.000 - MANDATORY, resolution down to 1 ps
     parameter CLKFBOUT_MULT_SENSOR =     8,      // 100 MHz --> 800 MHz
     parameter CLKFBOUT_PHASE_SENSOR =    0.000,  // CLOCK FEEDBACK phase in degrees (3 significant digits, -360.000...+360.000)
     parameter IPCLK_PHASE =              0.000,
     parameter IPCLK2X_PHASE =            0.000,
+    parameter PXD_IOSTANDARD =           "LVCMOS25",
+    parameter SENSI2C_IOSTANDARD =       "LVCMOS25",
 `endif
 //    parameter BUF_IPCLK =                "BUFR",
 //    parameter BUF_IPCLK2X =              "BUFR",  
@@ -266,13 +268,21 @@ module  sensors393 #(
 `ifdef HISPI
    ,parameter HISPI_MSB_FIRST =            0,
     parameter HISPI_NUMLANES =             4,
+    parameter HISPI_DELAY_CLK0=           "FALSE",      
+    parameter HISPI_DELAY_CLK1=           "FALSE",      
+    parameter HISPI_DELAY_CLK2=           "FALSE",      
+    parameter HISPI_DELAY_CLK3=           "FALSE",      
+    parameter HISPI_MMCM0 =               "TRUE",
+    parameter HISPI_MMCM1 =               "TRUE",
+    parameter HISPI_MMCM2 =               "TRUE",
+    parameter HISPI_MMCM3 =               "TRUE",
     parameter HISPI_CAPACITANCE =         "DONT_CARE",
     parameter HISPI_DIFF_TERM =           "TRUE",
     parameter HISPI_DQS_BIAS =            "TRUE",
     parameter HISPI_IBUF_DELAY_VALUE =    "0",
     parameter HISPI_IBUF_LOW_PWR =        "TRUE",
     parameter HISPI_IFD_DELAY_VALUE =     "AUTO",
-    parameter HISPI_IOSTANDARD =          "DEFAULT"
+    parameter HISPI_IOSTANDARD =          "DIFF_SSTL18_I" //"DIFF_SSTL18_II" for high current (13.4mA vs 8mA)
 `endif    
     
 `ifdef DEBUG_RING
@@ -301,12 +311,16 @@ module  sensors393 #(
     input         status_start, // Acknowledge of the first status packet byte (address)
     
     // I/O pads, pin names match circuit diagram (each sensor)
+`ifdef HISPI    
+    input  [15:0] sns_dp,
+    input  [15:0] sns_dn,
+    inout  [15:0] sns_dp74,
+    inout  [15:0] sns_dn74,
+    input   [3:0] sns_clkp, // SuppressThisWarning all - input-only in HiSPi mode
+    input   [3:0] sns_clkn, // SuppressThisWarning all - input-only in HiSPi mode
+`else
     inout  [31:0] sns_dp,
     inout  [31:0] sns_dn,
-`ifdef HISPI    
-    inout   [3:0] sns_clkp, // SuppressThisWarning all - input-only in HiSPi mode
-    inout   [3:0] sns_clkn, // SuppressThisWarning all - input-only in HiSPi mode
-`else
     inout   [3:0] sns_clkp,
     inout   [3:0] sns_clkn,
 `endif    
@@ -580,6 +594,10 @@ module  sensors393 #(
 `ifdef HISPI
                ,.HISPI_MSB_FIRST               (HISPI_MSB_FIRST),
                 .HISPI_NUMLANES                (HISPI_NUMLANES),
+
+                .HISPI_DELAY_CLK               ((i & 2) ? ((i & 1) ? HISPI_DELAY_CLK3 : HISPI_DELAY_CLK2) : ((i & 1) ?HISPI_DELAY_CLK1 : HISPI_DELAY_CLK0 )),
+                .HISPI_MMCM                    ((i & 2) ? ((i & 1) ? HISPI_MMCM3 :      HISPI_MMCM2) :      ((i & 1) ?HISPI_MMCM1 :      HISPI_MMCM0 )),
+
                 .HISPI_CAPACITANCE             (HISPI_CAPACITANCE),
                 .HISPI_DIFF_TERM               (HISPI_DIFF_TERM),
                 .HISPI_DQS_BIAS                (HISPI_DQS_BIAS),
@@ -599,11 +617,19 @@ module  sensors393 #(
 `endif                
                 .mrst         (mrst),                  // input
                 .prst         (prst),                  // input
-                
+`ifdef HISPI
+                .sns_dp       (sns_dp[i * 4 +: 4]),    // input[3:0] 
+                .sns_dn       (sns_dn[i * 4 +: 4]),    // input[3:0]
+                .sns_dp74     (sns_dp74[i * 4 +: 4]),  // input[3:0] 
+                .sns_dn74     (sns_dn74[i * 4 +: 4]),  // input[3:0] 
+                .sns_clkp     (sns_clkp[i]),           // input
+                .sns_clkn     (sns_clkn[i]),           // input
+`else                
                 .sns_dp       (sns_dp[i * 8 +: 8]),    // inout[7:0] 
                 .sns_dn       (sns_dn[i * 8 +: 8]),    // inout[7:0] 
                 .sns_clkp     (sns_clkp[i]),           // inout
                 .sns_clkn     (sns_clkn[i]),           // inout
+`endif                
                 .sns_scl      (sns_scl[i]),            // inout
                 .sns_sda      (sns_sda[i]),            // inout
                 .sns_ctl      (sns_ctl[i]),            // inout

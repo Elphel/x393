@@ -1,16 +1,16 @@
 /*******************************************************************************
- * Module: ibufds_ibufgds
+ * Module: ibufgds
  * Date:2015-07-17  
  * Author: Andrey  Filippov   
  * Description: Wrapper for IBUFDS primitive
  *
  * Copyright (c) 2015 Elphel, Inc .
- * ibufds_ibufgds.v is free software; you can redistribute it and/or modify
+ * ibufgds.v is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- *  ibufds_ibufgds.v is distributed in the hope that it will be useful,
+ *  ibufgds.v is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
@@ -25,31 +25,31 @@ The IBUFDS and IBUFGDS primitives are the same, IBUFGDS is used when an differen
 input buffer is used as a clock input.
 
 Actually, it still complains:
-WARNING: [DRC 23-20] Rule violation (CKLD-2) Clock Net has direct IO Driver - Clock net clocks393_i/ibuf_ibufg_i/memclk_0 is directly driven by an IO rather than a Clock Buffer. Driverx393.s: clocks393_i/ibuf_ibufg_i/IBUF_i/O[VivadoPlace:0000]
+WARNING: [DRC 23-20] Rule violation (CKLD-2) Clock Net has direct IO Driver - Clock net clocks393_i/ibufds_ibufgds0_i/ffclk0 is directly driven by an IO rather than a Clock Buffer. Driverx393.s: clocks393_i/ibufds_ibufgds0_i/IBUFDS_i/O[VivadoPlace:0000]
 
 */
-module  ibufds_ibufgds  #(
+module  ibufgds  #(
       parameter CAPACITANCE = "DONT_CARE",
       parameter DIFF_TERM = "FALSE",
-      parameter DQS_BIAS = "FALSE",
-      parameter IBUF_DELAY_VALUE = "0",
+//      parameter DQS_BIAS = "FALSE",
+//      parameter IBUF_DELAY_VALUE = "0",
       parameter IBUF_LOW_PWR = "TRUE",
-      parameter IFD_DELAY_VALUE = "AUTO",
+//      parameter IFD_DELAY_VALUE = "AUTO",
       parameter IOSTANDARD = "DEFAULT"
   )(
         output O,
         input  I,
         input  IB
 );
-    IBUFDS #(
+    IBUFGDS #(
         .CAPACITANCE       (CAPACITANCE),
         .DIFF_TERM         (DIFF_TERM),
-        .DQS_BIAS          (DQS_BIAS),
-        .IBUF_DELAY_VALUE  (IBUF_DELAY_VALUE),
+//        .DQS_BIAS          (DQS_BIAS),
+//        .IBUF_DELAY_VALUE  (IBUF_DELAY_VALUE),
         .IBUF_LOW_PWR      (IBUF_LOW_PWR),
-        .IFD_DELAY_VALUE   (IFD_DELAY_VALUE),
+//        .IFD_DELAY_VALUE   (IFD_DELAY_VALUE),
         .IOSTANDARD        (IOSTANDARD)
-    ) IBUFDS_i (
+    ) IBUFGDS_i (
         .O  (O), // output 
         .I  (I), // input 
         .IB (IB) // input 

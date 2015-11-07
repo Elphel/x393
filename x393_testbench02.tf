@@ -317,7 +317,6 @@ assign #10 gpio_pins[9] = gpio_pins[8];
     wire        SDDMU;  // inout
     wire        DQSU;   // inout
     wire        NDQSU;  // inout
-    wire        DUMMY_TO_KEEP;  // output to keep PS7 signals from "optimization" // SuppressThisWarning all - not used
     wire        memclk;
 
     wire        ffclk0p; // input
@@ -1292,8 +1291,6 @@ assign bresp=                              x393_i.ps7_i.MAXIGP0BRESP;
         .HIGH_PERFORMANCE_MODE             (HIGH_PERFORMANCE_MODE),
         .CLKIN_PERIOD                      (CLKIN_PERIOD),
         .CLKFBOUT_MULT                     (CLKFBOUT_MULT),
-        .CLKFBOUT_MULT_REF                 (CLKFBOUT_MULT_REF),
-        .CLKFBOUT_DIV_REF                  (CLKFBOUT_DIV_REF),
         .DIVCLK_DIVIDE                     (DIVCLK_DIVIDE),
         .CLKFBOUT_PHASE                    (CLKFBOUT_PHASE),
         .CLKFBOUT_USE_FINE_PS              (CLKFBOUT_USE_FINE_PS),
@@ -1439,8 +1436,7 @@ assign bresp=                              x393_i.ps7_i.MAXIGP0BRESP;
         .ffclk0p (ffclk0p),      // input
         .ffclk0n (ffclk0n),      // input
         .ffclk1p (ffclk1p),      // input
-        .ffclk1n (ffclk1n),      // input
-        .DUMMY_TO_KEEP(DUMMY_TO_KEEP)  // to keep PS7 signals from "optimization"
+        .ffclk1n (ffclk1n)         // input
     );
     // just to simplify extra delays in tri-state memory bus - provide output enable
     wire WRAP_MCLK=x393_i.mclk;

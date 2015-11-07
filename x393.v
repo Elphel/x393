@@ -26,6 +26,51 @@ module  x393 #(
 `include "includes/x393_parameters.vh"
 )(
     // Sensors interface: I/O pads, pin names match circuit diagram (each sensor)
+`ifdef HISPI
+    input                  [3:0] sns1_dp,
+    input                  [3:0] sns1_dn,
+    inout                  [7:4] sns1_dp74, // other non-diff signals
+    inout                  [7:4] sns1_dn74, // other non-diff signals
+    input                        sns1_clkp,
+    input                        sns1_clkn,
+    inout                        sns1_scl,
+    inout                        sns1_sda,
+    inout                        sns1_ctl,
+    inout                        sns1_pg,
+    
+    input                  [3:0] sns2_dp,
+    input                  [3:0] sns2_dn,
+    inout                  [7:4] sns2_dp74, // other non-diff signals
+    inout                  [7:4] sns2_dn74, // other non-diff signals
+    input                        sns2_clkp,
+    input                        sns2_clkn,
+    inout                        sns2_scl,
+    inout                        sns2_sda,
+    inout                        sns2_ctl,
+    inout                        sns2_pg,
+
+    input                  [3:0] sns3_dp,
+    input                  [3:0] sns3_dn,
+    inout                  [7:4] sns3_dp74, // other non-diff signals
+    inout                  [7:4] sns3_dn74, // other non-diff signals
+    input                        sns3_clkp,
+    input                        sns3_clkn,
+    inout                        sns3_scl,
+    inout                        sns3_sda,
+    inout                        sns3_ctl,
+    inout                        sns3_pg,
+
+    input                  [3:0] sns4_dp,
+    input                  [3:0] sns4_dn,
+    inout                  [7:4] sns4_dp74, // other non-diff signals
+    inout                  [7:4] sns4_dn74, // other non-diff signals
+    input                        sns4_clkp,
+    input                        sns4_clkn,
+    inout                        sns4_scl,
+    inout                        sns4_sda,
+    inout                        sns4_ctl,
+    inout                        sns4_pg,
+`else
     inout                  [7:0] sns1_dp,
     inout                  [7:0] sns1_dn,
     inout                        sns1_clkp,
@@ -61,6 +106,7 @@ module  x393 #(
     inout                        sns4_sda,
     inout                        sns4_ctl,
     inout                        sns4_pg,
+`endif    
     // GPIO pins (1.5V): assigned in 10389: [1:0] - i2c, [5:2] - gpio, [GPIO_N-1:6] - sync i/o
     inout           [GPIO_N-1:0] gpio_pins,
     // DDR3 interface
@@ -88,14 +134,9 @@ module  x393 #(
     input                        ffclk0n, // Y11
     input                        ffclk1p, // W14
     input                        ffclk1n  // W13
-    ,output                      DUMMY_TO_KEEP
     
 );
 `include "fpga_version.vh"
-    assign DUMMY_TO_KEEP = frst[2] && fclk[1];
-
-//    localparam ADDRESS_NUMBER=15;
-//    localparam COLADDR_NUMBER=10;
 // Source for reset and clock
 `ifndef IGNORE_ATTR
     (* KEEP = "TRUE" *)
@@ -1023,8 +1064,6 @@ assign axi_grst = axi_rst_pre;
         .HIGH_PERFORMANCE_MODE             (HIGH_PERFORMANCE_MODE),
         .CLKIN_PERIOD                      (CLKIN_PERIOD),
         .CLKFBOUT_MULT                     (CLKFBOUT_MULT),
-        .CLKFBOUT_MULT_REF                 (CLKFBOUT_MULT_REF),
-        .CLKFBOUT_DIV_REF                  (CLKFBOUT_DIV_REF),
         .DIVCLK_DIVIDE                     (DIVCLK_DIVIDE),
         .CLKFBOUT_USE_FINE_PS              (CLKFBOUT_USE_FINE_PS),
         .CLKFBOUT_PHASE                    (CLKFBOUT_PHASE),
@@ -1105,7 +1144,7 @@ assign axi_grst = axi_rst_pre;
         .mclk                      (mclk), // output
         .mrst                      (mrst),
         .locked                    (mcntrl_locked), // to generate sync reset
-        .ref_clk                   (ref_clk), // output
+        .ref_clk                   (ref_clk), // input
         .idelay_ctrl_reset         (idelay_ctrl_reset), // output
         
         .cmd_ad                    (cmd_mcontr_ad), // input[7:0] 
@@ -1553,7 +1592,6 @@ assign axi_grst = axi_rst_pre;
         .IDELAY_VALUE               (IDELAY_VALUE),
         .PXD_DRIVE                  (PXD_DRIVE),
         .PXD_IBUF_LOW_PWR           (PXD_IBUF_LOW_PWR),
-        .PXD_IOSTANDARD             (PXD_IOSTANDARD),
         .PXD_SLEW                   (PXD_SLEW),
         .SENS_REFCLK_FREQUENCY      (SENS_REFCLK_FREQUENCY),
         .SENS_HIGH_PERFORMANCE_MODE (SENS_HIGH_PERFORMANCE_MODE),
@@ -1570,6 +1608,7 @@ assign axi_grst = axi_rst_pre;
         .CLKFBOUT_PHASE_SENSOR      (CLKFBOUT_PHASE_SENSOR),
         .IPCLK_PHASE                (IPCLK_PHASE),
         .IPCLK2X_PHASE              (IPCLK2X_PHASE),
+        .PXD_IOSTANDARD             (PXD_IOSTANDARD),
         .BUF_IPCLK_SENS0            (BUF_IPCLK_SENS0),
         .BUF_IPCLK2X_SENS0          (BUF_IPCLK2X_SENS0),
         .BUF_IPCLK_SENS1            (BUF_IPCLK_SENS1),
@@ -1587,6 +1626,15 @@ assign axi_grst = axi_rst_pre;
 `ifdef HISPI
        ,.HISPI_MSB_FIRST               (HISPI_MSB_FIRST),
         .HISPI_NUMLANES                (HISPI_NUMLANES),
+        .HISPI_DELAY_CLK0              (HISPI_DELAY_CLK0),
+        .HISPI_DELAY_CLK1              (HISPI_DELAY_CLK1),
+        .HISPI_DELAY_CLK2              (HISPI_DELAY_CLK2),
+        .HISPI_DELAY_CLK3              (HISPI_DELAY_CLK3),
+        .HISPI_MMCM0                   (HISPI_MMCM0),
+        .HISPI_MMCM1                   (HISPI_MMCM1),
+        .HISPI_MMCM2                   (HISPI_MMCM2),
+        .HISPI_MMCM3                   (HISPI_MMCM3),
+        
         .HISPI_CAPACITANCE             (HISPI_CAPACITANCE),
         .HISPI_DIFF_TERM               (HISPI_DIFF_TERM),
         .HISPI_DQS_BIAS                (HISPI_DQS_BIAS),
@@ -1616,7 +1664,18 @@ assign axi_grst = axi_rst_pre;
         .status_ad          (status_sensor_ad),    // output[7:0] 
         .status_rq          (status_sensor_rq),    // output
         .status_start       (status_sensor_start), // input
-        
+`ifdef HISPI
+        .sns_dp            ({sns4_dp, sns3_dp, sns2_dp, sns1_dp}),             // input[3:0] 
+        .sns_dn            ({sns4_dn, sns3_dn, sns2_dn, sns1_dn}),             // input[3:0] 
+        .sns_dp74          ({sns4_dp74, sns3_dp74, sns2_dp74, sns1_dp74}),     // inout[7:4] SuppressThisWarning VEditor vdt-bug
+        .sns_dn74          ({sns4_dn74, sns3_dn74, sns2_dn74, sns1_dn74}),     // inout[7:4] SuppressThisWarning VEditor vdt-bug
+        .sns_clkp          ({sns4_clkp, sns3_clkp, sns2_clkp, sns1_clkp}),     // input
+        .sns_clkn          ({sns4_clkn, sns3_clkn, sns2_clkn, sns1_clkn}),     // input
+        .sns_scl           ({sns4_scl, sns3_scl, sns2_scl, sns1_scl}),         // inout
+        .sns_sda           ({sns4_sda, sns3_sda, sns2_sda, sns1_sda}),         // inout
+        .sns_ctl           ({sns4_ctl, sns3_ctl, sns2_ctl, sns1_ctl}),         // inout
+        .sns_pg            ({sns4_pg, sns3_pg, sns2_pg, sns1_pg}),             // inout
+`else
         .sns_dp            ({sns4_dp, sns3_dp, sns2_dp, sns1_dp}),             // inout[7:0] 
         .sns_dn            ({sns4_dn, sns3_dn, sns2_dn, sns1_dn}),             // inout[7:0] 
         .sns_clkp          ({sns4_clkp, sns3_clkp, sns2_clkp, sns1_clkp}),     // inout
@@ -1625,7 +1684,7 @@ assign axi_grst = axi_rst_pre;
         .sns_sda           ({sns4_sda, sns3_sda, sns2_sda, sns1_sda}),         // inout
         .sns_ctl           ({sns4_ctl, sns3_ctl, sns2_ctl, sns1_ctl}),         // inout
         .sns_pg            ({sns4_pg, sns3_pg, sns2_pg, sns1_pg}),             // inout
-
+`endif
         .rpage_set          (sens_rpage_set),      // input
         .rpage_next         (sens_rpage_next),     // input
         .buf_rd             (sens_buf_rd),         // input
@@ -2156,17 +2215,12 @@ assign axi_grst = axi_rst_pre;
         .saxi_bresp              (saxi1_bresp)          // input[1:0] 
     );
     
-    clocks393 #(
+    clocks393m #(
         .CLK_ADDR                (CLK_ADDR),
         .CLK_MASK                (CLK_MASK),
         .CLK_STATUS_REG_ADDR     (CLK_STATUS_REG_ADDR),
         .CLK_CNTRL               (CLK_CNTRL),
         .CLK_STATUS              (CLK_STATUS),
-        .CLKIN_PERIOD_AXIHP      (CLKIN_PERIOD_AXIHP),
-        .DIVCLK_DIVIDE_AXIHP     (DIVCLK_DIVIDE_AXIHP),
-        .CLKFBOUT_MULT_AXIHP     (CLKFBOUT_MULT_AXIHP),
-        .CLKOUT_DIV_AXIHP        (CLKOUT_DIV_AXIHP),
-        .BUF_CLK1X_AXIHP         (BUF_CLK1X_AXIHP),
         .CLKIN_PERIOD_PCLK       (CLKIN_PERIOD_PCLK),
         .DIVCLK_DIVIDE_PCLK      (DIVCLK_DIVIDE_PCLK),
         .CLKFBOUT_MULT_PCLK      (CLKFBOUT_MULT_PCLK),
@@ -2176,40 +2230,41 @@ assign axi_grst = axi_rst_pre;
         .CLKOUT_DIV_PCLK2X       (CLKOUT_DIV_PCLK2X),
         .PHASE_CLK2X_PCLK        (PHASE_CLK2X_PCLK),
         .BUF_CLK1X_PCLK2X        (BUF_CLK1X_PCLK2X),
+`endif
+        .MULTICLK_IN_PERIOD      (MULTICLK_IN_PERIOD),
+        .MULTICLK_DIVCLK         (MULTICLK_DIVCLK),
+        .MULTICLK_MULT           (MULTICLK_MULT),
+        .MULTICLK_DIV_DLYREF     (MULTICLK_DIV_DLYREF),
+        .MULTICLK_DIV_AXIHP      (MULTICLK_DIV_AXIHP),
+        .MULTICLK_DIV_XCLK       (MULTICLK_DIV_XCLK),
+`ifdef  USE_XCLK2X
+        .MULTICLK_DIV_XCLK2X     (MULTICLK_DIV_XCLK2X),
 `endif        
-        .CLKIN_PERIOD_XCLK       (CLKIN_PERIOD_XCLK),
-        .DIVCLK_DIVIDE_XCLK      (DIVCLK_DIVIDE_XCLK),
-        .CLKFBOUT_MULT_XCLK      (CLKFBOUT_MULT_XCLK),
-        .CLKOUT_DIV_XCLK         (CLKOUT_DIV_XCLK),
-        .BUF_CLK1X_XCLK          (BUF_CLK1X_XCLK),
-`ifdef  USE_XCLK2X     
-        .CLKOUT_DIV_XCLK2X       (CLKOUT_DIV_XCLK2X),
-        .PHASE_CLK2X_XCLK        (PHASE_CLK2X_XCLK),
-        .BUF_CLK1X_XCLK2X        (BUF_CLK1X_XCLK2X),
+        .MULTICLK_DIV_SYNC       (MULTICLK_DIV_SYNC),
+        .MULTICLK_PHASE_FB       (MULTICLK_PHASE_FB),
+        .MULTICLK_PHASE_DLYREF   (MULTICLK_PHASE_DLYREF),
+        .MULTICLK_BUF_DLYREF     (MULTICLK_BUF_DLYREF),
+        .MULTICLK_PHASE_AXIHP    (MULTICLK_PHASE_AXIHP),
+        .MULTICLK_BUF_AXIHP      (MULTICLK_BUF_AXIHP),
+        .MULTICLK_PHASE_XCLK     (MULTICLK_PHASE_XCLK),
+        .MULTICLK_BUF_XCLK       (MULTICLK_BUF_XCLK),
+`ifdef  USE_XCLK2X
+        .MULTICLK_PHASE_XCLK2X   (MULTICLK_PHASE_XCLK2X),
+        .MULTICLK_BUF_XCLK2X     (MULTICLK_BUF_XCLK2X),
 `endif        
-        .CLKIN_PERIOD_SYNC       (CLKIN_PERIOD_SYNC),
-        .DIVCLK_DIVIDE_SYNC      (DIVCLK_DIVIDE_SYNC),
-        .CLKFBOUT_MULT_SYNC      (CLKFBOUT_MULT_SYNC),
-        .CLKOUT_DIV_SYNC         (CLKOUT_DIV_SYNC),
-        .BUF_CLK1X_SYNC          (BUF_CLK1X_SYNC),
+        .MULTICLK_PHASE_SYNC     (MULTICLK_PHASE_SYNC),
+        .MULTICLK_BUF_SYNC       (MULTICLK_BUF_SYNC),
+        
         .MEMCLK_CAPACITANCE      (MEMCLK_CAPACITANCE),
-        .MEMCLK_IBUF_DELAY_VALUE (MEMCLK_IBUF_DELAY_VALUE),
         .MEMCLK_IBUF_LOW_PWR     (MEMCLK_IBUF_LOW_PWR),
-        .MEMCLK_IFD_DELAY_VALUE  (MEMCLK_IFD_DELAY_VALUE),
         .MEMCLK_IOSTANDARD       (MEMCLK_IOSTANDARD),
         .FFCLK0_CAPACITANCE      (FFCLK0_CAPACITANCE),
         .FFCLK0_DIFF_TERM        (FFCLK0_DIFF_TERM),
-        .FFCLK0_DQS_BIAS         (FFCLK0_DQS_BIAS),
-        .FFCLK0_IBUF_DELAY_VALUE (FFCLK0_IBUF_DELAY_VALUE),
         .FFCLK0_IBUF_LOW_PWR     (FFCLK0_IBUF_LOW_PWR),
-        .FFCLK0_IFD_DELAY_VALUE  (FFCLK0_IFD_DELAY_VALUE),
         .FFCLK0_IOSTANDARD       (FFCLK0_IOSTANDARD),
         .FFCLK1_CAPACITANCE      (FFCLK1_CAPACITANCE),
         .FFCLK1_DIFF_TERM        (FFCLK1_DIFF_TERM),
-        .FFCLK1_DQS_BIAS         (FFCLK1_DQS_BIAS),
-        .FFCLK1_IBUF_DELAY_VALUE (FFCLK1_IBUF_DELAY_VALUE),
         .FFCLK1_IBUF_LOW_PWR     (FFCLK1_IBUF_LOW_PWR),
-        .FFCLK1_IFD_DELAY_VALUE  (FFCLK1_IFD_DELAY_VALUE),
         .FFCLK1_IOSTANDARD       (FFCLK1_IOSTANDARD)
     ) clocks393_i (
         .async_rst       (axi_rst_pre),         
@@ -2238,12 +2293,12 @@ assign axi_grst = axi_rst_pre;
 `endif        
         .sync_clk        (camsync_clk),         // output
         .time_ref        (time_ref),            // output
+        .dly_ref_clk     (ref_clk),             // output
         .extra_status    ({1'b0,idelay_ctrl_rdy}), // input[1:0] 
-        .locked_sync_clk (locked_sync_clk), // output
-        .locked_xclk     (locked_xclk), // output
-        .locked_pclk     (locked_pclk), // output
-        .locked_hclk     (locked_hclk) // output
-        
+        .locked_sync_clk (locked_sync_clk),     // output // always 1
+        .locked_xclk     (locked_xclk),         // output // always 1
+        .locked_pclk     (locked_pclk),         // output 
+        .locked_hclk     (locked_hclk)          // output
     );
 
     sync_resets #(

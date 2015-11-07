@@ -77,8 +77,6 @@ module  mcontr_sequencer   #(
     parameter HIGH_PERFORMANCE_MODE = "FALSE",
     parameter CLKIN_PERIOD          = 10, //ns >1.25, 600<Fvco<1200
     parameter CLKFBOUT_MULT =       8, // Fvco=Fclkin*CLKFBOUT_MULT_F/DIVCLK_DIVIDE, Fout=Fvco/CLKOUT#_DIVIDE
-    parameter CLKFBOUT_MULT_REF =   9, // Fvco=Fclkin*CLKFBOUT_MULT_F/DIVCLK_DIVIDE, Fout=Fvco/CLKOUT#_DIVIDE
-    parameter CLKFBOUT_DIV_REF =    3, // To get 300MHz for the reference clock
     parameter DIVCLK_DIVIDE=        1,
     parameter CLKFBOUT_USE_FINE_PS= 1, // 0 - old, 1 - new 
     parameter CLKFBOUT_PHASE =      0.000,
@@ -118,7 +116,7 @@ module  mcontr_sequencer   #(
     output                       mclk,     // global clock, half DDR3 clock, synchronizes all I/O through the command port
     input                        mrst,     // @posedge mclk, sync reset (should not interrupt mclk!)
     output                       locked,   // to generate sync reset
-    output                       ref_clk,  // global clock for idelay_ctrl calibration
+    input                        ref_clk,  // global clock for idelay_ctrl calibration
     output                       idelay_ctrl_reset,
 // command port 0 (filled by software - 32w->32r) - used for mode set, refresh, write levelling, ...
     input                        cmd0_clk,
@@ -549,8 +547,6 @@ module  mcontr_sequencer   #(
         .HIGH_PERFORMANCE_MODE (HIGH_PERFORMANCE_MODE),
         .CLKIN_PERIOD          (CLKIN_PERIOD),
         .CLKFBOUT_MULT         (CLKFBOUT_MULT),
-        .CLKFBOUT_MULT_REF     (CLKFBOUT_MULT_REF),
-        .CLKFBOUT_DIV_REF      (CLKFBOUT_DIV_REF),
         .DIVCLK_DIVIDE         (DIVCLK_DIVIDE),
         .CLKFBOUT_USE_FINE_PS (CLKFBOUT_USE_FINE_PS),
         .CLKFBOUT_PHASE        (CLKFBOUT_PHASE),
@@ -586,7 +582,7 @@ module  mcontr_sequencer   #(
         .rst_in              (rst_in),                  // input
         .mclk                (mclk),                    // output
         .mrst                (mrst),                    // input
-        .ref_clk             (ref_clk),                 // output
+        .ref_clk             (ref_clk),                 // input
         .idelay_ctrl_reset   (idelay_ctrl_reset),       // output
         .dly_data            (dly_data[7:0]),           // input[7:0] 
         .dly_addr            (dly_addr[6:0]),           // input[6:0] 

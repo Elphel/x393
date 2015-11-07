@@ -1,5 +1,8 @@
-
-      parameter FPGA_VERSION =          32'h03930066; // trying just one histogram to watch utilization - with 4 was: Slice 15913 (80.98%), now Slice = 14318 (72.87%)
+      parameter FPGA_VERSION =          32'h0393006a; // modified clock generation, trying with HiSPi - 72.77% utilization
+//      parameter FPGA_VERSION =          32'h03930069; // modified clock generation, rebuilding for parallel sensors - all met, 71.8% utilization
+//      parameter FPGA_VERSION =          32'h03930068; // trying BUFR/FUFIO on all sensors ipclk/ipclk2x
+//      parameter FPGA_VERSION =          32'h03930067; // removing DUMMY_TO_KEEP, moving IOSTANDARD to HDL code
+//      parameter FPGA_VERSION =          32'h03930066; // trying just one histogram to watch utilization - with 4 was: Slice 15913 (80.98%), now Slice = 14318 (72.87%)
 //      parameter FPGA_VERSION =          32'h03930065; // (same rev) all met,  using "old" (non-inverted) phase - OK (full phase range)
 //      parameter FPGA_VERSION =          32'h03930065; // switch phy_top.v (all met) - OK with inverted phase control (reduced phase range)
 //      parameter FPGA_VERSION =          32'h03930064; // switch mcomtr_sequencer.v  (xclk not met) - wrong!

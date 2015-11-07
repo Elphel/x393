@@ -73,14 +73,19 @@ create_generated_clock -name ddr3_sdclk [get_nets -hierarchical sdclk_pre ]
 create_generated_clock -name ddr3_clk [get_nets -hierarchical clk_pre ]
 create_generated_clock -name ddr3_clk_div [get_nets -hierarchical clk_div_pre ]
 create_generated_clock -name ddr3_mclk [get_nets -hierarchical mclk_pre]
-create_generated_clock -name ddr3_clk_ref [get_nets -hierarchical clk_ref_pre ]
-create_generated_clock -name axihp_clk [get_nets clocks393_i/dual_clock_axihp_i/clk1x_pre ]
+#create_generated_clock -name ddr3_clk_ref [get_nets -hierarchical clk_ref_pre ]
+create_generated_clock -name ddr3_clk_ref [get_nets clocks393_i/dly_ref_clk_pre ]
+#create_generated_clock -name axihp_clk [get_nets clocks393_i/dual_clock_axihp_i/clk1x_pre ]
+create_generated_clock -name axihp_clk [get_nets clocks393_i/hclk_pre ]
 
-create_generated_clock -name xclk      [get_nets clocks393_i/dual_clock_xclk_i/clk1x_pre ]
+#create_generated_clock -name xclk      [get_nets clocks393_i/dual_clock_xclk_i/clk1x_pre ]
+create_generated_clock -name xclk      [get_nets clocks393_i/xclk_pre ]
 #create_generated_clock -name xclk2x    [get_nets clocks393_i/dual_clock_xclk_i/clk2x_pre ]
+#create_generated_clock -name xclk2x    [get_nets clocks393_i/xclk2x_pre ]
 
 #clock for inter - camera synchronization and event logger
-create_generated_clock -name sclk      [get_nets clocks393_i/dual_clock_sync_clk_i/clk1x_pre ]
+#create_generated_clock -name sclk      [get_nets clocks393_i/dual_clock_sync_clk_i/clk1x_pre ]
+create_generated_clock -name sclk      [get_nets clocks393_i/sync_clk_pre ]
 
 create_clock -name ffclk0 -period 41.667 [get_ports {ffclk0p}]
 #Generated clocks are assumed to be tied to clkin1 (not 2), so until external ffclk0 is constrained, derivative clocks are not generated 
