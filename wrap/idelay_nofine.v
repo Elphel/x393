@@ -22,7 +22,7 @@
  * with independent modules provided by the FPGA vendor only (this permission
  * does not extend to any 3-rd party modules, "soft cores" or macros) under
  * different license terms solely for the purpose of generating binary "bitstream"
- * files * and/or simulating the code, the copyright holders of this Program give
+ * files and/or simulating the code, the copyright holders of this Program give
  * you the right to distribute the covered work without those independent modules
  * as long as the source code for them is available from the FPGA vendor free of
  * charge, and there is no dependence on any ecrypted modules for simulating of
