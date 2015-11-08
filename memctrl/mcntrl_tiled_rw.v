@@ -29,7 +29,7 @@
  * files and/or simulating the code, the copyright holders of this Program give
  * you the right to distribute the covered work without those independent modules
  * as long as the source code for them is available from the FPGA vendor free of
- * charge, and there is no dependence on any ecrypted modules for simulating of
+ * charge, and there is no dependence on any encrypted modules for simulating of
  * the combined code. This permission applies to you if the distributed code
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
