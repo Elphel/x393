@@ -841,7 +841,8 @@ setup_all_sensors True None 0xf
 #next line to make compressor aways use the same input video frame buffer (default - 2 ping-pong frame buffers)
 #axi_write_single_w 0x6c4 0
 #set quadrants
-set_sensor_io_ctl 0 None None None None None 0 0x4
+#set_sensor_io_ctl 0 None None None None None 0 0x4
+set_sensor_io_ctl 0 None None None None None 0 0xe
 set_sensor_io_ctl 1 None None None None None 0 0xe
 set_sensor_io_ctl 2 None None None None None 0 0x4
 set_sensor_io_ctl 3 None None None None None 0 0xe
