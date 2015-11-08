@@ -17,6 +17,19 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/> .
+ *
+ * Additional permission under GNU GPL version 3 section 7:
+ * If you modify this Program, or any covered work, by linking or combining it
+ * with independent modules provided by the FPGA vendor only (this permission
+ * does not extend to any 3-rd party modules, "soft cores" or macros) under
+ * different license terms solely for the purpose of generating binary "bitstream"
+ * files and/or simulating the code, the copyright holders of this Program give
+ * you the right to distribute the covered work without those independent modules
+ * as long as the source code for them is available from the FPGA vendor free of
+ * charge, and there is no dependence on any encrypted modules for simulating of
+ * the combined code. This permission applies to you if the distributed code
+ * contains all the components and scripts required to completely simulate it
+ * with at least one of the Free Software programs.
  *******************************************************************************/
 `timescale 1ns/1ps
 `include "system_defines.vh" 
@@ -142,15 +155,11 @@ module  mcntrl393 #(
     parameter HIGH_PERFORMANCE_MODE = "FALSE",
     parameter CLKIN_PERIOD          = 20, // 10, //ns >1.25, 600<Fvco<1200 // Hardware 150MHz , change to             | 6.667
     parameter CLKFBOUT_MULT =       16,   // 8, // Fvco=Fclkin*CLKFBOUT_MULT_F/DIVCLK_DIVIDE, Fout=Fvco/CLKOUT#_DIVIDE  | 16
-    parameter CLKFBOUT_MULT_REF =   16,   // 18,   // 9, // Fvco=Fclkin*CLKFBOUT_MULT_F/DIVCLK_DIVIDE, Fout=Fvco/CLKOUT#_DIVIDE  | 6
-    parameter CLKFBOUT_DIV_REF =    4, // 200Mhz 3, // To get 300MHz for the reference clock
 `else
     parameter real REFCLK_FREQUENCY = 300.0,
     parameter HIGH_PERFORMANCE_MODE = "FALSE",
     parameter CLKIN_PERIOD          = 10, //ns >1.25, 600<Fvco<1200
     parameter CLKFBOUT_MULT =       8, // Fvco=Fclkin*CLKFBOUT_MULT_F/DIVCLK_DIVIDE, Fout=Fvco/CLKOUT#_DIVIDE
-    parameter CLKFBOUT_MULT_REF =   9, // Fvco=Fclkin*CLKFBOUT_MULT_F/DIVCLK_DIVIDE, Fout=Fvco/CLKOUT#_DIVIDE
-    parameter CLKFBOUT_DIV_REF =    3, // To get 300MHz for the reference clock
 `endif    
     parameter DIVCLK_DIVIDE=        1,
     parameter CLKFBOUT_USE_FINE_PS= 1, // 0 - old, 1 - new 
@@ -251,7 +260,7 @@ module  mcntrl393 #(
     output                       mclk,     // global clock, half DDR3 clock, synchronizes all I/O through the command port
     input                        mrst,     // @posedge mclk synchronous reset - should not interrupt mclk generation
     output                       locked,   // to generate sync reset
-    output                       ref_clk,  // global clock for idelay_ctrl calibration
+    input                        ref_clk,  // global clock for idelay_ctrl calibration
     output                       idelay_ctrl_reset,
     // programming interface
     input                  [7:0] cmd_ad,      // byte-serial command address/data (up to 6 bytes: AL-AH-D0-D1-D2-D3 
@@ -402,9 +411,6 @@ module  mcntrl393 #(
     inout                        DQSU,  // UDQS I/O pad
     inout                        NDQSU //,
        
-//    output                       DUMMY_TO_KEEP  // to keep PS7 signals from "optimization"
-//    input                        MEMCLK
-// temporary debug data    
     ,output                [11:0] tmp_debug // add some signals generated here?
 );
     localparam COL_WDTH = COLADDR_NUMBER-3; // number of column address bits in bursts
@@ -1814,8 +1820,6 @@ module  mcntrl393 #(
         .HIGH_PERFORMANCE_MODE (HIGH_PERFORMANCE_MODE),
         .CLKIN_PERIOD          (CLKIN_PERIOD),
         .CLKFBOUT_MULT         (CLKFBOUT_MULT),
-        .CLKFBOUT_MULT_REF     (CLKFBOUT_MULT_REF),
-        .CLKFBOUT_DIV_REF      (CLKFBOUT_DIV_REF),
         .DIVCLK_DIVIDE         (DIVCLK_DIVIDE),
         .CLKFBOUT_USE_FINE_PS  (CLKFBOUT_USE_FINE_PS),
         .CLKFBOUT_PHASE        (CLKFBOUT_PHASE),
@@ -1835,7 +1839,7 @@ module  mcntrl393 #(
         .mclk               (mclk),                       // output
         .mrst               (mrst),                       // input
         .locked             (locked),                     // output
-        .ref_clk            (ref_clk),                    // output
+        .ref_clk            (ref_clk),                    // input
         .idelay_ctrl_reset  (idelay_ctrl_reset),          // output
         .cmd_ad             (cmd_mcontr_ad),              // input[7:0] 
         .cmd_stb            (cmd_mcontr_stb),             // input

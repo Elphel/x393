@@ -120,8 +120,8 @@ parameter EXTERNAL_TIMESTAMP =    0; // 1 ;    // embed local timestamp, 1 - emb
     
 `else
     parameter HBLANK=            12; // 52; // 12; /// 52; //*********************
-    parameter BLANK_ROWS_BEFORE= 1; //8; ///2+2 - a little faster than compressor
-    parameter BLANK_ROWS_AFTER=  1; //8;
+ parameter BLANK_ROWS_BEFORE= 1; //8; ///2+2 - a little faster than compressor
+ parameter BLANK_ROWS_AFTER=  1; //8;
 `endif 
  parameter WOI_HEIGHT=        32;
  parameter TRIG_LINES=        8;
@@ -359,7 +359,7 @@ parameter EXTERNAL_TIMESTAMP =    0; // 1 ;    // embed local timestamp, 1 - emb
     assign PX1_ARST =       sns1_dn[7];
     assign sns1_clkn =      PX1_D[0];  // inout CNVSYNC/TDI
     assign sns1_clkp =      PX1_D[1];  // CNVCLK/TDO
-    assign PX1_ARO =        sns1_ctl;  // from FPGA to sensor
+    assign PX1_ARO =       sns1_ctl;  // from FPGA to sensor
 
     assign PX2_MRST =       sns2_dp[7]; // from FPGA to sensor
     assign PX2_MCLK_PRE =   sns2_dp[0]; // from FPGA to sensor
@@ -439,7 +439,6 @@ assign #10 gpio_pins[9] = gpio_pins[8];
     wire        SDDMU;  // inout
     wire        DQSU;   // inout
     wire        NDQSU;  // inout
-    wire        DUMMY_TO_KEEP;  // output to keep PS7 signals from "optimization" // SuppressThisWarning all - not used
     wire        memclk;
 
     wire        ffclk0p; // input
@@ -1261,7 +1260,7 @@ assign #10 gpio_pins[9] = gpio_pins[8];
   setup_sensor_membridge (0,   // for sensor 0
                           1) ; // disable_need
 `endif  
-  
+    
 `ifdef DEBUG_RING
   TEST_TITLE = "READING DEBUG DATA";
   $display("===================== TEST_%s =========================",TEST_TITLE);
@@ -1347,6 +1346,7 @@ assign bresp=                              x393_i.ps7_i.MAXIGP0BRESP;
 //TODO: See how to show problems in include files opened in the editor (test all top *.v files that have it)
 // Top module under test
     x393 #(
+// TODO: Are these parameters needed? They are included in x393 from the save x393_parameters.vh    
         .MCONTR_WR_MASK                    (MCONTR_WR_MASK),
         .MCONTR_RD_MASK                    (MCONTR_RD_MASK),
         .MCONTR_CMD_WR_ADDR                (MCONTR_CMD_WR_ADDR),
@@ -1420,8 +1420,6 @@ assign bresp=                              x393_i.ps7_i.MAXIGP0BRESP;
         .HIGH_PERFORMANCE_MODE             (HIGH_PERFORMANCE_MODE),
         .CLKIN_PERIOD                      (CLKIN_PERIOD),
         .CLKFBOUT_MULT                     (CLKFBOUT_MULT),
-        .CLKFBOUT_MULT_REF                 (CLKFBOUT_MULT_REF),
-        .CLKFBOUT_DIV_REF                  (CLKFBOUT_DIV_REF),
         .DIVCLK_DIVIDE                     (DIVCLK_DIVIDE),
         .CLKFBOUT_USE_FINE_PS              (CLKFBOUT_USE_FINE_PS),
         .CLKFBOUT_PHASE                    (CLKFBOUT_PHASE),
@@ -1508,8 +1506,15 @@ assign bresp=                              x393_i.ps7_i.MAXIGP0BRESP;
         .MCNTRL_TEST01_STATUS_REG_CHN3_ADDR (MCNTRL_TEST01_STATUS_REG_CHN3_ADDR),
         .MCNTRL_TEST01_STATUS_REG_CHN4_ADDR (MCNTRL_TEST01_STATUS_REG_CHN4_ADDR)
     ) x393_i (
+`ifdef HISPI
+        .sns1_dp   (sns1_dp[3:0]),    // inout[3:0]
+        .sns1_dn   (sns1_dn[3:0]),    // inout[3:0]
+        .sns1_dp74 (sns1_dp[7:4]),    // inout[3:0]
+        .sns1_dn74 (sns1_dn[7:4]),    // inout[3:0]
+`else    
         .sns1_dp   (sns1_dp),    // inout[7:0] {PX_MRST, PXD8, PXD6, PXD4, PXD2, PXD0, PX_HACT, PX_DCLK}
         .sns1_dn   (sns1_dn),    // inout[7:0] {PX_ARST, PXD9, PXD7, PXD5, PXD3, PXD1, PX_VACT, PX_BPF}
+`endif        
         .sns1_clkp (sns1_clkp),  // inout       CNVCLK/TDO
         .sns1_clkn (sns1_clkn),  // inout       CNVSYNC/TDI
         .sns1_scl  (sns1_scl),   // inout       PX_SCL
@@ -1517,8 +1522,15 @@ assign bresp=                              x393_i.ps7_i.MAXIGP0BRESP;
         .sns1_ctl  (sns1_ctl),   // inout       PX_ARO/TCK
         .sns1_pg   (sns1_pg),    // inout       SENSPGM
         
-        .sns2_dp   (sns2_dp),    // inout[7:0] {PX_MRST, PXD8, PXD6, PXD4, PXD2, PXD0, PX_HACT, PX_DCLK}
-        .sns2_dn   (sns2_dn),    // inout[7:0] {PX_ARST, PXD9, PXD7, PXD5, PXD3, PXD1, PX_VACT, PX_BPF}
+`ifdef HISPI
+        .sns2_dp   (sns2_dp[3:0]),    // inout[3:0]
+        .sns2_dn   (sns2_dn[3:0]),    // inout[3:0]
+        .sns2_dp74 (sns2_dp[7:4]),    // inout[3:0]
+        .sns2_dn74 (sns2_dn[7:4]),    // inout[3:0]
+`else    
+        .sns2_dp   (sns1_dp),    // inout[7:0] {PX_MRST, PXD8, PXD6, PXD4, PXD2, PXD0, PX_HACT, PX_DCLK}
+        .sns2_dn   (sns1_dn),    // inout[7:0] {PX_ARST, PXD9, PXD7, PXD5, PXD3, PXD1, PX_VACT, PX_BPF}
+`endif        
         .sns2_clkp (sns2_clkp),  // inout       CNVCLK/TDO
         .sns2_clkn (sns2_clkn),  // inout       CNVSYNC/TDI
         .sns2_scl  (sns2_scl),   // inout       PX_SCL
@@ -1526,8 +1538,15 @@ assign bresp=                              x393_i.ps7_i.MAXIGP0BRESP;
         .sns2_ctl  (sns2_ctl),   // inout       PX_ARO/TCK
         .sns2_pg   (sns2_pg),    // inout       SENSPGM
         
+`ifdef HISPI
+        .sns3_dp   (sns3_dp[3:0]),    // inout[3:0]
+        .sns3_dn   (sns3_dn[3:0]),    // inout[3:0]
+        .sns3_dp74 (sns3_dp[7:4]),    // inout[3:0]
+        .sns3_dn74 (sns3_dn[7:4]),    // inout[3:0]
+`else    
         .sns3_dp   (sns3_dp),    // inout[7:0] {PX_MRST, PXD8, PXD6, PXD4, PXD2, PXD0, PX_HACT, PX_DCLK}
         .sns3_dn   (sns3_dn),    // inout[7:0] {PX_ARST, PXD9, PXD7, PXD5, PXD3, PXD1, PX_VACT, PX_BPF}
+`endif        
         .sns3_clkp (sns3_clkp),  // inout       CNVCLK/TDO
         .sns3_clkn (sns3_clkn),  // inout       CNVSYNC/TDI
         .sns3_scl  (sns3_scl),   // inout       PX_SCL
@@ -1535,8 +1554,15 @@ assign bresp=                              x393_i.ps7_i.MAXIGP0BRESP;
         .sns3_ctl  (sns3_ctl),   // inout       PX_ARO/TCK
         .sns3_pg   (sns3_pg),    // inout       SENSPGM
         
+`ifdef HISPI
+        .sns4_dp   (sns4_dp[3:0]),    // inout[3:0]
+        .sns4_dn   (sns4_dn[3:0]),    // inout[3:0]
+        .sns4_dp74 (sns4_dp[7:4]),    // inout[3:0]
+        .sns4_dn74 (sns4_dn[7:4]),    // inout[3:0]
+`else    
         .sns4_dp   (sns4_dp),    // inout[7:0] {PX_MRST, PXD8, PXD6, PXD4, PXD2, PXD0, PX_HACT, PX_DCLK}
         .sns4_dn   (sns4_dn),    // inout[7:0] {PX_ARST, PXD9, PXD7, PXD5, PXD3, PXD1, PX_VACT, PX_BPF}
+`endif        
         .sns4_clkp (sns4_clkp),  // inout       CNVCLK/TDO
         .sns4_clkn (sns4_clkn),  // inout       CNVSYNC/TDI
         .sns4_scl  (sns4_scl),   // inout       PX_SCL
@@ -1567,8 +1593,7 @@ assign bresp=                              x393_i.ps7_i.MAXIGP0BRESP;
         .ffclk0p (ffclk0p),      // input
         .ffclk0n (ffclk0n),      // input
         .ffclk1p (ffclk1p),      // input
-        .ffclk1n (ffclk1n),      // input
-        .DUMMY_TO_KEEP(DUMMY_TO_KEEP)  // to keep PS7 signals from "optimization"
+        .ffclk1n (ffclk1n)         // input
     );
     // just to simplify extra delays in tri-state memory bus - provide output enable
     wire WRAP_MCLK=x393_i.mclk;
@@ -2264,7 +2289,7 @@ simul_axi_hp_wr #(
         .tDDO1     (SENSOR12BITS_TDDO1),
         .trigdly   (TRIG_LINES), // SENSOR12BITS_TRIGDLY),
         .ramp      (0), //SENSOR12BITS_RAMP),
-        .new_bayer (1) //SENSOR12BITS_NEW_BAYER)
+        .new_bayer (0) // was 1 SENSOR12BITS_NEW_BAYER)
     ) simul_sensor12bits_i (
         .MCLK  (PX1_MCLK), // input 
         .MRST  (PX1_MRST), // input 
@@ -2303,7 +2328,7 @@ simul_axi_hp_wr #(
         .tDDO1     (SENSOR12BITS_TDDO1),
         .trigdly   (TRIG_LINES), // SENSOR12BITS_TRIGDLY),
         .ramp      (0), //SENSOR12BITS_RAMP),
-        .new_bayer (1) //SENSOR12BITS_NEW_BAYER)
+        .new_bayer (0) //SENSOR12BITS_NEW_BAYER) was 1
     ) simul_sensor12bits_2_i (
         .MCLK  (PX2_MCLK), // input 
         .MRST  (PX2_MRST), // input 
@@ -2340,8 +2365,8 @@ simul_axi_hp_wr #(
         .tDDO      (SENSOR12BITS_TDDO),
         .tDDO1     (SENSOR12BITS_TDDO1),
         .trigdly   (TRIG_LINES), // SENSOR12BITS_TRIGDLY),
-        .ramp      (0), //SENSOR12BITS_RAMP),
-        .new_bayer (1) //SENSOR12BITS_NEW_BAYER)
+        .ramp      (0), // SENSOR12BITS_RAMP),
+        .new_bayer (0)  // was 1SENSOR12BITS_NEW_BAYER)
     ) simul_sensor12bits_3_i (
         .MCLK  (PX3_MCLK), // input 
         .MRST  (PX3_MRST), // input 
@@ -2378,8 +2403,8 @@ simul_axi_hp_wr #(
         .tDDO      (SENSOR12BITS_TDDO),
         .tDDO1     (SENSOR12BITS_TDDO1),
         .trigdly   (TRIG_LINES), // SENSOR12BITS_TRIGDLY),
-        .ramp      (0), //SENSOR12BITS_RAMP),
-        .new_bayer (1) //SENSOR12BITS_NEW_BAYER)
+        .ramp      (0),// SENSOR12BITS_RAMP),
+        .new_bayer (0) // was 1SENSOR12BITS_NEW_BAYER)
     ) simul_sensor12bits_4_i (
         .MCLK  (PX4_MCLK), // input 
         .MRST  (PX4_MRST), // input 
@@ -2665,8 +2690,8 @@ task setup_sensor_channel;
     
     setup_compressor_channel(
         num_sensor,              // sensor channel number (0..3)
-//        0,                       // qbank;    // [6:3] quantization table page - 100% quality
-        1,                       // qbank;    // [6:3] quantization table page - 85%? quality
+        0,                       // qbank;    // [6:3] quantization table page - 100% quality
+//        1,                       // qbank;    // [6:3] quantization table page - 85%? quality
         1,                       // dc_sub;   // [8:7] subtract DC
         CMPRS_CBIT_CMODE_JPEG18, //input [31:0] cmode;   //  [13:9] color mode:
 //        parameter CMPRS_CBIT_CMODE_JPEG18 =   4'h0, // color 4:2:0
@@ -2683,7 +2708,7 @@ task setup_sensor_channel;
 //        parameter CMPRS_CBIT_CMODE_MONO1 =    4'hb, // mono JPEG (not yet implemented)
 //        parameter CMPRS_CBIT_CMODE_MONO4 =    4'he, // mono 4 blocks
         1,                      // input [31:0] multi_frame;   // [15:14] 0 - single-frame buffer, 1 - multiframe video memory buffer
-        0,                      // input [31:0] bayer;         // [20:18] // Bayer shift
+        3,  // 0,               // input [31:0] bayer;         // [20:18] // Bayer shift
         0,                      // input [31:0] focus_mode;    // [23:21] Set focus mode
         3,                      // num_macro_cols_m1; // number of macroblock colums minus 1
         1,                      // num_macro_rows_m1; // number of macroblock rows minus 1
@@ -2756,10 +2781,10 @@ task setup_sensor_channel;
             num_sensor,
             0, // num_sub_sensor
 // add mode "DIRECT", "ASAP", "RELATIVE", "ABSOLUTE" and frame number
-            19'h20000, // 0,      // input  [18:0] AX;
-            19'h20000, // 0,      // input  [18:0] AY;
-            21'h180000, //0,      // input  [20:0] BX;
-            21'h180000, //0,      // input  [20:0] BY;
+            19'h0, // 19'h20000, // 0,      // input  [18:0] AX;
+            19'h0, // 19'h20000, // 0,      // input  [18:0] AY;
+            21'h0, // 21'h180000, //0,      // input  [20:0] BX;
+            21'h0, // 21'h180000, //0,      // input  [20:0] BY;
             'h8000, // input  [18:0] C;
             32768,  // input  [16:0] scales0;
             32768,  // input  [16:0] scales1;

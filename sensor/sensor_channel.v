@@ -17,6 +17,19 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/> .
+ *
+ * Additional permission under GNU GPL version 3 section 7:
+ * If you modify this Program, or any covered work, by linking or combining it
+ * with independent modules provided by the FPGA vendor only (this permission
+ * does not extend to any 3-rd party modules, "soft cores" or macros) under
+ * different license terms solely for the purpose of generating binary "bitstream"
+ * files and/or simulating the code, the copyright holders of this Program give
+ * you the right to distribute the covered work without those independent modules
+ * as long as the source code for them is available from the FPGA vendor free of
+ * charge, and there is no dependence on any encrypted modules for simulating of
+ * the combined code. This permission applies to you if the distributed code
+ * contains all the components and scripts required to completely simulate it
+ * with at least one of the Free Software programs.
  *******************************************************************************/
 `timescale 1ns/1ps
 
@@ -181,7 +194,6 @@ module  sensor_channel#(
     //sensor_i2c_io other parameters
     parameter integer SENSI2C_DRIVE=  12,
     parameter SENSI2C_IBUF_LOW_PWR=   "TRUE",
-    parameter SENSI2C_IOSTANDARD =    "DEFAULT",
     parameter SENSI2C_SLEW =          "SLOW",
     
 `ifndef HISPI
@@ -197,7 +209,6 @@ module  sensor_channel#(
     parameter integer IDELAY_VALUE = 0,
     parameter integer PXD_DRIVE = 12,
     parameter PXD_IBUF_LOW_PWR = "TRUE",
-    parameter PXD_IOSTANDARD = "DEFAULT",
     parameter PXD_SLEW = "SLOW",
     parameter real SENS_REFCLK_FREQUENCY =    300.0,
     parameter SENS_HIGH_PERFORMANCE_MODE =    "FALSE",
@@ -219,12 +230,16 @@ module  sensor_channel#(
     parameter CLKFBOUT_PHASE_SENSOR =    0.000,  // CLOCK FEEDBACK phase in degrees (3 significant digits, -360.000...+360.000)
     parameter IPCLK_PHASE =              0.000,
     parameter IPCLK2X_PHASE =            0.000,
+    parameter PXD_IOSTANDARD =           "LVCMOS18",
+    parameter SENSI2C_IOSTANDARD =       "LVCMOS18",
 `else    
     parameter CLKIN_PERIOD_SENSOR =      10.000, // input period in ns, 0..100.000 - MANDATORY, resolution down to 1 ps
     parameter CLKFBOUT_MULT_SENSOR =     8,      // 100 MHz --> 800 MHz
     parameter CLKFBOUT_PHASE_SENSOR =    0.000,  // CLOCK FEEDBACK phase in degrees (3 significant digits, -360.000...+360.000)
     parameter IPCLK_PHASE =              0.000,
     parameter IPCLK2X_PHASE =            0.000,
+    parameter PXD_IOSTANDARD =           "LVCMOS25",
+    parameter SENSI2C_IOSTANDARD =       "LVCMOS25",
 `endif
     
     parameter BUF_IPCLK =             "BUFR",
@@ -240,13 +255,15 @@ module  sensor_channel#(
 `ifdef HISPI
    ,parameter HISPI_MSB_FIRST =            0,
     parameter HISPI_NUMLANES =             4,
+    parameter HISPI_DELAY_CLK =           "FALSE",      
+    parameter HISPI_MMCM =                "TRUE",
     parameter HISPI_CAPACITANCE =         "DONT_CARE",
     parameter HISPI_DIFF_TERM =           "TRUE",
     parameter HISPI_DQS_BIAS =            "TRUE",
     parameter HISPI_IBUF_DELAY_VALUE =    "0",
     parameter HISPI_IBUF_LOW_PWR =        "TRUE",
     parameter HISPI_IFD_DELAY_VALUE =     "AUTO",
-    parameter HISPI_IOSTANDARD =          "DEFAULT"
+    parameter HISPI_IOSTANDARD =          "DIFF_SSTL18_I" //"DIFF_SSTL18_II" for high current (13.4mA vs 8mA)
 `endif    
     
 `ifdef DEBUG_RING
@@ -266,12 +283,16 @@ module  sensor_channel#(
     input         prst,      // @posedge pclk, sync reset
     
     // I/O pads, pin names match circuit diagram
-    inout   [7:0] sns_dp,
-    inout   [7:0] sns_dn,
 `ifdef HISPI   
+    input   [3:0] sns_dp,
+    input   [3:0] sns_dn,
+    inout   [7:4] sns_dp74,
+    inout   [7:4] sns_dn74,
     input         sns_clkp,
     input         sns_clkn,
 `else
+    inout   [7:0] sns_dp,
+    inout   [7:0] sns_dn,
     inout         sns_clkp,
     inout         sns_clkn,
 `endif    
@@ -732,6 +753,8 @@ module  sensor_channel#(
             .SENS_SS_MOD_PERIOD     (SENS_SS_MOD_PERIOD),
             .HISPI_MSB_FIRST        (HISPI_MSB_FIRST),
             .HISPI_NUMLANES         (HISPI_NUMLANES),
+            .HISPI_DELAY_CLK        (HISPI_DELAY_CLK),
+            .HISPI_MMCM             (HISPI_MMCM),
             .HISPI_CAPACITANCE      (HISPI_CAPACITANCE),
             .HISPI_DIFF_TERM        (HISPI_DIFF_TERM),
             .HISPI_DQS_BIAS         (HISPI_DQS_BIAS),
@@ -763,16 +786,16 @@ module  sensor_channel#(
             .sns_dn           (sns_dn[3:0]),            // input[3:0] 
             .sns_clkp         (sns_clkp),               // input
             .sns_clkn         (sns_clkn),               // input
-            .sens_ext_clk_p   (sns_dp[6]),              // output
-            .sens_ext_clk_n   (sns_dn[6]),              // output
+            .sens_ext_clk_p   (sns_dp74[6]),            // output
+            .sens_ext_clk_n   (sns_dn74[6]),            // output
             .sns_pgm          (sns_pg),                 // inout
             .sns_ctl_tck      (sns_ctl),                // output
-            .sns_mrst         (sns_dp[7]),              // output
-            .sns_arst_tms     (sns_dn[7]),              // output
-            .sns_gp0_tdi      (sns_dp[5]),              // output
-            .sns_gp1          (sns_dn[5]),              // output
-            .sns_flash_tdo    (sns_dp[4]),              // input
-            .sns_shutter_done (sns_dn[4]),              // input
+            .sns_mrst         (sns_dp74[7]),            // output
+            .sns_arst_tms     (sns_dn74[7]),            // output
+            .sns_gp0_tdi      (sns_dp74[5]),            // output
+            .sns_gp1          (sns_dn74[5]),            // output
+            .sns_flash_tdo    (sns_dp74[4]),            // input
+            .sns_shutter_done (sns_dn74[4]),            // input
             .pxd              (pxd),                    // output[11:0] 
             .hact             (hact),                   // output
             .sof              (sof),                    // output
@@ -806,7 +829,6 @@ module  sensor_channel#(
             .IODELAY_GRP           (IODELAY_GRP),
             .IDELAY_VALUE          (IDELAY_VALUE),
             .PXD_DRIVE             (PXD_DRIVE),
-            .PXD_IBUF_LOW_PWR      (PXD_IBUF_LOW_PWR),
             .PXD_IOSTANDARD        (PXD_IOSTANDARD),
             .PXD_SLEW              (PXD_SLEW),
             .SENS_REFCLK_FREQUENCY (SENS_REFCLK_FREQUENCY),
@@ -819,6 +841,7 @@ module  sensor_channel#(
             .CLKFBOUT_PHASE_SENSOR (CLKFBOUT_PHASE_SENSOR),
             .IPCLK_PHASE           (IPCLK_PHASE),
             .IPCLK2X_PHASE         (IPCLK2X_PHASE),
+            .PXD_IBUF_LOW_PWR      (PXD_IBUF_LOW_PWR),
             .BUF_IPCLK             (BUF_IPCLK),
             .BUF_IPCLK2X           (BUF_IPCLK2X),
             .SENS_DIVCLK_DIVIDE    (SENS_DIVCLK_DIVIDE),

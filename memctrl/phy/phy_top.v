@@ -17,6 +17,19 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/> .
+ *
+ * Additional permission under GNU GPL version 3 section 7:
+ * If you modify this Program, or any covered work, by linking or combining it
+ * with independent modules provided by the FPGA vendor only (this permission
+ * does not extend to any 3-rd party modules, "soft cores" or macros) under
+ * different license terms solely for the purpose of generating binary "bitstream"
+ * files and/or simulating the code, the copyright holders of this Program give
+ * you the right to distribute the covered work without those independent modules
+ * as long as the source code for them is available from the FPGA vendor free of
+ * charge, and there is no dependence on any encrypted modules for simulating of
+ * the combined code. This permission applies to you if the distributed code
+ * contains all the components and scripts required to completely simulate it
+ * with at least one of the Free Software programs.
  *******************************************************************************/
 `timescale 1ns/1ps
 
@@ -40,8 +53,6 @@ module  phy_top #(
     // Assuming 100MHz input clock, 800MHz Fvco, 400MHz clk, 200MHz clk_div, 200MHz mclk 
     parameter CLKIN_PERIOD          = 10, //ns >1.25, 600<Fvco<1200
     parameter CLKFBOUT_MULT =       8, // Fvco=Fclkin*CLKFBOUT_MULT_F/DIVCLK_DIVIDE, Fout=Fvco/CLKOUT#_DIVIDE
-    parameter CLKFBOUT_MULT_REF =   9, // Fvco=Fclkin*CLKFBOUT_MULT_F/DIVCLK_DIVIDE, Fout=Fvco/CLKOUT#_DIVIDE
-    parameter CLKFBOUT_DIV_REF =    3, // To get 300MHz for the reference clock
     parameter DIVCLK_DIVIDE=        1,
     parameter CLKFBOUT_USE_FINE_PS =1, // if 1 move CLKFBOUT_PHASE and SDCLK_PHASE, if 0 - other outputs (moved phases should be 0/same)
     parameter CLKFBOUT_PHASE =      0.000,
@@ -78,7 +89,7 @@ module  phy_top #(
     output                       clk_div,  // free-running half clk frequency, front aligned to clk (shared for R/W), BUFR output
     output                       mclk,     // same as clk_div, through separate BUFG and static phase adjust
     input                        mrst,     // @posedge mclk synchronous reset - should not interrupt mclk generation
-    output                       ref_clk,  // global clock for idelay_ctrl calibration
+    input                        ref_clk,  // global clock for idelay_ctrl calibration
     output                       idelay_ctrl_reset,
     input                        rst_in,   // reset delays/serdes - global reset?
     input                        ddr_rst,  // active high - generate NRST to memory
@@ -120,14 +131,9 @@ module  phy_top #(
     output                       ps_rdy,
     output     [PHASE_WIDTH-1:0] ps_out 
 );
-  
+  assign locked_pll = 1; // not used anymore, reference clock generation moved to other module
   reg rst= 1'b1;
-//  always @(negedge clk_div or posedge rst_in) begin // Why is it @ negedge clk_div?
-//    if (rst_in) rst <= 1'b1;
-//    else        rst <= 1'b0;
-//  end
 
-//  always @(negedge clk_div) begin // Why is it @ negedge clk_div?
   always @(posedge clk_div) begin // Why is it @ negedge clk_div?
     if (mrst) rst <= 1'b1;
     else      rst <= 1'b0;
@@ -137,27 +143,15 @@ module  phy_top #(
   wire  ld_data_h = (dly_addr[6:5] == 2'h1) && ld_delay ;             
   wire  ld_cmda =   (dly_addr[6:5] == 2'h2) && ld_delay ;             
   wire  ld_mmcm=    (dly_addr[6:0] == 7'h60) && ld_delay ;
-  wire  clkfb_ref, clk_ref_pre; 
-//  wire  ref_clk; // 200MHz/300Mhz to calibrate I/O delays            
-//  wire locked_mmcm,locked_pll, dly_ready, dci_ready;
-//  assign locked=locked_mmcm && locked_pll && dly_ready && dci_ready; // both PLL ready, I/O delay calibrated
+//  wire  clkfb_ref, clk_ref_pre; 
+
   wire clkin_stopped_mmcm;
   wire clkfb_stopped_mmcm;
   
   
   reg dbg1=0;
   reg dbg2=0;
-/*  
-  always @ (posedge rst_in or posedge mclk) begin
-    if (rst_in) dbg1 <= 0;
-    else dbg1 <= ~dbg1;
-  end
 
-  always @ (posedge rst_in or posedge clk_div) begin
-    if (rst_in) dbg2 <= 0;
-    else dbg2 <= ~dbg2;
-  end
-*/  
   always @ (posedge mclk) begin
     if (mrst) dbg1 <= 0;
     else     dbg1 <= ~dbg1;
@@ -316,10 +310,7 @@ BUFR clk_bufr_i (.O(clk), .CE(), .CLR(), .I(clk_pre));
 //BUFIO clk_buf_i (.O(clk), .I(clk_pre));
 BUFR clk_div_bufr_i (.O(clk_div), .CE(), .CLR(), .I(clk_div_pre));
 BUFIO iclk_bufio_i (.O(sdclk), .I(sdclk_pre) );
-//BUFIO clk_ref_i (.O(ref_clk), .I(clk_ref_pre));
-//assign ref_clk=clk_ref_pre;
-//BUFH clk_ref_i (.O(ref_clk), .I(clk_ref_pre));
-BUFG clk_ref_i (.O(ref_clk), .I(clk_ref_pre));
+///BUFG clk_ref_i (.O(ref_clk), .I(clk_ref_pre));
 BUFG mclk_i (.O(mclk),.I(mclk_pre) );
     mmcm_phase_cntr #(
         .PHASE_WIDTH         (PHASE_WIDTH),
@@ -389,30 +380,6 @@ BUFG mclk_i (.O(mclk),.I(mclk_pre) );
         .clkin_stopped       (clkin_stopped_mmcm), // output
         .clkfb_stopped       (clkfb_stopped_mmcm) // output
          // output
-    );
-
-// Generate reference clock for the I/O delays
-    pll_base #(
-        .CLKIN_PERIOD(CLKIN_PERIOD),
-        .BANDWIDTH("OPTIMIZED"),
-        .CLKFBOUT_MULT(CLKFBOUT_MULT_REF),
-        .CLKOUT0_DIVIDE(CLKFBOUT_DIV_REF),
-        .REF_JITTER1(0.010),
-        .STARTUP_WAIT("FALSE")
-    ) pll_base_i (
-        .clkin(clk_in), // input
-        .clkfbin(clkfb_ref), // input
-//        .rst(rst), // input
-        .rst(rst_in), // input
-        .pwrdwn(1'b0), // input
-        .clkout0(clk_ref_pre), // output
-        .clkout1(), // output
-        .clkout2(), // output
-        .clkout3(), // output
-        .clkout4(), // output
-        .clkout5(), // output
-        .clkfbout(clkfb_ref), // output
-        .locked(locked_pll) // output
     );
 // Does it need to be re-calibrated periodically - yes when temperature changes, same as dci_reset
 assign idelay_ctrl_reset = rst || dly_rst;

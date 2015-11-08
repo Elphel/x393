@@ -17,6 +17,19 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/> .
+#
+# Additional permission under GNU GPL version 3 section 7:
+# If you modify this Program, or any covered work, by linking or combining it
+# with independent modules provided by the FPGA vendor only (this permission
+# does not extend to any 3-rd party modules, "soft cores" or macros) under
+# different license terms solely for the purpose of generating binary "bitstream"
+# files and/or simulating the code, the copyright holders of this Program give
+# you the right to distribute the covered work without those independent modules
+# as long as the source code for them is available from the FPGA vendor free of
+# charge, and there is no dependence on any encrypted modules for simulating of
+# the combined code. This permission applies to you if the distributed code
+# contains all the components and scripts required to completely simulate it
+# with at least one of the Free Software programs.
 #################################################################################
 
 create_clock -name axi_aclk -period 20 [get_nets -hierarchical *axi_aclk]
@@ -73,14 +86,19 @@ create_generated_clock -name ddr3_sdclk [get_nets -hierarchical sdclk_pre ]
 create_generated_clock -name ddr3_clk [get_nets -hierarchical clk_pre ]
 create_generated_clock -name ddr3_clk_div [get_nets -hierarchical clk_div_pre ]
 create_generated_clock -name ddr3_mclk [get_nets -hierarchical mclk_pre]
-create_generated_clock -name ddr3_clk_ref [get_nets -hierarchical clk_ref_pre ]
-create_generated_clock -name axihp_clk [get_nets clocks393_i/dual_clock_axihp_i/clk1x_pre ]
+#create_generated_clock -name ddr3_clk_ref [get_nets -hierarchical clk_ref_pre ]
+create_generated_clock -name ddr3_clk_ref [get_nets clocks393_i/dly_ref_clk_pre ]
+#create_generated_clock -name axihp_clk [get_nets clocks393_i/dual_clock_axihp_i/clk1x_pre ]
+create_generated_clock -name axihp_clk [get_nets clocks393_i/hclk_pre ]
 
-create_generated_clock -name xclk      [get_nets clocks393_i/dual_clock_xclk_i/clk1x_pre ]
+#create_generated_clock -name xclk      [get_nets clocks393_i/dual_clock_xclk_i/clk1x_pre ]
+create_generated_clock -name xclk      [get_nets clocks393_i/xclk_pre ]
 #create_generated_clock -name xclk2x    [get_nets clocks393_i/dual_clock_xclk_i/clk2x_pre ]
+#create_generated_clock -name xclk2x    [get_nets clocks393_i/xclk2x_pre ]
 
 #clock for inter - camera synchronization and event logger
-create_generated_clock -name sclk      [get_nets clocks393_i/dual_clock_sync_clk_i/clk1x_pre ]
+#create_generated_clock -name sclk      [get_nets clocks393_i/dual_clock_sync_clk_i/clk1x_pre ]
+create_generated_clock -name sclk      [get_nets clocks393_i/sync_clk_pre ]
 
 create_clock -name ffclk0 -period 41.667 [get_ports {ffclk0p}]
 #Generated clocks are assumed to be tied to clkin1 (not 2), so until external ffclk0 is constrained, derivative clocks are not generated 

@@ -317,7 +317,6 @@ assign #10 gpio_pins[9] = gpio_pins[8];
     wire        SDDMU;  // inout
     wire        DQSU;   // inout
     wire        NDQSU;  // inout
-    wire        DUMMY_TO_KEEP;  // output to keep PS7 signals from "optimization" // SuppressThisWarning all - not used
     wire        memclk;
 
     wire        ffclk0p; // input
@@ -1292,8 +1291,6 @@ assign bresp=                              x393_i.ps7_i.MAXIGP0BRESP;
         .HIGH_PERFORMANCE_MODE             (HIGH_PERFORMANCE_MODE),
         .CLKIN_PERIOD                      (CLKIN_PERIOD),
         .CLKFBOUT_MULT                     (CLKFBOUT_MULT),
-        .CLKFBOUT_MULT_REF                 (CLKFBOUT_MULT_REF),
-        .CLKFBOUT_DIV_REF                  (CLKFBOUT_DIV_REF),
         .DIVCLK_DIVIDE                     (DIVCLK_DIVIDE),
         .CLKFBOUT_PHASE                    (CLKFBOUT_PHASE),
         .CLKFBOUT_USE_FINE_PS              (CLKFBOUT_USE_FINE_PS),
@@ -1439,8 +1436,7 @@ assign bresp=                              x393_i.ps7_i.MAXIGP0BRESP;
         .ffclk0p (ffclk0p),      // input
         .ffclk0n (ffclk0n),      // input
         .ffclk1p (ffclk1p),      // input
-        .ffclk1n (ffclk1n),      // input
-        .DUMMY_TO_KEEP(DUMMY_TO_KEEP)  // to keep PS7 signals from "optimization"
+        .ffclk1n (ffclk1n)         // input
     );
     // just to simplify extra delays in tri-state memory bus - provide output enable
     wire WRAP_MCLK=x393_i.mclk;
@@ -2251,7 +2247,8 @@ task write_block_scanline_chn;  // SuppressThisWarning VEditor : may be unused
     end
 endtask
 // x393_mcntrl (no class)
-function [11:0] func_encode_mode_tiled;  // SuppressThisWarning VEditor - not used
+function [12:0] func_encode_mode_tiled;  // SuppressThisWarning VEditor - not used
+    input       skip_too_late;
     input       disable_need;
     input       repetitive;
     input       single;
@@ -2264,7 +2261,7 @@ function [11:0] func_encode_mode_tiled;  // SuppressThisWarning VEditor - not us
     input       enable;      // enable requests from this channel ( 0 will let current to finish, but not raise want/need)
     input       chn_reset;       // immediately reset al;l the internal circuitry
 
-    reg  [11:0] rslt;
+    reg  [12:0] rslt;
     begin
         rslt = 0;
         rslt[MCONTR_LINTILE_EN] =                                     ~chn_reset;
@@ -2277,12 +2274,15 @@ function [11:0] func_encode_mode_tiled;  // SuppressThisWarning VEditor - not us
         rslt[MCONTR_LINTILE_SINGLE] =                                  single;
         rslt[MCONTR_LINTILE_REPEAT] =                                  repetitive;
         rslt[MCONTR_LINTILE_DIS_NEED] =                                disable_need;
+        rslt[MCONTR_LINTILE_SKIP_LATE] =                               skip_too_late;
+        
 //        func_encode_mode_tiled={byte32,keep_open,extra_pages,write_mem,enable,~chn_reset};
         func_encode_mode_tiled = rslt;
     end           
 endfunction
 // x393_mcntrl (no class)
-function [11:0] func_encode_mode_scanline; // SuppressThisWarning VEditor - not used
+function [12:0] func_encode_mode_scanline; // SuppressThisWarning VEditor - not used
+    input       skip_too_late;
     input       disable_need;
     input       repetitive;
     input       single;
@@ -2293,7 +2293,7 @@ function [11:0] func_encode_mode_scanline; // SuppressThisWarning VEditor - not 
     input       enable;      // enable requests from this channel ( 0 will let current to finish, but not raise want/need)
     input       chn_reset;       // immediately reset al;l the internal circuitry
     
-    reg  [11:0] rslt;
+    reg  [12:0] rslt;
     begin
         rslt = 0;
         rslt[MCONTR_LINTILE_EN] =                                     ~chn_reset;
@@ -2304,6 +2304,7 @@ function [11:0] func_encode_mode_scanline; // SuppressThisWarning VEditor - not 
         rslt[MCONTR_LINTILE_SINGLE] =                                  single;
         rslt[MCONTR_LINTILE_REPEAT] =                                  repetitive;
         rslt[MCONTR_LINTILE_DIS_NEED] =                                disable_need;
+        rslt[MCONTR_LINTILE_SKIP_LATE] =                               skip_too_late;
 //        func_encode_mode_scanline={extra_pages,write_mem,enable,~chn_reset};
         func_encode_mode_scanline = rslt;
     end           

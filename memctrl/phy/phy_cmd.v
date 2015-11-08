@@ -18,6 +18,19 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/> .
+ *
+ * Additional permission under GNU GPL version 3 section 7:
+ * If you modify this Program, or any covered work, by linking or combining it
+ * with independent modules provided by the FPGA vendor only (this permission
+ * does not extend to any 3-rd party modules, "soft cores" or macros) under
+ * different license terms solely for the purpose of generating binary "bitstream"
+ * files and/or simulating the code, the copyright holders of this Program give
+ * you the right to distribute the covered work without those independent modules
+ * as long as the source code for them is available from the FPGA vendor free of
+ * charge, and there is no dependence on any encrypted modules for simulating of
+ * the combined code. This permission applies to you if the distributed code
+ * contains all the components and scripts required to completely simulate it
+ * with at least one of the Free Software programs.
  *******************************************************************************/
 `timescale 1ns/1ps
 
@@ -33,8 +46,6 @@ module  phy_cmd#(
     parameter HIGH_PERFORMANCE_MODE = "FALSE",
     parameter CLKIN_PERIOD          = 10, //ns >1.25, 600<Fvco<1200
     parameter CLKFBOUT_MULT =       8, // Fvco=Fclkin*CLKFBOUT_MULT_F/DIVCLK_DIVIDE, Fout=Fvco/CLKOUT#_DIVIDE
-    parameter CLKFBOUT_MULT_REF =   9, // Fvco=Fclkin*CLKFBOUT_MULT_F/DIVCLK_DIVIDE, Fout=Fvco/CLKOUT#_DIVIDE
-    parameter CLKFBOUT_DIV_REF =    3, // To get 300MHz for the reference clock
     parameter DIVCLK_DIVIDE=        1,
     parameter CLKFBOUT_USE_FINE_PS= 1, // 0 - old, 1 - new 
     parameter CLKFBOUT_PHASE =      0.000,
@@ -73,7 +84,7 @@ module  phy_cmd#(
     input                        rst_in,
     output                       mclk,     // global clock, half DDR3 clock, synchronizes all I/O through the command port
     input                        mrst,     // @posedge mclk synchronous reset - should not interrupt mclk generation
-    output                       ref_clk,  // global clock for idelay_ctrl calibration
+    input                        ref_clk,  // global clock for idelay_ctrl calibration
     output                       idelay_ctrl_reset,
 // inteface to control I/O delays and mmcm
     input                  [7:0] dly_data, // delay value (3 LSB - fine delay)
@@ -377,8 +388,6 @@ module  phy_cmd#(
         .BANDWIDTH        ("OPTIMIZED"),
         .CLKIN_PERIOD     (CLKIN_PERIOD),
         .CLKFBOUT_MULT    (CLKFBOUT_MULT),
-        .CLKFBOUT_MULT_REF(CLKFBOUT_MULT_REF),
-        .CLKFBOUT_DIV_REF (CLKFBOUT_DIV_REF),
         .DIVCLK_DIVIDE    (DIVCLK_DIVIDE),
         .CLKFBOUT_USE_FINE_PS (CLKFBOUT_USE_FINE_PS),
         .CLKFBOUT_PHASE   (CLKFBOUT_PHASE),
@@ -413,7 +422,7 @@ module  phy_cmd#(
         .clk_div         (clk_div),                        // output
         .mclk            (mclk),                           // output
         .mrst            (mrst),                           // input
-        .ref_clk         (ref_clk),                        // output
+        .ref_clk         (ref_clk),                        // input
         .idelay_ctrl_reset (idelay_ctrl_reset),            // output
 
         .rst_in          (rst_in),                         // input

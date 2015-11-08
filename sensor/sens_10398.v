@@ -17,6 +17,19 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/> .
+ *
+ * Additional permission under GNU GPL version 3 section 7:
+ * If you modify this Program, or any covered work, by linking or combining it
+ * with independent modules provided by the FPGA vendor only (this permission
+ * does not extend to any 3-rd party modules, "soft cores" or macros) under
+ * different license terms solely for the purpose of generating binary "bitstream"
+ * files and/or simulating the code, the copyright holders of this Program give
+ * you the right to distribute the covered work without those independent modules
+ * as long as the source code for them is available from the FPGA vendor free of
+ * charge, and there is no dependence on any encrypted modules for simulating of
+ * the combined code. This permission applies to you if the distributed code
+ * contains all the components and scripts required to completely simulate it
+ * with at least one of the Free Software programs.
  *******************************************************************************/
 `timescale 1ns/1ps
 
@@ -76,18 +89,21 @@ module  sens_10398 #(
 
     parameter HISPI_MSB_FIRST =            0,
     parameter HISPI_NUMLANES =             4,
+    parameter HISPI_DELAY_CLK =           "FALSE",      
+    parameter HISPI_MMCM =                "TRUE",
+    
     parameter HISPI_CAPACITANCE =         "DONT_CARE",
     parameter HISPI_DIFF_TERM =           "TRUE",
     parameter HISPI_DQS_BIAS =            "TRUE",
     parameter HISPI_IBUF_DELAY_VALUE =    "0",
     parameter HISPI_IBUF_LOW_PWR =        "TRUE",
     parameter HISPI_IFD_DELAY_VALUE =     "AUTO",
-    parameter HISPI_IOSTANDARD =          "DEFAULT",
+    parameter HISPI_IOSTANDARD =          "DIFF_SSTL18_I", //"DIFF_SSTL18_II" for high current (13.4mA vs 8mA)
     
     // Other (non-HiSPi) sensor I/Os
     parameter integer PXD_DRIVE =         12,
     parameter PXD_IBUF_LOW_PWR =         "TRUE",
-    parameter PXD_IOSTANDARD =           "DEFAULT", // 1.8V single-ended
+    parameter PXD_IOSTANDARD =           "LVCMOS18", // 1.8V single-ended
     parameter PXD_SLEW =                 "SLOW",
     parameter PXD_CAPACITANCE =          "DONT_CARE",
     parameter PXD_CLK_DIV =              10, // 220MHz -> 22MHz
@@ -324,6 +340,8 @@ module  sens_10398 #(
         .SENS_SS_MOD_PERIOD     (SENS_SS_MOD_PERIOD),
         .HISPI_MSB_FIRST        (HISPI_MSB_FIRST),
         .HISPI_NUMLANES         (HISPI_NUMLANES),
+        .HISPI_DELAY_CLK        (HISPI_DELAY_CLK),
+        .HISPI_MMCM             (HISPI_MMCM),
         .HISPI_CAPACITANCE      (HISPI_CAPACITANCE),
         .HISPI_DIFF_TERM        (HISPI_DIFF_TERM),
         .HISPI_DQS_BIAS         (HISPI_DQS_BIAS),
@@ -356,16 +374,43 @@ module  sens_10398 #(
         .clkin_pxd_stopped_mmcm (clkin_pxd_stopped_mmcm), // output
         .clkfb_pxd_stopped_mmcm (clkfb_pxd_stopped_mmcm)  // output
     );
-
+/*
     obufds #(
         .CAPACITANCE("DONT_CARE"),
-        .IOSTANDARD("DEFAULT"),
+        .IOSTANDARD(PXD_IOSTANDARD), // not diff, just opposite phase signals
         .SLEW("SLOW")
     ) obufds_i (
         .o   (sens_ext_clk_p),                   // output
         .ob  (sens_ext_clk_n),                  // output
         .i   (pxd_clk_cntr[PXD_CLK_DIV_BITS-1]) // input
     );
+*/  
+//    reg [1:0] ext_clk_r;
+//    always @(posedge pclk) begin
+//        ext_clk_r <= {pxd_clk_cntr[PXD_CLK_DIV_BITS-1], !pxd_clk_cntr[PXD_CLK_DIV_BITS-1]};
+//    end
+
+  
+    obuf #(
+        .CAPACITANCE  (PXD_CAPACITANCE),
+        .DRIVE        (PXD_DRIVE),
+        .IOSTANDARD   (PXD_IOSTANDARD),
+        .SLEW         (PXD_SLEW)
+    ) ext_clk_p_i (
+        .O  (sens_ext_clk_p), // output
+        .I  (pxd_clk_cntr[PXD_CLK_DIV_BITS-1]) //ext_clk_r[0])    // input
+    );
+
+    obuf #(
+        .CAPACITANCE  (PXD_CAPACITANCE),
+        .DRIVE        (PXD_DRIVE),
+        .IOSTANDARD   (PXD_IOSTANDARD),
+        .SLEW         (PXD_SLEW)
+    ) ext_clk_n_i (
+        .O  (sens_ext_clk_n), // output
+        .I  (iarst) // ~pxd_clk_cntr[PXD_CLK_DIV_BITS-1]) // ext_clk_r[1])    // input
+    );
+    
     // Probe programmable/ control PROGRAM pin
     reg [1:0] xpgmen_d;
     reg force_senspgm=0;
