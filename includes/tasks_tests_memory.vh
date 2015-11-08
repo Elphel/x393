@@ -137,8 +137,10 @@ task test_afi_rw; // SuppressThisWarning VEditor - may be unused
     reg           single;
     reg           reset_frame;
     reg           disable_need; 
+    reg           skip_too_late; 
     begin
-//        disable_need = 1'b0;
+        skip_too_late = 1'b0;
+        disable_need = 1'b0;
         repetitive =  1'b1;
         single     =  1'b0;
         reset_frame = 1'b0;
@@ -149,6 +151,7 @@ task test_afi_rw; // SuppressThisWarning VEditor - may be unused
                   (window_width[12:0]==0)? 29'h4000 : {15'b0,window_width[12:0],1'b0},
                   start64, lo_addr64, size64, $time);
         mode=   func_encode_mode_scanline(
+                    skip_too_late,
                     disable_need,
                     repetitive,
                     single,
@@ -219,12 +222,14 @@ task test_scanline_write; // SuppressThisWarning VEditor - may be unused
     reg           repetitive;
     reg           single;
     reg           reset_frame;
-    reg           disable_need; 
+    reg           disable_need;
+    reg           skip_too_late; 
     begin
         disable_need = 1'b0;
         repetitive =  1'b1;
         single     =  1'b0;
         reset_frame = 1'b0;
+        skip_too_late = 1'b0;
         pages_per_row= (window_width>>NUM_XFER_BITS)+((window_width[NUM_XFER_BITS-1:0]==0)?0:1);
         $display("====== test_scanline_write: channel=%d, extra_pages=%d,  wait_done=%d @%t",
                                               channel,    extra_pages,     wait_done,   $time);
@@ -250,6 +255,7 @@ task test_scanline_write; // SuppressThisWarning VEditor - may be unused
             end
         endcase
         mode=   func_encode_mode_scanline(
+                    skip_too_late,
                     disable_need,
                     repetitive,
                     single,
@@ -360,8 +366,9 @@ task test_scanline_read; // SuppressThisWarning VEditor - may be unused
     reg           single;
     reg           reset_frame;
     reg           disable_need; 
-    
+    reg           skip_too_late; 
     begin
+        skip_too_late = 1'b0;
         disable_need = 1'b0;
         repetitive =  1'b1;
         single     =  1'b0;
@@ -391,6 +398,7 @@ task test_scanline_read; // SuppressThisWarning VEditor - may be unused
             end
         endcase
         mode=   func_encode_mode_scanline(
+                    skip_too_late,
                     disable_need,
                     repetitive,
                     single,
@@ -471,13 +479,14 @@ task test_tiled_write; // SuppressThisWarning VEditor - may be unused
     reg           repetitive;
     reg           single;
     reg           reset_frame;
-    reg           disable_need; 
+    reg           disable_need;
+    reg           skip_too_late; 
     begin
         disable_need = 1'b0;
         repetitive =  1'b1;
         single     =  1'b0;
         reset_frame = 1'b0;
-
+        skip_too_late = 1'b0;
         tiles_per_row= (window_width/tile_width)+  ((window_width % tile_width==0)?0:1);
         tile_rows_per_window= ((window_height-1)/tile_vstep) + 1;
         tile_size= tile_width*tile_height;
@@ -505,6 +514,7 @@ task test_tiled_write; // SuppressThisWarning VEditor - may be unused
             end
         endcase
         mode=   func_encode_mode_tiled(
+                    skip_too_late,
                     disable_need,
                     repetitive,
                     single,
@@ -603,8 +613,10 @@ task test_tiled_read; // SuppressThisWarning VEditor - may be unused
     reg           repetitive;
     reg           single;
     reg           reset_frame;
-    reg           disable_need; 
+    reg           disable_need;
+    reg           skip_too_late; 
     begin
+        skip_too_late = 1'b0;
         disable_need = 1'b0;
         repetitive =  1'b1;
         single     =  1'b0;
@@ -637,6 +649,7 @@ task test_tiled_read; // SuppressThisWarning VEditor - may be unused
             end
         endcase
         mode=   func_encode_mode_tiled(
+                    skip_too_late,
                     disable_need,
                     repetitive,
                     single,

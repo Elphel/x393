@@ -62,7 +62,7 @@
 		<link>
 			<name>vivado_logs/VivadoBitstream.log</name>
 			<type>1</type>
-			<location>/home/andrey/git/x393/vivado_logs/VivadoBitstream-20151107161322372.log</location>
+			<location>/home/andrey/git/x393/vivado_logs/VivadoBitstream-20151107204814914.log</location>
 		</link>
 		<link>
 			<name>vivado_logs/VivadoOpt.log</name>
@@ -97,7 +97,7 @@
 		<link>
 			<name>vivado_logs/VivadoTimimgSummaryReportImplemented.log</name>
 			<type>1</type>
-			<location>/home/andrey/git/x393/vivado_logs/VivadoTimimgSummaryReportImplemented-20151107161322372.log</location>
+			<location>/home/andrey/git/x393/vivado_logs/VivadoTimimgSummaryReportImplemented-20151107204814914.log</location>
 		</link>
 		<link>
 			<name>vivado_logs/VivadoTimimgSummaryReportSynthesis.log</name>

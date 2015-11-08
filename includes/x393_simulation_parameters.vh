@@ -46,9 +46,15 @@
     parameter SENSOR12BITS_NVLO =        1,   // VACT=0 in video mode (clocks)
     //parameter tMD   =   14;    //
     //parameter tDDO   =   10;   //   some confusion here - let's assume that it is from DCLK to Data out
+`ifdef HISPI
+    parameter SENSOR12BITS_TMD =         1,   //
+    parameter SENSOR12BITS_TDDO =        1,   //   some confusion here - let's assume that it is from DCLK to Data out
+    parameter SENSOR12BITS_TDDO1 =       2,   //
+`else    
     parameter SENSOR12BITS_TMD =         4,   //
     parameter SENSOR12BITS_TDDO =        2,   //   some confusion here - let's assume that it is from DCLK to Data out
     parameter SENSOR12BITS_TDDO1 =       5,   //
+`endif    
 //    parameter SENSOR12BITS_TRIGDLY =     8,   // delay between trigger input and start of output (VACT) in lines
 //    parameter SENSOR12BITS_RAMP =        1,   // 1 - ramp, 0 - random (now - sensor.dat)
 //    parameter SENSOR12BITS_NEW_BAYER =   0,   // 0 - "old" tiles (16x16, 1 - new - (18x18)   
@@ -61,7 +67,7 @@
     parameter FRAME_WIDTH_ROUND_BITS =   9,  // multiple of 512 pixels (32 16-byte bursts) (11 - ful SDRAM page)
     
     parameter WOI_WIDTH=                 64,
-    parameter QUADRANTS_PXD_HACT_VACT =  6'h01 // 2 bits each: data-0, hact - 1, vact - 2 
+    parameter QUADRANTS_PXD_HACT_VACT =  6'h01, // 2 bits each: data-0, hact - 1, vact - 2 
                                                // 90-degree shifts for data [1:0], hact [3:2] and vact [5:4]
-    
+    parameter SENSOR_PRIORITY =          1000
     
