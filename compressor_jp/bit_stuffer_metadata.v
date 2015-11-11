@@ -146,7 +146,7 @@ module  bit_stuffer_metadata(
     
     // just for testing
 `ifdef DEBUG_RING
-    assign dbg_ =        ts_rstb;
+    assign dbg_ts_rstb = ts_rstb;
     assign dbg_ts_dout = ts_dout;
 
     always @ (posedge xclk) begin

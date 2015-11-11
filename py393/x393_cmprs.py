@@ -301,6 +301,7 @@ class X393Cmprs(object):
         tile_height= 18
         base_addr = vrlg.MCONTR_CMPRS_BASE + vrlg.MCONTR_CMPRS_INC * num_sensor;
         mode=   x393_mcntrl.func_encode_mode_scan_tiled(
+                                   skip_too_late = False,
                                    disable_need = disable_need,
                                    repetitive=    True,
                                    single =       False,

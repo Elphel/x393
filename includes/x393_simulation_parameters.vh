@@ -41,7 +41,11 @@
     parameter       SIMUL_AXI_READ_WIDTH=16,
     
     parameter       MEMCLK_PERIOD = 5.0,
-    parameter       FCLK0_PERIOD =  41.667, //  10.417, 24MHz
+`ifdef HISPI
+    parameter       FCLK0_PERIOD =  40.91, //  24.444MHz
+`else    
+    parameter       FCLK0_PERIOD =  41.667, //  24MHz
+`endif    
     parameter       FCLK1_PERIOD =  0.0,
     
 //    parameter SENSOR12BITS_LLINE   =   192,   //   1664;//   line duration in clocks

@@ -40,7 +40,8 @@ __status__ = "Development"
 #import time
 import vrlg
 
-def func_encode_mode_scan_tiled   (disable_need = False,
+def func_encode_mode_scan_tiled   (skip_too_late = False,
+                                   disable_need = False,
                                    repetitive=    True,
                                    single =       False,
                                    reset_frame =  False,
@@ -52,6 +53,7 @@ def func_encode_mode_scan_tiled   (disable_need = False,
                                    chn_reset =    False):
     """
     Combines arguments to create a 12-bit encoded data for scanline mode memory R/W
+    @param skip_too_late - Skip over missed blocks to preserve frame structure (increment pointers),
     @param disable_need - disable 'need' generation, only 'want' (compressor channels),
     @param repetitive   - run repetitive frames (add this to older 'master' tests)
     @param single       - run single frame
@@ -66,17 +68,18 @@ def func_encode_mode_scan_tiled   (disable_need = False,
     
     """
     rslt = 0;
-    rslt |= (1,0)[chn_reset] <<    vrlg.MCONTR_LINTILE_EN # inverted
-    rslt |= (0,1)[enable] <<       vrlg.MCONTR_LINTILE_NRESET
-    rslt |= (0,1)[write_mem] <<    vrlg.MCONTR_LINTILE_WRITE
-    rslt |= (extra_pages & ((1 <<  vrlg.MCONTR_LINTILE_EXTRAPG_BITS) - 1)) << vrlg.MCONTR_LINTILE_EXTRAPG
-    rslt |= (0,1)[keep_open] <<    vrlg.MCONTR_LINTILE_KEEP_OPEN
-    rslt |= (0,1)[byte32] <<       vrlg.MCONTR_LINTILE_BYTE32
-    rslt |= (0,1)[reset_frame] <<  vrlg.MCONTR_LINTILE_RST_FRAME
+    rslt |= (1,0)[chn_reset] <<     vrlg.MCONTR_LINTILE_EN # inverted
+    rslt |= (0,1)[enable] <<        vrlg.MCONTR_LINTILE_NRESET
+    rslt |= (0,1)[write_mem] <<     vrlg.MCONTR_LINTILE_WRITE
+    rslt |= (extra_pages & ((1 <<   vrlg.MCONTR_LINTILE_EXTRAPG_BITS) - 1)) << vrlg.MCONTR_LINTILE_EXTRAPG
+    rslt |= (0,1)[keep_open] <<     vrlg.MCONTR_LINTILE_KEEP_OPEN
+    rslt |= (0,1)[byte32] <<        vrlg.MCONTR_LINTILE_BYTE32
+    rslt |= (0,1)[reset_frame] <<   vrlg.MCONTR_LINTILE_RST_FRAME
     
-    rslt |= (0,1)[single] <<       vrlg.MCONTR_LINTILE_SINGLE
-    rslt |= (0,1)[repetitive] <<   vrlg.MCONTR_LINTILE_REPEAT
-    rslt |= (0,1)[disable_need] << vrlg.MCONTR_LINTILE_DIS_NEED
+    rslt |= (0,1)[single] <<        vrlg.MCONTR_LINTILE_SINGLE
+    rslt |= (0,1)[repetitive] <<    vrlg.MCONTR_LINTILE_REPEAT
+    rslt |= (0,1)[disable_need] <<  vrlg.MCONTR_LINTILE_DIS_NEED
+    rslt |= (0,1)[skip_too_late] << vrlg.MCONTR_LINTILE_SKIP_LATE
     return rslt
 
 '''

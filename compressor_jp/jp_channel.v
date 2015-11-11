@@ -376,6 +376,7 @@ module  jp_channel#(
 //        wire          flush;       // output reg @ negedge xclk2x
         wire          last_block =  0;  // @negedge xxlk2x - used to copy timestamp in stuffer
         wire          stuffer_rdy = 1; // receiver (bit stuffer) is ready to accept data;
+        wire          xrst2xn =     xrst;
     `endif
 
 
@@ -418,7 +419,19 @@ module  jp_channel#(
     reg [15:0] dbg_zds_cntr;
     wire [2:0] dbg_block_mem_wa;
     wire [2:0] dbg_block_mem_wa_save;
-    
+  `ifndef  USE_XCLK2X
+        // temporarily assigning unused debug signals to 0
+        assign dbg_add_invalid =    0;
+        assign dbg_mb_release_buf = 0;
+        assign etrax_dma =          0;
+        assign dbg_ts_rstb =        0; // output
+        assign dbg_ts_dout =        0; //output [7:0]
+        assign dbg_flushing =       0;
+        assign dbg_test_lbw =       0;
+        assign dbg_gotLastBlock =   0;
+        assign dbg_fifo_or_full =   0;
+       
+  `endif    
     timestamp_to_parallel dbg_timestamp_to_parallel_i (
   `ifdef  USE_XCLK2X     
         .clk      (~xclk2x),     // input
@@ -428,7 +441,7 @@ module  jp_channel#(
         .pre_stb  (dbg_ts_rstb), // input
         .tdata    (dbg_ts_dout), // input[7:0] 
         .sec      (dbg_sec),     // output[31:0] reg 
-        .usec     (dbg_usec),    // output[19:0] reg 
+        .usec     (dbg_usec[19:0]),    // output[19:0] reg 
         .done()                  // output
     );
     

@@ -262,7 +262,7 @@ class X393Sensor(object):
         rslt |= 1 << vrlg.SENSI2C_TBL_RNWREG # this is read register command (0 - write register)
         if two_byte_addr > 1:
             two_byte_addr = 1
-        rslt |= (0,1)[two_byte_addr]                                      << vrlg.SENSI2C_TBL_SA
+        rslt |= (0,1)[two_byte_addr]                                      << vrlg.SENSI2C_TBL_NABRD
         rslt |= (num_bytes_rd &  ((1 << vrlg.SENSI2C_TBL_NBRD_BITS) - 1)) << vrlg.SENSI2C_TBL_NBRD
         rslt |= (bit_delay &     ((1 << vrlg.SENSI2C_TBL_DLY_BITS)  - 1)) << vrlg.SENSI2C_TBL_DLY
         return rslt        
@@ -474,6 +474,8 @@ class X393Sensor(object):
                                                verbose =    verbose) 
         self.x393_axi_tasks.write_control_register(vrlg.SENSOR_GROUP_ADDR + num_sensor * vrlg.SENSOR_BASE_INC + vrlg.SENSI2C_CTRL_RADDR, ta)
         self.x393_axi_tasks.write_control_register(vrlg.SENSOR_GROUP_ADDR + num_sensor * vrlg.SENSOR_BASE_INC + vrlg.SENSI2C_CTRL_RADDR, td)
+        if verbose > 1:
+            print ("ta= 0x%x, td = 0x%x"%(ta,td))
 
     def write_sensor_i2c (self,
                           num_sensor,
@@ -495,7 +497,7 @@ class X393Sensor(object):
                           sent for such extra word, only the lower bytes are sent.
                       2 - register read: index page, slave address (8-bit, with lower bit 0) and one or 2 address bytes (as programmed
                           in the table. Slave address is always in byte 2 (bits 23:16), byte1 (high register address) is skipped if
-                          read address in teh table is programmed to be a single-byte one    
+                          read address in the table is programmed to be a single-byte one    
         """
         try:
             if (num_sensor == all) or (num_sensor[0].upper() == "A"): #all is a built-in function
@@ -1057,6 +1059,7 @@ class X393Sensor(object):
         """
         base_addr = vrlg.MCONTR_SENS_BASE + vrlg.MCONTR_SENS_INC * num_sensor;
         mode=   x393_mcntrl.func_encode_mode_scan_tiled(
+                                   skip_too_late = True,                     
                                    disable_need = False,
                                    repetitive=    True,
                                    single =       False,

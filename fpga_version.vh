@@ -31,8 +31,11 @@
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
  *******************************************************************************/
-    parameter FPGA_VERSION =          32'h0393006a; // modified clock generation, trying with HiSPi - 72.77% utilization
+    parameter FPGA_VERSION =          32'h0393006c; // will try debug for HiSPi.  xclk violated by -0.030, slices 15062 (76.65%)
+//    parameter FPGA_VERSION =          32'h0393006b; // Correcting sensor external clock generation - was wrong division. xclk violated by 0.095 ns
+//    parameter FPGA_VERSION =          32'h0393006a; // modified clock generation, trying with HiSPi - 72.77% utilization x40..x60
 //    parameter FPGA_VERSION =          32'h03930069; // modified clock generation, rebuilding for parallel sensors - all met, 71.8% utilization
+                                                      // Worked OK, but different phase for sensor 0 (all quadrants as 1,3 OK)
 //    parameter FPGA_VERSION =          32'h03930068; // trying BUFR/FUFIO on all sensors ipclk/ipclk2x
 //    parameter FPGA_VERSION =          32'h03930067; // removing DUMMY_TO_KEEP, moving IOSTANDARD to HDL code
 //    parameter FPGA_VERSION =          32'h03930066; // trying just one histogram to watch utilization - with 4 was: Slice 15913 (80.98%), now Slice = 14318 (72.87%)

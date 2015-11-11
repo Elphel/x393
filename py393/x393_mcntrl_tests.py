@@ -290,6 +290,7 @@ class X393McntrlTests(object):
                     0)  # chn_reset
         '''
         mode=   x393_mcntrl.func_encode_mode_scan_tiled(
+                                   skip_too_late = False,
                                    disable_need = False,
                                    repetitive=    True,
                                    single =       False,
@@ -442,6 +443,7 @@ class X393McntrlTests(object):
                                                0)  # chn_reset
         '''
         mode=   x393_mcntrl.func_encode_mode_scan_tiled(
+                                   skip_too_late = False,
                                    disable_need = False,
                                    repetitive=    True,
                                    single =       False,
@@ -556,6 +558,7 @@ class X393McntrlTests(object):
                                             0)           # chn_reset
         '''
         mode=   x393_mcntrl.func_encode_mode_scan_tiled(
+                                   skip_too_late = False,
                                    disable_need = False,
                                    repetitive=    True,
                                    single =       False,
@@ -698,6 +701,7 @@ class X393McntrlTests(object):
                                             0)  # chn_reset
         '''
         mode=   x393_mcntrl.func_encode_mode_scan_tiled(
+                                   skip_too_late = False,                     
                                    disable_need = False,
                                    repetitive=    True,
                                    single =       False,

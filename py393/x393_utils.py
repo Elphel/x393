@@ -96,6 +96,10 @@ class X393Utils(object):
         """
         if bitfile is None:
             bitfile=DEFAULT_BITFILE
+        print ("Sensor ports power off")
+        POWER393_PATH = '/sys/devices/elphel393-pwr.1'
+        with open (POWER393_PATH + "/channels_dis","w") as f:
+            print("vcc_sens01 vp33sens01 vcc_sens23 vp33sens23", file = f)
         print ("FPGA clock OFF")
         self.x393_mem.write_mem(FPGA0_THR_CTRL,1)
         print ("Reset ON")

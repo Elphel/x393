@@ -271,7 +271,7 @@ module  sens_10398 #(
 
     // generate (slow) clock for the sensor - it will be multiplied by the sensor VCO
     always @(posedge pclk) begin
-        if (prst || (pxd_clk_cntr[PXD_CLK_DIV_BITS-2:0] == 0)) pxd_clk_cntr[PXD_CLK_DIV_BITS-2:0] <= (PXD_CLK_DIV / 2);
+        if (prst || (pxd_clk_cntr[PXD_CLK_DIV_BITS-2:0] == 0)) pxd_clk_cntr[PXD_CLK_DIV_BITS-2:0] <= (PXD_CLK_DIV / 2) -1;
         else                                                   pxd_clk_cntr[PXD_CLK_DIV_BITS-2:0] <= pxd_clk_cntr[PXD_CLK_DIV_BITS-2:0] - 1;
         // treat MSB separately to make 50% duty cycle
         if      (prst)                                         pxd_clk_cntr[PXD_CLK_DIV_BITS-1] <=   0;

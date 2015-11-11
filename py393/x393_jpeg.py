@@ -819,6 +819,27 @@ class X393Jpeg(object):
 ff d9
 """        
 """
+cd /usr/local/verilog/; test_mcntrl.py @hargs
+measure_all "*DI"
+setup_all_sensors True None 0xf
+write_sensor_i2c  0 1 0 0x030600b4
+print_sensor_i2c 0 0x306 0xff 0x10 0
+print_sensor_i2c 0 0x303a 0xff 0x10 0
+print_sensor_i2c 0 0x301a 0xff 0x10 0
+print_sensor_i2c 0 0x31c6 0xff 0x10 0
+write_sensor_i2c  0 1 0 0x31c68402
+print_sensor_i2c 0 0x31c6 0xff 0x10 0
+write_sensor_i2c  0 1 0 0x301a001c
+print_sensor_i2c 0 0x31c6 0xff 0x10 0
+#test pattern - 100% color bars
+write_sensor_i2c  0 1 0 0x30700003
+#test pattern - fadiong color bars
+write_sensor_i2c  0 1 0 0x30700003
+print_sensor_i2c 0 0x3070 0xff 0x10 0
+
+
+
+
 Camera compressors testing sequence
 cd /usr/local/verilog/; test_mcntrl.py @hargs
 #or (for debug)
@@ -1001,6 +1022,10 @@ jpeg_write  "img.jpeg" all
 write_sensor_i2c  0 1 0 0x91900004
 print_sensor_i2c 0 
 
+print_debug 0x8 0xb
+
+#Set "MSB first"and packet mode
+write_sensor_i2c  0 1 0 0x31c60402
 
 #r
 add hwmon:
@@ -1018,6 +1043,10 @@ root@elphel393:/sys/devices/amba.0/f8007100.ps7-xadc# cat /sys/devices/amba.0/f8
 967
 root@elphel393:/sys/devices/amba.0/f8007100.ps7-xadc# cat /sys/devices/amba.0/f8007100.ps7-xadc/vccint
 966
+
+write_sensor_i2c  0 1 0 0xff200000
+print_sensor_i2c 0 
+
 
 
 """

@@ -462,13 +462,30 @@ module  sensor_channel#(
     
     
 `ifdef DEBUG_RING
-    reg vact_to_fifo_r;
+//    reg vact_to_fifo_r;
     reg hact_to_fifo_r;
     reg [15:0] debug_line_cntr;
     reg [15:0] debug_lines;
     reg [15:0] hact_cntr;
     reg [15:0] vact_cntr;
-    
+`ifdef HISPI
+    always @(posedge pclk) begin
+//        vact_to_fifo_r <= vact_to_fifo;
+        hact_to_fifo_r <= hact;
+
+        if      (sof)  debug_line_cntr <=           0;
+        else if (hact && !hact_to_fifo_r)           debug_line_cntr <= debug_line_cntr + 1;
+
+        if      (sof)   debug_lines <=              debug_line_cntr;
+        
+        if      (prst)                              hact_cntr <= 0;
+        else if (hact && !hact_to_fifo_r)           hact_cntr <= hact_cntr + 1;
+
+        if      (prst)                              vact_cntr <= 0;
+        else if (sof)   vact_cntr <= vact_cntr + 1;
+        
+    end
+`else    
     always @(posedge ipclk) begin
         vact_to_fifo_r <= vact_to_fifo;
         hact_to_fifo_r <= hact_to_fifo;
@@ -485,6 +502,7 @@ module  sensor_channel#(
         else if (vact_to_fifo && !vact_to_fifo_r)   vact_cntr <= vact_cntr + 1;
         
     end
+`endif    
     debug_slave #(
         .SHIFT_WIDTH       (128),
         .READ_WIDTH        (128),
@@ -501,7 +519,12 @@ module  sensor_channel#(
 //        .rd_data   ({6'b0,hist_grant,hist_request, hist_gr[3:0], hist_rq[3:0], hact_cntr[15:0], debug_lines[15:0], debug_line_cntr[15:0]}), // input[31:0]
         .rd_data   ({
         lens_pxd_in, gamma_pxd_in[15:0],
-        pxd_to_fifo[11:0],pxd[11:0],gamma_pxd_out[7:0],
+`ifdef HISPI
+        12'b0,
+`else        
+        pxd_to_fifo[11:0],
+`endif        
+        pxd[11:0],gamma_pxd_out[7:0],
         6'b0,hist_grant,hist_request, hist_gr[3:0], hist_rq[3:0], hact_cntr[15:0],
         debug_lines[15:0], debug_line_cntr[15:0]}), // input[31:0]
          
