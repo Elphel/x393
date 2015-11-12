@@ -57,6 +57,7 @@ module  sens_hispi12l4#(
     parameter SENS_SS_MODE       =        "CENTER_HIGH",//"CENTER_HIGH","CENTER_LOW","DOWN_HIGH","DOWN_LOW"
     parameter SENS_SS_MOD_PERIOD =         10000,        // integer 4000-40000 - SS modulation period in ns
 
+    parameter DEFAULT_LANE_MAP =           8'b11100100, // one-to-one map (or make it 8'b00111001 ?)
     parameter HISPI_MSB_FIRST =            0,
     parameter HISPI_NUMLANES =             4,
     parameter HISPI_DELAY_CLK =           "FALSE",      
@@ -89,6 +90,7 @@ module  sens_hispi12l4#(
     input                           mclk,
     input                           mrst,
     input  [HISPI_NUMLANES * 8-1:0] dly_data,        // delay value (3 LSB - fine delay) - @posedge mclk
+    input                           set_lanes_map,   // set number of physical lane for each logical one
     input      [HISPI_NUMLANES-1:0] set_idelay,      // mclk synchronous load idelay value
     input                           ld_idelay,       // mclk synchronous set idealy value
     input                           set_clk_phase,   // mclk synchronous set idealy value
@@ -109,7 +111,22 @@ module  sens_hispi12l4#(
     localparam WAIT_ALL_LANES = 4'h8; // number of output pixel cycles to wait after the earliest lane
     localparam FIFO_DEPTH = 4;
     reg      [HISPI_KEEP_IRST-1:0] irst_r;
-    wire                         irst = irst_r[0];
+    wire                          irst = irst_r[0];
+    reg  [HISPI_NUMLANES * 2-1:0] lanes_map;
+    reg  [HISPI_NUMLANES * 4-1:0] logical_lanes4;                   
+    always @ (posedge mclk) begin
+        if      (mrst)          lanes_map <= DEFAULT_LANE_MAP; //{2'h3,2'h2,2'h1,2'h0}; // 1-to-1 default map
+        else if (set_lanes_map) lanes_map <= dly_data[HISPI_NUMLANES * 2-1:0];
+    end
+    
+//non-parametrized lane switch (4x4)
+    always  @(posedge ipclk) begin
+        logical_lanes4[ 3: 0] <= sns_d[{lanes_map[1:0],2'b0} +:4];
+        logical_lanes4[ 7: 4] <= sns_d[{lanes_map[3:2],2'b0} +:4];
+        logical_lanes4[11: 8] <= sns_d[{lanes_map[5:4],2'b0} +:4];
+        logical_lanes4[15:12] <= sns_d[{lanes_map[7:6],2'b0} +:4];
+    end   
+    
     
     sens_hispi_clock #(
         .SENS_PHASE_WIDTH       (SENS_PHASE_WIDTH),
@@ -182,8 +199,13 @@ module  sens_hispi12l4#(
         .ipclk        (ipclk), // input
         .ipclk2x      (ipclk2x), // input
         .irst         (irst), // input
+//`ifdef REVERSE_LANES
+//        .din_p        ({sns_dp[0],sns_dp[1],sns_dp[2],sns_dp[3]}), // input[3:0] 
+//        .din_n        ({sns_dn[0],sns_dn[1],sns_dn[2],sns_dn[3]}), // input[3:0] 
+//`else
         .din_p        (sns_dp), // input[3:0] 
         .din_n        (sns_dn), // input[3:0] 
+//`endif        
         .dout         (sns_d) // output[15:0] 
     );
     
@@ -339,7 +361,7 @@ module  sens_hispi12l4#(
             ) sens_hispi_lane_i (
                 .ipclk    (ipclk),                     // input
                 .irst     (irst),                      // input
-                .din      (sns_d[4*i +: 4]),           // input[3:0] 
+                .din      (logical_lanes4[4*i +: 4]),           // input[3:0] 
                 .dout     (hispi_aligned[12*i +: 12]), // output[3:0] reg 
                 .dv       (hispi_dv[i]),               // output reg 
                 .embed    (hispi_embed[i]),            // output reg 

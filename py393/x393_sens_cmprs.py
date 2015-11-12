@@ -75,7 +75,8 @@ SENSOR_INTERFACES={SENSOR_INTERFACE_PARALLEL: {"mv":2800, "freq":24.0,   "iface"
                    SENSOR_INTERFACE_HISPI:    {"mv":1820, "freq":24.444, "iface":"1V8_LVDS"}}
 
 SENSOR_DEFAULTS= {SENSOR_INTERFACE_PARALLEL: {"width":2592, "height":1944, "top":0, "left":0, "slave":0x48, "i2c_delay":100},
-                   SENSOR_INTERFACE_HISPI:   {"width":4608, "height":3288, "top":0, "left":0, "slave":0x10, "i2c_delay":100}}
+#                   SENSOR_INTERFACE_HISPI:   {"width":4608, "height":3288, "top":0, "left":0, "slave":0x10, "i2c_delay":100}}
+                   SENSOR_INTERFACE_HISPI:   {"width":4384, "height":3288, "top":0, "left":0, "slave":0x10, "i2c_delay":100}}
 
 class X393SensCmprs(object):
     DRY_MODE =           True # True

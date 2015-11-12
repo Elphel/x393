@@ -819,23 +819,50 @@ class X393Jpeg(object):
 ff d9
 """        
 """
+#should be no MSB first (0x31c68400)
+
 cd /usr/local/verilog/; test_mcntrl.py @hargs
 measure_all "*DI"
 setup_all_sensors True None 0xf
+#compressor_control  all  None  None  None None None  3
+set_sensor_hispi_lanes 0 1 2 3 0
+compressor_control  all  None  None  None None None  2
+program_gamma all 0 0.57 0.04
 write_sensor_i2c  0 1 0 0x030600b4
 print_sensor_i2c 0 0x306 0xff 0x10 0
 print_sensor_i2c 0 0x303a 0xff 0x10 0
 print_sensor_i2c 0 0x301a 0xff 0x10 0
 print_sensor_i2c 0 0x31c6 0xff 0x10 0
-write_sensor_i2c  0 1 0 0x31c68402
+write_sensor_i2c  0 1 0 0x31c68400
 print_sensor_i2c 0 0x31c6 0xff 0x10 0
-write_sensor_i2c  0 1 0 0x301a001c
-print_sensor_i2c 0 0x31c6 0xff 0x10 0
+print_sensor_i2c 0 0x306e 0xff 0x10 0
+write_sensor_i2c  0 1 0 0x306e9280
+
 #test pattern - 100% color bars
-write_sensor_i2c  0 1 0 0x30700003
-#test pattern - fadiong color bars
+write_sensor_i2c  0 1 0 0x30700002
+#test pattern - fading color bars
 write_sensor_i2c  0 1 0 0x30700003
 print_sensor_i2c 0 0x3070 0xff 0x10 0
+
+#Exposure 0x800 lines
+write_sensor_i2c  0 1 0 0x30120800
+
+#default gain = 0xa, set red and blue (outdoors)
+write_sensor_i2c  0 1 0 0x3028000a
+write_sensor_i2c  0 1 0 0x302c000d
+write_sensor_i2c  0 1 0 0x302e0010
+
+#default gain = 0xa, set red and blue (indoors)
+write_sensor_i2c  0 1 0 0x3028000a
+write_sensor_i2c  0 1 0 0x302c000b
+write_sensor_i2c  0 1 0 0x302e0010
+
+write_sensor_i2c  0 1 0 0x301a001c
+print_sensor_i2c 0 0x31c6 0xff 0x10 0
+
+
+compressor_control 0 2
+jpeg_write  "img.jpeg" 0
 
 
 
@@ -1046,6 +1073,12 @@ root@elphel393:/sys/devices/amba.0/f8007100.ps7-xadc# cat /sys/devices/amba.0/f8
 
 write_sensor_i2c  0 1 0 0xff200000
 print_sensor_i2c 0 
+#set JP46
+compressor_control  all  None  None  None  2
+#JP4
+compressor_control  all  None  None  None  5
+#JPEG
+compressor_control  all  None  None  None  0
 
 
 

@@ -635,14 +635,14 @@ class X393Sensor(object):
                     quadrants =  quadrants)
         reg_addr = (vrlg.SENSOR_GROUP_ADDR + num_sensor * vrlg.SENSOR_BASE_INC) + vrlg.SENSIO_RADDR + vrlg.SENSIO_CTRL;
         self.x393_axi_tasks.write_control_register(reg_addr, data)
-
-    def set_sensor_io_dly (self,
-                           num_sensor,
-                           mmcm_phase,
-                           iclk_dly,
-                           vact_dly,
-                           hact_dly,
-                           pxd_dly):
+# TODO: Make one for HiSPi (it is different)
+    def set_sensor_io_dly_parallel (self,
+                                    num_sensor,
+                                    mmcm_phase,
+                                    iclk_dly,
+                                    vact_dly,
+                                    hact_dly,
+                                    pxd_dly):
         """
         Set sensor port input delays and mmcm phase
         @param num_sensor - sensor port number (0..3)
@@ -663,6 +663,24 @@ class X393Sensor(object):
         self.x393_axi_tasks.write_control_register(reg_addr + 3, dlys[3]) # {mmcm_phase, bpf,   vact, hact}
         self.set_sensor_io_ctl (num_sensor = num_sensor,
                                 set_delays = True)
+        
+    def set_sensor_hispi_lanes(self,
+                               num_sensor,
+                               lane0 = 0,
+                               lane1 = 1,
+                               lane2 = 2,
+                               lane3 = 3):
+        """
+        Set HiSPi sensor lane map (physical lane for each logical lane)
+        @param num_sensor - sensor port number (0..3)
+        @param lane0 - physical (input) lane number for logical (internal) lane 0
+        @param lane1 - physical (input) lane number for logical (internal) lane 1
+        @param lane2 - physical (input) lane number for logical (internal) lane 2
+        @param lane3 - physical (input) lane number for logical (internal) lane 3
+        """
+        data = ((lane0 & 3) << 0 ) | ((lane1 & 3) << 2 ) | ((lane2 & 3) << 4 ) | ((lane3 & 3) << 6 )
+        reg_addr = (vrlg.SENSOR_GROUP_ADDR + num_sensor * vrlg.SENSOR_BASE_INC) + vrlg.SENSIO_RADDR + vrlg.SENSIO_DELAYS;
+        self.x393_axi_tasks.write_control_register(reg_addr + 1, data)
 
     def set_sensor_io_jtag (self,
                             num_sensor,

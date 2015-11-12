@@ -41,6 +41,7 @@
 //    `define USE_OLD_XDCT393  
 //  `define USE_PCLK2X
 //  `define USE_XCLK2X
+  `define REVERSE_LANES 1
   `define DEBUG_RING 1
 //  `define MCLK_VCO_MULT 16
 // DDR3 memory speed grade and density
