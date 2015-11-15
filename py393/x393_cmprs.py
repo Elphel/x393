@@ -279,6 +279,8 @@ class X393Cmprs(object):
                                  window_top,
                                  byte32,
                                  tile_width,
+                                 tile_vstep, # = 16
+                                 tile_height, #= 18
                                  extra_pages,
                                  disable_need):
         """
@@ -294,11 +296,13 @@ class X393Cmprs(object):
         @param window_top -       16-bit window top margin (in scan lines
         @param byte32 -           32-byte columns
         @param tile_width         tile width,
+        @param tile_vstep         tile vertical step in pixel rows (JPEG18/jp4 = 16)
+        @param tile_height        tile height: 18 for color JPEG, 16 fore JP$ flavors,
         @param extra_pages        extra pages needed (1)
         @param disable_need       disable need (preference to sensor channels - they can not wait
         """
-        tile_vstep = 16
-        tile_height= 18
+#        tile_vstep = 16
+#        tile_height= 18
         base_addr = vrlg.MCONTR_CMPRS_BASE + vrlg.MCONTR_CMPRS_INC * num_sensor;
         mode=   x393_mcntrl.func_encode_mode_scan_tiled(
                                    skip_too_late = False,
@@ -352,7 +356,7 @@ class X393Cmprs(object):
 #            run_mode = run_mode)      #0 - reset, 2 - run single from memory, 3 - run repetitive
         
     def setup_compressor_channel (self,
-                                  num_sensor,
+                                  chn,
                                   qbank,
                                   dc_sub,
                                   cmode,
@@ -367,7 +371,7 @@ class X393Cmprs(object):
                                   coring,
                                   verbose=0):
         """
-        @param num_sensor -       sensor port number (0..3)
+        @param chn -        compressor channel (0..3)
         @param qbank -       quantization table page (0..15)
         @param dc_sub -      True - subtract DC before running DCT, False - no subtraction, convert as is,
         @param cmode -       color mode:
@@ -397,7 +401,7 @@ class X393Cmprs(object):
         """
         if verbose > 0:
             print("COMPRESSOR_SETUP")
-            print (   "num_sensor = ",num_sensor)
+            print (   "num_sensor = ",chn)
             print (   "qbank = ",qbank)
             print (   "dc_sub = ",dc_sub)
             print (   "cmode = ",cmode)
@@ -405,27 +409,27 @@ class X393Cmprs(object):
             print (   "bayer = ",bayer)
             print (   "focus_mode = ",focus_mode)
         self.compressor_control(
-            chn =         num_sensor,  # sensor channel number (0..3)
+            chn =         chn,         # compressor channel number (0..3)
             qbank =       qbank,       # [6:3] quantization table page
             dc_sub =      dc_sub,      # [8:7] subtract DC
             cmode =       cmode,       #  [13:9] color mode:
             multi_frame = multi_frame, # [15:14] 0 - single-frame buffer, 1 - multiframe video memory buffer
             bayer =       bayer,       # [20:18] # Bayer shift
-            focus_mode =  focus_mode) # [23:21] Set focus mode
+            focus_mode =  focus_mode)  # [23:21] Set focus mode
             
         self.compressor_format(
-            chn =               num_sensor,        # sensor channel number (0..3)
+            chn =               chn,        # compressor channel number (0..3)
             num_macro_cols_m1 = num_macro_cols_m1, # number of macroblock colums minus 1
             num_macro_rows_m1 = num_macro_rows_m1, # number of macroblock rows minus 1
             left_margin =       left_margin)      # left margin of the first pixel (0..31) for 32-pixel wide colums in memory access
     
         self.compressor_color_saturation(
-            chn =          num_sensor,    # sensor channel number (0..3)
+            chn =           chn,           # compressor channel number (0..3)
             colorsat_blue = colorsat_blue, # color saturation for blue (10 bits) #'h90 for 100%
-            colorsat_red =  colorsat_red) # color saturation for red (10 bits)   # 'b6 for 100%
+            colorsat_red =  colorsat_red)  # color saturation for red (10 bits)   # 'b6 for 100%
 
         self.compressor_coring(
-            chn =        num_sensor,    # sensor channel number (0..3)
+            chn =        chn,           # compressor channel number (0..3)
             coring =     coring);       # coring value
 
 

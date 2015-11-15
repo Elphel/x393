@@ -67,9 +67,11 @@ module  cmprs_pixel_buf_iface #(
                                       // controller this can just be the same as mb_pre_end_in        
     input             mb_pre_start,       // 1 clock cycle before stream of addresses to the buffer
     input      [ 1:0] start_page,         // page to read next tile from (or first of several pages)
-    input      [ 6:0] macroblock_x,       // macroblock left pixel x relative to a tile (page) Maximal page - 128 bytes wide
+    input      [ 6:0] macroblock_x,       // macroblock left pixel x relative to a tile (page) Maximal page - 128 bytes wide.
+                                          //  valid 3 cycles before mb_pre_start
     output reg [ 7:0] data_out,           //
     output            pre_first_out,      // For each macroblock in a frame
+    output            pre2_first_out,     // 1 cycle before pre_first_out
     output reg        data_valid          //
 );
     localparam PERIOD_COLOR18 = 384; // >18*18, limited by 6*64 (macroblocks)
@@ -105,9 +107,14 @@ module  cmprs_pixel_buf_iface #(
     reg    [ 8:0] period_cntr;
     reg           mb_pre_end_r;
     reg           mb_release_buf_r;
-    reg           pre_first_out_r;
-     
+    reg [CMPRS_BUF_EXTRA_LATENCY+2:0]  pre_first_out_r;
     
+    reg    [ 2:0] mb_col_number; // number of tile column where macrobloc starts - valid 2 cycles before mb_pre_start
+    wire   [ 9:0] extra_start_addr_w = mb_col_number * mb_h_m1; //added to mb_start_addr when non-zero column
+    reg    [ 5:0] extra_start_addr_r;
+//    reg    [ 5:0] mb_h;          // macroblock height (lost MSB - OK)
+    reg    [ 9:0] mb_start_addr; // was macroblock_x, noccrected for multi-column. valid with mb_pre_start
+         
     assign buf_ra = bufa_r;
     assign tile_width_or=      tile_width[1]?(tile_width[0]?0:'h40):(tile_width[0]?'h60:'h70);
     assign column_width_or =   tile_col_width? 0: 'h10;
@@ -119,22 +126,32 @@ module  cmprs_pixel_buf_iface #(
     assign mb_release_buf =    mb_release_buf_r;
     assign buf_rd =            buf_re[1:0];
 //    assign data_out =          do_r;
-    assign pre_first_out =     pre_first_out_r;
+    assign pre_first_out =     pre_first_out_r[0];
+    assign pre2_first_out =    pre_first_out_r[1];
 
     always @(posedge xclk) begin
+//        mb_h <= mb_h_m1+1;     // macroblock height
+        mb_col_number <= {macroblock_x[6:5],tile_col_width?1'b0:macroblock_x[4]};
+        extra_start_addr_r <= extra_start_addr_w[5:0];
+        mb_start_addr <= {3'b0,macroblock_x} + {extra_start_addr_r,4'b0};
+    
         if      (!frame_en)     buf_re[0] <= 0;
         else if (mb_pre_start)  buf_re[0] <= 1'b1;
         else if (addr_run_end)  buf_re[0] <= 1'b0;
         
         if      (!frame_en)     buf_re[CMPRS_BUF_EXTRA_LATENCY+3:1] <= 0;
-        else                    buf_re[CMPRS_BUF_EXTRA_LATENCY+3:1] <= {buf_re[CMPRS_BUF_EXTRA_LATENCY+2:0]};
+        else                    buf_re[CMPRS_BUF_EXTRA_LATENCY+3:1] <= {buf_re[CMPRS_BUF_EXTRA_LATENCY + 2:0]};
 
         // Buffer data read:
         if (buf_re[CMPRS_BUF_EXTRA_LATENCY+2]) data_out <= buf_di;
-        
+//mb_pre_start        
         if (!frame_en) pre_first_out_r <= 0;
-        else pre_first_out_r <= buf_re[CMPRS_BUF_EXTRA_LATENCY+1] && ! buf_re[CMPRS_BUF_EXTRA_LATENCY+2];
+        else           pre_first_out_r <= {mb_pre_start, pre_first_out_r[CMPRS_BUF_EXTRA_LATENCY + 2 : 1]}; 
+//        else pre_first_out_r <= buf_re[CMPRS_BUF_EXTRA_LATENCY+1] && ! buf_re[CMPRS_BUF_EXTRA_LATENCY+2];
         
+//        if (!frame_en) pre2_first_out <= 0;
+//        else           pre2_first_out <= buf_re[CMPRS_BUF_EXTRA_LATENCY + 0] && ! buf_re[CMPRS_BUF_EXTRA_LATENCY + 1];
+
         if      (mb_pre_start) rows_left <= mb_h_m1;
         else if (last_col)     rows_left <= rows_left - 1;
 
@@ -153,7 +170,8 @@ module  cmprs_pixel_buf_iface #(
 
         first_col <= (mb_pre_start || (last_col && !last_row));
         
-        if   (mb_pre_start) row_sa <= {start_page,3'b0,macroblock_x};
+//        if   (mb_pre_start) row_sa <= {start_page,3'b0,mb_start_addr}; // macroblock_x};
+        if   (mb_pre_start) row_sa <= {start_page,mb_start_addr}; // macroblock_x};
         else if (first_col) row_sa <= row_sa + (tile_col_width ? 12'h20:12'h10);
 
         if  (mb_pre_start) tile_sa <= 0;
@@ -172,7 +190,8 @@ module  cmprs_pixel_buf_iface #(
         else if (last_in_tile)          bufa_r[11:10] <= bufa_r[11:10] + 1;
         
         // Most time critical - calculation of the buffer address
-        if  (mb_pre_start)              bufa_r[9:0] <= {3'b0,macroblock_x};
+//        if  (mb_pre_start)              bufa_r[9:0] <= {3'b0,mb_start_addr}; // macroblock_x};
+        if  (mb_pre_start)              bufa_r[9:0] <= {mb_start_addr}; // macroblock_x};
         else if (last_col)              bufa_r[9:0] <= row_sa[9:0]; // 'bx next cycle after AFTER mb_pre_start
         else if (last_in_tile)          bufa_r[9:0] <= tile_sa;
         else if (buf_re[0])             bufa_r[9:0] <= bufa_r[9:0] + {last_in_col?col_inc[9:4]:6'b0,4'b1};  

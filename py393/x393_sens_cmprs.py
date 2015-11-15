@@ -279,6 +279,18 @@ class X393SensCmprs(object):
         sensorType = self.getSensorInterfaceType()
         if verbose > 0 :
             print ("Sensor port %d interface type: %s"%(num_sensor, sensorType))
+        window = self.specify_window (window_width =  window_width,
+                                      window_height = window_height,
+                                      window_left =   window_left,
+                                      window_top =    window_top,
+                                      cmode =         None, # will use 0
+                                      verbose =       0)
+        window_width =   window["width"]
+        window_height =  window["height"]
+        window_left =    window["left"]
+        window_top =     window["top"]
+        """
+        cmode =          window["cmode"]
         if window_width is None:
             window_width = SENSOR_DEFAULTS[sensorType]["width"]
         if window_height is None:
@@ -287,6 +299,7 @@ class X393SensCmprs(object):
             window_left = SENSOR_DEFAULTS[sensorType]["left"]
         if window_top is None:
             window_top = SENSOR_DEFAULTS[sensorType]["top"]
+        """
             
         #setting up histogram window, same for parallel, similar for serial
                     
@@ -386,7 +399,7 @@ class X393SensCmprs(object):
                                           run_mode = 0) # reset compressor
         #TODO: Calculate from the image size?
         self.x393Cmprs.setup_compressor_channel (
-                                  num_sensor = num_sensor,
+                                  chn =               num_sensor,
                                   qbank =             0,
                                   dc_sub =            True,
                                   cmode =             vrlg.CMPRS_CBIT_CMODE_JPEG18,
@@ -417,10 +430,12 @@ class X393SensCmprs(object):
             print ("frame_full_width = 0x%x"%(frame_full_width))
             print ("window_width =     0x%x"%(width32 * 2 )) # window_width >> 4)) # width in 16 - bursts, made evem
             print ("window_height =    0x%x"%(window_height & 0xfffffff0))
-            print ("window_left =      0x%x"%(left_tiles32 * 2)) # window_left >> 4)) # lext in 16-byte bursts, made even
+            print ("window_left =      0x%x"%(left_tiles32 * 2)) # window_left >> 4)) # left in 16-byte bursts, made even
             print ("window_top =       0x%x"%(window_top))
             print ("byte32 =           1")
             print ("tile_width =       2")
+            print ("tile_vstep =      16")
+            print ("tile_height =     18")
             print ("extra_pages =      1")
             print ("disable_need =     1")
 
@@ -436,6 +451,8 @@ class X393SensCmprs(object):
             window_top =       window_top,                  # input [31:0] window_top;
             byte32 =           1,
             tile_width =       2,
+            tile_vstep =      16,
+            tile_height =     18,
             extra_pages =      1,
             disable_need =     1)
 
@@ -574,29 +591,52 @@ class X393SensCmprs(object):
             repet_mode = True, #  Normal mode, single trigger - just for debugging  TODO: re-assign?
             trig = False)
         return True
+    
     def specify_window (self,
                         window_width =              None,   # 2592
                         window_height =             None,   # 1944
                         window_left =               None,     # 0
                         window_top =                None, # 0? 1?
+                        cmode =                     None,
                         verbose =                   1
                         ):
+        global GLBL_WINDOW
+        if GLBL_WINDOW is None:
+            GLBL_WINDOW = {}
         sensorType = self.getSensorInterfaceType()
         if verbose > 0 :
             print ("Sensor interface type: %s"%(sensorType))
         if window_width is None:
-            window_width = SENSOR_DEFAULTS[sensorType]["width"]
+            try:
+                window_width = GLBL_WINDOW["width"]
+            except:
+                window_width = SENSOR_DEFAULTS[sensorType]["width"]
         if window_height is None:
-            window_height = SENSOR_DEFAULTS[sensorType]["height"]
+            try:
+                window_height = GLBL_WINDOW["height"]
+            except:
+                window_height = SENSOR_DEFAULTS[sensorType]["height"]
         if window_left is None:
-            window_left = SENSOR_DEFAULTS[sensorType]["left"]
+            try:
+                window_left = GLBL_WINDOW["left"]
+            except:
+                window_left = SENSOR_DEFAULTS[sensorType]["left"]
         if window_top is None:
-            window_top = SENSOR_DEFAULTS[sensorType]["top"]
-        global GLBL_WINDOW
+            try:
+                window_top = GLBL_WINDOW["top"]
+            except:
+                window_top = SENSOR_DEFAULTS[sensorType]["top"]
+        if cmode is None:
+            try:
+                cmode = GLBL_WINDOW["cmode"]
+            except:
+                cmode = 0
         GLBL_WINDOW = {"width":  window_width,
                        "height": window_height,
                        "left":   window_left,
-                       "top":    window_top}
+                       "top":    window_top,
+                       "cmode":  cmode}
+        return GLBL_WINDOW
         
                 
     def specify_phys_memory(self,
@@ -628,7 +668,178 @@ class X393SensCmprs(object):
             print ("membridge size =            %d bytes"%(GLBL_MEMBRIDGE_END - GLBL_MEMBRIDGE_START))
             print ("memory buffer end =         0x%x"%(GLBL_BUFFER_END))
         
-                                
+    def setup_compressor(self,
+                          chn,
+                          cmode =            vrlg.CMPRS_CBIT_CMODE_JPEG18,
+                          bayer =            0,
+                          qbank =            0,
+                          dc_sub =           1,
+                          multi_frame =      1,
+                          focus_mode =       0,
+                          coring =           0,
+                          window_width =     None, # 2592,   # 2592
+                          window_height =    None, # 1944,   # 1944
+                          window_left =      None, # 0,     # 0
+                          window_top =       None, # 0, # 0? 1?
+                          last_buf_frame =   1,  #  - just 2-frame buffer
+                          colorsat_blue =    0x180,     # 0x90 fo 1x
+                          colorsat_red =     0x16c,     # 0xb6 for x1
+                          verbose =          1):
+        """
+        @param chn -         compressor channel (0..3)
+        @param cmode -       color mode:
+                                CMPRS_CBIT_CMODE_JPEG18 =          0 - color 4:2:0
+                                CMPRS_CBIT_CMODE_MONO6 =           1 - mono 4:2:0 (6 blocks)
+                                CMPRS_CBIT_CMODE_JP46 =            2 - jp4, 6 blocks, original
+                                CMPRS_CBIT_CMODE_JP46DC =          3 - jp4, 6 blocks, dc -improved
+                                CMPRS_CBIT_CMODE_JPEG20 =          4 - mono, 4 blocks (but still not actual monochrome JPEG as the blocks are scanned in 2x2 macroblocks)
+                                CMPRS_CBIT_CMODE_JP4 =             5 - jp4,  4 blocks, dc-improved
+                                CMPRS_CBIT_CMODE_JP4DC =           6 - jp4,  4 blocks, dc-improved
+                                CMPRS_CBIT_CMODE_JP4DIFF =         7 - jp4,  4 blocks, differential
+                                CMPRS_CBIT_CMODE_JP4DIFFHDR =      8 - jp4,  4 blocks, differential, hdr
+                                CMPRS_CBIT_CMODE_JP4DIFFDIV2 =     9 - jp4,  4 blocks, differential, divide by 2
+                                CMPRS_CBIT_CMODE_JP4DIFFHDRDIV2 = 10 - jp4,  4 blocks, differential, hdr,divide by 2
+                                CMPRS_CBIT_CMODE_MONO1 =          11 -  mono JPEG (not yet implemented)
+                                CMPRS_CBIT_CMODE_MONO4 =          14 -  mono 4 blocks
+        @param qbank -       quantization table page (0..15)
+        @param dc_sub -      True - subtract DC before running DCT, False - no subtraction, convert as is,
+        @param multi_frame -  False - single-frame buffer, True - multi-frame video memory buffer,
+        @param bayer -        Bayer shift (0..3)
+        @param focus_mode -   focus mode - how to combine image with "focus quality" in the result image 
+        @param coring - coring value
+        @param window_width -      (here - in pixels)
+        @param window_height -     16-bit window height in scan lines
+        @param window_left -       left margin of the window (here - in pixels)
+        @param window_top -        top margin of the window (16 bit)
+        @param last_buf_frame) -   16-bit number of the last frame in a buffer
+        @param colorsat_blue - color saturation for blue (10 bits), 0x90 for 100%
+        @param colorsat_red -  color saturation for red (10 bits), 0xb6 for 100%
+        @param verbose - verbose level
+        """
+        try:
+            if (chn == all) or (chn[0].upper() == "A"): #all is a built-in function
+                for chn in range(4):
+                    self. setup_compressor(self,
+                                           chn =            chn,
+                                           cmode =          cmode,
+                                           qbank =          qbank,
+                                           dc_sub =         dc_sub,
+                                           multi_frame =    multi_frame,
+                                           bayer =          bayer,
+                                           focus_mode =     focus_mode,
+                                           coring =         coring,
+                                           window_width =   None, # 2592,   # 2592
+                                           window_height =  None, # 1944,   # 1944
+                                           window_left =    None, # 0,     # 0
+                                           window_top =     None, # 0, # 0? 1?
+                                           last_buf_frame = last_buf_frame,  #  - just 2-frame buffer
+                                           colorsat_blue =  colorsat_blue, #0x180     # 0x90 for 1x
+                                           colorsat_red =   colorsat_red, #0x16c,     # 0xb6 for x1
+                                           verbose =        verbose)
+                return
+        except:
+            pass
+        window = self.specify_window (window_width =  window_width,
+                                      window_height = window_height,
+                                      window_left =   window_left,
+                                      window_top =    window_top,
+                                      cmode =         cmode, # will use 0
+                                      verbose =       0)
+        window_width =   window["width"]
+        window_height =  window["height"]
+        window_left =    window["left"]
+        window_top =     window["top"]
+        cmode =          window["cmode"]
+        num_sensor = chn # 1:1 sensor - compressor
+        
+        align_to_bursts = 64 # align full width to multiple of align_to_bursts. 64 is the size of memory access
+        width_in_bursts = window_width >> 4
+        if (window_width & 0xf):
+            width_in_bursts += 1
+        compressor_left_margin = window_left % 32
+    
+        num_burst_in_line = (window_left >> 4) + width_in_bursts
+        num_pages_in_line = num_burst_in_line // align_to_bursts;
+        if num_burst_in_line % align_to_bursts:
+            num_pages_in_line += 1
+        frame_full_width =  num_pages_in_line * align_to_bursts
+        num8rows=   (window_top + window_height) // 8
+        if (window_top + window_height) % 8:
+            num8rows += 1
+        frame_start_address_inc = num8rows * frame_full_width
+
+        num_macro_cols_m1 = (window_width >> 4) - 1
+        num_macro_rows_m1 = (window_height >> 4) - 1
+        frame_start_address = (last_buf_frame + 1) * frame_start_address_inc * num_sensor
+        
+        self.x393Cmprs.setup_compressor_channel (
+                                  chn =               chn,
+                                  qbank =             qbank,
+                                  dc_sub =            dc_sub,
+                                  cmode =             cmode, # vrlg.CMPRS_CBIT_CMODE_JPEG18,
+                                  multi_frame =       True,
+                                  bayer       =       bayer,
+                                  focus_mode  =       focus_mode,
+                                  num_macro_cols_m1 = num_macro_cols_m1,
+                                  num_macro_rows_m1 = num_macro_rows_m1,
+                                  left_margin =       compressor_left_margin,
+                                  colorsat_blue =     colorsat_blue,
+                                  colorsat_red =      colorsat_red,
+                                  coring =            0,
+                                  verbose =           verbose)
+    # TODO: calculate widths correctly!
+        if cmode == vrlg.CMPRS_CBIT_CMODE_JPEG18:
+            tile_margin = 2 # 18x18 instead of 16x16
+            tile_width =  2
+            extra_pages = 1
+            
+        else: # actually other modes should be parsed here, now considering just JP4 flavors
+            tile_margin = 0 # 18x18 instead of 16x16
+            tile_width =  4
+#            extra_pages = (0,1)[(compressor_left_margin % 16) != 0] # memory access block border does not cut macroblocks
+            extra_pages = 1 # just testing
+        tile_vstep = 16
+        tile_height = tile_vstep + tile_margin
+
+        left_tiles32 = window_left // 32
+        last_tile32 = (window_left + ((num_macro_cols_m1 + 1) * 16) + tile_margin - 1) // 32
+        width32 = last_tile32 - left_tiles32 + 1 # number of 32-wide tiles needed in each row
+        
+        if (verbose > 0) :
+            print ("setup_compressor_memory:")
+            print ("num_sensor =       ", num_sensor)
+            print ("frame_sa =         0x%x"%(frame_start_address))
+            print ("frame_sa_inc =     0x%x"%(frame_start_address_inc))
+            print ("last_frame_num =   0x%x"%(last_buf_frame))
+            print ("frame_full_width = 0x%x"%(frame_full_width))
+            print ("window_width =     0x%x"%(width32 * 2 )) # window_width >> 4)) # width in 16 - bursts, made evem
+            print ("window_height =    0x%x"%(window_height & 0xfffffff0))
+            print ("window_left =      0x%x"%(left_tiles32 * 2)) # window_left >> 4)) # left in 16-byte bursts, made even
+            print ("window_top =       0x%x"%(window_top))
+            print ("byte32 =           1")
+            print ("tile_width =       0x%x"%(tile_width))
+            print ("tile_vstep =       0x%x"%(tile_vstep))
+            print ("tile_height =      0x%x"%(tile_height))
+            print ("extra_pages =      0x%x"%(extra_pages))
+            print ("disable_need =     1")
+
+        self.x393Cmprs.setup_compressor_memory (
+            num_sensor =       num_sensor,
+            frame_sa =         frame_start_address,         # input [31:0] frame_sa;         # 22-bit frame start address ((3 CA LSBs==0. BA==0)
+            frame_sa_inc =     frame_start_address_inc,     # input [31:0] frame_sa_inc;     # 22-bit frame start address increment  ((3 CA LSBs==0. BA==0)
+            last_frame_num =   last_buf_frame,              # input [31:0] last_frame_num;   # 16-bit number of the last frame in a buffer
+            frame_full_width = frame_full_width,            # input [31:0] frame_full_width; # 13-bit Padded line length (8-row increment), in 8-bursts (16 bytes)
+            window_width =     (width32 * 2 ),              # input [31:0] window_width;     # 13 bit - in 8*16=128 bit bursts
+            window_height =    window_height & 0xfffffff0,  # input [31:0] window_height;    # 16 bit
+            window_left =      left_tiles32 * 2,            # input [31:0] window_left;
+            window_top =       window_top,                  # input [31:0] window_top;
+            byte32 =           1,
+            tile_width =       tile_width,
+            tile_vstep =       tile_vstep,
+            tile_height =      tile_height,
+            extra_pages =      extra_pages,
+            disable_need =     1)
+        
     def setup_all_sensors (self,
                               setup_membridge =           False,
                               exit_step =                 None,
@@ -678,7 +889,7 @@ class X393SensCmprs(object):
         @param last_buf_frame) -   16-bit number of the last frame in a buffer
         @param colorsat_blue - color saturation for blue (10 bits), 0x90 for 100%
         @param colorsat_red -  color saturation for red (10 bits), 0xb6 for 100%
-        @param clk_sel - True - use pixel clock from the sensor, False - use internal clock (provided to the sensor), None - no chnage
+        @param clk_sel - True - use pixel clock from the sensor, False - use internal clock (provided to the sensor), None - no change
         @param histogram_left -      histogram window left margin
         @param histogram_top -       histogram window top margin
         @param histogram_width_m1 -  one less than window width. If 0 - use frame right margin (end of HACT)
@@ -692,6 +903,17 @@ class X393SensCmprs(object):
         sensorType = self.getSensorInterfaceType()
         if verbose > 0 :
             print ("Sensor interface type: %s"%(sensorType))
+        window = self.specify_window (window_width =  window_width,
+                                      window_height = window_height,
+                                      window_left =   window_left,
+                                      window_top =    window_top,
+                                      cmode =         None, # will use 0
+                                      verbose =       0)
+        window_width =   window["width"]
+        window_height =  window["height"]
+        window_left =    window["left"]
+        window_top =     window["top"]
+        """
         if window_width is None:
             window_width = SENSOR_DEFAULTS[sensorType]["width"]
         if window_height is None:
@@ -700,7 +922,7 @@ class X393SensCmprs(object):
             window_left = SENSOR_DEFAULTS[sensorType]["left"]
         if window_top is None:
             window_top = SENSOR_DEFAULTS[sensorType]["top"]
-            
+        """    
         #setting up histogram window, same for parallel, similar for serial
                     
         if histogram_left is None:
@@ -713,12 +935,14 @@ class X393SensCmprs(object):
             histogram_height_m1 = window_height - 1145
 
         self.specify_phys_memory(circbuf_chn_size = circbuf_chn_size)
+        """
         self.specify_window (window_width =  window_width,
                              window_height = window_height,
                              window_left =   window_left,
                              window_top =    window_top,
+                             cmode =         None, # will use 0
                              verbose =       0)
-
+        """
     #TODO: calculate addresses/lengths
         """
         AFI mux is programmed in 32-byte chunks

@@ -59,6 +59,29 @@
     parameter SENSOR_IMAGE_TYPE1 =        "RUN1",
     parameter SENSOR_IMAGE_TYPE2 =        "NORM", // "RUN1",
     parameter SENSOR_IMAGE_TYPE3 =        "RUN1",
+    
+    parameter SIMULATE_CMPRS_CMODE0 =     CMPRS_CBIT_CMODE_JPEG18,
+    parameter SIMULATE_CMPRS_CMODE1 =     CMPRS_CBIT_CMODE_JPEG18,
+    parameter SIMULATE_CMPRS_CMODE2 =     CMPRS_CBIT_CMODE_JP4,
+    parameter SIMULATE_CMPRS_CMODE3 =     CMPRS_CBIT_CMODE_JP4,
+//        CMPRS_CBIT_CMODE_JPEG18, //input [31:0] cmode;   //  [13:9] color mode:
+//        parameter CMPRS_CBIT_CMODE_JPEG18 =   4'h0, // color 4:2:0
+//        parameter CMPRS_CBIT_CMODE_MONO6 =    4'h1, // mono 4:2:0 (6 blocks)
+//        parameter CMPRS_CBIT_CMODE_JP46 =     4'h2, // jp4, 6 blocks, original
+//        parameter CMPRS_CBIT_CMODE_JP46DC =   4'h3, // jp4, 6 blocks, dc -improved
+//        parameter CMPRS_CBIT_CMODE_JPEG20 =   4'h4, // mono, 4 blocks (but still not actual monochrome JPEG as the blocks are scanned in 2x2 macroblocks)
+//        parameter CMPRS_CBIT_CMODE_JP4 =      4'h5, // jp4,  4 blocks, dc-improved
+//        parameter CMPRS_CBIT_CMODE_JP4DC =    4'h6, // jp4,  4 blocks, dc-improved
+//        parameter CMPRS_CBIT_CMODE_JP4DIFF =  4'h7, // jp4,  4 blocks, differential
+//        parameter CMPRS_CBIT_CMODE_JP4DIFFHDR =  4'h8, // jp4,  4 blocks, differential, hdr
+//        parameter CMPRS_CBIT_CMODE_JP4DIFFDIV2 = 4'h9, // jp4,  4 blocks, differential, divide by 2
+//        parameter CMPRS_CBIT_CMODE_JP4DIFFHDRDIV2 = 4'ha, // jp4,  4 blocks, differential, hdr,divide by 2
+//        parameter CMPRS_CBIT_CMODE_MONO1 =    4'hb, // mono JPEG (not yet implemented)
+//        parameter CMPRS_CBIT_CMODE_MONO4 =    4'he, // mono 4 blocks
+
+    
+    
+    
     parameter SENSOR12BITS_NGPL =        8,   // bpf to hact
     parameter SENSOR12BITS_NVLO =        1,   // VACT=0 in video mode (clocks)
     //parameter tMD   =   14;    //

@@ -416,7 +416,7 @@ class X393Jpeg(object):
                            portrait =  False,
                            height =    1936,
                            width =     2592,
-                           color_mode = 0,
+                           color_mode = vrlg.CMPRS_CBIT_CMODE_JPEG18,
                            byrshift   = 0,
                            verbose    = 1):
         """
@@ -633,7 +633,7 @@ class X393Jpeg(object):
                    y_quality = 100, #80,
                    c_quality = None,
                    portrait =  False,
-                   color_mode = 0,
+#                   color_mode = None, # vrlg.CMPRS_CBIT_CMODE_JPEG18, # read it from the saved
                    byrshift   = 0,
                    server_root = "/www/pages/",
                    verbose    = 1):
@@ -644,7 +644,6 @@ class X393Jpeg(object):
         @param y_quality - 1..100 - quantization quality for Y component
         @param c_quality - 1..100 - quantization quality for color components (None - use y_quality)
         @param portrait - False - use normal order, True - transpose for portrait mode images
-        @param color_mode - one of the image formats (jpeg, jp4,)
         @param byrshift - Bayer shift
         @param server_root - files ystem path to the web server root directory
         @param verbose - verbose level
@@ -657,6 +656,11 @@ class X393Jpeg(object):
                 allFiles = True
         except:
             pass
+        window = self.x393_sens_cmprs.specify_window()
+        if   window["cmode"] == vrlg.CMPRS_CBIT_CMODE_JP4:
+            file_path = file_path.replace(".jpeg",".jp4")
+        elif window["cmode"] == vrlg.CMPRS_CBIT_CMODE_JP46:
+            file_path = file_path.replace(".jpeg",".jp46")
         if allFiles:        
             html_text = """
 <html>
@@ -689,7 +693,7 @@ class X393Jpeg(object):
                                  y_quality = y_quality, #80,
                                  c_quality = c_quality,
                                  portrait =  portrait,
-                                 color_mode = color_mode,
+                                 color_mode = window["cmode"], #
                                  byrshift   = byrshift,
                                  verbose    = verbose)
             html_text += html_text_finish
@@ -705,14 +709,18 @@ class X393Jpeg(object):
                 with open (server_root+html_name, "w+b") as bf:
                     bf.write(html_text)
             return
-        
+        if verbose > 0 :
+            print ("window[height]",window["height"])
+            print ("window[width]",window["width"])
+            print ("window[cmode]",window["cmode"])
+            print ("window=",window)
         jpeg_data = self.jpegheader_create (
                            y_quality = y_quality,
                            c_quality = c_quality,
                            portrait =  portrait,
-                           height =    x393_sens_cmprs.GLBL_WINDOW["height"] & 0xfff0,
-                           width =     x393_sens_cmprs.GLBL_WINDOW["width"] & 0xfff0,
-                           color_mode = color_mode,
+                           height =    window["height"] & 0xfff0, # x393_sens_cmprs.GLBL_WINDOW["height"] & 0xfff0,
+                           width =     window["width"] & 0xfff0, # x393_sens_cmprs.GLBL_WINDOW["width"] & 0xfff0,
+                           color_mode = window["cmode"], #color_mode,
                            byrshift   = byrshift,
                            verbose    = verbose - 1)
         meta = self.x393_cmprs_afi.afi_mux_get_image_meta(
@@ -819,6 +827,12 @@ class X393Jpeg(object):
 ff d9
 """        
 """
+
+JP46: demuxing...
+Corrupt JPEG data: bad Huffman code
+Corrupt JPEG data: bad Huffman code
+Corrupt JPEG data: bad Huffman code
+
 #should be no MSB first (0x31c68400)
 
 cd /usr/local/verilog/; test_mcntrl.py @hargs
@@ -865,6 +879,14 @@ compressor_control 0 2
 jpeg_write  "img.jpeg" 0
 
 
+#default gain = 0xa, set red and blue (outdoors)
+write_sensor_i2c  0 1 0 0x30280014
+write_sensor_i2c  0 1 0 0x302c001a
+write_sensor_i2c  0 1 0 0x302e0020
+
+write_sensor_i2c  0 1 0 0x3028001e
+write_sensor_i2c  0 1 0 0x302c0021
+write_sensor_i2c  0 1 0 0x302e0030
 
 
 Camera compressors testing sequence

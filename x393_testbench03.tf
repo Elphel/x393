@@ -114,7 +114,7 @@ parameter EXTERNAL_TIMESTAMP =    0; // 1 ;    // embed local timestamp, 1 - emb
   
  parameter TRIG_PERIOD =      6000 ;
 `ifdef HISPI 
-    parameter HBLANK=            52; // 90; // 12; /// 52; //*********************
+    parameter HBLANK=            92; // 72; // 62; // 52; // 90; // 12; /// 52; //*********************
     parameter BLANK_ROWS_BEFORE= 3; // 9; // 3; //8; ///2+2 - a little faster than compressor
     parameter BLANK_ROWS_AFTER=  1; //8;
     
@@ -2136,7 +2136,7 @@ simul_axi_hp_wr #(
         .FULL_HEIGHT   (HISPI_FULL_HEIGHT),
         .CLOCK_MPY     (HISPI_CLK_MULT),
         .CLOCK_DIV     (HISPI_CLK_DIV),
-        .LANE0_DLY     (1.3),
+        .LANE0_DLY     (1.2), // 1.3), 1.3 not stable with default delays
         .LANE1_DLY     (2.7),
         .LANE2_DLY     (0.2),
         .LANE3_DLY     (1.8),
@@ -2160,7 +2160,7 @@ simul_axi_hp_wr #(
         .FULL_HEIGHT   (HISPI_FULL_HEIGHT),
         .CLOCK_MPY     (HISPI_CLK_MULT),
         .CLOCK_DIV     (HISPI_CLK_DIV),
-        .LANE0_DLY     (1.3),
+        .LANE0_DLY     (1.2), // 1.3), 1.3 not stable with default delays
         .LANE1_DLY     (2.7),
         .LANE2_DLY     (0.2),
         .LANE3_DLY     (1.8),
@@ -2184,7 +2184,7 @@ simul_axi_hp_wr #(
         .FULL_HEIGHT   (HISPI_FULL_HEIGHT),
         .CLOCK_MPY     (HISPI_CLK_MULT),
         .CLOCK_DIV     (HISPI_CLK_DIV),
-        .LANE0_DLY     (1.3),
+        .LANE0_DLY     (1.2), // 1.3), 1.3 not stable with default delays
         .LANE1_DLY     (2.7),
         .LANE2_DLY     (0.2),
         .LANE3_DLY     (1.8),
@@ -2208,7 +2208,7 @@ simul_axi_hp_wr #(
         .FULL_HEIGHT   (HISPI_FULL_HEIGHT),
         .CLOCK_MPY     (HISPI_CLK_MULT),
         .CLOCK_DIV     (HISPI_CLK_DIV),
-        .LANE0_DLY     (1.3),
+        .LANE0_DLY     (1.2), // 1.3), 1.3 not stable with default delays
         .LANE1_DLY     (2.7),
         .LANE2_DLY     (0.2),
         .LANE3_DLY     (1.8),
@@ -2623,6 +2623,7 @@ task setup_sensor_channel;
     reg   [31:0] frame_start_address;
     reg   [31:0] frame_start_address_inc;
     reg   [31:0] last_buf_frame;
+    reg   [31:0] cmode; // compressor mode
 //    reg   [31:0] camsync_delay;
 //    reg   [ 3:0] sensor_mask;
     
@@ -2632,6 +2633,13 @@ task setup_sensor_channel;
 // Setting up a single sensor channel 0, sunchannel 0
 // 
     begin
+        case (num_sensor)
+            2'h0: cmode = SIMULATE_CMPRS_CMODE0;
+            2'h1: cmode = SIMULATE_CMPRS_CMODE1;
+            2'h2: cmode = SIMULATE_CMPRS_CMODE2;
+            2'h3: cmode = SIMULATE_CMPRS_CMODE3;
+        endcase
+    
         window_height = FULL_HEIGHT;
         window_left = 0;
         window_top = 0;
@@ -2688,49 +2696,112 @@ task setup_sensor_channel;
     compressor_run (num_sensor, 0); // reset compressor
     
     
-    setup_compressor_channel(
-        num_sensor,              // sensor channel number (0..3)
-        0,                       // qbank;    // [6:3] quantization table page - 100% quality
-//        1,                       // qbank;    // [6:3] quantization table page - 85%? quality
-        1,                       // dc_sub;   // [8:7] subtract DC
-        CMPRS_CBIT_CMODE_JPEG18, //input [31:0] cmode;   //  [13:9] color mode:
-//        parameter CMPRS_CBIT_CMODE_JPEG18 =   4'h0, // color 4:2:0
-//        parameter CMPRS_CBIT_CMODE_MONO6 =    4'h1, // mono 4:2:0 (6 blocks)
-//        parameter CMPRS_CBIT_CMODE_JP46 =     4'h2, // jp4, 6 blocks, original
-//        parameter CMPRS_CBIT_CMODE_JP46DC =   4'h3, // jp4, 6 blocks, dc -improved
-//        parameter CMPRS_CBIT_CMODE_JPEG20 =   4'h4, // mono, 4 blocks (but still not actual monochrome JPEG as the blocks are scanned in 2x2 macroblocks)
-//        parameter CMPRS_CBIT_CMODE_JP4 =      4'h5, // jp4,  4 blocks, dc-improved
-//        parameter CMPRS_CBIT_CMODE_JP4DC =    4'h6, // jp4,  4 blocks, dc-improved
-//        parameter CMPRS_CBIT_CMODE_JP4DIFF =  4'h7, // jp4,  4 blocks, differential
-//        parameter CMPRS_CBIT_CMODE_JP4DIFFHDR =  4'h8, // jp4,  4 blocks, differential, hdr
-//        parameter CMPRS_CBIT_CMODE_JP4DIFFDIV2 = 4'h9, // jp4,  4 blocks, differential, divide by 2
-//        parameter CMPRS_CBIT_CMODE_JP4DIFFHDRDIV2 = 4'ha, // jp4,  4 blocks, differential, hdr,divide by 2
-//        parameter CMPRS_CBIT_CMODE_MONO1 =    4'hb, // mono JPEG (not yet implemented)
-//        parameter CMPRS_CBIT_CMODE_MONO4 =    4'he, // mono 4 blocks
-        1,                      // input [31:0] multi_frame;   // [15:14] 0 - single-frame buffer, 1 - multiframe video memory buffer
-        3,  // 0,               // input [31:0] bayer;         // [20:18] // Bayer shift
-        0,                      // input [31:0] focus_mode;    // [23:21] Set focus mode
-        3,                      // num_macro_cols_m1; // number of macroblock colums minus 1
-        1,                      // num_macro_rows_m1; // number of macroblock rows minus 1
-        1,                      // input [31:0] left_margin;       // left margin of the first pixel (0..31) for 32-pixel wide colums in memory access
-        'h120,                  // input [31:0] colorsat_blue; //color saturation for blue (10 bits) //'h90 for 100%
-        'h16c,                  // colorsat_red; //color saturation for red (10 bits)   // 'b6 for 100%
-        0);                     // input [31:0] coring;     // coring value
+    
+    if (cmode == CMPRS_CBIT_CMODE_JPEG18) begin
+        setup_compressor_channel(
+            num_sensor,              // sensor channel number (0..3)
+            0,                       // qbank;    // [6:3] quantization table page - 100% quality
+    //        1,                       // qbank;    // [6:3] quantization table page - 85%? quality
+            1,                       // dc_sub;   // [8:7] subtract DC
+            cmode, // CMPRS_CBIT_CMODE_JPEG18, //input [31:0] cmode;   //  [13:9] color mode:
+    //        parameter CMPRS_CBIT_CMODE_JPEG18 =   4'h0, // color 4:2:0
+    //        parameter CMPRS_CBIT_CMODE_MONO6 =    4'h1, // mono 4:2:0 (6 blocks)
+    //        parameter CMPRS_CBIT_CMODE_JP46 =     4'h2, // jp4, 6 blocks, original
+    //        parameter CMPRS_CBIT_CMODE_JP46DC =   4'h3, // jp4, 6 blocks, dc -improved
+    //        parameter CMPRS_CBIT_CMODE_JPEG20 =   4'h4, // mono, 4 blocks (but still not actual monochrome JPEG as the blocks are scanned in 2x2 macroblocks)
+    //        parameter CMPRS_CBIT_CMODE_JP4 =      4'h5, // jp4,  4 blocks, dc-improved
+    //        parameter CMPRS_CBIT_CMODE_JP4DC =    4'h6, // jp4,  4 blocks, dc-improved
+    //        parameter CMPRS_CBIT_CMODE_JP4DIFF =  4'h7, // jp4,  4 blocks, differential
+    //        parameter CMPRS_CBIT_CMODE_JP4DIFFHDR =  4'h8, // jp4,  4 blocks, differential, hdr
+    //        parameter CMPRS_CBIT_CMODE_JP4DIFFDIV2 = 4'h9, // jp4,  4 blocks, differential, divide by 2
+    //        parameter CMPRS_CBIT_CMODE_JP4DIFFHDRDIV2 = 4'ha, // jp4,  4 blocks, differential, hdr,divide by 2
+    //        parameter CMPRS_CBIT_CMODE_MONO1 =    4'hb, // mono JPEG (not yet implemented)
+    //        parameter CMPRS_CBIT_CMODE_MONO4 =    4'he, // mono 4 blocks
+            1,                      // input [31:0] multi_frame;   // [15:14] 0 - single-frame buffer, 1 - multiframe video memory buffer
+            3,  // 0,               // input [31:0] bayer;         // [20:18] // Bayer shift
+            0,                      // input [31:0] focus_mode;    // [23:21] Set focus mode
+            3,                      // num_macro_cols_m1; // number of macroblock colums minus 1
+            1,                      // num_macro_rows_m1; // number of macroblock rows minus 1
+            1,                      // input [31:0] left_margin;       // left margin of the first pixel (0..31) for 32-pixel wide colums in memory access
+            'h120,                  // input [31:0] colorsat_blue; //color saturation for blue (10 bits) //'h90 for 100%
+            'h16c,                  // colorsat_red; //color saturation for red (10 bits)   // 'b6 for 100%
+            0);                     // input [31:0] coring;     // coring value
     // TODO: calculate widths correctly!
-    setup_compressor_memory (
-            num_sensor,                    // input  [1:0] num_sensor;
-            frame_start_address,           // input [31:0] frame_sa;         // 22-bit frame start address ((3 CA LSBs==0. BA==0)
-            frame_start_address_inc,       // input [31:0] frame_sa_inc;     // 22-bit frame start address increment  ((3 CA LSBs==0. BA==0)
-            last_buf_frame,                // input [31:0] last_frame_num;   // 16-bit number of the last frame in a buffer
-            frame_full_width,              // input [31:0] frame_full_width; // 13-bit Padded line length (8-row increment), in 8-bursts (16 bytes)
-            window_width, //  & ~3,             // input [31:0] window_width;    // 13 bit - in 8*16=128 bit bursts
-            window_height & ~15,           // input [31:0] window_height;   // 16 bit
-            window_left,                   // input [31:0] window_left;
-            window_top+1,                  // input [31:0] window_top; (to match 20x20 tiles in 353)
-            1,   // input        byte32;     // == 1? 
-            2,   //input [31:0] tile_width; // == 2
-            1,  // input [31:0] extra_pages; // 1
-            1); // disable "need" (yield to sensor channels)
+        setup_compressor_memory (
+                num_sensor,                    // input  [1:0] num_sensor;
+                frame_start_address,           // input [31:0] frame_sa;         // 22-bit frame start address ((3 CA LSBs==0. BA==0)
+                frame_start_address_inc,       // input [31:0] frame_sa_inc;     // 22-bit frame start address increment  ((3 CA LSBs==0. BA==0)
+                last_buf_frame,                // input [31:0] last_frame_num;   // 16-bit number of the last frame in a buffer
+                frame_full_width,              // input [31:0] frame_full_width; // 13-bit Padded line length (8-row increment), in 8-bursts (16 bytes)
+                window_width, //  & ~3,             // input [31:0] window_width;    // 13 bit - in 8*16=128 bit bursts
+                window_height & ~15,           // input [31:0] window_height;   // 16 bit
+                window_left,                   // input [31:0] window_left;
+                window_top+1,                  // input [31:0] window_top; (to match 20x20 tiles in 353)
+                1,   // input        byte32;     // == 1? 
+                2,   //input [31:0] tile_width; // == 2
+                1,  // input [31:0] extra_pages; // 1
+                1,
+                18, //    reg   [7:0] tile_height;
+                16 //    reg   [7:0] tile_vstep;
+                ); // disable "need" (yield to sensor channels)
+    end else if ((cmode == CMPRS_CBIT_CMODE_JP46) ||
+             (cmode == CMPRS_CBIT_CMODE_JP46DC) ||
+             (cmode == CMPRS_CBIT_CMODE_JP4) ||
+             (cmode == CMPRS_CBIT_CMODE_JP4DC) ||
+             (cmode == CMPRS_CBIT_CMODE_JP4DIFF) ||
+             (cmode == CMPRS_CBIT_CMODE_JP4DIFFHDR) ||
+             (cmode == CMPRS_CBIT_CMODE_JP4DIFFDIV2) ||
+             (cmode == CMPRS_CBIT_CMODE_JP4DIFFHDRDIV2)) begin
+        setup_compressor_channel(
+            num_sensor,              // sensor channel number (0..3)
+            0,                       // qbank;    // [6:3] quantization table page - 100% quality
+    //        1,                       // qbank;    // [6:3] quantization table page - 85%? quality
+            1,                       // dc_sub;   // [8:7] subtract DC
+            cmode, // CMPRS_CBIT_CMODE_JPEG18, //input [31:0] cmode;   //  [13:9] color mode:
+    //        parameter CMPRS_CBIT_CMODE_JPEG18 =   4'h0, // color 4:2:0
+    //        parameter CMPRS_CBIT_CMODE_MONO6 =    4'h1, // mono 4:2:0 (6 blocks)
+    //        parameter CMPRS_CBIT_CMODE_JP46 =     4'h2, // jp4, 6 blocks, original
+    //        parameter CMPRS_CBIT_CMODE_JP46DC =   4'h3, // jp4, 6 blocks, dc -improved
+    //        parameter CMPRS_CBIT_CMODE_JPEG20 =   4'h4, // mono, 4 blocks (but still not actual monochrome JPEG as the blocks are scanned in 2x2 macroblocks)
+    //        parameter CMPRS_CBIT_CMODE_JP4 =      4'h5, // jp4,  4 blocks, dc-improved
+    //        parameter CMPRS_CBIT_CMODE_JP4DC =    4'h6, // jp4,  4 blocks, dc-improved
+    //        parameter CMPRS_CBIT_CMODE_JP4DIFF =  4'h7, // jp4,  4 blocks, differential
+    //        parameter CMPRS_CBIT_CMODE_JP4DIFFHDR =  4'h8, // jp4,  4 blocks, differential, hdr
+    //        parameter CMPRS_CBIT_CMODE_JP4DIFFDIV2 = 4'h9, // jp4,  4 blocks, differential, divide by 2
+    //        parameter CMPRS_CBIT_CMODE_JP4DIFFHDRDIV2 = 4'ha, // jp4,  4 blocks, differential, hdr,divide by 2
+    //        parameter CMPRS_CBIT_CMODE_MONO1 =    4'hb, // mono JPEG (not yet implemented)
+    //        parameter CMPRS_CBIT_CMODE_MONO4 =    4'he, // mono 4 blocks
+            1,                      // input [31:0] multi_frame;   // [15:14] 0 - single-frame buffer, 1 - multiframe video memory buffer
+            3,  // 0,               // input [31:0] bayer;         // [20:18] // Bayer shift
+            0,                      // input [31:0] focus_mode;    // [23:21] Set focus mode
+            window_width-1, // 3,    // num_macro_cols_m1; // number of macroblock colums minus 1
+            1,                      // num_macro_rows_m1; // number of macroblock rows minus 1
+            0, // 1,                // input [31:0] left_margin;       // left margin of the first pixel (0..31) for 32-pixel wide colums in memory access
+            'bx, // n/a 'h120,      // input [31:0] colorsat_blue; //color saturation for blue (10 bits) //'h90 for 100%
+            'bx, // n/a 'h16c,      // colorsat_red; //color saturation for red (10 bits)   // 'b6 for 100%
+            0);                     // input [31:0] coring;     // coring value
+        // TODO: calculate widths correctly!
+        setup_compressor_memory (
+                num_sensor,                    // input  [1:0] num_sensor;
+                frame_start_address,           // input [31:0] frame_sa;         // 22-bit frame start address ((3 CA LSBs==0. BA==0)
+                frame_start_address_inc,       // input [31:0] frame_sa_inc;     // 22-bit frame start address increment  ((3 CA LSBs==0. BA==0)
+                last_buf_frame,                // input [31:0] last_frame_num;   // 16-bit number of the last frame in a buffer
+                frame_full_width,              // input [31:0] frame_full_width; // 13-bit Padded line length (8-row increment), in 8-bursts (16 bytes)
+                window_width, //  & ~3,             // input [31:0] window_width;    // 13 bit - in 8*16=128 bit bursts
+                window_height & ~15,           // input [31:0] window_height;   // 16 bit
+                window_left,                   // input [31:0] window_left;
+                window_top+0,                  // input [31:0] window_top; (to match 20x20 tiles in 353)
+                1,   // input        byte32;     // == 1? 
+                4,   //input [31:0] tile_width; // == 2
+                0,  // input [31:0] extra_pages; // 1
+                1,
+                16, //    reg   [7:0] tile_height;
+                16  //    reg   [7:0] tile_vstep;
+                );  // disable "need" (yield to sensor channels)
+     end else begin
+        $display ("task setup_compressor_channel(): compressor mode %d is not supported",cmode);
+        $finish;
+     end
     
 //    compressor_run (num_sensor, 3); // run repetitive mode
 `ifndef COMPRESS_SINGLE
@@ -3169,14 +3240,16 @@ task setup_compressor_memory;
     input [31:0] tile_width; // == 2
     input [31:0] extra_pages; // 1
     input        disable_need; // set to 1
+    input  [7:0] tile_height;
+    input  [7:0] tile_vstep;
     
     reg [29:0] base_addr;
     integer    mode;
-    reg   [7:0] tile_height;
-    reg   [7:0] tile_vstep;
+//    reg   [7:0] tile_height;
+//    reg   [7:0] tile_vstep;
     begin
-        tile_vstep = 16;
-        tile_height= 18;
+//        tile_vstep = 16;
+//        tile_height= 18;
         
         
         base_addr = MCONTR_CMPRS_BASE + MCONTR_CMPRS_INC * num_sensor;

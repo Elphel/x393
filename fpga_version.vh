@@ -31,7 +31,9 @@
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
  *******************************************************************************/
-    parameter FPGA_VERSION =          32'h0393006e; // Trying lane switch again after bug fix, failing 1 in  ddr3_mclk -> ddr3_clk_div by  -0.023
+    parameter FPGA_VERSION =          32'h0393006f;  // Fixing JP4 mode - xcl -0.002 -0.004 2, utilization 15144 (77.07 %)
+//    parameter FPGA_VERSION =          32'h0393006f; // Fixing JP4 mode - xclk -0.209/-2.744/23, utilization  15127 (76.98%)
+//    parameter FPGA_VERSION =          32'h0393006e; // Trying lane switch again after bug fix, failing 1 in  ddr3_mclk -> ddr3_clk_div by  -0.023
 //    parameter FPGA_VERSION =          32'h0393006d; // -1 with lane switch - does not work
 //    parameter FPGA_VERSION =          32'h0393006d; // Reversing pixels/lanes order xclk violated -0.154
 //    parameter FPGA_VERSION =          32'h0393006c; // will try debug for HiSPi.  xclk violated by -0.030, slices 15062 (76.65%)

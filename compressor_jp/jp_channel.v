@@ -262,6 +262,7 @@ module  jp_channel#(
     // signals connecting modules: chn_rd_buf_i and ???:
     wire   [ 7:0] mb_data_out;       // Macroblock data out in scanline order 
     wire          mb_pre_first_out;  // Macroblock data out strobe - 1 cycle just before data valid
+    wire          mb_pre2_first_out;  // Macroblock data out strobe - 2 cycles just before data valid
 //    wire          mb_data_valid;     // Macroblock data out valid
     
     wire           limit_diff     = 1'b1;  // as in the prototype - just a constant 1
@@ -421,15 +422,15 @@ module  jp_channel#(
     wire [2:0] dbg_block_mem_wa_save;
   `ifndef  USE_XCLK2X
         // temporarily assigning unused debug signals to 0
-        assign dbg_add_invalid =    0;
-        assign dbg_mb_release_buf = 0;
-        assign etrax_dma =          0;
-        assign dbg_ts_rstb =        0; // output
-        assign dbg_ts_dout =        0; //output [7:0]
-        assign dbg_flushing =       0;
-        assign dbg_test_lbw =       0;
-        assign dbg_gotLastBlock =   0;
-        assign dbg_fifo_or_full =   0;
+//        assign dbg_add_invalid =    0;
+//        assign dbg_mb_release_buf = 0;
+//        assign etrax_dma =          0;
+//        assign dbg_ts_rstb =        0; // output
+//        assign dbg_ts_dout =        0; //output [7:0]
+        assign dbg_flushing =       0; // still not used in huffman_stuffer_meta 
+//        assign dbg_test_lbw =       0;
+//        assign dbg_gotLastBlock =   0;
+        assign dbg_fifo_or_full =   0; // still not used in huffman_stuffer_meta
        
   `endif    
     timestamp_to_parallel dbg_timestamp_to_parallel_i (
@@ -612,22 +613,29 @@ module  jp_channel#(
         .start            (status_start)          // input
     );
 //hifreq
-// Port buffer - TODO: Move to memory controller
+// Not needed?
+//    reg   emul64;
+//    always @ (negedge mclk) begin
+//        emul64 <= tile_width[1]; // will not work for monochrome (128 pixel wide) - chnge to 64?
+//    end
+    
+
     mcntrl_buf_rd #(
         .LOG2WIDTH_RD(3) // 64 bit external interface
     ) chn_rd_buf_i (
-        .ext_clk      (xclk), // input
-        .ext_raddr    (buf_ra), // input[11:0] 
-        .ext_rd       (buf_rd[0]), // input
-        .ext_regen    (buf_rd[1]), // input
-        .ext_data_out (buf_pxd), // output[7:0] 
-        .wclk         (!mclk), // input
-        .wpage_in     (2'b0), // input[1:0] 
+        .ext_clk      (xclk),               // input
+        .ext_raddr    (buf_ra),             // input[11:0] 
+        .ext_rd       (buf_rd[0]),          // input
+        .ext_regen    (buf_rd[1]),          // input
+        .ext_data_out (buf_pxd),            // output[7:0]
+//        .emul64       (1'b0), //emul64),             // input Modify buffer addresses (used for JP4 until a 64-wide mode is implemented)
+        .wclk         (!mclk),              // input
+        .wpage_in     (2'b0),               // input[1:0] 
         .wpage_set    (xfer_reset_page_rd), // input  TODO: Generate @ negedge mclk on frame start
-        .page_next    (buf_wpage_nxt), // input
-        .page         (), // output[1:0]
-        .we           (buf_we), // input
-        .data_in      (buf_din) // input[63:0] 
+        .page_next    (buf_wpage_nxt),      // input
+        .page         (),                   // output[1:0]
+        .we           (buf_we),             // input
+        .data_in      (buf_din)             // input[63:0] 
     );
     
     cmprs_cmd_decode #(
@@ -837,7 +845,8 @@ module  jp_channel#(
         .data_out           (mb_data_out),      // output[7:0] // Macroblock data out in scanline order
         .pre_first_out      (mb_pre_first_out), // output // Macroblock data out strobe - 1 cycle just before data valid  == old pre_first_pixel?
 //        .data_valid         (mb_data_valid) // output     // Macroblock data out valid
-        .data_valid         () // output        // Macroblock data out valid Unused
+        .pre2_first_out     (mb_pre2_first_out), // output reg  
+        .data_valid         () // output reg     // Macroblock data out valid Unused
     );
 
     csconvert #(
@@ -859,7 +868,7 @@ module  jp_channel#(
         .m_cr           (m_cr),             // input[9:0] 
         .mb_din         (mb_data_out),      // input[7:0] 
         .bayer_phase    (bayer_phase),      // input[1:0] 
-        .pre_first_in   (mb_pre_first_out), // input
+        .pre2_first_in  (mb_pre2_first_out),// input
         .signed_y       (signed_y),         // output[8:0] reg 
         .signed_c       (signed_c),         // output[8:0] reg 
         .yaddrw         (yaddrw),           // output[7:0] reg 

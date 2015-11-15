@@ -67,6 +67,7 @@ module  debug_master #(
     reg           ld_r;
     reg           cmd; //command stae (0 - idle)  
     reg [DEBUG_CMD_LATENCY : 0] cmd_reg;
+    wire    [3:0] debug_latency_plus1 = DEBUG_CMD_LATENCY+1;
     
     wire          set_status_w = cmd_we && (cmd_a == DEBUG_SET_STATUS);
     wire          shift32_w =    cmd_we && (cmd_a == DEBUG_SHIFT_DATA);
@@ -104,7 +105,7 @@ module  debug_master #(
     ) dly_16_i (
         .clk   (mclk),                // input
         .rst   (1'b0),                // input
-        .dly   (DEBUG_CMD_LATENCY+1), // input[3:0] 
+        .dly   (debug_latency_plus1), // DEBUG_CMD_LATENCY+1), // input[3:0] 
         .din   (&cntr),               // input[0:0] 
         .dout  (shift_done)           // output[0:0] 
     );
