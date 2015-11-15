@@ -1647,7 +1647,10 @@ assign axi_grst = axi_rst_pre;
         .HISPI_MMCM1                   (HISPI_MMCM1),
         .HISPI_MMCM2                   (HISPI_MMCM2),
         .HISPI_MMCM3                   (HISPI_MMCM3),
-        
+        .HISPI_KEEP_IRST               (HISPI_KEEP_IRST),
+        .HISPI_WAIT_ALL_LANES          (HISPI_WAIT_ALL_LANES),
+        .HISPI_FIFO_DEPTH              (HISPI_FIFO_DEPTH),
+        .HISPI_FIFO_START              (HISPI_FIFO_START),
         .HISPI_CAPACITANCE             (HISPI_CAPACITANCE),
         .HISPI_DIFF_TERM               (HISPI_DIFF_TERM),
         .HISPI_DQS_BIAS                (HISPI_DQS_BIAS),

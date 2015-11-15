@@ -682,6 +682,17 @@ class X393Sensor(object):
         reg_addr = (vrlg.SENSOR_GROUP_ADDR + num_sensor * vrlg.SENSOR_BASE_INC) + vrlg.SENSIO_RADDR + vrlg.SENSIO_DELAYS;
         self.x393_axi_tasks.write_control_register(reg_addr + 1, data)
 
+    def set_sensor_fifo_lag(self,
+                            num_sensor,
+                            fifo_lag = 7):
+        """
+        Set HiSPi sensor FIFO lag (when to start line output, ~= 1/2 FIFO size)
+        @param num_sensor - sensor port number (0..3)
+        @param fifo_lag - number of pixels to write to FIFO before starting output
+        """
+        reg_addr = (vrlg.SENSOR_GROUP_ADDR + num_sensor * vrlg.SENSOR_BASE_INC) + vrlg.SENSIO_RADDR + vrlg.SENSIO_DELAYS;
+        self.x393_axi_tasks.write_control_register(reg_addr + 0, fifo_lag)
+
     def set_sensor_io_jtag (self,
                             num_sensor,
                             pgmen = None,    # <2: keep PGMEN, 2 - PGMEN low (inactive),  3 - high (active) enable JTAG control

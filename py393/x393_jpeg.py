@@ -857,6 +857,8 @@ write_sensor_i2c  0 1 0 0x30700002
 #test pattern - fading color bars
 write_sensor_i2c  0 1 0 0x30700003
 print_sensor_i2c 0 0x3070 0xff 0x10 0
+#test - running 8, 8-bit
+write_sensor_i2c  0 1 0 0x30700101
 
 #Exposure 0x800 lines
 write_sensor_i2c  0 1 0 0x30120800
@@ -878,6 +880,10 @@ print_sensor_i2c 0 0x31c6 0xff 0x10 0
 compressor_control 0 2
 jpeg_write  "img.jpeg" 0
 
+#setup JP4
+setup_compressor 0 5 2 0 1 1 0 0 None None None None 1 384 364 2
+#setup JPEG
+setup_compressor 0 0 2 0 1 1 0 0 None None None None 1 384 364 2
 
 #default gain = 0xa, set red and blue (outdoors)
 write_sensor_i2c  0 1 0 0x30280014

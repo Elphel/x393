@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.3.66 (w)1999-2015 BSI
-[*] Sun Nov 15 06:56:54 2015
+[*] Sun Nov 15 22:03:05 2015
 [*]
-[dumpfile] "/home/andrey/git/x393/simulation/x393_testbench03-20151114232724798.fst"
-[dumpfile_mtime] "Sun Nov 15 06:56:52 2015"
-[dumpfile_size] 200323649
+[dumpfile] "/home/andrey/git/x393/simulation/x393_testbench03-20151115142219571.fst"
+[dumpfile_mtime] "Sun Nov 15 22:02:48 2015"
+[dumpfile_size] 287600988
 [savefile] "/home/andrey/git/x393/x393_testbench03.sav"
-[timestart] 111246500
+[timestart] 69077000
 [size] 1823 1180
 [pos] 0 0
-*-15.001225 111341667 107947388 109212388 108561548 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-18.688070 69667459 107947388 109212388 108561548 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] x393_testbench03.
 [treeopen] x393_testbench03.par12_hispi_psp4l0_i.
 [treeopen] x393_testbench03.par12_hispi_psp4l0_i.cmprs_channel_block[0].
@@ -75,7 +75,7 @@
 [treeopen] x393_testbench03.x393_i.sensors393_i.sensor_channel_block[3].
 [treeopen] x393_testbench03.x393_i.sensors393_i.sensor_channel_block[3].sensor_channel_i.
 [treeopen] x393_testbench03.x393_i.sensors393_i.sensor_channel_block[3].sensor_channel_i.genblk1.
-[sst_width] 298
+[sst_width] 340
 [signals_width] 321
 [sst_expanded] 1
 [sst_vpaned_height] 514
@@ -1114,9 +1114,9 @@ x393_testbench03.par12_hispi_psp4l0_i.simul_clk_div_mult_i.en
 @1401200
 -clk_mult_div
 -par_hispi_sel
-@c00200
--sens_hispi_12l4
 @800200
+-sens_hispi_12l4
+@c00201
 -lane0
 @28
 x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.ipclk
@@ -1183,11 +1183,81 @@ x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.se
 x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[0].sens_hispi_lane_i.shift_val[1:0]
 @1001200
 -group_end
+@1401201
+-lane0
+@800200
+-fifo0
+@22
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[0].sens_hispi_fifo_i.out_dly[3:0]
+@28
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[0].sens_hispi_fifo_i.ipclk
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[0].sens_hispi_fifo_i.we
+@22
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[0].sens_hispi_fifo_i.wa[4:0]
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[0].sens_hispi_fifo_i.din[11:0]
+@28
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[0].sens_hispi_fifo_i.start_out_ipclk
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[0].sens_hispi_fifo_i.start_sent
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[0].sens_hispi_fifo_i.line_run_ipclk
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[0].sens_hispi_fifo_i.line_run_ipclk_d
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[0].sens_hispi_fifo_i.pclk
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[0].sens_hispi_fifo_i.re
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[0].sens_hispi_fifo_i.run
 @200
 -
 @1000200
--lane0
-@1401200
+-fifo0
+@28
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_10398_i.set_lanes_map
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_10398_i.set_fifo_dly
+@22
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.lanes_map[7:0]
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.fifo_out_dly_mclk[3:0]
+@200
+-other
+@28
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.pclk
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.rd_line
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.rd_line_r
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.sol_all_dly
+@800022
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.rd_run[3:0]
+@28
+(0)x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.rd_run[3:0]
+(1)x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.rd_run[3:0]
+(2)x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.rd_run[3:0]
+(3)x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.rd_run[3:0]
+@1001200
+-group_end
+@22
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.good_lanes[3:0]
+@28
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.sol_pclk
+@800022
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.fifo_re[3:0]
+@28
+(0)x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.fifo_re[3:0]
+(1)x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.fifo_re[3:0]
+(2)x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.fifo_re[3:0]
+(3)x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.fifo_re[3:0]
+@800022
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.fifo_re_r[3:0]
+@28
+(0)x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.fifo_re_r[3:0]
+(1)x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.fifo_re_r[3:0]
+(2)x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.fifo_re_r[3:0]
+(3)x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.fifo_re_r[3:0]
+@22
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.pxd_out_pre[11:0]
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.pxd_out[11:0]
+@28
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hact_out
+@1001200
+-group_end
+-group_end
+@200
+-
+@1000200
 -sens_hispi_12l4
 @c00200
 -par_hspi_0
@@ -2476,9 +2546,7 @@ x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[2].jp_channel_i.cmpr
 @22
 x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[2].jp_channel_i.cmprs_pixel_buf_iface_i.col_inc[9:4]
 x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[2].jp_channel_i.cmprs_pixel_buf_iface_i.macroblock_x[6:0]
-@23
 x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[2].jp_channel_i.cmprs_pixel_buf_iface_i.extra_start_addr_w[9:0]
-@22
 x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[2].jp_channel_i.cmprs_pixel_buf_iface_i.extra_start_addr_r[5:0]
 x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[2].jp_channel_i.cmprs_pixel_buf_iface_i.mb_start_addr[9:0]
 x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[2].jp_channel_i.cmprs_pixel_buf_iface_i.mb_col_number[2:0]

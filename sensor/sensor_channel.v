@@ -257,6 +257,10 @@ module  sensor_channel#(
     parameter HISPI_NUMLANES =             4,
     parameter HISPI_DELAY_CLK =           "FALSE",      
     parameter HISPI_MMCM =                "TRUE",
+    parameter HISPI_KEEP_IRST =           5,   // number of cycles to keep irst on after release of prst (small number - use 1 hot)
+    parameter HISPI_WAIT_ALL_LANES =      4'h8, // number of output pixel cycles to wait after the earliest lane
+    parameter HISPI_FIFO_DEPTH =          4,
+    parameter HISPI_FIFO_START =          7,
     parameter HISPI_CAPACITANCE =         "DONT_CARE",
     parameter HISPI_DIFF_TERM =           "TRUE",
     parameter HISPI_DQS_BIAS =            "TRUE",
@@ -778,6 +782,10 @@ module  sensor_channel#(
             .HISPI_NUMLANES         (HISPI_NUMLANES),
             .HISPI_DELAY_CLK        (HISPI_DELAY_CLK),
             .HISPI_MMCM             (HISPI_MMCM),
+            .HISPI_KEEP_IRST        (HISPI_KEEP_IRST),
+            .HISPI_WAIT_ALL_LANES   (HISPI_WAIT_ALL_LANES),
+            .HISPI_FIFO_DEPTH       (HISPI_FIFO_DEPTH),
+            .HISPI_FIFO_START       (HISPI_FIFO_START),
             .HISPI_CAPACITANCE      (HISPI_CAPACITANCE),
             .HISPI_DIFF_TERM        (HISPI_DIFF_TERM),
             .HISPI_DQS_BIAS         (HISPI_DQS_BIAS),

@@ -91,6 +91,10 @@ module  sens_10398 #(
     parameter HISPI_NUMLANES =             4,
     parameter HISPI_DELAY_CLK =           "FALSE",      
     parameter HISPI_MMCM =                "TRUE",
+    parameter HISPI_KEEP_IRST =           5,   // number of cycles to keep irst on after release of prst (small number - use 1 hot)
+    parameter HISPI_WAIT_ALL_LANES =      4'h8, // number of output pixel cycles to wait after the earliest lane
+    parameter HISPI_FIFO_DEPTH =          4,
+    parameter HISPI_FIFO_START =          7,
     
     parameter HISPI_CAPACITANCE =         "DONT_CARE",
     parameter HISPI_DIFF_TERM =           "TRUE",
@@ -158,6 +162,7 @@ module  sens_10398 #(
     reg  [31:0] data_r; 
 //    reg   [3:0] set_idelay;
     reg         set_lanes_map; // set sequence of lanes im the composite pixel line
+    reg         set_fifo_dly;  // set how long to wait after strating to fill FIFOs (in items) ~= 1/2 2^FIFO_DEPTH
     reg         set_idelays;    
     reg         set_iclk_phase;
     reg         set_ctrl_r;
@@ -213,6 +218,9 @@ module  sens_10398 #(
         if      (mrst)     data_r <= 0;
         else if (cmd_we)   data_r <= cmd_data;
         
+        if      (mrst) set_fifo_dly <= 0;
+        else           set_fifo_dly <=  cmd_we & (cmd_a==(SENSIO_DELAYS+0)); // TODO - add Symbolic names
+
         if      (mrst) set_lanes_map <= 0;
         else           set_lanes_map <=  cmd_we & (cmd_a==(SENSIO_DELAYS+1));
 
@@ -345,6 +353,10 @@ module  sens_10398 #(
         .HISPI_NUMLANES         (HISPI_NUMLANES),
         .HISPI_DELAY_CLK        (HISPI_DELAY_CLK),
         .HISPI_MMCM             (HISPI_MMCM),
+        .HISPI_KEEP_IRST        (HISPI_KEEP_IRST),
+        .HISPI_WAIT_ALL_LANES   (HISPI_WAIT_ALL_LANES),
+        .HISPI_FIFO_DEPTH       (HISPI_FIFO_DEPTH),
+        .HISPI_FIFO_START       (HISPI_FIFO_START),
         .HISPI_CAPACITANCE      (HISPI_CAPACITANCE),
         .HISPI_DIFF_TERM        (HISPI_DIFF_TERM),
         .HISPI_DQS_BIAS         (HISPI_DQS_BIAS),
@@ -352,6 +364,7 @@ module  sens_10398 #(
         .HISPI_IBUF_LOW_PWR     (HISPI_IBUF_LOW_PWR),
         .HISPI_IFD_DELAY_VALUE  (HISPI_IFD_DELAY_VALUE),
         .HISPI_IOSTANDARD       (HISPI_IOSTANDARD)
+        
     ) sens_hispi12l4_i (
         .pclk                   (pclk),                   // input
         .prst                   (prsts),                  //prst),                   // input
@@ -366,7 +379,8 @@ module  sens_10398 #(
         .mclk                   (mclk),                   // input
         .mrst                   (mrst),                   // input
         .dly_data               (data_r),                 // input[31:0]
-        .set_lanes_map          (set_lanes_map),          // input[3:0] 
+        .set_lanes_map          (set_lanes_map),          // input 
+        .set_fifo_dly           (set_fifo_dly),           // input
         .set_idelay             ({4{set_idelays}}),       // input[3:0] 
         .ld_idelay              (ld_idelay),              // input
         .set_clk_phase          (set_iclk_phase),         // input

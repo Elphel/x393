@@ -598,7 +598,10 @@
     parameter HISPI_MMCM1 =               "FALSE",
     parameter HISPI_MMCM2 =               "TRUE",
     parameter HISPI_MMCM3 =               "FALSE",
-    
+    parameter HISPI_KEEP_IRST =           5,   // number of cycles to keep irst on after release of prst (small number - use 1 hot)
+    parameter HISPI_WAIT_ALL_LANES =      4'h8, // number of output pixel cycles to wait after the earliest lane
+    parameter HISPI_FIFO_DEPTH =          4,
+    parameter HISPI_FIFO_START =          7,
     parameter HISPI_CAPACITANCE =         "DONT_CARE",
     parameter HISPI_DIFF_TERM =           "FALSE", // Only possible with 2.5 power LVDS, not with 1.8V "TRUE",
     parameter HISPI_DQS_BIAS =            "TRUE",

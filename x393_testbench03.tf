@@ -2812,8 +2812,11 @@ task setup_sensor_channel;
             
        set_sensor_io_dly (
             num_sensor,                                 // input                            [1:0] num_sensor;
+`ifdef HISPI
+            128'h33404850_58606870_000000e4_00000007); // input [127:0] dly; // {delays_delays_lane-map_fifo-start_delay]
+`else
             128'h33404850_58606870_78808890_98a0a8b0 ); //input [127:0] dly; // {mmsm_phase, bpf, vact, hact, pxd11,...,pxd0]
-            
+`endif            
     TEST_TITLE = "IO_SETUP";
     $display("===================== TEST_%s =========================",TEST_TITLE);
         set_sensor_io_width(

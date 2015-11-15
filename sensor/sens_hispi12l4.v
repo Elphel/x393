@@ -62,14 +62,17 @@ module  sens_hispi12l4#(
     parameter HISPI_NUMLANES =             4,
     parameter HISPI_DELAY_CLK =           "FALSE",      
     parameter HISPI_MMCM =                "TRUE",
+    parameter HISPI_KEEP_IRST =           5,   // number of cycles to keep irst on after release of prst (small number - use 1 hot)
+    parameter HISPI_WAIT_ALL_LANES =      4'h8, // number of output pixel cycles to wait after the earliest lane
+    parameter HISPI_FIFO_DEPTH =          4,
+    parameter HISPI_FIFO_START =          7,
     parameter HISPI_CAPACITANCE =         "DONT_CARE",
     parameter HISPI_DIFF_TERM =           "TRUE",
     parameter HISPI_DQS_BIAS =            "TRUE",
     parameter HISPI_IBUF_DELAY_VALUE =    "0",
     parameter HISPI_IBUF_LOW_PWR =        "TRUE",
     parameter HISPI_IFD_DELAY_VALUE =     "AUTO",
-    parameter HISPI_IOSTANDARD =          "DIFF_SSTL18_I", //"DIFF_SSTL18_II" for high current (13.4mA vs 8mA),
-    parameter HISPI_KEEP_IRST =           5 // number of cycles to keep irst on after release of prst (small number - use 1 hot)
+    parameter HISPI_IOSTANDARD =          "DIFF_SSTL18_I" //"DIFF_SSTL18_II" for high current (13.4mA vs 8mA),
 )(
     input             pclk,   // global clock input, pixel rate (220MHz for MT9F002)
     input             prst,   // reset @pclk (add sensor reset here)
@@ -91,6 +94,7 @@ module  sens_hispi12l4#(
     input                           mrst,
     input  [HISPI_NUMLANES * 8-1:0] dly_data,        // delay value (3 LSB - fine delay) - @posedge mclk
     input                           set_lanes_map,   // set number of physical lane for each logical one
+    input                           set_fifo_dly,
     input      [HISPI_NUMLANES-1:0] set_idelay,      // mclk synchronous load idelay value
     input                           ld_idelay,       // mclk synchronous set idealy value
     input                           set_clk_phase,   // mclk synchronous set idealy value
@@ -108,15 +112,20 @@ module  sens_hispi12l4#(
     wire                          ipclk;  // re-generated half HiSPi clock (165 MHz) 
     wire                          ipclk2x;// re-generated HiSPi clock (330 MHz)
     wire [HISPI_NUMLANES * 4-1:0] sns_d;
-    localparam WAIT_ALL_LANES = 4'h8; // number of output pixel cycles to wait after the earliest lane
-    localparam FIFO_DEPTH = 4;
+//    localparam WAIT_ALL_LANES = 4'h8; // number of output pixel cycles to wait after the earliest lane
+//    localparam FIFO_DEPTH = 4;
     reg      [HISPI_KEEP_IRST-1:0] irst_r;
     wire                          irst = irst_r[0];
     reg  [HISPI_NUMLANES * 2-1:0] lanes_map;
-    reg  [HISPI_NUMLANES * 4-1:0] logical_lanes4;                   
+    reg  [HISPI_NUMLANES * 4-1:0] logical_lanes4;
+    reg    [HISPI_FIFO_DEPTH-1:0] fifo_out_dly_mclk;                  
+    reg    [HISPI_FIFO_DEPTH-1:0] fifo_out_dly;                  
     always @ (posedge mclk) begin
         if      (mrst)          lanes_map <= DEFAULT_LANE_MAP; //{2'h3,2'h2,2'h1,2'h0}; // 1-to-1 default map
         else if (set_lanes_map) lanes_map <= dly_data[HISPI_NUMLANES * 2-1:0];
+
+        if      (mrst)          fifo_out_dly_mclk <= HISPI_FIFO_START;
+        else if (set_fifo_dly)  fifo_out_dly_mclk <= dly_data[HISPI_FIFO_DEPTH-1:0];
     end
     
 //non-parametrized lane switch (4x4)
@@ -127,6 +136,9 @@ module  sens_hispi12l4#(
         logical_lanes4[15:12] <= sns_d[{lanes_map[7:6],2'b0} +:4];
     end   
     
+    always  @(posedge ipclk) begin
+        fifo_out_dly <= fifo_out_dly_mclk;
+    end
     
     sens_hispi_clock #(
         .SENS_PHASE_WIDTH       (SENS_PHASE_WIDTH),
@@ -231,6 +243,7 @@ module  sens_hispi12l4#(
     reg                             sof_pclk;
 //    wire       [HISPI_NUMLANES-1:0] sol_pclk = rd_run & ~rd_run_d;
     wire                            sol_pclk = |(rd_run & ~rd_run_d); // possibly multi-cycle
+    reg                             start_fifo_re; // start reading FIFO - single-cycle
     reg        [HISPI_NUMLANES-1:0] good_lanes; // lanes that started active line OK   
     reg        [HISPI_NUMLANES-1:0] fifo_re;
     reg        [HISPI_NUMLANES-1:0] fifo_re_r;
@@ -244,6 +257,7 @@ module  sens_hispi12l4#(
                                                   ({12 {fifo_re_r[1] & rd_run[1]}} & fifo_out[1 * 12 +:12]) |
                                                   ({12 {fifo_re_r[2] & rd_run[2]}} & fifo_out[2 * 12 +:12]) |
                                                   ({12 {fifo_re_r[3] & rd_run[3]}} & fifo_out[3 * 12 +:12]);
+                                                  
        
     
     
@@ -268,10 +282,12 @@ module  sens_hispi12l4#(
     end
     
     always @(posedge pclk) begin
-    if (prst || !vact_ipclk) vact_pclk_strt <= 0;
-    else                     vact_pclk_strt <= {vact_pclk_strt[0], 1'b1};
+        if (prst || !vact_ipclk) vact_pclk_strt <= 0;
+        else                     vact_pclk_strt <= {vact_pclk_strt[0], 1'b1};
 
         rd_run_d <= rd_run;
+        
+        start_fifo_re <= sol_pclk && !rd_line; // sol_pclk may be multi-cycle
        
         sof_pclk <= vact_pclk_strt[0] && ! vact_pclk_strt[1];
        
@@ -292,9 +308,10 @@ module  sens_hispi12l4#(
                    ({12 {fifo_re_r[2] & rd_run[2]}} & fifo_out[2 * 12 +:12]) |
                    ({12 {fifo_re_r[3] & rd_run[3]}} & fifo_out[3 * 12 +:12]); */
        
-       if      (prst)                                                 fifo_re <= 0;
-       else if (sol_pclk || (rd_line && fifo_re[HISPI_NUMLANES - 1])) fifo_re <= 1;
-       else                                                           fifo_re <= fifo_re << 1;
+       if      (prst)                                                      fifo_re <= 0;
+//       else if (sol_pclk || (rd_line && fifo_re[HISPI_NUMLANES - 1])) fifo_re <= 1;
+       else if (start_fifo_re || (rd_line && fifo_re[HISPI_NUMLANES - 1])) fifo_re <= 1;
+       else                                                                fifo_re <= fifo_re << 1;
        
 //       if (prst || (hact_off && (|(good_lanes & ~rd_run)))) hact_r <= 0;
        if (prst || (hact_off && (!rd_line || (good_lanes[3] & ~rd_run[3])))) hact_r <= 0;
@@ -310,7 +327,7 @@ module  sens_hispi12l4#(
     ) dly_16_start_line_i (
         .clk  (pclk),                  // input
         .rst  (1'b0),                  // input
-        .dly  (WAIT_ALL_LANES),        // input[3:0] 
+        .dly  (HISPI_WAIT_ALL_LANES),  // input[3:0] 
         .din  (rd_line && !rd_line_r), // input[0:0] 
         .dout (sol_all_dly)            // output[0:0] 
     );
@@ -320,10 +337,10 @@ module  sens_hispi12l4#(
     ) dly_16_hact_on_i (
         .clk  (pclk),                        // input
         .rst  (1'b0),                        // input
-//        .dly  (4'h2),                        // input[3:0] 
-//        .dly  (4'h3),                        // input[3:0] 
+//        .dly  (4'h2),                      // input[3:0] 
+//        .dly  (4'h3),                      // input[3:0] 
         .dly  (4'h1),                        // input[3:0] 
-//        .dly  (4'h2),                        // input[3:0] 
+//        .dly  (4'h2),                      // input[3:0] 
         .din  (sol_pclk),                    // input[0:0] 
         .dout (hact_on)                      // output[0:0] 
     );
@@ -371,16 +388,17 @@ module  sens_hispi12l4#(
                 .eol      (hispi_eol[i])               // output reg 
             );
             sens_hispi_fifo #(
-                .COUNT_START  (7),
+//                .COUNT_START  (HISPI_FIFO_START),
                 .DATA_WIDTH  (12),
-                .DATA_DEPTH  (FIFO_DEPTH)
+                .DATA_DEPTH  (HISPI_FIFO_DEPTH)
             ) sens_hispi_fifo_i (
                 .ipclk    (ipclk),                     // input
                 .irst     (irst),                      // input
                 .we       (hispi_dv[i]),               // input
                 .sol      (hispi_sol[i] && !(hispi_embed[i] && ignore_embedded_ipclk)), // input
                 .eol      (hispi_eol[i]),              // input
-                .din      (hispi_aligned[12*i +: 12]), // input[11:0] 
+                .din      (hispi_aligned[12*i +: 12]), // input[11:0]
+                .out_dly  (fifo_out_dly),              // input[3:0] 
                 .pclk     (pclk),                      // input
                 .prst     (prst),                      // input
                 .re       (fifo_re[i]),                // input
