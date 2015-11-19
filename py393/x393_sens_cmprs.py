@@ -74,9 +74,9 @@ SENSOR_INTERFACE_HISPI =    "HISPI"
 SENSOR_INTERFACES={SENSOR_INTERFACE_PARALLEL: {"mv":2800, "freq":24.0,   "iface":"2V5_LVDS"},
                    SENSOR_INTERFACE_HISPI:    {"mv":1820, "freq":24.444, "iface":"1V8_LVDS"}}
 
-SENSOR_DEFAULTS= {SENSOR_INTERFACE_PARALLEL: {"width":2592, "height":1944, "top":0, "left":0, "slave":0x48, "i2c_delay":100},
+SENSOR_DEFAULTS= {SENSOR_INTERFACE_PARALLEL: {"width":2592, "height":1944, "top":0, "left":0, "slave":0x48, "i2c_delay":100, "bayer":3},
 #                   SENSOR_INTERFACE_HISPI:   {"width":4608, "height":3288, "top":0, "left":0, "slave":0x10, "i2c_delay":100}}
-                   SENSOR_INTERFACE_HISPI:   {"width":4384, "height":3288, "top":0, "left":0, "slave":0x10, "i2c_delay":100}}
+                   SENSOR_INTERFACE_HISPI:   {"width":4384, "height":3288, "top":0, "left":0, "slave":0x10, "i2c_delay":100, "bayer":2}}
 
 class X393SensCmprs(object):
     DRY_MODE =           True # True
@@ -151,6 +151,9 @@ class X393SensCmprs(object):
                (see ls /sys/devices/amba.0/e0004000.ps7-i2c/i2c-0/0-0070/output_drivers)
         @param quiet - reduce output        
         """
+        if self.DRY_MODE:
+            print ("Not defined for simulation mode")
+            return
         with open ( SI5338_PATH + "/output_drivers/" + iface,      "w") as f:
             print("2", file = f)
         with open ( SI5338_PATH + "/output_clocks/out2_freq_fract","w") as f:
@@ -191,6 +194,9 @@ class X393SensCmprs(object):
         time.sleep(0.2)
         self.setSensorIfaceVoltage(sub_pair=sub_pair, voltage_mv = voltage_mv)
         time.sleep(0.2)
+        if self.DRY_MODE:
+            print ("Not defined for simulation mode")
+            return
         with open (POWER393_PATH + "/channels_en","w") as f:
             print(("vcc_sens01", "vcc_sens23")[sub_pair], file = f)
         if quiet == 0:
@@ -591,15 +597,24 @@ class X393SensCmprs(object):
             repet_mode = True, #  Normal mode, single trigger - just for debugging  TODO: re-assign?
             trig = False)
         return True
-    
+
     def specify_window (self,
-                        window_width =              None,   # 2592
-                        window_height =             None,   # 1944
+                        window_width =              None, # 2592
+                        window_height =             None, # 1944
                         window_left =               None,     # 0
                         window_top =                None, # 0? 1?
                         cmode =                     None,
+                        bayer =                     None,
+                        y_quality =                 None,
+                        c_quality =                 None, # use "same" to save None
+                        portrait =                  None,
+                        gamma =                     None,
+                        black =                     None, # 0.04 
+                        colorsat_blue =             None, # colorsat_blue, #0x180     # 0x90 for 1x
+                        colorsat_red =              None, # colorsat_red, #0x16c,     # 0xb6 for x1
                         verbose =                   1
                         ):
+    
         global GLBL_WINDOW
         if GLBL_WINDOW is None:
             GLBL_WINDOW = {}
@@ -631,11 +646,76 @@ class X393SensCmprs(object):
                 cmode = GLBL_WINDOW["cmode"]
             except:
                 cmode = 0
-        GLBL_WINDOW = {"width":  window_width,
-                       "height": window_height,
-                       "left":   window_left,
-                       "top":    window_top,
-                       "cmode":  cmode}
+
+        if bayer is None:
+            try:
+                bayer = GLBL_WINDOW["bayer"]
+            except:
+                bayer = SENSOR_DEFAULTS[sensorType]["bayer"]
+
+        if y_quality is None:
+            try:
+                y_quality = GLBL_WINDOW["y_quality"]
+            except:
+                y_quality = 100
+
+        if c_quality is None:
+            try:
+                c_quality = GLBL_WINDOW["c_quality"]
+            except:
+                c_quality = "same"
+        if c_quality == "same": # to save as None, not to not save
+                c_quality = None 
+                
+        if portrait is None:
+            try:
+                portrait = GLBL_WINDOW["portrait"]
+            except:
+                portrait = False
+                
+        if gamma is None:
+            try:
+                gamma = GLBL_WINDOW["gamma"]
+            except:
+                gamma = 0.57
+
+        if black is None:
+            try:
+                black = GLBL_WINDOW["black"]
+            except:
+                black = 0.04
+
+        if colorsat_blue is None:
+            try:
+                colorsat_blue = GLBL_WINDOW["colorsat_blue"]
+            except:
+                colorsat_blue = 2.0 # *0x90
+
+        if colorsat_red is None:
+            try:
+                colorsat_red = GLBL_WINDOW["colorsat_red"]
+            except:
+                colorsat_red = 2.0 #  *0xb6
+                
+                
+        GLBL_WINDOW = {"width":         window_width,
+                       "height":        window_height,
+                       "left":          window_left,
+                       "top":           window_top,
+                       "cmode":         cmode,
+                       "bayer":         bayer,
+                       "y_quality":     y_quality,
+                       "c_quality":     c_quality,
+                       "portrait":      portrait,
+                       "gamma":         gamma,
+                       "black":         black,
+                       "colorsat_blue": colorsat_blue,
+                       "colorsat_red":  colorsat_red,
+                       }
+        if verbose > 1:
+            print("GLBL_WINDOW:")
+            for k in GLBL_WINDOW.keys():
+                print ("%15s:%s"%(k,str(GLBL_WINDOW[k])))
         return GLBL_WINDOW
         
                 
@@ -682,7 +762,7 @@ class X393SensCmprs(object):
                           window_left =      None, # 0,     # 0
                           window_top =       None, # 0, # 0? 1?
                           last_buf_frame =   1,  #  - just 2-frame buffer
-                          colorsat_blue =    0x180,     # 0x90 fo 1x
+                          colorsat_blue =    0x180,     # 0x90 for 1x
                           colorsat_red =     0x16c,     # 0xb6 for x1
                           verbose =          1):
         """

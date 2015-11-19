@@ -22,6 +22,7 @@
 @contact:    andrey@elphel.coml
 @deffield    updated: Updated
 '''
+from __future__ import print_function
 from __builtin__ import str
 __author__ = "Andrey Filippov"
 __copyright__ = "Copyright 2015, Elphel, Inc."
@@ -43,6 +44,10 @@ from argparse import ArgumentParser
 #import argparse
 from argparse import RawDescriptionHelpFormatter
 import time
+
+import socket
+import select
+
 from import_verilog_parameters import ImportVerilogParameters
 #from import_verilog_parameters import VerilogParameters
 from verilog_utils             import hx 
@@ -217,6 +222,8 @@ USAGE
         parser.add_argument("-x", "--exceptions", dest="exceptions", action="count", help="Exit on more exceptions [default: %(default)s]")
         parser.add_argument("-l", "--localparams",  dest="localparams", action="store", default="",
                              help="path were modified parameters are saved [default: %(default)s]", metavar="path")
+        parser.add_argument("-P", "--socket-port",  dest="socket_port", action="store", default="",
+                             help="port to use for socket connection [default: %(default)s]")
 
         # Process arguments
         args = parser.parse_args()
@@ -391,18 +398,75 @@ USAGE
     '''       
 #TODO: use readline
     '''
+    if args.socket_port:
+        PORT = int(args.socket_port) # 8888
+    else:
+        PORT = 0
+    HOST = ''   # Symbolic name meaning all available interfaces
+    socket_conn = None
+    if PORT:
+        socket_conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        try:
+            socket_conn.bind((HOST, PORT))
+            print ('Socket bind complete')
+            socket_conn.listen(1) # just a single request
+            print ('Socket now listening to a single request on port %d: send command, receive response, close'%(PORT))
+        except socket.error as msg:
+            print ('Bind failed. Error Code : %s Message %s'%( str(msg[0]),msg[1]))
+            socket_conn = None # do not use sockets
+        
     if (args.interactive):
         line =""
         while True:
-            line=raw_input('x393%s +%3.3fs--> '%(('','(simulated)')[args.simulated],(time.time()-tim))).strip()
+            soc_conn = None
+            prompt = 'x393%s +%3.3fs--> '%(('','(simulated)')[args.simulated],(time.time()-tim))
+            if socket_conn:
+                print(prompt , end="")
+                sys.stdout.flush()
+                ready_to_read, _, _ = select.select( #ready_to_write, in_error
+                      [socket_conn, sys.stdin], # potential_readers,
+                      [],         # potential_writers,
+                      [])         # potential_errs,
+                if sys.stdin in ready_to_read:
+                    line=raw_input()
+#                    print ("stdin: ", line)
+                elif socket_conn in ready_to_read:
+                    try:
+                        soc_conn, soc_addr = socket_conn.accept()
+                        print ("Connected with %s"%(soc_addr[0] + ':' + str(soc_addr[1])))
+                        #Sending message to connected client
+                        #soc_conn.send('Welcome to the server. Type something and hit enter\n') #send only takes string
+                        line = soc_conn.recv(4096) # or make it unlimited?
+                        print ('Received from socket: ', line)
+                    except:
+                        continue # socket probably died, wait for the next command    
+                else:
+                    print ("Unexpected result from select: ready_to_read = ",ready_to_read)
+                    continue
+            else: # No sockets, just command line input
+                line=raw_input(prompt)
+                        
+#            line=raw_input('x393%s +%3.3fs--> '%(('','(simulated)')[args.simulated],(time.time()-tim))).strip()
+            line=line.strip() # maybe also remove comment?
+
+            # Process command, return result to a socket if it was a socket, not stdin
+
+
             tim=time.time()
             #remove comment from the input line
-            if line.find("#") > 0:
+            had_comment=False
+            if line.find("#") >= 0:
                 line=line[:line.find("#")]
+                had_comment=True
             lineList=line.split()
             if not line:
-                print ('Use "quit" to exit, "help" - for help')
+                if not had_comment:
+                    print ('Use "quit" to exit, "help" - for help')
             elif (line == 'quit') or (line == 'exit'):
+                if soc_conn:
+                    soc_conn.send('0\n') # OK\n')
+                    soc_conn.close()
+#                    soc_conn=None
                 break
             elif line== 'help' :
                 print ("\nAvailable tasks:")
@@ -412,7 +476,26 @@ USAGE
                 print ('\n"parameters" and "defines" list known defined parameters and macros')
                 print ("args.exception=%d, QUIET=%d"%(args.exceptions,QUIET))
                 print ("Enter 'R' to toggle show/hide command results, now it is %s"%(("OFF","ON")[showResult]))
+                print ("Use 'socket_port' [PORT] to (re-)open socket on PORT (0 or no PORT - disable socket)")
                 print ("Use 'pydev_predefines' to generate a parameter list to paste to vrlg.py, so Pydev will be happy")
+            elif (lineList[0].upper() == 'SOCKET_PORT') and (not soc_conn): # socket_conn):
+                if socket_conn : # close old socket (if open)
+                    print ("Closed socket on port %d"%(PORT))
+                    socket_conn.close()
+                    socket_conn = None
+                if len(lineList) > 1: # port specified
+                    PORT = int(lineList[1])
+                    if PORT:
+                        socket_conn = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                        try:
+                            socket_conn.bind((HOST, PORT))
+                            print ('Socket bind complete')
+                            socket_conn.listen(1) # just a single request
+                            print ('Socket now listening to a single request on port %d: send command, receive response, close'%(PORT))
+                        except socket.error as msg:
+                            print ('Bind failed. Error Code : %s Message %s'%( str(msg[0]),msg[1]))
+                            socket_conn = None # do not use sockets
+                continue            
             elif lineList[0].upper() == 'R':
                 if len(lineList)>1:
                     if (lineList[1].upper() == "ON") or (lineList[1].upper() == "1") or (lineList[1].upper() == "TRUE"):
@@ -506,6 +589,10 @@ USAGE
                     vrlg_text=vrlg_text[:index+1]+"\n"+predefines
                 except:
                     print ("Failed to update %s - it is either missing or does not have a '%s'"%(vrlg_path,magic))
+                    if soc_conn:
+                        soc_conn.send('0\n')
+                        soc_conn.close()
+#                        soc_conn=None
                     continue
                 try:
                     with open (vrlg_path, "w") as vrlg_file:
@@ -535,7 +622,17 @@ USAGE
 #                strarg=line[len(lineList[0]):].strip()
                 rslt= execTask(cmdLine)
                 if showResult:
-                    print ('    Result: '+hx(rslt))   
+                    print ('    Result: '+hx(rslt))
+                if soc_conn:
+                    soc_conn.send(str(rslt)+'\n')
+                    soc_conn.close()
+#                    soc_conn=None
+                continue    
+            if soc_conn:
+                soc_conn.send('0\n')
+                soc_conn.close()
+#                soc_conn=None
+       
 #http://stackoverflow.com/questions/11781265/python-using-getattr-to-call-function-with-variable-parameters
 #*getattr(foo,bar)(*params)   
     return 0

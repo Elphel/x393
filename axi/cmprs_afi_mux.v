@@ -195,11 +195,12 @@ each group of 4 bits per channel : bits [1:0] - select, bit[2] - sset (0 - nop),
     
 //    reg   [2:0] cur_chn;          // 'b0xx - none, 'b1** - ** - channel number (should match fifo_ren*)
     reg   [1:0] cur_chn;           // 'b0xx - none, 'b1** - ** - channel number (should match fifo_ren*)
-    reg  [31:0] left_to_eof;  // number of chunks left to end of frame
+    reg  [31:0] left_to_eof;  // number of chunks left to end of frame (one less: 3 means 4 left)
     reg   [3:0] fifo_flush_d;      // fifo_flush* delayed by 1 clk (to detect rising edge
     reg   [3:0] eof_stb;           // single-cycle pulse after fifo_flush is asserted
 //    reg   [1:0] w64_cnt;           // count 64-bit words in a chunk
 // adjusted counters used for channel arbitration
+// pessimistic FIFO content counter - decrements (form FIFO counter) on FIFO reads, knows nothing of writes
     reg  [35:0] counts_corr0; // registers to hold corrected (decremented currently processed ones if any) fifo count values, MSB - needs flush
     reg  [17:0] counts_corr1; // first arbitration level winning values
     reg   [8:0] counts_corr2;      // second arbitration level winning values
@@ -231,6 +232,8 @@ each group of 4 bits per channel : bits [1:0] - select, bit[2] - sset (0 - nop),
 //                                 3'h4 :
 //                                ({1'b0,left_to_eof[winner2 * 8 +: 2]} + 3'h1);
 
+    // Why it has priority for |counts_corr2[7:2] ? If next frame started, it may skip EOF? Or not?
+    // it is just to pass to a channel, actual transfer size will be decided here (depending on EOF) 
     wire  [1:0] pre_chunk_inc_m1 = (|counts_corr2[7:2])? // Would like to increment, if not roll-over
                                    2'h3 :
                                    left_to_eof[winner2 * 8 +: 2];
@@ -252,12 +255,15 @@ each group of 4 bits per channel : bits [1:0] - select, bit[2] - sset (0 - nop),
     
     wire [26:0] chunk_ptr_rd;
     wire [ 3:0] chunk_ptr_ra;
+    
+    // If flushing - whatever is left to EOF, otherwise corrected FIFO contents of the winner
     wire [ 7:0] items_left = counts_corr2[8] ? left_to_eof[(winner2 * 8)  +: 8] : counts_corr2[7:0];
     
     reg   [5:0] afi_awid_r;
-    
+    // "rollover" - roll over destination memory range 
     wire [2:0] max_wlen; // 0,1,2,3,7 (7 - not limited by rollover) - calculated by cmprs_afi_mux_ptr
-    wire [1:0] want_wleft32 = (|items_left[7:2])? 2'b11 : items_left[1:0]; // want to set wleft[3:2] if not roll-over
+    // wants to write (want_wleft32+1) 32-byte chunks (4,3,2,1)
+    wire [1:0] want_wleft32 = (|items_left[7:2])? 2'b11 : items_left[1:0]; // want to set wleft[3:2] if not roll-over (actually "3" means 2)
 
     assign cmd_we_status_w = cmd_we && ((cmd_a & 'hc) ==       CMPRS_AFIMUX_STATUS_CNTRL);    
     assign cmd_we_mode_w =   cmd_we && (cmd_a ==               CMPRS_AFIMUX_MODE);    
@@ -366,16 +372,22 @@ each group of 4 bits per channel : bits [1:0] - select, bit[2] - sset (0 - nop),
         // TODO: change &w64_cnt[1:0] so left_to_eof[*] will be updated earlier and valid at pre_busy_w       
         // Done, updating at the first (not last) word of 4
         // Now seems that eof_stb[i] & fifo_ren{i} == 0
-        if (eof_stb[0])                      left_to_eof[0 * 8 +: 8] <= fifo_count0_m1 - (fifo_ren0 & (&wleft[1:0]));
+        // Seems needs to decrement fifo_count0_m1 regardless of &wleft[1:0] - if started, will eventually decrement
+        // How to make sure that decremented value always >0?
+//        if (eof_stb[0])                      left_to_eof[0 * 8 +: 8] <= fifo_count0_m1 - (fifo_ren0 & (&wleft[1:0]));
+        if (eof_stb[0])                      left_to_eof[0 * 8 +: 8] <= fifo_count0_m1 - fifo_ren0;
         else if (fifo_ren0 & (&wleft[1:0]))  left_to_eof[0 * 8 +: 8] <= left_to_eof[0 * 8 +: 8] - 1;
     
-        if (eof_stb[1])                      left_to_eof[1 * 8 +: 8] <= fifo_count1_m1 - (fifo_ren1 & (&wleft[1:0]));
+//        if (eof_stb[1])                      left_to_eof[1 * 8 +: 8] <= fifo_count1_m1 - (fifo_ren1 & (&wleft[1:0]));
+        if (eof_stb[1])                      left_to_eof[1 * 8 +: 8] <= fifo_count1_m1 - fifo_ren1;
         else if (fifo_ren1 & (&wleft[1:0]))  left_to_eof[1 * 8 +: 8] <= left_to_eof[1 * 8 +: 8] - 1;
     
-        if (eof_stb[2])                      left_to_eof[2 * 8 +: 8] <= fifo_count2_m1 - (fifo_ren2 & (&wleft[1:0]));
+//        if (eof_stb[2])                      left_to_eof[2 * 8 +: 8] <= fifo_count2_m1 - (fifo_ren2 & (&wleft[1:0]));
+        if (eof_stb[2])                      left_to_eof[2 * 8 +: 8] <= fifo_count2_m1 - fifo_ren2;
         else if (fifo_ren2 & (&wleft[1:0]))  left_to_eof[2 * 8 +: 8] <= left_to_eof[2 * 8 +: 8] - 1;
     
-        if (eof_stb[3])                      left_to_eof[3 * 8 +: 8] <= fifo_count3_m1 - (fifo_ren3 & (&wleft[1:0]));
+//        if (eof_stb[3])                      left_to_eof[3 * 8 +: 8] <= fifo_count3_m1 - (fifo_ren3 & (&wleft[1:0]));
+        if (eof_stb[3])                      left_to_eof[3 * 8 +: 8] <= fifo_count3_m1 - fifo_ren3;
         else if (fifo_ren3 & (&wleft[1:0]))  left_to_eof[3 * 8 +: 8] <= left_to_eof[3 * 8 +: 8] - 1;
     
         // Calculate corrected values decrementing currently served channel (if any) values by 1 (latency 1 clk)

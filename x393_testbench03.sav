@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.3.66 (w)1999-2015 BSI
-[*] Sun Nov 15 22:03:05 2015
+[*] Wed Nov 18 00:58:20 2015
 [*]
 [dumpfile] "/home/andrey/git/x393/simulation/x393_testbench03-20151115142219571.fst"
 [dumpfile_mtime] "Sun Nov 15 22:02:48 2015"
 [dumpfile_size] 287600988
 [savefile] "/home/andrey/git/x393/x393_testbench03.sav"
-[timestart] 69077000
+[timestart] 0
 [size] 1823 1180
 [pos] 0 0
-*-18.688070 69667459 107947388 109212388 108561548 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-25.097748 69667459 107947388 109212388 108561548 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] x393_testbench03.
 [treeopen] x393_testbench03.par12_hispi_psp4l0_i.
 [treeopen] x393_testbench03.par12_hispi_psp4l0_i.cmprs_channel_block[0].
@@ -930,7 +930,7 @@ x393_testbench03.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_linear_wr_sensor_i
 @1401200
 -mcntr_linear_rw_sensor0
 -sensor_channel_0
-@800200
+@c00200
 -DDR3
 @28
 x393_testbench03.ddr3_i.SDCLK
@@ -943,7 +943,7 @@ x393_testbench03.ddr3_i.SDBA[2:0]
 x393_testbench03.ddr3_i.SDD_D[15:0]
 @200
 -
-@1000200
+@1401200
 -DDR3
 @c00200
 -simul_sensor_0
@@ -995,7 +995,7 @@ x393_testbench03.simul_sensor12bits_2_i.stopped
 x393_testbench03.simul_sensor12bits_2_i.stoppedd
 @1401200
 -simul_sensor_0
-@800200
+@c00200
 -PX1
 @28
 x393_testbench03.PX1_MCLK_PRE
@@ -1029,7 +1029,7 @@ x393_testbench03.PX1_MRST
 x393_testbench03.PX1_OFST
 x393_testbench03.PX1_SHUTTER
 x393_testbench03.PX1_VACT
-@1000200
+@1401200
 -PX1
 @c00200
 -SENSOR0
@@ -1114,9 +1114,8 @@ x393_testbench03.par12_hispi_psp4l0_i.simul_clk_div_mult_i.en
 @1401200
 -clk_mult_div
 -par_hispi_sel
-@800200
+@c00200
 -sens_hispi_12l4
-@c00201
 -lane0
 @28
 x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.ipclk
@@ -1183,7 +1182,7 @@ x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.se
 x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[0].sens_hispi_lane_i.shift_val[1:0]
 @1001200
 -group_end
-@1401201
+@1401200
 -lane0
 @800200
 -fifo0
@@ -1257,7 +1256,7 @@ x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.se
 -group_end
 @200
 -
-@1000200
+@1401200
 -sens_hispi_12l4
 @c00200
 -par_hspi_0
@@ -2256,7 +2255,7 @@ x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huff
 -
 @1401200
 -stuffer_metadata
-@800200
+@c00200
 -new_compressor
 @28
 x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.frame_start_dst
@@ -2394,10 +2393,10 @@ x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huff
 x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.bit_stuffer_metadata_i.imgsz4[21:0]
 @1000200
 -comressor
+@1401200
 -new_compressor
-@800200
-- new_compressor_chn2
 @c00200
+- new_compressor_chn2
 -tile_rd_chn2
 @200
 -
@@ -2636,6 +2635,7 @@ x393_testbench03.x393_i.mcntrl393_i.sens_comp_block[2].mcntrl_tiled_rd_compresso
 -
 @1000200
 -memory
+@1401200
 - new_compressor_chn2
 @22
 x393_testbench03.x393_i.compressor393_i.genblk3.cmprs_afi0_mux_i.fifo_rdata0[63:0]
@@ -2712,6 +2712,15 @@ x393_testbench03.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.cmd1_buf_i.we
 x393_testbench03.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.cmd1_buf_i.web[3:0]
 @1401200
 -memctrl_sequencer_cmd1buf
+@28
+x393_testbench03.x393_i.compressor393_i.genblk3.cmprs_afi0_mux_i.mclk
+x393_testbench03.x393_i.compressor393_i.genblk3.cmprs_afi0_mux_i.hclk
+x393_testbench03.x393_i.compressor393_i.genblk3.cmprs_afi0_mux_i.fifo_rst0
+x393_testbench03.x393_i.compressor393_i.genblk3.cmprs_afi0_mux_i.fifo_ren0
+@200
+-
+@29
+x393_testbench03.x393_i.compressor393_i.genblk3.cmprs_afi0_mux_i.eof_written0
 @200
 -
 [pattern_trace] 1

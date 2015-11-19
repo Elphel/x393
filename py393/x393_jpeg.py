@@ -39,8 +39,11 @@ import x393_axi_control_status
 import x393_utils
 #import time
 import x393_sens_cmprs
+import x393_sensor
+import x393_cmprs
 import x393_cmprs_afi
 import vrlg
+import time
 STD_QUANT_TBLS = {
                   "Y_landscape":( 16,  11,  10,  16,  24,  40,  51,  61,
                                   12,  12,  14,  19,  26,  58,  60,  55,
@@ -162,7 +165,8 @@ class X393Jpeg(object):
     x393_utils=None
     x393_cmprs_afi = None
     x393_sens_cmprs = None
-    
+    x393Sensor = None
+    x393Cmprs = None
     verbose=1
     def __init__(self, debug_mode=1,dry_mode=True, saveFileName=None):
         self.DEBUG_MODE=  debug_mode
@@ -173,6 +177,8 @@ class X393Jpeg(object):
         self.x393_cmprs_afi =     x393_cmprs_afi.X393CmprsAfi(debug_mode,dry_mode)
         self.x393_utils=          x393_utils.X393Utils(debug_mode,dry_mode, saveFileName) # should not overwrite save file path
         self.x393_sens_cmprs =    x393_sens_cmprs.X393SensCmprs(debug_mode,dry_mode, saveFileName)
+        self.x393Sensor =         x393_sensor.X393Sensor(debug_mode,dry_mode, saveFileName)
+        self.x393Cmprs =          x393_cmprs.X393Cmprs(debug_mode,dry_mode, saveFileName)
 
         try:
             self.verbose=vrlg.VERBOSE
@@ -627,6 +633,135 @@ class X393Jpeg(object):
         return {"header":buf,
                 "quantization":qtables["fpga"],
                 "huffman":  self.huff_tables[FPGA_HUFFMAN_TABLE]}
+        
+        
+    def jpeg_acquire_write(self,
+                   file_path = "img.jpeg", 
+                   channel =        0, 
+                   cmode =          None, # vrlg.CMPRS_CBIT_CMODE_JPEG18, # read it from the saved
+                   bayer     =      None,
+
+                   y_quality =      None,
+                   c_quality =      None,
+                   portrait =       None,
+                   
+                   gamma =          None, # 0.57,
+                   black =          None, # 0.04,
+                   colorsat_blue =  None, # 2.0, colorsat_blue, #0x180     # 0x90 for 1x
+                   colorsat_red =   None, # 2.0, colorsat_red, #0x16c,     # 0xb6 for x1
+
+                   server_root = "/www/pages/",
+                   verbose    = 1):
+        """
+        Acquire JPEG/JP4 image(s), wait completion, create file(s) 
+        @param file_path - camera file system path (starts with "/") or relative to web server root 
+        @param channel -   compressor channel
+        @param cmode - 0: color JPEG, 5 - JP4
+        @param bayer -   Bayer shift
+        @param y_quality - 1..100 - quantization quality for Y component
+        @param c_quality - 1..100 - quantization quality for color components ("same" - use y_quality)
+        @param portrait - False - use normal order, True - transpose for portrait mode images
+        @param gamma - gamma value (1.0 - linear)
+        @param black - black level, 1.0 corresponds to 256 for 8bit values
+        @param colorsat_blue - color saturation for blue (10 bits), 0x90 for 100%
+        @param colorsat_red -  color saturation for red (10 bits), 0xb6 for 100%
+        @param server_root - files ystem path to the web server root directory
+        @param verbose - verbose level
+        """
+        window = self.x393_sens_cmprs.specify_window(verbose = verbose) # will be updated if more parameters are specified
+        #First update quality/portrait/compression mode
+        if  (y_quality is not None) or (c_quality is not None) or (portrait is not None):
+            window = self.x393_sens_cmprs.specify_window(y_quality= y_quality,
+                                                         c_quality = c_quality,
+                                                         portrait = portrait,
+                                                         verbose = verbose)
+            self.set_qtables(chn =       channel,
+                             index =     0,   # index of a table pair
+                             y_quality = window["y_quality"],
+                             c_quality = window["c_quality"],
+                             portrait =  window["portrait"],
+                             verbose =   verbose)
+        # recalculate gamma if needed  with program_gamma
+        if  (gamma is not None) or (black is not None):
+            window = self.x393_sens_cmprs.specify_window(gamma= gamma,
+                                                         black = black)
+            self.x393Sensor.program_gamma (num_sensor =  channel,
+                                                sub_channel = 0,
+                                                gamma =       window["gamma"],
+                                                black =       window["black"],
+                                                page =        0)
+            
+        # Update compressor settings if needed  setup_compressor
+        if  (cmode is not None) or (bayer is not None) or (colorsat_blue is not None) or (colorsat_red is not None):
+            window = self.x393_sens_cmprs.specify_window(cmode= cmode,
+                                                         bayer = bayer,
+                                                         colorsat_blue = colorsat_blue,
+                                                         colorsat_red = colorsat_red,
+                                                         verbose = verbose)
+            self.x393_sens_cmprs.setup_compressor(chn =              channel, # All
+                                                  cmode =            window["cmode"],
+                                                  bayer =            window["bayer"],
+                                                  qbank =            0,
+                                                  dc_sub =           1,
+                                                  multi_frame =      1,
+                                                  focus_mode =       0,
+                                                  coring =           0,
+                                                  window_width =     window["width"], #None, # 2592,   # 2592
+                                                  window_height =    window["height"], #None, # 1944,   # 1944
+                                                  window_left =      window["left"], #None, # 0,     # 0
+                                                  window_top =       window["top"], #None, # 0, # 0? 1?
+                                                  last_buf_frame =   1,  #  - just 2-frame buffer
+                                                  colorsat_blue =    min(int(round(window["colorsat_blue"]*0x90)),1023),
+                                                  colorsat_red =     min(int(round(window["colorsat_red"]*0xb6)),1023),
+                                                  verbose =          verbose)
+        # read and save image pointer for each channel (report mode/status should be configured appropriately) afi_mux_get_image_pointer
+        old_pointers=[]
+        for i in range(4):
+            old_pointers.append(self.x393_cmprs_afi.afi_mux_get_image_pointer(
+                                                     port_afi= 0,
+                                                     channel = i))            
+        #start single-frame acquisition (on each channel)
+        self.x393Cmprs.compressor_control(chn = channel,
+                                          run_mode = 2)
+        #Wait with timeout for all enabled images
+        channel_mask = [False, False, False, False]
+        try:
+            if (channel == all) or (channel[0].upper() == "A"): #all is a built-in function
+                for i in range(4):
+                    channel_mask[i]=True
+            else:
+                channel_mask[int(channel)]=True         
+        except:
+            channel_mask[int(channel)]=True
+        now = time.time()
+        timeout_time = now + 1.0 #seconds
+        #print("channel_mask = ",channel_mask, "channel = ",channel )
+        while time.time() < timeout_time:
+            allNew = True;
+            for i, en in enumerate(channel_mask):
+                if en:
+                    if self.x393_cmprs_afi.afi_mux_get_image_pointer(port_afi= 0, channel = i) == old_pointers[i]: # frame pointer is not updated
+                        allNew = False;
+                        break;
+            if allNew: # all selected channels have updated frame pointers
+                break
+        numChannels=0;
+        for en in channel_mask:
+            if en:
+                numChannels+=1      
+        #Now generate JPEG/JP4 file    
+        self.jpeg_write(file_path =   file_path, 
+                        channel =     channel,
+                        y_quality =   window["y_quality"],
+                        c_quality =   window["c_quality"],
+                        portrait =    window["portrait"],
+                        byrshift =    window["bayer"],
+                        server_root = server_root,
+                        verbose =     verbose)
+        if verbose > 0:
+            self.x393_sens_cmprs.specify_window(verbose = 2)
+        return numChannels
+    
     def jpeg_write(self,
                    file_path = "img.jpeg", 
                    channel =   0, 
@@ -656,7 +791,7 @@ class X393Jpeg(object):
                 allFiles = True
         except:
             pass
-        window = self.x393_sens_cmprs.specify_window()
+        window = self.x393_sens_cmprs.specify_window(verbose = verbose)
         if   window["cmode"] == vrlg.CMPRS_CBIT_CMODE_JP4:
             file_path = file_path.replace(".jpeg",".jp4")
         elif window["cmode"] == vrlg.CMPRS_CBIT_CMODE_JP46:
@@ -728,14 +863,17 @@ class X393Jpeg(object):
                           channel =      channel,
                           cirbuf_start = x393_sens_cmprs.GLBL_CIRCBUF_STARTS[channel],
                           circbuf_len =  x393_sens_cmprs.GLBL_CIRCBUF_CHN_SIZE,
-                          verbose = 1)
-        print ("meta = ",meta)
-        for s in meta["segments"]:
-            print ("start_address = 0x%x, length = 0x%x"%(s[0],s[1]))
+                          verbose = verbose)
+        if verbose > 0 :
+            print ("meta = ",meta)
+        if verbose > 1 :
+            for s in meta["segments"]:
+                print ("start_address = 0x%x, length = 0x%x"%(s[0],s[1]))
         with open (server_root+file_path, "w+b") as bf:
             bf.write(jpeg_data["header"])
             for s in meta["segments"]:
-                print ("start_address = 0x%x, length = 0x%x"%(s[0],s[1]))
+                if verbose > 1 :
+                    print ("start_address = 0x%x, length = 0x%x"%(s[0],s[1]))
                 self.x393_mem._mem_write_to_file (bf =         bf,
                                                   start_addr = s[0],
                                                   length =     s[1])
@@ -839,7 +977,7 @@ cd /usr/local/verilog/; test_mcntrl.py @hargs
 measure_all "*DI"
 setup_all_sensors True None 0xf
 #compressor_control  all  None  None  None None None  3
-set_sensor_hispi_lanes 0 1 2 3 0
+#set_sensor_hispi_lanes 0 1 2 3 0
 compressor_control  all  None  None  None None None  2
 program_gamma all 0 0.57 0.04
 write_sensor_i2c  0 1 0 0x030600b4
@@ -860,8 +998,6 @@ print_sensor_i2c 0 0x3070 0xff 0x10 0
 #test - running 8, 8-bit
 write_sensor_i2c  0 1 0 0x30700101
 
-#Exposure 0x800 lines
-write_sensor_i2c  0 1 0 0x30120800
 
 #default gain = 0xa, set red and blue (outdoors)
 write_sensor_i2c  0 1 0 0x3028000a
@@ -872,6 +1008,9 @@ write_sensor_i2c  0 1 0 0x302e0010
 write_sensor_i2c  0 1 0 0x3028000a
 write_sensor_i2c  0 1 0 0x302c000b
 write_sensor_i2c  0 1 0 0x302e0010
+
+#Exposure 0x800 lines
+write_sensor_i2c  0 1 0 0x30120800
 
 write_sensor_i2c  0 1 0 0x301a001c
 print_sensor_i2c 0 0x31c6 0xff 0x10 0

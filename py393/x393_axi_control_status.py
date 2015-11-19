@@ -173,6 +173,9 @@ class X393AxiControlStatus(object):
                       {FILE:"vccint",  ITEM:"VCCint",      UNITS:"V", SCALE: 0.001},
                       {FILE:"vccbram", ITEM:"VCCbram",     UNITS:"V", SCALE: 0.001}]
         print("hwmon:")
+        if self.DRY_MODE:
+            print ("Not defined for simulation mode")
+            return
         for par in HWMON_ITEMS:
             with open(HWMON_PATH + par[FILE]) as f:
                 d=int(f.read())
