@@ -44,7 +44,7 @@ from argparse import ArgumentParser
 #import argparse
 from argparse import RawDescriptionHelpFormatter
 import time
-
+#import shutil
 import socket
 import select
 
@@ -476,8 +476,20 @@ USAGE
                 print ('\n"parameters" and "defines" list known defined parameters and macros')
                 print ("args.exception=%d, QUIET=%d"%(args.exceptions,QUIET))
                 print ("Enter 'R' to toggle show/hide command results, now it is %s"%(("OFF","ON")[showResult]))
-                print ("Use 'socket_port' [PORT] to (re-)open socket on PORT (0 or no PORT - disable socket)")
+                print ("Use 'socket_port [PORT]' to (re-)open socket on PORT (0 or no PORT - disable socket)")
+ #               print ("Use 'copy <SRC> <DST> to copy files in file the system")
                 print ("Use 'pydev_predefines' to generate a parameter list to paste to vrlg.py, so Pydev will be happy")
+            elif lineList[0].upper() == 'R':
+                if len(lineList)>1:
+                    if (lineList[1].upper() == "ON") or (lineList[1].upper() == "1") or (lineList[1].upper() == "TRUE"):
+                        showResult=True
+                    elif (lineList[1].upper() == "OFF") or (lineList[1].upper() == "0") or (lineList[1].upper() == "FALSE"):
+                        showResult=False
+                    else:
+                        print ("Unrecognized parameter %s for 'R' command"%lineList[1])
+                else:
+                    showResult = not showResult
+                print ("Show results mode is now %s"%(("OFF","ON")[showResult]))
             elif (lineList[0].upper() == 'SOCKET_PORT') and (not soc_conn): # socket_conn):
                 if socket_conn : # close old socket (if open)
                     print ("Closed socket on port %d"%(PORT))
@@ -496,20 +508,9 @@ USAGE
                             print ('Bind failed. Error Code : %s Message %s'%( str(msg[0]),msg[1]))
                             socket_conn = None # do not use sockets
                 continue            
-            elif lineList[0].upper() == 'R':
-                if len(lineList)>1:
-                    if (lineList[1].upper() == "ON") or (lineList[1].upper() == "1") or (lineList[1].upper() == "TRUE"):
-                        showResult=True
-                    elif (lineList[1].upper() == "OFF") or (lineList[1].upper() == "0") or (lineList[1].upper() == "FALSE"):
-                        showResult=False
-                    else:
-                        print ("Unrecognized parameter %s for 'R' command"%lineList[1])
-                else:
-                    showResult = not showResult
-                print ("Show results mode is now %s"%(("OFF","ON")[showResult]))
-#            elif (len(line) > len("help")) and (line[:len("help")]=='help'):
+#            elif lineList[0] == 'copy':
+#                shutil.copy2(lineList[1], lineList[2])    
             elif lineList[0] == 'help':
-#                helpFilter=line[len('help'):].strip()
                 helpFilter=lineList[1] # should not fail
                 try:
                     re.match(helpFilter,"")

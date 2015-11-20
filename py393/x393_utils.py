@@ -38,7 +38,7 @@ from x393_mem import X393Mem
 from time import sleep
 import vrlg # global parameters
 import x393_axi_control_status
-
+import shutil
 DEFAULT_BITFILE="/usr/local/verilog/x393.bit"
 FPGA_RST_CTRL= 0xf8000240
 FPGA0_THR_CTRL=0xf8000178
@@ -290,4 +290,13 @@ class X393Utils(object):
                 print ("Failed to write to %s"%(os.path.abspath(fileName)))
         else:
             print(txt)   
-
+    def copy (self,
+              src,
+              dst):
+        """
+        Copy files in the file system
+        @param src - source path
+        @param dst - destination path/directory
+        """
+        shutil.copy2(src, dst)    
+        

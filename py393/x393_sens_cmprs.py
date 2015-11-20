@@ -68,15 +68,15 @@ GLBL_MEMBRIDGE_END =    None
 GLBL_BUFFER_END =       None
 GLBL_WINDOW =           None
 
-SENSOR_INTERFACE_PARALLEL = "PAR12"
-SENSOR_INTERFACE_HISPI =    "HISPI"
+#SENSOR_INTERFACE_PARALLEL = "PAR12"
+#SENSOR_INTERFACE_HISPI =    "HISPI"
 # for now - single sensor type per interface
-SENSOR_INTERFACES={SENSOR_INTERFACE_PARALLEL: {"mv":2800, "freq":24.0,   "iface":"2V5_LVDS"},
-                   SENSOR_INTERFACE_HISPI:    {"mv":1820, "freq":24.444, "iface":"1V8_LVDS"}}
+SENSOR_INTERFACES={x393_sensor.SENSOR_INTERFACE_PARALLEL: {"mv":2800, "freq":24.0,   "iface":"2V5_LVDS"},
+                   x393_sensor.SENSOR_INTERFACE_HISPI:    {"mv":1820, "freq":24.444, "iface":"1V8_LVDS"}}
 
-SENSOR_DEFAULTS= {SENSOR_INTERFACE_PARALLEL: {"width":2592, "height":1944, "top":0, "left":0, "slave":0x48, "i2c_delay":100, "bayer":3},
+SENSOR_DEFAULTS= {x393_sensor.SENSOR_INTERFACE_PARALLEL: {"width":2592, "height":1944, "top":0, "left":0, "slave":0x48, "i2c_delay":100, "bayer":3},
 #                   SENSOR_INTERFACE_HISPI:   {"width":4608, "height":3288, "top":0, "left":0, "slave":0x10, "i2c_delay":100}}
-                   SENSOR_INTERFACE_HISPI:   {"width":4384, "height":3288, "top":0, "left":0, "slave":0x10, "i2c_delay":100, "bayer":2}}
+                   x393_sensor.SENSOR_INTERFACE_HISPI:   {"width":4384, "height":3288, "top":0, "left":0, "slave":0x10, "i2c_delay":100, "bayer":2}}
 
 class X393SensCmprs(object):
     DRY_MODE =           True # True
@@ -208,19 +208,19 @@ class X393SensCmprs(object):
             print ("Turned on +3.3V power for sensors %s"%(("0, 1","2, 3")[sub_pair]))    
 #        time.sleep(0.1)
             
-    def getSensorInterfaceType(self):
-        """
-        Get sensor interface type by reading status register 0xfe that is set to 0 for parallel and 1 for HiSPi
-        @return "PAR12" or "HISPI"
-        """
-        return (SENSOR_INTERFACE_PARALLEL, SENSOR_INTERFACE_HISPI)[self.x393_axi_tasks.read_status(address=0xfe)] # "PAR12" , "HISPI"
+#    def getSensorInterfaceType(self):
+#        """
+#        Get sensor interface type by reading status register 0xfe that is set to 0 for parallel and 1 for HiSPi
+#        @return "PAR12" or "HISPI"
+#        """
+#        return (SENSOR_INTERFACE_PARALLEL, SENSOR_INTERFACE_HISPI)[self.x393_axi_tasks.read_status(address=0xfe)] # "PAR12" , "HISPI"
 
     def setupSensorsPowerClock(self,quiet=0):
         """
         Set interface voltage for all sensors, clock for frequency and sensor power
         for the interface matching bitstream file
         """
-        ifaceType = self.getSensorInterfaceType();
+        ifaceType = self.x393Sensor.getSensorInterfaceType();
         if quiet == 0:
             print ("Configuring sensor ports for interface type: \"%s\""%(ifaceType))    
         for sub_pair in (0,1):
@@ -282,7 +282,7 @@ class X393SensCmprs(object):
         @return True if all done, False if exited prematurely through exit_step
         """
 #        @param compressor_left_margin - 0..31 - left margin for compressor (to the nearest 32-byte column)
-        sensorType = self.getSensorInterfaceType()
+        sensorType = self.x393Sensor.getSensorInterfaceType()
         if verbose > 0 :
             print ("Sensor port %d interface type: %s"%(num_sensor, sensorType))
         window = self.specify_window (window_width =  window_width,
@@ -618,7 +618,7 @@ class X393SensCmprs(object):
         global GLBL_WINDOW
         if GLBL_WINDOW is None:
             GLBL_WINDOW = {}
-        sensorType = self.getSensorInterfaceType()
+        sensorType = self.x393Sensor.getSensorInterfaceType()
         if verbose > 0 :
             print ("Sensor interface type: %s"%(sensorType))
         if window_width is None:
@@ -697,7 +697,6 @@ class X393SensCmprs(object):
             except:
                 colorsat_red = 2.0 #  *0xb6
                 
-                
         GLBL_WINDOW = {"width":         window_width,
                        "height":        window_height,
                        "left":          window_left,
@@ -747,7 +746,86 @@ class X393SensCmprs(object):
             print ("membridge end =             0x%x"%(GLBL_MEMBRIDGE_END))
             print ("membridge size =            %d bytes"%(GLBL_MEMBRIDGE_END - GLBL_MEMBRIDGE_START))
             print ("memory buffer end =         0x%x"%(GLBL_BUFFER_END))
+    def setup_cmdmux (self):
+        #Will report frame number for each channel
+        """
+        Configure status report for command sequencer to report 4 LSB of each channel frame number
+        with get_frame_numbers()
+        """    
+        self.x393_axi_tasks.program_status( # also takes snapshot
+                                           base_addr = vrlg.CMDSEQMUX_ADDR,
+                                           reg_addr =  0,
+                                           mode =      3,     # input [1:0] mode;
+                                           seq_num =   0)     #input [5:0] seq_num;
+    def get_frame_numbers(self):
+        """
+        @return list of 4-bit frame numbers, per channel
+        """
+        status =   self.x393_axi_tasks.read_status(address = vrlg.CMDSEQMUX_STATUS)
+        frames = []
+        for i in range(4):
+            frames.append (int((status >> (4*i)) & 0xf))
+        return frames
+    
+    def get_frame_number_i2c(self,
+                             channel=0):
+        """
+        @return frame number of the i2c sequencer for the specified channel
+        """
+        try:
+            if (channel == all) or (channel[0].upper() == "A"): #all is a built-in function
+                frames=[]
+                for channel in range(4):
+                    frames.append(self.get_frame_number_i2c(channel = channel))
+                return frames    
+        except:
+            pass                    
+        status = self.x393_axi_tasks.read_status(
+                    address = vrlg.SENSI2C_STATUS_REG_BASE + channel * vrlg.SENSI2C_STATUS_REG_INC + vrlg.SENSI2C_STATUS_REG_REL)
+        return int((status >> 12) & 0xf)
         
+    def skip_frame(self,
+                   channel_mask,
+                   loop_delay = 0.01,
+                   timeout = 2.0):
+        old_frames = self.get_frame_numbers()
+        timeout_time = time.time() + timeout
+        frameno = -1
+        while time.time() < timeout_time :
+            new_frames = self.get_frame_numbers()
+            all_new=True
+            for chn in range(4):
+                if ((channel_mask >> chn) & 1):
+                    if (old_frames[chn] == new_frames[chn]):
+                        all_new = False
+                        break
+                    else:
+                        frameno = new_frames[chn]
+            if all_new:
+                break;
+        return frameno # Frame number of the last  new frame checked         
+
+    def skip_frame_i2c(self,
+                   channel_mask,
+                   loop_delay = 0.01,
+                   timeout = 2.0):
+        old_frames = self.get_frame_number_i2c("all")
+        timeout_time = time.time() + timeout
+        frameno = -1
+        while time.time() < timeout_time :
+            new_frames = self.get_frame_number_i2c("all")
+            all_new=True
+            for chn in range(4):
+                if ((channel_mask >> chn) & 1):
+                    if (old_frames[chn] == new_frames[chn]):
+                        all_new = False
+                        break
+                    else:
+                        frameno = new_frames[chn]
+            if all_new:
+                break;
+        return frameno # Frame number of the last  new frame checked         
+             
     def setup_compressor(self,
                           chn,
                           cmode =            vrlg.CMPRS_CBIT_CMODE_JPEG18,
@@ -980,7 +1058,7 @@ class X393SensCmprs(object):
         """
         global GLBL_CIRCBUF_CHN_SIZE, GLBL_CIRCBUF_STARTS, GLBL_CIRCBUF_END, GLBL_MEMBRIDGE_START, GLBL_MEMBRIDGE_END, GLBL_BUFFER_END, GLBL_WINDOW
 
-        sensorType = self.getSensorInterfaceType()
+        sensorType = self.x393Sensor.getSensorInterfaceType()
         if verbose > 0 :
             print ("Sensor interface type: %s"%(sensorType))
         window = self.specify_window (window_width =  window_width,
@@ -1085,6 +1163,11 @@ class X393SensCmprs(object):
                                        mode =    3,   # input [1:0] mode;
                                        seq_num = 0)   # input [5:0] seq_num;
 
+        if verbose >0 :
+            print ("===================== CMDSEQMUX_SETUP =========================")
+        #Will report frame number for each channel
+        self.setup_cmdmux()    
+           
         if exit_step == 2: return False
         if verbose >0 :
             print ("===================== RTC_SETUP =========================")
@@ -1186,7 +1269,7 @@ class X393SensCmprs(object):
                                 early_release_0 = True,
                                 verbose = verbose)
     
-                if sensorType ==  SENSOR_INTERFACE_PARALLEL:
+                if sensorType ==  x393_sensor.SENSOR_INTERFACE_PARALLEL:
                     self.x393Sensor.set_sensor_i2c_table_reg_wr (
                                     num_sensor = num_sensor,
                                     page       = 0,
@@ -1229,7 +1312,7 @@ class X393SensCmprs(object):
                                     bit_delay  =    i2c_delay,
                                     verbose =       verbose)
 
-                elif sensorType == SENSOR_INTERFACE_HISPI:
+                elif sensorType == x393_sensor.SENSOR_INTERFACE_HISPI:
                     for page in (0,1,2,3,4,5,6,                           # SMIA configuration registers
                                  0x10,0x11,0x12,0x13,0x14,                # SMIA limit registers
                                  0x30,0x31,0x32,0x33,0x34,0x35,0x36,0x37, # Manufacturer registers

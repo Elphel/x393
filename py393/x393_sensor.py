@@ -40,6 +40,9 @@ import x393_utils
 import time
 import vrlg
 import x393_mcntrl
+#import x393_sens_cmprs
+SENSOR_INTERFACE_PARALLEL = "PAR12"
+SENSOR_INTERFACE_HISPI =    "HISPI"
 
 class X393Sensor(object):
     DRY_MODE= True # True
@@ -47,6 +50,7 @@ class X393Sensor(object):
     x393_mem=None
     x393_axi_tasks=None #x393X393AxiControlStatus
     x393_utils=None
+
     verbose=1
     def __init__(self, debug_mode=1,dry_mode=True, saveFileName=None):
         self.DEBUG_MODE=  debug_mode
@@ -54,10 +58,18 @@ class X393Sensor(object):
         self.x393_mem=            X393Mem(debug_mode,dry_mode)
         self.x393_axi_tasks=      x393_axi_control_status.X393AxiControlStatus(debug_mode,dry_mode)
         self.x393_utils=          x393_utils.X393Utils(debug_mode,dry_mode, saveFileName) # should not overwrite save file path
+        
         try:
             self.verbose=vrlg.VERBOSE
         except:
             pass
+    def getSensorInterfaceType(self):
+        """
+        Get sensor interface type by reading status register 0xfe that is set to 0 for parallel and 1 for HiSPi
+        @return "PAR12" or "HISPI"
+        """
+        return (SENSOR_INTERFACE_PARALLEL, SENSOR_INTERFACE_HISPI)[self.x393_axi_tasks.read_status(address=0xfe)] # "PAR12" , "HISPI"
+        
     def program_status_sensor_i2c( self,
                                    num_sensor,
                                    mode,     # input [1:0] mode;
@@ -477,6 +489,21 @@ class X393Sensor(object):
         if verbose > 1:
             print ("ta= 0x%x, td = 0x%x"%(ta,td))
 
+    def write_sensor_reg16(self,
+                           num_sensor,
+                           reg_addr16,
+                           reg_data16):
+        """
+        Write i2c register in immediate mode
+        @param num_sensor - sensor port number (0..3), or "all" - same to all sensors
+        @param reg_addr16 - 16-bit register address (page+low byte, for MT9F006 high byte is an 8-bit slave address = 0x90)
+        @param reg_data16 - 16-bit data to write to sesnor register
+        """
+        self.write_sensor_i2c (num_sensor = num_sensor,
+                               rel_addr = True,
+                               addr = 0,
+                               data = ((reg_addr16 & 0xffff) << 16) | (reg_data16 & 0xffff) )
+
     def write_sensor_i2c (self,
                           num_sensor,
                           rel_addr,
@@ -564,7 +591,7 @@ class X393Sensor(object):
                           reg_addr,
                           indx =  1,
                           sa7   = 0x48,
-                          verbose = 0):
+                          verbose = 1):
         """
         Read sequence of bytes available and print the result as a single hex number
         @param num_sensor - sensor port number (0..3), or "all" - same to all sensors
@@ -601,10 +628,107 @@ class X393Sensor(object):
             d = 0
             for b in dl:
                 d = (d << 8) | (b & 0xff)
-            fmt="i2c data[0x%02x:0x%x] = 0x%%0%dx"%(sa7,reg_addr,len(dl)*2)
-            print (fmt%(d))    
+            if verbose > 0:    
+                fmt="i2c data[0x%02x:0x%x] = 0x%%0%dx"%(sa7,reg_addr,len(dl)*2)
+                print (fmt%(d))    
+        return d
 
-    
+    def set_sensor_flipXY(self,
+                                  num_sensor,
+                                  flip_x =  False,
+                                  flip_y =  False,
+                                  verbose = 1):
+        """
+        Set sensor horizontal and vertical mirror (flip)
+        @param num_sensor - sensor number or "all"
+        @param flip_x -  mirror image around vertical axis
+        @param flip_y -  mirror image around horizontal axis
+        @param verbose - verbose level
+        """
+        sensorType = self.getSensorInterfaceType()
+        if flip_x is None:
+            flip_x = False
+        if flip_y is None:
+            flip_y = False
+            
+        if sensorType == "PAR12":
+            data = (0,0x8000)[flip_y] | (0,0x4000)[flip_x]  
+            self.write_sensor_reg16 (num_sensor = num_sensor,
+                                     reg_addr16 = 0x9020,
+                                     reg_data16 = data)
+        elif sensorType == "HISPI":
+            data = (0,0x8000)[flip_y] | (0,0x4000)[flip_x] | 0x41  
+            self.write_sensor_reg16 (num_sensor = num_sensor,
+                                     reg_addr16 = 0x3040,
+                                     reg_data16 = data)
+        else:
+            raise ("Unknown sensor type: %s"%(sensorType))
+
+    def set_sensor_gains_exposure(self,
+                                  num_sensor,
+                                  gain_r =   None,
+                                  gain_gr =  None,
+                                  gain_gb =  None,
+                                  gain_b =   None,
+                                  exposure = None,
+                                  verbose =  1):
+        """
+        Set sensor analog gains (raw register values) and
+        exposure (in scan lines)
+        @param num_sensor - sensor number or "all"
+        @param gain_r -   RED gain
+        @param gain_gr -  GREEN in red row gain
+        @param gain_gb -  GREEN in blue row gain
+        @param gain_b -   BLUE gain
+        @param exposure - exposure time in scan lines
+        @param verbose -  verbose level
+        """
+        sensorType = self.getSensorInterfaceType()
+        if sensorType == "PAR12":
+            if not gain_r is None:
+                self.write_sensor_reg16 (num_sensor = num_sensor,
+                                         reg_addr16 = 0x902c,
+                                         reg_data16 = gain_r)
+            if not gain_gr is None:
+                self.write_sensor_reg16 (num_sensor = num_sensor,
+                                         reg_addr16 = 0x902b,
+                                         reg_data16 = gain_gr)
+            if not gain_gb is None:
+                self.write_sensor_reg16 (num_sensor = num_sensor,
+                                         reg_addr16 = 0x902e,
+                                         reg_data16 = gain_gb)
+            if not gain_b is None:
+                self.write_sensor_reg16 (num_sensor = num_sensor,
+                                         reg_addr16 = 0x902d,
+                                         reg_data16 = gain_b)
+            if not exposure is None:
+                self.write_sensor_reg16 (num_sensor = num_sensor,
+                                         reg_addr16 = 0x9009,
+                                         reg_data16 = exposure)
+        elif sensorType == "HISPI":
+            if not gain_r is None:
+                self.write_sensor_reg16 (num_sensor = num_sensor,
+                                         reg_addr16 = 0x208,
+                                         reg_data16 = gain_r)
+            if not gain_gr is None:
+                self.write_sensor_reg16 (num_sensor = num_sensor,
+                                         reg_addr16 = 0x206, # SMIA register
+                                         reg_data16 = gain_gr)
+            if not gain_gb is None:
+                self.write_sensor_reg16 (num_sensor = num_sensor,
+                                         reg_addr16 = 0x20c, # SMIA register
+                                         reg_data16 = gain_gb)
+            if not gain_b is None:
+                self.write_sensor_reg16 (num_sensor = num_sensor,
+                                         reg_addr16 = 0x20a, # SMIA register
+                                         reg_data16 = gain_b)
+            if not exposure is None:
+                self.write_sensor_reg16 (num_sensor = num_sensor,
+                                         reg_addr16 = 0x202, # SMIA register
+                                         reg_data16 = exposure)
+        else:
+            raise ("Unknown sensor type: %s"%(sensorType))
+                                     
     def set_sensor_io_ctl (self,
                            num_sensor,
                            mrst =       None,

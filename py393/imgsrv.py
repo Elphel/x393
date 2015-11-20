@@ -40,6 +40,13 @@ import sys
 
 path="/www/pages/img.jpeg"
 PORT=8888
+def communicate(port,snd_str):
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.connect(('localhost', port))
+    sock.send(snd_str)
+    reply = sock.recv(16384)  # limit reply to 16K
+    sock.close()
+    return reply
 try:
     qs=urlparse.parse_qs(os.environ['QUERY_STRING'])
 except:
@@ -51,15 +58,22 @@ acquisition_parameters={
         "file_path":    "img.jpeg",
         "channel":      "0",
         "cmode":        "0",
-        "bayer":        "None",
-        "y_quality":    "None",
-        "c_quality":    "None",
-        "portrait":     "None",
-        "gamma":        "None",
-        "black":        "None",
-        "colorsat_blue":"None",
-        "colorsat_red": "None",
+        "bayer":        None,
+        "y_quality":    None,
+        "c_quality":    None,
+        "portrait":     None,
+        "gamma":        None,
+        "black":        None,
+        "colorsat_blue":None,
+        "colorsat_red": None,
         "server_root":  "/www/pages/",
+        "gain_r":       None,
+        "gain_gr":      None,
+        "gain_gb":      None,
+        "gain_b":       None,
+        "expos":        None,
+        "flip_x":       None,
+        "flip_y":       None,
         "verbose":      "0"}
 for k in qs:
     if k == "cmode":
@@ -69,6 +83,18 @@ for k in qs:
             acquisition_parameters[k] = "0"
     else:
         acquisition_parameters[k] = qs[k][0]
+#correct bayer (if specified) for flips
+if ((not acquisition_parameters["bayer"] is None) and
+    ((not acquisition_parameters["flip_x"] is None) or
+     (not acquisition_parameters["flip_y"] is None))):
+    ibayer= int (acquisition_parameters["bayer"])
+    if acquisition_parameters["flip_x"]:
+        if int (acquisition_parameters["flip_x"]):
+            ibayer ^= 1
+    if int (acquisition_parameters["flip_y"]):
+        ibayer ^= 2
+    acquisition_parameters["bayer"] = str(ibayer)    
+        
 cmd_str = "jpeg_acquire_write %s %s %s %s %s %s %s %s %s %s %s %s %s"%(
            str(acquisition_parameters["file_path"]),
            str(acquisition_parameters["channel"]),
@@ -83,13 +109,51 @@ cmd_str = "jpeg_acquire_write %s %s %s %s %s %s %s %s %s %s %s %s %s"%(
            str(acquisition_parameters["colorsat_red"]),
            str(acquisition_parameters["server_root"]),
            str(acquisition_parameters["verbose"]))
+gains_exp_changed = False
+geometry_changed = False
+#change gains/exposure if needed
+if ((not acquisition_parameters["gain_r"]  is None) or 
+    (not acquisition_parameters["gain_gr"] is None) or
+    (not acquisition_parameters["gain_gb"] is None) or
+    (not acquisition_parameters["gain_b"]  is None) or
+    (not acquisition_parameters["expos"]   is None)):
+    gains_exp_changed = True
+    gstr = "set_sensor_gains_exposure %s %s %s %s %s %s %s"%(
+            str(acquisition_parameters["channel"]),
+            str(acquisition_parameters["gain_r"]),
+            str(acquisition_parameters["gain_gr"]),
+            str(acquisition_parameters["gain_gb"]),
+            str(acquisition_parameters["gain_b"]),
+            str(acquisition_parameters["expos"]),
+            str(acquisition_parameters["verbose"]))
+    communicate(PORT, gstr)
 
-sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-sock.connect(('localhost', PORT))
-sock.send(cmd_str)
-reply = sock.recv(16384)  # limit reply to 16K
-sock.close()
+#change flips if needed
+if ((not acquisition_parameters["flip_x"]  is None) or 
+    (not acquisition_parameters["flip_yr"] is None)):
+    geometry_changed = True
+    fstr = "set_sensor_flipXY %s %s %s %s"%(
+            str(acquisition_parameters["channel"]),
+            str(acquisition_parameters["flip_x"]),
+            str(acquisition_parameters["flip_y"]),
+            str(acquisition_parameters["verbose"]))
+    communicate(PORT, fstr)
+#How many bad/non modified frames are to be skipped (just a guess)    
+skip_frames = 0
+if geometry_changed:
+    skip_frames = 2
+elif gains_exp_changed:
+    skip_frames = 1
+if (str(acquisition_parameters["channel"])[0].upper() == 'A'):
+    channel_mask = 0x0f
+else:
+    channel_mask = 1 << int(acquisition_parameters["channel"])
+skip_str= "skip_frame %d"%(channel_mask)    
+for i in range(skip_frames):
+    communicate(PORT, skip_str)
+# Now - get that image                      
 
+reply = communicate(PORT,cmd_str)
 if (acquisition_parameters["cmode"] =="5"):
     path = path.replace("jpeg","jp4")
 
