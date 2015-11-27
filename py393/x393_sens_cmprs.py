@@ -753,10 +753,10 @@ class X393SensCmprs(object):
         with get_frame_numbers()
         """    
         self.x393_axi_tasks.program_status( # also takes snapshot
-                                           base_addr = vrlg.CMDSEQMUX_ADDR,
-                                           reg_addr =  0,
-                                           mode =      3,     # input [1:0] mode;
-                                           seq_num =   0)     #input [5:0] seq_num;
+                                           base_addr =    vrlg.CMDSEQMUX_ADDR,
+                                           reg_addr =     0,
+                                           mode =         3,     # input [1:0] mode;
+                                           seq_number =   0)     #input [5:0] seq_num;
     def get_frame_numbers(self):
         """
         @return list of 4-bit frame numbers, per channel
