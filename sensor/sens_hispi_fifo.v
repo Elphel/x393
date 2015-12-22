@@ -34,7 +34,7 @@
 `timescale 1ns/1ps
 
 module  sens_hispi_fifo#(
-  parameter COUNT_START = 7, // wait these many samples input before starting output
+//  parameter COUNT_START = 7, // wait these many samples input before starting output
   parameter DATA_WIDTH = 12,
   parameter DATA_DEPTH = 4 // >=3
 ) (
@@ -44,6 +44,7 @@ module  sens_hispi_fifo#(
     input                       sol,     // start of line - 1 cycle before dv
     input                       eol,     // end of line - last dv 
     input      [DATA_WIDTH-1:0] din,
+    input      [DATA_DEPTH-1:0] out_dly, // wait these many samples input before starting output
     input                       pclk,
     input                       prst,
     input                       re,
@@ -55,8 +56,11 @@ module  sens_hispi_fifo#(
     reg   [DATA_DEPTH:0] ra;
     wire                 line_start_pclk;
     reg                  line_run_ipclk;
+    reg                  line_run_ipclk_d; // to generate start for very short lines (may just use small out_dly value)
     reg                  line_run_pclk;
     reg                  run_r;
+    reg                  start_sent;
+    reg                  start_out_ipclk;
     
     assign run = run_r;
     // TODO: generate early done by comparing ra with (wa-1) - separate counter
@@ -69,6 +73,15 @@ module  sens_hispi_fifo#(
         
         if (irst || eol) line_run_ipclk <= 0;
         else if (sol)    line_run_ipclk <= 1;
+
+        if      (!line_run_ipclk) start_sent <= 0;
+        else if (start_out_ipclk) start_sent <= 1;
+        
+        line_run_ipclk_d <= line_run_ipclk;
+        
+        if (irst)  start_out_ipclk <= 0;
+        else       start_out_ipclk <= line_run_ipclk? (!start_sent && we && (wa[DATA_DEPTH-1:0] == out_dly)) : (line_run_ipclk_d && !start_sent);
+        
     end
 
     always @(posedge pclk) begin
@@ -91,7 +104,8 @@ module  sens_hispi_fifo#(
         .rst       (irst),                      // input
         .src_clk   (ipclk),                     // input
         .dst_clk   (pclk),                      // input
-        .in_pulse  (we && (wa == COUNT_START)), // input
+//        .in_pulse  (we && (wa == COUNT_START)), // input
+        .in_pulse  (start_out_ipclk), // input
         .out_pulse (line_start_pclk),           // output
         .busy() // output
     );

@@ -94,7 +94,10 @@ module  status_read#(
     assign axird_rdata=axi_status_rdata_r;
     assign axird_selected = select_r; 
     initial begin
-        ram [DATA_2DEPTH] = FPGA_VERSION;
+        ram [DATA_2DEPTH]   = FPGA_VERSION;
+`ifdef HISPI
+        ram [DATA_2DEPTH-1] = 1; //0 - parallel sensor, 1 - HiSPi sensor 
+`endif         
     end
     always @ (posedge axi_clk) begin
         if      (arst)              select_r <= 0;

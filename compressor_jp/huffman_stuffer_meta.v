@@ -161,6 +161,11 @@ module  huffman_stuffer_meta(
         .data_out_valid (data_out_valid),     // output reg 
         .done           (done),               // output reg 
         .running        (running)             // output reg 
+`ifdef DEBUG_RING
+        ,.dbg_etrax_dma (dbg_etrax_dma),      // output[3:0] reg 
+        .dbg_ts_rstb    (dbg_ts_rstb),        // output
+        .dbg_ts_dout    (dbg_ts_dout)         // output[7:0] 
+`endif        
     );
 
 endmodule

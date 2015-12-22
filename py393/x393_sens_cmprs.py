@@ -68,6 +68,16 @@ GLBL_MEMBRIDGE_END =    None
 GLBL_BUFFER_END =       None
 GLBL_WINDOW =           None
 
+#SENSOR_INTERFACE_PARALLEL = "PAR12"
+#SENSOR_INTERFACE_HISPI =    "HISPI"
+# for now - single sensor type per interface
+SENSOR_INTERFACES={x393_sensor.SENSOR_INTERFACE_PARALLEL: {"mv":2800, "freq":24.0,   "iface":"2V5_LVDS"},
+                   x393_sensor.SENSOR_INTERFACE_HISPI:    {"mv":1820, "freq":24.444, "iface":"1V8_LVDS"}}
+
+SENSOR_DEFAULTS= {x393_sensor.SENSOR_INTERFACE_PARALLEL: {"width":2592, "height":1944, "top":0, "left":0, "slave":0x48, "i2c_delay":100, "bayer":3},
+#                   SENSOR_INTERFACE_HISPI:   {"width":4608, "height":3288, "top":0, "left":0, "slave":0x10, "i2c_delay":100}}
+                   x393_sensor.SENSOR_INTERFACE_HISPI:   {"width":4384, "height":3288, "top":0, "left":0, "slave":0x10, "i2c_delay":100, "bayer":2}}
+
 class X393SensCmprs(object):
     DRY_MODE =           True # True
     DEBUG_MODE =         1
@@ -132,33 +142,102 @@ class X393SensCmprs(object):
         global BUFFER_ADDRESS, BUFFER_LEN
         return BUFFER_ADDRESS + BUFFER_LEN
         
-    def setSensorClock(self, freq_MHz = 24.0):
+    def setSensorClock(self, freq_MHz = 24.0, iface = "2V5_LVDS", quiet = 0):
         """
         Set up external clock for sensor-synchronous circuitry (and sensor(s) themselves. 
         Currently required clock frequency is 1/4 of the sensor clock, so it is 24MHz for 96MHz sensor
-        @param freq_MHz - input clock frequency (MHz). Currently for 96MHZ sensor clock it should be 24.0 
+        @param freq_MHz - input clock frequency (MHz). Currently for 96MHZ sensor clock it should be 24.0
+        @param iface - one of the supported interfaces
+               (see ls /sys/devices/amba.0/e0004000.ps7-i2c/i2c-0/0-0070/output_drivers)
+        @param quiet - reduce output        
         """
-        with open ( SI5338_PATH + "/output_drivers/2V5_LVDS",      "w") as f:
+        if self.DRY_MODE:
+            print ("Not defined for simulation mode")
+            return
+        with open ( SI5338_PATH + "/output_drivers/" + iface,      "w") as f:
             print("2", file = f)
         with open ( SI5338_PATH + "/output_clocks/out2_freq_fract","w") as f:
             print("%d"%(round(1000000*freq_MHz)), file = f )
-    def setSensorPower(self, sub_pair=0, power_on=0):
+        if quiet == 0:
+            print ("Set sensor clock to %f MHz, driver type \"%s\""%(freq_MHz,iface))    
+    def setSensorPower(self, sub_pair=0, power_on=0, quiet=0):
         """
         @param sub_pair - pair of the sensors: 0 - sensors 1 and 2, 1 - sensors 3 and 4 
         @param power_on - 1 - power on, 0 - power off (both sensor power and interface/FPGA bank voltage) 
+        @param quiet - reduce output        
         """
+        if quiet == 0:
+            print (("vcc_sens01 vp33sens01", "vcc_sens23 vp33sens23")[sub_pair]+" -> "+POWER393_PATH + "/channels_"+ ("dis","en")[power_on])    
         with open (POWER393_PATH + "/channels_"+ ("dis","en")[power_on],"w") as f:
             print(("vcc_sens01 vp33sens01", "vcc_sens23 vp33sens23")[sub_pair], file = f)
+
+    def setSensorIfaceVoltage(self, sub_pair, voltage_mv, quiet = 0):
+        """
+        Set interface voltage (should be done before power is on) 
+        @param sub_pair - pair of the sensors: 0 - sensors 1 and 2, 1 - sensors 3 and 4 
+        @param voltage_mv - desired interface voltage (1800..2800 mv) 
+        @param quiet - reduce output        
+        """
+        with open (POWER393_PATH + "/voltages_mv/"+ ("vcc_sens01", "vcc_sens23")[sub_pair],"w") as f:
+            print(voltage_mv, file = f)
+        if quiet == 0:
+            print ("Set sensors %s interface voltage to %d mV"%(("0, 1","2, 3")[sub_pair],voltage_mv))    
+#        time.sleep(0.1)
+    def setSensorIfaceVoltagePower(self, sub_pair, voltage_mv, quiet=0):
+        """
+        Set interface voltage and turn on power for interface and the sensors 
+        @param sub_pair - pair of the sensors: 0 - sensors 1 and 2, 1 - sensors 3 and 4 
+        @param voltage_mv - desired interface voltage (1800..2800 mv) 
+        @param quiet - reduce output        
+        """
+        self.setSensorPower(sub_pair = sub_pair, power_on = 0)
+        time.sleep(0.2)
+        self.setSensorIfaceVoltage(sub_pair=sub_pair, voltage_mv = voltage_mv)
+        time.sleep(0.2)
+        if self.DRY_MODE:
+            print ("Not defined for simulation mode")
+            return
+        with open (POWER393_PATH + "/channels_en","w") as f:
+            print(("vcc_sens01", "vcc_sens23")[sub_pair], file = f)
+        if quiet == 0:
+            print ("Turned on interface power %f V for sensors %s"%(voltage_mv*0.001,("0, 1","2, 3")[sub_pair]))    
+#        time.sleep(0.1)
+        with open (POWER393_PATH + "/channels_en","w") as f:
+            print(("vp33sens01", "vp33sens23")[sub_pair], file = f)
+        if quiet == 0:
+            print ("Turned on +3.3V power for sensors %s"%(("0, 1","2, 3")[sub_pair]))    
+#        time.sleep(0.1)
+            
+#    def getSensorInterfaceType(self):
+#        """
+#        Get sensor interface type by reading status register 0xfe that is set to 0 for parallel and 1 for HiSPi
+#        @return "PAR12" or "HISPI"
+#        """
+#        return (SENSOR_INTERFACE_PARALLEL, SENSOR_INTERFACE_HISPI)[self.x393_axi_tasks.read_status(address=0xfe)] # "PAR12" , "HISPI"
+
+    def setupSensorsPowerClock(self,quiet=0):
+        """
+        Set interface voltage for all sensors, clock for frequency and sensor power
+        for the interface matching bitstream file
+        """
+        ifaceType = self.x393Sensor.getSensorInterfaceType();
+        if quiet == 0:
+            print ("Configuring sensor ports for interface type: \"%s\""%(ifaceType))    
+        for sub_pair in (0,1):
+            self.setSensorIfaceVoltagePower(sub_pair, SENSOR_INTERFACES[ifaceType]["mv"])
+        self.setSensorClock(freq_MHz = SENSOR_INTERFACES[ifaceType]["freq"], iface = SENSOR_INTERFACES[ifaceType]["iface"])    
+        
+#    def setSensorClock(self, freq_MHz = 24.0, iface = "2V5_LVDS"):
 
     def setup_sensor_channel (self,
                               exit_step =                 None,
                               num_sensor =                0,
 #                              histogram_start_phys_page, # Calculate from?
 #                              frame_full_width, # 13-bit Padded line length (8-row increment), in 8-bursts (16 bytes)
-                              window_width =              2592,   # 2592
-                              window_height =             1944,   # 1944
-                              window_left =               0,     # 0
-                              window_top =                0, # 0? 1?
+                              window_width =              None, # 2592,   # 2592
+                              window_height =             None, # 1944,   # 1944
+                              window_left =               None, # 0,     # 0
+                              window_top =                None, # 0, # 0? 1?
 #                              compressor_left_margin =    0, #0?`1? 
 #                              frame_start_address, # calculate through num_sensor, num frames, frame size and start addr?
 #                              frame_start_address_inc,
@@ -166,10 +245,10 @@ class X393SensCmprs(object):
                               colorsat_blue =             0x180,     # 0x90 fo 1x
                               colorsat_red =              0x16c,     # 0xb6 for x1
                               clk_sel =                   1,         # 1
-                              histogram_left =            0,
-                              histogram_top =             0,
-                              histogram_width_m1 =        2559, #0,
-                              histogram_height_m1 =       1935, #0,
+                              histogram_left =            None, # 0,
+                              histogram_top =             None, # 0,
+                              histogram_width_m1 =        None, # 2559, #0,
+                              histogram_height_m1 =       None, # 1935, #0,
                               verbose =                   1):
         """
         Setup one sensor+compressor channel (for one sub-channel only)
@@ -203,6 +282,42 @@ class X393SensCmprs(object):
         @return True if all done, False if exited prematurely through exit_step
         """
 #        @param compressor_left_margin - 0..31 - left margin for compressor (to the nearest 32-byte column)
+        sensorType = self.x393Sensor.getSensorInterfaceType()
+        if verbose > 0 :
+            print ("Sensor port %d interface type: %s"%(num_sensor, sensorType))
+        window = self.specify_window (window_width =  window_width,
+                                      window_height = window_height,
+                                      window_left =   window_left,
+                                      window_top =    window_top,
+                                      cmode =         None, # will use 0
+                                      verbose =       0)
+        window_width =   window["width"]
+        window_height =  window["height"]
+        window_left =    window["left"]
+        window_top =     window["top"]
+        """
+        cmode =          window["cmode"]
+        if window_width is None:
+            window_width = SENSOR_DEFAULTS[sensorType]["width"]
+        if window_height is None:
+            window_height = SENSOR_DEFAULTS[sensorType]["height"]
+        if window_left is None:
+            window_left = SENSOR_DEFAULTS[sensorType]["left"]
+        if window_top is None:
+            window_top = SENSOR_DEFAULTS[sensorType]["top"]
+        """
+            
+        #setting up histogram window, same for parallel, similar for serial
+                    
+        if histogram_left is None:
+            histogram_left = 0
+        if histogram_top is None:
+            histogram_top = 0
+        if histogram_width_m1 is None:
+            histogram_width_m1 = window_width - 33
+        if histogram_height_m1 is None:
+            histogram_height_m1 = window_height - 9
+
         
         align_to_bursts = 64 # align full width to multiple of align_to_bursts. 64 is the size of memory access
         width_in_bursts = window_width >> 4
@@ -290,7 +405,7 @@ class X393SensCmprs(object):
                                           run_mode = 0) # reset compressor
         #TODO: Calculate from the image size?
         self.x393Cmprs.setup_compressor_channel (
-                                  num_sensor = num_sensor,
+                                  chn =               num_sensor,
                                   qbank =             0,
                                   dc_sub =            True,
                                   cmode =             vrlg.CMPRS_CBIT_CMODE_JPEG18,
@@ -321,10 +436,12 @@ class X393SensCmprs(object):
             print ("frame_full_width = 0x%x"%(frame_full_width))
             print ("window_width =     0x%x"%(width32 * 2 )) # window_width >> 4)) # width in 16 - bursts, made evem
             print ("window_height =    0x%x"%(window_height & 0xfffffff0))
-            print ("window_left =      0x%x"%(left_tiles32 * 2)) # window_left >> 4)) # lext in 16-byte bursts, made even
+            print ("window_left =      0x%x"%(left_tiles32 * 2)) # window_left >> 4)) # left in 16-byte bursts, made even
             print ("window_top =       0x%x"%(window_top))
             print ("byte32 =           1")
             print ("tile_width =       2")
+            print ("tile_vstep =      16")
+            print ("tile_height =     18")
             print ("extra_pages =      1")
             print ("disable_need =     1")
 
@@ -340,6 +457,8 @@ class X393SensCmprs(object):
             window_top =       window_top,                  # input [31:0] window_top;
             byte32 =           1,
             tile_width =       2,
+            tile_vstep =      16,
+            tile_height =     18,
             extra_pages =      1,
             disable_need =     1)
 
@@ -478,17 +597,125 @@ class X393SensCmprs(object):
             repet_mode = True, #  Normal mode, single trigger - just for debugging  TODO: re-assign?
             trig = False)
         return True
+
     def specify_window (self,
-                        window_width =              2592,   # 2592
-                        window_height =             1944,   # 1944
-                        window_left =               0,     # 0
-                        window_top =                0, # 0? 1?
+                        window_width =              None, # 2592
+                        window_height =             None, # 1944
+                        window_left =               None,     # 0
+                        window_top =                None, # 0? 1?
+                        cmode =                     None,
+                        bayer =                     None,
+                        y_quality =                 None,
+                        c_quality =                 None, # use "same" to save None
+                        portrait =                  None,
+                        gamma =                     None,
+                        black =                     None, # 0.04 
+                        colorsat_blue =             None, # colorsat_blue, #0x180     # 0x90 for 1x
+                        colorsat_red =              None, # colorsat_red, #0x16c,     # 0xb6 for x1
+                        verbose =                   1
                         ):
+    
         global GLBL_WINDOW
-        GLBL_WINDOW = {"width":  window_width,
-                       "height": window_height,
-                       "left":   window_left,
-                       "top":    window_top}
+        if GLBL_WINDOW is None:
+            GLBL_WINDOW = {}
+        sensorType = self.x393Sensor.getSensorInterfaceType()
+        if verbose > 0 :
+            print ("Sensor interface type: %s"%(sensorType))
+        if window_width is None:
+            try:
+                window_width = GLBL_WINDOW["width"]
+            except:
+                window_width = SENSOR_DEFAULTS[sensorType]["width"]
+        if window_height is None:
+            try:
+                window_height = GLBL_WINDOW["height"]
+            except:
+                window_height = SENSOR_DEFAULTS[sensorType]["height"]
+        if window_left is None:
+            try:
+                window_left = GLBL_WINDOW["left"]
+            except:
+                window_left = SENSOR_DEFAULTS[sensorType]["left"]
+        if window_top is None:
+            try:
+                window_top = GLBL_WINDOW["top"]
+            except:
+                window_top = SENSOR_DEFAULTS[sensorType]["top"]
+        if cmode is None:
+            try:
+                cmode = GLBL_WINDOW["cmode"]
+            except:
+                cmode = 0
+
+        if bayer is None:
+            try:
+                bayer = GLBL_WINDOW["bayer"]
+            except:
+                bayer = SENSOR_DEFAULTS[sensorType]["bayer"]
+
+        if y_quality is None:
+            try:
+                y_quality = GLBL_WINDOW["y_quality"]
+            except:
+                y_quality = 100
+
+        if c_quality is None:
+            try:
+                c_quality = GLBL_WINDOW["c_quality"]
+            except:
+                c_quality = "same"
+        if c_quality == "same": # to save as None, not to not save
+                c_quality = None 
+                
+        if portrait is None:
+            try:
+                portrait = GLBL_WINDOW["portrait"]
+            except:
+                portrait = False
+                
+        if gamma is None:
+            try:
+                gamma = GLBL_WINDOW["gamma"]
+            except:
+                gamma = 0.57
+
+        if black is None:
+            try:
+                black = GLBL_WINDOW["black"]
+            except:
+                black = 0.04
+
+        if colorsat_blue is None:
+            try:
+                colorsat_blue = GLBL_WINDOW["colorsat_blue"]
+            except:
+                colorsat_blue = 2.0 # *0x90
+
+        if colorsat_red is None:
+            try:
+                colorsat_red = GLBL_WINDOW["colorsat_red"]
+            except:
+                colorsat_red = 2.0 #  *0xb6
+                
+        GLBL_WINDOW = {"width":         window_width,
+                       "height":        window_height,
+                       "left":          window_left,
+                       "top":           window_top,
+                       "cmode":         cmode,
+                       "bayer":         bayer,
+                       "y_quality":     y_quality,
+                       "c_quality":     c_quality,
+                       "portrait":      portrait,
+                       "gamma":         gamma,
+                       "black":         black,
+                       "colorsat_blue": colorsat_blue,
+                       "colorsat_red":  colorsat_red,
+                       }
+        if verbose > 1:
+            print("GLBL_WINDOW:")
+            for k in GLBL_WINDOW.keys():
+                print ("%15s:%s"%(k,str(GLBL_WINDOW[k])))
+        return GLBL_WINDOW
         
                 
     def specify_phys_memory(self,
@@ -519,30 +746,276 @@ class X393SensCmprs(object):
             print ("membridge end =             0x%x"%(GLBL_MEMBRIDGE_END))
             print ("membridge size =            %d bytes"%(GLBL_MEMBRIDGE_END - GLBL_MEMBRIDGE_START))
             print ("memory buffer end =         0x%x"%(GLBL_BUFFER_END))
+    def setup_cmdmux (self):
+        #Will report frame number for each channel
+        """
+        Configure status report for command sequencer to report 4 LSB of each channel frame number
+        with get_frame_numbers()
+        """    
+        self.x393_axi_tasks.program_status( # also takes snapshot
+                                           base_addr =    vrlg.CMDSEQMUX_ADDR,
+                                           reg_addr =     0,
+                                           mode =         3,     # input [1:0] mode;
+                                           seq_number =   0)     #input [5:0] seq_num;
+    def get_frame_numbers(self):
+        """
+        @return list of 4-bit frame numbers, per channel
+        """
+        status =   self.x393_axi_tasks.read_status(address = vrlg.CMDSEQMUX_STATUS)
+        frames = []
+        for i in range(4):
+            frames.append (int((status >> (4*i)) & 0xf))
+        return frames
+    
+    def get_frame_number_i2c(self,
+                             channel=0):
+        """
+        @return frame number of the i2c sequencer for the specified channel
+        """
+        try:
+            if (channel == all) or (channel[0].upper() == "A"): #all is a built-in function
+                frames=[]
+                for channel in range(4):
+                    frames.append(self.get_frame_number_i2c(channel = channel))
+                return frames    
+        except:
+            pass                    
+        status = self.x393_axi_tasks.read_status(
+                    address = vrlg.SENSI2C_STATUS_REG_BASE + channel * vrlg.SENSI2C_STATUS_REG_INC + vrlg.SENSI2C_STATUS_REG_REL)
+        return int((status >> 12) & 0xf)
         
-                                
+    def skip_frame(self,
+                   channel_mask,
+                   loop_delay = 0.01,
+                   timeout = 2.0):
+        old_frames = self.get_frame_numbers()
+        timeout_time = time.time() + timeout
+        frameno = -1
+        while time.time() < timeout_time :
+            new_frames = self.get_frame_numbers()
+            all_new=True
+            for chn in range(4):
+                if ((channel_mask >> chn) & 1):
+                    if (old_frames[chn] == new_frames[chn]):
+                        all_new = False
+                        break
+                    else:
+                        frameno = new_frames[chn]
+            if all_new:
+                break;
+        return frameno # Frame number of the last  new frame checked         
+
+    def skip_frame_i2c(self,
+                   channel_mask,
+                   loop_delay = 0.01,
+                   timeout = 2.0):
+        old_frames = self.get_frame_number_i2c("all")
+        timeout_time = time.time() + timeout
+        frameno = -1
+        while time.time() < timeout_time :
+            new_frames = self.get_frame_number_i2c("all")
+            all_new=True
+            for chn in range(4):
+                if ((channel_mask >> chn) & 1):
+                    if (old_frames[chn] == new_frames[chn]):
+                        all_new = False
+                        break
+                    else:
+                        frameno = new_frames[chn]
+            if all_new:
+                break;
+        return frameno # Frame number of the last  new frame checked         
+             
+    def setup_compressor(self,
+                          chn,
+                          cmode =            vrlg.CMPRS_CBIT_CMODE_JPEG18,
+                          bayer =            0,
+                          qbank =            0,
+                          dc_sub =           1,
+                          multi_frame =      1,
+                          focus_mode =       0,
+                          coring =           0,
+                          window_width =     None, # 2592,   # 2592
+                          window_height =    None, # 1944,   # 1944
+                          window_left =      None, # 0,     # 0
+                          window_top =       None, # 0, # 0? 1?
+                          last_buf_frame =   1,  #  - just 2-frame buffer
+                          colorsat_blue =    0x180,     # 0x90 for 1x
+                          colorsat_red =     0x16c,     # 0xb6 for x1
+                          verbose =          1):
+        """
+        @param chn -         compressor channel (0..3)
+        @param cmode -       color mode:
+                                CMPRS_CBIT_CMODE_JPEG18 =          0 - color 4:2:0
+                                CMPRS_CBIT_CMODE_MONO6 =           1 - mono 4:2:0 (6 blocks)
+                                CMPRS_CBIT_CMODE_JP46 =            2 - jp4, 6 blocks, original
+                                CMPRS_CBIT_CMODE_JP46DC =          3 - jp4, 6 blocks, dc -improved
+                                CMPRS_CBIT_CMODE_JPEG20 =          4 - mono, 4 blocks (but still not actual monochrome JPEG as the blocks are scanned in 2x2 macroblocks)
+                                CMPRS_CBIT_CMODE_JP4 =             5 - jp4,  4 blocks, dc-improved
+                                CMPRS_CBIT_CMODE_JP4DC =           6 - jp4,  4 blocks, dc-improved
+                                CMPRS_CBIT_CMODE_JP4DIFF =         7 - jp4,  4 blocks, differential
+                                CMPRS_CBIT_CMODE_JP4DIFFHDR =      8 - jp4,  4 blocks, differential, hdr
+                                CMPRS_CBIT_CMODE_JP4DIFFDIV2 =     9 - jp4,  4 blocks, differential, divide by 2
+                                CMPRS_CBIT_CMODE_JP4DIFFHDRDIV2 = 10 - jp4,  4 blocks, differential, hdr,divide by 2
+                                CMPRS_CBIT_CMODE_MONO1 =          11 -  mono JPEG (not yet implemented)
+                                CMPRS_CBIT_CMODE_MONO4 =          14 -  mono 4 blocks
+        @param qbank -       quantization table page (0..15)
+        @param dc_sub -      True - subtract DC before running DCT, False - no subtraction, convert as is,
+        @param multi_frame -  False - single-frame buffer, True - multi-frame video memory buffer,
+        @param bayer -        Bayer shift (0..3)
+        @param focus_mode -   focus mode - how to combine image with "focus quality" in the result image 
+        @param coring - coring value
+        @param window_width -      (here - in pixels)
+        @param window_height -     16-bit window height in scan lines
+        @param window_left -       left margin of the window (here - in pixels)
+        @param window_top -        top margin of the window (16 bit)
+        @param last_buf_frame) -   16-bit number of the last frame in a buffer
+        @param colorsat_blue - color saturation for blue (10 bits), 0x90 for 100%
+        @param colorsat_red -  color saturation for red (10 bits), 0xb6 for 100%
+        @param verbose - verbose level
+        """
+        try:
+            if (chn == all) or (chn[0].upper() == "A"): #all is a built-in function
+                for chn in range(4):
+                    self. setup_compressor(self,
+                                           chn =            chn,
+                                           cmode =          cmode,
+                                           qbank =          qbank,
+                                           dc_sub =         dc_sub,
+                                           multi_frame =    multi_frame,
+                                           bayer =          bayer,
+                                           focus_mode =     focus_mode,
+                                           coring =         coring,
+                                           window_width =   None, # 2592,   # 2592
+                                           window_height =  None, # 1944,   # 1944
+                                           window_left =    None, # 0,     # 0
+                                           window_top =     None, # 0, # 0? 1?
+                                           last_buf_frame = last_buf_frame,  #  - just 2-frame buffer
+                                           colorsat_blue =  colorsat_blue, #0x180     # 0x90 for 1x
+                                           colorsat_red =   colorsat_red, #0x16c,     # 0xb6 for x1
+                                           verbose =        verbose)
+                return
+        except:
+            pass
+        window = self.specify_window (window_width =  window_width,
+                                      window_height = window_height,
+                                      window_left =   window_left,
+                                      window_top =    window_top,
+                                      cmode =         cmode, # will use 0
+                                      verbose =       0)
+        window_width =   window["width"]
+        window_height =  window["height"]
+        window_left =    window["left"]
+        window_top =     window["top"]
+        cmode =          window["cmode"]
+        num_sensor = chn # 1:1 sensor - compressor
+        
+        align_to_bursts = 64 # align full width to multiple of align_to_bursts. 64 is the size of memory access
+        width_in_bursts = window_width >> 4
+        if (window_width & 0xf):
+            width_in_bursts += 1
+        compressor_left_margin = window_left % 32
+    
+        num_burst_in_line = (window_left >> 4) + width_in_bursts
+        num_pages_in_line = num_burst_in_line // align_to_bursts;
+        if num_burst_in_line % align_to_bursts:
+            num_pages_in_line += 1
+        frame_full_width =  num_pages_in_line * align_to_bursts
+        num8rows=   (window_top + window_height) // 8
+        if (window_top + window_height) % 8:
+            num8rows += 1
+        frame_start_address_inc = num8rows * frame_full_width
+
+        num_macro_cols_m1 = (window_width >> 4) - 1
+        num_macro_rows_m1 = (window_height >> 4) - 1
+        frame_start_address = (last_buf_frame + 1) * frame_start_address_inc * num_sensor
+        
+        self.x393Cmprs.setup_compressor_channel (
+                                  chn =               chn,
+                                  qbank =             qbank,
+                                  dc_sub =            dc_sub,
+                                  cmode =             cmode, # vrlg.CMPRS_CBIT_CMODE_JPEG18,
+                                  multi_frame =       True,
+                                  bayer       =       bayer,
+                                  focus_mode  =       focus_mode,
+                                  num_macro_cols_m1 = num_macro_cols_m1,
+                                  num_macro_rows_m1 = num_macro_rows_m1,
+                                  left_margin =       compressor_left_margin,
+                                  colorsat_blue =     colorsat_blue,
+                                  colorsat_red =      colorsat_red,
+                                  coring =            0,
+                                  verbose =           verbose)
+    # TODO: calculate widths correctly!
+        if cmode == vrlg.CMPRS_CBIT_CMODE_JPEG18:
+            tile_margin = 2 # 18x18 instead of 16x16
+            tile_width =  2
+            extra_pages = 1
+            
+        else: # actually other modes should be parsed here, now considering just JP4 flavors
+            tile_margin = 0 # 18x18 instead of 16x16
+            tile_width =  4
+#            extra_pages = (0,1)[(compressor_left_margin % 16) != 0] # memory access block border does not cut macroblocks
+            extra_pages = 1 # just testing
+        tile_vstep = 16
+        tile_height = tile_vstep + tile_margin
+
+        left_tiles32 = window_left // 32
+        last_tile32 = (window_left + ((num_macro_cols_m1 + 1) * 16) + tile_margin - 1) // 32
+        width32 = last_tile32 - left_tiles32 + 1 # number of 32-wide tiles needed in each row
+        
+        if (verbose > 0) :
+            print ("setup_compressor_memory:")
+            print ("num_sensor =       ", num_sensor)
+            print ("frame_sa =         0x%x"%(frame_start_address))
+            print ("frame_sa_inc =     0x%x"%(frame_start_address_inc))
+            print ("last_frame_num =   0x%x"%(last_buf_frame))
+            print ("frame_full_width = 0x%x"%(frame_full_width))
+            print ("window_width =     0x%x"%(width32 * 2 )) # window_width >> 4)) # width in 16 - bursts, made evem
+            print ("window_height =    0x%x"%(window_height & 0xfffffff0))
+            print ("window_left =      0x%x"%(left_tiles32 * 2)) # window_left >> 4)) # left in 16-byte bursts, made even
+            print ("window_top =       0x%x"%(window_top))
+            print ("byte32 =           1")
+            print ("tile_width =       0x%x"%(tile_width))
+            print ("tile_vstep =       0x%x"%(tile_vstep))
+            print ("tile_height =      0x%x"%(tile_height))
+            print ("extra_pages =      0x%x"%(extra_pages))
+            print ("disable_need =     1")
+
+        self.x393Cmprs.setup_compressor_memory (
+            num_sensor =       num_sensor,
+            frame_sa =         frame_start_address,         # input [31:0] frame_sa;         # 22-bit frame start address ((3 CA LSBs==0. BA==0)
+            frame_sa_inc =     frame_start_address_inc,     # input [31:0] frame_sa_inc;     # 22-bit frame start address increment  ((3 CA LSBs==0. BA==0)
+            last_frame_num =   last_buf_frame,              # input [31:0] last_frame_num;   # 16-bit number of the last frame in a buffer
+            frame_full_width = frame_full_width,            # input [31:0] frame_full_width; # 13-bit Padded line length (8-row increment), in 8-bursts (16 bytes)
+            window_width =     (width32 * 2 ),              # input [31:0] window_width;     # 13 bit - in 8*16=128 bit bursts
+            window_height =    window_height & 0xfffffff0,  # input [31:0] window_height;    # 16 bit
+            window_left =      left_tiles32 * 2,            # input [31:0] window_left;
+            window_top =       window_top,                  # input [31:0] window_top;
+            byte32 =           1,
+            tile_width =       tile_width,
+            tile_vstep =       tile_vstep,
+            tile_height =      tile_height,
+            extra_pages =      extra_pages,
+            disable_need =     1)
+        
     def setup_all_sensors (self,
                               setup_membridge =           False,
                               exit_step =                 None,
                               sensor_mask =               0x1, # channel 0 only
                               gamma_load =                False,
-#                              histogram_start_phys_page, # Calculate from?
-#                              frame_full_width, # 13-bit Padded line length (8-row increment), in 8-bursts (16 bytes)
-                              window_width =              2592,   # 2592
-                              window_height =             1944,   # 1944
-                              window_left =               0,     # 0
-                              window_top =                0, # 0? 1?
+                              window_width =              None, # 2592,   # 2592
+                              window_height =             None, # 1944,   # 1944
+                              window_left =               None, # 0,     # 0
+                              window_top =                None, # 0, # 0? 1?
                               compressor_left_margin =    0, #0?`1? 
-#                              frame_start_address, # calculate through num_sensor, num frames, frame size and start addr?
-#                              frame_start_address_inc,
                               last_buf_frame =            1,  #  - just 2-frame buffer
                               colorsat_blue =             0x180,     # 0x90 fo 1x
                               colorsat_red =              0x16c,     # 0xb6 for x1
                               clk_sel =                   1,         # 1
-                              histogram_left =            0,
-                              histogram_top =             0,
-                              histogram_width_m1 =        2559, #0,
-                              histogram_height_m1 =       799, #0,
+                              histogram_left =            None,
+                              histogram_top =             None,
+                              histogram_width_m1 =        None, # 2559, #0,
+                              histogram_height_m1 =       None, # 799, #0,
                               circbuf_chn_size=           0x1000000, #16777216
                               verbose =                   1):
         """
@@ -574,26 +1047,60 @@ class X393SensCmprs(object):
         @param last_buf_frame) -   16-bit number of the last frame in a buffer
         @param colorsat_blue - color saturation for blue (10 bits), 0x90 for 100%
         @param colorsat_red -  color saturation for red (10 bits), 0xb6 for 100%
-        @param clk_sel - True - use pixel clock from the sensor, False - use internal clock (provided to the sensor), None - no chnage
+        @param clk_sel - True - use pixel clock from the sensor, False - use internal clock (provided to the sensor), None - no change
         @param histogram_left -      histogram window left margin
         @param histogram_top -       histogram window top margin
         @param histogram_width_m1 -  one less than window width. If 0 - use frame right margin (end of HACT)
         @param histogram_height_m1 - one less than window height. If 0 - use frame bottom margin (end of VACT)
         @param circbuf_chn_size - circular buffer size for each channel, in bytes
-        @parame verbose - verbose level
+        @param verbose - verbose level
         @return True if all done, False if exited prematurely by  exit_step
         """
         global GLBL_CIRCBUF_CHN_SIZE, GLBL_CIRCBUF_STARTS, GLBL_CIRCBUF_END, GLBL_MEMBRIDGE_START, GLBL_MEMBRIDGE_END, GLBL_BUFFER_END, GLBL_WINDOW
-#    camsync_setup (
-#        4'hf ); # sensor_mask); #
 
+        sensorType = self.x393Sensor.getSensorInterfaceType()
+        if verbose > 0 :
+            print ("Sensor interface type: %s"%(sensorType))
+        window = self.specify_window (window_width =  window_width,
+                                      window_height = window_height,
+                                      window_left =   window_left,
+                                      window_top =    window_top,
+                                      cmode =         None, # will use 0
+                                      verbose =       0)
+        window_width =   window["width"]
+        window_height =  window["height"]
+        window_left =    window["left"]
+        window_top =     window["top"]
+        """
+        if window_width is None:
+            window_width = SENSOR_DEFAULTS[sensorType]["width"]
+        if window_height is None:
+            window_height = SENSOR_DEFAULTS[sensorType]["height"]
+        if window_left is None:
+            window_left = SENSOR_DEFAULTS[sensorType]["left"]
+        if window_top is None:
+            window_top = SENSOR_DEFAULTS[sensorType]["top"]
+        """    
+        #setting up histogram window, same for parallel, similar for serial
+                    
+        if histogram_left is None:
+            histogram_left = 0
+        if histogram_top is None:
+            histogram_top = 0
+        if histogram_width_m1 is None:
+            histogram_width_m1 = window_width - 33
+        if histogram_height_m1 is None:
+            histogram_height_m1 = window_height - 1145
 
         self.specify_phys_memory(circbuf_chn_size = circbuf_chn_size)
+        """
         self.specify_window (window_width =  window_width,
                              window_height = window_height,
                              window_left =   window_left,
-                             window_top =    window_top)
-
+                             window_top =    window_top,
+                             cmode =         None, # will use 0
+                             verbose =       0)
+        """
     #TODO: calculate addresses/lengths
         """
         AFI mux is programmed in 32-byte chunks
@@ -628,7 +1135,11 @@ class X393SensCmprs(object):
                                membridge_start = GLBL_MEMBRIDGE_START,
                                membridge_end   = GLBL_MEMBRIDGE_END,
                                verbose         = verbose)
-                
+        
+#        if verbose >0 :
+#            print ("===================== Sensor power setup: sensor ports 0 and 1 =========================")
+#        self.setSensorPower(sub_pair=0, power_on=0)
+        """        
         if sensor_mask & 3: # Need power for sens1 and sens 2
             if verbose >0 :
                 print ("===================== Sensor power setup: sensor ports 0 and 1 =========================")
@@ -640,6 +1151,10 @@ class X393SensCmprs(object):
         if verbose >0 :
             print ("===================== Sensor clock setup 24MHz (will output 96MHz) =========================")
         self.setSensorClock(freq_MHz = 24.0)
+        """
+        if verbose >0 :
+            print ("===================== Set up sensor and interface power, clock generator  =========================")
+        self.setupSensorsPowerClock(quiet = (verbose >0))
         if exit_step == 1: return False
         if verbose >0 :
             print ("===================== GPIO_SETUP =========================")
@@ -648,6 +1163,11 @@ class X393SensCmprs(object):
                                        mode =    3,   # input [1:0] mode;
                                        seq_num = 0)   # input [5:0] seq_num;
 
+        if verbose >0 :
+            print ("===================== CMDSEQMUX_SETUP =========================")
+        #Will report frame number for each channel
+        self.setup_cmdmux()    
+           
         if exit_step == 2: return False
         if verbose >0 :
             print ("===================== RTC_SETUP =========================")
@@ -735,6 +1255,9 @@ class X393SensCmprs(object):
                 
                 if verbose >0 :
                     print ("===================== I2C_SETUP =========================")
+                slave_addr = SENSOR_DEFAULTS[sensorType]["slave"]
+                i2c_delay=  SENSOR_DEFAULTS[sensorType]["i2c_delay"]
+                    
                 self.x393Sensor.set_sensor_i2c_command (
                                 num_sensor = num_sensor,
                                 rst_cmd =   True,
@@ -745,40 +1268,75 @@ class X393SensCmprs(object):
                                 active_sda =      True,
                                 early_release_0 = True,
                                 verbose = verbose)
+    
+                if sensorType ==  x393_sensor.SENSOR_INTERFACE_PARALLEL:
+                    self.x393Sensor.set_sensor_i2c_table_reg_wr (
+                                    num_sensor = num_sensor,
+                                    page       = 0,
+                                    slave_addr = slave_addr,
+                                    rah        = 0,
+                                    num_bytes  = 3, 
+                                    bit_delay  = i2c_delay,
+                                    verbose =    verbose)
+                     
+                    self.x393Sensor.set_sensor_i2c_table_reg_rd (
+                                    num_sensor =    num_sensor,
+                                    page       =    1,
+                                    two_byte_addr = 0,
+                                    num_bytes_rd =  2,
+                                    bit_delay  =    i2c_delay,
+                                    verbose =       verbose)
+    # aliases for indices 0x90 and 0x91
+                    self.x393Sensor.set_sensor_i2c_table_reg_wr (
+                                    num_sensor = num_sensor,
+                                    page       = 0x90,
+                                    slave_addr = slave_addr,
+                                    rah        = 0,
+                                    num_bytes  = 3, 
+                                    bit_delay  = i2c_delay,
+                                    verbose = verbose)
+                     
+                    self.x393Sensor.set_sensor_i2c_table_reg_rd (
+                                    num_sensor =    num_sensor,
+                                    page       =    0x91,
+                                    two_byte_addr = 0,
+                                    num_bytes_rd =  2,
+                                    bit_delay  =    100,
+                                    verbose =       verbose)
+                    
+                    self.x393Sensor.set_sensor_i2c_table_reg_rd ( #for compatibility with HiSPi mode, last page for read
+                                    num_sensor =    num_sensor,
+                                    page       =    0xff,
+                                    two_byte_addr = 0,
+                                    num_bytes_rd =  2,
+                                    bit_delay  =    i2c_delay,
+                                    verbose =       verbose)
 
-                self.x393Sensor.set_sensor_i2c_table_reg_wr (
-                                num_sensor = num_sensor,
-                                page       = 0,
-                                slave_addr = 0x48,
-                                rah        = 0,
-                                num_bytes  = 3, 
-                                bit_delay  = 100,
-                                verbose = verbose)
-                 
-                self.x393Sensor.set_sensor_i2c_table_reg_rd (
-                                num_sensor =    num_sensor,
-                                page       =    1,
-                                two_byte_addr = 0,
-                                num_bytes_rd =  2,
-                                bit_delay  =    100,
-                                verbose =       verbose)
-# aliases for indices 0x90 and 0x91
-                self.x393Sensor.set_sensor_i2c_table_reg_wr (
-                                num_sensor = num_sensor,
-                                page       = 0x90,
-                                slave_addr = 0x48,
-                                rah        = 0,
-                                num_bytes  = 3, 
-                                bit_delay  = 100,
-                                verbose = verbose)
-                 
-                self.x393Sensor.set_sensor_i2c_table_reg_rd (
-                                num_sensor =    num_sensor,
-                                page       =    0x91,
-                                two_byte_addr = 0,
-                                num_bytes_rd =  2,
-                                bit_delay  =    100,
-                                verbose =       verbose)
+                elif sensorType == x393_sensor.SENSOR_INTERFACE_HISPI:
+                    for page in (0,1,2,3,4,5,6,                           # SMIA configuration registers
+                                 0x10,0x11,0x12,0x13,0x14,                # SMIA limit registers
+                                 0x30,0x31,0x32,0x33,0x34,0x35,0x36,0x37, # Manufacturer registers
+                                 0x38,0x39,0x3a,0x3b,0x3c,0x3d,0x3e):
+                        self.x393Sensor.set_sensor_i2c_table_reg_wr (
+                                        num_sensor = num_sensor,
+                                        page       = page,
+                                        slave_addr = slave_addr,
+                                        rah        = page,
+                                        num_bytes  = 4, 
+                                        bit_delay  = i2c_delay,
+                                        verbose = verbose)
+                    
+                    self.x393Sensor.set_sensor_i2c_table_reg_rd ( # last page used for read
+                                    num_sensor =    num_sensor,
+                                    page       =    0xff,
+                                    two_byte_addr = 1,
+                                    num_bytes_rd =  2,
+                                    bit_delay  =    i2c_delay,
+                                    verbose =       verbose)
+                else:
+                    raise ("Unknown sensor type: %s"%(sensorType))
+                
+                
 # Turn off reset (is it needed?)
                 self.x393Sensor.set_sensor_i2c_command (
                                 num_sensor = num_sensor,
@@ -953,6 +1511,7 @@ class X393SensCmprs(object):
         Setup video memory
         """
         mode=   x393_mcntrl.func_encode_mode_scan_tiled(
+                                   skip_too_late = False,                     
                                    disable_need = False,
                                    repetitive=    True,
                                    single =       False,
@@ -1023,9 +1582,9 @@ class X393SensCmprs(object):
                                         ("sensor_channel3_i",  "sensor_channel"),
                                         ("histogram_saxi_i",   "histogram_saxi")),
                       "sensor_channel":(("sens_histogram0_i",  "sens_histogram"),
-                                        ("sens_histogram1_i",  "sens_histogram"),
-                                        ("sens_histogram2_i",  "sens_histogram"),
-                                        ("sens_histogram3_i",  "sens_histogram"),
+#                                        ("sens_histogram1_i",  "sens_histogram"),
+#                                        ("sens_histogram2_i",  "sens_histogram"),
+#                                        ("sens_histogram3_i",  "sens_histogram"),
                                         
                                         ("debug_line_cntr",    16),
                                         ("debug_lines",        16),

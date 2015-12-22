@@ -31,8 +31,18 @@
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
  *******************************************************************************/
-    parameter FPGA_VERSION =          32'h0393006a; // modified clock generation, trying with HiSPi - 72.77% utilization
+    parameter FPGA_VERSION =          32'h03930071;  // Fixing AXI HP multiplexer xclk -0.083 -1.968 44 / 15163 (77.17%)
+//    parameter FPGA_VERSION =          32'h03930070;  // Fixing HiSPi xclk -0.049 -0.291 17, utilization 15139 (77.04%)
+//    parameter FPGA_VERSION =          32'h0393006f;  // Fixing JP4 mode - xcl -0.002 -0.004 2, utilization 15144 (77.07 %)
+//    parameter FPGA_VERSION =          32'h0393006f; // Fixing JP4 mode - xclk -0.209/-2.744/23, utilization  15127 (76.98%)
+//    parameter FPGA_VERSION =          32'h0393006e; // Trying lane switch again after bug fix, failing 1 in  ddr3_mclk -> ddr3_clk_div by  -0.023
+//    parameter FPGA_VERSION =          32'h0393006d; // -1 with lane switch - does not work
+//    parameter FPGA_VERSION =          32'h0393006d; // Reversing pixels/lanes order xclk violated -0.154
+//    parameter FPGA_VERSION =          32'h0393006c; // will try debug for HiSPi.  xclk violated by -0.030, slices 15062 (76.65%)
+//    parameter FPGA_VERSION =          32'h0393006b; // Correcting sensor external clock generation - was wrong division. xclk violated by 0.095 ns
+//    parameter FPGA_VERSION =          32'h0393006a; // modified clock generation, trying with HiSPi - 72.77% utilization x40..x60
 //    parameter FPGA_VERSION =          32'h03930069; // modified clock generation, rebuilding for parallel sensors - all met, 71.8% utilization
+                                                      // Worked OK, but different phase for sensor 0 (all quadrants as 1,3 OK)
 //    parameter FPGA_VERSION =          32'h03930068; // trying BUFR/FUFIO on all sensors ipclk/ipclk2x
 //    parameter FPGA_VERSION =          32'h03930067; // removing DUMMY_TO_KEEP, moving IOSTANDARD to HDL code
 //    parameter FPGA_VERSION =          32'h03930066; // trying just one histogram to watch utilization - with 4 was: Slice 15913 (80.98%), now Slice = 14318 (72.87%)

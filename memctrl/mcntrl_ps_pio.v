@@ -247,35 +247,36 @@ fifo_same_clock   #(
     mcntrl_buf_rd #(
         .LOG2WIDTH_RD(5)
     ) chn0_buf_i (
-        .ext_clk      (port0_clk), // input
-        .ext_raddr    (port0_addr), // input[9:0] 
-        .ext_rd       (port0_re), // input
-        .ext_regen    (port0_regen), // input
-        .ext_data_out (port0_data), // output[31:0] 
-        .wclk         (!mclk), // input
+        .ext_clk      (port0_clk),          // input
+        .ext_raddr    (port0_addr),         // input[9:0] 
+        .ext_rd       (port0_re),           // input
+        .ext_regen    (port0_regen),        // input
+        .ext_data_out (port0_data),         // output[31:0] 
+//        .emul64       (1'b0),               // input Modify buffer addresses (used for JP4 until a 64-wide mode is implemented)
+        .wclk         (!mclk),              // input
         .wpage_in     (page_out_r_negedge), // page_neg), // input[1:0] 
-        .wpage_set    (page_w_set_negedge), //wpage_set_chn0_neg), // input 
-        .page_next    (buf_wpage_nxt), // input
-        .page         (), // output[1:0]
-        .we           (buf_wr), // input
-        .data_in      (buf_wdata) // input[63:0] 
+        .wpage_set    (page_w_set_negedge), // wpage_set_chn0_neg), // input 
+        .page_next    (buf_wpage_nxt),      // input
+        .page         (),                   // output[1:0]
+        .we           (buf_wr),             // input
+        .data_in      (buf_wdata)           // input[63:0] 
     );
     
 // Port 1 (write DDR from AXI) buffer
     mcntrl_buf_wr #(
         .LOG2WIDTH_WR(5)
     ) chn1_buf_i (
-        .ext_clk      (port1_clk), // input
-        .ext_waddr    (port1_addr), // input[9:0] 
-        .ext_we       (port1_we), // input
-        .ext_data_in  (port1_data), // input[31:0] 
-        .rclk         (mclk), // input
-        .rpage_in     (page_out_r), //page), // input[1:0] 
-        .rpage_set    (page_r_set), // rpage_set_chn1), // input 
-        .page_next    (buf_rpage_nxt), // input
-        .page         (), // output[1:0]
-        .rd           (buf_rd), // input
-        .data_out     (buf_rdata) // output[63:0] 
+        .ext_clk      (port1_clk),          // input
+        .ext_waddr    (port1_addr),         // input[9:0] 
+        .ext_we       (port1_we),           // input
+        .ext_data_in  (port1_data),         // input[31:0] 
+        .rclk         (mclk),               // input
+        .rpage_in     (page_out_r),         // page), // input[1:0] 
+        .rpage_set    (page_r_set),         // rpage_set_chn1), // input 
+        .page_next    (buf_rpage_nxt),      // input
+        .page         (),                   // output[1:0]
+        .rd           (buf_rd),             // input
+        .data_out     (buf_rdata)           // output[63:0] 
     );
 
 fifo_same_clock   #(
@@ -283,13 +284,13 @@ fifo_same_clock   #(
     .DATA_DEPTH(PAGE_FIFO_DEPTH) 
     ) page_fifo1_i (
         .rst       (1'b0),
-        .clk       (mclk), // posedge
+        .clk       (mclk),                      // posedge
         .sync_rst  (mrst || !nreset_page_fifo), // synchronously reset fifo;
         .we        (channel_pgm_en),
         .re        (buf_run),
-        .data_in   ({cmd_wr,cmd_page}), //page),
+        .data_in   ({cmd_wr,cmd_page}),         // page),
         .data_out  ({cmd_wr_out,page_out}),
-        .nempty    (), //page_fifo1_nempty),
+        .nempty    (),                          // page_fifo1_nempty),
         .half_full ()
     );
 

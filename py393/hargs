@@ -3,4 +3,5 @@
 -f /usr/local/verilog/x393_parameters.vh   /usr/local/verilog/x393_cur_params_target.vh /usr/local/verilog/x393_localparams.vh
 -l /usr/local/verilog/x393_cur_params_target.vh
 -p PICKLE="/usr/local/verilog/x393_mcntrl.pickle
+-c copy /usr/local/bin/imgsrv.py /www/pages
 -i

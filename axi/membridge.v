@@ -748,7 +748,8 @@ wire [63:0] afi_wdata0;
         .ext_raddr    ({read_page,buf_in_line64[6:0]}), // input[8:0] 
         .ext_rd       (bufrd_rd[0]),                    // input
         .ext_regen    (bufrd_rd[1]),                    // input
-        .ext_data_out (afi_wdata0),                      // output[63:0] 
+        .ext_data_out (afi_wdata0),                     // output[63:0]
+//        .emul64       (1'b0),                           // input Modify buffer addresses (used for JP4 until a 64-wide mode is implemented)
         .wclk         (!mclk),                          // input
         .wpage_in     (2'b0),                           // input[1:0] 
         .wpage_set    (xfer_reset_page_rd),             // input  TODO: Generate @ negedge mclk on frame start

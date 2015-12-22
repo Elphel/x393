@@ -43,6 +43,8 @@ module  mcntrl_buf_rd #(
       input                            ext_regen,    // output register enable
       output [(1 << LOG2WIDTH_RD)-1:0] ext_data_out, // data out
       
+//      input                            emul64,       // emulate 64 pixel wide reads with actual 32-wide columns
+                                                     // in the future - use rd64/wr64 for JP4 mode
       input                            wclk,         // !mclk (inverted)
       input                      [1:0] wpage_in,     // will register to wclk, input OK with mclk
       input                            wpage_set,    // set internal write page to wpage_in 
@@ -54,6 +56,9 @@ module  mcntrl_buf_rd #(
     reg  [1:0] page_r;
     reg  [6:0] waddr;
     assign page=page_r;
+//    wire [4:0] next62_norm = waddr[6:2] + 1;
+//    wire [4:0] next62_rot =  {waddr[2],waddr[6:3]} + 1;
+//    wire [4:0] next62_emul64 = {next62_rot[3:0],next62_rot[4]};
     always @ (posedge wclk) begin
     
         if      (wpage_set) page_r <= wpage_in;
@@ -61,6 +66,13 @@ module  mcntrl_buf_rd #(
 
         if      (page_next || wpage_set) waddr <= 0;
         else if (we)                     waddr <= waddr+1;
+
+//        if      (page_next || wpage_set) waddr[1:0] <= 0;
+//        else if (we)                     waddr[1:0] <= waddr[1:0] + 1;
+
+//        if      (page_next || wpage_set) waddr[6:2] <= 0;
+//        else if (we && (&waddr[1:0]))    waddr[6:2] <= emul64 ? next62_emul64 : next62_norm;
+
     end
 //    ram_512x64w_1kx32r #(
     ram_var_w_var_r #(

@@ -947,6 +947,7 @@ module  mcntrl393 #(
         .ext_rd       (buf2rd_rd), // input
         .ext_regen    (buf2rd_regen), // input
         .ext_data_out (buf2rd_data), // output[31:0] 
+//        .emul64       (1'b0),                           // input Modify buffer addresses (used for JP4 until a 64-wide mode is implemented)
         .wclk         (!mclk), // input
         .wpage_in     (2'b0), // input[1:0] 
         .wpage_set    (xfer_reset_page2_rd), // input  TODO: Generate @ negedge mclk on frame start
@@ -982,6 +983,7 @@ module  mcntrl393 #(
         .ext_rd       (buf3rd_rd), // input
         .ext_regen    (buf3rd_regen), // input
         .ext_data_out (buf3rd_data), // output[31:0] 
+//        .emul64       (1'b0),                // input Modify buffer addresses (used for JP4 until a 64-wide mode is implemented)
         .wclk         (!mclk), // input
         .wpage_in     (2'b0), // input[1:0] 
         .wpage_set    (xfer_reset_page3_rd), // input @ negedge mclk
@@ -1017,6 +1019,7 @@ module  mcntrl393 #(
         .ext_rd       (buf4rd_rd), // input
         .ext_regen    (buf4rd_regen), // input
         .ext_data_out (buf4rd_data), // output[31:0] 
+//        .emul64       (1'b0),                // input Modify buffer addresses (used for JP4 until a 64-wide mode is implemented)
         .wclk         (!mclk), // input
         .wpage_in     (2'b0), // input[1:0] 
         .wpage_set    (xfer_reset_page4_rd), // input  @ negedge mclk

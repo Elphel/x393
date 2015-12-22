@@ -55,7 +55,7 @@ module  csconvert#(
          input      [ 9:0] m_cr,         // [9:0] scale for CB - default 0.713 (10'hb6)
          input      [ 7:0] mb_din,       // input bayer data in scanline sequence, GR/BG sequence
          input      [ 1:0] bayer_phase,
-         input             pre_first_in, // marks the first input pixel
+         input             pre2_first_in, // marks the first input pixel (2 cycles ahead)
          
          output reg [ 8:0] signed_y,     //  - now signed char, -128(black) to +127 (white)
          output reg [ 8:0] signed_c,            // new, q is just signed char
@@ -69,7 +69,7 @@ module  csconvert#(
 //         output reg        ccv_out_start,     //TODO: adjust to minimal latency?
          output reg [ 7:0] n000, // not clear how they are used, make them just with latency1 from old
          output reg [ 7:0] n255);
-
+    reg            pre_first_in;
     // outputs to be multiplexed:
     wire   [7:0]   conv18_signed_y, conv20_signed_y, mono16_signed_y, jp4_signed_y;
     wire   [8:0]   jp4diff_signed_y, conv18_signed_c, conv20_signed_c;
@@ -100,7 +100,8 @@ module  csconvert#(
     reg [5:0]  component_firstsS; // first_r this component in a frame (DC absolute, otherwise - difference to previous)
 */
     always @ (posedge xclk) begin
-        if (pre_first_in) begin
+        pre_first_in <= pre2_first_in;
+        if (pre2_first_in) begin
             converter_type_r [2:0] <= converter_type[2:0];
             ignore_color_r         <= ignore_color;
 //            jp4_dc_improved_r      <= jp4_dc_improved;
@@ -116,23 +117,23 @@ module  csconvert#(
         end
     
         // generate one-hot converter enable  
-        if      (!frame_en)     en_converters[CMPRS_COLOR18] <= 0;
-        else if (pre_first_in)  en_converters[CMPRS_COLOR18] <= converter_type == CMPRS_COLOR18;
+        if      (!frame_en)      en_converters[CMPRS_COLOR18] <= 0;
+        else if (pre2_first_in)  en_converters[CMPRS_COLOR18] <= converter_type == CMPRS_COLOR18;
         
-        if       (!frame_en)    en_converters[CMPRS_COLOR20] <= 0;
-        else  if (pre_first_in) en_converters[CMPRS_COLOR20] <= converter_type == CMPRS_COLOR20;
+        if       (!frame_en)     en_converters[CMPRS_COLOR20] <= 0;
+        else  if (pre2_first_in) en_converters[CMPRS_COLOR20] <= converter_type == CMPRS_COLOR20;
         
-        if      (!frame_en)     en_converters[CMPRS_MONO16] <=  0;
-        else if (pre_first_in)  en_converters[CMPRS_MONO16] <=  converter_type == CMPRS_MONO16;
+        if      (!frame_en)      en_converters[CMPRS_MONO16] <=  0;
+        else if (pre2_first_in)  en_converters[CMPRS_MONO16] <=  converter_type == CMPRS_MONO16;
         
-        if      (!frame_en)     en_converters[CMPRS_JP4] <=     0;
-        else if (pre_first_in)  en_converters[CMPRS_JP4] <=     converter_type == CMPRS_JP4;
+        if      (!frame_en)      en_converters[CMPRS_JP4] <=     0;
+        else if (pre2_first_in)  en_converters[CMPRS_JP4] <=     converter_type == CMPRS_JP4;
         
-        if      (!frame_en)     en_converters[CMPRS_JP4DIFF] <= 0;
-        else if (pre_first_in)  en_converters[CMPRS_JP4DIFF] <= converter_type == CMPRS_JP4DIFF;
+        if      (!frame_en)      en_converters[CMPRS_JP4DIFF] <= 0;
+        else if (pre2_first_in)  en_converters[CMPRS_JP4DIFF] <= converter_type == CMPRS_JP4DIFF;
         
-        if      (!frame_en)     en_converters[CMPRS_MONO8] <=   0;
-        else if (pre_first_in)  en_converters[CMPRS_MONO8] <=   converter_type == CMPRS_MONO8;
+        if      (!frame_en)      en_converters[CMPRS_MONO8] <=   0;
+        else if (pre2_first_in)  en_converters[CMPRS_MONO8] <=   converter_type == CMPRS_MONO8;
     end
 
 

@@ -64,7 +64,8 @@ class X393McntrlTiming(object):
         fSDCLK=fVCO/CLKOUT1_DIVIDE
         tSDCLK=1000.0/fSDCLK # in ns
         phaseStep=1000.0/(fVCO*56.0) # 1 unit of phase shift (now 112 for the full period
-        fREF=fCLK_IN*vrlg.CLKFBOUT_MULT_REF/vrlg.CLKFBOUT_DIV_REF
+#        fREF=fCLK_IN*vrlg.CLKFBOUT_MULT_REF/vrlg.CLKFBOUT_DIV_REF
+        fREF=fCLK_IN*vrlg.MULTICLK_MULT/vrlg.MULTICLK_DIV_DLYREF/vrlg.MULTICLK_DIVCLK
         dlyStep=1000.0/fREF/32/2 # Approximate, depending on calibration
         dlyFStep=0.01 # fine step 
         return{"SDCLK_PERIOD":tSDCLK,
