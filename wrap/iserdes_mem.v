@@ -51,7 +51,7 @@ module  iserdes_mem #
 );
     wire   [3:0] dout_le;
     assign dout = MSB_FIRST ? {dout_le[0], dout_le[1], dout_le[2], dout_le[3]} : dout_le;
-`ifndef OPEN_SOURCE_ONLY  // Not using simulator - instanciate actual ISERDESE2 (can not be simulated because of encrypted )           
+`ifndef OPEN_SOURCE_ONLY  // Not using simulator - instantiate actual ISERDESE2 (can not be simulated because of encrypted )           
      ISERDESE2 #(
          .DATA_RATE                  ("DDR"),
          .DATA_WIDTH                 (4),

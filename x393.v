@@ -178,7 +178,7 @@ module  x393 #(
     wire   [11:0]  maxi0_wid;         // WID[11:0], input
     wire           maxi0_wlast;       // WLAST, input
     wire   [ 3:0]  maxi0_wstb;        // WSTRB[3:0], input
-// AXI PS Master GP0: Write Responce
+// AXI PS Master GP0: Write response
     wire           maxi0_bvalid;      // BVALID, output
     wire           maxi0_bready;      // BREADY, input
     wire   [11:0]  maxi0_bid;         // BID[11:0], output
@@ -2737,7 +2737,7 @@ assign axi_grst = axi_rst_pre;
     .MAXIGP0WID     (maxi0_wid[11:0]),       // AXI PS Master GP0 WID[11:0], output
     .MAXIGP0WLAST   (maxi0_wlast),         // AXI PS Master GP0 WLAST, output
     .MAXIGP0WSTRB   (maxi0_wstb[3:0]),    // AXI PS Master GP0 WSTRB[3:0], output
-// AXI PS Master GP0: Write Responce
+// AXI PS Master GP0: Write response
     .MAXIGP0BVALID  (maxi0_bvalid),       // AXI PS Master GP0 BVALID, input
     .MAXIGP0BREADY  (maxi0_bready),       // AXI PS Master GP0 BREADY, output
     .MAXIGP0BID     (maxi0_bid[11:0]),       // AXI PS Master GP0 BID[11:0], input
@@ -2785,7 +2785,7 @@ assign axi_grst = axi_rst_pre;
     .MAXIGP1WID(),               // AXI PS Master GP1 WID[11:0], output
     .MAXIGP1WLAST(),             // AXI PS Master GP1 WLAST, output
     .MAXIGP1WSTRB(),             // AXI PS Master GP1 WSTRB[3:0], output
-// AXI PS Master GP1: Write Responce
+// AXI PS Master GP1: Write response
     .MAXIGP1BVALID(),            // AXI PS Master GP1 BVALID, input
     .MAXIGP1BREADY(),            // AXI PS Master GP1 BREADY, output
     .MAXIGP1BID(),               // AXI PS Master GP1 BID[11:0], input
@@ -2833,7 +2833,7 @@ assign axi_grst = axi_rst_pre;
     .SAXIGP0WID        (saxi0_wid),      // AXI PS Slave GP0 WID[5:0], input
     .SAXIGP0WLAST      (saxi0_wlast),    // AXI PS Slave GP0 WLAST, input
     .SAXIGP0WSTRB      (saxi0_wstrb),    // AXI PS Slave GP0 WSTRB[3:0], input
-// AXI PS Slave GP0: Write Responce
+// AXI PS Slave GP0: Write response
     .SAXIGP0BVALID     (saxi0_bvalid),   // AXI PS Slave GP0 BVALID, output
     .SAXIGP0BREADY     (saxi0_bready),   // AXI PS Slave GP0 BREADY, input
     .SAXIGP0BID        (saxi0_bid),      // AXI PS Slave GP0 BID[5:0], output //TODO:  Update range !!!
@@ -2881,7 +2881,7 @@ assign axi_grst = axi_rst_pre;
     .SAXIGP1WID        (saxi1_wid),      // AXI PS Slave GP1 WID[5:0], input
     .SAXIGP1WLAST      (saxi1_wlast),    // AXI PS Slave GP1 WLAST, input
     .SAXIGP1WSTRB      (saxi1_wstrb),    // AXI PS Slave GP1 WSTRB[3:0], input
-// AXI PS Slave GP1: Write Responce
+// AXI PS Slave GP1: Write response
     .SAXIGP1BVALID     (saxi1_bvalid),   // AXI PS Slave GP1 BVALID, output
     .SAXIGP1BREADY     (saxi1_bready),   // AXI PS Slave GP1 BREADY, input
     .SAXIGP1BID        (saxi1_bid),      // AXI PS Slave GP1 BID[5:0], output //TODO:  Update range !!!
@@ -2935,7 +2935,7 @@ assign axi_grst = axi_rst_pre;
     .SAXIHP0WCOUNT        (afi0_wcount),            // AXI PS Slave HP0 WCOUNT[7:0], output
     .SAXIHP0WACOUNT       (afi0_wacount),           // AXI PS Slave HP0 WACOUNT[5:0], output
     .SAXIHP0WRISSUECAP1EN (afi0_wrissuecap1en),     // AXI PS Slave HP0 WRISSUECAP1EN, input
-// AXI PS Slave HP0: Write Responce
+// AXI PS Slave HP0: Write response
     .SAXIHP0BVALID        (afi0_bvalid),            // AXI PS Slave HP0 BVALID, output
     .SAXIHP0BREADY        (afi0_bready),            // AXI PS Slave HP0 BREADY, input
     .SAXIHP0BID           (afi0_bid),               // AXI PS Slave HP0 BID[5:0], output
@@ -2989,7 +2989,7 @@ assign axi_grst = axi_rst_pre;
     .SAXIHP1WCOUNT        (afi1_wcount),            // AXI PS Slave HP1 WCOUNT[7:0], output
     .SAXIHP1WACOUNT       (afi1_wacount),           // AXI PS Slave HP1 WACOUNT[5:0], output
     .SAXIHP1WRISSUECAP1EN (afi1_wrissuecap1en),     // AXI PS Slave HP1 WRISSUECAP1EN, input
-// AXI PS Slave HP1: Write Responce
+// AXI PS Slave HP1: Write response
     .SAXIHP1BVALID        (afi1_bvalid),            // AXI PS Slave HP1 BVALID, output
     .SAXIHP1BREADY        (afi1_bready),            // AXI PS Slave HP1 BREADY, input
     .SAXIHP1BID           (afi1_bid),               // AXI PS Slave HP1 BID[5:0], output
@@ -3043,7 +3043,7 @@ assign axi_grst = axi_rst_pre;
     .SAXIHP2WCOUNT        (afi2_wcount),            // AXI PS Slave HP2 WCOUNT[7:0], output
     .SAXIHP2WACOUNT       (afi2_wacount),           // AXI PS Slave HP2 WACOUNT[5:0], output
     .SAXIHP2WRISSUECAP1EN (afi2_wrissuecap1en),     // AXI PS Slave HP2 WRISSUECAP1EN, input
-// AXI PS Slave HP2: Write Responce
+// AXI PS Slave HP2: Write response
     .SAXIHP2BVALID        (afi2_bvalid),            // AXI PS Slave HP2 BVALID, output
     .SAXIHP2BREADY        (afi2_bready),            // AXI PS Slave HP2 BREADY, input
     .SAXIHP2BID           (afi2_bid),               // AXI PS Slave HP2 BID[5:0], output
@@ -3097,7 +3097,7 @@ assign axi_grst = axi_rst_pre;
     .SAXIHP3WCOUNT(),            // AXI PS Slave HP3 WCOUNT[7:0], output
     .SAXIHP3WACOUNT(),           // AXI PS Slave HP3 WACOUNT[5:0], output
     .SAXIHP3WRISSUECAP1EN(),     // AXI PS Slave HP3 WRISSUECAP1EN, input
-// AXI PS Slave HP3: Write Responce
+// AXI PS Slave HP3: Write response
     .SAXIHP3BVALID(),            // AXI PS Slave HP3 BVALID, output
     .SAXIHP3BREADY(),            // AXI PS Slave HP3 BREADY, input
     .SAXIHP3BID(),               // AXI PS Slave HP3 BID[5:0], output
@@ -3148,7 +3148,7 @@ assign axi_grst = axi_rst_pre;
     .SAXIACPWID(),               // AXI PS Slave ACP WID[2:0], input
     .SAXIACPWLAST(),             // AXI PS Slave ACP WLAST, input
     .SAXIACPWSTRB(),             // AXI PS Slave ACP WSTRB[7:0], input
-// AXI PS Slave ACP: Write Responce
+// AXI PS Slave ACP: Write response
     .SAXIACPBVALID(),            // AXI PS Slave ACP BVALID, output
     .SAXIACPBREADY(),            // AXI PS Slave ACP BREADY, input
     .SAXIACPBID(),               // AXI PS Slave ACP BID[2:0], output

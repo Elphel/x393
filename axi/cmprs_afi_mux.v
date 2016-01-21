@@ -542,7 +542,7 @@ items_left
         .we         (cmd_we)    // output
     );
     
-    wire [53:0] chunk_ptr_rd01; // [0:1]; // combines 2 pointers - write one and write responce one
+    wire [53:0] chunk_ptr_rd01; // [0:1]; // combines 2 pointers - write one and write response one
 
     cmprs_afi_mux_ptr cmprs_afi_mux_ptr_i (
         .hclk                (hclk),                // input

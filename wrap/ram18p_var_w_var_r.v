@@ -206,8 +206,8 @@ module  ram18p_32w_32r
       input                  [ 3:0] web,      // write byte enable
       input                  [35:0] data_in  // data out
     );
-    localparam  PWIDTH_WR=72;
-    localparam  PWIDTH_RD=72;
+    localparam  PWIDTH_WR=36;
+    localparam  PWIDTH_RD=36;
     
     RAMB18E1
     #(
@@ -459,7 +459,7 @@ module  ram18p_32w_lt32r
       input                         [ 3:0] web,      // write byte enable
       input                         [35:0] data_in   // data out
     );
-    localparam  PWIDTH_WR = 72;
+    localparam  PWIDTH_WR = 36;
     localparam  PWIDTH_RD = (LOG2WIDTH_RD > 2)? (9 << (LOG2WIDTH_RD - 3)): (1 << LOG2WIDTH_RD);
     localparam  WIDTH_RD  = 1 << LOG2WIDTH_RD;
     localparam  WIDTH_RDP = 1 << (LOG2WIDTH_RD-3);

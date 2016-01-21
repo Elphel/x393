@@ -58,7 +58,7 @@ module  axibram_write #(
    input  [11:0] wid,     // WID[11:0], input
    input         wlast,   // WLAST, input
    input  [ 3:0] wstb,    // WSTRB[3:0], input
-// AXI PS Master GP0: Write Responce
+// AXI PS Master GP0: Write response
    output        bvalid,  // BVALID, output
    input         bready,  // BREADY, input
    output [11:0] bid,     // BID[11:0], output
