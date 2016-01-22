@@ -50,7 +50,7 @@ module simul_axi_master_rdaddr
     input  [ID_WIDTH-1:0]      arid_in,
     input  [ADDRESS_WIDTH-1:0] araddr_in,
     input  [3:0]               arlen_in,
-    input  [2:0]               arsize_in,
+    input  [1:0]               arsize_in,
     input  [1:0]               arburst_in,
     input  [3:0]               arcache_in,
     input  [2:0]               arprot_in,
@@ -58,7 +58,7 @@ module simul_axi_master_rdaddr
     output [ID_WIDTH-1:0]      arid,
     output [ADDRESS_WIDTH-1:0] araddr,
     output [3:0]               arlen,
-    output [2:0]               arsize,
+    output [1:0]               arsize,
     output [1:0]               arburst,
     output [3:0]               arcache,
     output [2:0]               arprot,
@@ -71,7 +71,7 @@ module simul_axi_master_rdaddr
     wire [ID_WIDTH-1:0]      arid_out;
     wire [ADDRESS_WIDTH-1:0] araddr_out;
     wire [3:0]               arlen_out;
-    wire [2:0]               arsize_out;
+    wire [1:0]               arsize_out;
     wire [1:0]               arburst_out;
     wire [3:0]               arcache_out;
     wire [2:0]               arprot_out;
@@ -88,7 +88,7 @@ module simul_axi_master_rdaddr
 
 simul_axi_fifo
     #(
-      .WIDTH(ID_WIDTH+ADDRESS_WIDTH+16),     // total number of output bits
+      .WIDTH(ID_WIDTH+ADDRESS_WIDTH+15),     // total number of output bits
       .LATENCY(LATENCY),                     // minimal delay between inout and output ( 0 - next cycle)
       .DEPTH(DEPTH)                          // maximal number of commands in FIFO
 //  parameter OUT_DELAY = 3.5,

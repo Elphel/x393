@@ -585,12 +585,12 @@ assign #10 gpio_pins[9] = gpio_pins[8];
     reg [11:0] ARID_IN_r;
     reg [31:0] ARADDR_IN_r;
     reg  [3:0] ARLEN_IN_r;
-    reg  [2:0] ARSIZE_IN_r;
+    reg  [1:0] ARSIZE_IN_r;
     reg  [1:0] ARBURST_IN_r;
     reg [11:0] AWID_IN_r;
     reg [31:0] AWADDR_IN_r;
     reg  [3:0] AWLEN_IN_r;
-    reg  [2:0] AWSIZE_IN_r;
+    reg  [1:0] AWSIZE_IN_r;
     reg  [1:0] AWBURST_IN_r;
 
     reg [11:0] WID_IN_r;
@@ -629,12 +629,12 @@ assign #10 gpio_pins[9] = gpio_pins[8];
     wire [11:0]  #(AXI_TASK_HOLD) ARID_IN = ARID_IN_r;
     wire [31:0]  #(AXI_TASK_HOLD) ARADDR_IN = ARADDR_IN_r;
     wire  [3:0]  #(AXI_TASK_HOLD) ARLEN_IN = ARLEN_IN_r;
-    wire  [2:0]  #(AXI_TASK_HOLD) ARSIZE_IN = ARSIZE_IN_r;
+    wire  [1:0]  #(AXI_TASK_HOLD) ARSIZE_IN = ARSIZE_IN_r;
     wire  [1:0]  #(AXI_TASK_HOLD) ARBURST_IN = ARBURST_IN_r;
     wire [11:0]  #(AXI_TASK_HOLD) AWID_IN = AWID_IN_r;
     wire [31:0]  #(AXI_TASK_HOLD) AWADDR_IN = AWADDR_IN_r;
     wire  [3:0]  #(AXI_TASK_HOLD) AWLEN_IN = AWLEN_IN_r;
-    wire  [2:0]  #(AXI_TASK_HOLD) AWSIZE_IN = AWSIZE_IN_r;
+    wire  [1:0]  #(AXI_TASK_HOLD) AWSIZE_IN = AWSIZE_IN_r;
     wire  [1:0]  #(AXI_TASK_HOLD) AWBURST_IN = AWBURST_IN_r;
     wire [11:0]  #(AXI_TASK_HOLD) WID_IN = WID_IN_r;
     wire [31:0]  #(AXI_TASK_HOLD) WDATA_IN = WDATA_IN_r;
@@ -651,7 +651,7 @@ assign #10 gpio_pins[9] = gpio_pins[8];
     wire [11:0] arid;
     wire [31:0] araddr;
     wire [3:0]  arlen;
-    wire [2:0]  arsize;
+    wire [1:0]  arsize;
     wire [1:0]  arburst;
   // SuppressWarnings VEditor : assigned in $readmem(14) system task
     wire [3:0]  arcache;
@@ -663,7 +663,7 @@ assign #10 gpio_pins[9] = gpio_pins[8];
     wire [11:0] awid;
     wire [31:0] awaddr;
     wire [3:0]  awlen;
-    wire [2:0]  awsize;
+    wire [1:0]  awsize;
     wire [1:0]  awburst;
   // SuppressWarnings VEditor : assigned in $readmem() system task
     wire [3:0]  awcache;
@@ -1883,14 +1883,14 @@ simul_axi_master_wraddr
     .awid_in(AWID_IN[11:0]),
     .awaddr_in(AWADDR_IN[31:0]),
     .awlen_in(AWLEN_IN[3:0]),
-    .awsize_in(AWSIZE_IN[2:0]),
+    .awsize_in(AWSIZE_IN[1:0]),
     .awburst_in(AWBURST_IN[1:0]),
     .awcache_in(4'b0),
     .awprot_in(3'b0), //.awprot_in(2'b0),
     .awid(awid[11:0]),
     .awaddr(awaddr[31:0]),
     .awlen(awlen[3:0]),
-    .awsize(awsize[2:0]),
+    .awsize(awsize[1:0]),
     .awburst(awburst[1:0]),
     .awcache(awcache[3:0]),
     .awprot(awprot[2:0]),

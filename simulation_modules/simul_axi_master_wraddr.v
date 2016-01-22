@@ -47,7 +47,7 @@ module  simul_axi_master_wraddr
     input  [ID_WIDTH-1:0]      awid_in,
     input  [ADDRESS_WIDTH-1:0] awaddr_in,
     input  [3:0]               awlen_in,
-    input  [2:0]               awsize_in,
+    input  [1:0]               awsize_in,
     input  [1:0]               awburst_in,
     input  [3:0]               awcache_in,
     input  [2:0]               awprot_in,
@@ -55,7 +55,7 @@ module  simul_axi_master_wraddr
     output [ID_WIDTH-1:0]      awid,
     output [ADDRESS_WIDTH-1:0] awaddr,
     output [3:0]               awlen,
-    output [2:0]               awsize,
+    output [1:0]               awsize,
     output [1:0]               awburst,
     output [3:0]               awcache,
     output [2:0]               awprot,
@@ -68,7 +68,7 @@ module  simul_axi_master_wraddr
     wire [ID_WIDTH-1:0]      awid_out;
     wire [ADDRESS_WIDTH-1:0] awaddr_out;
     wire [3:0]               awlen_out;
-    wire [2:0]               awsize_out;
+    wire [1:0]               awsize_out;
     wire [1:0]               awburst_out;
     wire [3:0]               awcache_out;
     wire [2:0]               awprot_out;
@@ -85,7 +85,7 @@ module  simul_axi_master_wraddr
 
 simul_axi_fifo
     #(
-      .WIDTH(ID_WIDTH+ADDRESS_WIDTH+16),     // total number of output bits
+      .WIDTH(ID_WIDTH+ADDRESS_WIDTH+15),     // total number of output bits
       .LATENCY(LATENCY),                     // minimal delay between inout and output ( 0 - next cycle)
       .DEPTH(DEPTH)                          // maximal number of commands in FIFO
 //  parameter OUT_DELAY = 3.5,
