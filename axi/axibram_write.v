@@ -71,7 +71,8 @@ module  axibram_write #(
     
    output        bram_wclk,
    output  [ADDRESS_BITS-1:0] bram_waddr,
-   output        bram_wen,    // external memory wreite enable, (internally combined with registered dev_ready
+   output        pre_bram_wen,// 1 ahead of bram_wen, not masked by dev_ready
+   output        bram_wen,    // external memory write enable, (internally combined with registered dev_ready
    output  [3:0] bram_wstb, 
    output [31:0] bram_wdata
 `ifdef DEBUG_FIFO
@@ -151,6 +152,7 @@ module  axibram_write #(
     assign start_write_burst_w=w_nempty_ready && aw_nempty_ready && (!write_in_progress || (w_nempty_ready && ((write_left[3:0]==4'b0) || wlast_out)));
     assign write_in_progress_w=w_nempty_ready && aw_nempty_ready || (write_in_progress && !(w_nempty_ready && ((write_left[3:0]==4'b0) || wlast_out))); 
     
+    assign pre_bram_wen = write_in_progress_w;
     always @ (posedge  aclk) begin
       if   (arst)                   wburst[1:0] <= 0;
       else if (start_write_burst_w) wburst[1:0] <= awburst_out[1:0];

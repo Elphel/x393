@@ -76,6 +76,11 @@ module  ram_var_w_var_r
   parameter integer LOG2WIDTH_WR = 6,  // WIDTH= 1  << LOG2WIDTH
   parameter integer LOG2WIDTH_RD = 6,  // WIDTH= 1  << LOG2WIDTH
   parameter         DUMMY = 0
+`ifdef PRELOAD_BRAMS
+    ,
+    `include "includes/ram36_declare_init.vh"
+`endif
+  
  )
    (
       input                         rclk,     // clock for read port
@@ -101,6 +106,9 @@ module  ram_var_w_var_r
         else if ((LOG2WIDTH_WR == 6) && (LOG2WIDTH_RD == 6))
             ram_64w_64r #(
                 .REGISTERS    (REGISTERS)
+`ifdef PRELOAD_BRAMS
+    `include "includes/ram36_pass_init.vh"
+`endif
             ) ram_i (
                 .rclk         (rclk),     // input
                 .raddr        (raddr),    // input[8:0] 
@@ -117,6 +125,9 @@ module  ram_var_w_var_r
             ram_64w_lt64r #(
                 .REGISTERS    (REGISTERS),
                 .LOG2WIDTH_RD (LOG2WIDTH_RD)
+`ifdef PRELOAD_BRAMS
+    `include "includes/ram36_pass_init.vh"
+`endif
             ) ram_i (
                 .rclk         (rclk),     // input
                 .raddr        (raddr),    // input[(>8):0] 
@@ -133,6 +144,9 @@ module  ram_var_w_var_r
             ram_lt64w_64r #(
                 .REGISTERS    (REGISTERS),
                 .LOG2WIDTH_WR (LOG2WIDTH_WR)
+`ifdef PRELOAD_BRAMS
+    `include "includes/ram36_pass_init.vh"
+`endif
             ) ram_i (
                 .rclk         (rclk),     // input
                 .raddr        (raddr),    // input[8:0] 
@@ -150,6 +164,9 @@ module  ram_var_w_var_r
                 .REGISTERS    (REGISTERS),
                 .LOG2WIDTH_WR (LOG2WIDTH_WR),
                 .LOG2WIDTH_RD (LOG2WIDTH_RD)
+`ifdef PRELOAD_BRAMS
+    `include "includes/ram36_pass_init.vh"
+`endif
             ) ram_i (
                 .rclk         (rclk),     // input
                 .raddr        (raddr),    // input[(>8):0] 
@@ -169,6 +186,10 @@ endmodule
 module  ram_64w_64r
 #(
   parameter integer REGISTERS    = 0 // 1 - registered output
+`ifdef PRELOAD_BRAMS
+    ,
+    `include "includes/ram36_declare_init.vh"
+`endif
  )
    (
       input                         rclk,     // clock for read port
@@ -207,6 +228,9 @@ module  ram_64w_64r
     .SIM_DEVICE                ("7SERIES"),      // Simulation device family - "VIRTEX6", "VIRTEX5" and "7_SERIES" // "7SERIES"
     .EN_ECC_READ               ("FALSE"),        // Valid:"FALSE","TRUE" (ECC decoder circuitry)
     .EN_ECC_WRITE              ("FALSE")         // Valid:"FALSE","TRUE" (ECC decoder circuitry)
+`ifdef PRELOAD_BRAMS
+    `include "includes/ram36_pass_init.vh"
+`endif
     ) RAMB36E1_i
     (
         // Port A (Read port in SDP mode):
@@ -255,6 +279,10 @@ module  ram_lt64w_lt64r
   parameter integer REGISTERS    = 0, // 1 - registered output
   parameter integer LOG2WIDTH_WR = 5,  // WIDTH= 1  << LOG2WIDTH
   parameter integer LOG2WIDTH_RD = 5   // WIDTH= 1  << LOG2WIDTH
+`ifdef PRELOAD_BRAMS
+    ,
+    `include "includes/ram36_declare_init.vh"
+`endif
  )
    (
       input                            rclk,     // clock for read port
@@ -314,6 +342,9 @@ module  ram_lt64w_lt64r
     parameter IS_RSTREGARSTREG_INVERTED = 1'b0;
     parameter IS_RSTREGB_INVERTED = 1'b0;
 */    
+`ifdef PRELOAD_BRAMS
+    `include "includes/ram36_pass_init.vh"
+`endif
     
     ) RAMB36E1_i
     (
@@ -362,6 +393,10 @@ module  ram_lt64w_64r
 #(
   parameter integer REGISTERS    = 0, // 1 - registered output
   parameter integer LOG2WIDTH_WR = 5  // WIDTH= 1  << LOG2WIDTH
+`ifdef PRELOAD_BRAMS
+    ,
+    `include "includes/ram36_declare_init.vh"
+`endif
  )
    (
       input                            rclk,     // clock for read port
@@ -405,6 +440,9 @@ module  ram_lt64w_64r
 
     .EN_ECC_READ               ("FALSE"),        // Valid:"FALSE","TRUE" (ECC decoder circuitry)
     .EN_ECC_WRITE              ("FALSE")         // Valid:"FALSE","TRUE" (ECC decoder circuitry)
+`ifdef PRELOAD_BRAMS
+    `include "includes/ram36_pass_init.vh"
+`endif
     ) RAMB36E1_i
     (
         // Port A (Read port in SDP mode):
@@ -453,6 +491,10 @@ module  ram_64w_lt64r
   parameter integer REGISTERS    = 0, // 1 - registered output
 //  parameter integer LOG2WIDTH_WR = 5,  // WIDTH= 1  << LOG2WIDTH
   parameter integer LOG2WIDTH_RD = 5   // WIDTH= 1  << LOG2WIDTH
+`ifdef PRELOAD_BRAMS
+    ,
+    `include "includes/ram36_declare_init.vh"
+`endif
  )
    (
       input                            rclk,     // clock for read port
@@ -495,6 +537,9 @@ module  ram_64w_lt64r
 
     .EN_ECC_READ               ("FALSE"),        // Valid:"FALSE","TRUE" (ECC decoder circuitry)
     .EN_ECC_WRITE              ("FALSE")         // Valid:"FALSE","TRUE" (ECC decoder circuitry)
+`ifdef PRELOAD_BRAMS
+    `include "includes/ram36_pass_init.vh"
+`endif
     ) RAMB36E1_i
     (
         // Port A (Read port in SDP mode):

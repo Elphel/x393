@@ -2378,6 +2378,7 @@ assign axi_grst = axi_rst_pre;
         .dev_ready   (axiwr_dev_ready), // input
         .bram_wclk   (axiwr_wclk), // output
         .bram_waddr  (axiwr_waddr[AXI_WR_ADDR_BITS-1:0]), // output[9:0] 
+        .pre_bram_wen(),                               // 1 ahead of bram_wen, not masked by dev_ready
         .bram_wen    (axiwr_wen), // output
         .bram_wstb   (axiwr_bram_wstb[3:0]), // output[3:0] //SuppressThisWarning ISExst Assignment to axiwr_bram_wstb ignored, since the identifier is never used
         .bram_wdata  (axiwr_wdata[31:0]) // output[31:0]
