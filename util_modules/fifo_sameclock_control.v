@@ -42,8 +42,6 @@ module  fifo_sameclock_control#(
     reg                 ramo_full;
     reg                 rreg_full;
     
-    assign mem_regen = mem_regen;
-    
     assign mem_re = (|fill_ram) && (!ramo_full || !rreg_full || rd);
     assign mem_regen =   ramo_full && (!rreg_full || rd);
     assign nempty =    rreg_full;
