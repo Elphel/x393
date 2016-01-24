@@ -142,10 +142,11 @@ module  axibram_read #(
    assign  bram_rclk =  aclk;  // clock for read port
    assign  bram_raddr = read_in_progress?read_address[ADDRESS_BITS-1:0]:{ADDRESS_BITS{1'b1}};  // read address
    
-`ifdef USE_SHORT_REN_REGEN   
+`ifdef USE_SHORT_REN_REGEN 
    reg bram_regen_r;
 //   assign  bram_ren =   bram_reg_re_w && !pre_last_in_burst_r ;     // read port enable
-   assign  bram_ren = read_in_progress;
+///   assign  bram_ren = read_in_progress;
+   assign  bram_ren = read_in_progress && dev_ready;
    assign  bram_regen = bram_regen_r;     // output register enable
 `else
    assign  bram_ren =   bram_reg_re_w;     // read port enable
