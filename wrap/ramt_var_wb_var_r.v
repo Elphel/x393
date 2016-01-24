@@ -142,7 +142,7 @@ module  ramt_var_wb_var_r
     wire         [31:0] data_in32_b =    data_in_ext_b[31:0];
     
     wire [3:0] we_a4= (LOG2WIDTH_A > 3)? ((LOG2WIDTH_A > 4)? we_a : {2{we_a}} ):{4{we_a}};
-    wire [3:0] we_b4= (LOG2WIDTH_B > 3)? ((LOG2WIDTH_B > 4)? we_a : {2{we_b}} ):{4{we_b}};
+    wire [3:0] we_b4= (LOG2WIDTH_B > 3)? ((LOG2WIDTH_B > 4)? we_b : {2{we_b}} ):{4{we_b}};
 
     RAMB36E1
     #(
