@@ -126,7 +126,9 @@ module fifo_same_clock_fill
       if (wem) ram[wa] <= inreg;
       if (we)  inreg  <= data_in;
       if (rem) outreg <= ram[ra];
-      under <= ~we & re & ~nempty; // underrun error
-      over <=  we & ~re & (fill == (1<< (DATA_DEPTH-1)));    // overrun error
+//      under <= ~we & re & ~nempty; // underrun error
+//      over <=  we & ~re & (fill == (1<< (DATA_DEPTH-1)));    // overrun error
+      under <= re & ~nempty; // underrun error
+      over <=  wem & ~rem & fill[DATA_DEPTH] & ~fill[DATA_DEPTH-1];    // overrun error
     end
 endmodule

@@ -55,7 +55,7 @@ module  fifo_sameclock_control#(
         else if (mem_re) mem_ra <= mem_ra + 1;
 
         if      (rst)                fill_ram <= 0;
-        else if (wr ^ mem_re)        fill_ram <= mem_regen ? (fill_ram - 1) : (fill_ram + 1);
+        else if (wr ^ mem_re)        fill_ram <= mem_re ? (fill_ram - 1) : (fill_ram + 1);
 
         if      (rst)                ramo_full <= 0;
         else if (mem_re ^ mem_regen) ramo_full <= mem_re;

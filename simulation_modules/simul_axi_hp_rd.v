@@ -121,6 +121,7 @@ module  simul_axi_hp_rd #(
     wire  [3:0] arlen_out;
     wire [31:0] araddr_out;
     wire        ar_nempty;
+    wire        r_nempty;
     reg   [7:0] fifo_with_requested=0; // fill level of data FIFO if all the requested data will arrive and nothing read
     wire        fifo_data_rd;
     wire  [7:0] next_with_requested;
@@ -189,7 +190,8 @@ module  simul_axi_hp_rd #(
                                (! read_in_progress || last_confirmed_read);
     assign read_in_progress_w= ar_nempty && (next_with_requested <= 8'h80) ||
                                (read_in_progress && !last_confirmed_read); 
-    assign rvalid= (|rcount[7:1]) ||  (rcount[0] && !was_data_fifo_read);
+//    assign rvalid= (|rcount[7:1]) ||  (rcount[0] && !was_data_fifo_read);
+    assign rvalid= r_nempty && ((|rcount[7:1]) ||  !was_data_fifo_read);
     assign arready= !racount[2] && (!racount[1] || !racount[0] || !was_addr_fifo_write);
     assign last_read = (read_left==0);
     assign last_confirmed_read = (read_left==0) && sim_rd_valid && sim_rd_ready;
@@ -294,7 +296,7 @@ fifo_same_clock_fill   #( .DATA_WIDTH(73),.DATA_DEPTH(7)) // read - 4, write - 3
         .re        (rvalid && rready),
         .data_in   ({last_read, arid_out[5:0],  sim_rd_resp[1:0],  sim_rd_data[63:0]}),
         .data_out  ({rlast,     rid[5:0],       rresp[1:0],        rdata[63:0]}),
-        .nempty    (), //r_nempty),
+        .nempty    (r_nempty), //r_nempty),
         .half_full (), //aw_half_full),
         .under      (), //waddr_under), 
         .over       (), //waddr_over), 
