@@ -88,7 +88,7 @@ class X393PIOSequences(object):
                                                   ((page & 3) << 10) |
                                                   (seq_addr & 0x3ff))
  
-    def wait_ps_pio_ready(self,         #; // wait PS PIO module can accept comamnds (fifo half empty)
+    def wait_ps_pio_ready(self,         #; // wait PS PIO module can accept commands (fifo half empty)
                           mode,         # input [1:0] mode;
                           sync_seq,     # input       sync_seq; //  synchronize sequences
                           timeout=2.0): # maximal timeout in seconds
@@ -860,7 +860,8 @@ class X393PIOSequences(object):
             0,         # 1'h0,     #       mpr;    # MPR mode: 0 - normal, 1 - dataflow from MPR
             0)         # 2'h0);    # [1:0] mpr_rf; # MPR read function: 2'b00: predefined pattern 0101...
         cmd_addr = vrlg.MCONTR_CMD_WR_ADDR + vrlg.INITIALIZE_OFFSET;
-        if self.DEBUG_MODE > 1:
+#        if self.DEBUG_MODE > 1:
+        if self.DEBUG_MODE > -1:
             print("mr0=0x%05x"%mr0);
             print("mr1=0x%05x"%mr1);
             print("mr2=0x%05x"%mr2);
@@ -1120,7 +1121,8 @@ class X393PIOSequences(object):
             last_bad= 0
         rslt=(first_bad, last_bad, data16[mid_index],mid_index)
         if quiet < 3:
-            print ("non_consecutive leading/trailing: %d /%d, middle data=0x%x, index=0x%x"%rslt)    
+            print ("non_consecutive leading/trailing: %d /%d, middle data=0x%x, index=0x%x"%rslt)
+            print(data16)    
         return rslt
                  
                  

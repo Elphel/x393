@@ -163,22 +163,44 @@ class X393AxiControlStatus(object):
         """
         Read current temperature and supply voltages
         """
-        HWMON_PATH = "/sys/devices/amba.0/f8007100.ps7-xadc/"
+#        HWMON_PATH = "/sys/devices/amba.0/f8007100.ps7-xadc/"
+        HWMON_PATH = '/sys/devices/soc0/amba@0/f8007100.ps7-xadc/iio:device0/'
         FILE = "file"
         ITEM = "item"
         UNITS = "units"
         SCALE = "scale"
-        HWMON_ITEMS= [{FILE:"temp",    ITEM:"Temperature", UNITS:"C", SCALE: 1.0},
-                      {FILE:"vccaux",  ITEM:"VCCaux",      UNITS:"V", SCALE: 0.001},
-                      {FILE:"vccint",  ITEM:"VCCint",      UNITS:"V", SCALE: 0.001},
-                      {FILE:"vccbram", ITEM:"VCCbram",     UNITS:"V", SCALE: 0.001}]
+        HWMON_ITEMS= [{FILE:"in_temp0",             ITEM:"Temperature", UNITS:"C", SCALE: 0.001},
+                      {FILE:"in_voltage0_vccint",   ITEM:"VCCint",      UNITS:"V", SCALE: 0.001},
+                      {FILE:"in_voltage1_vccaux",   ITEM:"VCCaux",      UNITS:"V", SCALE: 0.001},
+                      {FILE:"in_voltage2_vccbram",  ITEM:"VCCbram",     UNITS:"V", SCALE: 0.001},
+                      {FILE:"in_voltage3_vccpint",  ITEM:"VCCPint",     UNITS:"V", SCALE: 0.001},
+                      {FILE:"in_voltage4_vccpaux",  ITEM:"VCCPaux",     UNITS:"V", SCALE: 0.001},
+                      {FILE:"in_voltage5_vccoddr",  ITEM:"VCCOddr",     UNITS:"V", SCALE: 0.001},
+                      {FILE:"in_voltage6_vrefp",    ITEM:"VREFp",       UNITS:"V", SCALE: 0.001},
+                      {FILE:"in_voltage7_vrefn",    ITEM:"VREFn",       UNITS:"V", SCALE: 0.001},
+                      ]
         print("hwmon:")
         if self.DRY_MODE:
             print ("Not defined for simulation mode")
             return
         for par in HWMON_ITEMS:
-            with open(HWMON_PATH + par[FILE]) as f:
-                d=int(f.read())
+#            with open(HWMON_PATH + par[FILE]) as f:
+#                d=int(f.read())
+            with open(HWMON_PATH + par[FILE]+"_raw") as f:
+                raw=float(f.read().strip())
+            with open(HWMON_PATH + par[FILE]+"_scale") as f:
+                scale=float(f.read().strip())
+            try:    
+                with open(HWMON_PATH + par[FILE]+"_offset") as f:
+                    offset=float(f.read().strip())
+            except:
+                offset = 0
+            #(guess)
+#            if (raw>2047) and (par[UNITS] == 'V'):
+            if (raw > 4000):
+                raw -= 4096    
+            d= (raw + offset)*scale        
+
             num_digits=0
             s = par[SCALE]
             while s < 1:
@@ -187,6 +209,7 @@ class X393AxiControlStatus(object):
             w = 2+num_digits + (0,1)[num_digits > 0]    
             frmt = "%%12s = %%%d.%df %%s"%(w,num_digits)    
             print(frmt%(par[ITEM],(d*par[SCALE]),par[UNITS]))
+            
     def write_control_register(self, reg_addr, data):
         """
         Write 32-bit word to the control register

@@ -52,9 +52,14 @@ from verilog_utils import hx
 
 
 PAGE_SIZE =           4096
-SI5338_PATH =         '/sys/devices/amba.0/e0004000.ps7-i2c/i2c-0/0-0070'
-POWER393_PATH =       '/sys/devices/elphel393-pwr.1'
-MEM_PATH =            '/sys/devices/elphel393-mem.2/'
+#SI5338_PATH =         '/sys/devices/amba.0/e0004000.ps7-i2c/i2c-0/0-0070'
+#POWER393_PATH =       '/sys/devices/elphel393-pwr.1'
+#MEM_PATH =            '/sys/devices/elphel393-mem.2/'
+
+SI5338_PATH =         '/sys/devices/soc0/amba@0/e0004000.ps7-i2c/i2c-0/0-0070'
+POWER393_PATH =       '/sys/devices/soc0/elphel393-pwr@0'
+MEM_PATH =            '/sys/devices/soc0/elphel393-mem@0/'
+
 BUFFER_ADDRESS_NAME = 'buffer_address'
 BUFFER_PAGES_NAME =   'buffer_pages'
 BUFFER_ADDRESS =      None # in bytes
@@ -148,7 +153,7 @@ class X393SensCmprs(object):
         Currently required clock frequency is 1/4 of the sensor clock, so it is 24MHz for 96MHz sensor
         @param freq_MHz - input clock frequency (MHz). Currently for 96MHZ sensor clock it should be 24.0
         @param iface - one of the supported interfaces
-               (see ls /sys/devices/amba.0/e0004000.ps7-i2c/i2c-0/0-0070/output_drivers)
+               (see ls /sys/devices/soc0/amba@0/e0004000.ps7-i2c/i2c-0/0-0070/output_drivers)
         @param quiet - reduce output        
         """
         if self.DRY_MODE:

@@ -2,3 +2,4 @@ eclipse.preferences.version=1
 encoding//helpers/convert_data_to_params.py=utf-8
 encoding//helpers/convert_pass_init_params.py=utf-8
 encoding//helpers/convert_zigzag_rom.py=utf-8
+encoding//py393/test_mcntrl.py=utf-8

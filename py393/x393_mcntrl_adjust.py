@@ -2868,13 +2868,11 @@ class X393McntrlAdjust(object):
             phase_ok=self.set_phase_with_refresh( # check result for not None
                                phase,
                                quiet)
-            if not phase_ok:
-                print ("Failed to set phase=%d for dly=%d- that should not happen (phase_dqso)- "%(phase,dqs_lin))
-                # See if it was meant "not phase_ok", not "phase_ok is None":
-                print ("phase_ok = ",phase_ok)
-                if phase_ok is None: 
-                    print (self.adjustment_state['cmda_bspe'])
-                    return None # no valid CMDA ODELAY exists for this phase
+            if phase_ok is None: 
+                print (self.adjustment_state['cmda_bspe'])
+                return None # no valid CMDA ODELAY exists for this phase
+#            if not phase_ok:
+#                print('0',end="") # just checking if something else depends on non-0 
             #set DQS IDELAY and DQ IDELAY matching phase 
             dqs_idelay=dqsi_dqi_for_phase[phase][DQSI_KEY] # 2-element list
             dq_idelay= dqsi_dqi_for_phase[phase][DQI_KEY]  # 16-element list
@@ -3026,6 +3024,12 @@ class X393McntrlAdjust(object):
                         dly_prev= max(0,dly-(1,NUM_FINE_STEPS)[compare_prim_steps])
                         patt_prev=measure_block(dly_prev,invert_patt) # ,force_meas=False) - will be stored in cache
                         patt=     measure_block(dly,invert_patt) # ,force_meas=False) - will be stored in cache
+                        if patt_prev is None:
+                            print ("patt_prev is None for dly= %d !"%(dly))
+                            continue
+                        if patt is None:
+                            print ("patt is None for dly= %d !"%(dly))
+                            continue
                         for b in range(32):
                             positiveJump=((not inPhase) and (b<16)) or (inPhase and (b >= 16)) # may be 0, False, True       
                             signs=((-1,1)[patt_prev[b]>0.5],(-1,1)[patt[b]>0.5])
@@ -3199,7 +3203,12 @@ class X393McntrlAdjust(object):
         rdict={"write_prim_steps":    compare_prim_steps,
                "write_meas_data":     meas_data} # TODO: May delete after LMA fitting
         self.adjustment_state.update(rdict)
-    
+    def hex_list(self,lst):
+        rslt='['
+        for i in lst:
+            rslt+="0x%x,"%(i)
+        return rslt[:-1]+"]"    
+
     def measure_addr_odelay(self,
                             safe_phase=0.25, # 0 strictly follow cmda_odelay, >0 -program with this fraction of clk period from the margin
                             dqsi_safe_phase=0.125, # > 0 - allow DQSI with DQI simultaneously deviate  +/- this fraction of a period   
@@ -3366,8 +3375,11 @@ class X393McntrlAdjust(object):
         wdata32_good=convert_mem16_to_w32(wdata16_good)
         wdata16_bad=(bad_patt,)*(8*(nbursts+3)) 
         wdata32_bad=convert_mem16_to_w32(wdata16_bad)
-        comp32_good= wdata32_good[4:(nbursts*4)+4] # data to compare with read buffer - discard first 4*32-bit words and the "tail" after nrep*4 words32
-        comp32_bad=  wdata32_bad[4:(nbursts*4)+4] # data to compare with read buffer - discard first 4*32-bit words and the "tail" after nrep*4 words32
+#        comp32_good= wdata32_good[4:(nbursts*4)+4] # data to compare with read buffer - discard first 4*32-bit words and the "tail" after nrep*4 words32
+#        comp32_bad=  wdata32_bad[4:(nbursts*4)+4] # data to compare with read buffer - discard first 4*32-bit words and the "tail" after nrep*4 words32
+        comp32_good= wdata32_good[4:(nbursts*4)+2] # data to compare with read buffer - discard first 4*32-bit words and the "tail" after nrep*4 words32
+        comp32_bad=  wdata32_bad[4:(nbursts*4)+2] # data to compare with read buffer - discard first 4*32-bit words and the "tail" after nrep*4 words32
+
         
         self.x393_mcntrl_buffers.write_block_buf_chn(0,0,wdata32_good,quiet) # fill block memory (channel, page, number)
         self.x393_pio_sequences.set_write_block(ba,ra,ca,nbursts+3,extraTgl,sel_wr) # set sequence to write 'correct' block
@@ -3392,7 +3404,6 @@ class X393McntrlAdjust(object):
         # if got for one bit - try other bits  in vicinity
         # check that the particular phase is valid for all parameters
         # To increase valid range it is possible to ignore write delays as they are not used here 
-
         def addr_phase_step(phase):
             def measure_block(dly,
                               addr_bit,
@@ -3413,16 +3424,21 @@ class X393McntrlAdjust(object):
                         buf=self.x393_pio_sequences.read_block(4 * (nbursts+1) +2,
                                                                (0,1)[quiet<1], #show_rslt,
                                                                1) # wait_complete=1)
-                        buf= buf[4:(nbursts*4)+4] # discard first 4*32-bit words and the "tail" after nrep*4 words32
+#                        buf= buf[4:(nbursts*4)+4] # discard first 4*32-bit words and the "tail" after nrep*4 words32
+                        buf= buf[4:(nbursts*4)+2] # discard first 4*32-bit words and the "tail" after nrep*4 words32
                         if buf==comp32_good:
                             meas=True
                         elif buf==comp32_bad:
                             meas=False
                         else:
                             print ("Inconclusive result for comparing read data for phase=%d, addr_bit=%s, bank_bit=%s  dly=%d"%(phase,str(addr_bit),str(bank_bit),dly))
-                            print ("Data read from memory=",buf, "(",convert_w32_to_mem16(buf),")")
-                            print ("Expected 'good' data=",comp32_good, "(",convert_w32_to_mem16(comp32_good),")")
-                            print ("Expected 'bad'  data=", comp32_bad, "(",convert_w32_to_mem16(comp32_bad),")")
+#                            print ("Data read from memory=",buf, "(",convert_w32_to_mem16(buf),")")
+                            print ("Data read from memory=%s(%s)"%(self.hex_list(buf),self.hex_list(convert_w32_to_mem16(buf))))
+                            #hex_list
+#                            print ("Expected 'good' data=",comp32_good, "(",convert_w32_to_mem16(comp32_good),")")
+                            print ("Expected 'good' data=%s(%s)"%(self.hex_list(comp32_good),self.hex_list(convert_w32_to_mem16(comp32_good))))
+#                            print ("Expected 'bad'  data=", comp32_bad, "(",convert_w32_to_mem16(comp32_bad),")")
+                            print ("Expected 'bad' data=%s(%s)"%(self.hex_list(comp32_bad),self.hex_list(convert_w32_to_mem16(comp32_bad))))
                             meas=None
                         meas_cache[dly]=meas
                         if not meas is None:
@@ -4074,7 +4090,7 @@ class X393McntrlAdjust(object):
         """
         Try read mode branches and find sel (early/late read command) and wbuf delay,
         if possible
-        Detect shift by 1/2 clock cycle (should not happen), if it does proq_dqi_dqsi with duifferent prim_set (^2) is needed
+        Detect shift by 1/2 clock cycle (should not happen), if it does proq_dqi_dqsi with different prim_set (^2) is needed
         delay vs. phase should be already calibrated
         @param wbuf_dly - initial wbuf delay to try
         @quiet reduce output
@@ -4082,8 +4098,12 @@ class X393McntrlAdjust(object):
                         optionally result may contain key 'odd' with a list of varinats that resulted in odd number of wrong words
                           if the remaining number of errors is odd
         """
-        #temporarily:
-#        self.load_mcntrl('dbg/x393_mcntrl.pickle')
+        #Seems that memory can be in mis-aligned state after previous adjustments, and is reading some junk before real block
+        #Try re-initialize memory here (maybe mov it to after doing dangerous things that caused mis-alignement?)
+        if quiet < 3:
+            print ("=== Re-initializing DDR3 before adjusting reads ===")
+        self.x393_pio_sequences.init_ddr3()
+        
         
         if wbuf_dly is None:
             wbuf_dly=vrlg.DFLT_WBUF_DELAY
@@ -4137,7 +4157,8 @@ class X393McntrlAdjust(object):
 #                    print ("rv is not - it is ",rv)
             else:    
                 read_phase_variants.append(None)
-#                print ("Some are not: phase=",phase,', cmda=',cmda,', dqsi=',dqsi,', dqi=',dqi)
+                if quiet < 3:
+                    print ("Some are not: phase=",phase,', cmda=',cmda,', dqsi=',dqsi,', dqi=',dqi)
                 
         if quiet < 3:
 #               print("all_read_variants=",all_read_variants)    
@@ -4244,8 +4265,8 @@ class X393McntrlAdjust(object):
                                         forgive_missing = False,
                                         maxPhaseErrorsPS = None,
                                         
-#                                        quiet=quiet+1)
                                         quiet=quiet+1)
+#                                        quiet= 1)
             if used_delays is None:
                 raise Exception("set_read_branch(): failed to set phase = %d"%(phase))
             wbuf_dly_max=12
@@ -4254,7 +4275,7 @@ class X393McntrlAdjust(object):
             #set_and_read_inc  8 16 0 0 1 1
             last_wstep=0
             read_problems=None
-            for _ in range(20): # limit numer of repetiotions - just in case
+            for _ in range(20): # limit numer of repetitions - just in case
                 self.x393_mcntrl_timing.axi_set_wbuf_delay(wdly)
                 read_results = self.x393_pio_sequences. set_and_read_inc(num8=8, # max 512 16-bit words
                                                                          ca=ca+16,
@@ -4262,6 +4283,7 @@ class X393McntrlAdjust(object):
                                                                          ba=ba,
                                                                          sel=rsel,
                                                                          quiet=quiet+1)
+
                 read_problems=read_results[:2]
                 if (read_problems[0]>=4) or ((rsel==0) and (read_problems[0]>=2)):
                     if last_wstep < 0:
@@ -4317,17 +4339,17 @@ class X393McntrlAdjust(object):
                                                                                                        phase,
                                                                                                        sel ^ rsel,
                                                                                                        wdly+dw,
+                                                                                                       shft,
                                                                                                        str(read_problems)))
                     if quiet < 3:
                         measured_shift= 4*(wdly+dw) - shft - 2* (sel ^ rsel)
 #variant=(-1, (0, 0)), calculated shift=1, measured shift=34, cal-meas=-32 shift=0 sel=1 wdly=9 sw=17
-                        
                         print ("variant=%s, calculated shift=%d (clocks), measured shift=%d(words), cal-meas=%d(words), problems=%s"%(
                                                                                                   str(variant),
                                                                                                   data_shifts[variant],
                                                                                                   measured_shift,
                                                                                                   2*data_shifts[variant]-measured_shift,
-                                                                                                  str(read_problems)))  
+                                                                                                  str(read_problems)))
                     
                     if sum(read_problems) < sum(read_problems_min):
                         read_problems_min=read_problems
@@ -5016,7 +5038,9 @@ write_settings= {
                     rsel=None, # None (any) or 0/1
                     wsel=None, # None (any) or 0/1 # Seems wsel=0 has a better fit - consider changing
                     extraTgl=0,
-                    quiet=3):
+                    quiet=3,
+                    wbuf_dly=9): # just a hint, start value can be different
+
         """
         @param tasks - "*" - load bitfile
                        "D" - set defaults
@@ -5055,7 +5079,7 @@ write_settings= {
         prim_steps_in=prim_steps
         prim_steps_wl=prim_steps
         prim_steps_out=prim_steps
-        wbuf_dly=9 # just a hint, start value can be different
+#        wbuf_dly=9 # just a hint, start value can be different
 #        primary_set_in=2
 #        primary_set_out=2
         write_sel=1 # set DDR3 command in the second cycle of two (0 - during the first one)
@@ -5472,8 +5496,8 @@ write_settings= {
             dqs_phase[k.replace('dqs_','dqsi_')]=dqs_phase.pop(k)
         if quiet < 3:
             print ("dqsi_phase=",dqs_phase)
-            numLanes= len(dqs_phase)
-            numPhases=len(dqs_phase[0])
+            numLanes= len(dqs_phase['dqsi_phase'])
+            numPhases=len(dqs_phase['dqsi_phase'][0])
             print ("\nphase", end=" ")
             for lane in range (numLanes):
                 print("dqsi%d"%(lane),end=" ")
@@ -5482,7 +5506,7 @@ write_settings= {
                 print ("%d"%(phase),end=" ")
                 for lane in range (numLanes):
                     try:
-                        print("%d"%(dqs_phase[lane][phase]),end=" ")
+                        print("%d"%(dqs_phase['dqsi_phase'][lane][phase]),end=" ")
                     except:
                         print("?")
                 print        

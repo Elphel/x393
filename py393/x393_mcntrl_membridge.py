@@ -38,7 +38,8 @@ import x393_mcntrl_timing
 import x393_mcntrl_buffers 
 #import verilog_utils 
 import x393_mcntrl
-MEM_PATH='/sys/devices/elphel393-mem.2/'
+#MEM_PATH='/sys/devices/elphel393-mem.2/'
+MEM_PATH='/sys/devices/soc0/elphel393-mem@0/'
 BUFFER_ADDRESS_NAME='buffer_address'
 BUFFER_PAGES_NAME='buffer_pages'
 BUFFER_ADDRESS=None

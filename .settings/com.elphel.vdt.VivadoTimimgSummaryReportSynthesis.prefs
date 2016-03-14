@@ -1,5 +1,4 @@
 VivadoTimimgSummaryReportSynthesis_102_DisableVivadoTimingSummary=true
 VivadoTimimgSummaryReportSynthesis_121_DisableVivadoTimingSummary=true
-VivadoTimimgSummaryReportSynthesis_122_DisableVivadoTimingSummary=true
-com.elphel.store.context.VivadoTimimgSummaryReportSynthesis=VivadoTimimgSummaryReportSynthesis_102_DisableVivadoTimingSummary<-@\#\#@->VivadoTimimgSummaryReportSynthesis_121_DisableVivadoTimingSummary<-@\#\#@->VivadoTimimgSummaryReportSynthesis_122_DisableVivadoTimingSummary<-@\#\#@->
+com.elphel.store.context.VivadoTimimgSummaryReportSynthesis=VivadoTimimgSummaryReportSynthesis_102_DisableVivadoTimingSummary<-@\#\#@->VivadoTimimgSummaryReportSynthesis_121_DisableVivadoTimingSummary<-@\#\#@->
 eclipse.preferences.version=1

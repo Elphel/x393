@@ -57,8 +57,8 @@ class X393Mem(object):
         with open("/dev/mem", "r+b") as f:
             page_addr=addr & (~(self.PAGE_SIZE-1))
             page_offs=addr-page_addr
-            if (page_addr>=0x80000000):
-                page_addr-= (1<<32)
+#            if (page_addr>=0x80000000):
+#                page_addr-= (1<<32)
             mm = mmap.mmap(f.fileno(), self.PAGE_SIZE, offset=page_addr)
             packedData=struct.pack(self.ENDIAN+"L",data)
             d=struct.unpack(self.ENDIAN+"L",packedData)[0]
@@ -87,8 +87,8 @@ class X393Mem(object):
         with open("/dev/mem", "r+b") as f:
             page_addr=addr & (~(self.PAGE_SIZE-1))
             page_offs=addr-page_addr
-            if (page_addr>=0x80000000):
-                page_addr-= (1<<32)
+#            if (page_addr>=0x80000000):
+#                page_addr-= (1<<32)
             mm = mmap.mmap(f.fileno(), self.PAGE_SIZE, offset=page_addr)
             data=struct.unpack(self.ENDIAN+"L",mm[page_offs:page_offs+4])
             d=data[0]
@@ -128,8 +128,8 @@ class X393Mem(object):
                 for addr in range (start_addr,end_addr+byte_mode,byte_mode):
                     page_addr=addr & (~(self.PAGE_SIZE-1))
                     page_offs=addr-page_addr
-                    if (page_addr>=0x80000000):
-                        page_addr-= (1<<32)
+#                    if (page_addr>=0x80000000):
+#                        page_addr-= (1<<32)
                     mm = mmap.mmap(f.fileno(), self.PAGE_SIZE, offset=page_addr)
                     data=struct.unpack_from(self.ENDIAN+frmt_bytes[byte_mode],mm, page_offs)
                     rslt.append(data[0])
@@ -181,8 +181,8 @@ class X393Mem(object):
                 if page_num == last_page:
                     end_offset = start_addr + length - self.PAGE_SIZE * page_num
                 page_addr = page_num * self.PAGE_SIZE 
-                if (page_addr>=0x80000000):
-                    page_addr-= (1<<32)
+#                if (page_addr>=0x80000000):
+#                    page_addr-= (1<<32)
                 mm = mmap.mmap(f.fileno(), self.PAGE_SIZE, offset=page_addr)
                 bf.write(mm[start_offset:end_offset])
 
@@ -208,8 +208,8 @@ class X393Mem(object):
                 if page_num == last_page:
                     end_offset = start_addr + length - self.PAGE_SIZE * page_num
                 page_addr = page_num * self.PAGE_SIZE 
-                if (page_addr>=0x80000000):
-                    page_addr-= (1<<32)
+#                if (page_addr>=0x80000000):
+#                    page_addr-= (1<<32)
                 mm = mmap.mmap(f.fileno(), self.PAGE_SIZE, offset=page_addr)
                 mm[start_offset:end_offset] = patt[start_offset:end_offset]
 
@@ -243,8 +243,8 @@ class X393Mem(object):
                 data = (start_data + ((addr-start_addr) // byte_mode)*inc_data) & data_mask
                 page_addr=addr & (~(self.PAGE_SIZE-1))
                 page_offs=addr-page_addr
-                if (page_addr>=0x80000000):
-                    page_addr-= (1<<32)
+#                if (page_addr>=0x80000000):
+#                    page_addr-= (1<<32)
                 print (("0x%08x: "+ data_frmt)%(addr,data))
         else:
             with open("/dev/mem", "r+b") as f:
@@ -252,8 +252,8 @@ class X393Mem(object):
                     data = (start_data + ((addr-start_addr) // byte_mode)*inc_data) & data_mask
                     page_addr=addr & (~(self.PAGE_SIZE-1))
                     page_offs=addr-page_addr
-                    if (page_addr>=0x80000000):
-                        page_addr-= (1<<32)
+#                    if (page_addr>=0x80000000):
+#                        page_addr-= (1<<32)
                     mm = mmap.mmap(f.fileno(), self.PAGE_SIZE, offset=page_addr)
                     struct.pack_into(self.ENDIAN+frmt_bytes[byte_mode],mm, page_offs, data)
     
