@@ -89,16 +89,10 @@ set_property CLOCK_DEDICATED_ROUTE FALSE [get_nets sensors393_i/sensor_channel_b
 set_clock_groups -name ps_async_clock                 -asynchronous -group {axi_aclk}
 # do not check timing between clk_axihp_pre and other clocks. Code should provide correct asynchronous crossing of the clock boundary.
 set_clock_groups -name ps_async_clock_axihp          -asynchronous -group {axihp_clk}
-#set_clock_groups -name compressor_clocks_xclk_xclk2x -asynchronous -group {xclk xclk2x}
-#set_clock_groups -name sensor_clocks_pclk_pclk2x     -asynchronous -group {pclk pclk2x}
 set_clock_groups -name compressor_clocks_xclk_xclk2x -asynchronous -group {xclk }
 set_clock_groups -name sensor_clocks_pclk_pclk2x     -asynchronous -group {pclk}
 
 set_clock_groups -name sync_logger_clocks_sclk       -asynchronous -group {sclk }
 
-#set_clock_groups -name sensor0_clocks_iclk_pclk2x -asynchronous -group {iclk0 iclk2x0}
-#set_clock_groups -name sensor1_clocks_iclk_pclk2x -asynchronous -group {iclk1 iclk2x1}
-#set_clock_groups -name sensor2_clocks_iclk_pclk2x -asynchronous -group {iclk2 iclk2x2}
-#set_clock_groups -name sensor3_clocks_iclk_pclk2x -asynchronous -group {iclk3 iclk2x3}
-
 set_clock_groups -name external_clock_ffclk0 -asynchronous -group {ffclk0}
+

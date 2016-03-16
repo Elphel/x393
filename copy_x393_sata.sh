@@ -2,7 +2,7 @@ x393_sata/device/sata_device.v
 #!/bin/bash
 REPO_ROOT=".."
 CWD="$(pwd)"
-#copy x393_sata unique files to the new x393_sata/ subdirectory
+#cop (or update)y x393_sata unique files to the new x393_sata/ subdirectory
 cd $REPO_ROOT
 cp -v --parents \
 x393_sata/device/oob_dev.v \
@@ -47,7 +47,7 @@ x393_sata/system_defines.vh \
 x393_sata/ahci_timing.xdc \
 $CWD
 
-#Copy include files to includes/
+#Copy (or update) include files to includes/
 cp -v \
 x393_sata/includes/ahxi_fsm_code.vh \
 x393_sata/includes/ahci_localparams.vh \
