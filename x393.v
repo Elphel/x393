@@ -146,7 +146,16 @@ module  x393 #(
     input                        ffclk0p, // Y12
     input                        ffclk0n, // Y11
     input                        ffclk1p, // W14
-    input                        ffclk1n  // W13
+    input                        ffclk1n,  // W13
+    
+// SATA data interface
+    input                        RXN, 
+    input                        RXP,
+    output                       TXN,
+    output                       TXP,
+// sata clocking iface
+    input                        EXTCLK_P,
+    input                        EXTCLK_N
     
 );
 `include "fpga_version.vh"
@@ -513,54 +522,136 @@ module  x393 #(
     wire                     [3:0] cmprs_suspend;          // output suspend reading data for this channel - waiting for the source data
 
 // Timestamp messages (@mclk) - combine to a single ts_data?    
-   wire                      [3:0] ts_pre_stb; // input[ 3:0] 4 compressor channels
-   wire                     [31:0] ts_data;    // input[31:0] 4 compressor channels
+    wire                      [3:0] ts_pre_stb; // input[ 3:0] 4 compressor channels
+    wire                     [31:0] ts_data;    // input[31:0] 4 compressor channels
 
 // Timestamp messages (@mclk) - combine to a single ts_data?    
-   wire                            ts_pre_logger_stb; // input logger timestamp sync (@logger_clk)
-   wire                      [7:0] ts_logegr_data;    // input[7:0] loger timestamp data (@logger_clk) 
+    wire                            ts_pre_logger_stb; // input logger timestamp sync (@logger_clk)
+    wire                      [7:0] ts_logegr_data;    // input[7:0] loger timestamp data (@logger_clk) 
    
 // Compressor signals for interrupts generation    
-   wire                      [3:0] eof_written_mclk;  // output // SuppressThisWarning VEditor - (yet) unused
-   wire                      [3:0] stuffer_done_mclk; // output// SuppressThisWarning VEditor - (yet) unused
+    wire                      [3:0] eof_written_mclk;  // output // SuppressThisWarning VEditor - (yet) unused
+    wire                      [3:0] stuffer_done_mclk; // output// SuppressThisWarning VEditor - (yet) unused
    
-   wire                      [3:0] cmprs_irq;         // compressor done, data confirmed written to memory)
+    wire                      [3:0] cmprs_irq;         // compressor done, data confirmed written to memory)
    
 // Compressor frame synchronization
   
 // GPIO internal signals (for camera GPIOs, not Zynq PS GPIO)
-   wire               [GPIO_N-1:0] gpio_rd;          // data read from the external GPIO pins 
-   wire               [GPIO_N-1:0] gpio_camsync;     // data out from the camsync module 
-   wire               [GPIO_N-1:0] gpio_camsync_en;  // output enable from the camsync module 
-   wire               [GPIO_N-1:0] gpio_db;          // data out from the port B (unused,  Motors in x353)
-   wire               [GPIO_N-1:0] gpio_db_en;       // output enable from the port B (unused,  Motors in x353)  
-   wire               [GPIO_N-1:0] gpio_logger;      // data out from the event_logger module 
-   wire               [GPIO_N-1:0] gpio_logger_en;   // output enable from the event_logger module 
-   assign gpio_db = 0;    // unused,  Motors in x353
-   assign gpio_db_en = 0; // unused,  Motors in x353
+    wire               [GPIO_N-1:0] gpio_rd;          // data read from the external GPIO pins 
+    wire               [GPIO_N-1:0] gpio_camsync;     // data out from the camsync module 
+    wire               [GPIO_N-1:0] gpio_camsync_en;  // output enable from the camsync module 
+    wire               [GPIO_N-1:0] gpio_db;          // data out from the port B (unused,  Motors in x353)
+    wire               [GPIO_N-1:0] gpio_db_en;       // output enable from the port B (unused,  Motors in x353)  
+    wire               [GPIO_N-1:0] gpio_logger;      // data out from the event_logger module 
+    wire               [GPIO_N-1:0] gpio_logger_en;   // output enable from the event_logger module 
     
-   assign gpio_in= {48'h0,frst,tmp_debug}; // these are PS GPIO pins
-   
    // Internal signal for toming393 (camsync) modules
-   wire               logger_snap;
+    wire               logger_snap;
    
    // event_logger intermediate signals
-   wire        [15:0] logger_out;          // output[15:0] 
-   wire               logger_stb;          // output
+    wire        [15:0] logger_out;          // output[15:0] 
+    wire               logger_stb;          // output
    // event_logger intermediate signals (after mult_saxi_wr_inbuf - converted to 32 bit wide)
    
-  wire               logger_saxi_en;
-  wire               logger_has_burst; 
-  wire               logger_read_burst;
-  wire        [31:0] logger_data32; 
-  wire               logger_pre_valid_chn;
- 
-    wire        idelay_ctrl_rdy;// just to keep idelay_ctrl instances
+    wire               logger_saxi_en;
+    wire               logger_has_burst; 
+    wire               logger_read_burst;
+    wire        [31:0] logger_data32; 
+    wire               logger_pre_valid_chn;
+    wire               idelay_ctrl_rdy;// just to keep idelay_ctrl instances
+
+// Top level signals for SATA
+// MAXIGP1 - interface with SATA controller register memory
+    wire       [31:0]  maxi1_araddr;
+    wire               maxi1_arvalid;
+    wire               maxi1_arready;
+    wire       [11:0]  maxi1_arid;
+    wire       [3:0]   maxi1_arlen;
+    wire       [1:0]   maxi1_arsize;
+    wire       [1:0]   maxi1_arburst;
+    wire       [31:0]  maxi1_rdata;
+    wire               maxi1_rvalid;
+    wire               maxi1_rready;
+    wire       [11:0]  maxi1_rid;
+    wire               maxi1_rlast;
+    wire       [1:0]   maxi1_rresp;
+    wire       [31:0]  maxi1_awaddr;
+    wire               maxi1_awvalid;
+    wire               maxi1_awready;
+    wire       [11:0]  maxi1_awid;
+    wire       [3:0]   maxi1_awlen;
+    wire       [1:0]   maxi1_awsize;
+    wire       [1:0]   maxi1_awburst;
+    wire       [31:0]  maxi1_wdata;
+    wire               maxi1_wvalid;
+    wire               maxi1_wready;
+    wire       [11:0]  maxi1_wid;
+    wire               maxi1_wlast;
+    wire       [3:0]   maxi1_wstb;
+    wire               maxi1_bvalid;
+    wire               maxi1_bready;
+    wire       [11:0]  maxi1_bid;
+    wire       [1:0]   maxi1_bresp;
+
+// SAXIGP3 - SATA comntroller DMA interface with system memory
+    wire        [31:0] afi3_awaddr;       // output[31:0]
+    wire               afi3_awvalid;      // output
+    wire               afi3_awready;      // input
+    wire        [ 5:0] afi3_awid;         // output[5:0]
+    wire        [ 1:0] afi3_awlock;       // output[1:0]
+    wire        [ 3:0] afi3_awcache;      // output[3:0]
+    wire        [ 2:0] afi3_awprot;       // output[2:0]
+    wire        [ 3:0] afi3_awlen;        // output[3:0]
+    wire        [ 1:0] afi3_awsize;       // output[2:0]
+    wire        [ 1:0] afi3_awburst;      // output[1:0]
+    wire        [ 3:0] afi3_awqos;        // output[3:0]
+    wire        [63:0] afi3_wdata;        // output[63:0]
+    wire               afi3_wvalid;       // output
+    wire               afi3_wready;       // input
+    wire        [ 5:0] afi3_wid;          // output[5:0]
+    wire               afi3_wlast;        // output
+    wire        [ 7:0] afi3_wstrb;        // output[7:0]
+    wire               afi3_bvalid;       // input
+    wire               afi3_bready;       // output
+    wire        [ 5:0] afi3_bid;          // input[5:0]
+    wire        [ 1:0] afi3_bresp;        // input[1:0]
+    wire        [ 7:0] afi3_wcount;       // input[7:0]
+    wire        [ 5:0] afi3_wacount;      // input[5:0]
+    wire               afi3_wrissuecap1en;// output
+    wire        [31:0] afi3_araddr;       // output[31:0]
+    wire               afi3_arvalid;      // output
+    wire               afi3_arready;      // input
+    wire        [ 5:0] afi3_arid;         // output[5:0]
+    wire        [ 1:0] afi3_arlock;       // output[1:0]
+    wire        [ 3:0] afi3_arcache;      // output[3:0]
+    wire        [ 2:0] afi3_arprot;       // output[2:0]
+    wire        [ 3:0] afi3_arlen;        // output[3:0]
+    wire        [ 1:0] afi3_arsize;       // output[2:0]
+    wire        [ 1:0] afi3_arburst;      // output[1:0]
+    wire        [ 3:0] afi3_arqos;        // output[3:0]
+    wire        [63:0] afi3_rdata;        // input[63:0]
+    wire               afi3_rvalid;       // input
+    wire               afi3_rready;       // output
+    wire        [ 5:0] afi3_rid;          // input[5:0]
+    wire               afi3_rlast;        // input
+    wire        [ 1:0] afi3_rresp;        // input[2:0]
+    wire        [ 7:0] afi3_rcount;       // input[7:0]
+    wire        [ 2:0] afi3_racount;      // input[2:0]
+    wire               afi3_rdissuecap1en;// output
+
+    wire               sata_irq;          // ps7 IRQ
+
+    wire               sata_clk    ; // Just output from SATA subsystem SuppressThisWarning VEditor Not used
    
-   assign axird_dev_ready = ~axird_dev_busy; //may combine (AND) multiple sources if needed
-   assign axird_dev_busy = 1'b0; // always for now
+    assign gpio_db = 0;    // unused,  Motors in x353
+    assign gpio_db_en = 0; // unused,  Motors in x353
+    assign gpio_in= {48'h0,frst,tmp_debug}; // these are PS GPIO pins
+   
+    assign axird_dev_ready = ~axird_dev_busy; //may combine (AND) multiple sources if needed
+    assign axird_dev_busy = 1'b0; // always for now
 // Use this later    
-   assign axird_rdata= ({32{status_selected_regen}} & status_rdata[31:0]) |
+    assign axird_rdata= ({32{status_selected_regen}} & status_rdata[31:0]) |
                        ({32{readback_selected_regen}} & readback_rdata[31:0]) |
                        ({32{mcntrl_axird_selected_regen}} & mcntrl_axird_rdata[31:0]);
    
@@ -1793,7 +1884,8 @@ assign axi_grst = axi_rst_pre;
     wire [ 7:0] afi1_wcount;     // input[7:0] 
     wire [ 5:0] afi1_wacount;     // input[5:0] 
     wire        afi1_wrissuecap1en;     // output
-
+    wire        afi1_clk;               // same as hclk if the second compressor AXI HP channel is enabled, 1'b0 otherwise
+    
     // AFI2 (AXI_HP2) signals - write channels only - used only if CMPRS_NUM_AFI_CHN == 2
     wire [31:0] afi2_awaddr;   // output[31:0]
     wire        afi2_awvalid;  // output
@@ -1974,6 +2066,7 @@ assign axi_grst = axi_rst_pre;
         .afi0_wcount               (afi1_wcount),                // input[7:0] 
         .afi0_wacount              (afi1_wacount),               // input[5:0] 
         .afi0_wrissuecap1en        (afi1_wrissuecap1en),         // output
+        .afi1_clk                  (afi1_clk),                   // output same as hclk if the second channel is used
         
         .afi1_awaddr               (afi2_awaddr),                // output[31:0] 
         .afi1_awvalid              (afi2_awvalid),               // output
@@ -2454,6 +2547,115 @@ assign axi_grst = axi_rst_pre;
         .bram_rdata  (axird_rdata ) // input[31:0] == axi_rdata[31:0], so SuppressThisWarning VivadoSynthesis: [Synth 8-3295] tying undriven pin #axibram_read_i:bram_rdata[31:0] to constant 0
     );
 
+sata_ahci_top sata_top(
+    .sata_clk                   (sata_clk), // output wire
+    .sata_rst                   (),         // output wire
+    .arst                       (hrst),     // extrst),   // input wire 
+    // reliable clock to source drp and cpll lock det circuits
+    .reliable_clk               (hclk),     // input wire// Use 150MHz hclk for MAXIGP1 axi_aclk0),
+    .hclk                       (hclk),     // input wire
+    .ACLK                       (hclk),     // input wire// Use 150MHz hclk for MAXIGP1 axi_aclk0),
+    .ARESETN                    (1'b0),     // input wire not used inside module
+// AXI PS Master GP1: Read Address
+    .ARADDR                     (maxi1_araddr),
+    .ARVALID                    (maxi1_arvalid),
+    .ARREADY                    (maxi1_arready),
+    .ARID                       (maxi1_arid),
+    .ARLEN                      (maxi1_arlen),
+    .ARSIZE                     (maxi1_arsize),
+    .ARBURST                    (maxi1_arburst),
+// AXI PS Master GP1: Read Data
+    .RDATA                      (maxi1_rdata),
+    .RVALID                     (maxi1_rvalid),
+    .RREADY                     (maxi1_rready),
+    .RID                        (maxi1_rid),
+    .RLAST                      (maxi1_rlast),
+    .RRESP                      (maxi1_rresp),
+// AXI PS Master GP1: Write Address
+    .AWADDR                     (maxi1_awaddr),
+    .AWVALID                    (maxi1_awvalid),
+    .AWREADY                    (maxi1_awready),
+    .AWID                       (maxi1_awid),
+    .AWLEN                      (maxi1_awlen),
+    .AWSIZE                     (maxi1_awsize),
+    .AWBURST                    (maxi1_awburst),
+// AXI PS Master GP1: Write Data
+    .WDATA                      (maxi1_wdata),
+    .WVALID                     (maxi1_wvalid),
+    .WREADY                     (maxi1_wready),
+    .WID                        (maxi1_wid),
+    .WLAST                      (maxi1_wlast),
+    .WSTRB                      (maxi1_wstb),
+// AXI PS Master GP1: Write response
+    .BVALID                     (maxi1_bvalid),
+    .BREADY                     (maxi1_bready),
+    .BID                        (maxi1_bid),
+    .BRESP                      (maxi1_bresp),
+// Data interface
+    .afi_awaddr                 (afi3_awaddr),
+    .afi_awvalid                (afi3_awvalid),
+    .afi_awready                (afi3_awready),
+    .afi_awid                   (afi3_awid),
+    .afi_awlock                 (afi3_awlock),
+    .afi_awcache                (afi3_awcache),
+    .afi_awprot                 (afi3_awprot),
+    .afi_awlen                  (afi3_awlen),
+    .afi_awsize                 (afi3_awsize),
+    .afi_awburst                (afi3_awburst),
+    .afi_awqos                  (afi3_awqos),
+    // write data
+    .afi_wdata                  (afi3_wdata),
+    .afi_wvalid                 (afi3_wvalid),
+    .afi_wready                 (afi3_wready),
+    .afi_wid                    (afi3_wid),
+    .afi_wlast                  (afi3_wlast),
+    .afi_wstrb                  (afi3_wstrb),
+    // write response
+    .afi_bvalid                 (afi3_bvalid),
+    .afi_bready                 (afi3_bready),
+    .afi_bid                    (afi3_bid),
+    .afi_bresp                  (afi3_bresp),
+    // PL extra (non-AXI) signal
+    .afi_wcount                 (afi3_wcount),
+    .afi_wacount                (afi3_wacount),
+    .afi_wrissuecap1en          (afi3_wrissuecap1en),
+    // AXI_HP signals - read channel
+    // read address
+    .afi_araddr                 (afi3_araddr),
+    .afi_arvalid                (afi3_arvalid),
+    .afi_arready                (afi3_arready),
+    .afi_arid                   (afi3_arid),
+    .afi_arlock                 (afi3_arlock),
+    .afi_arcache                (afi3_arcache),
+    .afi_arprot                 (afi3_arprot),
+    .afi_arlen                  (afi3_arlen),
+    .afi_arsize                 (afi3_arsize),
+    .afi_arburst                (afi3_arburst),
+    .afi_arqos                  (afi3_arqos),
+    // read data
+    .afi_rdata                  (afi3_rdata),
+    .afi_rvalid                 (afi3_rvalid),
+    .afi_rready                 (afi3_rready),
+    .afi_rid                    (afi3_rid),
+    .afi_rlast                  (afi3_rlast),
+    .afi_rresp                  (afi3_rresp),
+    // PL extra (non-AXI) signal
+    .afi_rcount                 (afi3_rcount),
+    .afi_racount                (afi3_racount),
+    .afi_rdissuecap1en          (afi3_rdissuecap1en),
+
+    .irq                        (sata_irq), // output wire
+// PHY
+    .TXN                        (TXN),
+    .TXP                        (TXP),
+    .RXN                        (RXN),
+    .RXP                        (RXP),
+
+    .EXTCLK_P                   (EXTCLK_P),
+    .EXTCLK_N                   (EXTCLK_N)
+);
+
+
   PS7 ps7_i (
  // EMIO interface
  // CAN interface
@@ -2685,7 +2887,7 @@ assign axi_grst = axi_rst_pre;
             cmprs_irq[3:0],      // [15:12] Compressor done interrupts
             frseq_irq[3:0],      // [11: 8] Frame sync interrupts
             7'b0,
-            1'b0                 // Put SATA here  
+            sata_irq             // Put AHCI (SATA ) interrupt  
             }),                  // Interrupts, OL to PS [19:0], input
     .IRQP2F(),                   // Interrupts, OL to PS [28:0], output
  // Event Signals
@@ -2750,143 +2952,143 @@ assign axi_grst = axi_rst_pre;
     .MAXIGP0AWID    (maxi0_awid[11:0]),     // AXI PS Master GP0 AWID[11:0], output
     .MAXIGP0AWLOCK   (),  // AXI PS Master GP0 AWLOCK[1:0], output
     .MAXIGP0AWCACHE  (),// AXI PS Master GP0 AWCACHE[3:0], output
-    .MAXIGP0AWPROT   (),  // AXI PS Master GP0 AWPROT[2:0], output
-    .MAXIGP0AWLEN   (maxi0_awlen[3:0]),    // AXI PS Master GP0 AWLEN[3:0], output
+    .MAXIGP0AWPROT   (),                  // AXI PS Master GP0 AWPROT[2:0], output
+    .MAXIGP0AWLEN   (maxi0_awlen[3:0]),   // AXI PS Master GP0 AWLEN[3:0], output
     .MAXIGP0AWSIZE  (maxi0_awsize[1:0]),  // AXI PS Master GP0 AWSIZE[1:0], output
-    .MAXIGP0AWBURST (maxi0_awburst[1:0]),// AXI PS Master GP0 AWBURST[1:0], output
-    .MAXIGP0AWQOS    (),          // AXI PS Master GP0 AWQOS[3:0], output
+    .MAXIGP0AWBURST (maxi0_awburst[1:0]), // AXI PS Master GP0 AWBURST[1:0], output
+    .MAXIGP0AWQOS    (),                  // AXI PS Master GP0 AWQOS[3:0], output
 // AXI PS Master GP0: Write Data
-    .MAXIGP0WDATA   (maxi0_wdata[31:0]),   // AXI PS Master GP0 WDATA[31:0], output
+    .MAXIGP0WDATA   (maxi0_wdata[31:0]),  // AXI PS Master GP0 WDATA[31:0], output
     .MAXIGP0WVALID  (maxi0_wvalid),       // AXI PS Master GP0 WVALID, output
     .MAXIGP0WREADY  (maxi0_wready),       // AXI PS Master GP0 WREADY, input
-    .MAXIGP0WID     (maxi0_wid[11:0]),       // AXI PS Master GP0 WID[11:0], output
-    .MAXIGP0WLAST   (maxi0_wlast),         // AXI PS Master GP0 WLAST, output
+    .MAXIGP0WID     (maxi0_wid[11:0]),    // AXI PS Master GP0 WID[11:0], output
+    .MAXIGP0WLAST   (maxi0_wlast),        // AXI PS Master GP0 WLAST, output
     .MAXIGP0WSTRB   (maxi0_wstb[3:0]),    // AXI PS Master GP0 WSTRB[3:0], output
 // AXI PS Master GP0: Write response
     .MAXIGP0BVALID  (maxi0_bvalid),       // AXI PS Master GP0 BVALID, input
     .MAXIGP0BREADY  (maxi0_bready),       // AXI PS Master GP0 BREADY, output
-    .MAXIGP0BID     (maxi0_bid[11:0]),       // AXI PS Master GP0 BID[11:0], input
-    .MAXIGP0BRESP   (maxi0_bresp[1:0]),    // AXI PS Master GP0 BRESP[1:0], input
+    .MAXIGP0BID     (maxi0_bid[11:0]),    // AXI PS Master GP0 BID[11:0], input
+    .MAXIGP0BRESP   (maxi0_bresp[1:0]),   // AXI PS Master GP0 BRESP[1:0], input
 
 // AXI PS Master GP1    
 // AXI PS Master GP1: Clock, Reset
-    .MAXIGP1ACLK(),              // AXI PS Master GP1 Clock , input
-    .MAXIGP1ARESETN(),           // AXI PS Master GP1 Reset, output
+    .MAXIGP1ACLK    (hclk),               // AXI PS Master GP1 Clock , input
+    .MAXIGP1ARESETN(),                    // AXI PS Master GP1 Reset, output
 // AXI PS Master GP1: Read Address    
-    .MAXIGP1ARADDR(),            // AXI PS Master GP1 ARADDR[31:0], output  
-    .MAXIGP1ARVALID(),           // AXI PS Master GP1 ARVALID, output
-    .MAXIGP1ARREADY(),           // AXI PS Master GP1 ARREADY, input
-    .MAXIGP1ARID(),              // AXI PS Master GP1 ARID[11:0], output
-    .MAXIGP1ARLOCK(),            // AXI PS Master GP1 ARLOCK[1:0], output
-    .MAXIGP1ARCACHE(),           // AXI PS Master GP1 ARCACHE[3:0], output
-    .MAXIGP1ARPROT(),            // AXI PS Master GP1 ARPROT[2:0], output
-    .MAXIGP1ARLEN(),             // AXI PS Master GP1 ARLEN[3:0], output
-    .MAXIGP1ARSIZE(),            // AXI PS Master GP1 ARSIZE[1:0], output
-    .MAXIGP1ARBURST(),           // AXI PS Master GP1 ARBURST[1:0], output
-    .MAXIGP1ARQOS(),             // AXI PS Master GP1 ARQOS[3:0], output
+    .MAXIGP1ARADDR  (maxi1_araddr),       // AXI PS Master GP1 ARADDR[31:0], output
+    .MAXIGP1ARVALID (maxi1_arvalid),      // AXI PS Master GP1 ARVALID, output
+    .MAXIGP1ARREADY (maxi1_arready),      // AXI PS Master GP1 ARREADY, input
+    .MAXIGP1ARID    (maxi1_arid),         // AXI PS Master GP1 ARID[11:0], output
+    .MAXIGP1ARLOCK  (),                   // AXI PS Master GP1 ARLOCK[1:0], output
+    .MAXIGP1ARCACHE (),                   // AXI PS Master GP1 ARCACHE[3:0], output
+    .MAXIGP1ARPROT  (),                   // AXI PS Master GP1 ARPROT[2:0], output
+    .MAXIGP1ARLEN   (maxi1_arlen),        // AXI PS Master GP1 ARLEN[3:0], output
+    .MAXIGP1ARSIZE  (maxi1_arsize),       // AXI PS Master GP1 ARSIZE[1:0], output
+    .MAXIGP1ARBURST (maxi1_arburst),      // AXI PS Master GP1 ARBURST[1:0], output
+    .MAXIGP1ARQOS   (),                   // AXI PS Master GP1 ARQOS[3:0], output
 // AXI PS Master GP1: Read Data
-    .MAXIGP1RDATA(),             // AXI PS Master GP1 RDATA[31:0], input
-    .MAXIGP1RVALID(),            // AXI PS Master GP1 RVALID, input
-    .MAXIGP1RREADY(),            // AXI PS Master GP1 RREADY, output
-    .MAXIGP1RID(),               // AXI PS Master GP1 RID[11:0], input
-    .MAXIGP1RLAST(),             // AXI PS Master GP1 RLAST, input
-    .MAXIGP1RRESP(),             // AXI PS Master GP1 RRESP[1:0], input
+    .MAXIGP1RDATA   (maxi1_rdata),        // AXI PS Master GP1 RDATA[31:0], input
+    .MAXIGP1RVALID  (maxi1_rvalid),       // AXI PS Master GP1 RVALID, input
+    .MAXIGP1RREADY  (maxi1_rready),       // AXI PS Master GP1 RREADY, output
+    .MAXIGP1RID     (maxi1_rid),          // AXI PS Master GP1 RID[11:0], input
+    .MAXIGP1RLAST   (maxi1_rlast),        // AXI PS Master GP1 RLAST, input
+    .MAXIGP1RRESP   (maxi1_rresp),        // AXI PS Master GP1 RRESP[1:0], input
 // AXI PS Master GP1: Write Address    
-    .MAXIGP1AWADDR(),            // AXI PS Master GP1 AWADDR[31:0], output
-    .MAXIGP1AWVALID(),           // AXI PS Master GP1 AWVALID, output
-    .MAXIGP1AWREADY(),           // AXI PS Master GP1 AWREADY, input
-    .MAXIGP1AWID(),              // AXI PS Master GP1 AWID[11:0], output
-    .MAXIGP1AWLOCK(),            // AXI PS Master GP1 AWLOCK[1:0], output
-    .MAXIGP1AWCACHE(),           // AXI PS Master GP1 AWCACHE[3:0], output
-    .MAXIGP1AWPROT(),            // AXI PS Master GP1 AWPROT[2:0], output
-    .MAXIGP1AWLEN(),             // AXI PS Master GP1 AWLEN[3:0], output
-    .MAXIGP1AWSIZE(),            // AXI PS Master GP1 AWSIZE[1:0], output
-    .MAXIGP1AWBURST(),           // AXI PS Master GP1 AWBURST[1:0], output
-    .MAXIGP1AWQOS(),             // AXI PS Master GP1 AWQOS[3:0], output
+    .MAXIGP1AWADDR  (maxi1_awaddr),       // AXI PS Master GP1 AWADDR[31:0], output
+    .MAXIGP1AWVALID (maxi1_awvalid),      // AXI PS Master GP1 AWVALID, output
+    .MAXIGP1AWREADY (maxi1_awready),      // AXI PS Master GP1 AWREADY, input
+    .MAXIGP1AWID    (maxi1_awid),         // AXI PS Master GP1 AWID[11:0], output
+    .MAXIGP1AWLOCK  (),                   // AXI PS Master GP1 AWLOCK[1:0], output
+    .MAXIGP1AWCACHE (),                   // AXI PS Master GP1 AWCACHE[3:0], output
+    .MAXIGP1AWPROT  (),                   // AXI PS Master GP1 AWPROT[2:0], output
+    .MAXIGP1AWLEN   (maxi1_awlen),        // AXI PS Master GP1 AWLEN[3:0], output
+    .MAXIGP1AWSIZE  (maxi1_awsize),       // AXI PS Master GP1 AWSIZE[1:0], output
+    .MAXIGP1AWBURST (maxi1_awburst),      // AXI PS Master GP1 AWBURST[1:0], output
+    .MAXIGP1AWQOS   (),                   // AXI PS Master GP1 AWQOS[3:0], output
 // AXI PS Master GP1: Write Data
-    .MAXIGP1WDATA(),             // AXI PS Master GP1 WDATA[31:0], output
-    .MAXIGP1WVALID(),            // AXI PS Master GP1 WVALID, output
-    .MAXIGP1WREADY(),            // AXI PS Master GP1 WREADY, input
-    .MAXIGP1WID(),               // AXI PS Master GP1 WID[11:0], output
-    .MAXIGP1WLAST(),             // AXI PS Master GP1 WLAST, output
-    .MAXIGP1WSTRB(),             // AXI PS Master GP1 WSTRB[3:0], output
+    .MAXIGP1WDATA   (maxi1_wdata),        // AXI PS Master GP1 WDATA[31:0], output
+    .MAXIGP1WVALID  (maxi1_wvalid),       // AXI PS Master GP1 WVALID, output
+    .MAXIGP1WREADY  (maxi1_wready),       // AXI PS Master GP1 WREADY, input
+    .MAXIGP1WID     (maxi1_wid),          // AXI PS Master GP1 WID[11:0], output
+    .MAXIGP1WLAST   (maxi1_wlast),        // AXI PS Master GP1 WLAST, output
+    .MAXIGP1WSTRB   (maxi1_wstb),         // AXI PS Master GP1 maxi1_wstb[3:0], output
 // AXI PS Master GP1: Write response
-    .MAXIGP1BVALID(),            // AXI PS Master GP1 BVALID, input
-    .MAXIGP1BREADY(),            // AXI PS Master GP1 BREADY, output
-    .MAXIGP1BID(),               // AXI PS Master GP1 BID[11:0], input
-    .MAXIGP1BRESP(),             // AXI PS Master GP1 BRESP[1:0], input
+    .MAXIGP1BVALID  (maxi1_bvalid),       // AXI PS Master GP1 BVALID, input
+    .MAXIGP1BREADY  (maxi1_bready),       // AXI PS Master GP1 BREADY, output
+    .MAXIGP1BID     (maxi1_bid),          // AXI PS Master GP1 BID[11:0], input
+    .MAXIGP1BRESP   (maxi1_bresp),        // AXI PS Master GP1 BRESP[1:0], input
 
 // AXI PS Slave GP0    
 // AXI PS Slave GP0: Clock, Reset
-    .SAXIGP0ACLK       (saxi0_aclk),              // AXI PS Slave GP0 Clock , input
-    .SAXIGP0ARESETN(),           // AXI PS Slave GP0 Reset, output
+    .SAXIGP0ACLK       (saxi0_aclk),      // AXI PS Slave GP0 Clock , input
+    .SAXIGP0ARESETN(),                    // AXI PS Slave GP0 Reset, output
 // AXI PS Slave GP0: Read Address    - Not used
-    .SAXIGP0ARADDR(),            // AXI PS Slave GP0 ARADDR[31:0], input  
-    .SAXIGP0ARVALID(),           // AXI PS Slave GP0 ARVALID, input
-    .SAXIGP0ARREADY(),           // AXI PS Slave GP0 ARREADY, output
-    .SAXIGP0ARID(),              // AXI PS Slave GP0 ARID[5:0], input
-    .SAXIGP0ARLOCK(),            // AXI PS Slave GP0 ARLOCK[1:0], input
-    .SAXIGP0ARCACHE(),           // AXI PS Slave GP0 ARCACHE[3:0], input
-    .SAXIGP0ARPROT(),            // AXI PS Slave GP0 ARPROT[2:0], input
-    .SAXIGP0ARLEN(),             // AXI PS Slave GP0 ARLEN[3:0], input
-    .SAXIGP0ARSIZE(),            // AXI PS Slave GP0 ARSIZE[1:0], input
-    .SAXIGP0ARBURST(),           // AXI PS Slave GP0 ARBURST[1:0], input
-    .SAXIGP0ARQOS(),             // AXI PS Slave GP0 ARQOS[3:0], input
+    .SAXIGP0ARADDR(),                     // AXI PS Slave GP0 ARADDR[31:0], input  
+    .SAXIGP0ARVALID(),                    // AXI PS Slave GP0 ARVALID, input
+    .SAXIGP0ARREADY(),                    // AXI PS Slave GP0 ARREADY, output
+    .SAXIGP0ARID(),                       // AXI PS Slave GP0 ARID[5:0], input
+    .SAXIGP0ARLOCK(),                     // AXI PS Slave GP0 ARLOCK[1:0], input
+    .SAXIGP0ARCACHE(),                    // AXI PS Slave GP0 ARCACHE[3:0], input
+    .SAXIGP0ARPROT(),                     // AXI PS Slave GP0 ARPROT[2:0], input
+    .SAXIGP0ARLEN(),                      // AXI PS Slave GP0 ARLEN[3:0], input
+    .SAXIGP0ARSIZE(),                     // AXI PS Slave GP0 ARSIZE[1:0], input
+    .SAXIGP0ARBURST(),                    // AXI PS Slave GP0 ARBURST[1:0], input
+    .SAXIGP0ARQOS(),                      // AXI PS Slave GP0 ARQOS[3:0], input
 // AXI PS Slave GP0: Read Data    - Not used
-    .SAXIGP0RDATA(),             // AXI PS Slave GP0 RDATA[31:0], output
-    .SAXIGP0RVALID(),            // AXI PS Slave GP0 RVALID, output
-    .SAXIGP0RREADY(),            // AXI PS Slave GP0 RREADY, input
-    .SAXIGP0RID(),               // AXI PS Slave GP0 RID[5:0], output
-    .SAXIGP0RLAST(),             // AXI PS Slave GP0 RLAST, output
-    .SAXIGP0RRESP(),             // AXI PS Slave GP0 RRESP[1:0], output
+    .SAXIGP0RDATA(),                      // AXI PS Slave GP0 RDATA[31:0], output
+    .SAXIGP0RVALID(),                     // AXI PS Slave GP0 RVALID, output
+    .SAXIGP0RREADY(),                     // AXI PS Slave GP0 RREADY, input
+    .SAXIGP0RID(),                        // AXI PS Slave GP0 RID[5:0], output
+    .SAXIGP0RLAST(),                      // AXI PS Slave GP0 RLAST, output
+    .SAXIGP0RRESP(),                      // AXI PS Slave GP0 RRESP[1:0], output
 // AXI PS Slave GP0: Write Address    
-    .SAXIGP0AWADDR     (saxi0_awaddr),   // AXI PS Slave GP0 AWADDR[31:0], input
-    .SAXIGP0AWVALID    (saxi0_awvalid),  // AXI PS Slave GP0 AWVALID, input
-    .SAXIGP0AWREADY    (saxi0_awready),  // AXI PS Slave GP0 AWREADY, output
-    .SAXIGP0AWID       (saxi0_awid),     // AXI PS Slave GP0 AWID[5:0], input
-    .SAXIGP0AWLOCK     (saxi0_awlock),   // AXI PS Slave GP0 AWLOCK[1:0], input
-    .SAXIGP0AWCACHE    (saxi0_awcache),  // AXI PS Slave GP0 AWCACHE[3:0], input
-    .SAXIGP0AWPROT     (saxi0_awprot),   // AXI PS Slave GP0 AWPROT[2:0], input
-    .SAXIGP0AWLEN      (saxi0_awlen),    // AXI PS Slave GP0 AWLEN[3:0], input
-    .SAXIGP0AWSIZE     (saxi0_awsize),   // AXI PS Slave GP0 AWSIZE[1:0], input
-    .SAXIGP0AWBURST    (saxi0_awburst),  // AXI PS Slave GP0 AWBURST[1:0], input
-    .SAXIGP0AWQOS      (saxi0_awqos),    // AXI PS Slave GP0 AWQOS[3:0], input
+    .SAXIGP0AWADDR     (saxi0_awaddr),    // AXI PS Slave GP0 AWADDR[31:0], input
+    .SAXIGP0AWVALID    (saxi0_awvalid),   // AXI PS Slave GP0 AWVALID, input
+    .SAXIGP0AWREADY    (saxi0_awready),   // AXI PS Slave GP0 AWREADY, output
+    .SAXIGP0AWID       (saxi0_awid),      // AXI PS Slave GP0 AWID[5:0], input
+    .SAXIGP0AWLOCK     (saxi0_awlock),    // AXI PS Slave GP0 AWLOCK[1:0], input
+    .SAXIGP0AWCACHE    (saxi0_awcache),   // AXI PS Slave GP0 AWCACHE[3:0], input
+    .SAXIGP0AWPROT     (saxi0_awprot),    // AXI PS Slave GP0 AWPROT[2:0], input
+    .SAXIGP0AWLEN      (saxi0_awlen),     // AXI PS Slave GP0 AWLEN[3:0], input
+    .SAXIGP0AWSIZE     (saxi0_awsize),    // AXI PS Slave GP0 AWSIZE[1:0], input
+    .SAXIGP0AWBURST    (saxi0_awburst),   // AXI PS Slave GP0 AWBURST[1:0], input
+    .SAXIGP0AWQOS      (saxi0_awqos),     // AXI PS Slave GP0 AWQOS[3:0], input
 // AXI PS Slave GP0: Write Data
-    .SAXIGP0WDATA      (saxi0_wdata),    // AXI PS Slave GP0 WDATA[31:0], input
-    .SAXIGP0WVALID     (saxi0_wvalid),   // AXI PS Slave GP0 WVALID, input
-    .SAXIGP0WREADY     (saxi0_wready),   // AXI PS Slave GP0 WREADY, output
-    .SAXIGP0WID        (saxi0_wid),      // AXI PS Slave GP0 WID[5:0], input
-    .SAXIGP0WLAST      (saxi0_wlast),    // AXI PS Slave GP0 WLAST, input
-    .SAXIGP0WSTRB      (saxi0_wstrb),    // AXI PS Slave GP0 WSTRB[3:0], input
+    .SAXIGP0WDATA      (saxi0_wdata),     // AXI PS Slave GP0 WDATA[31:0], input
+    .SAXIGP0WVALID     (saxi0_wvalid),    // AXI PS Slave GP0 WVALID, input
+    .SAXIGP0WREADY     (saxi0_wready),    // AXI PS Slave GP0 WREADY, output
+    .SAXIGP0WID        (saxi0_wid),       // AXI PS Slave GP0 WID[5:0], input
+    .SAXIGP0WLAST      (saxi0_wlast),     // AXI PS Slave GP0 WLAST, input
+    .SAXIGP0WSTRB      (saxi0_wstrb),     // AXI PS Slave GP0 WSTRB[3:0], input
 // AXI PS Slave GP0: Write response
-    .SAXIGP0BVALID     (saxi0_bvalid),   // AXI PS Slave GP0 BVALID, output
-    .SAXIGP0BREADY     (saxi0_bready),   // AXI PS Slave GP0 BREADY, input
-    .SAXIGP0BID        (saxi0_bid),      // AXI PS Slave GP0 BID[5:0], output //TODO:  Update range !!!
-    .SAXIGP0BRESP      (saxi0_bresp),    // AXI PS Slave GP0 BRESP[1:0], output
+    .SAXIGP0BVALID     (saxi0_bvalid),    // AXI PS Slave GP0 BVALID, output
+    .SAXIGP0BREADY     (saxi0_bready),    // AXI PS Slave GP0 BREADY, input
+    .SAXIGP0BID        (saxi0_bid),       // AXI PS Slave GP0 BID[5:0], output //TODO:  Update range !!!
+    .SAXIGP0BRESP      (saxi0_bresp),     // AXI PS Slave GP0 BRESP[1:0], output
 
 // AXI PS Slave GP1    
 // AXI PS Slave GP1: Clock, Reset
-    .SAXIGP1ACLK       (saxi1_aclk),    // AXI PS Slave GP1 Clock , input
-    .SAXIGP1ARESETN(),           // AXI PS Slave GP1 Reset, output
+    .SAXIGP1ACLK       (saxi1_aclk),      // AXI PS Slave GP1 Clock , input
+    .SAXIGP1ARESETN(),                    // AXI PS Slave GP1 Reset, output
 // AXI PS Slave GP1: Read Address    
-    .SAXIGP1ARADDR(),            // AXI PS Slave GP1 ARADDR[31:0], input  
-    .SAXIGP1ARVALID(),           // AXI PS Slave GP1 ARVALID, input
-    .SAXIGP1ARREADY(),           // AXI PS Slave GP1 ARREADY, output
-    .SAXIGP1ARID(),              // AXI PS Slave GP1 ARID[5:0], input
-    .SAXIGP1ARLOCK(),            // AXI PS Slave GP1 ARLOCK[1:0], input
-    .SAXIGP1ARCACHE(),           // AXI PS Slave GP1 ARCACHE[3:0], input
-    .SAXIGP1ARPROT(),            // AXI PS Slave GP1 ARPROT[2:0], input
-    .SAXIGP1ARLEN(),             // AXI PS Slave GP1 ARLEN[3:0], input
-    .SAXIGP1ARSIZE(),            // AXI PS Slave GP1 ARSIZE[1:0], input
-    .SAXIGP1ARBURST(),           // AXI PS Slave GP1 ARBURST[1:0], input
-    .SAXIGP1ARQOS(),             // AXI PS Slave GP1 ARQOS[3:0], input
+    .SAXIGP1ARADDR(),                     // AXI PS Slave GP1 ARADDR[31:0], input  
+    .SAXIGP1ARVALID(),                    // AXI PS Slave GP1 ARVALID, input
+    .SAXIGP1ARREADY(),                    // AXI PS Slave GP1 ARREADY, output
+    .SAXIGP1ARID(),                       // AXI PS Slave GP1 ARID[5:0], input
+    .SAXIGP1ARLOCK(),                     // AXI PS Slave GP1 ARLOCK[1:0], input
+    .SAXIGP1ARCACHE(),                    // AXI PS Slave GP1 ARCACHE[3:0], input
+    .SAXIGP1ARPROT(),                     // AXI PS Slave GP1 ARPROT[2:0], input
+    .SAXIGP1ARLEN(),                      // AXI PS Slave GP1 ARLEN[3:0], input
+    .SAXIGP1ARSIZE(),                     // AXI PS Slave GP1 ARSIZE[1:0], input
+    .SAXIGP1ARBURST(),                    // AXI PS Slave GP1 ARBURST[1:0], input
+    .SAXIGP1ARQOS(),                      // AXI PS Slave GP1 ARQOS[3:0], input
 // AXI PS Slave GP1: Read Data
-    .SAXIGP1RDATA(),             // AXI PS Slave GP1 RDATA[31:0], output
-    .SAXIGP1RVALID(),            // AXI PS Slave GP1 RVALID, output
-    .SAXIGP1RREADY(),            // AXI PS Slave GP1 RREADY, input
-    .SAXIGP1RID(),               // AXI PS Slave GP1 RID[5:0], output
-    .SAXIGP1RLAST(),             // AXI PS Slave GP1 RLAST, output
-    .SAXIGP1RRESP(),             // AXI PS Slave GP1 RRESP[1:0], output
+    .SAXIGP1RDATA(),                      // AXI PS Slave GP1 RDATA[31:0], output
+    .SAXIGP1RVALID(),                     // AXI PS Slave GP1 RVALID, output
+    .SAXIGP1RREADY(),                     // AXI PS Slave GP1 RREADY, input
+    .SAXIGP1RID(),                        // AXI PS Slave GP1 RID[5:0], output
+    .SAXIGP1RLAST(),                      // AXI PS Slave GP1 RLAST, output
+    .SAXIGP1RRESP(),                      // AXI PS Slave GP1 RRESP[1:0], output
 // AXI PS Slave GP1: Write Address    
     .SAXIGP1AWADDR     (saxi1_awaddr),   // AXI PS Slave GP1 AWADDR[31:0], input
     .SAXIGP1AWVALID    (saxi1_awvalid),  // AXI PS Slave GP1 AWVALID, input
@@ -2968,30 +3170,30 @@ assign axi_grst = axi_rst_pre;
 
 // AXI PS Slave HP1    
 // AXI PS Slave 1: Clock, Reset
-    .SAXIHP1ACLK          (hclk),              // AXI PS Slave HP1 Clock , input
-    .SAXIHP1ARESETN(),           // AXI PS Slave HP1 Reset, output
+    .SAXIHP1ACLK          (hclk),                   // AXI PS Slave HP1 Clock , input
+    .SAXIHP1ARESETN(),                              // AXI PS Slave HP1 Reset, output
 // AXI PS Slave HP1: Read Address   - unused
-    .SAXIHP1ARADDR(),            // AXI PS Slave HP1 ARADDR[31:0], input  
-    .SAXIHP1ARVALID(),           // AXI PS Slave HP1 ARVALID, input
-    .SAXIHP1ARREADY(),           // AXI PS Slave HP1 ARREADY, output
-    .SAXIHP1ARID(),              // AXI PS Slave HP1 ARID[5:0], input
-    .SAXIHP1ARLOCK(),            // AXI PS Slave HP1 ARLOCK[1:0], input
-    .SAXIHP1ARCACHE(),           // AXI PS Slave HP1 ARCACHE[3:0], input
-    .SAXIHP1ARPROT(),            // AXI PS Slave HP1 ARPROT[2:0], input
-    .SAXIHP1ARLEN(),             // AXI PS Slave HP1 ARLEN[3:0], input
-    .SAXIHP1ARSIZE(),            // AXI PS Slave HP1 ARSIZE[2:0], input
-    .SAXIHP1ARBURST(),           // AXI PS Slave HP1 ARBURST[1:0], input
-    .SAXIHP1ARQOS(),             // AXI PS Slave HP1 ARQOS[3:0], input
+    .SAXIHP1ARADDR(),                               // AXI PS Slave HP1 ARADDR[31:0], input  
+    .SAXIHP1ARVALID(),                              // AXI PS Slave HP1 ARVALID, input
+    .SAXIHP1ARREADY(),                              // AXI PS Slave HP1 ARREADY, output
+    .SAXIHP1ARID(),                                 // AXI PS Slave HP1 ARID[5:0], input
+    .SAXIHP1ARLOCK(),                               // AXI PS Slave HP1 ARLOCK[1:0], input
+    .SAXIHP1ARCACHE(),                              // AXI PS Slave HP1 ARCACHE[3:0], input
+    .SAXIHP1ARPROT(),                               // AXI PS Slave HP1 ARPROT[2:0], input
+    .SAXIHP1ARLEN(),                                // AXI PS Slave HP1 ARLEN[3:0], input
+    .SAXIHP1ARSIZE(),                               // AXI PS Slave HP1 ARSIZE[2:0], input
+    .SAXIHP1ARBURST(),                              // AXI PS Slave HP1 ARBURST[1:0], input
+    .SAXIHP1ARQOS(),                                // AXI PS Slave HP1 ARQOS[3:0], input
 // AXI PS Slave HP1: Read Data
-    .SAXIHP1RDATA(),             // AXI PS Slave HP1 RDATA[63:0], output
-    .SAXIHP1RVALID(),            // AXI PS Slave HP1 RVALID, output
-    .SAXIHP1RREADY(),            // AXI PS Slave HP1 RREADY, input
-    .SAXIHP1RID(),               // AXI PS Slave HP1 RID[5:0], output
-    .SAXIHP1RLAST(),             // AXI PS Slave HP1 RLAST, output
-    .SAXIHP1RRESP(),             // AXI PS Slave HP1 RRESP[1:0], output
-    .SAXIHP1RCOUNT(),            // AXI PS Slave HP1 RCOUNT[7:0], output
-    .SAXIHP1RACOUNT(),           // AXI PS Slave HP1 RACOUNT[2:0], output
-    .SAXIHP1RDISSUECAP1EN(),     // AXI PS Slave HP1 RDISSUECAP1EN, input
+    .SAXIHP1RDATA(),                                // AXI PS Slave HP1 RDATA[63:0], output
+    .SAXIHP1RVALID(),                               // AXI PS Slave HP1 RVALID, output
+    .SAXIHP1RREADY(),                               // AXI PS Slave HP1 RREADY, input
+    .SAXIHP1RID(),                                  // AXI PS Slave HP1 RID[5:0], output
+    .SAXIHP1RLAST(),                                // AXI PS Slave HP1 RLAST, output
+    .SAXIHP1RRESP(),                                // AXI PS Slave HP1 RRESP[1:0], output
+    .SAXIHP1RCOUNT(),                               // AXI PS Slave HP1 RCOUNT[7:0], output
+    .SAXIHP1RACOUNT(),                              // AXI PS Slave HP1 RACOUNT[2:0], output
+    .SAXIHP1RDISSUECAP1EN(),                        // AXI PS Slave HP1 RDISSUECAP1EN, input
 // AXI PS Slave HP1: Write Address    
     .SAXIHP1AWADDR        (afi1_awaddr),            // AXI PS Slave HP1 AWADDR[31:0], input
     .SAXIHP1AWVALID       (afi1_awvalid),           // AXI PS Slave HP1 AWVALID, input
@@ -3022,30 +3224,31 @@ assign axi_grst = axi_rst_pre;
 
 // AXI PS Slave HP2    
 // AXI PS Slave HP2: Clock, Reset
-    .SAXIHP2ACLK(),              // AXI PS Slave HP2 Clock , input
-    .SAXIHP2ARESETN(),           // AXI PS Slave HP2 Reset, output
+// TODO: Clock was not connected (currently this port is not used) - make it depend on parameters
+    .SAXIHP2ACLK          (afi1_clk),               // AXI PS Slave HP2 Clock , input ==hclk or 1'b0 if not used
+    .SAXIHP2ARESETN       (),                       // AXI PS Slave HP2 Reset, output
 // AXI PS Slave HP2: Read Address   - not used
-    .SAXIHP2ARADDR(),            // AXI PS Slave HP2 ARADDR[31:0], input  
-    .SAXIHP2ARVALID(),           // AXI PS Slave HP2 ARVALID, input
-    .SAXIHP2ARREADY(),           // AXI PS Slave HP2 ARREADY, output
-    .SAXIHP2ARID(),              // AXI PS Slave HP2 ARID[5:0], input
-    .SAXIHP2ARLOCK(),            // AXI PS Slave HP2 ARLOCK[1:0], input
-    .SAXIHP2ARCACHE(),           // AXI PS Slave HP2 ARCACHE[3:0], input
-    .SAXIHP2ARPROT(),            // AXI PS Slave HP2 ARPROT[2:0], input
-    .SAXIHP2ARLEN(),             // AXI PS Slave HP2 ARLEN[3:0], input
-    .SAXIHP2ARSIZE(),            // AXI PS Slave HP2 ARSIZE[2:0], input
-    .SAXIHP2ARBURST(),           // AXI PS Slave HP2 ARBURST[1:0], input
-    .SAXIHP2ARQOS(),             // AXI PS Slave HP2 ARQOS[3:0], input
+    .SAXIHP2ARADDR        (),                       // AXI PS Slave HP2 ARADDR[31:0], input  
+    .SAXIHP2ARVALID       (),                       // AXI PS Slave HP2 ARVALID, input
+    .SAXIHP2ARREADY       (),                       // AXI PS Slave HP2 ARREADY, output
+    .SAXIHP2ARID          (),                       // AXI PS Slave HP2 ARID[5:0], input
+    .SAXIHP2ARLOCK        (),                       // AXI PS Slave HP2 ARLOCK[1:0], input
+    .SAXIHP2ARCACHE       (),                       // AXI PS Slave HP2 ARCACHE[3:0], input
+    .SAXIHP2ARPROT        (),                       // AXI PS Slave HP2 ARPROT[2:0], input
+    .SAXIHP2ARLEN         (),                       // AXI PS Slave HP2 ARLEN[3:0], input
+    .SAXIHP2ARSIZE        (),                       // AXI PS Slave HP2 ARSIZE[2:0], input
+    .SAXIHP2ARBURST       (),                       // AXI PS Slave HP2 ARBURST[1:0], input
+    .SAXIHP2ARQOS         (),                       // AXI PS Slave HP2 ARQOS[3:0], input
 // AXI PS Slave HP2: Read Data - not used
-    .SAXIHP2RDATA(),             // AXI PS Slave HP2 RDATA[63:0], output
-    .SAXIHP2RVALID(),            // AXI PS Slave HP2 RVALID, output
-    .SAXIHP2RREADY(),            // AXI PS Slave HP2 RREADY, input
-    .SAXIHP2RID(),               // AXI PS Slave HP2 RID[5:0], output
-    .SAXIHP2RLAST(),             // AXI PS Slave HP2 RLAST, output
-    .SAXIHP2RRESP(),             // AXI PS Slave HP2 RRESP[1:0], output
-    .SAXIHP2RCOUNT(),            // AXI PS Slave HP2 RCOUNT[7:0], output
-    .SAXIHP2RACOUNT(),           // AXI PS Slave HP2 RACOUNT[2:0], output
-    .SAXIHP2RDISSUECAP1EN(),     // AXI PS Slave HP2 RDISSUECAP1EN, input
+    .SAXIHP2RDATA         (),                       // AXI PS Slave HP2 RDATA[63:0], output
+    .SAXIHP2RVALID        (),                       // AXI PS Slave HP2 RVALID, output
+    .SAXIHP2RREADY        (),                       // AXI PS Slave HP2 RREADY, input
+    .SAXIHP2RID           (),                       // AXI PS Slave HP2 RID[5:0], output
+    .SAXIHP2RLAST         (),                       // AXI PS Slave HP2 RLAST, output
+    .SAXIHP2RRESP         (),                       // AXI PS Slave HP2 RRESP[1:0], output
+    .SAXIHP2RCOUNT        (),                       // AXI PS Slave HP2 RCOUNT[7:0], output
+    .SAXIHP2RACOUNT       (),                       // AXI PS Slave HP2 RACOUNT[2:0], output
+    .SAXIHP2RDISSUECAP1EN (),                       // AXI PS Slave HP2 RDISSUECAP1EN, input
 // AXI PS Slave HP2: Write Address    
     .SAXIHP2AWADDR        (afi2_awaddr),            // AXI PS Slave HP2 AWADDR[31:0], input
     .SAXIHP2AWVALID       (afi2_awvalid),           // AXI PS Slave HP2 AWVALID, input
@@ -3076,57 +3279,57 @@ assign axi_grst = axi_rst_pre;
 
 // AXI PS Slave HP3    
 // AXI PS Slave HP3: Clock, Reset
-    .SAXIHP3ACLK(),              // AXI PS Slave HP3 Clock , input
+    .SAXIHP3ACLK            (hclk),                 // AXI PS Slave HP3 Clock , input
     .SAXIHP3ARESETN(),           // AXI PS Slave HP3 Reset, output
-// AXI PS Slave HP3: Read Address    
-    .SAXIHP3ARADDR(),            // AXI PS Slave HP3 ARADDR[31:0], input  
-    .SAXIHP3ARVALID(),           // AXI PS Slave HP3 ARVALID, input
-    .SAXIHP3ARREADY(),           // AXI PS Slave HP3 ARREADY, output
-    .SAXIHP3ARID(),              // AXI PS Slave HP3 ARID[5:0], input
-    .SAXIHP3ARLOCK(),            // AXI PS Slave HP3 ARLOCK[1:0], input
-    .SAXIHP3ARCACHE(),           // AXI PS Slave HP3 ARCACHE[3:0], input
-    .SAXIHP3ARPROT(),            // AXI PS Slave HP3 ARPROT[2:0], input
-    .SAXIHP3ARLEN(),             // AXI PS Slave HP3 ARLEN[3:0], input
-    .SAXIHP3ARSIZE(),            // AXI PS Slave HP3 ARSIZE[2:0], input
-    .SAXIHP3ARBURST(),           // AXI PS Slave HP3 ARBURST[1:0], input
-    .SAXIHP3ARQOS(),             // AXI PS Slave HP3 ARQOS[3:0], input
+// AXI PS Slave HP3: Read Address
+    .SAXIHP3ARADDR          (afi3_araddr),          // AXI PS Slave HP3 ARADDR[31:0], input
+    .SAXIHP3ARVALID         (afi3_arvalid),         // AXI PS Slave HP3 ARVALID, input
+    .SAXIHP3ARREADY         (afi3_arready),         // AXI PS Slave HP3 ARREADY, output
+    .SAXIHP3ARID            (afi3_arid),            // AXI PS Slave HP3 ARID[5:0], input
+    .SAXIHP3ARLOCK          (afi3_arlock),          // AXI PS Slave HP3 ARLOCK[1:0], input
+    .SAXIHP3ARCACHE         (afi3_arcache),         // AXI PS Slave HP3 ARCACHE[3:0], input
+    .SAXIHP3ARPROT          (afi3_arprot),          // AXI PS Slave HP3 ARPROT[2:0], input
+    .SAXIHP3ARLEN           (afi3_arlen),           // AXI PS Slave HP3 ARLEN[3:0], input
+    .SAXIHP3ARSIZE          (afi3_arsize),          // AXI PS Slave HP3 ARSIZE[2:0], input
+    .SAXIHP3ARBURST         (afi3_arburst),         // AXI PS Slave HP3 ARBURST[1:0], input
+    .SAXIHP3ARQOS           (afi3_arqos),           // AXI PS Slave HP3 ARQOS[3:0], input
 // AXI PS Slave HP3: Read Data
-    .SAXIHP3RDATA(),             // AXI PS Slave HP3 RDATA[63:0], output
-    .SAXIHP3RVALID(),            // AXI PS Slave HP3 RVALID, output
-    .SAXIHP3RREADY(),            // AXI PS Slave HP3 RREADY, input
-    .SAXIHP3RID(),               // AXI PS Slave HP3 RID[5:0], output
-    .SAXIHP3RLAST(),             // AXI PS Slave HP3 RLAST, output
-    .SAXIHP3RRESP(),             // AXI PS Slave HP3 RRESP[1:0], output
-    .SAXIHP3RCOUNT(),            // AXI PS Slave HP3 RCOUNT[7:0], output
-    .SAXIHP3RACOUNT(),           // AXI PS Slave HP3 RACOUNT[2:0], output
-    .SAXIHP3RDISSUECAP1EN(),     // AXI PS Slave HP3 RDISSUECAP1EN, input
-// AXI PS Slave HP3: Write Address    
-    .SAXIHP3AWADDR(),            // AXI PS Slave HP3 AWADDR[31:0], input
-    .SAXIHP3AWVALID(),           // AXI PS Slave HP3 AWVALID, input
-    .SAXIHP3AWREADY(),           // AXI PS Slave HP3 AWREADY, output
-    .SAXIHP3AWID(),              // AXI PS Slave HP3 AWID[5:0], input
-    .SAXIHP3AWLOCK(),            // AXI PS Slave HP3 AWLOCK[1:0], input
-    .SAXIHP3AWCACHE(),           // AXI PS Slave HP3 AWCACHE[3:0], input
-    .SAXIHP3AWPROT(),            // AXI PS Slave HP3 AWPROT[2:0], input
-    .SAXIHP3AWLEN(),             // AXI PS Slave HP3 AWLEN[3:0], input
-    .SAXIHP3AWSIZE(),            // AXI PS Slave HP3 AWSIZE[1:0], input
-    .SAXIHP3AWBURST(),           // AXI PS Slave HP3 AWBURST[1:0], input
-    .SAXIHP3AWQOS(),             // AXI PS Slave HP3 AWQOS[3:0], input
+    .SAXIHP3RDATA           (afi3_rdata),           // AXI PS Slave HP3 RDATA[63:0], output
+    .SAXIHP3RVALID          (afi3_rvalid),          // AXI PS Slave HP3 RVALID, output
+    .SAXIHP3RREADY          (afi3_rready),          // AXI PS Slave HP3 RREADY, input
+    .SAXIHP3RID             (afi3_rid),             // AXI PS Slave HP3 RID[5:0], output
+    .SAXIHP3RLAST           (afi3_rlast),           // AXI PS Slave HP3 RLAST, output
+    .SAXIHP3RRESP           (afi3_rresp),           // AXI PS Slave HP3 RRESP[1:0], output
+    .SAXIHP3RCOUNT          (afi3_rcount),          // AXI PS Slave HP3 RCOUNT[7:0], output
+    .SAXIHP3RACOUNT         (afi3_racount),         // AXI PS Slave HP3 RACOUNT[2:0], output
+    .SAXIHP3RDISSUECAP1EN   (afi3_rdissuecap1en),   // AXI PS Slave HP3 RDISSUECAP1EN, input
+// AXI PS Slave HP3: Write Address
+    .SAXIHP3AWADDR          (afi3_awaddr),          // AXI PS Slave HP3 AWADDR[31:0], input
+    .SAXIHP3AWVALID         (afi3_awvalid),         // AXI PS Slave HP3 AWVALID, input
+    .SAXIHP3AWREADY         (afi3_awready),         // AXI PS Slave HP3 AWREADY, output
+    .SAXIHP3AWID            (afi3_awid),            // AXI PS Slave HP3 AWID[5:0], input
+    .SAXIHP3AWLOCK          (afi3_awlock),          // AXI PS Slave HP3 AWLOCK[1:0], input
+    .SAXIHP3AWCACHE         (afi3_awcache),         // AXI PS Slave HP3 AWCACHE[3:0], input
+    .SAXIHP3AWPROT          (afi3_awprot),          // AXI PS Slave HP3 AWPROT[2:0], input
+    .SAXIHP3AWLEN           (afi3_awlen),           // AXI PS Slave HP3 AWLEN[3:0], input
+    .SAXIHP3AWSIZE          (afi3_awsize),          // AXI PS Slave HP3 AWSIZE[1:0], input
+    .SAXIHP3AWBURST         (afi3_awburst),         // AXI PS Slave HP3 AWBURST[1:0], input
+    .SAXIHP3AWQOS           (afi3_awqos),           // AXI PS Slave HP3 AWQOS[3:0], input
 // AXI PS Slave HP3: Write Data
-    .SAXIHP3WDATA(),             // AXI PS Slave HP3 WDATA[63:0], input
-    .SAXIHP3WVALID(),            // AXI PS Slave HP3 WVALID, input
-    .SAXIHP3WREADY(),            // AXI PS Slave HP3 WREADY, output
-    .SAXIHP3WID(),               // AXI PS Slave HP3 WID[5:0], input
-    .SAXIHP3WLAST(),             // AXI PS Slave HP3 WLAST, input
-    .SAXIHP3WSTRB(),             // AXI PS Slave HP3 WSTRB[7:0], input
-    .SAXIHP3WCOUNT(),            // AXI PS Slave HP3 WCOUNT[7:0], output
-    .SAXIHP3WACOUNT(),           // AXI PS Slave HP3 WACOUNT[5:0], output
-    .SAXIHP3WRISSUECAP1EN(),     // AXI PS Slave HP3 WRISSUECAP1EN, input
+    .SAXIHP3WDATA           (afi3_wdata),           // AXI PS Slave HP3 WDATA[63:0], input
+    .SAXIHP3WVALID          (afi3_wvalid),          // AXI PS Slave HP3 WVALID, input
+    .SAXIHP3WREADY          (afi3_wready),          // AXI PS Slave HP3 WREADY, output
+    .SAXIHP3WID             (afi3_wid),             // AXI PS Slave HP3 WID[5:0], input
+    .SAXIHP3WLAST           (afi3_wlast),           // AXI PS Slave HP3 WLAST, input
+    .SAXIHP3WSTRB           (afi3_wstrb),           // AXI PS Slave HP3 WSTRB[7:0], input
+    .SAXIHP3WCOUNT          (afi3_wcount),          // AXI PS Slave HP3 WCOUNT[7:0], output
+    .SAXIHP3WACOUNT         (afi3_wacount),         // AXI PS Slave HP3 WACOUNT[5:0], output
+    .SAXIHP3WRISSUECAP1EN   (afi3_wrissuecap1en),   // AXI PS Slave HP3 WRISSUECAP1EN, input
 // AXI PS Slave HP3: Write response
-    .SAXIHP3BVALID(),            // AXI PS Slave HP3 BVALID, output
-    .SAXIHP3BREADY(),            // AXI PS Slave HP3 BREADY, input
-    .SAXIHP3BID(),               // AXI PS Slave HP3 BID[5:0], output
-    .SAXIHP3BRESP(),             // AXI PS Slave HP3 BRESP[1:0], output
+    .SAXIHP3BVALID          (afi3_bvalid),          // AXI PS Slave HP3 BVALID, output
+    .SAXIHP3BREADY          (afi3_bready),          // AXI PS Slave HP3 BREADY, input
+    .SAXIHP3BID             (afi3_bid),             // AXI PS Slave HP3 BID[5:0], output
+    .SAXIHP3BRESP           (afi3_bresp),           // AXI PS Slave HP3 BRESP[1:0], output
 
 // AXI PS Slave ACP    
 // AXI PS Slave ACP: Clock, Reset

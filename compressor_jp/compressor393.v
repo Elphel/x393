@@ -226,6 +226,7 @@ module  compressor393 # (
     output                        afi0_wrissuecap1en,
     
     // write address, second channel
+    output                        afi1_clk,     // same as hclk if the second channel is used
     output                 [31:0] afi1_awaddr,
     output                        afi1_awvalid,
     input                         afi1_awready, // @SuppressThisWarning VEditor unused - used FIF0 level
@@ -638,6 +639,7 @@ module  compressor393 # (
                 .debug_di     (debug_ring[DEBUG_RING_LENGTH])        // input
 `endif         
             );
+            assign afi1_clk = hclk;
         end else begin
             cmprs_afi_mux #(
                 .CMPRS_AFIMUX_ADDR            (CMPRS_GROUP_ADDR + CMPRS_AFIMUX_RADDR0),
@@ -723,6 +725,7 @@ module  compressor393 # (
                 .debug_di     (debug_ring[5])        // input
 `endif         
             );
+            assign afi1_clk = hclk;
             assign afi1_awaddr = 0;
             assign afi1_awvalid = 0;
             assign afi1_awid = 0; 

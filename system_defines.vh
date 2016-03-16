@@ -34,6 +34,17 @@
   // This file may be used to define same pre-processor macros to be included into each parsed file
 `ifndef SYSTEM_DEFINES
   `define SYSTEM_DEFINES
+// Parameters from x393_sata project
+  `define USE_DRP
+  `define ALIGN_CLOCKS
+//  `define STRAIGHT_XCLK
+  `define USE_DATASCOPE
+//  `define DATASCOPE_INCOMING_RAW
+  `define PRELOAD_BRAMS
+//  `define AHCI_SATA 1
+//  `define DEBUG_ELASTIC  
+// End of parameters from x393_sata project
+  
   `define PRELOAD_BRAMS
   `define DISPLAY_COMPRESSED_DATA  
   // if HISPI is not defined, parallel sensor interface is used for all channels
