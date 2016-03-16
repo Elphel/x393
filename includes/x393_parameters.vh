@@ -633,6 +633,7 @@
     parameter CMPRS_FORMAT=                2,
     parameter CMPRS_COLOR_SATURATION=      3,
     parameter CMPRS_CORING_MODE=           4,
+    parameter CMPRS_INTERRUPTS=            5,
     parameter CMPRS_TABLES=                6, // 6..7
     parameter TABLE_QUANTIZATION_INDEX =   0,
     parameter TABLE_CORING_INDEX =         1,
@@ -762,6 +763,7 @@
     parameter CMDFRAMESEQ_CTRL =            31,
     parameter CMDFRAMESEQ_RST_BIT =         14,
     parameter CMDFRAMESEQ_RUN_BIT =         13,
+    parameter CMDFRAMESEQ_IRQ_BIT =         0,
     
     parameter CMDSEQMUX_ADDR =              'h702, // only status control
     parameter CMDSEQMUX_MASK =              'h7ff,

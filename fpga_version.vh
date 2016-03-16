@@ -31,7 +31,9 @@
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
  *******************************************************************************/
-    parameter FPGA_VERSION =          32'h03930071;  // Fixing AXI HP multiplexer xclk -0.083 -1.968 44 / 15163 (77.17%)
+      parameter FPGA_VERSION =          32'h03930073;  // Adding interrupts support
+//      parameter FPGA_VERSION =          32'h03930072;  // Adding hact monitor bit 77.9%, failed timing
+//    parameter FPGA_VERSION =          32'h03930071;  // Fixing AXI HP multiplexer xclk -0.083 -1.968 44 / 15163 (77.17%)
 //    parameter FPGA_VERSION =          32'h03930070;  // Fixing HiSPi xclk -0.049 -0.291 17, utilization 15139 (77.04%)
 //    parameter FPGA_VERSION =          32'h0393006f;  // Fixing JP4 mode - xcl -0.002 -0.004 2, utilization 15144 (77.07 %)
 //    parameter FPGA_VERSION =          32'h0393006f; // Fixing JP4 mode - xclk -0.209/-2.744/23, utilization  15127 (76.98%)

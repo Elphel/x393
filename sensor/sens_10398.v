@@ -204,6 +204,9 @@ module  sens_10398 #(
     reg [ PXD_CLK_DIV_BITS-1:0] pxd_clk_cntr;
     reg      [1:0] prst_with_sens_mrst = 2'h3; // prst extended to include sensor reset and rst_mmcm
     wire           async_prst_with_sens_mrst =  ~imrst | rst_mmcm; // mclk domain   
+    reg            hact_r;
+    wire           hact_mclk;
+    reg            hact_alive;
 
     assign status = { locked_pxd_mmcm, 
                      clkin_pxd_stopped_mmcm, clkfb_pxd_stopped_mmcm, xfpgadone,
@@ -277,6 +280,10 @@ module  sens_10398 #(
 
         if      (mrst)                                      gp_r[1] <= 0;
         else if (set_ctrl_r && data_r[SENS_CTRL_GP1 + 1])   gp_r[1] <= data_r[SENS_CTRL_GP1]; 
+        
+        if      (mrst || set_iclk_phase || set_idelays)     hact_alive <= 0;
+        else if (hact_mclk)                                 hact_alive <= 1;
+        
 
     end
 
@@ -294,6 +301,8 @@ module  sens_10398 #(
         if (async_prst_with_sens_mrst) prst_with_sens_mrst <=  2'h3;
         else if (prst)                 prst_with_sens_mrst <=  2'h3;
         else                           prst_with_sens_mrst <= prst_with_sens_mrst >> 1;
+        
+        hact_r <= hact;
     end
 
     cmd_deser #(
@@ -315,7 +324,7 @@ module  sens_10398 #(
 
     status_generate #(
         .STATUS_REG_ADDR(SENSIO_STATUS_REG),
-        .PAYLOAD_BITS(15) // +3) // +STATUS_ALIVE_WIDTH) // STATUS_PAYLOAD_BITS)
+        .PAYLOAD_BITS(15+1) // +3) // +STATUS_ALIVE_WIDTH) // STATUS_PAYLOAD_BITS)
     ) status_generate_sens_io_i (
         .rst        (1'b0),                    // rst), // input
         .clk        (mclk),                    // input
@@ -323,7 +332,7 @@ module  sens_10398 #(
         .we         (set_status_r),            // input
         .wd         (data_r[7:0]),             // input[7:0] 
 //        .status     ({status_alive,status}),   // input[25:0] 
-        .status     (status),                  // input[25:0] 
+        .status     ({hact_alive,status}),     // input[15:0] 
         .ad         (status_ad),               // output[7:0] 
         .rq         (status_rq),               // output
         .start      (status_start)             // input
@@ -533,6 +542,17 @@ module  sens_10398 #(
     ) sns_shutter_done_i (
         .O(xfpgadone),     // output
         .I(sns_shutter_done) // input
+    );
+
+    // just to verify hact is active
+    
+    pulse_cross_clock hact_mclk_i (
+        .rst         (1'b0),            // input
+        .src_clk     (pclk),            // input
+        .dst_clk     (mclk),            // input
+        .in_pulse    (hact && !hact_r), // input
+        .out_pulse   (hact_mclk),       // output
+        .busy() // output
     );
     
 endmodule

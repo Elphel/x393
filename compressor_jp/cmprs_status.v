@@ -34,25 +34,42 @@
 `timescale 1ns/1ps
 
 module  cmprs_status(
+    input              mrst,
     input              mclk,         // system clock
     input              eof_written,
     input              stuffer_running,
     input              reading_frame,
-    output   [2:0]     status
+    input              set_interrupts,
+    input        [1:0] data_in,
+    output       [4:0] status,
+    output             irq
 );
 
     reg                stuffer_running_r;
     reg                flushing_fifo;
+    reg                is_r; // interrupt status (not masked)
+    reg                im_r; // interrupt mask
     
-    assign status = {flushing_fifo, stuffer_running_r, reading_frame};
+    
+    assign status = {flushing_fifo,
+                     stuffer_running_r,
+                     reading_frame,
+                     im_r, is_r};
+    assign irq =     is_r && im_r;
     
     always @(posedge mclk) begin
+        if      (mrst)                         im_r <= 0;
+        else if (set_interrupts && data_in[1]) im_r <= data_in[0];
+    
+        if      (mrst)                             is_r <= 0;
+        else if (eof_written)                      is_r <= 1;
+        else if (set_interrupts && (data_in == 1)) is_r <= 0;
+
         stuffer_running_r <= stuffer_running;
         
         if (stuffer_running_r && !stuffer_running) flushing_fifo <= 1;
         else if (eof_written)                      flushing_fifo <= 0;
     end
-
 
 endmodule
 

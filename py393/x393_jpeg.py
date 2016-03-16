@@ -965,11 +965,88 @@ class X393Jpeg(object):
 ff d9
 """        
 """
+cd /usr/local/verilog/; test_mcntrl.py @hargs
+measure_all "*DI"
+setup_all_sensors True None 0xf
+#write_sensor_i2c  0 1 0 0x30700101
+compressor_control  all  None  None  None None None  2
+program_gamma all 0 0.57 0.04
+write_sensor_i2c 0 1 0 0x030600b4
+write_sensor_i2c 0 1 0 0x31c68400
+write_sensor_i2c 0 1 0 0x306e9280
+#write_sensor_i2c 0 1 0 0x30700002
+write_sensor_i2c 0 1 0 0x301a001c
+print_sensor_i2c 0 0x31c6 0xff 0x10 0
+compressor_control 0 2
 
+jpeg_write  "img.jpeg" 0
+
+jpeg_acquire_write
+write_sensor_i2c  0 1 0 0x30700000
+-------
+setup_all_sensors True None 0xf
+write_sensor_i2c  0 1 0 0x30700101
+compressor_control  all  None  None  None None None  2
+program_gamma all 0 0.57 0.04
+write_sensor_i2c  0 1 0 0x030600b4
+print_sensor_i2c 0 0x306 0xff 0x10 0
+print_sensor_i2c 0 0x303a 0xff 0x10 0
+print_sensor_i2c 0 0x301a 0xff 0x10 0
+print_sensor_i2c 0 0x31c6 0xff 0x10 0
+write_sensor_i2c  0 1 0 0x31c68400
+print_sensor_i2c 0 0x31c6 0xff 0x10 0
+print_sensor_i2c 0 0x306e 0xff 0x10 0
+write_sensor_i2c  0 1 0 0x306e9280
+write_sensor_i2c  0 1 0 0x30700002
+write_sensor_i2c  0 1 0 0x301a001c
+print_sensor_i2c 0 0x31c6 0xff 0x10 0
+compressor_control 0 2
+
+x393 +0.001s--> jpeg_write  "img.jpeg" 0
+
+
+
+
+
+
+
+
+http://192.168.0.7/imgsrv.py?y_quality=85&gamma=0.5&verbose=0&cmode=jpeg&bayer=2&expos=3000&flip_x=1&flip_y=1
 JP46: demuxing...
 Corrupt JPEG data: bad Huffman code
 Corrupt JPEG data: bad Huffman code
 Corrupt JPEG data: bad Huffman code
+
+    def jpeg_acquire_write(self,
+                   file_path = "img.jpeg", 
+                   channel =        0, 
+                   cmode =          None, # vrlg.CMPRS_CBIT_CMODE_JPEG18, # read it from the saved
+                   bayer     =      None,
+
+                   y_quality =      None,
+                   c_quality =      None,
+                   portrait =       None,
+                   
+                   gamma =          None, # 0.57,
+                   black =          None, # 0.04,
+                   colorsat_blue =  None, # 2.0, colorsat_blue, #0x180     # 0x90 for 1x
+                   colorsat_red =   None, # 2.0, colorsat_red, #0x16c,     # 0xb6 for x1
+
+                   server_root = "/www/pages/",
+                   verbose    = 1):
+    def print_sensor_i2c (self,
+                          num_sensor,
+                          reg_addr,
+                          indx =  1,
+                          sa7   = 0x48,
+                          verbose = 1):
+        Read sequence of bytes available and print the result as a single hex number
+        @param num_sensor - sensor port number (0..3), or "all" - same to all sensors
+        @param reg_addr - register to read address 1/2 bytes (defined by previously set format)
+        @param indx - i2c command index in 1 256-entry table (defines here i2c delay, number of address bytes and number of data bytes)
+        @param sa7 - 7-bit i2c slave address
+        @param verbose - verbose level
+print_sensor_i2c 0 0x306 0xff 0x10 0
 
 #should be no MSB first (0x31c68400)
 

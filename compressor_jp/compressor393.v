@@ -54,6 +54,7 @@ module  compressor393 # (
         parameter CMPRS_FORMAT=                2,
         parameter CMPRS_COLOR_SATURATION=      3,
         parameter CMPRS_CORING_MODE=           4,
+        parameter CMPRS_INTERRUPTS=            5,        
         parameter CMPRS_TABLES=                6, // 6..7
         parameter TABLE_QUANTIZATION_INDEX =   0,
         parameter TABLE_CORING_INDEX =         1,
@@ -141,12 +142,13 @@ module  compressor393 # (
     input                         hrst,      // @posedge hclk, sync reset
     
     // programming interface
-    input                         mclk,     // global system/memory clock
-    input                   [7:0] cmd_ad,      // byte-serial command address/data (up to 6 bytes: AL-AH-D0-D1-D2-D3 
-    input                         cmd_stb,     // strobe (with first byte) for the command a/d
-    output                  [7:0] status_ad,   // status address/data - up to 5 bytes: A - {seq,status[1:0]} - status[2:9] - status[10:17] - status[18:25]
-    output                        status_rq,   // input request to send status downstream
-    input                         status_start, // Acknowledge of the first status packet byte (address)
+    input                         mclk,                // global system/memory clock
+    input                   [7:0] cmd_ad,              // byte-serial command address/data (up to 6 bytes: AL-AH-D0-D1-D2-D3 
+    input                         cmd_stb,             // strobe (with first byte) for the command a/d
+    output                  [7:0] status_ad,           // status address/data - up to 5 bytes: A - {seq,status[1:0]} - status[2:9] - status[10:17] - status[18:25]
+    output                        status_rq,           // input request to send status downstream
+    input                         status_start,        // Acknowledge of the first status packet byte (address)
+    output                  [3:0] cmprs_irq,           // Compressor done interruupt
     
     // Buffer interfaces, combined for 4 channels 
     input                   [3:0] xfer_reset_page_rd,  // from mcntrl_tiled_rw (
@@ -280,7 +282,6 @@ module  compressor393 # (
     wire    [3:0] flush_hclk; // before last data was written
     wire   [31:0] fifo_count; 
 
-    /* Instance template for module status_router8 */
     status_router8 status_router8_i (
         .rst         (1'b0),                    //rst),                     // input
         .clk         (mclk),                    // input
@@ -339,6 +340,7 @@ module  compressor393 # (
                 .CMPRS_FORMAT                    (CMPRS_FORMAT),
                 .CMPRS_COLOR_SATURATION          (CMPRS_COLOR_SATURATION),
                 .CMPRS_CORING_MODE               (CMPRS_CORING_MODE),
+                .CMPRS_INTERRUPTS                (CMPRS_INTERRUPTS),    
                 .CMPRS_TABLES                    (CMPRS_TABLES),
                 .TABLE_QUANTIZATION_INDEX        (TABLE_QUANTIZATION_INDEX),
                 .TABLE_CORING_INDEX              (TABLE_CORING_INDEX),
@@ -414,6 +416,7 @@ module  compressor393 # (
                 .status_ad                            (status_ad_mux[8 * i +: 8]), // output[7:0] 
                 .status_rq                            (status_rq_mux[i]),          // output
                 .status_start                         (status_start_mux[i]),       // input
+                .irq                                  (cmprs_irq[i]),              // output
                 .xfer_reset_page_rd                   (xfer_reset_page_rd[i]),     // input
                 .buf_wpage_nxt                        (buf_wpage_nxt[i]),          // input
                 .buf_we                               (buf_we[i]),                 // input

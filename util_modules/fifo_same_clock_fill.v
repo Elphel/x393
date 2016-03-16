@@ -53,7 +53,8 @@ module fifo_same_clock_fill
   output reg                  over,      // overwritten
   output reg [DATA_DEPTH-1:0] wcount,
   output reg [DATA_DEPTH-1:0] rcount,
-  output     [DATA_DEPTH:  0] num_in_fifo
+  output     [DATA_DEPTH:  0] wnum_in_fifo, // number of items in FIFO on write side
+  output     [DATA_DEPTH:  0] rnum_in_fifo  // number of items in FIFO on read side
 );
     localparam integer DATA_2DEPTH=(1<<DATA_DEPTH)-1;
 //ISExst: FF/Latch ddrc_test01.axibram_write_i.waddr_i.fill[4] has a constant value of 0 in block <ddrc_test01>. This FF/Latch will be trimmed during the optimization process.
@@ -61,38 +62,45 @@ module fifo_same_clock_fill
 //ISExst: FF/Latch ddrc_test01.axibram_write_i.wdata_i.fill[4] has a constant value of 0 in block <ddrc_test01>. This FF/Latch will be trimmed during the optimization process.
 // Do not understand - why?
     reg  [DATA_DEPTH:  0] fill=0; // RAM fill
-    reg  [DATA_DEPTH:  0] fifo_fill=0; // FIFO (RAM+reg) fill
+    reg  [DATA_DEPTH:  0] wfifo_fill=0; // FIFO (RAM+reg) fill - total number in FIFO
+    reg  [DATA_DEPTH:  0] rfifo_fill=0; // number in FIFO, ready to be read out
     reg  [DATA_WIDTH-1:0] inreg;
     reg  [DATA_WIDTH-1:0] outreg;
     reg  [DATA_DEPTH-1:0] ra;
     reg  [DATA_DEPTH-1:0] wa;
-    wire [DATA_DEPTH:0] next_fill;
-    reg  wem;
+    wire   [DATA_DEPTH:0] next_fill;
+    reg             [1:0] wem;
     wire rem;
     reg  out_full=0; //output register full
     reg  [DATA_WIDTH-1:0]   ram [0:DATA_2DEPTH];
     
     reg  ram_nempty;
     
-    assign next_fill = fill[DATA_DEPTH:0]+((wem && ~rem)?1:((~wem && rem && ram_nempty)?-1:0));
+    assign next_fill = fill[DATA_DEPTH:0]+((wem[0] && ~rem)?1:((~wem[0] && rem && ram_nempty)?-1:0));
     assign rem= ram_nempty && (re || !out_full); 
     assign data_out=outreg;
     assign nempty=out_full;
 //    assign num_in_fifo=fill[DATA_DEPTH:0];
-    assign num_in_fifo=fifo_fill[DATA_DEPTH:0];
+    assign wnum_in_fifo=wfifo_fill[DATA_DEPTH:0];
+    assign rnum_in_fifo=rfifo_fill[DATA_DEPTH:0];
     always @ (posedge  clk or posedge  rst) begin
-      if      (rst)      fill <= 0;
-      else if (sync_rst) fill <= 0;
-      else               fill <= next_fill;
+      if      (rst)            fill <= 0;
+      else if (sync_rst)       fill <= 0;
+      else                     fill <= next_fill;
       
-      if      (rst)        fifo_fill <= 0;
-      else if (sync_rst)   fifo_fill <= 0;
-      else if ( we && !re) fifo_fill <= fifo_fill+1;
-      else if (!we &&  re) fifo_fill <= fifo_fill-1;
+      if      (rst)            wfifo_fill <= 0;
+      else if (sync_rst)       wfifo_fill <= 0;
+      else if ( we && !re)     wfifo_fill <= wfifo_fill+1;
+      else if (!we &&  re)     wfifo_fill <= wfifo_fill-1;
+
+      if      (rst)            rfifo_fill <= 0; // pessimistic, all writes are delayed by 2
+      else if (sync_rst)       rfifo_fill <= 0;
+      else if ( wem[1] && !re) rfifo_fill <= rfifo_fill+1;
+      else if (!wem[1] &&  re) rfifo_fill <= rfifo_fill-1;
 
       if (rst)           wem <= 0;
       else if (sync_rst) wem <= 0;
-      else               wem <= we;
+      else               wem <= {wem[0], we};
       
       if   (rst)         ram_nempty <= 0;
       else if (sync_rst) ram_nempty <= 0;
@@ -100,7 +108,7 @@ module fifo_same_clock_fill
      
       if (rst)           wa <= 0;
       else if (sync_rst) wa <= 0;
-      else if (wem)      wa <= wa+1;
+      else if (wem[0])   wa <= wa+1;
       
       if (rst)              ra <=  0;
       else if (sync_rst)    ra <= 0;
@@ -123,12 +131,13 @@ module fifo_same_clock_fill
 // no reset elements
     always @ (posedge  clk) begin
       half_full <=(fill & (1<<(DATA_DEPTH-1)))!=0;
-      if (wem) ram[wa] <= inreg;
-      if (we)  inreg  <= data_in;
-      if (rem) outreg <= ram[ra];
-//      under <= ~we & re & ~nempty; // underrun error
-//      over <=  we & ~re & (fill == (1<< (DATA_DEPTH-1)));    // overrun error
+      
+      if (wem[0]) ram[wa] <= inreg;
+      
+      if (we)     inreg  <= data_in;
+      
+      if (rem)    outreg <= ram[ra];
       under <= re & ~nempty; // underrun error
-      over <=  wem & ~rem & fill[DATA_DEPTH] & ~fill[DATA_DEPTH-1];    // overrun error
+      over <=  wem[0] & ~rem & fill[DATA_DEPTH] & ~fill[DATA_DEPTH-1];    // overrun error
     end
 endmodule

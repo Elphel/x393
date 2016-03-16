@@ -299,7 +299,9 @@ module  x393 #(
     wire                      [3:0] frseq_valid;
     wire                    [127:0] frseq_wdata; 
     wire                      [3:0] frseq_ackn;
-    
+    wire                      [3:0] frseq_is;
+    wire                      [3:0] frseq_im;
+    wire                      [3:0] frseq_irq = frseq_is & frseq_im; // frame interrupts
     
 // parallel address/data - where higher bandwidth (single-cycle) is needed        
     wire [AXI_WR_ADDR_BITS-1:0] par_waddr; 
@@ -521,6 +523,9 @@ module  x393 #(
 // Compressor signals for interrupts generation    
    wire                      [3:0] eof_written_mclk;  // output // SuppressThisWarning VEditor - (yet) unused
    wire                      [3:0] stuffer_done_mclk; // output// SuppressThisWarning VEditor - (yet) unused
+   
+   wire                      [3:0] cmprs_irq;         // compressor done, data confirmed written to memory)
+   
 // Compressor frame synchronization
   
 // GPIO internal signals (for camera GPIOs, not Zynq PS GPIO)
@@ -813,7 +818,8 @@ assign axi_grst = axi_rst_pre;
                 .CMDFRAMESEQ_REL      (CMDFRAMESEQ_REL),
                 .CMDFRAMESEQ_CTRL     (CMDFRAMESEQ_CTRL),
                 .CMDFRAMESEQ_RST_BIT  (CMDFRAMESEQ_RST_BIT),
-                .CMDFRAMESEQ_RUN_BIT  (CMDFRAMESEQ_RUN_BIT)
+                .CMDFRAMESEQ_RUN_BIT  (CMDFRAMESEQ_RUN_BIT),
+                .CMDFRAMESEQ_IRQ_BIT  (CMDFRAMESEQ_IRQ_BIT)
             ) cmd_frame_sequencer_i (
                 .mrst        (mrst),                       // input
                 .mclk        (mclk),                       // input
@@ -824,7 +830,10 @@ assign axi_grst = axi_rst_pre;
                 .waddr       (frseq_waddr[i * AXI_WR_ADDR_BITS +: AXI_WR_ADDR_BITS]), // output[13:0] 
                 .valid       (frseq_valid[i]),             // output
                 .wdata       (frseq_wdata[i * 32 +: 32]),  // output[31:0] 
-                .ackn        (frseq_ackn[i])               // input
+                .ackn        (frseq_ackn[i]),              // input
+                .is          (frseq_is[i]),                // output
+                .im          (frseq_im[i])                 // output
+                
             );
         end
     endgenerate
@@ -848,24 +857,33 @@ assign axi_grst = axi_rst_pre;
         .wr_en0       (frseq_valid[0]),                     // input
         .wdata0       (frseq_wdata[0 * 32 +: 32]),          // input[31:0] 
         .ackn0        (frseq_ackn[0]),                      // output
+        .is0          (frseq_is[0]),                        // input
+        .im0          (frseq_im[0]),                        // input
         
         .frame_num1   (frame_num[1 * NUM_FRAME_BITS +: 4]), // input[3:0] Use 4 bits even if NUM_FRAME_BITS > 4
         .waddr1       (frseq_waddr[1 * AXI_WR_ADDR_BITS +: AXI_WR_ADDR_BITS]), // input[13:0] 
         .wr_en1       (frseq_valid[1]),                     // input
         .wdata1       (frseq_wdata[1 * 32 +: 32]),          // input[31:0] 
         .ackn1        (frseq_ackn[1]),                      // output
+        .is1          (frseq_is[1]),                        // input
+        .im1          (frseq_im[1]),                        // input
         
         .frame_num2   (frame_num[2 * NUM_FRAME_BITS +: 4]), // input[3:0] Use 4 bits even if NUM_FRAME_BITS > 4
         .waddr2       (frseq_waddr[2 * AXI_WR_ADDR_BITS +: AXI_WR_ADDR_BITS]), // input[13:0] 
         .wr_en2       (frseq_valid[2]),                     // input
         .wdata2       (frseq_wdata[2 * 32 +: 32]),          // input[31:0] 
         .ackn2        (frseq_ackn[2]),                      // output
+        .is2          (frseq_is[2]),                        // input
+        .im2          (frseq_im[2]),                        // input
         
         .frame_num3   (frame_num[3 * NUM_FRAME_BITS +: 4]), // input[3:0] Use 4 bits even if NUM_FRAME_BITS > 4
         .waddr3       (frseq_waddr[3 * AXI_WR_ADDR_BITS +: AXI_WR_ADDR_BITS]), // input[13:0] 
         .wr_en3       (frseq_valid[3]),                     // input
         .wdata3       (frseq_wdata[3 * 32 +: 32]),          // input[31:0] 
         .ackn3        (frseq_ackn[3]),                      // output
+        .is3          (frseq_is[3]),                        // input
+        .im3          (frseq_im[3]),                        // input
+
         .waddr_out    (cseq_waddr),                         // output[13:0] reg 
         .wr_en_out    (cseq_wr_en),                         // output
         .wdata_out    (cseq_wdata),                         // output[31:0] reg 
@@ -1905,6 +1923,7 @@ assign axi_grst = axi_rst_pre;
         .status_ad                 (status_compressor_ad),       // output[7:0] 
         .status_rq                 (status_compressor_rq),       // output
         .status_start              (status_compressor_start),    // input
+        .cmprs_irq                 (cmprs_irq[3:0]),             // output[3:0]
 
         .xfer_reset_page_rd        (cmprs_xfer_reset_page_rd),   // input[3:0]
         .buf_wpage_nxt             (cmprs_buf_wpage_nxt),        // input[3:0]
@@ -2662,7 +2681,12 @@ assign axi_grst = axi_rst_pre;
     .DMA3DATYPE(),               // DMAC 3 DMA Ackbowledge TYpe (completed single AXI, completed burst AXI, flush request), output
     .DMA3RSTN(),                 // DMAC 3 RESET output (reserved, do not use), output
  // Interrupt signals
-    .IRQF2P(),                   // Interrupts, OL to PS [19:0], input
+    .IRQF2P({4'b0,
+            cmprs_irq[3:0],      // [15:12] Compressor done interrupts
+            frseq_irq[3:0],      // [11: 8] Frame sync interrupts
+            7'b0,
+            1'b0                 // Put SATA here  
+            }),                  // Interrupts, OL to PS [19:0], input
     .IRQP2F(),                   // Interrupts, OL to PS [28:0], output
  // Event Signals
     .EVENTEVENTI(),              // EVENT Wake up one or both CPU from WFE state, input

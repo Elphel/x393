@@ -54,6 +54,8 @@
 //     [14] -   reset all FIFO (takes 32 clock pulses), also - stops seq until run command
 //     [13:12] - 3 - run seq, 2 - stop seq , 1,0 - no change to run state
 
+// New - [1:0] - 0: NOP, 1: clear IRQ, 2 - Clear IE, 3: set IE
+
 module  cmd_frame_sequencer#(
     parameter CMDFRAMESEQ_ADDR=                'h780,
     parameter CMDFRAMESEQ_MASK=                'h7e0,
@@ -63,21 +65,25 @@ module  cmd_frame_sequencer#(
     parameter CMDFRAMESEQ_REL =                 16,
     parameter CMDFRAMESEQ_CTRL =                31,
     parameter CMDFRAMESEQ_RST_BIT =             14,
-    parameter CMDFRAMESEQ_RUN_BIT =             13
+    parameter CMDFRAMESEQ_RUN_BIT =             13,
+    parameter CMDFRAMESEQ_IRQ_BIT =             0 // [1:0] used
 )(
     input                         mrst,
     input                         mclk, // for command/status
      // programming interface
     input                   [7:0] cmd_ad,      // byte-serial command address/data (up to 6 bytes: AL-AH-D0-D1-D2-D3 
     input                         cmd_stb,     // strobe (with first byte) for the command a/d
-    // frame syn and frame number
+    // frame sync and frame number
     input                         frame_sync,  // @posedge mclk
     output                 [ 3:0] frame_no,    // @posedge mclk
     // command mux interface    
     output [AXI_WR_ADDR_BITS-1:0] waddr,   // write address, valid with wr_en_out
     output                        valid,   // output data valid 
     output                 [31:0] wdata,   // write data, valid with waddr_out and wr_en_out
-    input                         ackn     // command sequencer address/data accepted
+    input                         ackn,    // command sequencer address/data accepted
+    // Interrupt mask, status, request
+    output                        is,      // interrupt status (not masked)
+    output                        im       // interrupt mask
 );
     localparam PNTR_WIDH = (CMDFRAMESEQ_DEPTH > 32) ?((CMDFRAMESEQ_DEPTH > 64) ? 7 : 6) : 5;
     wire                  [4:0] cmd_a;     // 3 cycles before data
@@ -133,6 +139,16 @@ module  cmd_frame_sequencer#(
     reg                         valid_r;
 
     wire                 [63:0] cmdseq_do; // output data from the sequence
+    
+    wire                  [1:0] irq_bits = cmd_data[CMDFRAMESEQ_IRQ_BIT +: 2];
+    reg                         is_r;      // interrupt status (not masked)
+    reg                         im_r;       // interrtupt mask
+    wire                        irq_ctrl;
+    
+    assign is =  is_r;      // interrupt status (not masked)
+    assign im =  im_r;       // interrtupt mask
+    assign irq_ctrl = cmd_we_ctl_r[2] && (|irq_bits);
+    
     assign waddr = cmdseq_do[32 +:AXI_WR_ADDR_BITS];
     assign wdata = cmdseq_do[31:0];
     assign seq_cmd_ra = {page_r,rpointer};
@@ -152,6 +168,18 @@ module  cmd_frame_sequencer#(
     assign commands_pending = rpointer != fifo_wr_pointers_outr_r; // only look at the current page different pages will trigger page increment first
     assign pre_cmd_seq_w = commands_pending & ~(|page_r_inc) & seq_enrun;
     assign valid = valid_r;
+    
+//    parameter CMDFRAMESEQ_IRQ_BIT =             0,
+//    parameter CMDFRAMESEQ_IRQ_BITS =            2
+    always @ (posedge mclk) begin
+        if      (mrst)                            is_r <= 0;
+        else if (frame_sync)                      is_r <= 1;
+        else if (irq_ctrl && (irq_bits == 2'b01)) is_r <= 0;
+        
+        if      (mrst)                            im_r <= 0;
+        else if (irq_ctrl && irq_bits[1])         im_r <= irq_bits[0];
+    end    
+    
     always @ (posedge mclk) begin
         if (mrst) por <= 0;
         else      por <= {por[1:0], 1'b1};

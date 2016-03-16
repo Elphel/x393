@@ -104,6 +104,8 @@ Solved it!
 To make it work, I set the (AR/AW)CACHE=0x11 and (AR/AW)PROT=0x00. In the CDMA datasheet, these were the recommended values, which I confirmed with ChipScope, when attached to CDMA's master port.
 The default values set by VHLS were 0x00 and 0x10 respectively, which is also the case in the last post.
 Alex
+UPDATE: Xilinx docs say that (AR/AW)CACHE is ignored
+
 */    
     
     reg   [3:0] WrDataThreshold =  'hf;
@@ -302,37 +304,39 @@ Alex
 
 fifo_same_clock_fill   #( .DATA_WIDTH(50),.DATA_DEPTH(5)) // read - 4, write - 32?
     waddr_i (
-        .rst       (rst),
-        .clk       (aclk),
-        .sync_rst  (1'b0),
-        .we        (awvalid && awready),
-        .re        (start_write_burst_w),
-        .data_in   ({awid[5:0],     awburst[1:0],    awsize[1:0],    awlen[3:0],    awaddr[31:0],     wr_qos_in[3:0]}),
-        .data_out  ({awid_out[5:0], awburst_out[1:0],awsize_out[1:0],awlen_out[3:0],awaddr_out[31:0], wr_qos_out[3:0]}),
-        .nempty    (aw_nempty),
-        .half_full (), //aw_half_full),
-        .under      (), //waddr_under), // output reg 
-        .over       (), //waddr_over), // output reg
-        .wcount     (), //waddr_wcount), // output[3:0] reg 
-        .rcount     (), //waddr_rcount), // output[3:0] reg 
-        .num_in_fifo(wacount) // output[3:0] 
+        .rst          (rst),
+        .clk          (aclk),
+        .sync_rst     (1'b0),
+        .we           (awvalid && awready),
+        .re           (start_write_burst_w),
+        .data_in      ({awid[5:0],     awburst[1:0],    awsize[1:0],    awlen[3:0],    awaddr[31:0],     wr_qos_in[3:0]}),
+        .data_out     ({awid_out[5:0], awburst_out[1:0],awsize_out[1:0],awlen_out[3:0],awaddr_out[31:0], wr_qos_out[3:0]}),
+        .nempty       (aw_nempty),
+        .half_full    (), //aw_half_full),
+        .under        (), //waddr_under),  // output reg 
+        .over         (), //waddr_over),   // output reg
+        .wcount       (), //waddr_wcount), // output[3:0] reg 
+        .rcount       (), //waddr_rcount), // output[3:0] reg 
+        .wnum_in_fifo (wacount),           // output[3:0] 
+        .rnum_in_fifo ()                   // output[3:0] 
     );
 fifo_same_clock_fill   #( .DATA_WIDTH(79),.DATA_DEPTH(7))    
     wdata_i (
-        .rst(rst),
-        .clk(aclk),
-        .sync_rst  (1'b0),
-        .we(wvalid && wready),
-        .re(fifo_wd_rd), //start_write_burst_w), // wrong
-        .data_in({wlast,     wid[5:0],          wstrb[7:0],     wdata[63:0]}),
-        .data_out({wlast_out,wid_out[5:0],  wstrb_out[7:0], wdata_out[63:0]}),
-        .nempty(w_nempty),
-        .half_full(), //w_half_full),
-        .under      (), //wdata_under), // output reg 
-        .over       (), //wdata_over), // output reg
-        .wcount     (), //wdata_wcount), // output[3:0] reg 
-        .rcount     (), //wdata_rcount), // output[3:0] reg 
-        .num_in_fifo(wcount) // output[3:0] 
+        .rst          (rst),
+        .clk          (aclk),
+        .sync_rst     (1'b0),
+        .we           (wvalid && wready),
+        .re           (fifo_wd_rd), //start_write_burst_w), // wrong
+        .data_in      ({wlast,     wid[5:0],          wstrb[7:0],     wdata[63:0]}),
+        .data_out     ({wlast_out,wid_out[5:0],  wstrb_out[7:0], wdata_out[63:0]}),
+        .nempty       (w_nempty),
+        .half_full    (), //w_half_full),
+        .under        (), //wdata_under), // output reg 
+        .over         (), //wdata_over), // output reg
+        .wcount       (), //wdata_wcount), // output[3:0] reg 
+        .rcount       (), //wdata_rcount), // output[3:0] reg 
+        .wnum_in_fifo (wcount), // output[3:0] 
+        .rnum_in_fifo () // output[3:0] 
     );
 // **** Write response channel ****    
     wire [ 1:0] bresp_value=2'b0;
@@ -346,31 +350,32 @@ fifo_same_clock_fill   #( .DATA_WIDTH(79),.DATA_DEPTH(7))
     dly_16 #(
         .WIDTH(1)
     ) bresp_dly_16_i (
-        .clk(aclk), // input
-        .rst(rst), // input
-        .dly(sim_bresp_latency[3:0]), // input[3:0] 
-        .din(last_confirmed_write), //fifo_wd_rd), // input[0:0] 
-        .dout(fifo_wd_rd_dly) // output[0:0] 
+        .clk    (aclk),                   // input
+        .rst    (rst),                    // input
+        .dly    (sim_bresp_latency[3:0]), // input[3:0] 
+        .din    (last_confirmed_write),   //fifo_wd_rd), // input[0:0] 
+        .dout   (fifo_wd_rd_dly)          // output[0:0] 
     );
 
     // first FIFO for bresp - latency outside of the module
 // wresp per burst, not per item !    
 fifo_same_clock_fill  #( .DATA_WIDTH(8),.DATA_DEPTH(5))    
     wresp_ext_i (
-        .rst(rst),
-        .clk(aclk),
-        .sync_rst  (1'b0),
-        .we(last_confirmed_write), // fifo_wd_rd),
-        .re(fifo_wd_rd_dly), // not allowing RE next cycle after bvalid
-        .data_in({wid_out[5:0],bresp_value[1:0]}),
-        .data_out({bid_in[5:0],bresp_in[1:0]}),
-        .nempty(),
-        .half_full(), //),
-        .under      (), //wresp_under), // output reg 
-        .over       (), //wresp_over), // output reg
-        .wcount     (), //wresp_wcount), // output[3:0] reg 
-        .rcount     (), //wresp_rcount), // output[3:0] reg 
-        .num_in_fifo() // wresp_num_in_fifo) // output[3:0] 
+        .rst          (rst),
+        .clk          (aclk),
+        .sync_rst     (1'b0),
+        .we           (last_confirmed_write), // fifo_wd_rd),
+        .re           (fifo_wd_rd_dly), // not allowing RE next cycle after bvalid
+        .data_in      ({wid_out[5:0],bresp_value[1:0]}),
+        .data_out     ({bid_in[5:0],bresp_in[1:0]}),
+        .nempty       (),
+        .half_full    (), //),
+        .under        (),  //wresp_under), // output reg 
+        .over         (),  //wresp_over), // output reg
+        .wcount       (),  //wresp_wcount), // output[3:0] reg 
+        .rcount       (),  //wresp_rcount), // output[3:0] reg 
+        .wnum_in_fifo (), // wresp_num_in_fifo) // output[3:0] 
+        .rnum_in_fifo ()  // wresp_num_in_fifo) // output[3:0] 
     );
 
     assign wresp_re=bready && bvalid; // && !was_wresp_re;
@@ -382,20 +387,21 @@ fifo_same_clock_fill  #( .DATA_WIDTH(8),.DATA_DEPTH(5))
     // second wresp FIFO (does it exist in the actual module)?
 fifo_same_clock_fill  #( .DATA_WIDTH(8),.DATA_DEPTH(5))    
     wresp_i (
-        .rst(rst),
-        .clk(aclk),
-        .sync_rst  (1'b0),
-        .we(fifo_wd_rd_dly),
-        .re(wresp_re), // not allowing RE next cycle after bvalid
-        .data_in({bid_in[5:0],bresp_in[1:0]}),
-        .data_out({bid[5:0],bresp[1:0]}),
-        .nempty(), //bvalid),
-        .half_full(), //),
-        .under      (), //wresp_under), // output reg 
-        .over       (), //wresp_over), // output reg
-        .wcount     (), //wresp_wcount), // output[3:0] reg 
-        .rcount     (), //wresp_rcount), // output[3:0] reg 
-        .num_in_fifo(wresp_num_in_fifo) // wresp_num_in_fifo) // output[3:0] 
+        .rst          (rst),
+        .clk          (aclk),
+        .sync_rst     (1'b0),
+        .we           (fifo_wd_rd_dly),
+        .re           (wresp_re), // not allowing RE next cycle after bvalid
+        .data_in      ({bid_in[5:0],bresp_in[1:0]}),
+        .data_out     ({bid[5:0],bresp[1:0]}),
+        .nempty       (), //bvalid),
+        .half_full    (), //),
+        .under        (), //wresp_under),       // output reg 
+        .over         (), //wresp_over),        // output reg
+        .wcount       (), //wresp_wcount),      // output[3:0] reg 
+        .rcount       (), //wresp_rcount),      // output[3:0] reg 
+        .wnum_in_fifo (), // wresp_num_in_fifo) // output[3:0] 
+        .rnum_in_fifo (wresp_num_in_fifo)       // wresp_num_in_fifo) // output[3:0] 
     );
 
 endmodule

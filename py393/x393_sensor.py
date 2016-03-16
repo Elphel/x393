@@ -128,7 +128,8 @@ class X393Sensor(object):
         """
         status= self.get_status_sensor_io(num_sensor)
         print ("print_status_sensor_io(%d):"%(num_sensor))
-#last_in_line_1cyc_mclk, dout_valid_1cyc_mclk        
+#last_in_line_1cyc_mclk, dout_valid_1cyc_mclk
+        """        
         print ("   last_in_line_1cyc_mclk = %d"%((status>>23) & 1))        
         print ("   dout_valid_1cyc_mclk =   %d"%((status>>22) & 1))        
         print ("   alive_hist0_gr =         %d"%((status>>21) & 1))        
@@ -140,10 +141,13 @@ class X393Sensor(object):
         print ("   vact_alive =             %d"%((status>>15) & 1))
         print ("   hact_ext_alive =         %d"%((status>>14) & 1))
         print ("   hact_alive =             %d"%((status>>13) & 1))
+        """
+        print ("   hact_run =               %d"%((status>>13) & 1))
         print ("   locked_pxd_mmcm =        %d"%((status>>12) & 1))
         print ("   clkin_pxd_stopped_mmcm = %d"%((status>>11) & 1))
         print ("   clkfb_pxd_stopped_mmcm = %d"%((status>>10) & 1))
-        print ("   ps_rdy =                 %d"%((status>> 9) & 1))
+        print ("   xfpgadone =              %d"%((status>> 9) & 1))
+        print ("   ps_rdy =                 %d"%((status>> 8) & 1))
         print ("   ps_out =                 %d"%((status>> 0)  & 0xff))
         print ("   xfpgatdo =               %d"%((status>>25) & 1))
         print ("   senspgmin =              %d"%((status>>24) & 1))
@@ -787,6 +791,43 @@ class X393Sensor(object):
         self.x393_axi_tasks.write_control_register(reg_addr + 3, dlys[3]) # {mmcm_phase, bpf,   vact, hact}
         self.set_sensor_io_ctl (num_sensor = num_sensor,
                                 set_delays = True)
+
+    def set_sensor_io_dly_hispi (self,
+                                    num_sensor,
+                                    mmcm_phase = None,
+                                    lane0_dly =  None,
+                                    lane1_dly =  None,
+                                    lane2_dly =  None,
+                                    lane3_dly =  None):
+        """
+        Set sensor port input delays and mmcm phase
+        @param num_sensor - sensor port number (0..3) or all, 'A'
+        @param mmcm_phase - MMCM clock phase
+        @param lane0_dly - delay in the lane0 (3 LSB are not used) // All 4 lane delays should be set simultaneously
+        @param lane1_dly - delay in the lane1 (3 LSB are not used)
+        @param lane2_dly - delay in the lane2 (3 LSB are not used)
+        @param lane3_dly - delay in the lane3 (3 LSB are not used))                      
+        """
+        try:
+            if (num_sensor == all) or (num_sensor[0].upper() == "A"): #all is a built-in function
+                for num_sensor in range(4):
+                    self.set_sensor_io_dly_hispi (num_sensor = num_sensor,
+                                                  mmcm_phase = mmcm_phase,
+                                                  lane0_dly =  lane0_dly,
+                                                  lane1_dly =  lane1_dly,
+                                                  lane2_dly =  lane2_dly,
+                                                  lane3_dly =  lane3_dly)
+                return
+        except:
+            pass
+        reg_addr = (vrlg.SENSOR_GROUP_ADDR + num_sensor * vrlg.SENSOR_BASE_INC) + vrlg.SENSIO_RADDR + vrlg.SENSIO_DELAYS
+        try: # if any delay is None - do not set
+            dlys=(lane0_dly & 0xff) | ((lane1_dly & 0xff) << 8) | ((lane2_dly & 0xff) << 16) | ((lane3_dly & 0xff) << 24)
+            self.x393_axi_tasks.write_control_register(reg_addr + 2, dlys)
+        except:
+            pass                           
+        if not mmcm_phase is None:
+            self.x393_axi_tasks.write_control_register(reg_addr + 3, mmcm_phase & 0xff)
         
     def set_sensor_hispi_lanes(self,
                                num_sensor,

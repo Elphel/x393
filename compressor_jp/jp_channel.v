@@ -47,6 +47,7 @@ module  jp_channel#(
         parameter CMPRS_FORMAT=               2,
         parameter CMPRS_COLOR_SATURATION=     3,
         parameter CMPRS_CORING_MODE=          4,
+        parameter CMPRS_INTERRUPTS=           5,        
         parameter CMPRS_TABLES=               6, // 6(data)..7(address)
         parameter TABLE_QUANTIZATION_INDEX =  0,
         parameter TABLE_CORING_INDEX =        1,
@@ -116,34 +117,30 @@ module  jp_channel#(
 `endif        
         
 )(
-//    input                         rst,    // global reset
-    input                         xclk,   // global clock input, compressor single clock rate
+    input                         xclk,          // global clock input, compressor single clock rate
 `ifdef  USE_XCLK2X    
-    input                         xclk2x, // global clock input, compressor double clock rate, nominally rising edge aligned
+    input                         xclk2x,        // global clock input, compressor double clock rate, nominally rising edge aligned
 `endif    
-    input                         mrst,      // @posedge mclk, sync reset
-    input                         xrst,      // @posedge xclk, sync reset
-    input                         hrst,      // @posedge xclk, sync reset
+    input                         mrst,          // @posedge mclk, sync reset
+    input                         xrst,          // @posedge xclk, sync reset
+    input                         hrst,          // @posedge xclk, sync reset
     
     // programming interface
-    input                         mclk,     // global system/memory clock
-    input                   [7:0] cmd_ad,      // byte-serial command address/data (up to 6 bytes: AL-AH-D0-D1-D2-D3 
-    input                         cmd_stb,     // strobe (with first byte) for the command a/d
-    output                  [7:0] status_ad,   // status address/data - up to 5 bytes: A - {seq,status[1:0]} - status[2:9] - status[10:17] - status[18:25]
-    output                        status_rq,   // input request to send status downstream
-    input                         status_start, // Acknowledge of the first status packet byte (address)
+    input                         mclk,          // global system/memory clock
+    input                   [7:0] cmd_ad,        // byte-serial command address/data (up to 6 bytes: AL-AH-D0-D1-D2-D3 
+    input                         cmd_stb,       // strobe (with first byte) for the command a/d
+    output                  [7:0] status_ad,     // status address/data - up to 5 bytes: A - {seq,status[1:0]} - status[2:9] - status[10:17] - status[18:25]
+    output                        status_rq,     // input request to send status downstream
+    input                         status_start,  // Acknowledge of the first status packet byte (address)
+    output                        irq,           // processor interrupt
     
     // Buffer interface (buffer to be a part of the memory controller - it is connected there by a 64-bit data, here - by an 9-bit one
     input                         xfer_reset_page_rd, // from mcntrl_tiled_rw (
 
     input                         buf_wpage_nxt, // advance to next page memory interface writes to
-    input                         buf_we,       // @!mclk write buffer from memory, increment write
-    input                  [63:0] buf_din,      // data out 
+    input                         buf_we,        // @!mclk write buffer from memory, increment write
+    input                  [63:0] buf_din,       // data out 
 
-//    output                 [11:0] buf_ra,
-//    output                        buf_ren,
-//    output                        buf_regen,
-//    input                  [ 7:0] buf_di, 
     
     input                         page_ready_chn,     // single mclk (posedge)
     output                        next_page_chn,      // single mclk (posedge): Done with the page in the  buffer, memory controller may read more data 
@@ -186,8 +183,8 @@ module  jp_channel#(
     input                         fifo_rst,      // reset FIFO (set read address to write, reset count)
     input                         fifo_ren,
     output                 [63:0] fifo_rdata,
-    output                        fifo_eof,      // single rclk pulse signalling EOF
-    input                         eof_written,   // confirm frame written ofer AFI to the system memory (single rclk pulse)
+    output                        fifo_eof,      // single rclk pulse signaling EOF
+    input                         eof_written,   // confirm frame written over AFI to the system memory (single rclk pulse)
     output                        fifo_flush,    // EOF, need to output all what is in FIFO (Stays active until enough data chunks are read)
     output                        flush_hclk,    // output before writing last chunk - use it to suspend AFI to have
                                                  // last burst marked as the last one (otherwise last may be empty if frame had %4==0 chunks) 
@@ -313,15 +310,8 @@ module  jp_channel#(
     wire          enc_dv;
 
 //TODO: use next signals for status
-//    wire          eof_written_mclk;
-//    wire          stuffer_done_mclk;
     wire          stuffer_running_mclk;
     wire          reading_frame;
-    
-///    wire          last_block; //huffman393
-///    wire          test_lbw; 
-
-
     
 `ifdef   USE_XCLK2X
     wire   [15:0] huff_do;     // output[15:0] reg 
@@ -342,6 +332,7 @@ module  jp_channel#(
     wire          set_format_w;
     wire          set_color_saturation_w;
     wire          set_coring_w;
+    wire          set_interrupts_w;
     wire          set_tables_w;
     
     wire          stuffer_running;   // @negedge xclk2x from registering timestamp until done
@@ -352,6 +343,7 @@ module  jp_channel#(
     wire   [ 2:0] cmprs_qpage;
     wire   [ 2:0] coring_num;
     reg           dcc_en;
+    
 
     wire   [15:0] dccdata; // was not used in late nc353
     wire          dccvld;  // was not used in late nc353
@@ -361,7 +353,9 @@ module  jp_channel#(
     assign set_format_w =            cmd_we && (cmd_a==       CMPRS_FORMAT);
     assign set_color_saturation_w =  cmd_we && (cmd_a==       CMPRS_COLOR_SATURATION);
     assign set_coring_w =            cmd_we && (cmd_a==       CMPRS_CORING_MODE);
+    assign set_interrupts_w =        cmd_we && (cmd_a==       CMPRS_INTERRUPTS);
     assign set_tables_w =            cmd_we && ((cmd_a & 6)== CMPRS_TABLES);
+    
     
 `ifdef  USE_XCLK2X
       // re-sync to posedge xclk2x
@@ -586,31 +580,36 @@ module  jp_channel#(
         .data       (cmd_data), // output[31:0] 
         .we         (cmd_we)    // output
     );
-    wire [2:0] status_data; 
+    
+    wire [4:0] status_data; 
     cmprs_status cmprs_status_i (
-        .mclk            (mclk),                 // input
-        .eof_written     (eof_written_mclk),     // input
-        .stuffer_running (stuffer_running_mclk), // input
-        .reading_frame   (reading_frame),        // input
-        .status          (status_data)           // output[2:0] 
+        .mrst            (mrst),                  // input
+        .mclk            (mclk),                  // input
+        .eof_written     (eof_written_mclk),      // input
+        .stuffer_running (stuffer_running_mclk),  // input
+        .reading_frame   (reading_frame),         // input
+        .set_interrupts  (set_interrupts_w),      // input
+        .data_in         (cmd_data[1:0]),         // input[1:0] 
+        .status          (status_data),           // output[2:0] 
+        .irq             (irq) // output
     );
 
     status_generate #(
         .STATUS_REG_ADDR  (CMPRS_STATUS_REG_ADDR),
-        .PAYLOAD_BITS     (3),
+        .PAYLOAD_BITS     (7),
         .EXTRA_WORDS      (1),
         .EXTRA_REG_ADDR   (CMPRS_HIFREQ_REG_ADDR)
         
     ) status_generate_i (
-        .rst              (1'b0),                 //rst),      // input
-        .clk              (mclk),                 // input
-        .srst             (mrst),                 // input
-        .we               (set_status_w),         // input
-        .wd               (cmd_data[7:0]),        // input[7:0] 
-        .status           ({hifreq,status_data}), // input[2:0] 
-        .ad               (status_ad),            // output[7:0] 
-        .rq               (status_rq),            // output
-        .start            (status_start)          // input
+        .rst              (1'b0),                      //rst),      // input
+        .clk              (mclk),                      // input
+        .srst             (mrst),                      // input
+        .we               (set_status_w),              // input
+        .wd               (cmd_data[7:0]),             // input[7:0] 
+        .status           ({hifreq,status_data,2'b0}), // input[2:0] 
+        .ad               (status_ad),                 // output[7:0] 
+        .rq               (status_rq),                 // output
+        .start            (status_start)               // input
     );
 //hifreq
 // Not needed?

@@ -55,24 +55,32 @@ module  cmd_seq_mux#(
     input                             wr_en0,       // write enable 
     input                      [31:0] wdata0,       // write data, valid with waddr_out and wr_en_out
     output                            ackn0,        // command sequencer address/data accepted
+    input                             is0,          // interrupt status (not masked) 
+    input                             im0,          // interrupt mask 
     // Sensor channel 1
     input                      [ 3:0] frame_num1,   // @posedge mclk
     input      [AXI_WR_ADDR_BITS-1:0] waddr1,       // write address, valid with wr_en_out
     input                             wr_en1,       // write enable 
     input                      [31:0] wdata1,       // write data, valid with waddr_out and wr_en_out
     output                            ackn1,        // command sequencer address/data accepted
+    input                             is1,          // interrupt status (not masked) 
+    input                             im1,          // interrupt mask 
     // Sensor channel 2
     input                      [ 3:0] frame_num2,   // @posedge mclk
     input      [AXI_WR_ADDR_BITS-1:0] waddr2,       // write address, valid with wr_en_out
     input                             wr_en2,       // write enable 
     input                      [31:0] wdata2,       // write data, valid with waddr_out and wr_en_out
     output                            ackn2,        // command sequencer address/data accepted
+    input                             is2,          // interrupt status (not masked) 
+    input                             im2,          // interrupt mask 
     // Sensor channel 3
     input                      [ 3:0] frame_num3,   // @posedge mclk
     input      [AXI_WR_ADDR_BITS-1:0] waddr3,       // write address, valid with wr_en_out
     input                             wr_en3,       // write enable 
     input                      [31:0] wdata3,       // write data, valid with waddr_out and wr_en_out
     output                            ackn3,        // command sequencer address/data accepted
+    input                             is3,          // interrupt status (not masked) 
+    input                             im3,          // interrupt mask 
     // mux output
     output reg [AXI_WR_ADDR_BITS-1:0] waddr_out,    // write address, valid with wr_en_out
     output                            wr_en_out,    // write enable 
@@ -88,6 +96,9 @@ module  cmd_seq_mux#(
     reg         full_r;
     wire        ackn_w;  //pre-acknowledge of one of the channels
     reg   [3:0] ackn_r;
+    
+    wire  [3:0] is = {is[3], is[2], is[1], is[0]};
+    wire  [3:0] im = {im[3], im[2], im[1], im[0]};
     
     assign pri_one_rr = {wr_en[3] & ~(|wr_en[2:0]), wr_en[2]&~(|wr_en[1:0]),          wr_en[1] &                  wr_en[0],  wr_en[0],
                          wr_en[3],                  wr_en[2]&~(|wr_en[1:0])&wr_en[3], wr_en[1] & ~  wr_en[3]    & wr_en[0],  wr_en[0] & ~  wr_en[3],
@@ -164,7 +175,7 @@ module  cmd_seq_mux#(
                       
     status_generate #(
         .STATUS_REG_ADDR     (CMDSEQMUX_STATUS),
-        .PAYLOAD_BITS        (18),
+        .PAYLOAD_BITS        (26),
         .REGISTER_STATUS     (1)
     ) status_generate_cmd_seq_mux_i (
         .rst           (1'b0),               //rst),         // input
@@ -172,7 +183,7 @@ module  cmd_seq_mux#(
         .srst          (mrst),               // input
         .we            (cmd_status),         // input
         .wd            (cmd_data[7:0]),      // input[7:0] 
-        .status        ({frame_num3, frame_num2, frame_num1, frame_num0, 2'b0}), // input[18:0] // 2 LSBs - may add "real" status 
+        .status        ({im, is, frame_num3, frame_num2, frame_num1, frame_num0, 2'b0}), // input[18:0] // 2 LSBs - may add "real" status 
         .ad            (status_ad),          // output[7:0] 
         .rq            (status_rq),          // output
         .start         (status_start)        // input
