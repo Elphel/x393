@@ -72,6 +72,7 @@ import x393_sensor
 import x393_rtc
 import x393_jpeg
 import vrlg
+import x393_export_c
 __all__ = []
 __version__ = 0.1
 __date__ = '2015-03-01'
@@ -357,6 +358,7 @@ USAGE
     x393Sensor =         x393_sensor.X393Sensor(verbose,args.simulated,args.localparams)
     x393Rtc =            x393_rtc.X393Rtc(verbose,args.simulated,args.localparams)
     x393Jpeg =           x393_jpeg.X393Jpeg(verbose,args.simulated,args.localparams)
+    x393ExportC=         x393_export_c.X393ExportC(verbose,args.simulated,args.localparams)
     '''
     print ("----------------------")
     print("x393_mem.__dict__="+str(x393_mem.__dict__))
@@ -390,6 +392,7 @@ USAGE
     extractTasks(x393_sensor.X393Sensor,                       x393Sensor)
     extractTasks(x393_rtc.X393Rtc,                             x393Rtc)
     extractTasks(x393_jpeg.X393Jpeg,                           x393Jpeg)
+    extractTasks(x393_export_c.X393ExportC,                    x393ExportC)
 
     for cmdLine in commands:
         print ('Running task: '+str(cmdLine))

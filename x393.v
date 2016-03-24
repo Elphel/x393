@@ -1762,6 +1762,7 @@ assign axi_grst = axi_rst_pre;
         .HISPI_FIFO_START              (HISPI_FIFO_START),
         .HISPI_CAPACITANCE             (HISPI_CAPACITANCE),
         .HISPI_DIFF_TERM               (HISPI_DIFF_TERM),
+        .HISPI_UNTUNED_SPLIT           (HISPI_UNTUNED_SPLIT),        
         .HISPI_DQS_BIAS                (HISPI_DQS_BIAS),
         .HISPI_IBUF_DELAY_VALUE        (HISPI_IBUF_DELAY_VALUE),
         .HISPI_IBUF_LOW_PWR            (HISPI_IBUF_LOW_PWR),
@@ -1792,8 +1793,8 @@ assign axi_grst = axi_rst_pre;
 `ifdef HISPI
         .sns_dp            ({sns4_dp, sns3_dp, sns2_dp, sns1_dp}),             // input[3:0] 
         .sns_dn            ({sns4_dn, sns3_dn, sns2_dn, sns1_dn}),             // input[3:0] 
-        .sns_dp74          ({sns4_dp74, sns3_dp74, sns2_dp74, sns1_dp74}),     // inout[7:4] SuppressThisWarning VEditor vdt-bug
-        .sns_dn74          ({sns4_dn74, sns3_dn74, sns2_dn74, sns1_dn74}),     // inout[7:4] SuppressThisWarning VEditor vdt-bug
+        .sns_dp74          ({sns4_dp74, sns3_dp74, sns2_dp74, sns1_dp74}),     // inout[7:4] @SuppressThisWarning VEditor vdt-bug
+        .sns_dn74          ({sns4_dn74, sns3_dn74, sns2_dn74, sns1_dn74}),     // inout[7:4] @SuppressThisWarning VEditor vdt-bug
         .sns_clkp          ({sns4_clkp, sns3_clkp, sns2_clkp, sns1_clkp}),     // input
         .sns_clkn          ({sns4_clkn, sns3_clkn, sns2_clkn, sns1_clkn}),     // input
         .sns_scl           ({sns4_scl, sns3_scl, sns2_scl, sns1_scl}),         // inout

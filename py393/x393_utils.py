@@ -40,8 +40,12 @@ import vrlg # global parameters
 import x393_axi_control_status
 import shutil
 DEFAULT_BITFILE="/usr/local/verilog/x393.bit"
-FPGA_RST_CTRL= 0xf8000240
-FPGA0_THR_CTRL=0xf8000178
+FPGA_RST_CTRL =    0xf8000240
+FPGA0_THR_CTRL =   0xf8000178
+FPGA_LVL_SHFTR =   0xf8000900 # 0xf: all enabled, 0x0 - disable all
+FPGA_DEVCFG_CTRL = 0xf8007000 # &= (1 << 30) - reset
+
+
 FPGA_LOAD_BITSTREAM="/dev/xdevcfg"
 INT_STS=       0xf800700c
 #SAVE_FILE_NAME="Some_name"# None
@@ -86,6 +90,25 @@ class X393Utils(object):
         else:
             for d in data:
                 self.x393_mem.write_mem(FPGA_RST_CTRL,d)
+                
+    def fpga_shutdown(self,
+                      quiet = 1):
+        if quiet < 2:
+            print ("fpga_shutdown(): FPGA clock OFF")
+        self.x393_mem.write_mem(FPGA0_THR_CTRL,1)
+        if quiet < 2:
+            print ("fpga_shutdown(): Reset ON")
+        self.reset(0)
+        if quiet < 2:
+            print ("fpga_shutdown(): Disabling level shifters")
+        # turn off level shifters
+        self.x393_mem.write_mem(FPGA_LVL_SHFTR,0)
+        old_devcfg_ctrl = self.x393_mem.read_mem(FPGA_DEVCFG_CTRL)
+        if quiet < 2:
+            print ("fpga_shutdown():FPGA_DEVCFG_CTRL was 0x%08x"%(old_devcfg_ctrl))
+            print ("fpga_shutdown(): Applying PROG_B")
+        self.x393_mem.write_mem(FPGA_DEVCFG_CTRL,old_devcfg_ctrl & ~(1 << 30))
+                    
     def bitstream(self,
                   bitfile=None,
                   quiet=1):
@@ -100,8 +123,8 @@ class X393Utils(object):
 #        POWER393_PATH = '/sys/devices/elphel393-pwr.1'
         POWER393_PATH = '/sys/devices/soc0/elphel393-pwr@0'
         
-        with open (POWER393_PATH + "/channels_dis","w") as f:
-            print("vcc_sens01 vp33sens01 vcc_sens23 vp33sens23", file = f)
+#        with open (POWER393_PATH + "/channels_dis","w") as f:
+#            print("vcc_sens01 vp33sens01 vcc_sens23 vp33sens23", file = f)
         print ("FPGA clock OFF")
         self.x393_mem.write_mem(FPGA0_THR_CTRL,1)
         print ("Reset ON")

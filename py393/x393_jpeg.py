@@ -966,6 +966,7 @@ ff d9
 """        
 """
 cd /usr/local/verilog/; test_mcntrl.py @hargs
+setupSensorsPower "HISPI"
 measure_all "*DI"
 setup_all_sensors True None 0xf
 #write_sensor_i2c  0 1 0 0x30700101

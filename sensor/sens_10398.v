@@ -98,6 +98,7 @@ module  sens_10398 #(
     
     parameter HISPI_CAPACITANCE =         "DONT_CARE",
     parameter HISPI_DIFF_TERM =           "TRUE",
+    parameter HISPI_UNTUNED_SPLIT =       "FALSE", // Very power-hungry
     parameter HISPI_DQS_BIAS =            "TRUE",
     parameter HISPI_IBUF_DELAY_VALUE =    "0",
     parameter HISPI_IBUF_LOW_PWR =        "TRUE",
@@ -368,6 +369,7 @@ module  sens_10398 #(
         .HISPI_FIFO_START       (HISPI_FIFO_START),
         .HISPI_CAPACITANCE      (HISPI_CAPACITANCE),
         .HISPI_DIFF_TERM        (HISPI_DIFF_TERM),
+        .HISPI_UNTUNED_SPLIT    (HISPI_UNTUNED_SPLIT),        
         .HISPI_DQS_BIAS         (HISPI_DQS_BIAS),
         .HISPI_IBUF_DELAY_VALUE (HISPI_IBUF_DELAY_VALUE),
         .HISPI_IBUF_LOW_PWR     (HISPI_IBUF_LOW_PWR),

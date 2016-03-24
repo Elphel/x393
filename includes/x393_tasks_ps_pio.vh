@@ -37,7 +37,7 @@ task schedule_ps_pio; // schedule software-control memory operation (may need to
     input [1:0] page;     // buffer page number
     input       urgent;   // high priority request (only for competion wityh other channels, wiil not pass in this FIFO)
     input       chn;      // channel buffer to use: 0 - memory read, 1 - memory write
-    input       wait_complete; // Do not request a newe transaction from the scheduler until previous memory transaction is finished
+    input       wait_complete; // Do not request a new transaction from the scheduler until previous memory transaction is finished
     begin
 //        wait_ps_pio_ready(DEFAULT_STATUS_MODE); // wait FIFO not half full 
         write_contol_register(MCNTRL_PS_ADDR + MCNTRL_PS_CMD, {17'b0,wait_complete,chn,urgent,page,seq_addr});

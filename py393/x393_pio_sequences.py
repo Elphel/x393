@@ -68,9 +68,9 @@ class X393PIOSequences(object):
     def schedule_ps_pio(self,          #; // schedule software-control memory operation (may need to check FIFO status first)
                         seq_addr,      # input [9:0] seq_addr; // sequence start address
                         page,          # input [1:0] page;     // buffer page number
-                        urgent,        # input       urgent;   // high priority request (only for competion wityh other channels, wiil not pass in this FIFO)
+                        urgent,        # input       urgent;   // high priority request (only for competition with other channels, will not pass in this FIFO)
                         chn,           # input       chn;      // channel buffer to use: 0 - memory read, 1 - memory write
-                        wait_complete): # input       wait_complete; // Do not request a newe transaction from the scheduler until previous memory transaction is finished
+                        wait_complete): # input       wait_complete; // Do not request a new transaction from the scheduler until previous memory transaction is finished
         """
         Schedule PS PIO memory transaction 
         <seq_addr>       10-bit sequence start address
@@ -971,7 +971,7 @@ class X393PIOSequences(object):
                         2,                          # input [1:0] page;     # buffer page number
                         0,                          # input       urgent;   # high priority request (only for competion with other channels, will not pass in this FIFO)
                         0,                          # input       chn;      # channel buffer to use: 0 - memory read, 1 - memory write
-                        wait_complete) # `PS_PIO_WAIT_COMPLETE ) #  wait_complete; # Do not request a newe transaction from the scheduler until previous memory transaction is finished
+                        wait_complete) # `PS_PIO_WAIT_COMPLETE ) #  wait_complete; # Do not request a new transaction from the scheduler until previous memory transaction is finished
         self.wait_ps_pio_done(vrlg.DEFAULT_STATUS_MODE,1) # wait previous memory transaction finished before changing delays (effective immediately)
         return self.x393_mcntrl_buffers.read_block_buf_chn (0, 2, num, show_rslt )    # chn=0, page=2, number of 32-bit words=num, show_rslt
 
@@ -992,7 +992,7 @@ class X393PIOSequences(object):
                         3,                     # input [1:0] page;     # buffer page number
                         0,                     # input       urgent;   # high priority request (only for competion with other channels, will not pass in this FIFO)
                         0,                     # input       chn;      # channel buffer to use: 0 - memory read, 1 - memory write
-                        wait_complete)         #  wait_complete; # Do not request a newe transaction from the scheduler until previous memory transaction is finished
+                        wait_complete)         #  wait_complete; # Do not request a new transaction from the scheduler until previous memory transaction is finished
         self.wait_ps_pio_done(vrlg.DEFAULT_STATUS_MODE,1); # wait previous memory transaction finished before changing delays (effective immediately)
         return self.x393_mcntrl_buffers.read_block_buf_chn (0, 3, num, show_rslt ) # chn=0, page=3, number of 32-bit words=num, show_rslt
 
@@ -1146,7 +1146,7 @@ class X393PIOSequences(object):
                                                   0,                 # input [1:0] page;     # buffer page number
                                                   0,                 # input       urgent;   # high priority request (only for competition with other channels, will not pass in this FIFO)
                                                   0,                 # input       chn;      # channel buffer to use: 0 - memory read, 1 - memory write
-                                                  wait_complete)     # `PS_PIO_WAIT_COMPLETE );#  wait_complete; # Do not request a newe transaction from the scheduler until previous memory transaction is finished
+                                                  wait_complete)     # `PS_PIO_WAIT_COMPLETE );#  wait_complete; # Do not request a new transaction from the scheduler until previous memory transaction is finished
                         
         self.wait_ps_pio_done(vrlg.DEFAULT_STATUS_MODE,1); # wait previous memory transaction finished before changing delays (effective immediately)
         buf=self.x393_mcntrl_buffers.read_block_buf_chn (0, 0, numBufWords, (0,1)[quiet<1]) # chn=0, page=0, number of 32-bit words=32, show_rslt
@@ -1234,7 +1234,7 @@ class X393PIOSequences(object):
                         0,                          # input [1:0] page;     # buffer page number
                         0,                          # input       urgent;   # high priority request (only for competion with other channels, will not pass in this FIFO)
                         0,                          # input       chn;      # channel buffer to use: 0 - memory read, 1 - memory write
-                        wait_complete) # `PS_PIO_WAIT_COMPLETE ) #  wait_complete; # Do not request a newe transaction from the scheduler until previous memory transaction is finished
+                        wait_complete) # `PS_PIO_WAIT_COMPLETE ) #  wait_complete; # Do not request a new transaction from the scheduler until previous memory transaction is finished
         self.wait_ps_pio_done(vrlg.DEFAULT_STATUS_MODE,1) # wait previous memory transaction finished before changing delays (effective immediately)
 
 
@@ -1285,9 +1285,9 @@ class X393PIOSequences(object):
         self.schedule_ps_pio ( # schedule software-control memory operation (may need to check FIFO status first)
                         vrlg.INITIALIZE_OFFSET,   # input [9:0] seq_addr; # sequence start address
                         0,                        # input [1:0] page;     # buffer page number
-                        0,                        # input       urgent;   # high priority request (only for competion with other channels, wiil not pass in this FIFO)
+                        0,                        # input       urgent;   # high priority request (only for competition with other channels, will not pass in this FIFO)
                         0,                        # input       chn;      # channel buffer to use: 0 - memory read, 1 - memory write
-                        wait_complete );          #  wait_complete; # Do not request a newe transaction from the scheduler until previous memory transaction is finished
+                        wait_complete );          #  wait_complete; # Do not request a new transaction from the scheduler until previous memory transaction is finished
 # Wait PS PIO sequence DOEN
         self.wait_ps_pio_done(vrlg.DEFAULT_STATUS_MODE, 1 , 2.0); # wait FIFO not half full, sync sequences, timeout 2 sec 
 

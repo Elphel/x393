@@ -31,9 +31,16 @@
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
  *******************************************************************************/
-      parameter FPGA_VERSION =          32'h03930074;  // Adding SATA controller
-//      parameter FPGA_VERSION =          32'h03930073;  // Adding interrupts support
-//      parameter FPGA_VERSION =          32'h03930072;  // Adding hact monitor bit 77.9%, failed timing
+      parameter FPGA_VERSION =          32'h0393007b;  // lvcmos25_lvds_25_diff
+//      parameter FPGA_VERSION =          32'h0393007a;  // lvcmos25_ppds_25_nodiff - OK
+//      parameter FPGA_VERSION =          32'h03930079;  // diff - failed
+//      parameter FPGA_VERSION =          32'h03930078;  // lvcmos18_ppds_25_nodiff
+//      parameter FPGA_VERSION =          32'h03930077;  // Restoring IOSTANDARDs - OK
+//      parameter FPGA_VERSION =          32'h03930076;  // Trying PPDS_25 with 1.8 actual power - Stuck when applying 1.8 or 2.5V
+//      parameter FPGA_VERSION =          32'h03930075;  // Trying IN_TERM = "UNTUNED_50"
+//    parameter FPGA_VERSION =          32'h03930074;  // Adding SATA controller 16365 ( 83.28%)
+//    parameter FPGA_VERSION =          32'h03930073;  // Adding interrupts support
+//    parameter FPGA_VERSION =          32'h03930072;  // Adding hact monitor bit 77.9%, failed timing
 //    parameter FPGA_VERSION =          32'h03930071;  // Fixing AXI HP multiplexer xclk -0.083 -1.968 44 / 15163 (77.17%)
 //    parameter FPGA_VERSION =          32'h03930070;  // Fixing HiSPi xclk -0.049 -0.291 17, utilization 15139 (77.04%)
 //    parameter FPGA_VERSION =          32'h0393006f;  // Fixing JP4 mode - xcl -0.002 -0.004 2, utilization 15144 (77.07 %)

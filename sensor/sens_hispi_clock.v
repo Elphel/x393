@@ -61,6 +61,7 @@ module  sens_hispi_clock#(
     parameter HISPI_MMCM =                "TRUE",
     parameter HISPI_CAPACITANCE =         "DONT_CARE",
     parameter HISPI_DIFF_TERM =           "TRUE",
+    parameter HISPI_UNTUNED_SPLIT =       "FALSE", // Very power-hungry
     parameter HISPI_DQS_BIAS =            "TRUE",
     parameter HISPI_IBUF_DELAY_VALUE =    "0",
     parameter HISPI_IBUF_LOW_PWR =        "TRUE",
@@ -97,20 +98,37 @@ module  sens_hispi_clock#(
     
     assign ps_rdy = (HISPI_DELAY_CLK == "TRUE") ? 1'b1 : ps_rdy_w;
     assign ps_out = (HISPI_DELAY_CLK == "TRUE") ? 8'b0 : ps_out_w;
-    
-    ibufds_ibufgds #(
-        .CAPACITANCE      (HISPI_CAPACITANCE),
-        .DIFF_TERM        (HISPI_DIFF_TERM),
-        .DQS_BIAS         (HISPI_DQS_BIAS),
-        .IBUF_DELAY_VALUE (HISPI_IBUF_DELAY_VALUE),
-        .IBUF_LOW_PWR     (HISPI_IBUF_LOW_PWR),
-        .IFD_DELAY_VALUE  (HISPI_IFD_DELAY_VALUE),
-        .IOSTANDARD       (HISPI_IOSTANDARD)
-    ) ibufds_ibufgds0_i (
-        .O    (clk_int),      // output
-        .I    (clp_p), // input
-        .IB   (clk_n)  // input
-    );
+    generate
+        if (HISPI_UNTUNED_SPLIT == "TRUE") begin
+            ibufds_ibufgds_50 #(
+                .CAPACITANCE      (HISPI_CAPACITANCE),
+                .DIFF_TERM        (HISPI_DIFF_TERM),
+                .DQS_BIAS         (HISPI_DQS_BIAS),
+                .IBUF_DELAY_VALUE (HISPI_IBUF_DELAY_VALUE),
+                .IBUF_LOW_PWR     (HISPI_IBUF_LOW_PWR),
+                .IFD_DELAY_VALUE  (HISPI_IFD_DELAY_VALUE),
+                .IOSTANDARD       (HISPI_IOSTANDARD)
+            ) ibufds_ibufgds0_i (
+                .O    (clk_int),      // output
+                .I    (clp_p), // input
+                .IB   (clk_n)  // input
+            );
+        end else begin
+            ibufds_ibufgds #(
+                .CAPACITANCE      (HISPI_CAPACITANCE),
+                .DIFF_TERM        (HISPI_DIFF_TERM),
+                .DQS_BIAS         (HISPI_DQS_BIAS),
+                .IBUF_DELAY_VALUE (HISPI_IBUF_DELAY_VALUE),
+                .IBUF_LOW_PWR     (HISPI_IBUF_LOW_PWR),
+                .IFD_DELAY_VALUE  (HISPI_IFD_DELAY_VALUE),
+                .IOSTANDARD       (HISPI_IOSTANDARD)
+            ) ibufds_ibufgds0_i (
+                .O    (clk_int),      // output
+                .I    (clp_p), // input
+                .IB   (clk_n)  // input
+            );
+        end
+    endgenerate
     generate
         if (HISPI_DELAY_CLK == "TRUE") begin
             idelay_nofine # (

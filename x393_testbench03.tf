@@ -788,9 +788,9 @@ assign #10 gpio_pins[9] = gpio_pins[8];
     schedule_ps_pio ( // schedule software-control memory operation (may need to check FIFO status first)
                         INITIALIZE_OFFSET, // input [9:0] seq_addr; // sequence start address
                         0,                 // input [1:0] page;     // buffer page number
-                        0,                 // input       urgent;   // high priority request (only for competion with other channels, wiil not pass in this FIFO)
+                        0,                 // input       urgent;   // high priority request (only for competition with other channels, will not pass in this FIFO)
                         0,                // input       chn;      // channel buffer to use: 0 - memory read, 1 - memory write
-                        `PS_PIO_WAIT_COMPLETE );//  wait_complete; // Do not request a newe transaction from the scheduler until previous memory transaction is finished
+                        `PS_PIO_WAIT_COMPLETE );//  wait_complete; // Do not request a new transaction from the scheduler until previous memory transaction is finished
                         
    
 `ifdef WAIT_MRS 

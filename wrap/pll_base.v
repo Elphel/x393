@@ -2,7 +2,7 @@
  * Module: pll_base
  * Date:2014-05-01  
  * Author: Andrey Filippov
- * Description: PLLE2_BASE wrapper
+ * Description: PLLE2_ADV wrapper for PLL_BASE functionality
  *
  * Copyright (c) 2014 Elphel, Inc.
  * pll_base.v is free software; you can redistribute it and/or modify
@@ -74,7 +74,7 @@ module  pll_base#(
     output clkfbout, // dedicate feedback output    
     output locked   // PLL locked output
 );
-    PLLE2_BASE #(
+  PLLE2_ADV #(
         .BANDWIDTH           (BANDWIDTH),
         .CLKFBOUT_MULT       (CLKFBOUT_MULT),
         .CLKFBOUT_PHASE      (CLKFBOUT_PHASE),
@@ -100,18 +100,30 @@ module  pll_base#(
         .DIVCLK_DIVIDE       (DIVCLK_DIVIDE),
         .REF_JITTER1         (REF_JITTER1),
         .STARTUP_WAIT        (STARTUP_WAIT)
-    ) PLLE2_BASE_i (
+    ) PLLE2_ADV_i (
         .CLKFBOUT            (clkfbout), // output 
-        .CLKOUT0             (clkout0), // output 
-        .CLKOUT1             (clkout1), // output 
-        .CLKOUT2             (clkout2), // output 
-        .CLKOUT3             (clkout3), // output 
-        .CLKOUT4             (clkout4), // output 
-        .CLKOUT5             (clkout5), // output 
-        .LOCKED              (locked), // output 
-        .CLKFBIN             (clkfbin), // input 
-        .CLKIN1              (clkin), // input 
-        .PWRDWN              (pwrdwn), // input 
-        .RST                 (rst) // input 
+        .CLKOUT0             (clkout0),  // output 
+        .CLKOUT1             (clkout1),  // output 
+        .CLKOUT2             (clkout2),  // output 
+        .CLKOUT3             (clkout3),  // output 
+        .CLKOUT4             (clkout4),  // output 
+        .CLKOUT5             (clkout5),  // output 
+        .LOCKED              (locked),   // output 
+        .CLKFBIN             (clkfbin),  // input 
+        .CLKIN1              (clkin),    // input 
+        .PWRDWN              (pwrdwn),   // input 
+        .RST                 (rst),      // input
+        // Unused ports for advanced option
+        // Unused second clock input and select
+        .CLKIN2              (1'b0),      // input
+        .CLKINSEL            (1'b1),      // input
+        // Unused DRP I/O
+        .DADDR               (7'b0),      // input[6:0] 
+        .DCLK                (1'b0),      // input
+        .DEN                 (1'b0),      // input
+        .DI                  (16'b0),     // input[15:0]
+        .DO                  (),          // output[15:0]
+        .DRDY                (),          // output
+        .DWE                 ()           // input
     );
 endmodule

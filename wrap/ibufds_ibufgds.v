@@ -70,3 +70,33 @@ module  ibufds_ibufgds  #(
     
 endmodule
 
+module  ibufds_ibufgds_50  #(
+      parameter CAPACITANCE = "DONT_CARE",
+      parameter DIFF_TERM = "FALSE",
+      parameter DQS_BIAS = "FALSE",
+      parameter IBUF_DELAY_VALUE = "0",
+      parameter IBUF_LOW_PWR = "TRUE",
+      parameter IFD_DELAY_VALUE = "AUTO",
+      parameter IOSTANDARD = "DEFAULT"
+  )(
+        output O,
+        input  I,
+        input  IB
+);
+(* IN_TERM="UNTUNED_SPLIT_50" *)
+    IBUFDS #(
+        .CAPACITANCE       (CAPACITANCE),
+        .DIFF_TERM         (DIFF_TERM),
+        .DQS_BIAS          (DQS_BIAS),
+        .IBUF_DELAY_VALUE  (IBUF_DELAY_VALUE),
+        .IBUF_LOW_PWR      (IBUF_LOW_PWR),
+        .IFD_DELAY_VALUE   (IFD_DELAY_VALUE),
+        .IOSTANDARD        (IOSTANDARD)
+    ) IBUFDS_i (
+        .O  (O), // output 
+        .I  (I), // input 
+        .IB (IB) // input 
+    );
+    
+endmodule
+

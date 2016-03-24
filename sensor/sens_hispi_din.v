@@ -42,6 +42,7 @@ module  sens_hispi_din #(
     parameter HISPI_NUMLANES =            4,
     parameter HISPI_CAPACITANCE =        "DONT_CARE",
     parameter HISPI_DIFF_TERM =          "TRUE",
+    parameter HISPI_UNTUNED_SPLIT =      "FALSE", // Very power-hungry
     parameter HISPI_DQS_BIAS =           "TRUE",
     parameter HISPI_IBUF_DELAY_VALUE =   "0",
     parameter HISPI_IBUF_LOW_PWR =       "TRUE",
@@ -67,19 +68,35 @@ module  sens_hispi_din #(
     generate
         genvar i;
         for (i=0; i < HISPI_NUMLANES; i=i+1) begin: din_block
-            ibufds_ibufgds #(
-                .CAPACITANCE      (HISPI_CAPACITANCE),
-                .DIFF_TERM        (HISPI_DIFF_TERM),
-                .DQS_BIAS         (HISPI_DQS_BIAS),
-                .IBUF_DELAY_VALUE (HISPI_IBUF_DELAY_VALUE),
-                .IBUF_LOW_PWR     (HISPI_IBUF_LOW_PWR),
-                .IFD_DELAY_VALUE  (HISPI_IFD_DELAY_VALUE),
-                .IOSTANDARD       (HISPI_IOSTANDARD)
-            ) ibufds_ibufgds0_i (
-                .O    (din[i]),   // output
-                .I    (din_p[i]), // input
-                .IB   (din_n[i])  // input
-            );
+            if (HISPI_UNTUNED_SPLIT == "TRUE") begin
+                ibufds_ibufgds_50 #(
+                    .CAPACITANCE      (HISPI_CAPACITANCE),
+                    .DIFF_TERM        (HISPI_DIFF_TERM),
+                    .DQS_BIAS         (HISPI_DQS_BIAS),
+                    .IBUF_DELAY_VALUE (HISPI_IBUF_DELAY_VALUE),
+                    .IBUF_LOW_PWR     (HISPI_IBUF_LOW_PWR),
+                    .IFD_DELAY_VALUE  (HISPI_IFD_DELAY_VALUE),
+                    .IOSTANDARD       (HISPI_IOSTANDARD)
+                ) ibufds_ibufgds0_i (
+                    .O    (din[i]),   // output
+                    .I    (din_p[i]), // input
+                    .IB   (din_n[i])  // input
+                );
+            end else begin
+                ibufds_ibufgds #(
+                    .CAPACITANCE      (HISPI_CAPACITANCE),
+                    .DIFF_TERM        (HISPI_DIFF_TERM),
+                    .DQS_BIAS         (HISPI_DQS_BIAS),
+                    .IBUF_DELAY_VALUE (HISPI_IBUF_DELAY_VALUE),
+                    .IBUF_LOW_PWR     (HISPI_IBUF_LOW_PWR),
+                    .IFD_DELAY_VALUE  (HISPI_IFD_DELAY_VALUE),
+                    .IOSTANDARD       (HISPI_IOSTANDARD)
+                ) ibufds_ibufgds0_i (
+                    .O    (din[i]),   // output
+                    .I    (din_p[i]), // input
+                    .IB   (din_n[i])  // input
+                );
+            end
 
             idelay_nofine # (
                 .IODELAY_GRP           (IODELAY_GRP),

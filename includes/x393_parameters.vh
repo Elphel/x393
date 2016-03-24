@@ -1,7 +1,7 @@
 /*******************************************************************************
  * File: x393_parameters.vh
- * Date:2015-02-07  
- * Author: Andrey Filippov     
+ * Date:2015-02-07
+ * Author: Andrey Filippov
  * Description: Parameters for the x393 (simulation and implementation)
  *
  * Copyright (c) 2015 Elphel, Inc.
@@ -43,7 +43,7 @@
 
     parameter STATUS_ADDR =             'h0800, // AXI read address of status read registers
     parameter STATUS_ADDR_MASK =        'h3c00, // AXI write address of status registers
-    
+
     parameter MCONTR_CMD_WR_ADDR =      'h0c00, // AXI write to command sequence memory
 
     parameter MCONTR_BUF0_RD_ADDR =     'h1000, // AXI read address from buffer 0 (PS sequence, memory read) (was 'h400)
@@ -55,29 +55,29 @@
     parameter MCONTR_BUF3_WR_ADDR =     'h1800, // AXI write address to buffer 3 (PL sequence, scanline, memory write)
     parameter MCONTR_BUF4_RD_ADDR =     'h1c00, // AXI read address from buffer 4 (PL sequence, tiles, memory read)
     parameter MCONTR_BUF4_WR_ADDR =     'h1c00, // AXI write address to buffer 4 (PL sequence, tiles, memory write)
-     
-    
+
+
     parameter AXI_WR_ADDR_BITS =            14,
     parameter AXI_RD_ADDR_BITS =            14,
     parameter STATUS_DEPTH=                  8,  // 256 cells, maybe just 16..64 are enough?
-    
+
 //command interface parameters
     parameter DLY_LD =            'h080,  // address to generate delay load
     parameter DLY_LD_MASK =       'h780,  // address mask to generate delay load
 //0x1000..103f - 0- bit data (set/reset)
     parameter MCONTR_PHY_0BIT_ADDR =           'h020,  // address to set sequnecer channel and  run (4 LSB-s - channel)
     parameter MCONTR_PHY_0BIT_ADDR_MASK =      'h7f0,  // address mask to generate sequencer channel/run
-//  0x1020       - DLY_SET      // 0 bits -set pre-programmed delays 
-//  0x1024..1025 - CMDA_EN      // 0 bits - enable/disable command/address outputs 
+//  0x1020       - DLY_SET      // 0 bits -set pre-programmed delays
+//  0x1024..1025 - CMDA_EN      // 0 bits - enable/disable command/address outputs
 //  0x1026..1027 - SDRST_ACT    // 0 bits - enable/disable active-low reset signal to DDR3 memory
-//  0x1028..1029 - CKE_EN       // 0 bits - enable/disable CKE signal to memory 
-//  0x102a..102b - DCI_RST      // 0 bits - enable/disable CKE signal to memory 
-//  0x102c..102d - DLY_RST      // 0 bits - enable/disable CKE signal to memory 
-    parameter MCONTR_PHY_0BIT_DLY_SET =        'h0,    // set pre-programmed delays 
-    parameter MCONTR_PHY_0BIT_CMDA_EN =        'h4,    // enable/disable command/address outputs 
+//  0x1028..1029 - CKE_EN       // 0 bits - enable/disable CKE signal to memory
+//  0x102a..102b - DCI_RST      // 0 bits - enable/disable CKE signal to memory
+//  0x102c..102d - DLY_RST      // 0 bits - enable/disable CKE signal to memory
+    parameter MCONTR_PHY_0BIT_DLY_SET =        'h0,    // set pre-programmed delays
+    parameter MCONTR_PHY_0BIT_CMDA_EN =        'h4,    // enable/disable command/address outputs
     parameter MCONTR_PHY_0BIT_SDRST_ACT =      'h6,    // enable/disable active-low reset signal to DDR3 memory
-    parameter MCONTR_PHY_0BIT_CKE_EN =         'h8,    // enable/disable CKE signal to memory 
-    parameter MCONTR_PHY_0BIT_DCI_RST =        'ha,    // enable/disable CKE signal to memory 
+    parameter MCONTR_PHY_0BIT_CKE_EN =         'h8,    // enable/disable CKE signal to memory
+    parameter MCONTR_PHY_0BIT_DCI_RST =        'ha,    // enable/disable CKE signal to memory
     parameter MCONTR_PHY_0BIT_DLY_RST =        'hc,    // enable/disable CKE signal to memory
 //0x1030..1037 - 0-bit memory cotroller (set/reset)
     parameter MCONTR_TOP_0BIT_ADDR =           'h030,  // address to turn on/off memory controller features
@@ -85,26 +85,26 @@
 //  0x1030..1031 - MCONTR_EN  // 0 bits, disable/enable memory controller
 //  0x1032..1033 - REFRESH_EN // 0 bits, disable/enable memory refresh
 //  0x1034..1037 - reserved
-    parameter MCONTR_TOP_0BIT_MCONTR_EN =      'h0,    // set pre-programmed delays 
-    parameter MCONTR_TOP_0BIT_REFRESH_EN =     'h2,    // disable/enable command/address outputs 
+    parameter MCONTR_TOP_0BIT_MCONTR_EN =      'h0,    // set pre-programmed delays
+    parameter MCONTR_TOP_0BIT_REFRESH_EN =     'h2,    // disable/enable command/address outputs
 //0x1040..107f - 16-bit data
-//  0x1040..104f - RUN_CHN      // address to set sequncer channel and  run (4 LSB-s - channel) - bits? 
+//  0x1040..104f - RUN_CHN      // address to set sequncer channel and  run (4 LSB-s - channel) - bits?
 //    parameter RUN_CHN_REL =           'h040,  // address to set sequnecer channel and  run (4 LSB-s - channel)
 //   parameter RUN_CHN_REL_MASK =      'h7f0,  // address mask to generate sequencer channel/run
 //  0x1050..1057: MCONTR_PHY16
     parameter MCONTR_PHY_16BIT_ADDR =           'h050,  // address to set sequnecer channel and  run (4 LSB-s - channel)
     parameter MCONTR_PHY_16BIT_ADDR_MASK =      'h7f8,  // address mask to generate sequencer channel/run
 //  0x1050       - PATTERNS     // 16 bits
-//  0x1051       - PATTERNS_TRI // 16-bit address to set DQM and DQS tristate on/off patterns {dqs_off,dqs_on, dq_off,dq_on} - 4 bits each 
+//  0x1051       - PATTERNS_TRI // 16-bit address to set DQM and DQS tristate on/off patterns {dqs_off,dqs_on, dq_off,dq_on} - 4 bits each
 //  0x1052       - WBUF_DELAY   // 4 bits - extra delay (in mclk cycles) to add to write buffer enable (DDR3 read data)
 //  0x1053       - EXTRA_REL    // 1 bit - set extra parameters (currently just inv_clk_div)
 //  0x1054       - STATUS_CNTRL // 8 bits - write to status control
     parameter MCONTR_PHY_16BIT_PATTERNS =       'h0,    // set DQM and DQS patterns (16'h0055)
-    parameter MCONTR_PHY_16BIT_PATTERNS_TRI =   'h1,    // 16-bit address to set DQM and DQS tristate on/off patterns {dqs_off,dqs_on, dq_off,dq_on} - 4 bits each 
+    parameter MCONTR_PHY_16BIT_PATTERNS_TRI =   'h1,    // 16-bit address to set DQM and DQS tristate on/off patterns {dqs_off,dqs_on, dq_off,dq_on} - 4 bits each
     parameter MCONTR_PHY_16BIT_WBUF_DELAY =     'h2,    // 4? bits - extra delay (in mclk cycles) to add to write buffer enable (DDR3 read data)
     parameter MCONTR_PHY_16BIT_EXTRA =          'h3,    // ? bits - set extra parameters (currently just inv_clk_div)
     parameter MCONTR_PHY_STATUS_CNTRL =         'h4,    // write to status control (8-bit)
-   
+
 //0x1060..106f: arbiter priority data
     parameter MCONTR_ARBIT_ADDR =               'h060,   // Address to set channel priorities
     parameter MCONTR_ARBIT_ADDR_MASK =          'h7f0,   // Address mask to set channel priorities
@@ -119,23 +119,23 @@
     parameter MCONTR_TOP_16BIT_REFRESH_PERIOD = 'h1,    // 8-bit refresh period
     parameter MCONTR_TOP_16BIT_REFRESH_ADDRESS= 'h2,    // 10 bits refresh address in the sequencer (PL) memory
     parameter MCONTR_TOP_16BIT_STATUS_CNTRL=    'h3,    // 8 bits - write to status control (and debug?)
-    
+
 // Status read address
     parameter MCONTR_PHY_STATUS_REG_ADDR=      'h0,    // 8 or less bits: status register address to use for memory controller phy
     parameter MCONTR_TOP_STATUS_REG_ADDR=      'h1,    // 8 or less bits: status register address to use for memory controller
-    
-    
+
+
     parameter CHNBUF_READ_LATENCY =             2, //1,     // external channel buffer extra read latency ( 0 - data available next cycle after re (but prev. data))
-    
+
     parameter DFLT_DQS_PATTERN=        8'haa,  // TODO: make work for the simulator too 8'h55,
     parameter DFLT_DQM_PATTERN=        8'h00, // 8'h00
     parameter DFLT_DQ_TRI_ON_PATTERN=  4'h7,  // DQ tri-state control word, first when enabling output
     parameter DFLT_DQ_TRI_OFF_PATTERN= 4'he,  // DQ tri-state control word, first after disabling output
     parameter DFLT_DQS_TRI_ON_PATTERN= 4'h3,  // DQS tri-state control word, first when enabling output
     parameter DFLT_DQS_TRI_OFF_PATTERN=4'hc,  // DQS tri-state control word, first after disabling output
-    parameter DFLT_WBUF_DELAY=         4'h9,  // TODO: Find the reason - simulation needs 8, target - 9 
+    parameter DFLT_WBUF_DELAY=         4'h9,  // TODO: Find the reason - simulation needs 8, target - 9
     parameter DFLT_INV_CLK_DIV=        1'b0,
-    
+
     parameter DFLT_CHN_EN=            16'h0,  // channel mask to be enabled at reset
     parameter DFLT_REFRESH_ADDR=      10'h0,  // refresh sequence address in command memory
     parameter DFLT_REFRESH_PERIOD=     8'h0,  // default 8-bit refresh period (scale?)
@@ -151,19 +151,19 @@
     parameter real REFCLK_FREQUENCY = 200.0, // 300.0,
     parameter HIGH_PERFORMANCE_MODE = "FALSE",
     parameter CLKIN_PERIOD =        20, // 10, //ns >1.25, 600<Fvco<1200 // Hardware 150MHz , change to             | 6.667
-`ifdef MCLK_VCO_MULT    
+`ifdef MCLK_VCO_MULT
     parameter CLKFBOUT_MULT =       `MCLK_VCO_MULT ,
-`else    
+`else
     parameter CLKFBOUT_MULT =       16,   // 8, // Fvco=Fclkin*CLKFBOUT_MULT_F/DIVCLK_DIVIDE, Fout=Fvco/CLKOUT#_DIVIDE  | 16
-`endif    
+`endif
 `else
     parameter real REFCLK_FREQUENCY = 300.0,
     parameter HIGH_PERFORMANCE_MODE = "FALSE",
     parameter CLKIN_PERIOD          = 10, //ns >1.25, 600<Fvco<1200
     parameter CLKFBOUT_MULT =       8, // Fvco=Fclkin*CLKFBOUT_MULT_F/DIVCLK_DIVIDE, Fout=Fvco/CLKOUT#_DIVIDE
-`endif    
+`endif
     parameter DIVCLK_DIVIDE=        1,
-    parameter CLKFBOUT_USE_FINE_PS= 0, //1, // 0 - old, 1 - new 
+    parameter CLKFBOUT_USE_FINE_PS= 0, //1, // 0 - old, 1 - new
     parameter CLKFBOUT_PHASE =      0.000,
     parameter SDCLK_PHASE =         0.000,
     parameter CLK_PHASE =           0.000, //11.25, /// 0.000,
@@ -175,9 +175,9 @@
     parameter SS_MOD_PERIOD =       10000,
     parameter CMD_PAUSE_BITS=       10,
     parameter CMD_DONE_BIT=         10,
-    
+
     parameter NUM_CYCLES_LOW_BIT=   'h6,    // decode addresses [NUM_CYCLES_LOW_BIT+:4] into command a/d length
-// TODO: put actual data    
+// TODO: put actual data
     parameter NUM_CYCLES_00 =       2, // 2-cycle 000.003f
     parameter NUM_CYCLES_01 =       4, // 4-cycle 040.007f
     parameter NUM_CYCLES_02 =       3, // 3-cycle 080.00bf
@@ -210,7 +210,7 @@
     parameter NUM_CYCLES_29 =       6,  //
     parameter NUM_CYCLES_30 =       6,  //
     parameter NUM_CYCLES_31 =       6,  //
-    
+
 //    parameter CMD0_ADDR =           'h0800, // AXI write to command sequence memory
 //    parameter CMD0_ADDR_MASK =      'h1800, // AXI read address mask for the command sequence memory
     parameter MCNTRL_PS_ADDR=                    'h100,
@@ -221,8 +221,8 @@
     parameter MCNTRL_PS_STATUS_CNTRL=            'h2,
 
     parameter NUM_XFER_BITS=                       6,    // number of bits to specify transfer length
-    parameter FRAME_WIDTH_BITS=                   13,    // Maximal frame width - 8-word (16 bytes) bursts 
-    parameter FRAME_HEIGHT_BITS=                  16,    // Maximal frame height 
+    parameter FRAME_WIDTH_BITS=                   13,    // Maximal frame width - 8-word (16 bytes) bursts
+    parameter FRAME_HEIGHT_BITS=                  16,    // Maximal frame height
     parameter LAST_FRAME_BITS=                    16,     // number of bits in frame counter (before rolls over)
     parameter MCNTRL_SCANLINE_CHN1_ADDR=         'h120,
     parameter MCNTRL_SCANLINE_CHN3_ADDR=         'h130,
@@ -245,8 +245,8 @@
                                                         // if memory controller will allow programming several sequences in advance to
                                                         // spread long-programming (tiled) over fast-programming (linear) requests.
                                                         // But that should not be too big to maintain 2-level priorities
-    
-    parameter MCNTRL_SCANLINE_FRAME_PAGE_RESET =1'b0, // reset internal page number to zero at the frame start (false - only when hard/soft reset)                                                     
+
+    parameter MCNTRL_SCANLINE_FRAME_PAGE_RESET =1'b0, // reset internal page number to zero at the frame start (false - only when hard/soft reset)
     parameter MAX_TILE_WIDTH=                   6,     // number of bits to specify maximal tile (width-1) (6 -> 64)
     parameter MAX_TILE_HEIGHT=                  6,     // number of bits to specify maximal tile (height-1) (6 -> 64)
     parameter MCNTRL_TILED_CHN2_ADDR=       'h140,
@@ -273,22 +273,22 @@
                                                    // spread long-programming (tiled) over fast-programming (linear) requests.
                                                    // But that should not be too big to maintain 2-level priorities
     parameter MCNTRL_TILED_FRAME_PAGE_RESET =1'b0, // reset internal page number to zero at the frame start (false - only when hard/soft reset)
-    parameter BUFFER_DEPTH32=                10,   // Block rum buffer depth on a 32-bit port
+    parameter BUFFER_DEPTH32=                10,   // Block RAM buffer depth on a 32-bit port
 
     // bits in mode control word
     parameter MCONTR_LINTILE_NRESET =              0, // reset if 0
-    parameter MCONTR_LINTILE_EN =                  1, // enable requests 
+    parameter MCONTR_LINTILE_EN =                  1, // enable requests
     parameter MCONTR_LINTILE_WRITE =               2, // write to memory mode
     parameter MCONTR_LINTILE_EXTRAPG =             3, // extra pages (over 1) needed by the client simultaneously
     parameter MCONTR_LINTILE_EXTRAPG_BITS =        2, // number of bits to use for extra pages
     parameter MCONTR_LINTILE_KEEP_OPEN =           5, // keep banks open (will be used only if number of rows <= 8)
-    parameter MCONTR_LINTILE_BYTE32 =              6, // use 32-byte wide columns in each tile (false - 16-byte) 
-    parameter MCONTR_LINTILE_RST_FRAME =           8, // reset frame number 
-    parameter MCONTR_LINTILE_SINGLE =              9, // read/write a single page 
+    parameter MCONTR_LINTILE_BYTE32 =              6, // use 32-byte wide columns in each tile (false - 16-byte)
+    parameter MCONTR_LINTILE_RST_FRAME =           8, // reset frame number
+    parameter MCONTR_LINTILE_SINGLE =              9, // read/write a single page
     parameter MCONTR_LINTILE_REPEAT =             10,  // read/write pages until disabled
-    parameter MCONTR_LINTILE_DIS_NEED =           11,   // disable 'need' request 
+    parameter MCONTR_LINTILE_DIS_NEED =           11,   // disable 'need' request
     parameter MCONTR_LINTILE_SKIP_LATE =          12,  // skip actual R/W operation when it is too late, advance pointers
-     
+
 // Channel test module parameters
     parameter MCNTRL_TEST01_ADDR=                 'h0f0,
     parameter MCNTRL_TEST01_MASK=                 'h7f0,
@@ -304,7 +304,7 @@
     parameter MCNTRL_TEST01_STATUS_REG_CHN2_ADDR= 'h3d,  // status/readback register for channel 3
     parameter MCNTRL_TEST01_STATUS_REG_CHN3_ADDR= 'h3e,  // status/readback register for channel 4
     parameter MCNTRL_TEST01_STATUS_REG_CHN4_ADDR= 'h3f,  // status/readback register for channel 4
-    
+
     parameter MCONTR_SENS_BASE =                  'h680, // .. 'h6bf
     parameter MCONTR_SENS_INC =                   'h10,
     parameter MCONTR_CMPRS_BASE =                 'h6c0, // .. 'h6ff
@@ -314,7 +314,7 @@
     parameter MCONTR_CMPRS_STATUS_BASE =          'h2c, // .. 'h2f
     parameter MCONTR_CMPRS_STATUS_INC =           'h1,
 
-// membridge module parameters    
+// membridge module parameters
     parameter MEMBRIDGE_ADDR=                     'h200,
     parameter MEMBRIDGE_MASK=                     'h7f0,
     parameter MEMBRIDGE_CTRL=                     'h0, // bit 0 - enable, bits[2:1]: 01 - start, 11 - start and reset address
@@ -324,19 +324,19 @@
     parameter MEMBRIDGE_START64=                  'h4, // start address relative to lo_addr
     parameter MEMBRIDGE_LEN64=                    'h5, // full length of transfer in 64-bit words
     parameter MEMBRIDGE_WIDTH64=                  'h6, // frame width in 64-bit words (partial last page in each line)
-    parameter MEMBRIDGE_MODE=                     'h7, // frame width in 64-bit words (partial last page in each line)
+    parameter MEMBRIDGE_MODE=                     'h7, // AXI cache mode (default == 3). +0x10 - debug cache (replace data with counters)
     parameter MEMBRIDGE_STATUS_REG=               'h3b,
-    
+
     parameter RSEL=                               1'b1, // late/early READ commands (to adjust timing by 1 SDCLK period)
     parameter WSEL=                               1'b0,  // late/early WRITE commands (to adjust timing by 1 SDCLK period)
-    
+
     parameter SENSOR_GROUP_ADDR =         'h400, // sensor registers base address
     parameter SENSOR_BASE_INC =           'h040, // increment for sesor channel
-    
+
     parameter HIST_SAXI_ADDR_REL =         'h100, // histograms control addresses (16 locations) relative to SENSOR_GROUP_ADDR
-    parameter HIST_SAXI_MODE_ADDR_REL =    'h110, // histograms mode address (1 locatios) relative to SENSOR_GROUP_ADDR
-    
-    
+    parameter HIST_SAXI_MODE_ADDR_REL =    'h110, // histograms mode address (1 locations) relative to SENSOR_GROUP_ADDR
+
+
     parameter SENSI2C_STATUS_REG_BASE =   'h20,  // 4 locations" x20, x22, x24, x26
     parameter SENSI2C_STATUS_REG_INC =    2,     // increment to the next sensor
     parameter SENSI2C_STATUS_REG_REL =    0,     // 4 locations" 'h20, 'h22, 'h24, 'h26
@@ -345,17 +345,17 @@
     parameter HISTOGRAM_RAM_MODE =        "BUF32", // "NOBUF", // valid: "NOBUF" (32-bits, no buffering), "BUF18", "BUF32"
     parameter SENS_NUM_SUBCHN =           3,     // number of subchannels for his sensor ports (1..4)
     parameter SENS_GAMMA_BUFFER =         0,     // 1 - use "shadow" table for clean switching, 0 - single table per channel
-    
+
     // parameters defining address map
-    parameter SENSOR_CTRL_RADDR =         0, // relative to SENSOR_GROUP_ADDR 
+    parameter SENSOR_CTRL_RADDR =         0, // relative to SENSOR_GROUP_ADDR
     parameter SENSOR_CTRL_ADDR_MASK =    'h7ff, //
         // bits of the SENSOR mode register
         parameter SENSOR_MODE_WIDTH =     10,
         parameter SENSOR_HIST_EN_BITS =    0, // 0..3 1 - enable histogram modules, disable after processing the started frame
-        parameter SENSOR_HIST_NRST_BITS =  4, // 0 - immediately reset all histogram modules 
+        parameter SENSOR_HIST_NRST_BITS =  4, // 0 - immediately reset all histogram modules
         parameter SENSOR_CHN_EN_BIT =      8,  // 1 - this enable channel
         parameter SENSOR_16BIT_BIT =       9, // 0 - 8 bpp mode, 1 - 16 bpp (bypass gamma). Gamma-processed data is still used for histograms
-    
+
     parameter SENSI2C_CTRL_RADDR =        2, // 302..'h303
     parameter SENSI2C_CTRL_MASK =     'h7fe,
       // sensor_i2c_io relative control register addresses
@@ -363,16 +363,16 @@
     // Control register bits
         parameter SENSI2C_CMD_TABLE =       29, // [29]: 1 - write to translation table (ignore any other fields), 0 - write other fields
         parameter SENSI2C_CMD_TAND =        28, // [28]: 1 - write table address (8 bits), 0 - write table data (28 bits)
-    
+
         parameter SENSI2C_CMD_RESET =       14, // [14]   reset all FIFO (takes 16 clock pulses), also - stops i2c until run command
         parameter SENSI2C_CMD_RUN =         13, // [13:12]3 - run i2c, 2 - stop i2c (needed before software i2c), 1,0 - no change to run state
         parameter SENSI2C_CMD_RUN_PBITS =    1,
-        parameter SENSI2C_CMD_FIFO_RD =      3, // advance I2C read data FIFO by 1  
+        parameter SENSI2C_CMD_FIFO_RD =      3, // advance I2C read data FIFO by 1
         parameter SENSI2C_CMD_ACIVE =        2, // [2] - SENSI2C_CMD_ACIVE_EARLY0, SENSI2C_CMD_ACIVE_SDA
         parameter SENSI2C_CMD_ACIVE_EARLY0 = 1, // release SDA==0 early if next bit ==1
         parameter SENSI2C_CMD_ACIVE_SDA =    0,  // drive SDA=1 during the second half of SCL=1
     //i2c page table bit fields
-        parameter SENSI2C_TBL_RAH =          0, // high byte of the register address 
+        parameter SENSI2C_TBL_RAH =          0, // high byte of the register address
         parameter SENSI2C_TBL_RAH_BITS =     8,
         parameter SENSI2C_TBL_RNWREG =       8, // read register (when 0 - write register
         parameter SENSI2C_TBL_SA =           9, // Slave address in write mode
@@ -384,18 +384,18 @@
         parameter SENSI2C_TBL_NABRD =       19, // number of address bytes for read (0 - 1 byte, 1 - 2 bytes)
         parameter SENSI2C_TBL_DLY =         20, // bit delay (number of mclk periods in 1/4 of SCL period)
         parameter SENSI2C_TBL_DLY_BITS=      8,
-        
-      
+
+
       parameter SENSI2C_STATUS =        'h1,
-    
+
     parameter SENS_SYNC_RADDR  =        'h4,
     parameter SENS_SYNC_MASK  =         'h7fc,
       // 2 locations reserved for control/status (if they will be needed)
       parameter SENS_SYNC_MULT  =       'h2,   // relative register address to write number of frames to combine in one (minus 1, '0' - each farme)
       parameter SENS_SYNC_LATE  =       'h3,    // number of lines to delay late frame sync
-    
-    
-    
+
+
+
     parameter SENS_GAMMA_RADDR =        'h38, // 'h38..'h3b was 4,
     parameter SENS_GAMMA_ADDR_MASK =   'h7fc,
       // sens_gamma registers
@@ -410,10 +410,10 @@
         parameter SENS_GAMMA_MODE_EN =     3,
         parameter SENS_GAMMA_MODE_REPET =  4,
         parameter SENS_GAMMA_MODE_TRIG =   5,
-        
+
 // Vignetting correction / pixel value scaling - controlled via single data word (same as in 252), some of bits [23:16]
 // are used to select register, bits 25:24 - select sub-frame
-    parameter SENS_LENS_RADDR =             'h3c, 
+    parameter SENS_LENS_RADDR =             'h3c,
     parameter SENS_LENS_ADDR_MASK =         'h7fc,
     parameter SENS_LENS_COEFF =             'h3, // set vignetting/scale coefficients (
       parameter SENS_LENS_AX =              'h00, // 00000...
@@ -434,7 +434,7 @@
       parameter SENS_LENS_FAT0_OUT_MASK =   'hff,
       parameter SENS_LENS_POST_SCALE =      'h6a, // 01101010
       parameter SENS_LENS_POST_SCALE_MASK = 'hff,
-    
+
     parameter SENSIO_RADDR =               8, //'h408  .. 'h40f
     parameter SENSIO_ADDR_MASK =       'h7f8,
       // sens_parallel12 registers
@@ -446,18 +446,18 @@
         parameter SENS_CTRL_RST_MMCM =    6,  //  7: 6
 //`ifdef HISPI
         parameter SENS_CTRL_IGNORE_EMBED =8,  //  9: 8
-//`else        
+//`else
         parameter SENS_CTRL_EXT_CLK =     8,  //  9: 8
-//`endif        
+//`endif
         parameter SENS_CTRL_LD_DLY =     10,  // 10
 //`ifdef HISPI
         parameter SENS_CTRL_GP0=      12,  // 13:12
         parameter SENS_CTRL_GP1=      14,  // 15:14
-//`else        
+//`else
         parameter SENS_CTRL_QUADRANTS =  12,  // 17:12, enable - 20
         parameter SENS_CTRL_QUADRANTS_WIDTH = 6,
         parameter SENS_CTRL_QUADRANTS_EN =   20,  // 17:12, enable - 20 (2 bits reserved)
-//`endif        
+//`endif
       parameter SENSIO_STATUS =         'h1,
       parameter SENSIO_JTAG =           'h2,
         // SENSIO_JTAG register bits
@@ -468,7 +468,7 @@
         parameter SENS_JTAG_TDI =         0,
 //`ifndef HISPI
       parameter SENSIO_WIDTH =          'h3, // 1.. 2^16, 0 - use HACT
-//`endif      
+//`endif
       parameter SENSIO_DELAYS =         'h4, // 'h4..'h7
         // 4 of 8-bit delays per register
     // sensor_i2c_io command/data write registers s (relative to SENSOR_GROUP_ADDR)
@@ -485,18 +485,18 @@
       // sens_hist registers
       parameter HISTOGRAM_LEFT_TOP =     'h0,
       parameter HISTOGRAM_WIDTH_HEIGHT = 'h1, // 1.. 2^16, 0 - use HACT
-    
+
     //sensor_i2c_io other parameters
     parameter integer SENSI2C_DRIVE=     12,
     parameter SENSI2C_IBUF_LOW_PWR=      "TRUE",
     parameter SENSI2C_SLEW =             "SLOW",
-    
+
 //`ifndef HISPI
     //sensor_fifo parameters
     parameter SENSOR_DATA_WIDTH =      12,
     parameter SENSOR_FIFO_2DEPTH =     4,
     parameter [3:0] SENSOR_FIFO_DELAY =      5, // 7,
-//`endif    
+//`endif
 
     // other parameters for histogram_saxi module
     parameter HIST_SAXI_ADDR_MASK =      'h7f0,
@@ -506,20 +506,20 @@
       parameter HIST_CONFIRM_WRITE =     2, // wait write confirmation for each block
                                             // bit 3 is not used
       parameter HIST_SAXI_AWCACHE =      4, // ..7  Write 4'h3 there,  cache mode (4 bits, default 4'h3)
-      
+
     parameter HIST_SAXI_MODE_ADDR_MASK = 'h7ff,
-    parameter NUM_FRAME_BITS =           4, // number of bits use for frame number 
-    
+    parameter NUM_FRAME_BITS =           4, // number of bits use for frame number
+
     // Other parameters
     parameter SENS_SYNC_FBITS =          16,    // number of bits in a frame counter for linescan mode
-    parameter SENS_SYNC_LBITS =          16,    // number of bits in a line counter for sof_late output (limited by eof) 
+    parameter SENS_SYNC_LBITS =          16,    // number of bits in a line counter for sof_late output (limited by eof)
     parameter SENS_SYNC_LATE_DFLT =      15,    // number of lines to delay late frame sync
-    parameter SENS_SYNC_MINBITS =        8,    // number of bits to enforce minimal frame period 
-    parameter SENS_SYNC_MINPER =         130,    // minimal frame period (in pclk/mclk?) 
-    
-    
+    parameter SENS_SYNC_MINBITS =        8,    // number of bits to enforce minimal frame period
+    parameter SENS_SYNC_MINPER =         130,    // minimal frame period (in pclk/mclk?)
+
+
     // sens_parallel12 other parameters
-    
+
 //    parameter IODELAY_GRP ="IODELAY_SENSOR", // may need different for different channels?
     parameter integer IDELAY_VALUE =     0,
     parameter integer PXD_DRIVE =        12,
@@ -529,32 +529,38 @@
     parameter real SENS_REFCLK_FREQUENCY = 300.0, // same as REFCLK_FREQUENCY
 `else
     parameter real SENS_REFCLK_FREQUENCY = 200.0,
-`endif    
+`endif
     parameter SENS_HIGH_PERFORMANCE_MODE = "FALSE",
 
 //`ifdef HISPI
     parameter PXD_CAPACITANCE =          "DONT_CARE",
     parameter PXD_CLK_DIV =              10, // 220MHz -> 22MHz
     parameter PXD_CLK_DIV_BITS =          4,
-//`endif    
-    
+//`endif
+
     parameter SENS_PHASE_WIDTH=          8,      // number of bits for te phase counter (depends on divisors)
 //    parameter SENS_PCLK_PERIOD =         10.000,  // input period in ns, 0..100.000 - MANDATORY, resolution down to 1 ps
     parameter SENS_BANDWIDTH =           "OPTIMIZED",  //"OPTIMIZED", "HIGH","LOW"
 
     // parameters for the sensor-synchronous clock PLL
-`ifdef HISPI    
+`define TWEAKING_IOSTANDARD
+`ifdef HISPI
     parameter CLKIN_PERIOD_SENSOR =      3.000, // input period in ns, 0..100.000 - MANDATORY, resolution down to 1 ps
     parameter CLKFBOUT_MULT_SENSOR =     3,      // 330 MHz --> 990 MHz
     parameter CLKFBOUT_PHASE_SENSOR =    0.000,  // CLOCK FEEDBACK phase in degrees (3 significant digits, -360.000...+360.000)
     parameter IPCLK_PHASE =              0.000,
     parameter IPCLK2X_PHASE =            0.000,
-    parameter PXD_IOSTANDARD =           "LVCMOS18",
-    parameter SENSI2C_IOSTANDARD =       "LVCMOS18",
-//    parameter PXD_IOSTANDARD =           "LVCMOS25",
-//    parameter SENSI2C_IOSTANDARD =       "LVCMOS25",
-    
-`else    
+    `ifdef TWEAKING_IOSTANDARD
+        parameter PXD_IOSTANDARD =           "LVCMOS25", // with 1.8 actually applied voltage
+        parameter SENSI2C_IOSTANDARD =       "LVCMOS25", // with 1.8 actually applied voltage
+//        parameter PXD_IOSTANDARD =           "LVCMOS18", // with 1.8 actually applied voltage
+//        parameter SENSI2C_IOSTANDARD =       "LVCMOS18", // with 1.8 actually applied voltage
+    `else
+        parameter PXD_IOSTANDARD =           "LVCMOS18",
+        parameter SENSI2C_IOSTANDARD =       "LVCMOS18",
+    `endif
+
+`else
     parameter CLKIN_PERIOD_SENSOR =      10.000, // input period in ns, 0..100.000 - MANDATORY, resolution down to 1 ps
     parameter CLKFBOUT_MULT_SENSOR =     8,      // 100 MHz --> 800 MHz
     parameter CLKFBOUT_PHASE_SENSOR =    0.000,  // CLOCK FEEDBACK phase in degrees (3 significant digits, -360.000...+360.000)
@@ -562,22 +568,36 @@
     parameter IPCLK2X_PHASE =            0.000,
     parameter PXD_IOSTANDARD =           "LVCMOS25",
     parameter SENSI2C_IOSTANDARD =       "LVCMOS25",
-    
+
 `endif
+
+    `ifdef TWEAKING_IOSTANDARD
+        parameter HISPI_UNTUNED_SPLIT =       "FALSE",   // Very power-hungry
+        parameter HISPI_DIFF_TERM =           "TRUE",    // Only possible with 2.5 power LVDS, not with 1.8V "TRUE",
+//        parameter HISPI_DIFF_TERM =           "FALSE",    // Only possible with 2.5 power LVDS, not with 1.8V "TRUE",
+//        parameter HISPI_IOSTANDARD =          "PPDS_25", // "LVDS_25", "MINI_LVDS_25", "PPDS_25", "RSDS_25"
+        parameter HISPI_IOSTANDARD =          "LVDS_25", // "LVDS_25", "MINI_LVDS_25", "PPDS_25", "RSDS_25"
+    `else
+        parameter HISPI_UNTUNED_SPLIT =       "FALSE", // Very power-hungry
+        parameter HISPI_DIFF_TERM =           "FALSE", // Only possible with 2.5 power LVDS, not with 1.8V "TRUE",
+        parameter HISPI_IOSTANDARD =          "DIFF_SSTL18_I", //"DIFF_SSTL18_II" for high current (13.4mA vs 8mA)
+    `endif
+
+
 //    parameter BUF_IPCLK =                "BUFMR", //G", // "BUFR", // BUFR fails for both clocks for sensors1 and 3
-//    parameter BUF_IPCLK2X =              "BUFMR", //G", // "BUFR",  
+//    parameter BUF_IPCLK2X =              "BUFMR", //G", // "BUFR",
 
     parameter BUF_IPCLK_SENS0 =          "BUFR", // "BUFR2", //G", // "BUFR", // BUFR fails for both clocks for sensors1 and 3
-    parameter BUF_IPCLK2X_SENS0 =        "BUFIO", /// "BUFR", //G", // "BUFR",  
+    parameter BUF_IPCLK2X_SENS0 =        "BUFIO", /// "BUFR", //G", // "BUFR",
 
     parameter BUF_IPCLK_SENS1 =          "BUFG", // "BUFR", // BUFR fails for both clocks for sensors1 and 3
-    parameter BUF_IPCLK2X_SENS1 =        "BUFG", // "BUFR",  
+    parameter BUF_IPCLK2X_SENS1 =        "BUFG", // "BUFR",
 
     parameter BUF_IPCLK_SENS2 =          "BUFR", // "BUFR2", //G", // "BUFR", // BUFR fails for both clocks for sensors1 and 3
-    parameter BUF_IPCLK2X_SENS2 =        "BUFIO", ///"BUFR", //G", // "BUFR",  
+    parameter BUF_IPCLK2X_SENS2 =        "BUFIO", ///"BUFR", //G", // "BUFR",
 
     parameter BUF_IPCLK_SENS3 =          "BUFG", // "BUFR2", ///"BUFG", // "BUFR", // BUFR fails for both clocks for sensors1 and 3
-    parameter BUF_IPCLK2X_SENS3 =        "BUFG", // "BUFIO", ///"BUFG", // "BUFR",  
+    parameter BUF_IPCLK2X_SENS3 =        "BUFG", // "BUFIO", ///"BUFG", // "BUFR",
 
     parameter SENS_DIVCLK_DIVIDE =       1,            // Integer 1..106. Divides all outputs with respect to CLKIN
     parameter SENS_REF_JITTER1   =       0.010,        // Expected jitter on CLKIN1 (0.000..0.999)
@@ -590,10 +610,10 @@
     parameter HISPI_MSB_FIRST =            0,
     parameter HISPI_NUMLANES =             4,
 
-    parameter HISPI_DELAY_CLK0=           "TRUE",      
-    parameter HISPI_DELAY_CLK1=           "TRUE",      
-    parameter HISPI_DELAY_CLK2=           "TRUE",      
-    parameter HISPI_DELAY_CLK3=           "TRUE",      
+    parameter HISPI_DELAY_CLK0=           "TRUE",
+    parameter HISPI_DELAY_CLK1=           "TRUE",
+    parameter HISPI_DELAY_CLK2=           "TRUE",
+    parameter HISPI_DELAY_CLK3=           "TRUE",
     parameter HISPI_MMCM0 =               "TRUE",
     parameter HISPI_MMCM1 =               "FALSE",
     parameter HISPI_MMCM2 =               "TRUE",
@@ -603,28 +623,27 @@
     parameter HISPI_FIFO_DEPTH =          4,
     parameter HISPI_FIFO_START =          7,
     parameter HISPI_CAPACITANCE =         "DONT_CARE",
-    parameter HISPI_DIFF_TERM =           "FALSE", // Only possible with 2.5 power LVDS, not with 1.8V "TRUE",
     parameter HISPI_DQS_BIAS =            "TRUE",
     parameter HISPI_IBUF_DELAY_VALUE =    "0",
     parameter HISPI_IBUF_LOW_PWR =        "TRUE",
     parameter HISPI_IFD_DELAY_VALUE =     "AUTO",
-//    parameter HISPI_IOSTANDARD =          "PPDS_25", //"DIFF_SSTL18_II" for high current (13.4mA vs 8mA) 
-    parameter HISPI_IOSTANDARD =          "DIFF_SSTL18_I", //"DIFF_SSTL18_II" for high current (13.4mA vs 8mA) 
-//    parameter HISPI_IOSTANDARD =          "DIFF_HSTL_II_18", //"DIFF_SSTL18_II" for high current (13.4mA vs 8mA) 
-//`endif  DIFF_HSTL_II_18   
-    
+//    parameter HISPI_IOSTANDARD =          "PPDS_25", //"DIFF_SSTL18_II" for high current (13.4mA vs 8mA)
+//    parameter HISPI_IOSTANDARD =          "DIFF_HSTL_II_18", //"DIFF_SSTL18_II" for high current (13.4mA vs 8mA)
+//`endif  DIFF_HSTL_II_18
+
+
     parameter CMPRS_NUM_AFI_CHN =         1, // 2, // 1 - multiplex all 4 compressors to a single AXI_HP, 2 - split between to AXI_HP
     parameter CMPRS_GROUP_ADDR =          'h600, // total of 'h60
     parameter CMPRS_BASE_INC =            'h10,
     parameter CMPRS_AFIMUX_RADDR0=        'h40,  // relative to CMPRS_NUM_AFI_CHN ( 16 addr)
     parameter CMPRS_AFIMUX_RADDR1=        'h50,  // relative to CMPRS_NUM_AFI_CHN ( 16 addr)
     parameter CMPRS_AFIMUX_MASK=          'h7f0,
-    
+
     parameter CMPRS_STATUS_REG_BASE=      'h10,
-    parameter CMPRS_HIFREQ_REG_BASE=      'h14, 
+    parameter CMPRS_HIFREQ_REG_BASE=      'h14,
     parameter CMPRS_AFIMUX_REG_ADDR0=     'h18,  // Uses 4 locations
     parameter CMPRS_AFIMUX_REG_ADDR1=     'h1c,  // Uses 4 locations
-    
+
     parameter CMPRS_STATUS_REG_INC=        1,
     parameter CMPRS_HIFREQ_REG_INC=        1,
     parameter CMPRS_MASK=                 'h7f8,
@@ -639,7 +658,7 @@
     parameter TABLE_CORING_INDEX =         1,
     parameter TABLE_FOCUS_INDEX =          2,
     parameter TABLE_HUFFMAN_INDEX =        3,
-    
+
 
     // Bit-fields in compressor control word
     parameter CMPRS_CBIT_RUN =             2, // bit # to control compressor run modes
@@ -674,7 +693,7 @@
     parameter CMPRS_CBIT_CMODE_JP4DIFFHDRDIV2 = 4'ha, // jp4,  4 blocks, differential, hdr,divide by 2
     parameter CMPRS_CBIT_CMODE_MONO1 =     4'hb, // mono JPEG (not yet implemented)
     parameter CMPRS_CBIT_CMODE_MONO4 =     4'he, // mono 4 blocks
-    
+
     parameter CMPRS_CBIT_FRAMES_SINGLE =   0, //1, // use a single-frame buffer for images
 
     parameter CMPRS_COLOR18 =              0, // JPEG 4:2:0 with 18x18 overlapping tiles for de-bayer
@@ -683,7 +702,7 @@
     parameter CMPRS_JP4 =                  3, // JP4 mode with 16x16 macroblocks
     parameter CMPRS_JP4DIFF =              4, // JP4DIFF mode TODO: see if correct
     parameter CMPRS_MONO8 =                7,  // Regular JPEG monochrome with 8x8 macroblocks (not yet implemented)
-    
+
     parameter CMPRS_FRMT_MBCM1 =           0, // bit # of number of macroblock columns minus 1 field in format word
     parameter CMPRS_FRMT_MBCM1_BITS =     13, // number of bits in number of macroblock columns minus 1 field in format word
     parameter CMPRS_FRMT_MBRM1 =          13, // bit # of number of macroblock rows minus 1 field in format word
@@ -695,10 +714,10 @@
     parameter CMPRS_CSAT_CR =             12, // bit # of number of red scale field in color saturation word
     parameter CMPRS_CSAT_CR_BITS =        10, // number of bits in red scale field in color saturation word
     parameter CMPRS_CORING_BITS =          3,  // number of bits in coring mode
-    
+
     parameter CMPRS_TIMEOUT_BITS=         12,
     parameter CMPRS_TIMEOUT=            1000,   // mclk cycles
-    
+
     parameter CMPRS_AFIMUX_EN=            'h0, // enables (gl;obal and per-channel)
     parameter CMPRS_AFIMUX_RST=           'h1, // per-channel resets
     parameter CMPRS_AFIMUX_MODE=          'h2, // per-channel select - which register to return as status
@@ -713,19 +732,19 @@
     parameter GPIO_ADDR =                 'h700, // .701
     parameter GPIO_MASK =                 'h7fe,
     parameter GPIO_STATUS_REG_ADDR =      'h30,  // address where status can be read out (10 GPIO inputs)
-    
+
     parameter GPIO_IBUF_LOW_PWR =         "TRUE",
     parameter GPIO_IOSTANDARD =           "LVCMOS15", // power is 1.5V
     parameter GPIO_SLEW =                 "SLOW",
-    
-    parameter GPIO_SET_PINS =              0,  // Set GPIO output state, give control for some bits to other modules 
+
+    parameter GPIO_SET_PINS =              0,  // Set GPIO output state, give control for some bits to other modules
     parameter GPIO_SET_STATUS =            1,   // set status mode
     parameter GPIO_N =                     10, // number of GPIO bits to control
-    parameter GPIO_PORTEN =                24, // bit number to control port enables (up from this) 
-    // Timing (rtc+camsync) parameters    
+    parameter GPIO_PORTEN =                24, // bit number to control port enables (up from this)
+    // Timing (rtc+camsync) parameters
     parameter RTC_ADDR=                    'h704, // 'h707
     parameter CAMSYNC_ADDR =               'h708, // 'h70f
-    parameter RTC_STATUS_REG_ADDR =        'h31,   // (1 loc) address where status can be read out (currently just sequence # and alternating bit) 
+    parameter RTC_STATUS_REG_ADDR =        'h31,   // (1 loc) address where status can be read out (currently just sequence # and alternating bit)
     parameter RTC_SEC_USEC_ADDR =          'h32,  // ..'h33 address where seconds of the snapshot can be read (microseconds - next address)
     parameter RTC_MASK =                   'h7fc,
     parameter CAMSYNC_MASK =               'h7f8,
@@ -746,9 +765,9 @@
     parameter CAMSYNC_CHN_EN_BIT =         'he, // per-channel enable timestamp generation
     parameter CAMSYNC_PRE_MAGIC =          6'b110100,
     parameter CAMSYNC_POST_MAGIC =         6'b001101,
-    
+
     parameter RTC_MHZ=                    25, // RTC input clock in MHz (should be interger number)
-    parameter RTC_BITC_PREDIV =            5, // number of bits to generate 2 MHz pulses counting refclk 
+    parameter RTC_BITC_PREDIV =            5, // number of bits to generate 2 MHz pulses counting refclk
     parameter RTC_SET_USEC=                0, // 20-bit number of microseconds
     parameter RTC_SET_SEC=                 1, // 32-bit full number of seconds (und actually update timer)
     parameter RTC_SET_CORR=                2, // write correction 16-bit signed
@@ -764,7 +783,7 @@
     parameter CMDFRAMESEQ_RST_BIT =         14,
     parameter CMDFRAMESEQ_RUN_BIT =         13,
     parameter CMDFRAMESEQ_IRQ_BIT =         0,
-    
+
     parameter CMDSEQMUX_ADDR =              'h702, // only status control
     parameter CMDSEQMUX_MASK =              'h7ff,
     parameter CMDSEQMUX_STATUS =            'h38,
@@ -778,7 +797,7 @@
     parameter LOGGER_PAGE_IMU =             0, // 'h00..'h1f - overlaps with period/duration/halfperiod/config?
     parameter LOGGER_PAGE_GPS =             1, // 'h20..'h3f
     parameter LOGGER_PAGE_MSG =             2, // 'h40..'h5f
-    
+
     parameter LOGGER_PERIOD =               0,
     parameter LOGGER_BIT_DURATION =         1,
     parameter LOGGER_BIT_HALF_PERIOD =      2, //rs232 half bit period
@@ -799,7 +818,7 @@
 
     parameter MULT_SAXI_HALF_BRAM_IN =      1,     // 0 - use full 36Kb BRAM for the buffer, 1 - use just half
     parameter MULT_SAXI_WLOG =              4,      // number of bits for the input data ( 3 - 8 bit, 4 - 16-bit, 5 - 32-bit
-    
+
     parameter MULT_SAXI_ADDR =           'h730,  // ..'h737
     parameter MULT_SAXI_CNTRL_ADDR =     'h738,  // ..'h739
     parameter MULT_SAXI_STATUS_REG =     'h34,   //..'h37 uses 4 consecutive locations
@@ -814,17 +833,17 @@
     parameter MULT_SAXI_ADV_WR =          4, // number of clock cycles before end of write to genearte adv_wr_done
     parameter MULT_SAXI_ADV_RD =          3, // number of clock cycles before end of write to genearte adv_wr_done
 
-    // Clock management (input, generation, buffering) 
+    // Clock management (input, generation, buffering)
     parameter CLK_ADDR =                  'h728, // ..'h729
     parameter CLK_MASK =                  'h7fe, //
-    parameter CLK_STATUS_REG_ADDR =       'h3a,  //  
+    parameter CLK_STATUS_REG_ADDR =       'h3a,  //
     parameter CLK_CNTRL =                 0,
     parameter CLK_STATUS =                1,
 
 // These are needed for Python:
 //`ifdef DEBUG_RING
 // Debug module (read/write serial ring)
-    parameter DEBUG_ADDR =                'h710, //..'h713 // SuppressThisWarning VEditor 
+    parameter DEBUG_ADDR =                'h710, //..'h713 // SuppressThisWarning VEditor
     parameter DEBUG_MASK =                'h7fc,
     parameter DEBUG_STATUS_REG_ADDR =     'hfc,  // address where status can be read out // SuppressThisWarning VEditor
     parameter DEBUG_READ_REG_ADDR =       'hfd,  // read 32-bit received shifted data// SuppressThisWarning VEditor
@@ -846,9 +865,9 @@
 `ifdef  USE_XCLK2X
         parameter MULTICLK_DIV_XCLK =     12, // 100 MHz for compressor
         parameter MULTICLK_DIV_XCLK2X =    6, // 200 MHz for compressor (when MULTICLK_DIV_XCLK uses 100 MHz)
-`else        
+`else
         parameter MULTICLK_DIV_XCLK =          5, // 240 MHz for compressor (12 for 100 MHz)
-`endif        
+`endif
     parameter MULTICLK_DIV_SYNC =         12, // 100 MHz for inter-camera synchronization and time keeping
 // Additional parameters for multi-clock PLL (phases and buffer types)
     parameter MULTICLK_PHASE_FB =          0.0,
@@ -861,10 +880,10 @@
 `ifdef  USE_XCLK2X
     parameter MULTICLK_PHASE_XCLK2X =      0.0,
     parameter MULTICLK_BUF_XCLK2X =        "BUFG",
-`endif        
+`endif
     parameter MULTICLK_PHASE_SYNC =        0.0,
     parameter MULTICLK_BUF_SYNC =          "BUFG",
-    
+
 //    parameter CLKIN_PERIOD_AXIHP =        20, //ns >1.25, 600<Fvco<1200
 //    parameter DIVCLK_DIVIDE_AXIHP =       1,
 //    parameter CLKFBOUT_MULT_AXIHP =       18, // Fvco=Fclkin*CLKFBOUT_MULT_F/DIVCLK_DIVIDE, Fout=Fvco/CLKOUT#_DIVIDE
@@ -874,40 +893,20 @@
     parameter CLKIN_PERIOD_PCLK =         42, // 24MHz (actually needed is 24.4444
     parameter DIVCLK_DIVIDE_PCLK =         1,
     parameter CLKFBOUT_MULT_PCLK =        36, // 880 MHz
-    parameter CLKOUT_DIV_PCLK =            4, // 220 MHz 
+    parameter CLKOUT_DIV_PCLK =            4, // 220 MHz
     parameter CLKOUT_DIV_PCLK2X =          2, // 440 MHz
-`else    
-    parameter CLKIN_PERIOD_PCLK =         42, // 24MHz 
+`else
+    parameter CLKIN_PERIOD_PCLK =         42, // 24MHz
     parameter DIVCLK_DIVIDE_PCLK =         1,
     parameter CLKFBOUT_MULT_PCLK =        40, // 960 MHz
-    parameter CLKOUT_DIV_PCLK =           10, // 96MHz 
+    parameter CLKOUT_DIV_PCLK =           10, // 96MHz
     parameter CLKOUT_DIV_PCLK2X =          5, // 192 MHz
-`endif    
-    parameter PHASE_CLK2X_PCLK =           0.000, 
+`endif
+    parameter PHASE_CLK2X_PCLK =           0.000,
     parameter BUF_CLK1X_PCLK =            "BUFG",
-    parameter BUF_CLK1X_PCLK2X =          "BUFG",  
-    
-    
-//    parameter CLKIN_PERIOD_XCLK =         20, // 50MHz 
-//    parameter DIVCLK_DIVIDE_XCLK =         1,
-//    parameter CLKFBOUT_MULT_XCLK =        20, // 50*20=1000 MHz
-//`ifdef USE_XCLK2X
-//    parameter CLKOUT_DIV_XCLK =           10, // 100 MHz 
-//`else
-//    parameter CLKOUT_DIV_XCLK =           4, // 250 MHz 
-//`endif    
-//    parameter CLKOUT_DIV_XCLK2X =          5, // 200 MHz
-//    parameter PHASE_CLK2X_XCLK =           0.000, 
-//    parameter BUF_CLK1X_XCLK =            "BUFG",
-//    parameter BUF_CLK1X_XCLK2X =          "BUFG",  
-    
-//    parameter CLKIN_PERIOD_SYNC =         20, // 50MHz 
-//    parameter DIVCLK_DIVIDE_SYNC =         1,
-//    parameter CLKFBOUT_MULT_SYNC =        20, // 50*20=1000 MHz
-//    parameter CLKOUT_DIV_SYNC =           10, // 100 MHz 
-//    parameter BUF_CLK1X_SYNC =            "BUFG",
+    parameter BUF_CLK1X_PCLK2X =          "BUFG",
 
-    
+
     parameter MEMCLK_CAPACITANCE =        "DONT_CARE",
     parameter MEMCLK_IBUF_LOW_PWR =       "TRUE",
     parameter MEMCLK_IOSTANDARD =         "SSTL15",
@@ -916,16 +915,15 @@
     parameter FFCLK0_DIFF_TERM =          "FALSE",
     parameter FFCLK0_IBUF_LOW_PWR =       "TRUE",
     parameter FFCLK0_IOSTANDARD =         "RSDS_25",
-    
+
     parameter FFCLK1_CAPACITANCE =        "DONT_CARE",
     parameter FFCLK1_DIFF_TERM =          "FALSE",
     parameter FFCLK1_IBUF_LOW_PWR =       "TRUE",
     parameter FFCLK1_IOSTANDARD =         "RSDS_25"
-    
-    
-    
-    
-    
-    
-    
-    
+
+
+
+
+
+
+

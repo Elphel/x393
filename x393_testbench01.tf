@@ -447,9 +447,9 @@ assign #10 gpio_pins[9] = gpio_pins[8];
     schedule_ps_pio ( // schedule software-control memory operation (may need to check FIFO status first)
                         INITIALIZE_OFFSET, // input [9:0] seq_addr; // sequence start address
                         0,                 // input [1:0] page;     // buffer page number
-                        0,                 // input       urgent;   // high priority request (only for competion with other channels, wiil not pass in this FIFO)
+                        0,                 // input       urgent;   // high priority request (only for competition with other channels, will not pass in this FIFO)
                         0,                // input       chn;      // channel buffer to use: 0 - memory read, 1 - memory write
-                        `PS_PIO_WAIT_COMPLETE );//  wait_complete; // Do not request a newe transaction from the scheduler until previous memory transaction is finished
+                        `PS_PIO_WAIT_COMPLETE );//  wait_complete; // Do not request a new transaction from the scheduler until previous memory transaction is finished
                         
    
 `ifdef WAIT_MRS 
@@ -1537,9 +1537,9 @@ task test_write_levelling; // SuppressThisWarning VEditor - may be unused
         schedule_ps_pio ( // schedule software-control memory operation (may need to check FIFO status first)
                         WRITELEV_OFFSET,   // input [9:0] seq_addr; // sequence start address
                         0,                 // input [1:0] page;     // buffer page number
-                        0,                 // input       urgent;   // high priority request (only for competion with other channels, wiil not pass in this FIFO)
+                        0,                 // input       urgent;   // high priority request (only for competition with other channels, will not pass in this FIFO)
                         0,                // input       chn;      // channel buffer to use: 0 - memory read, 1 - memory write
-                        `PS_PIO_WAIT_COMPLETE );//  wait_complete; // Do not request a newe transaction from the scheduler until previous memory transaction is finished
+                        `PS_PIO_WAIT_COMPLETE );//  wait_complete; // Do not request a new transaction from the scheduler until previous memory transaction is finished
                         
         wait_ps_pio_done(DEFAULT_STATUS_MODE,1); // wait previous memory transaction finished before changing delays (effective immediately)
         read_block_buf_chn (0, 0, 32, 1 ); // chn=0, page=0, number of 32-bit words=32, wait_done
@@ -1548,9 +1548,9 @@ task test_write_levelling; // SuppressThisWarning VEditor - may be unused
         schedule_ps_pio ( // schedule software-control memory operation (may need to check FIFO status first)
                         WRITELEV_OFFSET,   // input [9:0] seq_addr; // sequence start address
                         1,                 // input [1:0] page;     // buffer page number
-                        0,                 // input       urgent;   // high priority request (only for competion with other channels, wiil not pass in this FIFO)
+                        0,                 // input       urgent;   // high priority request (only for competition with other channels, will not pass in this FIFO)
                         0,                // input       chn;      // channel buffer to use: 0 - memory read, 1 - memory write
-                        `PS_PIO_WAIT_COMPLETE );//  wait_complete; // Do not request a newe transaction from the scheduler until previous memory transaction is finished
+                        `PS_PIO_WAIT_COMPLETE );//  wait_complete; // Do not request a new transaction from the scheduler until previous memory transaction is finished
         wait_ps_pio_done(DEFAULT_STATUS_MODE,1); // wait previous memory transaction finished before changing delays (effective immediately)
         read_block_buf_chn (0, 1, 32, 1 ); // chn=0, page=1, number of 32-bit words=32, wait_done
 //    task wait_read_queue_empty; - alternative way to check fo empty read queue
@@ -1568,9 +1568,9 @@ task test_read_pattern; // SuppressThisWarning VEditor - may be unused
         schedule_ps_pio ( // schedule software-control memory operation (may need to check FIFO status first)
                         READ_PATTERN_OFFSET,   // input [9:0] seq_addr; // sequence start address
                         2,                     // input [1:0] page;     // buffer page number
-                        0,                     // input       urgent;   // high priority request (only for competion with other channels, wiil not pass in this FIFO)
+                        0,                     // input       urgent;   // high priority request (only for competition with other channels, will not pass in this FIFO)
                         0,                    // input       chn;      // channel buffer to use: 0 - memory read, 1 - memory write
-                        `PS_PIO_WAIT_COMPLETE );//  wait_complete; // Do not request a newe transaction from the scheduler until previous memory transaction is finished
+                        `PS_PIO_WAIT_COMPLETE );//  wait_complete; // Do not request a new transaction from the scheduler until previous memory transaction is finished
         wait_ps_pio_done(DEFAULT_STATUS_MODE,1); // wait previous memory transaction finished before changing delays (effective immediately)
         read_block_buf_chn (0, 2, 32, 1 ); // chn=0, page=2, number of 32-bit words=32, wait_done
     end
@@ -1582,9 +1582,9 @@ task test_write_block; // SuppressThisWarning VEditor - may be unused
         schedule_ps_pio ( // schedule software-control memory operation (may need to check FIFO status first)
                         WRITE_BLOCK_OFFSET,    // input [9:0] seq_addr; // sequence start address
                         0,                     // input [1:0] page;     // buffer page number
-                        0,                     // input       urgent;   // high priority request (only for competion with other channels, wiil not pass in this FIFO)
+                        0,                     // input       urgent;   // high priority request (only for competition with other channels, will not pass in this FIFO)
                         1,                    // input       chn;      // channel buffer to use: 0 - memory read, 1 - memory write
-                        `PS_PIO_WAIT_COMPLETE );//  wait_complete; // Do not request a newe transaction from the scheduler until previous memory transaction is finished
+                        `PS_PIO_WAIT_COMPLETE );//  wait_complete; // Do not request a new transaction from the scheduler until previous memory transaction is finished
 // tempoary - for debugging:
 //        wait_ps_pio_done(DEFAULT_STATUS_MODE,1); // wait previous memory transaction finished before changing delays (effective immediately)
     end
@@ -1595,21 +1595,21 @@ task test_read_block; // SuppressThisWarning VEditor - may be unused
         schedule_ps_pio ( // schedule software-control memory operation (may need to check FIFO status first)
                         READ_BLOCK_OFFSET,   // input [9:0] seq_addr; // sequence start address
                         3,                     // input [1:0] page;     // buffer page number
-                        0,                     // input       urgent;   // high priority request (only for competion with other channels, wiil not pass in this FIFO)
+                        0,                     // input       urgent;   // high priority request (only for competition with other channels, will not pass in this FIFO)
                         0,                    // input       chn;      // channel buffer to use: 0 - memory read, 1 - memory write
-                        `PS_PIO_WAIT_COMPLETE );//  wait_complete; // Do not request a newe transaction from the scheduler until previous memory transaction is finished
+                        `PS_PIO_WAIT_COMPLETE );//  wait_complete; // Do not request a new transaction from the scheduler until previous memory transaction is finished
         schedule_ps_pio ( // schedule software-control memory operation (may need to check FIFO status first)
                         READ_BLOCK_OFFSET,   // input [9:0] seq_addr; // sequence start address
                         2,                     // input [1:0] page;     // buffer page number
-                        0,                     // input       urgent;   // high priority request (only for competion with other channels, wiil not pass in this FIFO)
+                        0,                     // input       urgent;   // high priority request (only for competition with other channels, will not pass in this FIFO)
                         0,                    // input       chn;      // channel buffer to use: 0 - memory read, 1 - memory write
-                        `PS_PIO_WAIT_COMPLETE );//  wait_complete; // Do not request a newe transaction from the scheduler until previous memory transaction is finished
+                        `PS_PIO_WAIT_COMPLETE );//  wait_complete; // Do not request a new transaction from the scheduler until previous memory transaction is finished
         schedule_ps_pio ( // schedule software-control memory operation (may need to check FIFO status first)
                         READ_BLOCK_OFFSET,   // input [9:0] seq_addr; // sequence start address
                         1,                     // input [1:0] page;     // buffer page number
-                        0,                     // input       urgent;   // high priority request (only for competion with other channels, wiil not pass in this FIFO)
+                        0,                     // input       urgent;   // high priority request (only for competition with other channels, will not pass in this FIFO)
                         0,                    // input       chn;      // channel buffer to use: 0 - memory read, 1 - memory write
-                        `PS_PIO_WAIT_COMPLETE );//  wait_complete; // Do not request a newe transaction from the scheduler until previous memory transaction is finished
+                        `PS_PIO_WAIT_COMPLETE );//  wait_complete; // Do not request a new transaction from the scheduler until previous memory transaction is finished
         wait_ps_pio_done(DEFAULT_STATUS_MODE,1); // wait previous memory transaction finished before changing delays (effective immediately)
         read_block_buf_chn (0, 3, 256, 1 ); // chn=0, page=3, number of 32-bit words=256, wait_done
     end

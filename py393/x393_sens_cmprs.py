@@ -78,6 +78,7 @@ GLBL_WINDOW =           None
 # for now - single sensor type per interface
 SENSOR_INTERFACES={x393_sensor.SENSOR_INTERFACE_PARALLEL: {"mv":2800, "freq":24.0,   "iface":"2V5_LVDS"},
                    x393_sensor.SENSOR_INTERFACE_HISPI:    {"mv":1820, "freq":24.444, "iface":"1V8_LVDS"}}
+#                   x393_sensor.SENSOR_INTERFACE_HISPI:    {"mv":2500, "freq":24.444, "iface":"1V8_LVDS"}}
 
 SENSOR_DEFAULTS= {x393_sensor.SENSOR_INTERFACE_PARALLEL: {"width":2592, "height":1944, "top":0, "left":0, "slave":0x48, "i2c_delay":100, "bayer":3},
 #                   SENSOR_INTERFACE_HISPI:   {"width":4608, "height":3288, "top":0, "left":0, "slave":0x10, "i2c_delay":100}}
@@ -188,6 +189,11 @@ class X393SensCmprs(object):
         if quiet == 0:
             print ("Set sensors %s interface voltage to %d mV"%(("0, 1","2, 3")[sub_pair],voltage_mv))    
 #        time.sleep(0.1)
+
+    def setupSensorsPower(self, ifaceType,  quiet=0):
+        for sub_pair in (0,1):
+            self.setSensorIfaceVoltagePower(sub_pair, SENSOR_INTERFACES[ifaceType]["mv"])
+        
     def setSensorIfaceVoltagePower(self, sub_pair, voltage_mv, quiet=0):
         """
         Set interface voltage and turn on power for interface and the sensors 
@@ -212,7 +218,9 @@ class X393SensCmprs(object):
         if quiet == 0:
             print ("Turned on +3.3V power for sensors %s"%(("0, 1","2, 3")[sub_pair]))    
 #        time.sleep(0.1)
-            
+#        for sub_pair in (0,1):
+#                self.setSensorIfaceVoltagePower(sub_pair, SENSOR_INTERFACES[ifaceType]["mv"])
+
 #    def getSensorInterfaceType(self):
 #        """
 #        Get sensor interface type by reading status register 0xfe that is set to 0 for parallel and 1 for HiSPi
@@ -220,16 +228,19 @@ class X393SensCmprs(object):
 #        """
 #        return (SENSOR_INTERFACE_PARALLEL, SENSOR_INTERFACE_HISPI)[self.x393_axi_tasks.read_status(address=0xfe)] # "PAR12" , "HISPI"
 
-    def setupSensorsPowerClock(self,quiet=0):
+
+    def setupSensorsPowerClock(self, setPower=False, quiet=0):
         """
         Set interface voltage for all sensors, clock for frequency and sensor power
         for the interface matching bitstream file
+        Not possible for diff. termination - power should be set before the bitstream
         """
         ifaceType = self.x393Sensor.getSensorInterfaceType();
-        if quiet == 0:
-            print ("Configuring sensor ports for interface type: \"%s\""%(ifaceType))    
-        for sub_pair in (0,1):
-            self.setSensorIfaceVoltagePower(sub_pair, SENSOR_INTERFACES[ifaceType]["mv"])
+        if setPower:
+            if quiet == 0:
+                print ("Configuring sensor ports for interface type: \"%s\""%(ifaceType))    
+            for sub_pair in (0,1):
+                self.setSensorIfaceVoltagePower(sub_pair, SENSOR_INTERFACES[ifaceType]["mv"])
         self.setSensorClock(freq_MHz = SENSOR_INTERFACES[ifaceType]["freq"], iface = SENSOR_INTERFACES[ifaceType]["iface"])    
         
 #    def setSensorClock(self, freq_MHz = 24.0, iface = "2V5_LVDS"):
@@ -1158,8 +1169,10 @@ class X393SensCmprs(object):
         self.setSensorClock(freq_MHz = 24.0)
         """
         if verbose >0 :
-            print ("===================== Set up sensor and interface power, clock generator  =========================")
-        self.setupSensorsPowerClock(quiet = (verbose >0))
+#            print ("===================== Set up sensor and interface power, clock generator  =========================")
+            print ("===================== Set up clock generator (power should be set before bitstream)  =========================")
+        self.setupSensorsPowerClock(setPower=False,       # Should be set before bitstream
+                                    quiet = (verbose >0))
         if exit_step == 1: return False
         if verbose >0 :
             print ("===================== GPIO_SETUP =========================")

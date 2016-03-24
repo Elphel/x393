@@ -49,7 +49,7 @@ module  sensor_i2c#(
     parameter SENSI2C_CMD_RUN =         13, // [13:12]3 - run i2c, 2 - stop i2c (needed before software i2c), 1,0 - no change to run state
     parameter SENSI2C_CMD_RUN_PBITS =    1,
     
-    parameter SENSI2C_CMD_FIFO_RD =      3, // advane I2C read data FIFO by 1  
+    parameter SENSI2C_CMD_FIFO_RD =      3, // advance I2C read data FIFO by 1  
     parameter SENSI2C_CMD_ACIVE =        2, // [2] - SENSI2C_CMD_ACIVE_EARLY0, SENSI2C_CMD_ACIVE_SDA
     parameter SENSI2C_CMD_ACIVE_EARLY0 = 1, // release SDA==0 early if next bit ==1
     parameter SENSI2C_CMD_ACIVE_SDA =    0,  // drive SDA=1 during the second half of SCL=1
