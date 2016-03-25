@@ -85,7 +85,7 @@
 //  0x1030..1031 - MCONTR_EN  // 0 bits, disable/enable memory controller
 //  0x1032..1033 - REFRESH_EN // 0 bits, disable/enable memory refresh
 //  0x1034..1037 - reserved
-    parameter MCONTR_TOP_0BIT_MCONTR_EN =      'h0,    // set pre-programmed delays
+    parameter MCONTR_TOP_0BIT_MCONTR_EN =      'h0,    // disable/enable memory controller
     parameter MCONTR_TOP_0BIT_REFRESH_EN =     'h2,    // disable/enable command/address outputs
 //0x1040..107f - 16-bit data
 //  0x1040..104f - RUN_CHN      // address to set sequncer channel and  run (4 LSB-s - channel) - bits?
@@ -434,7 +434,7 @@
       parameter SENS_LENS_FAT0_OUT_MASK =   'hff,
       parameter SENS_LENS_POST_SCALE =      'h6a, // 01101010
       parameter SENS_LENS_POST_SCALE_MASK = 'hff,
-
+      
     parameter SENSIO_RADDR =               8, //'h408  .. 'h40f
     parameter SENSIO_ADDR_MASK =       'h7f8,
       // sens_parallel12 registers

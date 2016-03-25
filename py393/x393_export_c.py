@@ -219,6 +219,88 @@ class X393ExportC(object):
                                  data =      self._enc_mcntrl_dqs_dq_tri(),
                                  name =      "x393_mcntr_dqs_dqm_tri_rw",
                                  frmt_spcs = frmt_spcs)
+        
+        stypedefs += self.get_typedef32(comment =   "DDR3 memory controller I/O delay",
+                                 data =      self._enc_mcntrl_dly(),
+                                 name =      "x393_dly_rw",
+                                 frmt_spcs = frmt_spcs)
+        stypedefs += self.get_typedef32(comment =   "Extra delay in mclk (fDDR/2) cycles) to data write buffer",
+                                 data =      self._enc_wbuf_dly(),
+                                 name =      "x393_wbuf_dly_rw",
+                                 frmt_spcs = frmt_spcs)
+        
+        stypedefs += self.get_typedef32(comment =   "Control for the gamma-conversion module",
+                                 data =      self._enc_gamma_ctl(),
+                                 name =      "x393_gamma_ctl_rw",
+                                 frmt_spcs = frmt_spcs)
+        stypedefs += self.get_typedef32(comment =   "Write gamma table address/data",
+                                 data =      [self._enc_gamma_tbl_addr(), # generate typedef union
+                                              self._enc_gamma_tbl_data()],
+                                 name =      "x393_gamma_tbl_wo",
+                                 frmt_spcs = frmt_spcs)
+        stypedefs += self.get_typedef32(comment =   "Heights of the first two subchannels frames",
+                                 data =      self._enc_gamma_height01(),
+                                 name =      "x393_gamma_height01m1_rw",
+                                 frmt_spcs = frmt_spcs)
+        stypedefs += self.get_typedef32(comment =   "Height of the third subchannel frame",
+                                 data =      self._enc_gamma_height2(),
+                                 name =      "x393_gamma_height2m1_rw",
+                                 frmt_spcs = frmt_spcs)
+        
+        stypedefs += self.get_typedef32(comment =   "Sensor port I/O control",
+                                 data =      [self._enc_sensio_ctrl_par12(),
+                                              self._enc_sensio_ctrl_hispi()],
+                                 name =      "x393_sensio_ctl_wo",
+                                 frmt_spcs = frmt_spcs)
+        stypedefs += self.get_typedef32(comment =   "Programming interface for multiplexer FPGA",
+                                 data =      self._enc_sensio_jtag(),
+                                 name =      "x393_sensio_jpag_wo",
+                                 frmt_spcs = frmt_spcs)
+
+        stypedefs += self.get_typedef32(comment =   "Sensor delays (uses 4 DWORDs)",
+                                 data =      [self._enc_sensio_dly_par12(),
+                                              self._enc_sensio_dly_hispi()],
+                                 name =      "x393_sensio_dly_rw",
+                                 frmt_spcs = frmt_spcs)
+        stypedefs += self.get_typedef32(comment =   "Set sensor frame width (0 - use received)",
+                                 data =      self._enc_sensio_width(),
+                                 name =      "x393_sensio_width_rw",
+                                 frmt_spcs = frmt_spcs)
+
+        stypedefs += self.get_typedef32(comment =   "Lens vignetting parameter (write address first, then data that may overlap som address bits)",
+                                 data =      [self._enc_lens_addr(),
+                                              self._enc_lens_ax(),
+                                              self._enc_lens_ay(),
+                                              self._enc_lens_bx(),
+                                              self._enc_lens_by(),
+                                              self._enc_lens_c(),
+                                              self._enc_lens_scale(),
+                                              self._enc_lens_fatzero_in(),
+                                              self._enc_lens_fatzero_out(),
+                                              self._enc_lens_post_scale()],
+                                 name =      "x393_lens_corr_wo",
+                                 frmt_spcs = frmt_spcs)
+        stypedefs += self.get_typedef32(comment =   "Height of the subchannel frame for vignetting correction",
+                                 data =      self._enc_lens_height_m1(),
+                                 name =      "x393_lens_height_m1_rw",
+                                 frmt_spcs = frmt_spcs)
+
+        stypedefs += self.get_typedef32(comment =   "Histogram window left/top margins",
+                                 data =      self._enc_histogram_lt(),
+                                 name =      "x393_hist_left_top_rw",
+                                 frmt_spcs = frmt_spcs)
+        stypedefs += self.get_typedef32(comment =   "Histogram window width and height minus 1 (0 use full)",
+                                 data =      self._enc_histogram_wh_m1(),
+                                 name =      "x393_hist_width_height_m1_rw",
+                                 frmt_spcs = frmt_spcs)
+        stypedefs += self.get_typedef32(comment =   "Histograms DMA mode",
+                                 data =      self._enc_hist_saxi_mode(),
+                                 name =      "x393_hist_saxi_mode_rw",
+                                 frmt_spcs = frmt_spcs)
+        stypedefs += self.get_typedef32(comment =   "Histograms DMA addresses",
+                                 data =      self._enc_hist_saxi_page_addr(),
+                                 name =      "x393_hist_saxi_addr_rw",
+                                 frmt_spcs = frmt_spcs)
 
         return stypedefs
     
@@ -226,7 +308,9 @@ class X393ExportC(object):
         #memory arbiter priorities
         ba = vrlg.CONTROL_ADDR
         z3= (0,3)
+        z7 = (0,7)
         z15= (0,15)
+        z31= (0,31)
         ia = 1
         c = "chn"
         sdefines = []
@@ -239,19 +323,37 @@ class X393ExportC(object):
             (("X393_MCNTRL_CHN_EN",     c, vrlg.MCONTR_TOP_16BIT_ADDR +  vrlg.MCONTR_TOP_16BIT_CHN_EN +    ba,     0, None, "x393_mcntr_chn_en_rw",   "Enable/disable memory channels (currently r/w, may become just wo)")),
             (("X393_MCNTRL_DQS_DQM_PATT",c, vrlg.MCONTR_PHY_16BIT_ADDR+  vrlg.MCONTR_PHY_16BIT_PATTERNS +  ba,     0, None, "x393_mcntr_dqs_dqm_patt_rw",     "Setup DQS and DQM patterns")),
             (("X393_MCNTRL_DQ_DQS_TRI", c, vrlg.MCONTR_PHY_16BIT_ADDR +  vrlg.MCONTR_PHY_16BIT_PATTERNS_TRI+ ba,   0, None, "x393_mcntr_dqs_dqm_tri_rw",      "Setup DQS and DQ on/off sequence")),
-            (("Following enable/disable addresses can be written with any data,only addresses matter",)),
+            (("Following enable/disable addresses can be written with any data, only addresses matter",)),
             (("X393_MCNTRL_DIS",        c, vrlg.MCONTR_TOP_0BIT_ADDR +   vrlg.MCONTR_TOP_0BIT_MCONTR_EN +  ba + 0, 0, None, "",                       "Disable DDR3 memory controller")),        
             (("X393_MCNTRL_EN",         c, vrlg.MCONTR_TOP_0BIT_ADDR +   vrlg.MCONTR_TOP_0BIT_MCONTR_EN +  ba + 1, 0, None, "",                       "Enable DDR3 memory controller")),        
             (("X393_MCNTRL_REFRESH_DIS",c, vrlg.MCONTR_TOP_0BIT_ADDR +   vrlg.MCONTR_TOP_0BIT_REFRESH_EN + ba + 0, 0, None, "",                       "Disable DDR3 memory refresh")),        
             (("X393_MCNTRL_REFRESH_EN", c, vrlg.MCONTR_TOP_0BIT_ADDR +   vrlg.MCONTR_TOP_0BIT_REFRESH_EN + ba + 1, 0, None, "",                       "Enable DDR3 memory refresh")),        
-            (("X393_MCNTRL_SDRST_DIS",  c, vrlg.MCONTR_TOP_0BIT_ADDR +   vrlg.MCONTR_PHY_0BIT_SDRST_ACT +  ba + 0, 0, None, "",                       "Disable DDR3 memory reset")),        
-            (("X393_MCNTRL_SDRST_EN",   c, vrlg.MCONTR_TOP_0BIT_ADDR +   vrlg.MCONTR_PHY_0BIT_SDRST_ACT +  ba + 1, 0, None, "",                       "Enable DDR3 memory reset")),        
-            (("X393_MCNTRL_CKE_DIS",    c, vrlg.MCONTR_TOP_0BIT_ADDR +   vrlg.MCONTR_PHY_0BIT_CKE_EN +     ba + 0, 0, None, "",                       "Disable DDR3 memory CKE")),        
-            (("X393_MCNTRL_CKE_EN",     c, vrlg.MCONTR_TOP_0BIT_ADDR +   vrlg.MCONTR_PHY_0BIT_CKE_EN +     ba + 1, 0, None, "",                       "Enable DDR3 memory CKE")),        
-            (("X393_MCNTRL_CMDA_DIS",   c, vrlg.MCONTR_TOP_0BIT_ADDR +   vrlg.MCONTR_PHY_0BIT_CMDA_EN +    ba + 0, 0, None, "",                       "Disable DDR3 memory command/address lines")),        
-            (("X393_MCNTRL_CMDA_EN",    c, vrlg.MCONTR_TOP_0BIT_ADDR +   vrlg.MCONTR_PHY_0BIT_CMDA_EN +    ba + 1, 0, None, "",                       "Enable DDR3 memory command/address lines")),        
+            (("X393_MCNTRL_SDRST_DIS",  c, vrlg.MCONTR_PHY_0BIT_ADDR +   vrlg.MCONTR_PHY_0BIT_SDRST_ACT +  ba + 0, 0, None, "",                       "Disable DDR3 memory reset")),        
+            (("X393_MCNTRL_SDRST_EN",   c, vrlg.MCONTR_PHY_0BIT_ADDR +   vrlg.MCONTR_PHY_0BIT_SDRST_ACT +  ba + 1, 0, None, "",                       "Enable DDR3 memory reset")),        
+            (("X393_MCNTRL_CKE_DIS",    c, vrlg.MCONTR_PHY_0BIT_ADDR +   vrlg.MCONTR_PHY_0BIT_CKE_EN +     ba + 0, 0, None, "",                       "Disable DDR3 memory CKE")),        
+            (("X393_MCNTRL_CKE_EN",     c, vrlg.MCONTR_PHY_0BIT_ADDR +   vrlg.MCONTR_PHY_0BIT_CKE_EN +     ba + 1, 0, None, "",                       "Enable DDR3 memory CKE")),        
+            (("X393_MCNTRL_CMDA_DIS",   c, vrlg.MCONTR_PHY_0BIT_ADDR +   vrlg.MCONTR_PHY_0BIT_CMDA_EN +    ba + 0, 0, None, "",                       "Disable DDR3 memory command/address lines")),        
+            (("X393_MCNTRL_CMDA_EN",    c, vrlg.MCONTR_PHY_0BIT_ADDR +   vrlg.MCONTR_PHY_0BIT_CMDA_EN +    ba + 1, 0, None, "",                       "Enable DDR3 memory command/address lines")),        
             ]        
-        
+        ba = vrlg.CONTROL_ADDR
+        #"x393_dly_rw"
+        sdefines +=[
+            (('Set DDR3 memory controller I/O delays and other timing parameters (should use individually calibrated values)',)),
+            (("X393_MCNTRL_DQ_ODLY0",   c, vrlg.LD_DLY_LANE0_ODELAY +    ba,     1, z7,   "x393_dly_rw",    "Lane0 DQ output delays ")),
+            (("X393_MCNTRL_DQ_ODLY1",   c, vrlg.LD_DLY_LANE1_ODELAY +    ba,     1, z7,   "x393_dly_rw",    "Lane1 DQ output delays ")),
+            (("X393_MCNTRL_DQ_IDLY0",   c, vrlg.LD_DLY_LANE0_IDELAY +    ba,     1, z7,   "x393_dly_rw",    "Lane0 DQ input delays ")),
+            (("X393_MCNTRL_DQ_IDLY1",   c, vrlg.LD_DLY_LANE1_IDELAY +    ba,     1, z7,   "x393_dly_rw",    "Lane1 DQ input delays ")),
+            (("X393_MCNTRL_DQS_ODLY0",  c, vrlg.LD_DLY_LANE0_ODELAY +    ba + 8, 0, None, "x393_dly_rw",    "Lane0 DQS output delay ")),
+            (("X393_MCNTRL_DQS_ODLY1",  c, vrlg.LD_DLY_LANE1_ODELAY +    ba + 8, 0, None, "x393_dly_rw",    "Lane1 DQS output delay ")),
+            (("X393_MCNTRL_DQS_IDLY0",  c, vrlg.LD_DLY_LANE0_IDELAY +    ba + 8, 0, None, "x393_dly_rw",    "Lane0 DQS input delay ")),
+            (("X393_MCNTRL_DQS_IDLY1",  c, vrlg.LD_DLY_LANE1_IDELAY +    ba + 8, 0, None, "x393_dly_rw",    "Lane1 DQS input delay ")),
+            (("X393_MCNTRL_DM_ODLY0",   c, vrlg.LD_DLY_LANE0_ODELAY +    ba + 9, 0, None, "x393_dly_rw",    "Lane0 DM output delay ")),
+            (("X393_MCNTRL_DM_ODLY1",   c, vrlg.LD_DLY_LANE1_ODELAY +    ba + 9, 0, None, "x393_dly_rw",    "Lane1 DM output delay ")),
+            (("X393_MCNTRL_CMDA_ODLY",  c, vrlg.LD_DLY_CMDA +            ba,     1, z31,  "x393_dly_rw",    "Address, bank and commands delays")),
+            (("X393_MCNTRL_CMDA_ODLY",  c, vrlg.LD_DLY_PHASE +           ba,     0, None, "x393_dly_rw",    "Clock phase")),
+            (("X393_MCNTRL_DLY_SET",    c, vrlg.MCONTR_PHY_0BIT_ADDR +   vrlg.MCONTR_PHY_0BIT_DLY_SET +      ba, 0, None, "",                 "Set all pre-programmed delays")),
+            (("X393_MCNTRL_WBUF_DLY",   c, vrlg.MCONTR_PHY_16BIT_ADDR +  vrlg.MCONTR_PHY_16BIT_WBUF_DELAY +  ba, 0, None, "x393_wbuf_dly_rw", "Set write buffer delay")),
+            ]        
         ba = vrlg.MCONTR_SENS_BASE
         ia = vrlg.MCONTR_SENS_INC
         c = "chn"
@@ -323,7 +425,7 @@ class X393ExportC(object):
         ia = 0
         c =  ""
         sdefines +=[
-            (('Write-only addresses to to program status report mode For memory controller',)),
+            (('Write-only addresses to to program status report mode for memory controller',)),
             (("X393_MCONTR_PHY_STATUS_CNTRL",            c, vrlg.MCONTR_PHY_STATUS_CNTRL +         ba, 0, None, "x393_status_ctrl_wo",                    "Set status control register (status update mode)")),
             (("X393_MCONTR_TOP_16BIT_STATUS_CNTRL",      c, vrlg.MCONTR_TOP_16BIT_STATUS_CNTRL +   ba, 0, None, "x393_status_ctrl_wo",                    "Set status control register (status update mode)")),
         ]
@@ -371,7 +473,99 @@ class X393ExportC(object):
             (("X393_SENSI2C_STATUS",                    c, vrlg.SENSI2C_CTRL_RADDR + vrlg.SENSI2C_STATUS + ba, ia, z3, "x393_status_ctrl_wo",             "Setup sensor i2c status report mode")),
             (("X393_SENS_SYNC_MULT",                    c, vrlg.SENS_SYNC_RADDR + vrlg.SENS_SYNC_MULT+     ba, ia, z3, "x393_sens_sync_mult_wo",          "Configure frames combining")),
             (("X393_SENS_SYNC_LATE",                    c, vrlg.SENS_SYNC_RADDR + vrlg.SENS_SYNC_LATE+     ba, ia, z3, "x393_sens_sync_late_wo",          "Configure frame sync delay")),
+            (("X393_SENSIO_CTRL",                       c, vrlg.SENSIO_RADDR + vrlg.SENSIO_CTRL+           ba, ia, z3, "x393_sensio_ctl_wo",              "Configure sensor I/O port")),
+            (("X393_SENSIO_STATUS_CNTRL",               c, vrlg.SENSIO_RADDR + vrlg.SENSIO_STATUS+         ba, ia, z3, "x393_status_ctrl_wo",             "Set status control for SENSIO module")),
+            (("X393_SENSIO_JTAG",                       c, vrlg.SENSIO_RADDR + vrlg.SENSIO_JTAG+           ba, ia, z3, "x393_sensio_jpag_wo",             "Programming interface for multiplexer FPGA (with X393_SENSIO_STATUS)")),
+            (("X393_SENSIO_WIDTH",                      c, vrlg.SENSIO_RADDR + vrlg.SENSIO_WIDTH+          ba, ia, z3, "x393_sensio_width_rw",            "Set sensor line in pixels (0 - use line sync from the sensor)")),
+            (("X393_SENSIO_DELAYS",                     c, vrlg.SENSIO_RADDR + vrlg.SENSIO_DELAYS+         ba, ia, z3, "x393_sensio_dly_rw",              "Sensor port input delays (uses 4 DWORDs)")),
             ]
+        #Registers to control sensor channels        
+        ba = vrlg.SENSOR_GROUP_ADDR
+        ia = vrlg.SENSOR_BASE_INC
+        c =  "sens_num"
+        sdefines +=[
+            (('''I2C command sequencer, block of 16 DWORD slots for absolute frame numbers (modulo 16) and 15 slots for relative ones
+// 0 - ASAP, 1 next frame, 14 -14-th next.
+// Data written depends on context:
+// 1 - I2C register write: index page (MSB), 3 payload bytes. Payload bytes are used according to table and sent
+//     after the slave address and optional high address byte. Other bytes are sent in descending order (LSB- last).
+//     If less than 4 bytes are programmed in the table the high bytes (starting with the one from the table) are
+//     skipped.
+//     If more than 4 bytes are programmed in the table for the page (high byte), one or two next 32-bit words 
+//     bypass the index table and all 4 bytes are considered payload ones. If less than 4 extra bytes are to be
+//     sent for such extra word, only the lower bytes are sent.
+//
+// 2 - I2C register read: index page, slave address (8-bit, with lower bit 0) and one or 2 address bytes (as programmed
+//     in the table. Slave address is always in byte 2 (bits 23:16), byte1 (high register address) is skipped if
+//     read address in the table is programmed to be a single-byte one''',)),
+            (("X393_SENSI2C_ABS",                       c, vrlg.SENSI2C_ABS_RADDR +                        ba, ia, z3, "u32*",                            "Write sensor i2c sequencer")),
+            (("X393_SENSI2C_REL",                       c, vrlg.SENSI2C_REL_RADDR +                        ba, ia, z3, "u32*",                            "Write sensor i2c sequencer")),
+]
+        
+        #Lens vignetting correction
+        ba = vrlg.SENSOR_GROUP_ADDR + vrlg.SENS_LENS_RADDR
+        ia = vrlg.SENSOR_BASE_INC
+        c =  "sens_num"
+        sdefines +=[
+            (('Lens vignetting correction (for each sub-frame separately)',)),
+            (("X393_LENS_HEIGHT0_M1",                   c, 0 +                                            ba, ia, z3, "x393_lens_height_m1_rw",           "Subframe 0 height minus 1")),
+            (("X393_LENS_HEIGHT1_M1",                   c, 1 +                                            ba, ia, z3, "x393_lens_height_m1_rw",           "Subframe 1 height minus 1")),
+            (("X393_LENS_HEIGHT2_M1",                   c, 2 +                                            ba, ia, z3, "x393_lens_height_m1_rw",           "Subframe 2 height minus 1")),
+            (("X393_LENS_CORR_CNH_ADDR_DATA",           c, vrlg.SENS_LENS_COEFF +                         ba, ia, z3, "x393_lens_corr_wo",                "Combined address/data to write lens vignetting correction coefficients")),
+            (('Lens vignetting coefficient addresses - use with x393_lens_corr_wo_t (X393_LENS_CORR_CNH_ADDR_DATA)',)),
+            (("X393_LENS_AX",             "", vrlg.SENS_LENS_AX ,             0, None, None,    "Address of correction parameter Ax")),
+            (("X393_LENS_AX_MASK",        "", vrlg.SENS_LENS_AX_MASK ,        0, None, None,    "Correction parameter Ax mask")),
+            (("X393_LENS_AY",             "", vrlg.SENS_LENS_AY ,             0, None, None,    "Address of correction parameter Ay")),
+            (("X393_LENS_AY_MASK",        "", vrlg.SENS_LENS_AY_MASK ,        0, None, None,    "Correction parameter Ay mask")),
+            (("X393_LENS_C",              "", vrlg.SENS_LENS_C ,              0, None, None,    "Address of correction parameter C")),
+            (("X393_LENS_C_MASK",         "", vrlg.SENS_LENS_C_MASK ,         0, None, None,    "Correction parameter C mask")),
+            (("X393_LENS_BX",             "", vrlg.SENS_LENS_BX ,             0, None, None,    "Address of correction parameter Bx")),
+            (("X393_LENS_BX_MASK",        "", vrlg.SENS_LENS_BX_MASK ,        0, None, None,    "Correction parameter Bx mask")),
+            (("X393_LENS_BY",             "", vrlg.SENS_LENS_BY ,             0, None, None,    "Address of correction parameter By")),
+            (("X393_LENS_BY_MASK",        "", vrlg.SENS_LENS_BY_MASK ,        0, None, None,    "Correction parameter By mask")),
+            (("X393_LENS_SCALE0",         "", vrlg.SENS_LENS_SCALES ,         0, None, None,    "Address of correction parameter scale0")),
+            (("X393_LENS_SCALE1",         "", vrlg.SENS_LENS_SCALES + 2 ,     0, None, None,    "Address of correction parameter scale1")),
+            (("X393_LENS_SCALE2",         "", vrlg.SENS_LENS_SCALES + 4 ,     0, None, None,    "Address of correction parameter scale2")),
+            (("X393_LENS_SCALE3",         "", vrlg.SENS_LENS_SCALES + 6 ,     0, None, None,    "Address of correction parameter scale3")),
+            (("X393_LENS_SCALES_MASK",    "", vrlg.SENS_LENS_SCALES_MASK ,    0, None, None,    "Common mask for scales")),
+            (("X393_LENS_FAT0_IN",        "", vrlg.SENS_LENS_FAT0_IN ,        0, None, None,    "Address of input fat zero parameter (to subtract from input)")),
+            (("X393_LENS_FAT0_IN_MASK",   "", vrlg.SENS_LENS_FAT0_IN_MASK ,   0, None, None,    "Mask for fat zero input parameter")),
+            (("X393_LENS_FAT0_OUT",       "", vrlg.SENS_LENS_FAT0_OUT,        0, None, None,    "Address of output fat zero parameter (to add to output)")),
+            (("X393_LENS_FAT0_OUT_MASK",  "", vrlg.SENS_LENS_FAT0_OUT_MASK ,  0, None, None,    "Mask for fat zero output  parameters")),
+            (("X393_LENS_POST_SCALE",     "", vrlg.SENS_LENS_POST_SCALE ,     0, None, None,    "Address of post scale (shift output) parameter")),
+            (("X393_LENS_POST_SCALE_MASK","", vrlg.SENS_LENS_POST_SCALE_MASK, 0, None, None,    "Mask for post scale parameter"))]
+        #Gamma tables (See Python code for examples of the table data generation)
+        ba = vrlg.SENSOR_GROUP_ADDR + vrlg.SENS_GAMMA_RADDR
+        ia = vrlg.SENSOR_BASE_INC
+        c =  "sens_num"
+        sdefines +=[
+            (('Sensor gamma conversion control (See Python code for examples of the table data generation)',)),
+            (("X393_SENS_GAMMA_CTRL",                   c, vrlg.SENS_GAMMA_CTRL +                          ba, ia, z3, "x393_gamma_ctl_rw",               "Gamma module control")),
+            (("X393_SENS_GAMMA_TBL",                    c, vrlg.SENS_GAMMA_ADDR_DATA +                     ba, ia, z3, "x393_gamma_tbl_wo",               "Write sensor gamma table address/data (with autoincrement)")),
+            (("X393_SENS_GAMMA_HEIGHT01M1",             c, vrlg.SENS_GAMMA_HEIGHT01 +                      ba, ia, z3, "x393_gamma_height01m1_rw",        "Gamma module subframes 0,1 heights minus 1")),
+            (("X393_SENS_GAMMA_HEIGHT2M1",              c, vrlg.SENS_GAMMA_HEIGHT2 +                       ba, ia, z3, "x393_gamma_height2m1_rw",         "Gamma module subframe  2 height minus 1"))]
+
+        #Histogram window controls
+        ba = vrlg.SENSOR_GROUP_ADDR
+        ia = vrlg.SENSOR_BASE_INC
+        c =  "sens_num"
+        sdefines +=[
+            (('Windows for histogram subchannels',)),
+            (("X393_HISTOGRAM_LT0",                     c, vrlg.HISTOGRAM_RADDR0 +                         ba, ia, z3, "x393_hist_left_top_rw",          "Specify histogram 0 left/top")),
+            (("X393_HISTOGRAM_WH0",                     c, vrlg.HISTOGRAM_RADDR0 + 1 +                     ba, ia, z3, "x393_hist_width_height_m1_rw",   "Specify histogram 0 width/height")),
+            (("X393_HISTOGRAM_LT1",                     c, vrlg.HISTOGRAM_RADDR1 +                         ba, ia, z3, "x393_hist_left_top_rw",          "Specify histogram 1 left/top")),
+            (("X393_HISTOGRAM_WH1",                     c, vrlg.HISTOGRAM_RADDR1 + 1 +                     ba, ia, z3, "x393_hist_width_height_m1_rw",   "Specify histogram 1 width/height")),
+            (("X393_HISTOGRAM_LT2",                     c, vrlg.HISTOGRAM_RADDR2 +                         ba, ia, z3, "x393_hist_left_top_rw",          "Specify histogram 2 left/top")),
+            (("X393_HISTOGRAM_WH2",                     c, vrlg.HISTOGRAM_RADDR2 + 1 +                     ba, ia, z3, "x393_hist_width_height_m1_rw",   "Specify histogram 2 width/height")),
+            (("X393_HISTOGRAM_LT3",                     c, vrlg.HISTOGRAM_RADDR3 +                         ba, ia, z3, "x393_hist_left_top_rw",          "Specify histogram 3 left/top")),
+            (("X393_HISTOGRAM_WH3",                     c, vrlg.HISTOGRAM_RADDR3 + 1 +                     ba, ia, z3, "x393_hist_width_height_m1_rw",   "Specify histogram 3 width/height"))]        
+        ba = vrlg.SENSOR_GROUP_ADDR
+        ia = vrlg.SENSOR_BASE_INC
+        c =  "subchannel"
+        sdefines +=[
+            (('DMA control for the histograms. Subchannel here is 4*sensor_port+ histogram_subchannel',)),
+            (("X393_HIST_SAXI_MODE",                    c, vrlg.HIST_SAXI_MODE_ADDR_REL +                  ba,  0, None, "x393_hist_saxi_mode_rw",       "Histogram DMA operation mode")),
+            (("X393_HIST_SAXI_ADDR",                    c, vrlg.HIST_SAXI_ADDR_REL +                       ba, ia, z15,  "x393_hist_saxi_addr_rw",       "Histogram DMA addresses (in 4096 byte pages)"))]
 
         #sensors status        
         ba = vrlg.STATUS_ADDR + vrlg.SENSI2C_STATUS_REG_BASE
@@ -379,12 +573,11 @@ class X393ExportC(object):
         c =  "sens_num"
         sdefines +=[
             (('Read-only addresses for sensors status information',)),
-            (("X393_SENSI2C_STATUS",                     c, vrlg.SENSI2C_STATUS_REG_REL +      ba, ia, z3, "x393_status_sens_i2c_ro",                     "Status of the sensors i2c")),
-            (("X393_SENSIO_STATUS",                      c, vrlg.SENSIO_STATUS_REG_REL +       ba, ia, z3, "x393_status_sens_io_ro",                      "Status of the sensor ports I/O pins")),
+            (("X393_SENSI2C_STATUS",                    c, vrlg.SENSI2C_STATUS_REG_REL +      ba, ia, z3, "x393_status_sens_i2c_ro",                     "Status of the sensors i2c")),
+            (("X393_SENSIO_STATUS",                     c, vrlg.SENSIO_STATUS_REG_REL +       ba, ia, z3, "x393_status_sens_io_ro",                      "Status of the sensor ports I/O pins")),
             ]
         
         """
-        
         """
         return sdefines
     
@@ -431,24 +624,31 @@ class X393ExportC(object):
             (("X393_MCNTRL_CHN4_TILED_WINDOW_X0Y0",        c, vrlg.MCNTRL_TILED_WINDOW_X0Y0 +         ba, 0, None, "x393_mcntrl_window_left_top_wo",       "Set frame position")),
             (("X393_MCNTRL_CHN4_TILED_STARTXY",            c, vrlg.MCNTRL_TILED_WINDOW_STARTXY +      ba, 0, None, "x393_mcntrl_window_startx_starty_wo",  "Set startXY register")),
             (("X393_MCNTRL_CHN4_TILED_TILE_WHS",           c, vrlg.MCNTRL_TILED_TILE_WHS +            ba, 0, None, "x393_mcntrl_window_tile_whs_wo",       "Set tile size/step (tiled mode only)"))]
-        
-
-
-        
         return sdefines
     
     def expand_define_maxi0(self, define_tuple, frmt_spcs = None):
         if len(define_tuple)  ==1 :
             return self.expand_define(define_tuple = define_tuple, frmt_spcs = frmt_spcs)
         else:
-            return self.expand_define(define_tuple = (define_tuple[0],
-                                                      define_tuple[1],
-                                                      define_tuple[2] * 4 + self.MAXI0_BASE,
-                                                      define_tuple[3] * 4,
-                                                      define_tuple[4],
-                                                      define_tuple[5],
-                                                      define_tuple[6]),
-                                      frmt_spcs = frmt_spcs)
+            name, var_name, address, address_inc, var_range, data_type, comment = define_tuple
+            if data_type is None:
+                return self.expand_define(define_tuple = (name,
+                                                          var_name,
+                                                          address,
+                                                          address_inc,
+                                                          var_range,
+                                                          data_type,
+                                                          comment),
+                                          frmt_spcs = frmt_spcs)
+            else:
+                return self.expand_define(define_tuple = (name,
+                                                          var_name,
+                                                          address * 4 + self.MAXI0_BASE,
+                                                          address_inc * 4,
+                                                          var_range,
+                                                          data_type,
+                                                          comment),
+                                          frmt_spcs = frmt_spcs)
             
     def expand_define(self, define_tuple, frmt_spcs = None):
         frmt_spcs=self.fix_frmt_spcs(frmt_spcs)
@@ -487,13 +687,14 @@ class X393ExportC(object):
         for define_tuple in in_defs:
             if len(define_tuple) == 7:
                 name, var_name, address, address_inc, var_range, data_type, comment = define_tuple
-                if address_inc == 0:
-                    exp_defs.append(define_tuple)
-                    nextAddr = address + 4
-                else:
-                    for x in range(var_range[0], var_range[1] + 1):
-                        exp_defs.append(("%s__%d"%(name,x),var_name,address+x*address_inc,0,None,data_type,comment))
-                    nextAddr = address + var_range[1] * address_inc + 4
+                if not data_type is None:
+                    if address_inc == 0:
+                        exp_defs.append(define_tuple)
+                        nextAddr = address + 4
+                    else:
+                        for x in range(var_range[0], var_range[1] + 1):
+                            exp_defs.append(("%s__%d"%(name,x),var_name,address+x*address_inc,0,None,data_type,comment))
+                        nextAddr = address + var_range[1] * address_inc + 4
         #now sort address map
         sorted_defs= sorted(exp_defs,key=lambda item: item[2])
         if showGaps:
@@ -792,7 +993,228 @@ class X393ExportC(object):
         dw.append(("dqs_tri_last",       12,  4, 0xc,  "DQS tristate end   (0xe,0xc,0x8); early, nominal, late"))
         return dw
 
+    def _enc_mcntrl_dly(self):
+        dw=[]
+        dw.append(("dly",             0,  8,   0,  "8-bit delay value: 5MSBs(0..31) and 3LSBs(0..4)"))
+        return dw
+
+    def _enc_wbuf_dly(self):
+        dw=[]
+        dw.append(("wbuf_dly",        0,  4,   9,  "Extra delay in mclk (fDDR/2) cycles) to data write buffer"))
+        return dw
+
+    def _enc_gamma_ctl(self):
+        dw=[]
+        dw.append(("bayer",           0,  2,   0,  "Bayer color shift (pixel to gamma table)"))
+        dw.append(("page",            2,  1,   0,  "Table page (only available if SENS_GAMMA_BUFFER in Verilog)"))
+        dw.append(("en",              3,  1,   1,  "Enable module"))
+        dw.append(("repet",           4,  1,   1,  "Repetitive (normal) mode. Set 0 for testing of the single-frame mode"))
+        dw.append(("trig",            5,  1,   0,  "Single trigger used when repetitive mode is off (self clearing bit)"))
+        return dw
+
+    def _enc_gamma_tbl_addr(self):
+        dw=[]
+        dw.append(("addr",            0,  8,   0,  "Start address in a gamma page (normally 0)"))
+        dw.append(("color",           8,  2,   0,  "Color channel"))
+        if vrlg.SENS_GAMMA_BUFFER:
+            dw.append(("page",       10,  1,   0,  "Table page (only available for buffered mode)"))
+            sub_chn_bit = 11
+        else:
+            sub_chn_bit = 10
+        dw.append(("sub_chn",sub_chn_bit, 2,   0,  "Sensor sub-channel (multiplexed to the same port)"))
+        dw.append(("a_n_d",          20,  1,   1,  "Address/not data, should be set to 1 here"))
+        return dw
+    def _enc_gamma_tbl_data(self):
+        dw=[]
+        dw.append(("base",            0, 10,   0,  "Knee point value (to be interpolated between)"))
+        dw.append(("diff",           10,  7,   0,  "Difference to next (signed, -64..+63)"))
+        dw.append(("diff",           17,  1,   0,  "Difference scale: 0 - keep diff, 1- multiply diff by 16"))
+        return dw
+    def _enc_gamma_height01(self):
+        dw=[]
+        dw.append(("height0m1",       0, 16,   0,  "Height of subchannel 0 frame minus 1"))
+        dw.append(("height1m1",      16, 16,   0,  "Height of subchannel 1 frame minus 1"))
+        return dw
+    def _enc_gamma_height2(self):
+        dw=[]
+        dw.append(("height2m1",       0, 16,   0,  "Height of subchannel 2 frame minus 1"))
+        return dw
+
+    def _enc_sensio_ctrl_par12(self):
+        dw=[]
+        dw.append(("mrst",         vrlg.SENS_CTRL_MRST,         1,   0,  "MRST signal level to the sensor (0 - low(active), 1 - high (inactive)"))
+        dw.append(("mrst_set",     vrlg.SENS_CTRL_MRST + 1,     1,   0,  "when set to 1, MRST is set  to the 'mrst' field value"))
+        dw.append(("arst",         vrlg.SENS_CTRL_ARST,         1,   0,  "ARST signal to the sensor"))
+        dw.append(("arst_set",     vrlg.SENS_CTRL_ARST + 1,     1,   0,  "ARST set  to the 'arst' field"))
+        dw.append(("aro",          vrlg.SENS_CTRL_ARO,          1,   0,  "ARO signal to the sensor"))
+        dw.append(("aro_set",      vrlg.SENS_CTRL_ARO + 1,      1,   0,  "ARO set to the 'aro' field"))
+        dw.append(("mmcm_rst",     vrlg.SENS_CTRL_RST_MMCM,     1,   0,  "MMCM (for sesnor clock) reset signal"))
+        dw.append(("mmcm_rst_set", vrlg.SENS_CTRL_RST_MMCM + 1, 1,   0,  "MMCM reset set to  'mmcm_rst' field"))
+        dw.append(("ext_clk",      vrlg.SENS_CTRL_EXT_CLK,      1,   0,  "MMCM clock input: 0: clock to the sensor, 1 - clock from the sensor"))
+        dw.append(("ext_clk_set",  vrlg.SENS_CTRL_EXT_CLK + 1,  1,   0,  "Set MMCM clock input to 'ext_clk' field"))
+        dw.append(("set_dly",      vrlg.SENS_CTRL_LD_DLY,       1,   0,  "Set all pre-programmed delays to the sensor port input delays"))
+        dw.append(("quadrants",    vrlg.SENS_CTRL_QUADRANTS,  vrlg. SENS_CTRL_QUADRANTS_WIDTH, 1, "90-degree shifts for data [1:0], hact [3:2] and vact [5:4]"))
+        dw.append(("quadrants_set",vrlg.SENS_CTRL_QUADRANTS_EN, 1,   0,  "Set 'quadrants' values"))
+        return dw
+    def _enc_sensio_ctrl_hispi(self):
+        dw=[]
+        dw.append(("mrst",         vrlg.SENS_CTRL_MRST,         1,   0,  "MRST signal level to the sensor (0 - low(active), 1 - high (inactive)"))
+        dw.append(("mrst_set",     vrlg.SENS_CTRL_MRST + 1,     1,   0,  "when set to 1, MRST is set  to the 'mrst' field value"))
+        dw.append(("arst",         vrlg.SENS_CTRL_ARST,         1,   0,  "ARST signal to the sensor"))
+        dw.append(("arst_set",     vrlg.SENS_CTRL_ARST + 1,     1,   0,  "ARST set  to the 'arst' field"))
+        dw.append(("aro",          vrlg.SENS_CTRL_ARO,          1,   0,  "ARO signal to the sensor"))
+        dw.append(("aro_set",      vrlg.SENS_CTRL_ARO + 1,      1,   0,  "ARO set to the 'aro' field"))
+        dw.append(("mmcm_rst",     vrlg.SENS_CTRL_RST_MMCM,     1,   0,  "MMCM (for sesnor clock) reset signal"))
+        dw.append(("mmcm_rst_set", vrlg.SENS_CTRL_RST_MMCM + 1, 1,   0,  "MMCM reset set to  'mmcm_rst' field"))
+        dw.append(("ign_embed",    vrlg.SENS_CTRL_IGNORE_EMBED, 1,   0,  "Ignore embedded data (non-image pixel lines"))
+        dw.append(("ign_embed_set",vrlg.SENS_CTRL_IGNORE_EMBED + 1,1,0,  "Set mode to 'ign_embed' field"))
+        dw.append(("set_dly",      vrlg.SENS_CTRL_LD_DLY,       1,   0,  "Set all pre-programmed delays to the sensor port input delays"))
+        dw.append(("gp0",          vrlg.SENS_CTRL_GP0,          1,   0 , "GP0 multipurpose signal to the sensor"))
+        dw.append(("gp0_set",      vrlg.SENS_CTRL_GP0 + 1,      1,   0,  "Set GP0 to 'gp0' value"))
+        dw.append(("gp1",          vrlg.SENS_CTRL_GP1,          1,   0 , "GP1 multipurpose signal to the sensor"))
+        dw.append(("gp1_set",      vrlg.SENS_CTRL_GP1 + 1,      1,   0,  "Set GP1 to 'gp1' value"))
+        return dw
+    
+    def _enc_sensio_jtag(self):
+        dw=[]
+        dw.append(("tdi",          vrlg.SENS_JTAG_TDI,         1,   0,  "JTAG TDI level"))
+        dw.append(("tdi_set",      vrlg.SENS_JTAG_TDI + 1,     1,   0,  "JTAG TDI set to 'tdi' field"))
+        dw.append(("tms",          vrlg.SENS_JTAG_TMS,         1,   0,  "JTAG TMS level"))
+        dw.append(("tms_set",      vrlg.SENS_JTAG_TMS + 1,     1,   0,  "JTAG TMS set to 'tms' field"))
+        dw.append(("tck",          vrlg.SENS_JTAG_TCK,         1,   0,  "JTAG TCK level"))
+        dw.append(("tck_set",      vrlg.SENS_JTAG_TCK + 1,     1,   0,  "JTAG TCK set to 'tck' field"))
+        dw.append(("prog",         vrlg.SENS_JTAG_PROG,        1,   0,  "Sensor port PROG level"))
+        dw.append(("prog_set",     vrlg.SENS_JTAG_PROG + 1,    1,   0,  "Sensor port PROG set to 'prog' field"))
+        dw.append(("pgmen",        vrlg.SENS_JTAG_PGMEN,       1,   0 , "Sensor port PGMEN level"))
+        dw.append(("pgmen_set",    vrlg.SENS_JTAG_PGMEN + 1,   1,   0,  "Sensor port PGMEN set to 'pgmen' field"))
+        return dw
+    def _enc_sensio_dly_par12(self):
+        dw=[]
+        dw.append(("pxd0",         0,  8,   0,  "PXD0  input delay (3 LSB not used)"))
+        dw.append(("pxd1",         8,  8,   0,  "PXD1  input delay (3 LSB not used)"))
+        dw.append(("pxd2",        16,  8,   0,  "PXD2  input delay (3 LSB not used)"))
+        dw.append(("pxd3",        24,  8,   0,  "PXD3  input delay (3 LSB not used)"))
+        
+        dw.append(("pxd4",        32,  8,   0,  "PXD4  input delay (3 LSB not used)"))
+        dw.append(("pxd5",        40,  8,   0,  "PXD5  input delay (3 LSB not used)"))
+        dw.append(("pxd6",        48,  8,   0,  "PXD6  input delay (3 LSB not used)"))
+        dw.append(("pxd7",        56,  8,   0,  "PXD7  input delay (3 LSB not used)"))
+        
+        dw.append(("pxd8",        64,  8,   0,  "PXD8  input delay (3 LSB not used)"))
+        dw.append(("pxd9",        72,  8,   0,  "PXD9  input delay (3 LSB not used)"))
+        dw.append(("pxd10",       80,  8,   0,  "PXD10 input delay (3 LSB not used)"))
+        dw.append(("pxd11",       88,  8,   0,  "PXD11 input delay (3 LSB not used)"))
+        
+        dw.append(("hact",        96,  8,   0,  "HACT  input delay (3 LSB not used)"))
+        dw.append(("vact",       104,  8,   0,  "VACT  input delay (3 LSB not used)"))
+        dw.append(("bpf",        112,  8,   0,  "BPF (clock from sensor) input delay (3 LSB not used)"))
+        dw.append(("phase_p",    120,  8,   0,  "MMCM phase"))
+        return dw
+    def _enc_sensio_dly_hispi(self):
+        dw=[]
+        dw.append(("fifo_lag",     0,  4,   7,  "FIFO delay to start output"))
+        
+        dw.append(("phys_lane0",  32,  2,   1,  "Physical lane for logical lane 0"))
+        dw.append(("phys_lane1",  34,  2,   2,  "Physical lane for logical lane 1"))
+        dw.append(("phys_lane2",  36,  2,   3,  "Physical lane for logical lane 2"))
+        dw.append(("phys_lane3",  38,  2,   0,  "Physical lane for logical lane 3"))
+        
+        dw.append(("dly_lane0",   64,  8,   0,  "lane 0 (phys) input delay (3 LSB not used)"))
+        dw.append(("dly_lane1",   72,  8,   0,  "lane 1 (phys) input delay (3 LSB not used)"))
+        dw.append(("dly_lane2",   80,  8,   0,  "lane 2 (phys) input delay (3 LSB not used)"))
+        dw.append(("dly_lane3",   88,  8,   0,  "lane 3 (phys) input delay (3 LSB not used)"))
+        dw.append(("phase_h",     96,  8,   0,  "MMCM phase"))
+        return dw
+
+    def _enc_sensio_width(self):
+        dw=[]
+        dw.append(("sensor_width", 0, 16,   0,  "Sensor frame width (0 - use line sync signals from the sensor)"))
+        return dw
+
+    def _enc_lens_addr(self):
+        dw=[]
+        dw.append(("addr",        16,  8,   0,  "Lens correction address, should be written first (overlaps with data)"))
+        dw.append(("sub_chn",     24,  2,   0,  "Sensor subchannel"))
+        return dw
+
+    def _enc_lens_ax(self):
+        dw=[]
+        dw.append(("ax",           0, 19,   0x20000, "Coefficient Ax"))
+        return dw
+
+    def _enc_lens_ay(self):
+        dw=[]
+        dw.append(("ay",           0, 19,   0x20000, "Coefficient Ay"))
+        return dw
+
+    def _enc_lens_bx(self):
+        dw=[]
+        dw.append(("bx",           0, 21,   0x180000, "Coefficient Bx"))
+        return dw
+
+    def _enc_lens_by(self):
+        dw=[]
+        dw.append(("by",           0, 21,   0x180000, "Coefficient By"))
+        return dw
+
+    def _enc_lens_c(self):
+        dw=[]
+        dw.append(("c",            0, 19,   0x8000,   "Coefficient C"))
+        return dw
+
+    def _enc_lens_scale(self):
+        dw=[]
+        dw.append(("scale",        0, 17,   0x8000,   "Scale (4 per-color values)"))
+        return dw
+
+    def _enc_lens_fatzero_in(self):
+        dw=[]
+        dw.append(("fatzero_in",   0, 16,   0,  "'Fat zero' on the input (subtract from the input)"))
+        return dw
+
+    def _enc_lens_fatzero_out(self):
+        dw=[]
+        dw.append(("fatzero_out",  0, 16,   0,  "'Fat zero' on the output (add to the result)"))
+        return dw
+
+    def _enc_lens_post_scale(self):
+        dw=[]
+        dw.append(("post_scale",   0,  4,   1,  "Shift result (bits)"))
+        return dw
+
+    def _enc_lens_height_m1(self):
+        dw=[]
+        dw.append(("height_m1",    0, 16,   0,  "Height of subframe minus 1"))
+        return dw
+
+    def _enc_histogram_wh_m1(self):
+        dw=[]
+        dw.append(("width_m1" ,    0, 16,   0,  "Width of the histogram window minus 1. If 0 - use frame right margin (end of HACT)"))
+        dw.append(("height_m1",   16, 16,   0,  "Height of he histogram window minus 1. If 0 - use frame bottom margin (end of VACT)"))
+        return dw
+    def _enc_histogram_lt(self):
+        dw=[]
+        dw.append(("left" ,        0, 16,   0,  "Histogram window left margin"))
+        dw.append(("top",         16, 16,   0,  "Histogram window top margin"))
+        return dw
+
+    def _enc_hist_saxi_mode(self):
+        dw=[]
+        dw.append(("en" ,          vrlg.HIST_SAXI_EN,        1,   1,  "Enable histograms DMA"))
+        dw.append(("nrst" ,        vrlg.HIST_SAXI_NRESET,    1,   1,  "0 - reset histograms DMA"))
+        dw.append(("confirm" ,     vrlg.HIST_CONFIRM_WRITE,  1,   1,  "1 - wait for confirmation that histogram was written to the system memory"))
+        dw.append(("cache" ,       vrlg.HIST_SAXI_AWCACHE,   4,   3,  "AXI cache mode (normal - 3), ignored by Zynq?"))
+        return dw
+    def _enc_hist_saxi_page_addr(self):
+        dw=[]
+        dw.append(("page" ,        0, 20,   0,  "Start address of the subchannel histogram (in pages = 4096 bytes"))
+        return dw
+    
     """
+      parameter SENSIO_WIDTH =          'h3, // 1.. 2^16, 0 - use HACT
+      parameter SENSIO_DELAYS =         'h4, // 'h4..'h7
+        // 4 of 8-bit delays per register
+    
 DQSTRI_LAST, DQSTRI_FIRST, DQTRI_LAST, DQTRI_FIRST    
     """
 
@@ -808,8 +1230,8 @@ DQSTRI_LAST, DQSTRI_FIRST, DQTRI_LAST, DQTRI_FIRST
                 raise Exception("Overlapping bit fields in %s, %s and %s"%(name, str(padded_data[-1]), str(item)))
             padded_data.append(item)
             next_bit = item[1]+item[2]
-        if padLast and (next_bit < wlen):
-            padded_data.append(("", next_bit, wlen-next_bit, 0,""))
+        if padLast and (next_bit % wlen):
+            padded_data.append(("", next_bit, wlen- (next_bit % wlen), 0,""))
         return padded_data        
             
             

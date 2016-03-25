@@ -822,7 +822,8 @@ class X393PIOSequences(object):
         self.x393_axi_tasks.write_control_register(vrlg.MCONTR_TOP_16BIT_ADDR + vrlg.MCONTR_TOP_16BIT_REFRESH_PERIOD, t_refi)
         # enable refresh - should it be done here?
         if en_refresh:
-            self.x393_axi_tasks.write_control_register(vrlg.MCONTR_PHY_0BIT_ADDR +  vrlg.MCONTR_TOP_0BIT_REFRESH_EN + 1, 0)
+#            self.x393_axi_tasks.write_control_register(vrlg.MCONTR_PHY_0BIT_ADDR +  vrlg.MCONTR_TOP_0BIT_REFRESH_EN + 1, 0)
+            self.x393_axi_tasks.write_control_register(vrlg.MCONTR_TOP_0BIT_ADDR +  vrlg.MCONTR_TOP_0BIT_REFRESH_EN + 1, 0)
 
 
     def set_mrs(self,       # will also calibrate ZQ
