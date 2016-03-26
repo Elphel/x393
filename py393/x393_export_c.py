@@ -32,12 +32,25 @@ __email__ = "andrey@elphel.com"
 __status__ = "Development"
 #import sys
 #import pickle
+import os
+import errno
+import datetime
 import vrlg
 class X393ExportC(object):
     DRY_MODE =   True # True
     DEBUG_MODE = 1
     MAXI0_BASE = 0x40000000
     verbose=1
+    func_decl=None
+    func_def= None
+    typedefs = None
+    gen_dir =       "generated"
+    typdefs_file =  "x393_types.h" # typdef for hardware registers
+    header_file =   "x393.h"       # constant definitions and function declarations
+    func_def_file = "x393.c"       # functions definitions
+    defs_file =     "x393_defs.h"  # alternative - constants and address definitions
+    map_file =      "x393_map.h"   # address map as  defines
+    
     dflt_frmt_spcs={'ftype':        'u32',
                     'showBits':     True,
                     'showDefaults': True,
@@ -47,7 +60,17 @@ class X393ExportC(object):
                     'macroNameLen': 48,
                     'showType':     True,
                     'showRange':    True,
-                    'nameMembers':  True} #name each struct in a union 
+                    'nameMembers':  True, #name each struct in a union
+#                    'declare':(26,48,0, 80),  #function name, arguments, (body), comments
+#                    'define': (26,48,72,106), #function name, arguments, body, comments
+#                    'declare':(29,59,0, 91),  #function name, arguments, (body), comments
+#                    'define': (29,59,83,117), #function name, arguments, body, comments
+#                    'declare':(29,59,0, 103),  #function name, arguments, (body), comments
+#                    'define': (29,59,83,127), #function name, arguments, body, comments
+                    'declare':(29,65,0, 113),  #function name, arguments, (body), comments
+                    'define': (29,65,85,130), #function name, arguments, body, comments
+                    
+                    } 
 
     def __init__(self, debug_mode=1,dry_mode=True, saveFileName=None):
         self.DEBUG_MODE=  debug_mode
@@ -56,126 +79,243 @@ class X393ExportC(object):
             self.verbose=vrlg.VERBOSE
         except:
             pass
+        
     def export_all(self):
-        print(self.typedefs(frmt_spcs = None))
+        self.func_decl=[]
+        self.func_def= []
+        self.save_typedefs(self.gen_dir, self.typdefs_file)
+        
+#        print(self.get_typedefs(frmt_spcs = None))
+#        for k in self.typedefs:
+#            print (k+": " + self.typedefs[k]['comment'])
+        
+        self.save_header_file      (self.gen_dir, self.header_file)
+        self.save_func_def_file    (self.gen_dir, self.func_def_file)
+        self.save_defines_file     (self.gen_dir, self.defs_file)
+        self.save_harware_map_file (self.gen_dir, self.map_file)
+        
+#        ld= self.define_macros()
+#        ld+=self.define_other_macros()
+#        print('\n\n//======== using defines ========')
+#        for d in ld:
+#            print(self.expand_define_maxi0(d, mode = "defines",frmt_spcs = None))
+#        print('\n\n//======== function declarations ========')
+#        for d in ld:
+#            fd=self.expand_define_maxi0(d, mode = "func_decl",frmt_spcs = None)
+#            if fd:
+#                print(fd)
+#        print('\n\n//======== function definitions ========')
+#        for d in ld:
+#            fd=self.expand_define_maxi0(d, mode = "func_def",frmt_spcs = None)
+#            if fd:
+#                print(fd)
+#        print("\n\n// ===== Sorted address map =====\n")
+#        sam = self.expand_define_parameters(ld)
+#        print("sam=",sam)
+#        for d in sam:
+#            print(self.expand_define_maxi0(d, mode = "defines", frmt_spcs = None))
+    def make_generated(self, path):
+        try:
+            os.makedirs(path)
+        except OSError as exception:
+            if exception.errno != errno.EEXIST:
+                raise
+            
+    def generated_fileHeader(self, filename, description):
+        header_template="""/*******************************************************************************
+ * File: %s
+ * Date: %s  
+ * Author: auto-generated file, see %s
+ * Description: %s
+ *******************************************************************************/"""
+        return header_template%(filename, datetime.date.today().isoformat(), os.path.basename(__file__), description)
+        
+    def save_typedefs(self, directory, filename):
+        description = 'typedef definitions for the x393 hardware registers'
+        header = self.generated_fileHeader(filename,description)
+        txt=self.get_typedefs(frmt_spcs = None)
+        self.make_generated(os.path.abspath(os.path.join(os.path.dirname(__file__), directory)))
+        with open(os.path.abspath(os.path.join(os.path.dirname(__file__), directory, filename)),"w") as out_file:
+            print(header,file=out_file)
+            print(txt,file=out_file)
+        print ("%s are written to  to %s"%(description, os.path.abspath(os.path.join(os.path.dirname(__file__), directory, filename))))
+        
+    def save_header_file(self, directory, filename):
+        description = 'Constants definitions and functions declarations to access x393 hardware registers'
+        header = self.generated_fileHeader(filename,description)
         ld= self.define_macros()
         ld+=self.define_other_macros()
+        txt = ""
         for d in ld:
-            print(self.expand_define_maxi0(d, frmt_spcs = None))
-        print("\n\n// ===== Sorted address map =====\n")
+            fd=self.expand_define_maxi0(d, mode = "func_decl",frmt_spcs = None)
+            if fd:
+                txt += fd + "\n"
+        self.make_generated(os.path.abspath(os.path.join(os.path.dirname(__file__), directory)))
+        with open(os.path.abspath(os.path.join(os.path.dirname(__file__), directory, filename)),"w") as out_file:
+            print(header,file=out_file)
+            print(txt,file=out_file)
+        print ("%s are written to  to %s"%(description, os.path.abspath(os.path.join(os.path.dirname(__file__), directory, filename))))
+        
+    def save_func_def_file(self, directory, filename):
+        description = 'Functions definitions to access x393 hardware registers'
+        header = self.generated_fileHeader(filename,description)
+        ld= self.define_macros()
+        ld+=self.define_other_macros()
+        txt = ""
+        for d in ld:
+            fd=self.expand_define_maxi0(d, mode = "func_def",frmt_spcs = None)
+            if fd:
+                txt += fd + "\n"
+        self.make_generated(os.path.abspath(os.path.join(os.path.dirname(__file__), directory)))
+        with open(os.path.abspath(os.path.join(os.path.dirname(__file__), directory, filename)),"w") as out_file:
+            print(header,file=out_file)
+            print(txt,file=out_file)
+        print ("%s are written to  to %s"%(description, os.path.abspath(os.path.join(os.path.dirname(__file__), directory, filename))))
+
+    def save_defines_file(self, directory, filename):
+        description = 'Constants and hardware addresses definitions to access x393 hardware registers'
+        header = self.generated_fileHeader(filename,description)
+        ld= self.define_macros()
+        ld+=self.define_other_macros()
+        txt = ""
+        for d in ld:
+            fd=self.expand_define_maxi0(d, mode = "defines",frmt_spcs = None)
+            if fd:
+                txt += fd + "\n"
+        self.make_generated(os.path.abspath(os.path.join(os.path.dirname(__file__), directory)))
+        with open(os.path.abspath(os.path.join(os.path.dirname(__file__), directory, filename)),"w") as out_file:
+            print(header,file=out_file)
+            print(txt,file=out_file)
+        print ("%s are written to  to %s"%(description, os.path.abspath(os.path.join(os.path.dirname(__file__), directory, filename))))
+ 
+    def save_harware_map_file(self, directory, filename):
+        description = 'Sorted hardware addresses map'
+        header = self.generated_fileHeader(filename,description)
+        ld= self.define_macros()
+        ld+=self.define_other_macros()
         sam = self.expand_define_parameters(ld)
-#        print("sam=",sam)
+        txt = ""
         for d in sam:
-            print(self.expand_define_maxi0(d, frmt_spcs = None))
-            
-    def typedefs(self, frmt_spcs = None):
+#            print(self.expand_define_maxi0(d, mode = "defines", frmt_spcs = None))
+            fd=self.expand_define_maxi0(d, mode = "defines",frmt_spcs = None)
+            if fd:
+                txt += fd + "\n"
+        self.make_generated(os.path.abspath(os.path.join(os.path.dirname(__file__), directory)))
+        with open(os.path.abspath(os.path.join(os.path.dirname(__file__), directory, filename)),"w") as out_file:
+            print(header,file=out_file)
+            print(txt,file=out_file)
+        print ("%s is written to  to %s"%(description, os.path.abspath(os.path.join(os.path.dirname(__file__), directory, filename))))
+ 
+    def get_typedefs(self, frmt_spcs = None):
 #        print("Will list bitfields typedef and comments")
+        self.typedefs={}
+        self.typedefs['u32']= {'comment':'unsigned 32-bit', 'code':'', 'size':32, 'type':''}
         stypedefs = ""
         
         stypedefs += self.get_typedef32(comment =   "Status generation control ",
                                  data =      self._enc_status_control(),
-                                 name =      "x393_status_ctrl_wo",
+                                 name =      "x393_status_ctrl",  typ="wo",
                                  frmt_spcs = frmt_spcs)
         stypedefs += self.get_typedef32(comment =   "Memory channel operation mode",
                                  data =      self._enc_func_encode_mode_scan_tiled(),
-                                 name =      "x393_mcntrl_mode_scan_wo",
+                                 name =      "x393_mcntrl_mode_scan",  typ="wo",
                                  frmt_spcs = frmt_spcs)
         stypedefs += self.get_typedef32(comment =   "Memory channel window tile size/step (tiled only)",
                                  data =      self._enc_window_tile_whs(),
-                                 name =      "x393_mcntrl_window_tile_whs_wo",
+                                 name =      "x393_mcntrl_window_tile_whs",  typ="wo",
                                  frmt_spcs = frmt_spcs)
         stypedefs += self.get_typedef32(comment =   "Memory channel window size",
                                  data =      self._enc_window_wh(),
-                                 name =      "x393_mcntrl_window_width_height_wo",
+                                 name =      "x393_mcntrl_window_width_height",  typ="wo",
                                  frmt_spcs = frmt_spcs)
         stypedefs += self.get_typedef32(comment =   "Memory channel window position",
                                  data =      self._enc_window_lt(),
-                                 name =      "x393_mcntrl_window_left_top_wo",
+                                 name =      "x393_mcntrl_window_left_top",  typ="wo",
                                  frmt_spcs = frmt_spcs)
         stypedefs += self.get_typedef32(comment =   "Memory channel scan start (debug feature)",
                                  data =      self._enc_window_sxy(),
-                                 name =      "x393_mcntrl_window_startx_starty_wo",
+                                 name =      "x393_mcntrl_window_startx_starty",  typ="wo",
                                  frmt_spcs = frmt_spcs)
         stypedefs += self.get_typedef32(comment =   "Memory channel window full (padded) width",
                                  data =      self._enc_window_fw(),
-                                 name =      "x393_mcntrl_window_full_width_wo",
+                                 name =      "x393_mcntrl_window_full_width",  typ="wo",
                                  frmt_spcs = frmt_spcs)
         stypedefs += self.get_typedef32(comment =   "Memory channel last frame number in a buffer (number of frames minus 1)",
                                  data =      self._enc_window_last_frame_number(),
-                                 name =      "x393_mcntrl_window_last_frame_num_wo",
+                                 name =      "x393_mcntrl_window_last_frame_num",  typ="wo",
                                  frmt_spcs = frmt_spcs)
         stypedefs += self.get_typedef32(comment =   "Memory channel frame start address increment (for next frame in a buffer)",
                                  data =      self._enc_window_frame_sa_inc(),
-                                 name =      "x393_mcntrl_window_frame_sa_inc_wo",
+                                 name =      "x393_mcntrl_window_frame_sa_inc",  typ="wo",
                                  frmt_spcs = frmt_spcs)
         stypedefs += self.get_typedef32(comment =   "Memory channel frame start address for the first frame in a buffer",
                                  data =      self._enc_window_frame_sa(),
-                                 name =      "x393_mcntrl_window_frame_sa_wo",
+                                 name =      "x393_mcntrl_window_frame_sa",  typ="wo",
                                  frmt_spcs = frmt_spcs)
         stypedefs += self.get_typedef32(comment =   "PS PIO (software-programmed DDR3) access sequences enable and reset",
                                  data =      self._enc_ps_pio_en_rst(),
-                                 name =      "x393_ps_pio_en_rst_wo",
+                                 name =      "x393_ps_pio_en_rst",  typ="wo",
                                  frmt_spcs = frmt_spcs)
         stypedefs += self.get_typedef32(comment =   "PS PIO (software-programmed DDR3) access sequences control",
                                  data =      self._enc_ps_pio_cmd(),
-                                 name =      "x393_ps_pio_cmd_wo",
+                                 name =      "x393_ps_pio_cmd",  typ="wo",
                                  frmt_spcs = frmt_spcs)
 
         stypedefs += self.get_typedef32(comment =   "x393 generic status register",
                                  data =      self._enc_status(),
-                                 name =      "x393_status_ro",
+                                 name =      "x393_status",  typ="ro",
                                  frmt_spcs = frmt_spcs)
         stypedefs += self.get_typedef32(comment =   "Memory PHY status",
                                  data =      self._enc_status_mcntrl_phy(),
-                                 name =      "x393_status_mcntrl_phy_ro",
+                                 name =      "x393_status_mcntrl_phy",  typ="ro",
                                  frmt_spcs = frmt_spcs)
         stypedefs += self.get_typedef32(comment =   "Memory controller requests status",
                                  data =      self._enc_status_mcntrl_top(),
-                                 name =      "x393_status_mcntrl_top_ro",
+                                 name =      "x393_status_mcntrl_top",  typ="ro",
                                  frmt_spcs = frmt_spcs)
         stypedefs += self.get_typedef32(comment =   "Memory software access status",
                                  data =      self._enc_status_mcntrl_ps(),
-                                 name =      "x393_status_mcntrl_ps_ro",
+                                 name =      "x393_status_mcntrl_ps",  typ="ro",
                                  frmt_spcs = frmt_spcs)
         stypedefs += self.get_typedef32(comment =   "Memory test channels access status",
                                  data =      self._enc_status_lintile(),
-                                 name =      "x393_status_mcntrl_lintile_ro",
+                                 name =      "x393_status_mcntrl_lintile",  typ="ro",
                                  frmt_spcs = frmt_spcs)
         stypedefs += self.get_typedef32(comment =   "Memory test channels status",
                                  data =      self._enc_status_testchn(),
-                                 name =      "x393_status_mcntrl_testchn_ro",
+                                 name =      "x393_status_mcntrl_testchn",  typ="ro",
                                  frmt_spcs = frmt_spcs)
         stypedefs += self.get_typedef32(comment =   "Membridge channel status",
                                  data =      self._enc_status_membridge(),
-                                 name =      "x393_status_membridge_ro",
+                                 name =      "x393_status_membridge",  typ="ro",
                                  frmt_spcs = frmt_spcs)
         
         stypedefs += self.get_typedef32(comment =   "Sensor/multiplexer I/O pins status",
                                  data =      self._enc_status_sens_io(),
-                                 name =      "x393_status_sens_io_ro",
+                                 name =      "x393_status_sens_io",  typ="ro",
                                  frmt_spcs = frmt_spcs)
 
         stypedefs += self.get_typedef32(comment =   "Sensor/multiplexer i2c status",
                                  data =      self._enc_status_sens_i2c(),
-                                 name =      "x393_status_sens_i2c_ro",
+                                 name =      "x393_status_sens_i2c",  typ="ro",
                                  frmt_spcs = frmt_spcs)
 
         stypedefs += self.get_typedef32(comment =   "Command bits for test01 module (test frame memory accesses)",
                                  data =      self._enc_test01_mode(),
-                                 name =      "x393_test01_mode_wo",
+                                 name =      "x393_test01_mode",  typ="wo",
                                  frmt_spcs = frmt_spcs)
 
         stypedefs += self.get_typedef32(comment =   "Command for membridge",
                                  data =      self._enc_membridge_cmd(),
-                                 name =      "x393_membridge_cmd_wo",
+                                 name =      "x393_membridge_cmd",  typ="wo",
                                  frmt_spcs = frmt_spcs)
         stypedefs += self.get_typedef32(comment =   "Cache mode for membridge",
                                  data =      self._enc_membridge_mode(),
-                                 name =      "x393_membridge_mode_wo",
+                                 name =      "x393_membridge_mode",  typ="wo",
                                  frmt_spcs = frmt_spcs)
         stypedefs += self.get_typedef32(comment =   "Address in 64-bit words",
                                  data =      self._enc_u29(),
-                                 name =      "u29_wo",
+                                 name =      "u29",  typ="wo",
                                  frmt_spcs = frmt_spcs)
         
         stypedefs += self.get_typedef32(comment =   "I2C contol/table data",
@@ -183,88 +323,88 @@ class X393ExportC(object):
                                               self._enc_i2c_tbl_wmode(),
                                               self._enc_i2c_tbl_rmode(),
                                               self._enc_i2c_ctrl()],
-                                 name =      "x393_i2c_ctltbl_wo",
+                                 name =      "x393_i2c_ctltbl",  typ="wo",
                                  frmt_spcs = frmt_spcs)
         
         stypedefs += self.get_typedef32(comment =   "Write sensor channel mode register",
                                  data =      self._enc_sens_mode(),
-                                 name =      "x393_sens_mode_wo",
+                                 name =      "x393_sens_mode",  typ="wo",
                                  frmt_spcs = frmt_spcs)
 
         stypedefs += self.get_typedef32(comment =   "Write number of sensor frames to combine into one virtual (linescan mode)",
                                  data =      self._enc_sens_sync_mult(),
-                                 name =      "x393_sens_sync_mult_wo",
+                                 name =      "x393_sens_sync_mult",  typ="wo",
                                  frmt_spcs = frmt_spcs)
 
         stypedefs += self.get_typedef32(comment =   "Write sensor number of lines to delay frame sync",
                                  data =      self._enc_sens_sync_late(),
-                                 name =      "x393_sens_sync_late_wo",
+                                 name =      "x393_sens_sync_late",  typ="wo",
                                  frmt_spcs = frmt_spcs)
 
         stypedefs += self.get_typedef32(comment =   "Configure memory controller priorities",
                                  data =      self._enc_mcntrl_priorities(),
-                                 name =      "x393_arbite_pri_rw",
+                                 name =      "x393_arbite_pri",  typ="rw",
                                  frmt_spcs = frmt_spcs)
 
         stypedefs += self.get_typedef32(comment =   "Enable/disable memory controller channels",
                                  data =      self._enc_mcntrl_chnen(),
-                                 name =      "x393_mcntr_chn_en_rw",
+                                 name =      "x393_mcntr_chn_en",  typ="rw",
                                  frmt_spcs = frmt_spcs)
         
         stypedefs += self.get_typedef32(comment =   "DQS and DQM patterns (DQM - 0, DQS 0xaa or 0x55)",
                                  data =      self._enc_mcntrl_dqs_dqm_patterns(),
-                                 name =      "x393_mcntr_dqs_dqm_patt_rw",
+                                 name =      "x393_mcntr_dqs_dqm_patt",  typ="rw",
                                  frmt_spcs = frmt_spcs)
         stypedefs += self.get_typedef32(comment =   "DQ and DQS tristate control when turning on and off",
                                  data =      self._enc_mcntrl_dqs_dq_tri(),
-                                 name =      "x393_mcntr_dqs_dqm_tri_rw",
+                                 name =      "x393_mcntr_dqs_dqm_tri",  typ="rw",
                                  frmt_spcs = frmt_spcs)
         
         stypedefs += self.get_typedef32(comment =   "DDR3 memory controller I/O delay",
                                  data =      self._enc_mcntrl_dly(),
-                                 name =      "x393_dly_rw",
+                                 name =      "x393_dly",  typ="rw",
                                  frmt_spcs = frmt_spcs)
         stypedefs += self.get_typedef32(comment =   "Extra delay in mclk (fDDR/2) cycles) to data write buffer",
                                  data =      self._enc_wbuf_dly(),
-                                 name =      "x393_wbuf_dly_rw",
+                                 name =      "x393_wbuf_dly",  typ="rw",
                                  frmt_spcs = frmt_spcs)
         
         stypedefs += self.get_typedef32(comment =   "Control for the gamma-conversion module",
                                  data =      self._enc_gamma_ctl(),
-                                 name =      "x393_gamma_ctl_rw",
+                                 name =      "x393_gamma_ctl",  typ="rw",
                                  frmt_spcs = frmt_spcs)
         stypedefs += self.get_typedef32(comment =   "Write gamma table address/data",
                                  data =      [self._enc_gamma_tbl_addr(), # generate typedef union
                                               self._enc_gamma_tbl_data()],
-                                 name =      "x393_gamma_tbl_wo",
+                                 name =      "x393_gamma_tbl",  typ="wo",
                                  frmt_spcs = frmt_spcs)
         stypedefs += self.get_typedef32(comment =   "Heights of the first two subchannels frames",
                                  data =      self._enc_gamma_height01(),
-                                 name =      "x393_gamma_height01m1_rw",
+                                 name =      "x393_gamma_height01m1",  typ="rw",
                                  frmt_spcs = frmt_spcs)
         stypedefs += self.get_typedef32(comment =   "Height of the third subchannel frame",
                                  data =      self._enc_gamma_height2(),
-                                 name =      "x393_gamma_height2m1_rw",
+                                 name =      "x393_gamma_height2m1",  typ="rw",
                                  frmt_spcs = frmt_spcs)
         
         stypedefs += self.get_typedef32(comment =   "Sensor port I/O control",
                                  data =      [self._enc_sensio_ctrl_par12(),
                                               self._enc_sensio_ctrl_hispi()],
-                                 name =      "x393_sensio_ctl_wo",
+                                 name =      "x393_sensio_ctl",  typ="wo",
                                  frmt_spcs = frmt_spcs)
         stypedefs += self.get_typedef32(comment =   "Programming interface for multiplexer FPGA",
                                  data =      self._enc_sensio_jtag(),
-                                 name =      "x393_sensio_jpag_wo",
+                                 name =      "x393_sensio_jpag",  typ="wo",
                                  frmt_spcs = frmt_spcs)
 
         stypedefs += self.get_typedef32(comment =   "Sensor delays (uses 4 DWORDs)",
                                  data =      [self._enc_sensio_dly_par12(),
                                               self._enc_sensio_dly_hispi()],
-                                 name =      "x393_sensio_dly_rw",
+                                 name =      "x393_sensio_dly",  typ="rw",
                                  frmt_spcs = frmt_spcs)
         stypedefs += self.get_typedef32(comment =   "Set sensor frame width (0 - use received)",
                                  data =      self._enc_sensio_width(),
-                                 name =      "x393_sensio_width_rw",
+                                 name =      "x393_sensio_width",  typ="rw",
                                  frmt_spcs = frmt_spcs)
 
         stypedefs += self.get_typedef32(comment =   "Lens vignetting parameter (write address first, then data that may overlap som address bits)",
@@ -278,28 +418,52 @@ class X393ExportC(object):
                                               self._enc_lens_fatzero_in(),
                                               self._enc_lens_fatzero_out(),
                                               self._enc_lens_post_scale()],
-                                 name =      "x393_lens_corr_wo",
+                                 name =      "x393_lens_corr",  typ="wo",
                                  frmt_spcs = frmt_spcs)
         stypedefs += self.get_typedef32(comment =   "Height of the subchannel frame for vignetting correction",
                                  data =      self._enc_lens_height_m1(),
-                                 name =      "x393_lens_height_m1_rw",
+                                 name =      "x393_lens_height_m1",  typ="rw",
                                  frmt_spcs = frmt_spcs)
 
         stypedefs += self.get_typedef32(comment =   "Histogram window left/top margins",
                                  data =      self._enc_histogram_lt(),
-                                 name =      "x393_hist_left_top_rw",
+                                 name =      "x393_hist_left_top",  typ="rw",
                                  frmt_spcs = frmt_spcs)
         stypedefs += self.get_typedef32(comment =   "Histogram window width and height minus 1 (0 use full)",
                                  data =      self._enc_histogram_wh_m1(),
-                                 name =      "x393_hist_width_height_m1_rw",
+                                 name =      "x393_hist_width_height_m1",  typ="rw",
                                  frmt_spcs = frmt_spcs)
         stypedefs += self.get_typedef32(comment =   "Histograms DMA mode",
                                  data =      self._enc_hist_saxi_mode(),
-                                 name =      "x393_hist_saxi_mode_rw",
+                                 name =      "x393_hist_saxi_mode",  typ="rw",
                                  frmt_spcs = frmt_spcs)
         stypedefs += self.get_typedef32(comment =   "Histograms DMA addresses",
                                  data =      self._enc_hist_saxi_page_addr(),
-                                 name =      "x393_hist_saxi_addr_rw",
+                                 name =      "x393_hist_saxi_addr",  typ="rw",
+                                 frmt_spcs = frmt_spcs)
+        stypedefs += self.get_typedef32(comment =   "Compressor mode control",
+                                 data =      self._enc_cmprs_mode(),
+                                 name =      "x393_cmprs_mode",  typ="wo",
+                                 frmt_spcs = frmt_spcs)
+        stypedefs += self.get_typedef32(comment =   "Compressor coring mode (table number)",
+                                 data =      self._enc_cmprs_coring_sel(),
+                                 name =      "x393_cmprs_coring_mode",  typ="rw",
+                                 frmt_spcs = frmt_spcs)
+        stypedefs += self.get_typedef32(comment =   "Compressor color saturation",
+                                 data =      self._enc_cmprs_color_sat(),
+                                 name =      "x393_cmprs_colorsat",  typ="rw",
+                                 frmt_spcs = frmt_spcs)
+        stypedefs += self.get_typedef32(comment =   "Compressor frame format",
+                                 data =      self._enc_cmprs_format(),
+                                 name =      "x393_cmprs_frame_format",  typ="rw",
+                                 frmt_spcs = frmt_spcs)
+        stypedefs += self.get_typedef32(comment =   "Compressor interrupts control",
+                                 data =      self._enc_cmprs_interrupts(),
+                                 name =      "x393_cmprs_interrupts",  typ="wo",
+                                 frmt_spcs = frmt_spcs)
+        stypedefs += self.get_typedef32(comment =   "Compressor tables load control",
+                                 data =      self._enc_cmprs_table_addr(),
+                                 name =      "x393_cmprs_table_addr",  typ="wo",
                                  frmt_spcs = frmt_spcs)
 
         return stypedefs
@@ -316,109 +480,109 @@ class X393ExportC(object):
         sdefines = []
         sdefines +=[
             (('R/W addresses to set up memory arbiter priorities. For sensors  (chn = 8..11), for compressors - 12..15',)),
-            (("X393_MCNTRL_ARBITER_PRIORITY",              c, vrlg.MCONTR_ARBIT_ADDR +             ba, ia, z15, "x393_arbite_pri_rw",                     "Set memory arbiter priority (currently r/w, may become just wo)"))]        
+            (("X393_MCNTRL_ARBITER_PRIORITY",              c, vrlg.MCONTR_ARBIT_ADDR +             ba, ia, z15, "x393_arbite_pri", "rw",                     "Set memory arbiter priority (currently r/w, may become just wo)"))]        
 
         sdefines +=[
             (('Enable/disable memory channels (bits in a 16-bit word). For sensors  (chn = 8..11), for compressors - 12..15',)),
-            (("X393_MCNTRL_CHN_EN",     c, vrlg.MCONTR_TOP_16BIT_ADDR +  vrlg.MCONTR_TOP_16BIT_CHN_EN +    ba,     0, None, "x393_mcntr_chn_en_rw",   "Enable/disable memory channels (currently r/w, may become just wo)")),
-            (("X393_MCNTRL_DQS_DQM_PATT",c, vrlg.MCONTR_PHY_16BIT_ADDR+  vrlg.MCONTR_PHY_16BIT_PATTERNS +  ba,     0, None, "x393_mcntr_dqs_dqm_patt_rw",     "Setup DQS and DQM patterns")),
-            (("X393_MCNTRL_DQ_DQS_TRI", c, vrlg.MCONTR_PHY_16BIT_ADDR +  vrlg.MCONTR_PHY_16BIT_PATTERNS_TRI+ ba,   0, None, "x393_mcntr_dqs_dqm_tri_rw",      "Setup DQS and DQ on/off sequence")),
+            (("X393_MCNTRL_CHN_EN",     c, vrlg.MCONTR_TOP_16BIT_ADDR +  vrlg.MCONTR_TOP_16BIT_CHN_EN +    ba,     0, None, "x393_mcntr_chn_en", "rw",   "Enable/disable memory channels (currently r/w, may become just wo)")),
+            (("X393_MCNTRL_DQS_DQM_PATT",c, vrlg.MCONTR_PHY_16BIT_ADDR+  vrlg.MCONTR_PHY_16BIT_PATTERNS +  ba,     0, None, "x393_mcntr_dqs_dqm_patt", "rw",     "Setup DQS and DQM patterns")),
+            (("X393_MCNTRL_DQ_DQS_TRI", c, vrlg.MCONTR_PHY_16BIT_ADDR +  vrlg.MCONTR_PHY_16BIT_PATTERNS_TRI+ ba,   0, None, "x393_mcntr_dqs_dqm_tri", "rw",      "Setup DQS and DQ on/off sequence")),
             (("Following enable/disable addresses can be written with any data, only addresses matter",)),
-            (("X393_MCNTRL_DIS",        c, vrlg.MCONTR_TOP_0BIT_ADDR +   vrlg.MCONTR_TOP_0BIT_MCONTR_EN +  ba + 0, 0, None, "",                       "Disable DDR3 memory controller")),        
-            (("X393_MCNTRL_EN",         c, vrlg.MCONTR_TOP_0BIT_ADDR +   vrlg.MCONTR_TOP_0BIT_MCONTR_EN +  ba + 1, 0, None, "",                       "Enable DDR3 memory controller")),        
-            (("X393_MCNTRL_REFRESH_DIS",c, vrlg.MCONTR_TOP_0BIT_ADDR +   vrlg.MCONTR_TOP_0BIT_REFRESH_EN + ba + 0, 0, None, "",                       "Disable DDR3 memory refresh")),        
-            (("X393_MCNTRL_REFRESH_EN", c, vrlg.MCONTR_TOP_0BIT_ADDR +   vrlg.MCONTR_TOP_0BIT_REFRESH_EN + ba + 1, 0, None, "",                       "Enable DDR3 memory refresh")),        
-            (("X393_MCNTRL_SDRST_DIS",  c, vrlg.MCONTR_PHY_0BIT_ADDR +   vrlg.MCONTR_PHY_0BIT_SDRST_ACT +  ba + 0, 0, None, "",                       "Disable DDR3 memory reset")),        
-            (("X393_MCNTRL_SDRST_EN",   c, vrlg.MCONTR_PHY_0BIT_ADDR +   vrlg.MCONTR_PHY_0BIT_SDRST_ACT +  ba + 1, 0, None, "",                       "Enable DDR3 memory reset")),        
-            (("X393_MCNTRL_CKE_DIS",    c, vrlg.MCONTR_PHY_0BIT_ADDR +   vrlg.MCONTR_PHY_0BIT_CKE_EN +     ba + 0, 0, None, "",                       "Disable DDR3 memory CKE")),        
-            (("X393_MCNTRL_CKE_EN",     c, vrlg.MCONTR_PHY_0BIT_ADDR +   vrlg.MCONTR_PHY_0BIT_CKE_EN +     ba + 1, 0, None, "",                       "Enable DDR3 memory CKE")),        
-            (("X393_MCNTRL_CMDA_DIS",   c, vrlg.MCONTR_PHY_0BIT_ADDR +   vrlg.MCONTR_PHY_0BIT_CMDA_EN +    ba + 0, 0, None, "",                       "Disable DDR3 memory command/address lines")),        
-            (("X393_MCNTRL_CMDA_EN",    c, vrlg.MCONTR_PHY_0BIT_ADDR +   vrlg.MCONTR_PHY_0BIT_CMDA_EN +    ba + 1, 0, None, "",                       "Enable DDR3 memory command/address lines")),        
+            (("X393_MCNTRL_DIS",        c, vrlg.MCONTR_TOP_0BIT_ADDR +   vrlg.MCONTR_TOP_0BIT_MCONTR_EN +  ba + 0, 0, None, "","",                       "Disable DDR3 memory controller")),        
+            (("X393_MCNTRL_EN",         c, vrlg.MCONTR_TOP_0BIT_ADDR +   vrlg.MCONTR_TOP_0BIT_MCONTR_EN +  ba + 1, 0, None, "","",                       "Enable DDR3 memory controller")),        
+            (("X393_MCNTRL_REFRESH_DIS",c, vrlg.MCONTR_TOP_0BIT_ADDR +   vrlg.MCONTR_TOP_0BIT_REFRESH_EN + ba + 0, 0, None, "","",                       "Disable DDR3 memory refresh")),        
+            (("X393_MCNTRL_REFRESH_EN", c, vrlg.MCONTR_TOP_0BIT_ADDR +   vrlg.MCONTR_TOP_0BIT_REFRESH_EN + ba + 1, 0, None, "","",                       "Enable DDR3 memory refresh")),        
+            (("X393_MCNTRL_SDRST_DIS",  c, vrlg.MCONTR_PHY_0BIT_ADDR +   vrlg.MCONTR_PHY_0BIT_SDRST_ACT +  ba + 0, 0, None, "","",                       "Disable DDR3 memory reset")),        
+            (("X393_MCNTRL_SDRST_EN",   c, vrlg.MCONTR_PHY_0BIT_ADDR +   vrlg.MCONTR_PHY_0BIT_SDRST_ACT +  ba + 1, 0, None, "","",                       "Enable DDR3 memory reset")),        
+            (("X393_MCNTRL_CKE_DIS",    c, vrlg.MCONTR_PHY_0BIT_ADDR +   vrlg.MCONTR_PHY_0BIT_CKE_EN +     ba + 0, 0, None, "","",                       "Disable DDR3 memory CKE")),        
+            (("X393_MCNTRL_CKE_EN",     c, vrlg.MCONTR_PHY_0BIT_ADDR +   vrlg.MCONTR_PHY_0BIT_CKE_EN +     ba + 1, 0, None, "","",                       "Enable DDR3 memory CKE")),        
+            (("X393_MCNTRL_CMDA_DIS",   c, vrlg.MCONTR_PHY_0BIT_ADDR +   vrlg.MCONTR_PHY_0BIT_CMDA_EN +    ba + 0, 0, None, "","",                       "Disable DDR3 memory command/address lines")),        
+            (("X393_MCNTRL_CMDA_EN",    c, vrlg.MCONTR_PHY_0BIT_ADDR +   vrlg.MCONTR_PHY_0BIT_CMDA_EN +    ba + 1, 0, None, "","",                       "Enable DDR3 memory command/address lines")),        
             ]        
         ba = vrlg.CONTROL_ADDR
         #"x393_dly_rw"
         sdefines +=[
             (('Set DDR3 memory controller I/O delays and other timing parameters (should use individually calibrated values)',)),
-            (("X393_MCNTRL_DQ_ODLY0",   c, vrlg.LD_DLY_LANE0_ODELAY +    ba,     1, z7,   "x393_dly_rw",    "Lane0 DQ output delays ")),
-            (("X393_MCNTRL_DQ_ODLY1",   c, vrlg.LD_DLY_LANE1_ODELAY +    ba,     1, z7,   "x393_dly_rw",    "Lane1 DQ output delays ")),
-            (("X393_MCNTRL_DQ_IDLY0",   c, vrlg.LD_DLY_LANE0_IDELAY +    ba,     1, z7,   "x393_dly_rw",    "Lane0 DQ input delays ")),
-            (("X393_MCNTRL_DQ_IDLY1",   c, vrlg.LD_DLY_LANE1_IDELAY +    ba,     1, z7,   "x393_dly_rw",    "Lane1 DQ input delays ")),
-            (("X393_MCNTRL_DQS_ODLY0",  c, vrlg.LD_DLY_LANE0_ODELAY +    ba + 8, 0, None, "x393_dly_rw",    "Lane0 DQS output delay ")),
-            (("X393_MCNTRL_DQS_ODLY1",  c, vrlg.LD_DLY_LANE1_ODELAY +    ba + 8, 0, None, "x393_dly_rw",    "Lane1 DQS output delay ")),
-            (("X393_MCNTRL_DQS_IDLY0",  c, vrlg.LD_DLY_LANE0_IDELAY +    ba + 8, 0, None, "x393_dly_rw",    "Lane0 DQS input delay ")),
-            (("X393_MCNTRL_DQS_IDLY1",  c, vrlg.LD_DLY_LANE1_IDELAY +    ba + 8, 0, None, "x393_dly_rw",    "Lane1 DQS input delay ")),
-            (("X393_MCNTRL_DM_ODLY0",   c, vrlg.LD_DLY_LANE0_ODELAY +    ba + 9, 0, None, "x393_dly_rw",    "Lane0 DM output delay ")),
-            (("X393_MCNTRL_DM_ODLY1",   c, vrlg.LD_DLY_LANE1_ODELAY +    ba + 9, 0, None, "x393_dly_rw",    "Lane1 DM output delay ")),
-            (("X393_MCNTRL_CMDA_ODLY",  c, vrlg.LD_DLY_CMDA +            ba,     1, z31,  "x393_dly_rw",    "Address, bank and commands delays")),
-            (("X393_MCNTRL_CMDA_ODLY",  c, vrlg.LD_DLY_PHASE +           ba,     0, None, "x393_dly_rw",    "Clock phase")),
-            (("X393_MCNTRL_DLY_SET",    c, vrlg.MCONTR_PHY_0BIT_ADDR +   vrlg.MCONTR_PHY_0BIT_DLY_SET +      ba, 0, None, "",                 "Set all pre-programmed delays")),
-            (("X393_MCNTRL_WBUF_DLY",   c, vrlg.MCONTR_PHY_16BIT_ADDR +  vrlg.MCONTR_PHY_16BIT_WBUF_DELAY +  ba, 0, None, "x393_wbuf_dly_rw", "Set write buffer delay")),
+            (("X393_MCNTRL_DQ_ODLY0",   c, vrlg.LD_DLY_LANE0_ODELAY +    ba,     1, z7,   "x393_dly", "rw",    "Lane0 DQ output delays ")),
+            (("X393_MCNTRL_DQ_ODLY1",   c, vrlg.LD_DLY_LANE1_ODELAY +    ba,     1, z7,   "x393_dly", "rw",    "Lane1 DQ output delays ")),
+            (("X393_MCNTRL_DQ_IDLY0",   c, vrlg.LD_DLY_LANE0_IDELAY +    ba,     1, z7,   "x393_dly", "rw",    "Lane0 DQ input delays ")),
+            (("X393_MCNTRL_DQ_IDLY1",   c, vrlg.LD_DLY_LANE1_IDELAY +    ba,     1, z7,   "x393_dly", "rw",    "Lane1 DQ input delays ")),
+            (("X393_MCNTRL_DQS_ODLY0",  c, vrlg.LD_DLY_LANE0_ODELAY +    ba + 8, 0, None, "x393_dly", "rw",    "Lane0 DQS output delay ")),
+            (("X393_MCNTRL_DQS_ODLY1",  c, vrlg.LD_DLY_LANE1_ODELAY +    ba + 8, 0, None, "x393_dly", "rw",    "Lane1 DQS output delay ")),
+            (("X393_MCNTRL_DQS_IDLY0",  c, vrlg.LD_DLY_LANE0_IDELAY +    ba + 8, 0, None, "x393_dly", "rw",    "Lane0 DQS input delay ")),
+            (("X393_MCNTRL_DQS_IDLY1",  c, vrlg.LD_DLY_LANE1_IDELAY +    ba + 8, 0, None, "x393_dly", "rw",    "Lane1 DQS input delay ")),
+            (("X393_MCNTRL_DM_ODLY0",   c, vrlg.LD_DLY_LANE0_ODELAY +    ba + 9, 0, None, "x393_dly", "rw",    "Lane0 DM output delay ")),
+            (("X393_MCNTRL_DM_ODLY1",   c, vrlg.LD_DLY_LANE1_ODELAY +    ba + 9, 0, None, "x393_dly", "rw",    "Lane1 DM output delay ")),
+            (("X393_MCNTRL_CMDA_ODLY",  c, vrlg.LD_DLY_CMDA +            ba,     1, z31,  "x393_dly", "rw",    "Address, bank and commands delays")),
+            (("X393_MCNTRL_CMDA_ODLY",  c, vrlg.LD_DLY_PHASE +           ba,     0, None, "x393_dly", "rw",    "Clock phase")),
+            (("X393_MCNTRL_DLY_SET",    c, vrlg.MCONTR_PHY_0BIT_ADDR +   vrlg.MCONTR_PHY_0BIT_DLY_SET +      ba, 0, None, "", "",             "Set all pre-programmed delays")),
+            (("X393_MCNTRL_WBUF_DLY",   c, vrlg.MCONTR_PHY_16BIT_ADDR +  vrlg.MCONTR_PHY_16BIT_WBUF_DELAY +  ba, 0, None, "x393_wbuf_dly", "rw", "Set write buffer delay")),
             ]        
         ba = vrlg.MCONTR_SENS_BASE
         ia = vrlg.MCONTR_SENS_INC
         c = "chn"
         sdefines +=[
             (('Write-only addresses to program memory channels for sensors  (chn = 0..3), memory channels 8..11',)),
-            (("X393_SENS_MCNTRL_SCANLINE_MODE",            c, vrlg.MCNTRL_SCANLINE_MODE +             ba, ia, z3, "x393_mcntrl_mode_scan_wo",             "Set mode register (write last after other channel registers are set)")),
-            (("X393_SENS_MCNTRL_SCANLINE_STATUS_CNTRL",    c, vrlg.MCNTRL_SCANLINE_STATUS_CNTRL +     ba, ia, z3, "x393_status_ctrl_wo",                  "Set status control register (status update mode)")),
-            (("X393_SENS_MCNTRL_SCANLINE_STARTADDR",       c, vrlg.MCNTRL_SCANLINE_STARTADDR +        ba, ia, z3, "x393_mcntrl_window_frame_sa_wo",       "Set frame start address")),
-            (("X393_SENS_MCNTRL_SCANLINE_FRAME_SIZE",      c, vrlg.MCNTRL_SCANLINE_FRAME_SIZE +       ba, ia, z3, "x393_mcntrl_window_frame_sa_inc_wo",   "Set frame size (address increment)")),
-            (("X393_SENS_MCNTRL_SCANLINE_FRAME_LAST",      c, vrlg.MCNTRL_SCANLINE_FRAME_LAST +       ba, ia, z3, "x393_mcntrl_window_last_frame_num_wo", "Set last frame number (number of frames in buffer minus 1)")),
-            (("X393_SENS_MCNTRL_SCANLINE_FRAME_FULL_WIDTH",c, vrlg.MCNTRL_SCANLINE_FRAME_FULL_WIDTH + ba, ia, z3, "x393_mcntrl_window_full_width_wo",     "Set frame full(padded) width")),
-            (("X393_SENS_MCNTRL_SCANLINE_WINDOW_WH",       c, vrlg.MCNTRL_SCANLINE_WINDOW_WH +        ba, ia, z3, "x393_mcntrl_window_width_height_wo",   "Set frame window size")),
-            (("X393_SENS_MCNTRL_SCANLINE_WINDOW_X0Y0",     c, vrlg.MCNTRL_SCANLINE_WINDOW_X0Y0 +      ba, ia, z3, "x393_mcntrl_window_left_top_wo",       "Set frame position")),
-            (("X393_SENS_MCNTRL_SCANLINE_STARTXY",         c, vrlg.MCNTRL_SCANLINE_WINDOW_STARTXY +   ba, ia, z3, "x393_mcntrl_window_startx_starty_wo",  "Set startXY register"))]
+            (("X393_SENS_MCNTRL_SCANLINE_MODE",            c, vrlg.MCNTRL_SCANLINE_MODE +             ba, ia, z3, "x393_mcntrl_mode_scan", "wo",             "Set mode register (write last after other channel registers are set)")),
+            (("X393_SENS_MCNTRL_SCANLINE_STATUS_CNTRL",    c, vrlg.MCNTRL_SCANLINE_STATUS_CNTRL +     ba, ia, z3, "x393_status_ctrl", "wo",                  "Set status control register (status update mode)")),
+            (("X393_SENS_MCNTRL_SCANLINE_STARTADDR",       c, vrlg.MCNTRL_SCANLINE_STARTADDR +        ba, ia, z3, "x393_mcntrl_window_frame_sa", "wo",       "Set frame start address")),
+            (("X393_SENS_MCNTRL_SCANLINE_FRAME_SIZE",      c, vrlg.MCNTRL_SCANLINE_FRAME_SIZE +       ba, ia, z3, "x393_mcntrl_window_frame_sa_inc", "wo",   "Set frame size (address increment)")),
+            (("X393_SENS_MCNTRL_SCANLINE_FRAME_LAST",      c, vrlg.MCNTRL_SCANLINE_FRAME_LAST +       ba, ia, z3, "x393_mcntrl_window_last_frame_num", "wo", "Set last frame number (number of frames in buffer minus 1)")),
+            (("X393_SENS_MCNTRL_SCANLINE_FRAME_FULL_WIDTH",c, vrlg.MCNTRL_SCANLINE_FRAME_FULL_WIDTH + ba, ia, z3, "x393_mcntrl_window_full_width", "wo",     "Set frame full(padded) width")),
+            (("X393_SENS_MCNTRL_SCANLINE_WINDOW_WH",       c, vrlg.MCNTRL_SCANLINE_WINDOW_WH +        ba, ia, z3, "x393_mcntrl_window_width_height", "wo",   "Set frame window size")),
+            (("X393_SENS_MCNTRL_SCANLINE_WINDOW_X0Y0",     c, vrlg.MCNTRL_SCANLINE_WINDOW_X0Y0 +      ba, ia, z3, "x393_mcntrl_window_left_top", "wo",       "Set frame position")),
+            (("X393_SENS_MCNTRL_SCANLINE_STARTXY",         c, vrlg.MCNTRL_SCANLINE_WINDOW_STARTXY +   ba, ia, z3, "x393_mcntrl_window_startx_starty", "wo",  "Set startXY register"))]
         ba = vrlg.MCONTR_CMPRS_BASE
         ia = vrlg.MCONTR_CMPRS_INC
         sdefines +=[
             (('Write-only addresses to program memory channels for compressors (chn = 0..3), memory channels 12..15',)),
-            (("X393_SENS_MCNTRL_TILED_MODE",               c, vrlg.MCNTRL_TILED_MODE +                ba, ia, z3, "x393_mcntrl_mode_scan_wo",             "Set mode register (write last after other channel registers are set)")),
-            (("X393_SENS_MCNTRL_TILED_STATUS_CNTRL",       c, vrlg.MCNTRL_TILED_STATUS_CNTRL +        ba, ia, z3, "x393_status_ctrl_wo",                  "Set status control register (status update mode)")),
-            (("X393_SENS_MCNTRL_TILED_STARTADDR",          c, vrlg.MCNTRL_TILED_STARTADDR +           ba, ia, z3, "x393_mcntrl_window_frame_sa_wo",       "Set frame start address")),
-            (("X393_SENS_MCNTRL_TILED_FRAME_SIZE",         c, vrlg.MCNTRL_TILED_FRAME_SIZE +          ba, ia, z3, "x393_mcntrl_window_frame_sa_inc_wo",   "Set frame size (address increment)")),
-            (("X393_SENS_MCNTRL_TILED_FRAME_LAST",         c, vrlg.MCNTRL_TILED_FRAME_LAST +          ba, ia, z3, "x393_mcntrl_window_last_frame_num_wo", "Set last frame number (number of frames in buffer minus 1)")),
-            (("X393_SENS_MCNTRL_TILED_FRAME_FULL_WIDTH",   c, vrlg.MCNTRL_TILED_FRAME_FULL_WIDTH +    ba, ia, z3, "x393_mcntrl_window_full_width_wo",     "Set frame full(padded) width")),
-            (("X393_SENS_MCNTRL_TILED_WINDOW_WH",          c, vrlg.MCNTRL_TILED_WINDOW_WH +           ba, ia, z3, "x393_mcntrl_window_width_height_wo",   "Set frame window size")),
-            (("X393_SENS_MCNTRL_TILED_WINDOW_X0Y0",        c, vrlg.MCNTRL_TILED_WINDOW_X0Y0 +         ba, ia, z3, "x393_mcntrl_window_left_top_wo",       "Set frame position")),
-            (("X393_SENS_MCNTRL_TILED_STARTXY",            c, vrlg.MCNTRL_TILED_WINDOW_STARTXY +      ba, ia, z3, "x393_mcntrl_window_startx_starty_wo",  "Set startXY register")),
-            (("X393_SENS_MCNTRL_TILED_TILE_WHS",           c, vrlg.MCNTRL_TILED_TILE_WHS +            ba, ia, z3, "x393_mcntrl_window_tile_whs_wo",       "Set tile size/step (tiled mode only)"))]
+            (("X393_SENS_MCNTRL_TILED_MODE",               c, vrlg.MCNTRL_TILED_MODE +                ba, ia, z3, "x393_mcntrl_mode_scan", "wo",             "Set mode register (write last after other channel registers are set)")),
+            (("X393_SENS_MCNTRL_TILED_STATUS_CNTRL",       c, vrlg.MCNTRL_TILED_STATUS_CNTRL +        ba, ia, z3, "x393_status_ctrl", "wo",                  "Set status control register (status update mode)")),
+            (("X393_SENS_MCNTRL_TILED_STARTADDR",          c, vrlg.MCNTRL_TILED_STARTADDR +           ba, ia, z3, "x393_mcntrl_window_frame_sa", "wo",       "Set frame start address")),
+            (("X393_SENS_MCNTRL_TILED_FRAME_SIZE",         c, vrlg.MCNTRL_TILED_FRAME_SIZE +          ba, ia, z3, "x393_mcntrl_window_frame_sa_inc", "wo",   "Set frame size (address increment)")),
+            (("X393_SENS_MCNTRL_TILED_FRAME_LAST",         c, vrlg.MCNTRL_TILED_FRAME_LAST +          ba, ia, z3, "x393_mcntrl_window_last_frame_num", "wo", "Set last frame number (number of frames in buffer minus 1)")),
+            (("X393_SENS_MCNTRL_TILED_FRAME_FULL_WIDTH",   c, vrlg.MCNTRL_TILED_FRAME_FULL_WIDTH +    ba, ia, z3, "x393_mcntrl_window_full_width", "wo",     "Set frame full(padded) width")),
+            (("X393_SENS_MCNTRL_TILED_WINDOW_WH",          c, vrlg.MCNTRL_TILED_WINDOW_WH +           ba, ia, z3, "x393_mcntrl_window_width_height", "wo",   "Set frame window size")),
+            (("X393_SENS_MCNTRL_TILED_WINDOW_X0Y0",        c, vrlg.MCNTRL_TILED_WINDOW_X0Y0 +         ba, ia, z3, "x393_mcntrl_window_left_top", "wo",       "Set frame position")),
+            (("X393_SENS_MCNTRL_TILED_STARTXY",            c, vrlg.MCNTRL_TILED_WINDOW_STARTXY +      ba, ia, z3, "x393_mcntrl_window_startx_starty", "wo",  "Set startXY register")),
+            (("X393_SENS_MCNTRL_TILED_TILE_WHS",           c, vrlg.MCNTRL_TILED_TILE_WHS +            ba, ia, z3, "x393_mcntrl_window_tile_whs", "wo",       "Set tile size/step (tiled mode only)"))]
 
         ba = vrlg.MCNTRL_SCANLINE_CHN1_ADDR
         ia = 0
         c =  ""
         sdefines +=[
             (('Write-only addresses to program memory channel for membridge, memory channel 1',)),
-            (("X393_MEMBRIDGE_SCANLINE_MODE",            c, vrlg.MCNTRL_SCANLINE_MODE +             ba, 0, None, "x393_mcntrl_mode_scan_wo",             "Set mode register (write last after other channel registers are set)")),
-            (("X393_MEMBRIDGE_SCANLINE_STATUS_CNTRL",    c, vrlg.MCNTRL_SCANLINE_STATUS_CNTRL +     ba, 0, None, "x393_status_ctrl_wo",                  "Set status control register (status update mode)")),
-            (("X393_MEMBRIDGE_SCANLINE_STARTADDR",       c, vrlg.MCNTRL_SCANLINE_STARTADDR +        ba, 0, None, "x393_mcntrl_window_frame_sa_wo",       "Set frame start address")),
-            (("X393_MEMBRIDGE_SCANLINE_FRAME_SIZE",      c, vrlg.MCNTRL_SCANLINE_FRAME_SIZE +       ba, 0, None, "x393_mcntrl_window_frame_sa_inc_wo",   "Set frame size (address increment)")),
-            (("X393_MEMBRIDGE_SCANLINE_FRAME_LAST",      c, vrlg.MCNTRL_SCANLINE_FRAME_LAST +       ba, 0, None, "x393_mcntrl_window_last_frame_num_wo", "Set last frame number (number of frames in buffer minus 1)")),
-            (("X393_MEMBRIDGE_SCANLINE_FRAME_FULL_WIDTH",c, vrlg.MCNTRL_SCANLINE_FRAME_FULL_WIDTH + ba, 0, None, "x393_mcntrl_window_full_width_wo",     "Set frame full(padded) width")),
-            (("X393_MEMBRIDGE_SCANLINE_WINDOW_WH",       c, vrlg.MCNTRL_SCANLINE_WINDOW_WH +        ba, 0, None, "x393_mcntrl_window_width_height_wo",   "Set frame window size")),
-            (("X393_MEMBRIDGE_SCANLINE_WINDOW_X0Y0",     c, vrlg.MCNTRL_SCANLINE_WINDOW_X0Y0 +      ba, 0, None, "x393_mcntrl_window_left_top_wo",       "Set frame position")),
-            (("X393_MEMBRIDGE_SCANLINE_STARTXY",         c, vrlg.MCNTRL_SCANLINE_WINDOW_STARTXY +   ba, 0, None, "x393_mcntrl_window_startx_starty_wo",  "Set startXY register"))]
+            (("X393_MEMBRIDGE_SCANLINE_MODE",            c, vrlg.MCNTRL_SCANLINE_MODE +             ba, 0, None, "x393_mcntrl_mode_scan", "wo",             "Set mode register (write last after other channel registers are set)")),
+            (("X393_MEMBRIDGE_SCANLINE_STATUS_CNTRL",    c, vrlg.MCNTRL_SCANLINE_STATUS_CNTRL +     ba, 0, None, "x393_status_ctrl", "wo",                  "Set status control register (status update mode)")),
+            (("X393_MEMBRIDGE_SCANLINE_STARTADDR",       c, vrlg.MCNTRL_SCANLINE_STARTADDR +        ba, 0, None, "x393_mcntrl_window_frame_sa", "wo",       "Set frame start address")),
+            (("X393_MEMBRIDGE_SCANLINE_FRAME_SIZE",      c, vrlg.MCNTRL_SCANLINE_FRAME_SIZE +       ba, 0, None, "x393_mcntrl_window_frame_sa_inc", "wo",   "Set frame size (address increment)")),
+            (("X393_MEMBRIDGE_SCANLINE_FRAME_LAST",      c, vrlg.MCNTRL_SCANLINE_FRAME_LAST +       ba, 0, None, "x393_mcntrl_window_last_frame_num", "wo", "Set last frame number (number of frames in buffer minus 1)")),
+            (("X393_MEMBRIDGE_SCANLINE_FRAME_FULL_WIDTH",c, vrlg.MCNTRL_SCANLINE_FRAME_FULL_WIDTH + ba, 0, None, "x393_mcntrl_window_full_width", "wo",     "Set frame full(padded) width")),
+            (("X393_MEMBRIDGE_SCANLINE_WINDOW_WH",       c, vrlg.MCNTRL_SCANLINE_WINDOW_WH +        ba, 0, None, "x393_mcntrl_window_width_height", "wo",   "Set frame window size")),
+            (("X393_MEMBRIDGE_SCANLINE_WINDOW_X0Y0",     c, vrlg.MCNTRL_SCANLINE_WINDOW_X0Y0 +      ba, 0, None, "x393_mcntrl_window_left_top", "wo",       "Set frame position")),
+            (("X393_MEMBRIDGE_SCANLINE_STARTXY",         c, vrlg.MCNTRL_SCANLINE_WINDOW_STARTXY +   ba, 0, None, "x393_mcntrl_window_startx_starty", "wo",  "Set startXY register"))]
         
         ba = vrlg.MEMBRIDGE_ADDR
         ia = 0
         c =  ""
         sdefines +=[
-            (("X393_MEMBRIDGE_CTRL",                     c, vrlg.MEMBRIDGE_CTRL +                  ba, 0, None, "x393_membridge_cmd_wo",                "Issue membridge command")),
-            (("X393_MEMBRIDGE_STATUS_CNTRL",             c, vrlg.MEMBRIDGE_STATUS_CNTRL +          ba, 0, None, "x393_status_ctrl_wo",                  "Set membridge status control register")),
-            (("X393_MEMBRIDGE_LO_ADDR64",                c, vrlg.MEMBRIDGE_LO_ADDR64 +             ba, 0, None, "u29_wo",                               "start address of the system memory range in QWORDs (4 LSBs==0)")),
-            (("X393_MEMBRIDGE_SIZE64",                   c, vrlg.MEMBRIDGE_SIZE64 +                ba, 0, None, "u29_wo",                               "size of the system memory range in QWORDs (4 LSBs==0), rolls over")),
-            (("X393_MEMBRIDGE_START64",                  c, vrlg.MEMBRIDGE_START64 +               ba, 0, None, "u29_wo",                               "start of transfer offset to system memory range in QWORDs (4 LSBs==0)")),
-            (("X393_MEMBRIDGE_LEN64",                    c, vrlg.MEMBRIDGE_LEN64 +                 ba, 0, None, "u29_wo",                               "Full length of transfer in QWORDs")),
-            (("X393_MEMBRIDGE_WIDTH64",                  c, vrlg.MEMBRIDGE_WIDTH64 +               ba, 0, None, "u29_wo",                               "Frame width in QWORDs (last xfer in each line may be partial)")),
-            (("X393_MEMBRIDGE_MODE",                     c, vrlg.MEMBRIDGE_MODE +                  ba, 0, None, "x393_membridge_mode_wo",               "AXI cache mode"))]
+            (("X393_MEMBRIDGE_CTRL",                     c, vrlg.MEMBRIDGE_CTRL +                  ba, 0, None, "x393_membridge_cmd", "wo",                "Issue membridge command")),
+            (("X393_MEMBRIDGE_STATUS_CNTRL",             c, vrlg.MEMBRIDGE_STATUS_CNTRL +          ba, 0, None, "x393_status_ctrl", "wo",                  "Set membridge status control register")),
+            (("X393_MEMBRIDGE_LO_ADDR64",                c, vrlg.MEMBRIDGE_LO_ADDR64 +             ba, 0, None, "u29", "wo",                               "start address of the system memory range in QWORDs (4 LSBs==0)")),
+            (("X393_MEMBRIDGE_SIZE64",                   c, vrlg.MEMBRIDGE_SIZE64 +                ba, 0, None, "u29", "wo",                               "size of the system memory range in QWORDs (4 LSBs==0), rolls over")),
+            (("X393_MEMBRIDGE_START64",                  c, vrlg.MEMBRIDGE_START64 +               ba, 0, None, "u29", "wo",                               "start of transfer offset to system memory range in QWORDs (4 LSBs==0)")),
+            (("X393_MEMBRIDGE_LEN64",                    c, vrlg.MEMBRIDGE_LEN64 +                 ba, 0, None, "u29", "wo",                               "Full length of transfer in QWORDs")),
+            (("X393_MEMBRIDGE_WIDTH64",                  c, vrlg.MEMBRIDGE_WIDTH64 +               ba, 0, None, "u29", "wo",                               "Frame width in QWORDs (last xfer in each line may be partial)")),
+            (("X393_MEMBRIDGE_MODE",                     c, vrlg.MEMBRIDGE_MODE +                  ba, 0, None, "x393_membridge_mode", "wo",               "AXI cache mode"))]
 
         ba = vrlg.MCNTRL_PS_ADDR
         ia = 0
         c =  ""
         sdefines +=[
             (('Write-only addresses to PS PIO (Software generated DDR3 memory access sequences)',)),
-            (("X393_MCNTRL_PS_EN_RST",                   c, vrlg.MCNTRL_PS_EN_RST +                ba, 0, None, "x393_ps_pio_en_rst_wo",                 "Set PS PIO enable and reset")),
-            (("X393_MCNTRL_PS_CMD",                      c, vrlg.MCNTRL_PS_CMD +                   ba, 0, None, "x393_ps_pio_cmd_wo",                    "Set PS PIO commands")),
-            (("X393_MCNTRL_PS_STATUS_CNTRL",             c, vrlg.MCNTRL_PS_STATUS_CNTRL +          ba, 0, None, "x393_status_ctrl_wo",                   "Set PS PIO status control register (status update mode)"))]
+            (("X393_MCNTRL_PS_EN_RST",                   c, vrlg.MCNTRL_PS_EN_RST +                ba, 0, None, "x393_ps_pio_en_rst", "wo",                 "Set PS PIO enable and reset")),
+            (("X393_MCNTRL_PS_CMD",                      c, vrlg.MCNTRL_PS_CMD +                   ba, 0, None, "x393_ps_pio_cmd", "wo",                    "Set PS PIO commands")),
+            (("X393_MCNTRL_PS_STATUS_CNTRL",             c, vrlg.MCNTRL_PS_STATUS_CNTRL +          ba, 0, None, "x393_status_ctrl", "wo",                   "Set PS PIO status control register (status update mode)"))]
 
         #other program status (move to other places?)
         ba = vrlg.MCONTR_PHY_16BIT_ADDR
@@ -426,21 +590,21 @@ class X393ExportC(object):
         c =  ""
         sdefines +=[
             (('Write-only addresses to to program status report mode for memory controller',)),
-            (("X393_MCONTR_PHY_STATUS_CNTRL",            c, vrlg.MCONTR_PHY_STATUS_CNTRL +         ba, 0, None, "x393_status_ctrl_wo",                    "Set status control register (status update mode)")),
-            (("X393_MCONTR_TOP_16BIT_STATUS_CNTRL",      c, vrlg.MCONTR_TOP_16BIT_STATUS_CNTRL +   ba, 0, None, "x393_status_ctrl_wo",                    "Set status control register (status update mode)")),
+            (("X393_MCONTR_PHY_STATUS_CNTRL",            c, vrlg.MCONTR_PHY_STATUS_CNTRL +         ba, 0, None, "x393_status_ctrl", "wo",                    "Set status control register (status update mode)")),
+            (("X393_MCONTR_TOP_16BIT_STATUS_CNTRL",      c, vrlg.MCONTR_TOP_16BIT_STATUS_CNTRL +   ba, 0, None, "x393_status_ctrl", "wo",                    "Set status control register (status update mode)")),
         ]
         ba = vrlg.MCNTRL_TEST01_ADDR
         ia = 0
         c =  ""
         sdefines +=[
             (('Write-only addresses to to program status report mode for test channels',)),
-            (("X393_MCNTRL_TEST01_CHN2_STATUS_CNTRL",    c, vrlg.MCNTRL_TEST01_CHN2_STATUS_CNTRL + ba, 0, None, "x393_status_ctrl_wo",                    "Set status control register (status update mode)")),
-            (("X393_MCNTRL_TEST01_CHN3_STATUS_CNTRL",    c, vrlg.MCNTRL_TEST01_CHN3_STATUS_CNTRL + ba, 0, None, "x393_status_ctrl_wo",                    "Set status control register (status update mode)")),
-            (("X393_MCNTRL_TEST01_CHN4_STATUS_CNTRL",    c, vrlg.MCNTRL_TEST01_CHN4_STATUS_CNTRL + ba, 0, None, "x393_status_ctrl_wo",                    "Set status control register (status update mode)")),
+            (("X393_MCNTRL_TEST01_CHN2_STATUS_CNTRL",    c, vrlg.MCNTRL_TEST01_CHN2_STATUS_CNTRL + ba, 0, None, "x393_status_ctrl", "wo",                    "Set status control register (status update mode)")),
+            (("X393_MCNTRL_TEST01_CHN3_STATUS_CNTRL",    c, vrlg.MCNTRL_TEST01_CHN3_STATUS_CNTRL + ba, 0, None, "x393_status_ctrl", "wo",                    "Set status control register (status update mode)")),
+            (("X393_MCNTRL_TEST01_CHN4_STATUS_CNTRL",    c, vrlg.MCNTRL_TEST01_CHN4_STATUS_CNTRL + ba, 0, None, "x393_status_ctrl", "wo",                    "Set status control register (status update mode)")),
             (('Write-only addresses for test channels commands',)),
-            (("X393_MCNTRL_TEST01_CHN2_MODE",            c, vrlg.MCNTRL_TEST01_CHN2_MODE +         ba, 0, None, "x393_test01_mode_wo",                    "Set command for test01 channel 2")),
-            (("X393_MCNTRL_TEST01_CHN3_MODE",            c, vrlg.MCNTRL_TEST01_CHN3_MODE +         ba, 0, None, "x393_test01_mode_wo",                    "Set command for test01 channel 3")),
-            (("X393_MCNTRL_TEST01_CHN4_MODE",            c, vrlg.MCNTRL_TEST01_CHN4_MODE +         ba, 0, None, "x393_test01_mode_wo",                    "Set command for test01 channel 4")),
+            (("X393_MCNTRL_TEST01_CHN2_MODE",            c, vrlg.MCNTRL_TEST01_CHN2_MODE +         ba, 0, None, "x393_test01_mode", "wo",                    "Set command for test01 channel 2")),
+            (("X393_MCNTRL_TEST01_CHN3_MODE",            c, vrlg.MCNTRL_TEST01_CHN3_MODE +         ba, 0, None, "x393_test01_mode", "wo",                    "Set command for test01 channel 3")),
+            (("X393_MCNTRL_TEST01_CHN4_MODE",            c, vrlg.MCNTRL_TEST01_CHN4_MODE +         ba, 0, None, "x393_test01_mode", "wo",                    "Set command for test01 channel 4")),
             
 ]
         #read_all_status
@@ -449,17 +613,17 @@ class X393ExportC(object):
         c =  ""
         sdefines +=[
             (('Read-only addresses for status information',)),
-            (("X393_MCONTR_PHY_STATUS",                  c, vrlg.MCONTR_PHY_STATUS_REG_ADDR + ba, 0, None, "x393_status_mcntrl_phy_ro",                   "Status register for MCNTRL PHY")),
-            (("X393_MCONTR_TOP_STATUS",                  c, vrlg.MCONTR_TOP_STATUS_REG_ADDR + ba, 0, None, "x393_status_mcntrl_top_ro",                   "Status register for MCNTRL requests")),
-            (("X393_MCNTRL_PS_STATUS",                   c, vrlg.MCNTRL_PS_STATUS_REG_ADDR +  ba, 0, None, "x393_status_mcntrl_ps_ro",                    "Status register for MCNTRL software R/W")),
-            (("X393_MCNTRL_CHN1_STATUS",                 c, vrlg.MCNTRL_SCANLINE_STATUS_REG_CHN1_ADDR+ba,0,None, "x393_status_mcntrl_lintile_ro",         "Status register for MCNTRL CHN1 (membridge)")),
-            (("X393_MCNTRL_CHN3_STATUS",                 c, vrlg.MCNTRL_SCANLINE_STATUS_REG_CHN3_ADDR+ba,0,None, "x393_status_mcntrl_lintile_ro",         "Status register for MCNTRL CHN3 (scanline)")),
-            (("X393_MCNTRL_CHN2_STATUS",                 c, vrlg.MCNTRL_TILED_STATUS_REG_CHN2_ADDR+ba,0,None,    "x393_status_mcntrl_lintile_ro",         "Status register for MCNTRL CHN2 (tiled)")),
-            (("X393_MCNTRL_CHN4_STATUS",                 c, vrlg.MCNTRL_TILED_STATUS_REG_CHN4_ADDR+ba,0,None,    "x393_status_mcntrl_lintile_ro",         "Status register for MCNTRL CHN4 (tiled)")),
-            (("X393_TEST01_CHN2_STATUS",                 c, vrlg.MCNTRL_TEST01_STATUS_REG_CHN2_ADDR+ba,0,None,   "x393_status_mcntrl_testchn_ro",         "Status register for test channel 2")),
-            (("X393_TEST01_CHN3_STATUS",                 c, vrlg.MCNTRL_TEST01_STATUS_REG_CHN3_ADDR+ba,0,None,   "x393_status_mcntrl_testchn_ro",         "Status register for test channel 3")),
-            (("X393_TEST01_CHN4_STATUS",                 c, vrlg.MCNTRL_TEST01_STATUS_REG_CHN4_ADDR+ba,0,None,   "x393_status_mcntrl_testchn_ro",         "Status register for test channel 4")),
-            (("X393_MEMBRIDGE_STATUS",                   c, vrlg.MEMBRIDGE_STATUS_REG+ba, 0, None,         "x393_status_membridge_ro",                    "Status register for membridge")),
+            (("X393_MCONTR_PHY_STATUS",                  c, vrlg.MCONTR_PHY_STATUS_REG_ADDR + ba, 0, None, "x393_status_mcntrl_phy", "ro",                   "Status register for MCNTRL PHY")),
+            (("X393_MCONTR_TOP_STATUS",                  c, vrlg.MCONTR_TOP_STATUS_REG_ADDR + ba, 0, None, "x393_status_mcntrl_top", "ro",                   "Status register for MCNTRL requests")),
+            (("X393_MCNTRL_PS_STATUS",                   c, vrlg.MCNTRL_PS_STATUS_REG_ADDR +  ba, 0, None, "x393_status_mcntrl_ps", "ro",                    "Status register for MCNTRL software R/W")),
+            (("X393_MCNTRL_CHN1_STATUS",                 c, vrlg.MCNTRL_SCANLINE_STATUS_REG_CHN1_ADDR+ba,0,None, "x393_status_mcntrl_lintile", "ro",         "Status register for MCNTRL CHN1 (membridge)")),
+            (("X393_MCNTRL_CHN3_STATUS",                 c, vrlg.MCNTRL_SCANLINE_STATUS_REG_CHN3_ADDR+ba,0,None, "x393_status_mcntrl_lintile", "ro",         "Status register for MCNTRL CHN3 (scanline)")),
+            (("X393_MCNTRL_CHN2_STATUS",                 c, vrlg.MCNTRL_TILED_STATUS_REG_CHN2_ADDR+ba,0,None,    "x393_status_mcntrl_lintile", "ro",         "Status register for MCNTRL CHN2 (tiled)")),
+            (("X393_MCNTRL_CHN4_STATUS",                 c, vrlg.MCNTRL_TILED_STATUS_REG_CHN4_ADDR+ba,0,None,    "x393_status_mcntrl_lintile", "ro",         "Status register for MCNTRL CHN4 (tiled)")),
+            (("X393_TEST01_CHN2_STATUS",                 c, vrlg.MCNTRL_TEST01_STATUS_REG_CHN2_ADDR+ba,0,None,   "x393_status_mcntrl_testchn", "ro",         "Status register for test channel 2")),
+            (("X393_TEST01_CHN3_STATUS",                 c, vrlg.MCNTRL_TEST01_STATUS_REG_CHN3_ADDR+ba,0,None,   "x393_status_mcntrl_testchn", "ro",         "Status register for test channel 3")),
+            (("X393_TEST01_CHN4_STATUS",                 c, vrlg.MCNTRL_TEST01_STATUS_REG_CHN4_ADDR+ba,0,None,   "x393_status_mcntrl_testchn", "ro",         "Status register for test channel 4")),
+            (("X393_MEMBRIDGE_STATUS",                   c, vrlg.MEMBRIDGE_STATUS_REG+ba, 0, None,         "x393_status_membridge", "ro",                    "Status register for membridge")),
             ]
 
         #Registers to control sensor channels        
@@ -468,16 +632,16 @@ class X393ExportC(object):
         c =  "sens_num"
         sdefines +=[
             (('Write-only control of the sensor channels',)),
-            (("X393_SENS_MODE",                         c, vrlg.SENSOR_CTRL_RADDR +                        ba, ia, z3, "x393_sens_mode_wo",               "Write sensor channel mode")),
-            (("X393_SENSI2C_CTRL",                      c, vrlg.SENSI2C_CTRL_RADDR + vrlg.SENSI2C_CTRL +   ba, ia, z3, "x393_i2c_ctltbl_wo",              "Control sensor i2c, write i2c LUT")),
-            (("X393_SENSI2C_STATUS",                    c, vrlg.SENSI2C_CTRL_RADDR + vrlg.SENSI2C_STATUS + ba, ia, z3, "x393_status_ctrl_wo",             "Setup sensor i2c status report mode")),
-            (("X393_SENS_SYNC_MULT",                    c, vrlg.SENS_SYNC_RADDR + vrlg.SENS_SYNC_MULT+     ba, ia, z3, "x393_sens_sync_mult_wo",          "Configure frames combining")),
-            (("X393_SENS_SYNC_LATE",                    c, vrlg.SENS_SYNC_RADDR + vrlg.SENS_SYNC_LATE+     ba, ia, z3, "x393_sens_sync_late_wo",          "Configure frame sync delay")),
-            (("X393_SENSIO_CTRL",                       c, vrlg.SENSIO_RADDR + vrlg.SENSIO_CTRL+           ba, ia, z3, "x393_sensio_ctl_wo",              "Configure sensor I/O port")),
-            (("X393_SENSIO_STATUS_CNTRL",               c, vrlg.SENSIO_RADDR + vrlg.SENSIO_STATUS+         ba, ia, z3, "x393_status_ctrl_wo",             "Set status control for SENSIO module")),
-            (("X393_SENSIO_JTAG",                       c, vrlg.SENSIO_RADDR + vrlg.SENSIO_JTAG+           ba, ia, z3, "x393_sensio_jpag_wo",             "Programming interface for multiplexer FPGA (with X393_SENSIO_STATUS)")),
-            (("X393_SENSIO_WIDTH",                      c, vrlg.SENSIO_RADDR + vrlg.SENSIO_WIDTH+          ba, ia, z3, "x393_sensio_width_rw",            "Set sensor line in pixels (0 - use line sync from the sensor)")),
-            (("X393_SENSIO_DELAYS",                     c, vrlg.SENSIO_RADDR + vrlg.SENSIO_DELAYS+         ba, ia, z3, "x393_sensio_dly_rw",              "Sensor port input delays (uses 4 DWORDs)")),
+            (("X393_SENS_MODE",                         c, vrlg.SENSOR_CTRL_RADDR +                        ba, ia, z3, "x393_sens_mode", "wo",               "Write sensor channel mode")),
+            (("X393_SENSI2C_CTRL",                      c, vrlg.SENSI2C_CTRL_RADDR + vrlg.SENSI2C_CTRL +   ba, ia, z3, "x393_i2c_ctltbl", "wo",              "Control sensor i2c, write i2c LUT")),
+            (("X393_SENSI2C_STATUS",                    c, vrlg.SENSI2C_CTRL_RADDR + vrlg.SENSI2C_STATUS + ba, ia, z3, "x393_status_ctrl", "wo",             "Setup sensor i2c status report mode")),
+            (("X393_SENS_SYNC_MULT",                    c, vrlg.SENS_SYNC_RADDR + vrlg.SENS_SYNC_MULT+     ba, ia, z3, "x393_sens_sync_mult", "wo",          "Configure frames combining")),
+            (("X393_SENS_SYNC_LATE",                    c, vrlg.SENS_SYNC_RADDR + vrlg.SENS_SYNC_LATE+     ba, ia, z3, "x393_sens_sync_late", "wo",          "Configure frame sync delay")),
+            (("X393_SENSIO_CTRL",                       c, vrlg.SENSIO_RADDR + vrlg.SENSIO_CTRL+           ba, ia, z3, "x393_sensio_ctl", "wo",              "Configure sensor I/O port")),
+            (("X393_SENSIO_STATUS_CNTRL",               c, vrlg.SENSIO_RADDR + vrlg.SENSIO_STATUS+         ba, ia, z3, "x393_status_ctrl", "wo",             "Set status control for SENSIO module")),
+            (("X393_SENSIO_JTAG",                       c, vrlg.SENSIO_RADDR + vrlg.SENSIO_JTAG+           ba, ia, z3, "x393_sensio_jpag", "wo",             "Programming interface for multiplexer FPGA (with X393_SENSIO_STATUS)")),
+            (("X393_SENSIO_WIDTH",                      c, vrlg.SENSIO_RADDR + vrlg.SENSIO_WIDTH+          ba, ia, z3, "x393_sensio_width", "rw",            "Set sensor line in pixels (0 - use line sync from the sensor)")),
+            (("X393_SENSIO_DELAYS",                     c, vrlg.SENSIO_RADDR + vrlg.SENSIO_DELAYS+         ba, ia, z3, "x393_sensio_dly", "rw",              "Sensor port input delays (uses 4 DWORDs)")),
             ]
         #Registers to control sensor channels        
         ba = vrlg.SENSOR_GROUP_ADDR
@@ -498,8 +662,8 @@ class X393ExportC(object):
 // 2 - I2C register read: index page, slave address (8-bit, with lower bit 0) and one or 2 address bytes (as programmed
 //     in the table. Slave address is always in byte 2 (bits 23:16), byte1 (high register address) is skipped if
 //     read address in the table is programmed to be a single-byte one''',)),
-            (("X393_SENSI2C_ABS",                       c, vrlg.SENSI2C_ABS_RADDR +                        ba, ia, z3, "u32*",                            "Write sensor i2c sequencer")),
-            (("X393_SENSI2C_REL",                       c, vrlg.SENSI2C_REL_RADDR +                        ba, ia, z3, "u32*",                            "Write sensor i2c sequencer")),
+            (("X393_SENSI2C_ABS",                       c, vrlg.SENSI2C_ABS_RADDR +                        ba, ia, z3, "u32*", "wo",                         "Write sensor i2c sequencer")),
+            (("X393_SENSI2C_REL",                       c, vrlg.SENSI2C_REL_RADDR +                        ba, ia, z3, "u32*", "wo",                         "Write sensor i2c sequencer")),
 ]
         
         #Lens vignetting correction
@@ -508,42 +672,42 @@ class X393ExportC(object):
         c =  "sens_num"
         sdefines +=[
             (('Lens vignetting correction (for each sub-frame separately)',)),
-            (("X393_LENS_HEIGHT0_M1",                   c, 0 +                                            ba, ia, z3, "x393_lens_height_m1_rw",           "Subframe 0 height minus 1")),
-            (("X393_LENS_HEIGHT1_M1",                   c, 1 +                                            ba, ia, z3, "x393_lens_height_m1_rw",           "Subframe 1 height minus 1")),
-            (("X393_LENS_HEIGHT2_M1",                   c, 2 +                                            ba, ia, z3, "x393_lens_height_m1_rw",           "Subframe 2 height minus 1")),
-            (("X393_LENS_CORR_CNH_ADDR_DATA",           c, vrlg.SENS_LENS_COEFF +                         ba, ia, z3, "x393_lens_corr_wo",                "Combined address/data to write lens vignetting correction coefficients")),
+            (("X393_LENS_HEIGHT0_M1",                   c, 0 +                                            ba, ia, z3, "x393_lens_height_m1", "rw",           "Subframe 0 height minus 1")),
+            (("X393_LENS_HEIGHT1_M1",                   c, 1 +                                            ba, ia, z3, "x393_lens_height_m1", "rw",           "Subframe 1 height minus 1")),
+            (("X393_LENS_HEIGHT2_M1",                   c, 2 +                                            ba, ia, z3, "x393_lens_height_m1", "rw",           "Subframe 2 height minus 1")),
+            (("X393_LENS_CORR_CNH_ADDR_DATA",           c, vrlg.SENS_LENS_COEFF +                         ba, ia, z3, "x393_lens_corr", "wo",                "Combined address/data to write lens vignetting correction coefficients")),
             (('Lens vignetting coefficient addresses - use with x393_lens_corr_wo_t (X393_LENS_CORR_CNH_ADDR_DATA)',)),
-            (("X393_LENS_AX",             "", vrlg.SENS_LENS_AX ,             0, None, None,    "Address of correction parameter Ax")),
-            (("X393_LENS_AX_MASK",        "", vrlg.SENS_LENS_AX_MASK ,        0, None, None,    "Correction parameter Ax mask")),
-            (("X393_LENS_AY",             "", vrlg.SENS_LENS_AY ,             0, None, None,    "Address of correction parameter Ay")),
-            (("X393_LENS_AY_MASK",        "", vrlg.SENS_LENS_AY_MASK ,        0, None, None,    "Correction parameter Ay mask")),
-            (("X393_LENS_C",              "", vrlg.SENS_LENS_C ,              0, None, None,    "Address of correction parameter C")),
-            (("X393_LENS_C_MASK",         "", vrlg.SENS_LENS_C_MASK ,         0, None, None,    "Correction parameter C mask")),
-            (("X393_LENS_BX",             "", vrlg.SENS_LENS_BX ,             0, None, None,    "Address of correction parameter Bx")),
-            (("X393_LENS_BX_MASK",        "", vrlg.SENS_LENS_BX_MASK ,        0, None, None,    "Correction parameter Bx mask")),
-            (("X393_LENS_BY",             "", vrlg.SENS_LENS_BY ,             0, None, None,    "Address of correction parameter By")),
-            (("X393_LENS_BY_MASK",        "", vrlg.SENS_LENS_BY_MASK ,        0, None, None,    "Correction parameter By mask")),
-            (("X393_LENS_SCALE0",         "", vrlg.SENS_LENS_SCALES ,         0, None, None,    "Address of correction parameter scale0")),
-            (("X393_LENS_SCALE1",         "", vrlg.SENS_LENS_SCALES + 2 ,     0, None, None,    "Address of correction parameter scale1")),
-            (("X393_LENS_SCALE2",         "", vrlg.SENS_LENS_SCALES + 4 ,     0, None, None,    "Address of correction parameter scale2")),
-            (("X393_LENS_SCALE3",         "", vrlg.SENS_LENS_SCALES + 6 ,     0, None, None,    "Address of correction parameter scale3")),
-            (("X393_LENS_SCALES_MASK",    "", vrlg.SENS_LENS_SCALES_MASK ,    0, None, None,    "Common mask for scales")),
-            (("X393_LENS_FAT0_IN",        "", vrlg.SENS_LENS_FAT0_IN ,        0, None, None,    "Address of input fat zero parameter (to subtract from input)")),
-            (("X393_LENS_FAT0_IN_MASK",   "", vrlg.SENS_LENS_FAT0_IN_MASK ,   0, None, None,    "Mask for fat zero input parameter")),
-            (("X393_LENS_FAT0_OUT",       "", vrlg.SENS_LENS_FAT0_OUT,        0, None, None,    "Address of output fat zero parameter (to add to output)")),
-            (("X393_LENS_FAT0_OUT_MASK",  "", vrlg.SENS_LENS_FAT0_OUT_MASK ,  0, None, None,    "Mask for fat zero output  parameters")),
-            (("X393_LENS_POST_SCALE",     "", vrlg.SENS_LENS_POST_SCALE ,     0, None, None,    "Address of post scale (shift output) parameter")),
-            (("X393_LENS_POST_SCALE_MASK","", vrlg.SENS_LENS_POST_SCALE_MASK, 0, None, None,    "Mask for post scale parameter"))]
+            (("X393_LENS_AX",             "", vrlg.SENS_LENS_AX ,             0, None, None, "",    "Address of correction parameter Ax")),
+            (("X393_LENS_AX_MASK",        "", vrlg.SENS_LENS_AX_MASK ,        0, None, None, "",    "Correction parameter Ax mask")),
+            (("X393_LENS_AY",             "", vrlg.SENS_LENS_AY ,             0, None, None, "",    "Address of correction parameter Ay")),
+            (("X393_LENS_AY_MASK",        "", vrlg.SENS_LENS_AY_MASK ,        0, None, None, "",    "Correction parameter Ay mask")),
+            (("X393_LENS_C",              "", vrlg.SENS_LENS_C ,              0, None, None, "",    "Address of correction parameter C")),
+            (("X393_LENS_C_MASK",         "", vrlg.SENS_LENS_C_MASK ,         0, None, None, "",    "Correction parameter C mask")),
+            (("X393_LENS_BX",             "", vrlg.SENS_LENS_BX ,             0, None, None, "",    "Address of correction parameter Bx")),
+            (("X393_LENS_BX_MASK",        "", vrlg.SENS_LENS_BX_MASK ,        0, None, None, "",    "Correction parameter Bx mask")),
+            (("X393_LENS_BY",             "", vrlg.SENS_LENS_BY ,             0, None, None, "",    "Address of correction parameter By")),
+            (("X393_LENS_BY_MASK",        "", vrlg.SENS_LENS_BY_MASK ,        0, None, None, "",    "Correction parameter By mask")),
+            (("X393_LENS_SCALE0",         "", vrlg.SENS_LENS_SCALES ,         0, None, None, "",    "Address of correction parameter scale0")),
+            (("X393_LENS_SCALE1",         "", vrlg.SENS_LENS_SCALES + 2 ,     0, None, None, "",    "Address of correction parameter scale1")),
+            (("X393_LENS_SCALE2",         "", vrlg.SENS_LENS_SCALES + 4 ,     0, None, None, "",    "Address of correction parameter scale2")),
+            (("X393_LENS_SCALE3",         "", vrlg.SENS_LENS_SCALES + 6 ,     0, None, None, "",    "Address of correction parameter scale3")),
+            (("X393_LENS_SCALES_MASK",    "", vrlg.SENS_LENS_SCALES_MASK ,    0, None, None, "",    "Common mask for scales")),
+            (("X393_LENS_FAT0_IN",        "", vrlg.SENS_LENS_FAT0_IN ,        0, None, None, "",    "Address of input fat zero parameter (to subtract from input)")),
+            (("X393_LENS_FAT0_IN_MASK",   "", vrlg.SENS_LENS_FAT0_IN_MASK ,   0, None, None, "",    "Mask for fat zero input parameter")),
+            (("X393_LENS_FAT0_OUT",       "", vrlg.SENS_LENS_FAT0_OUT,        0, None, None, "",    "Address of output fat zero parameter (to add to output)")),
+            (("X393_LENS_FAT0_OUT_MASK",  "", vrlg.SENS_LENS_FAT0_OUT_MASK ,  0, None, None, "",    "Mask for fat zero output  parameters")),
+            (("X393_LENS_POST_SCALE",     "", vrlg.SENS_LENS_POST_SCALE ,     0, None, None, "",    "Address of post scale (shift output) parameter")),
+            (("X393_LENS_POST_SCALE_MASK","", vrlg.SENS_LENS_POST_SCALE_MASK, 0, None, None, "",    "Mask for post scale parameter"))]
         #Gamma tables (See Python code for examples of the table data generation)
         ba = vrlg.SENSOR_GROUP_ADDR + vrlg.SENS_GAMMA_RADDR
         ia = vrlg.SENSOR_BASE_INC
         c =  "sens_num"
         sdefines +=[
             (('Sensor gamma conversion control (See Python code for examples of the table data generation)',)),
-            (("X393_SENS_GAMMA_CTRL",                   c, vrlg.SENS_GAMMA_CTRL +                          ba, ia, z3, "x393_gamma_ctl_rw",               "Gamma module control")),
-            (("X393_SENS_GAMMA_TBL",                    c, vrlg.SENS_GAMMA_ADDR_DATA +                     ba, ia, z3, "x393_gamma_tbl_wo",               "Write sensor gamma table address/data (with autoincrement)")),
-            (("X393_SENS_GAMMA_HEIGHT01M1",             c, vrlg.SENS_GAMMA_HEIGHT01 +                      ba, ia, z3, "x393_gamma_height01m1_rw",        "Gamma module subframes 0,1 heights minus 1")),
-            (("X393_SENS_GAMMA_HEIGHT2M1",              c, vrlg.SENS_GAMMA_HEIGHT2 +                       ba, ia, z3, "x393_gamma_height2m1_rw",         "Gamma module subframe  2 height minus 1"))]
+            (("X393_SENS_GAMMA_CTRL",                   c, vrlg.SENS_GAMMA_CTRL +                          ba, ia, z3, "x393_gamma_ctl", "rw",               "Gamma module control")),
+            (("X393_SENS_GAMMA_TBL",                    c, vrlg.SENS_GAMMA_ADDR_DATA +                     ba, ia, z3, "x393_gamma_tbl", "wo",               "Write sensor gamma table address/data (with autoincrement)")),
+            (("X393_SENS_GAMMA_HEIGHT01M1",             c, vrlg.SENS_GAMMA_HEIGHT01 +                      ba, ia, z3, "x393_gamma_height01m1", "rw",        "Gamma module subframes 0,1 heights minus 1")),
+            (("X393_SENS_GAMMA_HEIGHT2M1",              c, vrlg.SENS_GAMMA_HEIGHT2 +                       ba, ia, z3, "x393_gamma_height2m1", "rw",         "Gamma module subframe  2 height minus 1"))]
 
         #Histogram window controls
         ba = vrlg.SENSOR_GROUP_ADDR
@@ -551,33 +715,93 @@ class X393ExportC(object):
         c =  "sens_num"
         sdefines +=[
             (('Windows for histogram subchannels',)),
-            (("X393_HISTOGRAM_LT0",                     c, vrlg.HISTOGRAM_RADDR0 +                         ba, ia, z3, "x393_hist_left_top_rw",          "Specify histogram 0 left/top")),
-            (("X393_HISTOGRAM_WH0",                     c, vrlg.HISTOGRAM_RADDR0 + 1 +                     ba, ia, z3, "x393_hist_width_height_m1_rw",   "Specify histogram 0 width/height")),
-            (("X393_HISTOGRAM_LT1",                     c, vrlg.HISTOGRAM_RADDR1 +                         ba, ia, z3, "x393_hist_left_top_rw",          "Specify histogram 1 left/top")),
-            (("X393_HISTOGRAM_WH1",                     c, vrlg.HISTOGRAM_RADDR1 + 1 +                     ba, ia, z3, "x393_hist_width_height_m1_rw",   "Specify histogram 1 width/height")),
-            (("X393_HISTOGRAM_LT2",                     c, vrlg.HISTOGRAM_RADDR2 +                         ba, ia, z3, "x393_hist_left_top_rw",          "Specify histogram 2 left/top")),
-            (("X393_HISTOGRAM_WH2",                     c, vrlg.HISTOGRAM_RADDR2 + 1 +                     ba, ia, z3, "x393_hist_width_height_m1_rw",   "Specify histogram 2 width/height")),
-            (("X393_HISTOGRAM_LT3",                     c, vrlg.HISTOGRAM_RADDR3 +                         ba, ia, z3, "x393_hist_left_top_rw",          "Specify histogram 3 left/top")),
-            (("X393_HISTOGRAM_WH3",                     c, vrlg.HISTOGRAM_RADDR3 + 1 +                     ba, ia, z3, "x393_hist_width_height_m1_rw",   "Specify histogram 3 width/height"))]        
+            (("X393_HISTOGRAM_LT0",                     c, vrlg.HISTOGRAM_RADDR0 +                         ba, ia, z3, "x393_hist_left_top", "rw",          "Specify histogram 0 left/top")),
+            (("X393_HISTOGRAM_WH0",                     c, vrlg.HISTOGRAM_RADDR0 + 1 +                     ba, ia, z3, "x393_hist_width_height_m1", "rw",   "Specify histogram 0 width/height")),
+            (("X393_HISTOGRAM_LT1",                     c, vrlg.HISTOGRAM_RADDR1 +                         ba, ia, z3, "x393_hist_left_top", "rw",          "Specify histogram 1 left/top")),
+            (("X393_HISTOGRAM_WH1",                     c, vrlg.HISTOGRAM_RADDR1 + 1 +                     ba, ia, z3, "x393_hist_width_height_m1", "rw",   "Specify histogram 1 width/height")),
+            (("X393_HISTOGRAM_LT2",                     c, vrlg.HISTOGRAM_RADDR2 +                         ba, ia, z3, "x393_hist_left_top", "rw",          "Specify histogram 2 left/top")),
+            (("X393_HISTOGRAM_WH2",                     c, vrlg.HISTOGRAM_RADDR2 + 1 +                     ba, ia, z3, "x393_hist_width_height_m1", "rw",   "Specify histogram 2 width/height")),
+            (("X393_HISTOGRAM_LT3",                     c, vrlg.HISTOGRAM_RADDR3 +                         ba, ia, z3, "x393_hist_left_top", "rw",          "Specify histogram 3 left/top")),
+            (("X393_HISTOGRAM_WH3",                     c, vrlg.HISTOGRAM_RADDR3 + 1 +                     ba, ia, z3, "x393_hist_width_height_m1", "rw",   "Specify histogram 3 width/height"))]        
         ba = vrlg.SENSOR_GROUP_ADDR
         ia = vrlg.SENSOR_BASE_INC
         c =  "subchannel"
         sdefines +=[
             (('DMA control for the histograms. Subchannel here is 4*sensor_port+ histogram_subchannel',)),
-            (("X393_HIST_SAXI_MODE",                    c, vrlg.HIST_SAXI_MODE_ADDR_REL +                  ba,  0, None, "x393_hist_saxi_mode_rw",       "Histogram DMA operation mode")),
-            (("X393_HIST_SAXI_ADDR",                    c, vrlg.HIST_SAXI_ADDR_REL +                       ba, ia, z15,  "x393_hist_saxi_addr_rw",       "Histogram DMA addresses (in 4096 byte pages)"))]
+            (("X393_HIST_SAXI_MODE",                    c, vrlg.HIST_SAXI_MODE_ADDR_REL +                  ba,  0, None, "x393_hist_saxi_mode", "rw",       "Histogram DMA operation mode")),
+            (("X393_HIST_SAXI_ADDR",                    c, vrlg.HIST_SAXI_ADDR_REL +                       ba,  1, z15,  "x393_hist_saxi_addr", "rw",       "Histogram DMA addresses (in 4096 byte pages)"))]
 
+        #Compressor control
+        sdefines +=[
+            (('Compressor bitfields values',)),
+            (("X393_CMPRS_CBIT_RUN_RST",            "", vrlg.CMPRS_CBIT_RUN_RST ,           0, None, None, "", "Reset compressor, stop immediately")),
+            (("X393_CMPRS_CBIT_RUN_DISABLE",        "", 1 ,                                 0, None, None, "", "Disable compression of the new frames, finish any already started")),
+            (("X393_CMPRS_CBIT_RUN_STANDALONE",     "", vrlg.CMPRS_CBIT_RUN_STANDALONE ,    0, None, None, "", "Enable compressor, compress single frame from memory (async)")),
+            (("X393_CMPRS_CBIT_RUN_ENABLE",         "", vrlg.CMPRS_CBIT_RUN_ENABLE ,        0, None, None, "", "Enable synchronous compression mode")),
+
+            (("X393_CMPRS_CBIT_CMODE_JPEG18",       "", vrlg.CMPRS_CBIT_CMODE_JPEG18 ,      0, None, None, "", "Color 4:2:0 3x3 de-bayer core")),
+            (("X393_CMPRS_CBIT_CMODE_MONO6",        "", vrlg.CMPRS_CBIT_CMODE_MONO6 ,       0, None, None, "", "Mono 4:2:0 (6 blocks)")),
+            (("X393_CMPRS_CBIT_CMODE_JP46",         "", vrlg.CMPRS_CBIT_CMODE_JP46 ,        0, None, None, "", "jp4, 6 blocks, original")),
+            (("X393_CMPRS_CBIT_CMODE_JP46DC",       "", vrlg.CMPRS_CBIT_CMODE_JP46DC ,      0, None, None, "", "jp4, 6 blocks, DC-improved")),
+            (("X393_CMPRS_CBIT_CMODE_JPEG20",       "", vrlg.CMPRS_CBIT_CMODE_JPEG20 ,      0, None, None, "", "Color 4:2:0 with 5x5 de-bayer (not implemented)")),
+            (("X393_CMPRS_CBIT_CMODE_JP4",          "", vrlg.CMPRS_CBIT_CMODE_JP4 ,         0, None, None, "", "jp4,  4 blocks")),
+            (("X393_CMPRS_CBIT_CMODE_JP4DC",        "", vrlg.CMPRS_CBIT_CMODE_JP4DC ,       0, None, None, "", "jp4,  4 blocks, DC-improved")),
+            (("X393_CMPRS_CBIT_CMODE_JP4DIFF",      "", vrlg.CMPRS_CBIT_CMODE_JP4DIFF ,     0, None, None, "", "jp4,  4 blocks, differential")),
+            (("X393_CMPRS_CBIT_CMODE_JP4DIFFHDR",   "", vrlg.CMPRS_CBIT_CMODE_JP4DIFFHDR,   0, None, None, "", "jp4,  4 blocks, differential, hdr")),
+            (("X393_CMPRS_CBIT_CMODE_JP4DIFFDIV2",  "", vrlg.CMPRS_CBIT_CMODE_JP4DIFFDIV2,  0, None, None, "", "jp4,  4 blocks, differential, divide by 2")),
+            (("X393_CMPRS_CBIT_CMODE_JP4DIFFHDRDIV2","",vrlg.CMPRS_CBIT_CMODE_JP4DIFFHDRDIV2,0,None, None, "", "jp4,  4 blocks, differential, hdr,divide by 2")),
+            (("X393_CMPRS_CBIT_CMODE_MONO1",        "", vrlg.CMPRS_CBIT_CMODE_MONO1 ,       0, None, None, "", "Mono JPEG (not yet implemented)")),
+            (("X393_CMPRS_CBIT_CMODE_MONO4",        "", vrlg.CMPRS_CBIT_CMODE_MONO4 ,       0, None, None, "", "Mono, 4 blocks (2x2 macroblocks)")),
+            (("X393_CMPRS_CBIT_CMODE_JPEG18",       "", vrlg.CMPRS_CBIT_CMODE_JPEG18 ,      0, None, None, "", "Color 4:2:0")),
+            (("X393_CMPRS_CBIT_CMODE_JPEG18",       "", vrlg.CMPRS_CBIT_CMODE_JPEG18 ,      0, None, None, "", "Color 4:2:0")),
+
+            (("X393_CMPRS_CBIT_FRAMES_SINGLE",      "", vrlg.CMPRS_CBIT_FRAMES_SINGLE ,     0, None, None, "", "Use single-frame buffer")),
+            (("X393_CMPRS_CBIT_FRAMES_MULTI",       "", 1 ,                                 0, None, None, "", "Use multi-frame buffer"))]        
+        ba = vrlg.CMPRS_GROUP_ADDR
+        ia = vrlg.CMPRS_BASE_INC
+        c =  "sens_num"
+        sdefines +=[
+            (('Compressor control',)),
+            (("X393_CMPRS_CONTROL_REG",                  c, vrlg.CMPRS_CONTROL_REG +                  ba, ia, z3, "x393_cmprs_mode", "wo",                    "Program compressor channel operation mode")),
+            (("X393_CMPRS_STATUS",                       c, vrlg.CMPRS_STATUS_CNTRL +                 ba, ia, z3, "x393_status_ctrl", "wo",                   "Setup compressor status report mode")),
+            (("X393_CMPRS_FORMAT",                       c, vrlg.CMPRS_FORMAT +                       ba, ia, z3, "x393_cmprs_frame_format", "rw",            "Compressor frame format")),
+            (("X393_CMPRS_COLOR_SATURATION",             c, vrlg.CMPRS_COLOR_SATURATION +             ba, ia, z3, "x393_cmprs_colorsat", "rw",                "Compressor color saturation")),
+            (("X393_CMPRS_CORING_MODE",                  c, vrlg.CMPRS_CORING_MODE +                  ba, ia, z3, "x393_cmprs_coring_mode", "rw",             "Select coring mode")),
+            (("X393_CMPRS_INTERRUPTS",                   c, vrlg.CMPRS_INTERRUPTS +                   ba, ia, z3, "x393_cmprs_interrupts", "wo",              "Compressor interrupts control (1 - clear, 2 - disable, 3 - enable)")),
+            (('_Compressor tables load control',)),
+            (('_Several tables can be loaded to the compressor, there are 4 types of them:',)),
+            (('_    0:quantization tables - 8 pairs can be loaded and switched at run time,',)),
+            (('_    1:coring tables -       8 pairs can be loaded and switched at run time,',)),
+            (('_    2:focusing tables -    15 tables can be loaded and switched at run time (16-th table address space',)),
+            (('_      is used to program other focusing mode parameters,',)),
+            (('_    3:Huffman tables -     1 pair tables can be loaded',)),
+            (('_Default tables are loaded with the bitstream file (100% quality for quantization table 0',)),
+            (('_Loading a table requires to load address of the beginning of data, it includes table type and optional offset',)),
+            (('_when multiple tables of the same type are used. Next the data should be written to the same register address,',)),
+            (('_the table address is auto-incremented,',)),
+            (('_Data for the tables 0..2 should be combined: two items into a single 32-bit DWORD (little endian), treating',)),
+            (('_each item as a 16-bit word. The Huffman table is one item per DWORD. Address offset is calculated in DWORDs',)),
+            (('Compressor table types',)),
+            (("X393_TABLE_QUANTIZATION_TYPE",            "", vrlg.TABLE_QUANTIZATION_INDEX ,        0, None, None, "", "Quantization table type")),
+            (("X393_TABLE_CORING_TYPE",                  "", vrlg.TABLE_CORING_INDEX ,              0, None, None, "", "Coring table type")),
+            (("X393_TABLE_FOCUS_TYPE",                   "", vrlg.TABLE_FOCUS_INDEX ,               0, None, None, "", "Focus table type")),
+            (("X393_TABLE_HUFFMAN_TYPE",                 "", vrlg.TABLE_HUFFMAN_INDEX ,             0, None, None, "", "Huffman table type")),
+            (('Compressor tables control',)),
+            (("X393_CMPRS_TABLES_DATA",                   c, vrlg.CMPRS_TABLES + 0 +                 ba, ia, z3, "u32*", "wo",                               "Compressor tables data")),
+            (("X393_CMPRS_TABLES_ADDRESS",                c, vrlg.CMPRS_TABLES + 1 +                 ba, ia, z3, "x393_cmprs_table_addr", "wo",              "Compressor tables type/address")),
+             ]
         #sensors status        
         ba = vrlg.STATUS_ADDR + vrlg.SENSI2C_STATUS_REG_BASE
         ia = vrlg.SENSI2C_STATUS_REG_INC
         c =  "sens_num"
         sdefines +=[
             (('Read-only addresses for sensors status information',)),
-            (("X393_SENSI2C_STATUS",                    c, vrlg.SENSI2C_STATUS_REG_REL +      ba, ia, z3, "x393_status_sens_i2c_ro",                     "Status of the sensors i2c")),
-            (("X393_SENSIO_STATUS",                     c, vrlg.SENSIO_STATUS_REG_REL +       ba, ia, z3, "x393_status_sens_io_ro",                      "Status of the sensor ports I/O pins")),
+            (("X393_SENSI2C_STATUS",                    c, vrlg.SENSI2C_STATUS_REG_REL +      ba, ia, z3, "x393_status_sens_i2c", "ro",                       "Status of the sensors i2c")),
+            (("X393_SENSIO_STATUS",                     c, vrlg.SENSIO_STATUS_REG_REL +       ba, ia, z3, "x393_status_sens_io", "ro",                        "Status of the sensor ports I/O pins")),
             ]
         
         """
+        
         """
         return sdefines
     
@@ -587,68 +811,262 @@ class X393ExportC(object):
         sdefines = []
         sdefines +=[
             (('Write-only addresses to program memory channel 3 (test channel)',)),
-            (("X393_MCNTRL_CHN3_SCANLINE_MODE",            c, vrlg.MCNTRL_SCANLINE_MODE +             ba, 0, None, "x393_mcntrl_mode_scan_wo",             "Set mode register (write last after other channel registers are set)")),
-            (("X393_MCNTRL_CHN3_SCANLINE_STATUS_CNTRL",    c, vrlg.MCNTRL_SCANLINE_STATUS_CNTRL +     ba, 0, None, "x393_status_ctrl_wo",                  "Set status control register (status update mode)")),
-            (("X393_MCNTRL_CHN3_SCANLINE_STARTADDR",       c, vrlg.MCNTRL_SCANLINE_STARTADDR +        ba, 0, None, "x393_mcntrl_window_frame_sa_wo",       "Set frame start address")),
-            (("X393_MCNTRL_CHN3_SCANLINE_FRAME_SIZE",      c, vrlg.MCNTRL_SCANLINE_FRAME_SIZE +       ba, 0, None, "x393_mcntrl_window_frame_sa_inc_wo",   "Set frame size (address increment)")),
-            (("X393_MCNTRL_CHN3_SCANLINE_FRAME_LAST",      c, vrlg.MCNTRL_SCANLINE_FRAME_LAST +       ba, 0, None, "x393_mcntrl_window_last_frame_num_wo", "Set last frame number (number of frames in buffer minus 1)")),
-            (("X393_MCNTRL_CHN3_SCANLINE_FRAME_FULL_WIDTH",c, vrlg.MCNTRL_SCANLINE_FRAME_FULL_WIDTH + ba, 0, None, "x393_mcntrl_window_full_width_wo",     "Set frame full(padded) width")),
-            (("X393_MCNTRL_CHN3_SCANLINE_WINDOW_WH",       c, vrlg.MCNTRL_SCANLINE_WINDOW_WH +        ba, 0, None, "x393_mcntrl_window_width_height_wo",   "Set frame window size")),
-            (("X393_MCNTRL_CHN3_SCANLINE_WINDOW_X0Y0",     c, vrlg.MCNTRL_SCANLINE_WINDOW_X0Y0 +      ba, 0, None, "x393_mcntrl_window_left_top_wo",       "Set frame position")),
-            (("X393_MCNTRL_CHN3_SCANLINE_STARTXY",         c, vrlg.MCNTRL_SCANLINE_WINDOW_STARTXY +   ba, 0, None, "x393_mcntrl_window_startx_starty_wo",  "Set startXY register"))]
+            (("X393_MCNTRL_CHN3_SCANLINE_MODE",            c, vrlg.MCNTRL_SCANLINE_MODE +             ba, 0, None, "x393_mcntrl_mode_scan", "wo",             "Set mode register (write last after other channel registers are set)")),
+            (("X393_MCNTRL_CHN3_SCANLINE_STATUS_CNTRL",    c, vrlg.MCNTRL_SCANLINE_STATUS_CNTRL +     ba, 0, None, "x393_status_ctrl", "wo",                  "Set status control register (status update mode)")),
+            (("X393_MCNTRL_CHN3_SCANLINE_STARTADDR",       c, vrlg.MCNTRL_SCANLINE_STARTADDR +        ba, 0, None, "x393_mcntrl_window_frame_sa", "wo",       "Set frame start address")),
+            (("X393_MCNTRL_CHN3_SCANLINE_FRAME_SIZE",      c, vrlg.MCNTRL_SCANLINE_FRAME_SIZE +       ba, 0, None, "x393_mcntrl_window_frame_sa_inc", "wo",   "Set frame size (address increment)")),
+            (("X393_MCNTRL_CHN3_SCANLINE_FRAME_LAST",      c, vrlg.MCNTRL_SCANLINE_FRAME_LAST +       ba, 0, None, "x393_mcntrl_window_last_frame_num", "wo", "Set last frame number (number of frames in buffer minus 1)")),
+            (("X393_MCNTRL_CHN3_SCANLINE_FRAME_FULL_WIDTH",c, vrlg.MCNTRL_SCANLINE_FRAME_FULL_WIDTH + ba, 0, None, "x393_mcntrl_window_full_width", "wo",     "Set frame full(padded) width")),
+            (("X393_MCNTRL_CHN3_SCANLINE_WINDOW_WH",       c, vrlg.MCNTRL_SCANLINE_WINDOW_WH +        ba, 0, None, "x393_mcntrl_window_width_height", "wo",   "Set frame window size")),
+            (("X393_MCNTRL_CHN3_SCANLINE_WINDOW_X0Y0",     c, vrlg.MCNTRL_SCANLINE_WINDOW_X0Y0 +      ba, 0, None, "x393_mcntrl_window_left_top", "wo",       "Set frame position")),
+            (("X393_MCNTRL_CHN3_SCANLINE_STARTXY",         c, vrlg.MCNTRL_SCANLINE_WINDOW_STARTXY +   ba, 0, None, "x393_mcntrl_window_startx_starty", "wo",  "Set startXY register"))]
         ba = vrlg.MCNTRL_TILED_CHN2_ADDR
         c =  ""
         sdefines +=[
             (('Write-only addresses to program memory channel 2 (test channel)',)),
-            (("X393_MCNTRL_CHN2_TILED_MODE",               c, vrlg.MCNTRL_TILED_MODE +                ba, 0, None, "x393_mcntrl_mode_scan_wo",             "Set mode register (write last after other channel registers are set)")),
-            (("X393_MCNTRL_CHN2_TILED_STATUS_CNTRL",       c, vrlg.MCNTRL_TILED_STATUS_CNTRL +        ba, 0, None, "x393_status_ctrl_wo",                  "Set status control register (status update mode)")),
-            (("X393_MCNTRL_CHN2_TILED_STARTADDR",          c, vrlg.MCNTRL_TILED_STARTADDR +           ba, 0, None, "x393_mcntrl_window_frame_sa_wo",       "Set frame start address")),
-            (("X393_MCNTRL_CHN2_TILED_FRAME_SIZE",         c, vrlg.MCNTRL_TILED_FRAME_SIZE +          ba, 0, None, "x393_mcntrl_window_frame_sa_inc_wo",   "Set frame size (address increment)")),
-            (("X393_MCNTRL_CHN2_TILED_FRAME_LAST",         c, vrlg.MCNTRL_TILED_FRAME_LAST +          ba, 0, None, "x393_mcntrl_window_last_frame_num_wo", "Set last frame number (number of frames in buffer minus 1)")),
-            (("X393_MCNTRL_CHN2_TILED_FRAME_FULL_WIDTH",   c, vrlg.MCNTRL_TILED_FRAME_FULL_WIDTH +    ba, 0, None, "x393_mcntrl_window_full_width_wo",     "Set frame full(padded) width")),
-            (("X393_MCNTRL_CHN2_TILED_WINDOW_WH",          c, vrlg.MCNTRL_TILED_WINDOW_WH +           ba, 0, None, "x393_mcntrl_window_width_height_wo",   "Set frame window size")),
-            (("X393_MCNTRL_CHN2_TILED_WINDOW_X0Y0",        c, vrlg.MCNTRL_TILED_WINDOW_X0Y0 +         ba, 0, None, "x393_mcntrl_window_left_top_wo",       "Set frame position")),
-            (("X393_MCNTRL_CHN2_TILED_STARTXY",            c, vrlg.MCNTRL_TILED_WINDOW_STARTXY +      ba, 0, None, "x393_mcntrl_window_startx_starty_wo",  "Set startXY register")),
-            (("X393_MCNTRL_CHN2_TILED_TILE_WHS",           c, vrlg.MCNTRL_TILED_TILE_WHS +            ba, 0, None, "x393_mcntrl_window_tile_whs_wo",       "Set tile size/step (tiled mode only)"))]
+            (("X393_MCNTRL_CHN2_TILED_MODE",               c, vrlg.MCNTRL_TILED_MODE +                ba, 0, None, "x393_mcntrl_mode_scan", "wo",             "Set mode register (write last after other channel registers are set)")),
+            (("X393_MCNTRL_CHN2_TILED_STATUS_CNTRL",       c, vrlg.MCNTRL_TILED_STATUS_CNTRL +        ba, 0, None, "x393_status_ctrl", "wo",                  "Set status control register (status update mode)")),
+            (("X393_MCNTRL_CHN2_TILED_STARTADDR",          c, vrlg.MCNTRL_TILED_STARTADDR +           ba, 0, None, "x393_mcntrl_window_frame_sa", "wo",       "Set frame start address")),
+            (("X393_MCNTRL_CHN2_TILED_FRAME_SIZE",         c, vrlg.MCNTRL_TILED_FRAME_SIZE +          ba, 0, None, "x393_mcntrl_window_frame_sa_inc", "wo",   "Set frame size (address increment)")),
+            (("X393_MCNTRL_CHN2_TILED_FRAME_LAST",         c, vrlg.MCNTRL_TILED_FRAME_LAST +          ba, 0, None, "x393_mcntrl_window_last_frame_num", "wo", "Set last frame number (number of frames in buffer minus 1)")),
+            (("X393_MCNTRL_CHN2_TILED_FRAME_FULL_WIDTH",   c, vrlg.MCNTRL_TILED_FRAME_FULL_WIDTH +    ba, 0, None, "x393_mcntrl_window_full_width", "wo",     "Set frame full(padded) width")),
+            (("X393_MCNTRL_CHN2_TILED_WINDOW_WH",          c, vrlg.MCNTRL_TILED_WINDOW_WH +           ba, 0, None, "x393_mcntrl_window_width_height", "wo",   "Set frame window size")),
+            (("X393_MCNTRL_CHN2_TILED_WINDOW_X0Y0",        c, vrlg.MCNTRL_TILED_WINDOW_X0Y0 +         ba, 0, None, "x393_mcntrl_window_left_top", "wo",       "Set frame position")),
+            (("X393_MCNTRL_CHN2_TILED_STARTXY",            c, vrlg.MCNTRL_TILED_WINDOW_STARTXY +      ba, 0, None, "x393_mcntrl_window_startx_starty", "wo",  "Set startXY register")),
+            (("X393_MCNTRL_CHN2_TILED_TILE_WHS",           c, vrlg.MCNTRL_TILED_TILE_WHS +            ba, 0, None, "x393_mcntrl_window_tile_whs", "wo",       "Set tile size/step (tiled mode only)"))]
         ba = vrlg.MCNTRL_TILED_CHN4_ADDR
         c =  ""
         sdefines +=[
             (('Write-only addresses to program memory channel 4 (test channel)',)),
-            (("X393_MCNTRL_CHN4_TILED_MODE",               c, vrlg.MCNTRL_TILED_MODE +                ba, 0, None, "x393_mcntrl_mode_scan_wo",             "Set mode register (write last after other channel registers are set)")),
-            (("X393_MCNTRL_CHN4_TILED_STATUS_CNTRL",       c, vrlg.MCNTRL_TILED_STATUS_CNTRL +        ba, 0, None, "x393_status_ctrl_wo",                  "Set status control register (status update mode)")),
-            (("X393_MCNTRL_CHN4_TILED_STARTADDR",          c, vrlg.MCNTRL_TILED_STARTADDR +           ba, 0, None, "x393_mcntrl_window_frame_sa_wo",       "Set frame start address")),
-            (("X393_MCNTRL_CHN4_TILED_FRAME_SIZE",         c, vrlg.MCNTRL_TILED_FRAME_SIZE +          ba, 0, None, "x393_mcntrl_window_frame_sa_inc_wo",   "Set frame size (address increment)")),
-            (("X393_MCNTRL_CHN4_TILED_FRAME_LAST",         c, vrlg.MCNTRL_TILED_FRAME_LAST +          ba, 0, None, "x393_mcntrl_window_last_frame_num_wo", "Set last frame number (number of frames in buffer minus 1)")),
-            (("X393_MCNTRL_CHN4_TILED_FRAME_FULL_WIDTH",   c, vrlg.MCNTRL_TILED_FRAME_FULL_WIDTH +    ba, 0, None, "x393_mcntrl_window_full_width_wo",     "Set frame full(padded) width")),
-            (("X393_MCNTRL_CHN4_TILED_WINDOW_WH",          c, vrlg.MCNTRL_TILED_WINDOW_WH +           ba, 0, None, "x393_mcntrl_window_width_height_wo",   "Set frame window size")),
-            (("X393_MCNTRL_CHN4_TILED_WINDOW_X0Y0",        c, vrlg.MCNTRL_TILED_WINDOW_X0Y0 +         ba, 0, None, "x393_mcntrl_window_left_top_wo",       "Set frame position")),
-            (("X393_MCNTRL_CHN4_TILED_STARTXY",            c, vrlg.MCNTRL_TILED_WINDOW_STARTXY +      ba, 0, None, "x393_mcntrl_window_startx_starty_wo",  "Set startXY register")),
-            (("X393_MCNTRL_CHN4_TILED_TILE_WHS",           c, vrlg.MCNTRL_TILED_TILE_WHS +            ba, 0, None, "x393_mcntrl_window_tile_whs_wo",       "Set tile size/step (tiled mode only)"))]
+            (("X393_MCNTRL_CHN4_TILED_MODE",               c, vrlg.MCNTRL_TILED_MODE +                ba, 0, None, "x393_mcntrl_mode_scan", "wo",             "Set mode register (write last after other channel registers are set)")),
+            (("X393_MCNTRL_CHN4_TILED_STATUS_CNTRL",       c, vrlg.MCNTRL_TILED_STATUS_CNTRL +        ba, 0, None, "x393_status_ctrl", "wo",                  "Set status control register (status update mode)")),
+            (("X393_MCNTRL_CHN4_TILED_STARTADDR",          c, vrlg.MCNTRL_TILED_STARTADDR +           ba, 0, None, "x393_mcntrl_window_frame_sa", "wo",       "Set frame start address")),
+            (("X393_MCNTRL_CHN4_TILED_FRAME_SIZE",         c, vrlg.MCNTRL_TILED_FRAME_SIZE +          ba, 0, None, "x393_mcntrl_window_frame_sa_inc", "wo",   "Set frame size (address increment)")),
+            (("X393_MCNTRL_CHN4_TILED_FRAME_LAST",         c, vrlg.MCNTRL_TILED_FRAME_LAST +          ba, 0, None, "x393_mcntrl_window_last_frame_num", "wo", "Set last frame number (number of frames in buffer minus 1)")),
+            (("X393_MCNTRL_CHN4_TILED_FRAME_FULL_WIDTH",   c, vrlg.MCNTRL_TILED_FRAME_FULL_WIDTH +    ba, 0, None, "x393_mcntrl_window_full_width", "wo",     "Set frame full(padded) width")),
+            (("X393_MCNTRL_CHN4_TILED_WINDOW_WH",          c, vrlg.MCNTRL_TILED_WINDOW_WH +           ba, 0, None, "x393_mcntrl_window_width_height", "wo",   "Set frame window size")),
+            (("X393_MCNTRL_CHN4_TILED_WINDOW_X0Y0",        c, vrlg.MCNTRL_TILED_WINDOW_X0Y0 +         ba, 0, None, "x393_mcntrl_window_left_top", "wo",       "Set frame position")),
+            (("X393_MCNTRL_CHN4_TILED_STARTXY",            c, vrlg.MCNTRL_TILED_WINDOW_STARTXY +      ba, 0, None, "x393_mcntrl_window_startx_starty", "wo",  "Set startXY register")),
+            (("X393_MCNTRL_CHN4_TILED_TILE_WHS",           c, vrlg.MCNTRL_TILED_TILE_WHS +            ba, 0, None, "x393_mcntrl_window_tile_whs", "wo",       "Set tile size/step (tiled mode only)"))]
         return sdefines
     
-    def expand_define_maxi0(self, define_tuple, frmt_spcs = None):
-        if len(define_tuple)  ==1 :
+    def expand_define_maxi0(self, define_tuple, mode, frmt_spcs = None):
+        if len(define_tuple)  == 1 :
             return self.expand_define(define_tuple = define_tuple, frmt_spcs = frmt_spcs)
-        else:
-            name, var_name, address, address_inc, var_range, data_type, comment = define_tuple
-            if data_type is None:
-                return self.expand_define(define_tuple = (name,
-                                                          var_name,
-                                                          address,
-                                                          address_inc,
-                                                          var_range,
-                                                          data_type,
-                                                          comment),
-                                          frmt_spcs = frmt_spcs)
+        elif len(define_tuple)  == 8:
+            name, var_name, address, address_inc, var_range, data_type, rw, comment = define_tuple
+            if data_type is None:  #just constants, no offset and multiplication
+                if (mode == 'defines') or (mode =='func_decl') :
+                    return self.expand_define(define_tuple = (name,
+                                                              var_name,
+                                                              address,
+                                                              address_inc,
+                                                              var_range,
+                                                              data_type,
+                                                              rw,
+                                                              comment),
+                                              frmt_spcs = frmt_spcs)
+                else:
+                    return ""
             else:
-                return self.expand_define(define_tuple = (name,
-                                                          var_name,
-                                                          address * 4 + self.MAXI0_BASE,
-                                                          address_inc * 4,
-                                                          var_range,
-                                                          data_type,
-                                                          comment),
-                                          frmt_spcs = frmt_spcs)
+                if (mode == 'defines') :
+                    return self.expand_define(define_tuple = (name,
+                                                              var_name,
+                                                              address * 4 + self.MAXI0_BASE,
+                                                              address_inc * 4,
+                                                              var_range,
+                                                              data_type,
+                                                              rw,
+                                                              comment),
+                                              frmt_spcs = frmt_spcs)
+                elif (mode =='func_decl'):
+                    return self.func_declare (define_tuple = (name,
+                                                              var_name,
+                                                              address * 4 + self.MAXI0_BASE,
+                                                              address_inc * 4,
+                                                              var_range,
+                                                              data_type,
+                                                              rw,
+                                                              comment),
+                                              frmt_spcs = frmt_spcs)
+                elif (mode =='func_def'):
+                    return self.func_define  (define_tuple = (name,
+                                                              var_name,
+                                                              address * 4 + self.MAXI0_BASE,
+                                                              address_inc * 4,
+                                                              var_range,
+                                                              data_type,
+                                                              rw,
+                                                              comment),
+                                              frmt_spcs = frmt_spcs)
+                else:
+                    print ("Unknown mode:", mode)    
+                        
+        else:
+            print ("****** wrong tuple length: ",define_tuple)
+
+    def  func_declare(self,
+                      define_tuple,
+                      frmt_spcs):
+        frmt_spcs=self.fix_frmt_spcs(frmt_spcs)
+        
+#        name, var_name, address, address_inc, var_range, data_type, rw, comment = define_tuple
+        rw= define_tuple[6]
+        s=""
+        if 'w' in rw:
+            s += self.func_set(isDefine=False,define_tuple=define_tuple, frmt_spcs = frmt_spcs)
+        if 'r' in rw:
+            if s:
+                s += '\n'
+            s += self.func_get(isDefine=False, define_tuple=define_tuple, frmt_spcs = frmt_spcs)
+        if (not 'r' in rw) and (not 'w' in rw):     
+            s += self.func_touch(isDefine=False,define_tuple=define_tuple, frmt_spcs = frmt_spcs)
+        return s    
+
+    def func_define(self,
+                      define_tuple,
+                      frmt_spcs):
+        frmt_spcs=self.fix_frmt_spcs(frmt_spcs)
+#        name, var_name, address, address_inc, var_range, data_type, rw, comment = define_tuple
+        rw= define_tuple[6]
+        s=""
+        if 'w' in rw:
+            s += self.func_set(isDefine=True, define_tuple=define_tuple, frmt_spcs = frmt_spcs)
+        if 'r' in rw:
+            if s:
+                s += '\n'
+            s += self.func_get(isDefine=True, define_tuple=define_tuple, frmt_spcs = frmt_spcs)
+        if (not 'r' in rw) and (not 'w' in rw):     
+            s += self.func_touch(isDefine=True, define_tuple=define_tuple, frmt_spcs = frmt_spcs)
+        return s    
+    def str_tab_stop(self,s,l):
+        if len(s)>= l:
+            return s
+        else:
+            return s + (" "*(l - len(s)))  
+    
+    def func_get(self,
+                  isDefine,
+                  define_tuple,
+                  frmt_spcs):
+#        name, var_name, address, address_inc, var_range, data_type, rw, comment = define_tuple
+        name, var_name, address, address_inc, _, data_type, rw, comment = define_tuple
+        stops=frmt_spcs[('declare','define')[isDefine]]
+        #TODO: add optional argument range check?
+        data_type = self.fix_data_type(data_type)
+        sz=self.typedefs[data_type]['size'] # check it exists
+        if (sz > 32):
+            print ("***** Only 32-bit data is supported, %s used for %s is %d bit"%(data_type, name, sz))
+        fname = name.lower()
+        if ('r' in rw) and ('w' in rw):
+            fname = 'get_'+fname
+            comment = "" # set is supposed to go first, if both - only set has comment
+        arg = var_name.lower()   
+        args = 'void'
+        if arg and address_inc:
+            args = 'int '+ arg    
+#        s= "%s %s(%s)"%(data_type, fname,args)
+        s = "%s "%(data_type)
+        s = self.str_tab_stop(s,stops[0])
+        s += "%s"%(fname)
+        s = self.str_tab_stop(s,stops[1])
+        s += "(%s)"%(args)
+        s = self.str_tab_stop(s,stops[2])
+        if isDefine:
+            s+='{'
+            if address_inc:
+                s+='return (%s) readl(0x%08x + 0x%x * %s)'%(data_type, address, address_inc, arg)
+            else:
+                s+='return (%s) readl(0x%08x)'%(data_type, address)
+            s+='};'
+        else:
+            s += ';'
+        if comment:
+            s = self.str_tab_stop(s,stops[3])
+            s += ' // %s'%(comment) 
+        return s
+
+    def  func_set(self,
+                  isDefine,
+                  define_tuple,
+                  frmt_spcs):
+#        name, var_name, address, address_inc, var_range, data_type, rw, comment = define_tuple
+        name, var_name, address, address_inc, _, data_type, rw, comment = define_tuple
+        stops=frmt_spcs[('declare','define')[isDefine]]
+        #TODO: add optional argument range check?
+        data_type = self.fix_data_type(data_type)
+        sz=self.typedefs[data_type]['size'] # check it exists
+        if (sz > 32):
+            print ("***** Only 32-bit data is supported, %s used for %s is %d bit"%(data_type, name, sz))
+        fname = name.lower()
+        if ('r' in rw) and ('w' in rw):
+            fname = 'set_'+fname
+        arg = var_name.lower()   
+        args = '%s d'%(data_type)
+        if arg and address_inc:
+            args += ', int '+ arg    
+#        s= "void %s(%s)"%(fname,args)
+        s = "void "
+        s = self.str_tab_stop(s,stops[0])
+        s += "%s"%(fname)
+        s = self.str_tab_stop(s,stops[1])
+        s += "(%s)"%(args)
+        s = self.str_tab_stop(s,stops[2])
+        if isDefine:
+            s+='{'
+            if address_inc:
+                s+='writel(0x%08x + 0x%x * %s, (u32) d)'%(address, address_inc, arg)
+            else:
+                s+='writel(0x%08x, (u32) d)'%(address)
+            s+='};'
+        else:
+            s += ';'
+        if comment:
+            s = self.str_tab_stop(s,stops[3])
+            s += ' // %s'%(comment) 
+        return s
+
+    def  func_touch(self,
+                  isDefine,
+                  define_tuple,
+                  frmt_spcs):
+#       name, var_name, address, address_inc, var_range, data_type, rw, comment = define_tuple
+        name, var_name, address, address_inc, _,            _,       _,  comment = define_tuple
+        stops=frmt_spcs[('declare','define')[isDefine]]
+        #TODO: add optional argument range check?
+        fname = name.lower()
+        arg = var_name.lower()   
+        args = 'void'
+        if arg and address_inc:
+            args = 'int '+ arg    
+#        s= "void %s(%s)"%(fname,args)
+        s = "void "
+        s = self.str_tab_stop(s,stops[0])
+        s += "%s"%(fname)
+        s = self.str_tab_stop(s,stops[1])
+        s += "(%s)"%(args)
+        s = self.str_tab_stop(s,stops[2])
+        if isDefine:
+            s+='{'
+            if address_inc:
+                s+='writel(0x%08x + 0x%x * %s, 0)'%(address, address_inc, arg)
+            else:
+                s+='writel(0x%08x, 0)'%(address)
+            s+='};'
+        else:
+            s += ';'
+        if comment:
+            s = self.str_tab_stop(s,stops[3])
+            s += ' // %s'%(comment) 
+        return s
+
+    def fix_data_type(self,data_type):
+        if data_type:
+            if data_type[-1] == "*": # skip adding '_t": some_type -> some_type_t, u32* -> u32
+                data_type=data_type[0:-1]
+            else:    
+                data_type = data_type +"_t"
+        return data_type
             
     def expand_define(self, define_tuple, frmt_spcs = None):
         frmt_spcs=self.fix_frmt_spcs(frmt_spcs)
@@ -656,9 +1074,12 @@ class X393ExportC(object):
         if len(define_tuple)  ==1 :
             comment = define_tuple[0]
             if comment:
-                s += "\n// %s\n"%(comment)
+                if comment[0] == "_":
+                    s += "// %s"%(comment[1:]) # for multi-line comments
+                else:
+                    s += "\n// %s\n"%(comment)
         else:
-            name, var_name, address, address_inc, var_range, data_type, comment = define_tuple
+            name, var_name, address, address_inc, var_range, data_type, rw, comment = define_tuple
             if var_range and frmt_spcs['showRange']:
                 if comment:
                     comment += ', '
@@ -666,10 +1087,7 @@ class X393ExportC(object):
             if data_type and frmt_spcs['showType']:
                 if comment:
                     comment += ', '
-                if data_type[-1] == "*": # skip adding '_t": som_type -> some_type_t, u32* -> u32
-                    comment += "data type: %s"%(data_type[0:-1])
-                else:    
-                    comment += "data type: %s_t"%(data_type)
+                comment += "data type: %s (%s)"%(self.fix_data_type(data_type), rw)
             name_len = len(name)
             if address_inc:
                 name_len += 2 + len(var_name)
@@ -685,28 +1103,31 @@ class X393ExportC(object):
     def expand_define_parameters(self, in_defs, showGaps = True):
         exp_defs=[]
         for define_tuple in in_defs:
-            if len(define_tuple) == 7:
-                name, var_name, address, address_inc, var_range, data_type, comment = define_tuple
+            if len(define_tuple) == 8:
+                name, var_name, address, address_inc, var_range, data_type, rw, comment = define_tuple
                 if not data_type is None:
                     if address_inc == 0:
                         exp_defs.append(define_tuple)
                         nextAddr = address + 4
                     else:
                         for x in range(var_range[0], var_range[1] + 1):
-                            exp_defs.append(("%s__%d"%(name,x),var_name,address+x*address_inc,0,None,data_type,comment))
+                            exp_defs.append(("%s__%d"%(name,x),var_name,address+x*address_inc,0,None,data_type,rw, comment))
                         nextAddr = address + var_range[1] * address_inc + 4
         #now sort address map
         sorted_defs= sorted(exp_defs,key=lambda item: item[2])
         if showGaps:
             nextAddr = None
+            prevName = ""
             gapped_defs=[]
             for define_tuple in sorted_defs:
                 address = define_tuple[2] 
                 if not nextAddr is None:
                     if address > nextAddr:
-                        gapped_defs.append(("Skipped 0x%x DWORDs"%(address - nextAddr),))
+                        gapped_defs.append(("_Gap: 0x%x DWORDs"%(address - nextAddr),))
                     elif not address == nextAddr:
-                        print("**************** Error? address = 0x%x (0x%08x), expected address = 0x%x (0x%08x)"%(address, 4*address, nextAddr,4*nextAddr))    
+                        print("**************** Error? address = 0x%x (0x%08x), expected address = 0x%x (0x%08x)"%(address, 4*address, nextAddr,4*nextAddr))
+                        print("**************** previous name = %s, this name = %s"%(prevName, define_tuple[0]))
+                prevName = define_tuple[0]            
                 gapped_defs.append(define_tuple)
                 nextAddr = address + 1    
             return gapped_defs
@@ -1210,13 +1631,49 @@ class X393ExportC(object):
         dw.append(("page" ,        0, 20,   0,  "Start address of the subchannel histogram (in pages = 4096 bytes"))
         return dw
     
-    """
-      parameter SENSIO_WIDTH =          'h3, // 1.. 2^16, 0 - use HACT
-      parameter SENSIO_DELAYS =         'h4, // 'h4..'h7
-        // 4 of 8-bit delays per register
+    def _enc_cmprs_mode(self):
+        dw=[]
+        dw.append(("run",            vrlg.CMPRS_CBIT_RUN - vrlg.CMPRS_CBIT_RUN_BITS,       vrlg.CMPRS_CBIT_RUN_BITS,    0, "Run mode"))
+        dw.append(("run_set",        vrlg.CMPRS_CBIT_RUN,                                                           1,  0, "Set 'run'"))
+        dw.append(("qbank",          vrlg.CMPRS_CBIT_QBANK - vrlg.CMPRS_CBIT_QBANK_BITS,   vrlg.CMPRS_CBIT_QBANK_BITS,  0, "Quantization table bank"))
+        dw.append(("qbank_set",      vrlg.CMPRS_CBIT_QBANK,                                                         1,  0, "Set 'qbank'"))
+        dw.append(("dcsub",          vrlg.CMPRS_CBIT_DCSUB - vrlg.CMPRS_CBIT_DCSUB_BITS,   vrlg.CMPRS_CBIT_DCSUB_BITS,  0, "Subtract DC enable"))
+        dw.append(("dcsub_set",      vrlg.CMPRS_CBIT_DCSUB,                                                         1,  0, "Set 'qbank'"))
+        dw.append(("cmode",          vrlg.CMPRS_CBIT_CMODE - vrlg.CMPRS_CBIT_CMODE_BITS,   vrlg.CMPRS_CBIT_CMODE_BITS,  0, "Color format"))
+        dw.append(("cmode_set" ,     vrlg.CMPRS_CBIT_CMODE,                                                         1,  0, "Set 'cmode'"))
+        dw.append(("multiframe",     vrlg.CMPRS_CBIT_FRAMES - vrlg.CMPRS_CBIT_FRAMES_BITS, vrlg.CMPRS_CBIT_FRAMES_BITS, 0, "Multi/single frame mode"))
+        dw.append(("multiframe_set", vrlg.CMPRS_CBIT_FRAMES,                                                         1, 0, "Set 'multiframe'"))
+        dw.append(("bayer",          vrlg.CMPRS_CBIT_BAYER - vrlg.CMPRS_CBIT_BAYER_BITS,   vrlg.CMPRS_CBIT_BAYER_BITS,  0, "Bayer shift"))
+        dw.append(("bayer_set",      vrlg.CMPRS_CBIT_BAYER,                                                          1, 0, "Set 'bayer'"))
+        dw.append(("focus",          vrlg.CMPRS_CBIT_FOCUS - vrlg.CMPRS_CBIT_FOCUS_BITS,   vrlg.CMPRS_CBIT_FOCUS_BITS,  0, "Focus mode"))
+        dw.append(("focus_set",      vrlg.CMPRS_CBIT_FOCUS,                                                          1, 0, "Set 'focus'"))
+        return dw
+    def _enc_cmprs_coring_sel(self):
+        dw=[]
+        dw.append(("coring_table",   0,       vrlg.CMPRS_CORING_BITS,    0, "Select coring table pair number"))
+        return dw
+    def _enc_cmprs_color_sat(self):
+        dw=[]
+        dw.append(("colorsat_blue",   vrlg.CMPRS_CSAT_CB,       vrlg.CMPRS_CSAT_CB_BITS,   0x120, "Color saturation for blue (0x90 - 100%)"))
+        dw.append(("colorsat_red",    vrlg.CMPRS_CSAT_CR,       vrlg.CMPRS_CSAT_CR_BITS,   0x16c, "Color saturation for red (0xb6 - 100%)"))
+        return dw
+    def _enc_cmprs_format(self):
+        dw=[]
+        dw.append(("num_macro_cols_m1", vrlg.CMPRS_FRMT_MBCM1,       vrlg.CMPRS_FRMT_MBCM1_BITS,   0, "Number of macroblock colums minus 1"))
+        dw.append(("num_macro_rows_m1", vrlg.CMPRS_FRMT_MBRM1,       vrlg.CMPRS_FRMT_MBRM1_BITS,   0, "Number of macroblock rows minus 1"))
+        dw.append(("left_margin",       vrlg.CMPRS_FRMT_LMARG,       vrlg.CMPRS_FRMT_LMARG_BITS,   0, "Left margin of the first pixel (0..31) for 32-pixel wide colums in memory access"))
+        return dw
+    def _enc_cmprs_interrupts(self):
+        dw=[]
+        dw.append(("interrupt_cmd",      0, 2,   0, "0: nop, 1: clear interrupt status, 2: disable interrupt, 3: enable interrupt"))
+        return dw
+    def _enc_cmprs_table_addr(self):
+        dw=[]
+        dw.append(("addr32",    0, 24,   0, "Table address to start writing to (autoincremented) for DWORDs"))
+        dw.append(("type",     24, 2,    0, "0: quantization, 1: coring, 2: focus, 3: huffman"))
+        return dw
     
-DQSTRI_LAST, DQSTRI_FIRST, DQTRI_LAST, DQTRI_FIRST    
-    """
+
 
     def get_pad32(self, data, wlen=32, name="unnamed", padLast=False):
         sorted_data=sorted(data,key=lambda sbit: sbit[1])
@@ -1235,21 +1692,24 @@ DQSTRI_LAST, DQSTRI_FIRST, DQTRI_LAST, DQTRI_FIRST
         return padded_data        
             
             
-    def get_typedef32(self, comment, data, name, frmt_spcs):
+    
+    def get_typedef32(self, comment, data, name, typ, frmt_spcs):
         
         """
         TODO: add alternative to bit fields 
         """
         isUnion = isinstance(data[0],list)
         frmt_spcs=self.fix_frmt_spcs(frmt_spcs)
-        s = "\n"
-        if comment:
-            s += "// %s\n\n"%(comment)
+        s = ""
+#        s = "\n"
+#        if comment:
+#            s += "// %s\n\n"%(comment)
         if isUnion:
             frmt_spcs['lastPad'] = True
             s += "typedef union {\n"
         else:
             data = [data]
+        sz=0    
         for ns,struct in enumerate(data):    
             lines=self.get_pad32(struct, wlen=32, name=name, padLast=frmt_spcs['lastPad'])
             lines.reverse()
@@ -1280,13 +1740,19 @@ DQSTRI_LAST, DQSTRI_FIRST, DQTRI_LAST, DQTRI_FIRST
                     elif hasComment:
                         s+=" // "+line[4]
                 s+="\n"
+                sz=line[1]+line[2]
             if isUnion:
                 if frmt_spcs['nameMembers']:
                     s += "    } struct_%d;\n"%(ns)
                 else:
                     s += "    }; \n"
         s += "} %s_t; \n"%(name)
-        return s
+        self.typedefs[name+'_t']= {'comment':comment, 'code':s, 'size':sz, 'type':typ} # type - not used ?
+        if comment:
+            return "\n// %s\n\n"%(comment) + s
+        else:
+            return "\n"+s 
+
 
     def fix_frmt_spcs(self,frmt_spcs):
         specs= frmt_spcs;    
