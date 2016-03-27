@@ -214,7 +214,7 @@ class X393ExportC(object):
         
         stypedefs += self.get_typedef32(comment =   "Status generation control ",
                                  data =      self._enc_status_control(),
-                                 name =      "x393_status_ctrl",  typ="wo",
+                                 name =      "x393_status_ctrl",  typ="rw",
                                  frmt_spcs = frmt_spcs)
         stypedefs += self.get_typedef32(comment =   "Memory channel operation mode",
                                  data =      self._enc_func_encode_mode_scan_tiled(),
@@ -396,12 +396,34 @@ class X393ExportC(object):
                                  data =      self._enc_sensio_jtag(),
                                  name =      "x393_sensio_jpag",  typ="wo",
                                  frmt_spcs = frmt_spcs)
-
+        """
         stypedefs += self.get_typedef32(comment =   "Sensor delays (uses 4 DWORDs)",
                                  data =      [self._enc_sensio_dly_par12(),
                                               self._enc_sensio_dly_hispi()],
                                  name =      "x393_sensio_dly",  typ="rw",
                                  frmt_spcs = frmt_spcs)
+        """                                 
+        stypedefs += self.get_typedef32(comment =   "Sensor i/o timing register 0 (different meanings for different sensor types)",
+                                 data =      [self._enc_sensio_par12_tim0(),
+                                              self._enc_sensio_hispi_tim0()],
+                                 name =      "x393_sensio_tim0",  typ="rw",
+                                 frmt_spcs = frmt_spcs)
+        stypedefs += self.get_typedef32(comment =   "Sensor i/o timing register 1 (different meanings for different sensor types)",
+                                 data =      [self._enc_sensio_par12_tim1(),
+                                              self._enc_sensio_hispi_tim1()],
+                                 name =      "x393_sensio_tim1",  typ="rw",
+                                 frmt_spcs = frmt_spcs)
+        stypedefs += self.get_typedef32(comment =   "Sensor i/o timing register 2 (different meanings for different sensor types)",
+                                 data =      [self._enc_sensio_par12_tim2(),
+                                              self._enc_sensio_hispi_tim2()],
+                                 name =      "x393_sensio_tim2",  typ="rw",
+                                 frmt_spcs = frmt_spcs)
+        stypedefs += self.get_typedef32(comment =   "Sensor i/o timing register 3 (different meanings for different sensor types)",
+                                 data =      [self._enc_sensio_par12_tim3(),
+                                              self._enc_sensio_hispi_tim3()],
+                                 name =      "x393_sensio_tim3",  typ="rw",
+                                 frmt_spcs = frmt_spcs)
+
         stypedefs += self.get_typedef32(comment =   "Set sensor frame width (0 - use received)",
                                  data =      self._enc_sensio_width(),
                                  name =      "x393_sensio_width",  typ="rw",
@@ -466,6 +488,63 @@ class X393ExportC(object):
                                  name =      "x393_cmprs_table_addr",  typ="wo",
                                  frmt_spcs = frmt_spcs)
 
+        stypedefs += self.get_typedef32(comment =   "Compressor DMA buffer address (in 32-byte blocks)",
+                                 data =      self._enc_cmprs_afimux_sa(),
+                                 name =      "x393_afimux_sa",  typ="rw",
+                                 frmt_spcs = frmt_spcs)
+        stypedefs += self.get_typedef32(comment =   "Compressor DMA buffer length (in 32-byte blocks)",
+                                 data =      self._enc_cmprs_afimux_len(),
+                                 name =      "x393_afimux_len", typ="rw",
+                                 frmt_spcs = frmt_spcs)
+        stypedefs += self.get_typedef32(comment =   "Compressor DMA channels reset",
+                                 data =      self._enc_cmprs_afimux_rst(),
+                                 name =      "x393_afimux_rst", typ="rw",
+                                 frmt_spcs = frmt_spcs)
+        stypedefs += self.get_typedef32(comment =   "Compressor DMA enable (global and channels)",
+                                 data =      self._enc_cmprs_afimux_en(),
+                                 name =      "x393_afimux_en", typ="wo",
+                                 frmt_spcs = frmt_spcs)
+        stypedefs += self.get_typedef32(comment =   "Compressor DMA report mode",
+                                 data =      self._enc_cmprs_afimux_report(),
+                                 name =      "x393_afimux_report", typ="wo",
+                                 frmt_spcs = frmt_spcs)
+        stypedefs += self.get_typedef32(comment =   "Compressor DMA status",
+                                 data =      self._enc_cmprs_afimux_status(),
+                                 name =      "x393_afimux_status", typ="ro",
+                                 frmt_spcs = frmt_spcs)
+        stypedefs += self.get_typedef32(comment =   "GPIO output control",
+                                 data =      self._enc_cmprs_gpio_out(),
+                                 name =      "x393_gpio_set_pins", typ="wo",
+                                 frmt_spcs = frmt_spcs)
+        stypedefs += self.get_typedef32(comment =   "GPIO pins status",
+                                 data =      self._enc_cmprs_gpio_status(),
+                                 name =      "x393_gpio_status", typ="ro",
+                                 frmt_spcs = frmt_spcs)
+        stypedefs += self.get_typedef32(comment =   "RTC seconds",
+                                 data =      self._enc_rtc_sec(),
+                                 name =      "x393_rtc_sec", typ="rw",
+                                 frmt_spcs = frmt_spcs)
+        stypedefs += self.get_typedef32(comment =   "RTC microseconds",
+                                 data =      self._enc_rtc_usec(),
+                                 name =      "x393_rtc_usec", typ="rw",
+                                 frmt_spcs = frmt_spcs)
+        stypedefs += self.get_typedef32(comment =   "RTC correction",
+                                 data =      self._enc_rtc_corr(),
+                                 name =      "x393_rtc_corr", typ="rw",
+                                 frmt_spcs = frmt_spcs)
+        stypedefs += self.get_typedef32(comment =   "RTC status",
+                                 data =      self._enc_rtc_status(),
+                                 name =      "x393_rtc_status", typ="ro",
+                                 frmt_spcs = frmt_spcs)
+
+        stypedefs += self.get_typedef32(comment =   "CAMSYNC I/O configuration",
+                                 data =      self._enc_camsync_lines(),
+                                 name =      "x393_camsync_io", typ="wo",
+                                 frmt_spcs = frmt_spcs)
+        stypedefs += self.get_typedef32(comment =   "CAMSYNC mode",
+                                 data =      self._enc_camsync_mode(),
+                                 name =      "x393_camsync_mode", typ="wo",
+                                 frmt_spcs = frmt_spcs)
         return stypedefs
     
     def define_macros(self):
@@ -524,7 +603,7 @@ class X393ExportC(object):
         sdefines +=[
             (('Write-only addresses to program memory channels for sensors  (chn = 0..3), memory channels 8..11',)),
             (("X393_SENS_MCNTRL_SCANLINE_MODE",            c, vrlg.MCNTRL_SCANLINE_MODE +             ba, ia, z3, "x393_mcntrl_mode_scan", "wo",             "Set mode register (write last after other channel registers are set)")),
-            (("X393_SENS_MCNTRL_SCANLINE_STATUS_CNTRL",    c, vrlg.MCNTRL_SCANLINE_STATUS_CNTRL +     ba, ia, z3, "x393_status_ctrl", "wo",                  "Set status control register (status update mode)")),
+            (("X393_SENS_MCNTRL_SCANLINE_STATUS_CNTRL",    c, vrlg.MCNTRL_SCANLINE_STATUS_CNTRL +     ba, ia, z3, "x393_status_ctrl", "rw",                  "Set status control register (status update mode)")),
             (("X393_SENS_MCNTRL_SCANLINE_STARTADDR",       c, vrlg.MCNTRL_SCANLINE_STARTADDR +        ba, ia, z3, "x393_mcntrl_window_frame_sa", "wo",       "Set frame start address")),
             (("X393_SENS_MCNTRL_SCANLINE_FRAME_SIZE",      c, vrlg.MCNTRL_SCANLINE_FRAME_SIZE +       ba, ia, z3, "x393_mcntrl_window_frame_sa_inc", "wo",   "Set frame size (address increment)")),
             (("X393_SENS_MCNTRL_SCANLINE_FRAME_LAST",      c, vrlg.MCNTRL_SCANLINE_FRAME_LAST +       ba, ia, z3, "x393_mcntrl_window_last_frame_num", "wo", "Set last frame number (number of frames in buffer minus 1)")),
@@ -537,7 +616,7 @@ class X393ExportC(object):
         sdefines +=[
             (('Write-only addresses to program memory channels for compressors (chn = 0..3), memory channels 12..15',)),
             (("X393_SENS_MCNTRL_TILED_MODE",               c, vrlg.MCNTRL_TILED_MODE +                ba, ia, z3, "x393_mcntrl_mode_scan", "wo",             "Set mode register (write last after other channel registers are set)")),
-            (("X393_SENS_MCNTRL_TILED_STATUS_CNTRL",       c, vrlg.MCNTRL_TILED_STATUS_CNTRL +        ba, ia, z3, "x393_status_ctrl", "wo",                  "Set status control register (status update mode)")),
+            (("X393_SENS_MCNTRL_TILED_STATUS_CNTRL",       c, vrlg.MCNTRL_TILED_STATUS_CNTRL +        ba, ia, z3, "x393_status_ctrl", "rw",                  "Set status control register (status update mode)")),
             (("X393_SENS_MCNTRL_TILED_STARTADDR",          c, vrlg.MCNTRL_TILED_STARTADDR +           ba, ia, z3, "x393_mcntrl_window_frame_sa", "wo",       "Set frame start address")),
             (("X393_SENS_MCNTRL_TILED_FRAME_SIZE",         c, vrlg.MCNTRL_TILED_FRAME_SIZE +          ba, ia, z3, "x393_mcntrl_window_frame_sa_inc", "wo",   "Set frame size (address increment)")),
             (("X393_SENS_MCNTRL_TILED_FRAME_LAST",         c, vrlg.MCNTRL_TILED_FRAME_LAST +          ba, ia, z3, "x393_mcntrl_window_last_frame_num", "wo", "Set last frame number (number of frames in buffer minus 1)")),
@@ -553,7 +632,7 @@ class X393ExportC(object):
         sdefines +=[
             (('Write-only addresses to program memory channel for membridge, memory channel 1',)),
             (("X393_MEMBRIDGE_SCANLINE_MODE",            c, vrlg.MCNTRL_SCANLINE_MODE +             ba, 0, None, "x393_mcntrl_mode_scan", "wo",             "Set mode register (write last after other channel registers are set)")),
-            (("X393_MEMBRIDGE_SCANLINE_STATUS_CNTRL",    c, vrlg.MCNTRL_SCANLINE_STATUS_CNTRL +     ba, 0, None, "x393_status_ctrl", "wo",                  "Set status control register (status update mode)")),
+            (("X393_MEMBRIDGE_SCANLINE_STATUS_CNTRL",    c, vrlg.MCNTRL_SCANLINE_STATUS_CNTRL +     ba, 0, None, "x393_status_ctrl", "rw",                  "Set status control register (status update mode)")),
             (("X393_MEMBRIDGE_SCANLINE_STARTADDR",       c, vrlg.MCNTRL_SCANLINE_STARTADDR +        ba, 0, None, "x393_mcntrl_window_frame_sa", "wo",       "Set frame start address")),
             (("X393_MEMBRIDGE_SCANLINE_FRAME_SIZE",      c, vrlg.MCNTRL_SCANLINE_FRAME_SIZE +       ba, 0, None, "x393_mcntrl_window_frame_sa_inc", "wo",   "Set frame size (address increment)")),
             (("X393_MEMBRIDGE_SCANLINE_FRAME_LAST",      c, vrlg.MCNTRL_SCANLINE_FRAME_LAST +       ba, 0, None, "x393_mcntrl_window_last_frame_num", "wo", "Set last frame number (number of frames in buffer minus 1)")),
@@ -567,7 +646,7 @@ class X393ExportC(object):
         c =  ""
         sdefines +=[
             (("X393_MEMBRIDGE_CTRL",                     c, vrlg.MEMBRIDGE_CTRL +                  ba, 0, None, "x393_membridge_cmd", "wo",                "Issue membridge command")),
-            (("X393_MEMBRIDGE_STATUS_CNTRL",             c, vrlg.MEMBRIDGE_STATUS_CNTRL +          ba, 0, None, "x393_status_ctrl", "wo",                  "Set membridge status control register")),
+            (("X393_MEMBRIDGE_STATUS_CNTRL",             c, vrlg.MEMBRIDGE_STATUS_CNTRL +          ba, 0, None, "x393_status_ctrl", "rw",                  "Set membridge status control register")),
             (("X393_MEMBRIDGE_LO_ADDR64",                c, vrlg.MEMBRIDGE_LO_ADDR64 +             ba, 0, None, "u29", "wo",                               "start address of the system memory range in QWORDs (4 LSBs==0)")),
             (("X393_MEMBRIDGE_SIZE64",                   c, vrlg.MEMBRIDGE_SIZE64 +                ba, 0, None, "u29", "wo",                               "size of the system memory range in QWORDs (4 LSBs==0), rolls over")),
             (("X393_MEMBRIDGE_START64",                  c, vrlg.MEMBRIDGE_START64 +               ba, 0, None, "u29", "wo",                               "start of transfer offset to system memory range in QWORDs (4 LSBs==0)")),
@@ -582,7 +661,7 @@ class X393ExportC(object):
             (('Write-only addresses to PS PIO (Software generated DDR3 memory access sequences)',)),
             (("X393_MCNTRL_PS_EN_RST",                   c, vrlg.MCNTRL_PS_EN_RST +                ba, 0, None, "x393_ps_pio_en_rst", "wo",                 "Set PS PIO enable and reset")),
             (("X393_MCNTRL_PS_CMD",                      c, vrlg.MCNTRL_PS_CMD +                   ba, 0, None, "x393_ps_pio_cmd", "wo",                    "Set PS PIO commands")),
-            (("X393_MCNTRL_PS_STATUS_CNTRL",             c, vrlg.MCNTRL_PS_STATUS_CNTRL +          ba, 0, None, "x393_status_ctrl", "wo",                   "Set PS PIO status control register (status update mode)"))]
+            (("X393_MCNTRL_PS_STATUS_CNTRL",             c, vrlg.MCNTRL_PS_STATUS_CNTRL +          ba, 0, None, "x393_status_ctrl", "rw",                   "Set PS PIO status control register (status update mode)"))]
 
         #other program status (move to other places?)
         ba = vrlg.MCONTR_PHY_16BIT_ADDR
@@ -590,17 +669,17 @@ class X393ExportC(object):
         c =  ""
         sdefines +=[
             (('Write-only addresses to to program status report mode for memory controller',)),
-            (("X393_MCONTR_PHY_STATUS_CNTRL",            c, vrlg.MCONTR_PHY_STATUS_CNTRL +         ba, 0, None, "x393_status_ctrl", "wo",                    "Set status control register (status update mode)")),
-            (("X393_MCONTR_TOP_16BIT_STATUS_CNTRL",      c, vrlg.MCONTR_TOP_16BIT_STATUS_CNTRL +   ba, 0, None, "x393_status_ctrl", "wo",                    "Set status control register (status update mode)")),
+            (("X393_MCONTR_PHY_STATUS_CNTRL",            c, vrlg.MCONTR_PHY_STATUS_CNTRL +         ba, 0, None, "x393_status_ctrl", "rw",                    "Set status control register (status update mode)")),
+            (("X393_MCONTR_TOP_16BIT_STATUS_CNTRL",      c, vrlg.MCONTR_TOP_16BIT_STATUS_CNTRL +   ba, 0, None, "x393_status_ctrl", "rw",                    "Set status control register (status update mode)")),
         ]
         ba = vrlg.MCNTRL_TEST01_ADDR
         ia = 0
         c =  ""
         sdefines +=[
             (('Write-only addresses to to program status report mode for test channels',)),
-            (("X393_MCNTRL_TEST01_CHN2_STATUS_CNTRL",    c, vrlg.MCNTRL_TEST01_CHN2_STATUS_CNTRL + ba, 0, None, "x393_status_ctrl", "wo",                    "Set status control register (status update mode)")),
-            (("X393_MCNTRL_TEST01_CHN3_STATUS_CNTRL",    c, vrlg.MCNTRL_TEST01_CHN3_STATUS_CNTRL + ba, 0, None, "x393_status_ctrl", "wo",                    "Set status control register (status update mode)")),
-            (("X393_MCNTRL_TEST01_CHN4_STATUS_CNTRL",    c, vrlg.MCNTRL_TEST01_CHN4_STATUS_CNTRL + ba, 0, None, "x393_status_ctrl", "wo",                    "Set status control register (status update mode)")),
+            (("X393_MCNTRL_TEST01_CHN2_STATUS_CNTRL",    c, vrlg.MCNTRL_TEST01_CHN2_STATUS_CNTRL + ba, 0, None, "x393_status_ctrl", "rw",                    "Set status control register (status update mode)")),
+            (("X393_MCNTRL_TEST01_CHN3_STATUS_CNTRL",    c, vrlg.MCNTRL_TEST01_CHN3_STATUS_CNTRL + ba, 0, None, "x393_status_ctrl", "rw",                    "Set status control register (status update mode)")),
+            (("X393_MCNTRL_TEST01_CHN4_STATUS_CNTRL",    c, vrlg.MCNTRL_TEST01_CHN4_STATUS_CNTRL + ba, 0, None, "x393_status_ctrl", "rw",                    "Set status control register (status update mode)")),
             (('Write-only addresses for test channels commands',)),
             (("X393_MCNTRL_TEST01_CHN2_MODE",            c, vrlg.MCNTRL_TEST01_CHN2_MODE +         ba, 0, None, "x393_test01_mode", "wo",                    "Set command for test01 channel 2")),
             (("X393_MCNTRL_TEST01_CHN3_MODE",            c, vrlg.MCNTRL_TEST01_CHN3_MODE +         ba, 0, None, "x393_test01_mode", "wo",                    "Set command for test01 channel 3")),
@@ -634,14 +713,18 @@ class X393ExportC(object):
             (('Write-only control of the sensor channels',)),
             (("X393_SENS_MODE",                         c, vrlg.SENSOR_CTRL_RADDR +                        ba, ia, z3, "x393_sens_mode", "wo",               "Write sensor channel mode")),
             (("X393_SENSI2C_CTRL",                      c, vrlg.SENSI2C_CTRL_RADDR + vrlg.SENSI2C_CTRL +   ba, ia, z3, "x393_i2c_ctltbl", "wo",              "Control sensor i2c, write i2c LUT")),
-            (("X393_SENSI2C_STATUS",                    c, vrlg.SENSI2C_CTRL_RADDR + vrlg.SENSI2C_STATUS + ba, ia, z3, "x393_status_ctrl", "wo",             "Setup sensor i2c status report mode")),
-            (("X393_SENS_SYNC_MULT",                    c, vrlg.SENS_SYNC_RADDR + vrlg.SENS_SYNC_MULT+     ba, ia, z3, "x393_sens_sync_mult", "wo",          "Configure frames combining")),
-            (("X393_SENS_SYNC_LATE",                    c, vrlg.SENS_SYNC_RADDR + vrlg.SENS_SYNC_LATE+     ba, ia, z3, "x393_sens_sync_late", "wo",          "Configure frame sync delay")),
-            (("X393_SENSIO_CTRL",                       c, vrlg.SENSIO_RADDR + vrlg.SENSIO_CTRL+           ba, ia, z3, "x393_sensio_ctl", "wo",              "Configure sensor I/O port")),
-            (("X393_SENSIO_STATUS_CNTRL",               c, vrlg.SENSIO_RADDR + vrlg.SENSIO_STATUS+         ba, ia, z3, "x393_status_ctrl", "wo",             "Set status control for SENSIO module")),
-            (("X393_SENSIO_JTAG",                       c, vrlg.SENSIO_RADDR + vrlg.SENSIO_JTAG+           ba, ia, z3, "x393_sensio_jpag", "wo",             "Programming interface for multiplexer FPGA (with X393_SENSIO_STATUS)")),
-            (("X393_SENSIO_WIDTH",                      c, vrlg.SENSIO_RADDR + vrlg.SENSIO_WIDTH+          ba, ia, z3, "x393_sensio_width", "rw",            "Set sensor line in pixels (0 - use line sync from the sensor)")),
-            (("X393_SENSIO_DELAYS",                     c, vrlg.SENSIO_RADDR + vrlg.SENSIO_DELAYS+         ba, ia, z3, "x393_sensio_dly", "rw",              "Sensor port input delays (uses 4 DWORDs)")),
+            (("X393_SENSI2C_STATUS",                    c, vrlg.SENSI2C_CTRL_RADDR + vrlg.SENSI2C_STATUS + ba, ia, z3, "x393_status_ctrl", "rw",             "Setup sensor i2c status report mode")),
+            (("X393_SENS_SYNC_MULT",                    c, vrlg.SENS_SYNC_RADDR + vrlg.SENS_SYNC_MULT +    ba, ia, z3, "x393_sens_sync_mult", "wo",          "Configure frames combining")),
+            (("X393_SENS_SYNC_LATE",                    c, vrlg.SENS_SYNC_RADDR + vrlg.SENS_SYNC_LATE +    ba, ia, z3, "x393_sens_sync_late", "wo",          "Configure frame sync delay")),
+            (("X393_SENSIO_CTRL",                       c, vrlg.SENSIO_RADDR + vrlg.SENSIO_CTRL +          ba, ia, z3, "x393_sensio_ctl", "wo",              "Configure sensor I/O port")),
+            (("X393_SENSIO_STATUS_CNTRL",               c, vrlg.SENSIO_RADDR + vrlg.SENSIO_STATUS +        ba, ia, z3, "x393_status_ctrl", "rw",             "Set status control for SENSIO module")),
+            (("X393_SENSIO_JTAG",                       c, vrlg.SENSIO_RADDR + vrlg.SENSIO_JTAG +          ba, ia, z3, "x393_sensio_jpag", "wo",             "Programming interface for multiplexer FPGA (with X393_SENSIO_STATUS)")),
+            (("X393_SENSIO_WIDTH",                      c, vrlg.SENSIO_RADDR + vrlg.SENSIO_WIDTH +         ba, ia, z3, "x393_sensio_width", "rw",            "Set sensor line in pixels (0 - use line sync from the sensor)")),
+#            (("X393_SENSIO_DELAYS",                     c, vrlg.SENSIO_RADDR + vrlg.SENSIO_DELAYS +       ba, ia, z3, "x393_sensio_dly", "rw",              "Sensor port input delays (uses 4 DWORDs)")),
+            (("X393_SENSIO_TIM0",                       c, vrlg.SENSIO_RADDR + vrlg.SENSIO_DELAYS + 0 +    ba, ia, z3, "x393_sensio_tim0", "rw",             "Sensor port i/o timing configuration, register 0")),
+            (("X393_SENSIO_TIM1",                       c, vrlg.SENSIO_RADDR + vrlg.SENSIO_DELAYS + 1 +    ba, ia, z3, "x393_sensio_tim1", "rw",             "Sensor port i/o timing configuration, register 1")),
+            (("X393_SENSIO_TIM2",                       c, vrlg.SENSIO_RADDR + vrlg.SENSIO_DELAYS + 2 +    ba, ia, z3, "x393_sensio_tim2", "rw",             "Sensor port i/o timing configuration, register 2")),
+            (("X393_SENSIO_TIM3",                       c, vrlg.SENSIO_RADDR + vrlg.SENSIO_DELAYS + 3 +    ba, ia, z3, "x393_sensio_tim3", "rw",             "Sensor port i/o timing configuration, register 3")),
             ]
         #Registers to control sensor channels        
         ba = vrlg.SENSOR_GROUP_ADDR
@@ -730,6 +813,15 @@ class X393ExportC(object):
             (('DMA control for the histograms. Subchannel here is 4*sensor_port+ histogram_subchannel',)),
             (("X393_HIST_SAXI_MODE",                    c, vrlg.HIST_SAXI_MODE_ADDR_REL +                  ba,  0, None, "x393_hist_saxi_mode", "rw",       "Histogram DMA operation mode")),
             (("X393_HIST_SAXI_ADDR",                    c, vrlg.HIST_SAXI_ADDR_REL +                       ba,  1, z15,  "x393_hist_saxi_addr", "rw",       "Histogram DMA addresses (in 4096 byte pages)"))]
+        #sensors status        
+        ba = vrlg.STATUS_ADDR + vrlg.SENSI2C_STATUS_REG_BASE
+        ia = vrlg.SENSI2C_STATUS_REG_INC
+        c =  "sens_num"
+        sdefines +=[
+            (('Read-only addresses for sensors status information',)),
+            (("X393_SENSI2C_STATUS",                    c, vrlg.SENSI2C_STATUS_REG_REL +      ba, ia, z3, "x393_status_sens_i2c", "ro",                       "Status of the sensors i2c")),
+            (("X393_SENSIO_STATUS",                     c, vrlg.SENSIO_STATUS_REG_REL +       ba, ia, z3, "x393_status_sens_io", "ro",                        "Status of the sensor ports I/O pins")),
+            ]
 
         #Compressor control
         sdefines +=[
@@ -759,11 +851,11 @@ class X393ExportC(object):
             (("X393_CMPRS_CBIT_FRAMES_MULTI",       "", 1 ,                                 0, None, None, "", "Use multi-frame buffer"))]        
         ba = vrlg.CMPRS_GROUP_ADDR
         ia = vrlg.CMPRS_BASE_INC
-        c =  "sens_num"
+        c =  "cmprs_chn"
         sdefines +=[
             (('Compressor control',)),
             (("X393_CMPRS_CONTROL_REG",                  c, vrlg.CMPRS_CONTROL_REG +                  ba, ia, z3, "x393_cmprs_mode", "wo",                    "Program compressor channel operation mode")),
-            (("X393_CMPRS_STATUS",                       c, vrlg.CMPRS_STATUS_CNTRL +                 ba, ia, z3, "x393_status_ctrl", "wo",                   "Setup compressor status report mode")),
+            (("X393_CMPRS_STATUS",                       c, vrlg.CMPRS_STATUS_CNTRL +                 ba, ia, z3, "x393_status_ctrl", "rw",                   "Setup compressor status report mode")),
             (("X393_CMPRS_FORMAT",                       c, vrlg.CMPRS_FORMAT +                       ba, ia, z3, "x393_cmprs_frame_format", "rw",            "Compressor frame format")),
             (("X393_CMPRS_COLOR_SATURATION",             c, vrlg.CMPRS_COLOR_SATURATION +             ba, ia, z3, "x393_cmprs_colorsat", "rw",                "Compressor color saturation")),
             (("X393_CMPRS_CORING_MODE",                  c, vrlg.CMPRS_CORING_MODE +                  ba, ia, z3, "x393_cmprs_coring_mode", "rw",             "Select coring mode")),
@@ -790,18 +882,95 @@ class X393ExportC(object):
             (("X393_CMPRS_TABLES_DATA",                   c, vrlg.CMPRS_TABLES + 0 +                 ba, ia, z3, "u32*", "wo",                               "Compressor tables data")),
             (("X393_CMPRS_TABLES_ADDRESS",                c, vrlg.CMPRS_TABLES + 1 +                 ba, ia, z3, "x393_cmprs_table_addr", "wo",              "Compressor tables type/address")),
              ]
-        #sensors status        
-        ba = vrlg.STATUS_ADDR + vrlg.SENSI2C_STATUS_REG_BASE
-        ia = vrlg.SENSI2C_STATUS_REG_INC
-        c =  "sens_num"
+        ba = vrlg.CMPRS_GROUP_ADDR + vrlg.CMPRS_AFIMUX_RADDR0
+        ia = 0
+        c =  "afi_port"
         sdefines +=[
-            (('Read-only addresses for sensors status information',)),
-            (("X393_SENSI2C_STATUS",                    c, vrlg.SENSI2C_STATUS_REG_REL +      ba, ia, z3, "x393_status_sens_i2c", "ro",                       "Status of the sensors i2c")),
-            (("X393_SENSIO_STATUS",                     c, vrlg.SENSIO_STATUS_REG_REL +       ba, ia, z3, "x393_status_sens_io", "ro",                        "Status of the sensor ports I/O pins")),
+            (('Compressor DMA control:',)),
+            (('_Camera can be configured to use either 2 AXI HP channels (with 2 compressors served by each one) or to use a single AXI HP channel',)),
+            (('_serving all 4 compressor channels through its input ports. Below afi_port (0..3) references to one of the 4 ports of each. Control',)),
+            (('_for two AXI HP channels is implemented as separate functions. Currently only the first channel is used',)),
+            (("X393_AFIMUX0_EN",                          c, vrlg.CMPRS_AFIMUX_EN +                  ba, 0, None, "x393_afimux_en", "wo",             "AFI MUX 0 global/port run/pause control")),
+            (("X393_AFIMUX0_RST",                         c, vrlg.CMPRS_AFIMUX_RST +                 ba, 0, None, "x393_afimux_rst", "rw",            "AFI MUX 0 per-port resets")),
+            (("X393_AFIMUX0_REPORT_MODE",                 c, vrlg.CMPRS_AFIMUX_MODE +                ba, 0, None, "x393_afimux_report", "wo",         "AFI MUX 0 readout pointer report mode")),
+            (("X393_AFIMUX0_STATUS_CONTROL",              c, vrlg.CMPRS_AFIMUX_STATUS_CNTRL +        ba, 0, None, "x393_status_ctrl", "rw",           "AFI MUX 0 status report mode")),
+            (("X393_AFIMUX0_SA",                          c, vrlg.CMPRS_AFIMUX_SA_LEN +              ba, 1, z3,   "x393_afimux_sa", "rw",             "AFI MUX 0 DMA buffer start address in 32-byte blocks")),
+            (("X393_AFIMUX0_LEN",                         c, vrlg.CMPRS_AFIMUX_SA_LEN + 4 +          ba, 1, z3,   "x393_afimux_len", "rw",            "AFI MUX 0 DMA buffer length in 32-byte blocks"))]
+        ba = vrlg.CMPRS_GROUP_ADDR + vrlg.CMPRS_AFIMUX_RADDR1
+        sdefines +=[
+            (('_Same for the second AXI HP channel (not currently used)',)),
+            (("X393_AFIMUX1_EN",                          c, vrlg.CMPRS_AFIMUX_EN +                  ba, 0, None, "x393_afimux_en", "wo",             "AFI MUX 1 global/port run/pause control")),
+            (("X393_AFIMUX1_RST",                         c, vrlg.CMPRS_AFIMUX_RST +                 ba, 0, None, "x393_afimux_rst", "rw",            "AFI MUX 1 per-port resets")),
+            (("X393_AFIMUX1_REPORT_MODE",                 c, vrlg.CMPRS_AFIMUX_MODE +                ba, 0, None, "x393_afimux_report", "wo",         "AFI MUX 1 readout pointer report mode")),
+            (("X393_AFIMUX1_STATUS_CONTROL",              c, vrlg.CMPRS_AFIMUX_STATUS_CNTRL +        ba, 0, None, "x393_status_ctrl", "rw",           "AFI MUX 1 status report mode")),
+            (("X393_AFIMUX1_SA",                          c, vrlg.CMPRS_AFIMUX_SA_LEN +              ba, 1, z3,   "x393_afimux_sa", "rw",             "AFI MUX 1 DMA buffer start address in 32-byte blocks")),
+            (("X393_AFIMUX1_LEN",                         c, vrlg.CMPRS_AFIMUX_SA_LEN + 4 +          ba, 1, z3,   "x393_afimux_len", "rw",            "AFI MUX 1 DMA buffer length in 32-byte blocks"))]        
+
+        #compressor DMA status        
+        ba = vrlg.STATUS_ADDR
+        ia = 1
+        c =  "afi_port"
+        sdefines +=[
+            (('Read-only sensors status information (pointer offset and last sequence number)',)),
+            (("X393_AFIMUX0_STATUS",                    c, vrlg.CMPRS_AFIMUX_REG_ADDR0 +             ba, ia, z3, "x393_afimux_status", "ro",          "Status of the AFI MUX 0 (including image pointer)")),
+            (("X393_AFIMUX1_STATUS",                    c, vrlg.CMPRS_AFIMUX_REG_ADDR1 +             ba, ia, z3, "x393_afimux_status", "ro",          "Status of the AFI MUX 1 (including image pointer)")),
             ]
+
+        #GPIO control
+        ba = vrlg.GPIO_ADDR
+        ia = 0
+        c =  ""
+        sdefines +=[
+            (('_',)),
+            (('_GPIO contol. Each of the 10 pins can be controlled by the software - individually or simultaneously or from any of the 3 masters (other FPGA modules)',)),
+            (('_Currently these modules are;',)),
+            (('_     A - camsync (intercamera synchronization), uses up to 4 pins ',)),
+            (('_     B - reserved (not yet used) and ',)),
+            (('_     C - logger (IMU, GPS, images), uses 6 pins, including separate i2c available on extension boards',)),
+            (('_If several enabled ports try to contol the same bit, highest priority has port C, lowest - software controlled',)),
+            (("X393_GPIO_SET_PINS",                       "", vrlg.GPIO_SET_PINS +                   ba, 0, None, "x393_gpio_set_pins", "wo",       "State of the GPIO pins and seq. number")),
+            (("X393_GPIO_STATUS_CONTROL",                 "", vrlg.GPIO_SET_STATUS +                 ba, 0, None, "x393_status_ctrl", "rw",         "GPIO status control mode"))]
+        
+        ba = vrlg.STATUS_ADDR
+        sdefines +=[
+            (('Read-only GPIO pins state',)),
+            (("X393_GPIO_STATUS",                         "", vrlg.GPIO_STATUS_REG_ADDR +            ba, 0, None, "x393_gpio_status", "ro",         "State of the GPIO pins and seq. number"))]
+
+        #RTC control
+        ba = vrlg.RTC_ADDR
+        ia = 0
+        c =  ""
+        sdefines +=[
+            (('RTC control',)),
+            (("X393_RTC_USEC",                            "", vrlg.RTC_SET_USEC +                    ba, 0, None, "x393_rtc_usec", "rw",            "RTC microseconds")),
+            (("X393_RTC_SEC_SET",                         "", vrlg.RTC_SET_SEC +                     ba, 0, None, "x393_rtc_sec", "rw",             "RTC seconds and set clock")),
+            (("X393_RTC_CORR",                            "", vrlg.RTC_SET_CORR +                    ba, 0, None, "x393_rtc_corr", "rw",            "RTC correction (+/- 1/256 full scale)")),
+            (("X393_RTC_SET_STATUS",                      "", vrlg.RTC_SET_STATUS +                  ba, 0, None, "x393_status_ctrl", "rw",         "RTC status control mode, write makes a snapshot to be read out"))]
+        ba = vrlg.STATUS_ADDR
+        sdefines +=[
+            (('Read-only RTC state',)),
+            (("X393_RTC_STATUS",                         "", vrlg.RTC_STATUS_REG_ADDR +              ba, 0, None, "x393_rtc_status", "ro",          "RTC status reg")),
+            (("X393_RTC_STATUS_SEC",                     "", vrlg.RTC_SEC_USEC_ADDR + 0 +            ba, 0, None, "x393_rtc_sec", "ro",             "RTC snapshot seconds")),
+            (("X393_RTC_STATUS_USEC",                    "", vrlg.RTC_SEC_USEC_ADDR + 1 +            ba, 0, None, "x393_rtc_usec", "ro",            "RTC snapshot microseconds"))]
+        
+        #CAMSYNC control
+        ba = vrlg.CAMSYNC_ADDR
+        ia = 0
+        c =  "sens_chn"
+        sdefines +=[
+            (('CAMSYNC control',)),
+            (("X393_CAMSYNC_MODE",                        "", vrlg.CAMSYNC_MODE +                    ba, 0, None, "x393_camsync_mode", "wo",        "CAMSYNC mode")),
+            (("X393_CAMSYNC_TRIG_SRC",                    "", vrlg.CAMSYNC_TRIG_SRC +                ba, 0, None, "x393_camsync_io", "wo",          "CAMSYNC trigger source")),
+            (("X393_CAMSYNC_TRIG_DST",                    "", vrlg.CAMSYNC_TRIG_DST +                ba, 0, None, "x393_camsync_io", "wo",          "CAMSYNC trigger destination")),
+            (('_Trigger period has special value for small (<255) values written to this register',)),
+            (('_    d == 0 - disable (stop periodic mode)',)),
+            (('_    d == 1 - single trigger',)),
+            (('_    d == 2..255 - set output pulse / input-output serial bit duration (no start generated)',)),
+            (('_    d >= 256 - repetitive trigger',)),
+            (("X393_CAMSYNC_TRIG_PERIOD",                 "", vrlg.CAMSYNC_TRIG_PERIOD +             ba, 0, None, "u32*", "rw",                     "CAMSYNC trigger period")),
+            (("X393_CAMSYNC_TRIG_DELAY",                  c,  vrlg.CAMSYNC_TRIG_DELAY0 +             ba, 1, z3,   "u32*", "rw",                     "CAMSYNC trigger delay"))]
         
         """
-        
         """
         return sdefines
     
@@ -812,7 +981,7 @@ class X393ExportC(object):
         sdefines +=[
             (('Write-only addresses to program memory channel 3 (test channel)',)),
             (("X393_MCNTRL_CHN3_SCANLINE_MODE",            c, vrlg.MCNTRL_SCANLINE_MODE +             ba, 0, None, "x393_mcntrl_mode_scan", "wo",             "Set mode register (write last after other channel registers are set)")),
-            (("X393_MCNTRL_CHN3_SCANLINE_STATUS_CNTRL",    c, vrlg.MCNTRL_SCANLINE_STATUS_CNTRL +     ba, 0, None, "x393_status_ctrl", "wo",                  "Set status control register (status update mode)")),
+            (("X393_MCNTRL_CHN3_SCANLINE_STATUS_CNTRL",    c, vrlg.MCNTRL_SCANLINE_STATUS_CNTRL +     ba, 0, None, "x393_status_ctrl", "rw",                  "Set status control register (status update mode)")),
             (("X393_MCNTRL_CHN3_SCANLINE_STARTADDR",       c, vrlg.MCNTRL_SCANLINE_STARTADDR +        ba, 0, None, "x393_mcntrl_window_frame_sa", "wo",       "Set frame start address")),
             (("X393_MCNTRL_CHN3_SCANLINE_FRAME_SIZE",      c, vrlg.MCNTRL_SCANLINE_FRAME_SIZE +       ba, 0, None, "x393_mcntrl_window_frame_sa_inc", "wo",   "Set frame size (address increment)")),
             (("X393_MCNTRL_CHN3_SCANLINE_FRAME_LAST",      c, vrlg.MCNTRL_SCANLINE_FRAME_LAST +       ba, 0, None, "x393_mcntrl_window_last_frame_num", "wo", "Set last frame number (number of frames in buffer minus 1)")),
@@ -825,7 +994,7 @@ class X393ExportC(object):
         sdefines +=[
             (('Write-only addresses to program memory channel 2 (test channel)',)),
             (("X393_MCNTRL_CHN2_TILED_MODE",               c, vrlg.MCNTRL_TILED_MODE +                ba, 0, None, "x393_mcntrl_mode_scan", "wo",             "Set mode register (write last after other channel registers are set)")),
-            (("X393_MCNTRL_CHN2_TILED_STATUS_CNTRL",       c, vrlg.MCNTRL_TILED_STATUS_CNTRL +        ba, 0, None, "x393_status_ctrl", "wo",                  "Set status control register (status update mode)")),
+            (("X393_MCNTRL_CHN2_TILED_STATUS_CNTRL",       c, vrlg.MCNTRL_TILED_STATUS_CNTRL +        ba, 0, None, "x393_status_ctrl", "rw",                  "Set status control register (status update mode)")),
             (("X393_MCNTRL_CHN2_TILED_STARTADDR",          c, vrlg.MCNTRL_TILED_STARTADDR +           ba, 0, None, "x393_mcntrl_window_frame_sa", "wo",       "Set frame start address")),
             (("X393_MCNTRL_CHN2_TILED_FRAME_SIZE",         c, vrlg.MCNTRL_TILED_FRAME_SIZE +          ba, 0, None, "x393_mcntrl_window_frame_sa_inc", "wo",   "Set frame size (address increment)")),
             (("X393_MCNTRL_CHN2_TILED_FRAME_LAST",         c, vrlg.MCNTRL_TILED_FRAME_LAST +          ba, 0, None, "x393_mcntrl_window_last_frame_num", "wo", "Set last frame number (number of frames in buffer minus 1)")),
@@ -839,7 +1008,7 @@ class X393ExportC(object):
         sdefines +=[
             (('Write-only addresses to program memory channel 4 (test channel)',)),
             (("X393_MCNTRL_CHN4_TILED_MODE",               c, vrlg.MCNTRL_TILED_MODE +                ba, 0, None, "x393_mcntrl_mode_scan", "wo",             "Set mode register (write last after other channel registers are set)")),
-            (("X393_MCNTRL_CHN4_TILED_STATUS_CNTRL",       c, vrlg.MCNTRL_TILED_STATUS_CNTRL +        ba, 0, None, "x393_status_ctrl", "wo",                  "Set status control register (status update mode)")),
+            (("X393_MCNTRL_CHN4_TILED_STATUS_CNTRL",       c, vrlg.MCNTRL_TILED_STATUS_CNTRL +        ba, 0, None, "x393_status_ctrl", "rw",                  "Set status control register (status update mode)")),
             (("X393_MCNTRL_CHN4_TILED_STARTADDR",          c, vrlg.MCNTRL_TILED_STARTADDR +           ba, 0, None, "x393_mcntrl_window_frame_sa", "wo",       "Set frame start address")),
             (("X393_MCNTRL_CHN4_TILED_FRAME_SIZE",         c, vrlg.MCNTRL_TILED_FRAME_SIZE +          ba, 0, None, "x393_mcntrl_window_frame_sa_inc", "wo",   "Set frame size (address increment)")),
             (("X393_MCNTRL_CHN4_TILED_FRAME_LAST",         c, vrlg.MCNTRL_TILED_FRAME_LAST +          ba, 0, None, "x393_mcntrl_window_last_frame_num", "wo", "Set last frame number (number of frames in buffer minus 1)")),
@@ -1448,7 +1617,7 @@ class X393ExportC(object):
     def _enc_gamma_tbl_data(self):
         dw=[]
         dw.append(("base",            0, 10,   0,  "Knee point value (to be interpolated between)"))
-        dw.append(("diff",           10,  7,   0,  "Difference to next (signed, -64..+63)"))
+        dw.append((("diff","char"),  10,  7,   0,  "Difference to next (signed, -64..+63)"))
         dw.append(("diff",           17,  1,   0,  "Difference scale: 0 - keep diff, 1- multiply diff by 16"))
         return dw
     def _enc_gamma_height01(self):
@@ -1509,6 +1678,7 @@ class X393ExportC(object):
         dw.append(("pgmen",        vrlg.SENS_JTAG_PGMEN,       1,   0 , "Sensor port PGMEN level"))
         dw.append(("pgmen_set",    vrlg.SENS_JTAG_PGMEN + 1,   1,   0,  "Sensor port PGMEN set to 'pgmen' field"))
         return dw
+    """    
     def _enc_sensio_dly_par12(self):
         dw=[]
         dw.append(("pxd0",         0,  8,   0,  "PXD0  input delay (3 LSB not used)"))
@@ -1545,6 +1715,60 @@ class X393ExportC(object):
         dw.append(("dly_lane2",   80,  8,   0,  "lane 2 (phys) input delay (3 LSB not used)"))
         dw.append(("dly_lane3",   88,  8,   0,  "lane 3 (phys) input delay (3 LSB not used)"))
         dw.append(("phase_h",     96,  8,   0,  "MMCM phase"))
+        return dw
+    """
+
+        #Splitting into single DWORD structures
+    def _enc_sensio_par12_tim0(self):
+        dw=[]
+        dw.append(("pxd0",         0,  8,   0,  "PXD0  input delay (3 LSB not used)"))
+        dw.append(("pxd1",         8,  8,   0,  "PXD1  input delay (3 LSB not used)"))
+        dw.append(("pxd2",        16,  8,   0,  "PXD2  input delay (3 LSB not used)"))
+        dw.append(("pxd3",        24,  8,   0,  "PXD3  input delay (3 LSB not used)"))
+        return dw
+    def _enc_sensio_par12_tim1(self):
+        dw=[]
+        dw.append(("pxd4",         0,  8,   0,  "PXD4  input delay (3 LSB not used)"))
+        dw.append(("pxd5",         8,  8,   0,  "PXD5  input delay (3 LSB not used)"))
+        dw.append(("pxd6",        16,  8,   0,  "PXD6  input delay (3 LSB not used)"))
+        dw.append(("pxd7",        24,  8,   0,  "PXD7  input delay (3 LSB not used)"))
+        return dw
+    def _enc_sensio_par12_tim2(self):
+        dw=[]
+        dw.append(("pxd8",         0,  8,   0,  "PXD8  input delay (3 LSB not used)"))
+        dw.append(("pxd9",         8,  8,   0,  "PXD9  input delay (3 LSB not used)"))
+        dw.append(("pxd10",       16,  8,   0,  "PXD10 input delay (3 LSB not used)"))
+        dw.append(("pxd11",       24,  8,   0,  "PXD11 input delay (3 LSB not used)"))
+        return dw
+    def _enc_sensio_par12_tim3(self):
+        dw=[]
+        dw.append(("hact",         0,  8,   0,  "HACT  input delay (3 LSB not used)"))
+        dw.append(("vact",         8,  8,   0,  "VACT  input delay (3 LSB not used)"))
+        dw.append(("bpf",         16,  8,   0,  "BPF (clock from sensor) input delay (3 LSB not used)"))
+        dw.append(("phase_p",     24,  8,   0,  "MMCM phase"))
+        return dw
+    
+    def _enc_sensio_hispi_tim0(self):
+        dw=[]
+        dw.append(("fifo_lag",     0,  4,   7,  "FIFO delay to start output"))
+        return dw
+    def _enc_sensio_hispi_tim1(self):
+        dw=[]
+        dw.append(("phys_lane0",   0,  2,   1,  "Physical lane for logical lane 0"))
+        dw.append(("phys_lane1",   2,  2,   2,  "Physical lane for logical lane 1"))
+        dw.append(("phys_lane2",   4,  2,   3,  "Physical lane for logical lane 2"))
+        dw.append(("phys_lane3",   6,  2,   0,  "Physical lane for logical lane 3"))
+        return dw
+    def _enc_sensio_hispi_tim2(self):
+        dw=[]
+        dw.append(("dly_lane0",    0,  8,   0,  "lane 0 (phys) input delay (3 LSB not used)"))
+        dw.append(("dly_lane1",    8,  8,   0,  "lane 1 (phys) input delay (3 LSB not used)"))
+        dw.append(("dly_lane2",   16,  8,   0,  "lane 2 (phys) input delay (3 LSB not used)"))
+        dw.append(("dly_lane3",   24,  8,   0,  "lane 3 (phys) input delay (3 LSB not used)"))
+        return dw
+    def _enc_sensio_hispi_tim3(self):
+        dw=[]
+        dw.append(("phase_h",      0,  8,   0,  "MMCM phase"))
         return dw
 
     def _enc_sensio_width(self):
@@ -1673,6 +1897,131 @@ class X393ExportC(object):
         dw.append(("type",     24, 2,    0, "0: quantization, 1: coring, 2: focus, 3: huffman"))
         return dw
     
+    def _enc_cmprs_afimux_sa(self):
+        dw=[]
+        dw.append(("sa256",     0, 27,   0, "System memory buffer start in multiples of 32 bytes (256 bits)"))
+        return dw
+    def _enc_cmprs_afimux_len(self):
+        dw=[]
+        dw.append(("len256",    0, 27,   0, "System memory buffer length in multiples of 32 bytes (256 bits)"))
+        return dw
+    def _enc_cmprs_afimux_rst(self):
+        dw=[]
+        dw.append(("rst0",      0,  1,   0, "AXI HPx sub-channel0 reset (0 - normal operation, 1 - reset)"))
+        dw.append(("rst1",      1,  1,   0, "AXI HPx sub-channel0 reset (0 - normal operation, 1 - reset)"))
+        dw.append(("rst2",      2,  1,   0, "AXI HPx sub-channel0 reset (0 - normal operation, 1 - reset)"))
+        dw.append(("rst3",      3,  1,   0, "AXI HPx sub-channel0 reset (0 - normal operation, 1 - reset)"))
+        return dw
+    def _enc_cmprs_afimux_en(self):
+        dw=[]
+        dw.append(("en0",       0,  1,   0, "AXI HPx sub-channel0 enable value to set (0 - pause, 1 - run)"))
+        dw.append(("en0_set",   1,  1,   0, "0 - nop, 1 - set en0"))
+        dw.append(("en1",       2,  1,   0, "AXI HPx sub-channel1 enable value to set (0 - pause, 1 - run)"))
+        dw.append(("en1_set",   3,  1,   0, "0 - nop, 1 - set en1"))
+        dw.append(("en2",       4,  1,   0, "AXI HPx sub-channel2 enable value to set (0 - pause, 1 - run)"))
+        dw.append(("en2_set",   5,  1,   0, "0 - nop, 1 - set en2"))
+        dw.append(("en3",       6,  1,   0, "AXI HPx sub-channel3 enable value to set (0 - pause, 1 - run)"))
+        dw.append(("en3_set",   7,  1,   0, "0 - nop, 1 - set en3"))
+        dw.append(("en",        8,  1,   0, "AXI HPx global enable value to set (0 - pause, 1 - run)"))
+        dw.append(("en_set",    9,  1,   0, "0 - nop, 1 - set en"))
+        return dw
+
+    def _enc_cmprs_afimux_report(self):
+        dw=[]
+        dw.append(("mode0",     0,  2,   0, "channel0 report mode: 0 - EOF int, 1 - EOF confirmed, 2 - CP (current), 3 - CP confirmed"))
+        dw.append(("mode0_set", 2,  1,   0, "0 - nop, 1 - set mode0"))
+        dw.append(("mode1",     4,  2,   0, "channel0 report mode: 0 - EOF int, 1 - EOF confirmed, 2 - CP (current), 3 - CP confirmed"))
+        dw.append(("mode1_set", 6,  1,   0, "0 - nop, 1 - set mode0"))
+        dw.append(("mode2",     8,  2,   0, "channel0 report mode: 0 - EOF int, 1 - EOF confirmed, 2 - CP (current), 3 - CP confirmed"))
+        dw.append(("mode2_set",10,  1,   0, "0 - nop, 1 - set mode0"))
+        dw.append(("mode3",    12,  2,   0, "channel0 report mode: 0 - EOF int, 1 - EOF confirmed, 2 - CP (current), 3 - CP confirmed"))
+        dw.append(("mode3_set",14,  1,   0, "0 - nop, 1 - set mode0"))
+        return dw
+
+    def _enc_cmprs_afimux_status(self):
+        dw=[]
+        dw.append(("offset256", 0, 26,   0, "AFI MUX current/EOF pointer offset in 32-byte blocks"))
+        dw.append(("seq_num",  26,  6,   0, "Status sequence number"))
+        return dw
+
+    def _enc_cmprs_gpio_out(self):
+        dw=[]
+        dw.append(("pin0",      0,  2,   0, "Output control for pin 0: 0 - nop, 1 - set low, 2 - set high, 3 - tristate"))
+        dw.append(("pin1",      2,  2,   0, "Output control for pin 1: 0 - nop, 1 - set low, 2 - set high, 3 - tristate"))
+        dw.append(("pin2",      4,  2,   0, "Output control for pin 2: 0 - nop, 1 - set low, 2 - set high, 3 - tristate"))
+        dw.append(("pin3",      6,  2,   0, "Output control for pin 3: 0 - nop, 1 - set low, 2 - set high, 3 - tristate"))
+        dw.append(("pin4",      8,  2,   0, "Output control for pin 4: 0 - nop, 1 - set low, 2 - set high, 3 - tristate"))
+        dw.append(("pin5",     10,  2,   0, "Output control for pin 5: 0 - nop, 1 - set low, 2 - set high, 3 - tristate"))
+        dw.append(("pin6",     12,  2,   0, "Output control for pin 6: 0 - nop, 1 - set low, 2 - set high, 3 - tristate"))
+        dw.append(("pin7",     14,  2,   0, "Output control for pin 7: 0 - nop, 1 - set low, 2 - set high, 3 - tristate"))
+        dw.append(("pin8",     16,  2,   0, "Output control for pin 8: 0 - nop, 1 - set low, 2 - set high, 3 - tristate"))
+        dw.append(("pin8",     18,  2,   0, "Output control for pin 0: 0 - nop, 1 - set low, 2 - set high, 3 - tristate"))
+        dw.append(("soft",     24,  2,   0, "Enable pin software control: 0,1 - nop, 2 - disab;e, 3 - enable"))
+        dw.append(("chn_a",    26,  2,   0, "Enable A channel (camsync): 0,1 - nop, 2 - disab;e, 3 - enable"))
+        dw.append(("chn_b",    28,  2,   0, "Enable B channel (reserved): 0,1 - nop, 2 - disab;e, 3 - enable"))
+        dw.append(("chn_c",    30,  2,   0, "Enable C channel (logger): 0,1 - nop, 2 - disab;e, 3 - enable"))
+        return dw
+
+    def _enc_cmprs_gpio_status(self):
+        dw=[]
+        dw.append(("pin0",      0,  1,   0, "GPIO pin 0 state"))
+        dw.append(("pin1",      1,  1,   0, "GPIO pin 0 state"))
+        dw.append(("pin2",      2,  1,   0, "GPIO pin 0 state"))
+        dw.append(("pin3",      3,  1,   0, "GPIO pin 0 state"))
+        dw.append(("pin4",      4,  1,   0, "GPIO pin 0 state"))
+        dw.append(("pin5",      5,  1,   0, "GPIO pin 0 state"))
+        dw.append(("pin6",      6,  1,   0, "GPIO pin 0 state"))
+        dw.append(("pin7",      7,  1,   0, "GPIO pin 0 state"))
+        dw.append(("pin8",      8,  1,   0, "GPIO pin 0 state"))
+        dw.append(("pin9",      9,  1,   0, "GPIO pin 0 state"))
+        dw.append(("seq_num",  26,  6,   0, "Status sequence number"))
+        return dw
+
+    def _enc_rtc_sec(self):
+        dw=[]
+        dw.append(("sec",       0, 32,   0, "RTC seconds"))
+        return dw
+    def _enc_rtc_usec(self):
+        dw=[]
+        dw.append(("usec",      0, 20,   0, "RTC microseconds"))
+        return dw
+    def _enc_rtc_corr(self):
+        dw=[]
+        dw.append((("corr","short"), 0, 16,   0, "RTC correction, +/1 1/256 full scale"))
+        return dw
+    def _enc_rtc_status(self):
+        dw=[]
+        dw.append(("alt_snap", 24,  1,   0, "alternates 0/1 each time RTC timer makes a snapshot"))
+        dw.append(("seq_num",  26,  6,   0, "Status sequence number"))
+        return dw
+
+    def _enc_camsync_lines(self):
+        dw=[]
+        dw.append(("line0",    0,   2,   1, "line 0 mode: 0 - inactive, 1 - keep (nop), 2 - active low, 3 - active high"))
+        dw.append(("line1",    2,   2,   1, "line 1 mode: 0 - inactive, 1 - keep (nop), 2 - active low, 3 - active high"))
+        dw.append(("line2",    4,   2,   1, "line 2 mode: 0 - inactive, 1 - keep (nop), 2 - active low, 3 - active high"))
+        dw.append(("line3",    6,   2,   1, "line 3 mode: 0 - inactive, 1 - keep (nop), 2 - active low, 3 - active high"))
+        dw.append(("line4",    8,   2,   1, "line 4 mode: 0 - inactive, 1 - keep (nop), 2 - active low, 3 - active high"))
+        dw.append(("line5",   10,   2,   1, "line 5 mode: 0 - inactive, 1 - keep (nop), 2 - active low, 3 - active high"))
+        dw.append(("line6",   12,   2,   1, "line 6 mode: 0 - inactive, 1 - keep (nop), 2 - active low, 3 - active high"))
+        dw.append(("line7",   14,   2,   1, "line 7 mode: 0 - inactive, 1 - keep (nop), 2 - active low, 3 - active high"))
+        dw.append(("line8",   16,   2,   1, "line 8 mode: 0 - inactive, 1 - keep (nop), 2 - active low, 3 - active high"))
+        dw.append(("line9",   18,   2,   1, "line 9 mode: 0 - inactive, 1 - keep (nop), 2 - active low, 3 - active high"))
+        return dw
+    def _enc_camsync_mode(self):
+        dw=[]
+        dw.append(("en",             vrlg.CAMSYNC_EN_BIT,             1,   1, "Enable CAMSYNC module"))
+        dw.append(("en_snd",         vrlg.CAMSYNC_SNDEN_BIT-1,        1,   1, "Enable sending timestamps (valid with 'en_snd_set')"))
+        dw.append(("en_snd_set",     vrlg.CAMSYNC_SNDEN_BIT,          1,   0, "Set 'en_snd'"))
+        dw.append(("ext",            vrlg.CAMSYNC_EXTERNAL_BIT - 1,   1,   1, "Use external (received) timestamps, if available. O - use local timestamps"))
+        dw.append(("ext_set",        vrlg.CAMSYNC_EXTERNAL_BIT,       1,   0, "Set 'ext'"))
+        dw.append(("trig",           vrlg.CAMSYNC_TRIGGERED_BIT - 1,  1,   1, "Sensor triggered mode (0 - free running sesnor)"))
+        dw.append(("trig_set",       vrlg.CAMSYNC_TRIGGERED_BIT,      1,   0, "Set 'trig'"))
+        dw.append(("master_chn",     vrlg.CAMSYNC_MASTER_BIT - 2,     2,   0, "master sensor channel (zero delay in internal trigger mode, delay used for flash output)"))
+        dw.append(("master_chn_set", vrlg.CAMSYNC_MASTER_BIT,         1,   0, "Set 'master_chn'"))
+        dw.append(("ts_chns",        vrlg.CAMSYNC_CHN_EN_BIT - 4,     4,   1, "Channels to generate timestmp messages (bit mask)"))
+        dw.append(("ts_chns_set",    vrlg.CAMSYNC_CHN_EN_BIT,         1,   0, "Set 'ts_chns'"))
+        return dw
 
 
     def get_pad32(self, data, wlen=32, name="unnamed", padLast=False):
@@ -1690,6 +2039,7 @@ class X393ExportC(object):
         if padLast and (next_bit % wlen):
             padded_data.append(("", next_bit, wlen- (next_bit % wlen), 0,""))
         return padded_data        
+            
             
             
     
@@ -1718,9 +2068,14 @@ class X393ExportC(object):
                 s += "    struct {\n"
             else:
                 s += "typedef struct {\n"
-            frmt= "%s    %%s %%%ds:%%2d;"%(("","    ")[isUnion], max([len(i[0]) for i in lines]+[ frmt_spcs['nameLength']]))
+            frmt= "%s    %%5s %%%ds:%%2d;"%(("","    ")[isUnion], max([len(i[0]) for i in lines]+[ frmt_spcs['nameLength']]))
             for line in lines:
-                s += frmt%( frmt_spcs['ftype'], line[0], line[2])
+                n = line[0]
+                t = frmt_spcs['ftype']
+                if isinstance(n,(list,tuple)):
+                    t = n[1]
+                    n = n[0]
+                s += frmt%( t, n, line[2])
                 if line[0] or  frmt_spcs['showReserved']:
                     hasComment = (len(line) > 4) and line[4]
                     if  frmt_spcs['showBits'] or  frmt_spcs['showDefaults']:
@@ -1740,7 +2095,8 @@ class X393ExportC(object):
                     elif hasComment:
                         s+=" // "+line[4]
                 s+="\n"
-                sz=line[1]+line[2]
+            sz=lines[0][1]+lines[0][2]
+                   
             if isUnion:
                 if frmt_spcs['nameMembers']:
                     s += "    } struct_%d;\n"%(ns)
@@ -1752,7 +2108,6 @@ class X393ExportC(object):
             return "\n// %s\n\n"%(comment) + s
         else:
             return "\n"+s 
-
 
     def fix_frmt_spcs(self,frmt_spcs):
         specs= frmt_spcs;    

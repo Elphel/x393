@@ -71,22 +71,23 @@ module camsync393       #(
     input                         mrst,        // @ posedge mclk - sync reset
     input                   [7:0] cmd_ad,      // byte-serial command address/data (up to 6 bytes: AL-AH-D0-D1-D2-D3 
     input                         cmd_stb,     // strobe (with first byte) for the command a/d
-                           // 0 - mode: [1:0] +2 - reset ts_snd_en, +3 - set ts_snd_en - enable sending timestamp over sync line
-                           //           [3:2] +8 - reset ts_external, +'hc - set ts_external:
+                           // 0 - mode: [0] - enable module, 0 reset
+                           //           [2:1] +4 - reset ts_snd_en, +6 - set ts_snd_en - enable sending timestamp over sync line
+                           //           [4:3] +0x10 - reset ts_external, +'hc - set ts_external:
                            //                  1 - use external timestamp, if available. 0 - always use local ts
-                           //           [5:4] +'h20 - reset triggered mode (free running sensor), +'h30 - set sensor triggered mode
-                           //           [8:6] +'h100 - set master channel (zero delay in internal trigger mode, delay used for flash output)
-                           //          [13:9] +'h2000 - set which channels to generate timestamp mesages
+                           //           [6:5] +'h40 - reset triggered mode (free running sensor), +'h30 - set sensor triggered mode
+                           //           [9:7] +'h200 - set master channel (zero delay in internal trigger mode, delay used for flash output)
+                           //         [14:10] +'h4000 - set which channels to generate timestamp messages
                            // UPDATE now di-bit "01" means "keep" (00 - do not use, 01 - keep, 10 set active 0, 11 - set active 1)
                            // 1 - source of trigger (10 bit pairs, LSB - level to trigger, MSB - use this bit). All 0 - internal trigger
                            //     in internal mode output has variable delay from the internal trigger (relative to sensor trigger)
                            // 2 - 10 bit pairs: MSB - enable selected line, LSB - level to send when trigger active
                            //     bit 25==1 some of the bits use test mode signals:
                            // 3 - output trigger period (duration constant of 256 pixel clocks). 
-                           //     d==0 - disable (stop periodic mode)
-                           //     d==1 - single trigger
-                           //     d==2..255 - set output pulse / input-output serial bit duration (no start generated)
-                           //     256>=d - repetitive trigger
+                           //     d == 0 - disable (stop periodic mode)
+                           //     d == 1 - single trigger
+                           //     d == 2..255 - set output pulse / input-output serial bit duration (no start generated)
+                           //     d >= 256 - repetitive trigger
                            
                            // 4..7 - input trigger delay (in pclk periods) 
     input                         pclk,           // pixel clock (global) - switch it to 100MHz (mclk/2)?
