@@ -53,7 +53,6 @@
 // 0x1f - control register:
 //     [14] -   reset all FIFO (takes 32 clock pulses), also - stops seq until run command
 //     [13:12] - 3 - run seq, 2 - stop seq , 1,0 - no change to run state
-
 // New - [1:0] - 0: NOP, 1: clear IRQ, 2 - Clear IE, 3: set IE
 
 module  cmd_frame_sequencer#(

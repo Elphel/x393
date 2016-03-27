@@ -545,6 +545,10 @@ class X393ExportC(object):
                                  data =      self._enc_camsync_mode(),
                                  name =      "x393_camsync_mode", typ="wo",
                                  frmt_spcs = frmt_spcs)
+        stypedefs += self.get_typedef32(comment =   "CMDFRAMESEQ mode",
+                                 data =      self._enc_cmdframeseq_mode(),
+                                 name =      "x393_cmdframeseq_mode", typ="wo",
+                                 frmt_spcs = frmt_spcs)
         return stypedefs
     
     def define_macros(self):
@@ -552,6 +556,7 @@ class X393ExportC(object):
         ba = vrlg.CONTROL_ADDR
         z3= (0,3)
         z7 = (0,7)
+        z14= (0,14)
         z15= (0,15)
         z31= (0,31)
         ia = 1
@@ -745,9 +750,8 @@ class X393ExportC(object):
 // 2 - I2C register read: index page, slave address (8-bit, with lower bit 0) and one or 2 address bytes (as programmed
 //     in the table. Slave address is always in byte 2 (bits 23:16), byte1 (high register address) is skipped if
 //     read address in the table is programmed to be a single-byte one''',)),
-            (("X393_SENSI2C_ABS",                       c, vrlg.SENSI2C_ABS_RADDR +                        ba, ia, z3, "u32*", "wo",                         "Write sensor i2c sequencer")),
-            (("X393_SENSI2C_REL",                       c, vrlg.SENSI2C_REL_RADDR +                        ba, ia, z3, "u32*", "wo",                         "Write sensor i2c sequencer")),
-]
+            (("X393_SENSI2C_ABS",            (c,"offset"), vrlg.SENSI2C_ABS_RADDR +                      ba, (ia,1), (z3,z15), "u32*", "wo",                 "Write sensor i2c sequencer")),
+            (("X393_SENSI2C_REL",            (c,"offset"), vrlg.SENSI2C_REL_RADDR +                      ba, (ia,1), (z3,z15), "u32*", "wo",                 "Write sensor i2c sequencer"))]
         
         #Lens vignetting correction
         ba = vrlg.SENSOR_GROUP_ADDR + vrlg.SENS_LENS_RADDR
@@ -970,8 +974,27 @@ class X393ExportC(object):
             (("X393_CAMSYNC_TRIG_PERIOD",                 "", vrlg.CAMSYNC_TRIG_PERIOD +             ba, 0, None, "u32*", "rw",                     "CAMSYNC trigger period")),
             (("X393_CAMSYNC_TRIG_DELAY",                  c,  vrlg.CAMSYNC_TRIG_DELAY0 +             ba, 1, z3,   "u32*", "rw",                     "CAMSYNC trigger delay"))]
         
-        """
-        """
+        ba = vrlg.CMDFRAMESEQ_ADDR_BASE
+        ia = vrlg.CMDFRAMESEQ_ADDR_INC
+        c =  "sens_chn"
+        sdefines +=[
+            (('Command sequencer control',)),
+            (('_Controller is programmed through 32 locations. Each registers but the control require two writes:',)),
+            (('_First write - register address (AXI_WR_ADDR_BITS bits), second - register data (32 bits)',)),
+            (('_Writing to the contol register (0x1f) resets the first/second counter so the next write will be "first"',)),
+            (('_0x0..0xf write directly to the frame number [3:0] modulo 16, except if you write to the frame',)),
+            (('_          "just missed" - in that case data will go to the current frame.',)),
+            (('_ 0x10 - write seq commands to be sent ASAP',)),
+            (('_ 0x11 - write seq commands to be sent after the next frame starts',)), 
+            (('_',)),
+            (('_ 0x1e - write seq commands to be sent after the next 14 frame start pulses',)),
+            (('_ 0x1f - control register:',)),
+            (('_     [14] -   reset all FIFO (takes 32 clock pulses), also - stops seq until run command',)),
+            (('_     [13:12] - 3 - run seq, 2 - stop seq , 1,0 - no change to run state',)),
+            (('_       [1:0] - 0: NOP, 1: clear IRQ, 2 - Clear IE, 3: set IE',)),
+            (("X393_CMDFRAMESEQ_CTRL",                    c,  vrlg.CMDFRAMESEQ_CTRL +                ba, ia, z3, "x393_cmdframeseq_mode", "wo",     "CMDFRAMESEQ control register")),
+            (("X393_CMDFRAMESEQ_ABS",          (c,"offset"),  vrlg.CMDFRAMESEQ_ABS +                 ba, (ia,1), (z3,z15), "u32*", "wo",            "CMDFRAMESEQ absolute frame address/command")),
+            (("X393_CMDFRAMESEQ_REL",          (c,"offset"),  vrlg.CMDFRAMESEQ_REL +                 ba, (ia,1), (z3,z14), "u32*", "wo",            "CMDFRAMESEQ relative frame address/command"))]        
         return sdefines
     
     def define_other_macros(self): # Used mostly for development/testing, not needed for normal camera operation
@@ -1120,6 +1143,8 @@ class X393ExportC(object):
                   frmt_spcs):
 #        name, var_name, address, address_inc, var_range, data_type, rw, comment = define_tuple
         name, var_name, address, address_inc, _, data_type, rw, comment = define_tuple
+        multivar = isinstance(address_inc,(list,tuple)) # var_name, var_range are also lists/tuples of the same length
+        
         stops=frmt_spcs[('declare','define')[isDefine]]
         #TODO: add optional argument range check?
         data_type = self.fix_data_type(data_type)
@@ -1130,11 +1155,15 @@ class X393ExportC(object):
         if ('r' in rw) and ('w' in rw):
             fname = 'get_'+fname
             comment = "" # set is supposed to go first, if both - only set has comment
-        arg = var_name.lower()   
-        args = 'void'
-        if arg and address_inc:
-            args = 'int '+ arg    
-#        s= "%s %s(%s)"%(data_type, fname,args)
+        if multivar:
+            args = "int %s"%(var_name[0].lower())
+            for vn in var_name[1:]:
+                args += ", int %s"%(vn.lower())
+        else:       
+            arg = var_name.lower()   
+            args = 'void'
+            if arg and address_inc:
+                args = 'int '+ arg    
         s = "%s "%(data_type)
         s = self.str_tab_stop(s,stops[0])
         s += "%s"%(fname)
@@ -1144,7 +1173,13 @@ class X393ExportC(object):
         if isDefine:
             s+='{'
             if address_inc:
-                s+='return (%s) readl(0x%08x + 0x%x * %s)'%(data_type, address, address_inc, arg)
+                if multivar:
+                    s+='return (%s) readl(0x%08x)'%(data_type, address)
+                    for vn, vi in zip (var_name, address_inc):
+                        s+=' + 0x%x * %s'%(vi, vn.lower())
+                    s+=")"    
+                else:
+                    s+='return (%s) readl(0x%08x + 0x%x * %s)'%(data_type, address, address_inc, arg)
             else:
                 s+='return (%s) readl(0x%08x)'%(data_type, address)
             s+='};'
@@ -1161,6 +1196,7 @@ class X393ExportC(object):
                   frmt_spcs):
 #        name, var_name, address, address_inc, var_range, data_type, rw, comment = define_tuple
         name, var_name, address, address_inc, _, data_type, rw, comment = define_tuple
+        multivar = isinstance(address_inc,(list,tuple)) # var_name, var_range are also lists/tuples of the same length
         stops=frmt_spcs[('declare','define')[isDefine]]
         #TODO: add optional argument range check?
         data_type = self.fix_data_type(data_type)
@@ -1170,11 +1206,14 @@ class X393ExportC(object):
         fname = name.lower()
         if ('r' in rw) and ('w' in rw):
             fname = 'set_'+fname
-        arg = var_name.lower()   
         args = '%s d'%(data_type)
-        if arg and address_inc:
-            args += ', int '+ arg    
-#        s= "void %s(%s)"%(fname,args)
+        if multivar:
+            for vn in var_name:
+                args += ', int '+ vn.lower()
+        else:
+            arg = var_name.lower()   
+            if arg and address_inc:
+                args += ', int '+ arg    
         s = "void "
         s = self.str_tab_stop(s,stops[0])
         s += "%s"%(fname)
@@ -1184,7 +1223,13 @@ class X393ExportC(object):
         if isDefine:
             s+='{'
             if address_inc:
-                s+='writel(0x%08x + 0x%x * %s, (u32) d)'%(address, address_inc, arg)
+                if multivar:
+                    s+='writel(0x%08x'%(address)
+                    for vn, vi in zip (var_name, address_inc):
+                        s+=' + 0x%x * %s'%(vi, vn.lower())
+                    s+=', (u32) d)'
+                else:
+                    s+='writel(0x%08x + 0x%x * %s, (u32) d)'%(address, address_inc, arg)
             else:
                 s+='writel(0x%08x, (u32) d)'%(address)
             s+='};'
@@ -1201,14 +1246,19 @@ class X393ExportC(object):
                   frmt_spcs):
 #       name, var_name, address, address_inc, var_range, data_type, rw, comment = define_tuple
         name, var_name, address, address_inc, _,            _,       _,  comment = define_tuple
+        multivar = isinstance(address_inc,(list,tuple)) # var_name, var_range are also lists/tuples of the same length
         stops=frmt_spcs[('declare','define')[isDefine]]
         #TODO: add optional argument range check?
         fname = name.lower()
-        arg = var_name.lower()   
-        args = 'void'
-        if arg and address_inc:
-            args = 'int '+ arg    
-#        s= "void %s(%s)"%(fname,args)
+        if multivar:
+            args = "int %s"%(var_name[0].lower())
+            for vn in var_name[1:]:
+                args += ", int %s"%(vn.lower())
+        else:       
+            arg = var_name.lower()   
+            args = 'void'
+            if arg and address_inc:
+                args = 'int '+ arg    
         s = "void "
         s = self.str_tab_stop(s,stops[0])
         s += "%s"%(fname)
@@ -1218,7 +1268,13 @@ class X393ExportC(object):
         if isDefine:
             s+='{'
             if address_inc:
-                s+='writel(0x%08x + 0x%x * %s, 0)'%(address, address_inc, arg)
+                if multivar:
+                    s+='writel(0x%08x'%(address)
+                    for vn, vi in zip (var_name, address_inc):
+                        s+=' + 0x%x * %s'%(vi, vn.lower())
+                    s+=', 0)'
+                else:
+                    s+='writel(0x%08x + 0x%x * %s, 0)'%(address, address_inc, arg)
             else:
                 s+='writel(0x%08x, 0)'%(address)
             s+='};'
@@ -1249,20 +1305,46 @@ class X393ExportC(object):
                     s += "\n// %s\n"%(comment)
         else:
             name, var_name, address, address_inc, var_range, data_type, rw, comment = define_tuple
+            multivar = isinstance(address_inc,(list,tuple)) # var_name, var_range are also lists/tuples of the same length
             if var_range and frmt_spcs['showRange']:
                 if comment:
                     comment += ', '
-                comment += "%s = %d..%d"%(var_name, var_range[0], var_range[1])
+                else:
+                    comment = ""
+                if multivar:
+                    first = True
+                    for vn,vr in zip(var_name, var_range):
+                        if first:
+                            first = False
+                        else:    
+                            comment += ', '
+                        comment += "%s = %d..%d"%(vn, vr[0], vr[1])
+                else:    
+                    comment += "%s = %d..%d"%(var_name, var_range[0], var_range[1])
             if data_type and frmt_spcs['showType']:
                 if comment:
                     comment += ', '
                 comment += "data type: %s (%s)"%(self.fix_data_type(data_type), rw)
             name_len = len(name)
             if address_inc:
-                name_len += 2 + len(var_name)
+                if multivar:
+                    name_len += 4 + len(var_name[0])
+                    for vn in var_name[1:]:
+                        name_len += 3 + len(vn)
+                else:        
+                    name_len += 2 + len(var_name)
             ins_spaces = max(0,frmt_spcs['macroNameLen'] - name_len)
             if address_inc:
-                s = "#define %s(%s) %s(0x%08x + 0x%x * (%s))"%(name, var_name, ' ' * ins_spaces, address, address_inc, var_name)
+                if multivar:
+                    vname = "(%s)"%(var_name[0])
+                    for vn in var_name[1:]:
+                        vname +=",(%s)"%(vn)
+                    s = "#define %s(%s) %s(0x%08x)"%(name, vname, ' ' * ins_spaces, address)
+                    for vn, vi in zip(var_name, address_inc):
+                        s += "+ 0x%x * (%s)"%(vi,vn)
+                    s+=")"                        
+                else:    
+                    s = "#define %s(%s) %s(0x%08x + 0x%x * (%s))"%(name, var_name, ' ' * ins_spaces, address, address_inc, var_name)
             else:
                 s = "#define %s %s0x%08x"%(name,' ' * ins_spaces, address)
             if comment:
@@ -1270,6 +1352,11 @@ class X393ExportC(object):
         return s
 
     def expand_define_parameters(self, in_defs, showGaps = True):
+        def recursive_pairs(increments,ranges):
+            if len(increments) == 0:
+                return (("",0),)
+            else:
+                return [("__%d%s"%(i,s),increments[0]*i+d) for i in range(ranges[0][0],ranges[0][1]+1) for s,d in recursive_pairs(increments[1:],ranges[1:])]
         exp_defs=[]
         for define_tuple in in_defs:
             if len(define_tuple) == 8:
@@ -1279,9 +1366,13 @@ class X393ExportC(object):
                         exp_defs.append(define_tuple)
                         nextAddr = address + 4
                     else:
-                        for x in range(var_range[0], var_range[1] + 1):
-                            exp_defs.append(("%s__%d"%(name,x),var_name,address+x*address_inc,0,None,data_type,rw, comment))
-                        nextAddr = address + var_range[1] * address_inc + 4
+                        if isinstance(address_inc,(list,tuple)):
+                            for suffix, offset in recursive_pairs(address_inc,var_range):
+                                exp_defs.append(("%s%s"%(name,suffix),var_name,address + offset ,0,None,data_type,rw, comment))
+                        else:
+                            for x in range(var_range[0], var_range[1] + 1):
+                                exp_defs.append(("%s__%d"%(name,x),var_name,address+x*address_inc,0,None,data_type,rw, comment))
+                                nextAddr = address + var_range[1] * address_inc + 4
         #now sort address map
         sorted_defs= sorted(exp_defs,key=lambda item: item[2])
         if showGaps:
@@ -2021,6 +2112,13 @@ class X393ExportC(object):
         dw.append(("master_chn_set", vrlg.CAMSYNC_MASTER_BIT,         1,   0, "Set 'master_chn'"))
         dw.append(("ts_chns",        vrlg.CAMSYNC_CHN_EN_BIT - 4,     4,   1, "Channels to generate timestmp messages (bit mask)"))
         dw.append(("ts_chns_set",    vrlg.CAMSYNC_CHN_EN_BIT,         1,   0, "Set 'ts_chns'"))
+        return dw
+
+    def _enc_cmdframeseq_mode(self):
+        dw=[]
+        dw.append(("interrupt_cmd",  vrlg.CMDFRAMESEQ_IRQ_BIT,        2,   0, "Interrupt command: 0-nop, 1 - clear is, 2 - disable, 3 - enable"))
+        dw.append(("run_cmd",        vrlg.CMDFRAMESEQ_RUN_BIT - 1,    2,   0, "Run command: 0,1 - nop, 2 - stop, 3 - run"))
+        dw.append(("reset",          vrlg.CMDFRAMESEQ_RST_BIT,        1,   0, "1 - reset, 0 - normal operation"))
         return dw
 
 
