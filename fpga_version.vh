@@ -31,7 +31,8 @@
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
  *******************************************************************************/
-      parameter FPGA_VERSION =          32'h0393007b;  // lvcmos25_lvds_25_diff
+      parameter FPGA_VERSION =          32'h0393007c;    // fixed cmdseqmux - reporting interrupt status and mask correctly
+//      parameter FPGA_VERSION =          32'h0393007b;  // lvcmos25_lvds_25_diff
 //      parameter FPGA_VERSION =          32'h0393007a;  // lvcmos25_ppds_25_nodiff - OK
 //      parameter FPGA_VERSION =          32'h03930079;  // diff - failed
 //      parameter FPGA_VERSION =          32'h03930078;  // lvcmos18_ppds_25_nodiff

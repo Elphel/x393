@@ -97,8 +97,8 @@ module  cmd_seq_mux#(
     wire        ackn_w;  //pre-acknowledge of one of the channels
     reg   [3:0] ackn_r;
     
-    wire  [3:0] is = {is[3], is[2], is[1], is[0]};
-    wire  [3:0] im = {im[3], im[2], im[1], im[0]};
+    wire  [3:0] is = {is3, is2, is1, is0};
+    wire  [3:0] im = {im3, im2, im1, im0};
     
     assign pri_one_rr = {wr_en[3] & ~(|wr_en[2:0]), wr_en[2]&~(|wr_en[1:0]),          wr_en[1] &                  wr_en[0],  wr_en[0],
                          wr_en[3],                  wr_en[2]&~(|wr_en[1:0])&wr_en[3], wr_en[1] & ~  wr_en[3]    & wr_en[0],  wr_en[0] & ~  wr_en[3],
