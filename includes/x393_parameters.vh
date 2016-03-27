@@ -794,9 +794,10 @@
     parameter LOGGER_MASK =                 'h7fe,
     parameter LOGGER_STATUS_MASK =          'h7ff,
 
-    parameter LOGGER_PAGE_IMU =             0, // 'h00..'h1f - overlaps with period/duration/halfperiod/config?
+//    parameter LOGGER_PAGE_IMU =           0, // 'h00..'h1f - overlaps with period/duration/halfperiod/config? (was so in x353)
     parameter LOGGER_PAGE_GPS =             1, // 'h20..'h3f
     parameter LOGGER_PAGE_MSG =             2, // 'h40..'h5f
+    parameter LOGGER_PAGE_IMU =             3, // 'h60..'h7f -  removing overlap with period/duration/halfperiod/config
 
     parameter LOGGER_PERIOD =               0,
     parameter LOGGER_BIT_DURATION =         1,

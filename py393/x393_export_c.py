@@ -549,6 +549,11 @@ class X393ExportC(object):
                                  data =      self._enc_cmdframeseq_mode(),
                                  name =      "x393_cmdframeseq_mode", typ="wo",
                                  frmt_spcs = frmt_spcs)
+        stypedefs += self.get_typedef32(comment =   "CMDFRAMESEQ mode",
+                                 data =      self._enc_cmdseqmux_status(),
+                                 name =      "x393_cmdseqmux_status", typ="ro",
+                                 frmt_spcs = frmt_spcs)
+#        
         return stypedefs
     
     def define_macros(self):
@@ -994,7 +999,16 @@ class X393ExportC(object):
             (('_       [1:0] - 0: NOP, 1: clear IRQ, 2 - Clear IE, 3: set IE',)),
             (("X393_CMDFRAMESEQ_CTRL",                    c,  vrlg.CMDFRAMESEQ_CTRL +                ba, ia, z3, "x393_cmdframeseq_mode", "wo",     "CMDFRAMESEQ control register")),
             (("X393_CMDFRAMESEQ_ABS",          (c,"offset"),  vrlg.CMDFRAMESEQ_ABS +                 ba, (ia,1), (z3,z15), "u32*", "wo",            "CMDFRAMESEQ absolute frame address/command")),
-            (("X393_CMDFRAMESEQ_REL",          (c,"offset"),  vrlg.CMDFRAMESEQ_REL +                 ba, (ia,1), (z3,z14), "u32*", "wo",            "CMDFRAMESEQ relative frame address/command"))]        
+            (("X393_CMDFRAMESEQ_REL",          (c,"offset"),  vrlg.CMDFRAMESEQ_REL +                 ba, (ia,1), (z3,z14), "u32*", "wo",            "CMDFRAMESEQ relative frame address/command"))]
+        
+        ba = 0
+        ia = 0
+        c =  ""
+        sdefines +=[
+            (('_Command sequencer multiplexer, provides current frame number for each sesnor channel and interrupt status/interrupt masks for them.',)),
+            (('_Interrupts and interrupt masks are controlled through channel CMDFRAMESEQ module',)),
+            (("X393_CMDSEQMUX_STATUS_CTRL",               "",  vrlg.CMDSEQMUX_ADDR,                      0, None, "x393_status_ctrl", "rw",           "CMDSEQMUX status control mode (status provides current frame numbers)")),
+            (("X393_CMDSEQMUX_STATUS",                    "",  vrlg.STATUS_ADDR + vrlg.CMDSEQMUX_STATUS, 0, None, "x393_cmdseqmux_status", "ro",      "CMDSEQMUX status data (frame numbers and interrupts"))]
         return sdefines
     
     def define_other_macros(self): # Used mostly for development/testing, not needed for normal camera operation
@@ -2119,6 +2133,19 @@ class X393ExportC(object):
         dw.append(("interrupt_cmd",  vrlg.CMDFRAMESEQ_IRQ_BIT,        2,   0, "Interrupt command: 0-nop, 1 - clear is, 2 - disable, 3 - enable"))
         dw.append(("run_cmd",        vrlg.CMDFRAMESEQ_RUN_BIT - 1,    2,   0, "Run command: 0,1 - nop, 2 - stop, 3 - run"))
         dw.append(("reset",          vrlg.CMDFRAMESEQ_RST_BIT,        1,   0, "1 - reset, 0 - normal operation"))
+        return dw
+
+    def _enc_cmdseqmux_status(self):
+        dw=[]
+        dw.append(("frame_num0",  0,  4,   0, "Fame number for sensor 0"))
+        dw.append(("frame_num1",  4,  4,   0, "Fame number for sensor 0"))
+        dw.append(("frame_num2",  8,  4,   0, "Fame number for sensor 0"))
+        dw.append(("frame_num3", 12,  4,   0, "Fame number for sensor 0"))
+
+        dw.append(("is",         16,  4,   0, "Interrupt status: 1 bit per sensor channel"))
+        dw.append(("im",         20,  4,   0, "Interrupt enable: 1 bit per sensor channel"))
+        
+        dw.append(("seq_num",    26,  6,   0, "Status sequence number"))
         return dw
 
 
