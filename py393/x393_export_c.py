@@ -2153,7 +2153,7 @@ class X393ExportC(object):
         dw.append(("pin6",     12,  2,   0, "Output control for pin 6: 0 - nop, 1 - set low, 2 - set high, 3 - tristate"))
         dw.append(("pin7",     14,  2,   0, "Output control for pin 7: 0 - nop, 1 - set low, 2 - set high, 3 - tristate"))
         dw.append(("pin8",     16,  2,   0, "Output control for pin 8: 0 - nop, 1 - set low, 2 - set high, 3 - tristate"))
-        dw.append(("pin8",     18,  2,   0, "Output control for pin 0: 0 - nop, 1 - set low, 2 - set high, 3 - tristate"))
+        dw.append(("pin9",     18,  2,   0, "Output control for pin 0: 0 - nop, 1 - set low, 2 - set high, 3 - tristate"))
         dw.append(("soft",     24,  2,   0, "Enable pin software control: 0,1 - nop, 2 - disab;e, 3 - enable"))
         dw.append(("chn_a",    26,  2,   0, "Enable A channel (camsync): 0,1 - nop, 2 - disab;e, 3 - enable"))
         dw.append(("chn_b",    28,  2,   0, "Enable B channel (reserved): 0,1 - nop, 2 - disab;e, 3 - enable"))

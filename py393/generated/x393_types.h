@@ -718,7 +718,7 @@ typedef struct {
       u32           chn_a: 2; // [27:26] (0) Enable A channel (camsync): 0,1 - nop, 2 - disab;e, 3 - enable
       u32            soft: 2; // [25:24] (0) Enable pin software control: 0,1 - nop, 2 - disab;e, 3 - enable
       u32                : 4;
-      u32            pin8: 2; // [19:18] (0) Output control for pin 0: 0 - nop, 1 - set low, 2 - set high, 3 - tristate
+      u32            pin9: 2; // [19:18] (0) Output control for pin 0: 0 - nop, 1 - set low, 2 - set high, 3 - tristate
       u32            pin8: 2; // [17:16] (0) Output control for pin 8: 0 - nop, 1 - set low, 2 - set high, 3 - tristate
       u32            pin7: 2; // [15:14] (0) Output control for pin 7: 0 - nop, 1 - set low, 2 - set high, 3 - tristate
       u32            pin6: 2; // [13:12] (0) Output control for pin 6: 0 - nop, 1 - set low, 2 - set high, 3 - tristate
