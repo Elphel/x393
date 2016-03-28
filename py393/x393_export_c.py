@@ -570,7 +570,21 @@ class X393ExportC(object):
                                  data =      self._enc_mult_saxi_addr(),
                                  name =      "x393_mult_saxi_al", typ="rw", # some - wo, others - ro
                                  frmt_spcs = frmt_spcs)
-#        
+
+        stypedefs += self.get_typedef32(comment =   "MULTICLK reset/power down controls",
+                                 data =      self._enc_multiclk_ctl(),
+                                 name =      "x393_multiclk_ctl", typ="rw",
+                                 frmt_spcs = frmt_spcs)
+        stypedefs += self.get_typedef32(comment =   "MULTICLK status",
+                                 data =      self._enc_multiclk_status(),
+                                 name =      "x393_multiclk_status", typ="ro",
+                                 frmt_spcs = frmt_spcs)
+
+        stypedefs += self.get_typedef32(comment =   "DEBUG status",
+                                 data =      self._enc_debug_status(),
+                                 name =      "x393_debug_status", typ="ro",
+                                 frmt_spcs = frmt_spcs)
+        
         return stypedefs
     
     def define_macros(self):
@@ -1058,6 +1072,36 @@ class X393ExportC(object):
             (("X393_MULT_SAXI_BUF_ADDRESS",         c,   vrlg.MULT_SAXI_ADDR + 0,                        2, z3,   "x393_mult_saxi_al", "wo",          "MULT_SAXI buffer start address in DWORDS")),
             (("X393_MULT_SAXI_BUF_LEN",             c,   vrlg.MULT_SAXI_ADDR + 1,                        2, z3,   "x393_mult_saxi_al", "wo",          "MULT_SAXI buffer length in DWORDS")),
             (("X393_MULT_SAXI_STATUS",              c,   vrlg.STATUS_ADDR + vrlg.MULT_SAXI_STATUS_REG,   1, z3,   "x393_mult_saxi_al", "ro",          "MULT_SAXI current DWORD pointer"))]
+
+        #MULTI_CLK global clock generation PLLs
+        ba = 0
+        ia = 0
+        c =  "chn"
+        sdefines +=[
+            (('MULTI_CLK - global clock generation PLLs. Interface provided for debugging, no interaction is needed for normal operation',)),
+            (("X393_MULTICLK_STATUS_CTRL",          "",  vrlg.CLK_ADDR + vrlg.CLK_STATUS,                0, None, "x393_status_ctrl", "rw",           "MULTI_CLK status generation (do not use or do not set auto)")),
+            (("X393_MULTICLK_CTRL",                 "",  vrlg.CLK_ADDR + vrlg.CLK_CNTRL,                 0, None, "x393_multiclk_ctl", "rw",          "MULTI_CLK reset and power down control")),
+            (("X393_MULTICLK_STATUS",               "",  vrlg.STATUS_ADDR + vrlg.CLK_STATUS_REG_ADDR,    0, None, "x393_multiclk_status", "ro",       "MULTI_CLK lock and toggle state"))]
+
+        #DEBUG ring module
+        ba = 0
+        ia = 0
+        c =  "chn"
+        sdefines +=[
+            (('Debug ring module',)),
+            (('_Debug ring module (when enabled with DEBUG_RING in system_defines.vh) provides low-overhead read/write access to internal test points',)),
+            (('_To write data you need to write 32-bit data with x393_debug_shift(u32) multiple times to fill the ring register (length depends on',)),
+            (('_implementation), skip this step if only reading from the modules under test is required.',)),
+            (('_Exchange data with x393_debug_load(), the data from the ring shift register.',)),
+            (('_Write 0xffffffff (or other "magic" data) if the ring length is unknown - this DWORD will appear on the output after the useful data',)),
+            (('_Read all data, waiting for status sequence number to be incremented,status mode should be set to auto (3) wor each DWORD certain',)),
+            (('_number of times or until the "magic" DWORD appears, writing "magic" to shift out next 32 bits.',)),
+            (("X393_DEBUG_STATUS_CTRL",             "",  vrlg.DEBUG_ADDR + vrlg.DEBUG_SET_STATUS,        0, None, "x393_status_ctrl", "rw",           "Debug ring status generation - set to auto(3) if used")),
+            (("X393_DEBUG_LOAD",                    "",  vrlg.DEBUG_ADDR + vrlg.DEBUG_LOAD,              0, None, "", "",                             "Debug ring copy shift register to/from tested modules")),
+            (("X393_DEBUG_SHIFT",                   "",  vrlg.DEBUG_ADDR + vrlg.DEBUG_SHIFT_DATA,        0, None, "u32*", "wo",                       "Debug ring shift ring by 32 bits")),
+            (("X393_DEBUG_STATUS",                  "",  vrlg.STATUS_ADDR + vrlg.DEBUG_STATUS_REG_ADDR,  0, None, "x393_debug_status", "ro",          "Debug read status (watch sequence number)")),
+            (("X393_DEBUG_READ",                    "",  vrlg.STATUS_ADDR + vrlg.DEBUG_READ_REG_ADDR,    0, None, "u32*", "ro",                       "Debug read DWORD form ring register"))]
+
         return sdefines
     
     def define_other_macros(self): # Used mostly for development/testing, not needed for normal camera operation
@@ -2233,6 +2277,42 @@ class X393ExportC(object):
         dw.append(("addr32",    0, 30,   0, "SAXI sddress/length in DWORDs"))
         return dw
 
+    def _enc_multiclk_ctl(self):
+        dw=[]
+        dw.append(("rst_clk0",    0, 1,   0, "Reset PLL for xclk(240MHz), hclk(150MHz)"))
+        dw.append(("rst_clk1",    1, 1,   0, "Reset PLL for pclk (sensors, from ffclk0)"))
+        dw.append(("rst_clk2",    2, 1,   0, "reserved"))
+        dw.append(("rst_clk3",    3, 1,   0, "reserved"))
+        dw.append(("pwrdwnclk0",  4, 1,   0, "Power down PLL for xclk(240MHz), hclk(150MHz)"))
+        dw.append(("pwrdwn_clk1", 5, 1,   0, "Power down for pclk (sensors, from ffclk0)"))
+        dw.append(("pwrdwn_clk2", 6, 1,   0, "reserved"))
+        dw.append(("pwrdwn_clk3", 7, 1,   0, "reserved"))
+        dw.append(("rst_memclk",  8, 1,   0, "reset memclk (external in for memory) toggle FF"))
+        dw.append(("rst_ffclk0",  9, 1,   0, "reset ffclk0 (external in for sensors) toggle FF"))
+        dw.append(("rst_ffclk1", 10, 1,   0, "reset ffclk1 (exteranl in, not yet used) toggle FF"))
+        return dw
+
+    def _enc_multiclk_status(self):
+        dw=[]
+        dw.append(("locked0",     0, 1,   0, "Locked PLL for xclk(240MHz), hclk(150MHz)"))
+        dw.append(("locked1",     1, 1,   0, "Locked PLL for pclk (sensors, from ffclk0)"))
+        dw.append(("locked2",     2, 1,   0, "==1, reserved"))
+        dw.append(("locked3",     3, 1,   0, "==1, reserved"))
+        dw.append(("tgl_memclk",  4, 1,   0, "memclk (external in for memory) toggle FF"))
+        dw.append(("tgl_ffclk0",  5, 1,   0, "ffclk0 (external in for sensors) toggle FF"))
+        dw.append(("tgl_ffclk1",  6, 1,   0, "ffclk1 (exteranl in, not yet used) toggle FF"))
+        dw.append(("idelay_rdy", 24, 1,   0, "idelay_ctrl_rdy (juct to prevent from optimization)"))
+        dw.append(("seq_num",    26, 6,   0, "Status sequence number"))
+        return dw
+    
+    def _enc_debug_status(self):
+        dw=[]
+        dw.append(("tgl",        24,  1,   0, "Toggles for each DWORD received"))
+        dw.append(("seq_num",    26,  6,   0, "Status sequence number"))
+        return dw
+    
+    
+    
     def get_pad32(self, data, wlen=32, name="unnamed", padLast=False):
         sorted_data=sorted(data,key=lambda sbit: sbit[1])
         padded_data=[]
