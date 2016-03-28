@@ -1,6 +1,6 @@
 /*******************************************************************************
  * File: x393_types.h
- * Date: 2016-03-27  
+ * Date: 2016-03-28  
  * Author: auto-generated file, see x393_export_c.py
  * Description: typedef definitions for the x393 hardware registers
  *******************************************************************************/
@@ -366,7 +366,7 @@ typedef union {
     } struct_0;
     struct {
           u32                :14;
-          u32            diff: 1; // [   17] (0) Difference scale: 0 - keep diff, 1- multiply diff by 16
+          u32      diff_scale: 1; // [   17] (0) Difference scale: 0 - keep diff, 1- multiply diff by 16
          char            diff: 7; // [16:10] (0) Difference to next (signed, -64..+63)
           u32            base:10; // [ 9: 0] (0) Knee point value (to be interpolated between)
     } struct_1;

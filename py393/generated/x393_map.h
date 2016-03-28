@@ -1,6 +1,6 @@
 /*******************************************************************************
  * File: x393_map.h
- * Date: 2016-03-27  
+ * Date: 2016-03-28  
  * Author: auto-generated file, see x393_export_c.py
  * Description: Sorted hardware addresses map
  *******************************************************************************/
@@ -116,7 +116,7 @@
 #define X393_MCNTRL_CMDA_ODLY__29                        0x40000374 // Address, bank and commands delays, data type: x393_dly_t (rw)
 #define X393_MCNTRL_CMDA_ODLY__30                        0x40000378 // Address, bank and commands delays, data type: x393_dly_t (rw)
 #define X393_MCNTRL_CMDA_ODLY__31                        0x4000037c // Address, bank and commands delays, data type: x393_dly_t (rw)
-#define X393_MCNTRL_CMDA_ODLY                            0x40000380 // Clock phase, data type: x393_dly_t (rw)
+#define X393_MCNTRL_PHASE                                0x40000380 // Clock phase, data type: x393_dly_t (rw)
 // RESERVED: 0x13 DWORDs
 #define X393_MCNTRL_TEST01_CHN2_MODE                     0x400003d0 // Set command for test01 channel 2, data type: x393_test01_mode_t (wo)
 #define X393_MCNTRL_TEST01_CHN2_STATUS_CNTRL             0x400003d4 // Set status control register (status update mode), data type: x393_status_ctrl_t (rw)

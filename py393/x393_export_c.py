@@ -634,7 +634,7 @@ class X393ExportC(object):
             (("X393_MCNTRL_DM_ODLY0",   c, vrlg.LD_DLY_LANE0_ODELAY +    ba + 9, 0, None, "x393_dly", "rw",    "Lane0 DM output delay ")),
             (("X393_MCNTRL_DM_ODLY1",   c, vrlg.LD_DLY_LANE1_ODELAY +    ba + 9, 0, None, "x393_dly", "rw",    "Lane1 DM output delay ")),
             (("X393_MCNTRL_CMDA_ODLY",  c, vrlg.LD_DLY_CMDA +            ba,     1, z31,  "x393_dly", "rw",    "Address, bank and commands delays")),
-            (("X393_MCNTRL_CMDA_ODLY",  c, vrlg.LD_DLY_PHASE +           ba,     0, None, "x393_dly", "rw",    "Clock phase")),
+            (("X393_MCNTRL_PHASE",      c, vrlg.LD_DLY_PHASE +           ba,     0, None, "x393_dly", "rw",    "Clock phase")),
             (("X393_MCNTRL_DLY_SET",    c, vrlg.MCONTR_PHY_0BIT_ADDR +   vrlg.MCONTR_PHY_0BIT_DLY_SET +      ba, 0, None, "", "",             "Set all pre-programmed delays")),
             (("X393_MCNTRL_WBUF_DLY",   c, vrlg.MCONTR_PHY_16BIT_ADDR +  vrlg.MCONTR_PHY_16BIT_WBUF_DELAY +  ba, 0, None, "x393_wbuf_dly", "rw", "Set write buffer delay")),
             ]        
@@ -1816,7 +1816,7 @@ class X393ExportC(object):
         dw=[]
         dw.append(("base",            0, 10,   0,  "Knee point value (to be interpolated between)"))
         dw.append((("diff","char"),  10,  7,   0,  "Difference to next (signed, -64..+63)"))
-        dw.append(("diff",           17,  1,   0,  "Difference scale: 0 - keep diff, 1- multiply diff by 16"))
+        dw.append(("diff_scale",     17,  1,   0,  "Difference scale: 0 - keep diff, 1- multiply diff by 16"))
         return dw
     def _enc_gamma_height01(self):
         dw=[]

@@ -1,6 +1,6 @@
 /*******************************************************************************
  * File: x393.h
- * Date: 2016-03-27  
+ * Date: 2016-03-28  
  * Author: auto-generated file, see x393_export_c.py
  * Description: Constants definitions and functions declarations to access x393 hardware registers
  *******************************************************************************/
@@ -56,8 +56,8 @@ void                         set_x393_mcntrl_dm_odly1            (x393_dly_t d);
 x393_dly_t                   get_x393_mcntrl_dm_odly1            (void);
 void                         set_x393_mcntrl_cmda_odly           (x393_dly_t d, int chn);                         // Address, bank and commands delays
 x393_dly_t                   get_x393_mcntrl_cmda_odly           (int chn);
-void                         set_x393_mcntrl_cmda_odly           (x393_dly_t d);                                  // Clock phase
-x393_dly_t                   get_x393_mcntrl_cmda_odly           (void);
+void                         set_x393_mcntrl_phase               (x393_dly_t d);                                  // Clock phase
+x393_dly_t                   get_x393_mcntrl_phase               (void);
 void                         x393_mcntrl_dly_set                 (void);                                          // Set all pre-programmed delays
 void                         set_x393_mcntrl_wbuf_dly            (x393_wbuf_dly_t d);                             // Set write buffer delay
 x393_wbuf_dly_t              get_x393_mcntrl_wbuf_dly            (void);

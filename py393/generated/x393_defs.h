@@ -1,6 +1,6 @@
 /*******************************************************************************
  * File: x393_defs.h
- * Date: 2016-03-27  
+ * Date: 2016-03-28  
  * Author: auto-generated file, see x393_export_c.py
  * Description: Constants and hardware addresses definitions to access x393 hardware registers
  *******************************************************************************/
@@ -41,7 +41,7 @@
 #define X393_MCNTRL_DM_ODLY0                             0x40000224 // Lane0 DM output delay , data type: x393_dly_t (rw)
 #define X393_MCNTRL_DM_ODLY1                             0x400002a4 // Lane1 DM output delay , data type: x393_dly_t (rw)
 #define X393_MCNTRL_CMDA_ODLY(chn)                       (0x40000300 + 0x4 * (chn)) // Address, bank and commands delays, chn = 0..31, data type: x393_dly_t (rw)
-#define X393_MCNTRL_CMDA_ODLY                            0x40000380 // Clock phase, data type: x393_dly_t (rw)
+#define X393_MCNTRL_PHASE                                0x40000380 // Clock phase, data type: x393_dly_t (rw)
 #define X393_MCNTRL_DLY_SET                              0x40000080 // Set all pre-programmed delays
 #define X393_MCNTRL_WBUF_DLY                             0x40000148 // Set write buffer delay, data type: x393_wbuf_dly_t (rw)
 

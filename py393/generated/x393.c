@@ -1,6 +1,6 @@
 /*******************************************************************************
  * File: x393.c
- * Date: 2016-03-27  
+ * Date: 2016-03-28  
  * Author: auto-generated file, see x393_export_c.py
  * Description: Functions definitions to access x393 hardware registers
  *******************************************************************************/
@@ -56,8 +56,8 @@ void                         set_x393_mcntrl_dm_odly1            (x393_dly_t d) 
 x393_dly_t                   get_x393_mcntrl_dm_odly1            (void)              {return (x393_dly_t) readl(0x400002a4)};
 void                         set_x393_mcntrl_cmda_odly           (x393_dly_t d, int chn){writel(0x40000300 + 0x4 * chn, (u32) d)}; // Address, bank and commands delays
 x393_dly_t                   get_x393_mcntrl_cmda_odly           (int chn)           {return (x393_dly_t) readl(0x40000300 + 0x4 * chn)};
-void                         set_x393_mcntrl_cmda_odly           (x393_dly_t d)      {writel(0x40000380, (u32) d)};                // Clock phase
-x393_dly_t                   get_x393_mcntrl_cmda_odly           (void)              {return (x393_dly_t) readl(0x40000380)};
+void                         set_x393_mcntrl_phase               (x393_dly_t d)      {writel(0x40000380, (u32) d)};                // Clock phase
+x393_dly_t                   get_x393_mcntrl_phase               (void)              {return (x393_dly_t) readl(0x40000380)};
 void                         x393_mcntrl_dly_set                 (void)              {writel(0x40000080, 0)};                      // Set all pre-programmed delays
 void                         set_x393_mcntrl_wbuf_dly            (x393_wbuf_dly_t d) {writel(0x40000148, (u32) d)};                // Set write buffer delay
 x393_wbuf_dly_t              get_x393_mcntrl_wbuf_dly            (void)              {return (x393_wbuf_dly_t) readl(0x40000148)};
