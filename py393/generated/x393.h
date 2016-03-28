@@ -5,6 +5,10 @@
  * Description: Constants definitions and functions declarations to access x393 hardware registers
  *******************************************************************************/
 
+#include "elphel/types.h"
+//#include "elphel/x393_defs.h // alternative variant"
+
+
 // R/W addresses to set up memory arbiter priorities. For sensors  (chn = 8..11), for compressors - 12..15
 
 void                         set_x393_mcntrl_arbiter_priority    (x393_arbite_pri_t d, int chn);                  // Set memory arbiter priority (currently r/w, may become just wo)
@@ -158,8 +162,8 @@ x393_status_membridge_t      x393_membridge_status               (void);        
 
 void                         x393_sens_mode                      (x393_sens_mode_t d, int sens_num);              // Write sensor channel mode
 void                         x393_sensi2c_ctrl                   (x393_i2c_ctltbl_t d, int sens_num);             // Control sensor i2c, write i2c LUT
-void                         set_x393_sensi2c_status             (x393_status_ctrl_t d, int sens_num);            // Setup sensor i2c status report mode
-x393_status_ctrl_t           get_x393_sensi2c_status             (int sens_num);
+void                         set_x393_sensi2c_status_ctrl        (x393_status_ctrl_t d, int sens_num);            // Setup sensor i2c status report mode
+x393_status_ctrl_t           get_x393_sensi2c_status_ctrl        (int sens_num);
 void                         x393_sens_sync_mult                 (x393_sens_sync_mult_t d, int sens_num);         // Configure frames combining
 void                         x393_sens_sync_late                 (x393_sens_sync_late_t d, int sens_num);         // Configure frame sync delay
 void                         x393_sensio_ctrl                    (x393_sensio_ctl_t d, int sens_num);             // Configure sensor I/O port

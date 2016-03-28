@@ -131,7 +131,7 @@
 
 #define X393_SENS_MODE(sens_num)                         (0x40001000 + 0x100 * (sens_num)) // Write sensor channel mode, sens_num = 0..3, data type: x393_sens_mode_t (wo)
 #define X393_SENSI2C_CTRL(sens_num)                      (0x40001008 + 0x100 * (sens_num)) // Control sensor i2c, write i2c LUT, sens_num = 0..3, data type: x393_i2c_ctltbl_t (wo)
-#define X393_SENSI2C_STATUS(sens_num)                    (0x4000100c + 0x100 * (sens_num)) // Setup sensor i2c status report mode, sens_num = 0..3, data type: x393_status_ctrl_t (rw)
+#define X393_SENSI2C_STATUS_CTRL(sens_num)               (0x4000100c + 0x100 * (sens_num)) // Setup sensor i2c status report mode, sens_num = 0..3, data type: x393_status_ctrl_t (rw)
 #define X393_SENS_SYNC_MULT(sens_num)                    (0x40001018 + 0x100 * (sens_num)) // Configure frames combining, sens_num = 0..3, data type: x393_sens_sync_mult_t (wo)
 #define X393_SENS_SYNC_LATE(sens_num)                    (0x4000101c + 0x100 * (sens_num)) // Configure frame sync delay, sens_num = 0..3, data type: x393_sens_sync_late_t (wo)
 #define X393_SENSIO_CTRL(sens_num)                       (0x40001020 + 0x100 * (sens_num)) // Configure sensor I/O port, sens_num = 0..3, data type: x393_sensio_ctl_t (wo)
@@ -158,8 +158,8 @@
 //     in the table. Slave address is always in byte 2 (bits 23:16), byte1 (high register address) is skipped if
 //     read address in the table is programmed to be a single-byte one
 
-#define X393_SENSI2C_ABS((sens_num),(offset))            (0x40001040)+ 0x40 * (sens_num)+ 0x1 * (offset)) // Write sensor i2c sequencer, sens_num = 0..3, offset = 0..15, data type: u32 (wo)
-#define X393_SENSI2C_REL((sens_num),(offset))            (0x40001080)+ 0x40 * (sens_num)+ 0x1 * (offset)) // Write sensor i2c sequencer, sens_num = 0..3, offset = 0..15, data type: u32 (wo)
+#define X393_SENSI2C_ABS(sens_num,offset)                (0x40001040)+ 0x40 * (sens_num)+ 0x1 * (offset)) // Write sensor i2c sequencer, sens_num = 0..3, offset = 0..15, data type: u32 (wo)
+#define X393_SENSI2C_REL(sens_num,offset)                (0x40001080)+ 0x40 * (sens_num)+ 0x1 * (offset)) // Write sensor i2c sequencer, sens_num = 0..3, offset = 0..15, data type: u32 (wo)
 
 // Lens vignetting correction (for each sub-frame separately)
 
@@ -357,8 +357,8 @@
 //      [13:12] - 3 - run seq, 2 - stop seq , 1,0 - no change to run state
 //        [1:0] - 0: NOP, 1: clear IRQ, 2 - Clear IE, 3: set IE
 #define X393_CMDFRAMESEQ_CTRL(sens_chn)                  (0x40001e7c + 0x80 * (sens_chn)) // CMDFRAMESEQ control register, sens_chn = 0..3, data type: x393_cmdframeseq_mode_t (wo)
-#define X393_CMDFRAMESEQ_ABS((sens_chn),(offset))        (0x40001e00)+ 0x20 * (sens_chn)+ 0x1 * (offset)) // CMDFRAMESEQ absolute frame address/command, sens_chn = 0..3, offset = 0..15, data type: u32 (wo)
-#define X393_CMDFRAMESEQ_REL((sens_chn),(offset))        (0x40001e40)+ 0x20 * (sens_chn)+ 0x1 * (offset)) // CMDFRAMESEQ relative frame address/command, sens_chn = 0..3, offset = 0..14, data type: u32 (wo)
+#define X393_CMDFRAMESEQ_ABS(sens_chn,offset)            (0x40001e00)+ 0x20 * (sens_chn)+ 0x1 * (offset)) // CMDFRAMESEQ absolute frame address/command, sens_chn = 0..3, offset = 0..15, data type: u32 (wo)
+#define X393_CMDFRAMESEQ_REL(sens_chn,offset)            (0x40001e40)+ 0x20 * (sens_chn)+ 0x1 * (offset)) // CMDFRAMESEQ relative frame address/command, sens_chn = 0..3, offset = 0..14, data type: u32 (wo)
 // Command sequencer multiplexer, provides current frame number for each sesnor channel and interrupt status/interrupt masks for them.
 // Interrupts and interrupt masks are controlled through channel CMDFRAMESEQ module
 #define X393_CMDSEQMUX_STATUS_CTRL                       0x40001c08 // CMDSEQMUX status control mode (status provides current frame numbers), data type: x393_status_ctrl_t (rw)

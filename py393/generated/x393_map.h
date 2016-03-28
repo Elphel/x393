@@ -183,7 +183,7 @@
 #define X393_SENS_MODE__0                                0x40001000 // Write sensor channel mode, data type: x393_sens_mode_t (wo)
 // RESERVED: 0x1 DWORD
 #define X393_SENSI2C_CTRL__0                             0x40001008 // Control sensor i2c, write i2c LUT, data type: x393_i2c_ctltbl_t (wo)
-#define X393_SENSI2C_STATUS__0                           0x4000100c // Setup sensor i2c status report mode, data type: x393_status_ctrl_t (rw)
+#define X393_SENSI2C_STATUS_CTRL__0                      0x4000100c // Setup sensor i2c status report mode, data type: x393_status_ctrl_t (rw)
 // RESERVED: 0x2 DWORDs
 #define X393_SENS_SYNC_MULT__0                           0x40001018 // Configure frames combining, data type: x393_sens_sync_mult_t (wo)
 #define X393_SENS_SYNC_LATE__0                           0x4000101c // Configure frame sync delay, data type: x393_sens_sync_late_t (wo)
@@ -246,7 +246,7 @@
 #define X393_SENS_MODE__1                                0x40001100 // Write sensor channel mode, data type: x393_sens_mode_t (wo)
 // RESERVED: 0x1 DWORD
 #define X393_SENSI2C_CTRL__1                             0x40001108 // Control sensor i2c, write i2c LUT, data type: x393_i2c_ctltbl_t (wo)
-#define X393_SENSI2C_STATUS__1                           0x4000110c // Setup sensor i2c status report mode, data type: x393_status_ctrl_t (rw)
+#define X393_SENSI2C_STATUS_CTRL__1                      0x4000110c // Setup sensor i2c status report mode, data type: x393_status_ctrl_t (rw)
 // RESERVED: 0x2 DWORDs
 #define X393_SENS_SYNC_MULT__1                           0x40001118 // Configure frames combining, data type: x393_sens_sync_mult_t (wo)
 #define X393_SENS_SYNC_LATE__1                           0x4000111c // Configure frame sync delay, data type: x393_sens_sync_late_t (wo)
@@ -309,7 +309,7 @@
 #define X393_SENS_MODE__2                                0x40001200 // Write sensor channel mode, data type: x393_sens_mode_t (wo)
 // RESERVED: 0x1 DWORD
 #define X393_SENSI2C_CTRL__2                             0x40001208 // Control sensor i2c, write i2c LUT, data type: x393_i2c_ctltbl_t (wo)
-#define X393_SENSI2C_STATUS__2                           0x4000120c // Setup sensor i2c status report mode, data type: x393_status_ctrl_t (rw)
+#define X393_SENSI2C_STATUS_CTRL__2                      0x4000120c // Setup sensor i2c status report mode, data type: x393_status_ctrl_t (rw)
 // RESERVED: 0x2 DWORDs
 #define X393_SENS_SYNC_MULT__2                           0x40001218 // Configure frames combining, data type: x393_sens_sync_mult_t (wo)
 #define X393_SENS_SYNC_LATE__2                           0x4000121c // Configure frame sync delay, data type: x393_sens_sync_late_t (wo)
@@ -372,7 +372,7 @@
 #define X393_SENS_MODE__3                                0x40001300 // Write sensor channel mode, data type: x393_sens_mode_t (wo)
 // RESERVED: 0x1 DWORD
 #define X393_SENSI2C_CTRL__3                             0x40001308 // Control sensor i2c, write i2c LUT, data type: x393_i2c_ctltbl_t (wo)
-#define X393_SENSI2C_STATUS__3                           0x4000130c // Setup sensor i2c status report mode, data type: x393_status_ctrl_t (rw)
+#define X393_SENSI2C_STATUS_CTRL__3                      0x4000130c // Setup sensor i2c status report mode, data type: x393_status_ctrl_t (rw)
 // RESERVED: 0x2 DWORDs
 #define X393_SENS_SYNC_MULT__3                           0x40001318 // Configure frames combining, data type: x393_sens_sync_mult_t (wo)
 #define X393_SENS_SYNC_LATE__3                           0x4000131c // Configure frame sync delay, data type: x393_sens_sync_late_t (wo)

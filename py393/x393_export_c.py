@@ -145,7 +145,9 @@ class X393ExportC(object):
         header = self.generated_fileHeader(filename,description)
         ld= self.define_macros()
         ld+=self.define_other_macros()
-        txt = ""
+        # Includes section
+        txt = '\n#include "elphel/types.h"\n'
+        txt +='//#include "elphel/x393_defs.h // alternative variant"\n\n'
         for d in ld:
             fd=self.expand_define_maxi0(d, mode = "func_decl",frmt_spcs = None)
             if fd:
@@ -161,7 +163,10 @@ class X393ExportC(object):
         header = self.generated_fileHeader(filename,description)
         ld= self.define_macros()
         ld+=self.define_other_macros()
-        txt = ""
+        # Includes section
+        txt = '\n#include <linux/io.h>\n'
+        txt +=  '#include "x393.h"\n\n'
+
         for d in ld:
             fd=self.expand_define_maxi0(d, mode = "func_def",frmt_spcs = None)
             if fd:
@@ -754,7 +759,7 @@ class X393ExportC(object):
             (('Write-only control of the sensor channels',)),
             (("X393_SENS_MODE",                         c, vrlg.SENSOR_CTRL_RADDR +                        ba, ia, z3, "x393_sens_mode", "wo",               "Write sensor channel mode")),
             (("X393_SENSI2C_CTRL",                      c, vrlg.SENSI2C_CTRL_RADDR + vrlg.SENSI2C_CTRL +   ba, ia, z3, "x393_i2c_ctltbl", "wo",              "Control sensor i2c, write i2c LUT")),
-            (("X393_SENSI2C_STATUS",                    c, vrlg.SENSI2C_CTRL_RADDR + vrlg.SENSI2C_STATUS + ba, ia, z3, "x393_status_ctrl", "rw",             "Setup sensor i2c status report mode")),
+            (("X393_SENSI2C_STATUS_CTRL",               c, vrlg.SENSI2C_CTRL_RADDR + vrlg.SENSI2C_STATUS + ba, ia, z3, "x393_status_ctrl", "rw",             "Setup sensor i2c status report mode")),
             (("X393_SENS_SYNC_MULT",                    c, vrlg.SENS_SYNC_RADDR + vrlg.SENS_SYNC_MULT +    ba, ia, z3, "x393_sens_sync_mult", "wo",          "Configure frames combining")),
             (("X393_SENS_SYNC_LATE",                    c, vrlg.SENS_SYNC_RADDR + vrlg.SENS_SYNC_LATE +    ba, ia, z3, "x393_sens_sync_late", "wo",          "Configure frame sync delay")),
             (("X393_SENSIO_CTRL",                       c, vrlg.SENSIO_RADDR + vrlg.SENSIO_CTRL +          ba, ia, z3, "x393_sensio_ctl", "wo",              "Configure sensor I/O port")),
@@ -1289,7 +1294,7 @@ class X393ExportC(object):
                     s+='return (%s) readl(0x%08x + 0x%x * %s)'%(data_type, address, address_inc, arg)
             else:
                 s+='return (%s) readl(0x%08x)'%(data_type, address)
-            s+='};'
+            s+=';}'
         else:
             s += ';'
         if comment:
@@ -1339,7 +1344,7 @@ class X393ExportC(object):
                     s+='writel(0x%08x + 0x%x * %s, (u32) d)'%(address, address_inc, arg)
             else:
                 s+='writel(0x%08x, (u32) d)'%(address)
-            s+='};'
+            s+=';}'
         else:
             s += ';'
         if comment:
@@ -1384,7 +1389,7 @@ class X393ExportC(object):
                     s+='writel(0x%08x + 0x%x * %s, 0)'%(address, address_inc, arg)
             else:
                 s+='writel(0x%08x, 0)'%(address)
-            s+='};'
+            s+=';}'
         else:
             s += ';'
         if comment:
@@ -1435,17 +1440,17 @@ class X393ExportC(object):
             name_len = len(name)
             if address_inc:
                 if multivar:
-                    name_len += 4 + len(var_name[0])
+                    name_len += 2 + len(var_name[0])
                     for vn in var_name[1:]:
-                        name_len += 3 + len(vn)
+                        name_len += 1 + len(vn)
                 else:        
                     name_len += 2 + len(var_name)
             ins_spaces = max(0,frmt_spcs['macroNameLen'] - name_len)
             if address_inc:
                 if multivar:
-                    vname = "(%s)"%(var_name[0])
+                    vname = "%s"%(var_name[0])
                     for vn in var_name[1:]:
-                        vname +=",(%s)"%(vn)
+                        vname +=",%s"%(vn)
                     s = "#define %s(%s) %s(0x%08x)"%(name, vname, ' ' * ins_spaces, address)
                     for vn, vi in zip(var_name, address_inc):
                         s += "+ 0x%x * (%s)"%(vi,vn)
