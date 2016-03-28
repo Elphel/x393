@@ -553,6 +553,23 @@ class X393ExportC(object):
                                  data =      self._enc_cmdseqmux_status(),
                                  name =      "x393_cmdseqmux_status", typ="ro",
                                  frmt_spcs = frmt_spcs)
+        stypedefs += self.get_typedef32(comment =   "Event logger status",
+                                 data =      self._enc_logger_status(),
+                                 name =      "x393_logger_status", typ="ro",
+                                 frmt_spcs = frmt_spcs)
+        stypedefs += self.get_typedef32(comment =   "Event logger register address",
+                                 data =      self._enc_logger_reg_addr(),
+                                 name =      "x393_logger_address", typ="wo",
+                                 frmt_spcs = frmt_spcs)
+        stypedefs += self.get_typedef32(comment =   "Event logger register data",
+                                 data =      [self._enc_logger_conf(),
+                                              self._enc_logger_data()],
+                                 name =      "x393_logger_data", typ="wo",
+                                 frmt_spcs = frmt_spcs)
+        stypedefs += self.get_typedef32(comment =   "MULT_SAXI DMA addresses/lengths in 32-bit DWORDS",
+                                 data =      self._enc_mult_saxi_addr(),
+                                 name =      "x393_mult_saxi_al", typ="rw", # some - wo, others - ro
+                                 frmt_spcs = frmt_spcs)
 #        
         return stypedefs
     
@@ -1009,6 +1026,38 @@ class X393ExportC(object):
             (('_Interrupts and interrupt masks are controlled through channel CMDFRAMESEQ module',)),
             (("X393_CMDSEQMUX_STATUS_CTRL",               "",  vrlg.CMDSEQMUX_ADDR,                      0, None, "x393_status_ctrl", "rw",           "CMDSEQMUX status control mode (status provides current frame numbers)")),
             (("X393_CMDSEQMUX_STATUS",                    "",  vrlg.STATUS_ADDR + vrlg.CMDSEQMUX_STATUS, 0, None, "x393_cmdseqmux_status", "ro",      "CMDSEQMUX status data (frame numbers and interrupts"))]
+
+        sdefines +=[
+            (('Event logger',)),
+            (('_Event logger configuration/data is writtent to the module ising two 32-bit register locations : data and address.',)),
+            (('_Address consists of 2 parts - 2-bit page (configuration, imu, gps, message) and a 5-bit sub-address autoincremented when writing data.',)),
+            (('_Register pages:',)),
+            (("X393_LOGGER_PAGE_CONF",                    "", 0 ,                                0, None, None, "",    "Logger configuration page")),
+            (("X393_LOGGER_PAGE_IMU",                     "", vrlg.LOGGER_PAGE_IMU ,             0, None, None, "",    "Logger IMU parameters page")),
+            (("X393_LOGGER_PAGE_GPS",                     "", vrlg.LOGGER_PAGE_GPS ,             0, None, None, "",    "Logger GPS parameters page")),
+            (("X393_LOGGER_PAGE_MSG",                     "", vrlg.LOGGER_PAGE_MSG ,             0, None, None, "",    "Logger MSG (odometer) parameters page")),
+            (('_Register configuration addresses (with X393_LOGGER_PAGE_CONF):',)),
+            (("X393_LOGGER_PERIOD",                       "", vrlg.LOGGER_PERIOD ,               0, None, None, "",    "IMU period (in SPI clocks, high word 0xffff - use IMU ready)")),
+            (("X393_LOGGER_BIT_DURATION",                 "", vrlg.LOGGER_BIT_DURATION ,         0, None, None, "",    "IMU SPI bit duration (in mclk == 50 ns periods?)")),
+            (("X393_LOGGER_BIT_HALF_PERIOD",              "", vrlg.LOGGER_BIT_HALF_PERIOD,       0, None, None, "",    "Logger rs232 half bit period (in mclk == 50 ns periods?)")),
+            (("X393_LOGGER_CONFIG",                       "", vrlg.LOGGER_CONFIG ,               0, None, None, "",    "Logger IMU parameters page")),
+            
+            (("X393_LOGGER_STATUS_CTRL",                  "",  vrlg.LOGGER_STATUS,                       0, None,       "x393_status_ctrl", "rw",     "Logger status configuration (to report sample number)")),
+            (("X393_LOGGER_DATA",                         "",  vrlg.LOGGER_ADDR + 0,                     0, None,       "x393_logger_data", "wo",     "Logger register write data")),
+            (("X393_LOGGER_ADDRESS",                      "",  vrlg.LOGGER_ADDR + 1,                     0, None,       "x393_logger_address", "wo",  "Logger register write page/address")),
+            (("X393_LOGGER_STATUS",                       "",  vrlg.STATUS_ADDR + vrlg.LOGGER_STATUS_REG_ADDR, 0, None, "x393_logger_status", "ro",   "Logger status data (sequence number)"))]
+#TODO: Add interrupt for the logger?
+
+        #MULT SAXI DMA engine control
+        ba = 0
+        ia = 0
+        c =  "chn"
+        sdefines +=[
+            (('MULT SAXI DMA engine control. Of 4 channels only one (number 0) is currently used - for the event logger',)),
+            (("X393_MULT_SAXI_STATUS_CTRL",         "",  vrlg.MULT_SAXI_CNTRL_ADDR,                      0, None, "x393_status_ctrl", "rw",           "MULT_SAXI status control mode (status provides current DWORD pointer)")),
+            (("X393_MULT_SAXI_BUF_ADDRESS",         c,   vrlg.MULT_SAXI_ADDR + 0,                        2, z3,   "x393_mult_saxi_al", "wo",          "MULT_SAXI buffer start address in DWORDS")),
+            (("X393_MULT_SAXI_BUF_LEN",             c,   vrlg.MULT_SAXI_ADDR + 1,                        2, z3,   "x393_mult_saxi_al", "wo",          "MULT_SAXI buffer length in DWORDS")),
+            (("X393_MULT_SAXI_STATUS",              c,   vrlg.STATUS_ADDR + vrlg.MULT_SAXI_STATUS_REG,   1, z3,   "x393_mult_saxi_al", "ro",          "MULT_SAXI current DWORD pointer"))]
         return sdefines
     
     def define_other_macros(self): # Used mostly for development/testing, not needed for normal camera operation
@@ -1397,7 +1446,7 @@ class X393ExportC(object):
                 address = define_tuple[2] 
                 if not nextAddr is None:
                     if address > nextAddr:
-                        gapped_defs.append(("_Gap: 0x%x DWORDs"%(address - nextAddr),))
+                        gapped_defs.append(("_RESERVED: 0x%x DWORD%s"%(address - nextAddr, ("","s")[(address - nextAddr) > 1]),))
                     elif not address == nextAddr:
                         print("**************** Error? address = 0x%x (0x%08x), expected address = 0x%x (0x%08x)"%(address, 4*address, nextAddr,4*nextAddr))
                         print("**************** previous name = %s, this name = %s"%(prevName, define_tuple[0]))
@@ -2137,10 +2186,10 @@ class X393ExportC(object):
 
     def _enc_cmdseqmux_status(self):
         dw=[]
-        dw.append(("frame_num0",  0,  4,   0, "Fame number for sensor 0"))
-        dw.append(("frame_num1",  4,  4,   0, "Fame number for sensor 0"))
-        dw.append(("frame_num2",  8,  4,   0, "Fame number for sensor 0"))
-        dw.append(("frame_num3", 12,  4,   0, "Fame number for sensor 0"))
+        dw.append(("frame_num0",  0,  4,   0, "Frame number for sensor 0"))
+        dw.append(("frame_num1",  4,  4,   0, "Frame number for sensor 0"))
+        dw.append(("frame_num2",  8,  4,   0, "Frame number for sensor 0"))
+        dw.append(("frame_num3", 12,  4,   0, "Frame number for sensor 0"))
 
         dw.append(("is",         16,  4,   0, "Interrupt status: 1 bit per sensor channel"))
         dw.append(("im",         20,  4,   0, "Interrupt enable: 1 bit per sensor channel"))
@@ -2148,6 +2197,41 @@ class X393ExportC(object):
         dw.append(("seq_num",    26,  6,   0, "Status sequence number"))
         return dw
 
+    def _enc_logger_status(self):
+        dw=[]
+        dw.append(("sample",      0, 24,   0, "Logger sample number"))
+        dw.append(("seq_num",    26,  6,   0, "Status sequence number"))
+        return dw
+
+    def _enc_logger_reg_addr(self):
+        dw=[]
+        dw.append(("addr",        0,  5,   0, "Register address (autoincrements in 32 DWORDs (page) range"))
+        dw.append(("page",        5,  2,   0, "Register page: configuration: 0, IMU: %d, GPS: %d, MSG: %d"%(vrlg.LOGGER_PAGE_IMU, vrlg.LOGGER_PAGE_GPS, vrlg.LOGGER_PAGE_MSG)))
+        return dw
+
+    def _enc_logger_conf(self):
+        dw=[]
+        dw.append(("imu_slot",   vrlg.LOGGER_CONF_IMU - vrlg.LOGGER_CONF_IMU_BITS,  vrlg.LOGGER_CONF_IMU_BITS,   0, "IMU slot"))
+        dw.append(("imu_set",    vrlg.LOGGER_CONF_IMU,                                  1,                       0, "Set 'imu_slot'"))
+        dw.append(("gps_slot",   vrlg.LOGGER_CONF_GPS - vrlg.LOGGER_CONF_GPS_BITS,      2,                       0, "GPS slot"))
+        dw.append(("gps_invert", vrlg.LOGGER_CONF_GPS - vrlg.LOGGER_CONF_GPS_BITS + 2,  1,                       0, "GPS inpert 1pps signal"))
+        dw.append(("gps_ext",    vrlg.LOGGER_CONF_GPS - vrlg.LOGGER_CONF_GPS_BITS + 3,  1,                       0, "GPS sync to 1 pps signal (0 - sync to serial message)"))
+        dw.append(("gps_set",    vrlg.LOGGER_CONF_GPS,                                  1,                       0, "Set 'gps_*' fields"))
+        dw.append(("msg_input",  vrlg.LOGGER_CONF_MSG - vrlg.LOGGER_CONF_MSG_BITS,      4,                       0, "MSG pin: GPIO pin number to accept external signal (0xf - disable)"))
+        dw.append(("msg_invert", vrlg.LOGGER_CONF_MSG - vrlg.LOGGER_CONF_MSG_BITS + 4,  1,                       0, "MSG input polarity - 0 - active high, 1 - active low"))
+        dw.append(("msg_set",    vrlg.LOGGER_CONF_MSG,                                  1,                       0, "Set 'msg_*' fields"))
+        dw.append(("log_sync",   vrlg.LOGGER_CONF_SYN - vrlg.LOGGER_CONF_SYN_BITS,  vrlg.LOGGER_CONF_SYN_BITS,   0, "Log frame sync events (bit per sensor channel)"))
+        dw.append(("log_sync_set",vrlg.LOGGER_CONF_SYN,                                 1,                       0, "Set 'log_sync' fields"))
+        return dw
+    def _enc_logger_data(self):
+        dw=[]
+        dw.append(("data32",   0, 32,   0, "Other logger register data (context-dependent)"))
+        return dw
+
+    def _enc_mult_saxi_addr(self):
+        dw=[]
+        dw.append(("addr32",    0, 30,   0, "SAXI sddress/length in DWORDs"))
+        return dw
 
     def get_pad32(self, data, wlen=32, name="unnamed", padLast=False):
         sorted_data=sorted(data,key=lambda sbit: sbit[1])
