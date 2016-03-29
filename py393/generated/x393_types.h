@@ -389,7 +389,7 @@ typedef union {
     }; 
     struct {
           u32                : 2;
-          u32        tbl_mode: 2; // [29:28] (2) Should be 2 to select table data write mode
+          u32    /*tbl_mode*/: 2; // [29:28] (2) Should be 2 to select table data write mode
           u32             dly: 8; // [27:20] (0) Bit delay - number of mclk periods in 1/4 of the SCL period
           u32            nbwr: 4; // [19:16] (0) Number of bytes to write (1..10)
           u32              sa: 7; // [15: 9] (0) Slave address in write mode
@@ -398,17 +398,17 @@ typedef union {
     }; 
     struct {
           u32                : 2;
-          u32        tbl_mode: 2; // [29:28] (2) Should be 2 to select table data write mode
-          u32             dly: 8; // [27:20] (0) Bit delay - number of mclk periods in 1/4 of the SCL period
+          u32    /*tbl_mode*/: 2; // [29:28] (2) Should be 2 to select table data write mode
+          u32         /*dly*/: 8; // [27:20] (0) Bit delay - number of mclk periods in 1/4 of the SCL period
           u32           nabrd: 1; // [   19] (0) Number of address bytes for read (0 - one byte, 1 - two bytes)
           u32            nbrd: 3; // [18:16] (0) Number of bytes to read (1..18, 0 means '8')
           u32                : 7;
-          u32             rnw: 1; // [    8] (0) Read/not write i2c register, should be 1 here
-          u32             rah: 8; // [ 7: 0] (0) High byte of the i2c register address
+          u32         /*rnw*/: 1; // [    8] (0) Read/not write i2c register, should be 1 here
+          u32         /*rah*/: 8; // [ 7: 0] (0) High byte of the i2c register address
     }; 
     struct {
           u32                : 2;
-          u32        tbl_mode: 2; // [29:28] (0) Should be 0 to select controls
+          u32    /*tbl_mode*/: 2; // [29:28] (0) Should be 0 to select controls
           u32                :13;
           u32           reset: 1; // [   14] (0) Sequencer reset all FIFO (takes 16 clock pulses), also - stops i2c until run command
           u32         cmd_run: 2; // [13:12] (0) Sequencer run/stop control: 0,1 - nop, 2 - stop, 3 - run 
@@ -628,17 +628,17 @@ typedef union {
           u32         gp0_set: 1; // [   13] (0) Set GP0 to 'gp0' value
           u32             gp0: 1; // [   12] (0) GP0 multipurpose signal to the sensor
           u32                : 1;
-          u32         set_dly: 1; // [   10] (0) Set all pre-programmed delays to the sensor port input delays
+          u32     /*set_dly*/: 1; // [   10] (0) Set all pre-programmed delays to the sensor port input delays
           u32   ign_embed_set: 1; // [    9] (0) Set mode to 'ign_embed' field
           u32       ign_embed: 1; // [    8] (0) Ignore embedded data (non-image pixel lines
-          u32    mmcm_rst_set: 1; // [    7] (0) MMCM reset set to  'mmcm_rst' field
-          u32        mmcm_rst: 1; // [    6] (0) MMCM (for sesnor clock) reset signal
-          u32         aro_set: 1; // [    5] (0) ARO set to the 'aro' field
-          u32             aro: 1; // [    4] (0) ARO signal to the sensor
-          u32        arst_set: 1; // [    3] (0) ARST set  to the 'arst' field
-          u32            arst: 1; // [    2] (0) ARST signal to the sensor
-          u32        mrst_set: 1; // [    1] (0) when set to 1, MRST is set  to the 'mrst' field value
-          u32            mrst: 1; // [    0] (0) MRST signal level to the sensor (0 - low(active), 1 - high (inactive)
+          u32 /*mmcm_rst_set*/: 1; // [    7] (0) MMCM reset set to  'mmcm_rst' field
+          u32    /*mmcm_rst*/: 1; // [    6] (0) MMCM (for sesnor clock) reset signal
+          u32     /*aro_set*/: 1; // [    5] (0) ARO set to the 'aro' field
+          u32         /*aro*/: 1; // [    4] (0) ARO signal to the sensor
+          u32    /*arst_set*/: 1; // [    3] (0) ARST set  to the 'arst' field
+          u32        /*arst*/: 1; // [    2] (0) ARST signal to the sensor
+          u32    /*mrst_set*/: 1; // [    1] (0) when set to 1, MRST is set  to the 'mrst' field value
+          u32        /*mrst*/: 1; // [    0] (0) MRST signal level to the sensor (0 - low(active), 1 - high (inactive)
     }; 
     struct {
           u32             d32:32; // [31: 0] (0) cast to u32

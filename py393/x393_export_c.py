@@ -2352,7 +2352,9 @@ class X393ExportC(object):
             s += "typedef union {\n"
         else:
             data = [data]
-        sz=0    
+        sz=0
+        #check for the same named members, verify they map to the same bit fields, replace with unnamed and move names to comments
+        members = {} # name:tuple of (start, len)
         for ns,struct in enumerate(data):    
             lines=self.get_pad32(struct, wlen=32, name=name, padLast=frmt_spcs['lastPad'])
             lines.reverse()
@@ -2363,11 +2365,25 @@ class X393ExportC(object):
                 s += "typedef struct {\n"
             frmt= "%s    %%5s %%%ds:%%2d;"%(("","    ")[isUnion], max([len(i[0]) for i in lines]+[ frmt_spcs['nameLength']]))
             for line in lines:
+                start_bit = 0
                 n = line[0]
                 t = frmt_spcs['ftype']
                 if isinstance(n,(list,tuple)):
                     t = n[1]
                     n = n[0]
+                if n in members: #same bitfield is already defined, make unnamed, move to comment
+                    #Verify it matches the original
+                    if not (start_bit,line[2]) == members[n]:
+                        print ("*** Error: in typdef for %s bitfield %s had start bit = %d, length = %d and later it has start bit = %d, length %d" %
+                                (name+'_t',members[n][0], members[n][1],start_bit, line[2]))
+                        print ("It needs to be resolved manually renamed?), for now keeping conflicting members")
+                        n += "_CONFLICT"
+                    else:    
+                        n = "/*%s*/"%(n)
+                else:
+                    if n:
+                        members[n] =  (start_bit,line[2])
+                start_bit += line[2]
                 s += frmt%( t, n, line[2])
                 if line[0] or  frmt_spcs['showReserved']:
                     hasComment = (len(line) > 4) and line[4]
