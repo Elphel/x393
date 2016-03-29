@@ -2,7 +2,7 @@
 # Filename: x393_timing.tcl
 # Date:2016-03-28
 # Author: Andrey Filippov
-# Description: Timing constraints (selected by HISPI parameter in system_devines.vh)
+# Description: Timing constraints (selected by HISPI parameter in system_defines.vh)
 #
 # Copyright (c) 2016 Elphel, Inc.
 # x393_timing.tcl is free software; you can redistribute it and/or modify
