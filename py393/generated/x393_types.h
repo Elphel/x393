@@ -1,6 +1,6 @@
 /*******************************************************************************
  * File: x393_types.h
- * Date: 2016-03-28  
+ * Date: 2016-03-29  
  * Author: auto-generated file, see x393_export_c.py
  * Description: typedef definitions for the x393 hardware registers
  *******************************************************************************/
@@ -12,10 +12,10 @@ typedef union {
           u32                :24;
           u32            mode: 2; // [ 7: 6] (3) Status report mode: 0 - disable, 1 - single, 2 - auto, keep sequence number, 3 - auto, inc. seq. number 
           u32         seq_num: 6; // [ 5: 0] (0) 6-bit sequence number to be used with the next status response
-    } struct_0;
+    }; 
     struct {
           u32             d32:32; // [31: 0] (0) cast to u32
-    } struct_1;
+    }; 
 } x393_status_ctrl_t; 
 
 // Memory channel operation mode
@@ -35,10 +35,10 @@ typedef union {
           u32       write_mem: 1; // [    2] (0) 0 - read from memory, 1 - write to memory
           u32      chn_nreset: 1; // [    1] (1) 0: immediately reset all the internal circuitry
           u32          enable: 1; // [    0] (1) enable requests from this channel ( 0 will let current to finish, but not raise want/need)
-    } struct_0;
+    }; 
     struct {
           u32             d32:32; // [31: 0] (0) cast to u32
-    } struct_1;
+    }; 
 } x393_mcntrl_mode_scan_t; 
 
 // Memory channel window tile size/step (tiled only)
@@ -51,10 +51,10 @@ typedef union {
           u32     tile_height: 6; // [13: 8] (0x12) tile height in lines (0 means 64 lines)
           u32                : 2;
           u32      tile_width: 6; // [ 5: 0] (2) tile width in 8-bursts (16 bytes)
-    } struct_0;
+    }; 
     struct {
           u32             d32:32; // [31: 0] (0) cast to u32
-    } struct_1;
+    }; 
 } x393_mcntrl_window_tile_whs_t; 
 
 // Memory channel window size
@@ -64,10 +64,10 @@ typedef union {
           u32          height:16; // [31:16] (0) 16-bit window height in scan lines
           u32                : 3;
           u32           width:13; // [12: 0] (0) 13-bit window width - in 8*16=128 bit bursts
-    } struct_0;
+    }; 
     struct {
           u32             d32:32; // [31: 0] (0) cast to u32
-    } struct_1;
+    }; 
 } x393_mcntrl_window_width_height_t; 
 
 // Memory channel window position
@@ -77,10 +77,10 @@ typedef union {
           u32             top:16; // [31:16] (0) 16-bit window top margin in scan lines
           u32                : 3;
           u32            left:13; // [12: 0] (0) 13-bit window left margin in 8-bursts (16 bytes)
-    } struct_0;
+    }; 
     struct {
           u32             d32:32; // [31: 0] (0) cast to u32
-    } struct_1;
+    }; 
 } x393_mcntrl_window_left_top_t; 
 
 // Memory channel scan start (debug feature)
@@ -90,10 +90,10 @@ typedef union {
           u32         start_y:16; // [31:16] (0) 16-bit window start Y relative to window top margin (debug feature, set = 0)
           u32                : 3;
           u32         start_x:13; // [12: 0] (0) 13-bit window start X relative to window left margin (debug feature, set = 0)
-    } struct_0;
+    }; 
     struct {
           u32             d32:32; // [31: 0] (0) cast to u32
-    } struct_1;
+    }; 
 } x393_mcntrl_window_startx_starty_t; 
 
 // Memory channel window full (padded) width
@@ -102,10 +102,10 @@ typedef union {
     struct {
           u32                :19;
           u32      full_width:13; // [12: 0] (0) 13-bit Padded line length (8-row increment), in 8-bursts (16 bytes)
-    } struct_0;
+    }; 
     struct {
           u32             d32:32; // [31: 0] (0) cast to u32
-    } struct_1;
+    }; 
 } x393_mcntrl_window_full_width_t; 
 
 // Memory channel last frame number in a buffer (number of frames minus 1)
@@ -114,10 +114,10 @@ typedef union {
     struct {
           u32                :16;
           u32  last_frame_num:16; // [15: 0] (0) 16-bit number of the last frame in a buffer (1 for a 2-frame ping-pong one)
-    } struct_0;
+    }; 
     struct {
           u32             d32:32; // [31: 0] (0) cast to u32
-    } struct_1;
+    }; 
 } x393_mcntrl_window_last_frame_num_t; 
 
 // Memory channel frame start address increment (for next frame in a buffer)
@@ -126,10 +126,10 @@ typedef union {
     struct {
           u32                :10;
           u32    frame_sa_inc:22; // [21: 0] (0) 22-bit frame start address increment  (3 CA LSBs==0. BA==0)
-    } struct_0;
+    }; 
     struct {
           u32             d32:32; // [31: 0] (0) cast to u32
-    } struct_1;
+    }; 
 } x393_mcntrl_window_frame_sa_inc_t; 
 
 // Memory channel frame start address for the first frame in a buffer
@@ -138,10 +138,10 @@ typedef union {
     struct {
           u32                :10;
           u32        frame_sa:22; // [21: 0] (0) 22-bit frame start address (3 CA LSBs==0. BA==0)
-    } struct_0;
+    }; 
     struct {
           u32             d32:32; // [31: 0] (0) cast to u32
-    } struct_1;
+    }; 
 } x393_mcntrl_window_frame_sa_t; 
 
 // PS PIO (software-programmed DDR3) access sequences enable and reset
@@ -151,10 +151,10 @@ typedef union {
           u32                :30;
           u32              en: 1; // [    1] (1) Enable PS_PIO channel. Only influences request for arbitration, started transactions will finish if disabled
           u32            nrst: 1; // [    0] (1) Active-low reset for programmed DDR3 memory sequences
-    } struct_0;
+    }; 
     struct {
           u32             d32:32; // [31: 0] (0) cast to u32
-    } struct_1;
+    }; 
 } x393_ps_pio_en_rst_t; 
 
 // PS PIO (software-programmed DDR3) access sequences control
@@ -167,10 +167,10 @@ typedef union {
           u32          urgent: 1; // [   12] (0) high priority request (only for competition with other channels, will not pass in this FIFO)
           u32            page: 2; // [11:10] (0) Buffer page number
           u32        seq_addr:10; // [ 9: 0] (0) Sequence start address
-    } struct_0;
+    }; 
     struct {
           u32             d32:32; // [31: 0] (0) cast to u32
-    } struct_1;
+    }; 
 } x393_ps_pio_cmd_t; 
 
 // x393 generic status register
@@ -180,10 +180,10 @@ typedef union {
           u32         seq_num: 6; // [31:26] (0) Sequence number
           u32         status2: 2; // [25:24] (0) 2-bit status payload (2 LSB in Verilog)
           u32        status24:24; // [23: 0] (0) 24-bit status payload ([25:2] in Verilog
-    } struct_0;
+    }; 
     struct {
           u32             d32:32; // [31: 0] (0) cast to u32
-    } struct_1;
+    }; 
 } x393_status_t; 
 
 // Memory PHY status
@@ -200,10 +200,10 @@ typedef union {
           u32      locked_pll: 1; // [    9] (0) PLL is locked
           u32        run_busy: 1; // [    8] (0) Controller sequence in progress
           u32          ps_out: 8; // [ 7: 0] (0) Current MMCM phase shift
-    } struct_0;
+    }; 
     struct {
           u32             d32:32; // [31: 0] (0) cast to u32
-    } struct_1;
+    }; 
 } x393_status_mcntrl_phy_t; 
 
 // Memory controller requests status
@@ -215,10 +215,10 @@ typedef union {
           u32       want_some: 1; // [   24] (0) At least one channel requests memory access (normal priority)
           u32                : 8;
           u32        chn_want:16; // [15: 0] (0) Bit mask of the channels that request memory access
-    } struct_0;
+    }; 
     struct {
           u32             d32:32; // [31: 0] (0) cast to u32
-    } struct_1;
+    }; 
 } x393_status_mcntrl_top_t; 
 
 // Memory software access status
@@ -229,10 +229,10 @@ typedef union {
           u32 cmd_nempty_busy: 1; // [   25] (0) MCNTRL software access pending commands FIFO is not empty or command is running
           u32   cmd_half_full: 1; // [   24] (0) MCNTRL software access pending commands FIFO is half full
           u32                :24;
-    } struct_0;
+    }; 
     struct {
           u32             d32:32; // [31: 0] (0) cast to u32
-    } struct_1;
+    }; 
 } x393_status_mcntrl_ps_t; 
 
 // Memory test channels access status
@@ -243,10 +243,10 @@ typedef union {
           u32  frame_finished: 1; // [   25] (0) Channel completed all memory accesses
           u32            busy: 1; // [   24] (0) Channel is busy (started and some memory accesses are pending)
           u32                :24;
-    } struct_0;
+    }; 
     struct {
           u32             d32:32; // [31: 0] (0) cast to u32
-    } struct_1;
+    }; 
 } x393_status_mcntrl_lintile_t; 
 
 // Memory test channels status
@@ -259,10 +259,10 @@ typedef union {
           u32                : 4;
           u32            page: 4; // [19:16] (0) Current page number read/written through a channel (low bits)
           u32 line_unfinished:16; // [15: 0] (0) Current unfinished frame line
-    } struct_0;
+    }; 
     struct {
           u32             d32:32; // [31: 0] (0) cast to u32
-    } struct_1;
+    }; 
 } x393_status_mcntrl_testchn_t; 
 
 // Membridge channel status
@@ -275,10 +275,10 @@ typedef union {
           u32                  : 8;
           u32 axi_arw_requested: 8; // [15: 8] (0) Number of 64-bit words to be read/written over axi queued to AR/AW channels (low bits)
           u32        wresp_conf: 8; // [ 7: 0] (0) Number of 64-bit words confirmed through axi b channel (low bits)
-    } struct_0;
+    }; 
     struct {
           u32             d32:32; // [31: 0] (0) cast to u32
-    } struct_1;
+    }; 
 } x393_status_membridge_t; 
 
 // Sensor/multiplexer I/O pins status
@@ -298,10 +298,10 @@ typedef union {
           u32              xfpgadone: 1; // [    9] (0) Multiplexer FPGA DONE output
           u32                 ps_rdy: 1; // [    8] (0) Sensor MMCM phase ready
           u32                 ps_out: 8; // [ 7: 0] (0) Sensor MMCM current phase
-    } struct_0;
+    }; 
     struct {
           u32             d32:32; // [31: 0] (0) cast to u32
-    } struct_1;
+    }; 
 } x393_status_sens_io_t; 
 
 // Sensor/multiplexer i2c status
@@ -320,10 +320,10 @@ typedef union {
           u32  i2c_fifo_cntrl: 1; // [    9] (0) I2C FIFO byte counter (odd/even bytes)
           u32 i2c_fifo_nempty: 1; // [    8] (0) I2C read FIFO has data
           u32   i2c_fifo_dout: 8; // [ 7: 0] (0) I2c byte read from the device through FIFO
-    } struct_0;
+    }; 
     struct {
           u32             d32:32; // [31: 0] (0) cast to u32
-    } struct_1;
+    }; 
 } x393_status_sens_i2c_t; 
 
 // Command bits for test01 module (test frame memory accesses)
@@ -334,10 +334,10 @@ typedef union {
           u32         suspend: 1; // [    2] (0) Suspend command
           u32       next_page: 1; // [    1] (0) Next page command
           u32     frame_start: 1; // [    0] (0) start frame command
-    } struct_0;
+    }; 
     struct {
           u32             d32:32; // [31: 0] (0) cast to u32
-    } struct_1;
+    }; 
 } x393_test01_mode_t; 
 
 // Command for membridge
@@ -347,10 +347,10 @@ typedef union {
           u32                :29;
           u32     start_reset: 2; // [ 2: 1] (0) 1 - start (from current address), 3 - start from reset address
           u32          enable: 1; // [    0] (0) enable membridge
-    } struct_0;
+    }; 
     struct {
           u32             d32:32; // [31: 0] (0) cast to u32
-    } struct_1;
+    }; 
 } x393_membridge_cmd_t; 
 
 // Cache mode for membridge
@@ -360,10 +360,10 @@ typedef union {
           u32                :27;
           u32     debug_cache: 1; // [    4] (0) 0 - normal operation, 1 debug (replace data)
           u32       axi_cache: 4; // [ 3: 0] (3) AXI CACHE value (ignored by Zynq)
-    } struct_0;
+    }; 
     struct {
           u32             d32:32; // [31: 0] (0) cast to u32
-    } struct_1;
+    }; 
 } x393_membridge_mode_t; 
 
 // Address in 64-bit words
@@ -372,10 +372,10 @@ typedef union {
     struct {
           u32                : 3;
           u32          addr64:29; // [28: 0] (0) Address/length in 64-bit words (<<3 to get byte address
-    } struct_0;
+    }; 
     struct {
           u32             d32:32; // [31: 0] (0) cast to u32
-    } struct_1;
+    }; 
 } u29_t; 
 
 // I2C contol/table data
@@ -386,7 +386,7 @@ typedef union {
           u32        tbl_mode: 2; // [29:28] (3) Should be 3 to select table address write mode
           u32                :20;
           u32        tbl_addr: 8; // [ 7: 0] (0) Address/length in 64-bit words (<<3 to get byte address
-    } struct_0;
+    }; 
     struct {
           u32                : 2;
           u32        tbl_mode: 2; // [29:28] (2) Should be 2 to select table data write mode
@@ -395,7 +395,7 @@ typedef union {
           u32              sa: 7; // [15: 9] (0) Slave address in write mode
           u32             rnw: 1; // [    8] (0) Read/not write i2c register, should be 0 here
           u32             rah: 8; // [ 7: 0] (0) High byte of the i2c register address
-    } struct_1;
+    }; 
     struct {
           u32                : 2;
           u32        tbl_mode: 2; // [29:28] (2) Should be 2 to select table data write mode
@@ -405,7 +405,7 @@ typedef union {
           u32                : 7;
           u32             rnw: 1; // [    8] (0) Read/not write i2c register, should be 1 here
           u32             rah: 8; // [ 7: 0] (0) High byte of the i2c register address
-    } struct_2;
+    }; 
     struct {
           u32                : 2;
           u32        tbl_mode: 2; // [29:28] (0) Should be 0 to select controls
@@ -417,10 +417,10 @@ typedef union {
           u32       drive_ctl: 1; // [    2] (0) 0 - nop, 1 - set sda_release and sda_drive_high
           u32     sda_release: 1; // [    1] (0) Release SDA early if next bit ==1 (valid with drive_ctl)
           u32  sda_drive_high: 1; // [    0] (0) Actively drive SDA high during second half of SCL==1 (valid with drive_ctl)
-    } struct_3;
+    }; 
     struct {
           u32             d32:32; // [31: 0] (0) cast to u32
-    } struct_4;
+    }; 
 } x393_i2c_ctltbl_t; 
 
 // Write sensor channel mode register
@@ -432,10 +432,10 @@ typedef union {
           u32          chn_en: 1; // [    8] (1) Enable this sensor channel
           u32       hist_nrst: 4; // [ 7: 4] (0xf) Reset off for histograms subchannels (may be less than 4)
           u32         hist_en: 4; // [ 3: 0] (0xf) Enable subchannel histogram modules (may be less than 4)
-    } struct_0;
+    }; 
     struct {
           u32             d32:32; // [31: 0] (0) cast to u32
-    } struct_1;
+    }; 
 } x393_sens_mode_t; 
 
 // Write number of sensor frames to combine into one virtual (linescan mode)
@@ -444,10 +444,10 @@ typedef union {
     struct {
           u32                :16;
           u32     mult_frames:16; // [15: 0] (0) Number of frames to combine into one minus 1 (0 - single,1 - two frames...)
-    } struct_0;
+    }; 
     struct {
           u32             d32:32; // [31: 0] (0) cast to u32
-    } struct_1;
+    }; 
 } x393_sens_sync_mult_t; 
 
 // Write sensor number of lines to delay frame sync
@@ -456,10 +456,10 @@ typedef union {
     struct {
           u32                :16;
           u32     mult_frames:16; // [15: 0] (0) Number of lines to delay late frame sync
-    } struct_0;
+    }; 
     struct {
           u32             d32:32; // [31: 0] (0) cast to u32
-    } struct_1;
+    }; 
 } x393_sens_sync_late_t; 
 
 // Configure memory controller priorities
@@ -468,10 +468,10 @@ typedef union {
     struct {
           u32                :16;
           u32        priority:16; // [15: 0] (0) Channel priority (the larger the higher)
-    } struct_0;
+    }; 
     struct {
           u32             d32:32; // [31: 0] (0) cast to u32
-    } struct_1;
+    }; 
 } x393_arbite_pri_t; 
 
 // Enable/disable memory controller channels
@@ -480,10 +480,10 @@ typedef union {
     struct {
           u32                :16;
           u32          chn_en:16; // [15: 0] (0) Enabled memory channels
-    } struct_0;
+    }; 
     struct {
           u32             d32:32; // [31: 0] (0) cast to u32
-    } struct_1;
+    }; 
 } x393_mcntr_chn_en_t; 
 
 // DQS and DQM patterns (DQM - 0, DQS 0xaa or 0x55)
@@ -493,10 +493,10 @@ typedef union {
           u32                :16;
           u32        dqm_patt: 8; // [15: 8] (0) DQM pattern: 0x0
           u32        dqs_patt: 8; // [ 7: 0] (0xaa) DQS pattern: 0xaa/0x55
-    } struct_0;
+    }; 
     struct {
           u32             d32:32; // [31: 0] (0) cast to u32
-    } struct_1;
+    }; 
 } x393_mcntr_dqs_dqm_patt_t; 
 
 // DQ and DQS tristate control when turning on and off
@@ -508,10 +508,10 @@ typedef union {
           u32   dqs_tri_first: 4; // [11: 8] (1) DQS tristate start (0x1,0x3,0x7); early, nominal, late
           u32     dq_tri_last: 4; // [ 7: 4] (0xe) DQ tristate  end   (0xf,0xe,0xc); early, nominal, late
           u32    dq_tri_first: 4; // [ 3: 0] (3) DQ tristate  start (0x3,0x7,0xf); early, nominal, late
-    } struct_0;
+    }; 
     struct {
           u32             d32:32; // [31: 0] (0) cast to u32
-    } struct_1;
+    }; 
 } x393_mcntr_dqs_dqm_tri_t; 
 
 // DDR3 memory controller I/O delay
@@ -520,10 +520,10 @@ typedef union {
     struct {
           u32                :24;
           u32             dly: 8; // [ 7: 0] (0) 8-bit delay value: 5MSBs(0..31) and 3LSBs(0..4)
-    } struct_0;
+    }; 
     struct {
           u32             d32:32; // [31: 0] (0) cast to u32
-    } struct_1;
+    }; 
 } x393_dly_t; 
 
 // Extra delay in mclk (fDDR/2) cycles) to data write buffer
@@ -532,10 +532,10 @@ typedef union {
     struct {
           u32                :28;
           u32        wbuf_dly: 4; // [ 3: 0] (9) Extra delay in mclk (fDDR/2) cycles) to data write buffer
-    } struct_0;
+    }; 
     struct {
           u32             d32:32; // [31: 0] (0) cast to u32
-    } struct_1;
+    }; 
 } x393_wbuf_dly_t; 
 
 // Control for the gamma-conversion module
@@ -548,10 +548,10 @@ typedef union {
           u32              en: 1; // [    3] (1) Enable module
           u32            page: 1; // [    2] (0) Table page (only available if SENS_GAMMA_BUFFER in Verilog)
           u32           bayer: 2; // [ 1: 0] (0) Bayer color shift (pixel to gamma table)
-    } struct_0;
+    }; 
     struct {
           u32             d32:32; // [31: 0] (0) cast to u32
-    } struct_1;
+    }; 
 } x393_gamma_ctl_t; 
 
 // Write gamma table address/data
@@ -564,16 +564,16 @@ typedef union {
           u32         sub_chn: 2; // [11:10] (0) Sensor sub-channel (multiplexed to the same port)
           u32           color: 2; // [ 9: 8] (0) Color channel
           u32            addr: 8; // [ 7: 0] (0) Start address in a gamma page (normally 0)
-    } struct_0;
+    }; 
     struct {
           u32                :14;
           u32      diff_scale: 1; // [   17] (0) Difference scale: 0 - keep diff, 1- multiply diff by 16
          char            diff: 7; // [16:10] (0) Difference to next (signed, -64..+63)
           u32            base:10; // [ 9: 0] (0) Knee point value (to be interpolated between)
-    } struct_1;
+    }; 
     struct {
           u32             d32:32; // [31: 0] (0) cast to u32
-    } struct_2;
+    }; 
 } x393_gamma_tbl_t; 
 
 // Heights of the first two subchannels frames
@@ -582,10 +582,10 @@ typedef union {
     struct {
           u32       height1m1:16; // [31:16] (0) Height of subchannel 1 frame minus 1
           u32       height0m1:16; // [15: 0] (0) Height of subchannel 0 frame minus 1
-    } struct_0;
+    }; 
     struct {
           u32             d32:32; // [31: 0] (0) cast to u32
-    } struct_1;
+    }; 
 } x393_gamma_height01m1_t; 
 
 // Height of the third subchannel frame
@@ -594,10 +594,10 @@ typedef union {
     struct {
           u32                :16;
           u32       height2m1:16; // [15: 0] (0) Height of subchannel 2 frame minus 1
-    } struct_0;
+    }; 
     struct {
           u32             d32:32; // [31: 0] (0) cast to u32
-    } struct_1;
+    }; 
 } x393_gamma_height2m1_t; 
 
 // Sensor port I/O control
@@ -620,7 +620,7 @@ typedef union {
           u32            arst: 1; // [    2] (0) ARST signal to the sensor
           u32        mrst_set: 1; // [    1] (0) when set to 1, MRST is set  to the 'mrst' field value
           u32            mrst: 1; // [    0] (0) MRST signal level to the sensor (0 - low(active), 1 - high (inactive)
-    } struct_0;
+    }; 
     struct {
           u32                :16;
           u32         gp1_set: 1; // [   15] (0) Set GP1 to 'gp1' value
@@ -639,10 +639,10 @@ typedef union {
           u32            arst: 1; // [    2] (0) ARST signal to the sensor
           u32        mrst_set: 1; // [    1] (0) when set to 1, MRST is set  to the 'mrst' field value
           u32            mrst: 1; // [    0] (0) MRST signal level to the sensor (0 - low(active), 1 - high (inactive)
-    } struct_1;
+    }; 
     struct {
           u32             d32:32; // [31: 0] (0) cast to u32
-    } struct_2;
+    }; 
 } x393_sensio_ctl_t; 
 
 // Programming interface for multiplexer FPGA
@@ -660,10 +660,10 @@ typedef union {
           u32             tms: 1; // [    2] (0) JTAG TMS level
           u32         tdi_set: 1; // [    1] (0) JTAG TDI set to 'tdi' field
           u32             tdi: 1; // [    0] (0) JTAG TDI level
-    } struct_0;
+    }; 
     struct {
           u32             d32:32; // [31: 0] (0) cast to u32
-    } struct_1;
+    }; 
 } x393_sensio_jpag_t; 
 
 // Sensor i/o timing register 0 (different meanings for different sensor types)
@@ -674,14 +674,14 @@ typedef union {
           u32            pxd2: 8; // [23:16] (0) PXD2  input delay (3 LSB not used)
           u32            pxd1: 8; // [15: 8] (0) PXD1  input delay (3 LSB not used)
           u32            pxd0: 8; // [ 7: 0] (0) PXD0  input delay (3 LSB not used)
-    } struct_0;
+    }; 
     struct {
           u32                :28;
           u32        fifo_lag: 4; // [ 3: 0] (7) FIFO delay to start output
-    } struct_1;
+    }; 
     struct {
           u32             d32:32; // [31: 0] (0) cast to u32
-    } struct_2;
+    }; 
 } x393_sensio_tim0_t; 
 
 // Sensor i/o timing register 1 (different meanings for different sensor types)
@@ -692,17 +692,17 @@ typedef union {
           u32            pxd6: 8; // [23:16] (0) PXD6  input delay (3 LSB not used)
           u32            pxd5: 8; // [15: 8] (0) PXD5  input delay (3 LSB not used)
           u32            pxd4: 8; // [ 7: 0] (0) PXD4  input delay (3 LSB not used)
-    } struct_0;
+    }; 
     struct {
           u32                :24;
           u32      phys_lane3: 2; // [ 7: 6] (0) Physical lane for logical lane 3
           u32      phys_lane2: 2; // [ 5: 4] (3) Physical lane for logical lane 2
           u32      phys_lane1: 2; // [ 3: 2] (2) Physical lane for logical lane 1
           u32      phys_lane0: 2; // [ 1: 0] (1) Physical lane for logical lane 0
-    } struct_1;
+    }; 
     struct {
           u32             d32:32; // [31: 0] (0) cast to u32
-    } struct_2;
+    }; 
 } x393_sensio_tim1_t; 
 
 // Sensor i/o timing register 2 (different meanings for different sensor types)
@@ -713,16 +713,16 @@ typedef union {
           u32           pxd10: 8; // [23:16] (0) PXD10 input delay (3 LSB not used)
           u32            pxd9: 8; // [15: 8] (0) PXD9  input delay (3 LSB not used)
           u32            pxd8: 8; // [ 7: 0] (0) PXD8  input delay (3 LSB not used)
-    } struct_0;
+    }; 
     struct {
           u32       dly_lane3: 8; // [31:24] (0) lane 3 (phys) input delay (3 LSB not used)
           u32       dly_lane2: 8; // [23:16] (0) lane 2 (phys) input delay (3 LSB not used)
           u32       dly_lane1: 8; // [15: 8] (0) lane 1 (phys) input delay (3 LSB not used)
           u32       dly_lane0: 8; // [ 7: 0] (0) lane 0 (phys) input delay (3 LSB not used)
-    } struct_1;
+    }; 
     struct {
           u32             d32:32; // [31: 0] (0) cast to u32
-    } struct_2;
+    }; 
 } x393_sensio_tim2_t; 
 
 // Sensor i/o timing register 3 (different meanings for different sensor types)
@@ -733,14 +733,14 @@ typedef union {
           u32             bpf: 8; // [23:16] (0) BPF (clock from sensor) input delay (3 LSB not used)
           u32            vact: 8; // [15: 8] (0) VACT  input delay (3 LSB not used)
           u32            hact: 8; // [ 7: 0] (0) HACT  input delay (3 LSB not used)
-    } struct_0;
+    }; 
     struct {
           u32                :24;
           u32         phase_h: 8; // [ 7: 0] (0) MMCM phase
-    } struct_1;
+    }; 
     struct {
           u32             d32:32; // [31: 0] (0) cast to u32
-    } struct_2;
+    }; 
 } x393_sensio_tim3_t; 
 
 // Set sensor frame width (0 - use received)
@@ -749,10 +749,10 @@ typedef union {
     struct {
           u32                :16;
           u32    sensor_width:16; // [15: 0] (0) Sensor frame width (0 - use line sync signals from the sensor)
-    } struct_0;
+    }; 
     struct {
           u32             d32:32; // [31: 0] (0) cast to u32
-    } struct_1;
+    }; 
 } x393_sensio_width_t; 
 
 // Lens vignetting parameter (write address first, then data that may overlap som address bits)
@@ -763,46 +763,46 @@ typedef union {
           u32         sub_chn: 2; // [25:24] (0) Sensor subchannel
           u32            addr: 8; // [23:16] (0) Lens correction address, should be written first (overlaps with data)
           u32                :16;
-    } struct_0;
+    }; 
     struct {
           u32                :13;
           u32              ax:19; // [18: 0] (0x20000) Coefficient Ax
-    } struct_1;
+    }; 
     struct {
           u32                :13;
           u32              ay:19; // [18: 0] (0x20000) Coefficient Ay
-    } struct_2;
+    }; 
     struct {
           u32                :11;
           u32              bx:21; // [20: 0] (0x180000) Coefficient Bx
-    } struct_3;
+    }; 
     struct {
           u32                :11;
           u32              by:21; // [20: 0] (0x180000) Coefficient By
-    } struct_4;
+    }; 
     struct {
           u32                :13;
           u32               c:19; // [18: 0] (0x8000) Coefficient C
-    } struct_5;
+    }; 
     struct {
           u32                :15;
           u32           scale:17; // [16: 0] (0x8000) Scale (4 per-color values)
-    } struct_6;
+    }; 
     struct {
           u32                :16;
           u32      fatzero_in:16; // [15: 0] (0) 'Fat zero' on the input (subtract from the input)
-    } struct_7;
+    }; 
     struct {
           u32                :16;
           u32     fatzero_out:16; // [15: 0] (0) 'Fat zero' on the output (add to the result)
-    } struct_8;
+    }; 
     struct {
           u32                :28;
           u32      post_scale: 4; // [ 3: 0] (1) Shift result (bits)
-    } struct_9;
+    }; 
     struct {
           u32             d32:32; // [31: 0] (0) cast to u32
-    } struct_10;
+    }; 
 } x393_lens_corr_t; 
 
 // Height of the subchannel frame for vignetting correction
@@ -811,10 +811,10 @@ typedef union {
     struct {
           u32                :16;
           u32       height_m1:16; // [15: 0] (0) Height of subframe minus 1
-    } struct_0;
+    }; 
     struct {
           u32             d32:32; // [31: 0] (0) cast to u32
-    } struct_1;
+    }; 
 } x393_lens_height_m1_t; 
 
 // Histogram window left/top margins
@@ -823,10 +823,10 @@ typedef union {
     struct {
           u32             top:16; // [31:16] (0) Histogram window top margin
           u32            left:16; // [15: 0] (0) Histogram window left margin
-    } struct_0;
+    }; 
     struct {
           u32             d32:32; // [31: 0] (0) cast to u32
-    } struct_1;
+    }; 
 } x393_hist_left_top_t; 
 
 // Histogram window width and height minus 1 (0 use full)
@@ -835,10 +835,10 @@ typedef union {
     struct {
           u32       height_m1:16; // [31:16] (0) Height of he histogram window minus 1. If 0 - use frame bottom margin (end of VACT)
           u32        width_m1:16; // [15: 0] (0) Width of the histogram window minus 1. If 0 - use frame right margin (end of HACT)
-    } struct_0;
+    }; 
     struct {
           u32             d32:32; // [31: 0] (0) cast to u32
-    } struct_1;
+    }; 
 } x393_hist_width_height_m1_t; 
 
 // Histograms DMA mode
@@ -851,10 +851,10 @@ typedef union {
           u32         confirm: 1; // [    2] (1) 1 - wait for confirmation that histogram was written to the system memory
           u32            nrst: 1; // [    1] (1) 0 - reset histograms DMA
           u32              en: 1; // [    0] (1) Enable histograms DMA
-    } struct_0;
+    }; 
     struct {
           u32             d32:32; // [31: 0] (0) cast to u32
-    } struct_1;
+    }; 
 } x393_hist_saxi_mode_t; 
 
 // Histograms DMA addresses
@@ -863,10 +863,10 @@ typedef union {
     struct {
           u32                :12;
           u32            page:20; // [19: 0] (0) Start address of the subchannel histogram (in pages = 4096 bytes
-    } struct_0;
+    }; 
     struct {
           u32             d32:32; // [31: 0] (0) cast to u32
-    } struct_1;
+    }; 
 } x393_hist_saxi_addr_t; 
 
 // Compressor mode control
@@ -889,10 +889,10 @@ typedef union {
           u32           qbank: 3; // [ 5: 3] (0) Quantization table bank
           u32         run_set: 1; // [    2] (0) Set 'run'
           u32             run: 2; // [ 1: 0] (0) Run mode
-    } struct_0;
+    }; 
     struct {
           u32             d32:32; // [31: 0] (0) cast to u32
-    } struct_1;
+    }; 
 } x393_cmprs_mode_t; 
 
 // Compressor coring mode (table number)
@@ -901,10 +901,10 @@ typedef union {
     struct {
           u32                :29;
           u32    coring_table: 3; // [ 2: 0] (0) Select coring table pair number
-    } struct_0;
+    }; 
     struct {
           u32             d32:32; // [31: 0] (0) cast to u32
-    } struct_1;
+    }; 
 } x393_cmprs_coring_mode_t; 
 
 // Compressor color saturation
@@ -915,10 +915,10 @@ typedef union {
           u32    colorsat_red:10; // [21:12] (0x16c) Color saturation for red (0xb6 - 100%)
           u32                : 2;
           u32   colorsat_blue:10; // [ 9: 0] (0x120) Color saturation for blue (0x90 - 100%)
-    } struct_0;
+    }; 
     struct {
           u32             d32:32; // [31: 0] (0) cast to u32
-    } struct_1;
+    }; 
 } x393_cmprs_colorsat_t; 
 
 // Compressor frame format
@@ -929,10 +929,10 @@ typedef union {
           u32       left_margin: 5; // [30:26] (0) Left margin of the first pixel (0..31) for 32-pixel wide colums in memory access
           u32 num_macro_rows_m1:13; // [25:13] (0) Number of macroblock rows minus 1
           u32 num_macro_cols_m1:13; // [12: 0] (0) Number of macroblock colums minus 1
-    } struct_0;
+    }; 
     struct {
           u32             d32:32; // [31: 0] (0) cast to u32
-    } struct_1;
+    }; 
 } x393_cmprs_frame_format_t; 
 
 // Compressor interrupts control
@@ -941,10 +941,10 @@ typedef union {
     struct {
           u32                :30;
           u32   interrupt_cmd: 2; // [ 1: 0] (0) 0: nop, 1: clear interrupt status, 2: disable interrupt, 3: enable interrupt
-    } struct_0;
+    }; 
     struct {
           u32             d32:32; // [31: 0] (0) cast to u32
-    } struct_1;
+    }; 
 } x393_cmprs_interrupts_t; 
 
 // Compressor tables load control
@@ -954,10 +954,10 @@ typedef union {
           u32                : 6;
           u32            type: 2; // [25:24] (0) 0: quantization, 1: coring, 2: focus, 3: huffman
           u32          addr32:24; // [23: 0] (0) Table address to start writing to (autoincremented) for DWORDs
-    } struct_0;
+    }; 
     struct {
           u32             d32:32; // [31: 0] (0) cast to u32
-    } struct_1;
+    }; 
 } x393_cmprs_table_addr_t; 
 
 // Compressor DMA buffer address (in 32-byte blocks)
@@ -966,10 +966,10 @@ typedef union {
     struct {
           u32                : 5;
           u32           sa256:27; // [26: 0] (0) System memory buffer start in multiples of 32 bytes (256 bits)
-    } struct_0;
+    }; 
     struct {
           u32             d32:32; // [31: 0] (0) cast to u32
-    } struct_1;
+    }; 
 } x393_afimux_sa_t; 
 
 // Compressor DMA buffer length (in 32-byte blocks)
@@ -978,10 +978,10 @@ typedef union {
     struct {
           u32                : 5;
           u32          len256:27; // [26: 0] (0) System memory buffer length in multiples of 32 bytes (256 bits)
-    } struct_0;
+    }; 
     struct {
           u32             d32:32; // [31: 0] (0) cast to u32
-    } struct_1;
+    }; 
 } x393_afimux_len_t; 
 
 // Compressor DMA channels reset
@@ -993,10 +993,10 @@ typedef union {
           u32            rst2: 1; // [    2] (0) AXI HPx sub-channel0 reset (0 - normal operation, 1 - reset)
           u32            rst1: 1; // [    1] (0) AXI HPx sub-channel0 reset (0 - normal operation, 1 - reset)
           u32            rst0: 1; // [    0] (0) AXI HPx sub-channel0 reset (0 - normal operation, 1 - reset)
-    } struct_0;
+    }; 
     struct {
           u32             d32:32; // [31: 0] (0) cast to u32
-    } struct_1;
+    }; 
 } x393_afimux_rst_t; 
 
 // Compressor DMA enable (global and channels)
@@ -1014,10 +1014,10 @@ typedef union {
           u32             en1: 1; // [    2] (0) AXI HPx sub-channel1 enable value to set (0 - pause, 1 - run)
           u32         en0_set: 1; // [    1] (0) 0 - nop, 1 - set en0
           u32             en0: 1; // [    0] (0) AXI HPx sub-channel0 enable value to set (0 - pause, 1 - run)
-    } struct_0;
+    }; 
     struct {
           u32             d32:32; // [31: 0] (0) cast to u32
-    } struct_1;
+    }; 
 } x393_afimux_en_t; 
 
 // Compressor DMA report mode
@@ -1036,10 +1036,10 @@ typedef union {
           u32                : 1;
           u32       mode0_set: 1; // [    2] (0) 0 - nop, 1 - set mode0
           u32           mode0: 2; // [ 1: 0] (0) channel0 report mode: 0 - EOF int, 1 - EOF confirmed, 2 - CP (current), 3 - CP confirmed
-    } struct_0;
+    }; 
     struct {
           u32             d32:32; // [31: 0] (0) cast to u32
-    } struct_1;
+    }; 
 } x393_afimux_report_t; 
 
 // Compressor DMA status
@@ -1048,10 +1048,10 @@ typedef union {
     struct {
           u32         seq_num: 6; // [31:26] (0) Status sequence number
           u32       offset256:26; // [25: 0] (0) AFI MUX current/EOF pointer offset in 32-byte blocks
-    } struct_0;
+    }; 
     struct {
           u32             d32:32; // [31: 0] (0) cast to u32
-    } struct_1;
+    }; 
 } x393_afimux_status_t; 
 
 // GPIO output control
@@ -1073,10 +1073,10 @@ typedef union {
           u32            pin2: 2; // [ 5: 4] (0) Output control for pin 2: 0 - nop, 1 - set low, 2 - set high, 3 - tristate
           u32            pin1: 2; // [ 3: 2] (0) Output control for pin 1: 0 - nop, 1 - set low, 2 - set high, 3 - tristate
           u32            pin0: 2; // [ 1: 0] (0) Output control for pin 0: 0 - nop, 1 - set low, 2 - set high, 3 - tristate
-    } struct_0;
+    }; 
     struct {
           u32             d32:32; // [31: 0] (0) cast to u32
-    } struct_1;
+    }; 
 } x393_gpio_set_pins_t; 
 
 // GPIO pins status
@@ -1095,10 +1095,10 @@ typedef union {
           u32            pin2: 1; // [    2] (0) GPIO pin 0 state
           u32            pin1: 1; // [    1] (0) GPIO pin 0 state
           u32            pin0: 1; // [    0] (0) GPIO pin 0 state
-    } struct_0;
+    }; 
     struct {
           u32             d32:32; // [31: 0] (0) cast to u32
-    } struct_1;
+    }; 
 } x393_gpio_status_t; 
 
 // RTC seconds
@@ -1106,10 +1106,10 @@ typedef union {
 typedef union {
     struct {
           u32             sec:32; // [31: 0] (0) RTC seconds
-    } struct_0;
+    }; 
     struct {
           u32             d32:32; // [31: 0] (0) cast to u32
-    } struct_1;
+    }; 
 } x393_rtc_sec_t; 
 
 // RTC microseconds
@@ -1118,10 +1118,10 @@ typedef union {
     struct {
           u32                :12;
           u32            usec:20; // [19: 0] (0) RTC microseconds
-    } struct_0;
+    }; 
     struct {
           u32             d32:32; // [31: 0] (0) cast to u32
-    } struct_1;
+    }; 
 } x393_rtc_usec_t; 
 
 // RTC correction
@@ -1130,10 +1130,10 @@ typedef union {
     struct {
           u32                :16;
         short            corr:16; // [15: 0] (0) RTC correction, +/1 1/256 full scale
-    } struct_0;
+    }; 
     struct {
           u32             d32:32; // [31: 0] (0) cast to u32
-    } struct_1;
+    }; 
 } x393_rtc_corr_t; 
 
 // RTC status
@@ -1144,10 +1144,10 @@ typedef union {
           u32                : 1;
           u32        alt_snap: 1; // [   24] (0) alternates 0/1 each time RTC timer makes a snapshot
           u32                :24;
-    } struct_0;
+    }; 
     struct {
           u32             d32:32; // [31: 0] (0) cast to u32
-    } struct_1;
+    }; 
 } x393_rtc_status_t; 
 
 // CAMSYNC I/O configuration
@@ -1165,10 +1165,10 @@ typedef union {
           u32           line2: 2; // [ 5: 4] (1) line 2 mode: 0 - inactive, 1 - keep (nop), 2 - active low, 3 - active high
           u32           line1: 2; // [ 3: 2] (1) line 1 mode: 0 - inactive, 1 - keep (nop), 2 - active low, 3 - active high
           u32           line0: 2; // [ 1: 0] (1) line 0 mode: 0 - inactive, 1 - keep (nop), 2 - active low, 3 - active high
-    } struct_0;
+    }; 
     struct {
           u32             d32:32; // [31: 0] (0) cast to u32
-    } struct_1;
+    }; 
 } x393_camsync_io_t; 
 
 // CAMSYNC mode
@@ -1187,10 +1187,10 @@ typedef union {
           u32      en_snd_set: 1; // [    2] (0) Set 'en_snd'
           u32          en_snd: 1; // [    1] (1) Enable sending timestamps (valid with 'en_snd_set')
           u32              en: 1; // [    0] (1) Enable CAMSYNC module
-    } struct_0;
+    }; 
     struct {
           u32             d32:32; // [31: 0] (0) cast to u32
-    } struct_1;
+    }; 
 } x393_camsync_mode_t; 
 
 // CMDFRAMESEQ mode
@@ -1202,10 +1202,10 @@ typedef union {
           u32         run_cmd: 2; // [13:12] (0) Run command: 0,1 - nop, 2 - stop, 3 - run
           u32                :10;
           u32   interrupt_cmd: 2; // [ 1: 0] (0) Interrupt command: 0-nop, 1 - clear is, 2 - disable, 3 - enable
-    } struct_0;
+    }; 
     struct {
           u32             d32:32; // [31: 0] (0) cast to u32
-    } struct_1;
+    }; 
 } x393_cmdframeseq_mode_t; 
 
 // CMDFRAMESEQ mode
@@ -1220,10 +1220,10 @@ typedef union {
           u32      frame_num2: 4; // [11: 8] (0) Frame number for sensor 0
           u32      frame_num1: 4; // [ 7: 4] (0) Frame number for sensor 0
           u32      frame_num0: 4; // [ 3: 0] (0) Frame number for sensor 0
-    } struct_0;
+    }; 
     struct {
           u32             d32:32; // [31: 0] (0) cast to u32
-    } struct_1;
+    }; 
 } x393_cmdseqmux_status_t; 
 
 // Event logger status
@@ -1233,10 +1233,10 @@ typedef union {
           u32         seq_num: 6; // [31:26] (0) Status sequence number
           u32                : 2;
           u32          sample:24; // [23: 0] (0) Logger sample number
-    } struct_0;
+    }; 
     struct {
           u32             d32:32; // [31: 0] (0) cast to u32
-    } struct_1;
+    }; 
 } x393_logger_status_t; 
 
 // Event logger register address
@@ -1246,10 +1246,10 @@ typedef union {
           u32                :25;
           u32            page: 2; // [ 6: 5] (0) Register page: configuration: 0, IMU: 3, GPS: 1, MSG: 2
           u32            addr: 5; // [ 4: 0] (0) Register address (autoincrements in 32 DWORDs (page) range
-    } struct_0;
+    }; 
     struct {
           u32             d32:32; // [31: 0] (0) cast to u32
-    } struct_1;
+    }; 
 } x393_logger_address_t; 
 
 // Event logger register data
@@ -1268,13 +1268,13 @@ typedef union {
           u32        gps_slot: 2; // [ 4: 3] (0) GPS slot
           u32         imu_set: 1; // [    2] (0) Set 'imu_slot'
           u32        imu_slot: 2; // [ 1: 0] (0) IMU slot
-    } struct_0;
+    }; 
     struct {
           u32            data:32; // [31: 0] (0) Other logger register data (context-dependent)
-    } struct_1;
+    }; 
     struct {
           u32             d32:32; // [31: 0] (0) cast to u32
-    } struct_2;
+    }; 
 } x393_logger_data_t; 
 
 // MULT_SAXI DMA addresses/lengths in 32-bit DWORDS
@@ -1283,10 +1283,10 @@ typedef union {
     struct {
           u32                : 2;
           u32          addr32:30; // [29: 0] (0) SAXI sddress/length in DWORDs
-    } struct_0;
+    }; 
     struct {
           u32             d32:32; // [31: 0] (0) cast to u32
-    } struct_1;
+    }; 
 } x393_mult_saxi_al_t; 
 
 // MULTICLK reset/power down controls
@@ -1305,10 +1305,10 @@ typedef union {
           u32        rst_clk2: 1; // [    2] (0) reserved
           u32        rst_clk1: 1; // [    1] (0) Reset PLL for pclk (sensors, from ffclk0)
           u32        rst_clk0: 1; // [    0] (0) Reset PLL for xclk(240MHz), hclk(150MHz)
-    } struct_0;
+    }; 
     struct {
           u32             d32:32; // [31: 0] (0) cast to u32
-    } struct_1;
+    }; 
 } x393_multiclk_ctl_t; 
 
 // MULTICLK status
@@ -1326,10 +1326,10 @@ typedef union {
           u32         locked2: 1; // [    2] (0) ==1, reserved
           u32         locked1: 1; // [    1] (0) Locked PLL for pclk (sensors, from ffclk0)
           u32         locked0: 1; // [    0] (0) Locked PLL for xclk(240MHz), hclk(150MHz)
-    } struct_0;
+    }; 
     struct {
           u32             d32:32; // [31: 0] (0) cast to u32
-    } struct_1;
+    }; 
 } x393_multiclk_status_t; 
 
 // DEBUG status
@@ -1340,9 +1340,9 @@ typedef union {
           u32                : 1;
           u32             tgl: 1; // [   24] (0) Toggles for each DWORD received
           u32                :24;
-    } struct_0;
+    }; 
     struct {
           u32             d32:32; // [31: 0] (0) cast to u32
-    } struct_1;
+    }; 
 } x393_debug_status_t; 
 

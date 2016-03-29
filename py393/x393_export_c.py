@@ -60,7 +60,7 @@ class X393ExportC(object):
                     'macroNameLen': 48,
                     'showType':     True,
                     'showRange':    True,
-                    'nameMembers':  True, #name each struct in a union
+                    'nameMembers':  False, # True, #name each struct in a union
                     'data32':       'd32', #union branch that is always u32 ("" to disable)
 #                    'declare':(26,48,0, 80),  #function name, arguments, (body), comments
 #                    'define': (26,48,72,106), #function name, arguments, body, comments
@@ -124,7 +124,7 @@ class X393ExportC(object):
         ld= self.define_macros()
         ld+=self.define_other_macros()
         # Includes section
-        txt = '\n#include "elphel/types.h"\n'
+        txt = '\n#include "elphel/x393_types.h"\n'
         txt +='//#include "elphel/x393_defs.h // alternative variant"\n\n'
         for d in ld:
             fd=self.expand_define_maxi0(d, mode = "func_decl",frmt_spcs = None)

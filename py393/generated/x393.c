@@ -1,6 +1,6 @@
 /*******************************************************************************
  * File: x393.c
- * Date: 2016-03-28
+ * Date: 2016-03-29  
  * Author: auto-generated file, see x393_export_c.py
  * Description: Functions definitions to access x393 hardware registers
  *******************************************************************************/
@@ -38,25 +38,25 @@ void                         x393_mcntrl_cmda_en                 (void)         
 
 // Set DDR3 memory controller I/O delays and other timing parameters (should use individually calibrated values)
 
-void                         set_x393_mcntrl_dq_odly0            (x393_dly_t d, int chn){writel(d.d32, (void *) (0x40000200 + 0x4 * chn));} // Lane0 DQ output delays
+void                         set_x393_mcntrl_dq_odly0            (x393_dly_t d, int chn){writel(d.d32, (void *) (0x40000200 + 0x4 * chn));} // Lane0 DQ output delays 
 x393_dly_t                   get_x393_mcntrl_dq_odly0            (int chn)           { x393_dly_t d; d.d32 = readl((void*) (0x40000200 + 0x4 * chn)); return d; }
-void                         set_x393_mcntrl_dq_odly1            (x393_dly_t d, int chn){writel(d.d32, (void *) (0x40000280 + 0x4 * chn));} // Lane1 DQ output delays
+void                         set_x393_mcntrl_dq_odly1            (x393_dly_t d, int chn){writel(d.d32, (void *) (0x40000280 + 0x4 * chn));} // Lane1 DQ output delays 
 x393_dly_t                   get_x393_mcntrl_dq_odly1            (int chn)           { x393_dly_t d; d.d32 = readl((void*) (0x40000280 + 0x4 * chn)); return d; }
-void                         set_x393_mcntrl_dq_idly0            (x393_dly_t d, int chn){writel(d.d32, (void *) (0x40000240 + 0x4 * chn));} // Lane0 DQ input delays
+void                         set_x393_mcntrl_dq_idly0            (x393_dly_t d, int chn){writel(d.d32, (void *) (0x40000240 + 0x4 * chn));} // Lane0 DQ input delays 
 x393_dly_t                   get_x393_mcntrl_dq_idly0            (int chn)           { x393_dly_t d; d.d32 = readl((void*) (0x40000240 + 0x4 * chn)); return d; }
-void                         set_x393_mcntrl_dq_idly1            (x393_dly_t d, int chn){writel(d.d32, (void *) (0x400002c0 + 0x4 * chn));} // Lane1 DQ input delays
+void                         set_x393_mcntrl_dq_idly1            (x393_dly_t d, int chn){writel(d.d32, (void *) (0x400002c0 + 0x4 * chn));} // Lane1 DQ input delays 
 x393_dly_t                   get_x393_mcntrl_dq_idly1            (int chn)           { x393_dly_t d; d.d32 = readl((void*) (0x400002c0 + 0x4 * chn)); return d; }
-void                         set_x393_mcntrl_dqs_odly0           (x393_dly_t d)      {writel(d.d32, (void *) 0x40000220);}         // Lane0 DQS output delay
+void                         set_x393_mcntrl_dqs_odly0           (x393_dly_t d)      {writel(d.d32, (void *) 0x40000220);}         // Lane0 DQS output delay 
 x393_dly_t                   get_x393_mcntrl_dqs_odly0           (void)              { x393_dly_t d; d.d32 = readl((void*) 0x40000220); return d; }
-void                         set_x393_mcntrl_dqs_odly1           (x393_dly_t d)      {writel(d.d32, (void *) 0x400002a0);}         // Lane1 DQS output delay
+void                         set_x393_mcntrl_dqs_odly1           (x393_dly_t d)      {writel(d.d32, (void *) 0x400002a0);}         // Lane1 DQS output delay 
 x393_dly_t                   get_x393_mcntrl_dqs_odly1           (void)              { x393_dly_t d; d.d32 = readl((void*) 0x400002a0); return d; }
-void                         set_x393_mcntrl_dqs_idly0           (x393_dly_t d)      {writel(d.d32, (void *) 0x40000260);}         // Lane0 DQS input delay
+void                         set_x393_mcntrl_dqs_idly0           (x393_dly_t d)      {writel(d.d32, (void *) 0x40000260);}         // Lane0 DQS input delay 
 x393_dly_t                   get_x393_mcntrl_dqs_idly0           (void)              { x393_dly_t d; d.d32 = readl((void*) 0x40000260); return d; }
-void                         set_x393_mcntrl_dqs_idly1           (x393_dly_t d)      {writel(d.d32, (void *) 0x400002e0);}         // Lane1 DQS input delay
+void                         set_x393_mcntrl_dqs_idly1           (x393_dly_t d)      {writel(d.d32, (void *) 0x400002e0);}         // Lane1 DQS input delay 
 x393_dly_t                   get_x393_mcntrl_dqs_idly1           (void)              { x393_dly_t d; d.d32 = readl((void*) 0x400002e0); return d; }
-void                         set_x393_mcntrl_dm_odly0            (x393_dly_t d)      {writel(d.d32, (void *) 0x40000224);}         // Lane0 DM output delay
+void                         set_x393_mcntrl_dm_odly0            (x393_dly_t d)      {writel(d.d32, (void *) 0x40000224);}         // Lane0 DM output delay 
 x393_dly_t                   get_x393_mcntrl_dm_odly0            (void)              { x393_dly_t d; d.d32 = readl((void*) 0x40000224); return d; }
-void                         set_x393_mcntrl_dm_odly1            (x393_dly_t d)      {writel(d.d32, (void *) 0x400002a4);}         // Lane1 DM output delay
+void                         set_x393_mcntrl_dm_odly1            (x393_dly_t d)      {writel(d.d32, (void *) 0x400002a4);}         // Lane1 DM output delay 
 x393_dly_t                   get_x393_mcntrl_dm_odly1            (void)              { x393_dly_t d; d.d32 = readl((void*) 0x400002a4); return d; }
 void                         set_x393_mcntrl_cmda_odly           (x393_dly_t d, int chn){writel(d.d32, (void *) (0x40000300 + 0x4 * chn));} // Address, bank and commands delays
 x393_dly_t                   get_x393_mcntrl_cmda_odly           (int chn)           { x393_dly_t d; d.d32 = readl((void*) (0x40000300 + 0x4 * chn)); return d; }
@@ -188,7 +188,7 @@ x393_sensio_tim3_t           get_x393_sensio_tim3                (int sens_num) 
 //     after the slave address and optional high address byte. Other bytes are sent in descending order (LSB- last).
 //     If less than 4 bytes are programmed in the table the high bytes (starting with the one from the table) are
 //     skipped.
-//     If more than 4 bytes are programmed in the table for the page (high byte), one or two next 32-bit words
+//     If more than 4 bytes are programmed in the table for the page (high byte), one or two next 32-bit words 
 //     bypass the index table and all 4 bytes are considered payload ones. If less than 4 extra bytes are to be
 //     sent for such extra word, only the lower bytes are sent.
 //
@@ -321,11 +321,11 @@ x393_afimux_len_t            get_x393_afimux1_len                (int afi_port) 
 
 x393_afimux_status_t         x393_afimux0_status                 (int afi_port)      { x393_afimux_status_t d; d.d32 = readl((void*) (0x40002060 + 0x4 * afi_port)); return d; } // Status of the AFI MUX 0 (including image pointer)
 x393_afimux_status_t         x393_afimux1_status                 (int afi_port)      { x393_afimux_status_t d; d.d32 = readl((void*) (0x40002070 + 0x4 * afi_port)); return d; } // Status of the AFI MUX 1 (including image pointer)
-//
+// 
 // GPIO contol. Each of the 10 pins can be controlled by the software - individually or simultaneously or from any of the 3 masters (other FPGA modules)
 // Currently these modules are;
-//      A - camsync (intercamera synchronization), uses up to 4 pins
-//      B - reserved (not yet used) and
+//      A - camsync (intercamera synchronization), uses up to 4 pins 
+//      B - reserved (not yet used) and 
 //      C - logger (IMU, GPS, images), uses 6 pins, including separate i2c available on extension boards
 // If several enabled ports try to contol the same bit, highest priority has port C, lowest - software controlled
 void                         x393_gpio_set_pins                  (x393_gpio_set_pins_t d){writel(d.d32, (void *) 0x40001c00);}     // State of the GPIO pins and seq. number
@@ -377,7 +377,7 @@ u32                          get_x393_camsync_trig_delay         (int sens_chn) 
 //           "just missed" - in that case data will go to the current frame.
 //  0x10 - write seq commands to be sent ASAP
 //  0x11 - write seq commands to be sent after the next frame starts
-//
+// 
 //  0x1e - write seq commands to be sent after the next 14 frame start pulses
 //  0x1f - control register:
 //      [14] -   reset all FIFO (takes 32 clock pulses), also - stops seq until run command
