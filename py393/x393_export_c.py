@@ -61,6 +61,7 @@ class X393ExportC(object):
                     'showType':     True,
                     'showRange':    True,
                     'nameMembers':  True, #name each struct in a union
+                    'data32':       'd32', #union branch that is always u32 ("" to disable)
 #                    'declare':(26,48,0, 80),  #function name, arguments, (body), comments
 #                    'define': (26,48,72,106), #function name, arguments, body, comments
 #                    'declare':(29,59,0, 91),  #function name, arguments, (body), comments
@@ -85,35 +86,12 @@ class X393ExportC(object):
         self.func_def= []
         self.save_typedefs(self.gen_dir, self.typdefs_file)
         
-#        print(self.get_typedefs(frmt_spcs = None))
-#        for k in self.typedefs:
-#            print (k+": " + self.typedefs[k]['comment'])
         
         self.save_header_file      (self.gen_dir, self.header_file)
         self.save_func_def_file    (self.gen_dir, self.func_def_file)
         self.save_defines_file     (self.gen_dir, self.defs_file)
         self.save_harware_map_file (self.gen_dir, self.map_file)
         
-#        ld= self.define_macros()
-#        ld+=self.define_other_macros()
-#        print('\n\n//======== using defines ========')
-#        for d in ld:
-#            print(self.expand_define_maxi0(d, mode = "defines",frmt_spcs = None))
-#        print('\n\n//======== function declarations ========')
-#        for d in ld:
-#            fd=self.expand_define_maxi0(d, mode = "func_decl",frmt_spcs = None)
-#            if fd:
-#                print(fd)
-#        print('\n\n//======== function definitions ========')
-#        for d in ld:
-#            fd=self.expand_define_maxi0(d, mode = "func_def",frmt_spcs = None)
-#            if fd:
-#                print(fd)
-#        print("\n\n// ===== Sorted address map =====\n")
-#        sam = self.expand_define_parameters(ld)
-#        print("sam=",sam)
-#        for d in sam:
-#            print(self.expand_define_maxi0(d, mode = "defines", frmt_spcs = None))
     def make_generated(self, path):
         try:
             os.makedirs(path)
@@ -1283,18 +1261,26 @@ class X393ExportC(object):
         s += "(%s)"%(args)
         s = self.str_tab_stop(s,stops[2])
         if isDefine:
-            s+='{'
+            if self.typedefs[data_type]['code']: # not just u32
+                td = 'd.%s'%(frmt_spcs['data32'])
+            else:
+                td='d'
+                
+#            s+='{ %s d; %s = readl(0x%08x'%(data_type, td,address)
+            s+='{ %s d; %s = readl((void*) '%(data_type, td)
             if address_inc:
+                s+='(0x%08x'%(address)
                 if multivar:
-                    s+='return (%s) readl(0x%08x)'%(data_type, address)
                     for vn, vi in zip (var_name, address_inc):
                         s+=' + 0x%x * %s'%(vi, vn.lower())
-                    s+=")"    
                 else:
-                    s+='return (%s) readl(0x%08x + 0x%x * %s)'%(data_type, address, address_inc, arg)
+                    s+=' + 0x%x * %s'%(address_inc, arg)
+                s += ')'
+#                    s+='return (%s) readl(0x%08x + 0x%x * %s)'%(data_type, address, address_inc, arg)
             else:
-                s+='return (%s) readl(0x%08x)'%(data_type, address)
-            s+=';}'
+                s+='0x%08x'%(address)
+#                s+='return (%s) readl(0x%08x)'%(data_type, address)
+            s+='); return d; }'
         else:
             s += ';'
         if comment:
@@ -1312,6 +1298,7 @@ class X393ExportC(object):
         stops=frmt_spcs[('declare','define')[isDefine]]
         #TODO: add optional argument range check?
         data_type = self.fix_data_type(data_type)
+        #        self.typedefs['u32']= {'comment':'unsigned 32-bit', 'code':'', 'size':32, 'type':''}
         sz=self.typedefs[data_type]['size'] # check it exists
         if (sz > 32):
             print ("***** Only 32-bit data is supported, %s used for %s is %d bit"%(data_type, name, sz))
@@ -1333,18 +1320,22 @@ class X393ExportC(object):
         s += "(%s)"%(args)
         s = self.str_tab_stop(s,stops[2])
         if isDefine:
-            s+='{'
+            if self.typedefs[data_type]['code']: # not just u32
+                td = 'd.%s'%(frmt_spcs['data32'])
+            else:
+                td='d'
+            s+='{writel(%s, (void *) '%(td)
             if address_inc:
+                s+='(0x%08x'%(address)
                 if multivar:
-                    s+='writel(0x%08x'%(address)
                     for vn, vi in zip (var_name, address_inc):
                         s+=' + 0x%x * %s'%(vi, vn.lower())
-                    s+=', (u32) d)'
                 else:
-                    s+='writel(0x%08x + 0x%x * %s, (u32) d)'%(address, address_inc, arg)
+                    s+=' + 0x%x * %s'%(address_inc, arg)
+                s += ')'
             else:
-                s+='writel(0x%08x, (u32) d)'%(address)
-            s+=';}'
+                s+='0x%08x'%(address)
+            s+=');}'
         else:
             s += ';'
         if comment:
@@ -1378,18 +1369,19 @@ class X393ExportC(object):
         s += "(%s)"%(args)
         s = self.str_tab_stop(s,stops[2])
         if isDefine:
-            s+='{'
+#            s+='{'
+            s+='{writel(0, (void *) '
             if address_inc:
+                s+='(0x%08x'%(address)
                 if multivar:
-                    s+='writel(0x%08x'%(address)
                     for vn, vi in zip (var_name, address_inc):
                         s+=' + 0x%x * %s'%(vi, vn.lower())
-                    s+=', 0)'
                 else:
-                    s+='writel(0x%08x + 0x%x * %s, 0)'%(address, address_inc, arg)
+                    s+=' + 0x%x * %s'%(address_inc, arg)
+                s += ')'
             else:
-                s+='writel(0x%08x, 0)'%(address)
-            s+=';}'
+                s+='0x%08x'%(address)
+            s+=');}'
         else:
             s += ';'
         if comment:
@@ -2274,7 +2266,7 @@ class X393ExportC(object):
         return dw
     def _enc_logger_data(self):
         dw=[]
-        dw.append(("data32",   0, 32,   0, "Other logger register data (context-dependent)"))
+        dw.append(("data",      0, 32,   0, "Other logger register data (context-dependent)"))
         return dw
 
     def _enc_mult_saxi_addr(self):
@@ -2342,8 +2334,15 @@ class X393ExportC(object):
         """
         TODO: add alternative to bit fields 
         """
-        isUnion = isinstance(data[0],list)
         frmt_spcs=self.fix_frmt_spcs(frmt_spcs)
+#        print("data=",data)
+#        print("1.data[0]=",data[0])
+        if frmt_spcs['data32']:
+            if not isinstance(data[0],list):
+                data=[data]
+            data.append([(frmt_spcs['data32'],    0,  32,   0, "cast to "+frmt_spcs['ftype'])])
+        isUnion = isinstance(data[0],list)
+#        print("2.data[0]=",data[0])
         s = ""
 #        s = "\n"
 #        if comment:
