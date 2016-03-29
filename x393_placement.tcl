@@ -47,31 +47,7 @@ if { $HISPI} {
 } else {
     puts "using parallel sensors"
 }
-
-# Global constraints
-
-set_property INTERNAL_VREF  0.750 [get_iobanks 34]
-set_property DCI_CASCADE 34 [get_iobanks 35]
-set_property INTERNAL_VREF  0.750 [get_iobanks 35]
-set_property CFGBVS GND [current_design]
-set_property CONFIG_VOLTAGE 1.8 [current_design]
-
-# Disabling some of the DRC checks:
-#http://forums.xilinx.com/t5/7-Series-FPGAs/MMCM-reference-clock-muxing/td-p/550622
-set_property is_enabled false [get_drc_checks REQP-119]
-#Input Buffer Connections .. has no loads. An input buffer must drive an internal load.
-set_property is_enabled false [get_drc_checks BUFC-1]
-#DSP Buffering:
-set_property is_enabled false [get_drc_checks DPIP-1]
-set_property is_enabled false [get_drc_checks DPOP-1]
-#MMCME2_ADV connectivity violation
-set_property is_enabled false [get_drc_checks REQP-1577]
-#Synchronous clocking for BRAM (mult_saxi_wr_inbuf_i/ram_var_w_var_r_i/ram_i/RAMB36E1_i) in SDP mode ...
-set_property is_enabled false [get_drc_checks REQP-165]
-#Useless input. The input pins CE and CLR are not used for BUFR_DIVIDE BYPASS.
-set_property is_enabled false [get_drc_checks REQP-14]
-
-
+#Placement constraints (I/O pads)
 set_property PACKAGE_PIN J4 [get_ports {SDRST}]
 set_property PACKAGE_PIN K3 [get_ports {SDCLK}]
 set_property PACKAGE_PIN K2 [get_ports {SDNCLK}]

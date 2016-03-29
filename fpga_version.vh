@@ -32,7 +32,8 @@
  * with at least one of the Free Software programs.
  *******************************************************************************/
  
-      parameter FPGA_VERSION =          32'h0393007e;    // Trying .tcl constraints instead of xdc
+      parameter FPGA_VERSION =          32'h0393007f;    // More constraints files tweaking
+//      parameter FPGA_VERSION =          32'h0393007e;    // Trying .tcl constraints instead of xdc - timing met
 //      parameter FPGA_VERSION =          32'h0393007d;    // Changing IMU logger LOGGER_PAGE_IMU 0-> 3 to avoid overlap with other registers. Timing met
 //      parameter FPGA_VERSION =          32'h0393007c;    // fixed cmdseqmux - reporting interrupt status and mask correctly
 //      parameter FPGA_VERSION =          32'h0393007b;  // lvcmos25_lvds_25_diff
