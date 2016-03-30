@@ -278,6 +278,11 @@
 #define X393_CMPRS_TABLES_DATA(cmprs_chn)                (0x40001818 + 0x40 * (cmprs_chn)) // Compressor tables data, cmprs_chn = 0..3, data type: u32 (wo)
 #define X393_CMPRS_TABLES_ADDRESS(cmprs_chn)             (0x4000181c + 0x40 * (cmprs_chn)) // Compressor tables type/address, cmprs_chn = 0..3, data type: x393_cmprs_table_addr_t (wo)
 
+// Compressor channel status)
+
+#define X393_CMPRS_STATUS(chn)                           (0x40002040 + 0x4 * (chn)) // Status of the compressor channel (incl. interrupt, chn = 0..3, data type: x393_cmprs_status_t (ro)
+#define X393_CMPRS_HIFREQ(chn)                           (0x40002050 + 0x4 * (chn)) // Focus helper high-frequency amount, chn = 0..3, data type: u32 (ro)
+
 // Compressor DMA control:
 
 // Camera can be configured to use either 2 AXI HP channels (with 2 compressors served by each one) or to use a single AXI HP channel
@@ -359,7 +364,7 @@
 #define X393_CMDFRAMESEQ_CTRL(sens_chn)                  (0x40001e7c + 0x80 * (sens_chn)) // CMDFRAMESEQ control register, sens_chn = 0..3, data type: x393_cmdframeseq_mode_t (wo)
 #define X393_CMDFRAMESEQ_ABS(sens_chn,offset)            (0x40001e00)+ 0x20 * (sens_chn)+ 0x1 * (offset)) // CMDFRAMESEQ absolute frame address/command, sens_chn = 0..3, offset = 0..15, data type: u32 (wo)
 #define X393_CMDFRAMESEQ_REL(sens_chn,offset)            (0x40001e40)+ 0x20 * (sens_chn)+ 0x1 * (offset)) // CMDFRAMESEQ relative frame address/command, sens_chn = 0..3, offset = 0..14, data type: u32 (wo)
-// Command sequencer multiplexer, provides current frame number for each sesnor channel and interrupt status/interrupt masks for them.
+// Command sequencer multiplexer, provides current frame number for each sensor channel and interrupt status/interrupt masks for them.
 // Interrupts and interrupt masks are controlled through channel CMDFRAMESEQ module
 #define X393_CMDSEQMUX_STATUS_CTRL                       0x40001c08 // CMDSEQMUX status control mode (status provides current frame numbers), data type: x393_status_ctrl_t (rw)
 #define X393_CMDSEQMUX_STATUS                            0x400020e0 // CMDSEQMUX status data (frame numbers and interrupts, data type: x393_cmdseqmux_status_t (ro)

@@ -336,6 +336,11 @@ void                         x393_cmprs_interrupts               (x393_cmprs_int
 void                         x393_cmprs_tables_data              (u32 d, int cmprs_chn);                          // Compressor tables data
 void                         x393_cmprs_tables_address           (x393_cmprs_table_addr_t d, int cmprs_chn);      // Compressor tables type/address
 
+// Compressor channel status)
+
+x393_cmprs_status_t          x393_cmprs_status                   (int chn);                                       // Status of the compressor channel (incl. interrupt
+u32                          x393_cmprs_hifreq                   (int chn);                                       // Focus helper high-frequency amount
+
 // Compressor DMA control:
 
 // Camera can be configured to use either 2 AXI HP channels (with 2 compressors served by each one) or to use a single AXI HP channel
@@ -432,7 +437,7 @@ u32                          get_x393_camsync_trig_delay         (int sens_chn);
 void                         x393_cmdframeseq_ctrl               (x393_cmdframeseq_mode_t d, int sens_chn);       // CMDFRAMESEQ control register
 void                         x393_cmdframeseq_abs                (u32 d, int sens_chn, int offset);               // CMDFRAMESEQ absolute frame address/command
 void                         x393_cmdframeseq_rel                (u32 d, int sens_chn, int offset);               // CMDFRAMESEQ relative frame address/command
-// Command sequencer multiplexer, provides current frame number for each sesnor channel and interrupt status/interrupt masks for them.
+// Command sequencer multiplexer, provides current frame number for each sensor channel and interrupt status/interrupt masks for them.
 // Interrupts and interrupt masks are controlled through channel CMDFRAMESEQ module
 void                         set_x393_cmdseqmux_status_ctrl      (x393_status_ctrl_t d);                          // CMDSEQMUX status control mode (status provides current frame numbers)
 x393_status_ctrl_t           get_x393_cmdseqmux_status_ctrl      (void);

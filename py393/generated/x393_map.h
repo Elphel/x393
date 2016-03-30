@@ -772,7 +772,15 @@
 #define X393_MCNTRL_CHN2_STATUS                          0x40002014 // Status register for MCNTRL CHN2 (tiled), data type: x393_status_mcntrl_lintile_t (ro)
 #define X393_MCNTRL_CHN3_STATUS                          0x40002018 // Status register for MCNTRL CHN3 (scanline), data type: x393_status_mcntrl_lintile_t (ro)
 #define X393_MCNTRL_CHN4_STATUS                          0x4000201c // Status register for MCNTRL CHN4 (tiled), data type: x393_status_mcntrl_lintile_t (ro)
-// RESERVED: 0x10 DWORDs
+// RESERVED: 0x8 DWORDs
+#define X393_CMPRS_STATUS__0                             0x40002040 // Status of the compressor channel (incl. interrupt, data type: x393_cmprs_status_t (ro)
+#define X393_CMPRS_STATUS__1                             0x40002044 // Status of the compressor channel (incl. interrupt, data type: x393_cmprs_status_t (ro)
+#define X393_CMPRS_STATUS__2                             0x40002048 // Status of the compressor channel (incl. interrupt, data type: x393_cmprs_status_t (ro)
+#define X393_CMPRS_STATUS__3                             0x4000204c // Status of the compressor channel (incl. interrupt, data type: x393_cmprs_status_t (ro)
+#define X393_CMPRS_HIFREQ__0                             0x40002050 // Focus helper high-frequency amount, data type: u32 (ro)
+#define X393_CMPRS_HIFREQ__1                             0x40002054 // Focus helper high-frequency amount, data type: u32 (ro)
+#define X393_CMPRS_HIFREQ__2                             0x40002058 // Focus helper high-frequency amount, data type: u32 (ro)
+#define X393_CMPRS_HIFREQ__3                             0x4000205c // Focus helper high-frequency amount, data type: u32 (ro)
 #define X393_AFIMUX0_STATUS__0                           0x40002060 // Status of the AFI MUX 0 (including image pointer), data type: x393_afimux_status_t (ro)
 #define X393_AFIMUX0_STATUS__1                           0x40002064 // Status of the AFI MUX 0 (including image pointer), data type: x393_afimux_status_t (ro)
 #define X393_AFIMUX0_STATUS__2                           0x40002068 // Status of the AFI MUX 0 (including image pointer), data type: x393_afimux_status_t (ro)

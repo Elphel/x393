@@ -500,8 +500,8 @@ class X393Sensor(object):
         """
         Write i2c register in immediate mode
         @param num_sensor - sensor port number (0..3), or "all" - same to all sensors
-        @param reg_addr16 - 16-bit register address (page+low byte, for MT9F006 high byte is an 8-bit slave address = 0x90)
-        @param reg_data16 - 16-bit data to write to sesnor register
+        @param reg_addr16 - 16-bit register address (page+low byte, for MT9P006 high byte is an 8-bit slave address = 0x90)
+        @param reg_data16 - 16-bit data to write to sensor register
         """
         self.write_sensor_i2c (num_sensor = num_sensor,
                                rel_addr = True,

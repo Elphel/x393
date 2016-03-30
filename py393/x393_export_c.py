@@ -470,6 +470,10 @@ class X393ExportC(object):
                                  data =      self._enc_cmprs_table_addr(),
                                  name =      "x393_cmprs_table_addr",  typ="wo",
                                  frmt_spcs = frmt_spcs)
+        stypedefs += self.get_typedef32(comment =   "Compressor channel status",
+                                 data =      self._enc_cmprs_status(),
+                                 name =      "x393_cmprs_status",  typ="ro",
+                                 frmt_spcs = frmt_spcs)
 
         stypedefs += self.get_typedef32(comment =   "Compressor DMA buffer address (in 32-byte blocks)",
                                  data =      self._enc_cmprs_afimux_sa(),
@@ -905,6 +909,14 @@ class X393ExportC(object):
             (("X393_CMPRS_TABLES_DATA",                   c, vrlg.CMPRS_TABLES + 0 +                 ba, ia, z3, "u32*", "wo",                               "Compressor tables data")),
             (("X393_CMPRS_TABLES_ADDRESS",                c, vrlg.CMPRS_TABLES + 1 +                 ba, ia, z3, "x393_cmprs_table_addr", "wo",              "Compressor tables type/address")),
              ]
+        ba = vrlg.STATUS_ADDR
+        ia = vrlg.CMPRS_STATUS_REG_INC
+        c =  "chn"
+        sdefines +=[
+            (('Compressor channel status)',)),
+            (("X393_CMPRS_STATUS",             c, vrlg.CMPRS_STATUS_REG_BASE + ba, vrlg.CMPRS_STATUS_REG_INC, z3, "x393_cmprs_status", "ro",          "Status of the compressor channel (incl. interrupt")),
+            (("X393_CMPRS_HIFREQ",             c, vrlg.CMPRS_HIFREQ_REG_BASE + ba, vrlg.CMPRS_HIFREQ_REG_INC, z3, "u32*", "ro",                       "Focus helper high-frequency amount"))]
+        
         ba = vrlg.CMPRS_GROUP_ADDR + vrlg.CMPRS_AFIMUX_RADDR0
         ia = 0
         c =  "afi_port"
@@ -1019,7 +1031,7 @@ class X393ExportC(object):
         ia = 0
         c =  ""
         sdefines +=[
-            (('_Command sequencer multiplexer, provides current frame number for each sesnor channel and interrupt status/interrupt masks for them.',)),
+            (('_Command sequencer multiplexer, provides current frame number for each sensor channel and interrupt status/interrupt masks for them.',)),
             (('_Interrupts and interrupt masks are controlled through channel CMDFRAMESEQ module',)),
             (("X393_CMDSEQMUX_STATUS_CTRL",               "",  vrlg.CMDSEQMUX_ADDR,                      0, None, "x393_status_ctrl", "rw",           "CMDSEQMUX status control mode (status provides current frame numbers)")),
             (("X393_CMDSEQMUX_STATUS",                    "",  vrlg.STATUS_ADDR + vrlg.CMDSEQMUX_STATUS, 0, None, "x393_cmdseqmux_status", "ro",      "CMDSEQMUX status data (frame numbers and interrupts"))]
@@ -1833,7 +1845,7 @@ class X393ExportC(object):
         dw.append(("arst_set",     vrlg.SENS_CTRL_ARST + 1,     1,   0,  "ARST set  to the 'arst' field"))
         dw.append(("aro",          vrlg.SENS_CTRL_ARO,          1,   0,  "ARO signal to the sensor"))
         dw.append(("aro_set",      vrlg.SENS_CTRL_ARO + 1,      1,   0,  "ARO set to the 'aro' field"))
-        dw.append(("mmcm_rst",     vrlg.SENS_CTRL_RST_MMCM,     1,   0,  "MMCM (for sesnor clock) reset signal"))
+        dw.append(("mmcm_rst",     vrlg.SENS_CTRL_RST_MMCM,     1,   0,  "MMCM (for sensor clock) reset signal"))
         dw.append(("mmcm_rst_set", vrlg.SENS_CTRL_RST_MMCM + 1, 1,   0,  "MMCM reset set to  'mmcm_rst' field"))
         dw.append(("ext_clk",      vrlg.SENS_CTRL_EXT_CLK,      1,   0,  "MMCM clock input: 0: clock to the sensor, 1 - clock from the sensor"))
         dw.append(("ext_clk_set",  vrlg.SENS_CTRL_EXT_CLK + 1,  1,   0,  "Set MMCM clock input to 'ext_clk' field"))
@@ -1849,7 +1861,7 @@ class X393ExportC(object):
         dw.append(("arst_set",     vrlg.SENS_CTRL_ARST + 1,     1,   0,  "ARST set  to the 'arst' field"))
         dw.append(("aro",          vrlg.SENS_CTRL_ARO,          1,   0,  "ARO signal to the sensor"))
         dw.append(("aro_set",      vrlg.SENS_CTRL_ARO + 1,      1,   0,  "ARO set to the 'aro' field"))
-        dw.append(("mmcm_rst",     vrlg.SENS_CTRL_RST_MMCM,     1,   0,  "MMCM (for sesnor clock) reset signal"))
+        dw.append(("mmcm_rst",     vrlg.SENS_CTRL_RST_MMCM,     1,   0,  "MMCM (for sensor clock) reset signal"))
         dw.append(("mmcm_rst_set", vrlg.SENS_CTRL_RST_MMCM + 1, 1,   0,  "MMCM reset set to  'mmcm_rst' field"))
         dw.append(("ign_embed",    vrlg.SENS_CTRL_IGNORE_EMBED, 1,   0,  "Ignore embedded data (non-image pixel lines"))
         dw.append(("ign_embed_set",vrlg.SENS_CTRL_IGNORE_EMBED + 1,1,0,  "Set mode to 'ign_embed' field"))
@@ -2092,6 +2104,16 @@ class X393ExportC(object):
         dw.append(("type",     24, 2,    0, "0: quantization, 1: coring, 2: focus, 3: huffman"))
         return dw
     
+    def _enc_cmprs_status(self):
+        dw=[]
+        dw.append(("is",              0,   1,   0, "Compressor channel interrupt status"))
+        dw.append(("im",              1,   1,   0, "Compressor channel interrupt mask"))
+        dw.append(("reading_frame",   2,   1,   0, "Compressor channel is reading frame from memory (debug feature)"))
+        dw.append(("stuffer_running", 3,   1,   0, "Compressor channel bit stuffer is running (debug feature)"))
+        dw.append(("flushing_fifo",   4,   1,   0, "Compressor channel is flushing FIFO (debug feature)"))
+        dw.append(("seq_num",        26,   6,   0, "Status sequence number"))
+        return dw
+    
     def _enc_cmprs_afimux_sa(self):
         dw=[]
         dw.append(("sa256",     0, 27,   0, "System memory buffer start in multiples of 32 bytes (256 bits)"))
@@ -2210,7 +2232,7 @@ class X393ExportC(object):
         dw.append(("en_snd_set",     vrlg.CAMSYNC_SNDEN_BIT,          1,   0, "Set 'en_snd'"))
         dw.append(("ext",            vrlg.CAMSYNC_EXTERNAL_BIT - 1,   1,   1, "Use external (received) timestamps, if available. O - use local timestamps"))
         dw.append(("ext_set",        vrlg.CAMSYNC_EXTERNAL_BIT,       1,   0, "Set 'ext'"))
-        dw.append(("trig",           vrlg.CAMSYNC_TRIGGERED_BIT - 1,  1,   1, "Sensor triggered mode (0 - free running sesnor)"))
+        dw.append(("trig",           vrlg.CAMSYNC_TRIGGERED_BIT - 1,  1,   1, "Sensor triggered mode (0 - free running sensor)"))
         dw.append(("trig_set",       vrlg.CAMSYNC_TRIGGERED_BIT,      1,   0, "Set 'trig'"))
         dw.append(("master_chn",     vrlg.CAMSYNC_MASTER_BIT - 2,     2,   0, "master sensor channel (zero delay in internal trigger mode, delay used for flash output)"))
         dw.append(("master_chn_set", vrlg.CAMSYNC_MASTER_BIT,         1,   0, "Set 'master_chn'"))

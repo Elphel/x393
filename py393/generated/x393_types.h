@@ -613,7 +613,7 @@ typedef union {
           u32     ext_clk_set: 1; // [    9] (0) Set MMCM clock input to 'ext_clk' field
           u32         ext_clk: 1; // [    8] (0) MMCM clock input: 0: clock to the sensor, 1 - clock from the sensor
           u32    mmcm_rst_set: 1; // [    7] (0) MMCM reset set to  'mmcm_rst' field
-          u32        mmcm_rst: 1; // [    6] (0) MMCM (for sesnor clock) reset signal
+          u32        mmcm_rst: 1; // [    6] (0) MMCM (for sensor clock) reset signal
           u32         aro_set: 1; // [    5] (0) ARO set to the 'aro' field
           u32             aro: 1; // [    4] (0) ARO signal to the sensor
           u32        arst_set: 1; // [    3] (0) ARST set  to the 'arst' field
@@ -632,7 +632,7 @@ typedef union {
           u32   ign_embed_set: 1; // [    9] (0) Set mode to 'ign_embed' field
           u32       ign_embed: 1; // [    8] (0) Ignore embedded data (non-image pixel lines
           u32 /*mmcm_rst_set*/: 1; // [    7] (0) MMCM reset set to  'mmcm_rst' field
-          u32    /*mmcm_rst*/: 1; // [    6] (0) MMCM (for sesnor clock) reset signal
+          u32    /*mmcm_rst*/: 1; // [    6] (0) MMCM (for sensor clock) reset signal
           u32     /*aro_set*/: 1; // [    5] (0) ARO set to the 'aro' field
           u32         /*aro*/: 1; // [    4] (0) ARO signal to the sensor
           u32    /*arst_set*/: 1; // [    3] (0) ARST set  to the 'arst' field
@@ -960,6 +960,23 @@ typedef union {
     }; 
 } x393_cmprs_table_addr_t; 
 
+// Compressor channel status
+
+typedef union {
+    struct {
+          u32         seq_num: 6; // [31:26] (0) Status sequence number
+          u32                :21;
+          u32   flushing_fifo: 1; // [    4] (0) Compressor channel is flushing FIFO (debug feature)
+          u32 stuffer_running: 1; // [    3] (0) Compressor channel bit stuffer is running (debug feature)
+          u32   reading_frame: 1; // [    2] (0) Compressor channel is reading frame from memory (debug feature)
+          u32              im: 1; // [    1] (0) Compressor channel interrupt mask
+          u32              is: 1; // [    0] (0) Compressor channel interrupt status
+    }; 
+    struct {
+          u32             d32:32; // [31: 0] (0) cast to u32
+    }; 
+} x393_cmprs_status_t; 
+
 // Compressor DMA buffer address (in 32-byte blocks)
 
 typedef union {
@@ -1181,7 +1198,7 @@ typedef union {
           u32  master_chn_set: 1; // [    9] (0) Set 'master_chn'
           u32      master_chn: 2; // [ 8: 7] (0) master sensor channel (zero delay in internal trigger mode, delay used for flash output)
           u32        trig_set: 1; // [    6] (0) Set 'trig'
-          u32            trig: 1; // [    5] (1) Sensor triggered mode (0 - free running sesnor)
+          u32            trig: 1; // [    5] (1) Sensor triggered mode (0 - free running sensor)
           u32         ext_set: 1; // [    4] (0) Set 'ext'
           u32             ext: 1; // [    3] (1) Use external (received) timestamps, if available. O - use local timestamps
           u32      en_snd_set: 1; // [    2] (0) Set 'en_snd'
