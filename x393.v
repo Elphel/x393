@@ -318,7 +318,7 @@ module  x393 #(
 
 
 
-    wire                  [7:0] cmd_root_ad;       // multiplexed byte-wide serialized address/data to salve devices (AL-AH-D0-D1-D2-D3), may contain less cycles 
+    wire                  [7:0] cmd_root_ad;       // multiplexed byte-wide serialized address/data to slave devices (AL-AH-D0-D1-D2-D3), may contain less cycles 
     wire                        cmd_root_stb;      // strobe marking the first of 1-6 a/d bytes and also data valid for par_waddr and par_data
 
     wire                  [7:0] status_root_ad;    // Root status byte-wide address/data 
@@ -884,7 +884,7 @@ assign axi_grst = axi_rst_pre;
         .wr_en        (axiwr_wen), // input
         .wdata        (axiwr_wdata[31:0]), // input[31:0] 
         .busy         (axiwr_dev_busy), // output // assign axiwr_dev_ready = ~axiwr_dev_busy; //may combine (AND) multiple sources if needed
-//TODO: The following is the interface to the command sequencer (not yet implemnted)        
+//TODO: The following is the interface to the command sequencer       
         .cseq_waddr   (cseq_waddr), // input[12:0] // SuppressThisWarning VivadoSynthesis: [Synth 8-3295] tying undriven pin #cmd_mux_i:cseq_waddr[13:0] to constant 0 (command sequencer not yet implemented)
         .cseq_wr_en   (cseq_wr_en), // input // SuppressThisWarning VivadoSynthesis: [Synth 8-3295] tying undriven pin #cmd_mux_i:cseq_wr_en to constant 0 (command sequencer not yet implemented)
         .cseq_wdata   (cseq_wdata), // input[31:0] // SuppressThisWarning VivadoSynthesis: [Synth 8-3295] tying undriven pin #cmd_mux_i:cseq_wdata[31:0] to constant 0 (command sequencer not yet implemented)
