@@ -37,13 +37,14 @@ import errno
 import datetime
 import vrlg
 class X393ExportC(object):
-    DRY_MODE =   True # True
-    DEBUG_MODE = 1
-    MAXI0_BASE = 0x40000000
-    verbose=1
-    func_decl=None
-    func_def= None
-    typedefs = None
+    DRY_MODE =    True # True
+    DEBUG_MODE =  1
+    MAXI0_BASE =  0x40000000
+    MAXI0_RANGE = 0x00003000
+    verbose =     1
+    func_decl =   None
+    func_def =    None
+    typedefs =    None
     gen_dir =       "generated"
     typdefs_file =  "x393_types.h" # typdef for hardware registers
     header_file =   "x393.h"       # constant definitions and function declarations
@@ -144,6 +145,9 @@ class X393ExportC(object):
         # Includes section
         txt = '\n#include <linux/io.h>\n'
         txt +=  '#include "x393.h"\n\n'
+        txt +=  'static void __iomem mmio_ptr;\n\n'
+        txt +=  '// init_mmio_ptr() should be called once before using any of the other defined functions\n\n'
+        txt +=  'int init_mmio_ptr(void) {mmio_ptr = ioremap(0x%08x, 0x%08x); if (!mmio_ptr) return -1; else return 0;}\n'%(self.MAXI0_BASE,self.MAXI0_RANGE)
 
         for d in ld:
             fd=self.expand_define_maxi0(d, mode = "func_def",frmt_spcs = None)
@@ -1278,8 +1282,7 @@ class X393ExportC(object):
             else:
                 td='d'
                 
-#            s+='{ %s d; %s = readl(0x%08x'%(data_type, td,address)
-            s+='{ %s d; %s = readl((void*) '%(data_type, td)
+            s+='{ %s d; %s = readl(mmio_ptr + '%(data_type, td)
             if address_inc:
                 s+='(0x%08x'%(address)
                 if multivar:
@@ -1288,10 +1291,8 @@ class X393ExportC(object):
                 else:
                     s+=' + 0x%x * %s'%(address_inc, arg)
                 s += ')'
-#                    s+='return (%s) readl(0x%08x + 0x%x * %s)'%(data_type, address, address_inc, arg)
             else:
                 s+='0x%08x'%(address)
-#                s+='return (%s) readl(0x%08x)'%(data_type, address)
             s+='); return d; }'
         else:
             s += ';'
@@ -1336,7 +1337,7 @@ class X393ExportC(object):
                 td = 'd.%s'%(frmt_spcs['data32'])
             else:
                 td='d'
-            s+='{writel(%s, (void *) '%(td)
+            s+='{writel(%s, mmio_ptr + '%(td)
             if address_inc:
                 s+='(0x%08x'%(address)
                 if multivar:
@@ -1382,7 +1383,7 @@ class X393ExportC(object):
         s = self.str_tab_stop(s,stops[2])
         if isDefine:
 #            s+='{'
-            s+='{writel(0, (void *) '
+            s+='{writel(0, mmio_ptr + '
             if address_inc:
                 s+='(0x%08x'%(address)
                 if multivar:
@@ -2379,7 +2380,7 @@ class X393ExportC(object):
         members = {} # name:tuple of (start, len)
         for ns,struct in enumerate(data):    
             lines=self.get_pad32(struct, wlen=32, name=name, padLast=frmt_spcs['lastPad'])
-            lines.reverse()
+#            lines.reverse()
             #nameMembers
             if isUnion:
                 s += "    struct {\n"
