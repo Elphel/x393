@@ -8,7 +8,7 @@
 #include <linux/io.h>
 #include "x393.h"
 
-static void __iomem mmio_ptr;
+static void __iomem* mmio_ptr;
 
 // init_mmio_ptr() should be called once before using any of the other defined functions
 

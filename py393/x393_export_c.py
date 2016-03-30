@@ -149,7 +149,7 @@ class X393ExportC(object):
         # Includes section
         txt = '\n#include <linux/io.h>\n'
         txt +=  '#include "x393.h"\n\n'
-        txt +=  'static void __iomem mmio_ptr;\n\n'
+        txt +=  'static void __iomem* mmio_ptr;\n\n'
         txt +=  '// init_mmio_ptr() should be called once before using any of the other defined functions\n\n'
         txt +=  'int init_mmio_ptr(void) {mmio_ptr = ioremap(0x%08x, 0x%08x); if (!mmio_ptr) return -1; else return 0;}\n'%(self.MAXI0_BASE,self.MAXI0_RANGE)
 
