@@ -127,6 +127,7 @@ class X393ExportC(object):
         # Includes section
         txt = '\n#include "elphel/x393_types.h"\n'
         txt +='//#include "elphel/x393_defs.h // alternative variant"\n\n'
+        txt +='// See elphel/x393_map.h for the ordered list of all I/O register addresses used\n'
         txt +=  '// init_mmio_ptr() should be called once before using any of the other declared functions\n\n'
         txt +=  'int init_mmio_ptr(void);\n'
         
@@ -1193,7 +1194,7 @@ class X393ExportC(object):
                 elif (mode =='func_def'):
                     return self.func_define  (define_tuple = (name,
                                                               var_name,
-                                                              address * 4 + self.MAXI0_BASE,
+                                                              address * 4, #  + self.MAXI0_BASE,
                                                               address_inc * 4,
                                                               var_range,
                                                               data_type,
@@ -1287,7 +1288,7 @@ class X393ExportC(object):
                 
             s+='{ %s d; %s = readl(mmio_ptr + '%(data_type, td)
             if address_inc:
-                s+='(0x%08x'%(address)
+                s+='(0x%04x'%(address)
                 if multivar:
                     for vn, vi in zip (var_name, address_inc):
                         s+=' + 0x%x * %s'%(vi, vn.lower())
@@ -1295,7 +1296,7 @@ class X393ExportC(object):
                     s+=' + 0x%x * %s'%(address_inc, arg)
                 s += ')'
             else:
-                s+='0x%08x'%(address)
+                s+='0x%04x'%(address)
             s+='); return d; }'
         else:
             s += ';'
@@ -1342,7 +1343,7 @@ class X393ExportC(object):
                 td='d'
             s+='{writel(%s, mmio_ptr + '%(td)
             if address_inc:
-                s+='(0x%08x'%(address)
+                s+='(0x%04x'%(address)
                 if multivar:
                     for vn, vi in zip (var_name, address_inc):
                         s+=' + 0x%x * %s'%(vi, vn.lower())
@@ -1350,7 +1351,7 @@ class X393ExportC(object):
                     s+=' + 0x%x * %s'%(address_inc, arg)
                 s += ')'
             else:
-                s+='0x%08x'%(address)
+                s+='0x%04x'%(address)
             s+=');}'
         else:
             s += ';'
@@ -1388,7 +1389,7 @@ class X393ExportC(object):
 #            s+='{'
             s+='{writel(0, mmio_ptr + '
             if address_inc:
-                s+='(0x%08x'%(address)
+                s+='(0x%04x'%(address)
                 if multivar:
                     for vn, vi in zip (var_name, address_inc):
                         s+=' + 0x%x * %s'%(vi, vn.lower())
@@ -1396,7 +1397,7 @@ class X393ExportC(object):
                     s+=' + 0x%x * %s'%(address_inc, arg)
                 s += ')'
             else:
-                s+='0x%08x'%(address)
+                s+='0x%04x'%(address)
             s+=');}'
         else:
             s += ';'

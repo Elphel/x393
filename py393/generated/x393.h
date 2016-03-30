@@ -8,6 +8,7 @@
 #include "elphel/x393_types.h"
 //#include "elphel/x393_defs.h // alternative variant"
 
+// See elphel/x393_map.h for the ordered list of all I/O register addresses used
 // init_mmio_ptr() should be called once before using any of the other declared functions
 
 int init_mmio_ptr(void);
