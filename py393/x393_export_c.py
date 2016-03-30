@@ -880,7 +880,6 @@ class X393ExportC(object):
             (("X393_CMPRS_CBIT_CMODE_MONO1",        "", vrlg.CMPRS_CBIT_CMODE_MONO1 ,       0, None, None, "", "Mono JPEG (not yet implemented)")),
             (("X393_CMPRS_CBIT_CMODE_MONO4",        "", vrlg.CMPRS_CBIT_CMODE_MONO4 ,       0, None, None, "", "Mono, 4 blocks (2x2 macroblocks)")),
             (("X393_CMPRS_CBIT_CMODE_JPEG18",       "", vrlg.CMPRS_CBIT_CMODE_JPEG18 ,      0, None, None, "", "Color 4:2:0")),
-            (("X393_CMPRS_CBIT_CMODE_JPEG18",       "", vrlg.CMPRS_CBIT_CMODE_JPEG18 ,      0, None, None, "", "Color 4:2:0")),
 
             (("X393_CMPRS_CBIT_FRAMES_SINGLE",      "", vrlg.CMPRS_CBIT_FRAMES_SINGLE ,     0, None, None, "", "Use single-frame buffer")),
             (("X393_CMPRS_CBIT_FRAMES_MULTI",       "", 1 ,                                 0, None, None, "", "Use multi-frame buffer"))]        
@@ -1718,7 +1717,7 @@ class X393ExportC(object):
 
     def _enc_i2c_tbl_addr(self):
         dw=[]
-        dw.append(("tbl_addr",         0, 8,0,  "Address/length in 64-bit words (<<3 to get byte address"))
+        dw.append(("tbl_addr",         0, 8,0,  "Address/length in 64-bit words (<<3 to get byte address)"))
         dw.append(("tbl_mode",         vrlg.SENSI2C_CMD_TAND, 2,3,  "Should be 3 to select table address write mode"))
         return dw
 
