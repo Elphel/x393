@@ -127,6 +127,9 @@ class X393ExportC(object):
         # Includes section
         txt = '\n#include "elphel/x393_types.h"\n'
         txt +='//#include "elphel/x393_defs.h // alternative variant"\n\n'
+        txt +=  '// init_mmio_ptr() should be called once before using any of the other declared functions\n\n'
+        txt +=  'int init_mmio_ptr(void);\n'
+        
         for d in ld:
             fd=self.expand_define_maxi0(d, mode = "func_decl",frmt_spcs = None)
             if fd:

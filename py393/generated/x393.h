@@ -8,6 +8,9 @@
 #include "elphel/x393_types.h"
 //#include "elphel/x393_defs.h // alternative variant"
 
+// init_mmio_ptr() should be called once before using any of the other declared functions
+
+int init_mmio_ptr(void);
 
 // R/W addresses to set up memory arbiter priorities. For sensors  (chn = 8..11), for compressors - 12..15
 
