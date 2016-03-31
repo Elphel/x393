@@ -467,7 +467,10 @@ module  sensor_channel#(
     
     
 `ifdef DEBUG_RING
-//    reg vact_to_fifo_r;
+    `ifdef HISPI
+    `else
+        reg vact_to_fifo_r;    
+    `endif
     reg hact_to_fifo_r;
     reg [15:0] debug_line_cntr;
     reg [15:0] debug_lines;
