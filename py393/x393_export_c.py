@@ -385,7 +385,7 @@ class X393ExportC(object):
                                  frmt_spcs = frmt_spcs)
         stypedefs += self.get_typedef32(comment =   "Programming interface for multiplexer FPGA",
                                  data =      self._enc_sensio_jtag(),
-                                 name =      "x393_sensio_jpag",  typ="wo",
+                                 name =      "x393_sensio_jtag",  typ="wo",
                                  frmt_spcs = frmt_spcs)
         """
         stypedefs += self.get_typedef32(comment =   "Sensor delays (uses 4 DWORDs)",
@@ -754,7 +754,7 @@ class X393ExportC(object):
             (("X393_SENS_SYNC_LATE",                    c, vrlg.SENS_SYNC_RADDR + vrlg.SENS_SYNC_LATE +    ba, ia, z3, "x393_sens_sync_late", "wo",          "Configure frame sync delay")),
             (("X393_SENSIO_CTRL",                       c, vrlg.SENSIO_RADDR + vrlg.SENSIO_CTRL +          ba, ia, z3, "x393_sensio_ctl", "wo",              "Configure sensor I/O port")),
             (("X393_SENSIO_STATUS_CNTRL",               c, vrlg.SENSIO_RADDR + vrlg.SENSIO_STATUS +        ba, ia, z3, "x393_status_ctrl", "rw",             "Set status control for SENSIO module")),
-            (("X393_SENSIO_JTAG",                       c, vrlg.SENSIO_RADDR + vrlg.SENSIO_JTAG +          ba, ia, z3, "x393_sensio_jpag", "wo",             "Programming interface for multiplexer FPGA (with X393_SENSIO_STATUS)")),
+            (("X393_SENSIO_JTAG",                       c, vrlg.SENSIO_RADDR + vrlg.SENSIO_JTAG +          ba, ia, z3, "x393_sensio_jtag", "wo",             "Programming interface for multiplexer FPGA (with X393_SENSIO_STATUS)")),
             (("X393_SENSIO_WIDTH",                      c, vrlg.SENSIO_RADDR + vrlg.SENSIO_WIDTH +         ba, ia, z3, "x393_sensio_width", "rw",            "Set sensor line in pixels (0 - use line sync from the sensor)")),
 #            (("X393_SENSIO_DELAYS",                     c, vrlg.SENSIO_RADDR + vrlg.SENSIO_DELAYS +       ba, ia, z3, "x393_sensio_dly", "rw",              "Sensor port input delays (uses 4 DWORDs)")),
             (("X393_SENSIO_TIM0",                       c, vrlg.SENSIO_RADDR + vrlg.SENSIO_DELAYS + 0 +    ba, ia, z3, "x393_sensio_tim0", "rw",             "Sensor port i/o timing configuration, register 0")),
