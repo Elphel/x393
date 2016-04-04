@@ -107,7 +107,10 @@ class X393ExportC(object):
  * Author: auto-generated file, see %s
  * Description: %s
  *******************************************************************************/"""
-        return header_template%(filename, datetime.date.today().isoformat(), os.path.basename(__file__), description)
+        script_name = os.path.basename(__file__)
+        if script_name[-1] == "c":
+            script_name = script_name[:-1] 
+        return header_template%(filename, datetime.date.today().isoformat(), script_name, description)
         
     def save_typedefs(self, directory, filename):
         description = 'typedef definitions for the x393 hardware registers'
