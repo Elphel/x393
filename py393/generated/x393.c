@@ -1,6 +1,6 @@
 /*******************************************************************************
  * File: x393.c
- * Date: 2016-03-29  
+ * Date: 2016-04-04  
  * Author: auto-generated file, see x393_export_c.py
  * Description: Functions definitions to access x393 hardware registers
  *******************************************************************************/
@@ -174,7 +174,7 @@ void                         x393_sens_sync_late                 (x393_sens_sync
 void                         x393_sensio_ctrl                    (x393_sensio_ctl_t d, int sens_num){writel(d.d32, mmio_ptr + (0x1020 + 0x100 * sens_num));} // Configure sensor I/O port
 void                         set_x393_sensio_status_cntrl        (x393_status_ctrl_t d, int sens_num){writel(d.d32, mmio_ptr + (0x1024 + 0x100 * sens_num));} // Set status control for SENSIO module
 x393_status_ctrl_t           get_x393_sensio_status_cntrl        (int sens_num)      { x393_status_ctrl_t d; d.d32 = readl(mmio_ptr + (0x1024 + 0x100 * sens_num)); return d; }
-void                         x393_sensio_jtag                    (x393_sensio_jpag_t d, int sens_num){writel(d.d32, mmio_ptr + (0x1028 + 0x100 * sens_num));} // Programming interface for multiplexer FPGA (with X393_SENSIO_STATUS)
+void                         x393_sensio_jtag                    (x393_sensio_jtag_t d, int sens_num){writel(d.d32, mmio_ptr + (0x1028 + 0x100 * sens_num));} // Programming interface for multiplexer FPGA (with X393_SENSIO_STATUS)
 void                         set_x393_sensio_width               (x393_sensio_width_t d, int sens_num){writel(d.d32, mmio_ptr + (0x102c + 0x100 * sens_num));} // Set sensor line in pixels (0 - use line sync from the sensor)
 x393_sensio_width_t          get_x393_sensio_width               (int sens_num)      { x393_sensio_width_t d; d.d32 = readl(mmio_ptr + (0x102c + 0x100 * sens_num)); return d; }
 void                         set_x393_sensio_tim0                (x393_sensio_tim0_t d, int sens_num){writel(d.d32, mmio_ptr + (0x1030 + 0x100 * sens_num));} // Sensor port i/o timing configuration, register 0

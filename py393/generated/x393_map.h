@@ -1,6 +1,6 @@
 /*******************************************************************************
  * File: x393_map.h
- * Date: 2016-03-29  
+ * Date: 2016-04-04  
  * Author: auto-generated file, see x393_export_c.py
  * Description: Sorted hardware addresses map
  *******************************************************************************/
@@ -189,7 +189,7 @@
 #define X393_SENS_SYNC_LATE__0                           0x4000101c // Configure frame sync delay, data type: x393_sens_sync_late_t (wo)
 #define X393_SENSIO_CTRL__0                              0x40001020 // Configure sensor I/O port, data type: x393_sensio_ctl_t (wo)
 #define X393_SENSIO_STATUS_CNTRL__0                      0x40001024 // Set status control for SENSIO module, data type: x393_status_ctrl_t (rw)
-#define X393_SENSIO_JTAG__0                              0x40001028 // Programming interface for multiplexer FPGA (with X393_SENSIO_STATUS), data type: x393_sensio_jpag_t (wo)
+#define X393_SENSIO_JTAG__0                              0x40001028 // Programming interface for multiplexer FPGA (with X393_SENSIO_STATUS), data type: x393_sensio_jtag_t (wo)
 #define X393_SENSIO_WIDTH__0                             0x4000102c // Set sensor line in pixels (0 - use line sync from the sensor), data type: x393_sensio_width_t (rw)
 #define X393_SENSIO_TIM0__0                              0x40001030 // Sensor port i/o timing configuration, register 0, data type: x393_sensio_tim0_t (rw)
 #define X393_SENSIO_TIM1__0                              0x40001034 // Sensor port i/o timing configuration, register 1, data type: x393_sensio_tim1_t (rw)
@@ -252,7 +252,7 @@
 #define X393_SENS_SYNC_LATE__1                           0x4000111c // Configure frame sync delay, data type: x393_sens_sync_late_t (wo)
 #define X393_SENSIO_CTRL__1                              0x40001120 // Configure sensor I/O port, data type: x393_sensio_ctl_t (wo)
 #define X393_SENSIO_STATUS_CNTRL__1                      0x40001124 // Set status control for SENSIO module, data type: x393_status_ctrl_t (rw)
-#define X393_SENSIO_JTAG__1                              0x40001128 // Programming interface for multiplexer FPGA (with X393_SENSIO_STATUS), data type: x393_sensio_jpag_t (wo)
+#define X393_SENSIO_JTAG__1                              0x40001128 // Programming interface for multiplexer FPGA (with X393_SENSIO_STATUS), data type: x393_sensio_jtag_t (wo)
 #define X393_SENSIO_WIDTH__1                             0x4000112c // Set sensor line in pixels (0 - use line sync from the sensor), data type: x393_sensio_width_t (rw)
 #define X393_SENSIO_TIM0__1                              0x40001130 // Sensor port i/o timing configuration, register 0, data type: x393_sensio_tim0_t (rw)
 #define X393_SENSIO_TIM1__1                              0x40001134 // Sensor port i/o timing configuration, register 1, data type: x393_sensio_tim1_t (rw)
@@ -315,7 +315,7 @@
 #define X393_SENS_SYNC_LATE__2                           0x4000121c // Configure frame sync delay, data type: x393_sens_sync_late_t (wo)
 #define X393_SENSIO_CTRL__2                              0x40001220 // Configure sensor I/O port, data type: x393_sensio_ctl_t (wo)
 #define X393_SENSIO_STATUS_CNTRL__2                      0x40001224 // Set status control for SENSIO module, data type: x393_status_ctrl_t (rw)
-#define X393_SENSIO_JTAG__2                              0x40001228 // Programming interface for multiplexer FPGA (with X393_SENSIO_STATUS), data type: x393_sensio_jpag_t (wo)
+#define X393_SENSIO_JTAG__2                              0x40001228 // Programming interface for multiplexer FPGA (with X393_SENSIO_STATUS), data type: x393_sensio_jtag_t (wo)
 #define X393_SENSIO_WIDTH__2                             0x4000122c // Set sensor line in pixels (0 - use line sync from the sensor), data type: x393_sensio_width_t (rw)
 #define X393_SENSIO_TIM0__2                              0x40001230 // Sensor port i/o timing configuration, register 0, data type: x393_sensio_tim0_t (rw)
 #define X393_SENSIO_TIM1__2                              0x40001234 // Sensor port i/o timing configuration, register 1, data type: x393_sensio_tim1_t (rw)
@@ -378,7 +378,7 @@
 #define X393_SENS_SYNC_LATE__3                           0x4000131c // Configure frame sync delay, data type: x393_sens_sync_late_t (wo)
 #define X393_SENSIO_CTRL__3                              0x40001320 // Configure sensor I/O port, data type: x393_sensio_ctl_t (wo)
 #define X393_SENSIO_STATUS_CNTRL__3                      0x40001324 // Set status control for SENSIO module, data type: x393_status_ctrl_t (rw)
-#define X393_SENSIO_JTAG__3                              0x40001328 // Programming interface for multiplexer FPGA (with X393_SENSIO_STATUS), data type: x393_sensio_jpag_t (wo)
+#define X393_SENSIO_JTAG__3                              0x40001328 // Programming interface for multiplexer FPGA (with X393_SENSIO_STATUS), data type: x393_sensio_jtag_t (wo)
 #define X393_SENSIO_WIDTH__3                             0x4000132c // Set sensor line in pixels (0 - use line sync from the sensor), data type: x393_sensio_width_t (rw)
 #define X393_SENSIO_TIM0__3                              0x40001330 // Sensor port i/o timing configuration, register 0, data type: x393_sensio_tim0_t (rw)
 #define X393_SENSIO_TIM1__3                              0x40001334 // Sensor port i/o timing configuration, register 1, data type: x393_sensio_tim1_t (rw)

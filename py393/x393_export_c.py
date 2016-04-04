@@ -125,7 +125,7 @@ class X393ExportC(object):
         ld= self.define_macros()
         ld+=self.define_other_macros()
         # Includes section
-        txt = '\n#include "elphel/x393_types.h"\n'
+        txt = '\n#include "x393_types.h"\n'
         txt +='//#include "elphel/x393_defs.h // alternative variant"\n\n'
         txt +='// See elphel/x393_map.h for the ordered list of all I/O register addresses used\n'
         txt +=  '// init_mmio_ptr() should be called once before using any of the other declared functions\n\n'

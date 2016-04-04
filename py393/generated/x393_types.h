@@ -1,6 +1,6 @@
 /*******************************************************************************
  * File: x393_types.h
- * Date: 2016-03-29  
+ * Date: 2016-04-04  
  * Author: auto-generated file, see x393_export_c.py
  * Description: typedef definitions for the x393 hardware registers
  *******************************************************************************/
@@ -382,7 +382,7 @@ typedef union {
 
 typedef union {
     struct {
-          u32        tbl_addr: 8; // [ 7: 0] (0) Address/length in 64-bit words (<<3 to get byte address
+          u32        tbl_addr: 8; // [ 7: 0] (0) Address/length in 64-bit words (<<3 to get byte address)
           u32                :20;
           u32        tbl_mode: 2; // [29:28] (3) Should be 3 to select table address write mode
           u32                : 2;
@@ -664,7 +664,7 @@ typedef union {
     struct {
           u32             d32:32; // [31: 0] (0) cast to u32
     }; 
-} x393_sensio_jpag_t; 
+} x393_sensio_jtag_t; 
 
 // Sensor i/o timing register 0 (different meanings for different sensor types)
 

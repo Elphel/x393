@@ -69,7 +69,7 @@ class X393Cmprs(object):
                                   0: disable status generation,
                                   1: single status request,
                                   2: auto status, keep specified seq number,
-                                  4: auto, inc sequence number 
+                                  3: auto, inc sequence number 
         @param seq_number - 6-bit sequence number of the status message to be sent
         """
 

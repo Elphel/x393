@@ -32,6 +32,8 @@ __email__ = "andrey@elphel.com"
 __status__ = "Development"
 #import sys
 #import pickle
+import struct
+
 from x393_mem                import X393Mem
 import x393_axi_control_status
 
@@ -81,7 +83,7 @@ class X393Sensor(object):
                                   0: disable status generation,
                                   1: single status request,
                                   2: auto status, keep specified seq number,
-                                  4: auto, inc sequence number 
+                                  3: auto, inc sequence number 
         @param seq_number - 6-bit sequence number of the status message to be sent
         """
 
@@ -101,31 +103,57 @@ class X393Sensor(object):
                                   0: disable status generation,
                                   1: single status request,
                                   2: auto status, keep specified seq number,
-                                  4: auto, inc sequence number 
+                                  3: auto, inc sequence number 
         @param seq_number - 6-bit sequence number of the status message to be sent
         """
+        try:
+            if (num_sensor == all) or (num_sensor[0].upper() == "A"): #all is a built-in function
+                for num_sensor in range(4):
+                    self.program_status_sensor_io (num_sensor = num_sensor,
+                                                   mode =       mode,
+                                                   seq_num =    seq_num)
+                return
+        except:
+            pass
 
         self.x393_axi_tasks.program_status (
                              vrlg.SENSOR_GROUP_ADDR  + num_sensor * vrlg.SENSOR_BASE_INC + vrlg.SENSIO_RADDR,
                              vrlg.SENSIO_STATUS,
                              mode,
                              seq_num)# //MCONTR_PHY_STATUS_REG_ADDR=          'h0,
+        
     def get_status_sensor_io ( self,
-                              num_sensor):
+                              num_sensor="All"):
         """
         Read sensor_io status word (no sync)
         @param num_sensor - number of the sensor port (0..3)
         @return sesnor_io status
         """
+        try:
+            if (num_sensor == all) or (num_sensor[0].upper() == "A"): #all is a built-in function
+                rslt = []
+                for num_sensor in range(4):
+                    rslt.append(self.program_status_sensor_io (num_sensor = num_sensor))
+                return rslt
+        except:
+            pass
         return self.x393_axi_tasks.read_status(
                     address=(vrlg.SENSI2C_STATUS_REG_BASE + num_sensor * vrlg.SENSI2C_STATUS_REG_INC + vrlg.SENSIO_STATUS_REG_REL))       
 
     def print_status_sensor_io (self,
-                                num_sensor):
+                                num_sensor="All"):
         """
         Print sensor_io status word (no sync)
         @param num_sensor - number of the sensor port (0..3)
         """
+        try:
+            if (num_sensor == all) or (num_sensor[0].upper() == "A"): #all is a built-in function
+                for num_sensor in range(4):
+                    print ("\n ==== Sensor %d"%(num_sensor))
+                    self.print_status_sensor_io (num_sensor = num_sensor)
+                return
+        except:
+            pass
         status= self.get_status_sensor_io(num_sensor)
         print ("print_status_sensor_io(%d):"%(num_sensor))
 #last_in_line_1cyc_mclk, dout_valid_1cyc_mclk
@@ -154,21 +182,37 @@ class X393Sensor(object):
         print ("   seq =                    %d"%((status>>26) & 0x3f))
 #vact_alive, hact_ext_alive, hact_alive
     def get_status_sensor_i2c ( self,
-                              num_sensor):
+                              num_sensor="All"):
         """
         Read sensor_i2c status word (no sync)
         @param num_sensor - number of the sensor port (0..3)
         @return sesnor_io status
         """
+        try:
+            if (num_sensor == all) or (num_sensor[0].upper() == "A"): #all is a built-in function
+                rslt = []
+                for num_sensor in range(4):
+                    rslt.append(self.get_status_sensor_i2c (num_sensor = num_sensor))
+                return rslt
+        except:
+            pass
         return self.x393_axi_tasks.read_status(
                     address=(vrlg.SENSI2C_STATUS_REG_BASE + num_sensor * vrlg.SENSI2C_STATUS_REG_INC + vrlg.SENSI2C_STATUS_REG_REL))       
 
     def print_status_sensor_i2c (self,
-                                num_sensor):
+                                num_sensor="All"):
         """
         Print sensor_i2c status word (no sync)
         @param num_sensor - number of the sensor port (0..3)
         """
+        try:
+            if (num_sensor == all) or (num_sensor[0].upper() == "A"): #all is a built-in function
+                for num_sensor in range(4):
+                    print ("\n ==== Sensor %d"%(num_sensor))
+                    self.print_status_sensor_i2c (num_sensor = num_sensor)
+                return
+        except:
+            pass
         status= self.get_status_sensor_i2c(num_sensor)
         print ("print_status_sensor_i2c(%d):"%(num_sensor))
         print ("   reset_on =               %d"%((status>> 7) & 1))
@@ -882,6 +926,137 @@ class X393Sensor(object):
                             tms =   tms,
                             tdi =   tdi)
         self.x393_axi_tasks.write_control_register(reg_addr, data)
+# /dev/sfpgabscan0
+    def readbscan(self, filename):
+        ffs=struct.pack("B",0xff)*97
+        with open(filename,'r+') as jtag:
+            jtag.write(ffs)
+            jtag.seek (0,0)
+            boundary= jtag.read(97)
+        return boundary    
+            
+            
+    """
+import struct
+def readbscan(filename):
+    ffs=struct.pack("B",0xff)*97
+    with open(filename,'r+') as jtag:
+        jtag.write(ffs)
+        jtag.seek (0,0)
+        boundary= jtag.read(97)
+    return boundary
+b = readbscan('/dev/sfpgabscan0')    
+        
+$boards=array (
+                '0' => array ('model' => '10347', 'scl' =>241,'sda' => 199),  // E4, C1
+                '1' => array ('model' => '10359', 'scl' =>280,'sda' => 296)   // H6, J5
+
+);
+cd /usr/local/verilog/; test_mcntrl.py @hargs
+setupSensorsPower "PAR12"
+measure_all "*DI"
+program_status_sensor_io all 1 0
+print_status_sensor_io all
+
+>>> b = readbscan('/dev/sfpgabscan0')
+>>> b
+b='\x00\x00\x00\x00\x00\x00\x00\x00\x08\x00$\x82\x12I\t\x00\x80\x02\x00@\x00\x04\x00\x00@\x00\x00\x00\x00\x00@\x00\x00\x00\x00\x00\x00\x00\x00\x00\x04\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00 \x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+
+a='ffffffffff7fffffffffffffffffffffffffffffffffffffbfffffffffffffffffffff7fff7ffffffbffffffffffffffffffffffffffffffffffffffffdffffffffffffffffffffff6dfffffffffffffffedf7fdbfedff7ffff6fffeffffffbff0'
+al = []
+for i in range(len(a)/2):
+    al.append(int('0x'+a[2*i:2*i+2],0))
+    
+bl = []
+for i in b:
+    bl.append(ord(i))
+
+for i,x in enumerate(zip(al,bl)):
+    print ("%02x %02x %02x"%(i,x[0],x[1]))
+    
+
+fwrite returned 97<br/>
+Boundary:
+ffffffffff7fffffffffffffffffffffffffffffffffffffbfffffffffffffffffffffffff7ffffffbffffffffffffffffffffffffffffffffffffffffdffffffffffffffffffffff6dfffffffffffffffedf7fdbfedff7ffff6fffeffffffbff0
+
+fwrite returned 97<br/>
+Boundary:
+ffffffffff7fffffffffffffffffffffffffffffffffffffbfffffffffffffffffffff7ffffffffffbffffffffffffffffffffffffffffffffffffffffdffffffffffffffffffffff6dfffffffffffffffedf7fdbfedff7ffff6fffeffffffbff0
+
+fwrite returned 97<br/>
+Boundary:
+ffffffffff7fffffffffffffffffffffffffffffffffffffbffffffffffffffffffffffffffffffffbffffffffffffffffffffffffffffffffffffffffdffffffffffffffffffffff6dfffffffffffffffedf7fdbfedff7ffff6fffeffffffbff0
+
+
+
+
+
+>>> b1 = readbscan('/dev/sfpgabscan0')
+>>> b1
+'\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xf0'
+
+'\x00\x00\x00\x00\x00\x00\x00\x00\x08\x00$\x82\x12I\t\x00\x80\x02\x00@\x00\x04\x00\x00@\x00\x00\x00\x00\x00@\x00\x00\x00\x00\x00\x00\x00\x00\x00\x04\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00 \x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+    
+root@elphel393:/sys/kernel/debug/dynamic_debug# cat control | grep fpga
+drivers/elphel/fpgajtag353.c:655 [fpgajtag]fpga_jtag_lseek =_ "fpga_jtag_lseek, fsize= 0x%x\012"
+drivers/elphel/fpgajtag353.c:679 [fpgajtag]fpga_jtag_lseek =_ "fpga_jtag_lseek, file->f_pos= 0x%x\012"
+drivers/elphel/fpgajtag353.c:1405 [fpgajtag]fpga_jtag_init =_ "elphel test %s: MAJOR %d"
+drivers/elphel/fpgajtag353.c:751 [fpgajtag]wait_sensio_status =_ "seq_num = %d received after %d wait cycles"
+drivers/elphel/fpgajtag353.c:764 [fpgajtag]set_pgm_mode =_ "set_pgm_mode (%d,%d)\012"
+drivers/elphel/fpgajtag353.c:789 [fpgajtag]set_pgm =_ "set_pgm (%d,%d)\012"
+drivers/elphel/fpgajtag353.c:851 [fpgajtag]jtag_send =_ "jtag_send(0x%x, 0x%x, 0x%x, 0x%x)\015\012"
+drivers/elphel/fpgajtag353.c:950 [fpgajtag]jtag_write_bits =_ "jtag_write_bits(0x%x, 0x%x, 0x%x, 0x%x, 0x%x)\015\012"
+drivers/elphel/fpgajtag353.c:1096 [fpgajtag]JTAG_configure =_ "JTAG_configure: chn=%x,  wp=0x%x, rp=0x%x, len=0x%x\015\012"
+drivers/elphel/fpgajtag353.c:1211 [fpgajtag]JTAG_openChannel =_ "JTAG_openChannel (%d)\012"
+drivers/elphel/fpgajtag353.c:367 [fpgajtag]fpga_jtag_open =_ "fpga_jtag_open: minor=%x, channel=%x, buf=%p\015\012"
+drivers/elphel/fpgajtag353.c:440 [fpgajtag]fpga_jtag_open =_ "fpga_jtag_open: chn=%x, JTAG_channels[chn].sizew=%x, JTAG_channels[chn].sizer=%x\015\012"
+drivers/elphel/fpgajtag353.c:441 [fpgajtag]fpga_jtag_open =_ "fpga_jtag_open: chn=%x, JTAG_channels[chn].bitsw=%x, JTAG_channels[chn].bitsr=%x\015\012"
+drivers/elphel/fpgajtag353.c:446 [fpgajtag]fpga_jtag_open =_ "fpga_jtag_open: inode->i_size=%x, chn=%x\015\012"
+drivers/elphel/fpgajtag353.c:1231 [fpgajtag]JTAG_resetChannel =_ "JTAG_resetChannel (%d)\012"
+drivers/elphel/fpgajtag353.c:1342 [fpgajtag]JTAG_CAPTURE =_ "\012"
+drivers/elphel/fpgajtag353.c:1347 [fpgajtag]JTAG_CAPTURE =_ "\012"
+drivers/elphel/fpgajtag353.c:1344 [fpgajtag]JTAG_CAPTURE =_ "%3x "
+drivers/elphel/fpgajtag353.c:1345 [fpgajtag]JTAG_CAPTURE =_ "\012"
+drivers/elphel/fpgajtag353.c:456 [fpgajtag]fpga_jtag_release =_ "fpga_jtag_release: p=%x,chn=%x,  wp=0x%x, rp=0x%x\015\012"
+drivers/elphel/fpgajtag353.c:497 [fpgajtag]fpga_jtag_release =_ "fpga_jtag_release:  done\015\012"
+drivers/elphel/fpgajtag353.c:509 [fpgajtag]fpga_jtag_write =_ "fpga_jtag_write: p=%x,chn=%x, buf address=%lx count=%lx *offs=%lx, wp=%lx,size=0x%x\015\012"
+drivers/elphel/fpgajtag353.c:562 [fpgajtag]fpga_jtag_write =_ "fpga_jtag_write end: p=%x,chn=%x, buf address=%lx count=%lx *offs=%lx, wp=%lx,size=0x%x\015\012"
+drivers/elphel/fpgajtag353.c:574 [fpgajtag]fpga_jtag_read =_ "fpga_jtag_read: p=%x,chn=%x, buf address=%lx count=%lx *offs=%lx, rp=%lx,size=0x%x\015\012"
+drivers/elphel/fpgajtag353.c:601 [fpgajtag]fpga_jtag_read =_ "fpga_jtag_read_01: p=%x,chn=%x, buf address=%lx count=%lx *offs=%lx, rp=%lx,size=0x%x\015\012"
+drivers/elphel/fpgajtag353.c:624 [fpgajtag]fpga_jtag_read =_ "fpga_jtag_read_01: p=%x,chn=%x, buf address=%lx count=%lx *offs=%lx, rp=%lx,size=0x%x\015\012"
+drivers/elphel/fpgajtag353.c:635 [fpgajtag]fpga_jtag_read =_ "fpga_jtag_read_end: p=%x,chn=%x, buf address=%lx count=%lx *offs=%lx, rp=%lx,size=0x%x, mode=%x\015\012"
+drivers/elphel/fpgajtag353.c:1416 [fpgajtag]fpga_jtag_exit =_ "unregistering driver"
+
+root@elphel393:/sys/kernel/debug/dynamic_debug# echo 'file drivers/elphel/fpgajtag353.c +p' > control
+
+ afpgaconfjtag       jtagraw             memory_bandwidth    mtd4ro              ram2                stderr              tty18               tty30               tty43               tty56               ttyS1
+block               kmem                mmcblk0             mtdblock0           ram3                stdin               tty19               tty31               tty44               tty57               ttyS2
+char                kmsg                mmcblk0p1           mtdblock1           random              stdout              tty2                tty32               tty45               tty58               ttyS3
+console             log                 mmcblk0p2           mtdblock2           rtc0                tty                 tty20               tty33               tty46               tty59               ubi_ctrl
+cpu_dma_latency     loop-control        mtab                mtdblock3           sfpgabscan0         tty0                tty21               tty34               tty47               tty6                urandom
+disk                loop0               mtd0                mtdblock4           sfpgabscan1         tty1                tty22               tty35               tty48               tty60               vcs
+fd                  loop1               mtd0ro              network_latency     sfpgabscan2         tty10               tty23               tty36               tty49               tty61               vcs1
+fpgaconfjtag        loop2               mtd1                network_throughput  sfpgabscan3         tty11               tty24               tty37               tty5                tty62               vcsa
+fpgaresetjtag       loop3               mtd1ro              null                sfpgaconfjtag       tty12               tty25               tty38               tty50               tty63               vcsa1
+full                loop4               mtd2                psaux               sfpgaconfjtag0      tty13               tty26               tty39               tty51               tty7                watchdog
+i2c-0               loop5               mtd2ro              ptmx                sfpgaconfjtag1      tty14               tty27               tty4                tty52               tty8                watchdog0
+iio:device0         loop6               mtd3                pts                 sfpgaconfjtag2      tty15               tty28               tty40               tty53               tty9                xdevcfg
+initctl             loop7               mtd3ro              ram0                sfpgaconfjtag3      tty16               tty29               tty41               tty54               ttyPS0              zero
+input               mem                 mtd4                ram1                shm                 tty17               tty3                tty42               tty55               ttyS0
+   
+    
+   fseek ($jtag,0);
+   $boundary= fread($jtag, 97);
+   fclose($jtag);
+  return $boundary;
+    
+    
+    
+            packedData=struct.pack(self.ENDIAN+"L",data)
+            d=struct.unpack(self.ENDIAN+"L",packedData)[0]
+            mm[page_offs:page_offs+4]=packedData
+
+    """
 
     def set_sensor_io_width (
                              self,

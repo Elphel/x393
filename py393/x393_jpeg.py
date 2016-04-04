@@ -965,6 +965,14 @@ class X393Jpeg(object):
 ff d9
 """        
 """
+################## 10359 ##################
+cd /usr/local/verilog/; test_mcntrl.py @hargs
+setupSensorsPower "PAR12"
+measure_all "*DI"
+program_status_sensor_io all 1 0
+print_status_sensor_io all
+
+
 ################## Parallel ##################
 cd /usr/local/verilog/; test_mcntrl.py @hargs
 setupSensorsPower "PAR12"

@@ -1,11 +1,11 @@
 /*******************************************************************************
  * File: x393.h
- * Date: 2016-03-29  
+ * Date: 2016-04-04  
  * Author: auto-generated file, see x393_export_c.py
  * Description: Constants definitions and functions declarations to access x393 hardware registers
  *******************************************************************************/
 
-#include "elphel/x393_types.h"
+#include "x393_types.h"
 //#include "elphel/x393_defs.h // alternative variant"
 
 // See elphel/x393_map.h for the ordered list of all I/O register addresses used
@@ -173,7 +173,7 @@ void                         x393_sens_sync_late                 (x393_sens_sync
 void                         x393_sensio_ctrl                    (x393_sensio_ctl_t d, int sens_num);             // Configure sensor I/O port
 void                         set_x393_sensio_status_cntrl        (x393_status_ctrl_t d, int sens_num);            // Set status control for SENSIO module
 x393_status_ctrl_t           get_x393_sensio_status_cntrl        (int sens_num);
-void                         x393_sensio_jtag                    (x393_sensio_jpag_t d, int sens_num);            // Programming interface for multiplexer FPGA (with X393_SENSIO_STATUS)
+void                         x393_sensio_jtag                    (x393_sensio_jtag_t d, int sens_num);            // Programming interface for multiplexer FPGA (with X393_SENSIO_STATUS)
 void                         set_x393_sensio_width               (x393_sensio_width_t d, int sens_num);           // Set sensor line in pixels (0 - use line sync from the sensor)
 x393_sensio_width_t          get_x393_sensio_width               (int sens_num);
 void                         set_x393_sensio_tim0                (x393_sensio_tim0_t d, int sens_num);            // Sensor port i/o timing configuration, register 0
@@ -297,7 +297,6 @@ x393_status_sens_io_t        x393_sensio_status                  (int sens_num);
 #define X393_CMPRS_CBIT_CMODE_JP4DIFFHDRDIV2             0x0000000a // jp4,  4 blocks, differential, hdr,divide by 2
 #define X393_CMPRS_CBIT_CMODE_MONO1                      0x0000000b // Mono JPEG (not yet implemented)
 #define X393_CMPRS_CBIT_CMODE_MONO4                      0x0000000e // Mono, 4 blocks (2x2 macroblocks)
-#define X393_CMPRS_CBIT_CMODE_JPEG18                     0x00000000 // Color 4:2:0
 #define X393_CMPRS_CBIT_CMODE_JPEG18                     0x00000000 // Color 4:2:0
 #define X393_CMPRS_CBIT_FRAMES_SINGLE                    0x00000000 // Use single-frame buffer
 #define X393_CMPRS_CBIT_FRAMES_MULTI                     0x00000001 // Use multi-frame buffer
