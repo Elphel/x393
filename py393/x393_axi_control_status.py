@@ -355,7 +355,7 @@ class X393AxiControlStatus(object):
                                   3: auto, inc sequence number 
         <seq_number> - 6-bit sequence number of the status message to be sent
         """
-        self.write_control_register(base_addr + reg_addr, ((mode & 3)<< 6) | (seq_number * 0x3f))
+        self.write_control_register(base_addr + reg_addr, ((mode & 3)<< 6) | (seq_number & 0x3f))
 
 
     def program_status_all( self,

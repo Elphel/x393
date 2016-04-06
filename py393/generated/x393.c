@@ -1,6 +1,6 @@
 /*******************************************************************************
  * File: x393.c
- * Date: 2016-04-04  
+ * Date: 2016-04-06  
  * Author: auto-generated file, see x393_export_c.py
  * Description: Functions definitions to access x393 hardware registers
  *******************************************************************************/

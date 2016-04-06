@@ -1,6 +1,6 @@
 /*******************************************************************************
  * File: x393_types.h
- * Date: 2016-04-04  
+ * Date: 2016-04-06  
  * Author: auto-generated file, see x393_export_c.py
  * Description: typedef definitions for the x393 hardware registers
  *******************************************************************************/
@@ -411,7 +411,9 @@ typedef union {
           u32     sda_release: 1; // [    1] (0) Release SDA early if next bit ==1 (valid with drive_ctl)
           u32       drive_ctl: 1; // [    2] (0) 0 - nop, 1 - set sda_release and sda_drive_high
           u32    next_fifo_rd: 1; // [    3] (0) Advance I2C read FIFO pointer
-          u32                : 8;
+          u32        soft_scl: 2; // [ 5: 4] (0) Control SCL pin (when stopped): 0 - nop, 1 - low, 2 - high (driven), 3 - float 
+          u32        soft_sda: 2; // [ 7: 6] (0) Control SDA pin (when stopped): 0 - nop, 1 - low, 2 - high (driven), 3 - float 
+          u32                : 4;
           u32         cmd_run: 2; // [13:12] (0) Sequencer run/stop control: 0,1 - nop, 2 - stop, 3 - run 
           u32           reset: 1; // [   14] (0) Sequencer reset all FIFO (takes 16 clock pulses), also - stops i2c until run command
           u32                :13;

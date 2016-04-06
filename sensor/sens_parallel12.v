@@ -190,7 +190,9 @@ module  sens_parallel12 #(
 
 
 
-    wire [17:0] status;
+//    wire [17:0] status;
+//    wire [18:0] status;
+    wire [22:0] status;
     
     wire        cmd_we;
     wire  [2:0] cmd_a;
@@ -228,7 +230,12 @@ module  sens_parallel12 #(
      
     assign set_pxd_delay =   set_idelay[2:0];
     assign set_other_delay = set_idelay[3];
-    assign status = {vact_alive, hact_ext_alive, hact_alive, locked_pxd_mmcm, 
+//    assign status = {pxd_out_pre[1],vact_alive, hact_ext_alive, hact_alive, locked_pxd_mmcm, 
+//                     clkin_pxd_stopped_mmcm, clkfb_pxd_stopped_mmcm, xfpgadone,
+//                     ps_rdy, ps_out, xfpgatdo, senspgmin};
+    assign status = {irst, async_prst_with_sens_mrst, imrst, rst_mmcm, pxd_out_pre[1],
+    
+                     vact_alive, hact_ext_alive, hact_alive, locked_pxd_mmcm, 
                      clkin_pxd_stopped_mmcm, clkfb_pxd_stopped_mmcm, xfpgadone,
                      ps_rdy, ps_out, xfpgatdo, senspgmin};
     assign hact_out = hact_r;
@@ -414,14 +421,16 @@ module  sens_parallel12 #(
 
     status_generate #(
         .STATUS_REG_ADDR(SENSIO_STATUS_REG),
-        .PAYLOAD_BITS(15+3+STATUS_ALIVE_WIDTH) // STATUS_PAYLOAD_BITS)
+//        .PAYLOAD_BITS(15+3+STATUS_ALIVE_WIDTH) // STATUS_PAYLOAD_BITS)
+        .PAYLOAD_BITS(15+3+STATUS_ALIVE_WIDTH+1) // STATUS_PAYLOAD_BITS)
     ) status_generate_sens_io_i (
         .rst        (1'b0),         // rst), // input
         .clk        (mclk),         // input
         .srst       (mclk_rst),     // input
         .we         (set_status_r), // input
         .wd         (data_r[7:0]),  // input[7:0] 
-        .status     ({status_alive,status}),       // input[25:0] 
+//        .status     ({status_alive,status}),       // input[25:0] 
+        .status     ({status}),       // input[25:0] 
         .ad         (status_ad),    // output[7:0] 
         .rq         (status_rq),    // output
         .start      (status_start)  // input
@@ -456,8 +465,27 @@ module  sens_parallel12 #(
         .ld_idelay      (ld_idelay),       // input
         .quadrant       (quadrants[1:0])   // input[1:0] 
     );
+    
 // debugging implementation
 //assign xfpgatdo = pxd_out[1];
+    /* Instance template for module iobuf */
+//`define DEBUF_JTAG 1
+`ifdef DEBUF_JTAG    
+    iobuf #(
+        .DRIVE        (PXD_DRIVE),
+        .IBUF_LOW_PWR (PXD_IBUF_LOW_PWR),
+        .IOSTANDARD   (PXD_IOSTANDARD),
+        .SLEW         (PXD_SLEW)
+    ) pxd_pxd1_i (
+        .O            (pxd_out_pre[1]), // output
+        .IO           (pxd[1]), // inout
+        .I            (1'b0), // input
+        .T            (1'b1) // input
+    );
+    assign xfpgatdo = pxd_out_pre[1];
+`else
+    wire n_xfpgatdo;
+    assign xfpgatdo = !n_xfpgatdo;
     pxd_single #(
         .IODELAY_GRP           (IODELAY_GRP),
         .IDELAY_VALUE          (IDELAY_VALUE),
@@ -471,18 +499,22 @@ module  sens_parallel12 #(
         .pxd            (pxd[1]),          // inout
         .pxd_out        (1'b0),            // input
         .pxd_en         (1'b0),            // input
-        .pxd_async      (xfpgatdo),        // output
+        .pxd_async      (n_xfpgatdo),      // output
         .pxd_in         (pxd_out_pre[1]),  // output
         .ipclk          (ipclk),           // input
         .ipclk2x        (ipclk2x),         // input
         .mrst           (mclk_rst),        // input
         .irst           (irst),            // input
         .mclk           (mclk),            // input
-        .dly_data       (data_r[15:8]),          // input[7:0] 
+        .dly_data       (data_r[15:8]),    // input[7:0] 
         .set_idelay     (set_pxd_delay[0]),// input
         .ld_idelay      (ld_idelay),       // input
         .quadrant       (quadrants[1:0])   // input[1:0] 
     );
+`endif    
+    
+    
+    
     // bits 2..11 are just PXD inputs, instance them all together
     generate
         genvar i;

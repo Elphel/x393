@@ -32,7 +32,11 @@
  * with at least one of the Free Software programs.
  *******************************************************************************/
  
-      parameter FPGA_VERSION =          32'h03930081;    // re-started parallel
+      parameter FPGA_VERSION =          32'h03930085;    // Adding software control for i2c pins when sequencer is stopped
+//      parameter FPGA_VERSION =          32'h03930084;    // Back to iserdes, inverting xfpgatdo - met
+//      parameter FPGA_VERSION =          32'h03930083;    // Debugging JTAG, using plain IOBUF
+//      parameter FPGA_VERSION =          32'h03930082;    // trying other path to read xfpgatdo
+//      parameter FPGA_VERSION =          32'h03930081;    // re-started parallel - timing met
 //      parameter FPGA_VERSION =          32'h03930080;    // serial, failed timing, >84%
 //      parameter FPGA_VERSION =          32'h0393007f;    // More constraints files tweaking
 //      parameter FPGA_VERSION =          32'h0393007e;    // Trying .tcl constraints instead of xdc - timing met

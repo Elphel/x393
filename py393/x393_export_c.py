@@ -1750,6 +1750,10 @@ class X393ExportC(object):
         dw.append(("sda_release",      vrlg.SENSI2C_CMD_ACIVE_EARLY0, 1,0,  "Release SDA early if next bit ==1 (valid with drive_ctl)"))
         dw.append(("drive_ctl",        vrlg.SENSI2C_CMD_ACIVE,        1,0,  "0 - nop, 1 - set sda_release and sda_drive_high"))
         dw.append(("next_fifo_rd",     vrlg.SENSI2C_CMD_FIFO_RD,      1,0,  "Advance I2C read FIFO pointer"))
+        
+        dw.append(("soft_scl",         vrlg.SENSI2C_CMD_SOFT_SCL,     2,0,  "Control SCL pin (when stopped): 0 - nop, 1 - low, 2 - high (driven), 3 - float "))
+        dw.append(("soft_sda",         vrlg.SENSI2C_CMD_SOFT_SDA,     2,0,  "Control SDA pin (when stopped): 0 - nop, 1 - low, 2 - high (driven), 3 - float "))
+        
         dw.append(("cmd_run",          vrlg.SENSI2C_CMD_RUN-1,        2,0,  "Sequencer run/stop control: 0,1 - nop, 2 - stop, 3 - run "))
         dw.append(("reset",            vrlg.SENSI2C_CMD_RESET,        1,0,  "Sequencer reset all FIFO (takes 16 clock pulses), also - stops i2c until run command"))
         dw.append(("tbl_mode",         vrlg.SENSI2C_CMD_TAND,         2,0,  "Should be 0 to select controls"))

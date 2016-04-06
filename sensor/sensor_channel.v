@@ -81,6 +81,8 @@ module  sensor_channel#(
         parameter SENSI2C_CMD_RESET =       14, // [14]   reset all FIFO (takes 16 clock pulses), also - stops i2c until run command
         parameter SENSI2C_CMD_RUN =         13, // [13:12]3 - run i2c, 2 - stop i2c (needed before software i2c), 1,0 - no change to run state
         parameter SENSI2C_CMD_RUN_PBITS =    1,
+        parameter SENSI2C_CMD_SOFT_SDA =     6, // [7:6] - SDA software control: 0 - nop, 1 - low, 2 - active high, 3 - float
+        parameter SENSI2C_CMD_SOFT_SCL =     4, // [5:4] - SCL software control: 0 - nop, 1 - low, 2 - active high, 3 - float
         parameter SENSI2C_CMD_FIFO_RD =      3, // advance I2C read data FIFO by 1  
         parameter SENSI2C_CMD_ACIVE =        2, // [2] - SENSI2C_CMD_ACIVE_EARLY0, SENSI2C_CMD_ACIVE_SDA
         parameter SENSI2C_CMD_ACIVE_EARLY0 = 1, // release SDA==0 early if next bit ==1
@@ -614,6 +616,8 @@ module  sensor_channel#(
         .SENSI2C_CMD_RESET       (SENSI2C_CMD_RESET),
         .SENSI2C_CMD_RUN         (SENSI2C_CMD_RUN),
         .SENSI2C_CMD_RUN_PBITS   (SENSI2C_CMD_RUN_PBITS),
+        .SENSI2C_CMD_SOFT_SDA    (SENSI2C_CMD_SOFT_SDA),
+        .SENSI2C_CMD_SOFT_SCL    (SENSI2C_CMD_SOFT_SCL),
         .SENSI2C_CMD_FIFO_RD     (SENSI2C_CMD_FIFO_RD),
         .SENSI2C_CMD_ACIVE       (SENSI2C_CMD_ACIVE),
         .SENSI2C_CMD_ACIVE_EARLY0(SENSI2C_CMD_ACIVE_EARLY0),
