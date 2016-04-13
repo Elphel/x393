@@ -1530,7 +1530,9 @@ class X393McntrlAdjust(object):
                     self.x393_mcntrl_timing.axi_set_dqs_odelay(combine_delay(dly),quiet=quiet)
                     wlev_rslt=norm_wlev(self.x393_pio_sequences.write_levelling(1, nbursts, quiet+1))
                     if wlev_rslt[2]>wlev_max_bad: # should be 0 - otherwise wlev did not work (CMDA?)
-                        raise Exception("Write levelling gave unexpected data, aborting (may be wrong command/address delay, incorrectly initialized")
+#                        raise Exception("Write levelling gave unexpected data, aborting (may be wrong command/address delay, incorrectly initialized")
+#disabling check 04.09.2016
+                        print ("raise Exception Write levelling gave unexpected data, aborting (may be wrong command/address delay, incorrectly initialized.  Phase: %d, cmda_odly_lin=%d"%(phase,cmda_odly_lin))
                     dqso_cache[dly] = wlev_rslt
                     if quiet < 1:
                         print ('measure_dqso(%d) - new measurement'%(dly))
@@ -3242,13 +3244,13 @@ class X393McntrlAdjust(object):
                                            dqsi_safe_phase=dqsi_safe_phase, 
                                            ra = ra, # 0,
                                            ba = ba, # 0,
-                                           quiet=quiet+1, #1,
+                                           quiet=quiet, #+1, #1,
                                            single=True) # single=False)
             pass2=self.measure_addr_odelay(safe_phase=safe_phase, #0.25, # 0 strictly follow cmda_odelay, >0 -program with this fraction of clk period from the margin 
                                            dqsi_safe_phase=dqsi_safe_phase, 
                                            ra = ra ^ ((1 << vrlg.ADDRESS_NUMBER)-1), # 0,
                                            ba = ba ^ ((1 << num_ba)-1), # 0,
-                                           quiet=quiet+1, #1,
+                                           quiet=quiet, #+1, #1,
                                            single=True) # single=False)
             self.adjustment_state['addr_meas']=[pass1,pass2]
             if (quiet<4):
@@ -3279,6 +3281,9 @@ class X393McntrlAdjust(object):
                                 print ("?", end=" ")
                     print()
             return [pass1,pass2]
+        if quiet<3:
+                print("Writing good data to ra=0x%x, ba = 0x%x" %(ra,ba))
+        
         dly_steps=self.x393_mcntrl_timing.get_dly_steps()
         numPhaseSteps= int(dly_steps['SDCLK_PERIOD']/dly_steps['PHASE_STEP']+0.5)
         
@@ -3297,6 +3302,10 @@ class X393McntrlAdjust(object):
         inv_ra=ra ^ ((1 << vrlg.ADDRESS_NUMBER)-1)
         ca= ra & ((1 << vrlg.COLADDR_NUMBER) -1)
         inv_ba=ba ^ ((1 << num_ba)-1)
+        print ("quiet=",quiet)
+        if quiet<4:
+                print("Writing good data to ra=0x%x, ba = 0x%x, ca = 0x%x, refresh will use: inv_ra = 0x%x, inv_ba=0x%x" %(ra,ba,ca,inv_ra,inv_ba))
+        
         if not "cmda_bspe" in self.adjustment_state:
             raise Exception ("No cmda_odelay data is available. 'adjust_cmda_odelay 0 1 0.1 3' command should run first.")
         #create a list of None/optimal cmda determined earlier
@@ -3325,7 +3334,12 @@ class X393McntrlAdjust(object):
         good_patt=0xaaaa
         bad_patt = good_patt ^ 0xffff
         # find first suitable phase
-        for phase in range(numPhaseSteps):
+        """
+        phase=0 seems to be bad (during wlev), ***temporarily*** just start from 90 degrees shift
+        """
+#        for phase in range(numPhaseSteps):
+        for phase_tmp in range(numPhaseSteps):
+            phase = (phase_tmp + (numPhaseSteps//4)) % numPhaseSteps
             try:
                 ph_dlys= self.get_all_delays(phase=phase,
                                              filter_cmda= DFLT_DLY_FILT, # may be special case: 'S<safe_phase_as_float_number>
@@ -3336,7 +3350,7 @@ class X393McntrlAdjust(object):
                                              cost=        None,
                                              forgive_missing=False,
                                              maxPhaseErrorsPS = maxPhaseErrorsPS, #CMDA, DQSI, DQSO
-                                             quiet=       quiet)
+                                             quiet=       quiet-1) # quiet)
                 if not ph_dlys is None:
                     break
             except:
@@ -3353,8 +3367,11 @@ class X393McntrlAdjust(object):
                                             inv_ba,
                                             0) # verbose=0
         # set usable timing, enable refresh
-        if quiet <3 :
+#        if quiet <3 :
+        if quiet < 4 :
             print ("+++ dqsi_safe_phase=",dqsi_safe_phase)
+            print ("Setting all delays to write good/bad data, phase=",phase)
+            
         used_delays=self.set_delays(phase=phase,
                                     filter_cmda=DFLT_DLY_FILT, # may be special case: 'S<safe_phase_as_float_number>
                                     filter_dqsi=DFLT_DLY_FILT,
@@ -3365,15 +3382,15 @@ class X393McntrlAdjust(object):
                                     refresh=True,
                                     forgive_missing=True,
                                     maxPhaseErrorsPS=maxPhaseErrorsPS,
-                                    quiet=quiet)
+                                    quiet=0) # quiet) # To see what delays where used when writing
         if used_delays is None:
             raise Exception("measure_addr_odelay(): failed to set phase = %d"%(phase))  #      
         #Write 0xaaaa pattern to correct block (all used words), address number - to all with a single bit different
         self.x393_pio_sequences.set_read_block(ba,ra,ca,nbursts+3,sel_wr)
         #prepare and writ 'correct' block:
-        wdata16_good=(good_patt,)*(8*(nbursts+3)) 
+        wdata16_good=(good_patt,)*(8*(nbursts+7)) #3)) 
         wdata32_good=convert_mem16_to_w32(wdata16_good)
-        wdata16_bad=(bad_patt,)*(8*(nbursts+3)) 
+        wdata16_bad=(bad_patt,)*(8*(nbursts+7)) #3)) 
         wdata32_bad=convert_mem16_to_w32(wdata16_bad)
 #        comp32_good= wdata32_good[4:(nbursts*4)+4] # data to compare with read buffer - discard first 4*32-bit words and the "tail" after nrep*4 words32
 #        comp32_bad=  wdata32_bad[4:(nbursts*4)+4] # data to compare with read buffer - discard first 4*32-bit words and the "tail" after nrep*4 words32
@@ -3381,10 +3398,17 @@ class X393McntrlAdjust(object):
         comp32_bad=  wdata32_bad[4:(nbursts*4)+2] # data to compare with read buffer - discard first 4*32-bit words and the "tail" after nrep*4 words32
 
         
-        self.x393_mcntrl_buffers.write_block_buf_chn(0,0,wdata32_good,quiet) # fill block memory (channel, page, number)
-        self.x393_pio_sequences.set_write_block(ba,ra,ca,nbursts+3,extraTgl,sel_wr) # set sequence to write 'correct' block
-        self.x393_pio_sequences.set_read_block(ba,ra,ca,nbursts+3,sel_rd) # set sequence to read block (will always be the same address)
+#        self.x393_mcntrl_buffers.write_block_buf_chn(0,0,wdata32_good,quiet) # fill block memory (channel, page, number)
+        self.x393_mcntrl_buffers.write_block_buf_chn(0,0,wdata32_good,0      ) # fill block memory (channel, page, number)
+        self.x393_mcntrl_buffers.write_block_buf_chn(0,0,wdata32_good,0      ) # fill block memory (channel, page, number)
+        self.x393_pio_sequences.set_write_block(ba,ra,ca,nbursts+7,extraTgl,sel_wr) # 3,extraTgl,sel_wr) # set sequence to write 'correct' block
+        self.x393_pio_sequences.set_write_block(ba,ra,ca,nbursts+7,extraTgl,sel_wr) #3,extraTgl,sel_wr)# set sequence to write 'correct' block ######
+
+#        self.x393_pio_sequences.set_read_block(ba,ra,ca,nbursts+3,sel_rd) # set sequence to read block (will always be the same address)
+        self.x393_pio_sequences.set_read_block(ba,ra,ca,nbursts+7,sel_rd) # set sequence to read block (will always be the same address)
         self.x393_pio_sequences.write_block() #page= 0, wait_complete=1) # write 'correct' block
+        self.x393_pio_sequences.write_block() #page= 0, wait_complete=1) # write 'correct' block ################# Repeat
+        
         #prepare and write all alternative blocks (different by one address/bank 
         self.x393_mcntrl_buffers.write_block_buf_chn(0,0,wdata32_bad,quiet) # fill block memory (channel, page, number)
         raba_bits=[]
@@ -3393,12 +3417,15 @@ class X393McntrlAdjust(object):
         for addr_bit in range(vrlg.ADDRESS_NUMBER):
             raba_bits.append((addr_bit,None))
             ra_alt=ra ^ (1<<addr_bit)
-            self.x393_pio_sequences.set_write_block(ba,ra_alt,ca,nbursts+3,extraTgl,sel_wr,(0,1)[quiet<2]) # set sequence to write alternative (by one address bit) block
+#            self.x393_pio_sequences.set_write_block(ba,ra_alt,ca,nbursts+3,extraTgl,sel_wr,(0,1)[quiet<2]) # set sequence to write alternative (by one address bit) block
+            self.x393_pio_sequences.set_write_block(ba,ra_alt,ca,nbursts+7,extraTgl,sel_wr,(0,1)[quiet<2]) # set sequence to write alternative (by one address bit) block
             self.x393_pio_sequences.write_block() #page= 0, wait_complete=1) # write alternative block
         for bank_bit in range(num_ba):
             raba_bits.append((None,bank_bit))
-            ba_alt=ra ^ (1<<bank_bit)
-            self.x393_pio_sequences.set_write_block(ba_alt,ra,ca,nbursts+3,extraTgl,sel_wr,(0,1)[quiet<2]) # set sequence to write alternative (by one address bit) block
+#            ba_alt=ra ^ (1<<bank_bit) # Bug? 04.10.2016
+            ba_alt=ba ^ (1<<bank_bit)
+#            self.x393_pio_sequences.set_write_block(ba_alt,ra,ca,nbursts+3,extraTgl,sel_wr,(0,1)[quiet<2]) # set sequence to write alternative (by one address bit) block
+            self.x393_pio_sequences.set_write_block(ba_alt,ra,ca,nbursts+7,extraTgl,sel_wr,(0,1)[quiet<2]) # set sequence to write alternative (by one address bit) block
             self.x393_pio_sequences.write_block() #page= 0, wait_complete=1) # write alternative block
         # For each valid phase, set valid delays, then find marginal delay for one bit (start with the longest available delay?
         # if got for one bit - try other bits  in vicinity
@@ -3431,14 +3458,12 @@ class X393McntrlAdjust(object):
                         elif buf==comp32_bad:
                             meas=False
                         else:
-                            print ("Inconclusive result for comparing read data for phase=%d, addr_bit=%s, bank_bit=%s  dly=%d"%(phase,str(addr_bit),str(bank_bit),dly))
+                            print ("Inconclusive result for comparing read data for phase=%d, addr_bit=%s, bank_bit=%s  dly=%d"%(phase,str(addr_bit),str(bank_bit),dly), end = " ")
 #                            print ("Data read from memory=",buf, "(",convert_w32_to_mem16(buf),")")
                             print ("Data read from memory=%s(%s)"%(self.hex_list(buf),self.hex_list(convert_w32_to_mem16(buf))))
                             #hex_list
-#                            print ("Expected 'good' data=",comp32_good, "(",convert_w32_to_mem16(comp32_good),")")
-                            print ("Expected 'good' data=%s(%s)"%(self.hex_list(comp32_good),self.hex_list(convert_w32_to_mem16(comp32_good))))
-#                            print ("Expected 'bad'  data=", comp32_bad, "(",convert_w32_to_mem16(comp32_bad),")")
-                            print ("Expected 'bad' data=%s(%s)"%(self.hex_list(comp32_bad),self.hex_list(convert_w32_to_mem16(comp32_bad))))
+#                            print ("Expected 'good' data=%s(%s)"%(self.hex_list(comp32_good),self.hex_list(convert_w32_to_mem16(comp32_good))))
+#                            print ("Expected 'bad' data=%s(%s)"%(self.hex_list(comp32_bad),self.hex_list(convert_w32_to_mem16(comp32_bad))))
                             meas=None
                         meas_cache[dly]=meas
                         if not meas is None:
@@ -5727,6 +5752,10 @@ write_settings= {
         Calculate finedelay corrections and finally optimal delay value for each line each phase
         """
 #        self.load_hardcoded_data() # TODO: TEMPORARY - remove later
+
+        quiet = 0 # 04.10.2016
+
+
         try:
 #            addr_odelay=self.adjustment_state['addr_odelay_meas']
             addr_odelay=self.adjustment_state['addr_meas']

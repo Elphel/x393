@@ -274,7 +274,7 @@ class X393AxiControlStatus(object):
                              0: disable status generation,
                              1: single status request,
                              2: auto status, keep specified seq number,
-                             4: auto, inc sequence number 
+                             3: auto, inc sequence number 
         @param pattern       26-bit pattern to match
         @param mask          26-bit mask to enable pattern matching (0-s - ignore)
         @param invert_match  invert match (wait until matching condition becomes false)
@@ -352,10 +352,10 @@ class X393AxiControlStatus(object):
                                   0: disable status generation,
                                   1: single status request,
                                   2: auto status, keep specified seq number,
-                                  4: auto, inc sequence number 
+                                  3: auto, inc sequence number 
         <seq_number> - 6-bit sequence number of the status message to be sent
         """
-        self.write_control_register(base_addr + reg_addr, ((mode & 3)<< 6) | (seq_number * 0x3f))
+        self.write_control_register(base_addr + reg_addr, ((mode & 3)<< 6) | (seq_number & 0x3f))
 
 
     def program_status_all( self,
@@ -367,7 +367,7 @@ class X393AxiControlStatus(object):
                                   0: disable status generation,
                                   1: single status request,
                                   2: auto status, keep specified seq number,
-                                  4: auto, inc sequence number 
+                                  3: auto, inc sequence number 
         @param seq_number - 6-bit sequence number of the status message to be sent
         """
 

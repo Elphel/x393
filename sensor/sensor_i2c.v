@@ -48,7 +48,8 @@ module  sensor_i2c#(
     parameter SENSI2C_CMD_RESET =       14, // [14]   reset all FIFO (takes 16 clock pulses), also - stops i2c until run command
     parameter SENSI2C_CMD_RUN =         13, // [13:12]3 - run i2c, 2 - stop i2c (needed before software i2c), 1,0 - no change to run state
     parameter SENSI2C_CMD_RUN_PBITS =    1,
-    
+    parameter SENSI2C_CMD_SOFT_SDA =     6, // [7:6] - SDA software control: 0 - nop, 1 - low, 2 - active high, 3 - float
+    parameter SENSI2C_CMD_SOFT_SCL =     4, // [5:4] - SCL software control: 0 - nop, 1 - low, 2 - active high, 3 - float
     parameter SENSI2C_CMD_FIFO_RD =      3, // advance I2C read data FIFO by 1  
     parameter SENSI2C_CMD_ACIVE =        2, // [2] - SENSI2C_CMD_ACIVE_EARLY0, SENSI2C_CMD_ACIVE_SDA
     parameter SENSI2C_CMD_ACIVE_EARLY0 = 1, // release SDA==0 early if next bit ==1
@@ -112,16 +113,7 @@ module  sensor_i2c#(
      wire           wen;
      wire    [31:0] di;
      wire     [3:0] wa; 
-//     wire           busy;        // busy (do not use software i2i)
-     
-     
-//    reg    [4:0]  wen_d; // [0] - not just fifo, but any PIO writes, [1] and next - filtered for FIFO only
-//     reg    [3:0]  wen_d; // [0] - not just fifo, but any PIO writes, [1] and next - filtered for FIFO only
-//     reg    [3:0]  wad; 
      reg   [31:0]  di_r; // 32 bit command takes 6 cycles, so di_r can hold data for up to this long
-//     reg   [15:0]  di_1;
-//     reg   [15:0]  di_2;
-//     reg   [15:0]  di_3;
      reg    [3:0]  wpage0;     // FIFO page where ASAP writes go
      reg    [3:0]  wpage_prev;     // unused page, currently being cleared
      reg    [3:0]  page_r;     // FIFO page where current i2c commands are taken from
@@ -129,21 +121,15 @@ module  sensor_i2c#(
      reg    [3:0]  wpage_wr;    // FIFO page where current write goes (reading from write address) 
      reg    [1:0]  wpage0_inc; // increment wpage0 (after frame sync or during reset)
      reg           reset_cmd;
-//     reg           dly_cmd;
-//     reg           bytes_cmd;
      reg           run_cmd;
      reg           twe;
      reg           active_cmd;
      reg           active_sda;
      reg           early_release_0;
      reg           reset_on;   // reset FIFO in progress
-//     reg    [1:0]  i2c_bytes;
-//     reg    [7:0]  i2c_dly;
      reg           i2c_enrun;     // enable i2c
      reg           we_fifo_wp; // enable writing to fifo write pointer memory
      reg           req_clr;    // request for clearing fifo_wp (delay frame sync if previous is not yet sent out), also used for clearing all
-//     wire          is_ctl= (wad[3:0]==4'hf);
-//     wire          is_abs= (wad[3]==0);
      wire          pre_wpage0_inc; // ready to increment
      
      wire   [3:0]  frame_num=wpage0[3:0];
@@ -165,7 +151,6 @@ module  sensor_i2c#(
      reg           i2c_start; // initiate i2c register write sequence
      wire          i2c_run;   // i2c sequence is in progress (early end)
      reg           i2c_run_d;   // i2c sequence is in progress (early end)
-//     wire          i2c_busy;  // i2c sequence is in progress (until bus is free and stop finished)
      wire   [1:0]  byte_number;  // byte number to send next (3-2-1-0)
      wire   [1:0]  seq_mem_re;
      wire   [7:0]  i2c_data;
@@ -182,8 +167,16 @@ module  sensor_i2c#(
      wire          set_status_w;
 
      reg            [1:0] wen_r;
-//     reg            [1:0] wen_fifo;
      reg            wen_fifo; // [1] was not used - we_fifo_wp was used instead
+     
+     reg           scl_en_soft;  // software i2c control signals (used when i2c controller is disabled)
+     reg           scl_soft;
+     reg           sda_en_soft;
+     reg           sda_soft;
+     
+     wire          sda_hard;
+     wire          sda_en_hard;
+     wire          scl_hard;
 
      
      assign set_ctrl_w = we_cmd && ((wa & ~SENSI2C_CTRL_MASK) == SENSI2C_CTRL );// ==0
@@ -196,8 +189,14 @@ module  sensor_i2c#(
 
      assign         wen=set_ctrl_w || we_rel || we_abs; //remove set_ctrl_w?
      
-     assign scl_en = i2c_enrun;
-     
+//     assign scl_en = i2c_enrun;
+     assign scl_out = i2c_enrun?  scl_hard:    scl_soft ;
+     assign scl_en =  i2c_enrun?  1'b1:        scl_en_soft  ;
+     assign sda_out = i2c_enrun?  sda_hard:    sda_soft ;
+     assign sda_en =  i2c_enrun?  sda_en_hard: sda_en_soft ;
+
+
+
      
     reg alive_fs;
     always @ (posedge mclk) begin
@@ -286,6 +285,16 @@ module  sensor_i2c#(
         
         if    (reset_cmd || mrst) i2c_enrun <= 1'b0;
         else if (run_cmd)         i2c_enrun <= di_r[SENSI2C_CMD_RUN - 1 -: SENSI2C_CMD_RUN_PBITS]; // [12];
+
+        if      (i2c_enrun || mrst)                                                     scl_en_soft <= 0;
+        else if (set_ctrl_w && !di[SENSI2C_CMD_TABLE] && |di[SENSI2C_CMD_SOFT_SCL +:2]) scl_en_soft <= di[SENSI2C_CMD_SOFT_SCL +:2] != 3;
+        
+        if      (set_ctrl_w && !di[SENSI2C_CMD_TABLE] && |di[SENSI2C_CMD_SOFT_SCL +:2]) scl_soft <=    di[SENSI2C_CMD_SOFT_SCL + 1];
+        
+        if      (i2c_enrun || mrst)                                                     sda_en_soft <= 0;
+        else if (set_ctrl_w && !di[SENSI2C_CMD_TABLE] && |di[SENSI2C_CMD_SOFT_SDA +:2]) sda_en_soft <= di[SENSI2C_CMD_SOFT_SDA +:2] != 3;
+        
+        if      (set_ctrl_w && !di[SENSI2C_CMD_TABLE] && |di[SENSI2C_CMD_SOFT_SDA +:2]) sda_soft <=    di[SENSI2C_CMD_SOFT_SDA + 1];
         
         if (active_cmd) begin
             early_release_0 <= di_r[SENSI2C_CMD_ACIVE_EARLY0];
@@ -377,9 +386,9 @@ module  sensor_i2c#(
         .td              (di_r[SENSI2C_CMD_TAND-1:0]),      // input[27:0] 
         .twe             (twe),             // input
         .sda_in          (sda_in),          // input
-        .sda             (sda_out),         // output
-        .sda_en          (sda_en),          // output
-        .scl             (scl_out),         // output
+        .sda             (sda_hard),        // output
+        .sda_en          (sda_en_hard),     // output
+        .scl             (scl_hard),        // output
         .i2c_run         (i2c_run),         // output reg 
         .i2c_busy        (), //i2c_busy),   // output reg 
         .seq_mem_ra      (byte_number),     // output[1:0] reg 

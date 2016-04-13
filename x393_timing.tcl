@@ -55,25 +55,11 @@ create_generated_clock -name ddr3_sdclk [get_nets -hierarchical sdclk_pre ]
 create_generated_clock -name ddr3_clk [get_nets -hierarchical clk_pre ]
 create_generated_clock -name ddr3_clk_div [get_nets -hierarchical clk_div_pre ]
 create_generated_clock -name ddr3_mclk [get_nets -hierarchical mclk_pre]
-if ($HISPI) {
-  create_generated_clock -name ddr3_clk_ref [get_nets clocks393_i/dly_ref_clk_pre ]
-  create_generated_clock -name axihp_clk [get_nets clocks393_i/hclk_pre ]
-
-  create_generated_clock -name xclk      [get_nets clocks393_i/xclk_pre ]
-
-  #clock for inter - camera synchronization and event logger
-  create_generated_clock -name sclk      [get_nets clocks393_i/sync_clk_pre ]
-
-} else {
-  create_generated_clock -name ddr3_clk_ref [get_nets -hierarchical clk_ref_pre ]
-  create_generated_clock -name axihp_clk [get_nets clocks393_i/dual_clock_axihp_i/clk1x_pre ]
-
-  create_generated_clock -name xclk      [get_nets clocks393_i/dual_clock_xclk_i/clk1x_pre ]
-  create_generated_clock -name xclk2x    [get_nets clocks393_i/dual_clock_xclk_i/clk2x_pre ]
-
-  #clock for inter - camera synchronization and event logger
-  create_generated_clock -name sclk      [get_nets clocks393_i/dual_clock_sync_clk_i/clk1x_pre ]
-}
+create_generated_clock -name ddr3_clk_ref [get_nets clocks393_i/dly_ref_clk_pre ]
+create_generated_clock -name axihp_clk [get_nets clocks393_i/hclk_pre ]
+create_generated_clock -name xclk      [get_nets clocks393_i/xclk_pre ]
+#clock for inter - camera synchronization and event logger
+create_generated_clock -name sclk      [get_nets clocks393_i/sync_clk_pre ]
 create_clock -name ffclk0 -period 41.667 [get_ports {ffclk0p}]
 
 #Generated clocks are assumed to be tied to clkin1 (not 2), so until external ffclk0 is constrained, derivative clocks are not generated
@@ -84,11 +70,7 @@ if ($HISPI) {
   set_property CLOCK_DEDICATED_ROUTE FALSE [get_nets sensors393_i/sensor_channel_block\[2\].sensor_channel_i/sens_10398_i/sens_hispi12l4_i/sens_hispi_clock_i/clk_in]
   set_property CLOCK_DEDICATED_ROUTE FALSE [get_nets sensors393_i/sensor_channel_block\[3\].sensor_channel_i/sens_10398_i/sens_hispi12l4_i/sens_hispi_clock_i/clk_in]
 
-  set_clock_groups -name compressor_clocks_xclk_xclk2x -asynchronous -group {xclk }
-  set_clock_groups -name sensor_clocks_pclk_pclk2x     -asynchronous -group {pclk}
-  set_clock_groups -name sync_logger_clocks_sclk       -asynchronous -group {sclk }
 } else {
-  create_generated_clock -name pclk2x    [get_nets clocks393_i/dual_clock_pclk_i/clk2x_pre ]
   #Sensor-synchronous clocks
   create_generated_clock -name iclk0    [get_nets sensors393_i/sensor_channel_block\[0\].sensor_channel_i/sens_parallel12_i/ipclk_pre ]
   create_generated_clock -name iclk2x0  [get_nets sensors393_i/sensor_channel_block\[0\].sensor_channel_i/sens_parallel12_i/ipclk2x_pre ]
@@ -102,15 +84,15 @@ if ($HISPI) {
   create_generated_clock -name iclk3    [get_nets sensors393_i/sensor_channel_block\[3\].sensor_channel_i/sens_parallel12_i/ipclk_pre ]
   create_generated_clock -name iclk2x3  [get_nets sensors393_i/sensor_channel_block\[3\].sensor_channel_i/sens_parallel12_i/ipclk2x_pre ]
 
-  set_clock_groups -name compressor_clocks_xclk_xclk2x -asynchronous -group {xclk xclk2x}
-  set_clock_groups -name sensor_clocks_pclk_pclk2x     -asynchronous -group {pclk pclk2x}
-  set_clock_groups -name sync_logger_clocks_sclk       -asynchronous -group {sclk }
-
   set_clock_groups -name sensor0_clocks_iclk_pclk2x -asynchronous -group {iclk0 iclk2x0}
   set_clock_groups -name sensor1_clocks_iclk_pclk2x -asynchronous -group {iclk1 iclk2x1}
   set_clock_groups -name sensor2_clocks_iclk_pclk2x -asynchronous -group {iclk2 iclk2x2}
   set_clock_groups -name sensor3_clocks_iclk_pclk2x -asynchronous -group {iclk3 iclk2x3}
 }
+
+set_clock_groups -name compressor_clocks_xclk_xclk2x -asynchronous -group {xclk }
+set_clock_groups -name sensor_clocks_pclk_pclk2x     -asynchronous -group {pclk}
+set_clock_groups -name sync_logger_clocks_sclk       -asynchronous -group {sclk }
 
 # do not check timing between axi_aclk and other clocks. Code should provide correct asynchronous crossing of the clock boundary.
 set_clock_groups -name ps_async_clock                -asynchronous -group {axi_aclk}

@@ -828,7 +828,7 @@ class X393Jpeg(object):
                                  y_quality = y_quality, #80,
                                  c_quality = c_quality,
                                  portrait =  portrait,
-                                 color_mode = window["cmode"], #
+#                                 color_mode = window["cmode"], #
                                  byrshift   = byrshift,
                                  verbose    = verbose)
             html_text += html_text_finish
@@ -965,6 +965,72 @@ class X393Jpeg(object):
 ff d9
 """        
 """
+################## 10359 ##################
+cd /usr/local/verilog/; test_mcntrl.py @hargs
+setupSensorsPower "PAR12"
+measure_all "*DI"
+program_status_sensor_io all 1 0
+print_status_sensor_io all
+
+setup_all_sensors True None 0x4
+
+################## Parallel ##################
+cd /usr/local/verilog/; test_mcntrl.py @hargs
+setupSensorsPower "PAR12"
+measure_all "*DI"
+setup_all_sensors True None 0xf
+#set quadrants
+set_sensor_io_ctl 0 None None None None None 0 0xe
+set_sensor_io_ctl 1 None None None None None 0 0xe
+#set_sensor_io_ctl 2 None None None None None 0 0x4
+set_sensor_io_ctl 2 None None None None None 0 0xe
+set_sensor_io_ctl 3 None None None None None 0 0xe
+# Set Bayer = 3 (probably #1 and #3 need different hact/pxd delays to use the same compressor bayer for all channels)
+compressor_control  all  None  None  None None None  3
+
+#Get rid of the corrupted last pixel column
+#longer line (default 0xa1f)
+write_sensor_i2c  all 1 0 0x90040a23
+#increase scanline write (memory controller) width in 16-bursts (was 0xa2)
+axi_write_single_w 0x696 0x079800a3
+axi_write_single_w 0x686 0x079800a3
+axi_write_single_w 0x6a6 0x079800a3
+axi_write_single_w 0x6b6 0x079800a3
+
+#Gamma 0.57
+program_gamma all 0 0.57 0.04
+
+#colors - outdoor
+write_sensor_i2c  all 1 0 0x9035000a
+write_sensor_i2c  all 1 0 0x902c000e
+write_sensor_i2c  all 1 0 0x902d000d
+
+#colors indoor
+write_sensor_i2c  all 1 0 0x90350009
+write_sensor_i2c  all 1 0 0x902c000f
+write_sensor_i2c  all 1 0 0x902d000a
+
+#exposure 0x100 lines (default was 0x797)
+write_sensor_i2c  all 1 0 0x90090100
+
+#exposure 0x797 (default)
+write_sensor_i2c  all 1 0 0x90090797
+
+
+#run compressors once (#1 - stop gracefully, 0 - reset, 2 - single, 3 - repetitive with sync to sensors)
+compressor_control all 2
+
+#jpeg_write  "img.jpeg" 0
+jpeg_write  "img.jpeg" All
+
+#changing quality (example 85%):
+set_qtables all 0 85
+compressor_control all 2
+#jpeg_write  "img.jpeg" all 85
+jpeg_write  "img.jpeg" 0 85
+
+
+################## Serial ####################
 cd /usr/local/verilog/; test_mcntrl.py @hargs
 setupSensorsPower "HISPI"
 measure_all "*DI"

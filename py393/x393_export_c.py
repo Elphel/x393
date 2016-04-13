@@ -107,7 +107,10 @@ class X393ExportC(object):
  * Author: auto-generated file, see %s
  * Description: %s
  *******************************************************************************/"""
-        return header_template%(filename, datetime.date.today().isoformat(), os.path.basename(__file__), description)
+        script_name = os.path.basename(__file__)
+        if script_name[-1] == "c":
+            script_name = script_name[:-1] 
+        return header_template%(filename, datetime.date.today().isoformat(), script_name, description)
         
     def save_typedefs(self, directory, filename):
         description = 'typedef definitions for the x393 hardware registers'
@@ -125,7 +128,7 @@ class X393ExportC(object):
         ld= self.define_macros()
         ld+=self.define_other_macros()
         # Includes section
-        txt = '\n#include "elphel/x393_types.h"\n'
+        txt = '\n#include "x393_types.h"\n'
         txt +='//#include "elphel/x393_defs.h // alternative variant"\n\n'
         txt +='// See elphel/x393_map.h for the ordered list of all I/O register addresses used\n'
         txt +=  '// init_mmio_ptr() should be called once before using any of the other declared functions\n\n'
@@ -385,7 +388,7 @@ class X393ExportC(object):
                                  frmt_spcs = frmt_spcs)
         stypedefs += self.get_typedef32(comment =   "Programming interface for multiplexer FPGA",
                                  data =      self._enc_sensio_jtag(),
-                                 name =      "x393_sensio_jpag",  typ="wo",
+                                 name =      "x393_sensio_jtag",  typ="wo",
                                  frmt_spcs = frmt_spcs)
         """
         stypedefs += self.get_typedef32(comment =   "Sensor delays (uses 4 DWORDs)",
@@ -754,7 +757,7 @@ class X393ExportC(object):
             (("X393_SENS_SYNC_LATE",                    c, vrlg.SENS_SYNC_RADDR + vrlg.SENS_SYNC_LATE +    ba, ia, z3, "x393_sens_sync_late", "wo",          "Configure frame sync delay")),
             (("X393_SENSIO_CTRL",                       c, vrlg.SENSIO_RADDR + vrlg.SENSIO_CTRL +          ba, ia, z3, "x393_sensio_ctl", "wo",              "Configure sensor I/O port")),
             (("X393_SENSIO_STATUS_CNTRL",               c, vrlg.SENSIO_RADDR + vrlg.SENSIO_STATUS +        ba, ia, z3, "x393_status_ctrl", "rw",             "Set status control for SENSIO module")),
-            (("X393_SENSIO_JTAG",                       c, vrlg.SENSIO_RADDR + vrlg.SENSIO_JTAG +          ba, ia, z3, "x393_sensio_jpag", "wo",             "Programming interface for multiplexer FPGA (with X393_SENSIO_STATUS)")),
+            (("X393_SENSIO_JTAG",                       c, vrlg.SENSIO_RADDR + vrlg.SENSIO_JTAG +          ba, ia, z3, "x393_sensio_jtag", "wo",             "Programming interface for multiplexer FPGA (with X393_SENSIO_STATUS)")),
             (("X393_SENSIO_WIDTH",                      c, vrlg.SENSIO_RADDR + vrlg.SENSIO_WIDTH +         ba, ia, z3, "x393_sensio_width", "rw",            "Set sensor line in pixels (0 - use line sync from the sensor)")),
 #            (("X393_SENSIO_DELAYS",                     c, vrlg.SENSIO_RADDR + vrlg.SENSIO_DELAYS +       ba, ia, z3, "x393_sensio_dly", "rw",              "Sensor port input delays (uses 4 DWORDs)")),
             (("X393_SENSIO_TIM0",                       c, vrlg.SENSIO_RADDR + vrlg.SENSIO_DELAYS + 0 +    ba, ia, z3, "x393_sensio_tim0", "rw",             "Sensor port i/o timing configuration, register 0")),
@@ -1681,7 +1684,7 @@ class X393ExportC(object):
         dw=[]
         dw.append(("i2c_fifo_dout",          0, 8,0,  "I2c byte read from the device through FIFO"))
         dw.append(("i2c_fifo_nempty",        8, 1,0,  "I2C read FIFO has data"))
-        dw.append(("i2c_fifo_cntrl",         9, 1,0,  "I2C FIFO byte counter (odd/even bytes)"))
+        dw.append(("i2c_fifo_lsb",           9, 1,0,  "I2C FIFO byte counter (odd/even bytes)"))
         dw.append(("busy",                  10, 1,0,  "I2C sequencer busy"))
         dw.append(("alive_fs",              11, 1,0,  "Sensor generated frame sync since last status update"))
         dw.append(("frame_num",             12, 4,0,  "I2C sequencer frame number"))
@@ -1717,7 +1720,7 @@ class X393ExportC(object):
 
     def _enc_i2c_tbl_addr(self):
         dw=[]
-        dw.append(("tbl_addr",         0, 8,0,  "Address/length in 64-bit words (<<3 to get byte address)"))
+        dw.append(("tbl_addr",         0, 8,0,  "I2C table index"))
         dw.append(("tbl_mode",         vrlg.SENSI2C_CMD_TAND, 2,3,  "Should be 3 to select table address write mode"))
         return dw
 
@@ -1735,7 +1738,7 @@ class X393ExportC(object):
         dw=[]
         dw.append(("rah",              vrlg.SENSI2C_TBL_RAH, vrlg.SENSI2C_TBL_RAH_BITS,  0, "High byte of the i2c register address"))
         dw.append(("rnw",              vrlg.SENSI2C_TBL_RNWREG,                       1, 0, "Read/not write i2c register, should be 1 here"))
-        dw.append(("nbrd",             vrlg.SENSI2C_TBL_NBRD, vrlg.SENSI2C_TBL_NBRD_BITS,0, "Number of bytes to read (1..18, 0 means '8')"))
+        dw.append(("nbrd",             vrlg.SENSI2C_TBL_NBRD, vrlg.SENSI2C_TBL_NBRD_BITS,0, "Number of bytes to read (1..8, 0 means '8')"))
         dw.append(("nabrd",            vrlg.SENSI2C_TBL_NABRD,                        1, 0, "Number of address bytes for read (0 - one byte, 1 - two bytes)"))
         dw.append(("dly",              vrlg.SENSI2C_TBL_DLY,  vrlg.SENSI2C_TBL_DLY_BITS, 0, "Bit delay - number of mclk periods in 1/4 of the SCL period"))
         dw.append(("tbl_mode",         vrlg.SENSI2C_CMD_TAND,                         2, 2, "Should be 2 to select table data write mode"))
@@ -1747,6 +1750,10 @@ class X393ExportC(object):
         dw.append(("sda_release",      vrlg.SENSI2C_CMD_ACIVE_EARLY0, 1,0,  "Release SDA early if next bit ==1 (valid with drive_ctl)"))
         dw.append(("drive_ctl",        vrlg.SENSI2C_CMD_ACIVE,        1,0,  "0 - nop, 1 - set sda_release and sda_drive_high"))
         dw.append(("next_fifo_rd",     vrlg.SENSI2C_CMD_FIFO_RD,      1,0,  "Advance I2C read FIFO pointer"))
+        
+        dw.append(("soft_scl",         vrlg.SENSI2C_CMD_SOFT_SCL,     2,0,  "Control SCL pin (when stopped): 0 - nop, 1 - low, 2 - high (driven), 3 - float "))
+        dw.append(("soft_sda",         vrlg.SENSI2C_CMD_SOFT_SDA,     2,0,  "Control SDA pin (when stopped): 0 - nop, 1 - low, 2 - high (driven), 3 - float "))
+        
         dw.append(("cmd_run",          vrlg.SENSI2C_CMD_RUN-1,        2,0,  "Sequencer run/stop control: 0,1 - nop, 2 - stop, 3 - run "))
         dw.append(("reset",            vrlg.SENSI2C_CMD_RESET,        1,0,  "Sequencer reset all FIFO (takes 16 clock pulses), also - stops i2c until run command"))
         dw.append(("tbl_mode",         vrlg.SENSI2C_CMD_TAND,         2,0,  "Should be 0 to select controls"))

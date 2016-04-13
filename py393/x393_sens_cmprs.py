@@ -188,11 +188,18 @@ class X393SensCmprs(object):
             print(voltage_mv, file = f)
         if quiet == 0:
             print ("Set sensors %s interface voltage to %d mV"%(("0, 1","2, 3")[sub_pair],voltage_mv))    
-#        time.sleep(0.1)
+        time.sleep(0.1)
 
-    def setupSensorsPower(self, ifaceType,  quiet=0):
-        for sub_pair in (0,1):
-            self.setSensorIfaceVoltagePower(sub_pair, SENSOR_INTERFACES[ifaceType]["mv"])
+    def setupSensorsPower(self, ifaceType,  pairs = "all", quiet=0):
+        try:
+            if (pairs == all) or (pairs[0].upper() == "A"): #all is a built-in function
+                pairs = (0,1)
+        except:
+            pass
+        if not isinstance(pairs,(list,tuple)):
+            pairs = (pairs,)
+        for pair in pairs:            
+            self.setSensorIfaceVoltagePower(pair, SENSOR_INTERFACES[ifaceType]["mv"])
         
     def setSensorIfaceVoltagePower(self, sub_pair, voltage_mv, quiet=0):
         """
@@ -208,16 +215,19 @@ class X393SensCmprs(object):
         if self.DRY_MODE:
             print ("Not defined for simulation mode")
             return
+        if quiet == 0:
+            print ("Turning on interface power %f V for sensors %s"%(voltage_mv*0.001,("0, 1","2, 3")[sub_pair]))    
+        time.sleep(0.2)
         with open (POWER393_PATH + "/channels_en","w") as f:
             print(("vcc_sens01", "vcc_sens23")[sub_pair], file = f)
         if quiet == 0:
             print ("Turned on interface power %f V for sensors %s"%(voltage_mv*0.001,("0, 1","2, 3")[sub_pair]))    
-#        time.sleep(0.1)
+        time.sleep(0.2)
         with open (POWER393_PATH + "/channels_en","w") as f:
             print(("vp33sens01", "vp33sens23")[sub_pair], file = f)
         if quiet == 0:
             print ("Turned on +3.3V power for sensors %s"%(("0, 1","2, 3")[sub_pair]))    
-#        time.sleep(0.1)
+        time.sleep(0.2)
 #        for sub_pair in (0,1):
 #                self.setSensorIfaceVoltagePower(sub_pair, SENSOR_INTERFACES[ifaceType]["mv"])
 
@@ -1419,7 +1429,7 @@ class X393SensCmprs(object):
                                   0: disable status generation,
                                   1: single status request,
                                   2: auto status, keep specified seq number,
-                                  4: auto, inc sequence number 
+                                  3: auto, inc sequence number 
         @param seq_number - 6-bit sequence number of the status message to be sent
         """
 
