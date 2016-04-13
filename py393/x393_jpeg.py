@@ -972,6 +972,7 @@ measure_all "*DI"
 program_status_sensor_io all 1 0
 print_status_sensor_io all
 
+setup_all_sensors True None 0x4
 
 ################## Parallel ##################
 cd /usr/local/verilog/; test_mcntrl.py @hargs
@@ -981,7 +982,8 @@ setup_all_sensors True None 0xf
 #set quadrants
 set_sensor_io_ctl 0 None None None None None 0 0xe
 set_sensor_io_ctl 1 None None None None None 0 0xe
-set_sensor_io_ctl 2 None None None None None 0 0x4
+#set_sensor_io_ctl 2 None None None None None 0 0x4
+set_sensor_io_ctl 2 None None None None None 0 0xe
 set_sensor_io_ctl 3 None None None None None 0 0xe
 # Set Bayer = 3 (probably #1 and #3 need different hact/pxd delays to use the same compressor bayer for all channels)
 compressor_control  all  None  None  None None None  3
@@ -1018,8 +1020,8 @@ write_sensor_i2c  all 1 0 0x90090797
 #run compressors once (#1 - stop gracefully, 0 - reset, 2 - single, 3 - repetitive with sync to sensors)
 compressor_control all 2
 
-jpeg_write  "img.jpeg" 0
-#jpeg_write  "img.jpeg" All
+#jpeg_write  "img.jpeg" 0
+jpeg_write  "img.jpeg" All
 
 #changing quality (example 85%):
 set_qtables all 0 85

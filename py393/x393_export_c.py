@@ -1684,7 +1684,7 @@ class X393ExportC(object):
         dw=[]
         dw.append(("i2c_fifo_dout",          0, 8,0,  "I2c byte read from the device through FIFO"))
         dw.append(("i2c_fifo_nempty",        8, 1,0,  "I2C read FIFO has data"))
-        dw.append(("i2c_fifo_cntrl",         9, 1,0,  "I2C FIFO byte counter (odd/even bytes)"))
+        dw.append(("i2c_fifo_lsb",           9, 1,0,  "I2C FIFO byte counter (odd/even bytes)"))
         dw.append(("busy",                  10, 1,0,  "I2C sequencer busy"))
         dw.append(("alive_fs",              11, 1,0,  "Sensor generated frame sync since last status update"))
         dw.append(("frame_num",             12, 4,0,  "I2C sequencer frame number"))
@@ -1720,7 +1720,7 @@ class X393ExportC(object):
 
     def _enc_i2c_tbl_addr(self):
         dw=[]
-        dw.append(("tbl_addr",         0, 8,0,  "Address/length in 64-bit words (<<3 to get byte address)"))
+        dw.append(("tbl_addr",         0, 8,0,  "I2C table index"))
         dw.append(("tbl_mode",         vrlg.SENSI2C_CMD_TAND, 2,3,  "Should be 3 to select table address write mode"))
         return dw
 
@@ -1738,7 +1738,7 @@ class X393ExportC(object):
         dw=[]
         dw.append(("rah",              vrlg.SENSI2C_TBL_RAH, vrlg.SENSI2C_TBL_RAH_BITS,  0, "High byte of the i2c register address"))
         dw.append(("rnw",              vrlg.SENSI2C_TBL_RNWREG,                       1, 0, "Read/not write i2c register, should be 1 here"))
-        dw.append(("nbrd",             vrlg.SENSI2C_TBL_NBRD, vrlg.SENSI2C_TBL_NBRD_BITS,0, "Number of bytes to read (1..18, 0 means '8')"))
+        dw.append(("nbrd",             vrlg.SENSI2C_TBL_NBRD, vrlg.SENSI2C_TBL_NBRD_BITS,0, "Number of bytes to read (1..8, 0 means '8')"))
         dw.append(("nabrd",            vrlg.SENSI2C_TBL_NABRD,                        1, 0, "Number of address bytes for read (0 - one byte, 1 - two bytes)"))
         dw.append(("dly",              vrlg.SENSI2C_TBL_DLY,  vrlg.SENSI2C_TBL_DLY_BITS, 0, "Bit delay - number of mclk periods in 1/4 of the SCL period"))
         dw.append(("tbl_mode",         vrlg.SENSI2C_CMD_TAND,                         2, 2, "Should be 2 to select table data write mode"))

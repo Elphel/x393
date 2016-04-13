@@ -1,7 +1,7 @@
 #!/bin/sh
 #mkdir -p /lib/modules
 #ln -sf /usr/local/lib /lib/modules/4.0.0-xilinx
-insmod /usr/local/lib/fpgajtag.ko
+#insmod /usr/local/lib/fpgajtag.ko
 #mknod  -m 0666 /dev/fjtag              c 132   2
 mknod  -m 0666 /dev/fpgaresetjtag      c 132   0
 mknod  -m 0666 /dev/jtagraw            c 132   0

@@ -299,7 +299,7 @@ class X393Sensor(object):
                 else:
                     return 3
   
-        if verbose>0:
+        if verbose>1:
             print ("func_sensor_i2c_command(): rst_cmd= ",rst_cmd,", run_cmd=",run_cmd,", active_sda = ",active_sda,", early_release_0 = ",early_release_0,
                    ", sda=",sda,", scl=",scl)
             
@@ -1279,12 +1279,18 @@ $boards=array (
                 '1' => array ('model' => '10359', 'scl' =>280,'sda' => 296)   // H6, J5
 
 );
-cd /usr/local/verilog/; test_mcntrl.py -x @hargs
+#cd /usr/local/verilog/; test_mcntrl.py -x @hargs
+cd /usr/local/verilog/; test_mcntrl.py @hargs
 setupSensorsPower "PAR12"
 measure_all "*DI"
 program_status_sensor_io all 1 0
 print_status_sensor_io all
 setSensorClock
+
+checkSclSda 1
+
+cat /usr/local/verilog/x359.bit > /dev/sfpgaconfjtag1
+
 
 #jtag_set_pgm_mode 0 1
 #jtag_set_pgm_mode 1 1
@@ -1437,7 +1443,7 @@ drivers/elphel/fpgajtag353.c:1416 [fpgajtag]fpga_jtag_exit =_ "unregistering dri
 
 root@elphel393:/sys/kernel/debug/dynamic_debug# echo 'file drivers/elphel/fpgajtag353.c +p' > control
 
- afpgaconfjtag       jtagraw             memory_bandwidth    mtd4ro              ram2                stderr              tty18               tty30               tty43               tty56               ttyS1
+afpgaconfjtag       jtagraw             memory_bandwidth    mtd4ro              ram2                stderr              tty18               tty30               tty43               tty56               ttyS1
 block               kmem                mmcblk0             mtdblock0           ram3                stdin               tty19               tty31               tty44               tty57               ttyS2
 char                kmsg                mmcblk0p1           mtdblock1           random              stdout              tty2                tty32               tty45               tty58               ttyS3
 console             log                 mmcblk0p2           mtdblock2           rtc0                tty                 tty20               tty33               tty46               tty59               ubi_ctrl

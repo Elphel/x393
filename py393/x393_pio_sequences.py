@@ -1152,7 +1152,8 @@ class X393PIOSequences(object):
         self.wait_ps_pio_done(vrlg.DEFAULT_STATUS_MODE,1); # wait previous memory transaction finished before changing delays (effective immediately)
         buf=self.x393_mcntrl_buffers.read_block_buf_chn (0, 0, numBufWords, (0,1)[quiet<1]) # chn=0, page=0, number of 32-bit words=32, show_rslt
         #calculate 1-s ratio for both lanes
-        rslt=[0.0,0.0,0.0] # last word - number of "problem" bytes that have non-ones in bits [7:1]
+#        rslt=[0.0,0.0,0.0] # last word - number of "problem" bytes that have non-ones in bits [7:1]
+        rslt=[0.0,0.0,0.0,0.0] # last 2 words - number of "problem" bytes that have non-ones in bits [7:1] or byte is not the same
         
         for i in range(0,numBufWords):
             rslt[i & 1] += ((buf[i] & 1) +
@@ -1164,11 +1165,25 @@ class X393PIOSequences(object):
                             (0,1)[(buf[i] &     0xfe00) != 0]+
                             (0,1)[(buf[i] &   0xfe0000) != 0]+
                             (0,1)[(buf[i] & 0xfe000000) != 0])
+            bm = buf[i] & 0x01010101
+            bm |= (bm << 1)
+            bm |= (bm << 2)
+            bm |= (bm << 4)
+            bm ^= buf[i]
+            rslt[3]     += ((0,1)[(bm &       0xfe) != 0]+
+                            (0,1)[(bm &     0xfe00) != 0]+
+                            (0,1)[(bm &   0xfe0000) != 0]+
+                            (0,1)[(bm & 0xfe000000) != 0])
+            
         for i in range(2):
             rslt[i]/=2*numBufWords
         rslt[2]/=4*numBufWords
+        rslt[3]/=4*numBufWords
+
         if quiet <1:
-            print ("WLEV lanes ratios: %f %f, non 0x00/0x01 bytes: %f"%(rslt[0],rslt[1],rslt[2]))   
+            print ("WLEV lanes ratios: %f %f, non 0x00/0x01 byte: %f, non 0x00/0xffs: %f"%(rslt[0],rslt[1],rslt[2],rslt[3]))   
+        if (rslt[3] < rslt[2]):
+            rslt[2] = rslt[3]
         return rslt
     
     def read_levelling(self,
