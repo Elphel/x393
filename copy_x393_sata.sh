@@ -1,4 +1,3 @@
-x393_sata/device/sata_device.v
 #!/bin/bash
 REPO_ROOT=".."
 CWD="$(pwd)"
