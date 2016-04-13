@@ -92,7 +92,8 @@ class X393ExportC(object):
         self.save_func_def_file    (self.gen_dir, self.func_def_file)
         self.save_defines_file     (self.gen_dir, self.defs_file)
         self.save_harware_map_file (self.gen_dir, self.map_file)
-        
+        return "OK"
+    
     def make_generated(self, path):
         try:
             os.makedirs(path)
