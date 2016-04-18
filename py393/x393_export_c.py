@@ -1676,8 +1676,9 @@ class X393ExportC(object):
         dw.append(("hact_alive",            13, 1,0,  "HACT signal from the sensor (or internal) is toggling (N/A for HiSPI"))
         dw.append(("hact_ext_alive",        14, 1,0,  "HACT signal from the sensor is toggling (N/A for HiSPI)"))
         dw.append(("vact_alive",            15, 1,0,  "VACT signal from the sensor is toggling (N/A for HiSPI)"))
+        dw.append(("xfpgatdo_byte",         16, 8,0,  "Multiplexer FPGA TDO output, previous 8 bits"))
         dw.append(("senspgmin",             24, 1,0,  "senspgm pin state"))
-        dw.append(("xfpgatdo",              25, 1,0,  "Multiplexer FPGA TDO output"))
+        dw.append(("xfpgatdo",              25, 1,0,  "Multiplexer FPGA TDO output, current"))
         dw.append(("seq_num",               26, 6,0,  "Sequence number"))
         return dw
 

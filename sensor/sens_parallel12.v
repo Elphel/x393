@@ -192,7 +192,8 @@ module  sens_parallel12 #(
 
 //    wire [17:0] status;
 //    wire [18:0] status;
-    wire [22:0] status;
+//    wire [22:0] status;
+    wire [25:0] status; // added byte-wide xfpgatdo
     
     wire        cmd_we;
     wire  [2:0] cmd_a;
@@ -200,6 +201,7 @@ module  sens_parallel12 #(
     
     wire           xfpgadone;  // state of the MRST pin ("DONE" pin on external FPGA)
     wire           xfpgatdo;   // TDO read from external FPGA
+    reg      [7:0] xfpgatdo_byte; // tdo signal shifted left at each TCK _/~
     wire           senspgmin;    
 
     reg            xpgmen=0;     // enable programming mode for external FPGA
@@ -233,11 +235,15 @@ module  sens_parallel12 #(
 //    assign status = {pxd_out_pre[1],vact_alive, hact_ext_alive, hact_alive, locked_pxd_mmcm, 
 //                     clkin_pxd_stopped_mmcm, clkfb_pxd_stopped_mmcm, xfpgadone,
 //                     ps_rdy, ps_out, xfpgatdo, senspgmin};
-    assign status = {irst, async_prst_with_sens_mrst, imrst, rst_mmcm, pxd_out_pre[1],
-    
+//    wire [25:0] status; // added byte-wide xfpgatdo
+
+    assign status = {
+///                  irst, async_prst_with_sens_mrst, imrst, rst_mmcm, pxd_out_pre[1],
+                     xfpgatdo_byte[7:0],
                      vact_alive, hact_ext_alive, hact_alive, locked_pxd_mmcm, 
                      clkin_pxd_stopped_mmcm, clkfb_pxd_stopped_mmcm, xfpgadone,
                      ps_rdy, ps_out, xfpgatdo, senspgmin};
+                        
     assign hact_out = hact_r;
     assign iaro = trigger_mode?  ~trig : iaro_soft;
     
@@ -280,7 +286,11 @@ module  sens_parallel12 #(
         else if (set_jtag_r && data_r[SENS_JTAG_PROG + 1])  xfpgaprog <= data_r[SENS_JTAG_PROG]; 
                                      
         if      (mclk_rst)                                  xfpgatck <= 0;
-        else if (set_jtag_r && data_r[SENS_JTAG_TCK + 1])   xfpgatck <= data_r[SENS_JTAG_TCK]; 
+        else if (set_jtag_r && data_r[SENS_JTAG_TCK + 1])   xfpgatck <= data_r[SENS_JTAG_TCK];
+        
+        // shift xfpgatdo to xfpgatdo_byte each time xfpgatck is 0->1
+        if      (mclk_rst)                                                                       xfpgatdo_byte <= 0;
+        else if (set_jtag_r && data_r[SENS_JTAG_TCK + 1] && !xfpgatck &&  data_r[SENS_JTAG_TCK]) xfpgatdo_byte <= {xfpgatdo_byte[6:0], xfpgatdo}; 
 
         if      (mclk_rst)                                  xfpgatms <= 0;
         else if (set_jtag_r && data_r[SENS_JTAG_TMS + 1])   xfpgatms <= data_r[SENS_JTAG_TMS]; 

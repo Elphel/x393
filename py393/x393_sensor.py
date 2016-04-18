@@ -167,12 +167,16 @@ class X393Sensor(object):
         print ("   sof_mclk =               %d"%((status>>17) & 1))        
         print ("   sol_mclk =               %d"%((status>>16) & 1))
         """
+        """
         #Folowing 5 bits may be just temporarily available        
         print ("   irst =                   %d"%((status>>20) & 1))
         print ("async_prst_with_sens_mrst = %d"%((status>>19) & 1))
         print ("   imrst =                  %d"%((status>>18) & 1))
         print ("   rst_mmcm =               %d"%((status>>17) & 1))
         print ("   pxd_out_pre[1] =         %d"%((status>>16) & 1))
+        """
+        
+        print ("   shifted TDO              %d"%((status>>16) & 0xff))
         
         print ("   vact_alive =             %d"%((status>>15) & 1))
         print ("   hact_ext_alive =         %d"%((status>>14) & 1))
