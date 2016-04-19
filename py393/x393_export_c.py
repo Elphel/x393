@@ -1174,11 +1174,16 @@ class X393ExportC(object):
                 else:
                     return ""
             else:
+                if isinstance(address_inc,(list,tuple)): # var_name, var_range are also lists/tuples of the same length
+                    address_inc = [4 * d for d in address_inc]
+                else:
+                    address_inc = 4 * address_inc
+
                 if (mode == 'defines') :
                     return self.expand_define(define_tuple = (name,
                                                               var_name,
                                                               address * 4 + self.MAXI0_BASE,
-                                                              address_inc * 4,
+                                                              address_inc, # * 4,
                                                               var_range,
                                                               data_type,
                                                               rw,
@@ -1188,7 +1193,7 @@ class X393ExportC(object):
                     return self.func_declare (define_tuple = (name,
                                                               var_name,
                                                               address * 4 + self.MAXI0_BASE,
-                                                              address_inc * 4,
+                                                              address_inc, # * 4,
                                                               var_range,
                                                               data_type,
                                                               rw,
@@ -1198,7 +1203,7 @@ class X393ExportC(object):
                     return self.func_define  (define_tuple = (name,
                                                               var_name,
                                                               address * 4, #  + self.MAXI0_BASE,
-                                                              address_inc * 4,
+                                                              address_inc, # * 4,
                                                               var_range,
                                                               data_type,
                                                               rw,
