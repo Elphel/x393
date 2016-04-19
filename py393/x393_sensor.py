@@ -78,7 +78,7 @@ class X393Sensor(object):
                                    seq_num): # input [5:0] seq_num;
         """
         Set status generation mode for selected sensor port i2c control
-        @param num_sensor - number of the sensor port (0..3)
+        @param num_sensor - number of the sensor port (0..3) or all
         @param mode -       status generation mode:
                                   0: disable status generation,
                                   1: single status request,
@@ -86,6 +86,15 @@ class X393Sensor(object):
                                   3: auto, inc sequence number 
         @param seq_number - 6-bit sequence number of the status message to be sent
         """
+        try:
+            if (num_sensor == all) or (num_sensor[0].upper() == "A"): #all is a built-in function
+                for num_sensor in range(4):
+                    self.program_status_sensor_i2c (num_sensor = num_sensor,
+                                                    mode =       mode,
+                                                    seq_num =    seq_num)
+                return
+        except:
+            pass
 
         self.x393_axi_tasks.program_status (vrlg.SENSOR_GROUP_ADDR  + num_sensor * vrlg.SENSOR_BASE_INC + vrlg.SENSI2C_CTRL_RADDR,
                              vrlg.SENSI2C_STATUS,
@@ -98,7 +107,7 @@ class X393Sensor(object):
                                   seq_num): # input [5:0] seq_num;
         """
         Set status generation mode for selected sensor port io subsystem
-        @param num_sensor - number of the sensor port (0..3)
+        @param num_sensor - number of the sensor port (0..3) or all
         @param mode -       status generation mode:
                                   0: disable status generation,
                                   1: single status request,
@@ -226,12 +235,15 @@ class X393Sensor(object):
             pass
         status= self.get_status_sensor_i2c(num_sensor)
         print ("print_status_sensor_i2c(%d):"%(num_sensor))
-        print ("   reset_on =               %d"%((status>> 7) & 1))
-        print ("   req_clr =                %d"%((status>> 6) & 1))
-        print ("   alive_fs =               %d"%((status>> 5) & 1))
+        print ("   reset_on =               %d"%((status>>17) & 1))
+        print ("   req_clr =                %d"%((status>>16) & 1))
+        print ("   frame_num =              %d"%((status>>12) & 0xf))
+        print ("   alive_fs =               %d"%((status>>11) & 1))
+        print ("   busy =                   %d"%((status>>10) & 1))
+        print ("   i2c_fifo_lsb =           %d"%((status>> 9) & 1))
+        print ("   i2c_fifo_nempty =        %d"%((status>> 8) & 1))
+        print ("   i2c_fifo_dout =          %d"%((status>> 0) & 0xff))
         
-        print ("   busy =                   %d"%((status>> 4) & 1))
-        print ("   frame_num =              %d"%((status>> 0)  & 0xf))
         print ("   sda_in =                 %d"%((status>>25) & 1))
         print ("   scl_in =                 %d"%((status>>24) & 1))
         print ("   seq =                    %d"%((status>>26) & 0x3f))
@@ -508,7 +520,7 @@ class X393Sensor(object):
                                 scl =             None,
                                 verbose =         1):
         """
-        @param num_sensor - sensor port number (0..3)
+        @param num_sensor - sensor port number (0..3) or all
         @param rst_cmd - reset all FIFO (takes 16 clock pulses), also - stops i2c until run command
         @param run_cmd - True - run i2c, False - stop i2c (needed before software i2c), None - no change
         @param active_sda - pull-up SDA line during second half of SCL=0, when needed and possible 
@@ -519,7 +531,25 @@ class X393Sensor(object):
         @param verbose -          verbose level
         active_sda and early_release_0 should be defined both to take effect (any of the None skips setting these parameters)
 
-        """  
+        """
+        try:
+            if (num_sensor == all) or (num_sensor[0].upper() == "A"): #all is a built-in function
+                for num_sensor in range(4):
+                    self.set_sensor_i2c_command (num_sensor,
+                                rst_cmd =         rst_cmd,
+                                run_cmd =         run_cmd,
+                                active_sda =      active_sda, 
+                                early_release_0 = early_release_0,
+                                advance_FIFO =    advance_FIFO,
+                                sda =             sda,
+                                scl =             scl,
+                                verbose =         verbose)
+
+                return
+        except:
+            pass
+        
+          
         self.x393_axi_tasks.write_control_register(vrlg.SENSOR_GROUP_ADDR + num_sensor * vrlg.SENSOR_BASE_INC + vrlg.SENSI2C_CTRL_RADDR,
                                                   self.func_sensor_i2c_command(
                                                        rst_cmd =         rst_cmd,
@@ -529,7 +559,7 @@ class X393Sensor(object):
                                                        advance_FIFO =    advance_FIFO,
                                                        sda =             sda,
                                                        scl =             scl,
-                                                       verbose =         verbose))
+                                                       verbose =         verbose-1))
 
     def set_sensor_i2c_table_reg_wr (self,
                                      num_sensor,
@@ -847,6 +877,22 @@ class X393Sensor(object):
         @param set_delays - (self-clearing) load all pre-programmed delays for the sensor pad inputs 
         @param quadrants -  90-degree shifts for data [1:0], hact [3:2] and vact [5:4] (6'h01), None - no change
         """
+        try:
+            if (num_sensor == all) or (num_sensor[0].upper() == "A"): #all is a built-in function
+                for num_sensor in range(4):
+                    self.set_sensor_io_ctl (num_sensor,
+                           mrst =       mrst,
+                           arst =       arst,
+                           aro  =       aro,
+                           mmcm_rst =   mmcm_rst,
+                           clk_sel =    clk_sel,
+                           set_delays = set_delays,
+                           quadrants =  quadrants)
+                return
+        except:
+            pass
+
+        
         data = self.func_sensor_io_ctl (
                     mrst =       mrst,
                     arst =       arst,
@@ -855,6 +901,7 @@ class X393Sensor(object):
                     clk_sel =    clk_sel,
                     set_delays = set_delays,
                     quadrants =  quadrants)
+        
         reg_addr = (vrlg.SENSOR_GROUP_ADDR + num_sensor * vrlg.SENSOR_BASE_INC) + vrlg.SENSIO_RADDR + vrlg.SENSIO_CTRL;
         self.x393_axi_tasks.write_control_register(reg_addr, data)
 # TODO: Make one for HiSPi (it is different)
@@ -1482,9 +1529,19 @@ input               mem                 mtd4                ram1                
                              width): # 0 - use HACT, >0 - generate HACT from start to specified width
         """
         Set sensor frame width
-        @param num_sensor - sensor port number (0..3)
+        @param num_sensor - sensor port number (0..3) or all
         @param width - sensor 16-bit frame width (0 - use sensor HACT signal) 
         """
+        try:
+            if (num_sensor == all) or (num_sensor[0].upper() == "A"): #all is a built-in function
+                for num_sensor in range(4):
+                    self.set_sensor_io_width (num_sensor,
+                                width =        width)
+
+                return
+        except:
+            pass
+        
         reg_addr = (vrlg.SENSOR_GROUP_ADDR + num_sensor * vrlg.SENSOR_BASE_INC) + vrlg.SENSIO_RADDR + vrlg.SENSIO_WIDTH;
         self.x393_axi_tasks.write_control_register(reg_addr, width)
  
