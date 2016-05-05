@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: sens_hispi_fifo
  * Date:2015-10-14  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: cross-clock FIFO with special handling of 'run' output
  *
  * Copyright (c) 2015 Elphel, Inc .

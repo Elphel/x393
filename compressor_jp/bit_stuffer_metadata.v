@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: bit_stuffer_metadata
  * Date:2015-10-25  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: 
  *
  * Copyright (c) 2015 Elphel, Inc .

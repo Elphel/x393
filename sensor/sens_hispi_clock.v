@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: sens_hispi_clock
  * Date:2015-10-13  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: Recover iclk/iclk2x from the HiSPi differntial clock
  *
  * Copyright (c) 2015 Elphel, Inc .

@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: select_clk_buf
  * Date:2015-11-07  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: Select one of the clock buffers primitives by parameter
  *
  * Copyright (c) 2015 Elphel, Inc .

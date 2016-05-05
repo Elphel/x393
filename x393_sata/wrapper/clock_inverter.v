@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: clock_inverter
  * Date:2016-02-11  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: Glitch-free clock controlled inverter
  *
  * Copyright (c) 2016 Elphel, Inc .

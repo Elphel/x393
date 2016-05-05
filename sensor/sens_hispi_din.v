@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: sens_hispi_din
  * Date:2015-10-13  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: Input differential receivers for HiSPi lanes
  *
  * Copyright (c) 2015 Elphel, Inc .

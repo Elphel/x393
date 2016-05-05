@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.3.66 (w)1999-2015 BSI
-[*] Wed May  4 20:52:00 2016
+[*] Thu May  5 06:16:12 2016
 [*]
-[dumpfile] "/home/andrey/git/x393/simulation/x393_testbench03-20160504133628289.fst"
-[dumpfile_mtime] "Wed May  4 20:03:27 2016"
-[dumpfile_size] 89230413
+[dumpfile] "/home/andrey/git/x393/simulation/x393_testbench03-20160504231654593.fst"
+[dumpfile_mtime] "Thu May  5 05:44:01 2016"
+[dumpfile_size] 89249645
 [savefile] "/home/andrey/git/x393/x393_testbench04.sav"
 [timestart] 0
 [size] 1823 1180
 [pos] -1 -1
-*-24.733164 47500000 121282388 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-24.979511 145131000 121282388 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] x393_testbench03.
 [treeopen] x393_testbench03.simul_axi_hp_wr_i.
 [treeopen] x393_testbench03.x393_i.
@@ -18,7 +18,8 @@
 [treeopen] x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[1].
 [treeopen] x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[2].
 [treeopen] x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[3].
-[treeopen] x393_testbench03.x393_i.sensors393_i.
+[treeopen] x393_testbench03.x393_i.compressor393_i.genblk3.
+[treeopen] x393_testbench03.x393_i.compressor393_i.genblk3.cmprs_afi0_mux_i.
 [treeopen] x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].
 [treeopen] x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.
 [treeopen] x393_testbench03.x393_i.sensors393_i.sensor_channel_block[1].
@@ -28,7 +29,7 @@
 [treeopen] x393_testbench03.x393_i.sensors393_i.sensor_channel_block[3].
 [treeopen] x393_testbench03.x393_i.sensors393_i.sensor_channel_block[3].sensor_channel_i.
 [treeopen] x393_testbench03.x393_i.sensors393_i.sensor_channel_block[3].sensor_channel_i.sens_parallel12_i.
-[sst_width] 257
+[sst_width] 377
 [signals_width] 340
 [sst_expanded] 1
 [sst_vpaned_height] 575
@@ -64,7 +65,6 @@ x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[3].jp_channel_i.fifo
 @22
 x393_testbench03.setup_sensor_channel.num_sensor[1:0]
 x393_testbench03.setup_compressor_channel.num_sensor[1:0]
-@23
 x393_testbench03.setup_compressor_channel.qbank[31:0]
 @200
 -
@@ -140,8 +140,36 @@ x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.left
 x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[1].jp_channel_i.left_marg[4:0]
 x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[2].jp_channel_i.left_marg[4:0]
 x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[3].jp_channel_i.left_marg[4:0]
+@c00200
+-status
+@22
+x393_testbench03.x393_i.compressor393_i.genblk3.cmprs_afi0_mux_i.cmprs_afi_mux_status_i.chunk_ptr_ra[3:0]
+x393_testbench03.x393_i.compressor393_i.genblk3.cmprs_afi0_mux_i.cmprs_afi_mux_status_i.chunk_ptr_rd[25:0]
+@28
+x393_testbench03.x393_i.compressor393_i.genblk3.cmprs_afi0_mux_i.cmprs_afi_mux_status_i.status_rq
+x393_testbench03.x393_i.compressor393_i.genblk3.cmprs_afi0_mux_i.cmprs_afi_mux_status_i.status_start
+@1401200
+-status
+@22
+x393_testbench03.x393_i.compressor393_i.genblk3.cmprs_afi0_mux_i.cmprs_afi_mux_ptr_i.chunk_ptr_rd[26:0]
+x393_testbench03.x393_i.compressor393_i.genblk3.cmprs_afi0_mux_i.cmprs_afi_mux_ptr_wresp_i.chunk_ptr_rd[26:0]
 @1000200
 -all_cmprs_out
+@800200
+-sim_afi1
+@200
+-
+@23
+x393_testbench03.sim_cmprs0_addr[31:0]
+x393_testbench03.sim_cmprs0_data[63:0]
+x393_testbench03.sim_cmprs1_addr[31:0]
+x393_testbench03.sim_cmprs1_data[63:0]
+x393_testbench03.sim_cmprs2_addr[31:0]
+x393_testbench03.sim_cmprs2_data[63:0]
+x393_testbench03.sim_cmprs3_addr[31:0]
+x393_testbench03.sim_cmprs3_data[63:0]
+@1000200
+-sim_afi1
 @c00200
 -all_sensor_data
 @22

@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: debug_slave
  * Date:2015-09-03  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: Send/receive debug data over the serial ring
  *
  * Copyright (c) 2015 Elphel, Inc .

@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: simul_clk
  * Date:2015-07-29  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: Generate clocks for simulation
  *
  * Copyright (c) 2015 Elphel, Inc.

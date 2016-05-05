@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: sens_hispi_lane
  * Date:2015-10-13  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: Decode a single lane of the HiSPi data assuming packetized-SP protocol
  *
  * Copyright (c) 2015 Elphel, Inc .

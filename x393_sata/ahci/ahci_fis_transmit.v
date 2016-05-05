@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: ahci_fis_transmit
  * Date:2016-01-07  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: Fetches commands, command tables, creates/sends FIS
  *
  * Copyright (c) 2016 Elphel, Inc .

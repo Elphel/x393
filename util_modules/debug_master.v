@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: debug_master
  * Date:2015-09-03  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: Debug master module to send/receive serial debug data
  *
  * Copyright (c) 2015 Elphel, Inc .

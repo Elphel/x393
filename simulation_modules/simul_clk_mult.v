@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: simul_clk_mult
  * Date:2015-10-10  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: Clock multiplier
  *
  * Copyright (c) 2015 Elphel, Inc .

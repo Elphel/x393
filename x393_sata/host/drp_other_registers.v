@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: drp_other_registers
  * Date:2016-03-13
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: Additional registers controlled/read back over DRP
  *
  * Copyright (c) 2016 Elphel, Inc .

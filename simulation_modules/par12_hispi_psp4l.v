@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: par12_hispi_psp4l
  * Date:2015-10-11  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: Convertp parallel 12bit to HiSPi packetized-SP 4 lanes
  *
  * Copyright (c) 2015 Elphel, Inc .

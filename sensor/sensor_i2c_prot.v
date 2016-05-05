@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: sensor_i2c_prot
  * Date:2015-10-05  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: Generate i2c R/W sequence from a 32-bit word and LUT
  *
  * Copyright (c) 2015 Elphel, Inc .

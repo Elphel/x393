@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: ahci_ctrl_stat
  * Date:2016-01-12  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: Copy of significant register fields, updating them in
  * axi_ahci_regs registers (software accessible)
  *

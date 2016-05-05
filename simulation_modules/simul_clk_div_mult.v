@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: simul_clk_div_mult
  * Date:2015-10-12  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: Simulation clock rational multiplier
  *
  * Copyright (c) 2015 Elphel, Inc .

@@ -1226,13 +1226,13 @@ assign #10 gpio_pins[9] = gpio_pins[8];
            'h10000 >> 5); // input [26:0] afi_cmprs3_len; //  input [26:0] length;     // channel buffer length in 32-byte chunks
         */
         'h10000000 >> 5,  // input [26:0] afi_cmprs0_sa;   // input [26:0] sa;   // start address in 32-byte chunks
-             'h800 >> 5,  // input [26:0] afi_cmprs0_len; //  input [26:0] length;     // channel buffer length in 32-byte chunks
+             'h5c0 >> 5,  // 'h800 >> 5,  // input [26:0] afi_cmprs0_len; //  input [26:0] length;     // channel buffer length in 32-byte chunks
         'h10010000 >> 5,  // input [26:0] afi_cmprs1_sa;   // input [26:0] sa;   // start address in 32-byte chunks
-             'h400 >> 5,  // input [26:0] afi_cmprs1_len; //  input [26:0] length;     // channel buffer length in 32-byte chunks
+             'h2e0 >> 5,  // h400 >> 5,  // input [26:0] afi_cmprs1_len; //  input [26:0] length;     // channel buffer length in 32-byte chunks
         'h10020000 >> 5,  // input [26:0] afi_cmprs2_sa;   // input [26:0] sa;   // start address in 32-byte chunks
-             'h200 >> 5,  // input [26:0] afi_cmprs2_len; //  input [26:0] length;     // channel buffer length in 32-byte chunks
+             'h280 >> 5,  // 'h200 >> 5,  // input [26:0] afi_cmprs2_len; //  input [26:0] length;     // channel buffer length in 32-byte chunks
         'h10030000 >> 5,  // input [26:0] afi_cmprs3_sa;   // input [26:0] sa;   // start address in 32-byte chunks
-             'h100 >> 5); // input [26:0] afi_cmprs3_len; //  input [26:0] length;     // channel buffer length in 32-byte chunks
+             'h1e0 >> 5); // 'h100 >> 5); // input [26:0] afi_cmprs3_len; //  input [26:0] length;     // channel buffer length in 32-byte chunks
     camsync_setup (
         4'hf ); // sensor_mask); //
 /*
@@ -2756,7 +2756,7 @@ task setup_sensor_channel;
     
     compressor_run (num_sensor, 0); // reset compressor
     
-    simulation_datasimulation_dataspecify_window 66 36 0 0 0 3 1
+    
     
     if (cmode == CMPRS_CBIT_CMODE_JPEG18) begin
         setup_compressor_channel(
@@ -2819,7 +2819,7 @@ task setup_sensor_channel;
              (cmode == CMPRS_CBIT_CMODE_JP4DIFFHDRDIV2)) begin
         setup_compressor_channel(
             num_sensor,              // sensor channel number (0..3)
-            0,                       // qbank;    // [6:3] quantization table page - 100% quality
+            ((num_sensor == 1) || (num_sensor == 3))?  1 : 0, // 0,          // qbank;    // [6:3] quantization table page - 100% quality
     //        1,                       // qbank;    // [6:3] quantization table page - 85%? quality
             1,                       // dc_sub;   // [8:7] subtract DC
             cmode, // CMPRS_CBIT_CMODE_JPEG18, //input [31:0] cmode;   //  [13:9] color mode:

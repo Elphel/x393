@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: bit_stuffer_escape
  * Date:2015-10-24  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: Escapes each 0xff with 0x00, 32-bit input and output
  *
  * Copyright (c) 2015 Elphel, Inc .

@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: IBUFGDS
  * Date:2015-11-06  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: Module name "known" to synthesis, but missing in unisims
  *
  * Copyright (c) 2015 Elphel, Inc .

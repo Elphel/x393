@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: ahci_sata_layers
  * Date:2016-01-19  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: Link and PHY SATA layers
  *
  * Copyright (c) 2016 Elphel, Inc .

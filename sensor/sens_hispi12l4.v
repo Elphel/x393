@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: sens_hispi12l4
  * Date:2015-10-13  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: Decode HiSPi 4-lane, 12 bits Packetized-SP data from the sensor
  *
  * Copyright (c) 2015 Elphel, Inc .

@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: frame_num_sync
  * Date:2016-04-28  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: Propagating frame number from acquisition to compressor output
  *
  * Copyright (c) 2016 Elphel, Inc .

@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: fifo_sameclock_control
  * Date:2016-01-20  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: BRAM-based fifo control, uses BARM output registers
  *
  * Copyright (c) 2016 Elphel, Inc .

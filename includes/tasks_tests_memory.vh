@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: tasks_tests_memory
  * Date:2015-08-01  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: Top-level tasks for testing memory subsystem functionality
  *
  * Copyright (c) 2015 Elphel, Inc .

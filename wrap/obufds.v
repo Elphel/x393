@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: obufds
  * Date:2015-10-15  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: Wrapper for OBUFDS primitive
  *
  * Copyright (c) 2015 Elphel, Inc .

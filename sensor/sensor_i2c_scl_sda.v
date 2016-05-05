@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: sensor_i2c_scl_sda
  * Date:2015-10-06  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: Generation of i2c signals
  *
  * Copyright (c) 2015 Elphel, Inc .

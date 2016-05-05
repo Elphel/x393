@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: sens_10398
  * Date:2015-10-15  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: Top level module for the 10398 SFE (with MT9F002 sensor)
  *
  * Copyright (c) 2015 Elphel, Inc .

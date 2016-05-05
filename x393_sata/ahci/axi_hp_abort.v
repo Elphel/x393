@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: axi_hp_abort
  * Date:2016-02-07  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: Trying to gracefully reset AXI HP after aborted transmission
  * For read channel - just keep afi_rready on until RD FIFO is empty (afi_rcount ==0)
  * For write - keep track aof all what was sent so far, assuming aw is always ahead of w

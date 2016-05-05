@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: sim_frac_clk_delay
  * Date:2015-10-11  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: Delay clock-synchronous signal by fractional number of periods
  *
  * Copyright (c) 2015 Elphel, Inc .

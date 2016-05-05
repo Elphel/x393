@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: ahci_dma_rd_stuff
  * Date:2016-01-01  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: Stuff DWORD data with missing words into continuous 32-bit data
  *
  * Copyright (c) 2016 Elphel, Inc .

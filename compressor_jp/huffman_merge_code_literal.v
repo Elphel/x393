@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: huffman_merge_code_literal
  * Date:2015-10-22  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: Merge 1-16 bits of Huffman code with 0..11 bits of literal data,
  * align result to MSB : {huffman,literal, {n{1'b0}}
  *

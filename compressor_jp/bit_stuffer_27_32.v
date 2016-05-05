@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: bit_stuffer_27_32
  * Date:2015-10-23  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: Aggregate MSB aligned variable-length (1..27) data to 32-bit words
  *
  * Copyright (c) 2015 Elphel, Inc .

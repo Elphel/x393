@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: ahci_fsm
  * Date:2016-01-10  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: AHCI host+port0 state machine
  *
  * Copyright (c) 2016 Elphel, Inc .

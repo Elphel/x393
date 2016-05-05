@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: elastic1632
  * Date:2016-02-03  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: Elastic buffer with 16-bit data input and 32-bit output
  *
  * Copyright (c) 2016 Elphel, Inc .

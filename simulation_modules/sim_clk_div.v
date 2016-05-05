@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: sim_clk_div
  * Date:2015-10-11  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: Divide clock frequency by integer number
  *
  * Copyright (c) 2015 Elphel, Inc .

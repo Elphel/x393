@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Module: freq_meter
  * Date:2016-02-13  
- * Author: andrey     
+ * Author: Andrey Filippov     
  * Description: Measure device clock frequency to set the local clock
  *
  * Copyright (c) 2016 Elphel, Inc .
