@@ -311,6 +311,7 @@ module  mcntrl393 #(
     input                    [255:0] sens_buf_dout,   //    (), // output[63:0]
     input                      [3:0] sens_page_written, //  single mclk pulse: buffer page (full or partial) is written to the memory buffer 
     output                     [3:0] sens_xfer_skipped, // single mclk pulse on each bit indicating one skipped (not written) block.
+    output reg                 [3:0] sens_first_wr_in_frame, // single mclk pulse on first write block in each frame
     // compressor subsystem interface
     // Buffer interfaces, combined for 4 channels 
     output                     [3:0] cmprs_xfer_reset_page_rd, // from mcntrl_tiled_rw (
@@ -319,6 +320,7 @@ module  mcntrl393 #(
     output                   [255:0] cmprs_buf_din,            // data out 
     output                     [3:0] cmprs_page_ready,         // single mclk (posedge)
     input                      [3:0] cmprs_next_page,          // single mclk (posedge): Done with the page in the  buffer, memory controller may read more data 
+    output reg                 [3:0] cmprs_first_rd_in_frame,  // single mclk pulse on first read block in each frame
 
     // master (sensor) with slave (compressor) synchronization I/Os
     input                      [3:0] cmprs_frame_start_dst,    // @mclk - trigger receive (tiledc) memory channel (it will take care of single/repetitive
@@ -734,7 +736,9 @@ module  mcntrl393 #(
     wire                        tiled_rw_start_wr16; // start cmd_encod_tiled_32_rw generating command sequence in write mode
     wire                        tiled_rw_start_rd32; // start cmd_encod_tiled_32_rw generating command sequence in read mode
     wire                        tiled_rw_start_wr32; // start cmd_encod_tiled_32_rw generating command sequence in write mode
- 
+    // for propagating absolute frame number:
+    reg                   [3:0] sens_first_wr_pending_r;
+    reg                   [3:0] cmprs_first_rd_pending_r;
      
 
     // Command tree - insert register layer(s) if needed, now just direct assignments
@@ -755,8 +759,6 @@ module  mcntrl393 #(
     assign cmd_sens_stb=   cmd_stb;
     assign cmd_cmprs_ad=    cmd_ad;
     assign cmd_cmprs_stb=   cmd_stb;
-
-    
     
 // For now - combinatorial, maybe add registers (modify axibram_read)
     assign buf_raddr=axird_raddr;    
@@ -787,6 +789,19 @@ module  mcntrl393 #(
     assign select_buf3wr_w = ((axiwr_pre_awaddr ^ MCONTR_BUF3_WR_ADDR) & MCONTR_WR_MASK)==0;
     assign select_buf4rd_w = ((axird_pre_araddr ^ MCONTR_BUF4_RD_ADDR) & MCONTR_RD_MASK)==0;
     assign select_buf4wr_w = ((axiwr_pre_awaddr ^ MCONTR_BUF4_WR_ADDR) & MCONTR_WR_MASK)==0;
+    
+    always @ (posedge mclk) begin
+        if (mrst) sens_first_wr_pending_r <= 0;
+        else      sens_first_wr_pending_r <= sens_sof | (sens_first_wr_pending_r & ~sens_start_wr);
+
+//cmprs_first_rd_pending_r        
+        sens_first_wr_in_frame <= sens_first_wr_pending_r & sens_start_wr;
+
+        if (mrst) cmprs_first_rd_pending_r <= 0;
+        else      cmprs_first_rd_pending_r <= cmprs_frame_start_dst | (cmprs_first_rd_pending_r & ~cmprs_channel_pgm_en);
+
+        cmprs_first_rd_in_frame <= cmprs_first_rd_pending_r & cmprs_channel_pgm_en;
+    end
 
     always @ (posedge axi_clk) begin
         if      (mrst)              select_cmd0 <= 0;

@@ -127,7 +127,9 @@ module  compressor393 # (
     
         parameter CMPRS_AFIMUX_WIDTH =         26, // maximal for status: currently only works with 26)
         parameter CMPRS_AFIMUX_CYCBITS =        3,
-        parameter AFI_MUX_BUF_LATENCY =      4'd2  // buffers read latency from fifo_ren* to fifo_rdata* valid : 2 if no register layers are used
+        parameter AFI_MUX_BUF_LATENCY =      4'd2,  // buffers read latency from fifo_ren* to fifo_rdata* valid : 2 if no register layers are used
+        parameter NUM_FRAME_BITS =              4 // number of bits use for frame number 
+        
 `ifdef DEBUG_RING
         ,parameter DEBUG_CMD_LATENCY = 2 
 `endif        
@@ -173,6 +175,7 @@ module  compressor393 # (
                                                         // use as 'eot_real' in 353 
     output                    [3:0]suspend,             // suspend reading data for this channel - waiting for the source data
 
+    output [4*LAST_FRAME_BITS-1:0] frame_number_finished, // frame numbers compressed
 
 // statistics data was not used in late nc353    
 //    input                         dccout,         //enable output of DC and HF components for brightness/color/focus adjustments
@@ -187,11 +190,12 @@ module  compressor393 # (
 // Outputs for interrupts generation    
     output                  [3:0] eof_written_mclk,
     output                  [3:0] stuffer_done_mclk,
-    
     // frame input synchronization
     input                   [3:0] vsync_late,         // delayed start of frame, @mclk. In 353 it was 16 lines after VACT active
                                                       // source channel should already start, some delay give time for sequencer commands
                                                       // that should arrive before it
+// Frame numbers to determine number of compressed frame (for interrupts)
+    input  [4 * NUM_FRAME_BITS-1:0] frame_num_compressed,
     
     // AXI_HP inteface (single/dual). afi indices - relative (0,1) may actually be connected to 1,2 (or only to 1)
     input                         hclk,
@@ -398,7 +402,8 @@ module  compressor393 # (
                 .CMPRS_CSAT_CR_BITS              (CMPRS_CSAT_CR_BITS),
                 .CMPRS_CORING_BITS               (CMPRS_CORING_BITS),
                 .CMPRS_TIMEOUT_BITS              (CMPRS_TIMEOUT_BITS),
-                .CMPRS_TIMEOUT                   (CMPRS_TIMEOUT)
+                .CMPRS_TIMEOUT                   (CMPRS_TIMEOUT),
+                .NUM_FRAME_BITS                  (NUM_FRAME_BITS)
 `ifdef DEBUG_RING
         ,.DEBUG_CMD_LATENCY         (DEBUG_CMD_LATENCY) 
 `endif        
@@ -433,7 +438,7 @@ module  compressor393 # (
                 .frame_number_dst                     (frame_number_dst[LAST_FRAME_BITS * i +: LAST_FRAME_BITS]), // input[15:0] 
                 .frame_done_dst                       (frame_done_dst[i]),         // input
                 .suspend                              (suspend[i]),                // output
-                
+                .frame_number_finished                (frame_number_finished[LAST_FRAME_BITS * i +: LAST_FRAME_BITS]), // output reg[15:0]
                 .dccout                               (1'b0), // input
                 .hfc_sel                              (3'b0), // input[2:0] 
                 .statistics_dv                        (), // output
@@ -443,6 +448,7 @@ module  compressor393 # (
                 .eof_written_mclk                     (eof_written_mclk[i]),       // output
                 .stuffer_done_mclk                    (stuffer_done_mclk[i]),      // output
                 .vsync_late                           (vsync_late[i]),             // input
+                .frame_num_compressed                 (frame_num_compressed[i * NUM_FRAME_BITS +: NUM_FRAME_BITS]), // input[3:0] 
                 
                 .hclk                                 (hclk),                      // input
                 .fifo_rst                             (fifo_rst[i]),               // input

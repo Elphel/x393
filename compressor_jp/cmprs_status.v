@@ -33,25 +33,30 @@
  *******************************************************************************/
 `timescale 1ns/1ps
 
-module  cmprs_status(
-    input              mrst,
-    input              mclk,         // system clock
-    input              eof_written,
-    input              stuffer_running,
-    input              reading_frame,
-    input              set_interrupts,
-    input        [1:0] data_in,
-    output       [4:0] status,
-    output             irq
+module  cmprs_status #(
+    parameter NUM_FRAME_BITS = 4
+    ) (
+    input                          mrst,
+    input                          mclk,         // system clock
+    input                          eof_written,
+    input                          stuffer_running,
+    input                          reading_frame,
+    input  [NUM_FRAME_BITS - 1:0] frame_num_compressed,
+    input                          set_interrupts,
+    input                    [1:0] data_in,
+    output    [NUM_FRAME_BITS+7:0] status,
+    output                         irq
 );
 
-    reg                stuffer_running_r;
-    reg                flushing_fifo;
-    reg                is_r; // interrupt status (not masked)
-    reg                im_r; // interrupt mask
+    reg                         stuffer_running_r;
+    reg                         flushing_fifo;
+    reg                         is_r; // interrupt status (not masked)
+    reg                         im_r; // interrupt mask
+    reg  [NUM_FRAME_BITS - 1:0] frame_irq;
     
-    
-    assign status = {flushing_fifo,
+    assign status = {frame_irq,
+                     3'b0,
+                     flushing_fifo,
                      stuffer_running_r,
                      reading_frame,
                      im_r, is_r};
@@ -64,6 +69,8 @@ module  cmprs_status(
         if      (mrst)                             is_r <= 0;
         else if (eof_written)                      is_r <= 1;
         else if (set_interrupts && (data_in == 1)) is_r <= 0;
+        
+        if (eof_written)                           frame_irq <= frame_num_compressed;
 
         stuffer_running_r <= stuffer_running;
         

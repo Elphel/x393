@@ -182,6 +182,7 @@ module  mcntrl_linear_rw #(
     reg                           frame_finished_r;    
     wire                          last_in_row_w;
     wire                          last_row_w;
+    wire                          last_block_w;
     reg                           last_block;
     reg [MCNTRL_SCANLINE_PENDING_CNTR_BITS-1:0] pending_xfers; // number of requested,. but not finished block transfers      
     reg   [NUM_RC_BURST_BITS-1:0] row_col_r;
@@ -340,7 +341,9 @@ module  mcntrl_linear_rw #(
     
 //    assign pre_want=    chn_en && busy_r && !want_r && !xfer_start_r[0] && calc_valid && !last_block && !suspend && !(|frame_start_r);
     // accelerating pre_want:
-    assign pre_want= pre_want_r1 && !want_r && !xfer_start_r[0] && !suspend ;
+//    assign pre_want= pre_want_r1 && !want_r && !xfer_start_r[0] && !suspend ;
+    // last_block was too late to inclusde in pre_want_r1, moving it here
+    assign pre_want= pre_want_r1 && !want_r && !xfer_start_r[0] && !suspend  && !last_block;
 
     assign last_in_row_w=(row_left=={{(FRAME_WIDTH_BITS-NUM_XFER_BITS){1'b0}},xfer_num128_r});
     assign last_row_w=  next_y==window_height;
@@ -485,8 +488,10 @@ wire    start_not_partial= xfer_start_r[0] && !xfer_limited_by_mem_page_r;
 // calculate number to read (min of row_left, maximal xfer and what is left in the DDR3 page    
     always @(posedge mclk) begin
         // acceletaring pre_want
-        pre_want_r1 <= chn_en &&  !frame_done_r && busy_r && par_mod_r[PAR_MOD_LATENCY-2] && !(|frame_start_r[4:1]) && !last_block;
-    
+        
+//        pre_want_r1 <= chn_en &&  !frame_done_r && busy_r && par_mod_r[PAR_MOD_LATENCY-2] && !(|frame_start_r[4:1]) && !last_block;
+        //last_block is too late for pre_want_r1, moving upsteram
+        pre_want_r1 <= chn_en &&  !frame_done_r && busy_r && par_mod_r[PAR_MOD_LATENCY-2] && !(|frame_start_r[4:1]);
         if      (mrst)                par_mod_r<=0;
         else if (pgm_param_w ||
                  xfer_start_r[0] ||

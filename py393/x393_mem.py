@@ -85,7 +85,7 @@ class X393Mem(object):
                     self.USE_NEGATIVE = True
                     return mmap.mmap(f.fileno(), self.PAGE_SIZE, offset = page_addr - (1<<32))
         else:
-             return mmap.mmap(f.fileno(), self.PAGE_SIZE, offset = page_addr)
+            return mmap.mmap(f.fileno(), self.PAGE_SIZE, offset = page_addr)
          
                         
     def write_mem (self,addr, data,quiet=1):

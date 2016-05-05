@@ -33,14 +33,18 @@
  *******************************************************************************/
 `timescale 1ns/1ps
 `include "system_defines.vh"
-`define SAME_SENSOR_DATA 1
+`define SAME_SENSOR_DATA  1
+//`undef SAME_SENSOR_DATA
 `define COMPRESS_SINGLE
 //`define use200Mhz 1
 //`define DEBUG_FIFO 1
 `undef WAIT_MRS
 `define SET_PER_PIN_DELAYS 1 // set individual (including per-DQ pin delays)
 `define READBACK_DELAYS 1
-//`define TEST_MEMBRIDGE 1
+
+//`define TEST_MEMBRIDGE 1 // was not set
+`undef TEST_MEMBRIDGE // was not set
+
 `define PS_PIO_WAIT_COMPLETE 0 // wait until PS PIO module finished transaction before starting a new one
 // Disabled already passed test to speedup simulation
 //`define TEST_WRITE_LEVELLING 1
@@ -58,8 +62,8 @@
 //`define TEST_TILED_WRITE32  1
 //`define TEST_TILED_READ32  1
 
-`define TEST_AFI_WRITE 1
-`define TEST_AFI_READ 1
+//`define TEST_AFI_WRITE 1
+//`define TEST_AFI_READ 1
 
 `define TEST_SENSOR 0
 
@@ -132,9 +136,10 @@ parameter EXTERNAL_TIMESTAMP =    0; // 1 ;    // embed local timestamp, 1 - emb
     parameter BLANK_ROWS_AFTER=  1; //8;
     
 `else
-    parameter HBLANK=            12; // 52; // 12; /// 52; //*********************
- parameter BLANK_ROWS_BEFORE= 1; //8; ///2+2 - a little faster than compressor
- parameter BLANK_ROWS_AFTER=  1; //8;
+//    parameter HBLANK=            12; // 52; // 12; /// 52; //*********************
+    parameter HBLANK=            52; // 12; // 52; // 12; /// 52; //*********************
+    parameter BLANK_ROWS_BEFORE= 8;  // 1; //8; ///2+2 - a little faster than compressor
+    parameter BLANK_ROWS_AFTER=  8; // 1; //8;
 `endif 
  parameter WOI_HEIGHT=        32;
  parameter TRIG_LINES=        8;
@@ -617,6 +622,7 @@ assign #10 gpio_pins[9] = gpio_pins[8];
 
     wire        CLK;
     reg        RST;
+    reg        RST_CLEAN  = 1;    
     reg        AR_SET_CMD_r;
     wire       AR_READY;
 
@@ -738,6 +744,7 @@ assign #10 gpio_pins[9] = gpio_pins[8];
   // SuppressWarnings VEditor : assigned in $readmem() system task
     $dumpvars(0,x393_testbench03);
 //    CLK =1'b0;
+    RST_CLEAN = 1;
     RST = 1'bx;
     AR_SET_CMD_r = 1'b0;
     AW_SET_CMD_r = 1'b0;
@@ -751,6 +758,8 @@ assign #10 gpio_pins[9] = gpio_pins[8];
     #9000; // same as glbl
     repeat (20) @(posedge CLK) ;
     RST =1'b0;
+    @(posedge CLK) ;
+    RST_CLEAN = 0;
     while (x393_i.mrst) @(posedge CLK) ;
 //    repeat (4) @(posedge CLK) ;
 //set simulation-only parameters   
@@ -836,7 +845,8 @@ assign #10 gpio_pins[9] = gpio_pins[8];
         1, //WINDOW_WIDTH,
         WINDOW_HEIGHT,
         WINDOW_X0,
-        WINDOW_Y0);
+        WINDOW_Y0,
+        1); // repetitive mode
     test_scanline_read (
         1, // valid: 1 or 3 input            [3:0] channel;
         SCANLINE_EXTRA_PAGES, // input            [1:0] extra_pages;
@@ -844,7 +854,8 @@ assign #10 gpio_pins[9] = gpio_pins[8];
         1, // WINDOW_WIDTH,
         WINDOW_HEIGHT,
         WINDOW_X0,
-        WINDOW_Y0);
+        WINDOW_Y0,
+        1); // repetitive mode
 
     test_scanline_write(
         1, // valid: 1 or 3 input            [3:0] channel;
@@ -853,7 +864,8 @@ assign #10 gpio_pins[9] = gpio_pins[8];
         2, //WINDOW_WIDTH,
         WINDOW_HEIGHT,
         WINDOW_X0,
-        WINDOW_Y0);
+        WINDOW_Y0,
+        1); // repetitive mode
     test_scanline_read (
         1, // valid: 1 or 3 input            [3:0] channel;
         SCANLINE_EXTRA_PAGES, // input            [1:0] extra_pages;
@@ -861,7 +873,8 @@ assign #10 gpio_pins[9] = gpio_pins[8];
         2, // WINDOW_WIDTH,
         WINDOW_HEIGHT,
         WINDOW_X0,
-        WINDOW_Y0);
+        WINDOW_Y0,
+        1); // repetitive mode
 
     test_scanline_write(
         1, // valid: 1 or 3 input            [3:0] channel;
@@ -870,7 +883,8 @@ assign #10 gpio_pins[9] = gpio_pins[8];
         3, //WINDOW_WIDTH,
         WINDOW_HEIGHT,
         WINDOW_X0,
-        WINDOW_Y0);
+        WINDOW_Y0,
+        1); // repetitive mode
     test_scanline_read (
         1, // valid: 1 or 3 input            [3:0] channel;
         SCANLINE_EXTRA_PAGES, // input            [1:0] extra_pages;
@@ -878,7 +892,8 @@ assign #10 gpio_pins[9] = gpio_pins[8];
         3, // WINDOW_WIDTH,
         WINDOW_HEIGHT,
         WINDOW_X0,
-        WINDOW_Y0);
+        WINDOW_Y0,
+        1); // repetitive mode
 
 
 
@@ -894,7 +909,8 @@ assign #10 gpio_pins[9] = gpio_pins[8];
         WINDOW_WIDTH,
         WINDOW_HEIGHT,
         WINDOW_X0,
-        WINDOW_Y0);
+        WINDOW_Y0,
+        1); // repetitive mode
         
 `endif
 `ifdef TEST_SCANLINE_READ
@@ -907,7 +923,8 @@ assign #10 gpio_pins[9] = gpio_pins[8];
         WINDOW_WIDTH,
         WINDOW_HEIGHT,
         WINDOW_X0,
-        WINDOW_Y0);
+        WINDOW_Y0,
+        1); // repetitive mode
         
 `endif
 
@@ -1001,7 +1018,8 @@ assign #10 gpio_pins[9] = gpio_pins[8];
        AFI_SIZE64,          // input [28:0] size64;    // size of the system memory range in 64-bit words
        0,                  // input        continue;    // 0 start from start64, 1 - continue from where it was
        0, // disable_need
-       'h13); //'h3);  // cache_mode;  // 'h3 - normal, 'h13 - debug
+       'h13, //'h3);  // cache_mode;  // 'h3 - normal, 'h13 - debug
+       1) // repetitive mode
        
        
 `endif
@@ -1025,7 +1043,8 @@ assign #10 gpio_pins[9] = gpio_pins[8];
        AFI_SIZE64,          // input [28:0] size64;    // size of the system memory range in 64-bit words
        0,                  // input        continue;    // 0 start from start64, 1 - continue from where it was
        0, // disable_need
-       'h13); //'h3); //  cache_mode;  // 'h3 - normal, 'h13 - debug
+       'h13, //'h3);  // cache_mode;  // 'h3 - normal, 'h13 - debug
+       1) // repetitive mode
 
     $display("===================== #2 TEST_%s =========================",TEST_TITLE);
     test_afi_rw (
@@ -1043,7 +1062,8 @@ assign #10 gpio_pins[9] = gpio_pins[8];
        AFI_SIZE64,          // input [28:0] size64;    // size of the system memory range in 64-bit words
        0,                  // input        continue;    // 0 start from start64, 1 - continue from where it was
        0, // disable_need
-       'h13); //'h3); //  cache_mode;  // 'h3 - normal, 'h13 - debug
+       'h13, //'h3);  // cache_mode;  // 'h3 - normal, 'h13 - debug
+       1) // repetitive mode
        
 `endif
 
@@ -1246,10 +1266,14 @@ assign #10 gpio_pins[9] = gpio_pins[8];
 `ifdef COMPRESS_SINGLE
   TEST_TITLE = "COMPRESS_FRAME";
   $display("===================== TEST_%s =========================",TEST_TITLE);
-    compressor_run (0, 2); // run single
-    compressor_run (1, 2); // run single
-    compressor_run (2, 2); // run single
-    compressor_run (3, 2); // run single
+//    compressor_run (0, 2); // run single
+//    compressor_run (1, 2); // run single
+//    compressor_run (2, 2); // run single
+//    compressor_run (3, 2); // run single
+    compressor_run (0, 3); // run repetitive
+    compressor_run (1, 3); // run repetitive
+    compressor_run (2, 3); // run repetitive
+    compressor_run (3, 3); // run repetitive
 `endif
 
 `ifdef READBACK_DELAYS    
@@ -1259,19 +1283,39 @@ assign #10 gpio_pins[9] = gpio_pins[8];
 `endif
 
 `ifdef TEST_MEMBRIDGE    
-    TEST_TITLE = "MEMBRIDGE_READ # 1";
+  TEST_TITLE = "MEMBRIDGE_READ # 1";
     $display("===================== TEST_%s =========================",TEST_TITLE);
   TEST_TITLE = "MEMBRIDGE READ #1";
   $display("===================== TEST_%s =========================",TEST_TITLE);
 
   setup_sensor_membridge (0,   // for sensor 0
-                          1) ; // disable_need
+                          1,  // disable_need
+                          0, // read from ddr3
+                          1); // repetitive mode
     
   TEST_TITLE = "MEMBRIDGE READ #2";
   $display("===================== TEST_%s =========================",TEST_TITLE);
 
   setup_sensor_membridge (0,   // for sensor 0
-                          1) ; // disable_need
+                          1,  // disable_need
+                          0,  // read from ddr3
+                          0); // single mode
+                          
+  TEST_TITLE = "MEMBRIDGE_WRITE # 1";
+  $display("===================== TEST_%s =========================",TEST_TITLE);
+
+  setup_sensor_membridge (0,   // for sensor 0
+                          1,  // disable_need
+                          1,  // read from ddr3
+                          1); // repetitive mode
+    
+  TEST_TITLE = "MEMBRIDGE_WRITE # 2";
+  $display("===================== TEST_%s =========================",TEST_TITLE);
+
+  setup_sensor_membridge (0,   // for sensor 0
+                          1,  // disable_need
+                          1,  // read from ddr3
+                          0); // single mode
 `endif  
     
 `ifdef DEBUG_RING
@@ -1298,8 +1342,10 @@ end
 // protect from never end
   initial begin
 //       #30000;
-     #200000;
+//     #200000;
 //     #250000;
+//      #160000;
+      #175000;
 //     #60000;
     $display("finish testbench 2");
   $finish;
@@ -1541,8 +1587,10 @@ assign bresp=                              x393_i.ps7_i.MAXIGP0BRESP;
         .sns2_dp74 (sns2_dp[7:4]),    // inout[3:0]
         .sns2_dn74 (sns2_dn[7:4]),    // inout[3:0]
 `else    
-        .sns2_dp   (sns1_dp),    // inout[7:0] {PX_MRST, PXD8, PXD6, PXD4, PXD2, PXD0, PX_HACT, PX_DCLK}
-        .sns2_dn   (sns1_dn),    // inout[7:0] {PX_ARST, PXD9, PXD7, PXD5, PXD3, PXD1, PX_VACT, PX_BPF}
+//        .sns2_dp   (sns1_dp),    // inout[7:0] {PX_MRST, PXD8, PXD6, PXD4, PXD2, PXD0, PX_HACT, PX_DCLK}
+//        .sns2_dn   (sns1_dn),    // inout[7:0] {PX_ARST, PXD9, PXD7, PXD5, PXD3, PXD1, PX_VACT, PX_BPF}
+        .sns2_dp   (sns2_dp),    // inout[7:0] {PX_MRST, PXD8, PXD6, PXD4, PXD2, PXD0, PX_HACT, PX_DCLK}
+        .sns2_dn   (sns2_dn),    // inout[7:0] {PX_ARST, PXD9, PXD7, PXD5, PXD3, PXD1, PX_VACT, PX_BPF}
 `endif        
         .sns2_clkp (sns2_clkp),  // inout       CNVCLK/TDO
         .sns2_clkn (sns2_clkn),  // inout       CNVSYNC/TDI
@@ -2708,12 +2756,13 @@ task setup_sensor_channel;
     
     compressor_run (num_sensor, 0); // reset compressor
     
-    
+    simulation_datasimulation_dataspecify_window 66 36 0 0 0 3 1
     
     if (cmode == CMPRS_CBIT_CMODE_JPEG18) begin
         setup_compressor_channel(
             num_sensor,              // sensor channel number (0..3)
-            0,                       // qbank;    // [6:3] quantization table page - 100% quality
+            ((num_sensor == 1) || (num_sensor == 3))?  1 : 0, // 0,                       // qbank;    // [6:3] quantization table page - 100% quality
+//            (num_sensor[1] ^ num_sensor[0]) ? 1 : 0, // 0,                       // qbank;    // [6:3] quantization table page - 100% quality
     //        1,                       // qbank;    // [6:3] quantization table page - 85%? quality
             1,                       // dc_sub;   // [8:7] subtract DC
             cmode, // CMPRS_CBIT_CMODE_JPEG18, //input [31:0] cmode;   //  [13:9] color mode:
@@ -2735,7 +2784,8 @@ task setup_sensor_channel;
             0,                      // input [31:0] focus_mode;    // [23:21] Set focus mode
             3,                      // num_macro_cols_m1; // number of macroblock colums minus 1
             1,                      // num_macro_rows_m1; // number of macroblock rows minus 1
-            1,                      // input [31:0] left_margin;       // left margin of the first pixel (0..31) for 32-pixel wide colums in memory access
+            // No shift may break same result as x353?
+            0, // make same as JP4, no shift 1,                      // input [31:0] left_margin;       // left margin of the first pixel (0..31) for 32-pixel wide colums in memory access
             'h120,                  // input [31:0] colorsat_blue; //color saturation for blue (10 bits) //'h90 for 100%
             'h16c,                  // colorsat_red; //color saturation for red (10 bits)   // 'b6 for 100%
             0);                     // input [31:0] coring;     // coring value
@@ -2749,7 +2799,9 @@ task setup_sensor_channel;
                 window_width, //  & ~3,             // input [31:0] window_width;    // 13 bit - in 8*16=128 bit bursts
                 window_height & ~15,           // input [31:0] window_height;   // 16 bit
                 window_left,                   // input [31:0] window_left;
-                window_top+1,                  // input [31:0] window_top; (to match 20x20 tiles in 353)
+//                window_top+1,                  // input [31:0] window_top; (to match 20x20 tiles in 353)
+                window_top,  // make same as JP4, no shift 1,                // input [31:0] window_top; (to match 20x20 tiles in 353)
+                
                 1,   // input        byte32;     // == 1? 
                 2,   //input [31:0] tile_width; // == 2
                 1,  // input [31:0] extra_pages; // 1
@@ -2948,6 +3000,8 @@ endtask // setup_sensor_channel
 task setup_sensor_membridge;
     input  [1:0] num_sensor;
     input        disable_need;
+    input        write_video_memory;
+    input        rpt;
      
     reg   [31:0] frame_full_width; // 13-bit Padded line length (8-row increment), in 8-bursts (16 bytes)
     reg   [31:0] window_width;    // 13 bit - in 8*16=128 bit bursts
@@ -2965,7 +3019,7 @@ task setup_sensor_membridge;
         frame_start_address = FRAME_START_ADDRESS + num_sensor * FRAME_START_ADDRESS_INC * (LAST_BUF_FRAME + 1);
 //        frame_start_address_inc = FRAME_START_ADDRESS_INC;
        test_afi_rw (
-           0,                         // write_ddr3;
+            write_video_memory,       // write_ddr3;
            SCANLINE_EXTRA_PAGES,      //  extra_pages;
            frame_start_address[21:0], //  input [21:0] frame_start_addr;
            frame_full_width[15:0],    // input [15:0] window_full_width; // 13 bit - in 8*16=128 bit bursts
@@ -2978,7 +3032,8 @@ task setup_sensor_membridge;
            AFI_SIZE64,                // input [28:0] size64;    // size of the system memory range in 64-bit words
            0,                         // input        continue;    // 0 start from start64, 1 - continue from where it was
            disable_need,
-          'h13); //   cache_mode;  // 'h3 - normal, 'h13 - debug
+          'h13, //'h3);  // cache_mode;  // 'h3 - normal, 'h13 - debug
+           rpt); // repetitive mode
         
     
     end
@@ -4589,6 +4644,426 @@ endtask
 `include "includes/x393_tasks_status.vh"
 `include "includes/x393_tasks01.vh"
 `include "includes/x393_mcontr_encode_cmd.vh"
+
+// Save sensor data written to memory
+reg [3:0] CAPTURE_SENSORS = 0;
+reg [3:0] CAPTURED_SENSORS = 0;
+//reg [3:0] CAPTURE_SENSORS_D = 0;
+
+//x393_i.pclk
+//always @ (posedge x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.pclk);
+always @ (posedge x393_i.pclk or posedge RST_CLEAN) begin
+    if (RST_CLEAN) CAPTURE_SENSORS <= 0;
+    else           CAPTURE_SENSORS <= (~CAPTURED_SENSORS & x393_i.sensors393_i.sof_out_pclk) | (CAPTURE_SENSORS & ~x393_i.sensors393_i.eof_out_pclk) ;
+    if (RST_CLEAN) CAPTURED_SENSORS <= 0;
+    else           CAPTURED_SENSORS <= CAPTURED_SENSORS | (CAPTURE_SENSORS & x393_i.sensors393_i.eof_out_pclk);
+//    if (RST_CLEAN) CAPTURE_SENSORS_D <= 0;
+//    else     CAPTURE_SENSORS_D <= CAPTURE_SENSORS;
+end
+
+
+localparam WRITE_SENSOR_CHN0 = 0;
+localparam WRITE_SENSOR_CHN1 = 1;
+localparam WRITE_SENSOR_CHN2 = 2;
+localparam WRITE_SENSOR_CHN3 = 3;
+localparam CAPTURE_FOREVER = 0; // 1;
+integer file_chn0,file_chn1,file_chn2,file_chn3;
+initial begin
+    @(posedge CAPTURE_SENSORS[WRITE_SENSOR_CHN0]);
+    file_chn0 = $fopen("simulation_data/sensor_to_memory_0.dat","w");
+    $display("capture chn0 file opened, CAPTURE_SENSORS[WRITE_SENSOR_CHN0]= %x @%t",CAPTURE_SENSORS[WRITE_SENSOR_CHN0], $time);
+    while  (CAPTURE_SENSORS[WRITE_SENSOR_CHN0]) begin
+        @(posedge x393_i.pclk);
+        if (x393_i.sensors393_i.px_valid[WRITE_SENSOR_CHN0]) begin
+//            $display("file_chn0 <= %x",x393_i.sensors393_i.px_data[WRITE_SENSOR_CHN0]);
+            $fwrite(file_chn0," %02x",x393_i.sensors393_i.px_data[16*WRITE_SENSOR_CHN0   +: 8]);
+            $fwrite(file_chn0," %02x",x393_i.sensors393_i.px_data[16*WRITE_SENSOR_CHN0+8 +: 8]);
+            if (x393_i.sensors393_i.last_in_line[WRITE_SENSOR_CHN0])
+                $fwrite(file_chn0,"\n");
+        end
+    end
+    if (CAPTURE_FOREVER) begin
+        $fwrite(file_chn0,"\n");
+        $display("capture chn0 first frame done, continue capturing @%t",$time);
+        forever begin
+            @(posedge x393_i.pclk);
+            if (x393_i.sensors393_i.px_valid[WRITE_SENSOR_CHN0]) begin
+                $fwrite(file_chn0," %02x",x393_i.sensors393_i.px_data[16*WRITE_SENSOR_CHN0   +: 8]);
+                $fwrite(file_chn0," %02x",x393_i.sensors393_i.px_data[16*WRITE_SENSOR_CHN0+8 +: 8]);
+                if (x393_i.sensors393_i.last_in_line[WRITE_SENSOR_CHN0])
+                    $fwrite(file_chn0,"\n");
+            end
+        end
+
+    end
+    $fclose(file_chn0);
+    $display("capture chn0 ended @%t",$time);
+end
+
+initial begin
+    @(posedge CAPTURE_SENSORS[WRITE_SENSOR_CHN1]);
+    file_chn1 = $fopen("simulation_data/sensor_to_memory_1.dat","w");
+    $display("capture chn1 file opened, CAPTURE_SENSORS[WRITE_SENSOR_CHN1]= %x @%t",CAPTURE_SENSORS[WRITE_SENSOR_CHN1], $time);
+    while  (CAPTURE_SENSORS[WRITE_SENSOR_CHN1]) begin
+        @(posedge x393_i.pclk);
+        if (x393_i.sensors393_i.px_valid[WRITE_SENSOR_CHN1]) begin
+            $fwrite(file_chn1," %02x",x393_i.sensors393_i.px_data[16*WRITE_SENSOR_CHN1   +: 8]);
+            $fwrite(file_chn1," %02x",x393_i.sensors393_i.px_data[16*WRITE_SENSOR_CHN1+8 +: 8]);
+            if (x393_i.sensors393_i.last_in_line[WRITE_SENSOR_CHN1])
+                $fwrite(file_chn1,"\n");
+        end
+    end 
+    if (CAPTURE_FOREVER) begin
+        $fwrite(file_chn1,"\n");
+        $display("capture chn1 first frame done, continue capturing @%t",$time);
+        forever begin
+            @(posedge x393_i.pclk);
+            if (x393_i.sensors393_i.px_valid[WRITE_SENSOR_CHN1]) begin
+                $fwrite(file_chn1," %02x",x393_i.sensors393_i.px_data[16*WRITE_SENSOR_CHN1   +: 8]);
+                $fwrite(file_chn1," %02x",x393_i.sensors393_i.px_data[16*WRITE_SENSOR_CHN1+8 +: 8]);
+                if (x393_i.sensors393_i.last_in_line[WRITE_SENSOR_CHN1])
+                    $fwrite(file_chn1,"\n");
+            end
+        end
+
+    end
+    $fclose(file_chn1);
+    $display("capture chn1 ended @%t",$time);
+end
+
+initial begin
+    @(posedge CAPTURE_SENSORS[WRITE_SENSOR_CHN2]);
+    file_chn2 = $fopen("simulation_data/sensor_to_memory_2.dat","w");
+    $display("capture chn2 file opened, CAPTURE_SENSORS[WRITE_SENSOR_CHN2]= %x @%t",CAPTURE_SENSORS[WRITE_SENSOR_CHN2], $time);
+    while  (CAPTURE_SENSORS[WRITE_SENSOR_CHN2]) begin
+        @(posedge x393_i.pclk);
+        if (x393_i.sensors393_i.px_valid[WRITE_SENSOR_CHN2]) begin
+            $fwrite(file_chn2," %02x",x393_i.sensors393_i.px_data[16*WRITE_SENSOR_CHN2   +: 8]);
+            $fwrite(file_chn2," %02x",x393_i.sensors393_i.px_data[16*WRITE_SENSOR_CHN2+8 +: 8]);
+            if (x393_i.sensors393_i.last_in_line[WRITE_SENSOR_CHN2])
+                $fwrite(file_chn2,"\n");
+        end
+    end 
+    if (CAPTURE_FOREVER) begin
+        $fwrite(file_chn2,"\n");
+        $display("capture chn2 first frame done, continue capturing @%t",$time);
+        forever begin
+            @(posedge x393_i.pclk);
+            if (x393_i.sensors393_i.px_valid[WRITE_SENSOR_CHN2]) begin
+                $fwrite(file_chn2," %02x",x393_i.sensors393_i.px_data[16*WRITE_SENSOR_CHN2   +: 8]);
+                $fwrite(file_chn2," %02x",x393_i.sensors393_i.px_data[16*WRITE_SENSOR_CHN2+8 +: 8]);
+                if (x393_i.sensors393_i.last_in_line[WRITE_SENSOR_CHN2])
+                    $fwrite(file_chn2,"\n");
+            end
+        end
+
+    end
+    $fclose(file_chn2);
+    $display("capture chn2 ended @%t",$time);
+end
+
+initial begin
+    @(posedge CAPTURE_SENSORS[WRITE_SENSOR_CHN3]);
+    file_chn3 = $fopen("simulation_data/sensor_to_memory_3.dat","w");
+    $display("capture chn3 file opened, CAPTURE_SENSORS[WRITE_SENSOR_CHN3]= %x @%t",CAPTURE_SENSORS[WRITE_SENSOR_CHN3], $time);
+    while  (CAPTURE_SENSORS[WRITE_SENSOR_CHN3]) begin
+        @(posedge x393_i.pclk);
+        if (x393_i.sensors393_i.px_valid[WRITE_SENSOR_CHN3]) begin
+            $fwrite(file_chn3," %02x",x393_i.sensors393_i.px_data[16*WRITE_SENSOR_CHN3   +: 8]);
+            $fwrite(file_chn3," %02x",x393_i.sensors393_i.px_data[16*WRITE_SENSOR_CHN3+8 +: 8]);
+            if (x393_i.sensors393_i.last_in_line[WRITE_SENSOR_CHN3])
+                $fwrite(file_chn3,"\n");
+        end
+    end 
+    if (CAPTURE_FOREVER) begin
+        $fwrite(file_chn3,"\n");
+        $display("capture chn3 first frame done, continue capturing @%t",$time);
+        forever begin
+            @(posedge x393_i.pclk);
+            if (x393_i.sensors393_i.px_valid[WRITE_SENSOR_CHN3]) begin
+                $fwrite(file_chn3," %02x",x393_i.sensors393_i.px_data[16*WRITE_SENSOR_CHN3   +: 8]);
+                $fwrite(file_chn3," %02x",x393_i.sensors393_i.px_data[16*WRITE_SENSOR_CHN3+8 +: 8]);
+                if (x393_i.sensors393_i.last_in_line[WRITE_SENSOR_CHN3])
+                    $fwrite(file_chn3,"\n");
+            end
+        end
+
+    end
+    $fclose(file_chn3);
+    $display("capture chn3 ended @%t",$time);
+end
+
+/*
+initial begin
+    @(posedge CAPTURE_SENSORS[WRITE_SENSOR_CHN]);
+    file_chn = $fopen("sensor_to_memory.dat","w");
+    $display("capture chn file opened, CAPTURE_SENSORS[WRITE_SENSOR_CHN]= %x @%t",CAPTURE_SENSORS[WRITE_SENSOR_CHN], $time);
+    while  (CAPTURE_SENSORS[WRITE_SENSOR_CHN]) begin
+        @(posedge x393_i.pclk);
+        if (x393_i.sensors393_i.px_valid[WRITE_SENSOR_CHN]) begin
+            $fwrite(file_chn," %02x",x393_i.sensors393_i.px_data[16*WRITE_SENSOR_CHN   +: 8]);
+            $fwrite(file_chn," %02x",x393_i.sensors393_i.px_data[16*WRITE_SENSOR_CHN+8 +: 8]);
+            if (x393_i.sensors393_i.last_in_line[WRITE_SENSOR_CHN])
+                $fwrite(file_chn,"\n");
+        end
+    end 
+    if (CAPTURE_FOREVER) begin
+        $fwrite(file_chn,"\n");
+        $display("capture chn first frame done, continue capturing @%t",$time);
+        forever begin
+            @(posedge x393_i.pclk);
+            if (x393_i.sensors393_i.px_valid[WRITE_SENSOR_CHN]) begin
+                $fwrite(file_chn," %02x",x393_i.sensors393_i.px_data[16*WRITE_SENSOR_CHN   +: 8]);
+                $fwrite(file_chn," %02x",x393_i.sensors393_i.px_data[16*WRITE_SENSOR_CHN+8 +: 8]);
+                if (x393_i.sensors393_i.last_in_line[WRITE_SENSOR_CHN])
+                    $fwrite(file_chn,"\n");
+            end
+        end
+
+    end
+    $fclose(file_chn);
+    $display("capture chn ended @%t",$time);
+end
+*/
+integer file_cmprs_chn0, file_cmprs_chn1, file_cmprs_chn2, file_cmprs_chn3;
+localparam WRITE_COMPRESSOR_CHN0 = 0;
+localparam WRITE_COMPRESSOR_CHN1 = 1;
+localparam WRITE_COMPRESSOR_CHN2 = 2;
+localparam WRITE_COMPRESSOR_CHN3 = 3;
+reg [3:0] CAPTURE_COMPRESSORS = 0;
+reg [3:0] CAPTURED_COMPRESSORS = 0;
+reg [3:0] CAPTURE_COMPRESSORS_REN_D;
+reg [3:0] CAPTURE_COMPRESSORS_REN_D2;
+wire [3:0] CAPTURE_COMPRESSOR_START;
+    pulse_cross_clock capture_compressor_start_0_i (.rst(RST_CLEAN), .src_clk(x393_i.mclk), .dst_clk(x393_i.hclk),
+                                                    .in_pulse(x393_i.compressor393_i.frame_start_dst[0]), .out_pulse(CAPTURE_COMPRESSOR_START[0]),.busy());
+    pulse_cross_clock capture_compressor_start_1_i (.rst(RST_CLEAN), .src_clk(x393_i.mclk), .dst_clk(x393_i.hclk),
+                                                    .in_pulse(x393_i.compressor393_i.frame_start_dst[1]), .out_pulse(CAPTURE_COMPRESSOR_START[1]),.busy());
+    pulse_cross_clock capture_compressor_start_2_i (.rst(RST_CLEAN), .src_clk(x393_i.mclk), .dst_clk(x393_i.hclk),
+                                                    .in_pulse(x393_i.compressor393_i.frame_start_dst[2]), .out_pulse(CAPTURE_COMPRESSOR_START[2]),.busy());
+    pulse_cross_clock capture_compressor_start_3_i (.rst(RST_CLEAN), .src_clk(x393_i.mclk), .dst_clk(x393_i.hclk),
+                                                    .in_pulse(x393_i.compressor393_i.frame_start_dst[3]), .out_pulse(CAPTURE_COMPRESSOR_START[3]),.busy());
+
+always @ (posedge x393_i.hclk or posedge RST_CLEAN) begin
+    if (RST_CLEAN) CAPTURE_COMPRESSORS <= 0;
+    else           CAPTURE_COMPRESSORS <= (~CAPTURED_COMPRESSORS & CAPTURE_COMPRESSOR_START) | (CAPTURE_COMPRESSORS & ~x393_i.compressor393_i.eof_written) ;
+    
+    if (RST_CLEAN) CAPTURED_COMPRESSORS <= 0;
+    else           CAPTURED_COMPRESSORS <= CAPTURED_COMPRESSORS | (CAPTURE_COMPRESSORS & x393_i.compressor393_i.eof_written);
+    
+    if (RST_CLEAN) CAPTURE_COMPRESSORS_REN_D <= 0;
+    else           CAPTURE_COMPRESSORS_REN_D <= x393_i.compressor393_i.fifo_ren;
+
+    if (RST_CLEAN) CAPTURE_COMPRESSORS_REN_D2 <= 0;
+    else           CAPTURE_COMPRESSORS_REN_D2 <= CAPTURE_COMPRESSORS_REN_D;
+end
+
+initial begin
+    @(posedge CAPTURE_COMPRESSORS[WRITE_COMPRESSOR_CHN0]);
+    file_cmprs_chn0 = $fopen("simulation_data/compressor_out_0.dat","w");
+    $display("capture compressor chn0 file opened, CAPTURE_COMPRESSORS[WRITE_COMPRESSOR_CHN0]= %x @%t",CAPTURE_COMPRESSORS[WRITE_COMPRESSOR_CHN0], $time);
+    while  (CAPTURE_COMPRESSORS[WRITE_COMPRESSOR_CHN0]) begin
+        @(posedge x393_i.hclk);
+        if (CAPTURE_COMPRESSORS_REN_D2[WRITE_COMPRESSOR_CHN0]) begin
+            $fwrite(file_cmprs_chn0," %x",x393_i.compressor393_i.fifo_rdata[64*WRITE_COMPRESSOR_CHN0      +: 8]);
+            $fwrite(file_cmprs_chn0," %x",x393_i.compressor393_i.fifo_rdata[64*WRITE_COMPRESSOR_CHN0 +  8 +: 8]);
+            $fwrite(file_cmprs_chn0," %x",x393_i.compressor393_i.fifo_rdata[64*WRITE_COMPRESSOR_CHN0 + 16 +: 8]);
+            $fwrite(file_cmprs_chn0," %x",x393_i.compressor393_i.fifo_rdata[64*WRITE_COMPRESSOR_CHN0 + 24 +: 8]);
+            $fwrite(file_cmprs_chn0," %x",x393_i.compressor393_i.fifo_rdata[64*WRITE_COMPRESSOR_CHN0 + 32 +: 8]);
+            $fwrite(file_cmprs_chn0," %x",x393_i.compressor393_i.fifo_rdata[64*WRITE_COMPRESSOR_CHN0 + 40 +: 8]);
+            $fwrite(file_cmprs_chn0," %x",x393_i.compressor393_i.fifo_rdata[64*WRITE_COMPRESSOR_CHN0 + 48 +: 8]);
+            $fwrite(file_cmprs_chn0," %x",x393_i.compressor393_i.fifo_rdata[64*WRITE_COMPRESSOR_CHN0 + 56 +: 8]);
+            $fwrite(file_cmprs_chn0,"\n");
+        end
+    end 
+    if (CAPTURE_FOREVER) begin
+        $fwrite(file_cmprs_chn0,"\n");
+        $display("capture compressor chn0 first frame done, continue capturing @%t",$time);
+        forever begin
+            @(posedge x393_i.hclk);
+            if (CAPTURE_COMPRESSORS_REN_D2[WRITE_COMPRESSOR_CHN0]) begin
+                $fwrite(file_cmprs_chn0," %x",x393_i.compressor393_i.fifo_rdata[64*WRITE_COMPRESSOR_CHN0      +: 8]);
+                $fwrite(file_cmprs_chn0," %x",x393_i.compressor393_i.fifo_rdata[64*WRITE_COMPRESSOR_CHN0 +  8 +: 8]);
+                $fwrite(file_cmprs_chn0," %x",x393_i.compressor393_i.fifo_rdata[64*WRITE_COMPRESSOR_CHN0 + 16 +: 8]);
+                $fwrite(file_cmprs_chn0," %x",x393_i.compressor393_i.fifo_rdata[64*WRITE_COMPRESSOR_CHN0 + 24 +: 8]);
+                $fwrite(file_cmprs_chn0," %x",x393_i.compressor393_i.fifo_rdata[64*WRITE_COMPRESSOR_CHN0 + 32 +: 8]);
+                $fwrite(file_cmprs_chn0," %x",x393_i.compressor393_i.fifo_rdata[64*WRITE_COMPRESSOR_CHN0 + 40 +: 8]);
+                $fwrite(file_cmprs_chn0," %x",x393_i.compressor393_i.fifo_rdata[64*WRITE_COMPRESSOR_CHN0 + 48 +: 8]);
+                $fwrite(file_cmprs_chn0," %x",x393_i.compressor393_i.fifo_rdata[64*WRITE_COMPRESSOR_CHN0 + 56 +: 8]);
+                $fwrite(file_cmprs_chn0,"\n");
+            end
+        end
+
+    end
+    $fclose(file_cmprs_chn0);
+    $display("capture compressor chn0 ended @%t",$time);
+end
+initial begin
+    @(posedge CAPTURE_COMPRESSORS[WRITE_COMPRESSOR_CHN1]);
+    file_cmprs_chn1 = $fopen("simulation_data/compressor_out_1.dat","w");
+    $display("capture compressor chn1 file opened, CAPTURE_COMPRESSORS[WRITE_COMPRESSOR_CHN1]= %x @%t",CAPTURE_COMPRESSORS[WRITE_COMPRESSOR_CHN1], $time);
+    while  (CAPTURE_COMPRESSORS[WRITE_COMPRESSOR_CHN1]) begin
+        @(posedge x393_i.hclk);
+        if (CAPTURE_COMPRESSORS_REN_D2[WRITE_COMPRESSOR_CHN1]) begin
+            $fwrite(file_cmprs_chn1," %x",x393_i.compressor393_i.fifo_rdata[64*WRITE_COMPRESSOR_CHN1      +: 8]);
+            $fwrite(file_cmprs_chn1," %x",x393_i.compressor393_i.fifo_rdata[64*WRITE_COMPRESSOR_CHN1 +  8 +: 8]);
+            $fwrite(file_cmprs_chn1," %x",x393_i.compressor393_i.fifo_rdata[64*WRITE_COMPRESSOR_CHN1 + 16 +: 8]);
+            $fwrite(file_cmprs_chn1," %x",x393_i.compressor393_i.fifo_rdata[64*WRITE_COMPRESSOR_CHN1 + 24 +: 8]);
+            $fwrite(file_cmprs_chn1," %x",x393_i.compressor393_i.fifo_rdata[64*WRITE_COMPRESSOR_CHN1 + 32 +: 8]);
+            $fwrite(file_cmprs_chn1," %x",x393_i.compressor393_i.fifo_rdata[64*WRITE_COMPRESSOR_CHN1 + 40 +: 8]);
+            $fwrite(file_cmprs_chn1," %x",x393_i.compressor393_i.fifo_rdata[64*WRITE_COMPRESSOR_CHN1 + 48 +: 8]);
+            $fwrite(file_cmprs_chn1," %x",x393_i.compressor393_i.fifo_rdata[64*WRITE_COMPRESSOR_CHN1 + 56 +: 8]);
+            $fwrite(file_cmprs_chn1,"\n");
+        end
+    end 
+    if (CAPTURE_FOREVER) begin
+        $fwrite(file_cmprs_chn1,"\n");
+        $display("capture compressor chn1 first frame done, continue capturing @%t",$time);
+        forever begin
+            @(posedge x393_i.hclk);
+            if (CAPTURE_COMPRESSORS_REN_D2[WRITE_COMPRESSOR_CHN1]) begin
+                $fwrite(file_cmprs_chn1," %x",x393_i.compressor393_i.fifo_rdata[64*WRITE_COMPRESSOR_CHN1      +: 8]);
+                $fwrite(file_cmprs_chn1," %x",x393_i.compressor393_i.fifo_rdata[64*WRITE_COMPRESSOR_CHN1 +  8 +: 8]);
+                $fwrite(file_cmprs_chn1," %x",x393_i.compressor393_i.fifo_rdata[64*WRITE_COMPRESSOR_CHN1 + 16 +: 8]);
+                $fwrite(file_cmprs_chn1," %x",x393_i.compressor393_i.fifo_rdata[64*WRITE_COMPRESSOR_CHN1 + 24 +: 8]);
+                $fwrite(file_cmprs_chn1," %x",x393_i.compressor393_i.fifo_rdata[64*WRITE_COMPRESSOR_CHN1 + 32 +: 8]);
+                $fwrite(file_cmprs_chn1," %x",x393_i.compressor393_i.fifo_rdata[64*WRITE_COMPRESSOR_CHN1 + 40 +: 8]);
+                $fwrite(file_cmprs_chn1," %x",x393_i.compressor393_i.fifo_rdata[64*WRITE_COMPRESSOR_CHN1 + 48 +: 8]);
+                $fwrite(file_cmprs_chn1," %x",x393_i.compressor393_i.fifo_rdata[64*WRITE_COMPRESSOR_CHN1 + 56 +: 8]);
+                $fwrite(file_cmprs_chn1,"\n");
+            end
+        end
+
+    end
+    $fclose(file_cmprs_chn1);
+    $display("capture compressor chn1 ended @%t",$time);
+end
+initial begin
+    @(posedge CAPTURE_COMPRESSORS[WRITE_COMPRESSOR_CHN2]);
+    file_cmprs_chn2 = $fopen("simulation_data/compressor_out_2.dat","w");
+    $display("capture compressor chn2 file opened, CAPTURE_COMPRESSORS[WRITE_COMPRESSOR_CHN2]= %x @%t",CAPTURE_COMPRESSORS[WRITE_COMPRESSOR_CHN2], $time);
+    while  (CAPTURE_COMPRESSORS[WRITE_COMPRESSOR_CHN2]) begin
+        @(posedge x393_i.hclk);
+        if (CAPTURE_COMPRESSORS_REN_D2[WRITE_COMPRESSOR_CHN2]) begin
+            $fwrite(file_cmprs_chn2," %x",x393_i.compressor393_i.fifo_rdata[64*WRITE_COMPRESSOR_CHN2      +: 8]);
+            $fwrite(file_cmprs_chn2," %x",x393_i.compressor393_i.fifo_rdata[64*WRITE_COMPRESSOR_CHN2 +  8 +: 8]);
+            $fwrite(file_cmprs_chn2," %x",x393_i.compressor393_i.fifo_rdata[64*WRITE_COMPRESSOR_CHN2 + 16 +: 8]);
+            $fwrite(file_cmprs_chn2," %x",x393_i.compressor393_i.fifo_rdata[64*WRITE_COMPRESSOR_CHN2 + 24 +: 8]);
+            $fwrite(file_cmprs_chn2," %x",x393_i.compressor393_i.fifo_rdata[64*WRITE_COMPRESSOR_CHN2 + 32 +: 8]);
+            $fwrite(file_cmprs_chn2," %x",x393_i.compressor393_i.fifo_rdata[64*WRITE_COMPRESSOR_CHN2 + 40 +: 8]);
+            $fwrite(file_cmprs_chn2," %x",x393_i.compressor393_i.fifo_rdata[64*WRITE_COMPRESSOR_CHN2 + 48 +: 8]);
+            $fwrite(file_cmprs_chn2," %x",x393_i.compressor393_i.fifo_rdata[64*WRITE_COMPRESSOR_CHN2 + 56 +: 8]);
+            $fwrite(file_cmprs_chn2,"\n");
+        end
+    end 
+    if (CAPTURE_FOREVER) begin
+        $fwrite(file_cmprs_chn2,"\n");
+        $display("capture compressor chn2 first frame done, continue capturing @%t",$time);
+        forever begin
+            @(posedge x393_i.hclk);
+            if (CAPTURE_COMPRESSORS_REN_D2[WRITE_COMPRESSOR_CHN2]) begin
+                $fwrite(file_cmprs_chn2," %x",x393_i.compressor393_i.fifo_rdata[64*WRITE_COMPRESSOR_CHN2      +: 8]);
+                $fwrite(file_cmprs_chn2," %x",x393_i.compressor393_i.fifo_rdata[64*WRITE_COMPRESSOR_CHN2 +  8 +: 8]);
+                $fwrite(file_cmprs_chn2," %x",x393_i.compressor393_i.fifo_rdata[64*WRITE_COMPRESSOR_CHN2 + 16 +: 8]);
+                $fwrite(file_cmprs_chn2," %x",x393_i.compressor393_i.fifo_rdata[64*WRITE_COMPRESSOR_CHN2 + 24 +: 8]);
+                $fwrite(file_cmprs_chn2," %x",x393_i.compressor393_i.fifo_rdata[64*WRITE_COMPRESSOR_CHN2 + 32 +: 8]);
+                $fwrite(file_cmprs_chn2," %x",x393_i.compressor393_i.fifo_rdata[64*WRITE_COMPRESSOR_CHN2 + 40 +: 8]);
+                $fwrite(file_cmprs_chn2," %x",x393_i.compressor393_i.fifo_rdata[64*WRITE_COMPRESSOR_CHN2 + 48 +: 8]);
+                $fwrite(file_cmprs_chn2," %x",x393_i.compressor393_i.fifo_rdata[64*WRITE_COMPRESSOR_CHN2 + 56 +: 8]);
+                $fwrite(file_cmprs_chn2,"\n");
+            end
+        end
+
+    end
+    $fclose(file_cmprs_chn2);
+    $display("capture compressor chn2 ended @%t",$time);
+end
+initial begin
+    @(posedge CAPTURE_COMPRESSORS[WRITE_COMPRESSOR_CHN3]);
+    file_cmprs_chn3 = $fopen("simulation_data/compressor_out_3.dat","w");
+    $display("capture compressor chn3 file opened, CAPTURE_COMPRESSORS[WRITE_COMPRESSOR_CHN3]= %x @%t",CAPTURE_COMPRESSORS[WRITE_COMPRESSOR_CHN3], $time);
+    while  (CAPTURE_COMPRESSORS[WRITE_COMPRESSOR_CHN3]) begin
+        @(posedge x393_i.hclk);
+        if (CAPTURE_COMPRESSORS_REN_D2[WRITE_COMPRESSOR_CHN3]) begin
+            $fwrite(file_cmprs_chn3," %x",x393_i.compressor393_i.fifo_rdata[64*WRITE_COMPRESSOR_CHN3      +: 8]);
+            $fwrite(file_cmprs_chn3," %x",x393_i.compressor393_i.fifo_rdata[64*WRITE_COMPRESSOR_CHN3 +  8 +: 8]);
+            $fwrite(file_cmprs_chn3," %x",x393_i.compressor393_i.fifo_rdata[64*WRITE_COMPRESSOR_CHN3 + 16 +: 8]);
+            $fwrite(file_cmprs_chn3," %x",x393_i.compressor393_i.fifo_rdata[64*WRITE_COMPRESSOR_CHN3 + 24 +: 8]);
+            $fwrite(file_cmprs_chn3," %x",x393_i.compressor393_i.fifo_rdata[64*WRITE_COMPRESSOR_CHN3 + 32 +: 8]);
+            $fwrite(file_cmprs_chn3," %x",x393_i.compressor393_i.fifo_rdata[64*WRITE_COMPRESSOR_CHN3 + 40 +: 8]);
+            $fwrite(file_cmprs_chn3," %x",x393_i.compressor393_i.fifo_rdata[64*WRITE_COMPRESSOR_CHN3 + 48 +: 8]);
+            $fwrite(file_cmprs_chn3," %x",x393_i.compressor393_i.fifo_rdata[64*WRITE_COMPRESSOR_CHN3 + 56 +: 8]);
+            $fwrite(file_cmprs_chn3,"\n");
+        end
+    end 
+    if (CAPTURE_FOREVER) begin
+        $fwrite(file_cmprs_chn3,"\n");
+        $display("capture compressor chn3 first frame done, continue capturing @%t",$time);
+        forever begin
+            @(posedge x393_i.hclk);
+            if (CAPTURE_COMPRESSORS_REN_D2[WRITE_COMPRESSOR_CHN3]) begin
+                $fwrite(file_cmprs_chn3," %x",x393_i.compressor393_i.fifo_rdata[64*WRITE_COMPRESSOR_CHN3      +: 8]);
+                $fwrite(file_cmprs_chn3," %x",x393_i.compressor393_i.fifo_rdata[64*WRITE_COMPRESSOR_CHN3 +  8 +: 8]);
+                $fwrite(file_cmprs_chn3," %x",x393_i.compressor393_i.fifo_rdata[64*WRITE_COMPRESSOR_CHN3 + 16 +: 8]);
+                $fwrite(file_cmprs_chn3," %x",x393_i.compressor393_i.fifo_rdata[64*WRITE_COMPRESSOR_CHN3 + 24 +: 8]);
+                $fwrite(file_cmprs_chn3," %x",x393_i.compressor393_i.fifo_rdata[64*WRITE_COMPRESSOR_CHN3 + 32 +: 8]);
+                $fwrite(file_cmprs_chn3," %x",x393_i.compressor393_i.fifo_rdata[64*WRITE_COMPRESSOR_CHN3 + 40 +: 8]);
+                $fwrite(file_cmprs_chn3," %x",x393_i.compressor393_i.fifo_rdata[64*WRITE_COMPRESSOR_CHN3 + 48 +: 8]);
+                $fwrite(file_cmprs_chn3," %x",x393_i.compressor393_i.fifo_rdata[64*WRITE_COMPRESSOR_CHN3 + 56 +: 8]);
+                $fwrite(file_cmprs_chn3,"\n");
+            end
+        end
+
+    end
+    $fclose(file_cmprs_chn3);
+    $display("capture compressor chn3 ended @%t",$time);
+end
+
+/*
+integer file_cmprs_chn;
+localparam capture compressor chn0 = 0;
+initial begin
+    @(posedge CAPTURE_COMPRESSORS[WRITE_COMPRESSOR_CHN]);
+    file_cmprs_chn = $fopen("compressor_out.dat","w");
+    $display("capture compressor chn file opened, CAPTURE_COMPRESSORS[WRITE_COMPRESSOR_CHN]= %x @%t",CAPTURE_COMPRESSORS[WRITE_COMPRESSOR_CHN], $time);
+    while  (CAPTURE_COMPRESSORS[WRITE_COMPRESSOR_CHN]) begin
+        @(posedge x393_i.hclk);
+        if (CAPTURE_COMPRESSORS_REN_D2[WRITE_COMPRESSOR_CHN]) begin
+            $fwrite(file_cmprs_chn," %x",x393_i.compressor393_i.fifo_rdata[64*WRITE_COMPRESSOR_CHN      +: 8]);
+            $fwrite(file_cmprs_chn," %x",x393_i.compressor393_i.fifo_rdata[64*WRITE_COMPRESSOR_CHN +  8 +: 8]);
+            $fwrite(file_cmprs_chn," %x",x393_i.compressor393_i.fifo_rdata[64*WRITE_COMPRESSOR_CHN + 16 +: 8]);
+            $fwrite(file_cmprs_chn," %x",x393_i.compressor393_i.fifo_rdata[64*WRITE_COMPRESSOR_CHN + 24 +: 8]);
+            $fwrite(file_cmprs_chn," %x",x393_i.compressor393_i.fifo_rdata[64*WRITE_COMPRESSOR_CHN + 32 +: 8]);
+            $fwrite(file_cmprs_chn," %x",x393_i.compressor393_i.fifo_rdata[64*WRITE_COMPRESSOR_CHN + 40 +: 8]);
+            $fwrite(file_cmprs_chn," %x",x393_i.compressor393_i.fifo_rdata[64*WRITE_COMPRESSOR_CHN + 48 +: 8]);
+            $fwrite(file_cmprs_chn," %x",x393_i.compressor393_i.fifo_rdata[64*WRITE_COMPRESSOR_CHN + 56 +: 8]);
+            $fwrite(file_cmprs_chn,"\n");
+        end
+    end 
+    if (CAPTURE_FOREVER) begin
+        $fwrite(file_cmprs_chn,"\n");
+        $display("capture chn first frame done, continue capturing @%t",$time);
+        forever begin
+            @(posedge x393_i.hclk);
+        if (CAPTURE_COMPRESSORS_REN_D2[WRITE_COMPRESSOR_CHN]) begin
+            $fwrite(file_cmprs_chn," %x",x393_i.compressor393_i.fifo_rdata[64*WRITE_COMPRESSOR_CHN      +: 8]);
+            $fwrite(file_cmprs_chn," %x",x393_i.compressor393_i.fifo_rdata[64*WRITE_COMPRESSOR_CHN +  8 +: 8]);
+            $fwrite(file_cmprs_chn," %x",x393_i.compressor393_i.fifo_rdata[64*WRITE_COMPRESSOR_CHN + 16 +: 8]);
+            $fwrite(file_cmprs_chn," %x",x393_i.compressor393_i.fifo_rdata[64*WRITE_COMPRESSOR_CHN + 24 +: 8]);
+            $fwrite(file_cmprs_chn," %x",x393_i.compressor393_i.fifo_rdata[64*WRITE_COMPRESSOR_CHN + 32 +: 8]);
+            $fwrite(file_cmprs_chn," %x",x393_i.compressor393_i.fifo_rdata[64*WRITE_COMPRESSOR_CHN + 40 +: 8]);
+            $fwrite(file_cmprs_chn," %x",x393_i.compressor393_i.fifo_rdata[64*WRITE_COMPRESSOR_CHN + 48 +: 8]);
+            $fwrite(file_cmprs_chn," %x",x393_i.compressor393_i.fifo_rdata[64*WRITE_COMPRESSOR_CHN + 56 +: 8]);
+            $fwrite(file_cmprs_chn,"\n");
+        end
+        end
+
+    end
+    $fclose(file_cmprs_chn);
+    $display("capture compressor chn ended @%t",$time);
+end
+*/
+
 
 
 endmodule

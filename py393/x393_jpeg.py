@@ -156,6 +156,7 @@ HUFFVAL = "huffval"
 LENGTH =  "length"
 VALUE =   "value"
 FPGA_HUFFMAN_TABLE = "fpga_huffman_table"
+SIMULATION_JPEG_DATA = "../simulation_data/compressor_out_%d.dat"
 
 class X393Jpeg(object):
     DRY_MODE= True # True
@@ -271,8 +272,8 @@ class X393Jpeg(object):
             for i,t in enumerate(STD_QUANT_TBLS[t_name]):
                 d = max(1,min((t * q + 50) // 100, 255))
                 tbl[ZIG_ZAG[i]] = d
-#                fpga_tbl[i] = min(((0x20000 // d) + 1) >> 1, 0xffff)   
-                fpga_tbl[ZIG_ZAG[i]] = min(((0x20000 // d) + 1) >> 1, 0xffff)   
+                fpga_tbl[i] = min(((0x20000 // d) + 1) >> 1, 0xffff)   
+##                fpga_tbl[ZIG_ZAG[i]] = min(((0x20000 // d) + 1) >> 1, 0xffff)   
             rslt.append(tbl)
             fpga.append(fpga_tbl)
         if verbose > 0:
@@ -770,7 +771,7 @@ class X393Jpeg(object):
                    portrait =  False,
 #                   color_mode = None, # vrlg.CMPRS_CBIT_CMODE_JPEG18, # read it from the saved
                    byrshift   = 0,
-                   server_root = "/www/pages/",
+                   server_root = None, # "/www/pages/",
                    verbose    = 1):
         """
         Create JPEG image from the latest acquired in the camera
@@ -783,6 +784,11 @@ class X393Jpeg(object):
         @param server_root - files ystem path to the web server root directory
         @param verbose - verbose level
         """
+        if server_root is None:
+            if (self.DRY_MODE):
+                server_root = "../www/"
+            else:
+                server_root = "/www/pages/"
         allFiles = False
         if file_path[0] == "/":
             server_root = "" # just do not add anything 
@@ -849,6 +855,9 @@ class X393Jpeg(object):
             print ("window[width]",window["width"])
             print ("window[cmode]",window["cmode"])
             print ("window=",window)
+        
+        
+            
         jpeg_data = self.jpegheader_create (
                            y_quality = y_quality,
                            c_quality = c_quality,
@@ -858,13 +867,23 @@ class X393Jpeg(object):
                            color_mode = window["cmode"], #color_mode,
                            byrshift   = byrshift,
                            verbose    = verbose - 1)
-        meta = self.x393_cmprs_afi.afi_mux_get_image_meta(
-                          port_afi =     0,
-                          channel =      channel,
-                          cirbuf_start = x393_sens_cmprs.GLBL_CIRCBUF_STARTS[channel],
-                          circbuf_len =  x393_sens_cmprs.GLBL_CIRCBUF_CHN_SIZE,
-                          verbose = verbose)
-        if verbose > 0 :
+        if self.DRY_MODE:
+            meta = self.x393_cmprs_afi.afi_mux_get_image_meta(
+                              port_afi =     SIMULATION_JPEG_DATA, # 0,
+                              channel =      channel,
+                              cirbuf_start = 0, #x393_sens_cmprs.GLBL_CIRCBUF_STARTS[channel],
+                              circbuf_len =  0, #x393_sens_cmprs.GLBL_CIRCBUF_ENDS[channel] - x393_sens_cmprs.GLBL_CIRCBUF_STARTS[channel],
+                              verbose = verbose)
+        else:
+            meta = self.x393_cmprs_afi.afi_mux_get_image_meta(
+                              port_afi =     0,
+                              channel =      channel,
+                              cirbuf_start = x393_sens_cmprs.GLBL_CIRCBUF_STARTS[channel],
+    #                         circbuf_len =  x393_sens_cmprs.GLBL_CIRCBUF_CHN_SIZE,
+                              circbuf_len =  x393_sens_cmprs.GLBL_CIRCBUF_ENDS[channel] - x393_sens_cmprs.GLBL_CIRCBUF_STARTS[channel],
+    
+                              verbose = verbose)
+        if verbose > 2 :
             print ("meta = ",meta)
         if verbose > 1 :
             for s in meta["segments"]:
@@ -874,9 +893,12 @@ class X393Jpeg(object):
             for s in meta["segments"]:
                 if verbose > 1 :
                     print ("start_address = 0x%x, length = 0x%x"%(s[0],s[1]))
-                self.x393_mem._mem_write_to_file (bf =         bf,
-                                                  start_addr = s[0],
-                                                  length =     s[1])
+                if 'bindata' in meta:
+                    bf.write(meta['bindata'][s[0] : s[0] + s[1]])
+                else:        
+                    self.x393_mem._mem_write_to_file (bf =         bf,
+                                                      start_addr = s[0],
+                                                      length =     s[1])
             bf.write(bytearray((0xff,0xd9)))
                 
         
@@ -976,6 +998,7 @@ setup_all_sensors True None 0x4
 
 ################## Parallel ##################
 cd /usr/local/verilog/; test_mcntrl.py @hargs
+#fpga_shutdown
 setupSensorsPower "PAR12"
 measure_all "*DI"
 setup_all_sensors True None 0xf
@@ -996,6 +1019,11 @@ axi_write_single_w 0x696 0x079800a3
 axi_write_single_w 0x686 0x079800a3
 axi_write_single_w 0x6a6 0x079800a3
 axi_write_single_w 0x6b6 0x079800a3
+
+
+
+
+
 
 #Gamma 0.57
 program_gamma all 0 0.57 0.04

@@ -64,14 +64,57 @@ BUFFER_ADDRESS_NAME = 'buffer_address'
 BUFFER_PAGES_NAME =   'buffer_pages'
 BUFFER_ADDRESS =      None # in bytes
 BUFFER_LEN =          None # in bytes
+BUFFER_ADDRESS_NAME =       'buffer_address'
+BUFFER_PAGES_NAME =         'buffer_pages'
+BUFFER_H2D_ADDRESS_NAME =   'buffer_address_h2d'
+BUFFER_H2D_PAGES_NAME =     'buffer_pages_h2d'
+BUFFER_D2H_ADDRESS_NAME =   'buffer_address_d2h'
+BUFFER_D2H_PAGES_NAME =     'buffer_pages_d2h'
+BUFFER_BIDIR_ADDRESS_NAME = 'buffer_address_bidir'
+BUFFER_BIDIR_PAGES_NAME =   'buffer_pages_bidir'
+
+BUFFER_FOR_CPU =             'sync_for_cpu' # add suffix
+BUFFER_FOR_DEVICE =          'sync_for_device' # add suffix
+
+BUFFER_FOR_CPU_H2D =         'sync_for_cpu_h2d'
+BUFFER_FOR_DEVICE_H2D =      'sync_for_device_h2d'
+
+BUFFER_FOR_CPU_D2H =         'sync_for_cpu_d2h'
+BUFFER_FOR_DEVICE_D2H =      'sync_for_device_d2h'
+
+BUFFER_FOR_CPU_BIDIR =       'sync_for_cpu_bidir'
+BUFFER_FOR_DEVICE_BIDIR =    'sync_for_device_bidir'
+
 
 GLBL_CIRCBUF_CHN_SIZE = None
 GLBL_CIRCBUF_STARTS =   None
+GLBL_CIRCBUF_ENDS =   None
 GLBL_CIRCBUF_END =      None
+
 GLBL_MEMBRIDGE_START =  None
 GLBL_MEMBRIDGE_END =    None
+
+GLBL_MEMBRIDGE_H2D_START =  None
+GLBL_MEMBRIDGE_H2D_END =    None
+
+GLBL_MEMBRIDGE_D2H_START =  None
+GLBL_MEMBRIDGE_D2H_END =    None
+
 GLBL_BUFFER_END =       None
 GLBL_WINDOW =           None
+
+BUFFER_ADDRESS =          None # in bytes
+BUFFER_LEN =              None # in bytes
+
+BUFFER_ADDRESS_H2D =      None # in bytes
+BUFFER_LEN_H2D =          None # in bytes
+
+BUFFER_ADDRESS_D2H =      None # in bytes
+BUFFER_LEN_D2H =          None # in bytes
+
+BUFFER_ADDRESS_BIDIR =    None # in bytes
+BUFFER_LEN_BIDIR =        None # in bytes
+
 
 #SENSOR_INTERFACE_PARALLEL = "PAR12"
 #SENSOR_INTERFACE_HISPI =    "HISPI"
@@ -102,7 +145,10 @@ class X393SensCmprs(object):
     x393Membridge =      None
     
     def __init__(self, debug_mode=1,dry_mode=True, saveFileName=None):
-        global BUFFER_ADDRESS, BUFFER_LEN
+#        global BUFFER_ADDRESS, BUFFER_LEN
+        global BUFFER_ADDRESS, BUFFER_LEN, COMMAND_ADDRESS, DATAIN_ADDRESS, DATAOUT_ADDRESS
+        global BUFFER_ADDRESS_H2D, BUFFER_LEN_H2D, BUFFER_ADDRESS_D2H, BUFFER_LEN_D2H, BUFFER_ADDRESS_BIDIR, BUFFER_LEN_BIDIR 
+        
         self.DEBUG_MODE=  debug_mode
         self.DRY_MODE=    dry_mode
         self.x393_mem=            X393Mem(debug_mode,dry_mode)
@@ -122,8 +168,16 @@ class X393SensCmprs(object):
         except:
             pass
         if dry_mode:
-            BUFFER_ADDRESS=0x27900000
-            BUFFER_LEN=    0x6400000
+            BUFFER_ADDRESS =       0x38100000
+            BUFFER_LEN =           0x06400000
+            BUFFER_ADDRESS_H2D =   0x38100000
+            BUFFER_LEN_H2D =       0x06400000
+            BUFFER_ADDRESS_D2H =   0x38100000
+            BUFFER_LEN_D2H =       0x06400000
+            BUFFER_ADDRESS_BIDIR = 0x38100000
+            BUFFER_LEN_BIDIR =     0x06400000
+            print ("Running in simulated mode, using hard-coded addresses:")
+            
             print ("Running in simulated mode, using hard-coded addresses:")
         else:
             try:
@@ -136,6 +190,41 @@ class X393SensCmprs(object):
                 print('BUFFER_ADDRESS=', BUFFER_ADDRESS)    
                 print('BUFFER_LEN=', BUFFER_LEN)    
                 return
+
+            try:
+                with open(MEM_PATH + BUFFER_H2D_ADDRESS_NAME) as sysfile:
+                    BUFFER_ADDRESS_H2D=int(sysfile.read(),0)
+                with open(MEM_PATH+BUFFER_H2D_PAGES_NAME) as sysfile:
+                    BUFFER_LEN_H2D=PAGE_SIZE*int(sysfile.read(),0)
+            except:
+                print("Failed to get reserved physical memory range")
+                print('BUFFER_ADDRESS_H2D=',BUFFER_ADDRESS_H2D)    
+                print('BUFFER_LEN_H2D=',BUFFER_LEN_H2D)    
+                return
+            
+            try:
+                with open(MEM_PATH + BUFFER_D2H_ADDRESS_NAME) as sysfile:
+                    BUFFER_ADDRESS_D2H=int(sysfile.read(),0)
+                with open(MEM_PATH+BUFFER_D2H_PAGES_NAME) as sysfile:
+                    BUFFER_LEN_D2H=PAGE_SIZE*int(sysfile.read(),0)
+            except:
+                print("Failed to get reserved physical memory range")
+                print('BUFFER_ADDRESS_D2H=',BUFFER_ADDRESS_D2H)    
+                print('BUFFER_LEN_D2H=',BUFFER_LEN_D2H)    
+                return
+            
+            try:
+                with open(MEM_PATH + BUFFER_BIDIR_ADDRESS_NAME) as sysfile:
+                    BUFFER_ADDRESS_BIDIR=int(sysfile.read(),0)
+                with open(MEM_PATH+BUFFER_BIDIR_PAGES_NAME) as sysfile:
+                    BUFFER_LEN_BIDIR=PAGE_SIZE*int(sysfile.read(),0)
+            except:
+                print("Failed to get reserved physical memory range")
+                print('BUFFER_ADDRESS_BIDIR=',BUFFER_ADDRESS_BIDIR)    
+                print('BUFFER_LEN_BIDIR=',BUFFER_LEN_BIDIR)    
+                return
+            
+            
         print('X393SensCmprs: BUFFER_ADDRESS=0x%x'%(BUFFER_ADDRESS))    
         print('X393SensCmprs: BUFFER_LEN=0x%x'%(BUFFER_LEN))
     def get_histogram_byte_start(self): # should be 4KB page aligned
@@ -217,12 +306,12 @@ class X393SensCmprs(object):
             return
         if quiet == 0:
             print ("Turning on interface power %f V for sensors %s"%(voltage_mv*0.001,("0, 1","2, 3")[sub_pair]))    
-        time.sleep(0.2)
+        time.sleep(0.3)
         with open (POWER393_PATH + "/channels_en","w") as f:
             print(("vcc_sens01", "vcc_sens23")[sub_pair], file = f)
         if quiet == 0:
             print ("Turned on interface power %f V for sensors %s"%(voltage_mv*0.001,("0, 1","2, 3")[sub_pair]))    
-        time.sleep(0.2)
+        time.sleep(0.3)
         with open (POWER393_PATH + "/channels_en","w") as f:
             print(("vp33sens01", "vp33sens23")[sub_pair], file = f)
         if quiet == 0:
@@ -268,7 +357,7 @@ class X393SensCmprs(object):
 #                              frame_start_address, # calculate through num_sensor, num frames, frame size and start addr?
 #                              frame_start_address_inc,
                               last_buf_frame =            1,  #  - just 2-frame buffer
-                              colorsat_blue =             0x180,     # 0x90 fo 1x
+                              colorsat_blue =             0x120,     # 0x90 fo 1x
                               colorsat_red =              0x16c,     # 0xb6 for x1
                               clk_sel =                   1,         # 1
                               histogram_left =            None, # 0,
@@ -636,7 +725,7 @@ class X393SensCmprs(object):
                         portrait =                  None,
                         gamma =                     None,
                         black =                     None, # 0.04 
-                        colorsat_blue =             None, # colorsat_blue, #0x180     # 0x90 for 1x
+                        colorsat_blue =             None, # colorsat_blue, #0x120     # 0x90 for 1x
                         colorsat_red =              None, # colorsat_red, #0x16c,     # 0xb6 for x1
                         verbose =                   1
                         ):
@@ -750,17 +839,28 @@ class X393SensCmprs(object):
         """
         @param circbuf_chn_size - circular buffer size for each channel, in bytes
         """
-        global GLBL_CIRCBUF_CHN_SIZE, GLBL_CIRCBUF_STARTS, GLBL_CIRCBUF_END, GLBL_MEMBRIDGE_START, GLBL_MEMBRIDGE_END, GLBL_BUFFER_END
+        global GLBL_CIRCBUF_CHN_SIZE, GLBL_CIRCBUF_STARTS, GLBL_CIRCBUF_ENDS, GLBL_CIRCBUF_END, GLBL_MEMBRIDGE_START, GLBL_MEMBRIDGE_END, GLBL_BUFFER_END
+        global GLBL_MEMBRIDGE_H2D_START, GLBL_MEMBRIDGE_H2D_END, GLBL_MEMBRIDGE_D2H_START, GLBL_MEMBRIDGE_D2H_END
+        global BUFFER_ADDRESS_H2D, BUFFER_LEN_H2D, BUFFER_ADDRESS_D2H, BUFFER_LEN_D2H
         
         circbuf_start =   self.get_circbuf_byte_start()
         GLBL_BUFFER_END=  self.get_circbuf_byte_end()
         GLBL_CIRCBUF_CHN_SIZE = circbuf_chn_size
         GLBL_CIRCBUF_STARTS=[]
+        GLBL_CIRCBUF_ENDS=[]
         for i in range(16):
             GLBL_CIRCBUF_STARTS.append(circbuf_start + i*circbuf_chn_size)
+            GLBL_CIRCBUF_ENDS.append(circbuf_start + (i+1)*circbuf_chn_size)
         GLBL_CIRCBUF_END =     circbuf_start + 4*GLBL_CIRCBUF_CHN_SIZE
         GLBL_MEMBRIDGE_START = GLBL_CIRCBUF_END
         GLBL_MEMBRIDGE_END =   GLBL_BUFFER_END
+
+        GLBL_MEMBRIDGE_H2D_START = BUFFER_ADDRESS_H2D
+        GLBL_MEMBRIDGE_H2D_END =   BUFFER_ADDRESS_H2D + BUFFER_LEN_H2D
+
+        GLBL_MEMBRIDGE_D2H_START = BUFFER_ADDRESS_D2H
+        GLBL_MEMBRIDGE_D2H_END =   BUFFER_ADDRESS_D2H + BUFFER_LEN_D2H
+        
         if verbose >0 :
             print ("compressor system memory buffers:")
             print ("circbuf start 0 =           0x%x"%(GLBL_CIRCBUF_STARTS[0]))
@@ -771,6 +871,12 @@ class X393SensCmprs(object):
             print ("membridge start =           0x%x"%(GLBL_MEMBRIDGE_START))
             print ("membridge end =             0x%x"%(GLBL_MEMBRIDGE_END))
             print ("membridge size =            %d bytes"%(GLBL_MEMBRIDGE_END - GLBL_MEMBRIDGE_START))
+            print ("membridge h2d_start =       0x%x"%(GLBL_MEMBRIDGE_H2D_START))
+            print ("membridge h2d end =         0x%x"%(GLBL_MEMBRIDGE_H2D_END))
+            print ("membridge h2d size =        %d bytes"%(GLBL_MEMBRIDGE_H2D_END - GLBL_MEMBRIDGE_H2D_START))
+            print ("membridge h2d start =       0x%x"%(GLBL_MEMBRIDGE_D2H_START))
+            print ("membridge h2d end =         0x%x"%(GLBL_MEMBRIDGE_D2H_END))
+            print ("membridge h2d size =        %d bytes"%(GLBL_MEMBRIDGE_D2H_END - GLBL_MEMBRIDGE_D2H_START))
             print ("memory buffer end =         0x%x"%(GLBL_BUFFER_END))
     def setup_cmdmux (self):
         #Will report frame number for each channel
@@ -866,7 +972,7 @@ class X393SensCmprs(object):
                           window_left =      None, # 0,     # 0
                           window_top =       None, # 0, # 0? 1?
                           last_buf_frame =   1,  #  - just 2-frame buffer
-                          colorsat_blue =    0x180,     # 0x90 for 1x
+                          colorsat_blue =    0x120,     # 0x90 for 1x
                           colorsat_red =     0x16c,     # 0xb6 for x1
                           verbose =          1):
         """
@@ -903,7 +1009,7 @@ class X393SensCmprs(object):
         try:
             if (chn == all) or (chn[0].upper() == "A"): #all is a built-in function
                 for chn in range(4):
-                    self. setup_compressor(self,
+                    self. setup_compressor( #self,
                                            chn =            chn,
                                            cmode =          cmode,
                                            qbank =          qbank,
@@ -917,7 +1023,7 @@ class X393SensCmprs(object):
                                            window_left =    None, # 0,     # 0
                                            window_top =     None, # 0, # 0? 1?
                                            last_buf_frame = last_buf_frame,  #  - just 2-frame buffer
-                                           colorsat_blue =  colorsat_blue, #0x180     # 0x90 for 1x
+                                           colorsat_blue =  colorsat_blue, #0x120     # 0x90 for 1x
                                            colorsat_red =   colorsat_red, #0x16c,     # 0xb6 for x1
                                            verbose =        verbose)
                 return
@@ -996,7 +1102,7 @@ class X393SensCmprs(object):
             print ("frame_sa_inc =     0x%x"%(frame_start_address_inc))
             print ("last_frame_num =   0x%x"%(last_buf_frame))
             print ("frame_full_width = 0x%x"%(frame_full_width))
-            print ("window_width =     0x%x"%(width32 * 2 )) # window_width >> 4)) # width in 16 - bursts, made evem
+            print ("window_width =     0x%x (in 16 - bursts, made even)"%(width32 * 2 )) # window_width >> 4)) # width in 16 - bursts, made even
             print ("window_height =    0x%x"%(window_height & 0xfffffff0))
             print ("window_left =      0x%x"%(left_tiles32 * 2)) # window_left >> 4)) # left in 16-byte bursts, made even
             print ("window_top =       0x%x"%(window_top))
@@ -1035,7 +1141,7 @@ class X393SensCmprs(object):
                               window_top =                None, # 0, # 0? 1?
                               compressor_left_margin =    0, #0?`1? 
                               last_buf_frame =            1,  #  - just 2-frame buffer
-                              colorsat_blue =             0x180,     # 0x90 fo 1x
+                              colorsat_blue =             0x120,     # 0x90 fo 1x
                               colorsat_red =              0x16c,     # 0xb6 for x1
                               clk_sel =                   1,         # 1
                               histogram_left =            None,
@@ -1082,7 +1188,8 @@ class X393SensCmprs(object):
         @param verbose - verbose level
         @return True if all done, False if exited prematurely by  exit_step
         """
-        global GLBL_CIRCBUF_CHN_SIZE, GLBL_CIRCBUF_STARTS, GLBL_CIRCBUF_END, GLBL_MEMBRIDGE_START, GLBL_MEMBRIDGE_END, GLBL_BUFFER_END, GLBL_WINDOW
+        global GLBL_CIRCBUF_CHN_SIZE, GLBL_CIRCBUF_STARTS, GLBL_CIRCBUF_ENDS, GLBL_CIRCBUF_END, GLBL_MEMBRIDGE_START, GLBL_MEMBRIDGE_END, GLBL_BUFFER_END, GLBL_WINDOW
+        global GLBL_MEMBRIDGE_H2D_START, GLBL_MEMBRIDGE_H2D_END, GLBL_MEMBRIDGE_D2H_START, GLBL_MEMBRIDGE_D2H_END
 
         sensorType = self.x393Sensor.getSensorInterfaceType()
         if verbose > 0 :
@@ -1135,17 +1242,32 @@ class X393SensCmprs(object):
         afi_cmprs1_sa = GLBL_CIRCBUF_STARTS[1] // 32
         afi_cmprs2_sa = GLBL_CIRCBUF_STARTS[2] // 32
         afi_cmprs3_sa = GLBL_CIRCBUF_STARTS[3] // 32
-        afi_cmprs_len = GLBL_CIRCBUF_CHN_SIZE  // 32    
+        afi_cmprs0_len = (GLBL_CIRCBUF_ENDS[0] - GLBL_CIRCBUF_STARTS[0]) // 32  
+        afi_cmprs1_len = (GLBL_CIRCBUF_ENDS[1] - GLBL_CIRCBUF_STARTS[1]) // 32
+        afi_cmprs2_len = (GLBL_CIRCBUF_ENDS[2] - GLBL_CIRCBUF_STARTS[2]) // 32
+        afi_cmprs3_len = (GLBL_CIRCBUF_ENDS[3] - GLBL_CIRCBUF_STARTS[3]) // 32
+        
+#        afi_cmprs_len = GLBL_CIRCBUF_CHN_SIZE  // 32    
         if verbose >0 :
             print ("compressor system memory buffers:")
             print ("circbuf start 0 =           0x%x"%(GLBL_CIRCBUF_STARTS[0]))
             print ("circbuf start 1 =           0x%x"%(GLBL_CIRCBUF_STARTS[1]))
             print ("circbuf start 2 =           0x%x"%(GLBL_CIRCBUF_STARTS[2]))
             print ("circbuf start 3 =           0x%x"%(GLBL_CIRCBUF_STARTS[3]))
+            print ("circbuf end 0 =             0x%x"%(GLBL_CIRCBUF_ENDS[0]))
+            print ("circbuf end 1 =             0x%x"%(GLBL_CIRCBUF_ENDS[1]))
+            print ("circbuf end 2 =             0x%x"%(GLBL_CIRCBUF_ENDS[2]))
+            print ("circbuf end 3 =             0x%x"%(GLBL_CIRCBUF_ENDS[3]))
             print ("circbuf end =               0x%x"%(GLBL_BUFFER_END))
             print ("membridge start =           0x%x"%(GLBL_MEMBRIDGE_START))
             print ("membridge end =             0x%x"%(GLBL_MEMBRIDGE_END))
             print ("membridge size =            %d bytes"%(GLBL_MEMBRIDGE_END - GLBL_MEMBRIDGE_START))
+            print ("membridge h2d_start =       0x%x"%(GLBL_MEMBRIDGE_H2D_START))
+            print ("membridge h2d end =         0x%x"%(GLBL_MEMBRIDGE_H2D_END))
+            print ("membridge h2d size =        %d bytes"%(GLBL_MEMBRIDGE_H2D_END - GLBL_MEMBRIDGE_H2D_START))
+            print ("membridge h2d start =       0x%x"%(GLBL_MEMBRIDGE_D2H_START))
+            print ("membridge h2d end =         0x%x"%(GLBL_MEMBRIDGE_D2H_END))
+            print ("membridge h2d size =        %d bytes"%(GLBL_MEMBRIDGE_D2H_END - GLBL_MEMBRIDGE_D2H_START))
             print ("memory buffer end =         0x%x"%(GLBL_BUFFER_END))
             
         self.program_status_debug (3,0)
@@ -1158,9 +1280,14 @@ class X393SensCmprs(object):
                                window_left     = window_left,
                                window_top      = window_top,
                                last_buf_frame  = last_buf_frame,
-                               membridge_start = GLBL_MEMBRIDGE_START,
-                               membridge_end   = GLBL_MEMBRIDGE_END,
+#                               membridge_start = GLBL_MEMBRIDGE_START,
+#                               membridge_end   = GLBL_MEMBRIDGE_END,
+#Setting up to read raw sensor data
+                               membridge_start = GLBL_MEMBRIDGE_D2H_START,
+                               membridge_end   = GLBL_MEMBRIDGE_D2H_END,
                                verbose         = verbose)
+        self.sync_for_device('D2H', GLBL_MEMBRIDGE_D2H_START, GLBL_MEMBRIDGE_D2H_END - GLBL_MEMBRIDGE_D2H_START) # command and PRD table
+            
         
 #        if verbose >0 :
 #            print ("===================== Sensor power setup: sensor ports 0 and 1 =========================")
@@ -1219,13 +1346,13 @@ class X393SensCmprs(object):
                                 # mode == 3 - show current pointer, confirmed written to the system memory
                                report_mode =    0, # = 0,
                                afi_cmprs0_sa =  afi_cmprs0_sa,
-                               afi_cmprs0_len = afi_cmprs_len,
+                               afi_cmprs0_len = afi_cmprs0_len,
                                afi_cmprs1_sa =  afi_cmprs1_sa,
-                               afi_cmprs1_len = afi_cmprs_len,
+                               afi_cmprs1_len = afi_cmprs1_len,
                                afi_cmprs2_sa =  afi_cmprs2_sa,
-                               afi_cmprs2_len = afi_cmprs_len,
+                               afi_cmprs2_len = afi_cmprs2_len,
                                afi_cmprs3_sa =  afi_cmprs3_sa,
-                               afi_cmprs3_len = afi_cmprs_len)
+                               afi_cmprs3_len = afi_cmprs3_len)
 
         for num_sensor in range(4):
             if sensor_mask & (1 << num_sensor):
@@ -1469,8 +1596,8 @@ class X393SensCmprs(object):
                                window_left     = 0,
                                window_top      = 0,
                                last_buf_frame =  1,  #  - just 2-frame buffer
-                               membridge_start = 0x2ba00000,
-                               membridge_end   = 0x2dd00000,
+                               membridge_start = None,
+                               membridge_end   = None,
                                verbose         = 1):
         """
         Configure membridge to read/write to the sensor 0 area in the video memory
@@ -1486,6 +1613,14 @@ class X393SensCmprs(object):
         @param membridge_end   system memory buffer length (bytes)= 0x2dd00000,
         @param verbose         verbose level):
         """
+        global GLBL_MEMBRIDGE_H2D_START, GLBL_MEMBRIDGE_H2D_END, GLBL_MEMBRIDGE_D2H_START, GLBL_MEMBRIDGE_D2H_END
+        if (membridge_start is None) or (membridge_end is None):
+            if write_mem:
+                membridge_start = GLBL_MEMBRIDGE_H2D_START
+                membridge_end =   GLBL_MEMBRIDGE_H2D_END
+            else:
+                membridge_start = GLBL_MEMBRIDGE_D2H_START
+                membridge_end =   GLBL_MEMBRIDGE_D2H_END
 #copied from setup_sensor_channel()
         align_to_bursts = 64 # align full width to multiple of align_to_bursts. 64 is the size of memory access
         width_in_bursts = window_width >> 4
@@ -1551,7 +1686,9 @@ class X393SensCmprs(object):
 
         self.x393_axi_tasks.write_control_register(vrlg.MCNTRL_SCANLINE_CHN1_ADDR + vrlg.MCNTRL_SCANLINE_STARTADDR,        frame_start_address) # RA=80, CA=0, BA=0 22-bit frame start address (3 CA LSBs==0. BA==0) 
         self.x393_axi_tasks.write_control_register(vrlg.MCNTRL_SCANLINE_CHN1_ADDR + vrlg.MCNTRL_SCANLINE_FRAME_FULL_WIDTH, frame_full_width)
-        self.x393_axi_tasks.write_control_register(vrlg.MCNTRL_SCANLINE_CHN1_ADDR + vrlg.MCNTRL_SCANLINE_WINDOW_WH,        (window_height << 16) | (window_width >> 4)) # WINDOW_WIDTH + (WINDOW_HEIGHT<<16));
+#        self.x393_axi_tasks.write_control_register(vrlg.MCNTRL_SCANLINE_CHN1_ADDR + vrlg.MCNTRL_SCANLINE_WINDOW_WH,        (window_height << 16) | (window_width >> 4)) # WINDOW_WIDTH + (WINDOW_HEIGHT<<16));
+# width should include partial bursts to matych membridge
+        self.x393_axi_tasks.write_control_register(vrlg.MCNTRL_SCANLINE_CHN1_ADDR + vrlg.MCNTRL_SCANLINE_WINDOW_WH,        (window_height << 16) | num_burst_in_line) # WINDOW_WIDTH + (WINDOW_HEIGHT<<16));
         self.x393_axi_tasks.write_control_register(vrlg.MCNTRL_SCANLINE_CHN1_ADDR + vrlg.MCNTRL_SCANLINE_WINDOW_X0Y0,      (window_top << 16) | (window_left >> 4))     # WINDOW_X0+ (WINDOW_Y0<<16));
         self.x393_axi_tasks.write_control_register(vrlg.MCNTRL_SCANLINE_CHN1_ADDR + vrlg.MCNTRL_SCANLINE_WINDOW_STARTXY,   0)
         self.x393_axi_tasks.write_control_register(vrlg.MCNTRL_SCANLINE_CHN1_ADDR + vrlg.MCNTRL_SCANLINE_MODE,             mode) 
@@ -1586,7 +1723,14 @@ class X393SensCmprs(object):
         if verbose >0 :
             print ("Run 'membridge_start' to initiate data transfer")
             print ("Use 'mem_dump 0x%x <length>' to view data"%(membridge_start))
+            if (write_mem):
+                print ("Synchronize to device after preparing data with:")
+                print ('sync_for_device "H2D" 0x%x 0x%x'%(membridge_start, membridge_end - membridge_start))
+            else:    
+                print ("Synchronize to CPU with:")
+                print ('sync_for_cpu "D2H" 0x%x 0x%x'%(membridge_start, membridge_end - membridge_start))
             print ("Use 'mem_save \"/usr/local/verilog/memdumpXX\" 0x%x 0x%x' to save data"%(membridge_start,(membridge_end - membridge_start)))
+        return {"start_addr":membridge_start,"width_padded":num_burst_in_line*16}    
 
     def print_debug( self,
                      first = None,
@@ -1940,6 +2084,283 @@ class X393SensCmprs(object):
         self.x393_axi_tasks.write_control_register(reg_addr + 1, t_addr)
         for d in data32:
             self.x393_axi_tasks.write_control_register(reg_addr, d)
-                               
-            
+
+#copied from x393_sata                               
+    def get_mem_buf_args(self, saddr=None, leng=None):
+        #Is it really needed? Or use cache line size (32B), not PAGE_SIZE?
+#        args=""
+        if (saddr is None) or (leng is None):
+            return ""
+        else:
+            eaddr = PAGE_SIZE * ((saddr+leng) // PAGE_SIZE)
+            if ((saddr+leng) % PAGE_SIZE):
+                eaddr += PAGE_SIZE
+            saddr = PAGE_SIZE * (saddr // PAGE_SIZE)
+            return "%d %d"%(saddr, eaddr-saddr )    
+    def _get_dma_dir_suffix(self, direction):
+        if   direction.upper()[0] in "HT":
+            return "_h2d"
+        elif direction.upper()[0] in "DF":
+            return "_d2h"
+        elif direction.upper()[0] in "B":
+            return "_bidir"
+    def sync_for_cpu(self, direction, saddr=None, leng=None):
         
+        with open (MEM_PATH + BUFFER_FOR_CPU + self._get_dma_dir_suffix(direction),"w") as f:
+            print (self.get_mem_buf_args(saddr, leng),file=f)
+                    
+    def sync_for_device(self, direction, saddr=None, leng=None):
+        with open (MEM_PATH + BUFFER_FOR_DEVICE + self._get_dma_dir_suffix(direction),"w") as f:
+            print (self.get_mem_buf_args(saddr, leng),file=f)
+    """
+cd /usr/local/verilog/; test_mcntrl.py @hargs
+#fpga_shutdown
+setupSensorsPower "PAR12"
+measure_all "*DI"
+#program_status_sensor_io all 1 0
+#setup_all_sensors True None 0xf
+
+setup_simulated_mode "sensor_to_memory_1.dat"
+#compressor_control  all  None  None  None None None  3
+
+sync_for_device "D2H" 0x2d800000 0x400000
+compressor_control 0 2
+sync_for_cpu "D2H" 0x2d800000 0x400000
+jpeg_write "img.jpeg" 0
+
+specify_window 66 36 0 0 0 3 1
+jpeg_write "img.jpeg" 1
+
+
+
+membridge h2d_start =       0x2dc00000
+membridge h2d end =         0x2e000000
+membridge h2d size =        4194304 bytes
+membridge h2d start =       0x2d800000
+membridge h2d end =         0x2dc00000
+membridge h2d size =        4194304 bytes
+    
+setup_membridge_sensor 0 False 3 66 36 0 0 0 0x2d800000 0x2dc00000 2
+jpeg_write "img.jpeg" 0 100 None False 0 "/www/pages/" 3
+    
+00000000: fe 08 3c 33 ff 00 21 5b 3f fa f8 8f ff 00 42 1f 
+00000010: e7 b7 d4 75 1f 66 fe db 72 ef b6 fd 9b 63 f3 77 
+00000020: f9 5f 04 2d 07 97 f6 8f 37 c9 dd e2 df 11 b6 df 
+00000030: 27 fb 5e fb ec db be f6 cf ec dd 17 7f df f2 2e 
+00000040: bf e3 e0 fc 6b e1 e8 a5 87 55 b0 f3 a3 92 2f 32 
+00000050: 68 de 3f 31 19 37 a0 98 c4 5d 37 01 b9 44 b1 bc 
+00000060: 65 87 02 44 74 dc 19 4e 3e e6 fd af 7c 3d af f8 
+00000070: ae cb f6 7e 7f 0e e9 d7 da ec 3a 1f c0 68 ef 35 
+00000080: 43 a7 33 5f 47 a4 da 41 e2 8d 7a e2 e2 6b b4 8f 
+00000090: 57 bf 5d 3e 28 e1 9e 29 e4 f3 34 ed 0c 34 52 2c 
+000000a0: e6 0b a4 3f 6a 3f 97 71 c6 27 0f 85 e3 3f 09 aa 
+000000b0: e2 ab d1 c3 52 7c 55 9d 53 f6 98 8a b0 a3 4f da 
+000000c0: 55 e0 1e 31 a7 4a 9f 3d 49 46 3c f5 6a 4a 34 e9 
+000000d0: c6 fc d3 9c a3 18 a7 26 91 f7 fe 1e 65 f8 fe 21 
+000000e0: cb bc 43 c2 e4 18 1c 5e 79 89 c6 70 6e 5d 80 c2 
+000000f0: 61 f2 7c 35 6c ce be 2b 1d 5f c5 8f 0d f2 ea 18 
+00000100: 2c 3d 1c 14 2b d4 af 8b ad 98 4a 38 1a 58 6a 51 
+00000110: 95 6a 98 c9 47 0b 08 3a ed 40 f8 5b c3 3f f2 15 
+00000120: b3 ff 00 af 88 ff 00 f4 21 fe 7b 7d 47 51 f6 67 
+
+
+    
+    
+    """
+
+# Setup for compression of teh simulated data
+    def setup_simulated_mode(self,
+                             data_file =       None,
+                             chn =             0,
+                             qbank =           0,
+                             y_quality =       None,
+                             c_quality =       None, # use "same" to save None
+                             cmode =           0, # vrlg.CMPRS_CBIT_CMODE_JPEG18,
+                             bayer =           3, #0, as in simulator
+                             window_width    = 66,
+                             window_height   = 36,
+                             window_left     = 0,
+                             window_top      = 0,
+                             colorsat_blue =    0x120,     # 0x90 for 1x
+                             colorsat_red =     0x16c,     # 0xb6 for x1
+                             verbose         = verbose):
+        """
+        @brief Stop sensor, configure membridge channel and write simulated data from teh text file (same as for simulation)
+        @param data_file -     data_file - hex simulation data as used in simulation ('None' will use sensor_to_memory_%d.dat)
+        @param chn -           compressor channel (0..3)
+        @param qbank -         quantization table page (0..15)
+        @param y_quality -     for JPEG header only
+        @param c_quality =     for JPEG header only,use "same" to save None
+        
+        @param cmode -         color mode:
+                                CMPRS_CBIT_CMODE_JPEG18 =          0 - color 4:2:0
+                                CMPRS_CBIT_CMODE_MONO6 =           1 - mono 4:2:0 (6 blocks)
+                                CMPRS_CBIT_CMODE_JP46 =            2 - jp4, 6 blocks, original
+                                CMPRS_CBIT_CMODE_JP46DC =          3 - jp4, 6 blocks, dc -improved
+                                CMPRS_CBIT_CMODE_JPEG20 =          4 - mono, 4 blocks (but still not actual monochrome JPEG as the blocks are scanned in 2x2 macroblocks)
+                                CMPRS_CBIT_CMODE_JP4 =             5 - jp4,  4 blocks, dc-improved
+                                CMPRS_CBIT_CMODE_JP4DC =           6 - jp4,  4 blocks, dc-improved
+                                CMPRS_CBIT_CMODE_JP4DIFF =         7 - jp4,  4 blocks, differential
+                                CMPRS_CBIT_CMODE_JP4DIFFHDR =      8 - jp4,  4 blocks, differential, hdr
+                                CMPRS_CBIT_CMODE_JP4DIFFDIV2 =     9 - jp4,  4 blocks, differential, divide by 2
+                                CMPRS_CBIT_CMODE_JP4DIFFHDRDIV2 = 10 - jp4,  4 blocks, differential, hdr,divide by 2
+                                CMPRS_CBIT_CMODE_MONO1 =          11 -  mono JPEG (not yet implemented)
+                                CMPRS_CBIT_CMODE_MONO4 =          14 -  mono 4 blocks
+        @param bayer -         Bayer shift (0..3)
+        @param window_width -  window width in pixels (bytes) (TODO: add 16-bit mode)
+        @param window_height - window height in lines
+        @param window_left -   window left margin
+        @param window_top -    window top margin
+        @param colorsat_blue - color saturation for blue (10 bits), 0x90 for 100%
+        @param colorsat_red -  color saturation for red (10 bits), 0xb6 for 100%
+        @param verbose         verbose level
+        """
+        
+        global GLBL_CIRCBUF_STARTS, GLBL_CIRCBUF_ENDS
+        global GLBL_MEMBRIDGE_H2D_START, GLBL_MEMBRIDGE_H2D_END, GLBL_MEMBRIDGE_D2H_START, GLBL_MEMBRIDGE_D2H_END
+
+        if data_file is None:
+            data_file = "sensor_to_memory_%d.dat"%chn
+
+        # Read data file
+        sensor_data = []
+        try:
+            with open(data_file) as f:
+                for l in f:
+                    line = l.strip()
+                    if line:
+                        dl = []
+                        for item in line.split():
+                            dl.append(int(item,16))
+                        sensor_data.append(dl)
+            num_cols =  max([len(l) for l in sensor_data])
+            num_rows = len(sensor_data)           
+                        
+            if verbose > 0:
+                print ("Read simulated sensor data of %d rows by %d columns from %s data file"%(num_rows, num_cols,data_file))
+        except:
+            print("Failed to read data from ", data_file)
+            return
+
+            
+# Above did not work, try disabling memory channel
+        self.x393_axi_tasks.enable_memcntrl_en_dis(8 + chn, False);
+
+#Will restore defaulrt circbuf parameters        
+        self.specify_phys_memory() # setup physical memory
+        
+#Overwrite CIRCBUF parameters for selected channel with D2H stream DMA buffer (shared with membridge)        
+        GLBL_CIRCBUF_STARTS[chn] = GLBL_MEMBRIDGE_D2H_START
+        GLBL_CIRCBUF_ENDS[chn] =   GLBL_MEMBRIDGE_D2H_END
+        
+        membridge_format = self.setup_membridge_sensor(
+                               num_sensor      = chn,         
+                               write_mem       = True,
+                               window_width    = window_width,
+                               window_height   = window_height,
+                               window_left     = window_left,
+                               window_top      = window_top,
+                               last_buf_frame  = 0, # single frame
+#                               membridge_start = GLBL_MEMBRIDGE_START,
+#                               membridge_end   = GLBL_MEMBRIDGE_END,
+                               membridge_start = GLBL_MEMBRIDGE_H2D_START,
+                               membridge_end   = GLBL_MEMBRIDGE_H2D_END,
+                               verbose         = verbose)
+#Fill membridge buffer with the data read from the file, rolling over if insufficient columns/rows
+        if verbose > 1:
+            print("membridge_format: start_addr=0x%08x, width_padded=0x%08x"%(membridge_format["start_addr"],membridge_format["width_padded"]))
+        self.sync_for_cpu('H2D',GLBL_MEMBRIDGE_H2D_START, GLBL_MEMBRIDGE_H2D_END - GLBL_MEMBRIDGE_H2D_START) # command and PRD table
+        for sline in range(window_height):
+            line_start = membridge_format["start_addr"] + sline * membridge_format["width_padded"]
+            if verbose > 1:
+                print("0x%08x: "%(line_start), end = "")
+            for scol4 in range(0,window_width,4):
+                data = 0
+                for b in range(4): 
+                    try:
+                        data |= sensor_data[sline % num_rows][(scol4 + b) % num_cols] << (8*b)
+                    except:
+                        pass # should happen only for short (<num_cols) lines
+                if verbose > 1:
+                    print("%08x "%(data), end = "")
+                self.x393_mem.write_mem(line_start + scol4,data)
+            if verbose > 1:
+                print()
+# Hand buffer to FPGA   
+            self.sync_for_device('H2D',GLBL_MEMBRIDGE_H2D_START, GLBL_MEMBRIDGE_H2D_END - GLBL_MEMBRIDGE_H2D_START) # command and PRD table
+
+                
+#run membridge write to video memory                
+        self.x393Membridge.membridge_start ()         
+# just wait done (default timeout = 10 sec)
+        self.x393_axi_tasks.wait_status_condition ( # may also be read directly from the same bit of mctrl_linear_rw (address=5) status
+            vrlg.MEMBRIDGE_STATUS_REG, # MCNTRL_TEST01_STATUS_REG_CHN3_ADDR,
+            vrlg.MEMBRIDGE_ADDR +vrlg.MEMBRIDGE_STATUS_CNTRL, # MCNTRL_TEST01_ADDR + MCNTRL_TEST01_CHN3_STATUS_CNTRL,
+            vrlg.DEFAULT_STATUS_MODE,
+            2 << vrlg.STATUS_2LSB_SHFT, # bit 24 - busy, bit 25 - frame done
+            2 << vrlg.STATUS_2LSB_SHFT,  # mask for the 4-bit page number
+            0, # equal to
+            1); # synchronize sequence number
+# setup compressor memory and mode
+        self. setup_compressor(chn =            chn,
+                               cmode =          cmode,
+                               qbank =          qbank,
+                               dc_sub =         True,
+                               multi_frame =    False,
+                               bayer =          bayer,
+                               focus_mode =     0,
+                               coring =         0,
+                               window_width =   window_width, # 2592,   # 2592
+                               window_height =  window_height, # 1944,   # 1944
+                               window_left =    window_left, # 0,     # 0
+                               window_top =     window_top, # 0, # 0? 1?
+                               last_buf_frame = 0,  #  - just 2-frame buffer
+                               colorsat_blue =  colorsat_blue, #0x120     # 0x90 for 1x
+                               colorsat_red =   colorsat_red, #0x16c,     # 0xb6 for x1
+                               verbose =        verbose)
+        self.specify_window (window_width =  window_width,
+                             window_height = window_height,
+                             window_left =   window_left,
+                             window_top =    window_top,
+                             cmode =         cmode,
+                             bayer =         bayer,
+#                             colorsat_blue = colorsat_blue, # colorsat_blue, #0x120     # 0x90 for 1x
+#                             colorsat_red =  colorsat_red, # colorsat_red, #0x16c,     # 0xb6 for x1
+                             verbose =       verbose)
+#Setup afi_mux for only one (this) channel, others will be disabled
+        afi_cmprs0_sa = GLBL_CIRCBUF_STARTS[0] // 32  
+        afi_cmprs1_sa = GLBL_CIRCBUF_STARTS[1] // 32
+        afi_cmprs2_sa = GLBL_CIRCBUF_STARTS[2] // 32
+        afi_cmprs3_sa = GLBL_CIRCBUF_STARTS[3] // 32
+        afi_cmprs0_len = (GLBL_CIRCBUF_ENDS[0] - GLBL_CIRCBUF_STARTS[0]) // 32  
+        afi_cmprs1_len = (GLBL_CIRCBUF_ENDS[1] - GLBL_CIRCBUF_STARTS[1]) // 32
+        afi_cmprs2_len = (GLBL_CIRCBUF_ENDS[2] - GLBL_CIRCBUF_STARTS[2]) // 32
+        afi_cmprs3_len = (GLBL_CIRCBUF_ENDS[3] - GLBL_CIRCBUF_STARTS[3]) // 32
+
+        self.x393CmprsAfi.afi_mux_setup (
+                               port_afi =       0,
+                               chn_mask =       1 << chn,
+                               status_mode =    3, # = 3,
+                                # mode == 0 - show EOF pointer, internal
+                                # mode == 1 - show EOF pointer, confirmed written to the system memory
+                                # mode == 2 - show current pointer, internal
+                                # mode == 3 - show current pointer, confirmed written to the system memory
+                               report_mode =    0, # = 0,
+                               afi_cmprs0_sa =  afi_cmprs0_sa,
+                               afi_cmprs0_len = afi_cmprs0_len,
+                               afi_cmprs1_sa =  afi_cmprs1_sa,
+                               afi_cmprs1_len = afi_cmprs1_len,
+                               afi_cmprs2_sa =  afi_cmprs2_sa,
+                               afi_cmprs2_len = afi_cmprs2_len,
+                               afi_cmprs3_sa =  afi_cmprs3_sa,
+                               afi_cmprs3_len = afi_cmprs3_len)
+# Hand CIRCBUF to FPGA   
+        self.sync_for_device('D2H',GLBL_CIRCBUF_STARTS[chn], GLBL_CIRCBUF_ENDS[chn] - GLBL_CIRCBUF_STARTS[chn])
+        
+        
+#        self.x393Cmprs.compressor_control(chn =  chn,
+#                                          run_mode = 2) # 2: run single from memory
+        print ('Use the next commands')
+        print ('compressor_control %d 2'%(chn))
+        print ('sync_for_cpu "D2H" 0x%x 0x%x'%(GLBL_CIRCBUF_STARTS[chn], GLBL_CIRCBUF_ENDS[chn] - GLBL_CIRCBUF_STARTS[chn]))
+        print ('jpeg_write "img.jpeg" %d\n to make jpeg from simulated data'%(chn))

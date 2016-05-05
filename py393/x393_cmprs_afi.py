@@ -106,15 +106,51 @@ class X393CmprsAfi(object):
                           num_lines_print = 20):
         """
         Returns image metadata (start, length,timestamp) or null
-        @param port_afi - AFI port (0/1), currently only 0
+        @param port_afi - AFI port (0/1), currently only 0, or file path template for simulated mode
         @param channel - AFI input channel (0..3) - with 2 AFIs - 0..1 only
         @return - memory segments (1 or two) with image data, timestamp in numeric and string format
         """
-        if verbose >0:
+        def read_mem(addr):
+            if ba_data:
+                return ba_data[addr + 0] + (ba_data[addr + 1] << 8)  + (ba_data[addr + 2] << 16)  + (ba_data[addr + 3] << 24)
+            else:
+                return self.x393_mem.read_mem(addr)
+
+        if isinstance(port_afi, (unicode,str)):
+            data_file = port_afi%channel # for simulated mode
+            ba_data=bytearray()
+            try:
+                with open(data_file) as f:
+                    for l in f:
+                        line = l.strip()
+                        if line:
+                            dl = []
+                            for item in line.split():
+                                dl.append(int(item,16))
+                            ba_data += bytearray(dl)    
+                            
+                if verbose > 0:
+                    print ("Read simulated sensor JPEG data from %s data file"%(data_file))
+            except:
+                print("Failed to read data from ", data_file)
+                return
+            cirbuf_start = 0
+            circbuf_len = len(ba_data)
+            print ("len(ba) = %d"%(len(ba_data)))
+            if verbose > 1:            
+                for i in range(len(ba_data)):
+                    if not (i%16):
+                        print("\n%04x:"%(i),end="")
+                    print ("%02x "%(ba_data[i]),end="")        
+            
+        else:
+            ba_data = None
+                
+        if verbose > 0:
             print ("\n------------ channel %d --------------"%(channel))
             print ("x393_sens_cmprs.GLBL_WINDOW = ", x393_sens_cmprs.GLBL_WINDOW)
-        if (self.DRY_MODE):
-            return None
+#        if (self.DRY_MODE):
+#            return None
         CCAM_MMAP_META        = 12 # extra bytes included at the end of each frame (last aligned to 32 bytes)
         CCAM_MMAP_META_LENGTH =  4 # displacement to length frame length data from the end of the 32-byte aligned frame slot
         CCAM_MMAP_META_USEC   =  8 # // (negative) displacement to USEC data - 20 bits (frame timestamp)
@@ -122,20 +158,25 @@ class X393CmprsAfi(object):
         
         
 #        offs_len32 = 0x20 - CCAM_MMAP_META_LENGTH # 0x1c #from last image 32-byte chunk to lower of 3-byte image length (MSB == 0xff)
-        next_image = self.afi_mux_get_image_pointer(port_afi = port_afi,
+        if ba_data:
+            next_image = len(ba_data)
+        else:    
+            next_image = self.afi_mux_get_image_pointer(port_afi = port_afi,
                                                     channel = channel)
         # Bug - got 0x20 more than start of the new image
         last_image_chunk = next_image - 0x40
         if last_image_chunk < 0:
             last_image_chunk += circbuf_len
-        len32 = self.x393_mem.read_mem(cirbuf_start + last_image_chunk + (0x20 - CCAM_MMAP_META_LENGTH))
+##        len32 = self.x393_mem.read_mem(cirbuf_start + last_image_chunk + (0x20 - CCAM_MMAP_META_LENGTH))
+        len32 = read_mem(cirbuf_start + last_image_chunk + (0x20 - CCAM_MMAP_META_LENGTH))
         markerFF = len32 >> 24
         if (markerFF != 0xff):
             print ("Failed to get 0xff marker at offset 0x%08x - length word = 0x%08x, next_image = 0x%08x)"%
                     (cirbuf_start + last_image_chunk + (0x20 - CCAM_MMAP_META_LENGTH) + 3,len32,next_image))
             if verbose >0:
                 for a in range ( next_image - (0x10 * num_lines_print),  next_image + (0x10 * num_lines_print), 4):
-                    d = self.x393_mem.read_mem(cirbuf_start + a)
+##                    d = self.x393_mem.read_mem(cirbuf_start + a)
+                    d = read_mem(cirbuf_start + a)
                     if (a % 16) == 0:
                         print ("\n%08x: "%(a),end ="" )
                     print("%02x %02x %02x %02x "%(d & 0xff, (d >> 8) & 0xff, (d >> 16) & 0xff, (d >> 24) & 0xff), end = "")
@@ -146,7 +187,8 @@ class X393CmprsAfi(object):
             last_image_chunk = next_image - 0x40
             if last_image_chunk < 0:
                 last_image_chunk += circbuf_len
-            len32 = self.x393_mem.read_mem(cirbuf_start + last_image_chunk + (0x20 - CCAM_MMAP_META_LENGTH))
+##            len32 = self.x393_mem.read_mem(cirbuf_start + last_image_chunk + (0x20 - CCAM_MMAP_META_LENGTH))
+            len32 = read_mem(cirbuf_start + last_image_chunk + (0x20 - CCAM_MMAP_META_LENGTH))
             markerFF = len32 >> 24
             if (markerFF != 0xff):
                 print ("**** Failed to get 0xff marker at CORRECTED offset 0x%08x - length word = 0x%08x, next_image = 0x%08x)"%
@@ -166,7 +208,8 @@ class X393CmprsAfi(object):
             img_start += circbuf_len
         if verbose >0:
             for a in range ( img_start,  img_start + (0x10 * num_lines_print), 4):
-                d = self.x393_mem.read_mem(cirbuf_start + a)
+##                d = self.x393_mem.read_mem(cirbuf_start + a)
+                d = read_mem(cirbuf_start + a)
                 if (a % 16) == 0:
                     print ("\n%08x: "%(a),end ="" )
                 print("%02x %02x %02x %02x "%(d & 0xff, (d >> 8) & 0xff, (d >> 16) & 0xff, (d >> 24) & 0xff), end = "")
@@ -175,14 +218,17 @@ class X393CmprsAfi(object):
                 a = a0
                 if (a < 0):
                     a -=circbuf_len
-                d = self.x393_mem.read_mem(cirbuf_start + a)
+##                d = self.x393_mem.read_mem(cirbuf_start + a)
+                d = read_mem(cirbuf_start + a)
                 if (a % 16) == 0:
                     print ("\n%08x: "%(a),end ="" )
                 print("%02x %02x %02x %02x "%(d & 0xff, (d >> 8) & 0xff, (d >> 16) & 0xff, (d >> 24) & 0xff), end = "")
             print()    
 
-        sec  = self.x393_mem.read_mem(cirbuf_start + last_image_chunk + (0x20 - CCAM_MMAP_META_SEC))
-        usec = self.x393_mem.read_mem(cirbuf_start + last_image_chunk + (0x20 - CCAM_MMAP_META_USEC))
+##        sec  = self.x393_mem.read_mem(cirbuf_start + last_image_chunk + (0x20 - CCAM_MMAP_META_SEC))
+        sec  = read_mem(cirbuf_start + last_image_chunk + (0x20 - CCAM_MMAP_META_SEC))
+##        usec = self.x393_mem.read_mem(cirbuf_start + last_image_chunk + (0x20 - CCAM_MMAP_META_USEC))
+        usec = read_mem(cirbuf_start + last_image_chunk + (0x20 - CCAM_MMAP_META_USEC))
         fsec=sec + usec/1000000.0
         try:
             tstr = time.strftime("%b %d %Y %H:%M:%S", time.gmtime(fsec))
@@ -196,6 +242,8 @@ class X393CmprsAfi(object):
         result = {"timestamp": fsec,
                   "timestring": tstr,
                   "segments":segments}
+        if ba_data:
+            result["bindata"] = ba_data
         if verbose >0 :
             print ("Inserted bytes after image before meta = 0x%x"%(inserted_bytes))
             print ("Image start (relative to cirbuf) = 0x%x, image length = 0x%x"%(img_start, len32 ))

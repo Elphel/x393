@@ -290,6 +290,8 @@ module  membridge#(
     // incrementing IDs for read (MSB==0) and write (MSB==1)
     reg [4:0] rd_id;
     reg [4:0] wr_id;
+    
+    reg        read_no_more; // after frame_done - no more requests for new pages to read
 
     assign afi_arid={1'b1,rd_id};
     assign afi_awid={1'b1,wr_id};
@@ -324,7 +326,7 @@ module  membridge#(
         if (hrst) wr_start <= 0;
         else      wr_start <= rdwr_start[2] && wr_mode;
         
-        page_ready_rd <= page_ready && !wr_mode;
+//        page_ready_rd <= page_ready && !wr_mode && !read_no_more;
         
         if      (hrst)     rd_id <= 0;
         else if (rd_start) rd_id <= rd_id +1;
@@ -429,7 +431,7 @@ module  membridge#(
         afi_len       <= (|left64[28:4])?4'hf : (left64[3:0]-1);
         afi_len_plus1 <= (|left64[28:4]) ? 5'h10 : {1'b0,left64[3:0]};
         
-        page_ready_rd <= page_ready && !wr_mode;
+        page_ready_rd <= page_ready && !wr_mode  && !read_no_more;
         page_ready_wr <= page_ready &&  wr_mode;
         
         if (!rw_in_progress) buf_left64 <= len64;
@@ -450,12 +452,13 @@ module  membridge#(
     //rdwr_en    
     reg  [7:0] axi_arw_requested;     // 64-bit words to be read/written over axi queued to AR/AW channels
     reg  [7:0] axi_bursts_requested;  // number of bursts requested
-    reg  [7:0] wresp_conf;         // number of 64-bit words confirmed through axi b channel
-    wire [7:0] axi_wr_pending;     // Number of words qued to AW but not yet confirmed through B-channel;
+    reg  [7:0] wresp_conf;         // number of 64-bit words confirmed through axi b channel (wrong confirmed only bursts)!
+    wire [7:0] axi_wr_pending;     // Number of bursts queued to AW but not yet confirmed through B-channel;
+    reg  [7:0] axi_wr_left;        // Number of bursts queued through AW but not sent over W;
     wire [7:0] axi_rd_pending;
 
     reg  [7:0] axi_rd_received;
-    assign axi_rd_pending= axi_arw_requested - axi_rd_received;
+    assign axi_rd_pending= axi_arw_requested - axi_rd_received; // WRONG! - use bursts, not words!
 //    assign axi_wr_pending= axi_arw_requested - wresp_conf;
     assign axi_wr_pending= axi_bursts_requested - wresp_conf;
     
@@ -520,12 +523,12 @@ module  membridge#(
         
         if      (hrst)           read_page <= 0;
         else if (reset_page_rd)  read_page <= 0;
-        else if (next_page_rd_w) read_page <= read_page + 1;
+        else if (done_page_rd_w) read_page <= read_page + 1;
 
         if      (hrst)                              read_pages_ready <= 0;
         else if (!read_busy)                        read_pages_ready <= 0;
-        else if ( page_ready_rd && !next_page_rd_w) read_pages_ready <= read_pages_ready +1;
-        else if (!page_ready_rd &&  next_page_rd_w) read_pages_ready <= read_pages_ready -1;
+        else if ( page_ready_rd && !done_page_rd_w) read_pages_ready <= read_pages_ready +1;
+        else if (!page_ready_rd &&  done_page_rd_w) read_pages_ready <= read_pages_ready -1;
         
         if (hrst) afi_wd_safe_not_full <= 0;
         else      afi_wd_safe_not_full <=  rdwr_en && (!afi_wcount[7] && !(&afi_wcount[6:3]));
@@ -544,6 +547,12 @@ module  membridge#(
         else if (pre_done)       done <= 1;
         else if (rdwr_start)     done <= 0;
         
+        if      (hrst )       read_no_more <= 0;
+        else if (!read_busy)  read_no_more <= 0;
+        else if (frame_done)  read_no_more <= 1;
+        
+        
+        
     end
     
     // handle interaction with the buffer, advance addresses, keep track of partial (last) pages in each line
@@ -557,17 +566,29 @@ module  membridge#(
     wire                       is_last_in_page;
     wire                       next_page_rd_w;
     wire                       next_page_wr_w;
+    wire                       done_page_rd_w;
+    wire                       safe_some_left_rd_w;
+    reg                        left_was_1; // was <=1 (0 does not matter)  valid next after buffer address
+    reg                        left_many;
+    
+    
 //    assign next_page_rd_w = read_started && !busy_next_page && is_last_in_page && bufrd_rd[0];
-    assign next_page_rd_w = read_started && is_last_in_page && bufrd_rd[0];
+    assign done_page_rd_w = read_started && is_last_in_page && bufrd_rd[0];
+    assign next_page_rd_w = done_page_rd_w && !read_no_more;
     assign is_last_in_line = buf_in_line64 == last_in_line64;
     assign is_last_in_page = is_last_in_line || (&buf_in_line64[6:0]);
+//    assign safe_some_left_rd_w =  (axi_wr_left[7:1]!=0) || (axi_wr_left[0] && !bufrd_rd[0]);
+    assign safe_some_left_rd_w =  left_many || (|buf_left64[1:0] && !(|bufrd_rd)); // Fine tune
 `ifdef MEMBRIDGE_DEBUG_READ
-    assign bufrd_rd_w = afi_wd_safe_not_full && (|read_pages_ready[2:1] || (read_pages_ready[0] && !is_last_in_page)) && debug_w_ready;
+    assign bufrd_rd_w = safe_some_left_rd_w && !read_over && afi_wd_safe_not_full &&
+                        (|read_pages_ready[2:1] || (read_pages_ready[0] && (!is_last_in_page || read_no_more))) && debug_w_ready;
 `else
-    assign bufrd_rd_w = afi_wd_safe_not_full && (|read_pages_ready[2:1] || (read_pages_ready[0] && !is_last_in_page));
+//  assign bufrd_rd_w =               afi_wd_safe_not_full && (|read_pages_ready[2:1] || (read_pages_ready[0] && !is_last_in_page));
+    
+    assign bufrd_rd_w = safe_some_left_rd_w && !read_over && afi_wd_safe_not_full &&
+                        (|read_pages_ready[2:1] || (read_pages_ready[0] && (!is_last_in_page || read_no_more)));
 `endif    
 //last_in_line64 - last word number in scan line
-    reg                        left_was_1; // was <=1 (0 does not matter)  valid next after buffer address
     reg                  [3:0] src_wcntr;
 //    reg                  [2:0] wlast_in_burst;
     reg                        wlast; // valid 2 after buffer address, same as wvalid
@@ -581,6 +602,12 @@ module  membridge#(
         if (!rw_in_progress) left_was_1 <= 0;
         else if   (buf_rdwr) left_was_1 <= !(|buf_left64[28:1]);
         
+/*        if (!rw_in_progress) left_many <= 0;
+        else if   (buf_rdwr) */
+        
+        left_many <= |buf_left64[28:2];
+
+
         if    (!read_started) src_wcntr <= 0;
         else if (bufrd_rd[0]) src_wcntr <= src_wcntr+1;
         
@@ -639,9 +666,14 @@ module  membridge#(
         else if (!write_busy && !read_started)  axi_bursts_requested <= 0;
         else if (advance_rel_addr)              axi_bursts_requested <= axi_bursts_requested + 1;
 
-        if      (hrst)             axi_rd_received <= 0;
-        else if (!write_busy)      axi_rd_received <= 0;
-        else if (bufwr_we[0])      axi_rd_received <= axi_rd_received + 1;
+        if      (hrst)                          axi_rd_received <= 0;
+        else if (!write_busy)                   axi_rd_received <= 0;
+        else if (bufwr_we[0])                   axi_rd_received <= axi_rd_received + 1;
+
+        if      (hrst)                                        axi_wr_left <= 0;
+        else if (!read_started)                               axi_wr_left <= 0;
+        else if ( advance_rel_addr && !(wlast && afi_wvalid)) axi_wr_left <= axi_wr_left + 1;
+        else if (!advance_rel_addr &&  (wlast && afi_wvalid)) axi_wr_left <= axi_wr_left - 1;
         
         
         if (hrst) afi_rd_safe_not_empty <= 0;

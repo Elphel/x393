@@ -139,6 +139,7 @@ task test_afi_rw; // SuppressThisWarning VEditor - may be unused
     input        continue;    // 0 start from start64, 1 - continue from where it was
     input        disable_need;
     input  [4:0] cache_mode;  // 'h3 - normal, 'h13 - debug
+    input        rpt;
     
     
 // -----------------------------------------
@@ -154,8 +155,8 @@ task test_afi_rw; // SuppressThisWarning VEditor - may be unused
     begin
         skip_too_late = 1'b0;
         disable_need = 1'b0;
-        repetitive =  1'b1;
-        single     =  1'b0;
+        repetitive =  rpt; //1'b1;
+        single     =  !rpt; // 1'b0;
         reset_frame = 1'b0;
         $display("====== test_afi_rw: write=%d, extra_pages=%d,  frame_start= %x, window_full_width=%d, window_width=%d, window_height=%d, window_left=%d, window_top=%d,@%t",
                                       write_ddr3,  extra_pages, frame_start_addr, window_full_width,   window_width, window_height, window_left, window_top, $time);

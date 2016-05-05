@@ -47,6 +47,7 @@ import time
 #import shutil
 import socket
 import select
+import traceback
 
 from import_verilog_parameters import ImportVerilogParameters
 #from import_verilog_parameters import VerilogParameters
@@ -152,6 +153,7 @@ def execTask(commandLine):
                 sFuncArgs+=' <'+str(a)+'>'
             print ("Usage:\n%s %s"%(funcName,sFuncArgs))
             print ("exception message:"+str(e))
+            print (traceback.format_exc())
     else:
         result = callableTasks[funcName]['func'](callableTasks[funcName]['inst'],*funcArgs)
     return result
@@ -480,7 +482,7 @@ USAGE
                 print ("args.exception=%d, QUIET=%d"%(args.exceptions,QUIET))
                 print ("Enter 'R' to toggle show/hide command results, now it is %s"%(("OFF","ON")[showResult]))
                 print ("Use 'socket_port [PORT]' to (re-)open socket on PORT (0 or no PORT - disable socket)")
- #               print ("Use 'copy <SRC> <DST> to copy files in file the system")
+#               print ("Use 'copy <SRC> <DST> to copy files in file the system")
                 print ("Use 'pydev_predefines' to generate a parameter list to paste to vrlg.py, so Pydev will be happy")
             elif lineList[0].upper() == 'R':
                 if len(lineList)>1:

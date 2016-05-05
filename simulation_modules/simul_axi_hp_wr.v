@@ -150,12 +150,14 @@ UPDATE: Xilinx docs say that (AR/AW)CACHE is ignored
     reg         start_write_burst_r; // next after start_write_burst_w
     wire        write_in_progress_w; // should go inactive last confirmed upstream cycle
     reg         write_in_progress;
-    reg  [ 7:0] num_full_data = 0; // Number of full data bursts in FIFO
 
     wire  [5:0] wresp_num_in_fifo;
     reg         was_wresp_re=0;
     wire        wresp_re;
         
+    reg  [ 7:0] num_full_data = 0; // Number of full data bursts in FIFO
+    wire        inc_num_full_data = wvalid && wready && wlast;
+
     // documentation sais : "When set, allows the priority of a transaction at the head of the WrCmdQ to be promoted if higher
     // priority transactions are backed up behind it." Whqt about demotion? Assuming it is not demoted
     assign sim_wr_qos = (wrQosHeadOfCmdQEn && (wr_qos_in > wr_qos_out))? wr_qos_in : wr_qos_out;
@@ -218,8 +220,8 @@ UPDATE: Xilinx docs say that (AR/AW)CACHE is ignored
     // Count full data bursts ready in FIFO
     always @ (posedge rst or posedge aclk) begin
         if (rst) num_full_data <=0;
-        else if (wvalid && wready && wlast     && !start_write_burst_w) num_full_data <= num_full_data + 1;
-        else if (!(wvalid && wready && wlast)  &&  start_write_burst_w) num_full_data <= num_full_data - 1;
+        else if ( inc_num_full_data  && !start_write_burst_w) num_full_data <= num_full_data + 1;
+        else if (!inc_num_full_data  &&  start_write_burst_w) num_full_data <= num_full_data - 1;
     end
     
     

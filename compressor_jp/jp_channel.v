@@ -110,8 +110,10 @@ module  jp_channel#(
         parameter CMPRS_CSAT_CR_BITS =        10, // number of bits in red scale field in color saturation word
         parameter CMPRS_CORING_BITS =          3,  // number of bits in coring mode
         
-        parameter CMPRS_TIMEOUT_BITS=              12,
-        parameter CMPRS_TIMEOUT=                   1000   // mclk cycles
+        parameter CMPRS_TIMEOUT_BITS=         12,
+        parameter CMPRS_TIMEOUT=            1000,   // mclk cycles
+        parameter NUM_FRAME_BITS =             4 // number of bits use for frame number 
+        
 `ifdef DEBUG_RING
         ,parameter DEBUG_CMD_LATENCY = 2 //SuppressThisWarning VEditor - not used
 `endif        
@@ -159,6 +161,8 @@ module  jp_channel#(
     input                         frame_done_dst,     // single-cycle pulse when the full frame (window) was transferred to/from DDR3 memory
                                                       // use as 'eot_real' in 353 
     output                        suspend,            // suspend reading data for this channel - waiting for the source data
+    output reg [LAST_FRAME_BITS-1:0] frame_number_finished,   // valid after stuffer done
+    
 
 // statistics data was not used in late nc353    
     input                         dccout,         //enable output of DC and HF components for brightness/color/focus adjustments
@@ -177,6 +181,7 @@ module  jp_channel#(
     input                         vsync_late,         // delayed start of frame, @mclk. In 353 it was 16 lines after VACT active
                                                       // source channel should already start, some delay give time for sequencer commands
                                                       // that should arrive before it
+    input  [NUM_FRAME_BITS-1:0] frame_num_compressed,
     
     // Output interface to the AFI mux
     input                         hclk,
@@ -312,6 +317,17 @@ module  jp_channel#(
 //TODO: use next signals for status
     wire          stuffer_running_mclk;
     wire          reading_frame;
+    wire          frame_started_mclk;// store frame number ? Wrong, frame number should come from the sensor channel
+    reg           stuffer_running_mclk_d;          
+    reg [LAST_FRAME_BITS-1:0] frame_number_started;   // valid when stuffer started
+    
+//    output reg [LAST_FRAME_BITS-1:0] frame_number_finished,   // valid after stuffer done
+    always @ (posedge mclk) begin
+        stuffer_running_mclk_d <=stuffer_running_mclk;
+        if ( stuffer_running_mclk && !stuffer_running_mclk_d) frame_number_started <= frame_number_dst;
+        if (!stuffer_running_mclk &&  stuffer_running_mclk_d) frame_number_finished <= frame_number_started;
+        
+    end
     
 `ifdef   USE_XCLK2X
     wire   [15:0] huff_do;     // output[15:0] reg 
@@ -581,22 +597,25 @@ module  jp_channel#(
         .we         (cmd_we)    // output
     );
     
-    wire [4:0] status_data; 
-    cmprs_status cmprs_status_i (
-        .mrst            (mrst),                  // input
-        .mclk            (mclk),                  // input
-        .eof_written     (eof_written_mclk),      // input
-        .stuffer_running (stuffer_running_mclk),  // input
-        .reading_frame   (reading_frame),         // input
-        .set_interrupts  (set_interrupts_w),      // input
-        .data_in         (cmd_data[1:0]),         // input[1:0] 
-        .status          (status_data),           // output[2:0] 
-        .irq             (irq) // output
+    wire [11:0] status_data; 
+    cmprs_status  #(
+        .NUM_FRAME_BITS(4)
+    ) cmprs_status_i (
+        .mrst                 (mrst),                  // input
+        .mclk                 (mclk),                  // input
+        .eof_written          (eof_written_mclk),      // input
+        .stuffer_running      (stuffer_running_mclk),  // input
+        .reading_frame        (reading_frame),         // input
+        .frame_num_compressed (frame_num_compressed),  // input[3:0]
+        .set_interrupts       (set_interrupts_w),      // input
+        .data_in              (cmd_data[1:0]),         // input[1:0] 
+        .status               (status_data),           // output[9:0] 
+        .irq                  (irq) // output
     );
 
     status_generate #(
         .STATUS_REG_ADDR  (CMPRS_STATUS_REG_ADDR),
-        .PAYLOAD_BITS     (7),
+        .PAYLOAD_BITS     (14),
         .EXTRA_WORDS      (1),
         .EXTRA_REG_ADDR   (CMPRS_HIFREQ_REG_ADDR)
         
@@ -779,8 +798,8 @@ module  jp_channel#(
         .stuffer_running    (stuffer_running), // input
         .force_flush_long   (force_flush_long),         // output reg - @ mclk tried to start frame compression before the previous one was finished
         .stuffer_running_mclk(stuffer_running_mclk), // output
-        .reading_frame      (reading_frame) // output
-        
+        .reading_frame      (reading_frame), // output
+        .frame_started_mclk (frame_started_mclk)
     );
 
     cmprs_macroblock_buf_iface cmprs_macroblock_buf_iface_i (
@@ -1239,6 +1258,9 @@ module  jp_channel#(
         .fifo_count          (fifo_count)      // output[7:0] - number of 32-byte chunks available in FIFO
     );
     pulse_cross_clock eof_written_mclk_i (.rst(xrst2xn), .src_clk(~xclk2x), .dst_clk(mclk), .in_pulse(eof_written_xclk2xn), .out_pulse(eof_written_mclk),.busy());
+//    pulse_cross_clock eof_written_mclk_i (.rst(xrst2xn), .src_clk(~xclk2x), .dst_clk(mclk), .in_pulse(eof_written_xclk2xn), .out_pulse(eof_written_mclk),.busy());
+    
+    
   `ifdef DISPLAY_COMPRESSED_DATA
     integer dbg_stuffer_word_number;
     reg         dbg_odd_stuffer_dv;

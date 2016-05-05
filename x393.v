@@ -481,7 +481,9 @@ module  x393 #(
     wire                [255:0] sens_buf_dout;   //    (), // output[63:0] 
     wire                  [3:0] sens_page_written;     //   single mclk pulse: buffer page (full or partial) is written to the memory buffer 
 // TODO: Add counter(s) to count sens_xfer_skipped pulses    
-    wire                  [3:0] sens_xfer_skipped;     // single mclk pulse on every skipped (not written) block to record error statistics
+    wire                  [3:0] sens_xfer_skipped;         // single mclk pulse on every skipped (not written) block to record error statistics
+    wire                  [3:0] sens_first_wr_in_frame;    // single mclk pulse on first write block in each frame
+    
     wire                        trigger_mode; //       (), // input
     wire                  [3:0] trig_in;                  // input[3:0] 
         
@@ -493,8 +495,8 @@ module  x393 #(
 // handling this pulse (should be so). Make sure parameters are applied in ASAP in single-trigger mode
     wire                  [3:0] sof_late_mclk; //      (), // output[3:0] 
         
-    wire [4 * NUM_FRAME_BITS - 1:0] frame_num; //      (), // input[15:0] 
-    
+    wire [4 * NUM_FRAME_BITS - 1:0] frame_num;            //       (), // input[15:0] 
+    wire [4 * NUM_FRAME_BITS - 1:0] frame_num_compressed; //      (), // input[15:0] 
     // signals for compressor393 (in/outs as seen for the sensor393)
     // per-channel memory buffers interface
 
@@ -520,6 +522,8 @@ module  x393 #(
     wire                     [3:0] cmprs_frame_done_dst;   // input single-cycle pulse when the full frame (window) was transferred to/from DDR3 memory
                                                            // use as 'eot_real' in 353 
     wire                     [3:0] cmprs_suspend;          // output suspend reading data for this channel - waiting for the source data
+    wire   [4*LAST_FRAME_BITS-1:0] cmprs_frame_number_finished;  // frame numbers compressed
+    
 
 // Timestamp messages (@mclk) - combine to a single ts_data?    
     wire                      [3:0] ts_pre_stb; // input[ 3:0] 4 compressor channels
@@ -929,6 +933,22 @@ assign axi_grst = axi_rst_pre;
         end
     endgenerate
 
+    frame_num_sync #(
+        .NUM_FRAME_BITS(NUM_FRAME_BITS),
+        .LAST_FRAME_BITS(LAST_FRAME_BITS),
+        .FRAME_BITS_KEEP(NUM_FRAME_BITS)
+    ) frame_num_sync_i (
+        .mrst                     (mrst),                        // input
+        .mclk                     (mclk),                        // input
+        .absolute_frames          (frame_num),                   // input[15:0] 
+        .first_wr_in_frame        (sens_first_wr_in_frame),      // input[3:0] 
+//        .first_rd_in_frame        (), // input[3:0] 
+        .memory_frames_sensor     (cmprs_frame_number_src),      // input[63:0] 
+        .memory_frames_compressor (cmprs_frame_number_finished), // input[63:0] 
+        .compressed_frames        (frame_num_compressed)         // output[15:0] 
+    );
+
+
     cmd_seq_mux #(
         .CMDSEQMUX_ADDR      (CMDSEQMUX_ADDR),
         .CMDSEQMUX_MASK      (CMDSEQMUX_MASK),
@@ -1298,6 +1318,8 @@ assign axi_grst = axi_rst_pre;
         .sens_buf_dout             (sens_buf_dout),              // input[255:0] 
         .sens_page_written         (sens_page_written),          // input [3:0] single mclk pulse: buffer page (full or partial) is written to the memory buffer 
         .sens_xfer_skipped         (sens_xfer_skipped),          // output reg
+        .sens_first_wr_in_frame    (sens_first_wr_in_frame),     // single mclk pulse on first write block in each frame
+        
 // compressor interface
         .cmprs_xfer_reset_page_rd  (cmprs_xfer_reset_page_rd),   // output[3:0] 
         .cmprs_buf_wpage_nxt       (cmprs_buf_wpage_nxt),        // output[3:0] 
@@ -1996,7 +2018,9 @@ assign axi_grst = axi_rst_pre;
         .CMPRS_AFIMUX_SA_LEN             (CMPRS_AFIMUX_SA_LEN),
         .CMPRS_AFIMUX_WIDTH              (CMPRS_AFIMUX_WIDTH),
         .CMPRS_AFIMUX_CYCBITS            (CMPRS_AFIMUX_CYCBITS),
-        .AFI_MUX_BUF_LATENCY             (AFI_MUX_BUF_LATENCY)
+        .AFI_MUX_BUF_LATENCY             (AFI_MUX_BUF_LATENCY),
+        .NUM_FRAME_BITS                  (NUM_FRAME_BITS)
+        
 `ifdef DEBUG_RING
         ,.DEBUG_CMD_LATENCY   (DEBUG_CMD_LATENCY) 
 `endif        
@@ -2034,14 +2058,16 @@ assign axi_grst = axi_rst_pre;
         .frame_done_dst            (cmprs_frame_done_dst),       // input[3:0] 
         .suspend                   (cmprs_suspend),              // output[3:0] 
 
+        .frame_number_finished     (cmprs_frame_number_finished),// output[63:0] frame numbers compressed
+
         .ts_pre_stb                (ts_pre_stb),                 // input[3:0]
         .ts_data                   (ts_data),                    // input[31:0] 
         
         .eof_written_mclk          (eof_written_mclk),           // output[3:0]
         .stuffer_done_mclk         (stuffer_done_mclk),          // output[3:0]
-
         .vsync_late                (sof_late_mclk),                 // input[3:0]
-        
+        .frame_num_compressed      (frame_num_compressed[4 * NUM_FRAME_BITS -1 : 0]), // input[3:0] 
+
         .hclk                      (hclk),                       // input
         .afi0_awaddr               (afi1_awaddr),                // output[31:0] 
         .afi0_awvalid              (afi1_awvalid),               // output

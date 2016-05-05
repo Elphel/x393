@@ -2,6 +2,9 @@ unisims
 vivado_*
 syntax_*
 simulation/*
+simulation_data/*
+www/*
+constraints/*
 ise_*
 attic/*
 hardware_tests/*
@@ -31,3 +34,9 @@ x393_testbench01_debug_membridge.sav
 x393_testbench02-0.sav
 py393/generated
 *.pickle
+py393/i2c.py
+
+py393/x393_i2c.py.test
+py393/x393_init_usb_hub.py
+py393/x393_mcntrl_adjust.py.dbg
+x393_testbench03_01.sav

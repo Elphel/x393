@@ -206,7 +206,7 @@ class X393McntrlMembridge(object):
             size64 =            BUFFER_LEN//8            # input [28:0] size64;           # size of the system memory range in 64-bit words
         
         if quiet <2:
-            print("membridge_setup(0x%08x,0x%0xx,0x%08x,0x%0xx,0x%08x,%d)"%(len64, width64, start64, lo_addr64, size64, quiet))
+            print("membridge_setup(0x%08x,0x%08x,0x%08x,0x%08x,0x%08x,%d)"%(len64, width64, start64, lo_addr64, size64, quiet))
         self.x393_axi_tasks.write_control_register(vrlg.MEMBRIDGE_ADDR + vrlg.MEMBRIDGE_LO_ADDR64,  lo_addr64);    
         self.x393_axi_tasks.write_control_register(vrlg.MEMBRIDGE_ADDR + vrlg.MEMBRIDGE_SIZE64,     size64);    
         self.x393_axi_tasks.write_control_register(vrlg.MEMBRIDGE_ADDR + vrlg.MEMBRIDGE_START64,    start64);    

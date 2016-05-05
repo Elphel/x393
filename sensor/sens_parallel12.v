@@ -432,7 +432,8 @@ module  sens_parallel12 #(
     status_generate #(
         .STATUS_REG_ADDR(SENSIO_STATUS_REG),
 //        .PAYLOAD_BITS(15+3+STATUS_ALIVE_WIDTH) // STATUS_PAYLOAD_BITS)
-        .PAYLOAD_BITS(15+3+STATUS_ALIVE_WIDTH+1) // STATUS_PAYLOAD_BITS)
+//        .PAYLOAD_BITS(15+3+STATUS_ALIVE_WIDTH+1) // STATUS_PAYLOAD_BITS)
+        .PAYLOAD_BITS(26) // STATUS_PAYLOAD_BITS)
     ) status_generate_sens_io_i (
         .rst        (1'b0),         // rst), // input
         .clk        (mclk),         // input

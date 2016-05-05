@@ -78,7 +78,8 @@ module  cmprs_frame_sync#(
     output reg                    force_flush_long,    // force flush (abort frame), can be any clock and may last until stuffer_done_mclk
                                                       // stuffer will re-clock and extract 0->1 transition
     output                        stuffer_running_mclk,
-    output                        reading_frame
+    output                        reading_frame,
+    output                        frame_started_mclk  // use to store frame number
 );
 /*
  Abort frame (force flush) if:
@@ -87,7 +88,7 @@ module  cmprs_frame_sync#(
  Abort frame lasts until flush end or timeout expire
 */
 //    wire   vsync_late_mclk; // single mclk cycle, reclocked from vsync_late
-    wire   frame_started_mclk; 
+//    wire   frame_started_mclk; 
     reg    bonded_mode;
     reg    frame_start_dst_r;
     reg    frames_differ;  // src and dest point to different frames (single-frame buffer mode), disregard line_unfinished_*

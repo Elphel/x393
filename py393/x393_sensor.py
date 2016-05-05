@@ -70,6 +70,8 @@ class X393Sensor(object):
         Get sensor interface type by reading status register 0xfe that is set to 0 for parallel and 1 for HiSPi
         @return "PAR12" or "HISPI"
         """
+        if  self.DRY_MODE:
+            return SENSOR_INTERFACE_PARALLEL
         return (SENSOR_INTERFACE_PARALLEL, SENSOR_INTERFACE_HISPI)[self.x393_axi_tasks.read_status(address=0xfe)] # "PAR12" , "HISPI"
         
     def program_status_sensor_i2c( self,
@@ -502,6 +504,18 @@ class X393Sensor(object):
         @param bits16)   - True - 16 bpp mode, false - 8 bpp mode (bypass gamma). Gamma-processed data
                            is still used for histograms
         """
+        try:
+            if (num_sensor == all) or (num_sensor[0].upper() == "A"): #all is a built-in function
+                for num_sensor in range(4):
+                    self.set_sensor_mode (num_sensor = num_sensor,
+                         hist_en = hist_en,
+                         hist_nrst = hist_nrst, 
+                         chn_en = chn_en, 
+                         bits16 = bits16)
+                return
+        except:
+            pass
+        
         self.x393_axi_tasks.write_control_register(vrlg.SENSOR_GROUP_ADDR + num_sensor * vrlg.SENSOR_BASE_INC + vrlg.SENSOR_CTRL_RADDR,
                                                   self.func_sensor_mode(
                                                                    hist_en =   hist_en,
