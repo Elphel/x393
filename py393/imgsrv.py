@@ -37,6 +37,7 @@ import time
 import socket
 import shutil
 import sys
+import subprocess
 
 path="/www/pages/img.jpeg"
 PORT=8888
@@ -94,6 +95,9 @@ if ((not acquisition_parameters["bayer"] is None) and
     if int (acquisition_parameters["flip_y"]):
         ibayer ^= 2
     acquisition_parameters["bayer"] = str(ibayer)    
+        
+#restart compressor
+communicate(PORT, "compressor_control all 1 None None None None None")
         
 cmd_str = "jpeg_acquire_write %s %s %s %s %s %s %s %s %s %s %s %s %s"%(
            str(acquisition_parameters["file_path"]),
@@ -156,6 +160,12 @@ for i in range(skip_frames):
 reply = communicate(PORT,cmd_str)
 if (acquisition_parameters["cmode"] =="5"):
     path = path.replace("jpeg","jp4")
+
+circbufcmd = "echo \"3 "+str(acquisition_parameters["y_quality"])+"\" > /dev/circbuf0"
+subprocess.check_output(circbufcmd,stderr=subprocess.STDOUT,shell=True)
+
+communicate(PORT, "compressor_control all 0 None None None None None")
+communicate(PORT, "compressor_control all 3 None None None None None")
 
 timestamp =str(time.time()).replace(".","_") # later use image timestamp
 print("Content-Type: image/jpeg")
