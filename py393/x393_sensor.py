@@ -829,7 +829,7 @@ class X393Sensor(object):
         if sensorType == "PAR12":
             if not gain_r is None:
                 self.write_sensor_reg16 (num_sensor = num_sensor,
-                                         reg_addr16 = 0x902c,
+                                         reg_addr16 = 0x902d,
                                          reg_data16 = gain_r)
             if not gain_gr is None:
                 self.write_sensor_reg16 (num_sensor = num_sensor,
@@ -841,7 +841,7 @@ class X393Sensor(object):
                                          reg_data16 = gain_gb)
             if not gain_b is None:
                 self.write_sensor_reg16 (num_sensor = num_sensor,
-                                         reg_addr16 = 0x902d,
+                                         reg_addr16 = 0x902c,
                                          reg_data16 = gain_b)
             if not exposure is None:
                 self.write_sensor_reg16 (num_sensor = num_sensor,
