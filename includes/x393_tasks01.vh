@@ -79,25 +79,36 @@
         end
     endtask
 
+
     task read_and_wait;
-    input [31:0] address;
-    begin
-        axi_read_addr(
-            GLOBAL_READ_ID,    // id
-            address & 32'hfffffffc, // addr
-            4'h0, // len - single
-            1     // burst type - increment
-            );
-        GLOBAL_READ_ID <= GLOBAL_READ_ID+1;
-        wait (!CLK && rvalid && rready);
-        wait (CLK);
-        registered_rdata <= rdata;
-        wait (!CLK); // registered_rdata should be valid on exit
-        
-    end
+        input      [31:0] address;
+        begin
+            IRQ_EN = 0;
+            wait (CLK);
+            while (!MAIN_GO) begin
+                wait (!CLK);
+                wait (CLK);
+            end
+            axi_read_addr_inner(
+                GLOBAL_READ_ID,    // id
+                address & 32'hfffffffc, // addr
+                4'h0, // len - single
+                1     // burst type - increment
+                );
+            GLOBAL_READ_ID <= GLOBAL_READ_ID+1;
+            wait (!CLK && rvalid && rready);
+            wait (CLK);
+            registered_rdata <= rdata;
+            wait (!CLK); // registered_rdata should be valid on exit
+            IRQ_EN = 1;
+            if (IRQS) begin
+                @(posedge CLK);
+                @(negedge CLK);
+            end
+        end
     endtask
     
-    task axi_write_single_w; // address in bytes, not words
+    task axi_write_single_w; // address in dwords
         input [29:0] address;
         input [31:0] data;
         begin
@@ -129,6 +140,176 @@
     endtask
    
     task axi_write_addr_data;
+        input [11:0] id;
+        input [31:0] addr;
+        input [31:0] data;
+        input [ 3:0] len;
+        input [ 1:0] burst;
+        input        data_en; // if 0 - do not send data, only address
+        input [ 3:0] wstrb;
+        input        last;
+        begin
+            IRQ_EN = 0;
+            wait (CLK);
+            while (!MAIN_GO) begin
+                wait (!CLK);
+                wait (CLK);
+            end
+            axi_write_addr_data_inner (id, addr, data, len, burst, data_en, wstrb, last);
+            IRQ_EN = 1;
+            if (IRQS) begin
+                @(posedge CLK);
+                @(negedge CLK);
+            end
+        end
+    endtask
+
+    task axi_write_data;
+        input [11:0] id;
+        input [31:0] data;
+        input [ 3:0] wstrb;
+        input        last;
+        begin
+            IRQ_EN = 0;
+            wait (CLK);
+            while (!MAIN_GO) begin
+                wait (!CLK);
+                wait (CLK);
+            end
+            axi_write_data_inner (id, data, wstrb, last);
+            IRQ_EN = 1;
+            if (IRQS) begin
+                @(posedge CLK);
+                @(negedge CLK);
+            end
+        end
+    endtask
+
+// Tasks called from ISR
+
+    task   read_contol_register_irq;
+        input  [29:0] reg_addr;
+        output [31:0] rslt;
+        begin
+            read_and_wait_w_irq(CONTROL_RBACK_ADDR+reg_addr, rslt);
+        end
+    endtask   
+
+ task read_status_irq;
+    input [STATUS_DEPTH-1:0] address;
+    output [31:0] rslt;
+    begin
+        read_and_wait_w_irq(STATUS_ADDR + address , rslt);
+    end
+ endtask
+
+    task read_and_wait_w_irq;
+        input [29:0] address;
+        output [31:0] rslt;
+        begin
+            read_and_wait_irq ({address,2'b0},rslt);
+        end
+    endtask
+
+    task read_and_wait_irq;
+        input      [31:0] address;
+        output reg [31:0] rslt;
+        begin
+            axi_read_addr_irq(
+                GLOBAL_READ_ID,    // id
+                address & 32'hfffffffc, // addr
+                4'h0, // len - single
+                1     // burst type - increment
+                );
+            GLOBAL_READ_ID <= GLOBAL_READ_ID+1;
+            wait (!CLK && rvalid && rready);
+            wait (CLK);
+            rslt <= rdata;
+            wait (!CLK); // registered_rdata should be valid on exit
+        end
+    endtask
+
+    task axi_read_addr_irq; // called ferom the main loop, not from interrupts
+        input [11:0] id;
+        input [31:0] addr;
+        input [ 3:0] len;
+        input [ 1:0] burst;
+        begin
+//            IRQ_EN = 0;
+//            wait (CLK);
+//            while (!MAIN_GO) begin
+//                wait (!CLK);
+//                wait (CLK);
+//            end
+            axi_read_addr_inner (id, addr, len, burst);
+//            IRQ_EN = 1;
+        end
+    endtask
+
+    task   write_contol_register_irq;
+        input [29:0] reg_addr;
+//        input integer reg_addr;
+        input [31:0] data;
+        begin
+            axi_write_single_w_irq(CONTROL_ADDR+reg_addr, data);
+        end
+    endtask   
+
+    task axi_write_single_w_irq; // address in dwords
+        input [29:0] address;
+        input [31:0] data;
+        begin
+`ifdef DEBUG_WR_SINGLE
+          $display("axi_write_single_w %h:%h @ %t",address,data,$time);
+`endif                
+            axi_write_single_irq ({address,2'b0},data);
+        end
+    endtask
+
+    task axi_write_single_irq; // address in bytes, not words
+        input [31:0] address;
+        input [31:0] data;
+        begin
+          axi_write_addr_data_irq(
+                    GLOBAL_WRITE_ID,    // id
+                    address & 32'hfffffffc, // addr
+                    data,
+                    4'h0, // len - single
+                    1,    // burst type - increment
+                    1'b1, // data_en
+                    4'hf, // wstrb
+                    1'b1 // last
+                );
+          GLOBAL_WRITE_ID <= GLOBAL_WRITE_ID+1;
+          #0.1; // without this delay axi_write_addr_data() used old value of GLOBAL_WRITE_ID
+        end
+    endtask
+
+    task axi_write_addr_data_irq;
+        input [11:0] id;
+        input [31:0] addr;
+        input [31:0] data;
+        input [ 3:0] len;
+        input [ 1:0] burst;
+        input        data_en; // if 0 - do not send data, only address
+        input [ 3:0] wstrb;
+        input        last;
+        begin
+//            IRQ_EN = 0;
+//            wait (CLK);
+//            while (!MAIN_GO) begin
+//                wait (!CLK);
+//                wait (CLK);
+//            end
+            axi_write_addr_data_inner (id, addr, data, len, burst, data_en, wstrb, last);
+//            IRQ_EN = 1;
+        end
+    endtask
+
+
+// Tasks common for main ind ISR
+
+    task axi_write_addr_data_inner;
         input [11:0] id;
         input [31:0] addr;
         input [31:0] data;
@@ -200,7 +381,7 @@
         end
     endtask
 
-    task axi_write_data;
+    task axi_write_data_inner;
         input [11:0] id;
         input [31:0] data;
         input [ 3:0] wstrb;
@@ -222,7 +403,8 @@
         end
     endtask
 
-    task axi_read_addr;
+
+    task axi_read_addr_inner; // regardless of main loop/interrupts
         input [11:0] id;
         input [31:0] addr;
         input [ 3:0] len;

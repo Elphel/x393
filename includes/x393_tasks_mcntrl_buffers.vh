@@ -173,14 +173,21 @@ task read_block_buf;
     input wait_done; 
     integer i; //,j;
     begin
-        wait (~rstb);
+
+        IRQ_EN = 0;
+        wait (CLK);
+        while (!MAIN_GO) begin
+            wait (!CLK);
+            wait (CLK);
+        end
+
         SIMUL_AXI_FULL<=1'b0;
         $display("**** read_block_buf  @%t", $time);
         axi_set_rd_lag(0);
         for (i = 0; i < num_read; i = i + 16) begin
             wait(arready);
-//                $display ("read_block_buf (0x%x) @%t",i,$time);
-            axi_read_addr(
+//            axi_read_addr(
+            axi_read_addr_inner(
                 i,    // id
                 {start_word_address,2'b0}+( i << 2), // addr
                 4'hf, // len
@@ -191,5 +198,11 @@ task read_block_buf;
 //            wait (AXI_RD_EMPTY);
             wait_read_queue_empty;
         end
+        IRQ_EN = 1;
+        if (IRQS) begin
+            @(posedge CLK);
+                @(negedge CLK);
+        end
+        
     end
 endtask

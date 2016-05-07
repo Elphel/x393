@@ -42,7 +42,7 @@ module  cmprs_status #(
     input                          stuffer_running,
     input                          reading_frame,
     input  [NUM_FRAME_BITS - 1:0] frame_num_compressed,
-    input                          set_interrupts,
+    input                          set_interrupts, // data = 2: disable, 3 - enable, 1 - reset irq
     input                    [1:0] data_in,
     output    [NUM_FRAME_BITS+7:0] status,
     output                         irq
@@ -54,7 +54,7 @@ module  cmprs_status #(
     reg                         im_r; // interrupt mask
     reg  [NUM_FRAME_BITS - 1:0] frame_irq;
     
-    assign status = {frame_irq,
+    assign status = {frame_irq[NUM_FRAME_BITS - 1:0],
                      3'b0,
                      flushing_fifo,
                      stuffer_running_r,

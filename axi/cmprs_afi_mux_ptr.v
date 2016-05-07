@@ -45,10 +45,11 @@ module  cmprs_afi_mux_ptr(
     input                  [ 3:0] reset_pointers,     // per-channel - reset pointers
     input                         pre_busy_w,         // combinatorial signal - one before busy[0] (depends on ptr_resetting)
     input                  [ 1:0] winner_channel,     // channel that won arbitration for AXI access, valid @ pre_busy_w
-    input                         need_to_bother,     // whants to start access if address and data FIFO permit
+    input                         need_to_bother,     // wants to start access if address and data FIFO permit
     input                   [1:0] chunk_inc_want_m1,  // how much to increment chunk pointer (0..3) +1 - valid with busy[0] (w/o rollover)
     
     input                         last_burst_in_frame, // valid with busy[0] (last_burst_in_frame<=last_chunk_w[winner2])
+                                                       // last_burst_in_frame is invalid when rollover splits burst in 2
     input                  [ 3:0] busy,               // one cycle less than sending 1-4 bursts, [1] - delayed by 1, [2] - by 2 
     output                        ptr_resetting,      // pointers will be reset next cycle (2-cycle-long pulse)
     output reg             [26:0] chunk_addr,         // chunk absolute address, valid with busy[1]

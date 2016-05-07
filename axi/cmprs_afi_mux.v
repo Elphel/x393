@@ -265,6 +265,9 @@ each group of 4 bits per channel : bits [1:0] - select, bit[2] - sset (0 - nop),
     // wants to write (want_wleft32+1) 32-byte chunks (4,3,2,1)
     wire [1:0] want_wleft32 = (|items_left[7:2])? 2'b11 : items_left[1:0]; // want to set wleft[3:2] if not roll-over (actually "3" means 2)
 
+    wire rollover_limited_w = max_wlen[1:0] < want_wleft32;
+
+
     assign cmd_we_status_w = cmd_we && ((cmd_a & 'hc) ==       CMPRS_AFIMUX_STATUS_CNTRL);    
     assign cmd_we_mode_w =   cmd_we && (cmd_a ==               CMPRS_AFIMUX_MODE);    
 
@@ -438,8 +441,6 @@ each group of 4 bits per channel : bits [1:0] - select, bit[2] - sset (0 - nop),
         //ready_to_start need_to_bother
         //done_burst
         if      (!en)          busy <= 0;
-//        else if (pre_busy_w)   busy <= {busy[2:0],1'b1};
-//        else if (done_burst_w) busy <= 0; // {busy[2:0],1'b0};
         else   busy <= {busy[2:0], pre_busy_w | (busy[0] & ~done_burst_w)};
         
         if      (!en)          first_busy <= 0;
@@ -451,16 +452,11 @@ each group of 4 bits per channel : bits [1:0] - select, bit[2] - sset (0 - nop),
 //pend_last        
         
         if      (!en)        wleft <= 0;
-///        else if (pre_busy_w) wleft <= {(|items_left[7:2])? 2'b11 : items_left[1:0], 2'b11}; // @@@******* different for roll over
-///        else if (pre_busy_w) wleft <= {(max_wlen[2] || (max_wlen[1:0] > want_wleft32))? want_wleft32 : max_wlen[1:0], 2'b11};
-        else if (pre_busy_w) wleft <= {(max_wlen[1:0] > want_wleft32) ? want_wleft32 : max_wlen[1:0], 2'b11};
+//        else if (pre_busy_w) wleft <= {(max_wlen[1:0] > want_wleft32) ? want_wleft32 : max_wlen[1:0], 2'b11};
+//    wire rollover_limited_w = max_wlen[1:0] < want_wleft32;
+        else if (pre_busy_w) wleft <= {rollover_limited_w ? max_wlen[1:0]: want_wleft32, 2'b11}; // same for == 
+        
         else if (wleft != 0) wleft <= wleft - 1;
-/* 
-counts_corr2[8]
-items_left       
-        else if (pre_busy_w) wleft <= {(|counts_corr2[7:2])? 2'b11 : left_to_eof[winner2 * 8 +: 2], 2'b11};
-        else if (wleft != 0) wleft <= wleft - 1;
-*/        
 
         if      (!en)        wvalid <= 0;
         else if (pre_busy_w) wvalid <= 1;
@@ -484,8 +480,9 @@ items_left
         
         if (pre_busy_w)  begin
             cur_chn <= winner2;
-//            last_burst_in_frame <= last_chunk_w[winner2] && pend_last[winner2];
-            last_burst_in_frame <= counts_corr2[8] && (left_to_eof[winner2 * 8 + 2 +: 6] == 0) && pend_last[winner2];
+//    wire rollover_limited_w = max_wlen[1:0] < want_wleft32;
+//            last_burst_in_frame <= counts_corr2[8] && (left_to_eof[winner2 * 8 + 2 +: 6] == 0) && pend_last[winner2];
+            last_burst_in_frame <= counts_corr2[8] && (left_to_eof[winner2 * 8 + 2 +: 6] == 0) && pend_last[winner2] &&!rollover_limited_w;
         end
         
         wlast <= done_burst_w; // when wleft==4'h1

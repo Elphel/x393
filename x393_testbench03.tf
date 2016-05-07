@@ -36,6 +36,8 @@
 `define SAME_SENSOR_DATA  1
 //`undef SAME_SENSOR_DATA
 `define COMPRESS_SINGLE
+`define USE_CMPRS_IRQ
+`define USE_FRAME_SEQ_IRQ
 //`define use200Mhz 1
 //`define DEBUG_FIFO 1
 `undef WAIT_MRS
@@ -100,6 +102,7 @@ module  x393_testbench03 #(
 parameter TRIGGER_MODE =          0; // 1;     // 0 - auto, 1 - triggered
 parameter EXT_TRIGGER_MODE =      1 ;    // 0 - internal, 1 - external trigger (camsync)
 parameter EXTERNAL_TIMESTAMP =    0; // 1 ;    // embed local timestamp, 1 - embed received timestamp
+parameter NUM_INTERRUPTS =        9;
 
 `include "includes/x393_localparams.vh" // SuppressThisWarning VEditor - not used
 // VDT - incorrect  real number calculation
@@ -622,7 +625,44 @@ assign #10 gpio_pins[9] = gpio_pins[8];
 
     wire        CLK;
     reg        RST;
-    reg        RST_CLEAN  = 1;    
+    reg        RST_CLEAN  = 1;
+    wire [NUM_INTERRUPTS-1:0] IRQ_R =   {x393_i.sata_irq, x393_i.cmprs_irq[3:0], x393_i.frseq_irq[3:0]}; 
+    wire [NUM_INTERRUPTS-1:0] IRQ_ACKN;
+    wire                [3:0] IRQ_FRSEQ_ACKN = IRQ_ACKN[3:0];
+    wire                [3:0] IRQ_CMPRS_ACKN = IRQ_ACKN[7:4];
+    wire                      IRQ_SATA_ACKN =  IRQ_ACKN[8];
+    reg                 [3:0] IRQ_FRSEQ_DONE = 0;
+    reg                 [3:0] IRQ_CMPRS_DONE = 0;
+    reg                       IRQ_SATA_DONE =  0;
+    wire [NUM_INTERRUPTS-1:0] IRQ_DONE = {IRQ_SATA_DONE, IRQ_CMPRS_DONE, IRQ_FRSEQ_DONE};
+    
+    reg  [NUM_INTERRUPTS-1:0] IRQ_M =  0; // all disabled - on/off by software
+    reg                       IRQ_EN = 1; // handled automatically when accessing MAXI_GP0
+    wire                      MAIN_GO;    // main loop can proceed (no INTA)
+    wire [NUM_INTERRUPTS-1:0] IRQ_S;      // masked interrupt requests
+    wire                      IRQS=|IRQ_S; // at least one interrupt is pending (to yield by main w/o slowing down)
+    wire                [3:0] IRQ_FRSEQ_S = IRQ_S[3:0];
+    wire                [3:0] IRQ_CMPRS_S = IRQ_S[7:4];
+    wire                      IRQ_SATA_S =  IRQ_S[8];
+    
+    
+/*
+    sim_soc_interrupts #(
+        .NUM_INTERRUPTS(8)
+    ) sim_soc_interrupts_i (
+        .clk(), // input
+        .rst(), // input
+        .irq_en(), // input
+        .irqm(), // input[7:0] 
+        .irq(), // input[7:0] 
+        .irq_done(), // input[7:0] 
+        .irqs(), // output[7:0] 
+        .inta(), // output[7:0] 
+        .main_go() // output
+    );
+*/    
+    
+        
     reg        AR_SET_CMD_r;
     wire       AR_READY;
 
@@ -765,6 +805,13 @@ assign #10 gpio_pins[9] = gpio_pins[8];
 //set simulation-only parameters   
     axi_set_b_lag(0); //(1);
     axi_set_rd_lag(0);
+// IRQ-related
+    IRQ_EN = 1;
+    IRQ_M = 0;
+    IRQ_FRSEQ_DONE = 0;
+    IRQ_CMPRS_DONE = 0;
+    IRQ_SATA_DONE =  0;
+    
     program_status_all(DEFAULT_STATUS_MODE,'h2a); // mode auto with sequence number increment 
 
     enable_memcntrl(1);                 // enable memory controller
@@ -1067,6 +1114,22 @@ assign #10 gpio_pins[9] = gpio_pins[8];
        
 `endif
 
+`ifdef USE_FRAME_SEQ_IRQ
+    TEST_TITLE = "IRQ FRAME SEQUENCER ENABLE";
+    $display("===================== TEST_%s =========================",TEST_TITLE);
+    IRQ_M = IRQ_M | 'hf; // all frame sequencer interrupts enabled
+// Enable all compressor interrupts
+    frame_sequencer_irq_en (0, 1);
+    frame_sequencer_irq_en (1, 1);
+    frame_sequencer_irq_en (2, 1);
+    frame_sequencer_irq_en (3, 1);
+    program_status_frame_sequencer(
+        3,           // input [1:0] mode;
+        0);          // input [5:0] seq_num;
+    
+`endif
+
+
 `ifdef TEST_SENSOR
 
 `ifdef DEBUG_RING
@@ -1226,13 +1289,14 @@ assign #10 gpio_pins[9] = gpio_pins[8];
            'h10000 >> 5); // input [26:0] afi_cmprs3_len; //  input [26:0] length;     // channel buffer length in 32-byte chunks
         */
         'h10000000 >> 5,  // input [26:0] afi_cmprs0_sa;   // input [26:0] sa;   // start address in 32-byte chunks
-             'h5c0 >> 5,  // 'h800 >> 5,  // input [26:0] afi_cmprs0_len; //  input [26:0] length;     // channel buffer length in 32-byte chunks
+             'hba0 >> 5,  // 59e/5e0 (exact 2-1) 'h800 >> 5,  // input [26:0] afi_cmprs0_len; //  input [26:0] length;     // channel buffer length in 32-byte chunks
         'h10010000 >> 5,  // input [26:0] afi_cmprs1_sa;   // input [26:0] sa;   // start address in 32-byte chunks
-             'h2e0 >> 5,  // h400 >> 5,  // input [26:0] afi_cmprs1_len; //  input [26:0] length;     // channel buffer length in 32-byte chunks
+             'h640>> 5,  // 2f0/320 (exact 2) h400 >> 5,  // input [26:0] afi_cmprs1_len; //  input [26:0] length;     // channel buffer length in 32-byte chunks
         'h10020000 >> 5,  // input [26:0] afi_cmprs2_sa;   // input [26:0] sa;   // start address in 32-byte chunks
-             'h280 >> 5,  // 'h200 >> 5,  // input [26:0] afi_cmprs2_len; //  input [26:0] length;     // channel buffer length in 32-byte chunks
+             'h520 >> 5,  // 25e/2a0 (1 less)'h200 >> 5,  // input [26:0] afi_cmprs2_len; //  input [26:0] length;     // channel buffer length in 32-byte chunks
         'h10030000 >> 5,  // input [26:0] afi_cmprs3_sa;   // input [26:0] sa;   // start address in 32-byte chunks
-             'h1e0 >> 5); // 'h100 >> 5); // input [26:0] afi_cmprs3_len; //  input [26:0] length;     // channel buffer length in 32-byte chunks
+             'h460 >> 5); // 1de/ 220 (1 more) 'h100 >> 5); // input [26:0] afi_cmprs3_len; //  input [26:0] length;     // channel buffer length in 32-byte chunks
+             
     camsync_setup (
         4'hf ); // sensor_mask); //
 /*
@@ -1262,6 +1326,21 @@ assign #10 gpio_pins[9] = gpio_pins[8];
             0);        //input [5:0] seq_num;
     
 `endif
+
+`ifdef USE_CMPRS_IRQ
+    TEST_TITLE = "IRQ CMPRS ENABLE";
+    $display("===================== TEST_%s =========================",TEST_TITLE);
+//    IRQ_FRSEQ_DONE = 0;
+    IRQ_M = IRQ_M | 'hf0; // all compressor interrupts enabled, others preserved
+//    IRQ_SATA_DONE =  0;
+// Enable all compressor interrupts
+    compressor_irq_en (0, 1);
+    compressor_irq_en (1, 1);
+    compressor_irq_en (2, 1);
+    compressor_irq_en (3, 1);
+    
+`endif
+
 
 `ifdef COMPRESS_SINGLE
   TEST_TITLE = "COMPRESS_FRAME";
@@ -1344,12 +1423,186 @@ end
 //       #30000;
 //     #200000;
 //     #250000;
+     #285000;
 //      #160000;
-      #175000;
+//      #175000;
 //     #60000;
     $display("finish testbench 2");
   $finish;
   end
+
+// Interrupt actions
+task read_compressor_frame_irq;
+    input      [1:0] chn;
+    output reg [3:0] frame;
+    reg        [31:0] rdata;
+    begin
+        repeat (5) @( posedge CLK);
+        read_status_irq(CMPRS_STATUS_REG_BASE + CMPRS_STATUS_REG_INC * chn, rdata);
+        @ (posedge CLK) frame = rdata [8 +: 4];
+        wait (!CLK);
+    end
+endtask
+
+task read_compressor_pointer_irq;
+    input       [1:0] chn;
+    output reg [25:0] pointer;
+    reg        [31:0] rdata;
+    begin
+        repeat (5) @( posedge CLK);
+        read_status_irq(CMPRS_AFIMUX_REG_ADDR0 + chn, rdata);
+        @ (posedge CLK) pointer = rdata [25:0];
+        wait (!CLK);
+    end
+endtask
+
+task read_sequencer_frame_irq;
+    input      [1:0] chn;
+    output reg [3:0] frame;
+    reg        [31:0] rdata;
+    begin
+        repeat (5) @( posedge CLK);
+        read_status_irq(CMDSEQMUX_STATUS, rdata);
+        @ (posedge CLK) frame = rdata [4*chn +: 4];
+        wait (!CLK);
+    end
+endtask
+
+
+reg   [3:0] IRQ_CMPRS_FRAME_0;
+reg   [3:0] IRQ_CMPRS_FRAME_1;
+reg   [3:0] IRQ_CMPRS_FRAME_2;
+reg   [3:0] IRQ_CMPRS_FRAME_3;
+reg   [3:0] IRQ_SEQUENCER_FRAME_0;
+reg   [3:0] IRQ_SEQUENCER_FRAME_1;
+reg   [3:0] IRQ_SEQUENCER_FRAME_2;
+reg   [3:0] IRQ_SEQUENCER_FRAME_3;
+reg  [25:0] IRQ_CMPRS_POINTER_0;
+reg  [25:0] IRQ_CMPRS_POINTER_1;
+reg  [25:0] IRQ_CMPRS_POINTER_2;
+reg  [25:0] IRQ_CMPRS_POINTER_3;
+//reg   [3:0] IRQ_SEQUENCER_FRAME;
+//reg   [3:0] IRQ_CMPRS_FRAME;
+//reg  [25:0] IRQ_CMPRS_POINTER;
+localparam CHN0 = 0;
+localparam CHN1 = 1;
+localparam CHN2 = 2;
+localparam CHN3 = 3;
+always @ (posedge IRQ_CMPRS_ACKN[CHN0]) begin
+    // Clear that interrupt
+    compressor_irq_clear(CHN0);
+    // Read frame pointer
+    read_compressor_frame_irq(CHN0, IRQ_CMPRS_FRAME_0);
+//    @(posedge CLK) IRQ_CMPRS_FRAME_0 = IRQ_CMPRS_FRAME;
+    read_compressor_pointer_irq(CHN0, IRQ_CMPRS_POINTER_0);
+//    @(posedge CLK) IRQ_CMPRS_POINTER_0 = IRQ_CMPRS_POINTER;
+    // Wait device to remove interrupt
+    while (IRQ_CMPRS_S[CHN0]) @ (posedge CLK);
+    IRQ_CMPRS_DONE[CHN0] = 1;
+    @(posedge CLK) IRQ_CMPRS_DONE[CHN0] = 0;
+    $display("Served compressor interrupt channel %d, frame 0x%x, pointer 0x%x (0x%x bytes) @%t",
+              CHN0, IRQ_CMPRS_FRAME_0, IRQ_CMPRS_POINTER_0, IRQ_CMPRS_POINTER_0 << 5, $time);
+end
+
+always @ (posedge IRQ_CMPRS_ACKN[CHN1]) begin
+    // Clear that interrupt
+    compressor_irq_clear(CHN1);
+    // Read frame pointer
+    read_compressor_frame_irq(CHN1, IRQ_CMPRS_FRAME_1);
+//    @(posedge CLK) IRQ_CMPRS_FRAME_1 = IRQ_CMPRS_FRAME;
+    read_compressor_pointer_irq(CHN1, IRQ_CMPRS_POINTER_1);
+//    @(posedge CLK) IRQ_CMPRS_POINTER_1 = IRQ_CMPRS_POINTER;
+    // Wait device to remove interrupt
+    while (IRQ_CMPRS_S[CHN1]) @ (posedge CLK);
+    IRQ_CMPRS_DONE[CHN1] = 1;
+    @(posedge CLK) IRQ_CMPRS_DONE[CHN1] = 0;
+    $display("Served compressor interrupt channel %d, frame 0x%x, pointer 0x%x (0x%x bytes) @%t",
+              CHN1, IRQ_CMPRS_FRAME_1, IRQ_CMPRS_POINTER_1, IRQ_CMPRS_POINTER_1 << 5, $time);
+end
+always @ (posedge IRQ_CMPRS_ACKN[CHN2]) begin
+    // Clear that interrupt
+    compressor_irq_clear(CHN2);
+    // Read frame pointer
+    read_compressor_frame_irq(CHN2, IRQ_CMPRS_FRAME_2);
+//    @(posedge CLK) IRQ_CMPRS_FRAME_2 = IRQ_CMPRS_FRAME;
+    read_compressor_pointer_irq(CHN2, IRQ_CMPRS_POINTER_2);
+//    @(posedge CLK) IRQ_CMPRS_POINTER_2 = IRQ_CMPRS_POINTER;
+    // Wait device to remove interrupt
+    while (IRQ_CMPRS_S[CHN2]) @ (posedge CLK);
+    IRQ_CMPRS_DONE[CHN2] = 1;
+    @(posedge CLK) IRQ_CMPRS_DONE[CHN2] = 0;
+    $display("Served compressor interrupt channel %d, frame 0x%x, pointer 0x%x (0x%x bytes) @%t",
+              CHN2, IRQ_CMPRS_FRAME_2, IRQ_CMPRS_POINTER_2, IRQ_CMPRS_POINTER_2 << 5, $time);
+    
+end
+always @ (posedge IRQ_CMPRS_ACKN[CHN3]) begin
+    // Clear that interrupt
+    compressor_irq_clear(CHN3);
+    // Read frame pointer
+    read_compressor_frame_irq(CHN3, IRQ_CMPRS_FRAME_3);
+//    @(posedge CLK) IRQ_CMPRS_FRAME_3 = IRQ_CMPRS_FRAME;
+    read_compressor_pointer_irq(CHN3, IRQ_CMPRS_POINTER_3);
+//    @(posedge CLK) IRQ_CMPRS_POINTER_3 = IRQ_CMPRS_POINTER;
+    // Wait device to remove interrupt
+    while (IRQ_CMPRS_S[CHN3]) @ (posedge CLK);
+    IRQ_CMPRS_DONE[CHN3] = 1;
+    @(posedge CLK) IRQ_CMPRS_DONE[CHN3] = 0;
+    $display("Served compressor interrupt channel %d, frame 0x%x, pointer 0x%x (0x%x bytes) @%t",
+              CHN3, IRQ_CMPRS_FRAME_3, IRQ_CMPRS_POINTER_3, IRQ_CMPRS_POINTER_3 << 5, $time);
+end
+
+
+always @ (posedge IRQ_FRSEQ_ACKN[CHN0]) begin
+    // Clear that interrupt
+    frame_sequencer_irq_clear(CHN0);
+    // Read frame pointer
+    read_sequencer_frame_irq(CHN0, IRQ_SEQUENCER_FRAME_0);
+//    @(posedge CLK) IRQ_SEQUENCER_FRAME_0 = IRQ_SEQUENCER_FRAME;
+    // Wait device to remove interrupt
+    while (IRQ_FRSEQ_S[CHN0]) @ (posedge CLK);
+    IRQ_FRSEQ_DONE[CHN0] = 1;
+    @(posedge CLK) IRQ_FRSEQ_DONE[CHN0] = 0;
+    $display("Served frame sequencer interrupt channel %d, frame 0x%x @%t", CHN0, IRQ_SEQUENCER_FRAME_0, $time);
+end
+
+always @ (posedge IRQ_FRSEQ_ACKN[CHN1]) begin
+    // Clear that interrupt
+    frame_sequencer_irq_clear(CHN1);
+    // Read frame pointer
+    read_sequencer_frame_irq(CHN1, IRQ_SEQUENCER_FRAME_1);
+//    @(posedge CLK) IRQ_SEQUENCER_FRAME_1 = IRQ_SEQUENCER_FRAME;
+    // Wait device to remove interrupt
+    while (IRQ_FRSEQ_S[CHN1]) @ (posedge CLK);
+    IRQ_FRSEQ_DONE[CHN1] = 1;
+    @(posedge CLK) IRQ_FRSEQ_DONE[CHN1] = 0;
+    $display("Served frame sequencer interrupt channel %d, frame 0x%x @%t", CHN1, IRQ_SEQUENCER_FRAME_1, $time);
+end
+
+always @ (posedge IRQ_FRSEQ_ACKN[CHN2]) begin
+    // Clear that interrupt
+    frame_sequencer_irq_clear(CHN2);
+    // Read frame pointer
+    read_sequencer_frame_irq(CHN2, IRQ_SEQUENCER_FRAME_2);
+//    @(posedge CLK) IRQ_SEQUENCER_FRAME_2 = IRQ_SEQUENCER_FRAME;
+    // Wait device to remove interrupt
+    while (IRQ_FRSEQ_S[CHN2]) @ (posedge CLK);
+    IRQ_FRSEQ_DONE[CHN2] = 1;
+    @(posedge CLK) IRQ_FRSEQ_DONE[CHN2] = 0;
+    $display("Served frame sequencer interrupt channel %d, frame 0x%x @%t", CHN2, IRQ_SEQUENCER_FRAME_2, $time);
+end
+
+always @ (posedge IRQ_FRSEQ_ACKN[CHN3]) begin
+    // Clear that interrupt
+    frame_sequencer_irq_clear(CHN3);
+    // Read frame pointer
+    read_sequencer_frame_irq(CHN3, IRQ_SEQUENCER_FRAME_3);
+//    @(posedge CLK) IRQ_SEQUENCER_FRAME_3 = IRQ_SEQUENCER_FRAME;
+    // Wait device to remove interrupt
+    while (IRQ_FRSEQ_S[CHN3]) @ (posedge CLK);
+    IRQ_FRSEQ_DONE[CHN3] = 1;
+    @(posedge CLK) IRQ_FRSEQ_DONE[CHN3] = 0;
+    $display("Served frame sequencer interrupt channel %d, frame 0x%x @%t", CHN3, IRQ_SEQUENCER_FRAME_3, $time);
+end
 
 
 
@@ -2483,6 +2736,19 @@ simul_axi_hp_wr #(
         .VACT1 () // output 
     );
 
+    sim_soc_interrupts #(
+        .NUM_INTERRUPTS (NUM_INTERRUPTS)
+    ) sim_soc_interrupts_i (
+        .clk            (CLK),       // input
+        .rst            (RST_CLEAN), // input
+        .irq_en         (IRQ_EN),    // input
+        .irqm           (IRQ_M),     // input[7:0] 
+        .irq            (IRQ_R),     // input[7:0] 
+        .irq_done       (IRQ_DONE),  // input[7:0] @ clk (>=1 cycle) - reset inta bits 
+        .irqs           (IRQ_S),     // output[7:0] 
+        .inta           (IRQ_ACKN),  // output[7:0] 
+        .main_go        (MAIN_GO)    // output
+    );
 
     
     //  wire [ 3:0] SIMUL_ADD_ADDR; 
@@ -2721,7 +2987,8 @@ task setup_sensor_channel;
 
         program_status_sensor_i2c(
             num_sensor,  // input [1:0] num_sensor;
-            3,           // input [1:0] mode;
+//            3,           // input [1:0] mode; Flooding simulation with high speed (sim) i2c
+            1,           // input [1:0] mode;
             0);          // input [5:0] seq_num;
         program_status_sensor_io(
             num_sensor,  // input [1:0] num_sensor;
@@ -2732,6 +2999,8 @@ task setup_sensor_channel;
             num_sensor,  // input [1:0] num_sensor;
             3,           // input [1:0] mode;
             0);          // input [5:0] seq_num;
+            
+            
 
     // moved before camsync to have a valid timestamo w/o special waiting            
     TEST_TITLE = "MEMORY_SENSOR";
@@ -3140,7 +3409,8 @@ task afi_mux_setup;
     mode == 3 - show current pointer, confirmed
     each group of 4 bits per channel : bits [1:0] - select, bit[2] - sset (0 - nop), bit[3] - not used
      */    
-                0);         // input [1:0] mode;
+                0);         // input [1:0] mode; EOF, as sent (not yet confirmed)
+//                1);         // input [1:0] mode; EOF confirmed
         end
         afi_mux_chn_start_length (
             0,               // input [0:0] port_afi;    // number of AFI port
@@ -3425,6 +3695,17 @@ task program_status_compressor;
     begin
         program_status (CMPRS_GROUP_ADDR + num_sensor * CMPRS_BASE_INC,
                         CMPRS_STATUS_CNTRL,
+                        mode,
+                        seq_num);
+    end
+endtask
+
+task program_status_frame_sequencer;
+    input [1:0] mode;
+    input [5:0] seq_num;
+    begin
+        program_status (CMDSEQMUX_ADDR,
+                        0, // only register
                         mode,
                         seq_num);
     end
@@ -4139,6 +4420,31 @@ endtask
 
 // Functions used by sensor-related tasks
 // x393_frame_sequencer.py
+
+task frame_sequencer_irq_en;
+    input [ 1:0] num_sensor; // sensor channel number (0..3)
+    input        en;         // 1 - enable, 0 - disable interrupts
+    
+    reg    [31:0] data;
+    reg    [29:0] reg_addr;
+    begin
+        data = (en? 3 : 2)  << CMDFRAMESEQ_IRQ_BIT;
+        reg_addr= CMDFRAMESEQ_ADDR_BASE + num_sensor * CMDFRAMESEQ_ADDR_INC + CMDFRAMESEQ_CTRL;
+        write_contol_register(reg_addr, data);                   
+    end
+endtask
+
+task frame_sequencer_irq_clear;
+    input [ 1:0] num_sensor; // sensor channel number (0..3)
+    
+    reg    [29:0] reg_addr;
+    begin
+        reg_addr= CMDFRAMESEQ_ADDR_BASE + num_sensor * CMDFRAMESEQ_ADDR_INC + CMDFRAMESEQ_CTRL;
+        write_contol_register_irq(reg_addr, 1 << CMDFRAMESEQ_IRQ_BIT);                   
+    end
+endtask
+
+
 task ctrl_cmd_frame_sequencer;
     input [1:0] num_sensor; // sensor channel number
     input       reset;      // reset sequencer (also stops)
@@ -4405,6 +4711,31 @@ task compressor_coring;
         write_contol_register(reg_addr, data);                   
     end
 endtask
+
+task compressor_irq_en;
+    input [ 1:0] num_sensor; // sensor channel number (0..3)
+    input        en;         // 1 - enable, 0 - disable interrupts
+    
+    reg    [31:0] data;
+    reg    [29:0] reg_addr;
+    begin
+        data = en? 3: 2;
+        reg_addr = (CMPRS_GROUP_ADDR + num_sensor * CMPRS_BASE_INC) + CMPRS_INTERRUPTS;
+        write_contol_register(reg_addr, data);                   
+    end
+endtask
+
+task compressor_irq_clear;
+    input [ 1:0] num_sensor; // sensor channel number (0..3)
+    
+    reg    [29:0] reg_addr;
+    begin
+        reg_addr = (CMPRS_GROUP_ADDR + num_sensor * CMPRS_BASE_INC) + CMPRS_INTERRUPTS;
+        write_contol_register_irq(reg_addr, 1);                   
+    end
+endtask
+
+
 
 // x393_cmprs.py
 function [31 : 0] func_compressor_control;

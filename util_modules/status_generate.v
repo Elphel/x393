@@ -156,7 +156,13 @@ module  status_generate_only #(
         if      (rst)       status_changed_r <= 0;
         else if (srst)      status_changed_r <= 0;
         else if (start)     status_changed_r <= 0;
+// In simulation should be able to detect changes from initial 'x' in memories, in hardware
+// any initial walue is OK, if not equal - will update, if equal - keep
+`ifdef SIMULATION
+        else                status_changed_r <= status_changed_r  || (status_r !== status_r0);
+`else        
         else                status_changed_r <= status_changed_r  || (status_r != status_r0);
+`endif
         
         if      (rst)  mode <= 0;
         else if (srst) mode <= 0;

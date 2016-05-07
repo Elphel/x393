@@ -32,7 +32,8 @@
  * with at least one of the Free Software programs.
  *******************************************************************************/
  
-        parameter FPGA_VERSION =          32'h03930087;    // Fixed default 90% quantization table
+        parameter FPGA_VERSION =          32'h03930088;    // Fixing circbuf rollover pointers bug
+//      parameter FPGA_VERSION =          32'h03930087;    // Fixed default 90% quantization table
 //      parameter FPGA_VERSION =          32'h03930087;    // Synchronizing i2c sequencer frame number with that of a command sequencer
 //      parameter FPGA_VERSION =          32'h03930086;    // Adding byte-wide JTAG read to speed-up 10359 load
 //      parameter FPGA_VERSION =          32'h03930085;    // Adding software control for i2c pins when sequencer is stopped, timing matched
