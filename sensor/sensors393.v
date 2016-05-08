@@ -435,7 +435,11 @@ module  sensors393 #(
     wire             [3:0] hist_grant;
     wire             [7:0] hist_chn; 
     wire             [3:0] hist_dvalid;
-    wire           [127:0] hist_data; 
+    wire           [127:0] hist_data;
+    
+    
+    wire  [4*NUM_FRAME_BITS-1:0] frame_num = {frame_num3, frame_num2, frame_num1, frame_num0};
+     
     
     always @ (posedge mclk) begin
         cmd_ad <= cmd_ad_in;
@@ -579,6 +583,7 @@ module  sensors393 #(
                 .SENSI2C_IBUF_LOW_PWR          (SENSI2C_IBUF_LOW_PWR),
                 .SENSI2C_IOSTANDARD            (SENSI2C_IOSTANDARD),
                 .SENSI2C_SLEW                  (SENSI2C_SLEW),
+                .NUM_FRAME_BITS                (NUM_FRAME_BITS),
 `ifndef HISPI
                 .SENSOR_DATA_WIDTH             (SENSOR_DATA_WIDTH),
                 .SENSOR_FIFO_2DEPTH            (SENSOR_FIFO_2DEPTH),
@@ -669,7 +674,7 @@ module  sensors393 #(
                 .status_start (status_start_chn[i]),   // input
                 .trigger_mode (trigger_mode),          // input
                 .trig_in      (trig_in[i]),            // input
-                
+                .frame_num_seq(frame_num[NUM_FRAME_BITS*i +:NUM_FRAME_BITS]), // input[3:0] 
                 .dout         (px_data[16 * i +: 16]), // output[15:0] 
                 .dout_valid   (px_valid[i]),           // output
                 .last_in_line (last_in_line[i]),       // output

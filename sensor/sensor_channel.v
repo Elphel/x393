@@ -198,6 +198,8 @@ module  sensor_channel#(
     parameter SENSI2C_IBUF_LOW_PWR=   "TRUE",
     parameter SENSI2C_SLEW =          "SLOW",
     
+    parameter NUM_FRAME_BITS =        4,
+    
 `ifndef HISPI
     //sensor_fifo parameters
     parameter SENSOR_DATA_WIDTH =      12,
@@ -321,6 +323,9 @@ module  sensor_channel#(
 
     input         trigger_mode, // running in triggered mode (0 - free running mode)
     input         trig_in,      // per-sensor trigger input
+    
+    input  [NUM_FRAME_BITS-1:0] frame_num_seq, // frame number from the command sequencer (to sync i2c)
+    
 
     // 16/8-bit mode data to memory (8-bits are packed by 2 in 16 mode @posedge pclk
     output [15:0] dout,         // @posedge pclk
@@ -637,7 +642,8 @@ module  sensor_channel#(
         .SENSI2C_DRIVE           (SENSI2C_DRIVE),
         .SENSI2C_IBUF_LOW_PWR    (SENSI2C_IBUF_LOW_PWR),
         .SENSI2C_IOSTANDARD      (SENSI2C_IOSTANDARD),
-        .SENSI2C_SLEW            (SENSI2C_SLEW)
+        .SENSI2C_SLEW            (SENSI2C_SLEW),
+        .NUM_FRAME_BITS          (NUM_FRAME_BITS)
     ) sensor_i2c_io_i (
         .mrst                  (mrst),                  // input
         .mclk                  (mclk),                  // input
@@ -647,6 +653,7 @@ module  sensor_channel#(
         .status_rq             (sens_i2c_status_rq),    // output
         .status_start          (sens_i2c_status_start), // input
         .frame_sync            (sof_out_mclk),          // input
+        .frame_num_seq         (frame_num_seq),         // input[3:0] 
         .scl                   (sns_scl),               // inout
         .sda                   (sns_sda)                // inout
     );

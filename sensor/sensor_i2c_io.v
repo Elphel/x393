@@ -75,7 +75,8 @@ module  sensor_i2c_io#(
 `else
     parameter SENSI2C_IOSTANDARD =  "LVCMOS25",
 `endif    
-    parameter SENSI2C_SLEW =        "SLOW"
+    parameter SENSI2C_SLEW =        "SLOW",
+    parameter NUM_FRAME_BITS =        4
 )(
     input         mrst,        // @mclk
     input         mclk,        // global clock, half DDR3 clock, synchronizes all I/O through the command port
@@ -85,6 +86,7 @@ module  sensor_i2c_io#(
     output        status_rq,   // input request to send status downstream
     input         status_start,// Acknowledge of the first status packet byte (address)
     input         frame_sync,  // increment/reset frame number
+    input  [NUM_FRAME_BITS-1:0] frame_num_seq, // frame number from the command sequencer (to sync i2c)
     inout         scl,
     inout         sda
 );
@@ -126,22 +128,24 @@ module  sensor_i2c_io#(
         .SENSI2C_TBL_NBRD_BITS   (SENSI2C_TBL_NBRD_BITS),
         .SENSI2C_TBL_NABRD       (SENSI2C_TBL_NABRD), // number of address bytes for read (0 - 1 byte, 1 - 2 bytes)
         .SENSI2C_TBL_DLY         (SENSI2C_TBL_DLY),   // bit delay (number of mclk periods in 1/4 of SCL period)
-        .SENSI2C_TBL_DLY_BITS    (SENSI2C_TBL_DLY_BITS)
+        .SENSI2C_TBL_DLY_BITS    (SENSI2C_TBL_DLY_BITS),
+        .NUM_FRAME_BITS          (NUM_FRAME_BITS)
     ) sensor_i2c_i (
-        .mrst          (mrst),         // input
-        .mclk          (mclk),         // input
-        .cmd_ad        (cmd_ad),       // input[7:0] 
-        .cmd_stb       (cmd_stb),      // input
-        .status_ad     (status_ad),    // output[7:0] 
-        .status_rq     (status_rq),    // output
-        .status_start  (status_start), // input
-        .frame_sync    (frame_sync),   // input
-        .scl_in        (scl_in),       // input
-        .sda_in        (sda_in),       // input
-        .scl_out       (scl_out),      // output
-        .sda_out       (sda_out),      // output
-        .scl_en        (scl_en),       // output
-        .sda_en        (sda_en)        // output
+        .mrst          (mrst),          // input
+        .mclk          (mclk),          // input
+        .cmd_ad        (cmd_ad),        // input[7:0] 
+        .cmd_stb       (cmd_stb),       // input
+        .status_ad     (status_ad),     // output[7:0] 
+        .status_rq     (status_rq),     // output
+        .status_start  (status_start),  // input
+        .frame_sync    (frame_sync),    // input
+        .frame_num_seq (frame_num_seq), // input[3:0] 
+        .scl_in        (scl_in),        // input
+        .sda_in        (sda_in),        // input
+        .scl_out       (scl_out),       // output
+        .sda_out       (sda_out),       // output
+        .scl_en        (scl_en),        // output
+        .sda_en        (sda_en)         // output
     );
 
     iobuf #(

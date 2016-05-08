@@ -32,7 +32,7 @@
  * with at least one of the Free Software programs.
  *******************************************************************************/
 `timescale 1ns/1ps
-
+`undef I2C_FRAME_INDEPENDENT
 module  sensor_i2c#(
     parameter SENSI2C_ABS_ADDR =       'h410,
     parameter SENSI2C_REL_ADDR =       'h420,
@@ -67,26 +67,28 @@ module  sensor_i2c#(
     parameter SENSI2C_TBL_NBRD_BITS =    3,
     parameter SENSI2C_TBL_NABRD =       19, // number of address bytes for read (0 - 1 byte, 1 - 2 bytes)
     parameter SENSI2C_TBL_DLY =         20, // bit delay (number of mclk periods in 1/4 of SCL period)
-    parameter SENSI2C_TBL_DLY_BITS=      8
+    parameter SENSI2C_TBL_DLY_BITS=      8,
+    parameter NUM_FRAME_BITS =           4
 )(
-    input         mrst,         // @ posedge mclk
-    input         mclk,         // global clock, half DDR3 clock, synchronizes all I/O through the command port
-    input   [7:0] cmd_ad,       // byte-serial command address/data (up to 6 bytes: AL-AH-D0-D1-D2-D3 
-    input         cmd_stb,      // strobe (with first byte) for the command a/d
+    input                       mrst,         // @ posedge mclk
+    input                       mclk,         // global clock, half DDR3 clock, synchronizes all I/O through the command port
+    input                 [7:0] cmd_ad,       // byte-serial command address/data (up to 6 bytes: AL-AH-D0-D1-D2-D3 
+    input                       cmd_stb,      // strobe (with first byte) for the command a/d
 // status will {frame_num[3:0],busy,sda,scl} - read outside of this module?
 // Or still use status here but program it in other bits?
 // increase address range over 5 bits?
 // borrow 0x1e?    
-    output  [7:0] status_ad,   // status address/data - up to 5 bytes: A - {seq,status[1:0]} - status[2:9] - status[10:17] - status[18:25]
-    output        status_rq,   // input request to send status downstream
-    input         status_start,// Acknowledge of the first status packet byte (address)
-    input         frame_sync,  // @posedge mclk increment/reset frame number 
-    input         sda_in,      // i2c SDA input
-    input         scl_in,      // i2c SCL input
-    output        scl_out,     // i2c SCL output
-    output        sda_out,     // i2c SDA output
-    output        scl_en,      // i2c SCL enable
-    output        sda_en       // i2c SDA enable
+    output                [7:0] status_ad,   // status address/data - up to 5 bytes: A - {seq,status[1:0]} - status[2:9] - status[10:17] - status[18:25]
+    output                      status_rq,   // input request to send status downstream
+    input                       status_start,// Acknowledge of the first status packet byte (address)
+    input                       frame_sync,  // @posedge mclk increment/reset frame number
+    input  [NUM_FRAME_BITS-1:0] frame_num_seq, // frame number from the command sequencer (to sync i2c)
+    input                       sda_in,      // i2c SDA input
+    input                       scl_in,      // i2c SCL input
+    output                      scl_out,     // i2c SCL output
+    output                      sda_out,     // i2c SDA output
+    output                      scl_en,      // i2c SCL enable
+    output                      sda_en       // i2c SDA enable
 //    output        busy,
 //    output  [3:0] frame_num
 
@@ -178,10 +180,16 @@ module  sensor_i2c#(
      wire          sda_en_hard;
      wire          scl_hard;
 
+`ifdef I2C_FRAME_INDEPENDENT
+     localparam sync_to_seq = -;
+`else     
+     reg           sync_to_seq;
+`endif
      
      assign set_ctrl_w = we_cmd && ((wa & ~SENSI2C_CTRL_MASK) == SENSI2C_CTRL );// ==0
      assign set_status_w = we_cmd && ((wa & ~SENSI2C_CTRL_MASK) == SENSI2C_STATUS );// ==0
      assign  pre_wpage0_inc = (!wen && !(|wen_r) && !wpage0_inc[0]) && (req_clr || reset_on) ;
+///     assign  pre_wpage0_inc = (!wen && !(|wen_r) && !(|wpage0_inc)) && (req_clr || reset_on) ;
 
      assign  fifo_wr_pointers_outw = fifo_wr_pointers_ram[wpage_wr[3:0]]; // valid next after command
      assign  fifo_wr_pointers_outr = fifo_wr_pointers_ram[page_r[3:0]];
@@ -308,13 +316,19 @@ module  sensor_i2c#(
       // request to clear pointer(s)? for one page - during reset or delayed frame sync (if previous was not finished)
       req_clr  <= frame_sync || (req_clr && !wpage0_inc[0]);
 
+`ifndef I2C_FRAME_INDEPENDENT
+    sync_to_seq <= frame_sync || (reset_on && ( wpage0[3:0] == 4'hf));
+`endif
+      
+
       if      (reset_cmd)     wpage0 <= 0;
-//      else if (frame_0)    wpage0 <= 0;
-      else if (wpage0_inc[0]) wpage0<=wpage0+1;
+      else if (wpage0_inc[0]) wpage0 <= wpage0 + 1;
+      else if (sync_to_seq)   wpage0 <= frame_num_seq;
       
-      if      (reset_cmd)     wpage_prev<=4'hf;
-      else if (wpage0_inc[0]) wpage_prev<=wpage0;
-      
+      if      (reset_cmd)     wpage_prev <= 4'hf;
+      else if (wpage0_inc[0]) wpage_prev <= wpage0;
+      else if (sync_to_seq)   wpage_prev <= frame_num_seq - 1 ;
+
       
       if      (we_abs)        wpage_wr <= ((wa==wpage_prev)? wpage0[3:0] : wa);
       else if (we_rel)        wpage_wr <= wpage0+wa;
@@ -333,10 +347,15 @@ module  sensor_i2c#(
       i2c_cmd_we    <=  !reset_cmd && wen_fifo; // [0];
         
 // signals related to reading from i2c FIFO
-      if      (reset_on)      page_r<=0;
-      else if (page_r_inc[0]) page_r<=page_r+1;
+`ifdef I2C_FRAME_INDEPENDENT
+      if      (reset_on)      page_r <= 0;
+      else if (page_r_inc[0]) page_r <= page_r+1;
+`else
+      if      (reset_on)      page_r <= frame_num_seq;
+      else if (page_r_inc[0]) page_r <= page_r+1;
+`endif
 
-
+//############ rpointer should startt not from 0, but form valuie in another RAM???
       if      (reset_cmd || page_r_inc[0])  rpointer[5:0] <= 6'h0;
       else if (i2c_run_d && ! i2c_run)      rpointer[5:0] <= rpointer[5:0] + 1;
 
