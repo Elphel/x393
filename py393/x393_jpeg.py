@@ -1072,13 +1072,40 @@ write_sensor_i2c 0 1 0 0x306e9280
 #write_sensor_i2c 0 1 0 0x30700002
 write_sensor_i2c 0 1 0 0x301a001c
 print_sensor_i2c 0 0x31c6 0xff 0x10 0
+
+#default gain = 0xa, set red and blue (outdoors)
+write_sensor_i2c  0 1 0 0x3028000a
+write_sensor_i2c  0 1 0 0x302c000d
+write_sensor_i2c  0 1 0 0x302e0010
+#outdoor sunny exposure
+write_sensor_i2c  0 1 0 0x30120060
+
+
+
 compressor_control 0 2
 
 jpeg_write  "img.jpeg" 0
 
 jpeg_acquire_write
 write_sensor_i2c  0 1 0 0x30700000
+
+#default gain = 0xa, set red and blue (indoors)
+write_sensor_i2c  0 1 0 0x3028000a
+write_sensor_i2c  0 1 0 0x302c000b
+write_sensor_i2c  0 1 0 0x302e0010
+
+#Exposure 0x800 lines
+write_sensor_i2c  0 1 0 0x30120800
+
+
+
 -------
+
+
+
+
+
+
 setup_all_sensors True None 0xf
 write_sensor_i2c  0 1 0 0x30700101
 compressor_control  all  None  None  None None None  2
