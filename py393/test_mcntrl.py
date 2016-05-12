@@ -428,11 +428,18 @@ USAGE
             if socket_conn:
                 print(prompt , end="")
                 sys.stdout.flush()
-                ready_to_read, _, _ = select.select( #ready_to_write, in_error
-                      [socket_conn, sys.stdin], # potential_readers,
-                      [],         # potential_writers,
-                      [])         # potential_errs,
-                if sys.stdin in ready_to_read:
+                if (args.socket_port):
+                    ready_to_read, _, _ = select.select( #ready_to_write, in_error
+                          #[socket_conn, sys.stdin], # potential_readers,
+                          [socket_conn], # potential_readers,
+                          [],         # potential_writers,
+                          [])         # potential_errs,
+                else:
+                    ready_to_read, _, _ = select.select( #ready_to_write, in_error
+                          [socket_conn, sys.stdin], # potential_readers,
+                          [],         # potential_writers,
+                          [])         # potential_errs,
+                if (not args.socket_port) and (sys.stdin in ready_to_read):
                     line=raw_input()
 #                    print ("stdin: ", line)
                 elif socket_conn in ready_to_read:
@@ -449,7 +456,8 @@ USAGE
                     print ("Unexpected result from select: ready_to_read = ",ready_to_read)
                     continue
             else: # No sockets, just command line input
-                line=raw_input(prompt)
+                if (not args.socket_port):
+                    line=raw_input(prompt)
                         
 #            line=raw_input('x393%s +%3.3fs--> '%(('','(simulated)')[args.simulated],(time.time()-tim))).strip()
             line=line.strip() # maybe also remove comment?
