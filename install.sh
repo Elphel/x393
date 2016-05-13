@@ -4,14 +4,14 @@ SCRIPT=$(readlink -f $0)
 SCRIPTPATH=`dirname $SCRIPT`
 if [ -z "$1" ]
     then
-        echo "You need to specify instllation root"
+        echo "You need to specify installation root"
         exit 1
 fi
 install -d -v $1/usr/local/verilog/
 install -d -v $1/usr/local/bin/
 install -v -m 0755 $SCRIPTPATH/py393/*.py $1/usr/local/bin/
 
-install -v -m 0644 $SCRIPTPATH/x393.bit $1/usr/local/verilog/
+install -v -m 0644 $SCRIPTPATH/*.bit $1/usr/local/verilog/
 
 install -v -m 0644 $SCRIPTPATH/system_defines.vh $1/usr/local/verilog/
 install -v -m 0644 $SCRIPTPATH/includes/x393_parameters.vh $1/usr/local/verilog/
