@@ -998,6 +998,7 @@ setup_all_sensors True None 0x4
 
 ################## Parallel ##################
 cd /usr/local/verilog/; test_mcntrl.py @hargs
+bitstream_set_path /usr/local/verilog/x393_parallel.bit
 #fpga_shutdown
 setupSensorsPower "PAR12"
 measure_all "*DI"
@@ -1060,6 +1061,7 @@ jpeg_write  "img.jpeg" 0 85
 
 ################## Serial ####################
 cd /usr/local/verilog/; test_mcntrl.py @hargs
+bitstream_set_path /usr/local/verilog/x393_hispi.bit
 setupSensorsPower "HISPI"
 measure_all "*DI"
 setup_all_sensors True None 0xf

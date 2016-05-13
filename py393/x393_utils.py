@@ -109,6 +109,13 @@ class X393Utils(object):
             print ("fpga_shutdown(): Applying PROG_B")
         self.x393_mem.write_mem(FPGA_DEVCFG_CTRL,old_devcfg_ctrl & ~(1 << 30))
                     
+    def bitstream_get_path(self):
+        return DEFAULT_BITFILE
+    
+    def bitstream_set_path(self, bitfile):
+        global DEFAULT_BITFILE
+        DEFAULT_BITFILE = bitfile
+                    
     def bitstream(self,
                   bitfile=None,
                   quiet=1):
