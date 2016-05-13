@@ -207,6 +207,7 @@ each group of 4 bits per channel : bits [1:0] - select, bit[2] - sset (0 - nop),
     
     reg   [1:0] winner1;           // 2 first level arbitration winners
     reg   [1:0] winner2;           // 2-bit second level arbitration winner
+    wire  [1:0] pre_winner2_w;     // 1 cycle ahead of winner2
     
 //    reg   [1:0] cur_chn;          // Can it be the same as cur_chn?
     wire  [7:0] fifo_count0_m1 = fifo_count0 - 1;
@@ -290,6 +291,8 @@ each group of 4 bits per channel : bits [1:0] - select, bit[2] - sset (0 - nop),
     assign {fifo_rst3, fifo_rst2, fifo_rst1, fifo_rst0} = reset_pointers;
     assign {fifo_ren3, fifo_ren2, fifo_ren1, fifo_ren0} = fifo_ren;
     
+    assign pre_winner2_w = (counts_corr1[1 * 9 +: 9] > counts_corr1[0 * 9 +: 9]) ? {1'b1,winner1[1]} : {1'b0,winner1[0]};
+    
     assign afi_awaddr =  {chunk_addr,5'b0};
     assign afi_awid =    afi_awid_r; //  {1'b0,wleft[3:2],last_burst_in_frame,cur_chn}; 
     assign afi_awvalid = awvalid[1];
@@ -306,6 +309,9 @@ each group of 4 bits per channel : bits [1:0] - select, bit[2] - sset (0 - nop),
     assign afi_awqos =         4'h0;
     assign afi_wstrb =         8'hff;
     assign afi_wrissuecap1en = 1'b0;
+    
+    
+    
 `ifdef DEBUG_RING
     debug_slave #(
         .SHIFT_WIDTH       (64),
@@ -433,11 +439,14 @@ each group of 4 bits per channel : bits [1:0] - select, bit[2] - sset (0 - nop),
         // second arbitration level (latency 3 clk)
         if (counts_corr1[1 * 9 +: 9] > counts_corr1[0 * 9 +: 9]) begin
             counts_corr2 <= counts_corr1[1 * 9 +: 9];
-            winner2 <=      {1'b1,winner1[1]};
+//            winner2 <=      {1'b1,winner1[1]};
         end else begin
             counts_corr2 <= counts_corr1[0 * 9 +: 9];
-            winner2 <=      {1'b0,winner1[0]};
+//            winner2 <=      {1'b0,winner1[0]};
         end
+        
+        winner2 <=  pre_winner2_w;
+        
         //ready_to_start need_to_bother
         //done_burst
         if      (!en)          busy <= 0;
@@ -549,7 +558,8 @@ each group of 4 bits per channel : bits [1:0] - select, bit[2] - sset (0 - nop),
         .en                  (en),                  // input
         .reset_pointers      (reset_pointers),      // input[3:0] 
         .pre_busy_w          (pre_busy_w),          // input
-        .winner_channel      (winner2),             // input[1:0] 
+        .pre_winner_channel  (pre_winner2_w),       // input[1:0] 
+//        .winner_channel      (winner2),             // input[1:0] 
         .need_to_bother      (need_to_bother),      // input
 //        .chunk_inc           (chunk_inc),           // input[2:0]
         .chunk_inc_want_m1   (pre_chunk_inc_m1),    // input[1:0] Want to increment by this (0..3) + 1, if not roll over 

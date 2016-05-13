@@ -44,7 +44,8 @@ module  cmprs_afi_mux_ptr(
     input                         en,                 // 0 - resets, 0->1 resets all pointers. While reset allows write response
     input                  [ 3:0] reset_pointers,     // per-channel - reset pointers
     input                         pre_busy_w,         // combinatorial signal - one before busy[0] (depends on ptr_resetting)
-    input                  [ 1:0] winner_channel,     // channel that won arbitration for AXI access, valid @ pre_busy_w
+    input                  [ 1:0] pre_winner_channel, // channel that won arbitration for AXI access, valid 1 cycle ahead of @ pre_busy_w
+//    input                  [ 1:0] winner_channel,     // channel that won arbitration for AXI access, valid @ pre_busy_w
     input                         need_to_bother,     // wants to start access if address and data FIFO permit
     input                   [1:0] chunk_inc_want_m1,  // how much to increment chunk pointer (0..3) +1 - valid with busy[0] (w/o rollover)
     
@@ -81,26 +82,34 @@ module  cmprs_afi_mux_ptr(
     
     reg   [3:0] chunks_to_rollover_r;   // [3] >=8 
     wire  [3:0] chunks_to_rollover_m1;
+    wire  [3:0] pre_chunks_to_rollover_m1;
     reg         max_inc_ram_we;
     reg   [1:0] max_inc_ram_wa;
     wire        rollover_w; // this cycle causes rollover - valid at pre_busy_w
     reg         rollover_r; // this cycle causes rollover - valid at busy[0] and late
+    reg  [ 1:0] winner_channel;     // channel that won arbitration for AXI access, valid @ pre_busy_w
+    
     
     wire        ptr_ram_wa = ptr_ram[ptr_wa]; // SuppressThisWarning VEditor debug - just to view 
+//    wire  [2:0] max_wlen_di;   // data to write to max_inc_ram and bypass register
+    reg   [2:0] max_wlen_r;    // memory registered output
+    reg   [2:0] max_wlen_same; // used to bypass max_inc_ram for the same channel
+//    reg         use_same_max_wlen; // valid @ pre_busy_w
+    reg   [1:0] last_max_written; // channel for which max_wlen was written to RAM
     
     assign ptr_resetting = resetting[0];
     assign sa_len_ra= {busy[1],ptr_wa[1:0]};
     
     assign reset_rq_enc = {reset_rq_pri[3] | reset_rq_pri[2],
                            reset_rq_pri[3] | reset_rq_pri[1]};
-//    assign ptr_ram_di= resetting[1] ? 27'b0 : (chunk_ptr_rovr[27] ? chunk_ptr_inc : chunk_ptr_rovr[26:0]);
     assign ptr_ram_di= (resetting[1] ||rollover_r)  ? 27'b0 : chunk_ptr_inc ;
 
     assign chunk_ptr_rd = ptr_ram[chunk_ptr_ra];
     assign start_resetting_w = en && !busy[0] && !resetting[0] && (|reset_rq) && !need_to_bother;
     
-//    assign max_inc = max_inc_ram[winner_channel];
-    assign max_wlen = max_inc_ram[winner_channel]; // valid @pre_busy_w
+///    assign max_wlen = max_inc_ram[winner_channel]; // valid @pre_busy_w
+//    assign max_wlen = (last_max_written == winner_channel) ? (max_inc_ram_we? max_wlen_di: max_wlen_same) :max_wlen_r ; // valid @pre_busy_w
+    assign max_wlen = (last_max_written == winner_channel) ? max_wlen_same :max_wlen_r ; // valid @pre_busy_w
     
 //chunk_inc_want_m1
     assign pre_chunk_inc_m1 = (max_wlen[1:0] >= chunk_inc_want_m1)? chunk_inc_want_m1 : max_wlen[1:0];
@@ -108,8 +117,15 @@ module  cmprs_afi_mux_ptr(
     
     assign chunks_to_rollover = sa_len_ram[sa_len_ra] -  ptr_ram_di;
     assign chunks_to_rollover_m1 = chunks_to_rollover_r -1;
-       
+//    assign max_wlen_di = (|chunks_to_rollover_m1[3:2])?3'h7:{1'b0,chunks_to_rollover_m1[1:0]};    
+    // 1 cycle ahead of chunks_to_rollover_m1
+    assign pre_chunks_to_rollover_m1 =  {|chunks_to_rollover[26:3],chunks_to_rollover[2:0]} - 1;  
     always @ (posedge hclk) begin
+        winner_channel <= pre_winner_channel;
+        max_wlen_r <= max_inc_ram[pre_winner_channel]; // valid @pre_busy_w
+        if       (!en)                 last_max_written <= 0;
+        else if  (ptr_we & ~ptr_wa[2]) last_max_written <= ptr_wa[1:0];
+        
         en_d <= en;
         // ===== calculate and rollover channel addresses ====
         // clear (during "resetting" or update 8x27 RAM that holds chunk pointers for the current burst and currenty frame
@@ -161,8 +177,16 @@ module  cmprs_afi_mux_ptr(
         
         max_inc_ram_we <= ptr_we & ~ptr_wa[2];
         max_inc_ram_wa <= ptr_wa[1:0];
-
-        if (max_inc_ram_we) max_inc_ram[max_inc_ram_wa] <= (|chunks_to_rollover_m1[3:2])?3'h7:{1'b0,chunks_to_rollover_m1[1:0]};
+        
+        // set 1 cycle earlier 
+        if (ptr_we & ~ptr_wa[2]) max_wlen_same <= (|pre_chunks_to_rollover_m1[3:2])?3'h7:{1'b0,pre_chunks_to_rollover_m1[1:0]};
+        
+        if (max_inc_ram_we) begin
+            max_inc_ram[max_inc_ram_wa] <= max_wlen_same; // max_wlen_di; //  (|chunks_to_rollover_m1[3:2])?3'h7:{1'b0,chunks_to_rollover_m1[1:0]};
+//            max_wlen_same <=               max_wlen_di;
+        end
+        
+        
     end
 endmodule
 

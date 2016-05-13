@@ -1289,13 +1289,16 @@ assign #10 gpio_pins[9] = gpio_pins[8];
            'h10000 >> 5); // input [26:0] afi_cmprs3_len; //  input [26:0] length;     // channel buffer length in 32-byte chunks
         */
         'h10000000 >> 5,  // input [26:0] afi_cmprs0_sa;   // input [26:0] sa;   // start address in 32-byte chunks
-             'hba0 >> 5,  // 59e/5e0 (exact 2-1) 'h800 >> 5,  // input [26:0] afi_cmprs0_len; //  input [26:0] length;     // channel buffer length in 32-byte chunks
+//             'hba0 >> 5,  // 59e/5e0 (exact 2-1) 'h800 >> 5,  // input [26:0] afi_cmprs0_len; //  input [26:0] length;     // channel buffer length in 32-byte chunks
+             'hb80 >> 5,  // 59e/5e0 (exact 2-2) 'h800 >> 5,  // input [26:0] afi_cmprs0_len; //  input [26:0] length;     // channel buffer length in 32-byte chunks
         'h10010000 >> 5,  // input [26:0] afi_cmprs1_sa;   // input [26:0] sa;   // start address in 32-byte chunks
-             'h640>> 5,  // 2f0/320 (exact 2) h400 >> 5,  // input [26:0] afi_cmprs1_len; //  input [26:0] length;     // channel buffer length in 32-byte chunks
+//             'h640>> 5,  // 2f0/320 (exact 2) h400 >> 5,  // input [26:0] afi_cmprs1_len; //  input [26:0] length;     // channel buffer length in 32-byte chunks
+             'h600>> 5,  // 2f0/320 (exact 2) h400 >> 5,  // input [26:0] afi_cmprs1_len; //  input [26:0] length;     // channel buffer length in 32-byte chunks
         'h10020000 >> 5,  // input [26:0] afi_cmprs2_sa;   // input [26:0] sa;   // start address in 32-byte chunks
              'h520 >> 5,  // 25e/2a0 (1 less)'h200 >> 5,  // input [26:0] afi_cmprs2_len; //  input [26:0] length;     // channel buffer length in 32-byte chunks
         'h10030000 >> 5,  // input [26:0] afi_cmprs3_sa;   // input [26:0] sa;   // start address in 32-byte chunks
-             'h460 >> 5); // 1de/ 220 (1 more) 'h100 >> 5); // input [26:0] afi_cmprs3_len; //  input [26:0] length;     // channel buffer length in 32-byte chunks
+//             'h460 >> 5); // 1de/ 220 (1 more) 'h100 >> 5); // input [26:0] afi_cmprs3_len; //  input [26:0] length;     // channel buffer length in 32-byte chunks
+             'h400 >> 5); // 1de/ 220 (2 less) 'h100 >> 5); // input [26:0] afi_cmprs3_len; //  input [26:0] length;     // channel buffer length in 32-byte chunks
              
     camsync_setup (
         4'hf ); // sensor_mask); //

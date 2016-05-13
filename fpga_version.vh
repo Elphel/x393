@@ -32,7 +32,9 @@
  * with at least one of the Free Software programs.
  *******************************************************************************/
  
-        parameter FPGA_VERSION =          32'h0393008a;    // HiSPI sensor (14 MPix)
+//        parameter FPGA_VERSION =          32'h0393008c;      // hispi, all met, 83.55%
+        parameter FPGA_VERSION =          32'h0393008b;    // parallel, all met, 82.06%
+//        parameter FPGA_VERSION =          32'h0393008a;    // HiSPI sensor (14 MPix) no timing errors
 //        parameter FPGA_VERSION =          32'h03930089;    // Auto-synchronizing i2c sequencers with the command ones
 //        parameter FPGA_VERSION =          32'h03930088;    // Fixing circbuf rollover pointers bug (only one path violated)
 //      parameter FPGA_VERSION =          32'h03930087;    // Fixed default 90% quantization table

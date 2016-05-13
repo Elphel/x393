@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.3.66 (w)1999-2015 BSI
-[*] Sun May  8 03:34:28 2016
+[*] Fri May 13 15:32:02 2016
 [*]
-[dumpfile] "/home/andrey/git/x393/simulation/x393_testbench03-20160507180624832.fst"
-[dumpfile_mtime] "Sun May  8 00:54:54 2016"
-[dumpfile_size] 169675454
+[dumpfile] "/home/andrey/git/x393/simulation/x393_testbench03-20160513083231165.fst"
+[dumpfile_mtime] "Fri May 13 15:20:12 2016"
+[dumpfile_size] 169994092
 [savefile] "/home/andrey/git/x393/x393_testbench04.sav"
-[timestart] 40584000
-[size] 1823 1180
-[pos] 1919 0
-*-17.720415 40842388 255683333 256143333 274856667 275790000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[timestart] 209230300
+[size] 1920 1180
+[pos] -1920 0
+*-15.456448 209370000 209370000 209396667 209423333 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] x393_testbench03.
 [treeopen] x393_testbench03.read_compressor_frame_irq.
 [treeopen] x393_testbench03.read_contol_register_irq.
@@ -49,8 +49,8 @@
 [treeopen] x393_testbench03.x393_i.sensors393_i.sensor_channel_block[3].
 [treeopen] x393_testbench03.x393_i.sensors393_i.sensor_channel_block[3].sensor_channel_i.
 [treeopen] x393_testbench03.x393_i.sensors393_i.sensor_channel_block[3].sensor_channel_i.sensor_i2c_io_i.
-[sst_width] 412
-[signals_width] 429
+[sst_width] 295
+[signals_width] 339
 [sst_expanded] 1
 [sst_vpaned_height] 578
 @820
@@ -321,7 +321,7 @@ x393_testbench03.sim_soc_interrupts_i.inta[8:0]
 -
 @1000200
 -sim_soc_interrupts
-@c00200
+@800200
 -interrupts
 @28
 x393_testbench03.MAIN_GO
@@ -647,6 +647,15 @@ x393_testbench03.x393_i.compressor393_i.genblk3.cmprs_afi0_mux_i.cmprs_afi_mux_s
 @800200
 -cmprs_afi_mux_ptr
 @22
+x393_testbench03.x393_i.compressor393_i.genblk3.cmprs_afi0_mux_i.cmprs_afi_mux_ptr_i.sa_len_ra[2:0]
+x393_testbench03.x393_i.compressor393_i.genblk3.cmprs_afi0_mux_i.cmprs_afi_mux_ptr_i.chunks_to_rollover[26:0]
+x393_testbench03.x393_i.compressor393_i.genblk3.cmprs_afi0_mux_i.cmprs_afi_mux_ptr_i.chunks_to_rollover_r[3:0]
+x393_testbench03.x393_i.compressor393_i.genblk3.cmprs_afi0_mux_i.cmprs_afi_mux_ptr_i.chunks_to_rollover_m1[3:0]
+x393_testbench03.x393_i.compressor393_i.genblk3.cmprs_afi0_mux_i.cmprs_afi_mux_ptr_i.max_wlen_same[2:0]
+x393_testbench03.x393_i.compressor393_i.genblk3.cmprs_afi0_mux_i.cmprs_afi_mux_ptr_i.max_wlen_r[2:0]
+x393_testbench03.x393_i.compressor393_i.genblk3.cmprs_afi0_mux_i.cmprs_afi_mux_ptr_i.max_wlen[2:0]
+x393_testbench03.x393_i.compressor393_i.genblk3.cmprs_afi0_mux_i.cmprs_afi_mux_ptr_i.last_max_written[1:0]
+x393_testbench03.x393_i.compressor393_i.genblk3.cmprs_afi0_mux_i.cmprs_afi_mux_ptr_i.pre_winner_channel[1:0]
 x393_testbench03.x393_i.compressor393_i.genblk3.cmprs_afi0_mux_i.cmprs_afi_mux_ptr_i.winner_channel[1:0]
 x393_testbench03.x393_i.compressor393_i.genblk3.cmprs_afi0_mux_i.cmprs_afi_mux_ptr_i.chunk_ptr_ra[2:0]
 @28
@@ -681,14 +690,21 @@ x393_testbench03.x393_i.compressor393_i.genblk3.cmprs_afi0_mux_i.cmprs_afi_mux_p
 x393_testbench03.x393_i.compressor393_i.genblk3.cmprs_afi0_mux_i.cmprs_afi_mux_ptr_i.chunk_inc[2:0]
 x393_testbench03.x393_i.compressor393_i.genblk3.cmprs_afi0_mux_i.cmprs_afi_mux_ptr_i.chunk_inc_want_m1[1:0]
 x393_testbench03.x393_i.compressor393_i.genblk3.cmprs_afi0_mux_i.cmprs_afi_mux_ptr_i.chunks_to_rollover[26:0]
+@23
+x393_testbench03.x393_i.compressor393_i.genblk3.cmprs_afi0_mux_i.cmprs_afi_mux_ptr_i.pre_chunks_to_rollover_m1[3:0]
+@22
 x393_testbench03.x393_i.compressor393_i.genblk3.cmprs_afi0_mux_i.cmprs_afi_mux_ptr_i.chunks_to_rollover_m1[3:0]
 x393_testbench03.x393_i.compressor393_i.genblk3.cmprs_afi0_mux_i.cmprs_afi_mux_ptr_i.chunks_to_rollover_r[3:0]
 @28
 x393_testbench03.x393_i.compressor393_i.genblk3.cmprs_afi0_mux_i.cmprs_afi_mux_ptr_i.rollover_w
 x393_testbench03.x393_i.compressor393_i.genblk3.cmprs_afi0_mux_i.cmprs_afi_mux_ptr_i.rollover_r
+x393_testbench03.x393_i.compressor393_i.genblk3.cmprs_afi0_mux_i.cmprs_afi_mux_ptr_i.max_inc_ram_we
+x393_testbench03.x393_i.compressor393_i.genblk3.cmprs_afi0_mux_i.cmprs_afi_mux_ptr_i.max_inc_ram_wa[1:0]
 @800200
 -cmprs_afi_mux
 @22
+x393_testbench03.x393_i.compressor393_i.genblk3.cmprs_afi0_mux_i.winner1[1:0]
+x393_testbench03.x393_i.compressor393_i.genblk3.cmprs_afi0_mux_i.winner2[1:0]
 x393_testbench03.x393_i.compressor393_i.genblk3.cmprs_afi0_mux_i.max_wlen[2:0]
 x393_testbench03.x393_i.compressor393_i.genblk3.cmprs_afi0_mux_i.want_wleft32[1:0]
 x393_testbench03.x393_i.compressor393_i.genblk3.cmprs_afi0_mux_i.wleft[3:0]
@@ -915,7 +931,7 @@ x393_testbench03.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.cmd_we
 @22
 x393_testbench03.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.wpage_asap[3:0]
 x393_testbench03.x393_i.frame_num[15:0]
-@1401200
+@1000200
 -interrupts
 @c00022
 x393_testbench03.x393_i.cmd_seq_mux_i.status_generate_cmd_seq_mux_i.status[25:0]
@@ -1307,7 +1323,7 @@ x393_testbench03.x393_i.membridge_i.read_busy
 @1401200
 -read_to_sys
 -membridge
-@c00200
+@800200
 -simul_axi_hp_wr0
 @22
 x393_testbench03.simul_axi_hp_wr_i.write_address[31:0]
@@ -1329,9 +1345,9 @@ x393_testbench03.simul_axi_hp_wr_i.start_write_burst_w
 x393_testbench03.simul_axi_hp_wr_i.num_full_data[7:0]
 @200
 -
-@1401200
+@1000200
 -simul_axi_hp_wr0
-@800200
+@c00200
 -frame_numbers
 @28
 x393_testbench03.x393_i.mclk
@@ -1361,12 +1377,12 @@ x393_testbench03.x393_i.sensors393_i.sensor_channel_block[3].sensor_channel_i.se
 @28
 x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.frame_sync
 x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.wen
-@800029
+@c00028
 x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.wen_r[1:0]
-@29
+@28
 (0)x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.wen_r[1:0]
 (1)x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.wen_r[1:0]
-@1001201
+@1401200
 -group_end
 @28
 x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.pre_wpage0_inc
@@ -1394,6 +1410,7 @@ x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.se
 -
 @1000200
 -i2c
+@1401200
 -frame_numbers
 [pattern_trace] 1
 [pattern_trace] 0
