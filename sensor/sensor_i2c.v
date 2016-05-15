@@ -120,7 +120,8 @@ module  sensor_i2c#(
      reg    [3:0]  wpage_prev;     // unused page, currently being cleared
      reg    [3:0]  page_r;     // FIFO page where current i2c commands are taken from
      
-     reg    [3:0]  wpage_wr;    // FIFO page where current write goes (reading from write address) 
+     reg    [3:0]  wpage_wr;      // FIFO page where current write goes (reading from write address) 
+     reg    [3:0]  wpage_wr_only; // as, wpage_wr but uses rel[0] after frame sync, not wpage_prev (for fifo_fill)  
      reg    [1:0]  wpage0_inc; // increment wpage0 (after frame sync or during reset)
      reg           reset_cmd;
      reg           run_cmd;
@@ -181,10 +182,16 @@ module  sensor_i2c#(
      wire          scl_hard;
 
 `ifdef I2C_FRAME_INDEPENDENT
-     localparam sync_to_seq = -;
+     localparam sync_to_seq = 0;
 `else     
      reg           sync_to_seq;
 `endif
+     reg     [5:0] last_wp;    // last written write pointer     
+     reg     [5:0] last_wp_d;    // last written write pointer, delayed to match rpointer
+     reg           was_asap;     
+     reg     [3:0] last_wpage; // last written to page (or zeroed)
+     reg     [5:0] fifo_fill;  // number of words written to the other (not current) page, or difference wp-rp for the current
+     wire    [5:0] fifo_wr_pointers_next; // pointer value to be written to  fifo_wr_pointers_ram[wpage_wr]    
      
      assign set_ctrl_w = we_cmd && ((wa & ~SENSI2C_CTRL_MASK) == SENSI2C_CTRL );// ==0
      assign set_status_w = we_cmd && ((wa & ~SENSI2C_CTRL_MASK) == SENSI2C_STATUS );// ==0
@@ -202,7 +209,7 @@ module  sensor_i2c#(
      assign scl_en =  i2c_enrun?  1'b1:        scl_en_soft  ;
      assign sda_out = i2c_enrun?  sda_hard:    sda_soft ;
      assign sda_en =  i2c_enrun?  sda_en_hard: sda_en_soft ;
-
+     assign fifo_wr_pointers_next = wpage0_inc[1]? 6'h0:(fifo_wr_pointers_outw_r[5:0]+1);
 
 
      
@@ -236,7 +243,7 @@ module  sensor_i2c#(
 
     status_generate #(
         .STATUS_REG_ADDR(SENSI2C_STATUS_REG),
-        .PAYLOAD_BITS(7+3+10) // STATUS_PAYLOAD_BITS)
+        .PAYLOAD_BITS(7+6+3+10) // STATUS_PAYLOAD_BITS)
     ) status_generate_sens_i2c_i (
         .rst        (1'b0), // rst), // input
         .clk        (mclk), // input
@@ -244,6 +251,7 @@ module  sensor_i2c#(
         .we         (set_status_w), // input
         .wd         (di[7:0]), // input[7:0] 
         .status     ({reset_on, req_clr,
+                      fifo_fill[5:0],
                       frame_num[3:0],
                       alive_fs,busy, i2c_fifo_cntrl, i2c_fifo_nempty,
                       i2c_fifo_dout[7:0],
@@ -340,7 +348,26 @@ module  sensor_i2c#(
       if (wen_fifo)  fifo_wr_pointers_outw_r[5:0] <= fifo_wr_pointers_outw[5:0];
        
        // write to dual-port pointer memory
-      if (we_fifo_wp) fifo_wr_pointers_ram[wpage_wr] <= wpage0_inc[1]? 6'h0:(fifo_wr_pointers_outw_r[5:0]+1); 
+//      if (we_fifo_wp) fifo_wr_pointers_ram[wpage_wr] <= wpage0_inc[1]? 6'h0:(fifo_wr_pointers_outw_r[5:0]+1);
+      if (we_fifo_wp)  begin
+          fifo_wr_pointers_ram[wpage_wr] <= fifo_wr_pointers_next;
+          last_wp <=                        fifo_wr_pointers_next;
+          last_wpage <=                     wpage_wr_only;
+      end
+/*
+     reg     [5:0] last_wp_d;    // last written write pointer, delayed to match rpointer
+     reg           was_asap;     
+
+*/
+      last_wp_d <= last_wp; // to match rrpointer
+      was_asap <= (last_wpage == wpage0);
+      
+      if      (we_abs)        wpage_wr_only <= ((wa==wpage_prev)? wpage0[3:0] : wa);
+      else if (we_rel)        wpage_wr_only <= wpage0 + wa;
+      else if (wpage0_inc[0]) wpage_wr_only <= wpage0 + 1;
+      
+//      fifo_fill <=  last_wp - ((last_wpage == wpage0)? rpointer : 6'b0); // for current frame use wp-rp, for other pages - just wp
+      fifo_fill <=  last_wp_d - (was_asap ? rpointer : 6'b0); // for current frame use wp-rp, for other pages - just wp
         
       fifo_wr_pointers_outr_r[5:0] <= fifo_wr_pointers_outr[5:0]; // just register distri
       if (wen_fifo) i2c_cmd_wa <= {wpage_wr[3:0],fifo_wr_pointers_outw[5:0]};
@@ -355,7 +382,7 @@ module  sensor_i2c#(
       else if (page_r_inc[0]) page_r <= page_r+1;
 `endif
 
-//############ rpointer should startt not from 0, but form valuie in another RAM???
+//############ rpointer should start not from 0, but form value in another RAM???
       if      (reset_cmd || page_r_inc[0])  rpointer[5:0] <= 6'h0;
       else if (i2c_run_d && ! i2c_run)      rpointer[5:0] <= rpointer[5:0] + 1;
 

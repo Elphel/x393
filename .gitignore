@@ -40,3 +40,5 @@ py393/x393_i2c.py.test
 py393/x393_init_usb_hub.py
 py393/x393_mcntrl_adjust.py.dbg
 x393_testbench03_01.sav
+simulation_data/*.dat
+simulation_data/*.jpeg
