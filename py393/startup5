@@ -1,0 +1,30 @@
+-d TARGET_MODE=1
+-f /usr/local/verilog/system_defines.vh
+-f /usr/local/verilog/x393_parameters.vh   /usr/local/verilog/x393_cur_params_target.vh /usr/local/verilog/x393_localparams.vh
+-l /usr/local/verilog/x393_cur_params_target.vh
+-p PICKLE="/usr/local/verilog/x393_mcntrl.pickle
+-c copy /usr/local/bin/imgsrv.py /www/pages
+-c bitstream_set_path /usr/local/verilog/x393_parallel.bit
+-c setupSensorsPower "PAR12"
+-c measure_all "*DI"
+-c setup_all_sensors True None 0xf
+-c set_sensor_io_ctl 0 None None None None None 0 0xe
+-c set_sensor_io_ctl 1 None None None None None 0 0xe
+-c set_sensor_io_ctl 2 None None None None None 0 0xe
+-c set_sensor_io_ctl 3 None None None None None 0 0xe
+-c compressor_control  all  None  None  None None None  3
+-c write_sensor_i2c  all 1 0 0x90040a23
+-c axi_write_single_w 0x696 0x079800a3
+-c axi_write_single_w 0x686 0x079800a3
+-c axi_write_single_w 0x6a6 0x079800a3
+-c axi_write_single_w 0x6b6 0x079800a3
+-c program_gamma all 0 0.57 0.04
+-c set_qtables all 0 80
+-c write_sensor_i2c  all 1 0 0x9035000a
+-c write_sensor_i2c  all 1 0 0x902c000e
+-c write_sensor_i2c  all 1 0 0x902d000d
+-c write_sensor_i2c  all 1 0 0x90090100
+-P 8888
+-c compressor_control all 2 None None None None None
+-x
+-i
