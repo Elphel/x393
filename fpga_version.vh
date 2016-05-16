@@ -32,8 +32,11 @@
  * with at least one of the Free Software programs.
  *******************************************************************************/
  
+        parameter FPGA_VERSION =          32'h0393008f;    // parallel, all the same
+//        parameter FPGA_VERSION =          32'h0393008e;    // hispi, adding i2c fifo fill, all met,83.73%
+//        parameter FPGA_VERSION =          32'h0393008d;    // parallel, adding i2c fifo fill max err 0.128, 82.61%
 //        parameter FPGA_VERSION =          32'h0393008c;      // hispi, all met, 83.55%
-        parameter FPGA_VERSION =          32'h0393008b;    // parallel, all met, 82.06%
+//        parameter FPGA_VERSION =          32'h0393008b;    // parallel, all met, 82.06% . Reran 0.051ns error, 82.02%
 //        parameter FPGA_VERSION =          32'h0393008a;    // HiSPI sensor (14 MPix) no timing errors
 //        parameter FPGA_VERSION =          32'h03930089;    // Auto-synchronizing i2c sequencers with the command ones
 //        parameter FPGA_VERSION =          32'h03930088;    // Fixing circbuf rollover pointers bug (only one path violated)
