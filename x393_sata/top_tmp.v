@@ -64,8 +64,6 @@ wire            axi_rst;
 wire            hclk;
 wire            comb_rst;
 reg             axi_rst_pre;
-reg             axi_rst_pre;
-
 
 
 wire    [31:0]  maxi1_araddr;

@@ -182,7 +182,7 @@ module  mcntrl_linear_rw #(
     reg                           frame_finished_r;    
     wire                          last_in_row_w;
     wire                          last_row_w;
-    wire                          last_block_w;
+//    wire                          last_block_w;
     reg                           last_block;
     reg [MCNTRL_SCANLINE_PENDING_CNTR_BITS-1:0] pending_xfers; // number of requested,. but not finished block transfers      
     reg   [NUM_RC_BURST_BITS-1:0] row_col_r;

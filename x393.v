@@ -36,7 +36,7 @@
 //`define DEBUG_FIFO 1
 `include "system_defines.vh" 
 module  x393 #(
-`include "includes/x393_parameters.vh"
+`include "includes/x393_parameters.vh" // SuppressThisWarning VEditor - some not used
 )(
     // Sensors interface: I/O pads, pin names match circuit diagram (each sensor)
 `ifdef HISPI
@@ -481,7 +481,7 @@ module  x393 #(
     wire                [255:0] sens_buf_dout;   //    (), // output[63:0] 
     wire                  [3:0] sens_page_written;     //   single mclk pulse: buffer page (full or partial) is written to the memory buffer 
 // TODO: Add counter(s) to count sens_xfer_skipped pulses    
-    wire                  [3:0] sens_xfer_skipped;         // single mclk pulse on every skipped (not written) block to record error statistics
+    wire                  [3:0] sens_xfer_skipped;         // single mclk pulse on every skipped (not written) block to record error statistics // SuppressThisWarning VEditor - unused
     wire                  [3:0] sens_first_wr_in_frame;    // single mclk pulse on first write block in each frame
     
     wire                        trigger_mode; //       (), // input
@@ -1327,6 +1327,7 @@ assign axi_grst = axi_rst_pre;
         .cmprs_buf_din             (cmprs_buf_din),              // output[255:0] 
         .cmprs_page_ready          (cmprs_page_ready),           // output[3:0] 
         .cmprs_next_page           (cmprs_next_page),            // input[3:0] 
+        .cmprs_first_rd_in_frame   (),                           // output[3:0] reg 
         .cmprs_frame_start_dst     (cmprs_frame_start_dst),      // input[3:0] 
         .cmprs_line_unfinished_src (cmprs_line_unfinished_src),  // output[63:0] 
         .cmprs_frame_number_src    (cmprs_frame_number_src),     // output[63:0] 
