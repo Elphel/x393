@@ -16,7 +16,10 @@ install -v -m 0644 $SCRIPTPATH/*.bit $1/usr/local/verilog/
 install -v -m 0644 $SCRIPTPATH/system_defines.vh $1/usr/local/verilog/
 install -v -m 0644 $SCRIPTPATH/includes/x393_parameters.vh $1/usr/local/verilog/
 install -v -m 0644 $SCRIPTPATH/includes/x393_localparams.vh $1/usr/local/verilog/
-install -v -m 0644 $SCRIPTPATH/py393/hargs $1/usr/local/verilog/
+install -v -m 0644 $SCRIPTPATH/py393/hargs      $1/usr/local/verilog/
 install -v -m 0644 $SCRIPTPATH/py393/hargs-auto $1/usr/local/verilog/
+install -v -m 0644 $SCRIPTPATH/py393/includes   $1/usr/local/verilog/
+install -v -m 0644 $SCRIPTPATH/py393/startup5   $1/usr/local/verilog/
+install -v -m 0644 $SCRIPTPATH/py393/startup14  $1/usr/local/verilog/
 
 exit 0
