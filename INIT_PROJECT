@@ -1,0 +1,4 @@
+ #!/bin/bash
+ echo "Copying Eclipse project files for project import"
+ cp .eclipse_project_setup/* ./
+ exit 0
