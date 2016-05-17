@@ -101,7 +101,7 @@ module  ram18t_var_w_var_r
   parameter WRITE_MODE_B =        "NO_CHANGE"  //Valid: "WRITE_FIRST", "READ_FIRST", "NO_CHANGE"
 `ifdef PRELOAD_BRAMS
     ,
-    `include "includes/ram36_declare_init.vh"
+    `include "includes/ram18_declare_init.vh"
 `endif
  )(
       input                               clk_a,     // clock for port A
