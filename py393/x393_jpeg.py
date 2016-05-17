@@ -997,10 +997,15 @@ print_status_sensor_io all
 setup_all_sensors True None 0x4
 
 ################## Parallel ##################
+cd /usr/local/verilog/; test_mcntrl.py @tpargs -x
+
+
+
 cd /usr/local/verilog/; test_mcntrl.py @hargs
 bitstream_set_path /usr/local/verilog/x393_parallel.bit
 #fpga_shutdown
-setupSensorsPower "PAR12"
+#setupSensorsPower "PAR12"
+setupSensorsPower  "PAR12"  all  0  0.0
 measure_all "*DI"
 setup_all_sensors True None 0xf
 #set quadrants

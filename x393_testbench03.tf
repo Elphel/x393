@@ -113,24 +113,24 @@ parameter NUM_INTERRUPTS =        9;
 `ifdef SYNC_COMPRESS
     parameter DEPEND=1'b1;
 `else  
-    parameter DEPEND=1'b0;
+    parameter DEPEND=1'b0; // SuppressThisWarning VEditor - may be not used
 `endif
 
 `ifdef TEST_ABORT
 `endif
  
   parameter SYNC_BIT_LENGTH=8-1; /// 7 pixel clock pulses
-  parameter FPGA_XTRA_CYCLES= 1500; // 1072+;
+  parameter FPGA_XTRA_CYCLES= 1500; // 1072+; // SuppressThisWarning VEditor - not used
 // moved to x393_simulation_parameters.vh
 //  parameter HISTOGRAM_LEFT=  0; //2;   // left   
 //  parameter HISTOGRAM_TOP =  2;   // top
 //  parameter HISTOGRAM_WIDTH= 6;  // width
 //  parameter HISTOGRAM_HEIGHT=6;  // height
   
-  parameter CLK0_PER = 6.25;   //160MHz
-  parameter CLK1_PER = 10.4;     //96MHz
-  parameter CLK3_PER = 83.33;   //12MHz
-  parameter CPU_PER=10.4;
+//  parameter CLK0_PER = 6.25;
+//  parameter CLK1_PER = 10.4;
+//  parameter CLK3_PER = 83.33;
+//  parameter CPU_PER=10.4;
   
  parameter TRIG_PERIOD =      6000 ;
 `ifdef HISPI 
@@ -147,16 +147,16 @@ parameter NUM_INTERRUPTS =        9;
  parameter WOI_HEIGHT=        32;
  parameter TRIG_LINES=        8;
  parameter VBLANK=            2; /// 2 lines //SuppressThisWarning Veditor UNUSED
- parameter CYCLES_PER_PIXEL=  3; /// 2 for JP4, 3 for JPEG
+ parameter CYCLES_PER_PIXEL=  3; /// 2 for JP4, 3 for JPEG // SuppressThisWarning VEditor - not used
 
 `ifdef PF
   parameter PF_HEIGHT=8;
   parameter FULL_HEIGHT=WOI_HEIGHT;
   parameter PF_STRIPES=WOI_HEIGHT/PF_HEIGHT;
 `else  
-  parameter PF_HEIGHT=0;
+  parameter PF_HEIGHT=0; // SuppressThisWarning VEditor - not used
   parameter FULL_HEIGHT=WOI_HEIGHT+4;
-  parameter PF_STRIPES=0;
+  parameter PF_STRIPES=0; // SuppressThisWarning VEditor - not used
 `endif
 
  parameter VIRTUAL_WIDTH=    FULL_WIDTH + HBLANK;
@@ -167,7 +167,7 @@ parameter NUM_INTERRUPTS =        9;
 /// parameter TRIG_OUT_DATA=        'h80000; // internal cable
 /// parameter TRIG_EXTERNAL_INPUT=  'h20000; // internal cable, low level on EXT[8]
 
- parameter TRIG_DELAY=      200; /// delay in sensor clock cycles
+ parameter TRIG_DELAY=      200; /// delay in sensor clock cycles // SuppressThisWarning VEditor - not used
 
 
  parameter FULL_WIDTH=        WOI_WIDTH+4;
@@ -630,7 +630,7 @@ assign #10 gpio_pins[9] = gpio_pins[8];
     wire [NUM_INTERRUPTS-1:0] IRQ_ACKN;
     wire                [3:0] IRQ_FRSEQ_ACKN = IRQ_ACKN[3:0];
     wire                [3:0] IRQ_CMPRS_ACKN = IRQ_ACKN[7:4];
-    wire                      IRQ_SATA_ACKN =  IRQ_ACKN[8];
+    wire                      IRQ_SATA_ACKN =  IRQ_ACKN[8]; // SuppressThisWarning VEditor - not used
     reg                 [3:0] IRQ_FRSEQ_DONE = 0;
     reg                 [3:0] IRQ_CMPRS_DONE = 0;
     reg                       IRQ_SATA_DONE =  0;
@@ -643,26 +643,8 @@ assign #10 gpio_pins[9] = gpio_pins[8];
     wire                      IRQS=|IRQ_S; // at least one interrupt is pending (to yield by main w/o slowing down)
     wire                [3:0] IRQ_FRSEQ_S = IRQ_S[3:0];
     wire                [3:0] IRQ_CMPRS_S = IRQ_S[7:4];
-    wire                      IRQ_SATA_S =  IRQ_S[8];
+    wire                      IRQ_SATA_S =  IRQ_S[8];// SuppressThisWarning VEditor - not used
     
-    
-/*
-    sim_soc_interrupts #(
-        .NUM_INTERRUPTS(8)
-    ) sim_soc_interrupts_i (
-        .clk(), // input
-        .rst(), // input
-        .irq_en(), // input
-        .irqm(), // input[7:0] 
-        .irq(), // input[7:0] 
-        .irq_done(), // input[7:0] 
-        .irqs(), // output[7:0] 
-        .inta(), // output[7:0] 
-        .main_go() // output
-    );
-*/    
-    
-        
     reg        AR_SET_CMD_r;
     wire       AR_READY;
 
@@ -744,26 +726,11 @@ assign #10 gpio_pins[9] = gpio_pins[8];
     integer     NUM_WORDS_READ;
     integer     NUM_WORDS_EXPECTED;
     reg  [15:0] ENABLED_CHANNELS = 0; // currently enabled memory channels
-//  integer     SCANLINE_CUR_X;
-//  integer     SCANLINE_CUR_Y;
     wire AXI_RD_EMPTY=NUM_WORDS_READ==NUM_WORDS_EXPECTED; //SuppressThisWarning VEditor : may be unused, just for simulation
   
-    reg  [31:0] DEBUG_DATA;
-    integer     DEBUG_ADDRESS; 
+    reg  [31:0] DEBUG_DATA;    //SuppressThisWarning VEditor : just for simulation viewing
+    integer     DEBUG_ADDRESS; //SuppressThisWarning VEditor : just for simulation viewing
   
-  //NUM_XFER_BITS=6
-//  localparam       SCANLINE_PAGES_PER_ROW= (WINDOW_WIDTH>>NUM_XFER_BITS)+((WINDOW_WIDTH[NUM_XFER_BITS-1:0]==0)?0:1);
-//  localparam       TILES_PER_ROW= (WINDOW_WIDTH/TILE_WIDTH)+  ((WINDOW_WIDTH % TILE_WIDTH==0)?0:1);
-//  localparam       TILE_ROWS_PER_WINDOW= ((WINDOW_HEIGHT-1)/TILE_VSTEP) + 1;
-  
-//  localparam       TILE_SIZE= TILE_WIDTH*TILE_HEIGHT;
-  
-  
-//  localparam  integer     SCANLINE_FULL_XFER= 1<<NUM_XFER_BITS; // 64 - full page transfer in 8-bursts
-//  localparam  integer     SCANLINE_LAST_XFER= WINDOW_WIDTH % (1<<NUM_XFER_BITS); // last page transfer size in a row
-  
-//  integer ii;
-//  integer  SCANLINE_XFER_SIZE;
 
 
   initial begin
@@ -1658,6 +1625,15 @@ assign bvalid=                             x393_i.ps7_i.MAXIGP0BVALID;
 assign x393_i.ps7_i.MAXIGP0BREADY=  bready;
 assign bid=                                x393_i.ps7_i.MAXIGP0BID;
 assign bresp=                              x393_i.ps7_i.MAXIGP0BRESP;
+
+// Next signals are not yet used in this simulation - see x393_sata project
+reg EXTCLK_P = 1'b1;
+reg EXTCLK_N = 1'b0;
+wire    rxn = 0;
+wire    rxp = 0;
+wire    txn; // SuppressThisWarning VEditor not yet unused
+wire    txp; // SuppressThisWarning VEditor not yet unused
+
 //TODO: See how to show problems in include files opened in the editor (test all top *.v files that have it)
 // Top module under test
     x393 #(
@@ -1910,7 +1886,13 @@ assign bresp=                              x393_i.ps7_i.MAXIGP0BRESP;
         .ffclk0p (ffclk0p),      // input
         .ffclk0n (ffclk0n),      // input
         .ffclk1p (ffclk1p),      // input
-        .ffclk1n (ffclk1n)         // input
+        .ffclk1n (ffclk1n),      // input
+        .RXN     (rxn),          // input
+        .RXP     (rxp),          // input
+        .TXN     (txn),          // output
+        .TXP     (txp),          // output
+        .EXTCLK_P(EXTCLK_P),     // input
+        .EXTCLK_N(EXTCLK_N)      // input
     );
     // just to simplify extra delays in tri-state memory bus - provide output enable
     wire WRAP_MCLK=x393_i.mclk;
@@ -3269,7 +3251,7 @@ task setup_sensor_channel;
     end
 endtask // setup_sensor_channel
 
-task setup_sensor_membridge;
+task setup_sensor_membridge;  // SuppressThisWarning VEditor not always unused
     input  [1:0] num_sensor;
     input        disable_need;
     input        write_video_memory;
@@ -3745,7 +3727,7 @@ task set_gpio_ports;
 endtask
     
 //x393_gpio.py
-task set_gpio_pins;
+task set_gpio_pins; // SuppressThisWarning VEditor not always unused
     input [1:0] ext0; // 0 - nop, 1 - set "0", 2 - set "1", 3 - set as input
     input [1:0] ext1; // 0 - nop, 1 - set "0", 2 - set "1", 3 - set as input
     input [1:0] ext2; // 0 - nop, 1 - set "0", 2 - set "1", 3 - set as input
@@ -4106,7 +4088,7 @@ task program_curves;
     end
 endtask
 
-task program_huffman;
+task program_huffman; // SuppressThisWarning VEditor not always unused
     input   [1:0] chn;
     reg    [29:0] reg_addr;
     reg    [23:0]   huff_data[0:511]; // SuppressThisWarning VEditor : assigned in $readmem() system task
@@ -4121,7 +4103,7 @@ task program_huffman;
     end
 endtask
     
-task program_quantization;
+task program_quantization; // SuppressThisWarning VEditor not always unused
     input   [1:0] chn;
     reg    [29:0] reg_addr;
     reg    [15:0]   quant_data[0:255]; //  Actually 4 pairs of tables, 1 table is just 64 words SuppressThisWarning VEditor : assigned in $readmem() system task
@@ -4136,7 +4118,7 @@ task program_quantization;
     end
 endtask
 
-task program_coring;
+task program_coring; // SuppressThisWarning VEditor not always unused
     input  [1:0] chn;
     reg   [29:0] reg_addr;
     reg   [15:0] coring_data[0:1023]; // SuppressThisWarning VEditor : assigned in $readmem() system task
@@ -4153,7 +4135,7 @@ endtask
 
 
 
-task program_focus_filt;
+task program_focus_filt; // SuppressThisWarning VEditor not always unused
     input  [1:0] chn;
     reg   [29:0] reg_addr;
     reg   [15:0] filt_data[0:127]; // SuppressThisWarning VEditor : assigned in $readmem() system task
@@ -4304,7 +4286,7 @@ task set_sensor_histogram_saxi_addr;
 endtask
     
 // x393_sensor.py
-function [STATUS_DEPTH-1:0] func_status_addr_sensor_i2c;
+function [STATUS_DEPTH-1:0] func_status_addr_sensor_i2c; // SuppressThisWarning VEditor not always unused
     input [1:0] num_sensor;
     begin
         func_status_addr_sensor_i2c = (SENSI2C_STATUS_REG_BASE + num_sensor * SENSI2C_STATUS_REG_INC + SENSI2C_STATUS_REG_REL);
@@ -4312,7 +4294,7 @@ function [STATUS_DEPTH-1:0] func_status_addr_sensor_i2c;
 endfunction
 
 // x393_sensor.py
-function [STATUS_DEPTH-1:0] func_status_addr_sensor_io;
+function [STATUS_DEPTH-1:0] func_status_addr_sensor_io; // SuppressThisWarning VEditor not always unused
     input [1:0] num_sensor;
     begin
         func_status_addr_sensor_io = (SENSI2C_STATUS_REG_BASE + num_sensor * SENSI2C_STATUS_REG_INC + SENSIO_STATUS_REG_REL);
@@ -4448,7 +4430,7 @@ task frame_sequencer_irq_clear;
 endtask
 
 
-task ctrl_cmd_frame_sequencer;
+task ctrl_cmd_frame_sequencer; // SuppressThisWarning VEditor not always unused
     input [1:0] num_sensor; // sensor channel number
     input       reset;      // reset sequencer (also stops)
     input       start;      // start sequencer
@@ -4466,7 +4448,7 @@ task ctrl_cmd_frame_sequencer;
 endtask
 
 // x393_frame_sequencer.py
-task write_cmd_frame_sequencer;
+task write_cmd_frame_sequencer; // SuppressThisWarning VEditor not always unused
     input                  [1:0] num_sensor; // sensor channel number
     input                        relative;   // 0 - absolute (address = 0..f), 1 - relative (address= 0..e)
     input                  [3:0] frame_addr;   // frame address (relative or absolute)
@@ -4976,7 +4958,11 @@ endtask
 `include "includes/x393_tasks_mcntrl_timing.vh" // SuppressThisWarning VEditor - not used
 `include "includes/x393_tasks_ps_pio.vh"
 `include "includes/x393_tasks_status.vh"
-`include "includes/x393_tasks01.vh"
+
+
+
+`include "includes/x393_tasks01.vh"  // SuppressThisWarning VEditor - some tasks may be unused
+
 `include "includes/x393_mcontr_encode_cmd.vh"
 
 // Save sensor data written to memory

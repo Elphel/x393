@@ -326,7 +326,7 @@
             AWID_IN_r    <= id;
             AWADDR_IN_r  <= addr;
             AWLEN_IN_r   <= len;
-            AWSIZE_IN_r  <= 3'b010;
+            AWSIZE_IN_r  <= 2'b10;
             AWBURST_IN_r <= burst;
             AW_SET_CMD_r <= 1'b1;
             if (data_en && W_READY) begin
@@ -414,14 +414,14 @@
             ARID_IN_r    <= id;
             ARADDR_IN_r  <= addr;
             ARLEN_IN_r   <= len;
-            ARSIZE_IN_r  <= 3'b010;
+            ARSIZE_IN_r  <= 2'b10;
             ARBURST_IN_r <= burst;
             AR_SET_CMD_r <= 1'b1;
             wait (CLK);
             ARID_IN_r    <= 12'hz;
             ARADDR_IN_r  <= 'hz;
             ARLEN_IN_r   <= 4'hz;
-            ARSIZE_IN_r  <= 3'hz;
+            ARSIZE_IN_r  <= 2'hz;
             ARBURST_IN_r <= 2'hz;
             AR_SET_CMD_r <= 1'b0;
             LAST_ARID <= id;

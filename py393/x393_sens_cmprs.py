@@ -236,7 +236,12 @@ class X393SensCmprs(object):
     def get_circbuf_byte_end(self): # should be 4KB page aligned
         global BUFFER_ADDRESS, BUFFER_LEN
         return BUFFER_ADDRESS + BUFFER_LEN
-        
+    def sleep_ms(self, time_ms):
+        """
+        Sleep for specified number of milliseconds
+        @param time_ms - sleep time in milliseconds
+        """    
+        time.sleep(0.001*time_ms)
     def setSensorClock(self, freq_MHz = 24.0, iface = "2V5_LVDS", quiet = 0):
         """
         Set up external clock for sensor-synchronous circuitry (and sensor(s) themselves. 
@@ -279,7 +284,14 @@ class X393SensCmprs(object):
             print ("Set sensors %s interface voltage to %d mV"%(("0, 1","2, 3")[sub_pair],voltage_mv))    
         time.sleep(0.1)
 
-    def setupSensorsPower(self, ifaceType,  pairs = "all", quiet=0):
+    def setupSensorsPower(self, ifaceType,  pairs = "all", quiet=0, dly=0.1):
+        """
+        Set interface voltage and turn on power for interface and the sensors
+        according to sensor type 
+        @param pairs - 'all' or list/tuple of pairs of the sensors: 0 - sensors 1 and 2, 1 - sensors 3 and 4 
+        @param quiet - reduce output        
+        @param dly - debug feature: step delay in sec        
+        """
         try:
             if (pairs == all) or (pairs[0].upper() == "A"): #all is a built-in function
                 pairs = (0,1)
@@ -288,44 +300,39 @@ class X393SensCmprs(object):
         if not isinstance(pairs,(list,tuple)):
             pairs = (pairs,)
         for pair in pairs:            
-            self.setSensorIfaceVoltagePower(pair, SENSOR_INTERFACES[ifaceType]["mv"])
+            self.setSensorIfaceVoltagePower(sub_pair =   pair,
+                                            voltage_mv = SENSOR_INTERFACES[ifaceType]["mv"],
+                                            quiet =      quiet,
+                                            dly =        dly)
         
-    def setSensorIfaceVoltagePower(self, sub_pair, voltage_mv, quiet=0):
+    def setSensorIfaceVoltagePower(self, sub_pair, voltage_mv, quiet=0, dly=0.1):
         """
         Set interface voltage and turn on power for interface and the sensors 
         @param sub_pair - pair of the sensors: 0 - sensors 1 and 2, 1 - sensors 3 and 4 
         @param voltage_mv - desired interface voltage (1800..2800 mv) 
         @param quiet - reduce output        
+        @param dly - debug feature: step delay in sec        
         """
         self.setSensorPower(sub_pair = sub_pair, power_on = 0)
-        time.sleep(0.2)
+        time.sleep(2*dly)
         self.setSensorIfaceVoltage(sub_pair=sub_pair, voltage_mv = voltage_mv)
-        time.sleep(0.2)
+        time.sleep(2*dly)
         if self.DRY_MODE:
             print ("Not defined for simulation mode")
             return
         if quiet == 0:
             print ("Turning on interface power %f V for sensors %s"%(voltage_mv*0.001,("0, 1","2, 3")[sub_pair]))    
-        time.sleep(0.3)
+        time.sleep(3*dly)
         with open (POWER393_PATH + "/channels_en","w") as f:
             print(("vcc_sens01", "vcc_sens23")[sub_pair], file = f)
         if quiet == 0:
             print ("Turned on interface power %f V for sensors %s"%(voltage_mv*0.001,("0, 1","2, 3")[sub_pair]))    
-        time.sleep(0.3)
+        time.sleep(3*dly)
         with open (POWER393_PATH + "/channels_en","w") as f:
             print(("vp33sens01", "vp33sens23")[sub_pair], file = f)
         if quiet == 0:
             print ("Turned on +3.3V power for sensors %s"%(("0, 1","2, 3")[sub_pair]))    
-        time.sleep(0.2)
-#        for sub_pair in (0,1):
-#                self.setSensorIfaceVoltagePower(sub_pair, SENSOR_INTERFACES[ifaceType]["mv"])
-
-#    def getSensorInterfaceType(self):
-#        """
-#        Get sensor interface type by reading status register 0xfe that is set to 0 for parallel and 1 for HiSPi
-#        @return "PAR12" or "HISPI"
-#        """
-#        return (SENSOR_INTERFACE_PARALLEL, SENSOR_INTERFACE_HISPI)[self.x393_axi_tasks.read_status(address=0xfe)] # "PAR12" , "HISPI"
+        time.sleep(2*dly)
 
 
     def setupSensorsPowerClock(self, setPower=False, quiet=0):

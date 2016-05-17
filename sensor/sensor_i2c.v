@@ -378,7 +378,7 @@ module  sensor_i2c#(
       if      (reset_on)      page_r <= 0;
       else if (page_r_inc[0]) page_r <= page_r+1;
 `else
-      if      (reset_on)      page_r <= frame_num_seq;
+      if      (sync_to_seq)   page_r <= frame_num_seq;
       else if (page_r_inc[0]) page_r <= page_r+1;
 `endif
 
