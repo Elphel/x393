@@ -81,6 +81,7 @@ module  cmprs_afi_mux_ptr(
     wire [26:0] chunks_to_rollover;
     
     reg   [3:0] chunks_to_rollover_r;   // [3] >=8 
+// SuppressWarnings VEditor unused 
     wire  [3:0] chunks_to_rollover_m1;
     wire  [3:0] pre_chunks_to_rollover_m1;
     reg         max_inc_ram_we;

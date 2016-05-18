@@ -153,6 +153,7 @@ module  mcntrl_linear_rw #(
     reg                           xfer_start_wr_r;
     reg     [PAR_MOD_LATENCY-1:0] par_mod_r;
     reg     [PAR_MOD_LATENCY-1:0] recalc_r; // 1-hot CE for re-calculating registers
+// SuppressWarnings VEditor unused 
     wire                          calc_valid;   // calculated registers have valid values   
     wire                          chn_en;   // enable requests by channel (continue ones in progress), enable frame_start inputs
     wire                          chn_rst; // resets command, including fifo;

@@ -317,6 +317,7 @@ module  jp_channel#(
 //TODO: use next signals for status
     wire          stuffer_running_mclk;
     wire          reading_frame;
+// SuppressWarnings VEditor unused 
     wire          frame_started_mclk;// store frame number ? Wrong, frame number should come from the sensor channel
     reg           stuffer_running_mclk_d;          
     reg [LAST_FRAME_BITS-1:0] frame_number_started;   // valid when stuffer started

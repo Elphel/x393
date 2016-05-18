@@ -25,6 +25,7 @@ module  frame_num_sync  #(
     parameter LAST_FRAME_BITS = 16,
     parameter FRAME_BITS_KEEP = 4    // number of bits from mcntrl frame number used to index absolute sensor frame number 
 )(
+// SuppressWarnings VEditor unused 
     input                             mrst,
     input                             mclk, // for command/status
     input      [NUM_FRAME_BITS*4-1:0] absolute_frames,          // per-channel current sensor frame number
