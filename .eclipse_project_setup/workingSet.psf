@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<psf version="2.0">
+<provider id="org.eclipse.egit.core.GitProvider">
+<project reference="1.0,git@github.com:Elphel/x393.git,master,."/>
+</provider>
+<workingSets editPageId="org.eclipse.ui.resourceWorkingSetPage" id="1463524167790_1" label="x393_files" name="x393_files">
+<item factoryID="org.eclipse.ui.internal.model.ResourceFactory" path="/x393/x393_global.tcl" type="1"/>
+<item factoryID="org.eclipse.ui.internal.model.ResourceFactory" path="/x393/helpers" type="2"/>
+<item factoryID="org.eclipse.ui.internal.model.ResourceFactory" path="/x393/timing" type="2"/>
+<item factoryID="org.eclipse.ui.internal.model.ResourceFactory" path="/x393/x393_timing.tcl" type="1"/>
+<item factoryID="org.eclipse.ui.internal.model.ResourceFactory" path="/x393/compressor_jp" type="2"/>
+<item factoryID="org.eclipse.ui.internal.model.ResourceFactory" path="/x393/axi" type="2"/>
+<item factoryID="org.eclipse.ui.internal.model.ResourceFactory" path="/x393/fpga_version.vh" type="1"/>
+<item factoryID="org.eclipse.ui.internal.model.ResourceFactory" path="/x393/memctrl" type="2"/>
+<item factoryID="org.eclipse.ui.internal.model.ResourceFactory" path="/x393/cmd_readback.v" type="1"/>
+<item factoryID="org.eclipse.ui.internal.model.ResourceFactory" path="/x393/system_defines.vh" type="1"/>
+<item factoryID="org.eclipse.ui.internal.model.ResourceFactory" path="/x393/x393_testbench03.tf" type="1"/>
+<item factoryID="org.eclipse.ui.internal.model.ResourceFactory" path="/x393/wrap" type="2"/>
+<item factoryID="org.eclipse.ui.internal.model.ResourceFactory" path="/x393/logger" type="2"/>
+<item factoryID="org.eclipse.ui.internal.model.ResourceFactory" path="/x393/x393.v" type="1"/>
+<item factoryID="org.eclipse.ui.internal.model.ResourceFactory" path="/x393/status_read.v" type="1"/>
+<item factoryID="org.eclipse.ui.internal.model.ResourceFactory" path="/x393/includes" type="2"/>
+<item factoryID="org.eclipse.ui.internal.model.ResourceFactory" path="/x393/sensor" type="2"/>
+<item factoryID="org.eclipse.ui.internal.model.ResourceFactory" path="/x393/x393_placement.tcl" type="1"/>
+<item factoryID="org.eclipse.ui.internal.model.ResourceFactory" path="/x393/input_data" type="2"/>
+<item factoryID="org.eclipse.ui.internal.model.ResourceFactory" path="/x393/util_modules" type="2"/>
+<item factoryID="org.eclipse.ui.internal.model.ResourceFactory" path="/x393/cmd_mux.v" type="1"/>
+</workingSets>
+</psf>
