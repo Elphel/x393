@@ -1,8 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <psf version="2.0">
-<provider id="org.eclipse.egit.core.GitProvider">
-<project reference="1.0,git@github.com:Elphel/x393.git,master,."/>
-</provider>
 <workingSets editPageId="org.eclipse.ui.resourceWorkingSetPage" id="1463524167790_1" label="x393_files" name="x393_files">
 <item factoryID="org.eclipse.ui.internal.model.ResourceFactory" path="/x393/x393_global.tcl" type="1"/>
 <item factoryID="org.eclipse.ui.internal.model.ResourceFactory" path="/x393/helpers" type="2"/>
