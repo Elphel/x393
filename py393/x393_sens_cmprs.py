@@ -284,7 +284,7 @@ class X393SensCmprs(object):
             print ("Set sensors %s interface voltage to %d mV"%(("0, 1","2, 3")[sub_pair],voltage_mv))    
         time.sleep(0.1)
 
-    def setupSensorsPower(self, ifaceType,  pairs = "all", quiet=0, dly=0.1):
+    def setupSensorsPower(self, ifaceType,  pairs = "all", quiet=0, dly=0.0):
         """
         Set interface voltage and turn on power for interface and the sensors
         according to sensor type 
@@ -305,7 +305,7 @@ class X393SensCmprs(object):
                                             quiet =      quiet,
                                             dly =        dly)
         
-    def setSensorIfaceVoltagePower(self, sub_pair, voltage_mv, quiet=0, dly=0.1):
+    def setSensorIfaceVoltagePower(self, sub_pair, voltage_mv, quiet=0, dly=0.0):
         """
         Set interface voltage and turn on power for interface and the sensors 
         @param sub_pair - pair of the sensors: 0 - sensors 1 and 2, 1 - sensors 3 and 4 
