@@ -42,3 +42,6 @@ py393/x393_mcntrl_adjust.py.dbg
 x393_testbench03_01.sav
 simulation_data/*.dat
 simulation_data/*.jpeg
+#these two project files are now in .eclipse_project_setup directory
+.project
+.pydevproject
