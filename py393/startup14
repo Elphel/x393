@@ -5,10 +5,10 @@
 -p PICKLE="/usr/local/verilog/x393_mcntrl.pickle
 -c copy /usr/local/bin/imgsrv.py /www/pages
 -c bitstream_set_path /usr/local/verilog/x393_hispi.bit
--c setupSensorsPower "PAR12"
+-c setupSensorsPower "HISPI"
 -c measure_all "*DI"
 -c setup_all_sensors True None 0xf
--c compressor_control  all  None  None  None None None  3
+-c compressor_control  all  None  None  None None None  2
 -c program_gamma all 0 0.57 0.04
 -c set_qtables all 0 80
 -c write_sensor_i2c all 1 0 0x030600b4
