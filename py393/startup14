@@ -11,6 +11,10 @@
 -c compressor_control  all  None  None  None None None  2
 -c program_gamma all 0 0.57 0.04
 -c set_qtables all 0 80
+-c write_sensor_i2c 0 1 0 0x31c08db6
+-c write_sensor_i2c 1 1 0 0x31c08000
+-c write_sensor_i2c 2 1 0 0x31c08fff
+-c write_sensor_i2c 3 1 0 0x31c08db6
 -c write_sensor_i2c all 1 0 0x030600b4
 -c write_sensor_i2c all 1 0 0x31c68400
 -c write_sensor_i2c all 1 0 0x306e9280
