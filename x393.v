@@ -378,6 +378,12 @@ module  x393 #(
     wire                        status_clocks_rq; // Other status request   
     wire                        status_clocks_start;  // S uppressThisWarning VEditor ****** Other status packet transfer start (currently with 0 latency from status_root_rq)
 
+`ifdef DEBUG_SENS_MEM_PAGES
+    wire                  [7:0] dbg_rpage;   
+    wire                  [7:0] dbg_wpage;   
+`endif              
+
+
 `ifdef DEBUG_RING
     wire                  [7:0] status_debug_ad; // saxi1 - logger data Other status byte-wide address/data
     wire                        status_debug_rq; // Other status request   
@@ -474,8 +480,9 @@ module  x393 #(
 
     wire                 [63:0] gpio_in;
     
-    // signals for sensor393 (in/outs as sseen for the sensor393)
+    // signals for sensor393 (in/outs as seen for the sensor393)
     wire                  [3:0] sens_rpage_set;  //    (), // input
+    wire                  [3:0] sens_frame_run;  // @mclk from mcntrl393 - enable data to memory buffer
     wire                  [3:0] sens_rpage_next; //    (), // input
     wire                  [3:0] sens_buf_rd;     //    (), // input
     wire                [255:0] sens_buf_dout;   //    (), // output[63:0] 
@@ -1312,6 +1319,7 @@ assign axi_grst = axi_rst_pre;
 
 // sensors interface
         .sens_sof                  (sof_out_mclk),               // input[3:0]  // Early start of frame pulses (@mclk)
+        .sens_frame_run            (sens_frame_run),             // output[3:0] @mclk - enable data to memory buffer
         .sens_rpage_set            (sens_rpage_set),             // output[3:0] 
         .sens_rpage_next           (sens_rpage_next),            // output[3:0] 
         .sens_buf_rd               (sens_buf_rd),                // output[3:0] 
@@ -1319,6 +1327,10 @@ assign axi_grst = axi_rst_pre;
         .sens_page_written         (sens_page_written),          // input [3:0] single mclk pulse: buffer page (full or partial) is written to the memory buffer 
         .sens_xfer_skipped         (sens_xfer_skipped),          // output reg
         .sens_first_wr_in_frame    (sens_first_wr_in_frame),     // single mclk pulse on first write block in each frame
+`ifdef DEBUG_SENS_MEM_PAGES
+        .dbg_rpage                 (dbg_rpage[7:0]),             // input[7:0]   
+        .dbg_wpage                 (dbg_wpage[7:0]),             // input[7:0]   
+`endif              
         
 // compressor interface
         .cmprs_xfer_reset_page_rd  (cmprs_xfer_reset_page_rd),   // output[3:0] 
@@ -1352,8 +1364,7 @@ assign axi_grst = axi_rst_pre;
         .xfer_reset_page1_wr       (xfer_reset_page1_wr),        // output
         .rpage_nxt_chn1            (rpage_nxt_chn1),             // output
         .buf_rd_chn1               (buf_rd_chn1),                // output
-        .buf_rdata_chn1            (buf_rdata_chn1[63:0]),       // input[63:0] 
-        
+        .buf_rdata_chn1            (buf_rdata_chn1[63:0]),       // input[63:0]
         .frame_start_chn2          (frame_start_chn2),           // input
         .next_page_chn2            (next_page_chn2),             // input
         .page_ready_chn2           (page_ready_chn2),            // output
@@ -1834,6 +1845,7 @@ assign axi_grst = axi_rst_pre;
         .sns_ctl           ({sns4_ctl, sns3_ctl, sns2_ctl, sns1_ctl}),         // inout
         .sns_pg            ({sns4_pg, sns3_pg, sns2_pg, sns1_pg}),             // inout
 `endif
+        .frame_run_mclk     (sens_frame_run),      // input [3:0] - enable sensor data to memory buffer
         .rpage_set          (sens_rpage_set),      // input
         .rpage_next         (sens_rpage_next),     // input
         .buf_rd             (sens_buf_rd),         // input
@@ -1876,6 +1888,11 @@ assign axi_grst = axi_rst_pre;
         .saxi_bready        (saxi0_bready),        // output
         .saxi_bid           (saxi0_bid),           // input[5:0] 
         .saxi_bresp         (saxi0_bresp)          // input[1:0]
+`ifdef DEBUG_SENS_MEM_PAGES
+       ,.dbg_rpage          (dbg_rpage[7:0])       // output[7:0]   
+       ,.dbg_wpage          (dbg_wpage[7:0])       // output[7:0]   
+`endif              
+        
 `ifdef DEBUG_RING       
         ,.debug_do          (debug_ring[0]),       // output
         .debug_sl           (debug_sl),            // input

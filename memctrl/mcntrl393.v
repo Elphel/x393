@@ -305,6 +305,7 @@ module  mcntrl393 #(
 
     // sensor subsystem interface
     input                      [3:0] sens_sof, //     // single mclk pulse, start of frame (early)
+    output                     [3:0] sens_frame_run,  // output @ mclk - enable data to memory buffer
     output                     [3:0] sens_rpage_set,  //    (), // input
     output                     [3:0] sens_rpage_next, // output to control memory side of the buffer during write to memory
     output                     [3:0] sens_buf_rd,     //    (), // input
@@ -312,6 +313,11 @@ module  mcntrl393 #(
     input                      [3:0] sens_page_written, //  single mclk pulse: buffer page (full or partial) is written to the memory buffer 
     output                     [3:0] sens_xfer_skipped, // single mclk pulse on each bit indicating one skipped (not written) block.
     output reg                 [3:0] sens_first_wr_in_frame, // single mclk pulse on first write block in each frame
+`ifdef DEBUG_SENS_MEM_PAGES
+    input            [2 * 4 - 1 : 0] dbg_rpage,
+    input            [2 * 4 - 1 : 0] dbg_wpage,
+`endif
+    
     // compressor subsystem interface
     // Buffer interfaces, combined for 4 channels 
     output                     [3:0] cmprs_xfer_reset_page_rd, // from mcntrl_tiled_rw (
@@ -1104,6 +1110,7 @@ module  mcntrl393 #(
                 .status_rq        (status_sens_rq[i]),          // output
                 .status_start     (status_sens_start[i]),       // input
                 .frame_start      (sens_sof[i]),                // input
+                .frame_run        (sens_frame_run[i]),          // output
                 .next_page        (sens_page_written[i]) ,      // Sensor has written next buffer page (full or partial)
                 .frame_done       (cmprs_frame_done_src[i]),    // output
                 .frame_finished       (), // output
@@ -1126,6 +1133,10 @@ module  mcntrl393 #(
                 .xfer_page_rst_rd (), // output @ negedge mclk
                 .xfer_skipped     (sens_xfer_skipped[i]),       // output reg
                 .cmd_wrmem        () // output
+`ifdef DEBUG_SENS_MEM_PAGES
+                ,.dbg_rpage        (dbg_rpage[2*i +:2])         // input[1:0]   
+                ,.dbg_wpage        (dbg_wpage[2*i +:2])         // input[1:0]   
+`endif              
             );
             
                mcntrl_tiled_rw #(
@@ -1244,6 +1255,7 @@ module  mcntrl393 #(
         .status_rq        (status_scanline_chn1_rq), // output
         .status_start     (status_scanline_chn1_start), // input
         .frame_start      (frame_start_chn1), // input
+        .frame_run        (),                           // output
         .next_page        (next_page_chn1), // input
         .frame_done       (frame_done_chn1), // output
         .frame_finished     (), // output
@@ -1266,6 +1278,11 @@ module  mcntrl393 #(
         .xfer_page_rst_rd (xfer_reset_page1_rd), // output
         .xfer_skipped     (), // output reg
         .cmd_wrmem        (cmd_wrmem_chn1) // output
+`ifdef DEBUG_SENS_MEM_PAGES
+        ,.dbg_rpage        ()         // input[1:0]   
+        ,.dbg_wpage        ()         // input[1:0]   
+`endif              
+        
     );
 
     mcntrl_linear_rw #(
@@ -1308,6 +1325,7 @@ module  mcntrl393 #(
         .status_rq        (status_scanline_chn3_rq), // output
         .status_start     (status_scanline_chn3_start), // input
         .frame_start      (frame_start_chn3), // input
+        .frame_run        (),                           // output
         .next_page        (next_page_chn3), // input
         .frame_done       (frame_done_chn3), // output
         .frame_finished       (), // output
@@ -1330,6 +1348,10 @@ module  mcntrl393 #(
         .xfer_page_rst_rd (xfer_reset_page3_rd), // output
         .xfer_skipped     (), // output reg
         .cmd_wrmem        () // output
+`ifdef DEBUG_SENS_MEM_PAGES
+        ,.dbg_rpage        ()         // input[1:0]   
+        ,.dbg_wpage        ()         // input[1:0]   
+`endif              
     );
     
        mcntrl_tiled_rw #(

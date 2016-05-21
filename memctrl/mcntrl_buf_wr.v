@@ -46,7 +46,7 @@ module  mcntrl_buf_wr #(
       input                     [1:0] rpage_in,     // will register to wclk, input OK with mclk
       input                           rpage_set,    // set internal read page to rpage_in 
       input                           page_next,    // advance to next page (and reset lower bits to 0)
-      output                    [1:0] page,         // current inernal page   
+      output                    [1:0] page,         // current internal page   
       input                           rd,           // read buffer to memory, increment read address (regester enable will be delayed)
       output                   [63:0] data_out      // data out
 

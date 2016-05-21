@@ -257,6 +257,38 @@ class X393AxiControlStatus(object):
         <addr> - status register address (currently 0..255)
         """
         return self.x393_mem.axi_read_addr_w(vrlg.STATUS_ADDR + address )
+    
+    def rpt_read_status(self, address, num_rep = 10, verbose = 1): # was read_and_wait_status
+        """
+        Read word from the status register multiple times (up to 26 bits payload and 6-bit sequence number)
+        @param addr - status register address (currently 0..255)
+        @param num_rep - number of times to read register
+        @param verbose - verbose level (0 - silent, >0 - print hex results)
+        """
+        rslt = []
+        for _ in range(num_rep):
+            rslt.append(self.read_status(address = address))
+        if (verbose > 0):
+            for i, v in enumerate(rslt):
+#                print("%3d: %08x (0x%06x %x 0x%02x"%(i, v, v & 0xffffff, (v >> 24) & 3, (v >> 26) & 0x3f))    
+                print("%3d: %08x (0x%06x) rpage=%x wpage=%x p_xfs=%x npg=%x snp=%x rpt=%x sngl=%x bsy=%x prewant=%x pgcnt=%x fren=%x bsy=%x done=%x"%(
+                        i, v, v & 0xffffff,
+                        (v >> 0) & 3,  # rpage
+                        (v >> 2) & 3,  # wpage
+                        (v >> 4) & 3,  # pening_xfers
+                        (v >> 6) & 3,  # dbg_nxt_page (counting next_page signals)
+                        (v >> 8) & 3,  # dbg_cnt_snp - count start_not_partial
+                        (v >>10) & 1,  # repeat frames
+                        (v >>11) & 1,  # single frames
+                        (v >>12) & 3,  # dbg_busy - count busy _/~
+                        (v >>14) & 3,  # dbg_prewant - count pre_want_r1 _/~
+                        (v >>16) & 7,  # page_cntr - up/down counter
+                        (v >>19) & 1,  # frame_en
+                        (v >>24) & 1,  # bsy
+                        (v >>25) & 1 ))#done    
+        return rslt    
+#    assign status_data= {frame_finished_r, busy_r};     // TODO: Add second bit?
+    
     def wait_status_condition(self,
                               status_address,         # input [STATUS_DEPTH-1:0] status_address;
                               status_control_address, # input [29:0] status_control_address;

@@ -334,8 +334,8 @@ module  sensors393 #(
 `ifdef HISPI    
     input  [15:0] sns_dp,
     input  [15:0] sns_dn,
-    inout  [15:0] sns_dp74,
-    inout  [15:0] sns_dn74,
+    inout  [15:0] sns_dp74, // SuppressThisWarning all - unused yet
+    inout  [15:0] sns_dn74, // SuppressThisWarning all - unused yet
     input   [3:0] sns_clkp, // SuppressThisWarning all - input-only in HiSPi mode
     input   [3:0] sns_clkn, // SuppressThisWarning all - input-only in HiSPi mode
 `else
@@ -355,9 +355,10 @@ module  sensors393 #(
     inout   [3:0] sns_pg,
     
     // Memory interface (4 channels)
+    input    [3:0] frame_run_mclk, // input [3:0] - enable sensor data to memory buffer
     input    [3:0] rpage_set,    // set internal read page to rpage_in (reset pointers)
     input    [3:0] rpage_next,   // advance to next page (and reset lower bits to 0)
-    input    [3:0] buf_rd,       // read buffer to memory, increment read address (regester enable will be delayed)
+    input    [3:0] buf_rd,       // read buffer to memory, increment read address (register enable will be delayed)
     output [255:0] buf_dout,     // data out 
     output   [3:0] page_written, // single mclk pulse: buffer page (full or partial) is written to the memory buffer 
     
@@ -404,6 +405,11 @@ module  sensors393 #(
     output                     saxi_bready,            // AXI PS Slave GP0 BREADY, input
     input               [ 5:0] saxi_bid,               // AXI PS Slave GP0 BID[5:0], output
     input               [ 1:0] saxi_bresp              // AXI PS Slave GP0 BRESP[1:0], output
+`ifdef DEBUG_SENS_MEM_PAGES
+    ,output [2 * 4 - 1 : 0] dbg_rpage   
+    ,output [2 * 4 - 1 : 0] dbg_wpage   
+`endif              
+    
 `ifdef DEBUG_RING       
     ,output                       debug_do, // output to the debug ring
      input                        debug_sl, // 0 - idle, (1,0) - shift, (1,1) - load
@@ -437,8 +443,9 @@ module  sensors393 #(
     wire             [3:0] hist_dvalid;
     wire           [127:0] hist_data;
     
-    
     wire  [4*NUM_FRAME_BITS-1:0] frame_num = {frame_num3, frame_num2, frame_num1, frame_num0};
+     
+     
      
     
     always @ (posedge mclk) begin
@@ -697,18 +704,23 @@ module  sensors393 #(
             sensor_membuf #(
                 .WADDR_WIDTH(9)
             ) sensor_membuf_i (
-                .pclk         (pclk),                    // input
-                .prst         (prst),                    // input
-                .mrst         (mrst),                    // input
-                .px_data      (px_data[16 * i +: 16]),   // input[15:0] 
-                .px_valid     (px_valid[i]),             // input
-                .last_in_line (last_in_line[i]),         // input
-                .mclk         (mclk),                    // input
-                .rpage_set    (rpage_set[i]),            // input
-                .rpage_next   (rpage_next[i]),           // input
-                .buf_rd       (buf_rd[i]),               // input
-                .buf_dout     (buf_dout[64*i +: 64]),    // output[63:0]
-                .page_written(page_written[i]) // output reg  single mclk pulse: buffer page (full or partial) is written to the memory buffer 
+                .pclk          (pclk),                    // input
+                .prst          (prst),                    // input
+                .mrst          (mrst),                    // input
+                .frame_run_mclk(frame_run_mclk[i]),       // input    @mclk - memory channel is ready to accept data from the sensor
+                .px_data       (px_data[16 * i +: 16]),   // input[15:0] 
+                .px_valid      (px_valid[i]),             // input
+                .last_in_line  (last_in_line[i]),         // input
+                .mclk          (mclk),                    // input
+                .rpage_set     (rpage_set[i]),            // input
+                .rpage_next    (rpage_next[i]),           // input
+                .buf_rd        (buf_rd[i]),               // input
+                .buf_dout      (buf_dout[64*i +: 64]),    // output[63:0]
+                .page_written (page_written[i]) // output reg  single mclk pulse: buffer page (full or partial) is written to the memory buffer 
+`ifdef DEBUG_SENS_MEM_PAGES
+               ,.dbg_rpage     (dbg_rpage[2 * i +: 2])   
+               ,.dbg_wpage     (dbg_wpage[2 * i +: 2])   
+`endif              
             );
         end
     endgenerate

@@ -84,6 +84,7 @@ module  mcntrl_linear_rw #(
     input                          status_start,   // acknowledge of address (first byte) from downsteram   
 
     input                          frame_start,   // resets page, x,y, and initiates transfer requests (in write mode will wait for next_page)
+    output                         frame_run,     // @mclk - enable pixels from sesnor to memory buffer
     input                          next_page,     // page was read/written from/to 4*1kB on-chip buffer
 //    output                         page_ready,    // == xfer_done, connect externally | Single-cycle pulse indicating that a page was read/written from/to DDR3 memory
     output                         frame_done,    // single-cycle pulse when the full frame (window) was transferred to/from DDR3 memory
@@ -109,6 +110,13 @@ module  mcntrl_linear_rw #(
     output                         xfer_page_rst_rd, // reset buffer internal page - at each frame start or when specifically reset (read memory channel), @negedge
     output reg                     xfer_skipped,
     output                         cmd_wrmem
+
+`ifdef DEBUG_SENS_MEM_PAGES
+    ,input                 [1 : 0] dbg_rpage
+    ,input                 [1 : 0] dbg_wpage
+`endif
+    
+    
 );
     localparam NUM_RC_BURST_BITS=ADDRESS_NUMBER+COLADDR_NUMBER-3;  //to spcify row and col8 == 22
     localparam MPY_WIDTH=        NUM_RC_BURST_BITS; // 22
@@ -249,6 +257,8 @@ module  mcntrl_linear_rw #(
     
     assign single_frame_w =  cmd_we && (cmd_a== MCNTRL_SCANLINE_MODE) && cmd_data[MCONTR_LINTILE_SINGLE];
     assign rst_frame_num_w = cmd_we && (cmd_a== MCNTRL_SCANLINE_MODE) && cmd_data[MCONTR_LINTILE_RST_FRAME];
+    
+    assign frame_run = busy_r;
     
     // Set parameter registers
     always @(posedge mclk) begin
@@ -597,17 +607,60 @@ wire    start_not_partial= xfer_start_r[0] && !xfer_limited_by_mem_page_r;
         .data       (cmd_data),  // output[31:0] 
         .we         (cmd_we)     // output
     );
+  `ifdef DEBUG_SENS_MEM_PAGES   
+      reg [1:0] dbg_cnt_snp;
+      reg [1:0] dbg_nxt_page;
+      reg       dbg_busy_r2;
+      reg       dbg_pre_want_r1;
+      reg [1:0] dbg_busy; // busy is toggling
+      reg [1:0] dbg_prewant; // pre_want_r1 is toggling
+      
+      //        else if (!start_not_partial &&  next_page) page_cntr <= page_cntr + 1;
+      always @ (posedge mclk) begin
+        if      (mrst)              dbg_cnt_snp <= 0;
+        else if (start_not_partial) dbg_cnt_snp <= dbg_cnt_snp + 1;
 
+        if      (mrst)              dbg_nxt_page <= 0;
+        else if (next_page)         dbg_nxt_page <= dbg_nxt_page + 1;
+
+        if      (mrst)              dbg_nxt_page <= 0;
+        else if (next_page)         dbg_nxt_page <= dbg_nxt_page + 1;
+        
+        dbg_busy_r2 <= busy_r;
+        dbg_pre_want_r1 <=pre_want_r1;
+        
+        if      (mrst)                   dbg_busy <= 0;
+        else if (busy_r && !dbg_busy_r2) dbg_busy <=  dbg_busy + 1;
+
+        if      (mrst)                            dbg_prewant <= 0;
+        else if (pre_want_r1 && !dbg_pre_want_r1) dbg_prewant <=  dbg_prewant + 1;
+      end
+      
+  `endif
+    
     status_generate #(
         .STATUS_REG_ADDR  (MCNTRL_SCANLINE_STATUS_REG_ADDR),
+  `ifdef DEBUG_SENS_MEM_PAGES   
+        .PAYLOAD_BITS     (2 + 2 +2 + 2 + 2 + 2 +2 + 3 + 3 + MCNTRL_SCANLINE_PENDING_CNTR_BITS)
+  `else   
         .PAYLOAD_BITS     (2)
+  `endif   
     ) status_generate_i (
         .rst              (1'b0),          //rst), // input
         .clk              (mclk),          // input
         .srst             (mrst),          // input
         .we               (set_status_w),  // input
         .wd               (cmd_data[7:0]), // input[7:0] 
+  `ifdef DEBUG_SENS_MEM_PAGES   
+        .status           ({frame_en,        page_cntr[2:0],   
+                           dbg_prewant[1:0], dbg_busy[1:0],
+                           single_frame_r, repeat_frames, dbg_cnt_snp[1:0],
+                           dbg_nxt_page[1:0], pending_xfers[1:0],
+                           dbg_wpage[1:0], dbg_rpage[1:0],
+                           status_data}),   // input[25:0] 
+  `else   
         .status           (status_data),   // input[25:0] 
+  `endif   
         .ad               (status_ad),     // output[7:0] 
         .rq               (status_rq),     // output
         .start            (status_start)   // input

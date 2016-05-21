@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.3.66 (w)1999-2015 BSI
-[*] Sat May 14 06:38:56 2016
+[*] Sat May 21 05:03:06 2016
 [*]
 [dumpfile] "/home/andrey/git/x393/simulation/x393_testbench03-20160513194544675.fst"
 [dumpfile_mtime] "Sat May 14 02:32:17 2016"
 [dumpfile_size] 169964391
 [savefile] "/home/andrey/git/x393/x393_testbench04.sav"
-[timestart] 42957700
+[timestart] 0
 [size] 1823 1180
 [pos] 0 0
-*-15.461116 43097388 209370000 209396667 209423333 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-25.461117 43097388 209370000 209396667 209423333 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] x393_testbench03.
 [treeopen] x393_testbench03.read_compressor_frame_irq.
 [treeopen] x393_testbench03.read_contol_register_irq.
@@ -33,9 +33,10 @@
 [treeopen] x393_testbench03.x393_i.compressor393_i.genblk3.cmprs_afi0_mux_i.cmprs_afi_mux_status_i.status_generate1_i.genblk2.status_generate_only_i.
 [treeopen] x393_testbench03.x393_i.frame_sequencer_block[0].
 [treeopen] x393_testbench03.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.
+[treeopen] x393_testbench03.x393_i.mcntrl393_i.
+[treeopen] x393_testbench03.x393_i.mcntrl393_i.sens_comp_block[0].
 [treeopen] x393_testbench03.x393_i.sensors393_i.
 [treeopen] x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].
-[treeopen] x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.
 [treeopen] x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.
 [treeopen] x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.
 [treeopen] x393_testbench03.x393_i.sensors393_i.sensor_channel_block[1].
@@ -255,7 +256,7 @@ x393_testbench03.sim_cmprs3_addr[31:0]
 x393_testbench03.sim_cmprs3_data[63:0]
 @1000200
 -sim_afi1
-@800200
+@c00200
 -sim_soc_interrupts
 @28
 x393_testbench03.sim_soc_interrupts_i.rst
@@ -318,7 +319,7 @@ x393_testbench03.sim_soc_interrupts_i.inta[8:0]
 -group_end
 @200
 -
-@1000200
+@1401200
 -sim_soc_interrupts
 @c00200
 -interrupts
@@ -909,6 +910,8 @@ x393_testbench03.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.wpage_asa
 x393_testbench03.x393_i.frame_num[15:0]
 @1401200
 -interrupts
+@c00200
+-other_dbg
 @c00022
 x393_testbench03.x393_i.cmd_seq_mux_i.status_generate_cmd_seq_mux_i.status[25:0]
 @28
@@ -1014,6 +1017,7 @@ x393_testbench03.read_status_irq.rslt[31:0]
 (31)x393_testbench03.read_status_irq.rslt[31:0]
 @1401200
 -group_end
+-other_dbg
 @c00200
 -all_sensor_data
 @22
@@ -1388,7 +1392,7 @@ x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.se
 -i2c
 @1401200
 -frame_numbers
-@800200
+@c00200
 -sensor_i2c-0
 @28
 x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.mclk
@@ -1429,15 +1433,128 @@ x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.se
 @22
 x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.wpage_wr[3:0]
 x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.fifo_wr_pointers_outw[5:0]
-@23
 x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.fifo_wr_pointers_outw_r[5:0]
-@22
 x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.fifo_wr_pointers_next[5:0]
 x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.page_r[3:0]
 @28
 x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.sync_to_seq
 x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.reset_on
-@1000200
+@1401200
 -sensor_i2c-0
+@800200
+-sensor_memory
+-top
+@800022
+x393_testbench03.x393_i.sens_rpage_set[3:0]
+@28
+(0)x393_testbench03.x393_i.sens_rpage_set[3:0]
+(1)x393_testbench03.x393_i.sens_rpage_set[3:0]
+(2)x393_testbench03.x393_i.sens_rpage_set[3:0]
+(3)x393_testbench03.x393_i.sens_rpage_set[3:0]
+@1001200
+-group_end
+@1000200
+-top
+@800200
+-mcntrl393
+@22
+x393_testbench03.x393_i.mcntrl393_i.sens_rpage_set[3:0]
+@800200
+-mcntrl_linear_wr_sensor
+@28
+x393_testbench03.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_linear_wr_sensor_i.xfer_page_rst_wr
+x393_testbench03.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_linear_wr_sensor_i.xfer_page_rst_r
+@c00028
+x393_testbench03.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_linear_wr_sensor_i.page_cntr[2:0]
+@28
+(0)x393_testbench03.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_linear_wr_sensor_i.page_cntr[2:0]
+(1)x393_testbench03.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_linear_wr_sensor_i.page_cntr[2:0]
+(2)x393_testbench03.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_linear_wr_sensor_i.page_cntr[2:0]
+@1401200
+-group_end
+@28
+x393_testbench03.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_linear_wr_sensor_i.pending_xfers[1:0]
+x393_testbench03.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_linear_wr_sensor_i.busy_r
+x393_testbench03.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_linear_wr_sensor_i.xfer_page_rst_neg
+@29
+x393_testbench03.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_linear_wr_sensor_i.xfer_page_rst_pos
+@200
+-
+@1000200
+-mcntrl_linear_wr_sensor
+-mcntrl393
+@c00200
+-all_channels
+@c00022
+x393_testbench03.x393_i.sensors393_i.rpage_set[3:0]
+@28
+(0)x393_testbench03.x393_i.sensors393_i.rpage_set[3:0]
+(1)x393_testbench03.x393_i.sensors393_i.rpage_set[3:0]
+(2)x393_testbench03.x393_i.sensors393_i.rpage_set[3:0]
+(3)x393_testbench03.x393_i.sensors393_i.rpage_set[3:0]
+@1401200
+-group_end
+@c00022
+x393_testbench03.x393_i.sensors393_i.rpage_next[3:0]
+@28
+(0)x393_testbench03.x393_i.sensors393_i.rpage_next[3:0]
+(1)x393_testbench03.x393_i.sensors393_i.rpage_next[3:0]
+(2)x393_testbench03.x393_i.sensors393_i.rpage_next[3:0]
+(3)x393_testbench03.x393_i.sensors393_i.rpage_next[3:0]
+@1401200
+-group_end
+@c00022
+x393_testbench03.x393_i.sensors393_i.page_written[3:0]
+@28
+(0)x393_testbench03.x393_i.sensors393_i.page_written[3:0]
+(1)x393_testbench03.x393_i.sensors393_i.page_written[3:0]
+(2)x393_testbench03.x393_i.sensors393_i.page_written[3:0]
+(3)x393_testbench03.x393_i.sensors393_i.page_written[3:0]
+@1401200
+-group_end
+@c00022
+x393_testbench03.x393_i.sensors393_i.buf_rd[3:0]
+@28
+(0)x393_testbench03.x393_i.sensors393_i.buf_rd[3:0]
+(1)x393_testbench03.x393_i.sensors393_i.buf_rd[3:0]
+(2)x393_testbench03.x393_i.sensors393_i.buf_rd[3:0]
+(3)x393_testbench03.x393_i.sensors393_i.buf_rd[3:0]
+@1401200
+-group_end
+@22
+x393_testbench03.x393_i.sensors393_i.buf_dout[255:0]
+@1401200
+-all_channels
+@800200
+-chn0
+-sensor_membuf_0
+@28
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_membuf_i.pclk
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_membuf_i.prst
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_membuf_i.px_valid
+@22
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_membuf_i.px_data[15:0]
+@28
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_membuf_i.last_in_line
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_membuf_i.rpage_set
+@c00028
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_membuf_i.rst_pntr[2:0]
+@28
+(0)x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_membuf_i.rst_pntr[2:0]
+(1)x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_membuf_i.rst_pntr[2:0]
+(2)x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_membuf_i.rst_pntr[2:0]
+@1401200
+-group_end
+@28
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_membuf_i.rpage_next
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_membuf_i.buf_rd
+@22
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_membuf_i.buf_dout[63:0]
+@200
+-
+@1000200
+-sensor_membuf_0
+-chn0
+-sensor_memory
 [pattern_trace] 1
 [pattern_trace] 0

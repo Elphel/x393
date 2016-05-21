@@ -39,6 +39,7 @@ module  sensor_membuf #(
     input         pclk,
     input         prst,         // reset @ posedge pclk
     input         mrst,         // reset @ posedge mclk
+    input         frame_run_mclk, // @mclk - memory channel is ready to accept data from the sensor
     input  [15:0] px_data,      // @posedge pclk pixel (pixel pair) data from the sensor channel
     input         px_valid,     // px_data valid
     input         last_in_line, // valid with px_valid - last px_data in line
@@ -49,30 +50,42 @@ module  sensor_membuf #(
     input         buf_rd,       // read buffer to memory, increment read address (register enable will be delayed)
     output [63:0] buf_dout,     // data out
     output        page_written  // buffer page (full or partial) is written to the memory buffer 
-              
+`ifdef DEBUG_SENS_MEM_PAGES
+    ,output [1:0] dbg_rpage   
+    ,output [1:0] dbg_wpage   
+`endif              
 
 );
     
     reg              [1:0] wpage;
     reg  [WADDR_WIDTH-1:0] waddr;
     
-//    reg                    sim_rst = 1; // jsut for simulation - reset from system reset to the first rpage_set
+//    reg                    sim_rst = 1; // just for simulation - reset from system reset to the first rpage_set
     reg              [2:0] rst_pntr;
+    reg                    frame_run_pclk;
     wire                   rst_wpntr;
     wire                   inc_wpage_w;
+    wire                   px_use = frame_run_pclk && px_valid; // px valid and enabled by memory controller
     
-    assign inc_wpage_w = px_valid && (last_in_line || (&waddr));
+    
+`ifdef DEBUG_SENS_MEM_PAGES
+    assign dbg_wpage = dbg_wpage;   
+`endif              
+    
+    assign inc_wpage_w = px_use && (last_in_line || (&waddr));
     always @ (posedge mclk) begin
         rst_pntr <= {rst_pntr[1] &~rst_pntr[0], rst_pntr[0], rpage_set};
 //        if (rpage_set) sim_rst <= 0;
     end
     
     always @ (posedge pclk) begin
-        if (prst || rst_wpntr || (px_valid && last_in_line)) waddr <= 0;
-        else if (px_valid)                                   waddr <= waddr + 1;
+        if (prst || rst_wpntr || (px_use && last_in_line)) waddr <= 0;
+        else if (px_use)                                   waddr <= waddr + 1;
         
         if (prst || rst_wpntr) wpage <= 0;
         else if (inc_wpage_w)  wpage <=  wpage + 1;
+        
+        frame_run_pclk <= frame_run_mclk;
     end 
 
     pulse_cross_clock  rst_wpntr_i (
@@ -99,13 +112,17 @@ module  sensor_membuf #(
     ) chn1wr_buf_i (
         .ext_clk      (pclk),            // input
         .ext_waddr    ({wpage, waddr}),  // input[9:0] 
-        .ext_we       (px_valid),        // input
+        .ext_we       (px_use),        // input
         .ext_data_in  (px_data),         // input[15:0] buf_wdata - from AXI
         .rclk         (mclk),            // input
         .rpage_in     (2'b0),            // input[1:0] 
         .rpage_set    (rpage_set),       // input  @ posedge mclk
         .page_next    (rpage_next),      // input
+`ifdef DEBUG_SENS_MEM_PAGES
+        .page         (dbg_rpage),       // output[1:0]
+`else        
         .page         (),                // output[1:0]
+`endif              
         .rd           (buf_rd),          // input
         .data_out     (buf_dout)         // output[63:0] 
     );

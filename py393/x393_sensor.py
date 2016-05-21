@@ -949,7 +949,7 @@ class X393Sensor(object):
 
     def set_sensor_io_dly_hispi (self,
                                     num_sensor,
-                                    mmcm_phase = None,
+                                    mmcm_phase = None, #24 steps in 3ns period
                                     lane0_dly =  None,
                                     lane1_dly =  None,
                                     lane2_dly =  None,
@@ -1892,6 +1892,68 @@ input               mem                 mtd4                ram1                
         channel_page = page + num_histogram_frames * channel
         self.x393_axi_tasks.write_control_register(vrlg.SENSOR_GROUP_ADDR + vrlg.HIST_SAXI_ADDR_REL + channel,
                                                    channel_page)
+
+    def control_sensor_memory(self,
+                              num_sensor,
+                              command,
+                              reset_frame = False,
+                              verbose = 1):
+        """
+        Control memory access (write) of a sensor channel
+        @param num_sensor - memory sensor channel (or all)
+        @param command -    one of (case insensitive):
+               reset       - reset channel, channel pointers immediately,
+               stop        - stop at the end of the frame (if repetitive),
+               single      - acquire single frame ,
+               repetitive  - repetitive mode
+        @param reset_frame - reset frame number       
+        @param vebose -      verbose level       
+        """
+        try:
+            if (num_sensor == all) or (num_sensor[0].upper() == "A"): #all is a built-in function
+                for num_sensor in range(4):
+                    print ('num_sensor = ',num_sensor)
+                    self.control_sensor_memory(num_sensor = num_sensor,
+                                               command =    command,
+                                               reset_frame = reset_frame,
+                                               verbose =    verbose)
+                return
+        except:
+            pass
+        
+        
+        rpt =    False
+        sngl =   False
+        en =     False
+        rst =    False
+        if command[:3].upper() ==   'RES':
+            rst = True
+        elif command[:2].upper() == 'ST':
+            pass
+        elif command[:2].upper() == 'SI':
+            sngl = True
+            en =   True
+        elif command[:3].upper() == 'REP':
+            rpt =  True
+            en =   True
+        else:
+            print ("Unrecognized command %s. Valid commands are RESET, STOP, SINGLE, REPETITIVE"%(command))
+            return    
+                                
+        base_addr = vrlg.MCONTR_SENS_BASE + vrlg.MCONTR_SENS_INC * num_sensor;
+        mode=   x393_mcntrl.func_encode_mode_scan_tiled(
+                                   skip_too_late = True,                     
+                                   disable_need = False,
+                                   repetitive=    rpt,
+                                   single =       sngl,
+                                   reset_frame =  reset_frame,
+                                   extra_pages =  0,
+                                   write_mem =    True,
+                                   enable =       en,
+                                   chn_reset =    rst)
+        self.x393_axi_tasks.write_control_register(base_addr + vrlg.MCNTRL_SCANLINE_MODE,  mode) 
+        if verbose > 0 :
+            print ("write_control_register(0x%08x, 0x%08x)"%(base_addr + vrlg.MCNTRL_SCANLINE_MODE,  mode))
 
     def setup_sensor_memory (self,
                              num_sensor,

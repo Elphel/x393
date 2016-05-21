@@ -182,15 +182,14 @@ parameter NUM_INTERRUPTS =        9;
 
 // ========================== end of parameters from x353 ===================================
 
-
-
 // Sensor signals - as on sensor pads
     wire        PX1_MCLK; // input sensor input clock
     wire        PX1_MRST; // input 
     wire        PX1_ARO;  // input 
     wire        PX1_ARST; // input 
     wire        PX1_OFST = 1'b1; // input // I2C address ofset by 2: for simulation 0 - still mode, 1 - video mode.
-    wire [11:0] PX1_D;    // output[11:0] 
+    wire [11:0] PX1_D;    // output[11:0]
+  // SuppressWarnings VEditor : not used in HISPI mode
     wire        PX1_DCLK; // output sensor output clock (connect to sensor BPF output )
     wire        PX1_HACT; // output 
     wire        PX1_VACT; // output 
@@ -201,6 +200,7 @@ parameter NUM_INTERRUPTS =        9;
     wire        PX2_ARST; // input 
     wire        PX2_OFST = 1'b1; // input // I2C address ofset by 2: for simulation 0 - still mode, 1 - video mode.
     wire [11:0] PX2_D;    // output[11:0] 
+  // SuppressWarnings VEditor : not used in HISPI mode
     wire        PX2_DCLK; // output sensor output clock (connect to sensor BPF output )
     wire        PX2_HACT; // output 
     wire        PX2_VACT; // output 
@@ -211,6 +211,7 @@ parameter NUM_INTERRUPTS =        9;
     wire        PX3_ARST; // input 
     wire        PX3_OFST = 1'b1; // input // I2C address ofset by 2: for simulation 0 - still mode, 1 - video mode.
     wire [11:0] PX3_D;    // output[11:0] 
+  // SuppressWarnings VEditor : not used in HISPI mode
     wire        PX3_DCLK; // output sensor output clock (connect to sensor BPF output )
     wire        PX3_HACT; // output 
     wire        PX3_VACT; // output 
@@ -221,6 +222,7 @@ parameter NUM_INTERRUPTS =        9;
     wire        PX4_ARST; // input 
     wire        PX4_OFST = 1'b1; // input // I2C address ofset by 2: for simulation 0 - still mode, 1 - video mode.
     wire [11:0] PX4_D;    // output[11:0] 
+  // SuppressWarnings VEditor : not used in HISPI mode
     wire        PX4_DCLK; // output sensor output clock (connect to sensor BPF output )
     wire        PX4_HACT; // output 
     wire        PX4_VACT; // output 

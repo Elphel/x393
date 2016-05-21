@@ -1104,12 +1104,66 @@ write_sensor_i2c  0 1 0 0x302e0010
 #Exposure 0x800 lines
 write_sensor_i2c  0 1 0 0x30120800
 
+################## Serial - chn3  ####################
+cd /usr/local/verilog/; test_mcntrl.py @hargs
+bitstream_set_path /usr/local/verilog/x393_hispi.bit
+setupSensorsPower "HISPI"
+measure_all "*DI"
+setup_all_sensors True None 0xf
+#write_sensor_i2c  3 1 0 0x30700101
+compressor_control  all  None  None  None None None  2
+program_gamma all 0 0.57 0.04
+write_sensor_i2c 3 1 0 0x030600b4
+write_sensor_i2c 3 1 0 0x31c68400
+write_sensor_i2c 3 1 0 0x306e9280
+#write_sensor_i2c 3 1 0 0x30700002
+write_sensor_i2c 3 1 0 0x301a001c
+print_sensor_i2c 3 0x31c6 0xff 0x10 0
+
+write_sensor_i2c  3 1 0 0x3028000a
+write_sensor_i2c  3 1 0 0x302c000d
+write_sensor_i2c  3 1 0 0x302e0010
+#exposure
+write_sensor_i2c  3 1 0 0x30120200
+
+compressor_control 3 2
+
+jpeg_write  "img.jpeg" 3
 
 
 -------
 
+################## Serial - chn2  ####################
+cd /usr/local/verilog/; test_mcntrl.py @hargs
+bitstream_set_path /usr/local/verilog/x393_hispi.bit
+setupSensorsPower "HISPI"
+measure_all "*DI"
+setup_all_sensors True None 0xf
+#write_sensor_i2c  2 1 0 0x30700101
+compressor_control  all  None  None  None None None  2
+program_gamma all 0 0.57 0.04
+write_sensor_i2c 2 1 0 0x030600b4
+write_sensor_i2c 2 1 0 0x31c68400
+write_sensor_i2c 2 1 0 0x306e9280
+#write_sensor_i2c 2 1 0 0x30700002
+write_sensor_i2c 2 1 0 0x301a001c
+print_sensor_i2c 2 0x31c6 0xff 0x10 0
+
+write_sensor_i2c  2 1 0 0x3028000a
+write_sensor_i2c  2 1 0 0x302c000d
+write_sensor_i2c  2 1 0 0x302e0010
+#exposure
+write_sensor_i2c  2 1 0 0x30120200
+write_sensor_i2c  2 1 0 0x30700101
+compressor_control 2 2
+
+jpeg_write  "img.jpeg" 2
 
 
+-------
+
+control_sensor_memory 2 reset
+print_sensor_i2c 2 0x31c0 0xff 0x10 0
 
 
 

@@ -1512,7 +1512,7 @@ class X393McntrlAdjust(object):
             try:
                 dqs_patt=self.adjustment_state["dqs_pattern"]
             except:
-                print("Skipping DQS pattern (0x55/0xaa) control as it is not provided and not in gloabal data (dqs_patt=self.adjustment_state['dqs_pattern'])")
+                print("Skipping DQS pattern (0x55/0xaa) control as it is not provided and not in global data (dqs_patt=self.adjustment_state['dqs_pattern'])")
 
         if not dqs_patt is None: # may be just set
             self.x393_mcntrl_timing.axi_set_dqs_dqm_patterns(dqs_patt=dqs_patt,
@@ -1533,6 +1533,12 @@ class X393McntrlAdjust(object):
 #                        raise Exception("Write levelling gave unexpected data, aborting (may be wrong command/address delay, incorrectly initialized")
 #disabling check 04.09.2016
                         print ("raise Exception Write levelling gave unexpected data, aborting (may be wrong command/address delay, incorrectly initialized.  Phase: %d, cmda_odly_lin=%d"%(phase,cmda_odly_lin))
+                        print ("=== resetting ===")
+                        self.x393_pio_sequences.restart_ddr3()
+                        wlev_rslt=norm_wlev(self.x393_pio_sequences.write_levelling(1, nbursts, quiet - 1))
+                        if wlev_rslt[2]>wlev_max_bad: # should be 0 - otherwise wlev did not work (CMDA?)
+                            print ("Second try: raise Exception Write levelling gave unexpected data, aborting (may be wrong command/address delay, incorrectly initialized.  Phase: %d, cmda_odly_lin=%d"%(phase,cmda_odly_lin))
+                            self.x393_pio_sequences.restart_ddr3()
                     dqso_cache[dly] = wlev_rslt
                     if quiet < 1:
                         print ('measure_dqso(%d) - new measurement'%(dly))

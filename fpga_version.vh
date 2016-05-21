@@ -32,7 +32,11 @@
  * with at least one of the Free Software programs.
  *******************************************************************************/
  
-        parameter FPGA_VERSION =          32'h0393008f;    // parallel, all the same
+        parameter FPGA_VERSION =          32'h03930093;    // hispi, masking sesnor data to memory buffer, debug still on
+//        parameter FPGA_VERSION =          32'h03930092;    // hispi, even more debugging memory pages sens-> memory
+//        parameter FPGA_VERSION =          32'h03930091;    // hispi, more debugging memory pages sens-> memory
+//        parameter FPGA_VERSION =          32'h03930090;    // hispi, debugging memory pages sens-> memory (not met)
+//        parameter FPGA_VERSION =          32'h0393008f;    // parallel, all the same
 //        parameter FPGA_VERSION =          32'h0393008e;    // hispi, adding i2c fifo fill, all met,83.73%
 //        parameter FPGA_VERSION =          32'h0393008d;    // parallel, adding i2c fifo fill max err 0.128, 82.61%
 //        parameter FPGA_VERSION =          32'h0393008c;      // hispi, all met, 83.55%
