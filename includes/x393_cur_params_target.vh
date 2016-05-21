@@ -31,11 +31,19 @@
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
  *******************************************************************************/
+/*
 localparam  DLY_LANE0_ODELAY =  80'hd85c1014141814181218;
 localparam  DLY_LANE0_IDELAY =  72'h2c7a8380897c807b88;
 localparam  DLY_LANE1_ODELAY =  80'hd8581812181418181814;
 localparam  DLY_LANE1_IDELAY =  72'h108078807a887c8280;
 localparam          DLY_CMDA = 256'hd3d3d3d4dcd1d8cc494949494949494949d4d3ccd3d3dbd4ccd4d2d3d1d2d8cc;
 localparam         DLY_PHASE =   8'h33;
+*/
+localparam  DLY_LANE0_ODELAY =  80'hd8e4141a191c1c1c181c;
+localparam  DLY_LANE0_IDELAY =  72'h187074747878787072;
+localparam  DLY_LANE1_ODELAY =  80'hd8dc191418141a141818;
+localparam  DLY_LANE1_IDELAY =  72'h186c6c726c746a7173;
+localparam          DLY_CMDA = 256'hd3d3dad2d1cccad2505050505050505050d4d1d1d2d2dbcad2cad3d4d2cacbd1;
+localparam         DLY_PHASE =   8'h34;
 // localparam   DFLT_WBUF_DELAY =   4'h9;
     
