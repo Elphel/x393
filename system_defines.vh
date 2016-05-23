@@ -48,14 +48,14 @@
   `define PRELOAD_BRAMS
   `define DISPLAY_COMPRESSED_DATA  
   // if HISPI is not defined, parallel sensor interface is used for all channels
-  `define HISPI /*************** CHANGE here and x393_hispi/x393_parallel in bitstream tool settings ****************/
+//  `define HISPI /*************** CHANGE here and x393_hispi/x393_parallel in bitstream tool settings ****************/
 //    `define USE_OLD_XDCT393  
 //  `define USE_PCLK2X
 //  `define USE_XCLK2X
   `define REVERSE_LANES 1
   `define DEBUG_RING 1
   
-  `define DEBUG_SENS_MEM_PAGES 1   
+//  `define DEBUG_SENS_MEM_PAGES 1   
 //  `define MCLK_VCO_MULT 16
 // DDR3 memory speed grade and density
     `define sg25 1
