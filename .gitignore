@@ -3,6 +3,7 @@ vivado_*
 syntax_*
 simulation/*
 simulation_data/*
+quartus_logs/ *
 www/*
 constraints/*
 ise_*

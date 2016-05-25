@@ -2129,6 +2129,7 @@ class X393ExportC(object):
         dw.append(("reading_frame",   2,   1,   0, "Compressor channel is reading frame from memory (debug feature)"))
         dw.append(("stuffer_running", 3,   1,   0, "Compressor channel bit stuffer is running (debug feature)"))
         dw.append(("flushing_fifo",   4,   1,   0, "Compressor channel is flushing FIFO (debug feature)"))
+        dw.append(("frame",           8,   vrlg.NUM_FRAME_BITS, 0, "Compressed frame number (mod %d)"%(1 << vrlg.NUM_FRAME_BITS)))
         dw.append(("seq_num",        26,   6,   0, "Status sequence number"))
         return dw
     
