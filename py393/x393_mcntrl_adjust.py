@@ -68,6 +68,7 @@ class X393McntrlAdjust(object):
     x393_mcntrl_buffers=None
     x393_utils=None
     verbose=1
+    wlev_all_bits = False # write leveling reported on allDQ lines
     adjustment_state={}
     def __init__(self, debug_mode=1,dry_mode=True, saveFileName=None):
         self.DEBUG_MODE=  debug_mode
@@ -611,6 +612,7 @@ class X393McntrlAdjust(object):
                                    filter_dqo=      filter_dqo,
                                    cost=            cost,
                                    forgive_missing= forgive_missing,
+                                   allow_replace =  True,
                                    maxPhaseErrorsPS=maxPhaseErrorsPS,
                                    quiet=           quiet)
         if delays is None: #May also be an empty dictionary? 
@@ -654,14 +656,15 @@ class X393McntrlAdjust(object):
 
     def get_all_delays(self,
                         phase,
-                        filter_cmda=None, # may be special case: 'S<safe_phase_as_float_number>
-                        filter_dqsi=None,
-                        filter_dqi= None,
-                        filter_dqso=None,
-                        filter_dqo= None,
-                        forgive_missing=False,
-                        cost=None,
-                        maxPhaseErrorsPS=None,
+                        filter_cmda =      None, # may be special case: 'S<safe_phase_as_float_number>
+                        filter_dqsi =      None,
+                        filter_dqi =       None,
+                        filter_dqso =      None,
+                        filter_dqo =       None,
+                        forgive_missing =  False,
+                        allow_replace =    True,
+                        cost =             None,
+                        maxPhaseErrorsPS = None,
                         quiet=3):
         """
         Calculate dictionary of delays for specific phase. Only Non-None filters will generate items in the dictionary
@@ -673,6 +676,7 @@ class X393McntrlAdjust(object):
         @param filter_dqso filter for DQS output delays
         @param filter_dqo  filter for DQS output delays,
         @param forgive_missing do not raise exceptions on missing data - just skip that delay group
+        @param allow_replace Try to find solutions fro close phases
         @param cost - cost of switching to a higher(lower) delay branch as a fraction of a period
         @param maxPhaseErrorsPS - if present, specifies maximal phase errors (in ps) for cmda, dqsi and dqso (each can be None)
 
@@ -698,6 +702,7 @@ class X393McntrlAdjust(object):
                                                       filter_dqso =     filter_dqso,
                                                       filter_dqo =      filter_dqo,
                                                       forgive_missing = forgive_missing,
+                                                      allow_replace =   allow_replace,
                                                       cost=             cost,
                                                       maxPhaseErrorsPS=maxPhaseErrorsPS,
                                                       quiet=            quiet))
@@ -777,7 +782,9 @@ class X393McntrlAdjust(object):
                         return None
         if not all_good: # try to fix - see if the solutions exist for slightly different phases
             if quiet < 3:                     
-                print ("phase= %d, delays= %s"%(phase,str(delays)))
+                print ("Not all good: allow_replace = %d, phase= %d, delays= %s"%(allow_replace, phase,str(delays)))
+            if not allow_replace:
+                raise Exception ("Not all good solutions for this phase")     
 
             for pair in ((CMDA_KEY,CMDA_KEY,),(DQSI_KEY,DQI_KEY),(DQSO_KEY,DQO_KEY)): # will do some double work for CMDA_KEY
                 if (pair[0] in phaseTolerances) and phaseTolerances[pair[0]] and (pair[0] in delays) and (pair[1] in delays): # so not to process forgive_missing again
@@ -1119,11 +1126,45 @@ class X393McntrlAdjust(object):
         self.x393_mcntrl_timing.axi_set_cmda_odelay(combine_delay(cmda_odly_lin),quiet=quiet)
         self.x393_axi_tasks.enable_refresh(1)
         return cmda_odly_lin
+    def write_levelling_allbits(self,
+                        wait_complete=1, # Wait for operation to complete
+                        nburst=16,
+                        quiet=1):       
+        """
+        Use when result is on all bits. Data may be inconsistent (not 0/ff) if read phase is wrong, so try
+        step to change it
+        @param wait_complete wait write levelling operation to complete (0 - may initiate multiple PS PIO operations)
+        @param nburst  number of 8-bursts written (should match sequence!) 
+        @param quiet    reduce output
+        @eturn a pair of ratios for getting "1" for 2 lanes and problem marker (should be 0), added 4-th value for LY
+        """
+        wlev_max_bad=0.01 # <= OK, > bad
+        if quiet < 1:
+            print("--- write_levelling_allbits--- ")
+        delay_dflt=(split_delay(vrlg.get_default_field("DLY_LANE0_IDELAY",8)),
+                    split_delay(vrlg.get_default_field("DLY_LANE1_IDELAY",8)))
+        delay_up = ((delay_dflt[0]+(NUM_DLY_STEPS/4))%NUM_DLY_STEPS, (delay_dflt[1]+(NUM_DLY_STEPS/4))%NUM_DLY_STEPS)
+        self.x393_mcntrl_timing.axi_set_dqs_idelay((combine_delay(delay_dflt[0]),combine_delay(delay_dflt[1])),quiet=quiet)
+        wlev_rslt=self.x393_pio_sequences.write_levelling(wait_complete, nburst, quiet)
+        if quiet < 1:
+            print("wlev_rslt=",wlev_rslt)
+        if wlev_rslt[3] > wlev_max_bad:
+            if quiet < 1:
+                print("Default dqs input delay (%d,%d) results in ambiguous wlev results, changing to (%d,%d)"%
+                      (delay_dflt[0],delay_dflt[1],delay_up[0],delay_up[1]))
+            self.x393_mcntrl_timing.axi_set_dqs_idelay((combine_delay(delay_up[0]),combine_delay(delay_up[1])),quiet=quiet)
+            wlev_rslt1= self.x393_pio_sequences.write_levelling(wait_complete, nburst, quiet)
+            #restore default delay
+            self.x393_mcntrl_timing.axi_set_dqs_idelay((combine_delay(delay_dflt[0]),combine_delay(delay_dflt[1])),quiet=quiet)
+            if wlev_rslt1[3] < wlev_rslt[3]:
+                return wlev_rslt1
+        return wlev_rslt    
 
     def adjust_cmda_odelay(self,
                            start_phase=0,
                            reinits=1, #higher the number - more re-inits are used (0 - only where absolutely necessary
                            max_phase_err=0.1,
+                           allow_all_bits = True,
                            quiet=1
                            ):
         """
@@ -1135,6 +1176,7 @@ class X393McntrlAdjust(object):
         @param start_phase initial phase to start measuremts (non-0 only for debugging dependencies)
         @param reinits higher the number - more re-inits are used (0 - only where absolutely necessary)
         @param max_phase_err maximal phase error for command and address line as a fraction of SDCLK period to consider
+        @parame allow_all_bits - allow write leveling to respond on all bits (normally - only on 1)
         @param quiet reduce output
         """
         nbursts=16
@@ -1145,38 +1187,65 @@ class X393McntrlAdjust(object):
         max_lin_dly=NUM_DLY_STEPS-1
         wlev_address_bit=7
         wlev_max_bad=0.01 # <= OK, > bad
+        # for MT41K256M16LY-093 (0/ff) need higher threshold
+#        wlev_max_bad=0.1
+        #self.wlev_all_bits = False # needed here?      
         def phase_step(phase,cmda_dly):
             """
-            Find marginal delay for address/comand lines for particular
-            clock pahse
-            Raises exception if failed to get write levelling data even after
+            Find marginal delay for address/command lines for particular clock phase
+            Raises exception if failed to get write leveling data even after
             changing cmda delay and restarting memory device
             Returns a tuple of the current cmda_odelay (hardware) and a marginal one for a7
             """
+            if quiet < 1:
+                print("==phase_step(%d,%d),self.wlev_all_bits=%d"%(phase,cmda_dly,self.wlev_all_bits))
+
             cmda_dly_lin=split_delay(cmda_dly)
             self.x393_mcntrl_timing.axi_set_phase(phase,quiet=quiet)
             self.x393_mcntrl_timing.axi_set_cmda_odelay(cmda_dly,quiet=quiet)
-            wlev_rslt=self.x393_pio_sequences.write_levelling(1, nbursts, quiet+1)
-            if wlev_rslt[2]>wlev_max_bad: # should be 0, if not - Try to recover
+            if not self.wlev_all_bits:
+                wlev_rslt=self.x393_pio_sequences.write_levelling(1, nbursts, quiet+1)
+                if allow_all_bits and (wlev_rslt[3] < wlev_rslt[2]):
+                    self.wlev_all_bits = True
+            if self.wlev_all_bits: # maybe just set
+                wlev_rslt=self.write_levelling_allbits(1, nbursts, quiet+1)        
+            bad_wlev = wlev_rslt[2 + (0,1)[self.wlev_all_bits]]
+            if bad_wlev > wlev_max_bad: # should be 0, if not - Try to recover
                 if quiet <4:
-                    print("*** FAILED to read data in write levelling mode, restarting memory device")
-                    print("    Retrying with the same cmda_odelay value = 0x%x"%cmda_dly)
+                    print("*** FAILED to read data in write leveling mode, restarting memory device")
+                    print("    Retrying with the same cmda_odelay value = 0x%x, wlev_rslt[2] = %f, wlev_rslt[3] = %f"
+                          %(cmda_dly,wlev_rslt[2],wlev_rslt[3]))
+                    
                 self.x393_pio_sequences.restart_ddr3()
-                wlev_rslt=self.x393_pio_sequences.write_levelling(1,nbursts, quiet)
-                if wlev_rslt[2]>wlev_max_bad: # should be 0, if not - change delay and restart memory
+                if self.wlev_all_bits: # try to vary DQS input delay
+                    wlev_rslt=self.write_levelling_allbits(1, nbursts, quiet+1)        
+                else:        
+#                   wlev_rslt=self.x393_pio_sequences.write_levelling(1,nbursts, quiet)
+                    wlev_rslt=self.x393_pio_sequences.write_levelling(1,nbursts, quiet)
+                bad_wlev = wlev_rslt[2 + (0,1)[self.wlev_all_bits]]
+                   
+                if bad_wlev > wlev_max_bad: # should be 0, if not - change delay and restart memory
                     cmda_dly_old=cmda_dly
                     if cmda_dly >=recover_cmda_dly_step:
                         cmda_dly -= recover_cmda_dly_step
                     else:
                         cmda_dly += recover_cmda_dly_step
                     if quiet <4:
-                        print("*** FAILED to read data in write levelling mode, restarting memory device")
+                        print("*** FAILED to read data in write leveling mode, restarting memory device")
                         print("    old cmda_odelay= 0x%x, new cmda_odelay =0x%x"%(cmda_dly_old,cmda_dly))
                     self.x393_mcntrl_timing.axi_set_cmda_odelay(cmda_dly,quiet=quiet)
                     self.x393_pio_sequences.restart_ddr3()
-                    wlev_rslt=self.x393_pio_sequences.write_levelling(1, nbursts, quiet)
-                    if wlev_rslt[2]>wlev_max_bad: # should be 0, if not - change delay and restart memory
-                        raise Exception("Failed to read in write levelling mode after modifying cmda_odelay, aborting")
+
+                    if self.wlev_all_bits: # try to vary DQS input delay
+                        wlev_rslt=self.write_levelling_allbits(1, nbursts, quiet+1)        
+                    else:        
+    #                   wlev_rslt=self.x393_pio_sequences.write_levelling(1,nbursts, quiet)
+                        wlev_rslt=self.x393_pio_sequences.write_levelling(1,nbursts, -1)
+                    bad_wlev = wlev_rslt[2 + (0,1)[self.wlev_all_bits]]
+#                    wlev_rslt=self.x393_pio_sequences.write_levelling(1, nbursts, quiet)
+                    bad_wlev = wlev_rslt[2 + (0,1)[self.wlev_all_bits]]
+                    if bad_wlev > wlev_max_bad: # should be 0, if not - change delay and restart memory
+                        raise Exception("Failed to read in write leveling mode after modifying cmda_odelay, aborting")
                     
 # Try twice step before giving up (was not needed so far)                    
             d_high=max_lin_dly
@@ -1184,8 +1253,13 @@ class X393McntrlAdjust(object):
                                                            combine_delay(d_high),
                                                            wlev_address_bit,
                                                            quiet=quiet)
-            wlev_rslt=self.x393_pio_sequences.write_levelling(1, nbursts, quiet+1)
-            if not wlev_rslt[2]>wlev_max_bad:
+            if self.wlev_all_bits: # try to vary DQS input delay
+                wlev_rslt=self.write_levelling_allbits(1, nbursts, quiet+1)        
+            else:        
+                wlev_rslt=self.x393_pio_sequences.write_levelling(1, nbursts, quiet+1)
+            bad_wlev = wlev_rslt[2 + (0,1)[self.wlev_all_bits]]
+                
+            if not bad_wlev > wlev_max_bad:
                 return  (split_delay(cmda_dly),-1) # even maximal delay is not enough to make rising sdclk separate command from A7
             # find marginal value of a7 delay to spoil write levelling mode
             d_high=max_lin_dly
@@ -1193,8 +1267,12 @@ class X393McntrlAdjust(object):
             while d_high > d_low:
                 dly= (d_high + d_low)//2
                 self.x393_mcntrl_timing.axi_set_address_odelay(combine_delay(dly),wlev_address_bit,quiet=quiet)
-                wlev_rslt=self.x393_pio_sequences.write_levelling(1, nbursts, quiet+1)
-                if wlev_rslt[2] > wlev_max_bad:
+                if self.wlev_all_bits: # try to vary DQS input delay
+                    wlev_rslt=self.write_levelling_allbits(1, nbursts, quiet+1)        
+                else:        
+                    wlev_rslt=self.x393_pio_sequences.write_levelling(1, nbursts, quiet+1)
+                bad_wlev = wlev_rslt[2 + (0,1)[self.wlev_all_bits]]
+                if bad_wlev > wlev_max_bad:
                     d_high=dly
                 else:
                     if d_low == dly:
@@ -1479,6 +1557,7 @@ class X393McntrlAdjust(object):
                                reinits=1, #higher the number - more re-inits are used (0 - only where absolutely necessary
                                invert=0, # anti-align DQS (should be 180 degrees off from the normal one)
                                dqs_patt=None,
+                               allow_all_bits = True,
                                quiet=1
                                ):
         """
@@ -1489,6 +1568,7 @@ class X393McntrlAdjust(object):
         @param reinits=1, #higher the number - more re-inits are used (0 - only where absolutely necessary
         @param invert=0, # anti-align DQS (should be 180 degrees off from the normal one), can be used to find duty cycle of the clock
         @param dqs_patt set and store in global data DQS pattern to use during writes
+        @parame allow_all_bits - allow write leveling to respond on all bits (normally - only on 1)
         @param quiet=1
         """
         nbursts=16
@@ -1501,7 +1581,10 @@ class X393McntrlAdjust(object):
         if start_phase >=128:
             start_phase -= 256 # -128..+127
         max_lin_dly=NUM_DLY_STEPS-1
-        wlev_max_bad=0.01 # <= OK, > bad
+#        wlev_max_bad=0.01 # <= OK, > bad
+        # for MT41K256M16LY-093 (0/ff) need higher threshold
+        wlev_max_bad=0.1
+        
         numPhaseSteps=len(self.adjustment_state['cmda_bspe'])
         if quiet < 2:
             print("cmda_bspe = %s"%str(self.adjustment_state['cmda_bspe']))
@@ -1523,21 +1606,36 @@ class X393McntrlAdjust(object):
             def measure_dqso(dly,force_meas=False):
                 def norm_wlev(wlev): #change results to invert wlev data
                     if invert:
-                        return [1.0-wlev[0],1.0-wlev[1],wlev[2]]
+                        return [1.0-wlev[0],1.0-wlev[1],wlev[2],wlev[3]]
                     else:
                         return wlev
                 if (dqso_cache[dly] is None) or force_meas:
                     self.x393_mcntrl_timing.axi_set_dqs_odelay(combine_delay(dly),quiet=quiet)
-                    wlev_rslt=norm_wlev(self.x393_pio_sequences.write_levelling(1, nbursts, quiet+1))
-                    if wlev_rslt[2]>wlev_max_bad: # should be 0 - otherwise wlev did not work (CMDA?)
-#                        raise Exception("Write levelling gave unexpected data, aborting (may be wrong command/address delay, incorrectly initialized")
+#                    wlev_rslt=norm_wlev(self.x393_pio_sequences.write_levelling(1, nbursts, quiet+1))
+
+                    if not self.wlev_all_bits:
+                        wlev_rslt=self.x393_pio_sequences.write_levelling(1, nbursts, quiet+1)
+                        if allow_all_bits and (wlev_rslt[3] < wlev_rslt[2]):
+                            self.wlev_all_bits = True
+                    if self.wlev_all_bits: # maybe just set
+                        wlev_rslt=self.write_levelling_allbits(1, nbursts, quiet+1)
+                    wlev_rslt=norm_wlev(wlev_rslt)
+                    bad_wlev = wlev_rslt[2 + (0,1)[self.wlev_all_bits]]
+                    if bad_wlev > wlev_max_bad: # should be 0 - otherwise wlev did not work (CMDA?)
+#                        raise Exception("Write leveling gave unexpected data, aborting (may be wrong command/address delay, incorrectly initialized")
 #disabling check 04.09.2016
-                        print ("raise Exception Write levelling gave unexpected data, aborting (may be wrong command/address delay, incorrectly initialized.  Phase: %d, cmda_odly_lin=%d"%(phase,cmda_odly_lin))
+                        print ("raise Exception Write leveling gave unexpected data, aborting (may be wrong command/address delay, incorrectly initialized.  Phase: %d, cmda_odly_lin=%d"%(phase,cmda_odly_lin))
                         print ("=== resetting ===")
                         self.x393_pio_sequences.restart_ddr3()
-                        wlev_rslt=norm_wlev(self.x393_pio_sequences.write_levelling(1, nbursts, quiet - 1))
-                        if wlev_rslt[2]>wlev_max_bad: # should be 0 - otherwise wlev did not work (CMDA?)
-                            print ("Second try: raise Exception Write levelling gave unexpected data, aborting (may be wrong command/address delay, incorrectly initialized.  Phase: %d, cmda_odly_lin=%d"%(phase,cmda_odly_lin))
+                        
+#                        wlev_rslt = norm_wlev(self.x393_pio_sequences.write_levelling(1, nbursts, -1)) # quiet - 1))
+                        if self.wlev_all_bits: # try to vary DQS input delay
+                            wlev_rslt = norm_wlev(self.write_levelling_allbits(1, nbursts, quiet+1))        
+                        else:        
+                            wlev_rslt = norm_wlev(self.x393_pio_sequences.write_levelling(1, nbursts, quiet+1))
+                        bad_wlev = wlev_rslt[2 + (0,1)[self.wlev_all_bits]]
+                        if bad_wlev > wlev_max_bad: # should be 0 - otherwise wlev did not work (CMDA?)
+                            print ("Second try: raise Exception Write leveling gave unexpected data, aborting (may be wrong command/address delay, incorrectly initialized.  Phase: %d, cmda_odly_lin=%d"%(phase,cmda_odly_lin))
                             self.x393_pio_sequences.restart_ddr3()
                     dqso_cache[dly] = wlev_rslt
                     if quiet < 1:
@@ -1962,7 +2060,9 @@ class X393McntrlAdjust(object):
                        limit_step=0.125, # initial delay step as a fraction of the period
                        max_phase_err=0.1,
                        quiet=1,
-                       start_dly=0): #just to check dependence
+                       start_dly=0,
+                       reinits = True):
+
         """
         for each DQS input delay find 4 DQ transitions for each DQ bit,
         then use them to find finedelay for each of the DQS and DQ,
@@ -1980,6 +2080,8 @@ class X393McntrlAdjust(object):
         if quiet<2:
             print ("timing)=%s, dly_step=%d step180=%d"%(str(timing),dly_step,step180))
         self.x393_pio_sequences.set_read_pattern(nrep+3) # set sequence once
+        if reinits:
+            self.x393_pio_sequences.restart_ddr3()
         
         def patt_dqs_step(dqs_lin):
             patt_cache=[None]*(max_lin_dly+1) # cache for holding already measured delays
@@ -2332,16 +2434,20 @@ class X393McntrlAdjust(object):
                                                 # save None for fraction in unknown (previous -0.5, next +0.5) 
                                frac_step=0.125,
                                sel=1,
-                               quiet=1):
+                               quiet=1,
+                               reinits = True):
+                               
         """
         Scan phase and find DQS input delay value to find when
-        the result changes (it is caused by crossing clock boundarty from extrenal memory device derived
+        the result changes (it is caused by crossing clock boundary from external memory device derived
         to system-synchronous one
         cmda_odelay should be already calibrated, refresh will be turned on.
         Uses random/previously written pattern in one memory block (should have some varying data
         @param quiet reduce output
         """
-        
+        if reinits:
+            self.x393_pio_sequences.restart_ddr3()
+
         try:
             dqi_dqsi=self.adjustment_state['dqi_dqsi']
         except:
@@ -2651,17 +2757,21 @@ class X393McntrlAdjust(object):
                                frac_step=0.125,
                                sel=1,
                                quiet=1,
-                               start_dly=0): #just to check dependence
+                               start_dly=0,
+                               reinits = True):
+                               
 
         """
         Scan dqs odelay (setting phase appropriately), write
         0x0000/0xffff/0x0000/0xffff (same as fixed pattern) data and read it with known dqsi/dqi
         values (maybe even set different phase for read?), discarding first and last 1.5 8-bursts
         Measure 4 different transitions for each data bit (rising DQS/rising DQ, falling DQS/falling DQ,
-        rising DQS/falling DQ and falling DQS/rising DQ (that allows to measure duty cycles fro both
+        rising DQS/falling DQ and falling DQS/rising DQ (that allows to measure duty cycles for both
         DQS and DQ lines
         @param quiet reduce output
         """
+        if reinits:
+            self.x393_pio_sequences.restart_ddr3()
 #        self.load_hardcoded_data() # TODO: REMOVE LATER
         try:
             dqi_dqsi=self.adjustment_state['dqi_dqsi']
@@ -3223,11 +3333,12 @@ class X393McntrlAdjust(object):
                             ra = 0,
                             ba = 0,
                             quiet=1,
-                            single=False):
+                            single = False,
+                            reinits = True):
 #                            quiet=0):
         """
         Will raise exception if read non good or bad - that may happen if cmda_odelay is violated too much. Need to re-
-        init memory if that happems and possibly re-run with largersafe_phase or safe_phase==0/None to disable this feature
+        init memory if that happens and possibly re-run with larger safe_phase or safe_phase==0/None to disable this feature
         Final measurement of output delay on address lines, performed when read/write timing is set
         Writes different data in the specified block and then different pattern to all blocks different
         by one row address or bank address bit.
@@ -3242,7 +3353,7 @@ class X393McntrlAdjust(object):
                                                              dqm_patt=None,
                                                              quiet=quiet+2)
         except:
-            print("Skipping DQS pattern (0x55/0xaa) control as it is not in gloabal data (dqs_patt=self.adjustment_state['dqs_pattern'])")
+            print("Skipping DQS pattern (0x55/0xaa) control as it is not in global data (dqs_patt=self.adjustment_state['dqs_pattern'])")
 
         num_ba=3
         if not single:
@@ -3251,13 +3362,15 @@ class X393McntrlAdjust(object):
                                            ra = ra, # 0,
                                            ba = ba, # 0,
                                            quiet=quiet, #+1, #1,
-                                           single=True) # single=False)
+                                           single=True,# single=False)
+                                           reinits = reinits)
             pass2=self.measure_addr_odelay(safe_phase=safe_phase, #0.25, # 0 strictly follow cmda_odelay, >0 -program with this fraction of clk period from the margin 
                                            dqsi_safe_phase=dqsi_safe_phase, 
                                            ra = ra ^ ((1 << vrlg.ADDRESS_NUMBER)-1), # 0,
                                            ba = ba ^ ((1 << num_ba)-1), # 0,
                                            quiet=quiet, #+1, #1,
-                                           single=True) # single=False)
+                                           single=True, # single=False)
+                                           reinits = reinits)
             self.adjustment_state['addr_meas']=[pass1,pass2]
             if (quiet<4):
                 print ('addr_meas=[')
@@ -3268,7 +3381,7 @@ class X393McntrlAdjust(object):
             if (quiet<4):
                 num_addr=vrlg.ADDRESS_NUMBER
                 num_banks=3
-                print ("\n measured marginal addresses and bank adresses for each phase")
+                print ("\n measured marginal addresses and bank addresses for each phase")
                 print ("phase", end=" ")
                 for edge in ("\\_","_/"):
                     for i in range (num_addr):
@@ -3308,7 +3421,7 @@ class X393McntrlAdjust(object):
         inv_ra=ra ^ ((1 << vrlg.ADDRESS_NUMBER)-1)
         ca= ra & ((1 << vrlg.COLADDR_NUMBER) -1)
         inv_ba=ba ^ ((1 << num_ba)-1)
-        print ("quiet=",quiet)
+        #print ("quiet=",quiet)
         if quiet<4:
                 print("Writing good data to ra=0x%x, ba = 0x%x, ca = 0x%x, refresh will use: inv_ra = 0x%x, inv_ba=0x%x" %(ra,ba,ca,inv_ra,inv_ba))
         
@@ -3343,28 +3456,54 @@ class X393McntrlAdjust(object):
         """
         phase=0 seems to be bad (during wlev), ***temporarily*** just start from 90 degrees shift
         """
-#        for phase in range(numPhaseSteps):
-        for phase_tmp in range(numPhaseSteps):
-            phase = (phase_tmp + (numPhaseSteps//4)) % numPhaseSteps
+        for phase in range(numPhaseSteps):
+##        for phase_tmp in range(numPhaseSteps):
+##            phase = (phase_tmp + (numPhaseSteps//4)) % numPhaseSteps
             try:
                 ph_dlys= self.get_all_delays(phase=phase,
-                                             filter_cmda= DFLT_DLY_FILT, # may be special case: 'S<safe_phase_as_float_number>
-                                             filter_dqsi= DFLT_DLY_FILT,
-                                             filter_dqi=  DFLT_DLY_FILT,
-                                             filter_dqso= DFLT_DLY_FILT, #None, # these are not needed here
-                                             filter_dqo=  DFLT_DLY_FILT, #None,
-                                             cost=        None,
-                                             forgive_missing=False,
+                                             filter_cmda=       DFLT_DLY_FILT, # may be special case: 'S<safe_phase_as_float_number>
+                                             filter_dqsi=       DFLT_DLY_FILT,
+                                             filter_dqi=        DFLT_DLY_FILT,
+                                             filter_dqso=       DFLT_DLY_FILT, #None, # these are not needed here
+                                             filter_dqo=        DFLT_DLY_FILT, #None,
+                                             cost=              None,
+                                             forgive_missing =  False,
+                                             allow_replace =    False,
                                              maxPhaseErrorsPS = maxPhaseErrorsPS, #CMDA, DQSI, DQSO
-                                             quiet=       quiet-1) # quiet)
+                                             quiet=             quiet-1) # quiet)
                 if not ph_dlys is None:
                     break
             except:
                 pass
         else:
+            print ("!!! Could not find a good phase that has valid delays for all signals, relaxing requirements")
+            for phase in range(numPhaseSteps):
+                try:
+                    ph_dlys= self.get_all_delays(phase=phase,
+                                                 filter_cmda=       DFLT_DLY_FILT, # may be special case: 'S<safe_phase_as_float_number>
+                                                 filter_dqsi=       DFLT_DLY_FILT,
+                                                 filter_dqi=        DFLT_DLY_FILT,
+                                                 filter_dqso=       DFLT_DLY_FILT, #None, # these are not needed here
+                                                 filter_dqo=        DFLT_DLY_FILT, #None,
+                                                 cost=              None,
+                                                 forgive_missing =  False,
+                                                 allow_replace =    True,
+                                                 maxPhaseErrorsPS = maxPhaseErrorsPS, #CMDA, DQSI, DQSO
+                                                 quiet=             quiet-1) # quiet)
+                    if not ph_dlys is None:
+                        break
+                except:
+                    pass
+
+            
+            
             raise Exception("Could not find a valid phase to use")
+        
         #phase is usable delay
         # reprogram refresh
+        
+        if reinits:
+            self.x393_pio_sequences.restart_ddr3()
         self.x393_axi_tasks.enable_refresh(0) # turn off refresh
         self.x393_pio_sequences.set_refresh(vrlg.T_RFC, # input [ 9:0] t_rfc; # =50 for tCK=2.5ns
                                             vrlg.T_REFI, #input [ 7:0] t_refi; # 48/97 for normal, 16 - for simulation
@@ -3388,10 +3527,16 @@ class X393McntrlAdjust(object):
                                     refresh=True,
                                     forgive_missing=True,
                                     maxPhaseErrorsPS=maxPhaseErrorsPS,
-                                    quiet=0) # quiet) # To see what delays where used when writing
+                                    quiet = quiet) # To see what delays where used when writing
         if used_delays is None:
             raise Exception("measure_addr_odelay(): failed to set phase = %d"%(phase))  #      
         #Write 0xaaaa pattern to correct block (all used words), address number - to all with a single bit different
+        """
+        TODO: Reset here?
+        TODO: Read back after writing with nominal delays to make sure it is correct
+        
+        """
+        
         self.x393_pio_sequences.set_read_block(ba,ra,ca,nbursts+3,sel_wr)
         #prepare and writ 'correct' block:
         wdata16_good=(good_patt,)*(8*(nbursts+7)) #3)) 
@@ -3402,11 +3547,10 @@ class X393McntrlAdjust(object):
 #        comp32_bad=  wdata32_bad[4:(nbursts*4)+4] # data to compare with read buffer - discard first 4*32-bit words and the "tail" after nrep*4 words32
         comp32_good= wdata32_good[4:(nbursts*4)+2] # data to compare with read buffer - discard first 4*32-bit words and the "tail" after nrep*4 words32
         comp32_bad=  wdata32_bad[4:(nbursts*4)+2] # data to compare with read buffer - discard first 4*32-bit words and the "tail" after nrep*4 words32
-
         
 #        self.x393_mcntrl_buffers.write_block_buf_chn(0,0,wdata32_good,quiet) # fill block memory (channel, page, number)
-        self.x393_mcntrl_buffers.write_block_buf_chn(0,0,wdata32_good,0      ) # fill block memory (channel, page, number)
-        self.x393_mcntrl_buffers.write_block_buf_chn(0,0,wdata32_good,0      ) # fill block memory (channel, page, number)
+        self.x393_mcntrl_buffers.write_block_buf_chn(0,0,wdata32_good,quiet    ) # fill block memory (channel, page, number)
+        self.x393_mcntrl_buffers.write_block_buf_chn(0,0,wdata32_good,quiet      ) # fill block memory (channel, page, number)
         self.x393_pio_sequences.set_write_block(ba,ra,ca,nbursts+7,extraTgl,sel_wr) # 3,extraTgl,sel_wr) # set sequence to write 'correct' block
         self.x393_pio_sequences.set_write_block(ba,ra,ca,nbursts+7,extraTgl,sel_wr) #3,extraTgl,sel_wr)# set sequence to write 'correct' block ######
 
@@ -3416,7 +3560,7 @@ class X393McntrlAdjust(object):
         self.x393_pio_sequences.write_block() #page= 0, wait_complete=1) # write 'correct' block ################# Repeat
         
         #prepare and write all alternative blocks (different by one address/bank 
-        self.x393_mcntrl_buffers.write_block_buf_chn(0,0,wdata32_bad,quiet) # fill block memory (channel, page, number)
+        self.x393_mcntrl_buffers.write_block_buf_chn(0,0,wdata32_bad, quiet) # fill block memory (channel, page, number)
         raba_bits=[]
 #        print('vrlg.ADDRESS_NUMBER=',vrlg.ADDRESS_NUMBER)
 #        print('num_ba=',num_ba)
@@ -3443,19 +3587,23 @@ class X393McntrlAdjust(object):
                               bank_bit,
                               force_meas=False):
                 if (meas_cache[dly] is None) or force_meas:
-                    for _ in range(5):
+#                    for _ in range(5):
+                    this_quiet = quiet
+                    for nn in range(15):
+                        if nn > 5:
+                            this_quiet = 0 # to show - what is going on
                         #set same delays for all cmda bits   (should be already done with 'set_phase_with_refresh'
                         if not addr_bit is None:
-                            self.x393_mcntrl_timing.axi_set_address_odelay(combine_delay(dly),addr_bit,quiet=quiet)
+                            self.x393_mcntrl_timing.axi_set_address_odelay(combine_delay(dly),addr_bit,quiet=this_quiet)
                         elif not bank_bit is None:
-                            self.x393_mcntrl_timing.axi_set_address_odelay(combine_delay(dly),bank_bit,quiet=quiet)
+                            self.x393_mcntrl_timing.axi_set_address_odelay(combine_delay(dly),bank_bit,quiet=this_quiet)
                         else:
                             raise Exception("BUG: both addr_bit and bank_bit are None")
-                        if quiet < 1:
-                            print ('measure_block(%d,%s) - new measurement'%(dly,str(force_meas)))
+                        if this_quiet < 1:
+                            print ('measure_block(%d,%s) - new measurement#%d'%(dly,str(force_meas),nn))
                         self.x393_pio_sequences.manual_refresh() # run refresh that sets address bit to opposite values to the required row+bank address
                         buf=self.x393_pio_sequences.read_block(4 * (nbursts+1) +2,
-                                                               (0,1)[quiet<1], #show_rslt,
+                                                               (0,1)[this_quiet<1], #show_rslt,
                                                                1) # wait_complete=1)
 #                        buf= buf[4:(nbursts*4)+4] # discard first 4*32-bit words and the "tail" after nrep*4 words32
                         buf= buf[4:(nbursts*4)+2] # discard first 4*32-bit words and the "tail" after nrep*4 words32
@@ -3464,15 +3612,34 @@ class X393McntrlAdjust(object):
                         elif buf==comp32_bad:
                             meas=False
                         else:
-                            print ("Inconclusive result for comparing read data for phase=%d, addr_bit=%s, bank_bit=%s  dly=%d"%(phase,str(addr_bit),str(bank_bit),dly), end = " ")
-#                            print ("Data read from memory=",buf, "(",convert_w32_to_mem16(buf),")")
-                            print ("Data read from memory=%s(%s)"%(self.hex_list(buf),self.hex_list(convert_w32_to_mem16(buf))))
+                            if this_quiet < 4:
+                                print ("Inconclusive result for comparing read data for phase=%d, addr_bit=%s, bank_bit=%s  dly=%d"%(phase,str(addr_bit),str(bank_bit),dly), end = " ")
+                                print ("Data read from memory=%s(%s)"%(self.hex_list(buf),self.hex_list(convert_w32_to_mem16(buf))))
                             #hex_list
 #                            print ("Expected 'good' data=%s(%s)"%(self.hex_list(comp32_good),self.hex_list(convert_w32_to_mem16(comp32_good))))
 #                            print ("Expected 'bad' data=%s(%s)"%(self.hex_list(comp32_bad),self.hex_list(convert_w32_to_mem16(comp32_bad))))
                             meas=None
+                            if this_quiet < 3 :
+                                print("====DEBUG: re-reading the same buffer")
+                                self.x393_mcntrl_buffers.read_block_buf_chn (chn=       0,
+                                                                             page =     3,   # page=3
+                                                                             num_read = 4 * (nbursts+1) +2,
+                                                                             show_rslt = (0,1)[this_quiet<1]) # chn=0, page=3, number of 32-bit words=num, show_rslt
+                                print("====DEBUG: re-reading the same block")
+                                buf=self.x393_pio_sequences.read_block(4 * (nbursts+1) +2,
+                                                                       (0,1)[this_quiet<1], #show_rslt,
+                                                                       1) # wait_complete=1)
+                                print("====DEBUG: re-reading the same block with refresh")
+                                self.x393_pio_sequences.manual_refresh() # run refresh that sets address bit to opposite values to the required row+bank address
+                                buf=self.x393_pio_sequences.read_block(4 * (nbursts+1) +2,
+                                                                       (0,1)[this_quiet<1], #show_rslt,
+                                                                       1) # wait_complete=1)
+                            
                         meas_cache[dly]=meas
                         if not meas is None:
+                            if (this_quiet < 4) and (nn>0):
+                                print ("Got right on %d attempt"%(nn))
+                                
                             break
                     else:
                         print("***** FAILED to get measurement ******")
@@ -3492,15 +3659,16 @@ class X393McntrlAdjust(object):
             # Remove try/except to troubleshoot newly introduced bugs                
             try:
                 ph_dlys= self.get_all_delays(phase=phase,
-                                             filter_cmda= DFLT_DLY_FILT, # may be special case: 'S<safe_phase_as_float_number>
-                                             filter_dqsi= DFLT_DLY_FILT,
-                                             filter_dqi=  DFLT_DLY_FILT,
-                                             filter_dqso= None, # these are not needed here
-                                             filter_dqo=  None,
-                                             cost=        None,
-                                             forgive_missing=False,
+                                             filter_cmda=       DFLT_DLY_FILT, # may be special case: 'S<safe_phase_as_float_number>
+                                             filter_dqsi=       DFLT_DLY_FILT,
+                                             filter_dqi=        DFLT_DLY_FILT,
+                                             filter_dqso=       None, # these are not needed here
+                                             filter_dqo=        None,
+                                             cost=              None,
+                                             forgive_missing=   False,
+                                             allow_replace =    True,
                                              maxPhaseErrorsPS = maxPhaseErrorsPS,
-                                             quiet=       quiet)
+                                             quiet=             quiet)
                 if ph_dlys is None:
                     if quiet < 1:
                         print ("get_all_delays(%d,...) is None"%(phase))
@@ -3627,7 +3795,8 @@ class X393McntrlAdjust(object):
     def measure_cmd_odelay(self,
                            safe_phase=0.25, # 0 strictly follow cmda_odelay, >0 -program with this fraction of clk period from the margin
                            reinits=1,
-                           tryWrongWlev=1, # try wrong write levelling mode to make sure device is not stuck in write levelling mode 
+                           tryWrongWlev=1, # try wrong write levelling mode to make sure device is not stuck in write levelling mode
+                           allow_all_bits = True,
                            quiet=0):
         """
         Measure output delay on 3 command lines - WE, RAS and CAS, only for high-low transitions as controller
@@ -3637,6 +3806,7 @@ class X393McntrlAdjust(object):
         the command bit is wrong. After each test one read with normal delay is done to make sure the write levelling mode is
         turned off - during write levelling mode it is turned on first, then off and marginal command bit delay may cause
         write levelling to turn on, but not off 
+        @parame allow_all_bits - allow write leveling to respond on all bits (normally - only on 1)
         """
 #        self.load_hardcoded_data() # TODO: ******** TEMPORARY - remove later
         nrep=4 #16 # number of 8-bursts in write levelling mode
@@ -3807,12 +3977,24 @@ class X393McntrlAdjust(object):
             # set DQS odelays  to get write levelling pattern
             self.x393_mcntrl_timing.axi_set_dqs_odelay(combine_delay(dly_wlev), quiet=quiet)
             #Verify wlev is OK
-            wl_rslt=self.x393_pio_sequences.write_levelling(1, nrep, quiet)
-            if wl_rslt[2] > margin_error:
-                self.x393_pio_sequences.set_write_lev(nrep,False) # write leveling - 'good' mode (if it was not set so) 
+            if not self.wlev_all_bits:
+                wl_rslt = self.x393_pio_sequences.write_levelling(1, nrep, quiet)
+                if allow_all_bits and (wl_rslt[3] < wl_rslt[2]):
+                    self.wlev_all_bits = True
+            if self.wlev_all_bits: # try to vary DQS input delay
+                wl_rslt = self.write_levelling_allbits(1, nrep, quiet)        
+            bad_wlev = wl_rslt[2 + (0,1)[self.wlev_all_bits]]
             
-            wl_rslt=self.x393_pio_sequences.write_levelling(1, nrep, quiet)
-            if wl_rslt[2] > margin_error:
+#            wl_rslt=self.x393_pio_sequences.write_levelling(1, nrep, quiet)
+            if bad_wlev > margin_error:
+                self.x393_pio_sequences.set_write_lev(nrep,False) # write leveling - 'good' mode (if it was not set so) 
+                if self.wlev_all_bits: # try to vary DQS input delay
+                    wl_rslt = self.write_levelling_allbits(1, nrep, quiet)        
+                else:        
+                    wl_rslt = self.x393_pio_sequences.write_levelling(1, nrep, quiet)
+                bad_wlev = wl_rslt[2 + (0,1)[self.wlev_all_bits]]
+#            wl_rslt=self.x393_pio_sequences.write_levelling(1, nrep, quiet)
+            if bad_wlev > margin_error:
                 if not restart:
                     set_delays_with_reinit(phase=phase,restart=True) # try with reinitialization
                 else:
@@ -3832,31 +4014,54 @@ class X393McntrlAdjust(object):
                         print ('measure_block(%d,%d,%d,%d,%s) - new measurement'%(dly,cmda_odly_early[phase],cmd_bit,phase,str(force_meas)))
                         
                     self.x393_pio_sequences.manual_refresh() # run refresh that sets address bit to opposite values to the required row+bank address
-                    wl_rslt=self.x393_pio_sequences.write_levelling(1, nrep, quiet)
-                    meas= not (wl_rslt[2] > margin_error) # not so many errors (normally should be just 0
+#                    wl_rslt=self.x393_pio_sequences.write_levelling(1, nrep, quiet)
+                    if not self.wlev_all_bits:
+                        wl_rslt = self.x393_pio_sequences.write_levelling(1, nrep, quiet)
+                        if allow_all_bits and (wl_rslt[3] < wl_rslt[2]):
+                            self.wlev_all_bits = True
+                            self.x393_pio_sequences.manual_refresh() # run refresh that sets address bit to opposite values to the required row+bank address
+                    if self.wlev_all_bits: # try to vary DQS input delay
+                        wl_rslt = self.write_levelling_allbits(1, nrep, quiet)        
+                    bad_wlev = wl_rslt[2 + (0,1)[self.wlev_all_bits]]
+                    
+                    meas= not (bad_wlev > margin_error) # not so many errors (normally should be just 0
                     meas_cache[dly]=meas
                     # now reset command bit delay and make sure it worked
                     self.x393_mcntrl_timing.axi_set_cmd_odelay(combine_delay(cmda_odly_early[phase]),None,   quiet=quiet)
-                    wl_rslt=self.x393_pio_sequences.write_levelling(1, nrep,  quiet)
+                    if self.wlev_all_bits:
+                        wl_rslt = self.write_levelling_allbits(1, nrep, quiet)
+                    else:            
+                        wl_rslt=self.x393_pio_sequences.write_levelling(1, nrep,  quiet)
+                    bad_wlev = wl_rslt[2 + (0,1)[self.wlev_all_bits]]
                     
-                    if wl_rslt[2] > margin_error:
+                    if bad_wlev > margin_error:
                         if quiet < 2:
                             print ("measure_block failed to re-read with safe delays for phase=%d, cmd_bit=%d. Resetting memory device, wl_rslt=%s"%(phase,cmd_bit,str(wl_rslt)))
                         set_delays_with_reinit(phase=phase, restart=True)
                         #retry after re-initialization                        
-                        wl_rslt=self.x393_pio_sequences.write_levelling(1,nrep, quiet)
-                        if wl_rslt[2] > margin_error:
+#                        wl_rslt=self.x393_pio_sequences.write_levelling(1,nrep, quiet)
+                        if self.wlev_all_bits:
+                            wl_rslt = self.write_levelling_allbits(1, nrep, quiet)
+                        else:            
+                            wl_rslt=self.x393_pio_sequences.write_levelling(1, nrep,  quiet)
+                        bad_wlev = wl_rslt[2 + (0,1)[self.wlev_all_bits]]
+                        if bad_wlev > margin_error:
                             raise Exception ("measure_block failed to re-read with safe delays for phase=%d even after re-initializing device, wl_rslt=%s"%(phase,str(wl_rslt)))
                     # Now make sure device responds - setup read "wrong" write levelling (no actually turning on wlev mode)
                     if tryWrongWlev: 
                         self.x393_pio_sequences.set_write_lev(nrep, True) # 'wrong' write leveling - should not work
-                        wl_rslt=self.x393_pio_sequences.write_levelling(1, nrep, quiet)
+#                        wl_rslt=self.x393_pio_sequences.write_levelling(1, nrep, quiet)
+                        if self.wlev_all_bits:
+                            wl_rslt = self.write_levelling_allbits(1, nrep, quiet)
+                        else:            
+                            wl_rslt=self.x393_pio_sequences.write_levelling(1, nrep,  quiet)
+                        bad_wlev = wl_rslt[2 + (0,1)[self.wlev_all_bits]]
                         #restore normal write levelling mode:
                         self.x393_pio_sequences.set_write_lev(nrep, False) # 'wrong' write leveling - should not work
-                        if not (wl_rslt[2] > margin_error):
+                        if not (bad_wlev > margin_error):
                             if quiet < 2:
                                 print ("!!! Write levelling mode is stuck (not turning off) for phase=%d, wl_rslt=%s"%(phase,str(wl_rslt)))
-                            set_delays_with_reinit(phase=phase, restart=True) # just do it, no testimng here (wlev mode is already restored
+                            set_delays_with_reinit(phase=phase, restart=True) # just do it, no testing here (wlev mode is already restored
                     
                 else:
                     meas=meas_cache[dly]
@@ -4435,7 +4640,9 @@ class X393McntrlAdjust(object):
     def set_write_branch(self,
                          dqs_pattern=None,
                          extraTgl=1, # just in case
-                         quiet=1):
+                         quiet=1,
+                         reinits = False):
+                         
         """
         Try write mode branches and find sel (early/late write command), even if it does not match read settings
         Read mode should already be set up
@@ -4445,12 +4652,18 @@ class X393McntrlAdjust(object):
         delay vs. phase should be already calibrated
         @param dqs_pattern -     0x55/0xaa - DQS output toggle pattern. When it is 0x55 primary_set_out is reversed ? 
         @quiet reduce output
+        @param reinits - re-initialize DDR3 before running this procedure
         @return dictioray with a key(s) (early,nominal,late) containing dictionary of {'wbuf_dly':xx, 'sel':Y} or value 'ODD'
                           if the remaining number of errors is odd
         """
         #temporarily:
 #        self.load_mcntrl('dbg/x393_mcntrl.pickle')
         #write/used block parameters
+        
+        if reinits:
+            if quiet < 3:
+                print ("=== Re-initializing DDR3 before adjusting writes ===")
+            self.x393_pio_sequences.restart_ddr3()
         startValue=0
         num8=8 # 8 bursts to read/write
         ca=0
@@ -4466,7 +4679,7 @@ class X393McntrlAdjust(object):
             except:
                 dqs_pattern=vrlg.DFLT_DQS_PATTERN
                 self.adjustment_state["dqs_pattern"] = dqs_pattern
-                print("Setting default DQS wirite pattern to self.adjustment_state['dqs_pattern'] and to hardware. Check that write levelling already ran")
+                print("Setting default DQS write pattern to self.adjustment_state['dqs_pattern'] and to hardware. Check that write levelling already ran")
         self.x393_mcntrl_timing.axi_set_dqs_dqm_patterns(dqs_patt=dqs_pattern,
                                                          dqm_patt=None,
                                                          quiet=quiet+2)
@@ -4603,10 +4816,18 @@ read_variants= {(-1, (0, 0)): {'sel': 1, 'wbuf_dly': 9},
         # now go through all write only ramnges, try to find included r/w one, if not - use default_read
         write_settings={}
         for k_wo in write_only_map.keys():
+            if quiet < 3:
+                print ("k_wo=",k_wo)
             try:
                 for k_rw in read_write_map.keys():
+                    if quiet < 3:
+                        print ("k_rw=",k_rw)
                     if (k_rw[0],k_rw[1]) == k_wo:
+                        if quiet < 3:
+                            print ("k_rw=k_wo")
                         phase=(read_write_map[k_rw][0]+read_write_map[k_rw][1]//2)% numPhases
+                        if quiet < 3:
+                            print ("phase=",phase)
                         write_settings[k_wo]={'cmda_read':  k_rw[0],
                                               'cmda_write': k_rw[0],
                                               'dqi':        k_rw[2],
@@ -4616,11 +4837,16 @@ read_variants= {(-1, (0, 0)): {'sel': 1, 'wbuf_dly': 9},
                                               'read_phase': phase,
                                               'write_phase': phase,
                                               'rel_sel':k_wo[0]+k_wo[1][1]-k_wo[1][0]}
+                        if quiet < 3:
+                            print ("write_settings[%s]=%s"%(str(k_wo), str(write_settings[k_wo])))
                         break
                 else:
+                    if quiet < 3:
+                        print ('raise Exception("failed")')
                     raise Exception("failed") # just assert
             except:
-                phase=(write_only_map[k_wo][0]+read_write_map[k_wo][1]//2)% numPhases
+#                phase=(write_only_map[k_wo][0]+read_write_map[k_wo][1]//2)% numPhases #error here
+                phase=(write_only_map[k_wo][0]+write_only_map[k_wo][1]//2)% numPhases #error here
                 write_settings[k_wo]={'cmda_write': k_wo[0],
                                       'dqo':        k_wo[1],
                                       'dqso':       k_wo[1][0],
@@ -4694,7 +4920,10 @@ write_settings= {
                                             maxPhaseErrorsPS= None,
                                             quiet=quiet+2)
                 if used_delays is None:
-                    raise Exception("set_write_branch(): failed to set phase = %d"%(phase))        
+#                    raise Exception("set_write_branch(): failed to set phase = %d"%(phase))        
+                    print("set_write_branch(): failed to set phase = %d, write_variant_key=%s, variant=%s, wsel=%d"%
+                           (phase,str(write_variant_key),str(variant),wsel))
+                    continue        
                 
                 
                 self.x393_pio_sequences.write_block_inc(num8=num8, # max 512 16-bit words
@@ -4733,6 +4962,8 @@ write_settings= {
                 if (problems_min is None) or (sum(problems) < sum(problems_min)):
                     problems_min=problems
                     best_wsel=wsel
+            if problems_min is None:
+                continue        
             if sum(problems_min) == 0:
                 rslt[write_variant_key]={'sel':best_wsel}
             elif (problems_min[0]%2) or (problems_min[1]%2):
@@ -4800,7 +5031,7 @@ write_settings= {
         except:
             dqs_pattern=vrlg.DFLT_DQS_PATTERN
             self.adjustment_state["dqs_pattern"] = dqs_pattern
-            print("Setting default DQS wirite pattern to self.adjustment_state['dqs_pattern'] and to hardware. Check that write levelling already ran")
+            print("Setting default DQS write pattern to self.adjustment_state['dqs_pattern'] and to hardware. Check that write levelling already ran")
         self.x393_mcntrl_timing.axi_set_dqs_dqm_patterns(dqs_patt=dqs_pattern,
                                                          dqm_patt=None,
                                                          quiet=quiet+2)
@@ -5062,15 +5293,15 @@ write_settings= {
 
     def measure_all(self,
                     tasks="*DCWRPOASZB", # "ICWRPOA", #"ICWRPOASZB",
-                    prim_steps=1,
-                    primary_set_in=2,
-                    primary_set_out=2,
-                    dqs_pattern=0xaa,
-                    rsel=None, # None (any) or 0/1
-                    wsel=None, # None (any) or 0/1 # Seems wsel=0 has a better fit - consider changing
-                    extraTgl=0,
-                    quiet=3,
-                    wbuf_dly=9): # just a hint, start value can be different
+                    prim_steps =      1,
+                    primary_set_in =  2,
+                    primary_set_out = 2,
+                    dqs_pattern =     0xaa,
+                    rsel=             1, #None, # None (any) or 0/1
+                    wsel=             0, #None, # None (any) or 0/1 # Seems wsel=0 has a better fit - consider changing
+                    extraTgl=         0,
+                    quiet=            3,
+                    wbuf_dly =        9): # just a hint, start value can be different
 
         """
         @param tasks - "*" - load bitfile
@@ -5078,7 +5309,7 @@ write_settings= {
                        "I" - initialize memory, set refresh
                        "C" cmda, "W' - write levelling, "R" - read levelling (DQI-DQSI), "P" -  dqs input phase (DQSI-PHASE),
                        "O" - output timing (DQ odelay vs  DQS odelay), "A" - address/bank lines output delays, "Z" - print results,
-                       "B" - select R/W brances and get the optimal phase
+                       "B" - select R/W branches and get the optimal phase
         @param prim_steps -  compare measurement with current delay with one lower by 1 primary step (5 fine delay steps), 0 -
                              compare with one fine step lower
         @param primary_set_in -  which of the primary sets to use when processing DQi/DQSi results (2 - normal, 0 - other DQS phase)
@@ -5118,7 +5349,7 @@ write_settings= {
         measure_addr_odelay_dqsi_safe_phase=0.125 # > 0 - allow DQSI with DQI simultaneously deviate  +/- this fraction of a period   
         commonFine=True, # use same values for fine delay for address/bank lines
         DqsiMaxDlyErr=200.0 # currently just to check multiple overlapping DQSI branches
-        DqsoMaxDlyErr=200.0 # currently just to check multiple overlapping DQSI branches
+        DqsoMaxDlyErr=500.0 # currently just to check multiple overlapping DQSI branches
         CMDAMaxDlyErr=200.0 # currently just to check multiple overlapping DQSI branches
         task_data=[
                    {'key':'*',
@@ -5143,6 +5374,7 @@ write_settings= {
                     'params':{'start_phase':0,
                               'reinits':1,
                               'max_phase_err':max_phase_err,
+                              'allow_all_bits':True,
                               'quiet':quiet+1}},
 
                    {'key':'W',
@@ -5153,6 +5385,7 @@ write_settings= {
                               'reinits':1,
                               'invert':0,
                               'dqs_patt':dqs_pattern,
+                              'allow_all_bits':True,
                               'quiet':quiet+1}},
                                        
                    {'key':'W',
@@ -5172,6 +5405,7 @@ write_settings= {
                     'params':{'safe_phase':safe_phase,
                               'reinits': 1,
                               'tryWrongWlev': 1,
+                              'allow_all_bits':True,
                               'quiet': quiet+1}},
                    {'key':'R',
                     'func':self.measure_pattern,
@@ -5247,7 +5481,8 @@ write_settings= {
                               'dqsi_safe_phase':measure_addr_odelay_dqsi_safe_phase,
                               'ra': 0,
                               'ba': 0,
-                              'quiet':quiet+1}},
+                              'quiet':quiet+1,
+                              'reinits':True}},
                    
                     {'key':'A',
                     'func':self.proc_addr_odelay,
@@ -5302,7 +5537,7 @@ write_settings= {
 
                     {'key':'Z',
                     'func':self.show_all_delays,
-                    'comment':'Printing results table (delays and errors vs. phase)- Only phases that nave valid values for all signals',
+                    'comment':'Printing results table (delays and errors vs. phase)- Only phases that have valid values for all signals',
                     'params':{'filter_variants':'A', # Here any string
                               'filter_cmda': 'A',
                               'filter_dqsi': 'A',
@@ -5545,10 +5780,10 @@ write_settings= {
         self.adjustment_state.update(dqs_phase)
 
         #combine DQSI and DQI data to get DQ vs. phase
-        delays, errors= self._combine_dq_dqs(dqs_data=self.adjustment_state['dqsi_phase_multi'],
-                                             dq_enl_data=self.adjustment_state["dqi_dqsi"],
-                                             dq_enl_err = self.adjustment_state["maxErrDqsi"],
-                                             quiet=quiet)
+        delays, errors= self._combine_dq_dqs(dqs_data =    self.adjustment_state['dqsi_phase_multi'],
+                                             dq_enl_data = self.adjustment_state["dqi_dqsi"],
+                                             dq_enl_err =  self.adjustment_state["maxErrDqsi"],
+                                             quiet =       quiet)
         self.adjustment_state['dqi_phase_multi'] = delays
         self.adjustment_state["dqi_phase_err"] =   errors
         return dqs_phase
@@ -5759,7 +5994,7 @@ write_settings= {
         """
 #        self.load_hardcoded_data() # TODO: TEMPORARY - remove later
 
-        quiet = 0 # 04.10.2016
+#        quiet = 0 # 04.10.2016
 
 
         try:

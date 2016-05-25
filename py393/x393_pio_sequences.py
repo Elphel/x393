@@ -1138,7 +1138,7 @@ class X393PIOSequences(object):
         @param wait_complete wait write levelling operation to complete (0 - may initiate multiple PS PIO operations)
         @param nburst  number of 8-bursts written (should match sequence!) 
         @param quiet    reduce output
-        @eturn a pair of ratios for getting "1" for 2 lanes and problem marker (should be 0)
+        @eturn a pair of ratios for getting "1" for 2 lanes and problem marker (should be 0), added 4-th value for LY
         """
         numBufWords=2*nburst # twice nrep in set_write_lev
         self.wait_ps_pio_done(vrlg.DEFAULT_STATUS_MODE,1); # not no interrupt running cycle - delays are changed immediately
@@ -1182,8 +1182,8 @@ class X393PIOSequences(object):
 
         if quiet <1:
             print ("WLEV lanes ratios: %f %f, non 0x00/0x01 byte: %f, non 0x00/0xffs: %f"%(rslt[0],rslt[1],rslt[2],rslt[3]))   
-        if (rslt[3] < rslt[2]):
-            rslt[2] = rslt[3]
+#        if (rslt[3] < rslt[2]):
+#            rslt[2] = rslt[3]
         return rslt
     
     def read_levelling(self,
