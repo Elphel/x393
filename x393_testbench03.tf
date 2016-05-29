@@ -146,8 +146,8 @@ parameter NUM_INTERRUPTS =        9;
  parameter TRIG_PERIOD =      6000 ;
 `ifdef HISPI 
     parameter HBLANK=            92; // 72; // 62; // 52; // 90; // 12; /// 52; //*********************
-    parameter BLANK_ROWS_BEFORE= 3; // 9; // 3; //8; ///2+2 - a little faster than compressor
-    parameter BLANK_ROWS_AFTER=  1; //8;
+    parameter BLANK_ROWS_BEFORE= 9; /// 3; // 9; // 3; //8; ///2+2 - a little faster than compressor
+    parameter BLANK_ROWS_AFTER=  8; /// 1; //8;
     
 `else
 //    parameter HBLANK=            12; // 52; // 12; /// 52; //*********************
@@ -1403,10 +1403,18 @@ assign #10 gpio_pins[9] = gpio_pins[8];
 end
 // protect from never end
   initial begin
+  // after 1 frame compressed on all channels
+`ifdef HISPI
+    #135000;
+
+`else
+    #160000;
+`endif  
+  
 //       #30000;
 //     #200000;
 //     #250000;
-     #285000;
+//     #285000;
 //      #160000;
 //      #175000;
 //     #60000;
