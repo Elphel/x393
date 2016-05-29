@@ -31,7 +31,8 @@
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
  *******************************************************************************/
-          parameter FPGA_VERSION =          32'h03930095;    // parallel  -0.068/-0.342/5 82.38%
+          parameter FPGA_VERSION =          32'h03930096;    // serial, next
+//          parameter FPGA_VERSION =          32'h03930095;    // parallel  -0.068/-0.342/5 82.38%
 //          parameter FPGA_VERSION =          32'h03930094;    // hispi, disabling debug  -0.187/-1.252/16 84.14%  
 //        parameter FPGA_VERSION =          32'h03930093;    // hispi, masking sensor data to memory buffer, debug still on
 //        parameter FPGA_VERSION =          32'h03930092;    // hispi, even more debugging memory pages sens-> memory

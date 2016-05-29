@@ -98,7 +98,18 @@ module  x393_testbench03 #(
 `define DEBUG_RD_DATA 1  
 
 //`include "includes/x393_cur_params_sim.vh" // parameters that may need adjustment, should be before x393_localparams.vh
-`include "includes/x393_cur_params_target.vh" // SuppressThisWarning VEditor - not used parameters that may need adjustment, should be before x393_localparams.vh
+// *** Adjusting includes/x393_cur_params_target.vh by the hardware may break simulation, hard-wired parameters below are tested ***
+`ifdef USE_HARD_CURPARAMS
+    localparam  DLY_LANE0_ODELAY =  80'hd85c1014141814181218;
+    localparam  DLY_LANE0_IDELAY =  72'h2c7a8380897c807b88;
+    localparam  DLY_LANE1_ODELAY =  80'hd8581812181418181814;
+    localparam  DLY_LANE1_IDELAY =  72'h108078807a887c8280;
+    localparam          DLY_CMDA = 256'hd3d3d3d4dcd1d8cc494949494949494949d4d3ccd3d3dbd4ccd4d2d3d1d2d8cc;
+    localparam         DLY_PHASE =   8'h33;
+`else
+    `include "includes/x393_cur_params_target.vh" // SuppressThisWarning VEditor - not used parameters that may need adjustment, should be before x393_localparams.vh
+`endif
+
 parameter TRIGGER_MODE =          0; // 1;     // 0 - auto, 1 - triggered
 parameter EXT_TRIGGER_MODE =      1 ;    // 0 - internal, 1 - external trigger (camsync)
 parameter EXTERNAL_TIMESTAMP =    0; // 1 ;    // embed local timestamp, 1 - embed received timestamp

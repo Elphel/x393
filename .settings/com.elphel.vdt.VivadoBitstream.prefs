@@ -3,6 +3,6 @@ VivadoBitstream_105_force=true
 VivadoBitstream_122_PreBitstreamTCL=set_property "BITSTREAM.STARTUP.MATCH_CYCLE" NoWait [current_design]<-@\#\#@->
 VivadoBitstream_123_PreBitstreamTCL=set_property "BITSTREAM.STARTUP.MATCH_CYCLE" NoWait [current_design]<-@\#\#@->
 VivadoBitstream_124_force=true
-VivadoBitstream_124_rawfile=x393_parallel
+VivadoBitstream_124_rawfile=x393_hispi
 com.elphel.store.context.VivadoBitstream=VivadoBitstream_105_force<-@\#\#@->VivadoBitstream_103_PreBitstreamTCL<-@\#\#@->VivadoBitstream_124_force<-@\#\#@->VivadoBitstream_122_PreBitstreamTCL<-@\#\#@->VivadoBitstream_123_PreBitstreamTCL<-@\#\#@->VivadoBitstream_124_rawfile<-@\#\#@->
 eclipse.preferences.version=1
