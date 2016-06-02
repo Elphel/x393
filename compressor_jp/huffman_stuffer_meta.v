@@ -2,7 +2,7 @@
  * Module: huffman_stuffer_meta
  * Date:2015-10-26  
  * Author: Andrey Filippov     
- * Description: Huffman encoder, bit stuffer, inser meta-data
+ * Description: Huffman encoder, bit stuffer, insert meta-data
  * "New" part of the JPEG/JP4 comressor that used double frequency clock
  *
  * Copyright (c) 2015 Elphel, Inc .
