@@ -841,7 +841,7 @@ class X393SensCmprs(object):
         
                 
     def specify_phys_memory(self,
-                            circbuf_chn_size= 0x1000000,
+                            circbuf_chn_size= 0x4000000,
                             verbose =         1):
         """
         @param circbuf_chn_size - circular buffer size for each channel, in bytes
