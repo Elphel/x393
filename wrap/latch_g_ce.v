@@ -1,10 +1,15 @@
-/*******************************************************************************
- * Module: latch_g_ce
- * Date:2015-07-22  
- * Author: Andrey Filippov    
- * Description: Multi-bit wrapper for the transparent latch primitive
+/*!
+ * <b>Module:</b>latch_g_ce
+ * @file latch_g_ce.v
+ * @date 2015-07-22  
+ * @author Andrey Filippov    
  *
- * Copyright (c) 2015 Elphel, Inc .
+ * @brief Multi-bit wrapper for the transparent latch primitive
+ *
+ * @copyright Copyright (c) 2015 Elphel, Inc .
+ *
+ * <b>License:</b>
+ *
  * latch_g_ce.v is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -30,7 +35,7 @@
  * the combined code. This permission applies to you if the distributed code
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
- *******************************************************************************/
+ */
 `timescale 1ns/1ps
 
 module  latch_g_ce#(

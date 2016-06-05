@@ -1,10 +1,15 @@
-/*******************************************************************************
- * Module: nmea_decoder393
- * Date:2015-07-06  
- * Author: Andrey Filippov     
- * Description: Decode some of the NMEA sentences (to compress them)
+/*!
+ * <b>Module:</b>nmea_decoder393
+ * @file nmea_decoder393.v
+ * @date 2015-07-06  
+ * @author Andrey Filippov     
  *
- * Copyright (c) 2015 Elphel, Inc.
+ * @brief Decode some of the NMEA sentences (to compress them)
+ *
+ * @copyright Copyright (c) 2015 Elphel, Inc.
+ *
+ * <b>License:</b>
+ *
  * nmea_decoder393.v is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -30,7 +35,7 @@
  * the combined code. This permission applies to you if the distributed code
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
- *******************************************************************************/
+ */
 `timescale 1ns/1ps
 
 module  nmea_decoder393(

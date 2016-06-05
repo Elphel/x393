@@ -1,12 +1,17 @@
-/*******************************************************************************
- * Module: ahci_dma_wr_fifo
- * Date:2016-01-02  
- * Author: Andrey Filippov
- * Description: cross clocks,  word-realign, 32 -> 64 with byte write mask
+/*!
+ * <b>Module:</b>ahci_dma_wr_fifo
+ * @file ahci_dma_wr_fifo.v
+ * @date 2016-01-02  
+ * @author Andrey Filippov
+ *
+ * @brief cross clocks,  word-realign, 32 -> 64 with byte write mask
  * Convertion from x32 DWORD data received from FIS-es @ mclk to QWORD-aligned
  * AXI data @hclk
  *
- * Copyright (c) 2016 Elphel, Inc .
+ * @copyright Copyright (c) 2016 Elphel, Inc .
+ *
+ * <b>License:</b>
+ *
  * ahci_dma_wr_fifo.v is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -32,7 +37,7 @@
  * the combined code. This permission applies to you if the distributed code
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
- *******************************************************************************/
+ */
 `timescale 1ns/1ps
 
 module  ahci_dma_wr_fifo#(

@@ -1,10 +1,15 @@
-/*******************************************************************************
- * Module: cmd_deser
- * Date:2015-01-12  
- * Author: Andrey Filippov     
- * Description: Expand command address/data from a byte-wide
+/*!
+ * <b>Module:</b>cmd_deser
+ * @file cmd_deser.v
+ * @date 2015-01-12  
+ * @author Andrey Filippov     
  *
- * Copyright (c) 2015 Elphel, Inc.
+ * @brief Expand command address/data from a byte-wide
+ *
+ * @copyright Copyright (c) 2015 Elphel, Inc.
+ *
+ * <b>License:</b>
+ *
  * cmd_deser.v is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -30,7 +35,7 @@
  * the combined code. This permission applies to you if the distributed code
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
- *******************************************************************************/
+ */
 `timescale 1ns/1ps
 
 module  cmd_deser#(

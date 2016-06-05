@@ -1,10 +1,15 @@
-/*******************************************************************************
- * Module: gtx_wrap
- * Date: 2015-08-24
- * Author: Alexey     
- * Description: shall replace gtx's PCS part functions, bypassing PCS itself in gtx
+/*!
+ * <b>Module:</b>gtx_wrap
+ * @file gtx_wrap.v
+ * @date  2015-08-24
+ * @author Alexey     
  *
- * Copyright (c) 2015 Elphel, Inc.
+ * @brief shall replace gtx's PCS part functions, bypassing PCS itself in gtx
+ *
+ * @copyright Copyright (c) 2015 Elphel, Inc.
+ *
+ * <b>License:</b>
+ *
  * gtx_wrap.v is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -30,7 +35,7 @@
  * the combined code. This permission applies to you if the distributed code
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
- *******************************************************************************/
+ */
 //`include "gtx_8x10enc.v"
 //`include "gtx_10x8dec.v"
 //`include "gtx_comma_align.v"

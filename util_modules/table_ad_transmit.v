@@ -1,12 +1,17 @@
-/*******************************************************************************
- * Module: table_ad_transmit
- * Date:2015-06-18  
- * Author: Andrey Filippov     
- * Description: transmit byte-wide table address/data from 32-bit cmd_desr
+/*!
+ * <b>Module:</b>table_ad_transmit
+ * @file table_ad_transmit.v
+ * @date 2015-06-18  
+ * @author Andrey Filippov     
+ *
+ * @brief transmit byte-wide table address/data from 32-bit cmd_desr
  * In 32-bit mode we duty cycle is >= 6, so there will always be gaps in
  * chn_stb[i] active 
  *
- * Copyright (c) 2015 Elphel, Inc.
+ * @copyright Copyright (c) 2015 Elphel, Inc.
+ *
+ * <b>License:</b>
+ *
  * table_ad_transmit.v is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -32,7 +37,7 @@
  * the combined code. This permission applies to you if the distributed code
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
- *******************************************************************************/
+ */
 `timescale 1ns/1ps
 
 module  table_ad_transmit#(

@@ -1,10 +1,15 @@
-/*******************************************************************************
- * Module: level_cross_clocks
- * Date:2015-07-19  
- * Author: Aandrey Filippov     
- * Description: re-sample signal to a different clock to reduce metastability
+/*!
+ * <b>Module:</b>level_cross_clocks
+ * @file level_cross_clocks.v
+ * @date 2015-07-19  
+ * @author Aandrey Filippov     
  *
- * Copyright (c) 2015 Elphel, Inc .
+ * @brief re-sample signal to a different clock to reduce metastability
+ *
+ * @copyright Copyright (c) 2015 Elphel, Inc .
+ *
+ * <b>License:</b>
+ *
  * level_cross_clocks.v is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -30,7 +35,7 @@
  * the combined code. This permission applies to you if the distributed code
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
- *******************************************************************************/
+ */
 `timescale 1ns/1ps
 
 module  level_cross_clocks#(

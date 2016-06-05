@@ -1,10 +1,14 @@
- /*******************************************************************************
- * File: x393_tasks01.vh
- * Date:2015-02-07  
- * Author: Andrey Filippov     
- * Description: Simulation tasks for the x393 (low level)
+/*!
+ * @file x393_tasks01.vh
+ * @date 2015-02-07  
+ * @author Andrey Filippov     
  *
- * Copyright (c) 2015 Elphel, Inc.
+ * @brief Simulation tasks for the x393 (low level)
+ *
+ * @copyright Copyright (c) 2015 Elphel, Inc.
+ *
+ * <b>License:</b>
+ *
  * x393_tasks01.vh is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -30,7 +34,7 @@
  * the combined code. This permission applies to you if the distributed code
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
- *******************************************************************************/
+ */
  // Low-level tasks 
 // alternative way to check for empty read queue (without a separate counter)
 

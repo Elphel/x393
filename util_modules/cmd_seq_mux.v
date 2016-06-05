@@ -1,11 +1,16 @@
-/*******************************************************************************
- * Module: cmd_seq_mux
- * Date:2015-06-29  
- * Author: Andrey Filippov     
- * Description: Command multiplexer from 4 channels of frame-based command
+/*!
+ * <b>Module:</b>cmd_seq_mux
+ * @file cmd_seq_mux.v
+ * @date 2015-06-29  
+ * @author Andrey Filippov     
+ *
+ * @brief Command multiplexer from 4 channels of frame-based command
  * sequencers.
  *
- * Copyright (c) 2015 Elphel, Inc.
+ * @copyright Copyright (c) 2015 Elphel, Inc.
+ *
+ * <b>License:</b>
+ *
  * cmd_seq_mux.v is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -31,7 +36,7 @@
  * the combined code. This permission applies to you if the distributed code
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
- *******************************************************************************/
+ */
 `timescale 1ns/1ps
 
 module  cmd_seq_mux#(

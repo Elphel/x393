@@ -1,11 +1,16 @@
-/*******************************************************************************
- * Module: sensors393
- * Date:2015-07-12  
- * Author: Andrey Filippov     
- * Description: 4-channel sensor subsystem
+/*!
+ * <b>Module:</b>sensors393
+ * @file sensors393.v
+ * @date 2015-07-12  
+ * @author Andrey Filippov     
+ *
+ * @brief 4-channel sensor subsystem
  *  Uniform, assuming the same sensors/multiplexers, common pixel clock
  *
- * Copyright (c) 2015 Elphel, Inc .
+ * @copyright Copyright (c) 2015 Elphel, Inc .
+ *
+ * <b>License:</b>
+ *
  * sensors393.v is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -31,7 +36,7 @@
  * the combined code. This permission applies to you if the distributed code
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
- *******************************************************************************/
+ */
 `timescale 1ns/1ps
 
 module  sensors393 #(

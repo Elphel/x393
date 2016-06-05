@@ -1,14 +1,19 @@
-/*******************************************************************************
- * Module: cmprs_afi_mux_status
- * Date:2015-06-28  
- * Author: Andrey Filippov     
- * Description: prepare and send per-channel chunk pointer information as status
+/*!
+ * <b>Module:</b>cmprs_afi_mux_status
+ * @file cmprs_afi_mux_status.v
+ * @date 2015-06-28  
+ * @author Andrey Filippov     
+ *
+ * @brief prepare and send per-channel chunk pointer information as status
  * Using 4 consecutive locations. Each channel can provide one of the 4 pointers:
  * frame pointer in the write channel, current chunk pointer in the write channel
  * and the same for the write response channel (confirmed written to the system
  * memory
  *
- * Copyright (c) 2015 Elphel, Inc.
+ * @copyright Copyright (c) 2015 Elphel, Inc.
+ *
+ * <b>License:</b>
+ *
  * cmprs_afi_mux_status.v is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -34,7 +39,7 @@
  * the combined code. This permission applies to you if the distributed code
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
- *******************************************************************************/
+ */
 `timescale 1ns/1ps
 
 module  cmprs_afi_mux_status #(

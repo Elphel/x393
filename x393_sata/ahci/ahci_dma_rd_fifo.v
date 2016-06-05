@@ -1,12 +1,17 @@
-/*******************************************************************************
- * Module: ahci_dma_rd_fifo
- * Date:2016-01-01  
- * Author: Andrey Filippov
- * Description: cross clocks,  word-realign, 64->32
+/*!
+ * <b>Module:</b>ahci_dma_rd_fifo
+ * @file ahci_dma_rd_fifo.v
+ * @date 2016-01-01  
+ * @author Andrey Filippov
+ *
+ * @brief cross clocks,  word-realign, 64->32
  * Convertion from x64 QWORD-aligned AXI data @hclk to
  * 32-bit word-aligned data at mclk
  *
- * Copyright (c) 2016 Elphel, Inc .
+ * @copyright Copyright (c) 2016 Elphel, Inc .
+ *
+ * <b>License:</b>
+ *
  * ahci_dma_rd_fifo.v is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -32,7 +37,7 @@
  * the combined code. This permission applies to you if the distributed code
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
- *******************************************************************************/
+ */
 `timescale 1ns/1ps
 
 module  ahci_dma_rd_fifo#(

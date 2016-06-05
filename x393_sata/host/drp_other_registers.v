@@ -1,10 +1,15 @@
-/*******************************************************************************
- * Module: drp_other_registers
- * Date:2016-03-13
- * Author: Andrey Filippov     
- * Description: Additional registers controlled/read back over DRP
+/*!
+ * <b>Module:</b>drp_other_registers
+ * @file drp_other_registers.v
+ * @date 2016-03-13
+ * @author Andrey Filippov     
  *
- * Copyright (c) 2016 Elphel, Inc .
+ * @brief Additional registers controlled/read back over DRP
+ *
+ * @copyright Copyright (c) 2016 Elphel, Inc .
+ *
+ * <b>License:</b>
+ *
  * drp_other_registers.v is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -17,7 +22,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/> .
- *******************************************************************************/
+ */
 `timescale 1ns/1ps
 
 module  drp_other_registers#(

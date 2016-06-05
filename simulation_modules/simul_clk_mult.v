@@ -1,10 +1,15 @@
-/*******************************************************************************
- * Module: simul_clk_mult
- * Date:2015-10-10  
- * Author: Andrey Filippov     
- * Description: Clock multiplier
+/*!
+ * <b>Module:</b>simul_clk_mult
+ * @file simul_clk_mult.v
+ * @date 2015-10-10  
+ * @author Andrey Filippov     
  *
- * Copyright (c) 2015 Elphel, Inc .
+ * @brief Clock multiplier
+ *
+ * @copyright Copyright (c) 2015 Elphel, Inc .
+ *
+ * <b>License:</b>
+ *
  * simul_clk_mult.v is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -30,7 +35,7 @@
  * the combined code. This permission applies to you if the distributed code
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
- *******************************************************************************/
+ */
 `timescale 1ns/1ps
 
 module  simul_clk_mult#(

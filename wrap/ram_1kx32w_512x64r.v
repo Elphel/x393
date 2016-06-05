@@ -1,5 +1,14 @@
-/*******************************************************************************
- * Copyright (c) 2014 Elphel, Inc.
+/*!
+ * <b>Module:</b> ram_1kx32w_512x64r
+ * @file ram_1kx32w_512x64r.v
+ * @author  Andrey Filippov
+ *
+ * @copyright Copyright (c) 2014 Elphel, Inc.
+ *      
+ * @brief Block RAM wrapper for the external memory write buffer
+ *
+ * <b>License:</b>
+ *
  * ram_1kx32w_512x64r.v is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -12,7 +21,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- *******************************************************************************/
+ */
 /*
    Address/data widths
    Connect unused data to 1b0, unused addresses - to 1'b1

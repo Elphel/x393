@@ -1,10 +1,14 @@
-/*******************************************************************************
- * File: x393_parameters.vh
- * Date:2015-02-07
- * Author: Andrey Filippov
- * Description: Parameters for the x393 (simulation and implementation)
+/*!
+ * @file x393_parameters.vh
+ * @date 2015-02-07
+ * @author Andrey Filippov
  *
- * Copyright (c) 2015 Elphel, Inc.
+ * @brief Parameters for the x393 (simulation and implementation)
+ *
+ * @copyright Copyright (c) 2015 Elphel, Inc.
+ *
+ * <b>License:</b>
+ *
  * x393_parameters.vh is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -30,7 +34,7 @@
  * the combined code. This permission applies to you if the distributed code
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
- *******************************************************************************/
+ */
     parameter MCONTR_WR_MASK =          'h3c00, // AXI write address mask for the 1Kx32 buffers command sequence memory
     parameter MCONTR_RD_MASK =          'h3c00, // AXI read address mask to generate busy
 

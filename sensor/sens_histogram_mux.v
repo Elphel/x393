@@ -1,10 +1,15 @@
-/*******************************************************************************
- * Module: sens_histogram_mux
- * Date:2015-06-01  
- * Author: Andrey Filippov     
- * Description: Readout multiplexer for 4 histogram modules
+/*!
+ * <b>Module:</b>sens_histogram_mux
+ * @file sens_histogram_mux.v
+ * @date 2015-06-01  
+ * @author Andrey Filippov     
  *
- * Copyright (c) 2015 Elphel, Inc.
+ * @brief Readout multiplexer for 4 histogram modules
+ *
+ * @copyright Copyright (c) 2015 Elphel, Inc.
+ *
+ * <b>License:</b>
+ *
  * sens_histogram_mux.v is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -30,7 +35,7 @@
  * the combined code. This permission applies to you if the distributed code
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
- *******************************************************************************/
+ */
 `timescale 1ns/1ps
 
 module  sens_histogram_mux(

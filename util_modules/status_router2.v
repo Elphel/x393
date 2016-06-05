@@ -1,10 +1,15 @@
-/*******************************************************************************
- * Module: status_router2
- * Date:2015-01-13  
- * Author: Andrey Filippov     
- * Description: 2:1 status data router/mux
+/*!
+ * <b>Module:</b>status_router2
+ * @file status_router2.v
+ * @date 2015-01-13  
+ * @author Andrey Filippov     
  *
- * Copyright (c) 2015 Elphel, Inc.
+ * @brief 2:1 status data router/mux
+ *
+ * @copyright Copyright (c) 2015 Elphel, Inc.
+ *
+ * <b>License:</b>
+ *
  * status_router2.v is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -30,7 +35,7 @@
  * the combined code. This permission applies to you if the distributed code
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
- *******************************************************************************/
+ */
  //TODO: make a 4-input mux too?
 `timescale 1ns/1ps
 `include "system_defines.vh" 

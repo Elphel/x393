@@ -1,11 +1,16 @@
-/*******************************************************************************
- * Module: fifo_2regs
- * Date:2015-02-17  
- * Author: Andrey Filippov     
- * Description: Simple two-register FIFO, no over/under check,
+/*!
+ * <b>Module:</b>fifo_2regs
+ * @file fifo_2regs.v
+ * @date 2015-02-17  
+ * @author Andrey Filippov     
+ *
+ * @brief Simple two-register FIFO, no over/under check,
  * behaves correctly only for correct inputs
  *
- * Copyright (c) 2015 Elphel, Inc.
+ * @copyright Copyright (c) 2015 Elphel, Inc.
+ *
+ * <b>License:</b>
+ *
  * fifo_2regs.v is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -31,7 +36,7 @@
  * the combined code. This permission applies to you if the distributed code
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
- *******************************************************************************/
+ */
 `timescale 1ns/1ps
 
 module  fifo_2regs #(

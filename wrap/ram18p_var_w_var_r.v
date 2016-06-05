@@ -1,8 +1,14 @@
-/*******************************************************************************
- * Copyright (c) 2015 Elphel, Inc.
- * Dual port memory wrapper, with variable width write and variable width read
+/*!
+ * <b>Module:</b> ram18p_var_w_var_r
+ * @file ram18p_var_w_var_r.v
+ * @author  Andrey Filippov
+ *
+ * @copyright Copyright (c) 2014 Elphel, Inc.
+ *      
+ * @brief  Dual port memory wrapper, with variable width write and variable width read
  * using "SDP" or "TDP" mode of RAMB18E1 (half of RAMB18E1) 
  * Uses parity bits to extend total data width (minimal width should be >=8).
+ *
  * ram18p_var_w_var_r.v is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -15,7 +21,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- *******************************************************************************/
+ */
 `include "system_defines.vh" 
 /*
    Address/data widths

@@ -1,10 +1,15 @@
-/*******************************************************************************
- * Module: oddr_ss
- * Date:2015-05-16  
- * Author: Andrey Filippov     
- * Description: Wrapper for ODDR+OBUFT
+/*!
+ * <b>Module:</b>oddr_ss
+ * @file oddr_ss.v
+ * @date 2015-05-16  
+ * @author Andrey Filippov     
  *
- * Copyright (c) 2015 Elphel, Inc.
+ * @brief Wrapper for ODDR+OBUFT
+ *
+ * @copyright Copyright (c) 2015 Elphel, Inc.
+ *
+ * <b>License:</b>
+ *
  * oddr_ss.v is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -30,7 +35,7 @@
  * the combined code. This permission applies to you if the distributed code
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
- *******************************************************************************/
+ */
 `timescale 1ns/1ps
 
 module  oddr_ss #(

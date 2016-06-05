@@ -1,10 +1,15 @@
-/*******************************************************************************
- * Module: membridge
- * Date:2015-04-26  
- * Author: Andrey Filippov     
- * Description: bi-directional bridge between system and video memory over axi_hp
+/*!
+ * <b>Module:</b>membridge
+ * @file membridge.v
+ * @date 2015-04-26  
+ * @author Andrey Filippov     
  *
- * Copyright (c) 2015 Elphel, Inc.
+ * @brief bi-directional bridge between system and video memory over axi_hp
+ *
+ * @copyright Copyright (c) 2015 Elphel, Inc.
+ *
+ * <b>License:</b>
+ *
  * membridge.v is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -30,7 +35,7 @@
  * the combined code. This permission applies to you if the distributed code
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
- *******************************************************************************/
+ */
 `timescale 1ns/1ps
 //`define MEMBRIDGE_DEBUG_READ 1
 module  membridge#(

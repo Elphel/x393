@@ -1,12 +1,17 @@
-/*******************************************************************************
- * Module: ramtp_var_w_var_r
- * Date:2015-05-29  
- * Author: Andrey Filippov     
- * Description:  Dual port memory wrapper, with variable width write and variable
+/*!
+ * <b>Module:</b>ramtp_var_w_var_r
+ * @file ramtp_var_w_var_r.v
+ * @date 2015-05-29  
+ * @author Andrey Filippov     
+ *
+ * @brief Dual port memory wrapper, with variable width write and variable
  * width read,  using "TDP" mode of RAMB36E1. Same R/W widths in each port.
  * Uses parity bits to increase total data width. Widths down to 9 are valid.
  *
- * Copyright (c) 2015 Elphel, Inc.
+ * @copyright Copyright (c) 2015 Elphel, Inc.
+ *
+ * <b>License:</b>
+ *
  * ramtp_var_w_var_r.v is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -32,7 +37,7 @@
  * the combined code. This permission applies to you if the distributed code
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
- *******************************************************************************/
+ */
 `timescale 1ns/1ps
 `include "system_defines.vh" 
 /*

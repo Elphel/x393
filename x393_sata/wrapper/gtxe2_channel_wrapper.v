@@ -1,10 +1,15 @@
-/*******************************************************************************
- * Module: gtxe2_channel_wrapper
- * Date: 2015-09-07
- * Author: Alexey     
- * Description: wrapper to switch between closed unisims primitive and open-source one
+/*!
+ * <b>Module:</b>gtxe2_channel_wrapper
+ * @file gtxe2_channel_wrapper.v
+ * @date  2015-09-07
+ * @author Alexey     
  *
- * Copyright (c) 2015 Elphel, Inc.
+ * @brief wrapper to switch between closed unisims primitive and open-source one
+ *
+ * @copyright Copyright (c) 2015 Elphel, Inc.
+ *
+ * <b>License:</b>
+ *
  * GTXE2_GPL.v is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -30,7 +35,7 @@
  * the combined code. This permission applies to you if the distributed code
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
- *******************************************************************************/
+ */
 `include "system_defines.vh" 
 module gtxe2_channel_wrapper(
 // clocking ports, UG476 p.37

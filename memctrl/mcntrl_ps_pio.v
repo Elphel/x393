@@ -1,11 +1,16 @@
-/*******************************************************************************
- * Module: mcntrl_ps_pio
- * Date:2015-01-27  
- * Author: Andrey Filippov     
- * Description: Read/write channels to DDR3 memory with software-programmable
+/*!
+ * <b>Module:</b>mcntrl_ps_pio
+ * @file mcntrl_ps_pio.v
+ * @date 2015-01-27  
+ * @author Andrey Filippov     
+ *
+ * @brief Read/write channels to DDR3 memory with software-programmable
  * command sequence
  *
- * Copyright (c) 2015 Elphel, Inc.
+ * @copyright Copyright (c) 2015 Elphel, Inc.
+ *
+ * <b>License:</b>
+ *
  * mcntrl_ps_pio.v is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -31,7 +36,7 @@
  * the combined code. This permission applies to you if the distributed code
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
- *******************************************************************************/
+ */
 `timescale 1ns/1ps
 `include "system_defines.vh" 
 `undef DEBUG_FIFO

@@ -1,10 +1,15 @@
-/*******************************************************************************
- * Module: timestamp_to_serial
- * Date:2015-07-04  
- * Author: Andrey Filippov     
- * Description: convert legacy parallel timestamp data to a byte-parallel message
+/*!
+ * <b>Module:</b>timestamp_to_serial
+ * @file timestamp_to_serial.v
+ * @date 2015-07-04  
+ * @author Andrey Filippov     
  *
- * Copyright (c) 2015 Elphel, Inc.
+ * @brief convert legacy parallel timestamp data to a byte-parallel message
+ *
+ * @copyright Copyright (c) 2015 Elphel, Inc.
+ *
+ * <b>License:</b>
+ *
  * timestamp_to_serial.v is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -30,7 +35,7 @@
  * the combined code. This permission applies to you if the distributed code
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
- *******************************************************************************/
+ */
 `timescale 1ns/1ps
 
 module  timestamp_to_serial(

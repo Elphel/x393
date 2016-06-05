@@ -1,10 +1,15 @@
-/*******************************************************************************
- * Module: sens_histogram
- * Date:2015-05-29  
- * Author: Andrey Filippov     
- * Description: Calculates per-color histogram over the specified rectangular region
+/*!
+ * <b>Module:</b>sens_histogram
+ * @file sens_histogram.v
+ * @date 2015-05-29  
+ * @author Andrey Filippov     
  *
- * Copyright (c) 2015 Elphel, Inc.
+ * @brief Calculates per-color histogram over the specified rectangular region
+ *
+ * @copyright Copyright (c) 2015 Elphel, Inc.
+ *
+ * <b>License:</b>
+ *
  * sens_histogram.v is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -30,7 +35,7 @@
  * the combined code. This permission applies to you if the distributed code
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
- *******************************************************************************/
+ */
 `timescale 1ns/1ps
     // TODO: get rid of pclk2x by doubling memories (making 1 write port and 2 read ones)
     // How to erase?

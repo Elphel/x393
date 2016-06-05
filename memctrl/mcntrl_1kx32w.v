@@ -1,11 +1,16 @@
-/*******************************************************************************
- * Module: mcntrl_1kx32w
- * Date:2015-02-03  
- * Author: Andrey Filippov     
- * Description: Paged buffer for ddr3 controller write channel
+/*!
+ * <b>Module:</b>mcntrl_1kx32w
+ * @file mcntrl_1kx32w.v
+ * @date 2015-02-03  
+ * @author Andrey Filippov     
+ *
+ * @brief Paged buffer for ddr3 controller write channel
  * with address autoincrement. 32 bit external data. Extends rd to regen
  *
- * Copyright (c) 2015 Elphel, Inc.
+ * @copyright Copyright (c) 2015 Elphel, Inc.
+ *
+ * <b>License:</b>
+ *
  * mcntrl_1kx32w.v is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -31,7 +36,7 @@
  * the combined code. This permission applies to you if the distributed code
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
- *******************************************************************************/
+ */
 `timescale 1ns/1ps
 
 module  mcntrl_1kx32w(

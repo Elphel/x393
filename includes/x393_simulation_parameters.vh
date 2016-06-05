@@ -1,10 +1,14 @@
- /*******************************************************************************
- * File: x393_simulation_parameters.vh
- * Date:2015-02-07  
- * Author: Andrey Filippov     
- * Description: Simulation-specific parameters for the x393
+/*!
+ * @file x393_simulation_parameters.vh
+ * @date 2015-02-07  
+ * @author Andrey Filippov     
  *
- * Copyright (c) 2015 Elphel, Inc.
+ * @brief Simulation-specific parameters for the x393
+ *
+ * @copyright Copyright (c) 2015 Elphel, Inc.
+ *
+ * <b>License:</b>
+ *
  * x393_simulation_parameters.vh is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -30,7 +34,7 @@
  * the combined code. This permission applies to you if the distributed code
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
- *******************************************************************************/
+ */
     , // to continue previous parameter list
     parameter integer AXI_RDADDR_LATENCY= 2, // 2, //2, //2,
     parameter integer AXI_WRADDR_LATENCY= 1, // 1, //2, //4,

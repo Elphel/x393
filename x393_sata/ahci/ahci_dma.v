@@ -1,10 +1,15 @@
-/*******************************************************************************
- * Module: ahci_dma
- * Date:2016-01-01  
- * Author: Andrey Filippov     
- * Description: DMA R/W over 64-AXI channel for AHCI implementation
+/*!
+ * <b>Module:</b>ahci_dma
+ * @file ahci_dma.v
+ * @date 2016-01-01  
+ * @author Andrey Filippov     
  *
- * Copyright (c) 2016 Elphel, Inc .
+ * @brief DMA R/W over 64-AXI channel for AHCI implementation
+ *
+ * @copyright Copyright (c) 2016 Elphel, Inc .
+ *
+ * <b>License:</b>
+ *
  * ahci_dma.v is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -30,7 +35,7 @@
  * the combined code. This permission applies to you if the distributed code
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
- *******************************************************************************/
+ */
 `timescale 1ns/1ps
 
 module  ahci_dma (

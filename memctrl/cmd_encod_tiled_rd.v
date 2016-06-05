@@ -1,9 +1,13 @@
-/*******************************************************************************
- * Module: cmd_encod_tiled_rd
- * Date:2015-01-23  
- * Author: Andrey Filippov     
- * Description: Command sequencer generator for reading a tiled area
- * up to 1 kB. Memory is mapped so 8 consecuitive rows have same RA, CA
+/*!
+ * <b>Module:</b>cmd_encod_tiled_rd
+ * @file cmd_encod_tiled_rd.v
+ * @date 2015-01-23  
+ * @author Andrey Filippov     
+ *
+ * @brief Command sequencer generator for reading a tiled area
+ * up to 1 kB.
+ *
+ * Memory is mapped so 8 consecuitive rows have same RA, CA
  * and alternating BA (0 to 7). Data will be read in columns 16 bytes wide,
  * then proceding to the next column (if >1).
  * If number of rows is less than 8 it is possible to use keep_open_in input,
@@ -11,8 +15,12 @@
  * AUTO RECHARGE will be applied only to the last column (single column OK).
  * if number of rows >=8, that port is ignored. If number of rows is less than
  * 5 (less for slower clock) without keep_open_in tRTP may be not matched.
- * Seems that actual tile heigt mod 8 should be only 0, 6 or7
- * Copyright (c) 2015 Elphel, Inc.
+ * Seems that actual tile heigt mod 8 should be only 0, 6 or7.
+ *
+ * @copyright Copyright (c) 2015 Elphel, Inc.
+ *
+ * <b>License:</b>
+ *
  * cmd_encod_tiled_rd.v is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -38,7 +46,7 @@
  * the combined code. This permission applies to you if the distributed code
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
- *******************************************************************************/
+ */
 `timescale 1ns/1ps
 /*
 Minimal ACTIVATE period =4 Tcm or 10ns, so maximal no-miss rate is Tck=1.25 ns (800 MHz)

@@ -1,8 +1,10 @@
-/*******************************************************************************
- * Module: ahci_fis_receive
- * Date:2016-01-06  
- * Author: Andrey Filippov      
- * Description: Receives incoming FIS-es, forwards DMA ones to DMA engine
+/*!
+ * <b>Module:</b>ahci_fis_receive
+ * @file ahci_fis_receive.v
+ * @date 2016-01-06  
+ * @author Andrey Filippov      
+ *
+ * @brief Receives incoming FIS-es, forwards DMA ones to DMA engine
  * Stores received FIS-es if requested
  *
  * 'fis_first_vld' is asserted when the FIFO output contains first DWORD
@@ -13,7 +15,10 @@
  * one of the 3 states (fis_ok, fis_err and fis_ferr) are raised 
  * This module also receives/updates device signature and PxTFD ERR and STS.
  *
- * Copyright (c) 2016 Elphel, Inc .
+ * @copyright Copyright (c) 2016 Elphel, Inc .
+ *
+ * <b>License:</b>
+ *
  * ahci_fis_receive.v is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -26,7 +31,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/> .
- *******************************************************************************/
+ */
 `timescale 1ns/1ps
 
 module  ahci_fis_receive#(

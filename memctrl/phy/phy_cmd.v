@@ -1,11 +1,16 @@
-/*******************************************************************************
- * Module: phy_cmd
- * Date:2014-05-15  
- * Author: Andrey Filippov
- * Description: Executes a stream of commands to DDR3 phy at 1/2 ddr3 clock, global
+/*!
+ * <b>Module:</b>phy_cmd
+ * @file phy_cmd.v
+ * @date 2014-05-15  
+ * @author Andrey Filippov
+ *
+ * @brief Executes a stream of commands to DDR3 phy at 1/2 ddr3 clock, global
  * (also proveides r/w interface to the x64 external buffer)
  *
- * Copyright (c) 2014 Elphel, Inc.
+ * @copyright Copyright (c) 2014 Elphel, Inc.
+ *
+ * <b>License:</b>
+ *
  * phy_cmd.v is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -31,7 +36,7 @@
  * the combined code. This permission applies to you if the distributed code
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
- *******************************************************************************/
+ */
 `timescale 1ns/1ps
 
 module  phy_cmd#(

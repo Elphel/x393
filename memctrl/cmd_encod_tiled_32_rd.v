@@ -1,8 +1,10 @@
-/*******************************************************************************
- * Module: cmd_encod_tiled_32_rd
- * Date:2015-02-218  
- * Author: Andrey Filippov     
- * Description: Command sequencer generator for reading a tiled area
+/*!
+ * <b>Module:</b>cmd_encod_tiled_32_rd
+ * @file cmd_encod_tiled_32_rd.v
+ * @date 2015-02-218  
+ * @author Andrey Filippov     
+ *
+ * @brief Command sequencer generator for reading a tiled area
  * up to 1 kB. Memory is mapped so 8 consecuitive rows have same RA, CA
  * and alternating BA (0 to 7). Data will be read in columns 32 bytes wide,
  * then proceding to the next column (if >1).
@@ -10,7 +12,10 @@
  * just reading 32 bytes per row instead of the 16 - that eases timing
  * Start burst should be even (LSB is ignored)
  *
- * Copyright (c) 2015 Elphel, Inc.
+ * @copyright Copyright (c) 2015 Elphel, Inc.
+ *
+ * <b>License:</b>
+ *
  * cmd_encod_tiled_32_rd.v is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -36,7 +41,7 @@
  * the combined code. This permission applies to you if the distributed code
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
- *******************************************************************************/
+ */
 `timescale 1ns/1ps
 /*
 TODO  Comments from cmd_encod_tiled_rd, update

@@ -1,10 +1,15 @@
-/*******************************************************************************
- * Module: cmd_frame_sequencer
- * Date:2015-06-30  
- * Author: Andrey Filippov     
- * Description: Store/dispatch commands on per-frame basis
+/*!
+ * <b>Module:</b>cmd_frame_sequencer
+ * @file cmd_frame_sequencer.v
+ * @date 2015-06-30  
+ * @author Andrey Filippov     
  *
- * Copyright (c) 2015 Elphel, Inc.
+ * @brief Store/dispatch commands on per-frame basis
+ *
+ * @copyright Copyright (c) 2015 Elphel, Inc.
+ *
+ * <b>License:</b>
+ *
  * cmd_frame_sequencer.v is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -30,7 +35,7 @@
  * the combined code. This permission applies to you if the distributed code
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
- *******************************************************************************/
+ */
 `timescale 1ns/1ps
 // Comments from the x353 code:
 // This command sequencer is designed (together with i2c sequencer) to provide

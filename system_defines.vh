@@ -1,10 +1,16 @@
- /*******************************************************************************
- * File: system_defines.vh
- * Date:2015-02-28  
- * Author: Andrey Filippov     
- * Description: Preprocessor macros definitions to be included in the project
+/*!
+ * @file system_defines.vh
+ * @date 2015-02-28  
+ * @author Andrey Filippov     
  *
- * Copyright (c) 2015 Elphel, Inc.
+ * @brief Preprocessor macros definitions to be included in the project
+ * These defines specify overall configuration of the system, set type
+ * of the sensor interface and more.
+ *
+ * @copyright Copyright (c) 2015 Elphel, Inc.
+ *
+ * <b>License:</b>
+ *
  * system_defines.vh is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -30,7 +36,7 @@
  * the combined code. This permission applies to you if the distributed code
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
- *******************************************************************************/
+ */
   // This file may be used to define same pre-processor macros to be included into each parsed file
 `ifndef SYSTEM_DEFINES
   `define SYSTEM_DEFINES

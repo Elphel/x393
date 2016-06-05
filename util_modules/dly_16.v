@@ -1,10 +1,15 @@
-/*******************************************************************************
- * Module: dly_16
- * Date:2014-05-30  
- * Author: Andrey Filippov
- * Description: Synchronous delay by 1-16 clock cycles with reset (will map to primitives)
+/*!
+ * <b>Module:</b>dly_16
+ * @file dly_16.v
+ * @date 2014-05-30  
+ * @author Andrey Filippov
  *
- * Copyright (c) 2014 Elphel, Inc.
+ * @brief Synchronous delay by 1-16 clock cycles with reset (will map to primitives)
+ *
+ * @copyright Copyright (c) 2014 Elphel, Inc.
+ *
+ * <b>License:</b>
+ *
  * dly_16.v is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -30,7 +35,7 @@
  * the combined code. This permission applies to you if the distributed code
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
- *******************************************************************************/
+ */
 `timescale 1ns/1ps
 
 module  dly_16 #(

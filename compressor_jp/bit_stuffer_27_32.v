@@ -1,10 +1,15 @@
-/*******************************************************************************
- * Module: bit_stuffer_27_32
- * Date:2015-10-23  
- * Author: Andrey Filippov     
- * Description: Aggregate MSB aligned variable-length (1..27) data to 32-bit words
+/*!
+ * <b>Module:</b>bit_stuffer_27_32
+ * @file bit_stuffer_27_32.v
+ * @date 2015-10-23  
+ * @author Andrey Filippov     
  *
- * Copyright (c) 2015 Elphel, Inc .
+ * @brief Aggregate MSB aligned variable-length (1..27) data to 32-bit words
+ *
+ * @copyright Copyright (c) 2015 Elphel, Inc .
+ *
+ * <b>License:</b>
+ *
  * bit_stuffer_27_32.v is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -30,7 +35,7 @@
  * the combined code. This permission applies to you if the distributed code
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
- *******************************************************************************/
+ */
 `timescale 1ns/1ps
 
 module  bit_stuffer_27_32#(

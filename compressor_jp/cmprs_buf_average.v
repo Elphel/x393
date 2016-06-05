@@ -1,12 +1,17 @@
-/*******************************************************************************
- * Module: cmprs_buf_average
- * Date:2015-06-14  
- * Author: Andrey Filippov     
- * Description: Saves Y and C components to buffers, caculates averages
+/*!
+ * <b>Module:</b>cmprs_buf_average
+ * @file cmprs_buf_average.v
+ * @date 2015-06-14  
+ * @author Andrey Filippov     
+ *
+ * @brief Saves Y and C components to buffers, caculates averages
  * during write, then subtracts them during read and provides to
  * the after DCT to restore DC
  *
- * Copyright (c) 2015 Elphel, Inc.
+ * @copyright Copyright (c) 2015 Elphel, Inc.
+ *
+ * <b>License:</b>
+ *
  * cmprs_buf_average.v is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -32,7 +37,7 @@
  * the combined code. This permission applies to you if the distributed code
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
- *******************************************************************************/
+ */
 `timescale 1ns/1ps
 // TODO:Clean up even more - remove signals that are not related to calculating/subtracting averages
 module  cmprs_buf_average#(

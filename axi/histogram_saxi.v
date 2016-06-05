@@ -1,10 +1,15 @@
-/*******************************************************************************
- * Module: histogram_saxi
- * Date:2015-06-04  
- * Author: Andrey Filippov     
- * Description: Histograms transfer to the system memory over S_AXI 
+/*!
+ * <b>Module:</b>histogram_saxi
+ * @file histogram_saxi.v
+ * @date 2015-06-04  
+ * @author Andrey Filippov     
  *
- * Copyright (c) 2015 Elphel, Inc.
+ * @brief Histograms transfer to the system memory over S_AXI 
+ *
+ * @copyright Copyright (c) 2015 Elphel, Inc.
+ *
+ * <b>License:</b>
+ *
  * histogram_saxi.v is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -30,7 +35,7 @@
  * the combined code. This permission applies to you if the distributed code
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
- *******************************************************************************/
+ */
 `timescale 1ns/1ps
 // Number of histograms per sensor is now statically defined by NUM_FRAME_BITS
 // It may be modified to both reduce this number (by masking) or increase ( by

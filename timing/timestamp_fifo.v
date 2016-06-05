@@ -1,14 +1,20 @@
-/*******************************************************************************
- * Module: timestamp_fifo
- * Date:2015-07-02  
- * Author: Andrey Filippov     
- * Description: Receives 64-bit timestamp data over 8-bit bus,
+/*!
+ * <b>Module:</b>timestamp_fifo
+ * @file timestamp_fifo.v
+ * @date 2015-07-02  
+ * @author Andrey Filippov     
+ *
+ * @brief Receives 64-bit timestamp data over 8-bit bus,
  * copies it to the outputr register set at 'advance' leading edge
  * and then reads through the different clock domain 8-bit bus.
- * Write, advance registers and readout events are supposed to have suffitient
- * pauses between them
  *
- * Copyright (c) 2015 Elphel, Inc.
+ * Write, advance registers and readout events are supposed to have suffitient
+ * pauses between them.
+ *
+ * @copyright Copyright (c) 2015 Elphel, Inc.
+ *
+ * <b>License:</b>
+ *
  * timestamp_fifo.v is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -34,7 +40,7 @@
  * the combined code. This permission applies to you if the distributed code
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
- *******************************************************************************/
+ */
 `timescale 1ns/1ps
 
 module  timestamp_fifo(

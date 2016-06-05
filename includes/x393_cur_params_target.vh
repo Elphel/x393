@@ -1,10 +1,15 @@
-/*******************************************************************************
- * File: x393_cur_params_target.vh
- * Date:2015-02-07  
- * Author: Andrey Filippov     
- * Description: Memory controller parameters that need adjustment during training
- * Target ,pde
- * Copyright (c) 2015 Elphel, Inc.
+/*!
+ * @file x393_cur_params_target.vh
+ * @date 2015-02-07  
+ * @author Andrey Filippov     
+ *
+ * @brief Memory controller parameters that need adjustment during training
+ * of the target. This file is individually updated on the target.
+ *
+ * @copyright Copyright (c) 2015 Elphel, Inc.
+ *
+ * <b>License:</b>
+ *
  * x393_cur_params_target.vh is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -30,7 +35,7 @@
  * the combined code. This permission applies to you if the distributed code
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
- *******************************************************************************/
+ */
 /*
 localparam  DLY_LANE0_ODELAY =  80'hd85c1014141814181218;
 localparam  DLY_LANE0_IDELAY =  72'h2c7a8380897c807b88;

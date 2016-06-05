@@ -1,11 +1,22 @@
-/*******************************************************************************
- * Module: huffman_stuffer_meta
- * Date:2015-10-26  
- * Author: Andrey Filippov     
- * Description: Huffman encoder, bit stuffer, inser meta-data
- * "New" part of the JPEG/JP4 comressor that used double frequency clock
+/*!
+ * <b>Module:</b>huffman_stuffer_meta
+ * @file huffman_stuffer_meta.v
+ * @date 2015-10-26  
+ * @author Andrey Filippov     
  *
- * Copyright (c) 2015 Elphel, Inc .
+ * @brief Wrapper fior several JPEG/JP4 compression modules. It includes
+ * - Huffman encoder (huffman_snglclk),
+ * - bit stuffer (bit_stuffer_27_32),
+ * - escapes 0xff with 0x00 (bit_stuffer_escape)
+ * - inserts meta-data (timestamp and data length) (bit_stuffer_metadata)
+ *
+ * This is a "new" (made for x393 project) part of the JPEG/JP4 comressor
+ * that eliminates use of the double frequency clock.
+ *
+ * @copyright Copyright (c) 2015 Elphel, Inc .
+ *
+ * <b>License:</b>
+ *
  * huffman_stuffer_meta.v is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -31,7 +42,7 @@
  * the combined code. This permission applies to you if the distributed code
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
- *******************************************************************************/
+ */
 `timescale 1ns/1ps
 
 module  huffman_stuffer_meta(

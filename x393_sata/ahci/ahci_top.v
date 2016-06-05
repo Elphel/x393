@@ -1,10 +1,15 @@
-/*******************************************************************************
- * Module: ahci_top
- * Date:2016-01-09  
- * Author: Andrey Filippov     
- * Description: Top module of the AHCI implementation
+/*!
+ * <b>Module:</b>ahci_top
+ * @file ahci_top.v
+ * @date 2016-01-09  
+ * @author Andrey Filippov     
+ *
+ * @brief Top module of the AHCI implementation
  * 
- * Copyright (c) 2016 Elphel, Inc .
+ * @copyright Copyright (c) 2016 Elphel, Inc .
+ *
+ * <b>License:</b>
+ *
  * ahci_top.v is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -17,7 +22,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/> .
- *******************************************************************************/
+ */
 `timescale 1ns/1ps
 
 module  ahci_top#(

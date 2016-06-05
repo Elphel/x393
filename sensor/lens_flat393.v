@@ -1,8 +1,10 @@
-/*******************************************************************************
- * Module: lens_flat393
- * Date:2015-08-27  
- * Author: Andrey Filippov     
- * Description: Correction of lens+sensor vignetting. Initially it is just
+/*!
+ * <b>Module:</b>lens_flat393
+ * @file lens_flat393.v
+ * @date 2015-08-27  
+ * @author Andrey Filippov     
+ *
+ * @brief Correction of lens+sensor vignetting. Initially it is just
  * a quadratic function  that can be improved later by a piece-linear table
  * function T() of the calculated f(x,y)=p*(x-x0)^2 + q(y-yo)^2 + c.
  * T(f(x,y)) can be used to approximate cos^4). or other vignetting functions
@@ -10,7 +12,10 @@
  * This function - f(x,y) or T(f(x,y)) here deal with full sensor data before 
  * gamma-tables are applied and the data is compressed to 8 bits
  *
- * Copyright (c) 2008-2015 Elphel, Inc.
+ * @copyright Copyright (c) 2008-2015 Elphel, Inc.
+ *
+ * <b>License:</b>
+ *
  * lens_flat393.v is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -36,7 +41,7 @@
  * the combined code. This permission applies to you if the distributed code
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
- *******************************************************************************/
+ */
 `timescale 1ns / 1ps
 /*
 F2(x,y)=p*(x-x0)^2 + q(y-yo)^2 + c=

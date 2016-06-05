@@ -1,10 +1,15 @@
-/*******************************************************************************
- * Module: axibram_read
- * Date:2014-03-18  
- * Author: Andrey Filippov
- * Description: Read block RAM memory over AXI PS Master GP0
+/*!
+ * <b>Module:</b>axibram_read
+ * @file axibram_read.v
+ * @date 2014-03-18  
+ * @author Andrey Filippov
  *
- * Copyright (c) 2014 Elphel, Inc.
+ * @brief Read block RAM memory over AXI PS Master GP0
+ *
+ * @copyright Copyright (c) 2014 Elphel, Inc.
+ *
+ * <b>License:</b>
+ *
  * axibram_read.v is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -30,7 +35,7 @@
  * the combined code. This permission applies to you if the distributed code
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
- *******************************************************************************/
+ */
  // Check that this fix did not break anything:
 `include "system_defines.vh" 
 `define USE_SHORT_REN_REGEN 
@@ -227,8 +232,7 @@ module  axibram_read #(
     assign bram_reg_re_w=   dev_ready && read_in_progress_or && (!rvalid || rready); // slower/simplier
 //    assign bram_reg_re_w=   rready? read_in_progress : bram_reg_re_0; // faster - more verification
     
-    
-    assign last_in_burst_w=bram_reg_re_w && (read_left==4'b0); // slower/simplier
+        assign last_in_burst_w=bram_reg_re_w && (read_left==4'b0); // slower/simplier
 //    assign last_in_burst_w=rready? (read_in_progress && (read_left==4'b0)): (bram_reg_re_0 && (read_left==4'b0));
 //    assign last_in_burst_w=rready? last_in_burst_1: last_in_burst_0; // faster (unfinished) - more verification
 
@@ -250,7 +254,7 @@ module  axibram_read #(
 //    assign start_read_burst_w=  ar_nempty && (rready?start_read_burst_1:start_read_burst_0);
 
 fifo_same_clock   #( .DATA_WIDTH(ADDRESS_BITS+20),.DATA_DEPTH(4))    
-    raddr_i (
+    raddr_i ( 
         .rst(1'b0),
         .clk(aclk),
         .sync_rst(arst),

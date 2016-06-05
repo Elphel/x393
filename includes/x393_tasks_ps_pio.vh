@@ -1,11 +1,15 @@
- /*******************************************************************************
- * File: x393_tasks_ps_pio.vh
- * Date:2015-02-07  
- * Author: Andrey Filippov     
- * Description: Simulation tasks for mcntrl_ps_pio module (launching software
- * - programmed memory transaction sequences)
+/*!
+ * @file x393_tasks_ps_pio.vh
+ * @date 2015-02-07  
+ * @author Andrey Filippov     
  *
- * Copyright (c) 2015 Elphel, Inc.
+ * @brief Simulation tasks for mcntrl_ps_pio module (launching
+ * software-programmed memory transaction sequences)
+ *
+ * @copyright Copyright (c) 2015 Elphel, Inc.
+ *
+ * <b>License:</b>
+ *
  * x393_tasks_ps_pio.vh is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -31,7 +35,7 @@
  * the combined code. This permission applies to you if the distributed code
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
- *******************************************************************************/
+ */
 task schedule_ps_pio; // schedule software-control memory operation (may need to check FIFO status first)
     input [9:0] seq_addr; // sequence start address
     input [1:0] page;     // buffer page number

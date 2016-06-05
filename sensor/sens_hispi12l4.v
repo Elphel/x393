@@ -1,10 +1,15 @@
-/*******************************************************************************
- * Module: sens_hispi12l4
- * Date:2015-10-13  
- * Author: Andrey Filippov     
- * Description: Decode HiSPi 4-lane, 12 bits Packetized-SP data from the sensor
+/*!
+ * <b>Module:</b>sens_hispi12l4
+ * @file sens_hispi12l4.v
+ * @date 2015-10-13  
+ * @author Andrey Filippov     
  *
- * Copyright (c) 2015 Elphel, Inc .
+ * @brief Decode HiSPi 4-lane, 12 bits Packetized-SP data from the sensor
+ *
+ * @copyright Copyright (c) 2015 Elphel, Inc .
+ *
+ * <b>License:</b>
+ *
  * sens_hispi12l4.v is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -30,7 +35,7 @@
  * the combined code. This permission applies to you if the distributed code
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
- *******************************************************************************/
+ */
 `timescale 1ns/1ps
 
 module  sens_hispi12l4#(

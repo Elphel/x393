@@ -1,10 +1,15 @@
-/*******************************************************************************
- * Module: axi_hp_clk
- * Date:2015-04-27  
- * Author: Andrey Filippov     
- * Description: Generate global clock for axi_hp
+/*!
+ * <b>Module:</b>axi_hp_clk
+ * @file axi_hp_clk.v
+ * @date 2015-04-27  
+ * @author Andrey Filippov     
  *
- * Copyright (c) 2015 Elphel, Inc.
+ * @brief Generate global clock for axi_hp
+ *
+ * @copyright Copyright (c) 2015 Elphel, Inc.
+ *
+ * <b>License:</b>
+ *
  * axi_hp_clk.v is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -30,7 +35,7 @@
  * the combined code. This permission applies to you if the distributed code
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
- *******************************************************************************/
+ */
 `timescale 1ns/1ps
 
 module  axi_hp_clk#(

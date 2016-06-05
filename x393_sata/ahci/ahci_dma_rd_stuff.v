@@ -1,10 +1,15 @@
-/*******************************************************************************
- * Module: ahci_dma_rd_stuff
- * Date:2016-01-01  
- * Author: Andrey Filippov     
- * Description: Stuff DWORD data with missing words into continuous 32-bit data
+/*!
+ * <b>Module:</b>ahci_dma_rd_stuff
+ * @file ahci_dma_rd_stuff.v
+ * @date 2016-01-01  
+ * @author Andrey Filippov     
  *
- * Copyright (c) 2016 Elphel, Inc .
+ * @brief Stuff DWORD data with missing words into continuous 32-bit data
+ *
+ * @copyright Copyright (c) 2016 Elphel, Inc .
+ *
+ * <b>License:</b>
+ *
  * ahci_dma_rd_stuff.v is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -30,7 +35,7 @@
  * the combined code. This permission applies to you if the distributed code
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
- *******************************************************************************/
+ */
 `timescale 1ns/1ps
 
 module  ahci_dma_rd_stuff(

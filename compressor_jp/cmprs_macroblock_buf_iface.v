@@ -1,12 +1,17 @@
-/*******************************************************************************
- * Module: cmprs_macroblock_buf_iface
- * Date:2015-06-11  
- * Author: Andrey Filippov     
- * Description: Communicates with compressor memory buffer, generates pixel
+/*!
+ * <b>Module:</b>cmprs_macroblock_buf_iface
+ * @file cmprs_macroblock_buf_iface.v
+ * @date 2015-06-11  
+ * @author Andrey Filippov     
+ *
+ * @brief Communicates with compressor memory buffer, generates pixel
  * stream matching selected color mode, accommodates for the buffer latency,
  * acts as a pacemaker for the whole compressor (next stages are able to keep up).
  *
- * Copyright (c) 2015 Elphel, Inc.
+ * @copyright Copyright (c) 2015 Elphel, Inc.
+ *
+ * <b>License:</b>
+ *
  * cmprs_macroblock_buf_iface.v is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -32,7 +37,7 @@
  * the combined code. This permission applies to you if the distributed code
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
- *******************************************************************************/
+ */
 `timescale 1ns/1ps
 
 module  cmprs_macroblock_buf_iface (

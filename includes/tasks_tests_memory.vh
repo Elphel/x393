@@ -1,10 +1,14 @@
-/*******************************************************************************
- * Module: tasks_tests_memory
- * Date:2015-08-01  
- * Author: Andrey Filippov     
- * Description: Top-level tasks for testing memory subsystem functionality
+/*!
+ * @file tasks_tests_memory.vh
+ * @date 2015-08-01  
+ * @author Andrey Filippov     
  *
- * Copyright (c) 2015 Elphel, Inc .
+ * @brief Top-level tasks for testing memory subsystem functionality
+ *
+ * @copyright Copyright (c) 2015 Elphel, Inc .
+ *
+ * <b>License:</b>
+ *
  * tasks_tests_memory.vh is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -30,7 +34,7 @@
  * the combined code. This permission applies to you if the distributed code
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
- *******************************************************************************/
+ */
 
 task test_write_levelling; // SuppressThisWarning VEditor - may be unused
   begin

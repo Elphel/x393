@@ -1,14 +1,19 @@
-/*******************************************************************************
- * Module: axi_hp_abort
- * Date:2016-02-07  
- * Author: Andrey Filippov     
- * Description: Trying to gracefully reset AXI HP after aborted transmission
+/*!
+ * <b>Module:</b>axi_hp_abort
+ * @file axi_hp_abort.v
+ * @date 2016-02-07  
+ * @author Andrey Filippov     
+ *
+ * @brief Trying to gracefully reset AXI HP after aborted transmission
  * For read channel - just keep afi_rready on until RD FIFO is empty (afi_rcount ==0)
  * For write - keep track aof all what was sent so far, assuming aw is always ahead of w
  * Reset only by global reset (system POR) - probably it is not possible to just
  * reset PL or relaod bitfile, 
  *
- * Copyright (c) 2016 Elphel, Inc .
+ * @copyright Copyright (c) 2016 Elphel, Inc .
+ *
+ * <b>License:</b>
+ *
  * axi_hp_abort.v is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -21,7 +26,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/> .
- *******************************************************************************/
+ */
 `timescale 1ns/1ps
 
 module  axi_hp_abort(

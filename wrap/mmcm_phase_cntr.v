@@ -1,10 +1,15 @@
-/*******************************************************************************
- * Module: mmcm_phase_cntr
- * Date:2014-05-01  
- * Author: Andrey Filippov
- * Description: MMCME2_ADV with phase counter, supporting absolute phase setting
+/*!
+ * <b>Module:</b>mmcm_phase_cntr
+ * @file mmcm_phase_cntr.v
+ * @date 2014-05-01  
+ * @author Andrey Filippov
  *
- * Copyright (c) 2014 Elphel, Inc.
+ * @brief MMCME2_ADV with phase counter, supporting absolute phase setting
+ *
+ * @copyright Copyright (c) 2014 Elphel, Inc.
+ *
+ * <b>License:</b>
+ *
  * mmcm_phase_cntr.v is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -30,7 +35,7 @@
  * the combined code. This permission applies to you if the distributed code
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
- *******************************************************************************/
+ */
 `timescale 1ns/1ps
 
 // all counters are two-clock cycle nets

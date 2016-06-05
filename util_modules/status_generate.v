@@ -1,10 +1,15 @@
-/*******************************************************************************
- * Module: status_generate
- * Date:2015-01-14  
- * Author: Andrey Filippov     
- * Description: generate byte-serial status data
+/*!
+ * <b>Module:</b>status_generate
+ * @file status_generate.v
+ * @date 2015-01-14  
+ * @author Andrey Filippov     
  *
- * Copyright (c) 2015 Elphel, Inc.
+ * @brief generate byte-serial status data
+ *
+ * @copyright Copyright (c) 2015 Elphel, Inc.
+ *
+ * <b>License:</b>
+ *
  * status_generate.v is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -30,7 +35,7 @@
  * the combined code. This permission applies to you if the distributed code
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
- *******************************************************************************/
+ */
 `timescale 1ns/1ps
 // mode bits:
 //  0 disable status generation,
@@ -56,7 +61,7 @@ module  status_generate #(
     input     [ALL_BITS-1:0] status, // parallel status data to be sent out, may come from different clock domain
     output             [7:0] ad,     // byte-wide address/data
     output                   rq,     // request to send downstream (last byte with rq==0)
-    input                    start   // acknowledge of address (first byte) from downsteram   
+    input                    start   // acknowledge of address (first byte) from downstream   
 );
     localparam STATUS_BITS = ((PAYLOAD_BITS > 0) ? PAYLOAD_BITS: 1);
     localparam ALL_BITS = STATUS_BITS + 32 * EXTRA_WORDS;

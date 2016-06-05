@@ -1,10 +1,15 @@
-/*******************************************************************************
- * Module: pri1hot16
- * Date:2015-01-09  
- * Author: Andrey Filippov     
- * Description: Priority select one of 16 inputs
+/*!
+ * <b>Module:</b>pri1hot16
+ * @file pri1hot16.v
+ * @date 2015-01-09  
+ * @author Andrey Filippov     
  *
- * Copyright (c) 2015 Elphel, Inc.
+ * @brief Priority select one of 16 inputs
+ *
+ * @copyright Copyright (c) 2015 Elphel, Inc.
+ *
+ * <b>License:</b>
+ *
  * pri1hot16.v is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -30,7 +35,7 @@
  * the combined code. This permission applies to you if the distributed code
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
- *******************************************************************************/
+ */
 `timescale 1ns/1ps
 
 module  pri1hot16(

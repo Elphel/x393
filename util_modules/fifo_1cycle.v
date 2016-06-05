@@ -1,11 +1,17 @@
-/*******************************************************************************
- * Module: fifo_1cycle
- * Date:2014-05-20  
- * Author: Andrey Filippov
- * Description: Configurable synchronous FIFO using the same clock for read and write
+/*!
+ * <b>Module:</b>fifo_1cycle
+ * @file fifo_1cycle.v
+ * @date 2014-05-20  
+ * @author Andrey Filippov
+ *
+ * @brief Configurable synchronous FIFO using the same clock for read and write
  * Single clock cycle latency - simple fifo using sync in, async out RAM,
- * no registers on input and output
- * Copyright (c) 2014 Elphel, Inc.
+ * no registers on input and output.
+ *
+ * @copyright Copyright (c) 2014 Elphel, Inc.
+ *
+ * <b>License:</b>
+ *
  * fifo_1cycle.v is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -31,7 +37,7 @@
  * the combined code. This permission applies to you if the distributed code
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
- *******************************************************************************/
+ */
 `timescale 1ns/1ps
 `include "system_defines.vh" 
 //`define DEBUG_FIFO 1 

@@ -1,12 +1,17 @@
-/*******************************************************************************
- * Module: dcc_sync393
- * Date:2015-06-17  
- * Author: Andrey Filippov     
- * Description: Synchronises output of DC components
+/*!
+ * <b>Module:</b>dcc_sync393
+ * @file dcc_sync393.v
+ * @date 2015-06-17  
+ * @author Andrey Filippov     
+ *
+ * @brief Synchronises output of DC components
  * Syncronizes dcc data with dma1 output, adds 16..31 16-bit zero words for Axis DMA
  * Was not used in late NC353 camera (DMA channel used fro IMU logger)
  *
- * Copyright (c) 2015 Elphel, Inc.
+ * @copyright Copyright (c) 2015 Elphel, Inc.
+ *
+ * <b>License:</b>
+ *
  * dcc_sync393.v is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -32,7 +37,7 @@
  * the combined code. This permission applies to you if the distributed code
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
- *******************************************************************************/
+ */
 `timescale 1ns/1ps
 
 module  dcc_sync393(

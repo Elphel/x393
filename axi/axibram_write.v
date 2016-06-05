@@ -1,11 +1,16 @@
-/*******************************************************************************
- * Module: axibram_write
- * Date:2014-03-18  
- * Author: Andrey Filippov
- * Description: Read block RAM memory (or memories?) over AXI PS Master GP0
+/*!
+ * <b>Module:</b>axibram_write
+ * @file axibram_write.v
+ * @date 2014-03-18  
+ * @author Andrey Filippov
+ *
+ * @brief Read block RAM memory (or memories?) over AXI PS Master GP0
  * Memory is supposed to be fast enough
  *
- * Copyright (c) 2014 Elphel, Inc.
+ * @copyright Copyright (c) 2014 Elphel, Inc.
+ *
+ * <b>License:</b>
+ *
  * axibram_write.v is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -31,7 +36,7 @@
  * the combined code. This permission applies to you if the distributed code
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
- *******************************************************************************/
+ */
 //`define DEBUG_FIFO 1 
 `include "system_defines.vh" 
 `ifdef DEBUG_FIFO

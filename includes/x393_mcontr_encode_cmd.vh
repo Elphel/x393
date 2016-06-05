@@ -1,10 +1,14 @@
-/*******************************************************************************
- * File: x393_mcontr_encode_cmd.vh
- * Date:2015-02-09  
- * Author: Andrey Filippov     
- * Description: Functions used to encode memory controller sequences
+/*!
+ * @file x393_mcontr_encode_cmd.vh
+ * @date 2015-02-09  
+ * @author Andrey Filippov     
  *
- * Copyright (c) 2015 Elphel, Inc.
+ * @brief Functions used to encode memory controller sequences
+ *
+ * @copyright Copyright (c) 2015 Elphel, Inc.
+ *
+ * <b>License:</b>
+ *
  * x393_mcontr_encode_cmd.vh is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -30,7 +34,7 @@
  * the combined code. This permission applies to you if the distributed code
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
- *******************************************************************************/
+ */
 
     function [31:0] func_encode_skip;
         input [CMD_PAUSE_BITS-1:0] skip;       // number of extra cycles to skip (and keep all the other outputs)

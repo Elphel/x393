@@ -1,10 +1,15 @@
-/*******************************************************************************
- * Module: cmprs_afi_mux
- * Date:2015-06-26  
- * Author: Andrey Filippov     
- * Description: Writes comressor data from up to 4 channels to system memory over AXI_HP
+/*!
+ * <b>Module:</b>cmprs_afi_mux
+ * @file cmprs_afi_mux.v
+ * @date 2015-06-26  
+ * @author Andrey Filippov     
  *
- * Copyright (c) 2015 Elphel, Inc.
+ * @brief Writes comressor data from up to 4 channels to system memory over AXI_HP
+ *
+ * @copyright Copyright (c) 2015 Elphel, Inc.
+ *
+ * <b>License:</b>
+ *
  * cmprs_afi_mux.v is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -30,7 +35,7 @@
  * the combined code. This permission applies to you if the distributed code
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
- *******************************************************************************/
+ */
 `timescale 1ns/1ps
 
 module  cmprs_afi_mux#(

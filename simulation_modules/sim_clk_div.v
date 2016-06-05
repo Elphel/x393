@@ -1,10 +1,15 @@
-/*******************************************************************************
- * Module: sim_clk_div
- * Date:2015-10-11  
- * Author: Andrey Filippov     
- * Description: Divide clock frequency by integer number
+/*!
+ * <b>Module:</b>sim_clk_div
+ * @file sim_clk_div.v
+ * @date 2015-10-11  
+ * @author Andrey Filippov     
  *
- * Copyright (c) 2015 Elphel, Inc .
+ * @brief Divide clock frequency by integer number
+ *
+ * @copyright Copyright (c) 2015 Elphel, Inc .
+ *
+ * <b>License:</b>
+ *
  * sim_clk_div.v is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -30,7 +35,7 @@
  * the combined code. This permission applies to you if the distributed code
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
- *******************************************************************************/
+ */
 `timescale 1ns/1ps
 
 module  sim_clk_div#(

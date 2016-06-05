@@ -1,13 +1,18 @@
-/*******************************************************************************
- * Module: axi_ahci_regs
- * Date:2015-12-29  
- * Author: Andrey Filippov
- * Description: Registers for single-port AHCI over AXI implementation
+/*!
+ * <b>Module:</b>axi_ahci_regs
+ * @file axi_ahci_regs.v
+ * @date 2015-12-29  
+ * @author Andrey Filippov
+ *
+ * @brief Registers for single-port AHCI over AXI implementation
  * Combination of PCI Headers, PCI power management, and HBA memory
  * 128 DWORD registers 
  * Registers, with bits being RO, RW, RWC, RW1
  *
- * Copyright (c) 2015 Elphel, Inc .
+ * @copyright Copyright (c) 2015 Elphel, Inc .
+ *
+ * <b>License:</b>
+ *
  * axi_ahci_regs.v is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -33,7 +38,7 @@
  * the combined code. This permission applies to you if the distributed code
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
- *******************************************************************************/
+ */
 `timescale 1ns/1ps
 
 

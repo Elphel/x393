@@ -1,13 +1,18 @@
-/*******************************************************************************
- * Module: mcntrl_tiled_rw
- * Date:2015-02-03  
- * Author: Andrey Filippov     
- * Description:  Organize paged R/W from DDR3 memory in tiled order
+/*!
+ * <b>Module:</b>mcntrl_tiled_rw
+ * @file mcntrl_tiled_rw.v
+ * @date 2015-02-03  
+ * @author Andrey Filippov     
+ *
+ * @brief Organize paged R/W from DDR3 memory in tiled order
  * with window support
  * Tiles spreading over two different frames is not yet supported (needed for
  * line-scan mode in JPEG (JP4 - OK)
  *
- * Copyright (c) 2015 Elphel, Inc.
+ * @copyright Copyright (c) 2015 Elphel, Inc.
+ *
+ * <b>License:</b>
+ *
  * mcntrl_tiled_rw.v is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -33,7 +38,7 @@
  * the combined code. This permission applies to you if the distributed code
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
- *******************************************************************************/
+ */
 `timescale 1ns/1ps
 
 module  mcntrl_tiled_rw#(

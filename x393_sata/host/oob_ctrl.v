@@ -1,10 +1,15 @@
-/*******************************************************************************
- * Module: oob_ctrl
- * Date: 2015-07-11  
- * Author: Alexey     
- * Description: module to start oob sequences and to handle errors
+/*!
+ * <b>Module:</b>oob_ctrl
+ * @file oob_ctrl.v
+ * @date  2015-07-11  
+ * @author Alexey     
  *
- * Copyright (c) 2015 Elphel, Inc.
+ * @brief module to start oob sequences and to handle errors
+ *
+ * @copyright Copyright (c) 2015 Elphel, Inc.
+ *
+ * <b>License:</b>
+ *
  * oob_ctrl.v is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -30,7 +35,7 @@
  * the combined code. This permission applies to you if the distributed code
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
- *******************************************************************************/
+ */
 //`include "oob.v"
 module oob_ctrl #(
     parameter DATA_BYTE_WIDTH = 4,

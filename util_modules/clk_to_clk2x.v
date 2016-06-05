@@ -1,10 +1,15 @@
-/*******************************************************************************
- * Module: clk_to_clk2x
- * Date:2015-05-29  
- * Author: Andrey Filippov     
- * Description: move data between clk and clk2x (nominally posedge aligned)
+/*!
+ * <b>Module:</b>clk_to_clk2x
+ * @file clk_to_clk2x.v
+ * @date 2015-05-29  
+ * @author Andrey Filippov     
  *
- * Copyright (c) 2015 Elphel, Inc.
+ * @brief move data between clk and clk2x (nominally posedge aligned)
+ *
+ * @copyright Copyright (c) 2015 Elphel, Inc.
+ *
+ * <b>License:</b>
+ *
  * clk_to_clk2x.v is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -30,7 +35,7 @@
  * the combined code. This permission applies to you if the distributed code
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
- *******************************************************************************/
+ */
 `timescale 1ns/1ps
 
 module  clk_to_clk2x(

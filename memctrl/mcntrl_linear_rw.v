@@ -1,11 +1,16 @@
-/*******************************************************************************
- * Module: mcntrl_linear_rw
- * Date:2015-01-29  
- * Author: Andrey Filippov     
- * Description: Organize paged R/W from DDR3 memory in scan-line order
+/*!
+ * <b>Module:</b>mcntrl_linear_rw
+ * @file mcntrl_linear_rw.v
+ * @date 2015-01-29  
+ * @author Andrey Filippov     
+ *
+ * @brief Organize paged R/W from DDR3 memory in scan-line order
  * with window support
  *
- * Copyright (c) 2015 Elphel, Inc.
+ * @copyright Copyright (c) 2015 Elphel, Inc.
+ *
+ * <b>License:</b>
+ *
  * mcntrl_linear_rw.v is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -31,7 +36,7 @@
  * the combined code. This permission applies to you if the distributed code
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
- *******************************************************************************/
+ */
 `timescale 1ns/1ps
 // TODO: ADD MCNTRL_SCANLINE_FRAME_PAGE_RESET to caller
 module  mcntrl_linear_rw #(

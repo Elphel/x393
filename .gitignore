@@ -18,8 +18,12 @@ x393.prj
 *.bad
 *.pyc
 *.pickle
+*.tmp
 py393/dbg*
-debug
+debug/*
+html/*
+man/*
+
 includes/x393_cur_params_sim.vh
 includes/x393_cur_params_target_*.vh
 py393/exp_gpio.py

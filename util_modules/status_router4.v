@@ -1,10 +1,15 @@
-/*******************************************************************************
- * Module: status_router4
- * Date:2015-01-31  
- * Author: Andrey Filippov     
- * Description: Routes status data from 4 sources
+/*!
+ * <b>Module:</b>status_router4
+ * @file status_router4.v
+ * @date 2015-01-31  
+ * @author Andrey Filippov     
  *
- * Copyright (c) 2015 Elphel, Inc.
+ * @brief Routes status data from 4 sources
+ *
+ * @copyright Copyright (c) 2015 Elphel, Inc.
+ *
+ * <b>License:</b>
+ *
  * status_router4.v is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -30,7 +35,7 @@
  * the combined code. This permission applies to you if the distributed code
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
- *******************************************************************************/
+ */
 `timescale 1ns/1ps
 
 module  status_router4(

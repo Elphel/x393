@@ -1,11 +1,16 @@
-/*******************************************************************************
- * Module: fifo_same_clock_fill
- * Date:2014-05-20  
- * Author: Andrey Filippov
- * Description: Configurable synchronous FIFO using the same clock for read and write.
+/*!
+ * <b>Module:</b>fifo_same_clock_fill
+ * @file fifo_same_clock_fill.v
+ * @date 2014-05-20  
+ * @author Andrey Filippov
+ *
+ * @brief Configurable synchronous FIFO using the same clock for read and write.
  * Provides fill level - number of words currently in FIFO
  *
- * Copyright (c) 2014 Elphel, Inc.
+ * @copyright Copyright (c) 2014 Elphel, Inc.
+ *
+ * <b>License:</b>
+ *
  * fifo_same_clock_fill.v is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -31,7 +36,7 @@
  * the combined code. This permission applies to you if the distributed code
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
- *******************************************************************************/
+ */
 `timescale 1ns/1ps
 `include "system_defines.vh" 
 module fifo_same_clock_fill

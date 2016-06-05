@@ -1,10 +1,15 @@
-/*******************************************************************************
- * Module: ram18_var_w_var_r
- * Date:2015-06-16  
- * Author: Andrey Filippov     
- * Description: Half-BRAM module wrapper to use as a variable width R/W, no parity
+/*!
+ * <b>Module:</b>ram18_var_w_var_r
+ * @file ram18_var_w_var_r.v
+ * @date 2015-06-16  
+ * @author Andrey Filippov     
  *
- * Copyright (c) 2015 Elphel, Inc.
+ * @brief Half-BRAM module wrapper to use as a variable width R/W, no parity
+ *
+ * @copyright Copyright (c) 2015 Elphel, Inc.
+ *
+ * <b>License:</b>
+ *
  * ram18_var_w_var_r.v is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -30,7 +35,7 @@
  * the combined code. This permission applies to you if the distributed code
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
- *******************************************************************************/
+ */
 `timescale 1ns/1ps
 `include "system_defines.vh" 
 

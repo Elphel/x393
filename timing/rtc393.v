@@ -1,12 +1,17 @@
-/*******************************************************************************
- * Module: rtc393
- * Date:2015-07-05  
- * Author: Andrey Filippov     
- * Description: Adjustable real time clock, generate 1 microsecond resolution,
+/*!
+ * <b>Module:</b>rtc393
+ * @file rtc393.v
+ * @date 2015-07-05  
+ * @author Andrey Filippov     
+ *
+ * @brief Adjustable real time clock, generate 1 microsecond resolution,
  * timestamps. Provides seconds (32 bit) and microseconds (20 bits),
  * allows 24-bit accummulator-based fine adjustment
  *
- * Copyright (c) 2005-2015 Elphel, Inc.
+ * @copyright Copyright (c) 2005-2015 Elphel, Inc.
+ *
+ * <b>License:</b>
+ *
  * rtc393.v is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -32,7 +37,7 @@
  * the combined code. This permission applies to you if the distributed code
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
- *******************************************************************************/
+ */
 `timescale 1ns/1ps
 
 module  rtc393 #(

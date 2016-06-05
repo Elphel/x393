@@ -1,15 +1,20 @@
-/*******************************************************************************
- * Module: camsync393
- * Date:2015-07-03  
- * Author: Andrey Filippov     
- * Description: Synchronization between cameras using GPIO lines:
+/*!
+ * <b>Module:</b>camsync393
+ * @file camsync393.v
+ * @date 2015-07-03  
+ * @author Andrey Filippov     
+ *
+ * @brief Synchronization between cameras using GPIO lines:
  *  - triggering from selected line(s) with filter;
  *  - programmable delay to actual trigger (in pixel clock periods)
  *  - Generating trigger output to selected GPIO line (and polarity)
  *    or directly to the input delay generator (see bove)
  *  - single/repetitive output with specified period in pixel clocks
  *
- * Copyright (C) 2007-2015 Elphel, Inc
+ * @copyright Copyright (C) 2007-2015 Elphel, Inc
+ *
+ * <b>License:</b>
+ *
  * jp_channel.v is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -35,7 +40,7 @@
  * the combined code. This permission applies to you if the distributed code
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
- *******************************************************************************/
+ */
  
  // TODO: make a separate clock for transmission (program counters too?) and/or for the period timer?
  // TODO: change timestamp to serial message

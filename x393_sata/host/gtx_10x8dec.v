@@ -1,10 +1,15 @@
-/*******************************************************************************
- * Module: gtx_10x8dec
- * Date: 2015-07-11  
- * Author: Alexey     
- * Description: 8x10 encoder implementation
+/*!
+ * <b>Module:</b>gtx_10x8dec
+ * @file gtx_10x8dec.v
+ * @date  2015-07-11  
+ * @author Alexey     
  *
- * Copyright (c) 2015 Elphel, Inc.
+ * @brief 8x10 encoder implementation
+ *
+ * @copyright Copyright (c) 2015 Elphel, Inc.
+ *
+ * <b>License:</b>
+ *
  * gtx_10x8dec.v is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -30,7 +35,7 @@
  * the combined code. This permission applies to you if the distributed code
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
- *******************************************************************************/
+ */
 module gtx_10x8dec(
     input   wire    rst,
     input   wire    clk,

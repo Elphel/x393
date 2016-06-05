@@ -1,10 +1,15 @@
-/*******************************************************************************
- * Module: cmprs_out_fifo
- * Date:2015-06-25  
- * Author: Andrey Filippov     
- * Description: Compressor output FIFO
+/*!
+ * <b>Module:</b>cmprs_out_fifo
+ * @file cmprs_out_fifo.v
+ * @date 2015-06-25  
+ * @author Andrey Filippov     
  *
- * Copyright (c) 2015 Elphel, Inc.
+ * @brief Compressor output FIFO
+ *
+ * @copyright Copyright (c) 2015 Elphel, Inc.
+ *
+ * <b>License:</b>
+ *
  * cmprs_out_fifo.v is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -30,7 +35,7 @@
  * the combined code. This permission applies to you if the distributed code
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
- *******************************************************************************/
+ */
 `timescale 1ns/1ps
 
 module  cmprs_out_fifo(

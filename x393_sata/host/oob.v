@@ -1,10 +1,15 @@
-/*******************************************************************************
- * Module: oob
- * Date: 2015-07-11  
- * Author: Alexey     
- * Description: sata oob unit implementation
+/*!
+ * <b>Module:</b>oob
+ * @file oob.v
+ * @date  2015-07-11  
+ * @author Alexey     
  *
- * Copyright (c) 2015 Elphel, Inc.
+ * @brief sata oob unit implementation
+ *
+ * @copyright Copyright (c) 2015 Elphel, Inc.
+ *
+ * <b>License:</b>
+ *
  * oob.v is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -30,7 +35,7 @@
  * the combined code. This permission applies to you if the distributed code
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
- *******************************************************************************/
+ */
 /*
  * For now both device and host shall be set up to SATA2 speeds.
  * Need to think how to change speed grades on fly (either to broaden 

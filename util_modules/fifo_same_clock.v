@@ -1,10 +1,15 @@
-/*******************************************************************************
- * Module: fifo_same_clock
- * Date:2014-05-20  
- * Author: Andrey Filippov
- * Description: Configurable synchronous FIFO using the same clock for read and write
+/*!
+ * <b>Module:</b>fifo_same_clock
+ * @file fifo_same_clock.v
+ * @date 2014-05-20  
+ * @author Andrey Filippov
  *
- * Copyright (c) 2014 Elphel, Inc.
+ * @brief Configurable synchronous FIFO using the same clock for read and write
+ *
+ * @copyright Copyright (c) 2014 Elphel, Inc.
+ *
+ * <b>License:</b>
+ *
  * fifo_same_clock.v is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -30,7 +35,7 @@
  * the combined code. This permission applies to you if the distributed code
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
- *******************************************************************************/
+ */
 `timescale 1ns/1ps
 `include "system_defines.vh" 
 //`define DEBUG_FIFO 1 

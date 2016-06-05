@@ -1,10 +1,15 @@
-/*******************************************************************************
- * Module: ahci_fis_transmit
- * Date:2016-01-07  
- * Author: Andrey Filippov     
- * Description: Fetches commands, command tables, creates/sends FIS
+/*!
+ * <b>Module:</b>ahci_fis_transmit
+ * @file ahci_fis_transmit.v
+ * @date 2016-01-07  
+ * @author Andrey Filippov     
  *
- * Copyright (c) 2016 Elphel, Inc .
+ * @brief Fetches commands, command tables, creates/sends FIS
+ *
+ * @copyright Copyright (c) 2016 Elphel, Inc .
+ *
+ * <b>License:</b>
+ *
  * ahci_fis_transmit.v is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -17,7 +22,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/> .
- *******************************************************************************/
+ */
 `timescale 1ns/1ps
 
 module  ahci_fis_transmit #(

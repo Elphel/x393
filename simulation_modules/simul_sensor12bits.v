@@ -1,10 +1,15 @@
-/*******************************************************************************
- * Module: simul_sensor12bits
- * Date:2015-07-29  
- * Author: Andrey Filippov     
- * Description: Generate sensor data
+/*!
+ * <b>Module:</b>simul_sensor12bits
+ * @file simul_sensor12bits.v
+ * @date 2015-07-29  
+ * @author Andrey Filippov     
  *
- * Copyright (c) 2002-2015 Elphel, Inc.
+ * @brief Generate sensor data
+ *
+ * @copyright Copyright (c) 2002-2015 Elphel, Inc.
+ *
+ * <b>License:</b>
+ *
  * simul_sensor12bits.v is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -30,7 +35,7 @@
  * the combined code. This permission applies to you if the distributed code
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
- *******************************************************************************/
+ */
 
 module   simul_sensor12bits # (
     parameter SENSOR_IMAGE_TYPE =        "NORM", // "RUN1",

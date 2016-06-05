@@ -1,10 +1,15 @@
-/*******************************************************************************
- * Module: sensor_i2c_prot
- * Date:2015-10-05  
- * Author: Andrey Filippov     
- * Description: Generate i2c R/W sequence from a 32-bit word and LUT
+/*!
+ * <b>Module:</b>sensor_i2c_prot
+ * @file sensor_i2c_prot.v
+ * @date 2015-10-05  
+ * @author Andrey Filippov     
  *
- * Copyright (c) 2015 Elphel, Inc .
+ * @brief Generate i2c R/W sequence from a 32-bit word and LUT
+ *
+ * @copyright Copyright (c) 2015 Elphel, Inc .
+ *
+ * <b>License:</b>
+ *
  * sensor_i2c_prot.v is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -30,7 +35,7 @@
  * the combined code. This permission applies to you if the distributed code
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
- *******************************************************************************/
+ */
 `timescale 1ns/1ps
 
 module  sensor_i2c_prot#(
@@ -64,7 +69,7 @@ module  sensor_i2c_prot#(
     output reg       i2c_run,      // released as soon as the last command (usually STOP) gets to the i2c start/stop/shift module
     output reg       i2c_busy,     // released when !i2c_run and all i2c activity is over 
     output reg [1:0] seq_mem_ra, // number of byte to read from the sequencer memory
-    output    [ 1:0] seq_mem_re, // [0] - re, [1] - regen to teh sequencer memory
+    output    [ 1:0] seq_mem_re, // [0] - re, [1] - regen to the sequencer memory
     input     [ 7:0] seq_rd,     // data from the sequencer memory 
     output    [ 7:0] rdata,
     output           rvalid
@@ -150,7 +155,7 @@ module  sensor_i2c_prot#(
     reg           next_byte_wr;
     
     reg           read_address_bytes; // 0 - single-byte register adderss, 1 - two-byte register address
-    reg    [ 2:0] read_data_bytes;    // 1..8 bytes to read from teh i2c slave (0 is 8!)
+    reg    [ 2:0] read_data_bytes;    // 1..8 bytes to read from the i2c slave (0 is 8!)
     
     reg    [ 1:0] initial_address; // initial data byte to read: usually 3  but for extra write may be different
     wire   [ 3:0] initial_address_w =  bytes_left_send - 1; // if bytes left to send == 0 - will be 3                      
@@ -210,7 +215,7 @@ module  sensor_i2c_prot#(
         else if (next_byte_wr)   bytes_left_send <= bytes_left_send - 1;
 
         // calculate stages for each type of commands
-        // start and write sa and some bytes, stop if number of bytes <= 4 at teh end        
+        // start and write sa and some bytes, stop if number of bytes <= 4 at the end        
         if      (mrst || i2c_rst) run_reg_wr <= 0;
         else if (start_wr_seq_w)  run_reg_wr <= 7'h40;
         else if (next_cmd)        run_reg_wr <= {1'b0,         // first "start"

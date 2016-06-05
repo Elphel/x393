@@ -1,10 +1,15 @@
-/*******************************************************************************
- * Module: scrambler
- * Date: 2015-07-11  
- * Author: Alexey     
- * Description: a scrambler for the link layer
+/*!
+ * <b>Module:</b>scrambler
+ * @file scrambler.v
+ * @date  2015-07-11  
+ * @author Alexey     
  *
- * Copyright (c) 2015 Elphel, Inc.
+ * @brief a scrambler for the link layer
+ *
+ * @copyright Copyright (c) 2015 Elphel, Inc.
+ *
+ * <b>License:</b>
+ *
  * scrambler.v is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -30,7 +35,7 @@
  * the combined code. This permission applies to you if the distributed code
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
- *******************************************************************************/
+ */
 /*
  * Algorithm is taken from the doc, p.565. TODO make it parallel
  */

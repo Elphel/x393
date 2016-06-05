@@ -1,10 +1,15 @@
-/*******************************************************************************
- * Module: mcont_to_chnbuf_reg
- * Date:2015-01-19  
- * Author: Andrey Filippov     
- * Description: Registering data from memory controller to channel buffer
+/*!
+ * <b>Module:</b>mcont_to_chnbuf_reg
+ * @file mcont_to_chnbuf_reg.v
+ * @date 2015-01-19  
+ * @author Andrey Filippov     
  *
- * Copyright (c) 2015 Elphel, Inc.
+ * @brief Registering data from memory controller to channel buffer
+ *
+ * @copyright Copyright (c) 2015 Elphel, Inc.
+ *
+ * <b>License:</b>
+ *
  * mcont_to_chnbuf_reg.v is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -30,7 +35,7 @@
  * the combined code. This permission applies to you if the distributed code
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
- *******************************************************************************/
+ */
 `timescale 1ns/1ps
 
 module  mcont_to_chnbuf_reg #(

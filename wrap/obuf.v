@@ -1,10 +1,15 @@
-/*******************************************************************************
- * Module: obuf
- * Date:2014-05-27  
- * Author: Andrey Filippov
- * Description: Wrapper for OBUF primitive
+/*!
+ * <b>Module:</b>obuf
+ * @file obuf.v
+ * @date 2014-05-27  
+ * @author Andrey Filippov
  *
- * Copyright (c) 2014 Elphel, Inc.
+ * @brief Wrapper for OBUF primitive
+ *
+ * @copyright Copyright (c) 2014 Elphel, Inc.
+ *
+ * <b>License:</b>
+ *
  * obuf.v is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -30,7 +35,7 @@
  * the combined code. This permission applies to you if the distributed code
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
- *******************************************************************************/
+ */
 `timescale 1ns/1ps
 
 module  obuf # (

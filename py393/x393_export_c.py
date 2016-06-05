@@ -103,10 +103,10 @@ class X393ExportC(object):
             
     def generated_fileHeader(self, filename, description):
         header_template="""/*******************************************************************************
- * File: %s
- * Date: %s  
- * Author: auto-generated file, see %s
- * Description: %s
+ * @file %s
+ * @date %s  
+ * @author auto-generated file, see %s
+ * @brief %s
  *******************************************************************************/"""
         script_name = os.path.basename(__file__)
         if script_name[-1] == "c":

@@ -1,12 +1,17 @@
-/*******************************************************************************
- * Module: pulse_cross_clock
- * Date:2015-04-27  
- * Author: Andrey Filippov     
- * Description: Propagate a single pulse through clock domain boundary
+/*!
+ * <b>Module:</b>pulse_cross_clock
+ * @file pulse_cross_clock.v
+ * @date 2015-04-27  
+ * @author Andrey Filippov     
+ *
+ * @brief Propagate a single pulse through clock domain boundary
  * For same frequencies input pulses can have 1:3 duty cycle EXTRA_DLY=0
  * and 1:5 for EXTRA_DLY=1 
  *
- * Copyright (c) 2015 Elphel, Inc.
+ * @copyright Copyright (c) 2015 Elphel, Inc.
+ *
+ * <b>License:</b>
+ *
  * pulse_cross_clock.v is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -32,7 +37,7 @@
  * the combined code. This permission applies to you if the distributed code
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
- *******************************************************************************/
+ */
 `timescale 1ns/1ps
 
 module  pulse_cross_clock#(

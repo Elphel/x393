@@ -1,10 +1,15 @@
-/*******************************************************************************
- * Module: ahci_fsm
- * Date:2016-01-10  
- * Author: Andrey Filippov     
- * Description: AHCI host+port0 state machine
+/*!
+ * <b>Module:</b>ahci_fsm
+ * @file ahci_fsm.v
+ * @date 2016-01-10  
+ * @author Andrey Filippov     
  *
- * Copyright (c) 2016 Elphel, Inc .
+ * @brief AHCI host+port0 state machine
+ *
+ * @copyright Copyright (c) 2016 Elphel, Inc .
+ *
+ * <b>License:</b>
+ *
  * ahci_fsm.v is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -17,7 +22,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/> .
- *******************************************************************************/
+ */
 `timescale 1ns/1ps
 
 module  ahci_fsm 

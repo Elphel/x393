@@ -1,13 +1,18 @@
-/*******************************************************************************
- * Module: mult_saxi_wr
- * Date:2015-07-08  
- * Author: Andrey Filippov     
- * Description: send data from up to 4 sources to the system memory over S_AXI.
+/*!
+ * <b>Module:</b>mult_saxi_wr
+ * @file mult_saxi_wr.v
+ * @date 2015-07-08  
+ * @author Andrey Filippov     
+ *
+ * @brief send data from up to 4 sources to the system memory over S_AXI.
  * Each source should have a 32-bit wide buffer running at the same clock (mclk).
  * Buffer should contain at least burst size (4,8,16,32,64 bytes)
  * Burst size parameter-configurable (per-port) 
  *
- * Copyright (c) 2015 Elphel, Inc .
+ * @copyright Copyright (c) 2015 Elphel, Inc .
+ *
+ * <b>License:</b>
+ *
  * mult_saxi_wr.v is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -33,7 +38,7 @@
  * the combined code. This permission applies to you if the distributed code
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
- *******************************************************************************/
+ */
 `timescale 1ns/1ps
 
 module  mult_saxi_wr #(
@@ -181,7 +186,7 @@ module  mult_saxi_wr #(
         else if (we_ctrl && !cmd_a[0]) mode_reg <= cmd_data[7:0];
     end
 
-// Arbiter requests on copying from one of teh input channels to the internal buffer
+// Arbiter requests on copying from one of the input channels to the internal buffer
 
     mult_saxi_wr_chn #(
         .MULT_SAXI_HALF_BRAM (MULT_SAXI_HALF_BRAM),

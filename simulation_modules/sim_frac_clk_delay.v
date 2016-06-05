@@ -1,10 +1,15 @@
-/*******************************************************************************
- * Module: sim_frac_clk_delay
- * Date:2015-10-11  
- * Author: Andrey Filippov     
- * Description: Delay clock-synchronous signal by fractional number of periods
+/*!
+ * <b>Module:</b>sim_frac_clk_delay
+ * @file sim_frac_clk_delay.v
+ * @date 2015-10-11  
+ * @author Andrey Filippov     
  *
- * Copyright (c) 2015 Elphel, Inc .
+ * @brief Delay clock-synchronous signal by fractional number of periods
+ *
+ * @copyright Copyright (c) 2015 Elphel, Inc .
+ *
+ * <b>License:</b>
+ *
  * sim_frac_clk_delay.v is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -30,7 +35,7 @@
  * the combined code. This permission applies to you if the distributed code
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
- *******************************************************************************/
+ */
 `timescale 1ns/1ps
 
 module  sim_frac_clk_delay #(

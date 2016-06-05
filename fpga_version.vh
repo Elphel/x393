@@ -1,10 +1,14 @@
- /*******************************************************************************
- * File: fpga_version.vh
- * Date:2015-08-26  
- * Author: Andrey Filippov     
- * Description: Defining run-time readable FPGA code version
+/*!
+ * @file fpga_version.vh
+ * @date 2015-08-26  
+ * @author Andrey Filippov     
  *
- * Copyright (c) 2015 Elphel, Inc.
+ * @brief Defining run-time readable FPGA code version
+ *
+ * @copyright Copyright (c) 2015 Elphel, Inc.
+ *
+ * <b>License:</b>
+ *
  * fpga_version.vh is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -30,7 +34,7 @@
  * the combined code. This permission applies to you if the distributed code
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
- *******************************************************************************/
+ */
           parameter FPGA_VERSION =          32'h03930096;    // serial, next
 //          parameter FPGA_VERSION =          32'h03930095;    // parallel  -0.068/-0.342/5 82.38%
 //          parameter FPGA_VERSION =          32'h03930094;    // hispi, disabling debug  -0.187/-1.252/16 84.14%  

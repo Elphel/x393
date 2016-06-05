@@ -1,10 +1,15 @@
-/*******************************************************************************
- * Module: mul_saxi_wr_chn
- * Date:2015-07-10  
- * Author: Andrey Filippov     
- * Description: One channel of the mult_saxi_wr (read/write common buffer)
+/*!
+ * <b>Module:</b>mul_saxi_wr_chn
+ * @file mul_saxi_wr_chn.v
+ * @date 2015-07-10  
+ * @author Andrey Filippov     
  *
- * Copyright (c) 2015 Elphel, Inc .
+ * @brief One channel of the mult_saxi_wr (read/write common buffer)
+ *
+ * @copyright Copyright (c) 2015 Elphel, Inc .
+ *
+ * <b>License:</b>
+ *
  * mul_saxi_wr_chn.v is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -30,7 +35,7 @@
  * the combined code. This permission applies to you if the distributed code
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
- *******************************************************************************/
+ */
 `timescale 1ns/1ps
 
 module  mult_saxi_wr_chn #(

@@ -1,10 +1,14 @@
- /*******************************************************************************
- * File: x393_status.vh
- * Date:2015-02-07  
- * Author: Andrey Filippov     
- * Description: Simulation tasks for the x393 related to status
+/*!
+ * @file x393_tasks_status.vh
+ * @date 2015-02-07  
+ * @author Andrey Filippov     
  *
- * Copyright (c) 2015 Elphel, Inc.
+ * @brief Simulation tasks for the x393 related to status
+ *
+ * @copyright Copyright (c) 2015 Elphel, Inc.
+ *
+ * <b>License:</b>
+ *
  * x393_status.vh is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -30,7 +34,7 @@
  * the combined code. This permission applies to you if the distributed code
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
- *******************************************************************************/
+ */
 
 // CVC bug that is supposed to be already fixed 
 `ifdef CVC 

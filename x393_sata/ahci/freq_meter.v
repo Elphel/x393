@@ -1,10 +1,15 @@
-/*******************************************************************************
- * Module: freq_meter
- * Date:2016-02-13  
- * Author: Andrey Filippov     
- * Description: Measure device clock frequency to set the local clock
+/*!
+ * <b>Module:</b>freq_meter
+ * @file freq_meter.v
+ * @date 2016-02-13  
+ * @author Andrey Filippov     
  *
- * Copyright (c) 2016 Elphel, Inc .
+ * @brief Measure device clock frequency to set the local clock
+ *
+ * @copyright Copyright (c) 2016 Elphel, Inc .
+ *
+ * <b>License:</b>
+ *
  * freq_meter.v is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -17,7 +22,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/> .
- *******************************************************************************/
+ */
 `timescale 1ns/1ps
 
 module  freq_meter#(

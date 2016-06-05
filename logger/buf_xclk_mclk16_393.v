@@ -1,10 +1,15 @@
-/*******************************************************************************
- * Module: buf_xclk_mclk16_393
- * Date:2015-07-06  
- * Author: Andrey Filippov     
- * Description: move data from xclk to mclk domain
+/*!
+ * <b>Module:</b>buf_xclk_mclk16_393
+ * @file buf_xclk_mclk16_393.v
+ * @date 2015-07-06  
+ * @author Andrey Filippov     
  *
- * Copyright (c) 2015 Elphel, Inc.
+ * @brief move data from xclk to mclk domain
+ *
+ * @copyright Copyright (c) 2015 Elphel, Inc.
+ *
+ * <b>License:</b>
+ *
  * buf_xclk_mclk16_393.v is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -30,7 +35,7 @@
  * the combined code. This permission applies to you if the distributed code
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
- *******************************************************************************/
+ */
 `timescale 1ns/1ps
 
 module  buf_xclk_mclk16_393(

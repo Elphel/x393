@@ -1,11 +1,16 @@
-/*******************************************************************************
- * Module: GTXE2_GPL
- * Date: 2015-09-08
- * Author: Alexey     
- * Description: emulates GTXE2_CHANNEL primitive behaviour. 
+/*!
+ * <b>Module:</b>GTXE2_GPL
+ * @file GTXE2_GPL.v
+ * @date  2015-09-08
+ * @author Alexey     
+ *
+ * @brief emulates GTXE2_CHANNEL primitive behaviour. 
  *              The file is gathered from multiple files
  *
- * Copyright (c) 2015 Elphel, Inc.
+ * @copyright Copyright (c) 2015 Elphel, Inc.
+ *
+ * <b>License:</b>
+ *
  * GTXE2_GPL.v is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -31,7 +36,7 @@
  * the combined code. This permission applies to you if the distributed code
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
- *******************************************************************************/
+ */
 /**
  * Original unisims primitive's interfaces, according to xilinx's user guide:
  * "7 Series FPGAs GTX/GTH Transceivers User Guide UG476(v1.11)", which is further 

@@ -1,10 +1,15 @@
-/*******************************************************************************
- * Module: dm_single
- * Date:2014-04-26  
- * Author: Andrey Filippov
- * Description: Single-bit DDR3 DQ I/O, same used for DM
+/*!
+ * <b>Module:</b>dm_single
+ * @file dm_single.v
+ * @date 2014-04-26  
+ * @author Andrey Filippov
  *
- * Copyright (c) 2014 Elphel, Inc.
+ * @brief Single-bit DDR3 DQ I/O, same used for DM
+ *
+ * @copyright Copyright (c) 2014 Elphel, Inc.
+ *
+ * <b>License:</b>
+ *
  * dm_single.v is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -30,7 +35,7 @@
  * the combined code. This permission applies to you if the distributed code
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
- *******************************************************************************/
+ */
 `timescale 1ns/1ps
 // ISE 14.7 does not have OBUFT_DCIEN
 `include "system_defines.vh" 

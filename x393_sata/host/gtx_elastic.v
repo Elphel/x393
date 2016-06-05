@@ -1,10 +1,15 @@
-/*******************************************************************************
- * Module: gtx_elastic
- * Date: 2015-07-11  
- * Author: Alexey     
- * Description: elastic buffer implementation
+/*!
+ * <b>Module:</b>gtx_elastic
+ * @file gtx_elastic.v
+ * @date  2015-07-11  
+ * @author Alexey     
  *
- * Copyright (c) 2015 Elphel, Inc.
+ * @brief elastic buffer implementation
+ *
+ * @copyright Copyright (c) 2015 Elphel, Inc.
+ *
+ * <b>License:</b>
+ *
  * gtx_elastic.v is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -30,7 +35,7 @@
  * the combined code. This permission applies to you if the distributed code
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
- *******************************************************************************/
+ */
 module gtx_elastic #(
     parameter DEPTH_LOG2 = 4, // 3,   // => 8 total rows
     parameter OFFSET = 8 // 4        // distance between read and write pointers, = wr_ptr - rd_ptr

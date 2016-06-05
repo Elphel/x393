@@ -1,10 +1,15 @@
-/*******************************************************************************
- * Module: cmda_single
- * Date:2014-04-26  
- * Author: Andrey Filippov
- * Description: Single-bit CMD/address output
+/*!
+ * <b>Module:</b>cmda_single
+ * @file cmda_single.v
+ * @date 2014-04-26  
+ * @author Andrey Filippov
  *
- * Copyright (c) 2014 Elphel, Inc.
+ * @brief Single-bit CMD/address output
+ *
+ * @copyright Copyright (c) 2014 Elphel, Inc.
+ *
+ * <b>License:</b>
+ *
  * cmda_single.v is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -30,7 +35,7 @@
  * the combined code. This permission applies to you if the distributed code
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
- *******************************************************************************/
+ */
 `timescale 1ns/1ps
 
 module  cmda_single #(

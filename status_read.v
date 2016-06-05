@@ -1,8 +1,10 @@
-/*******************************************************************************
- * Module: status_read
- * Date:2015-01-14  
- * Author: Andrey Filippov     
- * Description: Receives status read data (low bandwidth) from multiple
+/*!
+ * <b>Module:</b>status_read
+ * @file status_read.v
+ * @date 2015-01-14  
+ * @author Andrey Filippov     
+ *
+ * @brief Receives status read data (low bandwidth) from multiple
  * subsystems byte-serial, stores in axi-addressable memory
  * 8-bita ddress is received from the source module,
  * as well as another (optional) byte of sequence number (set in write command)
@@ -12,7 +14,10 @@
  * sequence number to use just 2-byte packets? 
  * TODO: add interrupt capabilities
  *
- * Copyright (c) 2015 Elphel, Inc.
+ * @copyright Copyright (c) 2015 Elphel, Inc.
+ *
+ * <b>License:</b>
+ *
  * status_read.v is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -38,7 +43,7 @@
  * the combined code. This permission applies to you if the distributed code
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
- *******************************************************************************/
+ */
 `timescale 1ns/1ps
 
 module  status_read#(

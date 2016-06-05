@@ -1,11 +1,15 @@
- /*******************************************************************************
- * File: x393_tasks_mcntrl_timing.vh
- * Date:2015-02-07  
- * Author: Andrey Filippov     
- * Description: Simulation tasks for programming I/O delays and other timing
+/*!
+ * @file x393_tasks_mcntrl_timing.vh
+ * @date 2015-02-07  
+ * @author Andrey Filippov     
+ *
+ * @brief Simulation tasks for programming I/O delays and other timing
  * parameters in the memory controller
  *
- * Copyright (c) 2015 Elphel, Inc.
+ * @copyright Copyright (c) 2015 Elphel, Inc.
+ *
+ * <b>License:</b>
+ *
  * x393_tasks_mcntrl_timing.vh is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -31,7 +35,7 @@
  * the combined code. This permission applies to you if the distributed code
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
- *******************************************************************************/
+ */
 
       task axi_set_same_delays;  //SuppressThisWarning VEditor : may be unused
         input [7:0] dq_idelay;

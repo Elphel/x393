@@ -1,10 +1,15 @@
-/*******************************************************************************
- * Module: select_clk_buf
- * Date:2015-11-07  
- * Author: Andrey Filippov     
- * Description: Select one of the clock buffers primitives by parameter
+/*!
+ * <b>Module:</b>select_clk_buf
+ * @file select_clk_buf.v
+ * @date 2015-11-07  
+ * @author Andrey Filippov     
  *
- * Copyright (c) 2015 Elphel, Inc .
+ * @brief Select one of the clock buffers primitives by parameter
+ *
+ * @copyright Copyright (c) 2015 Elphel, Inc .
+ *
+ * <b>License:</b>
+ *
  * select_clk_buf.v is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -30,7 +35,7 @@
  * the combined code. This permission applies to you if the distributed code
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
- *******************************************************************************/
+ */
 `timescale 1ns/1ps
 
 module  select_clk_buf #(

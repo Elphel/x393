@@ -1,10 +1,16 @@
-/*******************************************************************************
- * Module: top
- * Date: 2015-07-11
- * Author: Alexey
- * Description: top-level module, instantiates PS7 + sata host controller
+/*!
+ * <b>Module:</b>top
+ * @file top.v
+ * @date  2015-07-11
+ * @author Alexey
  *
- * Copyright (c) 2015 Elphel, Inc.
+ * @brief top-level module, instantiates PS7 + sata host controller.
+ * Not used when SATA is used as a part of the x393 project.
+ *
+ * @copyright Copyright (c) 2015 Elphel, Inc.
+ *
+ * <b>License:</b>
+ *
  * top.v is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -30,7 +36,7 @@
  * the combined code. This permission applies to you if the distributed code
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
- *******************************************************************************/
+ */
 /*
  * all signals' and modules' names and interconnections are taken from x393.v
  * to make the final integration easier - just to make an instance of

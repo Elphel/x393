@@ -1,16 +1,21 @@
-/*******************************************************************************
- * Module: sata_phy
- * Date: 2015-07-11  
- * Author: Alexey     
- * Description: phy-level, including oob, clock generation and GTXE2 
+/*!
+ * <b>Module:</b>sata_phy_dev
+ * @file sata_phy_dev.v
+ * @date  2015-07-11  
+ * @author Alexey     
  *
- * Copyright (c) 2015 Elphel, Inc.
- * sata_phy.v is free software; you can redistribute it and/or modify
+ * @brief phy-level, including oob, clock generation and GTXE2 
+ *
+ * @copyright Copyright (c) 2015 Elphel, Inc.
+ *
+ * <b>License:</b>
+ *
+ * sata_phy_dev.v is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- * sata_phy.v file is distributed in the hope that it will be useful,
+ * sata_phy_dev.v file is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
@@ -30,7 +35,7 @@
  * the combined code. This permission applies to you if the distributed code
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
- *******************************************************************************/
+ */
 //`include "oob_dev.v"
 module sata_phy_dev #(
     parameter DATA_BYTE_WIDTH = 4

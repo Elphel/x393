@@ -1,10 +1,15 @@
-/*******************************************************************************
- * Module: crc
- * Date: 2015-07-11  
- * Author: Alexey     
- * Description: crc calculations for the link layer
+/*!
+ * <b>Module:</b>crc
+ * @file crc.v
+ * @date  2015-07-11  
+ * @author Alexey     
  *
- * Copyright (c) 2015 Elphel, Inc.
+ * @brief crc calculations for the link layer
+ *
+ * @copyright Copyright (c) 2015 Elphel, Inc.
+ *
+ * <b>License:</b>
+ *
  * crc.v is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -30,7 +35,7 @@
  * the combined code. This permission applies to you if the distributed code
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
- *******************************************************************************/
+ */
 /* same as for a scrambler, @ doc p.561 */
 // TODO make it parallel, make another widths support
 module crc #(

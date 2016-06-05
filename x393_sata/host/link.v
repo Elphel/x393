@@ -1,10 +1,15 @@
-/*******************************************************************************
- * Module: link
- * Date: 2015-07-11  
- * Author: Alexey     
- * Description: sata link layer implementation
+/*!
+ * <b>Module:</b>link
+ * @file link.v
+ * @date  2015-07-11  
+ * @author Alexey     
  *
- * Copyright (c) 2015 Elphel, Inc.
+ * @brief sata link layer implementation
+ *
+ * @copyright Copyright (c) 2015 Elphel, Inc.
+ *
+ * <b>License:</b>
+ *
  * link.v is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -30,7 +35,7 @@
  * the combined code. This permission applies to you if the distributed code
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
- *******************************************************************************/
+ */
 //`include "scrambler.v"
 //`include "crc.v"
 module link #(

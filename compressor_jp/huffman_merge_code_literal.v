@@ -1,11 +1,16 @@
-/*******************************************************************************
- * Module: huffman_merge_code_literal
- * Date:2015-10-22  
- * Author: Andrey Filippov     
- * Description: Merge 1-16 bits of Huffman code with 0..11 bits of literal data,
+/*!
+ * <b>Module:</b>huffman_merge_code_literal
+ * @file huffman_merge_code_literal.v
+ * @date 2015-10-22  
+ * @author Andrey Filippov     
+ *
+ * @brief Merge 1-16 bits of Huffman code with 0..11 bits of literal data,
  * align result to MSB : {huffman,literal, {n{1'b0}}
  *
- * Copyright (c) 2015 Elphel, Inc .
+ * @copyright Copyright (c) 2015 Elphel, Inc .
+ *
+ * <b>License:</b>
+ *
  * huffman_merge_code_literal.v is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -31,7 +36,7 @@
  * the combined code. This permission applies to you if the distributed code
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
- *******************************************************************************/
+ */
 `timescale 1ns/1ps
 
 module  huffman_merge_code_literal(
