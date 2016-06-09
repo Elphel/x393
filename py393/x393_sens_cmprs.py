@@ -1155,7 +1155,7 @@ class X393SensCmprs(object):
                               histogram_top =             None,
                               histogram_width_m1 =        None, # 2559, #0,
                               histogram_height_m1 =       None, # 799, #0,
-                              circbuf_chn_size=           0x1000000, #16777216
+                              circbuf_chn_size=           0x4000000, # 64 Mib
                               verbose =                   1):
         """
         Setup one sensor+compressor channel (for one sub-channel only)
