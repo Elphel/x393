@@ -40,6 +40,9 @@
   // This file may be used to define same pre-processor macros to be included into each parsed file
 `ifndef SYSTEM_DEFINES
   `define SYSTEM_DEFINES
+  // TODO: Later compare instantiate/infer
+  `define INSTANTIATE_DSP48E1
+  
 // Parameters from x393_sata project
   `define USE_DRP
   `define ALIGN_CLOCKS
