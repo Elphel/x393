@@ -78,11 +78,11 @@ module  dsp_ma #(
         .ACASCREG            (1),
         .ADREG               (0), // (1),
         .ALUMODEREG          (1),
-        .AREG                (2), // (1)
+        .AREG                (1), // (2), // (1)  - means number in series, so "2" always reads the second
         .AUTORESET_PATDET    ("NO_RESET"),
         .A_INPUT             ("DIRECT"),
         .BCASCREG            (1),
-        .BREG                (2), // (1)
+        .BREG                (1), // (2), // (1)  - means number in series, so "2" always reads the second
         .B_INPUT             ("DIRECT"),
         .CARRYINREG          (1),
         .CARRYINSELREG       (1),
@@ -134,7 +134,7 @@ module  dsp_ma #(
         .CEB2           (ceb2),       // input
         .CEC            (1'b0),       // input
         .CECARRYIN      (1'b0),       // input
-        .CECTRL         (1'b0),       // input
+        .CECTRL         (1'b1),       // input
         .CED            (ced),        // input
         .CEINMODE       (1'b1),       // input
         .CEM            (1'b1),       // input

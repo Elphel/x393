@@ -43,33 +43,45 @@ module  dct1d_chen_reorder_out#(
  )(
     input                  clk,
     input                  rst,
+    input                  en,        // sampled at timeslot of pre2_start
     input  [WIDTH -1:0]    din,       // pre2_start-X-F4-X-F2-X-F6-F5-F0-F3-X-F1-X-F7
     input                  pre2_start,     // Two cycles ahead of F4 
     output   [WIDTH -1:0]  dout,      // data in natural order: F0-F1-F2-F3-F4-F5-F6-F7
-    output                 start_out, // 1 ahead of F0
-    output reg             en_out // to be sampled when start_out is expected
+    output                 start_out, // 1 ahead of the first F0
+    output reg             dv,        // output data valid
+    output                 en_out     // to be sampled when start_out is expected
 );
     reg [WIDTH -1:0] reord_buf_ram[0:15];
     reg [WIDTH -1:0] dout_r;
     reg  [3:0] cntr_in;
-    wire       start_8;
-    wire       start_11;
-    reg        start_12;
-    wire       stop_in;
+    reg        pre_we_r;
     reg        we_r;
     reg  [3:0] ina_rom;
     wire [3:0] waddr = {ina_rom[3] ^ cntr_in[3], ina_rom[2:0]};   
     reg  [3:0] raddr;
-    assign dout = dout_r; 
-    assign start_out = start_12;
+    reg  [2:0] per_type; // idle/last:0, first cycle - 1, 2-nd - 2, other - 3,... ~en->6 ->7 -> 0  (to generate pre2_start_out)
+    reg        start_out_r;
+    reg        en_out_r;
+    assign dout = dout_r;
+    assign start_out = start_out_r; 
+    assign en_out = en_out_r;
+    
     always @(posedge clk) begin
-        if      (rst)        we_r <= 0;
-        else if (pre2_start) we_r <= 1;
-        else if (stop_in)    we_r <= 0;
+        if      (rst)           per_type <= 0;
+        else if (pre2_start)    per_type <= 3'h1;
+        else if (&cntr_in[2:0]) begin
+            if      (!per_type[2] && !en)                per_type <= 3'h6;
+            else if ((per_type != 0) && (per_type != 3)) per_type <= per_type + 1;  
+        end
+    
+        if      (rst)                                              pre_we_r <= 0;
+        else if (pre2_start)                                       pre_we_r <= 1;
+        else if ((per_type == 0) || ((cntr_in==3) && per_type[2])) pre_we_r <= 0;
+        we_r <= pre_we_r;
         
         if      (rst)        cntr_in <= 0;
         else if (pre2_start) cntr_in <= {~cntr_in[3],3'b0};
-        else if (we_r)       cntr_in <= cntr_in + 1;
+        else if (pre_we_r)       cntr_in <= cntr_in + 1;
         case (cntr_in[2:0])
             3'h0: ina_rom <= {1'b0,3'h4};
             3'h1: ina_rom <= {1'b1,3'h1};
@@ -78,46 +90,24 @@ module  dct1d_chen_reorder_out#(
             3'h4: ina_rom <= {1'b0,3'h6};
             3'h5: ina_rom <= {1'b0,3'h5};
             3'h6: ina_rom <= {1'b0,3'h0};
-            3'h7: ina_rom <= {1'b0,3'h3};
+            3'h7: ina_rom <= {1'b1,3'h3};
         endcase
         
         if (we_r) reord_buf_ram[waddr] <= din;
 
-        if      (start_11)                  raddr <= {~cntr_in[3], 3'b0};
-        else if ((raddr[2:0] != 0) || we_r) raddr <= raddr + 1;
+        if      ((per_type == 2) && (cntr_in == 1))   raddr <= {~cntr_in[3], 3'b0};
+        else if ((raddr[2:0] != 0) || (per_type !=0)) raddr <= raddr + 1;
         
         dout_r <=  reord_buf_ram[raddr];
+        start_out_r <=  (per_type == 2) && (cntr_in == 1);
         
-        start_12 <= start_11;
-        
-        en_out <= start_12 || (raddr[2:0] != 0); 
-        
+        if (rst ||(per_type == 0) ) en_out_r <= 0;
+        else if (cntr_in == 1)      en_out_r <= (per_type == 2) || !per_type[2]; 
+
+        if      (rst)                            dv <= 0;
+        else if (start_out_r)                    dv <= 1;
+        else if ((raddr[2:0] == 0) && !en_out_r) dv <= 0;
     end
-
-    dly01_16 start_8__i (
-        .clk   (clk), // input
-        .rst   (rst), // input
-        .dly   (4'h7), // input[3:0] 
-        .din   (pre2_start), // input
-        .dout  (start_8) // output
-    );
-
-    dly01_16 start_11__i (
-        .clk   (clk), // input
-        .rst   (rst), // input
-        .dly   (4'h1), // input[3:0] 
-        .din   (start_8), // input
-        .dout  (start_11) // output
-    );
-
-    dly01_16 dly01_16_2_i (
-        .clk   (clk), // input
-        .rst   (rst), // input
-        .dly   (4'h4), // input[3:0] 
-        .din   (start_8 && !pre2_start), // input
-        .dout  (stop_in)            // output
-    );
-
 
 endmodule
 

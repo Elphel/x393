@@ -58,14 +58,14 @@ module  dsp_ma_preadd #(
     input                       sela,     // 0 - select a1, 1 - select a2
     input                       en_a,     // 1 - enable a input (0 - zero) ~inmode[1]
     input                       en_d,     // 1 - enable d input (0 - zero) ~inmode[2]
-    input                       sub_d,    // 0 - pre-add (A+D), 1 - pre-subtract (A-D)
+    input                       sub_a,    // 0 - pre-add (D+A), 1 - pre-subtract (D-A)
     input                       neg_m,    // 1 - negate multiplier result
     input                       accum,    // 0 - use multiplier result, 1 add to accumulator
     output signed [P_WIDTH-1:0] pout
 );
 `ifdef INSTANTIATE_DSP48E1
     wire [4:0] inmode = {~selb,
-                          sub_d,
+                          sub_a,
                           en_d,
                          ~en_a,
                          ~sela};
@@ -82,11 +82,11 @@ module  dsp_ma_preadd #(
         .ACASCREG            (1),
         .ADREG               (1),
         .ALUMODEREG          (1),
-        .AREG                (2), // (1)
+        .AREG                (1), // 2), // (1) - means number in series, so "2" always reads the second
         .AUTORESET_PATDET    ("NO_RESET"),
         .A_INPUT             ("DIRECT"),
         .BCASCREG            (1),
-        .BREG                (2), // (1)
+        .BREG                (1), // (2), // (1) - means number in series, so "2" always reads the second
         .B_INPUT             ("DIRECT"),
         .CARRYINREG          (1),
         .CARRYINSELREG       (1),
@@ -138,7 +138,7 @@ module  dsp_ma_preadd #(
         .CEB2           (ceb2),       // input
         .CEC            (1'b0),       // input
         .CECARRYIN      (1'b0),       // input
-        .CECTRL         (1'b0),       // input
+        .CECTRL         (1'b1),       // input
         .CED            (ced),        // input
         .CEINMODE       (1'b1),       // input
         .CEM            (1'b1),       // input
@@ -179,7 +179,7 @@ module  dsp_ma_preadd #(
     reg                       sela_r;
     reg                       en_a_r;
     reg                       en_d_r;
-    reg                       sub_d_r;
+    reg                       sub_a_r;
     reg                       neg_m_r;
     reg                       accum_r;
     wire signed [P_WIDTH-1:0] m_reg_pm;            
@@ -189,7 +189,8 @@ module  dsp_ma_preadd #(
     assign pout = p_reg;
     assign b_wire = selb_r ? b2_reg : b1_reg;
     assign a_wire = en_a_r ? (sela_r ? a2_reg : a1_reg) : {A_WIDTH{1'b0}};
-    assign d_wire = en_d_r ? (sub_d_r ? -d_reg : d_reg) : {A_WIDTH{1'b0}};
+//    assign d_wire = en_d_r ? (sub_a_r ? -d_reg : d_reg) : {A_WIDTH{1'b0}};
+    assign d_wire = en_d_r ? d_reg : {A_WIDTH{1'b0}};
     assign m_wire = ad_reg * b_wire;
     
     assign m_reg_pm =   neg_m_r ? - m_reg : m_reg;  
@@ -212,7 +213,7 @@ module  dsp_ma_preadd #(
         else if (ced)  d_reg <= din;
         
         if      (rst)   ad_reg <= 0;
-        else if (cead)  ad_reg <= a_wire + d_wire;
+        else if (cead)  ad_reg <= sub_a_r? (d_wire - a_wire): (d_wire + a_wire);
         
         neg_m_r <= neg_m;
         accum_r <= accum;
@@ -221,7 +222,7 @@ module  dsp_ma_preadd #(
         sela_r <=  sela;
         en_a_r <=  en_a;
         en_d_r <=  en_d;
-        sub_d_r <= sub_d;
+        sub_a_r <= sub_a;
         
         m_reg <= {{P_WIDTH - A_WIDTH - B_WIDTH{1'b0}}, m_wire};
         

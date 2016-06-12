@@ -991,6 +991,39 @@ module  jp_channel#(
         .dv                 (),  // not used: output data output valid. Will go high on the 94-th cycle after the start (now - on 95-th?)
         .d_out              (dct_out)              // output[12:0] 
     );
+    
+    /* New DCT, now in passive mode */
+    // TODO: enforce minimal pause (when not butted together)
+    wire        dct_last_in_debug;
+    wire        dct_pre_first_out_debug;
+    wire        dct_dv_debug;
+    wire [12:0] dct_dout_debug;
+    
+    dct2d8x8_chen #(
+        .INPUT_WIDTH      (10),
+        .OUTPUT_WIDTH     (13),
+        .STAGE1_SAFE_BITS (3),
+        .STAGE2_SAFE_BITS (3),
+        .TRANSPOSE_WIDTH  (16),
+        .TRIM_STAGE_1     (0),
+        .TRIM_STAGE_2     (2),
+        .DSP_WIDTH        (24),
+        .DSP_OUT_WIDTH    (24),
+        .DSP_B_WIDTH      (18),
+        .DSP_A_WIDTH      (25),
+        .DSP_P_WIDTH      (48),
+        .DSP_M_WIDTH      (43)
+    ) dct2d8x8_chen_i (
+        .clk           (xclk),                    // input
+        .rst           (!frame_en),               // input
+        .start         (dct_start),               // input
+        .xin           (yc_nodc),                 // input[9:0] signed 
+        .last_in       (dct_last_in_debug),       // output reg 
+        .pre_first_out (dct_pre_first_out_debug), // output
+        .dv            (dct_dv_debug),            // output
+        .d_out         (dct_dout_debug)           // output[12:0] signed 
+    );
+    
 `endif    
     
     wire          quant_start;

@@ -125,8 +125,8 @@ module  dsp_addsub_reg2_simd#(
         .CEB1           (cea1),       // input
         .CEB2           (cea2),       // input
         .CEC            (ceb),        // input
-        .CECARRYIN      (1'b0),       // input
-        .CECTRL         (1'b0),       // input
+        .CECARRYIN      (1'b1),       // input
+        .CECTRL         (1'b1),       // input
         .CED            (1'b0),       // input
         .CEINMODE       (1'b1),       // input
         .CEM            (1'b1),       // input

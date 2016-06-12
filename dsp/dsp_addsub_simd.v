@@ -58,13 +58,15 @@ module  dsp_addsub_simd#(
                           1'b0,  // seld,
                           1'b0,  // seld, // ~en_a,
                           1'b1}; // ~sela};
-    wire [3:0] alumode = {2'b0,        // Z + X + Y + CIN  / -Z +( X + Y + CIN) -1
-                          1'b0,     
+// No CIN in the middle of SIMD words!                          
+//    wire [3:0] alumode = {2'b0,        // Z + X + Y + CIN  / -Z +( X + Y + CIN) -1
+    wire [3:0] alumode = {2'b0,        // Z + X + Y + CIN  / Z -( X + Y + CIN)
+                          subtract, // 1'b0,     
                           subtract};
     wire [6:0] opmode =  {3'b011, // Z = C-input
                           2'b00,  // Y = 0
                           2'b11}; // X = A:B
-    wire cryin = subtract;                      
+//    wire cryin = subtract;                      
                           
     DSP48E1 #(
         .ACASCREG            (1),
@@ -109,24 +111,24 @@ module  dsp_addsub_simd#(
         .PATTERNDETECT  (),           // output
         .PCOUT          (),           // output[47:0] 
         .UNDERFLOW      (),           // output
-        .A              (ain[47:18]), // input[29:0] 
+        .A              (bin[47:18]), // input[29:0] 
         .ACIN           (30'b0),      // input[29:0] 
         .ALUMODE        (alumode),    // input[3:0] 
-        .B              (ain[17:0]),  // input[17:0] 
+        .B              (bin[17:0]),  // input[17:0] 
         .BCIN           (18'b0),      // input[17:0] 
-        .C              (bin),        // input[47:0] 
+        .C              (ain),        // input[47:0] 
         .CARRYCASCIN    (1'b0),       // input
-        .CARRYIN        (cryin),      // input
+        .CARRYIN        (1'b0),       // cryin),      // input
         .CARRYINSEL     (3'h0),       // input[2:0] // later modify? 
-        .CEA1           (cea),        // input
-        .CEA2           (1'b0),       // input
+        .CEA1           (1'b0),       // input
+        .CEA2           (ceb),        // input
         .CEAD           (1'b0),       // input
         .CEALUMODE      (1'b1),       // input
-        .CEB1           (cea),        // input
-        .CEB2           (1'b0),       // input
-        .CEC            (ceb),        // input
-        .CECARRYIN      (1'b0),       // input
-        .CECTRL         (1'b0),       // input
+        .CEB1           (1'b0),       // input
+        .CEB2           (ceb),        // input
+        .CEC            (cea),        // input
+        .CECARRYIN      (1'b1),       // input
+        .CECTRL         (1'b1),       // input
         .CED            (1'b0),       // input
         .CEINMODE       (1'b1),       // input
         .CEM            (1'b1),       // input

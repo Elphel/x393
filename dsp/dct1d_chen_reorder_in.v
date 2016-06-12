@@ -48,22 +48,34 @@ module  dct1d_chen_reorder_in#(
     input                  start, // with first pixel 
     output [2*WIDTH -1:0]  dout_10_32_76_54, // Concatenated/reordered output data {x[1],x[0]}/{x[3],x[2]}/ {x[7],x[6]}/{x[5],x[4]}
     output reg             start_out,
-    output reg             en_out // to be sampled when start_out is expected
+    output                 en_out // to be sampled when start_out is expected
 );
     reg                    last_r;
     reg              [2:0] cntr_in;
     reg              [1:0] raddr;
     wire                   restart = !rst && en && (start || last_r);
-    wire             [1:0] we = ((|cntr_in) || en)? {~cntr_in[0]^cntr_in[2],cntr_in[0]^cntr_in[2]}:2'b0;
+//    wire             [1:0] we = ((|cntr_in) || en)? {~cntr_in[0]^cntr_in[2],cntr_in[0]^cntr_in[2]}:2'b0;
+    wire             [1:0] we = ((|cntr_in) || en)? {cntr_in[0]^cntr_in[2], ~cntr_in[0]^cntr_in[2]}:2'b0;
     wire             [1:0] waddr = {cntr_in[2],cntr_in[2]^cntr_in[1]};
     reg        [WIDTH-1:0] bufl_ram[0:3];
     reg        [WIDTH-1:0] bufh_ram[0:3];
     reg     [2*WIDTH -1:0] dout_10_32_76_54_r;
+    reg                    first_period;
+    reg                    en_out_r;
+    reg                    last_out;
+    reg                    re_r;
     assign dout_10_32_76_54 = dout_10_32_76_54_r;
+    assign en_out =           en_out_r;
     
     always @(posedge clk) begin
         if (rst) last_r <= 0;
         else     last_r <= &cntr_in;
+
+        last_out <= raddr == 2;
+        
+        if      (rst)          re_r <= 0;
+        else if (cntr_in == 5) re_r <= 1;
+        else if (last_out)     re_r <= 0;
         
         if      (rst)                   cntr_in <= 0;
         else if (restart || (|cntr_in)) cntr_in <= cntr_in + 1;
@@ -75,10 +87,18 @@ module  dct1d_chen_reorder_in#(
         else if (cntr_in == 5) raddr <= 0;
         else if (!(&raddr))    raddr <= raddr + 1;
         
-        dout_10_32_76_54_r <= {bufh_ram[raddr],bufl_ram[raddr]};
-        start_out <= (cntr_in == 5);
+        if      (rst)          first_period <= 0;
+        else if (start && en)  first_period <= 1;
+        else if (last_r)       first_period <= 0;
         
-        en_out <= en || (|cntr_in) || last_r;
+        if (re_r) dout_10_32_76_54_r <= {bufh_ram[raddr],bufl_ram[raddr]};
+        
+        start_out <= first_period && (cntr_in == 5);
+        
+        if      (rst)                 en_out_r <= 0;
+        else if (cntr_in == 5)        en_out_r <= 1;
+        else if ((raddr == 2) && !en) en_out_r <= 0;
+
     end
 endmodule
 
