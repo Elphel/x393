@@ -44,7 +44,7 @@ module  dct2d8x8_chen#(
     parameter STAGE1_SAFE_BITS = 3, // leave this number of extra bits on DCT1D input to prevent output saturation
     parameter STAGE2_SAFE_BITS = 3, // leave this number of extra bits on DCT1D input to prevent output saturation
     parameter TRANSPOSE_WIDTH = 16, // transpose memory width
-    parameter TRIM_STAGE_1 =     0, // Trim these MSBs from the stage1 results
+    parameter TRIM_STAGE_1 =     1, // Trim these MSBs from the stage1 results (1 - matches old DCT)
     parameter TRIM_STAGE_2 =     2, // Trim these MSBs from the stage2 results TODO: put real value
     parameter DSP_WIDTH =       24,
     parameter DSP_OUT_WIDTH =   24,

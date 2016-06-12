@@ -56,7 +56,7 @@ module  dct_chen_transpose#(
          
     reg               wcol13;    // columns 1 and 3 (special)
     wire        [3:0] wrow_mod;  // effective row, including modifier for wpage
-    wire        [1:0] wcol01_mod = wcol[1:0] + wcol[2];   
+    wire        [1:0] wcol01_mod = wcol[1:0] - wcol[2];   
     reg         [6:0] waddr;
     wire              pre2_stop;
     reg   [WIDTH-1:0] transpose_ram[0:127];
@@ -76,12 +76,12 @@ module  dct_chen_transpose#(
     assign dout_10_32_76_54 = ram_reg2;
     // TODO: prevent writing to previous page after pause!
     always @(posedge clk) begin
-        wcol13 <=     ~wcol[0] & ~wcol[2];
+        wcol13 <=      pre_we_r & ~wcol[0] & ~wcol[2];
         waddr[0] <=    wrow_mod[0] ^ wrow_mod[2];  
-        waddr[1] <=    wcol[1];
-        waddr[2] <=   ~wcol01_mod[0] ^ wcol01_mod[1];
-        waddr[3] <=   ~wcol01_mod[1];
-        waddr[4] <=    wrow_mod[0] ^ wrow_mod[2];
+        waddr[1] <=    wcol[0];
+        waddr[2] <=    wcol01_mod[1];
+        waddr[3] <=   ~wcol01_mod[0] ^ wcol01_mod[1];
+        waddr[4] <=    wrow_mod[1] ^ wrow_mod[2];
         waddr[5] <=    wrow_mod[2];
         waddr[6] <=    wpage;
 
@@ -91,7 +91,7 @@ module  dct_chen_transpose#(
         
         if      (rst)        wcntr <= 0;
         else if (pre_we_r)   wcntr <= wcntr + 1;        // including page, should be before 'if (pre2_start)'
-        else if (pre2_start) wcntr <= {wcntr[6], 6'b0}; // if happens during pre_we_r - will be ignore, otherwise (after pause) will zero in-page adderss
+        else if (pre2_start) wcntr <= {wcntr[6], 6'b0}; // if happens during pre_we_r - will be ignored, otherwise (after pause) will zero in-page adderss
         
         we_r <= pre_we_r;
         
@@ -99,7 +99,7 @@ module  dct_chen_transpose#(
         
         if      (rst)          rcntr <= ~0;
         else if (pre_rstart_w) rcntr <= 0;
-        else if (rcntr != ~0)  rcntr <=  rcntr + 1;
+        else if (!(&rcntr))    rcntr <= rcntr + 1;
         
         re_r <=    ~rcntr[2];
         regen_r <= re_r;

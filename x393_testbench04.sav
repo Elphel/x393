@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.3.66 (w)1999-2015 BSI
-[*] Sun Jun 12 05:41:06 2016
+[*] Sun Jun 12 10:04:58 2016
 [*]
-[dumpfile] "/home/andrey/git/x393/simulation/x393_testbench03-20160611211111571.fst"
-[dumpfile_mtime] "Sun Jun 12 03:26:59 2016"
-[dumpfile_size] 85746817
+[dumpfile] "/home/andrey/git/x393/simulation/x393_testbench03-20160612033213998.fst"
+[dumpfile_mtime] "Sun Jun 12 09:48:19 2016"
+[dumpfile_size] 85326946
 [savefile] "/home/andrey/git/x393/x393_testbench04.sav"
-[timestart] 90597800
+[timestart] 90696800
 [size] 1823 1180
 [pos] 0 0
-*-14.383114 90668200 209370000 209396667 209423333 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-15.073349 90841667 209370000 209396667 209423333 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] x393_testbench03.
 [treeopen] x393_testbench03.read_compressor_frame_irq.
 [treeopen] x393_testbench03.read_contol_register_irq.
@@ -30,6 +30,7 @@
 [treeopen] x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.dct2d8x8_chen_i.dct1d_chen_stage1_i.dsp_ma1_i.DSP48E1_i.
 [treeopen] x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.dct2d8x8_chen_i.dct1d_chen_stage1_i.dsp_ma2_i.
 [treeopen] x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.dct2d8x8_chen_i.dct1d_chen_stage1_i.dsp_ma2_i.DSP48E1_i.
+[treeopen] x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.dct2d8x8_chen_i.dct_chen_transpose_i.
 [treeopen] x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.xdct393_i.
 [treeopen] x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[1].
 [treeopen] x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[2].
@@ -61,8 +62,8 @@
 [treeopen] x393_testbench03.x393_i.sensors393_i.sensor_channel_block[3].
 [treeopen] x393_testbench03.x393_i.sensors393_i.sensor_channel_block[3].sensor_channel_i.
 [treeopen] x393_testbench03.x393_i.sensors393_i.sensor_channel_block[3].sensor_channel_i.sensor_i2c_io_i.
-[sst_width] 352
-[signals_width] 267
+[sst_width] 238
+[signals_width] 260
 [sst_expanded] 1
 [sst_vpaned_height] 420
 @820
@@ -2172,7 +2173,7 @@ x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.dct2
 x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.dct2d8x8_chen_i.dct1d_chen_stage1_i.dout1_w[23:0]
 @1401200
 -ma1
-@800200
+@c00200
 -ma2
 @22
 [color] 7
@@ -2236,12 +2237,13 @@ x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.dct2
 -
 @1000200
 -dsp48e1
+@1401200
 -ma2
 @28
 x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.dct2d8x8_chen_i.start
 x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.dct2d8x8_chen_i.en_in_r
 x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.dct2d8x8_chen_i.dct1_en
-@800200
+@c00200
 -reorder_in
 @28
 x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.dct2d8x8_chen_i.dct1d_chen_reorder_in_i.en
@@ -2260,37 +2262,8 @@ x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.dct2
 x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.dct2d8x8_chen_i.dct1d_chen_reorder_in_i.en_out
 @200
 -
-@1000200
--reorder_in
-@28
-x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.dct2d8x8_chen_i.dct1d_chen_stage1_i.start
-x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.dct2d8x8_chen_i.dct1d_chen_stage1_i.en
-x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.dct2d8x8_chen_i.dct1d_chen_stage1_i.pre2_start_out
-x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.dct2d8x8_chen_i.dct1d_chen_stage1_i.en_out
-@420
-x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.dct2d8x8_chen_i.dct1d_chen_stage1_i.dout[23:0]
-@28
-x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.dct2d8x8_chen_i.dct1d_chen_stage1_i.en_out
-@22
-x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.dct2d8x8_chen_i.dct1d_chen_stage1_i.per_type[2:0]
-@28
-x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.dct2d8x8_chen_i.dct1d_chen_stage1_i.pre2_start_out
-@c00022
-x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.dct2d8x8_chen_i.dct1d_chen_stage1_i.phase[7:0]
-@28
-(0)x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.dct2d8x8_chen_i.dct1d_chen_stage1_i.phase[7:0]
-(1)x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.dct2d8x8_chen_i.dct1d_chen_stage1_i.phase[7:0]
-(2)x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.dct2d8x8_chen_i.dct1d_chen_stage1_i.phase[7:0]
-(3)x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.dct2d8x8_chen_i.dct1d_chen_stage1_i.phase[7:0]
-(4)x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.dct2d8x8_chen_i.dct1d_chen_stage1_i.phase[7:0]
-(5)x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.dct2d8x8_chen_i.dct1d_chen_stage1_i.phase[7:0]
-(6)x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.dct2d8x8_chen_i.dct1d_chen_stage1_i.phase[7:0]
-(7)x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.dct2d8x8_chen_i.dct1d_chen_stage1_i.phase[7:0]
 @1401200
--group_end
-@28
-x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.dct2d8x8_chen_i.dbg_stage1_pre2_en_out
-x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.dct2d8x8_chen_i.stage1_pre2_start_out
+-reorder_in
 @1000200
 -stage1
 @800200
@@ -2310,13 +2283,14 @@ x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.dct2
 x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.dct2d8x8_chen_i.dct1d_chen_reorder_out_dbg_i.waddr[3:0]
 @28
 x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.dct2d8x8_chen_i.dct1d_chen_reorder_out_dbg_i.we_r
-@23
+@22
 x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.dct2d8x8_chen_i.dct1d_chen_reorder_out_dbg_i.raddr[3:0]
 @28
 x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.dct2d8x8_chen_i.dbg_pre_first_out
 x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.dct2d8x8_chen_i.dbg_dv
 x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.dct2d8x8_chen_i.dbg_en_out
-@22
+@420
+[color] 6
 x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.dct2d8x8_chen_i.dbg_d_out[23:0]
 @28
 x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.dct2d8x8_chen_i.stage1_pre2_start_out
@@ -2326,6 +2300,57 @@ x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.dct2
 -
 @1000200
 -stage1_dbg
+@800200
+-transpose
+@28
+x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.dct2d8x8_chen_i.dct_chen_transpose_i.rst
+x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.dct2d8x8_chen_i.dct_chen_transpose_i.pre2_start
+x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.dct2d8x8_chen_i.dct_chen_transpose_i.pre2_stop
+@420
+x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.dct2d8x8_chen_i.dct_chen_transpose_i.din[15:0]
+@22
+[color] 3
+x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.dct2d8x8_chen_i.dct_chen_transpose_i.waddr[6:0]
+@28
+x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.dct2d8x8_chen_i.dct_chen_transpose_i.pre_we_r
+x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.dct2d8x8_chen_i.dct_chen_transpose_i.we_r
+@22
+x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.dct2d8x8_chen_i.dct_chen_transpose_i.pre_rstart_w
+@800023
+[color] 2
+x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.dct2d8x8_chen_i.dct_chen_transpose_i.wcntr[6:0]
+@29
+[color] 2
+(0)x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.dct2d8x8_chen_i.dct_chen_transpose_i.wcntr[6:0]
+[color] 2
+(1)x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.dct2d8x8_chen_i.dct_chen_transpose_i.wcntr[6:0]
+[color] 2
+(2)x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.dct2d8x8_chen_i.dct_chen_transpose_i.wcntr[6:0]
+[color] 2
+(3)x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.dct2d8x8_chen_i.dct_chen_transpose_i.wcntr[6:0]
+[color] 2
+(4)x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.dct2d8x8_chen_i.dct_chen_transpose_i.wcntr[6:0]
+[color] 2
+(5)x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.dct2d8x8_chen_i.dct_chen_transpose_i.wcntr[6:0]
+[color] 2
+(6)x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.dct2d8x8_chen_i.dct_chen_transpose_i.wcntr[6:0]
+@1001201
+-group_end
+@22
+x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.dct2d8x8_chen_i.dct_chen_transpose_i.wpage
+x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.dct2d8x8_chen_i.dct_chen_transpose_i.wrow[2:0]
+x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.dct2d8x8_chen_i.dct_chen_transpose_i.wrow_mod[3:0]
+x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.dct2d8x8_chen_i.dct_chen_transpose_i.wcol[2:0]
+x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.dct2d8x8_chen_i.dct_chen_transpose_i.wcol01_mod[1:0]
+@28
+x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.dct2d8x8_chen_i.dct_chen_transpose_i.wcol13
+@22
+x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.dct2d8x8_chen_i.dct_chen_transpose_i.rcntr[5:0]
+x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.dct2d8x8_chen_i.dct_chen_transpose_i.raddr[5:0]
+@200
+-
+@1000200
+-transpose
 @22
 x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.dct2d8x8_chen_i.dct2in_pad_h[23:0]
 x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.dct2d8x8_chen_i.dct2in_pad_l[23:0]
