@@ -42,6 +42,8 @@
   `define SYSTEM_DEFINES
   // TODO: Later compare instantiate/infer
   `define INSTANTIATE_DSP48E1
+  `define DEBUG_DCT1D // undefine after debugging is over
+//  `define USE_OLD_DCT
   
 // Parameters from x393_sata project
   `define USE_DRP

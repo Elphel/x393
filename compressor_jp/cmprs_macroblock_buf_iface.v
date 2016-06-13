@@ -40,7 +40,14 @@
  */
 `timescale 1ns/1ps
 
-module  cmprs_macroblock_buf_iface (
+module  cmprs_macroblock_buf_iface #(
+`ifdef USE_OLD_DCT
+    parameter DCT_PIPELINE_PAUSE = 0 // No need to delay
+`else    
+    parameter DCT_PIPELINE_PAUSE = 48 // TODO: find really required value (minimal), adjust counter bits (now 6)
+                                      // 48 seems to be OK (may be less)
+`endif                                      
+)(
 //    input         rst,
     input         xclk,               // global clock input, compressor single clock rate
     
@@ -98,6 +105,7 @@ module  cmprs_macroblock_buf_iface (
     wire          frame_pre_start_w; // start sequence for a new frame
     reg           frame_pre_start_r; 
     reg    [ 8:0] mb_pre_start;   // 1-hot macroblock pre start calcualtions - TODO: adjust width
+    reg           mb_pre_start4_first; // first cycle after mb_pre_start[3]    
     wire   [ 2:0] buf_diff;       // difference between page needed and next valid - should be negative to have it ready
     wire          buf_ready_w;    // External memory buffer has all the pages needed
        
@@ -116,6 +124,8 @@ module  cmprs_macroblock_buf_iface (
     wire          starting;
     reg           frame_pre_run;
     reg     [1:0] frame_may_start;
+    
+    reg     [5:0] dct_pipeline_delay_cntr;
     
 `ifdef DEBUG_RING
     assign  dbg_add_invalid = add_invalid;
@@ -180,9 +190,17 @@ module  cmprs_macroblock_buf_iface (
          
         // calculate before starting each macroblock (will wait if buffer is not ready) (TODO: align mb_pre_start[0] to mb_pre_end[2] - same)
         //mb_pre_start_w
-        if      (!frame_en_r)                     mb_pre_start <= 0;
-        if      (mb_pre_start_w)                  mb_pre_start <= 1;
-        else if (!mb_pre_start[4] || buf_ready_w) mb_pre_start <= mb_pre_start << 1;
+        // TODO: Here enforce minimal pause (if not zero for the DCT pipeline to recover
+        // will wait for buf_ready_w, but not less than DCT_PIPELINE_PAUSE (or no wait at all)
+        mb_pre_start4_first <=mb_pre_start[3];
+        if      (xrst)                                 dct_pipeline_delay_cntr <= 0;
+        else if (mb_pre_start4_first && !buf_ready_w)  dct_pipeline_delay_cntr <= DCT_PIPELINE_PAUSE -1;
+        else if (|dct_pipeline_delay_cntr)             dct_pipeline_delay_cntr <= dct_pipeline_delay_cntr -1;
+        
+        
+        if      (!frame_en_r)                                                      mb_pre_start <= 0;
+        if      (mb_pre_start_w)                                                   mb_pre_start <= 1;
+        else if (!mb_pre_start[4] || (buf_ready_w && !(|dct_pipeline_delay_cntr))) mb_pre_start <= mb_pre_start << 1;
         
         if (mb_pre_start[1]) mbl_x_r[6:3] <=      mb_first_in_row? {2'b0,left_marg[4:3]} : mbl_x_next_r[6:3];
         if (mb_pre_start[2]) mbl_x_last_r[7:3] <= {1'b0,mbl_x_r[6:3]} + {2'b0,mb_w_m1[5:3]};

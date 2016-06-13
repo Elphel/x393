@@ -1,10 +1,10 @@
-/*******************************************************************************
+/*!
  * <b>Module:</b>dct1d_chen
  * @file dct1d_chen.v
- * @date:2016-06-05  
- * @author: Andrey Filippov
+ * @date 2016-06-05  
+ * @author  Andrey Filippov
  *     
- * @brief: 1d 8-point DCT based on Chen algorithm
+ * @brief 1d 8-point DCT based on Chen algorithm
  *
  * @copyright Copyright (c) 2016 Elphel, Inc.
  *
@@ -35,17 +35,19 @@
  * the combined code. This permission applies to you if the distributed code
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
- *******************************************************************************/
+ */
 `timescale 1ns/1ps
 
 module  dct1d_chen#(
     parameter WIDTH = 24,
-    parameter OUT_WIDTH =   24,
+    parameter OUT_WIDTH =   16,
     parameter B_WIDTH =     18,
     parameter A_WIDTH =     25,
     parameter P_WIDTH =     48,
-    parameter M_WIDTH =     43, // actual multiplier width (== (A_WIDTH +B_WIDTH)
+//    parameter M_WIDTH =     43, // actual multiplier width (== (A_WIDTH +B_WIDTH)
+    parameter ROUND_OUT =    8, // cut these number of LSBs on the output, round result (in addition to COSINE_SHIFT) 
     parameter COSINE_SHIFT= 17,
+    
     parameter COS_1_16 =    128553, // (1<<17) * cos(1*pi/16)
     parameter COS_2_16 =    121095, // (2<<17) * cos(1*pi/16)
     parameter COS_3_16 =    108982, // (3<<17) * cos(1*pi/16)
@@ -59,11 +61,13 @@ module  dct1d_chen#(
     input                          en,
     input  [2 * WIDTH -1:0]        d10_32_76_54, // Concatenated input data {x[1],x[0]}/{x[3],x[2]}/ {x[7],x[6]}/{x[5],x[4]}
     input                          start,      // {x[1],x[0]} available next after start,  {x[3],x[2]} - second next, then {x[7],x[6]} and {x[5],x[4]} 
-    output [WIDTH -1:0]            dout,
+    output [OUT_WIDTH -1:0]        dout,
     output reg                     pre2_start_out, // 2 clock cycle before F4 output, full dout sequence
                                              // start_out-X-F4-X-F2-X-F6-F5-F0-F3-X-F1-X-F7
     output reg                     en_out    // valid at the same time slot as pre2_start_out (goes active with pre2_start_out)                                      
 );
+    localparam TOTAL_RSHIFT=    COSINE_SHIFT + ROUND_OUT;
+    localparam BEFORE_SAT_WIDTH = P_WIDTH - TOTAL_RSHIFT;  
     reg    signed [B_WIDTH-1:0] dsp_ma_bin;
     wire                        dsp_ma_ceb1_1;     // load b1 register
     wire                        dsp_ma_ceb2_1;     // load b2 register
@@ -94,6 +98,7 @@ module  dct1d_chen#(
     wire                        dsp_ma_neg_m_2;    // 1 - negate multiplier result
     wire                        dsp_ma_accum_2;    // 0 - use multiplier result, 1 add to accumulator
     wire   signed [P_WIDTH-1:0] dsp_ma_p_2;
+    wire   signed [P_WIDTH-1:0] dsp_ma_p_mux;
     
     // Multipler A/D inputs before shift
     wire   signed [WIDTH-1:0] dsp_ma_ain24_1;
@@ -142,9 +147,24 @@ module  dct1d_chen#(
     reg                   [7:0] phase;
     reg                   [2:0] phase_cnt;
     reg        [OUT_WIDTH -1:0] dout_r;
-    wire       [OUT_WIDTH -1:0] dout1_w;
-    wire       [OUT_WIDTH -1:0] dout2_w;
+//    wire       [OUT_WIDTH -1:0] dout1_w;
+//    wire       [OUT_WIDTH -1:0] dout2_w;
+    wire                        dout_round_c;
+    wire[BEFORE_SAT_WIDTH -1:0] dout_round_w; // after rounding, before (optional) saturation
+    reg [BEFORE_SAT_WIDTH -1:0] dout_round_r; // after rounding, before (optional) saturation              
+    wire       [OUT_WIDTH -1:0] dout_sat_w;
+    wire[BEFORE_SAT_WIDTH -1:0] dout_round; // after rounding, before (optional) saturation
+    
     reg                   [2:0] per_type; // idle/last:0, first cycle - 1, 2-nd - 2, other - 3,... ~en->6 ->7 -> 0  (to generate pre2_start_out)
+
+
+    // Temporarily adding 1 extra latency cycle for rounding/saturation. TODO: Remove when moved to DSP itself
+    reg                     pre3_start_out; // 3 clock cycle before F4 output, full dout sequence
+                                             // start_out-X-F4-X-F2-X-F6-F5-F0-F3-X-F1-X-F7
+    reg                     pre_en_out;    // valid at the same time slot as pre2_start_out (goes active with pre2_start_out)                                      
+
+
+
 
 //        .ain      ({simd_a1,simd_a0}), // input[47:0] 
 //        .bin      ({simd_b1,simd_b0}), // input[47:0]
@@ -233,7 +253,7 @@ module  dct1d_chen#(
     assign dsp_ma_ced_2 =  phase[1] | phase[6];
     assign dsp_ma_sela_2 =  phase[1] | phase[6];
     assign dsp_ma_seld_2 =  phase[0] | phase[2] | phase[5] | phase[7];
-    assign dsp_ma_neg_m_2 = phase[6];
+    assign dsp_ma_neg_m_2 = phase[1] | phase[6];
     assign dsp_ma_accum_2 = phase[0] | phase[2] | phase[4] | phase[6];
     // dsp_ma2_i data input connections
     assign dsp_ma_ain24_2 = simd_p5; 
@@ -255,10 +275,37 @@ module  dct1d_chen#(
     
 //    assign  dout1_w = dsp_ma_p_1[M_WIDTH -: WIDTH]; // adding one bit for adder (two MPY outputs are added)
 //    assign  dout2_w = dsp_ma_p_2[M_WIDTH -: WIDTH]; // adding one bit for adder (two MPY outputs are added)
-    assign  dout1_w = dsp_ma_p_1[COSINE_SHIFT +: WIDTH]; // adding one bit for adder (two MPY outputs are added)
-    assign  dout2_w = dsp_ma_p_2[COSINE_SHIFT +: WIDTH]; // adding one bit for adder (two MPY outputs are added)
+    assign dsp_ma_p_mux = phase_cnt[0] ? dsp_ma_p_1 : dsp_ma_p_2;
+
+//    assign  dout1_w = dsp_ma_p_1[COSINE_SHIFT +: OUT_WIDTH]; // adding one bit for adder (two MPY outputs are added)
+//    assign  dout2_w = dsp_ma_p_2[COSINE_SHIFT +: OUT_WIDTH]; // adding one bit for adder (two MPY outputs are added)
     
+    assign dout_round_c = dsp_ma_p_mux[TOTAL_RSHIFT-1];
+    assign dout_round_w = dsp_ma_p_mux[TOTAL_RSHIFT +: BEFORE_SAT_WIDTH] + dout_round_c;
+//  Saturation (only if  BEFORE_SAT_WIDTH > OUT_WIDTH)
+    localparam TRIM_MSB = BEFORE_SAT_WIDTH - OUT_WIDTH;
+    generate
+        if (TRIM_MSB < 0) begin // should never happen
+            assign dout_sat_w =  { {(-TRIM_MSB){dout_round[BEFORE_SAT_WIDTH-1]}},dout_round };
+        end else if (TRIM_MSB == 0) begin
+            assign dout_sat_w =  dout_round[0 +: OUT_WIDTH];
+        end else begin //! saturate. TODO: Maybe (and also symmetric rounding) can be done in DSP itself using masks?
+            assign dout_sat_w = (dout_round[BEFORE_SAT_WIDTH-1 -: TRIM_MSB] == {TRIM_MSB{dout_round[BEFORE_SAT_WIDTH-1]}})?
+                                   dout_round[0 +: OUT_WIDTH]:
+                                   {dout_round[BEFORE_SAT_WIDTH-1], {OUT_WIDTH-1{~dout_round[BEFORE_SAT_WIDTH-1]}}};
+        end                   
+    endgenerate                       
     
+    // to possibly remove registers with generate
+    assign dout_round= dout_round_r; 
+   
+//BEFORE_SAT_WIDTH    
+    
+//    wire                        dout_round_c;
+//    wire       [OUT_WIDTH -1:0] dout_round_w;
+    
+//ROUND_OUT
+//phase_cnt[0] ? dout1_w : dout2_w;    
     assign dout = dout_r;
 
     always @ (posedge clk) begin
@@ -284,16 +331,24 @@ module  dct1d_chen#(
             3'h6: dsp_ma_bin <= COS_4_16;
             3'h7: dsp_ma_bin <= COS_6_16;
         endcase
-        dout_r <= phase_cnt[0] ? dout1_w : dout2_w;
+//        dout_r <= phase_cnt[0] ? dout1_w : dout2_w;
+        dout_round_r <= dout_round_w;         
+        dout_r <= dout_sat_w;
 
-        if (rst) pre2_start_out <= 0;
-        else     pre2_start_out <= (per_type == 2) && phase[3];
+        if (rst) pre3_start_out <= 0;
+        else     pre3_start_out <= (per_type == 2) && phase[3];
         
-        if (rst || !(en || (|phase))) en_out <= 0;
+        pre2_start_out <=pre3_start_out;
+        
+        
+        if (rst || !(en || (|phase))) pre_en_out <= 0;
         else if (phase[3]) begin
-            if      (per_type == 2)   en_out <= 1;
-            else if (per_type[2])     en_out <= 0;
-        end         
+            if      (per_type == 2)   pre_en_out <= 1;
+            else if (per_type[2])     pre_en_out <= 0;
+        end
+        
+        en_out <= pre_en_out;
+        
     end
 
     dsp_addsub_simd #(

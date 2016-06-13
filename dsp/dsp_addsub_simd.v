@@ -1,10 +1,10 @@
-/*******************************************************************************
+/*!
  * <b>Module:</b>dsp_addsub_simd
  * @file dsp_addsub_simd.v
- * @date:2016-06-05  
- * @author: Andrey Filippov
+ * @date 2016-06-05  
+ * @author  Andrey Filippov
  *     
- * @brief: SIMD adder/subtracter
+ * @brief SIMD adder/subtracter
  *
  * @copyright Copyright (c) 2016 Elphel, Inc.
  *
@@ -35,7 +35,7 @@
  * the combined code. This permission applies to you if the distributed code
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
- *******************************************************************************/
+ */
 `timescale 1ns/1ps
 
 module  dsp_addsub_simd#(
@@ -70,7 +70,7 @@ module  dsp_addsub_simd#(
                           
     DSP48E1 #(
         .ACASCREG            (1),
-        .ADREG               (0), // (1),
+        .ADREG               (1),
         .ALUMODEREG          (1),
         .AREG                (1), // (1)
         .AUTORESET_PATDET    ("NO_RESET"),
@@ -81,7 +81,7 @@ module  dsp_addsub_simd#(
         .CARRYINREG          (1),
         .CARRYINSELREG       (1),
         .CREG                (1), //(1),
-        .DREG                (0), //(1),
+        .DREG                (1),
         .INMODEREG           (1),
         .IS_ALUMODE_INVERTED (4'b0),
         .IS_CARRYIN_INVERTED (1'b0),
@@ -131,7 +131,7 @@ module  dsp_addsub_simd#(
         .CECTRL         (1'b1),       // input
         .CED            (1'b0),       // input
         .CEINMODE       (1'b1),       // input
-        .CEM            (1'b1),       // input
+        .CEM            (1'b0),       // input
         .CEP            (cep),        // input
         .CLK            (clk),        // input
         .D              (25'h1ffffff),// input[24:0] 
@@ -145,9 +145,9 @@ module  dsp_addsub_simd#(
         .RSTB           (rst),        // input
         .RSTC           (rst),        // input
         .RSTCTRL        (rst),        // input
-        .RSTD           (rst),        // input
+        .RSTD           (1'b0),       // input
         .RSTINMODE      (rst),        // input
-        .RSTM           (rst),        // input
+        .RSTM           (1'b0),        // input
         .RSTP           (rst)         // input
     );
 `else

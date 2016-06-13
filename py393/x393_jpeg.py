@@ -1104,6 +1104,10 @@ write_sensor_i2c  0 1 0 0x302e0010
 #Exposure 0x800 lines
 write_sensor_i2c  0 1 0 0x30120800
 
+#test - running 8, 8-bit
+write_sensor_i2c  0 1 0 0x30700101
+
+
 ################## Serial - chn3  ####################
 cd /usr/local/verilog/; test_mcntrl.py @hargs
 bitstream_set_path /usr/local/verilog/x393_hispi.bit
@@ -1124,7 +1128,7 @@ write_sensor_i2c  3 1 0 0x3028000a
 write_sensor_i2c  3 1 0 0x302c000d
 write_sensor_i2c  3 1 0 0x302e0010
 #exposure
-write_sensor_i2c  3 1 0 0x30120200
+write_sensor_i2c  3 1 0 0x30120800
 
 compressor_control 3 2
 

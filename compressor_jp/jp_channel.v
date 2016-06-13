@@ -965,39 +965,10 @@ module  jp_channel#(
         if (dct_last_in) first_block_dct   <= first_block_color_after;
     end
     
-    
-`ifdef USE_OLD_XDCT393    
-    
-    xdct393 xdct393_i (
-        .clk                (xclk),                // input
-        .en                 (frame_en),            // input  if zero will reset transpose memory page numbers
-        .start              (dct_start),           // input  single-cycle start pulse that goes with the first pixel data. Other 63 should follow
-        .xin                (yc_nodc),             // input[9:0] 
-        .last_in            (dct_last_in),         // output reg  output high during input of the last of 64 pixels in a 8x8 block //
-        .pre_first_out      (dct_pre_first_out),   // outpu 1 cycle ahead of the first output in a 64 block
-///        .dv                 (dct_dv),           // output data output valid. Will go high on the 94-th cycle after the start (now - on 95-th?)
-        .dv                 (),  // not used: output data output valid. Will go high on the 94-th cycle after the start (now - on 95-th?)
-        .d_out              (dct_out)              // output[12:0] 
-    );
-`else
-    xdct393r xdct393_i (
-        .clk                (xclk),                // input
-        .en                 (frame_en),            // input  if zero will reset transpose memory page numbers
-        .start              (dct_start),           // input  single-cycle start pulse that goes with the first pixel data. Other 63 should follow
-        .xin                (yc_nodc),             // input[9:0] 
-        .last_in            (dct_last_in),         // output reg  output high during input of the last of 64 pixels in a 8x8 block //
-        .pre_first_out      (dct_pre_first_out),   // outpu 1 cycle ahead of the first output in a 64 block
-///        .dv                 (dct_dv),           // output data output valid. Will go high on the 94-th cycle after the start (now - on 95-th?)
-        .dv                 (),  // not used: output data output valid. Will go high on the 94-th cycle after the start (now - on 95-th?)
-        .d_out              (dct_out)              // output[12:0] 
-    );
-    
-    /* New DCT, now in passive mode */
-    // TODO: enforce minimal pause (when not butted together)
-    wire        dct_last_in_debug;
-    wire        dct_pre_first_out_debug;
-    wire        dct_dv_debug;
-    wire [12:0] dct_dout_debug;
+    // 8x8 DCT implementing Chen algorithm and 2 passes
+    // Each pass (1d) uses 5 DSP48E1 modules (2 - multipliers and 3 SIMD (2x24) adder/subracters
+    // Needs a small (<48, but did not calculate yet) pause between block if they did not come
+    // immediately after each other. This pause is needed to restart pipeline
     
     dct2d8x8_chen #(
         .INPUT_WIDTH      (10),
@@ -1005,26 +976,22 @@ module  jp_channel#(
         .STAGE1_SAFE_BITS (3),
         .STAGE2_SAFE_BITS (3),
         .TRANSPOSE_WIDTH  (16),
-        .TRIM_STAGE_1     (0),
-        .TRIM_STAGE_2     (2),
+        .TRIM_STAGE_1     (1),
+        .TRIM_STAGE_2     (0),
         .DSP_WIDTH        (24),
-        .DSP_OUT_WIDTH    (24),
         .DSP_B_WIDTH      (18),
         .DSP_A_WIDTH      (25),
-        .DSP_P_WIDTH      (48),
-        .DSP_M_WIDTH      (43)
+        .DSP_P_WIDTH      (48)
     ) dct2d8x8_chen_i (
-        .clk           (xclk),                    // input
-        .rst           (!frame_en),               // input
-        .start         (dct_start),               // input
-        .xin           (yc_nodc),                 // input[9:0] signed 
-        .last_in       (dct_last_in_debug),       // output reg 
-        .pre_first_out (dct_pre_first_out_debug), // output
-        .dv            (dct_dv_debug),            // output
-        .d_out         (dct_dout_debug)           // output[12:0] signed 
+        .clk           (xclk),              // input
+        .rst           (!frame_en),         // input
+        .start         (dct_start),         // input
+        .xin           (yc_nodc),           // input[9:0] signed 
+        .last_in       (dct_last_in),       // output reg 
+        .pre_first_out (dct_pre_first_out), // output
+        .dv            (),                  // output
+        .d_out         (dct_out)           // output[12:0] signed 
     );
-    
-`endif    
     
     wire          quant_start;
     dly_16 #(.WIDTH(1)) i_quant_start (.clk(xclk),.rst(1'b0), .dly(4'd0), .din(dct_pre_first_out), .dout(quant_start));    // dly=0+1

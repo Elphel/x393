@@ -1,10 +1,10 @@
-/*******************************************************************************
+/*!
  * <b>Module:</b>dct1d_chen_reorder_out
  * @file dct1d_chen_reorder_out.v
- * @date:2016-06-08  
- * @author: Andrey Filippov
+ * @date 2016-06-08  
+ * @author  Andrey Filippov
  *     
- * @brief: Reorder data from dct1d_chen output to natural sequence
+ * @brief Reorder data from dct1d_chen output to natural sequence
  *
  * @copyright Copyright (c) 2016 Elphel, Inc.
  *
@@ -35,7 +35,7 @@
  * the combined code. This permission applies to you if the distributed code
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
- *******************************************************************************/
+ */
 `timescale 1ns/1ps
 
 module  dct1d_chen_reorder_out#(
@@ -62,6 +62,7 @@ module  dct1d_chen_reorder_out#(
     reg  [2:0] per_type; // idle/last:0, first cycle - 1, 2-nd - 2, other - 3,... ~en->6 ->7 -> 0  (to generate pre2_start_out)
     reg        start_out_r;
     reg        en_out_r;
+    wire       stop_out; // qualify with en
     assign dout = dout_r;
     assign start_out = start_out_r; 
     assign en_out = en_out_r;
@@ -98,16 +99,30 @@ module  dct1d_chen_reorder_out#(
         if      ((per_type == 2) && (cntr_in == 1))   raddr <= {~cntr_in[3], 3'b0};
         else if ((raddr[2:0] != 0) || (per_type !=0)) raddr <= raddr + 1;
         
-        dout_r <=  reord_buf_ram[raddr];
+        if (en_out_r) dout_r <=  reord_buf_ram[raddr];
+        
         start_out_r <=  (per_type == 2) && (cntr_in == 1);
         
-        if (rst ||(per_type == 0) ) en_out_r <= 0;
-        else if (cntr_in == 1)      en_out_r <= (per_type == 2) || !per_type[2]; 
-
-        if      (rst)                            dv <= 0;
-        else if (start_out_r)                    dv <= 1;
-        else if ((raddr[2:0] == 0) && !en_out_r) dv <= 0;
+        if (rst ||(per_type == 0) )                 en_out_r <= 0;
+//        else if (cntr_in == 1)      en_out_r <= (per_type == 2) || !per_type[2];
+        else if ((cntr_in == 1) && (per_type == 2)) en_out_r <= 1;
+        else if (stop_out && !en)                   en_out_r <= 0;
+        //stop_out
+        
+        dv <= en_out_r;
+        
+//        if      (rst)                            dv <= 0;
+//        else if (start_out_r)                    dv <= 1;
+//        else if ((raddr[2:0] == 0) && !en_out_r) dv <= 0;
     end
+
+    dly01_16 dly01_16_i (
+        .clk      (clk),                    // input
+        .rst      (rst),                    // input
+        .dly      (4'd8),                   // input[3:0] 
+        .din      ((&cntr_in[2:0]) && !en), // input
+        .dout     (stop_out)                // output
+    );
 
 endmodule
 

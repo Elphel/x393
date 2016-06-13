@@ -1,10 +1,10 @@
-/*******************************************************************************
+/*!
  * <b>Module:</b>dct_chen_transpose
  * @file dct_chen_transpose.v
- * @date:2016-06-09  
- * @author: Andrey Filippov
+ * @date 2016-06-09  
+ * @author  Andrey Filippov
  *     
- * @brief: Reorder+transpose data between two 1-d DCT passes
+ * @brief Reorder+transpose data between two 1-d DCT passes
  *
  * @copyright Copyright (c) 2016 Elphel, Inc.
  *
@@ -35,7 +35,7 @@
  * the combined code. This permission applies to you if the distributed code
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
- *******************************************************************************/
+ */
 `timescale 1ns/1ps
 
 module  dct_chen_transpose#(
@@ -70,6 +70,7 @@ module  dct_chen_transpose#(
     reg [2*WIDTH-1:0] ram_reg2;
     wire              pre_rstart_w = wcntr[5:0] == 61;
     reg         [1:0] rstop_r;
+    reg               first_after_pause; // first block after pause - do not write 2 items to the "past"
     
     assign wpage = wcntr[6] ^ wrow_mod[3]; // previous page for row 0, col 1 & 3
     assign wrow_mod = {1'b0, wrow} - wcol13; 
@@ -93,7 +94,7 @@ module  dct_chen_transpose#(
         else if (pre_we_r)   wcntr <= wcntr + 1;        // including page, should be before 'if (pre2_start)'
         else if (pre2_start) wcntr <= {wcntr[6], 6'b0}; // if happens during pre_we_r - will be ignored, otherwise (after pause) will zero in-page adderss
         
-        we_r <= pre_we_r;
+        we_r <= pre_we_r && (!first_after_pause || !wcol13 || (|wrow)); // do not write first after pause to the "past"
         
         if (we_r) transpose_ram[waddr] <= din;
         
@@ -118,6 +119,11 @@ module  dct_chen_transpose#(
         if      (rst)        en_out <= 0;
         else if (rcntr == 1) en_out <= 1;
         else if (rstop_r[1]) en_out <= 0;
+        
+        if      (rst)                 first_after_pause <= 0;
+        else if (pre2_start && !we_r) first_after_pause <= 1;
+        else if (&wcntr[5:0])         first_after_pause <= 0;
+        
     end
     
     dly01_16 dly01_16_stop_i (

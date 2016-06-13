@@ -23,7 +23,7 @@ py393/dbg*
 debug/*
 html/*
 man/*
-
+x393_docs/*
 includes/x393_cur_params_sim.vh
 includes/x393_cur_params_target_*.vh
 py393/exp_gpio.py

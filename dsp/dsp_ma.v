@@ -1,10 +1,10 @@
-/*******************************************************************************
+/*!
  *  dsp_ma
  * @file dsp_ma.v
- * @date:2016-06-05  
- * @author: Andrey Filippov
+ * @date 2016-06-05  
+ * @author  Andrey Filippov
  *     
- * @brief: DSP with multi-input multiplier and accumulator
+ * @brief DSP with multi-input multiplier and accumulator
  *
  * @copyright Copyright (c) 2016 Elphel, Inc.
  *
@@ -35,7 +35,7 @@
  * the combined code. This permission applies to you if the distributed code
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
- *******************************************************************************/
+ */
 `timescale 1ns/1ps
 
 module  dsp_ma #(

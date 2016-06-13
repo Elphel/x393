@@ -1,10 +1,10 @@
-/*******************************************************************************
+/*!
  * <b>Module:</b>dct1d_chen_reorder_in
  * @file dct1d_chen_reorder_in.v
- * @date:2016-06-08  
- * @author: Andrey Filippov
+ * @date 2016-06-08  
+ * @author  Andrey Filippov
  *     
- * @brief: Reorder scan-line pixel stream for dct1d_chen module
+ * @brief Reorder scan-line pixel stream for dct1d_chen module
  *
  * @copyright Copyright (c) 2016 Elphel, Inc.
  *
@@ -35,7 +35,7 @@
  * the combined code. This permission applies to you if the distributed code
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
- *******************************************************************************/
+ */
 `timescale 1ns/1ps
 
 module  dct1d_chen_reorder_in#(
