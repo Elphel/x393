@@ -36,39 +36,6 @@
  * with at least one of the Free Software programs.
  */
 
-    function [31:0] func_encode_skip;
-        input [CMD_PAUSE_BITS-1:0] skip;       // number of extra cycles to skip (and keep all the other outputs)
-        input                      done;       // end of sequence 
-        input [2:0]                bank;       // bank (here OK to be any)
-        input                      odt_en;     // enable ODT
-        input                      cke;        // disable CKE
-        input                      sel;        // first/second half-cycle, other will be nop (cke+odt applicable to both)
-        input                      dq_en;      // enable (not tristate) DQ  lines (internal timing sequencer for 0->1 and 1->0)
-        input                      dqs_en;     // enable (not tristate) DQS lines (internal timing sequencer for 0->1 and 1->0)
-        input                      dqs_toggle; // enable toggle DQS according to the pattern
-        input                      dci;        // DCI disable, both DQ and DQS lines (internal logic and timing sequencer for 0->1 and 1->0)
-        input                      buf_wr;     // connect to external buffer (but only if not paused)
-        input                      buf_rd;     // connect to external buffer (but only if not paused)
-        input                      buf_rst;    // connect to external buffer (but only if not paused)
-        begin
-            func_encode_skip= func_encode_cmd (
-                {{14-CMD_DONE_BIT{1'b0}}, done, skip[CMD_PAUSE_BITS-1:0]},       // 15-bit row/column address
-                bank[2:0],  // bank (here OK to be any)
-                3'b0,       // RAS/CAS/WE, positive logic
-                odt_en,     // enable ODT
-                cke,        // disable CKE
-                sel,        // first/second half-cycle, other will be nop (cke+odt applicable to both)
-                dq_en,      // enable (not tristate) DQ  lines (internal timing sequencer for 0->1 and 1->0)
-                dqs_en,     // enable (not tristate) DQS lines (internal timing sequencer for 0->1 and 1->0)
-                dqs_toggle, // enable toggle DQS according to the pattern
-                dci,        // DCI disable, both DQ and DQS lines (internal logic and timing sequencer for 0->1 and 1->0)
-                buf_wr,     // connect to external buffer (but only if not paused)
-                buf_rd,     // connect to external buffer (but only if not paused)
-                1'b0,       // nop
-                buf_rst);
-        end
-    endfunction
-
     function [31:0] func_encode_cmd;
         input               [14:0] addr;       // 15-bit row/column address
         input                [2:0] bank;       // bank (here OK to be any)
@@ -103,4 +70,38 @@
            };
         end
     endfunction
+ 
+    function [31:0] func_encode_skip;
+        input [CMD_PAUSE_BITS-1:0] skip;       // number of extra cycles to skip (and keep all the other outputs)
+        input                      done;       // end of sequence 
+        input [2:0]                bank;       // bank (here OK to be any)
+        input                      odt_en;     // enable ODT
+        input                      cke;        // disable CKE
+        input                      sel;        // first/second half-cycle, other will be nop (cke+odt applicable to both)
+        input                      dq_en;      // enable (not tristate) DQ  lines (internal timing sequencer for 0->1 and 1->0)
+        input                      dqs_en;     // enable (not tristate) DQS lines (internal timing sequencer for 0->1 and 1->0)
+        input                      dqs_toggle; // enable toggle DQS according to the pattern
+        input                      dci;        // DCI disable, both DQ and DQS lines (internal logic and timing sequencer for 0->1 and 1->0)
+        input                      buf_wr;     // connect to external buffer (but only if not paused)
+        input                      buf_rd;     // connect to external buffer (but only if not paused)
+        input                      buf_rst;    // connect to external buffer (but only if not paused)
+        begin
+            func_encode_skip= func_encode_cmd (
+                {{14-CMD_DONE_BIT{1'b0}}, done, skip[CMD_PAUSE_BITS-1:0]},       // 15-bit row/column address
+                bank[2:0],  // bank (here OK to be any)
+                3'b0,       // RAS/CAS/WE, positive logic
+                odt_en,     // enable ODT
+                cke,        // disable CKE
+                sel,        // first/second half-cycle, other will be nop (cke+odt applicable to both)
+                dq_en,      // enable (not tristate) DQ  lines (internal timing sequencer for 0->1 and 1->0)
+                dqs_en,     // enable (not tristate) DQS lines (internal timing sequencer for 0->1 and 1->0)
+                dqs_toggle, // enable toggle DQS according to the pattern
+                dci,        // DCI disable, both DQ and DQS lines (internal logic and timing sequencer for 0->1 and 1->0)
+                buf_wr,     // connect to external buffer (but only if not paused)
+                buf_rd,     // connect to external buffer (but only if not paused)
+                1'b0,       // nop
+                buf_rst);
+        end
+    endfunction
+
  
