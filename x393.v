@@ -37,8 +37,6 @@
  * with at least one of the Free Software programs.
  */
 `timescale 1ns/1ps
-//`define use200Mhz 1
-//`define DEBUG_FIFO 1
 `include "system_defines.vh" 
 module  x393 #(
 `include "includes/x393_parameters.vh" // SuppressThisWarning VEditor - some not used

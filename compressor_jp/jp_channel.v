@@ -616,7 +616,7 @@ module  jp_channel#(
         .set_interrupts       (set_interrupts_w),      // input
         .data_in              (cmd_data[1:0]),         // input[1:0] 
         .status               (status_data),           // output[9:0] 
-        .irq                  (irq) // output
+        .irq                  (irq)                    // output
     );
 
     status_generate #(
@@ -626,16 +626,17 @@ module  jp_channel#(
         .EXTRA_REG_ADDR   (CMPRS_HIFREQ_REG_ADDR)
         
     ) status_generate_i (
-        .rst              (1'b0),                      //rst),      // input
+        .rst              (1'b0),                      // input
         .clk              (mclk),                      // input
         .srst             (mrst),                      // input
         .we               (set_status_w),              // input
         .wd               (cmd_data[7:0]),             // input[7:0] 
-        .status           ({hifreq,status_data,2'b0}), // input[2:0] 
+        .status           ({hifreq,status_data,2'b0}), // input[45:0] 
         .ad               (status_ad),                 // output[7:0] 
         .rq               (status_rq),                 // output
         .start            (status_start)               // input
     );
+    
 //hifreq
 // Not needed?
 //    reg   emul64;
