@@ -99,11 +99,6 @@
 //`define MEMBRIDGE_DEBUG_READ 1
   `define use200Mhz 1
   `define USE_CMD_ENCOD_TILED_32_RD 1  
-  // It can be used to check different `ifdef branches
-  //`define XIL_TIMING //Simprim 
-  `define den4096Mb 1
-//  `define IVERILOG
-  // defines for memory channels
   // chn 0 is read from memory and write to memory
  `define def_enable_mem_chn0
  `define def_read_mem_chn0
