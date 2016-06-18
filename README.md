@@ -1,13 +1,9 @@
 x393
 =====
 
-<center>
+<center> ![x393 Block Diagram](http://docs.elphel.com/x393_diagram.svg) </center>
 
- ![x393 Block Diagram](http://docs.elphel.com/x393_diagram.svg)
-
-Camera FPGA project Block Diagram
-
-</center>
+<center>Camera FPGA project Block Diagram</center>
 
 FPGA code for Elphel 393 camera, created with [VDT plugin](https://github.com/Elphel/vdt-plugin)
 
