@@ -35,7 +35,8 @@
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
  */
-        parameter FPGA_VERSION =          32'h03930098;    // serial, trying dct_chen - works, removing old completely
+        parameter FPGA_VERSION =          32'h03930099;    // parallel, with dct_chen, all met, 79.2%
+//      parameter FPGA_VERSION =          32'h03930098;    // serial, trying dct_chen - works, removing old completely, constraints met80.?%
 //      parameter FPGA_VERSION =          32'h03930097;    // serial, trying dct_chen - works
 //      parameter FPGA_VERSION =          32'h03930096;    // serial, next (before changing DCT)
 //      parameter FPGA_VERSION =          32'h03930095;    // parallel  -0.068/-0.342/5 82.38%
