@@ -1,6 +1,4 @@
-  // This file may be used to define same pre-processor macros to be included into each parsed file
-
-// TODO: Fix VDT - without IVERILOG defined, closure does not include modules needed for Icarus
-`define IVERILOG 1
+// This file may be used to define same pre-processor macros to be included into each parsed file opened in the editor
+// `define IVERILOG 1 // if IVERILOG is defined, editor will use simulator's "point of view", if not that of synthesis.
 `include "system_defines.vh"
  
