@@ -1406,12 +1406,8 @@ end
   // after 1 frame compressed on all channels
   // Debugging DCT Chen
   
-  #100000;
-  $finish;
-  
 `ifdef HISPI
     #135000;
-
 `else
     #160000;
 `endif  
