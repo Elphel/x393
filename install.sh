@@ -10,6 +10,7 @@ fi
 install -d -v $1/usr/local/verilog/
 install -d -v $1/usr/local/bin/
 install -v -m 0755 $SCRIPTPATH/py393/*.py $1/usr/local/bin/
+install -v -m 0755 $SCRIPTPATH/py393/*.pyc $1/usr/local/bin/
 
 install -d -v $1/www/pages/
 install -v -m 0755 $SCRIPTPATH/py393/imgsrv.py $1/www/pages/
