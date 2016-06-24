@@ -39,7 +39,8 @@ from time import sleep
 import vrlg # global parameters
 import x393_axi_control_status
 import shutil
-DEFAULT_BITFILE="/usr/local/verilog/x393.bit"
+#DEFAULT_BITFILE="/usr/local/verilog/x393.bit"
+DEFAULT_BITFILE="/tmp/x393.bit"
 FPGA_RST_CTRL =    0xf8000240
 FPGA0_THR_CTRL =   0xf8000178
 FPGA_LVL_SHFTR =   0xf8000900 # 0xf: all enabled, 0x0 - disable all

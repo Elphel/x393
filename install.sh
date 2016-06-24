@@ -11,6 +11,11 @@ install -d -v $1/usr/local/verilog/
 install -d -v $1/usr/local/bin/
 install -v -m 0755 $SCRIPTPATH/py393/*.py $1/usr/local/bin/
 
+install -d -v $1/www/pages/
+install -v -m 0755 $SCRIPTPATH/py393/imgsrv.py $1/www/pages/
+#unistall
+rm $1/usr/local/bin/imgsrv.py
+
 install -v -m 0644 $SCRIPTPATH/*.bit $1/usr/local/verilog/
 
 install -v -m 0644 $SCRIPTPATH/system_defines.vh $1/usr/local/verilog/
