@@ -2434,10 +2434,7 @@ simul_axi_hp_wr #(
         .sim_bresp_latency (saxi_gp0_sim_bresp_latency),  // input[3:0] 
         .sim_wr_qos        (saxi_gp0_sim_wr_qos)          // output[3:0] 
     );
-
-
 // Generate all clocks
-//always #(CLKIN_PERIOD/2) CLK = ~CLK;
     simul_clk #(
         .CLKIN_PERIOD  (CLKIN_PERIOD),
         .MEMCLK_PERIOD (MEMCLK_PERIOD),
