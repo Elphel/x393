@@ -743,7 +743,6 @@ assign #10 gpio_pins[9] = gpio_pins[8];
     wire [31:0] PS_REG_DOUT;
     reg  [31:0] PS_RDATA;  // SuppressThisWarning VEditor - not used - just view
     wire [31:0] PS_REG_DOUT1;
-
   initial begin
     PS_REG_ADDR <= 'bx;
     PS_REG_WR   <= 0;
@@ -752,7 +751,7 @@ assign #10 gpio_pins[9] = gpio_pins[8];
     PS_REG_RD1   <= 0;
     PS_REG_DIN  <= 'bx;
     PS_RDATA    <= 'bx;
-  end 
+  end
   always @ (posedge HCLK) begin
       if      (PS_REG_RD)  PS_RDATA <= PS_REG_DOUT;
       else if (PS_REG_RD1) PS_RDATA <= PS_REG_DOUT1;
@@ -1739,7 +1738,6 @@ simul_axi_hp_wr #(
         IRQ_SATA_DONE =  0;
         #5000;
         $finish;
-        
     end
 
 assign x393_i.ps7_i.FCLKCLK=        {4{CLK}};

@@ -223,16 +223,16 @@ class MAXIGPMaster(BusDriver):
         @param id transaction ID 
         @param dsize - data width - (1 << dsize) bytes (MAXIGP has only 2 bits while AXI specifies 3) 2 means 32 bits
         """
-#        self.log.debug ("MAXIGPMaster._send_write_data(",data,", ",wrstb,", ", delay,", ",id,", ",dsize)
+        self.log.debug ("MAXIGPMaster._send_write_data("+str(data)+", "+str(wrstb)+", "+str(delay)+", "+str(id)+", "+str(dsize))
         yield self.busy_channels[W_CHN].acquire()
         self.log.debug ("MAXIGPMaster._send_write_data(): acquired lock")
         for cycle in range(delay):
             yield RisingEdge(self.clock)
-
+        self.log.debug ("MAXIGPMaster._send_write_address(): delay over")
         self.bus.wvalid <= 1
         self.bus.wid <= id
         for i,val_wstb in enumerate(zip(data,wrstb)):
-#            self.log.debug ("MAXIGPMaster._send_write_data(), i= ",i,", val_wstb=",val_wstb)
+            self.log.debug ("MAXIGPMaster._send_write_data(), i= %d, val_stb=%s "%(i,str(val_wstb)))
             if (i == (len(data) - 1)) or ((i % 16) == 15):
                 self.bus.wlast <= 1
             else:
@@ -250,14 +250,7 @@ class MAXIGPMaster(BusDriver):
         self._float_signals((self.bus.wdata,self.bus.wstb,self.bus.wlast))
         self.busy_channels[W_CHN].release()
         self.log.debug ("MAXIGPMaster._send_write_data(): released lock %s"%(W_CHN))
-    """
-    @cocotb.coroutine    
-    def print_test(self):
-        print ("test2, clock=",self.clock);
-        yield Timer(10)
-#        yield RisingEdge(self.clock)
-        print ("test2, pass2, clock=",self.clock);
-   """
+
     @cocotb.coroutine    
     def axi_write(self, address, value, byte_enable=None, address_latency=0,
               data_latency=0,
@@ -312,6 +305,8 @@ class MAXIGPMaster(BusDriver):
             self.log.debug ("c_data.join()")
             yield c_data.join()
         yield RisingEdge(self.clock)
+        self.log.debug ("All done, returning")
+
 #        result = self.bus.bresp.value
 #        raise ReturnValue(0) #result)
         """    
