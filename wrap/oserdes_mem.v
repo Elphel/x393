@@ -38,6 +38,7 @@
  */
 `timescale 1ns/1ps
 //`define IVERILOG // uncomment just to chenck syntax (by the editor) in the corresponding branch
+`include "system_defines.vh"
 module  oserdes_mem #(
     parameter MODE_DDR="TRUE"
 ) (

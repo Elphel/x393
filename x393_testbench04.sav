@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.3.66 (w)1999-2015 BSI
-[*] Sun Jun 19 16:45:45 2016
+[*] Tue Jun 28 14:16:28 2016
 [*]
-[dumpfile] "/home/elphel/git/x393/simulation/x393_testbench03-20160618120329839.fst"
-[dumpfile_mtime] "Sat Jun 18 18:21:41 2016"
-[dumpfile_size] 152787343
-[savefile] "/home/elphel/git/x393/x393_testbench04.sav"
-[timestart] 0
-[size] 1736 841
-[pos] 0 0
-*-24.755907 54300800 209370000 209396667 209423333 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[dumpfile] "/home/andrey/git/x393/simulation/x393_testbench03-20160627204141983.fst"
+[dumpfile_mtime] "Tue Jun 28 03:05:44 2016"
+[dumpfile_size] 153062065
+[savefile] "/home/andrey/git/x393/x393_testbench04.sav"
+[timestart] 26395200
+[size] 1736 1145
+[pos] 1920 38
+*-16.746853 26660000 209370000 209396667 209423333 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] x393_testbench03.
 [treeopen] x393_testbench03.read_compressor_frame_irq.
 [treeopen] x393_testbench03.read_contol_register_irq.
@@ -48,26 +48,34 @@
 [treeopen] x393_testbench03.x393_i.compressor393_i.genblk3.cmprs_afi0_mux_i.cmprs_afi_mux_status_i.status_generate1_i.genblk2.status_generate_only_i.
 [treeopen] x393_testbench03.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.
 [treeopen] x393_testbench03.x393_i.mcntrl393_i.sens_comp_block[0].
-[treeopen] x393_testbench03.x393_i.sensors393_i.
 [treeopen] x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].
 [treeopen] x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.
 [treeopen] x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.
-[treeopen] x393_testbench03.x393_i.sensors393_i.sensor_channel_block[1].
 [treeopen] x393_testbench03.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.
 [treeopen] x393_testbench03.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sensor_i2c_io_i.
 [treeopen] x393_testbench03.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.
-[treeopen] x393_testbench03.x393_i.sensors393_i.sensor_channel_block[2].
 [treeopen] x393_testbench03.x393_i.sensors393_i.sensor_channel_block[2].sensor_channel_i.
 [treeopen] x393_testbench03.x393_i.sensors393_i.sensor_channel_block[2].sensor_channel_i.sensor_i2c_io_i.
-[treeopen] x393_testbench03.x393_i.sensors393_i.sensor_channel_block[3].
 [treeopen] x393_testbench03.x393_i.sensors393_i.sensor_channel_block[3].sensor_channel_i.
 [treeopen] x393_testbench03.x393_i.sensors393_i.sensor_channel_block[3].sensor_channel_i.sensor_i2c_io_i.
 [sst_width] 395
 [signals_width] 334
 [sst_expanded] 1
-[sst_vpaned_height] 249
+[sst_vpaned_height] 356
 @820
 x393_testbench03.TEST_TITLE[639:0]
+@28
+x393_testbench03.CLK
+x393_testbench03.x393_i.axi_aclk
+x393_testbench03.x393_i.ps7_i.MAXIGP0ARESETN
+x393_testbench03.x393_i.ps7_i.MAXIGP0ARLOCK[1:0]
+@22
+x393_testbench03.x393_i.ps7_i.MAXIGP0ARQOS[3:0]
+@28
+x393_testbench03.AR_SET_CMD
+x393_testbench03.AR_READY
+@29
+x393_testbench03.ARSIZE_IN_r[1:0]
 @200
 -
 @800200
@@ -84,7 +92,6 @@ x393_testbench03.x393_i.sensors393_i.sensor_channel_block[2].sensor_channel_i.px
 @28
 x393_testbench03.x393_i.sensors393_i.sensor_channel_block[2].sensor_channel_i.sof
 x393_testbench03.x393_i.sensors393_i.sensor_channel_block[2].sensor_channel_i.eof
-@29
 x393_testbench03.x393_i.sensors393_i.sensor_channel_block[2].sensor_channel_i.hact
 @1000200
 -chn1

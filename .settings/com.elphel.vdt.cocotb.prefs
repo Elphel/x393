@@ -1,0 +1,8 @@
+cocotb_107_CocotbDutTopFile=cocotb/x393_dut.v
+cocotb_111_CocotbMODULE=x393coco_02<-@\#\#@->
+cocotb_112_CocotbTESTCASE=run_test<-@\#\#@->
+cocotb_116_GTKWaveSavFile=x393_cocotb_02.sav
+cocotb_118_CocotbIncludeDir=${verilog_project_loc}/includes<-@\#\#@->${verilog_project_loc}/ddr3<-@\#\#@->${verilog_project_loc}/x393_sata<-@\#\#@->${verilog_project_loc}/x393_sata/host<-@\#\#@->
+cocotb_122_CocotbExtraFiles=glbl.v<-@\#\#@->
+com.elphel.store.context.cocotb=cocotb_107_CocotbDutTopFile<-@\#\#@->cocotb_116_GTKWaveSavFile<-@\#\#@->cocotb_118_CocotbIncludeDir<-@\#\#@->cocotb_122_CocotbExtraFiles<-@\#\#@->cocotb_111_CocotbMODULE<-@\#\#@->cocotb_112_CocotbTESTCASE<-@\#\#@->
+eclipse.preferences.version=1

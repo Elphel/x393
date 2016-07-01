@@ -83,12 +83,17 @@
   `ifdef IVERILOG
     `define SIMULATION
     `define OPEN_SOURCE_ONLY
-  `else
-    `ifdef CVC
-      `define SIMULATION
-      `define OPEN_SOURCE_ONLY
-    `endif // CVC
-  `endif // IVERILOG
+  `endif
+  
+  `ifdef COCOTB
+    `define SIMULATION
+    `define OPEN_SOURCE_ONLY
+  `endif
+  
+  `ifdef CVC
+    `define SIMULATION
+    `define OPEN_SOURCE_ONLY
+  `endif // CVC
   
 // will not use simultaneous reset in shift registers, just and input data with ~rst  
  `define SHREG_SEQUENTIAL_RESET 1

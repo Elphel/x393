@@ -145,6 +145,12 @@ assign   #tDDO1   HACT= ihact;
 assign   #tDDO1   VACT= ivact;
 assign   #tDDO1   VACT1= ivact && !ivact1;
 assign         DCLK= c;
+`ifndef ROOTPATH
+    `include "IVERILOG_INCLUDE.v"// SuppressThisWarning VEditor - maybe not used
+    `ifndef ROOTPATH
+        `define ROOTPATH "."
+    `endif
+`endif
 
 initial begin
 //parameter ramp   =   1;   // 0 - ramp, 1 - random
@@ -162,12 +168,13 @@ initial begin
    $display ("    -- t_preHACT = %d ",t_preHACT);
    $display ("    -- new_bayer = %d ",new_bayer);
 
+
 //  reg   [15:0]   sensor_data[0:4095]; // up to 64 x 64 pixels
-    if      (SENSOR_IMAGE_TYPE == "NORM") $readmemh("input_data/sensor.dat",sensor_data);
-    else if (SENSOR_IMAGE_TYPE == "RUN1") $readmemh("input_data/sensor_run1.dat",sensor_data);
+    if      (SENSOR_IMAGE_TYPE == "NORM") $readmemh({`ROOTPATH,"/input_data/sensor.dat"},sensor_data);
+    else if (SENSOR_IMAGE_TYPE == "RUN1") $readmemh({`ROOTPATH,"/input_data/sensor_run1.dat"},sensor_data);
     else begin
        $display ("WARNING: Unrecognized sensor image :'%s', using default 'NORM': input_data/sensor.dat",SENSOR_IMAGE_TYPE);
-       $readmemh("input_data/sensor.dat",sensor_data);
+       $readmemh({`ROOTPATH,"/input_data/sensor.dat"},sensor_data);
     end
    c=0;
 //   {ibpf,ihact,ivact}=0;

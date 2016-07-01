@@ -39,60 +39,65 @@
  * with at least one of the Free Software programs.
  */
 `timescale 1ns/1ps
+`define COCOTB
 `include "system_defines.vh"
 module  x393_dut#(
 `include "includes/x393_parameters.vh" // SuppressThisWarning VEditor - not used
 `include "includes/x393_simulation_parameters.vh"
 )(
-    // MAXIGP0 AXI interface
-    output        maxigp0aclk,
-    input         maxigp0aresetn,
+    output          dutm0_aclk,
+    output          reset_out,
 // axi ps master gp0: read address    
-    input  [31:0] maxigp0araddr,  
-    input         maxigp0arvalid,
-    output        maxigp0arready,
-    input  [11:0] maxigp0arid,
-    input   [1:0] maxigp0arlock,
-    input   [3:0] maxigp0arcache,
-    input   [2:0] maxigp0arprot,
-    input   [3:0] maxigp0arlen,
-    input   [1:0] maxigp0arsize,
-    input   [1:0] maxigp0arburst,
-    input   [3:0] maxigp0arqos,
-// axi ps master gp0: read data
-    output [31:0] maxigp0rdata,
-    output        maxigp0rvalid,
-    input         maxigp0rready,
-    output [11:0] maxigp0rid,
-    output        maxigp0rlast,
-    output  [1:0] maxigp0rresp,
-// axi ps master gp0: write address    
-    input  [31:0] maxigp0awaddr,
-    input         maxigp0awvalid,
-    output        maxigp0awready,
-    input  [11:0] maxigp0awid,
-    input   [1:0] maxigp0awlock,
-    input   [3:0] maxigp0awcache,
-    input   [2:0] maxigp0awprot,
-    input   [3:0] maxigp0awlen,
-    input   [1:0] maxigp0awsize,
-    input   [1:0] maxigp0awburst,
-    input   [3:0] maxigp0awqos,
-// axi ps master gp0: write data
-    input  [31:0] maxigp0wdata,
-    input         maxigp0wvalid,
-    output        maxigp0wready,
-    input  [11:0] maxigp0wid,
-    input         maxigp0wlast,
-    input   [3:0] maxigp0wstrb,
-// axi ps master gp0: write response
-    output        maxigp0bvalid,
-    input         maxigp0bready,
-    output [11:0] maxigp0bid,
-    output  [1:0] maxigp0bresp,
+    input    [31:0] dutm0_araddr,
+    output          dutm0_arready,
+    input           dutm0_arvalid,  // was dutm0_ar_set_cmd
+    input    [11:0] dutm0_arid,
+    input     [1:0] dutm0_arlock,   //SuppressThisWarning VEditor unused
+    input     [3:0] dutm0_arcache,  //SuppressThisWarning VEditor unused
+    input     [2:0] dutm0_arprot,   //SuppressThisWarning VEditor unused
+    input     [3:0] dutm0_arlen,
+    input     [1:0] dutm0_arsize,
+    input     [1:0] dutm0_arburst,
+    input     [3:0] dutm0_arqos,    //SuppressThisWarning VEditor unused
     
+// axi ps master gp0: read data
+    output   [31:0] dutm0_rdata,
+    output          dutm0_rvalid,
+    output          dutm0_rready, // internally generated as a slow response to dutm0_rvalid. Cn be moved to Python and made input here
+    output   [11:0] dutm0_rid,
+    output          dutm0_rlast,
+    output    [1:0] dutm0_rresp,
+// axi ps master gp0: write address
+    input    [31:0] dutm0_awaddr,
+    input           dutm0_awvalid,
+    output          dutm0_awready,
+    input    [11:0] dutm0_awid,
+    input     [1:0] dutm0_awlock,   //SuppressThisWarning VEditor unused
+    input     [3:0] dutm0_awcache,  //SuppressThisWarning VEditor unused
+    input     [2:0] dutm0_awprot,   //SuppressThisWarning VEditor unused
+    input     [3:0] dutm0_awlen,
+    input     [1:0] dutm0_awsize,
+    input     [1:0] dutm0_awburst,
+    input     [3:0] dutm0_awqos,    //SuppressThisWarning VEditor unused
+// axi ps master gp0: write data
+    input    [31:0] dutm0_wdata,
+    input           dutm0_wvalid,
+    output          dutm0_wready,
+    input    [11:0] dutm0_wid,
+    input           dutm0_wlast,
+    input    [ 3:0] dutm0_wstb,
+// axi ps master gp0: write response
+    output          dutm0_bvalid,
+    output          dutm0_bready,// internally generated as a slow response to dutm0_bvalid. Cn be moved to Python and made input here
+    output   [11:0] dutm0_bid,
+    output    [1:0] dutm0_bresp,
     // SATA and SATA clock I/O
-// SATA data interface
+    
+    input   [3:0] dutm0_xtra_rdlag,  // ready signal lag in axi read channel (0 - RDY=1, 1..15 - RDY is asserted N cycles after valid)   
+    input   [3:0] dutm0_xtra_blag,   // ready signal lag in axi arete response channel (0 - RDY=1, 1..15 - RDY is asserted N cycles after valid)   
+    
+    
+    // SATA data interface
     input         sata_rxn, 
     input         sata_rxp,
     output        sata_txn,
@@ -102,6 +107,114 @@ module  x393_dut#(
     input         sata_extclkn
     
 );
+
+// Temporary = to be moved to Python?
+
+    // MAXIGP0 AXI interface
+    wire          maxigp0aclk;
+    wire          maxigp0aresetn;
+// axi ps master gp0: read address    
+    wire   [31:0] maxigp0araddr;  
+    wire          maxigp0arvalid;
+    wire          maxigp0arready;
+    wire   [11:0] maxigp0arid;
+    wire    [1:0] maxigp0arlock;
+    wire    [3:0] maxigp0arcache;
+    wire    [2:0] maxigp0arprot;
+    wire    [3:0] maxigp0arlen;
+    wire    [1:0] maxigp0arsize;
+    wire    [1:0] maxigp0arburst;
+    wire    [3:0] maxigp0arqos;
+// axi ps master gp0: read data
+    wire   [31:0] maxigp0rdata;
+    wire          maxigp0rvalid;
+    wire          maxigp0rready;
+    wire   [11:0] maxigp0rid;
+    wire          maxigp0rlast;
+    wire    [1:0] maxigp0rresp;
+// axi ps master gp0: write address    
+    wire   [31:0] maxigp0awaddr;
+    wire          maxigp0awvalid;
+    wire          maxigp0awready;
+    wire   [11:0] maxigp0awid;
+    wire    [1:0] maxigp0awlock;
+    wire    [3:0] maxigp0awcache;
+    wire    [2:0] maxigp0awprot;
+    wire    [3:0] maxigp0awlen;
+    wire    [1:0] maxigp0awsize;
+    wire    [1:0] maxigp0awburst;
+    wire    [3:0] maxigp0awqos;
+// axi ps master gp0: write data
+    wire   [31:0] maxigp0wdata;
+    wire          maxigp0wvalid;
+    wire          maxigp0wready;
+    wire   [11:0] maxigp0wid;
+    wire          maxigp0wlast;
+    wire    [3:0] maxigp0wstrb;
+// axi ps master gp0: write response
+    wire          maxigp0bvalid;
+    wire          maxigp0bready;
+    wire   [11:0] maxigp0bid;
+    wire    [1:0] maxigp0bresp;
+
+    assign dutm0_aclk =   maxigp0aclk;
+    assign dutm0_rdata =  maxigp0rdata;
+    assign dutm0_rid =    maxigp0rid;
+    assign dutm0_rresp =  maxigp0rresp;
+    assign dutm0_bid =    maxigp0bid;
+    assign dutm0_bresp =  maxigp0bresp;
+    assign dutm0_rvalid = maxigp0rvalid;
+    assign dutm0_bvalid = maxigp0bvalid;
+    assign dutm0_rready = maxigp0rready; // temporary
+    assign dutm0_bready = maxigp0bready; // temporary
+    assign dutm0_rlast=   maxigp0rlast;
+
+  
+    reg [11:0] LAST_ARID; // last issued ARID
+
+  // SuppressWarnings VEditor : assigned in $readmem() system task
+    wire [SIMUL_AXI_READ_WIDTH-1:0] SIMUL_AXI_ADDR_W;
+  // SuppressWarnings VEditor
+    wire        SIMUL_AXI_MISMATCH;
+  // SuppressWarnings VEditor
+    reg  [31:0] SIMUL_AXI_READ;
+  // SuppressWarnings VEditor
+    reg  [SIMUL_AXI_READ_WIDTH-1:0] SIMUL_AXI_ADDR;
+  // SuppressWarnings VEditor
+    reg         SIMUL_AXI_FULL; // some data available
+//    wire        SIMUL_AXI_EMPTY= ~rvalid && rready && (rid==LAST_ARID); //S uppressThisWarning VEditor : may be unused, just for simulation // use it to wait for?
+//    reg  [31:0] registered_rdata; // here read data from tasks goes
+  // SuppressWarnings VEditor
+    reg         WAITING_STATUS;   // tasks are waiting for status
+    // SuppressWarnings VEditor all - these variables are just for viewing, not used anywhere else
+    reg DEBUG1, DEBUG2, DEBUG3;
+    reg [11:0] GLOBAL_WRITE_ID=0;
+    reg [11:0] GLOBAL_READ_ID=0;
+//    reg [7:0] target_phase=0; // to compare/wait for phase shifter ready
+    
+  // End of Temporary = to be moved to Python?
+    
+// For simulating MAXIGP0
+    
+    
+    wire [11:0]  #(AXI_TASK_HOLD) dutm0_arid_w = dutm0_arid;
+    wire [31:0]  #(AXI_TASK_HOLD) dutm0_araddr_w = dutm0_araddr;
+    wire  [3:0]  #(AXI_TASK_HOLD) dutm0_arlen_w = dutm0_arlen;
+    wire  [1:0]  #(AXI_TASK_HOLD) dutm0_arsize_w = dutm0_arsize;
+    wire  [1:0]  #(AXI_TASK_HOLD) dutm0_arburst_w = dutm0_arburst;
+    wire [11:0]  #(AXI_TASK_HOLD) dutm0_awid_w = dutm0_awid;
+    wire [31:0]  #(AXI_TASK_HOLD) dutm0_awaddr_w = dutm0_awaddr;
+    wire  [3:0]  #(AXI_TASK_HOLD) dutm0_awlen_w = dutm0_awlen;
+    wire  [1:0]  #(AXI_TASK_HOLD) dutm0_awsize_w = dutm0_awsize;
+    wire  [1:0]  #(AXI_TASK_HOLD) dutm0_awburst_w = dutm0_awburst;
+    wire [11:0]  #(AXI_TASK_HOLD) dutm0_wid_w = dutm0_wid;
+    wire [31:0]  #(AXI_TASK_HOLD) dutm0_wdata_w = dutm0_wdata;
+    wire [ 3:0]  #(AXI_TASK_HOLD) dutm0_wstb_w = dutm0_wstb;
+    wire         #(AXI_TASK_HOLD) dutm0_wlast_w = dutm0_wlast;
+    wire         #(AXI_TASK_HOLD) dut_arvalid_w = dutm0_arvalid;
+    wire         #(AXI_TASK_HOLD) dutm0_awvalid_w = dutm0_awvalid;  // was dutm0_aw_set_cmd
+    wire         #(AXI_TASK_HOLD) dutm0_wvalid_w =  dutm0_wvalid;   // was dutm0_wset_cmd
+
 
     // Connect MAXIGP0 i/o to that of PS7 inside x393_i
     assign maxigp0aclk =                 x393_i.axi_aclk;
@@ -160,15 +273,23 @@ module  x393_dut#(
     `endif // NON_VDT_ENVIROMENT
 `else // IVERILOG
 //    $display("IVERILOG is not defined");
-    `ifdef CVC
+    `ifdef COCOTB
         `ifdef NON_VDT_ENVIROMENT
             parameter fstname = "x393.fst";
         `else // NON_VDT_ENVIROMENT
             `include "IVERILOG_INCLUDE.v"
         `endif // NON_VDT_ENVIROMENT
     `else
-        parameter fstname = "x393.fst";
-    `endif // CVC
+        `ifdef CVC
+            `ifdef NON_VDT_ENVIROMENT
+                parameter fstname = "x393.fst";
+            `else // NON_VDT_ENVIROMENT
+                `include "IVERILOG_INCLUDE.v"
+            `endif // NON_VDT_ENVIROMENT
+        `else
+            parameter fstname = "x393.fst";
+        `endif // CVC
+    `endif // COCOTB
 `endif // IVERILOG
 `define DEBUG_WR_SINGLE 1  
 `define DEBUG_RD_DATA 1  
@@ -234,6 +355,7 @@ parameter NUM_INTERRUPTS =        9;
 
 
 // ========================== end of parameters from x353 ===================================
+    reg [639:0] TEST_TITLE="abcdef"; //SuppressThisWarning VEditor
 
 // Sensor signals - as on sensor pads
     wire        PX1_MCLK; // input sensor input clock
@@ -636,7 +758,7 @@ assign #10 gpio_pins[9] = gpio_pins[8];
       else if (PS_REG_RD1) PS_RDATA <= PS_REG_DOUT1;
   end 
   
-    reg [639:0] TEST_TITLE; //SuppressThisWarning VEditor May use again later
+//    reg [639:0] TEST_TITLE="abcdef"; //S uppressThisWarning VEditor May use again later
   // Simulation signals
 
     wire        CLK;
@@ -663,13 +785,13 @@ assign #10 gpio_pins[9] = gpio_pins[8];
     
 // Simulation modules interconnection
 //    integer     NUM_WORDS_READ;
-//    integer     NUM_WORDS_EXPECTED;
+    integer     NUM_WORDS_EXPECTED;
 //    reg  [15:0] ENABLED_CHANNELS = 0; // currently enabled memory channels
   
 //    reg  [31:0] DEBUG_DATA;    //S uppressThisWarning VEditor : just for simulation viewing
 //    integer     DEBUG_ADDRESS; //S uppressThisWarning VEditor : just for simulation viewing
 
-
+    assign reset_out = RST || x393_i.arst;
     x393 #(
 // TODO: Are these parameters needed? They are included in x393 from the save x393_parameters.vh    
         .MCONTR_WR_MASK                    (MCONTR_WR_MASK),
@@ -967,6 +1089,133 @@ assign #10 gpio_pins[9] = gpio_pins[8];
     );
     
 // Simulation modules    
+    simul_axi_master_rdaddr #(
+        .ID_WIDTH      (12),
+        .ADDRESS_WIDTH (32),
+        .LATENCY       (AXI_RDADDR_LATENCY),          // minimal delay between inout and output ( 0 -next cycle)
+        .DEPTH         (8),            // maximal number of commands in FIFO
+        .DATA_DELAY    (3.5),
+        .VALID_DELAY   (4.0)
+    ) simul_axi_master_rdaddr_i (
+        .clk        (maxigp0aclk),//CLK),// input
+        .reset      (RST),             // input
+        .arid_in    (dutm0_arid_w[11:0]),   // input[11:0] 
+        .araddr_in  (dutm0_araddr_w[31:0]), // input[31:0] 
+        .arlen_in   (dutm0_arlen_w[3:0]),   // input[3:0] 
+        .arsize_in  (dutm0_arsize_w[1:0]),  // input[1:0] 
+        .arburst_in (dutm0_arburst_w[1:0]), // input[1:0] 
+        .arcache_in (4'b0),            // input[3:0] 
+        .arprot_in  (3'b0),            // input[2:0] 
+        .arid       (maxigp0arid),     // output[11:0] 
+        .araddr     (maxigp0araddr),   // output[31:0] 
+        .arlen      (maxigp0arlen),    // output[3:0] 
+        .arsize     (maxigp0arsize),   // output[1:0] 
+        .arburst    (maxigp0arburst),  // output[1:0] 
+        .arcache    (maxigp0arcache),  // output[3:0] 
+        .arprot     (maxigp0arprot),   // output[2:0] 
+        .arvalid    (maxigp0arvalid),  // output
+        .arready    (maxigp0arready),  // input
+        .set_cmd    (dut_arvalid_w),      // input // latch all other input data at posedge of clock
+        .ready      (dutm0_arready)         // output // command/data FIFO can accept command
+    );
+// Non-implemented signals in simul_axi_master_rdaddr 
+        assign maxigp0aresetn = 'bz;
+        assign maxigp0arlock = 'bz;
+        assign maxigp0arqos = 'bz;
+
+    simul_axi_master_wraddr #(
+        .ID_WIDTH      (12),
+        .ADDRESS_WIDTH (32),
+        .LATENCY       (AXI_WRADDR_LATENCY), // minimal delay between inout and output ( 0 - next cycle)
+        .DEPTH         (8),                  // maximal number of commands in FIFO
+        .DATA_DELAY    (3.5),
+        .VALID_DELAY   (4.0)
+    ) simul_axi_master_wraddr_i (
+        .clk        (maxigp0aclk),     // input
+        .reset      (RST),             // input
+        .awid_in    (dutm0_awid_w[11:0]),   // input[11:0] 
+        .awaddr_in  (dutm0_awaddr_w[31:0]), // input[31:0] 
+        .awlen_in   (dutm0_awlen_w[3:0]),   // input[3:0] 
+        .awsize_in  (dutm0_awsize_w[1:0]),  // input[1:0] 
+        .awburst_in (dutm0_awburst_w[1:0]), // input[1:0] 
+        .awcache_in (4'b0),            // input[3:0] 
+        .awprot_in  (3'b0),            // input[2:0] 
+        .awid       (maxigp0awid),     // output[11:0] 
+        .awaddr     (maxigp0awaddr),   // output[31:0] 
+        .awlen      (maxigp0awlen),    // output[3:0] 
+        .awsize     (maxigp0awsize),   // output[1:0] 
+        .awburst    (maxigp0awburst),  // output[1:0] 
+        .awcache    (maxigp0awcache),  // output[3:0] 
+        .awprot     (maxigp0awprot),   // output[2:0] 
+        .awvalid    (maxigp0awvalid),  // output
+        .awready    (maxigp0awready),  // input
+        .set_cmd    (dutm0_awvalid_w),      // input   // latch all other input data at posedge of clock
+        .ready      (dutm0_awready)         // output  // command/data FIFO can accept command
+    );
+// Non-implemented signals in simul_axi_master_wraddr
+        assign maxigp0awlock = 'bz;
+        assign maxigp0awqos =  'bz;
+ 
+    simul_axi_master_wdata #(
+        .ID_WIDTH      (12),
+        .DATA_WIDTH    (32),
+        .WSTB_WIDTH    (4),
+        .LATENCY       (AXI_WRDATA_LATENCY), // minimal delay between inout and output ( 0 - next cycle)
+        .DEPTH         (8),                  // maximal number of commands in FIFO
+        .DATA_DELAY    (3.2),
+        .VALID_DELAY   (3.6)
+    ) simul_axi_master_wdata_i (
+        .clk        (maxigp0aclk),     // input
+        .reset      (RST),             // input
+        .wid_in     (dutm0_wid_w[11:0]),    // input[11:0] 
+        .wdata_in   (dutm0_wdata_w[31:0]),  // input[31:0] 
+        .wstrb_in   (dutm0_wstb_w[3:0]),   // input[3:0] 
+        .wlast_in   (dutm0_wlast_w),        // input
+        .wid        (maxigp0wid),      // output[11:0] 
+        .wdata      (maxigp0wdata),    // output[31:0] 
+        .wstrb      (maxigp0wstrb),    // output[3:0] 
+        .wlast      (maxigp0wlast),    // output
+        .wvalid     (maxigp0wvalid),   // output
+        .wready     (maxigp0wready),   // input
+        .set_cmd    (dutm0_wvalid_w),       // input   // latch all other input data at posedge of clock
+        .ready      (dutm0_wready)          // output  // command/data FIFO can accept command
+    );
+
+// These two modules generate ready (from host) as a slow response to valid (from FPGA). This functionality may be moved to Python
+// Until then  dutm0_rready and dutm0_bready are outputs, not inputs
+    simul_axi_slow_ready simul_axi_slow_ready_i (
+        .clk        (maxigp0aclk),     // input
+        .reset      (RST),             // input
+        .delay      (dutm0_xtra_rdlag),          // input[3:0] 
+        .valid      (maxigp0rvalid),   // input
+        .ready      (maxigp0rready)    // output
+    );
+    
+    simul_axi_slow_ready simul_axi_slow_ready_write_resp_i(
+        .clk        (maxigp0aclk),     // input
+        .reset      (RST),             // input
+        .delay      (dutm0_xtra_blag),           // input[3:0]
+        .valid      (maxigp0bvalid),   // input
+        .ready      (maxigp0bready)    // output
+    );
+
+    simul_axi_read #(
+        .ADDRESS_WIDTH (SIMUL_AXI_READ_WIDTH)
+    ) simul_axi_read_i (
+        .clk        (maxigp0aclk),                                // input
+        .reset      (RST),                                        // input
+        .last       (maxigp0rlast),                               // input
+        .data_stb   (maxigp0rready & maxigp0rvalid),              // input
+        .raddr      (dutm0_araddr_w[SIMUL_AXI_READ_WIDTH+1:2]),   // input[9:0] 
+        .rlen       (dutm0_arlen_w),                              // input[3:0] 
+        .rcmd       (dut_arvalid_w),                              // input
+        .addr_out   (SIMUL_AXI_ADDR_W[SIMUL_AXI_READ_WIDTH-1:0]), // output[9:0] 
+        .burst      (),  // output      // burst in progress - just debug
+        .err_out    ()   // output reg // data last does not match predicted or FIFO over/under run - just debug
+    );
+
+
+
 
 simul_axi_hp_rd #(
         .HP_PORT(0)
@@ -1461,11 +1710,18 @@ simul_axi_hp_wr #(
 
 // Initilize simulation
 
-
+`ifndef ROOTPATH
+    `define ROOTPATH "."
+`endif
+    
+`define DATAPATH "input_data"
     initial begin
             $dumpfile(fstname);
           // SuppressWarnings VEditor : assigned in $readmem() system task
             $dumpvars(0,x393_dut);
+        $display(`ROOTPATH);
+        $display({`ROOTPATH,"/",`DATAPATH});
+        
         RST_CLEAN = 1;
         RST = 1'bx;
         #500;
@@ -1481,8 +1737,413 @@ simul_axi_hp_wr #(
         IRQ_FRSEQ_DONE = 0;
         IRQ_CMPRS_DONE = 0;
         IRQ_SATA_DONE =  0;
+        #5000;
+        $finish;
+        
     end
 
+assign x393_i.ps7_i.FCLKCLK=        {4{CLK}};
+assign x393_i.ps7_i.FCLKRESETN=     {RST,~RST,RST,~RST};
+    
+//`define SHOW_TMP_TASKS    
+   
+// Temporary
+`ifdef  SHOW_TMP_TASKS
+    task   write_contol_register;
+        input [29:0] reg_addr;
+//        input integer reg_addr;
+        input [31:0] data;
+        begin
+            axi_write_single_w(CONTROL_ADDR+reg_addr, data);
+        end
+    endtask   
+
+    task   read_contol_register;
+        input [29:0] reg_addr;
+        begin
+            read_and_wait_w(CONTROL_RBACK_ADDR+reg_addr);
+        end
+    endtask   
+
+    task wait_read_queue_empty;
+        begin
+        wait (~rvalid && rready && (rid==LAST_ARID)); // nothing left in read queue?   
+        SIMUL_AXI_FULL<=1'b0;
+        end
+    endtask
+    task axi_set_rd_lag;
+        input [3:0] lag;
+        begin
+            @(posedge CLK);
+            dutm0_xtra_rdlag <= lag;
+        end
+    endtask
+
+    task axi_set_b_lag;
+        input [3:0] lag;
+        begin
+            @(posedge CLK);
+            dutm0_xtra_blag <= lag;
+        end
+    endtask
+
+    task read_and_wait_w;
+    input [29:0] address;
+        begin
+            read_and_wait ({address,2'b0});
+        end
+    endtask
+
+
+    task read_and_wait;
+        input      [31:0] address;
+        begin
+            IRQ_EN = 0;
+            wait (CLK);
+            while (!MAIN_GO) begin
+                wait (!CLK);
+                wait (CLK);
+            end
+            axi_read_addr_inner(
+                GLOBAL_READ_ID,    // id
+                address & 32'hfffffffc, // addr
+                4'h0, // len - single
+                1     // burst type - increment
+                );
+            GLOBAL_READ_ID <= GLOBAL_READ_ID+1;
+            wait (!CLK && rvalid && rready);
+            wait (CLK);
+            registered_rdata <= rdata;
+            wait (!CLK); // registered_rdata should be valid on exit
+            IRQ_EN = 1;
+            if (IRQS) begin
+                @(posedge CLK);
+                @(negedge CLK);
+            end
+        end
+    endtask
+    
+    task axi_write_single_w; // address in dwords
+        input [29:0] address;
+        input [31:0] data;
+        begin
+`ifdef DEBUG_WR_SINGLE
+          $display("axi_write_single_w %h:%h @ %t",address,data,$time);
+`endif                
+            axi_write_single ({address,2'b0},data);
+        end
+    endtask
+
+    task axi_write_single; // address in bytes, not words
+        input [31:0] address;
+        input [31:0] data;
+        begin
+          axi_write_addr_data(
+                    GLOBAL_WRITE_ID,    // id
+//                    address << 2, // addr
+                    address & 32'hfffffffc, // addr
+                    data,
+                    4'h0, // len - single
+                    1,    // burst type - increment
+                    1'b1, // data_en
+                    4'hf, // wstrb
+                    1'b1 // last
+                );
+          GLOBAL_WRITE_ID <= GLOBAL_WRITE_ID+1;
+          #0.1; // without this delay axi_write_addr_data() used old value of GLOBAL_WRITE_ID
+        end
+    endtask
+   
+    task axi_write_addr_data;
+        input [11:0] id;
+        input [31:0] addr;
+        input [31:0] data;
+        input [ 3:0] len;
+        input [ 1:0] burst;
+        input        data_en; // if 0 - do not send data, only address
+        input [ 3:0] wstrb;
+        input        last;
+        begin
+            IRQ_EN = 0;
+            wait (CLK);
+            while (!MAIN_GO) begin
+                wait (!CLK);
+                wait (CLK);
+            end
+            axi_write_addr_data_inner (id, addr, data, len, burst, data_en, wstrb, last);
+            IRQ_EN = 1;
+            if (IRQS) begin
+                @(posedge CLK);
+                @(negedge CLK);
+            end
+        end
+    endtask
+
+    task axi_write_data;
+        input [11:0] id;
+        input [31:0] data;
+        input [ 3:0] wstrb;
+        input        last;
+        begin
+            IRQ_EN = 0;
+            wait (CLK);
+            while (!MAIN_GO) begin
+                wait (!CLK);
+                wait (CLK);
+            end
+            axi_write_data_inner (id, data, wstrb, last);
+            IRQ_EN = 1;
+            if (IRQS) begin
+                @(posedge CLK);
+                @(negedge CLK);
+            end
+        end
+    endtask
+
+// Tasks called from ISR
+
+    task   read_contol_register_irq;
+        input  [29:0] reg_addr;
+        output [31:0] rslt;
+        begin
+            read_and_wait_w_irq(CONTROL_RBACK_ADDR+reg_addr, rslt);
+        end
+    endtask   
+
+ task read_status_irq;
+    input [STATUS_DEPTH-1:0] address;
+    output [31:0] rslt;
+    begin
+        read_and_wait_w_irq(STATUS_ADDR + address , rslt);
+    end
+ endtask
+
+    task read_and_wait_w_irq;
+        input [29:0] address;
+        output [31:0] rslt;
+        begin
+            read_and_wait_irq ({address,2'b0},rslt);
+        end
+    endtask
+
+    task read_and_wait_irq;
+        input      [31:0] address;
+        output reg [31:0] rslt;
+        begin
+            axi_read_addr_irq(
+                GLOBAL_READ_ID,    // id
+                address & 32'hfffffffc, // addr
+                4'h0, // len - single
+                1     // burst type - increment
+                );
+            GLOBAL_READ_ID <= GLOBAL_READ_ID+1;
+            wait (!CLK && rvalid && rready);
+            wait (CLK);
+            rslt <= rdata;
+            wait (!CLK); // registered_rdata should be valid on exit
+        end
+    endtask
+
+    task axi_read_addr_irq; // called ferom the main loop, not from interrupts
+        input [11:0] id;
+        input [31:0] addr;
+        input [ 3:0] len;
+        input [ 1:0] burst;
+        begin
+//            IRQ_EN = 0;
+//            wait (CLK);
+//            while (!MAIN_GO) begin
+//                wait (!CLK);
+//                wait (CLK);
+//            end
+            axi_read_addr_inner (id, addr, len, burst);
+//            IRQ_EN = 1;
+        end
+    endtask
+
+    task   write_contol_register_irq;
+        input [29:0] reg_addr;
+//        input integer reg_addr;
+        input [31:0] data;
+        begin
+            axi_write_single_w_irq(CONTROL_ADDR+reg_addr, data);
+        end
+    endtask   
+
+    task axi_write_single_w_irq; // address in dwords
+        input [29:0] address;
+        input [31:0] data;
+        begin
+`ifdef DEBUG_WR_SINGLE
+          $display("axi_write_single_w %h:%h @ %t",address,data,$time);
+`endif                
+            axi_write_single_irq ({address,2'b0},data);
+        end
+    endtask
+
+    task axi_write_single_irq; // address in bytes, not words
+        input [31:0] address;
+        input [31:0] data;
+        begin
+          axi_write_addr_data_irq(
+                    GLOBAL_WRITE_ID,    // id
+                    address & 32'hfffffffc, // addr
+                    data,
+                    4'h0, // len - single
+                    1,    // burst type - increment
+                    1'b1, // data_en
+                    4'hf, // wstrb
+                    1'b1 // last
+                );
+          GLOBAL_WRITE_ID <= GLOBAL_WRITE_ID+1;
+          #0.1; // without this delay axi_write_addr_data() used old value of GLOBAL_WRITE_ID
+        end
+    endtask
+
+    task axi_write_addr_data_irq;
+        input [11:0] id;
+        input [31:0] addr;
+        input [31:0] data;
+        input [ 3:0] len;
+        input [ 1:0] burst;
+        input        data_en; // if 0 - do not send data, only address
+        input [ 3:0] wstrb;
+        input        last;
+        begin
+//            IRQ_EN = 0;
+//            wait (CLK);
+//            while (!MAIN_GO) begin
+//                wait (!CLK);
+//                wait (CLK);
+//            end
+            axi_write_addr_data_inner (id, addr, data, len, burst, data_en, wstrb, last);
+//            IRQ_EN = 1;
+        end
+    endtask
+
+
+// Tasks common for main ind ISR
+
+    task axi_write_addr_data_inner;
+        input [11:0] id;
+        input [31:0] addr;
+        input [31:0] data;
+        input [ 3:0] len;
+        input [ 1:0] burst;
+        input        data_en; // if 0 - do not send data, only address
+        input [ 3:0] wstrb;
+        input        last;
+        reg          data_sent;
+//        wire         data_sent_d;
+//        assign #(.1) data_sent_d= data_sent;
+        begin
+            wait (!CLK && dutm0_awready);
+            dutm0_awid    <= id;
+            dutm0_awaddr  <= addr;
+            dutm0_awlen   <= len;
+            dutm0_awsize  <= 2'b10;
+            dutm0_awburst <= burst;
+            dutm0_awvalid <= 1'b1;
+            if (data_en && dutm0_wready) begin
+                dutm0_wid <= id;
+                dutm0_wdata <= data;
+                dutm0_wstb <= wstrb;
+                dutm0_wlast <= last;
+                dutm0_wvalid <= 1'b1; 
+                data_sent <= 1'b1;
+            end else begin
+                data_sent <= 1'b0;
+            end
+            DEBUG1 <=1'b1;
+            wait (CLK);
+            DEBUG1 <=1'b0;
+            dutm0_awid    <= 'hz;
+            dutm0_awaddr  <= 'hz;
+            dutm0_awlen   <= 'hz;
+            dutm0_awsize  <= 'hz;
+            dutm0_awburst <= 'hz;
+            dutm0_awvalid <= 1'b0;
+            DEBUG2 <=1'b1;
+            if (data_sent) begin
+                dutm0_wid    <= 'hz;
+                dutm0_wdata  <= 'hz;
+                dutm0_wstb  <= 'hz;
+                dutm0_wlast  <= 'hz;
+                dutm0_wvalid <= 1'b0; 
+            end
+// Now sent data if it was not sent simultaneously with the address
+            if (data_en && !data_sent) begin
+                DEBUG3 <=1'b1;
+                wait (!CLK && dutm0_wready);
+                DEBUG3 <=1'b0;
+                dutm0_wid    <= id;
+                dutm0_wdata  <= data;
+                dutm0_wstb  <= wstrb;
+                dutm0_wlast  <= last;
+                dutm0_wvalid <= 1'b1; 
+                wait (CLK);
+                DEBUG3 <=1'bx;
+                dutm0_wid    <= 'hz;
+                dutm0_wdata  <= 'hz;
+                dutm0_wstb  <= 'hz;
+                dutm0_wlast  <= 'hz;
+                dutm0_wvalid <= 1'b0; 
+            end
+            DEBUG2 <=1'b0;
+            #0.1;
+            data_sent <= 1'b0;
+            #0.1;
+        end
+    endtask
+
+    task axi_write_data_inner;
+        input [11:0] id;
+        input [31:0] data;
+        input [ 3:0] wstrb;
+        input        last;
+        begin
+            wait (!CLK && dutm0_wready);
+            dutm0_wid    <= id;
+            dutm0_wdata  <= data;
+            dutm0_wstb  <= wstrb;
+            dutm0_wlast  <= last;
+            dutm0_wvalid <= 1'b1; 
+            wait (CLK);
+            dutm0_wid    <= 12'hz;
+            dutm0_wdata  <= 'hz;
+            dutm0_wstb  <= 4'hz;
+            dutm0_wlast  <= 1'bz;
+            dutm0_wvalid <= 1'b0;
+            #0.1;
+        end
+    endtask
+
+    task axi_read_addr_inner; // regardless of main loop/interrupts
+        input [11:0] id;
+        input [31:0] addr;
+        input [ 3:0] len;
+        input [ 1:0] burst;
+        begin
+            wait (!CLK && dutm0_arready);
+            dutm0_arid    <= id;
+            dutm0_araddr  <= addr;
+            dutm0_arlen   <= len;
+            dutm0_arsize  <= 2'b10;
+            dutm0_arburst <= burst;
+            dut_arvalid <= 1'b1;
+            wait (CLK);
+            dutm0_arid    <= 12'hz;
+            dutm0_araddr  <= 'hz;
+            dutm0_arlen   <= 4'hz;
+            dutm0_arsize  <= 2'hz;
+            dutm0_arburst <= 2'hz;
+            dut_arvalid <= 1'b0;
+            LAST_ARID <= id;
+            NUM_WORDS_EXPECTED <= NUM_WORDS_EXPECTED+len+1;
+        end
+    endtask
+
+`endif // SHOW_TMP_TASKS
 
 
 endmodule

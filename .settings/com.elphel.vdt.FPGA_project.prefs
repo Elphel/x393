@@ -1,7 +1,9 @@
 FPGA_project_0_SimulationTopFile=x393_testbench03.tf
 FPGA_project_1_SimulationTopModule=x393_testbench03
+FPGA_project_2_DUTTopFile=cocotb/x393_dut.v
 FPGA_project_2_ImplementationTopFile=x393.v
+FPGA_project_3_DUTTopModule=x393_dut
 FPGA_project_4_part=xc7z030fbg484-1
 FPGA_project_5_part=xc7z030fbg484-1
-com.elphel.store.context.FPGA_project=FPGA_project_2_ImplementationTopFile<-@\#\#@->FPGA_project_4_part<-@\#\#@->FPGA_project_0_SimulationTopFile<-@\#\#@->FPGA_project_1_SimulationTopModule<-@\#\#@->FPGA_project_5_part<-@\#\#@->
+com.elphel.store.context.FPGA_project=FPGA_project_2_ImplementationTopFile<-@\#\#@->FPGA_project_4_part<-@\#\#@->FPGA_project_0_SimulationTopFile<-@\#\#@->FPGA_project_1_SimulationTopModule<-@\#\#@->FPGA_project_5_part<-@\#\#@->FPGA_project_2_DUTTopFile<-@\#\#@->FPGA_project_3_DUTTopModule<-@\#\#@->
 eclipse.preferences.version=1
