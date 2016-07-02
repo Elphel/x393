@@ -1,0 +1,4 @@
+VivadoTimingReportSynthesis_102_DisableVivadoTiming=true
+VivadoTimingReportSynthesis_121_DisableVivadoTiming=true
+com.elphel.store.context.VivadoTimingReportSynthesis=VivadoTimingReportSynthesis_102_DisableVivadoTiming<-@\#\#@->VivadoTimingReportSynthesis_121_DisableVivadoTiming<-@\#\#@->
+eclipse.preferences.version=1

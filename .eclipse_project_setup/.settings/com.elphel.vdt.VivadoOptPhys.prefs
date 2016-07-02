@@ -1,0 +1,4 @@
+VivadoOptPhys_123_SkipSnapshotOptPhys=true
+VivadoOptPhys_124_SkipSnapshotOptPhys=true
+com.elphel.store.context.VivadoOptPhys=VivadoOptPhys_123_SkipSnapshotOptPhys<-@\#\#@->VivadoOptPhys_124_SkipSnapshotOptPhys<-@\#\#@->
+eclipse.preferences.version=1

@@ -1,0 +1,5 @@
+VivadoRoute_122_SkipSnapshotRoute=true
+VivadoRoute_123_SkipSnapshotRoute=true
+VivadoRoute_125_directive_route=MoreGlobalIterations
+com.elphel.store.context.VivadoRoute=VivadoRoute_122_SkipSnapshotRoute<-@\#\#@->VivadoRoute_123_SkipSnapshotRoute<-@\#\#@->VivadoRoute_125_directive_route<-@\#\#@->
+eclipse.preferences.version=1

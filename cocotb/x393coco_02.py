@@ -20,7 +20,7 @@ from __future__ import print_function
 @license:    GPLv3.0+
 @contact:    andrey@elphel.coml
 """
-
+import os
 import cocotb
 from cocotb.triggers import Timer
 from x393buses import MAXIGPMaster
@@ -31,73 +31,83 @@ from cocotb.result import ReturnValue, TestFailure, TestError, TestSuccess
 import logging
 
 class X393_cocotb_02(object):
-    def __init__(self, dut, debug=True):
+    def __init__(self, dut): # , debug=False):
+        """
+        print("os.getenv('SIM_ROOT'",os.getenv('SIM_ROOT'))
+        print("os.getenv('COCOTB_DEBUG'",os.getenv('COCOTB_DEBUG'))
+        print("os.getenv('RANDOM_SEED'",os.getenv('RANDOM_SEED'))
+        print("os.getenv('MODULE'",os.getenv('MODULE'))
+        print("os.getenv('TESTCASE'",os.getenv('TESTCASE'))
+        print("os.getenv('COCOTB_ANSI_OUTPUT'",os.getenv('COCOTB_ANSI_OUTPUT'))
+        """
+        debug = os.getenv('COCOTB_DEBUG') # None/1
+        
         self.dut = dut
         self.axiwr = MAXIGPMaster(entity=dut, name="dutm0", clock=dut.dutm0_aclk, rdlag=0, blag=0)
 #        self.clock = dut.dutm0_aclk
         
         level = logging.DEBUG if debug else logging.WARNING
         self.axiwr.log.setLevel(level)
-
+def convert_string(txt):
+    number=0
+    for c in txt:
+        number = (number << 8) + ord(c)
+    return number   
 @cocotb.coroutine
-def run_test(dut, data_in=None, config_coroutine=None, idle_inserter=None,
-             backpressure_inserter=None):
-#    self.log.info ("MAXIGPMaster._send_write_data(): released lock %s"%(W_CHN))
-
-#    self.log.info  ("run_test(): starting X393_cocotb_02(dut) init")
+def run_test(dut):
     tb = X393_cocotb_02(dut)
-#    self.log.info  ("run_test(): X393_cocotb_02(dut) done")
     yield Timer(10000)
-#    yield RisingEdge(dut.dutm0_aclk)
-#    yield ReadOnly()
-#    raise TestSuccess("All done for now")
-
 
     while dut.reset_out.value.get_binstr() != "1":
         yield Timer(10000)
 
     while dut.reset_out.value:
         yield Timer(10000)
-    yield tb.axiwr.axi_write(address = 0x1234,
-                     value = [0,1,2,3,4,5,6,7,8],
-                     byte_enable=None,
-                     address_latency=0,
-                     data_latency=0,
-                     id=0,
-                     dsize=2,
-                     burst=1)
-    dut._log.info("Almost there")
-    yield Timer(1000)
-    dut._log.info("Ok!")
-#    raise TestSuccess()
-    
-#    raise TestSuccess("All done for now")
+#    dut.TEST_TITLE.buff = "WRITE"
+    dut.TEST_TITLE = convert_string("WRITE")    
+    val = yield tb.axiwr.axi_write(address =         0x1234,
+                                   value =           [8,7,6,5,4,3,2,1,0],
+                                   byte_enable =     None,
+                                   id =              0,
+                                   dsize =           2,
+                                   burst =           1,
+                                   address_latency = 0,
+                                   data_latency =    0)
+#    dut.TEST_TITLE.buff = "---"    
+    dut.TEST_TITLE = 0    
+    dut._log.info("axi_write returned => " +str(val))
+#    yield Timer(1000)
+    print("*******************************************")
+    yield Timer(11000)
+    dut.TEST_TITLE = convert_string("WRITE1")    
+    val = yield tb.axiwr.axi_write(address =         0x5678,
+                                   value =           [1,2,3,4],
+                                   byte_enable =     None,
+                                   id =              0,
+                                   dsize =           2,
+                                   burst =           1,
+                                   address_latency = 0,
+                                   data_latency =    0)
+#    dut.TEST_TITLE.buff = "---"    
+    dut.TEST_TITLE = 0    
+    dut._log.info("axi_write returned => " +str(val))
+#    yield Timer(1000)
+    print("*******************************************")
+    yield Timer(10000)
+#    dval = yield  tb.axiwr.axi_read(0x1234, 0, 4, 2, 0, 0 )
+#    dut.TEST_TITLE.buff = "READ"    
+    dut.TEST_TITLE <= convert_string("READ")    
+    dval = yield  tb.axiwr.axi_read(address =         0x1234,
+                                    id =              0,
+                                    dlen =            4,
+                                    dsize =           2,
+                                    address_latency = 0,
+                                    data_latency =    0 )
+
+    dut._log.info("axi_read returned => " +str(dval))
+#    dut.TEST_TITLE.buff = "---"
+    dut.TEST_TITLE <= 0
+    yield Timer(100000)
     print("*******************************************")
     cocotb.regression.tear_down()
 
-#print("Main done")    
-
-"""
-MODULE=test_endian_swapper
-
-class EndianSwapperTB(object):
-
-def convert_string(txt):
-    number=0
-    for c in txt:
-        number = (number << 8) + ord(c)
-    return number     
-    
-@cocotb.test()
-def hello_test(dut):
-    yield Timer(100)
-    for i in range (1000):
-        if i == 200:
-            dut.TEST_TITLE=convert_string("passed 200")
-        elif i == 400:
-            dut.TEST_TITLE=convert_string("passed 400")
-        dut.maxigp0arvalid=0
-        yield Timer(10000)
-        dut.maxigp0arvalid=1
-        yield Timer(10000)
-"""

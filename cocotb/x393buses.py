@@ -170,7 +170,7 @@ class MAXIGPMaster(BusDriver):
     def _send_write_address(self, address, delay, id, dlen, dsize, burst):
         """
         Send write address with parameters
-        @param address binary byte address for burst start
+        @param address binary byte address for (first) burst start
         @param delay Latency sending address in clock cycles
         @param id transaction ID 
         @param dlen burst length (1..16)
@@ -214,6 +214,53 @@ class MAXIGPMaster(BusDriver):
         self.log.debug  ("MAXIGPMaster._send_write_address(): released lock %s"%(AW_CHN))
 
     @cocotb.coroutine
+    def _send_read_address(self, address, delay, id, dlen, dsize, burst):
+        """
+        Send write address with parameters
+        @param address binary byte address for (first) burst start
+        @param delay Latency sending address in clock cycles
+        @param id transaction ID 
+        @param dlen burst length (1..16)
+        @param dsize - data width - (1 << dsize) bytes (MAXIGP has only 2 bits while AXI specifies 3) 2 means 32 bits
+        @param burst burst type (0 - fixed, 1 - increment, 2 - wrap, 3 - reserved)
+        """
+#        self.log.debug ("MAXIGPMaster._send_write_address(",address,", ",delay,", ",id,", ",dlen ,", ",dsize, ", ", burst)
+        yield self.busy_channels[AR_CHN].acquire()
+        self.log.debug ("MAXIGPMaster._send_write_address(): acquired lock")
+        for _ in range(delay):
+            yield RisingEdge(self.clock)
+        self.log.debug ("MAXIGPMaster._send_read_address(): delay over")
+        self.bus.arvalid <= 1
+        self.bus.arid   <= id
+        self.bus.arsize <= dsize
+        self.bus.arburst <= burst
+        while dlen > 16:
+            self.bus.araddr <= address
+            address += 16*(1 << dsize)
+            dlen -= 16
+            self.bus.arlen  <= 15
+            while True:
+                yield ReadOnly()
+                if self.bus.arready.value:
+                    break
+                yield RisingEdge(self.clock)
+            yield RisingEdge(self.clock)
+        self.bus.araddr <= address
+        self.bus.arlen  <= dlen -1
+        self.log.debug ("1.MAXIGPMaster._send_read_address(), address=0x%08x, dlen = 0x%x"%(address, dlen))
+        while True:
+            yield ReadOnly()
+            if self.bus.arready.value:
+                break
+            yield RisingEdge(self.clock)
+        yield RisingEdge(self.clock)
+        self.bus.arvalid <= 0
+        # FLoat all assigned bus signals but awvalid
+        self._float_signals((self.bus.araddr,self.bus.arid, self.bus.arlen, self.bus.arsize,self.bus.arburst))
+        self.busy_channels[AR_CHN].release()
+        self.log.debug  ("MAXIGPMaster._send_read_address(): released lock %s"%(AW_CHN))
+
+    @cocotb.coroutine
     def _send_write_data(self, data, wrstb,  delay, id, dsize):
         """
         Send a data word or a list of data words (supports multi-burst)
@@ -228,7 +275,7 @@ class MAXIGPMaster(BusDriver):
         self.log.debug ("MAXIGPMaster._send_write_data(): acquired lock")
         for cycle in range(delay):
             yield RisingEdge(self.clock)
-        self.log.debug ("MAXIGPMaster._send_write_address(): delay over")
+        self.log.debug ("MAXIGPMaster._send_write_data(): delay over")
         self.bus.wvalid <= 1
         self.bus.wid <= id
         for i,val_wstb in enumerate(zip(data,wrstb)):
@@ -250,23 +297,68 @@ class MAXIGPMaster(BusDriver):
         self._float_signals((self.bus.wdata,self.bus.wstb,self.bus.wlast))
         self.busy_channels[W_CHN].release()
         self.log.debug ("MAXIGPMaster._send_write_data(): released lock %s"%(W_CHN))
+        raise ReturnValue(dsize)
 
+
+    @cocotb.coroutine
+    def _get_read_data(self, address, id, dlen, dsize, delay):
+        """
+        Send a data word or a list of data words (supports multi-burst)
+        @param address start address to read data from (just for logging)
+        @param id expected receive data ID 
+        @param dlen number of words to read 
+        @param dsize - data width - (1 << dsize) bytes (MAXIGP has only 2 bits while AXI specifies 3) 2 means 32 bits
+        @param delay latency in clock cycles
+        """
+        self.log.debug ("MAXIGPMaster._get_read_data("+str(address)+", "+str(id)+", "+str(dlen)+", "+str(dsize)+", "+str(delay))
+        yield self.busy_channels[R_CHN].acquire()
+        self.log.debug ("MAXIGPMaster._get_read_data(): acquired lock")
+        for cycle in range(delay):
+            yield RisingEdge(self.clock)
+        self.log.debug ("MAXIGPMaster._get_read_data(): delay over")
+        self.bus.rready <= 1
+        data=[]
+        for i in range(dlen):
+            self.log.debug ("MAXIGPMaster._get_read_data(), i= %d"%(i))
+            while True:
+                yield ReadOnly()
+                if self.bus.rvalid.value:
+                    data.append(self.bus.rdata.value.integer)
+                    rid = int(self.bus.rid.value)  
+                    if rid != id:
+                        self.log.error("Read data 0x%x ID mismatch - expected: 0x%x, got 0x%x"%(address+i,id, rid))
+                    break
+                yield RisingEdge(self.clock)
+            yield RisingEdge(self.clock)
+        self.bus.rready <= 0
+        # FLoat all assigned bus signals but wvalid
+#        self._float_signals((self.bus.wdata,self.bus.wstb,self.bus.wlast))
+        self.busy_channels[R_CHN].release()
+        self.log.debug ("MAXIGPMaster._get_read_data(): released lock %s"%(R_CHN))
+        raise ReturnValue(data)
+
+
+    
     @cocotb.coroutine    
-    def axi_write(self, address, value, byte_enable=None, address_latency=0,
-              data_latency=0,
-              id=0, dsize=2, burst=1):
+    def axi_write(self, address, value, byte_enable=None, 
+              id=0, dsize=2, burst=1,address_latency=0,
+              data_latency=0):
         self.log.debug("axi_write")
         """
         Write a data burst.
         @param address binary byte address for burst start
         @param value - a value or a list of values (supports multi-burst, but no interrupts between bursts)
         @param byte_enable - byte enable mask. Should be None (all enabled) or have the same number of items as data 
-        @param address_latency latency sending address in clock cycles
-        @param data_latency latency sending data in clock cycles
         @param id transaction ID 
         @param dsize - data width - (1 << dsize) bytes (MAXIGP has only 2 bits while AXI specifies 3) 2 means 32 bits
         @param burst burst type (0 - fixed, 1 - increment, 2 - wrap, 3 - reserved)
+        @param address_latency latency sending address in clock cycles
+        @param data_latency latency sending data in clock cycles
         """
+                #Only wait if it is too late (<1/2 cycle)
+        if not int(self.clock):
+            yield RisingEdge(self.clock)
+
 #        self.log.debug ("1.MAXIGPMaster.write(",address,", ",value, ",", byte_enable,", ",address_latency,",",
 #                                     data_latency,", ",id,", ",dsize,", ", burst)
         if not isinstance(value, (list,tuple)):
@@ -297,34 +389,52 @@ class MAXIGPMaster(BusDriver):
                                                    delay=        data_latency,
                                                    id =          id,
                                                    dsize =       dsize))
-#(self, data, wrstb,  delay, id, dsize)        
+        
         if c_addr:
             self.log.debug ("c_addr.join()")
             yield c_addr.join()
         if c_data:
             self.log.debug ("c_data.join()")
             yield c_data.join()
-        yield RisingEdge(self.clock)
-        self.log.debug ("All done, returning")
-
-#        result = self.bus.bresp.value
-#        raise ReturnValue(0) #result)
-        """    
-
-            
-        # It will be to slow if to wait for response after each word sent, need to put a separate monitor on B-channel
-        # Wait for the response
-        while True:
-            yield ReadOnly()
-            if self.bus.BVALID.value and self.bus.BREADY.value:
-                result = self.bus.BRESP.value
-                break
-            yield RisingEdge(self.clock)
-
-        yield RisingEdge(self.clock)
-
-        if int(result):
-            raise AXIReadError("Write to address 0x%08x failed with BRESP: %d"
-                               % (address, int(result)))
-        raise ReturnValue(result)
+#        yield RisingEdge(self.clock)
+        self.log.debug ("axi_write:All done")
+        raise ReturnValue(0)
+  
+    @cocotb.coroutine
+    def axi_read(self, address, id = 0, dlen = 1, dsize = 2, burst = 1, address_latency = 0, data_latency= 0 ):
         """
+        Receive data form AXI port
+        @param address start address to read data from
+        @param id expected receive data ID 
+        @param dlen number of words to read 
+        @param dsize - data width - (1 << dsize) bytes (MAXIGP has only 2 bits while AXI specifies 3) 2 means 32 bits
+        @param burst burst type (0 - fixed, 1 - increment, 2 - wrap, 3 - reserved)
+        @param address_latency latency sending address in clock cycles
+        @param data_latency latency sending data in clock cycles
+        @return A list of BinaryValue objects
+        """
+        #Only wait if it is too late (<1/2 cycle)
+        if not int(self.clock):
+            yield RisingEdge(self.clock)
+            
+        c_addr = cocotb.fork(self._send_read_address(address=    address,
+                                                      delay=     address_latency,
+                                                      id =       id,
+                                                      dlen =     dlen,
+                                                      dsize =    dsize,
+                                                      burst =    burst))
+        
+        c_data = cocotb.fork(self._get_read_data     (address=   address,
+                                                      id =       id,
+                                                      dlen =     dlen,
+                                                      dsize =    dsize,
+                                                      delay =    data_latency))
+        if c_addr:
+            self.log.debug ("c_addr.join()")
+            yield c_addr.join()
+        if c_data:
+            self.log.debug ("c_data.join()")
+            data_rv=yield c_data.join()
+#        yield RisingEdge(self.clock)
+        self.log.debug ("axi_read:All done, returning, data_rv="+str(data_rv))
+        raise ReturnValue(data_rv)
