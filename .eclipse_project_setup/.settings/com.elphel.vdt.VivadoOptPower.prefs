@@ -1,4 +1,3 @@
-VivadoOptPower_124_SkipSnapshotOptPower=true
-VivadoOptPower_125_SkipSnapshotOptPower=true
-com.elphel.store.context.VivadoOptPower=VivadoOptPower_124_SkipSnapshotOptPower<-@\#\#@->VivadoOptPower_125_SkipSnapshotOptPower<-@\#\#@->
+VivadoOptPower_@_SkipSnapshotOptPower=true
+com.elphel.store.context.VivadoOptPower=VivadoOptPower_@_SkipSnapshotOptPower<-@\#\#@->
 eclipse.preferences.version=1

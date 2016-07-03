@@ -1,4 +1,4 @@
-VivadoTimingReportImplemented_121_DisableVivadoTiming=true
-VivadoTimingReportImplemented_122_DisableVivadoTiming=true
-com.elphel.store.context.VivadoTimingReportImplemented=VivadoTimingReportImplemented_132_rawfile<-@\#\#@->VivadoTimingReportImplemented_121_DisableVivadoTiming<-@\#\#@->VivadoTimingReportImplemented_122_DisableVivadoTiming<-@\#\#@->
+VivadoTimingReportImplemented_@_DisableVivadoTiming=true
+VivadoTimingReportImplemented_@_rawfile=
+com.elphel.store.context.VivadoTimingReportImplemented=VivadoTimingReportImplemented_@_DisableVivadoTiming<-@\#\#@->VivadoTimingReportImplemented_@_rawfile<-@\#\#@->
 eclipse.preferences.version=1

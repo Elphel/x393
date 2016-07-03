@@ -1,4 +1,3 @@
-VivadoOpt_123_SkipSnapshotOpt=true
-VivadoOpt_124_SkipSnapshotOpt=true
-com.elphel.store.context.VivadoOpt=VivadoOpt_123_SkipSnapshotOpt<-@\#\#@->VivadoOpt_124_SkipSnapshotOpt<-@\#\#@->
+VivadoOpt_@_SkipSnapshotOpt=true
+com.elphel.store.context.VivadoOpt=VivadoOpt_@_SkipSnapshotOpt<-@\#\#@->
 eclipse.preferences.version=1
