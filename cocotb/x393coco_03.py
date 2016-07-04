@@ -36,6 +36,8 @@ from cocotb.result import ReturnValue, TestFailure, TestError, TestSuccess
 import logging
 
 class X393_cocotb(object):
+    writeIDMask = (1 <<12) -1
+    readIDMask = (1 <<12) -1
     def __init__(self, dut, port, host): # , debug=False):
         """
         print("os.getenv('SIM_ROOT'",os.getenv('SIM_ROOT'))
@@ -49,6 +51,9 @@ class X393_cocotb(object):
         self.cmd= SocketCommand()
         self.dut = dut
         self.maxigp0 = MAXIGPMaster(entity=dut, name="dutm0", clock=dut.dutm0_aclk, rdlag=0, blag=0)
+        self.writeID=0
+        self.readID=0
+        
 #        self.clock = dut.dutm0_aclk
         
         level = logging.DEBUG if debug else logging.WARNING
@@ -82,17 +87,12 @@ class X393_cocotb(object):
             self.dut._log.info("Received from socket: %s"%(line))
         except:
             self.logErrorTerminate("Socket seems to have died :-(")
-#        return line  
         self.dut._log.info("1.Received from socket: %s"%(line))
-        yield Timer(10000)
-#        return line  
-#        raise ReturnValue(line)
-        self.dut._log.info("2.Received from socket: %s"%(line))
+#        yield Timer(10000)
+#        self.dut._log.debug("2.Received from socket: %s"%(line))
         yield self.executeCommand(line)
-        self.dut._log.info("3.Received from socket: %s"%(line))
+        self.dut._log.debug("3.Received from socket: %s"%(line))
     
-#        yield ReturnValue(line)
-#            return line
     @cocotb.coroutine
     def executeCommand(self,line):
         self.dut._log.info("1.executeCommand: %s"%(line))
@@ -110,23 +110,48 @@ class X393_cocotb(object):
             while self.dut.reset_out.value:
                 yield Timer(10000)
                 
-            self.soc_conn.send("'0'\n")
-            self.dut._log.info('Sent 0 to the socket')
+            self.soc_conn.send(self.cmd.toJSON(0)+"\n")
+            self.dut._log.debug('Sent 0 to the socket')
 
         elif self.cmd.getStop():
-            self.dut._log.info('Received STOP, closing...')
-            self.soc_conn.send("'0'\n")
+            self.dut._log.debug('Received STOP, closing...')
+            self.soc_conn.send(self.cmd.toJSON(0)+"\n")
             self.soc_conn.close()
+            yield Timer(10000) # small pause for the wave output
+
             self.socket_conn.shutdown(socket.SHUT_RDWR)
             self.socket_conn.close()
             cocotb.regression.tear_down()
             raise TestSuccess('Terminating as received STOP command')
-        
-#   raise ReturnValue(None)
-              
+        #For now write - one at a time, TODO: a) consolidate, b) decode address (some will be just a disk file)
+        elif self.cmd.getWrite():
+            ad = self.cmd.getWrite()
+            self.dut._log.info('Received WRITE, 0x%0x: %s'%(ad[0],str(ad[1])))
+            rslt = yield self.maxigp0.axi_write(address =     ad[0],
+                                            value =           ad[1],
+                                            byte_enable =     None,
+                                            id =              self.writeID,
+                                            dsize =           2,
+                                            burst =           1,
+                                            address_latency = 0,
+                                            data_latency =    0)
+            self.dut._log.info('maxigp0.axi_write yielded %s'%(str(rslt)))
+            self.writeID = (self.writeID+1) & self.writeIDMask
+            self.soc_conn.send(self.cmd.toJSON(rslt)+"\n")
+            self.dut._log.debug('Sent rslt to the socket')
+        elif self.cmd.getRead():
+            a = self.cmd.getRead()
+            dval = yield  self.maxigp0.axi_read(address =     a,
+                                           id =               self.readID,
+                                            dlen =            1,
+                                            dsize =           2,
+                                            address_latency = 0,
+                                            data_latency =    0 )
+            self.dut._log.info("axi_read returned => " +str(dval))
+            self.readID = (self.readID+1) & self.readIDMask
+            self.soc_conn.send(self.cmd.toJSON(dval)+"\n")
+            self.dut._log.debug('Sent dval to the socket')
             
-                
-        
 def convert_string(txt):
     number=0
     for c in txt:
@@ -140,11 +165,11 @@ def run_test(dut, port=7777):
     while True:
         try:
             rslt= yield tb.receiveCommandFromSocket()
-            dut._log.info("command_line = %s"%(str(rslt)))
+            dut._log.info("rslt = %s"%(str(rslt)))
         except ReturnValue as rv:
-            command_line = rv.retval;
+            line = rv.retval;
             dut._log.info("rv = %s"%(str(rv)))
-            dut._log.info("command_line = %s"%(str(command_line)))
+            dut._log.info("line = %s"%(str(line)))
 #        try:        
 #            rslt = yield tb.executeCommand(command_line)
 #        except:

@@ -51,8 +51,11 @@ class SocketCommand():
     def setRead(self,arguments):
         self.command = "read"
         self.arguments=arguments
-    def toJSON(self):
-        return json.dumps({"cmd":self.command,"args":self.arguments})    
+    def toJSON(self,val=None):
+        if val is None:
+            return json.dumps({"cmd":self.command,"args":self.arguments})
+        else:
+            return json.dumps(val)    
     def fromJSON(self,jstr):
         d=json.loads(jstr)
         try:
@@ -87,6 +90,7 @@ class x393Client():
         print("write->",self.communicate(self.cmd.toJSON()))
     def read(self, address):
         self.cmd.setRead(address)
+        print("read->args",self.cmd.getArgs())
         rslt = self.communicate(self.cmd.toJSON())
         print("read->",rslt)
         return json.loads(rslt)
