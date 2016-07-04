@@ -1,0 +1,99 @@
+[*]
+[*] GTKWave Analyzer v3.3.66 (w)1999-2015 BSI
+[*] Mon Jul  4 03:19:05 2016
+[*]
+[dumpfile] "/home/eyesis/git/x393-neon/simulation/x393_dut-20160703211758949.fst"
+[dumpfile_mtime] "Mon Jul  4 03:18:33 2016"
+[dumpfile_size] 639043
+[savefile] "/home/eyesis/git/x393-neon/cocotb/x393_cocotb_02.sav"
+[timestart] 10924700
+[size] 1836 1171
+[pos] 1920 0
+*-16.699684 11530000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[sst_width] 204
+[signals_width] 238
+[sst_expanded] 1
+[sst_vpaned_height] 344
+@821
+x393_dut.TEST_TITLE[639:0]
+@28
+x393_dut.dutm0_aclk
+@22
+x393_dut.dutm0_araddr[31:0]
+x393_dut.dutm0_araddr_w[31:0]
+@28
+x393_dut.dutm0_arburst[1:0]
+x393_dut.dutm0_arburst_w[1:0]
+@22
+x393_dut.dutm0_arcache[3:0]
+x393_dut.dutm0_arid[11:0]
+x393_dut.dutm0_arid_w[11:0]
+x393_dut.dutm0_arlen[3:0]
+x393_dut.dutm0_arlen_w[3:0]
+@28
+x393_dut.dutm0_arlock[1:0]
+x393_dut.dutm0_arprot[2:0]
+@22
+x393_dut.dutm0_arqos[3:0]
+@28
+x393_dut.dutm0_arready
+x393_dut.dutm0_arsize[1:0]
+x393_dut.dutm0_arsize_w[1:0]
+x393_dut.dutm0_arvalid
+@22
+x393_dut.dutm0_awaddr[31:0]
+x393_dut.dutm0_awaddr_w[31:0]
+@28
+x393_dut.dutm0_awburst[1:0]
+x393_dut.dutm0_awburst_w[1:0]
+@22
+x393_dut.dutm0_awcache[3:0]
+x393_dut.dutm0_awid[11:0]
+x393_dut.dutm0_awid_w[11:0]
+x393_dut.dutm0_awlen[3:0]
+x393_dut.dutm0_awlen_w[3:0]
+@28
+x393_dut.dutm0_awlock[1:0]
+x393_dut.dutm0_awprot[2:0]
+@22
+x393_dut.dutm0_awqos[3:0]
+@28
+x393_dut.dutm0_awready
+x393_dut.dutm0_awsize[1:0]
+x393_dut.dutm0_awsize_w[1:0]
+x393_dut.dutm0_awvalid
+x393_dut.dutm0_awvalid_w
+@22
+x393_dut.dutm0_bid[11:0]
+@28
+x393_dut.dutm0_bready
+x393_dut.dutm0_bresp[1:0]
+x393_dut.dutm0_bvalid
+@22
+x393_dut.dutm0_rdata[31:0]
+x393_dut.dutm0_rid[11:0]
+@28
+x393_dut.dutm0_rlast
+x393_dut.dutm0_rready
+x393_dut.dutm0_rresp[1:0]
+x393_dut.dutm0_rvalid
+@22
+x393_dut.dutm0_wdata[31:0]
+x393_dut.dutm0_wdata_w[31:0]
+x393_dut.dutm0_wid[11:0]
+x393_dut.dutm0_wid_w[11:0]
+@28
+x393_dut.dutm0_wlast
+x393_dut.dutm0_wlast_w
+x393_dut.dutm0_wready
+@22
+x393_dut.dutm0_wstb[3:0]
+x393_dut.dutm0_wstb_w[3:0]
+@28
+x393_dut.dutm0_wvalid
+x393_dut.dutm0_wvalid_w
+@22
+x393_dut.dutm0_xtra_blag[3:0]
+x393_dut.dutm0_xtra_rdlag[3:0]
+[pattern_trace] 1
+[pattern_trace] 0

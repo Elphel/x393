@@ -28,25 +28,18 @@ import select
 from socket_command import SocketCommand
 
 from cocotb.triggers import Timer
-from x393buses import MAXIGPMaster
+from x393interfaces import MAXIGPMaster
 from cocotb.drivers import BitDriver
 from cocotb.triggers import Timer, RisingEdge, ReadOnly
 from cocotb.result import ReturnValue, TestFailure, TestError, TestSuccess
 
 import logging
 
-class X393_cocotb(object):
+class X393_cocotb_server(object):
     writeIDMask = (1 <<12) -1
     readIDMask = (1 <<12) -1
     def __init__(self, dut, port, host): # , debug=False):
-        """
-        print("os.getenv('SIM_ROOT'",os.getenv('SIM_ROOT'))
-        print("os.getenv('COCOTB_DEBUG'",os.getenv('COCOTB_DEBUG'))
-        print("os.getenv('RANDOM_SEED'",os.getenv('RANDOM_SEED'))
-        print("os.getenv('MODULE'",os.getenv('MODULE'))
-        print("os.getenv('TESTCASE'",os.getenv('TESTCASE'))
-        print("os.getenv('COCOTB_ANSI_OUTPUT'",os.getenv('COCOTB_ANSI_OUTPUT'))
-        """
+
         debug = os.getenv('COCOTB_DEBUG') # None/1
         self.cmd= SocketCommand()
         self.dut = dut
@@ -54,7 +47,6 @@ class X393_cocotb(object):
         self.writeID=0
         self.readID=0
         
-#        self.clock = dut.dutm0_aclk
         
         level = logging.DEBUG if debug else logging.WARNING
         self.maxigp0.log.setLevel(level)
@@ -82,14 +74,11 @@ class X393_cocotb(object):
             self.soc_conn, soc_addr = self.socket_conn.accept()
             self.dut._log.debug ("Connected with %s"%(soc_addr[0] + ':' + str(soc_addr[1])))
             #Sending message to connected client
-            #self.soc_conn.send('Welcome to the server. Type something and hit enter\n') #send only takes string
             line = self.soc_conn.recv(4096) # or make it unlimited?
             self.dut._log.info("Received from socket: %s"%(line))
         except:
             self.logErrorTerminate("Socket seems to have died :-(")
         self.dut._log.info("1.Received from socket: %s"%(line))
-#        yield Timer(10000)
-#        self.dut._log.debug("2.Received from socket: %s"%(line))
         yield self.executeCommand(line)
         self.dut._log.debug("3.Received from socket: %s"%(line))
     
@@ -160,8 +149,8 @@ def convert_string(txt):
 
 @cocotb.coroutine
 def run_test(dut, port=7777):
-    tb = X393_cocotb(dut=dut, host = "", port=7777)
-    dut._log.info("Waiting for commnad on socket port %s"%(port))
+    tb = X393_cocotb_server(dut=dut, host = "", port=7777)
+    dut._log.warn("Waiting for commnad on socket port %s"%(port))
     while True:
         try:
             rslt= yield tb.receiveCommandFromSocket()
@@ -170,69 +159,6 @@ def run_test(dut, port=7777):
             line = rv.retval;
             dut._log.info("rv = %s"%(str(rv)))
             dut._log.info("line = %s"%(str(line)))
-#        try:        
-#            rslt = yield tb.executeCommand(command_line)
-#        except:
-#            break;
     tb.socket_conn.close()
     cocotb.regression.tear_down()
     
-def run_test_0(dut):
-    
-    tb = X393_cocotb(dut=dut, host = "", port=7777)
-#    tb.logErrorTerminate('Test error terminate')
-    yield Timer(10000)
-
-    while dut.reset_out.value.get_binstr() != "1":
-        yield Timer(10000)
-
-    while dut.reset_out.value:
-        yield Timer(10000)
-#    dut.TEST_TITLE.buff = "WRITE"
-    dut.TEST_TITLE = convert_string("WRITE")    
-    val = yield tb.maxigp0.axi_write(address =         0x1234,
-                                   value =           [8,7,6,5,4,3,2,1,0],
-                                   byte_enable =     None,
-                                   id =              0,
-                                   dsize =           2,
-                                   burst =           1,
-                                   address_latency = 0,
-                                   data_latency =    0)
-#    dut.TEST_TITLE.buff = "---"    
-    dut.TEST_TITLE = 0    
-    dut._log.info("axi_write returned => " +str(val))
-#    yield Timer(1000)
-    print("*******************************************")
-    yield Timer(11000)
-    dut.TEST_TITLE = convert_string("WRITE1")    
-    val = yield tb.maxigp0.axi_write(address =         0x5678,
-                                   value =           [1,2,3,4],
-                                   byte_enable =     None,
-                                   id =              0,
-                                   dsize =           2,
-                                   burst =           1,
-                                   address_latency = 0,
-                                   data_latency =    0)
-#    dut.TEST_TITLE.buff = "---"    
-    dut.TEST_TITLE = 0    
-    dut._log.info("axi_write returned => " +str(val))
-#    yield Timer(1000)
-    print("*******************************************")
-    yield Timer(10000)
-#    dval = yield  tb.maxigp0.axi_read(0x1234, 0, 4, 2, 0, 0 )
-#    dut.TEST_TITLE.buff = "READ"    
-    dut.TEST_TITLE <= convert_string("READ")    
-    dval = yield  tb.maxigp0.axi_read(address =         0x1234,
-                                    id =              0,
-                                    dlen =            4,
-                                    dsize =           2,
-                                    address_latency = 0,
-                                    data_latency =    0 )
-
-    dut._log.info("axi_read returned => " +str(dval))
-#    dut.TEST_TITLE.buff = "---"
-    dut.TEST_TITLE <= 0
-    yield Timer(100000)
-    print("*******************************************")
-    cocotb.regression.tear_down()
-
