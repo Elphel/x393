@@ -1,9 +1,12 @@
+cocotb_@_COCOTB_DEBUG=true
 cocotb_@_CocotbDutTopFile=cocotb/x393_dut.v
 cocotb_@_CocotbExtraFiles=glbl.v<-@\#\#@->
 cocotb_@_CocotbIncludeDir=${verilog_project_loc}/includes<-@\#\#@->${verilog_project_loc}/ddr3<-@\#\#@->${verilog_project_loc}/x393_sata<-@\#\#@->${verilog_project_loc}/x393_sata/host<-@\#\#@->
-cocotb_@_CocotbMODULE=x393coco_02<-@\#\#@->
+cocotb_@_CocotbMODULE=x393coco_03<-@\#\#@->
 cocotb_@_CocotbTESTCASE=run_test<-@\#\#@->
 cocotb_@_GTKWaveSavFile=x393_cocotb_02.sav
-com.elphel.store.context.cocotb=cocotb_@_CocotbExtraFiles<-@\#\#@->cocotb_@_CocotbMODULE<-@\#\#@->cocotb_@_GTKWaveSavFile<-@\#\#@->cocotb_@_CocotbIncludeDir<-@\#\#@->cocotb_@_CocotbDutTopFile<-@\#\#@->cocotb_@_CocotbTESTCASE<-@\#\#@->
+cocotb_@_GrepFindErrWarn=error|warning
+cocotb_@_ShowWarnings=false
+com.elphel.store.context.cocotb=cocotb_@_CocotbExtraFiles<-@\#\#@->cocotb_@_CocotbMODULE<-@\#\#@->cocotb_@_GTKWaveSavFile<-@\#\#@->cocotb_@_CocotbIncludeDir<-@\#\#@->cocotb_@_CocotbDutTopFile<-@\#\#@->cocotb_@_CocotbTESTCASE<-@\#\#@->cocotb_@_ShowWarnings<-@\#\#@->cocotb_@_GrepFindErrWarn<-@\#\#@->cocotb_@_COCOTB_DEBUG<-@\#\#@->
 com.elphel.store.version.cocotb=0.8
 eclipse.preferences.version=1
