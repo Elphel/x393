@@ -70,7 +70,7 @@ class X393Sensor(object):
         Get sensor interface type by reading status register 0xfe that is set to 0 for parallel and 1 for HiSPi
         @return "PAR12" or "HISPI"
         """
-        if  self.DRY_MODE:
+        if  self.DRY_MODE is True:
             return SENSOR_INTERFACE_PARALLEL
         return (SENSOR_INTERFACE_PARALLEL, SENSOR_INTERFACE_HISPI)[self.x393_axi_tasks.read_status(address=0xfe)] # "PAR12" , "HISPI"
         

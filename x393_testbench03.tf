@@ -155,7 +155,7 @@ parameter NUM_INTERRUPTS =        9;
     parameter BLANK_ROWS_BEFORE= 8;  // 1; //8; ///2+2 - a little faster than compressor
     parameter BLANK_ROWS_AFTER=  8; // 1; //8;
 `endif 
- parameter WOI_HEIGHT=        32;
+// parameter WOI_HEIGHT=        32;
  parameter TRIG_LINES=        8;
  parameter VBLANK=            2; /// 2 lines //SuppressThisWarning Veditor UNUSED
  parameter CYCLES_PER_PIXEL=  3; /// 2 for JP4, 3 for JPEG // SuppressThisWarning VEditor - not used
@@ -2303,7 +2303,8 @@ simul_axi_hp_rd #(
         .reg_wr         (PS_REG_WR), // input
         .reg_rd         (PS_REG_RD), // input
         .reg_din        (PS_REG_DIN), // input[31:0] 
-        .reg_dout       (PS_REG_DOUT) // output[31:0] 
+        .reg_dout       (PS_REG_DOUT), // output[31:0]
+        .reg_dvalid     () 
     );
 
 simul_axi_hp_wr #(
@@ -2349,7 +2350,8 @@ simul_axi_hp_wr #(
         .reg_wr         (PS_REG_WR),                         // input
         .reg_rd         (PS_REG_RD),                         // input
         .reg_din        (PS_REG_DIN),                        // input[31:0] 
-        .reg_dout       (PS_REG_DOUT)                        // output[31:0] 
+        .reg_dout       (PS_REG_DOUT),                       // output[31:0]
+        .reg_dvalid     () 
     );
     // afi1 - from compressor 
 simul_axi_hp_wr #(
@@ -2395,7 +2397,8 @@ simul_axi_hp_wr #(
         .reg_wr         (PS_REG_WR1),                         // input
         .reg_rd         (PS_REG_RD1),                         // input
         .reg_din        (PS_REG_DIN),                         // input[31:0] 
-        .reg_dout       (PS_REG_DOUT1)                        // output[31:0] 
+        .reg_dout       (PS_REG_DOUT1),                       // output[31:0]
+        .reg_dvalid     () 
     );
     
     // SAXI_GP0 - histograms to system memory

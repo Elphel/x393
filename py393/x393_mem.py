@@ -32,6 +32,15 @@ import mmap
 #import sys
 import struct
 import os
+import sys
+import traceback
+
+sys.path.append(os.path.abspath(os.path.dirname(sys.argv[0])+'/../cocotb'))
+from socket_command import x393Client
+
+DBG_CNTR=0
+X393_CLIENT = None
+
 class X393Mem(object):
     '''
     classdocs
@@ -47,16 +56,40 @@ class X393Mem(object):
                         # 2.7.11 does not need subtraction(and reports error if negative)
 
     def __init__(self, debug_mode=1,dry_mode=False, maxi_port=0):
-        if maxi_port:
-            self.MAXI_BASE=self.MAXI1_BASE
-        else:    
-            self.MAXI_BASE=self.MAXI0_BASE;
-        self.DEBUG_MODE=debug_mode
+        global DBG_CNTR
+        global X393_CLIENT
+        """
+        print('dry_mode = ',dry_mode,', DBG_CNTR=',DBG_CNTR)
+        traceback.print_stack()
+        """
         if not dry_mode:
             if not os.path.exists("/dev/xdevcfg"):
                 dry_mode=True
                 print("Program is forced to run in SIMULATED mode as '/dev/xdevcfg' does not exist (not a camera)")
         self.DRY_MODE=dry_mode
+        if (dry_mode) and (X393_CLIENT is None):
+            print("Creating X393_CLIENT")
+            try:
+                X393_CLIENT= x393Client(host=dry_mode.split(":")[0], port=int(dry_mode.split(":")[1]))
+                print("Created X393_CLIENT")
+            except:
+                X393_CLIENT= True
+                print("Failed to create X393_CLIENT")
+            if not X393_CLIENT is True:
+                print("Starting X393_CLIENT")
+                try:
+                    X393_CLIENT.start()
+                except:
+                    print ("Failed to communicate to the server. Is it started? Swithching to dry tun mode")
+                    X393_CLIENT = True
+                    
+                
+        DBG_CNTR+=1
+        if maxi_port:
+            self.MAXI_BASE=self.MAXI1_BASE
+        else:    
+            self.MAXI_BASE=self.MAXI0_BASE;
+        self.DEBUG_MODE=debug_mode
     def maxi_base(self, maxi_port=None):
         if not maxi_port is None:
             if maxi_port:
@@ -86,7 +119,20 @@ class X393Mem(object):
                     return mmap.mmap(f.fileno(), self.PAGE_SIZE, offset = page_addr - (1<<32))
         else:
             return mmap.mmap(f.fileno(), self.PAGE_SIZE, offset = page_addr)
-         
+    def finish(self):
+        """
+        Finish simulation, if server is opened
+        """
+        global X393_CLIENT
+        if X393_CLIENT is None:
+            print ("Not running in simulated mode")
+            return
+        elif X393_CLIENT is True:
+            print ("Not running as a client to x393 simulation server")
+            return
+        else:
+            X393_CLIENT.stop()
+            X393_CLIENT = True # just simulated mode
                         
     def write_mem (self,addr, data,quiet=1):
         """
@@ -95,8 +141,16 @@ class X393Mem(object):
         @param data - 32-bit data to write
         @param quiet - reduce output
         """
-        if self.DRY_MODE:
+        if X393_CLIENT is True:
+#        if self.DRY_MODE:
             print ("simulated: write_mem(0x%x,0x%x)"%(addr,data))
+            return
+        elif not X393_CLIENT is None:
+            if quiet < 1:
+                print ("remote: write_mem(0x%x,0x%x)"%(addr,data))
+            X393_CLIENT.write(addr, [data])
+            if quiet < 2:
+                print ("remote: write_mem done" )
             return
         with open("/dev/mem", "r+b") as f:
             page_addr=addr & (~(self.PAGE_SIZE-1))
@@ -108,7 +162,7 @@ class X393Mem(object):
             packedData=struct.pack(self.ENDIAN+"L",data)
             d=struct.unpack(self.ENDIAN+"L",packedData)[0]
             mm[page_offs:page_offs+4]=packedData
-            if quiet <1:
+            if quiet <2:
                 print ("0x%08x <== 0x%08x (%d)"%(addr,d,d))
         '''    
         if MONITOR_EMIO and VEBOSE:
@@ -125,7 +179,19 @@ class X393Mem(object):
         Read 32-bit word from physical memory
         @param addr  physical byte address
         @param quiet - reduce output
-        '''    
+        '''  
+        if X393_CLIENT is True:
+#        if self.DRY_MODE:
+            print ("simulated: read_mem(0x%x)"%(addr))
+            return addr # just some data
+        elif not X393_CLIENT is None:
+            if quiet < 1:
+                print ("remote: read_mem(0x%x)"%(addr))
+            data= X393_CLIENT.read(addr)
+            if quiet < 1:
+                print ("remote: read_mem done: 0x%08x"%(data[0]))
+            return data[0]
+          
         if self.DRY_MODE:
             print ("simulated: read_mem(0x%x)"%(addr))
             return addr # just some data

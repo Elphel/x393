@@ -364,7 +364,10 @@ class X393AxiControlStatus(object):
         print ("MCNTRL_TEST01_STATUS_REG_CHN4_ADDR:  %s"%(hx(self.read_status(vrlg.MCNTRL_TEST01_STATUS_REG_CHN4_ADDR),8)))
         print ("MEMBRIDGE_STATUS_REG:                %s"%(hx(self.read_status(vrlg.MEMBRIDGE_STATUS_REG),8)))
         items_per_line = 8
-        for i in range (256):
+        r = range(256)
+        if self.DRY_MODE:
+            r=(0,1,2,3,4,5,6,7,0x38,0x39,0x3a,0x3b,0x3c,0x3d,0x3e,0x3f,0xf8,0xf9,0xfa,0xfb,0xfc,0xfd,0xfe,0xff)
+        for i in r:
             if not i % items_per_line:
                 print ("\n0x%02x: "%(i), end = "") 
             d=hx(self.read_status(i),8)

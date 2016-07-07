@@ -36,7 +36,7 @@ module  sim_soc_interrupts #(
     input      [NUM_INTERRUPTS-1:0] irq_done, // end of ISR, turn off inta bit, re-enable arbitration
     output     [NUM_INTERRUPTS-1:0] irqs,     // synchronized by clock masked interrupts
     output     [NUM_INTERRUPTS-1:0] inta,     // interrupt acknowledge
-    output                          main_go   // enable main therad to proceed 
+    output                          main_go   // enable main thread to proceed 
 );
 
     reg        [NUM_INTERRUPTS-1:0] inta_r;

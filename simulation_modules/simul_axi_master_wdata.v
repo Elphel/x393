@@ -82,14 +82,13 @@ simul_axi_fifo
       .LATENCY(LATENCY),                         // minimal delay between inout and output ( 0 - next cycle)
       .DEPTH(DEPTH)                              // maximal number of commands in FIFO
     ) simul_axi_fifo_i (
-    .clk(clk),         // input              clk,
-    .reset(reset),       // input              reset,
-    .data_in({wid_in, wdata_in, wstrb_in, wlast_in}),     // input  [WIDTH-1:0] data_in,
-    .load(set_cmd),        // input              load,
-    .input_ready(ready), // output             input_ready,
-    .data_out({wid_out, wdata_out, wstrb_out, wlast_out}),    // output [WIDTH-1:0] data_out,
-    .valid(wvalid_out),       // output             valid,
-    .ready(wready));          //  input              ready);
-
+    .clk          (clk),                                        // input              clk,
+    .reset        (reset),                                      // input              reset,
+    .data_in      ({wid_in, wdata_in, wstrb_in, wlast_in}),     // input  [WIDTH-1:0] data_in,
+    .load         (set_cmd),                                    // input              load,
+    .input_ready  (ready),                                      // output             input_ready,
+    .data_out     ({wid_out, wdata_out, wstrb_out, wlast_out}), // output [WIDTH-1:0] data_out,
+    .valid        (wvalid_out),                                 // output             valid,
+    .ready        (wready));                                    // input              ready);
 endmodule
 

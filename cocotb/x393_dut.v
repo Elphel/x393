@@ -91,6 +91,62 @@ module  x393_dut#(
     output          dutm0_bready,// internally generated as a slow response to dutm0_bvalid. Cn be moved to Python and made input here
     output   [11:0] dutm0_bid,
     output    [1:0] dutm0_bresp,
+    
+    // SAXIHP* R/W control register access (internal address decoders)
+    output          ps_sbus_clk, // =hclk    
+    input    [31:0] ps_sbus_addr,
+    input           ps_sbus_wr,
+    input           ps_sbus_rd,
+    input    [31:0] ps_sbus_din,
+    output   [31:0] ps_sbus_dout,
+    
+    output          axi_hclk, // Clock for AXI interfaces
+    output          saxi0_aclk, //== hclk
+    // Membridge FPGA -> CPU
+    output   [31:0] saxihp0_wr_address,    
+    output   [ 5:0] saxihp0_wid,    
+    output          saxihp0_wr_valid,    
+    input           saxihp0_wr_ready,    
+    output   [63:0] saxihp0_wr_data,    
+    output    [7:0] saxihp0_wr_stb,    
+    input     [3:0] saxihp0_bresp_latency,    
+    output    [2:0] saxihp0_wr_cap,    
+    output    [3:0] saxihp0_wr_qos,    
+
+    // Membridge CPU -> FPGA
+    output   [31:0] saxihp0_rd_address,    
+    output   [ 5:0] saxihp0_rid,    
+    input           saxihp0_rd_valid,    
+    output          saxihp0_rd_ready,    
+    input    [63:0] saxihp0_rd_data,    
+    input     [1:0] saxihp0_rd_resp,    
+    output    [2:0] saxihp0_rd_cap,    
+    output    [3:0] saxihp0_rd_qos,    
+
+    // Compressed images FPGA -> CPU
+    output   [31:0] saxihp1_wr_address,    
+    output   [ 5:0] saxihp1_wid,    
+    output          saxihp1_wr_valid,    
+    input           saxihp1_wr_ready,    
+    output   [63:0] saxihp1_wr_data,    
+    output    [7:0] saxihp1_wr_stb,    
+    input     [3:0] saxihp1_bresp_latency,    
+    output    [2:0] saxihp1_wr_cap,    
+    output    [3:0] saxihp1_wr_qos,    
+    
+    // Histograms FPGA -> CPU
+    output   [31:0] saxigp0_wr_address,    
+    output   [ 5:0] saxigp0_wid,    
+    output          saxigp0_wr_valid,    
+    input           saxigp0_wr_ready,    
+    output   [31:0] saxigp0_wr_data,    
+    output    [3:0] saxigp0_wr_stb,    
+    output    [1:0] saxigp0_wr_size,    
+    input     [3:0] saxigp0_bresp_latency,    
+    output    [3:0] saxigp0_wr_qos,    
+    
+    output [NUM_INTERRUPTS-1:0] irq_r, // {x393_i.sata_irq, x393_i.cmprs_irq[3:0], x393_i.frseq_irq[3:0]};
+
     // SATA and SATA clock I/O
     
     input   [3:0] dutm0_xtra_rdlag,  // ready signal lag in axi read channel (0 - RDY=1, 1..15 - RDY is asserted N cycles after valid)   
@@ -108,6 +164,13 @@ module  x393_dut#(
     
 );
 
+
+
+    assign        irq_r = {x393_i.sata_irq, x393_i.cmprs_irq[3:0], x393_i.frseq_irq[3:0]};
+    assign        axi_hclk = x393_i.ps7_i.SAXIHP0ACLK; // 150 MHz
+    assign        saxi0_aclk = x393_i.ps7_i.SAXIGP0ACLK; // == hclk, 150MHz
+    assign        ps_sbus_clk = x393_i.ps7_i.SAXIHP0ACLK; // == hclk
+ 
 // Temporary = to be moved to Python?
 
     // MAXIGP0 AXI interface
@@ -170,7 +233,7 @@ module  x393_dut#(
     assign dutm0_rlast=   maxigp0rlast;
 
   
-    reg [11:0] LAST_ARID; // last issued ARID
+//    reg [11:0] LAST_ARID; // last issued ARID
 
   // SuppressWarnings VEditor : assigned in $readmem() system task
     wire [SIMUL_AXI_READ_WIDTH-1:0] SIMUL_AXI_ADDR_W;
@@ -188,8 +251,6 @@ module  x393_dut#(
     reg         WAITING_STATUS;   // tasks are waiting for status
     // SuppressWarnings VEditor all - these variables are just for viewing, not used anywhere else
     reg DEBUG1, DEBUG2, DEBUG3;
-    reg [11:0] GLOBAL_WRITE_ID=0;
-    reg [11:0] GLOBAL_READ_ID=0;
 //    reg [7:0] target_phase=0; // to compare/wait for phase shifter ready
     
   // End of Temporary = to be moved to Python?
@@ -307,7 +368,6 @@ module  x393_dut#(
     `include "includes/x393_cur_params_target.vh" // SuppressThisWarning VEditor - not used parameters that may need adjustment, should be before x393_localparams.vh
 `endif
 
-parameter NUM_INTERRUPTS =        9;
 
 `include "includes/x393_localparams.vh" // SuppressThisWarning VEditor - not used
 // ========================== parameters from x353 ===================================
@@ -329,11 +389,9 @@ parameter NUM_INTERRUPTS =        9;
     parameter BLANK_ROWS_BEFORE= 8;  // 1; //8; ///2+2 - a little faster than compressor
     parameter BLANK_ROWS_AFTER=  8; // 1; //8;
 `endif 
- parameter WOI_HEIGHT=        32;
  parameter TRIG_LINES=        8;
  parameter VBLANK=            2; /// 2 lines //SuppressThisWarning Veditor UNUSED
  parameter CYCLES_PER_PIXEL=  3; /// 2 for JP4, 3 for JPEG // SuppressThisWarning VEditor - not used
-
 `ifdef PF
   parameter PF_HEIGHT=8;
   parameter FULL_HEIGHT=WOI_HEIGHT;
@@ -343,7 +401,6 @@ parameter NUM_INTERRUPTS =        9;
   parameter FULL_HEIGHT=WOI_HEIGHT+4;
   parameter PF_STRIPES=0; // SuppressThisWarning VEditor - not used
 `endif
-
   parameter VIRTUAL_WIDTH=    FULL_WIDTH + HBLANK;
   parameter VIRTUAL_HEIGHT=   FULL_HEIGHT + BLANK_ROWS_BEFORE + BLANK_ROWS_AFTER;  //SuppressThisWarning Veditor UNUSED
   parameter TRIG_INTERFRAME=  100; /// extra 100 clock cycles between frames  //SuppressThisWarning Veditor UNUSED
@@ -645,117 +702,20 @@ assign #10 gpio_pins[9] = gpio_pins[8];
     wire        ffclk1n;  // input
 
 
-  
-// axi_hp simulation signals
-    wire HCLK;
-    wire [31:0] afi_sim_rd_address;    // output[31:0] 
-    wire [ 5:0] afi_sim_rid;           // output[5:0]  SuppressThisWarning VEditor - not used - just view
-//  reg         afi_sim_rd_valid;      // input
-    wire        afi_sim_rd_valid;      // input
-    wire        afi_sim_rd_ready;      // output
-//  reg  [63:0] afi_sim_rd_data;       // input[63:0] 
-    wire [63:0] afi_sim_rd_data;       // input[63:0] 
-    wire [ 2:0] afi_sim_rd_cap;        // output[2:0]  SuppressThisWarning VEditor - not used - just view
-    wire [ 3:0] afi_sim_rd_qos;        // output[3:0]  SuppressThisWarning VEditor - not used - just view
-    wire  [ 1:0] afi_sim_rd_resp;       // input[1:0] 
-//  reg  [ 1:0] afi_sim_rd_resp;       // input[1:0] 
-
-    wire [31:0] afi_sim_wr_address;    // output[31:0] SuppressThisWarning VEditor - not used - just view
-    wire [ 5:0] afi_sim_wid;           // output[5:0]  SuppressThisWarning VEditor - not used - just view
-    wire        afi_sim_wr_valid;      // output
-    wire        afi_sim_wr_ready;      // input
-//  reg         afi_sim_wr_ready;      // input
-    wire [63:0] afi_sim_wr_data;       // output[63:0] SuppressThisWarning VEditor - not used - just view
-    wire [ 7:0] afi_sim_wr_stb;        // output[7:0]  SuppressThisWarning VEditor - not used - just view
-    wire [ 3:0] afi_sim_bresp_latency; // input[3:0] 
-//  reg  [ 3:0] afi_sim_bresp_latency; // input[3:0] 
-    wire [ 2:0] afi_sim_wr_cap;        // output[2:0]  SuppressThisWarning VEditor - not used - just view
-    wire [ 3:0] afi_sim_wr_qos;        // output[3:0]  SuppressThisWarning VEditor - not used - just view
-
-    assign HCLK = x393_i.ps7_i.SAXIHP0ACLK; // shortcut name
-
-    wire [31:0] afi1_sim_wr_address;    // output[31:0] SuppressThisWarning VEditor - not used - just view
-    wire [ 5:0] afi1_sim_wid;           // output[5:0]  SuppressThisWarning VEditor - not used - just view
-    wire        afi1_sim_wr_valid;      // output
-    wire        afi1_sim_wr_ready;      // input
-//  reg         afi1_sim_wr_ready;      // input
-    wire [63:0] afi1_sim_wr_data;       // output[63:0] SuppressThisWarning VEditor - not used - just view
-    wire [ 7:0] afi1_sim_wr_stb;        // output[7:0]  SuppressThisWarning VEditor - not used - just view
-    wire [ 3:0] afi1_sim_bresp_latency; // input[3:0] 
-//  reg  [ 3:0] afi1_sim_bresp_latency; // input[3:0] 
-    wire [ 2:0] afi1_sim_wr_cap;        // output[2:0]  SuppressThisWarning VEditor - not used - just view
-    wire [ 3:0] afi1_sim_wr_qos;        // output[3:0]  SuppressThisWarning VEditor - not used - just view
-
-    wire [31:0] sim_cmprs0_addr = (afi1_sim_wr_valid && afi1_sim_wr_ready && (afi1_sim_wid[1:0] == 2'h0))?afi1_sim_wr_address:32'bz; // SuppressThisWarning VEditor - not used - just view
-    wire [31:0] sim_cmprs1_addr = (afi1_sim_wr_valid && afi1_sim_wr_ready && (afi1_sim_wid[1:0] == 2'h1))?afi1_sim_wr_address:32'bz; // SuppressThisWarning VEditor - not used - just view
-    wire [31:0] sim_cmprs2_addr = (afi1_sim_wr_valid && afi1_sim_wr_ready && (afi1_sim_wid[1:0] == 2'h2))?afi1_sim_wr_address:32'bz; // SuppressThisWarning VEditor - not used - just view
-    wire [31:0] sim_cmprs3_addr = (afi1_sim_wr_valid && afi1_sim_wr_ready && (afi1_sim_wid[1:0] == 2'h3))?afi1_sim_wr_address:32'bz; // SuppressThisWarning VEditor - not used - just view
-    wire [63:0] sim_cmprs0_data = (afi1_sim_wr_valid && afi1_sim_wr_ready && (afi1_sim_wid[1:0] == 2'h0))?afi1_sim_wr_data:64'bz;    // SuppressThisWarning VEditor - not used - just view
-    wire [63:0] sim_cmprs1_data = (afi1_sim_wr_valid && afi1_sim_wr_ready && (afi1_sim_wid[1:0] == 2'h1))?afi1_sim_wr_data:64'bz;    // SuppressThisWarning VEditor - not used - just view
-    wire [63:0] sim_cmprs2_data = (afi1_sim_wr_valid && afi1_sim_wr_ready && (afi1_sim_wid[1:0] == 2'h2))?afi1_sim_wr_data:64'bz;    // SuppressThisWarning VEditor - not used - just view
-    wire [63:0] sim_cmprs3_data = (afi1_sim_wr_valid && afi1_sim_wr_ready && (afi1_sim_wid[1:0] == 2'h3))?afi1_sim_wr_data:64'bz;    // SuppressThisWarning VEditor - not used - just view
-//x393_i.ps7_i.SAXIHP1ACLK
-
-    always @ (posedge x393_i.ps7_i.SAXIHP1ACLK) if (afi1_sim_wr_valid && afi1_sim_wr_ready) begin
-        if (afi1_sim_wid[1:0] == 2'h0) $display("---sim_cmprs0: %x:%x", afi1_sim_wr_address, afi1_sim_wr_data);
-        if (afi1_sim_wid[1:0] == 2'h1) $display("---sim_cmprs1: %x:%x", afi1_sim_wr_address, afi1_sim_wr_data);
-        if (afi1_sim_wid[1:0] == 2'h2) $display("---sim_cmprs2: %x:%x", afi1_sim_wr_address, afi1_sim_wr_data);
-        if (afi1_sim_wid[1:0] == 2'h3) $display("---sim_cmprs3: %x:%x", afi1_sim_wr_address, afi1_sim_wr_data);
-    end
-    
-// afi loopback (membridge)
-    assign #1 afi_sim_rd_data=  afi_sim_rd_ready?{2'h0,afi_sim_rd_address[31:3],1'h1,  2'h0,afi_sim_rd_address[31:3],1'h0}:64'bx;
-    assign #1 afi_sim_rd_valid = afi_sim_rd_ready;
-    assign #1 afi_sim_rd_resp = afi_sim_rd_ready?2'b0:2'bx;
-    assign #1 afi_sim_wr_ready = afi_sim_wr_valid;
-    assign #1 afi_sim_bresp_latency=4'h5; 
-// afi1 (compressor) loopback
-    assign #1 afi1_sim_wr_ready = afi1_sim_wr_valid;
-    assign #1 afi1_sim_bresp_latency=4'h5; 
-
-
-// SAXI_GP0 - histograms to system memory
-    wire        SAXI_GP0_CLK; 
-    wire [31:0] saxi_gp0_sim_wr_address;    // output[31:0]   SuppressThisWarning VEditor - not used - just view 
-    wire [ 5:0] saxi_gp0_sim_wid;           // output[5:0]    SuppressThisWarning VEditor - not used - just view
-    wire        saxi_gp0_sim_wr_valid;      // output
-    wire        saxi_gp0_sim_wr_ready;      // input
-    wire [31:0] saxi_gp0_sim_wr_data;       // output[31:0]   SuppressThisWarning VEditor - not used - just view
-    wire [ 3:0] saxi_gp0_sim_wr_stb;        // output[3:0]    SuppressThisWarning VEditor - not used - just view
-    wire [ 1:0] saxi_gp0_sim_wr_size;       // output[1:0]    SuppressThisWarning VEditor - not used - just view
-    wire [ 3:0] saxi_gp0_sim_bresp_latency; // input[3:0] 
-    wire [ 3:0] saxi_gp0_sim_wr_qos;        // output[3:0]    SuppressThisWarning VEditor - not used - just view
-
-    assign SAXI_GP0_CLK = x393_i.ps7_i.SAXIGP0ACLK;
-    assign #1 saxi_gp0_sim_wr_ready = saxi_gp0_sim_wr_valid;
-    assign #1 saxi_gp0_sim_bresp_latency=4'h5; 
-
-
-  
 // axi_hp register access
   // PS memory mapped registers to read/write over a separate simulation bus running at HCLK, no waits
-    reg  [31:0] PS_REG_ADDR;
-    reg         PS_REG_WR;
-    reg         PS_REG_RD;
-    reg         PS_REG_WR1;
-    reg         PS_REG_RD1;
-    reg  [31:0] PS_REG_DIN;
-    wire [31:0] PS_REG_DOUT;
-    reg  [31:0] PS_RDATA;  // SuppressThisWarning VEditor - not used - just view
-    wire [31:0] PS_REG_DOUT1;
-  initial begin
-    PS_REG_ADDR <= 'bx;
-    PS_REG_WR   <= 0;
-    PS_REG_RD   <= 0;
-    PS_REG_WR1  <= 0;
-    PS_REG_RD1   <= 0;
-    PS_REG_DIN  <= 'bx;
-    PS_RDATA    <= 'bx;
-  end
-  always @ (posedge HCLK) begin
-      if      (PS_REG_RD)  PS_RDATA <= PS_REG_DOUT;
-      else if (PS_REG_RD1) PS_RDATA <= PS_REG_DOUT1;
-  end 
+    wire [31:0] ps_reg_dout0w;
+    wire [31:0] ps_reg_dout0r;
+    wire [31:0] ps_reg_dout1w;
+//    wire [31:0] ps_reg_dout2w; // Unused
+    wire        ps_reg_dvalid0w;
+    wire        ps_reg_dvalid0r;
+    wire        ps_reg_dvalid1w;
+//    wire        ps_reg_dvalid2w; // Unused
+    assign ps_sbus_dout = {32{ps_reg_dvalid0w}} & ps_reg_dout0w &
+                          {32{ps_reg_dvalid0r}} & ps_reg_dout0r &
+                          {32{ps_reg_dvalid1w}} & ps_reg_dout1w;
+//                          & {32{ps_reg_dvalid2w}} & ps_reg_dout2w; 
   
 //    reg [639:0] TEST_TITLE="abcdef"; //S uppressThisWarning VEditor May use again later
   // Simulation signals
@@ -782,13 +742,6 @@ assign #10 gpio_pins[9] = gpio_pins[8];
     wire                [3:0] IRQ_CMPRS_S = IRQ_S[7:4];
     wire                      IRQ_SATA_S =  IRQ_S[8];// SuppressThisWarning VEditor - not used
     
-// Simulation modules interconnection
-//    integer     NUM_WORDS_READ;
-    integer     NUM_WORDS_EXPECTED;
-//    reg  [15:0] ENABLED_CHANNELS = 0; // currently enabled memory channels
-  
-//    reg  [31:0] DEBUG_DATA;    //S uppressThisWarning VEditor : just for simulation viewing
-//    integer     DEBUG_ADDRESS; //S uppressThisWarning VEditor : just for simulation viewing
 
     assign reset_out = RST || x393_i.arst;
     x393 #(
@@ -1242,19 +1195,21 @@ simul_axi_hp_rd #(
         .rcount         (x393_i.ps7_i.SAXIHP0RCOUNT),        // output[7:0] 
         .racount        (x393_i.ps7_i.SAXIHP0RACOUNT),       // output[2:0] 
         .rdissuecap1en  (x393_i.ps7_i.SAXIHP0RDISSUECAP1EN), // input
-        .sim_rd_address (afi_sim_rd_address), // output[31:0] 
-        .sim_rid        (afi_sim_rid), // output[5:0] 
-        .sim_rd_valid   (afi_sim_rd_valid), // input
-        .sim_rd_ready   (afi_sim_rd_ready), // output
-        .sim_rd_data    (afi_sim_rd_data), // input[63:0] 
-        .sim_rd_cap     (afi_sim_rd_cap), // output[2:0] 
-        .sim_rd_qos     (afi_sim_rd_qos), // output[3:0] 
-        .sim_rd_resp    (afi_sim_rd_resp), // input[1:0] 
-        .reg_addr       (PS_REG_ADDR), // input[31:0] 
-        .reg_wr         (PS_REG_WR), // input
-        .reg_rd         (PS_REG_RD), // input
-        .reg_din        (PS_REG_DIN), // input[31:0] 
-        .reg_dout       (PS_REG_DOUT) // output[31:0] 
+        .sim_rd_address (saxihp0_rd_address), // output[31:0] 
+        .sim_rid        (saxihp0_rid), // output[5:0] 
+        .sim_rd_valid   (saxihp0_rd_valid), // input
+        .sim_rd_ready   (saxihp0_rd_ready), // output
+        .sim_rd_data    (saxihp0_rd_data), // input[63:0] 
+        .sim_rd_cap     (saxihp0_rd_cap), // output[2:0] 
+        .sim_rd_qos     (saxihp0_rd_qos), // output[3:0] 
+        .sim_rd_resp    (saxihp0_rd_resp), // input[1:0] 
+        .reg_addr       (ps_sbus_addr), // input[31:0] 
+        .reg_wr         (ps_sbus_wr), // input
+        .reg_rd         (ps_sbus_rd), // input
+        .reg_din        (ps_sbus_din), // input[31:0] 
+        .reg_dout       (ps_reg_dout0r), // output[31:0]
+        .reg_dvalid     (ps_reg_dvalid0r) 
+         
     );
 
 simul_axi_hp_wr #(
@@ -1287,20 +1242,21 @@ simul_axi_hp_wr #(
         .wcount         (x393_i.ps7_i.SAXIHP0WCOUNT),        // output[7:0] 
         .wacount        (x393_i.ps7_i.SAXIHP0WACOUNT),       // output[5:0] 
         .wrissuecap1en  (x393_i.ps7_i.SAXIHP0WRISSUECAP1EN), // input
-        .sim_wr_address (afi_sim_wr_address),                // output[31:0] 
-        .sim_wid        (afi_sim_wid),                       // output[5:0] 
-        .sim_wr_valid   (afi_sim_wr_valid),                  // output
-        .sim_wr_ready   (afi_sim_wr_ready),                  // input
-        .sim_wr_data    (afi_sim_wr_data),                   // output[63:0] 
-        .sim_wr_stb     (afi_sim_wr_stb),                    // output[7:0] 
-        .sim_bresp_latency(afi_sim_bresp_latency),           // input[3:0] 
-        .sim_wr_cap     (afi_sim_wr_cap),                    // output[2:0] 
-        .sim_wr_qos     (afi_sim_wr_qos),                    // output[3:0] 
-        .reg_addr       (PS_REG_ADDR),                       // input[31:0] 
-        .reg_wr         (PS_REG_WR),                         // input
-        .reg_rd         (PS_REG_RD),                         // input
-        .reg_din        (PS_REG_DIN),                        // input[31:0] 
-        .reg_dout       (PS_REG_DOUT)                        // output[31:0] 
+        .sim_wr_address (saxihp0_wr_address),                // output[31:0] 
+        .sim_wid        (saxihp0_wid),                       // output[5:0] 
+        .sim_wr_valid   (saxihp0_wr_valid),                  // output
+        .sim_wr_ready   (saxihp0_wr_ready),                  // input
+        .sim_wr_data    (saxihp0_wr_data),                   // output[63:0] 
+        .sim_wr_stb     (saxihp0_wr_stb),                    // output[7:0] 
+        .sim_bresp_latency(saxihp0_bresp_latency),           // input[3:0] 
+        .sim_wr_cap     (saxihp0_wr_cap),                    // output[2:0] 
+        .sim_wr_qos     (saxihp0_wr_qos),                    // output[3:0] 
+        .reg_addr       (ps_sbus_addr),                      // input[31:0] 
+        .reg_wr         (ps_sbus_wr),                        // input
+        .reg_rd         (ps_sbus_rd),                        // input
+        .reg_din        (ps_sbus_din),                       // input[31:0] 
+        .reg_dout       (ps_reg_dout0w),                     // output[31:0] 
+        .reg_dvalid     (ps_reg_dvalid0w)                    // output 
     );
     // afi1 - from compressor 
 simul_axi_hp_wr #(
@@ -1333,26 +1289,27 @@ simul_axi_hp_wr #(
         .wcount         (x393_i.ps7_i.SAXIHP1WCOUNT),        // output[7:0] 
         .wacount        (x393_i.ps7_i.SAXIHP1WACOUNT),       // output[5:0] 
         .wrissuecap1en  (x393_i.ps7_i.SAXIHP1WRISSUECAP1EN), // input
-        .sim_wr_address (afi1_sim_wr_address),                // output[31:0] 
-        .sim_wid        (afi1_sim_wid),                       // output[5:0] 
-        .sim_wr_valid   (afi1_sim_wr_valid),                  // output
-        .sim_wr_ready   (afi1_sim_wr_ready),                  // input
-        .sim_wr_data    (afi1_sim_wr_data),                   // output[63:0] 
-        .sim_wr_stb     (afi1_sim_wr_stb),                    // output[7:0] 
-        .sim_bresp_latency(afi1_sim_bresp_latency),           // input[3:0] 
-        .sim_wr_cap     (afi1_sim_wr_cap),                    // output[2:0] 
-        .sim_wr_qos     (afi1_sim_wr_qos),                    // output[3:0] 
-        .reg_addr       (PS_REG_ADDR),                        // input[31:0] 
-        .reg_wr         (PS_REG_WR1),                         // input
-        .reg_rd         (PS_REG_RD1),                         // input
-        .reg_din        (PS_REG_DIN),                         // input[31:0] 
-        .reg_dout       (PS_REG_DOUT1)                        // output[31:0] 
+        .sim_wr_address (saxihp1_wr_address),                // output[31:0] 
+        .sim_wid        (saxihp1_wid),                       // output[5:0] 
+        .sim_wr_valid   (saxihp1_wr_valid),                  // output
+        .sim_wr_ready   (saxihp1_wr_ready),                  // input
+        .sim_wr_data    (saxihp1_wr_data),                   // output[63:0] 
+        .sim_wr_stb     (saxihp1_wr_stb),                    // output[7:0] 
+        .sim_bresp_latency(saxihp1_bresp_latency),           // input[3:0] 
+        .sim_wr_cap     (saxihp1_wr_cap),                    // output[2:0] 
+        .sim_wr_qos     (saxihp1_wr_qos),                    // output[3:0] 
+        .reg_addr       (ps_sbus_addr),                       // input[31:0] 
+        .reg_wr         (ps_sbus_wr),                         // input
+        .reg_rd         (ps_sbus_rd),                         // input
+        .reg_din        (ps_sbus_din),                        // input[31:0] 
+        .reg_dout       (ps_reg_dout1w),                      // output[31:0]
+        .reg_dvalid     (ps_reg_dvalid1w)                     // output
     );
     
     // SAXI_GP0 - histograms to system memory
     simul_saxi_gp_wr simul_saxi_gp0_wr_i (
         .rst               (RST),                         // input
-        .aclk              (SAXI_GP0_CLK),                // input
+        .aclk              (saxi0_aclk),                  // input
         .aresetn           (), // output
         .awaddr            (x393_i.ps7_i.SAXIGP0AWADDR),  // input[31:0] 
         .awvalid           (x393_i.ps7_i.SAXIGP0AWVALID), // input
@@ -1375,15 +1332,15 @@ simul_axi_hp_wr #(
         .bready            (x393_i.ps7_i.SAXIGP0BREADY),  // input
         .bid               (x393_i.ps7_i.SAXIGP0BID),     // output[5:0] 
         .bresp             (x393_i.ps7_i.SAXIGP0BRESP),   // output[1:0] 
-        .sim_wr_address    (saxi_gp0_sim_wr_address),     // output[31:0] 
-        .sim_wid           (saxi_gp0_sim_wid),            // output[5:0] 
-        .sim_wr_valid      (saxi_gp0_sim_wr_valid),       // output
-        .sim_wr_ready      (saxi_gp0_sim_wr_ready),       // input
-        .sim_wr_data       (saxi_gp0_sim_wr_data),        // output[31:0] 
-        .sim_wr_stb        (saxi_gp0_sim_wr_stb),         // output[3:0] 
-        .sim_wr_size       (saxi_gp0_sim_wr_size),        // output[1:0] 
-        .sim_bresp_latency (saxi_gp0_sim_bresp_latency),  // input[3:0] 
-        .sim_wr_qos        (saxi_gp0_sim_wr_qos)          // output[3:0] 
+        .sim_wr_address    (saxigp0_wr_address),          // output[31:0] 
+        .sim_wid           (saxigp0_wid),                 // output[5:0] 
+        .sim_wr_valid      (saxigp0_wr_valid),            // output
+        .sim_wr_ready      (saxigp0_wr_ready),            // input
+        .sim_wr_data       (saxigp0_wr_data),             // output[31:0] 
+        .sim_wr_stb        (saxigp0_wr_stb),              // output[3:0] 
+        .sim_wr_size       (saxigp0_wr_size),             // output[1:0] 
+        .sim_bresp_latency (saxigp0_bresp_latency),       // input[3:0] 
+        .sim_wr_qos        (saxigp0_wr_qos)               // output[3:0] 
     );
 
 
@@ -1723,13 +1680,17 @@ simul_axi_hp_wr #(
         
         RST_CLEAN = 1;
         RST = 1'bx;
+        $display("%t %s:%d RST=1'bx",$time,`__FILE__,`__LINE__); 
         #500;
         RST = 1'b1;
+        $display("%t %s:%d RST=1'b1",$time,`__FILE__,`__LINE__); 
         #9000; // same as glbl
         repeat (20) @(posedge CLK) ;
         RST =1'b0;
+        $display("%t %s:%d RST=1'b0",$time,`__FILE__,`__LINE__); 
         @(posedge CLK) ;
         RST_CLEAN = 0;
+        $display("%t %s:%d RST_CLEAN=1'b0",$time,`__FILE__,`__LINE__); 
     // IRQ-related
         IRQ_EN = 1;
         IRQ_M = 0;
@@ -1737,9 +1698,11 @@ simul_axi_hp_wr #(
         IRQ_CMPRS_DONE = 0;
         IRQ_SATA_DONE =  0;
         #5000;
-        $finish;
+//    Need to killall vvp      
+//        $finish;
     end
-
+//localparam file = `__FILE__;
+//localparam line = `__LINE__;
 assign x393_i.ps7_i.FCLKCLK=        {4{CLK}};
 assign x393_i.ps7_i.FCLKRESETN=     {RST,~RST,RST,~RST};
     

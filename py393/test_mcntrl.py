@@ -31,10 +31,13 @@ __version__ = "3.0+"
 __maintainer__ = "Andrey Filippov"
 __email__ = "andrey@elphel.com"
 __status__ = "Development"
+
 '''
 ./test_mcntrl.py -v -f../system_defines.vh -f ../includes/x393_parameters.vh  ../includes/x393_localparams.vh -pNEWPAR=\'h3ff -c write_mem 0x377 25 -c read_mem 0x3ff -i -d aaa=bbb -d ccc=ddd
 
 '''
+
+import readline
 import sys
 import os
 import inspect
@@ -94,15 +97,7 @@ class CLIError(Exception):
         return self.msg
     def __unicode__(self):
         return self.msg
-'''
-    for name in x393_mem.X393Mem.__dict__:
-        if hasattr((x393_mem.X393Mem.__dict__[name]), '__call__') and not (name[0]=='_'):
-            func_args=x393_mem.X393Mem.__dict__[name].func_code.co_varnames[1:x393_mem.X393Mem.__dict__[name].func_code.co_argcount]
-#            print (name+": "+str(x393_mem.X393Mem.__dict__[name]))
-#            print ("args="+str(func_args))
-            print (name+": "+str(func_args))
 
-'''
 def extractTasks(obj,inst):
     for name in obj.__dict__:
         if hasattr((obj.__dict__[name]), '__call__') and not (name[0]=='_'):
@@ -221,7 +216,7 @@ USAGE
         parser.add_argument("-p", "--parameter",  dest="parameters", action="append", default=[], help="Define parameter(s) as name=value" , nargs='*' )
         parser.add_argument("-c", "--command",  dest="commands", action="append", default=[], help="execute command" , nargs='*')
         parser.add_argument("-i", "--interactive", dest="interactive", action="store_true", help="enter interactive mode [default: %(default)s]")
-        parser.add_argument("-s", "--simulated", dest="simulated", action="store_true", help="Simulated mode (no real hardware I/O) [default: %(default)s]")
+        parser.add_argument("-s", "--simulated", dest="simulated", action="store", help="Simulated mode (no real hardware I/O) [default: %(default)s]")
         parser.add_argument("-x", "--exceptions", dest="exceptions", action="count", help="Exit on more exceptions [default: %(default)s]")
         parser.add_argument("-l", "--localparams",  dest="localparams", action="store", default="",
                              help="path were modified parameters are saved [default: %(default)s]", metavar="path")
@@ -236,9 +231,11 @@ USAGE
             
         QUIET = (1,0)[args.exceptions]
 #        print ("args.exception=%d, QUIET=%d"%(args.exceptions,QUIET))
+        print("args.simulated = ",args.simulated)
+        print("args = ",args)
         if not args.simulated:
             if not os.path.exists("/dev/xdevcfg"):
-                args.simulated=True
+                args.simulated="simulated"
                 print("Program is forced to run in SIMULATED mode as '/dev/xdevcfg' does not exist (not a camera)")
         #print("--- defines=%s"%    str(args.defines))
         #print("--- paths=%s"%      str(args.paths))
@@ -401,7 +398,7 @@ USAGE
         rslt= execTask(cmdLine)
         print ('    Result: '+str(rslt))
     '''       
-#TODO: use readline
+#TODO: use readline 
     '''
     if args.socket_port:
         PORT = int(args.socket_port) # 8888
@@ -424,8 +421,10 @@ USAGE
         line =""
         while True:
             soc_conn = None
-            prompt = 'x393%s +%3.3fs--> '%(('','(simulated)')[args.simulated],(time.time()-tim))
+            prompt = 'x393 (%s) +%3.3fs--> '%(args.simulated,(time.time()-tim)) if args.simulated else 'x393 +%3.3fs--> '%(time.time()-tim)
+            #prompt = 'x393%s +%3.3fs--> '%(args.simulated,(time.time()-tim))
             if socket_conn:
+                print ("***socket_conn***")
                 print(prompt , end="")
                 sys.stdout.flush()
                 if (args.socket_port):

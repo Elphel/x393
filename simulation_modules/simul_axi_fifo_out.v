@@ -64,34 +64,37 @@ module simul_axi_fifo
   integer            out_count;
   reg    [LATENCY:0] latency_delay_r;
   
-  wire [LATENCY+1:0] latency_delay={latency_delay_r,load};             
   wire               out_inc=latency_delay[LATENCY];
+  wire               input_ready_w =  in_count<DEPTH;
+  wire               load_and_ready = load & input_ready_w; // Masked load with input_ready 07/06/2016
+  wire [LATENCY+1:0] latency_delay={latency_delay_r,load_and_ready};             
   
   assign data_out=    fifo[out_address];
   assign valid=       out_count!=0;
-  assign input_ready= in_count<DEPTH;
+  
+  assign input_ready= input_ready_w;
 //  assign out_inc={
 
   always @ (posedge clk or posedge reset) begin
     if (reset) latency_delay_r <= 0;
     else       latency_delay_r <= latency_delay[LATENCY:0];
 
-    if    (reset)  in_address <= 0;
-    else if (load) in_address <= (in_address==(FIFO_DEPTH-1))?0:in_address+1;
+    if      (reset)          in_address <= 0;
+    else if (load_and_ready) in_address <= (in_address==(FIFO_DEPTH-1))?0:in_address+1;
 
     if    (reset)            out_address <= 0;
     else if (valid && ready) out_address <= (out_address==(FIFO_DEPTH-1))?0:out_address+1;
     
-    if    (reset)                       in_count <= 0;
-    else if (!(valid && ready) && load) in_count <= in_count+1;
-    else if (valid && ready && !load)   in_count <= in_count-1;
+    if    (reset)                                 in_count <= 0;
+    else if (!(valid && ready) && load_and_ready) in_count <= in_count+1;
+    else if (valid && ready && !load_and_ready)   in_count <= in_count-1;
 
     if    (reset)                          out_count <= 0;
     else if (!(valid && ready) && out_inc) out_count <= out_count+1;
     else if (valid && ready && !out_inc)   out_count <= out_count-1;
   end
   always @ (posedge clk) begin
-    if (load) fifo[in_address] <= data_in;
+    if (load_and_ready) fifo[in_address] <= data_in;
   end
   
 endmodule

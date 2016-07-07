@@ -87,7 +87,8 @@ module  simul_axi_hp_wr#(
     input         reg_wr,
     input         reg_rd,
     input  [31:0] reg_din,
-    output [31:0] reg_dout
+    output [31:0] reg_dout,
+    output        reg_dvalid    
 );
 //    localparam ADDRESS_BITS=32;
     localparam AFI_BASECTRL= 32'hf8008000+ (HP_PORT << 12);
@@ -179,6 +180,10 @@ UPDATE: Xilinx docs say that (AR/AW)CACHE is ignored
                           {25'b0,wrIssueCap1,1'b0,wrIssueCap0}:
                       ( (reg_rd && (reg_addr==AFI_WRQOS))?
                           {28'b0,staticQos}:32'bz)));
+    assign reg_dvalid = (reg_rd && ((reg_addr==AFI_WRDATAFIFO_LEVEL) ||
+                                   (reg_addr==AFI_WRCHAN_CTRL) ||
+                                   (reg_addr==AFI_WRCHAN_ISSUINGCAP) ||
+                                   (reg_addr==AFI_WRQOS))) ? 1 : 0;
 
     always @ (posedge aclk or posedge rst) begin
         if (rst) begin

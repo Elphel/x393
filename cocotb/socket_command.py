@@ -68,7 +68,7 @@ class SocketCommand():
             self.arguments=None
         
 class x393Client():
-    def __init__(self, port=7777, host='localhost'):
+    def __init__(self, host='localhost', port=7777):
         self.PORT = port
         self.HOST = host   # Symbolic name meaning all available interfaces
         self.cmd= SocketCommand()
@@ -87,11 +87,12 @@ class x393Client():
         print("stop->",self.communicate(self.cmd.toJSON()))
     def write(self, address, data):
         self.cmd.setWrite([address,data])
-        print("write->",self.communicate(self.cmd.toJSON()))
+        rslt = self.communicate(self.cmd.toJSON())
+        print("write->",rslt)
     def read(self, address):
         self.cmd.setRead(address)
-        print("read->args",self.cmd.getArgs())
+#        print("read->args",self.cmd.getArgs())
         rslt = self.communicate(self.cmd.toJSON())
-        print("read->",rslt)
+        #print("read->",rslt)
         return json.loads(rslt)
         

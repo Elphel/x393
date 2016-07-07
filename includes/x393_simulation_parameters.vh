@@ -36,6 +36,8 @@
  * with at least one of the Free Software programs.
  */
     , // to continue previous parameter list
+    parameter NUM_INTERRUPTS =        9,
+    
     parameter integer AXI_RDADDR_LATENCY= 2, // 2, //2, //2,
     parameter integer AXI_WRADDR_LATENCY= 1, // 1, //2, //4,
     parameter integer AXI_WRDATA_LATENCY= 2, // 1, //1, //1
@@ -113,6 +115,8 @@
     parameter FRAME_WIDTH_ROUND_BITS =   9,  // multiple of 512 pixels (32 16-byte bursts) (11 - ful SDRAM page)
     
     parameter WOI_WIDTH=                 64,
+    parameter WOI_HEIGHT=                32,
+         
     parameter QUADRANTS_PXD_HACT_VACT =  6'h01, // 2 bits each: data-0, hact - 1, vact - 2 
                                                // 90-degree shifts for data [1:0], hact [3:2] and vact [5:4]
     parameter SENSOR_PRIORITY =          1000

@@ -1,21 +1,25 @@
 [*]
 [*] GTKWave Analyzer v3.3.66 (w)1999-2015 BSI
-[*] Mon Jul  4 03:19:05 2016
+[*] Wed Jul  6 17:53:54 2016
 [*]
-[dumpfile] "/home/eyesis/git/x393-neon/simulation/x393_dut-20160703211758949.fst"
-[dumpfile_mtime] "Mon Jul  4 03:18:33 2016"
-[dumpfile_size] 639043
+[dumpfile] "/home/eyesis/git/x393-neon/simulation/x393_dut-20160706092756207.fst"
+[dumpfile_mtime] "Wed Jul  6 16:46:27 2016"
+[dumpfile_size] 26909872
 [savefile] "/home/eyesis/git/x393-neon/cocotb/x393_cocotb_02.sav"
-[timestart] 10924700
+[timestart] 0
 [size] 1836 1171
 [pos] 1920 0
-*-16.699684 11530000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
-[sst_width] 204
+*-24.853212 32750000 32750000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] x393_dut.
+[treeopen] x393_dut.simul_axi_master_wdata_i.
+[sst_width] 357
 [signals_width] 238
 [sst_expanded] 1
-[sst_vpaned_height] 344
-@821
+[sst_vpaned_height] 484
+@820
 x393_dut.TEST_TITLE[639:0]
+@c00200
+-maxi0
 @28
 x393_dut.dutm0_aclk
 @22
@@ -86,6 +90,8 @@ x393_dut.dutm0_wid_w[11:0]
 x393_dut.dutm0_wlast
 x393_dut.dutm0_wlast_w
 x393_dut.dutm0_wready
+@200
+-
 @22
 x393_dut.dutm0_wstb[3:0]
 x393_dut.dutm0_wstb_w[3:0]
@@ -95,5 +101,81 @@ x393_dut.dutm0_wvalid_w
 @22
 x393_dut.dutm0_xtra_blag[3:0]
 x393_dut.dutm0_xtra_rdlag[3:0]
+@1401200
+-maxi0
+@800200
+-SENSOR1
+@28
+x393_dut.simul_sensor12bits_i.MCLK
+@22
+x393_dut.simul_sensor12bits_i.D[11:0]
+@28
+x393_dut.simul_sensor12bits_i.HACT
+x393_dut.simul_sensor12bits_i.MRST
+@29
+x393_dut.simul_sensor12bits_i.ARST
+@28
+x393_dut.simul_sensor12bits_i.NMRST
+x393_dut.simul_sensor12bits_i.stopped
+x393_dut.simul_sensor12bits_i.DCLK
+@200
+-
+@1000200
+-SENSOR1
+@800200
+-axi_master_wdata
+@28
+x393_dut.simul_axi_master_wdata_i.clk
+x393_dut.simul_axi_master_wdata_i.ready
+x393_dut.simul_axi_master_wdata_i.reset
+x393_dut.simul_axi_master_wdata_i.set_cmd
+@22
+x393_dut.simul_axi_master_wdata_i.wdata[31:0]
+x393_dut.simul_axi_master_wdata_i.wdata_in[31:0]
+x393_dut.simul_axi_master_wdata_i.wdata_out[31:0]
+x393_dut.simul_axi_master_wdata_i.wid[11:0]
+x393_dut.simul_axi_master_wdata_i.wid_in[11:0]
+x393_dut.simul_axi_master_wdata_i.wid_out[11:0]
+@28
+x393_dut.simul_axi_master_wdata_i.wlast
+x393_dut.simul_axi_master_wdata_i.wlast_in
+x393_dut.simul_axi_master_wdata_i.wlast_out
+x393_dut.simul_axi_master_wdata_i.wready
+@22
+x393_dut.simul_axi_master_wdata_i.wstrb[3:0]
+x393_dut.simul_axi_master_wdata_i.wstrb_in[3:0]
+x393_dut.simul_axi_master_wdata_i.wstrb_out[3:0]
+@28
+x393_dut.simul_axi_master_wdata_i.wvalid
+x393_dut.simul_axi_master_wdata_i.wvalid_out
+@200
+-
+@800200
+-simul_axi_fifo
+@8028
+x393_dut.simul_axi_master_wdata_i.simul_axi_fifo_i.clk
+@8022
+x393_dut.simul_axi_master_wdata_i.simul_axi_fifo_i.data_in[48:0]
+x393_dut.simul_axi_master_wdata_i.simul_axi_fifo_i.data_out[48:0]
+x393_dut.simul_axi_master_wdata_i.simul_axi_fifo_i.in_address
+x393_dut.simul_axi_master_wdata_i.simul_axi_fifo_i.in_count
+@8028
+x393_dut.simul_axi_master_wdata_i.simul_axi_fifo_i.input_ready
+@8022
+x393_dut.simul_axi_master_wdata_i.simul_axi_fifo_i.latency_delay[3:0]
+@8028
+x393_dut.simul_axi_master_wdata_i.simul_axi_fifo_i.latency_delay_r[2:0]
+x393_dut.simul_axi_master_wdata_i.simul_axi_fifo_i.load
+@8022
+x393_dut.simul_axi_master_wdata_i.simul_axi_fifo_i.out_address
+x393_dut.simul_axi_master_wdata_i.simul_axi_fifo_i.out_count
+@8028
+x393_dut.simul_axi_master_wdata_i.simul_axi_fifo_i.out_inc
+x393_dut.simul_axi_master_wdata_i.simul_axi_fifo_i.ready
+x393_dut.simul_axi_master_wdata_i.simul_axi_fifo_i.reset
+x393_dut.simul_axi_master_wdata_i.simul_axi_fifo_i.valid
+@1000200
+-simul_axi_fifo
+-axi_master_wdata
 [pattern_trace] 1
 [pattern_trace] 0

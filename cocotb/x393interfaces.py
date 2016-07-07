@@ -60,8 +60,11 @@ from cocotb.drivers import BusDriver
 from cocotb.result import ReturnValue
 from cocotb.binary import BinaryValue
 
+import re
 import binascii
 import array
+import struct
+
 #channels
 AR_CHN="AR"
 AW_CHN="AW"
@@ -69,9 +72,283 @@ R_CHN="R"
 W_CHN="W"
 B_CHN="B"
 
+def _float_signals(self,signals):
+    if not isinstance (signals,(list,tuple)):
+        signals = (signals,)
+    for signal in signals:    
+        v = signal.value
+        v.binstr = "z" * len(signal)
+        signal <= v
+
 class MAXIGPReadError(Exception):
 #    print ("MAXIGPReadError")
     pass
+
+class PSBus(BusDriver):
+    """
+    Small subset of Zynq registers, used to access SAXI_HP* registers
+    """
+    _signals=[ # i/o from the DUT side
+        clk,    # output    
+        addr,   # input [31:0]
+        wr,     # input
+        rd,     # input
+        din,    # input [31:0]
+        dout]   #output [31:0]
+    def __init__(self, entity, name, clock):
+        BusDriver.__init__(self, entity, name, clock)
+        self.busy_channel = Lock("%s_busy"%(name))
+        self.bus.wr.setimmediatevalue(0)
+        self.bus.rd.setimmediatevalue(0)
+        _float_signals((self.bus.addr, self.bus.din))
+
+    @cocotb.coroutine
+    def write_reg(self,addr,data):
+        yield self.busy_channel.acquire()
+        #Only wait if it is too late (<1/2 cycle)
+        if not int(self.clock):
+            yield RisingEdge(self.clock)
+        self.bus.addr <= addr
+        self.bus.din <= data
+        self.bus.wr <= 1
+        yield RisingEdge(self.clock)
+        self.bus.wr <= 0
+        _float_signals((self.bus.addr, self.bus.din))
+        self.busy_channel.release()
+
+    @cocotb.coroutine
+    def read_reg(self,addr):
+        yield self.busy_channel.acquire()
+        #Only wait if it is too late (<1/2 cycle)
+        if not int(self.clock):
+            yield RisingEdge(self.clock)
+        self.bus.addr <= addr
+        self.bus.rd <= 1
+        yield RisingEdge(self.clock)
+        try:
+            data = self.bus.dout.value.integer
+        except:
+            bv = self.bus.dout.value
+            bv.binstr = re.sub("[^1]","0",bv.binstr)
+            data = bv.integer
+        self.bus.rd <= 0
+        _float_signals((self.bus.addr, ))
+        self.busy_channel.release()
+        raise ReturnValue(data)
+
+class SAXIWrSim(BusDriver):
+    """
+    Connects to host side of simul_axi_wr (just writes to system memory) (both GP and HP)
+    No locks are used, single instance should be connected to a particular port
+    """
+    _signals=[ # i/o from the DUT side
+        # read address channel
+        "wr_address",    # output[31:0] 
+        "wid",           # output[5:0] 
+        "wr_valid",      # output
+        "wr_ready",      # input
+        "wr_data",       # output[63:0] 
+        "wr_stb",        # output[7:0] 
+        "bresp_latency"] # input[3:0]  // just constant
+#        "wr_cap",       # output[2:0]
+#        "wr_qos"]       # output[3:0]
+    _fmt=None
+    _memfile = None
+    _data_bytes = 8
+    _address_lsb = 3 
+    def __init__(self, entity, name, clock, mempath, memhigh=0x40000000, data_bytes=8, autoflush=True, blatency=5):
+        """
+        @param entity Device under test
+        @param name port names prefix (DUT has I/O ports <name>_<signal>
+        @clock clock that drives this interface
+        @param mempath operation system path of the memory image (1GB now - 0..0x3fffffff) 
+        @param memhigh memory high address
+        @param data_bytes data width, in bytes
+        @param autoflush flush file after each write
+        @param blatency  number of cycles to delay write response (b) channel
+        """
+        BusDriver.__init__(self, entity, name, clock)
+        self.log.debug ("SAXIWrSim.__init__(): super done")
+        self._memfile=open(mempath, 'w+')
+        #Extend to full size
+        self._memfile.seek(memhigh-1)
+        try:
+            self._memfile.read(1)
+        except:
+            self._memfile.seek(memhigh-1)
+            self._memfile.write(chr(0))
+            self._memfile.flush()
+        self.autoflush=autoflush
+        self.bus.wr_ready.setimmediatevalue(1) # always ready
+        self.bresp_latency = blatency
+        if data_bytes > 4:
+            self._data_bytes = 8
+            self._address_lsb = 3
+            self._fmt= "<Q"
+        elif data_bytes > 2:
+            self._data_bytes = 4
+            self._address_lsb = 2
+            self._fmt= "<L"
+        elif data_bytes > 1:
+            self._data_bytes = 2
+            self._address_lsb = 1
+            self._fmt= "<H"
+        else:
+            self._data_bytes = 1
+            self._address_lsb = 0
+            self._fmt= "<B"
+            
+    def flush(self):
+        self._memfile.flush()
+            
+    @cocotb.coroutine
+    def saxi_wr_run(self):
+        while True:
+            if not self.bus.wr_ready.value:
+                break #exit
+            while True:
+                yield ReadOnly()
+                if self.bus.wr_valid.value:
+                    break
+                yield RisingEdge(self.clock)
+#            yield RisingEdge(self.clock)
+            #Here write data
+            try:
+                address = self.bus.wr_address.value.integer
+            except:
+                self.log.warning ("SAXIWrSim() tried to write to unknown memory address")
+                adress = None
+                yield RisingEdge(self.clock)
+                continue
+            if address & ((1 << self._address_lsb) - 1):
+                self.log.warning ("SAXIWrSim() Write memory address is not aligned to %d-byte words"%(self._data_bytes))
+                address = (address >> self._address_lsb) << self._address_lsb;
+            self._memfile.seek(address)
+
+            try:
+                data = self.bus.wr_data.value.integer
+            except:
+                self.log.warning ("SAXIWrSim() writing undefined data")
+                bv = self.bus.wr_data.value
+                bv.binstr = re.sub("[^1]","0",bv.binstr)
+                data = bv.integer
+            sdata=struct.pack(self._fmt,data)
+            bv = self.bus.wr_data.value    
+            bv.binstr= re.sub("[^0]","1",bv.binstr) # only 0 suppresses write to this byte
+            while len(bv.binstr) < self._data_bytes: # very unlikely
+                bv.binstr = "1"+bv.binstr
+            if bv.integer == self._data_bytes:
+                self._memfile.write(sdata)
+            else:
+                for i in range (self._data_bytes):
+                    if bv.binstr[-1-i] != 0:
+                       self._memfile.write(sdata[i])
+                    else:
+                       self._memfile.seek(1,1)
+            if self.autoflush:
+                self._memfile.flush()
+            self.log.debug ("SAXIWrSim() 0x%x -> 0x%x, mask = 0x%x"%(address,data,bv.integer))
+            yield RisingEdge(self.clock)
+            
+            
+class SAXIRdSim(BusDriver):
+    """
+    Connects to host side of simul_axi_rd (just writes to system memory) (both GP and HP)
+    No locks are used, single instance should be connected to a particular port
+    """
+    _signals=[ # i/o from the DUT side
+        # read address channel
+        "rd_address",    # output[31:0] 
+        "rid",           # output[5:0] 
+        "rd_valid",      # input
+        "rd_ready",      # output
+        "rd_data",       # input[63:0] 
+        "rd_resp"]       # input[1:0] 
+    _fmt=None
+    _memfile = None
+    _data_bytes =  8
+    _address_lsb = 3 
+    def __init__(self, entity, name, clock, mempath, memhigh=0x40000000, data_bytes=8):
+        """
+        @param entity Device under test
+        @param name port names prefix (DUT has I/O ports <name>_<signal>
+        @clock clock that drives this interface
+        @param mempath operation system path of the memory image (1GB now - 0..0x3fffffff) 
+        @param memhigh memory high address
+        @param data_bytes data width, in bytes
+        
+        """
+        BusDriver.__init__(self, entity, name, clock)
+        self.log.debug ("SAXIWrSim.__init__(): super done")
+        self._memfile=open(mempath, 'r+')
+        self.bus.rd_valid.setimmediatevalue(0)
+
+        if data_bytes > 4:
+            self._data_bytes = 8
+            self._address_lsb = 3
+            self._fmt= "<Q"
+        elif data_bytes > 2:
+            self._data_bytes = 4
+            self._address_lsb = 2
+            self._fmt= "<L"
+        elif data_bytes > 1:
+            self._data_bytes = 2
+            self._address_lsb = 1
+            self._fmt= "<H"
+        else:
+            self._data_bytes = 1
+            self._address_lsb = 0
+            self._fmt= "<B"
+            
+    @cocotb.coroutine
+    def saxi_rd_run(self):
+        while True:
+#            if not self.bus.rd_valid.value:
+#                break #exit
+            while True:
+                yield FallingEdge(self.clock)
+                if self.bus.rd_ready.value:
+                    break
+            self.bus.rd_valid  <= 1
+#            yield RisingEdge(self.clock)
+            #Here write data
+            try:
+                address = self.bus.rd_address.value.integer
+            except:
+                self.log.warning ("SAXIRdSim() tried to write to unknown memory address")
+                adress = None
+            if address & ((1 << self._address_lsb) - 1):
+                self.log.warning ("SAXIRdSim() Write memory address is not aligned to %d-byte words"%(self._data_bytes))
+                address = (address >> self._address_lsb) << self._address_lsb;
+            self._memfile.seek(address)
+            rresp=0
+            try:
+                rs = self._memfile.read(self._data_bytes)
+            except:
+                self.log.warning ("SAXIRdSim() failed reading %d bytes form 0x%08x"%(self._data_bytes, address))
+                rs = None
+            if not rs is None:
+                try:
+                    data = struct.unpack(self._fmt,rs)
+                except:
+                    self.log.warning ("SAXIRdSim():Can not unpack memory data @ address 0x%08x"%(address))
+                    data=None
+            if (not address is None) and (not data is None):
+                self.bus.rd_resp <= 0
+                self.bus.rd_data <= data
+            else:
+                self.bus.rd_resp <= 2 # error
+                _float_signals((self.bus.rd_data,))
+                
+            self.bus.rd_valid <= 1
+            yield RisingEdge(self.clock)
+            self.bus.rd_valid <= 0
+            _float_signals((self.bus.rd_data,self.bus.rd_resp))
+
+
+
+
+    
 class MAXIGPMaster(BusDriver):
     """
     Implements subset of AXI4 used in x393 project for Xilinx Zynq MAXIGP*
@@ -158,13 +435,6 @@ class MAXIGPMaster(BusDriver):
         for chn in self._channels:
             self.log.debug ("MAXIGPMaster.__init__(): chn = %s"%(chn))
             self.busy_channels[chn]=Lock("%s_%s_busy"%(name,chn))
-    def _float_signals(self,signals):
-        if not isinstance (signals,(list,tuple)):
-            signals = (signals,)
-        for signal in signals:    
-            v = signal.value
-            v.binstr = "z" * len(signal)
-            signal <= v
 
     @cocotb.coroutine
     def _send_write_address(self, address, delay, id, dlen, dsize, burst):
@@ -209,7 +479,7 @@ class MAXIGPMaster(BusDriver):
         yield RisingEdge(self.clock)
         self.bus.awvalid <= 0
         # FLoat all assigned bus signals but awvalid
-        self._float_signals((self.bus.awaddr,self.bus.awid, self.bus.awlen, self.bus.awsize,self.bus.awburst))
+        _float_signals((self.bus.awaddr,self.bus.awid, self.bus.awlen, self.bus.awsize,self.bus.awburst))
         self.busy_channels[AW_CHN].release()
         self.log.debug  ("MAXIGPMaster._send_write_address(): released lock %s"%(AW_CHN))
 
@@ -256,9 +526,9 @@ class MAXIGPMaster(BusDriver):
         yield RisingEdge(self.clock)
         self.bus.arvalid <= 0
         # FLoat all assigned bus signals but awvalid
-        self._float_signals((self.bus.araddr,self.bus.arid, self.bus.arlen, self.bus.arsize,self.bus.arburst))
+        _float_signals((self.bus.araddr,self.bus.arid, self.bus.arlen, self.bus.arsize,self.bus.arburst))
         self.busy_channels[AR_CHN].release()
-        self.log.debug  ("MAXIGPMaster._send_read_address(): released lock %s"%(AW_CHN))
+        self.log.debug  ("MAXIGPMaster._send_read_address(): released lock %s"%(AR_CHN))
 
     @cocotb.coroutine
     def _send_write_data(self, data, wrstb,  delay, id, dsize):
@@ -294,7 +564,7 @@ class MAXIGPMaster(BusDriver):
             yield RisingEdge(self.clock)
         self.bus.wvalid <= 0
         # FLoat all assigned bus signals but wvalid
-        self._float_signals((self.bus.wdata,self.bus.wstb,self.bus.wlast))
+        _float_signals((self.bus.wdata,self.bus.wstb,self.bus.wlast))
         self.busy_channels[W_CHN].release()
         self.log.debug ("MAXIGPMaster._send_write_data(): released lock %s"%(W_CHN))
         raise ReturnValue(dsize)
@@ -323,7 +593,12 @@ class MAXIGPMaster(BusDriver):
             while True:
                 yield ReadOnly()
                 if self.bus.rvalid.value:
-                    data.append(self.bus.rdata.value.integer)
+                    try:
+                        data.append(self.bus.rdata.value.integer)
+                    except:
+                        bv = self.bus.rdata.value
+                        bv.binstr = re.sub("[^1]","0",bv.binstr)
+                        data.append(bv.integer)
                     rid = int(self.bus.rid.value)  
                     if rid != id:
                         self.log.error("Read data 0x%x ID mismatch - expected: 0x%x, got 0x%x"%(address+i,id, rid))
@@ -332,7 +607,7 @@ class MAXIGPMaster(BusDriver):
             yield RisingEdge(self.clock)
         self.bus.rready <= 0
         # FLoat all assigned bus signals but wvalid
-#        self._float_signals((self.bus.wdata,self.bus.wstb,self.bus.wlast))
+#        _float_signals((self.bus.wdata,self.bus.wstb,self.bus.wlast))
         self.busy_channels[R_CHN].release()
         self.log.debug ("MAXIGPMaster._get_read_data(): released lock %s"%(R_CHN))
         raise ReturnValue(data)
@@ -355,7 +630,7 @@ class MAXIGPMaster(BusDriver):
         @param address_latency latency sending address in clock cycles
         @param data_latency latency sending data in clock cycles
         """
-                #Only wait if it is too late (<1/2 cycle)
+        #Only wait if it is too late (<1/2 cycle)
         if not int(self.clock):
             yield RisingEdge(self.clock)
 

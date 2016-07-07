@@ -81,7 +81,8 @@ module  simul_axi_hp_rd #(
     input         reg_wr,
     input         reg_rd,
     input  [31:0] reg_din,
-    output [31:0] reg_dout
+    output [31:0] reg_dout,
+    output        reg_dvalid // register output data valid
 );
     localparam AFI_BASECTRL= 32'hf8008000+ (HP_PORT << 12);
     localparam AFI_RDCHAN_CTRL= AFI_BASECTRL + 'h00;
@@ -162,7 +163,10 @@ module  simul_axi_hp_rd #(
                           {25'b0,rdIssueCap1,1'b0,rdIssueCap0}:
                       ( (reg_rd && (reg_addr==AFI_RDQOS))?
                           {28'b0,rdStaticQos}:32'bz)));
-
+    assign reg_dvalid = (reg_rd && ((reg_addr==AFI_RDDATAFIFO_LEVEL) ||
+                                   (reg_addr==AFI_RDCHAN_CTRL) ||
+                                   (reg_addr==AFI_RDCHAN_ISSUINGCAP) ||
+                                   (reg_addr==AFI_RDQOS))) ? 1 : 0;
     always @ (posedge aclk or posedge rst) begin
         if (rst) begin
             rdQosHeadOfCmdQEn  <= 0;

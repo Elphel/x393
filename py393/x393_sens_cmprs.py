@@ -124,9 +124,10 @@ SENSOR_INTERFACES={x393_sensor.SENSOR_INTERFACE_PARALLEL: {"mv":2800, "freq":24.
 #                   x393_sensor.SENSOR_INTERFACE_HISPI:    {"mv":2500, "freq":24.444, "iface":"1V8_LVDS"}}
 
 SENSOR_DEFAULTS= {x393_sensor.SENSOR_INTERFACE_PARALLEL: {"width":2592, "height":1944, "top":0, "left":0, "slave":0x48, "i2c_delay":100, "bayer":3},
-#                   SENSOR_INTERFACE_HISPI:   {"width":4608, "height":3288, "top":0, "left":0, "slave":0x10, "i2c_delay":100}}
                    x393_sensor.SENSOR_INTERFACE_HISPI:   {"width":4384, "height":3288, "top":0, "left":0, "slave":0x10, "i2c_delay":100, "bayer":2}}
 
+#SENSOR_DEFAULTS_SIMULATION= {x393_sensor.SENSOR_INTERFACE_PARALLEL: {"width":2592, "height":1944, "top":0, "left":0, "slave":0x48, "i2c_delay":100, "bayer":3},
+#                             x393_sensor.SENSOR_INTERFACE_HISPI:   {"width":4384, "height":3288, "top":0, "left":0, "slave":0x10, "i2c_delay":100, "bayer":2}}
 class X393SensCmprs(object):
     DRY_MODE =           True # True
     DEBUG_MODE =         1
@@ -147,8 +148,25 @@ class X393SensCmprs(object):
     def __init__(self, debug_mode=1,dry_mode=True, saveFileName=None):
 #        global BUFFER_ADDRESS, BUFFER_LEN
         global BUFFER_ADDRESS, BUFFER_LEN, COMMAND_ADDRESS, DATAIN_ADDRESS, DATAOUT_ADDRESS
-        global BUFFER_ADDRESS_H2D, BUFFER_LEN_H2D, BUFFER_ADDRESS_D2H, BUFFER_LEN_D2H, BUFFER_ADDRESS_BIDIR, BUFFER_LEN_BIDIR 
-        
+        global BUFFER_ADDRESS_H2D, BUFFER_LEN_H2D, BUFFER_ADDRESS_D2H, BUFFER_LEN_D2H, BUFFER_ADDRESS_BIDIR, BUFFER_LEN_BIDIR
+#        global SENSOR_DEFAULTS_SIMULATION 
+        print ("X393SensCmprs.__init__: dry_mode=",dry_mode)
+        try:
+            if ":" in dry_mode:
+                print ("X393SensCmprs.__init__: setting SENSOR_DEFAULTS")
+                SENSOR_DEFAULTS[x393_sensor.SENSOR_INTERFACE_PARALLEL]["width"]=  vrlg.WOI_WIDTH + 4
+                SENSOR_DEFAULTS[x393_sensor.SENSOR_INTERFACE_PARALLEL]["height"]= vrlg.WOI_HEIGHT + 4
+                SENSOR_DEFAULTS[x393_sensor.SENSOR_INTERFACE_PARALLEL]["top"]=    0
+                SENSOR_DEFAULTS[x393_sensor.SENSOR_INTERFACE_PARALLEL]["left"]=   0
+                SENSOR_DEFAULTS[x393_sensor.SENSOR_INTERFACE_HISPI]["width"]=     vrlg.WOI_WIDTH + 4
+                SENSOR_DEFAULTS[x393_sensor.SENSOR_INTERFACE_HISPI]["height"]=    vrlg.WOI_HEIGHT + 4
+                SENSOR_DEFAULTS[x393_sensor.SENSOR_INTERFACE_HISPI]["top"]=       0
+                SENSOR_DEFAULTS[x393_sensor.SENSOR_INTERFACE_HISPI]["left"]=      0
+                print ("Using simulation size sensor defaults ",SENSOR_DEFAULTS)
+                
+        except:
+            print ("No simulation server is used, just running in dry mode")       
+                
         self.DEBUG_MODE=  debug_mode
         self.DRY_MODE=    dry_mode
         self.x393_mem=            X393Mem(debug_mode,dry_mode)
@@ -2112,11 +2130,16 @@ class X393SensCmprs(object):
         elif direction.upper()[0] in "B":
             return "_bidir"
     def sync_for_cpu(self, direction, saddr=None, leng=None):
-        
+        if self.DRY_MODE:
+            print ("Simulating sync_for_cpu(),",self.get_mem_buf_args(saddr, leng)," -> ",MEM_PATH + BUFFER_FOR_CPU + self._get_dma_dir_suffix(direction))
+            return
         with open (MEM_PATH + BUFFER_FOR_CPU + self._get_dma_dir_suffix(direction),"w") as f:
             print (self.get_mem_buf_args(saddr, leng),file=f)
                     
     def sync_for_device(self, direction, saddr=None, leng=None):
+        if self.DRY_MODE:
+            print ("Simulating sync_for_device(),",self.get_mem_buf_args(saddr, leng)," -> ",MEM_PATH + BUFFER_FOR_DEVICE + self._get_dma_dir_suffix(direction))
+            return
         with open (MEM_PATH + BUFFER_FOR_DEVICE + self._get_dma_dir_suffix(direction),"w") as f:
             print (self.get_mem_buf_args(saddr, leng),file=f)
     """
@@ -2175,7 +2198,7 @@ jpeg_write "img.jpeg" 0 100 None False 0 "/www/pages/" 3
     
     """
 
-# Setup for compression of teh simulated data
+# Setup for compression of the simulated data
     def setup_simulated_mode(self,
                              data_file =       None,
                              chn =             0,
