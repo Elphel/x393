@@ -63,7 +63,7 @@ module  sync_resets#(
         else      mrst <=  ~(locked[0] && en_locked);
     end
     always @(posedge clk[0]) begin
-        rst_early_master <= rst_early_master_w;
+        rst_early_master <= rst_early_master_w | mrst;
     end
     level_cross_clocks #(
         .WIDTH      (1),
@@ -79,7 +79,9 @@ module  sync_resets#(
         for (i = 1; i < WIDTH; i = i + 1) begin: rst_block
             level_cross_clocks #(
                 .WIDTH      (1),
-                .REGISTER   ((i==5) ? 1: REGISTER) // disable for aclk
+              .REGISTER   ((i==5) ? 1: REGISTER), // disable for aclk
+//                .REGISTER   (REGISTER), // disable for aclk - aclk is now (0)
+                .FAST1      (1) // Switch to next cycle, to 0 - regeisterd
             ) level_cross_clocks_rst_i (
                 .clk   (clk[i]),                                  // input
                 .d_in  (mrst || rst_early_master || ~locked[i] ), // input[0:0] 

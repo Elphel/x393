@@ -357,19 +357,23 @@ module  x393_dut#(
 
 //`include "includes/x393_cur_params_sim.vh" // parameters that may need adjustment, should be before x393_localparams.vh
 // *** Adjusting includes/x393_cur_params_target.vh by the hardware may break simulation, hard-wired parameters below are tested ***
+
+/*
 `ifdef USE_HARD_CURPARAMS
-    localparam  DLY_LANE0_ODELAY =  80'hd85c1014141814181218;
-    localparam  DLY_LANE0_IDELAY =  72'h2c7a8380897c807b88;
-    localparam  DLY_LANE1_ODELAY =  80'hd8581812181418181814;
-    localparam  DLY_LANE1_IDELAY =  72'h108078807a887c8280;
-    localparam          DLY_CMDA = 256'hd3d3d3d4dcd1d8cc494949494949494949d4d3ccd3d3dbd4ccd4d2d3d1d2d8cc;
+    `include "includes/x393_cur_params_target_simulation.vh" // SuppressThisWarning VEditor - not used parameters that may need adjustment, should be before x393_localparams.vh
+
+//    localparam  DLY_LANE0_ODELAY =  80'hd85c1014141814181218;
+//    localparam  DLY_LANE0_IDELAY =  72'h2c7a8380897c807b88;
+//    localparam  DLY_LANE1_ODELAY =  80'hd8581812181418181814;
+//    localparam  DLY_LANE1_IDELAY =  72'h108078807a887c8280;
+//    localparam          DLY_CMDA = 256'hd3d3d3d4dcd1d8cc494949494949494949d4d3ccd3d3dbd4ccd4d2d3d1d2d8cc;
 //    localparam         DLY_PHASE =   8'h33;
 `else
     `include "includes/x393_cur_params_target.vh" // SuppressThisWarning VEditor - not used parameters that may need adjustment, should be before x393_localparams.vh
 `endif
 
-
 `include "includes/x393_localparams.vh" // SuppressThisWarning VEditor - not used
+*/
 // ========================== parameters from x353 ===================================
 
 `ifdef SYNC_COMPRESS
@@ -719,10 +723,10 @@ assign #10 gpio_pins[9] = gpio_pins[8];
   
 //    reg [639:0] TEST_TITLE="abcdef"; //S uppressThisWarning VEditor May use again later
   // Simulation signals
-
     wire        CLK;
     reg        RST;
-    reg        RST_CLEAN  = 1;
+//    reg        RST_CLEAN  = 1;
+/*
     wire [NUM_INTERRUPTS-1:0] IRQ_R =   {x393_i.sata_irq, x393_i.cmprs_irq[3:0], x393_i.frseq_irq[3:0]}; 
     wire [NUM_INTERRUPTS-1:0] IRQ_ACKN;
     wire                [3:0] IRQ_FRSEQ_ACKN = IRQ_ACKN[3:0];
@@ -742,7 +746,7 @@ assign #10 gpio_pins[9] = gpio_pins[8];
     wire                [3:0] IRQ_CMPRS_S = IRQ_S[7:4];
     wire                      IRQ_SATA_S =  IRQ_S[8];// SuppressThisWarning VEditor - not used
     
-
+*/
     assign reset_out = RST || x393_i.arst;
     x393 #(
 // TODO: Are these parameters needed? They are included in x393 from the save x393_parameters.vh    
@@ -1649,7 +1653,7 @@ simul_axi_hp_wr #(
         .VACT  (PX4_VACT), // output 
         .VACT1 () // output 
     );
-
+/*
     sim_soc_interrupts #(
         .NUM_INTERRUPTS (NUM_INTERRUPTS)
     ) sim_soc_interrupts_i (
@@ -1663,7 +1667,7 @@ simul_axi_hp_wr #(
         .inta           (IRQ_ACKN),  // output[7:0] 
         .main_go        (MAIN_GO)    // output
     );
-
+*/
 // Initilize simulation
 
 `ifndef ROOTPATH
@@ -1678,7 +1682,7 @@ simul_axi_hp_wr #(
         $display(`ROOTPATH);
         $display({`ROOTPATH,"/",`DATAPATH});
         
-        RST_CLEAN = 1;
+//        RST_CLEAN = 1;
         RST = 1'bx;
         $display("%t %s:%d RST=1'bx",$time,`__FILE__,`__LINE__); 
         #500;
@@ -1689,14 +1693,16 @@ simul_axi_hp_wr #(
         RST =1'b0;
         $display("%t %s:%d RST=1'b0",$time,`__FILE__,`__LINE__); 
         @(posedge CLK) ;
-        RST_CLEAN = 0;
-        $display("%t %s:%d RST_CLEAN=1'b0",$time,`__FILE__,`__LINE__); 
+//        RST_CLEAN = 0;
+//        $display("%t %s:%d RST_CLEAN=1'b0",$time,`__FILE__,`__LINE__); 
     // IRQ-related
+    /*
         IRQ_EN = 1;
         IRQ_M = 0;
         IRQ_FRSEQ_DONE = 0;
         IRQ_CMPRS_DONE = 0;
         IRQ_SATA_DONE =  0;
+    */    
         #5000;
 //    Need to killall vvp      
 //        $finish;

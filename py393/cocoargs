@@ -1,6 +1,6 @@
 -d TARGET_MODE=1
 -f system_defines.vh
--f includes/x393_parameters.vh includes/x393_cur_params_target.vh includes/x393_localparams.vh includes/x393_simulation_parameters.vh
+-f includes/x393_parameters.vh includes/x393_cur_params_target_simulation.vh includes/x393_localparams.vh includes/x393_simulation_parameters.vh
 -l includes/x393_cur_params_target_gen.vh
 -l includes/x393_cur_params_target_gen.vh
 -p PICKLE="includes/x393_mcntrl.pickle"

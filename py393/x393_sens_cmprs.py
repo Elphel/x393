@@ -154,11 +154,11 @@ class X393SensCmprs(object):
         try:
             if ":" in dry_mode:
                 print ("X393SensCmprs.__init__: setting SENSOR_DEFAULTS")
-                SENSOR_DEFAULTS[x393_sensor.SENSOR_INTERFACE_PARALLEL]["width"]=  vrlg.WOI_WIDTH + 4
+                SENSOR_DEFAULTS[x393_sensor.SENSOR_INTERFACE_PARALLEL]["width"]=  vrlg.WOI_WIDTH + 2 # 4
                 SENSOR_DEFAULTS[x393_sensor.SENSOR_INTERFACE_PARALLEL]["height"]= vrlg.WOI_HEIGHT + 4
                 SENSOR_DEFAULTS[x393_sensor.SENSOR_INTERFACE_PARALLEL]["top"]=    0
                 SENSOR_DEFAULTS[x393_sensor.SENSOR_INTERFACE_PARALLEL]["left"]=   0
-                SENSOR_DEFAULTS[x393_sensor.SENSOR_INTERFACE_HISPI]["width"]=     vrlg.WOI_WIDTH + 4
+                SENSOR_DEFAULTS[x393_sensor.SENSOR_INTERFACE_HISPI]["width"]=     vrlg.WOI_WIDTH + 2 #4
                 SENSOR_DEFAULTS[x393_sensor.SENSOR_INTERFACE_HISPI]["height"]=    vrlg.WOI_HEIGHT + 4
                 SENSOR_DEFAULTS[x393_sensor.SENSOR_INTERFACE_HISPI]["top"]=       0
                 SENSOR_DEFAULTS[x393_sensor.SENSOR_INTERFACE_HISPI]["left"]=      0
@@ -186,6 +186,7 @@ class X393SensCmprs(object):
         except:
             pass
         if dry_mode:
+            """
             BUFFER_ADDRESS =       0x38100000
             BUFFER_LEN =           0x06400000
             BUFFER_ADDRESS_H2D =   0x38100000
@@ -194,7 +195,18 @@ class X393SensCmprs(object):
             BUFFER_LEN_D2H =       0x06400000
             BUFFER_ADDRESS_BIDIR = 0x38100000
             BUFFER_LEN_BIDIR =     0x06400000
-            print ("Running in simulated mode, using hard-coded addresses:")
+            """
+
+            BUFFER_ADDRESS =       0x25500000
+            BUFFER_LEN =           0x19000000
+            BUFFER_ADDRESS_H2D =   0x25500000
+            BUFFER_LEN_H2D =       0x19000000
+            BUFFER_ADDRESS_D2H =   0x25500000
+            BUFFER_LEN_D2H =       0x19000000
+            BUFFER_ADDRESS_BIDIR = 0x25500000
+            BUFFER_LEN_BIDIR =     0x19000000
+
+            
             
             print ("Running in simulated mode, using hard-coded addresses:")
         else:
@@ -476,7 +488,7 @@ class X393SensCmprs(object):
         if (window_top + window_height) % 8:
             num8rows += 1
         frame_start_address_inc = num8rows * frame_full_width
-        """ TODO: Calculate tiles and mov e to initial print """
+        """ TODO: Calculate tiles and move to initial print """
         num_macro_cols_m1 = (window_width >> 4) - 1
         num_macro_rows_m1 = (window_height >> 4) - 1
 
@@ -499,7 +511,10 @@ class X393SensCmprs(object):
             print ("frame_start_address_inc =   0x%x"%(frame_start_address_inc))
             print ("histogram_start_phys_page = 0x%x"%(histogram_start_phys_page))
             print ("histogram start address =   0x%x"%(histogram_start_phys_page * 4096))
-            
+            print ("width_in_bursts =           %d(0x%x)"%(width_in_bursts,width_in_bursts))
+            print ("num_burst_in_line =         %d(0x%x)"%(num_burst_in_line,num_burst_in_line))
+            print ("num_pages_in_line =         %d(0x%x)"%(num_pages_in_line,num_pages_in_line))
+            print ("num8rows =                  %d(0x%x)"%(num8rows,num8rows))
             print ("last_buf_frame =            ", last_buf_frame)
             print ("num_macro_cols_m1 =         ", num_macro_cols_m1)
             print ("num_macro_rows_m1 =         ", num_macro_rows_m1)
@@ -531,7 +546,8 @@ class X393SensCmprs(object):
             frame_sa_inc =     frame_start_address_inc, # input [31:0] frame_sa_inc;     # 22-bit frame start address increment  ((3 CA LSBs==0. BA==0)
             last_frame_num =   last_buf_frame,          # input [31:0] last_frame_num;   # 16-bit number of the last frame in a buffer
             frame_full_width = frame_full_width,        # input [31:0] frame_full_width; # 13-bit Padded line length (8-row increment), in 8-bursts (16 bytes)
-            window_width =     window_width >> 4,        # input [31:0] window_width;     # 13 bit - in 8*16=128 bit bursts
+#            window_width =     window_width >> 4,        # input [31:0] window_width;     # 13 bit - in 8*16=128 bit bursts
+            window_width =     num_burst_in_line,       # input [31:0] window_width;     # 13 bit - in 8*16=128 bit bursts
             window_height =    window_height,           # input [31:0] window_height;    # 16 bit
             window_left =      window_left >> 4,        # input [31:0] window_left;
             window_top =       window_top);             # input [31:0] window_top;
@@ -1173,7 +1189,7 @@ class X393SensCmprs(object):
                               histogram_top =             None,
                               histogram_width_m1 =        None, # 2559, #0,
                               histogram_height_m1 =       None, # 799, #0,
-                              circbuf_chn_size=           0x4000000, # 64 Mib
+                              circbuf_chn_size=           0x4000000, # 64 Mib - all 4 channels?
                               verbose =                   1):
         """
         Setup one sensor+compressor channel (for one sub-channel only)
@@ -1691,6 +1707,13 @@ class X393SensCmprs(object):
         num8rows=   (window_top + window_height) // 8
         if (window_top + window_height) % 8:
             num8rows += 1
+            
+        if verbose >0 :
+            print ("width_in_bursts =           %d(0x%x)"%(width_in_bursts,width_in_bursts))
+            print ("num_burst_in_line =         %d(0x%x)"%(num_burst_in_line,num_burst_in_line))
+            print ("num_pages_in_line =         %d(0x%x)"%(num_pages_in_line,num_pages_in_line))
+            print ("num8rows =                  %d(0x%x)"%(num8rows,num8rows))
+            
 #        frame_start_addr = 0 # for sensor 0
 #        frame_start_address_inc = num8rows * frame_full_width
 #        len64 = num_burst_in_line * 2 * window_height    
@@ -2131,18 +2154,21 @@ class X393SensCmprs(object):
             return "_bidir"
     def sync_for_cpu(self, direction, saddr=None, leng=None):
         if self.DRY_MODE:
-            print ("Simulating sync_for_cpu(),",self.get_mem_buf_args(saddr, leng)," -> ",MEM_PATH + BUFFER_FOR_CPU + self._get_dma_dir_suffix(direction))
+            self.x393_mem.flush_simulation()            
+            #print ("Simulating sync_for_cpu(),",self.get_mem_buf_args(saddr, leng)," -> ",MEM_PATH + BUFFER_FOR_CPU + self._get_dma_dir_suffix(direction))
             return
         with open (MEM_PATH + BUFFER_FOR_CPU + self._get_dma_dir_suffix(direction),"w") as f:
             print (self.get_mem_buf_args(saddr, leng),file=f)
                     
     def sync_for_device(self, direction, saddr=None, leng=None):
         if self.DRY_MODE:
-            print ("Simulating sync_for_device(),",self.get_mem_buf_args(saddr, leng)," -> ",MEM_PATH + BUFFER_FOR_DEVICE + self._get_dma_dir_suffix(direction))
+            self.x393_mem.flush_simulation()            
+            #print ("Simulating sync_for_device(),",self.get_mem_buf_args(saddr, leng)," -> ",MEM_PATH + BUFFER_FOR_DEVICE + self._get_dma_dir_suffix(direction))
             return
         with open (MEM_PATH + BUFFER_FOR_DEVICE + self._get_dma_dir_suffix(direction),"w") as f:
             print (self.get_mem_buf_args(saddr, leng),file=f)
     """
+flush_simulation    
 cd /usr/local/verilog/; test_mcntrl.py @hargs
 #fpga_shutdown
 setupSensorsPower "PAR12"
@@ -2276,7 +2302,7 @@ jpeg_write "img.jpeg" 0 100 None False 0 "/www/pages/" 3
 # Above did not work, try disabling memory channel
         self.x393_axi_tasks.enable_memcntrl_en_dis(8 + chn, False);
 
-#Will restore defaulrt circbuf parameters        
+#Will restore default circbuf parameters        
         self.specify_phys_memory() # setup physical memory
         
 #Overwrite CIRCBUF parameters for selected channel with D2H stream DMA buffer (shared with membridge)        

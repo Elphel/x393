@@ -267,6 +267,85 @@ class X393Cmprs(object):
                             focus_mode =  focus_mode)
         self.x393_axi_tasks.write_control_register(vrlg.CMPRS_GROUP_ADDR +  chn * vrlg.CMPRS_BASE_INC + vrlg.CMPRS_CONTROL_REG,
                                                   data)
+        
+    def compressor_interrupt_control (self,
+                                      chn,
+                                      cntrl = "clr"):
+        """
+        Control compressor interrupts
+        @param chn -      compressor channel number, "a" or "all" - same for all 4 channels
+        @param cntrl -    "clr" - clear, "en" - enable, "dis" - disable
+        """
+#        print("compressor_interrupt_control(",chn,", ",cntrl,")")
+        try:
+            if (chn == all) or (chn[0].upper() == "A"): #all is a built-in function
+                for chn in range(4):
+                    self.compressor_interrupt_control (chn =      chn,
+                                                     cntrl =    cntrl)
+                return
+        except:
+            pass
+        if cntrl.lower() == "clr":
+            data = 1
+        elif cntrl.lower() == "dis":
+            data = 2
+        elif cntrl.lower() == "en":
+            data = 3
+        else:
+            print ("compressor_interrupts(): invalid control mode: %s, only 'clr', 'en' and 'dis' are accepted"%(str(cntrl)))
+            return
+        self.x393_axi_tasks.write_control_register(vrlg.CMPRS_GROUP_ADDR +  chn * vrlg.CMPRS_BASE_INC + vrlg.CMPRS_INTERRUPTS,
+                                                  data)        
+    def compressor_interrupt_acknowledge (self, enabledOnly=True):
+        """
+        Clear (one of) raised compressor interrupts
+        @param enabledOnly consider only channels with interrupts enabled
+        @return number of cleared interrupt, None if none was set 
+        """
+        d = 0 if enabledOnly else 2
+        for chn in range(4):
+            if ((self.get_status_compressor(chn) | d) & 3) == 3: # both request and mask are set
+                self.compressor_interrupt_control(chn, "clr")
+                return chn
+        return None    
+        
+    def get_status_compressor ( self,
+                                chn="All"):
+        """
+        Read compressor status word
+        @param chn - compressor port (0..3)
+        @return status word
+        """
+        try:
+            if (chn == all) or (chn[0].upper() == "A"): #all is a built-in function
+                rslt = []
+                for chn in range(4):
+                    rslt.append(self.get_status_compressor (chn = chn))
+                return rslt
+        except:
+            pass
+        return self.x393_axi_tasks.read_status(
+                    address=(vrlg.CMPRS_STATUS_REG_BASE + chn * vrlg.CMPRS_STATUS_REG_INC))       
+
+    def get_highfreq_compressor ( self,
+                                chn="All"):
+        """
+        Read total high frequency amount from the compressor
+        @param chn - compressor port (0..3)
+        @return status word
+        """
+        try:
+            if (chn == all) or (chn[0].upper() == "A"): #all is a built-in function
+                rslt = []
+                for chn in range(4):
+                    rslt.append(self.get_highfreq_compressor (chn = chn))
+                return rslt
+        except:
+            pass
+        return self.x393_axi_tasks.read_status(
+                    address=(vrlg.CMPRS_HIFREQ_REG_BASE + num_sensor * vrlg.CMPRS_STATUS_REG_INC))       
+
+        
     def setup_compressor_memory (self,
                                  num_sensor,
                                  frame_sa,

@@ -39,6 +39,10 @@ class SocketCommand():
         return self.command == "stop" 
     def getWrite(self):
         return self.arguments if self.command == "write" else None
+    def getWait(self):
+        return self.arguments if self.command == "wait" else None
+    def getFlush(self):
+        return self.command == "flush"
     def getRead(self):
         return self.arguments if self.command == "read" else None
     def setStart(self):
@@ -48,6 +52,11 @@ class SocketCommand():
     def setWrite(self,arguments):
         self.command = "write"
         self.arguments=arguments
+    def setWait(self,arguments): # wait irq mask, timeout (ns)
+        self.command = "wait"
+        self.arguments=arguments
+    def setFlush(self):         #flush memory file (use when sync_for_*
+        self.command = "flush"
     def setRead(self,arguments):
         self.command = "read"
         self.arguments=arguments
@@ -88,7 +97,15 @@ class x393Client():
     def write(self, address, data):
         self.cmd.setWrite([address,data])
         rslt = self.communicate(self.cmd.toJSON())
-        print("write->",rslt)
+#        print("write->",rslt)
+    def waitIrq(self, irqMask,wait_ns):
+        self.cmd.setWait([irqMask,wait_ns])
+        rslt = self.communicate(self.cmd.toJSON())
+#        print("waitIrq->",rslt)
+    def flush(self):
+        self.cmd.setFlush()
+#        print("flush->",self.communicate(self.cmd.toJSON()))
+
     def read(self, address):
         self.cmd.setRead(address)
 #        print("read->args",self.cmd.getArgs())

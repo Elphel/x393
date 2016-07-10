@@ -2476,7 +2476,6 @@ assign axi_grst = axi_rst_pre;
         .locked_pclk     (locked_pclk),         // output 
         .locked_hclk     (locked_hclk)          // output
     );
-
     sync_resets #(
         .WIDTH(7),
         .REGISTER(4)
@@ -2486,6 +2485,19 @@ assign axi_grst = axi_rst_pre;
         .clk    ({hclk,        axi_aclk, logger_clk,      camsync_clk,     xclk,        pclk,        mclk}),          // input[6:0] 
         .rst    ({hrst,        arst,     lrst,            crst,            xrst,        prst,        mrst})          // output[6:0] 
     );
+
+// Changed aclk to master (itg is the source of most orthers)
+/*
+    sync_resets #(
+        .WIDTH(7),
+        .REGISTER(4)
+    ) sync_resets_i (
+        .arst   (axi_rst_pre), // input
+        .locked ({locked_hclk, locked_sync_clk, locked_sync_clk, locked_xclk, locked_pclk, mcntrl_locked, 1'b1  }), // input
+        .clk    ({hclk,        logger_clk,      camsync_clk,     xclk,        pclk,        mclk,          axi_aclk}),          // input[6:0] 
+        .rst    ({hrst,        lrst,            crst,            xrst,        prst,        mrst,          arst})          // output[6:0] 
+    );
+*/
 
 `ifdef DEBUG_RING
     debug_master #(

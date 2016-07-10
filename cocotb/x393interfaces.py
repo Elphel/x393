@@ -55,7 +55,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. '''
 
 
 import cocotb
-from cocotb.triggers import Timer, RisingEdge, ReadOnly, Lock
+from cocotb.triggers import Timer, RisingEdge, FallingEdge, Edge, ReadOnly, Lock
 from cocotb.drivers import BusDriver
 from cocotb.result import ReturnValue
 from cocotb.binary import BinaryValue
@@ -64,6 +64,7 @@ import re
 import binascii
 import array
 import struct
+#import logging
 
 #channels
 AR_CHN="AR"
@@ -72,13 +73,15 @@ R_CHN="R"
 W_CHN="W"
 B_CHN="B"
 
-def _float_signals(self,signals):
+def _float_signals(signals):
     if not isinstance (signals,(list,tuple)):
         signals = (signals,)
     for signal in signals:    
         v = signal.value
         v.binstr = "z" * len(signal)
         signal <= v
+        
+        
 
 class MAXIGPReadError(Exception):
 #    print ("MAXIGPReadError")
@@ -89,18 +92,19 @@ class PSBus(BusDriver):
     Small subset of Zynq registers, used to access SAXI_HP* registers
     """
     _signals=[ # i/o from the DUT side
-        clk,    # output    
-        addr,   # input [31:0]
-        wr,     # input
-        rd,     # input
-        din,    # input [31:0]
-        dout]   #output [31:0]
+        "clk",    # output    
+        "addr",   # input [31:0]
+        "wr",     # input
+        "rd",     # input
+        "din",    # input [31:0]
+        "dout"]   #output [31:0]
     def __init__(self, entity, name, clock):
         BusDriver.__init__(self, entity, name, clock)
         self.busy_channel = Lock("%s_busy"%(name))
         self.bus.wr.setimmediatevalue(0)
         self.bus.rd.setimmediatevalue(0)
         _float_signals((self.bus.addr, self.bus.din))
+        self.name = name
 
     @cocotb.coroutine
     def write_reg(self,addr,data):
@@ -167,20 +171,36 @@ class SAXIWrSim(BusDriver):
         @param autoflush flush file after each write
         @param blatency  number of cycles to delay write response (b) channel
         """
+#        self.log.setLevel(logging.DEBUG)
         BusDriver.__init__(self, entity, name, clock)
-        self.log.debug ("SAXIWrSim.__init__(): super done")
-        self._memfile=open(mempath, 'w+')
+        self.name = name
+        self.log.debug ("SAXIWrSim: name='%s', mempath='%s', memhigh=0x%08x, data_bytes=%d, autoflush=%s, blatency=%d"%
+                       (name,mempath,memhigh,data_bytes, str(autoflush), blatency))
+#        self.log.debug ("SAXIWrSim.__init__(): super done")
+        #Open file to use as system memory
+        try:
+            self._memfile=open(mempath, 'r+') #keep old file if it exists already
+        except:    
+            self._memfile=open(mempath, 'w+') #create a new file if it does not exist
+            self.log.info ("SAXIWrSim(%s): created a new 'memory' file %s"%(name,mempath)) #
         #Extend to full size
         self._memfile.seek(memhigh-1)
+        readOK=False
         try:
-            self._memfile.read(1)
+            readOK = len(self._memfile.read(1))>0
+            self.log.debug ("Read from 0x%08x"%(memhigh-1)) #
+            
         except:
+            pass
+        if not readOK:
             self._memfile.seek(memhigh-1)
             self._memfile.write(chr(0))
             self._memfile.flush()
+            self.log.info("Wrote to 0x%08x to extend file to full size"%(memhigh-1)) #
+
         self.autoflush=autoflush
         self.bus.wr_ready.setimmediatevalue(1) # always ready
-        self.bresp_latency = blatency
+        self.bus.bresp_latency.setimmediatevalue(blatency)
         if data_bytes > 4:
             self._data_bytes = 8
             self._address_lsb = 3
@@ -197,12 +217,14 @@ class SAXIWrSim(BusDriver):
             self._data_bytes = 1
             self._address_lsb = 0
             self._fmt= "<B"
-            
+        self.log.debug ("SAXIWrSim(%s) init done"%(self.name))
+
     def flush(self):
         self._memfile.flush()
             
     @cocotb.coroutine
     def saxi_wr_run(self):
+        self.log.debug ("SAXIWrSim(%s).saxi_wr_run"%(self.name))
         while True:
             if not self.bus.wr_ready.value:
                 break #exit
@@ -278,9 +300,33 @@ class SAXIRdSim(BusDriver):
         @param data_bytes data width, in bytes
         
         """
+#        self.log.setLevel(logging.DEBUG)
         BusDriver.__init__(self, entity, name, clock)
-        self.log.debug ("SAXIWrSim.__init__(): super done")
-        self._memfile=open(mempath, 'r+')
+        self.name = name
+        self.log.debug ("SAXIRdSim: name='%s', mempath='%s', memhigh=0x%08x, data_bytes=%d"%
+                       (name,mempath,memhigh,data_bytes))
+#        self._memfile=open(mempath, 'r+')
+        #Open file to use as system memory
+        try:
+            self._memfile=open(mempath, 'r+') #keep old file if it exists already
+        except:    
+            self._memfile=open(mempath, 'w+') #create a new file if it does not exist
+            self.log.info ("SAXIRdSim(%s): created a new 'memory' file %s"%(name,mempath)) #
+        #Extend to full size
+        self._memfile.seek(memhigh-1)
+        readOK=False
+        try:
+            readOK = len(self._memfile.read(1))>0
+            self.log.debug ("Read from 0x%08x"%(memhigh-1)) #
+            
+        except:
+            pass
+        if not readOK:
+            self._memfile.seek(memhigh-1)
+            self._memfile.write(chr(0))
+            self._memfile.flush()
+            self.log.info("Wrote to 0x%08x to extend file to full size"%(memhigh-1)) #
+        
         self.bus.rd_valid.setimmediatevalue(0)
 
         if data_bytes > 4:
@@ -299,9 +345,16 @@ class SAXIRdSim(BusDriver):
             self._data_bytes = 1
             self._address_lsb = 0
             self._fmt= "<B"
-            
+        self.log.debug("SAXIRdSim(%s) init done"%(self.name))
+        
+    @cocotb.coroutine
+    def saxi_test(self):
+        self.log.info ("SAXIRdSim(%s).saxi_test"%(self.name))
+        yield Timer(1000)
+        
     @cocotb.coroutine
     def saxi_rd_run(self):
+        self.log.info ("SAXIRdSim(%s).saxi_wr_run"%(self.name))
         while True:
 #            if not self.bus.rd_valid.value:
 #                break #exit
@@ -404,6 +457,8 @@ class MAXIGPMaster(BusDriver):
     _channels = [AR_CHN,AW_CHN,R_CHN,W_CHN,B_CHN]
     def __init__(self, entity, name, clock, rdlag=None, blag=None):
         BusDriver.__init__(self, entity, name, clock)
+#        self.log.setLevel(logging.DEBUG)
+        self.name = name
         # set read and write back channels simulation lag between AXI sets valid and host responds with
         # ready. If None - drive these signals  
         self.log.debug ("MAXIGPMaster.__init__(): super done")
@@ -429,7 +484,7 @@ class MAXIGPMaster(BusDriver):
         self.bus.awprot.setimmediatevalue(0)
         self.bus.awqos.setimmediatevalue(0)
         self.busy_channels = {}
-        self.log.debug ("MAXIGPMaster.__init__(): pre-lcok done")
+        self.log.debug ("MAXIGPMaster.__init__(): pre-lock done")
 
         #Locks on each subchannel
         for chn in self._channels:

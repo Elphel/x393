@@ -144,7 +144,7 @@ class X393Sensor(object):
             if (num_sensor == all) or (num_sensor[0].upper() == "A"): #all is a built-in function
                 rslt = []
                 for num_sensor in range(4):
-                    rslt.append(self.program_status_sensor_io (num_sensor = num_sensor))
+                    rslt.append(self.get_status_sensor_io (num_sensor = num_sensor))
                 return rslt
         except:
             pass

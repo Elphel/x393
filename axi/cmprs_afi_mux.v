@@ -170,6 +170,7 @@ each group of 4 bits per channel : bits [1:0] - select, bit[2] - sset (0 - nop),
 //`endif        
     reg         en;      // enable mux
     reg         en_d;    // or use it to reset all channels?
+    wire        en_nrst = en && ! hrst; // when hclk is not yet available 
     reg   [3:0] en_chn;  // per-channel enable 
     
     wire [31:0] cmd_data;
@@ -272,7 +273,8 @@ each group of 4 bits per channel : bits [1:0] - select, bit[2] - sset (0 - nop),
     wire [1:0] want_wleft32 = (|items_left[7:2])? 2'b11 : items_left[1:0]; // want to set wleft[3:2] if not roll-over (actually "3" means 2)
 
     wire rollover_limited_w = max_wlen[1:0] < want_wleft32;
-
+    wire afi_wvalid_w;
+    
 
     assign cmd_we_status_w = cmd_we && ((cmd_a & 'hc) ==       CMPRS_AFIMUX_STATUS_CNTRL);    
     assign cmd_we_mode_w =   cmd_we && (cmd_a ==               CMPRS_AFIMUX_MODE);    
@@ -280,7 +282,7 @@ each group of 4 bits per channel : bits [1:0] - select, bit[2] - sset (0 - nop),
     assign cmd_we_sa_len_w = cmd_we && ((cmd_a & 'h8) ==       CMPRS_AFIMUX_SA_LEN);
     assign cmd_we_en_w =     cmd_we && (cmd_a ==               CMPRS_AFIMUX_EN);    
     assign cmd_we_rst_w =    cmd_we && (cmd_a ==               CMPRS_AFIMUX_RST);    
-    
+    assign afi_wvalid =      afi_wvalid_w && !hrst;
     
     
     // use last_chunk_w to apply a special id to waddr and wdata and watch for it during readout
@@ -300,7 +302,7 @@ each group of 4 bits per channel : bits [1:0] - select, bit[2] - sset (0 - nop),
     
     assign afi_awaddr =  {chunk_addr,5'b0};
     assign afi_awid =    afi_awid_r; //  {1'b0,wleft[3:2],last_burst_in_frame,cur_chn}; 
-    assign afi_awvalid = awvalid[1];
+    assign afi_awvalid = awvalid[1] && !hrst;
 //    assign afi_awlen = {wleft[3:2],2'b11};
     assign afi_wdata = wdata;
 //    assign afi_bready = 1'b1; // always ready
@@ -371,7 +373,7 @@ each group of 4 bits per channel : bits [1:0] - select, bit[2] - sset (0 - nop),
 
     
     always @ (posedge hclk) begin
-        en_d <= en;
+        en_d <= en && !hrst;
     
         ready_to_start <= en && // ready to strta a burst
                           !afi_wacount[5] && !(&afi_wacount[4:1]) &&  // >=2 free 
@@ -472,7 +474,8 @@ each group of 4 bits per channel : bits [1:0] - select, bit[2] - sset (0 - nop),
         
         else if (wleft != 0) wleft <= wleft - 1;
 
-        if      (!en)        wvalid <= 0;
+ //       if      (!en)        wvalid <= 0;
+        if      (!en_nrst)   wvalid <= 0;
         else if (pre_busy_w) wvalid <= 1;
         else if (wlast)      wvalid <= 0; // should be after pre_busy_w as both can happen simultaneously
 
@@ -489,8 +492,8 @@ each group of 4 bits per channel : bits [1:0] - select, bit[2] - sset (0 - nop),
         
         
         
-        
-        awvalid <= {awvalid[0],pre_busy_w}; // no need to wait for afi_awready, will use fifo levels to enable pre_busy_w
+        if (hrst) awvalid <= 0; 
+        else      awvalid <= {awvalid[0],pre_busy_w}; // no need to wait for afi_awready, will use fifo levels to enable pre_busy_w
         
         if (pre_busy_w)  begin
             cur_chn <= winner2;
@@ -523,7 +526,7 @@ each group of 4 bits per channel : bits [1:0] - select, bit[2] - sset (0 - nop),
         .rst       (!en),  // input
         .dly       (AFI_MUX_BUF_LATENCY), // input[3:0] will delay by AFI_MUX_BUF_LATENCY+1 (normally 3) 
         .din       ({    wvalid,     wlast}), // , afi_awid_r}), // afi_awid}), // input[0:0] 
-        .dout      ({afi_wvalid, afi_wlast}) //, afi_wid})     // output[0:0] 
+        .dout      ({afi_wvalid_w, afi_wlast}) //, afi_wid})     // output[0:0] 
     );
     localparam [3:0] AFI_MUX_BUF_LATENCYM1 = AFI_MUX_BUF_LATENCY - 1;
     dly_16 #(

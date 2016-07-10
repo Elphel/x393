@@ -44,6 +44,7 @@ import x393_cmprs
 import x393_cmprs_afi
 import vrlg
 import time
+import os
 STD_QUANT_TBLS = {
                   "Y_landscape":( 16,  11,  10,  16,  24,  40,  51,  61,
                                   12,  12,  14,  19,  26,  58,  60,  55,
@@ -763,6 +764,11 @@ class X393Jpeg(object):
             self.x393_sens_cmprs.specify_window(verbose = 2)
         return numChannels
     
+    def _get_project_root(self):
+        """
+        @return absolute path of the directory one above current script one
+        """
+        return os.path.abspath(os.path.join(os.path.dirname(__file__), '../'))    
     def jpeg_write(self,
                    file_path = "img.jpeg", 
                    channel =   0, 
@@ -776,7 +782,7 @@ class X393Jpeg(object):
         """
         Create JPEG image from the latest acquired in the camera
         @param file_path - camera file system path (starts with "/") or relative to web server root 
-        @param channel -   compressor channel
+        @param channel -   compressor channel 
         @param y_quality - 1..100 - quantization quality for Y component
         @param c_quality - 1..100 - quantization quality for color components (None - use y_quality)
         @param portrait - False - use normal order, True - transpose for portrait mode images
@@ -784,9 +790,29 @@ class X393Jpeg(object):
         @param server_root - files ystem path to the web server root directory
         @param verbose - verbose level
         """
+        useNextReady = False
+        try:
+            if (channel == next) or (channel[0].upper() == "N"): #next is a built-in function
+                useNextReady = True
+        except:
+            pass
+        if useNextReady:
+            channel = self.x393Cmprs.compressor_interrupt_acknowledge(enabledOnly=True)
+            if channel is None:
+                raise Exception ("No channels have new compressed images ready")
+            else:
+                schn="-"+str(channel)
+                if '@' in file_path:
+                    file_path=file_path[:file_path.rindex('@')+1]+schn+file_path[file_path.rindex('@')+1:] #insert after after '@' (keep @ to be replaced by a timestamp)
+                elif '.' in file_path:    
+                    file_path=file_path[:file_path.rindex('.')]+schn+file_path[file_path.rindex('.'):] #insert before '.' 
+                print("Channel %d has JPEG image ready, using path %s"%(channel, file_path))
+                #change image name
         if server_root is None:
             if (self.DRY_MODE):
-                server_root = "../www/"
+                server_root = self._get_project_root()+"/www/"
+                if not os.path.exists(server_root):
+                    os.mkdir(server_root)
             else:
                 server_root = "/www/pages/"
         allFiles = False
@@ -867,7 +893,7 @@ class X393Jpeg(object):
                            color_mode = window["cmode"], #color_mode,
                            byrshift   = byrshift,
                            verbose    = verbose - 1)
-        if self.DRY_MODE:
+        if self.DRY_MODE == True:
             meta = self.x393_cmprs_afi.afi_mux_get_image_meta(
                               port_afi =     SIMULATION_JPEG_DATA, # 0,
                               channel =      channel,
@@ -875,6 +901,8 @@ class X393Jpeg(object):
                               circbuf_len =  0, #x393_sens_cmprs.GLBL_CIRCBUF_ENDS[channel] - x393_sens_cmprs.GLBL_CIRCBUF_STARTS[channel],
                               verbose = verbose)
         else:
+            if self.DRY_MODE: # only with socket connection
+                self.x393_mem.flush_simulation()# Same as sync_for_cpu() ?
             meta = self.x393_cmprs_afi.afi_mux_get_image_meta(
                               port_afi =     0,
                               channel =      channel,
@@ -888,6 +916,9 @@ class X393Jpeg(object):
         if verbose > 1 :
             for s in meta["segments"]:
                 print ("start_address = 0x%x, length = 0x%x"%(s[0],s[1]))
+        if "@" in file_path:
+            fts=("%f"%(meta["timestamp"])).replace(".","_")
+            file_path=file_path[:file_path.rindex('@')]+fts+file_path[file_path.rindex('@')+1:] #replacing '@'
         with open (server_root+file_path, "w+b") as bf:
             bf.write(jpeg_data["header"])
             for s in meta["segments"]:
@@ -1062,6 +1093,31 @@ set_qtables all 0 85
 compressor_control all 2
 #jpeg_write  "img.jpeg" all 85
 jpeg_write  "img.jpeg" 0 85
+
+
+################## Simulate Serial ####################
+measure_all "*DI"
+setup_all_sensors True None 0xf
+compressor_control  all  None  None  None None None  2
+compressor_interrupt_control all clr
+compressor_interrupt_control all en
+compressor_control  all  3
+wait_irq 0xf0 100000
+wait_irq 0x0    100
+jpeg_write  "img@.jpeg" next
+
+
+jpeg_write  "/home/eyesis/git/x393-neon/www/img.jpeg" next
+
+x393 (localhost:7777) +107.289s--> compressor_control  all  None  None  None None None  2
+x393 (localhost:7777) +0.647s--> compressor_interrupt_control all clr
+x393 (localhost:7777) +0.150s--> compressor_interrupt_control all en
+x393 (localhost:7777) +0.589s--> compressor_interrupt_control 0 en
+x393 (localhost:7777) +0.153s--> compressor_interrupt_control 1 en
+x393 (localhost:7777) +0.147s--> compressor_interrupt_control 2 en
+x393 (localhost:7777) +0.150s--> compressor_interrupt_control 3 en
+x393 (localhost:7777) +0.162s--> compressor_control  all  3
+
 
 
 ################## Serial ####################

@@ -109,8 +109,8 @@ class X393McntrlMembridge(object):
         except:
             pass
         if dry_mode:
-            BUFFER_ADDRESS=0x27900000
-            BUFFER_LEN=    0x6400000
+            BUFFER_ADDRESS=0x25500000
+            BUFFER_LEN=    0x19000000
             print ("Running in simulated mode, using hard-coded addresses:")
         else:
             try:

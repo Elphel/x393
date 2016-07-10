@@ -113,7 +113,7 @@ module  x393_testbench03 #(
 parameter TRIGGER_MODE =          0; // 1;     // 0 - auto, 1 - triggered
 parameter EXT_TRIGGER_MODE =      1 ;    // 0 - internal, 1 - external trigger (camsync)
 parameter EXTERNAL_TIMESTAMP =    0; // 1 ;    // embed local timestamp, 1 - embed received timestamp
-parameter NUM_INTERRUPTS =        9;
+//parameter NUM_INTERRUPTS =        9;
 
 `include "includes/x393_localparams.vh" // SuppressThisWarning VEditor - not used
 // VDT - incorrect  real number calculation
@@ -1405,7 +1405,8 @@ end
   initial begin
   // after 1 frame compressed on all channels
   // Debugging DCT Chen
-  
+//#20000;
+//$finish;  
 `ifdef HISPI
     #135000;
 `else

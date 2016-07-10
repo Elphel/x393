@@ -93,7 +93,7 @@ class X393CmprsAfi(object):
         """
 #        print ("status reg =      0x%x"%(((vrlg.CMPRS_AFIMUX_REG_ADDR0, vrlg.CMPRS_AFIMUX_REG_ADDR1)[port_afi]+channel) ))
 #        print ("status reg data = 0x%x"%(self.x393_axi_tasks.read_status((vrlg.CMPRS_AFIMUX_REG_ADDR0, vrlg.CMPRS_AFIMUX_REG_ADDR1)[port_afi]+channel) ))
-        if (self.DRY_MODE):
+        if self.DRY_MODE == True:
             return None
         return 32*(self.x393_axi_tasks.read_status((vrlg.CMPRS_AFIMUX_REG_ADDR0, vrlg.CMPRS_AFIMUX_REG_ADDR1)[port_afi]+channel) & 0x3ffffff)
     

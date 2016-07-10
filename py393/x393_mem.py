@@ -133,7 +133,35 @@ class X393Mem(object):
         else:
             X393_CLIENT.stop()
             X393_CLIENT = True # just simulated mode
-                        
+    def flush_simulation(self):
+        """
+        Flush simulation 'system memory" file
+        """
+        global X393_CLIENT
+        if X393_CLIENT is None:
+            print ("flush_simulation(): Not running in simulated mode")
+            return
+        elif X393_CLIENT is True:
+            print ("flush_simulation(): Not running as a client to x393 simulation server")
+            return
+        else:
+            X393_CLIENT.flush()
+    def wait_irq(self,irq_mask= 0, wait_ns = 1000):
+        """
+        Wait silation certain time, interruptible
+        @param irq_mask - mask to be AND-ed with interrupt vector
+        @param wait_ns - timeout in nanoseconds
+        """
+        global X393_CLIENT
+        if X393_CLIENT is None:
+            print ("wait_irq(): Not running in simulated mode")
+            return
+        elif X393_CLIENT is True:
+            print ("wait_irq(): Not running as a client to x393 simulation server")
+            return
+        else:
+            X393_CLIENT.waitIrq(irq_mask, wait_ns)
+
     def write_mem (self,addr, data,quiet=1):
         """
         Write 32-bit word to physical memory
@@ -149,7 +177,7 @@ class X393Mem(object):
             if quiet < 1:
                 print ("remote: write_mem(0x%x,0x%x)"%(addr,data))
             X393_CLIENT.write(addr, [data])
-            if quiet < 2:
+            if quiet < 1:
                 print ("remote: write_mem done" )
             return
         with open("/dev/mem", "r+b") as f:
@@ -280,9 +308,26 @@ class X393Mem(object):
          @param start_addr physical byte start address
          @param length - number of bytes to save
         '''
-        if self.DRY_MODE:
+        if self.DRY_MODE == True:
             print ("Write memory to file is not implemented in non-target mode")
             return
+        elif self.DRY_MODE: # Cocotb over socket
+            first_page = start_addr // self.PAGE_SIZE
+            last_page = (start_addr + length - 1) // self.PAGE_SIZE
+            for page_num in range(first_page, last_page+1):
+                start_offset = 0
+                if page_num == first_page:
+                    start_offset = start_addr - self.PAGE_SIZE * page_num
+                end_offset =  self.PAGE_SIZE
+                if page_num == last_page:
+                    end_offset = start_addr + length - self.PAGE_SIZE * page_num
+                page_addr = page_num * self.PAGE_SIZE
+                page_data= X393_CLIENT.read((page_addr, self.PAGE_SIZE//4)) # always read memory page (as in mmap)
+                mm = struct.pack("<"+("L"*(self.PAGE_SIZE//4)),*page_data)
+                bf.write(mm[start_offset:end_offset])
+#                mm = self.wrap_mm(f, page_addr)
+#                bf.write(mm[start_offset:end_offset])
+            return    
         with open("/dev/mem", "r+b") as f:
             first_page = start_addr // self.PAGE_SIZE
             last_page = (start_addr + length - 1) // self.PAGE_SIZE

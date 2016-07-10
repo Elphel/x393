@@ -132,24 +132,26 @@ module  mmcm_phase_cntr#(
 // made a difference, so it doesn't seem Vivado extends bits of operands "+", "-"
     wire [PHASE_WIDTH:0] diff= {ps_target[PHASE_WIDTH-1],ps_target}-{ps_dout_r[PHASE_WIDTH-1],ps_dout_r};
     assign  ps_dout = ps_dout_r; 
+    wire reset_extended = rst || !locked;
+    
     always @ (posedge psclk) begin
-        if (rst) ps_start0 <= 0;
-        else ps_start0 <= ps_we && ps_ready;
+        if (reset_extended) ps_start0 <= 0;
+        else                ps_start0 <= ps_we && ps_ready;
         
-        if (rst) ps_dout_r <= 0;
+        if      (reset_extended)    ps_dout_r <= 0;
         else if (psen &&  psincdec) ps_dout_r <= ps_dout_r +1; //SuppressThisWarning ISExst Result of 9-bit expression is truncated to fit in 8-bit target.
         else if (psen && !psincdec) ps_dout_r <= ps_dout_r -1; //SuppressThisWarning ISExst Result of 32-bit expression is truncated to fit in 8-bit target.
         
-        if (rst) ps_target <= 0;
+        if      (reset_extended)    ps_target <= 0;
         else if (ps_we && ps_ready) ps_target <= ps_din;
 
-        if (rst)           ps_busy <= 1'b0;
-        else if (ps_start) ps_busy <= (diff!=0);
+        if (reset_extended) ps_busy <= 1'b0;
+        else if (ps_start)  ps_busy <= (diff!=0);
         
         
     end
     always @ (posedge psclk) begin
-        ps_start <= ps_start0 || psdone;
+        ps_start <= !reset_extended && (ps_start0 || psdone);
         psincdec <= !diff[PHASE_WIDTH];
     end
 
