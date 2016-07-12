@@ -15,6 +15,11 @@ from __future__ import print_function
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http:#www.gnu.org/licenses/>.
+@brief:      Provides sockets-related functionality for both the simulation server
+and tghe client. Server is linked to the Cocotb and custom modules and controls
+the simulation, server is used to replace memory read/write functionality in the
+target system 
+
 @author:     Andrey Filippov
 @copyright:  2016 Elphel, Inc.
 @license:    GPLv3.0+
@@ -97,19 +102,13 @@ class x393Client():
     def write(self, address, data):
         self.cmd.setWrite([address,data])
         rslt = self.communicate(self.cmd.toJSON())
-#        print("write->",rslt)
     def waitIrq(self, irqMask,wait_ns):
         self.cmd.setWait([irqMask,wait_ns])
         rslt = self.communicate(self.cmd.toJSON())
-#        print("waitIrq->",rslt)
     def flush(self):
         self.cmd.setFlush()
-#        print("flush->",self.communicate(self.cmd.toJSON()))
-
     def read(self, address):
         self.cmd.setRead(address)
-#        print("read->args",self.cmd.getArgs())
         rslt = self.communicate(self.cmd.toJSON())
-        #print("read->",rslt)
         return json.loads(rslt)
         

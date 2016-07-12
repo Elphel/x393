@@ -15,6 +15,9 @@ from __future__ import print_function
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http:#www.gnu.org/licenses/>.
+@brief:      Simulation server for x393_dut.v top Verilog module.
+Listens to the socket connection, accepts incoming commands, applies them
+to the simulator and sends back data from the model. 
 @author:     Andrey Filippov
 @copyright:  2016 Elphel, Inc.
 @license:    GPLv3.0+

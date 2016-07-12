@@ -17,10 +17,11 @@ from __future__ import print_function
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http:#www.gnu.org/licenses/>.
-@author:     Andrey Filippov
-@copyright:  2016 Elphel, Inc.
-@license:    GPLv3.0+
-@contact:    andrey@elphel.coml
+@brief      I/O Interfaces of the x393 project for simulation using cocotb 
+@author     Andrey Filippov
+@copyright  2016 Elphel, Inc.
+@license    GPLv3.0+
+@contact    andrey@elphel.coml
 
 Uses code from https://github.com/potentialventures/cocotb/blob/master/cocotb/drivers/amba.py
 Below are the copyright/license notices of the amba.py

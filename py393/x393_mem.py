@@ -80,7 +80,7 @@ class X393Mem(object):
                 try:
                     X393_CLIENT.start()
                 except:
-                    print ("Failed to communicate to the server. Is it started? Swithching to dry tun mode")
+                    print ("Failed to communicate to the server. Is it started? Switching to dry run mode")
                     X393_CLIENT = True
                     
                 
@@ -170,7 +170,6 @@ class X393Mem(object):
         @param quiet - reduce output
         """
         if X393_CLIENT is True:
-#        if self.DRY_MODE:
             print ("simulated: write_mem(0x%x,0x%x)"%(addr,data))
             return
         elif not X393_CLIENT is None:
@@ -184,23 +183,11 @@ class X393Mem(object):
             page_addr=addr & (~(self.PAGE_SIZE-1))
             page_offs=addr-page_addr
             mm = self.wrap_mm(f, page_addr)
-#            if (page_addr>=0x80000000):
-#                page_addr-= (1<<32)
-#            mm = mmap.mmap(f.fileno(), self.PAGE_SIZE, offset=page_addr)
             packedData=struct.pack(self.ENDIAN+"L",data)
             d=struct.unpack(self.ENDIAN+"L",packedData)[0]
             mm[page_offs:page_offs+4]=packedData
             if quiet <2:
                 print ("0x%08x <== 0x%08x (%d)"%(addr,d,d))
-        '''    
-        if MONITOR_EMIO and VEBOSE:
-            gpio0=read_mem (0xe000a068)
-            gpio1=read_mem (0xe000a06c)
-            print("GPIO: %04x %04x %04x %04x"%(gpio1>>16, gpio1 & 0xffff, gpio0>>16, gpio0 & 0xffff))
-            if ((gpio0 & 0xc) != 0xc) or ((gpio0 & 0xff00) != 0):
-                print("******** AXI STUCK ************")
-                exit (0)
-        '''    
 
     def read_mem (self,addr,quiet=1):
         '''

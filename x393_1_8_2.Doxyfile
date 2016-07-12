@@ -104,7 +104,7 @@ WARN_LOGFILE = log.txt
 #---------------------------------------------------------------------------
 # Configuration options related to the input files
 #---------------------------------------------------------------------------
-INPUT = . axi compressor_jp dsp includes logger memctrl sensor simulation_modules timing util_modules wrap x393_sata py393 helpers 
+INPUT = . axi compressor_jp dsp includes logger memctrl sensor simulation_modules timing util_modules wrap x393_sata helpers 
 
 INPUT_ENCODING = UTF-8
 FILE_PATTERNS = *.v *.vh *.ucf *.qsf *.tcl *.py
