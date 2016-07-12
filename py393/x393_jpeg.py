@@ -1096,6 +1096,7 @@ jpeg_write  "img.jpeg" 0 85
 
 
 ################## Simulate Serial ####################
+./py393/test_mcntrl.py @py393/cocoargs  --simulated=localhost:7777
 measure_all "*DI"
 setup_all_sensors True None 0xf
 compressor_control  all  None  None  None None None  2
