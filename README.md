@@ -17,5 +17,5 @@ is in this [blog post](http://blog.elphel.com/2016/03/free-fpga-reimplement-the-
 Python program used on the target and during Cocotb simulation requires Python numpy module, on Ubuntu you may
 install it with
 ```
-sudo apt-get install python2.7-numpy
+sudo apt-get install python-numpy
 ```
