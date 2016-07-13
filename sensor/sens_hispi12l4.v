@@ -264,7 +264,7 @@ module  sens_hispi12l4#(
                                                   ({12 {fifo_re_r[1] & rd_run[1]}} & fifo_out[1 * 12 +:12]) |
                                                   ({12 {fifo_re_r[2] & rd_run[2]}} & fifo_out[2 * 12 +:12]) |
                                                   ({12 {fifo_re_r[3] & rd_run[3]}} & fifo_out[3 * 12 +:12]);
-                                                  
+    reg                             start_only; // time window at the beginning of each line, can not end here                                              
        
     
     
@@ -297,10 +297,14 @@ module  sens_hispi12l4#(
         start_fifo_re <= sol_pclk && !rd_line; // sol_pclk may be multi-cycle
        
         sof_pclk <= vact_pclk_strt[0] && ! vact_pclk_strt[1];
+        
+        if (prst || sof_pclk || sol_all_dly) start_only <= 0;
+        else if (sol_pclk)                   start_only <= 1;
+        
        
         if      (prst || sof_pclk) rd_line <= 0;
         else if (sol_pclk)         rd_line <= 1;
-        else                       rd_line <= rd_line & (&(~good_lanes | rd_run)); // Off when first of the good lanes goes off      
+        else                       rd_line <= rd_line & (start_only || (&(~good_lanes | rd_run))); // Off when first of the good lanes goes off      
        
         rd_line_r <= rd_line;
         

@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.3.66 (w)1999-2015 BSI
-[*] Sat Jul  9 20:52:38 2016
+[*] Wed Jul 13 03:31:29 2016
 [*]
-[dumpfile] "/home/eyesis/git/x393-neon/simulation/x393_testbench03-20160708085728438.fst"
-[dumpfile_mtime] "Fri Jul  8 15:12:58 2016"
-[dumpfile_size] 152798280
+[dumpfile] "/home/eyesis/git/x393-neon/simulation/x393_testbench03-20160708114239115.fst"
+[dumpfile_mtime] "Fri Jul  8 17:58:15 2016"
+[dumpfile_size] 152636136
 [savefile] "/home/eyesis/git/x393-neon/x393_testbench04.sav"
-[timestart] 0
-[size] 1920 1171
+[timestart] 44643100
+[size] 1836 1171
 [pos] 0 24
-*-24.427032 91816667 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-17.551579 45052388 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] x393_testbench03.
 [treeopen] x393_testbench03.read_compressor_frame_irq.
 [treeopen] x393_testbench03.read_contol_register_irq.
@@ -18,7 +18,6 @@
 [treeopen] x393_testbench03.x393_i.
 [treeopen] x393_testbench03.x393_i.cmd_mux_i.
 [treeopen] x393_testbench03.x393_i.cmd_seq_mux_i.status_generate_cmd_seq_mux_i.
-[treeopen] x393_testbench03.x393_i.compressor393_i.
 [treeopen] x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.dct2d8x8_chen_i.
 [treeopen] x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.dct2d8x8_chen_i.dct1d_chen_reorder_in_i.
 [treeopen] x393_testbench03.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.dct2d8x8_chen_i.dct1d_chen_stage1_i.
@@ -43,7 +42,6 @@
 [treeopen] x393_testbench03.x393_i.compressor393_i.genblk3.cmprs_afi0_mux_i.cmprs_afi_mux_status_i.status_generate1_i.genblk2.
 [treeopen] x393_testbench03.x393_i.compressor393_i.genblk3.cmprs_afi0_mux_i.cmprs_afi_mux_status_i.status_generate1_i.genblk2.status_generate_only_i.
 [treeopen] x393_testbench03.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.
-[treeopen] x393_testbench03.x393_i.mcntrl393_i.
 [treeopen] x393_testbench03.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.
 [treeopen] x393_testbench03.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.
 [treeopen] x393_testbench03.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.phy_top_i.
@@ -55,10 +53,14 @@
 [treeopen] x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].
 [treeopen] x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.
 [treeopen] x393_testbench03.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.
+[treeopen] x393_testbench03.x393_i.sensors393_i.sensor_channel_block[1].
 [treeopen] x393_testbench03.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.
+[treeopen] x393_testbench03.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.
+[treeopen] x393_testbench03.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.
+[treeopen] x393_testbench03.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[0].
+[treeopen] x393_testbench03.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.sens_hispi_clock_i.
 [treeopen] x393_testbench03.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sensor_i2c_io_i.
 [treeopen] x393_testbench03.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.
-[treeopen] x393_testbench03.x393_i.sensors393_i.sensor_channel_block[2].
 [treeopen] x393_testbench03.x393_i.sensors393_i.sensor_channel_block[2].sensor_channel_i.
 [treeopen] x393_testbench03.x393_i.sensors393_i.sensor_channel_block[2].sensor_channel_i.sensor_i2c_io_i.
 [treeopen] x393_testbench03.x393_i.sensors393_i.sensor_channel_block[2].sensor_membuf_i.
@@ -68,8 +70,8 @@
 [treeopen] x393_testbench03.x393_i.sync_resets_i.rst_block[5].
 [treeopen] x393_testbench03.x393_i.sync_resets_i.rst_block[5].level_cross_clocks_rst_i.
 [treeopen] x393_testbench03.x393_i.sync_resets_i.rst_block[5].level_cross_clocks_rst_i.level_cross_clock_block[0].
-[sst_width] 321
-[signals_width] 348
+[sst_width] 454
+[signals_width] 418
 [sst_expanded] 1
 [sst_vpaned_height] 642
 @820
@@ -234,6 +236,26 @@ x393_testbench03.x393_i.sync_resets_i.rst_block[5].level_cross_clocks_rst_i.d_ou
 -resets
 @800200
 -sensor_hispi
+@22
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.data_r[31:0]
+@28
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.set_fifo_dly
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.set_idelays
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.ld_idelay
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.set_lanes_map
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.set_iclk_phase
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.rst_mmcm
+@22
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.lanes_map[7:0]
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.fifo_out_dly_mclk[3:0]
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.sens_hispi_clock_i.phase[7:0]
+@29
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.sens_hispi_clock_i.set_phase
+@22
+x393_testbench03.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.sens_hispi_clock_i.ps_out[7:0]
+@200
+-
+@800200
 -chn1
 @22
 x393_testbench03.PX1_D[11:0]
@@ -429,20 +451,20 @@ x393_testbench03.x393_i.compressor393_i.genblk3.cmprs_afi0_mux_i.fifo_count0[7:0
 -simul_axi_hp1_wr
 @200
 -
-@23
+@22
 x393_testbench03.simul_axi_hp1_wr_i.sim_bresp_latency[3:0]
 x393_testbench03.simul_axi_hp1_wr_i.sim_wid[5:0]
 x393_testbench03.simul_axi_hp1_wr_i.sim_wr_address[31:0]
-@29
+@28
 x393_testbench03.simul_axi_hp1_wr_i.sim_wr_cap[2:0]
-@23
+@22
 x393_testbench03.simul_axi_hp1_wr_i.sim_wr_data[63:0]
 x393_testbench03.simul_axi_hp1_wr_i.sim_wr_qos[3:0]
-@29
+@28
 x393_testbench03.simul_axi_hp1_wr_i.sim_wr_ready
-@23
+@22
 x393_testbench03.simul_axi_hp1_wr_i.sim_wr_stb[7:0]
-@29
+@28
 x393_testbench03.simul_axi_hp1_wr_i.sim_wr_valid
 @1000200
 -simul_axi_hp1_wr
