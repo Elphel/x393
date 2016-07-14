@@ -49,8 +49,9 @@ if { $HISPI} {
 }
 
 
-create_clock -name axi_aclk -period 20 [get_nets -hierarchical *axi_aclk]
-
+#create_clock -name axi_aclk -period 20 [get_nets -hierarchical *axi_aclk]
+#create_clock -name axi_aclk -period 20 [get_nets clocks393_i/aclk]
+create_clock -name axi_aclk -period 20 [get_pins clocks393_i/bufg_axi_aclk_i/O]
 create_generated_clock -name ddr3_sdclk [get_nets -hierarchical sdclk_pre ]
 create_generated_clock -name ddr3_clk [get_nets -hierarchical clk_pre ]
 create_generated_clock -name ddr3_clk_div [get_nets -hierarchical clk_div_pre ]
@@ -65,10 +66,11 @@ create_clock -name ffclk0 -period 41.667 [get_ports {ffclk0p}]
 #Generated clocks are assumed to be tied to clkin1 (not 2), so until external ffclk0 is constrained, derivative clocks are not generated
 create_generated_clock -name pclk      [get_nets clocks393_i/dual_clock_pclk_i/clk1x_pre ]
 if ($HISPI) {
-  set_property CLOCK_DEDICATED_ROUTE FALSE [get_nets sensors393_i/sensor_channel_block\[0\].sensor_channel_i/sens_10398_i/sens_hispi12l4_i/sens_hispi_clock_i/clk_in]
-  set_property CLOCK_DEDICATED_ROUTE FALSE [get_nets sensors393_i/sensor_channel_block\[1\].sensor_channel_i/sens_10398_i/sens_hispi12l4_i/sens_hispi_clock_i/clk_in]
-  set_property CLOCK_DEDICATED_ROUTE FALSE [get_nets sensors393_i/sensor_channel_block\[2\].sensor_channel_i/sens_10398_i/sens_hispi12l4_i/sens_hispi_clock_i/clk_in]
-  set_property CLOCK_DEDICATED_ROUTE FALSE [get_nets sensors393_i/sensor_channel_block\[3\].sensor_channel_i/sens_10398_i/sens_hispi12l4_i/sens_hispi_clock_i/clk_in]
+#WARNING: [Vivado 12-4777] Setting CLOCK_DEDICATED_ROUTE constraint on the PARENT net instead of the specified net segment (net name: sensors393_i/sensor_channel_block[0].sensor_channel_i/sens_10398_i/sens_hispi12l4_i/sens_hispi_clock_i/clk_in). Placer only honors CLOCK_DEDICATED_ROUTE when set on the PARENT net, e.g. net segment directly connected to the driver. To eliminate this message, please update your constraint to specify the PARENT net instead. [/home/xilinx/vdt/x393/x393_timing.tcl:68]
+#  set_property CLOCK_DEDICATED_ROUTE FALSE [get_nets sensors393_i/sensor_channel_block\[0\].sensor_channel_i/sens_10398_i/sens_hispi12l4_i/sens_hispi_clock_i/clk_in]
+#  set_property CLOCK_DEDICATED_ROUTE FALSE [get_nets sensors393_i/sensor_channel_block\[1\].sensor_channel_i/sens_10398_i/sens_hispi12l4_i/sens_hispi_clock_i/clk_in]
+#  set_property CLOCK_DEDICATED_ROUTE FALSE [get_nets sensors393_i/sensor_channel_block\[2\].sensor_channel_i/sens_10398_i/sens_hispi12l4_i/sens_hispi_clock_i/clk_in]
+#  set_property CLOCK_DEDICATED_ROUTE FALSE [get_nets sensors393_i/sensor_channel_block\[3\].sensor_channel_i/sens_10398_i/sens_hispi12l4_i/sens_hispi_clock_i/clk_in]
 
 } else {
   #Sensor-synchronous clocks
