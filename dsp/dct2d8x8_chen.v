@@ -228,27 +228,26 @@ module  dct2d8x8_chen#(
 
 // Just for debugging/comparing with old 1-d DCT:
 `ifdef SIMULATION // no sense to synthesize it
-`ifdef DEBUG_DCT1D
-wire [TRANSPOSE_WIDTH-1:0] dbg_d_out;
-//wire        [15:0]   dbg_d_out13=dbg_d_out[7 +: 16] ;
-wire                 dbg_dv;
-wire                 dbg_en_out;
-wire                 dbg_pre_first_out;
-
-    dct1d_chen_reorder_out #(
-        .WIDTH       (TRANSPOSE_WIDTH)
-    ) dct1d_chen_reorder_out_dbg_i (
-        .clk         (clk),                    // input
-        .rst         (rst),                    // input
-        .en          (dbg_stage1_pre2_en_out), // input
-        .din         (dct1_out),               // input[23:0] 
-        .pre2_start  (stage1_pre2_start_out),  // input
-        .dout        (dbg_d_out),              // output[23:0] 
-        .start_out   (dbg_pre_first_out),      // output reg 
-        .dv          (dbg_dv),                 // output reg 
-        .en_out      (dbg_en_out)              // output reg 
-    );
-`endif
+    `ifdef DEBUG_DCT1D
+        wire [TRANSPOSE_WIDTH-1:0] dbg_d_out;
+    //wire        [15:0]   dbg_d_out13=dbg_d_out[7 +: 16] ;
+        wire                 dbg_dv;
+        wire                 dbg_en_out;
+        wire                 dbg_pre_first_out;
+        dct1d_chen_reorder_out #(
+            .WIDTH       (TRANSPOSE_WIDTH)
+        ) dct1d_chen_reorder_out_dbg_i (
+            .clk         (clk),                    // input
+            .rst         (rst),                    // input
+            .en          (dbg_stage1_pre2_en_out), // input
+            .din         (dct1_out),               // input[23:0] 
+            .pre2_start  (stage1_pre2_start_out),  // input
+            .dout        (dbg_d_out),              // output[23:0] 
+            .start_out   (dbg_pre_first_out),      // output reg 
+            .dv          (dbg_dv),                 // output reg 
+            .en_out      (dbg_en_out)              // output reg 
+        );
+    `endif
 `endif    
 endmodule
 
