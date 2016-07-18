@@ -111,15 +111,6 @@ module  simul_axi_hp_rd #(
     
     wire  [3:0] rd_qos_in;
     wire  [3:0] rd_qos_out;
-/*    
-    wire        aw_nempty;
-    wire        w_nempty;
-    wire        enough_data; // enough data to start a new burst
-    wire [11:3] next_wr_address; // bits that are incrtemented in 64-bit mode (higher are kept according to AXI 4KB inc. limit)
-    reg  [31:0] write_address;
-    wire        fifo_wd_rd; // read data fifo
-    wire        last_confirmed_write;
-*/
 
     wire  [5:0] arid_out; // verify it matches wid_out when outputting data
     wire  [1:0] arburst_out;
@@ -141,7 +132,12 @@ module  simul_axi_hp_rd #(
     reg   [3:0] read_left;
     reg   [1:0] rburst;
     reg   [3:0] rlen;
+`ifndef AXI_4K_LIMIT_DISABLE    
     wire [11:3] next_rd_address; // bits that are incrtemented in 64-bit mode (higher are kept according to AXI 4KB inc. limit)
+`else
+    wire [31:3] next_rd_address;
+`endif    
+    
     reg  [31:0] read_address;
     
     wire        last_confirmed_read;
@@ -205,11 +201,20 @@ module  simul_axi_hp_rd #(
     assign last_read = (read_left==0);
     assign last_confirmed_read = (read_left==0) && sim_rd_valid && sim_rd_ready;
     // AXI: Bursts should not cross 4KB boundaries (... and to limit size of the address incrementer)
-    // in 64 bit mode - low 3 bits are preserved, next 9 are incremented        
+    // in 64 bit mode - low 3 bits are preserved, next 9 are incremented
+`ifndef AXI_4K_LIMIT_DISABLE    
     assign      next_rd_address[11:3] =
       rburst[1]?
         (rburst[0]? {9'bx}:((read_address[11:3] + 1) & {5'h1f, ~rlen[3:0]})):
         (rburst[0]? (read_address[11:3]+1):(read_address[11:3]));
+`else
+    assign      next_rd_address[31:3] =
+      rburst[1]?
+        (rburst[0]? {29'bx}:((read_address[31:3] + 1) & {25'h1f, ~rlen[3:0]})):
+        (rburst[0]? (read_address[31:3]+1):(read_address[31:3]));
+`endif
+        
+        
     assign sim_rd_address = read_address; 
     assign sim_rid =        arid_out;
     // Current model policy is not to initiate a new burst (read from simulation port) if it may overflow FIFO
@@ -272,8 +277,11 @@ module  simul_axi_hp_rd #(
                 
         if   (rst)                             read_address <= 32'bx;
         else if (start_read_burst_w)           read_address <= araddr_out; // precedence over inc
+`ifndef AXI_4K_LIMIT_DISABLE    
         else if (sim_rd_valid && sim_rd_ready) read_address <= {read_address[31:12],next_rd_address[11:3],read_address[2:0]};
-        
+`else
+        else if (sim_rd_valid && sim_rd_ready) read_address <= {                    next_rd_address[31:3],read_address[2:0]};
+`endif        
         
     end
 

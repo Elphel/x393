@@ -133,6 +133,18 @@ module  cmprs_pixel_buf_iface #(
 //    assign data_out =          do_r;
     assign pre_first_out =     pre_first_out_r[0];
     assign pre2_first_out =    pre_first_out_r[1];
+`ifdef DEBUG_COMPRESSOR_SCRAMBLE
+    wire [31:0] DBG_SCRAMBLED;
+    scrambler #(
+        .DATA_BYTE_WIDTH(4)
+    ) scrambler_i (
+        .clk      (xclk), // input wire 
+        .rst      (mb_pre_start), // input wire 
+        .val_in   (buf_re[CMPRS_BUF_EXTRA_LATENCY+2]), // input wire 
+        .data_in  ({24'b0,buf_di}), // input[31:0] wire 
+        .data_out (DBG_SCRAMBLED) // output[31:0] wire 
+    );
+`endif
 
     always @(posedge xclk) begin
 //        mb_h <= mb_h_m1+1;     // macroblock height

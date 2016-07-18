@@ -153,7 +153,7 @@ module  jp_channel#(
     output                        next_page_chn,      // single mclk (posedge): Done with the page in the  buffer, memory controller may read more data 
 // Master(sensor)/slave(compressor) synchronization signals
     output                        frame_start_dst,    // @mclk - trigger receive (tiledc) memory channel (it will take care of single/repetitive
-                                                      // these output either follows vsync_late (reclocks it) or generated in non-bonded mode
+                                                      // this output either follows vsync_late (reclocks it) or generated in non-bonded mode
                                                       // (compress from memory)
     input [FRAME_HEIGHT_BITS-1:0] line_unfinished_src,// number of the current (unfinished ) line, in the source (sensor) channel (RELATIVE TO FRAME, NOT WINDOW?)
     input   [LAST_FRAME_BITS-1:0] frame_number_src,   // current frame number (for multi-frame ranges) in the source (sensor) channel
@@ -723,7 +723,7 @@ module  jp_channel#(
         .coring_we          (set_coring_w),        // input - write color saturation values
         .di                 (cmd_data),            // input[31:0] - 32-bit data to write to control register (24LSB are used)
         .frame_start        (frame_start_dst),     // input @mclk
-        .frame_start_xclk   (frame_start_xclk),    // re-clocked, parameters are copied during this pulse
+        .frame_start_xclk   (frame_start_xclk),    // output re-clocked, parameters are copied during this pulse
         .cmprs_en_mclk      (cmprs_en_mclk),       // output
         .cmprs_en_extend    (cmprs_en_extend),     // input
         .cmprs_run_mclk     (cmprs_run_mclk),      // output reg 
@@ -970,7 +970,20 @@ module  jp_channel#(
     // Each pass (1d) uses 5 DSP48E1 modules (2 - multipliers and 3 SIMD (2x24) adder/subracters
     // Needs a small (<48, but did not calculate yet) pause between block if they did not come
     // immediately after each other. This pause is needed to restart pipeline
+`ifdef DEBUG_COMPRESSOR_SCRAMBLE
+    wire DBG_DCT_DV;
+    wire [31:0] DBG_DCT_SCRAMBLED;
+    scrambler #(
+        .DATA_BYTE_WIDTH(4)
+    ) scrambler_i (
+        .clk      (xclk),                                                 // input wire 
+        .rst      (first_block_dct && !DBG_DCT_DV && !dct_pre_first_out), // input wire 
+        .val_in   (DBG_DCT_DV),                                           // input wire 
+        .data_in  ({19'b0, dct_out}),                                     // input[31:0] wire 
+        .data_out (DBG_DCT_SCRAMBLED)                                     // output[31:0] wire 
+    );
     
+`endif    
     dct2d8x8_chen #(
         .INPUT_WIDTH      (10),
         .OUTPUT_WIDTH     (13),
@@ -990,8 +1003,12 @@ module  jp_channel#(
         .xin           (yc_nodc),           // input[9:0] signed 
         .last_in       (dct_last_in),       // output reg 
         .pre_first_out (dct_pre_first_out), // output
+`ifdef DEBUG_COMPRESSOR_SCRAMBLE
+        .dv            (DBG_DCT_DV),        // output
+`else
         .dv            (),                  // output
-        .d_out         (dct_out)           // output[12:0] signed 
+`endif        
+        .d_out         (dct_out)            // output[12:0] signed 
     );
     
     wire          quant_start;

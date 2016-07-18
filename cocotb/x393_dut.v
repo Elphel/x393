@@ -383,7 +383,9 @@ module  x393_dut#(
 `endif
 
 `ifdef HISPI 
-    parameter HBLANK=            92; // 72; // 62; // 52; // 90; // 12; /// 52; //*********************
+    parameter HBLANK=            132; // all in time
+///    parameter HBLANK=            122; // 72; // 62; // 52; // 90; // 12; /// 52; //********************* Still too fast
+///    parameter HBLANK=            92; // 72; // 62; // 52; // 90; // 12; /// 52; //*********************
     parameter BLANK_ROWS_BEFORE= 9; /// 3; // 9; // 3; //8; ///2+2 - a little faster than compressor
     parameter BLANK_ROWS_AFTER=  8; /// 1; //8;
     

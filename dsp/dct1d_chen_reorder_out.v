@@ -75,14 +75,15 @@ module  dct1d_chen_reorder_out#(
             else if ((per_type != 0) && (per_type != 3)) per_type <= per_type + 1;  
         end
     
-        if      (rst)                                              pre_we_r <= 0;
-        else if (pre2_start)                                       pre_we_r <= 1;
-        else if ((per_type == 0) || ((cntr_in==3) && per_type[2])) pre_we_r <= 0;
+        if      (rst)                                                   pre_we_r <= 0;
+        else if (pre2_start)                                            pre_we_r <= 1;
+///     else if ((per_type == 0) || ((cntr_in==3) && per_type[2]))      pre_we_r <= 0;
+        else if ((per_type == 0) || ((cntr_in[2:0]==3) && per_type[2])) pre_we_r <= 0;
         we_r <= pre_we_r;
         
         if      (rst)        cntr_in <= 0;
         else if (pre2_start) cntr_in <= {~cntr_in[3],3'b0};
-        else if (pre_we_r)       cntr_in <= cntr_in + 1;
+        else if (pre_we_r)   cntr_in <= cntr_in + 1;
         case (cntr_in[2:0])
             3'h0: ina_rom <= {1'b0,3'h4};
             3'h1: ina_rom <= {1'b1,3'h1};
@@ -96,16 +97,19 @@ module  dct1d_chen_reorder_out#(
         
         if (we_r) reord_buf_ram[waddr] <= din;
 
-        if      ((per_type == 2) && (cntr_in == 1))   raddr <= {~cntr_in[3], 3'b0};
+///        if      ((per_type == 2) && (cntr_in == 1))   raddr <= {~cntr_in[3], 3'b0};
+        if      ((per_type == 2) && (cntr_in[2:0] == 1))   raddr <= {~cntr_in[3], 3'b0};
         else if ((raddr[2:0] != 0) || (per_type !=0)) raddr <= raddr + 1;
         
         if (en_out_r) dout_r <=  reord_buf_ram[raddr];
         
-        start_out_r <=  (per_type == 2) && (cntr_in == 1);
+///        start_out_r <=  (per_type == 2) && (cntr_in == 1);
+        start_out_r <=  (per_type == 2) && (cntr_in[2:0] == 1);
         
         if (rst ||(per_type == 0) )                 en_out_r <= 0;
 //        else if (cntr_in == 1)      en_out_r <= (per_type == 2) || !per_type[2];
-        else if ((cntr_in == 1) && (per_type == 2)) en_out_r <= 1;
+///     else if ((cntr_in == 1) && (per_type == 2)) en_out_r <= 1;
+        else if ((cntr_in[2:0] == 1) && (per_type == 2)) en_out_r <= 1;
         else if (stop_out && !en)                   en_out_r <= 0;
         //stop_out
         

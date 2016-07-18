@@ -312,10 +312,13 @@ module  dct1d_chen#(
         if      (rst)      per_type <= 0;
         else if (start)    per_type <= 3'h1;
         else if (phase[7]) begin
-            if (!per_type[2] && !en)  per_type <= 3'h6;
+///            if (!per_type[2] && !en)  per_type <= 3'h6;
+            if (!per_type[2] && !en)  per_type <= 3'h7;
             else if ((per_type != 0) && (per_type != 3)) per_type <= per_type + 1;  
         end
-        phase <= {phase[6:0], start | (phase[7] & (|per_type) )};
+///        phase <= {phase[6:0], start | (phase[7] & (|per_type) & ~(&per_type))}; // both per_type 7 and 0 disables
+        phase <= {phase[6:0], start | (phase[7] & (|per_type))}; 
+        //TODO: 
         
         if (rst || start || phase[7]) phase_cnt <= 0;
         else if (|phase[6:0])         phase_cnt <= phase_cnt + 1;
@@ -343,8 +346,10 @@ module  dct1d_chen#(
         
         if (rst || !(en || (|phase))) pre_en_out <= 0;
         else if (phase[3]) begin
-            if      (per_type == 2)   pre_en_out <= 1;
-            else if (per_type[2])     pre_en_out <= 0;
+            if      (per_type == 2)     pre_en_out <= 1;
+///         else if (per_type[2])       pre_en_out <= 0;
+///            else if (&per_type[2:0])  pre_en_out <= 0;
+            else if (per_type[2:0]==0)  pre_en_out <= 0;
         end
         
         en_out <= pre_en_out;

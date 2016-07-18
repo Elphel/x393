@@ -148,7 +148,7 @@ class X393Mem(object):
             X393_CLIENT.flush()
     def wait_irq(self,irq_mask= 0, wait_ns = 1000):
         """
-        Wait silation certain time, interruptible
+        Wait simulation certain time (in ns), interruptible
         @param irq_mask - mask to be AND-ed with interrupt vector
         @param wait_ns - timeout in nanoseconds
         """

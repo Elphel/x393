@@ -130,7 +130,11 @@ UPDATE: Xilinx docs say that (AR/AW)CACHE is ignored
     wire        aw_nempty;
     wire        w_nempty;
     wire        enough_data; // enough data to start a new burst
+`ifndef AXI_4K_LIMIT_DISABLE    
     wire [11:3] next_wr_address; // bits that are incrtemented in 64-bit mode (higher are kept according to AXI 4KB inc. limit)
+`else
+    wire [31:3] next_wr_address;
+`endif    
     reg  [31:0] write_address;
     reg   [5:0] awid_r;          // awid registered with write_address
     wire        fifo_wd_rd; // read data fifo
@@ -248,11 +252,19 @@ UPDATE: Xilinx docs say that (AR/AW)CACHE is ignored
         (aw_nempty && enough_data) || (write_in_progress && !last_confirmed_write); 
 
     // AXI: Bursts should not cross 4KB boundaries (... and to limit size of the address incrementer)
-    // in 64 bit mode - low 3 bits are preserved, next 9 are incremented        
+    // in 64 bit mode - low 3 bits are preserved, next 9 are incremented
+    // Seems that Zynq is OK to cross 4K boundary
+`ifndef AXI_4K_LIMIT_DISABLE    
     assign      next_wr_address[11:3] =
       wburst[1]?
         (wburst[0]? {9'bx}:((write_address[11:3] + 1) & {5'h1f, ~wlen[3:0]})):
         (wburst[0]? (write_address[11:3]+1):(write_address[11:3]));
+`else
+    assign      next_wr_address[31:3] =
+      wburst[1]?
+        (wburst[0]? {29'bx}:((write_address[31:3] + 1) & {25'h1f, ~wlen[3:0]})):
+        (wburst[0]? (write_address[31:3]+1):(write_address[31:3]));
+`endif        
     assign sim_wr_data= wdata_out; 
     assign sim_wid= wid_out;    
     assign sim_wr_stb=wstrb_out;
@@ -305,8 +317,11 @@ UPDATE: Xilinx docs say that (AR/AW)CACHE is ignored
             
       if   (rst)                    write_address <= 32'bx;
       else if (start_write_burst_w) write_address <= awaddr_out; // precedence over inc
+`ifndef AXI_4K_LIMIT_DISABLE    
       else if (fifo_wd_rd)          write_address <= {write_address[31:12],next_wr_address[11:3],write_address[2:0]};
-      
+`else
+      else if (fifo_wd_rd)          write_address <= {                     next_wr_address[31:3],write_address[2:0]};
+`endif      
       if   (rst)                    awid_r <= 6'bx;
       else if (start_write_burst_w) awid_r <= awid_out; // precedence over inc
       

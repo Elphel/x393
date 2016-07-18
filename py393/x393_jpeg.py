@@ -768,7 +768,27 @@ class X393Jpeg(object):
         """
         @return absolute path of the directory one above current script one
         """
-        return os.path.abspath(os.path.join(os.path.dirname(__file__), '../'))    
+        return os.path.abspath(os.path.join(os.path.dirname(__file__), '../'))
+    def jpeg_sim_multi(self,
+                       num_rpt=1,
+                       irq_mask = 0xf0,
+                       irq_after=100,
+                       irq_timeout = 100000,
+                       file_path = "img@.jpeg"):
+        """
+        Wait for ready, acquire and save next image, use img
+        @param num_rpt - numer of times to acquire next ready image
+        @param irq_mask - IRQ mask, 0xf0 - all 4 channels
+        @param irq_after- nanoseconds to wait after IRQ befor4e reading pointers
+        @param irq_timeout - time (in nanoseconds) to wait for interrupts 
+        @param file_path - camera file system path (starts with "/") or relative to web server root,
+               @ is replaced with timestamp, -<chn> added before "."  
+        """
+        for _ in range (num_rpt):
+            self.x393_mem.wait_irq(irq_mask= irq_mask, wait_ns = irq_timeout) 
+            self.x393_mem.wait_irq(irq_mask= 0,        wait_ns = irq_after) 
+            self.jpeg_write(file_path, "next")
+            
     def jpeg_write(self,
                    file_path = "img.jpeg", 
                    channel =   0, 
@@ -1105,10 +1125,14 @@ compressor_control  all  None  None  None None None  2
 compressor_interrupt_control all clr
 compressor_interrupt_control all en
 compressor_control  all  3
+jpeg_sim_multi 8
+jpeg_sim_multi 8
+
+
+
 wait_irq 0xf0 100000
 wait_irq 0x0    100
 jpeg_write  "img@.jpeg" next
-
 
 jpeg_write  "/home/eyesis/git/x393-neon/www/img.jpeg" next
 
