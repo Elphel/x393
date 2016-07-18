@@ -46,7 +46,6 @@
 // Interconnect does not have 4K limit, and compressed data can only go to interconnect (memory), so it is OK to violate AXI specs here
   `define AXI_4K_LIMIT_DISABLE // Current x393 code (only simulation modules) does not have it implemented, defining it causes mismatch synth/sim    
   `define DEBUG_COMPRESSOR_SCRAMBLE
-  
   `define DEBUG_DCT1D // undefine after debugging is over
 //  `define USE_OLD_DCT
   
@@ -64,7 +63,7 @@
   `define PRELOAD_BRAMS
   `define DISPLAY_COMPRESSED_DATA  
   // if HISPI is not defined, parallel sensor interface is used for all channels
-  `define HISPI /*************** CHANGE here and x393_hispi/x393_parallel in bitstream tool settings ****************/
+//  `define HISPI /*************** CHANGE here and x393_hispi/x393_parallel in bitstream tool settings ****************/
 //    `define USE_OLD_XDCT393  
 //  `define USE_PCLK2X
 //  `define USE_XCLK2X
@@ -99,6 +98,12 @@
     `define SIMULATION
     `define OPEN_SOURCE_ONLY
   `endif // CVC
+  
+  `ifndef SIMULATION
+    `undef DEBUG_COMPRESSOR_SCRAMBLE
+    `undef DEBUG_DCT1D // undefine after debugging is over
+  `endif
+  
   
 // will not use simultaneous reset in shift registers, just and input data with ~rst  
  `define SHREG_SEQUENTIAL_RESET 1
