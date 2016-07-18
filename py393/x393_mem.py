@@ -33,7 +33,7 @@ import mmap
 import struct
 import os
 import sys
-import traceback
+#import traceback
 
 sys.path.append(os.path.abspath(os.path.dirname(sys.argv[0])+'/../cocotb'))
 from socket_command import x393Client

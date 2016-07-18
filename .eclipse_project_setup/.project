@@ -48,4 +48,51 @@
 		<nature>com.elphel.vdt.veditor.HdlNature</nature>
 		<nature>org.python.pydev.pythonNature</nature>
 	</natures>
+	<linkedResources>
+		<link>
+			<name>vivado_logs/VivadoBitstream.log</name>
+			<type>1</type>
+			<location>/home/andrey/git/x393-neon/vivado_logs/VivadoBitstream-20160713221922665.log</location>
+		</link>
+		<link>
+			<name>vivado_logs/VivadoOpt.log</name>
+			<type>1</type>
+			<location>/home/andrey/git/x393-neon/vivado_logs/VivadoOpt-20160713221922665.log</location>
+		</link>
+		<link>
+			<name>vivado_logs/VivadoOptPhys.log</name>
+			<type>1</type>
+			<location>/home/andrey/git/x393-neon/vivado_logs/VivadoOptPhys-20160713221922665.log</location>
+		</link>
+		<link>
+			<name>vivado_logs/VivadoOptPower.log</name>
+			<type>1</type>
+			<location>/home/andrey/git/x393-neon/vivado_logs/VivadoOptPower-20160713221922665.log</location>
+		</link>
+		<link>
+			<name>vivado_logs/VivadoPlace.log</name>
+			<type>1</type>
+			<location>/home/andrey/git/x393-neon/vivado_logs/VivadoPlace-20160713221922665.log</location>
+		</link>
+		<link>
+			<name>vivado_logs/VivadoRoute.log</name>
+			<type>1</type>
+			<location>/home/andrey/git/x393-neon/vivado_logs/VivadoRoute-20160713221922665.log</location>
+		</link>
+		<link>
+			<name>vivado_logs/VivadoSynthesis.log</name>
+			<type>1</type>
+			<location>/home/andrey/git/x393-neon/vivado_logs/VivadoSynthesis-20160713221027219.log</location>
+		</link>
+		<link>
+			<name>vivado_logs/VivadoTimimgSummaryReportImplemented.log</name>
+			<type>1</type>
+			<location>/home/andrey/git/x393-neon/vivado_logs/VivadoTimimgSummaryReportImplemented-20160713221922665.log</location>
+		</link>
+		<link>
+			<name>vivado_state/x393-synth.dcp</name>
+			<type>1</type>
+			<location>/home/andrey/git/x393-neon/vivado_state/x393-synth-20160713203728437.dcp</location>
+		</link>
+	</linkedResources>
 </projectDescription>
