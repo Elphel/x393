@@ -186,7 +186,7 @@ class X393Mem(object):
             packedData=struct.pack(self.ENDIAN+"L",data)
             d=struct.unpack(self.ENDIAN+"L",packedData)[0]
             mm[page_offs:page_offs+4]=packedData
-            if quiet <2:
+            if quiet < 1:
                 print ("0x%08x <== 0x%08x (%d)"%(addr,d,d))
 
     def read_mem (self,addr,quiet=1):

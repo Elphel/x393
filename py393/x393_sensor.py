@@ -353,7 +353,7 @@ class X393Sensor(object):
         @param verbose -    verbose level
         @return combined table data word.
         """  
-        if verbose>0:
+        if verbose>1:
             print ("func_sensor_i2c_table_reg_wr(): slave_addr= ",slave_addr,", rah=",rah,", num_bytes = ",num_bytes,", bit_delay = ",bit_delay)
         rslt = 0
         rslt |= (slave_addr & ((1 << vrlg.SENSI2C_TBL_SA_BITS)   - 1)) << vrlg.SENSI2C_TBL_SA
