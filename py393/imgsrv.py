@@ -39,7 +39,8 @@ import shutil
 import sys
 import subprocess
 
-path="/tmp/img.jpeg"
+path="/www/pages/img.jpeg"
+#path="/tmp/img.jpeg"
 PORT=8888
 def communicate(port,snd_str):
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -67,7 +68,7 @@ acquisition_parameters={
         "black":        None,
         "colorsat_blue":None,
         "colorsat_red": None,
-        "server_root":  "/tmp/",
+        "server_root":  "/www/pages/",
         "gain_r":       None,
         "gain_gr":      None,
         "gain_gb":      None,
