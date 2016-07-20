@@ -151,21 +151,22 @@ class X393SensCmprs(object):
         global BUFFER_ADDRESS_H2D, BUFFER_LEN_H2D, BUFFER_ADDRESS_D2H, BUFFER_LEN_D2H, BUFFER_ADDRESS_BIDIR, BUFFER_LEN_BIDIR
 #        global SENSOR_DEFAULTS_SIMULATION 
         print ("X393SensCmprs.__init__: dry_mode=",dry_mode)
-        try:
-            if ":" in dry_mode:
-                print ("X393SensCmprs.__init__: setting SENSOR_DEFAULTS")
-                SENSOR_DEFAULTS[x393_sensor.SENSOR_INTERFACE_PARALLEL]["width"]=  vrlg.WOI_WIDTH + 2 # 4
-                SENSOR_DEFAULTS[x393_sensor.SENSOR_INTERFACE_PARALLEL]["height"]= vrlg.WOI_HEIGHT + 4
-                SENSOR_DEFAULTS[x393_sensor.SENSOR_INTERFACE_PARALLEL]["top"]=    0
-                SENSOR_DEFAULTS[x393_sensor.SENSOR_INTERFACE_PARALLEL]["left"]=   0
-                SENSOR_DEFAULTS[x393_sensor.SENSOR_INTERFACE_HISPI]["width"]=     vrlg.WOI_WIDTH + 2 #4
-                SENSOR_DEFAULTS[x393_sensor.SENSOR_INTERFACE_HISPI]["height"]=    vrlg.WOI_HEIGHT + 4
-                SENSOR_DEFAULTS[x393_sensor.SENSOR_INTERFACE_HISPI]["top"]=       0
-                SENSOR_DEFAULTS[x393_sensor.SENSOR_INTERFACE_HISPI]["left"]=      0
-                print ("Using simulation size sensor defaults ",SENSOR_DEFAULTS)
-                
-        except:
-            print ("No simulation server is used, just running in dry mode")       
+        if (dry_mode):
+            try:
+                if ":" in dry_mode:
+                    print ("X393SensCmprs.__init__: setting SENSOR_DEFAULTS")
+                    SENSOR_DEFAULTS[x393_sensor.SENSOR_INTERFACE_PARALLEL]["width"]=  vrlg.WOI_WIDTH + 2 # 4
+                    SENSOR_DEFAULTS[x393_sensor.SENSOR_INTERFACE_PARALLEL]["height"]= vrlg.WOI_HEIGHT + 4
+                    SENSOR_DEFAULTS[x393_sensor.SENSOR_INTERFACE_PARALLEL]["top"]=    0
+                    SENSOR_DEFAULTS[x393_sensor.SENSOR_INTERFACE_PARALLEL]["left"]=   0
+                    SENSOR_DEFAULTS[x393_sensor.SENSOR_INTERFACE_HISPI]["width"]=     vrlg.WOI_WIDTH + 2 #4
+                    SENSOR_DEFAULTS[x393_sensor.SENSOR_INTERFACE_HISPI]["height"]=    vrlg.WOI_HEIGHT + 4
+                    SENSOR_DEFAULTS[x393_sensor.SENSOR_INTERFACE_HISPI]["top"]=       0
+                    SENSOR_DEFAULTS[x393_sensor.SENSOR_INTERFACE_HISPI]["left"]=      0
+                    print ("Using simulation size sensor defaults ",SENSOR_DEFAULTS)
+                    
+            except:
+                print ("No simulation server is used, just running in dry mode")       
                 
         self.DEBUG_MODE=  debug_mode
         self.DRY_MODE=    dry_mode
