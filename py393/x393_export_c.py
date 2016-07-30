@@ -112,6 +112,12 @@ class X393ExportC(object):
         if script_name[-1] == "c":
             script_name = script_name[:-1] 
         return header_template%(filename, datetime.date.today().isoformat(), script_name, description)
+    def gen_ifdef(self,filename):
+        macro= filename.upper().replace('.','_')
+        return """#ifndef %s
+#define %s        
+"""%(macro,macro)
+        return
         
     def save_typedefs(self, directory, filename):
         description = 'typedef definitions for the x393 hardware registers'
@@ -120,7 +126,9 @@ class X393ExportC(object):
         self.make_generated(os.path.abspath(os.path.join(os.path.dirname(__file__), directory)))
         with open(os.path.abspath(os.path.join(os.path.dirname(__file__), directory, filename)),"w") as out_file:
             print(header,file=out_file)
+            print(self.gen_ifdef(filename),file=out_file)
             print(txt,file=out_file)
+            print("#endif",file=out_file)
         print ("%s are written to  to %s"%(description, os.path.abspath(os.path.join(os.path.dirname(__file__), directory, filename))))
         
     def save_header_file(self, directory, filename):
@@ -142,7 +150,10 @@ class X393ExportC(object):
         self.make_generated(os.path.abspath(os.path.join(os.path.dirname(__file__), directory)))
         with open(os.path.abspath(os.path.join(os.path.dirname(__file__), directory, filename)),"w") as out_file:
             print(header,file=out_file)
+            print(self.gen_ifdef(filename),file=out_file)
             print(txt,file=out_file)
+            print("#endif",file=out_file)
+            
         print ("%s are written to  to %s"%(description, os.path.abspath(os.path.join(os.path.dirname(__file__), directory, filename))))
         
     def save_func_def_file(self, directory, filename):
@@ -180,7 +191,10 @@ class X393ExportC(object):
         self.make_generated(os.path.abspath(os.path.join(os.path.dirname(__file__), directory)))
         with open(os.path.abspath(os.path.join(os.path.dirname(__file__), directory, filename)),"w") as out_file:
             print(header,file=out_file)
+            print(self.gen_ifdef(filename),file=out_file)
             print(txt,file=out_file)
+            print("#endif",file=out_file)
+            
         print ("%s are written to  to %s"%(description, os.path.abspath(os.path.join(os.path.dirname(__file__), directory, filename))))
  
     def save_harware_map_file(self, directory, filename):
@@ -198,7 +212,10 @@ class X393ExportC(object):
         self.make_generated(os.path.abspath(os.path.join(os.path.dirname(__file__), directory)))
         with open(os.path.abspath(os.path.join(os.path.dirname(__file__), directory, filename)),"w") as out_file:
             print(header,file=out_file)
+            print(self.gen_ifdef(filename),file=out_file)
             print(txt,file=out_file)
+            print("#endif",file=out_file)
+            
         print ("%s is written to  to %s"%(description, os.path.abspath(os.path.join(os.path.dirname(__file__), directory, filename))))
  
     def get_typedefs(self, frmt_spcs = None):
@@ -1021,7 +1038,7 @@ class X393ExportC(object):
         c =  "sens_chn"
         sdefines +=[
             (('Command sequencer control',)),
-            (('_Controller is programmed through 32 locations. Each registers but the control require two writes:',)),
+            (('_Controller is programmed through 32 locations. Each register but the control requires two writes:',)),
             (('_First write - register address (AXI_WR_ADDR_BITS bits), second - register data (32 bits)',)),
             (('_Writing to the contol register (0x1f) resets the first/second counter so the next write will be "first"',)),
             (('_0x0..0xf write directly to the frame number [3:0] modulo 16, except if you write to the frame',)),
