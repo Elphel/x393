@@ -1108,7 +1108,7 @@ class X393ExportC(object):
             (("X393_MULT_SAXI_INTERRUPTS",          "",  vrlg.MULT_SAXI_CNTRL_ADDR+vrlg.MULT_SAXI_CNTRL_IRQ,    0, None, "x393_mult_saxi_interrupts", "wo","MULT_SAXI per-channel interrupts control (each dibit:nop/reset/disable/enable)")),
             (("X393_MULT_SAXI_BUF_ADDRESS",         c,   vrlg.MULT_SAXI_ADDR + 0,                        2, z3,   "x393_mult_saxi_al",                "wo","MULT_SAXI buffer start address in DWORDS")),
             (("X393_MULT_SAXI_BUF_LEN",             c,   vrlg.MULT_SAXI_ADDR + 1,                        2, z3,   "x393_mult_saxi_al",                "wo","MULT_SAXI buffer length in DWORDS")),
-            (("X393_MULT_SAXI_IRQLEN",              c,   vrlg.MULT_SAXI_IRQLEN_ADDR,                     1, z3,   "x393_mult_saxi_al",                "wo","MULT_SAXI lower DWORD address bit to change to generate interrupt")),
+            (("X393_MULT_SAXI_IRQLEN",              c,   vrlg.MULT_SAXI_IRQLEN_ADDR,                     1, z3,   "x393_mult_saxi_irqlen",            "wo","MULT_SAXI lower DWORD address bit to change to generate interrupt")),
             (("X393_MULT_SAXI_STATUS",              c,   vrlg.STATUS_ADDR + vrlg.MULT_SAXI_STATUS_REG,   1, z3,   "x393_mult_saxi_al",                "ro","MULT_SAXI current DWORD pointer"))]
 
         #MULTI_CLK global clock generation PLLs
