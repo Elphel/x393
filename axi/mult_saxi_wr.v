@@ -43,7 +43,11 @@
 
 module  mult_saxi_wr #(
     parameter MULT_SAXI_ADDR =           'h730,  // ..'h737
-    parameter MULT_SAXI_CNTRL_ADDR =     'h738,  // ..'h739
+    parameter MULT_SAXI_IRQLEN_ADDR =    'h738,  // ..'h73b
+    parameter MULT_SAXI_CNTRL_ADDR =     'h73c,  // ..'h73e
+    parameter MULT_SAXI_CNTRL_MODE =     'h0,  // 'h73c offset for mode register
+    parameter MULT_SAXI_CNTRL_STATUS =   'h1,  // 'h73d offset for status control register
+    parameter MULT_SAXI_CNTRL_IRQ =      'h2,  // 'h73e offset for IRQ contgrol register (4 dibits): 0 - nop, 1 reset, 2 - disable, 3 - enable
     parameter MULT_SAXI_STATUS_REG =     'h34,   //..'h37 uses 4 consecutive locations
     parameter MULT_SAXI_HALF_BRAM =       1,     // 0 - use full 36Kb BRAM for the buffer, 1 - use just half
     parameter MULT_SAXI_BSLOG0 =          4,     // number of bits to represent burst size (4 - b.s. = 16, 0 - b.s = 1)
@@ -51,7 +55,8 @@ module  mult_saxi_wr #(
     parameter MULT_SAXI_BSLOG2 =          4,
     parameter MULT_SAXI_BSLOG3 =          4,
     parameter MULT_SAXI_MASK =           'h7f8,  // 4 address/length pairs. In bytes, but lower bits are set to 0?
-    parameter MULT_SAXI_CNTRL_MASK =     'h7fe,  // mode and status - 2 locations
+    parameter MULT_SAXI_IRQLEN_MASK =    'h7fc,  // number of address bits to change for interrupt - 4 locations
+    parameter MULT_SAXI_CNTRL_MASK =     'h7fc,  // mode, status, irq - 3 locations
     parameter MULT_SAXI_AWCACHE =         4'h3, //..7 cache mode (4 bits, default 4'h3)
     parameter MULT_SAXI_ADV_WR =          4, // number of clock cycles before end of write to genearte adv_wr_done
     parameter MULT_SAXI_ADV_RD =          3 // number of clock cycles before end of write to genearte adv_wr_done
@@ -92,6 +97,8 @@ module  mult_saxi_wr #(
     output                     read_burst3,   // request to read a burst of data from channel 0
     input               [31:0] data_in_chn3,  // data read from channel 0 (with some latency)
     input                      pre_valid_chn3,// data valid (same latency)
+    
+    output               [3:0] irq,           // per channel IRQ (generated after each 2^n DWORDS are transferred)
 
     // S_AXI inerface w/o read channel
     // write address    
@@ -169,7 +176,13 @@ module  mult_saxi_wr #(
      
     wire                       we_ctrl;
     wire                       cmd_we_sa_len;
+    wire                       irq_log_we;  // write number of address bits to change to generate interrupt
+    wire                 [3:0] irqs_src;    // IRQ pulses to be used for IRQ generation
+    reg                  [3:0] irq_r = 0;   // IRQ request (before mask)
+    reg                  [3:0] irq_m = 0;   // IRQ enable
+    wire                       irq_we;
     
+    assign irq = irq_r & irq_m;
     assign                     saxi_bready=1'b1;
     
     assign {en_chn3, en_chn2, en_chn1, en_chn0} = en_chn_mclk; 
@@ -180,11 +193,35 @@ module  mult_saxi_wr #(
     
     assign en_chn_mclk =  mode_reg[3:0];
     assign run_chn_mclk = mode_reg[7:4];
+    assign irq_we = we_ctrl && (cmd_a[1:0] == MULT_SAXI_CNTRL_IRQ);
     
     always @ (posedge mclk) begin
-        if      (mrst)                 mode_reg <= 0;
-        else if (we_ctrl && !cmd_a[0]) mode_reg <= cmd_data[7:0];
+        if      (mrst)                                            mode_reg <= 0;
+        else if (we_ctrl && (cmd_a[1:0] == MULT_SAXI_CNTRL_MODE)) mode_reg <= cmd_data[7:0];
+/*       
+        if (mrst) irq_r <= 0;
+        else      irq_r <= irqs_src | (irq_r & (irq_we?{cmd_data[7:6] != 1,
+                                                        cmd_data[5:4] != 1,
+                                                        cmd_data[3:2] != 1,
+                                                        cmd_data[1:0] != 1}:4'hf));
+*/                                                        
     end
+    
+    generate
+        genvar i;
+        for (i=0; i<4; i=i+1) begin: irq_ctrl_block
+            always @ (posedge mclk) begin
+                if      (mrst)                      irq_m[i] <= 0;
+                else if (irq_we && cmd_data[2*i+1]) irq_m[i] <= cmd_data[2*i];
+                
+                if      (mrst)                                irq_r[i] <= 0;
+                else if (irqs_src[i])                         irq_r[i] <= 1;
+                else if (irq_we && (cmd_data[2*i +: 2] == 1)) irq_r[i] <= 0;
+                
+            end
+        end
+    endgenerate                                                
+    
 
 // Arbiter requests on copying from one of the input channels to the internal buffer
 
@@ -394,6 +431,7 @@ module  mult_saxi_wr #(
         .sa_len_di    (cmd_data[29:0]), // input[29:0] 
         .sa_len_wa    (cmd_a[2:0]),     // input[2:0] 
         .sa_len_we    (cmd_we_sa_len),  // input
+        .irq_log_we   (irq_log_we),     // input
         .chn          (re_cur_chn),     // input[1:0] 
         .start        (grant_rd_any),   // input make sure 1 cycle
         .busy         (axi_ptr_busy),   // output OR this busy with write data channel busy for en_out_arb
@@ -401,7 +439,9 @@ module  mult_saxi_wr #(
         .axi_len      (axi_len),        // output[3:0] reg 
         .pntr_wd      (pntr_wd),        // output[29:0] 
         .pntr_wa      (pntr_wa),        // output[1:0] 
-        .pntr_we      (pntr_we)         // output
+        .pntr_we      (pntr_we),        // output
+        .irqs         (irqs_src)        // output[3:0] 
+        
     );
 
     // interface axi_aw channel
@@ -498,17 +538,17 @@ module  mult_saxi_wr #(
         .DATA_WIDTH  (32),
         .ADDR1       (MULT_SAXI_CNTRL_ADDR),
         .ADDR_MASK1  (MULT_SAXI_CNTRL_MASK),
-        .ADDR2       (0),
-        .ADDR_MASK2  (0)
-    ) cmd_deser_sens_i2c_i (
-        .rst         (1'b0), //rst),                     // input
-        .clk         (mclk),                    // input
-        .srst        (mrst),                    // input
-        .ad          (cmd_ad),                  // input[7:0] 
-        .stb         (cmd_stb),                 // input
-        .addr        (cmd_a),                   // output[3:0] 
-        .data        (cmd_data),                // output[31:0] 
-        .we          ({cmd_we_sa_len,we_ctrl})  // output
+        .ADDR2       (MULT_SAXI_IRQLEN_ADDR),
+        .ADDR_MASK2  (MULT_SAXI_IRQLEN_MASK)
+    ) cmd_deser_mult_saxi_wr_i (
+        .rst         (1'b0), //rst),                      // input
+        .clk         (mclk),                              // input
+        .srst        (mrst),                              // input
+        .ad          (cmd_ad),                            // input[7:0] 
+        .stb         (cmd_stb),                           // input
+        .addr        (cmd_a),                             // output[3:0] 
+        .data        (cmd_data),                          // output[31:0] 
+        .we          ({cmd_we_sa_len,we_ctrl,irq_log_we}) // output
     );
     
     // now - converting all to parallel (TODO: use RAM for multi-word status data)
@@ -542,7 +582,7 @@ module  mult_saxi_wr #(
         .rst             (1'b0),                //rst), // input
         .clk             (mclk),                // input
         .srst            (mrst),                // input
-        .we              (we_ctrl && cmd_a[0]), // input
+        .we              (we_ctrl && (cmd_a[1:0] == MULT_SAXI_CNTRL_STATUS)), // input
         .wd              (cmd_data[7:0]),       // input[7:0] 
         .status          (status_data),         // input[128:0] 
         .ad              (status_ad),           // output[7:0] 

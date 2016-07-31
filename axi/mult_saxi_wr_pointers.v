@@ -50,6 +50,7 @@ module  mult_saxi_wr_pointers#(
     input                  [29:0] sa_len_di,        // input data to write pointers address/data
     input                  [ 2:0] sa_len_wa,        // channel address to write sa/lengths
     input                         sa_len_we,        // write enable sa/length data
+    input                         irq_log_we,       // write log2 of number of written dwords to generate interrupt 
     input                  [ 1:0] chn,              // selected channel number, valid with start
     input                         start,            // start address generation/pointer increment
     output                        busy,             // suspend new accesses (check latencies)
@@ -60,7 +61,8 @@ module  mult_saxi_wr_pointers#(
     // alternatively - read out directly from ptr_ram?
     output                 [29:0] pntr_wd, // @aclk
     output                  [1:0] pntr_wa,
-    output                        pntr_we
+    output                        pntr_we,
+    output                  [3:0] irqs             // @mclk, single-clock pulses to generate channel interrupts   
 );
     reg   [3:0] chn_en_mclk_r;
     reg   [3:0] chn_en_aclk;
@@ -79,6 +81,10 @@ module  mult_saxi_wr_pointers#(
     reg   [1:0] chn_r;                  // registered channel being processed (or reset)
     reg   [1:0] seq;                    // 1-hot sequence of address generation
     wire [29:0] sa_len_ram_out;
+    reg   [4:0] irq_log_r;
+    wire [29:0] irq_log_decoded_w;
+    reg         gen_irq; 
+    reg   [3:0] irqs_aclk;
     wire [29:0] ptr_ram_out;
     wire  [2:0] sa_len_ra;
     reg         ptr_we;                 // write to the pointer memory
@@ -105,11 +111,13 @@ module  mult_saxi_wr_pointers#(
     
 //  8x30 RAM for address/length    
     reg  [29:0] sa_len_ram[0:7];           // start chunk/num cunks in a buffer (write port @mclk)
+//  4*5 RAM to store number of dword conters that need to chnage to generate interrupt    
+    reg  [4:0] irq_log_ram[0:3];
     always @ (posedge mclk) begin
-        if (sa_len_we) sa_len_ram[sa_len_wa] <= sa_len_di;
+        if (sa_len_we)  sa_len_ram[sa_len_wa] <=       sa_len_di;
+        if (irq_log_we) irq_log_ram[sa_len_wa[1:0]] <= sa_len_di[4:0];
     end
     assign sa_len_ram_out = sa_len_ram[sa_len_ra];
-
 // 4 x 30 RAM for current pointers
     reg  [29:0] ptr_ram[0:3];           // start chunk/num cunks in a buffer (write port @mclk)
     always @ (posedge aclk) begin
@@ -158,14 +166,28 @@ module  mult_saxi_wr_pointers#(
         
         ptr_we <= resetting[0] || seq[1];
         
+        if (seq[0]) irq_log_r <= irq_log_ram[chn_r];
+        gen_irq <= seq[1] && (|((ptr_inc ^ ptr_ram_out) & irq_log_decoded_w));
+        irqs_aclk <= gen_irq? {chn_r[1] & chn_r[0], chn_r[1] & ~chn_r[0], ~chn_r[1] & chn_r[0], ~chn_r[1] & ~chn_r[0]}:4'b0; 
         // add one extra register layer here?
     
     end
-
+    generate
+        genvar i;
+            for (i = 0; i < 30; i = i+1) begin: decoder_block
+                assign irq_log_decoded_w[i] = i >= irq_log_r;
+            end
+    endgenerate
     pulse_cross_clock #(.EXTRA_DLY(1)) rst_pntr_aclk0_i (.rst(rst), .src_clk(mclk), .dst_clk(aclk), .in_pulse(rst_pntr_mclk[0]), .out_pulse(rst_pntr_aclk[0]),.busy());
     pulse_cross_clock #(.EXTRA_DLY(1)) rst_pntr_aclk1_i (.rst(rst), .src_clk(mclk), .dst_clk(aclk), .in_pulse(rst_pntr_mclk[1]), .out_pulse(rst_pntr_aclk[1]),.busy());
     pulse_cross_clock #(.EXTRA_DLY(1)) rst_pntr_aclk2_i (.rst(rst), .src_clk(mclk), .dst_clk(aclk), .in_pulse(rst_pntr_mclk[2]), .out_pulse(rst_pntr_aclk[2]),.busy());
     pulse_cross_clock #(.EXTRA_DLY(1)) rst_pntr_aclk3_i (.rst(rst), .src_clk(mclk), .dst_clk(aclk), .in_pulse(rst_pntr_mclk[3]), .out_pulse(rst_pntr_aclk[3]),.busy());
+
+    pulse_cross_clock irqs0_i (.rst(rst_aclk), .src_clk(aclk), .dst_clk(mclk), .in_pulse(irqs_aclk[0]), .out_pulse(irqs[0]),.busy());
+    pulse_cross_clock irqs1_i (.rst(rst_aclk), .src_clk(aclk), .dst_clk(mclk), .in_pulse(irqs_aclk[1]), .out_pulse(irqs[1]),.busy());
+    pulse_cross_clock irqs2_i (.rst(rst_aclk), .src_clk(aclk), .dst_clk(mclk), .in_pulse(irqs_aclk[2]), .out_pulse(irqs[2]),.busy());
+    pulse_cross_clock irqs3_i (.rst(rst_aclk), .src_clk(aclk), .dst_clk(mclk), .in_pulse(irqs_aclk[3]), .out_pulse(irqs[3]),.busy());
+
 
 endmodule
 

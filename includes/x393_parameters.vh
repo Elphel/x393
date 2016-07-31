@@ -829,7 +829,11 @@
     parameter MULT_SAXI_WLOG =              4,      // number of bits for the input data ( 3 - 8 bit, 4 - 16-bit, 5 - 32-bit
 
     parameter MULT_SAXI_ADDR =           'h730,  // ..'h737
-    parameter MULT_SAXI_CNTRL_ADDR =     'h738,  // ..'h739
+    parameter MULT_SAXI_IRQLEN_ADDR =    'h738,  // ..'h73b
+    parameter MULT_SAXI_CNTRL_ADDR =     'h73c,  // ..'h73e
+    parameter MULT_SAXI_CNTRL_MODE =       'h0,  // 'h73c offset for mode register
+    parameter MULT_SAXI_CNTRL_STATUS =     'h1,  // 'h73d offset for status control register
+    parameter MULT_SAXI_CNTRL_IRQ =        'h2,  // 'h73e offset for IRQ contgrol register (4 dibits): 0 - nop, 1 reset, 2 - disable, 3 - enable
     parameter MULT_SAXI_STATUS_REG =     'h34,   //..'h37 uses 4 consecutive locations
     parameter MULT_SAXI_HALF_BRAM =       1,     // 0 - use full 36Kb BRAM for the buffer, 1 - use just half
     parameter MULT_SAXI_BSLOG0 =          4,     // number of bits to represent burst size (4 - b.s. = 16, 0 - b.s = 1)
@@ -837,7 +841,8 @@
     parameter MULT_SAXI_BSLOG2 =          4,
     parameter MULT_SAXI_BSLOG3 =          4,
     parameter MULT_SAXI_MASK =           'h7f8,  // 4 address/length pairs. In bytes, but lower bits are set to 0?
-    parameter MULT_SAXI_CNTRL_MASK =     'h7fe,  // mode and status - 2 locations
+    parameter MULT_SAXI_IRQLEN_MASK =    'h7fc,  // number of address bits to change for interrupt - 4 locations
+    parameter MULT_SAXI_CNTRL_MASK =     'h7fc,  // mode, status, irq - 3 locations
     parameter MULT_SAXI_AWCACHE =         4'h3, //..7 cache mode (4 bits, default 4'h3)
     parameter MULT_SAXI_ADV_WR =          4, // number of clock cycles before end of write to genearte adv_wr_done
     parameter MULT_SAXI_ADV_RD =          3, // number of clock cycles before end of write to genearte adv_wr_done

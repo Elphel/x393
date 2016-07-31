@@ -586,6 +586,18 @@ class X393ExportC(object):
                                  data =      self._enc_mult_saxi_addr(),
                                  name =      "x393_mult_saxi_al", typ="rw", # some - wo, others - ro
                                  frmt_spcs = frmt_spcs)
+        stypedefs += self.get_typedef32(comment =   "MULT_SAXI DMA DW address bit to change for interrupt to be generated",
+                                 data =      self._enc_mult_saxi_irqlen(),
+                                 name =      "x393_mult_saxi_irqlen", typ="rw", # some - wo, others - ro
+                                 frmt_spcs = frmt_spcs)
+        stypedefs += self.get_typedef32(comment =   "MULT_SAXI DMA mode register (per channel enable/run)",
+                                 data =      self._enc_mult_saxi_mode(),
+                                 name =      "x393_mult_saxi_mode", typ="rw", # some - wo, others - ro
+                                 frmt_spcs = frmt_spcs)
+        stypedefs += self.get_typedef32(comment =   "MULT_SAXI per-channel interrupt control",
+                                 data =      self._enc_mult_saxi_interrupts(),
+                                 name =      "x393_mult_saxi_interrupts", typ="wo", # some - wo, others - ro
+                                 frmt_spcs = frmt_spcs)
 
         stypedefs += self.get_typedef32(comment =   "MULTICLK reset/power down controls",
                                  data =      self._enc_multiclk_ctl(),
@@ -1066,7 +1078,7 @@ class X393ExportC(object):
 
         sdefines +=[
             (('Event logger',)),
-            (('_Event logger configuration/data is writtent to the module ising two 32-bit register locations : data and address.',)),
+            (('_Event logger configuration/data is written to the module using two 32-bit register locations : data and address.',)),
             (('_Address consists of 2 parts - 2-bit page (configuration, imu, gps, message) and a 5-bit sub-address autoincremented when writing data.',)),
             (('_Register pages:',)),
             (("X393_LOGGER_PAGE_CONF",                    "", 0 ,                                0, None, None, "",    "Logger configuration page")),
@@ -1091,10 +1103,13 @@ class X393ExportC(object):
         c =  "chn"
         sdefines +=[
             (('MULT SAXI DMA engine control. Of 4 channels only one (number 0) is currently used - for the event logger',)),
-            (("X393_MULT_SAXI_STATUS_CTRL",         "",  vrlg.MULT_SAXI_CNTRL_ADDR,                      0, None, "x393_status_ctrl", "rw",           "MULT_SAXI status control mode (status provides current DWORD pointer)")),
-            (("X393_MULT_SAXI_BUF_ADDRESS",         c,   vrlg.MULT_SAXI_ADDR + 0,                        2, z3,   "x393_mult_saxi_al", "wo",          "MULT_SAXI buffer start address in DWORDS")),
-            (("X393_MULT_SAXI_BUF_LEN",             c,   vrlg.MULT_SAXI_ADDR + 1,                        2, z3,   "x393_mult_saxi_al", "wo",          "MULT_SAXI buffer length in DWORDS")),
-            (("X393_MULT_SAXI_STATUS",              c,   vrlg.STATUS_ADDR + vrlg.MULT_SAXI_STATUS_REG,   1, z3,   "x393_mult_saxi_al", "ro",          "MULT_SAXI current DWORD pointer"))]
+            (("X393_MULT_SAXI_MODE",                "",  vrlg.MULT_SAXI_CNTRL_ADDR+vrlg.MULT_SAXI_CNTRL_MODE,   0, None, "x393_mult_saxi_mode",       "rw","MULT_SAXI mode register (per-channel enable and run bits)")),
+            (("X393_MULT_SAXI_STATUS_CTRL",         "",  vrlg.MULT_SAXI_CNTRL_ADDR+vrlg.MULT_SAXI_CNTRL_STATUS, 0, None, "x393_status_ctrl",          "rw","MULT_SAXI status control mode (status provides current DWORD pointers)")),
+            (("X393_MULT_SAXI_INTERRUPTS",          "",  vrlg.MULT_SAXI_CNTRL_ADDR+vrlg.MULT_SAXI_CNTRL_IRQ,    0, None, "x393_mult_saxi_interrupts", "wo","MULT_SAXI per-channel interrupts control (each dibit:nop/reset/disable/enable)")),
+            (("X393_MULT_SAXI_BUF_ADDRESS",         c,   vrlg.MULT_SAXI_ADDR + 0,                        2, z3,   "x393_mult_saxi_al",                "wo","MULT_SAXI buffer start address in DWORDS")),
+            (("X393_MULT_SAXI_BUF_LEN",             c,   vrlg.MULT_SAXI_ADDR + 1,                        2, z3,   "x393_mult_saxi_al",                "wo","MULT_SAXI buffer length in DWORDS")),
+            (("X393_MULT_SAXI_IRQLEN",              c,   vrlg.MULT_SAXI_IRQLEN_ADDR,                     1, z3,   "x393_mult_saxi_al",                "wo","MULT_SAXI lower DWORD address bit to change to generate interrupt")),
+            (("X393_MULT_SAXI_STATUS",              c,   vrlg.STATUS_ADDR + vrlg.MULT_SAXI_STATUS_REG,   1, z3,   "x393_mult_saxi_al",                "ro","MULT_SAXI current DWORD pointer"))]
 
         #MULTI_CLK global clock generation PLLs
         ba = 0
@@ -2329,9 +2344,33 @@ class X393ExportC(object):
 
     def _enc_mult_saxi_addr(self):
         dw=[]
-        dw.append(("addr32",    0, 30,   0, "SAXI sddress/length in DWORDs"))
+        dw.append(("addr32",    0, 30,   0, "SAXI address/length in DWORDs"))
+        return dw
+    def _enc_mult_saxi_irqlen(self):
+        dw=[]
+        dw.append(("irqlen",      0, 5,   0, "lowest DW address bit that has to change to generate interrupt"))
         return dw
 
+    def _enc_mult_saxi_mode(self):
+        dw=[]
+        dw.append(("en0",          0, 1,   0, "Channel 0 enable (0 - reset)"))
+        dw.append(("en1",          1, 1,   0, "Channel 1 enable (0 - reset)"))
+        dw.append(("en2",          2, 1,   0, "Channel 2 enable (0 - reset)"))
+        dw.append(("en3",          3, 1,   0, "Channel 3 enable (0 - reset)"))
+        dw.append(("run0",         4, 1,   0, "Channel 0 run (0 - stop)"))
+        dw.append(("run1",         5, 1,   0, "Channel 1 run (0 - stop)"))
+        dw.append(("run2",         6, 1,   0, "Channel 2 run (0 - stop)"))
+        dw.append(("run3",         7, 1,   0, "Channel 3 run (0 - stop)"))
+        return dw
+
+    def _enc_mult_saxi_interrupts(self):
+        dw=[]
+        dw.append(("interrupt_cmd0", 0, 2,   0, "Channel 0 command - 0: nop, 1: clear interrupt status, 2: disable interrupt, 3: enable interrupt"))
+        dw.append(("interrupt_cmd1", 2, 2,   0, "Channel 1 command - 0: nop, 1: clear interrupt status, 2: disable interrupt, 3: enable interrupt"))
+        dw.append(("interrupt_cmd2", 4, 2,   0, "Channel 2 command - 0: nop, 1: clear interrupt status, 2: disable interrupt, 3: enable interrupt"))
+        dw.append(("interrupt_cmd3", 6, 2,   0, "Channel 3 command - 0: nop, 1: clear interrupt status, 2: disable interrupt, 3: enable interrupt"))
+        return dw
+    
     def _enc_multiclk_ctl(self):
         dw=[]
         dw.append(("rst_clk0",    0, 1,   0, "Reset PLL for xclk(240MHz), hclk(150MHz)"))

@@ -548,6 +548,7 @@ module  x393 #(
     wire                      [3:0] stuffer_done_mclk; // output// SuppressThisWarning VEditor - (yet) unused
    
     wire                      [3:0] cmprs_irq;         // compressor done, data confirmed written to memory)
+    wire                      [3:0] mult_saxi_irq;     // interrupts from mult_saxi channels
    
 // Compressor frame synchronization
   
@@ -2323,7 +2324,11 @@ assign axi_grst = axi_rst_pre;
 
     mult_saxi_wr #(
         .MULT_SAXI_ADDR          (MULT_SAXI_ADDR),
+        .MULT_SAXI_IRQLEN_ADDR   (MULT_SAXI_IRQLEN_ADDR),
         .MULT_SAXI_CNTRL_ADDR    (MULT_SAXI_CNTRL_ADDR),
+        .MULT_SAXI_CNTRL_MODE    (MULT_SAXI_CNTRL_MODE),
+        .MULT_SAXI_CNTRL_STATUS  (MULT_SAXI_CNTRL_STATUS),
+        .MULT_SAXI_CNTRL_IRQ     (MULT_SAXI_CNTRL_IRQ),
         .MULT_SAXI_STATUS_REG    (MULT_SAXI_STATUS_REG),
         .MULT_SAXI_HALF_BRAM     (MULT_SAXI_HALF_BRAM),
         .MULT_SAXI_BSLOG0        (MULT_SAXI_BSLOG0),
@@ -2331,6 +2336,7 @@ assign axi_grst = axi_rst_pre;
         .MULT_SAXI_BSLOG2        (MULT_SAXI_BSLOG2),
         .MULT_SAXI_BSLOG3        (MULT_SAXI_BSLOG3),
         .MULT_SAXI_MASK          (MULT_SAXI_MASK),
+        .MULT_SAXI_IRQLEN_MASK   (MULT_SAXI_IRQLEN_MASK),
         .MULT_SAXI_CNTRL_MASK    (MULT_SAXI_CNTRL_MASK),
         .MULT_SAXI_AWCACHE       (MULT_SAXI_AWCACHE),
         .MULT_SAXI_ADV_WR        (MULT_SAXI_ADV_WR),
@@ -2367,28 +2373,29 @@ assign axi_grst = axi_rst_pre;
         .read_burst3             (),                     // output
         .data_in_chn3            (32'b0),                // input[31:0] 
         .pre_valid_chn3          (1'b0),                 // input
+        .irq                     (mult_saxi_irq[3:0]),   // output[3:0]
         
-        .saxi_awaddr             (saxi1_awaddr),        // output[31:0] 
-        .saxi_awvalid            (saxi1_awvalid),       // output
-        .saxi_awready            (saxi1_awready),       // input
-        .saxi_awid               (saxi1_awid),          // output[5:0] 
-        .saxi_awlock             (saxi1_awlock),        // output[1:0] 
-        .saxi_awcache            (saxi1_awcache),       // output[3:0] 
-        .saxi_awprot             (saxi1_awprot),        // output[2:0] 
-        .saxi_awlen              (saxi1_awlen),         // output[3:0] 
-        .saxi_awsize             (saxi1_awsize),        // output[1:0] 
-        .saxi_awburst            (saxi1_awburst),       // output[1:0] 
-        .saxi_awqos              (saxi1_awqos),         // output[3:0] 
-        .saxi_wdata              (saxi1_wdata),         // output[31:0] 
-        .saxi_wvalid             (saxi1_wvalid),        // output
-        .saxi_wready             (saxi1_wready),        // input
-        .saxi_wid                (saxi1_wid),           // output[5:0] 
-        .saxi_wlast              (saxi1_wlast),         // output
-        .saxi_wstrb              (saxi1_wstrb),         // output[3:0] 
-        .saxi_bvalid             (saxi1_bvalid),        // input
-        .saxi_bready             (saxi1_bready),        // output
-        .saxi_bid                (saxi1_bid),           // input[5:0] 
-        .saxi_bresp              (saxi1_bresp)          // input[1:0] 
+        .saxi_awaddr             (saxi1_awaddr),         // output[31:0] 
+        .saxi_awvalid            (saxi1_awvalid),        // output
+        .saxi_awready            (saxi1_awready),        // input
+        .saxi_awid               (saxi1_awid),           // output[5:0] 
+        .saxi_awlock             (saxi1_awlock),         // output[1:0] 
+        .saxi_awcache            (saxi1_awcache),        // output[3:0] 
+        .saxi_awprot             (saxi1_awprot),         // output[2:0] 
+        .saxi_awlen              (saxi1_awlen),          // output[3:0] 
+        .saxi_awsize             (saxi1_awsize),         // output[1:0] 
+        .saxi_awburst            (saxi1_awburst),        // output[1:0] 
+        .saxi_awqos              (saxi1_awqos),          // output[3:0] 
+        .saxi_wdata              (saxi1_wdata),          // output[31:0] 
+        .saxi_wvalid             (saxi1_wvalid),         // output
+        .saxi_wready             (saxi1_wready),         // input
+        .saxi_wid                (saxi1_wid),            // output[5:0] 
+        .saxi_wlast              (saxi1_wlast),          // output
+        .saxi_wstrb              (saxi1_wstrb),          // output[3:0] 
+        .saxi_bvalid             (saxi1_bvalid),         // input
+        .saxi_bready             (saxi1_bready),         // output
+        .saxi_bid                (saxi1_bid),            // input[5:0] 
+        .saxi_bresp              (saxi1_bresp)           // input[1:0] 
     );
     
     clocks393m #(
@@ -2943,7 +2950,7 @@ sata_ahci_top sata_top(
     .DMA3DATYPE(),               // DMAC 3 DMA Ackbowledge TYpe (completed single AXI, completed burst AXI, flush request), output
     .DMA3RSTN(),                 // DMAC 3 RESET output (reserved, do not use), output
  // Interrupt signals
-    .IRQF2P({4'b0,
+    .IRQF2P({mult_saxi_irq[3:0], // [19:16] interrupts from mult_saxi channels
             cmprs_irq[3:0],      // [15:12] Compressor done interrupts
             frseq_irq[3:0],      // [11: 8] Frame sync interrupts
             7'b0,
