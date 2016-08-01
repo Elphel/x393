@@ -142,7 +142,12 @@ class X393ExportC(object):
         txt +='// See elphel/x393_map.h for the ordered list of all I/O register addresses used\n'
         txt +=  '// init_mmio_ptr() should be called once before using any of the other declared functions\n\n'
         txt +=  'int init_mmio_ptr(void);\n'
-        
+        txt += """// IRQ commands applicable to several targets
+#define X393_IRQ_NOP     0 
+#define X393_IRQ_RESET   1
+#define X393_IRQ_DISABLE 2
+#define X393_IRQ_ENABLE  3
+"""        
         for d in ld:
             fd=self.expand_define_maxi0(d, mode = "func_decl",frmt_spcs = None)
             if fd:
