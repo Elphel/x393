@@ -2951,13 +2951,14 @@ sata_ahci_top sata_top(
     .DMA3DATYPE(),               // DMAC 3 DMA Ackbowledge TYpe (completed single AXI, completed burst AXI, flush request), output
     .DMA3RSTN(),                 // DMAC 3 RESET output (reserved, do not use), output
  // Interrupt signals
-    .IRQF2P({mult_saxi_irq[3:0], // [19:16] interrupts from mult_saxi channels
-            cmprs_irq[3:0],      // [15:12] Compressor done interrupts
-            frseq_irq[3:0],      // [11: 8] Frame sync interrupts
-            7'b0,
-            sata_irq             // Put AHCI (SATA ) interrupt  
-            }),                  // Interrupts, OL to PS [19:0], input
-    .IRQP2F(),                   // Interrupts, OL to PS [28:0], output
+    .IRQF2P({4'b0,               // [19:16] Reserved                            PPI: nFIQ, nIRQ (both CPUs)    
+            cmprs_irq[3:0],      // [15:12] Compressor done interrupts          SPI: Numbers [91:88]
+            frseq_irq[3:0],      // [11: 8] Frame sync interrupts               SPI: Numbers [87:84]
+            mult_saxi_irq[3:0],  // [ 7: 4] interrupts from mult_saxi channels  SPI: Numbers [68:65]
+            3'b0,                // [ 3: 1] Reserved                            SPI: Numbers [65:63]
+            sata_irq             // [    0] AHCI (SATA ) interrupt              SPI: Number     [62]
+            }),                  // Interrupts, PL to PS [19:0], input
+    .IRQP2F(),                   // Interrupts, PL to PS [28:0], output
  // Event Signals
     .EVENTEVENTI(),              // EVENT Wake up one or both CPU from WFE state, input
     .EVENTEVENTO(),              // EVENT Asserted when one of the COUs executed SEV instruction, output
