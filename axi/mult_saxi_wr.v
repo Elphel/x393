@@ -48,7 +48,8 @@ module  mult_saxi_wr #(
     parameter MULT_SAXI_CNTRL_MODE =     'h0,  // 'h73c offset for mode register
     parameter MULT_SAXI_CNTRL_STATUS =   'h1,  // 'h73d offset for status control register
     parameter MULT_SAXI_CNTRL_IRQ =      'h2,  // 'h73e offset for IRQ contgrol register (4 dibits): 0 - nop, 1 reset, 2 - disable, 3 - enable
-    parameter MULT_SAXI_STATUS_REG =     'h34,   //..'h37 uses 4 consecutive locations
+    parameter MULT_SAXI_POINTERS_REG =   'h34,   //..'h37 uses 4 consecutive locations
+    parameter MULT_SAXI_STATUS_REG =     'h3c,   //status and IRQ requests and masks
     parameter MULT_SAXI_HALF_BRAM =       1,     // 0 - use full 36Kb BRAM for the buffer, 1 - use just half
     parameter MULT_SAXI_BSLOG0 =          4,     // number of bits to represent burst size (4 - b.s. = 16, 0 - b.s = 1)
     parameter MULT_SAXI_BSLOG1 =          4,
@@ -557,9 +558,15 @@ module  mult_saxi_wr #(
     reg   [29:0] status_pntr2;
     reg   [29:0] status_pntr3;
     wire         pntr_we_mclk;
-    wire [128:0] status_data;
+//    wire [128:0] status_data;
+    wire [137:0] status_data;
     reg          status_tgl;
-    assign status_data = {2'b0, status_pntr3, 2'b0, status_pntr2, 2'b0, status_pntr1, 2'b0, status_pntr0, status_tgl};
+    assign status_data = {2'b0, status_pntr3,
+                          2'b0, status_pntr2,
+                          2'b0, status_pntr1,
+                          2'b0, status_pntr0,
+                          irq_m[3:0],irq_r[3:0],
+                          1'b0, status_tgl};
     always @ (posedge mclk) begin
         if      (!en_mclk)     status_tgl <= 0;
         else if (pntr_we_mclk) status_tgl <= ~status_tgl;
@@ -573,18 +580,18 @@ module  mult_saxi_wr #(
     pulse_cross_clock status_wr_i (.rst(arst), .src_clk(aclk), .dst_clk(mclk), .in_pulse(pntr_we), .out_pulse(pntr_we_mclk),.busy());
 
     status_generate #(
-        .STATUS_REG_ADDR   (MULT_SAXI_STATUS_REG+4), // not used
-        .PAYLOAD_BITS      (0),
+        .STATUS_REG_ADDR   (MULT_SAXI_STATUS_REG),
+        .PAYLOAD_BITS      (10),
         .REGISTER_STATUS   (1),
         .EXTRA_WORDS       (4),
-        .EXTRA_REG_ADDR    (MULT_SAXI_STATUS_REG)
+        .EXTRA_REG_ADDR    (MULT_SAXI_POINTERS_REG)
     ) status_generate_i (
         .rst             (1'b0),                //rst), // input
         .clk             (mclk),                // input
         .srst            (mrst),                // input
         .we              (we_ctrl && (cmd_a[1:0] == MULT_SAXI_CNTRL_STATUS)), // input
         .wd              (cmd_data[7:0]),       // input[7:0] 
-        .status          (status_data),         // input[128:0] 
+        .status          (status_data),         // input[137:0] 
         .ad              (status_ad),           // output[7:0] 
         .rq              (status_rq),           // output
         .start           (status_start)         // input

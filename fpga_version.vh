@@ -35,7 +35,10 @@
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
  */
-        parameter FPGA_VERSION =          32'h0393009d;    // hispi, adding IRQ from multi_saxi  80.95%, timing not met (-0.034 )
+        parameter FPGA_VERSION =          32'h039300a0;    // parallel, else same as 9f 78.91%, not met by -0.032
+//        parameter FPGA_VERSION =          32'h0393009f;    // hispi, adding IRQ status register (placemnt "explore") 81.36%, all met
+//        parameter FPGA_VERSION =          32'h0393009e;    // hispi, adding IRQ status register 80.90%, timing failed by -0.218
+//        parameter FPGA_VERSION =          32'h0393009d;    // hispi, adding IRQ from multi_saxi  80.95%, timing not met (-0.034 )
 //        parameter FPGA_VERSION =          32'h0393009c;    // parallel, adding IRQ from multi_saxi  79.31% , timing met (2015.3)
 //        parameter FPGA_VERSION =          32'h0393009b;    // parallel, bug fixed in dct_chen 79.58, timing met (2015.3)
 //        parameter FPGA_VERSION =          32'h0393009a;    // serial, bug fixed in dct_chen 80.94%, timing met (2015.3)
