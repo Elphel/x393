@@ -71,6 +71,7 @@ class X393ExportC(object):
 #                    'define': (29,59,83,127), #function name, arguments, body, comments
                     'declare':(29,65,0, 113),  #function name, arguments, (body), comments
                     'define': (29,65,85,130), #function name, arguments, body, comments
+                    'body_prefix':'\n    '    #insert before function body {}
                     
                     } 
 
@@ -142,6 +143,10 @@ class X393ExportC(object):
         txt +='// See elphel/x393_map.h for the ordered list of all I/O register addresses used\n'
         txt +=  '// init_mmio_ptr() should be called once before using any of the other declared functions\n\n'
         txt +=  'int init_mmio_ptr(void);\n'
+        txt += '#ifndef PARS_FRAMES\n'
+        txt += '    #define PARS_FRAMES       16             ///< Number of frames in a sequencer     TODO:// move it here from <elphel/c313a.h>\n'
+        txt += '    #define PARS_FRAMES_MASK (PARS_FRAMES-1) ///< Maximal frame number (15 for NC393) TODO:// move it here from <elphel/c313a.h>\n'
+        txt += '#endif\n'
         txt += """// IRQ commands applicable to several targets
 #define X393_IRQ_NOP     0 
 #define X393_IRQ_RESET   1
@@ -167,9 +172,11 @@ class X393ExportC(object):
         ld= self.define_macros()
         ld+=self.define_other_macros()
         # Includes section
-        txt = '\n#include <linux/io.h>\n'
+        txt  = '\n#include <linux/io.h>\n'
+        txt += '#include <linux/spinlock.h>\n'
         txt +=  '#include "x393.h"\n\n'
         txt +=  'static void __iomem* mmio_ptr;\n\n'
+        txt +=  'static DEFINE_SPINLOCK(lock);\n\n'
         txt +=  '// init_mmio_ptr() should be called once before using any of the other defined functions\n\n'
         txt +=  'int init_mmio_ptr(void) {mmio_ptr = ioremap(0x%08x, 0x%08x); if (!mmio_ptr) return -1; else return 0;}\n'%(self.MAXI0_BASE,self.MAXI0_RANGE)
 
@@ -1220,7 +1227,17 @@ class X393ExportC(object):
                     address_inc = [4 * d for d in address_inc]
                 else:
                     address_inc = 4 * address_inc
-
+                #processing sequencer command (have "w" and var_name and var_range = 0..3
+                #TODO: Add special character to rw meaning channel applicable
+                channelCmd=False
+                if var_name and address_inc and ('w' in rw) and var_range:
+                    multivar = isinstance(address_inc,(list,tuple))
+                    if multivar:
+                        if isinstance(var_range[0],(list,tuple)) and (var_range[0][0] == 0) and (var_range[0][1] == 3):
+                            channelCmd = True
+                    else:
+                        if (var_range[0] == 0) and (var_range[1] == 3):
+                            channelCmd = True
                 if (mode == 'defines') :
                     return self.expand_define(define_tuple = (name,
                                                               var_name,
@@ -1232,6 +1249,8 @@ class X393ExportC(object):
                                                               comment),
                                               frmt_spcs = frmt_spcs)
                 elif (mode =='func_decl'):
+#                    if channelCmd:
+#                        print (name,data_type,rw)
                     return self.func_declare (define_tuple = (name,
                                                               var_name,
                                                               address * 4 + self.MAXI0_BASE,
@@ -1240,7 +1259,8 @@ class X393ExportC(object):
                                                               data_type,
                                                               rw,
                                                               comment),
-                                              frmt_spcs = frmt_spcs)
+                                              frmt_spcs = frmt_spcs,
+                                              genSeqCmd = channelCmd)
                 elif (mode =='func_def'):
                     return self.func_define  (define_tuple = (name,
                                                               var_name,
@@ -1250,7 +1270,8 @@ class X393ExportC(object):
                                                               data_type,
                                                               rw,
                                                               comment),
-                                              frmt_spcs = frmt_spcs)
+                                              frmt_spcs = frmt_spcs,
+                                              genSeqCmd = channelCmd)
                 else:
                     print ("Unknown mode:", mode)    
                         
@@ -1259,7 +1280,8 @@ class X393ExportC(object):
 
     def  func_declare(self,
                       define_tuple,
-                      frmt_spcs):
+                      frmt_spcs,
+                      genSeqCmd = False):
         frmt_spcs=self.fix_frmt_spcs(frmt_spcs)
         
 #        name, var_name, address, address_inc, var_range, data_type, rw, comment = define_tuple
@@ -1267,6 +1289,10 @@ class X393ExportC(object):
         s=""
         if 'w' in rw:
             s += self.func_set(isDefine=False,define_tuple=define_tuple, frmt_spcs = frmt_spcs)
+            if (genSeqCmd):
+                s += "\n"+self.func_set(isDefine=False,define_tuple=define_tuple, frmt_spcs = frmt_spcs, isGenRel = True)
+                s += "\n"+self.func_set(isDefine=False,define_tuple=define_tuple, frmt_spcs = frmt_spcs, isGenAbs = True)
+                
         if 'r' in rw:
             if s:
                 s += '\n'
@@ -1277,13 +1303,17 @@ class X393ExportC(object):
 
     def func_define(self,
                       define_tuple,
-                      frmt_spcs):
+                      frmt_spcs,
+                      genSeqCmd = False):
         frmt_spcs=self.fix_frmt_spcs(frmt_spcs)
 #        name, var_name, address, address_inc, var_range, data_type, rw, comment = define_tuple
         rw= define_tuple[6]
         s=""
         if 'w' in rw:
             s += self.func_set(isDefine=True, define_tuple=define_tuple, frmt_spcs = frmt_spcs)
+            if (genSeqCmd):
+                s += "\n"+self.func_set(isDefine=True, define_tuple=define_tuple, frmt_spcs = frmt_spcs, isGenRel = True)
+                s += "\n"+self.func_set(isDefine=True, define_tuple=define_tuple, frmt_spcs = frmt_spcs, isGenAbs = True)
         if 'r' in rw:
             if s:
                 s += '\n'
@@ -1335,7 +1365,7 @@ class X393ExportC(object):
                 td = 'd.%s'%(frmt_spcs['data32'])
             else:
                 td='d'
-                
+            s+=frmt_spcs['body_prefix']    
             s+='{ %s d; %s = readl(mmio_ptr + '%(data_type, td)
             if address_inc:
                 s+='(0x%04x'%(address)
@@ -1358,7 +1388,9 @@ class X393ExportC(object):
     def  func_set(self,
                   isDefine,
                   define_tuple,
-                  frmt_spcs):
+                  frmt_spcs,
+                  isGenRel = False,
+                  isGenAbs = False):
 #        name, var_name, address, address_inc, var_range, data_type, rw, comment = define_tuple
         name, var_name, address, address_inc, _, data_type, rw, comment = define_tuple
         multivar = isinstance(address_inc,(list,tuple)) # var_name, var_range are also lists/tuples of the same length
@@ -1370,8 +1402,13 @@ class X393ExportC(object):
         if (sz > 32):
             print ("***** Only 32-bit data is supported, %s used for %s is %d bit"%(data_type, name, sz))
         fname = name.lower()
-        if ('r' in rw) and ('w' in rw):
-            fname = 'set_'+fname
+        if isGenRel:
+            fname = 'seqr_'+fname
+        elif isGenAbs:
+            fname = 'seqa_'+fname
+        else:       
+            if ('r' in rw) and ('w' in rw):
+                fname = 'set_'+fname
         args = '%s d'%(data_type)
         if multivar:
             for vn in var_name:
@@ -1384,25 +1421,54 @@ class X393ExportC(object):
         s = self.str_tab_stop(s,stops[0])
         s += "%s"%(fname)
         s = self.str_tab_stop(s,stops[1])
-        s += "(%s)"%(args)
+        if isGenRel or isGenAbs: #can not be void - it is write command
+            s += "(int frame, %s)"%(args)
+        else:
+            s += "(%s)"%(args)
         s = self.str_tab_stop(s,stops[2])
         if isDefine:
             if self.typedefs[data_type]['code']: # not just u32
                 td = 'd.%s'%(frmt_spcs['data32'])
             else:
                 td='d'
-            s+='{writel(%s, mmio_ptr + '%(td)
-            if address_inc:
-                s+='(0x%04x'%(address)
+            s+=frmt_spcs['body_prefix']
+            if isGenRel or isGenAbs:
+                address32 = '0x%04x'%(address>>2)
                 if multivar:
                     for vn, vi in zip (var_name, address_inc):
-                        s+=' + 0x%x * %s'%(vi, vn.lower())
+                        address32 += ' + 0x%x * %s'%(vi>>2, vn.lower())
+                    first_index_name= var_name[0]   
                 else:
-                    s+=' + 0x%x * %s'%(address_inc, arg)
-                s += ')'
-            else:
-                s+='0x%04x'%(address)
-            s+=');}'
+                    address32 += ' + 0x%x * %s'%(address_inc>>2, arg)
+                    first_index_name= var_name   
+                if isGenRel: # TODO: Calculate!
+#                    reg_addr = '0x1e40 + 0x80 * %s + 0x4 * frame'%(first_index_name)
+                    reg_addr = '0x%x + 0x%x * %s + 0x4 * frame'%(
+                                4 * (vrlg.CMDFRAMESEQ_ADDR_BASE + vrlg.CMDFRAMESEQ_REL), 4*vrlg.CMDFRAMESEQ_ADDR_INC, first_index_name)    
+                else:
+#                    reg_addr = '0x1e00 + 0x80 * %s + 0x4 * frame'%(first_index_name)    
+                    reg_addr = '0x%x + 0x%x * %s + 0x4 * frame'%(
+                                4 * (vrlg.CMDFRAMESEQ_ADDR_BASE + vrlg.CMDFRAMESEQ_ABS), 4*vrlg.CMDFRAMESEQ_ADDR_INC, first_index_name)    
+                    
+                s+= '{frame &= PARS_FRAMES_MASK; spin_lock(&lock); '
+                s+= 'writel(%s, mio_ptr + %s); '%(address32,reg_addr)
+                s+= 'writel(d, mio_ptr + %s); '%(reg_addr)
+                s+= 'spin_unlock(&lock);}'
+                
+            else:   
+                s+='{writel(%s, mmio_ptr + '%(td)
+                if address_inc:
+                    s+='(0x%04x'%(address)
+                    if multivar:
+                        for vn, vi in zip (var_name, address_inc):
+                            s+=' + 0x%x * %s'%(vi, vn.lower())
+                    else:
+                        s+=' + 0x%x * %s'%(address_inc, arg)
+                    s += ')'
+                else:
+                    s+='0x%04x'%(address)
+                s+=');}'
+            
         else:
             s += ';'
         if comment:
@@ -1437,6 +1503,7 @@ class X393ExportC(object):
         s = self.str_tab_stop(s,stops[2])
         if isDefine:
 #            s+='{'
+            s+=frmt_spcs['body_prefix']    
             s+='{writel(0, mmio_ptr + '
             if address_inc:
                 s+='(0x%04x'%(address)
