@@ -334,9 +334,15 @@ class X393ExportC(object):
                                  data =      self._enc_membridge_cmd(),
                                  name =      "x393_membridge_cmd",  typ="wo",
                                  frmt_spcs = frmt_spcs)
+        """
         stypedefs += self.get_typedef32(comment =   "Cache mode for membridge",
                                  data =      self._enc_membridge_mode(),
                                  name =      "x393_membridge_mode",  typ="wo",
+                                 frmt_spcs = frmt_spcs)
+        """                                 
+        stypedefs += self.get_typedef32(comment =   "Interrupt handling commands for Membridge module",
+                                 data =      self._enc_membridge_ctrl_irq(),
+                                 name =      "x393_membridge_ctrl_irq",  typ="wo",
                                  frmt_spcs = frmt_spcs)
         stypedefs += self.get_typedef32(comment =   "Address in 64-bit words",
                                  data =      self._enc_u29(),
@@ -738,7 +744,7 @@ class X393ExportC(object):
             (("X393_MEMBRIDGE_START64",                  c, vrlg.MEMBRIDGE_START64 +               ba, 0, None, "u29", "wo",                               "start of transfer offset to system memory range in QWORDs (4 LSBs==0)")),
             (("X393_MEMBRIDGE_LEN64",                    c, vrlg.MEMBRIDGE_LEN64 +                 ba, 0, None, "u29", "wo",                               "Full length of transfer in QWORDs")),
             (("X393_MEMBRIDGE_WIDTH64",                  c, vrlg.MEMBRIDGE_WIDTH64 +               ba, 0, None, "u29", "wo",                               "Frame width in QWORDs (last xfer in each line may be partial)")),
-            (("X393_MEMBRIDGE_MODE",                     c, vrlg.MEMBRIDGE_MODE +                  ba, 0, None, "x393_membridge_mode", "wo",               "AXI cache mode"))]
+            (("X393_MEMBRIDGE_CTRL_IRQ",                 c, vrlg.MEMBRIDGE_CTRL_IRQ +              ba, 0, None, "x393_membridge_ctrl_irq", "wo",           "Membridge IRQ control"))]
 
         ba = vrlg.MCNTRL_PS_ADDR
         ia = 0
@@ -1777,6 +1783,8 @@ class X393ExportC(object):
         dw=[]
         dw.append(("wresp_conf",       0, 8,0,  "Number of 64-bit words confirmed through axi b channel (low bits)"))
         dw.append(("axi_arw_requested",8, 8,0,  "Number of 64-bit words to be read/written over axi queued to AR/AW channels (low bits)"))
+        dw.append(("irq_r",           16, 1,0,  "Interrupt request (before mask)"))
+        dw.append(("irq_m",           17, 1,0,  "Interrupt enable (0 - disable)"))
         dw.append(("busy",           24,  1,0,  "Membridge operation in progress"))
         dw.append(("done",           25,  1,0,  "Membridge operation finished"))
         dw.append(("seq_num",        26,  6,0,  "Sequence number"))
@@ -1828,11 +1836,18 @@ class X393ExportC(object):
         dw.append(("enable",           0, 1,0,  "enable membridge"))
         dw.append(("start_reset",      1, 2,0,  "1 - start (from current address), 3 - start from reset address"))
         return dw
+    """
     def _enc_membridge_mode(self):
         dw=[]
         dw.append(("axi_cache",        0, 4,3,  "AXI CACHE value (ignored by Zynq)"))
         dw.append(("debug_cache",      4, 1,0,  "0 - normal operation, 1 debug (replace data)"))
         return dw
+    """    
+    def _enc_membridge_ctrl_irq(self):
+        dw=[]
+        dw.append(("interrupt_cmd",    0, 2,   0, "IRQ control commands - 0: nop, 1: clear interrupt status, 2: disable interrupt, 3: enable interrupt"))
+        return dw
+    
     def _enc_u29(self):
         dw=[]
         dw.append(("addr64",           0,29,0,  "Address/length in 64-bit words (<<3 to get byte address"))

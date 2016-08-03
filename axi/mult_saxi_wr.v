@@ -47,7 +47,7 @@ module  mult_saxi_wr #(
     parameter MULT_SAXI_CNTRL_ADDR =     'h73c,  // ..'h73e
     parameter MULT_SAXI_CNTRL_MODE =     'h0,  // 'h73c offset for mode register
     parameter MULT_SAXI_CNTRL_STATUS =   'h1,  // 'h73d offset for status control register
-    parameter MULT_SAXI_CNTRL_IRQ =      'h2,  // 'h73e offset for IRQ contgrol register (4 dibits): 0 - nop, 1 reset, 2 - disable, 3 - enable
+    parameter MULT_SAXI_CNTRL_IRQ =      'h2,  // 'h73e offset for IRQ control register (4 dibits): 0 - nop, 1 reset, 2 - disable, 3 - enable
     parameter MULT_SAXI_POINTERS_REG =   'h34,   //..'h37 uses 4 consecutive locations
     parameter MULT_SAXI_STATUS_REG =     'h3c,   //status and IRQ requests and masks
     parameter MULT_SAXI_HALF_BRAM =       1,     // 0 - use full 36Kb BRAM for the buffer, 1 - use just half

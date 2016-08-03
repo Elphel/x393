@@ -187,7 +187,7 @@ class X393McntrlMembridge(object):
                          start64,                       # input [28:0] start64;  # relative start address of the transfer (set to 0 when writing lo_addr64)
                          lo_addr64 =       None,        # input [28:0] lo_addr64; # low address of the system memory range, in 64-bit words 
                          size64 =          None,        # input [28:0] size64;    # size of the system memory range in 64-bit words
-                         cache = 0x3,
+#                         cache = 0x3,
                          quiet=1):
         '''
         Set up membridge parameters for data transfer
@@ -196,8 +196,6 @@ class X393McntrlMembridge(object):
         @param start64 relative start address of the transfer (normally 0)
         @param lo_addr64 low address of the system memory range, in 64-bit words 
         @param size64  size of the system memory range in 64-bit words
-        @param cache bits[3:0] - ARCHACHE, AWCACHE (default 0x3), bit[4] - debug mode, when each 64-bit word high 16 bits is replaced with:
-               bits[63:60] - transfer id (incrementing each new transfer), bits[59:58]==0, [57:56] - mchtrl page number, [45:48] FIFO count (wcount)
         @quiet - reduce output (>=1 - silent)
         '''
         if lo_addr64 is None:
@@ -212,7 +210,7 @@ class X393McntrlMembridge(object):
         self.x393_axi_tasks.write_control_register(vrlg.MEMBRIDGE_ADDR + vrlg.MEMBRIDGE_START64,    start64);    
         self.x393_axi_tasks.write_control_register(vrlg.MEMBRIDGE_ADDR + vrlg.MEMBRIDGE_LEN64,      len64);    
         self.x393_axi_tasks.write_control_register(vrlg.MEMBRIDGE_ADDR + vrlg.MEMBRIDGE_WIDTH64,    width64);    
-        self.x393_axi_tasks.write_control_register(vrlg.MEMBRIDGE_ADDR + vrlg.MEMBRIDGE_MODE,       cache);    
+#        self.x393_axi_tasks.write_control_register(vrlg.MEMBRIDGE_ADDR + vrlg.MEMBRIDGE_MODE,       cache);    
 
     def membridge_start(self,
                         cont=False,
@@ -249,7 +247,7 @@ class X393McntrlMembridge(object):
                       lo_addr64 =         None,                     # input [28:0] lo_addr64;        # low address of the system memory range, in 64-bit words 
                       size64 =            None,                     # input [28:0] size64;           # size of the system memory range in 64-bit words
                       cont =              False,                    # input        continue;         # 0 start from start64, 1 - continue from where it was
-                      cache =             0x3,
+#                      cache =             0x3,
                       wait_ready =        False,
                       quiet=1):
         '''
@@ -265,8 +263,6 @@ class X393McntrlMembridge(object):
         @param lo_addr64 start of the system memory buffer, in 8-bytes (byte_address >>3), 29 bits 
         @param size64 size of the transfer buffer in the system memory, in 8-bytes. Transfers will roll over to lo_addr64. 29 bits.
         @param cont True: continue from  the same address in the system memory, where the previous transfer stopped. False - start from lo_addr64+start64
-        @param cache bits[3:0] - ARCHACHE, AWCACHE (default 0x3), bit[4] - debug mode, when each 64-bit word high 16 bits is replaced with:
-               bits[63:60] - transfer id (incrementing each new transfer), bits[59:58]==0, [57:56] - mchtrl page number, [45:48] FIFO count (wcount)
         @param wait_ready poll status to see if the command finished
         @param quiet Reduce output
         '''
@@ -297,10 +293,10 @@ class X393McntrlMembridge(object):
         if quiet <2:
             print("====== test_afi_rw: write=%s, frame_start=0x%x, window_full_width=%d, window_width=%d, window_height=%d, window_left=%d, window_top=%d"%(
                                       str(write_ddr3),  frame_start_addr, window_full_width,   window_width, window_height, window_left, window_top));
-            print("len64=0x%x,  width64=0x%x, start64=0x%x, lo_addr64=0x%x, size64=0x%x, cache=0x%x"%(
+            print("len64=0x%x,  width64=0x%x, start64=0x%x, lo_addr64=0x%x, size64=0x%x"%(
                   (window_width << 1)*window_height,
                   (window_width << 1),
-                  start64, lo_addr64, size64,cache))
+                  start64, lo_addr64, size64))
         '''    
         mode=   func_encode_mode_scanline(
                     0, # extra_pages,
@@ -337,7 +333,7 @@ class X393McntrlMembridge(object):
             start64,
             lo_addr64,
             size64,
-            cache,
+#            cache,
             quiet)
         self.membridge_start (cont)         
 # just wait done (default timeout = 10 sec)

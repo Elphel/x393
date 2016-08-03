@@ -48,7 +48,8 @@ module  membridge#(
     parameter MEMBRIDGE_START64=                  'h4, // start address relative to lo_addr
     parameter MEMBRIDGE_LEN64=                    'h5, // full length of transfer in 64-bit words
     parameter MEMBRIDGE_WIDTH64=                  'h6, // frame width in 64-bit words (partial last page in each line)
-    parameter MEMBRIDGE_MODE=                     'h7, // bits [3:0] - *_cache, bit [4] - cache debug
+//    parameter MEMBRIDGE_MODE=                     'h7, // bits [3:0] - *_cache, bit [4] - cache debug
+    parameter MEMBRIDGE_CTRL_IRQ=                 'h7,  // offset for IRQ control register (4 dibits): 0 - nop, 1 reset, 2 - disable, 3 - enable
     parameter MEMBRIDGE_STATUS_REG=               'h3b,
     parameter FRAME_HEIGHT_BITS=                   16,   // Maximal frame height bits
     parameter FRAME_WIDTH_BITS=                    13
@@ -70,6 +71,7 @@ module  membridge#(
     output                  [7:0] status_ad,   // status address/data - up to 5 bytes: A - {seq,status[1:0]} - status[2:9] - status[10:17] - status[18:25]
     output                        status_rq,   // input request to send status downstream
     input                         status_start, // Acknowledge of the first status packet byte (address)
+    output                        irq,          // Masked interrupt request (level, resettable)
     // mcntrl_linear_rw.v interface
     output                        frame_start_chn, // input
     output                        next_page_chn, // input
@@ -182,14 +184,15 @@ module  membridge#(
     wire set_size64_w;
     wire set_start64_w;
     wire set_len64_w;
-    wire set_mode_w;
+    wire set_irq_w;
     wire set_width64_w;
-    reg  [4:0] mode_reg_mclk;
-    reg  [4:0] mode_reg;
+//    reg  [4:0] mode_reg_mclk;
+//    reg  [4:0] mode_reg;
     wire       cache_debug;
-    assign cache_debug=mode_reg[4];
-    assign afi_awcache =       mode_reg[3:0]; // 4'h3;
-    assign afi_arcache =       mode_reg[3:0]; // 4'h3;
+    // Disabling cache modes and debug - cache modes are not supported in Zynq
+    assign cache_debug=         0;    // mode_reg[4];
+    assign afi_awcache =        4'h3; // mode_reg[3:0]; // 4'h3;
+    assign afi_arcache =        4'h3; // mode_reg[3:0]; // 4'h3;
     assign set_ctrl_w =         cmd_we && (cmd_a== MEMBRIDGE_CTRL);
     assign set_lo_addr64_w =    cmd_we && (cmd_a== MEMBRIDGE_LO_ADDR64);
     assign set_size64_w =       cmd_we && (cmd_a== MEMBRIDGE_SIZE64);
@@ -197,7 +200,7 @@ module  membridge#(
     assign set_len64_w =        cmd_we && (cmd_a== MEMBRIDGE_LEN64);
     assign set_width64_w =      cmd_we && (cmd_a== MEMBRIDGE_WIDTH64);
     assign set_status_w =       cmd_we && (cmd_a== MEMBRIDGE_STATUS_CNTRL);
-    assign set_mode_w =         cmd_we && (cmd_a== MEMBRIDGE_MODE);
+    assign set_irq_w =          cmd_we && (cmd_a== MEMBRIDGE_CTRL_IRQ);
     reg [28:0] lo_addr64_mclk;
     reg [28:0] size64_mclk;
     reg [28:0] start64_mclk;
@@ -223,7 +226,12 @@ module  membridge#(
     wire       debug_w_ready;
     assign debug_aw_ready = (!debug_aw_allowed[6] && (|debug_aw_allowed[5:0])) || debug_disable; // > 0
     assign debug_w_ready =  (!debug_w_allowed[8]  && (|debug_w_allowed [7:0]) &&((|debug_w_allowed [7:1]) || !(|debug_bufrd_rd))) || debug_disable; // > 0
-`endif    
+`endif 
+    reg        irq_r = 0;
+    reg        irq_m = 0;
+    wire       done_mclk; // pre_done && !done @ posedge mclk
+    assign irq = irq_r && irq_m;
+       
 //cmd_wrmem
     always @ (posedge mclk) begin
         if (set_lo_addr64_w)    lo_addr64_mclk       <= {cmd_data[28:4],4'b0}; // align to 16-bursts
@@ -244,8 +252,8 @@ module  membridge#(
         if   (mrst) start_mclk <= 0;
         else        start_mclk <= set_ctrl_w & cmd_data[1];
 
-        if      (mrst)       mode_reg_mclk <= 5'h03;
-        else if (set_mode_w) mode_reg_mclk <= cmd_data[4:0];
+//        if      (mrst)       mode_reg_mclk <= 5'h03;
+//        else if (set_mode_w) mode_reg_mclk <= cmd_data[4:0];
 
 `ifdef MEMBRIDGE_DEBUG_READ
         if  (mrst) debug_aw_mclk <= 0;
@@ -259,8 +267,18 @@ module  membridge#(
         
         
 `endif
-
     end
+    
+    // IRQ-related
+    always @ (posedge mclk) begin
+        if      (mrst)                              irq_m <= 0;
+        else if (set_irq_w && cmd_data[1])          irq_m <= cmd_data[0];
+        
+        if      (mrst)                              irq_r <= 0;
+        else if (done_mclk)                         irq_r <= 1;
+        else if (set_irq_w && (cmd_data[1:0] == 1)) irq_r <= 0;
+    end    
+    
     
     // syncronize mclk ->hclk
     
@@ -310,7 +328,7 @@ module  membridge#(
         size64          <= size64_mclk;
         start64         <= start64_mclk;
         len64           <= len64_mclk;
-        mode_reg        <= mode_reg_mclk;
+//        mode_reg        <= mode_reg_mclk;
         last_in_line64  <= width64_minus1_mclk;
         wr_mode         <= cmd_wrmem;
         rdwr_reset_addr <= rdwr_reset_addr_mclk;
@@ -347,6 +365,9 @@ module  membridge#(
     pulse_cross_clock page_ready_i     (.rst(mrst), .src_clk(mclk), .dst_clk(hclk), .in_pulse(page_ready_chn), .out_pulse(page_ready),.busy());
     pulse_cross_clock frame_done_i     (.rst(mrst), .src_clk(mclk), .dst_clk(hclk), .in_pulse(frame_done_chn), .out_pulse(frame_done),.busy());
     pulse_cross_clock  reset_page_wr_i (.rst(mrst), .src_clk(mclk), .dst_clk(hclk), .in_pulse(xfer_reset_page_wr), .out_pulse(reset_page_wr),.busy());
+
+    //hclk -> mclk
+    pulse_cross_clock done_mclk_i      (.rst(hrst), .src_clk(hclk), .dst_clk(mclk), .in_pulse(pre_done &&!done), .out_pulse(done_mclk),.busy());
 
 `ifdef MEMBRIDGE_DEBUG_READ
     // mclk -> hclk, debug-only
@@ -744,9 +765,9 @@ module  membridge#(
     status_generate #(
         .STATUS_REG_ADDR  (MEMBRIDGE_STATUS_REG),
 `ifdef MEMBRIDGE_DEBUG_READ
-        .PAYLOAD_BITS     (18) // 2) // With debug
+        .PAYLOAD_BITS     (20) // 2) // With debug
 `else
-        .PAYLOAD_BITS     (18) //2)
+        .PAYLOAD_BITS     (20) //2)
 `endif        
     ) status_generate_i (
         .rst              (1'b0),                                            //   rst), // input
@@ -755,9 +776,9 @@ module  membridge#(
         .we               (set_status_w),                                    // input
         .wd               (cmd_data[7:0]),                                   // input[7:0]
 `ifdef MEMBRIDGE_DEBUG_READ
-        .status           ({debug_aw_allowed, debug_w_allowed, done, busy}), // input[25:0]
+        .status           ({irq_m, irq_r, debug_aw_allowed[7:0], debug_w_allowed[7:0], done, busy}), // input[25:0]
 `else
-        .status           ({axi_arw_requested, wresp_conf, done, busy}),     // input[25:0] 
+        .status           ({irq_m, irq_r, axi_arw_requested[7:0], wresp_conf[7:0], done, busy}),     // input[25:0] 
 `endif
         .ad               (status_ad),                                       // output[7:0] 
         .rq               (status_rq),                                       // output

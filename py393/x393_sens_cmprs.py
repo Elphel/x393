@@ -1632,7 +1632,7 @@ class X393SensCmprs(object):
     def setup_membridge_sensor(self,
                                num_sensor      = 0,
                                write_mem       = False,
-                               cache_mode      = 0x3, # 0x13 for debug mode
+#                               cache_mode      = 0x3, # 0x13 for debug mode
                                window_width    = 2592,
                                window_height   = 1944,
                                window_left     = 0,
@@ -1645,7 +1645,6 @@ class X393SensCmprs(object):
         Configure membridge to read/write to the sensor 0 area in the video memory
         @param num_sensor - sensor port number (0..3)
         @param write_mem - Write to video memory (Flase - read from)
-        @param cache_mode - lower 4 bits, axi cache mode (default 3), bit [4] - debug mode (replace data)
         @param window_width -  window width in pixels (bytes) (TODO: add 16-bit mode)
         @param window_height - window height in lines
         @param window_left -   window left margin
@@ -1692,7 +1691,6 @@ class X393SensCmprs(object):
             print ("membridge start =           0x%x"%(membridge_start))
             print ("membridge end =             0x%x"%(membridge_end))
             print ("membridge size =            %d bytes"%(membridge_end - membridge_start))
-            print ("cache/debug mode =          0x%x bytes"%(cache_mode))
             
             
         # Copied from setup_sensor    
@@ -1762,7 +1760,7 @@ class X393SensCmprs(object):
                                            start64 =   0,
                                            lo_addr64 = membridge_start // 8,
                                            size64 =    (membridge_end - membridge_start) // 8,
-                                           cache =     cache_mode,
+#                                           cache =     cache_mode,
                                            quiet = 1 - verbose)
         
         self.x393Membridge.membridge_en( # enable membridge

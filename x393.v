@@ -549,6 +549,7 @@ module  x393 #(
    
     wire                      [3:0] cmprs_irq;         // compressor done, data confirmed written to memory)
     wire                      [3:0] mult_saxi_irq;     // interrupts from mult_saxi channels
+    wire                            membridge_irq;     // interrupt from membridge done
    
 // Compressor frame synchronization
   
@@ -1473,7 +1474,8 @@ assign axi_grst = axi_rst_pre;
         .MEMBRIDGE_START64      (MEMBRIDGE_START64),
         .MEMBRIDGE_LEN64        (MEMBRIDGE_LEN64),
         .MEMBRIDGE_WIDTH64      (MEMBRIDGE_WIDTH64),
-        .MEMBRIDGE_MODE         (MEMBRIDGE_MODE),
+//        .MEMBRIDGE_MODE         (MEMBRIDGE_MODE),
+        .MEMBRIDGE_CTRL_IRQ     (MEMBRIDGE_CTRL_IRQ),
         .MEMBRIDGE_STATUS_REG   (MEMBRIDGE_STATUS_REG),
         .FRAME_HEIGHT_BITS      (FRAME_HEIGHT_BITS),
         .FRAME_WIDTH_BITS       (FRAME_WIDTH_BITS)
@@ -1490,6 +1492,7 @@ assign axi_grst = axi_rst_pre;
         .status_ad              (status_membridge_ad[7:0]), // output[7:0] 
         .status_rq              (status_membridge_rq),      // output
         .status_start           (status_membridge_start),   // input
+        .irq                    (membridge_irq),            // output
         .frame_start_chn        (frame_start_chn1),         // output
         .next_page_chn          (next_page_chn1),           // output
         .cmd_wrmem              (cmd_wrmem_chn1),           // input
@@ -2955,7 +2958,8 @@ sata_ahci_top sata_top(
             cmprs_irq[3:0],      // [15:12] Compressor done interrupts          SPI: Numbers [91:88]
             frseq_irq[3:0],      // [11: 8] Frame sync interrupts               SPI: Numbers [87:84]
             mult_saxi_irq[3:0],  // [ 7: 4] interrupts from mult_saxi channels  SPI: Numbers [68:65]
-            3'b0,                // [ 3: 1] Reserved                            SPI: Numbers [65:63]
+            membridge_irq,       //     [3] interrupts from membridge module    SPI: Number     [65]    
+            2'b0,                // [ 2: 1] Reserved                            SPI: Numbers [64:63]
             sata_irq             // [    0] AHCI (SATA ) interrupt              SPI: Number     [62]
             }),                  // Interrupts, PL to PS [19:0], input
     .IRQP2F(),                   // Interrupts, PL to PS [28:0], output

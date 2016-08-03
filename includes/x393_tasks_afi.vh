@@ -42,14 +42,14 @@
     input [28:0] start64;  // relative start address of the transfer (set to 0 when writing lo_addr64)
     input [28:0] lo_addr64; // low address of the system memory range, in 64-bit words 
     input [28:0] size64;    // size of the system memory range in 64-bit words
-    input  [4:0] mode; 
+//    input  [4:0] mode; 
     begin
         write_contol_register(MEMBRIDGE_ADDR + MEMBRIDGE_LO_ADDR64,        {3'b0,lo_addr64});    
         write_contol_register(MEMBRIDGE_ADDR + MEMBRIDGE_SIZE64,           {3'b0,size64});    
         write_contol_register(MEMBRIDGE_ADDR + MEMBRIDGE_START64,          {3'b0,start64});    
         write_contol_register(MEMBRIDGE_ADDR + MEMBRIDGE_LEN64,            {3'b0,len64});    
         write_contol_register(MEMBRIDGE_ADDR + MEMBRIDGE_WIDTH64,          {3'b0,width64});    
-        write_contol_register(MEMBRIDGE_ADDR + MEMBRIDGE_MODE,             {27'b0,mode});    
+//        write_contol_register(MEMBRIDGE_ADDR + MEMBRIDGE_CTRL_IRQ,         {27'b0,mode});    
     end
 endtask
 

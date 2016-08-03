@@ -328,7 +328,8 @@
     parameter MEMBRIDGE_START64=                  'h4, // start address relative to lo_addr
     parameter MEMBRIDGE_LEN64=                    'h5, // full length of transfer in 64-bit words
     parameter MEMBRIDGE_WIDTH64=                  'h6, // frame width in 64-bit words (partial last page in each line)
-    parameter MEMBRIDGE_MODE=                     'h7, // AXI cache mode (default == 3). +0x10 - debug cache (replace data with counters)
+//    parameter MEMBRIDGE_MODE=                     'h7, // AXI cache mode (default == 3). +0x10 - debug cache (replace data with counters)
+    parameter MEMBRIDGE_CTRL_IRQ=                 'h7,  // offset for IRQ control register (4 dibits): 0 - nop, 1 reset, 2 - disable, 3 - enable
     parameter MEMBRIDGE_STATUS_REG=               'h3b,
 
     parameter RSEL=                               1'b1, // late/early READ commands (to adjust timing by 1 SDCLK period)
@@ -833,7 +834,7 @@
     parameter MULT_SAXI_CNTRL_ADDR =     'h73c,  // ..'h73e
     parameter MULT_SAXI_CNTRL_MODE =       'h0,  // 'h73c offset for mode register
     parameter MULT_SAXI_CNTRL_STATUS =     'h1,  // 'h73d offset for status control register
-    parameter MULT_SAXI_CNTRL_IRQ =        'h2,  // 'h73e offset for IRQ contgrol register (4 dibits): 0 - nop, 1 reset, 2 - disable, 3 - enable
+    parameter MULT_SAXI_CNTRL_IRQ =        'h2,  // 'h73e offset for IRQ control register (4 dibits): 0 - nop, 1 reset, 2 - disable, 3 - enable
     parameter MULT_SAXI_POINTERS_REG =   'h34,   //..'h37 uses 4 consecutive locations
     parameter MULT_SAXI_STATUS_REG =     'h3c,   //status and IRQ requests and masks
     parameter MULT_SAXI_HALF_BRAM =       1,     // 0 - use full 36Kb BRAM for the buffer, 1 - use just half

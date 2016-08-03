@@ -142,7 +142,7 @@ task test_afi_rw; // SuppressThisWarning VEditor - may be unused
     input [28:0] size64;    // size of the system memory range in 64-bit words
     input        continue;    // 0 start from start64, 1 - continue from where it was
     input        disable_need;
-    input  [4:0] cache_mode;  // 'h3 - normal, 'h13 - debug
+    input  [4:0] cache_mode;  // 'h3 - normal, 'h13 - debug - disabled
     input        rpt;
     
     
@@ -193,8 +193,8 @@ task test_afi_rw; // SuppressThisWarning VEditor - may be unused
             (window_width[12:0]==0)? 29'h4000 : {15'b0,window_width[12:0],1'b0}, // width64,
             start64,
             lo_addr64,
-            size64,
-            cache_mode);
+            size64); 
+//            cache_mode);
         membridge_start (continue);
 `ifdef MEMBRIDGE_DEBUG_READ    
         // debugging
