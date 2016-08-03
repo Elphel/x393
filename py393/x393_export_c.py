@@ -1451,8 +1451,11 @@ class X393ExportC(object):
                                 4 * (vrlg.CMDFRAMESEQ_ADDR_BASE + vrlg.CMDFRAMESEQ_ABS), 4*vrlg.CMDFRAMESEQ_ADDR_INC, first_index_name)    
                     
                 s+= '{frame &= PARS_FRAMES_MASK; spin_lock(&lock); '
-                s+= 'writel(%s, mio_ptr + %s); '%(address32,reg_addr)
-                s+= 'writel(d, mio_ptr + %s); '%(reg_addr)
+                s+= 'writel(%s, mmio_ptr + %s); '%(address32,reg_addr)
+                if data_type == "u32":
+                    s+= 'writel(d, mmio_ptr + %s); '%(reg_addr)
+                else:    
+                    s+= 'writel(d.d32, mmio_ptr + %s); '%(reg_addr)
                 s+= 'spin_unlock(&lock);}'
                 
             else:   
