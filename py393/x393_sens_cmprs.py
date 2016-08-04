@@ -1129,7 +1129,7 @@ class X393SensCmprs(object):
             tile_margin = 0 # 18x18 instead of 16x16
             tile_width =  4
 #            extra_pages = (0,1)[(compressor_left_margin % 16) != 0] # memory access block border does not cut macroblocks
-            extra_pages = 1 # just testing
+            extra_pages = 1 # just testing, 0 should be OK  here
         tile_vstep = 16
         tile_height = tile_vstep + tile_margin
 

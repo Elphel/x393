@@ -244,7 +244,7 @@ module  mcntrl_tiled_rw#(
     reg                     [4:0] frame_start_r; // increased length to have time from line_unfinished to suspend (external)
 //    reg                           rst_frame_num_d;
     
-    reg        [MAX_TILE_WIDTH:0] tile_cols;  // full number of columns in a tile
+    reg        [MAX_TILE_WIDTH:0] tile_cols;  // full number of columns in a tile (in bursts?)
 //    reg       [MAX_TILE_HEIGHT:0] tile_rows;  // full number of rows in a tile
 //    reg     [MAX_TILE_HEIGHT-1:0] tile_rows;  // full number of rows in a tile
     reg       [MAX_TILE_HEIGHT:0] tile_rows;  // full number of rows in a tile

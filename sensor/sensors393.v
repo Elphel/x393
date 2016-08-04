@@ -61,11 +61,14 @@ module  sensors393 #(
     parameter SENSOR_CTRL_RADDR =         0, // relative to SENSOR_GROUP_ADDR 
     parameter SENSOR_CTRL_ADDR_MASK =    'h7ff, //
         // bits of the SENSOR mode register
-        parameter SENSOR_MODE_WIDTH =     10,
         parameter SENSOR_HIST_EN_BITS =    0,  // 0..3 1 - enable histogram modules, disable after processing the started frame
-        parameter SENSOR_HIST_NRST_BITS =  4,  // 0 - immediately reset all histogram modules 
-        parameter SENSOR_CHN_EN_BIT =      8,  // 1 - this enable channel
-        parameter SENSOR_16BIT_BIT =       9, // 0 - 8 bpp mode, 1 - 16 bpp (bypass gamma). Gamma-processed data is still used for histograms
+        parameter SENSOR_HIST_NRST_BITS =  4,  // 0 - immediately reset all histogram modules
+        parameter SENSOR_HIST_BITS_SET  =  8,  // 1 - set bits 0..7 (en and nrst)
+        parameter SENSOR_CHN_EN_BIT =      9,  // 1 - this enable channel
+        parameter SENSOR_CHN_EN_BIT_SET = 10,  // set SENSOR_CHN_EN_BIT bit
+        parameter SENSOR_16BIT_BIT =      11,  // 0 - 8 bpp mode, 1 - 16 bpp (bypass gamma). Gamma-processed data is still used for histograms
+        parameter SENSOR_16BIT_BIT_SET =  12,  // set 8/16 bit mode
+//        parameter SENSOR_MODE_WIDTH =     13,
     
     parameter SENSI2C_CTRL_RADDR =        2, // 302..'h303
     parameter SENSI2C_CTRL_MASK =     'h7fe,
@@ -484,11 +487,13 @@ module  sensors393 #(
                 .SENS_GAMMA_BUFFER             (SENS_GAMMA_BUFFER),
                 .SENSOR_CTRL_RADDR             (SENSOR_CTRL_RADDR),
                 .SENSOR_CTRL_ADDR_MASK         (SENSOR_CTRL_ADDR_MASK),
-                .SENSOR_MODE_WIDTH             (SENSOR_MODE_WIDTH),
-                .SENSOR_CHN_EN_BIT             (SENSOR_CHN_EN_BIT),
                 .SENSOR_HIST_EN_BITS           (SENSOR_HIST_EN_BITS),
                 .SENSOR_HIST_NRST_BITS         (SENSOR_HIST_NRST_BITS),
+                .SENSOR_HIST_BITS_SET          (SENSOR_HIST_BITS_SET),
+                .SENSOR_CHN_EN_BIT             (SENSOR_CHN_EN_BIT),
+                .SENSOR_CHN_EN_BIT_SET         (SENSOR_CHN_EN_BIT_SET),
                 .SENSOR_16BIT_BIT              (SENSOR_16BIT_BIT),
+                .SENSOR_16BIT_BIT_SET          (SENSOR_16BIT_BIT_SET),
                 .SENSI2C_CTRL_RADDR            (SENSI2C_CTRL_RADDR),
                 .SENSI2C_CTRL_MASK             (SENSI2C_CTRL_MASK),
                 .SENSI2C_CTRL                  (SENSI2C_CTRL),

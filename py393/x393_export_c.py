@@ -147,7 +147,7 @@ class X393ExportC(object):
         txt += '    #define PARS_FRAMES       16             ///< Number of frames in a sequencer     TODO:// move it here from <elphel/c313a.h>\n'
         txt += '    #define PARS_FRAMES_MASK (PARS_FRAMES-1) ///< Maximal frame number (15 for NC393) TODO:// move it here from <elphel/c313a.h>\n'
         txt += '#endif\n'
-        txt += 'typedef enum {DIRECT,ABSOLUTE,RELATIVE} x393cmd_t; ///< How to apply command - directly or through the command sequencer\n'
+        txt += 'typedef enum {DIRECT,ABSOLUTE,RELATIVE,ASAP} x393cmd_t; ///< How to apply command - directly or through the command sequencer\n'
         txt += """// IRQ commands applicable to several targets
 #define X393_IRQ_NOP     0 
 #define X393_IRQ_RESET   1
@@ -935,7 +935,6 @@ class X393ExportC(object):
             (("X393_CMPRS_CBIT_CMODE_JP4DIFFHDRDIV2","",vrlg.CMPRS_CBIT_CMODE_JP4DIFFHDRDIV2,0,None, None, "", "jp4,  4 blocks, differential, hdr,divide by 2")),
             (("X393_CMPRS_CBIT_CMODE_MONO1",        "", vrlg.CMPRS_CBIT_CMODE_MONO1 ,       0, None, None, "", "Mono JPEG (not yet implemented)")),
             (("X393_CMPRS_CBIT_CMODE_MONO4",        "", vrlg.CMPRS_CBIT_CMODE_MONO4 ,       0, None, None, "", "Mono, 4 blocks (2x2 macroblocks)")),
-            (("X393_CMPRS_CBIT_CMODE_JPEG18",       "", vrlg.CMPRS_CBIT_CMODE_JPEG18 ,      0, None, None, "", "Color 4:2:0")),
 
             (("X393_CMPRS_CBIT_FRAMES_SINGLE",      "", vrlg.CMPRS_CBIT_FRAMES_SINGLE ,     0, None, None, "", "Use single-frame buffer")),
             (("X393_CMPRS_CBIT_FRAMES_MULTI",       "", 1 ,                                 0, None, None, "", "Use multi-frame buffer"))]        
@@ -1898,8 +1897,11 @@ class X393ExportC(object):
         dw=[]
         dw.append(("hist_en",          vrlg.SENSOR_HIST_EN_BITS,    4,15,  "Enable subchannel histogram modules (may be less than 4)"))
         dw.append(("hist_nrst",        vrlg.SENSOR_HIST_NRST_BITS,  4,15,  "Reset off for histograms subchannels (may be less than 4)"))
+        dw.append(("hist_set",         vrlg.SENSOR_HIST_BITS_SET,   1, 0,  "Apply values in hist_en and hist_nrst fields (0 - ignore)"))
         dw.append(("chn_en",           vrlg.SENSOR_CHN_EN_BIT,      1, 1,  "Enable this sensor channel"))
+        dw.append(("chn_en_set",       vrlg.SENSOR_CHN_EN_BIT_SET,  1, 1,  "Apply chn_en value (0 - ignore)"))
         dw.append(("bit16",            vrlg.SENSOR_16BIT_BIT,       1, 0,  "0 - 8 bpp mode, 1 - 16 bpp (bypass gamma). Gamma-processed data is still used for histograms"))
+        dw.append(("bit16_set",        vrlg.SENSOR_16BIT_BIT_SET,   1, 0,  "Apply bit16 value (0 - ignore)"))
         return dw
 
     def _enc_sens_sync_mult(self):

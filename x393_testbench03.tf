@@ -3247,13 +3247,19 @@ task setup_sensor_channel;
         // Run after histogram channel is set up?
     TEST_TITLE = "SENSOR_SETUP";
     $display("===================== TEST_%s =========================",TEST_TITLE);
-            
-        set_sensor_mode (
+
+        set_sensor_mode_hist (
             num_sensor, // input  [1:0] num_sensor;
             4'h1,       // input  [3:0] hist_en;    // [0..3] 1 - enable histogram modules, disable after processing the started frame
-            4'h1,       // input  [3:0] hist_nrst;  // [4..7] 0 - immediately reset histogram module 
-            1'b1,       // input        chn_en;     // [8]    1 - enable sensor channel (0 - reset) 
-            1'b0);      // input        bits16;     // [9]    0 - 8 bpp mode, 1 - 16 bpp (bypass gamma). Gamma-processed data is still used for histograms
+            4'h1);      // input  [3:0] hist_nrst;  // [4..7] 0 - immediately reset histogram module 
+        set_sensor_mode_en (
+            num_sensor, // input  [1:0] num_sensor;
+            1'b1);      // input        chn_en;     // [9]    1 - enable sensor channel (0 - reset) 
+            // test i2c - manual and sequencer (same data as in 353 test fixture
+            
+        set_sensor_mode_bits16 (
+            num_sensor, // input  [1:0] num_sensor;
+            1'b0);      // input        bits16;     // [11]    0 - 8 bpp mode, 1 - 16 bpp (bypass gamma). Gamma-processed data is still used for histograms
             // test i2c - manual and sequencer (same data as in 353 test fixture
 
     TEST_TITLE = "CMPRS_EN_ARBIT";
@@ -3780,6 +3786,37 @@ task set_gpio_pins; // SuppressThisWarning VEditor not always unused
 endtask
 
 // x393_sensor.py
+task set_sensor_mode_hist;
+    input  [1:0] num_sensor;
+    input  [3:0] hist_en;    // [0..3] 1 - enable histogram modules, disable after processing the started frame
+    input  [3:0] hist_nrst;  // [4..7] 0 - immediately reset histogram module 
+    reg    [31:0]      tmp;
+    begin
+        tmp= {{(32-9){1'b0}},{1'b1,hist_nrst,hist_en}};
+        write_contol_register( SENSOR_GROUP_ADDR + num_sensor * SENSOR_BASE_INC +SENSOR_CTRL_RADDR, tmp);
+    end
+endtask
+
+task set_sensor_mode_en;
+    input  [1:0] num_sensor;
+    input        chn_en;     // [9]    1 - enable sensor channel (0 - reset) 
+    reg    [31:0]      tmp;
+    begin
+        tmp= {{(32-11){1'b0}},{1'b1,chn_en,9'b0}};
+        write_contol_register( SENSOR_GROUP_ADDR + num_sensor * SENSOR_BASE_INC +SENSOR_CTRL_RADDR, tmp);
+    end
+endtask
+
+task set_sensor_mode_bits16;
+    input  [1:0] num_sensor;
+    input        bits16;     // [11]    0 - 8 bpp mode, 1 - 16 bpp (bypass gamma). Gamma-processed data is still used for histograms
+    reg    [31:0]      tmp;
+    begin
+        tmp= {{(32-13){1'b0}},{1'b1,bits16,11'b0}};
+        write_contol_register( SENSOR_GROUP_ADDR + num_sensor * SENSOR_BASE_INC +SENSOR_CTRL_RADDR, tmp);
+    end
+endtask
+/*
 task set_sensor_mode;
     input  [1:0] num_sensor;
     input  [3:0] hist_en;    // [0..3] 1 - enable histogram modules, disable after processing the started frame
@@ -3791,9 +3828,8 @@ task set_sensor_mode;
         tmp= {{(32-SENSOR_MODE_WIDTH){1'b0}},func_sensor_mode(hist_en, hist_nrst, chn_en,bits16)};
         write_contol_register( SENSOR_GROUP_ADDR + num_sensor * SENSOR_BASE_INC +SENSOR_CTRL_RADDR, tmp);
     end
-     
 endtask
-    
+*/    
 // x393_sensor.py
 task set_sensor_i2c_command;
     input                             [1:0] num_sensor;
@@ -4489,22 +4525,6 @@ task write_cmd_frame_sequencer; // SuppressThisWarning VEditor not always unused
     end
 endtask
 // x393_sensor.py
-function [SENSOR_MODE_WIDTH-1:0] func_sensor_mode;
-    input  [3:0] hist_en;    // [0..3] 1 - enable histogram modules, disable after processing the started frame
-    input  [3:0] hist_nrst;  // [4..7] 0 - immediately reset histogram module 
-    input        chn_en;     // [8]    1 - enable sensor channel (0 - reset) 
-    input        bits16;     // [9]    0 - 8 bpp mode, 1 - 16 bpp (bypass gamma). Gamma-processed data is still used for histograms 
-    reg  [SENSOR_MODE_WIDTH-1:0] tmp;
-    begin
-        tmp = 0;
-        tmp [SENSOR_HIST_EN_BITS +: 4] =   hist_en;
-        tmp [SENSOR_HIST_NRST_BITS +: 4] = hist_nrst;
-        tmp [SENSOR_CHN_EN_BIT] =          chn_en;
-        tmp [SENSOR_16BIT_BIT] =           bits16;
-        func_sensor_mode = tmp;
-    end
-endfunction
-
 
 // x393_sensor.py
 function [31 : 0] func_sensor_i2c_command;

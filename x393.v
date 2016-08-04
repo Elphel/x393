@@ -1622,11 +1622,13 @@ assign axi_grst = axi_rst_pre;
         .SENS_GAMMA_BUFFER          (SENS_GAMMA_BUFFER),
         .SENSOR_CTRL_RADDR          (SENSOR_CTRL_RADDR),
         .SENSOR_CTRL_ADDR_MASK      (SENSOR_CTRL_ADDR_MASK),
-        .SENSOR_MODE_WIDTH          (SENSOR_MODE_WIDTH),
         .SENSOR_HIST_EN_BITS        (SENSOR_HIST_EN_BITS),
-        .SENSOR_CHN_EN_BIT          (SENSOR_CHN_EN_BIT),
         .SENSOR_HIST_NRST_BITS      (SENSOR_HIST_NRST_BITS),
+        .SENSOR_HIST_BITS_SET       (SENSOR_HIST_BITS_SET),
+        .SENSOR_CHN_EN_BIT          (SENSOR_CHN_EN_BIT),
+        .SENSOR_CHN_EN_BIT_SET      (SENSOR_CHN_EN_BIT_SET),
         .SENSOR_16BIT_BIT           (SENSOR_16BIT_BIT),
+        .SENSOR_16BIT_BIT_SET       (SENSOR_16BIT_BIT_SET),
         .SENSI2C_CTRL_RADDR         (SENSI2C_CTRL_RADDR),
         .SENSI2C_CTRL_MASK          (SENSI2C_CTRL_MASK),
         .SENSI2C_CTRL               (SENSI2C_CTRL),
@@ -2958,9 +2960,9 @@ sata_ahci_top sata_top(
             cmprs_irq[3:0],      // [15:12] Compressor done interrupts          SPI: Numbers [91:88]
             frseq_irq[3:0],      // [11: 8] Frame sync interrupts               SPI: Numbers [87:84]
             mult_saxi_irq[3:0],  // [ 7: 4] interrupts from mult_saxi channels  SPI: Numbers [68:65]
-            membridge_irq,       //     [3] interrupts from membridge module    SPI: Number     [65]    
-            2'b0,                // [ 2: 1] Reserved                            SPI: Numbers [64:63]
-            sata_irq             // [    0] AHCI (SATA ) interrupt              SPI: Number     [62]
+            membridge_irq,       //     [3] interrupts from membridge module    SPI: Number     [64]    
+            2'b0,                // [ 2: 1] Reserved                            SPI: Numbers [63:62]
+            sata_irq             // [    0] AHCI (SATA ) interrupt              SPI: Number     [61]
             }),                  // Interrupts, PL to PS [19:0], input
     .IRQP2F(),                   // Interrupts, PL to PS [28:0], output
  // Event Signals

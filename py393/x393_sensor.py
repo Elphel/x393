@@ -252,10 +252,10 @@ class X393Sensor(object):
 
 # Functions used by sensor-related tasks
     def func_sensor_mode (self,
-                          hist_en,
-                          hist_nrst, 
-                          chn_en, 
-                          bits16):
+                          hist_en =   None,
+                          hist_nrst = None, 
+                          chn_en =    None, 
+                          bits16 =    None):
         """
         Combine parameters into sensor mode control word
         @param hist_en -   bit mask to enable histogram sub-modules, when 0 - disable after processing
@@ -267,10 +267,16 @@ class X393Sensor(object):
         @return: sensor mode control word
         """
         rslt = 0;
-        rslt |= (hist_en & 0xf) <<   vrlg.SENSOR_HIST_EN_BITS
-        rslt |= (hist_nrst & 0xf) << vrlg.SENSOR_HIST_NRST_BITS
-        rslt |= ((0,1)[chn_en]) <<   vrlg.SENSOR_CHN_EN_BIT
-        rslt |= ((0,1)[bits16]) <<   vrlg.SENSOR_16BIT_BIT
+        if (not hist_en is None) and (hist_nrst is None):
+            rslt |= (hist_en & 0xf) <<   vrlg.SENSOR_HIST_EN_BITS
+            rslt |= (hist_nrst & 0xf) << vrlg.SENSOR_HIST_NRST_BITS
+            rslt |= 1 << vrlg.SENSOR_HIST_BITS_SET;
+        if not chn_en is None:    
+            rslt |= ((0,1)[chn_en]) <<   vrlg.SENSOR_CHN_EN_BIT
+            rslt |= 1 <<                 vrlg.SENSOR_CHN_EN_BIT_SET
+        if not bits16 is None:    
+            rslt |= ((0,1)[bits16]) <<   vrlg.SENSOR_16BIT_BIT
+            rslt |= 1 <<                 vrlg.SENSOR_16BIT_BIT_SET
         return rslt
     
     def func_sensor_i2c_command (self,
@@ -490,10 +496,10 @@ class X393Sensor(object):
     
     def set_sensor_mode (self,
                          num_sensor,
-                         hist_en,
-                         hist_nrst, 
-                         chn_en, 
-                         bits16):
+                         hist_en =   None,
+                         hist_nrst = None, 
+                         chn_en =    None, 
+                         bits16 =    None):
         """
         Set sensor mode
         @param num_sensor - sensor port number (0..3)
@@ -522,6 +528,10 @@ class X393Sensor(object):
                                                                    hist_nrst = hist_nrst,
                                                                    chn_en =    chn_en,
                                                                    bits16 =    bits16))
+        
+        
+        
+        
 
     def set_sensor_i2c_command (self,
                                 num_sensor,

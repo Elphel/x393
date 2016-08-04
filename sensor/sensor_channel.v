@@ -69,11 +69,14 @@ module  sensor_channel#(
     parameter SENSOR_CTRL_RADDR =     0, //'h00
     parameter SENSOR_CTRL_ADDR_MASK = 'h7ff, //
         // bits of the SENSOR mode register
-        parameter SENSOR_MODE_WIDTH =     10,
         parameter SENSOR_HIST_EN_BITS =    0,  // 0..3 1 - enable histogram modules, disable after processing the started frame
-        parameter SENSOR_HIST_NRST_BITS =  4,  // 0 - immediately reset all histogram modules 
-        parameter SENSOR_CHN_EN_BIT =      8,  // 1 - this enable channel
-        parameter SENSOR_16BIT_BIT =       9, // 0 - 8 bpp mode, 1 - 16 bpp (bypass gamma). Gamma-processed data is still used for histograms
+        parameter SENSOR_HIST_NRST_BITS =  4,  // 0 - immediately reset all histogram modules
+        parameter SENSOR_HIST_BITS_SET  =  8,  // 1 - set bits 0..7 (en and nrst)
+        parameter SENSOR_CHN_EN_BIT =      9,  // 1 - this enable channel
+        parameter SENSOR_CHN_EN_BIT_SET = 10,  // set SENSOR_CHN_EN_BIT bit
+        parameter SENSOR_16BIT_BIT =      11,  // 0 - 8 bpp mode, 1 - 16 bpp (bypass gamma). Gamma-processed data is still used for histograms
+        parameter SENSOR_16BIT_BIT_SET =  12,  // set 8/16 bit mode
+//        parameter SENSOR_MODE_WIDTH =     13,
     
     parameter SENSI2C_CTRL_RADDR =    2, // 'h02..'h03
     parameter SENSI2C_CTRL_MASK =     'h7fe,
@@ -432,12 +435,12 @@ module  sensor_channel#(
     
     wire  [31:0] sensor_ctrl_data;
     wire         sensor_ctrl_we;
-    reg    [SENSOR_MODE_WIDTH-1:0] mode;
-    wire   [3:0] hist_en;
-    wire         en_mclk; // enable this channel
+//    reg    [SENSOR_MODE_WIDTH-1:0] mode;
+    reg    [3:0] hist_en;
+    reg          en_mclk; // enable this channel
     wire         en_pclk; // enable in pclk domain   
-    wire   [3:0] hist_nrst;
-    wire         bit16; // 16-bit mode, 0 - 8 bit mode
+    reg    [3:0] hist_nrst;
+    reg          bit16; // 16-bit mode, 0 - 8 bit mode
     wire   [3:0] hist_rq;
     wire   [3:0] hist_gr;
     wire   [3:0] hist_dv;
@@ -472,10 +475,10 @@ module  sensor_channel#(
     assign dav_w =  bit16 ? gamma_hact_in : dav_8bit;
     assign last_in_line = ! ( bit16 ? gamma_hact_in : gamma_hact_out);
      
-    assign en_mclk =   mode[SENSOR_CHN_EN_BIT];
-    assign hist_en =   mode[SENSOR_HIST_EN_BITS +: 4];
-    assign hist_nrst = mode[SENSOR_HIST_NRST_BITS +: 4];
-    assign bit16 =     mode[SENSOR_16BIT_BIT];
+//    assign en_mclk =   mode[SENSOR_CHN_EN_BIT];
+//    assign hist_en =   mode[SENSOR_HIST_EN_BITS +: 4];
+//    assign hist_nrst = mode[SENSOR_HIST_NRST_BITS +: 4];
+//    assign bit16 =     mode[SENSOR_16BIT_BIT];
     
     
 `ifdef DEBUG_RING
@@ -561,8 +564,16 @@ module  sensor_channel#(
     end
 
     always @ (posedge mclk) begin
-        if      (mrst)           mode <= 0;
-        else if (sensor_ctrl_we) mode <= sensor_ctrl_data[SENSOR_MODE_WIDTH-1:0];
+//        if      (mrst)           mode <= 0;
+//        else if (sensor_ctrl_we) mode <= sensor_ctrl_data[SENSOR_MODE_WIDTH-1:0];
+        if      (mrst)                                                      hist_en <=   0;
+        else if (sensor_ctrl_we && sensor_ctrl_data[SENSOR_HIST_BITS_SET])  hist_en <=   sensor_ctrl_data[SENSOR_HIST_EN_BITS +:4];
+        if      (mrst)                                                      hist_nrst <= 0;
+        else if (sensor_ctrl_we && sensor_ctrl_data[SENSOR_HIST_BITS_SET])  hist_nrst <= sensor_ctrl_data[SENSOR_HIST_NRST_BITS +:4];
+        if      (mrst)                                                      en_mclk <=   0;
+        else if (sensor_ctrl_we && sensor_ctrl_data[SENSOR_CHN_EN_BIT_SET]) en_mclk <=   sensor_ctrl_data[SENSOR_CHN_EN_BIT];
+        if      (mrst)                                                      bit16 <=   0;
+        else if (sensor_ctrl_we && sensor_ctrl_data[SENSOR_16BIT_BIT_SET])  bit16 <=   sensor_ctrl_data[SENSOR_16BIT_BIT];
     end
     
     always @ (posedge pclk) begin
