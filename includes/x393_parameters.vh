@@ -416,12 +416,16 @@
       parameter SENS_GAMMA_HEIGHT01 =    'h2, // bits [15:0] - height minus 1 of image 0, [31:16] - height-1 of image1
       parameter SENS_GAMMA_HEIGHT2 =     'h3, // bits [15:0] - height minus 1 of image 2 ( no need for image 3)
         // bits of the SENS_GAMMA_CTRL mode register
-        parameter SENS_GAMMA_MODE_WIDTH =  5, // does not include trig
-        parameter SENS_GAMMA_MODE_BAYER =  0,
-        parameter SENS_GAMMA_MODE_PAGE =   2,
-        parameter SENS_GAMMA_MODE_EN =     3,
-        parameter SENS_GAMMA_MODE_REPET =  4,
-        parameter SENS_GAMMA_MODE_TRIG =   5,
+//        parameter SENS_GAMMA_MODE_WIDTH =      5, // does not include trig
+        parameter SENS_GAMMA_MODE_BAYER =      0,
+        parameter SENS_GAMMA_MODE_BAYER_SET =  2,
+        parameter SENS_GAMMA_MODE_PAGE =       3,
+        parameter SENS_GAMMA_MODE_PAGE_SET =   4,
+        parameter SENS_GAMMA_MODE_EN =         5,
+        parameter SENS_GAMMA_MODE_EN_SET =     6,
+        parameter SENS_GAMMA_MODE_REPET =      7,
+        parameter SENS_GAMMA_MODE_REPET_SET =  8,
+        parameter SENS_GAMMA_MODE_TRIG =       9,
 
 // Vignetting correction / pixel value scaling - controlled via single data word (same as in 252), some of bits [23:16]
 // are used to select register, bits 25:24 - select sub-frame
@@ -498,6 +502,7 @@
       parameter HISTOGRAM_LEFT_TOP =     'h0,
       parameter HISTOGRAM_WIDTH_HEIGHT = 'h1, // 1.. 2^16, 0 - use HACT
 
+    parameter [1:0] XOR_HIST_BAYER =  2'b00,// invert bayer setting    
     //sensor_i2c_io other parameters
     parameter integer SENSI2C_DRIVE=     12,
     parameter SENSI2C_IBUF_LOW_PWR=      "TRUE",

@@ -120,12 +120,15 @@ module  sensor_channel#(
       parameter SENS_GAMMA_HEIGHT01 =    'h2, // bits [15:0] - height minus 1 of image 0, [31:16] - height-1 of image1
       parameter SENS_GAMMA_HEIGHT2 =     'h3, // bits [15:0] - height minus 1 of image 2 ( no need for image 3)
         // bits of the SENS_GAMMA_CTRL mode register
-        parameter SENS_GAMMA_MODE_WIDTH =  5, // does not include trig
-        parameter SENS_GAMMA_MODE_BAYER =  0,
-        parameter SENS_GAMMA_MODE_PAGE =   2,
-        parameter SENS_GAMMA_MODE_EN =     3,
-        parameter SENS_GAMMA_MODE_REPET =  4,
-        parameter SENS_GAMMA_MODE_TRIG =   5,
+        parameter SENS_GAMMA_MODE_BAYER =      0,
+        parameter SENS_GAMMA_MODE_BAYER_SET =  2,
+        parameter SENS_GAMMA_MODE_PAGE =       3,
+        parameter SENS_GAMMA_MODE_PAGE_SET =   4,
+        parameter SENS_GAMMA_MODE_EN =         5,
+        parameter SENS_GAMMA_MODE_EN_SET =     6,
+        parameter SENS_GAMMA_MODE_REPET =      7,
+        parameter SENS_GAMMA_MODE_REPET_SET =  8,
+        parameter SENS_GAMMA_MODE_TRIG =       9,
 // Vignetting correction / pixel value scaling - controlled via single data word (same as in 252), some of bits [23:16]
 // are used to select register, bits 25:24 - select sub-frame
     parameter SENS_LENS_RADDR =             'h3c, 
@@ -200,7 +203,8 @@ module  sensor_channel#(
       // sens_hist registers
       parameter HISTOGRAM_LEFT_TOP =     'h0,
       parameter HISTOGRAM_WIDTH_HEIGHT = 'h1, // 1.. 2^16, 0 - use HACT
-    
+      
+    parameter [1:0] XOR_HIST_BAYER =  2'b00,// invert bayer setting    
     //sensor_i2c_io other parameters
     parameter integer SENSI2C_DRIVE=  12,
     parameter SENSI2C_IBUF_LOW_PWR=   "TRUE",
@@ -1047,20 +1051,23 @@ module  sensor_channel#(
     );
 
     sens_gamma #(
-        .SENS_NUM_SUBCHN       (SENS_NUM_SUBCHN),
-        .SENS_GAMMA_BUFFER     (SENS_GAMMA_BUFFER),
-        .SENS_GAMMA_ADDR       (SENS_GAMMA_ADDR),
-        .SENS_GAMMA_ADDR_MASK  (SENS_GAMMA_ADDR_MASK),
-        .SENS_GAMMA_CTRL       (SENS_GAMMA_CTRL),
-        .SENS_GAMMA_ADDR_DATA  (SENS_GAMMA_ADDR_DATA),
-        .SENS_GAMMA_HEIGHT01   (SENS_GAMMA_HEIGHT01),
-        .SENS_GAMMA_HEIGHT2    (SENS_GAMMA_HEIGHT2),
-        .SENS_GAMMA_MODE_WIDTH (SENS_GAMMA_MODE_WIDTH),
-        .SENS_GAMMA_MODE_BAYER (SENS_GAMMA_MODE_BAYER),
-        .SENS_GAMMA_MODE_PAGE  (SENS_GAMMA_MODE_PAGE),
-        .SENS_GAMMA_MODE_EN    (SENS_GAMMA_MODE_EN),
-        .SENS_GAMMA_MODE_REPET (SENS_GAMMA_MODE_REPET),
-        .SENS_GAMMA_MODE_TRIG  (SENS_GAMMA_MODE_TRIG)
+        .SENS_NUM_SUBCHN            (SENS_NUM_SUBCHN),
+        .SENS_GAMMA_BUFFER          (SENS_GAMMA_BUFFER),
+        .SENS_GAMMA_ADDR            (SENS_GAMMA_ADDR),
+        .SENS_GAMMA_ADDR_MASK       (SENS_GAMMA_ADDR_MASK),
+        .SENS_GAMMA_CTRL            (SENS_GAMMA_CTRL),
+        .SENS_GAMMA_ADDR_DATA       (SENS_GAMMA_ADDR_DATA),
+        .SENS_GAMMA_HEIGHT01        (SENS_GAMMA_HEIGHT01),
+        .SENS_GAMMA_HEIGHT2         (SENS_GAMMA_HEIGHT2),
+        .SENS_GAMMA_MODE_BAYER      (SENS_GAMMA_MODE_BAYER),
+        .SENS_GAMMA_MODE_BAYER_SET  (SENS_GAMMA_MODE_BAYER_SET),
+        .SENS_GAMMA_MODE_PAGE       (SENS_GAMMA_MODE_PAGE),
+        .SENS_GAMMA_MODE_PAGE_SET   (SENS_GAMMA_MODE_PAGE_SET),
+        .SENS_GAMMA_MODE_EN         (SENS_GAMMA_MODE_EN),
+        .SENS_GAMMA_MODE_EN_SET     (SENS_GAMMA_MODE_EN_SET),
+        .SENS_GAMMA_MODE_REPET      (SENS_GAMMA_MODE_REPET),
+        .SENS_GAMMA_MODE_REPET_SET  (SENS_GAMMA_MODE_REPET_SET),
+        .SENS_GAMMA_MODE_TRIG       (SENS_GAMMA_MODE_TRIG)
     ) sens_gamma_i (
 //        .rst         (rst),            // input
         .pclk        (pclk),           // input
@@ -1091,12 +1098,13 @@ module  sensor_channel#(
                 .HISTOGRAM_ADDR         (HISTOGRAM_ADDR0),
                 .HISTOGRAM_ADDR_MASK    (HISTOGRAM_ADDR_MASK),
                 .HISTOGRAM_LEFT_TOP     (HISTOGRAM_LEFT_TOP),
-                .HISTOGRAM_WIDTH_HEIGHT (HISTOGRAM_WIDTH_HEIGHT)
+                .HISTOGRAM_WIDTH_HEIGHT (HISTOGRAM_WIDTH_HEIGHT),
+                .XOR_HIST_BAYER         (XOR_HIST_BAYER)
     `ifdef DEBUG_RING
                 ,.DEBUG_CMD_LATENCY         (DEBUG_CMD_LATENCY) 
     `endif        
             ) sens_histogram_0_i (
-                .mrst       (mrst),            // input
+                .mrst       (mrst),           // input
                 .prst       (prsts),          // input extended to include sensor reset and rst_mmcm
                 .pclk       (pclk),           // input
                 .pclk2x     (pclk2x),         // input
@@ -1104,6 +1112,7 @@ module  sensor_channel#(
                 .eof        (gamma_eof_out),  // input
                 .hact       (gamma_hact_out), // input
                 .hist_di    (gamma_pxd_out),  // input[7:0] 
+                .bayer      (gamma_bayer),    // input[1:0] 
                 .mclk       (mclk),           // input
                 .hist_en    (hist_en[0]),     // input
                 .hist_rst   (!hist_nrst[0]),     // input
@@ -1139,7 +1148,8 @@ module  sensor_channel#(
                 .HISTOGRAM_ADDR         (HISTOGRAM_ADDR0),
                 .HISTOGRAM_ADDR_MASK    (HISTOGRAM_ADDR_MASK),
                 .HISTOGRAM_LEFT_TOP     (HISTOGRAM_LEFT_TOP),
-                .HISTOGRAM_WIDTH_HEIGHT (HISTOGRAM_WIDTH_HEIGHT)
+                .HISTOGRAM_WIDTH_HEIGHT (HISTOGRAM_WIDTH_HEIGHT),
+                .XOR_HIST_BAYER         (XOR_HIST_BAYER)
     `ifdef DEBUG_RING
                 ,.DEBUG_CMD_LATENCY         (DEBUG_CMD_LATENCY) 
     `endif        
@@ -1150,7 +1160,8 @@ module  sensor_channel#(
                 .sof        (gamma_sof_out),  // input
                 .eof        (gamma_eof_out),  // input
                 .hact       (gamma_hact_out), // input
-                .hist_di    (gamma_pxd_out),  // input[7:0] 
+                .hist_di    (gamma_pxd_out),  // input[7:0]
+                .bayer      (gamma_bayer),    // input[1:0] 
                 .mclk       (mclk),           // input
                 .hist_en    (hist_en[0]),     // input
                 .hist_rst   (!hist_nrst[0]),     // input
@@ -1190,7 +1201,8 @@ module  sensor_channel#(
                 .HISTOGRAM_ADDR         (HISTOGRAM_ADDR1),
                 .HISTOGRAM_ADDR_MASK    (HISTOGRAM_ADDR_MASK),
                 .HISTOGRAM_LEFT_TOP     (HISTOGRAM_LEFT_TOP),
-                .HISTOGRAM_WIDTH_HEIGHT (HISTOGRAM_WIDTH_HEIGHT)
+                .HISTOGRAM_WIDTH_HEIGHT (HISTOGRAM_WIDTH_HEIGHT),
+                .XOR_HIST_BAYER         (XOR_HIST_BAYER)
     `ifdef DEBUG_RING
                 ,.DEBUG_CMD_LATENCY         (DEBUG_CMD_LATENCY) 
     `endif        
@@ -1202,7 +1214,8 @@ module  sensor_channel#(
                 .sof        (gamma_sof_out),  // input
                 .eof        (gamma_eof_out),  // input
                 .hact       (gamma_hact_out), // input
-                .hist_di    (gamma_pxd_out),  // input[7:0] 
+                .hist_di    (gamma_pxd_out),  // input[7:0]
+                .bayer      (gamma_bayer),    // input[1:0] 
                 .mclk       (mclk),           // input
                 .hist_en    (hist_en[1]),     // input
                 .hist_rst   (!hist_nrst[1]),     // input
@@ -1236,7 +1249,8 @@ module  sensor_channel#(
                 .HISTOGRAM_ADDR         (HISTOGRAM_ADDR1),
                 .HISTOGRAM_ADDR_MASK    (HISTOGRAM_ADDR_MASK),
                 .HISTOGRAM_LEFT_TOP     (HISTOGRAM_LEFT_TOP),
-                .HISTOGRAM_WIDTH_HEIGHT (HISTOGRAM_WIDTH_HEIGHT)
+                .HISTOGRAM_WIDTH_HEIGHT (HISTOGRAM_WIDTH_HEIGHT),
+                .XOR_HIST_BAYER         (XOR_HIST_BAYER)
     `ifdef DEBUG_RING
                 ,.DEBUG_CMD_LATENCY         (DEBUG_CMD_LATENCY) 
     `endif        
@@ -1247,7 +1261,8 @@ module  sensor_channel#(
                 .sof        (gamma_sof_out),  // input
                 .eof        (gamma_eof_out),  // input
                 .hact       (gamma_hact_out), // input
-                .hist_di    (gamma_pxd_out),  // input[7:0] 
+                .hist_di    (gamma_pxd_out),  // input[7:0]
+                .bayer      (gamma_bayer),    // input[1:0] 
                 .mclk       (mclk),           // input
                 .hist_en    (hist_en[1]),     // input
                 .hist_rst   (!hist_nrst[1]),     // input
@@ -1285,7 +1300,8 @@ module  sensor_channel#(
                 .HISTOGRAM_ADDR         (HISTOGRAM_ADDR2),
                 .HISTOGRAM_ADDR_MASK    (HISTOGRAM_ADDR_MASK),
                 .HISTOGRAM_LEFT_TOP     (HISTOGRAM_LEFT_TOP),
-                .HISTOGRAM_WIDTH_HEIGHT (HISTOGRAM_WIDTH_HEIGHT)
+                .HISTOGRAM_WIDTH_HEIGHT (HISTOGRAM_WIDTH_HEIGHT),
+                .XOR_HIST_BAYER         (XOR_HIST_BAYER)
 `ifdef DEBUG_RING
                 ,.DEBUG_CMD_LATENCY         (DEBUG_CMD_LATENCY) 
 `endif        
@@ -1297,7 +1313,8 @@ module  sensor_channel#(
                 .sof        (gamma_sof_out),  // input
                 .eof        (gamma_eof_out),  // input
                 .hact       (gamma_hact_out), // input
-                .hist_di    (gamma_pxd_out),  // input[7:0] 
+                .hist_di    (gamma_pxd_out),  // input[7:0]
+                .bayer      (gamma_bayer),    // input[1:0] 
                 .mclk       (mclk),           // input
                 .hist_en    (hist_en[2]),     // input
                 .hist_rst   (!hist_nrst[2]),     // input
@@ -1331,7 +1348,8 @@ module  sensor_channel#(
                 .HISTOGRAM_ADDR         (HISTOGRAM_ADDR2),
                 .HISTOGRAM_ADDR_MASK    (HISTOGRAM_ADDR_MASK),
                 .HISTOGRAM_LEFT_TOP     (HISTOGRAM_LEFT_TOP),
-                .HISTOGRAM_WIDTH_HEIGHT (HISTOGRAM_WIDTH_HEIGHT)
+                .HISTOGRAM_WIDTH_HEIGHT (HISTOGRAM_WIDTH_HEIGHT),
+                .XOR_HIST_BAYER         (XOR_HIST_BAYER)
 `ifdef DEBUG_RING
                 ,.DEBUG_CMD_LATENCY         (DEBUG_CMD_LATENCY) 
 `endif        
@@ -1342,7 +1360,8 @@ module  sensor_channel#(
                 .sof        (gamma_sof_out),  // input
                 .eof        (gamma_eof_out),  // input
                 .hact       (gamma_hact_out), // input
-                .hist_di    (gamma_pxd_out),  // input[7:0] 
+                .hist_di    (gamma_pxd_out),  // input[7:0]
+                .bayer      (gamma_bayer),    // input[1:0] 
                 .mclk       (mclk),           // input
                 .hist_en    (hist_en[2]),     // input
                 .hist_rst   (!hist_nrst[2]),     // input
@@ -1380,7 +1399,8 @@ module  sensor_channel#(
                 .HISTOGRAM_ADDR         (HISTOGRAM_ADDR3),
                 .HISTOGRAM_ADDR_MASK    (HISTOGRAM_ADDR_MASK),
                 .HISTOGRAM_LEFT_TOP     (HISTOGRAM_LEFT_TOP),
-                .HISTOGRAM_WIDTH_HEIGHT (HISTOGRAM_WIDTH_HEIGHT)
+                .HISTOGRAM_WIDTH_HEIGHT (HISTOGRAM_WIDTH_HEIGHT),
+                .XOR_HIST_BAYER         (XOR_HIST_BAYER)
     `ifdef DEBUG_RING
                 ,.DEBUG_CMD_LATENCY         (DEBUG_CMD_LATENCY) 
     `endif        
@@ -1392,7 +1412,8 @@ module  sensor_channel#(
                 .sof        (gamma_sof_out),  // input
                 .eof        (gamma_eof_out),  // input
                 .hact       (gamma_hact_out), // input
-                .hist_di    (gamma_pxd_out),  // input[7:0] 
+                .hist_di    (gamma_pxd_out),  // input[7:0]
+                .bayer      (gamma_bayer),    // input[1:0] 
                 .mclk       (mclk),           // input
                 .hist_en    (hist_en[3]),     // input
                 .hist_rst   (!hist_nrst[3]),  // input
@@ -1427,7 +1448,8 @@ module  sensor_channel#(
                 .HISTOGRAM_ADDR         (HISTOGRAM_ADDR3),
                 .HISTOGRAM_ADDR_MASK    (HISTOGRAM_ADDR_MASK),
                 .HISTOGRAM_LEFT_TOP     (HISTOGRAM_LEFT_TOP),
-                .HISTOGRAM_WIDTH_HEIGHT (HISTOGRAM_WIDTH_HEIGHT)
+                .HISTOGRAM_WIDTH_HEIGHT (HISTOGRAM_WIDTH_HEIGHT),
+                .XOR_HIST_BAYER         (XOR_HIST_BAYER)
     `ifdef DEBUG_RING
                 ,.DEBUG_CMD_LATENCY         (DEBUG_CMD_LATENCY) 
     `endif        
@@ -1438,7 +1460,8 @@ module  sensor_channel#(
                 .sof        (gamma_sof_out),  // input
                 .eof        (gamma_eof_out),  // input
                 .hact       (gamma_hact_out), // input
-                .hist_di    (gamma_pxd_out),  // input[7:0] 
+                .hist_di    (gamma_pxd_out),  // input[7:0]
+                .bayer      (gamma_bayer),    // input[1:0] 
                 .mclk       (mclk),           // input
                 .hist_en    (hist_en[3]),     // input
                 .hist_rst   (!hist_nrst[3]),  // input

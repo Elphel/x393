@@ -119,12 +119,15 @@ module  sensors393 #(
       parameter SENS_GAMMA_HEIGHT01 =    'h2, // bits [15:0] - height minus 1 of image 0, [31:16] - height-1 of image1
       parameter SENS_GAMMA_HEIGHT2 =     'h3, // bits [15:0] - height minus 1 of image 2 ( no need for image 3)
         // bits of the SENS_GAMMA_CTRL mode register
-        parameter SENS_GAMMA_MODE_WIDTH =  5, // does not include trig
-        parameter SENS_GAMMA_MODE_BAYER =  0,
-        parameter SENS_GAMMA_MODE_PAGE =   2,
-        parameter SENS_GAMMA_MODE_EN =     3,
-        parameter SENS_GAMMA_MODE_REPET =  4,
-        parameter SENS_GAMMA_MODE_TRIG =   5,
+        parameter SENS_GAMMA_MODE_BAYER =      0,
+        parameter SENS_GAMMA_MODE_BAYER_SET =  2,
+        parameter SENS_GAMMA_MODE_PAGE =       3,
+        parameter SENS_GAMMA_MODE_PAGE_SET =   4,
+        parameter SENS_GAMMA_MODE_EN =         5,
+        parameter SENS_GAMMA_MODE_EN_SET =     6,
+        parameter SENS_GAMMA_MODE_REPET =      7,
+        parameter SENS_GAMMA_MODE_REPET_SET =  8,
+        parameter SENS_GAMMA_MODE_TRIG =       9,
     
 // Vignetting correction / pixel value scaling - controlled via single data word (same as in 252), some of bits [23:16]
 // are used to select register, bits 25:24 - select sub-frame
@@ -201,6 +204,7 @@ module  sensors393 #(
       parameter HISTOGRAM_LEFT_TOP =     'h0,
       parameter HISTOGRAM_WIDTH_HEIGHT = 'h1, // 1.. 2^16, 0 - use HACT
     
+    parameter [1:0] XOR_HIST_BAYER =  2'b00,// 11 // invert bayer setting    
     //sensor_i2c_io other parameters
     parameter integer SENSI2C_DRIVE=     12,
     parameter SENSI2C_IBUF_LOW_PWR=      "TRUE",
@@ -527,11 +531,14 @@ module  sensors393 #(
                 .SENS_GAMMA_ADDR_DATA          (SENS_GAMMA_ADDR_DATA),
                 .SENS_GAMMA_HEIGHT01           (SENS_GAMMA_HEIGHT01),
                 .SENS_GAMMA_HEIGHT2            (SENS_GAMMA_HEIGHT2),
-                .SENS_GAMMA_MODE_WIDTH         (SENS_GAMMA_MODE_WIDTH),
                 .SENS_GAMMA_MODE_BAYER         (SENS_GAMMA_MODE_BAYER),
+                .SENS_GAMMA_MODE_BAYER_SET     (SENS_GAMMA_MODE_BAYER_SET),
                 .SENS_GAMMA_MODE_PAGE          (SENS_GAMMA_MODE_PAGE),
+                .SENS_GAMMA_MODE_PAGE_SET      (SENS_GAMMA_MODE_PAGE_SET),
                 .SENS_GAMMA_MODE_EN            (SENS_GAMMA_MODE_EN),
+                .SENS_GAMMA_MODE_EN_SET        (SENS_GAMMA_MODE_EN_SET),
                 .SENS_GAMMA_MODE_REPET         (SENS_GAMMA_MODE_REPET),
+                .SENS_GAMMA_MODE_REPET_SET     (SENS_GAMMA_MODE_REPET_SET),
                 .SENS_GAMMA_MODE_TRIG          (SENS_GAMMA_MODE_TRIG),
                 .SENS_LENS_RADDR               (SENS_LENS_RADDR),
                 .SENS_LENS_ADDR_MASK           (SENS_LENS_ADDR_MASK),
@@ -595,6 +602,7 @@ module  sensors393 #(
                 .HISTOGRAM_RADDR3              (HISTOGRAM_RADDR3),
                 .HISTOGRAM_ADDR_MASK           (HISTOGRAM_ADDR_MASK),
                 .HISTOGRAM_LEFT_TOP            (HISTOGRAM_LEFT_TOP),
+                .XOR_HIST_BAYER                (XOR_HIST_BAYER),
                 .HISTOGRAM_WIDTH_HEIGHT        (HISTOGRAM_WIDTH_HEIGHT),
                 .SENSI2C_DRIVE                 (SENSI2C_DRIVE),
                 .SENSI2C_IBUF_LOW_PWR          (SENSI2C_IBUF_LOW_PWR),

@@ -61,7 +61,7 @@ module  sens_histogram #(
     input         eof,
     input         hact,
     input   [7:0] hist_di, // 8-bit pixel data
-    
+    input   [1:0] bayer,
     input         mclk,
     input         hist_en,  // @mclk - gracefully enable/disable histogram
     input         hist_rst, // @mclk - immediately disable if true
@@ -277,10 +277,10 @@ module  sens_histogram #(
 
         if      (monochrome_pclk)         bayer_pclk[1] <= 0;
         else if (!hact && hact_d[0])      bayer_pclk[1] <= !bayer_pclk[1];
-        else if (pre_first_line && !hact) bayer_pclk[1] <= XOR_HIST_BAYER[1];
+        else if (pre_first_line && !hact) bayer_pclk[1] <= XOR_HIST_BAYER[1] ^ bayer[1];
 
         if      (monochrome_pclk)         bayer_pclk[0] <= 0;
-        else if (!hact)                   bayer_pclk[0] <= XOR_HIST_BAYER[0];
+        else if (!hact)                   bayer_pclk[0] <= XOR_HIST_BAYER[0] ^ bayer[0];
         else                              bayer_pclk[0] <= ~bayer_pclk[0]; 
 
     end

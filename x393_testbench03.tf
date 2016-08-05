@@ -3269,13 +3269,22 @@ task setup_sensor_channel;
     
     TEST_TITLE = "GAMMA_CTL";
     $display("===================== TEST_%s =========================",TEST_TITLE);
-        set_sensor_gamma_ctl (// doing last to enable sensor data when everything else is set up
-            num_sensor, // input   [1:0] num_sensor; // sensor channel number (0..3)
-            2'h0, // 2'h3,       // input   [1:0] bayer;      // bayer shift (0..3)
-            0,          // input         table_page; // table page (only used if SENS_GAMMA_BUFFER)
-            1'b1,       // input         en_input;   // enable channel input
-            1'b1,       // input         repet_mode; //  Normal mode, single trigger - just for debugging
-            1'b0);      // input         trig;       // pass next frame
+    set_sensor_gamma_ctl_bayer (// doing last to enable sensor data when everything else is set up
+        num_sensor, // input   [1:0] num_sensor; // sensor channel number (0..3)
+        2'h0); // 2'h3,       // input   [1:0] bayer;      // bayer shift (0..3)
+    set_sensor_gamma_ctl_page (// doing last to enable sensor data when everything else is set up
+        num_sensor, // input   [1:0] num_sensor; // sensor channel number (0..3)
+        0);         // input         table_page; // table page (only used if SENS_GAMMA_BUFFER)
+    set_sensor_gamma_ctl_en_input (// doing last to enable sensor data when everything else is set up
+        num_sensor, // input   [1:0] num_sensor; // sensor channel number (0..3)
+        1'b1);      // input         en_input;   // enable channel input
+    set_sensor_gamma_ctl_repet (// doing last to enable sensor data when everything else is set up
+        num_sensor, // input   [1:0] num_sensor; // sensor channel number (0..3)
+        1'b1);      // input         repet_mode; //  Normal mode, single trigger - just for debugging
+    set_sensor_gamma_ctl_trig (// doing last to enable sensor data when everything else is set up
+        num_sensor, // input   [1:0] num_sensor; // sensor channel number (0..3)
+        1'b0);      // input         trig;       // pass next frame
+
     // temporarily putting in the very end as it takes about 30 usec to program curves (TODO: see how to make it faster for simulation)
     end
 endtask // setup_sensor_channel
@@ -4269,28 +4278,64 @@ task set_sensor_gamma_heights;
 endtask
 
 // x393_sensor.py
-task set_sensor_gamma_ctl;
+task set_sensor_gamma_ctl_bayer;
     input   [1:0] num_sensor; // sensor channel number (0..3)
     input   [1:0] bayer;      // bayer shift (0..3)
-    input         table_page; // table page (only used if SENS_GAMMA_BUFFER)
-    input         en_input;   // enable channel input
-    input         repet_mode; //  Normal mode, single trigger - just for debugging
-    input         trig;       // pass next frame
-    
     reg    [31:0] data;
     reg    [29:0] reg_addr;
-
     begin
-        data = func_sensor_gamma_ctl (
-                    bayer,
-                    table_page,
-                    en_input,
-                    repet_mode,
-                    trig);
+        data  = {{32-3{1'b0}},1'b1,bayer};
         reg_addr = (SENSOR_GROUP_ADDR + num_sensor * SENSOR_BASE_INC) + SENS_GAMMA_RADDR + SENS_GAMMA_CTRL;
         write_contol_register(reg_addr, data);                   
     end
-    
+endtask
+
+task set_sensor_gamma_ctl_page;
+    input   [1:0] num_sensor; // sensor channel number (0..3)
+    input         table_page; // table page (only used if SENS_GAMMA_BUFFER)
+    reg    [31:0] data;
+    reg    [29:0] reg_addr;
+    begin
+        data  = {{32-5{1'b0}},1'b1,table_page,3'b0};
+        reg_addr = (SENSOR_GROUP_ADDR + num_sensor * SENSOR_BASE_INC) + SENS_GAMMA_RADDR + SENS_GAMMA_CTRL;
+        write_contol_register(reg_addr, data);                   
+    end
+endtask
+
+task set_sensor_gamma_ctl_en_input;
+    input   [1:0] num_sensor; // sensor channel number (0..3)
+    input         en_input;   // enable channel input
+    reg    [31:0] data;
+    reg    [29:0] reg_addr;
+    begin
+        data  = {{32-7{1'b0}},1'b1,en_input,5'b0};
+        reg_addr = (SENSOR_GROUP_ADDR + num_sensor * SENSOR_BASE_INC) + SENS_GAMMA_RADDR + SENS_GAMMA_CTRL;
+        write_contol_register(reg_addr, data);                   
+    end
+endtask
+
+task set_sensor_gamma_ctl_repet;
+    input   [1:0] num_sensor; // sensor channel number (0..3)
+    input         repet_mode; //  Normal mode, single trigger - just for debugging
+    reg    [31:0] data;
+    reg    [29:0] reg_addr;
+    begin
+        data  = {{32-9{1'b0}},1'b1,repet_mode,7'b0};
+        reg_addr = (SENSOR_GROUP_ADDR + num_sensor * SENSOR_BASE_INC) + SENS_GAMMA_RADDR + SENS_GAMMA_CTRL;
+        write_contol_register(reg_addr, data);                   
+    end
+endtask
+
+task set_sensor_gamma_ctl_trig;
+    input   [1:0] num_sensor; // sensor channel number (0..3)
+    input         trig;       // pass next frame
+    reg    [31:0] data;
+    reg    [29:0] reg_addr;
+    begin
+        data  = {{32-10{1'b0}},trig,9'b0};
+        reg_addr = (SENSOR_GROUP_ADDR + num_sensor * SENSOR_BASE_INC) + SENS_GAMMA_RADDR + SENS_GAMMA_CTRL;
+        write_contol_register(reg_addr, data);                   
+    end
 endtask
 
 // x393_sensor.py
@@ -4629,24 +4674,6 @@ function                          [31 : 0] func_sensor_jtag_ctl;
 endfunction
 
 // x393_sensor.py
-function  [31 : 0] func_sensor_gamma_ctl;
-    input   [1:0] bayer;
-    input         table_page;
-    input         en_input;
-    input         repet_mode; //  Normal mode, single trigger - just for debugging  TODO: re-assign?
-    input         trig;
-    
-    reg  [31 : 0] tmp;
-    begin
-        tmp = 0;
-        tmp[SENS_GAMMA_MODE_BAYER +: 2] = bayer;
-        tmp [SENS_GAMMA_MODE_PAGE] =      table_page;
-        tmp [SENS_GAMMA_MODE_EN] =        en_input;
-        tmp [SENS_GAMMA_MODE_REPET] =     repet_mode;
-        tmp [SENS_GAMMA_MODE_TRIG] =      trig;
-        func_sensor_gamma_ctl =           tmp;
-    end
-endfunction
 
 // ****************** compressor related tasks and functions *************************
 // x393_cmprs.py

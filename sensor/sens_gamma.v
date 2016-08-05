@@ -48,12 +48,26 @@ module  sens_gamma #(
     parameter SENS_GAMMA_ADDR_DATA =   'h1, // bit 20 ==1 - table address, bit 20==0 - table data (18 bits)
     parameter SENS_GAMMA_HEIGHT01 =    'h2, // bits [15:0] - height minus 1 of image 0, [31:16] - height-1 of image1
     parameter SENS_GAMMA_HEIGHT2 =     'h3, // bits [15:0] - height minus 1 of image 2 ( no need for image 3)
-    parameter SENS_GAMMA_MODE_WIDTH =  5, // does not include trig
-    parameter SENS_GAMMA_MODE_BAYER =  0,
-    parameter SENS_GAMMA_MODE_PAGE =   2,
-    parameter SENS_GAMMA_MODE_EN =     3,
-    parameter SENS_GAMMA_MODE_REPET =  4,
-    parameter SENS_GAMMA_MODE_TRIG =   5,
+    
+    
+//    parameter SENS_GAMMA_MODE_WIDTH =  5, // does not include trig
+//    parameter SENS_GAMMA_MODE_BAYER =  0,
+//    parameter SENS_GAMMA_MODE_PAGE =   2,
+//    parameter SENS_GAMMA_MODE_EN =     3,
+//    parameter SENS_GAMMA_MODE_REPET =  4,
+//    parameter SENS_GAMMA_MODE_TRIG =   5,
+    
+    parameter SENS_GAMMA_MODE_BAYER =      0,
+    parameter SENS_GAMMA_MODE_BAYER_SET =  2,
+    parameter SENS_GAMMA_MODE_PAGE =       3,
+    parameter SENS_GAMMA_MODE_PAGE_SET =   4,
+    parameter SENS_GAMMA_MODE_EN =         5,
+    parameter SENS_GAMMA_MODE_EN_SET =     6,
+    parameter SENS_GAMMA_MODE_REPET =      7,
+    parameter SENS_GAMMA_MODE_REPET_SET =  8,
+    parameter SENS_GAMMA_MODE_TRIG =       9,
+    
+    
     parameter [1:0] XOR_GAMMA_BAYER =  2'b11 // invert bayer setting - just for gamma tables (to match 353)
     
 ) (
@@ -104,17 +118,22 @@ module  sens_gamma #(
     reg    [17:0] tdata;
 //    wire          set_taddr_data_w;
     reg    [12:0] taddr; // two high bits - select channnel (in buffered mode), in non-buffered - 1 bit less, only 10 bits each table
-    reg [SENS_GAMMA_MODE_WIDTH-1:0] mode=0;
-    reg [SENS_GAMMA_MODE_WIDTH-1:0] mode_mclk=0;
+//    reg [SENS_GAMMA_MODE_WIDTH-1:0] mode=0;
+//    reg [SENS_GAMMA_MODE_WIDTH-1:0] mode_mclk=0;
     
     reg    [15:0] height0_m1; // set @ posedge mclk, used at pclk, but should be OK
     reg    [15:0] height1_m1;
     reg    [15:0] height2_m1;
     
-    wire    [1:0] bayer;
-    wire          table_page; //part of the mode register
-    wire          en_input;
-    wire          repet_mode;
+    reg     [1:0] bayer;
+    reg           table_page; //part of the mode register
+    reg           en_input;
+    reg           repet_mode;
+
+    reg     [1:0] bayer_mclk;
+    reg           table_page_mclk;
+    reg           en_input_mclk;
+    reg           repet_mode_mclk;
     
     reg     [1:0] sensor_subchn; // select sensor from the multiplexed ones
     reg           sof_r;
@@ -196,10 +215,10 @@ module  sens_gamma #(
                             (ram_chn_d2[0]?table_rdata1:table_rdata0);
 //    assign {table_diff_w[7:0],table_base_w[9:0]} = table_rdata;
 
-    assign bayer =        mode[SENS_GAMMA_MODE_BAYER +: 2];
-    assign table_page =   mode[SENS_GAMMA_MODE_PAGE]; // TODO: re-assign?
-    assign en_input =     mode[SENS_GAMMA_MODE_EN]; 
-    assign repet_mode =   mode[SENS_GAMMA_MODE_REPET]; // TODO: re-assign?
+//    assign bayer =        mode[SENS_GAMMA_MODE_BAYER +: 2];
+//    assign table_page =   mode[SENS_GAMMA_MODE_PAGE]; // TODO: re-assign?
+//    assign en_input =     mode[SENS_GAMMA_MODE_EN]; 
+//    assign repet_mode =   mode[SENS_GAMMA_MODE_REPET]; // TODO: re-assign?
     
 //AF2015  assign sync_bayer=hact_d[1] && ~hact_d[2];
     assign interp_data[9:0] = table_base_r[9:0]+table_mult_r[17:8]+table_mult_r[7]; //round
@@ -224,8 +243,20 @@ module  sens_gamma #(
         else if (set_taddr_w) taddr <= cmd_data[12:0];
         else if (set_tdata_r) taddr <= taddr + 1;
         
-        if     (mrst)         mode_mclk <= 0;
-        else if (set_ctrl_w)  mode_mclk <= cmd_data[SENS_GAMMA_MODE_WIDTH-1:0];
+//        if     (mrst)         mode_mclk <= 0;
+//        else if (set_ctrl_w)  mode_mclk <= cmd_data[SENS_GAMMA_MODE_WIDTH-1:0];
+
+        if      (mrst)                                               bayer_mclk <= 0;
+        else if (set_ctrl_w && cmd_data[SENS_GAMMA_MODE_BAYER_SET])  bayer_mclk <= cmd_data[SENS_GAMMA_MODE_BAYER +: 2];
+
+        if      (mrst)                                               table_page_mclk <= 0;
+        else if (set_ctrl_w && cmd_data[SENS_GAMMA_MODE_PAGE_SET])   table_page_mclk <= cmd_data[SENS_GAMMA_MODE_PAGE];
+
+        if      (mrst)                                               en_input_mclk <= 0;
+        else if (set_ctrl_w && cmd_data[SENS_GAMMA_MODE_EN_SET])     en_input_mclk <= cmd_data[SENS_GAMMA_MODE_EN];
+
+        if      (mrst)                                               repet_mode_mclk <= 0;
+        else if (set_ctrl_w && cmd_data[SENS_GAMMA_MODE_REPET_SET])  repet_mode_mclk <= cmd_data[SENS_GAMMA_MODE_REPET];
         
         if (mrst) set_tdata_ram <=0;
         else      set_tdata_ram <= {4{set_tdata_w}} &
@@ -247,7 +278,12 @@ module  sens_gamma #(
 
     always @ (posedge pclk) begin
         if (prst) begin
-            mode           <= 0;
+//            mode           <= 0;
+            bayer          <= 0;
+            table_page     <= 0;
+            en_input       <= 0;
+            repet_mode     <= 0;
+            
             hact_d         <= 0;
 //            bayer_nset     <= 0;
 //            bayer0_latched <= 0;
@@ -258,7 +294,12 @@ module  sens_gamma #(
             frame_run      <= 0; 
             
         end else begin
-            mode           <= mode_mclk;
+//            mode           <= mode_mclk;
+            bayer          <= bayer_mclk;
+            table_page     <= table_page_mclk;
+            en_input       <= en_input_mclk;
+            repet_mode     <= repet_mode_mclk;
+
             hact_d         <= {hact_d[4:0],hact_in};
 //            bayer_nset     <= frame_run && (bayer_nset || hact_in);
 //            bayer0_latched <= bayer_nset? bayer0_latched : bayer[0];

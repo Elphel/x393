@@ -457,11 +457,11 @@ class X393Sensor(object):
         return rslt
 
     def func_sensor_gamma_ctl(self,
-                              bayer =      0,
-                              table_page = 0,
-                              en_input =   True,
-                              repet_mode = True, #  Normal mode, single trigger - just for debugging  TODO: re-assign?
-                              trig = False):
+                              bayer =      None,
+                              table_page = None,
+                              en_input =   None,
+                              repet_mode = None, #  Normal mode, single trigger - just for debugging  TODO: re-assign?
+                              trig =       False):
         """
         @param bayer - Bayer shift (0..3)
         @param table_page - Gamma table page
@@ -471,10 +471,22 @@ class X393Sensor(object):
         @return combined control word
         """
         rslt = 0
-        rslt |= (bayer & 3) <<       vrlg.SENS_GAMMA_MODE_BAYER
-        rslt |= (0,1)[table_page] << vrlg.SENS_GAMMA_MODE_PAGE
-        rslt |= (0,1)[en_input] <<   vrlg.SENS_GAMMA_MODE_EN
-        rslt |= (0,1)[repet_mode] << vrlg.SENS_GAMMA_MODE_REPET
+        if not bayer is None:
+            rslt |= (bayer & 3) <<       vrlg.SENS_GAMMA_MODE_BAYER
+            rslt |=          1  <<       vrlg.SENS_GAMMA_MODE_BAYER_SET
+            
+        if not table_page is None:
+            rslt |= (0,1)[table_page] << vrlg.SENS_GAMMA_MODE_PAGE
+            rslt |=                1  << vrlg.SENS_GAMMA_MODE_PAGE_SET
+
+        if not en_input is None:
+            rslt |= (0,1)[en_input] <<   vrlg.SENS_GAMMA_MODE_EN
+            rslt |=              1  <<   vrlg.SENS_GAMMA_MODE_EN_SET
+            
+        if not repet_mode is None:
+            rslt |= (0,1)[repet_mode] << vrlg.SENS_GAMMA_MODE_REPET
+            rslt |=                1  << vrlg.SENS_GAMMA_MODE_REPET_SET
+            
         rslt |= (0,1)[trig] <<       vrlg.SENS_GAMMA_MODE_TRIG
         return rslt
 

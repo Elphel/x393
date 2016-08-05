@@ -60,7 +60,7 @@ module  sens_histogram_snglclk #(
     input         eof,
     input         hact,
     input   [7:0] hist_di, // 8-bit pixel data
-    
+    input   [1:0] bayer,
     input         mclk,
     input         hist_en,  // @mclk - gracefully enable/disable histogram
     input         hist_rst, // @mclk - immediately disable if true
@@ -232,9 +232,9 @@ module  sens_histogram_snglclk #(
         en_new <= !hist_rst_pclk && hist_en_pclk;
 
         if (!hact && hact_d[0])      bayer_pclk[1] <= !bayer_pclk[1];
-        else if (pre_first_line && !hact) bayer_pclk[1] <= XOR_HIST_BAYER[1];
+        else if (pre_first_line && !hact) bayer_pclk[1] <= XOR_HIST_BAYER[1] ^ bayer[1];
 
-        if (!hact)                        bayer_pclk[0] <= XOR_HIST_BAYER[0];
+        if (!hact)                        bayer_pclk[0] <= XOR_HIST_BAYER[0] ^ bayer[0];
         else                              bayer_pclk[0] <= ~bayer_pclk[0]; 
 
     end
@@ -281,12 +281,12 @@ module  sens_histogram_snglclk #(
         if (!hist_en_pclk || !(|hor_woi)) odd_pix <= 0;
         else                              odd_pix <= ~odd_pix;
         
-        if (!hist_en_pclk || !((XOR_HIST_BAYER[0] ^ left[0])? hor_woi[1] : hor_woi[0])) memen_even[0] <= 0;
+        if (!hist_en_pclk || !((bayer[0] ^ XOR_HIST_BAYER[0] ^ left[0])? hor_woi[1] : hor_woi[0])) memen_even[0] <= 0;
         else                                                                            memen_even[0] <= ~memen_even[0];
         
         memen_even[6:1] <= memen_even[5:0];
          
-        if (!hist_en_pclk || !((XOR_HIST_BAYER[0] ^ left[0])? hor_woi[0] : hor_woi[1])) memen_odd[0]  <= 0;
+        if (!hist_en_pclk || !((bayer[0] ^ XOR_HIST_BAYER[0] ^ left[0])? hor_woi[0] : hor_woi[1])) memen_odd[0]  <= 0;
         else                                                                            memen_odd[0]  <= ~memen_odd[0];
         
         memen_odd[6:1] <= memen_odd[5:0];
