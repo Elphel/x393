@@ -94,7 +94,8 @@ class X393Camsync(object):
         if not master_chn is None:
             data |=  (4 | (master_chn & 3)) << (vrlg.CAMSYNC_MASTER_BIT - 2)
         if not chn_en is None:
-            data |=  (0x10 | (chn_en & 0xf)) << (vrlg.CAMSYNC_CHN_EN_BIT - 4)
+#            data |=  (0x10 | (chn_en & 0xf)) << (vrlg.CAMSYNC_CHN_EN_BIT - 4)
+            data |=  (0xf0 | (chn_en & 0xf)) << (vrlg.CAMSYNC_CHN_EN_BIT - 7)
         self.x393_axi_tasks.write_control_register(vrlg.CAMSYNC_ADDR + vrlg.CAMSYNC_MODE, data);
         
     def set_camsync_inout(self,

@@ -64,7 +64,7 @@ module camsync393       #(
     parameter CAMSYNC_EXTERNAL_BIT =       'h5, // enable writing ts_external (0 - local timestamp in the frame header)
     parameter CAMSYNC_TRIGGERED_BIT =      'h7, // triggered mode ( 0- async)
     parameter CAMSYNC_MASTER_BIT =         'ha, // select a 2-bit master channel (master delay may be used as a flash delay)
-    parameter CAMSYNC_CHN_EN_BIT =         'hf, // per-channel enable timestamp generation
+    parameter CAMSYNC_CHN_EN_BIT =         'h12, // per-channel enable timestamp generation (4 bits themselves, then for enables for them)
     
     parameter CAMSYNC_PRE_MAGIC =          6'b110100,
     parameter CAMSYNC_POST_MAGIC =         6'b001101
@@ -75,13 +75,13 @@ module camsync393       #(
     input                         mrst,        // @ posedge mclk - sync reset
     input                   [7:0] cmd_ad,      // byte-serial command address/data (up to 6 bytes: AL-AH-D0-D1-D2-D3 
     input                         cmd_stb,     // strobe (with first byte) for the command a/d
-                           // 0 - mode: [0] - enable module, 0 reset
-                           //           [2:1] +4 - reset ts_snd_en, +6 - set ts_snd_en - enable sending timestamp over sync line
-                           //           [4:3] +0x10 - reset ts_external, +'hc - set ts_external:
+                           // 0 - mode: [1:0] - 3 - enable module, 2 - reset 0,1 - NOP
+                           //           [3:2] +8 - reset ts_snd_en, +'hc - set ts_snd_en - enable sending timestamp over sync line
+                           //           [5:4] +0x20 - reset ts_external, +'h30 - set ts_external:
                            //                  1 - use external timestamp, if available. 0 - always use local ts
                            //           [6:5] +'h40 - reset triggered mode (free running sensor), +'h30 - set sensor triggered mode
-                           //           [9:7] +'h200 - set master channel (zero delay in internal trigger mode, delay used for flash output)
-                           //         [14:10] +'h4000 - set which channels to generate timestamp messages
+                           //           [10:8] +'h400 - set master channel (zero delay in internal trigger mode, delay used for flash output)
+                           //         [15:11] +'h8000 - set which channels to generate timestamp messages
                            // UPDATE now di-bit "01" means "keep" (00 - do not use, 01 - keep, 10 set active 0, 11 - set active 1)
                            // 1 - source of trigger (10 bit pairs, LSB - level to trigger, MSB - use this bit). All 0 - internal trigger
                            //     in internal mode output has variable delay from the internal trigger (relative to sensor trigger)
@@ -374,12 +374,18 @@ module camsync393       #(
 
     always @(posedge mclk) begin
         if (set_mode_reg_w) begin
-            if (cmd_data[CAMSYNC_EN_BIT])        ts_snd_en <=   cmd_data[CAMSYNC_EN_BIT - 1];
+            if (cmd_data[CAMSYNC_EN_BIT])        en <=          cmd_data[CAMSYNC_EN_BIT - 1];
             if (cmd_data[CAMSYNC_SNDEN_BIT])     ts_snd_en <=   cmd_data[CAMSYNC_SNDEN_BIT - 1];
             if (cmd_data[CAMSYNC_EXTERNAL_BIT])  ts_external <= cmd_data[CAMSYNC_EXTERNAL_BIT - 1];
             if (cmd_data[CAMSYNC_TRIGGERED_BIT]) triggered_mode_r <= cmd_data[CAMSYNC_TRIGGERED_BIT - 1];
             if (cmd_data[CAMSYNC_MASTER_BIT])    master_chn <= cmd_data[CAMSYNC_MASTER_BIT - 1 -: 2];
-            if (cmd_data[CAMSYNC_CHN_EN_BIT])    chn_en <= cmd_data[CAMSYNC_CHN_EN_BIT - 1 -: 4];
+//            if (cmd_data[CAMSYNC_CHN_EN_BIT])    chn_en <= cmd_data[CAMSYNC_CHN_EN_BIT - 1 -: 4];
+// Making separate enables for each channel, so channel software will not disturb other channels
+            if (cmd_data[CAMSYNC_CHN_EN_BIT-3])    chn_en[0] <= cmd_data[CAMSYNC_CHN_EN_BIT - 7];
+            if (cmd_data[CAMSYNC_CHN_EN_BIT-2])    chn_en[1] <= cmd_data[CAMSYNC_CHN_EN_BIT - 6];
+            if (cmd_data[CAMSYNC_CHN_EN_BIT-1])    chn_en[2] <= cmd_data[CAMSYNC_CHN_EN_BIT - 5];
+            if (cmd_data[CAMSYNC_CHN_EN_BIT-0])    chn_en[3] <= cmd_data[CAMSYNC_CHN_EN_BIT - 4];
+            
         end 
         if (mrst) input_use <= 0;
         if (!en) begin

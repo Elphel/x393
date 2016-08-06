@@ -2388,8 +2388,8 @@ class X393ExportC(object):
         dw.append(("trig_set",       vrlg.CAMSYNC_TRIGGERED_BIT,      1,   0, "Set 'trig'"))
         dw.append(("master_chn",     vrlg.CAMSYNC_MASTER_BIT - 2,     2,   0, "master sensor channel (zero delay in internal trigger mode, delay used for flash output)"))
         dw.append(("master_chn_set", vrlg.CAMSYNC_MASTER_BIT,         1,   0, "Set 'master_chn'"))
-        dw.append(("ts_chns",        vrlg.CAMSYNC_CHN_EN_BIT - 4,     4,   1, "Channels to generate timestmp messages (bit mask)"))
-        dw.append(("ts_chns_set",    vrlg.CAMSYNC_CHN_EN_BIT,         1,   0, "Set 'ts_chns'"))
+        dw.append(("ts_chns",        vrlg.CAMSYNC_CHN_EN_BIT - 7,     4,   1, "Channels to generate timestmp messages (bit mask)"))
+        dw.append(("ts_chns_set",    vrlg.CAMSYNC_CHN_EN_BIT - 3,     4,   0, "Sets for 'ts_chns' (each bit controls corresponding 'ts_chns' bit)"))
         return dw
 
     def _enc_cmdframeseq_mode(self):

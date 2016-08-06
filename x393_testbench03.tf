@@ -4462,7 +4462,12 @@ task set_camsync_mode;
         data [CAMSYNC_EXTERNAL_BIT  -: 2] = en_ts_external;
         data [CAMSYNC_TRIGGERED_BIT -: 2] = triggered_mode;
         data [CAMSYNC_MASTER_BIT    -: 3] = master_chn;
-        data [CAMSYNC_CHN_EN_BIT    -: 5] = chn_en;
+//        data [CAMSYNC_CHN_EN_BIT    -: 5] = chn_en;
+        // Apply chn_en[4] as 'set' to all 4 channles (was 4+1 set, now 4 +4 set) 
+        data [CAMSYNC_CHN_EN_BIT-3  -: 5] = chn_en;
+        data [CAMSYNC_CHN_EN_BIT-2] =       chn_en[4];
+        data [CAMSYNC_CHN_EN_BIT-1] =       chn_en[4];
+        data [CAMSYNC_CHN_EN_BIT-0] =       chn_en[4];
         write_contol_register(CAMSYNC_ADDR + CAMSYNC_MODE, data);
     end
 endtask
