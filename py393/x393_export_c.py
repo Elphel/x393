@@ -2378,7 +2378,8 @@ class X393ExportC(object):
         return dw
     def _enc_camsync_mode(self):
         dw=[]
-        dw.append(("en",             vrlg.CAMSYNC_EN_BIT,             1,   1, "Enable CAMSYNC module"))
+        dw.append(("en",             vrlg.CAMSYNC_EN_BIT-1,             1,   1, "Enable CAMSYNC module"))
+        dw.append(("en_set",         vrlg.CAMSYNC_EN_BIT,             1,   1, "Set 'en' bit"))
         dw.append(("en_snd",         vrlg.CAMSYNC_SNDEN_BIT-1,        1,   1, "Enable sending timestamps (valid with 'en_snd_set')"))
         dw.append(("en_snd_set",     vrlg.CAMSYNC_SNDEN_BIT,          1,   0, "Set 'en_snd'"))
         dw.append(("ext",            vrlg.CAMSYNC_EXTERNAL_BIT - 1,   1,   1, "Use external (received) timestamps, if available. O - use local timestamps"))

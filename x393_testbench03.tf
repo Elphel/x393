@@ -4456,7 +4456,8 @@ task set_camsync_mode;
     reg    [31:0] data;
     begin
         data = 0;
-        data [CAMSYNC_EN_BIT]             = en;
+        data [CAMSYNC_EN_BIT-1]           = en;
+        data [CAMSYNC_EN_BIT]             = 1;  // always set enable (how it was)
         data [CAMSYNC_SNDEN_BIT     -: 2] = en_snd;
         data [CAMSYNC_EXTERNAL_BIT  -: 2] = en_ts_external;
         data [CAMSYNC_TRIGGERED_BIT -: 2] = triggered_mode;

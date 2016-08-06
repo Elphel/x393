@@ -64,7 +64,7 @@ class X393Camsync(object):
         except:
             pass
     def set_camsync_mode (self,
-                          en =             True,
+                          en =             None,
                           en_snd =         None,
                           en_ts_external = None,
                           triggered_mode = None,
@@ -81,8 +81,10 @@ class X393Camsync(object):
         @param chn_en -         bitmask of enabled channels
         """
         data = 0
-        if en:
-            data |= 1 << vrlg.CAMSYNC_EN_BIT     
+        if not en is None:
+            data |= (2,3)[en] << (vrlg.CAMSYNC_EN_BIT - 1)
+#        if en:
+#            data |= 1 << vrlg.CAMSYNC_EN_BIT     
         if not en_snd is None:
             data |= (2,3)[en_snd] << (vrlg.CAMSYNC_SNDEN_BIT - 1)
         if not en_ts_external is None:
