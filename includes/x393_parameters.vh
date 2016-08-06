@@ -493,10 +493,11 @@
     parameter SENSI2C_ADDR_MASK =       'h7f0, // both for SENSI2C_ABS_ADDR and SENSI2C_REL_ADDR
 
     // sens_hist registers (relative to SENSOR_GROUP_ADDR)
+    parameter HISTOGRAM_RADDR_INC =      'h2, //
     parameter HISTOGRAM_RADDR0 =        'h30, //
-    parameter HISTOGRAM_RADDR1 =        'h32, //
-    parameter HISTOGRAM_RADDR2 =        'h34, //
-    parameter HISTOGRAM_RADDR3 =        'h36, //
+    parameter HISTOGRAM_RADDR1 =        HISTOGRAM_RADDR0+ HISTOGRAM_RADDR_INC * 1, //'h32, //
+    parameter HISTOGRAM_RADDR2 =        HISTOGRAM_RADDR0+ HISTOGRAM_RADDR_INC * 2, //'h34, //
+    parameter HISTOGRAM_RADDR3 =        HISTOGRAM_RADDR0+ HISTOGRAM_RADDR_INC * 3, //'h36, //
     parameter HISTOGRAM_ADDR_MASK =     'h7fe, // for each channel
       // sens_hist registers
       parameter HISTOGRAM_LEFT_TOP =     'h0,

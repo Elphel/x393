@@ -887,16 +887,14 @@ class X393ExportC(object):
         ba = vrlg.SENSOR_GROUP_ADDR
         ia = vrlg.SENSOR_BASE_INC
         c =  "sens_num"
+        cs = ("sens_num","sub_chn")
+        iam=(vrlg.SENSOR_BASE_INC,vrlg.HISTOGRAM_RADDR_INC)
+        z3z3=(z3,z3)
         sdefines +=[
             (('Windows for histogram subchannels',)),
-            (("X393_HISTOGRAM_LT0",                     c, vrlg.HISTOGRAM_RADDR0 +                         ba, ia, z3, "x393_hist_left_top", "rw",          "Specify histogram 0 left/top")),
-            (("X393_HISTOGRAM_WH0",                     c, vrlg.HISTOGRAM_RADDR0 + 1 +                     ba, ia, z3, "x393_hist_width_height_m1", "rw",   "Specify histogram 0 width/height")),
-            (("X393_HISTOGRAM_LT1",                     c, vrlg.HISTOGRAM_RADDR1 +                         ba, ia, z3, "x393_hist_left_top", "rw",          "Specify histogram 1 left/top")),
-            (("X393_HISTOGRAM_WH1",                     c, vrlg.HISTOGRAM_RADDR1 + 1 +                     ba, ia, z3, "x393_hist_width_height_m1", "rw",   "Specify histogram 1 width/height")),
-            (("X393_HISTOGRAM_LT2",                     c, vrlg.HISTOGRAM_RADDR2 +                         ba, ia, z3, "x393_hist_left_top", "rw",          "Specify histogram 2 left/top")),
-            (("X393_HISTOGRAM_WH2",                     c, vrlg.HISTOGRAM_RADDR2 + 1 +                     ba, ia, z3, "x393_hist_width_height_m1", "rw",   "Specify histogram 2 width/height")),
-            (("X393_HISTOGRAM_LT3",                     c, vrlg.HISTOGRAM_RADDR3 +                         ba, ia, z3, "x393_hist_left_top", "rw",          "Specify histogram 3 left/top")),
-            (("X393_HISTOGRAM_WH3",                     c, vrlg.HISTOGRAM_RADDR3 + 1 +                     ba, ia, z3, "x393_hist_width_height_m1", "rw",   "Specify histogram 3 width/height"))]        
+            (("X393_HISTOGRAM_LT",                      cs, vrlg.HISTOGRAM_RADDR0 +                         ba, iam, z3z3, "x393_hist_left_top", "rw",          "Specify histograms left/top")),
+            (("X393_HISTOGRAM_WH",                      cs, vrlg.HISTOGRAM_RADDR0 + 1 +                     ba, iam, z3z3, "x393_hist_width_height_m1", "rw",   "Specify histograms width/height")),
+]
         ba = vrlg.SENSOR_GROUP_ADDR
         ia = vrlg.SENSOR_BASE_INC
         c =  "subchannel"
