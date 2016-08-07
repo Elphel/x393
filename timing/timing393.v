@@ -58,7 +58,8 @@ module  timing393       #(
     parameter CAMSYNC_EXTERNAL_BIT =            'h5, // enable writing ts_external (0 - local timestamp in the frame header)
     parameter CAMSYNC_TRIGGERED_BIT =           'h7, // triggered mode ( 0- async)
     parameter CAMSYNC_MASTER_BIT =              'ha, // select a 2-bit master channel (master delay may be used as a flash delay)
-    parameter CAMSYNC_CHN_EN_BIT =              'hf, // per-channel enable timestamp generation
+//    parameter CAMSYNC_CHN_EN_BIT =              'hf, // per-channel enable timestamp generation
+    parameter CAMSYNC_CHN_EN_BIT =              'h12, // per-channel enable timestamp generation (4 bits themselves, then for enables for them)
     parameter CAMSYNC_PRE_MAGIC =               6'b110100,
     parameter CAMSYNC_POST_MAGIC =              6'b001101,
     
