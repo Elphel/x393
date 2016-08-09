@@ -374,7 +374,7 @@ class X393ExportC(object):
 
         stypedefs += self.get_typedef32(comment =   "Configure memory controller priorities",
                                  data =      self._enc_mcntrl_priorities(),
-                                 name =      "x393_arbite_pri",  typ="rw",
+                                 name =      "x393_arbiter_pri",  typ="rw",
                                  frmt_spcs = frmt_spcs)
 
         stypedefs += self.get_typedef32(comment =   "Enable/disable memory controller channels",
@@ -651,7 +651,7 @@ class X393ExportC(object):
         sdefines = []
         sdefines +=[
             (('R/W addresses to set up memory arbiter priorities. For sensors  (chn = 8..11), for compressors - 12..15',)),
-            (("X393_MCNTRL_ARBITER_PRIORITY",              c, vrlg.MCONTR_ARBIT_ADDR +             ba, ia, z15, "x393_arbite_pri", "rw",                     "Set memory arbiter priority (currently r/w, may become just wo)"))]        
+            (("X393_MCNTRL_ARBITER_PRIORITY",              c, vrlg.MCONTR_ARBIT_ADDR +             ba, ia, z15, "x393_arbiter_pri", "rw",                     "Set memory arbiter priority (currently r/w, may become just wo)"))]        
 
         sdefines +=[
             (('Enable/disable memory channels (bits in a 16-bit word). For sensors  (chn = 8..11), for compressors - 12..15',)),
