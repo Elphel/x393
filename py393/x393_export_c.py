@@ -1991,11 +1991,11 @@ class X393ExportC(object):
         dw=[]
         dw.append(("mrst",         vrlg.SENS_CTRL_MRST,         1,   0,  "MRST signal level to the sensor (0 - low(active), 1 - high (inactive)"))
         dw.append(("mrst_set",     vrlg.SENS_CTRL_MRST + 1,     1,   0,  "when set to 1, MRST is set  to the 'mrst' field value"))
-        dw.append(("arst",         vrlg.SENS_CTRL_ARST,         1,   0,  "ARST signal to the sensor"))
+        dw.append(("arst",         vrlg.SENS_CTRL_ARST,         1,   0,  "ARST signal to the sensor (0 - low(active), 1 - high (inactive)"))
         dw.append(("arst_set",     vrlg.SENS_CTRL_ARST + 1,     1,   0,  "ARST set  to the 'arst' field"))
         dw.append(("aro",          vrlg.SENS_CTRL_ARO,          1,   0,  "ARO signal to the sensor"))
         dw.append(("aro_set",      vrlg.SENS_CTRL_ARO + 1,      1,   0,  "ARO set to the 'aro' field"))
-        dw.append(("mmcm_rst",     vrlg.SENS_CTRL_RST_MMCM,     1,   0,  "MMCM (for sensor clock) reset signal"))
+        dw.append(("mmcm_rst",     vrlg.SENS_CTRL_RST_MMCM,     1,   0,  "MMCM (for sensor clock) reset signal (1 - reset, 0 - normal operation)"))
         dw.append(("mmcm_rst_set", vrlg.SENS_CTRL_RST_MMCM + 1, 1,   0,  "MMCM reset set to  'mmcm_rst' field"))
         dw.append(("ext_clk",      vrlg.SENS_CTRL_EXT_CLK,      1,   0,  "MMCM clock input: 0: clock to the sensor, 1 - clock from the sensor"))
         dw.append(("ext_clk_set",  vrlg.SENS_CTRL_EXT_CLK + 1,  1,   0,  "Set MMCM clock input to 'ext_clk' field"))
@@ -2402,9 +2402,9 @@ class X393ExportC(object):
     def _enc_cmdseqmux_status(self):
         dw=[]
         dw.append(("frame_num0",  0,  4,   0, "Frame number for sensor 0"))
-        dw.append(("frame_num1",  4,  4,   0, "Frame number for sensor 0"))
-        dw.append(("frame_num2",  8,  4,   0, "Frame number for sensor 0"))
-        dw.append(("frame_num3", 12,  4,   0, "Frame number for sensor 0"))
+        dw.append(("frame_num1",  4,  4,   0, "Frame number for sensor 1"))
+        dw.append(("frame_num2",  8,  4,   0, "Frame number for sensor 2"))
+        dw.append(("frame_num3", 12,  4,   0, "Frame number for sensor 3"))
 
         dw.append(("is",         16,  4,   0, "Interrupt status: 1 bit per sensor channel"))
         dw.append(("im",         20,  4,   0, "Interrupt enable: 1 bit per sensor channel"))
