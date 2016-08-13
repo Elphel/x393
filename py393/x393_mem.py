@@ -68,13 +68,16 @@ class X393Mem(object):
                 print("Program is forced to run in SIMULATED mode as '/dev/xdevcfg' does not exist (not a camera)")
         self.DRY_MODE=dry_mode
         if (dry_mode) and (X393_CLIENT is None):
-            print("Creating X393_CLIENT")
-            try:
-                X393_CLIENT= x393Client(host=dry_mode.split(":")[0], port=int(dry_mode.split(":")[1]))
-                print("Created X393_CLIENT")
-            except:
-                X393_CLIENT= True
-                print("Failed to create X393_CLIENT")
+            if ":" in dry_mode:
+                print("Creating X393_CLIENT")
+                try:
+                    X393_CLIENT= x393Client(host=dry_mode.split(":")[0], port=int(dry_mode.split(":")[1]))
+                    print("Created X393_CLIENT")
+                except:
+                    X393_CLIENT= True
+                    print("Failed to create X393_CLIENT")
+            else:
+                X393_CLIENT= True # just will not complain "Failed to create..."
             if not X393_CLIENT is True:
                 print("Starting X393_CLIENT")
                 try:

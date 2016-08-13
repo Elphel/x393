@@ -144,8 +144,8 @@ class X393ExportC(object):
         txt +=  '// init_mmio_ptr() should be called once before using any of the other declared functions\n\n'
         txt +=  'int init_mmio_ptr(void);\n'
         txt += '#ifndef PARS_FRAMES\n'
-        txt += '    #define PARS_FRAMES       16             ///< Number of frames in a sequencer     TODO:// move it here from <elphel/c313a.h>\n'
-        txt += '    #define PARS_FRAMES_MASK (PARS_FRAMES-1) ///< Maximal frame number (15 for NC393) TODO:// move it here from <elphel/c313a.h>\n'
+        txt += '    #define PARS_FRAMES       16             ///< Number of frames in a sequencer     TODO:// move it here from <uapi/elphel/c313a.h>\n'
+        txt += '    #define PARS_FRAMES_MASK (PARS_FRAMES-1) ///< Maximal frame number (15 for NC393) TODO:// move it here from <uapi/elphel/c313a.h>\n'
         txt += '#endif\n'
         txt += 'typedef enum {DIRECT,ABSOLUTE,RELATIVE,ASAP} x393cmd_t; ///< How to apply command - directly or through the command sequencer\n'
         txt += """// IRQ commands applicable to several targets
@@ -651,7 +651,7 @@ class X393ExportC(object):
         sdefines = []
         sdefines +=[
             (('R/W addresses to set up memory arbiter priorities. For sensors  (chn = 8..11), for compressors - 12..15',)),
-            (("X393_MCNTRL_ARBITER_PRIORITY",              c, vrlg.MCONTR_ARBIT_ADDR +             ba, ia, z15, "x393_arbiter_pri", "rw",                     "Set memory arbiter priority (currently r/w, may become just wo)"))]        
+            (("X393_MCNTRL_ARBITER_PRIORITY",              c, vrlg.MCONTR_ARBIT_ADDR +             ba, ia, z15, "x393_arbiter_pri", "rw",                "Set memory arbiter priority (currently r/w, may become just wo)"))]        
 
         sdefines +=[
             (('Enable/disable memory channels (bits in a 16-bit word). For sensors  (chn = 8..11), for compressors - 12..15',)),
@@ -1914,7 +1914,7 @@ class X393ExportC(object):
 
     def _enc_mcntrl_priorities(self):
         dw=[]
-        dw.append(("priority",         0, 16,   0,  "Channel priority (the larger the higher)"))
+        dw.append(("priority",         0, 16,   0,  "Channel priority (the larger the higher). Each grant resets this channel to 'priority', increments others. Highest wins (among want/need)"))
         return dw
 
     def _enc_mcntrl_chnen(self):
