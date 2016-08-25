@@ -315,6 +315,8 @@ module  membridge#(
     reg [4:0] wr_id;
     
     reg        read_no_more; // after frame_done - no more requests for new pages to read
+    reg        done;
+    reg        pre_done;
 
     assign afi_arid={1'b1,rd_id};
     assign afi_awid={1'b1,wr_id};
@@ -436,8 +438,6 @@ module  membridge#(
     reg        write_busy;
     wire       rw_in_progress;
     reg        busy;
-    reg        done;
-    reg        pre_done;
 
     assign rw_in_progress = read_started || write_busy;
     
