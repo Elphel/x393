@@ -653,6 +653,16 @@ class X393SensCmprs(object):
                            arst =       False,
                            aro  =       False,
                            mmcm_rst =   True,   #reset mmcm 
+                           clk_sel =    None,   #Dealing with Unisims bug: "Error: [Unisim MMCME2_ADV-4] Input clock can only be switched when..."
+                           set_delays = False,
+                           quadrants =  None)
+
+        self.x393Sensor.set_sensor_io_ctl (
+                           num_sensor = num_sensor,
+                           mrst =       False,
+                           arst =       False,
+                           aro  =       False,
+                           mmcm_rst =   True,   #reset mmcm 
                            clk_sel =    clk_sel,
                            set_delays = False,
                            quadrants =  None)
