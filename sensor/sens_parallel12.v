@@ -310,7 +310,7 @@ module  sens_parallel12 #(
         else if (set_ctrl_r && data_r[SENS_CTRL_ARST + 1])      iarst <= data_r[SENS_CTRL_ARST]; 
          
         if      (mclk_rst)                                      iaro_soft <= 0;
-        else if (set_ctrl_r && data_r[SENS_CTRL_MRST + 1])      iaro_soft <= data_r[SENS_CTRL_ARO]; 
+        else if (set_ctrl_r && data_r[SENS_CTRL_ARO + 1])       iaro_soft <= data_r[SENS_CTRL_ARO]; 
          
         if      (mclk_rst)                                      rst_mmcm <= 0;
         else if (set_ctrl_r && data_r[SENS_CTRL_RST_MMCM + 1])  rst_mmcm <= data_r[SENS_CTRL_RST_MMCM]; 
