@@ -1,21 +1,20 @@
 [*]
 [*] GTKWave Analyzer v3.3.66 (w)1999-2015 BSI
-[*] Mon Jul 18 03:09:11 2016
+[*] Fri Aug 26 03:11:57 2016
 [*]
-[dumpfile] "/home/andrey/git/x393-neon/simulation/x393_dut-20160717195210458.fst"
-[dumpfile_mtime] "Mon Jul 18 02:40:16 2016"
-[dumpfile_size] 400879350
-[savefile] "/home/andrey/git/x393-neon/cocotb/x393_cocotb_02.sav"
-[timestart] 73530000
-[size] 1823 1180
-[pos] 1917 0
-*-21.042217 79400000 123238096 124220833 174385000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[dumpfile] "/home/eyesis/git/x393-neon/simulation/x393_dut-20160825202535502.fst"
+[dumpfile_mtime] "Fri Aug 26 02:56:41 2016"
+[dumpfile_size] 171390450
+[savefile] "/home/eyesis/git/x393-neon/cocotb/x393_cocotb_02.sav"
+[timestart] 177022600
+[size] 1836 1171
+[pos] 0 23
+*-17.349640 177492388 123238096 124220833 174385000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] x393_dut.
 [treeopen] x393_dut.ddr3_i.ddr3_i.
-[treeopen] x393_dut.par12_hispi_psp4l1_i.cmprs_channel_block[0].
 [treeopen] x393_dut.simul_axi_master_wdata_i.
 [treeopen] x393_dut.x393_i.
-[treeopen] x393_dut.x393_i.compressor393_i.
+[treeopen] x393_dut.x393_i.cmd_seq_mux_i.
 [treeopen] x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].
 [treeopen] x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_pixel_buf_iface_i.
 [treeopen] x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_status_i.
@@ -32,7 +31,9 @@
 [treeopen] x393_dut.x393_i.compressor393_i.cmprs_channel_block[3].jp_channel_i.cmprs_pixel_buf_iface_i.
 [treeopen] x393_dut.x393_i.compressor393_i.genblk3.
 [treeopen] x393_dut.x393_i.compressor393_i.genblk3.cmprs_afi0_mux_i.
-[treeopen] x393_dut.x393_i.mcntrl393_i.
+[treeopen] x393_dut.x393_i.frame_sequencer_block[0].
+[treeopen] x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.
+[treeopen] x393_dut.x393_i.gpio393_i.
 [treeopen] x393_dut.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.
 [treeopen] x393_dut.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.
 [treeopen] x393_dut.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.phy_top_i.
@@ -41,22 +42,16 @@
 [treeopen] x393_dut.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_tiled_rd_compressor_i.
 [treeopen] x393_dut.x393_i.sensors393_i.
 [treeopen] x393_dut.x393_i.sensors393_i.sensor_channel_block[0].
-[treeopen] x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_10398_i.
+[treeopen] x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.
+[treeopen] x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_parallel12_i.
+[treeopen] x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_membuf_i.
 [treeopen] x393_dut.x393_i.sensors393_i.sensor_channel_block[1].
-[treeopen] x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.
-[treeopen] x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.
-[treeopen] x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[0].
-[treeopen] x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[0].sens_hispi_fifo_i.
-[treeopen] x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[1].
-[treeopen] x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[2].
-[treeopen] x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[3].
-[treeopen] x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.sens_hispi_clock_i.
 [treeopen] x393_dut.x393_i.sensors393_i.sensor_channel_block[2].
 [treeopen] x393_dut.x393_i.sensors393_i.sensor_channel_block[3].
-[sst_width] 362
-[signals_width] 331
+[sst_width] 311
+[signals_width] 350
 [sst_expanded] 1
-[sst_vpaned_height] 610
+[sst_vpaned_height] 540
 @820
 x393_dut.TEST_TITLE[639:0]
 @800200
@@ -158,9 +153,10 @@ x393_dut.dutm0_xtra_blag[3:0]
 x393_dut.dutm0_xtra_rdlag[3:0]
 @1401200
 -maxi0
-@c00200
+@800200
 -SENSOR1
 @28
+x393_dut.simul_sensor12bits_i.ARO
 x393_dut.simul_sensor12bits_i.MCLK
 @22
 x393_dut.simul_sensor12bits_i.D[11:0]
@@ -171,7 +167,9 @@ x393_dut.simul_sensor12bits_i.ARST
 x393_dut.simul_sensor12bits_i.NMRST
 x393_dut.simul_sensor12bits_i.stopped
 x393_dut.simul_sensor12bits_i.DCLK
-@1401200
+x393_dut.simul_sensor12bits_i.MCLK
+x393_dut.PX1_MCLK
+@1000200
 -SENSOR1
 @c00200
 -memory_timing
@@ -298,15 +296,8 @@ x393_dut.x393_i.sync_resets_i.rst_early_master
 -
 @1401200
 -resets
-@c00200
+@800200
 -sensor_channel0
-@28
-x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_10398_i.pclk
-@8022
-x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_10398_i.pxd[11:0]
-@28
-x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_10398_i.hact
-x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_10398_i.sof
 @22
 x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_membuf_i.px_data[15:0]
 @28
@@ -349,36 +340,36 @@ x393_dut.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_linear_wr_sensor_i.cmd_a[3
 x393_dut.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_linear_wr_sensor_i.cmd_data[31:0]
 @1000200
 -memory
+@c00200
+-debug_mmcm_clk
+@28
+x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_parallel12_i.cmd_we
+@22
+x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_parallel12_i.cmd_a[2:0]
+x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_parallel12_i.data_r[31:0]
+@28
+x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_parallel12_i.set_ctrl_r
+x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_parallel12_i.mmcm_phase_cntr_i.sel_clk2
+x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_parallel12_i.imrst
+x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_parallel12_i.ibpf
+x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_parallel12_i.pclk
+x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_parallel12_i.aro
+x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_parallel12_i.iaro
+x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_parallel12_i.iaro_soft
+x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_parallel12_i.trig
+x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_parallel12_i.trigger_mode
 @1401200
+-debug_mmcm_clk
+@200
+-
+@1000200
 -sensor_channel0
 @c00200
 -par12_hispi_psp4l1
-@28
-x393_dut.par12_hispi_psp4l1_i.pclk
-x393_dut.par12_hispi_psp4l1_i.oclk
-x393_dut.par12_hispi_psp4l1_i.rst
-x393_dut.par12_hispi_psp4l1_i.orst
-x393_dut.par12_hispi_psp4l1_i.next_frame_pclk
-x393_dut.par12_hispi_psp4l1_i.next_frame_oclk
-x393_dut.par12_hispi_psp4l1_i.next_line_oclk
-@8022
-x393_dut.par12_hispi_psp4l1_i.pxd[11:0]
-x393_dut.par12_hispi_psp4l1_i.sdata[3:0]
-x393_dut.par12_hispi_psp4l1_i.sdata_dly[3:0]
 @1401200
 -par12_hispi_psp4l1
 @c00200
 -all_par_hispi
-@28
-x393_dut.par12_hispi_psp4l0_i.hact
-x393_dut.par12_hispi_psp4l1_i.hact
-x393_dut.par12_hispi_psp4l2_i.hact
-x393_dut.par12_hispi_psp4l3_i.hact
-@8022
-x393_dut.par12_hispi_psp4l0_i.pxd[11:0]
-x393_dut.par12_hispi_psp4l1_i.pxd[11:0]
-x393_dut.par12_hispi_psp4l2_i.pxd[11:0]
-x393_dut.par12_hispi_psp4l3_i.pxd[11:0]
 @200
 -hispi_out
 @8022
@@ -493,7 +484,7 @@ x393_dut.simul_axi_hp1_wr_i.sim_wr_data[63:0]
 x393_dut.simul_axi_hp1_wr_i.sim_wr_valid
 @1401200
 -compressor_0
-@800200
+@c00200
 -compressors_all
 @28
 x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_pixel_buf_iface_i.mb_pre_start
@@ -580,9 +571,8 @@ x393_dut.x393_i.compressor393_i.cmprs_channel_block[2].jp_channel_i.dct2d8x8_che
 x393_dut.x393_i.compressor393_i.cmprs_channel_block[2].jp_channel_i.dct2d8x8_chen_i.dct1d_chen_reorder_out_i.pre_we_r
 @8022
 x393_dut.x393_i.compressor393_i.cmprs_channel_block[2].jp_channel_i.dct2d8x8_chen_i.dct1d_chen_reorder_out_i.cntr_in[3:0]
-@29
-x393_dut.x393_i.compressor393_i.cmprs_channel_block[2].jp_channel_i.dct2d8x8_chen_i.dct1d_chen_reorder_out_i.en_out_r
 @28
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[2].jp_channel_i.dct2d8x8_chen_i.dct1d_chen_reorder_out_i.en_out_r
 x393_dut.x393_i.compressor393_i.cmprs_channel_block[2].jp_channel_i.dct2d8x8_chen_i.dct1d_chen_reorder_out_i.dv
 x393_dut.x393_i.compressor393_i.cmprs_channel_block[2].jp_channel_i.dct2d8x8_chen_i.dct1d_chen_reorder_out_i.en_out
 x393_dut.x393_i.compressor393_i.cmprs_channel_block[2].jp_channel_i.dct2d8x8_chen_i.dct1d_chen_reorder_out_i.stop_out
@@ -744,269 +734,418 @@ x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.buf_pxd[7:0]
 x393_dut.x393_i.compressor393_i.cmprs_channel_block[1].jp_channel_i.buf_pxd[7:0]
 x393_dut.x393_i.compressor393_i.cmprs_channel_block[2].jp_channel_i.buf_pxd[7:0]
 x393_dut.x393_i.compressor393_i.cmprs_channel_block[3].jp_channel_i.buf_pxd[7:0]
-@1000200
+@1401200
 -compressors_all
+@800200
+-cmdseq_0
+@c00022
+x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.cmdseq_di[63:0]
+@28
+(0)x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.cmdseq_di[63:0]
+(1)x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.cmdseq_di[63:0]
+(2)x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.cmdseq_di[63:0]
+(3)x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.cmdseq_di[63:0]
+(4)x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.cmdseq_di[63:0]
+(5)x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.cmdseq_di[63:0]
+(6)x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.cmdseq_di[63:0]
+(7)x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.cmdseq_di[63:0]
+(8)x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.cmdseq_di[63:0]
+(9)x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.cmdseq_di[63:0]
+(10)x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.cmdseq_di[63:0]
+(11)x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.cmdseq_di[63:0]
+(12)x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.cmdseq_di[63:0]
+(13)x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.cmdseq_di[63:0]
+(14)x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.cmdseq_di[63:0]
+(15)x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.cmdseq_di[63:0]
+(16)x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.cmdseq_di[63:0]
+(17)x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.cmdseq_di[63:0]
+(18)x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.cmdseq_di[63:0]
+(19)x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.cmdseq_di[63:0]
+(20)x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.cmdseq_di[63:0]
+(21)x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.cmdseq_di[63:0]
+(22)x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.cmdseq_di[63:0]
+(23)x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.cmdseq_di[63:0]
+(24)x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.cmdseq_di[63:0]
+(25)x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.cmdseq_di[63:0]
+(26)x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.cmdseq_di[63:0]
+(27)x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.cmdseq_di[63:0]
+(28)x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.cmdseq_di[63:0]
+(29)x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.cmdseq_di[63:0]
+(30)x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.cmdseq_di[63:0]
+(31)x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.cmdseq_di[63:0]
+(32)x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.cmdseq_di[63:0]
+(33)x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.cmdseq_di[63:0]
+(34)x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.cmdseq_di[63:0]
+(35)x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.cmdseq_di[63:0]
+(36)x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.cmdseq_di[63:0]
+(37)x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.cmdseq_di[63:0]
+(38)x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.cmdseq_di[63:0]
+(39)x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.cmdseq_di[63:0]
+(40)x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.cmdseq_di[63:0]
+(41)x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.cmdseq_di[63:0]
+(42)x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.cmdseq_di[63:0]
+(43)x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.cmdseq_di[63:0]
+(44)x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.cmdseq_di[63:0]
+(45)x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.cmdseq_di[63:0]
+(46)x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.cmdseq_di[63:0]
+(47)x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.cmdseq_di[63:0]
+(48)x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.cmdseq_di[63:0]
+(49)x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.cmdseq_di[63:0]
+(50)x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.cmdseq_di[63:0]
+(51)x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.cmdseq_di[63:0]
+(52)x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.cmdseq_di[63:0]
+(53)x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.cmdseq_di[63:0]
+(54)x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.cmdseq_di[63:0]
+(55)x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.cmdseq_di[63:0]
+(56)x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.cmdseq_di[63:0]
+(57)x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.cmdseq_di[63:0]
+(58)x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.cmdseq_di[63:0]
+(59)x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.cmdseq_di[63:0]
+(60)x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.cmdseq_di[63:0]
+(61)x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.cmdseq_di[63:0]
+(62)x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.cmdseq_di[63:0]
+(63)x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.cmdseq_di[63:0]
+@1401200
+-group_end
+@22
+x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.seq_cmd_wa[9:0]
+x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.wpage_asap[3:0]
+x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.wpage_next[3:0]
+@28
+x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.cmd_stb
+@22
+x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.cmd_ad[7:0]
+x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.cmd_a[4:0]
+x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.wpage_prev[3:0]
+@28
+x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.cmd_we
+x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.cmd_we_abs_w
+x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.cmd_we_rel_w
+x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.cmd_we_abs_r
+x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.cmd_we_rel_r
+x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.we_fifo_wp
+x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.pend_rel
+x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.pend_abs
+@800028
+x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.cmd_we_r[2:0]
+@28
+(0)x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.cmd_we_r[2:0]
+(1)x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.cmd_we_r[2:0]
+(2)x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.cmd_we_r[2:0]
+@1001200
+-group_end
+@800028
+x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.data_cycle_r[2:0]
+@28
+(0)x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.data_cycle_r[2:0]
+(1)x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.data_cycle_r[2:0]
+(2)x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.data_cycle_r[2:0]
+@1001200
+-group_end
+@28
+[color] 2
+x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.we_seq_data
+@22
+x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.wpage_w[3:0]
+@c00022
+x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.cmd_data[31:0]
+@28
+(0)x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.cmd_data[31:0]
+(1)x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.cmd_data[31:0]
+(2)x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.cmd_data[31:0]
+(3)x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.cmd_data[31:0]
+(4)x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.cmd_data[31:0]
+(5)x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.cmd_data[31:0]
+(6)x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.cmd_data[31:0]
+(7)x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.cmd_data[31:0]
+(8)x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.cmd_data[31:0]
+(9)x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.cmd_data[31:0]
+(10)x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.cmd_data[31:0]
+(11)x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.cmd_data[31:0]
+(12)x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.cmd_data[31:0]
+(13)x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.cmd_data[31:0]
+(14)x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.cmd_data[31:0]
+(15)x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.cmd_data[31:0]
+(16)x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.cmd_data[31:0]
+(17)x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.cmd_data[31:0]
+(18)x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.cmd_data[31:0]
+(19)x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.cmd_data[31:0]
+(20)x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.cmd_data[31:0]
+(21)x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.cmd_data[31:0]
+(22)x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.cmd_data[31:0]
+(23)x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.cmd_data[31:0]
+(24)x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.cmd_data[31:0]
+(25)x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.cmd_data[31:0]
+(26)x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.cmd_data[31:0]
+(27)x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.cmd_data[31:0]
+(28)x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.cmd_data[31:0]
+(29)x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.cmd_data[31:0]
+(30)x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.cmd_data[31:0]
+(31)x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.cmd_data[31:0]
+@1401200
+-group_end
+@22
+x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.address_hold[13:0]
+@28
+x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.we_fifo_wp
+@22
+x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.cmd_a[4:0]
+@800028
+x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.wpage_inc[1:0]
+@28
+(0)x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.wpage_inc[1:0]
+(1)x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.wpage_inc[1:0]
+x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.cmd_we_ctl_w
+@1001200
+-group_end
+@200
+-
+@28
+x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.seq_enrun
+@22
+x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.fifo_wr_pointers_outr_r[5:0]
+@800028
+x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.ren[1:0]
+@28
+(0)x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.ren[1:0]
+(1)x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.ren[1:0]
+@1001200
+-group_end
+@22
+x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.rpointer[5:0]
+@28
+x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.commands_pending
+x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.pre_cmd_seq_w
+@22
+x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.seq_cmd_ra[9:0]
+@800028
+x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.read_busy[1:0]
+@28
+(0)x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.read_busy[1:0]
+(1)x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.read_busy[1:0]
+x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.conf_send
+x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.valid
+x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.ackn
+@1001200
+-group_end
+@1000200
+-cmdseq_0
+@800200
+-cmdseq_mux
+@22
+x393_dut.x393_i.cmd_seq_mux_i.frame_num0[3:0]
+@28
+x393_dut.x393_i.cmd_seq_mux_i.wr_en0
+@22
+x393_dut.x393_i.cmd_seq_mux_i.waddr0[13:0]
+x393_dut.x393_i.cmd_seq_mux_i.wdata0[31:0]
+@28
+x393_dut.x393_i.cmd_seq_mux_i.ackn0
+@22
+x393_dut.x393_i.cmd_seq_mux_i.waddr_out[13:0]
+x393_dut.x393_i.cmd_seq_mux_i.wdata_out[31:0]
+@28
+x393_dut.x393_i.cmd_seq_mux_i.wr_en_out
+x393_dut.x393_i.cmd_seq_mux_i.ackn_out
+@c00022
+x393_dut.x393_i.cmd_seq_mux_i.wr_en[3:0]
+@28
+(0)x393_dut.x393_i.cmd_seq_mux_i.wr_en[3:0]
+(1)x393_dut.x393_i.cmd_seq_mux_i.wr_en[3:0]
+(2)x393_dut.x393_i.cmd_seq_mux_i.wr_en[3:0]
+(3)x393_dut.x393_i.cmd_seq_mux_i.wr_en[3:0]
+@1401200
+-group_end
+@28
+x393_dut.x393_i.cmd_seq_mux_i.rq_any
+x393_dut.x393_i.cmd_seq_mux_i.full_r
+x393_dut.x393_i.cmd_seq_mux_i.ackn_out
+x393_dut.x393_i.cmd_seq_mux_i.ackn_w
+@c00022
+x393_dut.x393_i.cmd_seq_mux_i.ackn_r[3:0]
+@28
+(0)x393_dut.x393_i.cmd_seq_mux_i.ackn_r[3:0]
+(1)x393_dut.x393_i.cmd_seq_mux_i.ackn_r[3:0]
+(2)x393_dut.x393_i.cmd_seq_mux_i.ackn_r[3:0]
+(3)x393_dut.x393_i.cmd_seq_mux_i.ackn_r[3:0]
+@1401200
+-group_end
+@22
+x393_dut.x393_i.cmd_seq_mux_i.pri_one_rr[15:0]
+@28
+x393_dut.x393_i.cmd_seq_mux_i.pri_enc_w[1:0]
+@22
+x393_dut.x393_i.cmd_seq_mux_i.pri_one[3:0]
+@28
+x393_dut.x393_i.cmd_seq_mux_i.chn_r[1:0]
+@1000200
+-cmdseq_mux
+@800200
+-gpio
+@28
+x393_dut.x393_i.gpio393_i.set_mode_w
+@22
+x393_dut.x393_i.gpio393_i.cmd_data[31:0]
+@c00023
+x393_dut.x393_i.gpio393_i.ds[9:0]
+@28
+(0)x393_dut.x393_i.gpio393_i.ds[9:0]
+(1)x393_dut.x393_i.gpio393_i.ds[9:0]
+(2)x393_dut.x393_i.gpio393_i.ds[9:0]
+(3)x393_dut.x393_i.gpio393_i.ds[9:0]
+(4)x393_dut.x393_i.gpio393_i.ds[9:0]
+(5)x393_dut.x393_i.gpio393_i.ds[9:0]
+(6)x393_dut.x393_i.gpio393_i.ds[9:0]
+(7)x393_dut.x393_i.gpio393_i.ds[9:0]
+(8)x393_dut.x393_i.gpio393_i.ds[9:0]
+(9)x393_dut.x393_i.gpio393_i.ds[9:0]
+@1401201
+-group_end
+@22
+x393_dut.x393_i.gpio393_i.ds_en_m[9:0]
+x393_dut.x393_i.gpio393_i.ds_en[9:0]
+@c00022
+[color] 3
+x393_dut.x393_i.gpio393_i.io_do[9:0]
+@28
+[color] 3
+(0)x393_dut.x393_i.gpio393_i.io_do[9:0]
+[color] 3
+(1)x393_dut.x393_i.gpio393_i.io_do[9:0]
+[color] 3
+(2)x393_dut.x393_i.gpio393_i.io_do[9:0]
+[color] 3
+(3)x393_dut.x393_i.gpio393_i.io_do[9:0]
+[color] 3
+(4)x393_dut.x393_i.gpio393_i.io_do[9:0]
+[color] 3
+(5)x393_dut.x393_i.gpio393_i.io_do[9:0]
+[color] 3
+(6)x393_dut.x393_i.gpio393_i.io_do[9:0]
+[color] 3
+(7)x393_dut.x393_i.gpio393_i.io_do[9:0]
+[color] 3
+(8)x393_dut.x393_i.gpio393_i.io_do[9:0]
+[color] 3
+(9)x393_dut.x393_i.gpio393_i.io_do[9:0]
+@1401200
+-group_end
+@22
+x393_dut.x393_i.gpio393_i.da_en_m[9:0]
+x393_dut.x393_i.gpio393_i.db_en[9:0]
+@c00022
+x393_dut.x393_i.gpio393_i.dc_en[9:0]
+@28
+(0)x393_dut.x393_i.gpio393_i.dc_en[9:0]
+(1)x393_dut.x393_i.gpio393_i.dc_en[9:0]
+(2)x393_dut.x393_i.gpio393_i.dc_en[9:0]
+(3)x393_dut.x393_i.gpio393_i.dc_en[9:0]
+(4)x393_dut.x393_i.gpio393_i.dc_en[9:0]
+(5)x393_dut.x393_i.gpio393_i.dc_en[9:0]
+(6)x393_dut.x393_i.gpio393_i.dc_en[9:0]
+(7)x393_dut.x393_i.gpio393_i.dc_en[9:0]
+(8)x393_dut.x393_i.gpio393_i.dc_en[9:0]
+(9)x393_dut.x393_i.gpio393_i.dc_en[9:0]
+@1401200
+-group_end
+@c00022
+x393_dut.x393_i.gpio393_i.ch_en[3:0]
+@28
+(0)x393_dut.x393_i.gpio393_i.ch_en[3:0]
+(1)x393_dut.x393_i.gpio393_i.ch_en[3:0]
+(2)x393_dut.x393_i.gpio393_i.ch_en[3:0]
+(3)x393_dut.x393_i.gpio393_i.ch_en[3:0]
+@1401200
+-group_end
+@22
+x393_dut.x393_i.gpio393_i.da_en_m[9:0]
+x393_dut.x393_i.gpio393_i.db_en_m[9:0]
+x393_dut.x393_i.gpio393_i.dc_en_m[9:0]
+@800022
+x393_dut.x393_i.gpio393_i.io_pins[9:0]
+@28
+(0)x393_dut.x393_i.gpio393_i.io_pins[9:0]
+(1)x393_dut.x393_i.gpio393_i.io_pins[9:0]
+(2)x393_dut.x393_i.gpio393_i.io_pins[9:0]
+(3)x393_dut.x393_i.gpio393_i.io_pins[9:0]
+(4)x393_dut.x393_i.gpio393_i.io_pins[9:0]
+(5)x393_dut.x393_i.gpio393_i.io_pins[9:0]
+(6)x393_dut.x393_i.gpio393_i.io_pins[9:0]
+(7)x393_dut.x393_i.gpio393_i.io_pins[9:0]
+(8)x393_dut.x393_i.gpio393_i.io_pins[9:0]
+(9)x393_dut.x393_i.gpio393_i.io_pins[9:0]
+@1001200
+-group_end
+@1000200
+-gpio
 @200
 -
 @c00200
 -sensor_channel1
-@22
-x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.data_r[31:0]
-@28
-x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.set_fifo_dly
-x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.set_idelays
-x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.ld_idelay
-x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.set_iclk_phase
-x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.set_lanes_map
-@22
-x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.lanes_map[7:0]
-x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.fifo_out_dly_mclk[3:0]
-@28
-x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.sens_hispi_clock_i.set_phase
-@22
-x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.sens_hispi_clock_i.phase[7:0]
 @200
 -
 @800200
 -hispi_clock
-@28
-x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.sens_hispi_clock_i.rst_mmcm
-x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.sens_hispi_clock_i.set_phase
-x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.sens_hispi_clock_i.load
-x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.sens_hispi_clock_i.locked_pxd_mmcm
-x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.sens_hispi_clock_i.ipclk_pre
-x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.sens_hispi_clock_i.ipclk2x
 @1000200
 -hispi_clock
 @c00200
 -hispi+lanes
-@28
-x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.sof_pclk
-x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[0].sens_hispi_fifo_i.pclk
-x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.sol_pclk
-x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.start_only
-x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.sol_all_dly
-x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.start_fifo_re
-x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.rd_line
-@800022
-x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.rd_run[3:0]
-@28
-(0)x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.rd_run[3:0]
-(1)x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.rd_run[3:0]
-(2)x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.rd_run[3:0]
-(3)x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.rd_run[3:0]
-@800022
-x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.good_lanes[3:0]
-@28
-(0)x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.good_lanes[3:0]
-(1)x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.good_lanes[3:0]
-(2)x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.good_lanes[3:0]
-(3)x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.good_lanes[3:0]
+@800200
+-x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.rd_run
+-x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.good_lanes
 @1001200
 -group_end
 -group_end
-@800022
-x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.fifo_re[3:0]
-@28
-(0)x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.fifo_re[3:0]
-(1)x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.fifo_re[3:0]
-(2)x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.fifo_re[3:0]
-(3)x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.fifo_re[3:0]
+@800200
+-x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.fifo_re
 @1001200
 -group_end
 @200
 -
-@28
-x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[0].sens_hispi_fifo_i.sol
-@c08022
-x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[0].sens_hispi_fifo_i.din[11:0]
-@28
-(0)x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[0].sens_hispi_fifo_i.din[11:0]
-(1)x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[0].sens_hispi_fifo_i.din[11:0]
-(2)x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[0].sens_hispi_fifo_i.din[11:0]
-(3)x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[0].sens_hispi_fifo_i.din[11:0]
-(4)x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[0].sens_hispi_fifo_i.din[11:0]
-(5)x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[0].sens_hispi_fifo_i.din[11:0]
-(6)x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[0].sens_hispi_fifo_i.din[11:0]
-(7)x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[0].sens_hispi_fifo_i.din[11:0]
-(8)x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[0].sens_hispi_fifo_i.din[11:0]
-(9)x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[0].sens_hispi_fifo_i.din[11:0]
-(10)x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[0].sens_hispi_fifo_i.din[11:0]
-(11)x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[0].sens_hispi_fifo_i.din[11:0]
-@1401200
--group_end
-@8022
-x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[1].sens_hispi_fifo_i.din[11:0]
-x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[2].sens_hispi_fifo_i.din[11:0]
-x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[3].sens_hispi_fifo_i.din[11:0]
-@200
--
-@c08022
-x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[0].sens_hispi_fifo_i.dout[11:0]
-@28
-(0)x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[0].sens_hispi_fifo_i.dout[11:0]
-(1)x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[0].sens_hispi_fifo_i.dout[11:0]
-(2)x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[0].sens_hispi_fifo_i.dout[11:0]
-(3)x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[0].sens_hispi_fifo_i.dout[11:0]
-(4)x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[0].sens_hispi_fifo_i.dout[11:0]
-(5)x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[0].sens_hispi_fifo_i.dout[11:0]
-(6)x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[0].sens_hispi_fifo_i.dout[11:0]
-(7)x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[0].sens_hispi_fifo_i.dout[11:0]
-(8)x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[0].sens_hispi_fifo_i.dout[11:0]
-(9)x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[0].sens_hispi_fifo_i.dout[11:0]
-(10)x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[0].sens_hispi_fifo_i.dout[11:0]
-(11)x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[0].sens_hispi_fifo_i.dout[11:0]
-@1401200
--group_end
-@c08022
-x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[1].sens_hispi_fifo_i.dout[11:0]
-@28
-(0)x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[1].sens_hispi_fifo_i.dout[11:0]
-(1)x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[1].sens_hispi_fifo_i.dout[11:0]
-(2)x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[1].sens_hispi_fifo_i.dout[11:0]
-(3)x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[1].sens_hispi_fifo_i.dout[11:0]
-(4)x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[1].sens_hispi_fifo_i.dout[11:0]
-(5)x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[1].sens_hispi_fifo_i.dout[11:0]
-(6)x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[1].sens_hispi_fifo_i.dout[11:0]
-(7)x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[1].sens_hispi_fifo_i.dout[11:0]
-(8)x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[1].sens_hispi_fifo_i.dout[11:0]
-(9)x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[1].sens_hispi_fifo_i.dout[11:0]
-(10)x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[1].sens_hispi_fifo_i.dout[11:0]
-(11)x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[1].sens_hispi_fifo_i.dout[11:0]
-@1401200
--group_end
-@c08022
-x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[2].sens_hispi_fifo_i.dout[11:0]
-@28
-(0)x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[2].sens_hispi_fifo_i.dout[11:0]
-(1)x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[2].sens_hispi_fifo_i.dout[11:0]
-(2)x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[2].sens_hispi_fifo_i.dout[11:0]
-(3)x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[2].sens_hispi_fifo_i.dout[11:0]
-(4)x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[2].sens_hispi_fifo_i.dout[11:0]
-(5)x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[2].sens_hispi_fifo_i.dout[11:0]
-(6)x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[2].sens_hispi_fifo_i.dout[11:0]
-(7)x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[2].sens_hispi_fifo_i.dout[11:0]
-(8)x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[2].sens_hispi_fifo_i.dout[11:0]
-(9)x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[2].sens_hispi_fifo_i.dout[11:0]
-(10)x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[2].sens_hispi_fifo_i.dout[11:0]
-(11)x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[2].sens_hispi_fifo_i.dout[11:0]
-@1401200
--group_end
-@c08022
-x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[3].sens_hispi_fifo_i.dout[11:0]
-@28
-(0)x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[3].sens_hispi_fifo_i.dout[11:0]
-(1)x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[3].sens_hispi_fifo_i.dout[11:0]
-(2)x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[3].sens_hispi_fifo_i.dout[11:0]
-(3)x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[3].sens_hispi_fifo_i.dout[11:0]
-(4)x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[3].sens_hispi_fifo_i.dout[11:0]
-(5)x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[3].sens_hispi_fifo_i.dout[11:0]
-(6)x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[3].sens_hispi_fifo_i.dout[11:0]
-(7)x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[3].sens_hispi_fifo_i.dout[11:0]
-(8)x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[3].sens_hispi_fifo_i.dout[11:0]
-(9)x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[3].sens_hispi_fifo_i.dout[11:0]
-(10)x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[3].sens_hispi_fifo_i.dout[11:0]
-(11)x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[3].sens_hispi_fifo_i.dout[11:0]
+@c00200
+-x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[0].sens_hispi_fifo_i.din
 @1401200
 -group_end
 @200
 -
-@28
-x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[0].sens_hispi_fifo_i.we
-x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[1].sens_hispi_fifo_i.we
-x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[2].sens_hispi_fifo_i.we
-x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[3].sens_hispi_fifo_i.we
-@200
--
-@28
-x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[0].sens_hispi_fifo_i.line_run_ipclk
-x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[1].sens_hispi_fifo_i.line_run_ipclk
-x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[2].sens_hispi_fifo_i.line_run_ipclk
-x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[3].sens_hispi_fifo_i.line_run_ipclk
-@200
--
-@28
-x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[0].sens_hispi_fifo_i.re
-x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[1].sens_hispi_fifo_i.re
-x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[2].sens_hispi_fifo_i.re
-x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[3].sens_hispi_fifo_i.re
-@200
--
-@28
-x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[0].sens_hispi_fifo_i.line_run_pclk
-x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[1].sens_hispi_fifo_i.line_run_pclk
-x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[2].sens_hispi_fifo_i.line_run_pclk
-x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[3].sens_hispi_fifo_i.line_run_pclk
-@200
--
-@28
-x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[0].sens_hispi_fifo_i.start_out_ipclk
-x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[1].sens_hispi_fifo_i.start_out_ipclk
-x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[2].sens_hispi_fifo_i.start_out_ipclk
-x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[3].sens_hispi_fifo_i.start_out_ipclk
-@200
--
-@28
-x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[0].sens_hispi_fifo_i.line_start_pclk
-x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[1].sens_hispi_fifo_i.line_start_pclk
-x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[2].sens_hispi_fifo_i.line_start_pclk
-x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[3].sens_hispi_fifo_i.line_start_pclk
-@200
--
-@28
-x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[0].sens_hispi_fifo_i.start_sent
-x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[1].sens_hispi_fifo_i.start_sent
-x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[2].sens_hispi_fifo_i.start_sent
-x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[3].sens_hispi_fifo_i.start_sent
-@200
--
-@28
-x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[0].sens_hispi_fifo_i.ipclk
-x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[1].sens_hispi_fifo_i.ipclk
-x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[2].sens_hispi_fifo_i.ipclk
-x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[3].sens_hispi_fifo_i.ipclk
-@8022
-x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[0].sens_hispi_fifo_i.wa[4:0]
-x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[1].sens_hispi_fifo_i.wa[4:0]
-x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[2].sens_hispi_fifo_i.wa[4:0]
-@c08022
-x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[3].sens_hispi_fifo_i.wa[4:0]
-@28
-(0)x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[3].sens_hispi_fifo_i.wa[4:0]
-(1)x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[3].sens_hispi_fifo_i.wa[4:0]
-(2)x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[3].sens_hispi_fifo_i.wa[4:0]
-(3)x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[3].sens_hispi_fifo_i.wa[4:0]
-(4)x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[3].sens_hispi_fifo_i.wa[4:0]
+@c00200
+-x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[0].sens_hispi_fifo_i.dout
 @1401200
 -group_end
-@28
-x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[0].sens_hispi_fifo_i.pclk
-@8022
-x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[0].sens_hispi_fifo_i.ra[4:0]
-x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[1].sens_hispi_fifo_i.ra[4:0]
-x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[2].sens_hispi_fifo_i.ra[4:0]
-@c08022
-x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[3].sens_hispi_fifo_i.ra[4:0]
-@28
-(0)x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[3].sens_hispi_fifo_i.ra[4:0]
-(1)x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[3].sens_hispi_fifo_i.ra[4:0]
-(2)x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[3].sens_hispi_fifo_i.ra[4:0]
-(3)x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[3].sens_hispi_fifo_i.ra[4:0]
-(4)x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[3].sens_hispi_fifo_i.ra[4:0]
+@c00200
+-x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[1].sens_hispi_fifo_i.dout
+@1401200
+-group_end
+@c00200
+-x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[2].sens_hispi_fifo_i.dout
+@1401200
+-group_end
+@c00200
+-x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[3].sens_hispi_fifo_i.dout
+@1401200
+-group_end
+@200
+-
+-
+-
+-
+-
+-
+-
+-
+@c00200
+-x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[3].sens_hispi_fifo_i.wa
+@1401200
+-group_end
+@c00200
+-x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_10398_i.sens_hispi12l4_i.hispi_lane[3].sens_hispi_fifo_i.ra
 @1401200
 -group_end
 -hispi+lanes
-@c08022
-x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sns_dp[3:0]
-@28
-(0)x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sns_dp[3:0]
-(1)x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sns_dp[3:0]
-(2)x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sns_dp[3:0]
-(3)x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sns_dp[3:0]
+@c00200
+-x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sns_dp
 @1401200
 -group_end
-@22
-x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sns_dp[3:0]
 @28
 x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sof
 x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.hact
@@ -1096,7 +1235,7 @@ x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_membuf_i.buf_dout[63
 -memory
 @1401200
 -sensor_channel1
-@800200
+@c00200
 -ddr3
 @8022
 x393_dut.x393_i.mcntrl393_i.memctrl16_i.grant_chn[3:0]
@@ -1160,11 +1299,9 @@ x393_dut.SDBA[2:0]
 x393_dut.SDCAS
 x393_dut.SDRAS
 x393_dut.SDWE
-@1000200
+@1401200
 -ddr3
-@200
--
-@800200
+@c00200
 -compressor_channel0
 @28
 x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.mclk
@@ -1239,9 +1376,9 @@ x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.frame_start_
 x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.suspend
 x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.vsync_late
 x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.hclk
-@1000200
+@1401200
 -compressor_channel0
-@c00200
+@800200
 -interrupts
 @800022
 x393_dut.irq_r[8:0]
@@ -1279,7 +1416,7 @@ x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_status
 -group_end
 @200
 -
-@1401200
+@1000200
 -interrupts
 @c00200
 -afi0_mux

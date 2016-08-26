@@ -35,7 +35,8 @@
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
  */
-          parameter FPGA_VERSION =          32'h039300a4;      // parallel 79.66, -0.1
+          parameter FPGA_VERSION =          32'h039300a5;      // parallel, fixing command sequencer and ARO
+//          parameter FPGA_VERSION =          32'h039300a4;      // parallel 79.66, -0.1
 //          parameter FPGA_VERSION =          32'h039300a3;      // hispi, after minor interface changes (separated control bits)80.52% -0.163
 //          parameter FPGA_VERSION =          32'h039300a2;      // hispi trying default placement 81.39% not met by -0.183
 //          parameter FPGA_VERSION =          32'h039300a1;      // hispi 81.19%, not met by -0.07
