@@ -1416,6 +1416,8 @@ class X393SensCmprs(object):
                     self.x393_sensor.program_curves(
                                                     num_sensor = num_sensor,  #num_sensor,  # input   [1:0] num_sensor;
                                                     sub_channel = 0)          # input   [1:0] sub_channel;    
+                    if verbose >0 :
+                        print ("===================== SETUP_SENSOR_CHANNEL =========================")
                 rslt = self.setup_sensor_channel (
                           exit_step =               exit_step,      # 10 .. 19
                           num_sensor =              num_sensor,
