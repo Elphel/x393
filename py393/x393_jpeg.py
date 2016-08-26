@@ -1059,6 +1059,7 @@ bitstream_set_path /usr/local/verilog/x393_parallel.bit
 setupSensorsPower  "PAR12"  all  0  0.0
 measure_all "*DI"
 setup_all_sensors True None 0xf
+set_sensor_io_ctl  all None None 1 # Set ARO low - check if it is still needed?
 #set quadrants
 set_sensor_io_ctl 0 None None None None None 0 0xe
 set_sensor_io_ctl 1 None None None None None 0 0xe
@@ -1076,11 +1077,6 @@ axi_write_single_w 0x696 0x079800a3
 axi_write_single_w 0x686 0x079800a3
 axi_write_single_w 0x6a6 0x079800a3
 axi_write_single_w 0x6b6 0x079800a3
-
-
-
-
-
 
 #Gamma 0.57
 program_gamma all 0 0.57 0.04
@@ -1103,7 +1099,7 @@ write_sensor_i2c  all 1 0 0x90090797
 
 
 #run compressors once (#1 - stop gracefully, 0 - reset, 2 - single, 3 - repetitive with sync to sensors)
-compressor_control all 2
+compressor_control all 3
 
 #jpeg_write  "img.jpeg" 0
 jpeg_write  "img.jpeg" All
