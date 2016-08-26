@@ -65,11 +65,22 @@ class X393FrameSequencer(object):
                                   stop = False):
         """
         Control frame sequence
-        @param num_sensor -  sensor channel number
+        @param num_sensor -  sensor channel number (0 ..3 or All)
         @param reset -       reset sequencer (also stops)
         @param start -       start sequencer
         @param stop -        stop sequencer
         """
+        try:
+            if (num_sensor == all) or (num_sensor[0].upper() == "A"): #all is a built-in function
+                for num_sensor in range(4):
+                    self.ctrl_cmd_frame_sequencer (num_sensor,
+                                  reset = False,
+                                  start = False,
+                                  stop = False)
+                return    
+        except:
+            pass                    
+        
         data = 0;
         if reset:
             data |= 1 <<  vrlg.CMDFRAMESEQ_RST_BIT
@@ -89,13 +100,24 @@ class X393FrameSequencer(object):
                                   data):
         """
         Schedule/execute frame sequence command (register write)
-        @param num_sensor -  sensor channel number
+        @param num_sensor -  sensor channel number (or All)
         @param relative -    False - use absolute address (0..15), True - use relative (to current frame) address - 0..14
                              writes to relative address 0 are considered ASAP and do not wait for the frame sync
         @param frame_addr -  4-bit frame address (relative or absolute), relative must be < 15
         @param addr;         // command address (register to which command should be applied), 32 word (not byte) address, relative to maxi0 space
         @param data;         // command data to write
         """
+        try:
+            if (num_sensor == all) or (num_sensor[0].upper() == "A"): #all is a built-in function
+                for num_sensor in range(4):
+                    self. write_cmd_frame_sequencer (num_sensor,
+                                  relative,
+                                  frame_addr,
+                                  addr,
+                                  data)
+                return    
+        except:
+            pass                    
         frame_addr &= 0xf
         if relative and (frame_addr == 0xf):
             raise Exception ("task write_cmd_frame_sequencer(): relative address 0xf is invalid, it is reserved for module control")
