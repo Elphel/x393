@@ -988,7 +988,7 @@ class X393ExportC(object):
             (("X393_AFIMUX0_EN",                          c, vrlg.CMPRS_AFIMUX_EN +                  ba, 0, None, "x393_afimux_en", "wo",             "AFI MUX 0 global/port run/pause control")),
             (("X393_AFIMUX0_RST",                         c, vrlg.CMPRS_AFIMUX_RST +                 ba, 0, None, "x393_afimux_rst", "rw",            "AFI MUX 0 per-port resets")),
             (("X393_AFIMUX0_REPORT_MODE",                 c, vrlg.CMPRS_AFIMUX_MODE +                ba, 0, None, "x393_afimux_report", "wo",         "AFI MUX 0 readout pointer report mode")),
-            (("X393_AFIMUX0_STATUS_CONTROL",              c, vrlg.CMPRS_AFIMUX_STATUS_CNTRL +        ba, 0, None, "x393_status_ctrl", "rw",           "AFI MUX 0 status report mode")),
+            (("X393_AFIMUX0_STATUS_CONTROL",              c, vrlg.CMPRS_AFIMUX_STATUS_CNTRL +        ba, 1, z3,   "x393_status_ctrl", "rw",           "AFI MUX 0 status report mode")),
             (("X393_AFIMUX0_SA",                          c, vrlg.CMPRS_AFIMUX_SA_LEN +              ba, 1, z3,   "x393_afimux_sa", "rw",             "AFI MUX 0 DMA buffer start address in 32-byte blocks")),
             (("X393_AFIMUX0_LEN",                         c, vrlg.CMPRS_AFIMUX_SA_LEN + 4 +          ba, 1, z3,   "x393_afimux_len", "rw",            "AFI MUX 0 DMA buffer length in 32-byte blocks"))]
         ba = vrlg.CMPRS_GROUP_ADDR + vrlg.CMPRS_AFIMUX_RADDR1
@@ -997,7 +997,7 @@ class X393ExportC(object):
             (("X393_AFIMUX1_EN",                          c, vrlg.CMPRS_AFIMUX_EN +                  ba, 0, None, "x393_afimux_en", "wo",             "AFI MUX 1 global/port run/pause control")),
             (("X393_AFIMUX1_RST",                         c, vrlg.CMPRS_AFIMUX_RST +                 ba, 0, None, "x393_afimux_rst", "rw",            "AFI MUX 1 per-port resets")),
             (("X393_AFIMUX1_REPORT_MODE",                 c, vrlg.CMPRS_AFIMUX_MODE +                ba, 0, None, "x393_afimux_report", "wo",         "AFI MUX 1 readout pointer report mode")),
-            (("X393_AFIMUX1_STATUS_CONTROL",              c, vrlg.CMPRS_AFIMUX_STATUS_CNTRL +        ba, 0, None, "x393_status_ctrl", "rw",           "AFI MUX 1 status report mode")),
+            (("X393_AFIMUX1_STATUS_CONTROL",              c, vrlg.CMPRS_AFIMUX_STATUS_CNTRL +        ba, 1, z3,   "x393_status_ctrl", "rw",           "AFI MUX 1 status report mode")),
             (("X393_AFIMUX1_SA",                          c, vrlg.CMPRS_AFIMUX_SA_LEN +              ba, 1, z3,   "x393_afimux_sa", "rw",             "AFI MUX 1 DMA buffer start address in 32-byte blocks")),
             (("X393_AFIMUX1_LEN",                         c, vrlg.CMPRS_AFIMUX_SA_LEN + 4 +          ba, 1, z3,   "x393_afimux_len", "rw",            "AFI MUX 1 DMA buffer length in 32-byte blocks"))]        
 
