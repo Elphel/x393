@@ -92,10 +92,13 @@ module  cmd_seq_mux#(
     output reg                 [31:0] wdata_out,    // write data, valid with waddr_out and wr_en_out
     input                             ackn_out      // command sequencer address/data accepted
 );
-    wire  [3:0] wr_en = {wr_en3 & ~ackn3, wr_en2 & ~ackn2, wr_en1 & ~ackn1, wr_en0 & ~ackn0};
+    wire  [3:0] wr_rq = {wr_en3, wr_en2, wr_en1, wr_en0};
+//    wire  [3:0] wr_en = {wr_en3 & ~ackn3, wr_en2 & ~ackn2, wr_en1 & ~ackn1, wr_en0 & ~ackn0};
+    wire  [3:0] wr_en = wr_rq & ~ackn_r; // write enable antil acknowledged?
+    //ackn_r
     wire [15:0] pri_one_rr; // round robin priority
     wire  [3:0] pri_one;
-    reg   [1:0] chn_r; // last served channel
+    reg   [1:0] chn_r = 0; // last served channel
     wire        rq_any;
     wire  [1:0] pri_enc_w;
     reg         full_r;
@@ -112,7 +115,8 @@ module  cmd_seq_mux#(
 
 
     assign pri_one = pri_one_rr[chn_r * 4 +: 4];
-    assign rq_any= |wr_en;
+    assign rq_any= |wr_en; // Loop?
+//    assign rq_any= |wr_rq;
     assign pri_enc_w ={pri_one[3] | pri_one[2],
                        pri_one[3] | pri_one[1]};
     assign wr_en_out = full_r;
@@ -133,8 +137,10 @@ module  cmd_seq_mux#(
         
     always @(posedge mclk) begin
     
+        if      (mrst)   chn_r <= 0;        // let it always start from 0
+        else if (ackn_w) chn_r <= pri_enc_w;
+            
         if (ackn_w) begin
-            chn_r <= pri_enc_w;
             case (pri_enc_w)
                 2'h0:begin
                     waddr_out <= waddr0;

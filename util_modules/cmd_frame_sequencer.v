@@ -91,6 +91,7 @@ module  cmd_frame_sequencer#(
 );
     localparam PNTR_WIDH = (CMDFRAMESEQ_DEPTH > 32) ?((CMDFRAMESEQ_DEPTH > 64) ? 7 : 6) : 5;
     wire                  [4:0] cmd_a;     // 3 cycles before data
+    reg                   [3:0] cmd_a_r;   // 2 cycles before data
     wire                        cmd_we;    // 3 cycles befor data
     reg                   [2:0] cmd_we_r;  // cmd_we_r[2] - with cmd_data
     wire                 [31:0] cmd_data;
@@ -114,19 +115,23 @@ module  cmd_frame_sequencer#(
     
     reg         [PNTR_WIDH-1:0] fifo_wr_pointers_outw_r;
     reg         [PNTR_WIDH-1:0] fifo_wr_pointers_outr_r;
-    reg                         d_na;  // register counting address(0) or data(1) when writing sequences
+//    reg                         d_na;  // register counting address(0) or data(1) when writing sequences
     reg  [AXI_WR_ADDR_BITS-1:0] address_hold; // register to hold command address to write to the sequencer simultaneously with data
     wire                 [63:0] cmdseq_di = {{32 - AXI_WR_ADDR_BITS{1'b0}},address_hold,cmd_data};      // data to write to the command sequencer
     reg                   [2:0] por=0;                //power on reset
     reg                         initialized;        // command fifo initialized
     
     wire                        cmd_we_ctl_w = cmd_we && (cmd_a ==       CMDFRAMESEQ_CTRL); // 3 cycles before data
-    reg                   [2:0] cmd_we_ctl_r; // cmd_we_ctl_r[2] - with data   
+    reg                   [2:0] cmd_we_ctl_r;   // cmd_we_ctl_r[2] - with data   
     wire                        cmd_we_abs_w = cmd_we && ((cmd_a & 'h10) == CMDFRAMESEQ_ABS);  // 3 cycles before data
-    reg                         cmd_we_abs_r; // 2 cycles before data  
+    reg                         cmd_we_abs_r;   // 2 cycles before data  
     wire                        cmd_we_rel_w = cmd_we && ((cmd_a & 'h10) == CMDFRAMESEQ_REL) && (cmd_a != CMDFRAMESEQ_CTRL);  // 3 cycles before data   
-    reg                         cmd_we_rel_r; // 2 cycles before data  
-    reg                   [2:0] cmd_we_any_r; // any of the abs or rel (valid 2, 1 and 0 cycles before data)  
+    reg                         cmd_we_rel_r;   // 2 cycles before data  
+//    reg                         cmd_we_any_r;   // any of the abs or rel (valid 2 cycles before data)
+    reg                   [2:0] data_cycle_r;      // [2] write to command memory (only with data)  
+    reg                         pend_abs;       // got address in absolute mode, waiting to write data
+    reg                         pend_rel;       // got address in relative mode, waiting to write data
+    
     wire                        reset_seq_done;
     
     reg         [PNTR_WIDH+3:0] seq_cmd_wa;     // width of in-page pointer plus 4 (number of pages)
@@ -148,6 +153,9 @@ module  cmd_frame_sequencer#(
     reg                         is_r;      // interrupt status (not masked)
     reg                         im_r;       // interrtupt mask
     wire                        irq_ctrl;
+    wire                        we_seq_data;
+    
+    assign we_seq_data = data_cycle_r[2];
     
     assign is =  is_r;      // interrupt status (not masked)
     assign im =  im_r;       // interrtupt mask
@@ -170,7 +178,9 @@ module  cmd_frame_sequencer#(
 //    assign pre_wpage_inc = (!cmd_we && !(|cmd_we_r) ) && ((next_frame_rq && initialized) || reset_on) ;
     assign pre_wpage_inc = (!cmd_we && !(|cmd_we_r) ) && ((next_frame_rq && !wpage_inc[0] && initialized) || reset_on) ;
     assign commands_pending = rpointer != fifo_wr_pointers_outr_r; // only look at the current page different pages will trigger page increment first
-    assign pre_cmd_seq_w = commands_pending & ~(|page_r_inc) & seq_enrun;
+//    assign pre_cmd_seq_w = commands_pending & ~(|page_r_inc) & seq_enrun;
+    assign pre_cmd_seq_w = commands_pending & ~(|page_r_inc) & seq_enrun && !ren[0]; // counter lags
+//    
     assign valid = valid_r;
     
 //    parameter CMDFRAMESEQ_IRQ_BIT =             0,
@@ -195,9 +205,11 @@ module  cmd_frame_sequencer#(
         if      (mrst)           initialized <= 0;
         else if (reset_seq_done) initialized <= 1;
         
-        if      (mrst)         d_na <= 0;
-        else if (cmd_we_ctl_w) d_na <= 0;
-        else if (cmd_we)       d_na <= ~ d_na;
+//        if      (mrst)         d_na <= 0;
+//        else if (cmd_we_ctl_w) d_na <= 0;
+//        else if (cmd_we)       d_na <= ~ d_na;
+//        else if (cmd_we_r[1])  d_na <= ~ d_na; // same cycle it is used
+        
         
         if      (mrst)   valid_r <= 0;
         else if (ren[1]) valid_r <= 1;
@@ -206,13 +218,26 @@ module  cmd_frame_sequencer#(
     end
    
     always @ (posedge mclk) begin
+        cmd_a_r <=      cmd_a[3:0];
         cmd_we_ctl_r <= {cmd_we_ctl_r[1:0],cmd_we_ctl_w};
         cmd_we_r <=     {cmd_we_r[1:0], cmd_we};
-        cmd_we_abs_r <= cmd_we_abs_w;
-        cmd_we_rel_r <= cmd_we_rel_w;
-        cmd_we_any_r <= {cmd_we_any_r[1:0], cmd_we_abs_w | cmd_we_rel_w};
+        cmd_we_abs_r <= cmd_we_abs_w & ~(pend_abs | pend_rel); // only first (address) of the 2
+        cmd_we_rel_r <= cmd_we_rel_w & ~(pend_abs | pend_rel); // only first (address) of the 2
+//        cmd_we_any_r <= cmd_we_abs_w | cmd_we_rel_w;
+        
+//        if (reset_cmd || !por[1] || cmd_we_ctl_w || we_seq_data) pend_abs <= 0;
+        if (reset_cmd || !por[1] || cmd_we_ctl_w || data_cycle_r[0]) pend_abs <= 0;
+        else if (cmd_we_abs_w)                                       pend_abs <= 1;
+
+//        if (reset_cmd || !por[1] || cmd_we_ctl_w || we_seq_data) pend_rel <= 0;
+        if (reset_cmd || !por[1] || cmd_we_ctl_w || data_cycle_r[0]) pend_rel <= 0;
+        else if (cmd_we_rel_w)                                       pend_rel <= 1;
+        
+        
 // signals related to writing to seq FIFO
-        if (cmd_we_r[1] && !d_na) address_hold <= cmd_data[AXI_WR_ADDR_BITS-1:0];
+//        if (cmd_we_r[1] && !d_na) address_hold <= cmd_data[AXI_WR_ADDR_BITS-1:0];
+//        if (cmd_we_r[1] && (pend_abs || pend_rel)) address_hold <= cmd_data[AXI_WR_ADDR_BITS-1:0];
+        if (cmd_we_r[2] && (pend_abs || pend_rel)) address_hold <= cmd_data[AXI_WR_ADDR_BITS-1:0];
 // decoded commands        
 // write pointer memory
         wpage_inc <= (&por[1:0]) ? {wpage_inc[0],pre_wpage_inc} : 2'b0;
@@ -236,17 +261,27 @@ module  cmd_frame_sequencer#(
         
 
 // now cmd_we_abs_r or cmd_we_rel_r can not happen with wpage_inc[0] - earliest at the next cycle
-        if      (cmd_we_abs_r)    wpage_w <= (cmd_a[3:0] == wpage_prev)? wpage_asap : cmd_a[3:0];
-        else if (cmd_we_rel_r)    wpage_w <= wpage_asap + cmd_a[3:0];
+// BUG: cmd_a[3:0] was valid cycle before
+//        if      (cmd_we_abs_r)    wpage_w <= (cmd_a[3:0] == wpage_prev)? wpage_asap : cmd_a[3:0];
+//        else if (cmd_we_rel_r)    wpage_w <= wpage_asap + cmd_a[3:0];
+        if      (cmd_we_abs_r)    wpage_w <= (cmd_a_r[3:0] == wpage_prev)? wpage_asap : cmd_a_r[3:0];
+        else if (cmd_we_rel_r)    wpage_w <= wpage_asap + cmd_a_r[3:0];
         else if (wpage_inc[0])    wpage_w <= wpage_asap; // will now be previous (switched at the same cycle)
-
-        we_fifo_wp <= cmd_we_any_r[1] || wpage_inc[0];
+//BUG: Only should be active each other cycle (with data)
+//        we_fifo_wp <= cmd_we_any_r[1] || wpage_inc[0];
+        we_fifo_wp <= data_cycle_r[1] || wpage_inc[0];
+//        data_cycle_r <=  {data_cycle_r[1:0],  cmd_we_any_r &  d_na};
+//        data_cycle_r <=  {data_cycle_r[1:0],  (cmd_we_abs_w | cmd_we_rel_w) &  d_na};
+//        data_cycle_r <=  {data_cycle_r[1:0],  cmd_we_abs_w &  (pend_abs | pend_rel)}; // any write command is considered second (data)
+        data_cycle_r <=  {data_cycle_r[1:0],  (cmd_we_abs_w | cmd_we_rel_w) &  (pend_abs | pend_rel)}; // 
         
-        if (cmd_we_any_r[1])  fifo_wr_pointers_outw_r <= fifo_wr_pointers_outw; // register pointer RAM output (write port)
+//        if (cmd_we_any_r[1])  fifo_wr_pointers_outw_r <= fifo_wr_pointers_outw; // register pointer RAM output (write port)
+        if (data_cycle_r[1])     fifo_wr_pointers_outw_r <= fifo_wr_pointers_outw; // register pointer RAM output (write port)
+        
         // write to pointer RAM (to the same address as just read from if read)
         if (we_fifo_wp) fifo_wr_pointers_ram[wpage_w] <= wpage_inc[1] ? {PNTR_WIDH{1'b0}}:(fifo_wr_pointers_outw_r + 1); 
-        
-        if (cmd_we_any_r[1]) seq_cmd_wa <= {wpage_w, fifo_wr_pointers_outw};
+//        if (cmd_we_any_r[1]) seq_cmd_wa <= {wpage_w, fifo_wr_pointers_outw};
+        if (data_cycle_r[1])  seq_cmd_wa <= {wpage_w, fifo_wr_pointers_outw};
         
         fifo_wr_pointers_outr_r <= fifo_wr_pointers_outr; // just register write pointer for the read page 
         page_r_inc <= {page_r_inc[0],
@@ -310,7 +345,7 @@ module  cmd_frame_sequencer#(
                 // VDT TODO: make conditions in generate skip parsing if condition does not match
 //              .waddr         (seq_cmd_wa),             // input[8:0] 
                 .waddr         ({seq_cmd_wa[PNTR_WIDH+3 -:4],seq_cmd_wa[4:0]}), // input[8:0] // just to make VDT happy
-                .we            (cmd_we_any_r[2]),        // input
+                .we            (we_seq_data),        // input
                 .web           (8'hff),                  // input[7:0] 
                 .data_in       (cmdseq_di)               // input[63:0] 
             );
@@ -331,8 +366,9 @@ module  cmd_frame_sequencer#(
                 .data_out      (cmdseq_do[15:0]),        // output[15:0] 
                 .wclk          (mclk),                   // input
 //              .waddr         (seq_cmd_wa),             // input[9:0] 
-                .waddr         ({seq_cmd_ra[PNTR_WIDH+3 -:4],seq_cmd_ra[5:0]}), // input[9:0] 
-                .we            (cmd_we_any_r[2]),        // input
+//                .waddr         ({seq_cmd_ra[PNTR_WIDH+3 -:4],seq_cmd_ra[5:0]}), // input[9:0] 
+                .waddr         ({seq_cmd_wa[PNTR_WIDH+3 -:4],seq_cmd_wa[5:0]}), // input[9:0] 
+                .we            (we_seq_data),        // input
                 .web           (4'hf),                   // input[3:0] 
                 .data_in       (cmdseq_di[15:0])         // input[15:0] 
             );
@@ -351,8 +387,9 @@ module  cmd_frame_sequencer#(
                 .data_out      (cmdseq_do[31:16]),       // output[15:0] 
                 .wclk          (mclk),                   // input
 //              .waddr         (seq_cmd_wa),             // input[9:0] 
-                .waddr         ({seq_cmd_ra[PNTR_WIDH+3 -:4],seq_cmd_ra[5:0]}), // input[9:0] 
-                .we            (cmd_we_any_r[2]),        // input
+//                .waddr         ({seq_cmd_ra[PNTR_WIDH+3 -:4],seq_cmd_ra[5:0]}), // input[9:0] 
+                .waddr         ({seq_cmd_wa[PNTR_WIDH+3 -:4],seq_cmd_wa[5:0]}), // input[9:0] 
+                .we            (we_seq_data),        // input
                 .web           (4'hf),                   // input[3:0] 
                 .data_in       (cmdseq_di[31:16])        // input[15:0] 
             );
@@ -371,8 +408,9 @@ module  cmd_frame_sequencer#(
                 .data_out      (cmdseq_do[47:32]),       // output[15:0] 
                 .wclk          (mclk),                   // input
 //              .waddr         (seq_cmd_wa),             // input[9:0] 
-                .waddr         ({seq_cmd_ra[PNTR_WIDH+3 -:4],seq_cmd_ra[5:0]}), // input[9:0] 
-                .we            (cmd_we_any_r[2]),        // input
+//                .waddr         ({seq_cmd_ra[PNTR_WIDH+3 -:4],seq_cmd_ra[5:0]}), // input[9:0] 
+                .waddr         ({seq_cmd_wa[PNTR_WIDH+3 -:4],seq_cmd_wa[5:0]}), // input[9:0] 
+                .we            (we_seq_data),        // input
                 .web           (4'hf),                   // input[3:0] 
                 .data_in       (cmdseq_di[47:32])        // input[15:0] 
             );
@@ -394,8 +432,9 @@ module  cmd_frame_sequencer#(
                 .data_out      (cmdseq_do[15:0]),        // output[15:0] 
                 .wclk          (mclk),                   // input
 //              .waddr         (seq_cmd_wa),             // input[9:0] 
-                .waddr         ({seq_cmd_ra[PNTR_WIDH+3 -:4],seq_cmd_ra[6:0]}), // input[10:0] 
-                .we            (cmd_we_any_r[2]),        // input
+//                .waddr         ({seq_cmd_ra[PNTR_WIDH+3 -:4],seq_cmd_ra[6:0]}), // input[10:0] 
+                .waddr         ({seq_cmd_wa[PNTR_WIDH+3 -:4],seq_cmd_wa[6:0]}), // input[10:0] 
+                .we            (we_seq_data),        // input
                 .web           (8'hff),                  // input[7:0] 
                 .data_in       (cmdseq_di[15:0])         // input[15:0] 
             );
@@ -415,7 +454,7 @@ module  cmd_frame_sequencer#(
                 .wclk          (mclk),                   // input
 //              .waddr         (seq_cmd_wa),             // input[9:0] 
                 .waddr         ({seq_cmd_ra[PNTR_WIDH+3 -:4],seq_cmd_ra[6:0]}), // input[10:0] 
-                .we            (cmd_we_any_r[2]),        // input
+                .we            (we_seq_data),        // input
                 .web           (8'hff),                  // input[7:0] 
                 .data_in       (cmdseq_di[31:16])        // input[15:0] 
             );
@@ -435,7 +474,7 @@ module  cmd_frame_sequencer#(
                 .wclk          (mclk),                   // input
 //              .waddr         (seq_cmd_wa),             // input[9:0] 
                 .waddr         ({seq_cmd_ra[PNTR_WIDH+3 -:4],seq_cmd_ra[6:0]}), // input[10:0] 
-                .we            (cmd_we_any_r[2]),        // input
+                .we            (we_seq_data),        // input
                 .web           (8'hff),                  // input[7:0] 
                 .data_in       (cmdseq_di[47:32])        // input[15:0] 
             );
