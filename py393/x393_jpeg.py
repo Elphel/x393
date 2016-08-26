@@ -1128,7 +1128,42 @@ compressor_control  all  3
 jpeg_sim_multi 8
 jpeg_sim_multi 8
 
+################## Simulate Parallel ####################
+./py393/test_mcntrl.py @py393/cocoargs  --simulated=localhost:7777
+measure_all "*DI"
+setup_all_sensors True None 0xf
+set_sensor_io_ctl  all None None 1 # Set ARO low - check if it is still needed?
+#just testing
+set_gpio_ports  1 # enable software gpio pins - just for testing. Also needed for legacy i2c!
+set_gpio_pins 0 1 # pin 0 low, pin 1 - high
+#sequencer test
+#ctrl_cmd_frame_sequencer  <num_sensor>  <reset=False>  <start=False>  <stop=False>
+ctrl_cmd_frame_sequencer   0  0  1  0
+write_cmd_frame_sequencer  0  1  1  0x700  0x6
+write_cmd_frame_sequencer  0  0  3  0x700  0xa000
+write_cmd_frame_sequencer  0  1  0  0x700  0x90
+write_cmd_frame_sequencer  0  0  2  0x700  0xe00
+write_cmd_frame_sequencer  0  0  3  0x700  0xa
 
+#set_sensor_io_dly_hispi all 0x48 0x68 0x68 0x68 0x68
+#set_sensor_io_ctl all None None None None None 1 None # load all delays?
+compressor_control  all  None  None  None None None  2
+compressor_interrupt_control all clr
+compressor_interrupt_control all en
+compressor_control  all  3
+jpeg_sim_multi 4
+jpeg_sim_multi 8
+jpeg_sim_multi 8
+
+ctrl_cmd_frame_sequencer  0  0  1 0
+
+ctrl_cmd_frame_sequencer  <num_sensor>  <reset=False>  <start=False>  <stop=False>
+
+
+#set_gpio_ports  <port_soft=None>  <port_a=None>  <port_b=None>  <port_c=None>
+set_gpio_ports  1 # enable software gpio pins - just for testing. Also needed for legacy i2c!
+
+set_sensor_io_ctl  <num_sensor>  <mrst=None>  <arst=None>  <aro=None>  <mmcm_rst=None>  <clk_sel=None>  <set_delays=False>  <quadrants=None>
 
 wait_irq 0xf0 100000
 wait_irq 0x0    100
