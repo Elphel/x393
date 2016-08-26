@@ -125,11 +125,11 @@ class X393GPIO(object):
         data = 0
         for i, e in enumerate (ext):
             if not e is None:
-                if   (e is False) or (e == 0) or (e.upper() == "0") or (e.upper() == "L"):
+                if   (e is False) or (e == 0) or (str(e).upper() == "0") or (str(e).upper() == "L"):
                     data |= 1 << (2*i)
-                elif (e is True) or (e == 1) or (e.upper() == "1")  or (e.upper() == "H"):
+                elif (e is True) or (e == 1) or (str(e).upper() == "1")  or (str(e).upper() == "H"):
                     data |= 2 << (2*i)
-                elif e.upper() == "I":
+                elif str(e).upper() == "I":
                     data |= 3 << (2*i)
                 else:
                     raise Exception ("Expecting one of 'L', 'H', 'I', got "+str(e)+" for ext"+str(i))
