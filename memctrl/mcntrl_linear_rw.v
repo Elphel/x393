@@ -60,6 +60,7 @@ module  mcntrl_linear_rw #(
                                                       // Start XY can be used when read command to start from the middle
                                                       // TODO: Add number of blocks to R/W? (blocks can be different) - total length?
                                                       // Read back current address (for debugging)?
+    parameter MCNTRL_SCANLINE_START_DELAY =    'ha,      // Set start delay (to accommodate for the command sequencer                                                       
     parameter MCNTRL_SCANLINE_STATUS_REG_ADDR= 'h4,
     parameter MCNTRL_SCANLINE_PENDING_CNTR_BITS=2,     // Number of bits to count pending trasfers, currently 2 is enough, but may increase
                                                       // if memory controller will allow programming several sequences in advance to
@@ -76,7 +77,13 @@ module  mcntrl_linear_rw #(
     parameter MCONTR_LINTILE_SINGLE =           9, // read/write a single page 
     parameter MCONTR_LINTILE_REPEAT =          10, // read/write pages until disabled 
     parameter MCONTR_LINTILE_DIS_NEED =        11, // disable 'need' request 
-    parameter MCONTR_LINTILE_SKIP_LATE =       12  // skip actual R/W operation when it is too late, advance pointers
+    parameter MCONTR_LINTILE_SKIP_LATE =       12, // skip actual R/W operation when it is too late, advance pointers
+    
+// TODO NC393: This delay may be too long for serail sensors. Make them always start to fill the
+// first buffer page, waiting for the request from mcntrl_linear during that first page. And if it will arrive - 
+// just continue.    
+    parameter MCNTRL_SCANLINE_DLY_WIDTH =       7,  // delay start pulse by 1..64 mclk
+    parameter MCNTRL_SCANLINE_DLY_DEFAULT =    63  // initial delay value for start pulse
 )(
     input                          mrst,
     input                          mclk,
@@ -84,12 +91,12 @@ module  mcntrl_linear_rw #(
     input                    [7:0] cmd_ad,      // byte-serial command address/data (up to 6 bytes: AL-AH-D0-D1-D2-D3 
     input                          cmd_stb,     // strobe (with first byte) for the command a/d
     
-    output                   [7:0] status_ad,     // byte-wide address/data
-    output                         status_rq,     // request to send downstream (last byte with rq==0)
+    output                   [7:0] status_ad,      // byte-wide address/data
+    output                         status_rq,      // request to send downstream (last byte with rq==0)
     input                          status_start,   // acknowledge of address (first byte) from downsteram   
 
     input                          frame_start,   // resets page, x,y, and initiates transfer requests (in write mode will wait for next_page)
-    output                         frame_run,     // @mclk - enable pixels from sesnor to memory buffer
+    output                         frame_run,     // @mclk - enable pixels from sensor to memory buffer
     input                          next_page,     // page was read/written from/to 4*1kB on-chip buffer
 //    output                         page_ready,    // == xfer_done, connect externally | Single-cycle pulse indicating that a page was read/written from/to DDR3 memory
     output                         frame_done,    // single-cycle pulse when the full frame (window) was transferred to/from DDR3 memory
@@ -168,7 +175,7 @@ module  mcntrl_linear_rw #(
     reg     [PAR_MOD_LATENCY-1:0] recalc_r; // 1-hot CE for re-calculating registers
 // SuppressWarnings VEditor unused 
     wire                          calc_valid;   // calculated registers have valid values   
-    wire                          chn_en;   // enable requests by channel (continue ones in progress), enable frame_start inputs
+    wire                          chn_en;   // enable requests by channel (continue ones in progress), enable frame_start_late inputs
     wire                          chn_rst; // resets command, including fifo;
     reg                           chn_rst_d; // delayed by 1 cycle do detect turning off
 //    reg                           xfer_reset_page_r;
@@ -245,9 +252,14 @@ module  mcntrl_linear_rw #(
     reg     [FRAME_HEIGHT_BITS:0] window_height;  // (programmed) 0- max
     reg    [FRAME_WIDTH_BITS-1:0] window_x0;      // (programmed) window left
     reg   [FRAME_HEIGHT_BITS-1:0] window_y0;      // (programmed) window top
-    reg    [FRAME_WIDTH_BITS-1:0] start_x;        // (programmed) normally 0, copied to curr_x on frame_start  
-    reg   [FRAME_HEIGHT_BITS-1:0] start_y;        // (programmed) normally 0, copied to curr_y on frame_start 
+    reg    [FRAME_WIDTH_BITS-1:0] start_x;        // (programmed) normally 0, copied to curr_x on frame_start_late  
+    reg   [FRAME_HEIGHT_BITS-1:0] start_y;        // (programmed) normally 0, copied to curr_y on frame_start_late 
     reg                           xfer_done_d;    // xfer_done delayed by 1 cycle (also includes xfer_skipped)
+    reg [MCNTRL_SCANLINE_DLY_WIDTH-1:0] start_delay; // how much to delay frame start
+    wire                          frame_start_late;
+    wire                          set_start_delay_w; 
+    
+    
     assign frame_number =       frame_number_current;
     
     assign set_mode_w =         cmd_we && (cmd_a== MCNTRL_SCANLINE_MODE);
@@ -259,6 +271,7 @@ module  mcntrl_linear_rw #(
     assign set_window_wh_w =    cmd_we && (cmd_a== MCNTRL_SCANLINE_WINDOW_WH);
     assign set_window_x0y0_w =  cmd_we && (cmd_a== MCNTRL_SCANLINE_WINDOW_X0Y0);
     assign set_window_start_w = cmd_we && (cmd_a== MCNTRL_SCANLINE_WINDOW_STARTXY);
+    assign set_start_delay_w =  cmd_we && (cmd_a== MCNTRL_SCANLINE_START_DELAY);
     
     assign single_frame_w =  cmd_we && (cmd_a== MCNTRL_SCANLINE_MODE) && cmd_data[MCONTR_LINTILE_SINGLE];
     assign rst_frame_num_w = cmd_we && (cmd_a== MCNTRL_SCANLINE_MODE) && cmd_data[MCONTR_LINTILE_RST_FRAME];
@@ -297,11 +310,11 @@ module  mcntrl_linear_rw #(
         else      is_last_frame <= frame_number_cntr == last_frame_number;
         
 //        if (mrst) frame_start_r <= 0;
-//        else      frame_start_r <= {frame_start_r[3:0], frame_start & frame_en};
+//        else      frame_start_r <= {frame_start_r[3:0], frame_start_late & frame_en};
 
         if      (mrst)                            frame_en <= 0;
         else if (single_frame_r || repeat_frames) frame_en <= 1;
-        else if (frame_start)                     frame_en <= 0;
+        else if (frame_start_late)                     frame_en <= 0;
         
         if      (mrst)               frame_number_cntr <= 0;
         else if (rst_frame_num_r[0]) frame_number_cntr <= 0;
@@ -339,8 +352,12 @@ module  mcntrl_linear_rw #(
                start_y <=  0;
         end else if (set_window_start_w)  begin
                start_x <= cmd_data[FRAME_WIDTH_BITS-1:0];
-               start_y  <=cmd_data[FRAME_HEIGHT_BITS+15:16];
+               start_y <= cmd_data[FRAME_HEIGHT_BITS+15:16];
         end
+        
+        if      (mrst)              start_delay <= MCNTRL_SCANLINE_DLY_DEFAULT;
+        else if (set_start_delay_w) start_delay <= cmd_data[MCNTRL_SCANLINE_DLY_WIDTH-1:0];
+        
     end
     assign mul_rslt_w=  frame_y8_r * frame_full_width_r; // 5 MSBs will be discarded
     assign xfer_num128= xfer_num128_r[NUM_XFER_BITS-1:0];
@@ -393,12 +410,12 @@ module  mcntrl_linear_rw #(
     reg          start_skip_r;
     reg          skip_run = 0;    // run "skip" - advance addresses, but no actual read/write
     reg          xfer_reject_r;
-    reg          frame_start_pending; // frame_start came before previous one was finished
+    reg          frame_start_pending; // frame_start_late came before previous one was finished
     reg    [1:0] frame_start_pending_long;
     wire         xfer_done_skipped = xfer_skipped || xfer_done;
     
     wire         frame_start_delayed = frame_start_pending_long[1] && !frame_start_pending_long[0];
-    wire         frame_start_mod = (frame_start && !busy_r) || frame_start_delayed; // when frame_start_delayed it will completely miss a frame_start
+    wire         frame_start_mod = (frame_start_late && !busy_r) || frame_start_delayed; // when frame_start_delayed it will completely miss a frame_start_late
     assign xfer_reject = xfer_reject_r;
     assign  start_skip_w = skip_too_late && want_r && !xfer_grant && !skip_run &&
                           (((|page_cntr) && frame_start_pending) || ((page_cntr >= 4) && (cmd_wrmem || page_cntr[0]))); //&& busy_r && skip_run;
@@ -427,14 +444,14 @@ module  mcntrl_linear_rw #(
             
 //        if  (mrst || frame_start_delayed) frame_start_pending <= 0;
         if  (mrst) frame_start_pending <= 0;
-//        else       frame_start_pending <= {frame_start_pending[0], busy_r && (frame_start_pending[0] | frame_start)};
-        else       frame_start_pending <= busy_r && (frame_start_pending | frame_start);
+//        else       frame_start_pending <= {frame_start_pending[0], busy_r && (frame_start_pending[0] | frame_start_late)};
+        else       frame_start_pending <= busy_r && (frame_start_pending | frame_start_late);
 
         if  (mrst) frame_start_pending_long <= 0;
-        else       frame_start_pending_long <= {frame_start_pending_long[0], (busy_r || skip_run) && (frame_start_pending_long[0] | frame_start)};
+        else       frame_start_pending_long <= {frame_start_pending_long[0], (busy_r || skip_run) && (frame_start_pending_long[0] | frame_start_late)};
 
         if (mrst) frame_start_r <= 0;
-//        else      frame_start_r <= {frame_start_r[3:0], frame_start & frame_en};
+//        else      frame_start_r <= {frame_start_r[3:0], frame_start_late & frame_en};
         else      frame_start_r <= {frame_start_r[3:0], frame_start_mod & frame_en};        
 
         if (mrst || disable_need)                         need_r <= 0;
@@ -587,7 +604,7 @@ wire    start_not_partial= xfer_start_r[0] && !xfer_limited_by_mem_page_r;
         
         if (recalc_r[0]) line_unfinished_relw_r <= curr_y + (cmd_wrmem ? 0: 1);
         
-//        if (mrst || (frame_start || !chn_en))  line_unfinished_r <= {FRAME_HEIGHT_BITS{~cmd_wrmem}}; // lowest/highest value until valid
+//        if (mrst || (frame_start_late || !chn_en))  line_unfinished_r <= {FRAME_HEIGHT_BITS{~cmd_wrmem}}; // lowest/highest value until valid
         if (mrst || (frame_start_mod || !chn_en))  line_unfinished_r <= {FRAME_HEIGHT_BITS{~cmd_wrmem}}; // lowest/highest value until valid
         else if (recalc_r[2])                      line_unfinished_r <= line_unfinished_relw_r + window_y0;
 
@@ -670,5 +687,17 @@ wire    start_not_partial= xfer_start_r[0] && !xfer_limited_by_mem_page_r;
         .rq               (status_rq),     // output
         .start            (status_start)   // input
     );
+    
+    dly_var #(
+        .WIDTH     (1),
+        .DLY_WIDTH (MCNTRL_SCANLINE_DLY_WIDTH)
+    ) frame_start_late_i (
+        .clk   (mclk), // input
+        .rst   (mrst), // input
+        .dly   (start_delay),     // input[0:0] 
+        .din   (frame_start),     // input[0:0] 
+        .dout  (frame_start_late) // output[0:0] 
+    );
+    
 endmodule
 

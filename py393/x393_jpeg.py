@@ -1050,15 +1050,27 @@ setup_all_sensors True None 0x4
 ################## Parallel ##################
 cd /usr/local/verilog/; test_mcntrl.py @tpargs -x
 
-
+reset_channels 15
 
 cd /usr/local/verilog/; test_mcntrl.py @hargs
 bitstream_set_path /usr/local/verilog/x393_parallel.bit
 #fpga_shutdown
 #setupSensorsPower "PAR12"
 setupSensorsPower  "PAR12"  all  0  0.0
+
 measure_all "*DI"
-setup_all_sensors True None 0xf
+
+setSensorClock 24.0 "2V5_LVDS"
+specify_phys_memory
+specify_window
+set_rtc # maybe not needed as it can be set differently
+camsync_setup 0xf # sensor mask - use local timestamps)
+
+                   
+
+#setup_all_sensors True None 0xf
+#setup_all_sensors <setup_membridge=False>  <exit_step=None>  <sensor_mask=1>  <gamma_load=False>  <window_width=None>  <window_height=None>  <window_left=None>  <window_top=None>  <compressor_left_margin=0>  <last_buf_frame=1>  <colorsat_blue=288>  <colorsat_red=364>  <clk_sel=1>  <histogram_left=None>  <histogram_top=None>  <histogram_width_m1=None>  <histogram_height_m1=None>  <circbuf_chn_size=67108864>  <reset_afi=False>  <verbose=1>
+setup_all_sensors True  None 0xf False None None None None 0 1 288 364 1 None None None None 67108864 True 2
 set_sensor_io_ctl  all None None 1 # Set ARO low - check if it is still needed?
 #set quadrants
 set_sensor_io_ctl 0 None None None None None 0 0xe
@@ -1073,8 +1085,8 @@ compressor_control  all  None  None  None None None  3
 #longer line (default 0xa1f)
 write_sensor_i2c  all 1 0 0x90040a23
 #increase scanline write (memory controller) width in 16-bursts (was 0xa2)
-axi_write_single_w 0x696 0x079800a3
 axi_write_single_w 0x686 0x079800a3
+axi_write_single_w 0x696 0x079800a3
 axi_write_single_w 0x6a6 0x079800a3
 axi_write_single_w 0x6b6 0x079800a3
 
@@ -1099,10 +1111,11 @@ write_sensor_i2c  all 1 0 0x90090797
 
 
 #run compressors once (#1 - stop gracefully, 0 - reset, 2 - single, 3 - repetitive with sync to sensors)
+set_qtables all 0 80
 compressor_control all 3
 
-#jpeg_write  "img.jpeg" 0
-jpeg_write  "img.jpeg" All
+#jpeg_write  "img.jpeg" 0 80
+jpeg_write  "img.jpeg" All 80
 
 #changing quality (example 85%):
 set_qtables all 0 85
@@ -1110,6 +1123,114 @@ compressor_control all 2
 #jpeg_write  "img.jpeg" all 85
 jpeg_write  "img.jpeg" 0 85
 
+
+#To reset all (before reprogramming): This one works, reset_channels - does not
+
+compressor_control all 1
+compressor_control all 0
+set_sensor_io_ctl  all 1 # MRST on all sensors
+control_sensor_memory  all stop
+control_compressor_memory  all stop
+sleep_ms 200
+control_sensor_memory  all reset True
+control_compressor_memory  all reset True
+
+#To reset all (before reprogramming):
+
+#enable all interrupts
+write_control_register 0x605 3
+write_control_register 0x615 3
+write_control_register 0x625 3
+write_control_register 0x635 3
+write_control_register 0x79f 3
+write_control_register 0x7bf 3
+write_control_register 0x7df 3
+write_control_register 0x7ff 3
+
+#disable all interrupts
+write_control_register 0x605 2
+write_control_register 0x615 2
+write_control_register 0x625 2
+write_control_register 0x635 2
+write_control_register 0x79f 2
+write_control_register 0x7bf 2
+write_control_register 0x7df 2
+write_control_register 0x7ff 2
+
+#Restart 0
+compressor_control 0 1
+compressor_control 0 0
+control_sensor_memory  0 stop
+control_compressor_memory  0 stop
+sleep_ms 200
+control_sensor_memory  0 repetitive
+control_compressor_memory  0 repetitive
+
+compressor_control 0 3
+compressor_control  0  None  None  None None None  0
+
+specify_phys_memory
+specify_window
+
+#Reset 0 but sensor all
+compressor_control 0 1
+control_sensor_memory  0 stop
+control_compressor_memory  0 stop
+sleep_ms 200
+control_sensor_memory  0 reset True
+control_compressor_memory  0 reset True
+
+########### Trying to make i2c work in driver #########
+Other required actions:
+/www/pages/exif.php init=/etc/Exif_template.xml
+imgsrv -p 2323
+#restart PHP - it can get errors while opening/mmaping at startupo, then some functions fail
+killall lighttpd; /usr/sbin/lighttpd -f /etc/lighttpd.conf
+
+setSensorClock 24.0 "2V5_LVDS"
+
+set_rtc # maybe not needed as it can be set differently
+camsync_setup 0xf # sensor mask - use local timestamps)
+
+                   
+#set_sensor_io_ctl  <num_sensor>  <mrst=None>  <arst=None>  <aro=None>  <mmcm_rst=None>  <clk_sel=None>  <set_delays=False>  <quadrants=None>
+set_sensor_io_ctl  0             True            True       False           True              1               False
+sleep_ms 10
+set_sensor_io_ctl  0             False           False      False           False             1               False
+set_sensor_io_ctl  0             None            None       True            False             1               False
+
+
+#or
+setup_sensor_channel None 0
+setup_compressor 0 0
+
+read_control_register 0x403 # sequencer 0 status mode
+write_control_register 0x403 0xc0
+read_status 0x20 # 0x5f030000
+#echo "1" >i2c_frame0
+read_status 0x20 # 0x7f000000
+
+compressor_control 0 1
+sleep_ms 100
+control_compressor_memory  0 stop
+control_sensor_memory  0 stop
+sleep_ms 100
+control_sensor_memory  0 repetitive
+sleep_ms 100
+control_compressor_memory  0 repetitive
+sleep_ms 100
+compressor_control 0 3
+
+"blocked" image - reset+restart worked
+#after python (change there too):
+axi_write_single_w 0x686 0x079800a3    # this
+write_control_register 0x686 0x79400a3 # or this?
+write_control_register 0x602 0x40f00a1
+write_control_register 0x6c7 0x10000
+compressor_control  all  None  None  None None None  0
+
+tar -C / -xzpf /usr.tar.gz;
+/usr/sbin/lighttpd -f /etc/lighttpd.conf
 
 ################## Simulate Serial ####################
 ./py393/test_mcntrl.py @py393/cocoargs  --simulated=localhost:7777

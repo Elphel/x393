@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.3.66 (w)1999-2015 BSI
-[*] Fri Aug 26 03:11:57 2016
+[*] Mon Aug 29 02:48:05 2016
 [*]
-[dumpfile] "/home/eyesis/git/x393-neon/simulation/x393_dut-20160825202535502.fst"
-[dumpfile_mtime] "Fri Aug 26 02:56:41 2016"
-[dumpfile_size] 171390450
+[dumpfile] "/home/eyesis/git/x393-neon/simulation/x393_dut-20160828192314061.fst"
+[dumpfile_mtime] "Mon Aug 29 01:55:16 2016"
+[dumpfile_size] 172137517
 [savefile] "/home/eyesis/git/x393-neon/cocotb/x393_cocotb_02.sav"
-[timestart] 177022600
+[timestart] 177303100
 [size] 1836 1171
-[pos] 0 23
-*-17.349640 177492388 123238096 124220833 174385000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[pos] 1920 23
+*-15.588772 177422388 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] x393_dut.
 [treeopen] x393_dut.ddr3_i.ddr3_i.
 [treeopen] x393_dut.simul_axi_master_wdata_i.
@@ -34,22 +34,24 @@
 [treeopen] x393_dut.x393_i.frame_sequencer_block[0].
 [treeopen] x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.
 [treeopen] x393_dut.x393_i.gpio393_i.
+[treeopen] x393_dut.x393_i.mcntrl393_i.
 [treeopen] x393_dut.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.
 [treeopen] x393_dut.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.
 [treeopen] x393_dut.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.phy_top_i.
 [treeopen] x393_dut.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.phy_top_i.mmcm_phase_cntr_i.
 [treeopen] x393_dut.x393_i.mcntrl393_i.sens_comp_block[0].
+[treeopen] x393_dut.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_linear_wr_sensor_i.
 [treeopen] x393_dut.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_tiled_rd_compressor_i.
 [treeopen] x393_dut.x393_i.sensors393_i.
 [treeopen] x393_dut.x393_i.sensors393_i.sensor_channel_block[0].
 [treeopen] x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.
-[treeopen] x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_parallel12_i.
+[treeopen] x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_sync_i.
 [treeopen] x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_membuf_i.
 [treeopen] x393_dut.x393_i.sensors393_i.sensor_channel_block[1].
 [treeopen] x393_dut.x393_i.sensors393_i.sensor_channel_block[2].
 [treeopen] x393_dut.x393_i.sensors393_i.sensor_channel_block[3].
-[sst_width] 311
-[signals_width] 350
+[sst_width] 358
+[signals_width] 293
 [sst_expanded] 1
 [sst_vpaned_height] 540
 @820
@@ -298,6 +300,26 @@ x393_dut.x393_i.sync_resets_i.rst_early_master
 -resets
 @800200
 -sensor_channel0
+@c00200
+-sens_sync
+@28
+x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_sync_i.sof_in
+x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_sync_i.sof_dly
+x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_sync_i.hact
+x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_sync_i.en
+x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_sync_i.hact_r
+x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_sync_i.hact_single
+@22
+x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_sync_i.line_dly_pclk[15:0]
+x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_sync_i.lines_left[15:0]
+@28
+x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_sync_i.last_line
+x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_sync_i.pre_sof_late
+x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_sync_i.sof_late
+@200
+-
+@1401200
+-sens_sync
 @22
 x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_membuf_i.px_data[15:0]
 @28
@@ -325,7 +347,21 @@ x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.pxd[11:0]
 -group_end
 @8022
 x393_dut.x393_i.sensors393_i.sensor_channel_block[2].sensor_channel_i.pxd[11:0]
-x393_dut.x393_i.sensors393_i.sensor_channel_block[3].sensor_channel_i.pxd[11:0]
+@800022
+#{x393_dut.x393_i.sensors393_i.sensor_channel_block[3].sensor_channel_i.pxd[11:0]} (0)x393_dut.x393_i.sensors393_i.sensor_channel_block[3].sensor_channel_i.pxd[11:0] (1)x393_dut.x393_i.sensors393_i.sensor_channel_block[3].sensor_channel_i.pxd[11:0] (2)x393_dut.x393_i.sensors393_i.sensor_channel_block[3].sensor_channel_i.pxd[11:0] (3)x393_dut.x393_i.sensors393_i.sensor_channel_block[3].sensor_channel_i.pxd[11:0] (4)x393_dut.x393_i.sensors393_i.sensor_channel_block[3].sensor_channel_i.pxd[11:0] (5)x393_dut.x393_i.sensors393_i.sensor_channel_block[3].sensor_channel_i.pxd[11:0] (6)x393_dut.x393_i.sensors393_i.sensor_channel_block[3].sensor_channel_i.pxd[11:0] (7)x393_dut.x393_i.sensors393_i.sensor_channel_block[3].sensor_channel_i.pxd[11:0] (8)x393_dut.x393_i.sensors393_i.sensor_channel_block[3].sensor_channel_i.pxd[11:0] (9)x393_dut.x393_i.sensors393_i.sensor_channel_block[3].sensor_channel_i.pxd[11:0] (10)x393_dut.x393_i.sensors393_i.sensor_channel_block[3].sensor_channel_i.pxd[11:0] (11)x393_dut.x393_i.sensors393_i.sensor_channel_block[3].sensor_channel_i.pxd[11:0]
+@1001200
+-group_end
+@800200
+-scanline0
+@28
+x393_dut.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_linear_wr_sensor_i.frame_start
+x393_dut.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_linear_wr_sensor_i.frame_start_late
+x393_dut.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_linear_wr_sensor_i.frame_start_delayed
+@22
+x393_dut.x393_i.sens_frame_run[3:0]
+x393_dut.x393_i.cmprs_frame_start_dst[3:0]
+@1000200
+-scanline0
 @800200
 -memory
 @28
@@ -360,8 +396,6 @@ x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_paral
 x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_parallel12_i.trigger_mode
 @1401200
 -debug_mmcm_clk
-@200
--
 @1000200
 -sensor_channel0
 @c00200
@@ -736,8 +770,10 @@ x393_dut.x393_i.compressor393_i.cmprs_channel_block[2].jp_channel_i.buf_pxd[7:0]
 x393_dut.x393_i.compressor393_i.cmprs_channel_block[3].jp_channel_i.buf_pxd[7:0]
 @1401200
 -compressors_all
-@800200
+@c00201
 -cmdseq_0
+@28
+x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.frame_sync
 @c00022
 x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.cmdseq_di[63:0]
 @28
@@ -928,7 +964,7 @@ x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.valid
 x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.ackn
 @1001200
 -group_end
-@1000200
+@1401201
 -cmdseq_0
 @800200
 -cmdseq_mux
@@ -980,13 +1016,13 @@ x393_dut.x393_i.cmd_seq_mux_i.pri_one[3:0]
 x393_dut.x393_i.cmd_seq_mux_i.chn_r[1:0]
 @1000200
 -cmdseq_mux
-@800200
+@c00200
 -gpio
 @28
 x393_dut.x393_i.gpio393_i.set_mode_w
 @22
 x393_dut.x393_i.gpio393_i.cmd_data[31:0]
-@c00023
+@c00022
 x393_dut.x393_i.gpio393_i.ds[9:0]
 @28
 (0)x393_dut.x393_i.gpio393_i.ds[9:0]
@@ -999,7 +1035,7 @@ x393_dut.x393_i.gpio393_i.ds[9:0]
 (7)x393_dut.x393_i.gpio393_i.ds[9:0]
 (8)x393_dut.x393_i.gpio393_i.ds[9:0]
 (9)x393_dut.x393_i.gpio393_i.ds[9:0]
-@1401201
+@1401200
 -group_end
 @22
 x393_dut.x393_i.gpio393_i.ds_en_m[9:0]
@@ -1076,7 +1112,7 @@ x393_dut.x393_i.gpio393_i.io_pins[9:0]
 (9)x393_dut.x393_i.gpio393_i.io_pins[9:0]
 @1001200
 -group_end
-@1000200
+@1401200
 -gpio
 @200
 -

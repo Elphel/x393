@@ -484,11 +484,25 @@ class X393SensCmprs(object):
             num_pages_in_line += 1
 #        frame_full_width -  13-bit Padded line length (8-row increment), in 8-bursts (16 bytes)
 #        frame_start_address_inc - 22-bit frame start address increment  ((3 CA LSBs==0. BA==0)
-        frame_full_width =  num_pages_in_line * align_to_bursts
+##        frame_full_width =  num_pages_in_line * align_to_bursts
+        """
+        Changing frame full width and size to fixed values (normally read from sysfs)
+                frame_full_width =  num_pages_in_line * align_to_bursts
+        
+        """
+        
+        frame_full_width =  0x200 # Made it fixed width
+        
+        
+        
         num8rows=   (window_top + window_height) // 8
         if (window_top + window_height) % 8:
             num8rows += 1
+        """    
         frame_start_address_inc = num8rows * frame_full_width
+        """
+        frame_start_address_inc = 0x80000 #Fixed size
+        
         """ TODO: Calculate tiles and move to initial print """
         num_macro_cols_m1 = (window_width >> 4) - 1
         num_macro_rows_m1 = (window_height >> 4) - 1
@@ -1104,11 +1118,20 @@ class X393SensCmprs(object):
         num_pages_in_line = num_burst_in_line // align_to_bursts;
         if num_burst_in_line % align_to_bursts:
             num_pages_in_line += 1
-        frame_full_width =  num_pages_in_line * align_to_bursts
+        """
+        Changing frame full width and size to fixed values (normally read from sysfs)
+                frame_full_width =  num_pages_in_line * align_to_bursts
+        
+        """
+        
+        frame_full_width =  0x200 # Made it fixed width
         num8rows=   (window_top + window_height) // 8
         if (window_top + window_height) % 8:
             num8rows += 1
+        """    
         frame_start_address_inc = num8rows * frame_full_width
+        """
+        frame_start_address_inc = 0x80000 #Fixed size
 
         num_macro_cols_m1 = (window_width >> 4) - 1
         num_macro_rows_m1 = (window_height >> 4) - 1
@@ -1181,6 +1204,54 @@ class X393SensCmprs(object):
             tile_height =      tile_height,
             extra_pages =      extra_pages,
             disable_need =     1)
+    def reset_channels(self,
+                       sensor_mask = 0x1,
+                       reset_mask =  0xf):
+        """
+        Reset channels before re-programming
+        @param sensor_mask -       bitmap of the selected channels (1 - only channel 0, 0xf - all channels)
+        @param reset_mask -        +1 - reset sensor(s) (MRST and internal),
+                                   +2 - reset compressor(s)
+                                   +4 - reset sensor-to-memory modules
+                                   +8 - reset memory-to-compressor modules
+        """
+        MASK_SENSOR =        1
+        MASK_COMPRESSOR =    2
+        MASK_MEMSENSOR =     4
+        MASK_MEMCOMPRESSOR = 8
+        
+        for chn in range (4):
+            if sensor_mask & (1 << chn):
+                if reset_mask & MASK_COMPRESSOR:
+                    self.x393Cmprs.compressor_control        (chn =      chn,
+                                                              run_mode = 1) # stop after frame done
+                    
+                if reset_mask & MASK_MEMSENSOR:
+                    self.x393Sensor.control_sensor_memory    (num_sensor = chn,
+                                                              command = 'stop')
+                      
+                if reset_mask & MASK_MEMCOMPRESSOR:
+                    self.x393Cmprs.control_compressor_memory (num_sensor = chn,
+                                                              command = 'stop')
+                    
+        self.sleep_ms(200)            
+        for chn in range (4):
+            if sensor_mask & (1 << chn):
+                if reset_mask & MASK_COMPRESSOR:
+                    self.x393Cmprs.compressor_control        (chn =      chn,
+                                                              run_mode = 0)  # reset, 'kill -9'
+                if reset_mask & MASK_MEMSENSOR:
+                    self.x393Sensor.control_sensor_memory    (num_sensor = chn,
+                                                              command = 'reset')
+                      
+                if reset_mask & MASK_MEMCOMPRESSOR:
+                    self.x393Cmprs.control_compressor_memory (num_sensor = chn,
+                                                              command = 'reset')
+
+                if reset_mask & MASK_SENSOR:
+                    self.x393Sensor.set_sensor_io_ctl        (num_sensor =  chn,
+                                                              mrst =        True)
+
         
     def setup_all_sensors (self,
                               setup_membridge =           False,
@@ -1201,6 +1272,7 @@ class X393SensCmprs(object):
                               histogram_width_m1 =        None, # 2559, #0,
                               histogram_height_m1 =       None, # 799, #0,
                               circbuf_chn_size=           0x4000000, # 64 Mib - all 4 channels?
+                              reset_afi =                 False, # reset AFI multiplexer 
                               verbose =                   1):
         """
         Setup one sensor+compressor channel (for one sub-channel only)
@@ -1236,6 +1308,8 @@ class X393SensCmprs(object):
         @param histogram_top -       histogram window top margin
         @param histogram_width_m1 -  one less than window width. If 0 - use frame right margin (end of HACT)
         @param histogram_height_m1 - one less than window height. If 0 - use frame bottom margin (end of VACT)
+        @param reset_afi            Reset AFI multiplexer when initializing 
+
         @param circbuf_chn_size - circular buffer size for each channel, in bytes
         @param verbose - verbose level
         @return True if all done, False if exited prematurely by  exit_step
@@ -1404,7 +1478,8 @@ class X393SensCmprs(object):
                                afi_cmprs2_sa =  afi_cmprs2_sa,
                                afi_cmprs2_len = afi_cmprs2_len,
                                afi_cmprs3_sa =  afi_cmprs3_sa,
-                               afi_cmprs3_len = afi_cmprs3_len)
+                               afi_cmprs3_len = afi_cmprs3_len,
+                               reset =          reset_afi)
 
         for num_sensor in range(4):
             if sensor_mask & (1 << num_sensor):
@@ -1683,11 +1758,21 @@ class X393SensCmprs(object):
         num_pages_in_line = num_burst_in_line // align_to_bursts;
         if num_burst_in_line % align_to_bursts:
             num_pages_in_line += 1
-        frame_full_width =  num_pages_in_line * align_to_bursts
+        """
+        Changing frame full width and size to fixed values (normally read from sysfs)
+                frame_full_width =  num_pages_in_line * align_to_bursts
+        
+        """
+        
+        frame_full_width =  0x200 # Made it fixed width
         num8rows=   (window_top + window_height) // 8
         if (window_top + window_height) % 8:
             num8rows += 1
+        """    
         frame_start_address_inc = num8rows * frame_full_width
+        """
+        frame_start_address_inc = 0x80000 #Fixed size
+
         frame_start_address = (last_buf_frame + 1) * frame_start_address_inc * num_sensor
         
         if verbose >0 :
@@ -1714,7 +1799,13 @@ class X393SensCmprs(object):
         num_pages_in_line = num_burst_in_line // align_to_bursts;
         if num_burst_in_line % align_to_bursts:
             num_pages_in_line += 1
-        frame_full_width =  num_pages_in_line * align_to_bursts
+        """
+        Changing frame full width and size to fixed values (normally read from sysfs)
+                frame_full_width =  num_pages_in_line * align_to_bursts
+        
+        """
+        
+        frame_full_width =  0x200 # Made it fixed width
         num8rows=   (window_top + window_height) // 8
         if (window_top + window_height) % 8:
             num8rows += 1

@@ -1231,7 +1231,6 @@ assign axi_grst = axi_rst_pre;
         .SS_MOD_PERIOD                     (SS_MOD_PERIOD),
         .CMD_PAUSE_BITS                    (CMD_PAUSE_BITS),
         .CMD_DONE_BIT                      (CMD_DONE_BIT),
-        
         .MCNTRL_PS_ADDR                    (MCNTRL_PS_ADDR),
         .MCNTRL_PS_MASK                    (MCNTRL_PS_MASK),
         .MCNTRL_PS_STATUS_REG_ADDR         (MCNTRL_PS_STATUS_REG_ADDR),
@@ -1254,6 +1253,7 @@ assign axi_grst = axi_rst_pre;
         .MCNTRL_SCANLINE_WINDOW_WH         (MCNTRL_SCANLINE_WINDOW_WH),
         .MCNTRL_SCANLINE_WINDOW_X0Y0       (MCNTRL_SCANLINE_WINDOW_X0Y0),
         .MCNTRL_SCANLINE_WINDOW_STARTXY    (MCNTRL_SCANLINE_WINDOW_STARTXY),
+        .MCNTRL_SCANLINE_START_DELAY       (MCNTRL_SCANLINE_START_DELAY),
         .MCNTRL_SCANLINE_STATUS_REG_CHN1_ADDR   (MCNTRL_SCANLINE_STATUS_REG_CHN1_ADDR),
         .MCNTRL_SCANLINE_STATUS_REG_CHN3_ADDR   (MCNTRL_SCANLINE_STATUS_REG_CHN3_ADDR),
         .MCNTRL_SCANLINE_PENDING_CNTR_BITS (MCNTRL_SCANLINE_PENDING_CNTR_BITS),
@@ -1289,6 +1289,8 @@ assign axi_grst = axi_rst_pre;
         .MCONTR_LINTILE_REPEAT             (MCONTR_LINTILE_REPEAT),
         .MCONTR_LINTILE_DIS_NEED           (MCONTR_LINTILE_DIS_NEED),
         .MCONTR_LINTILE_SKIP_LATE          (MCONTR_LINTILE_SKIP_LATE),
+        .MCNTRL_SCANLINE_DLY_WIDTH         (MCNTRL_SCANLINE_DLY_WIDTH),
+        .MCNTRL_SCANLINE_DLY_DEFAULT       (MCNTRL_SCANLINE_DLY_DEFAULT),
         .BUFFER_DEPTH32                    (BUFFER_DEPTH32),
         .RSEL                              (RSEL),
         .WSEL                              (WSEL)

@@ -55,7 +55,7 @@ module  sensor_channel#(
     parameter SENS_SYNC_LATE  =           'h3,    // number of lines to delay late frame sync
     parameter SENS_SYNC_FBITS =           16,    // number of bits in a frame counter for linescan mode
     parameter SENS_SYNC_LBITS =           16,    // number of bits in a line counter for sof_late output (limited by eof) 
-    parameter SENS_SYNC_LATE_DFLT =       15,    // number of lines to delay late frame sync
+    parameter SENS_SYNC_LATE_DFLT =       4, // 15,    // number of lines to delay late frame sync
     parameter SENS_SYNC_MINBITS =         8,    // number of bits to enforce minimal frame period 
     parameter SENS_SYNC_MINPER =          130,    // minimal frame period (in pclk/mclk?) 
     
@@ -949,6 +949,10 @@ module  sensor_channel#(
             .status_rq            (sens_phys_status_rq),   // output
             .status_start         (sens_phys_status_start) // input
         );
+
+// TODO NC393: This delay may be too long for serail sensors. Make them always start to fill the
+// first buffer page, waiting for the request from mcntrl_linear during that first page. And if it will arrive - 
+// just continue.    
     
         sensor_fifo #(
             .SENSOR_DATA_WIDTH  (SENSOR_DATA_WIDTH),

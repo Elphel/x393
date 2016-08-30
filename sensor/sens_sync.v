@@ -46,7 +46,7 @@ module  sens_sync#(
     parameter SENS_SYNC_LATE  =     'h3,    // number of lines to delay late frame sync
     parameter SENS_SYNC_FBITS =     16,    // number of bits in a frame counter for linescan mode
     parameter SENS_SYNC_LBITS =     16,    // number of bits in a line counter for sof_late output (limited by eof) 
-    parameter SENS_SYNC_LATE_DFLT = 15,    // number of lines to delay late frame sync
+    parameter SENS_SYNC_LATE_DFLT =  4, // 15,    // number of lines to delay late frame sync
     parameter SENS_SYNC_MINBITS =    8,    // number of bits to enforce minimal frame period 
     parameter SENS_SYNC_MINPER =   130    // minimal frame period (in pclk/mclk?) 
     
@@ -122,7 +122,8 @@ module  sens_sync#(
         if (!en || (sof_in && zero_frames_left)) sub_frames_left <= sub_frames_pclk ;
         else if (sof_in)                         sub_frames_left <=  sub_frames_left - 1;
         
-        if (!en) hact_r <= hact; 
+//        if (!en) hact_r <= hact; 
+        hact_r <= hact || !en; 
         
         if (!en)               sof_dly <= 0;
         else if (pre_sof_out)  sof_dly <= 1;

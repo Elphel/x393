@@ -345,6 +345,75 @@ class X393Cmprs(object):
         return self.x393_axi_tasks.read_status(
                     address=(vrlg.CMPRS_HIFREQ_REG_BASE + num_sensor * vrlg.CMPRS_STATUS_REG_INC))       
 
+
+    def control_compressor_memory(self,
+                              num_sensor,
+                              command,
+                              reset_frame = False,
+                              verbose = 1):
+        """
+        Control memory access (write) of a sensor channel
+        @param num_sensor - memory sensor channel (or all)
+        @param command -    one of (case insensitive):
+               reset       - reset channel, channel pointers immediately,
+               stop        - stop at the end of the frame (if repetitive),
+               single      - acquire single frame ,
+               repetitive  - repetitive mode
+        @param reset_frame - reset frame number       
+        @param vebose -      verbose level       
+        """
+        try:
+            if (num_sensor == all) or (num_sensor[0].upper() == "A"): #all is a built-in function
+                for num_sensor in range(4):
+                    print ('num_sensor = ',num_sensor)
+                    self.control_compressor_memory(num_sensor = num_sensor,
+                                                   command =    command,
+                                                   reset_frame = reset_frame,
+                                                   verbose =    verbose)
+                return
+        except:
+            pass
+        
+        
+        rpt =    False
+        sngl =   False
+        en =     False
+        rst =    False
+        byte32 = True
+        if command[:3].upper() ==   'RES':
+            rst = True
+        elif command[:2].upper() == 'ST':
+            pass
+        elif command[:2].upper() == 'SI':
+            sngl = True
+            en =   True
+        elif command[:3].upper() == 'REP':
+            rpt =  True
+            en =   True
+        else:
+            print ("Unrecognized command %s. Valid commands are RESET, STOP, SINGLE, REPETITIVE"%(command))
+            return    
+                                
+        base_addr = vrlg.MCONTR_CMPRS_BASE + vrlg.MCONTR_CMPRS_INC * num_sensor;
+        mode=   x393_mcntrl.func_encode_mode_scan_tiled(
+                                   skip_too_late = True,                     
+                                   disable_need = False,
+                                   repetitive=    rpt,
+                                   single =       sngl,
+                                   reset_frame =  reset_frame,
+                                   byte32 =       byte32,
+                                   keep_open =    False,
+                                   extra_pages =  0,
+                                   write_mem =    False,
+                                   enable =       en,
+                                   chn_reset =    rst)
+        
+        self.x393_axi_tasks.write_control_register(base_addr + vrlg.MCNTRL_TILED_MODE,  mode) 
+        if verbose > 0 :
+            print ("write_control_register(0x%08x, 0x%08x)"%(base_addr + vrlg.MCNTRL_TILED_MODE,  mode))
+
+
+
         
     def setup_compressor_memory (self,
                                  num_sensor,

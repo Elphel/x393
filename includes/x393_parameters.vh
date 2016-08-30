@@ -268,8 +268,11 @@
                                                       // Start XY can be used when read command to start from the middle
                                                       // TODO: Add number of blocks to R/W? (blocks can be different) - total length?
                                                       // Read back current address (for debugging)?
-    parameter MCNTRL_TILED_TILE_WHS=        'h9,   // low byte - 6-bit tile width in 8-bursts, second byte - tile height (0 - > 64),
-                                                   // 3-rd byte - vertical step (to control tile vertical overlap)
+                                                      
+    parameter MCNTRL_TILED_TILE_WHS=        'h9,    // low byte - 6-bit tile width in 8-bursts, second byte - tile height (0 - > 64),
+                                                    // 3-rd byte - vertical step (to control tile vertical overlap)
+    parameter MCNTRL_SCANLINE_START_DELAY = 'ha,    // Set start delay (to accommodate for the command sequencer                                                       
+
     parameter MCNTRL_TILED_STATUS_REG_CHN2_ADDR= 'h5,
     parameter MCNTRL_TILED_STATUS_REG_CHN4_ADDR= 'h7,
     parameter MCNTRL_TILED_PENDING_CNTR_BITS=2,    // Number of bits to count pending trasfers, currently 2 is enough, but may increase
@@ -292,6 +295,8 @@
     parameter MCONTR_LINTILE_REPEAT =             10,  // read/write pages until disabled
     parameter MCONTR_LINTILE_DIS_NEED =           11,   // disable 'need' request
     parameter MCONTR_LINTILE_SKIP_LATE =          12,  // skip actual R/W operation when it is too late, advance pointers
+    parameter MCNTRL_SCANLINE_DLY_WIDTH =          7,  // delay start pulse by 1..64 mclk
+    parameter MCNTRL_SCANLINE_DLY_DEFAULT =       63,  // initial delay value for start pulse
 
 // Channel test module parameters
     parameter MCNTRL_TEST01_ADDR=                 'h0f0,
@@ -531,7 +536,7 @@
     // Other parameters
     parameter SENS_SYNC_FBITS =          16,    // number of bits in a frame counter for linescan mode
     parameter SENS_SYNC_LBITS =          16,    // number of bits in a line counter for sof_late output (limited by eof)
-    parameter SENS_SYNC_LATE_DFLT =      15,    // number of lines to delay late frame sync
+    parameter SENS_SYNC_LATE_DFLT =      4, // 15,    // number of lines to delay late frame sync
     parameter SENS_SYNC_MINBITS =        8,    // number of bits to enforce minimal frame period
     parameter SENS_SYNC_MINPER =         130,    // minimal frame period (in pclk/mclk?)
 

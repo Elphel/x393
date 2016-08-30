@@ -206,6 +206,8 @@ module  mcntrl393 #(
                                                         // Start XY can be used when read command to start from the middle
                                                         // TODO: Add number of blocks to R/W? (blocks can be different) - total length?
                                                         // Read back current address (for debugging)?
+    parameter MCNTRL_SCANLINE_START_DELAY =       'ha,    // Set start delay (to accommodate for the command sequencer                                                       
+                                                        
 //    parameter MCNTRL_SCANLINE_STATUS_REG_ADDR=   'h4,
     parameter MCNTRL_SCANLINE_STATUS_REG_CHN1_ADDR=   'h4,
     parameter MCNTRL_SCANLINE_STATUS_REG_CHN3_ADDR=   'h6,
@@ -235,6 +237,7 @@ module  mcntrl393 #(
                                                       // Read back current address (for debugging)?
     parameter MCNTRL_TILED_TILE_WHS=        'h9,   // low byte - 6-bit tile width in 8-bursts, second byte - tile height (0 - > 64),
                                                    // 3-rd byte - vertical step (to control tile vertical overlap)
+                                                   
     parameter MCNTRL_TILED_STATUS_REG_CHN2_ADDR= 'h5,
     parameter MCNTRL_TILED_STATUS_REG_CHN4_ADDR= 'h7,
     parameter MCNTRL_TILED_PENDING_CNTR_BITS=2,    // Number of bits to count pending trasfers, currently 2 is enough, but may increase
@@ -257,7 +260,9 @@ module  mcntrl393 #(
     parameter MCONTR_LINTILE_SINGLE =        9, // read/write a single page 
     parameter MCONTR_LINTILE_REPEAT =       10,  // read/write pages until disabled 
     parameter MCONTR_LINTILE_DIS_NEED =     11,   // disable 'need' request 
-    parameter MCONTR_LINTILE_SKIP_LATE =    12  // skip actual R/W operation when it is too late, advance pointers
+    parameter MCONTR_LINTILE_SKIP_LATE =    12,  // skip actual R/W operation when it is too late, advance pointers
+    parameter MCNTRL_SCANLINE_DLY_WIDTH =    7,  // delay start pulse by 1..64 mclk
+    parameter MCNTRL_SCANLINE_DLY_DEFAULT = 63  // initial delay value for start pulse
     
     ) (
     input                        rst_in,
@@ -1093,6 +1098,7 @@ module  mcntrl393 #(
                 .MCNTRL_SCANLINE_WINDOW_WH         (MCNTRL_SCANLINE_WINDOW_WH),
                 .MCNTRL_SCANLINE_WINDOW_X0Y0       (MCNTRL_SCANLINE_WINDOW_X0Y0),
                 .MCNTRL_SCANLINE_WINDOW_STARTXY    (MCNTRL_SCANLINE_WINDOW_STARTXY),
+                .MCNTRL_SCANLINE_START_DELAY       (MCNTRL_SCANLINE_START_DELAY),
                 .MCNTRL_SCANLINE_STATUS_REG_ADDR   (MCONTR_SENS_STATUS_BASE + MCONTR_SENS_STATUS_INC * i),
                 .MCNTRL_SCANLINE_PENDING_CNTR_BITS (MCNTRL_SCANLINE_PENDING_CNTR_BITS),
                 .MCNTRL_SCANLINE_FRAME_PAGE_RESET  (MCNTRL_SCANLINE_FRAME_PAGE_RESET),
@@ -1105,7 +1111,9 @@ module  mcntrl393 #(
                 .MCONTR_LINTILE_SINGLE             (MCONTR_LINTILE_SINGLE),
                 .MCONTR_LINTILE_REPEAT             (MCONTR_LINTILE_REPEAT),
                 .MCONTR_LINTILE_DIS_NEED           (MCONTR_LINTILE_DIS_NEED),
-                .MCONTR_LINTILE_SKIP_LATE          (MCONTR_LINTILE_SKIP_LATE) 
+                .MCONTR_LINTILE_SKIP_LATE          (MCONTR_LINTILE_SKIP_LATE),
+                .MCNTRL_SCANLINE_DLY_WIDTH         (MCNTRL_SCANLINE_DLY_WIDTH),
+                .MCNTRL_SCANLINE_DLY_DEFAULT       (MCNTRL_SCANLINE_DLY_DEFAULT)
             ) mcntrl_linear_wr_sensor_i (
                 .mrst             (mrst),                       // input
                 .mclk             (mclk),                       // input
@@ -1238,6 +1246,7 @@ module  mcntrl393 #(
         .MCNTRL_SCANLINE_WINDOW_WH         (MCNTRL_SCANLINE_WINDOW_WH),
         .MCNTRL_SCANLINE_WINDOW_X0Y0       (MCNTRL_SCANLINE_WINDOW_X0Y0),
         .MCNTRL_SCANLINE_WINDOW_STARTXY    (MCNTRL_SCANLINE_WINDOW_STARTXY),
+        .MCNTRL_SCANLINE_START_DELAY       (MCNTRL_SCANLINE_START_DELAY),
         .MCNTRL_SCANLINE_STATUS_REG_ADDR   (MCNTRL_SCANLINE_STATUS_REG_CHN1_ADDR),
         .MCNTRL_SCANLINE_PENDING_CNTR_BITS (MCNTRL_SCANLINE_PENDING_CNTR_BITS),
         .MCNTRL_SCANLINE_FRAME_PAGE_RESET  (MCNTRL_SCANLINE_FRAME_PAGE_RESET),
@@ -1250,7 +1259,10 @@ module  mcntrl393 #(
         .MCONTR_LINTILE_SINGLE             (MCONTR_LINTILE_SINGLE),
         .MCONTR_LINTILE_REPEAT             (MCONTR_LINTILE_REPEAT),
         .MCONTR_LINTILE_DIS_NEED           (MCONTR_LINTILE_DIS_NEED),
-        .MCONTR_LINTILE_SKIP_LATE          (MCONTR_LINTILE_SKIP_LATE) 
+        .MCONTR_LINTILE_SKIP_LATE          (MCONTR_LINTILE_SKIP_LATE),
+        .MCNTRL_SCANLINE_DLY_WIDTH         (MCNTRL_SCANLINE_DLY_WIDTH),
+        .MCNTRL_SCANLINE_DLY_DEFAULT       (MCNTRL_SCANLINE_DLY_DEFAULT)
+         
     ) mcntrl_linear_rw_chn1_i (
         .mrst             (mrst), // input
         .mclk             (mclk), // input
@@ -1308,6 +1320,7 @@ module  mcntrl393 #(
         .MCNTRL_SCANLINE_WINDOW_WH         (MCNTRL_SCANLINE_WINDOW_WH),
         .MCNTRL_SCANLINE_WINDOW_X0Y0       (MCNTRL_SCANLINE_WINDOW_X0Y0),
         .MCNTRL_SCANLINE_WINDOW_STARTXY    (MCNTRL_SCANLINE_WINDOW_STARTXY),
+        .MCNTRL_SCANLINE_START_DELAY       (MCNTRL_SCANLINE_START_DELAY),
         .MCNTRL_SCANLINE_STATUS_REG_ADDR   (MCNTRL_SCANLINE_STATUS_REG_CHN3_ADDR),
         .MCNTRL_SCANLINE_PENDING_CNTR_BITS (MCNTRL_SCANLINE_PENDING_CNTR_BITS),
         .MCNTRL_SCANLINE_FRAME_PAGE_RESET  (MCNTRL_SCANLINE_FRAME_PAGE_RESET),
@@ -1320,7 +1333,9 @@ module  mcntrl393 #(
         .MCONTR_LINTILE_SINGLE             (MCONTR_LINTILE_SINGLE),
         .MCONTR_LINTILE_REPEAT             (MCONTR_LINTILE_REPEAT),
         .MCONTR_LINTILE_DIS_NEED           (MCONTR_LINTILE_DIS_NEED),
-        .MCONTR_LINTILE_SKIP_LATE          (MCONTR_LINTILE_SKIP_LATE) 
+        .MCONTR_LINTILE_SKIP_LATE          (MCONTR_LINTILE_SKIP_LATE),
+        .MCNTRL_SCANLINE_DLY_WIDTH         (MCNTRL_SCANLINE_DLY_WIDTH),
+        .MCNTRL_SCANLINE_DLY_DEFAULT       (MCNTRL_SCANLINE_DLY_DEFAULT)
     ) mcntrl_linear_rw_chn3_i (
         .mrst             (mrst), // input
         .mclk             (mclk), // input

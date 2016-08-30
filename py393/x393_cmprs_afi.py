@@ -396,6 +396,7 @@ inline struct interframe_params_t* updateIRQ_interframe(void) {
                        afi_cmprs2_len,
                        afi_cmprs3_sa,
                        afi_cmprs3_len,
+                       reset = False,
                        verbose = 1):    
 
         """
@@ -416,6 +417,7 @@ inline struct interframe_params_t* updateIRQ_interframe(void) {
         @param afi_cmprs2_len - input channel 0 buffer length in 32-byte chunks
         @param afi_cmprs3_sa -  input channel 0 start address in 32-byte chunks
         @param afi_cmprs3_len - input channel 0 buffer length in 32-byte chunks
+        @param reset - reset all channles
         @param verbose - verbose level
         """
         if verbose >0 :
@@ -438,13 +440,13 @@ inline struct interframe_params_t* updateIRQ_interframe(void) {
                                              chn_afi = i,
                                              mode =status_mode,
                                              seq_num = 0)
-                
+        if reset:        
         # reset all channels    
-        self.afi_mux_reset( port_afi = port_afi,
-                            rst_chn = 0xf) # reset all channels
-        # release resets
-        self.afi_mux_reset( port_afi = port_afi,
-                            rst_chn =  0) # release reset on all channels
+            self.afi_mux_reset( port_afi = port_afi,
+                                rst_chn = 0xf) # reset all channels
+            # release resets
+            self.afi_mux_reset( port_afi = port_afi,
+                                rst_chn =  0) # release reset on all channels
             
         # set report mode (pointer type) - per status    
         for i in range(4):
