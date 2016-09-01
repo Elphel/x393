@@ -121,9 +121,9 @@ module  mcntrl_tiled_rw#(
     output   [MAX_TILE_HEIGHT-1:0] num_cols_m1,   // number of 16-pixel columns to read (rows first, then columns) - 1
     output                         keep_open,     // (programmable bit)keep banks open (for <=8 banks only
     output                         xfer_partial,  // partial tile (first of 2) , sequencer will not generate page_next at the end of block   
-    input                          xfer_page_done,     // transfer to/from the buffer finished (partial transfers should not generate), use rpage_nxt_chn@mclk
+    input                          xfer_page_done,   // transfer to/from the buffer finished (partial transfers should not generate), use rpage_nxt_chn@mclk
     output                         xfer_page_rst_wr, // reset buffer internal page - at each frame start or when specifically reset (write to memory channel), @posedge
-    output                         xfer_page_rst_rd // reset buffer internal page - at each frame start or when specifically reset (read memory channel), @negedge
+    output                         xfer_page_rst_rd  // reset buffer internal page - at each frame start or when specifically reset (read memory channel), @negedge
 );
 // FIXME: not all tile heights are valid (because of the banks)
 
@@ -520,7 +520,7 @@ wire    start_not_partial= xfer_start_r[0] && !xfer_limited_by_mem_page_r;
         else if (chn_rst || xfer_grant)                          want_r <= 0;
         else if (pre_want && (page_cntr>{1'b0,cmd_extra_pages})) want_r <= 1;
         
-        if (mrst)                                   page_cntr <= 0;
+        if (mrst)                                  page_cntr <= 0;
         else if (frame_start_r[0])                 page_cntr <= cmd_wrmem?0:4;
         else if ( start_not_partial && !next_page) page_cntr <= page_cntr - 1;     
         else if (!start_not_partial &&  next_page) page_cntr <= page_cntr + 1;
@@ -532,22 +532,22 @@ wire    start_not_partial= xfer_start_r[0] && !xfer_limited_by_mem_page_r;
         else     xfer_page_rst_pos <= chn_rst || (MCNTRL_TILED_FRAME_PAGE_RESET ? (frame_start_r[0] & ~cmd_wrmem):1'b0);
         
 // increment x,y (two cycles)
-        if (mrst)                                  curr_x <= 0;
+        if (mrst)                                 curr_x <= 0;
         else if (chn_rst || frame_start_r[0])     curr_x <= start_x;
         else if (xfer_start_r[0])                 curr_x <= last_in_row?0: curr_x + num_cols_r;
         
-        if (mrst)                                  curr_y <= 0;
+        if (mrst)                                 curr_y <= 0;
         else if (chn_rst || frame_start_r[0])     curr_y <= start_y;
         else if (xfer_start_r[0] && last_in_row)  curr_y <= next_y[FRAME_HEIGHT_BITS-1:0];
                
-        if      (mrst)                         last_block <= 0;
-        else if (chn_rst || !busy_r)          last_block <= 0;
-        else if (xfer_start_r[0])             last_block <= last_row_w && last_in_row_w;
+        if      (mrst)                            last_block <= 0;
+        else if (chn_rst || !busy_r)              last_block <= 0;
+        else if (xfer_start_r[0])                 last_block <= last_row_w && last_in_row_w;
  
  // start_not_partial is not generated when partial (first of 2, caused by a tile crossing memory page) transfer is requested       
  // here we need to cout all requests - partial or not
-        if      (mrst)                                   pending_xfers <= 0;
-        else if (chn_rst || !busy_r)                    pending_xfers <= 0;
+        if      (mrst)                                pending_xfers <= 0;
+        else if (chn_rst || !busy_r)                  pending_xfers <= 0;
         else if ( xfer_start_r[0] && !xfer_page_done) pending_xfers <= pending_xfers + 1;     
         else if (!xfer_start_r[0] &&  xfer_page_done) pending_xfers <= pending_xfers - 1; // page done is not generated on partial (first) pages
         
@@ -556,7 +556,7 @@ wire    start_not_partial= xfer_start_r[0] && !xfer_limited_by_mem_page_r;
         else              frame_done_r <= busy_r && last_block && xfer_page_done_d && (pending_xfers==0);
 
         // turns and stays on (used in status)
-        if (mrst)                              frame_finished_r <= 0;
+        if (mrst)                             frame_finished_r <= 0;
         else if (chn_rst || frame_start_r[0]) frame_finished_r <= 0;
         else if (frame_done_r)                frame_finished_r <= 1;
         //line_unfinished_r cmd_wrmem

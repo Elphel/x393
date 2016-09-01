@@ -35,7 +35,8 @@
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
  */
-          parameter FPGA_VERSION =          32'h039300a6;      // parallel, adding frame sync delays to mcntrl_linear 79.26, mclk and xclk violated
+          parameter FPGA_VERSION =          32'h039300a7;      // parallel, chnging parameter to reset buffer pages at each frame start. 79.4%, -0.022 (2 paths)
+//          parameter FPGA_VERSION =          32'h039300a6;      // parallel, adding frame sync delays to mcntrl_linear 79.26, mclk and xclk violated
 //          parameter FPGA_VERSION =          32'h039300a5;      // parallel, fixing command sequencer and ARO 80.21%, -0.068
 //          parameter FPGA_VERSION =          32'h039300a4;      // parallel 79.66, -0.1
 //          parameter FPGA_VERSION =          32'h039300a3;      // hispi, after minor interface changes (separated control bits)80.52% -0.163

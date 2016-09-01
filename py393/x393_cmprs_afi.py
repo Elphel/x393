@@ -101,7 +101,7 @@ class X393CmprsAfi(object):
                           port_afi,
                           channel,
                           cirbuf_start = 0x27a00000,
-                          circbuf_len =  0x1000000,
+                          circbuf_len =   0x1000000,
                           verbose = 1,
                           num_lines_print = 20):
         """
@@ -417,7 +417,7 @@ inline struct interframe_params_t* updateIRQ_interframe(void) {
         @param afi_cmprs2_len - input channel 0 buffer length in 32-byte chunks
         @param afi_cmprs3_sa -  input channel 0 start address in 32-byte chunks
         @param afi_cmprs3_len - input channel 0 buffer length in 32-byte chunks
-        @param reset - reset all channles
+        @param reset - reset all channels
         @param verbose - verbose level
         """
         if verbose >0 :

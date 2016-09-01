@@ -1059,13 +1059,43 @@ bitstream_set_path /usr/local/verilog/x393_parallel.bit
 setupSensorsPower  "PAR12"  all  0  0.0
 
 measure_all "*DI"
-
 setSensorClock 24.0 "2V5_LVDS"
 specify_phys_memory
 specify_window
 set_rtc # maybe not needed as it can be set differently
 camsync_setup 0xf # sensor mask - use local timestamps)
 
+#later:
+#Repeat COMPRESSOR_RUN <= 2
+#set_sensor_lens_flat_parameters         0               0           0     0    0    0 0x8000  0x8000    0x8000     0x8000    0x8000        0              0            1 
+
+
+
+Other required actions:
+imgsrv -p 2323
+#restart PHP - it can get errors while opening/mmaping at startup, then some functions fail
+killall lighttpd; /usr/sbin/lighttpd -f /etc/lighttpd.conf
+/www/pages/exif.php init=/etc/Exif_template.xml
+
+
+
+
+#see what is needed, reimplement in the driver
+# DONE set_sensor_lens_flat_heights  <num_sensor>  <height0_m1=None>  <height1_m1=None>  <height2_m1=None> 
+set_sensor_lens_flat_heights         0            0xffff
+# SUPPOSED TO BE IMPLEMENTED ALREADY set_sensor_lens_flat_parameters  <num_sensor>  <num_sub_sensor>  <AX> <AY> <BX> <BY> <C>   <scales0> <scales1> <scales2> <scales3>  <fatzero_in>  <fatzero_out>  <post_scale> 
+set_sensor_lens_flat_parameters         0               0           0     0    0    0 0x8000  0x8000    0x8000     0x8000    0x8000        0              0            1 
+# DONE set_sensor_gamma_heights  <num_sensor>  <height0_m1>  <height1_m1>  <height2_m1> 
+set_sensor_gamma_heights        0         0xffff            0            0
+ 
+# DONE set_sensor_mode  <num_sensor>  <hist_en=None>  <hist_nrst=None>  <chn_en=None>  <bits16=None> 
+set_sensor_mode
+        0              1              1                  1             0
+#*DONE set_sensor_gamma_ctl  <num_sensor>  <bayer=0>  <table_page=0>  <en_input=True>  <repet_mode=True>  <trig=False>
+set_sensor_gamma_ctl        0            0            0             True               True            False
+
+#Status for the compressor channel - needed to get frame numbers.
+write_control_register 0x601 0xc0
                    
 
 #setup_all_sensors True None 0xf
@@ -1117,11 +1147,10 @@ compressor_control all 3
 #jpeg_write  "img.jpeg" 0 80
 jpeg_write  "img.jpeg" All 80
 
-#changing quality (example 85%):
-set_qtables all 0 85
-compressor_control all 2
-#jpeg_write  "img.jpeg" all 85
-jpeg_write  "img.jpeg" 0 85
+# Set Bayer = 3 (probably #1 and #3 need different hact/pxd delays to use the same compressor bayer for all channels)
+compressor_control  all  None  None  None None None  0
+write_control_register 0x6c7 0x10000
+write_control_register 0x602 0x40f00a1
 
 
 #To reset all (before reprogramming): This one works, reset_channels - does not
@@ -1180,18 +1209,53 @@ sleep_ms 200
 control_sensor_memory  0 reset True
 control_compressor_memory  0 reset True
 
+#===== reset compressor only ====
+#Reset 0 but sensor all
+compressor_control 0 1
+control_compressor_memory  0 stop
+sleep_ms 200
+control_compressor_memory  0 reset True
+
+#===== restart compressor only ====
+compressor_control 0 1
+control_sensor_memory  0 stop
+sleep_ms 200
+control_compressor_memory  0 repetitive
+compressor_control 0 3
+
+
+
+################  Status registers #########################
+read_status 0x20 # status i2c
+read_status 0x18 #status AFI0
+
+#define X393_CMPRS_STATUS__0                             0x40002040 // Status of the compressor channel (incl. interrupt, data type: x393_cmprs_status_t (ro)
+#define X393_AFIMUX0_STATUS__0                           0x40002060 // Status of the AFI MUX 0 (including image pointer), data type: x393_afimux_status_t (ro)
+#define X393_SENSI2C_STATUS__0                           0x40002080 // Status of the sensors i2c, data type: x393_status_sens_i2c_t (ro)
+#define X393_SENSIO_STATUS__0                            0x40002084 // Status of the sensor ports I/O pins, data type: x393_status_sens_io_t (ro)
+#define X393_CMDSEQMUX_STATUS                            0x400020e0 // CMDSEQMUX status data (frame numbers and interrupts, data type: x393_cmdseqmux_status_t (ro)
+#    parameter MCONTR_SENS_STATUS_BASE =           'h28, // .. 'h2b not used {done, busy}
+#    parameter MCONTR_CMPRS_STATUS_BASE =          'h2c, // .. 'h2f not used {done, busy}
+
+
+
+write_control_register 0x641 0xc0 # was not enabled? Needed to read addresses?
+
+
+
 ########### Trying to make i2c work in driver #########
 Other required actions:
-/www/pages/exif.php init=/etc/Exif_template.xml
 imgsrv -p 2323
-#restart PHP - it can get errors while opening/mmaping at startupo, then some functions fail
+#restart PHP - it can get errors while opening/mmaping at startup, then some functions fail
 killall lighttpd; /usr/sbin/lighttpd -f /etc/lighttpd.conf
+/www/pages/exif.php init=/etc/Exif_template.xml
+
 
 setSensorClock 24.0 "2V5_LVDS"
 
 set_rtc # maybe not needed as it can be set differently
 camsync_setup 0xf # sensor mask - use local timestamps)
-
+write_control_register 0x6c7 0x10000
                    
 #set_sensor_io_ctl  <num_sensor>  <mrst=None>  <arst=None>  <aro=None>  <mmcm_rst=None>  <clk_sel=None>  <set_delays=False>  <quadrants=None>
 set_sensor_io_ctl  0             True            True       False           True              1               False
@@ -1231,6 +1295,13 @@ compressor_control  all  None  None  None None None  0
 
 tar -C / -xzpf /usr.tar.gz;
 /usr/sbin/lighttpd -f /etc/lighttpd.conf
+
+#**********************************
+afi_mux_reset 0 1 #reset channel 0 AFI (afi_mux_reset 0 15 - all channels) 
+afi_mux_reset 0 0 # release all resets
+
+
+
 
 ################## Simulate Serial ####################
 ./py393/test_mcntrl.py @py393/cocoargs  --simulated=localhost:7777

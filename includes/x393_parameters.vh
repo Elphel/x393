@@ -250,7 +250,8 @@
                                                         // spread long-programming (tiled) over fast-programming (linear) requests.
                                                         // But that should not be too big to maintain 2-level priorities
 
-    parameter MCNTRL_SCANLINE_FRAME_PAGE_RESET =1'b0, // reset internal page number to zero at the frame start (false - only when hard/soft reset)
+//    parameter MCNTRL_SCANLINE_FRAME_PAGE_RESET =1'b0, // reset internal page number to zero at the frame start (false - only when hard/soft reset)
+    parameter MCNTRL_SCANLINE_FRAME_PAGE_RESET =1'b1, // reset internal page number to zero at the frame start (false - only when hard/soft reset)
     parameter MAX_TILE_WIDTH=                   6,     // number of bits to specify maximal tile (width-1) (6 -> 64)
     parameter MAX_TILE_HEIGHT=                  6,     // number of bits to specify maximal tile (height-1) (6 -> 64)
     parameter MCNTRL_TILED_CHN2_ADDR=       'h140,
@@ -279,7 +280,8 @@
                                                    // if memory controller will allow programming several sequences in advance to
                                                    // spread long-programming (tiled) over fast-programming (linear) requests.
                                                    // But that should not be too big to maintain 2-level priorities
-    parameter MCNTRL_TILED_FRAME_PAGE_RESET =1'b0, // reset internal page number to zero at the frame start (false - only when hard/soft reset)
+//    parameter MCNTRL_TILED_FRAME_PAGE_RESET =1'b0, // reset internal page number to zero at the frame start (false - only when hard/soft reset)
+    parameter MCNTRL_TILED_FRAME_PAGE_RESET =1'b1, // reset internal page number to zero at the frame start (false - only when hard/soft reset)
     parameter BUFFER_DEPTH32=                10,   // Block RAM buffer depth on a 32-bit port
 
     // bits in mode control word
