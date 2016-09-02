@@ -3,4 +3,8 @@
 -f /usr/local/verilog/x393_parameters.vh   /usr/local/verilog/x393_cur_params_target.vh /usr/local/verilog/x393_localparams.vh
 -l /usr/local/verilog/x393_cur_params_target.vh
 -p PICKLE="/usr/local/verilog/x393_mcntrl.pickle
--i
+-c bitstream_set_path /usr/local/verilog/x393_parallel.bit
+-c setupSensorsPower  "PAR12"  all  0  0.0
+-c measure_all "*DI"
+-c setSensorClock 24.0 "2V5_LVDS"
+-c set_rtc # maybe not needed as it can be set differently
