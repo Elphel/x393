@@ -1047,22 +1047,32 @@ print_status_sensor_io all
 
 setup_all_sensors True None 0x4
 
-################## Parallel ##################
-cd /usr/local/verilog/; test_mcntrl.py @tpargs -x
-
-reset_channels 15
-
-cd /usr/local/verilog/; test_mcntrl.py @hargs
-bitstream_set_path /usr/local/verilog/x393_parallel.bit
-#fpga_shutdown
-#setupSensorsPower "PAR12"
-setupSensorsPower  "PAR12"  all  0  0.0
-
-measure_all "*DI"
-setSensorClock 24.0 "2V5_LVDS"
+################## Parallel after drivers ##################
+cd /usr/local/verilog/; test_mcntrl.py @hargs-after
 specify_phys_memory
 specify_window
 set_rtc # maybe not needed as it can be set differently
+camsync_setup 0xf # sensor mask - use local timestamps)
+jpeg_write  "img.jpeg" 0 80
+
+
+
+################## Parallel ##################
+cd /usr/local/verilog/; test_mcntrl.py @tpargs -x
+
+
+cd /usr/local/verilog/; test_mcntrl.py @hargs
+#bitstream_set_path /usr/local/verilog/x393_parallel.bit
+#fpga_shutdown
+#setupSensorsPower  "PAR12"  all  0  0.0
+#measure_all "*DI"
+#setSensorClock 24.0 "2V5_LVDS"
+#set_rtc # maybe not needed as it can be set differently
+
+#all above included hargs
+
+
+
 camsync_setup 0xf # sensor mask - use local timestamps)
 
 #later:
@@ -1328,10 +1338,19 @@ set_gpio_pins 0 1 # pin 0 low, pin 1 - high
 #ctrl_cmd_frame_sequencer  <num_sensor>  <reset=False>  <start=False>  <stop=False>
 ctrl_cmd_frame_sequencer   0  0  1  0
 write_cmd_frame_sequencer  0  1  1  0x700  0x6
+write_cmd_frame_sequencer  0  1  1  0x700  0x9
+write_cmd_frame_sequencer  0  1  1  0x700  0xa0
+write_cmd_frame_sequencer  0  1  1  0x700  0x50
 write_cmd_frame_sequencer  0  0  3  0x700  0xa000
 write_cmd_frame_sequencer  0  1  0  0x700  0x90
 write_cmd_frame_sequencer  0  0  2  0x700  0xe00
 write_cmd_frame_sequencer  0  0  3  0x700  0xa
+write_cmd_frame_sequencer  0  0  2  0x700  0x6
+write_cmd_frame_sequencer  0  0  2  0x700  0x9
+write_cmd_frame_sequencer  0  0  2  0x700  0x60
+write_cmd_frame_sequencer  0  0  2  0x700  0x90
+write_cmd_frame_sequencer  0  0  2  0x700  0x600
+write_cmd_frame_sequencer  0  0  2  0x700  0x900
 
 #set_sensor_io_dly_hispi all 0x48 0x68 0x68 0x68 0x68
 #set_sensor_io_ctl all None None None None None 1 None # load all delays?

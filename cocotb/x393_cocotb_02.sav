@@ -1,19 +1,20 @@
 [*]
 [*] GTKWave Analyzer v3.3.66 (w)1999-2015 BSI
-[*] Thu Sep  1 04:51:15 2016
+[*] Thu Sep  1 21:10:54 2016
 [*]
-[dumpfile] "/home/eyesis/git/x393-neon/simulation/x393_dut-20160830202606545.fst"
-[dumpfile_mtime] "Wed Aug 31 03:39:41 2016"
-[dumpfile_size] 281513830
+[dumpfile] "/home/eyesis/git/x393-neon/simulation/x393_dut-20160901133543970.fst"
+[dumpfile_mtime] "Thu Sep  1 20:31:46 2016"
+[dumpfile_size] 118208746
 [savefile] "/home/eyesis/git/x393-neon/cocotb/x393_cocotb_02.sav"
-[timestart] 0
+[timestart] 115264800
 [size] 1836 1171
 [pos] 1920 23
-*-26.061598 53377388 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-15.820814 115547388 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] x393_dut.
 [treeopen] x393_dut.ddr3_i.ddr3_i.
 [treeopen] x393_dut.simul_axi_master_wdata_i.
 [treeopen] x393_dut.x393_i.
+[treeopen] x393_dut.x393_i.cmd_mux_i.
 [treeopen] x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].
 [treeopen] x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.
 [treeopen] x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_pixel_buf_iface_i.
@@ -28,6 +29,7 @@
 [treeopen] x393_dut.x393_i.compressor393_i.cmprs_channel_block[3].jp_channel_i.
 [treeopen] x393_dut.x393_i.compressor393_i.cmprs_channel_block[3].jp_channel_i.cmprs_pixel_buf_iface_i.
 [treeopen] x393_dut.x393_i.compressor393_i.genblk3.cmprs_afi0_mux_i.
+[treeopen] x393_dut.x393_i.frame_sequencer_block[0].
 [treeopen] x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.
 [treeopen] x393_dut.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.
 [treeopen] x393_dut.x393_i.mcntrl393_i.memctrl16_i.mcontr_sequencer_i.phy_cmd_i.
@@ -43,7 +45,7 @@
 [treeopen] x393_dut.x393_i.sensors393_i.sensor_channel_block[2].
 [treeopen] x393_dut.x393_i.sensors393_i.sensor_channel_block[3].
 [treeopen] x393_dut.x393_i.timing393_i.
-[sst_width] 440
+[sst_width] 266
 [signals_width] 293
 [sst_expanded] 1
 [sst_vpaned_height] 540
@@ -295,7 +297,7 @@ x393_dut.x393_i.sync_resets_i.rst_early_master
 -linescan0
 @1000200
 -linescan0
-@800200
+@c00200
 -tiled0
 @28
 x393_dut.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_tiled_rd_compressor_i.frame_en
@@ -342,6 +344,7 @@ x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_macrob
 @1000200
 -compressor_address
 -rbuffer0
+@1401200
 -tiled0
 @800200
 -rtc
@@ -821,7 +824,7 @@ x393_dut.x393_i.compressor393_i.cmprs_channel_block[2].jp_channel_i.buf_pxd[7:0]
 x393_dut.x393_i.compressor393_i.cmprs_channel_block[3].jp_channel_i.buf_pxd[7:0]
 @1401200
 -compressors_all
-@c00200
+@800200
 -cmdseq_0
 @28
 x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.frame_sync
@@ -991,6 +994,8 @@ x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.cmd_we_ctl_w
 x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.seq_enrun
 @22
 x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.fifo_wr_pointers_outr_r[5:0]
+@28
+x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.pre_cmd_seq_w
 @800028
 x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.ren[1:0]
 @28
@@ -1000,6 +1005,10 @@ x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.ren[1:0]
 -group_end
 @22
 x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.rpointer[5:0]
+[color] 7
+x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.waddr[13:0]
+[color] 7
+x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.wdata[31:0]
 @28
 x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.commands_pending
 x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.pre_cmd_seq_w
@@ -1013,11 +1022,13 @@ x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.read_busy[1:0]
 x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.conf_send
 x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.valid
 x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.ackn
+@29
+x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.mclk
 @1001200
 -group_end
-@1401200
+@1000200
 -cmdseq_0
-@c00200
+@800200
 -cmdseq_mux
 @22
 x393_dut.x393_i.cmd_seq_mux_i.frame_num0[3:0]
@@ -1065,9 +1076,67 @@ x393_dut.x393_i.cmd_seq_mux_i.pri_enc_w[1:0]
 x393_dut.x393_i.cmd_seq_mux_i.pri_one[3:0]
 @28
 x393_dut.x393_i.cmd_seq_mux_i.chn_r[1:0]
-@1401200
+@1000200
 -cmdseq_mux
-@c00200
+@800200
+-cmd_mux
+@22
+x393_dut.x393_i.cmd_mux_i.pre_waddr[13:0]
+@28
+x393_dut.x393_i.cmd_mux_i.start_wburst
+@22
+x393_dut.x393_i.cmd_mux_i.waddr[13:0]
+@28
+x393_dut.x393_i.cmd_mux_i.wr_en
+@22
+x393_dut.x393_i.cmd_mux_i.wdata[31:0]
+x393_dut.x393_i.cmd_mux_i.cseq_waddr[13:0]
+@28
+x393_dut.x393_i.cmd_mux_i.cseq_wr_en
+@22
+x393_dut.x393_i.cmd_mux_i.cseq_wdata[31:0]
+@28
+x393_dut.x393_i.cmd_mux_i.cseq_ackn
+@200
+-
+@22
+x393_dut.x393_i.cmd_mux_i.par_waddr[13:0]
+x393_dut.x393_i.cmd_mux_i.par_data[31:0]
+x393_dut.x393_i.cmd_mux_i.byte_ad[7:0]
+@28
+x393_dut.x393_i.cmd_mux_i.ad_stb
+@200
+-
+@28
+x393_dut.x393_i.cmd_mux_i.cmdseq_full_r
+x393_dut.x393_i.cmd_mux_i.fifo_nempty
+x393_dut.x393_i.cmd_mux_i.fifo_half_empty
+x393_dut.x393_i.cmd_mux_i.can_start_w
+@c00022
+x393_dut.x393_i.cmd_mux_i.seq_busy_r[4:0]
+@28
+(0)x393_dut.x393_i.cmd_mux_i.seq_busy_r[4:0]
+(1)x393_dut.x393_i.cmd_mux_i.seq_busy_r[4:0]
+(2)x393_dut.x393_i.cmd_mux_i.seq_busy_r[4:0]
+(3)x393_dut.x393_i.cmd_mux_i.seq_busy_r[4:0]
+(4)x393_dut.x393_i.cmd_mux_i.seq_busy_r[4:0]
+@1401200
+-group_end
+@28
+x393_dut.x393_i.cmd_mux_i.start_axi_w
+x393_dut.x393_i.cmd_mux_i.start_wburst
+@1000200
+-cmd_mux
+@800200
+-readback
+@28
+x393_dut.x393_i.cmd_readback_i.we
+@22
+x393_dut.x393_i.cmd_readback_i.waddr[10:0]
+x393_dut.x393_i.cmd_readback_i.wdata[31:0]
+@1000200
+-readback
+@800200
 -gpio
 @28
 x393_dut.x393_i.gpio393_i.set_mode_w
@@ -1163,7 +1232,7 @@ x393_dut.x393_i.gpio393_i.io_pins[9:0]
 (9)x393_dut.x393_i.gpio393_i.io_pins[9:0]
 @1001200
 -group_end
-@1401200
+@1000200
 -gpio
 @c00200
 -sensor_channel1
@@ -1748,7 +1817,6 @@ x393_dut.simul_axi_master_wdata_i.simul_axi_fifo_i.valid
 -frames
 @22
 x393_dut.x393_i.frame_num[15:0]
-@23
 x393_dut.x393_i.frame_num_compressed[15:0]
 @200
 -

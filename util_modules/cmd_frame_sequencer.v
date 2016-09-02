@@ -141,7 +141,9 @@ module  cmd_frame_sequencer#(
     reg                   [1:0] page_r_inc;     // increment page_r - signal and delayed version
     reg         [PNTR_WIDH-1:0] rpointer;       // FIFO read pointer for current page
     reg                   [1:0] read_busy;      // reading and sending command  
-    reg                         conf_send;      // valid && ackn
+    wire                        conf_send_w;    // valid && ackn
+    reg                         conf_send_r;    // valid && ackn
+    
     wire                        commands_pending; // wants to send some commands
     reg                   [1:0] ren;             // 1-hot ren to BRAM, then regen to BRAM
     wire                        pre_cmd_seq_w;  // 1 cycle before starting command read/send sequence
@@ -155,6 +157,7 @@ module  cmd_frame_sequencer#(
     wire                        irq_ctrl;
     wire                        we_seq_data;
     
+    assign conf_send_w = valid && ackn;
     assign we_seq_data = data_cycle_r[2];
     
     assign is =  is_r;      // interrupt status (not masked)
@@ -179,7 +182,8 @@ module  cmd_frame_sequencer#(
     assign pre_wpage_inc = (!cmd_we && !(|cmd_we_r) ) && ((next_frame_rq && !wpage_inc[0] && initialized) || reset_on) ;
     assign commands_pending = rpointer != fifo_wr_pointers_outr_r; // only look at the current page different pages will trigger page increment first
 //    assign pre_cmd_seq_w = commands_pending & ~(|page_r_inc) & seq_enrun;
-    assign pre_cmd_seq_w = commands_pending & ~(|page_r_inc) & seq_enrun && !ren[0]; // counter lags
+//    assign pre_cmd_seq_w = commands_pending & ~(|page_r_inc) & seq_enrun && !ren[0]; // counter lags
+    assign pre_cmd_seq_w = commands_pending & ~(|page_r_inc) & seq_enrun && !read_busy[0]; // counter lags
 //    
     assign valid = valid_r;
     
@@ -285,7 +289,8 @@ module  cmd_frame_sequencer#(
         
         fifo_wr_pointers_outr_r <= fifo_wr_pointers_outr; // just register write pointer for the read page 
         page_r_inc <= {page_r_inc[0],
-                      (~read_busy[0] | conf_send) & // not busy or will not be busy next cycle (when page_r_inc active)
+//                      (~read_busy[0] | conf_send_r) & // not busy or will not be busy next cycle (when page_r_inc active)
+                      (~read_busy[0] | conf_send_w) & // not busy or will not be busy next cycle (when page_r_inc active)
                       ~(|page_r_inc) & // read_page was not just incremented, so updated read pointer had a chance to propagate
                        (rpointer == fifo_wr_pointers_outr_r) & // nothing left in the frame FIFO pointed  page_r
                        (page_r != wpage_asap)};  // the page commands are taken from is not the ASAP (current) page
@@ -297,12 +302,13 @@ module  cmd_frame_sequencer#(
         if      (!por[1] || reset_on || page_r_inc[0]) rpointer <= 0; // TODO: move to rst ?
         else if (ren[0])                               rpointer <= rpointer + 1;
         
-        conf_send <= valid && ackn;
+        conf_send_r <= conf_send_w; // valid && ackn;
 
 //        if (reset_on || reset_cmd) read_busy <= 0;
         if (!por[1] || reset_on) read_busy <= 0;
         else                     read_busy <= {read_busy[0],
-                                               read_busy[0]? (~conf_send) : pre_cmd_seq_w};
+//                                               read_busy[0]? (~conf_send_r) : pre_cmd_seq_w};
+                                               read_busy[0]? (~conf_send_w) : pre_cmd_seq_w};
         ren <= {ren[0], pre_cmd_seq_w};
 // TODO: check generation of the reset sequence
 
