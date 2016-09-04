@@ -350,6 +350,7 @@ class X393Cmprs(object):
                               num_sensor,
                               command,
                               reset_frame = False,
+                              copy_frame = False,
                               verbose = 1):
         """
         Control memory access (write) of a sensor channel
@@ -359,7 +360,8 @@ class X393Cmprs(object):
                stop        - stop at the end of the frame (if repetitive),
                single      - acquire single frame ,
                repetitive  - repetitive mode
-        @param reset_frame - reset frame number       
+        @param reset_frame - reset frame number
+        @param copy_frame  copy frame number from the master channel (non-persistent)
         @param vebose -      verbose level       
         """
         try:
@@ -369,6 +371,7 @@ class X393Cmprs(object):
                     self.control_compressor_memory(num_sensor = num_sensor,
                                                    command =    command,
                                                    reset_frame = reset_frame,
+                                                   copy_frame = copy_frame,
                                                    verbose =    verbose)
                 return
         except:
@@ -406,7 +409,8 @@ class X393Cmprs(object):
                                    extra_pages =  0,
                                    write_mem =    False,
                                    enable =       en,
-                                   chn_reset =    rst)
+                                   chn_reset =    rst,
+                                   copy_frame = copy_frame)
         
         self.x393_axi_tasks.write_control_register(base_addr + vrlg.MCNTRL_TILED_MODE,  mode) 
         if verbose > 0 :

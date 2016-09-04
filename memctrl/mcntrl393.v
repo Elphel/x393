@@ -261,6 +261,7 @@ module  mcntrl393 #(
     parameter MCONTR_LINTILE_REPEAT =       10,  // read/write pages until disabled 
     parameter MCONTR_LINTILE_DIS_NEED =     11,   // disable 'need' request 
     parameter MCONTR_LINTILE_SKIP_LATE =    12,  // skip actual R/W operation when it is too late, advance pointers
+    parameter MCONTR_LINTILE_COPY_FRAME =   13,  // copy frame number from the master channel (single event, not a persistent mode)
     parameter MCNTRL_SCANLINE_DLY_WIDTH =    7,  // delay start pulse by 1..64 mclk
     parameter MCNTRL_SCANLINE_DLY_DEFAULT = 63  // initial delay value for start pulse
     
@@ -352,7 +353,7 @@ module  mcntrl393 #(
     output                     [3:0] cmprs_frame_done_dst,     // single-cycle pulse when the full frame (window) was transferred to/from DDR3 memory
                                                                // use as 'eot_real' in 353 
     input                      [3:0] cmprs_suspend,            // suspend reading data for this channel - waiting for the source data
-
+//    input                      [3:0] master_follow,            // compressor memory frame should follow that of the sensor channel, instead of reset
 // TODO: move line_unfinished and suspend to internals of this module (and control comparator modes)
     // Channel 1 - AFI read/write to system memory with scanline linear mode
     input                          frame_start_chn1,   // resets page, x,y, and initiates transfer requests (in write mode will wait for next_page)
@@ -564,6 +565,7 @@ module  mcntrl393 #(
     wire                  [3:0] status_cmprs_start;
 
 // Sensor and compressor signals
+    wire                   [3:0] sens_frame_set; // sensor memory controller has just set frame number (slave can use to sync)
     wire                   [3:0] sens_want;
     wire                   [3:0] sens_need;
     wire                   [3:0] cmprs_want;
@@ -1129,7 +1131,8 @@ module  mcntrl393 #(
                 .frame_finished       (), // output
                 .line_unfinished  (cmprs_line_unfinished_src[i * FRAME_HEIGHT_BITS +: FRAME_HEIGHT_BITS]), // output[15:0] 
                 .suspend          (1'b0), // input
-                .frame_number     (cmprs_frame_number_src[i * LAST_FRAME_BITS +: LAST_FRAME_BITS]),
+                .frame_number     (cmprs_frame_number_src[i * LAST_FRAME_BITS +: LAST_FRAME_BITS]), //output[15:0]
+                .frame_set        (sens_frame_set[i]),          // output
                 .xfer_want        (sens_want[i]),               // output
                 .xfer_need        (sens_need[i]),               // output
                 .xfer_grant       (sens_channel_pgm_en[i]),     // input
@@ -1185,7 +1188,8 @@ module  mcntrl393 #(
                 .MCONTR_LINTILE_RST_FRAME      (MCONTR_LINTILE_RST_FRAME),
                 .MCONTR_LINTILE_SINGLE         (MCONTR_LINTILE_SINGLE),
                 .MCONTR_LINTILE_REPEAT         (MCONTR_LINTILE_REPEAT),
-                .MCONTR_LINTILE_DIS_NEED       (MCONTR_LINTILE_DIS_NEED)
+                .MCONTR_LINTILE_DIS_NEED       (MCONTR_LINTILE_DIS_NEED),
+                .MCONTR_LINTILE_COPY_FRAME     (MCONTR_LINTILE_COPY_FRAME)
             ) mcntrl_tiled_rd_compressor_i ( 
                 .mrst                 (mrst),                         // input
                 .mclk                 (mclk),                        // input
@@ -1200,7 +1204,10 @@ module  mcntrl393 #(
                 .frame_finished       (),                            // output
                 .line_unfinished      (cmprs_line_unfinished_dst[i * FRAME_HEIGHT_BITS +: FRAME_HEIGHT_BITS]), // output[15:0] 
                 .suspend              (cmprs_suspend[i]),            // input
-                .frame_number         (cmprs_frame_number_dst[i * LAST_FRAME_BITS +: LAST_FRAME_BITS]),
+                .frame_number         (cmprs_frame_number_dst[i * LAST_FRAME_BITS +: LAST_FRAME_BITS]), // output[15:0]
+                .master_frame         (cmprs_frame_number_src[i * LAST_FRAME_BITS +: LAST_FRAME_BITS]), // input[15:0] 
+                .master_set           (sens_frame_set[i]),           // input
+//                .master_follow        (master_follow[i]),            // input
                 .xfer_want            (cmprs_want[i]),               // output
                 .xfer_need            (cmprs_need[i]),               // output
                 .xfer_grant           (cmprs_channel_pgm_en[i]),     // input
@@ -1279,6 +1286,7 @@ module  mcntrl393 #(
         .line_unfinished  (line_unfinished_chn1), // output[15:0] 
         .suspend          (suspend_chn1), // input
         .frame_number     (), // output[15:0] - not used for this channel
+        .frame_set        (),          // output
         .xfer_want        (want_rq1), // output
         .xfer_need        (need_rq1), // output
         .xfer_grant       (channel_pgm_en1), // input
@@ -1352,6 +1360,7 @@ module  mcntrl393 #(
         .line_unfinished  (line_unfinished_chn3), // output[15:0] 
         .suspend          (suspend_chn3), // input
         .frame_number     (frame_number_chn3),
+        .frame_set        (),          // output
         .xfer_want        (want_rq3), // output
         .xfer_need        (need_rq3), // output
         .xfer_grant       (channel_pgm_en3), // input
@@ -1422,6 +1431,9 @@ module  mcntrl393 #(
         .line_unfinished      (line_unfinished_chn2),       // output[15:0] 
         .suspend              (suspend_chn2),               // input
         .frame_number         (frame_number_chn2),
+        .master_frame         (16'b0),                      // input[15:0] 
+        .master_set           (1'b0),                       // input
+//        .master_follow        (1'b0),                       // input
         .xfer_want            (want_rq2),                   // output
         .xfer_need            (need_rq2),                   // output
         .xfer_grant           (channel_pgm_en2),            // input
@@ -1490,6 +1502,9 @@ module  mcntrl393 #(
         .line_unfinished      (line_unfinished_chn4),       // output[15:0] 
         .suspend              (suspend_chn4),               // input
         .frame_number         (frame_number_chn4),          // output  [15:0]
+        .master_frame         (16'b0),                      // input[15:0] 
+        .master_set           (1'b0),                       // input
+//        .master_follow        (1'b0),                       // input
         .xfer_want            (want_rq4),                   // output
         .xfer_need            (need_rq4),                   // output
         .xfer_grant           (channel_pgm_en4),            // input

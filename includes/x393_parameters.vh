@@ -297,6 +297,8 @@
     parameter MCONTR_LINTILE_REPEAT =             10,  // read/write pages until disabled
     parameter MCONTR_LINTILE_DIS_NEED =           11,   // disable 'need' request
     parameter MCONTR_LINTILE_SKIP_LATE =          12,  // skip actual R/W operation when it is too late, advance pointers
+    parameter MCONTR_LINTILE_COPY_FRAME =         13,  // copy frame number from the master channel (single event, not a persistent mode)
+    
     parameter MCNTRL_SCANLINE_DLY_WIDTH =          7,  // delay start pulse by 1..64 mclk
     parameter MCNTRL_SCANLINE_DLY_DEFAULT =       63,  // initial delay value for start pulse
 

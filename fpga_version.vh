@@ -35,14 +35,15 @@
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
  */
-          parameter FPGA_VERSION =          32'h039300a8;      // parallel, fixing BUG in command sequencer that was missing some commands 79.25%, all met
-//          parameter FPGA_VERSION =          32'h039300a7;      // parallel, changing parameter to reset buffer pages at each frame start. 79.4%, -0.022 (2 paths)
-//          parameter FPGA_VERSION =          32'h039300a6;      // parallel, adding frame sync delays to mcntrl_linear 79.26, mclk and xclk violated
-//          parameter FPGA_VERSION =          32'h039300a5;      // parallel, fixing command sequencer and ARO 80.21%, -0.068
-//          parameter FPGA_VERSION =          32'h039300a4;      // parallel 79.66, -0.1
-//          parameter FPGA_VERSION =          32'h039300a3;      // hispi, after minor interface changes (separated control bits)80.52% -0.163
-//          parameter FPGA_VERSION =          32'h039300a2;      // hispi trying default placement 81.39% not met by -0.183
-//          parameter FPGA_VERSION =          32'h039300a1;      // hispi 81.19%, not met by -0.07
+          parameter FPGA_VERSION =          32'h039300a9;      // parallel, added copying maste-t-slave frame number -0.169(8 paths), 80.28%
+//        parameter FPGA_VERSION =          32'h039300a8;      // parallel, fixing BUG in command sequencer that was missing some commands 79.25%, all met
+//        parameter FPGA_VERSION =          32'h039300a7;      // parallel, changing parameter to reset buffer pages at each frame start. 79.4%, -0.022 (2 paths)
+//        parameter FPGA_VERSION =          32'h039300a6;      // parallel, adding frame sync delays to mcntrl_linear 79.26, mclk and xclk violated
+//        parameter FPGA_VERSION =          32'h039300a5;      // parallel, fixing command sequencer and ARO 80.21%, -0.068
+//        parameter FPGA_VERSION =          32'h039300a4;      // parallel 79.66, -0.1
+//        parameter FPGA_VERSION =          32'h039300a3;      // hispi, after minor interface changes (separated control bits)80.52% -0.163
+//        parameter FPGA_VERSION =          32'h039300a2;      // hispi trying default placement 81.39% not met by -0.183
+//        parameter FPGA_VERSION =          32'h039300a1;      // hispi 81.19%, not met by -0.07
 //        parameter FPGA_VERSION =          32'h039300a0;      // parallel, re-ran after bug fix, %79.38%, not met -0.072
 //        parameter FPGA_VERSION =          32'h039300a0;    // parallel, else same as 9f 78.91%, not met by -0.032
 //        parameter FPGA_VERSION =          32'h0393009f;    // hispi, adding IRQ status register (placemnt "explore") 81.36%, all met - broken on one channel?

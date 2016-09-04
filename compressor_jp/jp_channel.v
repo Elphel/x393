@@ -166,6 +166,8 @@ module  jp_channel#(
     input                         frame_done_dst,     // single-cycle pulse when the full frame (window) was transferred to/from DDR3 memory
                                                       // use as 'eot_real' in 353 
     output                        suspend,            // suspend reading data for this channel - waiting for the source data
+//    output                        master_follow,      // compressor is following sensor, copy sesnor frame number instead of reset. 
+    
     output reg [LAST_FRAME_BITS-1:0] frame_number_finished,   // valid after stuffer done
     
 
@@ -781,14 +783,14 @@ module  jp_channel#(
         .mrst               (mrst),                // input
         .xrst               (xrst),                // input
         .cmprs_en           (cmprs_en_mclk),       // input - @mclk 0 resets immediately
-        .cmprs_en_extend    (cmprs_en_extend), // output
+        .cmprs_en_extend    (cmprs_en_extend),     // output
         .cmprs_run          (cmprs_run_mclk),      // input - @mclk enable propagation of vsync_late to frame_start_dst in bonded(sync to src) mode
         .cmprs_standalone   (cmprs_standalone),    // input - @mclk single-cycle: generate a single frame_start_dst in unbonded (not synchronized) mode.
                                                    // cmprs_run should be off
         .sigle_frame_buf    (sigle_frame_buf),     // input - memory controller uses a single frame buffer (frame_number_* == 0), use other sync
         .vsync_late         (vsync_late),          // input - @mclk delayed start of frame, @xclk. In 353 it was 16 lines after VACT active
                                                    // source channel should already start, some delay give time for sequencer commands
-                                                   // that should arrive before it
+                                                   // that should arrive before it, in NC393 it is programmable
         .frame_started      (first_mb && mb_pre_start), // @xclk started first macroblock (checking for broken frames)
         .frame_start_dst    (frame_start_dst),     // output reg @mclk - trigger receive (tiled) memory channel (it will take care of
                                                    // single/repetitive modes itself this output either follows vsync_late (reclocks it)

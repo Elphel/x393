@@ -106,6 +106,7 @@ module  mcntrl_linear_rw #(
     output [FRAME_HEIGHT_BITS-1:0] line_unfinished, // number of the current (unfinished ) line, RELATIVE TO FRAME, NOT WINDOW?. 
     input                          suspend,       // suspend transfers (from external line number comparator)
     output   [LAST_FRAME_BITS-1:0] frame_number,  // current frame number (for multi-frame ranges)
+    output                         frame_set,     // frame number is just set to a new value (can be used by slave to sync)
     output                         xfer_want,     // "want" data transfer
     output                         xfer_need,     // "need" - really need a transfer (only 1 page/ room for 1 page left in a buffer), want should still be set.
     input                          xfer_grant,    // sequencer programming access granted, deassert wait/need 
@@ -258,6 +259,8 @@ module  mcntrl_linear_rw #(
     reg [MCNTRL_SCANLINE_DLY_WIDTH-1:0] start_delay; // how much to delay frame start
     wire                          frame_start_late;
     wire                          set_start_delay_w; 
+    reg                           buf_reset_pend;  // reset buffer page at next (late)frame sync (compressor should be disabled
+                                                   // if total  number of pages in a frame is not multiple of 4 
     
     
     assign frame_number =       frame_number_current;
@@ -277,7 +280,7 @@ module  mcntrl_linear_rw #(
     assign rst_frame_num_w = cmd_we && (cmd_a== MCNTRL_SCANLINE_MODE) && cmd_data[MCONTR_LINTILE_RST_FRAME];
     
     assign frame_run = busy_r;
-    
+    assign frame_set = frame_start_r[3];
     // Set parameter registers
     always @(posedge mclk) begin
         if      (mrst)               mode_reg <= 0;
@@ -314,7 +317,11 @@ module  mcntrl_linear_rw #(
 
         if      (mrst)                            frame_en <= 0;
         else if (single_frame_r || repeat_frames) frame_en <= 1;
-        else if (frame_start_late)                     frame_en <= 0;
+        else if (frame_start_late)                frame_en <= 0;
+        
+        // will reset buffer page at next frame start
+        if      (mrst ||frame_start_r[0])         buf_reset_pend <= 0;
+        else if (rst_frame_num_r)                 buf_reset_pend <= 1;
         
         if      (mrst)               frame_number_cntr <= 0;
         else if (rst_frame_num_r[0]) frame_number_cntr <= 0;
@@ -578,10 +585,10 @@ wire    start_not_partial= xfer_start_r[0] && !xfer_limited_by_mem_page_r;
         else if (!start_not_partial &&  next_page) page_cntr <= page_cntr + 1;
         
         if (mrst) xfer_page_rst_r <= 1;
-        else      xfer_page_rst_r <= chn_rst || (MCNTRL_SCANLINE_FRAME_PAGE_RESET ? (frame_start_r[0] & cmd_wrmem):1'b0);
+        else      xfer_page_rst_r <= chn_rst || (buf_reset_pend && (MCNTRL_SCANLINE_FRAME_PAGE_RESET ? (frame_start_r[0] & cmd_wrmem):1'b0));
 
         if (mrst) xfer_page_rst_pos <= 1;
-        else      xfer_page_rst_pos <= chn_rst || (MCNTRL_SCANLINE_FRAME_PAGE_RESET ? (frame_start_r[0] & ~cmd_wrmem):1'b0);
+        else      xfer_page_rst_pos <= chn_rst || (buf_reset_pend && (MCNTRL_SCANLINE_FRAME_PAGE_RESET ? (frame_start_r[0] & ~cmd_wrmem):1'b0));
 
         
 // increment x,y (two cycles)

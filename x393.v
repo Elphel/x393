@@ -532,6 +532,7 @@ module  x393 #(
     wire                     [3:0] cmprs_frame_done_dst;   // input single-cycle pulse when the full frame (window) was transferred to/from DDR3 memory
                                                            // use as 'eot_real' in 353 
     wire                     [3:0] cmprs_suspend;          // output suspend reading data for this channel - waiting for the source data
+//    wire                     [3:0] cmprs_master_follow;    // compressor memory is in dependent mode, frame number should be copied from sesnor, not reset to 0
     wire   [4*LAST_FRAME_BITS-1:0] cmprs_frame_number_finished;  // frame numbers compressed
     
 
@@ -1355,6 +1356,7 @@ assign axi_grst = axi_rst_pre;
         .cmprs_frame_number_dst    (cmprs_frame_number_dst),     // output[63:0] 
         .cmprs_frame_done_dst      (cmprs_frame_done_dst),       // output[3:0] 
         .cmprs_suspend             (cmprs_suspend),              // input[3:0] 
+//        .master_follow             (cmprs_master_follow),        // input[3:0] 
         
  // Originally implemented channels, some are just for testing and may be replaced        
         .frame_start_chn1          (frame_start_chn1),           // input

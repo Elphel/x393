@@ -50,7 +50,8 @@ def func_encode_mode_scan_tiled   (skip_too_late = False,
                                    extra_pages =  0,
                                    write_mem =    False,
                                    enable =       True,
-                                   chn_reset =    False):
+                                   chn_reset =    False,
+                                   copy_frame =   False):
     """
     Combines arguments to create a 12-bit encoded data for scanline mode memory R/W
     @param skip_too_late - Skip over missed blocks to preserve frame structure (increment pointers),
@@ -64,7 +65,8 @@ def func_encode_mode_scan_tiled   (skip_too_late = False,
                     This argument can be used for  read access with horizontal overlapping tiles
     @param write_mem,    write to memory mode (0 - read from memory)
     @param enable,       enable requests from this channel ( 0 will let current to finish, but not raise want/need)
-    @param chn_reset):   immediately reset all the internal circuitry
+    @param chn_reset   immediately reset all the internal circuitry
+    @param copy_frame  copy frame number from the master channel (non-persistent)
     
     """
     rslt = 0;
@@ -80,6 +82,7 @@ def func_encode_mode_scan_tiled   (skip_too_late = False,
     rslt |= (0,1)[repetitive] <<    vrlg.MCONTR_LINTILE_REPEAT
     rslt |= (0,1)[disable_need] <<  vrlg.MCONTR_LINTILE_DIS_NEED
     rslt |= (0,1)[skip_too_late] << vrlg.MCONTR_LINTILE_SKIP_LATE
+    rslt |= (0,1)[copy_frame] <<    vrlg.MCONTR_LINTILE_COPY_FRAME
     return rslt
 
 '''

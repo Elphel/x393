@@ -1343,6 +1343,11 @@ write_cmd_frame_sequencer  0  1  1  0x700  0xa0
 write_cmd_frame_sequencer  0  1  1  0x700  0x50
 write_cmd_frame_sequencer  0  0  3  0x700  0xa000
 write_cmd_frame_sequencer  0  1  0  0x700  0x90
+write_cmd_frame_sequencer  0  0  2  0x438  0x5 # set gamma_bayer = 1
+write_cmd_frame_sequencer  0  0  2  0x600  0x14c000 # set bayer =  1
+write_cmd_frame_sequencer  0  0  3  0x438  0x4 # set gamma_bayer = 0
+write_cmd_frame_sequencer  0  0  3  0x600  0x1cc000 # set bayer =  3
+
 write_cmd_frame_sequencer  0  0  2  0x700  0xe00
 write_cmd_frame_sequencer  0  0  3  0x700  0xa
 write_cmd_frame_sequencer  0  0  2  0x700  0x6
@@ -1352,6 +1357,13 @@ write_cmd_frame_sequencer  0  0  2  0x700  0x90
 write_cmd_frame_sequencer  0  0  2  0x700  0x600
 write_cmd_frame_sequencer  0  0  2  0x700  0x900
 
+#stop compressor memory @2, restart @3 and copy frame number # Better to turn off compressor before resetting memory channel
+write_cmd_frame_sequencer  0  0  2  0x600  0x5 # stop compressor 
+write_cmd_frame_sequencer  0  0  2  0x6c0  0x1c49 # enable off
+#write_cmd_frame_sequencer  0  0  3  0x6c0  0x3c4b # enable on, copy frame
+write_cmd_frame_sequencer  0  0  3  0x6c0  0x3d4b # enable on, copy frame, reset buffer
+write_cmd_frame_sequencer  0  0  3  0x600  0x7 # run compressor (after memory?) 
+
 #set_sensor_io_dly_hispi all 0x48 0x68 0x68 0x68 0x68
 #set_sensor_io_ctl all None None None None None 1 None # load all delays?
 compressor_control  all  None  None  None None None  2
@@ -1360,6 +1372,9 @@ compressor_interrupt_control all en
 compressor_control  all  3
 jpeg_sim_multi 4
 jpeg_sim_multi 8
+
+
+
 jpeg_sim_multi 8
 
 ctrl_cmd_frame_sequencer  0  0  1 0
@@ -1386,6 +1401,48 @@ x393 (localhost:7777) +0.153s--> compressor_interrupt_control 1 en
 x393 (localhost:7777) +0.147s--> compressor_interrupt_control 2 en
 x393 (localhost:7777) +0.150s--> compressor_interrupt_control 3 en
 x393 (localhost:7777) +0.162s--> compressor_control  all  3
+
+################## Simulate Parallel 2 ####################
+./py393/test_mcntrl.py @py393/cocoargs  --simulated=localhost:7777
+measure_all "*DI"
+setup_all_sensors True None 0xf
+set_sensor_io_ctl  all None None 1 # Set ARO low - check if it is still needed?
+#just testing
+set_gpio_ports  1 # enable software gpio pins - just for testing. Also needed for legacy i2c!
+set_gpio_pins 0 1 # pin 0 low, pin 1 - high
+#sequencer test
+#ctrl_cmd_frame_sequencer  <num_sensor>  <reset=False>  <start=False>  <stop=False>
+ctrl_cmd_frame_sequencer   0  0  1  0
+write_cmd_frame_sequencer  0  1  1  0x700  0x6
+write_cmd_frame_sequencer  0  1  1  0x700  0x9
+write_cmd_frame_sequencer  0  1  1  0x700  0xa0
+write_cmd_frame_sequencer  0  1  1  0x700  0x50
+write_cmd_frame_sequencer  0  0  3  0x700  0xa000
+write_cmd_frame_sequencer  0  1  0  0x700  0x90
+write_cmd_frame_sequencer  0  0  2  0x700  0xe00
+write_cmd_frame_sequencer  0  0  3  0x700  0xa
+write_cmd_frame_sequencer  0  0  2  0x700  0x6
+write_cmd_frame_sequencer  0  0  2  0x700  0x9
+write_cmd_frame_sequencer  0  0  2  0x700  0x60
+write_cmd_frame_sequencer  0  0  2  0x700  0x90
+write_cmd_frame_sequencer  0  0  2  0x700  0x600
+write_cmd_frame_sequencer  0  0  2  0x700  0x900
+
+#stop compressor memory @2, restart @3 and copy frame number # Better to turn off compressor before resetting memory channel
+write_cmd_frame_sequencer  0  1  2  0x600  0x5 # stop compressor 
+#write_cmd_frame_sequencer  0  1  2  0x6c0  0x1c49 # enable off
+#write_cmd_frame_sequencer  0  1  3  0x6c0  0x3c4b # enable on, copy frame
+#write_cmd_frame_sequencer  0  1  3  0x6c0  0x3d4b # enable on, copy frame, reset buffer
+write_cmd_frame_sequencer  0  1  3  0x600  0x7 # run compressor (after memory?) 
+
+#set_sensor_io_dly_hispi all 0x48 0x68 0x68 0x68 0x68
+#set_sensor_io_ctl all None None None None None 1 None # load all delays?
+compressor_control  all  None  None  None None None  2
+compressor_interrupt_control all clr
+compressor_interrupt_control all en
+compressor_control  all  3
+jpeg_sim_multi 4
+jpeg_sim_multi 8
 
 
 

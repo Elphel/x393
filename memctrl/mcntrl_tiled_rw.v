@@ -81,9 +81,9 @@ module  mcntrl_tiled_rw#(
     parameter MCONTR_LINTILE_BYTE32 =        6, // use 32-byte wide columns in each tile (false - 16-byte) 
     parameter MCONTR_LINTILE_RST_FRAME =     8, // reset frame number 
     parameter MCONTR_LINTILE_SINGLE =        9, // read/write a single page 
-    parameter MCONTR_LINTILE_REPEAT =       10,  // read/write pages until disabled
-    parameter MCONTR_LINTILE_DIS_NEED =     11   // disable 'need' request 
-     
+    parameter MCONTR_LINTILE_REPEAT =       10, // read/write pages until disabled
+    parameter MCONTR_LINTILE_DIS_NEED =     11, // disable 'need' request
+    parameter MCONTR_LINTILE_COPY_FRAME =   13  // copy frame number from the master channel (single event, not a persistent mode)
 )(
     input                          mrst,
     input                          mclk,
@@ -105,6 +105,9 @@ module  mcntrl_tiled_rw#(
     output [FRAME_HEIGHT_BITS-1:0] line_unfinished, // number of the current (unfinished ) line, RELATIVE TO FRAME, NOT WINDOW. 
     input                          suspend,       // suspend transfers (from external line number comparator)
     output   [LAST_FRAME_BITS-1:0] frame_number,  // current frame number (for multi-frame ranges)
+    input    [LAST_FRAME_BITS-1:0] master_frame,  // current frame number of a master channel
+    input                          master_set,    // master frame number set (1-st cycle when new value is valid)
+//    input                          master_follow, // copy master frame number instead of reset @master_set, 0 - ignore master_set 
     output                         xfer_want,     // "want" data transfer
     output                         xfer_need,     // "need" - really need a transfer (only 1 page/ room for 1 page left in a buffer), want should still be set.
     input                          xfer_grant,    // sequencer programming access granted, deassert wait/need 
@@ -185,6 +188,7 @@ module  mcntrl_tiled_rw#(
     wire                          repeat_frames; // mode bit
     wire                          single_frame_w; // pulse
     wire                          rst_frame_num_w;
+    wire                          set_copy_frame_num_w;
     reg                           single_frame_r;  // pulse
     reg                     [1:0] rst_frame_num_r; // reset frame number/next start address
     reg                           frame_en;       // enable next frame
@@ -264,6 +268,10 @@ module  mcntrl_tiled_rw#(
     reg    [FRAME_WIDTH_BITS-1:0] start_x;        // (programmed) normally 0, copied to curr_x on frame_start  
     reg   [FRAME_HEIGHT_BITS-1:0] start_y;        // (programmed) normally 0, copied to curr_y on frame_start 
     reg                           xfer_page_done_d;   // next cycle after xfer_page_done
+    reg                           frame_master_pend;  // set frame counter from the master frame number at  next master_set
+    reg                           set_frame_from_master; // single-clock copy frame counter from the master channel
+    reg                           buf_reset_pend;  // reset buffer page at next (late)frame sync (compressor should be disabled
+                                                   // if total  number of pages in a frame is not multiple of 4 
     
     assign frame_number =       frame_number_current;
     
@@ -278,10 +286,10 @@ module  mcntrl_tiled_rw#(
     assign set_window_start_w = cmd_we && (cmd_a== MCNTRL_TILED_WINDOW_STARTXY);
     assign set_tile_whs_w =     cmd_we && (cmd_a== MCNTRL_TILED_TILE_WHS);
     
-    assign single_frame_w =  cmd_we && (cmd_a== MCNTRL_TILED_MODE) && cmd_data[MCONTR_LINTILE_SINGLE];
-    assign rst_frame_num_w = cmd_we && (cmd_a== MCNTRL_TILED_MODE) && cmd_data[MCONTR_LINTILE_RST_FRAME];
-
-
+    assign single_frame_w =       cmd_we && (cmd_a== MCNTRL_TILED_MODE) && cmd_data[MCONTR_LINTILE_SINGLE];
+    assign rst_frame_num_w =      cmd_we && (cmd_a== MCNTRL_TILED_MODE) && cmd_data[MCONTR_LINTILE_RST_FRAME];
+    assign set_copy_frame_num_w = cmd_we && (cmd_a== MCNTRL_TILED_MODE) && cmd_data[MCONTR_LINTILE_COPY_FRAME];
+    
     //
     // Set parameter registers
     always @(posedge mclk) begin
@@ -293,7 +301,7 @@ module  mcntrl_tiled_rw#(
         
         if (mrst) rst_frame_num_r <= 0;
         else      rst_frame_num_r <= {rst_frame_num_r[0],
-                                     rst_frame_num_w |
+                                     rst_frame_num_w | 
                                      set_start_addr_w |
                                      set_last_frame_w |
                                      set_frame_size_w};
@@ -321,9 +329,19 @@ module  mcntrl_tiled_rw#(
         else if (single_frame_r || repeat_frames) frame_en <= 1;
         else if (frame_start)                     frame_en <= 0;
         
-        if      (mrst)               frame_number_cntr <= 0;
-        else if (rst_frame_num_r[0]) frame_number_cntr <= 0;
-        else if (frame_start_r[2])   frame_number_cntr <= is_last_frame?{LAST_FRAME_BITS{1'b0}}:(frame_number_cntr+1);
+        if      (mrst ||master_set)     frame_master_pend <= 0;
+        else if (set_copy_frame_num_w)  frame_master_pend <= 1;
+        
+        // will reset buffer page at next frame start
+        if      (mrst ||frame_start_r[0])   buf_reset_pend <= 0;
+        else if (rst_frame_num_r)           buf_reset_pend <= 1;
+        
+        set_frame_from_master <= master_set && frame_master_pend;
+        
+        if      (mrst)                  frame_number_cntr <= 0;
+        else if (rst_frame_num_r[0])    frame_number_cntr <= 0;
+        else if (set_frame_from_master) frame_number_cntr <= master_frame;
+        else if (frame_start_r[2])      frame_number_cntr <= is_last_frame?{LAST_FRAME_BITS{1'b0}}:(frame_number_cntr+1);
         
         if      (mrst)               frame_number_current <= 0;
         else if (rst_frame_num_r[0]) frame_number_current <= 0;
@@ -526,10 +544,10 @@ wire    start_not_partial= xfer_start_r[0] && !xfer_limited_by_mem_page_r;
         else if (!start_not_partial &&  next_page) page_cntr <= page_cntr + 1;
         
         if (mrst) xfer_page_rst_r <= 1;
-        else     xfer_page_rst_r <= chn_rst || (MCNTRL_TILED_FRAME_PAGE_RESET ? (frame_start_r[0] & cmd_wrmem):1'b0);
+        else      xfer_page_rst_r <= chn_rst || (buf_reset_pend && (MCNTRL_TILED_FRAME_PAGE_RESET ? (frame_start_r[0] & cmd_wrmem):1'b0));
 
         if (mrst) xfer_page_rst_pos <= 1;
-        else     xfer_page_rst_pos <= chn_rst || (MCNTRL_TILED_FRAME_PAGE_RESET ? (frame_start_r[0] & ~cmd_wrmem):1'b0);
+        else     xfer_page_rst_pos <= chn_rst || (buf_reset_pend && (MCNTRL_TILED_FRAME_PAGE_RESET ? (frame_start_r[0] & ~cmd_wrmem):1'b0));
         
 // increment x,y (two cycles)
         if (mrst)                                 curr_x <= 0;

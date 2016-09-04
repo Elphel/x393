@@ -7,4 +7,4 @@
 -c setupSensorsPower  "PAR12"  all  0  0.0
 -c measure_all "*DI"
 -c setSensorClock 24.0 "2V5_LVDS"
--c set_rtc # maybe not needed as it can be set differently
+-c set_rtc

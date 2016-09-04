@@ -277,6 +277,11 @@ class X393ExportC(object):
                                  data =      self._enc_window_frame_sa(),
                                  name =      "x393_mcntrl_window_frame_sa",  typ="wo",
                                  frmt_spcs = frmt_spcs)
+        stypedefs += self.get_typedef32(comment =   "Delay start of the channel from sensor frame sync (to allow frame sequencer issue commands)",
+                                 data =      self._enc_frame_start_dly(),
+                                 name =      "x393_mcntrl_frame_start_dly",  typ="wo",
+                                 frmt_spcs = frmt_spcs)
+        
         stypedefs += self.get_typedef32(comment =   "PS PIO (software-programmed DDR3) access sequences enable and reset",
                                  data =      self._enc_ps_pio_en_rst(),
                                  name =      "x393_ps_pio_en_rst",  typ="wo",
@@ -702,7 +707,8 @@ class X393ExportC(object):
             (("X393_SENS_MCNTRL_SCANLINE_FRAME_FULL_WIDTH",c, vrlg.MCNTRL_SCANLINE_FRAME_FULL_WIDTH + ba, ia, z3, "x393_mcntrl_window_full_width", "wo",     "Set frame full(padded) width")),
             (("X393_SENS_MCNTRL_SCANLINE_WINDOW_WH",       c, vrlg.MCNTRL_SCANLINE_WINDOW_WH +        ba, ia, z3, "x393_mcntrl_window_width_height", "wo",   "Set frame window size")),
             (("X393_SENS_MCNTRL_SCANLINE_WINDOW_X0Y0",     c, vrlg.MCNTRL_SCANLINE_WINDOW_X0Y0 +      ba, ia, z3, "x393_mcntrl_window_left_top", "wo",       "Set frame position")),
-            (("X393_SENS_MCNTRL_SCANLINE_STARTXY",         c, vrlg.MCNTRL_SCANLINE_WINDOW_STARTXY +   ba, ia, z3, "x393_mcntrl_window_startx_starty", "wo",  "Set startXY register"))]
+            (("X393_SENS_MCNTRL_SCANLINE_STARTXY",         c, vrlg.MCNTRL_SCANLINE_WINDOW_STARTXY +   ba, ia, z3, "x393_mcntrl_window_startx_starty", "wo",  "Set startXY register")),
+            (("X393_SENS_MCNTRL_SCANLINE_START_DELAY",     c, vrlg.MCNTRL_SCANLINE_START_DELAY +      ba, ia, z3, "x393_mcntrl_frame_start_dly", "wo",       "Set dDelay start of the channel from sensor frame sync"))]
         ba = vrlg.MCONTR_CMPRS_BASE
         ia = vrlg.MCONTR_CMPRS_INC
         sdefines +=[
@@ -1642,17 +1648,18 @@ class X393ExportC(object):
              
     def _enc_func_encode_mode_scan_tiled(self):
         dw=[]
-        dw.append(("chn_nreset",   vrlg.MCONTR_LINTILE_EN,1,1,        "0: immediately reset all the internal circuitry"))
-        dw.append(("enable",       vrlg.MCONTR_LINTILE_NRESET,1,1,    "enable requests from this channel ( 0 will let current to finish, but not raise want/need)"))
+        dw.append(("enable",       vrlg.MCONTR_LINTILE_EN,1,1,        "enable requests from this channel ( 0 will let current to finish, but not raise want/need)"))
+        dw.append(("chn_nreset",   vrlg.MCONTR_LINTILE_NRESET,1,1,    "0: immediately reset all the internal circuitry"))
         dw.append(("write_mem",    vrlg.MCONTR_LINTILE_WRITE,1,0,     "0 - read from memory, 1 - write to memory"))
         dw.append(("extra_pages",  vrlg.MCONTR_LINTILE_EXTRAPG, vrlg.MCONTR_LINTILE_EXTRAPG_BITS,0, "2-bit number of extra pages that need to stay (not to be overwritten) in the buffer"))
         dw.append(("keep_open",    vrlg.MCONTR_LINTILE_KEEP_OPEN,1,0, "for 8 or less rows - do not close page between accesses (not used in scanline mode)"))
         dw.append(("byte32",       vrlg.MCONTR_LINTILE_BYTE32,1,1,    "32-byte columns (0 - 16-byte), not used in scanline mode"))
-        dw.append(("reset_frame",  vrlg.MCONTR_LINTILE_RST_FRAME,1,0, "reset frame number"))
+        dw.append(("reset_frame",  vrlg.MCONTR_LINTILE_RST_FRAME,1,0, "reset frame number (also resets buffer at next frame start)"))
         dw.append(("single",       vrlg.MCONTR_LINTILE_SINGLE,1,0,    "run single frame"))
         dw.append(("repetitive",   vrlg.MCONTR_LINTILE_REPEAT,1,1,    "run repetitive frames"))
         dw.append(("disable_need", vrlg.MCONTR_LINTILE_DIS_NEED,1,0,  "disable 'need' generation, only 'want' (compressor channels)"))
         dw.append(("skip_too_late",vrlg.MCONTR_LINTILE_SKIP_LATE,1,0, "Skip over missed blocks to preserve frame structure (increment pointers)"))
+        dw.append(("copy_frame",   vrlg.MCONTR_LINTILE_COPY_FRAME,1,0, "Copy frame number from the master (sensor) channel. Combine with reset_frame to reset bjuffer"))
         return dw
     """
         self.x393_axi_tasks.write_control_register(
@@ -1703,6 +1710,12 @@ class X393ExportC(object):
         dw=[]
         dw.append(("frame_sa",      0,22,0,        "22-bit frame start address (3 CA LSBs==0. BA==0)"))
         return dw
+
+    def _enc_frame_start_dly(self):
+        dw=[]
+        dw.append(("start_dly",      0,vrlg.MCNTRL_SCANLINE_DLY_WIDTH,vrlg.MCNTRL_SCANLINE_DLY_DEFAULT, "delay start pulse by mclk"))
+        return dw
+    
     
     def _enc_status_control(self):
         dw=[]
@@ -1909,7 +1922,7 @@ class X393ExportC(object):
 
     def _enc_sens_sync_late(self):
         dw=[]
-        dw.append(("mult_frames",      0, vrlg.SENS_SYNC_LBITS,   0,  "Number of lines to delay late frame sync"))
+        dw.append(("delay_fsync",      0, vrlg.SENS_SYNC_LBITS,   0,  "Number of lines to delay late frame sync"))
         return dw
 
     def _enc_mcntrl_priorities(self):
