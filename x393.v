@@ -529,6 +529,7 @@ module  x393 #(
                                                           // Used withe a single-frame buffers
     wire [4*FRAME_HEIGHT_BITS-1:0] cmprs_line_unfinished_dst; // input[15:0] number of the current (unfinished ) line in this (compressor) channel
     wire   [4*LAST_FRAME_BITS-1:0] cmprs_frame_number_dst; // input[15:0] current frame number (for multi-frame ranges) in this (compressor channel
+    wire                     [3:0] cmprs_frames_in_sync;   // cmprs_frame_number_dst is valid (in bonded mode) 
     wire                     [3:0] cmprs_frame_done_dst;   // input single-cycle pulse when the full frame (window) was transferred to/from DDR3 memory
                                                            // use as 'eot_real' in 353 
     wire                     [3:0] cmprs_suspend;          // output suspend reading data for this channel - waiting for the source data
@@ -1353,7 +1354,9 @@ assign axi_grst = axi_rst_pre;
         .cmprs_frame_number_src    (cmprs_frame_number_src),     // output[63:0] 
         .cmprs_frame_done_src      (cmprs_frame_done_src),       // output[3:0] 
         .cmprs_line_unfinished_dst (cmprs_line_unfinished_dst),  // output[63:0] 
-        .cmprs_frame_number_dst    (cmprs_frame_number_dst),     // output[63:0] 
+        .cmprs_frame_number_dst    (cmprs_frame_number_dst),     // output[63:0]
+        .cmprs_frames_in_sync      (cmprs_frames_in_sync),       // output[3:0] 
+      
         .cmprs_frame_done_dst      (cmprs_frame_done_dst),       // output[3:0] 
         .cmprs_suspend             (cmprs_suspend),              // input[3:0] 
 //        .master_follow             (cmprs_master_follow),        // input[3:0] 
@@ -2089,7 +2092,8 @@ assign axi_grst = axi_rst_pre;
         .frame_number_src          (cmprs_frame_number_src),     // input[63:0] 
         .frame_done_src            (cmprs_frame_done_src),       // input[3:0] 
         .line_unfinished_dst       (cmprs_line_unfinished_dst),  // input[63:0] 
-        .frame_number_dst          (cmprs_frame_number_dst),     // input[63:0] 
+        .frame_number_dst          (cmprs_frame_number_dst),     // input[63:0]
+        .frames_in_sync            (cmprs_frames_in_sync),       // input[3:0]  
         .frame_done_dst            (cmprs_frame_done_dst),       // input[3:0] 
         .suspend                   (cmprs_suspend),              // output[3:0] 
 

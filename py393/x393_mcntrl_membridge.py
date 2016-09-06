@@ -309,7 +309,7 @@ class X393McntrlMembridge(object):
                                    disable_need = False,
                                    repetitive=    True,
                                    single =       False,
-                                   reset_frame =  False,
+                                   reset_frame =  True, # Is needed to propagate start addressFalse,
                                    extra_pages =  0,
                                    write_mem =    write_ddr3,
                                    enable =       True,

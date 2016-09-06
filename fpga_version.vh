@@ -35,7 +35,12 @@
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
  */
-          parameter FPGA_VERSION =          32'h039300a9;      // parallel, added copying maste-t-slave frame number -0.169(8 paths), 80.28%
+          parameter FPGA_VERSION =          32'h039300ae;      // parallel, increasing sesnsor-channels maximal delays to 12 bits
+//        parameter FPGA_VERSION =          32'h039300ad;      // parallel, resetting frame_pre_run. All met, 79.97%
+//        parameter FPGA_VERSION =          32'h039300ac;      // parallel, adding reset needed_page in compressor -0.012 (2), 79.39%
+//        parameter FPGA_VERSION =          32'h039300ab;      // parallel, more on frame sync in compressor All met, 79.04%
+//        parameter FPGA_VERSION =          32'h039300aa;      // parallel, improving frame sync in compressor -0.036ns, 79.60%
+//        parameter FPGA_VERSION =          32'h039300a9;      // parallel, added copying maste-t-slave frame number -0.169(8 paths), 80.28%
 //        parameter FPGA_VERSION =          32'h039300a8;      // parallel, fixing BUG in command sequencer that was missing some commands 79.25%, all met
 //        parameter FPGA_VERSION =          32'h039300a7;      // parallel, changing parameter to reset buffer pages at each frame start. 79.4%, -0.022 (2 paths)
 //        parameter FPGA_VERSION =          32'h039300a6;      // parallel, adding frame sync delays to mcntrl_linear 79.26, mclk and xclk violated

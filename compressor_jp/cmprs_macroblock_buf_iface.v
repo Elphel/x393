@@ -42,11 +42,12 @@
 
 module  cmprs_macroblock_buf_iface #(
 `ifdef USE_OLD_DCT
-    parameter DCT_PIPELINE_PAUSE = 0 // No need to delay
+    parameter DCT_PIPELINE_PAUSE = 0, // No need to delay
 `else    
-    parameter DCT_PIPELINE_PAUSE = 48 // TODO: find really required value (minimal), adjust counter bits (now 6)
+    parameter DCT_PIPELINE_PAUSE = 48, // TODO: find really required value (minimal), adjust counter bits (now 6)
                                       // 48 seems to be OK (may be less)
 `endif                                      
+    parameter FRAME_QUEUE_WIDTH = 2
 )(
 //    input         rst,
     input         xclk,               // global clock input, compressor single clock rate
@@ -64,6 +65,7 @@ module  cmprs_macroblock_buf_iface #(
     input         frame_start_xclk,   // frame parameters are valid after this pulse
     input         frame_go,           // start frame: if idle, will start reading data (if available),
                                       // if running - will not restart a new frame if 0.
+    input         cmprs_run_mclk,     // 0 - off or stopping, reset frame_pre_run
     input  [ 4:0] left_marg,          // left margin (for not-yet-implemented) mono JPEG (8 lines tile row) can need 7 bits (mod 32 - tile)
     input  [12:0] n_blocks_in_row_m1, // number of macroblocks in a macroblock row minus 1
     input  [12:0] n_block_rows_m1,    // number of macroblock rows in a frame minus 1
@@ -125,9 +127,21 @@ module  cmprs_macroblock_buf_iface #(
     reg           frame_pre_run;
 //    reg     [1:0] frame_may_start;
     reg           frame_start_xclk_r; // next cycle after frame_start_xclk
-    
+    reg           cmprs_run_xclk;
     
     reg     [5:0] dct_pipeline_delay_cntr;
+    
+    reg [FRAME_QUEUE_WIDTH:0] frame_que_cntr; // width+1
+    reg     [1:0] frame_finish_r; // active after last macroblock in a frame
+    wire          mb_done_w;
+    wire          frame_finish_w;
+    wire          frames_pending;
+    
+//    assign mb_done = mb_pre_start[1] && last_mb; // mb_pre_end_in && last_mb; 
+    assign mb_done_w = mb_pre_start[1] && last_mb; // mb_pre_end_in && last_mb; 
+//    assign mb_done_w = first_mb && (dct_pipeline_delay_cntr == 1);
+    assign frame_finish_w = frame_finish_r[1] && !frame_finish_r[0];
+    assign frames_pending = !frame_que_cntr[FRAME_QUEUE_WIDTH] && (|frame_que_cntr[FRAME_QUEUE_WIDTH-1:0]);
     
 `ifdef DEBUG_RING
     assign  dbg_add_invalid = add_invalid;
@@ -149,9 +163,12 @@ module  cmprs_macroblock_buf_iface #(
     assign mb_pre_start_w =  (mb_pre_end_in && (!last_mb || frame_may_start)) ||
                              ((frame_may_start==2'b1) && !frame_pre_run && !starting);
     assign frame_pre_start_w =  frame_may_start[0] && ((mb_pre_end_in && last_mb) || (!frame_pre_run && !frame_may_start[1] && !starting));
-*/    
+*/   
+    // one extra at the end of frame is needed (sequence will be short) 
     assign mb_pre_start_w =     mb_pre_end_in ||              (frame_start_xclk_r && !frame_pre_run && !starting);
-    assign frame_pre_start_w =  (mb_pre_end_in && last_mb) || (frame_start_xclk_r && !frame_pre_run && !starting);
+//    assign frame_pre_start_w =  (mb_pre_end_in && last_mb) || (frame_start_xclk_r && !frame_pre_run && !starting);
+    assign frame_pre_start_w =  (frames_pending && frame_finish_w) || (frame_start_xclk_r && !frame_pre_run && !starting);
+
  //frame_start_xclk_r   
     assign start_page = next_invalid[1:0]; // oldest page needed for this macroblock
     always @ (posedge xclk) begin
@@ -173,10 +190,11 @@ module  cmprs_macroblock_buf_iface #(
         else if (frame_pre_start_r) mb_first_in_row <= 1;
         else if (mb_pre_start[0])   mb_first_in_row <= mb_last_in_row;
         
+        cmprs_run_xclk <=cmprs_run_mclk;
         
-        if      (!frame_en)                frame_pre_run <= 0;
-        else if (mb_pre_start_w)           frame_pre_run <= 1;
-        else if (mb_pre_end_in && last_mb) frame_pre_run <= 0;
+        if      (!frame_en || (!frames_pending && frame_finish_w)) frame_pre_run <= 0;
+        else if (mb_pre_start_w)                                   frame_pre_run <= 1;
+//        else if (mb_pre_end_in && last_mb)     frame_pre_run <= 0;
         
         if      (frame_pre_start_r)                                        mb_rows_left <= n_block_rows_m1;
         else if (mb_pre_start[0] && mb_last_in_row)                        mb_rows_left <= mb_rows_left - 1;        
@@ -184,9 +202,11 @@ module  cmprs_macroblock_buf_iface #(
         if      (frame_pre_start_r || (mb_pre_start[0] && mb_last_in_row)) mb_cols_left <= n_blocks_in_row_m1;
         else if (mb_pre_start[0])                                          mb_cols_left <= mb_cols_left - 1;
         
-        if      (mb_pre_start[1])                                          mb_last_row <= (mb_rows_left == 0);
+        if      (frame_pre_start_r)                                        mb_last_row <= 0;
+        else if (mb_pre_start[1])                                          mb_last_row <= (mb_rows_left == 0);
         
-        if      (mb_pre_start[1])                                          mb_last_in_row <= (mb_cols_left == 0);
+        if      (frame_pre_start_r)                                        mb_last_in_row <= 0;
+        else if (mb_pre_start[1])                                          mb_last_in_row <= (mb_cols_left == 0);
         
         if (!frame_en || mb_pre_start[1]) pre_first_mb <= 0;
         else if (frame_pre_start_r)       pre_first_mb <= 1;
@@ -203,18 +223,35 @@ module  cmprs_macroblock_buf_iface #(
         // TODO: Here enforce minimal pause (if not zero for the DCT pipeline to recover
         // will wait for buf_ready_w, but not less than DCT_PIPELINE_PAUSE (or no wait at all)
         mb_pre_start4_first <=mb_pre_start[3];
+        if      (!frame_en)                    frame_finish_r[0] <= 0;
+        else if (mb_done_w)                    frame_finish_r[0] <= 1;
+        else if (dct_pipeline_delay_cntr == 0) frame_finish_r[0] <= 0;
+        frame_finish_r[1] <=                   frame_finish_r[0];
+        
         if      (xrst)                                 dct_pipeline_delay_cntr <= 0;
-        else if (mb_pre_start4_first && !buf_ready_w)  dct_pipeline_delay_cntr <= DCT_PIPELINE_PAUSE -1;
+        else if ((mb_pre_start4_first && !buf_ready_w) ||
+                  mb_done_w)                           dct_pipeline_delay_cntr <= DCT_PIPELINE_PAUSE -1;
         else if (|dct_pipeline_delay_cntr)             dct_pipeline_delay_cntr <= dct_pipeline_delay_cntr -1;
         
         
-        if      (!frame_en_r)                                                      mb_pre_start <= 0;
-        if      (mb_pre_start_w)                                                   mb_pre_start <= 1;
+//      if      (!frame_en_r)                                                      mb_pre_start <= 0;
+//        if      (!frame_en_r || (mb_pre_start[1] && last_mb))                      mb_pre_start <= 0;
+        if      (!frame_en_r || (mb_pre_start[3] && frame_finish_r[0]))            mb_pre_start <= 0; // so needed page is updated
+        else if (mb_pre_start_w)                                                   mb_pre_start <= 1;
+//        if      (mb_pre_start_w && ! last_mb)                                      mb_pre_start <= 1;
         else if (!mb_pre_start[4] || (buf_ready_w && !(|dct_pipeline_delay_cntr))) mb_pre_start <= mb_pre_start << 1;
+        
+        if      (!cmprs_run_xclk)                           frame_que_cntr <= 0;
+        else if ( frame_start_xclk_r && !frame_pre_start_r) frame_que_cntr <= frame_que_cntr + 1;
+        else if (!frame_start_xclk_r && frame_pre_start_r)  frame_que_cntr <= frame_que_cntr - 1;
+        
+        
         
         if (mb_pre_start[1]) mbl_x_r[6:3] <=      mb_first_in_row? {2'b0,left_marg[4:3]} : mbl_x_next_r[6:3];
         if (mb_pre_start[2]) mbl_x_last_r[7:3] <= {1'b0,mbl_x_r[6:3]} + {2'b0,mb_w_m1[5:3]};
-        if (mb_pre_start[3]) begin
+        
+        if (reset_page_rd) needed_page[2:0] <=  0; // together with next_valid, next_invalid
+        else if (mb_pre_start[3]) begin
             case (tile_width)
                 2'b00: needed_page[2:0] <=  next_invalid[2:0]+{1'b0, mbl_x_last_r[5:4]}; 
                 2'b01: needed_page[2:0] <=  next_invalid[2:0]+{1'b0, mbl_x_last_r[6:5]}; 

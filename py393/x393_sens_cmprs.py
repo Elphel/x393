@@ -964,6 +964,13 @@ class X393SensCmprs(object):
         for i in range(4):
             frames.append (int((status >> (4*i)) & 0xf))
         return frames
+    def get_frame_number(self,
+                         channel=0):
+        """
+        @return frame number of the sequencer for the specified channel (4 bits)
+        """
+        status =   self.x393_axi_tasks.read_status(address = vrlg.CMDSEQMUX_STATUS)
+        return int((status >> (4*channel)) & 0xf)
     
     def get_frame_number_i2c(self,
                              channel=0):
@@ -1001,6 +1008,19 @@ class X393SensCmprs(object):
                         frameno = new_frames[chn]
             if all_new:
                 break;
+        return frameno # Frame number of the last  new frame checked         
+
+    def wait_frame(self,
+                   channel = 0,
+                   frame =      0,
+                   loop_delay = 0.01,
+                   timeout = 2.0):
+        timeout_time = time.time() + timeout
+        frameno = -1
+        while time.time() < timeout_time :
+            frameno = self.get_frame_number(channel)
+            if frameno == (frame & 15):
+                return frameno
         return frameno # Frame number of the last  new frame checked         
 
     def skip_frame_i2c(self,
@@ -1828,7 +1848,7 @@ class X393SensCmprs(object):
                                    disable_need = False,
                                    repetitive=    True,
                                    single =       False,
-                                   reset_frame =  False,
+                                   reset_frame =  True, # False, now start address is only copied at reset_frame
                                    extra_pages =  0,
                                    write_mem =    write_mem,
                                    enable =       True,

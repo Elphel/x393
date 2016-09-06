@@ -1928,7 +1928,7 @@ input               mem                 mtd4                ram1                
                stop        - stop at the end of the frame (if repetitive),
                single      - acquire single frame ,
                repetitive  - repetitive mode
-        @param reset_frame - reset frame number       
+        @param reset_frame - reset frame number. Needed after changing frame start address (i.e. initial set-up) !       
         @param vebose -      verbose level       
         """
         try:
@@ -2005,7 +2005,7 @@ input               mem                 mtd4                ram1                
                                    disable_need = False,
                                    repetitive=    True,
                                    single =       False,
-                                   reset_frame =  False,
+                                   reset_frame =  True, # False,
                                    extra_pages =  0,
                                    write_mem =    True,
                                    enable =       True,

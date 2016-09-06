@@ -461,7 +461,7 @@ class X393Cmprs(object):
                                    disable_need = disable_need,
                                    repetitive=    True,
                                    single =       False,
-                                   reset_frame =  False,
+                                   reset_frame =  True, # Now needed to propagate start address False,
                                    byte32 =       byte32,
                                    keep_open =    False,
                                    extra_pages =  extra_pages,

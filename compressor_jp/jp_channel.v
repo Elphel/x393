@@ -163,6 +163,7 @@ module  jp_channel#(
      
     input [FRAME_HEIGHT_BITS-1:0] line_unfinished_dst,// number of the current (unfinished ) line in this (compressor) channel
     input   [LAST_FRAME_BITS-1:0] frame_number_dst,   // current frame number (for multi-frame ranges) in this (compressor channel
+    input                         frames_in_sync,     // frame number in destination memory channel is valid for bonded mode
     input                         frame_done_dst,     // single-cycle pulse when the full frame (window) was transferred to/from DDR3 memory
                                                       // use as 'eot_real' in 353 
     output                        suspend,            // suspend reading data for this channel - waiting for the source data
@@ -802,6 +803,7 @@ module  jp_channel#(
                                                    // Used withe a single-frame buffers
         .line_unfinished    (line_unfinished_dst), // input[15:0] - number of the current (unfinished ) line in this (compressor) channel
         .frame_number       (frame_number_dst),    // input[15:0] - current frame number (for multi-frame ranges) in this (compressor channel
+        .frames_in_sync     (frames_in_sync),      // frame number in destination memory channel is valid for bonded mode
         .frame_done         (frame_done_dst),      // input - single-cycle pulse when the full frame (window) was transferred to/from DDR3 memory 
         .suspend            (suspend),             // output reg - suspend reading data for this channel - waiting for the source data
         .stuffer_running    (stuffer_running), // input
@@ -823,6 +825,7 @@ module  jp_channel#(
         .frame_en           (frame_en),           // input
         .frame_start_xclk   (frame_start_xclk),   // input@posedge xclk - parameters are copied @ this pulse
         .frame_go           (frame_go),           // input - do not use - assign to frame_en? Running frames can be controlled by other means
+        .cmprs_run_mclk     (cmprs_run_mclk),     // input used to reset frame_pre_run (enable vsync_late for the new frame after stop)
         .left_marg          (left_marg),          // input[4:0] 
         .n_blocks_in_row_m1 (n_blocks_in_row_m1), // input[12:0] 
         .n_block_rows_m1    (n_block_rows_m1),    // input[12:0] 

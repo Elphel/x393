@@ -262,7 +262,7 @@ module  mcntrl393 #(
     parameter MCONTR_LINTILE_DIS_NEED =     11,   // disable 'need' request 
     parameter MCONTR_LINTILE_SKIP_LATE =    12,  // skip actual R/W operation when it is too late, advance pointers
     parameter MCONTR_LINTILE_COPY_FRAME =   13,  // copy frame number from the master channel (single event, not a persistent mode)
-    parameter MCNTRL_SCANLINE_DLY_WIDTH =    7,  // delay start pulse by 1..64 mclk
+    parameter MCNTRL_SCANLINE_DLY_WIDTH =   12,  // delay start pulse by 1..64 mclk
     parameter MCNTRL_SCANLINE_DLY_DEFAULT = 63  // initial delay value for start pulse
     
     ) (
@@ -350,6 +350,8 @@ module  mcntrl393 #(
                                                                // Used withe a single-frame buffers
     output [4*FRAME_HEIGHT_BITS-1:0] cmprs_line_unfinished_dst,// number of the current (unfinished ) line in this (compressor) channel
     output   [4*LAST_FRAME_BITS-1:0] cmprs_frame_number_dst,   // current frame number (for multi-frame ranges) in this (compressor channel
+    output                     [3:0] cmprs_frames_in_sync,           // cmprs_frame_number_dst is valid (in bonded mode) 
+    
     output                     [3:0] cmprs_frame_done_dst,     // single-cycle pulse when the full frame (window) was transferred to/from DDR3 memory
                                                                // use as 'eot_real' in 353 
     input                      [3:0] cmprs_suspend,            // suspend reading data for this channel - waiting for the source data
@@ -1205,6 +1207,7 @@ module  mcntrl393 #(
                 .line_unfinished      (cmprs_line_unfinished_dst[i * FRAME_HEIGHT_BITS +: FRAME_HEIGHT_BITS]), // output[15:0] 
                 .suspend              (cmprs_suspend[i]),            // input
                 .frame_number         (cmprs_frame_number_dst[i * LAST_FRAME_BITS +: LAST_FRAME_BITS]), // output[15:0]
+                .frames_in_sync       (cmprs_frames_in_sync[i]),     // output
                 .master_frame         (cmprs_frame_number_src[i * LAST_FRAME_BITS +: LAST_FRAME_BITS]), // input[15:0] 
                 .master_set           (sens_frame_set[i]),           // input
 //                .master_follow        (master_follow[i]),            // input
@@ -1431,6 +1434,7 @@ module  mcntrl393 #(
         .line_unfinished      (line_unfinished_chn2),       // output[15:0] 
         .suspend              (suspend_chn2),               // input
         .frame_number         (frame_number_chn2),
+        .frames_in_sync(), // output
         .master_frame         (16'b0),                      // input[15:0] 
         .master_set           (1'b0),                       // input
 //        .master_follow        (1'b0),                       // input
@@ -1502,9 +1506,10 @@ module  mcntrl393 #(
         .line_unfinished      (line_unfinished_chn4),       // output[15:0] 
         .suspend              (suspend_chn4),               // input
         .frame_number         (frame_number_chn4),          // output  [15:0]
+        .frames_in_sync       (),                           // output
         .master_frame         (16'b0),                      // input[15:0] 
         .master_set           (1'b0),                       // input
-//        .master_follow        (1'b0),                       // input
+//        .master_follow        (1'b0),                     // input
         .xfer_want            (want_rq4),                   // output
         .xfer_need            (need_rq4),                   // output
         .xfer_grant           (channel_pgm_en4),            // input

@@ -176,6 +176,8 @@ module  compressor393 # (
                                                         // Used withe a single-frame buffers
     input [4*FRAME_HEIGHT_BITS-1:0] line_unfinished_dst,// number of the current (unfinished ) line in this (compressor) channel
     input   [4*LAST_FRAME_BITS-1:0] frame_number_dst,   // current frame number (for multi-frame ranges) in this (compressor channel
+    input                     [3:0] frames_in_sync,     // frame number in destination memory channel is valid for bonded mode
+    
     input                     [3:0]frame_done_dst,      // single-cycle pulse when the full frame (window) was transferred to/from DDR3 memory
                                                         // use as 'eot_real' in 353 
     output                    [3:0]suspend,             // suspend reading data for this channel - waiting for the source data
@@ -440,7 +442,8 @@ module  compressor393 # (
                 .frame_number_src                     (frame_number_src[LAST_FRAME_BITS * i +: LAST_FRAME_BITS]), // input[15:0] 
                 .frame_done_src                       (frame_done_src[i]),         // input
                 .line_unfinished_dst                  (line_unfinished_dst[FRAME_HEIGHT_BITS * i +: FRAME_HEIGHT_BITS]), // input[15:0] 
-                .frame_number_dst                     (frame_number_dst[LAST_FRAME_BITS * i +: LAST_FRAME_BITS]), // input[15:0] 
+                .frame_number_dst                     (frame_number_dst[LAST_FRAME_BITS * i +: LAST_FRAME_BITS]), // input[15:0]
+                .frames_in_sync                       (frames_in_sync[i]),         //input  
                 .frame_done_dst                       (frame_done_dst[i]),         // input
                 .suspend                              (suspend[i]),                // output
                 .frame_number_finished                (frame_number_finished[LAST_FRAME_BITS * i +: LAST_FRAME_BITS]), // output reg[15:0]

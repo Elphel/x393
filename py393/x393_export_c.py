@@ -1654,7 +1654,7 @@ class X393ExportC(object):
         dw.append(("extra_pages",  vrlg.MCONTR_LINTILE_EXTRAPG, vrlg.MCONTR_LINTILE_EXTRAPG_BITS,0, "2-bit number of extra pages that need to stay (not to be overwritten) in the buffer"))
         dw.append(("keep_open",    vrlg.MCONTR_LINTILE_KEEP_OPEN,1,0, "for 8 or less rows - do not close page between accesses (not used in scanline mode)"))
         dw.append(("byte32",       vrlg.MCONTR_LINTILE_BYTE32,1,1,    "32-byte columns (0 - 16-byte), not used in scanline mode"))
-        dw.append(("reset_frame",  vrlg.MCONTR_LINTILE_RST_FRAME,1,0, "reset frame number (also resets buffer at next frame start)"))
+        dw.append(("reset_frame",  vrlg.MCONTR_LINTILE_RST_FRAME,1,0, "reset frame number (also resets buffer at next frame start). NEEDED after initial set up to propagate start address!"))
         dw.append(("single",       vrlg.MCONTR_LINTILE_SINGLE,1,0,    "run single frame"))
         dw.append(("repetitive",   vrlg.MCONTR_LINTILE_REPEAT,1,1,    "run repetitive frames"))
         dw.append(("disable_need", vrlg.MCONTR_LINTILE_DIS_NEED,1,0,  "disable 'need' generation, only 'want' (compressor channels)"))

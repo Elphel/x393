@@ -82,7 +82,7 @@ module  mcntrl_linear_rw #(
 // TODO NC393: This delay may be too long for serail sensors. Make them always start to fill the
 // first buffer page, waiting for the request from mcntrl_linear during that first page. And if it will arrive - 
 // just continue.    
-    parameter MCNTRL_SCANLINE_DLY_WIDTH =       7,  // delay start pulse by 1..64 mclk
+    parameter MCNTRL_SCANLINE_DLY_WIDTH =      12,  // delay start pulse by 1..64 mclk
     parameter MCNTRL_SCANLINE_DLY_DEFAULT =    63  // initial delay value for start pulse
 )(
     input                          mrst,
@@ -257,11 +257,11 @@ module  mcntrl_linear_rw #(
     reg   [FRAME_HEIGHT_BITS-1:0] start_y;        // (programmed) normally 0, copied to curr_y on frame_start_late 
     reg                           xfer_done_d;    // xfer_done delayed by 1 cycle (also includes xfer_skipped)
     reg [MCNTRL_SCANLINE_DLY_WIDTH-1:0] start_delay; // how much to delay frame start
-    wire                          frame_start_late;
+    reg [MCNTRL_SCANLINE_DLY_WIDTH:0] start_delay_cntr = {MCNTRL_SCANLINE_DLY_WIDTH+1{1'b1}}; // start delay counter
+    reg                           frame_start_late;
     wire                          set_start_delay_w; 
     reg                           buf_reset_pend;  // reset buffer page at next (late)frame sync (compressor should be disabled
                                                    // if total  number of pages in a frame is not multiple of 4 
-    
     
     assign frame_number =       frame_number_current;
     
@@ -290,12 +290,13 @@ module  mcntrl_linear_rw #(
         else      single_frame_r <= single_frame_w;
         
         if (mrst) rst_frame_num_r <= 0;
-        else      rst_frame_num_r <= {rst_frame_num_r[0],
-                                     rst_frame_num_w |
+        else      rst_frame_num_r <= {rst_frame_num_r[0], rst_frame_num_w }; // now only at specific command
+/*
+        |
                                      set_start_addr_w |
                                      set_last_frame_w |
                                      set_frame_size_w};
-
+*/ 
         if      (mrst)               start_range_addr <= 0;
         else if (set_start_addr_w)   start_range_addr <= cmd_data[NUM_RC_BURST_BITS-1:0];
 
@@ -315,13 +316,14 @@ module  mcntrl_linear_rw #(
 //        if (mrst) frame_start_r <= 0;
 //        else      frame_start_r <= {frame_start_r[3:0], frame_start_late & frame_en};
 
-        if      (mrst)                            frame_en <= 0;
+//        if      (mrst)                            frame_en <= 0;
+        if      (!chn_en)                         frame_en <= 0;
         else if (single_frame_r || repeat_frames) frame_en <= 1;
         else if (frame_start_late)                frame_en <= 0;
         
         // will reset buffer page at next frame start
         if      (mrst ||frame_start_r[0])         buf_reset_pend <= 0;
-        else if (rst_frame_num_r)                 buf_reset_pend <= 1;
+        else if (rst_frame_num_r[0])              buf_reset_pend <= 1;
         
         if      (mrst)               frame_number_cntr <= 0;
         else if (rst_frame_num_r[0]) frame_number_cntr <= 0;
@@ -364,6 +366,14 @@ module  mcntrl_linear_rw #(
         
         if      (mrst)              start_delay <= MCNTRL_SCANLINE_DLY_DEFAULT;
         else if (set_start_delay_w) start_delay <= cmd_data[MCNTRL_SCANLINE_DLY_WIDTH-1:0];
+        
+        if      (mrst)                                         start_delay_cntr <= {MCNTRL_SCANLINE_DLY_WIDTH+1{1'b1}};
+        else if (frame_start)                                  start_delay_cntr <= {1'b0, start_delay};
+        else if (!start_delay_cntr[MCNTRL_SCANLINE_DLY_WIDTH]) start_delay_cntr <= start_delay_cntr - 1;
+        
+        frame_start_late <= start_delay_cntr == 0;
+        
+//        
         
     end
     assign mul_rslt_w=  frame_y8_r * frame_full_width_r; // 5 MSBs will be discarded
@@ -694,17 +704,5 @@ wire    start_not_partial= xfer_start_r[0] && !xfer_limited_by_mem_page_r;
         .rq               (status_rq),     // output
         .start            (status_start)   // input
     );
-    
-    dly_var #(
-        .WIDTH     (1),
-        .DLY_WIDTH (MCNTRL_SCANLINE_DLY_WIDTH)
-    ) frame_start_late_i (
-        .clk   (mclk), // input
-        .rst   (mrst), // input
-        .dly   (start_delay),     // input[0:0] 
-        .din   (frame_start),     // input[0:0] 
-        .dout  (frame_start_late) // output[0:0] 
-    );
-    
 endmodule
 

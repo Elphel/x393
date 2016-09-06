@@ -105,6 +105,7 @@ module  mcntrl_tiled_rw#(
     output [FRAME_HEIGHT_BITS-1:0] line_unfinished, // number of the current (unfinished ) line, RELATIVE TO FRAME, NOT WINDOW. 
     input                          suspend,       // suspend transfers (from external line number comparator)
     output   [LAST_FRAME_BITS-1:0] frame_number,  // current frame number (for multi-frame ranges)
+    output                         frames_in_sync, // frame number valid for bonded mode
     input    [LAST_FRAME_BITS-1:0] master_frame,  // current frame number of a master channel
     input                          master_set,    // master frame number set (1-st cycle when new value is valid)
 //    input                          master_follow, // copy master frame number instead of reset @master_set, 0 - ignore master_set 
@@ -271,8 +272,10 @@ module  mcntrl_tiled_rw#(
     reg                           frame_master_pend;  // set frame counter from the master frame number at  next master_set
     reg                           set_frame_from_master; // single-clock copy frame counter from the master channel
     reg                           buf_reset_pend;  // reset buffer page at next (late)frame sync (compressor should be disabled
-                                                   // if total  number of pages in a frame is not multiple of 4 
+                                                   // if total  number of pages in a frame is not multiple of 4
+    reg                           frames_in_sync_r;
     
+    assign frames_in_sync =     frames_in_sync_r;
     assign frame_number =       frame_number_current;
     
     assign set_mode_w =         cmd_we && (cmd_a== MCNTRL_TILED_MODE);
@@ -300,11 +303,11 @@ module  mcntrl_tiled_rw#(
         else      single_frame_r <= single_frame_w;
         
         if (mrst) rst_frame_num_r <= 0;
-        else      rst_frame_num_r <= {rst_frame_num_r[0],
-                                     rst_frame_num_w | 
-                                     set_start_addr_w |
-                                     set_last_frame_w |
-                                     set_frame_size_w};
+        else      rst_frame_num_r <= {rst_frame_num_r[0], rst_frame_num_w}; // resetting only at specific command
+          //| 
+          //                           set_start_addr_w |
+          //                           set_last_frame_w |
+          //                           set_frame_size_w};
 
         if      (mrst)               start_range_addr <= 0;
         else if (set_start_addr_w)   start_range_addr <= cmd_data[NUM_RC_BURST_BITS-1:0];
@@ -325,16 +328,23 @@ module  mcntrl_tiled_rw#(
         if (mrst) frame_start_r <= 0;
         else     frame_start_r <= {frame_start_r[3:0], frame_start & frame_en};
 
-        if      (mrst)                            frame_en <= 0;
+//        if      (mrst)                            frame_en <= 0;
+        if      (!chn_en)                         frame_en <= 0;
         else if (single_frame_r || repeat_frames) frame_en <= 1;
         else if (frame_start)                     frame_en <= 0;
         
         if      (mrst ||master_set)     frame_master_pend <= 0;
         else if (set_copy_frame_num_w)  frame_master_pend <= 1;
         
+        // after channel was disabled frame number reported is incorrect, until updated by master_set
+        // Without this signal compressor was reading data between the time source frame number was updated and this one.
+        if      (!chn_en)          frames_in_sync_r <= 0;
+//        else if (frame_start_r[2]) frames_in_sync_r <= 1;
+        else if (frame_start_r[3]) frames_in_sync_r <= 1; // to match line_unfinished
+        
         // will reset buffer page at next frame start
         if      (mrst ||frame_start_r[0])   buf_reset_pend <= 0;
-        else if (rst_frame_num_r)           buf_reset_pend <= 1;
+        else if (rst_frame_num_r[0])        buf_reset_pend <= 1;
         
         set_frame_from_master <= master_set && frame_master_pend;
         
