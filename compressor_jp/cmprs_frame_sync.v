@@ -68,6 +68,9 @@ module  cmprs_frame_sync#(
     output                        frame_start_dst,    // @mclk - trigger receive (tiled) memory channel (it will take care of single/repetitive
                                                       // this output either follows vsync_late (reclocks it) or generated in non-bonded mode
                                                       // (compress from memory)
+    input                         frame_start_conf,   // memory controller confirmed frame_start_dst - normally delayed by 1 clock,
+                                                      // or more if there were outstanding memory transactions.                                                           
+                                                      
     input [FRAME_HEIGHT_BITS-1:0] line_unfinished_src,// number of the current (unfinished ) line, in the source (sensor) channel (RELATIVE TO FRAME, NOT WINDOW?)
     input   [LAST_FRAME_BITS-1:0] frame_number_src,   // current frame number (for multi-frame ranges) in the source (sensor) channel
     input                         frame_done_src,     // single-cycle pulse when the full frame (window) was transferred to/from DDR3 memory 
@@ -77,7 +80,8 @@ module  cmprs_frame_sync#(
     input [FRAME_HEIGHT_BITS-1:0] line_unfinished,    // number of the current (unfinished ) line in this (compressor) channel
     input   [LAST_FRAME_BITS-1:0] frame_number,       // current frame number (for multi-frame ranges) in this (compressor channel
     input                         frames_in_sync,     // frame number in destination memory channel is valid for bonded mode
-    input                         frame_done,         // input - single-cycle pulse when the full frame (window) was transferred to/from DDR3 memory 
+    input                         frame_done,         // input - single-cycle pulse when the full frame (window) was transferred to/from DDR3 memory\
+    input                         last_mb_started,    // @ xclk - last mb started running, safe to assume memory channel is done 
     output reg                    suspend,            // suspend reading data for this channel - waiting for the source data
 
     input                         stuffer_running,    // @xclk2x stuffer is running/flushing
@@ -115,6 +119,7 @@ module  cmprs_frame_sync#(
     reg        cmprs_en_d;
     reg        suspend_end; // suspend at the end of the current frame until frame number changes
 //    reg    cmprs_en_xclk;
+    wire      last_mb_started_mclk;
     assign frame_start_dst = frame_start_dst_r[0];
     assign cmprs_en_extend = cmprs_en_extend_r;
     
@@ -128,6 +133,7 @@ module  cmprs_frame_sync#(
         if       (mrst)                                       cmprs_en_extend_r <= 0;
         else if  (cmprs_en)                                   cmprs_en_extend_r <= 1;
         else if  ((timeout == 0) || !stuffer_running_mclk_r)  cmprs_en_extend_r <= 0;
+        
     end
     
     always @ (posedge mclk) begin
@@ -139,21 +145,21 @@ module  cmprs_frame_sync#(
         
         cmprs_en_d <= cmprs_en;
 
-///     broken_frame <=  cmprs_en && cmprs_run && vsync_late && reading_frame_r; // single xclk pulse
+//     broken_frame <=  cmprs_en && cmprs_run && vsync_late && reading_frame_r; // single xclk pulse
         aborted_frame <= cmprs_en_d && !cmprs_en && stuffer_running_mclk_r;
         
         if      (!stuffer_running_mclk_r ||!cmprs_en_extend_r) force_flush_long <= 0;
-///     else if (broken_frame || aborted_frame)                force_flush_long <= 1;
+//     else if (broken_frame || aborted_frame)                force_flush_long <= 1;
         else if (aborted_frame)                                force_flush_long <= 1;
 
-    
-///     if (!cmprs_en || frame_done || (cmprs_run && vsync_late)) reading_frame_r <= 0;
-        if (!cmprs_en || frame_done )                             reading_frame_r <= 0;
+//     if (!cmprs_en || frame_done || (cmprs_run && vsync_late)) reading_frame_r <= 0;
+//     last_mb_start[2] is used as emergency turn off reading_frame if memory channel did not generate frame_done (i.e. wrong frame height)
+// TODO: Consider the opposite - frame_done, but not got the last MB?
+        if (!cmprs_en || frame_done || last_mb_started_mclk)      reading_frame_r <= 0;
         else if (frame_started_mclk)                              reading_frame_r <= 1;
 
-//        if      (!cmprs_en || frame_start_dst_r[0])                              frame_start_pend_r <= 0;
-        if      (!cmprs_run || frame_start_dst_r[0])                             frame_start_pend_r <= 0;
-//        else if (cmprs_run && vsync_late && reading_frame_r)  frame_start_pend_r <= 1;
+//        if      (!cmprs_run || frame_start_dst_r[0])                             frame_start_pend_r <= 0;
+        if      (!cmprs_run || frame_start_conf)                                  frame_start_pend_r <= 0;
         else if ((cmprs_run && vsync_late && reading_frame_r) ||
                  (frame_start_dst_r[5] && bonded_mode && frames_numbers_differ)) frame_start_pend_r <= 1;
   //      else if (frame_start_dst_r[0])                        frame_start_pend_r <= 0;
@@ -168,8 +174,10 @@ module  cmprs_frame_sync#(
         frame_start_dst_r[0] <= cmprs_en && (cmprs_run ? 
                                             ((vsync_late && !reading_frame_r) || (frame_start_pend_r  && frame_done)):
                                              cmprs_standalone);
+        // modified - now bit 0 is disconnected from 1..5, 1 gets from memory channel controller, may be delayed                                             
         if      (!cmprs_en)   frame_start_dst_r[5:1] <=0;
-        else                  frame_start_dst_r[5:1] <= frame_start_dst_r[4:0];                                             
+//        else                  frame_start_dst_r[5:1] <= frame_start_dst_r[4:0];                                             
+        else                  frame_start_dst_r[5:1] <= {frame_start_dst_r[4:1],frame_start_conf};                                             
         
         if      (!cmprs_en)        bonded_mode <= 0;
         else if (cmprs_run)        bonded_mode <= 1;
@@ -188,6 +196,8 @@ module  cmprs_frame_sync#(
     
 //    pulse_cross_clock vsync_late_mclk_i (.rst(xrst), .src_clk(xclk), .dst_clk(mclk), .in_pulse(cmprs_en_xclk && vsync_late), .out_pulse(vsync_late_mclk),.busy());
     pulse_cross_clock frame_started_i   (.rst(xrst), .src_clk(xclk), .dst_clk(mclk), .in_pulse(frame_started), .out_pulse(frame_started_mclk),.busy());
+    pulse_cross_clock last_mb_started_i (.rst(xrst), .src_clk(xclk), .dst_clk(mclk), .in_pulse(last_mb_started), .out_pulse(last_mb_started_mclk),.busy());
+
 
 endmodule
 

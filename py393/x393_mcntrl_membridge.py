@@ -313,7 +313,8 @@ class X393McntrlMembridge(object):
                                    extra_pages =  0,
                                    write_mem =    write_ddr3,
                                    enable =       True,
-                                   chn_reset =    False)
+                                   chn_reset =    False,
+                                   abort_late =   False)
 
 #        self.x393_axi_tasks.write_control_register(vrlg.MEMBRIDGE_ADDR + vrlg.MEMBRIDGE_WIDTH64,    width64);    
 #        self.x393_axi_tasks.write_control_register(vrlg.MCNTRL_SCANLINE_CHN1_ADDR + vrlg.MCNTRL_SCANLINE_MODE,             0); # reset channel, including page address

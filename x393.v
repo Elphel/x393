@@ -521,6 +521,8 @@ module  x393 #(
     wire                     [3:0] cmprs_frame_start_dst; // output - trigger receive (tiledc) memory channel (it will take care of single/repetitive
                                                           // these output either follows vsync_late (reclocks it) or generated in non-bonded mode
                                                           // (compress from memory)
+    wire                     [3:0] cmprs_frame_start_conf; // memory controller confirmed cmprs_frame_start_dst - normally delayed by 1 clock,
+                                                           // or more if there were outstanding memory transactions.                                                           
     wire [4*FRAME_HEIGHT_BITS-1:0] cmprs_line_unfinished_src; // input[15:0] number of the current (unfinished ) line, in the source (sensor)
                                                           //  channel (RELATIVE TO FRAME, NOT WINDOW?)
     wire   [4*LAST_FRAME_BITS-1:0] cmprs_frame_number_src;// input[15:0] current frame number (for multi-frame ranges) in the source (sensor) channel
@@ -1349,7 +1351,8 @@ assign axi_grst = axi_rst_pre;
         .cmprs_page_ready          (cmprs_page_ready),           // output[3:0] 
         .cmprs_next_page           (cmprs_next_page),            // input[3:0] 
         .cmprs_first_rd_in_frame   (),                           // output[3:0] reg 
-        .cmprs_frame_start_dst     (cmprs_frame_start_dst),      // input[3:0] 
+        .cmprs_frame_start_dst     (cmprs_frame_start_dst),      // input[3:0]
+        .cmprs_frame_start_conf    (cmprs_frame_start_conf),     // output[3:0] 
         .cmprs_line_unfinished_src (cmprs_line_unfinished_src),  // output[63:0] 
         .cmprs_frame_number_src    (cmprs_frame_number_src),     // output[63:0] 
         .cmprs_frame_done_src      (cmprs_frame_done_src),       // output[3:0] 
@@ -2087,7 +2090,9 @@ assign axi_grst = axi_rst_pre;
         .page_ready                (cmprs_page_ready),           // input[3:0]
         .next_page                 (cmprs_next_page),            // output[3:0]
         
-        .frame_start_dst           (cmprs_frame_start_dst),      // output[3:0] 
+        .frame_start_dst           (cmprs_frame_start_dst),      // output[3:0]
+        .frame_start_conf          (cmprs_frame_start_conf),     // input[3:0] 
+
         .line_unfinished_src       (cmprs_line_unfinished_src),  // input[63:0] 
         .frame_number_src          (cmprs_frame_number_src),     // input[63:0] 
         .frame_done_src            (cmprs_frame_done_src),       // input[3:0] 

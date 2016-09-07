@@ -262,6 +262,7 @@ module  mcntrl393 #(
     parameter MCONTR_LINTILE_DIS_NEED =     11,   // disable 'need' request 
     parameter MCONTR_LINTILE_SKIP_LATE =    12,  // skip actual R/W operation when it is too late, advance pointers
     parameter MCONTR_LINTILE_COPY_FRAME =   13,  // copy frame number from the master channel (single event, not a persistent mode)
+    parameter MCONTR_LINTILE_ABORT_LATE =   14,  // abort frame if not finished by the new frame sync (wait pending memory)
     parameter MCNTRL_SCANLINE_DLY_WIDTH =   12,  // delay start pulse by 1..64 mclk
     parameter MCNTRL_SCANLINE_DLY_DEFAULT = 63  // initial delay value for start pulse
     
@@ -343,6 +344,7 @@ module  mcntrl393 #(
     input                      [3:0] cmprs_frame_start_dst,    // @mclk - trigger receive (tiledc) memory channel (it will take care of single/repetitive
                                                                // these output either follows vsync_late (reclocks it) or generated in non-bonded mode
                                                                // (compress from memory)
+    output                     [3:0] cmprs_frame_start_conf,   // @mclk lags by 1 from cmprs_frame_start_dst, more if there are outstanding memory transactions
     output [4*FRAME_HEIGHT_BITS-1:0] cmprs_line_unfinished_src,// number of the current (unfinished ) line, in the source (sensor) channel (RELATIVE TO FRAME, NOT WINDOW?)
     output   [4*LAST_FRAME_BITS-1:0] cmprs_frame_number_src,   // current frame number (for multi-frame ranges) in the source (sensor) channel
     output                     [3:0] cmprs_frame_done_src,     // single-cycle pulse when the full frame (window) was transferred to/from DDR3 memory 
@@ -1116,6 +1118,7 @@ module  mcntrl393 #(
                 .MCONTR_LINTILE_REPEAT             (MCONTR_LINTILE_REPEAT),
                 .MCONTR_LINTILE_DIS_NEED           (MCONTR_LINTILE_DIS_NEED),
                 .MCONTR_LINTILE_SKIP_LATE          (MCONTR_LINTILE_SKIP_LATE),
+                .MCONTR_LINTILE_ABORT_LATE         (MCONTR_LINTILE_ABORT_LATE),
                 .MCNTRL_SCANLINE_DLY_WIDTH         (MCNTRL_SCANLINE_DLY_WIDTH),
                 .MCNTRL_SCANLINE_DLY_DEFAULT       (MCNTRL_SCANLINE_DLY_DEFAULT)
             ) mcntrl_linear_wr_sensor_i (
@@ -1191,7 +1194,9 @@ module  mcntrl393 #(
                 .MCONTR_LINTILE_SINGLE         (MCONTR_LINTILE_SINGLE),
                 .MCONTR_LINTILE_REPEAT         (MCONTR_LINTILE_REPEAT),
                 .MCONTR_LINTILE_DIS_NEED       (MCONTR_LINTILE_DIS_NEED),
-                .MCONTR_LINTILE_COPY_FRAME     (MCONTR_LINTILE_COPY_FRAME)
+                .MCONTR_LINTILE_COPY_FRAME     (MCONTR_LINTILE_COPY_FRAME),
+                .MCONTR_LINTILE_ABORT_LATE     (MCONTR_LINTILE_ABORT_LATE)
+                
             ) mcntrl_tiled_rd_compressor_i ( 
                 .mrst                 (mrst),                         // input
                 .mclk                 (mclk),                        // input
@@ -1201,6 +1206,7 @@ module  mcntrl393 #(
                 .status_rq            (status_cmprs_rq[i]),          // output
                 .status_start         (status_cmprs_start[i]),       // input
                 .frame_start          (cmprs_frame_start_dst[i]),    // input
+                .frame_start_conf     (cmprs_frame_start_conf[i]),   // output
                 .next_page            (cmprs_next_page[i]),          // input compressor consumed page cmprs_buf_wpage_nxt?
                 .frame_done           (cmprs_frame_done_dst[i]),     // output
                 .frame_finished       (),                            // output
@@ -1270,6 +1276,7 @@ module  mcntrl393 #(
         .MCONTR_LINTILE_REPEAT             (MCONTR_LINTILE_REPEAT),
         .MCONTR_LINTILE_DIS_NEED           (MCONTR_LINTILE_DIS_NEED),
         .MCONTR_LINTILE_SKIP_LATE          (MCONTR_LINTILE_SKIP_LATE),
+        .MCONTR_LINTILE_ABORT_LATE         (MCONTR_LINTILE_ABORT_LATE),
         .MCNTRL_SCANLINE_DLY_WIDTH         (MCNTRL_SCANLINE_DLY_WIDTH),
         .MCNTRL_SCANLINE_DLY_DEFAULT       (MCNTRL_SCANLINE_DLY_DEFAULT)
          
@@ -1345,6 +1352,7 @@ module  mcntrl393 #(
         .MCONTR_LINTILE_REPEAT             (MCONTR_LINTILE_REPEAT),
         .MCONTR_LINTILE_DIS_NEED           (MCONTR_LINTILE_DIS_NEED),
         .MCONTR_LINTILE_SKIP_LATE          (MCONTR_LINTILE_SKIP_LATE),
+        .MCONTR_LINTILE_ABORT_LATE         (MCONTR_LINTILE_ABORT_LATE),
         .MCNTRL_SCANLINE_DLY_WIDTH         (MCNTRL_SCANLINE_DLY_WIDTH),
         .MCNTRL_SCANLINE_DLY_DEFAULT       (MCNTRL_SCANLINE_DLY_DEFAULT)
     ) mcntrl_linear_rw_chn3_i (
@@ -1418,7 +1426,8 @@ module  mcntrl393 #(
         .MCONTR_LINTILE_RST_FRAME      (MCONTR_LINTILE_RST_FRAME),
         .MCONTR_LINTILE_SINGLE         (MCONTR_LINTILE_SINGLE),
         .MCONTR_LINTILE_REPEAT         (MCONTR_LINTILE_REPEAT),
-        .MCONTR_LINTILE_DIS_NEED       (MCONTR_LINTILE_DIS_NEED) 
+        .MCONTR_LINTILE_DIS_NEED       (MCONTR_LINTILE_DIS_NEED),
+        .MCONTR_LINTILE_ABORT_LATE     (MCONTR_LINTILE_ABORT_LATE)
     ) mcntrl_tiled_rw_chn2_i ( 
         .mrst                 (mrst),                       // input
         .mclk                 (mclk),                       // input
@@ -1428,6 +1437,7 @@ module  mcntrl393 #(
         .status_rq            (status_tiled_chn2_rq),       // output
         .status_start         (status_tiled_chn2_start),    // input
         .frame_start          (frame_start_chn2),           // input
+        .frame_start_conf     (),                           // output
         .next_page            (next_page_chn2),             // input
         .frame_done           (frame_done_chn2),            // output
         .frame_finished       (),                           // output
@@ -1490,7 +1500,8 @@ module  mcntrl393 #(
         .MCONTR_LINTILE_RST_FRAME      (MCONTR_LINTILE_RST_FRAME),
         .MCONTR_LINTILE_SINGLE         (MCONTR_LINTILE_SINGLE),
         .MCONTR_LINTILE_REPEAT         (MCONTR_LINTILE_REPEAT),
-        .MCONTR_LINTILE_DIS_NEED       (MCONTR_LINTILE_DIS_NEED)
+        .MCONTR_LINTILE_DIS_NEED       (MCONTR_LINTILE_DIS_NEED),
+        .MCONTR_LINTILE_ABORT_LATE     (MCONTR_LINTILE_ABORT_LATE)
     ) mcntrl_tiled_rw_chn4_i ( 
         .mrst                 (mrst),                       // input
         .mclk                 (mclk),                       // input
@@ -1500,6 +1511,7 @@ module  mcntrl393 #(
         .status_rq            (status_tiled_chn4_rq),       // output
         .status_start         (status_tiled_chn4_start),    // input
         .frame_start          (frame_start_chn4),           // input
+        .frame_start_conf     (),                           // output
         .next_page            (next_page_chn4),             // input
         .frame_done           (frame_done_chn4),            // output
         .frame_finished       (),                           // output

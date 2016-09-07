@@ -1919,6 +1919,7 @@ input               mem                 mtd4                ram1                
                               num_sensor,
                               command,
                               reset_frame = False,
+                              abort_late =   False,
                               verbose = 1):
         """
         Control memory access (write) of a sensor channel
@@ -1928,17 +1929,20 @@ input               mem                 mtd4                ram1                
                stop        - stop at the end of the frame (if repetitive),
                single      - acquire single frame ,
                repetitive  - repetitive mode
-        @param reset_frame - reset frame number. Needed after changing frame start address (i.e. initial set-up) !       
+        @param reset_frame - reset frame number. Needed after changing frame start address (i.e. initial set-up) !
+        @param abort_late    abort frame r/w at the next frame sync, if not finished. Wait for pending memory transfers
+
         @param vebose -      verbose level       
         """
         try:
             if (num_sensor == all) or (num_sensor[0].upper() == "A"): #all is a built-in function
                 for num_sensor in range(4):
                     print ('num_sensor = ',num_sensor)
-                    self.control_sensor_memory(num_sensor = num_sensor,
-                                               command =    command,
+                    self.control_sensor_memory(num_sensor =  num_sensor,
+                                               command =     command,
                                                reset_frame = reset_frame,
-                                               verbose =    verbose)
+                                               abort_late =  abort_late, 
+                                               verbose =     verbose)
                 return
         except:
             pass
@@ -1972,7 +1976,8 @@ input               mem                 mtd4                ram1                
                                    extra_pages =  0,
                                    write_mem =    True,
                                    enable =       en,
-                                   chn_reset =    rst)
+                                   chn_reset =    rst,
+                                   abort_late =   abort_late)
         self.x393_axi_tasks.write_control_register(base_addr + vrlg.MCNTRL_SCANLINE_MODE,  mode) 
         if verbose > 0 :
             print ("write_control_register(0x%08x, 0x%08x)"%(base_addr + vrlg.MCNTRL_SCANLINE_MODE,  mode))
@@ -2009,7 +2014,8 @@ input               mem                 mtd4                ram1                
                                    extra_pages =  0,
                                    write_mem =    True,
                                    enable =       True,
-                                   chn_reset =    False)
+                                   chn_reset =    False,
+                                   abort_late =   False) # default, change with  control_sensor_memory()
                     
         self.x393_axi_tasks.write_control_register(base_addr + vrlg.MCNTRL_SCANLINE_STARTADDR,
                                                   frame_sa); # RA=80, CA=0, BA=0 22-bit frame start address (3 CA LSBs==0. BA==0)

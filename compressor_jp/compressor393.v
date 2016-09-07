@@ -169,6 +169,8 @@ module  compressor393 # (
     output                    [3:0] frame_start_dst,    // @mclk - trigger receive (tiledc) memory channel (it will take care of single/repetitive
                                                         // these output either follows vsync_late (reclocks it) or generated in non-bonded mode
                                                         // (compress from memory)
+    input                     [3:0] frame_start_conf,   // memory controller confirmed frame_start_dst - normally delayed by 1 clock,
+                                                        // or more if there were outstanding memory transactions.                                                           
     input [4*FRAME_HEIGHT_BITS-1:0] line_unfinished_src,// number of the current (unfinished ) line, in the source (sensor) channel (RELATIVE TO FRAME, NOT WINDOW?)
     input   [4*LAST_FRAME_BITS-1:0] frame_number_src,   // current frame number (for multi-frame ranges) in the source (sensor) channel
     input                     [3:0] frame_done_src,     // single-cycle pulse when the full frame (window) was transferred to/from DDR3 memory 
@@ -438,6 +440,7 @@ module  compressor393 # (
                 .next_page_chn                        (next_page[i]),              // output
                 
                 .frame_start_dst                      (frame_start_dst[i]),        // output
+                .frame_start_conf                     (frame_start_conf[i]),          // input
                 .line_unfinished_src                  (line_unfinished_src[FRAME_HEIGHT_BITS * i +: FRAME_HEIGHT_BITS]), // input[15:0] 
                 .frame_number_src                     (frame_number_src[LAST_FRAME_BITS * i +: LAST_FRAME_BITS]), // input[15:0] 
                 .frame_done_src                       (frame_done_src[i]),         // input

@@ -351,6 +351,7 @@ class X393Cmprs(object):
                               command,
                               reset_frame = False,
                               copy_frame = False,
+                              abort_late = False,
                               verbose = 1):
         """
         Control memory access (write) of a sensor channel
@@ -361,7 +362,8 @@ class X393Cmprs(object):
                single      - acquire single frame ,
                repetitive  - repetitive mode
         @param reset_frame - reset frame number
-        @param copy_frame  copy frame number from the master channel (non-persistent)
+        @param copy_frame  - copy frame number from the master channel (non-persistent)
+        @param abort_late  -  abort frame r/w at the next frame sync, if not finished. Wait for pending memory transfers
         @param vebose -      verbose level       
         """
         try:
@@ -372,6 +374,7 @@ class X393Cmprs(object):
                                                    command =    command,
                                                    reset_frame = reset_frame,
                                                    copy_frame = copy_frame,
+                                                   abort_late = abort_late,
                                                    verbose =    verbose)
                 return
         except:
@@ -410,7 +413,8 @@ class X393Cmprs(object):
                                    write_mem =    False,
                                    enable =       en,
                                    chn_reset =    rst,
-                                   copy_frame = copy_frame)
+                                   copy_frame = copy_frame,
+                                   abort_late =   abort_late)
         
         self.x393_axi_tasks.write_control_register(base_addr + vrlg.MCNTRL_TILED_MODE,  mode) 
         if verbose > 0 :
@@ -434,7 +438,8 @@ class X393Cmprs(object):
                                  tile_vstep, # = 16
                                  tile_height, #= 18
                                  extra_pages,
-                                 disable_need):
+                                 disable_need,
+                                 abort_late = False):
         """
         Setup memory controller for a compressor channel
         @param num_sensor -       sensor port number (0..3)
@@ -452,6 +457,7 @@ class X393Cmprs(object):
         @param tile_height        tile height: 18 for color JPEG, 16 fore JP$ flavors,
         @param extra_pages        extra pages needed (1)
         @param disable_need       disable need (preference to sensor channels - they can not wait
+        @param abort_late         abort frame r/w at the next frame sync, if not finished. Wait for pending memory transfers
         """
 #        tile_vstep = 16
 #        tile_height= 18
@@ -467,7 +473,8 @@ class X393Cmprs(object):
                                    extra_pages =  extra_pages,
                                    write_mem =    False,
                                    enable =       True,
-                                   chn_reset =    False)
+                                   chn_reset =    False,
+                                   abort_late =   abort_late)
         self.x393_axi_tasks.write_control_register(
                                     base_addr + vrlg.MCNTRL_TILED_STARTADDR,
                                     frame_sa) # RA=80, CA=0, BA=0 22-bit frame start address (3 CA LSBs==0. BA==0)

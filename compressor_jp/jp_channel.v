@@ -155,6 +155,9 @@ module  jp_channel#(
     output                        frame_start_dst,    // @mclk - trigger receive (tiledc) memory channel (it will take care of single/repetitive
                                                       // this output either follows vsync_late (reclocks it) or generated in non-bonded mode
                                                       // (compress from memory)
+    input                         frame_start_conf,   // memory controller confirmed frame_start_dst - normally delayed by 1 clock,
+                                                        // or more if there were outstanding memory transactions.                                                           
+                                                      
     input [FRAME_HEIGHT_BITS-1:0] line_unfinished_src,// number of the current (unfinished ) line, in the source (sensor) channel (RELATIVE TO FRAME, NOT WINDOW?)
     input   [LAST_FRAME_BITS-1:0] frame_number_src,   // current frame number (for multi-frame ranges) in the source (sensor) channel
     input                         frame_done_src,     // single-cycle pulse when the full frame (window) was transferred to/from DDR3 memory 
@@ -582,7 +585,8 @@ module  jp_channel#(
         .rst       (!cmprs_en_mclk),
         .src_clk   (mclk),
         .dst_clk   (hclk),
-        .in_pulse  (frame_start_dst),
+//        .in_pulse  (frame_start_dst),
+        .in_pulse  (frame_start_conf),
         .out_pulse (dbg_frame_start_hclk),
         .busy      ());
     
@@ -725,7 +729,8 @@ module  jp_channel#(
         .color_sat_we       (set_color_saturation_w), // input - write color saturation values
         .coring_we          (set_coring_w),        // input - write color saturation values
         .di                 (cmd_data),            // input[31:0] - 32-bit data to write to control register (24LSB are used)
-        .frame_start        (frame_start_dst),     // input @mclk
+//        .frame_start        (frame_start_dst),     // input @mclk
+        .frame_start        (frame_start_conf),     // input @mclk
         .frame_start_xclk   (frame_start_xclk),    // output re-clocked, parameters are copied during this pulse
         .cmprs_en_mclk      (cmprs_en_mclk),       // output
         .cmprs_en_extend    (cmprs_en_extend),     // input
@@ -796,6 +801,8 @@ module  jp_channel#(
         .frame_start_dst    (frame_start_dst),     // output reg @mclk - trigger receive (tiled) memory channel (it will take care of
                                                    // single/repetitive modes itself this output either follows vsync_late (reclocks it)
                                                    // or generated in non-bonded mode (compress from memory once)
+        .frame_start_conf   (frame_start_conf),    // input: memory controller confirmed cmprs_frame_start_dst - normally delayed by 1 clock,
+                                                   // or more if there were outstanding memory transactions.                                                           
         .line_unfinished_src(line_unfinished_src), // input[15:0] - number of the current (unfinished ) line, in the source (sensor) channel
         .frame_number_src   (frame_number_src),    // input[15:0] - current frame number (for multi-frame ranges) in the source (sensor) channel
         .frame_done_src     (frame_done_src),      // input - single-cycle pulse when the full frame (window) was transferred to/from DDR3 memory 
@@ -804,7 +811,8 @@ module  jp_channel#(
         .line_unfinished    (line_unfinished_dst), // input[15:0] - number of the current (unfinished ) line in this (compressor) channel
         .frame_number       (frame_number_dst),    // input[15:0] - current frame number (for multi-frame ranges) in this (compressor channel
         .frames_in_sync     (frames_in_sync),      // frame number in destination memory channel is valid for bonded mode
-        .frame_done         (frame_done_dst),      // input - single-cycle pulse when the full frame (window) was transferred to/from DDR3 memory 
+        .frame_done         (frame_done_dst),      // input - single-cycle pulse when the full frame (window) was transferred to/from DDR3 memory
+        .last_mb_started    (last_mb && mb_pre2_first_out), // input 
         .suspend            (suspend),             // output reg - suspend reading data for this channel - waiting for the source data
         .stuffer_running    (stuffer_running), // input
         .force_flush_long   (force_flush_long),         // output reg - @ mclk tried to start frame compression before the previous one was finished

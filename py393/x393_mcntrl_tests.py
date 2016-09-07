@@ -298,7 +298,8 @@ class X393McntrlTests(object):
                                    extra_pages =  extra_pages,
                                    write_mem =    True,
                                    enable =       True,
-                                   chn_reset =    False)
+                                   chn_reset =    False,
+                                   abort_late =   False)
             
                                 
         self.x393_axi_tasks.write_control_register(start_addr + vrlg.MCNTRL_SCANLINE_MODE, 0); # reset channel, including page address
@@ -451,7 +452,8 @@ class X393McntrlTests(object):
                                    extra_pages =  extra_pages,
                                    write_mem =    False,
                                    enable =       True,
-                                   chn_reset =    False)
+                                   chn_reset =    False,
+                                   abort_late =   False)
             
 # program to the
         self.x393_axi_tasks.write_control_register(start_addr + vrlg.MCNTRL_SCANLINE_MODE, 0); # reset channel, including page address
@@ -568,7 +570,8 @@ class X393McntrlTests(object):
                                    extra_pages =  extra_pages,
                                    write_mem =    True,
                                    enable =       True,
-                                   chn_reset =    False)
+                                   chn_reset =    False,
+                                   abort_late =   False)
                                                         
         self.x393_axi_tasks.write_control_register(start_addr + vrlg.MCNTRL_TILED_MODE, 0); # reset channel, including page address
         self.x393_axi_tasks.write_control_register(start_addr + vrlg.MCNTRL_TILED_STARTADDR,
@@ -711,7 +714,8 @@ class X393McntrlTests(object):
                                    extra_pages =  extra_pages,
                                    write_mem =    False,
                                    enable =       True,
-                                   chn_reset =    False)
+                                   chn_reset =    False,
+                                   abort_late =   False)
             
         self.x393_axi_tasks.write_control_register(start_addr + vrlg.MCNTRL_TILED_MODE, 0); # reset channel, including page address
         self.x393_axi_tasks.write_control_register(start_addr + vrlg.MCNTRL_TILED_STARTADDR,

@@ -83,7 +83,9 @@ module  mcntrl_tiled_rw#(
     parameter MCONTR_LINTILE_SINGLE =        9, // read/write a single page 
     parameter MCONTR_LINTILE_REPEAT =       10, // read/write pages until disabled
     parameter MCONTR_LINTILE_DIS_NEED =     11, // disable 'need' request
-    parameter MCONTR_LINTILE_COPY_FRAME =   13  // copy frame number from the master channel (single event, not a persistent mode)
+    parameter MCONTR_LINTILE_COPY_FRAME =   13, // copy frame number from the master channel (single event, not a persistent mode)
+    parameter MCONTR_LINTILE_ABORT_LATE =   14  // abort frame if not finished by the new frame sync (wait pending memory)
+    
 )(
     input                          mrst,
     input                          mclk,
@@ -96,6 +98,8 @@ module  mcntrl_tiled_rw#(
     input                          status_start,   // acknowledge of address (first byte) from downsteram   
 
     input                          frame_start,   // resets page, x,y, and initiates transfer requests (in write mode will wait for next_page)
+    output                         frame_start_conf, // frame start modified by memory controller. Normally delayed by 1 cycle,
+                                                     // or more if memory transactions are to be finished 
     input                          next_page,     // page was read/written from/to 4*1kB on-chip buffer
 //    output                         page_ready,    // == xfer_done, connect externally | Single-cycle pulse indicating that a page was read/written from/to DDR3 memory
     output                         frame_done,    // single-cycle pulse when the full frame (window) was transferred to/from DDR3 memory
@@ -176,6 +180,10 @@ module  mcntrl_tiled_rw#(
     wire                          chn_en;   // enable requests by channel (continue ones in progress), enable frame_start inputs
     wire                          chn_rst; // resets command, including fifo;
     reg                           chn_rst_d; // delayed by 1 cycle do detect turning off
+    wire                          abort_en;     // enable frame abort (mode register bit)
+    reg                           aborting_r;   // waiting pending memory transactions at if the frame was not finished at frame sync
+    reg                           aborting_d;   // aborting_r delayed by 1 cycle
+    reg                           frame_start_mod; // either original frame start pulse or delayed during abort (delayed by 1 cycle)
     reg                           xfer_page_rst_r=1;
     reg                           xfer_page_rst_pos=1;  
     reg                           xfer_page_rst_neg=1;  
@@ -196,6 +204,7 @@ module  mcntrl_tiled_rw#(
     
     reg                           busy_r;
     reg                           want_r;
+    reg                           want_d; // want_r delayed (no gap to pending_xfers)
     reg                           need_r;
     reg                           frame_done_r;
     reg                           frame_finished_r;    
@@ -236,7 +245,7 @@ module  mcntrl_tiled_rw#(
     
 //    reg                     [5:0] mode_reg;//mode register: {write_mode,keep_open,extra_pages[1:0],enable,!reset}
 //    reg                     [6:0] mode_reg;//mode register: {byte32,keep_open,extra_pages[1:0],write_mode,enable,!reset}
-    reg                    [11:0] mode_reg;//mode register: {dis_need,repet,single,rst_frame,na,byte32,keep_open,extra_pages[1:0],write_mode,enable,!reset}
+    reg                    [14:0] mode_reg;//mode register: {dis_need,repet,single,rst_frame,na,byte32,keep_open,extra_pages[1:0],write_mode,enable,!reset}
     reg   [NUM_RC_BURST_BITS-1:0] start_range_addr; // (programmed) First frame in range start (in {row,col8} in burst8, bank ==0
     reg   [NUM_RC_BURST_BITS-1:0] frame_size;       // (programmed) First frame in range start (in {row,col8} in burst8, bank ==0
     reg     [LAST_FRAME_BITS-1:0] last_frame_number; 
@@ -291,13 +300,15 @@ module  mcntrl_tiled_rw#(
     
     assign single_frame_w =       cmd_we && (cmd_a== MCNTRL_TILED_MODE) && cmd_data[MCONTR_LINTILE_SINGLE];
     assign rst_frame_num_w =      cmd_we && (cmd_a== MCNTRL_TILED_MODE) && cmd_data[MCONTR_LINTILE_RST_FRAME];
-    assign set_copy_frame_num_w = cmd_we && (cmd_a== MCNTRL_TILED_MODE) && cmd_data[MCONTR_LINTILE_COPY_FRAME];
+    assign set_copy_frame_num_w = cmd_we && (cmd_a== MCNTRL_TILED_MODE) && cmd_data[MCONTR_LINTILE_COPY_FRAME]; // self-clearing bit
     
+    assign frame_start_conf = frame_start_r[3]; // frame_number valid
+//    assign frame_start_mod = (!busy_r && frame_start) || (aborting_d && !aborting_r);    
     //
     // Set parameter registers
     always @(posedge mclk) begin
         if      (mrst)               mode_reg <= 0;
-        else if (set_mode_w)         mode_reg <= cmd_data[11:0]; // [5:0];
+        else if (set_mode_w)         mode_reg <= cmd_data[14:0]; // [5:0];
         
         if (mrst) single_frame_r <= 0;
         else      single_frame_r <= single_frame_w;
@@ -326,12 +337,12 @@ module  mcntrl_tiled_rw#(
         else     is_last_frame <= frame_number_cntr == last_frame_number;
         
         if (mrst) frame_start_r <= 0;
-        else     frame_start_r <= {frame_start_r[3:0], frame_start & frame_en};
+        else      frame_start_r <= {frame_start_r[3:0], frame_start_mod & frame_en}; // frame_start
 
 //        if      (mrst)                            frame_en <= 0;
         if      (!chn_en)                         frame_en <= 0;
         else if (single_frame_r || repeat_frames) frame_en <= 1;
-        else if (frame_start)                     frame_en <= 0;
+        else if (frame_start_mod)                 frame_en <= 0;
         
         if      (mrst ||master_set)     frame_master_pend <= 0;
         else if (set_copy_frame_num_w)  frame_master_pend <= 1;
@@ -409,7 +420,7 @@ module  mcntrl_tiled_rw#(
     assign calc_valid=  par_mod_r[PAR_MOD_LATENCY-1]; // MSB, longest 0
     assign frame_done=      frame_done_r;
     assign frame_finished=  frame_finished_r;
-    assign pre_want=    chn_en && busy_r && !want_r && !xfer_start_r[0] && calc_valid && !last_block && !suspend && !(|frame_start_r);
+    assign pre_want=    chn_en && busy_r && !want_r && !xfer_start_r[0] && calc_valid && !last_block && !suspend && !(|frame_start_r) && !aborting_r;
     assign last_in_row_w=(row_left=={{(FRAME_WIDTH_BITS-MAX_TILE_WIDTH){1'b0}},num_cols_r}); // what if it crosses page? OK, num_cols_r & row_left know that
 // tiles must completely fit window
 // all window should be covered (tiles may extend):    
@@ -431,6 +442,7 @@ module  mcntrl_tiled_rw#(
     assign byte32=           mode_reg[MCONTR_LINTILE_BYTE32]; // use 32-byte wide columns in each tile (false - 16-byte) 
     assign repeat_frames=    mode_reg[MCONTR_LINTILE_REPEAT];
     assign disable_need =    mode_reg[MCONTR_LINTILE_DIS_NEED];
+    assign abort_en =        mode_reg[MCONTR_LINTILE_ABORT_LATE];
     assign status_data=      {frame_finished_r, busy_r}; 
     assign pgm_param_w=      cmd_we;
     assign rowcol_inc=       frame_full_width;
@@ -450,6 +462,7 @@ module  mcntrl_tiled_rw#(
     wire xfer_limited_by_mem_page;
     reg  xfer_limited_by_mem_page_r;
     assign xfer_limited_by_mem_page= keep_open && (mem_page_left < {EXTRA_BITS,lim_by_tile_width}); // if not keep_open - no need to break
+    
     always @(posedge mclk) begin // TODO: Match latencies (is it needed?) Reduce consumption by CE?
     // cycle 1
         if (recalc_r[0]) begin
@@ -547,9 +560,10 @@ wire    start_not_partial= xfer_start_r[0] && !xfer_limited_by_mem_page_r;
         if (mrst)                                                want_r <= 0;
         else if (chn_rst || xfer_grant)                          want_r <= 0;
         else if (pre_want && (page_cntr>{1'b0,cmd_extra_pages})) want_r <= 1;
-        
+        want_d <= want_r;        
         if (mrst)                                  page_cntr <= 0;
-        else if (frame_start_r[0])                 page_cntr <= cmd_wrmem?0:4;
+//        else if (frame_start_r[0])                 page_cntr <= cmd_wrmem?0:4; // reset here, but compressor is not
+        else if (xfer_page_rst_pos)                page_cntr <= cmd_wrmem?0:4; // reset here, but compressor is not
         else if ( start_not_partial && !next_page) page_cntr <= page_cntr - 1;     
         else if (!start_not_partial &&  next_page) page_cntr <= page_cntr + 1;
         
@@ -580,8 +594,22 @@ wire    start_not_partial= xfer_start_r[0] && !xfer_limited_by_mem_page_r;
         else if (!xfer_start_r[0] &&  xfer_page_done) pending_xfers <= pending_xfers - 1; // page done is not generated on partial (first) pages
         
         // single cycle (sent out)
-        if (mrst)          frame_done_r <= 0;
-        else              frame_done_r <= busy_r && last_block && xfer_page_done_d && (pending_xfers==0);
+//        if (mrst)          frame_done_r <= 0;
+//        else              frame_done_r <= busy_r && last_block && xfer_page_done_d && (pending_xfers==0);
+
+        if (mrst)         frame_done_r <= 0;
+//        else              frame_done_r <= busy_r && (last_block || aborting_r) && xfer_page_done_d && (pending_xfers==0);
+        else              frame_done_r <= busy_r && (pending_xfers==0) &&
+                                          ((last_block && xfer_page_done_d) || (aborting_r && !want_r && !want_d));
+        
+
+        aborting_d <= aborting_r;
+
+        if      (!busy_r)                           aborting_r <= 0;
+        else if (abort_en && busy_r && frame_start) aborting_r <= 1;
+
+
+        frame_start_mod <= (frame_start && !busy_r) || (aborting_d && !aborting_r);    
 
         // turns and stays on (used in status)
         if (mrst)                             frame_finished_r <= 0;
@@ -612,8 +640,8 @@ wire    start_not_partial= xfer_start_r[0] && !xfer_limited_by_mem_page_r;
 */
         if (recalc_r[0]) line_unfinished_relw_r <= curr_y + (cmd_wrmem ? 0: tile_rows);
         
-        if (mrst || (frame_start || !chn_en))  line_unfinished_r <= {FRAME_HEIGHT_BITS{~cmd_wrmem}}; // lowest/highest value until valid
-        else if (recalc_r[2])                  line_unfinished_r <= line_unfinished_relw_r + window_y0;
+        if (mrst || (frame_start_mod || !chn_en))  line_unfinished_r <= {FRAME_HEIGHT_BITS{~cmd_wrmem}}; // lowest/highest value until valid
+        else if (recalc_r[2])                      line_unfinished_r <= line_unfinished_relw_r + window_y0;
         
     end
     always @ (negedge mclk) begin

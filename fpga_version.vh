@@ -35,7 +35,7 @@
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
  */
-          parameter FPGA_VERSION =          32'h039300ae;      // parallel, increasing sesnsor-channels maximal delays to 12 bits
+          parameter FPGA_VERSION =          32'h039300ae;      // parallel, increasing sesnsor-channels maximal delays to 12 bits -0.091/25, 79.89%
 //        parameter FPGA_VERSION =          32'h039300ad;      // parallel, resetting frame_pre_run. All met, 79.97%
 //        parameter FPGA_VERSION =          32'h039300ac;      // parallel, adding reset needed_page in compressor -0.012 (2), 79.39%
 //        parameter FPGA_VERSION =          32'h039300ab;      // parallel, more on frame sync in compressor All met, 79.04%

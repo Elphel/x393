@@ -615,6 +615,7 @@ class X393SensCmprs(object):
             print ("tile_height =     18")
             print ("extra_pages =      1")
             print ("disable_need =     1")
+            print ("abort_late =       0")
 
         self.x393Cmprs.setup_compressor_memory (
             num_sensor =       num_sensor,
@@ -631,7 +632,8 @@ class X393SensCmprs(object):
             tile_vstep =      16,
             tile_height =     18,
             extra_pages =      1,
-            disable_need =     1)
+            disable_need =     1,
+            abort_late =       False)
 
         if exit_step == 15: return False
     
@@ -1207,6 +1209,7 @@ class X393SensCmprs(object):
             print ("tile_height =      0x%x"%(tile_height))
             print ("extra_pages =      0x%x"%(extra_pages))
             print ("disable_need =     1")
+            print ("abort_late =       0")
 
         self.x393Cmprs.setup_compressor_memory (
             num_sensor =       num_sensor,
@@ -1223,7 +1226,9 @@ class X393SensCmprs(object):
             tile_vstep =       tile_vstep,
             tile_height =      tile_height,
             extra_pages =      extra_pages,
-            disable_need =     1)
+            disable_need =     1,
+            abort_late =       False)
+
     def reset_channels(self,
                        sensor_mask = 0x1,
                        reset_mask =  0xf):
@@ -1852,7 +1857,8 @@ class X393SensCmprs(object):
                                    extra_pages =  0,
                                    write_mem =    write_mem,
                                    enable =       True,
-                                   chn_reset =    False)
+                                   chn_reset =    False,
+                                   abort_late =   False)
 
         self.x393_axi_tasks.write_control_register(vrlg.MCNTRL_SCANLINE_CHN1_ADDR + vrlg.MCNTRL_SCANLINE_STARTADDR,        frame_start_address) # RA=80, CA=0, BA=0 22-bit frame start address (3 CA LSBs==0. BA==0) 
         self.x393_axi_tasks.write_control_register(vrlg.MCNTRL_SCANLINE_CHN1_ADDR + vrlg.MCNTRL_SCANLINE_FRAME_FULL_WIDTH, frame_full_width)

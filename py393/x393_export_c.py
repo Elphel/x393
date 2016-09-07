@@ -1660,6 +1660,7 @@ class X393ExportC(object):
         dw.append(("disable_need", vrlg.MCONTR_LINTILE_DIS_NEED,1,0,  "disable 'need' generation, only 'want' (compressor channels)"))
         dw.append(("skip_too_late",vrlg.MCONTR_LINTILE_SKIP_LATE,1,0, "Skip over missed blocks to preserve frame structure (increment pointers)"))
         dw.append(("copy_frame",   vrlg.MCONTR_LINTILE_COPY_FRAME,1,0, "Copy frame number from the master (sensor) channel. Combine with reset_frame to reset bjuffer"))
+        dw.append(("abort_late",   vrlg.MCONTR_LINTILE_ABORT_LATE,1,0, "abort frame if not finished by the new frame sync (wait pending memory transfers)"))
         return dw
     """
         self.x393_axi_tasks.write_control_register(

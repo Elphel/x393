@@ -78,6 +78,7 @@ module  mcntrl_linear_rw #(
     parameter MCONTR_LINTILE_REPEAT =          10, // read/write pages until disabled 
     parameter MCONTR_LINTILE_DIS_NEED =        11, // disable 'need' request 
     parameter MCONTR_LINTILE_SKIP_LATE =       12, // skip actual R/W operation when it is too late, advance pointers
+    parameter MCONTR_LINTILE_ABORT_LATE =      14,  // abort frame if not finished by the new frame sync (wait pending memory)
     
 // TODO NC393: This delay may be too long for serail sensors. Make them always start to fill the
 // first buffer page, waiting for the request from mcntrl_linear during that first page. And if it will arrive - 
@@ -176,9 +177,11 @@ module  mcntrl_linear_rw #(
     reg     [PAR_MOD_LATENCY-1:0] recalc_r; // 1-hot CE for re-calculating registers
 // SuppressWarnings VEditor unused 
     wire                          calc_valid;   // calculated registers have valid values   
-    wire                          chn_en;   // enable requests by channel (continue ones in progress), enable frame_start_late inputs
-    wire                          chn_rst; // resets command, including fifo;
-    reg                           chn_rst_d; // delayed by 1 cycle do detect turning off
+    wire                          chn_en;       // enable requests by channel (continue ones in progress), enable frame_start_late inputs
+    wire                          chn_rst;      // resets command, including fifo;
+    reg                           chn_rst_d;    // delayed by 1 cycle do detect turning off
+    wire                          abort_en;     // enable frame abort (mode register bit)
+    reg                           aborting_r;   // waiting pending memory transactions at if the frame was not finished at frame sync
 //    reg                           xfer_reset_page_r;
     reg                           xfer_page_rst_r=1;
     reg                           xfer_page_rst_pos=1;  
@@ -199,6 +202,7 @@ module  mcntrl_linear_rw #(
     
     reg                           busy_r;
     reg                           want_r;
+    reg                           want_d; // want_r delayed (no gap to pending_xfers)
     reg                           need_r;
     reg                           frame_done_r;
     reg                           frame_finished_r;    
@@ -232,7 +236,7 @@ module  mcntrl_linear_rw #(
     wire                          msw_zero=  !(|cmd_data[31:16]); // MSW all bits are 0 - set carry bit
       
     
-    reg                    [12:0] mode_reg;//mode register: {dis_need,repet,single,rst_frame,na[2:0],extra_pages[1:0],write_mode,enable,!reset}
+    reg                    [14:0] mode_reg;//mode register: {dis_need,repet,single,rst_frame,na[2:0],extra_pages[1:0],write_mode,enable,!reset}
     
     reg   [NUM_RC_BURST_BITS-1:0] start_range_addr; // (programmed) First frame in range start (in {row,col8} in burst8, bank ==0
     reg   [NUM_RC_BURST_BITS-1:0] frame_size;       // (programmed) First frame in range start (in {row,col8} in burst8, bank ==0
@@ -262,6 +266,8 @@ module  mcntrl_linear_rw #(
     wire                          set_start_delay_w; 
     reg                           buf_reset_pend;  // reset buffer page at next (late)frame sync (compressor should be disabled
                                                    // if total  number of pages in a frame is not multiple of 4 
+                                                   
+//    wire                                                
     
     assign frame_number =       frame_number_current;
     
@@ -284,7 +290,7 @@ module  mcntrl_linear_rw #(
     // Set parameter registers
     always @(posedge mclk) begin
         if      (mrst)               mode_reg <= 0;
-        else if (set_mode_w)         mode_reg <= cmd_data[12:0]; // 4:0]; // [4:0];
+        else if (set_mode_w)         mode_reg <= cmd_data[14:0]; // 4:0]; // [4:0];
 
         if (mrst) single_frame_r <= 0;
         else      single_frame_r <= single_frame_w;
@@ -393,7 +399,7 @@ module  mcntrl_linear_rw #(
     // accelerating pre_want:
 //    assign pre_want= pre_want_r1 && !want_r && !xfer_start_r[0] && !suspend ;
     // last_block was too late to inclusde in pre_want_r1, moving it here
-    assign pre_want= pre_want_r1 && !want_r && !xfer_start_r[0] && !suspend  && !last_block;
+    assign pre_want= pre_want_r1 && !want_r && !xfer_start_r[0] && !suspend  && !last_block && !aborting_r;
 
     assign last_in_row_w=(row_left=={{(FRAME_WIDTH_BITS-NUM_XFER_BITS){1'b0}},xfer_num128_r});
     assign last_row_w=  next_y==window_height;
@@ -410,6 +416,8 @@ module  mcntrl_linear_rw #(
     assign repeat_frames=    mode_reg[MCONTR_LINTILE_REPEAT];
     assign disable_need =    mode_reg[MCONTR_LINTILE_DIS_NEED];
     assign skip_too_late =   mode_reg[MCONTR_LINTILE_SKIP_LATE];
+    assign abort_en =        mode_reg[MCONTR_LINTILE_ABORT_LATE];
+    
     assign status_data= {frame_finished_r, busy_r};     // TODO: Add second bit?
     assign pgm_param_w=      cmd_we;
     localparam [COLADDR_NUMBER-3-NUM_XFER_BITS-1:0] EXTRA_BITS=0;
@@ -439,7 +447,6 @@ module  mcntrl_linear_rw #(
     always @(posedge mclk) begin // Handling skip/reject
         if (mrst) xfer_reject_r <= 0;
         else      xfer_reject_r <= xfer_grant && !chn_rst && skip_run;
-    
 
         if (mrst) xfer_start_r <= 0;
         else      xfer_start_r <= {xfer_start_r[1:0], (xfer_grant & ~chn_rst & ~skip_run) | start_skip_r};
@@ -478,6 +485,7 @@ module  mcntrl_linear_rw #(
         if (mrst)                                                  want_r <= 0;
         else if (chn_rst || xfer_grant || start_skip_r)            want_r <= 0;
         else if (pre_want && (page_cntr > {1'b0,cmd_extra_pages})) want_r <= 1;
+        want_d <= want_r;        
         
     end    
     
@@ -571,10 +579,15 @@ wire    start_not_partial= xfer_start_r[0] && !xfer_limited_by_mem_page_r;
         else if (frame_start_r[0])  continued_xfer <= 1'b0;
         else if (xfer_start_r[0])   continued_xfer <= xfer_limited_by_mem_page_r; // only set after actual start if it was partial, not after parameter change
 
-        // single cycle (sent out)
+        // single cycle (sent out), will alos reset busy, set frame_finished, ...
         if (mrst)         frame_done_r <= 0;
-        else              frame_done_r <= busy_r && last_block && xfer_done_d && (pending_xfers==0);
-
+//        else              frame_done_r <= busy_r && (last_block || aborting_r) && xfer_done_d && (pending_xfers==0);
+        else              frame_done_r <= busy_r && (pending_xfers==0) &&
+                                         ((last_block && xfer_done_d) || (aborting_r && !want_r && !want_d));
+        
+        if      (!busy_r)                           aborting_r <= 0;
+        else if (abort_en && busy_r && frame_start) aborting_r <= 1; // Early frame start, not delayed
+        
         // turns and stays on (used in status)
         if (mrst)                             frame_finished_r <= 0;
         else if (chn_rst || frame_start_r[0]) frame_finished_r <= 0;
