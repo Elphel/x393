@@ -501,7 +501,7 @@ class X393ExportC(object):
                                  frmt_spcs = frmt_spcs)
         stypedefs += self.get_typedef32(comment =   "Compressor mode control",
                                  data =      self._enc_cmprs_mode(),
-                                 name =      "x393_cmprs_mode",  typ="wo",
+                                 name =      "x393_cmprs_mode",  typ="rw", # to read back last written
                                  frmt_spcs = frmt_spcs)
         stypedefs += self.get_typedef32(comment =   "Compressor coring mode (table number)",
                                  data =      self._enc_cmprs_coring_sel(),
@@ -947,7 +947,7 @@ class X393ExportC(object):
         c =  "cmprs_chn"
         sdefines +=[
             (('Compressor control',)),
-            (("X393_CMPRS_CONTROL_REG",                  c, vrlg.CMPRS_CONTROL_REG +                  ba, ia, z3, "x393_cmprs_mode", "wo",                    "Program compressor channel operation mode")),
+            (("X393_CMPRS_CONTROL_REG",                  c, vrlg.CMPRS_CONTROL_REG +                  ba, ia, z3, "x393_cmprs_mode", "rw",                    "Program compressor channel operation mode")),
             (("X393_CMPRS_STATUS",                       c, vrlg.CMPRS_STATUS_CNTRL +                 ba, ia, z3, "x393_status_ctrl", "rw",                   "Setup compressor status report mode")),
             (("X393_CMPRS_FORMAT",                       c, vrlg.CMPRS_FORMAT +                       ba, ia, z3, "x393_cmprs_frame_format", "rw",            "Compressor frame format")),
             (("X393_CMPRS_COLOR_SATURATION",             c, vrlg.CMPRS_COLOR_SATURATION +             ba, ia, z3, "x393_cmprs_colorsat", "rw",                "Compressor color saturation")),
