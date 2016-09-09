@@ -141,7 +141,7 @@ class X393_cocotb_server(object):
                                     autoflush =  self.autoflush,
                                     blatency =   5)
         
-        level = logging.DEBUG if debug else logging.WARNING
+        level = logging.DEBUG if debug else logging.INFO # WARNING
         self.dut._log.info('Set debug level '+str(level)+", debug="+str(debug))
         
         self.maxigp0.log.setLevel(level)

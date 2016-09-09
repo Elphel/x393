@@ -172,7 +172,6 @@ class SAXIWrSim(BusDriver):
         @param autoflush flush file after each write
         @param blatency  number of cycles to delay write response (b) channel
         """
-#        self.log.setLevel(logging.DEBUG)
         BusDriver.__init__(self, entity, name, clock)
         self.name = name
         self.log.debug ("SAXIWrSim: name='%s', mempath='%s', memhigh=0x%08x, data_bytes=%d, autoflush=%s, blatency=%d"%
@@ -251,7 +250,7 @@ class SAXIWrSim(BusDriver):
             try:
                 data = self.bus.wr_data.value.integer
             except:
-                self.log.warning ("SAXIWrSim() writing undefined data")
+                self.log.warning ("SAXIWrSim(%s:%d) writing undefined data"%(self.name,self._data_bytes))
                 bv = self.bus.wr_data.value
                 bv.binstr = re.sub("[^1]","0",bv.binstr)
                 data = bv.integer
@@ -270,7 +269,7 @@ class SAXIWrSim(BusDriver):
                        self._memfile.seek(1,1)
             if self.autoflush:
                 self._memfile.flush()
-            self.log.debug ("SAXIWrSim() 0x%x -> 0x%x, mask = 0x%x"%(address,data,bv.integer))
+            self.log.info ("SAXIWrSim(%s:%d) 0x%x <- 0x%x"%(self.name,self._data_bytes,address,data))
             yield RisingEdge(self.clock)
             
             
@@ -301,7 +300,7 @@ class SAXIRdSim(BusDriver):
         @param data_bytes data width, in bytes
         
         """
-#        self.log.setLevel(logging.DEBUG)
+        
         BusDriver.__init__(self, entity, name, clock)
         self.name = name
         self.log.debug ("SAXIRdSim: name='%s', mempath='%s', memhigh=0x%08x, data_bytes=%d"%
@@ -458,7 +457,6 @@ class MAXIGPMaster(BusDriver):
     _channels = [AR_CHN,AW_CHN,R_CHN,W_CHN,B_CHN]
     def __init__(self, entity, name, clock, rdlag=None, blag=None):
         BusDriver.__init__(self, entity, name, clock)
-#        self.log.setLevel(logging.DEBUG)
         self.name = name
         # set read and write back channels simulation lag between AXI sets valid and host responds with
         # ready. If None - drive these signals  

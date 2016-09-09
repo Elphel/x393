@@ -268,7 +268,7 @@ fifo_same_clock_fill   #( .DATA_WIDTH(50),.DATA_DEPTH(AW_FIFO_DEPTH)) // read - 
         .re           (start_write_burst_w),
         .data_in      ({awid[5:0],     awburst[1:0],    awsize[1:0],    awlen[3:0],    awaddr[31:0],     awqos[3:0]}),
         .data_out     ({awid_out[5:0], awburst_out[1:0],awsize_out[1:0],awlen_out[3:0],awaddr_out[31:0], sim_wr_qos[3:0]}),
-        .nempty       (aw_nempty),
+        .nempty       (aw_nempty), // output
         .half_full    (),        // aw_half_full),
         .under        (),        // waddr_under),  // output reg 
         .over         (),        // waddr_over),   // output reg

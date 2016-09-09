@@ -39,7 +39,7 @@
  * with at least one of the Free Software programs.
  */
 `timescale 1ns/1ps
-
+`include "system_defines.vh" // just for debugging histograms 
 module  sens_histogram_snglclk #(
     parameter HISTOGRAM_RAM_MODE =     "BUF32", // valid: "NOBUF" (32-bits, no buffering - now is replaced by BUF32), "BUF18", "BUF32"
     parameter HISTOGRAM_ADDR =         'h33c,
@@ -75,7 +75,12 @@ module  sens_histogram_snglclk #(
     ,output                       debug_do, // output to the debug ring
      input                        debug_sl, // 0 - idle, (1,0) - shift, (1,1) - load // SuppressThisWarning VEditor - not used
      input                        debug_di  // input from the debug ring
-`endif         
+`endif
+
+`ifdef DEBUG_HISTOGRAMS
+    ,output [3:0] dbg_hist_data
+`endif
+         
 );
     
     localparam HIST_WIDTH = (HISTOGRAM_RAM_MODE == "BUF18") ? 18 : 32;
@@ -273,6 +278,22 @@ module  sens_histogram_snglclk #(
     reg                     eq_prev;         // pixel equals  previous of the same color
     wire                    eq_prev_d3;      // eq_prev delayed by 3 clocks to select r1 source
 //    wire                    start_hor_woi = hcntr_zero_w && left_margin && vert_woi;
+`ifdef DEBUG_HISTOGRAMS
+    assign dbg_hist_data[3:0] = {frame_active, hist_done, vert_woi, vcntr_zero_w };
+//    assign dbg_hist_data[3:0] = {frame_active, hist_rst_pclk, hist_en_pclk, vcntr_zero_w };
+    reg    [2:0] dbg_toggle=0;
+//    assign dbg_hist_data[3:0] = {dbg_toggle, en_new, en, vcntr_zero_w };
+//    assign dbg_hist_data[3:0] = {dbg_toggle, vcntr_zero_w }; // version b4 (toggles)
+//        hist_done <= vert_woi && (eof || (vcntr_zero_w && line_start_w)); // hist done never asserted, line_start_w - active
+//        if      (hist_rst_pclk)                               en <= 0;
+//        else if (hist_en_pclk)                                en <= 1;
+//    reg           en;
+//    reg           en_new; // @ pclk - enable new frame
+    always @(posedge pclk) begin
+        if (sof) dbg_toggle <= dbg_toggle+1;
+    end
+    
+`endif
         
     
     // hist_di is 2 cycles ahead of hor_woi
@@ -326,7 +347,7 @@ module  sens_histogram_snglclk #(
     reg en_rq_start;
     
     always @ (posedge mclk) begin
-        en_mclk <= en;
+        en_mclk <= en && !hist_rst;
         if      (!en_mclk)       hist_out <= 0;
         else if (hist_done_mclk) hist_out <= 1;
         else if (&hist_raddr)    hist_out <= 0;
@@ -339,7 +360,7 @@ module  sens_histogram_snglclk #(
 // prevent starting rq if grant is still on (back-to-back)
         if      (!hist_out)   en_rq_start <= 0;
         else if (!hist_grant) en_rq_start <= 1;
-        hist_rq_r <= en_mclk && hist_out && !(&hist_raddr) && en_rq_start;
+        hist_rq_r <= !hist_rst & en_mclk && hist_out && !(&hist_raddr) && en_rq_start;
         
         if      (!hist_out || (&hist_raddr[7:0])) hist_re[0] <= 0;
         else if (hist_grant)                      hist_re[0] <= 1;

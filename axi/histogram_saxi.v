@@ -139,7 +139,7 @@ module  histogram_saxi#(
 `endif    
 */
     localparam ATTRIB_WIDTH = NUM_FRAME_BITS + 4 +2;
-    reg  [HIST_SAXI_MODE_WIDTH-1:0]  mode;
+    reg  [HIST_SAXI_MODE_WIDTH-1:0]  mode = 0;
     wire                             en =     mode[HIST_SAXI_EN] & mode[HIST_SAXI_NRESET];
     reg                        [3:0] awcache_mode;
     reg                              confirm_write;
@@ -316,7 +316,7 @@ module  histogram_saxi#(
     
     assign saxi_awaddr = {start_addr_r[31:6],6'b0};
     
-    assign saxi_awvalid = (|start_addr_r[9:6]) || first_burst;    
+    assign saxi_awvalid = ((|start_addr_r[9:6]) || first_burst) && !arst;    
 //{enc_rq[1:0], sub_chn_r, frame_r,  burst[1:0]}
     
     // assign block_end= ???;
@@ -406,8 +406,7 @@ module  histogram_saxi#(
     // Buffer read, SAXI send logic
     always @(posedge aclk) begin
         preen_aclk <= en; 
-        en_aclk <=    preen_aclk && en; 
-
+        en_aclk <=    preen_aclk && en && !arst; 
         prenreset_aclk <= nreset; 
         nreset_aclk <=    prenreset_aclk && nreset; 
 
@@ -440,7 +439,7 @@ module  histogram_saxi#(
         if (arst || block_start_r[3]) start_addr_r[31:6] <= {hist_start_addr[31:10], 4'b0}; 
         else if (saxi_start_burst_w)  start_addr_r[31:6] <= start_addr_r[31:6] + 1;
         
-        if (!nreset_aclk)            first_burst <= 0;
+        if (!nreset_aclk ||  arst)   first_burst <= 0;
         else if (block_start_r[3])   first_burst <= 1; // block_start_r[3] - same as start_addr_r set
         else if (saxi_start_burst_w) first_burst <= 0;
         

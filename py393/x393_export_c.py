@@ -1962,15 +1962,15 @@ class X393ExportC(object):
 
     def _enc_gamma_ctl(self):
         dw=[]
-        dw.append(("bayer",           0,  2,   0,  "Bayer color shift (pixel to gamma table)"))
-        dw.append(("bayer_set",       2,  1,   0,  "Set 'bayer' field"))
-        dw.append(("page",            3,  1,   0,  "Table page (only available if SENS_GAMMA_BUFFER in Verilog)"))
-        dw.append(("page_set",        4,  1,   0,  "Set 'page' field"))
-        dw.append(("en",              5,  1,   1,  "Enable module"))
-        dw.append(("en_set",          6,  1,   1,  "Set 'en' field"))
-        dw.append(("repet",           7,  1,   1,  "Repetitive (normal) mode. Set 0 for testing of the single-frame mode"))
-        dw.append(("repet_set",       8,  1,   1,  "Set 'repet' field"))
-        dw.append(("trig",            9,  1,   0,  "Single trigger used when repetitive mode is off (self clearing bit)"))
+        dw.append(("bayer",           vrlg.SENS_GAMMA_MODE_BAYER,      2,   0,  "Bayer color shift (pixel to gamma table)"))
+        dw.append(("bayer_set",       vrlg.SENS_GAMMA_MODE_BAYER_SET,  1,   0,  "Set 'bayer' field"))
+        dw.append(("page",            vrlg.SENS_GAMMA_MODE_PAGE,  1,   0,  "Table page (only available if SENS_GAMMA_BUFFER in Verilog)"))
+        dw.append(("page_set",        vrlg.SENS_GAMMA_MODE_PAGE_SET,   1,   0,  "Set 'page' field"))
+        dw.append(("en",              vrlg.SENS_GAMMA_MODE_EN,         1,   1,  "Enable module"))
+        dw.append(("en_set",          vrlg.SENS_GAMMA_MODE_EN_SET,     1,   1,  "Set 'en' field"))
+        dw.append(("repet",           vrlg.SENS_GAMMA_MODE_REPET,      1,   1,  "Repetitive (normal) mode. Set 0 for testing of the single-frame mode"))
+        dw.append(("repet_set",       vrlg.SENS_GAMMA_MODE_REPET_SET,  1,   1,  "Set 'repet' field"))
+        dw.append(("trig",            vrlg.SENS_GAMMA_MODE_TRIG,       1,   0,  "Single trigger used when repetitive mode is off (self clearing bit)"))
         return dw
 
     def _enc_gamma_tbl_addr(self):

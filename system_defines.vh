@@ -40,6 +40,7 @@
   // This file may be used to define same pre-processor macros to be included into each parsed file
 `ifndef SYSTEM_DEFINES
   `define SYSTEM_DEFINES
+  `define DEBUG_HISTOGRAMS
   // TODO: Later compare instantiate/infer
   `define INSTANTIATE_DSP48E1 // not yet tesetd/debugged otherwise
 // https://forums.xilinx.com/t5/Embedded-Processor-System-Design/AXI4-Bursts-4KB-Address-Boundary-Limitation/td-p/216413

@@ -37,7 +37,7 @@
  * with at least one of the Free Software programs.
  */
 `timescale 1ns/1ps
-
+`include "system_defines.vh" // just for debugging histograms 
 module  sens_parallel12 #(
     parameter SENSIO_ADDR =        'h330,
     parameter SENSIO_ADDR_MASK =   'h7f8,
@@ -144,6 +144,10 @@ module  sens_parallel12 #(
     output  [7:0] status_ad,   // status address/data - up to 5 bytes: A - {seq,status[1:0]} - status[2:9] - status[10:17] - status[18:25]
     output        status_rq,   // input request to send status downstream
     input         status_start // Acknowledge of the first status packet byte (address)
+`ifdef DEBUG_HISTOGRAMS
+    ,input  [7:0] dbg_hist_data
+`endif
+    
 );
 
     // delaying vact and pxd by one clock cycle to match hact register
@@ -247,7 +251,14 @@ module  sens_parallel12 #(
                      xfpgatdo_byte[7:0],
                      vact_alive, hact_ext_alive, hact_alive, locked_pxd_mmcm, 
                      clkin_pxd_stopped_mmcm, clkfb_pxd_stopped_mmcm, xfpgadone,
-                     ps_rdy, ps_out, xfpgatdo, senspgmin};
+                     ps_rdy,
+`ifdef DEBUG_HISTOGRAMS
+                     dbg_hist_data,
+`else
+                     ps_out,
+`endif
+                     
+                     xfpgatdo, senspgmin};
                         
     assign hact_out = hact_r;
     assign iaro = trigger_mode?  ~trig : iaro_soft;

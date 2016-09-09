@@ -267,7 +267,7 @@ class X393Sensor(object):
         @return: sensor mode control word
         """
         rslt = 0;
-        if (not hist_en is None) and (hist_nrst is None):
+        if (not hist_en is None) and (not hist_nrst is None):
             rslt |= (hist_en & 0xf) <<   vrlg.SENSOR_HIST_EN_BITS
             rslt |= (hist_nrst & 0xf) << vrlg.SENSOR_HIST_NRST_BITS
             rslt |= 1 << vrlg.SENSOR_HIST_BITS_SET;

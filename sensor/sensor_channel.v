@@ -37,6 +37,7 @@
  * with at least one of the Free Software programs.
  */
 `timescale 1ns/1ps
+`include "system_defines.vh" // just for debugging histograms 
 
 module  sensor_channel#(
     // parameters, individual to sensor channels and those likely to be modified
@@ -463,6 +464,25 @@ module  sensor_channel#(
     reg          eof_out_r;       
     wire         prsts;  // @pclk - includes sensor reset and sensor PLL reset
     
+`ifdef DEBUG_HISTOGRAMS
+    wire [7:0] dbg_hist_data;
+    wire [3:0] dbg_hist_data_hist;
+    reg [15:0] dbg_cntr;
+//    reg [1:0] dbg_cntr;  // verion B4 - toggles
+    always @ (posedge pclk) begin
+//        if      (prst) dbg_cntr <= 0;
+//        else
+//         if (sof_out_r) dbg_cntr <=  dbg_cntr + 1;
+          if (hist_gr[0] && hist_rq[0]) dbg_cntr <=  dbg_cntr + 1; // verion B4 - toggles
+    
+    end
+    assign dbg_hist_data = {dbg_cntr[11], hist_en[0], hist_gr[0], hist_rq[0], dbg_hist_data_hist[3:0]};
+//    assign dbg_hist_data = {prst, hist_en[0], dbg_cntr, dbg_hist_data_hist[3:0]}; // verion B4
+//                .hist_en    (hist_en[0]),     // input
+//                .hist_rst   (!hist_nrst[0]),     // input
+    
+`endif        
+    
     // TODO: insert vignetting and/or flat field, pixel defects before gamma_*_in
     assign lens_pxd_in = {pxd[11:0],4'b0};
     assign lens_hact_in = hact;
@@ -576,8 +596,8 @@ module  sensor_channel#(
         else if (sensor_ctrl_we && sensor_ctrl_data[SENSOR_HIST_BITS_SET])  hist_nrst <= sensor_ctrl_data[SENSOR_HIST_NRST_BITS +:4];
         if      (mrst)                                                      en_mclk <=   0;
         else if (sensor_ctrl_we && sensor_ctrl_data[SENSOR_CHN_EN_BIT_SET]) en_mclk <=   sensor_ctrl_data[SENSOR_CHN_EN_BIT];
-        if      (mrst)                                                      bit16 <=   0;
-        else if (sensor_ctrl_we && sensor_ctrl_data[SENSOR_16BIT_BIT_SET])  bit16 <=   sensor_ctrl_data[SENSOR_16BIT_BIT];
+        if      (mrst)                                                      bit16 <=     0;
+        else if (sensor_ctrl_we && sensor_ctrl_data[SENSOR_16BIT_BIT_SET])  bit16 <=     sensor_ctrl_data[SENSOR_16BIT_BIT];
     end
     
     always @ (posedge pclk) begin
@@ -948,6 +968,10 @@ module  sensor_channel#(
             .status_ad            (sens_phys_status_ad),   // output[7:0] 
             .status_rq            (sens_phys_status_rq),   // output
             .status_start         (sens_phys_status_start) // input
+`ifdef DEBUG_HISTOGRAMS
+            , .dbg_hist_data        (dbg_hist_data)
+`endif
+            
         );
 
 // TODO NC393: This delay may be too long for serail sensors. Make them always start to fill the
@@ -1179,7 +1203,11 @@ module  sensor_channel#(
                 ,.debug_do    (debug_ring[0]),         // output
                 .debug_sl     (debug_sl),              // input
                 .debug_di     (debug_ring[1])        // input
-    `endif         
+    `endif
+    `ifdef DEBUG_HISTOGRAMS
+    
+    ,.dbg_hist_data(dbg_hist_data_hist[3:0])         
+    `endif
                   
             );
         else

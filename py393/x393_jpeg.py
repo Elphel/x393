@@ -1055,6 +1055,31 @@ set_rtc # maybe not needed as it can be set differently
 camsync_setup 0xf # sensor mask - use local timestamps)
 jpeg_write  "img.jpeg" 0 80
 
+####### Parallel - setup sensor 1 (sensor 0 is set by drivers) ##############
+setup_all_sensors True None 0x2 # sensor 1
+set_sensor_io_ctl  1 None None 1 # Set ARO low - check if it is still needed?
+#set quadrants
+set_sensor_io_ctl 1 None None None None None 0 0xe
+compressor_control  1  None  None  None None None  3 #bayer
+#Get rid of the corrupted last pixel column
+#longer line (default 0xa1f)
+write_sensor_i2c  1 1 0 0x90040a23
+#increase scanline write (memory controller) width in 16-bursts (was 0xa2)
+axi_write_single_w 0x696 0x079800a3
+#Gamma 0.57
+program_gamma 1 0 0.57 0.04
+#colors - outdoor
+write_sensor_i2c  1 1 0 0x9035000a
+write_sensor_i2c  1 1 0 0x902c000e
+write_sensor_i2c  1 1 0 0x902d000d
+#exposure 0x100 lines (default was 0x797)
+#write_sensor_i2c  1 1 0 0x90090100
+#exposure 0x797 (default)
+#write_sensor_i2c  1 1 0 0x90090797
+#run compressors once (#1 - stop gracefully, 0 - reset, 2 - single, 3 - repetitive with sync to sensors)
+set_qtables 1l 0 80
+compressor_control 1 3
+jpeg_write  "img.jpeg" 1 80
 
 
 ################## Parallel ##################
@@ -1607,6 +1632,10 @@ write_cmd_frame_sequencer  0  1  4 0x6c6 0x300006 #save more lines than compress
 write_cmd_frame_sequencer  0  1  4  0x6c0  0x7d4b # run compressor memory       (+2)
 write_cmd_frame_sequencer  0  1  4  0x600  0x7    # run compressor              (+0)
 
+#testing histograms
+write_control_register 0x409 0xc0
+
+
 #sequencer test
 #ctrl_cmd_frame_sequencer  <num_sensor>  <reset=False>  <start=False>  <stop=False>
 ctrl_cmd_frame_sequencer   0  0  1  0
@@ -1624,20 +1653,27 @@ write_cmd_frame_sequencer  0  0  2  0x700  0x60
 write_cmd_frame_sequencer  0  0  2  0x700  0x90
 write_cmd_frame_sequencer  0  0  2  0x700  0x600
 write_cmd_frame_sequencer  0  0  2  0x700  0x900
-
-
-
-
-
+r
+read_status 0x21
+r
 #set_sensor_io_dly_hispi all 0x48 0x68 0x68 0x68 0x68
 #set_sensor_io_ctl all None None None None None 1 None # load all delays?
 compressor_control  all  None  None  None None None  2
 compressor_interrupt_control all clr
 compressor_interrupt_control all en
 compressor_control  all  3
+r
+read_status 0x21
+r
 jpeg_sim_multi 4
-jpeg_sim_multi 8
-jpeg_sim_multi 4
+r
+read_status 0x21
+r
+jpeg_sim_multi 3
+r
+read_status 0x21
+r
+
 
 write_cmd_frame_sequencer  0  1  1 0x686 0x240005 # correct lines                                                                                                   
 write_cmd_frame_sequencer  0  1  1 0x6c6 0x200006 # correct lines                                                                                                                                    
