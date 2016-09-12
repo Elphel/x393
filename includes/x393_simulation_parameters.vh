@@ -61,10 +61,10 @@
 //    parameter SENSOR12BITS_NROWA   =     1,   // number of "blank rows" from last hact to end of vact
 //    parameter nAV   =      24,   //240;   // clocks from ARO to VACT (actually from en_dclkd)
 //    parameter SENSOR12BITS_NBPF =       20,   //16; // bpf length
-    parameter SENSOR_IMAGE_TYPE0 =        "RUN1", //"NORM", // "RUN1",
-    parameter SENSOR_IMAGE_TYPE1 =        "RUN1",
-    parameter SENSOR_IMAGE_TYPE2 =        "RUN1", // "NORM", // "RUN1",
-    parameter SENSOR_IMAGE_TYPE3 =        "RUN1",
+    parameter SENSOR_IMAGE_TYPE0 =       "RUN1", //"NORM", // "RUN1", "HIST_TEST"
+    parameter SENSOR_IMAGE_TYPE1 =       "RUN1",
+    parameter SENSOR_IMAGE_TYPE2 =       "RUN1", // "NORM", // "RUN1",
+    parameter SENSOR_IMAGE_TYPE3 =       "RUN1",
     
     parameter SIMULATE_CMPRS_CMODE0 =     CMPRS_CBIT_CMODE_JPEG18,
     parameter SIMULATE_CMPRS_CMODE1 =     CMPRS_CBIT_CMODE_JPEG18,

@@ -294,68 +294,67 @@ module  sensor_channel#(
     
 ) (
 
-    input         pclk,   // global clock input, pixel rate (96MHz for MT9P006)
+    input                       pclk,   // global clock input, pixel rate (96MHz for MT9P006)
     // TODO: get rid of pclk2x in histograms by doubling memories (making 1 write port and 2 read ones)
     // How to erase?
     // Alternative: copy/erase to a separate buffer in the beginning/end of a frame?
 `ifdef USE_PCLK2X    
-    input         pclk2x, // global clock input, double pixel rate (192MHz for MT9P006)
+    input                       pclk2x, // global clock input, double pixel rate (192MHz for MT9P006)
 `endif    
-    input         mrst,      // @posedge mclk, sync reset
-    input         prst,      // @posedge pclk, sync reset
+    input                       mrst,      // @posedge mclk, sync reset
+    input                       prst,      // @posedge pclk, sync reset
     
     // I/O pads, pin names match circuit diagram
 `ifdef HISPI   
-    input   [3:0] sns_dp,
-    input   [3:0] sns_dn,
-    inout   [7:4] sns_dp74,
-    inout   [7:4] sns_dn74,
-    input         sns_clkp,
-    input         sns_clkn,
+    input                 [3:0] sns_dp,
+    input                 [3:0] sns_dn,
+    inout                 [7:4] sns_dp74,
+    inout                 [7:4] sns_dn74,
+    input                       sns_clkp,
+    input                       sns_clkn,
 `else
-    inout   [7:0] sns_dp,
-    inout   [7:0] sns_dn,
-    inout         sns_clkp,
-    inout         sns_clkn,
+    inout                 [7:0] sns_dp,
+    inout                 [7:0] sns_dn,
+    inout                       sns_clkp,
+    inout                       sns_clkn,
 `endif    
-    inout         sns_scl,
-    inout         sns_sda,
+    inout                       sns_scl,
+    inout                       sns_sda,
 `ifdef HISPI   
-    output        sns_ctl,
+    output                      sns_ctl,
 `else    
-    inout         sns_ctl,
+    inout                       sns_ctl,
 `endif    
-    inout         sns_pg,
+    inout                       sns_pg,
     // programming interface
-    input         mclk,     // global clock, half DDR3 clock, synchronizes all I/O through the command port
-    input   [7:0] cmd_ad_in,      // byte-serial command address/data (up to 6 bytes: AL-AH-D0-D1-D2-D3 
-    input         cmd_stb_in,     // strobe (with first byte) for the command a/d
-    output  [7:0] status_ad,   // status address/data - up to 5 bytes: A - {seq,status[1:0]} - status[2:9] - status[10:17] - status[18:25]
-    output        status_rq,   // input request to send status downstream
-    input         status_start, // Acknowledge of the first status packet byte (address)
+    input                       mclk,     // global clock, half DDR3 clock, synchronizes all I/O through the command port
+    input                 [7:0] cmd_ad_in,      // byte-serial command address/data (up to 6 bytes: AL-AH-D0-D1-D2-D3 
+    input                       cmd_stb_in,     // strobe (with first byte) for the command a/d
+    output                [7:0] status_ad,   // status address/data - up to 5 bytes: A - {seq,status[1:0]} - status[2:9] - status[10:17] - status[18:25]
+    output                      status_rq,   // input request to send status downstream
+    input                       status_start, // Acknowledge of the first status packet byte (address)
 
-    input         trigger_mode, // running in triggered mode (0 - free running mode)
-    input         trig_in,      // per-sensor trigger input
+    input                       trigger_mode, // running in triggered mode (0 - free running mode)
+    input                       trig_in,      // per-sensor trigger input
     
     input  [NUM_FRAME_BITS-1:0] frame_num_seq, // frame number from the command sequencer (to sync i2c)
-    
-
     // 16/8-bit mode data to memory (8-bits are packed by 2 in 16 mode @posedge pclk
-    output [15:0] dout,         // @posedge pclk
-    output        dout_valid,   // in 8-bit mode continues pixel flow have dout_valid alternating on/off
-    output        last_in_line, // valid with dout_valid - last in line dout
+    output               [15:0] dout,         // @posedge pclk
+    output                      dout_valid,   // in 8-bit mode continues pixel flow have dout_valid alternating on/off
+    output                      last_in_line, // valid with dout_valid - last in line dout
      
-    output        sof_out,       // @pclk start of frame 1-clk pulse with the same delays as output data
-    output        eof_out,       // @pclk end of frame 1-clk pulse with the same delays as output data
-    output        sof_out_mclk,  // @mclk filtered, possibly decimated  start of frame 
-    output        sof_late_mclk, // @mclk filtered, possibly decimated  start of frame, delayed by specified number of lines
+    output                      sof_out,       // @pclk start of frame 1-clk pulse with the same delays as output data
+    output                      eof_out,       // @pclk end of frame 1-clk pulse with the same delays as output data
+    output                      sof_out_mclk,  // @mclk filtered, possibly decimated  start of frame 
+    output                      sof_late_mclk, // @mclk filtered, possibly decimated  start of frame, delayed by specified number of lines
 
     // histogram interface to S_AXI, 256x32bit continuous bursts @posedge mclk, each histogram having 4 bursts
-    output        hist_request, // request to transfer a burst
-    input         hist_grant,   // request to transfer over S_AXI granted
-    output  [1:0] hist_chn,     // output[1:0] histogram (sub) channel, valid with request and transfer
-    output        hist_dvalid,  // output data valid - active when sending a burst
-    output [31:0] hist_data     // output[31:0] histogram data
+    output                      hist_request, // request to transfer a burst
+    output [NUM_FRAME_BITS-1:0] hist_frame,
+    input                       hist_grant,   // request to transfer over S_AXI granted
+    output                [1:0] hist_chn,     // output[1:0] histogram (sub) channel, valid with request and transfer
+    output                      hist_dvalid,  // output data valid - active when sending a burst
+    output               [31:0] hist_data     // output[31:0] histogram data
 `ifdef DEBUG_RING       
     ,output                       debug_do, // output to the debug ring
      input                        debug_sl, // 0 - idle, (1,0) - shift, (1,1) - load
@@ -394,94 +393,77 @@ module  sensor_channel#(
     localparam HISTOGRAM_ADDR3 =   (SENSOR_NUM_HISTOGRAM > 3)?(SENSOR_BASE_ADDR + HISTOGRAM_RADDR3):-1; //
 
 
-    reg    [7:0] cmd_ad;      // byte-serial command address/data (up to 6 bytes: AL-AH-D0-D1-D2-D3 
-    reg          cmd_stb;     // strobe (with first byte) for the command a/d
+    reg                 [7:0] cmd_ad;      // byte-serial command address/data (up to 6 bytes: AL-AH-D0-D1-D2-D3 
+    reg                       cmd_stb;     // strobe (with first byte) for the command a/d
 
 
-    wire   [7:0] sens_i2c_status_ad;
-    wire         sens_i2c_status_rq;
-    wire         sens_i2c_status_start;
-    wire   [7:0] sens_phys_status_ad;
-    wire         sens_phys_status_rq;
-    wire         sens_phys_status_start;
+    wire                [7:0] sens_i2c_status_ad;
+    wire                      sens_i2c_status_rq;
+    wire                      sens_i2c_status_start;
+    wire                [7:0] sens_phys_status_ad;
+    wire                      sens_phys_status_rq;
+    wire                      sens_phys_status_start;
     
 `ifndef HISPI        
-    wire         ipclk;   // Use in FIFO
-    wire  [11:0] pxd_to_fifo;
-    wire         vact_to_fifo;    // frame active @posedge  ipclk
-    wire         hact_to_fifo;    // line active @posedge  ipclk
+    wire                      ipclk;   // Use in FIFO
+    wire               [11:0] pxd_to_fifo;
+    wire                      vact_to_fifo;    // frame active @posedge  ipclk
+    wire                      hact_to_fifo;    // line active @posedge  ipclk
 `endif    
     // data from FIFO
-    wire  [11:0] pxd;     // TODO: align MSB? parallel data, @posedge  ipclk
-    wire         hact;    // line active @posedge  ipclk
-    wire         sof; // start of frame
-    wire         eof; // end of frame
+    wire               [11:0] pxd;     // TODO: align MSB? parallel data, @posedge  ipclk
+    wire                      hact;    // line active @posedge  ipclk
+    wire                      sof; // start of frame
+    wire                      eof; // end of frame
     
-    wire         sof_out_sync; // sof filtetred, optionally decimated (for linescan mode)
+    wire                      sof_out_sync; // sof filtetred, optionally decimated (for linescan mode)
     
-    wire  [15:0] lens_pxd_in; 
-    wire         lens_hact_in;
-    wire         lens_sof_in;
-    wire         lens_eof_in;
+    wire               [15:0] lens_pxd_in; 
+    wire                      lens_hact_in;
+    wire                      lens_sof_in;
+    wire                      lens_eof_in;
 
 
 
-    wire  [15:0] gamma_pxd_in; 
-    wire         gamma_hact_in;
-    wire         gamma_sof_in;
-    wire         gamma_eof_in;
-    wire   [1:0] gamma_bayer; // gamma module mode register bits -> lens_flat module
+    wire               [15:0] gamma_pxd_in; 
+    wire                      gamma_hact_in;
+    wire                      gamma_sof_in;
+    wire                      gamma_eof_in;
+    wire                [1:0] gamma_bayer; // gamma module mode register bits -> lens_flat module
     
+    wire                [7:0] gamma_pxd_out; 
+    wire                      gamma_hact_out;
+    wire                      gamma_sof_out;
+    wire                      gamma_eof_out;
     
-    wire   [7:0] gamma_pxd_out; 
-    wire         gamma_hact_out;
-    wire         gamma_sof_out;
-    wire         gamma_eof_out;
-    
-    wire  [31:0] sensor_ctrl_data;
-    wire         sensor_ctrl_we;
-//    reg    [SENSOR_MODE_WIDTH-1:0] mode;
-    reg    [3:0] hist_en;
-    reg          en_mclk; // enable this channel
-    wire         en_pclk; // enable in pclk domain   
-    reg    [3:0] hist_nrst;
-    reg          bit16; // 16-bit mode, 0 - 8 bit mode
-    wire   [3:0] hist_rq;
-    wire   [3:0] hist_gr;
-    wire   [3:0] hist_dv;
-    wire  [31:0] hist_do0;
-    wire  [31:0] hist_do1;
-    wire  [31:0] hist_do2;
-    wire  [31:0] hist_do3;
-    reg    [7:0] gamma_data_r;
-    reg   [15:0] dout_r;
-    reg          dav_8bit;
-    reg          dav_r;       
-    wire  [15:0] dout_w;
-    wire         dav_w;
-    wire         trig;
-    reg          sof_out_r;       
-    reg          eof_out_r;       
-    wire         prsts;  // @pclk - includes sensor reset and sensor PLL reset
-    
-`ifdef DEBUG_HISTOGRAMS
-    wire [7:0] dbg_hist_data;
-    wire [3:0] dbg_hist_data_hist;
-    reg [15:0] dbg_cntr;
-//    reg [1:0] dbg_cntr;  // verion B4 - toggles
-    always @ (posedge pclk) begin
-//        if      (prst) dbg_cntr <= 0;
-//        else
-//         if (sof_out_r) dbg_cntr <=  dbg_cntr + 1;
-          if (hist_gr[0] && hist_rq[0]) dbg_cntr <=  dbg_cntr + 1; // verion B4 - toggles
-    
-    end
-    assign dbg_hist_data = {dbg_cntr[11], hist_en[0], hist_gr[0], hist_rq[0], dbg_hist_data_hist[3:0]};
-//    assign dbg_hist_data = {prst, hist_en[0], dbg_cntr, dbg_hist_data_hist[3:0]}; // verion B4
-//                .hist_en    (hist_en[0]),     // input
-//                .hist_rst   (!hist_nrst[0]),     // input
-    
-`endif        
+    wire               [31:0] sensor_ctrl_data;
+    wire                      sensor_ctrl_we;
+    reg                 [3:0] hist_en;
+    reg                       en_mclk; // enable this channel
+    wire                      en_pclk; // enable in pclk domain   
+    reg                [3:0] hist_nrst;
+    reg                       bit16; // 16-bit mode, 0 - 8 bit mode
+    wire [NUM_FRAME_BITS-1:0] hist_frame0;
+    wire [NUM_FRAME_BITS-1:0] hist_frame1;
+    wire [NUM_FRAME_BITS-1:0] hist_frame2;
+    wire [NUM_FRAME_BITS-1:0] hist_frame3;
+    wire                [3:0] hist_rq;
+    wire                [3:0] hist_gr;
+    wire                [3:0] hist_dv;
+    wire               [31:0] hist_do0;
+    wire               [31:0] hist_do1;
+    wire              [31:0] hist_do2;
+    wire               [31:0] hist_do3;
+    reg                 [7:0] gamma_data_r;
+    reg                [15:0] dout_r;
+    reg                       dav_8bit;
+    reg                       dav_r;       
+    wire               [15:0] dout_w;
+    wire                      dav_w;
+    wire                      trig;
+    reg                       sof_out_r;       
+    reg                       eof_out_r;       
+    wire                      prsts;  // @pclk - includes sensor reset and sensor PLL reset
     
     // TODO: insert vignetting and/or flat field, pixel defects before gamma_*_in
     assign lens_pxd_in = {pxd[11:0],4'b0};
@@ -968,10 +950,6 @@ module  sensor_channel#(
             .status_ad            (sens_phys_status_ad),   // output[7:0] 
             .status_rq            (sens_phys_status_rq),   // output
             .status_start         (sens_phys_status_start) // input
-`ifdef DEBUG_HISTOGRAMS
-            , .dbg_hist_data        (dbg_hist_data)
-`endif
-            
         );
 
 // TODO NC393: This delay may be too long for serail sensors. Make them always start to fill the
@@ -1177,7 +1155,8 @@ module  sensor_channel#(
                 .HISTOGRAM_ADDR_MASK    (HISTOGRAM_ADDR_MASK),
                 .HISTOGRAM_LEFT_TOP     (HISTOGRAM_LEFT_TOP),
                 .HISTOGRAM_WIDTH_HEIGHT (HISTOGRAM_WIDTH_HEIGHT),
-                .XOR_HIST_BAYER         (XOR_HIST_BAYER)
+                .XOR_HIST_BAYER         (XOR_HIST_BAYER),
+                .NUM_FRAME_BITS         (NUM_FRAME_BITS)
     `ifdef DEBUG_RING
                 ,.DEBUG_CMD_LATENCY         (DEBUG_CMD_LATENCY) 
     `endif        
@@ -1185,6 +1164,7 @@ module  sensor_channel#(
                 .mrst       (mrst),            // input
                 .prst       (prsts),          // input extended to include sensor reset and rst_mmcm
                 .pclk       (pclk),           // input
+                .frame_num_seq (frame_num_seq), // input[3:0] 
                 .sof        (gamma_sof_out),  // input
                 .eof        (gamma_eof_out),  // input
                 .hact       (gamma_hact_out), // input
@@ -1194,25 +1174,25 @@ module  sensor_channel#(
                 .hist_en    (hist_en[0]),     // input
                 .hist_rst   (!hist_nrst[0]),     // input
                 .hist_rq    (hist_rq[0]),     // output
+                .hist_frame (hist_frame0),    // output[3:0] reg 
                 .hist_grant (hist_gr[0]),     // input
                 .hist_do    (hist_do0),       // output[31:0] 
                 .hist_dv    (hist_dv[0]),     // output
                 .cmd_ad     (cmd_ad),         // input[7:0] 
-                .cmd_stb    (cmd_stb)        // input
+                .cmd_stb    (cmd_stb)         // input
     `ifdef DEBUG_RING       
                 ,.debug_do    (debug_ring[0]),         // output
                 .debug_sl     (debug_sl),              // input
                 .debug_di     (debug_ring[1])        // input
     `endif
-    `ifdef DEBUG_HISTOGRAMS
-    
-    ,.dbg_hist_data(dbg_hist_data_hist[3:0])         
-    `endif
                   
             );
         else
-            sens_histogram_snglclk_dummy sens_histogram_0_i (
+            sens_histogram_snglclk_dummy #(
+                .NUM_FRAME_BITS         (NUM_FRAME_BITS)
+            )  sens_histogram_0_i (
                 .hist_rq      (hist_rq[0]),         // output
+                .hist_frame   (hist_frame0), // output[3:0] reg 
                 .hist_do      (hist_do0),           // output[31:0] 
                 .hist_dv      (hist_dv[0])          // output
     `ifdef DEBUG_RING       
@@ -1282,7 +1262,9 @@ module  sensor_channel#(
                 .HISTOGRAM_ADDR_MASK    (HISTOGRAM_ADDR_MASK),
                 .HISTOGRAM_LEFT_TOP     (HISTOGRAM_LEFT_TOP),
                 .HISTOGRAM_WIDTH_HEIGHT (HISTOGRAM_WIDTH_HEIGHT),
-                .XOR_HIST_BAYER         (XOR_HIST_BAYER)
+                .XOR_HIST_BAYER         (XOR_HIST_BAYER),
+                .NUM_FRAME_BITS         (NUM_FRAME_BITS)
+                
     `ifdef DEBUG_RING
                 ,.DEBUG_CMD_LATENCY         (DEBUG_CMD_LATENCY) 
     `endif        
@@ -1290,6 +1272,7 @@ module  sensor_channel#(
                 .mrst        (mrst),          // input
                 .prst       (prsts),         // input extended to include sensor reset and rst_mmcm
                 .pclk       (pclk),           // input
+                .frame_num_seq (frame_num_seq), // input[3:0] 
                 .sof        (gamma_sof_out),  // input
                 .eof        (gamma_eof_out),  // input
                 .hact       (gamma_hact_out), // input
@@ -1299,6 +1282,7 @@ module  sensor_channel#(
                 .hist_en    (hist_en[1]),     // input
                 .hist_rst   (!hist_nrst[1]),     // input
                 .hist_rq    (hist_rq[1]),     // output
+                .hist_frame (hist_frame1), // output[3:0] reg 
                 .hist_grant (hist_gr[1]),     // input
                 .hist_do    (hist_do1),       // output[31:0] 
                 .hist_dv    (hist_dv[1]),     // output
@@ -1311,8 +1295,11 @@ module  sensor_channel#(
     `endif         
             );
         else
-            sens_histogram_snglclk_dummy sens_histogram_1_i (
+            sens_histogram_snglclk_dummy #(
+                .NUM_FRAME_BITS         (NUM_FRAME_BITS)
+            )  sens_histogram_1_i (
                 .hist_rq      (hist_rq[1]),   // output
+                .hist_frame   (hist_frame1), // output[3:0] reg 
                 .hist_do      (hist_do1),     // output[31:0] 
                 .hist_dv      (hist_dv[1])    // output
             `ifdef DEBUG_RING       
@@ -1381,7 +1368,8 @@ module  sensor_channel#(
                 .HISTOGRAM_ADDR_MASK    (HISTOGRAM_ADDR_MASK),
                 .HISTOGRAM_LEFT_TOP     (HISTOGRAM_LEFT_TOP),
                 .HISTOGRAM_WIDTH_HEIGHT (HISTOGRAM_WIDTH_HEIGHT),
-                .XOR_HIST_BAYER         (XOR_HIST_BAYER)
+                .XOR_HIST_BAYER         (XOR_HIST_BAYER),
+                .NUM_FRAME_BITS         (NUM_FRAME_BITS)
 `ifdef DEBUG_RING
                 ,.DEBUG_CMD_LATENCY         (DEBUG_CMD_LATENCY) 
 `endif        
@@ -1389,6 +1377,7 @@ module  sensor_channel#(
                 .mrst        (mrst),          // input
                 .prst       (prsts),         // input extended to include sensor reset and rst_mmcm
                 .pclk       (pclk),           // input
+                .frame_num_seq (frame_num_seq), // input[3:0] 
                 .sof        (gamma_sof_out),  // input
                 .eof        (gamma_eof_out),  // input
                 .hact       (gamma_hact_out), // input
@@ -1398,6 +1387,7 @@ module  sensor_channel#(
                 .hist_en    (hist_en[2]),     // input
                 .hist_rst   (!hist_nrst[2]),     // input
                 .hist_rq    (hist_rq[2]),     // output
+                .hist_frame (hist_frame2),    // output[3:0] reg 
                 .hist_grant (hist_gr[2]),     // input
                 .hist_do    (hist_do2),       // output[31:0] 
                 .hist_dv    (hist_dv[2]),     // output
@@ -1410,10 +1400,13 @@ module  sensor_channel#(
 `endif         
             );
         else
-            sens_histogram_snglclk_dummy sens_histogram_2_i (
-                .hist_rq(hist_rq[2]),        // output
-                .hist_do(hist_do2),          // output[31:0] 
-                .hist_dv(hist_dv[2])         // output
+            sens_histogram_snglclk_dummy #(
+                .NUM_FRAME_BITS         (NUM_FRAME_BITS)
+            )  sens_histogram_2_i (
+                .hist_rq(hist_rq[2]),         // output
+                .hist_frame    (hist_frame2), // output[3:0] reg 
+                .hist_do(hist_do2),           // output[31:0] 
+                .hist_dv(hist_dv[2])          // output
 `ifdef DEBUG_RING       
                 ,.debug_do    (debug_ring[2]),         // output
                 .debug_di     (debug_ring[3])          // input
@@ -1481,37 +1474,43 @@ module  sensor_channel#(
                 .HISTOGRAM_ADDR_MASK    (HISTOGRAM_ADDR_MASK),
                 .HISTOGRAM_LEFT_TOP     (HISTOGRAM_LEFT_TOP),
                 .HISTOGRAM_WIDTH_HEIGHT (HISTOGRAM_WIDTH_HEIGHT),
-                .XOR_HIST_BAYER         (XOR_HIST_BAYER)
+                .XOR_HIST_BAYER         (XOR_HIST_BAYER),
+                .NUM_FRAME_BITS         (NUM_FRAME_BITS)
     `ifdef DEBUG_RING
                 ,.DEBUG_CMD_LATENCY         (DEBUG_CMD_LATENCY) 
     `endif        
             ) sens_histogram_3_i (
-                .mrst        (mrst),          // input
-                .prst       (prsts),         // input extended to include sensor reset and rst_mmcm
-                .pclk       (pclk),           // input
-                .sof        (gamma_sof_out),  // input
-                .eof        (gamma_eof_out),  // input
-                .hact       (gamma_hact_out), // input
-                .hist_di    (gamma_pxd_out),  // input[7:0]
-                .bayer      (gamma_bayer),    // input[1:0] 
-                .mclk       (mclk),           // input
-                .hist_en    (hist_en[3]),     // input
-                .hist_rst   (!hist_nrst[3]),  // input
-                .hist_rq    (hist_rq[3]),     // output
-                .hist_grant (hist_gr[3]),     // input
-                .hist_do    (hist_do3),       // output[31:0] 
-                .hist_dv    (hist_dv[3]),     // output
-                .cmd_ad     (cmd_ad),         // input[7:0] 
-                .cmd_stb    (cmd_stb)         // input
+                .mrst          (mrst),           // input
+                .prst          (prsts),          // input extended to include sensor reset and rst_mmcm
+                .pclk          (pclk),           // input
+                .sof           (gamma_sof_out),  // input
+                .eof           (gamma_eof_out),  // input
+                .hact          (gamma_hact_out), // input
+                .frame_num_seq (frame_num_seq),  // input[3:0] 
+                .hist_di       (gamma_pxd_out),  // input[7:0]
+                .bayer         (gamma_bayer),    // input[1:0] 
+                .mclk          (mclk),           // input
+                .hist_en       (hist_en[3]),     // input
+                .hist_rst      (!hist_nrst[3]),  // input
+                .hist_rq       (hist_rq[3]),     // output
+                .hist_frame    (hist_frame3),    // output[3:0] reg 
+                .hist_grant    (hist_gr[3]),     // input
+                .hist_do       (hist_do3),       // output[31:0] 
+                .hist_dv       (hist_dv[3]),     // output
+                .cmd_ad        (cmd_ad),         // input[7:0] 
+                .cmd_stb       (cmd_stb)         // input
     `ifdef DEBUG_RING       
-                ,.debug_do    (debug_ring[3]),         // output
-                .debug_sl     (debug_sl),              // input
-                .debug_di     (debug_ring[4])        // input
+                ,.debug_do     (debug_ring[3]),         // output
+                .debug_sl      (debug_sl),              // input
+                .debug_di      (debug_ring[4])        // input
     `endif         
             );
         else
-            sens_histogram_snglclk_dummy sens_histogram_3_i (
+            sens_histogram_snglclk_dummy #(
+                .NUM_FRAME_BITS         (NUM_FRAME_BITS)
+            ) sens_histogram_3_i (
                 .hist_rq(hist_rq[3]),  // output
+                .hist_frame    (hist_frame3), // output[3:0] reg 
                 .hist_do(hist_do3),    // output[31:0] 
                 .hist_dv(hist_dv[3])   // output
     `ifdef DEBUG_RING       
@@ -1522,30 +1521,37 @@ module  sensor_channel#(
 `endif
     endgenerate
     
-    sens_histogram_mux sens_histogram_mux_i (
-        .mclk   (mclk),          // input
-        .en     (|hist_nrst),    // input
-        .rq0    (hist_rq[0]),    // input
-        .grant0 (hist_gr[0]),    // output
-        .dav0   (hist_dv[0]),    // input
-        .din0   (hist_do0),      // input[31:0] 
-        .rq1    (hist_rq[1]),    // input
-        .grant1 (hist_gr[1]),    // output
-        .dav1   (hist_dv[1]),    // input
-        .din1   (hist_do1),      // input[31:0] 
-        .rq2    (hist_rq[2]),    // input
-        .grant2 (hist_gr[2]),    // output
-        .dav2   (hist_dv[2]),    // input
-        .din2   (hist_do2),      // input[31:0] 
-        .rq3    (hist_rq[3]),    // input
-        .grant3 (hist_gr[3]),    // output
-        .dav3   (hist_dv[3]),    // input
-        .din3   (hist_do3),      // input[31:0] 
-        .rq     (hist_request),  // output
-        .grant  (hist_grant),    // input
-        .chn    (hist_chn),      // output[1:0]
-        .dv     (hist_dvalid),   // output
-        .dout   (hist_data)      // output[31:0] 
+    sens_histogram_mux  #(
+                .NUM_FRAME_BITS         (NUM_FRAME_BITS)
+            ) sens_histogram_mux_i (
+        .mclk        (mclk),          // input
+        .en          (|hist_nrst),    // input
+        .rq0         (hist_rq[0]),    // input
+        .hist_frame0 (hist_frame0),   // input[3:0] 
+        .grant0      (hist_gr[0]),    // output
+        .dav0        (hist_dv[0]),    // input
+        .din0        (hist_do0),      // input[31:0] 
+        .rq1         (hist_rq[1]),    // input
+        .hist_frame1 (hist_frame1),   // input[3:0] 
+        .grant1      (hist_gr[1]),    // output
+        .dav1        (hist_dv[1]),    // input
+        .din1        (hist_do1),      // input[31:0] 
+        .rq2         (hist_rq[2]),    // input
+        .hist_frame2 (hist_frame2),   // input[3:0] 
+        .grant2      (hist_gr[2]),    // output
+        .dav2        (hist_dv[2]),    // input
+        .din2        (hist_do2),      // input[31:0] 
+        .rq3         (hist_rq[3]),    // input
+        .hist_frame3 (hist_frame3),   // input[3:0] 
+        .grant3      (hist_gr[3]),    // output
+        .dav3        (hist_dv[3]),    // input
+        .din3        (hist_do3),      // input[31:0] 
+        .rq          (hist_request),  // output
+        .hist_frame  (hist_frame),    // input[3:0] 
+        .grant       (hist_grant),    // input
+        .chn         (hist_chn),      // output[1:0]
+        .dv          (hist_dvalid),   // output
+        .dout        (hist_data)      // output[31:0] 
     );
 
 

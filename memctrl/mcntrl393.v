@@ -249,22 +249,22 @@ module  mcntrl393 #(
     parameter RSEL=                          1'b1, // late/early READ commands (to adjust timing by 1 SDCLK period)
     parameter WSEL=                          1'b0,  // late/early WRITE commands (to adjust timing by 1 SDCLK period)
     // bits in mode control word
-    parameter MCONTR_LINTILE_NRESET =        0, // reset if 0
-    parameter MCONTR_LINTILE_EN =            1, // enable requests 
-    parameter MCONTR_LINTILE_WRITE =         2, // write to memory mode
-    parameter MCONTR_LINTILE_EXTRAPG =       3, // extra pages (over 1) needed by the client simultaneously
-    parameter MCONTR_LINTILE_EXTRAPG_BITS =  2, // number of bits to use for extra pages
-    parameter MCONTR_LINTILE_KEEP_OPEN =     5, // keep banks open (will be used only if number of rows <= 8)
-    parameter MCONTR_LINTILE_BYTE32 =        6, // use 32-byte wide columns in each tile (false - 16-byte) 
-    parameter MCONTR_LINTILE_RST_FRAME =     8, // reset frame number 
-    parameter MCONTR_LINTILE_SINGLE =        9, // read/write a single page 
-    parameter MCONTR_LINTILE_REPEAT =       10,  // read/write pages until disabled 
-    parameter MCONTR_LINTILE_DIS_NEED =     11,   // disable 'need' request 
-    parameter MCONTR_LINTILE_SKIP_LATE =    12,  // skip actual R/W operation when it is too late, advance pointers
-    parameter MCONTR_LINTILE_COPY_FRAME =   13,  // copy frame number from the master channel (single event, not a persistent mode)
-    parameter MCONTR_LINTILE_ABORT_LATE =   14,  // abort frame if not finished by the new frame sync (wait pending memory)
-    parameter MCNTRL_SCANLINE_DLY_WIDTH =   12,  // delay start pulse by 1..64 mclk
-    parameter MCNTRL_SCANLINE_DLY_DEFAULT = 63  // initial delay value for start pulse
+    parameter MCONTR_LINTILE_NRESET =          0, // reset if 0
+    parameter MCONTR_LINTILE_EN =              1, // enable requests 
+    parameter MCONTR_LINTILE_WRITE =           2, // write to memory mode
+    parameter MCONTR_LINTILE_EXTRAPG =         3, // extra pages (over 1) needed by the client simultaneously
+    parameter MCONTR_LINTILE_EXTRAPG_BITS =    2, // number of bits to use for extra pages
+    parameter MCONTR_LINTILE_KEEP_OPEN =       5, // keep banks open (will be used only if number of rows <= 8)
+    parameter MCONTR_LINTILE_BYTE32 =          6, // use 32-byte wide columns in each tile (false - 16-byte) 
+    parameter MCONTR_LINTILE_RST_FRAME =       8, // reset frame number 
+    parameter MCONTR_LINTILE_SINGLE =          9, // read/write a single page 
+    parameter MCONTR_LINTILE_REPEAT =         10,  // read/write pages until disabled 
+    parameter MCONTR_LINTILE_DIS_NEED =       11,   // disable 'need' request 
+    parameter MCONTR_LINTILE_SKIP_LATE =      12,  // skip actual R/W operation when it is too late, advance pointers
+    parameter MCONTR_LINTILE_COPY_FRAME =     13,  // copy frame number from the master channel (single event, not a persistent mode)
+    parameter MCONTR_LINTILE_ABORT_LATE =     14,  // abort frame if not finished by the new frame sync (wait pending memory)
+    parameter MCNTRL_SCANLINE_DLY_WIDTH =     12,  // delay start pulse by 1..64 mclk
+    parameter MCNTRL_SCANLINE_DLY_DEFAULT = 1024  // initial delay value for start pulse
     
     ) (
     input                        rst_in,

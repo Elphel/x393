@@ -38,35 +38,43 @@
  */
 `timescale 1ns/1ps
 
-module  sens_histogram_mux(
-    input         mclk,
-    input         en,
+module  sens_histogram_mux#(
+    parameter NUM_FRAME_BITS =  4 // number of bits use for frame number 
+)(
+    input                       mclk,
+    input                       en,
 
-    input         rq0,
-    output        grant0,
-    input         dav0,
-    input  [31:0] din0,
+    input                       rq0,
+    input  [NUM_FRAME_BITS-1:0] hist_frame0, // frame number matching histogram output
+    
+    output                      grant0,
+    input                       dav0,
+    input                [31:0] din0,
 
-    input         rq1,
-    output        grant1,
-    input         dav1,
-    input  [31:0] din1,
+    input                       rq1,
+    input  [NUM_FRAME_BITS-1:0] hist_frame1, // frame number matching histogram output
+    output                      grant1,
+    input                       dav1,
+    input                [31:0] din1,
 
-    input         rq2,
-    output        grant2,
-    input         dav2,
-    input  [31:0] din2,
+    input                       rq2,
+    input  [NUM_FRAME_BITS-1:0] hist_frame2, // frame number matching histogram output
+    output                      grant2,
+    input                       dav2,
+    input                [31:0] din2,
 
-    input         rq3,
-    output        grant3,
-    input         dav3,
-    input  [31:0] din3,
+    input                       rq3,
+    input  [NUM_FRAME_BITS-1:0] hist_frame3, // frame number matching histogram output
+    output                      grant3,
+    input                       dav3,
+    input                [31:0] din3,
 
-    output        rq,
-    input         grant, // grant may stay longer, not masked by rq?
-    output  [1:0] chn,
-    output        dv,
-    output [31:0] dout
+    output                      rq,
+    output [NUM_FRAME_BITS-1:0] hist_frame, // frame number matching histogram output
+    input                       grant, // grant may stay longer, not masked by rq?
+    output                [1:0] chn,
+    output                      dv,
+    output               [31:0] dout
 );
 
     reg   [2:0] burst0;
@@ -97,9 +105,11 @@ module  sens_histogram_mux(
     assign pri_rq = {rq3 & ~rq2 & ~rq1 & ~rq0, rq2 & ~rq1 & ~ rq0, rq1 & ~ rq0, rq0};
     assign busy_w = |burst0 || (|burst1) || (|burst2) || (|burst3);
     assign start_w = enc_rq[2] && !busy_r && !started;
-    assign dav_in = mux_sel[1] ? (mux_sel[0] ? dav3 : dav2) : (mux_sel[0] ? dav1 : dav0); 
-    assign din =    mux_sel[1] ? (mux_sel[0] ? din3 : din2) : (mux_sel[0] ? din1 : din0);
-    assign rq_in =  mux_sel[1] ? (mux_sel[0] ? rq3 :  rq2)  : (mux_sel[0] ? rq1 :  rq0); 
+    assign dav_in =     mux_sel[1] ? (mux_sel[0] ? dav3 :         dav2) :         (mux_sel[0] ? dav1 :         dav0); 
+    assign din =        mux_sel[1] ? (mux_sel[0] ? din3 :         din2) :         (mux_sel[0] ? din1 :         din0);
+    assign rq_in =      mux_sel[1] ? (mux_sel[0] ? rq3 :          rq2)  :         (mux_sel[0] ? rq1 :          rq0);
+    assign hist_frame = mux_sel[1] ? (mux_sel[0] ? hist_frame3 :  hist_frame2)  : (mux_sel[0] ? hist_frame1 :  hist_frame0);
+     
     assign burst_done_w = dav_out && !dav_in;
     assign chn_start =  {4{start_w}} & {enc_rq[1] & enc_rq[0], enc_rq[1] & ~enc_rq[0], ~enc_rq[1] & enc_rq[0], ~enc_rq[1] & ~enc_rq[0]};
     assign chn_sel =    {mux_sel[1] & mux_sel[0], mux_sel[1] & ~mux_sel[0], ~mux_sel[1] & mux_sel[0], ~mux_sel[1] & ~mux_sel[0]};

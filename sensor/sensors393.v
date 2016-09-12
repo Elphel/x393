@@ -456,6 +456,7 @@ module  sensors393 #(
     wire           [127:0] hist_data;
     
     wire  [4*NUM_FRAME_BITS-1:0] frame_num = {frame_num3, frame_num2, frame_num1, frame_num0};
+    wire  [4*NUM_FRAME_BITS-1:0] hist_frame; // frame numbers of the histogram outputs
      
      
      
@@ -708,6 +709,8 @@ module  sensors393 #(
                 .sof_out_mclk (sof_out_mclk[i]),       // output
                 .sof_late_mclk(sof_late_mclk[i]),      // output
                 .hist_request (hist_request[i]),       // output
+                .hist_frame   (hist_frame[NUM_FRAME_BITS*i +:NUM_FRAME_BITS]), // output[3:0] 
+                
                 .hist_grant   (hist_grant[i]),         // input
                 .hist_chn     (hist_chn[2 * i +: 2]),  // output[1:0] 
                 .hist_dvalid  (hist_dvalid[i]),        // output
@@ -758,62 +761,61 @@ module  sensors393 #(
                 ,.DEBUG_CMD_LATENCY   (DEBUG_CMD_LATENCY) 
 `endif        
     ) histogram_saxi_i (
-//        .rst            (rst),                    // input
-        .mclk           (mclk),                   // input
-        .aclk           (aclk),                   // input
-        .mrst           (mrst),                   // input
-        .arst           (arst),                   // input
-        .frame0         (frame_num0),             // input[3:0] 
-        .hist_request0  (hist_request[0]),        // input
-        .hist_grant0    (hist_grant[0]),          // output
-        .hist_chn0      (hist_chn[0 * 2 +: 2]),   // input[1:0] 
-        .hist_dvalid0   (hist_dvalid[0]),         // input
-        .hist_data0     (hist_data[0 * 32 +: 32]),// input[31:0] 
-        .frame1         (frame_num1),             // input[3:0] 
-        .hist_request1  (hist_request[1]),        // input
-        .hist_grant1    (hist_grant[1]),          // output
-        .hist_chn1      (hist_chn[1 * 2 +: 2]),   // input[1:0] 
-        .hist_dvalid1   (hist_dvalid[1]),         // input
-        .hist_data1     (hist_data[1 * 32 +: 32]),// input[31:0] 
-        .frame2         (frame_num2),             // input[3:0] 
-        .hist_request2  (hist_request[2]),        // input
-        .hist_grant2    (hist_grant[2]),          // output
-        .hist_chn2      (hist_chn[2 * 2 +: 2]),   // input[1:0]
-        .hist_dvalid2   (hist_dvalid[2]),         // input
-        .hist_data2     (hist_data[2 * 32 +: 32]),// input[31:0] 
-        .frame3         (frame_num3),             // input[3:0] 
-        .hist_request3  (hist_request[3]),        // input
-        .hist_grant3    (hist_grant[3]),          // output
-        .hist_chn3      (hist_chn[3 * 2 +: 2]),   // input[1:0]
-        .hist_dvalid3   (hist_dvalid[3]),         // input
-        .hist_data3     (hist_data[3 * 32 +: 32]),// input[31:0] 
-        .cmd_ad         (cmd_ad),                 // input[7:0] 
-        .cmd_stb        (cmd_stb),                // input
-        .saxi_awaddr    (saxi_awaddr),            // output[31:0] 
-        .saxi_awvalid   (saxi_awvalid),           // output
-        .saxi_awready   (saxi_awready),           // input
-        .saxi_awid      (saxi_awid),              // output[5:0] 
-        .saxi_awlock    (saxi_awlock),            // output[1:0] 
-        .saxi_awcache   (saxi_awcache),           // output[3:0] 
-        .saxi_awprot    (saxi_awprot),            // output[2:0] 
-        .saxi_awlen     (saxi_awlen),             // output[3:0] 
-        .saxi_awsize    (saxi_awsize),            // output[1:0] 
-        .saxi_awburst   (saxi_awburst),           // output[1:0] 
-        .saxi_awqos     (saxi_awqos),             // output[3:0] 
-        .saxi_wdata     (saxi_wdata),             // output[31:0] 
-        .saxi_wvalid    (saxi_wvalid),            // output
-        .saxi_wready    (saxi_wready),            // input
-        .saxi_wid       (saxi_wid),               // output[5:0] 
-        .saxi_wlast     (saxi_wlast),             // output
-        .saxi_wstrb     (saxi_wstrb),             // output[3:0] 
-        .saxi_bvalid    (saxi_bvalid),            // input
-        .saxi_bready    (saxi_bready),            // output
-        .saxi_bid       (saxi_bid),               // input[5:0] 
-        .saxi_bresp     (saxi_bresp)              // input[1:0] 
+        .mclk           (mclk),                                          // input
+        .aclk           (aclk),                                          // input
+        .mrst           (mrst),                                          // input
+        .arst           (arst),                                          // input
+        .frame0         (hist_frame[NUM_FRAME_BITS*0 +:NUM_FRAME_BITS]), // input[3:0] 
+        .hist_request0  (hist_request[0]),                               // input
+        .hist_grant0    (hist_grant[0]),                                 // output
+        .hist_chn0      (hist_chn[0 * 2 +: 2]),                          // input[1:0] 
+        .hist_dvalid0   (hist_dvalid[0]),                                // input
+        .hist_data0     (hist_data[0 * 32 +: 32]),                       // input[31:0] 
+        .frame1         (hist_frame[NUM_FRAME_BITS*1 +:NUM_FRAME_BITS]), // input[3:0] 
+        .hist_request1  (hist_request[1]),                               // input
+        .hist_grant1    (hist_grant[1]),                                 // output
+        .hist_chn1      (hist_chn[1 * 2 +: 2]),                          // input[1:0] 
+        .hist_dvalid1   (hist_dvalid[1]),                                // input
+        .hist_data1     (hist_data[1 * 32 +: 32]),                       // input[31:0] 
+        .frame2         (hist_frame[NUM_FRAME_BITS*2 +:NUM_FRAME_BITS]), // input[3:0] 
+        .hist_request2  (hist_request[2]),                               // input
+        .hist_grant2    (hist_grant[2]),                                 // output
+        .hist_chn2      (hist_chn[2 * 2 +: 2]),                          // input[1:0]
+        .hist_dvalid2   (hist_dvalid[2]),                                // input
+        .hist_data2     (hist_data[2 * 32 +: 32]),                       // input[31:0] 
+        .frame3         (hist_frame[NUM_FRAME_BITS*3 +:NUM_FRAME_BITS]), // input[3:0] 
+        .hist_request3  (hist_request[3]),                               // input
+        .hist_grant3    (hist_grant[3]),                                 // output
+        .hist_chn3      (hist_chn[3 * 2 +: 2]),                          // input[1:0]
+        .hist_dvalid3   (hist_dvalid[3]),                                // input
+        .hist_data3     (hist_data[3 * 32 +: 32]),                       // input[31:0] 
+        .cmd_ad         (cmd_ad),                                        // input[7:0] 
+        .cmd_stb        (cmd_stb),                                       // input
+        .saxi_awaddr    (saxi_awaddr),                                   // output[31:0] 
+        .saxi_awvalid   (saxi_awvalid),                                  // output
+        .saxi_awready   (saxi_awready),                                  // input
+        .saxi_awid      (saxi_awid),                                     // output[5:0] 
+        .saxi_awlock    (saxi_awlock),                                   // output[1:0] 
+        .saxi_awcache   (saxi_awcache),                                  // output[3:0] 
+        .saxi_awprot    (saxi_awprot),                                   // output[2:0] 
+        .saxi_awlen     (saxi_awlen),                                    // output[3:0] 
+        .saxi_awsize    (saxi_awsize),                                   // output[1:0] 
+        .saxi_awburst   (saxi_awburst),                                  // output[1:0] 
+        .saxi_awqos     (saxi_awqos),                                    // output[3:0] 
+        .saxi_wdata     (saxi_wdata),                                    // output[31:0] 
+        .saxi_wvalid    (saxi_wvalid),                                   // output
+        .saxi_wready    (saxi_wready),                                   // input
+        .saxi_wid       (saxi_wid),                                      // output[5:0] 
+        .saxi_wlast     (saxi_wlast),                                    // output
+        .saxi_wstrb     (saxi_wstrb),                                    // output[3:0] 
+        .saxi_bvalid    (saxi_bvalid),                                   // input
+        .saxi_bready    (saxi_bready),                                   // output
+        .saxi_bid       (saxi_bid),                                      // input[5:0] 
+        .saxi_bresp     (saxi_bresp)                                     // input[1:0] 
 `ifdef DEBUG_RING       
-       ,.debug_do       (debug_ring[4]),          // output
-        .debug_sl       (debug_sl),               // input
-        .debug_di       (debug_ring[5])           // input
+       ,.debug_do       (debug_ring[4]),                                 // output
+        .debug_sl       (debug_sl),                                      // input
+        .debug_di       (debug_ring[5])                                  // input
 `endif         
     );
     

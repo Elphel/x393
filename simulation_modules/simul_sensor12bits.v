@@ -170,8 +170,9 @@ initial begin
 
 
 //  reg   [15:0]   sensor_data[0:4095]; // up to 64 x 64 pixels
-    if      (SENSOR_IMAGE_TYPE == "NORM") $readmemh({`ROOTPATH,"/input_data/sensor.dat"},sensor_data);
-    else if (SENSOR_IMAGE_TYPE == "RUN1") $readmemh({`ROOTPATH,"/input_data/sensor_run1.dat"},sensor_data);
+    if      (SENSOR_IMAGE_TYPE == "NORM")      $readmemh({`ROOTPATH,"/input_data/sensor.dat"},sensor_data);
+    else if (SENSOR_IMAGE_TYPE == "RUN1")      $readmemh({`ROOTPATH,"/input_data/sensor_run1.dat"},sensor_data);
+    else if (SENSOR_IMAGE_TYPE == "HIST_TEST") $readmemh({`ROOTPATH,"/input_data/sensor_hist_test.dat"},sensor_data);
     else begin
        $display ("WARNING: Unrecognized sensor image :'%s', using default 'NORM': input_data/sensor.dat",SENSOR_IMAGE_TYPE);
        $readmemh({`ROOTPATH,"/input_data/sensor.dat"},sensor_data);

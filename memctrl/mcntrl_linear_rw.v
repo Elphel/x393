@@ -84,7 +84,7 @@ module  mcntrl_linear_rw #(
 // first buffer page, waiting for the request from mcntrl_linear during that first page. And if it will arrive - 
 // just continue.    
     parameter MCNTRL_SCANLINE_DLY_WIDTH =      12,  // delay start pulse by 1..64 mclk
-    parameter MCNTRL_SCANLINE_DLY_DEFAULT =    63  // initial delay value for start pulse
+    parameter MCNTRL_SCANLINE_DLY_DEFAULT =  1024  // initial delay value for start pulse
 )(
     input                          mrst,
     input                          mclk,

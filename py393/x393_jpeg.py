@@ -1051,6 +1051,16 @@ setup_all_sensors True None 0x4
 cd /usr/local/verilog/; test_mcntrl.py @hargs-after
 specify_phys_memory
 specify_window
+
+#reset
+write_cmd_frame_sequencer  0  1  2  0x600  0x5    #stop    compressor           `      
+write_cmd_frame_sequencer  0  1  4  0x600  0x4    #reset   reset compressor            (+2)
+write_cmd_frame_sequencer  0  1  4  0x6c0  0x1c48 # reset  reset compressor memory     (+0)
+write_cmd_frame_sequencer  0  1  8  0x6c0  0x3d4b # enable run compressor memory       (+2)
+write_cmd_frame_sequencer  0  1  8  0x600  0x7    # enable run compressor              (+0)
+
+
+
 set_rtc # maybe not needed as it can be set differently
 camsync_setup 0xf # sensor mask - use local timestamps)
 jpeg_write  "img.jpeg" 0 80
@@ -1284,6 +1294,7 @@ imgsrv -p 2323
 #restart PHP - it can get errors while opening/mmaping at startup, then some functions fail
 killall lighttpd; /usr/sbin/lighttpd -f /etc/lighttpd.conf
 /www/pages/exif.php init=/etc/Exif_template.xml
+
 
 
 setSensorClock 24.0 "2V5_LVDS"
@@ -1683,11 +1694,104 @@ write_cmd_frame_sequencer  0  1  1  0x600  0x7    # run compressor
 
 jpeg_sim_multi 12
 
+################## Simulate Parallel 7 ####################
+./py393/test_mcntrl.py @py393/cocoargs  --simulated=localhost:7777
+measure_all "*DI"
+setup_all_sensors True None 0xf
+set_sensor_io_ctl  all None None 1 # Set ARO low - check if it is still needed?
+#just testing
+set_gpio_ports  1 # enable software gpio pins - just for testing. Also needed for legacy i2c!
+set_gpio_pins 0 1 # pin 0 low, pin 1 - high
+
+set_sensor_histogram_window  0  0  4  4  25 21
+set_sensor_histogram_window  1  0  4  4  41 21
+set_sensor_histogram_window  2  0  4  4  25 41
+set_sensor_histogram_window  3  0  4  4  41 41
+r
+read_control_register 0x430
+read_control_register 0x431
+
+#irq coming, image not changing - yes
+write_cmd_frame_sequencer  0  1  1 0x686 0x280005 #save 4 more lines than sensor has                                                                                                                                    
+write_cmd_frame_sequencer  0  1  1 0x680 0x5507 #enable abort
+#write_cmd_frame_sequencer  0  1  1 0x6c6 0x300006 #save 4 more lines that compressor has                                                                                                                                    
+
+write_cmd_frame_sequencer  0  1  2  0x600  0x5    #stop    compressor           `      
+write_cmd_frame_sequencer  0  1  2  0x680  0x5405 # stop  sensor memory         (+0) // sensor memory should be controlled first, (9 commands
+write_cmd_frame_sequencer  0  1  2  0x6c0  0x5c49 # stop compressor memory      (+0)
+
+write_cmd_frame_sequencer  0  1  3 0x686 0x240005 # correct lines                                                                                                   
+write_cmd_frame_sequencer  0  1  3  0x680  0x5507 # run sensor memory           (+1) Can not be 0
+
+write_cmd_frame_sequencer  0  1  4 0x686 0x280005 #save 4 more lines than sensor has                                                                                                                                    
+write_cmd_frame_sequencer  0  1  4 0x6c6 0x300006 #save more lines than compressor needs (sensor provides)                                                                                                                                    
+write_cmd_frame_sequencer  0  1  4  0x6c0  0x7d4b # run compressor memory       (+2)
+write_cmd_frame_sequencer  0  1  4  0x600  0x7    # run compressor              (+0)
+
+read_control_register 0x431
+read_control_register 0x430
+
+#testing histograms
+write_control_register 0x409 0xc0
+
+
+#sequencer test
+#ctrl_cmd_frame_sequencer  <num_sensor>  <reset=False>  <start=False>  <stop=False>
+ctrl_cmd_frame_sequencer   0  0  1  0
+write_cmd_frame_sequencer  0  1  1  0x700  0x6
+write_cmd_frame_sequencer  0  1  1  0x700  0x9
+write_cmd_frame_sequencer  0  1  1  0x700  0xa0
+write_cmd_frame_sequencer  0  1  1  0x700  0x50
+write_cmd_frame_sequencer  0  0  3  0x700  0xa000
+write_cmd_frame_sequencer  0  1  0  0x700  0x90
+write_cmd_frame_sequencer  0  0  2  0x700  0xe00
+write_cmd_frame_sequencer  0  0  3  0x700  0xa
+write_cmd_frame_sequencer  0  0  2  0x700  0x6
+write_cmd_frame_sequencer  0  0  2  0x700  0x9
+write_cmd_frame_sequencer  0  0  2  0x700  0x60
+write_cmd_frame_sequencer  0  0  2  0x700  0x90
+write_cmd_frame_sequencer  0  0  2  0x700  0x600
+write_cmd_frame_sequencer  0  0  2  0x700  0x900
+r
+read_status 0x21
+r
+#set_sensor_io_dly_hispi all 0x48 0x68 0x68 0x68 0x68
+#set_sensor_io_ctl all None None None None None 1 None # load all delays?
+compressor_control  all  None  None  None None None  2
+compressor_interrupt_control all clr
+compressor_interrupt_control all en
+compressor_control  all  3
+r
+read_status 0x21
+r
+jpeg_sim_multi 4
+r
+read_status 0x21
+r
+jpeg_sim_multi 3
+r
+read_status 0x21
+r
+
+
+write_cmd_frame_sequencer  0  1  1 0x686 0x240005 # correct lines                                                                                                   
+write_cmd_frame_sequencer  0  1  1 0x6c6 0x200006 # correct lines                                                                                                                                    
+write_cmd_frame_sequencer  0  1  1  0x680  0x5507 # run sensor memory, update frame#, reset buffers
+write_cmd_frame_sequencer  0  1  1  0x6c0  0x7d4b # run compressor memory
+write_cmd_frame_sequencer  0  1  1  0x600  0x7    # run compressor
+
+jpeg_sim_multi 4
+jpeg_sim_multi 4
+jpeg_sim_multi 4
+
+
 
 
 
 #write_cmd_frame_sequencer  0  1  4  0x6c0  0x1c49 # stop       compressor memory     (+0)
 #write_cmd_frame_sequencer  0  1  6  0x6c0  0x3d4b # enable run compressor memory       (+2)
+
+
 
 ################## Serial ####################
 cd /usr/local/verilog/; test_mcntrl.py @hargs

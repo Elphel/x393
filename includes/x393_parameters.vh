@@ -301,7 +301,7 @@
     parameter MCONTR_LINTILE_ABORT_LATE =         14,  // abort frame if not finished by the new frame sync (wait pending memory)
     
     parameter MCNTRL_SCANLINE_DLY_WIDTH =         12,  // delay start pulse by 1..64 mclk
-    parameter MCNTRL_SCANLINE_DLY_DEFAULT =       63,  // initial delay value for start pulse
+    parameter MCNTRL_SCANLINE_DLY_DEFAULT =     1024,  // initial delay value for start pulse
 
 // Channel test module parameters
     parameter MCNTRL_TEST01_ADDR=                 'h0f0,
@@ -513,7 +513,8 @@
       parameter HISTOGRAM_LEFT_TOP =     'h0,
       parameter HISTOGRAM_WIDTH_HEIGHT = 'h1, // 1.. 2^16, 0 - use HACT
 
-    parameter [1:0] XOR_HIST_BAYER =  2'b00,// invert bayer setting    
+//    parameter [1:0] XOR_HIST_BAYER =  2'b00,// invert bayer setting    
+    parameter [1:0] XOR_HIST_BAYER =  2'b01,// invert bayer setting    
     //sensor_i2c_io other parameters
     parameter integer SENSI2C_DRIVE=     12,
     parameter SENSI2C_IBUF_LOW_PWR=      "TRUE",

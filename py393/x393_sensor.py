@@ -1858,7 +1858,7 @@ input               mem                 mtd4                ram1                
         """
         raddr = (vrlg.HISTOGRAM_RADDR0, vrlg.HISTOGRAM_RADDR1, vrlg.HISTOGRAM_RADDR2, vrlg.HISTOGRAM_RADDR3)
         reg_addr = (vrlg.SENSOR_GROUP_ADDR + num_sensor * vrlg.SENSOR_BASE_INC) + raddr[subchannel & 3]
-        if self.DEBUG_MODE:
+        if self.DEBUG_MODE or True:
             print("set_sensor_histogram_window():")
             print("num_sensor = ", num_sensor)
             print("subchannel = ", subchannel)
