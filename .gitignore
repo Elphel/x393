@@ -57,3 +57,4 @@ cocotb/Makefile
 cocotb/sim_build
 cocotb/results.xml
 *.directory
+/html.tar.gz
