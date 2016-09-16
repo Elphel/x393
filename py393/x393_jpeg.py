@@ -1049,8 +1049,8 @@ setup_all_sensors True None 0x4
 
 ################## Parallel after drivers ##################
 cd /usr/local/verilog/; test_mcntrl.py @hargs-after
-specify_phys_memory
-specify_window
+
+set_qtables all 0 80
 
 r
 read_control_register 0x431
