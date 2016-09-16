@@ -147,6 +147,7 @@ class X393ExportC(object):
         txt += '    #define PARS_FRAMES       16             ///< Number of frames in a sequencer     TODO:// move it here from <uapi/elphel/c313a.h>\n'
         txt += '    #define PARS_FRAMES_MASK (PARS_FRAMES-1) ///< Maximal frame number (15 for NC393) TODO:// move it here from <uapi/elphel/c313a.h>\n'
         txt += '#endif\n'
+        txt += 'typedef enum {TABLE_TYPE_QUANT,TABLE_TYPE_CORING,TABLE_TYPE_FOCUS,TABLE_TYPE_HUFFMAN} x393cmprs_tables_t; ///< compressor table type\n'
         txt += 'typedef enum {DIRECT,ABSOLUTE,RELATIVE,ASAP} x393cmd_t; ///< How to apply command - directly or through the command sequencer\n'
         txt += """// IRQ commands applicable to several targets
 #define X393_IRQ_NOP     0 
