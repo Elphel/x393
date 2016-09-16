@@ -39,7 +39,7 @@
  * with at least one of the Free Software programs.
  */
 `timescale 1ns/1ps
-
+// Table address is BYTE address
 module  table_ad_transmit#(
     parameter NUM_CHANNELS = 1,
     parameter ADDR_BITS=4

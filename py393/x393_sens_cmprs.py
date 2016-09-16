@@ -2256,7 +2256,12 @@ class X393SensCmprs(object):
                 for j in range (merge_num):
                     d |=  data[2* i + j] << (j * (32 // merge_num))   
                 data32.append(d)
-        t_addr = (t_num << 24) + index* len(data32)
+        '''
+        t_addr[23:0] is in BYTES (so *4)
+        '''        
+        t_addr = (t_num << 24) + index* len(data32) * 4
+        print("name: %s, merge_num=%d, t_num=%d, len(data32)=%d, index=%d, t_addr=0x%x"%
+              (item['name'], merge_num, t_num, len(data32), index,t_addr))
         self.x393_axi_tasks.write_control_register(reg_addr + 1, t_addr)
         for d in data32:
             self.x393_axi_tasks.write_control_register(reg_addr, d)
