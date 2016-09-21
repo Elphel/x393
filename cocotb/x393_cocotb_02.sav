@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.3.66 (w)1999-2015 BSI
-[*] Wed Sep 14 19:28:33 2016
+[*] Tue Sep 20 04:34:10 2016
 [*]
-[dumpfile] "/home/eyesis/git/x393-neon/simulation/x393_dut-20160914091637595.fst"
-[dumpfile_mtime] "Wed Sep 14 17:55:04 2016"
-[dumpfile_size] 377060747
+[dumpfile] "/home/eyesis/git/x393-neon/simulation/x393_dut-20160919202856605.fst"
+[dumpfile_mtime] "Tue Sep 20 04:31:39 2016"
+[dumpfile_size] 93558968
 [savefile] "/home/eyesis/git/x393-neon/cocotb/x393_cocotb_02.sav"
-[timestart] 43511100
-[size] 1814 1171
-[pos] 1936 23
-*-14.509074 43557388 77654500 77716800 80133500 86987400 89448000 91674200 91801500 95195280 96480090 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[timestart] 42705000
+[size] 1201 767
+[pos] 2223 211
+*-19.051508 43557388 77654500 77716800 80133500 86987400 89448000 91674200 91801500 95195280 96480090 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] x393_dut.
 [treeopen] x393_dut.ddr3_i.ddr3_i.
 [treeopen] x393_dut.simul_axi_master_wdata_i.
@@ -73,10 +73,10 @@
 [treeopen] x393_dut.x393_i.sensors393_i.sensor_channel_block[3].sensor_channel_i.
 [treeopen] x393_dut.x393_i.sensors393_i.sensor_channel_block[3].sensor_channel_i.genblk1.
 [treeopen] x393_dut.x393_i.timing393_i.
-[sst_width] 435
+[sst_width] 212
 [signals_width] 312
 [sst_expanded] 1
-[sst_vpaned_height] 642
+[sst_vpaned_height] 380
 @820
 x393_dut.TEST_TITLE[639:0]
 @800200

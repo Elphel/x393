@@ -35,8 +35,10 @@
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
  */
-        parameter FPGA_VERSION =          32'h039300b7;      //parallel, matching histograms Bayer to gamma bayer -0.011/9, 79.92%
-//        parameter FPGA_VERSION =          32'h039300b6;      //parallel, working on histograms odd colors bug -0.207 /58,  79.68%
+        parameter FPGA_VERSION =          32'h039300b9;      //parallel, correcting RTC (it was 25/24 faster) -0.038/29, 79.64%
+//      parameter FPGA_VERSION =          32'h039300b8;      //parallel, working on camsync -0.330/99, 80.52% -> -0.143 /40, 79.88% 
+//      parameter FPGA_VERSION =          32'h039300b7;      //parallel, matching histograms Bayer to gamma bayer -0.011/9, 79.92%
+//      parameter FPGA_VERSION =          32'h039300b6;      //parallel, working on histograms odd colors bug -0.207 /58,  79.68%
 //      parameter FPGA_VERSION =          32'h039300b5;      //parallel, moving histograms earlier -0.123/30, 79.47 
 //      parameter FPGA_VERSION =          32'h039300b4;      //-a parallel, and more - -0.180/33, 80.68 %
 //      parameter FPGA_VERSION =          32'h039300b4;      // parallel, and more -0.094/37, 80.18 %

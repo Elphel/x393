@@ -139,11 +139,18 @@ module  rtc393 #(
     
     always @ (posedge mclk) begin
         
-        if (!enable_rtc || halfusec[0]) pre_cntr <= RTC_MHZ-2;
-        else if (refclk2x_mclk)         pre_cntr <= pre_cntr - 1;
+//        if (!enable_rtc || halfusec[0]) pre_cntr <= RTC_MHZ-2;
+//        else if (refclk2x_mclk)         pre_cntr <= pre_cntr - 1;
+        
+//        if (!enable_rtc) halfusec <= 0;
+//        else             halfusec <= {halfusec[2:0], (|pre_cntr || !refclk2x_mclk)?1'b0:1'b1};
+
+        if      (!enable_rtc)   pre_cntr <= RTC_MHZ-1;
+        else if (refclk2x_mclk) pre_cntr <= (|pre_cntr) ? (pre_cntr - 1) : (RTC_MHZ-1);
         
         if (!enable_rtc) halfusec <= 0;
         else             halfusec <= {halfusec[2:0], (|pre_cntr || !refclk2x_mclk)?1'b0:1'b1};
+
         
         if (set_usec_w)      pend_set_cntr <= 1'b0; // just to get rid of undefined
         if (set_sec_w)       pend_set_cntr <= 1'b1;

@@ -198,7 +198,8 @@ end
 
 always begin
    @ (posedge MCLK) begin
-      #tMD   c = !stoppedd;
+//      #tMD   c = !stoppedd;
+      #tMD   c = ARST && MRST; // NC393: when both are incative, (do not stop clock) 
       end
    @ (negedge MCLK) begin
       #tMD   c = 1'b0;

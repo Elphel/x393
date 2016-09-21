@@ -677,10 +677,10 @@ module  x393_dut#(
 
 
 
-    wire [ 9:0] gpio_pins; // inout[9:0] ([6]-synco0,[7]-syncio0,[8]-synco1,[9]-syncio1)
+    wire [ 9:0] gpio_pins; // inout[9:0] ([8]-synco0,[7]-syncio0,[6]-synco1,[9]-syncio1)
 // Connect trigger outs to triggets in (#10 needed for Icarus)
-assign #10 gpio_pins[7] = gpio_pins[6];
-assign #10 gpio_pins[9] = gpio_pins[8];
+assign #10 gpio_pins[7] = gpio_pins[8];
+assign #10 gpio_pins[9] = gpio_pins[6];
 
   // DDR3 signals
     wire        SDRST;
