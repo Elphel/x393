@@ -142,7 +142,7 @@ class X393Camsync(object):
         @param sub_chn - sensor channel (0..3)
         @param delay -   delay value in 10 ns steps - max 42.95 sec
         """
-        self.x393_axi_tasks.write_control_register(vrlg.CAMSYNC_ADDR + vrlg.CAMSYNC_TRIG_PERIOD, delay)
+        self.x393_axi_tasks.write_control_register(vrlg.CAMSYNC_ADDR + vrlg.CAMSYNC_TRIG_DELAY0+sub_chn, delay)
     
     def camsync_setup(self,
                       sensor_mask =        None,

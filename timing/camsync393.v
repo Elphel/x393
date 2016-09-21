@@ -275,6 +275,7 @@ module camsync393       #(
     wire          pre_set_period;
     reg           set_period;
     wire          start_late ;// delayed start to wait for time stamp to be available
+    wire          start_late_first; // do not restart
 
     reg   [31:0]  sr_snd_first;
     reg   [31:0]  sr_snd_second;
@@ -301,7 +302,8 @@ module camsync393       #(
 
     reg           ts_external_pclk; // 1 - use external timestamp (combines ts_external and input_use_intern)
     reg           triggered_mode_pclk;
-    
+    reg           armed_internal_trigger; // to prevent re-start as in internal trigger mode timestamp over for master channel trigger s the sequence
+                                          // and that timestmp is acquired fro each delayed channel (includin master) again
     
     wire    [3:0] local_got; // received local timestamp (@ posedge mclk)
     wire    [3:0] local_got_pclk; // local_got reclocked @pclk
@@ -359,7 +361,8 @@ module camsync393       #(
     assign {ts_snap_mclk_chn3, ts_snap_mclk_chn2, ts_snap_mclk_chn1, ts_snap_mclk_chn0 } = {4{en}} & (triggered_mode? ts_snap_triggered_mclk: frame_sync);
      // keep previous value if 2'b01
 //    assign input_use_w = pre_input_use | (~pre_input_use & pre_input_pattern & input_use);
-    wire [9:0] input_mask = pre_input_pattern | ~pre_input_use;
+//    wire [9:0] input_mask = pre_input_pattern | ~pre_input_use;
+    wire [9:0] input_mask = ~pre_input_pattern | pre_input_use;
     wire [9:0] input_use_w =     ((input_use     ^ pre_input_use)     & input_mask) ^ input_use;
     wire [9:0] input_pattern_w = ((input_pattern ^ pre_input_pattern) & input_mask) ^ input_pattern;
 
@@ -464,6 +467,9 @@ module camsync393       #(
         endcase
     end    
     always @ (posedge pclk) begin
+        if (!input_use_intern || start_late) armed_internal_trigger <= 0;
+        else if (start_pclk[2])              armed_internal_trigger <= 1;
+        
         ts_snap_triggered <=  chn_en & ({4{(start_pclk[2] & ts_snd_en_pclk)}} | //strobe by internal generator if output timestamp is enabled
                               (trig_r & ~{4{ts_external_pclk}}));  // get local timestamp of the trigger (ext/int)
 
@@ -557,7 +563,10 @@ module camsync393       #(
                                        (rcv_run_or_deaf && !(bit_rcv_duration_zero  && (bit_rcv_counter[6:0]==0))));
 
         rcv_run_d <= rcv_run; 
-        start_dly <= input_use_intern ? (start_late && start_en) : (rcv_run && !rcv_run_d); // all start at the same time - master/others
+        
+        start_dly <= input_use_intern ?
+                      (start_late_first && start_en) : // only use armed_internal_trigger with timestamps
+                      (rcv_run && !rcv_run_d);  // all start at the same time - master/others
 // simulation problems w/o "start_en &&" ? 
 
         dly_cntr_run_d <= dly_cntr_run;
@@ -574,10 +583,10 @@ module camsync393       #(
         else                 dly_cntr_chn3[31:0] <= input_dly_chn3[31:0];
         
         /// bypass delay to trig_r in internal trigger mode
-        trig_r[0] <= (input_use_intern && (master_chn ==0)) ? (start_late && start_en): dly_cntr_end[0];
-        trig_r[1] <= (input_use_intern && (master_chn ==1)) ? (start_late && start_en): dly_cntr_end[1];
-        trig_r[2] <= (input_use_intern && (master_chn ==2)) ? (start_late && start_en): dly_cntr_end[2];
-        trig_r[3] <= (input_use_intern && (master_chn ==3)) ? (start_late && start_en): dly_cntr_end[3];
+        trig_r[0] <= (input_use_intern && (master_chn ==0)) ? (start_late_first && start_en): dly_cntr_end[0];
+        trig_r[1] <= (input_use_intern && (master_chn ==1)) ? (start_late_first && start_en): dly_cntr_end[1];
+        trig_r[2] <= (input_use_intern && (master_chn ==2)) ? (start_late_first && start_en): dly_cntr_end[2];
+        trig_r[3] <= (input_use_intern && (master_chn ==3)) ? (start_late_first && start_en): dly_cntr_end[3];
         
 /// 64-bit serial receiver (52 bit payload, 6 pre magic and 6 bits post magic for error checking
         if      (!rcv_run_or_deaf)         bit_rcv_duration[7:0] <= bit_length_short[7:0]; // 3/4 bit length-1
@@ -636,9 +645,9 @@ module camsync393       #(
     end
 
     assign ts_stb = (!ts_external || pre_input_use_intern) ? local_got : {4{rcv_done_mclk}};
-    // Making delayed start that waits for timestamp use timestamp_got, otherwize - nothing to wait
+    // Making delayed start that waits for timestamp use timestamp_got, otherwise - nothing to wait
     assign start_late = ts_snd_en_pclk?local_got_pclk[master_chn] :  start_pclk[2];    
-    
+    assign start_late_first = start_late && (armed_internal_trigger|| !ts_snd_en_pclk);
     
     cmd_deser #(
         .ADDR       (CAMSYNC_ADDR),
