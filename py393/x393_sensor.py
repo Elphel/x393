@@ -1376,7 +1376,7 @@ setSensorClock
 
 checkSclSda 1
 
-cat /usr/local/verilog/x359.bit > /dev/sfpgaconfjtag1
+#cat /usr/local/verilog/x359.bit > /dev/sfpgaconfjtag1
 
 
 #jtag_set_pgm_mode 0 1
