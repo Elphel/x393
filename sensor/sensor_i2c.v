@@ -196,7 +196,15 @@ module  sensor_i2c#(
      reg           was_asap;     
      reg     [3:0] last_wpage; // last written to page (or zeroed)
      reg     [5:0] fifo_fill;  // number of words written to the other (not current) page, or difference wp-rp for the current
-     wire    [5:0] fifo_wr_pointers_next; // pointer value to be written to  fifo_wr_pointers_ram[wpage_wr]    
+     wire    [5:0] fifo_wr_pointers_next; // pointer value to be written to  fifo_wr_pointers_ram[wpage_wr]
+     
+     // Preventing overflow when many i2c commands are written in ASAP mode (stopped compressor) 
+     wire    [1:0] send_diff= fifo_wr_pointers_outr[5:4] - rpointer[5:4]; // to determine buffer full in ASAP mode
+     wire          wr_full_w = (wpage0==wpage_wr)? // is it ASAP mode (i.e. sequencer is stopped, progr. 10359)
+                                send_diff[1]: // 1/4..3/4 full in ASAP mode
+                                (&fifo_wr_pointers_outw_r[5:2]); // current page almost full
+     reg           wr_full_r;                             
+// fifo_wr_pointers_outw_r         
      
      assign set_ctrl_w = we_cmd && ((wa & ~SENSI2C_CTRL_MASK) == SENSI2C_CTRL );// ==0
      assign set_status_w = we_cmd && ((wa & ~SENSI2C_CTRL_MASK) == SENSI2C_STATUS );// ==0
@@ -217,13 +225,13 @@ module  sensor_i2c#(
      assign fifo_wr_pointers_next = wpage0_inc[1]? 6'h0:(fifo_wr_pointers_outw_r[5:0]+1);
 
 
-     
+/*    
     reg alive_fs;
     always @ (posedge mclk) begin
         if    (set_status_w) alive_fs <= 0;
         else if (frame_sync) alive_fs <= 1;
     end
-    
+*/    
 
     cmd_deser #(
         .ADDR        (SENSI2C_ABS_ADDR),
@@ -258,7 +266,10 @@ module  sensor_i2c#(
         .status     ({reset_on, req_clr,
                       fifo_fill[5:0],
                       frame_num[3:0],
-                      alive_fs,busy, i2c_fifo_cntrl, i2c_fifo_nempty,
+                      wr_full_r, // alive_fs,
+                      busy,
+                      i2c_fifo_cntrl,
+                      i2c_fifo_nempty,
                       i2c_fifo_dout[7:0],
                       sda_in, scl_in}), // input[25:0] 
         .ad         (status_ad), // output[7:0] 
@@ -281,6 +292,8 @@ module  sensor_i2c#(
     );
      
     always @ (posedge mclk) begin
+        wr_full_r <= wr_full_w;  // write buffer is almost full
+    
         if (wen) di_r <= di; // 32 bit command takes 6 cycles, so di_r can hold data for up to this long
         wen_r    <= {wen_r[0],wen}; // is it needed?      
 //        wen_fifo <= {wen_fifo[0],we_rel || we_abs};      
@@ -387,7 +400,7 @@ module  sensor_i2c#(
       else if (page_r_inc[0]) page_r <= page_r+1;
 `endif
 
-//############ rpointer should start not from 0, but form value in another RAM???
+//############ rpointer should start not from 0, but from the value in another RAM???
       if      (reset_cmd || page_r_inc[0])  rpointer[5:0] <= 6'h0;
       else if (i2c_run_d && ! i2c_run)      rpointer[5:0] <= rpointer[5:0] + 1;
 

@@ -1903,8 +1903,8 @@ set_gpio_ports  1   1 # enable software gpio pins and porta (camsync)
 set_gpio_pins 0 1 # pin 0 low, pin 1 - high
 
 set_camsync_period 31 # set bit duration
-set_camsync_period 7500 # 75 usec
-set_camsync_delay 0 0
+set_camsync_period  8000 # 80 usec
+set_camsync_delay 0 400
 set_camsync_delay 1 100
 set_camsync_delay 2 200
 set_camsync_delay 3 300
@@ -2014,7 +2014,7 @@ jpeg_sim_multi 4
 #set_camsync_mode  <en=None>  <en_snd=None>  <en_ts_external=None>  <triggered_mode=None>  <master_chn=None>  <chn_en=None> 
 set_camsync_mode     None        None            None                      0
 jpeg_sim_multi 4
-jpeg_sim_multi 4
+jpeg_sim_multi 8
 
 
 

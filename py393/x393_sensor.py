@@ -240,7 +240,7 @@ class X393Sensor(object):
         print ("   reset_on =               %d"%((status>>17) & 1))
         print ("   req_clr =                %d"%((status>>16) & 1))
         print ("   frame_num =              %d"%((status>>12) & 0xf))
-        print ("   alive_fs =               %d"%((status>>11) & 1))
+        print ("   wr_full =                %d"%((status>>11) & 1))
         print ("   busy =                   %d"%((status>>10) & 1))
         print ("   i2c_fifo_lsb =           %d"%((status>> 9) & 1))
         print ("   i2c_fifo_nempty =        %d"%((status>> 8) & 1))
@@ -1326,7 +1326,7 @@ class X393Sensor(object):
         print ("print_status_sensor_i2c(%d):"%(num_sensor))
         print ("   reset_on =               %d"%((status>> 7) & 1))
         print ("   req_clr =                %d"%((status>> 6) & 1))
-        print ("   alive_fs =               %d"%((status>> 5) & 1))
+        print ("   wr_full =               %d"%((status>> 5) & 1))
         
         print ("   busy =                   %d"%((status>> 4) & 1))
         print ("   frame_num =              %d"%((status>> 0)  & 0xf))
