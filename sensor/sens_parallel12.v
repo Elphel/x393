@@ -247,7 +247,7 @@ module  sens_parallel12 #(
                      xfpgatdo_byte[7:0],
                      vact_alive, hact_ext_alive, hact_alive, locked_pxd_mmcm, 
                      clkin_pxd_stopped_mmcm, clkfb_pxd_stopped_mmcm, xfpgadone,
-                     ps_out,
+                     ps_rdy, ps_out,
                      xfpgatdo, senspgmin};
                         
     assign hact_out = hact_r;

@@ -59,6 +59,10 @@ PAGE_SIZE =           4096
 SI5338_PATH =         '/sys/devices/soc0/amba@0/e0004000.ps7-i2c/i2c-0/0-0070'
 POWER393_PATH =       '/sys/devices/soc0/elphel393-pwr@0'
 MEM_PATH =            '/sys/devices/soc0/elphel393-mem@0/'
+EYESIS_POWER_PATH=    '/sys/devices/soc0/elphel393-pwr@0/gpio_10389'
+EYESIS_POWER_ON=      '0x101'
+EYESIS_POWER_OFF=     '0x100'
+
 
 BUFFER_ADDRESS_NAME = 'buffer_address'
 BUFFER_PAGES_NAME =   'buffer_pages'
@@ -271,8 +275,9 @@ class X393SensCmprs(object):
         """
         Sleep for specified number of milliseconds
         @param time_ms - sleep time in milliseconds
-        """    
-        time.sleep(0.001*time_ms)
+        """
+        if (time_ms):    
+            time.sleep(0.001*time_ms)
     def setSensorClock(self, freq_MHz = 24.0, iface = "2V5_LVDS", quiet = 0):
         """
         Set up external clock for sensor-synchronous circuitry (and sensor(s) themselves. 
@@ -314,11 +319,53 @@ class X393SensCmprs(object):
         if quiet == 0:
             print ("Set sensors %s interface voltage to %d mV"%(("0, 1","2, 3")[sub_pair],voltage_mv))    
         time.sleep(0.1)
+        
+    def setEyesisPower (self, en, dly_ms=0):
+        """
+        Turn on/off external power supply for Eyesis sensor ports. At startup stupid GPIO system
+        interface "thinks" it is off, but it is actually on. So to turn off after boot On-Off sequence
+        is needed
+        @param en True or 1 - turn power on, False or 0 - turn off
+        @param dly_ms - delay in ms after turning power on or off   
+        """
+        if self.DRY_MODE:
+            print ("setEyesisPower() is not defined for simulation mode")
+            return
+        with open (EYESIS_POWER_PATH,      "w") as f:
+            print((EYESIS_POWER_OFF,EYESIS_POWER_ON)[en], file = f)
+        self.sleep_ms(dly_ms)
+
+    def setupEyesisPower (self, dly1_ms = 50, dly2_ms=100):
+        """
+        1. Turn off external power supply for Eyesis sensor ports (it is on after boot),
+        2. Set interface voltage (should be with power off)
+        3. Turn on power
+        @param dly1_ms - delay time in ms after interface voltage
+        @param dly2_ms - delay time in ms after external power on/off
+        """
+        voltage_mv = SENSOR_INTERFACES['PAR12']["mv"]
+        if self.DRY_MODE:
+            print ("setupEyesisPower() is not defined for simulation mode")
+            return
+        #turn off external sensor power    
+        self.setEyesisPower (True,  0) # stupid GPIO after reset will not turn off if it thinks it is off 
+        self.setEyesisPower (False, dly2_ms)
+        #Turn off on-board sensor power (just in case)
+        for sub_pair in (0,1):
+            self.setSensorPower(sub_pair = sub_pair, power_on = 0)
+        for sub_pair in (0,1):
+            self.setSensorIfaceVoltage(sub_pair=sub_pair, voltage_mv = voltage_mv)
+            self.sleep_ms(dly1_ms)
+        self.setEyesisPower (True, dly2_ms)
+        #Turn on-board sensor power (just in case)
+        for sub_pair in (0,1):
+            self.setSensorPower(sub_pair = sub_pair, power_on = 0)
 
     def setupSensorsPower(self, ifaceType,  pairs = "all", quiet=0, dly=0.0):
         """
         Set interface voltage and turn on power for interface and the sensors
-        according to sensor type 
+        according to sensor type
+        @param ifaceType "PAR12" or "HISPI" 
         @param pairs - 'all' or list/tuple of pairs of the sensors: 0 - sensors 1 and 2, 1 - sensors 3 and 4 
         @param quiet - reduce output        
         @param dly - debug feature: step delay in sec        

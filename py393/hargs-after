@@ -5,5 +5,4 @@
 -p PICKLE="/usr/local/verilog/x393_mcntrl.pickle
 -c bitstream_set_path /usr/local/verilog/x393_parallel.bit
 -c specify_phys_memory
--c specify_window
 -i

@@ -38,7 +38,9 @@
  */
 `timescale 1ns/1ps
 
-module  sensor_i2c_scl_sda(
+module  sensor_i2c_scl_sda#
+(parameter I2C_REDUCE_SPEED_BITS = 1 // reduce i2c speed , 0: min = 200kHz, 1: 100kHz
+)(
     input         mrst,           // @ posedge mclk
     input         mclk,           // global clock
     input         i2c_rst,
@@ -63,7 +65,9 @@ module  sensor_i2c_scl_sda(
     wire         rst = mrst || i2c_rst;
     reg          is_open_r;
     reg    [8:0] sr;
-    reg    [7:0] dly_cntr;
+    reg  [I2C_REDUCE_SPEED_BITS + 7:0] dly_cntr;
+    wire [I2C_REDUCE_SPEED_BITS + 8:0] dly_cntr_w = {i2c_dly,{I2C_REDUCE_SPEED_BITS+1{1'b0}}}; // to handle 0-lengths
+    
     reg          busy_r;
     wire         snd_start_w =  snd_start && ready; //!busy_r;
     wire         snd_stop_w =   snd_stop && ready; // !busy_r;
@@ -137,7 +141,9 @@ module  sensor_i2c_scl_sda(
 //        if (!busy_r || dly_over_d) dly_cntr <= i2c_dly;
 //        else                       dly_cntr <= dly_cntr - 1;
         
-        if (!busy_w || dly_over) dly_cntr <= i2c_dly;
+//        if (!busy_w || dly_over) dly_cntr <= i2c_dly << I2C_REDUCE_SPEED_BITS;
+        if (!busy_w || dly_over) dly_cntr <= dly_cntr_w[I2C_REDUCE_SPEED_BITS+8 :1]; // top 8 bits
+        //
         else                     dly_cntr <= dly_cntr - 1;
         
         if (dly_over && seq_bit[1]) sda_r <= sda_in; // just before the end of SCL pulse - delay it by a few clocks to match external latencies?
