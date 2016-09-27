@@ -1826,7 +1826,7 @@ class X393ExportC(object):
         dw.append(("i2c_fifo_nempty",        8, 1,0,  "I2C read FIFO has data"))
         dw.append(("i2c_fifo_lsb",           9, 1,0,  "I2C FIFO byte counter (odd/even bytes)"))
         dw.append(("busy",                  10, 1,0,  "I2C sequencer busy"))
-        dw.append(("wr_full",               11, 1,0,  "Write buffer almost full (14..3/4 in ASAP mode)"))
+        dw.append(("wr_full",               11, 1,0,  "Write buffer almost full (1/4..3/4 in ASAP mode)"))
         dw.append(("frame_num",             12, 4,0,  "I2C sequencer frame number"))
         dw.append(("req_clr",               16, 1,0,  "Request for clearing fifo_wp (delay frame sync if previous is not yet sent out)"))
         dw.append(("reset_on",              17, 1,0,  "Reset in progress"))

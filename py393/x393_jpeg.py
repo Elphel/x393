@@ -1072,6 +1072,8 @@ camsync_setup 0xf # sensor mask - use local timestamps)
 jpeg_write  "img.jpeg" 0 80
 
 ####### Parallel - setup sensor 1 (sensor 0 is set by drivers) ##############
+cd /usr/local/verilog/; test_mcntrl.py @hargs-after
+
 setup_all_sensors True None 0x2 # sensor 1
 set_sensor_io_ctl  1 None None 1 # Set ARO low - check if it is still needed?
 #set quadrants
@@ -1099,6 +1101,8 @@ jpeg_write  "img.jpeg" 1 80
 
 
 ################## Parallel ##################
+cd /usr/local/verilog/; test_mcntrl.py @hargs-after
+
 cd /usr/local/verilog/; test_mcntrl.py @tpargs -x
 
 
