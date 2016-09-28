@@ -5,7 +5,9 @@
 -p PICKLE="/usr/local/verilog/x393_mcntrl.pickle
 -c bitstream_set_path /usr/local/verilog/x393_parallel.bit
 -c setupSensorsPower  "PAR12"  all  0  0.2
+-c sleep_ms 5000
 -c setEyesisPower 1
+-c sleep_ms 5000
 -c sleep_ms 20
 -c measure_all "*DI"
 -c setSensorClock 24.0 "2V5_LVDS"
