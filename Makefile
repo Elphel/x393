@@ -21,6 +21,8 @@ VERILOG_HEADERS = system_defines.vh \
 				  
 COMMAND_FILES =   py393/hargs \
 				  py393/hargs-auto \
+				  py393/hargs-after \
+				  py393/hargs-eyesis \
 				  py393/includes \
 				  py393/startup5 \
 				  py393/startup14
