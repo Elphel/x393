@@ -1065,6 +1065,16 @@ write_cmd_frame_sequencer  0  1  4  0x6c0  0x1c48 # reset  reset compressor memo
 write_cmd_frame_sequencer  0  1  8  0x6c0  0x3d4b # enable run compressor memory       (+2)
 write_cmd_frame_sequencer  0  1  8  0x600  0x7    # enable run compressor              (+0)
 
+write_cmd_frame_sequencer  1  1  2  0x600  0x5    #stop    compressor           `      
+write_cmd_frame_sequencer  1  1  4  0x600  0x4    #reset   reset compressor            (+2)
+write_cmd_frame_sequencer  1  1  4  0x6c0  0x1c48 # reset  reset compressor memory     (+0)
+write_cmd_frame_sequencer  1  1  8  0x6c0  0x3d4b # enable run compressor memory       (+2)
+write_cmd_frame_sequencer  1  1  8  0x600  0x7    # enable run compressor              (+0)
+
+
+
+
+
 set_qtables all 0 80
 
 set_rtc # maybe not needed as it can be set differently
