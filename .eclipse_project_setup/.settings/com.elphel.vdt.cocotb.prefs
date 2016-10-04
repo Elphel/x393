@@ -1,4 +1,4 @@
-cocotb_@_COCOTB_DEBUG=true
+cocotb_@_COCOTB_DEBUG=false
 cocotb_@_CocotbDutTopFile=cocotb/x393_dut.v
 cocotb_@_CocotbExtraFiles=glbl.v<-@\#\#@->
 cocotb_@_CocotbIncludeDir=${verilog_project_loc}/includes<-@\#\#@->${verilog_project_loc}/ddr3<-@\#\#@->${verilog_project_loc}/x393_sata<-@\#\#@->${verilog_project_loc}/x393_sata/host<-@\#\#@->
