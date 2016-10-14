@@ -35,8 +35,9 @@
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
  */
-        parameter FPGA_VERSION =          32'h039300bc;      //parallel, 100kHz min i2c speed -0.076/8, 79.69%
-//        parameter FPGA_VERSION =          32'h039300bb;      //parallel, adding i2c almost full. -0.101/8, 79.37%
+        parameter FPGA_VERSION =          32'h039300bd;      //hispi,  trying the same -0.173/36, 80.95%
+//      parameter FPGA_VERSION =          32'h039300bc;      //parallel, 100kHz min i2c speed -0.076/8, 79.69%
+//      parameter FPGA_VERSION =          32'h039300bb;      //parallel, adding i2c almost full. -0.101/8, 79.37%
 //      parameter FPGA_VERSION =          32'h039300ba;      //parallel, fixing introduced by debug bug in sens_parallel12.v: met, 80.03%
 //      parameter FPGA_VERSION =          32'h039300b9;      //parallel, correcting RTC (it was 25/24 faster) -0.038/29, 79.64%
 //      parameter FPGA_VERSION =          32'h039300b8;      //parallel, working on camsync -0.330/99, 80.52% -> -0.143 /40, 79.88% 
