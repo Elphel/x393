@@ -173,9 +173,10 @@ module  sensor_channel#(
         parameter SENS_CTRL_GP0=      12,  // 13:12
         parameter SENS_CTRL_GP1=      14,  // 15:14
 `else        
-        parameter SENS_CTRL_QUADRANTS =  12,  // 17:12, enable - 20
-        parameter SENS_CTRL_QUADRANTS_WIDTH = 6,
-        parameter SENS_CTRL_QUADRANTS_EN =   20,  // 17:12, enable - 20 (2 bits reserved)
+        parameter SENS_CTRL_QUADRANTS =      12,  // 17:12, enable - 20
+        parameter SENS_CTRL_QUADRANTS_WIDTH = 7, // 6,
+        parameter SENS_CTRL_ODD =             6, //
+        parameter SENS_CTRL_QUADRANTS_EN =   20,  // 18:12, enable - 20 (1 bits reserved)
 `endif        
       parameter SENSIO_STATUS =         'h1,
       parameter SENSIO_JTAG =           'h2,
@@ -893,6 +894,7 @@ module  sensor_channel#(
             .SENS_CTRL_EXT_CLK     (SENS_CTRL_EXT_CLK),
             .SENS_CTRL_LD_DLY      (SENS_CTRL_LD_DLY),
             .SENS_CTRL_QUADRANTS   (SENS_CTRL_QUADRANTS),
+            .SENS_CTRL_ODD         (SENS_CTRL_ODD),
             .SENS_CTRL_QUADRANTS_WIDTH  (SENS_CTRL_QUADRANTS_WIDTH),
             .SENS_CTRL_QUADRANTS_EN     (SENS_CTRL_QUADRANTS_EN),
             .IODELAY_GRP           (IODELAY_GRP),

@@ -1721,6 +1721,7 @@ assign axi_grst = axi_rst_pre;
         .SENS_CTRL_GP1              (SENS_CTRL_GP1),
 `else        
         .SENS_CTRL_QUADRANTS        (SENS_CTRL_QUADRANTS),
+        .SENS_CTRL_ODD              (SENS_CTRL_ODD),
         .SENS_CTRL_QUADRANTS_WIDTH  (SENS_CTRL_QUADRANTS_WIDTH),
         .SENS_CTRL_QUADRANTS_EN     (SENS_CTRL_QUADRANTS_EN),
 `endif                

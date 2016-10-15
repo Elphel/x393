@@ -2015,7 +2015,7 @@ class X393ExportC(object):
         dw.append(("ext_clk",      vrlg.SENS_CTRL_EXT_CLK,      1,   0,  "MMCM clock input: 0: clock to the sensor, 1 - clock from the sensor"))
         dw.append(("ext_clk_set",  vrlg.SENS_CTRL_EXT_CLK + 1,  1,   0,  "Set MMCM clock input to 'ext_clk' field"))
         dw.append(("set_dly",      vrlg.SENS_CTRL_LD_DLY,       1,   0,  "Set all pre-programmed delays to the sensor port input delays"))
-        dw.append(("quadrants",    vrlg.SENS_CTRL_QUADRANTS,  vrlg. SENS_CTRL_QUADRANTS_WIDTH, 1, "90-degree shifts for data [1:0], hact [3:2] and vact [5:4]"))
+        dw.append(("quadrants",    vrlg.SENS_CTRL_QUADRANTS,  vrlg. SENS_CTRL_QUADRANTS_WIDTH, 1, "90-degree shifts for data [1:0], hact [3:2] and vact [5:4], [6] - extra period delay for hact"))
         dw.append(("quadrants_set",vrlg.SENS_CTRL_QUADRANTS_EN, 1,   0,  "Set 'quadrants' values"))
         return dw
     def _enc_sensio_ctrl_hispi(self):
