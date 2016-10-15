@@ -61,8 +61,9 @@ module  sens_parallel12 #(
     parameter SENS_CTRL_EXT_CLK=   8,  //  9: 8
     parameter SENS_CTRL_LD_DLY=   10,  // 10
     parameter SENS_CTRL_QUADRANTS =      12,  // 17:12, enable - 20
-    parameter SENS_CTRL_QUADRANTS_WIDTH = 6,
-    parameter SENS_CTRL_QUADRANTS_EN =   20,  // 17:12, enable - 20 (2 bits reserved)
+    parameter SENS_CTRL_QUADRANTS_WIDTH = 7, // 6,
+    parameter SENS_CTRL_ODD =             6, //
+    parameter SENS_CTRL_QUADRANTS_EN =   20,  // 18:12, enable - 20 (1 bits reserved)
      
     
     parameter LINE_WIDTH_BITS =   16,
@@ -189,7 +190,7 @@ module  sens_parallel12 #(
     reg         iarst = 0;
     reg         imrst = 0;
     reg         rst_mmcm=1; // rst and command - en/dis 
-    reg  [SENS_CTRL_QUADRANTS_WIDTH-1:0]  quadrants=0; //90-degree shifts for data {1:0], hact [3:2] and vact [5:4]
+    reg  [SENS_CTRL_QUADRANTS_WIDTH-1:0]  quadrants=0; //90-degree shifts for data [1:0], hact [3:2] and vact [5:4], [6] odd/even
     reg         ld_idelay=0;
     reg         sel_ext_clk=0; // select clock source from the sensor (0 - use internal clock - to sensor)
 
@@ -214,8 +215,10 @@ module  sens_parallel12 #(
     reg            xfpgatck=0;   // TCK to be sent to external FPGA
     reg            xfpgatms=0;   // TMS to be sent to external FPGA
     reg            xfpgatdi=0;   // TDI to be sent to external FPGA
-    wire           hact_ext;     // received hact signal
-    reg            hact_ext_r;   // received hact signal, delayed by 1 clock
+    wire           hact_ext_direct;     // received hact signal
+    reg            hact_ext_d;   // external hact delayed by 1 pixel    
+    wire           hact_ext =  quadrants[SENS_CTRL_ODD]? hact_ext_d: hact_ext_direct;   // selected between     
+    reg            hact_ext_r;   // received hact signal, delayed by 1 and 2 clocks
     reg            hact_r;       // received or regenerated hact 
 
 // for debug/test alive    
@@ -341,8 +344,13 @@ module  sens_parallel12 #(
     
         if (irst)                 line_width_internal_ipclk <= 0;
         else if (set_width_ipclk) line_width_internal_ipclk <= line_width_internal;
+
+        // generate delayed hact to switch between original/delayed
+        if (irst) hact_ext_d <= 0;
+        else      hact_ext_d <= hact_ext_direct;
+
         // regenerate/propagate  HACT
-        if (irst) hact_ext_r <= 1'b0;
+        if (irst) hact_ext_r <= 0;
         else      hact_ext_r <= hact_ext;
         
         if      (irst)                                                      hact_r <= 0;
@@ -576,20 +584,20 @@ module  sens_parallel12 #(
         .REFCLK_FREQUENCY      (SENS_REFCLK_FREQUENCY),
         .HIGH_PERFORMANCE_MODE (SENS_HIGH_PERFORMANCE_MODE)
     ) pxd_hact_i (
-        .pxd            (hact),          // inout
-        .pxd_out        (1'b0),          // input
-        .pxd_en         (1'b0),          // input
-        .pxd_async      (),              // output
-        .pxd_in         (hact_ext),      // output
-        .ipclk          (ipclk),         // input
-        .ipclk2x        (ipclk2x),       // input
-        .mrst           (mclk_rst),      // input
-        .irst           (irst),          // input
-        .mclk           (mclk),          // input
+        .pxd            (hact),           // inout
+        .pxd_out        (1'b0),           // input
+        .pxd_en         (1'b0),           // input
+        .pxd_async      (),               // output
+        .pxd_in         (hact_ext_direct),// output
+        .ipclk          (ipclk),          // input
+        .ipclk2x        (ipclk2x),        // input
+        .mrst           (mclk_rst),       // input
+        .irst           (irst),           // input
+        .mclk           (mclk),           // input
         .dly_data       (data_r[7:0]),    // input[7:0] 
         .set_idelay     (set_other_delay),// input
-        .ld_idelay      (ld_idelay),     // input
-        .quadrant       (quadrants[3:2]) // input[1:0] 
+        .ld_idelay      (ld_idelay),      // input
+        .quadrant       (quadrants[3:2])  // input[1:0] 
     );
     
     pxd_single #(

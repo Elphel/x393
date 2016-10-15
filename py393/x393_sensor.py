@@ -407,7 +407,7 @@ class X393Sensor(object):
         @param mmcm_rst - True - activate MMCM reset, False - deactivate MMCM reset, None - no change (needed after clock change/interruption)
         @param clk_sel - True - use pixel clock from the sensor, False - use internal clock (provided to the sensor), None - no chnage
         @param set_delays - (self-clearing) load all pre-programmed delays for the sensor pad inputs 
-        @param quadrants -  90-degree shifts for data [1:0], hact [3:2] and vact [5:4] (6'h01), None - no change
+        @param quadrants -  90-degree shifts for data [1:0], hact [3:2] and vact [5:4] [6] - extra hact delay by 1 pixel (7'h01), None - no change
         @return sensor i/o control word
         """
         rslt = 0
