@@ -167,7 +167,8 @@ module camsync393       #(
     wire          en_pclk;
     wire          eprst = prst || !en_pclk;
     reg           ts_snd_en;   // enable sending timestamp over sync line
-    reg           ts_external; // 1 - use external timestamp, if available. 0 - always use local ts
+    reg           ts_external;   // Combined bit  1 - use external timestamp, if available. 0 - always use local ts
+    reg           ts_external_m; // 1 - use external timestamp, if available. 0 - always use local ts (mode bit)
     reg           triggered_mode_r;
 
     reg    [31:0] ts_snd_sec;  // [31:0] timestamp seconds to be sent over the sync line - multiplexed from master channel
@@ -377,19 +378,22 @@ module camsync393       #(
 
     always @(posedge mclk) begin
         if (set_mode_reg_w) begin
-            if (cmd_data[CAMSYNC_EN_BIT])        en <=          cmd_data[CAMSYNC_EN_BIT - 1];
-            if (cmd_data[CAMSYNC_SNDEN_BIT])     ts_snd_en <=   cmd_data[CAMSYNC_SNDEN_BIT - 1];
-            if (cmd_data[CAMSYNC_EXTERNAL_BIT])  ts_external <= cmd_data[CAMSYNC_EXTERNAL_BIT - 1];
+            if (cmd_data[CAMSYNC_EN_BIT])        en <=               cmd_data[CAMSYNC_EN_BIT - 1];
+            if (cmd_data[CAMSYNC_SNDEN_BIT])     ts_snd_en <=        cmd_data[CAMSYNC_SNDEN_BIT - 1];
+            if (cmd_data[CAMSYNC_EXTERNAL_BIT])  ts_external_m <=    cmd_data[CAMSYNC_EXTERNAL_BIT - 1];
             if (cmd_data[CAMSYNC_TRIGGERED_BIT]) triggered_mode_r <= cmd_data[CAMSYNC_TRIGGERED_BIT - 1];
-            if (cmd_data[CAMSYNC_MASTER_BIT])    master_chn <= cmd_data[CAMSYNC_MASTER_BIT - 1 -: 2];
+            if (cmd_data[CAMSYNC_MASTER_BIT])    master_chn <=       cmd_data[CAMSYNC_MASTER_BIT - 1 -: 2];
 //            if (cmd_data[CAMSYNC_CHN_EN_BIT])    chn_en <= cmd_data[CAMSYNC_CHN_EN_BIT - 1 -: 4];
 // Making separate enables for each channel, so channel software will not disturb other channels
-            if (cmd_data[CAMSYNC_CHN_EN_BIT-3])    chn_en[0] <= cmd_data[CAMSYNC_CHN_EN_BIT - 7];
-            if (cmd_data[CAMSYNC_CHN_EN_BIT-2])    chn_en[1] <= cmd_data[CAMSYNC_CHN_EN_BIT - 6];
-            if (cmd_data[CAMSYNC_CHN_EN_BIT-1])    chn_en[2] <= cmd_data[CAMSYNC_CHN_EN_BIT - 5];
-            if (cmd_data[CAMSYNC_CHN_EN_BIT-0])    chn_en[3] <= cmd_data[CAMSYNC_CHN_EN_BIT - 4];
+            if (cmd_data[CAMSYNC_CHN_EN_BIT-3])    chn_en[0] <=      cmd_data[CAMSYNC_CHN_EN_BIT - 7];
+            if (cmd_data[CAMSYNC_CHN_EN_BIT-2])    chn_en[1] <=      cmd_data[CAMSYNC_CHN_EN_BIT - 6];
+            if (cmd_data[CAMSYNC_CHN_EN_BIT-1])    chn_en[2] <=      cmd_data[CAMSYNC_CHN_EN_BIT - 5];
+            if (cmd_data[CAMSYNC_CHN_EN_BIT-0])    chn_en[3] <=      cmd_data[CAMSYNC_CHN_EN_BIT - 4];
             
-        end 
+        end
+        // Do not try to use external timestamp in free run or internally triggered mode
+        ts_external <= ts_external_m && !input_use_intern && triggered_mode_r;
+         
         if (mrst) input_use <= 0;
         if (!en) begin
             input_use <= 0;

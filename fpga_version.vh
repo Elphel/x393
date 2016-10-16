@@ -35,7 +35,8 @@
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
  */
-        parameter FPGA_VERSION =          32'h039300be;      //parallel - adding odd/even pixels shift -0.066/12, 80.26%
+        parameter FPGA_VERSION =          32'h039300bf;      //parallel - mask extrenal timestamps mode -0.043/17 79.56%
+//        parameter FPGA_VERSION =          32'h039300be;      //parallel - adding odd/even pixels shift -0.066/12, 80.26%
 //      parameter FPGA_VERSION =          32'h039300bd;      //hispi,  trying the same -0.173/36, 80.95%
 //      parameter FPGA_VERSION =          32'h039300bc;      //parallel, 100kHz min i2c speed -0.076/8, 79.69%
 //      parameter FPGA_VERSION =          32'h039300bb;      //parallel, adding i2c almost full. -0.101/8, 79.37%
