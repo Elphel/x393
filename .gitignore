@@ -60,4 +60,5 @@ cocotb/results.xml
 html.tar.gz
 latex
 bitbake-logs                                                                                                                                               
-sysroots  
+sysroots
+image
