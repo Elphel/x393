@@ -1109,7 +1109,7 @@ class X393ExportC(object):
             (('_Address consists of 2 parts - 2-bit page (configuration, imu, gps, message) and a 5-bit sub-address autoincremented when writing data.',)),
             (('_Register pages:',)),
             (("X393_LOGGER_PAGE_CONF",                    "", 0 ,                                0, None, None, "",    "Logger configuration page")),
-            (("X393_LOGGER_PAGE_IMU",                     "", vrlg.LOGGER_PAGE_IMU ,             0, None, None, "",    "Logger IMU parameters page")),
+            (("X393_LOGGER_PAGE_IMU",                     "", vrlg.LOGGER_PAGE_IMU ,             0, None, None, "",    "Logger IMU parameters page (fist 4 DWORDs are not used)")),
             (("X393_LOGGER_PAGE_GPS",                     "", vrlg.LOGGER_PAGE_GPS ,             0, None, None, "",    "Logger GPS parameters page")),
             (("X393_LOGGER_PAGE_MSG",                     "", vrlg.LOGGER_PAGE_MSG ,             0, None, None, "",    "Logger MSG (odometer) parameters page")),
             (('_Register configuration addresses (with X393_LOGGER_PAGE_CONF):',)),
