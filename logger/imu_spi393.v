@@ -40,25 +40,24 @@
 
 module  imu_spi393(
 //    input                         rst,
-    input                         mclk,        // system clock, negedge TODO:COnvert to posedge!
-    input                         xclk,        // half frequency (80 MHz nominal)
-            
-    input                         we_ra, // write enable for registers to log (@negedge clk)
-    input                         we_div,// write enable for clock dividing(@negedge clk)
-    input                         we_period,// write enable for IMU cycle period(@negedge clk) 0 - disable, 1 - single, >1 - half bit periods
-    input                  [ 4:0] wa,    // write address for register (5 bits, @negedge clk)
-    input                  [31:0] din,   //
-    output                        mosi,  // to IMU, bit 2 in J9
-    input                         miso,  // from IMU, bit 3 on J9
+    input                         mclk,         // system clock, negedge TODO:COnvert to posedge!
+    input                         xclk,         // half frequency (80 MHz nominal)
+    input                         we_ra,        // write enable for registers to log (@negedge clk)
+    input                         we_div,       // write enable for clock dividing(@negedge clk)
+    input                         we_period,    // write enable for IMU cycle period(@negedge clk) 0 - disable, 1 - single, >1 - half bit periods
+    input                  [ 4:0] wa,           // write address for register (5 bits, @negedge clk)
+    input                  [31:0] din,          //
+    output                        mosi,         // to IMU, bit 2 in J9
+    input                         miso,         // from IMU, bit 3 on J9
     input                  [ 3:0] config_debug, // bit 0 - long sda_en
-    output                        sda,   // sda, shared with i2c, bit 1
-    output                        sda_en, // enable sda output (when sda==0 and 1 cycle after sda 0->1)
-    output                        scl,   // scl, shared with i2c, bit 0
-    output                        scl_en, // enable scl output (when scl==0 and 1 cycle after sda 0->1)
-    output                        ts,    // timestamop request
-    output                        rdy,    // data ready
-    input                         rd_stb, // data read strobe (increment address)
-    output                 [15:0] rdata); // data out (16 bits)
+    output                        sda,          // sda, shared with i2c, bit 1
+    output                        sda_en,       // enable sda output (when sda==0 and 1 cycle after sda 0->1)
+    output                        scl,          // scl, shared with i2c, bit 0
+    output                        scl_en,       // enable scl output (when scl==0 and 1 cycle after sda 0->1)
+    output                        ts,           // timestamp request
+    output                        rdy,          // data ready
+    input                         rd_stb,       // data read strobe (increment address)
+    output                 [15:0] rdata);       // data out (16 bits)
  /*
   input         mclk;   // system clock, negedge
   input         xclk;  // half frequency (80 MHz nominal)
@@ -115,14 +114,14 @@ module  imu_spi393(
     reg           imu_start;
     reg           ts_r; // delay imu_start by one cycle, so it will be after rdy is reset
 
-    reg    [31:0] period; // 0 - disable, 1 - single, >1 - period in 50 ns steps
+    reg    [31:0] period=0; // 0 - disable, 1 - single, >1 - period in 50 ns steps
 //  reg    [15:0] di_d;
 
-    reg           imu_enabled_mclk;
+    reg           imu_enabled_mclk = 0;
     reg     [1:0] imu_enabled=2'h0;
-    reg           imu_run_mclk;
+    reg           imu_run_mclk = 0;
     reg     [1:0] imu_run;
-    reg           imu_when_ready_mclk;
+    reg           imu_when_ready_mclk = 0;
     reg     [1:0] imu_when_ready;
   
     reg           imu_run_confirmed;
@@ -184,7 +183,7 @@ module  imu_spi393(
     
         if (we_period)   period[31:0] <=        din[31:0];
         if (we_timer[2]) imu_run_mclk <=        (period[31:1]!=31'b0); // double-cycle
-        if (we_timer[3]) imu_enabled_mclk <=    imu_run_mclk | period[0];
+        if (we_timer[3]) imu_enabled_mclk <=    imu_run_mclk | period[0]; // NC393: Why period[0]?
         
         if (we_timer[2]) imu_when_ready_mclk <= &period[31:16]; // double-cycle
         
@@ -317,8 +316,8 @@ module  imu_spi393(
         
         sngl_wire_stb[2:0] <={sngl_wire_stb[1:0], en & ((scl_r[0] ^ pre_scl) | end_prepare)};
     
-        if      (!en)                              sngl_wire_r[0]<=1'b0;
-        else if ((pre_scl ^scl_r[0]) | end_prepare)     sngl_wire_r[0]<=1'b1;
+        if      (!en)                                           sngl_wire_r[0]<=1'b0;
+        else if ((pre_scl ^scl_r[0]) | end_prepare)             sngl_wire_r[0]<=1'b1;
         else if (!mosi_reg[15] || sngl_wire_stb[2] || scl_r[0]) sngl_wire_r[0]<=1'b0;
         
        

@@ -2314,7 +2314,8 @@ assign axi_grst = axi_rst_pre;
         .ts_local_data (ts_logegr_data),      // input[7:0] 
         .ext_di        (gpio_rd),             // input[9:0] 
         .ext_do        (gpio_logger),         // output[9:0] 
-        .ext_en        (gpio_logger_en),      // output[9:0] 
+        .ext_en        (gpio_logger_en),      // output[9:0]
+        .sof_mclk      (sof_out_mclk),        // input[3:0] 
         .ts_stb_chn0   (ts_pre_stb[0]),       // input
         .ts_data_chn0  (ts_data[0 * 8 +: 8]), // input[7:0] 
         .ts_stb_chn1   (ts_pre_stb[1]),       // input

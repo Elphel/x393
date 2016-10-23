@@ -679,8 +679,6 @@ module  x393_dut#(
 
     wire [ 9:0] gpio_pins; // inout[9:0] ([8]-synco0,[7]-syncio0,[6]-synco1,[9]-syncio1)
 // Connect trigger outs to triggets in (#10 needed for Icarus)
-assign #10 gpio_pins[7] = gpio_pins[8];
-assign #10 gpio_pins[9] = gpio_pins[6];
 
   // DDR3 signals
     wire        SDRST;
@@ -1713,6 +1711,220 @@ simul_axi_hp_wr #(
 //localparam line = `__LINE__;
 assign x393_i.ps7_i.FCLKCLK=        {4{CLK}};
 assign x393_i.ps7_i.FCLKRESETN=     {RST,~RST,RST,~RST};
+
+`define TEST_IMU
+
+assign #10 gpio_pins[7] = gpio_pins[8];
+`ifndef TEST_IMU
+    assign #10 gpio_pins[9] = gpio_pins[6]; 
+`endif
+
+
+
+`ifdef TEST_IMU
+//     localparam X313_WA_IOPINS_EN_IMU_OUT= 'hc0000000;
+//     localparam X313_WA_IOPINS_DIS_IMU_OUT='h80000000;  //SuppressThisWarning Veditor UNUSED
+//     localparam X313_WA_IMU_CTRL= 'h7f;
     
+//     localparam X313_WA_IMU_DATA= 'h7e;
+//     localparam X313_RA_IMU_DATA= 'h7e; // read fifo word, advance pointer (32 reads w/o ready check) 
+//     localparam X313_RA_IMU_STATUS= 'h7f; // LSB==ready
+//     localparam IMU_PERIOD= 'h800; // normal period
+//     localparam IMU_AUTO_PERIOD= 'hffff0000; // period defined by IMU ready
+ 
+     localparam IMU_BIT_DURATION= 'h3; // actual F(scl) will be F(xclk)/2/(IMU_BIT_DURATION+1)
+     localparam IMU_READY_PERIOD=100000; //100usec
+     localparam IMU_NREADY_DURATION=10000; //10usec
+     localparam IMU_GPS_BIT_PERIOD='h18; // 20; // serial communication duration of a bit (in system clocks)
+// use start of trigger as a timestamp (in async mode to prevent timestamp jitter)
+// parameter X313_WA_DCR1_EARLYTRIGEN='hc; //OBSOLETE!
+// parameter X313_WA_DCR1_EARLYTRIGDIS='h8;
+`endif
+
+`ifdef TEST_IMU
+
+    //wire [11:0] EXT; // bidirectional
+    //reg TEST_CPU_WR_OK;
+    //reg TEST_CPU_RD_OK;
+      reg SERIAL_BIT = 1'b1;
+      reg GPS1SEC    = 1'b0;
+      reg ODOMETER_PULSE= 1'b0;
+      integer SERIAL_DATA_FD; // @SuppressThisWarning VEditor
+      reg IMU_DATA_READY;
+    
+    
+      wire IMU_SCL=gpio_pins[0];
+      wire IMU_SDA=gpio_pins[1];
+      wire IMU_MOSI=gpio_pins[2];
+      wire IMU_MISO=gpio_pins[3]; // @SuppressThisWarning VEditor just for simulation
+      reg  IMU_EN;
+      wire IMU_ACTIVE;            // @SuppressThisWarning VEditor just for simulation
+      wire IMU_NMOSI=!IMU_MOSI;
+      wire [5:1] IMU_TAPS;
+      reg        IMU_LATE_ACKN = 0;
+      reg        IMU_SCLK =      1;
+      reg        IMU_MOSI_REVA;
+      reg        IMU_103695REVA = 1;
+      wire       IMU_MOSI_OUT;
+      wire       IMU_SCLK_OUT;
+      reg        RS232_SENDING_BYTE;   // @SuppressThisWarning VEditor just for simulation
+      reg        RS232_SENDING_PAUSE; // @SuppressThisWarning VEditor just for simulation
+`endif
+
+
+`ifdef TEST_IMU
+  initial begin
+    SERIAL_DATA_FD=$fopen({`ROOTPATH,"/input_data/gps_data.dat"},"r"); 
+    #10000;
+    while (!$feof (SERIAL_DATA_FD)) begin
+      repeat (18*IMU_BIT_DURATION) begin  wait (axi_hclk); wait (~axi_hclk);  end // was 20
+      send_serial_line;
+      send_serial_bit('h0a);
+      send_serial_pause; // was not here
+      GPS1SEC=1'b1;
+      send_serial_line;
+      send_serial_bit('h0a);
+      GPS1SEC=1'b0;
+      send_serial_line;
+      send_serial_bit('h0a);
+      send_serial_pause;
+      send_serial_pause;
+      ODOMETER_PULSE=1'b1;
+      send_serial_pause;
+      ODOMETER_PULSE=1'b0;
+//  repeat (20) send_serial_pause;
+    end
+  end 
+`endif
+
+
+`ifdef TEST_IMU
+    
+      assign IMU_MOSI_OUT=IMU_103695REVA? IMU_MOSI_REVA : IMU_MOSI;
+      assign IMU_SCLK_OUT=IMU_103695REVA?(IMU_SCLK):IMU_SCL;
+      always @ (posedge IMU_SDA) begin
+        IMU_EN<=IMU_MOSI;
+      end
+      wire IMU_CS=IMU_103695REVA?!IMU_ACTIVE:!(IMU_EN &&IMU_SDA);
+      reg        IMU_MOSI_D;
+      always @ (posedge IMU_SCLK_OUT) begin
+    //        IMU_MOSI_D<=IMU_MOSI;
+        IMU_MOSI_D<=IMU_MOSI_OUT;
+      end
+      reg [15:0] IMU_LOOPBACK;
+      always @ (negedge IMU_SCLK_OUT) begin
+        if (!IMU_CS) IMU_LOOPBACK[15:0]<={IMU_LOOPBACK[14:0],IMU_MOSI_D};
+      end
+      assign gpio_pins[3]=IMU_CS?IMU_DATA_READY:IMU_LOOPBACK[15];
+      PULLUP  i_IMU_SDA   (.O(IMU_SDA));
+      PULLUP  i_IMU_SCL   (.O(IMU_SCL));
+      
+      initial begin
+//        SERIAL_DATA_FD=$fopen("gps_data.dat","r"); 
+      end
+      
+      always begin
+       #(IMU_READY_PERIOD-IMU_NREADY_DURATION) IMU_DATA_READY=1'b0;
+       #(IMU_NREADY_DURATION)                  IMU_DATA_READY=1'b1;
+      end
+      assign gpio_pins[4]=SERIAL_BIT;
+      assign gpio_pins[5]=GPS1SEC;
+//      assign gpio_pins[6]=ODOMETER_PULSE;
+      assign gpio_pins[9]=ODOMETER_PULSE;
+      oneshot i_oneshot  (.trigger(IMU_NMOSI),
+                          .out(IMU_ACTIVE));
+                          
+      dly5taps i_dly5taps (.dly_in(IMU_NMOSI),
+                           .dly_out(IMU_TAPS[5:1]));
+      always @ (negedge IMU_ACTIVE or posedge IMU_TAPS[5])    if (!IMU_ACTIVE)    IMU_LATE_ACKN<= 1'b0; else IMU_LATE_ACKN<= 1'b1;
+      always @ (negedge IMU_LATE_ACKN or posedge IMU_TAPS[4]) if (!IMU_LATE_ACKN) IMU_SCLK<= 1'b1;      else IMU_SCLK<= ~IMU_SCLK;
+      always @ (negedge IMU_SCLK)  IMU_MOSI_REVA <= IMU_NMOSI;
+    
+    task send_serial_bit;
+      input [7:0] data_byte;
+      reg   [7:0] d;
+      begin
+        RS232_SENDING_BYTE <= 1;
+        d <= data_byte;
+        wait (axi_hclk); wait (~axi_hclk); 
+    // SERIAL_BIT should be 1 here
+    // Send start bit    
+        SERIAL_BIT <= 1'b0;
+        repeat (IMU_GPS_BIT_PERIOD) begin  wait (axi_hclk); wait (~axi_hclk);  end
+        // Send 8 data bits, LSB first    
+        repeat (8) begin
+          SERIAL_BIT <= d[0];
+          #1 d[7:0] <= {1'b0,d[7:1]};
+          repeat (IMU_GPS_BIT_PERIOD) begin  wait (axi_hclk); wait (~axi_hclk);  end
+        end
+    // Send stop bit    
+        SERIAL_BIT <= 1'b1;
+        RS232_SENDING_BYTE <= 0; // before stop bit
+        repeat (IMU_GPS_BIT_PERIOD) begin  wait (axi_hclk); wait (~axi_hclk);  end
+      end
+    endtask  
+    
+    task send_serial_pause;
+      begin
+        RS232_SENDING_PAUSE <= 1;
+        wait (axi_hclk); wait (~axi_hclk); 
+        SERIAL_BIT <= 1'b1;
+        repeat (16) begin
+          repeat (IMU_GPS_BIT_PERIOD) begin  wait (axi_hclk); wait (~axi_hclk);  end
+        end  
+        RS232_SENDING_PAUSE <= 0;
+      end
+    endtask  
+    
+    //        SERIAL_DATA_FD=$fopen("gps_data.dat","r"); 
+    
+    task send_serial_line;
+      integer char;
+      begin
+        char=0;
+        while (!$feof (SERIAL_DATA_FD) && (char != 'h0a)) begin
+          char=$fgetc(SERIAL_DATA_FD);
+          send_serial_bit(char);
+        end
+      end  
+    endtask
+
+
+`endif
+
+
+
+
 endmodule
 
+module oneshot(trigger,
+               out);
+  input  trigger;
+  output out;
+  reg    out;
+  event  start;
+  parameter duration=4000;
+  initial out= 0;
+  always @ (posedge trigger) begin
+    disable timeout;
+    #0 -> start;
+  end
+  always @start
+    begin : timeout
+      out = 1;
+      # duration out = 0;
+    end
+endmodule
+
+module dly5taps (dly_in,
+                dly_out);
+  input        dly_in;
+  output [5:1] dly_out;
+  reg    [5:1] dly_out;
+  parameter dly=6; // delay per tap, ns
+  always @ (dly_in)     # dly dly_out[1] <= dly_in;
+  always @ (dly_out[1]) # dly dly_out[2] <= dly_out[1];
+  always @ (dly_out[2]) # dly dly_out[3] <= dly_out[2];
+  always @ (dly_out[3]) # dly dly_out[4] <= dly_out[3];
+  always @ (dly_out[4]) # dly dly_out[5] <= dly_out[4];
+endmodule

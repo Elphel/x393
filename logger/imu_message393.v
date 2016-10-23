@@ -81,11 +81,11 @@ module  imu_message393 (
     
         ts_r <= !trig_denoise[1] && trig_denoise[0];
     
-        if (!en || ts_r)   raddr[4:0] <= 5'h0;
+        if (!en || ts_r)    raddr[4:0] <= 5'h0;
         else if (rd_stb)    raddr[4:0] <= raddr[4:0] + 1;
     
         if  (ts_r || (rd_stb && (raddr[4:0]==5'h1b)) || !en) rdy_r <= 1'b0;
-        else if (trig_denoise[1] && !trig_denoise[0])     rdy_r <= 1'b1;
+        else if (trig_denoise[1] && !trig_denoise[0])        rdy_r <= 1'b1;
     end
 
     reg     [31:0] odbuf0_ram[0:15];
