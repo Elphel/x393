@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.3.66 (w)1999-2015 BSI
-[*] Sun Oct 23 15:34:21 2016
+[*] Mon Oct 24 00:30:16 2016
 [*]
-[dumpfile] "/home/eyesis/git/x393-neon/simulation/x393_dut-20161023002450549.fst"
-[dumpfile_mtime] "Sun Oct 23 07:43:15 2016"
-[dumpfile_size] 421314821
+[dumpfile] "/home/eyesis/git/x393-neon/simulation/x393_dut-20161023171014405.fst"
+[dumpfile_mtime] "Mon Oct 24 00:23:04 2016"
+[dumpfile_size] 364619214
 [savefile] "/home/eyesis/git/x393-neon/cocotb/x393_cocotb_03.sav"
 [timestart] 0
 [size] 1814 1171
-[pos] 1920 0
-*-26.672018 548510000 53094051 136169617 216213845 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[pos] 0 0
+*-26.593010 46043333 53094051 136169617 216213845 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] x393_dut.
 [treeopen] x393_dut.simul_sensor12bits_2_i.
 [treeopen] x393_dut.simul_sensor12bits_3_i.
@@ -19,13 +19,14 @@
 [treeopen] x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.
 [treeopen] x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.
 [treeopen] x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.bit_stuffer_metadata_i.
-[treeopen] x393_dut.x393_i.event_logger_i.
 [treeopen] x393_dut.x393_i.event_logger_i.i_imu_exttime.
 [treeopen] x393_dut.x393_i.event_logger_i.i_imu_exttime.timestamp_fifo_chn0_i.
 [treeopen] x393_dut.x393_i.event_logger_i.i_imu_spi.
 [treeopen] x393_dut.x393_i.event_logger_i.i_logger_arbiter.
 [treeopen] x393_dut.x393_i.event_logger_i.i_nmea_decoder.
 [treeopen] x393_dut.x393_i.event_logger_i.i_rs232_rcv.
+[treeopen] x393_dut.x393_i.mult_saxi_wr_i.
+[treeopen] x393_dut.x393_i.mult_saxi_wr_i.mult_saxi_wr_pointers_i.
 [treeopen] x393_dut.x393_i.sensors393_i.sensor_channel_block[0].
 [treeopen] x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.
 [treeopen] x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.
@@ -40,10 +41,10 @@
 [treeopen] x393_dut.x393_i.sensors393_i.sensor_channel_block[3].sensor_channel_i.sens_parallel12_i.
 [treeopen] x393_dut.x393_i.sensors393_i.sensor_channel_block[3].sensor_channel_i.sens_sync_i.
 [treeopen] x393_dut.x393_i.timing393_i.camsync393_i.
-[sst_width] 380
-[signals_width] 259
+[sst_width] 398
+[signals_width] 323
 [sst_expanded] 1
-[sst_vpaned_height] 487
+[sst_vpaned_height] 486
 @820
 x393_dut.TEST_TITLE[639:0]
 @c00200
@@ -835,8 +836,6 @@ x393_dut.x393_i.ts_pre_stb[3:0]
 (3)x393_dut.x393_i.ts_pre_stb[3:0]
 @1001200
 -group_end
-@200
--
 @c00022
 x393_dut.x393_i.event_logger_i.ext_di[9:0]
 @28
@@ -1123,8 +1122,14 @@ x393_dut.x393_i.event_logger_i.i_nmea_decoder.ser_di
 x393_dut.x393_i.event_logger_i.i_nmea_decoder.ser_stb
 x393_dut.x393_i.event_logger_i.i_nmea_decoder.nmea_sent_start
 x393_dut.x393_i.event_logger_i.i_nmea_decoder.rdy
+@22
+[color] 2
+x393_dut.x393_i.event_logger_i.i_nmea_decoder.raddr[4:0]
+@28
+[color] 2
 x393_dut.x393_i.event_logger_i.i_nmea_decoder.rd_stb
 @22
+[color] 2
 x393_dut.x393_i.event_logger_i.i_nmea_decoder.rdata[15:0]
 @c00022
 x393_dut.x393_i.event_logger_i.i_nmea_decoder.debug[23:0]
@@ -1197,9 +1202,27 @@ x393_dut.x393_i.event_logger_i.i_nmea_decoder.we
 @22
 x393_dut.x393_i.event_logger_i.i_nmea_decoder.wa[4:0]
 x393_dut.x393_i.event_logger_i.i_nmea_decoder.wd[7:0]
+@200
+-
+@28
+x393_dut.x393_i.event_logger_i.i_nmea_decoder.nibble_stb
+@c00022
+x393_dut.x393_i.event_logger_i.i_nmea_decoder.nibble_count[6:0]
+@28
+(0)x393_dut.x393_i.event_logger_i.i_nmea_decoder.nibble_count[6:0]
+(1)x393_dut.x393_i.event_logger_i.i_nmea_decoder.nibble_count[6:0]
+(2)x393_dut.x393_i.event_logger_i.i_nmea_decoder.nibble_count[6:0]
+(3)x393_dut.x393_i.event_logger_i.i_nmea_decoder.nibble_count[6:0]
+(4)x393_dut.x393_i.event_logger_i.i_nmea_decoder.nibble_count[6:0]
+(5)x393_dut.x393_i.event_logger_i.i_nmea_decoder.nibble_count[6:0]
+(6)x393_dut.x393_i.event_logger_i.i_nmea_decoder.nibble_count[6:0]
+@1401200
+-group_end
+@22
+x393_dut.x393_i.event_logger_i.i_nmea_decoder.nibble[3:0]
 @1401200
 -nmea_decoder
-@800200
+@c00200
 -imu_exttime
 @28
 x393_dut.x393_i.event_logger_i.i_imu_exttime.mclk
@@ -1208,10 +1231,10 @@ x393_dut.x393_i.event_logger_i.i_imu_exttime.xclk
 x393_dut.x393_i.event_logger_i.i_imu_exttime.xrst
 x393_dut.x393_i.event_logger_i.i_imu_exttime.ts
 x393_dut.x393_i.event_logger_i.i_imu_exttime.rdy
-@29
 x393_dut.x393_i.event_logger_i.i_imu_exttime.rd_stb
-@28
 x393_dut.x393_i.event_logger_i.i_imu_exttime.ts_full
+x393_dut.x393_i.event_logger_i.i_imu_exttime.rd_start
+x393_dut.x393_i.event_logger_i.i_imu_exttime.rd_start_mclk
 @22
 x393_dut.x393_i.event_logger_i.i_imu_exttime.copy_data[7:0]
 x393_dut.x393_i.event_logger_i.i_imu_exttime.copy_data_r[7:0]
@@ -1220,16 +1243,7 @@ x393_dut.x393_i.event_logger_i.i_imu_exttime.copy_data_r[7:0]
 x393_dut.x393_i.event_logger_i.i_imu_exttime.sel_chn[1:0]
 (1)x393_dut.x393_i.event_logger_i.i_imu_exttime.copy_selected[1:0]
 (2)x393_dut.x393_i.event_logger_i.i_imu_exttime.copy_cntr[2:0]
-@c08022
-x393_dut.x393_i.event_logger_i.i_imu_exttime.raddr[4:0]
-@28
-(0)x393_dut.x393_i.event_logger_i.i_imu_exttime.raddr[4:0]
-(1)x393_dut.x393_i.event_logger_i.i_imu_exttime.raddr[4:0]
-(2)x393_dut.x393_i.event_logger_i.i_imu_exttime.raddr[4:0]
-(3)x393_dut.x393_i.event_logger_i.i_imu_exttime.raddr[4:0]
-(4)x393_dut.x393_i.event_logger_i.i_imu_exttime.raddr[4:0]
-@1401200
--group_end
+x393_dut.x393_i.event_logger_i.i_imu_exttime.raddr[2:0]
 @c00022
 x393_dut.x393_i.event_logger_i.i_imu_exttime.rdata[15:0]
 @28
@@ -1300,9 +1314,7 @@ x393_dut.x393_i.event_logger_i.i_imu_exttime.in_full[3:0]
 (1)x393_dut.x393_i.event_logger_i.i_imu_exttime.in_full[3:0]
 (2)x393_dut.x393_i.event_logger_i.i_imu_exttime.in_full[3:0]
 (3)x393_dut.x393_i.event_logger_i.i_imu_exttime.in_full[3:0]
-x393_dut.x393_i.event_logger_i.i_imu_exttime.rd_start
 x393_dut.x393_i.event_logger_i.i_imu_exttime.en
-x393_dut.x393_i.event_logger_i.i_imu_exttime.rd_start_mclk
 @1001200
 -group_end
 @28
@@ -1388,9 +1400,44 @@ x393_dut.x393_i.event_logger_i.i_imu_exttime.timestamp_fifo_chn0_i.rpntr[3:0]
 x393_dut.x393_i.event_logger_i.i_imu_exttime.timestamp_fifo_chn0_i.dout[7:0]
 @200
 -
-@1000200
+@1401200
 -imu_exttime
-@800200
+@c00200
+-imu_spi
+-external
+@28
+x393_dut.IMU_CS
+x393_dut.IMU_MOSI
+x393_dut.IMU_MISO
+@22
+x393_dut.IMU_LOOPBACK[15:0]
+@28
+x393_dut.IMU_SCLK_OUT
+@200
+-
+@28
+(6)x393_dut.x393_i.gpio393_i.ext_pins[9:0]
+(7)x393_dut.x393_i.gpio393_i.ext_pins[9:0]
+@1401200
+-external
+@28
+x393_dut.x393_i.event_logger_i.i_imu_spi.mosi
+x393_dut.x393_i.event_logger_i.i_imu_spi.miso
+x393_dut.x393_i.event_logger_i.i_imu_spi.sda
+x393_dut.x393_i.event_logger_i.i_imu_spi.sda_en
+x393_dut.x393_i.event_logger_i.i_imu_spi.scl
+x393_dut.x393_i.event_logger_i.i_imu_spi.scl_en
+x393_dut.x393_i.event_logger_i.i_imu_spi.ts
+x393_dut.x393_i.event_logger_i.i_imu_spi.rdy
+x393_dut.x393_i.event_logger_i.i_imu_spi.rd_stb
+@22
+x393_dut.x393_i.event_logger_i.i_imu_spi.raddr[4:0]
+x393_dut.x393_i.event_logger_i.i_imu_spi.rdata[15:0]
+@28
+x393_dut.x393_i.event_logger_i.i_imu_spi.stall
+@1401200
+-imu_spi
+@c00200
 -logger_arbiter
 @28
 x393_dut.x393_i.event_logger_i.i_logger_arbiter.rst
@@ -1444,7 +1491,7 @@ x393_dut.x393_i.event_logger_i.i_logger_arbiter.seq_cntr[4:0]
 (2)x393_dut.x393_i.event_logger_i.i_logger_arbiter.seq_cntr[4:0]
 (3)x393_dut.x393_i.event_logger_i.i_logger_arbiter.seq_cntr[4:0]
 (4)x393_dut.x393_i.event_logger_i.i_logger_arbiter.seq_cntr[4:0]
-@1401202
+@1401200
 -group_end
 @c08022
 x393_dut.x393_i.event_logger_i.i_logger_arbiter.seq_cntr[4:0]
@@ -1458,7 +1505,7 @@ x393_dut.x393_i.event_logger_i.i_logger_arbiter.seq_cntr[4:0]
 -group_end
 @28
 x393_dut.x393_i.event_logger_i.i_logger_arbiter.pre_nxt
-@c00022
+@800022
 x393_dut.x393_i.event_logger_i.i_logger_arbiter.nxt[3:0]
 @28
 (0)x393_dut.x393_i.event_logger_i.i_logger_arbiter.nxt[3:0]
@@ -1466,7 +1513,7 @@ x393_dut.x393_i.event_logger_i.i_logger_arbiter.nxt[3:0]
 (2)x393_dut.x393_i.event_logger_i.i_logger_arbiter.nxt[3:0]
 (3)x393_dut.x393_i.event_logger_i.i_logger_arbiter.nxt[3:0]
 x393_dut.x393_i.event_logger_i.i_logger_arbiter.seq_cntr_last
-@1401200
+@1001200
 -group_end
 @28
 x393_dut.x393_i.event_logger_i.i_logger_arbiter.channel[1:0]
@@ -1481,18 +1528,77 @@ x393_dut.x393_i.event_logger_i.i_logger_arbiter.chn_servicing[3:0]
 @28
 x393_dut.x393_i.event_logger_i.i_logger_arbiter.wstart
 x393_dut.x393_i.event_logger_i.i_logger_arbiter.chn1hot[3:1]
-@1000200
+@1401200
 -logger_arbiter
+@28
+x393_dut.x393_i.event_logger_i.gps_pulse1sec_single
+@c00022
+x393_dut.x393_i.event_logger_i.timestamp_request[3:0]
+@28
+(0)x393_dut.x393_i.event_logger_i.timestamp_request[3:0]
+(1)x393_dut.x393_i.event_logger_i.timestamp_request[3:0]
+(2)x393_dut.x393_i.event_logger_i.timestamp_request[3:0]
+(3)x393_dut.x393_i.event_logger_i.timestamp_request[3:0]
+@1401200
+-group_end
+@c00022
+x393_dut.x393_i.event_logger_i.timestamp_request_long[3:0]
+@28
+(0)x393_dut.x393_i.event_logger_i.timestamp_request_long[3:0]
+(1)x393_dut.x393_i.event_logger_i.timestamp_request_long[3:0]
+(2)x393_dut.x393_i.event_logger_i.timestamp_request_long[3:0]
+(3)x393_dut.x393_i.event_logger_i.timestamp_request_long[3:0]
+@1401200
+-group_end
+@c00022
+x393_dut.x393_i.event_logger_i.timestamp_ackn[3:0]
+@28
+(0)x393_dut.x393_i.event_logger_i.timestamp_ackn[3:0]
+(1)x393_dut.x393_i.event_logger_i.timestamp_ackn[3:0]
+(2)x393_dut.x393_i.event_logger_i.timestamp_ackn[3:0]
+(3)x393_dut.x393_i.event_logger_i.timestamp_ackn[3:0]
+@1401200
+-group_end
+@22
+x393_dut.x393_i.event_logger_i.channel_ready[3:0]
+@c00022
+x393_dut.x393_i.event_logger_i.channel_next[3:0]
+@28
+(0)x393_dut.x393_i.event_logger_i.channel_next[3:0]
+(1)x393_dut.x393_i.event_logger_i.channel_next[3:0]
+(2)x393_dut.x393_i.event_logger_i.channel_next[3:0]
+(3)x393_dut.x393_i.event_logger_i.channel_next[3:0]
+@1401200
+-group_end
 @28
 x393_dut.x393_i.event_logger_i.mux_rdy_source
 x393_dut.x393_i.event_logger_i.mux_data_valid
 x393_dut.x393_i.event_logger_i.ts_en
 @22
 x393_dut.x393_i.event_logger_i.timestamps_rdata[15:0]
+@c00022
 x393_dut.x393_i.event_logger_i.mux_data_source[15:0]
+@28
+(0)x393_dut.x393_i.event_logger_i.mux_data_source[15:0]
+(1)x393_dut.x393_i.event_logger_i.mux_data_source[15:0]
+(2)x393_dut.x393_i.event_logger_i.mux_data_source[15:0]
+(3)x393_dut.x393_i.event_logger_i.mux_data_source[15:0]
+(4)x393_dut.x393_i.event_logger_i.mux_data_source[15:0]
+(5)x393_dut.x393_i.event_logger_i.mux_data_source[15:0]
+(6)x393_dut.x393_i.event_logger_i.mux_data_source[15:0]
+(7)x393_dut.x393_i.event_logger_i.mux_data_source[15:0]
+(8)x393_dut.x393_i.event_logger_i.mux_data_source[15:0]
+(9)x393_dut.x393_i.event_logger_i.mux_data_source[15:0]
+(10)x393_dut.x393_i.event_logger_i.mux_data_source[15:0]
+(11)x393_dut.x393_i.event_logger_i.mux_data_source[15:0]
+(12)x393_dut.x393_i.event_logger_i.mux_data_source[15:0]
+(13)x393_dut.x393_i.event_logger_i.mux_data_source[15:0]
+(14)x393_dut.x393_i.event_logger_i.mux_data_source[15:0]
+(15)x393_dut.x393_i.event_logger_i.mux_data_source[15:0]
+@1401200
+-group_end
+@22
 x393_dut.x393_i.event_logger_i.mux_data_final[15:0]
-@200
--
 @800022
 x393_dut.x393_i.event_logger_i.timestamp_request[3:0]
 @28
@@ -1502,8 +1608,142 @@ x393_dut.x393_i.event_logger_i.timestamp_request[3:0]
 (3)x393_dut.x393_i.event_logger_i.timestamp_request[3:0]
 @1001200
 -group_end
+@28
+x393_dut.x393_i.event_logger_i.mclk
+@22
+[color] 3
+x393_dut.x393_i.event_logger_i.data_out[15:0]
+@28
+[color] 3
+x393_dut.x393_i.event_logger_i.data_out_stb
+@22
+[color] 3
+x393_dut.x393_i.event_logger_i.sample_counter[23:0]
+@c00200
+-x393
+@22
+x393_dut.x393_i.logger_out[15:0]
+@28
+x393_dut.x393_i.logger_stb
+@1401200
+-x393
 @1000200
 -event_logger
+@800200
+-mult_saxi_wr_inbuf
+@28
+x393_dut.x393_i.mult_saxi_wr_inbuf_i.mclk
+x393_dut.x393_i.mult_saxi_wr_inbuf_i.en
+@22
+x393_dut.x393_i.mult_saxi_wr_inbuf_i.data_in[15:0]
+@28
+x393_dut.x393_i.mult_saxi_wr_inbuf_i.valid
+x393_dut.x393_i.mult_saxi_wr_inbuf_i.has_burst
+x393_dut.x393_i.mult_saxi_wr_inbuf_i.read_burst
+@22
+x393_dut.x393_i.mult_saxi_wr_inbuf_i.data_out[31:0]
+@1000200
+-mult_saxi_wr_inbuf
+@800200
+-mult_saxi_wr
+@22
+x393_dut.x393_i.mult_saxi_wr_i.cmd_ad[7:0]
+@28
+x393_dut.x393_i.mult_saxi_wr_i.cmd_stb
+x393_dut.x393_i.mult_saxi_wr_i.pre_valid_chn0
+x393_dut.x393_i.mult_saxi_wr_i.irq_log_we
+x393_dut.x393_i.mult_saxi_wr_i.we_ctrl
+x393_dut.x393_i.mult_saxi_wr_i.cmd_we_sa_len
+@22
+x393_dut.x393_i.mult_saxi_wr_i.cmd_a[3:0]
+x393_dut.x393_i.mult_saxi_wr_i.cmd_data[31:0]
+@28
+x393_dut.x393_i.mult_saxi_wr_i.saxi_awready
+x393_dut.x393_i.mult_saxi_wr_i.saxi_awvalid
+@22
+x393_dut.x393_i.mult_saxi_wr_i.saxi_awaddr[31:0]
+@28
+x393_dut.x393_i.mult_saxi_wr_i.saxi_wready
+x393_dut.x393_i.mult_saxi_wr_i.saxi_wvalid
+@22
+x393_dut.x393_i.mult_saxi_wr_i.saxi_wdata[31:0]
+x393_dut.x393_i.mult_saxi_wr_i.axi_addr[29:0]
+@800200
+-mult_saxi_wr_pointers
+@22
+x393_dut.x393_i.mult_saxi_wr_i.mult_saxi_wr_pointers_i.chn[1:0]
+x393_dut.x393_i.mult_saxi_wr_i.mult_saxi_wr_pointers_i.start
+@28
+x393_dut.x393_i.mult_saxi_wr_i.mult_saxi_wr_pointers_i.busy
+@22
+x393_dut.x393_i.mult_saxi_wr_i.mult_saxi_wr_pointers_i.chn_en_mclk[3:0]
+x393_dut.x393_i.mult_saxi_wr_i.mult_saxi_wr_pointers_i.chn_en_aclk[3:0]
+x393_dut.x393_i.mult_saxi_wr_i.mult_saxi_wr_pointers_i.axi_len[3:0]
+x393_dut.x393_i.mult_saxi_wr_i.mult_saxi_wr_pointers_i.axi_addr[29:0]
+@28
+x393_dut.x393_i.mult_saxi_wr_i.mult_saxi_wr_pointers_i.ptr_we
+@22
+x393_dut.x393_i.mult_saxi_wr_i.mult_saxi_wr_pointers_i.irqs[3:0]
+@28
+x393_dut.x393_i.mult_saxi_wr_i.mult_saxi_wr_pointers_i.aclk
+x393_dut.x393_i.mult_saxi_wr_i.mult_saxi_wr_pointers_i.rst_aclk
+x393_dut.x393_i.mult_saxi_wr_i.mult_saxi_wr_pointers_i.en_aclk
+x393_dut.x393_i.mult_saxi_wr_i.mult_saxi_wr_pointers_i.busy_r
+x393_dut.x393_i.mult_saxi_wr_i.mult_saxi_wr_pointers_i.rst
+@c00022
+x393_dut.x393_i.mult_saxi_wr_i.mult_saxi_wr_pointers_i.rst_pntr_mclk[3:0]
+@28
+(0)x393_dut.x393_i.mult_saxi_wr_i.mult_saxi_wr_pointers_i.rst_pntr_mclk[3:0]
+(1)x393_dut.x393_i.mult_saxi_wr_i.mult_saxi_wr_pointers_i.rst_pntr_mclk[3:0]
+(2)x393_dut.x393_i.mult_saxi_wr_i.mult_saxi_wr_pointers_i.rst_pntr_mclk[3:0]
+(3)x393_dut.x393_i.mult_saxi_wr_i.mult_saxi_wr_pointers_i.rst_pntr_mclk[3:0]
+@1401200
+-group_end
+@c00022
+x393_dut.x393_i.mult_saxi_wr_i.mult_saxi_wr_pointers_i.rst_pntr_aclk[3:0]
+@28
+(0)x393_dut.x393_i.mult_saxi_wr_i.mult_saxi_wr_pointers_i.rst_pntr_aclk[3:0]
+(1)x393_dut.x393_i.mult_saxi_wr_i.mult_saxi_wr_pointers_i.rst_pntr_aclk[3:0]
+(2)x393_dut.x393_i.mult_saxi_wr_i.mult_saxi_wr_pointers_i.rst_pntr_aclk[3:0]
+(3)x393_dut.x393_i.mult_saxi_wr_i.mult_saxi_wr_pointers_i.rst_pntr_aclk[3:0]
+@1401200
+-group_end
+@800022
+x393_dut.x393_i.mult_saxi_wr_i.mult_saxi_wr_pointers_i.reset_rq[3:0]
+@22
+x393_dut.x393_i.mult_saxi_wr_i.mult_saxi_wr_pointers_i.reset_rq_pri[3:0]
+@28
+(0)x393_dut.x393_i.mult_saxi_wr_i.mult_saxi_wr_pointers_i.reset_rq[3:0]
+(1)x393_dut.x393_i.mult_saxi_wr_i.mult_saxi_wr_pointers_i.reset_rq[3:0]
+(2)x393_dut.x393_i.mult_saxi_wr_i.mult_saxi_wr_pointers_i.reset_rq[3:0]
+(3)x393_dut.x393_i.mult_saxi_wr_i.mult_saxi_wr_pointers_i.reset_rq[3:0]
+@1001200
+-group_end
+@28
+x393_dut.x393_i.mult_saxi_wr_i.mult_saxi_wr_pointers_i.start_resetting_w
+x393_dut.x393_i.mult_saxi_wr_i.mult_saxi_wr_pointers_i.resetting[1:0]
+x393_dut.x393_i.mult_saxi_wr_i.mult_saxi_wr_pointers_i.seq[1:0]
+x393_dut.x393_i.mult_saxi_wr_i.mult_saxi_wr_pointers_i.pntr_we
+x393_dut.x393_i.mult_saxi_wr_i.mult_saxi_wr_pointers_i.pntr_wa[1:0]
+@22
+x393_dut.x393_i.mult_saxi_wr_i.mult_saxi_wr_pointers_i.pntr_wd[29:0]
+@28
+x393_dut.x393_i.mult_saxi_wr_i.mult_saxi_wr_pointers_i.sa_len_we
+x393_dut.x393_i.mult_saxi_wr_i.mult_saxi_wr_pointers_i.sa_len_wa[2:0]
+@22
+x393_dut.x393_i.mult_saxi_wr_i.mult_saxi_wr_pointers_i.sa_len_di[29:0]
+@28
+x393_dut.x393_i.mult_saxi_wr_i.mult_saxi_wr_pointers_i.sa_len_ra[2:0]
+@23
+x393_dut.x393_i.mult_saxi_wr_i.mult_saxi_wr_pointers_i.sa_len_ram_out[29:0]
+@28
+x393_dut.x393_i.mult_saxi_wr_i.mrst
+x393_dut.x393_i.mult_saxi_wr_i.arst
+@200
+-
+@1000200
+-mult_saxi_wr_pointers
+-mult_saxi_wr
 @c00200
 -IMU_
 @28

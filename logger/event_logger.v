@@ -124,19 +124,19 @@ module  event_logger#(
     wire         sda, sda_en, scl, scl_en;
 
     reg    [6:0] ctrl_addr=7'h0; // 0 - period, 1 - reserved, 2..31 - registers to log, >32 - gps parameters, >64 - odometer message
-    reg          we_d; // only if wa was 0
-    reg          we_imu;
-    reg          we_gps;
-    reg          we_period;
-    reg          we_bit_duration;
-    reg          we_message;
-    reg          we_config_imu; // bits 1:0, 2 - enable slot[1:0]
-    reg          we_config_gps; // bits 6:3, 7 - enable - {ext,invert, slot[1:0]} slot==0 - disable
-    reg          we_config_msg; // bits 12:8,13 - enable - {invert,extinp[3:0]} extinp[3:0]=='hf' - disable
-    reg          we_config_syn; // bit  14,  15 - enable  - enable logging external timestamps
-    reg          we_config_rst; // bit  14,  15 - enable  - reset
-    reg          we_config_debug; // bit  14,  15 - enable  - debug bits set
-    reg          we_bitHalfPeriod;
+    reg          we_d = 0; // only if wa was 0
+    reg          we_imu = 0;
+    reg          we_gps = 0;
+    reg          we_period = 0;
+    reg          we_bit_duration = 0;
+    reg          we_message = 0;
+    reg          we_config_imu = 0; // bits 1:0, 2 - enable slot[1:0]
+    reg          we_config_gps = 0; // bits 6:3, 7 - enable - {ext,invert, slot[1:0]} slot==0 - disable
+    reg          we_config_msg = 0; // bits 12:8,13 - enable - {invert,extinp[3:0]} extinp[3:0]=='hf' - disable
+    reg          we_config_syn = 0; // bit  14,  15 - enable  - enable logging external timestamps
+    reg          we_config_rst = 0; // bit  14,  15 - enable  - reset
+    reg          we_config_debug = 0; // bit  14,  15 - enable  - debug bits set
+    reg          we_bitHalfPeriod = 0;
 
 
     reg    [1:0] config_imu;
@@ -263,7 +263,8 @@ module  event_logger#(
         gps_pulse1sec_single <= !gps_pulse1sec_denoise[1] && gps_pulse1sec_denoise[0];
     end
 
-    always @ (posedge mclk or posedge mrst) begin // was negedge
+//    always @ (posedge mclk or posedge mrst) begin // was negedge
+    always @ (posedge mclk) begin // was negedge
         we_d            <= !mrst && cmd_we && !cmd_a;
         we_imu          <= !mrst && cmd_we && !cmd_a && (ctrl_addr[6:5] == LOGGER_PAGE_IMU);
         we_gps          <= !mrst && cmd_we && !cmd_a && (ctrl_addr[6:5] == LOGGER_PAGE_GPS);

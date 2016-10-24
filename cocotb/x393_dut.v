@@ -145,6 +145,19 @@ module  x393_dut#(
     input     [3:0] saxigp0_bresp_latency,    
     output    [3:0] saxigp0_wr_qos,    
     
+    // Event logger FPGA -> CPU
+    output   [31:0] saxigp1_wr_address,    
+    output   [ 5:0] saxigp1_wid,    
+    output          saxigp1_wr_valid,    
+    input           saxigp1_wr_ready,    
+    output   [31:0] saxigp1_wr_data,    
+    output    [3:0] saxigp1_wr_stb,    
+    output    [1:0] saxigp1_wr_size,    
+    input     [3:0] saxigp1_bresp_latency,    
+    output    [3:0] saxigp1_wr_qos,    
+    
+
+
     output [NUM_INTERRUPTS-1:0] irq_r, // {x393_i.sata_irq, x393_i.cmprs_irq[3:0], x393_i.frseq_irq[3:0]};
 
     // SATA and SATA clock I/O
@@ -1347,6 +1360,43 @@ simul_axi_hp_wr #(
         .sim_wr_qos        (saxigp0_wr_qos)               // output[3:0] 
     );
 
+    // SAXI_GP1 - event logger to system memory
+    simul_saxi_gp_wr simul_saxi_gp1_wr_i (
+        .rst               (RST),                         // input
+        .aclk              (saxi0_aclk),                  // input
+        .aresetn           (), // output
+        .awaddr            (x393_i.ps7_i.SAXIGP1AWADDR),  // input[31:0] 
+        .awvalid           (x393_i.ps7_i.SAXIGP1AWVALID), // input
+        .awready           (x393_i.ps7_i.SAXIGP1AWREADY), // output
+        .awid              (x393_i.ps7_i.SAXIGP1AWID),    // input[5:0] 
+        .awlock            (x393_i.ps7_i.SAXIGP1AWLOCK),  // input[1:0] 
+        .awcache           (x393_i.ps7_i.SAXIGP1AWCACHE), // input[3:0] 
+        .awprot            (x393_i.ps7_i.SAXIGP1AWPROT),  // input[2:0] 
+        .awlen             (x393_i.ps7_i.SAXIGP1AWLEN),   // input[3:0] 
+        .awsize            (x393_i.ps7_i.SAXIGP1AWSIZE),  // input[1:0] 
+        .awburst           (x393_i.ps7_i.SAXIGP1AWBURST), // input[1:0] 
+        .awqos             (x393_i.ps7_i.SAXIGP1AWQOS),   // input[3:0] 
+        .wdata             (x393_i.ps7_i.SAXIGP1WDATA),   // input[31:0] 
+        .wvalid            (x393_i.ps7_i.SAXIGP1WVALID),  // input
+        .wready            (x393_i.ps7_i.SAXIGP1WREADY),  // output
+        .wid               (x393_i.ps7_i.SAXIGP1WID),     // input[5:0] 
+        .wlast             (x393_i.ps7_i.SAXIGP1WLAST),   // input
+        .wstrb             (x393_i.ps7_i.SAXIGP1WSTRB),   // input[3:0] 
+        .bvalid            (x393_i.ps7_i.SAXIGP1BVALID),  // output
+        .bready            (x393_i.ps7_i.SAXIGP1BREADY),  // input
+        .bid               (x393_i.ps7_i.SAXIGP1BID),     // output[5:0] 
+        .bresp             (x393_i.ps7_i.SAXIGP1BRESP),   // output[1:0] 
+        .sim_wr_address    (saxigp1_wr_address),          // output[31:0] 
+        .sim_wid           (saxigp1_wid),                 // output[5:0] 
+        .sim_wr_valid      (saxigp1_wr_valid),            // output
+        .sim_wr_ready      (saxigp1_wr_ready),            // input
+        .sim_wr_data       (saxigp1_wr_data),             // output[31:0] 
+        .sim_wr_stb        (saxigp1_wr_stb),              // output[3:0] 
+        .sim_wr_size       (saxigp1_wr_size),             // output[1:0] 
+        .sim_bresp_latency (saxigp1_bresp_latency),       // input[3:0] 
+        .sim_wr_qos        (saxigp1_wr_qos)               // output[3:0] 
+    );
+
 
 // Generate all clocks
     simul_clk #(
@@ -1814,8 +1864,9 @@ assign #10 gpio_pins[7] = gpio_pins[8];
       reg [15:0] IMU_LOOPBACK;
       always @ (negedge IMU_SCLK_OUT) begin
         if (!IMU_CS) IMU_LOOPBACK[15:0]<={IMU_LOOPBACK[14:0],IMU_MOSI_D};
+        
       end
-      assign gpio_pins[3]=IMU_CS?IMU_DATA_READY:IMU_LOOPBACK[15];
+      assign gpio_pins[3]=IMU_CS?IMU_DATA_READY: IMU_LOOPBACK[15];
       PULLUP  i_IMU_SDA   (.O(IMU_SDA));
       PULLUP  i_IMU_SCL   (.O(IMU_SCL));
       
