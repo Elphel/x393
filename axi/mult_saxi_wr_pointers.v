@@ -45,7 +45,9 @@ module  mult_saxi_wr_pointers#(
     parameter MULT_SAXI_BSLOG3 =          4
 )(
     input                         mclk,             // system clock
+    input                         mrst,             //
     input                         aclk,             // global clock to run s_axi (@150MHz?)
+    input                         arst,             //
     input                   [3:0] chn_en_mclk,      // enable this channle ( 0 - reset)
     input                  [29:0] sa_len_di,        // input data to write pointers address/data
     input                  [ 2:0] sa_len_wa,        // channel address to write sa/lengths
@@ -57,7 +59,7 @@ module  mult_saxi_wr_pointers#(
     // provide address and burst length for AXI @aclk, will stay until ackn
     output reg             [29:0] axi_addr,
     output reg              [3:0] axi_len,
-    // write data to external pointre memory (to be read out by PIO) @ aclk
+    // write data to external pointer memory (to be read out by PIO) @ aclk
     // alternatively - read out directly from ptr_ram?
     output                 [29:0] pntr_wd, // @aclk
     output                  [1:0] pntr_wa,
@@ -92,6 +94,7 @@ module  mult_saxi_wr_pointers#(
     reg  [30:0] ptr_rollover;
     reg   [4:0] burst_size;             // ROM
     wire [29:0] ptr_wd;
+    reg         arst_d;                 //delayed version of arst
     
     assign reset_rq_enc = {reset_rq_pri[3] | reset_rq_pri[2],
                            reset_rq_pri[3] | reset_rq_pri[1]};
@@ -134,7 +137,12 @@ module  mult_saxi_wr_pointers#(
     
     always @ (posedge aclk) begin
         chn_en_aclk <= chn_en_mclk;
-        reset_rq <= rst_pntr_aclk | (reset_rq  & ~({4{resetting[0] &~ resetting[1]}} & reset_rq_pri));        
+        arst_d <= arst; // probably not needed?
+        
+        if (arst) reset_rq <= ~0; // or ~0 ? Add auto reset after
+//        else      reset_rq <= {4{arst_d}} | rst_pntr_aclk | (reset_rq  & ~({4{resetting[0] &~ resetting[1]}} & reset_rq_pri));
+        else      reset_rq <= rst_pntr_aclk | (reset_rq  & ~({4{resetting[0] &~ resetting[1]}} & reset_rq_pri));
+                
         if (start_resetting_w)  reset_rq_pri <= {reset_rq[3] & ~(|reset_rq[2:0]),
                                                  reset_rq[2] & ~(|reset_rq[1:0]),
                                                  reset_rq[1] &     ~reset_rq[0],

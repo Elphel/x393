@@ -140,7 +140,16 @@ class X393_cocotb_server(object):
                                     data_bytes = 4,
                                     autoflush =  self.autoflush,
                                     blatency =   5)
-        
+        #event logger from FPGA
+        self.saxigp1 =   SAXIWrSim (entity =     dut,
+                                    name =       "saxigp1",
+                                    clock =      dut.saxi0_aclk,
+                                    mempath =    self.mempath,
+                                    memhigh =    self.memhigh,
+                                    data_bytes = 4,
+                                    autoflush =  self.autoflush,
+                                    blatency =   5)
+
         level = logging.DEBUG if debug else logging.INFO # WARNING
         self.dut._log.info('Set debug level '+str(level)+", debug="+str(debug))
         
@@ -150,6 +159,7 @@ class X393_cocotb_server(object):
         self.saxihp0w.log.setLevel(level)
         self.saxihp1w.log.setLevel(level)
         self.saxigp0.log.setLevel(level)
+        self.saxigp1.log.setLevel(level)
         
         #Initialize socket
         self.PORT = port
@@ -208,6 +218,7 @@ class X393_cocotb_server(object):
             self.saxihp0w_thread = cocotb.fork(self.saxihp0w.saxi_wr_run())    
             self.saxihp1w_thread = cocotb.fork(self.saxihp1w.saxi_wr_run())    
             self.saxigp0_thread =  cocotb.fork(self.saxigp0.saxi_wr_run())    
+            self.saxigp1_thread =  cocotb.fork(self.saxigp1.saxi_wr_run())    
             self.soc_conn.send(self.cmd.toJSON(0)+"\n")
             self.dut._log.debug('Sent 0 to the socket')
             started=True

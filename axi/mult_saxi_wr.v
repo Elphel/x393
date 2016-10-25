@@ -427,7 +427,9 @@ module  mult_saxi_wr #(
         .MULT_SAXI_BSLOG3   (MULT_SAXI_BSLOG3)
     ) mult_saxi_wr_pointers_i (
         .mclk         (mclk),           // input
+        .mrst         (mrst),           // input
         .aclk         (aclk),           // input
+        .arst         (arst),           // input
         .chn_en_mclk  (en_chn_mclk),    // input[3:0] 
         .sa_len_di    (cmd_data[29:0]), // input[29:0] 
         .sa_len_wa    (cmd_a[2:0]),     // input[2:0] 
@@ -549,7 +551,7 @@ module  mult_saxi_wr #(
         .stb         (cmd_stb),                           // input
         .addr        (cmd_a),                             // output[3:0] 
         .data        (cmd_data),                          // output[31:0] 
-        .we          ({cmd_we_sa_len,we_ctrl,irq_log_we}) // output
+        .we          ({irq_log_we,we_ctrl,cmd_we_sa_len}) // output
     );
     
     // now - converting all to parallel (TODO: use RAM for multi-word status data)

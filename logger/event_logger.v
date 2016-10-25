@@ -92,7 +92,8 @@ module  event_logger#(
 
     // byte-parallel timestamps from 4 sensors channels (in triggered mode all are the same, different only in free running mode)
     // each may generate logger event, channel number encoded in bits 25:24 of the external microseconds
-
+    input                   [3:0] sof_mclk,     // start of frame (per-channel) to filter out non-first timestamps
+    
     input                         ts_stb_chn0,  // @mclk 1 clock before ts_rcv_data is valid
     input                   [7:0] ts_data_chn0, // @mclk byte-wide serialized timestamp message received or local
 
@@ -123,19 +124,19 @@ module  event_logger#(
     wire         sda, sda_en, scl, scl_en;
 
     reg    [6:0] ctrl_addr=7'h0; // 0 - period, 1 - reserved, 2..31 - registers to log, >32 - gps parameters, >64 - odometer message
-    reg          we_d; // only if wa was 0
-    reg          we_imu;
-    reg          we_gps;
-    reg          we_period;
-    reg          we_bit_duration;
-    reg          we_message;
-    reg          we_config_imu; // bits 1:0, 2 - enable slot[1:0]
-    reg          we_config_gps; // bits 6:3, 7 - enable - {ext,invert, slot[1:0]} slot==0 - disable
-    reg          we_config_msg; // bits 12:8,13 - enable - {invert,extinp[3:0]} extinp[3:0]=='hf' - disable
-    reg          we_config_syn; // bit  14,  15 - enable  - enable logging external timestamps
-    reg          we_config_rst; // bit  14,  15 - enable  - enable logging external timestamps
-    reg          we_config_debug; // bit  14,  15 - enable  - enable logging external timestamps
-    reg          we_bitHalfPeriod;
+    reg          we_d = 0; // only if wa was 0
+    reg          we_imu = 0;
+    reg          we_gps = 0;
+    reg          we_period = 0;
+    reg          we_bit_duration = 0;
+    reg          we_message = 0;
+    reg          we_config_imu = 0; // bits 1:0, 2 - enable slot[1:0]
+    reg          we_config_gps = 0; // bits 6:3, 7 - enable - {ext,invert, slot[1:0]} slot==0 - disable
+    reg          we_config_msg = 0; // bits 12:8,13 - enable - {invert,extinp[3:0]} extinp[3:0]=='hf' - disable
+    reg          we_config_syn = 0; // bit  14,  15 - enable  - enable logging external timestamps
+    reg          we_config_rst = 0; // bit  14,  15 - enable  - reset
+    reg          we_config_debug = 0; // bit  14,  15 - enable  - debug bits set
+    reg          we_bitHalfPeriod = 0;
 
 
     reg    [1:0] config_imu;
@@ -159,7 +160,7 @@ module  event_logger#(
     reg    [3:0] config_gps_mclk;
     reg    [4:0] config_msg_mclk;
     reg    [3:0] config_syn_mclk;
-    reg          config_rst_mclk;
+    reg          config_rst_mclk = 0;
     reg    [3:0] config_debug_mclk;
     reg   [15:0] bitHalfPeriod_mclk;
 
@@ -211,6 +212,8 @@ module  event_logger#(
     reg   [31:0] cmd_data_r; // valid next after cmd_we; 
     wire         cmd_we;
     wire         cmd_status;
+    
+    reg    [3:0] timestamps_en;  // enable timestamp to go through (first after sof)
 
     assign ext_en = {{(GPIO_N-5){1'b0}},
                    (config_imu[1:0]==2'h2)?1'b1:1'b0,
@@ -241,6 +244,9 @@ module  event_logger#(
 
     assign timestamp_request[1]=config_gps[3]? (config_gps[2]?nmea_sent_start:gps_ts_stb):gps_pulse1sec_single;
  
+    always @ (posedge mclk) begin
+        timestamps_en <= enable_syn_mclk & (sof_mclk | (timestamps_en & ~{ts_stb_chn3, ts_stb_chn2,ts_stb_chn1, ts_stb_chn0}));
+    end
 
 // filter gps_pulse1sec
     always @ (posedge xclk) begin
@@ -257,9 +263,25 @@ module  event_logger#(
         gps_pulse1sec_single <= !gps_pulse1sec_denoise[1] && gps_pulse1sec_denoise[0];
     end
 
-
+//    always @ (posedge mclk or posedge mrst) begin // was negedge
     always @ (posedge mclk) begin // was negedge
-        if (cmd_we)  cmd_data_r <= cmd_data; // valid next after cmd_we; 
+        we_d            <= !mrst && cmd_we && !cmd_a;
+        we_imu          <= !mrst && cmd_we && !cmd_a && (ctrl_addr[6:5] == LOGGER_PAGE_IMU);
+        we_gps          <= !mrst && cmd_we && !cmd_a && (ctrl_addr[6:5] == LOGGER_PAGE_GPS);
+        we_message      <= !mrst && cmd_we && !cmd_a && (ctrl_addr[6:5] == LOGGER_PAGE_MSG);
+        we_period       <= !mrst && cmd_we && !cmd_a && (ctrl_addr[6:0] == LOGGER_PERIOD);
+        we_bit_duration <= !mrst && cmd_we && !cmd_a && (ctrl_addr[6:0] == LOGGER_BIT_DURATION);
+        we_bitHalfPeriod<= !mrst && cmd_we && !cmd_a && (ctrl_addr[6:0] == LOGGER_BIT_HALF_PERIOD);
+        we_config_imu   <= !mrst && cmd_we && !cmd_a && (ctrl_addr[6:0] == LOGGER_CONFIG) && cmd_data[LOGGER_CONF_IMU];
+        we_config_gps   <= !mrst && cmd_we && !cmd_a && (ctrl_addr[6:0] == LOGGER_CONFIG) && cmd_data[LOGGER_CONF_GPS];
+        we_config_msg   <= !mrst && cmd_we && !cmd_a && (ctrl_addr[6:0] == LOGGER_CONFIG) && cmd_data[LOGGER_CONF_MSG];
+        we_config_syn   <= !mrst && cmd_we && !cmd_a && (ctrl_addr[6:0] == LOGGER_CONFIG) && cmd_data[LOGGER_CONF_SYN];
+        we_config_rst   <= !mrst && cmd_we && !cmd_a && (ctrl_addr[6:0] == LOGGER_CONFIG) && cmd_data[LOGGER_CONF_EN];
+        we_config_debug <= !mrst && cmd_we && !cmd_a && (ctrl_addr[6:0] == LOGGER_CONFIG) && cmd_data[LOGGER_CONF_DBG];
+    end
+    always @ (posedge mclk) begin // was negedge
+        if (cmd_we)  cmd_data_r <= cmd_data; // valid next after cmd_we;
+        /* 
         we_d            <= cmd_we && !cmd_a;
         we_imu          <= cmd_we && !cmd_a && (ctrl_addr[6:5] == LOGGER_PAGE_IMU);
         we_gps          <= cmd_we && !cmd_a && (ctrl_addr[6:5] == LOGGER_PAGE_GPS);
@@ -273,6 +295,7 @@ module  event_logger#(
         we_config_syn   <= cmd_we && !cmd_a && (ctrl_addr[6:0] == LOGGER_CONFIG) && cmd_data[LOGGER_CONF_SYN];
         we_config_rst   <= cmd_we && !cmd_a && (ctrl_addr[6:0] == LOGGER_CONFIG) && cmd_data[LOGGER_CONF_EN];
         we_config_debug <= cmd_we && !cmd_a && (ctrl_addr[6:0] == LOGGER_CONFIG) && cmd_data[LOGGER_CONF_DBG];
+        */
     
         if (we_config_imu)   config_imu_mclk[1:0] <=   cmd_data_r[LOGGER_CONF_IMU - 1 -: LOGGER_CONF_IMU_BITS]; // bits 1:0, 2 - enable slot[1:0]
         if (we_config_gps)   config_gps_mclk[3:0] <=   cmd_data_r[LOGGER_CONF_GPS - 1 -: LOGGER_CONF_GPS_BITS]; // bits 6:3, 7 - enable - {ext,inver, slot[1:0]} slot==0 - disable
@@ -400,24 +423,24 @@ fixed-length de-noise circuitry with latency 256*T(xclk) (~3usec)
 /* logs frame synchronization data from other camera (same as frame sync) */
 // ts_stb (mclk) -> trig)
     imu_exttime393 i_imu_exttime(
-//                        .rst              (rst),                  // input global reset
-                        .mclk             (mclk),                 // system clock, negedge
-                        .xclk             (xclk),                 // half frequency (80 MHz nominal)
-                        .mrst             (mrst),                 // @mclk - sync reset
-                        .xrst             (xrst),                 // @xclk - sync reset
-                        .en_chn_mclk      (enable_syn_mclk),      // enable module operation, if 0 - reset
-                        .ts_stb_chn0      (ts_stb_chn0),          // input
-                        .ts_data_chn0     (ts_data_chn0),         // input[7:0] 
-                        .ts_stb_chn1      (ts_stb_chn1),          // input
-                        .ts_data_chn1     (ts_data_chn1),         // input[7:0] 
-                        .ts_stb_chn2      (ts_stb_chn2),          // input
-                        .ts_data_chn2     (ts_data_chn2),         // input[7:0] 
-                        .ts_stb_chn3      (ts_stb_chn3),          // input
-                        .ts_data_chn3     (ts_data_chn3),         // input[7:0] 
-                        .ts               (timestamp_request[2]), // timestamop request
-                        .rdy              (channel_ready[2]),     // data ready
-                        .rd_stb           (channel_next[2]),      // data read strobe (increment address)
-                        .rdata            (extts_data[15:0]));    // data out (16 bits)
+//                        .rst              (rst),                           // input global reset
+                        .mclk             (mclk),                            // system clock, negedge
+                        .xclk             (xclk),                            // half frequency (80 MHz nominal)
+                        .mrst             (mrst),                            // @mclk - sync reset
+                        .xrst             (xrst),                            // @xclk - sync reset
+                        .en_chn_mclk      (enable_syn_mclk),                 // input[3:0] enable module operation, if 0 - reset
+                        .ts_stb_chn0      (ts_stb_chn0 && timestamps_en[0]), // input
+                        .ts_data_chn0     (ts_data_chn0),                    // input[7:0] 
+                        .ts_stb_chn1      (ts_stb_chn1 && timestamps_en[1]), // input
+                        .ts_data_chn1     (ts_data_chn1),                    // input[7:0] 
+                        .ts_stb_chn2      (ts_stb_chn2 && timestamps_en[2]), // input
+                        .ts_data_chn2     (ts_data_chn2),                    // input[7:0] 
+                        .ts_stb_chn3      (ts_stb_chn3 && timestamps_en[3]), // input
+                        .ts_data_chn3     (ts_data_chn3),                    // input[7:0] 
+                        .ts               (timestamp_request[2]),            // timestamop request
+                        .rdy              (channel_ready[2]),                // data ready
+                        .rd_stb           (channel_next[2]),                 // data read strobe (increment address)
+                        .rdata            (extts_data[15:0]));               // data out (16 bits)
 
     imu_timestamps393 i_imu_timestamps (
                         .xclk             (xclk),                              // 80 MHz, posedge

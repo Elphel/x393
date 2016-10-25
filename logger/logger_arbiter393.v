@@ -39,9 +39,9 @@
 `timescale 1ns/1ps
 
 module  logger_arbiter393(
-    input                         xclk,     // half frequency (80 MHz nominal)
-    input                         rst,      // module reset (sync)
-    input                   [3:0] ts_rq_in, // in requests for timestamp (single-cycle - just leading edge )
+    input                         xclk,         // half frequency (80 MHz nominal)
+    input                         rst,          // module reset (sync)
+    input                   [3:0] ts_rq_in,     // in requests for timestamp (single-cycle - just leading edge )
     output                  [3:0] ts_rq,        // out request for timestamp, to timestmp module
     input                   [3:0] ts_grant,     // granted ts requests from timestamping module
     input                   [3:0] rdy,          // channels ready (leading edge - became ready, trailing - no more data, use zero)
@@ -98,7 +98,7 @@ module  logger_arbiter393(
     
     always @ (posedge xclk) begin
         ts_rq_in_d[3:0] <= ts_rq_in[3:0];
-      
+        if (rst)    channel_r[1:0] <= 0;
         if (wstart) channel_r[1:0] <= {chn1hot[3] | chn1hot[2],chn1hot[3] | chn1hot[1]};
         
         if     (wstart) chn_servicing[3:0]  <= {chn1hot[3:1], ~|chn1hot[3:1]};
@@ -109,7 +109,7 @@ module  logger_arbiter393(
         else     ts_rq_r[3:0] <= ~ts_grant & ( wts_rq[3:0] | ts_rq_r[3:0]);
     
         if (rst) ts_valid[3:0] <= 4'h0;
-        else ts_valid[3:0] <= (ts_grant[3:0] | (ts_valid & ~wts_rq[3:0]));
+        else     ts_valid[3:0] <= (ts_grant[3:0] | (ts_valid & ~wts_rq[3:0]));
     
         channels_ready[3:0] <= ts_valid[3:0] & rdy[3:0] & ~chn_servicing[3:0]; // ready should go down during servicing
     

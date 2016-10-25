@@ -201,7 +201,7 @@ module  nmea_decoder393(
         if      (restart)       vfy_first_comma <= 1'b0;
         else if (stb[3] && msb) vfy_first_comma <= last_vfy_sent;
         
-        if (restart)                                                      valid <= 1'b1; // ready @ stb[2]
+        if (restart)                                                                              valid <= 1'b1; // ready @ stb[2]
         else if (stb[1] && (ser_di!=gp_exp_bit) &&
                            (vfy_dollar || vfy_gp || vfy_first_comma || (vfy_sel_sent && !lsbs5))) valid <= 1'b0;
     
@@ -292,14 +292,14 @@ module  nmea_decoder393(
     assign rdata[11: 8] = odbuf2_ram[raddr[4:0]];
     assign rdata[15:12] = odbuf3_ram[raddr[4:0]];
 
-    reg     [3:0] gpxxx_ram[0:3];
+    reg     [3:0] gpxxx_ram[0:15];
     always @ (posedge mclk) if (we &  ~wa[4]) gpxxx_ram[wa[3:0]] <= wd[3:0];
     assign gpxxx_w_one[3:0] =                 gpxxx_ram[gpxxx_addr[3:0]];
-// for each of the four sentences first byte - number of field (<=24), next 3 bytes - formats for each nmea filed (LSB first):
+// for each of the four sentences first byte - number of field (<=24), next 3 bytes - formats for each nmea field (LSB first):
 // 0 - nibble ("-" -> 0xd, "." -> 0xe), terminated with 0xf
 // 1 - byte (2 nibbles), all bytes but last have MSB clear, last - set.
 // No padding of nibbles to byte borders, bytes are encoded as 2 nibbles
-    reg     [7:0] format_ram[0:3];
+    reg     [7:0] format_ram[0:15];
     always @ (posedge mclk) if (we & wa[4]) format_ram[wa[3:0]] <= wd[7:0];
     assign format_data[7:0] =               format_ram[{sentence[1:0],format_field[4:3]}];
 
