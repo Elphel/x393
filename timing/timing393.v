@@ -62,6 +62,12 @@ module  timing393       #(
     parameter CAMSYNC_CHN_EN_BIT =              'h12, // per-channel enable timestamp generation (4 bits themselves, then for enables for them)
     parameter CAMSYNC_PRE_MAGIC =               6'b110100,
     parameter CAMSYNC_POST_MAGIC =              6'b001101,
+
+    // GPIO bits used for camera synchronization
+    parameter CAMSYNC_GPIO_EXT_IN =             9,
+    parameter CAMSYNC_GPIO_INT_IN =             7,
+    parameter CAMSYNC_GPIO_EXT_OUT =            6,
+    parameter CAMSYNC_GPIO_INT_OUT =            8,
     
     parameter RTC_MHZ=                         25, // RTC input clock in MHz (should be interger number)
     parameter RTC_BITC_PREDIV =                 5, // number of bits to generate 2 MHz pulses counting refclk 
@@ -250,7 +256,11 @@ module  timing393       #(
         .CAMSYNC_MASTER_BIT     (CAMSYNC_MASTER_BIT),
         .CAMSYNC_CHN_EN_BIT     (CAMSYNC_CHN_EN_BIT),
         .CAMSYNC_PRE_MAGIC      (CAMSYNC_PRE_MAGIC),
-        .CAMSYNC_POST_MAGIC     (CAMSYNC_POST_MAGIC)
+        .CAMSYNC_POST_MAGIC     (CAMSYNC_POST_MAGIC),
+        .CAMSYNC_GPIO_EXT_IN    (CAMSYNC_GPIO_EXT_IN),
+        .CAMSYNC_GPIO_INT_IN    (CAMSYNC_GPIO_INT_IN),
+        .CAMSYNC_GPIO_EXT_OUT   (CAMSYNC_GPIO_EXT_OUT),
+        .CAMSYNC_GPIO_INT_OUT   (CAMSYNC_GPIO_INT_OUT)
     ) camsync393_i (
 //        .rst               (rst),                       // input
         .mclk              (mclk),                      // input

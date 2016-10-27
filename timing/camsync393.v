@@ -67,7 +67,13 @@ module camsync393       #(
     parameter CAMSYNC_CHN_EN_BIT =         'h12, // per-channel enable timestamp generation (4 bits themselves, then for enables for them)
     
     parameter CAMSYNC_PRE_MAGIC =          6'b110100,
-    parameter CAMSYNC_POST_MAGIC =         6'b001101
+    parameter CAMSYNC_POST_MAGIC =         6'b001101,
+
+    // GPIO bits used for camera synchronization
+    parameter CAMSYNC_GPIO_EXT_IN =        9,
+    parameter CAMSYNC_GPIO_INT_IN =        7,
+    parameter CAMSYNC_GPIO_EXT_OUT =       6,
+    parameter CAMSYNC_GPIO_INT_OUT =       8
 
     )(
 //    input                         rst,  // global reset
@@ -311,6 +317,20 @@ module camsync393       #(
     wire    [3:0] frame_sync;
     reg     [3:0] ts_snap_triggered;     // make a timestamp pulse  single @(posedge pclk)
     wire    [3:0] ts_snap_triggered_mclk;     // make a timestamp pulse  single @(posedge pclk)
+    
+    reg           ext_int_mode_mclk;    // triggered from external (no TS instead of the FPGA timer), generate internal network
+                                        // sync+ts. Used for External trigger of Eyesis
+                                        // Activated when CAMSYNC_GPIO_EXT_IN & !CAMSYNC_GPIO_EXT_OUT &
+                                        //                 CAMSYNC_GPIO_INT_IN & CAMSYNC_GPIO_INT_OUT
+    reg           ext_int_mode_pclk;     
+    
+    reg           ext_int_trigger_condition; // GPIO input trigger condition met
+    reg           ext_int_trigger_condition_d; // GPIO input trigger condition met, delayed (for edge detection)
+    reg           ext_int_trigger_condition_filtered; // trigger condition filtered
+    reg           ext_int_trigger_condition_filtered_d; // trigger condition filtered - delayed version
+    reg    [6:0]  ext_int_trigger_filter_cntr;
+    reg           ext_int_pre_pause;   // when repeat counter is < 6 - to speed up decoding
+    reg    [1:0]  ext_int_arm;         // 0 - when repeat counter =
     assign gpio_out_en = gpio_out_en_r;
     
 //! in testmode GPIO[9] and GPIO[8] use internal signals instead of the outsync:
@@ -447,8 +467,14 @@ module camsync393       #(
         start_d <= start;
 
         start_en <= en && (repeat_period[31:0]!=0);
+        
         if (!en) rep_en <= 0;
         else if (set_period) rep_en <= !high_zero;
+        
+        ext_int_mode_mclk <= input_use[CAMSYNC_GPIO_EXT_IN] && !gpio_out_en_r[CAMSYNC_GPIO_EXT_OUT] &&
+                             input_use[CAMSYNC_GPIO_INT_IN] &&  gpio_out_en_r[CAMSYNC_GPIO_INT_OUT]; 
+        
+        
     end
     always @ (posedge pclk) begin
         case (master_chn)
@@ -482,13 +508,31 @@ module camsync393       #(
         ts_external_pclk<= ts_external && !input_use_intern;
      
         start_pclk[2:0] <= {(restart && rep_en) || 
-                            (start_pclk[1] && !restart_cntr_run[1] && !restart_cntr_run[0] && !start_pclk[2]),
+//                            (start_pclk[1] && !restart_cntr_run[1] && !restart_cntr_run[0] && !start_pclk[2]), // does not allow to restart
+                            (start_pclk[1]  && !start_pclk[2]), // allows to restart running or armed counter
                             start_pclk[0],
                             start_to_pclk && !start_pclk[0]};
-        restart_cntr_run[1:0] <= {restart_cntr_run[0],start_en && (start_pclk[2] || (restart_cntr_run[0] && (restart_cntr[31:2] !=0)))};
+                            
+//        restart_cntr_run[1:0] <= {restart_cntr_run[0],start_en && (start_pclk[2] || (restart_cntr_run[0] && (restart_cntr[31:2] !=0)))};
+//
+//        if (restart_cntr_run[0]) restart_cntr[31:0] <= restart_cntr[31:0] - 1;
+//        else                     restart_cntr[31:0] <= repeat_period[31:0];
+
+        restart_cntr_run[1:0] <= {restart_cntr_run[0],start_en && (start_pclk[2] || (restart_cntr_run[0] && !ext_int_arm[1] && !start_pclk[0]))};
         
-        if (restart_cntr_run[0]) restart_cntr[31:0] <= restart_cntr[31:0] - 1;
-        else restart_cntr[31:0] <= repeat_period[31:0];
+        if (restart_cntr_run[0]) begin
+            if (!ext_int_arm[0])  restart_cntr[31:0] <= restart_cntr[31:0] - 1;
+//        end else if (!restart_cntr_run[0])  restart_cntr[31:0] <= repeat_period[31:0];
+        end else                  restart_cntr[31:0] <= repeat_period[31:0];
+
+        ext_int_pre_pause <= !(|restart_cntr[31:3]);
+        
+        if (ext_int_arm[1] || !start_en)                 ext_int_arm[0] <= 0;
+        if (ext_int_pre_pause && (restart_cntr[2:0]==5)) ext_int_arm[0] <= 1;
+        
+        ext_int_arm[1] <= !ext_int_arm[1] && (start_pclk[0] || (ext_int_arm[0] &&
+         (!ext_int_mode_pclk || (ext_int_trigger_condition_filtered && !ext_int_trigger_condition_filtered_d))));
+
       
         start_out_pulse <= pre_start_out_pulse;
 /// Generating output pulse - 64* bit_length if timestamp is disabled or
@@ -511,6 +555,8 @@ module camsync393       #(
         else if (bit_snd_duration_zero)     sr_snd_second[31:0] <={sr_snd_second[30:0],1'b0};
         
         out_data <=outsync && (ts_snd_en_pclk?sr_snd_first[31]:1'b1);
+        
+        ext_int_mode_pclk <= ext_int_mode_mclk;
       
     end
  
@@ -553,18 +599,33 @@ module camsync393       #(
         triggered_mode_pclk<= triggered_mode_r;
         bit_length_short[7:0] <= bit_length[7:0]-bit_length_plus1[7:2]-1; // 3/4 of the duration
 
-        trigger_condition <= (((gpio_in[9:0] ^ input_pattern[9:0]) & input_use[9:0]) == 10'b0);
+//        trigger_condition <= (((gpio_in[9:0] ^ input_pattern[9:0]) & input_use[9:0]) == 10'b0);
+        trigger_condition <= (((gpio_in[9:0] ^ input_pattern[9:0]) & input_use[9:0] &
+         ~(ext_int_mode_pclk?(10'b1 << CAMSYNC_GPIO_EXT_IN):10'b0)) == 10'b0); // disable external trigger in line
         trigger_condition_d <= trigger_condition;
+     
      
         if (!triggered_mode_pclk || (trigger_condition !=trigger_condition_d)) trigger_filter_cntr <= {1'b0,bit_length[7:2]};
         else if (!trigger_filter_cntr[6]) trigger_filter_cntr<=trigger_filter_cntr-1;
      
-        if (input_use_intern) trigger_condition_filtered <= 1'b0;
+        if      (input_use_intern)       trigger_condition_filtered <= 1'b0;
         else if (trigger_filter_cntr[6]) trigger_condition_filtered <= trigger_condition_d;
       
                                      
         rcv_run_or_deaf <= start_en && (trigger_condition_filtered ||
                                        (rcv_run_or_deaf && !(bit_rcv_duration_zero  && (bit_rcv_counter[6:0]==0))));
+
+        ext_int_trigger_condition <= ext_int_mode_pclk && !(gpio_in[CAMSYNC_GPIO_EXT_IN] ^ input_pattern[CAMSYNC_GPIO_EXT_IN]); // disable external trigger in line
+        ext_int_trigger_condition_d <= ext_int_trigger_condition;
+     
+        if (!triggered_mode_pclk || (ext_int_trigger_condition !=ext_int_trigger_condition_d)) ext_int_trigger_filter_cntr <= {1'b0,bit_length[7:2]};
+        else if (!ext_int_trigger_filter_cntr[6]) ext_int_trigger_filter_cntr <= ext_int_trigger_filter_cntr-1;
+     
+        if      (input_use_intern)                ext_int_trigger_condition_filtered <= 1'b0;
+        else if (ext_int_trigger_filter_cntr[6])  ext_int_trigger_condition_filtered <= ext_int_trigger_condition_d;
+        
+        ext_int_trigger_condition_filtered_d <= ext_int_trigger_condition_filtered;
+        
 
         rcv_run_d <= rcv_run; 
         

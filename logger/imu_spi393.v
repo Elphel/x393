@@ -159,7 +159,7 @@ module  imu_spi393(
     assign sngl_wire =          ~|sngl_wire_r[1:0];
   
     assign shift_mosi =         (clk_en[3] && seq_counter[0] && !stall);
-    assign mosi =               config_single_wire?sngl_wire:mosi_reg[15];
+    assign mosi =               config_single_wire?sngl_wire: mosi_reg[15];
   
     assign config_long_sda_en = config_debug[0];
     assign config_late_clk =    config_debug[1];

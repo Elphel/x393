@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.3.66 (w)1999-2015 BSI
-[*] Mon Oct 24 00:30:16 2016
+[*] Thu Oct 27 01:40:51 2016
 [*]
-[dumpfile] "/home/eyesis/git/x393-neon/simulation/x393_dut-20161023171014405.fst"
-[dumpfile_mtime] "Mon Oct 24 00:23:04 2016"
-[dumpfile_size] 364619214
+[dumpfile] "/home/eyesis/git/x393-neon/simulation/x393_dut-20161026180017757.fst"
+[dumpfile_mtime] "Thu Oct 27 01:39:08 2016"
+[dumpfile_size] 418439836
 [savefile] "/home/eyesis/git/x393-neon/cocotb/x393_cocotb_03.sav"
 [timestart] 0
 [size] 1814 1171
 [pos] 0 0
-*-26.593010 46043333 53094051 136169617 216213845 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-27.006804 350100000 53094051 136169617 216213845 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] x393_dut.
 [treeopen] x393_dut.simul_sensor12bits_2_i.
 [treeopen] x393_dut.simul_sensor12bits_3_i.
@@ -25,7 +25,6 @@
 [treeopen] x393_dut.x393_i.event_logger_i.i_logger_arbiter.
 [treeopen] x393_dut.x393_i.event_logger_i.i_nmea_decoder.
 [treeopen] x393_dut.x393_i.event_logger_i.i_rs232_rcv.
-[treeopen] x393_dut.x393_i.mult_saxi_wr_i.
 [treeopen] x393_dut.x393_i.mult_saxi_wr_i.mult_saxi_wr_pointers_i.
 [treeopen] x393_dut.x393_i.sensors393_i.sensor_channel_block[0].
 [treeopen] x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.
@@ -40,9 +39,10 @@
 [treeopen] x393_dut.x393_i.sensors393_i.sensor_channel_block[3].sensor_channel_i.
 [treeopen] x393_dut.x393_i.sensors393_i.sensor_channel_block[3].sensor_channel_i.sens_parallel12_i.
 [treeopen] x393_dut.x393_i.sensors393_i.sensor_channel_block[3].sensor_channel_i.sens_sync_i.
+[treeopen] x393_dut.x393_i.timing393_i.
 [treeopen] x393_dut.x393_i.timing393_i.camsync393_i.
-[sst_width] 398
-[signals_width] 323
+[sst_width] 282
+[signals_width] 319
 [sst_expanded] 1
 [sst_vpaned_height] 486
 @820
@@ -814,8 +814,18 @@ x393_dut.x393_i.gpio393_i.ext_pins[9:0]
 -group_end
 @1401200
 -gpio
-@800200
+@c00200
 -event_logger
+@22
+x393_dut.x393_i.event_logger_i.config_gps[3:0]
+@28
+x393_dut.x393_i.event_logger_i.gps_pulse1sec
+x393_dut.x393_i.event_logger_i.gps_ts_stb
+x393_dut.x393_i.event_logger_i.nmea_sent_start
+(2)x393_dut.x393_i.event_logger_i.timestamp_request[3:0]
+x393_dut.x393_i.event_logger_i.gps_pulse1sec_single
+x393_dut.x393_i.event_logger_i.mclk
+x393_dut.x393_i.event_logger_i.mrst
 @200
 -x393
 @800022
@@ -977,7 +987,7 @@ x393_dut.x393_i.event_logger_i.i_imu_spi.mclk
 @1401200
 -imu_spi393
 -group_end
-@c00200
+@800200
 -rs232_rcvr
 @28
 x393_dut.x393_i.axi_aclk
@@ -1107,9 +1117,9 @@ x393_dut.x393_i.event_logger_i.i_rs232_rcv.restart[1:0]
 x393_dut.x393_i.event_logger_i.i_rs232_rcv.reset_bit_duration
 @22
 x393_dut.x393_i.event_logger_i.i_rs232_rcv.bitHalfPeriod[15:0]
-@1401200
+@1000200
 -rs232_rcvr
-@c00200
+@800200
 -nmea_decoder
 @28
 x393_dut.x393_i.event_logger_i.i_nmea_decoder.start
@@ -1220,7 +1230,7 @@ x393_dut.x393_i.event_logger_i.i_nmea_decoder.nibble_count[6:0]
 -group_end
 @22
 x393_dut.x393_i.event_logger_i.i_nmea_decoder.nibble[3:0]
-@1401200
+@1000200
 -nmea_decoder
 @c00200
 -imu_exttime
@@ -1404,6 +1414,7 @@ x393_dut.x393_i.event_logger_i.i_imu_exttime.timestamp_fifo_chn0_i.dout[7:0]
 -imu_exttime
 @c00200
 -imu_spi
+@800200
 -external
 @28
 x393_dut.IMU_CS
@@ -1418,14 +1429,67 @@ x393_dut.IMU_SCLK_OUT
 @28
 (6)x393_dut.x393_i.gpio393_i.ext_pins[9:0]
 (7)x393_dut.x393_i.gpio393_i.ext_pins[9:0]
-@1401200
+@1000200
 -external
+@28
+x393_dut.x393_i.event_logger_i.i_imu_spi.xclk
+@c00022
+x393_dut.x393_i.event_logger_i.i_imu_spi.mosi_reg[15:0]
+@28
+(0)x393_dut.x393_i.event_logger_i.i_imu_spi.mosi_reg[15:0]
+(1)x393_dut.x393_i.event_logger_i.i_imu_spi.mosi_reg[15:0]
+(2)x393_dut.x393_i.event_logger_i.i_imu_spi.mosi_reg[15:0]
+(3)x393_dut.x393_i.event_logger_i.i_imu_spi.mosi_reg[15:0]
+(4)x393_dut.x393_i.event_logger_i.i_imu_spi.mosi_reg[15:0]
+(5)x393_dut.x393_i.event_logger_i.i_imu_spi.mosi_reg[15:0]
+(6)x393_dut.x393_i.event_logger_i.i_imu_spi.mosi_reg[15:0]
+(7)x393_dut.x393_i.event_logger_i.i_imu_spi.mosi_reg[15:0]
+(8)x393_dut.x393_i.event_logger_i.i_imu_spi.mosi_reg[15:0]
+(9)x393_dut.x393_i.event_logger_i.i_imu_spi.mosi_reg[15:0]
+(10)x393_dut.x393_i.event_logger_i.i_imu_spi.mosi_reg[15:0]
+(11)x393_dut.x393_i.event_logger_i.i_imu_spi.mosi_reg[15:0]
+(12)x393_dut.x393_i.event_logger_i.i_imu_spi.mosi_reg[15:0]
+(13)x393_dut.x393_i.event_logger_i.i_imu_spi.mosi_reg[15:0]
+(14)x393_dut.x393_i.event_logger_i.i_imu_spi.mosi_reg[15:0]
+(15)x393_dut.x393_i.event_logger_i.i_imu_spi.mosi_reg[15:0]
+@1401200
+-group_end
+@28
+(0)x393_dut.x393_i.event_logger_i.i_imu_spi.mosi_reg[15:0]
+@200
+-
+@28
+x393_dut.x393_i.event_logger_i.i_imu_spi.end_prepare
+@800028
+x393_dut.x393_i.event_logger_i.i_imu_spi.sngl_wire_stb[2:0]
+@28
+(0)x393_dut.x393_i.event_logger_i.i_imu_spi.sngl_wire_stb[2:0]
+(1)x393_dut.x393_i.event_logger_i.i_imu_spi.sngl_wire_stb[2:0]
+(2)x393_dut.x393_i.event_logger_i.i_imu_spi.sngl_wire_stb[2:0]
+@1001200
+-group_end
+@800028
+x393_dut.x393_i.event_logger_i.i_imu_spi.sngl_wire_r[1:0]
+@28
+(0)x393_dut.x393_i.event_logger_i.i_imu_spi.sngl_wire_r[1:0]
+(1)x393_dut.x393_i.event_logger_i.i_imu_spi.sngl_wire_r[1:0]
+@1001200
+-group_end
 @28
 x393_dut.x393_i.event_logger_i.i_imu_spi.mosi
 x393_dut.x393_i.event_logger_i.i_imu_spi.miso
 x393_dut.x393_i.event_logger_i.i_imu_spi.sda
 x393_dut.x393_i.event_logger_i.i_imu_spi.sda_en
+x393_dut.x393_i.event_logger_i.i_imu_spi.pre_scl
 x393_dut.x393_i.event_logger_i.i_imu_spi.scl
+@c00028
+x393_dut.x393_i.event_logger_i.i_imu_spi.scl_r[1:0]
+@28
+(0)x393_dut.x393_i.event_logger_i.i_imu_spi.scl_r[1:0]
+(1)x393_dut.x393_i.event_logger_i.i_imu_spi.scl_r[1:0]
+@1401200
+-group_end
+@28
 x393_dut.x393_i.event_logger_i.i_imu_spi.scl_en
 x393_dut.x393_i.event_logger_i.i_imu_spi.ts
 x393_dut.x393_i.event_logger_i.i_imu_spi.rdy
@@ -1435,6 +1499,7 @@ x393_dut.x393_i.event_logger_i.i_imu_spi.raddr[4:0]
 x393_dut.x393_i.event_logger_i.i_imu_spi.rdata[15:0]
 @28
 x393_dut.x393_i.event_logger_i.i_imu_spi.stall
+x393_dut.x393_i.event_logger_i.i_imu_spi.set_stall
 @1401200
 -imu_spi
 @c00200
@@ -1627,9 +1692,8 @@ x393_dut.x393_i.logger_out[15:0]
 x393_dut.x393_i.logger_stb
 @1401200
 -x393
-@1000200
 -event_logger
-@800200
+@c00200
 -mult_saxi_wr_inbuf
 @28
 x393_dut.x393_i.mult_saxi_wr_inbuf_i.mclk
@@ -1642,9 +1706,9 @@ x393_dut.x393_i.mult_saxi_wr_inbuf_i.has_burst
 x393_dut.x393_i.mult_saxi_wr_inbuf_i.read_burst
 @22
 x393_dut.x393_i.mult_saxi_wr_inbuf_i.data_out[31:0]
-@1000200
+@1401200
 -mult_saxi_wr_inbuf
-@800200
+@c00200
 -mult_saxi_wr
 @22
 x393_dut.x393_i.mult_saxi_wr_i.cmd_ad[7:0]
@@ -1734,7 +1798,7 @@ x393_dut.x393_i.mult_saxi_wr_i.mult_saxi_wr_pointers_i.sa_len_wa[2:0]
 x393_dut.x393_i.mult_saxi_wr_i.mult_saxi_wr_pointers_i.sa_len_di[29:0]
 @28
 x393_dut.x393_i.mult_saxi_wr_i.mult_saxi_wr_pointers_i.sa_len_ra[2:0]
-@23
+@22
 x393_dut.x393_i.mult_saxi_wr_i.mult_saxi_wr_pointers_i.sa_len_ram_out[29:0]
 @28
 x393_dut.x393_i.mult_saxi_wr_i.mrst
@@ -1743,6 +1807,7 @@ x393_dut.x393_i.mult_saxi_wr_i.arst
 -
 @1000200
 -mult_saxi_wr_pointers
+@1401200
 -mult_saxi_wr
 @c00200
 -IMU_
@@ -1773,5 +1838,97 @@ x393_dut.IMU_SDA
 x393_dut.IMU_TAPS[5:1]
 @1401200
 -IMU_
+@800200
+-camsync_ext_int
+@800022
+x393_dut.x393_i.timing393_i.camsync393_i.gpio_in[9:0]
+@28
+(0)x393_dut.x393_i.timing393_i.camsync393_i.gpio_in[9:0]
+(1)x393_dut.x393_i.timing393_i.camsync393_i.gpio_in[9:0]
+(2)x393_dut.x393_i.timing393_i.camsync393_i.gpio_in[9:0]
+(3)x393_dut.x393_i.timing393_i.camsync393_i.gpio_in[9:0]
+(4)x393_dut.x393_i.timing393_i.camsync393_i.gpio_in[9:0]
+(5)x393_dut.x393_i.timing393_i.camsync393_i.gpio_in[9:0]
+(6)x393_dut.x393_i.timing393_i.camsync393_i.gpio_in[9:0]
+(7)x393_dut.x393_i.timing393_i.camsync393_i.gpio_in[9:0]
+(8)x393_dut.x393_i.timing393_i.camsync393_i.gpio_in[9:0]
+(9)x393_dut.x393_i.timing393_i.camsync393_i.gpio_in[9:0]
+@1001200
+-group_end
+@c00022
+x393_dut.x393_i.timing393_i.frame_sync[3:0]
+@28
+(0)x393_dut.x393_i.timing393_i.frame_sync[3:0]
+(1)x393_dut.x393_i.timing393_i.frame_sync[3:0]
+(2)x393_dut.x393_i.timing393_i.frame_sync[3:0]
+(3)x393_dut.x393_i.timing393_i.frame_sync[3:0]
+@1401200
+-group_end
+@22
+x393_dut.x393_i.timing393_i.camsync393_i.cmd_a[2:0]
+@28
+x393_dut.x393_i.timing393_i.camsync393_i.cmd_we
+x393_dut.x393_i.timing393_i.camsync393_i.set_trig_dst_w
+x393_dut.x393_i.timing393_i.camsync393_i.en
+x393_dut.x393_i.timing393_i.camsync393_i.pclk
+@8022
+x393_dut.x393_i.timing393_i.camsync393_i.restart_cntr[31:0]
+@800028
+x393_dut.x393_i.timing393_i.camsync393_i.restart_cntr_run[1:0]
+@28
+(0)x393_dut.x393_i.timing393_i.camsync393_i.restart_cntr_run[1:0]
+(1)x393_dut.x393_i.timing393_i.camsync393_i.restart_cntr_run[1:0]
+x393_dut.x393_i.timing393_i.camsync393_i.start_en
+@800028
+x393_dut.x393_i.timing393_i.camsync393_i.start_pclk[2:0]
+@28
+(0)x393_dut.x393_i.timing393_i.camsync393_i.start_pclk[2:0]
+(1)x393_dut.x393_i.timing393_i.camsync393_i.start_pclk[2:0]
+(2)x393_dut.x393_i.timing393_i.camsync393_i.start_pclk[2:0]
+@22
+x393_dut.x393_i.timing393_i.camsync393_i.input_use[9:0]
+x393_dut.x393_i.timing393_i.camsync393_i.gpio_out_en_r[9:0]
+@28
+x393_dut.x393_i.timing393_i.camsync393_i.ext_int_mode_mclk
+x393_dut.x393_i.timing393_i.camsync393_i.ext_int_mode_pclk
+x393_dut.x393_i.timing393_i.camsync393_i.ext_int_trigger_condition
+x393_dut.x393_i.timing393_i.camsync393_i.ext_int_trigger_condition_d
+@22
+x393_dut.x393_i.timing393_i.camsync393_i.ext_int_trigger_filter_cntr[6:0]
+@28
+x393_dut.x393_i.timing393_i.camsync393_i.ext_int_trigger_condition_filtered
+x393_dut.x393_i.timing393_i.camsync393_i.ext_int_pre_pause
+@800028
+x393_dut.x393_i.timing393_i.camsync393_i.ext_int_arm[1:0]
+@28
+(0)x393_dut.x393_i.timing393_i.camsync393_i.ext_int_arm[1:0]
+(1)x393_dut.x393_i.timing393_i.camsync393_i.ext_int_arm[1:0]
+x393_dut.x393_i.timing393_i.camsync393_i.trigger_condition
+x393_dut.x393_i.timing393_i.camsync393_i.trigger_condition_filtered
+@22
+x393_dut.x393_i.timing393_i.camsync393_i.input_pattern[9:0]
+@c00023
+x393_dut.x393_i.timing393_i.camsync393_i.input_use[9:0]
+@29
+(0)x393_dut.x393_i.timing393_i.camsync393_i.input_use[9:0]
+(1)x393_dut.x393_i.timing393_i.camsync393_i.input_use[9:0]
+(2)x393_dut.x393_i.timing393_i.camsync393_i.input_use[9:0]
+(3)x393_dut.x393_i.timing393_i.camsync393_i.input_use[9:0]
+(4)x393_dut.x393_i.timing393_i.camsync393_i.input_use[9:0]
+(5)x393_dut.x393_i.timing393_i.camsync393_i.input_use[9:0]
+(6)x393_dut.x393_i.timing393_i.camsync393_i.input_use[9:0]
+(7)x393_dut.x393_i.timing393_i.camsync393_i.input_use[9:0]
+(8)x393_dut.x393_i.timing393_i.camsync393_i.input_use[9:0]
+(9)x393_dut.x393_i.timing393_i.camsync393_i.input_use[9:0]
+@1401201
+-group_end
+@1001200
+-group_end
+-group_end
+-group_end
+@200
+-
+@1000200
+-camsync_ext_int
 [pattern_trace] 1
 [pattern_trace] 0
