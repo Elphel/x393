@@ -1762,8 +1762,12 @@ simul_axi_hp_wr #(
 assign x393_i.ps7_i.FCLKCLK=        {4{CLK}};
 assign x393_i.ps7_i.FCLKRESETN=     {RST,~RST,RST,~RST};
 
-`define TEST_IMU
 
+
+
+
+`define TEST_IMU
+`define TEST_EXT_INT
 assign #10 gpio_pins[7] = gpio_pins[8];
 `ifndef TEST_IMU
     assign #10 gpio_pins[9] = gpio_pins[6]; 
@@ -1798,7 +1802,7 @@ assign #10 gpio_pins[7] = gpio_pins[8];
     //reg TEST_CPU_RD_OK;
       reg SERIAL_BIT = 1'b1;
       reg GPS1SEC    = 1'b0;
-      reg ODOMETER_PULSE= 1'b0;
+      reg ODOMETER_PULSE= 1'b1;
       integer SERIAL_DATA_FD; // @SuppressThisWarning VEditor
       reg IMU_DATA_READY;
     
@@ -1820,6 +1824,33 @@ assign #10 gpio_pins[7] = gpio_pins[8];
       reg        RS232_SENDING_BYTE;   // @SuppressThisWarning VEditor just for simulation
       reg        RS232_SENDING_PAUSE; // @SuppressThisWarning VEditor just for simulation
 `endif
+`ifdef TEST_EXT_INT      
+  initial begin
+      #350000;
+      ODOMETER_PULSE=1'b0; // first pulse will be missed
+      #5000;
+      ODOMETER_PULSE=1'b1;
+      #50000;
+      ODOMETER_PULSE=1'b0;
+      #5000;
+      ODOMETER_PULSE=1'b1;
+      #50000;
+      ODOMETER_PULSE=1'b0;
+      #5000;
+      ODOMETER_PULSE=1'b1;
+/*      
+      #100000;
+      ODOMETER_PULSE=1'b0;
+      #5000;
+      ODOMETER_PULSE=1'b1;
+      #100000;
+      ODOMETER_PULSE=1'b0;
+      #5000;
+      ODOMETER_PULSE=1'b1;
+      */
+  end
+`endif
+
 
 
 `ifdef TEST_IMU
@@ -1839,10 +1870,16 @@ assign #10 gpio_pins[7] = gpio_pins[8];
       send_serial_bit('h0a);
       send_serial_pause;
       send_serial_pause;
+      
+`ifndef TEST_EXT_INT      
       ODOMETER_PULSE=1'b1;
+`endif
       send_serial_pause;
+
+`ifndef TEST_EXT_INT      
       ODOMETER_PULSE=1'b0;
-//  repeat (20) send_serial_pause;
+`endif
+
     end
   end 
 `endif

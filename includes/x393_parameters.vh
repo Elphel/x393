@@ -797,6 +797,12 @@
     parameter CAMSYNC_PRE_MAGIC =          6'b110100,
     parameter CAMSYNC_POST_MAGIC =         6'b001101,
 
+    // GPIO bits used for camera synchronization
+    parameter CAMSYNC_GPIO_EXT_IN =        9,
+    parameter CAMSYNC_GPIO_INT_IN =        7,
+    parameter CAMSYNC_GPIO_EXT_OUT =       6,
+    parameter CAMSYNC_GPIO_INT_OUT =       8,
+
     parameter RTC_MHZ=                    25, // RTC input clock in MHz (should be interger number)
     parameter RTC_BITC_PREDIV =            5, // number of bits to generate 2 MHz pulses counting refclk
     parameter RTC_SET_USEC=                0, // 20-bit number of microseconds
