@@ -35,7 +35,8 @@
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
  */
-        parameter FPGA_VERSION =          32'h039300c2;      //parallel - external sync for Eyesis -0.160/71 79.84%
+        parameter FPGA_VERSION =          32'h039300c3;      //parallel - fixing timestamps
+//        parameter FPGA_VERSION =          32'h039300c2;      //parallel - external sync for Eyesis -0.160/71 79.84%
 //      parameter FPGA_VERSION =          32'h039300c1;      //parallel - modified after troubleshooting simulation -0.069/41, 79.90 %
 //      parameter FPGA_VERSION =          32'h039300c0;      //parallel - changing LOGGER_PAGE_IMU 3->0 (how it was in 353) -0.044/16, 79.59%
 //      parameter FPGA_VERSION =          32'h039300bf;      //parallel - mask extrenal timestamps mode -0.043/17 79.56%

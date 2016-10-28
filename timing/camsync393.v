@@ -227,7 +227,7 @@ module camsync393       #(
     reg     [9:0] input_use;       // 1 - use this bit
     reg     [9:0] input_pattern;   // data to be compared for trigger event to take place
     reg     [9:0] gpio_out_en_r;
-    reg           pre_input_use_intern;// @(posedge mclk) Use internal trigger generator, 0 - use external trigger (also switches delay from input to output)
+    reg           pre_input_use_intern = 1;// @(posedge mclk) Use internal trigger generator, 0 - use external trigger (also switches delay from input to output)
     reg           input_use_intern;//  @(posedge clk) 
     reg    [31:0] input_dly_chn0;  // delay value for the trigger
     reg    [31:0] input_dly_chn1;  // delay value for the trigger
@@ -418,7 +418,7 @@ module camsync393       #(
         if (!en) begin
             input_use <= 0;
             input_pattern <= 0;        
-            pre_input_use_intern <= 0; // use internal source for triggering
+            pre_input_use_intern <= 1; // use internal source for triggering
         end else if (set_trig_src_w) begin
             input_use <= input_use_w;
             input_pattern <= input_pattern_w;        
@@ -505,7 +505,7 @@ module camsync393       #(
 
         ts_snd_en_pclk<=ts_snd_en;
         input_use_intern <= pre_input_use_intern;
-        ts_external_pclk<= ts_external && !input_use_intern;
+        ts_external_pclk<= ts_external; //  && !input_use_intern;
      
         start_pclk[2:0] <= {(restart && rep_en) || 
 //                            (start_pclk[1] && !restart_cntr_run[1] && !restart_cntr_run[0] && !start_pclk[2]), // does not allow to restart
