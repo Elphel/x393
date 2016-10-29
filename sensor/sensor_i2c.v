@@ -53,6 +53,7 @@ module  sensor_i2c#(
     parameter SENSI2C_CMD_RESET =       14, // [14]   reset all FIFO (takes 16 clock pulses), also - stops i2c until run command
     parameter SENSI2C_CMD_RUN =         13, // [13:12]3 - run i2c, 2 - stop i2c (needed before software i2c), 1,0 - no change to run state
     parameter SENSI2C_CMD_RUN_PBITS =    1,
+    parameter SENSI2C_CMD_USE_EOF =      8, // [9:8] - 0: advance sequencer at SOF, 1 - advance sequencer at EOF 
     parameter SENSI2C_CMD_SOFT_SDA =     6, // [7:6] - SDA software control: 0 - nop, 1 - low, 2 - active high, 3 - float
     parameter SENSI2C_CMD_SOFT_SCL =     4, // [5:4] - SCL software control: 0 - nop, 1 - low, 2 - active high, 3 - float
     parameter SENSI2C_CMD_FIFO_RD =      3, // advance I2C read data FIFO by 1  
@@ -88,6 +89,7 @@ module  sensor_i2c#(
     input                       status_start,// Acknowledge of the first status packet byte (address)
     input                       frame_sync,  // @posedge mclk increment/reset frame number
     input  [NUM_FRAME_BITS-1:0] frame_num_seq, // frame number from the command sequencer (to sync i2c)
+    input                       eof_mclk,    // frame end (use as alternative i2c sequencer increment (disable for linescan mode)
     input                       sda_in,      // i2c SDA input
     input                       scl_in,      // i2c SCL input
     output                      scl_out,     // i2c SCL output
@@ -185,11 +187,15 @@ module  sensor_i2c#(
      wire          sda_hard;
      wire          sda_en_hard;
      wire          scl_hard;
+     
+     reg           use_eof; // advance sequencer with eof, not sof  
 
 `ifdef I2C_FRAME_INDEPENDENT
      localparam sync_to_seq = 0;
+     localparam sync_to_eof = 0;
 `else     
      reg           sync_to_seq;
+     reg           sync_to_eof;
 `endif
      reg     [5:0] last_wp;    // last written write pointer     
      reg     [5:0] last_wp_d;    // last written write pointer, delayed to match rpointer
@@ -209,6 +215,7 @@ module  sensor_i2c#(
      assign set_ctrl_w = we_cmd && ((wa & ~SENSI2C_CTRL_MASK) == SENSI2C_CTRL );// ==0
      assign set_status_w = we_cmd && ((wa & ~SENSI2C_CTRL_MASK) == SENSI2C_STATUS );// ==0
      assign  pre_wpage0_inc = (!wen && !(|wen_r) && !wpage0_inc[0]) && (req_clr || reset_on) ;
+     
 ///     assign  pre_wpage0_inc = (!wen && !(|wen_r) && !(|wpage0_inc)) && (req_clr || reset_on) ;
 
      assign  fifo_wr_pointers_outw = fifo_wr_pointers_ram[wpage_wr[3:0]]; // valid next after command
@@ -328,6 +335,10 @@ module  sensor_i2c#(
         if      (i2c_enrun || mrst)                                                     sda_en_soft <= 0;
         else if (set_ctrl_w && !di[SENSI2C_CMD_TABLE] && |di[SENSI2C_CMD_SOFT_SDA +:2]) sda_en_soft <= di[SENSI2C_CMD_SOFT_SDA +:2] != 3;
         
+        if      (mrst)                                                                use_eof <= 0;
+        else if (set_ctrl_w && !di[SENSI2C_CMD_TABLE] && di[SENSI2C_CMD_USE_EOF + 1]) use_eof <= di[SENSI2C_CMD_USE_EOF];
+                
+        
         if      (set_ctrl_w && !di[SENSI2C_CMD_TABLE] && |di[SENSI2C_CMD_SOFT_SDA +:2]) sda_soft <=    di[SENSI2C_CMD_SOFT_SDA + 1];
         
         if (active_cmd) begin
@@ -340,16 +351,17 @@ module  sensor_i2c#(
       // reset pointers in all 16 pages:      
       reset_on <= reset_cmd  || (reset_on && !(wpage0_inc[0] && ( wpage0[3:0] == 4'hf)));
       // request to clear pointer(s)? for one page - during reset or delayed frame sync (if previous was not finished)
-      req_clr  <= frame_sync || (req_clr && !wpage0_inc[0]);
+      req_clr  <= (use_eof ? eof_mclk : frame_sync) || (req_clr && !wpage0_inc[0]);
 
 `ifndef I2C_FRAME_INDEPENDENT
-    sync_to_seq <= frame_sync || (reset_on && ( wpage0[3:0] == 4'hf));
+    sync_to_seq <= !use_eof && (frame_sync || (reset_on && ( wpage0[3:0] == 4'hf)));
+    sync_to_eof <=  use_eof && (eof_mclk || (reset_on && ( wpage0[3:0] == 4'hf)));    
 `endif
       
 
-      if      (reset_cmd)     wpage0 <= 0;
-      else if (wpage0_inc[0]) wpage0 <= wpage0 + 1;
-      else if (sync_to_seq)   wpage0 <= frame_num_seq;
+      if      (reset_cmd)                    wpage0 <= 0;
+      else if (wpage0_inc[0])                wpage0 <= wpage0 + 1;
+      else if (sync_to_seq || sync_to_eof)   wpage0 <= sync_to_eof?(frame_num_seq-1):frame_num_seq;
       
       if      (reset_cmd)     wpage_prev <= 4'hf;
       else if (wpage0_inc[0]) wpage_prev <= wpage0;

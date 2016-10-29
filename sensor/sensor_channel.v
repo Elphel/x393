@@ -90,6 +90,7 @@ module  sensor_channel#(
         parameter SENSI2C_CMD_RESET =       14, // [14]   reset all FIFO (takes 16 clock pulses), also - stops i2c until run command
         parameter SENSI2C_CMD_RUN =         13, // [13:12]3 - run i2c, 2 - stop i2c (needed before software i2c), 1,0 - no change to run state
         parameter SENSI2C_CMD_RUN_PBITS =    1,
+        parameter SENSI2C_CMD_USE_EOF =      8, // [9:8] - 0: advance sequencer at SOF, 1 - advance sequencer at EOF 
         parameter SENSI2C_CMD_SOFT_SDA =     6, // [7:6] - SDA software control: 0 - nop, 1 - low, 2 - active high, 3 - float
         parameter SENSI2C_CMD_SOFT_SCL =     4, // [5:4] - SCL software control: 0 - nop, 1 - low, 2 - active high, 3 - float
         parameter SENSI2C_CMD_FIFO_RD =      3, // advance I2C read data FIFO by 1  
@@ -416,6 +417,7 @@ module  sensor_channel#(
     wire                      hact;    // line active @posedge  ipclk
     wire                      sof; // start of frame
     wire                      eof; // end of frame
+    wire                      eof_mclk; // to be used by i2c sequencer
     
     wire                      sof_out_sync; // sof filtetred, optionally decimated (for linescan mode)
     
@@ -644,6 +646,7 @@ module  sensor_channel#(
         .SENSI2C_CMD_RESET       (SENSI2C_CMD_RESET),
         .SENSI2C_CMD_RUN         (SENSI2C_CMD_RUN),
         .SENSI2C_CMD_RUN_PBITS   (SENSI2C_CMD_RUN_PBITS),
+        .SENSI2C_CMD_USE_EOF     (SENSI2C_CMD_USE_EOF),
         .SENSI2C_CMD_SOFT_SDA    (SENSI2C_CMD_SOFT_SDA),
         .SENSI2C_CMD_SOFT_SCL    (SENSI2C_CMD_SOFT_SCL),
         .SENSI2C_CMD_FIFO_RD     (SENSI2C_CMD_FIFO_RD),
@@ -676,6 +679,8 @@ module  sensor_channel#(
         .status_rq             (sens_i2c_status_rq),    // output
         .status_start          (sens_i2c_status_start), // input
         .frame_sync            (sof_out_mclk),          // input
+        .eof_mclk              (eof_mclk),              // End of frame for i2c sequencer (will not work for linescan mode: either disable or make
+                                                        // division as in sof_out_mclk
         .frame_num_seq         (frame_num_seq),         // input[3:0] 
         .scl                   (sns_scl),               // inout
         .sda                   (sns_sda)                // inout
@@ -692,7 +697,7 @@ module  sensor_channel#(
     reg hist_gr0_r;
     wire sol_mclk;
     wire sof_mclk;
-    wire eof_mclk;
+//    wire eof_mclk;
     wire alive_hist0_rq = hist_rq[0] && !hist_rq0_r;
     wire alive_hist0_gr = hist_gr[0] && !hist_gr0_r;
     // sof_out_mclk - already exists
@@ -739,15 +744,6 @@ module  sensor_channel#(
             .busy() // output
         );
     
-        pulse_cross_clock pulse_cross_clock_eof_mclk_i (
-//            .rst         (prst),                  // input
-            .rst         (prsts),                  // input extended to include sensor reset and rst_mmcm
-            .src_clk     (pclk),                  // input
-            .dst_clk     (mclk),                  // input
-            .in_pulse    (eof),                   // input
-            .out_pulse   (eof_mclk),              // output
-            .busy() // output
-        );
     
         pulse_cross_clock pulse_cross_clock_dout_valid_1cyc_mclk_i (
 //            .rst         (prst),                  // input
@@ -771,6 +767,14 @@ module  sensor_channel#(
     
 `endif    
 
+        pulse_cross_clock pulse_cross_clock_eof_mclk_i (
+            .rst         (prsts),                  // input extended to include sensor reset and rst_mmcm
+            .src_clk     (pclk),                  // input
+            .dst_clk     (mclk),                  // input
+            .in_pulse    (eof),                   // input
+            .out_pulse   (eof_mclk),              // output
+            .busy() // output
+        );
     
 
 

@@ -1900,6 +1900,7 @@ class X393ExportC(object):
         
         dw.append(("soft_scl",         vrlg.SENSI2C_CMD_SOFT_SCL,     2,0,  "Control SCL pin (when stopped): 0 - nop, 1 - low, 2 - high (driven), 3 - float "))
         dw.append(("soft_sda",         vrlg.SENSI2C_CMD_SOFT_SDA,     2,0,  "Control SDA pin (when stopped): 0 - nop, 1 - low, 2 - high (driven), 3 - float "))
+        dw.append(("eof_not_sof",      vrlg.SENSI2C_CMD_USE_EOF,      2,0,  "Advance I2C sequencer: 0 - SOF, 1 - EOF"))
         
         dw.append(("cmd_run",          vrlg.SENSI2C_CMD_RUN-1,        2,0,  "Sequencer run/stop control: 0,1 - nop, 2 - stop, 3 - run "))
         dw.append(("reset",            vrlg.SENSI2C_CMD_RESET,        1,0,  "Sequencer reset all FIFO (takes 16 clock pulses), also - stops i2c until run command"))
