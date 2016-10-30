@@ -361,7 +361,8 @@ module  sensor_i2c#(
 
       if      (reset_cmd)                    wpage0 <= 0;
       else if (wpage0_inc[0])                wpage0 <= wpage0 + 1;
-      else if (sync_to_seq || sync_to_eof)   wpage0 <= sync_to_eof?(frame_num_seq-1):frame_num_seq;
+//      else if (sync_to_seq || sync_to_eof)   wpage0 <= sync_to_eof?(frame_num_seq-1):frame_num_seq;
+      else if (sync_to_seq || sync_to_eof)   wpage0 <= frame_num_seq; // i2c frame is ahead of the frame sync one
       
       if      (reset_cmd)     wpage_prev <= 4'hf;
       else if (wpage0_inc[0]) wpage_prev <= wpage0;
