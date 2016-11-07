@@ -2166,6 +2166,7 @@ measure_all "*DI"
 setup_all_sensors True None 0xf
 set_sensor_io_ctl  all None None 1 # Set ARO low - check if it is still needed?
 #just testing
+
 set_gpio_ports  1   1 # enable software gpio pins and porta (camsync)
 set_gpio_pins 0 1 # pin 0 low, pin 1 - high
 
@@ -2289,6 +2290,12 @@ set_gpio_ports  1   1 # enable software gpio pins and porta (camsync)
 set_gpio_pins 0 1 # pin 0 low, pin 1 - high
 
 set_logger_params_file "/home/eyesis/git/x393-neon/attic/imu_config.bin"
+
+
+
+write_control_register 0x480  0x400 # disable sensor chn 2
+
+
 
 reset_camsync_inout 1 # reset all outputs
 set_camsync_period 31 # set bit duration

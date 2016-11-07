@@ -1613,7 +1613,7 @@ simul_axi_hp_wr #(
         .new_bayer (0) //SENSOR12BITS_NEW_BAYER) was 1
     ) simul_sensor12bits_2_i (
         .MCLK  (PX2_MCLK), // input 
-        .MRST  (PX2_MRST), // input 
+        .MRST  (PX2_MRST & 0), // input // force reset !!! 
         .ARO   (PX2_ARO),  // input 
         .ARST  (PX2_ARST), // input 
         .OE    (1'b0),     // input output enable active low
