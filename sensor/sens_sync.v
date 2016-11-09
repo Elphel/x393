@@ -98,7 +98,7 @@ module  sens_sync#(
     reg                       trig_r;
     reg [SENS_SYNC_MINBITS-1:0] period_cntr;
     reg                       period_dly; // runnning counter to enforce > min period
-
+    reg                       en_pclk;
     assign set_data_mclk = cmd_we && ((cmd_a == SENS_SYNC_MULT) || (cmd_a == SENS_SYNC_LATE));
     assign zero_frames_left = !(|sub_frames_left);
     assign hact_single = hact && !hact_r;
@@ -113,6 +113,9 @@ module  sens_sync#(
     end
     
     always @ (posedge pclk) begin
+    
+        en_pclk <= en;
+        
         if (set_data_pclk && (cmd_a_r == SENS_SYNC_MULT))
             sub_frames_pclk <= cmd_data_r[SENS_SYNC_FBITS-1:0];
             
@@ -186,7 +189,7 @@ module  sens_sync#(
     );
     
     pulse_cross_clock pulse_cross_clock_trig_in_pclk_i (
-        .rst         (mrst),           // input
+        .rst         (!en),           // input
         .src_clk     (mclk),          // input
         .dst_clk     (pclk),          // input
         .in_pulse    (trig_in),       // input
@@ -195,17 +198,19 @@ module  sens_sync#(
     );
     
     // pclk -> mclk    
-    pulse_cross_clock pulse_cross_clock_sof_out_i (
-        .rst         (prst),           // input
+    pulse_cross_clock_orst pulse_cross_clock_sof_out_i (
+        .rst         (!en_pclk),      // input
         .src_clk     (pclk),          // input
+        .orst        (!en),           // input // should work even if pclk is not running
         .dst_clk     (mclk),          // input
         .in_pulse    (pre_sof_out),   // input
         .out_pulse   (sof_out),       // output
         .busy() // output
     );
-    pulse_cross_clock pulse_cross_clock_sof_late_i (
-        .rst         (prst),           // input
+    pulse_cross_clock_orst pulse_cross_clock_sof_late_i (
+        .rst         (!en_pclk),      // input
         .src_clk     (pclk),          // input
+        .orst        (!en),           // input // should work even if pclk is not running
         .dst_clk     (mclk),          // input
         .in_pulse    (pre_sof_late),  // input
         .out_pulse   (sof_late),      // output
@@ -213,4 +218,3 @@ module  sens_sync#(
     );
 
 endmodule
-

@@ -53,6 +53,7 @@ module  sensor_i2c_io#(
     parameter SENSI2C_CMD_RESET =       14, // [14]   reset all FIFO (takes 16 clock pulses), also - stops i2c until run command
     parameter SENSI2C_CMD_RUN =         13, // [13:12]3 - run i2c, 2 - stop i2c (needed before software i2c), 1,0 - no change to run state
     parameter SENSI2C_CMD_RUN_PBITS =    1,
+    parameter SENSI2C_CMD_USE_EOF =      8, // [9:8] - 0: advance sequencer at SOF, 1 - advance sequencer at EOF 
     parameter SENSI2C_CMD_SOFT_SDA =     6, // [7:6] - SDA software control: 0 - nop, 1 - low, 2 - active high, 3 - float
     parameter SENSI2C_CMD_SOFT_SCL =     4, // [5:4] - SCL software control: 0 - nop, 1 - low, 2 - active high, 3 - float
     parameter SENSI2C_CMD_FIFO_RD =      3, // advance I2C read data FIFO by 1  
@@ -91,6 +92,7 @@ module  sensor_i2c_io#(
     output        status_rq,   // input request to send status downstream
     input         status_start,// Acknowledge of the first status packet byte (address)
     input         frame_sync,  // increment/reset frame number
+    input         eof_mclk,    // End of frame for i2c sequencer (will not work for linescan mode: either disable or make division upsteram
     input  [NUM_FRAME_BITS-1:0] frame_num_seq, // frame number from the command sequencer (to sync i2c)
     inout         scl,
     inout         sda
@@ -116,6 +118,7 @@ module  sensor_i2c_io#(
         .SENSI2C_CMD_RESET       (SENSI2C_CMD_RESET),
         .SENSI2C_CMD_RUN         (SENSI2C_CMD_RUN),
         .SENSI2C_CMD_RUN_PBITS   (SENSI2C_CMD_RUN_PBITS),
+        .SENSI2C_CMD_USE_EOF      (SENSI2C_CMD_USE_EOF),
         .SENSI2C_CMD_SOFT_SDA    (SENSI2C_CMD_SOFT_SDA),
         .SENSI2C_CMD_SOFT_SCL    (SENSI2C_CMD_SOFT_SCL),
         .SENSI2C_CMD_FIFO_RD     (SENSI2C_CMD_FIFO_RD),
@@ -144,7 +147,8 @@ module  sensor_i2c_io#(
         .status_rq     (status_rq),     // output
         .status_start  (status_start),  // input
         .frame_sync    (frame_sync),    // input
-        .frame_num_seq (frame_num_seq), // input[3:0] 
+        .frame_num_seq (frame_num_seq), // input[3:0]
+        .eof_mclk      (eof_mclk),      // input 
         .scl_in        (scl_in),        // input
         .sda_in        (sda_in),        // input
         .scl_out       (scl_out),       // output

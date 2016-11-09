@@ -287,6 +287,7 @@ class X393Sensor(object):
                                  advance_FIFO = None,
                                  sda = None,
                                  scl = None,
+                                 use_eof = None,
                                  verbose = 1):
         """
         @param rst_cmd - reset all FIFO (takes 16 clock pulses), also - stops i2c until run command
@@ -296,6 +297,7 @@ class X393Sensor(object):
         @param advance_FIFO - advance i2c read FIFO
         @param sda - control SDA line (stopped mode only): I<nput>, L<ow> or 0, High or 1
         @param scl - control SCL line (stopped mode only): I<nput>, L<ow> or 0, High or 1
+        @param use_eof - advance sequencer at EOF, not at SOF
         @param verbose -          verbose level
         @return combined command word.
         active_sda and early_release_0 should be defined both to take effect (any of the None skips setting these parameters)
@@ -338,6 +340,10 @@ class X393Sensor(object):
             rslt |= 1 <<                 vrlg.SENSI2C_CMD_ACIVE
         if advance_FIFO:
             rslt |= 1 << vrlg.SENSI2C_CMD_FIFO_RD
+        if not use_eof is None:
+            rslt |= 1 <<                (vrlg.SENSI2C_CMD_USE_EOF + 1)
+            rslt |= (0,1)[use_eof] <<   (vrlg.SENSI2C_CMD_USE_EOF)
+            
         rslt |= parse_sda_scl(sda) <<  vrlg.SENSI2C_CMD_SOFT_SDA  
         rslt |= parse_sda_scl(scl) <<  vrlg.SENSI2C_CMD_SOFT_SCL  
         if verbose>0:
@@ -554,6 +560,7 @@ class X393Sensor(object):
                                 advance_FIFO =    None,
                                 sda =             None,
                                 scl =             None,
+                                use_eof =         None,
                                 verbose =         1):
         """
         @param num_sensor - sensor port number (0..3) or all
@@ -564,6 +571,7 @@ class X393Sensor(object):
         @param advance_FIFO -     advance i2c read FIFO
         @param sda - control SDA line (stopped mode only): I<nput>, L<ow> or 0, High or 1
         @param scl - control SCL line (stopped mode only): I<nput>, L<ow> or 0, High or 1
+        @param use_eof - advance sequencer at EOF, not at SOF
         @param verbose -          verbose level
         active_sda and early_release_0 should be defined both to take effect (any of the None skips setting these parameters)
 
@@ -579,6 +587,7 @@ class X393Sensor(object):
                                 advance_FIFO =    advance_FIFO,
                                 sda =             sda,
                                 scl =             scl,
+                                use_eof =         use_eof,    
                                 verbose =         verbose)
 
                 return
@@ -595,6 +604,7 @@ class X393Sensor(object):
                                                        advance_FIFO =    advance_FIFO,
                                                        sda =             sda,
                                                        scl =             scl,
+                                                       use_eof =         use_eof,
                                                        verbose =         verbose-1))
 
     def set_sensor_i2c_table_reg_wr (self,

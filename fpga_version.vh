@@ -35,8 +35,12 @@
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
  */
-        parameter FPGA_VERSION =          32'h039300c3;      //parallel - fixing timestamps
-//        parameter FPGA_VERSION =          32'h039300c2;      //parallel - external sync for Eyesis -0.160/71 79.84%
+        parameter FPGA_VERSION =          32'h039300c7;      //parallel - disable SoF when channel disabled
+//      parameter FPGA_VERSION =          32'h039300c6;      //parallel - same -0.132 /31, 80.73%
+//      parameter FPGA_VERSION =          32'h039300c5;      //parallel - made i2c ahead of system frame number for eof -0.027/12 , 82.08%
+//      parameter FPGA_VERSION =          32'h039300c4;      //parallel - option to use EOF for i2c sequencer timing met, 79.66%
+//      parameter FPGA_VERSION =          32'h039300c3;      //parallel - fixing timestamps -0.209/47, 79.86%
+//      parameter FPGA_VERSION =          32'h039300c2;      //parallel - external sync for Eyesis -0.160/71 79.84%
 //      parameter FPGA_VERSION =          32'h039300c1;      //parallel - modified after troubleshooting simulation -0.069/41, 79.90 %
 //      parameter FPGA_VERSION =          32'h039300c0;      //parallel - changing LOGGER_PAGE_IMU 3->0 (how it was in 353) -0.044/16, 79.59%
 //      parameter FPGA_VERSION =          32'h039300bf;      //parallel - mask extrenal timestamps mode -0.043/17 79.56%
