@@ -40,6 +40,7 @@
  */
 `timescale 1ns/1ps
 `define COCOTB
+//`define DISABLE_SENSOR_2
 `include "system_defines.vh"
 module  x393_dut#(
 `include "includes/x393_parameters.vh" // SuppressThisWarning VEditor - not used
@@ -1612,8 +1613,12 @@ simul_axi_hp_wr #(
         .ramp      (0), //SENSOR12BITS_RAMP),
         .new_bayer (0) //SENSOR12BITS_NEW_BAYER) was 1
     ) simul_sensor12bits_2_i (
-        .MCLK  (PX2_MCLK), // input 
-        .MRST  (PX2_MRST & 0), // input // force reset !!! 
+        .MCLK  (PX2_MCLK), // input
+`ifdef DISABLE_SENSOR_2
+        .MRST  (PX2_MRST & 0), // input // force reset !!!
+`else 
+        .MRST  (PX2_MRST), // input // force reset !!!
+`endif 
         .ARO   (PX2_ARO),  // input 
         .ARST  (PX2_ARST), // input 
         .OE    (1'b0),     // input output enable active low

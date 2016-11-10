@@ -91,9 +91,8 @@ module  bit_stuffer_27_32#(
 //        else if (ds)       dlen1 <= early_length; // previous value
         else if (ds || flush_in)  dlen1 <= early_length; // previous value
 
-//        if      (rst)      dlen2 <= 0;
-        if      (rst || flush_stage[0]) dlen2 <= 0; // flush_stage[0] - equivalent of "if (flush_in) data1 <= 0;"
-        else if (stage[0])              dlen2 <= dlen1; // previous value (position)
+        if      (rst)        dlen2 <= 0;
+        else if (stage[0])   dlen2 <= dlen1; // previous value (position)
         
 
         // barrel shifter stage 1 (0/8/16/24)
@@ -108,6 +107,7 @@ module  bit_stuffer_27_32#(
     
         // barrel shifter stage 2 (0/2/4/6)
         if (rst) data2 <= 'bx;
+        else if (flush_stage[0]) data2 <= 0; // flush_stage[0] - equivalent of "if (flush_in) data1 <= 0;"
         else if (stage[0]) case (dlen1[2:1])
             2'h0: data2 <= {      data1, 6'b0};
             2'h1: data2 <= { 2'b0,data1, 4'b0};

@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.3.66 (w)1999-2015 BSI
-[*] Thu Nov 10 19:05:29 2016
+[*] Thu Nov 10 22:29:46 2016
 [*]
-[dumpfile] "/home/eyesis/git/x393-neon/simulation/x393_dut-20161110114854506.fst"
-[dumpfile_mtime] "Thu Nov 10 19:05:03 2016"
-[dumpfile_size] 49333165
+[dumpfile] "/home/eyesis/git/x393-neon/simulation/x393_dut-20161110150532005.fst"
+[dumpfile_mtime] "Thu Nov 10 22:29:04 2016"
+[dumpfile_size] 118798882
 [savefile] "/home/eyesis/git/x393-neon/cocotb/x393_cocotb_03.sav"
-[timestart] 114383480
+[timestart] 115333600
 [size] 1814 1171
 [pos] 0 0
-*-14.266726 114449010 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-14.676100 115459900 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] x393_dut.
 [treeopen] x393_dut.simul_sensor12bits_2_i.
 [treeopen] x393_dut.simul_sensor12bits_3_i.
@@ -48,8 +48,8 @@
 [treeopen] x393_dut.x393_i.sensors393_i.sensor_channel_block[3].sensor_channel_i.sens_parallel12_i.
 [treeopen] x393_dut.x393_i.sensors393_i.sensor_channel_block[3].sensor_channel_i.sens_sync_i.
 [treeopen] x393_dut.x393_i.timing393_i.camsync393_i.
-[sst_width] 294
-[signals_width] 319
+[sst_width] 230
+[signals_width] 361
 [sst_expanded] 1
 [sst_vpaned_height] 486
 @820
@@ -2079,10 +2079,10 @@ x393_dut.x393_i.compressor393_i.cmprs_channel_block[3].jp_channel_i.huffman_stuf
 x393_dut.x393_i.compressor393_i.cmprs_channel_block[3].jp_channel_i.huffman_stuffer_meta_i.bit_stuffer_27_32_i.dv
 @22
 x393_dut.x393_i.compressor393_i.cmprs_channel_block[3].jp_channel_i.huffman_stuffer_meta_i.bit_stuffer_27_32_i.pre_bits_out_w[4:0]
-@23
 x393_dut.x393_i.compressor393_i.cmprs_channel_block[3].jp_channel_i.huffman_stuffer_meta_i.bit_stuffer_27_32_i.early_length[5:0]
-@22
+@23
 x393_dut.x393_i.compressor393_i.cmprs_channel_block[3].jp_channel_i.huffman_stuffer_meta_i.bit_stuffer_27_32_i.dlen1[5:0]
+@22
 x393_dut.x393_i.compressor393_i.cmprs_channel_block[3].jp_channel_i.huffman_stuffer_meta_i.bit_stuffer_27_32_i.dlen2[5:0]
 @800028
 x393_dut.x393_i.compressor393_i.cmprs_channel_block[3].jp_channel_i.huffman_stuffer_meta_i.bit_stuffer_27_32_i.stage[1:0]
