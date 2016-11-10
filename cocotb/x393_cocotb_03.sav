@@ -1,24 +1,28 @@
 [*]
 [*] GTKWave Analyzer v3.3.66 (w)1999-2015 BSI
-[*] Mon Nov  7 00:04:33 2016
+[*] Thu Nov 10 19:05:29 2016
 [*]
-[dumpfile] "/home/eyesis/git/x393-neon/simulation/x393_dut-20161106163115099.fst"
-[dumpfile_mtime] "Mon Nov  7 00:03:53 2016"
-[dumpfile_size] 125174737
+[dumpfile] "/home/eyesis/git/x393-neon/simulation/x393_dut-20161110114854506.fst"
+[dumpfile_mtime] "Thu Nov 10 19:05:03 2016"
+[dumpfile_size] 49333165
 [savefile] "/home/eyesis/git/x393-neon/cocotb/x393_cocotb_03.sav"
-[timestart] 0
+[timestart] 114383480
 [size] 1814 1171
 [pos] 0 0
-*-25.890059 103100000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-14.266726 114449010 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] x393_dut.
 [treeopen] x393_dut.simul_sensor12bits_2_i.
 [treeopen] x393_dut.simul_sensor12bits_3_i.
 [treeopen] x393_dut.simul_sensor12bits_i.
 [treeopen] x393_dut.x393_i.
-[treeopen] x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].
+[treeopen] x393_dut.x393_i.compressor393_i.
 [treeopen] x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.
 [treeopen] x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.
 [treeopen] x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.bit_stuffer_metadata_i.
+[treeopen] x393_dut.x393_i.compressor393_i.cmprs_channel_block[3].
+[treeopen] x393_dut.x393_i.compressor393_i.cmprs_channel_block[3].jp_channel_i.
+[treeopen] x393_dut.x393_i.compressor393_i.cmprs_channel_block[3].jp_channel_i.huffman_stuffer_meta_i.
+[treeopen] x393_dut.x393_i.compressor393_i.cmprs_channel_block[3].jp_channel_i.huffman_stuffer_meta_i.bit_stuffer_27_32_i.
 [treeopen] x393_dut.x393_i.event_logger_i.i_imu_exttime.
 [treeopen] x393_dut.x393_i.event_logger_i.i_imu_exttime.timestamp_fifo_chn0_i.
 [treeopen] x393_dut.x393_i.event_logger_i.i_imu_spi.
@@ -28,7 +32,6 @@
 [treeopen] x393_dut.x393_i.frame_sequencer_block[0].
 [treeopen] x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.
 [treeopen] x393_dut.x393_i.mult_saxi_wr_i.mult_saxi_wr_pointers_i.
-[treeopen] x393_dut.x393_i.sensors393_i.
 [treeopen] x393_dut.x393_i.sensors393_i.sensor_channel_block[0].
 [treeopen] x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.
 [treeopen] x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_sync_i.
@@ -44,9 +47,8 @@
 [treeopen] x393_dut.x393_i.sensors393_i.sensor_channel_block[3].sensor_channel_i.
 [treeopen] x393_dut.x393_i.sensors393_i.sensor_channel_block[3].sensor_channel_i.sens_parallel12_i.
 [treeopen] x393_dut.x393_i.sensors393_i.sensor_channel_block[3].sensor_channel_i.sens_sync_i.
-[treeopen] x393_dut.x393_i.timing393_i.
 [treeopen] x393_dut.x393_i.timing393_i.camsync393_i.
-[sst_width] 440
+[sst_width] 294
 [signals_width] 319
 [sst_expanded] 1
 [sst_vpaned_height] 486
@@ -1942,7 +1944,7 @@ x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.frame_sync
 x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.frame_no[3:0]
 @1000200
 -cmd_frame_seq0
-@800200
+@c00200
 -i2c_seq_0
 @28
 x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.frame_sync
@@ -1963,9 +1965,9 @@ x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c
 @28
 x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.eof_mclk
 x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.use_eof
-@1000200
+@1401200
 -i2c_seq_0
-@800200
+@c00200
 -sensor_channel0
 @28
 x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sof_out_mclk
@@ -1986,9 +1988,11 @@ x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_sync_
 -
 @1000200
 -sesns_sync
+@1401200
 -sensor_channel0
+@1000200
 -sequencers_0
-@800200
+@c00200
 -sensor_channel_a
 @28
 x393_dut.simul_sensor12bits_2_i.MRST
@@ -2014,7 +2018,6 @@ x393_dut.simul_sensor12bits_3_i.VACT
 x393_dut.x393_i.sensors393_i.sensor_channel_block[2].sensor_channel_i.en_mclk
 x393_dut.x393_i.sensors393_i.sensor_channel_block[2].sensor_channel_i.en_pclk
 x393_dut.x393_i.sensors393_i.sensor_channel_block[2].sensor_channel_i.sof_out_mclk
-@29
 x393_dut.x393_i.sensors393_i.sensor_channel_block[2].sensor_channel_i.eof_mclk
 @22
 x393_dut.x393_i.sensors393_i.sensor_channel_block[2].sensor_channel_i.frame_num_seq[3:0]
@@ -2024,15 +2027,80 @@ x393_dut.x393_i.sensors393_i.sensor_channel_block[2].sensor_channel_i.frame_num_
 -
 @1000200
 -sens_sync2
+@1401200
 -sensor_channel_a
-@800022
+@c00022
 x393_dut.x393_i.sof_out_mclk[3:0]
 @28
 (0)x393_dut.x393_i.sof_out_mclk[3:0]
 (1)x393_dut.x393_i.sof_out_mclk[3:0]
 (2)x393_dut.x393_i.sof_out_mclk[3:0]
 (3)x393_dut.x393_i.sof_out_mclk[3:0]
+@1401200
+-group_end
+@800200
+-jpeg3
+@22
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[3].jp_channel_i.huffman_stuffer_meta_i.data_out[31:0]
+@28
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[3].jp_channel_i.huffman_stuffer_meta_i.data_out_valid
+@22
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[3].jp_channel_i.huffman_stuffer_meta_i.escape_do32[31:0]
+@28
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[3].jp_channel_i.huffman_stuffer_meta_i.escape_bytes[1:0]
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[3].jp_channel_i.huffman_stuffer_meta_i.escape_dv
+@22
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[3].jp_channel_i.huffman_stuffer_meta_i.stuffer_do32[31:0]
+@28
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[3].jp_channel_i.huffman_stuffer_meta_i.stuffer_bytes[1:0]
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[3].jp_channel_i.huffman_stuffer_meta_i.stuffer_dv
+@800200
+-bit_stuffer_27_32
+@28
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[3].jp_channel_i.huffman_stuffer_meta_i.bit_stuffer_27_32_i.xclk
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[3].jp_channel_i.huffman_stuffer_meta_i.bit_stuffer_27_32_i.flush_in
+@800028
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[3].jp_channel_i.huffman_stuffer_meta_i.bit_stuffer_27_32_i.flush_stage[2:0]
+@28
+(0)x393_dut.x393_i.compressor393_i.cmprs_channel_block[3].jp_channel_i.huffman_stuffer_meta_i.bit_stuffer_27_32_i.flush_stage[2:0]
+(1)x393_dut.x393_i.compressor393_i.cmprs_channel_block[3].jp_channel_i.huffman_stuffer_meta_i.bit_stuffer_27_32_i.flush_stage[2:0]
+(2)x393_dut.x393_i.compressor393_i.cmprs_channel_block[3].jp_channel_i.huffman_stuffer_meta_i.bit_stuffer_27_32_i.flush_stage[2:0]
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[3].jp_channel_i.huffman_stuffer_meta_i.bit_stuffer_27_32_i.flush_out
 @1001200
 -group_end
+@28
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[3].jp_channel_i.huffman_stuffer_meta_i.bit_stuffer_27_32_i.ds
+@22
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[3].jp_channel_i.huffman_stuffer_meta_i.bit_stuffer_27_32_i.dlen[4:0]
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[3].jp_channel_i.huffman_stuffer_meta_i.bit_stuffer_27_32_i.din[26:0]
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[3].jp_channel_i.huffman_stuffer_meta_i.bit_stuffer_27_32_i.d_out[31:0]
+@28
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[3].jp_channel_i.huffman_stuffer_meta_i.bit_stuffer_27_32_i.bytes_out[1:0]
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[3].jp_channel_i.huffman_stuffer_meta_i.bit_stuffer_27_32_i.dv
+@22
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[3].jp_channel_i.huffman_stuffer_meta_i.bit_stuffer_27_32_i.pre_bits_out_w[4:0]
+@23
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[3].jp_channel_i.huffman_stuffer_meta_i.bit_stuffer_27_32_i.early_length[5:0]
+@22
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[3].jp_channel_i.huffman_stuffer_meta_i.bit_stuffer_27_32_i.dlen1[5:0]
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[3].jp_channel_i.huffman_stuffer_meta_i.bit_stuffer_27_32_i.dlen2[5:0]
+@800028
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[3].jp_channel_i.huffman_stuffer_meta_i.bit_stuffer_27_32_i.stage[1:0]
+@28
+(0)x393_dut.x393_i.compressor393_i.cmprs_channel_block[3].jp_channel_i.huffman_stuffer_meta_i.bit_stuffer_27_32_i.stage[1:0]
+(1)x393_dut.x393_i.compressor393_i.cmprs_channel_block[3].jp_channel_i.huffman_stuffer_meta_i.bit_stuffer_27_32_i.stage[1:0]
+@800028
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[3].jp_channel_i.huffman_stuffer_meta_i.bit_stuffer_27_32_i.ds_stage[1:0]
+@28
+(0)x393_dut.x393_i.compressor393_i.cmprs_channel_block[3].jp_channel_i.huffman_stuffer_meta_i.bit_stuffer_27_32_i.ds_stage[1:0]
+(1)x393_dut.x393_i.compressor393_i.cmprs_channel_block[3].jp_channel_i.huffman_stuffer_meta_i.bit_stuffer_27_32_i.ds_stage[1:0]
+@1001200
+-group_end
+-group_end
+@200
+-
+@1000200
+-bit_stuffer_27_32
+-jpeg3
 [pattern_trace] 1
 [pattern_trace] 0

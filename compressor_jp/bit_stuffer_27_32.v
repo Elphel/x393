@@ -61,13 +61,14 @@ module  bit_stuffer_27_32#(
     
     reg         [5:0] early_length; // number of bits in the last word (mod 32)
     reg         [5:0] dlen1; // use for the stage 2, MSB - carry out
-    reg         [5:0] dlen2; // use for the stege 3
+    reg         [5:0] dlen2; // use for the stage 3
     
     reg        [31:0] dmask2_rom; // data mask (sync with data2) - 1 use new data, 0 - use old data. Use small ROM?
     
     reg         [1:0] stage; // delayed ds or flush
     reg         [1:0] ds_stage;
     reg         [2:0] flush_stage;
+    
     wire        [4:0] pre_bits_out_w = dlen2[4:0] + 5'h7; 
 
     assign d_out = data3[DATA3_LEN-1 -: 32];
@@ -86,15 +87,18 @@ module  bit_stuffer_27_32#(
         if (rst || flush_in) early_length <= 0;
         else if (ds)         early_length <= early_length[4:0] + dlen; // early_length[5] is not used in calculations, it is just carry out
         
-        if     (rst)       dlen1 <= 0;
-        else if (ds)       dlen1 <= early_length; // previous value
+        if     (rst)              dlen1 <= 0;
+//        else if (ds)       dlen1 <= early_length; // previous value
+        else if (ds || flush_in)  dlen1 <= early_length; // previous value
 
-        if      (rst)      dlen2 <= 0;
-        else if (stage[0]) dlen2 <= dlen1; // previous value (position)
+//        if      (rst)      dlen2 <= 0;
+        if      (rst || flush_stage[0]) dlen2 <= 0; // flush_stage[0] - equivalent of "if (flush_in) data1 <= 0;"
+        else if (stage[0])              dlen2 <= dlen1; // previous value (position)
         
 
         // barrel shifter stage 1 (0/8/16/24)
         if (rst) data1 <= 'bx;
+//        else if (flush_in) data1 <= 51'b0; // is it needed?
         else if (ds) case (early_length[4:3])
             2'h0: data1 <= {      din, 24'b0};
             2'h1: data1 <= { 8'b0,din, 16'b0};
