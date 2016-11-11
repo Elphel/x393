@@ -173,6 +173,14 @@ initial begin
     if      (SENSOR_IMAGE_TYPE == "NORM")      $readmemh({`ROOTPATH,"/input_data/sensor.dat"},sensor_data);
     else if (SENSOR_IMAGE_TYPE == "RUN1")      $readmemh({`ROOTPATH,"/input_data/sensor_run1.dat"},sensor_data);
     else if (SENSOR_IMAGE_TYPE == "HIST_TEST") $readmemh({`ROOTPATH,"/input_data/sensor_hist_test.dat"},sensor_data);
+    else if (SENSOR_IMAGE_TYPE == "NORM1")     $readmemh({`ROOTPATH,"/input_data/sensor_01.dat"},sensor_data);
+    else if (SENSOR_IMAGE_TYPE == "NORM2")     $readmemh({`ROOTPATH,"/input_data/sensor_02.dat"},sensor_data);
+    else if (SENSOR_IMAGE_TYPE == "NORM3")     $readmemh({`ROOTPATH,"/input_data/sensor_03.dat"},sensor_data);
+    else if (SENSOR_IMAGE_TYPE == "NORM4")     $readmemh({`ROOTPATH,"/input_data/sensor_04.dat"},sensor_data);
+    else if (SENSOR_IMAGE_TYPE == "NORM5")     $readmemh({`ROOTPATH,"/input_data/sensor_05.dat"},sensor_data);
+    else if (SENSOR_IMAGE_TYPE == "NORM6")     $readmemh({`ROOTPATH,"/input_data/sensor_06.dat"},sensor_data);
+    else if (SENSOR_IMAGE_TYPE == "NORM7")     $readmemh({`ROOTPATH,"/input_data/sensor_07.dat"},sensor_data);
+    else if (SENSOR_IMAGE_TYPE == "NORM8")     $readmemh({`ROOTPATH,"/input_data/sensor_08.dat"},sensor_data);
     else begin
        $display ("WARNING: Unrecognized sensor image :'%s', using default 'NORM': input_data/sensor.dat",SENSOR_IMAGE_TYPE);
        $readmemh({`ROOTPATH,"/input_data/sensor.dat"},sensor_data);

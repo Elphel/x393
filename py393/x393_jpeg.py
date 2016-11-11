@@ -2293,7 +2293,7 @@ set_logger_params_file "/home/eyesis/git/x393-neon/attic/imu_config.bin"
 
 
 
-write_control_register 0x480  0x400 # disable sensor chn 2
+##### write_control_register 0x480  0x400 # disable sensor chn 2
 
 
 
