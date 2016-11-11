@@ -66,20 +66,25 @@ module  bit_stuffer_27_32#(
     reg        [31:0] dmask2_rom; // data mask (sync with data2) - 1 use new data, 0 - use old data. Use small ROM?
     
     reg         [1:0] stage; // delayed ds or flush
-    reg         [1:0] ds_stage;
+    //reg         [1:0] ds_stage;
     reg         [2:0] flush_stage;
-    
+//    reg               flush_pend;
+//    wire              flush_ackn = flush_pend && !flush_stage[0] && !stage[0];
+    // probably just a single unconditional flush_in delay (not to appear next after ds) will work
     wire        [4:0] pre_bits_out_w = dlen2[4:0] + 5'h7; 
 
     assign d_out = data3[DATA3_LEN-1 -: 32];
     
     always @ (posedge xclk) begin
     
+//        if (rst) flush_pend <= 0;
+//        else     flush_pend <= flush_in || (flush_pend && !stage[0]);
+    
         if (rst) stage <= 0;
         else     stage <= {stage[0], ds | flush_in};
 
-        if (rst) ds_stage <= 0;
-        else     ds_stage <= {ds_stage[0], ds};
+//        if (rst) ds_stage <= 0;
+//        else     ds_stage <= {ds_stage[0], ds};
 
         if (rst) flush_stage <= 0;
         else     flush_stage <= {flush_stage[1:0], flush_in};
@@ -152,20 +157,23 @@ module  bit_stuffer_27_32#(
         endcase
         // barrel shifter stage 3 (0/1), combined with output/hold register
         if (rst) data3 <= 'bx;
-        else if (ds_stage[1]) begin
+//        else if (ds_stage[1]) begin
+        else if (stage[1]) begin // flush causes shift too
             data3[DATA3_LEN-1 -: 32] <= (~dmask2_rom & (dlen2[5] ? {data3[DATA3_LEN-1-32 : 0],6'b0}: data3[DATA3_LEN-1 -: 32])) |
                                ( dmask2_rom & (dlen2[0] ? {1'b0,data2[DATA2_LEN-1 -: 31]} : data2[DATA2_LEN-1 -: 32]));
             data3[DATA3_LEN-1-32: 0] <= dlen2[0] ? data2[DATA2_LEN-31-1 : 0] : {data2[DATA2_LEN-32-1 : 0], 1'b0};
             
         end
-//        dv <= (ds_stage[1] && dlen2[5]) || (flush_stage[1] && !(|data3[DATA3_LEN-1 -: 32]));
-//        dv <= (ds_stage[1] && dlen1[5]) || (flush_stage[1] && !(|data3[DATA3_LEN-1 -: 32]));
-//        dv <= (ds_stage[0] && dlen1[5]) || (flush_stage[1] && !(|data3[DATA3_LEN-1 -: 32]));
-        dv <= (ds_stage[0] && dlen1[5]) || (flush_stage[1] && (|data3[DATA3_LEN-1 -: 32]));
+
+//        dv <= (ds_stage[0] && dlen1[5]) || (flush_stage[1] && (|data3[DATA3_LEN-1 -: 32]));
+        dv <= (stage[0] && dlen1[5]) || (flush_stage[1] && (|data3[DATA3_LEN-1 -: 32])); // both ds and flush-caused (full 32-bit out if available)
 // no difference in number of cells
 //        if      (rst )                bytes_out <= 0; // if the dv was caused by 32 bits full - output 4 bytes
 //        else if (ds_stage[1])         bytes_out <= 0; // if the dv was caused by 32 bits full - output 4 bytes
-        if  (rst || ds_stage[1]) bytes_out <= 0; // if the dv was caused by 32 bits full - output 4 bytes
+//        if  (rst || ds_stage[1]) bytes_out <= 0; // if the dv was caused by 32 bits full - output 4 bytes
+
+// bytes_out valid with dv
+        if      (rst || stage[0])     bytes_out <= 0; // if the dv was caused by 32 bits full - output 4 bytes
         else if (flush_stage[1])      bytes_out <= pre_bits_out_w[4:3];
     
         flush_out <= flush_stage[2];
