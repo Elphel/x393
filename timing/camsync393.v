@@ -256,6 +256,7 @@ module camsync393       #(
     reg    [31:0] repeat_period;    // restart period in repetitive mode
     reg           start,start_d;   // start single/repetitive output pulse(s)
     reg           rep_en;          // enable repetitive mode
+    reg           rep_en_pclk;
     reg           start_en;
     wire          start_to_pclk;
     reg    [2:0]  start_pclk; // start and restart
@@ -324,8 +325,10 @@ module camsync393       #(
 
     reg           ts_external_pclk; // 1 - use external timestamp (combines ts_external and input_use_intern)
     reg           triggered_mode_pclk;
-    reg           armed_internal_trigger; // to prevent re-start as in internal trigger mode timestamp over for master channel trigger s the sequence
-                                          // and that timestmp is acquired fro each delayed channel (includin master) again
+    reg           armed_internal_trigger; // to prevent re-start as in internal trigger mode timestamp
+                                          // over for master channel triggers the sequence
+                                          // and that timestmp is acquired for each delayed channel (including master) again
+                                          // Is it still needed after mods or should be removed (likely)
     
     wire    [3:0] local_got; // received local timestamp (@ posedge mclk)
     wire    [3:0] local_got_pclk; // local_got reclocked @pclk
@@ -361,7 +364,14 @@ module camsync393       #(
     wire   [3:0]  pending_latest = frsync_pend | {4{received_or_master_pending}};
     reg    [3:0]  pending_latest_d;
     reg    [3:0]  ts_stb_pclk_r;
-    reg           start_early; 
+    reg           start_early;
+    
+    reg           suppress_immediate_set_mclk; // even single after repetitive will be suppressed (0 should be written first)
+    wire          suppress_immediate_set_pclk;
+    reg           suppress_immediate; // suppress first trigger if period was not 0 (to avoid re-started frames)
+     
+    wire          start_pclk2_masked= start_pclk[2] && !suppress_immediate; 
+     
 //    reg 
 
     
@@ -395,8 +405,8 @@ module camsync393       #(
     assign  restart= restart_cntr_run[1] && !restart_cntr_run[0];
     
     assign  pre_set_bit=     (|cmd_data[31:8]==0) && |cmd_data[7:1]; // 2..255
-    assign  pre_start0=       |cmd_data[31:0] && !pre_set_bit;
-    assign  pre_set_period = !pre_set_bit;
+    assign  pre_start0=       |cmd_data[31:0] && !pre_set_bit; //  1, 256...
+    assign  pre_set_period = !pre_set_bit; 
 
     assign {trig_chn3, trig_chn2, trig_chn1, trig_chn0} =  trig_r_mclk;
 
@@ -509,81 +519,44 @@ module camsync393       #(
 
         start_en <= en && (repeat_period[31:0]!=0);
         
-        if (!en) rep_en <= 0;
+//        if      (!en)        rep_en <= 0;
+        if      (mrst)       rep_en <= 0;
         else if (set_period) rep_en <= !high_zero;
+        
+        suppress_immediate_set_mclk <= set_period && rep_en && en; // even single will be suppressed if not after stopped/single  
         
         ext_int_mode_mclk <= input_use[CAMSYNC_GPIO_EXT_IN] && !gpio_out_en_r[CAMSYNC_GPIO_EXT_OUT] &&
                              input_use[CAMSYNC_GPIO_INT_IN] &&  gpio_out_en_r[CAMSYNC_GPIO_INT_OUT]; 
         
         
     end
- /*   
-    always @ (posedge pclk) begin
-        ts_to_send <= chn_en & (ts_snap_triggered | (ts_to_send & ~local_got_pclk)); 
-    end
-    
-   
-    always @ (posedge pclk) begin
-        case (master_chn)
-            2'h0: if (local_got_pclk[0] & ts_to_send[0]) begin
-                    ts_snd_sec <=  ts_snd_sec_chn0;
-                    ts_snd_usec <= ts_snd_usec_chn0;
-                  end
-            2'h1: if (local_got_pclk[1] & ts_to_send[1])begin
-                    ts_snd_sec <=  ts_snd_sec_chn1;
-                    ts_snd_usec <= ts_snd_usec_chn1;
-                  end
-            2'h2: if (local_got_pclk[2] & ts_to_send[2])begin
-                    ts_snd_sec <=  ts_snd_sec_chn2;
-                    ts_snd_usec <= ts_snd_usec_chn2;
-                  end
-            2'h3: if (local_got_pclk[3] & ts_to_send[3])begin
-                    ts_snd_sec <=  ts_snd_sec_chn3;
-                    ts_snd_usec <= ts_snd_usec_chn3;
-                  end
-        endcase
-    end    
-*/    
     
     always @ (posedge pclk) begin
         chn_en_pclk <= chn_en;
+        rep_en_pclk <= rep_en && en;
+        
+        if      (!en_pclk || start_pclk[2])    suppress_immediate <= 0;
+        else if (suppress_immediate_set_pclk)  suppress_immediate <= 1;
     
         if (!input_use_intern || start_late) armed_internal_trigger <= 0;
         else if (start_pclk[2])              armed_internal_trigger <= 1;
-/*        
-        ts_snap_triggered <=  chn_en & ({4{(start_pclk[2] & ts_snd_en_pclk)}} | //strobe by internal generator if output timestamp is enabled
-                              (trig_r & ~{4{ts_external_pclk}}));  // get local timestamp of the trigger (ext/int)
-*/
         // now only at frame sync, others are handled by master timestamp
         ts_snap_triggered <=  chn_en_pclk & trig_r;  // get local timestamp of the trigger (ext/int). Non-trigger-mode will use frame sync instead
                               
 // request master timestamp at start if it is sent out or at receive (if it is not).  ts_snd_en_pclk should be 0 if incoming sync does not have timestamps                              
                               
-        ts_master_snap_pclk <=  ts_snd_en_pclk? start_pclk[2]: rcv_done;
+///        ts_master_snap_pclk <=  ts_snd_en_pclk? start_pclk[2]: rcv_done;
+        ts_master_snap_pclk <=  ts_snd_en_pclk? start_pclk2_masked: rcv_done;
                             
-/*                              
-        if (ts_external_pclk) begin
-            if (ts_snd_en_pclk ||input_use_intern ) ts_snap_triggered <= chn_en_pclk & {4{start_pclk[2]}};  // when the trigger pulse is generated
-            else                                    ts_snap_triggered <= chn_en_pclk & {4{rcv_done}};       // when the external trigger pulse is received (TODO: Eyesis ext. mode?)
-        end  else begin // use local timestamps (per-channel individual)
-            ts_snap_triggered <= trig_r;
-        end 
-*/
         ts_snd_en_pclk<=ts_snd_en;
         input_use_intern <= pre_input_use_intern;
         ts_external_pclk<= ts_external; //  && !input_use_intern;
      
-        start_pclk[2:0] <= {(restart && rep_en) || 
-//                            (start_pclk[1] && !restart_cntr_run[1] && !restart_cntr_run[0] && !start_pclk[2]), // does not allow to restart
+        start_pclk[2:0] <= {(restart && rep_en_pclk) || 
                             (start_pclk[1]  && !start_pclk[2]), // allows to restart running or armed counter
                             start_pclk[0],
                             start_to_pclk && !start_pclk[0]};
                             
-//        restart_cntr_run[1:0] <= {restart_cntr_run[0],start_en && (start_pclk[2] || (restart_cntr_run[0] && (restart_cntr[31:2] !=0)))};
-//
-//        if (restart_cntr_run[0]) restart_cntr[31:0] <= restart_cntr[31:0] - 1;
-//        else                     restart_cntr[31:0] <= repeat_period[31:0];
-
         restart_cntr_run[1:0] <= {restart_cntr_run[0],start_en && (start_pclk[2] || (restart_cntr_run[0] && !ext_int_arm[1] && !start_pclk[0]))};
         
         if (restart_cntr_run[0]) begin
@@ -700,11 +673,14 @@ module camsync393       #(
                       (rcv_run && !rcv_run_d);  // all start at the same time - master/others
                       
                       
+///        start_early <=input_use_intern ?
+///                      (start_pclk[2] && start_en) :
+///                      (rcv_run && !rcv_run_d);  // all start at the same time - master/others
         start_early <=input_use_intern ?
-                      (start_pclk[2] && start_en) :
+                      (start_pclk2_masked && start_en) :
                       (rcv_run && !rcv_run_d);  // all start at the same time - master/others
                       
-                      
+//                      
 // simulation problems w/o "start_en &&" ? 
 
         dly_cntr_run_d <= dly_cntr_run;
@@ -847,8 +823,8 @@ module camsync393       #(
 //  rcv_done_mclk - make it either really received or from FPGA if internal?   
     
     // Making delayed start that waits for timestamp use timestamp_got, otherwise - nothing to wait
-///    assign start_late = ts_snd_en_pclk?local_got_pclk[master_chn] :  start_pclk[2];    
-    assign start_late = ts_snd_en_pclk?master_got_pclk :  start_pclk[2];    
+///    assign start_late =    ts_snd_en_pclk?master_got_pclk :  start_pclk[2];   
+    assign start_late =       ts_snd_en_pclk?master_got_pclk :  start_pclk2_masked;   
     assign start_late_first = start_late && (armed_internal_trigger|| !ts_snd_en_pclk);
     
     cmd_deser #(
@@ -993,6 +969,7 @@ module camsync393       #(
     pulse_cross_clock i_ts_stb_mclk2 (.rst(eprst), .src_clk(pclk), .dst_clk(mclk), .in_pulse(ts_stb_pclk_r[2]), .out_pulse(ts_stb[2]),.busy());
     pulse_cross_clock i_ts_stb_mclk3 (.rst(eprst), .src_clk(pclk), .dst_clk(mclk), .in_pulse(ts_stb_pclk_r[3]), .out_pulse(ts_stb[3]),.busy());
 
+    pulse_cross_clock i_suppress_immediate_set_pclk(.rst(!en),    .src_clk(mclk), .dst_clk(pclk), .in_pulse(suppress_immediate_set_mclk), .out_pulse(suppress_immediate_set_pclk),.busy());
 
     
 endmodule
