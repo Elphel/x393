@@ -150,6 +150,13 @@ module camsync393       #(
     output                        ts_snap_mclk_chn3,     // ts_snap_mclk make a timestamp pulse  single @(posedge pclk)
     input                         ts_snd_stb_chn3,  // 1 clk before ts_snd_data is valid
     input                   [7:0] ts_snd_data_chn3, // byte-wide serialized timestamp message  
+    
+// Timestamps to be sent over the network (or provided internally)    
+    output                        ts_master_snap,   // ts_snap_mclk make a timestamp pulse  single @(posedge pclk)
+    input                         ts_master_stb,    // 1 clk before ts_snd_data is valid
+    input                   [7:0] ts_master_data,   // byte-wide serialized timestamp message  
+    
+    
     //ts_rcv_*sec (@mclk) goes to the following receivers:
                 //ts_sync_*sec (synchronized to sensor clock) -> timestamp353 REMOVED
                 //ts_sync_*sec (synchronized to sensor clock) -> compressor
@@ -177,8 +184,12 @@ module camsync393       #(
     reg           ts_external_m; // 1 - use external timestamp, if available. 0 - always use local ts (mode bit)
     reg           triggered_mode_r;
 
-    reg    [31:0] ts_snd_sec;  // [31:0] timestamp seconds to be sent over the sync line - multiplexed from master channel
-    reg    [19:0] ts_snd_usec; // [19:0] timestamp microseconds to be sent over the sync line
+//    reg    [31:0] ts_snd_sec;  // [31:0] timestamp seconds to be sent over the sync line - multiplexed from master channel
+//    reg    [19:0] ts_snd_usec; // [19:0] timestamp microseconds to be sent over the sync line
+
+    wire   [31:0] ts_snd_sec;  // [31:0] timestamp seconds to be sent over the sync line - multiplexed from master channel
+    wire   [19:0] ts_snd_usec; // [19:0] timestamp microseconds to be sent over the sync line
+
 
     wire   [31:0] ts_snd_sec_chn0;  // [31:0] timestamp seconds to be sent over the sync line
     wire   [19:0] ts_snd_usec_chn0; // [19:0] timestamp microseconds to be sent over the sync line
@@ -233,7 +244,10 @@ module camsync393       #(
     reg    [31:0] input_dly_chn1;  // delay value for the trigger
     reg    [31:0] input_dly_chn2;  // delay value for the trigger
     reg    [31:0] input_dly_chn3;  // delay value for the trigger
-    reg     [3:0] chn_en;          // enable channels
+    reg     [3:0] chn_en_r;
+    wire    [3:0] chn_en = chn_en_r & {4{en}};  // enable channels
+    
+    reg     [3:0] chn_en_pclk;     // enable channels
     reg     [1:0] master_chn;      // master channel (internal mode - delay used for flash) 
     reg     [9:0] gpio_active;     // output levels on the selected GPIO lines during output pulse (will be negated when inactive)
     reg           testmode;        // drive some internal signals to GPIO bits
@@ -260,6 +274,7 @@ module camsync393       #(
     reg     [3:0] overdue;
 `endif    
     reg           start_dly;      // start delay (external input filtered or from internal single/rep)
+//    reg           start_early;    // start (external input filtered or from internal single/rep - early)
     reg   [31:0]  dly_cntr_chn0;       // trigger delay counter
     reg   [31:0]  dly_cntr_chn1;       // trigger delay counter
     reg   [31:0]  dly_cntr_chn2;       // trigger delay counter
@@ -303,7 +318,7 @@ module camsync393       #(
     reg           rcv_done_rq; // request to copy time stamp (if it is not ready yet)
     reg           rcv_done_rq_d;
     reg           rcv_done;  // rcv_run ended, copy timestamp if requested
-    wire          rcv_done_mclk; // rcv_done re-clocked @mclk 
+//    wire          rcv_done_mclk; // rcv_done re-clocked @mclk 
     wire          pre_rcv_error;  // pre/post magic does not match, set ts to all ff-s
     reg           rcv_error;
 
@@ -314,8 +329,12 @@ module camsync393       #(
     
     wire    [3:0] local_got; // received local timestamp (@ posedge mclk)
     wire    [3:0] local_got_pclk; // local_got reclocked @pclk
+    wire          master_got;
+    wire          master_got_pclk;
     wire    [3:0] frame_sync;
     reg     [3:0] ts_snap_triggered;     // make a timestamp pulse  single @(posedge pclk)
+    reg           ts_master_snap_pclk;       // make a timestamp pulse  single @(posedge pclk)
+    
     wire    [3:0] ts_snap_triggered_mclk;     // make a timestamp pulse  single @(posedge pclk)
     
     reg           ext_int_mode_mclk;    // triggered from external (no TS instead of the FPGA timer), generate internal network
@@ -331,7 +350,29 @@ module camsync393       #(
     reg    [6:0]  ext_int_trigger_filter_cntr;
     reg           ext_int_pre_pause;   // when repeat counter is < 6 - to speed up decoding
     reg    [1:0]  ext_int_arm;         // 0 - when repeat counter =
+    reg           ts_incoming;         // expect incoming timestamps (ts_snd_en && !input_use_intern)
+    reg           received_or_master;  // either received timestamp or master
+
+    wire   [31:0] ts_sec_received_or_master =  ts_incoming? {sr_rcv_first[25:0],  sr_rcv_second[31:26]} : ts_snd_sec[31:0];
+    wire   [19:0] ts_usec_received_or_master = ts_incoming? {rcv_error?20'hfffff:  sr_rcv_second[25:6]} : ts_snd_usec[19:0];
+    
+    reg    [3:0]  frsync_pend;                // from start_dly->start_early to frsync_pclk[i]; (start_dly too late in internal trigger mode)
+    reg           received_or_master_pending; // from start_dly->start_early to received_or_master;
+    wire   [3:0]  pending_latest = frsync_pend | {4{received_or_master_pending}};
+    reg    [3:0]  pending_latest_d;
+    reg    [3:0]  ts_stb_pclk_r;
+    reg           start_early; 
+//    reg 
+
+    
+    
+    wire   [3:0] frsync_pclk; // time to copy timestamps from master/received to channels (will always be after it is available)  
+//    assign  chn_en = ch_en_r & {4{en}};  // enable channels
+    
     assign gpio_out_en = gpio_out_en_r;
+    
+//    reg    [3:0]  ts_to_send; // per-channel discrimination between (first) timestamp to send and the second (individual, captured at frame sync)
+    
     
 //! in testmode GPIO[9] and GPIO[8] use internal signals instead of the outsync:
 //! bit 11 - same as TRIGGER output to the sensor (signal to the sensor may be disabled externally)
@@ -403,16 +444,16 @@ module camsync393       #(
             if (cmd_data[CAMSYNC_EXTERNAL_BIT])  ts_external_m <=    cmd_data[CAMSYNC_EXTERNAL_BIT - 1];
             if (cmd_data[CAMSYNC_TRIGGERED_BIT]) triggered_mode_r <= cmd_data[CAMSYNC_TRIGGERED_BIT - 1];
             if (cmd_data[CAMSYNC_MASTER_BIT])    master_chn <=       cmd_data[CAMSYNC_MASTER_BIT - 1 -: 2];
-//            if (cmd_data[CAMSYNC_CHN_EN_BIT])    chn_en <= cmd_data[CAMSYNC_CHN_EN_BIT - 1 -: 4];
 // Making separate enables for each channel, so channel software will not disturb other channels
-            if (cmd_data[CAMSYNC_CHN_EN_BIT-3])    chn_en[0] <=      cmd_data[CAMSYNC_CHN_EN_BIT - 7];
-            if (cmd_data[CAMSYNC_CHN_EN_BIT-2])    chn_en[1] <=      cmd_data[CAMSYNC_CHN_EN_BIT - 6];
-            if (cmd_data[CAMSYNC_CHN_EN_BIT-1])    chn_en[2] <=      cmd_data[CAMSYNC_CHN_EN_BIT - 5];
-            if (cmd_data[CAMSYNC_CHN_EN_BIT-0])    chn_en[3] <=      cmd_data[CAMSYNC_CHN_EN_BIT - 4];
-            
+            if (cmd_data[CAMSYNC_CHN_EN_BIT-3])  chn_en_r[0] <= cmd_data[CAMSYNC_CHN_EN_BIT - 7];
+            if (cmd_data[CAMSYNC_CHN_EN_BIT-2])  chn_en_r[1] <= cmd_data[CAMSYNC_CHN_EN_BIT - 6];
+            if (cmd_data[CAMSYNC_CHN_EN_BIT-1])  chn_en_r[2] <= cmd_data[CAMSYNC_CHN_EN_BIT - 5];
+            if (cmd_data[CAMSYNC_CHN_EN_BIT-0])  chn_en_r[3] <= cmd_data[CAMSYNC_CHN_EN_BIT - 4];
         end
+        
         // Do not try to use external timestamp in free run or internally triggered mode
-        ts_external <= ts_external_m && !input_use_intern && triggered_mode_r;
+///        ts_external <= ts_external_m && !input_use_intern && triggered_mode_r;
+        ts_external <= ts_external_m && triggered_mode_r; // internal will still use common timestamp made for sending
          
         if (mrst) input_use <= 0;
         if (!en) begin
@@ -476,33 +517,58 @@ module camsync393       #(
         
         
     end
+ /*   
+    always @ (posedge pclk) begin
+        ts_to_send <= chn_en & (ts_snap_triggered | (ts_to_send & ~local_got_pclk)); 
+    end
+    
+   
     always @ (posedge pclk) begin
         case (master_chn)
-            2'h0: begin
+            2'h0: if (local_got_pclk[0] & ts_to_send[0]) begin
                     ts_snd_sec <=  ts_snd_sec_chn0;
                     ts_snd_usec <= ts_snd_usec_chn0;
                   end
-            2'h1: begin
+            2'h1: if (local_got_pclk[1] & ts_to_send[1])begin
                     ts_snd_sec <=  ts_snd_sec_chn1;
                     ts_snd_usec <= ts_snd_usec_chn1;
                   end
-            2'h2: begin
+            2'h2: if (local_got_pclk[2] & ts_to_send[2])begin
                     ts_snd_sec <=  ts_snd_sec_chn2;
                     ts_snd_usec <= ts_snd_usec_chn2;
                   end
-            2'h3: begin
+            2'h3: if (local_got_pclk[3] & ts_to_send[3])begin
                     ts_snd_sec <=  ts_snd_sec_chn3;
                     ts_snd_usec <= ts_snd_usec_chn3;
                   end
         endcase
     end    
+*/    
+    
     always @ (posedge pclk) begin
+        chn_en_pclk <= chn_en;
+    
         if (!input_use_intern || start_late) armed_internal_trigger <= 0;
         else if (start_pclk[2])              armed_internal_trigger <= 1;
-        
+/*        
         ts_snap_triggered <=  chn_en & ({4{(start_pclk[2] & ts_snd_en_pclk)}} | //strobe by internal generator if output timestamp is enabled
                               (trig_r & ~{4{ts_external_pclk}}));  // get local timestamp of the trigger (ext/int)
-
+*/
+        // now only at frame sync, others are handled by master timestamp
+        ts_snap_triggered <=  chn_en_pclk & trig_r;  // get local timestamp of the trigger (ext/int). Non-trigger-mode will use frame sync instead
+                              
+// request master timestamp at start if it is sent out or at receive (if it is not).  ts_snd_en_pclk should be 0 if incoming sync does not have timestamps                              
+                              
+        ts_master_snap_pclk <=  ts_snd_en_pclk? start_pclk[2]: rcv_done;
+                            
+/*                              
+        if (ts_external_pclk) begin
+            if (ts_snd_en_pclk ||input_use_intern ) ts_snap_triggered <= chn_en_pclk & {4{start_pclk[2]}};  // when the trigger pulse is generated
+            else                                    ts_snap_triggered <= chn_en_pclk & {4{rcv_done}};       // when the external trigger pulse is received (TODO: Eyesis ext. mode?)
+        end  else begin // use local timestamps (per-channel individual)
+            ts_snap_triggered <= trig_r;
+        end 
+*/
         ts_snd_en_pclk<=ts_snd_en;
         input_use_intern <= pre_input_use_intern;
         ts_external_pclk<= ts_external; //  && !input_use_intern;
@@ -561,7 +627,7 @@ module camsync393       #(
     end
  
     always @ (posedge pclk) begin
-        if      (eprst)                 dly_cntr_run <= 0;
+        if      (eprst)                dly_cntr_run <= 0;
         else if (!triggered_mode_pclk) dly_cntr_run <= 0;
         else if (start_dly)            dly_cntr_run <= 4'hf;
         else                           dly_cntr_run <= dly_cntr_run &
@@ -632,6 +698,13 @@ module camsync393       #(
         start_dly <= input_use_intern ?
                       (start_late_first && start_en) : // only use armed_internal_trigger with timestamps
                       (rcv_run && !rcv_run_d);  // all start at the same time - master/others
+                      
+                      
+        start_early <=input_use_intern ?
+                      (start_pclk[2] && start_en) :
+                      (rcv_run && !rcv_run_d);  // all start at the same time - master/others
+                      
+                      
 // simulation problems w/o "start_en &&" ? 
 
         dly_cntr_run_d <= dly_cntr_run;
@@ -676,42 +749,106 @@ module camsync393       #(
       
         rcv_error <= pre_rcv_error;
 
+        ts_incoming <= ts_snd_en_pclk && !input_use_intern;
+        received_or_master <= ts_incoming ? rcv_done: master_got_pclk;
+        
+        
+        frsync_pend <=                chn_en_pclk & ({4{start_early}} | (frsync_pend & ~frsync_pclk));
+        received_or_master_pending <= en_pclk & (start_early | (received_or_master_pending & ~received_or_master));
+        pending_latest_d <=           pending_latest;                   // delayed version
+        ts_stb_pclk_r <=              (triggered_mode_pclk && ts_external_pclk)? (pending_latest_d & ~pending_latest): local_got_pclk ; // trailing edge or just local
+        
+        if (triggered_mode_pclk && ts_external_pclk) begin
+            if (received_or_master) begin
+                ts_rcv_sec_chn0  [31:0] <= ts_sec_received_or_master;
+                ts_rcv_usec_chn0 [19:0] <= ts_usec_received_or_master;
+                ts_rcv_sec_chn1  [31:0] <= ts_sec_received_or_master;
+                ts_rcv_usec_chn1 [19:0] <= ts_usec_received_or_master;
+                ts_rcv_sec_chn2  [31:0] <= ts_sec_received_or_master;
+                ts_rcv_usec_chn2 [19:0] <= ts_usec_received_or_master;
+                ts_rcv_sec_chn3  [31:0] <= ts_sec_received_or_master;
+                ts_rcv_usec_chn3 [19:0] <= ts_usec_received_or_master;
+            end
+        end else begin // use local timestamps
+            if (local_got_pclk[0]) begin
+                ts_rcv_sec_chn0[31:0] <=  ts_snd_sec_chn0 [31:0];
+                ts_rcv_usec_chn0[19:0] <=  ts_snd_usec_chn0[19:0];
+            end
+            if (local_got_pclk[1]) begin
+                ts_rcv_sec_chn1[31:0] <=  ts_snd_sec_chn1 [31:0];
+                ts_rcv_usec_chn1[19:0] <=  ts_snd_usec_chn1[19:0];
+            end
+            if (local_got_pclk[2]) begin
+                ts_rcv_sec_chn2[31:0] <=  ts_snd_sec_chn2 [31:0];
+                ts_rcv_usec_chn2[19:0] <=  ts_snd_usec_chn2[19:0];
+            end
+            if (local_got_pclk[3]) begin
+                ts_rcv_sec_chn3[31:0] <=  ts_snd_sec_chn3 [31:0];
+                ts_rcv_usec_chn3[19:0] <=  ts_snd_usec_chn3[19:0];
+            end
+        end
+
+
+/*
         if (rcv_done) begin
             ts_rcv_sec_chn0  [31:0] <= {sr_rcv_first[25:0],sr_rcv_second[31:26]};
             ts_rcv_usec_chn0 [19:0] <= rcv_error?20'hfffff:   sr_rcv_second[25:6];
+        end else if (master_got_pclk && ts_external_pclk) begin
+            ts_rcv_sec_chn0[31:0] <=   ts_snd_sec[31:0];
+            ts_rcv_usec_chn0[19:0] <=  ts_snd_usec[19:0];
         end else if (!triggered_mode_pclk || (!ts_external_pclk && local_got_pclk[0])) begin
             ts_rcv_sec_chn0[31:0] <=  ts_snd_sec_chn0 [31:0];
             ts_rcv_usec_chn0[19:0] <=  ts_snd_usec_chn0[19:0];
         end
-        
-        if (rcv_done) begin
-            ts_rcv_sec_chn1  [31:0] <= {sr_rcv_first[25:0],sr_rcv_second[31:26]};
-            ts_rcv_usec_chn1 [19:0] <= rcv_error?20'hfffff:   sr_rcv_second[25:6];
-        end else if (!triggered_mode_pclk || (!ts_external_pclk && local_got_pclk[1])) begin
-            ts_rcv_sec_chn1[31:0] <=  ts_snd_sec_chn1 [31:0];
-            ts_rcv_usec_chn1[19:0] <=  ts_snd_usec_chn1[19:0];
+
+
+        ts_incoming <= ts_snd_en_pclk && !input_use_intern;
+
+        if (triggered_mode_pclk && ts_external_pclk) begin
+            if (frsync_pclk[0]) begin
+                ts_rcv_sec_chn0  [31:0] <= ts_incoming? {sr_rcv_first[25:0],  sr_rcv_second[31:26]} : ts_snd_sec[31:0];
+                ts_rcv_usec_chn0 [19:0] <= ts_incoming? {rcv_error?20'hfffff:  sr_rcv_second[25:6]} : ts_snd_usec[19:0];
+            end
+            if (frsync_pclk[1]) begin
+                ts_rcv_sec_chn1  [31:0] <= ts_incoming? {sr_rcv_first[25:0],  sr_rcv_second[31:26]} : ts_snd_sec[31:0];
+                ts_rcv_usec_chn1 [19:0] <= ts_incoming? {rcv_error?20'hfffff:  sr_rcv_second[25:6]} : ts_snd_usec[19:0];
+            end
+            if (frsync_pclk[2]) begin
+                ts_rcv_sec_chn2  [31:0] <= ts_incoming? {sr_rcv_first[25:0],  sr_rcv_second[31:26]} : ts_snd_sec[31:0];
+                ts_rcv_usec_chn2 [19:0] <= ts_incoming? {rcv_error?20'hfffff:  sr_rcv_second[25:6]} : ts_snd_usec[19:0];
+            end
+            if (frsync_pclk[3]) begin
+                ts_rcv_sec_chn3  [31:0] <= ts_incoming? {sr_rcv_first[25:0],  sr_rcv_second[31:26]} : ts_snd_sec[31:0];
+                ts_rcv_usec_chn3 [19:0] <= ts_incoming? {rcv_error?20'hfffff:  sr_rcv_second[25:6]} : ts_snd_usec[19:0];
+            end
+        end else begin
+            if (local_got_pclk[0]) begin
+                ts_rcv_sec_chn0[31:0] <=  ts_snd_sec_chn0 [31:0];
+                ts_rcv_usec_chn0[19:0] <=  ts_snd_usec_chn0[19:0];
+            end
+            if (local_got_pclk[1]) begin
+                ts_rcv_sec_chn1[31:0] <=  ts_snd_sec_chn1 [31:0];
+                ts_rcv_usec_chn1[19:0] <=  ts_snd_usec_chn1[19:0];
+            end
+            if (local_got_pclk[2]) begin
+                ts_rcv_sec_chn2[31:0] <=  ts_snd_sec_chn2 [31:0];
+                ts_rcv_usec_chn2[19:0] <=  ts_snd_usec_chn2[19:0];
+            end
+            if (local_got_pclk[3]) begin
+                ts_rcv_sec_chn3[31:0] <=  ts_snd_sec_chn3 [31:0];
+                ts_rcv_usec_chn3[19:0] <=  ts_snd_usec_chn3[19:0];
+            end
         end
-        
-        if (rcv_done) begin
-            ts_rcv_sec_chn2  [31:0] <= {sr_rcv_first[25:0],sr_rcv_second[31:26]};
-            ts_rcv_usec_chn2 [19:0] <= rcv_error?20'hfffff:   sr_rcv_second[25:6];
-        end else if (!triggered_mode_pclk || (!ts_external_pclk && local_got_pclk[2])) begin
-            ts_rcv_sec_chn2[31:0] <=  ts_snd_sec_chn2 [31:0];
-            ts_rcv_usec_chn2[19:0] <=  ts_snd_usec_chn2[19:0];
-        end
-        
-        if (rcv_done) begin
-            ts_rcv_sec_chn3  [31:0] <= {sr_rcv_first[25:0],sr_rcv_second[31:26]};
-            ts_rcv_usec_chn3 [19:0] <= rcv_error?20'hfffff:   sr_rcv_second[25:6];
-        end else if (!triggered_mode_pclk || (!ts_external_pclk && local_got_pclk[3])) begin
-            ts_rcv_sec_chn3[31:0] <=  ts_snd_sec_chn3 [31:0];
-            ts_rcv_usec_chn3[19:0] <=  ts_snd_usec_chn3[19:0];
-        end
+*/        
     end
 
-    assign ts_stb = (!ts_external || pre_input_use_intern) ? local_got : {4{rcv_done_mclk}};
+//    assign ts_stb = (!ts_external || pre_input_use_intern) ? local_got : {4{rcv_done_mclk}};
+    
+//  rcv_done_mclk - make it either really received or from FPGA if internal?   
+    
     // Making delayed start that waits for timestamp use timestamp_got, otherwise - nothing to wait
-    assign start_late = ts_snd_en_pclk?local_got_pclk[master_chn] :  start_pclk[2];    
+///    assign start_late = ts_snd_en_pclk?local_got_pclk[master_chn] :  start_pclk[2];    
+    assign start_late = ts_snd_en_pclk?master_got_pclk :  start_pclk[2];    
     assign start_late_first = start_late && (armed_internal_trigger|| !ts_snd_en_pclk);
     
     cmd_deser #(
@@ -767,6 +904,17 @@ module camsync393       #(
         .done       (local_got[3])    // output
     );
 
+    timestamp_to_parallel timestamp_to_parallel_master_i (
+        .clk        (mclk),             // input
+        .pre_stb    (ts_master_stb),    // input
+        .tdata      (ts_master_data),   // input[7:0] 
+        .sec        (ts_snd_sec),       // output[31:0] reg 
+        .usec       (ts_snd_usec),      // output[19:0] reg 
+        .done       (master_got)        // output
+    );
+
+
+
     timestamp_to_serial timestamp_to_serial0_i (
         .clk        (mclk),             // input
         .stb        (ts_stb[0]),        // input
@@ -799,6 +947,8 @@ module camsync393       #(
         .tdata      (ts_rcv_data_chn3)  // output[7:0] reg 
     );
 
+
+
     level_cross_clocks #(
         .WIDTH(1),
         .REGISTER(2)
@@ -817,17 +967,33 @@ module camsync393       #(
     pulse_cross_clock i_ts_snap_mclk2 (.rst(eprst), .src_clk(pclk), .dst_clk(mclk), .in_pulse(ts_snap_triggered[2]), .out_pulse(ts_snap_triggered_mclk[2]),.busy());
     pulse_cross_clock i_ts_snap_mclk3 (.rst(eprst), .src_clk(pclk), .dst_clk(mclk), .in_pulse(ts_snap_triggered[3]), .out_pulse(ts_snap_triggered_mclk[3]),.busy());
 
-    pulse_cross_clock i_rcv_done_mclk (.rst(eprst), .src_clk(pclk), .dst_clk(mclk), .in_pulse(rcv_done), .out_pulse(rcv_done_mclk),.busy());
+    pulse_cross_clock i_ts_snap_master(.rst(eprst), .src_clk(pclk), .dst_clk(mclk), .in_pulse(ts_master_snap_pclk),  .out_pulse(ts_master_snap),.busy());
+
+///    pulse_cross_clock i_rcv_done_mclk (.rst(eprst), .src_clk(pclk), .dst_clk(mclk), .in_pulse(rcv_done), .out_pulse(rcv_done_mclk),.busy());
 
     pulse_cross_clock i_local_got_pclk0(.rst(mrst), .src_clk(mclk), .dst_clk(pclk), .in_pulse(local_got[0]), .out_pulse(local_got_pclk[0]),.busy());
     pulse_cross_clock i_local_got_pclk1(.rst(mrst), .src_clk(mclk), .dst_clk(pclk), .in_pulse(local_got[1]), .out_pulse(local_got_pclk[1]),.busy());
     pulse_cross_clock i_local_got_pclk2(.rst(mrst), .src_clk(mclk), .dst_clk(pclk), .in_pulse(local_got[2]), .out_pulse(local_got_pclk[2]),.busy());
     pulse_cross_clock i_local_got_pclk3(.rst(mrst), .src_clk(mclk), .dst_clk(pclk), .in_pulse(local_got[3]), .out_pulse(local_got_pclk[3]),.busy());
+    
+    pulse_cross_clock i_master_got_pclk(.rst(mrst), .src_clk(mclk), .dst_clk(pclk), .in_pulse(master_got),   .out_pulse(master_got_pclk),.busy());
 
     pulse_cross_clock i_trig_r_mclk0 (.rst(eprst), .src_clk(pclk), .dst_clk(mclk), .in_pulse(trig_r[0]), .out_pulse(trig_r_mclk[0]),.busy());
     pulse_cross_clock i_trig_r_mclk1 (.rst(eprst), .src_clk(pclk), .dst_clk(mclk), .in_pulse(trig_r[1]), .out_pulse(trig_r_mclk[1]),.busy());
     pulse_cross_clock i_trig_r_mclk2 (.rst(eprst), .src_clk(pclk), .dst_clk(mclk), .in_pulse(trig_r[2]), .out_pulse(trig_r_mclk[2]),.busy());
     pulse_cross_clock i_trig_r_mclk3 (.rst(eprst), .src_clk(pclk), .dst_clk(mclk), .in_pulse(trig_r[3]), .out_pulse(trig_r_mclk[3]),.busy());
+    
+    pulse_cross_clock i_frsync_pclk0(.rst(!en),    .src_clk(mclk), .dst_clk(pclk), .in_pulse(frame_sync[0]), .out_pulse(frsync_pclk[0]),.busy());
+    pulse_cross_clock i_frsync_pclk1(.rst(!en),    .src_clk(mclk), .dst_clk(pclk), .in_pulse(frame_sync[1]), .out_pulse(frsync_pclk[1]),.busy());
+    pulse_cross_clock i_frsync_pclk2(.rst(!en),    .src_clk(mclk), .dst_clk(pclk), .in_pulse(frame_sync[2]), .out_pulse(frsync_pclk[2]),.busy());
+    pulse_cross_clock i_frsync_pclk3(.rst(!en),    .src_clk(mclk), .dst_clk(pclk), .in_pulse(frame_sync[3]), .out_pulse(frsync_pclk[3]),.busy());
+    
+    pulse_cross_clock i_ts_stb_mclk0 (.rst(eprst), .src_clk(pclk), .dst_clk(mclk), .in_pulse(ts_stb_pclk_r[0]), .out_pulse(ts_stb[0]),.busy());
+    pulse_cross_clock i_ts_stb_mclk1 (.rst(eprst), .src_clk(pclk), .dst_clk(mclk), .in_pulse(ts_stb_pclk_r[1]), .out_pulse(ts_stb[1]),.busy());
+    pulse_cross_clock i_ts_stb_mclk2 (.rst(eprst), .src_clk(pclk), .dst_clk(mclk), .in_pulse(ts_stb_pclk_r[2]), .out_pulse(ts_stb[2]),.busy());
+    pulse_cross_clock i_ts_stb_mclk3 (.rst(eprst), .src_clk(pclk), .dst_clk(mclk), .in_pulse(ts_stb_pclk_r[3]), .out_pulse(ts_stb[3]),.busy());
+
+
     
 endmodule
 

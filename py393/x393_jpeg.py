@@ -2401,6 +2401,256 @@ jpeg_sim_multi 4
 jpeg_sim_multi 4
 
 
+################## Simulate Parallel 13 - external trigger ####################
+./py393/test_mcntrl.py @py393/cocoargs  --simulated=localhost:7777
+measure_all "*DI"
+setup_all_sensors True None 0xf
+#set_sensor_io_ctl  all None None 1 # Set ARO low - check if it is still needed?
+
+#use EOF instead of SOF for i2c sequencer advance
+set_sensor_i2c_command  all  False  None  None  None None None None True
+
+#just testing
+set_gpio_ports  1   1 # enable software gpio pins and porta (camsync)
+set_gpio_pins 0 1 # pin 0 low, pin 1 - high
+
+set_logger_params_file "/home/eyesis/git/x393-neon/attic/imu_config.bin"
+
+
+
+##### write_control_register 0x480  0x400 # disable sensor chn 2
+
+
+
+reset_camsync_inout 1 # reset all outputs
+set_camsync_period 31 # set bit duration
+set_camsync_period  0 # disable
+set_camsync_delay 0 400
+set_camsync_delay 1 100
+set_camsync_delay 2 200
+set_camsync_delay 3 300
+#set_camsync_inout  <is_out>  <bit_number>  <active_positive>
+###set_camsync_inout  1  8  0
+###set_camsync_inout  0  7  0
+reset_camsync_inout  0 # start with internal trigger
+
+
+#set_camsync_mode  <en=None>  <en_snd=None>  <en_ts_external=None>  <triggered_mode=None>  <master_chn=None>  <chn_en=None> 
+set_camsync_mode  1 1 1 1 0 0xf
+set_camsync_period  8000 # 80 usec #and issue first trigger
+ 
+
+
+
+set_sensor_histogram_window  0  0  4  4  25 21
+set_sensor_histogram_window  1  0  4  4  41 21
+set_sensor_histogram_window  2  0  4  4  25 41
+set_sensor_histogram_window  3  0  4  4  41 41
+
+
+
+
+r
+read_control_register 0x430
+read_control_register 0x431
+write_cmd_frame_sequencer  0  1  2  0x600  0x48   # compressor q page = 1 // too late for frame 2
+set_qtables 0 0 80
+set_qtables 0 1 70
+
+#irq coming, image not changing - yes
+write_cmd_frame_sequencer  0  1  1 0x686 0x280005 #save 4 more lines than sensor has                                                                                                                                    
+write_cmd_frame_sequencer  0  1  1 0x680 0x5507 #enable abort
+#write_cmd_frame_sequencer  0  1  1 0x6c6 0x300006 #save 4 more lines that compressor has                                                                                                                                    
+
+write_cmd_frame_sequencer  0  1  2  0x600  0x5    #stop    compressor           `      
+write_cmd_frame_sequencer  0  1  2  0x680  0x5405 # stop  sensor memory         (+0) // sensor memory should be controlled first, (9 commands
+write_cmd_frame_sequencer  0  1  2  0x6c0  0x5c49 # stop compressor memory      (+0)
+
+write_cmd_frame_sequencer  0  1  3 0x686 0x240005 # correct lines                                                                                                   
+write_cmd_frame_sequencer  0  1  3  0x680  0x5507 # run sensor memory           (+1) Can not be 0
+
+write_cmd_frame_sequencer  0  1  4 0x686 0x280005 #save 4 more lines than sensor has                                                                                                                                    
+write_cmd_frame_sequencer  0  1  4 0x6c6 0x300006 #save more lines than compressor needs (sensor provides)                                                                                                                                    
+write_cmd_frame_sequencer  0  1  4  0x6c0  0x7d4b # run compressor memory       (+2)
+write_cmd_frame_sequencer  0  1  4  0x600  0x7    # run compressor              (+0)
+
+write_cmd_frame_sequencer  0  1  1  0x600  0x48   # compressor q page = 1
+write_cmd_frame_sequencer  0  1  4  0x600  0x40   # compressor q page = 0
+
+read_control_register 0x431
+read_control_register 0x430
+
+#testing histograms
+write_control_register 0x409 0xc0
+
+#set_sensor_io_dly_hispi all 0x48 0x68 0x68 0x68 0x68
+#set_sensor_io_ctl all None None None None None 1 None # load all delays?
+compressor_control  all  None  None  None None None  2
+compressor_interrupt_control all clr
+compressor_interrupt_control all en
+compressor_control  all  3
+r
+read_status 0x21
+r
+jpeg_sim_multi 4
+r
+read_status 0x21
+r
+jpeg_sim_multi 3
+r
+read_status 0x21
+r
+
+write_cmd_frame_sequencer  0  1  1 0x686 0x240005 # correct lines                                                                                                   
+write_cmd_frame_sequencer  0  1  1 0x6c6 0x200006 # correct lines                                                                                                                                    
+write_cmd_frame_sequencer  0  1  1  0x680  0x5507 # run sensor memory, update frame#, reset buffers
+write_cmd_frame_sequencer  0  1  1  0x6c0  0x7d4b # run compressor memory
+write_cmd_frame_sequencer  0  1  1  0x600  0x7    # run compressor
+
+#switch to external (wired) trigger
+
+jpeg_sim_multi 4
+
+### set_camsync_inout  0  9  0 # external/internal trigger mode
+
+
+###switch to external (wired) trigger
+##set_camsync_inout  0  7  0
+
+jpeg_sim_multi 4
+#set_camsync_mode  <en=None>  <en_snd=None>  <en_ts_external=None>  <triggered_mode=None>  <master_chn=None>  <chn_en=None> 
+jpeg_sim_multi 8
+
+###set_camsync_period  8000 # 80 usec - restart while waiting for external trigger
+jpeg_sim_multi 4
+
+jpeg_sim_multi 4
+
+################## Simulate Parallel 14 - external trigger ####################
+./py393/test_mcntrl.py @py393/cocoargs  --simulated=localhost:7777
+measure_all "*DI"
+setup_all_sensors True None 0xf
+#set_sensor_io_ctl  all None None 1 # Set ARO low - check if it is still needed?
+
+#use EOF instead of SOF for i2c sequencer advance
+set_sensor_i2c_command  all  False  None  None  None None None None True
+
+#just testing
+set_gpio_ports  1   1 # enable software gpio pins and porta (camsync)
+set_gpio_pins 0 1 # pin 0 low, pin 1 - high
+
+set_logger_params_file "/home/eyesis/git/x393-neon/attic/imu_config.bin"
+
+
+
+##### write_control_register 0x480  0x400 # disable sensor chn 2
+
+
+
+reset_camsync_inout 1 # reset all outputs
+set_camsync_period 31 # set bit duration
+set_camsync_period  10000 # 100 usec
+set_camsync_delay 0  400
+set_camsync_delay 1 1000
+set_camsync_delay 2 2000
+set_camsync_delay 3 2500
+#set_camsync_inout  <is_out>  <bit_number>  <active_positive>
+set_camsync_inout  1  8  0
+set_camsync_inout  0  7  0
+#reset_camsync_inout  0 # start with internal trigger
+
+
+#set_camsync_mode  <en=None>  <en_snd=None>  <en_ts_external=None>  <triggered_mode=None>  <master_chn=None>  <chn_en=None> 
+set_camsync_mode  1 1 1 1 0 0xf
+ 
+
+
+
+set_sensor_histogram_window  0  0  4  4  25 21
+set_sensor_histogram_window  1  0  4  4  41 21
+set_sensor_histogram_window  2  0  4  4  25 41
+set_sensor_histogram_window  3  0  4  4  41 41
+
+
+
+
+r
+read_control_register 0x430
+read_control_register 0x431
+write_cmd_frame_sequencer  0  1  2  0x600  0x48   # compressor q page = 1 // too late for frame 2
+set_qtables 0 0 80
+set_qtables 0 1 70
+
+#irq coming, image not changing - yes
+write_cmd_frame_sequencer  0  1  1 0x686 0x280005 #save 4 more lines than sensor has                                                                                                                                    
+write_cmd_frame_sequencer  0  1  1 0x680 0x5507 #enable abort
+#write_cmd_frame_sequencer  0  1  1 0x6c6 0x300006 #save 4 more lines that compressor has                                                                                                                                    
+
+write_cmd_frame_sequencer  0  1  2  0x600  0x5    #stop    compressor           `      
+write_cmd_frame_sequencer  0  1  2  0x680  0x5405 # stop  sensor memory         (+0) // sensor memory should be controlled first, (9 commands
+write_cmd_frame_sequencer  0  1  2  0x6c0  0x5c49 # stop compressor memory      (+0)
+
+write_cmd_frame_sequencer  0  1  3 0x686 0x240005 # correct lines                                                                                                   
+write_cmd_frame_sequencer  0  1  3  0x680  0x5507 # run sensor memory           (+1) Can not be 0
+
+write_cmd_frame_sequencer  0  1  4 0x686 0x280005 #save 4 more lines than sensor has                                                                                                                                    
+write_cmd_frame_sequencer  0  1  4 0x6c6 0x300006 #save more lines than compressor needs (sensor provides)                                                                                                                                    
+write_cmd_frame_sequencer  0  1  4  0x6c0  0x7d4b # run compressor memory       (+2)
+write_cmd_frame_sequencer  0  1  4  0x600  0x7    # run compressor              (+0)
+
+write_cmd_frame_sequencer  0  1  1  0x600  0x48   # compressor q page = 1
+write_cmd_frame_sequencer  0  1  4  0x600  0x40   # compressor q page = 0
+
+read_control_register 0x431
+read_control_register 0x430
+
+#testing histograms
+write_control_register 0x409 0xc0
+
+#set_sensor_io_dly_hispi all 0x48 0x68 0x68 0x68 0x68
+#set_sensor_io_ctl all None None None None None 1 None # load all delays?
+compressor_control  all  None  None  None None None  2
+compressor_interrupt_control all clr
+compressor_interrupt_control all en
+compressor_control  all  3
+r
+read_status 0x21
+r
+jpeg_sim_multi 4
+r
+read_status 0x21
+r
+jpeg_sim_multi 3
+r
+read_status 0x21
+r
+
+write_cmd_frame_sequencer  0  1  1 0x686 0x240005 # correct lines                                                                                                   
+write_cmd_frame_sequencer  0  1  1 0x6c6 0x200006 # correct lines                                                                                                                                    
+write_cmd_frame_sequencer  0  1  1  0x680  0x5507 # run sensor memory, update frame#, reset buffers
+write_cmd_frame_sequencer  0  1  1  0x6c0  0x7d4b # run compressor memory
+write_cmd_frame_sequencer  0  1  1  0x600  0x7    # run compressor
+
+#switch to external (wired) trigger
+
+jpeg_sim_multi 4
+
+set_camsync_inout  0  9  0 # external/internal trigger mode
+
+
+###switch to external (wired) trigger
+##set_camsync_inout  0  7  0
+
+jpeg_sim_multi 4
+#set_camsync_mode  <en=None>  <en_snd=None>  <en_ts_external=None>  <triggered_mode=None>  <master_chn=None>  <chn_en=None> 
+jpeg_sim_multi 8
+
+set_camsync_period  8000 # 80 usec - restart while waiting for external trigger
+jpeg_sim_multi 4
+
+jpeg_sim_multi 4
+
+
 ################## Serial ####################
 cd /usr/local/verilog/; test_mcntrl.py @hargs
 bitstream_set_path /usr/local/verilog/x393_hispi.bit

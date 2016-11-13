@@ -129,8 +129,8 @@ module  logger_arbiter393(
     
         seq_cntr_last <= (seq_cntr[4:0]=='h1e);
     
-    
-        if      (wstart)              ts_en_r <=1'b1;
+        if      (rst)                 ts_en_r <=1'b0;
+        else if (wstart)              ts_en_r <=1'b1;
         else if (seq_cntr[1:0]==2'h3) ts_en_r <=1'b0;
         
         if (!ts_en_r) ts_sel_r[1:0] <= 2'h0;
