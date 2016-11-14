@@ -240,7 +240,7 @@ module  event_logger#(
 
     assign pre_message_trig = ext_di16[config_msg[3:0]];
 
-    assign message_trig= config_msg[4]^pre_message_trig;
+    assign message_trig= config_msg[4] ^ pre_message_trig;
 
     assign timestamp_request[1]=config_gps[3]? (config_gps[2]?nmea_sent_start:gps_ts_stb):gps_pulse1sec_single;
  

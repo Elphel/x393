@@ -35,7 +35,9 @@
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
  */
-        parameter FPGA_VERSION =          32'h039300ca;      //parallel - and more ... -0.267/46, 80.42%
+        parameter FPGA_VERSION =          32'h039300cc;      //parallel - more jpeg tail -0.268/56, 80.24 %
+//      parameter FPGA_VERSION =          32'h039300cb;      //parallel - modifying trigger/timestamps -0.050/13 80.38%
+//      parameter FPGA_VERSION =          32'h039300ca;      //parallel - and more ... fixed -0.267/46, 80.42%
 //      parameter FPGA_VERSION =          32'h039300c9;      //parallel - trying more ...-0.123/32 79.82%
 //      parameter FPGA_VERSION =          32'h039300c8;      //parallel - trying to fix "premature..." -0.121/21, 80.2%
 //      parameter FPGA_VERSION =          32'h039300c7;      //parallel - disable SoF when channel disabled: met, 80.32%

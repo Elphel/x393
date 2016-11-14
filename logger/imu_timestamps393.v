@@ -51,6 +51,7 @@ module  imu_timestamps393(
     output                 [15:0] dout);// output data
     reg           ts_rcv;
     reg           ts_busy;
+    reg           ts_busy_d; 
     reg     [1:0] chn; // channel for which timestamp is bein requested/received
     wire    [3:0] rq_pri; // 1-hot prioritized timestamp request
     wire    [1:0] rq_enc; // encoded request channel
@@ -70,7 +71,7 @@ module  imu_timestamps393(
     assign rq_enc = {rq_pri[3] | rq_pri[2],
                      rq_pri[3] | rq_pri[1]};
                      
-    assign pre_snap = (|ts_rq) && !ts_busy; 
+    assign pre_snap = (|ts_rq) && !ts_busy && !ts_busy_d; 
     assign chn1hot = {chn[1] & chn[0], chn[1] & ~chn[0], ~chn[1] & chn[0], ~chn[1] & ~chn[0]};
     assign pre_ackn = ts_rcv && (cntr == 3'h6);
     
@@ -86,6 +87,8 @@ module  imu_timestamps393(
         if      (rst)                      ts_busy <= 0;
         else if (pre_snap)                 ts_busy <= 1;
         else if (ts_rcv && (cntr == 3'h6)) ts_busy <= 0; // adjust 6?
+        
+        ts_busy_d <= ts_busy;
         
         rcv_last <= ts_rcv && (cntr == 3'h6);
         

@@ -74,11 +74,18 @@
 //    parameter SENSOR_IMAGE_TYPE2 =       "NORM3",
 //    parameter SENSOR_IMAGE_TYPE3 =       "NORM4",
 
-    parameter SENSOR_IMAGE_TYPE0 =       "NORM1",
-    parameter SENSOR_IMAGE_TYPE1 =       "NORM2",
-    parameter SENSOR_IMAGE_TYPE2 =       "NORM3", // 4",
-    parameter SENSOR_IMAGE_TYPE3 =       "NORM3",
+//    parameter SENSOR_IMAGE_TYPE0 =       "NORM10",
+//    parameter SENSOR_IMAGE_TYPE1 =       "NORM10",
+//    parameter SENSOR_IMAGE_TYPE2 =       "NORM11", // 4",
+//    parameter SENSOR_IMAGE_TYPE3 =       "NORM12",
     
+    parameter SENSOR_IMAGE_TYPE0 =       "NORM13",
+    parameter SENSOR_IMAGE_TYPE1 =       "NORM13",
+    parameter SENSOR_IMAGE_TYPE2 =       "NORM14", // 4",
+    parameter SENSOR_IMAGE_TYPE3 =       "NORM15",
+    
+
+
     parameter SIMULATE_CMPRS_CMODE0 =     CMPRS_CBIT_CMODE_JPEG18,
     parameter SIMULATE_CMPRS_CMODE1 =     CMPRS_CBIT_CMODE_JPEG18,
     parameter SIMULATE_CMPRS_CMODE2 =     CMPRS_CBIT_CMODE_JP4,

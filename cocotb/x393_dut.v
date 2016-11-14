@@ -1773,6 +1773,8 @@ assign x393_i.ps7_i.FCLKRESETN=     {RST,~RST,RST,~RST};
 
 `define TEST_IMU
 `define TEST_EXT_INT
+
+`define ODOMETER_PULSE_6
 assign #10 gpio_pins[7] = gpio_pins[8];
 `ifndef TEST_IMU
     assign #10 gpio_pins[9] = gpio_pins[6]; 
@@ -1922,7 +1924,9 @@ assign #10 gpio_pins[7] = gpio_pins[8];
       end
       assign gpio_pins[4]=SERIAL_BIT;
       assign gpio_pins[5]=GPS1SEC;
-//      assign gpio_pins[6]=ODOMETER_PULSE;
+`ifdef ODOMETER_PULSE_6
+      assign gpio_pins[6]=ODOMETER_PULSE;
+`endif
       assign gpio_pins[9]=ODOMETER_PULSE;
       oneshot i_oneshot  (.trigger(IMU_NMOSI),
                           .out(IMU_ACTIVE));

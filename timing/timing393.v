@@ -140,6 +140,12 @@ module  timing393       #(
     wire   [3:0] ts_local_stb;   // 1 clk before ts_snd_data is valid
     wire  [31:0] ts_local_data;  // byte-wide serialized timestamp message  
 
+    wire         ts_master_snap; // ts_snap_mclk make a timestamp pulse  single @(posedge pclk)
+    wire         ts_master_stb;  // 1 clk before ts_snd_data is valid
+    wire   [7:0] ts_master_data; // byte-wide serialized timestamp message  
+
+
+
     wire   [3:0] ts_stb;        // 1 clk before ts_snd_data is valid
     wire  [31:0] ts_data;       // byte-wide serialized timestamp message (channels concatenated)
     
@@ -238,6 +244,18 @@ module  timing393       #(
         .ts_data               (ts_local_data[3 * 8 +: 8]) // output[7:0] reg 
     );
 
+    timestamp_snapshot timestamp_snapshot_master_i ( // timestamp to send over the sync network
+        .tclk                  (mclk),                     // input
+        .sec                   (live_sec),                 // input[31:0] 
+        .usec                  (live_usec),                // input[19:0] 
+        .sclk                  (mclk),                     // input
+        .srst                  (mrst),                     // input
+        .snap                  (ts_master_snap),           // input
+        .pre_stb               (ts_master_stb),            // output
+        .ts_data               (ts_master_data[7:0])       // output[7:0] reg 
+    );
+
+
     camsync393 #(
         .CAMSYNC_ADDR           (CAMSYNC_ADDR),
         .CAMSYNC_MASK           (CAMSYNC_MASK),
@@ -294,6 +312,9 @@ module  timing393       #(
         .ts_snap_mclk_chn3 (ts_local_snap[3]),          // output
         .ts_snd_stb_chn3   (ts_local_stb[3]),           // input
         .ts_snd_data_chn3  (ts_local_data[3 * 8 +: 8]), // input[7:0] 
+        .ts_master_snap    (ts_master_snap),            // output
+        .ts_master_stb     (ts_master_stb),             // input
+        .ts_master_data    (ts_master_data),            // input[7:0] 
         .ts_rcv_stb_chn0   (ts_stb[0]),                 // output
         .ts_rcv_data_chn0  (ts_data[0 * 8 +: 8]),       // output[7:0] 
         .ts_rcv_stb_chn1   (ts_stb[1]),                 // output
