@@ -2853,9 +2853,43 @@ compressor_control  all  3
 r
 read_status 0x21
 r
+
+#set_sensor_lens_flat_parameters  <num_sensor>  <num_sub_sensor>  <AX=None>  <AY=None>  <BX=None>  <BY=None>  <C=None>  <scales0=None>  <scales1=None>  <scales2=None>  <scales3=None>  <fatzero_in=None>  <fatzero_out=None>  <post_scale=None> 
+set_sensor_lens_flat_parameters  0  0  None None None None None 0x6000 0x6000 0x6000 0x6000
+set_sensor_lens_flat_parameters  1  0  None None None None None 0x6000 0x6000 0x6000 0x6000
+set_sensor_lens_flat_parameters  2  0  None None None None None 0x6000 0x6000 0x6000 0x6000
+set_sensor_lens_flat_parameters  3  0  None None None None None 0x6000 0x6000 0x6000 0x6000
 jpeg_sim_multi 4
+
+set_sensor_lens_flat_parameters  0  0  None None None None None 0x4000 0x4000 0x4000 0x4000
+set_sensor_lens_flat_parameters  1  0  None None None None None 0x4000 0x4000 0x4000 0x4000
+set_sensor_lens_flat_parameters  2  0  None None None None None 0x4000 0x4000 0x4000 0x4000
+set_sensor_lens_flat_parameters  3  0  None None None None None 0x4000 0x4000 0x4000 0x4000
 jpeg_sim_multi 4
-jpeg_sim_multi 12
+
+set_sensor_lens_flat_parameters  0  0  None None None None None 0x3000 0x3000 0x3000 0x3000
+set_sensor_lens_flat_parameters  1  0  None None None None None 0x3000 0x3000 0x3000 0x3000
+set_sensor_lens_flat_parameters  2  0  None None None None None 0x3000 0x3000 0x3000 0x3000
+set_sensor_lens_flat_parameters  3  0  None None None None None 0x3000 0x3000 0x3000 0x3000
+jpeg_sim_multi 4
+
+set_sensor_lens_flat_parameters  0  0  None None None None None 0x2000 0x2000 0x2000 0x2000
+set_sensor_lens_flat_parameters  1  0  None None None None None 0x2000 0x2000 0x2000 0x2000
+set_sensor_lens_flat_parameters  2  0  None None None None None 0x2000 0x2000 0x2000 0x2000
+set_sensor_lens_flat_parameters  3  0  None None None None None 0x2000 0x2000 0x2000 0x2000
+jpeg_sim_multi 4
+
+set_sensor_lens_flat_parameters  0  0  None None None None None 0x1e00 0x1e00 0x1e00 0x1e00
+set_sensor_lens_flat_parameters  1  0  None None None None None 0x1e00 0x1e00 0x1e00 0x1e00
+set_sensor_lens_flat_parameters  2  0  None None None None None 0x1e00 0x1e00 0x1e00 0x1e00
+set_sensor_lens_flat_parameters  3  0  None None None None None 0x1e00 0x1e00 0x1e00 0x1e00
+jpeg_sim_multi 4
+
+set_sensor_lens_flat_parameters  0  0  None None None None None 0x1d00 0x1d00 0x1d00 0x1d00
+set_sensor_lens_flat_parameters  1  0  None None None None None 0x1d00 0x1d00 0x1d00 0x1d00
+set_sensor_lens_flat_parameters  2  0  None None None None None 0x1d00 0x1d00 0x1d00 0x1d00
+set_sensor_lens_flat_parameters  3  0  None None None None None 0x1d00 0x1d00 0x1d00 0x1d00
+jpeg_sim_multi 4
 
 ################## Serial ####################
 cd /usr/local/verilog/; test_mcntrl.py @hargs

@@ -71,7 +71,8 @@ module  bit_stuffer_27_32#(
 //    reg               flush_pend;
 //    wire              flush_ackn = flush_pend && !flush_stage[0] && !stage[0];
     // probably just a single unconditional flush_in delay (not to appear next after ds) will work
-    wire        [4:0] pre_bits_out_w = dlen2[4:0] + 5'h7; 
+//    wire        [4:0] pre_bits_out_w = dlen2[4:0] + 5'h7; 
+    wire        [5:0] pre_bits_out_w = {1'b0,dlen2[4:0]} + 6'h7; 
 
     assign d_out = data3[DATA3_LEN-1 -: 32];
     
@@ -165,8 +166,9 @@ module  bit_stuffer_27_32#(
             
         end
 
-//        dv <= (ds_stage[0] && dlen1[5]) || (flush_stage[1] && (|data3[DATA3_LEN-1 -: 32]));
-        dv <= (stage[0] && dlen1[5]) || (flush_stage[1] && (|data3[DATA3_LEN-1 -: 32])); // both ds and flush-caused (full 32-bit out if available)
+///        dv <= (stage[0] && dlen1[5]) || (flush_stage[1] && (|data3[DATA3_LEN-1 -: 32])); // both ds and flush-caused (full 32-bit out if available)
+ 
+        dv <= (stage[0] && dlen1[5]) || (flush_stage[1] && (|pre_bits_out_w[5:3])); // both ds and flush-caused (full 32-bit out if available)
 // no difference in number of cells
 //        if      (rst )                bytes_out <= 0; // if the dv was caused by 32 bits full - output 4 bytes
 //        else if (ds_stage[1])         bytes_out <= 0; // if the dv was caused by 32 bits full - output 4 bytes
