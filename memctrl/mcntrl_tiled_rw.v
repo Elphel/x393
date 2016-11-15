@@ -283,6 +283,7 @@ module  mcntrl_tiled_rw#(
     reg                           buf_reset_pend;  // reset buffer page at next (late)frame sync (compressor should be disabled
                                                    // if total  number of pages in a frame is not multiple of 4
     reg                           frames_in_sync_r;
+    wire                          chn_dis_delayed = chn_rst || (!chn_en && !busy_r); // reset if real reset or disabled and frame finished 
     
     assign frames_in_sync =     frames_in_sync_r;
     assign frame_number =       frame_number_current;
@@ -349,9 +350,10 @@ module  mcntrl_tiled_rw#(
         
         // after channel was disabled frame number reported is incorrect, until updated by master_set
         // Without this signal compressor was reading data between the time source frame number was updated and this one.
-        if      (!chn_en)          frames_in_sync_r <= 0;
+//        if      (!chn_en)          frames_in_sync_r <= 0;
+        if      (chn_dis_delayed)    frames_in_sync_r <= 0; // do not invalidate frames_in_sync_r until busy_r is off
 //        else if (frame_start_r[2]) frames_in_sync_r <= 1;
-        else if (frame_start_r[3]) frames_in_sync_r <= 1; // to match line_unfinished
+        else if (frame_start_r[3])   frames_in_sync_r <= 1; // to match line_unfinished
         
         // will reset buffer page at next frame start
         if      (mrst ||frame_start_r[0])   buf_reset_pend <= 0;
@@ -420,7 +422,8 @@ module  mcntrl_tiled_rw#(
     assign calc_valid=  par_mod_r[PAR_MOD_LATENCY-1]; // MSB, longest 0
     assign frame_done=      frame_done_r;
     assign frame_finished=  frame_finished_r;
-    assign pre_want=    chn_en && busy_r && !want_r && !xfer_start_r[0] && calc_valid && !last_block && !suspend && !(|frame_start_r) && !aborting_r;
+//    assign pre_want=    chn_en && busy_r && !want_r && !xfer_start_r[0] && calc_valid && !last_block && !suspend && !(|frame_start_r) && !aborting_r;
+    assign pre_want=    !chn_rst && busy_r && !want_r && !xfer_start_r[0] && calc_valid && !last_block && !suspend && !(|frame_start_r) && !aborting_r;
     assign last_in_row_w=(row_left=={{(FRAME_WIDTH_BITS-MAX_TILE_WIDTH){1'b0}},num_cols_r}); // what if it crosses page? OK, num_cols_r & row_left know that
 // tiles must completely fit window
 // all window should be covered (tiles may extend):    
@@ -640,8 +643,8 @@ wire    start_not_partial= xfer_start_r[0] && !xfer_limited_by_mem_page_r;
 */
         if (recalc_r[0]) line_unfinished_relw_r <= curr_y + (cmd_wrmem ? 0: tile_rows);
         
-        if (mrst || (frame_start_mod || !chn_en))  line_unfinished_r <= {FRAME_HEIGHT_BITS{~cmd_wrmem}}; // lowest/highest value until valid
-        else if (recalc_r[2])                      line_unfinished_r <= line_unfinished_relw_r + window_y0;
+        if (mrst || (frame_start_mod || chn_dis_delayed))  line_unfinished_r <= {FRAME_HEIGHT_BITS{~cmd_wrmem}}; // lowest/highest value until valid
+        else if (recalc_r[2])                              line_unfinished_r <= line_unfinished_relw_r + window_y0;
         
     end
     always @ (negedge mclk) begin

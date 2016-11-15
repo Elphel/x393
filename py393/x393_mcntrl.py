@@ -71,8 +71,8 @@ def func_encode_mode_scan_tiled   (skip_too_late = False,
     @param abort_late  abort frame r/w at the next frame sync, if not finished. Wait for pending memory transfers
     """
     rslt = 0;
-    rslt |= (1,0)[chn_reset] <<     vrlg.MCONTR_LINTILE_EN # inverted
-    rslt |= (0,1)[enable] <<        vrlg.MCONTR_LINTILE_NRESET
+    rslt |= (1,0)[chn_reset] <<     vrlg.MCONTR_LINTILE_NRESET # inverted
+    rslt |= (0,1)[enable] <<        vrlg.MCONTR_LINTILE_EN
     rslt |= (0,1)[write_mem] <<     vrlg.MCONTR_LINTILE_WRITE
     rslt |= (extra_pages & ((1 <<   vrlg.MCONTR_LINTILE_EXTRAPG_BITS) - 1)) << vrlg.MCONTR_LINTILE_EXTRAPG
     rslt |= (0,1)[keep_open] <<     vrlg.MCONTR_LINTILE_KEEP_OPEN

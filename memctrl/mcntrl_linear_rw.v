@@ -266,6 +266,7 @@ module  mcntrl_linear_rw #(
     wire                          set_start_delay_w; 
     reg                           buf_reset_pend;  // reset buffer page at next (late)frame sync (compressor should be disabled
                                                    // if total  number of pages in a frame is not multiple of 4 
+    wire                          chn_dis_delayed = chn_rst || (!chn_en && !busy_r); // reset if real reset or disabled and frame finished 
                                                    
 //    wire                                                
     
@@ -399,6 +400,7 @@ module  mcntrl_linear_rw #(
     // accelerating pre_want:
 //    assign pre_want= pre_want_r1 && !want_r && !xfer_start_r[0] && !suspend ;
     // last_block was too late to inclusde in pre_want_r1, moving it here
+    
     assign pre_want= pre_want_r1 && !want_r && !xfer_start_r[0] && !suspend  && !last_block && !aborting_r;
 
     assign last_in_row_w=(row_left=={{(FRAME_WIDTH_BITS-NUM_XFER_BITS){1'b0}},xfer_num128_r});
@@ -549,7 +551,8 @@ wire    start_not_partial= xfer_start_r[0] && !xfer_limited_by_mem_page_r;
         
 //        pre_want_r1 <= chn_en &&  !frame_done_r && busy_r && par_mod_r[PAR_MOD_LATENCY-2] && !(|frame_start_r[4:1]) && !last_block;
         //last_block is too late for pre_want_r1, moving upsteram
-        pre_want_r1 <= chn_en &&  !frame_done_r && busy_r && par_mod_r[PAR_MOD_LATENCY-2] && !(|frame_start_r[4:1]);
+//        pre_want_r1 <= chn_en &&  !frame_done_r && busy_r && par_mod_r[PAR_MOD_LATENCY-2] && !(|frame_start_r[4:1]);
+        pre_want_r1 <= !chn_rst &&  !frame_done_r && busy_r && par_mod_r[PAR_MOD_LATENCY-2] && !(|frame_start_r[4:1]);
         if      (mrst)                par_mod_r<=0;
         else if (pgm_param_w ||
                  xfer_start_r[0] ||
@@ -635,8 +638,8 @@ wire    start_not_partial= xfer_start_r[0] && !xfer_limited_by_mem_page_r;
         if (recalc_r[0]) line_unfinished_relw_r <= curr_y + (cmd_wrmem ? 0: 1);
         
 //        if (mrst || (frame_start_late || !chn_en))  line_unfinished_r <= {FRAME_HEIGHT_BITS{~cmd_wrmem}}; // lowest/highest value until valid
-        if (mrst || (frame_start_mod || !chn_en))  line_unfinished_r <= {FRAME_HEIGHT_BITS{~cmd_wrmem}}; // lowest/highest value until valid
-        else if (recalc_r[2])                      line_unfinished_r <= line_unfinished_relw_r + window_y0;
+        if (mrst || (frame_start_mod || chn_dis_delayed))  line_unfinished_r <= {FRAME_HEIGHT_BITS{~cmd_wrmem}}; // lowest/highest value until valid
+        else if (recalc_r[2])                              line_unfinished_r <= line_unfinished_relw_r + window_y0;
 
 
     end
