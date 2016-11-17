@@ -39,6 +39,7 @@
  */
 `timescale 1ns/1ps
 // TODO: ADD MCNTRL_SCANLINE_FRAME_PAGE_RESET to caller
+`undef DEBUG_MCNTRL_LINEAR_EXTRA_STATUS 
 module  mcntrl_linear_rw #(
     parameter ADDRESS_NUMBER=                   15,
     parameter COLADDR_NUMBER=                   10,
@@ -218,7 +219,11 @@ module  mcntrl_linear_rw #(
     
     wire                          pre_want;
     reg                           pre_want_r1;
+`ifdef DEBUG_MCNTRL_LINEAR_EXTRA_STATUS    
+    wire                   [11:0] status_data;
+`else    
     wire                    [1:0] status_data;
+`endif    
     wire                    [3:0] cmd_a; 
     wire                   [31:0] cmd_data; 
     wire                          cmd_we;
@@ -318,7 +323,8 @@ module  mcntrl_linear_rw #(
         else if (set_frame_width_w) frame_full_width <= {lsw13_zero,cmd_data[FRAME_WIDTH_BITS-1:0]};
         
         if (mrst) is_last_frame <= 0;
-        else      is_last_frame <= frame_number_cntr == last_frame_number;
+//      else      is_last_frame <= frame_number_cntr == last_frame_number;
+        else      is_last_frame <= frame_number_cntr >= last_frame_number; // trying to make it safe 
         
 //        if (mrst) frame_start_r <= 0;
 //        else      frame_start_r <= {frame_start_r[3:0], frame_start_late & frame_en};
@@ -420,7 +426,11 @@ module  mcntrl_linear_rw #(
     assign skip_too_late =   mode_reg[MCONTR_LINTILE_SKIP_LATE];
     assign abort_en =        mode_reg[MCONTR_LINTILE_ABORT_LATE];
     
-    assign status_data= {frame_finished_r, busy_r};     // TODO: Add second bit?
+`ifdef DEBUG_MCNTRL_LINEAR_EXTRA_STATUS    
+    assign status_data=      {last_row_w, last_in_row,line_unfinished[7:0], frame_finished_r, busy_r}; 
+`else
+    assign status_data=      {frame_finished_r, busy_r};     // TODO: Add second bit?
+`endif    
     assign pgm_param_w=      cmd_we;
     localparam [COLADDR_NUMBER-3-NUM_XFER_BITS-1:0] EXTRA_BITS=0;
     assign remainder_in_xfer = {EXTRA_BITS, lim_by_xfer}-mem_page_left;
@@ -698,7 +708,11 @@ wire    start_not_partial= xfer_start_r[0] && !xfer_limited_by_mem_page_r;
   `ifdef DEBUG_SENS_MEM_PAGES   
         .PAYLOAD_BITS     (2 + 2 +2 + 2 + 2 + 2 +2 + 3 + 3 + MCNTRL_SCANLINE_PENDING_CNTR_BITS)
   `else   
+    `ifdef DEBUG_MCNTRL_LINEAR_EXTRA_STATUS    
+        .PAYLOAD_BITS     (12)
+    `else    
         .PAYLOAD_BITS     (2)
+    `endif    
   `endif   
     ) status_generate_i (
         .rst              (1'b0),          //rst), // input

@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.3.66 (w)1999-2015 BSI
-[*] Tue Nov 15 08:28:37 2016
+[*] Thu Nov 17 03:52:16 2016
 [*]
-[dumpfile] "/home/eyesis/git/x393-neon/simulation/x393_dut-20161115004643177.fst"
-[dumpfile_mtime] "Tue Nov 15 08:28:05 2016"
-[dumpfile_size] 302685090
+[dumpfile] "/home/eyesis/git/x393-neon/simulation/x393_dut-20161116200800621.fst"
+[dumpfile_mtime] "Thu Nov 17 03:40:28 2016"
+[dumpfile_size] 230939121
 [savefile] "/home/eyesis/git/x393-neon/cocotb/x393_cocotb_03.sav"
-[timestart] 152590000
+[timestart] 0
 [size] 1814 1171
 [pos] 0 0
-*-23.275805 166587388 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-25.389460 68867388 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] x393_dut.
 [treeopen] x393_dut.simul_sensor12bits_2_i.
 [treeopen] x393_dut.simul_sensor12bits_3_i.
@@ -47,7 +47,9 @@
 [treeopen] x393_dut.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_tiled_rd_compressor_i.
 [treeopen] x393_dut.x393_i.mcntrl393_i.sens_comp_block[1].
 [treeopen] x393_dut.x393_i.mcntrl393_i.sens_comp_block[2].
+[treeopen] x393_dut.x393_i.mcntrl393_i.sens_comp_block[2].mcntrl_tiled_rd_compressor_i.
 [treeopen] x393_dut.x393_i.mcntrl393_i.sens_comp_block[3].
+[treeopen] x393_dut.x393_i.mcntrl393_i.sens_comp_block[3].mcntrl_tiled_rd_compressor_i.
 [treeopen] x393_dut.x393_i.mult_saxi_wr_i.mult_saxi_wr_pointers_i.
 [treeopen] x393_dut.x393_i.mult_saxi_wr_inbuf_i.
 [treeopen] x393_dut.x393_i.sensors393_i.
@@ -2758,17 +2760,68 @@ x393_dut.x393_i.sof_out_mclk[3:0]
 -group_end
 @800200
 -jpeg3
+-memsensor3
+@22
+x393_dut.x393_i.mcntrl393_i.sens_comp_block[2].mcntrl_linear_wr_sensor_i.window_height[16:0]
+x393_dut.x393_i.mcntrl393_i.sens_comp_block[2].mcntrl_linear_wr_sensor_i.window_width[13:0]
+@1000200
+-memsensor3
+@22
+x393_dut.x393_i.mcntrl393_i.sens_comp_block[2].mcntrl_tiled_rd_compressor_i.window_height[16:0]
+x393_dut.x393_i.mcntrl393_i.sens_comp_block[2].mcntrl_tiled_rd_compressor_i.window_width[13:0]
+x393_dut.x393_i.mcntrl393_i.sens_comp_block[2].mcntrl_tiled_rd_compressor_i.tile_rows[6:0]
+x393_dut.x393_i.mcntrl393_i.sens_comp_block[2].mcntrl_tiled_rd_compressor_i.tile_vstep[6:0]
 @28
 x393_dut.x393_i.mcntrl393_i.sens_comp_block[3].mcntrl_tiled_rd_compressor_i.chn_en
 x393_dut.x393_i.mcntrl393_i.sens_comp_block[3].mcntrl_tiled_rd_compressor_i.chn_rst
 x393_dut.x393_i.mcntrl393_i.sens_comp_block[3].mcntrl_tiled_rd_compressor_i.frame_en
 x393_dut.x393_i.mcntrl393_i.sens_comp_block[3].mcntrl_tiled_rd_compressor_i.frame_start
 x393_dut.x393_i.compressor393_i.cmprs_channel_block[3].jp_channel_i.cmprs_frame_sync_i.frames_numbers_differ
-@23
+@22
 [color] 6
 x393_dut.x393_i.compressor393_i.cmprs_channel_block[3].jp_channel_i.cmprs_frame_sync_i.line_unfinished_src[15:0]
+@28
+x393_dut.x393_i.mcntrl393_i.sens_comp_block[3].mcntrl_tiled_rd_compressor_i.frame_start_mod
+x393_dut.x393_i.mcntrl393_i.sens_comp_block[3].mcntrl_tiled_rd_compressor_i.chn_dis_delayed
+(6)x393_dut.x393_i.mcntrl393_i.sens_comp_block[3].mcntrl_tiled_rd_compressor_i.recalc_r[8:0]
+@c00022
 [color] 6
 x393_dut.x393_i.compressor393_i.cmprs_channel_block[3].jp_channel_i.cmprs_frame_sync_i.line_unfinished[15:0]
+@28
+[color] 6
+(0)x393_dut.x393_i.compressor393_i.cmprs_channel_block[3].jp_channel_i.cmprs_frame_sync_i.line_unfinished[15:0]
+[color] 6
+(1)x393_dut.x393_i.compressor393_i.cmprs_channel_block[3].jp_channel_i.cmprs_frame_sync_i.line_unfinished[15:0]
+[color] 6
+(2)x393_dut.x393_i.compressor393_i.cmprs_channel_block[3].jp_channel_i.cmprs_frame_sync_i.line_unfinished[15:0]
+[color] 6
+(3)x393_dut.x393_i.compressor393_i.cmprs_channel_block[3].jp_channel_i.cmprs_frame_sync_i.line_unfinished[15:0]
+[color] 6
+(4)x393_dut.x393_i.compressor393_i.cmprs_channel_block[3].jp_channel_i.cmprs_frame_sync_i.line_unfinished[15:0]
+[color] 6
+(5)x393_dut.x393_i.compressor393_i.cmprs_channel_block[3].jp_channel_i.cmprs_frame_sync_i.line_unfinished[15:0]
+[color] 6
+(6)x393_dut.x393_i.compressor393_i.cmprs_channel_block[3].jp_channel_i.cmprs_frame_sync_i.line_unfinished[15:0]
+[color] 6
+(7)x393_dut.x393_i.compressor393_i.cmprs_channel_block[3].jp_channel_i.cmprs_frame_sync_i.line_unfinished[15:0]
+[color] 6
+(8)x393_dut.x393_i.compressor393_i.cmprs_channel_block[3].jp_channel_i.cmprs_frame_sync_i.line_unfinished[15:0]
+[color] 6
+(9)x393_dut.x393_i.compressor393_i.cmprs_channel_block[3].jp_channel_i.cmprs_frame_sync_i.line_unfinished[15:0]
+[color] 6
+(10)x393_dut.x393_i.compressor393_i.cmprs_channel_block[3].jp_channel_i.cmprs_frame_sync_i.line_unfinished[15:0]
+[color] 6
+(11)x393_dut.x393_i.compressor393_i.cmprs_channel_block[3].jp_channel_i.cmprs_frame_sync_i.line_unfinished[15:0]
+[color] 6
+(12)x393_dut.x393_i.compressor393_i.cmprs_channel_block[3].jp_channel_i.cmprs_frame_sync_i.line_unfinished[15:0]
+[color] 6
+(13)x393_dut.x393_i.compressor393_i.cmprs_channel_block[3].jp_channel_i.cmprs_frame_sync_i.line_unfinished[15:0]
+[color] 6
+(14)x393_dut.x393_i.compressor393_i.cmprs_channel_block[3].jp_channel_i.cmprs_frame_sync_i.line_unfinished[15:0]
+[color] 6
+(15)x393_dut.x393_i.compressor393_i.cmprs_channel_block[3].jp_channel_i.cmprs_frame_sync_i.line_unfinished[15:0]
+@1401200
+-group_end
 @28
 x393_dut.x393_i.compressor393_i.cmprs_channel_block[3].jp_channel_i.cmprs_frame_sync_i.line_numbers_sync
 x393_dut.x393_i.mcntrl393_i.sens_comp_block[3].mcntrl_tiled_rd_compressor_i.frames_in_sync
@@ -2807,6 +2860,11 @@ x393_dut.x393_i.compressor393_i.cmprs_channel_block[3].jp_channel_i.huffman_stuf
 @28
 x393_dut.x393_i.compressor393_i.cmprs_channel_block[3].jp_channel_i.huffman_stuffer_meta_i.stuffer_bytes[1:0]
 x393_dut.x393_i.compressor393_i.cmprs_channel_block[3].jp_channel_i.huffman_stuffer_meta_i.stuffer_dv
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[3].jp_channel_i.huffman_stuffer_meta_i.bit_stuffer_27_32_i.flush_in
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[3].jp_channel_i.flush_hclk
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[3].jp_channel_i.irq
+@23
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[3].jp_channel_i.frame_num_compressed[3:0]
 @c00200
 -bit_stuffer_27_32
 @28

@@ -40,7 +40,7 @@
  * with at least one of the Free Software programs.
  */
 `timescale 1ns/1ps
-
+`undef DEBUG_MCNTRL_TILED_EXTRA_STATUS 
 module  mcntrl_tiled_rw#(
     parameter ADDRESS_NUMBER=                   15,
     parameter COLADDR_NUMBER=                   10,
@@ -213,14 +213,16 @@ module  mcntrl_tiled_rw#(
     reg                           last_block;
     reg [MCNTRL_TILED_PENDING_CNTR_BITS-1:0] pending_xfers; // number of requested,. but not finished block transfers   (to genearate frame done)   
     reg   [NUM_RC_BURST_BITS-1:0] row_col_r;
-//    reg   [FRAME_HEIGHT_BITS-1:0] line_unfinished_r0;
-//    reg   [FRAME_HEIGHT_BITS-1:0] line_unfinished_r1;
-//    reg [2*FRAME_HEIGHT_BITS-1:0] line_unfinished_r;
     reg   [FRAME_HEIGHT_BITS-1:0] line_unfinished_relw_r;
     reg   [FRAME_HEIGHT_BITS-1:0] line_unfinished_r;
     
     wire                          pre_want;
+`ifdef DEBUG_MCNTRL_TILED_EXTRA_STATUS    
+    wire                   [13:0] status_data;
+`else    
     wire                    [1:0] status_data;
+`endif    
+    
     wire                    [3:0] cmd_a; 
     wire                   [31:0] cmd_data; 
     wire                          cmd_we;
@@ -335,7 +337,8 @@ module  mcntrl_tiled_rw#(
         else if (set_frame_width_w) frame_full_width <= {lsw13_zero,cmd_data[FRAME_WIDTH_BITS-1:0]};
         
         if (mrst) is_last_frame <= 0;
-        else     is_last_frame <= frame_number_cntr == last_frame_number;
+//        else     is_last_frame <= frame_number_cntr == last_frame_number;
+        else     is_last_frame <= frame_number_cntr >= last_frame_number; // trying to make it safe 
         
         if (mrst) frame_start_r <= 0;
         else      frame_start_r <= {frame_start_r[3:0], frame_start_mod & frame_en}; // frame_start
@@ -446,7 +449,13 @@ module  mcntrl_tiled_rw#(
     assign repeat_frames=    mode_reg[MCONTR_LINTILE_REPEAT];
     assign disable_need =    mode_reg[MCONTR_LINTILE_DIS_NEED];
     assign abort_en =        mode_reg[MCONTR_LINTILE_ABORT_LATE];
+`ifdef DEBUG_MCNTRL_TILED_EXTRA_STATUS    
+    assign status_data=      {frames_in_sync, suspend, last_row_w, last_in_row,line_unfinished[7:0], frame_finished_r, busy_r}; 
+`else    
     assign status_data=      {frame_finished_r, busy_r}; 
+`endif    
+    
+    
     assign pgm_param_w=      cmd_we;
     assign rowcol_inc=       frame_full_width;
     assign num_cols_m1_w=    num_cols_r-1;
@@ -644,7 +653,8 @@ wire    start_not_partial= xfer_start_r[0] && !xfer_limited_by_mem_page_r;
         if (recalc_r[0]) line_unfinished_relw_r <= curr_y + (cmd_wrmem ? 0: tile_rows);
         
         if (mrst || (frame_start_mod || chn_dis_delayed))  line_unfinished_r <= {FRAME_HEIGHT_BITS{~cmd_wrmem}}; // lowest/highest value until valid
-        else if (recalc_r[2])                              line_unfinished_r <= line_unfinished_relw_r + window_y0;
+///        else if (recalc_r[2])                              line_unfinished_r <= line_unfinished_relw_r + window_y0;
+        else if (recalc_r[2] && busy_r)                    line_unfinished_r <= line_unfinished_relw_r + window_y0;
         
     end
     always @ (negedge mclk) begin
@@ -669,7 +679,11 @@ wire    start_not_partial= xfer_start_r[0] && !xfer_limited_by_mem_page_r;
 
     status_generate #(
         .STATUS_REG_ADDR  (MCNTRL_TILED_STATUS_REG_ADDR),
+`ifdef DEBUG_MCNTRL_TILED_EXTRA_STATUS    
+        .PAYLOAD_BITS     (14)
+`else    
         .PAYLOAD_BITS     (2)
+`endif    
     ) status_generate_i (
         .rst              (1'b0),          // input
         .clk              (mclk),          // input
