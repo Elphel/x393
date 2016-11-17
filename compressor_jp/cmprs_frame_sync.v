@@ -188,7 +188,8 @@ module  cmprs_frame_sync#(
         
         frames_numbers_differ <= !suspend_end && (frame_number_src != frame_number); // during end of frame, before frame number is incremented
         
-        line_numbers_sync <= (line_unfinished_src > line_unfinished);
+///        line_numbers_sync <= (line_unfinished_src > line_unfinished);
+        line_numbers_sync <= (line_unfinished_src >= line_unfinished);
         
         suspend <= bonded_mode && (!frames_in_sync || !((sigle_frame_buf ? frames_differ : frames_numbers_differ) || line_numbers_sync));
 

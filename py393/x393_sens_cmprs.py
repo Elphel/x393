@@ -442,6 +442,7 @@ class X393SensCmprs(object):
 #                              frame_start_address, # calculate through num_sensor, num frames, frame size and start addr?
 #                              frame_start_address_inc,
                               last_buf_frame =            1,  #  - just 2-frame buffer
+                              cmode =                     vrlg.CMPRS_CBIT_CMODE_JPEG18,
                               colorsat_blue =             0x120,     # 0x90 fo 1x
                               colorsat_red =              0x16c,     # 0xb6 for x1
                               clk_sel =                   1,         # 1
@@ -449,7 +450,8 @@ class X393SensCmprs(object):
                               histogram_top =             None, # 0,
                               histogram_width_m1 =        None, # 2559, #0,
                               histogram_height_m1 =       None, # 1935, #0,
-                              verbose =                   1):
+                              verbose =                   1
+                              ):
         """
         Setup one sensor+compressor channel (for one sub-channel only)
         @param exit_step -         exit after executing specified step:
@@ -469,6 +471,20 @@ class X393SensCmprs(object):
         @param window_left -       left margin of the window (here - in pixels)
         @param window_top -        top margin of the window (16 bit)
         @param last_buf_frame) -   16-bit number of the last frame in a buffer
+        @param cmode -       color mode:
+                                CMPRS_CBIT_CMODE_JPEG18 =          0 - color 4:2:0
+                                CMPRS_CBIT_CMODE_MONO6 =           1 - mono 4:2:0 (6 blocks)
+                                CMPRS_CBIT_CMODE_JP46 =            2 - jp4, 6 blocks, original
+                                CMPRS_CBIT_CMODE_JP46DC =          3 - jp4, 6 blocks, dc -improved
+                                CMPRS_CBIT_CMODE_JPEG20 =          4 - mono, 4 blocks (but still not actual monochrome JPEG as the blocks are scanned in 2x2 macroblocks)
+                                CMPRS_CBIT_CMODE_JP4 =             5 - jp4,  4 blocks, dc-improved
+                                CMPRS_CBIT_CMODE_JP4DC =           6 - jp4,  4 blocks, dc-improved
+                                CMPRS_CBIT_CMODE_JP4DIFF =         7 - jp4,  4 blocks, differential
+                                CMPRS_CBIT_CMODE_JP4DIFFHDR =      8 - jp4,  4 blocks, differential, hdr
+                                CMPRS_CBIT_CMODE_JP4DIFFDIV2 =     9 - jp4,  4 blocks, differential, divide by 2
+                                CMPRS_CBIT_CMODE_JP4DIFFHDRDIV2 = 10 - jp4,  4 blocks, differential, hdr,divide by 2
+                                CMPRS_CBIT_CMODE_MONO1 =          11 -  mono JPEG (not yet implemented)
+                                CMPRS_CBIT_CMODE_MONO4 =          14 -  mono 4 blocks
         @param colorsat_blue - color saturation for blue (10 bits), 0x90 for 100%
         @param colorsat_red -  color saturation for red (10 bits), 0xb6 for 100%
         @param clk_sel - True - use pixel clock from the sensor, False - use internal clock (provided to the sensor), None - no chnage
@@ -489,7 +505,8 @@ class X393SensCmprs(object):
                                       window_height = window_height,
                                       window_left =   window_left,
                                       window_top =    window_top,
-                                      cmode =         None, # will use 0
+#                                      cmode =         None, # will use 0
+                                      cmode =         cmode, # will use 0
                                       verbose =       0)
         window_width =   window["width"]
         window_height =  window["height"]
@@ -580,6 +597,7 @@ class X393SensCmprs(object):
             print ("last_buf_frame =            ", last_buf_frame)
             print ("num_macro_cols_m1 =         ", num_macro_cols_m1)
             print ("num_macro_rows_m1 =         ", num_macro_rows_m1)
+            print ("cmode =                     ", cmode)
             print ("verbose =                   ", verbose)
         if exit_step == 10: return False
             
@@ -602,6 +620,11 @@ class X393SensCmprs(object):
         if verbose >0 :
             print ("===================== MEMORY_SENSOR =========================")
             
+        window_height_memory = window_height
+        if cmode==vrlg.CMPRS_CBIT_CMODE_JP4:
+            window_height_memory &= 0xfff0 # do not need extra margins
+            num_burst_in_line &= 0xfffe    # make even (assuming left=0)  
+            
         self.x393Sensor.setup_sensor_memory (
             num_sensor =       num_sensor,              # input  [1:0] num_sensor;
             frame_sa =         frame_start_address,     # input [31:0] frame_sa;         # 22-bit frame start address ((3 CA LSBs==0. BA==0)
@@ -610,7 +633,8 @@ class X393SensCmprs(object):
             frame_full_width = frame_full_width,        # input [31:0] frame_full_width; # 13-bit Padded line length (8-row increment), in 8-bursts (16 bytes)
 #            window_width =     window_width >> 4,        # input [31:0] window_width;     # 13 bit - in 8*16=128 bit bursts
             window_width =     num_burst_in_line,       # input [31:0] window_width;     # 13 bit - in 8*16=128 bit bursts
-            window_height =    window_height,           # input [31:0] window_height;    # 16 bit
+#            window_height =    window_height,           # input [31:0] window_height;    # 16 bit
+            window_height =    window_height_memory,   # input [31:0] window_height;    # 16 bit
             window_left =      window_left >> 4,        # input [31:0] window_left;
             window_top =       window_top);             # input [31:0] window_top;
     # Enable arbitration of sensor-to-memory controller
@@ -622,11 +646,14 @@ class X393SensCmprs(object):
         self.x393Cmprs.compressor_control(chn =  num_sensor,
                                           run_mode = 0) # reset compressor
         #TODO: Calculate from the image size?
+        """
+        #How it was        
         self.x393Cmprs.setup_compressor_channel (
                                   chn =               num_sensor,
                                   qbank =             0,
                                   dc_sub =            True,
                                   cmode =             vrlg.CMPRS_CBIT_CMODE_JPEG18,
+#                                  cmode =             vrlg.CMPRS_CBIT_CMODE_JP4,
                                   multi_frame =       True,
                                   bayer       =       0,
                                   focus_mode  =       0,
@@ -681,6 +708,25 @@ class X393SensCmprs(object):
             extra_pages =      1,
             disable_need =     1,
             abort_late =       False)
+        """
+        # replacing with setup compressor:
+        self.setup_compressor(chn =  num_sensor,
+                               cmode =          cmode,
+                               qbank =          0,
+                               dc_sub =         True,
+                               multi_frame =    True,
+                               bayer =          0,
+                               focus_mode =     0,
+                               coring =         0,
+                               window_width =   window_width, # 2592,   # 2592
+                               window_height =  window_height, # 1944,   # 1944
+                               window_left =    window_left, # 0,     # 0
+                               window_top =     window_top, # 0, # 0? 1?
+                               last_buf_frame = last_buf_frame,  #  - just 2-frame buffer
+                               colorsat_blue =  colorsat_blue, #0x120     # 0x90 for 1x
+                               colorsat_red =   colorsat_red, #0x16c,     # 0xb6 for x1
+                               verbose =        verbose)
+
 
         if exit_step == 15: return False
     
@@ -1175,9 +1221,40 @@ class X393SensCmprs(object):
         window_left =    window["left"]
         window_top =     window["top"]
         cmode =          window["cmode"]
+        COLOR_MARGINS = 2
         num_sensor = chn # 1:1 sensor - compressor
         
         align_to_bursts = 64 # align full width to multiple of align_to_bursts. 64 is the size of memory access
+        """
+        overlap = 0    # tile overlap (total - 2 for JPEG18, 4 - for JPEG20, 0 otherwise
+        cmprs_top = 0  # 1 for JPEG18 only, 0 for others (also is used for compressor left)
+        if cmode ==  vrlg.CMPRS_CBIT_CMODE_JPEG18:
+            overlap = 2
+            cmprs_top = 1
+        elif cmode ==  vrlg.CMPRS_CBIT_CMODE_JPEG20:
+            overlap = 4
+            
+        if overlap:
+            window_width +=  (2 * COLOR_MARGINS)
+            window_height += (2 * COLOR_MARGINS)
+            tile_width = 2
+        else:
+            tile_width = 4
+#        cmprs_frame_format.left_margin = cmprs_top; // same as top - only for 18x18 tiles to keep Bayer shift (0/1)
+    
+        width_bursts = window_width >> 4
+        if  window_width & 0xf:
+            width_bursts += 1
+        # Adjusting for tile width. TODO: probably not needed, handled in FPGA - verify (and remove 2 next lines)
+        if width_bursts & 1:
+            width_bursts += 1
+        if (tile_width > 2) and (width_bursts & 2):
+             width_bursts += 2
+    
+        tile_height = 16 + overlap;
+        """
+        
+        
         width_in_bursts = window_width >> 4
         if (window_width & 0xf):
             width_in_bursts += 1
@@ -1231,7 +1308,7 @@ class X393SensCmprs(object):
             tile_margin = 0 # 18x18 instead of 16x16
             tile_width =  4
 #            extra_pages = (0,1)[(compressor_left_margin % 16) != 0] # memory access block border does not cut macroblocks
-            extra_pages = 1 # just testing, 0 should be OK  here
+            extra_pages = 0 #  1 # just testing, 0 should be OK  here
         tile_vstep = 16
         tile_height = tile_vstep + tile_margin
 
@@ -1336,6 +1413,7 @@ class X393SensCmprs(object):
                               window_top =                None, # 0, # 0? 1?
                               compressor_left_margin =    0, #0?`1? 
                               last_buf_frame =            1,  #  - just 2-frame buffer
+                              cmode =                     vrlg.CMPRS_CBIT_CMODE_JPEG18,
                               colorsat_blue =             0x120,     # 0x90 fo 1x
                               colorsat_red =              0x16c,     # 0xb6 for x1
                               clk_sel =                   1,         # 1
@@ -1373,6 +1451,20 @@ class X393SensCmprs(object):
         @param window_top -        top margin of the window (16 bit)
         @param compressor_left_margin - 0..31 - left margin for compressor (to the nearest 32-byte column)
         @param last_buf_frame) -   16-bit number of the last frame in a buffer
+        @param cmode -       color mode:
+                                CMPRS_CBIT_CMODE_JPEG18 =          0 - color 4:2:0
+                                CMPRS_CBIT_CMODE_MONO6 =           1 - mono 4:2:0 (6 blocks)
+                                CMPRS_CBIT_CMODE_JP46 =            2 - jp4, 6 blocks, original
+                                CMPRS_CBIT_CMODE_JP46DC =          3 - jp4, 6 blocks, dc -improved
+                                CMPRS_CBIT_CMODE_JPEG20 =          4 - mono, 4 blocks (but still not actual monochrome JPEG as the blocks are scanned in 2x2 macroblocks)
+                                CMPRS_CBIT_CMODE_JP4 =             5 - jp4,  4 blocks, dc-improved
+                                CMPRS_CBIT_CMODE_JP4DC =           6 - jp4,  4 blocks, dc-improved
+                                CMPRS_CBIT_CMODE_JP4DIFF =         7 - jp4,  4 blocks, differential
+                                CMPRS_CBIT_CMODE_JP4DIFFHDR =      8 - jp4,  4 blocks, differential, hdr
+                                CMPRS_CBIT_CMODE_JP4DIFFDIV2 =     9 - jp4,  4 blocks, differential, divide by 2
+                                CMPRS_CBIT_CMODE_JP4DIFFHDRDIV2 = 10 - jp4,  4 blocks, differential, hdr,divide by 2
+                                CMPRS_CBIT_CMODE_MONO1 =          11 -  mono JPEG (not yet implemented)
+                                CMPRS_CBIT_CMODE_MONO4 =          14 -  mono 4 blocks
         @param colorsat_blue - color saturation for blue (10 bits), 0x90 for 100%
         @param colorsat_red -  color saturation for red (10 bits), 0xb6 for 100%
         @param clk_sel - True - use pixel clock from the sensor, False - use internal clock (provided to the sensor), None - no change
@@ -1396,7 +1488,7 @@ class X393SensCmprs(object):
                                       window_height = window_height,
                                       window_left =   window_left,
                                       window_top =    window_top,
-                                      cmode =         None, # will use 0
+                                      cmode =         cmode, # will use 0
                                       verbose =       0)
         window_width =   window["width"]
         window_height =  window["height"]
@@ -1574,6 +1666,7 @@ class X393SensCmprs(object):
                           window_top =              window_top, # 0? 1?
 #                          compressor_left_margin =  compressor_left_margin, #0?`1? 
                           last_buf_frame =          last_buf_frame,  #  - just 2-frame buffer
+                          cmode =                   cmode,
                           colorsat_blue =           colorsat_blue,     # 0x90 fo 1x
                           colorsat_red =            colorsat_red,     # 0xb6 for x1
                           clk_sel =                 clk_sel,         # 1

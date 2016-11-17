@@ -35,7 +35,12 @@
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
  */
-        parameter FPGA_VERSION =          32'h039300cd;      //parallel - making stop compression clean -0.048/8, 79.50
+        parameter FPGA_VERSION =          32'h039300d1;      //parallel - removed extra debug -0.042/9 80.34%
+//      parameter FPGA_VERSION =          32'h039300d1;      //parallel - changing line_numbers_sync condition  -0.011/3, 80.78 %
+//      parameter FPGA_VERSION =          32'h039300d0;      //parallel - more status data
+//      parameter FPGA_VERSION =          32'h039300cf;      //parallel - more status data for debugging ddr3_clk_div -0.033/2, 80.94%
+//      parameter FPGA_VERSION =          32'h039300ce;      //parallel - frame_number_cntr >= last_frame_number -0.019/6 80.42%
+//      parameter FPGA_VERSION =          32'h039300cd;      //parallel - making stop compression clean -0.048/8, 79.50
 //      parameter FPGA_VERSION =          32'h039300cc;      //parallel - more jpeg tail -0.268/56, 80.24 %
 //      parameter FPGA_VERSION =          32'h039300cb;      //parallel - modifying trigger/timestamps -0.050/13 80.38%
 //      parameter FPGA_VERSION =          32'h039300ca;      //parallel - and more ... fixed -0.267/46, 80.42%

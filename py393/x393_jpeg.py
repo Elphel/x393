@@ -2894,7 +2894,9 @@ jpeg_sim_multi 4
 ################## Simulate Parallel 17 - free running, aborted frame  ####################
 ./py393/test_mcntrl.py @py393/cocoargs  --simulated=localhost:7777
 measure_all "*DI"
-setup_all_sensors True None 0xf
+#setup_all_sensors True None 0xf
+setup_all_sensors  True  None  0xf  False None None None None 0   1   5 # JP4
+#setup_all_sensors  True  None  0xf  False None None None None 0   1   0 # JPEG
 #Setting ARO for free run mode? 
 set_sensor_io_ctl  all None None 1 # Set ARO low - check if it is still needed?
 
