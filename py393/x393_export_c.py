@@ -789,6 +789,8 @@ class X393ExportC(object):
         ba = vrlg.STATUS_ADDR
         ia = 0
         c =  ""
+        fpga_ver=   (1 << vrlg.STATUS_DEPTH) - 1;
+        sens_iface= (1 << vrlg.STATUS_DEPTH) - 2;
         sdefines +=[
             (('Read-only addresses for status information',)),
             (("X393_MCONTR_PHY_STATUS",                  c, vrlg.MCONTR_PHY_STATUS_REG_ADDR + ba, 0, None, "x393_status_mcntrl_phy", "ro",                   "Status register for MCNTRL PHY")),
@@ -802,6 +804,8 @@ class X393ExportC(object):
             (("X393_TEST01_CHN3_STATUS",                 c, vrlg.MCNTRL_TEST01_STATUS_REG_CHN3_ADDR+ba,0,None,   "x393_status_mcntrl_testchn", "ro",         "Status register for test channel 3")),
             (("X393_TEST01_CHN4_STATUS",                 c, vrlg.MCNTRL_TEST01_STATUS_REG_CHN4_ADDR+ba,0,None,   "x393_status_mcntrl_testchn", "ro",         "Status register for test channel 4")),
             (("X393_MEMBRIDGE_STATUS",                   c, vrlg.MEMBRIDGE_STATUS_REG+ba, 0, None,         "x393_status_membridge", "ro",                    "Status register for membridge")),
+            (("X393_FPGA_VERSION",                       c, fpga_ver + ba, 0, None,                         "u32*", "ro",                                    "FPGA bitstream version")),
+            (("X393_SENSOR_INTERFACE",                   c, sens_iface + ba, 0, None,                       "u32*", "ro",                                    "Sensor interface 0-parallel 12, 1 - HiSPI 4 lanes")),
             ]
 
         #Registers to control sensor channels        
