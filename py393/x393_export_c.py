@@ -1022,10 +1022,10 @@ class X393ExportC(object):
             (("X393_AFIMUX1_STATUS",                    c, vrlg.CMPRS_AFIMUX_REG_ADDR1 +             ba, ia, z3, "x393_afimux_status", "ro",          "Status of the AFI MUX 1 (including image pointer)")),
             ]
 
-        #GPIO control
+        #GPIO control - modified to use sequencer so any channel can control it
         ba = vrlg.GPIO_ADDR
         ia = 0
-        c =  ""
+        c =  "sens_chn"
         sdefines +=[
             (('_',)),
             (('_GPIO contol. Each of the 10 pins can be controlled by the software - individually or simultaneously or from any of the 3 masters (other FPGA modules)',)),
@@ -1034,7 +1034,7 @@ class X393ExportC(object):
             (('_     B - reserved (not yet used) and ',)),
             (('_     C - logger (IMU, GPS, images), uses 6 pins, including separate i2c available on extension boards',)),
             (('_If several enabled ports try to contol the same bit, highest priority has port C, lowest - software controlled',)),
-            (("X393_GPIO_SET_PINS",                       "", vrlg.GPIO_SET_PINS +                   ba, 0, None, "x393_gpio_set_pins", "wo",       "State of the GPIO pins and seq. number")),
+            (("X393_GPIO_SET_PINS",                       c,  vrlg.GPIO_SET_PINS +                   ba, 0, z3,   "x393_gpio_set_pins", "wo",       "State of the GPIO pins and seq. number")),
             (("X393_GPIO_STATUS_CONTROL",                 "", vrlg.GPIO_SET_STATUS +                 ba, 0, None, "x393_status_ctrl", "rw",         "GPIO status control mode"))]
         
         ba = vrlg.STATUS_ADDR
