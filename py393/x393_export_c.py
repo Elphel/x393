@@ -1409,6 +1409,7 @@ class X393ExportC(object):
                   isGenAbs = False):
 #        name, var_name, address, address_inc, var_range, data_type, rw, comment = define_tuple
         name, var_name, address, address_inc, _, data_type, rw, comment = define_tuple
+        use_address_inc = address_inc or isGenRel or isGenAbs # so address_inc ==0 will work for TRIG_ parameters
         multivar = isinstance(address_inc,(list,tuple)) # var_name, var_range are also lists/tuples of the same length
         stops=frmt_spcs[('declare','define')[isDefine]]
         #TODO: add optional argument range check?
@@ -1431,7 +1432,7 @@ class X393ExportC(object):
                 args += ', int '+ vn.lower()
         else:
             arg = var_name.lower()   
-            if arg and address_inc:
+            if arg and use_address_inc:
                 args += ', int '+ arg    
         s = "void "
         s = self.str_tab_stop(s,stops[0])
@@ -1476,7 +1477,7 @@ class X393ExportC(object):
                 
             else:   
                 s+='{writel(%s, mmio_ptr + '%(td)
-                if address_inc:
+                if use_address_inc:
                     s+='(0x%04x'%(address)
                     if multivar:
                         for vn, vi in zip (var_name, address_inc):
