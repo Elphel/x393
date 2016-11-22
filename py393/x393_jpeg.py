@@ -2529,8 +2529,11 @@ jpeg_sim_multi 4
 ################## Simulate Parallel 14 - external trigger ####################
 ./py393/test_mcntrl.py @py393/cocoargs  --simulated=localhost:7777
 measure_all "*DI"
-setup_all_sensors True None 0xf
-#set_sensor_io_ctl  all None None 1 # Set ARO low - check if it is still needed?
+setup_all_sensors  True  None  0xf
+#setup_all_sensors  True  None  0xf  False None None None None 0   1   5 # JP4
+ setup_all_sensors  True  None  0xf  False None None None None 0   1   0 # JPEG
+
+set_sensor_io_ctl  all None None 1 # Set ARO low - check if it is still needed?
 
 #use EOF instead of SOF for i2c sequencer advance
 set_sensor_i2c_command  all  False  None  None  None None None None True
@@ -2549,7 +2552,7 @@ set_logger_params_file "/home/eyesis/git/x393-neon/attic/imu_config.bin"
 
 reset_camsync_inout 1 # reset all outputs
 set_camsync_period 31 # set bit duration
-set_camsync_period  10000 # 100 usec
+#set_camsync_period  10000 # 100 usec
 set_camsync_delay 0  400
 set_camsync_delay 1 1000
 set_camsync_delay 2 2000
@@ -2562,6 +2565,7 @@ set_camsync_inout  0  7  0
 
 #set_camsync_mode  <en=None>  <en_snd=None>  <en_ts_external=None>  <triggered_mode=None>  <master_chn=None>  <chn_en=None> 
 set_camsync_mode  1 1 1 1 0 0xf
+set_camsync_period  10000 # 100 usec # and start
  
 
 

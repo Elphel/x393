@@ -263,9 +263,11 @@ module camsync393       #(
     reg   [31:0]  restart_cntr; // restart period counter
     reg    [1:0]  restart_cntr_run; // restart counter running
     wire          restart;          // restart out sync
+    wire   [9:0]  trigger_condition_mask_w; // which bits to watch for the trigger condition
     reg           trigger_condition; // GPIO input trigger condition met
-    reg           trigger_condition_d; // GPIO input trigger condition met, delayed (for edge detection)
+    reg    [1:0]  trigger_condition_d; // GPIO input trigger condition met, delayed (for edge detection)
     reg           trigger_condition_filtered; // trigger condition filtered
+    reg           trigger_condition_filtered_d; // trigger condition filtered delayed (to detect leading edge)
     reg    [6:0]  trigger_filter_cntr;
     reg    [3:0]  trig_r;
     wire   [3:0]  trig_r_mclk;
@@ -347,7 +349,7 @@ module camsync393       #(
     reg           ext_int_mode_pclk;     
     
     reg           ext_int_trigger_condition; // GPIO input trigger condition met
-    reg           ext_int_trigger_condition_d; // GPIO input trigger condition met, delayed (for edge detection)
+    reg    [1:0]  ext_int_trigger_condition_d; // GPIO input trigger condition met, delayed (for edge detection)
     reg           ext_int_trigger_condition_filtered; // trigger condition filtered
     reg           ext_int_trigger_condition_filtered_d; // trigger condition filtered - delayed version
     reg    [6:0]  ext_int_trigger_filter_cntr;
@@ -633,35 +635,43 @@ module camsync393       #(
 /// if the trigger pulses continue to come.
 
     assign pre_rcv_error= (sr_rcv_first[31:26]!=CAMSYNC_PRE_MAGIC) || (sr_rcv_second[5:0]!=CAMSYNC_POST_MAGIC);
+    assign trigger_condition_mask_w = input_use[9:0] &  ~(ext_int_mode_pclk?(10'b1 << CAMSYNC_GPIO_EXT_IN):10'b0);
+    
     always @ (posedge pclk) begin
 
         triggered_mode_pclk<= triggered_mode_r;
         bit_length_short[7:0] <= bit_length[7:0]-bit_length_plus1[7:2]-1; // 3/4 of the duration
 
 //        trigger_condition <= (((gpio_in[9:0] ^ input_pattern[9:0]) & input_use[9:0]) == 10'b0);
-        trigger_condition <= (((gpio_in[9:0] ^ input_pattern[9:0]) & input_use[9:0] &
-         ~(ext_int_mode_pclk?(10'b1 << CAMSYNC_GPIO_EXT_IN):10'b0)) == 10'b0); // disable external trigger in line
-        trigger_condition_d <= trigger_condition;
+//        trigger_condition <= (((gpio_in[9:0] ^ input_pattern[9:0]) & input_use[9:0] &
+//         ~(ext_int_mode_pclk?(10'b1 << CAMSYNC_GPIO_EXT_IN):10'b0)) == 10'b0); // disable external trigger in line
+
+    // trigger_condition_mask_w is @ mclk, but input signal is asynchronous too, so filtering is needed anyway)
+        trigger_condition <=  (|trigger_condition_mask_w) && (((gpio_in[9:0] ^ input_pattern[9:0]) & trigger_condition_mask_w) == 10'b0); // disable external trigger in line
+        
+        trigger_condition_d <= {trigger_condition_d[0], trigger_condition};
      
      
-        if (!triggered_mode_pclk || (trigger_condition !=trigger_condition_d)) trigger_filter_cntr <= {1'b0,bit_length[7:2]};
+        if (!triggered_mode_pclk || (trigger_condition_d[0] !=trigger_condition_d[1])) trigger_filter_cntr <= {1'b0,bit_length[7:2]};
         else if (!trigger_filter_cntr[6]) trigger_filter_cntr<=trigger_filter_cntr-1;
      
         if      (input_use_intern)       trigger_condition_filtered <= 1'b0;
-        else if (trigger_filter_cntr[6]) trigger_condition_filtered <= trigger_condition_d;
+        else if (trigger_filter_cntr[6]) trigger_condition_filtered <= trigger_condition_d[1];
+        
+        trigger_condition_filtered_d <=trigger_condition_filtered;
       
                                      
-        rcv_run_or_deaf <= start_en && (trigger_condition_filtered ||
+        rcv_run_or_deaf <= start_en && ((trigger_condition_filtered && !trigger_condition_filtered_d)|| // Is it OK to use leading edge only here?
                                        (rcv_run_or_deaf && !(bit_rcv_duration_zero  && (bit_rcv_counter[6:0]==0))));
 
         ext_int_trigger_condition <= ext_int_mode_pclk && !(gpio_in[CAMSYNC_GPIO_EXT_IN] ^ input_pattern[CAMSYNC_GPIO_EXT_IN]); // disable external trigger in line
-        ext_int_trigger_condition_d <= ext_int_trigger_condition;
+        ext_int_trigger_condition_d <= {ext_int_trigger_condition_d[0], ext_int_trigger_condition};
      
-        if (!triggered_mode_pclk || (ext_int_trigger_condition !=ext_int_trigger_condition_d)) ext_int_trigger_filter_cntr <= {1'b0,bit_length[7:2]};
+        if (!triggered_mode_pclk || (ext_int_trigger_condition_d[0] !=ext_int_trigger_condition_d[1])) ext_int_trigger_filter_cntr <= {1'b0,bit_length[7:2]};
         else if (!ext_int_trigger_filter_cntr[6]) ext_int_trigger_filter_cntr <= ext_int_trigger_filter_cntr-1;
      
         if      (input_use_intern)                ext_int_trigger_condition_filtered <= 1'b0;
-        else if (ext_int_trigger_filter_cntr[6])  ext_int_trigger_condition_filtered <= ext_int_trigger_condition_d;
+        else if (ext_int_trigger_filter_cntr[6])  ext_int_trigger_condition_filtered <= ext_int_trigger_condition_d[1];
         
         ext_int_trigger_condition_filtered_d <= ext_int_trigger_condition_filtered;
         
