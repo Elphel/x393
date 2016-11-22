@@ -1065,15 +1065,15 @@ class X393ExportC(object):
         c =  "sens_chn"
         sdefines +=[
             (('CAMSYNC control',)),
-            (("X393_CAMSYNC_MODE",                        "", vrlg.CAMSYNC_MODE +                    ba, 0, None, "x393_camsync_mode", "wo",        "CAMSYNC mode")),
-            (("X393_CAMSYNC_TRIG_SRC",                    "", vrlg.CAMSYNC_TRIG_SRC +                ba, 0, None, "x393_camsync_io", "wo",          "CAMSYNC trigger source")),
-            (("X393_CAMSYNC_TRIG_DST",                    "", vrlg.CAMSYNC_TRIG_DST +                ba, 0, None, "x393_camsync_io", "wo",          "CAMSYNC trigger destination")),
+            (("X393_CAMSYNC_MODE",                        "", vrlg.CAMSYNC_MODE +                    ba, 0, z3,   "x393_camsync_mode", "wo",        "CAMSYNC mode")),
+            (("X393_CAMSYNC_TRIG_SRC",                    "", vrlg.CAMSYNC_TRIG_SRC +                ba, 0, z3,   "x393_camsync_io", "wo",          "CAMSYNC trigger source")),
+            (("X393_CAMSYNC_TRIG_DST",                    "", vrlg.CAMSYNC_TRIG_DST +                ba, 0, z3,   "x393_camsync_io", "wo",          "CAMSYNC trigger destination")),
             (('_Trigger period has special value for small (<255) values written to this register',)),
             (('_    d == 0 - disable (stop periodic mode)',)),
             (('_    d == 1 - single trigger',)),
             (('_    d == 2..255 - set output pulse / input-output serial bit duration (no start generated)',)),
             (('_    d >= 256 - repetitive trigger',)),
-            (("X393_CAMSYNC_TRIG_PERIOD",                 "", vrlg.CAMSYNC_TRIG_PERIOD +             ba, 0, None, "u32*", "rw",                     "CAMSYNC trigger period")),
+            (("X393_CAMSYNC_TRIG_PERIOD",                 "", vrlg.CAMSYNC_TRIG_PERIOD +             ba, 0, z3,   "u32*", "rw",                     "CAMSYNC trigger period")),
             (("X393_CAMSYNC_TRIG_DELAY",                  c,  vrlg.CAMSYNC_TRIG_DELAY0 +             ba, 1, z3,   "u32*", "rw",                     "CAMSYNC trigger delay"))]
         
         ba = vrlg.CMDFRAMESEQ_ADDR_BASE
