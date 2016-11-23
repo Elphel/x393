@@ -442,7 +442,7 @@ class X393SensCmprs(object):
 #                              frame_start_address, # calculate through num_sensor, num frames, frame size and start addr?
 #                              frame_start_address_inc,
                               last_buf_frame =            1,  #  - just 2-frame buffer
-                              cmode =                     vrlg.CMPRS_CBIT_CMODE_JPEG18,
+                              cmode =                     0, # vrlg.CMPRS_CBIT_CMODE_JPEG18,
                               colorsat_blue =             0x120,     # 0x90 fo 1x
                               colorsat_red =              0x16c,     # 0xb6 for x1
                               clk_sel =                   1,         # 1
@@ -1141,7 +1141,7 @@ class X393SensCmprs(object):
              
     def setup_compressor(self,
                           chn,
-                          cmode =            vrlg.CMPRS_CBIT_CMODE_JPEG18,
+                          cmode =            0, # vrlg.CMPRS_CBIT_CMODE_JPEG18,
                           bayer =            0,
                           qbank =            0,
                           dc_sub =           1,
@@ -1413,7 +1413,7 @@ class X393SensCmprs(object):
                               window_top =                None, # 0, # 0? 1?
                               compressor_left_margin =    0, #0?`1? 
                               last_buf_frame =            1,  #  - just 2-frame buffer
-                              cmode =                     vrlg.CMPRS_CBIT_CMODE_JPEG18,
+                              cmode =                     0, # vrlg.CMPRS_CBIT_CMODE_JPEG18,
                               colorsat_blue =             0x120,     # 0x90 fo 1x
                               colorsat_red =              0x16c,     # 0xb6 for x1
                               clk_sel =                   1,         # 1

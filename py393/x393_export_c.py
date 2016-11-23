@@ -1022,10 +1022,10 @@ class X393ExportC(object):
             (("X393_AFIMUX1_STATUS",                    c, vrlg.CMPRS_AFIMUX_REG_ADDR1 +             ba, ia, z3, "x393_afimux_status", "ro",          "Status of the AFI MUX 1 (including image pointer)")),
             ]
 
-        #GPIO control
+        #GPIO control - modified to use sequencer so any channel can control it
         ba = vrlg.GPIO_ADDR
         ia = 0
-        c =  ""
+        c =  "sens_chn"
         sdefines +=[
             (('_',)),
             (('_GPIO contol. Each of the 10 pins can be controlled by the software - individually or simultaneously or from any of the 3 masters (other FPGA modules)',)),
@@ -1034,7 +1034,7 @@ class X393ExportC(object):
             (('_     B - reserved (not yet used) and ',)),
             (('_     C - logger (IMU, GPS, images), uses 6 pins, including separate i2c available on extension boards',)),
             (('_If several enabled ports try to contol the same bit, highest priority has port C, lowest - software controlled',)),
-            (("X393_GPIO_SET_PINS",                       "", vrlg.GPIO_SET_PINS +                   ba, 0, None, "x393_gpio_set_pins", "wo",       "State of the GPIO pins and seq. number")),
+            (("X393_GPIO_SET_PINS",                       c,  vrlg.GPIO_SET_PINS +                   ba, 0, z3,   "x393_gpio_set_pins", "wo",       "State of the GPIO pins and seq. number")),
             (("X393_GPIO_STATUS_CONTROL",                 "", vrlg.GPIO_SET_STATUS +                 ba, 0, None, "x393_status_ctrl", "rw",         "GPIO status control mode"))]
         
         ba = vrlg.STATUS_ADDR
@@ -1065,15 +1065,15 @@ class X393ExportC(object):
         c =  "sens_chn"
         sdefines +=[
             (('CAMSYNC control',)),
-            (("X393_CAMSYNC_MODE",                        "", vrlg.CAMSYNC_MODE +                    ba, 0, None, "x393_camsync_mode", "wo",        "CAMSYNC mode")),
-            (("X393_CAMSYNC_TRIG_SRC",                    "", vrlg.CAMSYNC_TRIG_SRC +                ba, 0, None, "x393_camsync_io", "wo",          "CAMSYNC trigger source")),
-            (("X393_CAMSYNC_TRIG_DST",                    "", vrlg.CAMSYNC_TRIG_DST +                ba, 0, None, "x393_camsync_io", "wo",          "CAMSYNC trigger destination")),
+            (("X393_CAMSYNC_MODE",                        c, vrlg.CAMSYNC_MODE +                     ba, 0, z3,   "x393_camsync_mode", "wo",        "CAMSYNC mode")),
+            (("X393_CAMSYNC_TRIG_SRC",                    c, vrlg.CAMSYNC_TRIG_SRC +                 ba, 0, z3,   "x393_camsync_io",   "wo",        "CAMSYNC trigger source")),
+            (("X393_CAMSYNC_TRIG_DST",                    c, vrlg.CAMSYNC_TRIG_DST +                 ba, 0, z3,   "x393_camsync_io",   "wo",        "CAMSYNC trigger destination")),
             (('_Trigger period has special value for small (<255) values written to this register',)),
             (('_    d == 0 - disable (stop periodic mode)',)),
             (('_    d == 1 - single trigger',)),
             (('_    d == 2..255 - set output pulse / input-output serial bit duration (no start generated)',)),
             (('_    d >= 256 - repetitive trigger',)),
-            (("X393_CAMSYNC_TRIG_PERIOD",                 "", vrlg.CAMSYNC_TRIG_PERIOD +             ba, 0, None, "u32*", "rw",                     "CAMSYNC trigger period")),
+            (("X393_CAMSYNC_TRIG_PERIOD",                 c,  vrlg.CAMSYNC_TRIG_PERIOD +             ba, 0, z3,   "u32*", "rw",                     "CAMSYNC trigger period")),
             (("X393_CAMSYNC_TRIG_DELAY",                  c,  vrlg.CAMSYNC_TRIG_DELAY0 +             ba, 1, z3,   "u32*", "rw",                     "CAMSYNC trigger delay"))]
         
         ba = vrlg.CMDFRAMESEQ_ADDR_BASE
@@ -1245,7 +1245,8 @@ class X393ExportC(object):
                 #processing sequencer command (have "w" and var_name and var_range = 0..3
                 #TODO: Add special character to rw meaning channel applicable
                 channelCmd=False
-                if var_name and address_inc and ('w' in rw) and var_range:
+#                if var_name and address_inc and ('w' in rw) and var_range:
+                if var_name and ('w' in rw) and var_range:
                     multivar = isinstance(address_inc,(list,tuple))
                     if multivar:
                         if isinstance(var_range[0],(list,tuple)) and (var_range[0][0] == 0) and (var_range[0][1] == 3):
@@ -1408,6 +1409,7 @@ class X393ExportC(object):
                   isGenAbs = False):
 #        name, var_name, address, address_inc, var_range, data_type, rw, comment = define_tuple
         name, var_name, address, address_inc, _, data_type, rw, comment = define_tuple
+        use_address_inc = address_inc or isGenRel or isGenAbs # so address_inc ==0 will work for TRIG_ parameters
         multivar = isinstance(address_inc,(list,tuple)) # var_name, var_range are also lists/tuples of the same length
         stops=frmt_spcs[('declare','define')[isDefine]]
         #TODO: add optional argument range check?
@@ -1430,7 +1432,7 @@ class X393ExportC(object):
                 args += ', int '+ vn.lower()
         else:
             arg = var_name.lower()   
-            if arg and address_inc:
+            if arg and use_address_inc:
                 args += ', int '+ arg    
         s = "void "
         s = self.str_tab_stop(s,stops[0])
@@ -1475,7 +1477,7 @@ class X393ExportC(object):
                 
             else:   
                 s+='{writel(%s, mmio_ptr + '%(td)
-                if address_inc:
+                if use_address_inc:
                     s+='(0x%04x'%(address)
                     if multivar:
                         for vn, vi in zip (var_name, address_inc):

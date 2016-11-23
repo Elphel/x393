@@ -35,7 +35,8 @@
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
  */
-        parameter FPGA_VERSION =          32'h039300d1;      //parallel - removed extra debug -0.042/9 80.34%
+        parameter FPGA_VERSION =          32'h039300d2;      //parallel - fixing false trigger on input condition change -0.018/21, 80.28 %
+//      parameter FPGA_VERSION =          32'h039300d1;      //parallel - removed extra debug -0.042/9 80.34%
 //      parameter FPGA_VERSION =          32'h039300d1;      //parallel - changing line_numbers_sync condition  -0.011/3, 80.78 %
 //      parameter FPGA_VERSION =          32'h039300d0;      //parallel - more status data
 //      parameter FPGA_VERSION =          32'h039300cf;      //parallel - more status data for debugging ddr3_clk_div -0.033/2, 80.94%

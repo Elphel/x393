@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.3.66 (w)1999-2015 BSI
-[*] Thu Nov 17 03:52:16 2016
+[*] Tue Nov 22 04:53:52 2016
 [*]
-[dumpfile] "/home/eyesis/git/x393-neon/simulation/x393_dut-20161116200800621.fst"
-[dumpfile_mtime] "Thu Nov 17 03:40:28 2016"
-[dumpfile_size] 230939121
+[dumpfile] "/home/eyesis/git/x393-neon/simulation/x393_dut-20161121203439871.fst"
+[dumpfile_mtime] "Tue Nov 22 04:52:55 2016"
+[dumpfile_size] 442146667
 [savefile] "/home/eyesis/git/x393-neon/cocotb/x393_cocotb_03.sav"
 [timestart] 0
 [size] 1814 1171
 [pos] 0 0
-*-25.389460 68867388 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-26.832495 36980000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] x393_dut.
 [treeopen] x393_dut.simul_sensor12bits_2_i.
 [treeopen] x393_dut.simul_sensor12bits_3_i.
@@ -71,7 +71,7 @@
 [treeopen] x393_dut.x393_i.timing393_i.camsync393_i.
 [treeopen] x393_dut.x393_i.timing393_i.camsync393_i.i_frsync_pclk0.
 [sst_width] 388
-[signals_width] 276
+[signals_width] 349
 [sst_expanded] 1
 [sst_vpaned_height] 486
 @820
@@ -575,7 +575,6 @@ x393_dut.x393_i.timing393_i.camsync393_i.set_trig_src_w
 x393_dut.x393_i.timing393_i.camsync393_i.trigger_condition
 x393_dut.x393_i.timing393_i.camsync393_i.set_period
 x393_dut.x393_i.timing393_i.camsync393_i.set_trig_dst_w
-x393_dut.x393_i.timing393_i.camsync393_i.trigger_condition_d
 x393_dut.x393_i.timing393_i.camsync393_i.pre_input_use_intern
 x393_dut.x393_i.timing393_i.camsync393_i.input_use_intern
 x393_dut.x393_i.timing393_i.camsync393_i.master_got_pclk
@@ -1225,7 +1224,6 @@ x393_dut.x393_i.timing393_i.camsync393_i.trigger_condition_filtered
 @22
 x393_dut.x393_i.timing393_i.camsync393_i.trigger_filter_cntr[6:0]
 @28
-x393_dut.x393_i.timing393_i.camsync393_i.trigger_condition_d
 x393_dut.x393_i.timing393_i.camsync393_i.trigger_condition
 @1001200
 -group_end
@@ -2565,9 +2563,9 @@ x393_dut.IMU_SDA
 x393_dut.IMU_TAPS[5:1]
 @1401200
 -IMU_
-@c00200
+@800200
 -camsync_ext_int
-@800022
+@c00022
 x393_dut.x393_i.timing393_i.camsync393_i.gpio_in[9:0]
 @28
 (0)x393_dut.x393_i.timing393_i.camsync393_i.gpio_in[9:0]
@@ -2580,7 +2578,7 @@ x393_dut.x393_i.timing393_i.camsync393_i.gpio_in[9:0]
 (7)x393_dut.x393_i.timing393_i.camsync393_i.gpio_in[9:0]
 (8)x393_dut.x393_i.timing393_i.camsync393_i.gpio_in[9:0]
 (9)x393_dut.x393_i.timing393_i.camsync393_i.gpio_in[9:0]
-@1001200
+@1401200
 -group_end
 @c00022
 x393_dut.x393_i.timing393_i.frame_sync[3:0]
@@ -2597,6 +2595,7 @@ x393_dut.x393_i.timing393_i.camsync393_i.cmd_a[2:0]
 x393_dut.x393_i.timing393_i.camsync393_i.cmd_we
 x393_dut.x393_i.timing393_i.camsync393_i.set_trig_dst_w
 x393_dut.x393_i.timing393_i.camsync393_i.en
+x393_dut.x393_i.timing393_i.camsync393_i.en_pclk
 x393_dut.x393_i.timing393_i.camsync393_i.pclk
 @8022
 x393_dut.x393_i.timing393_i.camsync393_i.restart_cntr[31:0]
@@ -2605,7 +2604,10 @@ x393_dut.x393_i.timing393_i.camsync393_i.restart_cntr_run[1:0]
 @28
 (0)x393_dut.x393_i.timing393_i.camsync393_i.restart_cntr_run[1:0]
 (1)x393_dut.x393_i.timing393_i.camsync393_i.restart_cntr_run[1:0]
+x393_dut.x393_i.timing393_i.camsync393_i.start0
+x393_dut.x393_i.timing393_i.camsync393_i.start_d
 x393_dut.x393_i.timing393_i.camsync393_i.start_en
+x393_dut.x393_i.timing393_i.camsync393_i.rep_en
 @800028
 x393_dut.x393_i.timing393_i.camsync393_i.start_pclk[2:0]
 @28
@@ -2619,7 +2621,6 @@ x393_dut.x393_i.timing393_i.camsync393_i.gpio_out_en_r[9:0]
 x393_dut.x393_i.timing393_i.camsync393_i.ext_int_mode_mclk
 x393_dut.x393_i.timing393_i.camsync393_i.ext_int_mode_pclk
 x393_dut.x393_i.timing393_i.camsync393_i.ext_int_trigger_condition
-x393_dut.x393_i.timing393_i.camsync393_i.ext_int_trigger_condition_d
 @22
 x393_dut.x393_i.timing393_i.camsync393_i.ext_int_trigger_filter_cntr[6:0]
 @28
@@ -2630,10 +2631,8 @@ x393_dut.x393_i.timing393_i.camsync393_i.ext_int_arm[1:0]
 @28
 (0)x393_dut.x393_i.timing393_i.camsync393_i.ext_int_arm[1:0]
 (1)x393_dut.x393_i.timing393_i.camsync393_i.ext_int_arm[1:0]
-x393_dut.x393_i.timing393_i.camsync393_i.trigger_condition
-x393_dut.x393_i.timing393_i.camsync393_i.trigger_condition_filtered
 @22
-x393_dut.x393_i.timing393_i.camsync393_i.input_pattern[9:0]
+x393_dut.x393_i.timing393_i.camsync393_i.gpio_out[9:0]
 @c00022
 x393_dut.x393_i.timing393_i.camsync393_i.input_use[9:0]
 @28
@@ -2649,11 +2648,64 @@ x393_dut.x393_i.timing393_i.camsync393_i.input_use[9:0]
 (9)x393_dut.x393_i.timing393_i.camsync393_i.input_use[9:0]
 @1401200
 -group_end
+@22
+x393_dut.x393_i.timing393_i.camsync393_i.input_pattern[9:0]
+@28
+x393_dut.x393_i.timing393_i.camsync393_i.input_use_intern
+@22
+x393_dut.x393_i.timing393_i.camsync393_i.trigger_condition_mask_w[9:0]
+@28
+x393_dut.x393_i.timing393_i.camsync393_i.trigger_condition
+x393_dut.x393_i.timing393_i.camsync393_i.trigger_condition_filtered
+@29
+x393_dut.x393_i.timing393_i.camsync393_i.rcv_run_or_deaf
+@28
+x393_dut.x393_i.timing393_i.camsync393_i.ext_int_mode_pclk
+x393_dut.x393_i.timing393_i.camsync393_i.triggered_mode
+@22
+x393_dut.x393_i.timing393_i.camsync393_i.repeat_period[31:0]
+@c00022
+x393_dut.x393_i.timing393_i.camsync393_i.restart_cntr[31:0]
+@28
+(0)x393_dut.x393_i.timing393_i.camsync393_i.restart_cntr[31:0]
+(1)x393_dut.x393_i.timing393_i.camsync393_i.restart_cntr[31:0]
+(2)x393_dut.x393_i.timing393_i.camsync393_i.restart_cntr[31:0]
+(3)x393_dut.x393_i.timing393_i.camsync393_i.restart_cntr[31:0]
+(4)x393_dut.x393_i.timing393_i.camsync393_i.restart_cntr[31:0]
+(5)x393_dut.x393_i.timing393_i.camsync393_i.restart_cntr[31:0]
+(6)x393_dut.x393_i.timing393_i.camsync393_i.restart_cntr[31:0]
+(7)x393_dut.x393_i.timing393_i.camsync393_i.restart_cntr[31:0]
+(8)x393_dut.x393_i.timing393_i.camsync393_i.restart_cntr[31:0]
+(9)x393_dut.x393_i.timing393_i.camsync393_i.restart_cntr[31:0]
+(10)x393_dut.x393_i.timing393_i.camsync393_i.restart_cntr[31:0]
+(11)x393_dut.x393_i.timing393_i.camsync393_i.restart_cntr[31:0]
+(12)x393_dut.x393_i.timing393_i.camsync393_i.restart_cntr[31:0]
+(13)x393_dut.x393_i.timing393_i.camsync393_i.restart_cntr[31:0]
+(14)x393_dut.x393_i.timing393_i.camsync393_i.restart_cntr[31:0]
+(15)x393_dut.x393_i.timing393_i.camsync393_i.restart_cntr[31:0]
+(16)x393_dut.x393_i.timing393_i.camsync393_i.restart_cntr[31:0]
+(17)x393_dut.x393_i.timing393_i.camsync393_i.restart_cntr[31:0]
+(18)x393_dut.x393_i.timing393_i.camsync393_i.restart_cntr[31:0]
+(19)x393_dut.x393_i.timing393_i.camsync393_i.restart_cntr[31:0]
+(20)x393_dut.x393_i.timing393_i.camsync393_i.restart_cntr[31:0]
+(21)x393_dut.x393_i.timing393_i.camsync393_i.restart_cntr[31:0]
+(22)x393_dut.x393_i.timing393_i.camsync393_i.restart_cntr[31:0]
+(23)x393_dut.x393_i.timing393_i.camsync393_i.restart_cntr[31:0]
+(24)x393_dut.x393_i.timing393_i.camsync393_i.restart_cntr[31:0]
+(25)x393_dut.x393_i.timing393_i.camsync393_i.restart_cntr[31:0]
+(26)x393_dut.x393_i.timing393_i.camsync393_i.restart_cntr[31:0]
+(27)x393_dut.x393_i.timing393_i.camsync393_i.restart_cntr[31:0]
+(28)x393_dut.x393_i.timing393_i.camsync393_i.restart_cntr[31:0]
+(29)x393_dut.x393_i.timing393_i.camsync393_i.restart_cntr[31:0]
+(30)x393_dut.x393_i.timing393_i.camsync393_i.restart_cntr[31:0]
+(31)x393_dut.x393_i.timing393_i.camsync393_i.restart_cntr[31:0]
+@1401200
+-group_end
 @1001200
 -group_end
 -group_end
 -group_end
-@1401200
+@1000200
 -camsync_ext_int
 @800200
 -sequencers_0
@@ -2758,8 +2810,9 @@ x393_dut.x393_i.sof_out_mclk[3:0]
 (3)x393_dut.x393_i.sof_out_mclk[3:0]
 @1401200
 -group_end
-@800200
+@c00200
 -jpeg3
+@800200
 -memsensor3
 @22
 x393_dut.x393_i.mcntrl393_i.sens_comp_block[2].mcntrl_linear_wr_sensor_i.window_height[16:0]
@@ -2863,7 +2916,7 @@ x393_dut.x393_i.compressor393_i.cmprs_channel_block[3].jp_channel_i.huffman_stuf
 x393_dut.x393_i.compressor393_i.cmprs_channel_block[3].jp_channel_i.huffman_stuffer_meta_i.bit_stuffer_27_32_i.flush_in
 x393_dut.x393_i.compressor393_i.cmprs_channel_block[3].jp_channel_i.flush_hclk
 x393_dut.x393_i.compressor393_i.cmprs_channel_block[3].jp_channel_i.irq
-@23
+@22
 x393_dut.x393_i.compressor393_i.cmprs_channel_block[3].jp_channel_i.frame_num_compressed[3:0]
 @c00200
 -bit_stuffer_27_32
@@ -2903,9 +2956,8 @@ x393_dut.x393_i.compressor393_i.cmprs_channel_block[3].jp_channel_i.huffman_stuf
 -
 @1401200
 -bit_stuffer_27_32
-@1000200
 -jpeg3
-@800200
+@c00200
 -jpeg2
 @28
 x393_dut.x393_i.mcntrl393_i.sens_comp_block[2].mcntrl_tiled_rd_compressor_i.chn_en
@@ -3016,9 +3068,8 @@ x393_dut.x393_i.compressor393_i.cmprs_channel_block[2].jp_channel_i.huffman_stuf
 -
 @1401200
 -bit_stuffer
-@1000200
 -jpeg2
-@800200
+@c00200
 -jpeg1
 @28
 x393_dut.x393_i.mcntrl393_i.sens_comp_block[1].mcntrl_tiled_rd_compressor_i.chn_en
@@ -3064,9 +3115,9 @@ x393_dut.x393_i.compressor393_i.cmprs_channel_block[2].jp_channel_i.huffman_stuf
 @28
 x393_dut.x393_i.compressor393_i.cmprs_channel_block[2].jp_channel_i.huffman_stuffer_meta_i.stuffer_bytes[1:0]
 x393_dut.x393_i.compressor393_i.cmprs_channel_block[2].jp_channel_i.huffman_stuffer_meta_i.stuffer_dv
-@1000200
+@1401200
 -jpeg1
-@800200
+@c00200
 -jpeg0
 @28
 x393_dut.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_tiled_rd_compressor_i.chn_rst
@@ -3140,7 +3191,6 @@ x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuf
 -
 @1401200
 -bit_stuffer
-@1000200
 -jpeg0
 [pattern_trace] 1
 [pattern_trace] 0
