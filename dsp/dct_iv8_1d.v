@@ -38,6 +38,8 @@
  * with at least one of the Free Software programs.
  */
 `timescale 1ns/1ps
+// No saturation here, and no rounding as we do not need to match decoder (be bit-precise), skipping rounding adder
+// will reduce needed resources
 
 module  dct_iv8_1d#(
     parameter WIDTH =        24, // input data width
@@ -46,8 +48,6 @@ module  dct_iv8_1d#(
     parameter B_WIDTH =      18,
     parameter A_WIDTH =      25,
     parameter P_WIDTH =      48,
-//    parameter M_WIDTH =     43, // actual multiplier width (== (A_WIDTH +B_WIDTH)
-//    parameter ROUND_OUT =     8, // cut these number of LSBs on the output, round result (in addition to COSINE_SHIFT) 
     parameter COSINE_SHIFT=  17,
     parameter COS_01_32 =    130441, // (1<<17) * cos( 1*pi/32)
     parameter COS_03_32 =    125428, // (1<<17) * cos( 3*pi/32)
@@ -73,14 +73,10 @@ module  dct_iv8_1d#(
                                              // start_out-x-Y0-x-Y7-x-Y1-x-Y6-x-Y3-x-Y4-x-Y2-x-Y5
     output reg                     en_out    // valid at the same time slot as pre2_start_out (goes active with pre2_start_out)                                      
 );
-//    localparam TOTAL_RSHIFT=    COSINE_SHIFT + ROUND_OUT;
-//    localparam BEFORE_SAT_WIDTH = P_WIDTH - TOTAL_RSHIFT;
     localparam RSHIFT1 = 2; // safe right shift for stage 1
     localparam STAGE1_RSHIFT = COSINE_SHIFT + (WIDTH - A_WIDTH) + RSHIFT1; // divide by 4 in stage 1 - never saturates
     localparam STAGE2_RSHIFT = COSINE_SHIFT + (OUT_WIDTH - WIDTH) +(OUT_RSHIFT-RSHIFT1); // divide by 4 in stage 1 - never saturates
     // STAGE2_RSHIFT should be >0 ( >=1 ) for rounding    
-// TODO: Add rounding to stage 1    
-    
     
 // register files on the D-inputs of DSPs
     reg    signed [A_WIDTH-1:0] dsp_din_1_ram[0:1] ; // just two registers
@@ -126,23 +122,16 @@ module  dct_iv8_1d#(
     reg                         dsp_accum_2;    // 0 - use multiplier result, 1 add to accumulator
     wire   signed [P_WIDTH-1:0] dsp_p_2;
 
-    reg                   [7:0] phase;
     reg                   [3:0] phase_cnt;
-    reg        [OUT_WIDTH -1:0] dout_r;
+
     
-    reg                   [2:0] per_type; // idle/last:0, first cycle - 1, 2-nd - 2, other - 3,... ~en->6 ->7 -> 0  (to generate pre2_start_out)
-
-
-    // Temporarily adding 1 extra latency cycle for rounding/saturation. TODO: Remove when moved to DSP itself
-    reg                     pre3_start_out; // 3 clock cycle before F4 output, full dout sequence
-                                             // start_out-X-F4-X-F2-X-F6-F5-F0-F3-X-F1-X-F7
-    reg                     pre_en_out;    // valid at the same time slot as pre2_start_out (goes active with pre2_start_out)                                      
-
+    reg                         run_in;  // receiving input data
+    reg                         restart; // restarting next block if en was active at phase=14;
+    reg                         run_out; // running output data
     
     assign dsp_ain_2 = dsp_p_1 [STAGE1_RSHIFT +: A_WIDTH];
     
-
-    assign dout = dout_r;
+    assign dout = dsp_p_2 [STAGE2_RSHIFT +: OUT_WIDTH]; // dout_r;
 
     generate
         if (A_WIDTH > WIDTH)  assign dsp_ain_1 = {{A_WIDTH-WIDTH{d_in[WIDTH-1]}},d_in};   
@@ -161,17 +150,22 @@ module  dct_iv8_1d#(
     end
 
     always @ (posedge clk) begin
-        if      (rst)      per_type <= 0;
-        else if (start)    per_type <= 3'h1;
-        else if (phase[7]) begin
-            if (!per_type[2] && !en)  per_type <= 3'h7;
-            else if ((per_type != 0) && (per_type != 3)) per_type <= per_type + 1;  
-        end
-        phase <= {phase[6:0], start | (phase[7] & (|per_type))}; 
-        //TODO: 
+        if (rst)  restart <= 0;
+        else      restart <= (phase_cnt == 14) && en;
+    
+        if      (rst)              run_in <= 0;
+        else if (start || restart) run_in <= 1;
+        else if (phase_cnt==15)    run_in <= 0;
+
+        if      (rst)              run_out <= 0;
+        else if (phase_cnt == 13)  run_out <= run_in;
+
+        if (rst || (!run_in && !run_out)) phase_cnt <= 0;
+        else                              phase_cnt <= phase_cnt + 1;
+    
+        pre2_start_out <= run_out && (phase_cnt == 13);
         
-        if (rst || start || phase[7]) phase_cnt <= 0;
-        else if (|phase[6:0])         phase_cnt <= phase_cnt + 1;
+        en_out <= run_out && !phase_cnt[0];
         
         // Cosine table, defined to fit into 17 bits for 18-bit signed DSP B-operand
         case (phase_cnt)
@@ -192,41 +186,25 @@ module  dct_iv8_1d#(
             4'he: dsp_bin <= COS_12_32;
             4'hf: dsp_bin <= 'bx;
         endcase
-        
-        dout_r <= dsp_p_2 [STAGE2_RSHIFT +: OUT_WIDTH] + dsp_p_2 [STAGE2_RSHIFT - 1];
-
-        if (rst) pre3_start_out <= 0;
-        else     pre3_start_out <= (per_type == 2) && phase[3];
-        
-        pre2_start_out <=pre3_start_out;
-        
-        
-        if (rst || !(en || (|phase))) pre_en_out <= 0;
-        else if (phase[3]) begin
-            if      (per_type == 2)     pre_en_out <= 1;
-            else if (per_type[2:0]==0)  pre_en_out <= 0;
-        end
-        
-        en_out <= pre_en_out;
-        
     end
+
     // Control signals for each phase
-    wire p00 = phase[3:0] ==  0;
-    wire p01 = phase[3:0] ==  1;
-    wire p02 = phase[3:0] ==  2;
-    wire p03 = phase[3:0] ==  3;
-    wire p04 = phase[3:0] ==  4;
-    wire p05 = phase[3:0] ==  5;
-    wire p06 = phase[3:0] ==  6;
-    wire p07 = phase[3:0] ==  7;
-    wire p08 = phase[3:0] ==  8;
-    wire p09 = phase[3:0] ==  9;
-    wire p10 = phase[3:0] == 10;
-    wire p11 = phase[3:0] == 11;
-    wire p12 = phase[3:0] == 12;
-    wire p13 = phase[3:0] == 13;
-    wire p14 = phase[3:0] == 14;
-    wire p15 = phase[3:0] == 15;
+    wire p00 = phase_cnt[3:0] ==  0;
+    wire p01 = phase_cnt[3:0] ==  1;
+    wire p02 = phase_cnt[3:0] ==  2;
+    wire p03 = phase_cnt[3:0] ==  3;
+    wire p04 = phase_cnt[3:0] ==  4;
+    wire p05 = phase_cnt[3:0] ==  5;
+    wire p06 = phase_cnt[3:0] ==  6;
+    wire p07 = phase_cnt[3:0] ==  7;
+    wire p08 = phase_cnt[3:0] ==  8;
+    wire p09 = phase_cnt[3:0] ==  9;
+    wire p10 = phase_cnt[3:0] == 10;
+    wire p11 = phase_cnt[3:0] == 11;
+    wire p12 = phase_cnt[3:0] == 12;
+    wire p13 = phase_cnt[3:0] == 13;
+    wire p14 = phase_cnt[3:0] == 14;
+    wire p15 = phase_cnt[3:0] == 15;
     always @ (posedge clk) begin
     //                   p00 | p01 | p02 | p03 | p04 | p05 | p06 | p07 | p08 | p09 | p10 | p11 | p12 | p13 | p14 | p15 ;
         dsp_din_1_we <=          p01       | p03                         | p08                                     | p15 | start;
@@ -317,6 +295,4 @@ module  dct_iv8_1d#(
         .post_add    (1'b0),           // input
         .pout        (dsp_p_2)         // output[47:0] signed 
     );
-
 endmodule
-
