@@ -2563,6 +2563,10 @@ set_camsync_inout  0  7  0
 #reset_camsync_inout  0 # start with internal trigger
 
 
+
+
+
+
 #set_camsync_mode  <en=None>  <en_snd=None>  <en_ts_external=None>  <triggered_mode=None>  <master_chn=None>  <chn_en=None> 
 set_camsync_mode  1 1 1 1 0 0xf
 set_camsync_period  10000 # 100 usec # and start
@@ -2621,6 +2625,7 @@ r
 read_status 0x21
 r
 jpeg_sim_multi 4
+
 r
 read_status 0x21
 r
