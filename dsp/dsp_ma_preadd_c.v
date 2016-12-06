@@ -241,7 +241,7 @@ module  dsp_ma_preadd_c #(
         en_d_r <=  en_d;
         sub_a_r <= sub_a;
         
-        m_reg <= {{P_WIDTH - A_WIDTH - B_WIDTH{1'b0}}, m_wire};
+        m_reg <= {{P_WIDTH - A_WIDTH - B_WIDTH{m_wire[A_WIDTH+B_WIDTH-1]}}, m_wire};
         
         p_reg <= p_reg_cond + m_reg_pm;
         

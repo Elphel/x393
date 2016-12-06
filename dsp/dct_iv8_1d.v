@@ -66,13 +66,17 @@ module  dct_iv8_1d#(
     input                          clk,
     input                          rst,
     input                          en,
-    input  [WIDTH -1:0]            d_in,  // X6-X7-X5-X2-X1-X3-X0-X4-*-X5-X1-X2-*-X4-X7-*
+    input  [WIDTH -1:0]            d_in,  // X2-X7-X3-X4-X5-X6-X0-X1-*-X3-X5-X4-*-X6-X7-*
     input                          start, // one cycle before first X6 input 
     output [OUT_WIDTH -1:0]        dout,
     output reg                     pre2_start_out, // 2 clock cycle before Y0 output, full dout sequence
                                              // start_out-x-Y0-x-Y7-x-Y4-x-Y3-x-Y1-x-Y6-x-Y2-x-Y5
     output reg                     en_out    // valid at the same time slot as pre2_start_out (goes active with pre2_start_out)                                      
 );
+// X6-X7-X5-X2-X1-X3-X0-X4-*-X5-X1-X2-*-X4-X7-*
+// X2-X7-X3-X4-X5-X6-X0-X1-*-X3-X5-X4-*-X1-X7-*
+// X2-X7-X3-X4-X5-X6-X0-X1-*-X3-X5-X4-*-X6-X7-*
+
     localparam RSHIFT1 = 2; // safe right shift for stage 1
     localparam STAGE1_RSHIFT = COSINE_SHIFT + (WIDTH - A_WIDTH) + RSHIFT1; // divide by 4 in stage 1 - never saturates
     localparam STAGE2_RSHIFT = COSINE_SHIFT + (A_WIDTH - OUT_WIDTH) +(OUT_RSHIFT-RSHIFT1); // divide by 4 in stage 1 - never saturates
@@ -211,20 +215,20 @@ module  dct_iv8_1d#(
     wire p15 = phase_cnt[3:0] == 15;
     always @ (posedge clk) begin
     //                   p00 | p01 | p02 | p03 | p04 | p05 | p06 | p07 | p08 | p09 | p10 | p11 | p12 | p13 | p14 | p15 ;
-        dsp_din_1_we <=          p01       | p03                         | p08                                     | p15 | start;
+        dsp_din_1_we <=          p01       | p03                         | p08 | p09                               | p15 | start;
         dsp_din_1_wa <=                                                                                              p15 | start;
         dsp_din_1_ra <=                                        p06                                           | p14       ;
-        dsp_cea1_1 <=                                          p06                   | p10       | p12                   ;
-        dsp_cea2_1 <=                  p02       | p04                                                                   ;
+        dsp_cea1_1 <=                                          p06                                                       ;
+        dsp_cea2_1 <=                  p02       | p04                               | p10       | p12                   ;
         dsp_ced_1 <=       p00       | p02             | p05 | p06       | p08 | p09                   | p13 | p14       ;
-        dsp_sela_1 <=      p00 | p01 | p02 | p03 | p04 | p05             | p08                         | p13             ;
+        dsp_sela_1 <=      p00 | p01 | p02 | p03 | p04 | p05             | p08       | p10 | p11       | p13             ;
         dsp_sub_a_1 <=     p00 | p01 | p02       | p04 | p05 | p06                         | p11                   | p15 ;
         dsp_ceb1_1 <=            p01                                                                                     ;
         dsp_ceb2_1 <=                  p02             | p05                         | p10             | p13             ;
         dsp_selb_1 <=            p01 | p02 | p03 | p04             | p07       | p09 | p10 | p11 | p12             | p15 ;
         dsp_cec_1 <=       p00                         | p05                                           | p13             ;
         dsp_neg_m_1 <=     p00 | p01 | p02                               | p08             | p11 | p12 | p13             ;
-        dsp_accum_1 <=     p00       | p02                               | p08       | p10 | p11 | p12 | p13 | p14 | p15 ;
+        dsp_accum_1 <=     p00       | p02                               | p08       | p10                               ;
         dsp_post_add_1 <=                          p04 | p05                                     | p12 | p13             ;
         dsp_din_2_we <=                                      | p06 | p07                                     | p14 | p15 ;
         dsp_din_2_wa[0] <=                                     p06                                                 | p15 ;
@@ -238,7 +242,7 @@ module  dct_iv8_1d#(
         dsp_ceb1_2 <=      p00             | p03                         | p08             | p11                         ;
         dsp_ceb2_2 <=                              p04             | p07                         | p12             | p15 ;
         dsp_selb_2 <=      p00             | p03       | p05 | p06       | p08             | p11       | p13 | p14       ;
-        dsp_neg_m_2 <=                       p03                         | p08                   | p12             | p15 ; //~phase[0]
+        dsp_neg_m_2 <=                       p03             | p06                               | p12             | p15 ; //~phase[0]
         dsp_accum_2 <=     p00       | p02       | p04       | p06       | p08       | p10       | p12       | p14       ;
     end
     
