@@ -1,10 +1,11 @@
 /*!
- *  dsp_ma_preadd
+ *  dsp_ma_preadd_c
  * @file dsp_ma_preadd.v
  * @date 2016-06-05  
  * @author  Andrey Filippov
  *     
  * @brief DSP with multi-input multiplier and accumulator with pre-adder
+ * and post-adder  
  *
  * @copyright Copyright (c) 2016 Elphel, Inc.
  *
@@ -37,8 +38,9 @@
  * with at least one of the Free Software programs.
  */
 `timescale 1ns/1ps
-
-module  dsp_ma_preadd #(
+//`define INSTANTIATE_DSP48E1
+`undef INSTANTIATE_DSP48E1
+module  dsp_ma_preadd_c #(
     parameter B_WIDTH = 18,
     parameter A_WIDTH = 25,
     parameter P_WIDTH = 48)
@@ -54,6 +56,8 @@ module  dsp_ma_preadd #(
     input                       cea2,     // clock enable a2 reg 
     input  signed [A_WIDTH-1:0] din,
     input                       ced,      // enable d-reg
+    input  signed [P_WIDTH-1:0] cin,      // c - input
+    input                       cec,      // enable c-reg
     input                       cead,     // enable ad register (after pre-adder)  
     input                       sela,     // 0 - select a1, 1 - select a2
     input                       en_a,     // 1 - enable a input (0 - zero) ~inmode[1]
@@ -61,6 +65,7 @@ module  dsp_ma_preadd #(
     input                       sub_a,    // 0 - pre-add (D+A), 1 - pre-subtract (D-A)
     input                       neg_m,    // 1 - negate multiplier result
     input                       accum,    // 0 - use multiplier result, 1 add to accumulator
+    input                       post_add, // 0 - use multiplier or add to accumulator, 1 - add C and multiplier
     output signed [P_WIDTH-1:0] pout
 );
 `ifdef INSTANTIATE_DSP48E1
@@ -73,8 +78,8 @@ module  dsp_ma_preadd #(
                           neg_m,
                           neg_m};
     wire [6:0] opmode =  {1'b0,
-                          accum,
-                          1'b0,
+                          accum | post_add,   
+                          post_add,
                           2'b01,
                           2'b01};
                          
@@ -90,7 +95,7 @@ module  dsp_ma_preadd #(
         .B_INPUT             ("DIRECT"),
         .CARRYINREG          (1),
         .CARRYINSELREG       (1),
-        .CREG                (0), //(1),
+        .CREG                (1), //(0),
         .DREG                (1),
         .INMODEREG           (1),
         .IS_ALUMODE_INVERTED (4'b0),
@@ -126,7 +131,7 @@ module  dsp_ma_preadd #(
         .ALUMODE        (alumode),    // input[3:0] 
         .B              (bin),        // input[17:0] 
         .BCIN           (18'b0),      // input[17:0] 
-        .C              (48'hffffffffffff), // input[47:0] 
+        .C              (cin),        // input[47:0] 
         .CARRYCASCIN    (1'b0),       // input
         .CARRYIN        (1'b0),       // input
         .CARRYINSEL     (3'h0),       // input[2:0] // later modify? 
@@ -136,7 +141,7 @@ module  dsp_ma_preadd #(
         .CEALUMODE      (1'b1),       // input
         .CEB1           (ceb1),       // input
         .CEB2           (ceb2),       // input
-        .CEC            (1'b0),       // input
+        .CEC            (cec),        // input
         .CECARRYIN      (1'b0),       // input
         .CECTRL         (1'b1),       // input
         .CED            (ced),        // input
@@ -168,6 +173,7 @@ module  dsp_ma_preadd #(
     reg  signed [A_WIDTH-1:0] a1_reg;
     reg  signed [A_WIDTH-1:0] a2_reg;
     reg  signed [A_WIDTH-1:0] d_reg;
+    reg  signed [P_WIDTH-1:0] c_reg;
     reg  signed [A_WIDTH-1:0] ad_reg;
     reg  signed [P_WIDTH-1:0] m_reg;
     reg  signed [P_WIDTH-1:0] p_reg;
@@ -182,9 +188,15 @@ module  dsp_ma_preadd #(
     reg                       sub_a_r;
     reg                       neg_m_r;
     reg                       accum_r;
+    reg                       post_add_r;
     wire signed [P_WIDTH-1:0] m_reg_pm;            
     wire signed [P_WIDTH-1:0] p_reg_cond;          
-    
+ /*
+    input  signed [P_WIDTH-1:0] cin,      // c - input
+    input                       cec,      // enable c-reg
+    input                       post_add, // 0 - use multiplier or add to accumulator, 1 - add C and multiplier
+ 
+ */   
     
     assign pout = p_reg;
     assign b_wire = selb_r ? b2_reg : b1_reg;
@@ -194,7 +206,8 @@ module  dsp_ma_preadd #(
     assign m_wire = ad_reg * b_wire;
     
     assign m_reg_pm =   neg_m_r ? - m_reg : m_reg;  
-    assign p_reg_cond = accum_r ? p_reg : 0;  
+//    assign p_reg_cond = accum_r ? p_reg : 0;  
+    assign p_reg_cond = post_add_r? c_reg: (accum_r ? p_reg : 0); 
     
     always @ (posedge clk) begin
         if      (rst)  b1_reg <= 0;
@@ -212,11 +225,15 @@ module  dsp_ma_preadd #(
         if      (rst)  d_reg <= 0;
         else if (ced)  d_reg <= din;
         
+        if      (rst)  c_reg <= 0;
+        else if (cec)  c_reg <= cin;
+
         if      (rst)   ad_reg <= 0;
         else if (cead)  ad_reg <= sub_a_r? (d_wire - a_wire): (d_wire + a_wire);
         
         neg_m_r <= neg_m;
         accum_r <= accum;
+        post_add_r <= post_add;
 
         selb_r <=  selb;
         sela_r <=  sela;

@@ -1,8 +1,8 @@
 FPGA_project_@_DUTTopFile=cocotb/x393_dut.v
 FPGA_project_@_DUTTopModule=x393_dut
 FPGA_project_@_ImplementationTopFile=x393.v
-FPGA_project_@_SimulationTopFile=x393_testbench03.tf
-FPGA_project_@_SimulationTopModule=x393_testbench03
+FPGA_project_@_SimulationTopFile=dsp/dct_tests_01.tf
+FPGA_project_@_SimulationTopModule=dct_tests_01
 FPGA_project_@_part=xc7z030fbg484-1
 com.elphel.store.context.FPGA_project=FPGA_project_@_SimulationTopFile<-@\#\#@->FPGA_project_@_DUTTopModule<-@\#\#@->FPGA_project_@_ImplementationTopFile<-@\#\#@->FPGA_project_@_DUTTopFile<-@\#\#@->FPGA_project_@_SimulationTopModule<-@\#\#@->FPGA_project_@_part<-@\#\#@->
 com.elphel.store.version.FPGA_project=1.0
