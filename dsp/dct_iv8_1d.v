@@ -49,17 +49,17 @@ module  dct_iv8_1d#(
     parameter A_WIDTH =      25,
     parameter P_WIDTH =      48,
     parameter COSINE_SHIFT=  17,
-    parameter COS_01_32 =    130441, // (1<<17) * cos( 1*pi/32)
-    parameter COS_03_32 =    125428, // (1<<17) * cos( 3*pi/32)
-    parameter COS_04_32 =    121095, // (1<<17) * cos( 4*pi/32)
-    parameter COS_05_32 =    115595, // (1<<17) * cos( 5*pi/32)
-    parameter COS_07_32 =    101320, // (1<<17) * cos( 7*pi/32)
-    parameter COS_08_32 =    92682, // (1<<17) * cos( 8*pi/32)
-    parameter COS_09_32 =    83151, // (1<<17) * cos( 9*pi/32)
-    parameter COS_11_32 =    61787, // (1<<17) * cos(11*pi/32)
-    parameter COS_12_32 =    50159, // (1<<17) * cos(12*pi/32)
-    parameter COS_13_32 =    38048, // (1<<17) * cos(13*pi/32)
-    parameter COS_15_32 =    12847  // (1<<17) * cos(15*pi/32)
+    parameter COS_01_32 =    130441, // int(round((1<<17) * cos( 1*pi/32)))
+    parameter COS_03_32 =    125428, // int(round((1<<17) * cos( 3*pi/32)))
+    parameter COS_04_32 =    121095, // int(round((1<<17) * cos( 4*pi/32)))
+    parameter COS_05_32 =    115595, // int(round((1<<17) * cos( 5*pi/32)))
+    parameter COS_07_32 =    101320, // int(round((1<<17) * cos( 7*pi/32)))
+    parameter COS_08_32 =    92682,  // int(round((1<<17) * cos( 8*pi/32)))
+    parameter COS_09_32 =    83151,  // int(round((1<<17) * cos( 9*pi/32)))
+    parameter COS_11_32 =    61787,  // int(round((1<<17) * cos(11*pi/32)))
+    parameter COS_12_32 =    50159,  // int(round((1<<17) * cos(12*pi/32)))
+    parameter COS_13_32 =    38048,  // int(round((1<<17) * cos(13*pi/32)))
+    parameter COS_15_32 =    12847   // int(round((1<<17) * cos(15*pi/32)))
 
 
 )(

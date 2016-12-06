@@ -1,8 +1,8 @@
-com.elphel.store.context.iverilog=iverilog_@_ExtraFiles<-@\#\#@->iverilog_@_ShowWarnings<-@\#\#@->iverilog_@_SaveLogsSimulator<-@\#\#@->iverilog_@_ShowNoProblem<-@\#\#@->iverilog_@_IncludeDir<-@\#\#@->iverilog_@_TopModulesOther<-@\#\#@->iverilog_@_GTKWaveSavFile<-@\#\#@->iverilog_@_SaveLogsPreprocessor<-@\#\#@->
+com.elphel.store.context.iverilog=iverilog_@_ShowWarnings<-@\#\#@->iverilog_@_SaveLogsSimulator<-@\#\#@->iverilog_@_ShowNoProblem<-@\#\#@->iverilog_@_IncludeDir<-@\#\#@->iverilog_@_GTKWaveSavFile<-@\#\#@->iverilog_@_SaveLogsPreprocessor<-@\#\#@->iverilog_@_TopModulesOther<-@\#\#@->iverilog_@_ExtraFiles<-@\#\#@->
 com.elphel.store.version.iverilog=1.1
 eclipse.preferences.version=1
 iverilog_@_ExtraFiles=glbl.v<-@\#\#@->
-iverilog_@_GTKWaveSavFile=x393_testbench04.sav
+iverilog_@_GTKWaveSavFile=dct_tests_01.sav
 iverilog_@_IncludeDir=${verilog_project_loc}/ddr3<-@\#\#@->${verilog_project_loc}/includes<-@\#\#@->${verilog_project_loc}/x393_sata<-@\#\#@->${verilog_project_loc}/x393_sata/host<-@\#\#@->
 iverilog_@_SaveLogsPreprocessor=false
 iverilog_@_SaveLogsSimulator=true
