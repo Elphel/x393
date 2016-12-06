@@ -16,6 +16,7 @@ x393.prj
 *.old
 *.new
 *.bad
+*.bak
 *.pyc
 *.pickle
 *.tmp
