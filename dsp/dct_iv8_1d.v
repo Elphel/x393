@@ -43,7 +43,7 @@
 
 module  dct_iv8_1d#(
     parameter WIDTH =        24, // input data width
-    parameter OUT_WIDTH =    16, // output deata width
+    parameter OUT_WIDTH =    24, // 16, // output deata width
     parameter OUT_RSHIFT =   3,  // overall right shift of the result from input, aligned by MSB (>=3 will never cause saturation)
     parameter B_WIDTH =      18,
     parameter A_WIDTH =      25,
@@ -70,12 +70,12 @@ module  dct_iv8_1d#(
     input                          start, // one cycle before first X6 input 
     output [OUT_WIDTH -1:0]        dout,
     output reg                     pre2_start_out, // 2 clock cycle before Y0 output, full dout sequence
-                                             // start_out-x-Y0-x-Y7-x-Y1-x-Y6-x-Y3-x-Y4-x-Y2-x-Y5
+                                             // start_out-x-Y0-x-Y7-x-Y4-x-Y3-x-Y1-x-Y6-x-Y2-x-Y5
     output reg                     en_out    // valid at the same time slot as pre2_start_out (goes active with pre2_start_out)                                      
 );
     localparam RSHIFT1 = 2; // safe right shift for stage 1
     localparam STAGE1_RSHIFT = COSINE_SHIFT + (WIDTH - A_WIDTH) + RSHIFT1; // divide by 4 in stage 1 - never saturates
-    localparam STAGE2_RSHIFT = COSINE_SHIFT + (OUT_WIDTH - WIDTH) +(OUT_RSHIFT-RSHIFT1); // divide by 4 in stage 1 - never saturates
+    localparam STAGE2_RSHIFT = COSINE_SHIFT + (A_WIDTH - OUT_WIDTH) +(OUT_RSHIFT-RSHIFT1); // divide by 4 in stage 1 - never saturates
     // STAGE2_RSHIFT should be >0 ( >=1 ) for rounding    
     
 // register files on the D-inputs of DSPs
@@ -99,8 +99,8 @@ module  dct_iv8_1d#(
     wire   signed [A_WIDTH-1:0] dsp_din_1;
     reg                         dsp_ced_1;
     reg                         dsp_sela_1;
-//    reg                         dsp_en_a_1;      // Not used here 0: +/- D, 1: A or A +/- D 
-//    reg                         dsp_en_d_1;      // Not used here 0: A, 1: D  or A +/- D 
+//  reg                         dsp_en_a_1;      // Not used here 0: +/- D, 1: A or A +/- D 
+//  reg                         dsp_en_d_1;      // Not used here 0: A, 1: D  or A +/- D 
     reg                         dsp_sub_a_1;     //
     reg                         dsp_neg_m_1;     // 1 - negate multiplier result
     reg                         dsp_accum_1;     // 0 - use multiplier result, 1 add to accumulator
@@ -137,7 +137,11 @@ module  dct_iv8_1d#(
         if (A_WIDTH > WIDTH)  assign dsp_ain_1 = {{A_WIDTH-WIDTH{d_in[WIDTH-1]}},d_in};   
         else                  assign dsp_ain_1 = d_in; // SuppressThisWarning VEditor (not implemented)  
     endgenerate                       
-    assign dsp_cin_1 = {{P_WIDTH-WIDTH{d_in[WIDTH-1]}},d_in};
+//    assign dsp_cin_1 = {{P_WIDTH-WIDTH{d_in[WIDTH-1]}},d_in};
+
+// symmetrically lshift by COSINE_SHIFT (match multiplication by 1.0), add 0.5LSB for positive, subtract 0.5LSB for negative
+    wire din_zero = ~(|d_in);
+    assign dsp_cin_1 = {{P_WIDTH-WIDTH-COSINE_SHIFT{d_in[WIDTH-1]}},d_in,~d_in[WIDTH-1]^din_zero,{COSINE_SHIFT-1{d_in[WIDTH-1]}}};
 
 
     //register files
@@ -163,33 +167,33 @@ module  dct_iv8_1d#(
         if (rst || (!run_in && !run_out)) phase_cnt <= 0;
         else                              phase_cnt <= phase_cnt + 1;
     
-        pre2_start_out <= run_out && (phase_cnt == 13);
+        pre2_start_out <= run_out && (phase_cnt == 14);
         
         en_out <= run_out && !phase_cnt[0];
         
         // Cosine table, defined to fit into 17 bits for 18-bit signed DSP B-operand
         case (phase_cnt)
-            4'h0: dsp_bin <= COS_07_32;
-            4'h1: dsp_bin <= COS_09_32;
-            4'h2: dsp_bin <= COS_04_32;
-            4'h3: dsp_bin <= COS_08_32;
-            4'h4: dsp_bin <= COS_05_32;
-            4'h5: dsp_bin <= COS_11_32;
-            4'h6: dsp_bin <= COS_12_32;
-            4'h7: dsp_bin <= 'bx;
-            4'h8: dsp_bin <= COS_13_32;
-            4'h9: dsp_bin <= COS_03_32;
-            4'ha: dsp_bin <= 'bx;
-            4'hb: dsp_bin <= COS_08_32;
-            4'hc: dsp_bin <= COS_15_32;
-            4'hd: dsp_bin <= COS_01_32;
-            4'he: dsp_bin <= COS_12_32;
-            4'hf: dsp_bin <= 'bx;
+            4'h0: dsp_bin <= COS_09_32;
+            4'h1: dsp_bin <= COS_04_32;
+            4'h2: dsp_bin <= COS_08_32;
+            4'h3: dsp_bin <= COS_03_32;
+            4'h4: dsp_bin <= COS_13_32;
+            4'h5: dsp_bin <= COS_12_32;
+            4'h6: dsp_bin <= 'bx;
+            4'h7: dsp_bin <= COS_05_32;
+            4'h8: dsp_bin <= COS_11_32;
+            4'h9: dsp_bin <= 'bx;
+            4'ha: dsp_bin <= COS_08_32;
+            4'hb: dsp_bin <= COS_15_32;
+            4'hc: dsp_bin <= COS_01_32;
+            4'hd: dsp_bin <= COS_12_32;
+            4'he: dsp_bin <= 'bx;
+            4'hf: dsp_bin <= COS_07_32;
         endcase
     end
 
     // Control signals for each phase
-    wire p00 = phase_cnt[3:0] ==  0;
+    wire p00 = (phase_cnt[3:0] ==  0) && (run_in || run_out);
     wire p01 = phase_cnt[3:0] ==  1;
     wire p02 = phase_cnt[3:0] ==  2;
     wire p03 = phase_cnt[3:0] ==  3;
@@ -230,7 +234,7 @@ module  dct_iv8_1d#(
         dsp_cea1_2 <=                  p02                                           | p10                               ;
         dsp_cea2_2 <=                              p04                                           | p12                   ;
         dsp_sela_2 <=      p00       | p02       | p04       | p06       | p08       | p10       | p12       | p14       ; //~phase[0]
-        dsp_sub_a_2 <=     p00 | p01 | p02                         | p07 | p08 | p09 | p10                         | p15 ;
+        dsp_sub_a_2 <=     p00 | p01 | p02 | p03 | p04 | p05 | p06                                                 | p15 ;
         dsp_ceb1_2 <=      p00             | p03                         | p08             | p11                         ;
         dsp_ceb2_2 <=                              p04             | p07                         | p12             | p15 ;
         dsp_selb_2 <=      p00             | p03       | p05 | p06       | p08             | p11       | p13 | p14       ;
@@ -250,7 +254,7 @@ module  dct_iv8_1d#(
         .ceb1        (dsp_ceb1_1),     // input
         .ceb2        (dsp_ceb2_1),     // input
         .selb        (dsp_selb_1),     // input
-        .ain         (dsp_din_1),      // input[24:0] signed 
+        .ain         (dsp_ain_1),      // input[24:0] signed 
         .cea1        (dsp_cea1_1),     // input
         .cea2        (dsp_cea2_1),     // input
         .din         (dsp_din_1),      // input[24:0] signed 
@@ -278,7 +282,7 @@ module  dct_iv8_1d#(
         .ceb1        (dsp_ceb1_2),     // input
         .ceb2        (dsp_ceb2_2),     // input
         .selb        (dsp_selb_2),     // input
-        .ain         (dsp_din_2),      // input[24:0] signed 
+        .ain         (dsp_ain_2),      // input[24:0] signed 
         .cea1        (dsp_cea1_2),     // input
         .cea2        (dsp_cea2_2),     // input
         .din         (dsp_din_2),      // input[24:0] signed 

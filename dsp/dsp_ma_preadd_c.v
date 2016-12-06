@@ -38,7 +38,8 @@
  * with at least one of the Free Software programs.
  */
 `timescale 1ns/1ps
-//`undef INSTANTIATE_DSP48E1
+//`define INSTANTIATE_DSP48E1
+`undef INSTANTIATE_DSP48E1
 module  dsp_ma_preadd_c #(
     parameter B_WIDTH = 18,
     parameter A_WIDTH = 25,
