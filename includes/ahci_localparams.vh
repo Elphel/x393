@@ -97,7 +97,7 @@
 // RO: HBA Revision ID
     localparam PCI_Header__RID__RID__ADDR = 'h62;
     localparam PCI_Header__RID__RID__MASK = 'hff;
-    localparam PCI_Header__RID__RID__DFLT = 'h2;
+    localparam PCI_Header__RID__RID__DFLT = 'hb;
 // RO: Base Class Code: 1 - Mass Storage Device
     localparam PCI_Header__CC__BCC__ADDR = 'h62;
     localparam PCI_Header__CC__BCC__MASK = 'hff000000;

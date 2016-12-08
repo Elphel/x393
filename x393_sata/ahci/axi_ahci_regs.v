@@ -332,7 +332,8 @@ module  axi_ahci_regs#(
 
     end
 
-    always @ (hba_clk) begin
+////    always @ (hba_clk) begin
+    always @ (posedge aclk) begin
         was_hba_rst_r <= {was_hba_rst_aclk, was_hba_rst_r[2:1]};
         was_port_rst_r <= {was_port_rst_aclk, was_port_rst_r[2:1]};
     end
