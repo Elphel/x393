@@ -1,10 +1,9 @@
 /*!
  * <b>Module:</b>condition_mux
- * @file condition_mux.v
- * @date 2016-03-12  
- * @author auto-generated file, see ahci_fsm_sequence_old.py
- *
- * @brief Select condition
+ * @file   condition_mux.v 
+ * @date   2016-12-08  
+ * @author auto-generated file, see ahci_fsm_sequence.py
+ * @brief  Select condition
  */
 
 `timescale 1ns/1ps

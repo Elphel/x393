@@ -498,7 +498,7 @@ localparam PxCMD_MASK = HBA_PORT__PxCMD__ICC__MASK |   //  'hf0000000;
         else if (swr_HBA_PORT__PxCI) pxci0_r <= soft_write_data[0];
     end    
 
-    // HBA_PORT__PxCMD register - different behaviors of differtnt fields 
+    // HBA_PORT__PxCMD register - different behaviors of different fields 
     // use PxCMD_MASK to prevent generation of unneeded register bits
     
     always @(posedge mclk) begin

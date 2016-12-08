@@ -394,7 +394,9 @@ module  ahci_fsm
         
         if (fsm_actions && fsm_next)                        was_last_action_r <= fsm_last_act_w;
         
-        if      (hba_rst || pre_jump_w)                                fsm_transitions <= 0;
+////    if      (hba_rst || pre_jump_w)                                fsm_transitions <= 0;
+/// 2016.12.07 jumps were not disabled after async transitions, they came from the previously executed code
+        if      (hba_rst || pre_jump_w || dis_actions)                 fsm_transitions <= 0;
         else if (fsm_transitions_w)                                    fsm_transitions <= 1; 
 //        else if ((fsm_last_act_w && fsm_actions && fsm_next && !fsm_wait_act_w) ||
 //                 (fsm_act_busy && fsm_act_done && was_last_action_r) ) fsm_transitions <= 1;
