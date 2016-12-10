@@ -393,7 +393,7 @@ localparam DATA_TYPE_ERR =      3;
         
         if (reg_sdb[1])                       sactive0 <=        hba_data_in[0];
         
-        if (hba_rst || reg_sdb[0] || clear_xfer_cntr) xfer_cntr_r[31:2] <= 0;
+        if (hba_rst || reg_sdb[0] || clear_xfer_cntr)           xfer_cntr_r[31:2] <= 0;
         else if (reg_ps[4] || reg_ds[5])                        xfer_cntr_r[31:2] <= {reg_ds[5]?hba_data_in[31:16]:16'b0,
                                                                                       hba_data_in[15:2]} + hba_data_in[1]; // round up
         else if ((decr_dwcw || decr_dwcr) && !xfer_cntr_zero_r) xfer_cntr_r[31:2] <= {xfer_cntr_r[31:2]} - 

@@ -24,7 +24,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/> .
  */
 `timescale 1ns/1ps
-
+//`define CHECK_LOW_H2D_FIFO // reduce actual h2d fifo size during simulation, to test h2d_ready
+/** TODO:
+ 1. Check nothing is left in H2D FIFO after data is sent  - it will happen after DPATp received.
+ 2. Make DPATp an error? It is not easy to insert 0x00000046" data FIS header before remaining data (already in FIS)
+  - it may also hold fis_transmit, as maximal data fis is 4x of the FIFO size. 
+*/
 module  ahci_sata_layers #(
 `ifdef USE_DATASCOPE
     parameter ADDRESS_BITS =         10, //for datascope
@@ -105,6 +110,9 @@ module  ahci_sata_layers #(
     output  wire        txn_out,
     input   wire        rxp_in,
     input   wire        rxn_in,
+    output              debug_is_data, // @clk (sata clk) - last symbol was data output
+    output              debug_dmatp,  // @clk (sata clk) - received CODE_DMATP
+    
 `ifdef USE_DATASCOPE
 // Datascope interface (write to memory that can be software-read)
     output                    datascope_clk,
@@ -141,6 +149,13 @@ module  ahci_sata_layers #(
     localparam H2D_TYPE_FIS_DATA = 0; // @SuppressThisWarning VEditor unused
     localparam H2D_TYPE_FIS_HEAD = 1;
     localparam H2D_TYPE_FIS_LAST = 2;
+    
+`ifdef SIMULATION
+    `ifdef CHECK_LOW_H2D_FIFO
+        localparam H2D_FIFO_THRESHOLD = 4; // to test h2d_ready - will turn off frequently, much earlier than fifo almost full
+    `endif
+`endif
+    
     
     wire               phy_ready;        // active when GTX gets aligned output
     wire               link_established; // Received 3 back-to-back non-ALIGNp 
@@ -186,7 +201,9 @@ module  ahci_sata_layers #(
     wire       [FIFO_ADDR_WIDTH:0] d2h_fill;
     wire                           d2h_nempty;
     wire                           h2d_fifo_rd = h2d_nempty && ll_strobe_out; // TODO: check latency in link.v
-    wire                           h2d_fifo_wr = h2d_valid;
+//    wire                           h2d_fifo_wr = h2d_valid;
+//2016.12.10
+    wire                           h2d_fifo_wr = h2d_valid && h2d_ready; // or should valid depend on ready in the fis_transmit?
     
     wire                           d2h_fifo_rd = d2h_valid && d2h_ready;
     wire                           d2h_fifo_wr = ll_d2h_valid || fis_over_r; // fis_over_r will push FIS end to FIFO
@@ -205,7 +222,18 @@ assign ll_h2d_last =  (h2d_type_out == H2D_TYPE_FIS_LAST);
 assign d2h_valid = d2h_nempty;
 assign d2h_many =  |d2h_fill[FIFO_ADDR_WIDTH:3]; // 
 
-assign h2d_ready = !h2d_fill[FIFO_ADDR_WIDTH] && !(&h2d_fill[FIFO_ADDR_WIDTH:3]);
+// assign h2d_ready = !h2d_fill[FIFO_ADDR_WIDTH] && !(&h2d_fill[FIFO_ADDR_WIDTH:3]);
+// 2016:12:10 sometimes overflow happened because of a BUG 
+`ifdef SIMULATION
+    `ifdef CHECK_LOW_H2D_FIFO
+        assign h2d_ready = !h2d_fill[FIFO_ADDR_WIDTH] && (h2d_fill < ((1 << BITS_TO_START_XMIT) + H2D_FIFO_THRESHOLD ));
+    `else
+        assign h2d_ready = !h2d_fill[FIFO_ADDR_WIDTH] && !(&h2d_fill[FIFO_ADDR_WIDTH-1:3]); // same as with synthesis
+    `endif
+`else
+        assign h2d_ready = !h2d_fill[FIFO_ADDR_WIDTH] && !(&h2d_fill[FIFO_ADDR_WIDTH-1:3]);
+`endif
+
 assign ll_d2h_almost_full   = d2h_fill[FIFO_ADDR_WIDTH] || &d2h_fill[FIFO_ADDR_WIDTH-1:6]; // 63 dwords (maybe use :5?) - time to tell device to stop 
 
 //    assign ll_frame_req_w = !ll_frame_busy && h2d_pending && (((h2d_type == H2D_TYPE_FIS_LAST) && h2d_fifo_wr ) || (|h2d_fill[FIFO_ADDR_WIDTH : BITS_TO_START_XMIT]));
@@ -317,7 +345,9 @@ assign debug_phy = debug_phy0;
         .phy_err_in       (ph2ll_err_out),         // input[3:0] wire   // disperr | notintable
         // to phy
         .phy_data_out     (ll2ph_data_in),         // output[31:0] wire 
-        .phy_isk_out      (ll2ph_charisk_in),       // output[3:0] wire   // charisk
+        .phy_isk_out      (ll2ph_charisk_in),      // output[3:0] wire   // charisk
+        .debug_is_data    (debug_is_data),         // output reg @clk (sata clk) - last symbol was data output
+        .debug_dmatp      (debug_dmatp),           // output reg @clk (sata clk) - received CODE_DMATP
         .debug_out        (debug_link)
     );
     

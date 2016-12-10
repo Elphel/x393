@@ -99,6 +99,8 @@ module link #(
     // to phy
     output  wire    [DATA_BYTE_WIDTH*8 - 1:0] phy_data_out,
     output  wire    [DATA_BYTE_WIDTH   - 1:0] phy_isk_out,   // charisk
+    output reg                                debug_is_data, // @clk (sata clk) - last symbol was data output
+    output reg                                debug_dmatp,  // @clk (sata clk) - received CODE_DMATP
     // debug
     output                             [31:0] debug_out      //
 );
@@ -580,6 +582,10 @@ begin
 end
 endgenerate
 
+always @ (posedge clk) begin
+     debug_dmatp <= rcvd_dword[CODE_DMATP];
+end
+
 // select which primitive shall be sent 
 wire    [PRIM_NUM - 1:0]    select_prim;
 assign  select_prim[CODE_SYNCP]     = ~alignes_pair & (state_idle | state_sync_esc | state_rcvr_wait | state_reset);
@@ -617,6 +623,10 @@ always @ (posedge clk)
                     {DATA_BYTE_WIDTH*8{select_prim[CODE_ERRP]}}   & prim_data[CODE_ERRP]   |
                     {DATA_BYTE_WIDTH*8{select_prim[CODE_CRC]}}    & prim_data[CODE_CRC]    |
                     {DATA_BYTE_WIDTH*8{select_prim[CODE_DATA]}}   & prim_data[CODE_DATA];
+
+always @ (posedge clk)
+    debug_is_data <=  select_prim[CODE_DATA];
+
 
 always @ (posedge clk)
     to_phy_isk <= rst | ~select_prim[CODE_DATA] & ~select_prim[CODE_CRC] ? {{(DATA_BYTE_WIDTH - 1){1'b0}}, 1'b1} : {DATA_BYTE_WIDTH{1'b0}} ;
