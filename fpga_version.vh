@@ -35,8 +35,12 @@
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
  */
-        parameter FPGA_VERSION =          32'h039300d3;      //parallel - Updated SATA (v.0xb)
-//        parameter FPGA_VERSION =          32'h039300d2;      //parallel - fixing false trigger on input condition change -0.018/21, 80.28 %
+        parameter FPGA_VERSION =          32'h039300d7;      //parallel - updated SATA (v12) all met, 80.32%
+//        parameter FPGA_VERSION =          32'h039300d6;      //parallel - more SATA debug link layer -0.127/18, 80.03% -> -0.002/4, 80.26%
+//      parameter FPGA_VERSION =          32'h039300d5;      //parallel - more SATA debug (v.0xd) -0.021/8 80.20 %
+//      parameter FPGA_VERSION =          32'h039300d4;      //parallel - more SATA debug (v.0xd) -0.064 /24 80.77%
+//      parameter FPGA_VERSION =          32'h039300d3;      //parallel - Updated SATA (v.0xb) -0.073/22
+//      parameter FPGA_VERSION =          32'h039300d2;      //parallel - fixing false trigger on input condition change -0.018/21, 80.28 %
 //      parameter FPGA_VERSION =          32'h039300d1;      //parallel - removed extra debug -0.042/9 80.34%
 //      parameter FPGA_VERSION =          32'h039300d1;      //parallel - changing line_numbers_sync condition  -0.011/3, 80.78 %
 //      parameter FPGA_VERSION =          32'h039300d0;      //parallel - more status data

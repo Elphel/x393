@@ -239,6 +239,8 @@
     
     reg          [2:0] nhrst_r;
     wire               hrst = !nhrst_r[2];
+    wire               debug_link_send_data; // @sata clk - last symbol was data output
+    wire               debug_link_dmatp;     // @clk (sata clk) - received CODE_DMATP
     
     wire [FREQ_METER_WIDTH-1:0] xclk_period;
 `ifdef USE_DATASCOPE
@@ -403,7 +405,8 @@
         .sctl_ipm          (sctl_ipm),          // output[3:0] 
         .sctl_spd          (sctl_spd),          // output[3:0] 
         .irq               (irq),               // output
-
+        .debug_link_send_data (debug_link_send_data), // input @posedge sata_clk - last symbol was data output (to count sent out)
+        .debug_link_dmatp  (debug_link_dmatp),        // link received DMATp from device
 `ifdef USE_DATASCOPE
         .datascope1_clk    (datascope_clk),     // input
         .datascope1_waddr  (datascope_waddr),   // input[9:0] 
@@ -489,6 +492,10 @@
         .txn_out           (TXN),               // output wire 
         .rxp_in            (RXP),               // input wire 
         .rxn_in            (RXN),               // input wire
+        .debug_is_data     (debug_link_send_data), //output  @clk (sata clk) - last symbol was data output
+        .debug_dmatp       (debug_link_dmatp),  // @clk (sata clk) - received CODE_DMATP
+        
+        
 `ifdef USE_DATASCOPE
         .datascope_clk     (datascope_clk),     // output
         .datascope_waddr   (datascope_waddr),   // output[9:0] 
