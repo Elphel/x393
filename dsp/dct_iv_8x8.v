@@ -106,12 +106,14 @@ module  dct_iv_8x8#(
     reg                         [1:0] transpose_w_page;
     reg                         [6:0] transpose_cntr; // transpose memory counter, [6] == 1 when the last page is being finished
     reg                               transpose_in_run; 
-    wire                              transpose_start = dcth_phin_run && (dcth_phin [6:0] == 7'h10);
+//    wire                              transpose_start = dcth_phin_run && (dcth_phin [6:0] == 7'h10);
+    wire                              transpose_start = dcth_phin_run && (dcth_phin [6:0] == 7'h11);
+//    wire                              transpose_start = dcth_phin_run && (dcth_phin [6:0] == 7'h12);
     reg                         [2:0] transpose_wa_low; // [2:0] transpose memory low address bits, [3] - other group (of 16)
     reg                         [4:0] transpose_wa_high; // high bits of transpose memory write address
     wire                        [7:0] transpose_wa = {transpose_wa_high,transpose_wa_low};
     wire                              transpose_wa_decr = (transpose_cntr[0] & ~transpose_cntr[3]);
-    reg                               transpose_we;
+    reg                         [1:0] transpose_we; // [1]
     wire        [TRANSPOSE_WIDTH-1:0] transpose_di = transpose_cntr[0]? dcth_dout0: dcth_dout1;
     
     reg         [TRANSPOSE_WIDTH-1:0] transpose_ram[0:255];
@@ -125,8 +127,8 @@ module  dct_iv_8x8#(
     wire                              transpose_out_start = transpose_in_run && (transpose_cntr[6:0] == 7'h34); // 7'h33 is actual minimum
     reg                         [1:0] transpose_r_page;
 
-    reg         [TRANSPOSE_WIDTH-1:0] transpose_reg; // internal BRAM register
-    reg         [TRANSPOSE_WIDTH-1:0] transpose_out; // output BRAM register
+    reg signed  [TRANSPOSE_WIDTH-1:0] transpose_reg; // internal BRAM register
+    reg signed  [TRANSPOSE_WIDTH-1:0] transpose_out; // output BRAM register
 
     reg                         [7:0] transpose_debug_reg; // internal BRAM register
     reg                         [7:0] transpose_debug_out; // output BRAM register
@@ -168,10 +170,11 @@ module  dct_iv_8x8#(
     
     reg                        [6:0] dctv_out_cntr; // count output data from second (vertical) pass (bit 6 - stopping)
     reg                              dctv_out_run;  // 
-    wire                             dctv_out_start = dctv_phin [6:0] == 'h10; 
+//    wire                             dctv_out_start = dctv_phin [6:0] == 'h10; 
+    wire                             dctv_out_start = dctv_phin [6:0] == 'h11; 
     
     reg                        [3:0] dctv_out_wa_1;
-    reg                              dctv_out_we_1;
+    reg                        [1:0] dctv_out_we_1;
     reg                              dctv_out_sel; // select DCTv channel output;
     reg signed       [OUT_WIDTH-1:0] dctv_out_ram_1[0:15];
     reg                        [2:0] dctv_out_debug_ram_1[0:15];
@@ -266,11 +269,11 @@ module  dct_iv_8x8#(
             4'hf: transpose_wa_low <= 3;
         endcase  
         transpose_wa_high <= {transpose_w_page, transpose_cntr[5:4], transpose_cntr[0]} - {transpose_wa_decr,1'b0};
-        transpose_we <=  dcth_en_out0 || dcth_en_out1;
+        transpose_we <=  {transpose_we[0],dcth_en_out0 | dcth_en_out1};
         // Write transpose memory)
-        if (transpose_we)       transpose_ram[transpose_wa] <= transpose_di;
-        if (transpose_we) transpose_debug_ram[transpose_wa] <= transpose_debug_di;
-//        if (transpose_we) $display("%d %d @%t",transpose_cntr, transpose_wa, $time) ;
+        if (transpose_we[1])       transpose_ram[transpose_wa] <= transpose_di;
+        if (transpose_we[1]) transpose_debug_ram[transpose_wa] <= transpose_debug_di;
+//        if (transpose_we[1]) $display("%d %d @%t",transpose_cntr, transpose_wa, $time) ;
         
         if      (rst)                           transpose_out_run[0] <= 0;
         else if           (transpose_out_start) transpose_out_run[0] <= 1;
@@ -335,7 +338,7 @@ module  dct_iv_8x8#(
         if (!dctv_out_run || dctv_out_start) dctv_out_cntr <= 0;
         else                                 dctv_out_cntr <= dctv_out_cntr + 1;
         
-        dctv_out_we_1 <= dctv_en_out0 || dctv_en_out1;
+        dctv_out_we_1 <= {dctv_out_we_1[0], dctv_en_out0 | dctv_en_out1};
         
         dctv_out_sel <= dctv_out_cntr[0];
 
@@ -359,8 +362,8 @@ module  dct_iv_8x8#(
         endcase  
         
         // write first stage of output reordering
-        if (dctv_out_we_1) dctv_out_ram_1[dctv_out_wa_1] <=       dctv_out_sel? dctv_dout1: dctv_dout0;
-        if (dctv_out_we_1) dctv_out_debug_ram_1[dctv_out_wa_1] <= dctv_out_sel? dctv_yindex1: dctv_yindex0;
+        if (dctv_out_we_1[1]) dctv_out_ram_1[dctv_out_wa_1] <=       dctv_out_sel? dctv_dout1: dctv_dout0;
+        if (dctv_out_we_1[1]) dctv_out_debug_ram_1[dctv_out_wa_1] <= dctv_out_sel? dctv_yindex1: dctv_yindex0;
         
         if      (rst)                 dctv_out_run_1 <= 0;
         else if (dctv_out_start_1)    dctv_out_run_1 <= 1;
