@@ -40,7 +40,7 @@
 `timescale 1ns/1ps
 // No saturation here, and no rounding as we do not need to match decoder (be bit-precise), skipping rounding adder
 // will reduce needed resources
-//`define DCT_INPUT_UNITY
+`define DCT_INPUT_UNITY
 module  dct_tests_01 ();
 //    parameter fstname="dct_tests_01.fst";
 `ifdef IVERILOG              
@@ -61,11 +61,16 @@ module  dct_tests_01 ();
     `endif // CVC
 `endif // IVERILOG
     
-    parameter CLK_PERIOD = 10; // ns
-    parameter WIDTH =        24; // input data width
-//    parameter OUT_WIDTH =    16; // output data width
-    parameter OUT_WIDTH =    24; // output data width
-    parameter OUT_RSHIFT =    3;  // overall right shift of the result from input, aligned by MSB (>=3 will never cause saturation)
+    parameter CLK_PERIOD =     10; // ns
+    parameter WIDTH =           24; // input data width
+//    parameter OUT_WIDTH =     16; // output data width
+    parameter OUT_WIDTH =       24; // output data width
+    parameter TRANSPOSE_WIDTH = 24; // width of the transpose memory (intermediate results)    
+    parameter OUT_RSHIFT =       2;  // overall right shift of the result from input, aligned by MSB (>=3 will never cause saturation)
+    parameter OUT_RSHIFT2 =      0;  // overall right shift for the second (vertical) pass
+    
+    parameter DCT_GAP = 16; // between runs            
+    
     
     reg              RST = 1'b1;
     reg              CLK = 1'b0;
@@ -83,15 +88,17 @@ module  dct_tests_01 ();
     
     wire             x_we = !phase_in[3] && run_in;
     reg  [WIDTH-1:0] x_in;
+    reg  [WIDTH-1:0] x_in_2d;
     reg  [WIDTH-1:0] x_out;
     reg  [WIDTH-1:0] x_ram[0:7];
     wire [WIDTH-1:0] x_out_w = x_ram[x_ra];
     
     reg              start = 0;
+    reg              start2 = 0; // second start for 2d
     
-    wire [OUT_WIDTH-1:0] y_dct;           // S uppressThisWarning VEditor - simulation only
-    wire                 pre2_start_out;  // S uppressThisWarning VEditor - simulation only
-    wire                 en_out;          // S uppressThisWarning VEditor - simulation only
+    wire [OUT_WIDTH-1:0] y_dct;
+    wire                 pre2_start_out;
+    wire                 en_out;
     
     reg                  y_pre_we;
     reg                  y_we;
@@ -103,13 +110,27 @@ module  dct_tests_01 ();
     wire signed [OUT_WIDTH-1:0] y_out = y_ram[y_ra];           // SuppressThisWarning VEditor - simulation only
     reg  signed     [WIDTH-1:0] data_in[0:63];
     reg  signed [OUT_WIDTH-1:0] data_out[0:63];
-    integer              i,j;
+
+    wire                        pre_last_in_2d;    // SuppressThisWarning VEditor - simulation only
+    wire                        pre_first_out_2d;  // SuppressThisWarning VEditor - simulation only
+    wire                        pre_busy_2d;       // SuppressThisWarning VEditor - simulation only
+    wire                        dv_2d;             // SuppressThisWarning VEditor - simulation only
+    wire signed [OUT_WIDTH-1:0] d_out_2d; 
+
+    wire                        pre_last_in_2dr;   // SuppressThisWarning VEditor - simulation only
+    wire                        pre_first_out_2dr; // SuppressThisWarning VEditor - simulation only
+    wire                        pre_busy_2dr;      // SuppressThisWarning VEditor - simulation only
+    wire                        dv_2dr;            // SuppressThisWarning VEditor - simulation only
+    wire signed [OUT_WIDTH-1:0] d_out_2dr;         // SuppressThisWarning VEditor - simulation only
+
+    
+    integer              i,j, i1;
     initial begin
         for (i=0; i<64; i=i+1) begin
 `ifdef DCT_INPUT_UNITY
-            data_in[i] = (i[2:0] == i[5:3]) ? {2'b1,{WIDTH-2{1'b0}}} : 0;
+            data_in[i] =  (i[2:0] == i[5:3]) ? {2'b1,{WIDTH-2{1'b0}}} : 0;
 `else
-            data_in[i] = $random;
+            data_in[i]  = $random;
 `endif
         end
         $display("Input data in line-scan order:");
@@ -147,23 +168,6 @@ module  dct_tests_01 ();
             if (&i[2:0]) repeat (8) @(posedge CLK);
         end
         #1 x_in = 0;
-/*        
-        // running 'one' - just make a period == 17
-        repeat (7) begin
-            @(posedge CLK);
-#1          x_in = {2'b1,{WIDTH-2{1'b0}}}; // >>x_wa;
-            @(posedge CLK);
-#1            x_in = 0; 
-            repeat (15) @(posedge CLK); // 16+1= 17, non-zero will go through all of the 8 x[i]
-        end
-        begin
-            @(posedge CLK);
-#1            x_in = {2'b1,{WIDTH-2{1'b0}}};
-            @(posedge CLK);
-#1            x_in = 0; 
-            en_x = 0;
-        end
-*/        
         repeat (64) @(posedge CLK);
         
         $display("");
@@ -173,8 +177,44 @@ module  dct_tests_01 ();
                                                        data_out[i+4],data_out[i+5],data_out[i+6],data_out[i+7]);
         end
         
-        $finish;
+//        repeat (64) @(posedge CLK);
+//        $finish;
     end
+
+    initial begin
+        wait (!RST);
+        while (!start) begin
+            @(posedge CLK);
+            #1;
+        end    
+        for (i1 = 0; i1 < 64; i1 = i1+1) begin
+            @(posedge CLK);
+            #1;
+            x_in_2d = data_in[i1];
+            if (i1 == 63) start2 = 1;
+        end
+        for (i1 = 0; i1 < 64; i1 = i1+1) begin
+            @(posedge CLK);
+            #1;
+            start2 = 0;
+            x_in_2d = data_in[i1];
+        end
+        
+        repeat (DCT_GAP) @(posedge CLK);
+        #1;
+        start2 = 1;
+        for (i1 = 0; i1 < 64; i1 = i1+1) begin
+            @(posedge CLK);
+            #1;
+            start2 = 0;
+            x_in_2d = data_in[63-i1];
+        end
+        
+        repeat (300) @(posedge CLK);
+        $finish;
+        
+    end
+    
 
     initial j = 0;
     always @ (posedge CLK) begin
@@ -285,7 +325,53 @@ module  dct_tests_01 ();
         .start          (start),          // input
         .dout           (y_dct),          // output[15:0] 
         .pre2_start_out (pre2_start_out), // output reg 
-        .en_out         (en_out)          // output reg 
+        .en_out         (en_out),          // output reg
+        .y_index        () // output[2:0] reg 
     );
+
+
+
+    dct_iv_8x8 #(
+        .INPUT_WIDTH     (WIDTH),
+        .OUT_WIDTH       (OUT_WIDTH),
+        .OUT_RSHIFT1     (OUT_RSHIFT),
+        .OUT_RSHIFT2     (OUT_RSHIFT2),
+        .TRANSPOSE_WIDTH (TRANSPOSE_WIDTH),
+        .DSP_B_WIDTH     (18),
+        .DSP_A_WIDTH     (25),
+        .DSP_P_WIDTH     (48)
+    ) dct_iv_8x8_i (
+        .clk            (CLK),              // input
+        .rst            (RST),              // input
+        .start          (start || start2),  // input
+        .xin            (x_in_2d),          // input[24:0] signed 
+        .pre_last_in    (pre_last_in_2d),       // output reg 
+        .pre_first_out  (pre_first_out_2d), // output
+        .dv             (dv_2d),            // output
+        .d_out          (d_out_2d),         // output[24:0] signed
+        .pre_busy       (pre_busy_2d)       // output reg 
+    );
+
+    dct_iv_8x8 #(
+        .INPUT_WIDTH     (WIDTH),
+        .OUT_WIDTH       (OUT_WIDTH),
+        .OUT_RSHIFT1     (OUT_RSHIFT),
+        .OUT_RSHIFT2     (OUT_RSHIFT2),
+        .TRANSPOSE_WIDTH (TRANSPOSE_WIDTH),
+        .DSP_B_WIDTH     (18),
+        .DSP_A_WIDTH     (25),
+        .DSP_P_WIDTH     (48)
+    ) dct_iv_8x8r_i (
+        .clk            (CLK),               // input
+        .rst            (RST),               // input
+        .start          (pre_first_out_2d),  // input
+        .xin            (d_out_2d),          // input[24:0] signed 
+        .pre_last_in    (pre_last_in_2dr),   // output reg 
+        .pre_first_out  (pre_first_out_2dr), // output
+        .dv             (dv_2dr),            // output
+        .d_out          (d_out_2dr),         // output[24:0] signed
+        .pre_busy       (pre_busy_2dr)       // output reg 
+    );
+
 
 endmodule

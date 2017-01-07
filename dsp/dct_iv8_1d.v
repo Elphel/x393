@@ -71,11 +71,10 @@ module  dct_iv8_1d#(
     output [OUT_WIDTH -1:0]        dout,
     output reg                     pre2_start_out, // 2 clock cycle before Y0 output, full dout sequence
                                              // start_out-x-Y0-x-Y7-x-Y4-x-Y3-x-Y1-x-Y6-x-Y2-x-Y5
-    output reg                     en_out    // valid at the same time slot as pre2_start_out (goes active with pre2_start_out)                                      
+    output                         en_out,   // valid at the same time slot as pre2_start_out (goes active with pre2_start_out), 2 ahead of data
+    output reg               [2:0] y_index   // for simulation - valid with dout - index of the data output
+                                          
 );
-// X6-X7-X5-X2-X1-X3-X0-X4-*-X5-X1-X2-*-X4-X7-*
-// X2-X7-X3-X4-X5-X6-X0-X1-*-X3-X5-X4-*-X1-X7-*
-// X2-X7-X3-X4-X5-X6-X0-X1-*-X3-X5-X4-*-X6-X7-*
 
     localparam RSHIFT1 = 2; // safe right shift for stage 1
     localparam STAGE1_RSHIFT = COSINE_SHIFT + (WIDTH - A_WIDTH) + RSHIFT1; // divide by 4 in stage 1 - never saturates
@@ -132,6 +131,11 @@ module  dct_iv8_1d#(
     reg                         run_in;  // receiving input data
     reg                         restart; // restarting next block if en was active at phase=14;
     reg                         run_out; // running output data
+    reg                         en_out_r;
+    reg                         en_out_r2;
+    
+    
+    assign en_out = en_out_r;
     
     assign dsp_ain_2 = dsp_p_1 [STAGE1_RSHIFT +: A_WIDTH];
     
@@ -147,6 +151,23 @@ module  dct_iv8_1d#(
     wire din_zero = ~(|d_in);
     assign dsp_cin_1 = {{P_WIDTH-WIDTH-COSINE_SHIFT{d_in[WIDTH-1]}},d_in,~d_in[WIDTH-1]^din_zero,{COSINE_SHIFT-1{d_in[WIDTH-1]}}};
 
+    always @ (posedge clk) begin
+        en_out_r2 <= en_out_r;
+        if (en_out_r2) begin
+            case (phase_cnt[3:1])
+                3'h0: y_index <= 0;
+                3'h1: y_index <= 7;
+                3'h2: y_index <= 4;
+                3'h3: y_index <= 3;
+                3'h4: y_index <= 1;
+                3'h5: y_index <= 6;
+                3'h6: y_index <= 2;
+                3'h7: y_index <= 5;
+            endcase
+        end else begin
+            y_index <= 'bx;
+        end 
+    end
 
     //register files
     assign dsp_din_1 = dsp_din_1_ram[dsp_din_1_ra];
@@ -173,7 +194,7 @@ module  dct_iv8_1d#(
     
         pre2_start_out <= run_out && (phase_cnt == 14);
         
-        en_out <= run_out && !phase_cnt[0];
+        en_out_r <= run_out && !phase_cnt[0];
         
         // Cosine table, defined to fit into 17 bits for 18-bit signed DSP B-operand
         case (phase_cnt)
