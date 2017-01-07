@@ -66,7 +66,7 @@ module  dct_tests_01 ();
 //    parameter OUT_WIDTH =     16; // output data width
     parameter OUT_WIDTH =       24; // output data width
     parameter TRANSPOSE_WIDTH = 24; // width of the transpose memory (intermediate results)    
-    parameter OUT_RSHIFT =       3;  // overall right shift of the result from input, aligned by MSB (>=3 will never cause saturation)
+    parameter OUT_RSHIFT =       2;  // overall right shift of the result from input, aligned by MSB (>=3 will never cause saturation)
     parameter OUT_RSHIFT2 =      0;  // overall right shift for the second (vertical) pass
     
     parameter DCT_GAP = 16; // between runs            
@@ -96,9 +96,9 @@ module  dct_tests_01 ();
     reg              start = 0;
     reg              start2 = 0; // second start for 2d
     
-    wire [OUT_WIDTH-1:0] y_dct;           // S uppressThisWarning VEditor - simulation only
-    wire                 pre2_start_out;  // S uppressThisWarning VEditor - simulation only
-    wire                 en_out;          // S uppressThisWarning VEditor - simulation only
+    wire [OUT_WIDTH-1:0] y_dct;
+    wire                 pre2_start_out;
+    wire                 en_out;
     
     reg                  y_pre_we;
     reg                  y_we;
@@ -111,21 +111,20 @@ module  dct_tests_01 ();
     reg  signed     [WIDTH-1:0] data_in[0:63];
     reg  signed [OUT_WIDTH-1:0] data_out[0:63];
 
-    reg  signed     [WIDTH-1:0] d_in;     
-    wire                        pre_last_in_2d; 
-    wire                        pre_first_out_2d;
-    wire                        pre_busy_2d;
-    wire                        dv_2d;
+    wire                        pre_last_in_2d;    // SuppressThisWarning VEditor - simulation only
+    wire                        pre_first_out_2d;  // SuppressThisWarning VEditor - simulation only
+    wire                        pre_busy_2d;       // SuppressThisWarning VEditor - simulation only
+    wire                        dv_2d;             // SuppressThisWarning VEditor - simulation only
     wire signed [OUT_WIDTH-1:0] d_out_2d; 
 
-    wire                        pre_last_in_2dr; 
-    wire                        pre_first_out_2dr;
-    wire                        pre_busy_2dr;
-    wire                        dv_2dr;
-    wire signed [OUT_WIDTH-1:0] d_out_2dr; 
+    wire                        pre_last_in_2dr;   // SuppressThisWarning VEditor - simulation only
+    wire                        pre_first_out_2dr; // SuppressThisWarning VEditor - simulation only
+    wire                        pre_busy_2dr;      // SuppressThisWarning VEditor - simulation only
+    wire                        dv_2dr;            // SuppressThisWarning VEditor - simulation only
+    wire signed [OUT_WIDTH-1:0] d_out_2dr;         // SuppressThisWarning VEditor - simulation only
 
     
-    integer              i,j, i1, j1;
+    integer              i,j, i1;
     initial begin
         for (i=0; i<64; i=i+1) begin
 `ifdef DCT_INPUT_UNITY

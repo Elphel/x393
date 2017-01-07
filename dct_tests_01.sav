@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.3.78 (w)1999-2016 BSI
-[*] Tue Dec 13 19:22:06 2016
+[*] Tue Dec 13 19:43:18 2016
 [*]
-[dumpfile] "/home/eyesis/git/x393-neon/simulation/dct_tests_01-20161213121815935.fst"
-[dumpfile_mtime] "Tue Dec 13 19:18:19 2016"
-[dumpfile_size] 101333
+[dumpfile] "/home/eyesis/git/x393-neon/simulation/dct_tests_01-20161213123921501.fst"
+[dumpfile_mtime] "Tue Dec 13 19:39:21 2016"
+[dumpfile_size] 103386
 [savefile] "/home/eyesis/git/x393-neon/dct_tests_01.sav"
 [timestart] 0
 [size] 1814 1171
 [pos] 1912 0
-*-19.687614 1470200 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-19.687614 3465000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] dct_tests_01.
 [treeopen] dct_tests_01.dct_iv8_1d_i.
 [treeopen] dct_tests_01.dct_iv8_1d_i.dsp_ma_preadd_c_1_i.
@@ -17,7 +17,7 @@
 [treeopen] dct_tests_01.dct_iv_8x8_i.dct_iv8_1d_pass1_0_i.
 [treeopen] dct_tests_01.dct_iv_8x8_i.dct_iv8_1d_pass1_1_i.
 [sst_width] 204
-[signals_width] 264
+[signals_width] 302
 [sst_expanded] 1
 [sst_vpaned_height] 344
 @c00200
@@ -93,10 +93,14 @@ dct_tests_01.y_out[23:0]
 dct_tests_01.dct_iv8_1d_i.y_index[2:0]
 @1401200
 -top
-@800200
+@c00200
 -2d-1d
 @28
 dct_tests_01.start
+@420
+dct_tests_01.x_in[23:0]
+@8420
+dct_tests_01.x_in[23:0]
 @22
 dct_tests_01.x_out[23:0]
 @8420
@@ -152,7 +156,7 @@ dct_tests_01.dct_iv_8x8_i.dct_iv8_1d_pass1_1_i.en_out
 dct_tests_01.dct_iv_8x8_i.dct_iv8_1d_pass1_1_i.y_index[2:0]
 @200
 -
-@1000200
+@1401200
 -2d-1d
 @c00200
 -dct_iv8_1d
@@ -381,13 +385,15 @@ dct_tests_01.pre_busy_2d
 dct_tests_01.pre_last_in_2d
 dct_tests_01.pre_first_out_2d
 dct_tests_01.dv_2d
-@22
+@420
+dct_tests_01.d_out_2d[23:0]
+@8420
 dct_tests_01.d_out_2d[23:0]
 @28
 dct_tests_01.dv_2dr
 @22
 dct_tests_01.d_out_2dr[23:0]
-@8420
+@8421
 dct_tests_01.d_out_2dr[23:0]
 @200
 -
@@ -622,7 +628,7 @@ dct_tests_01.dct_iv_8x8_i.dctv_out_run_2
 dct_tests_01.dct_iv_8x8_i.dctv_out_ra_2[6:0]
 @420
 dct_tests_01.dct_iv_8x8_i.dctv_out_reg_2[23:0]
-@8421
+@8420
 dct_tests_01.dct_iv_8x8_i.dctv_out_reg_2[23:0]
 @22
 dct_tests_01.dct_iv_8x8_i.dctv_out_debug_reg_2[2:0]

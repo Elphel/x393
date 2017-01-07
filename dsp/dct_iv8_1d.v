@@ -75,9 +75,6 @@ module  dct_iv8_1d#(
     output reg               [2:0] y_index   // for simulation - valid with dout - index of the data output
                                           
 );
-// X6-X7-X5-X2-X1-X3-X0-X4-*-X5-X1-X2-*-X4-X7-*
-// X2-X7-X3-X4-X5-X6-X0-X1-*-X3-X5-X4-*-X1-X7-*
-// X2-X7-X3-X4-X5-X6-X0-X1-*-X3-X5-X4-*-X6-X7-*
 
     localparam RSHIFT1 = 2; // safe right shift for stage 1
     localparam STAGE1_RSHIFT = COSINE_SHIFT + (WIDTH - A_WIDTH) + RSHIFT1; // divide by 4 in stage 1 - never saturates
@@ -171,7 +168,6 @@ module  dct_iv8_1d#(
             y_index <= 'bx;
         end 
     end
-
 
     //register files
     assign dsp_din_1 = dsp_din_1_ram[dsp_din_1_ra];

@@ -41,8 +41,8 @@
 module  dct_iv_8x8#(
     parameter INPUT_WIDTH =     25,
     parameter OUT_WIDTH =       25,
-    parameter OUT_RSHIFT1 =      3,  // overall right shift of the result from input, aligned by MSB for pass1 (>=3 will never cause saturation)
-    parameter OUT_RSHIFT2 =      0,  // overall right shift of the result from input, aligned by MSB for pass2 (>=3 will never cause saturation)
+    parameter OUT_RSHIFT1 =      1,  // overall right shift of the result from input, aligned by MSB for pass1 (>=3 will never cause saturation)
+    parameter OUT_RSHIFT2 =      1, //  if sum OUT_RSHIFT1+OUT_RSHIFT2 == 2, direct*reverse == ident (may use 3, -1) or 3,0 with wider output and saturate
     parameter TRANSPOSE_WIDTH = 25, // transpose memory width
     parameter DSP_B_WIDTH =     18,
     parameter DSP_A_WIDTH =     25,
@@ -76,6 +76,9 @@ module  dct_iv_8x8#(
 // 3. common transpose memory plus 2 input reorder memory for each of the vertical DCT
 // 4. 2 of the vertical DCTs
 // 5. small memory to combine/reorder outputs (2 stages as 1 x16 memory is not enough)
+// TODO make a version that uses common transpose memory (twice width) and simultaneously calculates dst-iv (invert time sequence, alternate sign)
+// That can be used for lateral chromatic aberration (shift in time domain). Reverse transform does not need it - will always be just dct-iv
+
     reg                               x_run;
     reg                        [5:0]  x_wa;
     wire                              dcth_phin_start = x_run && (x_wa[5:0] == 6); 
