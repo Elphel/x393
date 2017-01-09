@@ -388,8 +388,8 @@ module  histogram_saxi#(
         else if ( burst_done_w && !page_sent_mclk) pages_in_buf_wr <= pages_in_buf_wr + 1;
         else if (!burst_done_w &&  page_sent_mclk) pages_in_buf_wr <= pages_in_buf_wr - 1;
         
-//        grant <= en && rq_in && !buf_full && (!started || busy_r); // delay grant until chn_sel is set (first cycle of started)
-        grant <= en && rq_in && !buf_full && (grant || busy_r); // delay grant until chn_sel is set (first cycle of started)
+//        grant <= en && rq_in && !buf_full && (grant || busy_r); // delay grant until chn_sel is set (first cycle of started)
+        grant <= en && rq_in && !dav_r && !buf_full && (grant || busy_r); // delay grant until chn_sel is set (first cycle of started)
 
         
         if (!en) chn_grant <= 0;
