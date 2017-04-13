@@ -661,7 +661,10 @@
 //    parameter HISPI_IOSTANDARD =          "PPDS_25", //"DIFF_SSTL18_II" for high current (13.4mA vs 8mA)
 //    parameter HISPI_IOSTANDARD =          "DIFF_HSTL_II_18", //"DIFF_SSTL18_II" for high current (13.4mA vs 8mA)
 //`endif  DIFF_HSTL_II_18
-
+//    parameter CMPRS_CHN_MASK =          4'hf, // all channels (specify wich compressor channels to use (disable some/all to make room for processing))
+//    parameter CMPRS_CHN_MASK =          4'h1, // single channel (specify wich compressor channels to use (disable some/all to make room for processing))
+//    parameter CMPRS_CHN_MASK =          4'h3, // two channels (specify wich compressor channels to use (disable some/all to make room for processing))
+    parameter CMPRS_CHN_MASK =            4'h7, // three channels (specify wich compressor channels to use (disable some/all to make room for processing))
 
     parameter CMPRS_NUM_AFI_CHN =         1, // 2, // 1 - multiplex all 4 compressors to a single AXI_HP, 2 - split between to AXI_HP
     parameter CMPRS_GROUP_ADDR =          'h600, // total of 'h60

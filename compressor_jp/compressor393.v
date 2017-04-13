@@ -39,6 +39,7 @@
 `timescale 1ns/1ps
 
 module  compressor393 # (
+        parameter CMPRS_CHN_MASK =            4'hf, // specify wich compressor channels to use (disable some/all to make room for processing)
         parameter CMPRS_NUM_AFI_CHN =         2, // 1 - multiplex all 4 compressors to a single AXI_HP, 2 - split between to AXI_HP
         parameter CMPRS_GROUP_ADDR =          'h600, // total of 'h60
         parameter CMPRS_BASE_INC =            'h10,
@@ -340,144 +341,165 @@ module  compressor393 # (
     generate
         genvar i;
         for (i=0; i < 4; i=i+1) begin: cmprs_channel_block
-            jp_channel #(
-                .CMPRS_NUMBER                    (i),
-                .CMPRS_GROUP_ADDR                (CMPRS_GROUP_ADDR),
-                .CMPRS_BASE_INC                  (CMPRS_BASE_INC),
-                .CMPRS_STATUS_REG_BASE           (CMPRS_STATUS_REG_BASE),
-                .CMPRS_HIFREQ_REG_BASE           (CMPRS_HIFREQ_REG_BASE),
-                .CMPRS_STATUS_REG_INC            (CMPRS_STATUS_REG_INC),
-                .CMPRS_HIFREQ_REG_INC            (CMPRS_HIFREQ_REG_INC),
-                .CMPRS_MASK                      (CMPRS_MASK),
-                .CMPRS_CONTROL_REG               (CMPRS_CONTROL_REG),
-                .CMPRS_STATUS_CNTRL              (CMPRS_STATUS_CNTRL),
-                .CMPRS_FORMAT                    (CMPRS_FORMAT),
-                .CMPRS_COLOR_SATURATION          (CMPRS_COLOR_SATURATION),
-                .CMPRS_CORING_MODE               (CMPRS_CORING_MODE),
-                .CMPRS_INTERRUPTS                (CMPRS_INTERRUPTS),    
-                .CMPRS_TABLES                    (CMPRS_TABLES),
-                .TABLE_QUANTIZATION_INDEX        (TABLE_QUANTIZATION_INDEX),
-                .TABLE_CORING_INDEX              (TABLE_CORING_INDEX),
-                .TABLE_FOCUS_INDEX               (TABLE_FOCUS_INDEX),
-                .TABLE_HUFFMAN_INDEX             (TABLE_HUFFMAN_INDEX),
-                .FRAME_HEIGHT_BITS               (FRAME_HEIGHT_BITS),
-                .LAST_FRAME_BITS                 (LAST_FRAME_BITS),
-                .CMPRS_CBIT_RUN                  (CMPRS_CBIT_RUN),
-                .CMPRS_CBIT_RUN_BITS             (CMPRS_CBIT_RUN_BITS),
-                .CMPRS_CBIT_QBANK                (CMPRS_CBIT_QBANK),
-                .CMPRS_CBIT_QBANK_BITS           (CMPRS_CBIT_QBANK_BITS),
-                .CMPRS_CBIT_DCSUB                (CMPRS_CBIT_DCSUB),
-                .CMPRS_CBIT_DCSUB_BITS           (CMPRS_CBIT_DCSUB_BITS),
-                .CMPRS_CBIT_CMODE                (CMPRS_CBIT_CMODE),
-                .CMPRS_CBIT_CMODE_BITS           (CMPRS_CBIT_CMODE_BITS),
-                .CMPRS_CBIT_FRAMES               (CMPRS_CBIT_FRAMES),
-                .CMPRS_CBIT_FRAMES_BITS          (CMPRS_CBIT_FRAMES_BITS),
-                .CMPRS_CBIT_BAYER                (CMPRS_CBIT_BAYER),
-                .CMPRS_CBIT_BAYER_BITS           (CMPRS_CBIT_BAYER_BITS),
-                .CMPRS_CBIT_FOCUS                (CMPRS_CBIT_FOCUS),
-                .CMPRS_CBIT_FOCUS_BITS           (CMPRS_CBIT_FOCUS_BITS),
-                .CMPRS_CBIT_RUN_RST              (CMPRS_CBIT_RUN_RST),
-                .CMPRS_CBIT_RUN_STANDALONE       (CMPRS_CBIT_RUN_STANDALONE),
-                .CMPRS_CBIT_RUN_ENABLE           (CMPRS_CBIT_RUN_ENABLE),
-                .CMPRS_CBIT_CMODE_JPEG18         (CMPRS_CBIT_CMODE_JPEG18),
-                .CMPRS_CBIT_CMODE_MONO6          (CMPRS_CBIT_CMODE_MONO6),
-                .CMPRS_CBIT_CMODE_JP46           (CMPRS_CBIT_CMODE_JP46),
-                .CMPRS_CBIT_CMODE_JP46DC         (CMPRS_CBIT_CMODE_JP46DC),
-                .CMPRS_CBIT_CMODE_JPEG20         (CMPRS_CBIT_CMODE_JPEG20),
-                .CMPRS_CBIT_CMODE_JP4            (CMPRS_CBIT_CMODE_JP4),
-                .CMPRS_CBIT_CMODE_JP4DC          (CMPRS_CBIT_CMODE_JP4DC),
-                .CMPRS_CBIT_CMODE_JP4DIFF        (CMPRS_CBIT_CMODE_JP4DIFF),
-                .CMPRS_CBIT_CMODE_JP4DIFFHDR     (CMPRS_CBIT_CMODE_JP4DIFFHDR),
-                .CMPRS_CBIT_CMODE_JP4DIFFDIV2    (CMPRS_CBIT_CMODE_JP4DIFFDIV2),
-                .CMPRS_CBIT_CMODE_JP4DIFFHDRDIV2 (CMPRS_CBIT_CMODE_JP4DIFFHDRDIV2),
-                .CMPRS_CBIT_CMODE_MONO1          (CMPRS_CBIT_CMODE_MONO1),
-                .CMPRS_CBIT_CMODE_MONO4          (CMPRS_CBIT_CMODE_MONO4),
-                .CMPRS_CBIT_FRAMES_SINGLE        (CMPRS_CBIT_FRAMES_SINGLE),
-                .CMPRS_COLOR18                   (CMPRS_COLOR18),
-                .CMPRS_COLOR20                   (CMPRS_COLOR20),
-                .CMPRS_MONO16                    (CMPRS_MONO16),
-                .CMPRS_JP4                       (CMPRS_JP4),
-                .CMPRS_JP4DIFF                   (CMPRS_JP4DIFF),
-                .CMPRS_MONO8                     (CMPRS_MONO8),
-                .CMPRS_FRMT_MBCM1                (CMPRS_FRMT_MBCM1),
-                .CMPRS_FRMT_MBCM1_BITS           (CMPRS_FRMT_MBCM1_BITS),
-                .CMPRS_FRMT_MBRM1                (CMPRS_FRMT_MBRM1),
-                .CMPRS_FRMT_MBRM1_BITS           (CMPRS_FRMT_MBRM1_BITS),
-                .CMPRS_FRMT_LMARG                (CMPRS_FRMT_LMARG),
-                .CMPRS_FRMT_LMARG_BITS           (CMPRS_FRMT_LMARG_BITS),
-                .CMPRS_CSAT_CB                   (CMPRS_CSAT_CB),
-                .CMPRS_CSAT_CB_BITS              (CMPRS_CSAT_CB_BITS),
-                .CMPRS_CSAT_CR                   (CMPRS_CSAT_CR),
-                .CMPRS_CSAT_CR_BITS              (CMPRS_CSAT_CR_BITS),
-                .CMPRS_CORING_BITS               (CMPRS_CORING_BITS),
-                .CMPRS_TIMEOUT_BITS              (CMPRS_TIMEOUT_BITS),
-                .CMPRS_TIMEOUT                   (CMPRS_TIMEOUT),
-                .NUM_FRAME_BITS                  (NUM_FRAME_BITS)
-`ifdef DEBUG_RING
-        ,.DEBUG_CMD_LATENCY         (DEBUG_CMD_LATENCY) 
-`endif        
-            ) jp_channel_i (
-//                .rst                                  (rst),                       // input
-                .xclk                                 (xclk),                      // input
-`ifdef  USE_XCLK2X                
-                .xclk2x                               (xclk2x),                    // input
-`endif
-                .mrst                                 (mrst),                      // input
-                .xrst                                 (xrst),                      // input
-                .hrst                                 (hrst),                      // input
-                .mclk                                 (mclk),                      // input
-                .cmd_ad                               (cmd_ad),                    // input[7:0] 
-                .cmd_stb                              (cmd_stb),                   // input
-                .status_ad                            (status_ad_mux[8 * i +: 8]), // output[7:0] 
-                .status_rq                            (status_rq_mux[i]),          // output
-                .status_start                         (status_start_mux[i]),       // input
-                .irq                                  (cmprs_irq[i]),              // output
-                .xfer_reset_page_rd                   (xfer_reset_page_rd[i]),     // input
-                .buf_wpage_nxt                        (buf_wpage_nxt[i]),          // input
-                .buf_we                               (buf_we[i]),                 // input
-                .buf_din                              (buf_din[64 * i +: 64]),     // input[63:0] 
-                .page_ready_chn                       (page_ready[i]),             // input
-                .next_page_chn                        (next_page[i]),              // output
-                
-                .frame_start_dst                      (frame_start_dst[i]),        // output
-                .frame_start_conf                     (frame_start_conf[i]),          // input
-                .line_unfinished_src                  (line_unfinished_src[FRAME_HEIGHT_BITS * i +: FRAME_HEIGHT_BITS]), // input[15:0] 
-                .frame_number_src                     (frame_number_src[LAST_FRAME_BITS * i +: LAST_FRAME_BITS]), // input[15:0] 
-                .frame_done_src                       (frame_done_src[i]),         // input
-                .line_unfinished_dst                  (line_unfinished_dst[FRAME_HEIGHT_BITS * i +: FRAME_HEIGHT_BITS]), // input[15:0] 
-                .frame_number_dst                     (frame_number_dst[LAST_FRAME_BITS * i +: LAST_FRAME_BITS]), // input[15:0]
-                .frames_in_sync                       (frames_in_sync[i]),         //input  
-                .frame_done_dst                       (frame_done_dst[i]),         // input
-                .suspend                              (suspend[i]),                // output
-                .frame_number_finished                (frame_number_finished[LAST_FRAME_BITS * i +: LAST_FRAME_BITS]), // output reg[15:0]
-                .dccout                               (1'b0), // input
-                .hfc_sel                              (3'b0), // input[2:0] 
-                .statistics_dv                        (), // output
-                .statistics_do                        (), // output[15:0] 
-                .ts_pre_stb                           (ts_pre_stb[i]),             // input
-                .ts_data                              (ts_data[8*i +: 8]),         // input[7:0] 
-                .eof_written_mclk                     (eof_written_mclk[i]),       // output
-                .stuffer_done_mclk                    (stuffer_done_mclk[i]),      // output
-                .vsync_late                           (vsync_late[i]),             // input
-                .frame_num_compressed                 (frame_num_compressed[i * NUM_FRAME_BITS +: NUM_FRAME_BITS]), // input[3:0] 
-                
-                .hclk                                 (hclk),                      // input
-                .fifo_rst                             (fifo_rst[i]),               // input
-                .fifo_ren                             (fifo_ren[i]),               // input
-                .fifo_rdata                           (fifo_rdata[64 * i +: 64]),  // output[63:0]
-                 
-                .fifo_eof                             (fifo_eof[i]),               // output
-                .eof_written                          (eof_written[i]),            // input
-                .fifo_flush                           (fifo_flush[i]),             // output
-                .flush_hclk                           (flush_hclk[i]),             // output
-                .fifo_count                           (fifo_count[8* i +: 8])      // output[7:0]
- `ifdef DEBUG_RING       
-                ,.debug_do                            (debug_ring[i]),         // output
-                .debug_sl                             (debug_sl),              // output
-                .debug_di                             (debug_ring[i+1])        // input
-`endif         
-                 
-            );
+            if (CMPRS_CHN_MASK & (1<<i)) begin 
+                jp_channel #(
+                    .CMPRS_NUMBER                    (i),
+                    .CMPRS_GROUP_ADDR                (CMPRS_GROUP_ADDR),
+                    .CMPRS_BASE_INC                  (CMPRS_BASE_INC),
+                    .CMPRS_STATUS_REG_BASE           (CMPRS_STATUS_REG_BASE),
+                    .CMPRS_HIFREQ_REG_BASE           (CMPRS_HIFREQ_REG_BASE),
+                    .CMPRS_STATUS_REG_INC            (CMPRS_STATUS_REG_INC),
+                    .CMPRS_HIFREQ_REG_INC            (CMPRS_HIFREQ_REG_INC),
+                    .CMPRS_MASK                      (CMPRS_MASK),
+                    .CMPRS_CONTROL_REG               (CMPRS_CONTROL_REG),
+                    .CMPRS_STATUS_CNTRL              (CMPRS_STATUS_CNTRL),
+                    .CMPRS_FORMAT                    (CMPRS_FORMAT),
+                    .CMPRS_COLOR_SATURATION          (CMPRS_COLOR_SATURATION),
+                    .CMPRS_CORING_MODE               (CMPRS_CORING_MODE),
+                    .CMPRS_INTERRUPTS                (CMPRS_INTERRUPTS),    
+                    .CMPRS_TABLES                    (CMPRS_TABLES),
+                    .TABLE_QUANTIZATION_INDEX        (TABLE_QUANTIZATION_INDEX),
+                    .TABLE_CORING_INDEX              (TABLE_CORING_INDEX),
+                    .TABLE_FOCUS_INDEX               (TABLE_FOCUS_INDEX),
+                    .TABLE_HUFFMAN_INDEX             (TABLE_HUFFMAN_INDEX),
+                    .FRAME_HEIGHT_BITS               (FRAME_HEIGHT_BITS),
+                    .LAST_FRAME_BITS                 (LAST_FRAME_BITS),
+                    .CMPRS_CBIT_RUN                  (CMPRS_CBIT_RUN),
+                    .CMPRS_CBIT_RUN_BITS             (CMPRS_CBIT_RUN_BITS),
+                    .CMPRS_CBIT_QBANK                (CMPRS_CBIT_QBANK),
+                    .CMPRS_CBIT_QBANK_BITS           (CMPRS_CBIT_QBANK_BITS),
+                    .CMPRS_CBIT_DCSUB                (CMPRS_CBIT_DCSUB),
+                    .CMPRS_CBIT_DCSUB_BITS           (CMPRS_CBIT_DCSUB_BITS),
+                    .CMPRS_CBIT_CMODE                (CMPRS_CBIT_CMODE),
+                    .CMPRS_CBIT_CMODE_BITS           (CMPRS_CBIT_CMODE_BITS),
+                    .CMPRS_CBIT_FRAMES               (CMPRS_CBIT_FRAMES),
+                    .CMPRS_CBIT_FRAMES_BITS          (CMPRS_CBIT_FRAMES_BITS),
+                    .CMPRS_CBIT_BAYER                (CMPRS_CBIT_BAYER),
+                    .CMPRS_CBIT_BAYER_BITS           (CMPRS_CBIT_BAYER_BITS),
+                    .CMPRS_CBIT_FOCUS                (CMPRS_CBIT_FOCUS),
+                    .CMPRS_CBIT_FOCUS_BITS           (CMPRS_CBIT_FOCUS_BITS),
+                    .CMPRS_CBIT_RUN_RST              (CMPRS_CBIT_RUN_RST),
+                    .CMPRS_CBIT_RUN_STANDALONE       (CMPRS_CBIT_RUN_STANDALONE),
+                    .CMPRS_CBIT_RUN_ENABLE           (CMPRS_CBIT_RUN_ENABLE),
+                    .CMPRS_CBIT_CMODE_JPEG18         (CMPRS_CBIT_CMODE_JPEG18),
+                    .CMPRS_CBIT_CMODE_MONO6          (CMPRS_CBIT_CMODE_MONO6),
+                    .CMPRS_CBIT_CMODE_JP46           (CMPRS_CBIT_CMODE_JP46),
+                    .CMPRS_CBIT_CMODE_JP46DC         (CMPRS_CBIT_CMODE_JP46DC),
+                    .CMPRS_CBIT_CMODE_JPEG20         (CMPRS_CBIT_CMODE_JPEG20),
+                    .CMPRS_CBIT_CMODE_JP4            (CMPRS_CBIT_CMODE_JP4),
+                    .CMPRS_CBIT_CMODE_JP4DC          (CMPRS_CBIT_CMODE_JP4DC),
+                    .CMPRS_CBIT_CMODE_JP4DIFF        (CMPRS_CBIT_CMODE_JP4DIFF),
+                    .CMPRS_CBIT_CMODE_JP4DIFFHDR     (CMPRS_CBIT_CMODE_JP4DIFFHDR),
+                    .CMPRS_CBIT_CMODE_JP4DIFFDIV2    (CMPRS_CBIT_CMODE_JP4DIFFDIV2),
+                    .CMPRS_CBIT_CMODE_JP4DIFFHDRDIV2 (CMPRS_CBIT_CMODE_JP4DIFFHDRDIV2),
+                    .CMPRS_CBIT_CMODE_MONO1          (CMPRS_CBIT_CMODE_MONO1),
+                    .CMPRS_CBIT_CMODE_MONO4          (CMPRS_CBIT_CMODE_MONO4),
+                    .CMPRS_CBIT_FRAMES_SINGLE        (CMPRS_CBIT_FRAMES_SINGLE),
+                    .CMPRS_COLOR18                   (CMPRS_COLOR18),
+                    .CMPRS_COLOR20                   (CMPRS_COLOR20),
+                    .CMPRS_MONO16                    (CMPRS_MONO16),
+                    .CMPRS_JP4                       (CMPRS_JP4),
+                    .CMPRS_JP4DIFF                   (CMPRS_JP4DIFF),
+                    .CMPRS_MONO8                     (CMPRS_MONO8),
+                    .CMPRS_FRMT_MBCM1                (CMPRS_FRMT_MBCM1),
+                    .CMPRS_FRMT_MBCM1_BITS           (CMPRS_FRMT_MBCM1_BITS),
+                    .CMPRS_FRMT_MBRM1                (CMPRS_FRMT_MBRM1),
+                    .CMPRS_FRMT_MBRM1_BITS           (CMPRS_FRMT_MBRM1_BITS),
+                    .CMPRS_FRMT_LMARG                (CMPRS_FRMT_LMARG),
+                    .CMPRS_FRMT_LMARG_BITS           (CMPRS_FRMT_LMARG_BITS),
+                    .CMPRS_CSAT_CB                   (CMPRS_CSAT_CB),
+                    .CMPRS_CSAT_CB_BITS              (CMPRS_CSAT_CB_BITS),
+                    .CMPRS_CSAT_CR                   (CMPRS_CSAT_CR),
+                    .CMPRS_CSAT_CR_BITS              (CMPRS_CSAT_CR_BITS),
+                    .CMPRS_CORING_BITS               (CMPRS_CORING_BITS),
+                    .CMPRS_TIMEOUT_BITS              (CMPRS_TIMEOUT_BITS),
+                    .CMPRS_TIMEOUT                   (CMPRS_TIMEOUT),
+                    .NUM_FRAME_BITS                  (NUM_FRAME_BITS)
+    `ifdef DEBUG_RING
+            ,.DEBUG_CMD_LATENCY         (DEBUG_CMD_LATENCY) 
+    `endif        
+                ) jp_channel_i (
+    //                .rst                                  (rst),                       // input
+                    .xclk                                 (xclk),                      // input
+    `ifdef  USE_XCLK2X                
+                    .xclk2x                               (xclk2x),                    // input
+    `endif
+                    .mrst                                 (mrst),                      // input
+                    .xrst                                 (xrst),                      // input
+                    .hrst                                 (hrst),                      // input
+                    .mclk                                 (mclk),                      // input
+                    .cmd_ad                               (cmd_ad),                    // input[7:0] 
+                    .cmd_stb                              (cmd_stb),                   // input
+                    .status_ad                            (status_ad_mux[8 * i +: 8]), // output[7:0] 
+                    .status_rq                            (status_rq_mux[i]),          // output
+                    .status_start                         (status_start_mux[i]),       // input
+                    .irq                                  (cmprs_irq[i]),              // output
+                    .xfer_reset_page_rd                   (xfer_reset_page_rd[i]),     // input
+                    .buf_wpage_nxt                        (buf_wpage_nxt[i]),          // input
+                    .buf_we                               (buf_we[i]),                 // input
+                    .buf_din                              (buf_din[64 * i +: 64]),     // input[63:0] 
+                    .page_ready_chn                       (page_ready[i]),             // input
+                    .next_page_chn                        (next_page[i]),              // output
+                    
+                    .frame_start_dst                      (frame_start_dst[i]),        // output
+                    .frame_start_conf                     (frame_start_conf[i]),          // input
+                    .line_unfinished_src                  (line_unfinished_src[FRAME_HEIGHT_BITS * i +: FRAME_HEIGHT_BITS]), // input[15:0] 
+                    .frame_number_src                     (frame_number_src[LAST_FRAME_BITS * i +: LAST_FRAME_BITS]), // input[15:0] 
+                    .frame_done_src                       (frame_done_src[i]),         // input
+                    .line_unfinished_dst                  (line_unfinished_dst[FRAME_HEIGHT_BITS * i +: FRAME_HEIGHT_BITS]), // input[15:0] 
+                    .frame_number_dst                     (frame_number_dst[LAST_FRAME_BITS * i +: LAST_FRAME_BITS]), // input[15:0]
+                    .frames_in_sync                       (frames_in_sync[i]),         //input  
+                    .frame_done_dst                       (frame_done_dst[i]),         // input
+                    .suspend                              (suspend[i]),                // output
+                    .frame_number_finished                (frame_number_finished[LAST_FRAME_BITS * i +: LAST_FRAME_BITS]), // output reg[15:0]
+                    .dccout                               (1'b0), // input
+                    .hfc_sel                              (3'b0), // input[2:0] 
+                    .statistics_dv                        (), // output
+                    .statistics_do                        (), // output[15:0] 
+                    .ts_pre_stb                           (ts_pre_stb[i]),             // input
+                    .ts_data                              (ts_data[8*i +: 8]),         // input[7:0] 
+                    .eof_written_mclk                     (eof_written_mclk[i]),       // output
+                    .stuffer_done_mclk                    (stuffer_done_mclk[i]),      // output
+                    .vsync_late                           (vsync_late[i]),             // input
+                    .frame_num_compressed                 (frame_num_compressed[i * NUM_FRAME_BITS +: NUM_FRAME_BITS]), // input[3:0] 
+                    
+                    .hclk                                 (hclk),                      // input
+                    .fifo_rst                             (fifo_rst[i]),               // input
+                    .fifo_ren                             (fifo_ren[i]),               // input
+                    .fifo_rdata                           (fifo_rdata[64 * i +: 64]),  // output[63:0]
+                     
+                    .fifo_eof                             (fifo_eof[i]),               // output
+                    .eof_written                          (eof_written[i]),            // input
+                    .fifo_flush                           (fifo_flush[i]),             // output
+                    .flush_hclk                           (flush_hclk[i]),             // output
+                    .fifo_count                           (fifo_count[8* i +: 8])      // output[7:0]
+     `ifdef DEBUG_RING       
+                    ,.debug_do                            (debug_ring[i]),         // output
+                    .debug_sl                             (debug_sl),              // input
+                    .debug_di                             (debug_ring[i+1])        // input
+    `endif         
+                );
+            end else begin
+                // assign unused outputs from missing jp_channel instances 
+                assign status_ad_mux[8 * i +: 8] = 'bx;
+                assign status_rq_mux[i] =          'b0;
+                assign cmprs_irq[i] =              'b0;
+                assign next_page[i] =              'b0;
+                assign frame_start_dst[i] =        'b0;
+                assign suspend[i] =                'b0;
+                assign eof_written_mclk[i] =       'b0;
+
+                assign eof_written_mclk[i] =       'b0;
+                assign stuffer_done_mclk[i] =      'b0;
+                assign fifo_rdata[64 * i +: 64] =  'bx;
+                assign fifo_eof[i] =               'b0;
+                assign fifo_flush[i] =             'b0;
+                assign flush_hclk[i] =             'b0;
+                assign fifo_count[8* i +: 8] =     'bx;
+                `ifdef DEBUG_RING       
+                    assign debug_ring[i] =         'bx;
+                `endif
+            end
         end
     endgenerate
     

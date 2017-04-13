@@ -35,7 +35,11 @@
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
  */
-        parameter FPGA_VERSION =          32'h039300d9;      //parallel - correcting histograms -0.022/1, 79.60%
+        parameter FPGA_VERSION =          32'h03930103;      //parallel - three compressor channels -0.177/37, 74.94%
+//      parameter FPGA_VERSION =          32'h03930102;      //parallel - two compressor channels - all met, 67.75%
+//      parameter FPGA_VERSION =          32'h03930101;      //parallel - single compressor channel all met, 61.25%
+//      parameter FPGA_VERSION =          32'h03930100;      //parallel - removing some compressors to make room for DCT-based processing -0.004/3, 80.17 - all channels,
+//      parameter FPGA_VERSION =          32'h039300d9;      //parallel - correcting histograms -0.022/1, 79.60%
 //      parameter FPGA_VERSION =          32'h039300d8;      //parallel - SATA is now logging irq on/off -0.054 /16, 80.50%
 //      parameter FPGA_VERSION =          32'h039300d7;      //parallel - updated SATA (v12) all met, 80.32%
 //      parameter FPGA_VERSION =          32'h039300d6;      //parallel - more SATA debug link layer -0.127/18, 80.03% -> -0.002/4, 80.26%

@@ -1144,6 +1144,7 @@ assign axi_grst = axi_rst_pre;
     );
 
     mcntrl393 #(
+        .CMPRS_CHN_MASK                    (CMPRS_CHN_MASK),
         .MCONTR_SENS_BASE                  (MCONTR_SENS_BASE),
         .MCONTR_SENS_INC                   (MCONTR_SENS_INC),
         .MCONTR_CMPRS_BASE                 (MCONTR_CMPRS_BASE),
@@ -1266,6 +1267,7 @@ assign axi_grst = axi_rst_pre;
         .MAX_TILE_HEIGHT                   (MAX_TILE_HEIGHT),
         .MCNTRL_TILED_CHN2_ADDR            (MCNTRL_TILED_CHN2_ADDR),
         .MCNTRL_TILED_CHN4_ADDR            (MCNTRL_TILED_CHN4_ADDR),
+        
         .MCNTRL_TILED_MASK                 (MCNTRL_TILED_MASK),
         .MCNTRL_TILED_MODE                 (MCNTRL_TILED_MODE),
         .MCNTRL_TILED_STATUS_CNTRL         (MCNTRL_TILED_STATUS_CNTRL),
@@ -1978,6 +1980,7 @@ assign axi_grst = axi_rst_pre;
     wire        afi2_wrissuecap1en;     // output
 
     compressor393 #(
+        .CMPRS_CHN_MASK                  (CMPRS_CHN_MASK),
         .CMPRS_NUM_AFI_CHN               (CMPRS_NUM_AFI_CHN),
         .CMPRS_GROUP_ADDR                (CMPRS_GROUP_ADDR),
         .CMPRS_BASE_INC                  (CMPRS_BASE_INC),

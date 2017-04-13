@@ -39,6 +39,7 @@
 `timescale 1ns/1ps
 `include "system_defines.vh" 
 module  mcntrl393 #(
+    parameter CMPRS_CHN_MASK =            4'hf, // specify wich compressor channels to use (disable some/all to make room for processing)
 // MAXI address space, in 32-bit words
     parameter MCONTR_SENS_BASE =         'h680, // .. 'h6bf
     parameter MCONTR_SENS_INC =          'h10,
@@ -1159,88 +1160,106 @@ module  mcntrl393 #(
                 ,.dbg_wpage        (dbg_wpage[2*i +:2])         // input[1:0]   
 `endif              
             );
-            
-               mcntrl_tiled_rw #(
-                .ADDRESS_NUMBER                (ADDRESS_NUMBER),
-                .COLADDR_NUMBER                (COLADDR_NUMBER),
-                .FRAME_WIDTH_BITS              (FRAME_WIDTH_BITS),
-                .FRAME_HEIGHT_BITS             (FRAME_HEIGHT_BITS),
-                .MAX_TILE_WIDTH                (MAX_TILE_WIDTH),
-                .MAX_TILE_HEIGHT               (MAX_TILE_HEIGHT),
-                .LAST_FRAME_BITS               (LAST_FRAME_BITS),
-                .MCNTRL_TILED_ADDR             (MCONTR_CMPRS_BASE + MCONTR_CMPRS_INC * i),
-                .MCNTRL_TILED_MASK             (MCNTRL_TILED_MASK),
-                .MCNTRL_TILED_MODE             (MCNTRL_TILED_MODE),
-                .MCNTRL_TILED_STATUS_CNTRL     (MCNTRL_TILED_STATUS_CNTRL),
-                .MCNTRL_TILED_STARTADDR        (MCNTRL_TILED_STARTADDR),
-                .MCNTRL_TILED_FRAME_SIZE       (MCNTRL_TILED_FRAME_SIZE),
-                .MCNTRL_TILED_FRAME_LAST       (MCNTRL_TILED_FRAME_LAST),
-                .MCNTRL_TILED_FRAME_FULL_WIDTH (MCNTRL_TILED_FRAME_FULL_WIDTH),
-                .MCNTRL_TILED_WINDOW_WH        (MCNTRL_TILED_WINDOW_WH),
-                .MCNTRL_TILED_WINDOW_X0Y0      (MCNTRL_TILED_WINDOW_X0Y0),
-                .MCNTRL_TILED_WINDOW_STARTXY   (MCNTRL_TILED_WINDOW_STARTXY),
-                .MCNTRL_TILED_TILE_WHS         (MCNTRL_TILED_TILE_WHS),
-                .MCNTRL_TILED_STATUS_REG_ADDR  (MCONTR_CMPRS_STATUS_BASE + MCONTR_CMPRS_STATUS_INC * i),
-                .MCNTRL_TILED_PENDING_CNTR_BITS(MCNTRL_TILED_PENDING_CNTR_BITS),
-                .MCNTRL_TILED_FRAME_PAGE_RESET (MCNTRL_TILED_FRAME_PAGE_RESET),
-                .MCONTR_LINTILE_NRESET         (MCONTR_LINTILE_NRESET),
-                .MCONTR_LINTILE_EN             (MCONTR_LINTILE_EN),
-                .MCONTR_LINTILE_WRITE          (MCONTR_LINTILE_WRITE),
-                .MCONTR_LINTILE_EXTRAPG        (MCONTR_LINTILE_EXTRAPG),
-                .MCONTR_LINTILE_EXTRAPG_BITS   (MCONTR_LINTILE_EXTRAPG_BITS),
-                .MCONTR_LINTILE_KEEP_OPEN      (MCONTR_LINTILE_KEEP_OPEN),
-                .MCONTR_LINTILE_BYTE32         (MCONTR_LINTILE_BYTE32),
-                .MCONTR_LINTILE_RST_FRAME      (MCONTR_LINTILE_RST_FRAME),
-                .MCONTR_LINTILE_SINGLE         (MCONTR_LINTILE_SINGLE),
-                .MCONTR_LINTILE_REPEAT         (MCONTR_LINTILE_REPEAT),
-                .MCONTR_LINTILE_DIS_NEED       (MCONTR_LINTILE_DIS_NEED),
-                .MCONTR_LINTILE_COPY_FRAME     (MCONTR_LINTILE_COPY_FRAME),
-                .MCONTR_LINTILE_ABORT_LATE     (MCONTR_LINTILE_ABORT_LATE)
-                
-            ) mcntrl_tiled_rd_compressor_i ( 
-                .mrst                 (mrst),                         // input
-                .mclk                 (mclk),                        // input
-                .cmd_ad               (cmd_cmprs_ad),                // input[7:0] 
-                .cmd_stb              (cmd_cmprs_stb),               // input
-                .status_ad            (status_cmprs_ad[i * 8 +: 8]), // output[7:0] 
-                .status_rq            (status_cmprs_rq[i]),          // output
-                .status_start         (status_cmprs_start[i]),       // input
-                .frame_start          (cmprs_frame_start_dst[i]),    // input
-                .frame_start_conf     (cmprs_frame_start_conf[i]),   // output
-                .next_page            (cmprs_next_page[i]),          // input compressor consumed page cmprs_buf_wpage_nxt?
-                .frame_done           (cmprs_frame_done_dst[i]),     // output
-                .frame_finished       (),                            // output
-                .line_unfinished      (cmprs_line_unfinished_dst[i * FRAME_HEIGHT_BITS +: FRAME_HEIGHT_BITS]), // output[15:0] 
-                .suspend              (cmprs_suspend[i]),            // input
-                .frame_number         (cmprs_frame_number_dst[i * LAST_FRAME_BITS +: LAST_FRAME_BITS]), // output[15:0]
-                .frames_in_sync       (cmprs_frames_in_sync[i]),     // output
-                .master_frame         (cmprs_frame_number_src[i * LAST_FRAME_BITS +: LAST_FRAME_BITS]), // input[15:0] 
-                .master_set           (sens_frame_set[i]),           // input
-//                .master_follow        (master_follow[i]),            // input
-                .xfer_want            (cmprs_want[i]),               // output
-                .xfer_need            (cmprs_need[i]),               // output
-                .xfer_grant           (cmprs_channel_pgm_en[i]),     // input
-                .xfer_start_rd        (cmprs_start_rd16[i]),         // output
-                .xfer_start_wr        (),                            // output
-                .xfer_start32_rd      (cmprs_start_rd32[i]),         // output
-                .xfer_start32_wr      (),                            // output
-                .xfer_bank            (cmprs_bank[i * 3 +: 3]), // output[2:0] 
-                .xfer_row             (cmprs_row[ADDRESS_NUMBER * i +: ADDRESS_NUMBER]), // output[14:0] 
-                .xfer_col             (cmprs_col[COL_WDTH * i +: COL_WDTH]), // output[6:0] 
-                .rowcol_inc           (cmprs_rowcol_inc[i * FRAME_WBP1 +: FRAME_WBP1]), // output[13:0] 
-                .num_rows_m1          (cmprs_num_rows_m1[i * MAX_TILE_WIDTH +: MAX_TILE_WIDTH]), // output[5:0] 
-                .num_cols_m1          (cmprs_num_cols_m1[i * MAX_TILE_HEIGHT +: MAX_TILE_HEIGHT]), // output[5:0] 
-                .keep_open            (cmprs_keep_open[i]),          // output
-                .xfer_partial         (cmprs_partial[i]),            // output
-                .xfer_page_done       (cmprs_seq_done[i]),           // input
-                .xfer_page_rst_wr     (),                            // output
-                .xfer_page_rst_rd     (cmprs_xfer_reset_page_rd[i])  // output @negedge
-            );
-
-
-
-
-        
+            if (CMPRS_CHN_MASK & (1<<i)) begin 
+                   mcntrl_tiled_rw #(
+                    .ADDRESS_NUMBER                (ADDRESS_NUMBER),
+                    .COLADDR_NUMBER                (COLADDR_NUMBER),
+                    .FRAME_WIDTH_BITS              (FRAME_WIDTH_BITS),
+                    .FRAME_HEIGHT_BITS             (FRAME_HEIGHT_BITS),
+                    .MAX_TILE_WIDTH                (MAX_TILE_WIDTH),
+                    .MAX_TILE_HEIGHT               (MAX_TILE_HEIGHT),
+                    .LAST_FRAME_BITS               (LAST_FRAME_BITS),
+                    .MCNTRL_TILED_ADDR             (MCONTR_CMPRS_BASE + MCONTR_CMPRS_INC * i),
+                    .MCNTRL_TILED_MASK             (MCNTRL_TILED_MASK),
+                    .MCNTRL_TILED_MODE             (MCNTRL_TILED_MODE),
+                    .MCNTRL_TILED_STATUS_CNTRL     (MCNTRL_TILED_STATUS_CNTRL),
+                    .MCNTRL_TILED_STARTADDR        (MCNTRL_TILED_STARTADDR),
+                    .MCNTRL_TILED_FRAME_SIZE       (MCNTRL_TILED_FRAME_SIZE),
+                    .MCNTRL_TILED_FRAME_LAST       (MCNTRL_TILED_FRAME_LAST),
+                    .MCNTRL_TILED_FRAME_FULL_WIDTH (MCNTRL_TILED_FRAME_FULL_WIDTH),
+                    .MCNTRL_TILED_WINDOW_WH        (MCNTRL_TILED_WINDOW_WH),
+                    .MCNTRL_TILED_WINDOW_X0Y0      (MCNTRL_TILED_WINDOW_X0Y0),
+                    .MCNTRL_TILED_WINDOW_STARTXY   (MCNTRL_TILED_WINDOW_STARTXY),
+                    .MCNTRL_TILED_TILE_WHS         (MCNTRL_TILED_TILE_WHS),
+                    .MCNTRL_TILED_STATUS_REG_ADDR  (MCONTR_CMPRS_STATUS_BASE + MCONTR_CMPRS_STATUS_INC * i),
+                    .MCNTRL_TILED_PENDING_CNTR_BITS(MCNTRL_TILED_PENDING_CNTR_BITS),
+                    .MCNTRL_TILED_FRAME_PAGE_RESET (MCNTRL_TILED_FRAME_PAGE_RESET),
+                    .MCONTR_LINTILE_NRESET         (MCONTR_LINTILE_NRESET),
+                    .MCONTR_LINTILE_EN             (MCONTR_LINTILE_EN),
+                    .MCONTR_LINTILE_WRITE          (MCONTR_LINTILE_WRITE),
+                    .MCONTR_LINTILE_EXTRAPG        (MCONTR_LINTILE_EXTRAPG),
+                    .MCONTR_LINTILE_EXTRAPG_BITS   (MCONTR_LINTILE_EXTRAPG_BITS),
+                    .MCONTR_LINTILE_KEEP_OPEN      (MCONTR_LINTILE_KEEP_OPEN),
+                    .MCONTR_LINTILE_BYTE32         (MCONTR_LINTILE_BYTE32),
+                    .MCONTR_LINTILE_RST_FRAME      (MCONTR_LINTILE_RST_FRAME),
+                    .MCONTR_LINTILE_SINGLE         (MCONTR_LINTILE_SINGLE),
+                    .MCONTR_LINTILE_REPEAT         (MCONTR_LINTILE_REPEAT),
+                    .MCONTR_LINTILE_DIS_NEED       (MCONTR_LINTILE_DIS_NEED),
+                    .MCONTR_LINTILE_COPY_FRAME     (MCONTR_LINTILE_COPY_FRAME),
+                    .MCONTR_LINTILE_ABORT_LATE     (MCONTR_LINTILE_ABORT_LATE)
+                    
+                ) mcntrl_tiled_rd_compressor_i ( 
+                    .mrst                 (mrst),                         // input
+                    .mclk                 (mclk),                        // input
+                    .cmd_ad               (cmd_cmprs_ad),                // input[7:0] 
+                    .cmd_stb              (cmd_cmprs_stb),               // input
+                    .status_ad            (status_cmprs_ad[i * 8 +: 8]), // output[7:0] 
+                    .status_rq            (status_cmprs_rq[i]),          // output
+                    .status_start         (status_cmprs_start[i]),       // input
+                    .frame_start          (cmprs_frame_start_dst[i]),    // input
+                    .frame_start_conf     (cmprs_frame_start_conf[i]),   // output
+                    .next_page            (cmprs_next_page[i]),          // input compressor consumed page cmprs_buf_wpage_nxt?
+                    .frame_done           (cmprs_frame_done_dst[i]),     // output
+                    .frame_finished       (),                            // output
+                    .line_unfinished      (cmprs_line_unfinished_dst[i * FRAME_HEIGHT_BITS +: FRAME_HEIGHT_BITS]), // output[15:0] 
+                    .suspend              (cmprs_suspend[i]),            // input
+                    .frame_number         (cmprs_frame_number_dst[i * LAST_FRAME_BITS +: LAST_FRAME_BITS]), // output[15:0]
+                    .frames_in_sync       (cmprs_frames_in_sync[i]),     // output
+                    .master_frame         (cmprs_frame_number_src[i * LAST_FRAME_BITS +: LAST_FRAME_BITS]), // input[15:0] 
+                    .master_set           (sens_frame_set[i]),           // input
+    //                .master_follow        (master_follow[i]),            // input
+                    .xfer_want            (cmprs_want[i]),               // output
+                    .xfer_need            (cmprs_need[i]),               // output
+                    .xfer_grant           (cmprs_channel_pgm_en[i]),     // input
+                    .xfer_start_rd        (cmprs_start_rd16[i]),         // output
+                    .xfer_start_wr        (),                            // output
+                    .xfer_start32_rd      (cmprs_start_rd32[i]),         // output
+                    .xfer_start32_wr      (),                            // output
+                    .xfer_bank            (cmprs_bank[i * 3 +: 3]), // output[2:0] 
+                    .xfer_row             (cmprs_row[ADDRESS_NUMBER * i +: ADDRESS_NUMBER]), // output[14:0] 
+                    .xfer_col             (cmprs_col[COL_WDTH * i +: COL_WDTH]), // output[6:0] 
+                    .rowcol_inc           (cmprs_rowcol_inc[i * FRAME_WBP1 +: FRAME_WBP1]), // output[13:0] 
+                    .num_rows_m1          (cmprs_num_rows_m1[i * MAX_TILE_WIDTH +: MAX_TILE_WIDTH]), // output[5:0] 
+                    .num_cols_m1          (cmprs_num_cols_m1[i * MAX_TILE_HEIGHT +: MAX_TILE_HEIGHT]), // output[5:0] 
+                    .keep_open            (cmprs_keep_open[i]),          // output
+                    .xfer_partial         (cmprs_partial[i]),            // output
+                    .xfer_page_done       (cmprs_seq_done[i]),           // input
+                    .xfer_page_rst_wr     (),                            // output
+                    .xfer_page_rst_rd     (cmprs_xfer_reset_page_rd[i])  // output @negedge
+                );
+            end else begin
+                // assign unused outputs from missing mcntrl_tiled_rd_compressor_i instances 
+                assign status_cmprs_ad[i * 8 +: 8] =                                           'bx;
+                assign status_cmprs_rq[i] =                                                    'b0;
+                assign cmprs_frame_start_conf[i] =                                             'b0;
+                assign cmprs_frame_done_dst[i] =                                               'b0;
+                assign cmprs_line_unfinished_dst[i * FRAME_HEIGHT_BITS +: FRAME_HEIGHT_BITS] = 'bx;
+                assign cmprs_frame_number_dst[i * LAST_FRAME_BITS +: LAST_FRAME_BITS] =        'bx;
+                assign cmprs_frames_in_sync[i] =                                               'b0;
+                assign cmprs_want[i] =                                                         'b0;
+                assign cmprs_need[i] =                                                         'b0;
+                assign cmprs_start_rd16[i] =                                                   'b0;
+                assign cmprs_start_rd32[i] =                                                   'b0;
+                assign cmprs_bank[i * 3 +: 3] =                                                'b0;
+                assign cmprs_row[ADDRESS_NUMBER * i +: ADDRESS_NUMBER] =                       'bx;
+                assign cmprs_col[COL_WDTH * i +: COL_WDTH] =                                   'bx;
+                assign cmprs_rowcol_inc[i * FRAME_WBP1 +: FRAME_WBP1] =                        'bx;
+                assign cmprs_num_rows_m1[i * MAX_TILE_WIDTH +: MAX_TILE_WIDTH] =               'bx;
+                assign cmprs_num_cols_m1[i * MAX_TILE_HEIGHT +: MAX_TILE_HEIGHT] =             'bx;
+                assign cmprs_keep_open[i] =                                                    'bx;
+                assign cmprs_partial[i] =                                                      'bx;
+                assign cmprs_xfer_reset_page_rd[i] =                                           'bx;
+            end
         end
     endgenerate
 
