@@ -44,7 +44,10 @@
 // All references to doc = to SerialATA_Revision_2_6_Gold.pdf
 module oob_dev #(
     parameter DATA_BYTE_WIDTH = 4,
-    parameter CLK_SPEED_GRADE = 2 // 1 - 75 Mhz, 2 - 150Mhz, 4 - 300Mhz
+    parameter CLK_SPEED_GRADE = 2, // 1 - 75 Mhz, 2 - 150Mhz, 4 - 300Mhz
+    parameter TEST_ELIDLE =      2,      // test transmitting eidle between data rates (number of times)
+    parameter ELIDLE_DELAY =    'h28, // 80,    // counter cycles
+    parameter ELIDLE_DURATION = 'h80    // counter cycles
 )
 (
     // sata clk = usrclk2
@@ -83,15 +86,21 @@ localparam  STATE_CALIBRATE         = 4;
 localparam  STATE_COMWAKE           = 5;
 localparam  STATE_RECAL             = 55;
 localparam  STATE_SENDALIGN         = 6;
+localparam  STATE_EIDLE_RATE        = 65; 
 localparam  STATE_READY             = 7;
 localparam  STATE_PARTIAL           = 8;
 localparam  STATE_SLUMBER           = 9;
 localparam  STATE_REDUCESPEED       = 10;
 localparam  STATE_ERROR             = 11;
 
+
+reg     [31:0]  rate_change_cntr;
+reg             was_txelecidle;
 reg     [9:0]   state;
 wire    retry_interval_elapsed;
 wire    wait_interval_elapsed;
+wire    elidle_rate_delay_elapsed; 
+wire    elidle_rate_duration_elapsed; 
 wire    nocomwake;
 wire    [31:0]  align;
 wire    [31:0]  sync;
@@ -110,9 +119,21 @@ always @ (posedge clk)
     retry_timer <= rst | ~(state == STATE_AWAITCOMWAKE) ? 32'h0 : retry_timer + 1'b1;
 
 reg [31:0]  wait_timer;
-assign  wait_interval_elapsed = wait_timer == 32'd4096;
+assign  wait_interval_elapsed =   wait_timer == 32'd4096;
+assign elidle_rate_delay_elapsed = wait_timer == ELIDLE_DELAY;
 always @ (posedge clk)
     wait_timer <= rst | ~(state == STATE_SENDALIGN) ? 32'h0 : wait_timer + 1'b1;
+reg [31:0] elidle_timer;
+assign elidle_rate_duration_elapsed = elidle_timer == ELIDLE_DURATION;    
+always @ (posedge clk)
+    elidle_timer <= rst | ~(state == STATE_EIDLE_RATE) ? 32'h0 : elidle_timer + 1'b1;
+
+always @ (posedge clk) begin
+    was_txelecidle <= txelecidle;
+    if (rst)                                rate_change_cntr <= 0;
+    else if (txelecidle && !was_txelecidle) rate_change_cntr <= rate_change_cntr + 1;  
+end
+
 
 reg [31:0]  data;
 reg [3:0]   isk;
@@ -218,6 +239,7 @@ always @ (posedge clk)
         end
         STATE_SENDALIGN:
         begin
+            txelecidle <= 1'b0;
             data    <= align;
             isk     <= 4'h1;
             if (aligndet)
@@ -225,9 +247,21 @@ always @ (posedge clk)
             else 
             if (wait_interval_elapsed)
                 state   <= STATE_ERROR;
-            else
+            else if ((rate_change_cntr < TEST_ELIDLE) && elidle_rate_delay_elapsed)
+                state   <= STATE_EIDLE_RATE;
+            else 
                 state   <= STATE_SENDALIGN;
         end
+
+        STATE_EIDLE_RATE:
+        begin
+            txelecidle <= 1'b1;
+            data    <= 0; // align; // 'bz;
+            isk     <= 4'h1;
+            if (elidle_rate_duration_elapsed)
+                state   <= STATE_SENDALIGN;
+        end
+        
         STATE_READY:
         begin
             txelecidle <= 1'b0;

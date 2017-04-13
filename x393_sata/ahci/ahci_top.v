@@ -1217,6 +1217,7 @@ wire [9:0] xmit_dbg_01;
                 .d2h_ready       (d2h_ready), // input
                 .debug_link_send_data(debug_link_send_data), // input
                 .debug_link_dmatp  (debug_link_dmatp),        // link received DMATp from device
+                .irq             (irq),           // system IRQ
                 .datascope_clk   (datascope_clk), // output
                 .datascope_waddr (datascope_waddr), // output[9:0] reg 
                 .datascope_we    (datascope_we), // output
@@ -1350,6 +1351,7 @@ module datascope_timing #(
     
     input                     debug_link_send_data, // @posedge mclk (sata_clk, 75MHz)  - last symbol was data output (to count sent out)
     input                     debug_link_dmatp,     // link received DMATp from device
+    input                     irq,                  // system irq
     output                        datascope_clk,
     output reg [ADDRESS_BITS-1:0] datascope_waddr,
     output                        datascope_we,
@@ -1408,6 +1410,10 @@ module datascope_timing #(
     
     reg                       reset_link_count; // data FIS from dma command until
     reg                       was_link_dmatp;   //
+    reg                       irq_r;
+    reg                       irq_was;
+    wire                      we_w = write_punch_time || fis_start || (fis_we ? pre_we_r : (!fis_run && (fis_run_d || fis_run_d2 || fis_run_d3 || fis_run_d4  || fis_run_d5))); // 3 after
+    wire                      we_irq= (irq_was ^ irq_r) && !we_w; // only when not irq  
     
 //    input              debug_link_dmatp,      // link received DMATp from device
     
@@ -1436,11 +1442,11 @@ module datascope_timing #(
         else if (!fis_run_d2 && fis_run_d3)  datascope_di <= {8'h55,   last_dma_cmd};
         else if (!fis_run_d3 && fis_run_d4)  datascope_di <= non_dma_act;
         else if (!fis_run_d4 && fis_run_d5)  datascope_di <= {h2d_nready_cntr[7:0], was_link_dmatp, 1'b0, link_count_latched};
-
+        else if (we_irq)                     datascope_di <= {3'h7,irq_r,cur_time};
         pre_we_r <= pre_we_w || fis_start ;
     
 //        we_r <= write_punch_time || fis_start || (fis_we ? pre_we_r : (!fis_run && fis_run_d));
-        we_r <= write_punch_time || fis_start || (fis_we ? pre_we_r : (!fis_run && (fis_run_d || fis_run_d2 || fis_run_d3 || fis_run_d4  || fis_run_d5))); // 3 after
+        we_r <= we_w || we_irq;
         
         if     (fis_start) fis_left <= FIS_LEN - 1;
         else if (pre_we_w) fis_left <= fis_left - 1;
@@ -1508,6 +1514,11 @@ module datascope_timing #(
         
         if      (rst)  datascope_waddr <= 0;
         else if (we_r) datascope_waddr <= datascope_waddr + 1;
+        
+        irq_r <= irq;
+        
+        if      (rst)    irq_was <=0;
+        else if (we_irq) irq_was <= irq_r;
         
     end
     

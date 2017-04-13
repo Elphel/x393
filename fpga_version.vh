@@ -35,8 +35,11 @@
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
  */
-        parameter FPGA_VERSION =          32'h039300d7;      //parallel - updated SATA (v12) all met, 80.32%
-//        parameter FPGA_VERSION =          32'h039300d6;      //parallel - more SATA debug link layer -0.127/18, 80.03% -> -0.002/4, 80.26%
+        parameter FPGA_VERSION =          32'h039300da;      //parallel - sata v.13 - tolerating elidle from device during comreset/cominit -0.014 /1, 81.38%, 
+//      parameter FPGA_VERSION =          32'h039300d9;      //parallel - correcting histograms -0.022/1, 79.60%
+//      parameter FPGA_VERSION =          32'h039300d8;      //parallel - SATA is now logging irq on/off -0.054 /16, 80.50%
+//      parameter FPGA_VERSION =          32'h039300d7;      //parallel - updated SATA (v12) all met, 80.32%
+//      parameter FPGA_VERSION =          32'h039300d6;      //parallel - more SATA debug link layer -0.127/18, 80.03% -> -0.002/4, 80.26%
 //      parameter FPGA_VERSION =          32'h039300d5;      //parallel - more SATA debug (v.0xd) -0.021/8 80.20 %
 //      parameter FPGA_VERSION =          32'h039300d4;      //parallel - more SATA debug (v.0xd) -0.064 /24 80.77%
 //      parameter FPGA_VERSION =          32'h039300d3;      //parallel - Updated SATA (v.0xb) -0.073/22

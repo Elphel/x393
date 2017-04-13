@@ -223,7 +223,11 @@ always @ (posedge clk) begin
     else                         rxdlysreset_r <= rxdlysreset_r << 1; 
 end
 
-
+reg was_rxelecidle_waiting_reset;
+always @ (posedge clk) begin
+    if      (rst || set_wait_eidle)          was_rxelecidle_waiting_reset <= 0;
+    else if (state_wait_rxrst && rxelecidle) was_rxelecidle_waiting_reset <= 1;
+end
 assign  state_idle = ~state_wait_cominit &
                      ~state_wait_comwake &
                      ~state_wait_align &
@@ -253,11 +257,17 @@ end
 assign  set_wait_cominit   = state_idle & oob_start & ~cominit_req;
 assign  set_wait_comwake   = state_idle & cominit_req_l & cominit_allow & rxcominit_done | state_wait_cominit & rxcominitdet_l & rxcominit_done;
 assign  set_recal_tx       = state_wait_comwake & rxcomwakedet_l & rxcomwake_done;
-assign  set_wait_eidle     = state_recal_tx & recal_tx_done;
+///assign  set_wait_eidle     = state_recal_tx & recal_tx_done;
+assign  set_wait_eidle     = (state_recal_tx & recal_tx_done) |
+                             (rxelecidle & 
+                              (state_wait_align | state_wait_clk_align | state_wait_align2 | (state_wait_rxrst & rxreset_ack & was_rxelecidle_waiting_reset) ));
 assign  set_wait_rxrst     = state_wait_eidle & eidle_timer_done;
-assign  set_wait_align     = state_wait_rxrst & rxreset_ack;
-assign  set_wait_clk_align = state_wait_align & (detected_alignp_r);
-assign  set_wait_align2    = state_wait_clk_align & clk_phase_align_ack;
+///assign  set_wait_align     = state_wait_rxrst & rxreset_ack;
+///assign  set_wait_clk_align = state_wait_align & (detected_alignp_r);
+///assign  set_wait_align2    = state_wait_clk_align & clk_phase_align_ack;
+assign  set_wait_align     = state_wait_rxrst & rxreset_ack & ~rxelecidle;
+assign  set_wait_clk_align = state_wait_align & (detected_alignp_r) & ~rxelecidle;
+assign  set_wait_align2    = state_wait_clk_align & clk_phase_align_ack & ~rxelecidle;
 
 
 
@@ -278,10 +288,18 @@ assign  clr_wait_cominit   = set_wait_comwake   | set_error;
 assign  clr_wait_comwake   = set_recal_tx       | set_error;
 assign  clr_recal_tx       = set_wait_eidle     | set_error;
 assign  clr_wait_eidle     = set_wait_rxrst     | set_error;
-assign  clr_wait_rxrst     = set_wait_align     | set_error;
-assign  clr_wait_align     = set_wait_clk_align | set_error;
-assign  clr_wait_clk_align = set_wait_align2    | set_error;
-assign  clr_wait_align2    = set_wait_synp      | set_error;
+///assign  clr_wait_rxrst     = set_wait_align     | set_error;
+assign  clr_wait_rxrst     = state_wait_rxrst & rxreset_ack; 
+
+///assign  clr_wait_align     = set_wait_clk_align | set_error;
+///assign  clr_wait_clk_align = set_wait_align2    | set_error;
+///assign  clr_wait_align2    = set_wait_synp      | set_error;
+assign  clr_wait_align     = set_wait_clk_align | set_error | rxelecidle;
+assign  clr_wait_clk_align = set_wait_align2    | set_error | rxelecidle;
+assign  clr_wait_align2    = set_wait_synp      | set_error | rxelecidle;
+
+
+
 assign  clr_wait_synp      = set_wait_linkup    | set_error;
 assign  clr_wait_linkup    = state_wait_linkup; //TODO not so important, but still have to trace 3 back-to-back non alignp primitives
 assign  clr_error          = state_error;

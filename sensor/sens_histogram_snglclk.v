@@ -356,6 +356,7 @@ module  sens_histogram_snglclk #(
         // prevent starting rq if grant is still on (back-to-back)
         if      (!hist_out)   en_rq_start <= 0;
         else if (!hist_grant) en_rq_start <= 1;
+
         hist_rq_r <= !hist_rst & en_mclk && hist_out && !(&hist_raddr) && en_rq_start;
         
         if      (!hist_out || (&hist_raddr[7:0])) hist_re[0] <= 0;
