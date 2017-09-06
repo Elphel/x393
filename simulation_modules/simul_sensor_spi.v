@@ -97,7 +97,7 @@ end
 `define S_FST_RD_A0 8'h03
 `define S_FST_RD_D0 8'h04
 
-always @ ( posedge clk ) begin  //todo: always begin @(posedge) begin end @(negedge) begin end
+always @ ( posedge clk ) begin 
 if ( reset ) begin
     sfst <= `S_FST_00000;
     reg_addr[6:0] <= 0;
@@ -123,7 +123,7 @@ end else begin
                 ciklu_addr[2:0] <= ciklu_addr[2:0] - 1;
         end
         `S_FST_RD_D0 : begin
-            #tSPI spi_out <= sensor_spi_reg[reg_addr[6:0]][ciklu_addr[2:0]]; //todo: pakeist fronta kai bus testbench
+//           #tSPI spi_out <= sensor_spi_reg[reg_addr[6:0]][ciklu_addr[2:0]];
             if ( ciklu_addr[2:0] == 3'b000)
                 sfst <= `S_FST_00000;
             else
@@ -144,6 +144,21 @@ end else begin
                 sfst <= `S_FST_00000;
             end else
                 ciklu_addr[2:0] <= ciklu_addr[2:0] - 1;
+        end
+    endcase
+        
+end //if
+end //always
+
+always @ ( negedge clk ) begin
+if ( reset ) begin
+    spi_out <= 1'b0;
+end else begin 
+
+
+    case ( sfst )
+        `S_FST_RD_D0 : begin
+            spi_out <= sensor_spi_reg[reg_addr[6:0]][ciklu_addr[2:0]];
         end
     endcase
         
