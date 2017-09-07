@@ -62,7 +62,7 @@ reg [7:0] reg_wr;
 
 assign  pin_spi_out=spi_out;
 assign  clk = pin_spi_clk;
-assign  reset = !pin_spi_reset || !pin_spi_en;
+assign  reset = !pin_spi_reset || !pin_spi_en; //todo: asinchronous
 
 `ifndef ROOTPATH
     `include "IVERILOG_INCLUDE.v"// SuppressThisWarning VEditor - maybe not used
@@ -97,7 +97,7 @@ end
 `define S_FST_RD_A0 8'h03
 `define S_FST_RD_D0 8'h04
 
-always @ ( posedge clk ) begin 
+always @ ( posedge clk or posedge reset ) begin 
 if ( reset ) begin
     sfst <= `S_FST_00000;
     reg_addr[6:0] <= 0;
@@ -150,7 +150,7 @@ end else begin
 end //if
 end //always
 
-always @ ( negedge clk ) begin
+always @ ( negedge clk or posedge reset ) begin
 if ( reset ) begin
     spi_out <= 1'b0;
 end else begin 
