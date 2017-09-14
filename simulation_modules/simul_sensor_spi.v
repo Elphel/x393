@@ -62,7 +62,7 @@ reg [7:0] reg_wr;
 
 assign  pin_spi_out=spi_out;
 assign  clk = pin_spi_clk;
-assign  reset = !pin_spi_reset || !pin_spi_en; //todo: asinchronous
+assign  reset = !pin_spi_reset || !pin_spi_en;
 
 `ifndef ROOTPATH
     `include "IVERILOG_INCLUDE.v"// SuppressThisWarning VEditor - maybe not used
