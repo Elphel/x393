@@ -132,7 +132,7 @@ end else begin
         `S_FST_WR_A0 : begin
             reg_addr[ciklu_addr] <= pin_spi_in;
             if ( ciklu_addr[2:0] == 3'b000) begin
-                ciklu_addr[2:0] <= 3'b111;//6 data bit
+                ciklu_addr[2:0] <= 3'b111;//7 data bit
                 sfst <= `S_FST_WR_D0;
             end else
                 ciklu_addr[2:0] <= ciklu_addr[2:0] - 1;
@@ -140,7 +140,7 @@ end else begin
         `S_FST_WR_D0 : begin
             reg_wr[ciklu_addr[2:0]] <= pin_spi_in;
             if ( ciklu_addr[2:0] == 3'b000) begin
-                sensor_spi_reg[reg_addr[6:0]][7:0] <= {pin_spi_in, reg_wr[6:0]};
+                sensor_spi_reg[reg_addr[6:0]][7:0] <= {reg_wr[7:1], pin_spi_in};
                 sfst <= `S_FST_00000;
             end else
                 ciklu_addr[2:0] <= ciklu_addr[2:0] - 1;

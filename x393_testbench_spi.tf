@@ -208,6 +208,23 @@ module  x393_testbench_spi #(
         end
     endtask
 
+    task write_spi;
+        input  [6:0] adresas;
+        input  [7:0] write_data;
+        begin
+            addr[6:0] <= adresas [6:0];
+            wr_data[7:0] <= write_data [7:0];
+            wr_en <= 1'b1;
+            wait (CLK);
+            wait (!CLK);
+            wait (CLK);
+            wr_en <= 1'b0;
+            wait (!CLK && spi_ready);
+            wait (CLK);
+            wait (!CLK);
+        end
+    endtask
+
     task all_regs_spi;
         integer i;
         reg  [6:0] adresas;
@@ -249,6 +266,10 @@ module  x393_testbench_spi #(
     RST_CLEAN = 0;
     @(posedge CLK) ;
     all_regs_spi;
+    write_spi(0,8'h55);
+    read_spi(0);
+    $display("===================");
+    $display("SPI %d reg - 0x%x =====", addr, reg_data);
     #15000;
     
     $display("normal finish testbench");
