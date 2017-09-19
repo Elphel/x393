@@ -225,16 +225,36 @@ module  x393_testbench_spi #(
         end
     endtask
 
-    task all_regs_spi;
+    task all_regs_spi;      //task destroy original registers values
         integer i;
         reg  [6:0] adresas;
+        reg ok;
         begin
+            ok = 1;
             adresas = 0;
             for (i=0; i<128; i=i+1) begin
                 read_spi(adresas);
                 $display("SPI %d reg - %d =====", addr, reg_data);
                 adresas = adresas + 1;
             end
+            adresas = 0;
+            for (i=0; i<128; i=i+1) begin
+                write_spi(adresas,adresas[6:0] + 8'h80);
+                adresas = adresas + 1;
+            end
+            adresas = 0;
+            for (i=0; i<128; i=i+1) begin
+                read_spi(adresas);
+                if ( addr[6:0] + 8'h80 != reg_data[7:0])
+                    ok = 0;
+                adresas = adresas + 1;
+            end
+            $display("");
+            if ( ok == 0)
+                $display("SPI registers self write-read - ERROR ===== original registers values destroyed");
+            else
+                $display("SPI registers self write-read - OK ===== original registers values destroyed");
+            $display("");
         end
     endtask
 
@@ -265,11 +285,9 @@ module  x393_testbench_spi #(
     @(posedge CLK) ;
     RST_CLEAN = 0;
     @(posedge CLK) ;
-    all_regs_spi;
-    write_spi(0,8'h55);
-    read_spi(0);
-    $display("===================");
-    $display("SPI %d reg - 0x%x =====", addr, reg_data);
+    $display("original SPI registers:");
+    $display("");
+    all_regs_spi; //task destroy original registers values
     #15000;
     
     $display("normal finish testbench");
@@ -279,7 +297,7 @@ module  x393_testbench_spi #(
 // protect from never end
   initial begin
 
-    #160000;
+    #2000000;
   
     $display("finish testbench (before end)");
   $finish;
