@@ -678,6 +678,21 @@ class X393Sensor(object):
                                addr = 0,
                                data = ((reg_addr16 & 0xffff) << 16) | (reg_data16 & 0xffff) )
 
+    def write_sensor_spi_reg(self,
+                           num_sensor,
+                           reg_addr7,
+                           reg_data8):
+        """
+        Write spi register in immediate mode
+        @param num_sensor - sensor port number (0..3), or "all" - same to all sensors
+        @param reg_addr7 - 7-bit register address 
+        @param reg_data8 - 8-bit data to write to sensor register
+        """
+        self.write_sensor_i2c (num_sensor = num_sensor,
+                               rel_addr = True,
+                               addr = 0,
+                               data = ( ((0x9000) << 16) | ( (reg_addr7 & 0x7f) << 8 ) | (reg_data8 & 0xff) ) )
+
     def write_sensor_i2c (self,
                           num_sensor,
                           rel_addr,
