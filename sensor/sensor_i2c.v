@@ -475,7 +475,23 @@ module  sensor_i2c#(
         .rvalid          (i2c_rvalid)       // output
     );
     
+`ifdef SENSOR_SPI    
+
+    simul_fifo
+    #(
+      .WIDTH(32),
+      .DEPTH(64)
+    )simmul_fifo_i(
+         .clk(mclk),
+         .reset(mrst),
+         .data_in(di_r),
+         .load(i2c_cmd_we),
+         .input_ready(),
+         .data_out(data_spi),
+         .valid(valid_spi),
+         .ready(read_spi));
     
+`else
     
     ram_var_w_var_r #(
         .REGISTERS(1), // try to delay i2c_byte_start by one more cycle
@@ -493,6 +509,9 @@ module  sensor_i2c#(
         .web      (8'hff), // input[7:0] 
         .data_in  (di_r) // input[31:0] 
     );
+
+`endif    
+
 
 endmodule
 
