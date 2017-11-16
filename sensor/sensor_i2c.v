@@ -283,6 +283,26 @@ module  sensor_i2c#(
         .rq         (status_rq), // output
         .start      (status_start) // input
     );
+
+`ifdef SENSOR_SPI    
+
+    wire    pin_spi_out;
+    wire    pin_spi_in;
+    wire    pin_spi_en;
+    wire    pin_spi_reset;
+    wire    pin_spi_clk;
+    reg     read_spi_fifo;
+    reg     spi_rd_en;
+    reg     spi_wr_en;
+    wire    valid_spi;
+    wire [31:0] data_spi;
+    wire    spi_ready;
+    wire [7:0] data_from_spi;
+    reg     spi_wr_fifo_en;
+    reg     spi_pre_wr_fifo_en;
+    
+`endif    
+    
     fifo_same_clock #(
         .DATA_WIDTH(8),
         .DATA_DEPTH(4)
@@ -297,6 +317,8 @@ module  sensor_i2c#(
         .nempty     (i2c_fifo_nempty), // output
         .half_full  () // output reg 
     );
+
+
      
     always @ (posedge mclk) begin
         wr_full_r <= wr_full_w;  // write buffer is almost full
@@ -477,6 +499,27 @@ module  sensor_i2c#(
     
 `ifdef SENSOR_SPI    
 
+
+    always @ (posedge mclk) begin
+
+        if      (spi_wr_en)  spi_wr_en <= 0; 
+        if      (spi_rd_en)  spi_rd_en <= 0; 
+
+        if      (mrst)  begin      
+            read_spi_fifo <= 0;
+            spi_wr_en <= 0;
+            spi_rd_en <= 0;
+            end 
+        else if (read_spi_fifo)    read_spi_fifo <= 0;
+        else if ( valid_spi )
+            case ( data_spi[31:16] )
+                16'h9000 : if (spi_ready) begin spi_wr_en <= 1;  read_spi_fifo <= 1; end
+                16'h9100 : if (spi_ready) begin spi_rd_en <= 1;  read_spi_fifo <= 1; end
+                default: read_spi_fifo <= 1;
+            endcase
+        
+    end
+
     simul_fifo
     #(
       .WIDTH(32),
@@ -486,10 +529,40 @@ module  sensor_i2c#(
          .reset(mrst),
          .data_in(di_r),
          .load(i2c_cmd_we),
-         .input_ready(),
+         .input_ready(),        //input ready to load
          .data_out(data_spi),
          .valid(valid_spi),
-         .ready(read_spi));
+         .ready(read_spi_fifo));
+
+    sensor_spi_io sensor_spi_io_i
+(
+        .clk0(mclk),               //clock 10-40MHz CMV300
+        .reset(mrst),          //reset, active high
+        .addr(data_spi[14:8]),     //spi address
+        .rd_en(spi_rd_en),          //read from sensor enable, one clock period input signal
+        .wr_en(spi_wr_en),              //write to sensor enable, one clock period input signal
+        .wr_data(data_spi[7:0]),      //data to spi address be write
+        .reg_data(data_from_spi),  //data from spi address will read
+        .spi_ready(spi_ready),  //spi available for command
+        .pin_spi_out(pin_spi_out),        //SPI interface pin: data out, direction from sensor to FPGA 
+        .pin_spi_in(pin_spi_in),      //SPI interface pin: data in, direction from FPGA to sensor 
+        .pin_spi_en(pin_spi_en),      //SPI interface pin: data enable, direction from FPGA to sensor 
+        .pin_spi_reset(pin_spi_reset),   //SPI interface pin: data reset, direction from FPGA to sensor 
+        .pin_spi_clk(pin_spi_clk)      //SPI interface pin: data clock, direction from FPGA to sensor 
+);
+
+    simul_sensor_spi # (
+        .SENSOR_IMAGE_TYPE ("NORM"), 
+        .SENSOR_TYPE ("CMV300") 
+) simul_sensor_spi_i (
+        .pin_spi_out(pin_spi_out),        //SPI interface pin: data out, direction from sensor to FPGA 
+        .pin_spi_in(pin_spi_in),      //SPI interface pin: data in, direction from FPGA to sensor 
+        .pin_spi_en(pin_spi_en),      //SPI interface pin: data enable, direction from FPGA to sensor 
+        .pin_spi_reset(pin_spi_reset),   //SPI interface pin: data reset, direction from FPGA to sensor 
+        .pin_spi_clk(pin_spi_clk)      //SPI interface pin: data clock, direction from FPGA to sensor 
+);
+
+
     
 `else
     
