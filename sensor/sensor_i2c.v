@@ -301,7 +301,37 @@ module  sensor_i2c#(
     reg     spi_wr_fifo_en;
     reg     spi_pre_wr_fifo_en;
     
-`endif    
+    always @ (posedge mclk) begin
+
+        if      (spi_wr_fifo_en)  spi_wr_fifo_en <= 1'b0; 
+
+        if      (mrst)  begin      
+            spi_wr_fifo_en <= 1'b0;
+            spi_pre_wr_fifo_en <= 1'b0;
+            end 
+        else if (spi_rd_en)    spi_pre_wr_fifo_en <= 1'b1;
+        else if (spi_ready && spi_pre_wr_fifo_en)  begin  spi_pre_wr_fifo_en <= 1'b0; spi_wr_fifo_en <= 1'b1; end
+        
+    end
+
+    fifo_same_clock #(
+        .DATA_WIDTH(8),
+        .DATA_DEPTH(4)
+    ) fifo_same_clock_spi_rdata_i (
+        .rst        (1'b0),             // input
+        .clk        (mclk),            // input
+        .sync_rst   (mrst),            // input
+        .we         (spi_wr_fifo_en),      // input
+        .re         (i2c_fifo_rd),     // input
+        .data_in    (data_from_spi),       // input[7:0] 
+        .data_out   (i2c_fifo_dout),   // output[7:0] 
+        .nempty     (i2c_fifo_nempty), // output
+        .half_full  () // output reg 
+    );
+
+
+    
+`else
     
     fifo_same_clock #(
         .DATA_WIDTH(8),
@@ -318,6 +348,7 @@ module  sensor_i2c#(
         .half_full  () // output reg 
     );
 
+`endif    
 
      
     always @ (posedge mclk) begin
