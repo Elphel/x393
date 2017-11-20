@@ -49,6 +49,7 @@
   `define DEBUG_COMPRESSOR_SCRAMBLE
   `define DEBUG_DCT1D // undefine after debugging is over
 //  `define USE_OLD_DCT
+`define SENSOR_SPI //define if used SPI sensor CMV300
   
 // Parameters from x393_sata project
   `define USE_DRP
