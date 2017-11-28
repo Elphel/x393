@@ -49,17 +49,18 @@ x393_testbench03_01.sav
 simulation_data/*.dat
 simulation_data/*.jpeg
 #these two project files are now in .eclipse_project_setup directory
-.project
-.pydevproject
+/.project
+/.pydevproject
 #copied from .eclipse_project_setup, can be used to import workin set to limit warnings reported
-workingSet.psf
+/workingSet.psf
 *.fst
 cocotb/Makefile
 cocotb/sim_build
 cocotb/results.xml
 *.directory
 html.tar.gz
-latex
-bitbake-logs                                                                                                                                               
-sysroots
-image
+/latex
+/bitbake-logs                                                                                                                                               
+/sysroots
+/image
+/scripts
