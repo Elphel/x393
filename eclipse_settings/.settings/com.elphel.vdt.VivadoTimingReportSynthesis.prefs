@@ -1,0 +1,3 @@
+VivadoTimingReportSynthesis_@_DisableVivadoTiming=true
+com.elphel.store.context.VivadoTimingReportSynthesis=VivadoTimingReportSynthesis_@_DisableVivadoTiming<-@\#\#@->
+eclipse.preferences.version=1
