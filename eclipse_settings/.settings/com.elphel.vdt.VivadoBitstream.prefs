@@ -1,0 +1,5 @@
+VivadoBitstream_@_PreBitstreamTCL=set_property BITSTREAM.STARTUP.MATCH_CYCLE NoWait [current_design]<-@\#\#@->
+VivadoBitstream_@_force=true
+VivadoBitstream_@_rawfile=x393_parallel
+com.elphel.store.context.VivadoBitstream=VivadoBitstream_@_rawfile<-@\#\#@->VivadoBitstream_@_force<-@\#\#@->VivadoBitstream_@_PreBitstreamTCL<-@\#\#@->
+eclipse.preferences.version=1
