@@ -66,7 +66,7 @@ module  dtt_iv8_1d#(
     input                          clk,
     input                          rst,
     input                          en,
-    input                          dst_in, // 0 - dct, 1 - dst. Valid with X6
+    input                          dst_in, // 0 - dct, 1 - dst. @ start/restart
     input  [WIDTH -1:0]            d_in,   // X2-X7-X3-X4-X5-X6-X0-X1-*-X3-X5-X4-*-X6-X7-*
     input                          start,  // one cycle before first X6 input 
     output [OUT_WIDTH -1:0]        dout,
@@ -139,6 +139,8 @@ module  dtt_iv8_1d#(
     reg                         en_out_r;
     reg                         en_out_r2;
     
+    reg                         dst_pre; // keeps dst_in value for second stage
+    reg                         dst_out; // controls source of dsp_neg_m_2 mux
     
     assign en_out = en_out_r;
     
@@ -190,9 +192,17 @@ module  dtt_iv8_1d#(
         if      (rst)              run_in <= 0;
         else if (start || restart) run_in <= 1;
         else if (phase_cnt==15)    run_in <= 0;
+        
+        if (start || restart)      dst_pre <= dst_in;
+        
+        if (phase_cnt == 12)       dst_out <= dst_pre;
+        
+        dsp_neg_m_2 <= dst_out ?  dsp_neg_m_2_dst : dsp_neg_m_2_dct;
 
         if      (rst)              run_out <= 0;
         else if (phase_cnt == 13)  run_out <= run_in;
+        
+
 
         if (rst || (!run_in && !run_out)) phase_cnt <= 0;
         else                              phase_cnt <= phase_cnt + 1;
@@ -268,7 +278,7 @@ module  dtt_iv8_1d#(
         dsp_ceb1_2 <=      p00             | p03                         | p08             | p11                         ;
         dsp_ceb2_2 <=                              p04             | p07                         | p12             | p15 ;
         dsp_selb_2 <=      p00             | p03       | p05 | p06       | p08             | p11       | p13 | p14       ;
-        dsp_neg_m_2 <=                       p03             | p06                               | p12             | p15 ;
+//        dsp_neg_m_2 <=                       p03             | p06                               | p12             | p15 ;
         dsp_neg_m_2_dct <=             p02             | p05                               | p11             | p14       ;
         dsp_neg_m_2_dst <= p00 | p01 | p02             | p05 | p06 | p07 | p08 | p09       | p11             | p14       ;
         dsp_accum_2 <=     p00       | p02       | p04       | p06       | p08       | p10       | p12       | p14       ;
