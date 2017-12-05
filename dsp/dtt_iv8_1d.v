@@ -66,7 +66,7 @@ module  dtt_iv8_1d#(
     input                          clk,
     input                          rst,
     input                          en,
-    input                          dst_in, // 0 - dct, 1 - dst. @ start/restart
+    input                          dst_in, // 0 - dct, 1 - dst. @ start only, no restart
     input  [WIDTH -1:0]            d_in,   // X2-X7-X3-X4-X5-X6-X0-X1-*-X3-X5-X4-*-X6-X7-*
     input                          start,  // one cycle before first X6 input 
     output [OUT_WIDTH -1:0]        dout,
@@ -75,6 +75,7 @@ module  dtt_iv8_1d#(
                                              // In DST mode the sequence is the same (to be inverted), but
                                              // Y0, Y2, Y4 and Y6 are negated 
     output                         en_out,   // valid at the same time slot as pre2_start_out (goes active with pre2_start_out), 2 ahead of data
+    output                         dst_out,  // valid with en_out
     output reg               [2:0] y_index   // for simulation - valid with dout - index of the data output
                                           
 );
@@ -140,7 +141,10 @@ module  dtt_iv8_1d#(
     reg                         en_out_r2;
     
     reg                         dst_pre; // keeps dst_in value for second stage
-    reg                         dst_out; // controls source of dsp_neg_m_2 mux
+    reg                         dst_2;     // controls source of dsp_neg_m_2 mux
+    reg                         dst_out_r; // // 2 ahead of data out
+    
+    assign dst_out = dst_out_r;
     
     assign en_out = en_out_r;
     
@@ -162,14 +166,14 @@ module  dtt_iv8_1d#(
         en_out_r2 <= en_out_r;
         if (en_out_r2) begin
             case (phase_cnt[3:1])
-                3'h0: y_index <= 0;
-                3'h1: y_index <= 7;
-                3'h2: y_index <= 4;
-                3'h3: y_index <= 3;
-                3'h4: y_index <= 1;
-                3'h5: y_index <= 6;
-                3'h6: y_index <= 2;
-                3'h7: y_index <= 5;
+                3'h0: y_index <= dst_out_r ? 7 : 0;
+                3'h1: y_index <= dst_out_r ? 0 : 7;
+                3'h2: y_index <= dst_out_r ? 3 : 4;
+                3'h3: y_index <= dst_out_r ? 4 : 3;
+                3'h4: y_index <= dst_out_r ? 6 : 1;
+                3'h5: y_index <= dst_out_r ? 1 : 6;
+                3'h6: y_index <= dst_out_r ? 5 : 2;
+                3'h7: y_index <= dst_out_r ? 2 : 5;
             endcase
         end else begin
             y_index <= 'bx;
@@ -193,11 +197,14 @@ module  dtt_iv8_1d#(
         else if (start || restart) run_in <= 1;
         else if (phase_cnt==15)    run_in <= 0;
         
-        if (start || restart)      dst_pre <= dst_in;
+//        if (start || restart)      dst_pre <= dst_in;
+        if (start)                 dst_pre <= dst_in;
         
-        if (phase_cnt == 12)       dst_out <= dst_pre;
+        if (phase_cnt == 12)       dst_2 <=      dst_pre;
+        if (phase_cnt == 14)       dst_out_r <=  dst_2;
         
-        dsp_neg_m_2 <= dst_out ?  dsp_neg_m_2_dst : dsp_neg_m_2_dct;
+        
+        dsp_neg_m_2 <= dst_2 ?  dsp_neg_m_2_dst : dsp_neg_m_2_dct;
 
         if      (rst)              run_out <= 0;
         else if (phase_cnt == 13)  run_out <= run_in;
@@ -280,7 +287,7 @@ module  dtt_iv8_1d#(
         dsp_selb_2 <=      p00             | p03       | p05 | p06       | p08             | p11       | p13 | p14       ;
 //        dsp_neg_m_2 <=                       p03             | p06                               | p12             | p15 ;
         dsp_neg_m_2_dct <=             p02             | p05                               | p11             | p14       ;
-        dsp_neg_m_2_dst <= p00 | p01 | p02             | p05 | p06 | p07 | p08 | p09       | p11             | p14       ;
+        dsp_neg_m_2_dst <= p00 | p01 | p02             | p05 | p06 | p07 | p08 | p09       | p11 | p12 | p13 | p14       ;
         dsp_accum_2 <=     p00       | p02       | p04       | p06       | p08       | p10       | p12       | p14       ;
     end
     

@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.3.78 (w)1999-2016 BSI
-[*] Tue Dec 13 19:43:18 2016
+[*] Tue Dec  5 02:26:14 2017
 [*]
-[dumpfile] "/home/eyesis/git/x393-neon/simulation/dct_tests_01-20161213123921501.fst"
-[dumpfile_mtime] "Tue Dec 13 19:39:21 2016"
-[dumpfile_size] 103386
-[savefile] "/home/eyesis/git/x393-neon/dct_tests_01.sav"
+[dumpfile] "/home/eyesis/nc393/elphel393/fpga-elphel/x393_branch_dct/simulation/dct_tests_01-20171130150416223.fst"
+[dumpfile_mtime] "Thu Nov 30 22:04:17 2017"
+[dumpfile_size] 105262
+[savefile] "/home/eyesis/nc393/elphel393/fpga-elphel/x393_branch_dct/dct_tests_01.sav"
 [timestart] 0
-[size] 1814 1171
-[pos] 1912 0
-*-19.687614 3465000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[size] 1814 1167
+[pos] 1940 0
+*-18.730682 785000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] dct_tests_01.
 [treeopen] dct_tests_01.dct_iv8_1d_i.
 [treeopen] dct_tests_01.dct_iv8_1d_i.dsp_ma_preadd_c_1_i.
@@ -19,11 +19,14 @@
 [sst_width] 204
 [signals_width] 302
 [sst_expanded] 1
-[sst_vpaned_height] 344
-@c00200
+[sst_vpaned_height] 343
+@800200
 -top
 @24
 dct_tests_01.i
+@420
+dct_tests_01.i1
+@24
 dct_tests_01.j
 @28
 dct_tests_01.CLK
@@ -79,6 +82,7 @@ dct_tests_01.x_out[23:0]
 @28
 [color] 2
 dct_tests_01.start
+dct_tests_01.start2
 dct_tests_01.y_dv
 dct_tests_01.y_pre_we
 @22
@@ -91,7 +95,8 @@ dct_tests_01.phase_y[3:0]
 dct_tests_01.y_dct[23:0]
 dct_tests_01.y_out[23:0]
 dct_tests_01.dct_iv8_1d_i.y_index[2:0]
-@1401200
+dct_tests_01.x_in_2d[23:0]
+@1000200
 -top
 @c00200
 -2d-1d
@@ -203,7 +208,7 @@ dct_tests_01.dct_iv8_1d_i.dsp_post_add_1
 dct_tests_01.dct_iv8_1d_i.dsp_accum_1
 @22
 dct_tests_01.dct_iv8_1d_i.dsp_p_1[47:0]
-@800200
+@c00200
 -dsp_1
 @22
 dct_tests_01.dct_iv8_1d_i.dsp_ma_preadd_c_1_i.ain[24:0]
@@ -235,7 +240,7 @@ dct_tests_01.dct_iv8_1d_i.dsp_ma_preadd_c_1_i.p_reg_cond[47:0]
 dct_tests_01.dct_iv8_1d_i.dsp_ma_preadd_c_1_i.p_reg[47:0]
 @200
 -
-@1000200
+@1401200
 -dsp_1
 @22
 dct_tests_01.dct_iv8_1d_i.dsp_p_2[47:0]
@@ -274,7 +279,7 @@ dct_tests_01.dct_iv8_1d_i.dsp_p_2[47:0]
 dct_tests_01.dct_iv8_1d_i.phase_cnt[3:0]
 @22
 dct_tests_01.dct_iv8_1d_i.dout[23:0]
-@800200
+@c00200
 -dsp_2
 @22
 dct_tests_01.dct_iv8_1d_i.dsp_ma_preadd_c_2_i.ain[24:0]
@@ -286,7 +291,7 @@ dct_tests_01.dct_iv8_1d_i.dsp_ma_preadd_c_2_i.ad_reg[24:0]
 dct_tests_01.dct_iv8_1d_i.dsp_ma_preadd_c_2_i.p_reg[47:0]
 @200
 -
-@1000200
+@1401200
 -dsp_2
 @28
 dct_tests_01.dct_iv8_1d_i.en
@@ -393,10 +398,53 @@ dct_tests_01.d_out_2d[23:0]
 dct_tests_01.dv_2dr
 @22
 dct_tests_01.d_out_2dr[23:0]
-@8421
+@8420
 dct_tests_01.d_out_2dr[23:0]
+@800200
+-debug
+@420
+dct_tests_01.dct_iv_8x8_i.dcth_dout0[23:0]
+@8420
+dct_tests_01.dct_iv_8x8_i.dcth_dout0[23:0]
+@420
+dct_tests_01.dct_iv_8x8_i.dcth_dout1[23:0]
+@8420
+dct_tests_01.dct_iv_8x8_i.dcth_dout1[23:0]
+@28
+dct_tests_01.dct_iv_8x8_i.transpose_start
+@22
+dct_tests_01.dct_iv_8x8_i.transpose_debug_di[7:0]
+@8022
+dct_tests_01.dct_iv_8x8_i.transpose_debug_di[7:0]
+@420
+dct_tests_01.dct_iv_8x8_i.transpose_di[23:0]
+@8420
+dct_tests_01.dct_iv_8x8_i.transpose_di[23:0]
+@22
+dct_tests_01.dct_iv_8x8_i.transpose_wa[7:0]
+@8022
+dct_tests_01.dct_iv_8x8_i.transpose_wa[7:0]
+@28
+(0)dct_tests_01.dct_iv_8x8_i.transpose_we[1:0]
+@22
+dct_tests_01.dct_iv_8x8_i.transpose_cntr[6:0]
+@8022
+dct_tests_01.dct_iv_8x8_i.transpose_cntr[6:0]
+@420
+dct_tests_01.dct_iv_8x8_i.transpose_out[23:0]
+@8420
+dct_tests_01.dct_iv_8x8_i.transpose_out[23:0]
+@22
+dct_tests_01.dct_iv_8x8_i.dctv_xin0[23:0]
+dct_tests_01.dct_iv_8x8_i.dctv_xin1[23:0]
+@28
+dct_tests_01.dct_iv_8x8_i.dctv_start_0_r
+@29
+dct_tests_01.dct_iv_8x8_i.dctv_start_1_r
 @200
 -
+@1000200
+-debug
 @800200
 -dct_iv_8x8
 @28
