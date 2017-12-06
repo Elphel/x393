@@ -40,7 +40,7 @@
 `timescale 1ns/1ps
 // No saturation here, and no rounding as we do not need to match decoder (be bit-precise), skipping rounding adder
 // will reduce needed resources
-`define DCT_INPUT_UNITY
+//`define DCT_INPUT_UNITY
 module  dct_tests_02 ();
 //    parameter fstname="dct_tests_02.fst";
 `ifdef IVERILOG              
@@ -71,6 +71,7 @@ module  dct_tests_02 ();
     
     parameter DCT_GAP = 16; // between runs            
     
+    parameter SAME_BITS=3;
     
     reg              RST = 1'b1;
     reg              CLK = 1'b0;
@@ -95,7 +96,7 @@ module  dct_tests_02 ();
     
     reg              start = 0;
     reg              start2 = 0; // second start for 2d
-    reg        [1:0] mode_in= 3; // [0] - vertical pass 0: dct, 1 - dst, [1] - horizontal pass
+    reg        [1:0] mode_in= 0; // 3; // [0] - vertical pass 0: dct, 1 - dst, [1] - horizontal pass
     wire       [1:0] mode_out;   // [0] - vertical pass 0: dct, 1 - dst, [1] - horizontal pass
     
     wire [OUT_WIDTH-1:0] y_dct;
@@ -126,14 +127,18 @@ module  dct_tests_02 ();
     wire signed [OUT_WIDTH-1:0] d_out_2dr;         // SuppressThisWarning VEditor - simulation only
 
     
-    integer              i,j, i1;
+    integer   i,j, i1, ir;
     initial begin
         for (i=0; i<64; i=i+1) begin
-`ifdef DCT_INPUT_UNITY
-            data_in[i] =  (i[2:0] == i[5:3]) ? {2'b1,{WIDTH-2{1'b0}}} : 0;
-`else
-            data_in[i]  = $random;
-`endif
+        `ifdef DCT_INPUT_UNITY
+            data_in[i] =  (i[2:0] == (i[5:3]  ^ 3'h0)) ? {2'b1,{WIDTH-2{1'b0}}} : 0;
+            ir= (i[2:0] == (i[5:3]  ^ 3'h1)) ? {2'b1,{WIDTH-2{1'b0}}} : 0;
+            data_in[i] =  ir;
+        `else
+            ir = $random;
+            data_in[i]  = ((i[5:3] == 0) || (i[5:3] == 7) || (i[2:0] == 0) || (i[2:0] == 7))? 0:
+            {{SAME_BITS{ir[WIDTH -SAME_BITS - 1]}},ir[WIDTH -SAME_BITS-1:0]};
+        `endif
         end
         $display("Input data in line-scan order:");
         for (i=0; i<64; i=i+8) begin
@@ -372,7 +377,7 @@ module  dct_tests_02 ();
         .clk            (CLK),               // input
         .rst            (RST),               // input
         .start          (pre_first_out_2d),  // input
-        .mode           (mode_out),          // input[1:0] 
+        .mode           ({mode_out[0],mode_out[1]}),          // input[1:0] // result is transposed
         .xin            (d_out_2d),          // input[24:0] signed 
         .pre_last_in    (pre_last_in_2dr),   // output reg 
         .pre_first_out  (pre_first_out_2dr), // output

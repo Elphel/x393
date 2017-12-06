@@ -178,29 +178,38 @@ module  dtt_iv_8x8#(
 //    wire                             dctv_out_start = dctv_phin [6:0] == 'h10; 
     wire                             dctv_out_start = dctv_phin [6:0] == 'h11; 
     
-    reg                        [3:0] dctv_out_wa_1;
+    reg                        [4:0] dctv_out_wa_1;
     reg                        [1:0] dctv_out_we_1;
     reg                              dctv_out_sel; // select DCTv channel output;
-    reg signed       [OUT_WIDTH-1:0] dctv_out_ram_1[0:15];
-    reg                        [2:0] dctv_out_debug_ram_1[0:15];
+    reg signed       [OUT_WIDTH-1:0] dctv_out_ram_1[0:31];
+    reg                        [2:0] dctv_out_debug_ram_1[0:31];
 
     reg                        [6:0] dctv_out_ra_1;
-    wire                       [3:0] dctv_out_ra_1_w = {dctv_out_ra_1[3:1], ~dctv_out_ra_1[0]};
-    wire                             dctv_out_start_1 = dctv_out_cntr[6:0] == 'h0c; // 'h0b;
+//    wire                       [3:0] dctv_out_ra_1_w = {dctv_out_ra_1[3:1], ~dctv_out_ra_1[0]};
+/*
+    wire                       [3:0] dctv_out_ra_1_w = {dctv_out_ra_1[3],
+                                                        dctv_out_ra_1[2] ? dctv_out_ra_1[1] : (~dctv_out_ra_1[1] ^ dctv_out_ra_1[0]),
+                                                        ~dctv_out_ra_1[2] ^ dctv_out_ra_1[0],
+                                                        ~dctv_out_ra_1[0]};
+*/                                                        
+//    wire                             dctv_out_start_1 = dctv_out_cntr[6:0] == 'h0c; // 'h0b;
+///    wire                             dctv_out_start_1 = dctv_out_cntr[6:0] == 'h0b; // 'h0b;
+    wire                             dctv_out_start_1 = dctv_out_cntr[6:0] == 'h0e; // 'h0b;
     reg                              dctv_out_run_1;
     reg signed       [OUT_WIDTH-1:0] dctv_out_reg_1;
-    reg                        [2:0] dctv_out_debug_reg_1;
-    
-    reg signed       [OUT_WIDTH-1:0] dctv_out_ram_2[0:3];
-    reg                        [2:0] dctv_out_debug_ram_2[0:3];
+    reg                        [2:0] dctv_out_debug_reg_1; // SuppressThisWarning VEditor - simulation only
+/*    
+    reg signed       [OUT_WIDTH-1:0] dctv_out_ram_2[0:7];
+    reg                        [2:0] dctv_out_debug_ram_2[0:7];
     reg                              dctv_out_we_2;
-    reg                        [1:0] dctv_out_wa_2;
+    reg                        [2:0] dctv_out_wa_2;
     reg                        [6:0] dctv_out_ra_2;
-    wire                             dctv_out_start_2 = dctv_out_ra_1[6:0] == 2;
+//    wire                             dctv_out_start_2 = dctv_out_ra_1[6:0] == 2;
+    wire                             dctv_out_start_2 = dctv_out_ra_1[6:0] == 8;
     reg                              dctv_out_run_2;
     reg signed       [OUT_WIDTH-1:0] dctv_out_reg_2;
     reg                        [2:0] dctv_out_debug_reg_2; // SuppressThisWarning VEditor - simulation only
-    
+*/    
 //    reg                        [1:0] mode_in; //
 //    reg                        [1:0] mode_in; //
     
@@ -217,10 +226,12 @@ module  dtt_iv_8x8#(
     wire                       [1:0] pre2_dstv; // 2 cycles before vertical output data is valid, 0 dct, 1 - dst
     reg                              pre_dsth;  // 1 cycles before horizontal output data is valid, 0 dct, 1 - dst
     reg                              pre_dstv;  // 1 cycles before vertical output data is valid, 0 dct, 1 - dst
-    wire                             pre_first_out_w = dctv_out_ra_1[6:0] == 1;
+//    wire                             pre_first_out_w = dctv_out_ra_1[6:0] == 1;
+    wire                             pre_first_out_w = dctv_out_start_1;
     
-    wire [OUT_WIDTH-1:0] debug_dctv_dout = dctv_out_sel? dctv_dout1: dctv_dout0;
-    assign d_out = dctv_out_reg_2;
+    wire [OUT_WIDTH-1:0] debug_dctv_dout = dctv_out_sel? dctv_dout1: dctv_dout0; // SuppressThisWarning VEditor - simulation only
+//    assign d_out = dctv_out_reg_2;
+    assign d_out = dctv_out_reg_1;
     
     assign pre_last_in = pre_last_in_r;
 
@@ -378,24 +389,24 @@ module  dtt_iv_8x8#(
         dctv_out_sel <= dctv_out_cntr[0];
 
         case (dctv_out_cntr[3:0])
-            4'h0: dctv_out_wa_1 <= 0  ^ {3{pre_dstv}};
-            4'h1: dctv_out_wa_1 <= 9  ^ {3{pre_dstv}};
-            4'h2: dctv_out_wa_1 <= 7  ^ {3{pre_dstv}};
-            4'h3: dctv_out_wa_1 <= 14 ^ {3{pre_dstv}};
-            4'h4: dctv_out_wa_1 <= 4  ^ {3{pre_dstv}};
-            4'h5: dctv_out_wa_1 <= 10 ^ {3{pre_dstv}};
-            4'h6: dctv_out_wa_1 <= 3  ^ {3{pre_dstv}};
-            4'h7: dctv_out_wa_1 <= 13 ^ {3{pre_dstv}};
-            4'h8: dctv_out_wa_1 <= 1  ^ {3{pre_dstv}};
-            4'h9: dctv_out_wa_1 <= 8  ^ {3{pre_dstv}};
-            4'ha: dctv_out_wa_1 <= 6  ^ {3{pre_dstv}};
-            4'hb: dctv_out_wa_1 <= 15 ^ {3{pre_dstv}};
-            4'hc: dctv_out_wa_1 <= 2  ^ {3{pre_dstv}};
-            4'hd: dctv_out_wa_1 <= 12 ^ {3{pre_dstv}};
-            4'he: dctv_out_wa_1 <= 5  ^ {3{pre_dstv}};
-            4'hf: dctv_out_wa_1 <= 11 ^ {3{pre_dstv}};
+            4'h0: dctv_out_wa_1[3:0] <= 0  ^ {3{pre_dstv}};
+            4'h1: dctv_out_wa_1[3:0] <= 9  ^ {3{pre_dstv}};
+            4'h2: dctv_out_wa_1[3:0] <= 7  ^ {3{pre_dstv}};
+            4'h3: dctv_out_wa_1[3:0] <= 14 ^ {3{pre_dstv}};
+            4'h4: dctv_out_wa_1[3:0] <= 4  ^ {3{pre_dstv}};
+            4'h5: dctv_out_wa_1[3:0] <= 10 ^ {3{pre_dstv}};
+            4'h6: dctv_out_wa_1[3:0] <= 3  ^ {3{pre_dstv}};
+            4'h7: dctv_out_wa_1[3:0] <= 13 ^ {3{pre_dstv}};
+            4'h8: dctv_out_wa_1[3:0] <= 1  ^ {3{pre_dstv}};
+            4'h9: dctv_out_wa_1[3:0] <= 8  ^ {3{pre_dstv}};
+            4'ha: dctv_out_wa_1[3:0] <= 6  ^ {3{pre_dstv}};
+            4'hb: dctv_out_wa_1[3:0] <= 15 ^ {3{pre_dstv}};
+            4'hc: dctv_out_wa_1[3:0] <= 2  ^ {3{pre_dstv}};
+            4'hd: dctv_out_wa_1[3:0] <= 12 ^ {3{pre_dstv}};
+            4'he: dctv_out_wa_1[3:0] <= 5  ^ {3{pre_dstv}};
+            4'hf: dctv_out_wa_1[3:0] <= 11 ^ {3{pre_dstv}};
         endcase  
-        
+        dctv_out_wa_1[4] <= dctv_out_cntr[4] ^ (~dctv_out_cntr[3] & dctv_out_cntr[0]);
         // write first stage of output reordering
         if (dctv_out_we_1[1]) dctv_out_ram_1[dctv_out_wa_1] <=       dctv_out_sel? dctv_dout1: dctv_dout0;
         if (dctv_out_we_1[1]) dctv_out_debug_ram_1[dctv_out_wa_1] <= dctv_out_sel? dctv_yindex1: dctv_yindex0;
@@ -407,13 +418,15 @@ module  dtt_iv_8x8#(
         if (!dctv_out_run_1 || dctv_out_start_1) dctv_out_ra_1 <= 0;
         else                                     dctv_out_ra_1 <= dctv_out_ra_1 + 1;
         // reading first stage of output reorder RAM
-        if (dctv_out_run_1) dctv_out_reg_1 <=       dctv_out_ram_1[dctv_out_ra_1_w];
-        if (dctv_out_run_1) dctv_out_debug_reg_1 <= dctv_out_debug_ram_1[dctv_out_ra_1_w];
+//        if (dctv_out_run_1) dctv_out_reg_1 <=       dctv_out_ram_1[dctv_out_ra_1_w];
+//        if (dctv_out_run_1) dctv_out_debug_reg_1 <= dctv_out_debug_ram_1[dctv_out_ra_1_w];
+        if (dctv_out_run_1) dctv_out_reg_1 <=       dctv_out_ram_1[dctv_out_ra_1[4:0]];
+        if (dctv_out_run_1) dctv_out_debug_reg_1 <= dctv_out_debug_ram_1[dctv_out_ra_1[4:0]];
         
-        // last stage of the output reordering - 4 register memory
-        
+        // last stage of the output reordering - 8 register memory
+/*        
         dctv_out_we_2 <= dctv_out_run_1;
-        dctv_out_wa_2 <= dctv_out_ra_1_w[1:0];
+        dctv_out_wa_2 <= dctv_out_ra_1_w[2:0];
 
         // write last stage of output reordering
         if (dctv_out_we_2) dctv_out_ram_2[dctv_out_wa_2] <=       dctv_out_reg_1;
@@ -427,12 +440,14 @@ module  dtt_iv_8x8#(
         else                                     dctv_out_ra_2 <= dctv_out_ra_2 + 1;
 
         // reading first stage of output reorder RAM
-        if (dctv_out_run_2) dctv_out_reg_2 <=       dctv_out_ram_2[dctv_out_ra_2[1:0]];
-        if (dctv_out_run_2) dctv_out_debug_reg_2 <= dctv_out_debug_ram_2[dctv_out_ra_2[1:0]];
+        if (dctv_out_run_2) dctv_out_reg_2 <=       dctv_out_ram_2[dctv_out_ra_2[2:0]];
+        if (dctv_out_run_2) dctv_out_debug_reg_2 <= dctv_out_debug_ram_2[dctv_out_ra_2[2:0]];
+*/        
         
         pre_first_out <= pre_first_out_w;
         
-        dv <= dctv_out_run_2;
+//        dv <= dctv_out_run_2;
+        dv <= dctv_out_run_1;
     end
 
     always @ (posedge clk) begin

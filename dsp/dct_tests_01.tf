@@ -40,7 +40,7 @@
 `timescale 1ns/1ps
 // No saturation here, and no rounding as we do not need to match decoder (be bit-precise), skipping rounding adder
 // will reduce needed resources
-`define DCT_INPUT_UNITY
+//`define DCT_INPUT_UNITY
 module  dct_tests_01 ();
 //    parameter fstname="dct_tests_01.fst";
 `ifdef IVERILOG              
@@ -70,6 +70,8 @@ module  dct_tests_01 ();
     parameter OUT_RSHIFT2 =      0;  // overall right shift for the second (vertical) pass
     
     parameter DCT_GAP = 16; // between runs            
+    
+    parameter SAME_BITS=3;
     
     
     reg              RST = 1'b1;
@@ -124,14 +126,18 @@ module  dct_tests_01 ();
     wire signed [OUT_WIDTH-1:0] d_out_2dr;         // SuppressThisWarning VEditor - simulation only
 
     
-    integer              i,j, i1;
+    integer   i,j, i1, ir;
     initial begin
         for (i=0; i<64; i=i+1) begin
-`ifdef DCT_INPUT_UNITY
-            data_in[i] =  (i[2:0] == i[5:3]) ? {2'b1,{WIDTH-2{1'b0}}} : 0;
-`else
-            data_in[i]  = $random;
-`endif
+        `ifdef DCT_INPUT_UNITY
+            data_in[i] =  (i[2:0] == (i[5:3]  ^ 3'h1)) ? {2'b1,{WIDTH-2{1'b0}}} : 0;
+            ir= (i[2:0] == (i[5:3]  ^ 3'h1)) ? {2'b1,{WIDTH-2{1'b0}}} : 0;
+            data_in[i] =  ir;
+        `else
+            ir = $random;
+            data_in[i]  = ((i[5:3] == 0) || (i[5:3] == 7) || (i[2:0] == 0) || (i[2:0] == 7))? 0:
+            {{SAME_BITS{ir[WIDTH -SAME_BITS - 1]}},ir[WIDTH -SAME_BITS-1:0]};
+        `endif
         end
         $display("Input data in line-scan order:");
         for (i=0; i<64; i=i+8) begin
