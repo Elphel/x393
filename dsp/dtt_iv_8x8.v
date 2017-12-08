@@ -63,7 +63,7 @@ module  dtt_iv_8x8#(
     ) (
     input                            clk,           //!< system clock, posedge
     input                            rst,           //!< sync reset
-    input                            start,         //!< single-cycle start pulse that goes with the first pixel data.
+    input                            start,         //!< single-cycle start pulse that goes 1 cycle before first data
     input                      [1:0] mode,          //!< DCT/DST: [1] - first (horizontal) pass, [0] - second (vertical) pass. 0 - DCT, 1 - DST  
                                                     // Next data should be sent in bursts of 8, pause of 8 - total 128 cycles
     input  signed  [INPUT_WIDTH-1:0] xin,           //!< input data
