@@ -118,7 +118,7 @@ module  dct_tests_03 ();
     wire                        pre_first_out_2d;  // SuppressThisWarning VEditor - simulation only
     wire                        pre_busy_2d;       // SuppressThisWarning VEditor - simulation only
     wire                        dv_2d;             // SuppressThisWarning VEditor - simulation only
-    wire signed [OUT_WIDTH-1:0] d_out_2d; 
+//    wire signed [OUT_WIDTH-1:0] d_out_2d;
 
     wire                        pre_last_in_2dr;   // SuppressThisWarning VEditor - simulation only
     wire                        pre_first_out_2dr; // SuppressThisWarning VEditor - simulation only
@@ -352,10 +352,14 @@ module  dct_tests_03 ();
     wire                [ODEPTH-1:0] out_ram_wa = {out_ram_wah,out_wa};
     reg                              out_ram_ren;
     reg                              out_ram_regen;
+    reg                              out_ram_dv;
+    wire                             out_pre_first;
     reg                        [5:0] out_ram_ra;
+    
     
     reg signed      [OUT_WIDTH-1:0] out_ram_r;
     reg signed      [OUT_WIDTH-1:0] out_ram_r2;
+    
     
     
     always @ (posedge CLK) begin
@@ -370,7 +374,7 @@ module  dct_tests_03 ();
         else if (&out_ram_ra) out_ram_ren <= 1'b0;
         
         out_ram_regen <= out_ram_ren;
-        
+        out_ram_dv <=    out_ram_regen;
         if (!out_ram_ren) out_ram_ra <= 0;
         else              out_ram_ra <= out_ram_ra + 1;
         
@@ -378,6 +382,17 @@ module  dct_tests_03 ();
         if (out_ram_regen) out_ram_r2 <= out_ram_r;
     
     end
+
+    dly_var #(
+        .WIDTH(1),
+        .DLY_WIDTH(4)
+    ) dly_out_pre_first_i (
+        .clk  (CLK),           // input
+        .rst  (RST),           // input
+        .dly  (4'h1),          // input[3:0] 
+        .din  (start64),       // input[0:0] 
+        .dout (out_pre_first)  // output[0:0] 
+    );
 
 
     dtt_iv_8x8_ad #(
@@ -396,9 +411,6 @@ module  dct_tests_03 ();
         .mode           (mode_in),          // input[1:0] 
         .xin            (x_in_2d),          // input[24:0] signed 
         .pre_last_in    (pre_last_in_2d),   // output reg 
-        .pre_first_out  (pre_first_out_2d), // output
-        .dv             (dv_2d),            // output
-        .d_out          (d_out_2d),         // output[24:0] signed
         .mode_out       (mode_out),         // output[1:0] reg 
         .pre_busy       (pre_busy_2d),      // output reg
         .out_wd         (out_wd),           // output[24:0] reg 
@@ -411,7 +423,7 @@ module  dct_tests_03 ();
 
 
 
-    dtt_iv_8x8 #(
+    dtt_iv_8x8_obuf #(
         .INPUT_WIDTH     (WIDTH),
         .OUT_WIDTH       (OUT_WIDTH),
         .OUT_RSHIFT1     (OUT_RSHIFT),
@@ -423,14 +435,14 @@ module  dct_tests_03 ();
     ) dtt_iv_8x8r_i (
         .clk            (CLK),               // input
         .rst            (RST),               // input
-        .start          (pre_first_out_2d),  // input
+        .start          (out_pre_first),     // pre_first_out_2d),  // input
         .mode           ({mode_out[0],mode_out[1]}),          // input[1:0] // result is transposed
-        .xin            (d_out_2d),          // input[24:0] signed 
+        .xin            (out_ram_r2),        // d_out_2d),          // input[24:0] signed 
         .pre_last_in    (pre_last_in_2dr),   // output reg 
         .pre_first_out  (pre_first_out_2dr), // output
         .dv             (dv_2dr),            // output
         .d_out          (d_out_2dr),         // output[24:0] signed
-        .mode_out       (),                 // output[1:0] reg 
+        .mode_out       (),                  // output[1:0] reg 
         .pre_busy       (pre_busy_2dr)       // output reg 
     );
 

@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.3.78 (w)1999-2016 BSI
-[*] Sat Dec  9 01:30:06 2017
+[*] Sat Dec  9 23:22:47 2017
 [*]
-[dumpfile] "/home/eyesis/nc393/elphel393/fpga-elphel/x393_branch_dct/simulation/dct_tests_02-20171206113130304.fst"
-[dumpfile_mtime] "Wed Dec  6 18:31:30 2017"
+[dumpfile] "/home/eyesis/nc393/elphel393/fpga-elphel/x393_branch_dct/simulation/dct_tests_02-20171209161906877.fst"
+[dumpfile_mtime] "Sat Dec  9 23:19:07 2017"
 [dumpfile_size] 222572
 [savefile] "/home/eyesis/nc393/elphel393/fpga-elphel/x393_branch_dct/dct_tests_02.sav"
-[timestart] 1319200
+[timestart] 0
 [size] 1814 1171
 [pos] 0 40
-*-15.492632 1451000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-20.492632 3096000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] dct_tests_02.
 [treeopen] dct_tests_02.dtt_iv_8x8_i.
 [treeopen] dct_tests_02.dtt_iv_8x8r_i.
@@ -59,6 +59,9 @@ dct_tests_02.dtt_iv_8x8_i.xin[23:0]
 @28
 dct_tests_02.dtt_iv_8x8_i.pre_last_in
 dct_tests_02.dtt_iv_8x8_i.pre_first_out
+@29
+dct_tests_02.dtt_iv_8x8_i.pre_busy
+@28
 dct_tests_02.dtt_iv_8x8_i.dv
 @420
 dct_tests_02.dtt_iv_8x8_i.d_out[23:0]
@@ -177,12 +180,12 @@ dct_tests_02.dtt_iv_8x8_i.dctv_out_run
 dct_tests_02.dtt_iv_8x8_i.dctv_out_start_1
 @22
 dct_tests_02.dtt_iv_8x8_i.dctv_out_wa[4:0]
-@c00029
+@c00028
 dct_tests_02.dtt_iv_8x8_i.dctv_out_we[1:0]
 @28
 (0)dct_tests_02.dtt_iv_8x8_i.dctv_out_we[1:0]
 (1)dct_tests_02.dtt_iv_8x8_i.dctv_out_we[1:0]
-@1401201
+@1401200
 -group_end
 @1000200
 -debug

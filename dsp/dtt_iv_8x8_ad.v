@@ -48,7 +48,7 @@ module  dtt_iv_8x8_ad#(
     parameter DSP_A_WIDTH =     25,
     parameter DSP_P_WIDTH =     48,
     parameter COSINE_SHIFT=     17,
-    parameter ODEPTH =           5, // output buffer depth (bits). Here 5, put can use more if used as a full block buffer 
+//    parameter ODEPTH =           5, // output buffer depth (bits). Here 5, put can use more if used as a full block buffer 
     parameter COS_01_32 =    130441, // int(round((1<<17) * cos( 1*pi/32)))
     parameter COS_03_32 =    125428, // int(round((1<<17) * cos( 3*pi/32)))
     parameter COS_04_32 =    121095, // int(round((1<<17) * cos( 4*pi/32)))
@@ -68,9 +68,6 @@ module  dtt_iv_8x8_ad#(
                                                     // Next data should be sent in bursts of 8, pause of 8 - total 128 cycles
     input  signed  [INPUT_WIDTH-1:0] xin,           //!< input data
     output                           pre_last_in,   //!< output high during input of the pre-last of 64 pixels in a 8x8 block (next can be start
-    output reg                       pre_first_out, //!< 1 cycle ahead of the first output in a 64 block
-    output reg                       dv,            //!< data output valid. WAS: Will go high on the 94-th cycle after the start
-    output signed    [OUT_WIDTH-1:0] d_out,         //!< output data
     output reg                 [1:0] mode_out,      //!< copy of mode input, valid @ pre_first_out
     output reg                       pre_busy,      //!< start should come each 64-th cycle (next after pre_last_in), and not after pre_busy)
     output reg       [OUT_WIDTH-1:0] out_wd,        //!< output data to write to external output buffer memory    
@@ -159,8 +156,8 @@ module  dtt_iv_8x8_ad#(
     wire signed      [OUT_WIDTH-1:0] dctv_dout1; 
     wire                             dctv_en_out0; 
     wire                             dctv_en_out1; 
-    wire                       [2:0] dctv_yindex0;
-    wire                       [2:0] dctv_yindex1;
+    ///wire                       [2:0] dctv_yindex0;
+    ///wire                       [2:0] dctv_yindex1;
 
     wire                             dctv_phin_start = transpose_out_run && (transpose_rcntr[5:0] == 8); 
     reg                              dctv_phin_run;
@@ -176,27 +173,14 @@ module  dtt_iv_8x8_ad#(
     reg                              dctv_start_1_r;
     
     reg                              pre_last_in_r;
-    
-    reg                        [6:0] dctv_out_cntr; // count output data from second (vertical) pass (bit 6 - stopping)
-    reg                              dctv_out_run;  // 
-    wire                             dctv_out_start = dctv_phin [6:0] == 'h11;
      
     reg                        [6:0] out_cntr; // count output data from second (vertical) pass (bit 6 - stopping)
     reg                              out_run;  // 
     wire                             out_start = dctv_phin [6:0] == 'h12;
     reg                              out_sel;  // which of the 2 output channels to select 
     
-    reg                 [ODEPTH-1:0] dctv_out_wa;
     reg                        [1:0] dctv_out_we;
-    reg                              dctv_out_sel; // select DCTv channel output;
 
-    reg signed       [OUT_WIDTH-1:0] dctv_out_ram[0: ((1<<ODEPTH)-1)]; // [0:31];
-    reg                        [2:0] dctv_out_debug_ram[0:((1<<ODEPTH)-1)]; // [0:31];
-
-    reg                        [6:0] dctv_out_ra;
-    wire                             dctv_out_start_1 = dctv_out_cntr[6:0] == 'h0e; // 'h0b;
-    reg                              pre_dv;
-    reg signed       [OUT_WIDTH-1:0] dctv_out_reg;
     reg                        [2:0] dctv_out_debug_reg; // SuppressThisWarning VEditor - simulation only
 
     reg                        [1:0] mode_h;      // registered at start, [1] used for hor (first) pass
@@ -208,10 +192,9 @@ module  dtt_iv_8x8_ad#(
     reg                              pre_dsth;  // 1 cycles before horizontal output data is valid, 0 dct, 1 - dst
     reg                              pre_dstv;  // 1 cycles before vertical output data is valid, 0 dct, 1 - dst
     reg                              dstv;      // when vertical output data is valid, 0 dct, 1 - dst
-    wire                             pre_first_out_w = dctv_out_start_1;
     
-    wire [OUT_WIDTH-1:0] debug_dctv_dout = dctv_out_sel? dctv_dout1: dctv_dout0; // SuppressThisWarning VEditor - simulation only
-    assign d_out = dctv_out_reg;
+    wire                             start64_w = out_cntr[6:0] == 'h0d;
+    
     
     assign pre_last_in = pre_last_in_r;
 
@@ -224,7 +207,9 @@ module  dtt_iv_8x8_ad#(
         if (start)               mode_h      <= mode;
         if (pre_last_in)         mode_h_late <= mode_h;
         if (transpose_out_start) mode_v      <= mode_h_late;
-        if (pre_first_out_w)     mode_out    <= mode_v;
+        
+        
+        if (start64_w)           mode_out    <= mode_v;
         
         if (!x_run) x_wa <= 0;
         else        x_wa <= x_wa + 1;
@@ -356,56 +341,9 @@ module  dtt_iv_8x8_ad#(
         dctv_debug_xin0 <= t_debug_ram0[t_ra0[2:0]];
         dctv_debug_xin1 <= t_debug_ram1[t_ra1[2:0]];
         
-        // Reordering data from a pair of vertical DCTs - 2 steps, 1 is not enough
-        if      (rst)                        dctv_out_run <= 0;
-        else if (dctv_out_start)             dctv_out_run <= 1;
-        else if (dctv_out_cntr[6:0] == 'h47) dctv_out_run <= 0;
-        
-        if (!dctv_out_run || dctv_out_start) dctv_out_cntr <= 0;
-        else                                 dctv_out_cntr <= dctv_out_cntr + 1;
         
         dctv_out_we <= {dctv_out_we[0], dctv_en_out0 | dctv_en_out1};
         
-        dctv_out_sel <= dctv_out_cntr[0];
-
-        case (dctv_out_cntr[3:0])
-            4'h0: dctv_out_wa[3:0] <= 4'h0 ^ {1'b0,{3{pre_dstv}}};
-            4'h1: dctv_out_wa[3:0] <= 4'h9 ^ {1'b0,{3{pre_dstv}}};
-            4'h2: dctv_out_wa[3:0] <= 4'h7 ^ {1'b0,{3{pre_dstv}}};
-            4'h3: dctv_out_wa[3:0] <= 4'he ^ {1'b0,{3{pre_dstv}}};
-            4'h4: dctv_out_wa[3:0] <= 4'h4 ^ {1'b0,{3{pre_dstv}}};
-            4'h5: dctv_out_wa[3:0] <= 4'ha ^ {1'b0,{3{pre_dstv}}};
-            4'h6: dctv_out_wa[3:0] <= 4'h3 ^ {1'b0,{3{pre_dstv}}};
-            4'h7: dctv_out_wa[3:0] <= 4'hd ^ {1'b0,{3{pre_dstv}}};
-            4'h8: dctv_out_wa[3:0] <= 4'h1 ^ {1'b0,{3{pre_dstv}}};
-            4'h9: dctv_out_wa[3:0] <= 4'h8 ^ {1'b0,{3{pre_dstv}}};
-            4'ha: dctv_out_wa[3:0] <= 4'h6 ^ {1'b0,{3{pre_dstv}}};
-            4'hb: dctv_out_wa[3:0] <= 4'hf ^ {1'b0,{3{pre_dstv}}};
-            4'hc: dctv_out_wa[3:0] <= 4'h2 ^ {1'b0,{3{pre_dstv}}};
-            4'hd: dctv_out_wa[3:0] <= 4'hc ^ {1'b0,{3{pre_dstv}}};
-            4'he: dctv_out_wa[3:0] <= 4'h5 ^ {1'b0,{3{pre_dstv}}};
-            4'hf: dctv_out_wa[3:0] <= 4'hb ^ {1'b0,{3{pre_dstv}}};
-        endcase  
-        // It is possible to fill large output memory buffer, in that case 
-        dctv_out_wa[ODEPTH-1:4] <= dctv_out_cntr[ODEPTH-1:4] - (~dctv_out_cntr[3] & dctv_out_cntr[0]);
-
-        // write first stage of output reordering
-        if (dctv_out_we[1]) dctv_out_ram[dctv_out_wa] <=       dctv_out_sel? dctv_dout1: dctv_dout0;
-        if (dctv_out_we[1]) dctv_out_debug_ram[dctv_out_wa] <= dctv_out_sel? dctv_yindex1: dctv_yindex0;
-        
-        if      (rst)                 pre_dv <= 0;
-        else if (dctv_out_start_1)    pre_dv <= 1;
-        else if (&dctv_out_ra[5:0])   pre_dv <= 0;
-        
-        if (!pre_dv || dctv_out_start_1) dctv_out_ra <= 0;
-        else                                     dctv_out_ra <= dctv_out_ra + 1;
-        // reading first stage of output reorder RAM
-        if (pre_dv) dctv_out_reg <=       dctv_out_ram[dctv_out_ra[4:0]];
-        if (pre_dv) dctv_out_debug_reg <= dctv_out_debug_ram[dctv_out_ra[4:0]];
-        
-        pre_first_out <= pre_first_out_w;
-        
-        dv <= pre_dv;
         
 // alternative option        
 
@@ -442,11 +380,10 @@ module  dtt_iv_8x8_ad#(
             4'he: out_wa[3:0] <= 4'h5 ^ {1'b0,{3{dstv}}};
             4'hf: out_wa[3:0] <= 4'hb ^ {1'b0,{3{dstv}}};
         endcase  
-//        sub16 <= ~out_cntr[3] & out_cntr[0];
         sub16 <= ~out_cntr[3] & ~out_cntr[0] & out_run;
         inc16 <= out_cntr[3:0] == 'he;
         out_we <= dctv_out_we[1];
-        start64 <= out_cntr[6:0] == 'h0d;        
+        start64 <= start64_w;         
     end
 
     always @ (posedge clk) begin
@@ -628,7 +565,7 @@ module  dtt_iv_8x8_ad#(
         .pre2_start_out (), // pre2_start_outv[0]),   // output reg 
         .en_out         (dctv_en_out0),         // output reg
         .dst_out        (pre2_dstv[0]),         // output   valid with en_out
-        .y_index        (dctv_yindex0)          // output[2:0] reg 
+        .y_index        () // dctv_yindex0)          // output[2:0] reg 
  
     );
 
@@ -662,7 +599,7 @@ module  dtt_iv_8x8_ad#(
         .pre2_start_out (), // pre2_start_outv[1]),   // output reg 
         .en_out         (dctv_en_out1),         // output reg
         .dst_out        (pre2_dstv[1]),         // output   valid with en_out
-        .y_index        (dctv_yindex1)          // output[2:0] reg 
+        .y_index        () //dctv_yindex1)          // output[2:0] reg 
     );
 
 endmodule

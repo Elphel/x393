@@ -1,19 +1,19 @@
 [*]
 [*] GTKWave Analyzer v3.3.78 (w)1999-2016 BSI
-[*] Sat Dec  9 05:38:48 2017
+[*] Sat Dec  9 23:05:14 2017
 [*]
-[dumpfile] "/home/eyesis/nc393/elphel393/fpga-elphel/x393_branch_dct/simulation/dct_tests_03-20171208223621417.fst"
-[dumpfile_mtime] "Sat Dec  9 05:36:24 2017"
-[dumpfile_size] 225832
+[dumpfile] "/home/eyesis/nc393/elphel393/fpga-elphel/x393_branch_dct/simulation/dct_tests_03-20171209160023169.fst"
+[dumpfile_mtime] "Sat Dec  9 23:00:23 2017"
+[dumpfile_size] 225733
 [savefile] "/home/eyesis/nc393/elphel393/fpga-elphel/x393_branch_dct/dct_tests_03.sav"
 [timestart] 0
 [size] 1920 1171
 [pos] -1920 40
-*-20.492632 1460700 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-20.492632 1605000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] dct_tests_03.
 [treeopen] dct_tests_03.dtt_iv_8x8_i.
 [treeopen] dct_tests_03.dtt_iv_8x8r_i.
-[sst_width] 299
+[sst_width] 318
 [signals_width] 287
 [sst_expanded] 1
 [sst_vpaned_height] 344
@@ -34,10 +34,6 @@ dct_tests_03.mode_in[1:0]
 dct_tests_03.x_in_2d[23:0]
 @8420
 dct_tests_03.x_in_2d[23:0]
-@420
-dct_tests_03.d_out_2d[23:0]
-@8420
-dct_tests_03.d_out_2d[23:0]
 @22
 dct_tests_03.mode_out[1:0]
 @420
@@ -58,12 +54,6 @@ dct_tests_03.dtt_iv_8x8_i.xin[23:0]
 dct_tests_03.dtt_iv_8x8_i.xin[23:0]
 @28
 dct_tests_03.dtt_iv_8x8_i.pre_last_in
-dct_tests_03.dtt_iv_8x8_i.pre_first_out
-dct_tests_03.dtt_iv_8x8_i.dv
-@420
-dct_tests_03.dtt_iv_8x8_i.d_out[23:0]
-@8420
-dct_tests_03.dtt_iv_8x8_i.d_out[23:0]
 @800200
 -debug
 @28
@@ -175,8 +165,6 @@ dct_tests_03.dtt_iv_8x8_i.dctv_out_sel
 [color] 2
 dct_tests_03.dtt_iv_8x8_i.dctv_out_run
 dct_tests_03.dtt_iv_8x8_i.dctv_out_start_1
-@22
-dct_tests_03.dtt_iv_8x8_i.dctv_out_wa[4:0]
 @c00028
 dct_tests_03.dtt_iv_8x8_i.dctv_out_we[1:0]
 @28
@@ -231,22 +219,20 @@ dct_tests_03.out_ram_ren
 dct_tests_03.out_ram_regen
 @22
 dct_tests_03.out_ram_ra[5:0]
+@8420
 dct_tests_03.out_ram_r[23:0]
-@23
 dct_tests_03.out_ram_r2[23:0]
+@29
+dct_tests_03.out_pre_first
+@28
+dct_tests_03.out_ram_dv
 @1000200
 -debug
 @22
 dct_tests_03.dtt_iv_8x8_i.mode_out[1:0]
 @28
 dct_tests_03.dtt_iv_8x8_i.pre_first_out_w
-@8420
-dct_tests_03.dtt_iv_8x8_i.d_out[23:0]
-@28
-dct_tests_03.dtt_iv_8x8_i.dv
-dct_tests_03.dtt_iv_8x8_i.pre_first_out
 dct_tests_03.dtt_iv_8x8_i.pre_busy
-dct_tests_03.dtt_iv_8x8_i.pre_first_out
 @c00200
 -direct_internal
 @28
