@@ -56,6 +56,9 @@ module  mclt16x16#(
     input           [SHIFT_WIDTH-1:0] x_shft,       //!< tile pixel X fractional shift (valid @ start) 
     input           [SHIFT_WIDTH-1:0] y_shft,       //!< tile pixel Y fractional shift (valid @ start)
     input                       [3:0] bayer,        // bayer mask (0 bits - skip pixel, valid @ start)
+// TODO may modify/remove delay dly_pixel_data_i and use this 3-cycle delay for address calculation. If use 18x18 (0r 20x20) full tile
+// instead of 16x16 use different shifts in the case of lateral chromatic aberration      
+    
     output                      [7:0] mpixel_a,     //!< pixel address {y,x} of the input tile
     input           [PIXEL_WIDTH-1:0] mpixel_d,     //!< pixel data, latency = 2 from pixel address
     output                            pre2_rdy,     //!< after next cycle may be start of the next block          
@@ -367,7 +370,55 @@ D11 - negate for mode 3 (SS)
     );
 
 
-    dtt_iv_8x8 #(
+//    wire                  [1:0] dtt_mode_out;
+    wire signed [OUT_WIDTH-1:0] dtt_out_wd;
+    wire                  [3:0] dtt_out_wa16;
+    wire                        dtt_out_we;
+    wire                        dtt_sub16;
+    wire                        dtt_inc16;
+    reg                   [4:0] dtt_out_ram_cntr;
+    reg                   [4:0] dtt_out_ram_wah;
+    wire                        dtt_start_fill; // some data available in DTT output buffer, OK to start consecutive readout 
+    reg                         dtt_start_out;  // start read out to sin/cos rotator
+
+// frequency domain, high address bit - page, 2 next - mode, 6 LSBs - transposed FD data (vertical first) 
+    wire                  [8:0] dtt_out_ram_wa = {dtt_out_ram_wah,dtt_out_wa16};
+    
+    localparam  DTT_OUT_DELAY = 192; // start output to sin/cos rotator, ~=3/4 of 256
+    reg                   [7:0] dtt_dly_cntr;
+    reg                   [8:0] dtt_rd_cntr; // counter for dtt readout to rotator
+    wire                  [8:0] dtt_rd_ra = {dtt_rd_cntr[8],dtt_rd_cntr[1:0],dtt_rd_cntr[7:2]}; // page, mode, frequency
+    reg                   [2:0] dtt_rd_regen_dv;    // dtt output buffer mem read, register enable, data valid
+    wire                 [35:0] dtt_rd_data_w; // high bits are not used 
+    // data to be input to phase rotator
+    wire signed [OUT_WIDTH-1:0] dtt_rd_data = dtt_rd_data_w[OUT_WIDTH-1:0]; // valid with dtt_rd_regen_dv[2]
+    
+    
+    
+//    reg                   [9:0] dtt_out_ram_cntr;    
+    always @(posedge clk) begin
+        if      (rst)        dtt_out_ram_cntr <= 0;
+        else if (dtt_inc16)  dtt_out_ram_cntr <= dtt_out_ram_cntr + 1;
+        dtt_out_ram_wah <= dtt_out_ram_cntr - dtt_sub16;
+        
+        if      (rst)            dtt_dly_cntr <= 0;
+        else if (dtt_start_fill) dtt_dly_cntr <= DTT_OUT_DELAY;
+        else if (|dtt_dly_cntr)  dtt_dly_cntr <= dtt_dly_cntr - 1;
+        
+        dtt_start_out <= dtt_dly_cntr == 1;
+
+        if      (rst)               dtt_rd_regen_dv[0] <= 0;
+        else if (dtt_start_out)     dtt_rd_regen_dv[0] <= 1;
+        else if (&dtt_rd_cntr[7:0]) dtt_rd_regen_dv[0] <= 0;
+        
+        if      (rst)               dtt_rd_regen_dv[2:1] <= 0;
+        else                        dtt_rd_regen_dv[2:1] <= dtt_rd_regen_dv[1:0];
+        
+        if (dtt_start_out)           dtt_rd_cntr <= {dtt_out_ram_wah[4], 8'b0}; //copy page number
+        else if (dtt_rd_regen_dv[0]) dtt_rd_cntr <= dtt_rd_cntr + 1;
+    end
+    
+    dtt_iv_8x8_ad #(
         .INPUT_WIDTH     (DTT_IN_WIDTH),
         .OUT_WIDTH       (OUT_WIDTH),
         .OUT_RSHIFT1     (OUT_RSHIFT),
@@ -376,20 +427,40 @@ D11 - negate for mode 3 (SS)
         .DSP_B_WIDTH     (18),
         .DSP_A_WIDTH     (25),
         .DSP_P_WIDTH     (48)
-    ) dtt_iv_8x8_i (
+    ) dtt_iv_8x8_ad_i (
         .clk            (clk),              // input
         .rst            (rst),              // input
-        .start          (dtt_start),  // input
-        .mode           (dtt_mode),          // input[1:0] 
-        .xin            (dtt_r_data),          // input[24:0] signed 
-        .pre_last_in    (),   // output reg 
-        .pre_first_out  (pre_first_out_2d), // output
-        .dv             (dv),               // output
-        .d_out          (dout),             // output[24:0] signed
-        .mode_out       (mode_out),         // output[1:0] reg 
-        .pre_busy       (pre_busy_2d)       // output reg 
+        .start          (dtt_start),        // input
+        .mode           (dtt_mode),         // input[1:0] 
+        .xin            (dtt_r_data),       // input[24:0] signed 
+        .pre_last_in    (),                 // output reg 
+        .mode_out       (), // dtt_mode_out),     // output[1:0] reg 
+        .pre_busy       (),                 // output reg 
+        .out_wd         (dtt_out_wd),       // output[24:0] reg 
+        .out_wa         (dtt_out_wa16),     // output[3:0] reg 
+        .out_we         (dtt_out_we),       // output reg 
+        .sub16          (dtt_sub16),        // output reg 
+        .inc16          (dtt_inc16),        // output reg 
+        .start_out      (dtt_start_fill)    // output[24:0] signed
     );
 
+// 2 page buffer after dtt
+    ram18p_var_w_var_r #(
+        .REGISTERS(1),
+        .LOG2WIDTH_WR(5),
+        .LOG2WIDTH_RD(5)
+    ) ram18p_var_w_var_r_dtt_out_i (
+        .rclk     (clk),                // input
+        .raddr    (dtt_rd_ra),          // input[8:0] 
+        .ren      (dtt_rd_regen_dv[0]), // input
+        .regen    (dtt_rd_regen_dv[0]), // input
+        .data_out (dtt_rd_data_w),      // output[35:0] 
+        .wclk     (clk),                // input
+        .waddr    (dtt_out_ram_wa),     // input[8:0] 
+        .we       (dtt_out_we),         // input
+        .web      (4'hf),               // input[3:0] 
+        .data_in  ({{(36-DTT_IN_WIDTH){1'b0}}, dtt_out_wd}) // input[35:0] 
+    );
 
 
 
