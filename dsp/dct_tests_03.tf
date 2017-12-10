@@ -345,7 +345,7 @@ module  dct_tests_03 ();
     wire                             out_we;
     wire                             sub16;
     wire                             inc16;
-    wire                             start64;
+    wire                             start_out;
     reg                 [ODEPTH-5:0] out_ram_cntr;
     reg                 [ODEPTH-5:0] out_ram_wah;
     
@@ -370,7 +370,7 @@ module  dct_tests_03 ();
         if (out_we) out_ram[out_ram_wa] <= out_wd;
         
         if      (RST)         out_ram_ren <= 1'b0;
-        else if (start64)     out_ram_ren <= 1'b1;
+        else if (start_out)   out_ram_ren <= 1'b1;
         else if (&out_ram_ra) out_ram_ren <= 1'b0;
         
         out_ram_regen <= out_ram_ren;
@@ -390,7 +390,7 @@ module  dct_tests_03 ();
         .clk  (CLK),           // input
         .rst  (RST),           // input
         .dly  (4'h1),          // input[3:0] 
-        .din  (start64),       // input[0:0] 
+        .din  (start_out),       // input[0:0] 
         .dout (out_pre_first)  // output[0:0] 
     );
 
@@ -418,7 +418,7 @@ module  dct_tests_03 ();
         .out_we         (out_we),           // output reg 
         .sub16          (sub16),            // output reg 
         .inc16          (inc16),            // output reg 
-        .start64        (start64)           // output reg 
+        .start_out      (start_out)         // output reg 
     );
 
 

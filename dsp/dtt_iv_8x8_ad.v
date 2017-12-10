@@ -76,7 +76,7 @@ module  dtt_iv_8x8_ad#(
     output reg                       out_we,        //!< output data valid (write to external buffer 
     output reg                       sub16,         //!< Subtract 16 from the full output address when true
     output reg                       inc16,         //!< increment full output address by 16
-    output reg                       start64);      //!< may start output readout, 1 entry per clock, vertically
+    output reg                       start_out);    //!< may start output readout, 1 entry per clock, vertically
 
 // 1. Two 16xINPUT_WIDTH memories to feed two of the 'horizontal' 1-dct - they should provide outputs shifted by 1 clock
 // 2. of the horizontal DCTs
@@ -193,7 +193,7 @@ module  dtt_iv_8x8_ad#(
     reg                              pre_dstv;  // 1 cycles before vertical output data is valid, 0 dct, 1 - dst
     reg                              dstv;      // when vertical output data is valid, 0 dct, 1 - dst
     
-    wire                             start64_w = out_cntr[6:0] == 'h0d;
+    wire                             start_out_w = out_cntr[6:0] == 'h0d;
     
     
     assign pre_last_in = pre_last_in_r;
@@ -383,7 +383,7 @@ module  dtt_iv_8x8_ad#(
         sub16 <= ~out_cntr[3] & ~out_cntr[0] & out_run;
         inc16 <= out_cntr[3:0] == 'he;
         out_we <= dctv_out_we[1];
-        start64 <= start64_w;         
+        start_out <= start_out_w;         
     end
 
     always @ (posedge clk) begin

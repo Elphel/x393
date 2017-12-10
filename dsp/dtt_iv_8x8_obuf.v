@@ -80,7 +80,7 @@ module  dtt_iv_8x8_obuf#(
     wire                             out_we;
     wire                             sub16;
     wire                             inc16;
-    wire                             start64;
+    wire                             start_out;
     reg                 [ODEPTH-5:0] out_ram_cntr;
     reg                 [ODEPTH-5:0] out_ram_wah;
     
@@ -101,7 +101,7 @@ module  dtt_iv_8x8_obuf#(
         if (out_we) out_ram[out_ram_wa] <= out_wd;
         
         if      (rst)         out_ram_ren <= 1'b0;
-        else if (start64)     out_ram_ren <= 1'b1;
+        else if (start_out)     out_ram_ren <= 1'b1;
         else if (&out_ram_ra) out_ram_ren <= 1'b0;
         
         out_ram_regen <= out_ram_ren;
@@ -121,7 +121,7 @@ module  dtt_iv_8x8_obuf#(
         .clk  (clk),           // input
         .rst  (rst),           // input
         .dly  (4'h1),          // input[3:0] 
-        .din  (start64),       // input[0:0] 
+        .din  (start_out),       // input[0:0] 
         .dout (pre_first_out)  // output[0:0] 
     );
 
@@ -160,7 +160,7 @@ module  dtt_iv_8x8_obuf#(
         .out_we         (out_we),           // output reg 
         .sub16          (sub16),            // output reg 
         .inc16          (inc16),            // output reg 
-        .start64        (start64)           // output reg 
+        .start_out      (start_out)           // output reg 
     );
 
 
