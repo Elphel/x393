@@ -41,7 +41,9 @@
 module  dsp_ma_preadd #(
     parameter B_WIDTH = 18,
     parameter A_WIDTH = 25,
-    parameter P_WIDTH = 48)
+    parameter P_WIDTH = 48,
+    parameter A_INPUT = "DIRECT", // other: "CASCADE"
+    parameter B_INPUT = "DIRECT") // other: "CASCADE"
 (
     input                       clk,
     input                       rst,
@@ -84,10 +86,10 @@ module  dsp_ma_preadd #(
         .ALUMODEREG          (1),
         .AREG                (1), // 2), // (1) - means number in series, so "2" always reads the second
         .AUTORESET_PATDET    ("NO_RESET"),
-        .A_INPUT             ("DIRECT"),
+        .A_INPUT             (A_INPUT), // "DIRECT", "CASCADE"
         .BCASCREG            (1),
         .BREG                (1), // (2), // (1) - means number in series, so "2" always reads the second
-        .B_INPUT             ("DIRECT"),
+        .B_INPUT             (B_INPUT), // "DIRECT"),
         .CARRYINREG          (1),
         .CARRYINSELREG       (1),
         .CREG                (0), //(1),
