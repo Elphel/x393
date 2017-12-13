@@ -3,7 +3,6 @@
 from __future__ import print_function
 from __future__ import division
 # Copyright (C) 2017, Elphel.inc.
-# Helper module create AHCI registers type/default data
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
