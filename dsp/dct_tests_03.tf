@@ -63,7 +63,6 @@ module  dct_tests_03 ();
     
     parameter CLK_PERIOD =     10; // ns
     parameter WIDTH =           24; // input data width
-//    parameter OUT_WIDTH =     16; // output data width
     parameter OUT_WIDTH =       24; // output data width
     parameter TRANSPOSE_WIDTH = 24; // width of the transpose memory (intermediate results)    
     parameter OUT_RSHIFT =       2;  // overall right shift of the result from input, aligned by MSB (>=3 will never cause saturation)
