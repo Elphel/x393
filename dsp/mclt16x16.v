@@ -39,15 +39,21 @@
 `timescale 1ns/1ps
 
 module  mclt16x16#(
-    parameter SHIFT_WIDTH =   8,    // bits in shift (1 bit - integer, 7 bits - fractional
-    parameter COORD_WIDTH =  10,    // bits in full coordinate 10 for 18K RAM
-    parameter PIXEL_WIDTH =  16,    // input pixel width (unsigned) 
-    parameter WND_WIDTH =    18,    // input pixel width (unsigned) 
-    parameter OUT_WIDTH =    24,    // bits in dtt output
-    parameter DTT_IN_WIDTH = 24,    // bits in DTT input
-    parameter TRANSPOSE_WIDTH = 24, // width of the transpose memory (intermediate results)    
-    parameter OUT_RSHIFT =    2,    // overall right shift of the result from input, aligned by MSB (>=3 will never cause saturation)
-    parameter OUT_RSHIFT2 =   0     // overall right shift for the second (vertical) pass
+//    parameter SHIFT_WIDTH =      8, // bits in shift (1 bit - integer, 7 bits - fractional (remove int, make it 7
+    parameter SHIFT_WIDTH =      7, // bits in shift (7 bits - fractional)
+    parameter COORD_WIDTH =     10, // bits in full coordinate 10 for 18K RAM
+    parameter PIXEL_WIDTH =     16, // input pixel width (unsigned) 
+    parameter WND_WIDTH =       18, // input pixel width (unsigned) 
+    parameter OUT_WIDTH =       25, // bits in dtt output
+    parameter DTT_IN_WIDTH =    25, // bits in DTT input
+    parameter TRANSPOSE_WIDTH = 25, // width of the transpose memory (intermediate results)    
+    parameter OUT_RSHIFT =       2, // overall right shift of the result from input, aligned by MSB (>=3 will never cause saturation)
+    parameter OUT_RSHIFT2 =      0, // overall right shift for the second (vertical) pass
+    parameter DSP_B_WIDTH =     18, // signed, output from sin/cos ROM
+    parameter DSP_A_WIDTH =     25,
+    parameter DSP_P_WIDTH =     48,
+    parameter DEAD_CYCLES =     14  // start next block immedaitely, or with longer pause
+    
     
 )(
     input                             clk,          //!< system clock, posedge
@@ -61,8 +67,8 @@ module  mclt16x16#(
     
     output                      [7:0] mpixel_a,     //!< pixel address {y,x} of the input tile
     input           [PIXEL_WIDTH-1:0] mpixel_d,     //!< pixel data, latency = 2 from pixel address
-    output                            pre2_rdy,     //!< after next cycle may be start of the next block          
-    output                            pre_last_in,  //!< may increment page
+    output                            pre_busy,     //!< start should come each 256-th cycle (next after pre_last_in), and not after pre_busy)          
+    output reg                        pre_last_in,  //!< may increment page
     output                            pre_first_out,//!< next will output first of DCT/DCT coefficients          
     output                            pre_last_out, //!< next will be last output of DST/DST coefficients
     output                      [7:0] out_addr,     //!< address to save coefficients, 2 MSBs - mode (CC,SC,CS,SS), others - down first         
@@ -130,6 +136,11 @@ module  mclt16x16#(
     wire             [35:0] dtt_r_data_w; // high bits are not used 
     wire [DTT_IN_WIDTH-1:0] dtt_r_data = dtt_r_data_w[DTT_IN_WIDTH-1:0]; 
     
+    reg                     pre_last_out_r;
+    
+    assign pre_last_out = pre_last_out_r;
+    assign pre_busy =     pre_busy_r;
+    
     always @ (posedge clk) begin
         if (start) begin
             x_shft_r <= x_shft;
@@ -144,11 +155,12 @@ module  mclt16x16#(
         if (in_busy[2]) bayer_d <= bayer_r; 
         
         if      (rst)      in_busy <= 0;
-        else if (start)    in_busy <= 1;
-        else               in_busy <= {in_busy[15:0], in_busy[0] & ~(&in_cntr)};
+        else               in_busy <= {in_busy[15:0], start | (in_busy[0] & ~(&in_cntr))};
         
         if      (start)      in_cntr <= 0;
         else if (in_busy[0]) in_cntr[7:0] <= in_cntr[7:0] + 1;
+        
+        pre_last_in <= in_cntr[7:0] == 8'hfe;
         
         if (in_busy[8]) begin
             mpixel_d_r <= mpixel_d;
@@ -416,6 +428,7 @@ D11 - negate for mode 3 (SS)
         
         if (dtt_start_out)           dtt_rd_cntr <= {dtt_out_ram_wah[4], 8'b0}; //copy page number
         else if (dtt_rd_regen_dv[0]) dtt_rd_cntr <= dtt_rd_cntr + 1;
+        
     end
     
     dtt_iv_8x8_ad #(
@@ -424,9 +437,9 @@ D11 - negate for mode 3 (SS)
         .OUT_RSHIFT1     (OUT_RSHIFT),
         .OUT_RSHIFT2     (OUT_RSHIFT2),
         .TRANSPOSE_WIDTH (TRANSPOSE_WIDTH),
-        .DSP_B_WIDTH     (18),
-        .DSP_A_WIDTH     (25),
-        .DSP_P_WIDTH     (48)
+        .DSP_B_WIDTH     (DSP_B_WIDTH),
+        .DSP_A_WIDTH     (DSP_A_WIDTH),
+        .DSP_P_WIDTH     (DSP_P_WIDTH)
     ) dtt_iv_8x8_ad_i (
         .clk            (clk),              // input
         .rst            (rst),              // input
@@ -464,6 +477,46 @@ D11 - negate for mode 3 (SS)
 
 
 
+// Rotate phase (equvalent to pixel domain shift)
+    phase_rotator #(
+        .FD_WIDTH(OUT_WIDTH),
+        .SHIFT_WIDTH(SHIFT_WIDTH), // should be exactly 7
+        .DSP_B_WIDTH(DSP_B_WIDTH),
+        .DSP_A_WIDTH(DSP_A_WIDTH),
+        .DSP_P_WIDTH(DSP_P_WIDTH)
+    ) phase_rotator_i (
+        .clk           (clk),           // input
+        .rst           (rst),           // input
+        .start         (dtt_start_out), // input
+        // are these shift OK? Will need to be valis only @ dtt_start_out
+        .shift_h       (x_shft_r2),     // input[6:0] signed 
+        .shift_v       (y_shft_r2),     // input[6:0] signed 
+        .fd_din        (dtt_rd_data),   // input[24:0] signed. Expected latency = 3 from start  
+        .fd_out        (dout),          // output[24:0] reg signed 
+        .pre_first_out (pre_first_out), // output reg 
+        .fd_dv         (dv)             // output reg 
+    );
+
+    reg [7:0] out_addr_r;
+    reg [3:0] dead_cntr;
+    reg       pre_busy_r;  
+    
+    assign out_addr = {out_addr_r[0],out_addr_r[1],out_addr_r[4:2],out_addr_r[7:5]};
+
+    always @ (posedge clk) begin
+        if (!dv) out_addr_r <= 0;
+        else     out_addr_r <= out_addr_r + 1;
+        
+        pre_last_out_r <= out_addr_r == 8'hfe;
+        
+        if      (rst)            pre_busy_r <= 0;
+        else if (pre_last_out_r) pre_busy_r <= 1;
+        else if (dead_cntr == 0) pre_busy_r <= 0;
+        
+        if (~pre_busy_r) dead_cntr <= DEAD_CYCLES;
+        else             dead_cntr <= dead_cntr - 1;
+        
+    end
 
 endmodule
 
