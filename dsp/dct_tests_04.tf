@@ -1,6 +1,6 @@
 /*!
- * <b>Module:</b>dct_tests_03
- * @file dct_tests_03.tf
+ * <b>Module:</b>dct_tests_04
+ * @file dct_tests_04.tf
  * @date 2016-12-02  
  * @author  Andrey Filippov
  *     
@@ -11,12 +11,12 @@
  *
  * <b>License:</b>
  *
- *dct_tests_03.tf is free software; you can redistribute it and/or modify
+ *dct_tests_04.tf is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
- *  dct_tests_03.tf is distributed in the hope that it will be useful,
+ *  dct_tests_04.tf is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
@@ -41,11 +41,11 @@
 // No saturation here, and no rounding as we do not need to match decoder (be bit-precise), skipping rounding adder
 // will reduce needed resources
 //`define DCT_INPUT_UNITY
-module  dct_tests_03 ();
-//    parameter fstname="dct_tests_03.fst";
+module  dct_tests_04 ();
+//    parameter fstname="dct_tests_04.fst";
 `ifdef IVERILOG              
     `ifdef NON_VDT_ENVIROMENT
-        parameter fstname="dct_tests_03.fst";
+        parameter fstname="dct_tests_04.fst";
     `else
         `include "IVERILOG_INCLUDE.v"
     `endif // NON_VDT_ENVIROMENT
@@ -57,7 +57,7 @@ module  dct_tests_03 ();
             `include "IVERILOG_INCLUDE.v"
         `endif // NON_VDT_ENVIROMENT
     `else
-        parameter fstname = "dct_tests_03.fst";
+        parameter fstname = "dct_tests_04.fst";
     `endif // CVC
 `endif // IVERILOG
     
@@ -158,7 +158,7 @@ module  dct_tests_03 ();
     always #(CLK_PERIOD/2) CLK = ~CLK;    
     initial begin
         $dumpfile(fstname);
-        $dumpvars(0,dct_tests_03); // SuppressThisWarning VEditor
+        $dumpvars(0,dct_tests_04); // SuppressThisWarning VEditor
         #100;
         RST = 0;
         #100;
