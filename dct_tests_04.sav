@@ -1,0 +1,231 @@
+[*]
+[*] GTKWave Analyzer v3.3.78 (w)1999-2016 BSI
+[*] Wed Dec 13 06:00:34 2017
+[*]
+[dumpfile] "/home/eyesis/nc393/elphel393/fpga-elphel/x393_branch_dct/simulation/dct_tests_04-20171212192023266.fst"
+[dumpfile_mtime] "Wed Dec 13 02:20:23 2017"
+[dumpfile_size] 219185
+[savefile] "/home/eyesis/nc393/elphel393/fpga-elphel/x393_branch_dct/dct_tests_04.sav"
+[timestart] 1588000
+[size] 1814 1171
+[pos] 0 40
+*-15.492632 1795000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] dct_tests_03.
+[treeopen] dct_tests_03.dtt_iv_8x8_i.
+[treeopen] dct_tests_03.dtt_iv_8x8r_i.
+[sst_width] 318
+[signals_width] 284
+[sst_expanded] 1
+[sst_vpaned_height] 344
+@420
+dct_tests_03.i
+dct_tests_03.i1
+dct_tests_03.j
+@28
+dct_tests_03.CLK
+dct_tests_03.RST
+[color] 2
+dct_tests_03.start
+[color] 2
+dct_tests_03.start2
+@22
+dct_tests_03.mode_in[1:0]
+@8420
+dct_tests_03.x_in_2d[24:0]
+@22
+dct_tests_03.mode_out[1:0]
+@8420
+dct_tests_03.d_out_2dr[24:0]
+@800200
+-dtt_iv8x8_direct
+@28
+dct_tests_03.dtt_iv_8x8_i.rst
+dct_tests_03.dtt_iv_8x8_i.clk
+dct_tests_03.dtt_iv_8x8_i.start
+@22
+dct_tests_03.dtt_iv_8x8_i.mode[1:0]
+@28
+dct_tests_03.dtt_iv_8x8_i.pre_last_in
+dct_tests_03.dtt_iv_8x8_i.pre_busy
+@c00200
+-debug
+@28
+dct_tests_03.dtt_iv_8x8_i.transpose_start
+@22
+dct_tests_03.dtt_iv_8x8_i.transpose_debug_di[7:0]
+@8022
+dct_tests_03.dtt_iv_8x8_i.transpose_debug_di[7:0]
+@c00022
+dct_tests_03.dtt_iv_8x8_i.transpose_wa[7:0]
+@28
+(0)dct_tests_03.dtt_iv_8x8_i.transpose_wa[7:0]
+(1)dct_tests_03.dtt_iv_8x8_i.transpose_wa[7:0]
+(2)dct_tests_03.dtt_iv_8x8_i.transpose_wa[7:0]
+(3)dct_tests_03.dtt_iv_8x8_i.transpose_wa[7:0]
+(4)dct_tests_03.dtt_iv_8x8_i.transpose_wa[7:0]
+(5)dct_tests_03.dtt_iv_8x8_i.transpose_wa[7:0]
+(6)dct_tests_03.dtt_iv_8x8_i.transpose_wa[7:0]
+(7)dct_tests_03.dtt_iv_8x8_i.transpose_wa[7:0]
+@1401200
+-group_end
+@c08022
+dct_tests_03.dtt_iv_8x8_i.transpose_wa[7:0]
+@28
+(0)dct_tests_03.dtt_iv_8x8_i.transpose_wa[7:0]
+(1)dct_tests_03.dtt_iv_8x8_i.transpose_wa[7:0]
+(2)dct_tests_03.dtt_iv_8x8_i.transpose_wa[7:0]
+(3)dct_tests_03.dtt_iv_8x8_i.transpose_wa[7:0]
+(4)dct_tests_03.dtt_iv_8x8_i.transpose_wa[7:0]
+(5)dct_tests_03.dtt_iv_8x8_i.transpose_wa[7:0]
+(6)dct_tests_03.dtt_iv_8x8_i.transpose_wa[7:0]
+(7)dct_tests_03.dtt_iv_8x8_i.transpose_wa[7:0]
+@1401200
+-group_end
+@28
+(0)dct_tests_03.dtt_iv_8x8_i.transpose_we[1:0]
+dct_tests_03.dtt_iv_8x8_i.pre_dsth
+@8022
+dct_tests_03.dtt_iv_8x8_i.transpose_cntr[6:0]
+@22
+dct_tests_03.dtt_iv_8x8_i.transpose_ra[7:0]
+@28
+dct_tests_03.dtt_iv_8x8_i.dctv_start_0_r
+dct_tests_03.dtt_iv_8x8_i.dctv_start_1_r
+@800028
+dct_tests_03.dtt_iv_8x8_i.pre2_dstv[1:0]
+@28
+(0)dct_tests_03.dtt_iv_8x8_i.pre2_dstv[1:0]
+(1)dct_tests_03.dtt_iv_8x8_i.pre2_dstv[1:0]
+@1001200
+-group_end
+@c00028
+[color] 2
+dct_tests_03.dtt_iv_8x8_i.dctv_out_we[1:0]
+@28
+(0)dct_tests_03.dtt_iv_8x8_i.dctv_out_we[1:0]
+(1)dct_tests_03.dtt_iv_8x8_i.dctv_out_we[1:0]
+@1401200
+-group_end
+@28
+dct_tests_03.dtt_iv_8x8_i.pre_dstv
+@200
+-alt
+@28
+dct_tests_03.dtt_iv_8x8_i.dstv
+dct_tests_03.dtt_iv_8x8_i.out_sel
+dct_tests_03.dtt_iv_8x8_i.out_run
+@22
+dct_tests_03.dtt_iv_8x8_i.out_cntr[6:0]
+@28
+dct_tests_03.dtt_iv_8x8_i.out_sel
+@c00022
+dct_tests_03.dtt_iv_8x8_i.out_wa[3:0]
+@28
+(0)dct_tests_03.dtt_iv_8x8_i.out_wa[3:0]
+(1)dct_tests_03.dtt_iv_8x8_i.out_wa[3:0]
+(2)dct_tests_03.dtt_iv_8x8_i.out_wa[3:0]
+(3)dct_tests_03.dtt_iv_8x8_i.out_wa[3:0]
+@1401200
+-group_end
+@28
+dct_tests_03.dtt_iv_8x8_i.out_we
+dct_tests_03.dtt_iv_8x8_i.sub16
+dct_tests_03.dtt_iv_8x8_i.inc16
+dct_tests_03.dtt_iv_8x8_i.start_out
+@200
+-top
+@22
+dct_tests_03.out_ram_wa[4:0]
+@28
+dct_tests_03.out_ram_cntr
+dct_tests_03.out_ram_wah
+@22
+dct_tests_03.out_wa[3:0]
+@28
+dct_tests_03.out_we
+dct_tests_03.out_ram_ren
+dct_tests_03.out_ram_regen
+@22
+dct_tests_03.out_ram_ra[5:0]
+@28
+dct_tests_03.out_pre_first
+dct_tests_03.out_ram_dv
+@1401200
+-debug
+@22
+dct_tests_03.dtt_iv_8x8_i.mode_out[1:0]
+@28
+dct_tests_03.dtt_iv_8x8_i.pre_busy
+@c00200
+-direct_internal
+@28
+dct_tests_03.dtt_iv_8x8_i.dcth_en0
+dct_tests_03.dtt_iv_8x8_i.dcth_en1
+dct_tests_03.dtt_iv_8x8_i.dcth_start_0_r
+dct_tests_03.dtt_iv_8x8_i.dcth_start_1_r
+@22
+dct_tests_03.dtt_iv_8x8_i.mode[1:0]
+dct_tests_03.dtt_iv_8x8_i.mode_h[1:0]
+dct_tests_03.dtt_iv_8x8_i.mode_h_late[1:0]
+dct_tests_03.dtt_iv_8x8_i.mode_v[1:0]
+dct_tests_03.dtt_iv_8x8_i.mode_out[1:0]
+@28
+dct_tests_03.dtt_iv_8x8_i.dctv_start_0_w
+@22
+dct_tests_03.dtt_iv_8x8_i.dctv_start_1_w
+@800028
+dct_tests_03.dtt_iv_8x8_i.pre2_dsth[1:0]
+@28
+(0)dct_tests_03.dtt_iv_8x8_i.pre2_dsth[1:0]
+(1)dct_tests_03.dtt_iv_8x8_i.pre2_dsth[1:0]
+@1001200
+-group_end
+@200
+-
+@800028
+dct_tests_03.dtt_iv_8x8_i.pre2_dstv[1:0]
+@28
+(0)dct_tests_03.dtt_iv_8x8_i.pre2_dstv[1:0]
+(1)dct_tests_03.dtt_iv_8x8_i.pre2_dstv[1:0]
+@800200
+-g3
+@28
+dct_tests_03.dtt_iv_8x8_i.dct_iv8_1d_pass2_0_i.start
+dct_tests_03.dtt_iv_8x8_i.dct_iv8_1d_pass2_0_i.dst_in
+dct_tests_03.dtt_iv_8x8_i.dct_iv8_1d_pass2_0_i.dst_out
+@1000200
+-g3
+@28
+dct_tests_03.dtt_iv_8x8_i.dct_iv8_1d_pass2_1_i.start
+dct_tests_03.dtt_iv_8x8_i.dct_iv8_1d_pass2_1_i.dst_in
+dct_tests_03.dtt_iv_8x8_i.dct_iv8_1d_pass2_1_i.dst_out
+@200
+-
+@1001200
+-group_end
+@1401200
+-direct_internal
+@1000200
+-dtt_iv8x8_direct
+@800200
+-dtt_iv8x8_inv
+@29
+dct_tests_03.dtt_iv_8x8r_i.clk
+@28
+dct_tests_03.dtt_iv_8x8r_i.start
+dct_tests_03.dtt_iv_8x8r_i.mode[1:0]
+dct_tests_03.dtt_iv_8x8r_i.mode_out[1:0]
+@800200
+-inv_internals
+@200
+-
+@1000200
+-inv_internals
+@200
+-
+@1000200
+-dtt_iv8x8_inv
+@200
+-dbg
+[pattern_trace] 1
+[pattern_trace] 0
