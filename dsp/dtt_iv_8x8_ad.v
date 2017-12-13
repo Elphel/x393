@@ -209,7 +209,7 @@ module  dtt_iv_8x8_ad#(
         if (transpose_out_start) mode_v      <= mode_h_late;
         
         
-        if (start64_w)           mode_out    <= mode_v;
+        if (start_out_w)           mode_out    <= mode_v;
         
         if (!x_run) x_wa <= 0;
         else        x_wa <= x_wa + 1;
