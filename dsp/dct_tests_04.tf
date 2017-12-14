@@ -38,6 +38,8 @@
  * with at least one of the Free Software programs.
  */
 `timescale 1ns/1ps
+  `define INSTANTIATE_DSP48E1 
+
 // No saturation here, and no rounding as we do not need to match decoder (be bit-precise), skipping rounding adder
 // will reduce needed resources
 //`define DCT_INPUT_UNITY
@@ -444,6 +446,42 @@ module  dct_tests_04 ();
         .mode_out       (),                  // output[1:0] reg 
         .pre_busy       (pre_busy_2dr)       // output reg 
     );
+
+/*
+    mclt16x16 #(
+        .SHIFT_WIDTH(7),
+        .COORD_WIDTH(10),
+        .PIXEL_WIDTH(16),
+        .WND_WIDTH(18),
+        .OUT_WIDTH(25),
+        .DTT_IN_WIDTH(25),
+        .TRANSPOSE_WIDTH(25),
+        .OUT_RSHIFT(2),
+        .OUT_RSHIFT2(0),
+        .DSP_B_WIDTH(18),
+        .DSP_A_WIDTH(25),
+        .DSP_P_WIDTH(48),
+        .DEAD_CYCLES(14)
+    ) mclt16x16_i (
+        .clk(CLK), // input
+        .rst(RST), // input
+        .start(start), // input
+        .x_shft(0), // input[6:0] 
+        .y_shft(0), // input[6:0] 
+        .bayer(0), // input[3:0] 
+        .mpixel_re(), // output
+        .mpixel_page(), // output
+        .mpixel_a(), // output[7:0] 
+        .mpixel_d(0), // input[15:0] 
+        .pre_busy(), // output
+        .pre_last_in(), // output
+        .pre_first_out(), // output
+        .pre_last_out(), // output
+        .out_addr(), // output[7:0] 
+        .dv(), // output
+        .dout() // output[24:0] signed 
+    );
+*/
 
 
 endmodule
