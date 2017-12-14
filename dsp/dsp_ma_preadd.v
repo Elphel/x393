@@ -79,6 +79,9 @@ module  dsp_ma_preadd #(
                           1'b0,
                           2'b01,
                           2'b01};
+   initial begin
+      $display("dsp_ma_preadd, using DSP48E1");
+   end
                          
     DSP48E1 #(
         .ACASCREG            (1),
@@ -164,6 +167,10 @@ module  dsp_ma_preadd #(
     );
 
 `else
+   initial begin
+      $display("dsp_ma_preadd, not using DSP48E1");
+   end
+
 // Will try to make it infer DSP48e1
     reg  signed [B_WIDTH-1:0] b1_reg;
     reg  signed [B_WIDTH-1:0] b2_reg;

@@ -69,6 +69,10 @@ module  dsp_ma_preadd_c #(
     output signed [P_WIDTH-1:0] pout
 );
 `ifdef INSTANTIATE_DSP48E1
+   initial begin
+      $display("dsp_ma_preadd_c, using DSP48E1");
+   end
+
     wire [4:0] inmode = {~selb,
                           sub_a,
                           en_d,
@@ -167,6 +171,10 @@ module  dsp_ma_preadd_c #(
     );
 
 `else
+   initial begin
+      $display("dsp_ma_preadd_c, not using DSP48E1");
+   end
+
 // Will try to make it infer DSP48e1
     reg  signed [B_WIDTH-1:0] b1_reg;
     reg  signed [B_WIDTH-1:0] b2_reg;
