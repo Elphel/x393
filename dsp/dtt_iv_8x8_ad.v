@@ -314,15 +314,15 @@ module  dtt_iv_8x8_ad#(
         
         if      (rst)                          dctv_en0 <= 0;
         else if (dctv_start_0_w)               dctv_en0 <= 1;
-        else if (!transpose_out_run[2])        dctv_en0 <= 0; // maybe get rid of this signal and send satrt for each 8? 
+        else if (!transpose_out_run[2])        dctv_en0 <= 0; // maybe get rid of this signal and send start for each 8? 
         
         if      (rst)                          dctv_en1 <= 0;
         else if (dctv_start_1_w)               dctv_en1 <= 1;
-        else if (dctv_phin[6])                 dctv_en1 <= 0; // maybe get rid of this signal and send satrt for each 8?
+        else if (dctv_phin[6])                 dctv_en1 <= 0; // maybe get rid of this signal and send start for each 8?
         
         pre_dstv <= dctv_en_out0 ? pre2_dstv[0] : pre2_dstv[1];
         
-        if (t_we0 || t_we1) $display("%d %d",transpose_rcntr-2, transpose_out) ;
+//        if (t_we0 || t_we1) $display("%d %d",transpose_rcntr-2, transpose_out) ;
         
         //write vertical dct input reorder memory
         if (t_we0) t_ram0[t_wa[2:0]] <= transpose_out;

@@ -153,7 +153,7 @@ module  phase_rotator#(
     dly_var #(
         .WIDTH(1),
         .DLY_WIDTH(4)
-    ) dly_cntrv_i (
+    ) dly_sign_cs_d_i (
         .clk  (clk),             // input
         .rst  (rst),             // input
         .dly  (4'h2),            // input[3:0] 

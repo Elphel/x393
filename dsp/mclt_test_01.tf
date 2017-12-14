@@ -38,6 +38,8 @@
  * with at least one of the Free Software programs.
  */
 `timescale 1ns/1ps
+  `define INSTANTIATE_DSP48E1
+  `define PRELOAD_BRAMS 
 module  mclt_test_01 ();
 `ifdef IVERILOG              
     `ifdef NON_VDT_ENVIROMENT
@@ -58,8 +60,7 @@ module  mclt_test_01 ();
 `endif // IVERILOG
     
     parameter CLK_PERIOD =      10; // ns
-    parameter WIDTH =           25; //4; // input data width
-
+//    parameter WIDTH =           25; //4; // input data width
     parameter SHIFT_WIDTH =      7; // bits in shift (7 bits - fractional)
     parameter COORD_WIDTH =     10; // bits in full coordinate 10 for 18K RAM
     parameter PIXEL_WIDTH =     16; // input pixel width (unsigned) 
@@ -74,169 +75,145 @@ module  mclt_test_01 ();
     parameter DSP_P_WIDTH =     48;
     parameter DEAD_CYCLES =     14;  // start next block immedaitely, or with longer pause
     
-    parameter DCT_GAP = 16; // between runs            
+    //parameter DCT_GAP = 16; // between runs            
     
-    parameter SAME_BITS=4; // (3) to match 24-bit widths
+    //parameter SAME_BITS=4; // (3) to match 24-bit widths
     
     reg              RST = 1'b1;
     reg              CLK = 1'b0;
-    reg        [3:0] phase_in;
-    reg        [3:0] phase_out;
-    reg              run_in;
-    reg              run_out;
-    reg              run_out_d;
     
-    reg              en_x = 0;
-//    reg              end_x = 0;
-    reg        [2:0] x_ra;
-    wire       [2:0] x_wa = phase_in[2:0];
-    
-    
-    wire             x_we = !phase_in[3] && run_in;
-    reg  [WIDTH-1:0] x_in;
-    reg  [WIDTH-1:0] x_in_2d;
-    reg  [WIDTH-1:0] x_out;
-    reg  [WIDTH-1:0] x_ram[0:7];
-    wire [WIDTH-1:0] x_out_w = x_ram[x_ra];
-    
-    reg              start = 0;
-    reg              start2 = 0; // second start for 2d
-    reg        [1:0] mode_in= 0; // 3; // [0] - vertical pass 0: dct, 1 - dst, [1] - horizontal pass
-    wire       [1:0] mode_out;   // [0] - vertical pass 0: dct, 1 - dst, [1] - horizontal pass
-    
-    wire [OUT_WIDTH-1:0] y_dct;
-    wire                 pre2_start_out;
-    wire                 en_out;
-    
-    reg                  y_pre_we;
-    reg                  y_we;
-    reg            [3:0] phase_y=8;
-    reg            [2:0] y_wa;
-    reg            [2:0] y_ra;
-    reg                  y_dv=0;
-    reg  signed [OUT_WIDTH-1:0] y_ram[0:7]; 
-    wire signed [OUT_WIDTH-1:0] y_out = y_ram[y_ra];           // SuppressThisWarning VEditor - simulation only
-    reg  signed     [WIDTH-1:0] data_in[0:63];
-    reg  signed [OUT_WIDTH-1:0] data_out[0:63];
-
-    wire                        pre_last_in_2d;    // SuppressThisWarning VEditor - simulation only
-    wire                        pre_first_out_2d;  // SuppressThisWarning VEditor - simulation only
-    wire                        pre_busy_2d;       // SuppressThisWarning VEditor - simulation only
-    wire                        dv_2d;             // SuppressThisWarning VEditor - simulation only
-//    wire signed [OUT_WIDTH-1:0] d_out_2d;
-
-    wire                        pre_last_in_2dr;   // SuppressThisWarning VEditor - simulation only
-    wire                        pre_first_out_2dr; // SuppressThisWarning VEditor - simulation only
-    wire                        pre_busy_2dr;      // SuppressThisWarning VEditor - simulation only
-    wire                        dv_2dr;            // SuppressThisWarning VEditor - simulation only
-    wire signed [OUT_WIDTH-1:0] d_out_2dr;         // SuppressThisWarning VEditor - simulation only
-
-    
-    integer   i,j, i1, ir;
+    reg   [PIXEL_WIDTH-1 : 0]   tile_shift[0:258];  // SuppressThisWarning VEditor : assigned in $readmem() system task
+    reg   [PIXEL_WIDTH-1 : 0]   tiles[0:1023];
+    reg   [SHIFT_WIDTH-1 : 0]   shifts_x[0:3]; 
+    reg   [SHIFT_WIDTH-1 : 0]   shifts_y[0:3]; 
+    reg               [3 : 0]   bayer[0:3]; 
+    integer   i, n, n_out;
     initial begin
-        for (i=0; i<64; i=i+1) begin
-        `ifdef DCT_INPUT_UNITY
-            data_in[i] =  (i[2:0] == (i[5:3]  ^ 3'h0)) ? {2'b1,{WIDTH-2{1'b0}}} : 0;
-            ir= (i[2:0] == (i[5:3]  ^ 3'h1)) ? {2'b1,{WIDTH-2{1'b0}}} : 0;
-            data_in[i] =  ir;
-        `else
-            ir = $random;
-            data_in[i]  = ((i[5:3] == 0) || (i[5:3] == 7) || (i[2:0] == 0) || (i[2:0] == 7))? 0:
-            {{SAME_BITS{ir[WIDTH -SAME_BITS - 1]}},ir[WIDTH -SAME_BITS-1:0]};
-        `endif
+        $readmemh("input_data/tile_01.dat",tile_shift);
+        shifts_x[0] = tile_shift[0][SHIFT_WIDTH-1:0];
+        shifts_y[0] = tile_shift[1][SHIFT_WIDTH-1:0];
+        bayer[0] =    tile_shift[2][3:0];
+        for (i=0; i<256; i=i+1) begin
+            tiles['h000 + i] = tile_shift[i+3]; 
         end
-        $display("Input data in line-scan order:");
-        for (i=0; i<64; i=i+8) begin
-            $display ("%d, %d, %d, %d, %d, %d, %d, %d",data_in[i+0],data_in[i+1],data_in[i+2],data_in[i+3],
-                                                   data_in[i+4],data_in[i+5],data_in[i+6],data_in[i+7]);
+        $readmemh("input_data/tile_02.dat",tile_shift);
+        shifts_x[1] = tile_shift[0][SHIFT_WIDTH-1:0];
+        shifts_y[1] = tile_shift[1][SHIFT_WIDTH-1:0];
+        bayer[1] =    tile_shift[2][3:0];
+        for (i=0; i<256; i=i+1) begin
+            tiles['h100 + i] = tile_shift[i+3]; 
         end
-        $display("");
-        $display("Input data - transposed:");
-        j=0;
-        for (i=0; i < 8; i=i+1) begin
-            $display ("%d, %d, %d, %d, %d, %d, %d, %d",data_in[i+ 0],data_in[i+ 8],data_in[i+16],data_in[i+24],
-                                                       data_in[i+32],data_in[i+40],data_in[i+48],data_in[i+56]);
+        $readmemh("input_data/tile_03.dat",tile_shift);
+        shifts_x[2] = tile_shift[0][SHIFT_WIDTH-1:0];
+        shifts_y[2] = tile_shift[1][SHIFT_WIDTH-1:0];
+        bayer[2] =    tile_shift[2][3:0];
+        for (i=0; i<256; i=i+1) begin
+            tiles['h200 + i] = tile_shift[i+3]; 
         end
-        $display("");
+        $readmemh("input_data/tile_04.dat",tile_shift);
+        shifts_x[3] = tile_shift[0][SHIFT_WIDTH-1:0];
+        shifts_y[3] = tile_shift[1][SHIFT_WIDTH-1:0];
+        bayer[3] =    tile_shift[2][3:0];
+        for (i=0; i<256; i=i+1) begin
+            tiles['h300 + i] = tile_shift[i+3]; 
+        end
+        for (n=0;n<4;n=n+1) begin
+            $display("Tile %d: shift x = %h, shift_y = %h, bayer = %h", 0, shifts_x[n], shifts_y[n], bayer[n]);
+            for (i = 256 * n; i < 256 * (n + 1); i = i + 16) begin
+                $display ("%h, %h, %h, %h, %h, %h, %h, %h, %h, %h, %h, %h, %h, %h, %h, %h",
+                    tiles[i+ 0],tiles[i+ 1],tiles[i+ 2],tiles[i+ 3],
+                    tiles[i+ 4],tiles[i+ 5],tiles[i+ 6],tiles[i+ 7],
+                    tiles[i+ 8],tiles[i+ 9],tiles[i+10],tiles[i+11],
+                    tiles[i+12],tiles[i+13],tiles[i+14],tiles[i+15]);
+            end
+            $display("");
+        end
         
-    end  
+    end
+
+    reg                         start;
+    reg       [SHIFT_WIDTH-1:0] x_shft; 
+    reg       [SHIFT_WIDTH-1:0] y_shft;
+    reg                   [3:0] bayer_r;
+    reg                   [1:0] page_in; 
+    wire                        pre_busy_w;
+    wire                        pre_busy;
+    reg                         LATE = 0;
+    wire                        mpixel_re;
+    wire                        mpixel_page;    
+    reg                         mpixel_reg;
+    reg                         mpixel_valid;
+    wire                  [7:0] mpixel_a;
+    reg     [PIXEL_WIDTH-1 : 0] pixel_r;
+    reg     [PIXEL_WIDTH-1 : 0] pixel_r2;
+    wire    [PIXEL_WIDTH-1 : 0] mpixel_d = mpixel_valid ? pixel_r2 : {PIXEL_WIDTH{1'bz}};  
+    
+    wire                        pre_last_in;   // SuppressThisWarning VEditor - output only
+    wire                        pre_first_out; // SuppressThisWarning VEditor - output only
+    wire                        pre_last_out;  // SuppressThisWarning VEditor - output only
+    wire                  [7:0] out_addr;      // SuppressThisWarning VEditor - output only
+    wire                        dv;            // SuppressThisWarning VEditor - output only
+    wire        [OUT_WIDTH-1:0] dout;          // SuppressThisWarning VEditor - output only
+    
+    assign  #(1)  pre_busy = pre_busy_w;
+    
     
     always #(CLK_PERIOD/2) CLK = ~CLK;    
     initial begin
         $dumpfile(fstname);
         $dumpvars(0,mclt_test_01); // SuppressThisWarning VEditor
         #100;
+        start =  0;
+        page_in = 0;
+        LATE = 0;
         RST = 0;
         #100;
         repeat (10) @(posedge CLK);
-#1      en_x = 1;
-        for (i = 0; i < 64; i = i+1) begin
+//        #1;
+        for (n = 0; n < 4; n = n+1) begin
+            if (n>2) LATE = 1;
+            while (pre_busy || LATE) begin
+                if (!pre_busy) LATE = 0;
+                @(posedge CLK);
+                #1;
+            end
+            start = 1;
+            x_shft = shifts_x[n];
+            y_shft = shifts_y[n];
+            bayer_r = bayer[n];
             @(posedge CLK);
             #1;
-            x_in = data_in[i]; // >>x_wa;
-            if (i==63) begin
-                en_x = 0;
-            end
-            if (&i[2:0]) repeat (8) @(posedge CLK);
-        end
-        #1 x_in = 0;
-        repeat (64) @(posedge CLK);
-        
-        $display("");
-        $display("output data - transposed:");
-        for (i=0; i<64; i=i+8) begin
-            $display ("%d, %d, %d, %d, %d, %d, %d, %d",data_out[i+0],data_out[i+1],data_out[i+2],data_out[i+3],
-                                                       data_out[i+4],data_out[i+5],data_out[i+6],data_out[i+7]);
-        end
-        
-//        repeat (64) @(posedge CLK);
-//        $finish;
+            start = 0; 
+            x_shft = 'bz;
+            y_shft = 'bz;
+            bayer_r = 'bz;                    
+            @(posedge CLK);
+//            #1;
+        end 
+        // emergency finish
+        repeat (1024) @(posedge CLK);
+        $finish; 
+        //pre_last_out
+    end
+    
+    always @ (posedge CLK) if (!RST) begin
+        mpixel_reg <=     mpixel_re;
+        mpixel_valid <=   mpixel_reg; 
+        if (mpixel_re)    pixel_r <= tiles[{page_in,mpixel_a}];
+        if (mpixel_reg)   pixel_r2 <= pixel_r; 
+        if (mpixel_page)  page_in <= page_in + 1;
+        if (pre_last_out) n_out <= n_out + 1;
+
     end
 
     initial begin
-        wait (!RST);
-        while (!start) begin
-            @(posedge CLK);
-            #1;
-        end    
-        for (i1 = 0; i1 < 192; i1 = i1+1) begin
-            @(posedge CLK);
-            #1;
-            x_in_2d = data_in[i1 & 63];
-            if ((i1 & 63) ==  0)  mode_in = mode_in+1;
-            start2 = (i1 & 63) == 63;
-        end
-        for (i1 = 0; i1 < 64; i1 = i1+1) begin
-            @(posedge CLK);
-            #1;
-            start2 = 0;
-            x_in_2d = data_in[i1];
-        end
-        
-        repeat (DCT_GAP) @(posedge CLK);
-        #1;
-        start2 = 1;
-        for (i1 = 0; i1 < 64; i1 = i1+1) begin
-            @(posedge CLK);
-            #1;
-            start2 = 0;
-            x_in_2d = data_in[63-i1];
-        end
-        
-        repeat (300) @(posedge CLK);
+        n_out = 0;
+        while (n_out < 4)  @(posedge CLK);
+        repeat (32)        @(posedge CLK);
         $finish;
-        
-    end
     
-
-    initial j = 0;
-    always @ (posedge CLK) begin
-        if (y_dv) begin
-//$display (" y[0x%x] => 0x%x %d, j=%d @%t",y_ra,y_out,y_out,j,$time);        
-            data_out[{j[2:0],j[5:3]}] = y_out; // transpose array
-            #1 j = j+1;
-        end
     end
+
     
     mclt16x16 #(
         .SHIFT_WIDTH     (SHIFT_WIDTH),
@@ -253,23 +230,24 @@ module  mclt_test_01 ();
         .DSP_P_WIDTH     (DSP_P_WIDTH),
         .DEAD_CYCLES     (DEAD_CYCLES)
     ) mclt16x16_i (
-        .clk             (CLK), // input
-        .rst             (RST), // input
-        .start           (), // input
-        .x_shft          (), // input[6:0] 
-        .y_shft          (), // input[6:0] 
-        .bayer           (), // input[3:0] 
-        .mpixel_a        (), // output[7:0] 
-        .mpixel_d        (), // input[15:0] 
-        .pre_busy        (), // output
-        .pre_last_in     (), // output reg 
-        .pre_first_out   (), // output
-        .pre_last_out    (), // output
-        .out_addr        (), // output[7:0] 
-        .dv              (), // output
-        .dout            () // output[24:0] signed 
+        .clk             (CLK),         // input
+        .rst             (RST),         // input
+        .start           (start),       // input
+        .x_shft          (x_shft),      // input[6:0] 
+        .y_shft          (y_shft),      // input[6:0] 
+        .bayer           (bayer_r),     // input[3:0] 
+        .mpixel_re       (mpixel_re),   // output
+        .mpixel_page     (mpixel_page), // output  //!< increment pixel page after this
+        
+        .mpixel_a        (mpixel_a),    // output[7:0] 
+        .mpixel_d        (mpixel_d),    // input[15:0] 
+        .pre_busy        (pre_busy_w),    // output
+        .pre_last_in     (pre_last_in), // output reg 
+        .pre_first_out   (pre_first_out), // output
+        .pre_last_out    (pre_last_out), // output
+        .out_addr        (out_addr), // output[7:0] 
+        .dv              (dv), // output
+        .dout            (dout) // output[24:0] signed 
     );
- 
- 
 
 endmodule

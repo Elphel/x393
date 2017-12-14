@@ -76,7 +76,7 @@ module  mclt_wnd_mul#(
         .coord     (x_in),   // input[3:0] 
         .shift     (x_shft), // input[2:0] signed 
         .coord_out (x_full), // output[4:0] reg 
-        .zero      (x_zero) // output reg 
+        .zero      (x_zero)  // output reg 
     );
 
     mclt_full_shift #(

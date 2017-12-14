@@ -64,11 +64,12 @@ module  mclt16x16#(
     input                       [3:0] bayer,        // bayer mask (0 bits - skip pixel, valid @ start)
 // TODO may modify/remove delay dly_pixel_data_i and use this 3-cycle delay for address calculation. If use 18x18 (0r 20x20) full tile
 // instead of 16x16 use different shifts in the case of lateral chromatic aberration      
-    
+    output                            mpixel_re,    //!< pixel read enable (sync with  mpixel_a)
+    output                            mpixel_page,  //!< increment pixel page after this
     output                      [7:0] mpixel_a,     //!< pixel address {y,x} of the input tile
     input           [PIXEL_WIDTH-1:0] mpixel_d,     //!< pixel data, latency = 2 from pixel address
     output                            pre_busy,     //!< start should come each 256-th cycle (next after pre_last_in), and not after pre_busy)          
-    output reg                        pre_last_in,  //!< may increment page
+    output                            pre_last_in,  //!< may increment page
     output                            pre_first_out,//!< next will output first of DCT/DCT coefficients          
     output                            pre_last_out, //!< next will be last output of DST/DST coefficients
     output                      [7:0] out_addr,     //!< address to save coefficients, 2 MSBs - mode (CC,SC,CS,SS), others - down first         
@@ -137,9 +138,13 @@ module  mclt16x16#(
     wire [DTT_IN_WIDTH-1:0] dtt_r_data = dtt_r_data_w[DTT_IN_WIDTH-1:0]; 
     
     reg                     pre_last_out_r;
+    reg                     pre_last_in_r;
+    wire                    mpixel_prepage; // before common delay
     
     assign pre_last_out = pre_last_out_r;
-    assign pre_busy =     pre_busy_r;
+    assign pre_busy =     pre_busy_r || start || (!pre_last_in_r && in_busy[0]);
+    assign pre_last_in = pre_last_in_r;
+//    assign mpixel_re = in_busy[6];
     
     always @ (posedge clk) begin
         if (start) begin
@@ -157,10 +162,9 @@ module  mclt16x16#(
         if      (rst)      in_busy <= 0;
         else               in_busy <= {in_busy[15:0], start | (in_busy[0] & ~(&in_cntr))};
         
-        if      (start)      in_cntr <= 0;
-        else if (in_busy[0]) in_cntr[7:0] <= in_cntr[7:0] + 1;
+        if (!in_busy[0])   in_cntr <= 0;
+        else               in_cntr[7:0] <= in_cntr[7:0] + 1;
         
-        pre_last_in <= in_cntr[7:0] == 8'hfe;
         
         if (in_busy[8]) begin
             mpixel_d_r <= mpixel_d;
@@ -212,7 +216,8 @@ module  mclt16x16#(
         if (!dtt_r_re) dtt_r_cntr <= 0;
         else           dtt_r_cntr <= dtt_r_cntr + 1;
         
-        dtt_start <= dtt_r_cntr[5:0] == 0;
+///        dtt_start <= dtt_r_cntr[5:0] == 0;
+        dtt_start <= (dtt_r_cntr[5:0] == 0) && dtt_r_re;
         
      
         
@@ -275,16 +280,27 @@ D11 - negate for mode 3 (SS)
         .wnd_out   (window_w) // output[17:0] valid with in_busy[8]
     );
 
+    dly_var #(
+        .WIDTH(1),
+        .DLY_WIDTH(4)
+    ) dly_prepage_i (
+        .clk  (clk),            // input
+        .rst  (rst),            // input
+        .dly  (4'h3),           // input[3:0] Delay for external memory latency = 2, reduce for higher 
+        .din  (pre_last_in_r),  // input[0:0] 
+        .dout (mpixel_prepage)  // output[0:0] 
+    );
+
 // Matching window latency with pixel data latency
     dly_var #(
-        .WIDTH(8),
+        .WIDTH(10),
         .DLY_WIDTH(4)
     ) dly_pixel_data_i (
         .clk  (clk),      // input
         .rst  (rst),      // input
         .dly  (4'h2),     // input[3:0] Delay for external memory latency = 2, reduce for higher 
-        .din  (mpix_a_w), // input[0:0] 
-        .dout (mpixel_a)  // output[0:0] 
+        .din  ({mpixel_prepage, in_busy[3], mpix_a_w}), // input[0:0] 
+        .dout ({mpixel_page,    mpixel_re,  mpixel_a})  // output[0:0] 
     );
 
     dly_var #(
@@ -405,7 +421,7 @@ D11 - negate for mode 3 (SS)
     // data to be input to phase rotator
     wire signed [OUT_WIDTH-1:0] dtt_rd_data = dtt_rd_data_w[OUT_WIDTH-1:0]; // valid with dtt_rd_regen_dv[2]
     
-    
+    wire                        dtt_first_quad_out = ~dtt_out_ram_cntr[3] & ~dtt_out_ram_cntr[2];
     
 //    reg                   [9:0] dtt_out_ram_cntr;    
     always @(posedge clk) begin
@@ -413,9 +429,9 @@ D11 - negate for mode 3 (SS)
         else if (dtt_inc16)  dtt_out_ram_cntr <= dtt_out_ram_cntr + 1;
         dtt_out_ram_wah <= dtt_out_ram_cntr - dtt_sub16;
         
-        if      (rst)            dtt_dly_cntr <= 0;
-        else if (dtt_start_fill) dtt_dly_cntr <= DTT_OUT_DELAY;
-        else if (|dtt_dly_cntr)  dtt_dly_cntr <= dtt_dly_cntr - 1;
+        if      (rst)                                 dtt_dly_cntr <= 0;
+        else if (dtt_start_fill & dtt_first_quad_out) dtt_dly_cntr <= DTT_OUT_DELAY;
+        else if (|dtt_dly_cntr)                       dtt_dly_cntr <= dtt_dly_cntr - 1;
         
         dtt_start_out <= dtt_dly_cntr == 1;
 
@@ -510,8 +526,11 @@ D11 - negate for mode 3 (SS)
         pre_last_out_r <= out_addr_r == 8'hfe;
         
         if      (rst)            pre_busy_r <= 0;
-        else if (pre_last_out_r) pre_busy_r <= 1;
+        else if (pre_last_in_r)  pre_busy_r <= 1;
         else if (dead_cntr == 0) pre_busy_r <= 0;
+        
+        pre_last_in_r <= in_cntr[7:0] == 8'hfd;
+        
         
         if (~pre_busy_r) dead_cntr <= DEAD_CYCLES;
         else             dead_cntr <= dead_cntr - 1;
