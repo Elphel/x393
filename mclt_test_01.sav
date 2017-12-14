@@ -1,19 +1,19 @@
 [*]
 [*] GTKWave Analyzer v3.3.78 (w)1999-2016 BSI
-[*] Thu Dec 14 02:04:25 2017
+[*] Thu Dec 14 06:19:18 2017
 [*]
-[dumpfile] "/home/eyesis/nc393/elphel393/fpga-elphel/x393_branch_dct/simulation/mclt_test_01-20171213185819967.fst"
-[dumpfile_mtime] "Thu Dec 14 01:58:22 2017"
-[dumpfile_size] 935615
+[dumpfile] "/home/eyesis/nc393/elphel393/fpga-elphel/x393_branch_dct/simulation/mclt_test_01-20171213195034071.fst"
+[dumpfile_mtime] "Thu Dec 14 02:50:36 2017"
+[dumpfile_size] 935652
 [savefile] "/home/eyesis/nc393/elphel393/fpga-elphel/x393_branch_dct/mclt_test_01.sav"
-[timestart] 0
+[timestart] 365600
 [size] 1920 1171
 [pos] -1921 -1
-*-21.521639 8335000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-15.459125 415000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] mclt_test_01.
 [treeopen] mclt_test_01.mclt16x16_i.
-[sst_width] 446
-[signals_width] 198
+[sst_width] 242
+[signals_width] 275
 [sst_expanded] 1
 [sst_vpaned_height] 344
 @800200
@@ -37,7 +37,7 @@ mclt_test_01.mpixel_d[15:0]
 @28
 mclt_test_01.pre_last_in
 mclt_test_01.pre_first_out
-@8023
+@8022
 mclt_test_01.out_addr[7:0]
 @28
 mclt_test_01.dv
@@ -49,7 +49,7 @@ mclt_test_01.pre_last_out
 -top
 @800200
 -mclt16x16
-@c00022
+@800022
 mclt_test_01.mclt16x16_i.in_busy[16:0]
 @28
 (0)mclt_test_01.mclt16x16_i.in_busy[16:0]
@@ -69,10 +69,29 @@ mclt_test_01.mclt16x16_i.in_busy[16:0]
 (14)mclt_test_01.mclt16x16_i.in_busy[16:0]
 (15)mclt_test_01.mclt16x16_i.in_busy[16:0]
 (16)mclt_test_01.mclt16x16_i.in_busy[16:0]
-@1401200
+@1001200
 -group_end
 @22
 mclt_test_01.mclt16x16_i.in_cntr[7:0]
+mclt_test_01.mclt16x16_i.fold_rom_out[17:0]
+mclt_test_01.mclt16x16_i.mpix_a_w[7:0]
+@28
+mclt_test_01.mclt16x16_i.mpix_use
+@22
+mclt_test_01.mclt16x16_i.window_w[17:0]
+mclt_test_01.mclt16x16_i.window_r[17:0]
+mclt_test_01.mclt16x16_i.mpixel_a[7:0]
+mclt_test_01.mclt16x16_i.mpixel_d[15:0]
+mclt_test_01.mclt16x16_i.mpixel_d_r[15:0]
+mclt_test_01.mclt16x16_i.pix_wnd_r[33:0]
+@23
+mclt_test_01.mclt16x16_i.pix_wnd_r2[24:0]
+@28
+mclt_test_01.mclt16x16_i.mpix_use_d
+@22
+mclt_test_01.mclt16x16_i.mpix_sgn_w[3:0]
+mclt_test_01.mclt16x16_i.mpix_sgn_d[3:0]
+mclt_test_01.mclt16x16_i.mpix_sgn_r[3:0]
 @28
 mclt_test_01.mclt16x16_i.pre_busy
 mclt_test_01.mclt16x16_i.pre_busy_r
@@ -224,6 +243,10 @@ mclt_test_01.mclt16x16_i.pix_wnd_r[33:0]
 -group_end
 @8420
 mclt_test_01.mclt16x16_i.pix_wnd_r2[24:0]
+@28
+mclt_test_01.mclt16x16_i.var_first_d
+mclt_test_01.mclt16x16_i.var_first_r
+mclt_test_01.mclt16x16_i.var_last
 @8022
 mclt_test_01.mclt16x16_i.mode_mux[1:0]
 @8420
@@ -236,7 +259,7 @@ mclt_test_01.mclt16x16_i.dtt_r_page
 mclt_test_01.mclt16x16_i.dtt_r_data_w[35:0]
 @8420
 mclt_test_01.mclt16x16_i.dtt_r_data[24:0]
-@c00200
+@800200
 -ddt_in_ram
 @28
 mclt_test_01.mclt16x16_i.ram18p_var_w_var_r_dtt_in_i.we
@@ -251,7 +274,7 @@ mclt_test_01.mclt16x16_i.ram18p_var_w_var_r_dtt_in_i.regen
 mclt_test_01.mclt16x16_i.ram18p_var_w_var_r_dtt_in_i.data_out[35:0]
 @200
 -
-@1401200
+@1000200
 -ddt_in_ram
 @28
 mclt_test_01.mclt16x16_i.dtt_r_re

@@ -175,6 +175,7 @@ module  mclt16x16#(
         
         if (in_busy[10]) pix_wnd_r2 <= {2'b00,pix_wnd_r[PIXEL_WIDTH + WND_WIDTH - 1 -: DTT_IN_WIDTH - 2]};
         if (in_busy[10]) begin
+///        if (in_busy[9]) begin
             mpix_use_r  <= mpix_use_d;
             var_first_r <= var_first_d;
             mpix_sgn_r <=  mpix_sgn_d; 
@@ -309,7 +310,8 @@ D11 - negate for mode 3 (SS)
     ) dly_var_first_i (
         .clk  (clk),           // input
         .rst  (rst),           // input
-        .dly  (4'h8),          // input[3:0] 
+///        .dly  (4'h8),          // input[3:0] 
+        .dly  (4'h9),          // input[3:0] 
         .din  (in_busy[0] && (in_cntr[1:0] == 0)),  // input[0:0] 
         .dout (var_first_d)    // output[0:0] 
     );
