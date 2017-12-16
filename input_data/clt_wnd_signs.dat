@@ -1,0 +1,17 @@
+//Signs table (per mode, per index - bitstring of variants, 0 - positive, 1 - negative
+0 0 0 0 5 5 5 5 0 0 0 0 5 5 5 5 
+0 0 0 0 5 5 5 5 0 0 0 0 5 5 5 5 
+3 3 3 3 6 6 6 6 3 3 3 3 6 6 6 6 
+3 3 3 3 6 6 6 6 3 3 3 3 6 6 6 6 
+5 5 5 5 f f f f 5 5 5 5 f f f f 
+5 5 5 5 f f f f 5 5 5 5 f f f f 
+6 6 6 6 c c c c 6 6 6 6 c c c c 
+6 6 6 6 c c c c 6 6 6 6 c c c c 
+3 3 3 3 6 6 6 6 3 3 3 3 6 6 6 6 
+3 3 3 3 6 6 6 6 3 3 3 3 6 6 6 6 
+f f f f a a a a f f f f a a a a 
+f f f f a a a a f f f f a a a a 
+6 6 6 6 c c c c 6 6 6 6 c c c c 
+6 6 6 6 c c c c 6 6 6 6 c c c c 
+a a a a 0 0 0 0 a a a a 0 0 0 0 
+a a a a 0 0 0 0 a a a a 0 0 0 0 
