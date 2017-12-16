@@ -152,12 +152,14 @@ module  mclt16x16#(
             y_shft_r <= y_shft;
             bayer_r <= bayer;
         end
-        if (in_busy[2]) begin      // same latency as mpix_a_w
+//        if (in_busy[2]) begin      // same latency as mpix_a_w
+        if (in_busy[1]) begin      // same latency as mpix_a_w
             x_shft_r2 <= x_shft_r;
             y_shft_r2 <= y_shft_r;
         end
         
-        if (in_busy[2]) bayer_d <= bayer_r; 
+///        if (in_busy[2]) bayer_d <= bayer_r; 
+        if (in_busy[1]) bayer_d <= bayer_r; 
         
         if      (rst)      in_busy <= 0;
         else               in_busy <= {in_busy[15:0], start | (in_busy[0] & ~(&in_cntr))};
@@ -251,8 +253,10 @@ D11 - negate for mode 3 (SS)
     
         .clk_a     (clk),       // input
         .addr_a    ({2'b0,in_cntr[1:0],in_cntr[7:2]}),    // input[9:0] 
-        .en_a      (in_busy[1]),   // input
-        .regen_a   (in_busy[2]),   // input
+///        .en_a      (in_busy[1]),   // input
+///        .regen_a   (in_busy[2]),   // input
+        .en_a      (in_busy[0]),   // input
+        .regen_a   (in_busy[1]),   // input
         .we_a      (1'b0),         // input
         .data_out_a(fold_rom_out), // output[17:0] 
         .data_in_a (18'b0),        // input[17:0]
@@ -273,7 +277,8 @@ D11 - negate for mode 3 (SS)
         .OUT_WIDTH   (WND_WIDTH)
     ) mclt_wnd_i (
         .clk       (clk), // input
-        .en        (in_busy[3]), // input
+//        .en        (in_busy[3]), // input
+        .en        (in_busy[2]), // input
         .x_in      (mpix_a_w[3:0]), // input[3:0] 
         .y_in      (mpix_a_w[7:4]), // input[3:0] 
         .x_shft    (x_shft_r2),     // input[7:0] 

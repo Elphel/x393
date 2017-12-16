@@ -1,19 +1,20 @@
 [*]
 [*] GTKWave Analyzer v3.3.78 (w)1999-2016 BSI
-[*] Thu Dec 14 06:19:18 2017
+[*] Sat Dec 16 19:54:45 2017
 [*]
-[dumpfile] "/home/eyesis/nc393/elphel393/fpga-elphel/x393_branch_dct/simulation/mclt_test_01-20171213195034071.fst"
-[dumpfile_mtime] "Thu Dec 14 02:50:36 2017"
-[dumpfile_size] 935652
+[dumpfile] "/home/eyesis/nc393/elphel393/fpga-elphel/x393_branch_dct/simulation/mclt_test_01-20171215180909701.fst"
+[dumpfile_mtime] "Sat Dec 16 01:09:12 2017"
+[dumpfile_size] 940154
 [savefile] "/home/eyesis/nc393/elphel393/fpga-elphel/x393_branch_dct/mclt_test_01.sav"
-[timestart] 365600
-[size] 1920 1171
-[pos] -1921 -1
-*-15.459125 415000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[timestart] 394400
+[size] 1814 1171
+[pos] -1 -1
+*-15.197140 538600 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] mclt_test_01.
 [treeopen] mclt_test_01.mclt16x16_i.
+[treeopen] mclt_test_01.mclt16x16_i.mclt_wnd_i.
 [sst_width] 242
-[signals_width] 275
+[signals_width] 251
 [sst_expanded] 1
 [sst_vpaned_height] 344
 @800200
@@ -45,11 +46,29 @@ mclt_test_01.dv
 mclt_test_01.dout[24:0]
 @28
 mclt_test_01.pre_last_out
+@420
+mclt_test_01.n1
+mclt_test_01.cntr1
+@22
+mclt_test_01.java_fi_w[7:0]
+@420
+[color] 2
+mclt_test_01.diff1
+mclt_test_01.n2
+mclt_test_01.cntr2
+@22
+mclt_test_01.window_r[17:0]
+mclt_test_01.java_window_w[17:0]
+@420
+mclt_test_01.diff2
+mclt_test_01.diff2a
+@8420
+mclt_test_01.diff2a
 @1000200
 -top
 @800200
 -mclt16x16
-@800022
+@c00022
 mclt_test_01.mclt16x16_i.in_busy[16:0]
 @28
 (0)mclt_test_01.mclt16x16_i.in_busy[16:0]
@@ -69,7 +88,7 @@ mclt_test_01.mclt16x16_i.in_busy[16:0]
 (14)mclt_test_01.mclt16x16_i.in_busy[16:0]
 (15)mclt_test_01.mclt16x16_i.in_busy[16:0]
 (16)mclt_test_01.mclt16x16_i.in_busy[16:0]
-@1001200
+@1401200
 -group_end
 @22
 mclt_test_01.mclt16x16_i.in_cntr[7:0]
@@ -84,7 +103,6 @@ mclt_test_01.mclt16x16_i.mpixel_a[7:0]
 mclt_test_01.mclt16x16_i.mpixel_d[15:0]
 mclt_test_01.mclt16x16_i.mpixel_d_r[15:0]
 mclt_test_01.mclt16x16_i.pix_wnd_r[33:0]
-@23
 mclt_test_01.mclt16x16_i.pix_wnd_r2[24:0]
 @28
 mclt_test_01.mclt16x16_i.mpix_use_d
@@ -115,25 +133,31 @@ mclt_test_01.mclt16x16_i.i_mclt_fold_rom.data_out_a[17:0]
 -
 @1401200
 -fold_rom
-@c00200
+@800200
 -mclt_wnd_mul
 @28
 mclt_test_01.mclt16x16_i.mclt_wnd_i.en
 @22
-mclt_test_01.mclt16x16_i.mclt_wnd_i.y_shft[6:0]
 mclt_test_01.mclt16x16_i.mclt_wnd_i.x_shft[6:0]
-@8022
+mclt_test_01.mclt16x16_i.mclt_wnd_i.y_shft[6:0]
 mclt_test_01.mclt16x16_i.mclt_wnd_i.x_in[3:0]
 mclt_test_01.mclt16x16_i.mclt_wnd_i.y_in[3:0]
 mclt_test_01.mclt16x16_i.mclt_wnd_i.x_full[9:0]
 @28
 mclt_test_01.mclt16x16_i.mclt_wnd_i.x_zero
-@8022
+@22
 mclt_test_01.mclt16x16_i.mclt_wnd_i.y_full[9:0]
 @28
-mclt_test_01.mclt16x16_i.mclt_wnd_i.y_zero
+mclt_test_01.mclt16x16_i.mclt_wnd_i.zero
+@c00022
 mclt_test_01.mclt16x16_i.mclt_wnd_i.regen[2:0]
-@c08022
+@28
+(0)mclt_test_01.mclt16x16_i.mclt_wnd_i.regen[2:0]
+(1)mclt_test_01.mclt16x16_i.mclt_wnd_i.regen[2:0]
+(2)mclt_test_01.mclt16x16_i.mclt_wnd_i.regen[2:0]
+@1401200
+-group_end
+@c00022
 mclt_test_01.mclt16x16_i.mclt_wnd_i.wnd_out_x[17:0]
 @28
 (0)mclt_test_01.mclt16x16_i.mclt_wnd_i.wnd_out_x[17:0]
@@ -156,11 +180,36 @@ mclt_test_01.mclt16x16_i.mclt_wnd_i.wnd_out_x[17:0]
 (17)mclt_test_01.mclt16x16_i.mclt_wnd_i.wnd_out_x[17:0]
 @1401200
 -group_end
-@8022
+@22
 mclt_test_01.mclt16x16_i.mclt_wnd_i.wnd_out_y[17:0]
+mclt_test_01.mclt16x16_i.mclt_wnd_i.wnd_out[17:0]
+@c00200
+-wnd_rom
+@22
+mclt_test_01.mclt16x16_i.mclt_wnd_i.i_wnd_rom.addr_a[9:0]
+@28
+mclt_test_01.mclt16x16_i.mclt_wnd_i.i_wnd_rom.en_a
+mclt_test_01.mclt16x16_i.mclt_wnd_i.i_wnd_rom.regen_a
+mclt_test_01.mclt16x16_i.mclt_wnd_i.i_wnd_rom.regrst_a
+@200
+-
 @1401200
+-wnd_rom
+@c00200
+-mclt_full_shift_x
+@22
+mclt_test_01.mclt16x16_i.mclt_wnd_i.mclt_full_shift_x_i.coord[3:0]
+mclt_test_01.mclt16x16_i.mclt_wnd_i.mclt_full_shift_x_i.shift[6:0]
+mclt_test_01.mclt16x16_i.mclt_wnd_i.mclt_full_shift_x_i.mod_coord_w[11:0]
+mclt_test_01.mclt16x16_i.mclt_wnd_i.mclt_full_shift_x_i.mod_coord_r[11:0]
+mclt_test_01.mclt16x16_i.mclt_wnd_i.mclt_full_shift_x_i.coord_out[9:0]
+@200
+-
+@1401200
+-mclt_full_shift_x
+@1000200
 -mclt_wnd_mul
-@c08022
+@c08023
 mclt_test_01.mclt16x16_i.window_r[17:0]
 @28
 (0)mclt_test_01.mclt16x16_i.window_r[17:0]
@@ -181,7 +230,7 @@ mclt_test_01.mclt16x16_i.window_r[17:0]
 (15)mclt_test_01.mclt16x16_i.window_r[17:0]
 (16)mclt_test_01.mclt16x16_i.window_r[17:0]
 (17)mclt_test_01.mclt16x16_i.window_r[17:0]
-@1401200
+@1401201
 -group_end
 @8022
 mclt_test_01.mclt16x16_i.mpixel_d_r[15:0]

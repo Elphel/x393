@@ -87,15 +87,29 @@ module  mclt_test_01 ();
     reg   [SHIFT_WIDTH-1 : 0]   shifts_x[0:3]; 
     reg   [SHIFT_WIDTH-1 : 0]   shifts_y[0:3]; 
     reg               [3 : 0]   bayer[0:3]; 
+    
+    reg                 [3:0]   java_wnd_signs[0:255]; // SuppressThisWarning VEditor : assigned in $readmem() system task
+    reg                 [7:0]   java_fold_index[0:255]; // SuppressThisWarning VEditor : assigned in $readmem() system task
+    reg     [WND_WIDTH - 1:0]   java_tiles_wnd[0:255]; // SuppressThisWarning VEditor : assigned in $readmem() system task
+    reg     [WND_WIDTH - 1:0]   tiles_wnd[0:1023];
     integer   i, n, n_out;
     initial begin
-        $readmemh("input_data/tile_01.dat",tile_shift);
+        $readmemh("input_data/clt_wnd_signs.dat",  java_wnd_signs);
+        $readmemh("input_data/clt_fold_index.dat", java_fold_index);
+    
+//        $readmemh("input_data/tile_01.dat",tile_shift);
+        $readmemh("input_data/tile_00_2_x1489_y951.dat",tile_shift);
         shifts_x[0] = tile_shift[0][SHIFT_WIDTH-1:0];
         shifts_y[0] = tile_shift[1][SHIFT_WIDTH-1:0];
         bayer[0] =    tile_shift[2][3:0];
         for (i=0; i<256; i=i+1) begin
             tiles['h000 + i] = tile_shift[i+3]; 
         end
+        $readmemh("input_data/clt_wnd_00_2_x1489_y951.dat",java_tiles_wnd);
+        for (i=0; i<256; i=i+1) begin
+            tiles_wnd['h000 + i] = java_tiles_wnd[i]; 
+        end
+        
         $readmemh("input_data/tile_02.dat",tile_shift);
         shifts_x[1] = tile_shift[0][SHIFT_WIDTH-1:0];
         shifts_y[1] = tile_shift[1][SHIFT_WIDTH-1:0];
@@ -213,6 +227,41 @@ module  mclt_test_01 ();
         $finish;
     
     end
+
+    integer n1, cntr1, diff1;
+    wire           [7:0] mpix_a_w = mclt16x16_i.mpix_a_w;
+    wire           [7:0] java_fi_w = java_fold_index[cntr1];  
+    initial begin
+        while (RST) @(negedge CLK);
+        for (n1 = 0; n1 < 4; n1 = n1+1) begin
+            while (mclt16x16_i.in_cntr != 2) begin
+                @(negedge CLK);
+            end
+            for (cntr1 = 0; cntr1 < 256; cntr1 = cntr1 + 1) begin
+                diff1 = mpix_a_w - java_fi_w; // java_fold_index[cntr1];
+                @(negedge CLK);
+            end
+        end
+    end
+
+    integer n2, cntr2, diff2, diff2a;
+    wire [WND_WIDTH-1:0] window_r = mclt16x16_i.window_r;
+//    reg            [7:0] java_fi_r;  
+    wire [WND_WIDTH-1:0] java_window_w = java_tiles_wnd[cntr2]; // tiles_wnd[n2 * 256 + cntr2];  
+    initial begin
+        while (RST) @(negedge CLK);
+        for (n2 = 0; n2 < 4; n2 = n2+1) begin
+            while (mclt16x16_i.in_cntr != 9) begin
+                @(negedge CLK);
+            end
+            for (cntr2 = 0; cntr2 < 256; cntr2 = cntr2 + 1) begin
+                diff2 = window_r - java_window_w;
+                if (n2 < 1) diff2a = window_r - java_window_w; // TEMPORARY, while no other data
+                @(negedge CLK);
+            end
+        end
+    end
+
 
     
     mclt16x16 #(

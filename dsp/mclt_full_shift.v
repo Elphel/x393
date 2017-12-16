@@ -6,7 +6,7 @@
  *     
  * @brief 1d index for window with fractional shift
  *
- * @copyright Copyright (c) 2017 <set up in Preferences-Verilog/VHDL Editor-Templates> .
+ * @copyright Copyright (c) 2017
  *
  * <b>License </b>
  *
@@ -39,8 +39,8 @@
 `timescale 1ns/1ps
 
 module  mclt_full_shift#(
-    parameter COORD_WIDTH =     5,  //
-    parameter SHIFT_WIDTH =     3   // bits in shift  
+    parameter COORD_WIDTH =     10,  //
+    parameter SHIFT_WIDTH =      7   // bits in shift  
     
     )(
     input                          clk,           //!< system clock, posedge
@@ -49,12 +49,18 @@ module  mclt_full_shift#(
     output reg   [COORD_WIDTH-1:0] coord_out,     //!< pixel coordinate in window ROM (latency 2)
     output reg                     zero           //!< window is zero (on or out of the boundary)  (latency 2)     
 );
-    wire [COORD_WIDTH+1:0] mod_coord_w = {1'b0, coord,1'b0, {(COORD_WIDTH-4){1'b1}}} - {{(COORD_WIDTH-SHIFT_WIDTH + 2){shift[SHIFT_WIDTH-1]}}, shift};
+//    wire [COORD_WIDTH+1:0] mod_coord_w = {1'b0, coord,1'b0, {(COORD_WIDTH-4){1'b1}}} - {{(COORD_WIDTH-SHIFT_WIDTH + 2){shift[SHIFT_WIDTH-1]}}, shift};
+    wire             [5:0] shift_high_w = {{(COORD_WIDTH-SHIFT_WIDTH+2){shift[SHIFT_WIDTH-1]}} , shift[SHIFT_WIDTH-1:COORD_WIDTH-4]};
+    wire             [5:0] coord_high_w = {1'b0,coord,1'b1} + shift_high_w;
+    
+    wire [COORD_WIDTH+1:0] mod_coord_w = {coord_high_w,shift[COORD_WIDTH-5:0]};
+    
     reg [COORD_WIDTH+1:0] mod_coord_r;
     always @ (posedge clk) begin
-    coord_out <= mod_coord_r[COORD_WIDTH] ? ~mod_coord_r[COORD_WIDTH-1:0] : mod_coord_r[COORD_WIDTH-1:0];
+//        coord_out <= mod_coord_r[COORD_WIDTH] ? ~mod_coord_r[COORD_WIDTH-1:0] : mod_coord_r[COORD_WIDTH-1:0];
+        coord_out <= mod_coord_r[COORD_WIDTH] ? -mod_coord_r[COORD_WIDTH-1:0] : mod_coord_r[COORD_WIDTH-1:0];
         mod_coord_r <= mod_coord_w;
-        zero <= mod_coord_r[COORD_WIDTH + 1];
+        zero <= mod_coord_r[COORD_WIDTH + 1] || (mod_coord_r == 0);
     end 
 
 endmodule

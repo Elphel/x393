@@ -98,15 +98,24 @@ def print_params(data,
             if v:
                 print (", .INITP_%02X (256'h%064X)"%(i,v), file=out_file)
                         
-def create_wnd_1d (N=1024, bits=18): # N=32, bits=18, all data is positive
-    rom = []
-    sin = []
-    for i in range(N):
-        rom.append(int(round(math.sin(math.pi*(i+1)/(2*N))* ((1 << bits) - 1)))) # loosing 1 count
-    return rom                        
+def create_wnd_1d (N=1024, bits=17): # N=32, bits=18, all data is positive
+    rom = [0.0]*N
+    scale = (1 << bits) - 1  # loosing 1 count
+#    sin = []
+    for i in range(1,N+1):
+        rom[i % N]=int(round(math.sin(math.pi*i/(2*N))* scale)) # loosing 1 count
+#        rom.append(int(round(math.sin(math.pi*(i+1)/(2*N))* ((1 << bits) - 1)))) # loosing 1 count
+    print_rom(rom)  
+    return rom
+                        
+def print_rom(rom):
+    for i,d in enumerate(rom):
+        print("%5x "%(d),end="")
+        if (i % 16) == 15:
+            print()
                         
 print_params(
-    create_with_parity(create_wnd_1d (N=1024, bits=18), 18, False),
+    create_with_parity(create_wnd_1d (N=1024, bits=17), 18, False),
     os.path.abspath(os.path.join(os.path.dirname(__file__), mclt_wnd_rom_path)),
     "// MCLT 1d 16 count window with 128:1 super resolution data")
 print ("MCLT 1d 16 count window with 128:1 super resolution data is written to %s"%(os.path.abspath(os.path.join(os.path.dirname(__file__), mclt_wnd_rom_path))))

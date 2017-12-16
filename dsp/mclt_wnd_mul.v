@@ -39,33 +39,39 @@
 `timescale 1ns/1ps
 // Latency = 5
 module  mclt_wnd_mul#(
-    parameter SHIFT_WIDTH =  8,  // bits in shift (1 bit - integer, 7 bits - fractional
+    parameter SHIFT_WIDTH =  7,  // bits in shift (0 bits - integer, 7 bits - fractional
     parameter COORD_WIDTH = 10,  // bits in full coordinate 10 for 18K RAM 
     parameter OUT_WIDTH =   18   // bits in window value (positive) 
 )(
-    input                          clk,   //!< system clock, posedge
-    input                          en,    //!< re (both re and ren - just for power)
-    input                    [3:0] x_in,  //!< tile pixel X
-    input                    [3:0] y_in,  //!< tile pixel Y
-    input        [SHIFT_WIDTH-1:0] x_shft,  //!< tile pixel X
-    input        [SHIFT_WIDTH-1:0] y_shft,  //!< tile pixel Y
-    output       [OUT_WIDTH - 1 : 0] wnd_out            
+    input                           clk,   //!< system clock, posedge
+    input                           en,    //!< re (both re and ren - just for power)
+    input                     [3:0] x_in,  //!< tile pixel X
+    input                     [3:0] y_in,  //!< tile pixel Y
+    input         [SHIFT_WIDTH-1:0] x_shft,  //!< tile pixel X
+    input         [SHIFT_WIDTH-1:0] y_shft,  //!< tile pixel Y
+    output signed [OUT_WIDTH - 1 : 0] wnd_out            
 );
-    wire [COORD_WIDTH - 1 : 0] x_full;
-    wire [COORD_WIDTH - 1 : 0] y_full;
-    wire                       x_zero;
-    wire                       y_zero;
-    reg                  [1:0] zero; // x_zero | y_zero;
-    reg                  [2:0] regen; //
-    wire   [OUT_WIDTH - 1 : 0] wnd_out_x;            
-    wire   [OUT_WIDTH - 1 : 0] wnd_out_y;            
-    reg  [2*OUT_WIDTH - 1 : 0] wnd_out_r;
-    assign wnd_out = wnd_out_r[2 * OUT_WIDTH - 1: OUT_WIDTH];
+    wire        [COORD_WIDTH - 1 : 0] x_full;
+    wire        [COORD_WIDTH - 1 : 0] y_full;
+    wire                              x_zero;
+    wire                              y_zero;
+//    reg                  [1:0] zero; // x_zero | y_zero;
+    reg                               zero; // x_zero | y_zero;
+    reg                         [2:0] regen; //
+    wire signed   [OUT_WIDTH - 1 : 0] wnd_out_x;   // should be all positive         
+    wire signed   [OUT_WIDTH - 1 : 0] wnd_out_y;   // should be all positive         
+    reg  signed   [OUT_WIDTH - 1 : 0] wnd_out_x_r; // to be absorbed in DSP            
+    reg  signed   [OUT_WIDTH - 1 : 0] wnd_out_y_r; // to be absorbed in DSP            
+    reg  signed [2*OUT_WIDTH - 1 : 0] wnd_out_r;   // should be all positive
+    assign wnd_out = wnd_out_r[2 * OUT_WIDTH - 2: OUT_WIDTH-1];
      
     always @ (posedge clk) begin
         regen <= {regen[1:0],en};
-        zero <= {1'b0, x_zero | y_zero};
-        wnd_out_r <= wnd_out_x * wnd_out_y;
+        wnd_out_x_r <= wnd_out_x;
+        wnd_out_y_r <= wnd_out_y;
+//        zero <= {zero[0],  x_zero | y_zero};
+        zero <= x_zero | y_zero;
+        wnd_out_r <= wnd_out_x_r * wnd_out_y_r;
     end
 
     mclt_full_shift #(
@@ -106,7 +112,7 @@ module  mclt_wnd_mul#(
         .regen_a   (regen[2]),  // input
         .we_a      (1'b0),      // input
         .rrst_a    (1'b0),      // input
-        .regrst_a  (zero[1]),   // input
+        .regrst_a  (zero),      // input
         .data_out_a(wnd_out_x), // output[17:0] 
         .data_in_a (18'b0),     // input[17:0] 
         .clk_b     (clk),       // input
@@ -115,7 +121,7 @@ module  mclt_wnd_mul#(
         .regen_b   (regen[2]),  // input
         .we_b      (1'b0),      // input
         .rrst_b    (1'b0),      // input
-        .regrst_b  (zero[1]),   // input
+        .regrst_b  (zero),      // input
         .data_out_b(wnd_out_y), // output[17:0] 
         .data_in_b (18'b0)      // input[17:0] 
     );
