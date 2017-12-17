@@ -91,7 +91,12 @@ module  mclt_test_01 ();
     reg                 [3:0]   java_wnd_signs[0:255]; // SuppressThisWarning VEditor : assigned in $readmem() system task
     reg                 [7:0]   java_fold_index[0:255]; // SuppressThisWarning VEditor : assigned in $readmem() system task
     reg     [WND_WIDTH - 1:0]   java_tiles_wnd[0:255]; // SuppressThisWarning VEditor : assigned in $readmem() system task
+
+    reg  [DTT_IN_WIDTH - 1:0]   java_dtt_in0[0:255]; // SuppressThisWarning VEditor : assigned in $readmem() system task
+
     reg     [WND_WIDTH - 1:0]   tiles_wnd[0:1023];
+    reg  [DTT_IN_WIDTH - 1:0]   java_dtt_in[0:1023];
+
     integer   i, n, n_out;
     initial begin
         $readmemh("input_data/clt_wnd_signs.dat",  java_wnd_signs);
@@ -109,6 +114,12 @@ module  mclt_test_01 ();
         for (i=0; i<256; i=i+1) begin
             tiles_wnd['h000 + i] = java_tiles_wnd[i]; 
         end
+
+        $readmemh("input_data/clt_dtt_in_00_2_x1489_y951.dat",java_dtt_in0);
+        for (i=0; i<256; i=i+1) begin
+            java_dtt_in['h000 + i] = java_dtt_in0[i]; 
+        end
+        
         
         $readmemh("input_data/tile_02.dat",tile_shift);
         shifts_x[1] = tile_shift[0][SHIFT_WIDTH-1:0];
@@ -228,7 +239,7 @@ module  mclt_test_01 ();
     
     end
 
-    integer n1, cntr1, diff1;
+    integer n1, cntr1, diff1;// SuppressThisWarning VEditor : assigned in $readmem() system task
     wire           [7:0] mpix_a_w = mclt16x16_i.mpix_a_w;
     wire           [7:0] java_fi_w = java_fold_index[cntr1];  
     initial begin
@@ -244,7 +255,7 @@ module  mclt_test_01 ();
         end
     end
 
-    integer n2, cntr2, diff2, diff2a;
+    integer n2, cntr2, diff2, diff2a; // SuppressThisWarning VEditor : assigned in $readmem() system task
     wire [WND_WIDTH-1:0] window_r = mclt16x16_i.window_r;
 //    reg            [7:0] java_fi_r;  
     wire [WND_WIDTH-1:0] java_window_w = java_tiles_wnd[cntr2]; // tiles_wnd[n2 * 256 + cntr2];  
@@ -261,6 +272,55 @@ module  mclt_test_01 ();
             end
         end
     end
+
+//Compare window signs
+    integer n3, cntr3, diff3; // SuppressThisWarning VEditor : assigned in $readmem() system task
+    wire           [3:0] mpix_sgn_w =  mclt16x16_i.mpix_sgn_w; // SuppressThisWarning VEditor : assigned in $readmem() system task
+//    wire           [3:0] java_sgn_w =  java_wnd_signs[java_fold_index[cntr3]];  // SuppressThisWarning VEditor : assigned in $readmem() system task
+//    wire           [3:0] java_sgn_w1 = java_wnd_signs[java_fold_index[cntr3]];  // SuppressThisWarning VEditor : assigned in $readmem() system task
+
+    wire           [3:0] java_sgn_w =  { //java_wnd_signs[java_fold_index[cntr3]];  // SuppressThisWarning VEditor : assigned in $readmem() system task
+    java_wnd_signs[{2'b11,cntr3[7:2]}][cntr3[1:0]],
+    java_wnd_signs[{2'b10,cntr3[7:2]}][cntr3[1:0]],
+    java_wnd_signs[{2'b01,cntr3[7:2]}][cntr3[1:0]],
+    java_wnd_signs[{2'b00,cntr3[7:2]}][cntr3[1:0]] 
+    };
+    initial begin
+        while (RST) @(negedge CLK);
+        for (n3 = 0; n3 < 4; n3 = n3+1) begin
+            while (mclt16x16_i.in_cntr != 2) begin
+                @(negedge CLK);
+            end
+            for (cntr3 = 0; cntr3 < 256; cntr3 = cntr3 + 1) begin
+                #1;
+                diff3 = mpix_sgn_w - java_sgn_w; // java_fold_index[cntr1];
+                @(negedge CLK);
+            end
+        end
+    end
+
+//Compare DTT inputs
+//  reg  [DTT_IN_WIDTH - 1:0]   java_dtt_in0[0:255]; // SuppressThisWarning VEditor : assigned in $readmem() system task
+
+    integer n4, cntr4, diff4, diff4a; // SuppressThisWarning VEditor : assigned in $readmem() system task
+    wire [DTT_IN_WIDTH-1:0] data_dtt_in = mclt16x16_i.data_dtt_in;
+//    reg            [7:0] java_fi_r;  
+    wire [DTT_IN_WIDTH-1:0] java_data_dtt_in = java_dtt_in0[{cntr4[1:0],cntr4[7:2]}]; // java_dtt_in[n2 * 256 + cntr2];  
+    initial begin
+        while (RST) @(negedge CLK);
+        for (n4 = 0; n4 < 4; n4 = n4+1) begin
+            while (mclt16x16_i.in_cntr != 16) begin
+                @(negedge CLK);
+            end
+            for (cntr4 = 0; cntr4 < 256; cntr4 = cntr4 + 1) begin
+                #1;
+                diff4 = data_dtt_in - java_data_dtt_in;
+                if (n2 < 1) diff4a = data_dtt_in - java_data_dtt_in; // TEMPORARY, while no other data
+                @(negedge CLK);
+            end
+        end
+    end
+
 
 
     

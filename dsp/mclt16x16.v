@@ -92,50 +92,51 @@ module  mclt16x16#(
                                          mpix_a_w[4] & ~mpix_a_w[0],
                                         ~mpix_a_w[4] &  mpix_a_w[0],
                                         ~mpix_a_w[4] & ~mpix_a_w[0]};
-    wire                  mpix_use = |(bayer_d & bayer_1hot); //not disabled by bayer, valid with mpix_a_w
-    wire                  mpix_use_d; // delayed
-    reg                   mpix_use_r; // delayed
-    wire           [ 3:0] mpix_sgn_d;
-    reg            [ 3:0] mpix_sgn_r;
-    wire  [WND_WIDTH-1:0] window_w;
-    reg   [WND_WIDTH-1:0] window_r;
-    reg [PIXEL_WIDTH-1:0] mpixel_d_r; // registered pixel data (to be absorbed by MPY)
+                                        
+    wire                          mpix_use = |(bayer_d & bayer_1hot); //not disabled by bayer, valid with mpix_a_w
+    wire                          mpix_use_d; // delayed
+    reg                           mpix_use_r; // delayed
+    wire                   [ 3:0] mpix_sgn_d;
+    reg                    [ 3:0] mpix_sgn_r;
+    wire signed   [WND_WIDTH-1:0] window_w;
+    reg  signed   [WND_WIDTH-1:0] window_r;
+    reg  signed [PIXEL_WIDTH-1:0] mpixel_d_r; // registered pixel data (to be absorbed by MPY)
     
-    reg [PIXEL_WIDTH + WND_WIDTH - 1:0] pix_wnd_r; 
-    reg   [DTT_IN_WIDTH-1:0] pix_wnd_r2; // pixels (positive) multiplied by window(positive), two MSBs == 2'b0 to prevent overflow
+    reg  signed [PIXEL_WIDTH + WND_WIDTH - 1:0] pix_wnd_r; // MSB not used: positive[PIXEL_WIDTH]*positive[WND_WIDTH]->positive[PIXEL_WIDTH+WND_WIDTH-1]
+    reg  signed              [DTT_IN_WIDTH-1:0] pix_wnd_r2; // pixels (positive) multiplied by window(positive), two MSBs == 2'b0 to prevent overflow
 //    parameter DTT_IN_WIDTH = 24 
 //    wire  [DTT_IN_WIDTH-3:0] pix_wnd = pix_wnd_r[PIXEL_WIDTH + WND_WIDTH - 1 -: DTT_IN_WIDTH-2];
-    reg  [DTT_IN_WIDTH-1:0] data_cc_r;   
-    reg  [DTT_IN_WIDTH-1:0] data_sc_r;   
-    reg  [DTT_IN_WIDTH-1:0] data_cs_r;   
-    reg  [DTT_IN_WIDTH-1:0] data_ss_r;
+    reg  signed [DTT_IN_WIDTH-1:0] data_cc_r;   
+    reg  signed [DTT_IN_WIDTH-1:0] data_sc_r;   
+    reg  signed [DTT_IN_WIDTH-1:0] data_cs_r;   
+    reg  signed [DTT_IN_WIDTH-1:0] data_ss_r;
     // delay data to appear at different time slots from data_cc_r
-    wire [DTT_IN_WIDTH-1:0] data_sc_w0; // delayed by 1 cycle   
-    wire [DTT_IN_WIDTH-1:0] data_cs_w1; // delayed by 2 cycles   
-    wire [DTT_IN_WIDTH-1:0] data_ss_w2; // delayed by 3 cycles
-    reg  [DTT_IN_WIDTH-1:0] data_dtt_in; // multiplexed DTT input data
+    wire signed [DTT_IN_WIDTH-1:0] data_sc_w0; // delayed by 1 cycle   
+    wire signed [DTT_IN_WIDTH-1:0] data_cs_w1; // delayed by 2 cycles   
+    wire signed [DTT_IN_WIDTH-1:0] data_ss_w2; // delayed by 3 cycles
+    reg  signed [DTT_IN_WIDTH-1:0] data_dtt_in; // multiplexed DTT input data
     
-    reg               [1:0] mode_mux;   
-    reg               [7:0] dtt_in_cntr; //
-    reg                     dtt_in_page;
-    wire              [8:0] dtt_in_wa = {dtt_in_page, dtt_in_cntr[1:0], dtt_in_cntr[7:2]};  
-    wire                    dtt_we = in_busy[16];
+    reg                      [1:0] mode_mux;   
+    reg                      [7:0] dtt_in_cntr; //
+    reg                            dtt_in_page;
+    wire                     [8:0] dtt_in_wa = {dtt_in_page, dtt_in_cntr[1:0], dtt_in_cntr[7:2]};  
+    wire                           dtt_we = in_busy[16];
     
-    wire                     var_first_d; // adding subtracting first variant of 4 folds    
-    reg                      var_first_r; // adding subtracting first variant of 4 folds
-    wire                     var_last;    // next cycle the   data_xx_r will have data  (in_busy[14], ...)
+    wire                           var_first_d; // adding subtracting first variant of 4 folds    
+    reg                            var_first_r; // adding subtracting first variant of 4 folds
+    wire                           var_last;    // next cycle the   data_xx_r will have data  (in_busy[14], ...)
     
 // reading/converting DTT
-    wire                    start_dtt = dtt_in_cntr == 196; // fune tune? ~= 3/4 of 256 
-    reg               [7:0] dtt_r_cntr; //
-    reg                     dtt_r_page;
-    reg                     dtt_r_re;
-    reg                     dtt_r_regen;
-    reg                     dtt_start;
-    wire              [1:0] dtt_mode = {dtt_r_cntr[7], dtt_r_cntr[6]}; // TODO: or reverse? 
-    wire              [8:0] dtt_r_ra = {dtt_r_page,dtt_r_cntr};
-    wire             [35:0] dtt_r_data_w; // high bits are not used 
-    wire [DTT_IN_WIDTH-1:0] dtt_r_data = dtt_r_data_w[DTT_IN_WIDTH-1:0]; 
+    wire                           start_dtt = dtt_in_cntr == 196; // fune tune? ~= 3/4 of 256 
+    reg                      [7:0] dtt_r_cntr; //
+    reg                            dtt_r_page;
+    reg                            dtt_r_re;
+    reg                            dtt_r_regen;
+    reg                            dtt_start;
+    wire                     [1:0] dtt_mode = {dtt_r_cntr[7], dtt_r_cntr[6]}; // TODO: or reverse? 
+    wire                     [8:0] dtt_r_ra = {dtt_r_page,dtt_r_cntr};
+    wire signed             [35:0] dtt_r_data_w; // high bits are not used 
+    wire signed [DTT_IN_WIDTH-1:0] dtt_r_data = dtt_r_data_w[DTT_IN_WIDTH-1:0]; 
     
     reg                     pre_last_out_r;
     reg                     pre_last_in_r;
@@ -173,11 +174,13 @@ module  mclt16x16#(
             window_r <=   window_w;
         end
         
-        if (in_busy[9])  pix_wnd_r <= mpixel_d_r * window_r;
+        if (in_busy[9])  pix_wnd_r <= mpixel_d_r * window_r; // 1 MSB is extra
         
-        if (in_busy[10]) pix_wnd_r2 <= {2'b00,pix_wnd_r[PIXEL_WIDTH + WND_WIDTH - 1 -: DTT_IN_WIDTH - 2]};
+        // pix_wnd_r2 - positive with 2 extra zeros, max value 0x3fff60
+///        if (in_busy[10]) pix_wnd_r2 <= {2'b00,pix_wnd_r[PIXEL_WIDTH + WND_WIDTH - 2 -: DTT_IN_WIDTH - 2]};
         if (in_busy[10]) begin
 ///        if (in_busy[9]) begin
+            pix_wnd_r2 <= {2'b00,pix_wnd_r[PIXEL_WIDTH + WND_WIDTH - 2 -: DTT_IN_WIDTH - 2]};
             mpix_use_r  <= mpix_use_d;
             var_first_r <= var_first_d;
             mpix_sgn_r <=  mpix_sgn_d; 
@@ -185,10 +188,10 @@ module  mclt16x16#(
         
         
         if (in_busy[11]) begin
-            data_cc_r <= (var_first_r ? {DTT_IN_WIDTH{1'b0}} : data_cc_r) + mpix_use_r ? (mpix_sgn_r[0]?(-pix_wnd_r2):pix_wnd_r2): {DTT_IN_WIDTH{1'b0}} ;
-            data_sc_r <= (var_first_r ? {DTT_IN_WIDTH{1'b0}} : data_sc_r) + mpix_use_r ? (mpix_sgn_r[1]?(-pix_wnd_r2):pix_wnd_r2): {DTT_IN_WIDTH{1'b0}} ;
-            data_cs_r <= (var_first_r ? {DTT_IN_WIDTH{1'b0}} : data_cs_r) + mpix_use_r ? (mpix_sgn_r[2]?(-pix_wnd_r2):pix_wnd_r2): {DTT_IN_WIDTH{1'b0}} ;
-            data_ss_r <= (var_first_r ? {DTT_IN_WIDTH{1'b0}} : data_ss_r) + mpix_use_r ? (mpix_sgn_r[3]?(-pix_wnd_r2):pix_wnd_r2): {DTT_IN_WIDTH{1'b0}} ;
+            data_cc_r <= (var_first_r ? {DTT_IN_WIDTH{1'b0}} : data_cc_r) + (mpix_use_r ? (mpix_sgn_r[0]?(-pix_wnd_r2):pix_wnd_r2): {DTT_IN_WIDTH{1'b0}}) ;
+            data_sc_r <= (var_first_r ? {DTT_IN_WIDTH{1'b0}} : data_sc_r) + (mpix_use_r ? (mpix_sgn_r[1]?(-pix_wnd_r2):pix_wnd_r2): {DTT_IN_WIDTH{1'b0}}) ;
+            data_cs_r <= (var_first_r ? {DTT_IN_WIDTH{1'b0}} : data_cs_r) + (mpix_use_r ? (mpix_sgn_r[2]?(-pix_wnd_r2):pix_wnd_r2): {DTT_IN_WIDTH{1'b0}}) ;
+            data_ss_r <= (var_first_r ? {DTT_IN_WIDTH{1'b0}} : data_ss_r) + (mpix_use_r ? (mpix_sgn_r[3]?(-pix_wnd_r2):pix_wnd_r2): {DTT_IN_WIDTH{1'b0}}) ;
         end
         
         if      (var_last)    mode_mux <= 0;
@@ -304,8 +307,9 @@ D11 - negate for mode 3 (SS)
     ) dly_pixel_data_i (
         .clk  (clk),      // input
         .rst  (rst),      // input
-        .dly  (4'h2),     // input[3:0] Delay for external memory latency = 2, reduce for higher 
-        .din  ({mpixel_prepage, in_busy[3], mpix_a_w}), // input[0:0] 
+//        .dly  (4'h2),     // input[3:0] Delay for external memory latency = 2, reduce for higher 
+        .dly  (4'h3),     // input[3:0] Delay for external memory latency = 2, reduce for higher 
+        .din  ({mpixel_prepage, in_busy[2], mpix_a_w}), // input[0:0] 
         .dout ({mpixel_page,    mpixel_re,  mpixel_a})  // output[0:0] 
     );
 
@@ -327,7 +331,8 @@ D11 - negate for mode 3 (SS)
     ) dly_mpix_use_i (
         .clk  (clk),           // input
         .rst  (rst),           // input
-        .dly  (4'h6),          // input[3:0] 
+///        .dly  (4'h6),          // input[3:0] 
+        .dly  (4'h7),          // input[3:0] 
         .din  (mpix_use),      // input[0:0] 
         .dout (mpix_use_d)     // output[0:0] 
     );
@@ -338,7 +343,8 @@ D11 - negate for mode 3 (SS)
     ) dly_mpix_sgn_i (
         .clk  (clk),           // input
         .rst  (rst),           // input
-        .dly  (4'h6),          // input[3:0] 
+///        .dly  (4'h6),          // input[3:0] 
+        .dly  (4'h7),          // input[3:0] 
         .din  (mpix_sgn_w),    // input[0:0] 
         .dout (mpix_sgn_d)     // output[0:0] 
     );
