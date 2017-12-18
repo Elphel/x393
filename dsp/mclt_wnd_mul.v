@@ -51,19 +51,26 @@ module  mclt_wnd_mul#(
     input         [SHIFT_WIDTH-1:0] y_shft,  //!< tile pixel Y
     output signed [OUT_WIDTH - 1 : 0] wnd_out            
 );
-    wire        [COORD_WIDTH - 1 : 0] x_full;
-    wire        [COORD_WIDTH - 1 : 0] y_full;
-    wire                              x_zero;
-    wire                              y_zero;
+    wire         [COORD_WIDTH - 1 : 0] x_full;
+    wire         [COORD_WIDTH - 1 : 0] y_full;
+    wire                               x_zero;
+    wire                               y_zero;
 //    reg                  [1:0] zero; // x_zero | y_zero;
-    reg                               zero; // x_zero | y_zero;
-    reg                         [2:0] regen; //
-    wire signed   [OUT_WIDTH - 1 : 0] wnd_out_x;   // should be all positive         
-    wire signed   [OUT_WIDTH - 1 : 0] wnd_out_y;   // should be all positive         
-    reg  signed   [OUT_WIDTH - 1 : 0] wnd_out_x_r; // to be absorbed in DSP            
-    reg  signed   [OUT_WIDTH - 1 : 0] wnd_out_y_r; // to be absorbed in DSP            
-    reg  signed [2*OUT_WIDTH - 1 : 0] wnd_out_r;   // should be all positive
-    assign wnd_out = wnd_out_r[2 * OUT_WIDTH - 2: OUT_WIDTH-1];
+    reg                                zero; // x_zero | y_zero;
+    reg                          [2:0] regen; //
+    wire signed    [OUT_WIDTH - 1 : 0] wnd_out_x;   // should be all positive         
+    wire signed    [OUT_WIDTH - 1 : 0] wnd_out_y;   // should be all positive         
+    reg  signed    [OUT_WIDTH - 1 : 0] wnd_out_x_r; // to be absorbed in DSP            
+    reg  signed    [OUT_WIDTH - 1 : 0] wnd_out_y_r; // to be absorbed in DSP
+    reg  signed    [OUT_WIDTH - 1 : 0] wnd_out_r;   // should be all positive
+//    reg  signed [2*OUT_WIDTH - 1 : 0] wnd_out_r;   // should be all positive
+    wire  signed [2*OUT_WIDTH - 1 : 0] wnd_out_full = wnd_out_x_r * wnd_out_y_r;
+    wire  signed   [OUT_WIDTH - 1 : 0] wnd_out_w = wnd_out_full[2 * OUT_WIDTH - 2: OUT_WIDTH-1]
+    `ifdef ROUND
+        +wnd_out_full[OUT_WIDTH-2]
+    `endif    
+    ;
+    assign wnd_out = wnd_out_r;
      
     always @ (posedge clk) begin
         regen <= {regen[1:0],en};
@@ -71,7 +78,7 @@ module  mclt_wnd_mul#(
         wnd_out_y_r <= wnd_out_y;
 //        zero <= {zero[0],  x_zero | y_zero};
         zero <= x_zero | y_zero;
-        wnd_out_r <= wnd_out_x_r * wnd_out_y_r;
+        wnd_out_r <= wnd_out_w; // wnd_out_x_r * wnd_out_y_r;
     end
 
     mclt_full_shift #(

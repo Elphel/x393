@@ -104,6 +104,17 @@ module  mclt16x16#(
     
     reg  signed [PIXEL_WIDTH + WND_WIDTH - 1:0] pix_wnd_r; // MSB not used: positive[PIXEL_WIDTH]*positive[WND_WIDTH]->positive[PIXEL_WIDTH+WND_WIDTH-1]
     reg  signed              [DTT_IN_WIDTH-1:0] pix_wnd_r2; // pixels (positive) multiplied by window(positive), two MSBs == 2'b0 to prevent overflow
+//    reg  signed              [DTT_IN_WIDTH-1:0] pix_wnd_r2_old;
+    // rounding
+    wire signed              [DTT_IN_WIDTH-3:0] pix_wnd_r2_w = pix_wnd_r[PIXEL_WIDTH + WND_WIDTH - 2 -: DTT_IN_WIDTH - 2]
+    `ifdef ROUND
+                 + pix_wnd_r[PIXEL_WIDTH + WND_WIDTH -DTT_IN_WIDTH]
+    `endif
+    ;
+    
+//            pix_wnd_r2 <= {{2{pix_wnd_r[PIXEL_WIDTH + WND_WIDTH - 2]}},pix_wnd_r[PIXEL_WIDTH + WND_WIDTH - 2 -: DTT_IN_WIDTH - 2]};
+    
+    
 //    parameter DTT_IN_WIDTH = 24 
 //    wire  [DTT_IN_WIDTH-3:0] pix_wnd = pix_wnd_r[PIXEL_WIDTH + WND_WIDTH - 1 -: DTT_IN_WIDTH-2];
     reg  signed [DTT_IN_WIDTH-1:0] data_cc_r;   
@@ -180,7 +191,9 @@ module  mclt16x16#(
 ///        if (in_busy[10]) pix_wnd_r2 <= {2'b00,pix_wnd_r[PIXEL_WIDTH + WND_WIDTH - 2 -: DTT_IN_WIDTH - 2]};
         if (in_busy[10]) begin
 ///        if (in_busy[9]) begin
-            pix_wnd_r2 <= {2'b00,pix_wnd_r[PIXEL_WIDTH + WND_WIDTH - 2 -: DTT_IN_WIDTH - 2]};
+///         pix_wnd_r2 <= {2'b0,pix_wnd_r[PIXEL_WIDTH + WND_WIDTH - 2 -: DTT_IN_WIDTH - 2]};
+//            pix_wnd_r2_old <= {{2{pix_wnd_r[PIXEL_WIDTH + WND_WIDTH - 2]}},pix_wnd_r[PIXEL_WIDTH + WND_WIDTH - 2 -: DTT_IN_WIDTH - 2]};
+            pix_wnd_r2 <= {{2{pix_wnd_r2_w[DTT_IN_WIDTH-3]}},pix_wnd_r2_w};
             mpix_use_r  <= mpix_use_d;
             var_first_r <= var_first_d;
             mpix_sgn_r <=  mpix_sgn_d; 

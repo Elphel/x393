@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.3.78 (w)1999-2016 BSI
-[*] Sun Dec 17 07:54:42 2017
+[*] Mon Dec 18 06:35:04 2017
 [*]
-[dumpfile] "/home/eyesis/nc393/elphel393/fpga-elphel/x393_branch_dct/simulation/mclt_test_01-20171216233340576.fst"
-[dumpfile_mtime] "Sun Dec 17 06:33:43 2017"
-[dumpfile_size] 1133363
+[dumpfile] "/home/eyesis/nc393/elphel393/fpga-elphel/x393_branch_dct/simulation/mclt_test_01-20171217184741312.fst"
+[dumpfile_mtime] "Mon Dec 18 01:47:43 2017"
+[dumpfile_size] 1137059
 [savefile] "/home/eyesis/nc393/elphel393/fpga-elphel/x393_branch_dct/mclt_test_01.sav"
-[timestart] 248000
+[timestart] 2319800
 [size] 1814 1171
 [pos] -1 -1
-*-16.313055 499800 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-15.313055 2509200 2425400 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] mclt_test_01.
 [treeopen] mclt_test_01.mclt16x16_i.
 [treeopen] mclt_test_01.mclt16x16_i.mclt_wnd_i.
@@ -84,15 +84,20 @@ mclt_test_01.java_sgn_w[3:0]
 [color] 2
 mclt_test_01.diff3
 mclt_test_01.n4
+@24
+[color] 3
 mclt_test_01.cntr4
 @22
+[color] 6
 mclt_test_01.data_dtt_in[24:0]
 mclt_test_01.java_data_dtt_in[24:0]
-@8421
+@8420
 mclt_test_01.data_dtt_in[24:0]
 mclt_test_01.java_data_dtt_in[24:0]
 @420
 mclt_test_01.diff4
+mclt_test_01.diff4a
+@8420
 mclt_test_01.diff4a
 @1000200
 -top
@@ -121,6 +126,7 @@ mclt_test_01.mclt16x16_i.in_busy[16:0]
 @1401200
 -group_end
 @22
+[color] 3
 mclt_test_01.mclt16x16_i.in_cntr[7:0]
 mclt_test_01.mclt16x16_i.fold_rom_out[17:0]
 mclt_test_01.mclt16x16_i.mpix_a_w[7:0]
@@ -307,6 +313,74 @@ mclt_test_01.mclt16x16_i.pix_wnd_r[33:0]
 -group_end
 @8420
 mclt_test_01.mclt16x16_i.pix_wnd_r2[24:0]
+@c00022
+mclt_test_01.mclt16x16_i.window_r[17:0]
+@28
+(0)mclt_test_01.mclt16x16_i.window_r[17:0]
+(1)mclt_test_01.mclt16x16_i.window_r[17:0]
+(2)mclt_test_01.mclt16x16_i.window_r[17:0]
+(3)mclt_test_01.mclt16x16_i.window_r[17:0]
+(4)mclt_test_01.mclt16x16_i.window_r[17:0]
+(5)mclt_test_01.mclt16x16_i.window_r[17:0]
+(6)mclt_test_01.mclt16x16_i.window_r[17:0]
+(7)mclt_test_01.mclt16x16_i.window_r[17:0]
+(8)mclt_test_01.mclt16x16_i.window_r[17:0]
+(9)mclt_test_01.mclt16x16_i.window_r[17:0]
+(10)mclt_test_01.mclt16x16_i.window_r[17:0]
+(11)mclt_test_01.mclt16x16_i.window_r[17:0]
+(12)mclt_test_01.mclt16x16_i.window_r[17:0]
+(13)mclt_test_01.mclt16x16_i.window_r[17:0]
+(14)mclt_test_01.mclt16x16_i.window_r[17:0]
+(15)mclt_test_01.mclt16x16_i.window_r[17:0]
+(16)mclt_test_01.mclt16x16_i.window_r[17:0]
+(17)mclt_test_01.mclt16x16_i.window_r[17:0]
+@1401200
+-group_end
+@22
+mclt_test_01.mclt16x16_i.mpixel_d_r[15:0]
+@c00022
+mclt_test_01.mclt16x16_i.pix_wnd_r[33:0]
+@28
+(0)mclt_test_01.mclt16x16_i.pix_wnd_r[33:0]
+(1)mclt_test_01.mclt16x16_i.pix_wnd_r[33:0]
+(2)mclt_test_01.mclt16x16_i.pix_wnd_r[33:0]
+(3)mclt_test_01.mclt16x16_i.pix_wnd_r[33:0]
+(4)mclt_test_01.mclt16x16_i.pix_wnd_r[33:0]
+(5)mclt_test_01.mclt16x16_i.pix_wnd_r[33:0]
+(6)mclt_test_01.mclt16x16_i.pix_wnd_r[33:0]
+(7)mclt_test_01.mclt16x16_i.pix_wnd_r[33:0]
+(8)mclt_test_01.mclt16x16_i.pix_wnd_r[33:0]
+(9)mclt_test_01.mclt16x16_i.pix_wnd_r[33:0]
+(10)mclt_test_01.mclt16x16_i.pix_wnd_r[33:0]
+(11)mclt_test_01.mclt16x16_i.pix_wnd_r[33:0]
+(12)mclt_test_01.mclt16x16_i.pix_wnd_r[33:0]
+(13)mclt_test_01.mclt16x16_i.pix_wnd_r[33:0]
+(14)mclt_test_01.mclt16x16_i.pix_wnd_r[33:0]
+(15)mclt_test_01.mclt16x16_i.pix_wnd_r[33:0]
+(16)mclt_test_01.mclt16x16_i.pix_wnd_r[33:0]
+(17)mclt_test_01.mclt16x16_i.pix_wnd_r[33:0]
+(18)mclt_test_01.mclt16x16_i.pix_wnd_r[33:0]
+(19)mclt_test_01.mclt16x16_i.pix_wnd_r[33:0]
+(20)mclt_test_01.mclt16x16_i.pix_wnd_r[33:0]
+(21)mclt_test_01.mclt16x16_i.pix_wnd_r[33:0]
+(22)mclt_test_01.mclt16x16_i.pix_wnd_r[33:0]
+(23)mclt_test_01.mclt16x16_i.pix_wnd_r[33:0]
+(24)mclt_test_01.mclt16x16_i.pix_wnd_r[33:0]
+(25)mclt_test_01.mclt16x16_i.pix_wnd_r[33:0]
+(26)mclt_test_01.mclt16x16_i.pix_wnd_r[33:0]
+(27)mclt_test_01.mclt16x16_i.pix_wnd_r[33:0]
+(28)mclt_test_01.mclt16x16_i.pix_wnd_r[33:0]
+(29)mclt_test_01.mclt16x16_i.pix_wnd_r[33:0]
+(30)mclt_test_01.mclt16x16_i.pix_wnd_r[33:0]
+(31)mclt_test_01.mclt16x16_i.pix_wnd_r[33:0]
+(32)mclt_test_01.mclt16x16_i.pix_wnd_r[33:0]
+(33)mclt_test_01.mclt16x16_i.pix_wnd_r[33:0]
+@1401200
+-group_end
+@22
+mclt_test_01.mclt16x16_i.pix_wnd_r2[24:0]
+@23
+mclt_test_01.mclt16x16_i.pix_wnd_r2_old[24:0]
 @c00200
 -mpix_
 @28
