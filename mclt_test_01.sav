@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.3.78 (w)1999-2016 BSI
-[*] Tue Dec 19 07:49:51 2017
+[*] Tue Dec 19 16:58:00 2017
 [*]
-[dumpfile] "/home/eyesis/nc393/elphel393/fpga-elphel/x393_branch_dct/simulation/mclt_test_01-20171219002107123.fst"
-[dumpfile_mtime] "Tue Dec 19 07:21:09 2017"
-[dumpfile_size] 1109829
+[dumpfile] "/home/eyesis/nc393/elphel393/fpga-elphel/x393_branch_dct/simulation/mclt_test_01-20171219005000376.fst"
+[dumpfile_mtime] "Tue Dec 19 07:50:02 2017"
+[dumpfile_size] 1108642
 [savefile] "/home/eyesis/nc393/elphel393/fpga-elphel/x393_branch_dct/mclt_test_01.sav"
-[timestart] 3926100
+[timestart] 4720000
 [size] 1814 1171
 [pos] 1923 0
-*-16.313055 4330300 2715000 3535000 3355000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-19.408367 7791000 2715000 3535000 3355000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] mclt_test_01.
 [treeopen] mclt_test_01.mclt16x16_i.
 [treeopen] mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.
