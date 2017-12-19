@@ -95,8 +95,10 @@ module  dtt_iv_8x8_ad#(
     reg                        [6:0]  dcth_phin;
     reg                        [2:0]  x_ra0;
     reg                        [2:0]  x_ra1;
-    reg signed      [INPUT_WIDTH-1:0] x_ram0[0:7];
-    reg signed      [INPUT_WIDTH-1:0] x_ram1[0:7];
+    reg                               x_ra0h; // high bit of x_ra0
+    reg                               x_ra1h; // high bit of x_ra0
+    reg signed      [INPUT_WIDTH-1:0] x_ram0[0:15]; // [0:7];
+    reg signed      [INPUT_WIDTH-1:0] x_ram1[0:15]; // [0:7];
     reg signed      [INPUT_WIDTH-1:0] dcth_xin0;
     reg signed      [INPUT_WIDTH-1:0] dcth_xin1;
 
@@ -139,11 +141,11 @@ module  dtt_iv_8x8_ad#(
     reg                         [7:0] transpose_debug_reg; // internal BRAM register
     reg                         [7:0] transpose_debug_out; // output BRAM register
     wire                       [7:0] transpose_ra = {transpose_r_page, transpose_rcntr[2:0], transpose_rcntr[5:3]};
-    reg                        [3:0] t_wa;
+    reg                        [4:0] t_wa;
     wire                             t_we0 = transpose_out_run[2] && !t_wa[3];
     wire                             t_we1 = transpose_out_run[2] &&  t_wa[3];
-    reg signed [TRANSPOSE_WIDTH-1:0] t_ram0[0:7];
-    reg signed [TRANSPOSE_WIDTH-1:0] t_ram1[0:7];
+    reg signed [TRANSPOSE_WIDTH-1:0] t_ram0[0:15];
+    reg signed [TRANSPOSE_WIDTH-1:0] t_ram1[0:15];
     reg signed [TRANSPOSE_WIDTH-1:0] dctv_xin0;
     reg signed [TRANSPOSE_WIDTH-1:0] dctv_xin1;
 
@@ -167,6 +169,8 @@ module  dtt_iv_8x8_ad#(
     reg                        [6:0] dctv_phin;
     reg                        [2:0] t_ra0;
     reg                        [2:0] t_ra1;
+    reg                              t_ra0h; // high bit of t_ra0
+    reg                              t_ra1h; // high bit of t_ra0
     wire                             dctv_start_0_w =  dctv_phin_run && (dctv_phin [6:0] ==0);
     wire                             dctv_start_1_w =  dctv_phin_run && (dctv_phin [6:0] ==9);
     reg                              dctv_start_0_r;
@@ -184,6 +188,16 @@ module  dtt_iv_8x8_ad#(
     reg                        [2:0] dctv_out_debug_reg; // SuppressThisWarning VEditor - simulation only
 
     reg                        [1:0] mode_h;      // registered at start, [1] used for hor (first) pass
+    wire                             start6;      // 7 cycles after start
+    reg                              mode_h_ra0;  // one cycle before x_ra0 
+    reg                              mode_h_ra1;  // one cycle before x_ra1
+    wire                       [2:0] x_ra0inv = {3{mode_h_ra0}};
+    wire                       [2:0] x_ra1inv = {3{mode_h_ra1}};
+//    reg                              mode_v_ra;
+    reg                              mode_v_ra0;  // one cycle before x_ra0 
+    reg                              mode_v_ra1;  // one cycle before x_ra1
+    wire                       [2:0] t_ra0inv = {3{mode_v_ra0}};
+    wire                       [2:0] t_ra1inv = {3{mode_v_ra1}};
     reg                        [1:0] mode_h_late; // mode_h registered @ pre_last_in
     reg                        [1:0] mode_v;  // mode_h_late registered @ transpose_out_start ([0]used for vert pass)
 // mode_out mode_v registered @ pre_first_out_w
@@ -208,6 +222,8 @@ module  dtt_iv_8x8_ad#(
         if (pre_last_in)         mode_h_late <= mode_h;
         if (transpose_out_start) mode_v      <= mode_h_late;
         
+        if (start6)              mode_h_ra0 <= mode_h[1];
+        if (dcth_phin[4:0] == 8) mode_h_ra1 <= mode_h_ra0;
         
         if (start_out_w)           mode_out    <= mode_v;
         
@@ -236,12 +252,12 @@ module  dtt_iv_8x8_ad#(
         else if (dcth_phin [6])                dcth_en1 <= 0; // maybe get rid of this signal and send start for each 8? 
 
         //write input reorder memory
-        if (x_run && !x_wa[3]) x_ram0[x_wa[2:0]] <= xin;
-        if (x_run &&  x_wa[3]) x_ram1[x_wa[2:0]] <= xin;
+        if (x_run && !x_wa[3]) x_ram0[{x_wa[4],x_wa[2:0]}] <= xin;
+        if (x_run &&  x_wa[3]) x_ram1[{x_wa[4],x_wa[2:0]}] <= xin;
         
         //read input reorder memory
-        dcth_xin0 <= x_ram0[x_ra0[2:0]];
-        dcth_xin1 <= x_ram1[x_ra1[2:0]];
+        dcth_xin0 <= x_ram0[{x_ra0h,x_ra0[2:0]}];
+        dcth_xin1 <= x_ram1[{x_ra1h,x_ra1[2:0]}];
         
         dcth_start_0_r <= dcth_start_0_w;
         dcth_start_1_r <= dcth_start_1_w;
@@ -260,22 +276,42 @@ module  dtt_iv_8x8_ad#(
         else if (transpose_in_run && (&transpose_cntr[5:0])) transpose_w_page <=  transpose_w_page + 1;
 
         case (transpose_cntr[3:0])
-            4'h0: transpose_wa_low <= 0 ^ {3{pre_dsth}};
-            4'h1: transpose_wa_low <= 1 ^ {3{pre_dsth}};
-            4'h2: transpose_wa_low <= 7 ^ {3{pre_dsth}};
-            4'h3: transpose_wa_low <= 6 ^ {3{pre_dsth}};
-            4'h4: transpose_wa_low <= 4 ^ {3{pre_dsth}};
-            4'h5: transpose_wa_low <= 2 ^ {3{pre_dsth}};
-            4'h6: transpose_wa_low <= 3 ^ {3{pre_dsth}};
-            4'h7: transpose_wa_low <= 5 ^ {3{pre_dsth}};
-            4'h8: transpose_wa_low <= 1 ^ {3{pre_dsth}};
-            4'h9: transpose_wa_low <= 0 ^ {3{pre_dsth}};
-            4'ha: transpose_wa_low <= 6 ^ {3{pre_dsth}};
-            4'hb: transpose_wa_low <= 7 ^ {3{pre_dsth}};
-            4'hc: transpose_wa_low <= 2 ^ {3{pre_dsth}};
-            4'hd: transpose_wa_low <= 4 ^ {3{pre_dsth}};
-            4'he: transpose_wa_low <= 5 ^ {3{pre_dsth}};
-            4'hf: transpose_wa_low <= 3 ^ {3{pre_dsth}};
+//            4'h0: transpose_wa_low <= 0 ^ {3{pre_dsth}};
+//            4'h1: transpose_wa_low <= 1 ^ {3{pre_dsth}};
+//            4'h2: transpose_wa_low <= 7 ^ {3{pre_dsth}};
+//            4'h3: transpose_wa_low <= 6 ^ {3{pre_dsth}};
+//            4'h4: transpose_wa_low <= 4 ^ {3{pre_dsth}};
+//            4'h5: transpose_wa_low <= 2 ^ {3{pre_dsth}};
+//            4'h6: transpose_wa_low <= 3 ^ {3{pre_dsth}};
+//            4'h7: transpose_wa_low <= 5 ^ {3{pre_dsth}};
+//            4'h8: transpose_wa_low <= 1 ^ {3{pre_dsth}};
+//            4'h9: transpose_wa_low <= 0 ^ {3{pre_dsth}};
+//            4'ha: transpose_wa_low <= 6 ^ {3{pre_dsth}};
+//            4'hb: transpose_wa_low <= 7 ^ {3{pre_dsth}};
+//            4'hc: transpose_wa_low <= 2 ^ {3{pre_dsth}};
+//            4'hd: transpose_wa_low <= 4 ^ {3{pre_dsth}};
+//            4'he: transpose_wa_low <= 5 ^ {3{pre_dsth}};
+//            4'hf: transpose_wa_low <= 3 ^ {3{pre_dsth}};
+
+            4'h0: transpose_wa_low <= 0;
+            4'h1: transpose_wa_low <= 1;
+            4'h2: transpose_wa_low <= 7;
+            4'h3: transpose_wa_low <= 6;
+            4'h4: transpose_wa_low <= 4;
+            4'h5: transpose_wa_low <= 2;
+            4'h6: transpose_wa_low <= 3;
+            4'h7: transpose_wa_low <= 5;
+            4'h8: transpose_wa_low <= 1;
+            4'h9: transpose_wa_low <= 0;
+            4'ha: transpose_wa_low <= 6;
+            4'hb: transpose_wa_low <= 7;
+            4'hc: transpose_wa_low <= 2;
+            4'hd: transpose_wa_low <= 4;
+            4'he: transpose_wa_low <= 5;
+            4'hf: transpose_wa_low <= 3;
+
+
+
         endcase  
         transpose_wa_high <= {transpose_w_page, transpose_cntr[5:4], transpose_cntr[0]} - {transpose_wa_decr,1'b0};
         transpose_we <=  {transpose_we[0],dcth_en_out0 | dcth_en_out1};
@@ -308,6 +344,8 @@ module  dtt_iv_8x8_ad#(
         else if          (dctv_phin_start)     dctv_phin_run <= 1;
         else if (dctv_phin [6:0] == 7'h48)     dctv_phin_run <= 0; // check actual?
 
+        if (dctv_phin_start)     mode_v_ra0 <= mode_v[0];
+        if (dctv_phin[4:0] == 8) mode_v_ra1 <= mode_v_ra0;
 
         if (!dctv_phin_run || dctv_phin_start) dctv_phin <= 0;
         else                                   dctv_phin <= dctv_phin + 1;
@@ -325,15 +363,15 @@ module  dtt_iv_8x8_ad#(
 //        if (t_we0 || t_we1) $display("%d %d",transpose_rcntr-2, transpose_out) ;
         
         //write vertical dct input reorder memory
-        if (t_we0) t_ram0[t_wa[2:0]] <= transpose_out;
-        if (t_we1) t_ram1[t_wa[2:0]] <= transpose_out;
+        if (t_we0) t_ram0[{t_wa[4],t_wa[2:0]}] <= transpose_out;
+        if (t_we1) t_ram1[{t_wa[4],t_wa[2:0]}] <= transpose_out;
 
         if (t_we0) t_debug_ram0[t_wa[2:0]] <= transpose_debug_out;
         if (t_we1) t_debug_ram1[t_wa[2:0]] <= transpose_debug_out;
         
         //read vertical dct input reorder memory
-        dctv_xin0 <= t_ram0[t_ra0[2:0]];
-        dctv_xin1 <= t_ram1[t_ra1[2:0]];
+        dctv_xin0 <= t_ram0[{t_ra0h,t_ra0[2:0]}];
+        dctv_xin1 <= t_ram1[{t_ra1h,t_ra1[2:0]}];
 
         dctv_start_0_r <= dctv_start_0_w;
         dctv_start_1_r <= dctv_start_1_w;
@@ -363,106 +401,130 @@ module  dtt_iv_8x8_ad#(
         dstv <= pre_dstv;
         
         case (out_cntr[3:0])
-            4'h0: out_wa[3:0] <= 4'h0 ^ {1'b0,{3{dstv}}};
-            4'h1: out_wa[3:0] <= 4'h9 ^ {1'b0,{3{dstv}}};
-            4'h2: out_wa[3:0] <= 4'h7 ^ {1'b0,{3{dstv}}};
-            4'h3: out_wa[3:0] <= 4'he ^ {1'b0,{3{dstv}}};
-            4'h4: out_wa[3:0] <= 4'h4 ^ {1'b0,{3{dstv}}};
-            4'h5: out_wa[3:0] <= 4'ha ^ {1'b0,{3{dstv}}};
-            4'h6: out_wa[3:0] <= 4'h3 ^ {1'b0,{3{dstv}}};
-            4'h7: out_wa[3:0] <= 4'hd ^ {1'b0,{3{dstv}}};
-            4'h8: out_wa[3:0] <= 4'h1 ^ {1'b0,{3{dstv}}};
-            4'h9: out_wa[3:0] <= 4'h8 ^ {1'b0,{3{dstv}}};
-            4'ha: out_wa[3:0] <= 4'h6 ^ {1'b0,{3{dstv}}};
-            4'hb: out_wa[3:0] <= 4'hf ^ {1'b0,{3{dstv}}};
-            4'hc: out_wa[3:0] <= 4'h2 ^ {1'b0,{3{dstv}}};
-            4'hd: out_wa[3:0] <= 4'hc ^ {1'b0,{3{dstv}}};
-            4'he: out_wa[3:0] <= 4'h5 ^ {1'b0,{3{dstv}}};
-            4'hf: out_wa[3:0] <= 4'hb ^ {1'b0,{3{dstv}}};
+//            4'h0: out_wa[3:0] <= 4'h0 ^ {1'b0,{3{dstv}}};
+//            4'h1: out_wa[3:0] <= 4'h9 ^ {1'b0,{3{dstv}}};
+//            4'h2: out_wa[3:0] <= 4'h7 ^ {1'b0,{3{dstv}}};
+//            4'h3: out_wa[3:0] <= 4'he ^ {1'b0,{3{dstv}}};
+//            4'h4: out_wa[3:0] <= 4'h4 ^ {1'b0,{3{dstv}}};
+//            4'h5: out_wa[3:0] <= 4'ha ^ {1'b0,{3{dstv}}};
+//            4'h6: out_wa[3:0] <= 4'h3 ^ {1'b0,{3{dstv}}};
+//            4'h7: out_wa[3:0] <= 4'hd ^ {1'b0,{3{dstv}}};
+//            4'h8: out_wa[3:0] <= 4'h1 ^ {1'b0,{3{dstv}}};
+//            4'h9: out_wa[3:0] <= 4'h8 ^ {1'b0,{3{dstv}}};
+//            4'ha: out_wa[3:0] <= 4'h6 ^ {1'b0,{3{dstv}}};
+//            4'hb: out_wa[3:0] <= 4'hf ^ {1'b0,{3{dstv}}};
+//            4'hc: out_wa[3:0] <= 4'h2 ^ {1'b0,{3{dstv}}};
+//            4'hd: out_wa[3:0] <= 4'hc ^ {1'b0,{3{dstv}}};
+//            4'he: out_wa[3:0] <= 4'h5 ^ {1'b0,{3{dstv}}};
+//            4'hf: out_wa[3:0] <= 4'hb ^ {1'b0,{3{dstv}}};
+
+            4'h0: out_wa[3:0] <= 4'h0;
+            4'h1: out_wa[3:0] <= 4'h9;
+            4'h2: out_wa[3:0] <= 4'h7;
+            4'h3: out_wa[3:0] <= 4'he;
+            4'h4: out_wa[3:0] <= 4'h4;
+            4'h5: out_wa[3:0] <= 4'ha;
+            4'h6: out_wa[3:0] <= 4'h3;
+            4'h7: out_wa[3:0] <= 4'hd;
+            4'h8: out_wa[3:0] <= 4'h1;
+            4'h9: out_wa[3:0] <= 4'h8;
+            4'ha: out_wa[3:0] <= 4'h6;
+            4'hb: out_wa[3:0] <= 4'hf;
+            4'hc: out_wa[3:0] <= 4'h2;
+            4'hd: out_wa[3:0] <= 4'hc;
+            4'he: out_wa[3:0] <= 4'h5;
+            4'hf: out_wa[3:0] <= 4'hb;
+
         endcase  
         sub16 <= ~out_cntr[3] & ~out_cntr[0] & out_run;
         inc16 <= out_cntr[3:0] == 'he;
         out_we <= dctv_out_we[1];
         start_out <= start_out_w;         
     end
-
+    
     always @ (posedge clk) begin
+        if (dcth_phin[3:0] == 4'h0) x_ra0h <= dcth_phin[4];
+        if (dcth_phin[3:0] == 4'h9) x_ra1h <= x_ra0h;
+    
+    
     //X2-X7-X3-X4-X5-X6-X0-X1-*-X3-X5-X4-*-X1-X7-*        
         case (dcth_phin[3:0])
-            4'h0: x_ra0 <= 2;
-            4'h1: x_ra0 <= 7;
-            4'h2: x_ra0 <= 3;
-            4'h3: x_ra0 <= 4;
-            4'h4: x_ra0 <= 5;
-            4'h5: x_ra0 <= 6;
-            4'h6: x_ra0 <= 0;
-            4'h7: x_ra0 <= 1;
+            4'h0: x_ra0 <= 2 ^ x_ra0inv;
+            4'h1: x_ra0 <= 7 ^ x_ra0inv;
+            4'h2: x_ra0 <= 3 ^ x_ra0inv;
+            4'h3: x_ra0 <= 4 ^ x_ra0inv;
+            4'h4: x_ra0 <= 5 ^ x_ra0inv;
+            4'h5: x_ra0 <= 6 ^ x_ra0inv;
+            4'h6: x_ra0 <= 0 ^ x_ra0inv;
+            4'h7: x_ra0 <= 1 ^ x_ra0inv;
             4'h8: x_ra0 <= 'bx;
-            4'h9: x_ra0 <= 3;
-            4'ha: x_ra0 <= 5;
-            4'hb: x_ra0 <= 4;
+            4'h9: x_ra0 <= 3 ^ x_ra0inv;
+            4'ha: x_ra0 <= 5 ^ x_ra0inv;
+            4'hb: x_ra0 <= 4 ^ x_ra0inv;
             4'hc: x_ra0 <= 'bx;
-            4'hd: x_ra0 <= 6;
-            4'he: x_ra0 <= 7;
+            4'hd: x_ra0 <= 6 ^ x_ra0inv;
+            4'he: x_ra0 <= 7 ^ x_ra0inv;
             4'hf: x_ra0 <= 'bx;
         endcase
         case (dcth_phin[3:0])
-            4'h0: x_ra1 <= 1;
+            4'h0: x_ra1 <= 1 ^ x_ra1inv;
             4'h1: x_ra1 <= 'bx;
-            4'h2: x_ra1 <= 3;
-            4'h3: x_ra1 <= 5;
-            4'h4: x_ra1 <= 4;
+            4'h2: x_ra1 <= 3 ^ x_ra1inv;
+            4'h3: x_ra1 <= 5 ^ x_ra1inv;
+            4'h4: x_ra1 <= 4 ^ x_ra1inv;
             4'h5: x_ra1 <= 'bx;
-            4'h6: x_ra1 <= 6;
-            4'h7: x_ra1 <= 7;
+            4'h6: x_ra1 <= 6 ^ x_ra1inv;
+            4'h7: x_ra1 <= 7 ^ x_ra1inv;
             4'h8: x_ra1 <= 'bx;
-            4'h9: x_ra1 <= 2;
-            4'ha: x_ra1 <= 7;
-            4'hb: x_ra1 <= 3;
-            4'hc: x_ra1 <= 4;
-            4'hd: x_ra1 <= 5;
-            4'he: x_ra1 <= 6;
-            4'hf: x_ra1 <= 0;
+            4'h9: x_ra1 <= 2 ^ x_ra1inv;
+            4'ha: x_ra1 <= 7 ^ x_ra1inv;
+            4'hb: x_ra1 <= 3 ^ x_ra1inv;
+            4'hc: x_ra1 <= 4 ^ x_ra1inv;
+            4'hd: x_ra1 <= 5 ^ x_ra1inv;
+            4'he: x_ra1 <= 6 ^ x_ra1inv;
+            4'hf: x_ra1 <= 0 ^ x_ra1inv;
         endcase
     end
  
     always @ (posedge clk) begin
+        if (dctv_phin[3:0] == 4'h0) t_ra0h <= dctv_phin[4];
+        if (dctv_phin[3:0] == 4'h9) t_ra1h <= t_ra0h;
     //X2-X7-X3-X4-X5-X6-X0-X1-*-X3-X5-X4-*-X1-X7-*        
         case (dctv_phin[3:0])
-            4'h0: t_ra0 <= 2;
-            4'h1: t_ra0 <= 7;
-            4'h2: t_ra0 <= 3;
-            4'h3: t_ra0 <= 4;
-            4'h4: t_ra0 <= 5;
-            4'h5: t_ra0 <= 6;
-            4'h6: t_ra0 <= 0;
-            4'h7: t_ra0 <= 1;
+            4'h0: t_ra0 <= 2 ^ t_ra0inv;
+            4'h1: t_ra0 <= 7 ^ t_ra0inv;
+            4'h2: t_ra0 <= 3 ^ t_ra0inv;
+            4'h3: t_ra0 <= 4 ^ t_ra0inv;
+            4'h4: t_ra0 <= 5 ^ t_ra0inv;
+            4'h5: t_ra0 <= 6 ^ t_ra0inv;
+            4'h6: t_ra0 <= 0 ^ t_ra0inv;
+            4'h7: t_ra0 <= 1 ^ t_ra0inv;
             4'h8: t_ra0 <= 'bx;
-            4'h9: t_ra0 <= 3;
-            4'ha: t_ra0 <= 5;
-            4'hb: t_ra0 <= 4;
+            4'h9: t_ra0 <= 3 ^ t_ra0inv;
+            4'ha: t_ra0 <= 5 ^ t_ra0inv;
+            4'hb: t_ra0 <= 4 ^ t_ra0inv;
             4'hc: t_ra0 <= 'bx;
-            4'hd: t_ra0 <= 6;
-            4'he: t_ra0 <= 7;
+            4'hd: t_ra0 <= 6 ^ t_ra0inv;
+            4'he: t_ra0 <= 7 ^ t_ra0inv;
             4'hf: t_ra0 <= 'bx;
         endcase
         case (dctv_phin[3:0])
-            4'h0: t_ra1 <= 1;
+            4'h0: t_ra1 <= 1 ^ t_ra1inv;
             4'h1: t_ra1 <= 'bx;
-            4'h2: t_ra1 <= 3;
-            4'h3: t_ra1 <= 5;
-            4'h4: t_ra1 <= 4;
+            4'h2: t_ra1 <= 3 ^ t_ra1inv;
+            4'h3: t_ra1 <= 5 ^ t_ra1inv;
+            4'h4: t_ra1 <= 4 ^ t_ra1inv;
             4'h5: t_ra1 <= 'bx;
-            4'h6: t_ra1 <= 6;
-            4'h7: t_ra1 <= 7;
+            4'h6: t_ra1 <= 6 ^ t_ra1inv;
+            4'h7: t_ra1 <= 7 ^ t_ra1inv;
             4'h8: t_ra1 <= 'bx;
-            4'h9: t_ra1 <= 2;
-            4'ha: t_ra1 <= 7;
-            4'hb: t_ra1 <= 3;
-            4'hc: t_ra1 <= 4;
-            4'hd: t_ra1 <= 5;
-            4'he: t_ra1 <= 6;
-            4'hf: t_ra1 <= 0;
+            4'h9: t_ra1 <= 2 ^ t_ra1inv;
+            4'ha: t_ra1 <= 7 ^ t_ra1inv;
+            4'hb: t_ra1 <= 3 ^ t_ra1inv;
+            4'hc: t_ra1 <= 4 ^ t_ra1inv;
+            4'hd: t_ra1 <= 5 ^ t_ra1inv;
+            4'he: t_ra1 <= 6 ^ t_ra1inv;
+            4'hf: t_ra1 <= 0 ^ t_ra1inv;
         endcase
     end
 
@@ -601,6 +663,18 @@ module  dtt_iv_8x8_ad#(
         .dst_out        (pre2_dstv[1]),         // output   valid with en_out
         .y_index        () //dctv_yindex1)          // output[2:0] reg 
     );
+
+    dly_var #(
+        .WIDTH(1),
+        .DLY_WIDTH(4)
+    ) dly_start6_i (
+        .clk  (clk),       // input
+        .rst  (rst),       // input
+        .dly  (4'h6),      // input[3:0] 
+        .din  (start),     // input[0:0] 
+        .dout (start6)     // output[0:0] 
+    );
+
 
 endmodule
 

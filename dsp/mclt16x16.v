@@ -85,6 +85,7 @@ module  mclt16x16#(
     reg             [3:0] bayer_d; // same latency as mpix_a_w
     reg             [7:0] in_cntr; // input counter
     reg            [16:0] in_busy;
+    reg            [ 1:0] start_r;
     wire           [17:0] fold_rom_out;
     wire           [ 7:0] mpix_a_w =   fold_rom_out[ 7:0];
     wire           [ 3:0] mpix_sgn_w = fold_rom_out[11:8];
@@ -164,8 +165,9 @@ module  mclt16x16#(
             y_shft_r <= y_shft;
             bayer_r <= bayer;
         end
+        start_r <= {start_r[0], start};
 //        if (in_busy[2]) begin      // same latency as mpix_a_w
-        if (in_busy[1]) begin      // same latency as mpix_a_w
+        if (start_r[1]) begin      // same latency as mpix_a_w
             x_shft_r2 <= x_shft_r;
             y_shft_r2 <= y_shft_r;
         end
@@ -486,7 +488,8 @@ D11 - negate for mode 3 (SS)
         .clk            (clk),              // input
         .rst            (rst),              // input
         .start          (dtt_start),        // input
-        .mode           (dtt_mode),         // input[1:0] 
+//        .mode           (dtt_mode),         // input[1:0] 
+        .mode           ({dtt_mode[0],dtt_mode[1]}),         // input[1:0] 
         .xin            (dtt_r_data),       // input[24:0] signed 
         .pre_last_in    (),                 // output reg 
         .mode_out       (), // dtt_mode_out),     // output[1:0] reg 

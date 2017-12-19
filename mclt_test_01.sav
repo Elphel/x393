@@ -1,20 +1,23 @@
 [*]
 [*] GTKWave Analyzer v3.3.78 (w)1999-2016 BSI
-[*] Mon Dec 18 06:35:04 2017
+[*] Tue Dec 19 07:49:51 2017
 [*]
-[dumpfile] "/home/eyesis/nc393/elphel393/fpga-elphel/x393_branch_dct/simulation/mclt_test_01-20171217184741312.fst"
-[dumpfile_mtime] "Mon Dec 18 01:47:43 2017"
-[dumpfile_size] 1137059
+[dumpfile] "/home/eyesis/nc393/elphel393/fpga-elphel/x393_branch_dct/simulation/mclt_test_01-20171219002107123.fst"
+[dumpfile_mtime] "Tue Dec 19 07:21:09 2017"
+[dumpfile_size] 1109829
 [savefile] "/home/eyesis/nc393/elphel393/fpga-elphel/x393_branch_dct/mclt_test_01.sav"
-[timestart] 2319800
+[timestart] 3926100
 [size] 1814 1171
-[pos] -1 -1
-*-15.313055 2509200 2425400 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[pos] 1923 0
+*-16.313055 4330300 2715000 3535000 3355000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] mclt_test_01.
 [treeopen] mclt_test_01.mclt16x16_i.
+[treeopen] mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.
+[treeopen] mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.dct_iv8_1d_pass1_0_i.
+[treeopen] mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.dct_iv8_1d_pass2_0_i.
 [treeopen] mclt_test_01.mclt16x16_i.mclt_wnd_i.
-[sst_width] 242
-[signals_width] 285
+[sst_width] 285
+[signals_width] 289
 [sst_expanded] 1
 [sst_vpaned_height] 344
 @800200
@@ -58,6 +61,7 @@ mclt_test_01.diff1
 mclt_test_01.n2
 mclt_test_01.cntr2
 @22
+[color] 6
 mclt_test_01.window_r[17:0]
 mclt_test_01.java_window_w[17:0]
 @420
@@ -99,6 +103,44 @@ mclt_test_01.diff4
 mclt_test_01.diff4a
 @8420
 mclt_test_01.diff4a
+@c00022
+mclt_test_01.mclt16x16_i.dtt_rd_cntr[8:0]
+@28
+(0)mclt_test_01.mclt16x16_i.dtt_rd_cntr[8:0]
+(1)mclt_test_01.mclt16x16_i.dtt_rd_cntr[8:0]
+(2)mclt_test_01.mclt16x16_i.dtt_rd_cntr[8:0]
+(3)mclt_test_01.mclt16x16_i.dtt_rd_cntr[8:0]
+(4)mclt_test_01.mclt16x16_i.dtt_rd_cntr[8:0]
+(5)mclt_test_01.mclt16x16_i.dtt_rd_cntr[8:0]
+(6)mclt_test_01.mclt16x16_i.dtt_rd_cntr[8:0]
+(7)mclt_test_01.mclt16x16_i.dtt_rd_cntr[8:0]
+(8)mclt_test_01.mclt16x16_i.dtt_rd_cntr[8:0]
+@1401200
+-group_end
+@28
+mclt_test_01.mclt16x16_i.dtt_start
+@420
+mclt_test_01.n5
+mclt_test_01.cntr5
+@22
+mclt_test_01.dtt_r_data[24:0]
+mclt_test_01.java_dtt_r_data[24:0]
+@8420
+mclt_test_01.dtt_r_data[24:0]
+mclt_test_01.java_dtt_r_data[24:0]
+mclt_test_01.diff5
+mclt_test_01.diff5a
+@420
+mclt_test_01.n6
+mclt_test_01.cntr6
+@22
+mclt_test_01.data_dtt_out[24:0]
+mclt_test_01.java_data_dtt_out[24:0]
+@8420
+mclt_test_01.data_dtt_out[24:0]
+mclt_test_01.java_data_dtt_out[24:0]
+mclt_test_01.diff6
+mclt_test_01.diff6a
 @1000200
 -top
 @800200
@@ -125,9 +167,29 @@ mclt_test_01.mclt16x16_i.in_busy[16:0]
 (16)mclt_test_01.mclt16x16_i.in_busy[16:0]
 @1401200
 -group_end
-@22
+@c00022
 [color] 3
 mclt_test_01.mclt16x16_i.in_cntr[7:0]
+@28
+[color] 3
+(0)mclt_test_01.mclt16x16_i.in_cntr[7:0]
+[color] 3
+(1)mclt_test_01.mclt16x16_i.in_cntr[7:0]
+[color] 3
+(2)mclt_test_01.mclt16x16_i.in_cntr[7:0]
+[color] 3
+(3)mclt_test_01.mclt16x16_i.in_cntr[7:0]
+[color] 3
+(4)mclt_test_01.mclt16x16_i.in_cntr[7:0]
+[color] 3
+(5)mclt_test_01.mclt16x16_i.in_cntr[7:0]
+[color] 3
+(6)mclt_test_01.mclt16x16_i.in_cntr[7:0]
+[color] 3
+(7)mclt_test_01.mclt16x16_i.in_cntr[7:0]
+@1401200
+-group_end
+@22
 mclt_test_01.mclt16x16_i.fold_rom_out[17:0]
 mclt_test_01.mclt16x16_i.mpix_a_w[7:0]
 @28
@@ -172,7 +234,7 @@ mclt_test_01.mclt16x16_i.i_mclt_fold_rom.data_out_a[17:0]
 -
 @1401200
 -fold_rom
-@c00200
+@800200
 -mclt_wnd_mul
 @28
 mclt_test_01.mclt16x16_i.mclt_wnd_i.en
@@ -246,6 +308,7 @@ mclt_test_01.mclt16x16_i.mclt_wnd_i.mclt_full_shift_x_i.coord_out[9:0]
 -
 @1401200
 -mclt_full_shift_x
+@1000200
 -mclt_wnd_mul
 @c08022
 mclt_test_01.mclt16x16_i.window_r[17:0]
@@ -379,8 +442,6 @@ mclt_test_01.mclt16x16_i.pix_wnd_r[33:0]
 -group_end
 @22
 mclt_test_01.mclt16x16_i.pix_wnd_r2[24:0]
-@23
-mclt_test_01.mclt16x16_i.pix_wnd_r2_old[24:0]
 @c00200
 -mpix_
 @28
@@ -406,10 +467,14 @@ mclt_test_01.mclt16x16_i.mpix_sgn_r[3:0]
 -group_end
 @28
 mclt_test_01.mclt16x16_i.var_last
-@8022
+@8420
+[color] 2
 mclt_test_01.mclt16x16_i.data_cc_r[24:0]
+[color] 2
 mclt_test_01.mclt16x16_i.data_sc_r[24:0]
+[color] 2
 mclt_test_01.mclt16x16_i.data_cs_r[24:0]
+[color] 2
 mclt_test_01.mclt16x16_i.data_ss_r[24:0]
 mclt_test_01.mclt16x16_i.data_sc_w0[24:0]
 mclt_test_01.mclt16x16_i.data_cs_w1[24:0]
@@ -464,25 +529,229 @@ mclt_test_01.mclt16x16_i.dtt_r_cntr[7:0]
 -group_end
 @28
 mclt_test_01.mclt16x16_i.dtt_start
-@c00200
+mclt_test_01.mclt16x16_i.dtt_mode[1:0]
+@22
+mclt_test_01.mclt16x16_i.dtt_r_data[24:0]
+@800200
 -dtt_iv_8x8
 @28
 mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.start
+mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.dcth_start_0_w
+mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.dcth_start_0_r
+mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.dcth_start_1_w
+mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.dcth_start_1_r
 @22
 mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.mode[1:0]
+@c00022
 mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.xin[24:0]
 @28
-mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.out_we
+(0)mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.xin[24:0]
+(1)mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.xin[24:0]
+(2)mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.xin[24:0]
+(3)mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.xin[24:0]
+(4)mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.xin[24:0]
+(5)mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.xin[24:0]
+(6)mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.xin[24:0]
+(7)mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.xin[24:0]
+(8)mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.xin[24:0]
+(9)mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.xin[24:0]
+(10)mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.xin[24:0]
+(11)mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.xin[24:0]
+(12)mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.xin[24:0]
+(13)mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.xin[24:0]
+(14)mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.xin[24:0]
+(15)mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.xin[24:0]
+(16)mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.xin[24:0]
+(17)mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.xin[24:0]
+(18)mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.xin[24:0]
+(19)mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.xin[24:0]
+(20)mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.xin[24:0]
+(21)mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.xin[24:0]
+(22)mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.xin[24:0]
+(23)mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.xin[24:0]
+(24)mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.xin[24:0]
+@1401200
+-group_end
 @22
+mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.x_wa[5:0]
+@c00022
+mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.dcth_phin[6:0]
+@28
+(0)mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.dcth_phin[6:0]
+(1)mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.dcth_phin[6:0]
+(2)mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.dcth_phin[6:0]
+(3)mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.dcth_phin[6:0]
+(4)mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.dcth_phin[6:0]
+(5)mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.dcth_phin[6:0]
+(6)mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.dcth_phin[6:0]
+@1401200
+-group_end
+@28
+mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.x_ra0h
+@22
+mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.x_ra0[2:0]
+mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.x_ra1[2:0]
+@28
+mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.x_ra1h
+@22
+mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.transpose_wa[7:0]
+mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.transpose_di[24:0]
+@28
+mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.pre2_dsth[1:0]
+mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.transpose_out_start
+@22
+mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.transpose_rcntr[6:0]
+mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.transpose_ra[7:0]
+mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.transpose_out[24:0]
+@28
+mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.out_we
+@c00022
 mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.out_wa[3:0]
+@28
+(0)mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.out_wa[3:0]
+(1)mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.out_wa[3:0]
+(2)mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.out_wa[3:0]
+(3)mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.out_wa[3:0]
+@1401200
+-group_end
+@22
 mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.out_wd[24:0]
 @28
+mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.pre2_dstv[1:0]
 mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.sub16
 mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.inc16
 mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.start_out
+mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.dctv_start_0_w
+mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.dctv_start_0_r
+mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.dctv_start_1_r
+@22
+mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.t_ra0[2:0]
+mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.t_ra1[2:0]
+@28
+mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.dctv_phin_run
+@22
+mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.dctv_phin[6:0]
+mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.mode[1:0]
+mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.mode_h[1:0]
+mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.mode_v[1:0]
+@28
+mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.dctv_phin_start
+@800200
+-dtt_hor
+@28
+mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.dct_iv8_1d_pass1_0_i.dst_in
+mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.dct_iv8_1d_pass1_0_i.start
+@22
+mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.dct_iv8_1d_pass1_0_i.d_in[24:0]
+@28
+mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.dct_iv8_1d_pass1_0_i.pre2_start_out
+@c00022
+mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.dct_iv8_1d_pass1_0_i.dout[24:0]
+@28
+(0)mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.dct_iv8_1d_pass1_0_i.dout[24:0]
+(1)mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.dct_iv8_1d_pass1_0_i.dout[24:0]
+(2)mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.dct_iv8_1d_pass1_0_i.dout[24:0]
+(3)mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.dct_iv8_1d_pass1_0_i.dout[24:0]
+(4)mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.dct_iv8_1d_pass1_0_i.dout[24:0]
+(5)mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.dct_iv8_1d_pass1_0_i.dout[24:0]
+(6)mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.dct_iv8_1d_pass1_0_i.dout[24:0]
+(7)mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.dct_iv8_1d_pass1_0_i.dout[24:0]
+(8)mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.dct_iv8_1d_pass1_0_i.dout[24:0]
+(9)mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.dct_iv8_1d_pass1_0_i.dout[24:0]
+(10)mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.dct_iv8_1d_pass1_0_i.dout[24:0]
+(11)mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.dct_iv8_1d_pass1_0_i.dout[24:0]
+(12)mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.dct_iv8_1d_pass1_0_i.dout[24:0]
+(13)mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.dct_iv8_1d_pass1_0_i.dout[24:0]
+(14)mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.dct_iv8_1d_pass1_0_i.dout[24:0]
+(15)mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.dct_iv8_1d_pass1_0_i.dout[24:0]
+(16)mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.dct_iv8_1d_pass1_0_i.dout[24:0]
+(17)mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.dct_iv8_1d_pass1_0_i.dout[24:0]
+(18)mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.dct_iv8_1d_pass1_0_i.dout[24:0]
+(19)mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.dct_iv8_1d_pass1_0_i.dout[24:0]
+(20)mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.dct_iv8_1d_pass1_0_i.dout[24:0]
+(21)mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.dct_iv8_1d_pass1_0_i.dout[24:0]
+(22)mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.dct_iv8_1d_pass1_0_i.dout[24:0]
+(23)mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.dct_iv8_1d_pass1_0_i.dout[24:0]
+(24)mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.dct_iv8_1d_pass1_0_i.dout[24:0]
 @1401200
+-group_end
+@28
+mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.dct_iv8_1d_pass1_0_i.dst_in
+mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.dct_iv8_1d_pass1_0_i.dst_pre
+mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.dct_iv8_1d_pass1_0_i.dst_2
+mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.dct_iv8_1d_pass1_0_i.dst_out_r
+mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.dct_iv8_1d_pass1_0_i.dsp_neg_m_2
+mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.dct_iv8_1d_pass1_0_i.dsp_neg_m_2_dct
+mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.dct_iv8_1d_pass1_0_i.dsp_neg_m_2_dst
+@1000200
+-dtt_hor
+@800200
+-dtt_vert0
+@28
+mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.dct_iv8_1d_pass2_0_i.dst_in
+mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.dct_iv8_1d_pass2_0_i.start
+@22
+mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.dct_iv8_1d_pass2_0_i.d_in[24:0]
+@28
+mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.dct_iv8_1d_pass2_0_i.pre2_start_out
+@22
+mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.dct_iv8_1d_pass2_0_i.dout[24:0]
+@1000200
+-dtt_vert0
+@800200
+-dtt_vert1
+@28
+mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.dct_iv8_1d_pass2_1_i.dst_in
+mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.dct_iv8_1d_pass2_1_i.start
+@22
+mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.dct_iv8_1d_pass2_1_i.d_in[24:0]
+@29
+mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.dct_iv8_1d_pass2_1_i.pre2_start_out
+@200
+-
+@1000200
+-dtt_vert1
 -dtt_iv_8x8
+@28
+mclt_test_01.mclt16x16_i.dtt_start
+mclt_test_01.mclt16x16_i.dtt_mode[1:0]
+mclt_test_01.mclt16x16_i.dtt_out_we
+@22
+mclt_test_01.mclt16x16_i.dtt_out_ram_wah[4:0]
+mclt_test_01.mclt16x16_i.dtt_out_wa16[3:0]
+@c00022
+[color] 3
+mclt_test_01.mclt16x16_i.dtt_out_wd[24:0]
+@28
+(0)mclt_test_01.mclt16x16_i.dtt_out_wd[24:0]
+(1)mclt_test_01.mclt16x16_i.dtt_out_wd[24:0]
+(2)mclt_test_01.mclt16x16_i.dtt_out_wd[24:0]
+(3)mclt_test_01.mclt16x16_i.dtt_out_wd[24:0]
+(4)mclt_test_01.mclt16x16_i.dtt_out_wd[24:0]
+(5)mclt_test_01.mclt16x16_i.dtt_out_wd[24:0]
+(6)mclt_test_01.mclt16x16_i.dtt_out_wd[24:0]
+(7)mclt_test_01.mclt16x16_i.dtt_out_wd[24:0]
+(8)mclt_test_01.mclt16x16_i.dtt_out_wd[24:0]
+(9)mclt_test_01.mclt16x16_i.dtt_out_wd[24:0]
+(10)mclt_test_01.mclt16x16_i.dtt_out_wd[24:0]
+(11)mclt_test_01.mclt16x16_i.dtt_out_wd[24:0]
+(12)mclt_test_01.mclt16x16_i.dtt_out_wd[24:0]
+(13)mclt_test_01.mclt16x16_i.dtt_out_wd[24:0]
+(14)mclt_test_01.mclt16x16_i.dtt_out_wd[24:0]
+(15)mclt_test_01.mclt16x16_i.dtt_out_wd[24:0]
+(16)mclt_test_01.mclt16x16_i.dtt_out_wd[24:0]
+(17)mclt_test_01.mclt16x16_i.dtt_out_wd[24:0]
+(18)mclt_test_01.mclt16x16_i.dtt_out_wd[24:0]
+(19)mclt_test_01.mclt16x16_i.dtt_out_wd[24:0]
+(20)mclt_test_01.mclt16x16_i.dtt_out_wd[24:0]
+(21)mclt_test_01.mclt16x16_i.dtt_out_wd[24:0]
+(22)mclt_test_01.mclt16x16_i.dtt_out_wd[24:0]
+(23)mclt_test_01.mclt16x16_i.dtt_out_wd[24:0]
+(24)mclt_test_01.mclt16x16_i.dtt_out_wd[24:0]
+@1401200
+-group_end
 @c08022
+[color] 3
 mclt_test_01.mclt16x16_i.dtt_out_ram_wa[8:0]
 @28
 (0)mclt_test_01.mclt16x16_i.dtt_out_ram_wa[8:0]
@@ -496,8 +765,6 @@ mclt_test_01.mclt16x16_i.dtt_out_ram_wa[8:0]
 (8)mclt_test_01.mclt16x16_i.dtt_out_ram_wa[8:0]
 @1401200
 -group_end
-@28
-mclt_test_01.mclt16x16_i.dtt_out_we
 @c00022
 mclt_test_01.mclt16x16_i.dtt_out_ram_cntr[4:0]
 @28
@@ -509,7 +776,6 @@ mclt_test_01.mclt16x16_i.dtt_out_ram_cntr[4:0]
 @1401200
 -group_end
 @28
-mclt_test_01.mclt16x16_i.dtt_mode[1:0]
 mclt_test_01.mclt16x16_i.dtt_start_fill
 mclt_test_01.mclt16x16_i.dtt_first_quad_out
 @c08022
@@ -527,11 +793,30 @@ mclt_test_01.mclt16x16_i.dtt_dly_cntr[7:0]
 -group_end
 @28
 mclt_test_01.mclt16x16_i.dtt_start_out
-@22
+@c00022
 mclt_test_01.mclt16x16_i.dtt_rd_cntr[8:0]
-mclt_test_01.mclt16x16_i.dtt_rd_ra[8:0]
 @28
+(0)mclt_test_01.mclt16x16_i.dtt_rd_cntr[8:0]
+(1)mclt_test_01.mclt16x16_i.dtt_rd_cntr[8:0]
+(2)mclt_test_01.mclt16x16_i.dtt_rd_cntr[8:0]
+(3)mclt_test_01.mclt16x16_i.dtt_rd_cntr[8:0]
+(4)mclt_test_01.mclt16x16_i.dtt_rd_cntr[8:0]
+(5)mclt_test_01.mclt16x16_i.dtt_rd_cntr[8:0]
+(6)mclt_test_01.mclt16x16_i.dtt_rd_cntr[8:0]
+(7)mclt_test_01.mclt16x16_i.dtt_rd_cntr[8:0]
+(8)mclt_test_01.mclt16x16_i.dtt_rd_cntr[8:0]
+@1401200
+-group_end
+@22
+mclt_test_01.mclt16x16_i.dtt_rd_ra[8:0]
+@800028
 mclt_test_01.mclt16x16_i.dtt_rd_regen_dv[2:0]
+@28
+(0)mclt_test_01.mclt16x16_i.dtt_rd_regen_dv[2:0]
+(1)mclt_test_01.mclt16x16_i.dtt_rd_regen_dv[2:0]
+(2)mclt_test_01.mclt16x16_i.dtt_rd_regen_dv[2:0]
+@1001200
+-group_end
 @22
 mclt_test_01.mclt16x16_i.dtt_rd_data[24:0]
 @28

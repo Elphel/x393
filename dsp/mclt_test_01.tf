@@ -98,6 +98,9 @@ module  mclt_test_01 ();
     reg     [WND_WIDTH - 1:0]   tiles_wnd[0:1023];
     reg  [DTT_IN_WIDTH - 1:0]   java_dtt_in[0:1023];
 
+    reg  [DTT_IN_WIDTH - 1:0]   java_dtt_out0[0:255]; // SuppressThisWarning VEditor : assigned in $readmem() system task
+    reg  [DTT_IN_WIDTH - 1:0]   java_dtt_out[0:1023];
+
     integer   i, n, n_out;
     initial begin
         $readmemh("input_data/clt_wnd_signs.dat",  java_wnd_signs);
@@ -119,6 +122,11 @@ module  mclt_test_01 ();
         $readmemh("input_data/clt_dtt_in_00_2_x1489_y951.dat",java_dtt_in0);
         for (i=0; i<256; i=i+1) begin
             java_dtt_in['h000 + i] = java_dtt_in0[i]; 
+        end
+
+        $readmemh("input_data/clt_dtt_out_00_2_x1489_y951.dat",java_dtt_out0);
+        for (i=0; i<256; i=i+1) begin
+            java_dtt_out['h000 + i] = java_dtt_out0[i]; 
         end
         
         
@@ -301,11 +309,9 @@ module  mclt_test_01 ();
     end
 
 //Compare DTT inputs
-//  reg  [DTT_IN_WIDTH - 1:0]   java_dtt_in0[0:255]; // SuppressThisWarning VEditor : assigned in $readmem() system task
 
     integer n4, cntr4, diff4, diff4a; // SuppressThisWarning VEditor : assigned in $readmem() system task
     wire [DTT_IN_WIDTH-1:0] data_dtt_in = mclt16x16_i.data_dtt_in;
-//    reg            [7:0] java_fi_r;  
     wire [DTT_IN_WIDTH-1:0] java_data_dtt_in = java_dtt_in0[{cntr4[1:0],cntr4[7:2]}]; // java_dtt_in[n2 * 256 + cntr2];  
     initial begin
         while (RST) @(negedge CLK);
@@ -316,12 +322,59 @@ module  mclt_test_01 ();
             for (cntr4 = 0; cntr4 < 256; cntr4 = cntr4 + 1) begin
                 #1;
                 diff4 = data_dtt_in - java_data_dtt_in;
-                if (n2 < 1) diff4a = data_dtt_in - java_data_dtt_in; // TEMPORARY, while no other data
+                if (n4 < 1) diff4a = data_dtt_in - java_data_dtt_in; // TEMPORARY, while no other data
                 @(negedge CLK);
             end
         end
     end
 
+    integer n5, cntr5, diff5, diff5a; // SuppressThisWarning VEditor : assigned in $readmem() system task
+    wire [DTT_IN_WIDTH-1:0] dtt_r_data = mclt16x16_i.dtt_r_data;
+    wire [DTT_IN_WIDTH-1:0] java_dtt_r_data = java_dtt_in0[cntr5[7:0]]; // java_dtt_in[n2 * 256 + cntr2];
+    
+    wire                           dtt_r_regen = mclt16x16_i.dtt_r_regen;
+    reg                            dtt_r_dv; // SuppressThisWarning VEditor just for simulation
+    always @ (posedge CLK) begin
+        if (RST) dtt_r_dv <= 0;
+        else     dtt_r_dv <= dtt_r_regen;
+    end
+    
+      
+    initial begin
+        while (RST) @(negedge CLK);
+        for (n5 = 0; n5 < 4; n5 = n5+1) begin
+            while ((!dtt_r_dv) || (mclt16x16_i.dtt_r_cntr[7:0] != 2)) begin
+                @(negedge CLK);
+            end
+            for (cntr5 = 0; cntr5 < 256; cntr5 = cntr5 + 1) begin
+                #1;
+                diff5 = dtt_r_data - java_dtt_r_data;
+                if (n5 < 1) diff5a = dtt_r_data - java_dtt_r_data; // TEMPORARY, while no other data
+                @(negedge CLK);
+            end
+        end
+    end
+
+
+
+
+    integer n6, cntr6, diff6, diff6a; // SuppressThisWarning VEditor : assigned in $readmem() system task
+    wire [DTT_IN_WIDTH-1:0] data_dtt_out = mclt16x16_i.dtt_rd_data;
+    wire [DTT_IN_WIDTH-1:0] java_data_dtt_out = java_dtt_out0[{cntr6[1:0],cntr6[7:2]}]; // java_dtt_in[n2 * 256 + cntr2];  
+    initial begin
+        while (RST) @(negedge CLK);
+        for (n6 = 0; n6 < 4; n6 = n6+1) begin
+            while ((!mclt16x16_i.dtt_rd_regen_dv[2]) || (mclt16x16_i.dtt_rd_cntr[7:0] != 2)) begin
+                @(negedge CLK);
+            end
+            for (cntr6 = 0; cntr6 < 256; cntr6 = cntr6 + 1) begin
+                #1;
+                diff6 = data_dtt_out - java_data_dtt_out;
+                if (n6 < 1) diff6a = data_dtt_out - java_data_dtt_out; // TEMPORARY, while no other data
+                @(negedge CLK);
+            end
+        end
+    end
 
 
     
