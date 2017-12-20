@@ -1,23 +1,24 @@
 [*]
 [*] GTKWave Analyzer v3.3.78 (w)1999-2016 BSI
-[*] Tue Dec 19 16:58:00 2017
+[*] Wed Dec 20 07:04:05 2017
 [*]
-[dumpfile] "/home/eyesis/nc393/elphel393/fpga-elphel/x393_branch_dct/simulation/mclt_test_01-20171219005000376.fst"
-[dumpfile_mtime] "Tue Dec 19 07:50:02 2017"
-[dumpfile_size] 1108642
+[dumpfile] "/home/eyesis/nc393/elphel393/fpga-elphel/x393_branch_dct/simulation/mclt_test_01-20171219235955852.fst"
+[dumpfile_mtime] "Wed Dec 20 06:59:58 2017"
+[dumpfile_size] 1334335
 [savefile] "/home/eyesis/nc393/elphel393/fpga-elphel/x393_branch_dct/mclt_test_01.sav"
-[timestart] 4720000
+[timestart] 5698200
 [size] 1814 1171
-[pos] 1923 0
-*-19.408367 7791000 2715000 3535000 3355000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[pos] 0 0
+*-14.519981 5777900 2715000 3535000 3355000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] mclt_test_01.
 [treeopen] mclt_test_01.mclt16x16_i.
-[treeopen] mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.
 [treeopen] mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.dct_iv8_1d_pass1_0_i.
 [treeopen] mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.dct_iv8_1d_pass2_0_i.
-[treeopen] mclt_test_01.mclt16x16_i.mclt_wnd_i.
-[sst_width] 285
-[signals_width] 289
+[treeopen] mclt_test_01.mclt16x16_i.phase_rotator_i.
+[treeopen] mclt_test_01.mclt16x16_i.phase_rotator_i.dsp_2_i.
+[treeopen] mclt_test_01.mclt16x16_i.phase_rotator_i.dsp_2_i.DSP48E1_i.
+[sst_width] 204
+[signals_width] 341
 [sst_expanded] 1
 [sst_vpaned_height] 344
 @800200
@@ -143,6 +144,312 @@ mclt_test_01.diff6
 mclt_test_01.diff6a
 @1000200
 -top
+@800200
+-rotator
+@c00200
+-main
+@28
+mclt_test_01.mclt16x16_i.start
+@22
+mclt_test_01.mclt16x16_i.x_shft[6:0]
+mclt_test_01.mclt16x16_i.x_shft_r[6:0]
+mclt_test_01.mclt16x16_i.x_shft_r2[6:0]
+mclt_test_01.mclt16x16_i.x_shft_r3[6:0]
+mclt_test_01.mclt16x16_i.y_shft[6:0]
+mclt_test_01.mclt16x16_i.y_shft_r[6:0]
+mclt_test_01.mclt16x16_i.y_shft_r2[6:0]
+mclt_test_01.mclt16x16_i.y_shft_r3[6:0]
+@28
+mclt_test_01.mclt16x16_i.start_dtt
+mclt_test_01.mclt16x16_i.dtt_start_first_fill
+mclt_test_01.mclt16x16_i.dtt_start_out
+mclt_test_01.mclt16x16_i.pre_first_out
+mclt_test_01.mclt16x16_i.dv
+@c00022
+mclt_test_01.mclt16x16_i.dout[24:0]
+@28
+(0)mclt_test_01.mclt16x16_i.dout[24:0]
+(1)mclt_test_01.mclt16x16_i.dout[24:0]
+(2)mclt_test_01.mclt16x16_i.dout[24:0]
+(3)mclt_test_01.mclt16x16_i.dout[24:0]
+(4)mclt_test_01.mclt16x16_i.dout[24:0]
+(5)mclt_test_01.mclt16x16_i.dout[24:0]
+(6)mclt_test_01.mclt16x16_i.dout[24:0]
+(7)mclt_test_01.mclt16x16_i.dout[24:0]
+(8)mclt_test_01.mclt16x16_i.dout[24:0]
+(9)mclt_test_01.mclt16x16_i.dout[24:0]
+(10)mclt_test_01.mclt16x16_i.dout[24:0]
+(11)mclt_test_01.mclt16x16_i.dout[24:0]
+(12)mclt_test_01.mclt16x16_i.dout[24:0]
+(13)mclt_test_01.mclt16x16_i.dout[24:0]
+(14)mclt_test_01.mclt16x16_i.dout[24:0]
+(15)mclt_test_01.mclt16x16_i.dout[24:0]
+(16)mclt_test_01.mclt16x16_i.dout[24:0]
+(17)mclt_test_01.mclt16x16_i.dout[24:0]
+(18)mclt_test_01.mclt16x16_i.dout[24:0]
+(19)mclt_test_01.mclt16x16_i.dout[24:0]
+(20)mclt_test_01.mclt16x16_i.dout[24:0]
+(21)mclt_test_01.mclt16x16_i.dout[24:0]
+(22)mclt_test_01.mclt16x16_i.dout[24:0]
+(23)mclt_test_01.mclt16x16_i.dout[24:0]
+(24)mclt_test_01.mclt16x16_i.dout[24:0]
+@1401200
+-group_end
+@c08420
+mclt_test_01.mclt16x16_i.dout[24:0]
+@28
+(0)mclt_test_01.mclt16x16_i.dout[24:0]
+(1)mclt_test_01.mclt16x16_i.dout[24:0]
+(2)mclt_test_01.mclt16x16_i.dout[24:0]
+(3)mclt_test_01.mclt16x16_i.dout[24:0]
+(4)mclt_test_01.mclt16x16_i.dout[24:0]
+(5)mclt_test_01.mclt16x16_i.dout[24:0]
+(6)mclt_test_01.mclt16x16_i.dout[24:0]
+(7)mclt_test_01.mclt16x16_i.dout[24:0]
+(8)mclt_test_01.mclt16x16_i.dout[24:0]
+(9)mclt_test_01.mclt16x16_i.dout[24:0]
+(10)mclt_test_01.mclt16x16_i.dout[24:0]
+(11)mclt_test_01.mclt16x16_i.dout[24:0]
+(12)mclt_test_01.mclt16x16_i.dout[24:0]
+(13)mclt_test_01.mclt16x16_i.dout[24:0]
+(14)mclt_test_01.mclt16x16_i.dout[24:0]
+(15)mclt_test_01.mclt16x16_i.dout[24:0]
+(16)mclt_test_01.mclt16x16_i.dout[24:0]
+(17)mclt_test_01.mclt16x16_i.dout[24:0]
+(18)mclt_test_01.mclt16x16_i.dout[24:0]
+(19)mclt_test_01.mclt16x16_i.dout[24:0]
+(20)mclt_test_01.mclt16x16_i.dout[24:0]
+(21)mclt_test_01.mclt16x16_i.dout[24:0]
+(22)mclt_test_01.mclt16x16_i.dout[24:0]
+(23)mclt_test_01.mclt16x16_i.dout[24:0]
+(24)mclt_test_01.mclt16x16_i.dout[24:0]
+@1401200
+-group_end
+-main
+@28
+mclt_test_01.mclt16x16_i.phase_rotator_i.start
+@22
+mclt_test_01.mclt16x16_i.phase_rotator_i.fd_din[24:0]
+mclt_test_01.mclt16x16_i.phase_rotator_i.start_d[5:0]
+mclt_test_01.mclt16x16_i.phase_rotator_i.shift_h[6:0]
+mclt_test_01.mclt16x16_i.phase_rotator_i.shift_hr[6:0]
+@28
+mclt_test_01.mclt16x16_i.phase_rotator_i.run_h
+@c00022
+mclt_test_01.mclt16x16_i.phase_rotator_i.cntr_h[7:0]
+@28
+(0)mclt_test_01.mclt16x16_i.phase_rotator_i.cntr_h[7:0]
+(1)mclt_test_01.mclt16x16_i.phase_rotator_i.cntr_h[7:0]
+(2)mclt_test_01.mclt16x16_i.phase_rotator_i.cntr_h[7:0]
+(3)mclt_test_01.mclt16x16_i.phase_rotator_i.cntr_h[7:0]
+(4)mclt_test_01.mclt16x16_i.phase_rotator_i.cntr_h[7:0]
+(5)mclt_test_01.mclt16x16_i.phase_rotator_i.cntr_h[7:0]
+(6)mclt_test_01.mclt16x16_i.phase_rotator_i.cntr_h[7:0]
+(7)mclt_test_01.mclt16x16_i.phase_rotator_i.cntr_h[7:0]
+@1401200
+-group_end
+@22
+mclt_test_01.mclt16x16_i.phase_rotator_i.shift_v[6:0]
+mclt_test_01.mclt16x16_i.phase_rotator_i.shift_v0[6:0]
+mclt_test_01.mclt16x16_i.phase_rotator_i.shift_vr[6:0]
+@28
+mclt_test_01.mclt16x16_i.phase_rotator_i.run_v
+@22
+mclt_test_01.mclt16x16_i.phase_rotator_i.cntr_v[7:0]
+@28
+mclt_test_01.mclt16x16_i.phase_rotator_i.run_hv
+@22
+mclt_test_01.mclt16x16_i.phase_rotator_i.rom_a[9:0]
+@c00028
+mclt_test_01.mclt16x16_i.phase_rotator_i.rom_re_regen[2:0]
+@28
+(0)mclt_test_01.mclt16x16_i.phase_rotator_i.rom_re_regen[2:0]
+(1)mclt_test_01.mclt16x16_i.phase_rotator_i.rom_re_regen[2:0]
+(2)mclt_test_01.mclt16x16_i.phase_rotator_i.rom_re_regen[2:0]
+@1401200
+-group_end
+@28
+mclt_test_01.mclt16x16_i.phase_rotator_i.rom_a_sin
+@22
+mclt_test_01.mclt16x16_i.phase_rotator_i.rom_a_shift[5:0]
+mclt_test_01.mclt16x16_i.phase_rotator_i.rom_a_indx[2:0]
+mclt_test_01.mclt16x16_i.phase_rotator_i.shift_hv[6:0]
+mclt_test_01.mclt16x16_i.phase_rotator_i.shift_hr[6:0]
+@28
+mclt_test_01.mclt16x16_i.phase_rotator_i.mux_v
+mclt_test_01.mclt16x16_i.phase_rotator_i.sign_cs_d
+mclt_test_01.mclt16x16_i.phase_rotator_i.sign_cs_r[1:0]
+@22
+mclt_test_01.mclt16x16_i.phase_rotator_i.pout_1[47:0]
+[color] 6
+mclt_test_01.mclt16x16_i.phase_rotator_i.ain_34[24:0]
+mclt_test_01.mclt16x16_i.phase_rotator_i.pout_2[47:0]
+[color] 6
+mclt_test_01.mclt16x16_i.phase_rotator_i.din_34[24:0]
+mclt_test_01.mclt16x16_i.phase_rotator_i.pout_3[47:0]
+mclt_test_01.mclt16x16_i.phase_rotator_i.pout_4[47:0]
+@28
+mclt_test_01.mclt16x16_i.phase_rotator_i.fd_dv
+@22
+[color] 6
+mclt_test_01.mclt16x16_i.phase_rotator_i.fd_out[24:0]
+@800200
+-dsps
+@22
+mclt_test_01.mclt16x16_i.phase_rotator_i.fd_out[24:0]
+@28
+mclt_test_01.mclt16x16_i.phase_rotator_i.pre_first_out
+mclt_test_01.mclt16x16_i.phase_rotator_i.fd_dv
+@c00022
+mclt_test_01.mclt16x16_i.phase_rotator_i.ph[16:0]
+@28
+(0)mclt_test_01.mclt16x16_i.phase_rotator_i.ph[16:0]
+(1)mclt_test_01.mclt16x16_i.phase_rotator_i.ph[16:0]
+(2)mclt_test_01.mclt16x16_i.phase_rotator_i.ph[16:0]
+(3)mclt_test_01.mclt16x16_i.phase_rotator_i.ph[16:0]
+(4)mclt_test_01.mclt16x16_i.phase_rotator_i.ph[16:0]
+(5)mclt_test_01.mclt16x16_i.phase_rotator_i.ph[16:0]
+(6)mclt_test_01.mclt16x16_i.phase_rotator_i.ph[16:0]
+(7)mclt_test_01.mclt16x16_i.phase_rotator_i.ph[16:0]
+(8)mclt_test_01.mclt16x16_i.phase_rotator_i.ph[16:0]
+(9)mclt_test_01.mclt16x16_i.phase_rotator_i.ph[16:0]
+(10)mclt_test_01.mclt16x16_i.phase_rotator_i.ph[16:0]
+(11)mclt_test_01.mclt16x16_i.phase_rotator_i.ph[16:0]
+(12)mclt_test_01.mclt16x16_i.phase_rotator_i.ph[16:0]
+(13)mclt_test_01.mclt16x16_i.phase_rotator_i.ph[16:0]
+(14)mclt_test_01.mclt16x16_i.phase_rotator_i.ph[16:0]
+(15)mclt_test_01.mclt16x16_i.phase_rotator_i.ph[16:0]
+(16)mclt_test_01.mclt16x16_i.phase_rotator_i.ph[16:0]
+@1401200
+-group_end
+@28
+mclt_test_01.mclt16x16_i.phase_rotator_i.cea1_1
+mclt_test_01.mclt16x16_i.phase_rotator_i.cea2_1
+mclt_test_01.mclt16x16_i.phase_rotator_i.sela_1
+mclt_test_01.mclt16x16_i.phase_rotator_i.cead_1
+@22
+[color] 2
+mclt_test_01.mclt16x16_i.phase_rotator_i.cos_sin_w[17:0]
+@28
+[color] 2
+mclt_test_01.mclt16x16_i.phase_rotator_i.ceb1_1
+[color] 2
+mclt_test_01.mclt16x16_i.phase_rotator_i.ceb2_1
+[color] 2
+mclt_test_01.mclt16x16_i.phase_rotator_i.selb_1
+(12)mclt_test_01.mclt16x16_i.phase_rotator_i.ph[16:0]
+(11)mclt_test_01.mclt16x16_i.phase_rotator_i.ph[16:0]
+mclt_test_01.mclt16x16_i.phase_rotator_i.negm_1
+mclt_test_01.mclt16x16_i.phase_rotator_i.accum_1
+@22
+mclt_test_01.mclt16x16_i.phase_rotator_i.pout_1[47:0]
+[color] 6
+mclt_test_01.mclt16x16_i.phase_rotator_i.ain_34[24:0]
+@28
+mclt_test_01.mclt16x16_i.phase_rotator_i.cea1_2
+mclt_test_01.mclt16x16_i.phase_rotator_i.cea2_2
+mclt_test_01.mclt16x16_i.phase_rotator_i.sela_2
+mclt_test_01.mclt16x16_i.phase_rotator_i.cead_2
+@22
+[color] 2
+mclt_test_01.mclt16x16_i.phase_rotator_i.cos_sin_w[17:0]
+@28
+[color] 2
+mclt_test_01.mclt16x16_i.phase_rotator_i.ceb1_2
+[color] 2
+mclt_test_01.mclt16x16_i.phase_rotator_i.ceb2_2
+[color] 2
+mclt_test_01.mclt16x16_i.phase_rotator_i.selb_2
+mclt_test_01.mclt16x16_i.phase_rotator_i.negm_2
+mclt_test_01.mclt16x16_i.phase_rotator_i.accum_2
+@22
+mclt_test_01.mclt16x16_i.phase_rotator_i.pout_2[47:0]
+[color] 6
+mclt_test_01.mclt16x16_i.phase_rotator_i.din_34[24:0]
+@28
+mclt_test_01.mclt16x16_i.phase_rotator_i.cea1_3
+mclt_test_01.mclt16x16_i.phase_rotator_i.ced_3
+mclt_test_01.mclt16x16_i.phase_rotator_i.cead_3
+@22
+[color] 3
+mclt_test_01.mclt16x16_i.phase_rotator_i.cos_sin_w[17:0]
+@28
+[color] 3
+mclt_test_01.mclt16x16_i.phase_rotator_i.ceb1_3
+[color] 3
+mclt_test_01.mclt16x16_i.phase_rotator_i.ceb2_3
+[color] 3
+mclt_test_01.mclt16x16_i.phase_rotator_i.selb_3
+mclt_test_01.mclt16x16_i.phase_rotator_i.hv_sin
+@22
+mclt_test_01.mclt16x16_i.phase_rotator_i.shift_hv[6:0]
+@800022
+mclt_test_01.mclt16x16_i.phase_rotator_i.sign_cs[5:0]
+@28
+(0)mclt_test_01.mclt16x16_i.phase_rotator_i.sign_cs[5:0]
+(1)mclt_test_01.mclt16x16_i.phase_rotator_i.sign_cs[5:0]
+(2)mclt_test_01.mclt16x16_i.phase_rotator_i.sign_cs[5:0]
+(3)mclt_test_01.mclt16x16_i.phase_rotator_i.sign_cs[5:0]
+(4)mclt_test_01.mclt16x16_i.phase_rotator_i.sign_cs[5:0]
+(5)mclt_test_01.mclt16x16_i.phase_rotator_i.sign_cs[5:0]
+@1001200
+-group_end
+@28
+(6)mclt_test_01.mclt16x16_i.phase_rotator_i.ph[16:0]
+(5)mclt_test_01.mclt16x16_i.phase_rotator_i.ph[16:0]
+mclt_test_01.mclt16x16_i.phase_rotator_i.negm_3
+mclt_test_01.mclt16x16_i.phase_rotator_i.accum_3
+@22
+mclt_test_01.mclt16x16_i.phase_rotator_i.pout_3[47:0]
+@200
+-
+@28
+mclt_test_01.mclt16x16_i.phase_rotator_i.cea1_4
+mclt_test_01.mclt16x16_i.phase_rotator_i.ced_4
+mclt_test_01.mclt16x16_i.phase_rotator_i.cead_4
+@22
+[color] 3
+mclt_test_01.mclt16x16_i.phase_rotator_i.cos_sin_w[17:0]
+@28
+[color] 3
+mclt_test_01.mclt16x16_i.phase_rotator_i.ceb1_4
+[color] 3
+mclt_test_01.mclt16x16_i.phase_rotator_i.ceb2_4
+[color] 3
+mclt_test_01.mclt16x16_i.phase_rotator_i.selb_4
+mclt_test_01.mclt16x16_i.phase_rotator_i.negm_4
+mclt_test_01.mclt16x16_i.phase_rotator_i.accum_4
+@22
+mclt_test_01.mclt16x16_i.phase_rotator_i.pout_4[47:0]
+@c00200
+-dsp2
+@22
+mclt_test_01.mclt16x16_i.phase_rotator_i.dsp_2_i.ain[24:0]
+@28
+mclt_test_01.mclt16x16_i.phase_rotator_i.dsp_2_i.cea1
+mclt_test_01.mclt16x16_i.phase_rotator_i.dsp_2_i.cea2
+mclt_test_01.mclt16x16_i.phase_rotator_i.dsp_2_i.sela
+mclt_test_01.mclt16x16_i.phase_rotator_i.dsp_2_i.cead
+mclt_test_01.mclt16x16_i.phase_rotator_i.dsp_2_i.neg_m
+mclt_test_01.mclt16x16_i.phase_rotator_i.dsp_2_i.accum
+mclt_test_01.mclt16x16_i.phase_rotator_i.dsp_2_i.selb
+@800200
+-dsp48
+@22
+mclt_test_01.mclt16x16_i.phase_rotator_i.dsp_2_i.DSP48E1_i.B[17:0]
+mclt_test_01.mclt16x16_i.phase_rotator_i.dsp_2_i.DSP48E1_i.b_mult[17:0]
+mclt_test_01.mclt16x16_i.phase_rotator_i.dsp_2_i.DSP48E1_i.qb_o_mux[17:0]
+mclt_test_01.mclt16x16_i.phase_rotator_i.dsp_2_i.DSP48E1_i.qb_o_reg1[17:0]
+mclt_test_01.mclt16x16_i.phase_rotator_i.dsp_2_i.DSP48E1_i.qb_o_reg2[17:0]
+@200
+-
+@1000200
+-dsp48
+@1401200
+-dsp2
+@1000200
+-dsps
+-rotator
 @800200
 -mclt16x16
 @c00022
@@ -597,7 +904,6 @@ mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.x_ra1h
 mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.transpose_wa[7:0]
 mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.transpose_di[24:0]
 @28
-mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.pre2_dsth[1:0]
 mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.transpose_out_start
 @22
 mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.transpose_rcntr[6:0]
@@ -617,7 +923,6 @@ mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.out_wa[3:0]
 @22
 mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.out_wd[24:0]
 @28
-mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.pre2_dstv[1:0]
 mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.sub16
 mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.inc16
 mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.start_out
@@ -705,7 +1010,7 @@ mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.dct_iv8_1d_pass2_1_i.dst_in
 mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.dct_iv8_1d_pass2_1_i.start
 @22
 mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.dct_iv8_1d_pass2_1_i.d_in[24:0]
-@29
+@28
 mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.dct_iv8_1d_pass2_1_i.pre2_start_out
 @200
 -

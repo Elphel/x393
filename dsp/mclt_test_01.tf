@@ -95,12 +95,14 @@ module  mclt_test_01 ();
 
     reg  [DTT_IN_WIDTH - 1:0]   java_dtt_in0[0:255]; // SuppressThisWarning VEditor : assigned in $readmem() system task
 
-    reg     [WND_WIDTH - 1:0]   tiles_wnd[0:1023];
-    reg  [DTT_IN_WIDTH - 1:0]   java_dtt_in[0:1023];
+    reg     [WND_WIDTH - 1:0]   tiles_wnd[0:1023];    // SuppressThisWarning VEditor : assigned in $readmem() system task
+    reg  [DTT_IN_WIDTH - 1:0]   java_dtt_in[0:1023];  // SuppressThisWarning VEditor : assigned in $readmem() system task
 
     reg  [DTT_IN_WIDTH - 1:0]   java_dtt_out0[0:255]; // SuppressThisWarning VEditor : assigned in $readmem() system task
-    reg  [DTT_IN_WIDTH - 1:0]   java_dtt_out[0:1023];
+    reg  [DTT_IN_WIDTH - 1:0]   java_dtt_out[0:1023]; // SuppressThisWarning VEditor : assigned in $readmem() system task
 
+    reg  [DTT_IN_WIDTH - 1:0]   java_dtt_rot0[0:255]; // SuppressThisWarning VEditor : assigned in $readmem() system task
+    reg  [DTT_IN_WIDTH - 1:0]   java_dtt_rot[0:1023]; // SuppressThisWarning VEditor : assigned in $readmem() system task
     integer   i, n, n_out;
     initial begin
         $readmemh("input_data/clt_wnd_signs.dat",  java_wnd_signs);
@@ -129,6 +131,10 @@ module  mclt_test_01 ();
             java_dtt_out['h000 + i] = java_dtt_out0[i]; 
         end
         
+        $readmemh("input_data/clt_dtt_rot_00_2_x1489_y951.dat",java_dtt_rot0);
+        for (i=0; i<256; i=i+1) begin
+            java_dtt_rot['h000 + i] = java_dtt_rot0[i]; 
+        end
         
         $readmemh("input_data/tile_02.dat",tile_shift);
         shifts_x[1] = tile_shift[0][SHIFT_WIDTH-1:0];
@@ -360,7 +366,8 @@ module  mclt_test_01 ();
 
     integer n6, cntr6, diff6, diff6a; // SuppressThisWarning VEditor : assigned in $readmem() system task
     wire [DTT_IN_WIDTH-1:0] data_dtt_out = mclt16x16_i.dtt_rd_data;
-    wire [DTT_IN_WIDTH-1:0] java_data_dtt_out = java_dtt_out0[{cntr6[1:0],cntr6[7:2]}]; // java_dtt_in[n2 * 256 + cntr2];  
+//    wire [DTT_IN_WIDTH-1:0] java_data_dtt_out = java_dtt_out0[{cntr6[1:0],cntr6[7:2]}]; // java_dtt_in[n2 * 256 + cntr2];  
+    wire [DTT_IN_WIDTH-1:0] java_data_dtt_out = java_dtt_out0[{cntr6[0],cntr6[1],cntr6[7:2]}]; // java_dtt_in[n2 * 256 + cntr2];  
     initial begin
         while (RST) @(negedge CLK);
         for (n6 = 0; n6 < 4; n6 = n6+1) begin

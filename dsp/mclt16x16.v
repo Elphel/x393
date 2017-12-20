@@ -76,11 +76,19 @@ module  mclt16x16#(
     output                            dv,           //!< output data valid
     output signed [OUT_WIDTH - 1 : 0] dout          //!<frequency domain data output            
 );
+    localparam  DTT_OUT_DELAY = 191; // start output to sin/cos rotator, ~=3/4 of 256
+    localparam  DTT_IN_DELAY =  195; // fune tune? ~= 3/4 of 256
 
-    reg [SHIFT_WIDTH-1:0] x_shft_r;
-    reg [SHIFT_WIDTH-1:0] y_shft_r;
-    reg [SHIFT_WIDTH-1:0] x_shft_r2;
-    reg [SHIFT_WIDTH-1:0] y_shft_r2;
+    // maybe use small FIFO memory?
+    reg [SHIFT_WIDTH-1:0] x_shft_r;  // registered at start
+    reg [SHIFT_WIDTH-1:0] y_shft_r;  // registered at start
+    reg [SHIFT_WIDTH-1:0] x_shft_r2; // use for the window calculation
+    reg [SHIFT_WIDTH-1:0] y_shft_r2; // use for the window calculation
+    reg [SHIFT_WIDTH-1:0] x_shft_r3; // registered @ start_dtt
+    reg [SHIFT_WIDTH-1:0] y_shft_r3; // registered @ start_dtt
+    reg [SHIFT_WIDTH-1:0] x_shft_r4; // registered @ dtt_start_first_fill
+    reg [SHIFT_WIDTH-1:0] y_shft_r4; // registered @ dtt_start_first_fill
+    
     reg             [3:0] bayer_r;
     reg             [3:0] bayer_d; // same latency as mpix_a_w
     reg             [7:0] in_cntr; // input counter
@@ -139,7 +147,7 @@ module  mclt16x16#(
     wire                           var_last;    // next cycle the   data_xx_r will have data  (in_busy[14], ...)
     
 // reading/converting DTT
-    wire                           start_dtt = dtt_in_cntr == 196; // fune tune? ~= 3/4 of 256 
+    reg                            start_dtt; //  = dtt_in_cntr == 196; // fune tune? ~= 3/4 of 256 
     reg                      [7:0] dtt_r_cntr; //
     reg                            dtt_r_page;
     reg                            dtt_r_re;
@@ -166,13 +174,21 @@ module  mclt16x16#(
             bayer_r <= bayer;
         end
         start_r <= {start_r[0], start};
-//        if (in_busy[2]) begin      // same latency as mpix_a_w
         if (start_r[1]) begin      // same latency as mpix_a_w
-            x_shft_r2 <= x_shft_r;
+            x_shft_r2 <= x_shft_r; // use for the window 
             y_shft_r2 <= y_shft_r;
         end
+
+        if (start_dtt) begin 
+            x_shft_r3 <= x_shft_r2; 
+            y_shft_r3 <= y_shft_r2;
+        end
+
+        if (dtt_start_first_fill) begin 
+            x_shft_r4 <= x_shft_r3; 
+            y_shft_r4 <= y_shft_r3;
+        end
         
-///        if (in_busy[2]) bayer_d <= bayer_r; 
         if (in_busy[1]) bayer_d <= bayer_r; 
         
         if      (rst)      in_busy <= 0;
@@ -190,11 +206,7 @@ module  mclt16x16#(
         if (in_busy[9])  pix_wnd_r <= mpixel_d_r * window_r; // 1 MSB is extra
         
         // pix_wnd_r2 - positive with 2 extra zeros, max value 0x3fff60
-///        if (in_busy[10]) pix_wnd_r2 <= {2'b00,pix_wnd_r[PIXEL_WIDTH + WND_WIDTH - 2 -: DTT_IN_WIDTH - 2]};
         if (in_busy[10]) begin
-///        if (in_busy[9]) begin
-///         pix_wnd_r2 <= {2'b0,pix_wnd_r[PIXEL_WIDTH + WND_WIDTH - 2 -: DTT_IN_WIDTH - 2]};
-//            pix_wnd_r2_old <= {{2{pix_wnd_r[PIXEL_WIDTH + WND_WIDTH - 2]}},pix_wnd_r[PIXEL_WIDTH + WND_WIDTH - 2 -: DTT_IN_WIDTH - 2]};
             pix_wnd_r2 <= {{2{pix_wnd_r2_w[DTT_IN_WIDTH-3]}},pix_wnd_r2_w};
             mpix_use_r  <= mpix_use_d;
             var_first_r <= var_first_d;
@@ -221,7 +233,10 @@ module  mclt16x16#(
 
         if (!in_busy[16]) dtt_in_cntr <= 0; 
         else              dtt_in_cntr <= dtt_in_cntr + 1;
-        
+
+        start_dtt <= dtt_in_cntr == DTT_IN_DELAY;
+
+
         if (rst)               dtt_in_page <= 0;
         else if (&dtt_in_cntr) dtt_in_page <= dtt_in_page + 1;
         
@@ -434,16 +449,18 @@ D11 - negate for mode 3 (SS)
     wire                        dtt_inc16;
     reg                   [4:0] dtt_out_ram_cntr;
     reg                   [4:0] dtt_out_ram_wah;
-    wire                        dtt_start_fill; // some data available in DTT output buffer, OK to start consecutive readout 
+    wire                        dtt_start_fill; // some data available in DTT output buffer, OK to start consecutive readout
+    reg                         dtt_start_first_fill;
     reg                         dtt_start_out;  // start read out to sin/cos rotator
 
 // frequency domain, high address bit - page, 2 next - mode, 6 LSBs - transposed FD data (vertical first) 
     wire                  [8:0] dtt_out_ram_wa = {dtt_out_ram_wah,dtt_out_wa16};
     
-    localparam  DTT_OUT_DELAY = 192; // start output to sin/cos rotator, ~=3/4 of 256
+    
     reg                   [7:0] dtt_dly_cntr;
     reg                   [8:0] dtt_rd_cntr; // counter for dtt readout to rotator
-    wire                  [8:0] dtt_rd_ra = {dtt_rd_cntr[8],dtt_rd_cntr[1:0],dtt_rd_cntr[7:2]}; // page, mode, frequency
+//    wire                  [8:0] dtt_rd_ra = {dtt_rd_cntr[8],dtt_rd_cntr[1:0],dtt_rd_cntr[7:2]}; // page, mode, frequency
+    wire                  [8:0] dtt_rd_ra = {dtt_rd_cntr[8],dtt_rd_cntr[0],dtt_rd_cntr[1],dtt_rd_cntr[7:2]}; // page, mode, frequency
     reg                   [2:0] dtt_rd_regen_dv;    // dtt output buffer mem read, register enable, data valid
     wire                 [35:0] dtt_rd_data_w; // high bits are not used 
     // data to be input to phase rotator
@@ -457,9 +474,13 @@ D11 - negate for mode 3 (SS)
         else if (dtt_inc16)  dtt_out_ram_cntr <= dtt_out_ram_cntr + 1;
         dtt_out_ram_wah <= dtt_out_ram_cntr - dtt_sub16;
         
-        if      (rst)                                 dtt_dly_cntr <= 0;
-        else if (dtt_start_fill & dtt_first_quad_out) dtt_dly_cntr <= DTT_OUT_DELAY;
-        else if (|dtt_dly_cntr)                       dtt_dly_cntr <= dtt_dly_cntr - 1;
+        dtt_start_first_fill <= dtt_start_fill & dtt_first_quad_out;
+        
+        if      (rst)                  dtt_dly_cntr <= 0;
+        else if (dtt_start_first_fill) dtt_dly_cntr <= DTT_OUT_DELAY;
+        else if (|dtt_dly_cntr)        dtt_dly_cntr <= dtt_dly_cntr - 1;
+        
+        
         
         dtt_start_out <= dtt_dly_cntr == 1;
 
@@ -534,8 +555,8 @@ D11 - negate for mode 3 (SS)
         .rst           (rst),           // input
         .start         (dtt_start_out), // input
         // are these shift OK? Will need to be valis only @ dtt_start_out
-        .shift_h       (x_shft_r2),     // input[6:0] signed 
-        .shift_v       (y_shft_r2),     // input[6:0] signed 
+        .shift_h       (x_shft_r4),     // input[6:0] signed 
+        .shift_v       (y_shft_r4),     // input[6:0] signed 
         .fd_din        (dtt_rd_data),   // input[24:0] signed. Expected latency = 3 from start  
         .fd_out        (dout),          // output[24:0] reg signed 
         .pre_first_out (pre_first_out), // output reg 

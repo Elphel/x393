@@ -1,37 +1,37 @@
 // DTT input range: -341.093520 ... 345.703701
-  a6e42   bbecb   b0d82   757e8   888a0   44f14   3df14    4f8f 
-  9bacb   c2323   8292d   94604   3dd5c   7c9f2    928f   3da1f 
-  a737e   8f707   c33dd   4c6b3   9ea56 1fffa0a   7736b 1fb3813 
-  9aa38   c729a   53827   c82f8    3db4   9a8b6 1fc678d   6d045 
-  9dde5   542e6   c29ad    72b8   a6d06 1fc51bf   95f2b 1f969fc 
-  71fc8   a3d29    9586   b3172 1fb7b28   b1e4e 1f85a94   aac83 
-  5526c 1fe55b1   9908c 1face78  2b36b0 1f6ec1c   a5ece 1f4982f 
-  269b2   3bb9a 1f8177b   ac042 1f778e6   ae96a 1f385d0   d69c9 
+  a6e2e   bbeb3   b0d6b   757d9   8888f   44f0b   3df0d    4f8e 
+  9bab8   c230a   8291d   945f1   3dd54   7c9e3    928e   3da17 
+  a7369   8f6f5   c33c5   4c6a9   9ea42 1fffa0b   7735c 1fb381d 
+  9aa25   c7281   5381c   c82df    3db3   9a8a3 1fc6794   6d038 
+  9ddd2   542dc   c2995    72b7   a6cf1 1fc51c7   95f18 1f96a09 
+  71fba   a3d15    9585   b315b 1fb7b31   b1e38 1f85aa4   aac6e 
+  55262 1fe55b4   99079 1face82  2b365a 1f6ec2e   a5eb9 1f49846 
+  269ad   3bb93 1f8178b   ac02c 1f778f7   ae954 1f385e9   d69ae 
 
-1fe3382 1fd4a1c 1f965df 1fae322 1f6c881 1f78cdc 1f6c360 1f640e0 
-  3011b 1f8b460 1ff2381 1f81088 1fb1cb0 1f625f5 1f64e21 1f664ab 
-1f90fae   2d78c 1f5d4f8 1feb1c2 1f5c6fb 1fac5db 1f640c5 1f6fa75 
-  8338c 1f45b22   3b259 1f3b8e0 1feafb8 1f5f0f0 1fb07fe 1f80604 
-1f4675f   80c13 1f2f275   3cb9b 1f5b248 1fe87dc 1f7abd1 1fb126f 
-  cb130 1f2435c   9b2ae 1f3ea65   35bcc 1f6751a 1fdc518 1f918a4 
-1f272bc  26fe2b 1f2bdb4   92266 1d55cd7   35f2e 1fad736 1fdba2d 
- 11f686 1f257ae   ff5bb 1f2ff73   7aecf 1f835ee   430ad 1fd9293 
+1fe3385 1fd4a22 1f965ed 1fae32c 1f6c893 1f78ced 1f6c373 1f640f4 
+  30115 1f8b46f 1ff2383 1f81098 1fb1cb9 1f62608 1f64e35 1f664be 
+1f90fbc   2d786 1f5d50c 1feb1c5 1f5c70f 1fac5e5 1f640d8 1f6fa87 
+  8337b 1f45b39   3b251 1f3b8f9 1feafbb 1f5f104 1fb0808 1f80614 
+1f46776   80c03 1f2f28f   3cb93 1f5b25c 1fe87df 1f7abe2 1fb1279 
+  cb116 1f24377   9b29a 1f3ea7d   35bc5 1f6752d 1fdc51d 1f918b2 
+1f272d7  26fddd 1f2bdcf   92254 1d55d2d   35f28 1fad740 1fdba31 
+ 11f662 1f257ca   ff59b 1f2ff8d   7aec0 1f835fe   430a5 1fd9297 
 
-1fe3382   2b5e4 1f965df   51cde 1f6c881   87324 1f6c360   9bf20 
-1fcfee5 1f8b460    dc7f 1f81088   4e350 1f625f5   9b1df 1f664ab 
-1f90fae 1fd2874 1f5d4f8   14e3e 1f5c6fb   53a25 1f640c5   9058b 
-1f7cc74 1f45b22 1fc4da7 1f3b8e0   15048 1f5f0f0   4f802 1f80604 
-1f4675f 1f7f3ed 1f2f275 1fc3465 1f5b248   17824 1f7abd1   4ed91 
-1f34ed0 1f2435c 1f64d52 1f3ea65 1fca434 1f6751a   23ae8 1f918a4 
-1f272bc 1d901d5 1f2bdb4 1f6dd9a 1d55cd7 1fca0d2 1fad736   245d3 
-1ee097a 1f257ae 1f00a45 1f2ff73 1f85131 1f835ee 1fbcf53 1fd9293 
+1fe3385   2b5de 1f965ed   51cd4 1f6c893   87313 1f6c373   9bf0c 
+1fcfeeb 1f8b46f    dc7d 1f81098   4e347 1f62608   9b1cb 1f664be 
+1f90fbc 1fd287a 1f5d50c   14e3b 1f5c70f   53a1b 1f640d8   90579 
+1f7cc85 1f45b39 1fc4daf 1f3b8f9   15045 1f5f104   4f7f8 1f80614 
+1f46776 1f7f3fd 1f2f28f 1fc346d 1f5b25c   17821 1f7abe2   4ed87 
+1f34eea 1f24377 1f64d66 1f3ea7d 1fca43b 1f6752d   23ae3 1f918b2 
+1f272d7 1d90223 1f2bdcf 1f6ddac 1d55d2d 1fca0d8 1fad740   245cf 
+1ee099e 1f257ca 1f00a65 1f2ff8d 1f85140 1f835fe 1fbcf5b 1fd9297 
 
-  a6e42 1f44135   b0d82 1f8a818   888a0 1fbb0ec   3df14 1ffb071 
-1f64535   c2323 1f7d6d3   94604 1fc22a4   7c9f2 1ff6d71   3da1f 
-  a737e 1f708f9   c33dd 1fb394d   9ea56     5f6   7736b   4c7ed 
-1f655c8   c729a 1fac7d9   c82f8 1ffc24c   9a8b6   39873   6d045 
-  9dde5 1fabd1a   c29ad 1ff8d48   a6d06   3ae41   95f2b   69604 
-1f8e038   a3d29 1ff6a7a   b3172   484d8   b1e4e   7a56c   aac83 
-  5526c   1aa4f   9908c   53188  2b36b0   913e4   a5ece   b67d1 
-1fd964e   3bb9a   7e885   ac042   8871a   ae96a   c7a30   d69c9 
+  a6e2e 1f4414d   b0d6b 1f8a827   8888f 1fbb0f5   3df0d 1ffb072 
+1f64548   c230a 1f7d6e3   945f1 1fc22ac   7c9e3 1ff6d72   3da17 
+  a7369 1f7090b   c33c5 1fb3957   9ea42     5f5   7735c   4c7e3 
+1f655db   c7281 1fac7e4   c82df 1ffc24d   9a8a3   3986c   6d038 
+  9ddd2 1fabd24   c2995 1ff8d49   a6cf1   3ae39   95f18   695f7 
+1f8e046   a3d15 1ff6a7b   b315b   484cf   b1e38   7a55c   aac6e 
+  55262   1aa4c   99079   5317e  2b365a   913d2   a5eb9   b67ba 
+1fd9653   3bb93   7e875   ac02c   88709   ae954   c7a17   d69ae 
 

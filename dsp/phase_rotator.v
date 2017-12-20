@@ -43,7 +43,8 @@ module  phase_rotator#(
     parameter SHIFT_WIDTH =      7, // x/y subpixel shift, signed -0.5<=shift<0.5
     parameter DSP_B_WIDTH =     18, // signed, output from sin/cos ROM
     parameter DSP_A_WIDTH =     25,
-    parameter DSP_P_WIDTH =     48
+    parameter DSP_P_WIDTH =     48,
+    parameter COEFF_WIDTH =     17 // = DSP_B_WIDTH - 1 or positive numbers,
 )(
     input                            clk,           //!< system clock, posedge
     input                            rst,           //!< sync reset
@@ -89,7 +90,7 @@ module  phase_rotator#(
     reg         [SHIFT_WIDTH-1:0] shift_v0;
     reg         [SHIFT_WIDTH-1:0] shift_vr;
     reg         [SHIFT_WIDTH-1:0] shift_hv; // combined horizonta and vertical shifts to match cntr_mux;
-    reg                           sign_cs;  // sign for cos / sin, feed to DSP
+    reg                     [5:0] sign_cs;  // sign for cos / sin, feed to DSP
     wire                          sign_cs_d; // sign_cs delayed by 3 clocks
     reg                     [1:0] sign_cs_r; // sign_cs delayed by 5 clocks      
     reg         [SHIFT_WIDTH-2:0] rom_a_shift; // ~shift absolute value
@@ -99,7 +100,7 @@ module  phase_rotator#(
     wire                          shift_ends_0 = shift_hv[SHIFT_WIDTH-2:0] == 0;
     reg                     [2:0] rom_re_regen;
     wire signed [DSP_B_WIDTH-1:0] cos_sin_w;
-    wire mux_v =  run_v && cntr_v[1]; 
+    wire mux_v =  cntr_v[1]; //  && run_v; // removed for debugging to see 'x' 
 
     always @ (posedge clk) begin
         if (rst) start_d <= 0;
@@ -131,7 +132,8 @@ module  phase_rotator#(
         rom_a_shift <= shift_hv[SHIFT_WIDTH-1] ? -shift_hv[SHIFT_WIDTH-2:0] : shift_hv[SHIFT_WIDTH-2:0];
         rom_a_sin <=   shift_ends_0 ? shift_hv[SHIFT_WIDTH-1] : hv_sin;
 //        sign_cs <=     shift_hv[SHIFT_WIDTH-1] & ( hv_sin | (shift_ends_0 & hv_index[2]));
-        sign_cs <=     shift_hv[SHIFT_WIDTH-1] &  hv_sin;
+//        sign_cs <=     shift_hv[SHIFT_WIDTH-1] &  hv_sin;
+        sign_cs <=     {sign_cs[4:0], shift_hv[SHIFT_WIDTH-1] &  hv_sin};
         
         rom_re_regen <= {rom_re_regen[1:0],run_hv};
         
@@ -157,8 +159,8 @@ module  phase_rotator#(
         .clk  (clk),             // input
         .rst  (rst),             // input
         .dly  (4'h2),            // input[3:0] 
-        .din  (sign_cs),         // input[0:0] 
-        .dout (sign_cs_d)      // output[0:0] 
+        .din  (sign_cs[0]),      // input[0:0] 
+        .dout (sign_cs_d)        // output[0:0] 
     );
     
     
@@ -168,7 +170,7 @@ module  phase_rotator#(
         .LOG2WIDTH_A(4),
         .LOG2WIDTH_B(4)
 `ifdef PRELOAD_BRAMS
-    `include "mclt_fold_rom.vh" // TODO: put real!
+    `include "mclt_rotator_rom.vh"
 `endif
     ) i_mclt_rot_rom (
     
@@ -192,8 +194,8 @@ module  phase_rotator#(
     reg ceb1_1, ceb1_2, ceb1_3, ceb1_4;
     reg ceb2_1, ceb2_2, ceb2_3, ceb2_4;
     reg selb_1, selb_2, selb_3, selb_4;
-    wire signed [DSP_A_WIDTH-1:0] ain_34 = pout_1[DSP_P_WIDTH-1 -: FD_WIDTH]; // bit select from pout_1    
-    wire signed [DSP_A_WIDTH-1:0] din_34 = pout_2[DSP_P_WIDTH-1 -: FD_WIDTH]; // bit select from pout_1    
+    wire signed [DSP_A_WIDTH-1:0] ain_34 = pout_1[COEFF_WIDTH +: DSP_A_WIDTH]; // bit select from pout_1    
+    wire signed [DSP_A_WIDTH-1:0] din_34 = pout_2[COEFF_WIDTH +: DSP_A_WIDTH]; // bit select from pout_1    
     reg cea1_1,  cea1_2,  cea1_3,  cea1_4;
     reg cea2_1,  cea2_2,  ced_3,   ced_4;
     reg sela_1,  sela_2,  end_3,   end_4;
@@ -210,7 +212,8 @@ module  phase_rotator#(
     
     always @(posedge clk) begin
         if (rst) ph <= 0;
-        else ph <= {ph[15:0], run_h & ~cntr_h[0] & cntr_h[1]};
+//        else ph <= {ph[15:0], run_h & ~cntr_h[0] & cntr_h[1]};
+        else ph <= {ph[15:0], run_h & ~cntr_h[0] & ~cntr_h[1]};
         cea1_1 <= ph[0]; cea2_1 <= ph[2]; cea1_2 <= ph[1]; cea2_2 <= ph[3];
         ceb1_1 <= ph[3]; ceb2_1 <= ph[2]; ceb1_2 <= ph[2] | ph[3]; ceb2_2 <= ph[3];
         cead_1 <= |ph[5:2]; cead_2 <= |ph[6:3];
@@ -218,8 +221,12 @@ module  phase_rotator#(
         sela_1 <= ph[2] | ph[4]; sela_2 <= ph[3] | ph[5];
         selb_1 <= ph[2] | ph[5]; selb_2 <= ph[3] | ph[6];
         // 0 1 0 0
-        negm_1 <= (ph[3] ^ sign_cs_d) | (~ph[4] ^ sign_cs_d) | (ph[5] ^ sign_cs_r[1]) | (ph[6] ^ sign_cs_r[1]);
-        negm_2 <= (ph[4] ^ sign_cs_d) | (~ph[5] ^ sign_cs_d) | (ph[6] ^ sign_cs_r[1]) | (ph[7] ^ sign_cs_r[1]);
+//        negm_1 <= (ph[3] ^ sign_cs_d) | (~ph[4] ^ sign_cs_d) | (ph[5] ^ sign_cs_r[1]) | (ph[6] ^ sign_cs_r[1]);
+//        negm_2 <= (ph[4] ^ sign_cs_d) | (~ph[5] ^ sign_cs_d) | (ph[6] ^ sign_cs_r[1]) | (ph[7] ^ sign_cs_r[1]);
+///        negm_1 <= (ph[4] & ~sign_cs[0]) | (ph[5] & sign_cs[1]);
+///        negm_2 <= (ph[5] & ~sign_cs[1]) | (ph[6] & sign_cs[2]);
+        negm_1 <= (ph[4] & ~sign_cs[2]) | (ph[5] & sign_cs[3]);
+        negm_2 <= (ph[5] & ~sign_cs[3]) | (ph[6] & sign_cs[4]);
         
         accum_1 <= ph[4] | ph[6]; accum_2 <= ph[5] | ph[7];
     // vertical shift DSPs
@@ -230,16 +237,22 @@ module  phase_rotator#(
         end_3  <= ph[10] | ph[8]; end_4 <= ph[11] | ph[9];
         selb_3 <= ph[8] | ph[11]; selb_4 <= ph[9] | ph[12];
 
-        negm_4 <= (ph[ 9] ^ sign_cs_d) | (~ph[10] ^ sign_cs_d) | (ph[11] ^ sign_cs_r[1]) | (ph[12] ^ sign_cs_r[1]);
-        negm_3 <= (ph[10] ^ sign_cs_d) | (~ph[11] ^ sign_cs_d) | (ph[12] ^ sign_cs_r[1]) | (ph[13] ^ sign_cs_r[1]);
+//        negm_4 <= (ph[ 9] ^ sign_cs_d) | (~ph[10] ^ sign_cs_d) | (ph[11] ^ sign_cs_r[1]) | (ph[12] ^ sign_cs_r[1]);
+//        negm_3 <= (ph[10] ^ sign_cs_d) | (~ph[11] ^ sign_cs_d) | (ph[12] ^ sign_cs_r[1]) | (ph[13] ^ sign_cs_r[1]);
+///        negm_3 <= (ph[10] & ~sign_cs[0]) | (ph[11] & sign_cs[1]);
+///        negm_4 <= (ph[11] & ~sign_cs[1]) | (ph[12] & sign_cs[2]);
+        negm_3 <= (ph[10] & ~sign_cs[2]) | (ph[11] & sign_cs[3]);
+        negm_4 <= (ph[11] & ~sign_cs[3]) | (ph[12] & sign_cs[4]);
 
         accum_3 <= ph[10] | ph[12]; accum_4 <= ph[11] | ph[13];
         
         omux_sel <= ph[13] | ph[15];
         fd_dv <= pre_dv;
-        if (pre_dv) fd_out <= omux_sel ? pout_4[DSP_P_WIDTH-1 -: FD_WIDTH] : pout_3[DSP_P_WIDTH-1 -: FD_WIDTH];
+        if (pre_dv) fd_out <= omux_sel ? pout_4[COEFF_WIDTH +: DSP_A_WIDTH] : pout_3[COEFF_WIDTH +: DSP_A_WIDTH];
         
-        pre_first_out <= ph[12];
+//        pre_first_out <= ph[12];
+        pre_first_out <= cntr_h[7:0] == 8'hf;
+        
     end
      
 /*
@@ -251,9 +264,7 @@ module  phase_rotator#(
     dsp_ma_preadd #(
         .B_WIDTH(DSP_B_WIDTH),
         .A_WIDTH(DSP_A_WIDTH),
-        .P_WIDTH(DSP_P_WIDTH),
-        .A_INPUT("DIRECT"),
-        .B_INPUT("DIRECT")
+        .P_WIDTH(DSP_P_WIDTH)
     ) dsp_1_i (
         .clk   (clk),       // input
         .rst   (rst),       // input
@@ -280,8 +291,7 @@ module  phase_rotator#(
         .B_WIDTH(DSP_B_WIDTH),
         .A_WIDTH(DSP_A_WIDTH),
         .P_WIDTH(DSP_P_WIDTH),
-        .A_INPUT("DIRECT"),
-        .B_INPUT("CASCADE")
+        .BREG   (2)
     ) dsp_2_i (
         .clk   (clk),       // input
         .rst   (rst),       // input
@@ -309,9 +319,7 @@ module  phase_rotator#(
     dsp_ma_preadd #(
         .B_WIDTH(DSP_B_WIDTH),
         .A_WIDTH(DSP_A_WIDTH),
-        .P_WIDTH(DSP_P_WIDTH),
-        .A_INPUT("DIRECT"),
-        .B_INPUT("DIRECT")
+        .P_WIDTH(DSP_P_WIDTH)
     ) dsp_3_i (
         .clk   (clk),       // input
         .rst   (rst),       // input
@@ -338,8 +346,7 @@ module  phase_rotator#(
         .B_WIDTH(DSP_B_WIDTH),
         .A_WIDTH(DSP_A_WIDTH),
         .P_WIDTH(DSP_P_WIDTH),
-        .A_INPUT("DIRECT"),
-        .B_INPUT("CASCADE")
+        .BREG   (2)
     ) dsp_4_i (
         .clk   (clk),       // input
         .rst   (rst),       // input
