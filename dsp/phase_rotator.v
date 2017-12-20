@@ -90,7 +90,7 @@ module  phase_rotator#(
     reg         [SHIFT_WIDTH-1:0] shift_v0;
     reg         [SHIFT_WIDTH-1:0] shift_vr;
     reg         [SHIFT_WIDTH-1:0] shift_hv; // combined horizonta and vertical shifts to match cntr_mux;
-    reg                     [5:0] sign_cs;  // sign for cos / sin, feed to DSP
+    reg                     [4:0] sign_cs;  // sign for cos / sin, feed to DSP
     wire                          sign_cs_d; // sign_cs delayed by 3 clocks
     reg                     [1:0] sign_cs_r; // sign_cs delayed by 5 clocks      
     reg         [SHIFT_WIDTH-2:0] rom_a_shift; // ~shift absolute value
@@ -133,7 +133,7 @@ module  phase_rotator#(
         rom_a_sin <=   shift_ends_0 ? shift_hv[SHIFT_WIDTH-1] : hv_sin;
 //        sign_cs <=     shift_hv[SHIFT_WIDTH-1] & ( hv_sin | (shift_ends_0 & hv_index[2]));
 //        sign_cs <=     shift_hv[SHIFT_WIDTH-1] &  hv_sin;
-        sign_cs <=     {sign_cs[4:0], shift_hv[SHIFT_WIDTH-1] &  hv_sin};
+        sign_cs <=     {sign_cs[3:0], shift_hv[SHIFT_WIDTH-1] &  hv_sin};
         
         rom_re_regen <= {rom_re_regen[1:0],run_hv};
         
