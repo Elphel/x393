@@ -117,9 +117,6 @@ module  phase_rotator#(
         if (!run_h) cntr_h <= 0;
         else        cntr_h <= cntr_h + 1;
         
-//        if (!run_hv) hv_phase <= 0;
-//        else         hv_phase <= hv_phase + 1;
-        
         // combine horizontal and vertical counters and shifts to feed to ROM
         hv_index <= mux_v ? cntr_v[4:2] : cntr_h[7:5]; // input data "down first" (transposed) 
         hv_sin <=   mux_v ? cntr_v[0] :   cntr_h[0]; 
@@ -131,8 +128,6 @@ module  phase_rotator#(
         
         rom_a_shift <= shift_hv[SHIFT_WIDTH-1] ? -shift_hv[SHIFT_WIDTH-2:0] : shift_hv[SHIFT_WIDTH-2:0];
         rom_a_sin <=   shift_ends_0 ? shift_hv[SHIFT_WIDTH-1] : hv_sin;
-//        sign_cs <=     shift_hv[SHIFT_WIDTH-1] & ( hv_sin | (shift_ends_0 & hv_index[2]));
-//        sign_cs <=     shift_hv[SHIFT_WIDTH-1] &  hv_sin;
         sign_cs <=     {sign_cs[3:0], shift_hv[SHIFT_WIDTH-1] &  hv_sin};
         
         rom_re_regen <= {rom_re_regen[1:0],run_hv};
@@ -212,7 +207,6 @@ module  phase_rotator#(
     
     always @(posedge clk) begin
         if (rst) ph <= 0;
-//        else ph <= {ph[15:0], run_h & ~cntr_h[0] & cntr_h[1]};
         else ph <= {ph[15:0], run_h & ~cntr_h[0] & ~cntr_h[1]};
         cea1_1 <= ph[0]; cea2_1 <= ph[2]; cea1_2 <= ph[1]; cea2_2 <= ph[3];
         ceb1_1 <= ph[3]; ceb2_1 <= ph[2]; ceb1_2 <= ph[2] | ph[3]; ceb2_2 <= ph[3];
@@ -221,10 +215,6 @@ module  phase_rotator#(
         sela_1 <= ph[2] | ph[4]; sela_2 <= ph[3] | ph[5];
         selb_1 <= ph[2] | ph[5]; selb_2 <= ph[3] | ph[6];
         // 0 1 0 0
-//        negm_1 <= (ph[3] ^ sign_cs_d) | (~ph[4] ^ sign_cs_d) | (ph[5] ^ sign_cs_r[1]) | (ph[6] ^ sign_cs_r[1]);
-//        negm_2 <= (ph[4] ^ sign_cs_d) | (~ph[5] ^ sign_cs_d) | (ph[6] ^ sign_cs_r[1]) | (ph[7] ^ sign_cs_r[1]);
-///        negm_1 <= (ph[4] & ~sign_cs[0]) | (ph[5] & sign_cs[1]);
-///        negm_2 <= (ph[5] & ~sign_cs[1]) | (ph[6] & sign_cs[2]);
         negm_1 <= (ph[4] & ~sign_cs[2]) | (ph[5] & sign_cs[3]);
         negm_2 <= (ph[5] & ~sign_cs[3]) | (ph[6] & sign_cs[4]);
         
@@ -237,10 +227,6 @@ module  phase_rotator#(
         end_3  <= ph[10] | ph[8]; end_4 <= ph[11] | ph[9];
         selb_3 <= ph[8] | ph[11]; selb_4 <= ph[9] | ph[12];
 
-//        negm_4 <= (ph[ 9] ^ sign_cs_d) | (~ph[10] ^ sign_cs_d) | (ph[11] ^ sign_cs_r[1]) | (ph[12] ^ sign_cs_r[1]);
-//        negm_3 <= (ph[10] ^ sign_cs_d) | (~ph[11] ^ sign_cs_d) | (ph[12] ^ sign_cs_r[1]) | (ph[13] ^ sign_cs_r[1]);
-///        negm_3 <= (ph[10] & ~sign_cs[0]) | (ph[11] & sign_cs[1]);
-///        negm_4 <= (ph[11] & ~sign_cs[1]) | (ph[12] & sign_cs[2]);
         negm_3 <= (ph[10] & ~sign_cs[2]) | (ph[11] & sign_cs[3]);
         negm_4 <= (ph[11] & ~sign_cs[3]) | (ph[12] & sign_cs[4]);
 
@@ -250,15 +236,10 @@ module  phase_rotator#(
         fd_dv <= pre_dv;
         if (pre_dv) fd_out <= omux_sel ? pout_4[COEFF_WIDTH +: DSP_A_WIDTH] : pout_3[COEFF_WIDTH +: DSP_A_WIDTH];
         
-//        pre_first_out <= ph[12];
-        pre_first_out <= cntr_h[7:0] == 8'hf;
+        pre_first_out <= cntr_h[7:0] == 8'hd;
         
     end
      
-/*
-    output reg signed [FD_WIDTH-1:0] fd_out,        //!< frequency domain data in
-
-*/
     // horizontal shift stage
 
     dsp_ma_preadd #(

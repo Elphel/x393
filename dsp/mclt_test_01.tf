@@ -383,7 +383,27 @@ module  mclt_test_01 ();
         end
     end
 
-
+    reg FIRST_OUT;
+    always @(posedge CLK) FIRST_OUT <= mclt16x16_i.pre_first_out;
+    
+    integer n7, cntr7, diff7, diff7a; // SuppressThisWarning VEditor : assigned in $readmem() system task
+    wire [OUT_WIDTH-1:0] java_data_dtt_rot = java_dtt_rot0[{cntr7[1],cntr7[0],cntr7[7:2]}]; // java_dtt_in[n2 * 256 + cntr2];  
+    initial begin
+        while (RST) @(negedge CLK);
+        for (n7 = 0; n7 < 4; n7 = n7+1) begin
+            while (!FIRST_OUT) begin
+                @(negedge CLK);
+            end
+            for (cntr7 = 0; cntr7 < 256; cntr7 = cntr7 + 1) begin
+                #1;
+                diff7 = dout - java_data_dtt_rot;
+                if (n7 < 1) diff7a = dout - java_data_dtt_rot; // TEMPORARY, while no other data
+                @(negedge CLK);
+            end
+        end
+    end
+    
+    
     
     mclt16x16 #(
         .SHIFT_WIDTH     (SHIFT_WIDTH),

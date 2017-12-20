@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.3.78 (w)1999-2016 BSI
-[*] Wed Dec 20 07:04:05 2017
+[*] Wed Dec 20 18:03:31 2017
 [*]
-[dumpfile] "/home/eyesis/nc393/elphel393/fpga-elphel/x393_branch_dct/simulation/mclt_test_01-20171219235955852.fst"
-[dumpfile_mtime] "Wed Dec 20 06:59:58 2017"
-[dumpfile_size] 1334335
+[dumpfile] "/home/eyesis/nc393/elphel393/fpga-elphel/x393_branch_dct/simulation/mclt_test_01-20171220105946700.fst"
+[dumpfile_mtime] "Wed Dec 20 17:59:49 2017"
+[dumpfile_size] 1336550
 [savefile] "/home/eyesis/nc393/elphel393/fpga-elphel/x393_branch_dct/mclt_test_01.sav"
-[timestart] 5698200
+[timestart] 0
 [size] 1814 1171
 [pos] 0 0
-*-14.519981 5777900 2715000 3535000 3355000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-21.371767 6140000 2715000 3535000 3355000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] mclt_test_01.
 [treeopen] mclt_test_01.mclt16x16_i.
 [treeopen] mclt_test_01.mclt16x16_i.dtt_iv_8x8_ad_i.dct_iv8_1d_pass1_0_i.
@@ -142,6 +142,18 @@ mclt_test_01.data_dtt_out[24:0]
 mclt_test_01.java_data_dtt_out[24:0]
 mclt_test_01.diff6
 mclt_test_01.diff6a
+@420
+mclt_test_01.n7
+mclt_test_01.cntr7
+@22
+mclt_test_01.dout[24:0]
+mclt_test_01.java_data_dtt_rot[24:0]
+@8420
+mclt_test_01.dout[24:0]
+mclt_test_01.java_data_dtt_rot[24:0]
+@8421
+mclt_test_01.diff7
+mclt_test_01.diff7a
 @1000200
 -top
 @800200
@@ -289,17 +301,17 @@ mclt_test_01.mclt16x16_i.phase_rotator_i.din_34[24:0]
 mclt_test_01.mclt16x16_i.phase_rotator_i.pout_3[47:0]
 mclt_test_01.mclt16x16_i.phase_rotator_i.pout_4[47:0]
 @28
-mclt_test_01.mclt16x16_i.phase_rotator_i.fd_dv
-@22
-[color] 6
-mclt_test_01.mclt16x16_i.phase_rotator_i.fd_out[24:0]
-@800200
--dsps
-@22
-mclt_test_01.mclt16x16_i.phase_rotator_i.fd_out[24:0]
-@28
 mclt_test_01.mclt16x16_i.phase_rotator_i.pre_first_out
 mclt_test_01.mclt16x16_i.phase_rotator_i.fd_dv
+@22
+[color] 3
+mclt_test_01.mclt16x16_i.phase_rotator_i.fd_out[24:0]
+@28
+mclt_test_01.mclt16x16_i.phase_rotator_i.pre_dv
+@22
+mclt_test_01.mclt16x16_i.phase_rotator_i.cntr_h[7:0]
+@c00200
+-dsps
 @c00022
 mclt_test_01.mclt16x16_i.phase_rotator_i.ph[16:0]
 @28
@@ -383,15 +395,8 @@ mclt_test_01.mclt16x16_i.phase_rotator_i.selb_3
 mclt_test_01.mclt16x16_i.phase_rotator_i.hv_sin
 @22
 mclt_test_01.mclt16x16_i.phase_rotator_i.shift_hv[6:0]
-@800022
-mclt_test_01.mclt16x16_i.phase_rotator_i.sign_cs[5:0]
-@28
-(0)mclt_test_01.mclt16x16_i.phase_rotator_i.sign_cs[5:0]
-(1)mclt_test_01.mclt16x16_i.phase_rotator_i.sign_cs[5:0]
-(2)mclt_test_01.mclt16x16_i.phase_rotator_i.sign_cs[5:0]
-(3)mclt_test_01.mclt16x16_i.phase_rotator_i.sign_cs[5:0]
-(4)mclt_test_01.mclt16x16_i.phase_rotator_i.sign_cs[5:0]
-(5)mclt_test_01.mclt16x16_i.phase_rotator_i.sign_cs[5:0]
+@800200
+-mclt_test_01.mclt16x16_i.phase_rotator_i.sign_cs
 @1001200
 -group_end
 @28
@@ -447,9 +452,11 @@ mclt_test_01.mclt16x16_i.phase_rotator_i.dsp_2_i.DSP48E1_i.qb_o_reg2[17:0]
 -dsp48
 @1401200
 -dsp2
-@1000200
 -dsps
+@1000200
 -rotator
+@22
+mclt_test_01.mclt16x16_i.out_addr[7:0]
 @800200
 -mclt16x16
 @c00022
