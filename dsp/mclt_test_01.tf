@@ -109,7 +109,7 @@ module  mclt_test_01 ();
         $readmemh("input_data/clt_fold_index.dat", java_fold_index);
     
 //        $readmemh("input_data/tile_01.dat",tile_shift);
-        $readmemh("input_data/tile_00_2_x1489_y951.dat",tile_shift);
+        $readmemh("input_data/clt_tile_00_2_x1489_y951.dat",tile_shift);
         shifts_x[0] = tile_shift[0][SHIFT_WIDTH-1:0];
         shifts_y[0] = tile_shift[1][SHIFT_WIDTH-1:0];
         bayer[0] =    tile_shift[2][3:0];
