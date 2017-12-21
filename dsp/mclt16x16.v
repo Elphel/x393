@@ -532,7 +532,7 @@ D11 - negate for mode 3 (SS)
         .rclk     (clk),                // input
         .raddr    (dtt_rd_ra),          // input[8:0] 
         .ren      (dtt_rd_regen_dv[0]), // input
-        .regen    (dtt_rd_regen_dv[0]), // input
+        .regen    (dtt_rd_regen_dv[1]), // input
         .data_out (dtt_rd_data_w),      // output[35:0] 
         .wclk     (clk),                // input
         .waddr    (dtt_out_ram_wa),     // input[8:0] 

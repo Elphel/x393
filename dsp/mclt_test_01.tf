@@ -109,6 +109,7 @@ module  mclt_test_01 ();
         $readmemh("input_data/clt_fold_index.dat", java_fold_index);
     
 //        $readmemh("input_data/tile_01.dat",tile_shift);
+        //============ tile 0
         $readmemh("input_data/clt_tile_00_2_x1489_y951.dat",tile_shift);
         shifts_x[0] = tile_shift[0][SHIFT_WIDTH-1:0];
         shifts_y[0] = tile_shift[1][SHIFT_WIDTH-1:0];
@@ -136,27 +137,95 @@ module  mclt_test_01 ();
             java_dtt_rot['h000 + i] = java_dtt_rot0[i]; 
         end
         
-        $readmemh("input_data/tile_02.dat",tile_shift);
+        //============ tile 1
+        
+        $readmemh("input_data/clt_tile_01_2_x1489_y951.dat",tile_shift);
         shifts_x[1] = tile_shift[0][SHIFT_WIDTH-1:0];
         shifts_y[1] = tile_shift[1][SHIFT_WIDTH-1:0];
         bayer[1] =    tile_shift[2][3:0];
         for (i=0; i<256; i=i+1) begin
             tiles['h100 + i] = tile_shift[i+3]; 
         end
-        $readmemh("input_data/tile_03.dat",tile_shift);
+        
+        $readmemh("input_data/clt_wnd_01_2_x1489_y951.dat",java_tiles_wnd);
+        for (i=0; i<256; i=i+1) begin
+            tiles_wnd['h100 + i] = java_tiles_wnd[i]; 
+        end
+
+        $readmemh("input_data/clt_dtt_in_01_2_x1489_y951.dat",java_dtt_in0);
+        for (i=0; i<256; i=i+1) begin
+            java_dtt_in['h100 + i] = java_dtt_in0[i]; 
+        end
+
+        $readmemh("input_data/clt_dtt_out_01_2_x1489_y951.dat",java_dtt_out0);
+        for (i=0; i<256; i=i+1) begin
+            java_dtt_out['h100 + i] = java_dtt_out0[i]; 
+        end
+        
+        $readmemh("input_data/clt_dtt_rot_01_2_x1489_y951.dat",java_dtt_rot0);
+        for (i=0; i<256; i=i+1) begin
+            java_dtt_rot['h100 + i] = java_dtt_rot0[i]; 
+        end
+        
+        //============ tile 2
+        
+        $readmemh("input_data/clt_tile_02_2_x1489_y951.dat",tile_shift);
         shifts_x[2] = tile_shift[0][SHIFT_WIDTH-1:0];
         shifts_y[2] = tile_shift[1][SHIFT_WIDTH-1:0];
         bayer[2] =    tile_shift[2][3:0];
         for (i=0; i<256; i=i+1) begin
             tiles['h200 + i] = tile_shift[i+3]; 
         end
-        $readmemh("input_data/tile_04.dat",tile_shift);
+        
+        $readmemh("input_data/clt_wnd_02_2_x1489_y951.dat",java_tiles_wnd);
+        for (i=0; i<256; i=i+1) begin
+            tiles_wnd['h200 + i] = java_tiles_wnd[i]; 
+        end
+
+        $readmemh("input_data/clt_dtt_in_02_2_x1489_y951.dat",java_dtt_in0);
+        for (i=0; i<256; i=i+1) begin
+            java_dtt_in['h200 + i] = java_dtt_in0[i]; 
+        end
+
+        $readmemh("input_data/clt_dtt_out_02_2_x1489_y951.dat",java_dtt_out0);
+        for (i=0; i<256; i=i+1) begin
+            java_dtt_out['h200 + i] = java_dtt_out0[i]; 
+        end
+        
+        $readmemh("input_data/clt_dtt_rot_02_2_x1489_y951.dat",java_dtt_rot0);
+        for (i=0; i<256; i=i+1) begin
+            java_dtt_rot['h200 + i] = java_dtt_rot0[i]; 
+        end
+        
+        //============ tile 3
+        
+        $readmemh("input_data/clt_tile_00_2_x1489_y951.dat",tile_shift);
         shifts_x[3] = tile_shift[0][SHIFT_WIDTH-1:0];
         shifts_y[3] = tile_shift[1][SHIFT_WIDTH-1:0];
         bayer[3] =    tile_shift[2][3:0];
         for (i=0; i<256; i=i+1) begin
             tiles['h300 + i] = tile_shift[i+3]; 
         end
+        $readmemh("input_data/clt_wnd_00_2_x1489_y951.dat",java_tiles_wnd);
+        for (i=0; i<256; i=i+1) begin
+            tiles_wnd['h300 + i] = java_tiles_wnd[i]; 
+        end
+
+        $readmemh("input_data/clt_dtt_in_00_2_x1489_y951.dat",java_dtt_in0);
+        for (i=0; i<256; i=i+1) begin
+            java_dtt_in['h300 + i] = java_dtt_in0[i]; 
+        end
+
+        $readmemh("input_data/clt_dtt_out_00_2_x1489_y951.dat",java_dtt_out0);
+        for (i=0; i<256; i=i+1) begin
+            java_dtt_out['h300 + i] = java_dtt_out0[i]; 
+        end
+        
+        $readmemh("input_data/clt_dtt_rot_00_2_x1489_y951.dat",java_dtt_rot0);
+        for (i=0; i<256; i=i+1) begin
+            java_dtt_rot['h300 + i] = java_dtt_rot0[i]; 
+        end
+        
         for (n=0;n<4;n=n+1) begin
             $display("Tile %d: shift x = %h, shift_y = %h, bayer = %h", 0, shifts_x[n], shifts_y[n], bayer[n]);
             for (i = 256 * n; i < 256 * (n + 1); i = i + 16) begin
@@ -273,7 +342,7 @@ module  mclt_test_01 ();
     integer n2, cntr2, diff2, diff2a; // SuppressThisWarning VEditor : assigned in $readmem() system task
     wire [WND_WIDTH-1:0] window_r = mclt16x16_i.window_r;
 //    reg            [7:0] java_fi_r;  
-    wire [WND_WIDTH-1:0] java_window_w = java_tiles_wnd[cntr2]; // tiles_wnd[n2 * 256 + cntr2];  
+    wire [WND_WIDTH-1:0] java_window_w = tiles_wnd[n2 * 256 + cntr2]; //  java_tiles_wnd[cntr2];  
     initial begin
         while (RST) @(negedge CLK);
         for (n2 = 0; n2 < 4; n2 = n2+1) begin
@@ -291,9 +360,6 @@ module  mclt_test_01 ();
 //Compare window signs
     integer n3, cntr3, diff3; // SuppressThisWarning VEditor : assigned in $readmem() system task
     wire           [3:0] mpix_sgn_w =  mclt16x16_i.mpix_sgn_w; // SuppressThisWarning VEditor : assigned in $readmem() system task
-//    wire           [3:0] java_sgn_w =  java_wnd_signs[java_fold_index[cntr3]];  // SuppressThisWarning VEditor : assigned in $readmem() system task
-//    wire           [3:0] java_sgn_w1 = java_wnd_signs[java_fold_index[cntr3]];  // SuppressThisWarning VEditor : assigned in $readmem() system task
-
     wire           [3:0] java_sgn_w =  { //java_wnd_signs[java_fold_index[cntr3]];  // SuppressThisWarning VEditor : assigned in $readmem() system task
     java_wnd_signs[{2'b11,cntr3[7:2]}][cntr3[1:0]],
     java_wnd_signs[{2'b10,cntr3[7:2]}][cntr3[1:0]],
@@ -318,7 +384,7 @@ module  mclt_test_01 ();
 
     integer n4, cntr4, diff4, diff4a; // SuppressThisWarning VEditor : assigned in $readmem() system task
     wire [DTT_IN_WIDTH-1:0] data_dtt_in = mclt16x16_i.data_dtt_in;
-    wire [DTT_IN_WIDTH-1:0] java_data_dtt_in = java_dtt_in0[{cntr4[1:0],cntr4[7:2]}]; // java_dtt_in[n2 * 256 + cntr2];  
+    wire [DTT_IN_WIDTH-1:0] java_data_dtt_in = java_dtt_in[{n4[1:0], cntr4[1:0],cntr4[7:2]}]; // java_dtt_in0[{cntr4[1:0],cntr4[7:2]}]  
     initial begin
         while (RST) @(negedge CLK);
         for (n4 = 0; n4 < 4; n4 = n4+1) begin
@@ -336,7 +402,7 @@ module  mclt_test_01 ();
 
     integer n5, cntr5, diff5, diff5a; // SuppressThisWarning VEditor : assigned in $readmem() system task
     wire [DTT_IN_WIDTH-1:0] dtt_r_data = mclt16x16_i.dtt_r_data;
-    wire [DTT_IN_WIDTH-1:0] java_dtt_r_data = java_dtt_in0[cntr5[7:0]]; // java_dtt_in[n2 * 256 + cntr2];
+    wire [DTT_IN_WIDTH-1:0] java_dtt_r_data =  java_dtt_in[{n5[1:0], cntr5[7:0]}]; // java_dtt_in0[cntr5[7:0]];
     
     wire                           dtt_r_regen = mclt16x16_i.dtt_r_regen;
     reg                            dtt_r_dv; // SuppressThisWarning VEditor just for simulation
@@ -367,7 +433,7 @@ module  mclt_test_01 ();
     integer n6, cntr6, diff6, diff6a; // SuppressThisWarning VEditor : assigned in $readmem() system task
     wire [DTT_IN_WIDTH-1:0] data_dtt_out = mclt16x16_i.dtt_rd_data;
 //    wire [DTT_IN_WIDTH-1:0] java_data_dtt_out = java_dtt_out0[{cntr6[1:0],cntr6[7:2]}]; // java_dtt_in[n2 * 256 + cntr2];  
-    wire [DTT_IN_WIDTH-1:0] java_data_dtt_out = java_dtt_out0[{cntr6[0],cntr6[1],cntr6[7:2]}]; // java_dtt_in[n2 * 256 + cntr2];  
+    wire [DTT_IN_WIDTH-1:0] java_data_dtt_out = java_dtt_out[{n6[1:0], cntr6[0],cntr6[1], cntr6[7:2]}]; //java_dtt_out0[{cntr6[0],cntr6[1],cntr6[7:2]}];  
     initial begin
         while (RST) @(negedge CLK);
         for (n6 = 0; n6 < 4; n6 = n6+1) begin
@@ -387,7 +453,7 @@ module  mclt_test_01 ();
     always @(posedge CLK) FIRST_OUT <= mclt16x16_i.pre_first_out;
     
     integer n7, cntr7, diff7, diff7a; // SuppressThisWarning VEditor : assigned in $readmem() system task
-    wire [OUT_WIDTH-1:0] java_data_dtt_rot = java_dtt_rot0[{cntr7[1],cntr7[0],cntr7[7:2]}]; // java_dtt_in[n2 * 256 + cntr2];  
+    wire [OUT_WIDTH-1:0] java_data_dtt_rot = java_dtt_rot[{n7[1:0], cntr7[1],cntr7[0],cntr7[7:2]}];  //java_dtt_rot0[{cntr7[1],cntr7[0],cntr7[7:2]}];
     initial begin
         while (RST) @(negedge CLK);
         for (n7 = 0; n7 < 4; n7 = n7+1) begin
