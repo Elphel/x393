@@ -1,0 +1,17 @@
+//Absolute values, shoud be the same for each of 4 modes
+14914 10e11 117dc  e5ac 17771  c8ae 13f4a  aaaa 19761  7b94 15a72  6918 1a7a9  29ba 1684b  237c 
+ 29ba 1a7a9  237c 1684b  7b94 19761  6918 15a72  c8ae 17771  aaaa 13f4a 10e11 14914  e5ac 117dc 
+16da7 12c15  dbe2  b474 1a12b  defb  fadd  8617 1c4a8  8950 11034  5292 1d6bf  2e5d 11b15  1be2 
+ 2e5d 1d6bf  1be2 11b15  8950 1c4a8  5292 11034  defb 1a12b  8617  fadd 12c15 16da7  b474  dbe2 
+1842c 13e91  9775  7c4c 1badd  ecb7  accc  5c5d 1e089  91c5  bb7f  38e0 1f3bd  3138  c2fd  1334 
+ 3138 1f3bd  1334  c2fd  91c5 1e089  38e0  bb7f  ecb7 1badd  5c5d  accc 13e91 1842c  7c4c  9775 
+18bc7 144cf  4d36  3f5e 1c38a  f15a  5817  2f16 1e9f3  94a0  5f96  1cff 1fd88  322f  6368   9ca 
+ 322f 1fd88   9ca  6368  94a0 1e9f3  1cff  5f96  f15a 1c38a  2f16  5817 144cf 18bc7  3f5e  4d36 
+    0     0 1842c 13e91     0     0 1badd  ecb7     0     0 1e089  91c5     0     0 1f3bd  3138 
+    0     0  3138 1f3bd     0     0  91c5 1e089     0     0  ecb7 1badd     0     0 13e91 1842c 
+ 4d36  3f5e 16da7 12c15  5817  2f16 1a12b  defb  5f96  1cff 1c4a8  8950  6368   9ca 1d6bf  2e5d 
+  9ca  6368  2e5d 1d6bf  1cff  5f96  8950 1c4a8  2f16  5817  defb 1a12b  3f5e  4d36 12c15 16da7 
+ 9775  7c4c 14914 10e11  accc  5c5d 17771  c8ae  bb7f  38e0 19761  7b94  c2fd  1334 1a7a9  29ba 
+ 1334  c2fd  29ba 1a7a9  38e0  bb7f  7b94 19761  5c5d  accc  c8ae 17771  7c4c  9775 10e11 14914 
+ dbe2  b474 117dc  e5ac  fadd  8617 13f4a  aaaa 11034  5292 15a72  6918 11b15  1be2 1684b  237c 
+ 1be2 11b15  237c 1684b  5292 11034  6918 15a72  8617  fadd  aaaa 13f4a  b474  dbe2  e5ac 117dc 
