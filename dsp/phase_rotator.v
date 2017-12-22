@@ -51,6 +51,7 @@ module  phase_rotator#(
     input                            start,         //!< single-cycle start pulse that goes 1 cycle before first data
     input signed   [SHIFT_WIDTH-1:0] shift_h,       //!< subpixel shift horizontal
     input signed   [SHIFT_WIDTH-1:0] shift_v,       //!< subpixel shift vertical
+    input                            inv_checker,   //!< negate 2-nd and fourth samples (for handling inverted checkerboard)
     // input data CC,CS,SC,SS in column scan order (matching DTT)
     input signed      [FD_WIDTH-1:0] fd_din,        //!< frequency domain data in, LATENCY=3 from start
     output reg signed [FD_WIDTH-1:0] fd_out,        //!< frequency domain data in
@@ -90,6 +91,7 @@ module  phase_rotator#(
     reg         [SHIFT_WIDTH-1:0] shift_v0;
     reg         [SHIFT_WIDTH-1:0] shift_vr;
     reg         [SHIFT_WIDTH-1:0] shift_hv; // combined horizonta and vertical shifts to match cntr_mux;
+    reg                           inv_checker_r;
     reg                     [4:0] sign_cs;  // sign for cos / sin, feed to DSP
     wire                          sign_cs_d; // sign_cs delayed by 3 clocks
     reg                     [1:0] sign_cs_r; // sign_cs delayed by 5 clocks      
@@ -108,6 +110,7 @@ module  phase_rotator#(
         
         if (start)      shift_hr <= shift_h;
         if (start)      shift_v0 <= shift_v;
+        if (start)      inv_checker_r <= inv_checker; 
         if (start_d[3]) shift_vr <= shift_v0;
         
         if   (rst)        run_h <= 0;

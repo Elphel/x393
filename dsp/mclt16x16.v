@@ -453,11 +453,8 @@ D11 - negate for mode 3 (SS)
 
 // frequency domain, high address bit - page, 2 next - mode, 6 LSBs - transposed FD data (vertical first) 
     wire                  [8:0] dtt_out_ram_wa = {dtt_out_ram_wah,dtt_out_wa16};
-    
-    
     reg                   [7:0] dtt_dly_cntr;
     reg                   [8:0] dtt_rd_cntr; // counter for dtt readout to rotator
-//    wire                  [8:0] dtt_rd_ra = {dtt_rd_cntr[8],dtt_rd_cntr[1:0],dtt_rd_cntr[7:2]}; // page, mode, frequency
     wire                  [8:0] dtt_rd_ra = {dtt_rd_cntr[8],dtt_rd_cntr[0],dtt_rd_cntr[1],dtt_rd_cntr[7:2]}; // page, mode, frequency
     reg                   [2:0] dtt_rd_regen_dv;    // dtt output buffer mem read, register enable, data valid
     wire                 [35:0] dtt_rd_data_w; // high bits are not used 
@@ -466,7 +463,6 @@ D11 - negate for mode 3 (SS)
     
     wire                        dtt_first_quad_out = ~dtt_out_ram_cntr[3] & ~dtt_out_ram_cntr[2];
     
-//    reg                   [9:0] dtt_out_ram_cntr;    
     always @(posedge clk) begin
         if      (rst)        dtt_out_ram_cntr <= 0;
         else if (dtt_inc16)  dtt_out_ram_cntr <= dtt_out_ram_cntr + 1;
@@ -507,7 +503,6 @@ D11 - negate for mode 3 (SS)
         .clk            (clk),              // input
         .rst            (rst),              // input
         .start          (dtt_start),        // input
-//        .mode           (dtt_mode),         // input[1:0] 
         .mode           ({dtt_mode[0],dtt_mode[1]}),         // input[1:0] 
         .xin            (dtt_r_data),       // input[24:0] signed 
         .pre_last_in    (),                 // output reg 
@@ -554,7 +549,8 @@ D11 - negate for mode 3 (SS)
         .start         (dtt_start_out), // input
         // are these shift OK? Will need to be valis only @ dtt_start_out
         .shift_h       (x_shft_r4),     // input[6:0] signed 
-        .shift_v       (y_shft_r4),     // input[6:0] signed 
+        .shift_v       (y_shft_r4),     // input[6:0] signed
+        .inv_checker    (1'b0),          // input only used for Bayer mosaic data 
         .fd_din        (dtt_rd_data),   // input[24:0] signed. Expected latency = 3 from start  
         .fd_out        (dout),          // output[24:0] reg signed 
         .pre_first_out (pre_first_out), // output reg 

@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.3.78 (w)1999-2016 BSI
-[*] Fri Dec 22 06:19:20 2017
+[*] Fri Dec 22 22:36:36 2017
 [*]
-[dumpfile] "/home/eyesis/nc393/elphel393/fpga-elphel/x393_branch_dct/simulation/mclt_test_02-20171221231546581.fst"
-[dumpfile_mtime] "Fri Dec 22 06:15:49 2017"
-[dumpfile_size] 1127723
+[dumpfile] "/home/eyesis/nc393/elphel393/fpga-elphel/x393_branch_dct/simulation/mclt_test_02-20171222152552213.fst"
+[dumpfile_mtime] "Fri Dec 22 22:25:57 2017"
+[dumpfile_size] 1477081
 [savefile] "/home/eyesis/nc393/elphel393/fpga-elphel/x393_branch_dct/mclt_test_02.sav"
 [timestart] 0
 [size] 1920 1171
 [pos] -1920 0
-*-21.434872 1705000 355000 2885000 325000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-21.350550 3425000 355000 2885000 325000 7455000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] mclt_test_02.
 [treeopen] mclt_test_02.mclt16x16_i.dtt_iv_8x8_ad_i.dct_iv8_1d_pass1_0_i.
 [treeopen] mclt_test_02.mclt16x16_i.dtt_iv_8x8_ad_i.dct_iv8_1d_pass2_0_i.
@@ -23,7 +23,7 @@
 [treeopen] mclt_test_02.mclt_bayer_fold_i.mclt_bayer_fold_i.
 [treeopen] mclt_test_02.mclt_bayer_fold_i.mclt_bayer_fold_i.mclt_wnd_i.
 [sst_width] 306
-[signals_width] 397
+[signals_width] 327
 [sst_expanded] 1
 [sst_vpaned_height] 343
 @c00200
@@ -1272,10 +1272,7 @@ mclt_test_02.mclt_bayer_fold_i.window_w[17:0]
 mclt_test_02.mclt_bayer_fold_i.window_r[17:0]
 mclt_test_02.mclt_bayer_fold_i.pix_wnd_r[33:0]
 mclt_test_02.mclt_bayer_fold_i.pix_wnd_r2[24:0]
-@c00200
--mclt_test_02.mclt_bayer_fold_i.phases
-@1401200
--group_end
+mclt_test_02.mclt_bayer_fold_i.phases[14:0]
 @28
 mclt_test_02.mclt_bayer_fold_i.var_first
 mclt_test_02.mclt_bayer_fold_i.var_last
@@ -1292,12 +1289,11 @@ mclt_test_02.mclt_bayer_fold_i.data_dtt_in[24:0]
 mclt_test_02.mclt_bayer_fold_i.dtt_in_cntr[6:0]
 @28
 mclt_test_02.mclt_bayer_fold_i.dtt_in_page
-@29
 mclt_test_02.mclt_bayer_fold_i.start_dtt
-@800200
+@c00200
 -membuf
 @8022
-mclt_test_02.mclt_bayer_fold_i.dbgt_diff_wara[8:0]
+mclt_test_02.mclt_bayer_fold_i.dbg_diff_wara_dtt_in[8:0]
 @20000
 -
 -
@@ -1313,9 +1309,166 @@ mclt_test_02.mclt_bayer_fold_i.ram18p_var_w_var_r_dtt_in_i.waddr[8:0]
 -
 @200
 -
-@1000200
+@28
+mclt_test_02.mclt_bayer_fold_i.dtt_out_we
+@8022
+mclt_test_02.mclt_bayer_fold_i.dtt_out_ram_wa[8:0]
+@20000
+-
+-
+@8022
+mclt_test_02.mclt_bayer_fold_i.dbg_last_dtt_out_ram_wa[8:0]
+@20000
+-
+-
+-
+@8022
+mclt_test_02.mclt_bayer_fold_i.dtt_rd_ra0[8:0]
+@20000
+-
+-
+@8022
+mclt_test_02.mclt_bayer_fold_i.dtt_rd_ra1[8:0]
+mclt_test_02.mclt_bayer_fold_i.dbg_diff_wara_dtt_out0[8:0]
+@20000
+-
+-
+@8022
+mclt_test_02.mclt_bayer_fold_i.dbg_diff_wara_dtt_out1[8:0]
+@20000
+-
+-
+@1401200
 -membuf
+@22
+mclt_test_02.mclt_bayer_fold_i.dtt_r_ra[8:0]
+mclt_test_02.mclt_bayer_fold_i.dtt_r_data[24:0]
+@8420
+mclt_test_02.mclt_bayer_fold_i.dtt_r_data[24:0]
+@28
+mclt_test_02.mclt_bayer_fold_i.dtt_start
+mclt_test_02.mclt_bayer_fold_i.dtt_start_fill
+@22
+mclt_test_02.mclt_bayer_fold_i.dtt_out_ram_cntr[4:0]
+@28
+mclt_test_02.mclt_bayer_fold_i.dtt_start_first_fill
+@22
+mclt_test_02.mclt_bayer_fold_i.dtt_out_wd[24:0]
+@28
+mclt_test_02.mclt_bayer_fold_i.dtt_out_we
+@c00022
+mclt_test_02.mclt_bayer_fold_i.dtt_out_ram_wa[8:0]
+@28
+(0)mclt_test_02.mclt_bayer_fold_i.dtt_out_ram_wa[8:0]
+(1)mclt_test_02.mclt_bayer_fold_i.dtt_out_ram_wa[8:0]
+(2)mclt_test_02.mclt_bayer_fold_i.dtt_out_ram_wa[8:0]
+(3)mclt_test_02.mclt_bayer_fold_i.dtt_out_ram_wa[8:0]
+(4)mclt_test_02.mclt_bayer_fold_i.dtt_out_ram_wa[8:0]
+(5)mclt_test_02.mclt_bayer_fold_i.dtt_out_ram_wa[8:0]
+(6)mclt_test_02.mclt_bayer_fold_i.dtt_out_ram_wa[8:0]
+(7)mclt_test_02.mclt_bayer_fold_i.dtt_out_ram_wa[8:0]
+(8)mclt_test_02.mclt_bayer_fold_i.dtt_out_ram_wa[8:0]
+@1401200
+-group_end
+@22
+mclt_test_02.mclt_bayer_fold_i.dtt_dly_cntr[7:0]
+mclt_test_02.mclt_bayer_fold_i.dtt_out_ram_wa[8:0]
+mclt_test_02.mclt_bayer_fold_i.dtt_out_ram_wah[4:0]
+mclt_test_02.mclt_bayer_fold_i.dtt_out_wa16[3:0]
+@28
+mclt_test_02.mclt_bayer_fold_i.dtt_start_out
+@c00022
+mclt_test_02.mclt_bayer_fold_i.dtt_rd_cntr_pre[8:0]
+@28
+(0)mclt_test_02.mclt_bayer_fold_i.dtt_rd_cntr_pre[8:0]
+(1)mclt_test_02.mclt_bayer_fold_i.dtt_rd_cntr_pre[8:0]
+(2)mclt_test_02.mclt_bayer_fold_i.dtt_rd_cntr_pre[8:0]
+(3)mclt_test_02.mclt_bayer_fold_i.dtt_rd_cntr_pre[8:0]
+(4)mclt_test_02.mclt_bayer_fold_i.dtt_rd_cntr_pre[8:0]
+(5)mclt_test_02.mclt_bayer_fold_i.dtt_rd_cntr_pre[8:0]
+(6)mclt_test_02.mclt_bayer_fold_i.dtt_rd_cntr_pre[8:0]
+(7)mclt_test_02.mclt_bayer_fold_i.dtt_rd_cntr_pre[8:0]
+(8)mclt_test_02.mclt_bayer_fold_i.dtt_rd_cntr_pre[8:0]
+@1401200
+-group_end
+@28
+mclt_test_02.mclt_bayer_fold_i.ram18p_var_w_var_r_dtt_out0_i.we
+@c00022
+mclt_test_02.mclt_bayer_fold_i.ram18p_var_w_var_r_dtt_out0_i.waddr[8:0]
+@28
+(0)mclt_test_02.mclt_bayer_fold_i.ram18p_var_w_var_r_dtt_out0_i.waddr[8:0]
+(1)mclt_test_02.mclt_bayer_fold_i.ram18p_var_w_var_r_dtt_out0_i.waddr[8:0]
+(2)mclt_test_02.mclt_bayer_fold_i.ram18p_var_w_var_r_dtt_out0_i.waddr[8:0]
+(3)mclt_test_02.mclt_bayer_fold_i.ram18p_var_w_var_r_dtt_out0_i.waddr[8:0]
+(4)mclt_test_02.mclt_bayer_fold_i.ram18p_var_w_var_r_dtt_out0_i.waddr[8:0]
+(5)mclt_test_02.mclt_bayer_fold_i.ram18p_var_w_var_r_dtt_out0_i.waddr[8:0]
+(6)mclt_test_02.mclt_bayer_fold_i.ram18p_var_w_var_r_dtt_out0_i.waddr[8:0]
+(7)mclt_test_02.mclt_bayer_fold_i.ram18p_var_w_var_r_dtt_out0_i.waddr[8:0]
+(8)mclt_test_02.mclt_bayer_fold_i.ram18p_var_w_var_r_dtt_out0_i.waddr[8:0]
+@1401200
+-group_end
+@28
+mclt_test_02.mclt_bayer_fold_i.ram18p_var_w_var_r_dtt_out0_i.ren
+mclt_test_02.mclt_bayer_fold_i.ram18p_var_w_var_r_dtt_out0_i.regen
+@c00022
+mclt_test_02.mclt_bayer_fold_i.dtt_rd_ra1[8:0]
+@28
+(0)mclt_test_02.mclt_bayer_fold_i.dtt_rd_ra1[8:0]
+(1)mclt_test_02.mclt_bayer_fold_i.dtt_rd_ra1[8:0]
+(2)mclt_test_02.mclt_bayer_fold_i.dtt_rd_ra1[8:0]
+(3)mclt_test_02.mclt_bayer_fold_i.dtt_rd_ra1[8:0]
+(4)mclt_test_02.mclt_bayer_fold_i.dtt_rd_ra1[8:0]
+(5)mclt_test_02.mclt_bayer_fold_i.dtt_rd_ra1[8:0]
+(6)mclt_test_02.mclt_bayer_fold_i.dtt_rd_ra1[8:0]
+(7)mclt_test_02.mclt_bayer_fold_i.dtt_rd_ra1[8:0]
+(8)mclt_test_02.mclt_bayer_fold_i.dtt_rd_ra1[8:0]
+@1401200
+-group_end
+@22
+mclt_test_02.mclt_bayer_fold_i.x_shft[6:0]
+mclt_test_02.mclt_bayer_fold_i.x_shft_r[6:0]
+mclt_test_02.mclt_bayer_fold_i.x_shft_r2[6:0]
+mclt_test_02.mclt_bayer_fold_i.x_shft_r3[6:0]
+mclt_test_02.mclt_bayer_fold_i.x_shft_r4[6:0]
+mclt_test_02.mclt_bayer_fold_i.y_shft[6:0]
+mclt_test_02.mclt_bayer_fold_i.y_shft_r2[6:0]
+mclt_test_02.mclt_bayer_fold_i.y_shft_r3[6:0]
+mclt_test_02.mclt_bayer_fold_i.y_shft_r4[6:0]
+@28
+mclt_test_02.mclt_bayer_fold_i.inv_checker
+mclt_test_02.mclt_bayer_fold_i.inv_checker_r
+mclt_test_02.mclt_bayer_fold_i.inv_checker_r2
+mclt_test_02.mclt_bayer_fold_i.inv_checker_r3
+mclt_test_02.mclt_bayer_fold_i.inv_checker_r4
+@800023
+mclt_test_02.mclt_bayer_fold_i.dtt_rd_ra0[8:0]
+@29
+(0)mclt_test_02.mclt_bayer_fold_i.dtt_rd_ra0[8:0]
+(1)mclt_test_02.mclt_bayer_fold_i.dtt_rd_ra0[8:0]
+(2)mclt_test_02.mclt_bayer_fold_i.dtt_rd_ra0[8:0]
+(3)mclt_test_02.mclt_bayer_fold_i.dtt_rd_ra0[8:0]
+(4)mclt_test_02.mclt_bayer_fold_i.dtt_rd_ra0[8:0]
+(5)mclt_test_02.mclt_bayer_fold_i.dtt_rd_ra0[8:0]
+(6)mclt_test_02.mclt_bayer_fold_i.dtt_rd_ra0[8:0]
+(7)mclt_test_02.mclt_bayer_fold_i.dtt_rd_ra0[8:0]
+(8)mclt_test_02.mclt_bayer_fold_i.dtt_rd_ra0[8:0]
+@1001201
+-group_end
 @800200
+-rotator0
+@28
+mclt_test_02.mclt_bayer_fold_i.phase_rotator0_i.start
+@22
+mclt_test_02.mclt_bayer_fold_i.phase_rotator0_i.shift_h[6:0]
+mclt_test_02.mclt_bayer_fold_i.phase_rotator0_i.shift_v[6:0]
+mclt_test_02.mclt_bayer_fold_i.phase_rotator0_i.shift_hr[6:0]
+mclt_test_02.mclt_bayer_fold_i.phase_rotator0_i.shift_v0[6:0]
+mclt_test_02.mclt_bayer_fold_i.phase_rotator0_i.shift_vr[6:0]
+@200
+-
+@1000200
+-rotator0
+@c00200
 -mclt_bayer_fold
 @28
 mclt_test_02.mclt_bayer_fold_i.mclt_bayer_fold_i.rst
@@ -1378,8 +1531,8 @@ mclt_test_02.mclt_bayer_fold_i.mclt_bayer_fold_i.mclt_wnd_i.i_wnd_rom.regrst_a
 mclt_test_02.mclt_bayer_fold_i.mclt_bayer_fold_i.mclt_wnd_i.i_wnd_rom.regrst_b
 @1401200
 -mclt_wnd_mul
-@1000200
 -mclt_bayer_fold
+@1000200
 -mclt_bayer
 @800200
 -mono

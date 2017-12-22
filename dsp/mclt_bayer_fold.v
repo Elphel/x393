@@ -71,8 +71,9 @@ module  mclt_bayer_fold#(
     output                            pix_page,     //!< copy pixel page (should be externally combined with first color)
     output signed     [WND_WIDTH-1:0] window,       //!< msb==0, always positive
     output                      [1:0] signs,        //!< bit 0: sign to add to dtt-cc input, bit 1: sign to add to dtt-cs input
-    output                     [14:0] phases,        //!< other signals
-    output reg                        var_first  
+    output                     [14:0] phases,       //!< other signals
+    output reg                        var_first,    //!< first of 2 fold variants (4 for monochrome, 2 left for checker)
+    output reg                        pre_last_in   //!< pre last data in
 );
     reg                         [6:0] in_cntr;      // input phase counter
     reg                        [14:0] run_r;        // run phase
@@ -145,6 +146,10 @@ module  mclt_bayer_fold#(
         if (run_r[10]) begin
             var_first <= var_first_d;
         end
+         
+        pre_last_in <= in_cntr[7:0] == 8'hfd;
+         
+         
          
     end
 
