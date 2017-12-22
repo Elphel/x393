@@ -286,8 +286,6 @@ D11 - negate for mode 3 (SS)
     
         .clk_a     (clk),       // input
         .addr_a    ({2'b0,in_cntr[1:0],in_cntr[7:2]}),    // input[9:0] 
-///        .en_a      (in_busy[1]),   // input
-///        .regen_a   (in_busy[2]),   // input
         .en_a      (in_busy[0]),   // input
         .regen_a   (in_busy[1]),   // input
         .we_a      (1'b0),         // input
@@ -303,7 +301,7 @@ D11 - negate for mode 3 (SS)
         .data_in_b (18'b0)         // input[17:0] 
     );
 
-// Latency = 5
+// Latency = 6
     mclt_wnd_mul #(
         .SHIFT_WIDTH (SHIFT_WIDTH),
         .COORD_WIDTH (COORD_WIDTH),
@@ -315,7 +313,8 @@ D11 - negate for mode 3 (SS)
         .x_in      (mpix_a_w[3:0]), // input[3:0] 
         .y_in      (mpix_a_w[7:4]), // input[3:0] 
         .x_shft    (x_shft_r2),     // input[7:0] 
-        .y_shft    (y_shft_r2),     // input[7:0] 
+        .y_shft    (y_shft_r2),     // input[7:0]
+        .zero_in   (1'b0),          // input TODO: covert from mpix_use_r?  
         .wnd_out   (window_w) // output[17:0] valid with in_busy[8]
     );
 
@@ -349,7 +348,6 @@ D11 - negate for mode 3 (SS)
     ) dly_var_first_i (
         .clk  (clk),           // input
         .rst  (rst),           // input
-///        .dly  (4'h8),          // input[3:0] 
         .dly  (4'h9),          // input[3:0] 
         .din  (in_busy[0] && (in_cntr[1:0] == 0)),  // input[0:0] 
         .dout (var_first_d)    // output[0:0] 

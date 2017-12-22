@@ -79,7 +79,7 @@ module  dsp_ma_preadd #(
                           2'b01,
                           2'b01};
    initial begin
-      $display("dsp_ma_preadd, using DSP48E1");
+      $display("dsp_ma_preadd, using DSP48E1. FIXME: implement BREG=2 for undef INSTANTIATE_DSP48E1");
    end
                          
     DSP48E1 #(

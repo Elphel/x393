@@ -17,17 +17,18 @@ from __future__ import division
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 '''
-Calculate ROM for MCLT fold indices:
+Calculate ROM for MCLT fold indices with Bahyer pattern on the input
+Source tile is expanded to accommodate small lateral chromatic aberrations (up to +/- 3 pixels for 22x22 pixel tiles):
 A0..A2 - sample column in folded 8x8 tile
 A3..A5 - sample row in folded 8x8 tile
-A6..A7 - variant, folding to the same 8x8 sample
-
-D0..D4 - pixel column in 16x16 tile
-D5..D7 - pixel row in 16x16 tile
-D8 -  negate for mode 0 (CC)
-D9 -  negate for mode 1 (SC)
-D10 - negate for mode 2 (CS)      
-D11 - negate for mode 3 (SS)
+A6 -     variant, folding to the same 8x8 sample (with checker board there are only 2 of 4)
+A7 -     invert checker: 0 - pixels on main diagonal, 1 - zeros on main diagonal
+A8..A9 - source tile size: 0 - 16x16, 1 - 18x18, 2 - 20x20, 3 - 22x22 (all < 512)
+D0..D4 - pixel column in 16x16 tile (for window)
+D5..D7 - pixel row in 16x16 tile (for window)
+D8..D15 - pixel offset in full tile, MSB omitted - it will be restored from bits 7 and 15
+D16 - negate for mode 0 (CC)
+D17 - negate for mode 1 (SC) other modes (CS and SS are reversed SC and CC, negated for inverted checker
 '''
   
 __author__ = "Andrey Filippov"
@@ -41,7 +42,7 @@ import sys
 import math
 import os
 import datetime
-mclt_wnd_rom_path=  '../includes/mclt_fold_rom.vh'
+mclt_wnd_rom_path=  '../includes/mclt_bayer_fold_rom.vh'
 
 def create_with_parity (init_data,   # numeric data (may be less than full array
                         num_bits,    # number of bits in item, valid:  1,2,4,8,9,16,18,32,36,64,72
@@ -195,7 +196,7 @@ def create_fold(n = 8): # n - DCT and window size
         print("   :   %2d   %2d   %2d   %2d"%(fold_signs[1][i][0],  fold_signs[1][i][1], fold_signs[1][i][2], fold_signs[1][i][3]))
         print("   :   %2d   %2d   %2d   %2d"%(fold_signs[2][i][0],  fold_signs[2][i][1], fold_signs[2][i][2], fold_signs[2][i][3]))
         print("   :   %2d   %2d   %2d   %2d"%(fold_signs[3][i][0],  fold_signs[3][i][1], fold_signs[3][i][2], fold_signs[3][i][3]))
-
+    """
     fold = (4*n*n)*[0]    
     for var in range(4):
         for i in range(n * n):
@@ -204,24 +205,55 @@ def create_fold(n = 8): # n - DCT and window size
                                   + (((0,1)[fold_signs[1][i][var] < 0]) <<  9) +
                                   + (((0,1)[fold_signs[2][i][var] < 0]) << 10) +
                                   + (((0,1)[fold_signs[3][i][var] < 0]) << 11))
+    """
+    fold = (4*2*2*n*n)*[0] # sizes (16-18-20-22) * invert_checker (0,1) * variant(0,1) * index (0..63)
+    for inv_checker in range(2):    
+        for i in range(n * n):
+            addresses=[]
+            signs = []
+            for var4 in range(4):
+                row = (fold_index[i][var4] >> 4) & 0xf
+                col = (fold_index[i][var4] >> 0) & 0xf
+                blank = (row ^ col ^ inv_checker) & 1
+                if not blank:
+                    addresses.append (fold_index[i][var4])
+                    signs.append ([((0,1)[fold_signs[0][i][var4] < 0]),((0,1)[fold_signs[1][i][var4] < 0])])
+            for size_bits, size_val in enumerate ([16,18,20,22]):
+                for var2 in range(2):
+                    row = (addresses[var2] >> 4) & 0xf
+                    col = (addresses[var2] >> 0) & 0xf
+                    full_addr = (row * size_val + col) & 0xff # saving one address bit
+                    fold[(size_bits << 8) + (inv_checker << 7) + (var2 << 6) + i] = (
+                        (addresses[var2]  & 0xff) +
+                        ((full_addr & 0xff) << 8) +
+                        (signs[var2][0] << 16) +
+                        (signs[var2][1] << 17))         
+            
+#      wire                        [7:0] wnd_a_w =   fold_rom_out[7:0];
+#    wire         [PIX_ADDR_WIDTH-1:0] pix_a_w =   {~fold_rom_out[15] & fold_rom_out[7],fold_rom_out[15:8]};
+#    reg          [PIX_ADDR_WIDTH-1:0] pix_a_r;
+#    wire                       [ 1:0] sgn_w =     fold_rom_out[16 +: 2];
+            
     return fold
 
 '''
-Calculate ROM for MCLT fold indices:
+Calculate ROM for MCLT fold indices with Bahyer pattern on the input
+Source tile is expanded to accommodate small lateral chromatic aberrations (up to +/- 3 pixels for 22x22 pixel tiles):
 A0..A2 - sample column in folded 8x8 tile
 A3..A5 - sample row in folded 8x8 tile
-A6..A7 - variant, folding to the same 8x8 sample
-D0..D4 - pixel column in 16x16 tile
-D5..D7 - pixel row in 16x16 tile
-D8 -  negate for mode 0 (CC)
-D9 -  negate for mode 1 (SC)
-D10 - negate for mode 2 (CS)      
-D11 - negate for mode 3 (SS)
+A6 -     variant, folding to the same 8x8 sample (with checker board there are only 2 of 4)
+A7 -     invert checker: 0 - pixels on main diagonal, 1 - zeros on main diagonal
+A8..A9 - source tile size: 0 - 16x16, 1 - 18x18, 2 - 20x20, 3 - 22x22 (all < 512)
+D0..D4 - pixel column in 16x16 tile (for window)
+D5..D7 - pixel row in 16x16 tile (for window)
+D8..D15 - pixel offset in full tile, MSB omitted - it will be restored from bits 7 and 15
+D16 - negate for mode 0 (CC)
+D17 - negate for mode 1 (SC) other modes (CS and SS are reversed SC and CC, negated for inverted checker
 '''
                         
 print_params(
     create_with_parity(create_fold (), 18, False),
     os.path.abspath(os.path.join(os.path.dirname(__file__), mclt_wnd_rom_path)),
-    "// MCLT 16x16 -> 8x8 fold indices")
-print ("MCLT 16x16 -> 8x8 fold indices data is written to %s"%(os.path.abspath(os.path.join(os.path.dirname(__file__), mclt_wnd_rom_path))))
+    "// MCLT 16x16...22x22 Bayer -> 8x8 fold indices")
+print ("MCLT 16x16...22x22 Bayer -> 8x8 fold indices data is written to %s"%(os.path.abspath(os.path.join(os.path.dirname(__file__), mclt_wnd_rom_path))))
                  

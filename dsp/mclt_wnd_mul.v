@@ -43,12 +43,13 @@ module  mclt_wnd_mul#(
     parameter COORD_WIDTH = 10,  // bits in full coordinate 10 for 18K RAM 
     parameter OUT_WIDTH =   18   // bits in window value (positive) 
 )(
-    input                           clk,   //!< system clock, posedge
-    input                           en,    //!< re (both re and ren - just for power)
-    input                     [3:0] x_in,  //!< tile pixel X
-    input                     [3:0] y_in,  //!< tile pixel Y
+    input                           clk,     //!< system clock, posedge
+    input                           en,      //!< re (both re and ren - just for power)
+    input                     [3:0] x_in,    //!< tile pixel X
+    input                     [3:0] y_in,    //!< tile pixel Y
     input         [SHIFT_WIDTH-1:0] x_shft,  //!< tile pixel X
     input         [SHIFT_WIDTH-1:0] y_shft,  //!< tile pixel Y
+    input                           zero_in, // set window to zero (2 cycles after other inputs) 
     output signed [OUT_WIDTH - 1 : 0] wnd_out            
 );
     wire         [COORD_WIDTH - 1 : 0] x_full;
@@ -77,7 +78,7 @@ module  mclt_wnd_mul#(
         wnd_out_x_r <= wnd_out_x;
         wnd_out_y_r <= wnd_out_y;
 //        zero <= {zero[0],  x_zero | y_zero};
-        zero <= x_zero | y_zero;
+        zero <= x_zero | y_zero | zero_in;
         wnd_out_r <= wnd_out_w; // wnd_out_x_r * wnd_out_y_r;
     end
 
