@@ -44,7 +44,9 @@ module  phase_rotator#(
     parameter DSP_B_WIDTH =     18, // signed, output from sin/cos ROM
     parameter DSP_A_WIDTH =     25,
     parameter DSP_P_WIDTH =     48,
-    parameter COEFF_WIDTH =     17 // = DSP_B_WIDTH - 1 or positive numbers,
+    parameter COEFF_WIDTH =     17, // = DSP_B_WIDTH - 1 or positive numbers,
+    parameter DECIMATE    =      0,  // 0 - all 64 samples, 1 - 32 samples (2 parallel rotators)
+    parameter ODD         =      0  // 0 for DECIMATE==0 and for first rotator, 1 - for the second one
 )(
     input                            clk,           //!< system clock, posedge
     input                            rst,           //!< sync reset
@@ -92,6 +94,7 @@ module  phase_rotator#(
     reg         [SHIFT_WIDTH-1:0] shift_vr;
     reg         [SHIFT_WIDTH-1:0] shift_hv; // combined horizonta and vertical shifts to match cntr_mux;
     reg                           inv_checker_r;
+    reg                           inv_checker_r2;
     reg                     [4:0] sign_cs;  // sign for cos / sin, feed to DSP
     wire                          sign_cs_d; // sign_cs delayed by 3 clocks
     reg                     [1:0] sign_cs_r; // sign_cs delayed by 5 clocks      
@@ -112,13 +115,14 @@ module  phase_rotator#(
         if (start)      shift_v0 <= shift_v;
         if (start)      inv_checker_r <= inv_checker; 
         if (start_d[3]) shift_vr <= shift_v0;
+        if (start_d[4]) inv_checker_r2 <= inv_checker_r;
         
-        if   (rst)        run_h <= 0;
-        else if (start)   run_h <= 1;
-        else if (&cntr_h) run_h <= 0;
+        if   (rst)                                        run_h <= 0;
+        else if (start)                                   run_h <= 1;
+        else if (&cntr_h[7:1] && (cntr_h[0] || DECIMATE)) run_h <= 0;
         
-        if (!run_h) cntr_h <= 0;
-        else        cntr_h <= cntr_h + 1;
+        if (!run_h) cntr_h <= ODD;
+        else        cntr_h <= cntr_h + (1 << DECIMATE);
         
         // combine horizontal and vertical counters and shifts to feed to ROM
         hv_index <= mux_v ? cntr_v[4:2] : cntr_h[7:5]; // input data "down first" (transposed) 
@@ -218,8 +222,11 @@ module  phase_rotator#(
         sela_1 <= ph[2] | ph[4]; sela_2 <= ph[3] | ph[5];
         selb_1 <= ph[2] | ph[5]; selb_2 <= ph[3] | ph[6];
         // 0 1 0 0
-        negm_1 <= (ph[4] & ~sign_cs[2]) | (ph[5] & sign_cs[3]);
-        negm_2 <= (ph[5] & ~sign_cs[3]) | (ph[6] & sign_cs[4]);
+        negm_1 <= ((ph[4] & ~sign_cs[2]) | (ph[5] & sign_cs[3])) ^ 
+                  (inv_checker_r2 & (ph[4] | ph[6]));  // invert negation when using Bayer patterns
+        negm_2 <= ((ph[5] & ~sign_cs[3]) | (ph[6] & sign_cs[4])) ^
+                  (inv_checker_r2 & (ph[5] | ph[7]));  // invert negation when using Bayer patterns
+        
         
         accum_1 <= ph[4] | ph[6]; accum_2 <= ph[5] | ph[7];
     // vertical shift DSPs
@@ -229,9 +236,10 @@ module  phase_rotator#(
         // 1 cycle ahead
         end_3  <= ph[10] | ph[8]; end_4 <= ph[11] | ph[9];
         selb_3 <= ph[8] | ph[11]; selb_4 <= ph[9] | ph[12];
-
+//inv_checker_r2
         negm_3 <= (ph[10] & ~sign_cs[2]) | (ph[11] & sign_cs[3]);
         negm_4 <= (ph[11] & ~sign_cs[3]) | (ph[12] & sign_cs[4]);
+        ;
 
         accum_3 <= ph[10] | ph[12]; accum_4 <= ph[11] | ph[13];
         

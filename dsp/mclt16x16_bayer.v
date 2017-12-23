@@ -463,7 +463,9 @@ module  mclt16x16_bayer#(
         .SHIFT_WIDTH(SHIFT_WIDTH), // should be exactly 7
         .DSP_B_WIDTH(DSP_B_WIDTH),
         .DSP_A_WIDTH(DSP_A_WIDTH),
-        .DSP_P_WIDTH(DSP_P_WIDTH)
+        .DSP_P_WIDTH(DSP_P_WIDTH),
+        .DECIMATE   (1'b1),
+        .ODD        (1'b0)
     ) phase_rotator0_i (
         .clk           (clk),           // input
         .rst           (rst),           // input
@@ -483,7 +485,9 @@ module  mclt16x16_bayer#(
         .SHIFT_WIDTH(SHIFT_WIDTH), // should be exactly 7
         .DSP_B_WIDTH(DSP_B_WIDTH),
         .DSP_A_WIDTH(DSP_A_WIDTH),
-        .DSP_P_WIDTH(DSP_P_WIDTH)
+        .DSP_P_WIDTH(DSP_P_WIDTH),
+        .DECIMATE   (1'b1),
+        .ODD        (1'b1)
     ) phase_rotator1_i (
         .clk           (clk),           // input
         .rst           (rst),           // input
