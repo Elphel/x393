@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.3.78 (w)1999-2016 BSI
-[*] Fri Dec 22 22:36:36 2017
+[*] Sat Dec 23 00:35:32 2017
 [*]
-[dumpfile] "/home/eyesis/nc393/elphel393/fpga-elphel/x393_branch_dct/simulation/mclt_test_02-20171222152552213.fst"
-[dumpfile_mtime] "Fri Dec 22 22:25:57 2017"
-[dumpfile_size] 1477081
+[dumpfile] "/home/eyesis/nc393/elphel393/fpga-elphel/x393_branch_dct/simulation/mclt_test_02-20171222173437847.fst"
+[dumpfile_mtime] "Sat Dec 23 00:34:42 2017"
+[dumpfile_size] 1338753
 [savefile] "/home/eyesis/nc393/elphel393/fpga-elphel/x393_branch_dct/mclt_test_02.sav"
 [timestart] 0
 [size] 1920 1171
 [pos] -1920 0
-*-21.350550 3425000 355000 2885000 325000 7455000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-21.350550 1140000 355000 2885000 325000 7455000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] mclt_test_02.
 [treeopen] mclt_test_02.mclt16x16_i.dtt_iv_8x8_ad_i.dct_iv8_1d_pass1_0_i.
 [treeopen] mclt_test_02.mclt16x16_i.dtt_iv_8x8_ad_i.dct_iv8_1d_pass2_0_i.
@@ -22,6 +22,7 @@
 [treeopen] mclt_test_02.mclt_bayer_fold_i.
 [treeopen] mclt_test_02.mclt_bayer_fold_i.mclt_bayer_fold_i.
 [treeopen] mclt_test_02.mclt_bayer_fold_i.mclt_bayer_fold_i.mclt_wnd_i.
+[treeopen] mclt_test_02.mclt_bayer_fold_i.phase_rotator0_i.
 [sst_width] 306
 [signals_width] 327
 [sst_expanded] 1
@@ -1440,9 +1441,9 @@ mclt_test_02.mclt_bayer_fold_i.inv_checker_r
 mclt_test_02.mclt_bayer_fold_i.inv_checker_r2
 mclt_test_02.mclt_bayer_fold_i.inv_checker_r3
 mclt_test_02.mclt_bayer_fold_i.inv_checker_r4
-@800023
+@c00022
 mclt_test_02.mclt_bayer_fold_i.dtt_rd_ra0[8:0]
-@29
+@28
 (0)mclt_test_02.mclt_bayer_fold_i.dtt_rd_ra0[8:0]
 (1)mclt_test_02.mclt_bayer_fold_i.dtt_rd_ra0[8:0]
 (2)mclt_test_02.mclt_bayer_fold_i.dtt_rd_ra0[8:0]
@@ -1452,7 +1453,7 @@ mclt_test_02.mclt_bayer_fold_i.dtt_rd_ra0[8:0]
 (6)mclt_test_02.mclt_bayer_fold_i.dtt_rd_ra0[8:0]
 (7)mclt_test_02.mclt_bayer_fold_i.dtt_rd_ra0[8:0]
 (8)mclt_test_02.mclt_bayer_fold_i.dtt_rd_ra0[8:0]
-@1001201
+@1401200
 -group_end
 @800200
 -rotator0
@@ -1461,9 +1462,26 @@ mclt_test_02.mclt_bayer_fold_i.phase_rotator0_i.start
 @22
 mclt_test_02.mclt_bayer_fold_i.phase_rotator0_i.shift_h[6:0]
 mclt_test_02.mclt_bayer_fold_i.phase_rotator0_i.shift_v[6:0]
+@28
+mclt_test_02.mclt_bayer_fold_i.phase_rotator0_i.inv_checker
+@22
 mclt_test_02.mclt_bayer_fold_i.phase_rotator0_i.shift_hr[6:0]
 mclt_test_02.mclt_bayer_fold_i.phase_rotator0_i.shift_v0[6:0]
 mclt_test_02.mclt_bayer_fold_i.phase_rotator0_i.shift_vr[6:0]
+@28
+mclt_test_02.mclt_bayer_fold_i.phase_rotator0_i.inv_checker_r
+mclt_test_02.mclt_bayer_fold_i.phase_rotator0_i.inv_checker_r2
+@22
+mclt_test_02.mclt_bayer_fold_i.phase_rotator0_i.sign_cs[4:0]
+@28
+(12)mclt_test_02.mclt_bayer_fold_i.phase_rotator0_i.ph[16:0]
+(1)mclt_test_02.mclt_bayer_fold_i.phase_rotator0_i.start_d[5:0]
+mclt_test_02.mclt_bayer_fold_i.phase_rotator0_i.negm_1
+mclt_test_02.mclt_bayer_fold_i.phase_rotator0_i.negm_2
+@22
+mclt_test_02.mclt_bayer_fold_i.phase_rotator0_i.cntr_h[7:0]
+@23
+mclt_test_02.mclt_bayer_fold_i.phase_rotator0_i.cntr_v[7:0]
 @200
 -
 @1000200
