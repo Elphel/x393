@@ -38,6 +38,7 @@
  * with at least one of the Free Software programs.
  */
 `timescale 1ns/1ps
+`include "system_defines.vh"
 // No saturation here, and no rounding as we do not need to match decoder (be bit-precise), skipping rounding adder
 // will reduce needed resources
 //`define DCT_INPUT_UNITY

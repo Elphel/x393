@@ -38,8 +38,10 @@
  * with at least one of the Free Software programs.
  */
 `timescale 1ns/1ps
-  `define INSTANTIATE_DSP48E1
-  `define PRELOAD_BRAMS
+`include "system_defines.vh"
+//  `define INSTANTIATE_DSP48E1
+//  `undef INSTANTIATE_DSP48E1
+//  `define PRELOAD_BRAMS
 //  `define ROUND 
 module  mclt_test_01 ();
 `ifdef IVERILOG              

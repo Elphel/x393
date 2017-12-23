@@ -38,7 +38,8 @@
  * with at least one of the Free Software programs.
  */
 `timescale 1ns/1ps
-  `define INSTANTIATE_DSP48E1 
+`include "system_defines.vh"
+//  `define INSTANTIATE_DSP48E1 
 
 // No saturation here, and no rounding as we do not need to match decoder (be bit-precise), skipping rounding adder
 // will reduce needed resources
