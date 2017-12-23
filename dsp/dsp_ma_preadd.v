@@ -79,7 +79,7 @@ module  dsp_ma_preadd #(
                           2'b01,
                           2'b01};
    initial begin
-      $display("dsp_ma_preadd, using DSP48E1. FIXME: implement BREG=2 for undef INSTANTIATE_DSP48E1");
+      $display("dsp_ma_preadd, using DSP48E1.");
    end
                          
     DSP48E1 #(
@@ -203,10 +203,30 @@ module  dsp_ma_preadd #(
     
     assign m_reg_pm =   neg_m_r ? - m_reg : m_reg;  
     assign p_reg_cond = accum_r ? p_reg : 0;  
+
+
+    generate 
+       case (BREG)
+          1 : begin
+                  always @(posedge clk) begin
+                      if (rst)         b2_reg <= 18'b0;
+                      else  if (ceb2)  b2_reg <= bin;
+                  end 
+              end
+          2 : begin
+                  always @(posedge clk) begin
+                      if (rst)         b2_reg <= 18'b0;
+                      else  if (ceb2)  b2_reg <= b1_reg;
+                  end 
+              end
+       endcase
+    endgenerate 
+
     
     always @ (posedge clk) begin
         if      (rst)  b1_reg <= 0;
         else if (ceb1) b1_reg <= bin;
+        
         
         if      (rst)  b2_reg <= 0;
         else if (ceb2) b2_reg <= bin;
