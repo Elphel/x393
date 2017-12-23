@@ -97,7 +97,6 @@ module  mclt16x16_bayer#(
     reg                   inv_checker_r3;                
     reg                   inv_checker_r4;                
 
-//    wire signed       [WND_WIDTH-1:0] window;       //!< msb==0, always positive
     wire                         [1:0] signs;        //!< bit 0: sign to add to dtt-cc input, bit 1: sign to add to dtt-cs input
     wire                        [14:0] phases;        //!< other signals
     
@@ -140,7 +139,6 @@ module  mclt16x16_bayer#(
     reg                            dtt_r_regen;
     reg                            dtt_start;
     
-//    wire                     [1:0] dtt_mode = {dtt_r_cntr[7], dtt_r_cntr[6]}; // TODO: or reverse? 
     wire                           dtt_mode = dtt_r_cntr[6]; // TODO: or reverse? 
     wire                     [8:0] dtt_r_ra = {1'b0,dtt_r_page,dtt_r_cntr};
     wire signed             [35:0] dtt_r_data_w; // high bits are not used 
@@ -179,25 +177,21 @@ module  mclt16x16_bayer#(
             y_shft_r4 <= y_shft_r3;
             inv_checker_r4 <= inv_checker_r3;
         end
+        
         if (phases[8]) begin
             pix_d_r <= pix_d;
             window_r <=   window_w;
         end
         if (phases[9])  pix_wnd_r <= pix_d_r * window_r; // 1 MSB is extra
     
-        // pix_wnd_r2 - positive with 2 extra zeros, max value 0x3fff60
         if (phases[10]) begin
             pix_wnd_r2 <= {{2{pix_wnd_r2_w[DTT_IN_WIDTH-3]}},pix_wnd_r2_w};
-//            mpix_use_r  <= mpix_use_d;
-//            var_first_r <= var_first_d;
             pix_sgn_r <=  pix_sgn_d; 
         end
         
         var_last <= var_first & phases[11];
        
         if (phases[11]) begin
-//            data_cc_r <= (var_first ? {DTT_IN_WIDTH{1'b0}} : data_cc_r) + (mpix_use_r ? (mpix_sgn_r[0]?(-pix_wnd_r2):pix_wnd_r2): {DTT_IN_WIDTH{1'b0}}) ;
-//            data_sc_r <= (var_first ? {DTT_IN_WIDTH{1'b0}} : data_sc_r) + (mpix_use_r ? (mpix_sgn_r[1]?(-pix_wnd_r2):pix_wnd_r2): {DTT_IN_WIDTH{1'b0}}) ;
              data_cc_r <= (var_first ? {DTT_IN_WIDTH{1'b0}} : data_cc_r) + (pix_sgn_r[0]?(-pix_wnd_r2):pix_wnd_r2) ;
              data_sc_r <= (var_first ? {DTT_IN_WIDTH{1'b0}} : data_sc_r) + (pix_sgn_r[1]?(-pix_wnd_r2):pix_wnd_r2) ;
              data_sc_r2 <= data_sc_r;
@@ -233,7 +227,6 @@ module  mclt16x16_bayer#(
         if (!dtt_r_re) dtt_r_cntr <= 0;
         else           dtt_r_cntr <= dtt_r_cntr + 1;
         
-///        dtt_start <= dtt_r_cntr[5:0] == 0;
         dtt_start <= (dtt_r_cntr[5:0] == 0) && dtt_r_re;
     
     end
@@ -243,17 +236,17 @@ module  mclt16x16_bayer#(
         .SHIFT_WIDTH     (SHIFT_WIDTH),
         .PIX_ADDR_WIDTH  (PIX_ADDR_WIDTH),
         .COORD_WIDTH     (COORD_WIDTH),
-        .PIXEL_WIDTH     (PIXEL_WIDTH),
-        .WND_WIDTH       (WND_WIDTH),
-        .OUT_WIDTH       (OUT_WIDTH),
-        .DTT_IN_WIDTH    (DTT_IN_WIDTH),
-        .TRANSPOSE_WIDTH (TRANSPOSE_WIDTH),
-        .OUT_RSHIFT      (OUT_RSHIFT),
-        .OUT_RSHIFT2     (OUT_RSHIFT2),
-        .DSP_B_WIDTH     (DSP_B_WIDTH),
-        .DSP_A_WIDTH     (DSP_A_WIDTH),
-        .DSP_P_WIDTH     (DSP_P_WIDTH),
-        .DEAD_CYCLES     (DEAD_CYCLES)
+//        .PIXEL_WIDTH     (PIXEL_WIDTH),
+        .WND_WIDTH       (WND_WIDTH)
+//        .OUT_WIDTH       (OUT_WIDTH),
+//        .DTT_IN_WIDTH    (DTT_IN_WIDTH),
+//        .TRANSPOSE_WIDTH (TRANSPOSE_WIDTH),
+//        .OUT_RSHIFT      (OUT_RSHIFT),
+//        .OUT_RSHIFT2     (OUT_RSHIFT2),
+//        .DSP_B_WIDTH     (DSP_B_WIDTH),
+//        .DSP_A_WIDTH     (DSP_A_WIDTH),
+//        .DSP_P_WIDTH     (DSP_P_WIDTH),
+//        .DEAD_CYCLES     (DEAD_CYCLES)
     ) mclt_bayer_fold_i (
         .clk         (clk),         // input
         .rst         (rst),         // input
@@ -324,12 +317,10 @@ module  mclt16x16_bayer#(
  
     wire                  [8:0] dtt_out_ram_wa = {dtt_out_ram_wah,dtt_out_wa16};
     reg                   [7:0] dtt_dly_cntr;
-//    reg                   [8:0] dtt_rd_cntr; // counter for dtt readout to rotator
     reg                   [8:0] dtt_rd_cntr_pre; // 1 ahead of the former counter for dtt readout to rotator
     
     // TODO: fix rd addresses
     
-//    wire                  [8:0] dtt_rd_ra = {dtt_rd_cntr[8],dtt_rd_cntr[0],dtt_rd_cntr[1],dtt_rd_cntr[7:2]}; // page, mode, frequency
     reg                   [8:0] dtt_rd_ra0; 
     reg                   [8:0] dtt_rd_ra1; 
     
@@ -340,7 +331,6 @@ module  mclt16x16_bayer#(
     wire signed [OUT_WIDTH-1:0] dtt_rd_data0 = dtt_rd_data0_w[OUT_WIDTH-1:0]; // valid with dtt_rd_regen_dv[3]
     wire signed [OUT_WIDTH-1:0] dtt_rd_data1 = dtt_rd_data1_w[OUT_WIDTH-1:0]; // valid with dtt_rd_regen_dv[3]
     
-//    wire                        dtt_first_quad_out = ~dtt_out_ram_cntr[3] & ~dtt_out_ram_cntr[2];
     wire                        dtt_first_quad_out = ~dtt_out_ram_cntr[2];
     
     always @(posedge clk) begin
@@ -358,10 +348,6 @@ module  mclt16x16_bayer#(
         
         dtt_start_out <= dtt_dly_cntr == 1;
 
-//        if      (rst)               dtt_rd_regen_dv[0] <= 0;
-//        else if (dtt_start_out)     dtt_rd_regen_dv[0] <= 1;
-//        else if (&dtt_rd_cntr[7:0]) dtt_rd_regen_dv[0] <= 0;
-
         if      (rst)                   dtt_rd_regen_dv[0] <= 0;
         else if (dtt_start_out)         dtt_rd_regen_dv[0] <= 1;
         else if (&dtt_rd_cntr_pre[6:0]) dtt_rd_regen_dv[0] <= 0;
@@ -369,11 +355,9 @@ module  mclt16x16_bayer#(
         if      (rst)               dtt_rd_regen_dv[3:1] <= 0;
         else                        dtt_rd_regen_dv[3:1] <= dtt_rd_regen_dv[2:0];
         
-//        if (dtt_start_out)           dtt_rd_cntr_pre <= {dtt_out_ram_wah[4], 8'b0}; //copy page number
         if (dtt_start_out)           dtt_rd_cntr_pre <= {dtt_out_ram_wpage, 7'b0}; //copy page number
         
         else if (dtt_rd_regen_dv[0]) dtt_rd_cntr_pre <= dtt_rd_cntr_pre + 1;
-////    wire                  [8:0] dtt_rd_ra = {dtt_rd_cntr[8],dtt_rd_cntr[0],dtt_rd_cntr[1],dtt_rd_cntr[7:2]}; // page, mode, frequency
         
         dtt_rd_ra0 <= {dtt_rd_cntr_pre[8:7],
                        dtt_rd_cntr_pre[6] ^ dtt_rd_cntr_pre[5],

@@ -42,19 +42,19 @@ module  mclt_bayer_fold#(
     parameter SHIFT_WIDTH =      7, // bits in shift (7 bits - fractional)
     parameter PIX_ADDR_WIDTH =   9, // number of pixel address width
 //    parameter EXT_PIX_LATENCY =  2, // external pixel buffer a->d latency
-    parameter ADDR_DLY =        4'h2, // extra delay of pixel address to match window delay
+//    parameter ADDR_DLY =        4'h2, // extra delay of pixel address to match window delay
     parameter COORD_WIDTH =     10, // bits in full coordinate 10 for 18K RAM
-    parameter PIXEL_WIDTH =     16, // input pixel width (unsigned) 
-    parameter WND_WIDTH =       18, // input pixel width (unsigned) 
-    parameter OUT_WIDTH =       25, // bits in dtt output
-    parameter DTT_IN_WIDTH =    25, // bits in DTT input
-    parameter TRANSPOSE_WIDTH = 25, // width of the transpose memory (intermediate results)    
-    parameter OUT_RSHIFT =       2, // overall right shift of the result from input, aligned by MSB (>=3 will never cause saturation)
-    parameter OUT_RSHIFT2 =      0, // overall right shift for the second (vertical) pass
-    parameter DSP_B_WIDTH =     18, // signed, output from sin/cos ROM
-    parameter DSP_A_WIDTH =     25,
-    parameter DSP_P_WIDTH =     48,
-    parameter DEAD_CYCLES =     14  // start next block immedaitely, or with longer pause
+//    parameter PIXEL_WIDTH =     16, // input pixel width (unsigned) 
+    parameter WND_WIDTH =       18 // input pixel width (unsigned) 
+//    parameter OUT_WIDTH =       25, // bits in dtt output
+//    parameter DTT_IN_WIDTH =    25, // bits in DTT input
+//    parameter TRANSPOSE_WIDTH = 25, // width of the transpose memory (intermediate results)    
+//    parameter OUT_RSHIFT =       2, // overall right shift of the result from input, aligned by MSB (>=3 will never cause saturation)
+//    parameter OUT_RSHIFT2 =      0, // overall right shift for the second (vertical) pass
+//    parameter DSP_B_WIDTH =     18, // signed, output from sin/cos ROM
+//    parameter DSP_A_WIDTH =     25,
+//    parameter DSP_P_WIDTH =     48,
+//    parameter DEAD_CYCLES =     14  // start next block immedaitely, or with longer pause
 )(
     input                             clk,          //!< system clock, posedge
     input                             rst,          //!< sync reset
@@ -77,12 +77,15 @@ module  mclt_bayer_fold#(
 );
     reg                         [6:0] in_cntr;      // input phase counter
     reg                        [14:0] run_r;        // run phase
+    
     reg                         [1:0] tile_size_r;  // 0: 16x16, 1 - 18x18, 2 - 20x20, 3 - 22x22 (max for 9-bit addr)
     reg                               inv_checker_r;// 0 - includes main diagonal (symmetrical DTT), 1 - antisymmetrical DTT
     reg                         [7:0] top_left_r0;  // index of the 16x16 top left corner
     reg                         [7:0] top_left_r;   // index of the 16x16 top left corner
     reg                         [1:0] valid_rows_r0;// 3 for green, 1 or 2 for R/B - which of the even/odd checker rows contain pixels
-    reg                         [1:0] valid_rows_r ;// correct latency for window rom
+//    reg                         [1:0] valid_rows_r ;// correct latency for window rom
+/// wire                       [ 9:0] fold_addr=    {tile_size_r,inv_checker_r, in_cntr[0],in_cntr[6:1]}; 
+    wire                       [ 9:0] fold_addr=    {tile_size_r,inv_checker_r, (valid_rows_r0==3)?in_cntr[0]:valid_rows_r0[0],in_cntr[6:1]}; 
     reg             [SHIFT_WIDTH-1:0] x_shft_r0;    // tile pixel X fractional shift (valid @ start) 
     reg             [SHIFT_WIDTH-1:0] y_shft_r0;    // tile pixel Y fractional shift (valid @ start)
     reg             [SHIFT_WIDTH-1:0] x_shft_r;     // matching delay 
@@ -94,7 +97,7 @@ module  mclt_bayer_fold#(
     wire         [PIX_ADDR_WIDTH-1:0] pix_a_w =   {~fold_rom_out[15] & fold_rom_out[7],fold_rom_out[15:8]};
     reg          [PIX_ADDR_WIDTH-1:0] pix_a_r;
     wire                       [ 1:0] sgn_w =     fold_rom_out[16 +: 2];
-    reg                               blank_r;    // blank window (latency 1 from fold_rom_out)
+//    reg                               blank_r;    // blank window (latency 1 from fold_rom_out)
 //    wire                              blank_d;    //  delayed to matchwindow rom regrst
     wire                              pre_page =  in_cntr == 2; // valid 1 cycle before fold_rom_out
     
@@ -139,15 +142,15 @@ module  mclt_bayer_fold#(
         if (run_r[2]) pix_a_r <= pix_a_w + {1'b0, top_left_r};
         
 
-        if (in_cntr == 2) valid_rows_r <= valid_rows_r0;
+///        if (in_cntr == 2) valid_rows_r <= valid_rows_r0;
         
-        blank_r <= ~(wnd_a_w[0] ? valid_rows_r[1]: valid_rows_r[0]);  
+///        blank_r <= ~(wnd_a_w[0] ? valid_rows_r[1]: valid_rows_r[0]);  
         
         if (run_r[10]) begin
             var_first <= var_first_d;
         end
          
-        pre_last_in <= in_cntr[7:0] == 8'hfd;
+        pre_last_in <= in_cntr[6:0] == 7'h7d;
          
          
          
@@ -164,7 +167,7 @@ module  mclt_bayer_fold#(
     ) i_mclt_fold_rom (
     
         .clk_a     (clk),          // input
-        .addr_a    ({tile_size_r,inv_checker_r, in_cntr[0],in_cntr[6:1]}),    // input[9:0] 
+        .addr_a    (fold_addr),    // input[9:0] 
         .en_a      (run_r[0]),     // input
         .regen_a   (run_r[1]),     // input
         .we_a      (1'b0),         // input
@@ -219,7 +222,7 @@ module  mclt_bayer_fold#(
         .y_in      (wnd_a_w[7:4]), // input[3:0] 
         .x_shft    (x_shft_r),     // input[7:0] 
         .y_shft    (y_shft_r),     // input[7:0]
-        .zero_in   (blank_r),      // input 2 cycles after inputs! 
+        .zero_in   (1'b0),         // blank_r),      // input 2 cycles after inputs! 
         .wnd_out   (window)        // output[17:0] valid with in_busy[8]
     );
 

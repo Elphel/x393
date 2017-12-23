@@ -218,6 +218,27 @@ def create_fold(n = 8): # n - DCT and window size
                 if not blank:
                     addresses.append (fold_index[i][var4])
                     signs.append ([((0,1)[fold_signs[0][i][var4] < 0]),((0,1)[fold_signs[1][i][var4] < 0])])
+            byrs = []
+            for var2 in range(2):
+                row = (addresses[var2] >> 4) & 0xf
+                col = (addresses[var2] >> 0) & 0xf
+                byr = ((row & 1) << 1) + (col & 1)
+                byrs.append(byr)
+            #make sure first variant always has lower byr index
+            if byrs[1] < byrs[0]:
+                addresses = [addresses[1],addresses[0]]
+                signs =     [signs[1],signs[0]]
+        
+            for var2 in range(2):
+                row = (addresses[var2] >> 4) & 0xf
+                col = (addresses[var2] >> 0) & 0xf
+                byr = ((row & 1) << 1) + (col & 1)
+                print ("%1d "%(byr,),end="")
+            print ("   ",end="")
+            
+            if ((i + 1) % 8) == 0:
+                print()         
+                    
             for size_bits, size_val in enumerate ([16,18,20,22]):
                 for var2 in range(2):
                     row = (addresses[var2] >> 4) & 0xf
@@ -227,7 +248,8 @@ def create_fold(n = 8): # n - DCT and window size
                         (addresses[var2]  & 0xff) +
                         ((full_addr & 0xff) << 8) +
                         (signs[var2][0] << 16) +
-                        (signs[var2][1] << 17))         
+                        (signs[var2][1] << 17))
+        print()                     
             
 #      wire                        [7:0] wnd_a_w =   fold_rom_out[7:0];
 #    wire         [PIX_ADDR_WIDTH-1:0] pix_a_w =   {~fold_rom_out[15] & fold_rom_out[7],fold_rom_out[15:8]};
