@@ -42,7 +42,7 @@ module  mclt_bayer_fold#(
     parameter SHIFT_WIDTH =      7, // bits in shift (7 bits - fractional)
     parameter PIX_ADDR_WIDTH =   9, // number of pixel address width
 //    parameter EXT_PIX_LATENCY =  2, // external pixel buffer a->d latency
-//    parameter ADDR_DLY =        4'h2, // extra delay of pixel address to match window delay
+    parameter ADDR_DLY =        4'h2, // extra delay of pixel address to match window delay
     parameter COORD_WIDTH =     10, // bits in full coordinate 10 for 18K RAM
 //    parameter PIXEL_WIDTH =     16, // input pixel width (unsigned) 
     parameter WND_WIDTH =       18 // input pixel width (unsigned) 
@@ -71,12 +71,15 @@ module  mclt_bayer_fold#(
     output                            pix_page,     //!< copy pixel page (should be externally combined with first color)
     output signed     [WND_WIDTH-1:0] window,       //!< msb==0, always positive
     output                      [1:0] signs,        //!< bit 0: sign to add to dtt-cc input, bit 1: sign to add to dtt-cs input
-    output                     [14:0] phases,       //!< other signals
-    output reg                        var_first,    //!< first of 2 fold variants (4 for monochrome, 2 left for checker)
+//    output                     [14:0] phases,       //!< other signals
+    output                      [6:0] phases,       //!< other signals
+    output                            var_pre2_first,//!< two ahead of first of 2 fold variants (4 for monochrome, 2 left for checker)
+//    output reg                        var_first,    //!< first of 2 fold variants (4 for monochrome, 2 left for checker)
     output reg                        pre_last_in   //!< pre last data in
 );
     reg                         [6:0] in_cntr;      // input phase counter
-    reg                        [14:0] run_r;        // run phase
+//    reg                        [14:0] run_r;        // run phase
+    reg                         [6:0] run_r;        // run phase
     
     reg                         [1:0] tile_size_r;  // 0: 16x16, 1 - 18x18, 2 - 20x20, 3 - 22x22 (max for 9-bit addr)
     reg                               inv_checker_r;// 0 - includes main diagonal (symmetrical DTT), 1 - antisymmetrical DTT
@@ -102,8 +105,9 @@ module  mclt_bayer_fold#(
     wire                              pre_page =  in_cntr == 2; // valid 1 cycle before fold_rom_out
     
     wire                              var_first_d; // adding subtracting first variant of 2 folds    
-    
+//    reg                               var_pre_first;
     assign phases = run_r;
+    assign var_pre2_first = var_first_d;
     
 //    wire           [ 3:0] bayer_1hot = { mpix_a_w[4] &  mpix_a_w[0],  
 //                                        mpix_a_w[4] & ~mpix_a_w[0],
@@ -117,7 +121,8 @@ module  mclt_bayer_fold#(
    
     always @ (posedge clk) begin
         if (rst) run_r <= 0;
-        else     run_r <= {run_r[13:0], start | (run_r[0] & ~(&in_cntr[6:0]))};
+//        else     run_r <= {run_r[13:0], start | (run_r[0] & ~(&in_cntr[6:0]))};
+        else     run_r <= {run_r[5:0], start | (run_r[0] & ~(&in_cntr[6:0]))};
         
         if (!run_r[0]) in_cntr <= 0;
         else           in_cntr <= in_cntr + 1;
@@ -144,11 +149,14 @@ module  mclt_bayer_fold#(
 
 ///        if (in_cntr == 2) valid_rows_r <= valid_rows_r0;
         
-///        blank_r <= ~(wnd_a_w[0] ? valid_rows_r[1]: valid_rows_r[0]);  
+///        blank_r <= ~(wnd_a_w[0] ? valid_rows_r[1]: valid_rows_r[0]);
+
+///        if (run_r[9]) var_pre_first <= var_first_d;  
         
-        if (run_r[10]) begin
-            var_first <= var_first_d;
-        end
+///        if (run_r[10]) begin
+//            var_first <= var_first_d;
+///            var_first <= var_pre_first;
+///        end
          
         pre_last_in <= in_cntr[6:0] == 7'h7d;
          
@@ -184,32 +192,19 @@ module  mclt_bayer_fold#(
     );
 
 // Matching window latency with pixel data latency
+    wire [3:0] addr_dly = ADDR_DLY;
     dly_var #(
         .WIDTH(11),
         .DLY_WIDTH(4)
     ) dly_pixel_addr_i (
         .clk  (clk),      // input
         .rst  (rst),      // input
-        .dly  (4'h2),     // input[3:0] Delay for external memory latency = 2, reduce for higher 
+//        .dly  (4'h2),     // input[3:0] Delay for external memory latency = 2, reduce for higher 
+        .dly  (addr_dly),     // input[3:0] Delay for external memory latency = 2, reduce for higher 
         .din  ({pre_page, run_r[3], pix_a_r}), // input[0:0] 
         .dout ({pix_page,   pix_re, pix_addr}) // output[0:0] 
     );
 
-/*
-    dly_var #(
-        .WIDTH(1),
-        .DLY_WIDTH(4)
-    ) dly_blank_i (
-        .clk  (clk),           // input
-        .rst  (rst),           // input
-        .dly  (4'h0),          // TODO: put correct value! 
-        
-        
-         
-        .din  (blank_r),  // input[0:0] 
-        .dout (blank_d)   // output[0:0] 
-    );
-*/
 // Latency = 6
     mclt_wnd_mul #(
         .SHIFT_WIDTH (SHIFT_WIDTH),
@@ -243,7 +238,8 @@ module  mclt_bayer_fold#(
     ) dly_var_first_i (
         .clk  (clk),           // input
         .rst  (rst),           // input
-        .dly  (4'h9),          // input[3:0] 
+//        .dly  (4'h9),          // input[3:0] 
+        .dly  (4'h8),          // input[3:0] 
         .din  (run_r[0] && (in_cntr[0] == 0)),  // input[0:0] 
         .dout (var_first_d)    // output[0:0] 
     );

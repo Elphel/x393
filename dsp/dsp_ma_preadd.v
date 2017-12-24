@@ -42,7 +42,8 @@ module  dsp_ma_preadd #(
     parameter B_WIDTH = 18,
     parameter A_WIDTH = 25,
     parameter P_WIDTH = 48,
-    parameter BREG = 1) // means number in series, so "2" always reads the second
+    parameter AREG =     1,
+    parameter BREG =     1) // means number in series, so "2" always reads the second
 (
     input                       clk,
     input                       rst,
@@ -86,7 +87,7 @@ module  dsp_ma_preadd #(
         .ACASCREG            (1),
         .ADREG               (1),
         .ALUMODEREG          (1),
-        .AREG                (1), // 2), // (1) - means number in series, so "2" always reads the second
+        .AREG                (AREG), // 2), // (1) - means number in series, so "2" always reads the second
         .AUTORESET_PATDET    ("NO_RESET"),
         .A_INPUT             ("DIRECT"), // "DIRECT", "CASCADE"
         .BCASCREG            (1),
@@ -206,20 +207,36 @@ module  dsp_ma_preadd #(
 
 
     generate 
+       case (AREG)
+          1 : begin
+                  always @(posedge clk) begin
+                      if (rst)         a2_reg <= 0;
+                      else  if (cea2)  a2_reg <= ain;
+                  end 
+              end
+          2 : begin
+                  always @(posedge clk) begin
+                      if (rst)         a2_reg <= 0;
+                      else  if (cea2)  a2_reg <= a1_reg;
+                  end 
+              end
+       endcase
+
        case (BREG)
           1 : begin
                   always @(posedge clk) begin
-                      if (rst)         b2_reg <= 18'b0;
+                      if (rst)         b2_reg <= 0;
                       else  if (ceb2)  b2_reg <= bin;
                   end 
               end
           2 : begin
                   always @(posedge clk) begin
-                      if (rst)         b2_reg <= 18'b0;
+                      if (rst)         b2_reg <= 0;
                       else  if (ceb2)  b2_reg <= b1_reg;
                   end 
               end
        endcase
+
     endgenerate 
 
     
@@ -228,14 +245,14 @@ module  dsp_ma_preadd #(
         else if (ceb1) b1_reg <= bin;
         
         
-        if      (rst)  b2_reg <= 0;
-        else if (ceb2) b2_reg <= bin;
+//        if      (rst)  b2_reg <= 0;
+//        else if (ceb2) b2_reg <= bin;
         
         if      (rst)  a1_reg <= 0;
         else if (cea1) a1_reg <= ain;
         
-        if      (rst)  a2_reg <= 0;
-        else if (cea2) a2_reg <= ain;
+//        if      (rst)  a2_reg <= 0;
+//        else if (cea2) a2_reg <= ain;
         
         if      (rst)  d_reg <= 0;
         else if (ced)  d_reg <= din;

@@ -80,7 +80,9 @@ module  phase_rotator#(
 // 0xxxxxx (>0)       nnn    s     s    xxxxxx            nnn          0         0
 
     reg                     [5:0] start_d; // delayed versions of start (TODO: adjust length)  
-    reg                     [7:0] cntr_h; // input sample counter
+    reg                     [7:0] cntr_h_consec; // input sample counter
+    wire                    [7:0] cntr_h = DECIMATE ? {cntr_h_consec[6:2], ODD ? 1'b1: 1'b0, cntr_h_consec[1:0]}: cntr_h_consec;
+    
     reg                           run_h;
     wire                    [7:0] cntr_v; // delayed sample counter
     wire                          run_v;
@@ -117,12 +119,12 @@ module  phase_rotator#(
         if (start_d[3]) shift_vr <= shift_v0;
         if (start_d[4]) inv_checker_r2 <= inv_checker_r;
         
-        if   (rst)                                        run_h <= 0;
-        else if (start)                                   run_h <= 1;
-        else if (&cntr_h[7:1] && (cntr_h[0] || DECIMATE)) run_h <= 0;
+        if   (rst)                                               run_h <= 0;
+        else if (start)                                          run_h <= 1;
+        else if (&cntr_h_consec[6:0] && (cntr_h[7] || DECIMATE)) run_h <= 0;
         
-        if (!run_h) cntr_h <= ODD;
-        else        cntr_h <= cntr_h + (1 << DECIMATE);
+        if (!run_h) cntr_h_consec <= 0;
+        else        cntr_h_consec <= cntr_h_consec + 1;
         
         // combine horizontal and vertical counters and shifts to feed to ROM
         hv_index <= mux_v ? cntr_v[4:2] : cntr_h[7:5]; // input data "down first" (transposed) 
@@ -247,7 +249,7 @@ module  phase_rotator#(
         fd_dv <= pre_dv;
         if (pre_dv) fd_out <= omux_sel ? pout_4[COEFF_WIDTH +: DSP_A_WIDTH] : pout_3[COEFF_WIDTH +: DSP_A_WIDTH];
         
-        pre_first_out <= cntr_h[7:0] == 8'hd;
+        pre_first_out <= cntr_h_consec[7:0] == 8'hd;
         
     end
      

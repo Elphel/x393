@@ -79,8 +79,15 @@ module  mclt16x16_bayer#(
     output signed [OUT_WIDTH - 1 : 0] dout1         //!<frequency domain data output (odd s amples)           
     
 );
+    
+    // When defined, use 2 DSP multipleierts
+    `define DSP_ACCUM_FOLD 1
+    
     localparam  DTT_OUT_DELAY = 128; // 191; // start output to sin/cos rotator, with checker - 2*64 +/=?
     localparam  DTT_IN_DELAY =  62; // 69; // wa -ra min = 1
+    wire signed [OUT_WIDTH - 1 : 0] dbg_dout0 = {dout0[OUT_WIDTH - 1],dout0[OUT_WIDTH - 1 : 1]}; // SuppressThisWarning VEditor : debug only signal
+    wire signed [OUT_WIDTH - 1 : 0] dbg_dout1 = {dout1[OUT_WIDTH - 1],dout1[OUT_WIDTH - 1 : 1]}; // SuppressThisWarning VEditor : debug only signal
+    
     reg            [ 1:0] start_r;
 
     // maybe use small FIFO memory?
@@ -98,38 +105,26 @@ module  mclt16x16_bayer#(
     reg                   inv_checker_r4;                
 
     wire                         [1:0] signs;        //!< bit 0: sign to add to dtt-cc input, bit 1: sign to add to dtt-cs input
-    wire                        [14:0] phases;        //!< other signals
+    wire                        [6:0] phases;        //!< other signals
     
     wire signed   [WND_WIDTH-1:0] window_w;
-    reg  signed   [WND_WIDTH-1:0] window_r;
-    reg  signed [PIXEL_WIDTH-1:0] pix_d_r;         // registered pixel data (to be absorbed by MPY)
+ 
+    wire  signed [DTT_IN_WIDTH-1:0] data_dtt_in; // multiplexed DTT input data
     
-    reg  signed [PIXEL_WIDTH + WND_WIDTH - 1:0] pix_wnd_r; // MSB not used: positive[PIXEL_WIDTH]*positive[WND_WIDTH]->positive[PIXEL_WIDTH+WND_WIDTH-1]
-    reg  signed              [DTT_IN_WIDTH-1:0] pix_wnd_r2; // pixels (positive) multiplied by window(positive), two MSBs == 2'b0 to prevent overflow
-    // rounding
-    wire signed              [DTT_IN_WIDTH-3:0] pix_wnd_r2_w = pix_wnd_r[PIXEL_WIDTH + WND_WIDTH - 2 -: DTT_IN_WIDTH - 2]
-    `ifdef ROUND
-                 + pix_wnd_r[PIXEL_WIDTH + WND_WIDTH -DTT_IN_WIDTH]
-    `endif
-    ;
-
-    reg  signed [DTT_IN_WIDTH-1:0] data_cc_r;   
-    reg  signed [DTT_IN_WIDTH-1:0] data_sc_r;
-    reg  signed [DTT_IN_WIDTH-1:0] data_sc_r2; // data_sc_r delayed by 1 cycle 
-    reg  signed [DTT_IN_WIDTH-1:0] data_dtt_in; // multiplexed DTT input data
-    
-    reg                            mode_mux;   
+       
     reg                      [6:0] dtt_in_cntr; //
     reg                            dtt_in_page;
     wire                     [8:0] dtt_in_wa = {1'b0,dtt_in_page, dtt_in_cntr[0], dtt_in_cntr[6:1]};  
-    wire                           dtt_we = phases[14];
+//    wire                           dtt_we = phases[14];
+    wire                           dtt_we;
     
        
-    wire                    [ 1:0] pix_sgn_d;
-    reg                     [ 1:0] pix_sgn_r;
+//    wire                    [ 1:0] pix_sgn_d;
+//    reg                     [ 1:0] pix_sgn_r;
     
-    wire                           var_first; // adding subtracting first variant of 4 folds    
-    reg                            var_last;    // next cycle the   data_xx_r will have data  (in_busy[14], ...)
+//    wire                           var_first; // adding subtracting first variant of 4 folds    
+    wire                           var_pre2_first; //     
+//    reg                            var_last;    // next cycle the   data_xx_r will have data  (in_busy[14], ...)
 
 // reading/converting DTT
     reg                            start_dtt; //  = dtt_in_cntr == 196; // fune tune? ~= 3/4 of 256 
@@ -143,6 +138,7 @@ module  mclt16x16_bayer#(
     wire                     [8:0] dtt_r_ra = {1'b0,dtt_r_page,dtt_r_cntr};
     wire signed             [35:0] dtt_r_data_w; // high bits are not used 
     wire signed [DTT_IN_WIDTH-1:0] dtt_r_data = dtt_r_data_w[DTT_IN_WIDTH-1:0]; 
+    wire signed [DTT_IN_WIDTH-1:0] dbg_dtt_r_data = {dtt_r_data_w[DTT_IN_WIDTH-1],dtt_r_data_w[DTT_IN_WIDTH-1:1]}; // SuppressThisWarning VEditor : debug only signal
    
     reg                            pre_last_out_r;
     wire                           pre_last_in_w;
@@ -177,37 +173,9 @@ module  mclt16x16_bayer#(
             y_shft_r4 <= y_shft_r3;
             inv_checker_r4 <= inv_checker_r3;
         end
-        
-        if (phases[8]) begin
-            pix_d_r <= pix_d;
-            window_r <=   window_w;
-        end
-        if (phases[9])  pix_wnd_r <= pix_d_r * window_r; // 1 MSB is extra
-    
-        if (phases[10]) begin
-            pix_wnd_r2 <= {{2{pix_wnd_r2_w[DTT_IN_WIDTH-3]}},pix_wnd_r2_w};
-            pix_sgn_r <=  pix_sgn_d; 
-        end
-        
-        var_last <= var_first & phases[11];
-       
-        if (phases[11]) begin
-             data_cc_r <= (var_first ? {DTT_IN_WIDTH{1'b0}} : data_cc_r) + (pix_sgn_r[0]?(-pix_wnd_r2):pix_wnd_r2) ;
-             data_sc_r <= (var_first ? {DTT_IN_WIDTH{1'b0}} : data_sc_r) + (pix_sgn_r[1]?(-pix_wnd_r2):pix_wnd_r2) ;
-             data_sc_r2 <= data_sc_r;
-         end
-         
-         if (phases[12]) data_sc_r2 <= data_sc_r;
-        
-         if      (var_last)    mode_mux <= 0;
-         else if (phases[13])  mode_mux <= mode_mux + 1;
-    
-         if (phases[13]) case (mode_mux)
-             1'b0: data_dtt_in <= data_cc_r;
-             1'b1: data_dtt_in <= data_sc_r2;
-         endcase
-    
-         if (!phases[14]) dtt_in_cntr <= 0; 
+
+//         if (!phases[14]) dtt_in_cntr <= 0; 
+         if (!dtt_we) dtt_in_cntr <= 0; 
          else             dtt_in_cntr <= dtt_in_cntr + 1;
    
          start_dtt <= dtt_in_cntr == DTT_IN_DELAY;
@@ -235,6 +203,7 @@ module  mclt16x16_bayer#(
     mclt_bayer_fold #(
         .SHIFT_WIDTH     (SHIFT_WIDTH),
         .PIX_ADDR_WIDTH  (PIX_ADDR_WIDTH),
+        .ADDR_DLY        (4'h1), // 2 for mpy, 1 - for dsp
         .COORD_WIDTH     (COORD_WIDTH),
 //        .PIXEL_WIDTH     (PIXEL_WIDTH),
         .WND_WIDTH       (WND_WIDTH)
@@ -248,35 +217,26 @@ module  mclt16x16_bayer#(
 //        .DSP_P_WIDTH     (DSP_P_WIDTH),
 //        .DEAD_CYCLES     (DEAD_CYCLES)
     ) mclt_bayer_fold_i (
-        .clk         (clk),         // input
-        .rst         (rst),         // input
-        .start       (start),       // input
-        .tile_size   (tile_size),   // input[1:0] 
-        .inv_checker (inv_checker), // input
-        .top_left    (top_left),    // input[7:0] 
-        .valid_rows  (valid_rows),  // input[1:0] 
-        .x_shft      (x_shft),      // input[6:0] 
-        .y_shft      (y_shft),      // input[6:0] 
-        .pix_addr    (pix_addr),    // output[8:0] 
-        .pix_re      (pix_re),      // output
-        .pix_page    (pix_page),    // output
-        .window      (window_w),    // output[17:0] signed 
-        .signs       (signs),       // output[1:0] 
-        .phases      (phases),      // output[7:0]
-        .var_first   (var_first),   // output reg
-        .pre_last_in (pre_last_in_w)// output reg
+        .clk           (clk),         // input
+        .rst           (rst),         // input
+        .start         (start),       // input
+        .tile_size     (tile_size),   // input[1:0] 
+        .inv_checker   (inv_checker), // input
+        .top_left      (top_left),    // input[7:0] 
+        .valid_rows    (valid_rows),  // input[1:0] 
+        .x_shft        (x_shft),      // input[6:0] 
+        .y_shft        (y_shft),      // input[6:0] 
+        .pix_addr      (pix_addr),    // output[8:0] 
+        .pix_re        (pix_re),      // output
+        .pix_page      (pix_page),    // output
+        .window        (window_w),    // output[17:0] signed 
+        .signs         (signs),       // output[1:0] 
+        .phases        (phases),      // output[7:0]
+        .var_pre2_first(var_pre2_first), // output
+//        .var_first     (), // var_first),   // output reg
+        .pre_last_in   (pre_last_in_w)// output reg
     );
 
-    dly_var #(
-        .WIDTH(2),
-        .DLY_WIDTH(4)
-    ) dly_pix_sgn_i (
-        .clk  (clk),           // input
-        .rst  (rst),           // input
-        .dly  (4'h1),          // input[3:0] 
-        .din  (signs),    // input[0:0] 
-        .dout (pix_sgn_d)     // output[0:0] 
-    );
 
 
     ram18p_var_w_var_r #(
@@ -299,6 +259,9 @@ module  mclt16x16_bayer#(
     
     
     wire signed [OUT_WIDTH-1:0] dtt_out_wd;
+    wire signed [OUT_WIDTH-1:0] dbg_dtt_out_wd={dtt_out_wd[OUT_WIDTH-1],dtt_out_wd[OUT_WIDTH-1:1]};// SuppressThisWarning VEditor : debug only signal
+    
+    
     wire                  [3:0] dtt_out_wa16;
     wire                        dtt_out_we;
     wire                        dtt_sub16;
@@ -308,7 +271,7 @@ module  mclt16x16_bayer#(
     reg                   [1:0] dtt_out_ram_wpage; // one of 4 pages (128 samples long) being written to
     wire                        dtt_start_fill; // some data available in DTT output buffer, OK to start consecutive readout
     reg                         dtt_start_first_fill;
-    reg                         dtt_start_out;  // start read out to sin/cos rotator
+    reg                   [1:0] dtt_start_out;  // start read out to sin/cos rotator
     
 
 // frequency domain, high address bit - page, 2 next - mode, 6 LSBs - transposed FD data (vertical first)
@@ -330,6 +293,8 @@ module  mclt16x16_bayer#(
     // data to be input to phase rotator
     wire signed [OUT_WIDTH-1:0] dtt_rd_data0 = dtt_rd_data0_w[OUT_WIDTH-1:0]; // valid with dtt_rd_regen_dv[3]
     wire signed [OUT_WIDTH-1:0] dtt_rd_data1 = dtt_rd_data1_w[OUT_WIDTH-1:0]; // valid with dtt_rd_regen_dv[3]
+    wire signed [OUT_WIDTH-1:0] dbg_dtt_rd_data0 = {dtt_rd_data0[OUT_WIDTH-1],dtt_rd_data0[OUT_WIDTH-1:1]}; // SuppressThisWarning VEditor : debug only signal
+    wire signed [OUT_WIDTH-1:0] dbg_dtt_rd_data1 = {dtt_rd_data1[OUT_WIDTH-1],dtt_rd_data1[OUT_WIDTH-1:1]}; // SuppressThisWarning VEditor : debug only signal
     
     wire                        dtt_first_quad_out = ~dtt_out_ram_cntr[2];
     
@@ -346,19 +311,20 @@ module  mclt16x16_bayer#(
         else if (dtt_start_first_fill) dtt_dly_cntr <= DTT_OUT_DELAY;
         else if (|dtt_dly_cntr)        dtt_dly_cntr <= dtt_dly_cntr - 1;
         
-        dtt_start_out <= dtt_dly_cntr == 1;
+        dtt_start_out <= {dtt_start_out[0],(dtt_dly_cntr == 1) ? 1'b1 : 1'b0};
 
         if      (rst)                   dtt_rd_regen_dv[0] <= 0;
-        else if (dtt_start_out)         dtt_rd_regen_dv[0] <= 1;
+        else if (dtt_start_out[0])      dtt_rd_regen_dv[0] <= 1;
         else if (&dtt_rd_cntr_pre[6:0]) dtt_rd_regen_dv[0] <= 0;
         
-        if      (rst)               dtt_rd_regen_dv[3:1] <= 0;
-        else                        dtt_rd_regen_dv[3:1] <= dtt_rd_regen_dv[2:0];
+        if      (rst)                   dtt_rd_regen_dv[3:1] <= 0;
+        else                            dtt_rd_regen_dv[3:1] <= dtt_rd_regen_dv[2:0];
         
-        if (dtt_start_out)           dtt_rd_cntr_pre <= {dtt_out_ram_wpage, 7'b0}; //copy page number
+        if (dtt_start_out[0])           dtt_rd_cntr_pre <= {dtt_out_ram_wpage, 7'b0}; //copy page number
         
         else if (dtt_rd_regen_dv[0]) dtt_rd_cntr_pre <= dtt_rd_cntr_pre + 1;
-        
+
+/*
         dtt_rd_ra0 <= {dtt_rd_cntr_pre[8:7],
                        dtt_rd_cntr_pre[6] ^ dtt_rd_cntr_pre[5],
                        dtt_rd_cntr_pre[5]? (~dtt_rd_cntr_pre[4:0]) : dtt_rd_cntr_pre[4:0],
@@ -367,8 +333,40 @@ module  mclt16x16_bayer#(
                        dtt_rd_cntr_pre[6] ^ dtt_rd_cntr_pre[5],
                        dtt_rd_cntr_pre[5]? (~dtt_rd_cntr_pre[4:0]) : dtt_rd_cntr_pre[4:0],
                        ~dtt_rd_cntr_pre[5]};    
+
+*/        
+        dtt_rd_ra0 <= {dtt_rd_cntr_pre[8:7],
+                       dtt_rd_cntr_pre[0] ^ dtt_rd_cntr_pre[1],
+                       dtt_rd_cntr_pre[0]? (~dtt_rd_cntr_pre[6:2]) : dtt_rd_cntr_pre[6:2],
+                       dtt_rd_cntr_pre[0]};    
+        dtt_rd_ra1 <= {dtt_rd_cntr_pre[8:7],
+                       dtt_rd_cntr_pre[0] ^ dtt_rd_cntr_pre[1],
+                       dtt_rd_cntr_pre[0]? (~dtt_rd_cntr_pre[6:2]) : dtt_rd_cntr_pre[6:2],
+                      ~dtt_rd_cntr_pre[0]};    
         
     end
+    
+    
+    mclt_baeyer_fold_accum #(
+        .PIXEL_WIDTH(PIXEL_WIDTH),
+        .WND_WIDTH(WND_WIDTH),
+        .DTT_IN_WIDTH(DTT_IN_WIDTH),
+        .DSP_B_WIDTH(DSP_B_WIDTH),
+        .DSP_A_WIDTH(DSP_A_WIDTH),
+        .DSP_P_WIDTH(DSP_P_WIDTH)
+    ) mclt_baeyer_fold_accum_i (
+        .clk       (clk),          // input
+        .rst       (rst),          // input
+        .pre_phase (phases[6]),    // input
+        .pix_d     (pix_d),        // input[15:0] signed 
+        .pix_sgn   (signs),        // input[1:0] 
+        .window    (window_w),     // input[17:0] signed 
+        .var_pre2_first (var_pre2_first),    // input
+        .dtt_in    (data_dtt_in),   // output[24:0] signed
+        .dtt_in_dv (dtt_we) // output reg 
+    );
+    
+   
     
     
     dtt_iv_8x8_ad #(
@@ -453,7 +451,7 @@ module  mclt16x16_bayer#(
     ) phase_rotator0_i (
         .clk           (clk),           // input
         .rst           (rst),           // input
-        .start         (dtt_start_out), // input
+        .start         (dtt_start_out[1]), // input
         // are these shift OK? Will need to be valis only @ dtt_start_out
         .shift_h       (x_shft_r4),     // input[6:0] signed 
         .shift_v       (y_shft_r4),     // input[6:0] signed
@@ -475,15 +473,15 @@ module  mclt16x16_bayer#(
     ) phase_rotator1_i (
         .clk           (clk),           // input
         .rst           (rst),           // input
-        .start         (dtt_start_out), // input
+        .start         (dtt_start_out[1]), // input
         // are these shift OK? Will need to be valis only @ dtt_start_out
         .shift_h       (x_shft_r4),     // input[6:0] signed 
         .shift_v       (y_shft_r4),     // input[6:0] signed
         .inv_checker   (inv_checker_r4),// input only used for Bayer mosaic data 
         .fd_din        (dtt_rd_data1),  // input[24:0] signed. Expected latency = 3 from start  
         .fd_out        (dout1),         // output[24:0] reg signed 
-        .pre_first_out (pre_first_out), // output reg 
-        .fd_dv         (dv)             // output reg 
+        .pre_first_out (),              // output reg 
+        .fd_dv         ()               // output reg 
     );
 
 
