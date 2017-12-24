@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.3.78 (w)1999-2016 BSI
-[*] Sun Dec 24 08:31:35 2017
+[*] Sun Dec 24 17:48:46 2017
 [*]
-[dumpfile] "/home/eyesis/nc393/elphel393/fpga-elphel/x393_branch_dct/simulation/mclt_test_02-20171224011207780.fst"
-[dumpfile_mtime] "Sun Dec 24 08:12:14 2017"
-[dumpfile_size] 1516519
+[dumpfile] "/home/eyesis/nc393/elphel393/fpga-elphel/x393_branch_dct/simulation/mclt_test_02-20171224013140770.fst"
+[dumpfile_mtime] "Sun Dec 24 08:31:46 2017"
+[dumpfile_size] 1515496
 [savefile] "/home/eyesis/nc393/elphel393/fpga-elphel/x393_branch_dct/mclt_test_02.sav"
-[timestart] 3589100
-[size] 1814 1171
-[pos] 0 0
-*-14.476400 3690400 355000 2885000 325000 7455000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[timestart] 3552600
+[size] 1201 767
+[pos] -1740 37
+*-14.476400 3828100 355000 2885000 325000 7455000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] mclt_test_02.
 [treeopen] mclt_test_02.mclt16x16_i.dtt_iv_8x8_ad_i.dct_iv8_1d_pass1_0_i.
 [treeopen] mclt_test_02.mclt16x16_i.dtt_iv_8x8_ad_i.dct_iv8_1d_pass2_0_i.
@@ -31,7 +31,7 @@
 [sst_width] 280
 [signals_width] 319
 [sst_expanded] 1
-[sst_vpaned_height] 343
+[sst_vpaned_height] 203
 @c00200
 -top
 @28
@@ -1311,8 +1311,6 @@ mclt_test_02.mclt_bayer_fold_i.mclt_bayer_fold_i.wnd_a_w[7:0]
 -fold
 @1000200
 -top
-@29
-mclt_test_02.mclt_bayer_fold_i.dtt_start_out
 @200
 -
 @800200
@@ -1644,8 +1642,6 @@ mclt_test_02.mclt_bayer_fold_i.dtt_dly_cntr[7:0]
 mclt_test_02.mclt_bayer_fold_i.dtt_out_ram_wa[8:0]
 mclt_test_02.mclt_bayer_fold_i.dtt_out_ram_wah[4:0]
 mclt_test_02.mclt_bayer_fold_i.dtt_out_wa16[3:0]
-@28
-mclt_test_02.mclt_bayer_fold_i.dtt_start_out
 @c00022
 mclt_test_02.mclt_bayer_fold_i.dtt_rd_cntr_pre[8:0]
 @28

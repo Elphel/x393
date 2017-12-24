@@ -81,7 +81,7 @@ module  mclt16x16_bayer#(
 );
     
     // When defined, use 2 DSP multipleierts
-    `define DSP_ACCUM_FOLD 1
+//    `define DSP_ACCUM_FOLD 1
     
     localparam  DTT_OUT_DELAY = 128; // 191; // start output to sin/cos rotator, with checker - 2*64 +/=?
     localparam  DTT_IN_DELAY =  62; // 69; // wa -ra min = 1
