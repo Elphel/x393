@@ -1,0 +1,678 @@
+// Debugging FPGA implementation
+// residual_shift[0][0]=0.4609375, residual_shift[0][1]=-0.21875
+  3b // color 0 shift_x, 7 bits
+  64 // color 0 shift_y, 7 bits
+ 5d3 // color 0 ctile_left
+ 3b4 // color 0 ctile_top
+// residual_shift[1][0]=0.0625, residual_shift[1][1]=0.375
+   8 // color 1 shift_x, 7 bits
+  30 // color 1 shift_y, 7 bits
+ 5d0 // color 1 ctile_left
+ 3ba // color 1 ctile_top
+// residual_shift[2][0]=-0.234375, residual_shift[2][1]=0.078125
+  62 // color 2 shift_x, 7 bits
+   a // color 2 shift_y, 7 bits
+ 5d1 // color 2 ctile_left
+ 3b7 // color 2 ctile_top
+
+// Full Bayer fpga tile data
+177d 2fbe 19b7 2941 16c6 288f 1899 3143 1d9d 3c50 1e6e 4236 1c09 3fa9 2155 493c 23e9 3ed5 1cd6 39e8 19bd 294b 
+379e 18f8 3370 150d 3443 1618 36c9 15bf 36c9 1ba0 3ea6 1f33 4248 1c68 4337 1e66 4603 21b1 3dc6 2008 3b20 1842 
+1a79 2aa7 14ab 2527 1453 25d2 1351 2529 13fd 2944 1a1b 3dfb 1d9f 4082 1c6f 377c 1ba6 3b85 1da2 3b88 2157 3e03 
+3879 14b4 3443 14b5 35ef 1565 3372 13b3 30ff 14b6 395d 1d97 4334 1b3f 3ce0 16d0 3520 1787 3c01 18a0 3eab 2008 
+12fa 1ff6 13fc 2941 1503 2c17 14ab 247e 14ab 2730 1a1b 3844 1ed6 4235 16c9 252d 166e 2ab0 1457 27e7 17e0 314b 
+329b 145d 3958 16cc 37a0 18f9 35f2 195a 3dbe 1b3d 415d 1d97 638a 5ce5 4cbc 195c 3883 16d0 32a7 1676 3962 161c 
+1721 2e43 166a 2b5f 13a5 29f5 1c6c 3775 1e04 3452 195a 35e4 261c 6e90 1e07 3ab3 1e07 36b0 183e 2cda 1507 2333 
+3879 150c 329e 14b5 3518 189b 3a39 1b3d 3bf8 195a 5c00 1e64 4334 189d 4424 26e6 5e26 1ecd 3dc6 18a0 37aa 1361 
+134f 2329 13a5 288e 1a18 313f 19b8 3082 1454 2c19 6194 6a51 1a7c 2893 1a7e 4856 5216 4dc4 1ed9 2d94 13a9 29fe 
+31cb 12b4 35ef 1727 3958 17e0 3cda 189c 37a3 16cd 46f2 183f 3cdd 1ba1 4161 1ecd 4fb2 2006 4516 1c07 3b20 1adf 
+1669 293e 177e 29f4 1503 288e 1351 21e1 14ab 2528 1505 2d8f 1a1b 3d25 1ae0 3087 1a1c 3914 1da2 3b87 17e0 314a 
+31cb 1616 36c7 14b5 329e 1408 30ff 1409 35f2 150e 3881 18fc 3ea6 1add 3b1d 1ade 36cf 1ade 3ce3 1cd0 3962 19bd 
+13fb 21dd 14aa 21df 166a 313f 183b 2942 1504 25d3 155e 2945 183c 3206 16c9 2f09 183d 35e6 195c 3394 19bc 35e9 
+336e 150c 3519 1671 36c7 183d 387e 14b6 3446 1566 3448 13b4 351d 189d 35f7 15c1 3960 18fd 3a41 17e5 3886 16d1 
+15b4 27db 177e 2ccf 160f 2f01 14ab 247d 13fd 2cd2 1780 2945 17de 2fc5 13ff 252c 1725 3087 1457 21e6 13a9 2332 
+36c5 1616 329e 150d 302f 1408 3446 15bf 395b 15bf 37a5 140a 3375 19ba 344b 14b8 35f7 1568 31d6 13b6 3522 1676 
+160e 288b 15b5 27dc 1252 2098 1504 2d8b 1a19 2aaa 1352 1ffa 1455 2e49 1255 252b 14ad 2733 1457 27e5 12fe 228b 
+30fb 14b4 3030 1565 37a1 135d 2dd1 14b6 3446 1409 2e9d 1619 3449 189d 31d4 130b 32a5 161b 337a 1462 3039 116f 
+13fb 1e1b 13fc 213b 13a5 288d 177f 2e47 1351 25d3 12fc 1ffa 12fc 2944 1613 21e4 12fd 2733 13a9 20a0 1256 20a0 
+302e 120d 31cd 12b4 30fe 1b9f 4245 1c03 3372 13b3 31d2 13b4 351e 183f 3520 12b7 32a5 1461 2f6d 12b8 2d10 1361 
+134f 2281 12a6 25d1 1957 272d 1958 2d8b 166b 1f59 1352 27e1 189a 2fc4 1506 1f5d 115d 1e21 1256 1e23 12aa 23da 
+329c 111a 329e 135d 3030 145e 351c 15bf 31d0 120f 3034 12b6 3449 1674 32a5 1510 2b82 111d 2f6d 1212 31d7 11c0 
+
+
+// Color # 0: Pixels input range: 0.000000 ... 442.242462
+//3b // shift_x, 7 bits
+//64 // shift_y, 7 bits
+288f    0 3143    0 3c50    0 4236    0 3fa9    0 493c    0 3ed5    0 39e8    0 
+   0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0 
+25d2    0 2529    0 2944    0 3dfb    0 4082    0 377c    0 3b85    0 3b88    0 
+   0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0 
+2c17    0 247e    0 2730    0 3844    0 4235    0 252d    0 2ab0    0 27e7    0 
+   0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0 
+29f5    0 3775    0 3452    0 35e4    0 6e90    0 3ab3    0 36b0    0 2cda    0 
+   0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0 
+313f    0 3082    0 2c19    0 6a51    0 2893    0 4856    0 4dc4    0 2d94    0 
+   0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0 
+288e    0 21e1    0 2528    0 2d8f    0 3d25    0 3087    0 3914    0 3b87    0 
+   0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0 
+313f    0 2942    0 25d3    0 2945    0 3206    0 2f09    0 35e6    0 3394    0 
+   0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0 
+2f01    0 247d    0 2cd2    0 2945    0 2fc5    0 252c    0 3087    0 21e6    0 
+   0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0 
+
+
+// Color # 1: Pixels input range: 0.000000 ... 376.589752
+//8 // shift_x, 7 bits
+//30 // shift_y, 7 bits
+   0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0 
+329e    0 3518    0 3a39    0 3bf8    0 5c00    0 4334    0 4424    0 5e26    0 
+   0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0 
+35ef    0 3958    0 3cda    0 37a3    0 46f2    0 3cdd    0 4161    0 4fb2    0 
+   0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0 
+36c7    0 329e    0 30ff    0 35f2    0 3881    0 3ea6    0 3b1d    0 36cf    0 
+   0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0 
+3519    0 36c7    0 387e    0 3446    0 3448    0 351d    0 35f7    0 3960    0 
+   0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0 
+329e    0 302f    0 3446    0 395b    0 37a5    0 3375    0 344b    0 35f7    0 
+   0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0 
+3030    0 37a1    0 2dd1    0 3446    0 2e9d    0 3449    0 31d4    0 32a5    0 
+   0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0 
+31cd    0 30fe    0 4245    0 3372    0 31d2    0 351e    0 3520    0 32a5    0 
+   0    0    0    0    0    0    0    0    0    0    0    0    0    0    0    0 
+329e    0 3030    0 351c    0 31d0    0 3034    0 3449    0 32a5    0 2b82    0 
+
+
+// Color # 2: Pixels input range: 0.000000 ... 390.304718
+//62 // shift_x, 7 bits
+//a // shift_y, 7 bits
+14b5    0 1565    0 13b3    0 14b6    0 1d97    0 1b3f    0 16d0    0 1787    0 
+   0 1503    0 14ab    0 14ab    0 1a1b    0 1ed6    0 16c9    0 166e    0 1457 
+16cc    0 18f9    0 195a    0 1b3d    0 1d97    0 5ce5    0 195c    0 16d0    0 
+   0 13a5    0 1c6c    0 1e04    0 195a    0 261c    0 1e07    0 1e07    0 183e 
+14b5    0 189b    0 1b3d    0 195a    0 1e64    0 189d    0 26e6    0 1ecd    0 
+   0 1a18    0 19b8    0 1454    0 6194    0 1a7c    0 1a7e    0 5216    0 1ed9 
+1727    0 17e0    0 189c    0 16cd    0 183f    0 1ba1    0 1ecd    0 2006    0 
+   0 1503    0 1351    0 14ab    0 1505    0 1a1b    0 1ae0    0 1a1c    0 1da2 
+14b5    0 1408    0 1409    0 150e    0 18fc    0 1add    0 1ade    0 1ade    0 
+   0 166a    0 183b    0 1504    0 155e    0 183c    0 16c9    0 183d    0 195c 
+1671    0 183d    0 14b6    0 1566    0 13b4    0 189d    0 15c1    0 18fd    0 
+   0 160f    0 14ab    0 13fd    0 1780    0 17de    0 13ff    0 1725    0 1457 
+150d    0 1408    0 15bf    0 15bf    0 140a    0 19ba    0 14b8    0 1568    0 
+   0 1252    0 1504    0 1a19    0 1352    0 1455    0 1255    0 14ad    0 1457 
+1565    0 135d    0 14b6    0 1409    0 1619    0 189d    0 130b    0 161b    0 
+   0 13a5    0 177f    0 1351    0 12fc    0 12fc    0 1613    0 12fd    0 13a9 
+
+
+// Color=0, signs table (per mode, per index - bitstring of variants, 0 - positive, 1 - negative)
+0 0 0 0 5 5 5 5 0 0 0 0 5 5 5 5 
+0 0 0 0 5 5 5 5 0 0 0 0 5 5 5 5 
+3 3 3 3 6 6 6 6 3 3 3 3 6 6 6 6 
+3 3 3 3 6 6 6 6 3 3 3 3 6 6 6 6 
+5 5 5 5 f f f f 5 5 5 5 f f f f 
+5 5 5 5 f f f f 5 5 5 5 f f f f 
+6 6 6 6 c c c c 6 6 6 6 c c c c 
+6 6 6 6 c c c c 6 6 6 6 c c c c 
+3 3 3 3 6 6 6 6 3 3 3 3 6 6 6 6 
+3 3 3 3 6 6 6 6 3 3 3 3 6 6 6 6 
+f f f f a a a a f f f f a a a a 
+f f f f a a a a f f f f a a a a 
+6 6 6 6 c c c c 6 6 6 6 c c c c 
+6 6 6 6 c c c c 6 6 6 6 c c c c 
+a a a a 0 0 0 0 a a a a 0 0 0 0 
+a a a a 0 0 0 0 a a a a 0 0 0 0 
+
+// Color=1, signs table (per mode, per index - bitstring of variants, 0 - positive, 1 - negative)
+0 0 0 0 5 5 5 5 0 0 0 0 5 5 5 5 
+0 0 0 0 5 5 5 5 0 0 0 0 5 5 5 5 
+3 3 3 3 6 6 6 6 3 3 3 3 6 6 6 6 
+3 3 3 3 6 6 6 6 3 3 3 3 6 6 6 6 
+5 5 5 5 f f f f 5 5 5 5 f f f f 
+5 5 5 5 f f f f 5 5 5 5 f f f f 
+6 6 6 6 c c c c 6 6 6 6 c c c c 
+6 6 6 6 c c c c 6 6 6 6 c c c c 
+3 3 3 3 6 6 6 6 3 3 3 3 6 6 6 6 
+3 3 3 3 6 6 6 6 3 3 3 3 6 6 6 6 
+f f f f a a a a f f f f a a a a 
+f f f f a a a a f f f f a a a a 
+6 6 6 6 c c c c 6 6 6 6 c c c c 
+6 6 6 6 c c c c 6 6 6 6 c c c c 
+a a a a 0 0 0 0 a a a a 0 0 0 0 
+a a a a 0 0 0 0 a a a a 0 0 0 0 
+
+// Color=2, signs table (per mode, per index - bitstring of variants, 0 - positive, 1 - negative)
+0 0 0 0 5 5 5 5 0 0 0 0 5 5 5 5 
+0 0 0 0 5 5 5 5 0 0 0 0 5 5 5 5 
+3 3 3 3 6 6 6 6 3 3 3 3 6 6 6 6 
+3 3 3 3 6 6 6 6 3 3 3 3 6 6 6 6 
+5 5 5 5 f f f f 5 5 5 5 f f f f 
+5 5 5 5 f f f f 5 5 5 5 f f f f 
+6 6 6 6 c c c c 6 6 6 6 c c c c 
+6 6 6 6 c c c c 6 6 6 6 c c c c 
+3 3 3 3 6 6 6 6 3 3 3 3 6 6 6 6 
+3 3 3 3 6 6 6 6 3 3 3 3 6 6 6 6 
+f f f f a a a a f f f f a a a a 
+f f f f a a a a f f f f a a a a 
+6 6 6 6 c c c c 6 6 6 6 c c c c 
+6 6 6 6 c c c c 6 6 6 6 c c c c 
+a a a a 0 0 0 0 a a a a 0 0 0 0 
+a a a a 0 0 0 0 a a a a 0 0 0 0 
+
+
+// Color = 0, absolute values, mode0 (CC), others are the same
+123ac  e608  f353  bfe6 1561b  9f8d 11d65  851a 17b64  52f0 13c80  4531 19218   324 14f71   29f 
+ 4cc8 19959  400d 1557e  99c0 190df  8043 14e6b  e0d0 178fd  bb8b 13a7f 11f3c 1529e  ef9e 11a7c 
+148d0 10353  b99f  9265 181ab  b3de  d9b8  658a 1abb3  5d80  f172  34c8 1c54c   38a  ffe5   200 
+ 568f 1cd79  30dd 10483  ad54 1c3ea  61d9  ff1e  fd70 1a8fe  8f12  efeb 143cf 17dbc  b6cc  d77f 
+16152 116a6  78ca  5f43 19e69  c146  8dac  4213 1cb93  6478  9d1d  2259 1e714   3ce  a684   14d 
+ 5d02 1efdd  1fcc  a985  ba3f 1e598  3fac  a602 11053 1c8aa  5d19  9c1e 15bf1 19a2f  76f3  8c3a 
+16c3f 11f45  3350  2878 1ab3a  c740  3c2f  1c12 1d9ca  6793  42be   e97 1f625   3ec  46bd    8d 
+ 5fe2 1ff33   d82  4804  c001 1f49d  1b0c  4686 118bf 1d6ca  278d  4252 166b3 1a6df  3288  3b92 
+ 1423   fe1 1692d 11cd9  179e   b04 1a7a0  c592  1a31   5ba 1d5cb  66b4  1bc2    37 1f1e9   3e3 
+  54d  1c42  5f14 1fae4   a9d  1bac  be63 1f065   f85  1a06 11662 1d2d2  13d4  1760 163ad 1a34e 
+ 5acf  479e 1583a 10f7a  6a83  31ad 193be  bc4c  761e  19d2 1bfbf  61e2  7d30    fa 1da8b   3b5 
+ 17e8  7f72  5a9d 1e31a  2fde  7ccf  b574 1d919  45fe  755f 10951 1bce9  596d  696d 152fc 18fa0 
+ 9dfe  7c9b 13a0c  f7ad  b950  566d 17059  abca  cd82  2ced 1987e  594d  d9cf   1b3 1b0f0   361 
+ 2997  ddbc  52ac 1b8bf  5349  d925  a58b 1af9f  79c7  cc35  f20e 195e7  9b97  b76c 13544 16c97 
+ db1b  accd 10fcc  d65c 100fe  77db 13ecb  94ae 11d00  3e4e 1618a  4d4a 12e0e   25c 176b2   2ed 
+ 39ae 13381  478c 17d75  737f 12d23  8f46 1758e  a8e1 11b32  d17e 15f4d  d7c5  fe5f 10ba9 13b8b 
+
+// Color = 1, absolute values, mode0 (CC), others are the same
+11bbc  e7b5  e195  b837 144db  aac6 10247  87c6 1617f  6747 1190c  521c 1708d  1fd1 12504  194b 
+ 28df 17172  207f 125b9  6ffd 16424  5909 11b25  b2cd 14926  8e27 105b0  eebe 12182  bdcf  e62c 
+14afb 10e4a  9ec2  81a6 17af4  c736  b5c5  5f8e 19c5d  787a  c5cb  39ca 1aded  251d  ce38  11cd 
+ 2fae 1aef7  16de  ceb8  82a3 19f72  3ea9  c746  d093 17ff5  640b  b82b 1167f 151b8  8595  a1fd 
+16d83 12a7d  55d6  4619 1a27d  dbfe  6247  33aa 1c762  850c  6af1  1f3e 1dac7  28fc  6f7f   9a0 
+ 34a7 1dbed   c5d  6fc4  9044 1cac9  21e1  6bbd  e655 1a804  3617  6393 1338d 174f3  4839  5795 
+181ff 13b37   99d   7da 1b9f1  e853   b02   5c9 1e0e7  8c80   bfa   380 1f562  2b48   c7d   114 
+ 379a 1f699   163   c85  9859 1e47f   3cb   c11  f33e 1bfc7   60f   b27 144c9 189d9   817   9cf 
+ 42fa  36b2 187a5 13fd4  4caf  2850 1c069  ebb9  5372  1861 1e7f1  8e8f  5700   783 1fcb9  2bea 
+  9a6  5736  386b 1fdf4  1a6f  5411  9a94 1eb97  2a35  4db2  f6cd 1c655  385b  4457 1498a 18f9d 
+ 8cfe  7324 17e3e 13827  a16e  54dc 1b5a5  e611  afa9  3352 1dc3b  8b23  b724   fcf 1f083  2adc 
+ 144f  b796  3710 1f1b7  37a6  b0f9  96de 1dfca  58d9  a390  f0e1 1bb6d  76a3  8fdd 141a1 18606 
+ d198  ab29 16627 1247b  eff8  7e26 19a10  d791 10520  4c4b 1be37  825e 1103f  1780 1d138  2829 
+ 1e31 110e8  3398 1d259  52b9 10714  8d5c 1c18d  8414  f324  e1b2 19f7b  b05b  d5db 12d5c 16d71 
+10e23  dc9a 1404d 10591 1354a  a297 16eb9  c0c8 1508f  6254 18f0e  7497 15ee4  1e4a 1a00d  23ea 
+ 26ea 15fbe  2e24 1a10f  6a9f 15313  7e6b 19209  aa3b 13960  c9d8 17391  e34d 113a2 10d82 146d1 
+
+// Color = 2, absolute values, mode0 (CC), others are the same
+13923 10586  ff66  d54d 160b8  c7db 11fae  a301 17abf  8283 134e8  6a72 18638  3826 13e44  2dcc 
+ 145f 182b2  109d 13b64  601b 1704f  4e63 12c65  a826 14fc6  8925 111dc  e9bb 12254  bea2  eccc 
+166d8 12bb2  bbd7  9ce1 19434  e507  d396  77e3 1b208  958f  e333  4e4a 1bf2d  4058  ea14  21af 
+ 1758 1bb23   c38  e7f7  6e23 1a612  39a7  dcf0  c0b2 180c8  64de  c96b 10bd9 14cb5  8c35  ae29 
+186c3 1465a  7111  5e6e 1b828  f966  7f5c  482a 1d8a2  a2dd  88c2  2f20 1e6f3  4611  8ce6  1446 
+ 196c 1e28d   75b  8ba1  77ee 1cb9c  22b4  84fd  d1d5 1a302  3cb7  793e 123ac 16a4d  5465  68d5 
+197a9 15477  21f3  1c5a 1cb31 1042f  263d  15ab 1ed13  a9e8  2910   e26 1fc02  4919  2a4e   616 
+ 1a85 1f76c   235  29ec  7d1e 1df7d   a6b  27ee  dae8 1b521  123b  2467 13049 179f8  1957  1f7a 
+ 2e7a  26d1 198e5 1557f  345a  1daa 1cc95 104f9  3836  135f 1ee91  aa6c  39ea   855 1fd8c  4952 
+  306  3964  1a9a 1f8f2   e44  36aa  7d7f 1e0f0  18f5  31d6  db92 1b673  22b1  2b17 13135 17b1d 
+ 7d1d  687d 18a6a 14967  8ced  4fda 1bc45  fbbb  9754  3425 1dd0e  a463  9be9  166f 1eb81  46b9 
+  824  9a81  19a8 1e710  2666  9328  790d 1cfe8  432f  8628  d3cb 1a6ed  5d63  7400 12666 16db0 
+ c6f1  a626 16cc7 130a6  e017  7ef9 19ae3  e8d1  f0a0  52ea 1b935  9808  f7ea  23ac 1c692  4169 
+  cf1  f5ad  17bb 1c277  3d0f  e9ff  6ff5 1ad0d  6ad4  d553  c3e1 18725  947e  b874 11047 15236 
+10921  dd6d 1411f 10c31 12aa4  a937 169b7  ccf4 140ad  6e80 18468  85d7 14a64  2f8a 1902b  3995 
+ 113f 14768  14e4 18c8e  515f 137d7  628f 179b4  8e5e 11c4b  ac70 15856  c5e5  f5d1  efb1 129bc 
+
+
+// Color= 0, DTT input range: -831.634611 ... 831.634611
+ 2866ff  346faf   df0c0  418c65 1f3adbe  35e8ea 1e1c607  29bcd1 
+ 39d1ed  491b6a  15bdc5  6c4532 1f249b3  506be9 1de7608  37679b 
+ 120e9e  149219   48c58  1f1245 1fa296a  1ac2ee 1f2bae1  188ce8 
+ 574308  78b7c1  1270ba  4f94ff 1ed8e07  cfe7ce 1cace16  48d80a 
+1fc1a3a 1f93e71 1feb476 1f918f0    d6fa 1f8d7c1   2fc82 1fa7e1e 
+ 39feda  5c9366  112646  ccf146 1f1264b  639712 1c68662  51ac91 
+1e307d0 1d7d632 1f58d72 1c91e3d   624fb 1cb6d12  11ad06 1e26f42 
+ 23be9b  2e4ab5   c0bcd  60e740 1f3ad57  521a5f 1e22338  304d32 
+
+ 2866ff 1cb9051   df0c0 1be739b 1f3adbe 1ca1716 1e1c607 1d6432f 
+ 39d1ed 1b6e496  15bdc5 193bace 1f249b3 1af9417 1de7608 1c89865 
+ 120e9e 1eb6de7   48c58 1e0edbb 1fa296a 1e53d12 1f2bae1 1e77318 
+ 574308 187483f  1270ba 1b06b01 1ed8e07 1301832 1cace16 1b727f6 
+1fc1a3a   6c18f 1feb476   6e710    d6fa   7283f   2fc82   581e2 
+ 39feda 1a36c9a  112646 1330eba 1f1264b 19c68ee 1c68662 1ae536f 
+1e307d0  2829ce 1f58d72  36e1c3   624fb  3492ee  11ad06  1d90be 
+ 23be9b 1d1b54b   c0bcd 19f18c0 1f3ad57 1ade5a1 1e22338 1cfb2ce 
+
+ 2866ff  346faf   df0c0  418c65 1f3adbe  35e8ea 1e1c607  29bcd1 
+1c62e13 1b6e496 1ea423b 193bace   db64d 1af9417  2189f8 1c89865 
+ 120e9e  149219   48c58  1f1245 1fa296a  1ac2ee 1f2bae1  188ce8 
+1a8bcf8 187483f 1ed8f46 1b06b01  1271f9 1301832  3531ea 1b727f6 
+1fc1a3a 1f93e71 1feb476 1f918f0    d6fa 1f8d7c1   2fc82 1fa7e1e 
+1c60126 1a36c9a 1eed9ba 1330eba   ed9b5 19c68ee  39799e 1ae536f 
+1e307d0 1d7d632 1f58d72 1c91e3d   624fb 1cb6d12  11ad06 1e26f42 
+1dc4165 1d1b54b 1f3f433 19f18c0   c52a9 1ade5a1  1ddcc8 1cfb2ce 
+
+ 2866ff 1cb9051   df0c0 1be739b 1f3adbe 1ca1716 1e1c607 1d6432f 
+1c62e13  491b6a 1ea423b  6c4532   db64d  506be9  2189f8  37679b 
+ 120e9e 1eb6de7   48c58 1e0edbb 1fa296a 1e53d12 1f2bae1 1e77318 
+1a8bcf8  78b7c1 1ed8f46  4f94ff  1271f9  cfe7ce  3531ea  48d80a 
+1fc1a3a   6c18f 1feb476   6e710    d6fa   7283f   2fc82   581e2 
+1c60126  5c9366 1eed9ba  ccf146   ed9b5  639712  39799e  51ac91 
+1e307d0  2829ce 1f58d72  36e1c3   624fb  3492ee  11ad06  1d90be 
+1dc4165  2e4ab5 1f3f433  60e740   c52a9  521a5f  1ddcc8  304d32 
+
+
+// Color= 1, DTT input range: -415.584333 ... 415.584333
+ 2d19a0  42587a  146e7b  431b8e 1f84e90  48b89e 1d925ea  33d064 
+ 1ae796  25b6d0   b6ea2  2821ba 1fb8d13  280bdc 1ecdac8  29ef11 
+ 3cf85d  541d40  1c0bc0  673376 1f596f8  66c8e8 1d4a55c  4c26fa 
+  18da4   23f8a    9841   25a00 1ffb9e6   25920 1fedc0d   208fc 
+ 436b70  5d092c  1ff320  67e4fe 1f44c87  64608b 1cb30b5  582f68 
+1e15a38 1d59fc6 1ed2042 1be2ebe   40400 1d68adb  126d76 1df484a 
+ 4389af  64592e  1be8fc  66ae08 1f4f5f0  5ebab3 1d36042  45f1b9 
+1c7a9cc 1b677a7 1e16397 19ec28a   832c5 1b64fa4  262177 1be7b17 
+
+ 2d19a0 1bda786  146e7b 1bce472 1f84e90 1b74762 1d925ea 1cc2f9c 
+ 1ae796 1da4930   b6ea2 1d7de46 1fb8d13 1d7f424 1ecdac8 1d610ef 
+ 3cf85d 1abe2c0  1c0bc0 198cc8a 1f596f8 1993718 1d4a55c 1b3d906 
+  18da4 1fdc076    9841 1fda600 1ffb9e6 1fda6e0 1fedc0d 1fdf704 
+ 436b70 1a2f6d4  1ff320 1981b02 1f44c87 19b9f75 1cb30b5 1a7d098 
+1e15a38  2a603a 1ed2042  41d142   40400  297525  126d76  20b7b6 
+ 4389af 19ba6d2  1be8fc 19951f8 1f4f5f0 1a1454d 1d36042 1ba0e47 
+1c7a9cc  498859 1e16397  613d76   832c5  49b05c  262177  4184e9 
+
+1d2e660 1bda786 1eb9185 1bce472   7b170 1b74762  26da16 1cc2f9c 
+ 1ae796  25b6d0   b6ea2  2821ba 1fb8d13  280bdc 1ecdac8  29ef11 
+1c307a3 1abe2c0 1e3f440 198cc8a   a6908 1993718  2b5aa4 1b3d906 
+  18da4   23f8a    9841   25a00 1ffb9e6   25920 1fedc0d   208fc 
+1bc9490 1a2f6d4 1e00ce0 1981b02   bb379 19b9f75  34cf4b 1a7d098 
+1e15a38 1d59fc6 1ed2042 1be2ebe   40400 1d68adb  126d76 1df484a 
+1bc7651 19ba6d2 1e41704 19951f8   b0a10 1a1454d  2c9fbe 1ba0e47 
+1c7a9cc 1b677a7 1e16397 19ec28a   832c5 1b64fa4  262177 1be7b17 
+
+1d2e660  42587a 1eb9185  431b8e   7b170  48b89e  26da16  33d064 
+ 1ae796 1da4930   b6ea2 1d7de46 1fb8d13 1d7f424 1ecdac8 1d610ef 
+1c307a3  541d40 1e3f440  673376   a6908  66c8e8  2b5aa4  4c26fa 
+  18da4 1fdc076    9841 1fda600 1ffb9e6 1fda6e0 1fedc0d 1fdf704 
+1bc9490  5d092c 1e00ce0  67e4fe   bb379  64608b  34cf4b  582f68 
+1e15a38  2a603a 1ed2042  41d142   40400  297525  126d76  20b7b6 
+1bc7651  64592e 1e41704  66ae08   b0a10  5ebab3  2c9fbe  45f1b9 
+1c7a9cc  498859 1e16397  613d76   832c5  49b05c  262177  4184e9 
+
+
+// Color= 2, DTT input range: -341.093520 ... 345.703701
+ 14dc5b  177d66  161ad7   eafb3  11111f   89e16   7be19    9f1c 
+ 137570  184615  105239  128be3   7baa8   f93c6   1251b   7b42e 
+ 14e6d2  11edeb  186789   98d53  13d485 1fff415   ee6b9 1f6703a 
+ 13544a  18e501   a7038  1905be    7b67  135145 1f8cf29   da06f 
+ 13bba3   a85b7  18532a    e56d  14d9e3 1f8a38d  12be30 1f2d412 
+  e3f74  147a29   12b09  1662b6 1f6f663  163c70 1f0b547  1558dc 
+  aa4c3 1fcab68  1320f2 1f59d04  566cb3 1edd85c  14bd73 1e9308c 
+  4d35a   77725 1f02f16  158059 1eef1ed  15d2a9 1e70bd2  1ad35d 
+
+1fc670b 1fa9443 1f2cbd9 1f5c658 1ed9127 1ef19da 1ed86e5 1ec81e7 
+  6022b 1f168de 1fe4706 1f02130 1f63973 1ec4c10 1ec9c6a 1ecc97c 
+1f21f78   5af0c 1ebaa18 1fd638a 1eb8e1e 1f58bca 1ec81b1 1edf50e 
+ 1066f6 1e8b673   764a3 1e771f1 1fd5f75 1ebe209 1f61011 1f00c29 
+1e8ceec  101806 1e5e51d   79727 1eb64b9 1fd0fbe 1ef57c4 1f624f2 
+ 19622c 1e486ef  136534 1e7d4fb   6b78a 1ecea5a 1fb8a3a 1f23165 
+1e4e5ad  4dfbba 1e57b9d  1244a8 1aaba59   6be4f 1f5ae81 1fb7462 
+ 23ecc4 1e4af93  1feb36 1e5ff1b   f5d7f 1f06bfb   86149 1fb252f 
+
+1fc670b   56bbd 1f2cbd9   a39a8 1ed9127  10e626 1ed86e5  137e19 
+1f9fdd5 1f168de   1b8fa 1f02130   9c68d 1ec4c10  136396 1ecc97c 
+1f21f78 1fa50f4 1ebaa18   29c76 1eb8e1e   a7436 1ec81b1  120af2 
+1ef990a 1e8b673 1f89b5d 1e771f1   2a08b 1ebe209   9efef 1f00c29 
+1e8ceec 1efe7fa 1e5e51d 1f868d9 1eb64b9   2f042 1ef57c4   9db0e 
+1e69dd4 1e486ef 1ec9acc 1e7d4fb 1f94876 1ecea5a   475c6 1f23165 
+1e4e5ad 1b20446 1e57b9d 1edbb58 1aaba59 1f941b1 1f5ae81   48b9e 
+1dc133c 1e4af93 1e014ca 1e5ff1b 1f0a281 1f06bfb 1f79eb7 1fb252f 
+
+ 14dc5b 1e8829a  161ad7 1f1504d  11111f 1f761ea   7be19 1ff60e4 
+1ec8a90  184615 1efadc7  128be3 1f84558   f93c6 1fedae5   7b42e 
+ 14e6d2 1ee1215  186789 1f672ad  13d485     beb   ee6b9   98fc6 
+1ecabb6  18e501 1f58fc8  1905be 1ff8499  135145   730d7   da06f 
+ 13bba3 1f57a49  18532a 1ff1a93  14d9e3   75c73  12be30   d2bee 
+1f1c08c  147a29 1fed4f7  1662b6   9099d  163c70   f4ab9  1558dc 
+  aa4c3   35498  1320f2   a62fc  566cb3  1227a4  14bd73  16cf74 
+1fb2ca6   77725   fd0ea  158059  110e13  15d2a9  18f42e  1ad35d 
+
+
+
+// Color = 0: DTT output range: -930.830168 ... 962.877927
+ dc89ef 1e1fa87 1f43f6e   da38a 1f7e59e  13e853 1e8116c 11ffb67 
+1f2a286  12ece9   4bbc2   2c827 1fbdaf8 1ff8e39 1fe137e  1fde1a 
+  5c552   928d8 1d0268c 1fe7123  33fe20 1fc5dc0 1e2681f   8b9d2 
+  c7c1b 1f7ef4d 1f9206f   1a18a   7960f   3778a 1fa0016 1f13d92 
+1fac088 1fd470d  346f8f 1fc61f2 1c465be 1ffe078  25465b 1fc48dd 
+ 16fc2b 1f967cb 1f5d41e 1fee2bb   cd034 1fba2da 1fa5d4b 1e404bf 
+1e70c61   e9377 1ee4612 1fbe23f  19579e 1faacbc 1fa0db8  25d546 
+1174adf  2b4cec   b8fc5 1f5811a 1fe358d 1e486ca  10608b  f0b830 
+
+1174adf  2b4cec   b8fc5 1f5811a 1fe358d 1e486ca  10608b  f0b830 
+1e70c61   e9377 1ee4612 1fbe23f  19579e 1faacbc 1fa0db8  25d546 
+ 16fc2b 1f967cb 1f5d41e 1fee2bb   cd034 1fba2da 1fa5d4b 1e404bf 
+1fac088 1fd470d  346f8f 1fc61f2 1c465be 1ffe078  25465b 1fc48dd 
+  c7c1b 1f7ef4d 1f9206f   1a18a   7960f   3778a 1fa0016 1f13d92 
+  5c552   928d8 1d0268c 1fe7123  33fe20 1fc5dc0 1e2681f   8b9d2 
+1f2a286  12ece9   4bbc2   2c827 1fbdaf8 1ff8e39 1fe137e  1fde1a 
+ dc89ef 1e1fa87 1f43f6e   da38a 1f7e59e  13e853 1e8116c 11ffb67 
+
+11ffb67 1e8116c  13e853 1f7e59e   da38a 1f43f6e 1e1fa87  dc89ef 
+ 1fde1a 1fe137e 1ff8e39 1fbdaf8   2c827   4bbc2  12ece9 1f2a286 
+  8b9d2 1e2681f 1fc5dc0  33fe20 1fe7123 1d0268c   928d8   5c552 
+1f13d92 1fa0016   3778a   7960f   1a18a 1f9206f 1f7ef4d   c7c1b 
+1fc48dd  25465b 1ffe078 1c465be 1fc61f2  346f8f 1fd470d 1fac088 
+1e404bf 1fa5d4b 1fba2da   cd034 1fee2bb 1f5d41e 1f967cb  16fc2b 
+ 25d546 1fa0db8 1faacbc  19579e 1fbe23f 1ee4612   e9377 1e70c61 
+ f0b830  10608b 1e486ca 1fe358d 1f5811a   b8fc5  2b4cec 1174adf 
+
+ f0b830  10608b 1e486ca 1fe358d 1f5811a   b8fc5  2b4cec 1174adf 
+ 25d546 1fa0db8 1faacbc  19579e 1fbe23f 1ee4612   e9377 1e70c61 
+1e404bf 1fa5d4b 1fba2da   cd034 1fee2bb 1f5d41e 1f967cb  16fc2b 
+1fc48dd  25465b 1ffe078 1c465be 1fc61f2  346f8f 1fd470d 1fac088 
+1f13d92 1fa0016   3778a   7960f   1a18a 1f9206f 1f7ef4d   c7c1b 
+  8b9d2 1e2681f 1fc5dc0  33fe20 1fe7123 1d0268c   928d8   5c552 
+ 1fde1a 1fe137e 1ff8e39 1fbdaf8   2c827   4bbc2  12ece9 1f2a286 
+11ffb67 1e8116c  13e853 1f7e59e   da38a 1f43f6e 1e1fa87  dc89ef 
+
+
+// Color = 0 Testing symmetry of checkerboard patterns
+//       0       0       0       0       0       0       0       0 
+//       0       0       0       0       0       0       0       0 
+//       0       0       0       0       0       0       0       0 
+//       0       0       0       0       0       0       0       0 
+//       0       0       0       0       0       0       0       0 
+//       0       0       0       0       0       0       0       0 
+//       0       0       0       0       0       0       0       0 
+//       0       0       0       0       0       0       0       0 
+
+//       0       0       0       0       0       0       0       0 
+//       0       0       0       0       0       0       0       0 
+//       0       0       0       0       0       0       0       0 
+//       0       0       0       0       0       0       0       0 
+//       0       0       0       0       0       0       0       0 
+//       0       0       0       0       0       0       0       0 
+//       0       0       0       0       0       0       0       0 
+//       0       0       0       0       0       0       0       0 
+
+
+// Color = 0 Testing antisymmetry of checkerboard patterns
+// 1b913de 1c3f50e 1e87edc  1b4714 1efcb3c  27d0a6 1d022d8  3ff6ce 
+// 1e5450c  25d9d2   97784   5904e 1f7b5f0 1ff1c72 1fc26fc  3fbc34 
+//   b8aa4  1251b0 1a04d18 1fce246  67fc40 1f8bb80 1c4d03e  1173a4 
+//  18f836 1efde9a 1f240de   34314   f2c1e   6ef14 1f4002c 1e27b24 
+// 1f58110 1fa8e1a  68df1e 1f8c3e4 188cb7c 1ffc0f0  4a8cb6 1f891ba 
+//  2df856 1f2cf96 1eba83c 1fdc576  19a068 1f745b4 1f4ba96 1c8097e 
+// 1ce18c2  1d26ee 1dc8c24 1f7c47e  32af3c 1f55978 1f41b70  4baa8c 
+//  2e95be  5699d8  171f8a 1eb0234 1fc6b1a 1c90d94  20c116 1e17060 
+
+//  2e95be  5699d8  171f8a 1eb0234 1fc6b1a 1c90d94  20c116 1e17060 
+// 1ce18c2  1d26ee 1dc8c24 1f7c47e  32af3c 1f55978 1f41b70  4baa8c 
+//  2df856 1f2cf96 1eba83c 1fdc576  19a068 1f745b4 1f4ba96 1c8097e 
+// 1f58110 1fa8e1a  68df1e 1f8c3e4 188cb7c 1ffc0f0  4a8cb6 1f891ba 
+//  18f836 1efde9a 1f240de   34314   f2c1e   6ef14 1f4002c 1e27b24 
+//   b8aa4  1251b0 1a04d18 1fce246  67fc40 1f8bb80 1c4d03e  1173a4 
+// 1e5450c  25d9d2   97784   5904e 1f7b5f0 1ff1c72 1fc26fc  3fbc34 
+// 1b913de 1c3f50e 1e87edc  1b4714 1efcb3c  27d0a6 1d022d8  3ff6ce 
+
+
+// Color = 1: DTT output range: -1017.836480 ... 1017.836480
+ bab4bd   64828 1f5a0e7 1fadaeb   2a5c1   1d639 1efc498  fe7589 
+1ff7be2 1fc248c   7a37e   3d3d7   1d2e0 1ff891d 1fac4f9   1228b 
+  5bb51 1fa358a   595b8 1fd2a7c 1fca1bb 1fecaaa   3c24c 1f6ee57 
+1ffd1d1 1ffba68   29c6b    4567   26028   2d8fa   2b7cf 1fd7403 
+1fa8828   45a21 1f4ab58    c481 1fb8734 1fcb7fa 1f9b5dc   7902d 
+1fe6d20   32e3d 1fbe5ee 1fe6d3b   28b5b   497d0   363d9   379fa 
+  37999 1fe7d5f 1fec01e   7ea63 1f88a6f 1fc746d   37d4f 1f648f1 
+13dfc83 1fbd7a0   a1844    ae61   3039c   1698b   796fe 10d97fb 
+
+13dfc83 1fbd7a0   a1844    ae61   3039c   1698b   796fe 10d97fb 
+  37999 1fe7d5f 1fec01e   7ea63 1f88a6f 1fc746d   37d4f 1f648f1 
+1fe6d20   32e3d 1fbe5ee 1fe6d3b   28b5b   497d0   363d9   379fa 
+1fa8828   45a21 1f4ab58    c481 1fb8734 1fcb7fa 1f9b5dc   7902d 
+1ffd1d1 1ffba68   29c6b    4567   26028   2d8fa   2b7cf 1fd7403 
+  5bb51 1fa358a   595b8 1fd2a7c 1fca1bb 1fecaaa   3c24c 1f6ee57 
+1ff7be2 1fc248c   7a37e   3d3d7   1d2e0 1ff891d 1fac4f9   1228b 
+ bab4bd   64828 1f5a0e7 1fadaeb   2a5c1   1d639 1efc498  fe7589 
+
+1018a77  103b68 1fe29c7 1fd5a3f   52515   a5f19 1f9b7d8 1454b43 
+1fedd75   53b07    76e3 1fe2d20 1fc2c29 1f85c82   3db74    841e 
+  911a9 1fc3db4   13556   35e45   2d584 1fa6a48   5ca76 1fa44af 
+  28bfd 1fd4831 1fd2706 1fd9fd8 1ffba99 1fd6395    4598    2e2f 
+1f86fd3   64a24   34806   478cc 1ff3b7f   b54a8 1fba5df   577d8 
+1fc8606 1fc9c27 1fb6830 1fd74a5   192c5   41a12 1fcd1c3   192e0 
+  9b70f 1fc82b1   38b93   77591 1f8159d   13fe2   182a1 1fc8667 
+ f26805 1f86902 1fe9675 1fcfc64 1ff519f 1f5e7bc   42860  c2037d 
+
+ f26805 1f86902 1fe9675 1fcfc64 1ff519f 1f5e7bc   42860  c2037d 
+  9b70f 1fc82b1   38b93   77591 1f8159d   13fe2   182a1 1fc8667 
+1fc8606 1fc9c27 1fb6830 1fd74a5   192c5   41a12 1fcd1c3   192e0 
+1f86fd3   64a24   34806   478cc 1ff3b7f   b54a8 1fba5df   577d8 
+  28bfd 1fd4831 1fd2706 1fd9fd8 1ffba99 1fd6395    4598    2e2f 
+  911a9 1fc3db4   13556   35e45   2d584 1fa6a48   5ca76 1fa44af 
+1fedd75   53b07    76e3 1fe2d20 1fc2c29 1f85c82   3db74    841e 
+1018a77  103b68 1fe29c7 1fd5a3f   52515   a5f19 1f9b7d8 1454b43 
+
+
+// Color = 1 Testing symmetry of checkerboard patterns
+// 175697a   c9050 1eb41ce 1f5b5d6   54b82   3ac72 1df8930 1fceb12 
+// 1fef7c4 1f84918   f46fc   7a7ae   3a5c0 1ff123a 1f589f2   24516 
+//   b76a2 1f46b14   b2b70 1fa54f8 1f94376 1fd9554   78498 1eddcae 
+// 1ffa3a2 1ff74d0   538d6    8ace   4c050   5b1f4   56f9e 1fae806 
+// 1f51050   8b442 1e956b0   18902 1f70e68 1f96ff4 1f36bb8   f205a 
+// 1fcda40   65c7a 1f7cbdc 1fcda76   516b6   92fa0   6c7b2   6f3f4 
+//   6f332 1fcfabe 1fd803c   fd4c6 1f114de 1f8e8da   6fa9e 1ec91e2 
+//  7bf906 1f7af40  143088   15cc2   60738   2d316   f2dfc  1b2ff6 
+
+//  7bf906 1f7af40  143088   15cc2   60738   2d316   f2dfc  1b2ff6 
+//   6f332 1fcfabe 1fd803c   fd4c6 1f114de 1f8e8da   6fa9e 1ec91e2 
+// 1fcda40   65c7a 1f7cbdc 1fcda76   516b6   92fa0   6c7b2   6f3f4 
+// 1f51050   8b442 1e956b0   18902 1f70e68 1f96ff4 1f36bb8   f205a 
+// 1ffa3a2 1ff74d0   538d6    8ace   4c050   5b1f4   56f9e 1fae806 
+//   b76a2 1f46b14   b2b70 1fa54f8 1f94376 1fd9554   78498 1eddcae 
+// 1fef7c4 1f84918   f46fc   7a7ae   3a5c0 1ff123a 1f589f2   24516 
+// 175697a   c9050 1eb41ce 1f5b5d6   54b82   3ac72 1df8930 1fceb12 
+
+
+// Color = 1 Testing antisymmetry of checkerboard patterns
+//       0       0       0       0       0       0       0       0 
+//       0       0       0       0       0       0       0       0 
+//       0       0       0       0       0       0       0       0 
+//       0       0       0       0       0       0       0       0 
+//       0       0       0       0       0       0       0       0 
+//       0       0       0       0       0       0       0       0 
+//       0       0       0       0       0       0       0       0 
+//       0       0       0       0       0       0       0       0 
+
+//       0       0       0       0       0       0       0       0 
+//       0       0       0       0       0       0       0       0 
+//       0       0       0       0       0       0       0       0 
+//       0       0       0       0       0       0       0       0 
+//       0       0       0       0       0       0       0       0 
+//       0       0       0       0       0       0       0       0 
+//       0       0       0       0       0       0       0       0 
+//       0       0       0       0       0       0       0       0 
+
+
+// Color = 2: DTT output range: -549.382667 ... 423.390240
+ 62a212 1f24602   87aaa 1fa041e   4c39d   2fe1f 1fa01a1   7510d 
+   36c5   68f6e 1f22bd7   c8371 1f92abf 1fed109   92217 1f1990b 
+1fdee23   2e5d6 1fbdfd4   50b43 1fc5882 1fe20ea   37cd9 1f8b1ba 
+  2af60 1f18630  1237bf 1ef1f31   acfee 1ffec15 1f80671   ccfee 
+1fd8989 1fd6a63 1ff709d 1ffa735   1dd34 1fd8ee8   39b31 1fb424a 
+1fad64c   996c1 1eff738   c5f22 1f8832e 1fe3822   910e9 1f39008 
+  1fcc6 1f90590   a1c45 1fa0db2   36e1b 1ffda6a 1fb18bd   c611f 
+  3b069 1f7c9ff   bd15b 1f46b44   46ee1   5a54a 1f0c63d  69d8fa 
+
+1ac8a6c   62ce4 1f7f933   6edfd 1fda078 1fd163e   597e6 1f86dd4 
+1ff8f1a 1fc9ed6   57509 1fafe90 1ff003f 1feea77 1ff600e     6a3 
+  6983b 1e9121b  1e5928 1e56502  1046c1    a673 1f024d4  180257 
+  2e85e 1f43a73   d9f14 1f29666   8c64d   1a1c5 1f9cfc8   b8152 
+1fd0c9b   84fee 1f4cb9f   9b034 1f9f944 1fe1875   5b7be 1f81527 
+  261a6 1fd3754   56edd 1fc9977   33f90   1169c 1fee6f3   56eea 
+  39890 1fc4937   6d806 1fa4bc5   25879    ba12 1fb0545 1ff0ae1 
+1fb9722   f4d1a 1eab7fd  118d2d 1f88b36 1faced7  159d22 176a782 
+
+176a782  159d22 1faced7 1f88b36  118d2d 1eab7fd   f4d1a 1fb9722 
+1ff0ae1 1fb0545    ba12   25879 1fa4bc5   6d806 1fc4937   39890 
+  56eea 1fee6f3   1169c   33f90 1fc9977   56edd 1fd3754   261a6 
+1f81527   5b7be 1fe1875 1f9f944   9b034 1f4cb9f   84fee 1fd0c9b 
+  b8152 1f9cfc8   1a1c5   8c64d 1f29666   d9f14 1f43a73   2e85e 
+ 180257 1f024d4    a673  1046c1 1e56502  1e5928 1e9121b   6983b 
+    6a3 1ff600e 1feea77 1ff003f 1fafe90   57509 1fc9ed6 1ff8f1a 
+1f86dd4   597e6 1fd163e 1fda078   6edfd 1f7f933   62ce4 1ac8a6c 
+
+ 69d8fa 1f0c63d   5a54a   46ee1 1f46b44   bd15b 1f7c9ff   3b069 
+  c611f 1fb18bd 1ffda6a   36e1b 1fa0db2   a1c45 1f90590   1fcc6 
+1f39008   910e9 1fe3822 1f8832e   c5f22 1eff738   996c1 1fad64c 
+1fb424a   39b31 1fd8ee8   1dd34 1ffa735 1ff709d 1fd6a63 1fd8989 
+  ccfee 1f80671 1ffec15   acfee 1ef1f31  1237bf 1f18630   2af60 
+1f8b1ba   37cd9 1fe20ea 1fc5882   50b43 1fbdfd4   2e5d6 1fdee23 
+1f1990b   92217 1fed109 1f92abf   c8371 1f22bd7   68f6e    36c5 
+  7510d 1fa01a1   2fe1f   4c39d 1fa041e   87aaa 1f24602  62a212 
+
+
+// Color = 2 Testing symmetry of checkerboard patterns
+//       0       0       0       0       0       0       0       0 
+//       0       0       0       0       0       0       0       0 
+//       0       0       0       0       0       0       0       0 
+//       0       0       0       0       0       0       0       0 
+//       0       0       0       0       0       0       0       0 
+//       0       0       0       0       0       0       0       0 
+//       0       0       0       0       0       0       0       0 
+//       0       0       0       0       0       0       0       0 
+
+//       0       0       0       0       0       0       0       0 
+//       0       0       0       0       0       0       0       0 
+//       0       0       0       0       0       0       0       0 
+//       0       0       0       0       0       0       0       0 
+//       0       0       0       0       0       0       0       0 
+//       0       0       0       0       0       0       0       0 
+//       0       0       0       0       0       0       0       0 
+//       0       0       0       0       0       0       0       0 
+
+
+// Color = 2 Testing antisymmetry of checkerboard patterns
+//  c54424 1e48c04  10f554 1f4083c   9873a   5fc3e 1f40342   ea21a 
+//    6d8a   d1edc 1e457ae  1906e2 1f2557e 1fda212  12442e 1e33216 
+// 1fbdc46   5cbac 1f7bfa8   a1686 1f8b104 1fc41d4   6f9b2 1f16374 
+//   55ec0 1e30c60  246f7e 1de3e62  159fdc 1ffd82a 1f00ce2  199fdc 
+// 1fb1312 1fad4c6 1fee13a 1ff4e6a   3ba68 1fb1dd0   73662 1f68494 
+// 1f5ac98  132d82 1dfee70  18be44 1f1065c 1fc7044  1221d2 1e72010 
+//   3f98c 1f20b20  14388a 1f41b64   6dc36 1ffb4d4 1f6317a  18c23e 
+//   760d2 1ef93fe  17a2b6 1e8d688   8ddc2   b4a94 1e18c7a  d3b1f4 
+
+// 15914d8   c59c8 1eff266   ddbfa 1fb40f0 1fa2c7c   b2fcc 1f0dba8 
+// 1ff1e34 1f93dac   aea12 1f5fd20 1fe007e 1fdd4ee 1fec01c     d46 
+//   d3076 1d22436  3cb250 1caca04  208d82   14ce6 1e049a8  3004ae 
+//   5d0bc 1e874e6  1b3e28 1e52ccc  118c9a   3438a 1f39f90  1702a4 
+// 1fa1936  109fdc 1e9973e  136068 1f3f288 1fc30ea   b6f7c 1f02a4e 
+//   4c34c 1fa6ea8   addba 1f932ee   67f20   22d38 1fdcde6   addd4 
+//   73120 1f8926e   db00c 1f4978a   4b0f2   17424 1f60a8a 1fe15c2 
+// 1f72e44  1e9a34 1d56ffa  231a5a 1f1166c 1f59dae  2b3a44  ed4f04 
+
+
+
+// Color = 0: DTT rotated, shift_x=0.460938. shift_y = -0.218750
+// DTT rotated  range: -1495.218153 ... 1357.956283
+ e5ed06 1db376f 1f84c60   b8995 1fe2772   e1015 1d89e33 1ccc73d 
+1fab466   e2ba9   9501c    6b39 1f76eff   52105   75e6a   cb80f 
+1fc01c5   7ecde 1da0309   b50b9  25c636 1ed3ad3 1f168eb   d2313 
+  cbd6a 1f7b20e 1dcdf02   f8f8a  27a53d 1f1e7e7 1e69844    2840 
+1f3ae4e   7d00f  277bad 1eebff3 1d3a034  105418  1b8323 1feed9e 
+  6affa 1f79e08  21f667 1f5d096 1de50e4  105a65   c7c6e 1f293dc 
+  21d2e 1f42896 1f4bacd     d7b   afece 1f974f5 1f94735 1f5bfd9 
+1030d60  29a282   83a1a 1f36153   11f0e 1efd6ca  2b2cda  38be8f 
+
+135cdac  29e437   4c3ae 1f672e2 1fa31a6 1edfee5  21681e  30433d 
+1e65614  1227fe 1ef7000   3d371  145e55 1f421e2   4d515  136223 
+ 164184 1fbc6b9 1e17291   88979  1f17e4 1ed683a 1efb520 1fcdc7f 
+  2a79a 1fc7e36  25ba99 1f13dfc 1d6ef27  131e67  12c60f 1f884d8 
+  431b9 1fb80b9  212520 1f34207 1dc1897  113fed   f85ca 1f8982c 
+ 159989 1fcc736 1dd06f3   9dba0  237bc4 1eb3fd1 1ee0b48 1fe7e37 
+1e5e18c  13c11a 1f0b3ba   3d933  132aac 1f4d976   5b2b2  14cb66 
+153782a  2512e0   3c929 1f7eed3 1fa02fb 1efda3f  1c55af  29a12e 
+
+1010ac5 1eb3db8  18834b 1f424be  1070b2 1ea7ee9 1f0bc3e 1537a8d 
+ 14ccb1 1fde734 1fefdfe 1f4930a   79276   7d69f   c48c3 1eeb628 
+ 14458b 1e69f17   6e4e3  279487 1efa330 1de42de  1639ee 1f00d99 
+1f5bf7f 1e5f335   a98c3  26844b 1f39804 1de1f5d   a1b42  105a13 
+  8b938  1d2de7 1f4b865 1d4c0a2   e19f3  25ad38 1f38736 1f0f16c 
+1e925e0  170831 1f94863 1dcc89e   e77be  1e83c7 1eae8a4  13aaa8 
+1f10126   105b9    c8ea   e2e4a 1f70b63 1f6ca40 1f632a6   b25ae 
+118fef0  15af3d 1e4577e   bceb2 1eec113  17e7dd  126d78  8a34f5 
+
+ e45f85   8d642 1e4cc7f    53d8 1f868b6  14f06d  1ac6c5  d2d251 
+ 2e2308 1f759d5 1fe3d71  1735af 1f43bc1 1f45044  13859a 1cee48b 
+1e9acb8 1ee63c2   1056f  2137b0 1f186b5 1e7bc19   7e829  1f5df9 
+1f424bc  1b2a20 1f9c501 1d6fca9   e9c44  211e0d 1ec0e59   992e4 
+1f2fa4c  17c57f 1fb1d12 1dc02a0   cfb5d  1cb8ac 1ed7174   b80e1 
+1ec52f5 1eb6a5f   1db82  25d011 1efa1d2 1e3c98a   a9172  1d2ddb 
+ 305602 1f728c7 1fe213f  15a2f4 1f53fb2 1f55c66  14e0f8 1cd2551 
+ c37232   63ab8 1e80107 1fedfab 1fa7a83  12263b  18b4de  fea472 
+
+// Color = 1: DTT rotated, shift_x=0.062500. shift_y = 0.375000
+// DTT rotated  range: -1315.936119 ... 1138.483876
+ cf7da3   29a14 1f6dd1b 1fccda5 1fee33e 1f9a76f 1fbc727 11c9cbf 
+1ff77c6 1fb1eba   70b6b   41ba6   3d3b9   554e6 1f9cf78    1886 
+  51eb3 1faf263   4e661 1fbe38d 1fb8bbc   33184 1fd27db   107d1 
+    de1    153d   474d0   1888c   24b40   4bd05   157de 1fed370 
+1fb2c6d   2d075 1f3f028 1fe516c 1fcbda3 1f52ba1 1ffc9f9 1feab56 
+1fe04d0   475e5 1fd3402    7107   19ed3 1ffc328   4db54     403 
+  2c8cd    1475 1fc7bdb   27f77 1fe665d 1fbdd7a   1be7a 1febe84 
+10abfb0 1fd2d05   b68a5   29fa7   2f1fd   949ab   1b9aa  b706a9 
+
+12f376d 1fda359   9d0a1   20a08   2c81e   8351a    eb53  e931a5 
+  2bbab 1ff1c5c 1fdd0f1   35d2e 1ff2137 1fcd83c    8c0a 1febd19 
+1feff97   38af3 1fe1f7e 1ffa1e5    c423    6494   462d9    3892 
+1fb16fb   2e2cc 1f49696 1fe9712 1fd221a 1f5e699     d50 1fe68e0 
+1ff1862    a4f6   224f4   13a97   1b0ca   2ad54   153db 1fe89c9 
+  4d37e 1fbbc2f   47089 1fbe56a 1fbc7e9   3356e 1fe10e7   10dc9 
+    2e4 1fb0a52   67bb3   4af73   3956f   49d16 1fa093d 1ffd90f 
+ a2c5b2   21751 1f8f43c 1fd4336 1ff73a4 1fb608e 1fc09d4  e0c04d 
+
+10d3304  115073 1fa869b 1fb306c   5ab00   88dc7 1ef020e  90ea53 
+1fe7709   46491   31330 1ffeac5 1fe812a 1fa7698 1fdcf1d   19f2f 
+  9aaec 1fb3bad   37c10   1b6d1 1fffd57 1fae7cf   6567a 1f51be3 
+  332eb 1fcb0b4 1fe6064 1fdb522   187f9 1ffcb67   306ac 1fd061b 
+1f7d341   75884 1ff2dd9   474c9 1fc86d3   55fd3 1f822ec   96647 
+1fb2d0d 1fe13cf 1f9de6f 1fcd4e2   2c21f   6bc16    11be   5370a 
+  a00ee 1fba2af   250e8   a363d 1f59c0c 1ff34b3   40070 1f5b13c 
+10b8fc7 1f4ac73   345eb 1fea340    412c 1f89c2f   b8b82 166a8ab 
+
+ e081e6 1f7e550   23f94 1fda772   16312 1fa2ab2   86427 1807aed 
+  9e4f0 1fc6c7c   2f91a   a653b 1f51bc9 1fe16c6   3a4f0 1f5d01f 
+1fd0126 1fd176d 1fa7121 1fd1c48   2cf6d   5da72   154d2   3269a 
+1f84d26   6d4d2 1fed70f   41667 1fcc360   57051 1f89593   8fddf 
+  1a2b0 1fe162a 1fe2e72 1fe8c8e    dec9    dc0a   1856c 1fed5d2 
+  8e5c3 1fac1de   25556   11e13    89bf 1fc2534   679ca 1f5eed2 
+   6cbd   39c59   3988c   1f25c 1fc6891 1fa3263 1fe8fe6 1ff9a6f 
+13da9f3   f6687 1fb11d2 1fad2ed   5d464   7405f 1f0f8b9  7540c1 
+
+// Color = 2: DTT rotated, shift_x=-0.234375. shift_y = 0.078125
+// DTT rotated  range: -792.799879 ... 442.768833
+ 60b47d 1f1a02f   87451 1fb267d   2441b   64b28 1f76e45   7be2a 
+   23be   648bb 1f309e7   b5691 1fa0cf0 1fd534c   9b38e 1f13d74 
+1ff7386 1fd8c6f   2d890 1feb1a1    3858 1fe1367 1ffe334 1fe2542 
+  39aee 1ee424b  15ba03 1ec690e   ba8f9   2404c 1f543f2  1031ed 
+1fc515f   162ea 1fae188   23bc5   1e99f 1f9b739   8c7a4 1f7d193 
+1fc5f3e   796c7 1f4abb4   7c850 1fdf084 1fadd13   af1af 1f6e34a 
+  3ca80 1f7f00b   c4ad7 1f86bf6   3b710    d5a7 1f919e9   97d72 
+    e02   362b1 1fb99b4   21abd 1fe78dd   12a30   2c561 1faaa4b 
+
+1a662ca   789cd 1f72a9a   6a502 1ff2357 1fad948   782d3 1f76c12 
+1ff57fe 1fbf241   74e32 1f90771    a761 1fd9417 1ff6def   19e60 
+  718bd 1e89f20  1e8cf9 1e5f674   ec1da   3dfe6 1ee1d03  19a6f4 
+  1f035 1f95991   7435d 1f8450a   5521f   10b32 1fdba63   6fef2 
+1fe2e62   8dc81 1f60dc2   84634 1fb2d28 1fd5eb2   56505 1fa81d8 
+  4dcac 1f86dfc   ca37a 1f8447f   406fd   4ddd2 1f80bc1   ba3d4 
+  208db    7f35 1fffd42 1ff303c 1fe3206   31bd2 1fd3913 1f85838 
+1fa1759  11626b 1e7d160  143b1c 1f8c082 1f68db8  1cb687 139ce5b 
+
+17d241e  144001 1fbb562 1f830ed  117a4e 1ec0f2b   d79ef 1fd76c6 
+   c1e9 1faad41 1ffb4a8   4089a 1f8a4b1   7d4f9 1fd3a60    7b42 
+  271fb    e30e    dfc6   15294 1ff895f   1541d 1ff7172    bcd5 
+1f70b1e   5c14d 1ff1526 1f8bb90   ac983 1f56c2e   50a23    1e41 
+  fa223 1f72e25   112d0   cb22f 1ed0326  1303e6 1f0d65c   1ed59 
+ 1166cf 1f42914 1feca24   d5fbd 1eab0f5  180502 1ef2fd0   2c223 
+1f7f7b4   442d1 1ff60b4 1fa7b78   37493 1fcd0ea 1ff86ae   1f8f5 
+1fed26e    a719 1ff5200   17002   155d2 1ff65b6 1fc8031 1fd2983 
+
+ 6eb057 1f0206d   53782   583e2 1f362b6   c172c 1f86e9b   1fbde 
+  c6266 1fba339    50b5   25749 1faefe1   8ca4f 1f95acf   1e483 
+1f2c24a   8029e    5c2a 1f51db1   efe8a 1ef9126   68eb3    49d1 
+1fe09f9   14e51 1fed707   2dd2e 1fd4f7e   33cb8 1fa5aea    32f0 
+  71252 1fb97ce 1fe816b   74ba0 1f52e1b   ae899 1f86762     939 
+1ee0ace   a669f 1ff037b 1f403c4  120972 1ee3e0f   c51f3 1fd955e 
+1f41d61   7ee08 1ffa17a 1faccb3   d08d8 1f1d217   6e92e 1fea4b7 
+  a5f6b 1f89bec   250f5   7652c 1f5e149   a3508 1f6fe66  56434a 
