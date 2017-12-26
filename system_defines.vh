@@ -43,6 +43,9 @@
   `define DEBUG_HISTOGRAMS
   // TODO: Later compare instantiate/infer
   `define INSTANTIATE_DSP48E1 // not yet tesetd/debugged otherwise
+  `define DSP_ACCUM_FOLD 1 // for MCLT  
+  
+  
 // https://forums.xilinx.com/t5/Embedded-Processor-System-Design/AXI4-Bursts-4KB-Address-Boundary-Limitation/td-p/216413
 // Interconnect does not have 4K limit, and compressed data can only go to interconnect (memory), so it is OK to violate AXI specs here
   `define AXI_4K_LIMIT_DISABLE // Current x393 code (only simulation modules) does not have it implemented, defining it causes mismatch synth/sim    

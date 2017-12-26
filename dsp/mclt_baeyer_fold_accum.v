@@ -37,7 +37,7 @@
  * with at least one of the Free Software programs.
  */
 `timescale 1ns/1ps
-`define DSP_ACCUM_FOLD 1
+//`define DSP_ACCUM_FOLD 1
 module  mclt_baeyer_fold_accum # (
     parameter PIXEL_WIDTH =     16, // input pixel width (unsigned) 
     parameter WND_WIDTH =       18, // input pixel width (unsigned) 
@@ -49,15 +49,13 @@ module  mclt_baeyer_fold_accum # (
 )(
     input                            clk,
     input                            rst,
-//    input                      [5:0] phases,
     input                            pre_phase,
-    input signed   [PIXEL_WIDTH-1:0] pix_d,    //!< pixel data
+    input signed   [PIXEL_WIDTH-1:0] pix_d,    //!< pixel data (should be 1 cycle later for `undef DSP_ACCUM_FOLD
     input                      [1:0] pix_sgn,  //!< bit 0: sign to add to dtt-cc input, bit 1: sign to add to dtt-cs input
     input signed     [WND_WIDTH-1:0] window,
     input                            var_pre2_first,
     output signed [DTT_IN_WIDTH-1:0] dtt_in,
     output                           dtt_in_dv  
-
 );
     reg                           var_pre_first;
     reg                           var_first;
@@ -65,43 +63,6 @@ module  mclt_baeyer_fold_accum # (
     
     reg                      [6:0] phases;
     
-`ifdef DSP_ACCUM_FOLD
-    reg                            dtt_in_dv_dsp_r;
-    reg signed [DTT_IN_WIDTH-1:0]  dtt_in_dsp; 
-`else
-    wire                   [ 1:0] pix_sgn_d;
-    reg            [PIXEL_WIDTH-1:0] pix_dr;         // only for mpy to match dsp
-    reg  signed   [WND_WIDTH-1:0] window_r;
-    reg  signed [PIXEL_WIDTH-1:0] pix_d_r;         // registered pixel data (to be absorbed by MPY)
-    reg                    [ 1:0] pix_sgn_r;
-    
-    reg  signed [PIXEL_WIDTH + WND_WIDTH - 1:0] pix_wnd_r; // MSB not used: positive[PIXEL_WIDTH]*positive[WND_WIDTH]->positive[PIXEL_WIDTH+WND_WIDTH-1]
-    reg  signed              [DTT_IN_WIDTH-1:0] pix_wnd_r2; // pixels (positive) multiplied by window(positive), two MSBs == 2'b0 to prevent overflow
-    // rounding
-//    wire signed              [DTT_IN_WIDTH-3:0] pix_wnd_r2_w = pix_wnd_r[PIXEL_WIDTH + WND_WIDTH - 2 -: DTT_IN_WIDTH - 2]
-    wire signed              [DTT_IN_WIDTH-2:0] pix_wnd_r2_w = pix_wnd_r[PIXEL_WIDTH + WND_WIDTH - 2 -: DTT_IN_WIDTH - 1]
-    `ifdef ROUND
-//                 + pix_wnd_r[PIXEL_WIDTH + WND_WIDTH -DTT_IN_WIDTH]
-                 + pix_wnd_r[PIXEL_WIDTH + WND_WIDTH -DTT_IN_WIDTH -1]
-    `endif
-    ;
-    reg  signed [DTT_IN_WIDTH-1:0] data_cc_r;   
-    reg  signed [DTT_IN_WIDTH-1:0] data_sc_r;
-    reg  signed [DTT_IN_WIDTH-1:0] data_sc_r2; // data_sc_r delayed by 1 cycle 
-    reg                            mode_mux;
-    reg                            dtt_in_dv_r;
-    reg  signed [DTT_IN_WIDTH-1:0] data_dtt_in; // multiplexed DTT input data
-`endif
-    
-    
-    
-    `ifdef DSP_ACCUM_FOLD
-        assign dtt_in =    dtt_in_dsp;
-        assign dtt_in_dv = dtt_in_dv_dsp_r;
-    `else
-        assign dtt_in =    data_dtt_in;
-        assign dtt_in_dv = dtt_in_dv_r;
-    `endif
     always @ (posedge clk) begin
         phases <= {phases[5:0], pre_phase};
 
@@ -119,6 +80,12 @@ module  mclt_baeyer_fold_accum # (
 
 
 `ifdef DSP_ACCUM_FOLD
+    reg                            dtt_in_dv_dsp_r;
+    reg signed [DTT_IN_WIDTH-1:0]  dtt_in_dsp; 
+
+    assign dtt_in =    dtt_in_dsp;
+    assign dtt_in_dv = dtt_in_dv_dsp_r;
+    
     always @ (posedge clk) begin
         if (rst) dtt_in_dv_dsp_r <= 0;
         else     dtt_in_dv_dsp_r <= phases[5];
@@ -223,13 +190,40 @@ module  mclt_baeyer_fold_accum # (
     );
 
 `else
+    wire                   [ 1:0] pix_sgn_d;
+///    reg            [PIXEL_WIDTH-1:0] pix_dr;         // only for mpy to match dsp
+    reg  signed   [WND_WIDTH-1:0] window_r;
+    reg  signed [PIXEL_WIDTH-1:0] pix_d_r;         // registered pixel data (to be absorbed by MPY)
+    reg                    [ 1:0] pix_sgn_r;
+    
+    reg  signed [PIXEL_WIDTH + WND_WIDTH - 1:0] pix_wnd_r; // MSB not used: positive[PIXEL_WIDTH]*positive[WND_WIDTH]->positive[PIXEL_WIDTH+WND_WIDTH-1]
+    reg  signed              [DTT_IN_WIDTH-1:0] pix_wnd_r2; // pixels (positive) multiplied by window(positive), two MSBs == 2'b0 to prevent overflow
+    // rounding
+//    wire signed              [DTT_IN_WIDTH-3:0] pix_wnd_r2_w = pix_wnd_r[PIXEL_WIDTH + WND_WIDTH - 2 -: DTT_IN_WIDTH - 2]
+    wire signed              [DTT_IN_WIDTH-2:0] pix_wnd_r2_w = pix_wnd_r[PIXEL_WIDTH + WND_WIDTH - 2 -: DTT_IN_WIDTH - 1]
+    `ifdef ROUND
+//                 + pix_wnd_r[PIXEL_WIDTH + WND_WIDTH -DTT_IN_WIDTH]
+                 + pix_wnd_r[PIXEL_WIDTH + WND_WIDTH -DTT_IN_WIDTH -1]
+    `endif
+    ;
+    reg  signed [DTT_IN_WIDTH-1:0] data_cc_r;   
+    reg  signed [DTT_IN_WIDTH-1:0] data_sc_r;
+    reg  signed [DTT_IN_WIDTH-1:0] data_sc_r2; // data_sc_r delayed by 1 cycle 
+    reg                            mode_mux;
+    reg                            dtt_in_dv_r;
+    reg  signed [DTT_IN_WIDTH-1:0] data_dtt_in; // multiplexed DTT input data
+
+    assign dtt_in =    data_dtt_in;
+    assign dtt_in_dv = dtt_in_dv_r;
+
     always @ (posedge clk) begin
         if (rst) dtt_in_dv_r <= 0;
         else     dtt_in_dv_r <= phases[6];
 
-        pix_dr <= pix_d;
+///        pix_dr <= pix_d;
         if (phases[1]) begin
-            pix_d_r <=    pix_dr;
+///            pix_d_r <=    pix_dr;
+            pix_d_r <=    pix_d;
             window_r <=   window;
         end
         if (phases[2])  pix_wnd_r <= pix_d_r * window_r; // 1 MSB is extra

@@ -508,7 +508,9 @@ module  mclt_test_03 ();
     );
 
     localparam PIX_ADDR_WIDTH = 9;
-    localparam ADDR_DLY = 2;
+//    localparam ADDR_DLY = 2;
+    localparam EXT_PIX_LATENCY =  2; // external pixel buffer a->d latency (may increase to 4 for gamma)
+    
     reg                   [1:0] TILE_SIZE =   3; // 22;
     reg                         INV_CHECKER = 0;
     reg                   [7:0] TOP_LEFT =    69; // center
@@ -540,6 +542,7 @@ module  mclt_test_03 ();
     mclt16x16_bayer #(
         .SHIFT_WIDTH     (SHIFT_WIDTH),
         .PIX_ADDR_WIDTH  (PIX_ADDR_WIDTH),
+        .EXT_PIX_LATENCY (EXT_PIX_LATENCY), // 2), // external pixel buffer a->d latency (may increase to 4 for gamma)
         .COORD_WIDTH     (COORD_WIDTH),
         .PIXEL_WIDTH     (PIXEL_WIDTH),
         .WND_WIDTH       (WND_WIDTH),
@@ -552,7 +555,7 @@ module  mclt_test_03 ();
         .DSP_A_WIDTH     (DSP_A_WIDTH),
         .DSP_P_WIDTH     (DSP_P_WIDTH),
         .DEAD_CYCLES     (DEAD_CYCLES)
-    ) mclt_bayer_fold_i (
+    ) mclt16x16_bayer_i (
         .clk         (CLK),         // input
         .rst         (RST),         // input
         .start       (start),       // input
@@ -565,7 +568,16 @@ module  mclt_test_03 ();
         .pix_addr    (PIX_ADDR9),   // output[8:0] 
         .pix_re      (PIX_RE),      // output
         .pix_page    (PIX_PAGE),    // output
-        .pix_d       (PIX_D)        // input[15:0] 
+        .pix_d       (PIX_D),        // input[15:0]
+        .pre_busy      (), // output
+        .pre_last_in   (), // output
+        .pre_first_out (), // output
+        .pre_last_out  (), // output
+        .out_addr      (), // output[7:0] 
+        .dv            (), // output
+        .dout0         (), // output[24:0] signed 
+        .dout1         () // output[24:0] signed 
+         
     );
 
 
