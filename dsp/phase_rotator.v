@@ -80,7 +80,7 @@ module  phase_rotator#(
 // 0xxxxxx (>0)       nnn    s     s    xxxxxx            nnn          0         0
 
     reg                     [5:0] start_d; // delayed versions of start (TODO: adjust length)  
-    reg                     [7:0] cntr_h_consec; // input sample counter
+    reg            [7-DECIMATE:0] cntr_h_consec; // input sample counter
     wire                    [7:0] cntr_h = DECIMATE ? {cntr_h_consec[6:2], ODD ? 1'b1: 1'b0, cntr_h_consec[1:0]}: cntr_h_consec;
     
     reg                           run_h;
@@ -121,7 +121,8 @@ module  phase_rotator#(
         
         if   (rst)                                               run_h <= 0;
         else if (start)                                          run_h <= 1;
-        else if (&cntr_h_consec[6:0] && (cntr_h[7] || DECIMATE)) run_h <= 0;
+//        else if (&cntr_h_consec[6:0] && (cntr_h[7] || DECIMATE)) run_h <= 0;
+        else if (&cntr_h_consec)                                 run_h <= 0;
         
         if (!run_h) cntr_h_consec <= 0;
         else        cntr_h_consec <= cntr_h_consec + 1;
@@ -224,10 +225,15 @@ module  phase_rotator#(
         sela_1 <= ph[2] | ph[4]; sela_2 <= ph[3] | ph[5];
         selb_1 <= ph[2] | ph[5]; selb_2 <= ph[3] | ph[6];
         // 0 1 0 0
+        /*
         negm_1 <= ((ph[4] & ~sign_cs[2]) | (ph[5] & sign_cs[3])) ^ 
                   (inv_checker_r2 & (ph[4] | ph[6]));  // invert negation when using Bayer patterns
         negm_2 <= ((ph[5] & ~sign_cs[3]) | (ph[6] & sign_cs[4])) ^
                   (inv_checker_r2 & (ph[5] | ph[7]));  // invert negation when using Bayer patterns
+        */
+        negm_1 <= (ph[4] & ~sign_cs[2]) | (ph[5] & sign_cs[3]); 
+        negm_2 <= ((ph[5] & ~sign_cs[3]) | (ph[6] & sign_cs[4])) ^ inv_checker_r2;
+//                  (inv_checker_r2 & (|ph[7:4]));  // invert negation when using Bayer patterns
         
         
         accum_1 <= ph[4] | ph[6]; accum_2 <= ph[5] | ph[7];
@@ -241,7 +247,6 @@ module  phase_rotator#(
 //inv_checker_r2
         negm_3 <= (ph[10] & ~sign_cs[2]) | (ph[11] & sign_cs[3]);
         negm_4 <= (ph[11] & ~sign_cs[3]) | (ph[12] & sign_cs[4]);
-        ;
 
         accum_3 <= ph[10] | ph[12]; accum_4 <= ph[11] | ph[13];
         
@@ -249,7 +254,7 @@ module  phase_rotator#(
         fd_dv <= pre_dv;
         if (pre_dv) fd_out <= omux_sel ? pout_4[COEFF_WIDTH +: DSP_A_WIDTH] : pout_3[COEFF_WIDTH +: DSP_A_WIDTH];
         
-        pre_first_out <= cntr_h_consec[7:0] == 8'hd;
+        pre_first_out <= cntr_h_consec == 8'hd;
         
     end
      

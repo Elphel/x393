@@ -99,10 +99,13 @@ module  mclt16x16_bayer#(
     reg [SHIFT_WIDTH-1:0] y_shft_r3; // registered @ start_dtt
     reg [SHIFT_WIDTH-1:0] x_shft_r4; // registered @ dtt_start_first_fill
     reg [SHIFT_WIDTH-1:0] y_shft_r4; // registered @ dtt_start_first_fill
+    reg [SHIFT_WIDTH-1:0] x_shft_r5; // registered @ dtt_start_first_fill
+    reg [SHIFT_WIDTH-1:0] y_shft_r5; // registered @ dtt_start_first_fill
     reg                   inv_checker_r;                
     reg                   inv_checker_r2;                
     reg                   inv_checker_r3;                
     reg                   inv_checker_r4;                
+    reg                   inv_checker_r5;                
 
     wire                     [1:0] signs;        //!< bit 0: sign to add to dtt-cc input, bit 1: sign to add to dtt-cs input
     wire                     [6:0] phases;        //!< other signals
@@ -157,7 +160,7 @@ module  mclt16x16_bayer#(
         end
         start_r <= {start_r[0], start};
         if (start_r[1]) begin      // same latency as mpix_a_w
-            x_shft_r2 <=      x_shft_r; // use for the window 
+            x_shft_r2 <=      x_shft_r;
             y_shft_r2 <=      y_shft_r;
             inv_checker_r2 <= inv_checker_r;
         end
@@ -173,6 +176,13 @@ module  mclt16x16_bayer#(
             y_shft_r4 <= y_shft_r3;
             inv_checker_r4 <= inv_checker_r3;
         end
+
+        if (dtt_start_second_fill) begin 
+            x_shft_r5 <= x_shft_r4; 
+            y_shft_r5 <= y_shft_r4;
+            inv_checker_r5 <= inv_checker_r4;
+        end
+
 
 //         if (!phases[14]) dtt_in_cntr <= 0; 
          if     (!dtt_we) dtt_in_cntr <= 0; 
@@ -374,7 +384,8 @@ module  mclt16x16_bayer#(
         .rst            (rst),              // input
         .start          (dtt_start),        // input
         .mode           ({dtt_mode, 1'b0}), // input[1:0] for checker-board: only 2 of 4 modes (CC, SC) 
-        .xin            (dtt_r_data),       // input[24:0] signed 
+//        .xin            (dtt_r_data),       // input[24:0] signed 
+        .xin            ({dtt_r_data[DTT_IN_WIDTH-1],dtt_r_data[DTT_IN_WIDTH-1:1]}),       // input[24:0] signed 
         .pre_last_in    (),                 // output reg 
         .mode_out       (), // dtt_mode_out),     // output[1:0] reg 
         .pre_busy       (),                 // output reg 
@@ -385,6 +396,7 @@ module  mclt16x16_bayer#(
         .inc16          (dtt_inc16),        // output reg 
         .start_out      (dtt_start_fill)    // output[24:0] signed
     );
+    //[DTT_IN_WIDTH-1:0
     // still incorrectly shows difference when filled nto sequentially 
     reg  [8:0] dbg_last_dtt_out_ram_wa; // SuppressThisWarning VEditor : debug only signal
     wire [8:0] dbg_diff_wara_dtt_out0 = dbg_last_dtt_out_ram_wa-dtt_rd_ra0; // SuppressThisWarning VEditor : debug only signal
@@ -444,9 +456,9 @@ module  mclt16x16_bayer#(
         .rst           (rst),           // input
         .start         (dtt_start_out[1]), // input
         // are these shift OK? Will need to be valis only @ dtt_start_out
-        .shift_h       (x_shft_r4),     // input[6:0] signed 
-        .shift_v       (y_shft_r4),     // input[6:0] signed
-        .inv_checker   (inv_checker_r4),// input only used for Bayer mosaic data 
+        .shift_h       (x_shft_r5),     // input[6:0] signed 
+        .shift_v       (y_shft_r5),     // input[6:0] signed
+        .inv_checker   (inv_checker_r5),// input only used for Bayer mosaic data 
         .fd_din        (dtt_rd_data0),  // input[24:0] signed. Expected latency = 3 from start  
         .fd_out        (dout0),         // output[24:0] reg signed 
         .pre_first_out (pre_first_out), // output reg 
@@ -466,9 +478,9 @@ module  mclt16x16_bayer#(
         .rst           (rst),           // input
         .start         (dtt_start_out[1]), // input
         // are these shift OK? Will need to be valis only @ dtt_start_out
-        .shift_h       (x_shft_r4),     // input[6:0] signed 
-        .shift_v       (y_shft_r4),     // input[6:0] signed
-        .inv_checker   (inv_checker_r4),// input only used for Bayer mosaic data 
+        .shift_h       (x_shft_r5),     // input[6:0] signed 
+        .shift_v       (y_shft_r5),     // input[6:0] signed
+        .inv_checker   (inv_checker_r5),// input only used for Bayer mosaic data 
         .fd_din        (dtt_rd_data1),  // input[24:0] signed. Expected latency = 3 from start  
         .fd_out        (dout1),         // output[24:0] reg signed 
         .pre_first_out (),              // output reg 
