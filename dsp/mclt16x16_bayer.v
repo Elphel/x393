@@ -245,22 +245,6 @@ module  mclt16x16_bayer#(
 
 
 
-    ram18p_var_w_var_r #(
-        .REGISTERS(1),
-        .LOG2WIDTH_WR(5),
-        .LOG2WIDTH_RD(5)
-    ) ram18p_var_w_var_r_dtt_in_i (
-        .rclk     (clk),          // input
-        .raddr    (dtt_r_ra),     // input[8:0] 
-        .ren      (dtt_r_re),     // input
-        .regen    (dtt_r_regen),  // input
-        .data_out (dtt_r_data_w), // output[35:0] 
-        .wclk     (clk),          // input
-        .waddr    (dtt_in_wa),    // input[8:0] 
-        .we       (dtt_we),       // input
-        .web      (4'hf),         // input[3:0] 
-        .data_in  ({{(36-DTT_IN_WIDTH){1'b0}}, data_dtt_in}) // input[35:0] 
-    );
     wire [8:0] dbg_diff_wara_dtt_in = dtt_in_wa-dtt_r_ra; // SuppressThisWarning VEditor : debug only signal
     
     
@@ -367,6 +351,22 @@ module  mclt16x16_bayer#(
         .dtt_in_dv (dtt_we)        // output reg 
     );
     
+    ram18p_var_w_var_r #(
+        .REGISTERS(1),
+        .LOG2WIDTH_WR(5),
+        .LOG2WIDTH_RD(5)
+    ) ram18p_var_w_var_r_dtt_in_i (
+        .rclk     (clk),          // input
+        .raddr    (dtt_r_ra),     // input[8:0] 
+        .ren      (dtt_r_re),     // input
+        .regen    (dtt_r_regen),  // input
+        .data_out (dtt_r_data_w), // output[35:0] 
+        .wclk     (clk),          // input
+        .waddr    (dtt_in_wa),    // input[8:0] 
+        .we       (dtt_we),       // input
+        .web      (4'hf),         // input[3:0] 
+        .data_in  ({{(36-DTT_IN_WIDTH){1'b0}}, data_dtt_in}) // input[35:0] 
+    );
    
     
     
