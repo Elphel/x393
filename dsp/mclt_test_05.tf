@@ -70,7 +70,7 @@ module  mclt_test_05 ();
     parameter OUT_WIDTH =       25; // bits in dtt output
     parameter DTT_IN_WIDTH =    25; // bits in DTT input
     parameter TRANSPOSE_WIDTH = 25; // width of the transpose memory (intermediate results)    
-    parameter OUT_RSHIFT =       2; // overall right shift of the result from input, aligned by MSB (>=3 will never cause saturation)
+    parameter OUT_RSHIFT1 =      2; // overall right shift of the result from input, aligned by MSB (>=3 will never cause saturation)
     parameter OUT_RSHIFT2 =      0; // overall right shift for the second (vertical) pass
     parameter DSP_B_WIDTH =     18; // signed, output from sin/cos ROM
     parameter DSP_A_WIDTH =     25;
@@ -92,6 +92,23 @@ module  mclt_test_05 ();
     wire                        dv;            // SuppressThisWarning VEditor - output only
     wire        [OUT_WIDTH-1:0] dout0;         // SuppressThisWarning VEditor - output only
     wire        [OUT_WIDTH-1:0] dout1;         // SuppressThisWarning VEditor - output only
+    wire                        pre_busy3; // output// SuppressThisWarning VEditor - output only
+    wire                        pre_last_in3; // output// SuppressThisWarning VEditor - output only
+    wire                        pre_first_out_r; // output// SuppressThisWarning VEditor - output only
+    wire                        pre_first_out_b; // output// SuppressThisWarning VEditor - output only
+    wire                        pre_first_out_g; // output// SuppressThisWarning VEditor - output only
+    wire                        pre_last_out_r; // output// SuppressThisWarning VEditor - output only
+    wire                        pre_last_out_b; // output// SuppressThisWarning VEditor - output only
+    wire                        pre_last_out_g; // output// SuppressThisWarning VEditor - output only
+    wire                  [8:0] out_addr_r; // output[7:0] // SuppressThisWarning VEditor - output only
+    wire                  [8:0] out_addr_b; // output[7:0] // SuppressThisWarning VEditor - output only
+    wire                  [8:0] out_addr_g; // output[7:0] // SuppressThisWarning VEditor - output only
+    wire                        dv_r; // output// SuppressThisWarning VEditor - output only
+    wire                        dv_b; // output// SuppressThisWarning VEditor - output only
+    wire                        dv_g; // output// SuppressThisWarning VEditor - output only
+    wire        [OUT_WIDTH-1:0] dout_r; // output[24:0] signed // SuppressThisWarning VEditor - output only
+    wire        [OUT_WIDTH-1:0] dout_b; // output[24:0] signed // SuppressThisWarning VEditor - output only
+    wire        [OUT_WIDTH-1:0] dout_g; // output[24:0] signed // SuppressThisWarning VEditor - output only
     
 //    assign  #(1)  pre_busy = pre_busy_w;
     
@@ -306,14 +323,13 @@ module  mclt_test_05 ();
         
     end
 
-
-
-    integer n1, cntr1, diff1;// SuppressThisWarning VEditor : assigned in $readmem() system task
-    wire               [7:0] wnd_a_w = mclt16x16_bayer_i.mclt_bayer_fold_i.wnd_a_w;
-    wire              [10:0] jav_pix_in_now_a = {n1[2:0], wnd_a_w};
+    integer n1, cntr1, diff1, p1;// SuppressThisWarning VEditor : assigned in $readmem() system task
+    wire               [7:0] wnd_a_w = mclt16x16_bayer3_i.mclt_bayer_fold_rgb_i.wnd_a_w;
+    wire               [2:0] pix_page= 3 * n1 + p1;
+    wire               [2:0] pix_page_d;
+    wire              [10:0] jav_pix_in_now_a = {pix_page_d, wnd_a_w};
     wire [PIXEL_WIDTH-1 : 0] jav_pix_in_now =  cntr1[7]?{PIXEL_WIDTH{1'bz}}:jav_pix_in[jav_pix_in_now_a];
     wire [PIXEL_WIDTH-1 : 0] jav_pix_in_now_d;
-    
    dly_var #(
         .WIDTH(PIXEL_WIDTH),
         .DLY_WIDTH(4)
@@ -325,48 +341,78 @@ module  mclt_test_05 ();
         .dout (jav_pix_in_now_d)     // output[0:0] 
     );
     
-       
+   dly_var #(
+        .WIDTH(3),
+        .DLY_WIDTH(4)
+    ) dly_jav_pix_page_d_i (
+        .clk  (CLK),           // input
+        .rst  (RST),           // input
+        .dly  (4'h0), // 7),          // input[3:0] 
+        .din  (pix_page),      // input[0:0] 
+        .dout (pix_page_d)     // output[0:0] 
+    );
+
     initial begin
         while (RST) @(negedge CLK);
-        for (n1 = 0; n1 < 6; n1 = n1+1) begin
-            while (mclt16x16_bayer_i.mclt_bayer_fold_i.in_cntr != 2) begin
+        for (n1 = 0; n1 < 2; n1 = n1+1) begin
+            while (!mclt16x16_bayer3_i.mclt_bayer_fold_rgb_i.run_r[0] ||
+                 (mclt16x16_bayer3_i.mclt_bayer_fold_rgb_i.in_cntr != 2)) begin
                 @(negedge CLK);
             end
-            for (cntr1 = 0; cntr1 < 128; cntr1 = cntr1 + 1) begin
-                diff1 = PIX_D - jav_pix_in_now_d; // java_fold_index[cntr1];
-                @(negedge CLK);
+            for (p1 = 0; p1 <3; p1=p1+1) begin
+                for (cntr1 = 0; cntr1 < ((p1 > 1)?128:64); cntr1 = cntr1 + 1) begin
+                    diff1 = PIX_D3 - jav_pix_in_now_d; // java_fold_index[cntr1];
+                    @(negedge CLK);
+                end
             end
+            
         end
     end
 
 
 //Compare DTT inputs
 
-    integer n4, cntr4, diff4, diff4a; // SuppressThisWarning VEditor : assigned in $readmem() system task
-    wire [DTT_IN_WIDTH-1:0] data_dtt_in = mclt16x16_bayer_i.data_dtt_in;
-//    wire [DTT_IN_WIDTH-1:0] java_data_dtt_in = jav_dtt_in[{n4[2:0], cntr4[1:0],cntr4[7:2]}]; // java_dtt_in0[{cntr4[1:0],cntr4[7:2]}]  
-    wire [DTT_IN_WIDTH-1:0] java_data_dtt_in = jav_dtt_in[{n4[2:0], 1'b0, cntr4[0],cntr4[6:1]}]; // java_dtt_in0[{cntr4[1:0],cntr4[7:2]}]  
+
+    integer n4, cntr4, diff4,p4; // SuppressThisWarning VEditor : assigned in $readmem() system task
+    wire [DTT_IN_WIDTH-1:0] data_dtt_in = mclt16x16_bayer3_i.data_dtt_in;
+    wire              [2:0] page4 = 3 * n4 + p4;
+    wire             [10:0] java_dtt_in_addr = (p4>1)?
+                           {page4, 1'b0, cntr4[0],cntr4[6:1]} :
+                           {page4, 1'b0, 1'b0,    cntr4[5:0]};
+    wire [DTT_IN_WIDTH-1:0] java_data_dtt_in = jav_dtt_in[java_dtt_in_addr]; // java_dtt_in0[{cntr4[1:0],cntr4[7:2]}]  
     initial begin
         while (RST) @(negedge CLK);
-        for (n4 = 0; n4 < 6; n4 = n4+1) begin
-            while ((mclt16x16_bayer_i.dtt_in_cntr != 0) ||!mclt16x16_bayer_i.dtt_we) begin
+        for (n4 = 0; n4 < 2; n4 = n4+1) begin
+`ifdef DSP_ACCUM_FOLD        
+            while ((mclt16x16_bayer3_i.dtt_in_precntr != 1) ||!mclt16x16_bayer3_i.dtt_prewe) begin
                 @(negedge CLK);
             end
-            for (cntr4 = 0; cntr4 < 128; cntr4 = cntr4 + 1) begin
-                #1;
-                diff4 = data_dtt_in - java_data_dtt_in;
-                if (n4 < 1) diff4a = data_dtt_in - java_data_dtt_in; // TEMPORARY, while no other data
+`else
+            while ((mclt16x16_bayer3_i.dtt_in_precntr != 0) ||!mclt16x16_bayer3_i.dtt_prewe) begin
                 @(negedge CLK);
+            end
+`endif            
+            for (p4 = 0; p4 < 3; p4=p4+1) begin
+                for (cntr4 = 0; cntr4 < ((p4 > 1)?128:64); cntr4 = cntr4 + 1) begin
+                    #1;
+                    diff4 = data_dtt_in - java_data_dtt_in;
+                    @(negedge CLK);
+                end
             end
         end
     end
 
 
-    integer n5, cntr5, diff5, diff5a; // SuppressThisWarning VEditor : assigned in $readmem() system task
-    wire [DTT_IN_WIDTH-1:0] dtt_r_data = mclt16x16_bayer_i.dtt_r_data;
-    wire [DTT_IN_WIDTH-1:0] java_dtt_r_data =  jav_dtt_in[{n5[2:0], 1'b0, cntr5[6:0]}]; // java_dtt_in0[cntr5[7:0]];
+    integer n5, cntr5, diff5,p5; // SuppressThisWarning VEditor : assigned in $readmem() system task
+    wire              [2:0] page5 = 3 * n5 + p5;
+//    wire             [10:0] java_dtt_r_addr = (p5>1)?
+//                           {page5,  1'b0, cntr5[6:0]} :
+//                           {page5,  2'b0, cntr5[5:0]};
+    wire             [10:0] java_dtt_r_addr = {page5,  1'b0, cntr5[6:0]};
+    wire [DTT_IN_WIDTH-1:0] dtt_r_data = mclt16x16_bayer3_i.dtt_r_data;
+    wire [DTT_IN_WIDTH-1:0] java_dtt_r_data =  jav_dtt_in[java_dtt_r_addr]; // java_dtt_in0[cntr5[7:0]];
     
-    wire                           dtt_r_regen = mclt16x16_bayer_i.dtt_r_regen;
+    wire                           dtt_r_regen = mclt16x16_bayer3_i.dtt_r_regen;
     reg                            dtt_r_dv; // SuppressThisWarning VEditor just for simulation
     always @ (posedge CLK) begin
         if (RST) dtt_r_dv <= 0;
@@ -377,48 +423,113 @@ module  mclt_test_05 ();
     initial begin
         while (RST) @(negedge CLK);
         for (n5 = 0; n5 < 6; n5 = n5+1) begin
-            while ((!dtt_r_dv) || (mclt16x16_bayer_i.dtt_r_cntr[6:0] != 2)) begin
+            while ((!dtt_r_dv) || (mclt16x16_bayer3_i.dtt_r_cntr[6:0] != 2)) begin
                 @(negedge CLK);
             end
-            for (cntr5 = 0; cntr5 < 128; cntr5 = cntr5 + 1) begin
-                #1;
-                diff5 = dtt_r_data - java_dtt_r_data;
-                if (n5 < 1) diff5a = dtt_r_data - java_dtt_r_data; // TEMPORARY, while no other data
-                @(negedge CLK);
+            for (p5 = 0; p5 < 3; p5=p5+1) begin
+                for (cntr5 = 0; cntr5 < ((p5 > 1)?128:64); cntr5 = cntr5 + 1) begin
+                    #1;
+                    diff5 = dtt_r_data - java_dtt_r_data;
+                    @(negedge CLK);
+                end
             end
         end
     end
 
 
-    integer n6, cntr6, diff60, diff61; // SuppressThisWarning VEditor : assigned in $readmem() system task
-    wire [DTT_IN_WIDTH-1:0] data_dtt_out0 = mclt16x16_bayer_i.dtt_rd_data0;
-    wire [DTT_IN_WIDTH-1:0] data_dtt_out1 = mclt16x16_bayer_i.dtt_rd_data1;
-    wire [DTT_IN_WIDTH-1:0] java_data_dtt_out0 = jav_dtt_out[{
-             n6[2:0],
-             1'b0,
-             cntr6[0] ^ cntr6[1],
-             cntr6[0]? (~cntr6[6:2]) : cntr6[6:2],
-             cntr6[0]}];  
-    wire [DTT_IN_WIDTH-1:0] java_data_dtt_out1 = jav_dtt_out[{
-             n6[2:0],
-             1'b0,
-             cntr6[0] ^ cntr6[1],
-             cntr6[0]? (~cntr6[6:2]) : cntr6[6:2],
-             ~cntr6[0]}];  
+    integer n50, cntr50, diff50; // SuppressThisWarning VEditor : assigned in $readmem() system task
+    wire [DTT_IN_WIDTH-1:0] dtt_r_data0 = mclt16x16_bayer_i.dtt_r_data;
+    wire [DTT_IN_WIDTH-1:0] java_dtt_r_data0 =  jav_dtt_in[{n50[2:0], 1'b0, cntr50[6:0]}]; // java_dtt_in0[cntr5[7:0]];
+    
+    wire                           dtt_r_regen0 = mclt16x16_bayer_i.dtt_r_regen;
+    reg                            dtt_r_dv0; // SuppressThisWarning VEditor just for simulation
+    always @ (posedge CLK) begin
+        if (RST) dtt_r_dv0 <= 0;
+        else     dtt_r_dv0 <= dtt_r_regen0;
+    end
+    
+      
     initial begin
         while (RST) @(negedge CLK);
-        for (n6 = 0; n6 < 6; n6 = n6+1) begin
-            while ((!mclt16x16_bayer_i.dtt_rd_regen_dv[2]) || (mclt16x16_bayer_i.dtt_rd_cntr_pre[6:0] != 3)) begin
+        for (n50 = 0; n50 < 6; n50 = n50+1) begin
+            while ((!dtt_r_dv0) || (mclt16x16_bayer_i.dtt_r_cntr[6:0] != 2)) begin
                 @(negedge CLK);
             end
-            for (cntr6 = 0; cntr6 < 128; cntr6 = cntr6 + 1) begin
+            for (cntr50 = 0; cntr50 < 128; cntr50 = cntr50 + 1) begin
                 #1;
-                diff60 = data_dtt_out0 - java_data_dtt_out0;
-                diff61 = data_dtt_out1 - java_data_dtt_out1;
+                diff50 = dtt_r_data0 - java_dtt_r_data0;
                 @(negedge CLK);
             end
         end
     end
+
+
+
+
+
+    integer n6, cntr6, diff6r, diff6b, diff6g; // SuppressThisWarning VEditor : assigned in $readmem() system task
+    wire [6:0] dtt_rd_ra_r =    mclt16x16_bayer3_i.dtt_rd_ra_r;
+    wire [6:0] dtt_rd_ra_b =    mclt16x16_bayer3_i.dtt_rd_ra_b;
+    wire [7:0] dtt_rd_ra_g =    mclt16x16_bayer3_i.dtt_rd_ra_g;
+    wire [1:0] dtt_rd_regen_r = mclt16x16_bayer3_i.dtt_rd_regen_r;
+    wire [1:0] dtt_rd_regen_b = mclt16x16_bayer3_i.dtt_rd_regen_b;
+    wire [1:0] dtt_rd_regen_g = mclt16x16_bayer3_i.dtt_rd_regen_g;
+    wire [DTT_IN_WIDTH-1:0] dtt_rd_data_r = mclt16x16_bayer3_i.dtt_rd_data_r;
+    wire [DTT_IN_WIDTH-1:0] dtt_rd_data_b = mclt16x16_bayer3_i.dtt_rd_data_b;
+    wire [DTT_IN_WIDTH-1:0] dtt_rd_data_g = mclt16x16_bayer3_i.dtt_rd_data_g;
+    wire [DTT_IN_WIDTH-1:0] java_dtt_rd_data_r=jav_dtt_out['h300*dtt_rd_ra_r[6] + 'h000 + dtt_rd_ra_r[5:0]];
+    wire [DTT_IN_WIDTH-1:0] java_dtt_rd_data_b=jav_dtt_out['h300*dtt_rd_ra_b[6] + 'h100 + dtt_rd_ra_b[5:0]];
+    wire [DTT_IN_WIDTH-1:0] java_dtt_rd_data_g=jav_dtt_out['h300*dtt_rd_ra_g[7] + 'h200 + dtt_rd_ra_g[6:0]];
+    wire [DTT_IN_WIDTH-1:0] java_dtt_rd_data_rd;
+    wire [DTT_IN_WIDTH-1:0] java_dtt_rd_data_bd;
+    wire [DTT_IN_WIDTH-1:0] java_dtt_rd_data_gd;
+    reg       dtt_rd_regen_rv;
+    reg       dtt_rd_regen_bv;
+    reg       dtt_rd_regen_gv;
+    
+    always @ (posedge CLK) begin
+        dtt_rd_regen_rv <= dtt_rd_regen_r[1];
+        dtt_rd_regen_bv <= dtt_rd_regen_b[1];
+        dtt_rd_regen_gv <= dtt_rd_regen_g[1];
+        diff6r <= dtt_rd_regen_rv? (dtt_rd_data_r - java_dtt_rd_data_rd) : 'bz;
+        diff6b <= dtt_rd_regen_bv? (dtt_rd_data_b - java_dtt_rd_data_bd) : 'bz;
+        diff6g <= dtt_rd_regen_gv? (dtt_rd_data_g - java_dtt_rd_data_gd) : 'bz;
+    end
+    
+    
+   dly_var #(
+        .WIDTH(DTT_IN_WIDTH),
+        .DLY_WIDTH(4)
+    ) dly_java_dtt_rd_data_rd_i (
+        .clk  (CLK),           // input
+        .rst  (RST),           // input
+        .dly  (4'h1),          // input[3:0] 
+        .din  (java_dtt_rd_data_r),      // input[0:0] 
+        .dout (java_dtt_rd_data_rd)     // output[0:0] 
+    );
+
+   dly_var #(
+        .WIDTH(DTT_IN_WIDTH),
+        .DLY_WIDTH(4)
+    ) dly_java_dtt_rd_data_bd_i (
+        .clk  (CLK),           // input
+        .rst  (RST),           // input
+        .dly  (4'h1),          // input[3:0] 
+        .din  (java_dtt_rd_data_b),      // input[0:0] 
+        .dout (java_dtt_rd_data_bd)     // output[0:0] 
+    );
+
+   dly_var #(
+        .WIDTH(DTT_IN_WIDTH),
+        .DLY_WIDTH(4)
+    ) dly_java_dtt_rd_data_gd_i (
+        .clk  (CLK),           // input
+        .rst  (RST),           // input
+        .dly  (4'h1),          // input[3:0] 
+        .din  (java_dtt_rd_data_g),      // input[0:0] 
+        .dout (java_dtt_rd_data_gd)     // output[0:0] 
+    );
+    
 
     reg FIRST_OUT;
     always @(posedge CLK) FIRST_OUT <= mclt16x16_bayer_i.pre_first_out;
@@ -441,6 +552,26 @@ module  mclt_test_05 ();
         end
     end
 
+    reg FIRST_OUTa;
+    always @(posedge CLK) FIRST_OUTa <= mclt16x16_bayer_i.pre_first_out;
+    
+    integer n7a, cntr7a, diff70a, diff71a; // SuppressThisWarning VEditor : assigned in $readmem() system task
+    wire [OUT_WIDTH-1:0] java_data_dtt_rot0a = jav_dtt_rot[{n7a[2:0], cntr7a[1],cntr7a[0],cntr7a[6:2],1'b0}];  //java_dtt_rot0[{cntr7[1],cntr7[0],cntr7[7:2]}];
+    wire [OUT_WIDTH-1:0] java_data_dtt_rot1a = jav_dtt_rot[{n7a[2:0], cntr7a[1],cntr7a[0],cntr7a[6:2],1'b1}];  //java_dtt_rot0[{cntr7[1],cntr7[0],cntr7[7:2]}];
+    initial begin
+        while (RST) @(negedge CLK);
+        for (n7a = 0; n7a < 6; n7a = n7a+1) begin
+            while (!FIRST_OUTa) begin
+                @(negedge CLK);
+            end
+            for (cntr7a = 0; cntr7a < 128; cntr7a = cntr7a + 1) begin
+                #1;
+                diff70a = dout0 - java_data_dtt_rot0a;
+                diff71a = dout1 - java_data_dtt_rot1a;
+                @(negedge CLK);
+            end
+        end
+    end
 
 
 
@@ -455,7 +586,7 @@ module  mclt_test_05 ();
         .OUT_WIDTH       (OUT_WIDTH),
         .DTT_IN_WIDTH    (DTT_IN_WIDTH),
         .TRANSPOSE_WIDTH (TRANSPOSE_WIDTH),
-        .OUT_RSHIFT      (OUT_RSHIFT),
+        .OUT_RSHIFT      (OUT_RSHIFT1),
         .OUT_RSHIFT2     (OUT_RSHIFT2),
         .DSP_B_WIDTH     (DSP_B_WIDTH),
         .DSP_A_WIDTH     (DSP_A_WIDTH),
@@ -537,7 +668,7 @@ module  mclt_test_05 ();
         .OUT_WIDTH       (OUT_WIDTH),
         .DTT_IN_WIDTH    (DTT_IN_WIDTH),
         .TRANSPOSE_WIDTH (TRANSPOSE_WIDTH),
-        .OUT_RSHIFT      (OUT_RSHIFT),
+        .OUT_RSHIFT1     (OUT_RSHIFT1),
         .OUT_RSHIFT2     (OUT_RSHIFT2),
         .DSP_B_WIDTH     (DSP_B_WIDTH),
         .DSP_A_WIDTH     (DSP_A_WIDTH),
@@ -547,6 +678,7 @@ module  mclt_test_05 ();
         .clk            (CLK),                        // input
         .rst            (RST),                        // input
         .start          (start3),                     // input
+        .page           (page3),                      // input
         .tile_size      (TILE_SIZE2),                 // input[1:0] 
         .color_wa       (pre_run_cntr),               // input[1:0] 
         .inv_checker    (jav_inv_check[color_page]),  // input
@@ -563,15 +695,23 @@ module  mclt_test_05 ();
         .pix_re         (PIX_RE3),                  // output
         .pix_page       (PIX_COPY_PAGE3),           // output
         .pix_d          (PIX_D3),                   // input[15:0]
-        .pre_busy(), // output
-        .pre_last_in(), // output
-        .pre_first_out(), // output
-        .pre_last_out(), // output
-        .out_addr(), // output[7:0] 
-        .dv(), // output
-        .dout_r(), // output[24:0] signed 
-        .dout_b(), // output[24:0] signed 
-        .dout_g() // output[24:0] signed 
+        .pre_busy       (pre_busy3), // output
+        .pre_last_in    (pre_last_in3), // output
+        .pre_first_out_r(pre_first_out_r), // output
+        .pre_first_out_b(pre_first_out_b), // output
+        .pre_first_out_g(pre_first_out_g), // output
+        .pre_last_out_r (pre_last_out_r), // output
+        .pre_last_out_b (pre_last_out_b), // output
+        .pre_last_out_g (pre_last_out_g), // output
+        .out_addr_r     (out_addr_r), // output[7:0] 
+        .out_addr_b     (out_addr_b), // output[7:0] 
+        .out_addr_g     (out_addr_g), // output[7:0] 
+        .dv_r           (dv_r), // output
+        .dv_b           (dv_b), // output
+        .dv_g           (dv_g), // output
+        .dout_r         (dout_r), // output[24:0] signed 
+        .dout_b         (dout_b), // output[24:0] signed 
+        .dout_g         (dout_g) // output[24:0] signed 
     );
 
    dly_var #(

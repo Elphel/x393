@@ -292,7 +292,8 @@ module  mclt16x16_bayer#(
     
     always @(posedge clk) begin
         if      (rst)        dtt_out_ram_cntr <= 0;
-        else if (dtt_inc16)  dtt_out_ram_cntr <= dtt_out_ram_cntr + 1;
+        else if (dtt_inc16)  dtt_out_ram_cntr <= dtt_out_ram_cntr + 1; // make it copy input page?
+        
         dtt_out_ram_wah <= dtt_out_ram_cntr - dtt_sub16;
         
         dtt_start_first_fill <= dtt_start_fill & dtt_first_quad_out;
@@ -368,8 +369,6 @@ module  mclt16x16_bayer#(
         .data_in  ({{(36-DTT_IN_WIDTH){1'b0}}, data_dtt_in}) // input[35:0] 
     );
    
-    
-    
     dtt_iv_8x8_ad #(
         .INPUT_WIDTH     (DTT_IN_WIDTH),
         .OUT_WIDTH       (OUT_WIDTH),
@@ -393,7 +392,8 @@ module  mclt16x16_bayer#(
         .out_wa         (dtt_out_wa16),     // output[3:0] reg 
         .out_we         (dtt_out_we),       // output reg 
         .sub16          (dtt_sub16),        // output reg 
-        .inc16          (dtt_inc16),        // output reg 
+        .inc16          (dtt_inc16),        // output reg
+        .start16        (),                 // output reg 
         .start_out      (dtt_start_fill)    // output[24:0] signed
     );
     //[DTT_IN_WIDTH-1:0

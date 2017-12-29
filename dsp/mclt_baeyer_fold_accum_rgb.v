@@ -108,7 +108,8 @@ module  mclt_baeyer_fold_accum_rgb # (
     reg  [1:0] ced2;
     wire neg_m1, neg_m2, en_a2;
     wire accum1= !var_pre2_first;
-    wire accum2= !var_pre_first && green_r[2];
+//    wire accum2= !var_pre_first && green_r[2];
+    wire accum2= !var_pre_first && green_r[3];
     wire [DSP_P_WIDTH-1:0] pout1;
     wire [DSP_P_WIDTH-1:0] pout2;
     wire signed [DTT_IN_WIDTH-1:0] dtt_in_dsp_w = (var_last ?
@@ -205,7 +206,8 @@ module  mclt_baeyer_fold_accum_rgb # (
         .rst  (rst),           // input
         .dly  (4'h1),          // input[3:0] 
 //        .din  (pix_sgn[1]),    // input[0:0] 
-        .din  (green_r[0]? pix_sgn[1]:pix_sgn[0]),    // input[0:0] 
+//        .din  (green_r[0]? pix_sgn[1]:pix_sgn[0]),    // input[0:0] 
+        .din  (green_r[1]? pix_sgn[1]:pix_sgn[0]),    // input[0:0] 
         .dout (neg_m2)         // output[0:0] 
     );
 
