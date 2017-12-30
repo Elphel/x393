@@ -1,0 +1,479 @@
+[*]
+[*] GTKWave Analyzer v3.3.78 (w)1999-2016 BSI
+[*] Sat Dec 30 05:11:50 2017
+[*]
+[dumpfile] "/home/eyesis/nc393/elphel393/fpga-elphel/x393_branch_dct/simulation/mclt_test_06-20171229221040868.fst"
+[dumpfile_mtime] "Sat Dec 30 05:10:48 2017"
+[dumpfile_size] 1605316
+[savefile] "/home/eyesis/nc393/elphel393/fpga-elphel/x393_branch_dct/mclt_test_06.sav"
+[timestart] 0
+[size] 1824 1171
+[pos] 0 0
+*-21.112703 4972000 2935000 2945000 3595000 3575000 3585000 4855000 4865000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] mclt_test_06.
+[treeopen] mclt_test_06.mclt16x16_bayer3_i.
+[treeopen] mclt_test_06.mclt16x16_bayer3_i.mclt_baeyer_fold_accum_rgb_i.
+[treeopen] mclt_test_06.mclt16x16_bayer3_i.mclt_baeyer_fold_accum_rgb_i.dsp_fold_cs_i.
+[treeopen] mclt_test_06.mclt16x16_bayer3_i.mclt_bayer_fold_rgb_i.
+[treeopen] mclt_test_06.mclt16x16_bayer3_i.phase_rotator_b_i.
+[treeopen] mclt_test_06.mclt16x16_bayer3_i.phase_rotator_g_i.
+[treeopen] mclt_test_06.mclt16x16_bayer3_i.phase_rotator_r_i.
+[treeopen] mclt_test_06.mclt16x16_bayer3_i.phase_rotator_r_i.phase_rotator0_i.
+[treeopen] mclt_test_06.mclt16x16_bayer_i.
+[treeopen] mclt_test_06.mclt16x16_bayer_i.dtt_iv_8x8_ad_i.
+[treeopen] mclt_test_06.mclt16x16_bayer_i.mclt_baeyer_fold_accum_i.
+[treeopen] mclt_test_06.mclt16x16_bayer_i.mclt_baeyer_fold_accum_i.dsp_fold_cc_i.
+[treeopen] mclt_test_06.mclt16x16_bayer_i.mclt_baeyer_fold_accum_i.dsp_fold_cc_i.DSP48E1_i.
+[treeopen] mclt_test_06.mclt16x16_bayer_i.mclt_baeyer_fold_accum_i.dsp_fold_cs_i.
+[treeopen] mclt_test_06.mclt16x16_bayer_i.mclt_bayer_fold_i.
+[treeopen] mclt_test_06.mclt16x16_bayer_i.mclt_bayer_fold_i.mclt_wnd_i.
+[treeopen] mclt_test_06.mclt16x16_bayer_i.phase_rotator0_i.
+[treeopen] mclt_test_06.mclt16x16_bayer_i.phase_rotator0_i.dsp_1_i.
+[treeopen] mclt_test_06.mclt16x16_bayer_i.phase_rotator1_i.
+[sst_width] 204
+[signals_width] 284
+[sst_expanded] 1
+[sst_vpaned_height] 343
+@28
+mclt_test_06.CLK
+@420
+mclt_test_06.n1
+mclt_test_06.p1
+mclt_test_06.cntr1
+@c00022
+mclt_test_06.wnd_a_w[7:0]
+@28
+(0)mclt_test_06.wnd_a_w[7:0]
+(1)mclt_test_06.wnd_a_w[7:0]
+(2)mclt_test_06.wnd_a_w[7:0]
+(3)mclt_test_06.wnd_a_w[7:0]
+(4)mclt_test_06.wnd_a_w[7:0]
+(5)mclt_test_06.wnd_a_w[7:0]
+(6)mclt_test_06.wnd_a_w[7:0]
+(7)mclt_test_06.wnd_a_w[7:0]
+@1401200
+-group_end
+@22
+mclt_test_06.jav_pix_in_now_a[10:0]
+mclt_test_06.jav_pix_in_now[15:0]
+@c00022
+[color] 3
+mclt_test_06.jav_pix_in_now_d[15:0]
+@28
+[color] 3
+(0)mclt_test_06.jav_pix_in_now_d[15:0]
+[color] 3
+(1)mclt_test_06.jav_pix_in_now_d[15:0]
+[color] 3
+(2)mclt_test_06.jav_pix_in_now_d[15:0]
+[color] 3
+(3)mclt_test_06.jav_pix_in_now_d[15:0]
+[color] 3
+(4)mclt_test_06.jav_pix_in_now_d[15:0]
+[color] 3
+(5)mclt_test_06.jav_pix_in_now_d[15:0]
+[color] 3
+(6)mclt_test_06.jav_pix_in_now_d[15:0]
+[color] 3
+(7)mclt_test_06.jav_pix_in_now_d[15:0]
+[color] 3
+(8)mclt_test_06.jav_pix_in_now_d[15:0]
+[color] 3
+(9)mclt_test_06.jav_pix_in_now_d[15:0]
+[color] 3
+(10)mclt_test_06.jav_pix_in_now_d[15:0]
+[color] 3
+(11)mclt_test_06.jav_pix_in_now_d[15:0]
+[color] 3
+(12)mclt_test_06.jav_pix_in_now_d[15:0]
+[color] 3
+(13)mclt_test_06.jav_pix_in_now_d[15:0]
+[color] 3
+(14)mclt_test_06.jav_pix_in_now_d[15:0]
+[color] 3
+(15)mclt_test_06.jav_pix_in_now_d[15:0]
+@1401200
+-group_end
+@420
+mclt_test_06.diff1
+@28
+mclt_test_06.START
+@22
+mclt_test_06.pix_page_d[2:0]
+@200
+-
+@420
+mclt_test_06.n4
+mclt_test_06.p4
+@c08022
+mclt_test_06.cntr4
+@28
+(0)mclt_test_06.cntr4
+(1)mclt_test_06.cntr4
+(2)mclt_test_06.cntr4
+(3)mclt_test_06.cntr4
+(4)mclt_test_06.cntr4
+(5)mclt_test_06.cntr4
+(6)mclt_test_06.cntr4
+(7)mclt_test_06.cntr4
+(8)mclt_test_06.cntr4
+(9)mclt_test_06.cntr4
+(10)mclt_test_06.cntr4
+(11)mclt_test_06.cntr4
+(12)mclt_test_06.cntr4
+(13)mclt_test_06.cntr4
+(14)mclt_test_06.cntr4
+(15)mclt_test_06.cntr4
+(16)mclt_test_06.cntr4
+(17)mclt_test_06.cntr4
+(18)mclt_test_06.cntr4
+(19)mclt_test_06.cntr4
+(20)mclt_test_06.cntr4
+(21)mclt_test_06.cntr4
+(22)mclt_test_06.cntr4
+(23)mclt_test_06.cntr4
+(24)mclt_test_06.cntr4
+(25)mclt_test_06.cntr4
+(26)mclt_test_06.cntr4
+(27)mclt_test_06.cntr4
+(28)mclt_test_06.cntr4
+(29)mclt_test_06.cntr4
+(30)mclt_test_06.cntr4
+(31)mclt_test_06.cntr4
+@1401200
+-group_end
+@22
+mclt_test_06.page4[2:0]
+mclt_test_06.java_dtt_in_addr[10:0]
+mclt_test_06.data_dtt_in[24:0]
+mclt_test_06.java_data_dtt_in[24:0]
+@8420
+mclt_test_06.diff4
+@200
+-
+@420
+mclt_test_06.n5
+mclt_test_06.p5
+@8420
+mclt_test_06.cntr5
+@22
+[color] 3
+mclt_test_06.dtt_r_data[24:0]
+mclt_test_06.java_dtt_r_data[24:0]
+@8420
+mclt_test_06.diff5
+@c00022
+mclt_test_06.mclt16x16_bayer3_i.dtt_r_cntr[7:0]
+@28
+(0)mclt_test_06.mclt16x16_bayer3_i.dtt_r_cntr[7:0]
+(1)mclt_test_06.mclt16x16_bayer3_i.dtt_r_cntr[7:0]
+(2)mclt_test_06.mclt16x16_bayer3_i.dtt_r_cntr[7:0]
+(3)mclt_test_06.mclt16x16_bayer3_i.dtt_r_cntr[7:0]
+(4)mclt_test_06.mclt16x16_bayer3_i.dtt_r_cntr[7:0]
+(5)mclt_test_06.mclt16x16_bayer3_i.dtt_r_cntr[7:0]
+(6)mclt_test_06.mclt16x16_bayer3_i.dtt_r_cntr[7:0]
+(7)mclt_test_06.mclt16x16_bayer3_i.dtt_r_cntr[7:0]
+@1401200
+-group_end
+@22
+mclt_test_06.mclt16x16_bayer3_i.dtt_r_data[24:0]
+@200
+-
+@8022
+mclt_test_06.dtt_rd_ra_r[6:0]
+mclt_test_06.dtt_rd_ra_b[6:0]
+mclt_test_06.dtt_rd_ra_g[7:0]
+@22
+mclt_test_06.dtt_rd_data_r[24:0]
+mclt_test_06.dtt_rd_data_b[24:0]
+mclt_test_06.dtt_rd_data_g[24:0]
+mclt_test_06.java_dtt_rd_data_rd[24:0]
+mclt_test_06.java_dtt_rd_data_bd[24:0]
+mclt_test_06.java_dtt_rd_data_gd[24:0]
+@28
+mclt_test_06.dtt_rd_regen_rv
+mclt_test_06.dtt_rd_regen_bv
+mclt_test_06.dtt_rd_regen_gv
+@8420
+mclt_test_06.diff6r
+mclt_test_06.diff6b
+mclt_test_06.diff6g
+@200
+-
+@22
+mclt_test_06.out_addr_r[8:0]
+mclt_test_06.dout_r[24:0]
+mclt_test_06.java_dout_r[24:0]
+@28
+mclt_test_06.pre_first_out_r
+@22
+mclt_test_06.dout_b[24:0]
+mclt_test_06.out_addr_b[8:0]
+mclt_test_06.out_addr_g[8:0]
+mclt_test_06.dout_g[24:0]
+mclt_test_06.java_dout_g[24:0]
+@8420
+mclt_test_06.diff7r
+mclt_test_06.diff7b
+mclt_test_06.diff7g
+@200
+-
+@420
+mclt_test_06.n7r
+@22
+mclt_test_06.cntr7r[7:0]
+@420
+mclt_test_06.n7b
+@22
+mclt_test_06.cntr7b[7:0]
+@420
+mclt_test_06.n7g
+@22
+mclt_test_06.cntr7g[7:0]
+@200
+-
+@800200
+-pre_rot_buffers
+@28
+mclt_test_06.mclt16x16_bayer3_i.clk
+@22
+mclt_test_06.mclt16x16_bayer3_i.dtt_out_ram_wa_rb[8:0]
+mclt_test_06.mclt16x16_bayer3_i.dtt_rd_ra_r[6:0]
+mclt_test_06.mclt16x16_bayer3_i.dtt_rd_ra_b[6:0]
+mclt_test_06.mclt16x16_bayer3_i.dtt_out_ram_wa_g[8:0]
+mclt_test_06.mclt16x16_bayer3_i.dtt_rd_ra_g[7:0]
+mclt_test_06.mclt16x16_bayer3_i.dtt_out_we_r
+mclt_test_06.mclt16x16_bayer3_i.dtt_out_we_b
+@8022
+mclt_test_06.mclt16x16_bayer3_i.dtt_out_ram_wa_rb[8:0]
+@22
+mclt_test_06.mclt16x16_bayer3_i.dtt_out_we_g
+@8022
+mclt_test_06.mclt16x16_bayer3_i.dtt_out_ram_wa_g[8:0]
+mclt_test_06.mclt16x16_bayer3_i.dbg_prerot_bufwr_r[8:0]
+mclt_test_06.mclt16x16_bayer3_i.dbg_prerot_bufwr_b[8:0]
+mclt_test_06.mclt16x16_bayer3_i.dbg_prerot_bufwr_g[8:0]
+@20000
+-
+-
+@8022
+mclt_test_06.mclt16x16_bayer3_i.dtt_rd_ra_r[6:0]
+mclt_test_06.mclt16x16_bayer3_i.dtt_rd_ra_b[6:0]
+mclt_test_06.mclt16x16_bayer3_i.dtt_rd_ra_g[7:0]
+@20000
+-
+-
+@8022
+mclt_test_06.mclt16x16_bayer3_i.dbg_prerot_buf_r[8:0]
+@20000
+-
+-
+@8022
+mclt_test_06.mclt16x16_bayer3_i.dbg_prerot_buf_b[8:0]
+@20000
+-
+-
+@8022
+mclt_test_06.mclt16x16_bayer3_i.dbg_prerot_buf_g[8:0]
+@20000
+-
+-
+@200
+-
+@1000200
+-pre_rot_buffers
+@c00201
+-rotators
+@c00200
+-rotators_top
+@28
+mclt_test_06.mclt16x16_bayer3_i.dtt_rd_regen_r[1:0]
+@c08022
+mclt_test_06.mclt16x16_bayer3_i.dtt_rd_ra_r[6:0]
+@28
+(0)mclt_test_06.mclt16x16_bayer3_i.dtt_rd_ra_r[6:0]
+(1)mclt_test_06.mclt16x16_bayer3_i.dtt_rd_ra_r[6:0]
+(2)mclt_test_06.mclt16x16_bayer3_i.dtt_rd_ra_r[6:0]
+(3)mclt_test_06.mclt16x16_bayer3_i.dtt_rd_ra_r[6:0]
+(4)mclt_test_06.mclt16x16_bayer3_i.dtt_rd_ra_r[6:0]
+(5)mclt_test_06.mclt16x16_bayer3_i.dtt_rd_ra_r[6:0]
+(6)mclt_test_06.mclt16x16_bayer3_i.dtt_rd_ra_r[6:0]
+@1401200
+-group_end
+@22
+mclt_test_06.mclt16x16_bayer3_i.dtt_rd_data_r[24:0]
+@28
+(0)mclt_test_06.mclt16x16_bayer3_i.dtt_r_cntr[7:0]
+(1)mclt_test_06.mclt16x16_bayer3_i.dtt_r_cntr[7:0]
+mclt_test_06.mclt16x16_bayer3_i.dtt_start16
+mclt_test_06.mclt16x16_bayer3_i.dtt_start_red
+mclt_test_06.mclt16x16_bayer3_i.dtt_start_red_fill
+mclt_test_06.mclt16x16_bayer3_i.dtt_start_blue
+mclt_test_06.mclt16x16_bayer3_i.dtt_start_blue_fill
+mclt_test_06.mclt16x16_bayer3_i.dtt_start_green
+mclt_test_06.mclt16x16_bayer3_i.dtt_start_green_fill
+mclt_test_06.mclt16x16_bayer3_i.ram_wpage_r
+mclt_test_06.mclt16x16_bayer3_i.ram_wpage_b
+mclt_test_06.mclt16x16_bayer3_i.ram_wpage_g
+@1401200
+-rotators_top
+@800200
+-rotator_red
+@28
+mclt_test_06.mclt16x16_bayer3_i.phase_rotator_r_i.start
+mclt_test_06.mclt16x16_bayer3_i.phase_rotator_r_i.inv_checker
+@22
+mclt_test_06.mclt16x16_bayer3_i.phase_rotator_r_i.odd_rows
+[color] 6
+mclt_test_06.mclt16x16_bayer3_i.phase_rotator_r_i.inv[2:0]
+@28
+mclt_test_06.mclt16x16_bayer3_i.phase_rotator_r_i.wpage
+mclt_test_06.mclt16x16_bayer3_i.phase_rotator_r_i.wpage_r
+(1)mclt_test_06.mclt16x16_bayer3_i.phase_rotator_r_i.dtt_start_out[1:0]
+@22
+mclt_test_06.mclt16x16_bayer3_i.phase_rotator_r_i.dtt_rd_cntr_pre[8:0]
+mclt_test_06.mclt16x16_bayer3_i.phase_rotator_r_i.in_addr[6:0]
+@800200
+-rotator
+@28
+mclt_test_06.mclt16x16_bayer3_i.phase_rotator_r_i.phase_rotator0_i.start
+@c00022
+mclt_test_06.mclt16x16_bayer3_i.phase_rotator_r_i.phase_rotator0_i.start_d[5:0]
+@28
+(0)mclt_test_06.mclt16x16_bayer3_i.phase_rotator_r_i.phase_rotator0_i.start_d[5:0]
+(1)mclt_test_06.mclt16x16_bayer3_i.phase_rotator_r_i.phase_rotator0_i.start_d[5:0]
+(2)mclt_test_06.mclt16x16_bayer3_i.phase_rotator_r_i.phase_rotator0_i.start_d[5:0]
+(3)mclt_test_06.mclt16x16_bayer3_i.phase_rotator_r_i.phase_rotator0_i.start_d[5:0]
+(4)mclt_test_06.mclt16x16_bayer3_i.phase_rotator_r_i.phase_rotator0_i.start_d[5:0]
+(5)mclt_test_06.mclt16x16_bayer3_i.phase_rotator_r_i.phase_rotator0_i.start_d[5:0]
+@1401200
+-group_end
+@22
+mclt_test_06.mclt16x16_bayer3_i.phase_rotator_r_i.phase_rotator0_i.fd_din[24:0]
+mclt_test_06.mclt16x16_bayer3_i.phase_rotator_r_i.phase_rotator0_i.inv[2:0]
+mclt_test_06.mclt16x16_bayer3_i.phase_rotator_r_i.phase_rotator0_i.inv_r[2:0]
+mclt_test_06.mclt16x16_bayer3_i.phase_rotator_r_i.phase_rotator0_i.inv_r4[2:0]
+mclt_test_06.mclt16x16_bayer3_i.phase_rotator_r_i.phase_rotator0_i.inv_r5[2:0]
+@c00022
+mclt_test_06.mclt16x16_bayer3_i.phase_rotator_r_i.phase_rotator0_i.ph[16:0]
+@28
+(0)mclt_test_06.mclt16x16_bayer3_i.phase_rotator_r_i.phase_rotator0_i.ph[16:0]
+(1)mclt_test_06.mclt16x16_bayer3_i.phase_rotator_r_i.phase_rotator0_i.ph[16:0]
+(2)mclt_test_06.mclt16x16_bayer3_i.phase_rotator_r_i.phase_rotator0_i.ph[16:0]
+(3)mclt_test_06.mclt16x16_bayer3_i.phase_rotator_r_i.phase_rotator0_i.ph[16:0]
+(4)mclt_test_06.mclt16x16_bayer3_i.phase_rotator_r_i.phase_rotator0_i.ph[16:0]
+(5)mclt_test_06.mclt16x16_bayer3_i.phase_rotator_r_i.phase_rotator0_i.ph[16:0]
+(6)mclt_test_06.mclt16x16_bayer3_i.phase_rotator_r_i.phase_rotator0_i.ph[16:0]
+(7)mclt_test_06.mclt16x16_bayer3_i.phase_rotator_r_i.phase_rotator0_i.ph[16:0]
+(8)mclt_test_06.mclt16x16_bayer3_i.phase_rotator_r_i.phase_rotator0_i.ph[16:0]
+(9)mclt_test_06.mclt16x16_bayer3_i.phase_rotator_r_i.phase_rotator0_i.ph[16:0]
+(10)mclt_test_06.mclt16x16_bayer3_i.phase_rotator_r_i.phase_rotator0_i.ph[16:0]
+(11)mclt_test_06.mclt16x16_bayer3_i.phase_rotator_r_i.phase_rotator0_i.ph[16:0]
+[color] 3
+(12)mclt_test_06.mclt16x16_bayer3_i.phase_rotator_r_i.phase_rotator0_i.ph[16:0]
+(13)mclt_test_06.mclt16x16_bayer3_i.phase_rotator_r_i.phase_rotator0_i.ph[16:0]
+(14)mclt_test_06.mclt16x16_bayer3_i.phase_rotator_r_i.phase_rotator0_i.ph[16:0]
+(15)mclt_test_06.mclt16x16_bayer3_i.phase_rotator_r_i.phase_rotator0_i.ph[16:0]
+(16)mclt_test_06.mclt16x16_bayer3_i.phase_rotator_r_i.phase_rotator0_i.ph[16:0]
+@1401200
+-group_end
+@28
+mclt_test_06.mclt16x16_bayer3_i.phase_rotator_r_i.phase_rotator0_i.negm_1
+mclt_test_06.mclt16x16_bayer3_i.phase_rotator_r_i.phase_rotator0_i.negm_2
+@22
+mclt_test_06.mclt16x16_bayer3_i.phase_rotator_r_i.phase_rotator0_i.pout_1[47:0]
+mclt_test_06.mclt16x16_bayer3_i.phase_rotator_r_i.phase_rotator0_i.pout_2[47:0]
+mclt_test_06.mclt16x16_bayer3_i.phase_rotator_r_i.phase_rotator0_i.cos_sin_w[17:0]
+@28
+mclt_test_06.mclt16x16_bayer3_i.phase_rotator_r_i.phase_rotator0_i.ceb1_1
+mclt_test_06.mclt16x16_bayer3_i.phase_rotator_r_i.phase_rotator0_i.ceb2_1
+mclt_test_06.mclt16x16_bayer3_i.phase_rotator_r_i.phase_rotator0_i.ceb1_2
+mclt_test_06.mclt16x16_bayer3_i.phase_rotator_r_i.phase_rotator0_i.ceb2_2
+[color] 2
+(12)mclt_test_06.mclt16x16_bayer3_i.phase_rotator_r_i.phase_rotator0_i.ph[16:0]
+[color] 2
+(11)mclt_test_06.mclt16x16_bayer3_i.phase_rotator_r_i.phase_rotator0_i.ph[16:0]
+[color] 2
+(10)mclt_test_06.mclt16x16_bayer3_i.phase_rotator_r_i.phase_rotator0_i.ph[16:0]
+(2)mclt_test_06.mclt16x16_bayer3_i.phase_rotator_r_i.phase_rotator0_i.sign_cs[4:0]
+(1)mclt_test_06.mclt16x16_bayer3_i.phase_rotator_r_i.phase_rotator0_i.inv_r4[2:0]
+@200
+-
+@28
+mclt_test_06.mclt16x16_bayer3_i.phase_rotator_r_i.phase_rotator0_i.negm_1
+@1000200
+-rotator
+-rotator_red
+@c00200
+-rotator_blue
+@28
+mclt_test_06.mclt16x16_bayer3_i.phase_rotator_b_i.start
+mclt_test_06.mclt16x16_bayer3_i.phase_rotator_b_i.inv_checker
+mclt_test_06.mclt16x16_bayer3_i.phase_rotator_b_i.odd_rows
+@22
+[color] 6
+mclt_test_06.mclt16x16_bayer3_i.phase_rotator_b_i.inv[2:0]
+@28
+mclt_test_06.mclt16x16_bayer3_i.phase_rotator_b_i.wpage
+mclt_test_06.mclt16x16_bayer3_i.phase_rotator_b_i.wpage_r
+(1)mclt_test_06.mclt16x16_bayer3_i.phase_rotator_b_i.dtt_start_out[1:0]
+@22
+mclt_test_06.mclt16x16_bayer3_i.phase_rotator_b_i.dtt_rd_cntr_pre[8:0]
+mclt_test_06.mclt16x16_bayer3_i.phase_rotator_b_i.in_addr_r[7:0]
+@200
+-
+@1401200
+-rotator_blue
+@c00200
+-green_upstream
+@28
+mclt_test_06.mclt16x16_bayer3_i.dtt_start_green_fill
+@22
+mclt_test_06.mclt16x16_bayer3_i.dtt_rd_ra_g[7:0]
+@c00028
+mclt_test_06.mclt16x16_bayer3_i.dtt_rd_regen_g[1:0]
+@28
+(0)mclt_test_06.mclt16x16_bayer3_i.dtt_rd_regen_g[1:0]
+(1)mclt_test_06.mclt16x16_bayer3_i.dtt_rd_regen_g[1:0]
+@1401200
+-group_end
+@200
+-
+@22
+mclt_test_06.mclt16x16_bayer3_i.phase_rotator_g_i.fd_din[24:0]
+@1401200
+-green_upstream
+@c00200
+-rotator_green
+@28
+mclt_test_06.mclt16x16_bayer3_i.phase_rotator_g_i.start
+mclt_test_06.mclt16x16_bayer3_i.phase_rotator_g_i.inv_checker
+mclt_test_06.mclt16x16_bayer3_i.phase_rotator_g_i.odd_rows
+@22
+[color] 6
+mclt_test_06.mclt16x16_bayer3_i.phase_rotator_g_i.inv[2:0]
+mclt_test_06.mclt16x16_bayer3_i.phase_rotator_g_i.dtt_rd_cntr_pre[8:0]
+mclt_test_06.mclt16x16_bayer3_i.phase_rotator_g_i.in_addr_r[7:0]
+mclt_test_06.mclt16x16_bayer3_i.phase_rotator_g_i.in_addr[7:0]
+mclt_test_06.mclt16x16_bayer3_i.phase_rotator_g_i.fd_din[24:0]
+@28
+mclt_test_06.mclt16x16_bayer3_i.phase_rotator_g_i.wpage
+mclt_test_06.mclt16x16_bayer3_i.phase_rotator_g_i.wpage_r
+(1)mclt_test_06.mclt16x16_bayer3_i.phase_rotator_g_i.dtt_start_out[1:0]
+@22
+mclt_test_06.mclt16x16_bayer3_i.phase_rotator_g_i.dtt_rd_cntr_pre[8:0]
+mclt_test_06.mclt16x16_bayer3_i.phase_rotator_g_i.in_addr_r[7:0]
+@800200
+-rotator
+@28
+mclt_test_06.mclt16x16_bayer3_i.phase_rotator_g_i.phase_rotator0_i.start
+@200
+-
+@1000200
+-rotator
+@1401200
+-rotator_green
+@1401201
+-rotators
+[pattern_trace] 1
+[pattern_trace] 0
