@@ -64,7 +64,6 @@ module  mclt16x16_bayer3#(
     input                       [1:0] color_wa,     //!< color index to apply parameters to (0 - R, 1 - B, 2 - G) 
     input                             inv_checker,  //!< 0 - includes main diagonal (symmetrical DTT), 1 - antisymmetrical DTT
     input                       [7:0] top_left,     //!< index of the 16x16 top left corner
-//    input                       [1:0] valid_rows,   //!< 3 for green, 1 or 2 for R/B - which of the even/odd checker rows contain pixels
     input                             valid_odd,    //!< For R and B: 0 - even rows (0,2...) valid, 1 - odd rows valid, green - N/A
     input           [SHIFT_WIDTH-1:0] x_shft,       //!< tile pixel X fractional shift (valid @ start) 
     input           [SHIFT_WIDTH-1:0] y_shft,       //!< tile pixel Y fractional shift (valid @ start)
@@ -101,9 +100,6 @@ module  mclt16x16_bayer3#(
 //    `define DSP_ACCUM_FOLD 1
     
     localparam  DTT_IN_DELAY =  63; // 69; // wa -ra min = 1
-//    localparam  DTT_OUT_DELAY = 128; // 191; // start output to sin/cos rotator, with checker - 2*64 +/=?
-    // May be tweaked so outputs will appear simultaneously
-    
     
     localparam  DTT_OUT_DELAY_G = 128-17; // 191; // start output to sin/cos rotator, with checker - 2*64 +/=?
     localparam  DTT_OUT_DELAY_R = OUTS_AT_ONCE ? (DTT_OUT_DELAY_G + 128) : 64-19; // 191; // start output to sin/cos rotator, with checker - 2*64 +/=?
@@ -141,7 +137,6 @@ module  mclt16x16_bayer3#(
     reg                            valid_odd_ram[0:3];   //
     reg          [SHIFT_WIDTH-1:0] x_shft_ram[0:3];      // 
     reg          [SHIFT_WIDTH-1:0] y_shft_ram[0:3];      //
-//    reg                            reg_rot_page; // odd/even register sets for long latency (rotator)
     reg                      [1:0] regs_wa;
     reg                            inv_checker_rot_ram[0:7]; //
     reg                            valid_odd_rot_ram[0:7];   //
@@ -159,7 +154,6 @@ module  mclt16x16_bayer3#(
     reg                            valid_odd_rot_ram_reg; //
     reg          [SHIFT_WIDTH-1:0] x_shft_rot_ram_reg; // 
     reg          [SHIFT_WIDTH-1:0] y_shft_rot_ram_reg; //
-    // todo: add registers to read into rotators
     
     
     always @(posedge clk) begin
@@ -177,9 +171,6 @@ module  mclt16x16_bayer3#(
             x_shft_rf_ram_reg <=      x_shft_rf_ram[in_cntr[1:0]];
             y_shft_rf_ram_reg <=      y_shft_rf_ram[in_cntr[1:0]];
         end
-        
-//        if      (rst)   reg_rot_page <= 1;
-//        else if (start) reg_rot_page <= ~reg_rot_page;
         
         if (copy_regs[1]) begin
             inv_checker_ram[regs_wa] <= inv_checker_rf_ram_reg;
@@ -230,12 +221,8 @@ module  mclt16x16_bayer3#(
     reg                            dtt_we;
     wire                           dtt_prewe;
     reg                      [7:0] dtt_in_precntr; //
-//    reg                            dtt_in_page;
     reg                      [8:0] dtt_in_wa;  
     
-    
-   
-//    assign pre_last_out = pre_last_out_r;
     assign pre_busy =     pre_busy_r || start || (!pre_last_in_w && phases[0]);
     assign pre_last_in = pre_last_in_w;
   
@@ -302,16 +289,12 @@ module  mclt16x16_bayer3#(
     end
 // reading/converting DTT
     reg                            start_dtt; //  = dtt_in_cntr == 196; // fune tune? ~= 3/4 of 256 
-//    reg                      [6:0] dtt_r_cntr; //
     reg                      [7:0] dtt_r_cntr; //
-//    reg                            dtt_r_page;
     reg                            dtt_r_re;
     reg                            dtt_r_regen;
     reg                            dtt_start;
     
-//    wire                           dtt_mode = dtt_r_cntr[6]; // TODO: or reverse? 
     wire                           dtt_mode = dtt_r_cntr[7] & dtt_r_cntr[6]; // (second of green only) 
-//    wire                     [8:0] dtt_r_ra = {1'b0,dtt_r_page,dtt_r_cntr};
     wire                     [8:0] dtt_r_ra = {1'b0, dtt_r_cntr};
     wire signed             [35:0] dtt_r_data_w; // high bits are not used 
     wire signed [DTT_IN_WIDTH-1:0] dtt_r_data = dtt_r_data_w[DTT_IN_WIDTH-1:0]; 
@@ -345,16 +328,10 @@ module  mclt16x16_bayer3#(
     wire                        dtt_start_green = (dtt_start16 & dtt_r_cntr[7:6] == 3); // after 
     reg                   [4:0] dtt_out_ram_cntr;
     reg                   [4:0] dtt_out_ram_wah;
-//    reg                   [1:0] dtt_out_ram_wpage;  // one of 4 pages (128 samples long) being written to
-//    reg                         dtt_out_ram_wpage;  // one of 2 pages (256 samples long) being written to
-//    reg                   [1:0] dtt_out_ram_wpage2; // later by 1 DTT
-//    reg                         dtt_out_ram_wpage2; // later by 1 DTT
     wire                        dtt_start_fill; // some data available in DTT output buffer, OK to start consecutive readout
-//    reg                         dtt_start_first_fill;
     reg                         dtt_start_red_fill;
     reg                         dtt_start_blue_fill;
     reg                         dtt_start_green_fill;
-//    reg                         dtt_start_second_fill;
     
     wire                  [8:0] dtt_out_ram_wa = {dtt_out_ram_wah,dtt_out_wa16};
     
@@ -378,11 +355,9 @@ module  mclt16x16_bayer3#(
     wire signed [OUT_WIDTH-1:0] dtt_rd_data_b = dtt_rd_data_b_w[OUT_WIDTH-1:0]; // valid with dtt_rd_regen_dv[3]
     wire signed [OUT_WIDTH-1:0] dtt_rd_data_g = dtt_rd_data_g_w[OUT_WIDTH-1:0]; // valid with dtt_rd_regen_dv[3]
     
-//    wire                        dtt_first_quad_out = ~dtt_out_ram_cntr[2];
     wire                        dtt_red_quad_out =   dtt_out_ram_cntr[3:2] == 0;
     wire                        dtt_blue_quad_out =  dtt_out_ram_cntr[3:2] == 1;
     wire                        dtt_green_quad_out = dtt_out_ram_cntr[3:2] == 2;
-//    wire                        dtt_last_quad_out =  dtt_out_ram_cntr[3:2] == 3;
     
     wire                        ram_wpage_r = dtt_out_ram_cntr[4]; // dtt_out_ram_wah[4];
     reg                         ram_wpage_b;
@@ -397,11 +372,8 @@ module  mclt16x16_bayer3#(
         rot_ram_copy <= {rot_ram_copy[0], dtt_start16};
         if (rot_ram_copy[0]) rot_ram_page <= dtt_out_ram_cntr[4:2];
         
-//rot_ram_page
-        
     // reading memory and running DTT
          start_dtt <= dtt_in_precntr == DTT_IN_DELAY;
-//        if (start_dtt)        dtt_r_page <= dtt_in_wa[7];// dtt_in_page;
         
         if (rst)              dtt_r_re <= 1'b0;
         else if (start_dtt)   dtt_r_re <= 1'b1;
@@ -428,7 +400,6 @@ module  mclt16x16_bayer3#(
         .rst            (rst),              // input
         .start          (dtt_start),        // input
         .mode           ({dtt_mode, 1'b0}), // input[1:0] for checker-board: only 2 of 4 modes (CC, SC) 
-//        .xin            (dtt_r_data),       // input[24:0] signed 
         .xin            ({dtt_r_data[DTT_IN_WIDTH-1],dtt_r_data[DTT_IN_WIDTH-1:1]}),       // input[24:0] signed 
         .pre_last_in    (),                 // output reg 
         .mode_out       (), // dtt_mode_out),     // output[1:0] reg 
@@ -444,30 +415,20 @@ module  mclt16x16_bayer3#(
 
 
     always @(posedge clk) begin
-//        if      (rst)        dtt_out_ram_cntr <= 0;
         if (dtt_start_red)   dtt_out_ram_cntr <= {page,4'b0};
         else if (dtt_inc16)  dtt_out_ram_cntr <= dtt_out_ram_cntr + 1;
         
         dtt_out_ram_wah <=   dtt_out_ram_cntr - dtt_sub16;
         
-//        dtt_start_first_fill <= dtt_start_fill & dtt_first_quad_out;
         dtt_start_red_fill <= dtt_start_fill & dtt_red_quad_out;
         dtt_start_blue_fill <= dtt_start_fill & dtt_blue_quad_out;
         dtt_start_green_fill <= dtt_start_fill & dtt_green_quad_out;
-        
-//        dtt_start_second_fill<= dtt_start_fill & ~dtt_first_quad_out;
-        
-//        if (dtt_start_first_fill) dtt_out_ram_wpage <= dtt_out_ram_wah[4:3];
-///        if (dtt_start_red_fill)  dtt_out_ram_wpage <= dtt_out_ram_wah[4:3];
-//        if (dtt_start_red_fill)  dtt_out_ram_wpage <= dtt_out_ram_wah[4];
         
         if (dtt_start_blue)   ram_wpage_b <= ram_wpage_r;
         if (dtt_start_green)  ram_wpage_g <= ram_wpage_b;
         
         
     end
-
-
 
 
 // Three of 2 page buffers after dtt (feeding two phase rotators), address MSB is not needed
@@ -477,9 +438,6 @@ module  mclt16x16_bayer3#(
         if (dtt_out_we_b) dbg_prerot_bufwr_b <= dtt_out_ram_wa_rb;
         if (dtt_out_we_g) dbg_prerot_bufwr_g <= dtt_out_ram_wa_g;
     end
-//    wire [8:0] dbg_prerot_buf_r = dtt_rd_regen_r[0]?(dtt_out_ram_wa_rb - dtt_rd_ra_r):'bz; // SuppressThisWarning VEditor : debug output
-//    wire [8:0] dbg_prerot_buf_b = dtt_rd_regen_b[0]?(dtt_out_ram_wa_rb - dtt_rd_ra_b):'bz; // SuppressThisWarning VEditor : debug output
-//    wire [8:0] dbg_prerot_buf_g = dtt_rd_regen_g[0]?(dtt_out_ram_wa_g -  dtt_rd_ra_g):'bz; // SuppressThisWarning VEditor : debug output
     wire [8:0] dbg_prerot_buf_r = dtt_rd_regen_r[0]?(dbg_prerot_bufwr_r -  dtt_rd_ra_r):'bz; // SuppressThisWarning VEditor : debug output
     wire [8:0] dbg_prerot_buf_b = dtt_rd_regen_b[0]?(dbg_prerot_bufwr_b -  dtt_rd_ra_b):'bz; // SuppressThisWarning VEditor : debug output
     wire [8:0] dbg_prerot_buf_g = dtt_rd_regen_g[0]?(dbg_prerot_bufwr_g -  dtt_rd_ra_g):'bz; // SuppressThisWarning VEditor : debug output
@@ -541,7 +499,6 @@ module  mclt16x16_bayer3#(
         .DSP_B_WIDTH   (DSP_B_WIDTH),
         .DSP_A_WIDTH   (DSP_A_WIDTH),
         .DSP_P_WIDTH   (DSP_P_WIDTH),
-//        .COEFF_WIDTH(COEFF_WIDTH),
         .GREEN         (0),
         .START_DELAY   (DTT_OUT_DELAY_R)
     ) phase_rotator_r_i (
@@ -570,7 +527,6 @@ module  mclt16x16_bayer3#(
         .DSP_B_WIDTH   (DSP_B_WIDTH),
         .DSP_A_WIDTH   (DSP_A_WIDTH),
         .DSP_P_WIDTH   (DSP_P_WIDTH),
-//        .COEFF_WIDTH(COEFF_WIDTH),
         .GREEN         (0),
         .START_DELAY   (DTT_OUT_DELAY_B)
     ) phase_rotator_b_i (
