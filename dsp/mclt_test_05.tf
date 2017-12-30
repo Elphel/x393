@@ -76,6 +76,8 @@ module  mclt_test_05 ();
     parameter DSP_A_WIDTH =     25;
     parameter DSP_P_WIDTH =     48;
     parameter DEAD_CYCLES =     14;  // start next block immedaitely, or with longer pause
+//    parameter OUTS_AT_ONCE =     0;  // 0: outputs with lowest latency, 1: all at once (with green)
+    parameter OUTS_AT_ONCE =     1;  // 0: outputs with lowest latency, 1: all at once (with green)
     
     reg              RST = 1'b1;
     reg              CLK = 1'b0;
@@ -170,7 +172,8 @@ module  mclt_test_05 ();
     reg                   [1:0] byr_index; // [0:2]; // bayer index of top-left 16x16 tile
 
     initial begin
-        $readmemh("input_data/mclt_dtt_all_00_x1489_y951.dat",  java_all);
+//        $readmemh("input_data/mclt_dtt_all_00_x1489_y951.dat",  java_all);
+        $readmemh("input_data/mclt_dtt_all_02_x1489_y951.dat",  java_all);
 
         $display("000c:  %h", java_all['h000c]);
 
@@ -531,25 +534,32 @@ module  mclt_test_05 ();
     );
     
 
-    reg FIRST_OUT;
-    always @(posedge CLK) FIRST_OUT <= mclt16x16_bayer_i.pre_first_out;
+//dout_r, dout_b, dout_g
+    integer n7r, n7b, n7g;
+    reg [7:0] cntr7r, cntr7b, cntr7g;
+    always @ (posedge CLK) begin
+        if      (RST)           n7r <= -1; else if (pre_first_out_r) n7r <= n7r + 1;
+        if (pre_first_out_r) cntr7r <= 0; else if (dv_r)            cntr7r <= cntr7r + 1; 
+
+        if      (RST)           n7b <= -1; else if (pre_first_out_b) n7b <= n7b + 1;
+        if (pre_first_out_b) cntr7b <= 0; else if (dv_b)            cntr7b <= cntr7b + 1; 
+
+        if      (RST)           n7g <= -1; else if (pre_first_out_g) n7g <= n7g + 1;
+        if (pre_first_out_g) cntr7g <= 0; else if (dv_g)            cntr7g <= cntr7g + 1; 
+    end
+
+    integer diff7r, diff7b, diff7g; // SuppressThisWarning VEditor : assigned in $readmem() system task
+///    wire [OUT_WIDTH-1:0] java_dout_r0 = jav_dtt_rot['h300*out_addr_r[8] + 'h000 + {out_addr_r[7:6], out_addr_r[2:0], out_addr_r[5:3]}];
+///    wire [OUT_WIDTH-1:0] java_dout_b0 = jav_dtt_rot['h300*out_addr_b[8] + 'h100 + {out_addr_b[7:6], out_addr_b[2:0], out_addr_b[5:3]}];
+///    wire [OUT_WIDTH-1:0] java_dout_g0 = jav_dtt_rot['h300*out_addr_g[8] + 'h200 + {out_addr_g[7:6], out_addr_g[2:0], out_addr_g[5:3]}];
+    wire [OUT_WIDTH-1:0] java_dout_r = jav_dtt_rot['h300*n7r + 'h000 + {cntr7r[1:0], cntr7r[7:2]}];
+    wire [OUT_WIDTH-1:0] java_dout_b = jav_dtt_rot['h300*n7b + 'h100 + {cntr7b[1:0], cntr7b[7:2]}];
+    wire [OUT_WIDTH-1:0] java_dout_g = jav_dtt_rot['h300*n7g + 'h200 + {cntr7g[1:0], cntr7g[7:2]}];
     
-    integer n7, cntr7, diff70, diff71; // SuppressThisWarning VEditor : assigned in $readmem() system task
-    wire [OUT_WIDTH-1:0] java_data_dtt_rot0 = jav_dtt_rot[{n7[2:0], cntr7[1],cntr7[0],cntr7[6:2],1'b0}];  //java_dtt_rot0[{cntr7[1],cntr7[0],cntr7[7:2]}];
-    wire [OUT_WIDTH-1:0] java_data_dtt_rot1 = jav_dtt_rot[{n7[2:0], cntr7[1],cntr7[0],cntr7[6:2],1'b1}];  //java_dtt_rot0[{cntr7[1],cntr7[0],cntr7[7:2]}];
-    initial begin
-        while (RST) @(negedge CLK);
-        for (n7 = 0; n7 < 6; n7 = n7+1) begin
-            while (!FIRST_OUT) begin
-                @(negedge CLK);
-            end
-            for (cntr7 = 0; cntr7 < 128; cntr7 = cntr7 + 1) begin
-                #1;
-                diff70 = dout0 - java_data_dtt_rot0;
-                diff71 = dout1 - java_data_dtt_rot1;
-                @(negedge CLK);
-            end
-        end
+    always @ (posedge CLK) begin
+        diff7r <= dv_r? (dout_r - java_dout_r) : 'bz;
+        diff7b <= dv_b? (dout_b - java_dout_b) : 'bz;
+        diff7g <= dv_g? (dout_g - java_dout_g) : 'bz;
     end
 
     reg FIRST_OUTa;
@@ -641,7 +651,7 @@ module  mclt_test_05 ();
     reg                         page3; // 1/2-nd bayer tile
     reg                         pre_run;
     reg                   [1:0] pre_run_cntr;
-    wire                  [2:0] color_page = pre_run_cntr + 3 * page3;
+    wire                  [2:0] color_page = pre_run_cntr + 3 * page3; // SuppressThisWarning VEditor - VDT bug (used as index)
     always @ (posedge CLK) begin
         if (START)                  page3 <= (SUB_PAGE > 2);
         
@@ -673,7 +683,8 @@ module  mclt_test_05 ();
         .DSP_B_WIDTH     (DSP_B_WIDTH),
         .DSP_A_WIDTH     (DSP_A_WIDTH),
         .DSP_P_WIDTH     (DSP_P_WIDTH),
-        .DEAD_CYCLES     (DEAD_CYCLES)
+        .DEAD_CYCLES     (DEAD_CYCLES),
+        .OUTS_AT_ONCE    (OUTS_AT_ONCE)
     ) mclt16x16_bayer3_i (
         .clk            (CLK),                        // input
         .rst            (RST),                        // input

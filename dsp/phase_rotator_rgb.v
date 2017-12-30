@@ -55,7 +55,7 @@ module  phase_rotator_rgb#(
     input signed   [SHIFT_WIDTH-1:0] shift_h,       //!< subpixel shift horizontal
     input signed   [SHIFT_WIDTH-1:0] shift_v,       //!< subpixel shift vertical
     input                            inv_checker,   //!< negate 2-nd and fourth samples (for handling inverted checkerboard)
-    input                            inv_rows,      //!< 0 : use first row, 1 - second row (when GREEN=0) 
+    input                            odd_rows,      //!< when not GEEN (R or B) 0: even (first) rows non-zero, 1: odd (second)  
     // input data CC,CS,SC,SS in column scan order (matching DTT)
     output             [GREEN + 6:0] in_addr,       //!< input buffer address
     output                     [1:0] in_re,         //!< input buffer re/regen      
@@ -69,10 +69,8 @@ module  phase_rotator_rgb#(
 
     reg signed   [SHIFT_WIDTH-1:0] shift_h_r;
     reg signed   [SHIFT_WIDTH-1:0] shift_v_r;
-    reg                            inv_checker_r;
-    reg                            inv_rows_r;
     reg                            wpage_r;
-    wire                           negate = inv_checker_r ^ inv_rows_r; // FIXME: put real
+    reg                      [2:0] inv;
     reg                      [1:0] dtt_start_out;
     reg                      [7:0] dtt_dly_cntr;
     reg                      [4:0] dtt_rd_regen_dv;
@@ -81,14 +79,16 @@ module  phase_rotator_rgb#(
     reg                      [8:0] out_addr_r;
     assign  in_addr = in_addr_r[GREEN + 6:0];
     assign  in_re = dtt_rd_regen_dv[2:1];
-    assign  fd_wa = {out_addr_r[8], out_addr_r[0],out_addr_r[1],out_addr_r[4:2],out_addr_r[7:5]};
+//    assign  fd_wa = {out_addr_r[8], out_addr_r[0],out_addr_r[1],out_addr_r[4:2],out_addr_r[7:5]};
+    assign  fd_wa = {out_addr_r[8], out_addr_r[1],out_addr_r[0],out_addr_r[4:2],out_addr_r[7:5]};
     
     always @ (posedge clk) begin
         if (start) begin
             shift_h_r <=     shift_h;
             shift_v_r <=     shift_v;
-            inv_checker_r <= inv_checker;
-            inv_rows_r <=    inv_rows;
+            inv <= inv_checker ?
+                   (( GREEN || odd_rows) ? 5 : 6):
+                   ((!GREEN && odd_rows) ? 3 : 0);
             wpage_r <=       wpage;
         end
         
@@ -110,11 +110,11 @@ module  phase_rotator_rgb#(
         else if (dtt_rd_regen_dv[0])    dtt_rd_cntr_pre <= dtt_rd_cntr_pre + 1;
         
         if (GREEN) in_addr_r <= {dtt_rd_cntr_pre[8],
-                                 dtt_rd_cntr_pre[0] ^ dtt_rd_cntr_pre[0],
+                                 dtt_rd_cntr_pre[0] ^ dtt_rd_cntr_pre[1],
                                  dtt_rd_cntr_pre[0] ? (~dtt_rd_cntr_pre[7:2]) : dtt_rd_cntr_pre[7:2]};
         else       in_addr_r <= {1'b0, 
                                  dtt_rd_cntr_pre[8],
-//                               dtt_rd_cntr_pre[0] ^ dtt_rd_cntr_pre[0],
+//                               dtt_rd_cntr_pre[0] ^ dtt_rd_cntr_pre[1],
                                  dtt_rd_cntr_pre[1] ?
                                  (dtt_rd_cntr_pre[0] ? (~dtt_rd_cntr_pre[7:2]) : {~dtt_rd_cntr_pre[7:5],dtt_rd_cntr_pre[4:2]}):
                                  (dtt_rd_cntr_pre[0] ? {dtt_rd_cntr_pre[7:5],~dtt_rd_cntr_pre[4:2]} : dtt_rd_cntr_pre[7:2])};
@@ -139,10 +139,10 @@ module  phase_rotator_rgb#(
         .clk           (clk),            // input
         .rst           (rst),            // input
         .start         (dtt_start_out[1]), // input
-        // are these shift OK? Will need to be valis only @ dtt_start_out
+        // are these shift OK? Will need to be valid only @ dtt_start_out
         .shift_h       (shift_h_r),      // input[6:0] signed 
         .shift_v       (shift_v_r),      // input[6:0] signed
-        .inv_checker   (negate),         // input only used for Bayer mosaic data 
+        .inv           (inv),            // input [2:0] 
         .fd_din        (fd_din),         // input[24:0] signed. Expected latency = 3 from start  
         .fd_out        (fd_out),         // output[24:0] reg signed 
         .pre_first_out (pre_first_out),  // output reg 

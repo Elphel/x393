@@ -550,7 +550,8 @@ D11 - negate for mode 3 (SS)
         // are these shift OK? Will need to be valis only @ dtt_start_out
         .shift_h       (x_shft_r4),     // input[6:0] signed 
         .shift_v       (y_shft_r4),     // input[6:0] signed
-        .inv_checker    (1'b0),          // input only used for Bayer mosaic data 
+//        .inv_checker    (1'b0),          // input only used for Bayer mosaic data 
+        .inv           (3'b0),          // input only used for Bayer mosaic data 
         .fd_din        (dtt_rd_data),   // input[24:0] signed. Expected latency = 3 from start  
         .fd_out        (dout),          // output[24:0] reg signed 
         .pre_first_out (pre_first_out), // output reg 

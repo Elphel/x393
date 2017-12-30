@@ -458,7 +458,8 @@ module  mclt16x16_bayer#(
         // are these shift OK? Will need to be valis only @ dtt_start_out
         .shift_h       (x_shft_r5),     // input[6:0] signed 
         .shift_v       (y_shft_r5),     // input[6:0] signed
-        .inv_checker   (inv_checker_r5),// input only used for Bayer mosaic data 
+//        .inv_checker   (inv_checker_r5),// input only used for Bayer mosaic data 
+        .inv           ({inv_checker_r5,1'b0,inv_checker_r5}),// input only used for Bayer mosaic data 
         .fd_din        (dtt_rd_data0),  // input[24:0] signed. Expected latency = 3 from start  
         .fd_out        (dout0),         // output[24:0] reg signed 
         .pre_first_out (pre_first_out), // output reg 
@@ -480,7 +481,9 @@ module  mclt16x16_bayer#(
         // are these shift OK? Will need to be valis only @ dtt_start_out
         .shift_h       (x_shft_r5),     // input[6:0] signed 
         .shift_v       (y_shft_r5),     // input[6:0] signed
-        .inv_checker   (inv_checker_r5),// input only used for Bayer mosaic data 
+//        .inv_checker   (inv_checker_r5),// input only used for Bayer mosaic data
+        .inv           ({inv_checker_r5,1'b0,inv_checker_r5}),// input only used for Bayer mosaic data 
+         
         .fd_din        (dtt_rd_data1),  // input[24:0] signed. Expected latency = 3 from start  
         .fd_out        (dout1),         // output[24:0] reg signed 
         .pre_first_out (),              // output reg 

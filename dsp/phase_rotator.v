@@ -53,7 +53,10 @@ module  phase_rotator#(
     input                            start,         //!< single-cycle start pulse that goes 1 cycle before first data
     input signed   [SHIFT_WIDTH-1:0] shift_h,       //!< subpixel shift horizontal
     input signed   [SHIFT_WIDTH-1:0] shift_v,       //!< subpixel shift vertical
-    input                            inv_checker,   //!< negate 2-nd and fourth samples (for handling inverted checkerboard)
+//    input                            inv_checker,   //!< negate 2-nd and fourth samples (for handling inverted checkerboard)
+// fitst sample is never negated
+    input                      [2:0] inv,           //!< bit 0 - invert 2-nd sample, 1 - third, 2 - fourth (for green: 5)
+    
     // input data CC,CS,SC,SS in column scan order (matching DTT)
     input signed      [FD_WIDTH-1:0] fd_din,        //!< frequency domain data in, LATENCY=3 from start
     output reg signed [FD_WIDTH-1:0] fd_out,        //!< frequency domain data in
@@ -95,8 +98,11 @@ module  phase_rotator#(
     reg         [SHIFT_WIDTH-1:0] shift_v0;
     reg         [SHIFT_WIDTH-1:0] shift_vr;
     reg         [SHIFT_WIDTH-1:0] shift_hv; // combined horizonta and vertical shifts to match cntr_mux;
-    reg                           inv_checker_r;
-    reg                           inv_checker_r2;
+//    reg                           inv_checker_r;
+//    reg                           inv_checker_r2;
+    reg                     [2:0] inv_r;
+    reg                     [2:0] inv_r4;
+    reg                     [2:0] inv_r5;
     reg                     [4:0] sign_cs;  // sign for cos / sin, feed to DSP
     wire                          sign_cs_d; // sign_cs delayed by 3 clocks
     reg                     [1:0] sign_cs_r; // sign_cs delayed by 5 clocks      
@@ -115,10 +121,12 @@ module  phase_rotator#(
         
         if (start)      shift_hr <= shift_h;
         if (start)      shift_v0 <= shift_v;
-        if (start)      inv_checker_r <= inv_checker; 
+//        if (start)      inv_checker_r <= inv_checker; 
+        if (start)      inv_r <= inv; 
         if (start_d[3]) shift_vr <= shift_v0;
-        if (start_d[4]) inv_checker_r2 <= inv_checker_r;
-        
+//        if (start_d[4]) inv_checker_r2 <= inv_checker_r;
+        if (start_d[3]) inv_r4 <= inv_r;
+        inv_r5 <= inv_r4;
         if   (rst)                                               run_h <= 0;
         else if (start)                                          run_h <= 1;
 //        else if (&cntr_h_consec[6:0] && (cntr_h[7] || DECIMATE)) run_h <= 0;
@@ -231,10 +239,16 @@ module  phase_rotator#(
         negm_2 <= ((ph[5] & ~sign_cs[3]) | (ph[6] & sign_cs[4])) ^
                   (inv_checker_r2 & (ph[5] | ph[7]));  // invert negation when using Bayer patterns
         */
-        negm_1 <= (ph[4] & ~sign_cs[2]) | (ph[5] & sign_cs[3]); 
-        negm_2 <= ((ph[5] & ~sign_cs[3]) | (ph[6] & sign_cs[4])) ^ inv_checker_r2;
-//                  (inv_checker_r2 & (|ph[7:4]));  // invert negation when using Bayer patterns
+//        negm_1 <= (ph[4] & ~sign_cs[2]) | (ph[5] & sign_cs[3]); 
+//        negm_2 <= ((ph[5] & ~sign_cs[3]) | (ph[6] & sign_cs[4])) ^ inv_checker_r2;
         
+        negm_1 <= ((ph[4] & ~sign_cs[2]) | (ph[5] & sign_cs[3])) ^
+                  (inv_r4[1] & (ph[4] | ph[6]));  // invert negation when using Bayer patterns
+        negm_2 <= ((ph[5] & ~sign_cs[3]) | (ph[6] & sign_cs[4])) ^
+                  ((inv_r5[0] & (ph[4] | ph[6])) |
+                   (inv_r5[2] & (ph[5] | ph[7])));  // invert negation when using Bayer patterns
+
+
         
         accum_1 <= ph[4] | ph[6]; accum_2 <= ph[5] | ph[7];
     // vertical shift DSPs

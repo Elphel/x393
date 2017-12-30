@@ -53,7 +53,8 @@ module  mclt16x16_bayer3#(
     parameter DSP_B_WIDTH =     18, // signed, output from sin/cos ROM
     parameter DSP_A_WIDTH =     25,
     parameter DSP_P_WIDTH =     48,
-    parameter DEAD_CYCLES =     14  // start next block immedaitely, or with longer pause
+    parameter DEAD_CYCLES =     14,  // start next block immedaitely, or with longer pause
+    parameter OUTS_AT_ONCE =     1  // 0: outputs with lowest latency, 1: all at once (with green)
 )(
     input                             clk,          //!< system clock, posedge
     input                             rst,          //!< sync reset
@@ -102,9 +103,11 @@ module  mclt16x16_bayer3#(
     localparam  DTT_IN_DELAY =  63; // 69; // wa -ra min = 1
 //    localparam  DTT_OUT_DELAY = 128; // 191; // start output to sin/cos rotator, with checker - 2*64 +/=?
     // May be tweaked so outputs will appear simultaneously
-    localparam  DTT_OUT_DELAY_R = 64; // 191; // start output to sin/cos rotator, with checker - 2*64 +/=?
-    localparam  DTT_OUT_DELAY_B = 64; // 191; // start output to sin/cos rotator, with checker - 2*64 +/=?
-    localparam  DTT_OUT_DELAY_G = 128; // 191; // start output to sin/cos rotator, with checker - 2*64 +/=?
+    
+    
+    localparam  DTT_OUT_DELAY_G = 128-17; // 191; // start output to sin/cos rotator, with checker - 2*64 +/=?
+    localparam  DTT_OUT_DELAY_R = OUTS_AT_ONCE ? (DTT_OUT_DELAY_G + 128) : 64-19; // 191; // start output to sin/cos rotator, with checker - 2*64 +/=?
+    localparam  DTT_OUT_DELAY_B = OUTS_AT_ONCE ? (DTT_OUT_DELAY_G + 64) :  64-19; // 191; // start output to sin/cos rotator, with checker - 2*64 +/=?
 
     reg                      [7:0] in_cntr; //
     reg                            run_r;
@@ -468,6 +471,18 @@ module  mclt16x16_bayer3#(
 
 
 // Three of 2 page buffers after dtt (feeding two phase rotators), address MSB is not needed
+    reg  [8:0] dbg_prerot_bufwr_r, dbg_prerot_bufwr_b, dbg_prerot_bufwr_g;
+    always @(posedge clk) begin
+        if (dtt_out_we_r) dbg_prerot_bufwr_r <= dtt_out_ram_wa_rb;
+        if (dtt_out_we_b) dbg_prerot_bufwr_b <= dtt_out_ram_wa_rb;
+        if (dtt_out_we_g) dbg_prerot_bufwr_g <= dtt_out_ram_wa_g;
+    end
+//    wire [8:0] dbg_prerot_buf_r = dtt_rd_regen_r[0]?(dtt_out_ram_wa_rb - dtt_rd_ra_r):'bz; // SuppressThisWarning VEditor : debug output
+//    wire [8:0] dbg_prerot_buf_b = dtt_rd_regen_b[0]?(dtt_out_ram_wa_rb - dtt_rd_ra_b):'bz; // SuppressThisWarning VEditor : debug output
+//    wire [8:0] dbg_prerot_buf_g = dtt_rd_regen_g[0]?(dtt_out_ram_wa_g -  dtt_rd_ra_g):'bz; // SuppressThisWarning VEditor : debug output
+    wire [8:0] dbg_prerot_buf_r = dtt_rd_regen_r[0]?(dbg_prerot_bufwr_r -  dtt_rd_ra_r):'bz; // SuppressThisWarning VEditor : debug output
+    wire [8:0] dbg_prerot_buf_b = dtt_rd_regen_b[0]?(dbg_prerot_bufwr_b -  dtt_rd_ra_b):'bz; // SuppressThisWarning VEditor : debug output
+    wire [8:0] dbg_prerot_buf_g = dtt_rd_regen_g[0]?(dbg_prerot_bufwr_g -  dtt_rd_ra_g):'bz; // SuppressThisWarning VEditor : debug output
     ram18p_var_w_var_r #(
         .REGISTERS(1),
         .LOG2WIDTH_WR(5),
@@ -537,7 +552,7 @@ module  mclt16x16_bayer3#(
         .shift_h       (x_shft_rot_ram_reg),      // input[6:0] signed 
         .shift_v       (y_shft_rot_ram_reg),      // input[6:0] signed 
         .inv_checker   (inv_checker_rot_ram_reg), // input
-        .inv_rows      (valid_odd_rot_ram_reg),   // input
+        .odd_rows      (valid_odd_rot_ram_reg),   // input
         .in_addr       (dtt_rd_ra_r),             // output[7:0] 
         .in_re         (dtt_rd_regen_r),          // output[1:0] 
         .fd_din        (dtt_rd_data_r),           // input[24:0] signed 
@@ -566,7 +581,7 @@ module  mclt16x16_bayer3#(
         .shift_h       (x_shft_rot_ram_reg),      // input[6:0] signed 
         .shift_v       (y_shft_rot_ram_reg),      // input[6:0] signed 
         .inv_checker   (inv_checker_rot_ram_reg), // input
-        .inv_rows      (valid_odd_rot_ram_reg),   // input
+        .odd_rows      (valid_odd_rot_ram_reg),   // input
         .in_addr       (dtt_rd_ra_b),             // output[7:0] 
         .in_re         (dtt_rd_regen_b),          // output[1:0] 
         .fd_din        (dtt_rd_data_b),           // input[24:0] signed 
@@ -594,7 +609,7 @@ module  mclt16x16_bayer3#(
         .shift_h       (x_shft_rot_ram_reg),      // input[6:0] signed 
         .shift_v       (y_shft_rot_ram_reg),      // input[6:0] signed 
         .inv_checker   (inv_checker_rot_ram_reg), // input
-        .inv_rows      (valid_odd_rot_ram_reg),   // input
+        .odd_rows      (valid_odd_rot_ram_reg),   // input
         .in_addr       (dtt_rd_ra_g),             // output[7:0] 
         .in_re         (dtt_rd_regen_g),          // output[1:0] 
         .fd_din        (dtt_rd_data_g),           // input[24:0] signed 
