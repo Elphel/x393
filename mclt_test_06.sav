@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.3.78 (w)1999-2016 BSI
-[*] Sat Dec 30 05:11:50 2017
+[*] Sat Dec 30 07:52:57 2017
 [*]
-[dumpfile] "/home/eyesis/nc393/elphel393/fpga-elphel/x393_branch_dct/simulation/mclt_test_06-20171229221040868.fst"
-[dumpfile_mtime] "Sat Dec 30 05:10:48 2017"
-[dumpfile_size] 1605316
+[dumpfile] "/home/eyesis/nc393/elphel393/fpga-elphel/x393_branch_dct/simulation/mclt_test_06-20171230003356794.fst"
+[dumpfile_mtime] "Sat Dec 30 07:33:59 2017"
+[dumpfile_size] 938964
 [savefile] "/home/eyesis/nc393/elphel393/fpga-elphel/x393_branch_dct/mclt_test_06.sav"
 [timestart] 0
 [size] 1824 1171
 [pos] 0 0
-*-21.112703 4972000 2935000 2945000 3595000 3575000 3585000 4855000 4865000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-21.184513 5550000 4825000 5405000 6875000 6955000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] mclt_test_06.
 [treeopen] mclt_test_06.mclt16x16_bayer3_i.
 [treeopen] mclt_test_06.mclt16x16_bayer3_i.mclt_baeyer_fold_accum_rgb_i.
@@ -19,23 +19,20 @@
 [treeopen] mclt_test_06.mclt16x16_bayer3_i.phase_rotator_g_i.
 [treeopen] mclt_test_06.mclt16x16_bayer3_i.phase_rotator_r_i.
 [treeopen] mclt_test_06.mclt16x16_bayer3_i.phase_rotator_r_i.phase_rotator0_i.
-[treeopen] mclt_test_06.mclt16x16_bayer_i.
-[treeopen] mclt_test_06.mclt16x16_bayer_i.dtt_iv_8x8_ad_i.
-[treeopen] mclt_test_06.mclt16x16_bayer_i.mclt_baeyer_fold_accum_i.
-[treeopen] mclt_test_06.mclt16x16_bayer_i.mclt_baeyer_fold_accum_i.dsp_fold_cc_i.
-[treeopen] mclt_test_06.mclt16x16_bayer_i.mclt_baeyer_fold_accum_i.dsp_fold_cc_i.DSP48E1_i.
-[treeopen] mclt_test_06.mclt16x16_bayer_i.mclt_baeyer_fold_accum_i.dsp_fold_cs_i.
-[treeopen] mclt_test_06.mclt16x16_bayer_i.mclt_bayer_fold_i.
-[treeopen] mclt_test_06.mclt16x16_bayer_i.mclt_bayer_fold_i.mclt_wnd_i.
-[treeopen] mclt_test_06.mclt16x16_bayer_i.phase_rotator0_i.
-[treeopen] mclt_test_06.mclt16x16_bayer_i.phase_rotator0_i.dsp_1_i.
-[treeopen] mclt_test_06.mclt16x16_bayer_i.phase_rotator1_i.
-[sst_width] 204
-[signals_width] 284
+[sst_width] 366
+[signals_width] 316
 [sst_expanded] 1
 [sst_vpaned_height] 343
+@22
+mclt_test_06.PAGE
+@c00200
+-mclt_test_06.in_cntr
+@1401200
+-group_end
 @28
 mclt_test_06.CLK
+@29
+mclt_test_06.page3[1:0]
 @420
 mclt_test_06.n1
 mclt_test_06.p1
@@ -98,7 +95,10 @@ mclt_test_06.jav_pix_in_now_d[15:0]
 mclt_test_06.diff1
 @28
 mclt_test_06.START
+mclt_test_06.start3
+mclt_test_06.pre_busy3
 @22
+mclt_test_06.mclt16x16_bayer3_i.in_cntr[7:0]
 mclt_test_06.pix_page_d[2:0]
 @200
 -
@@ -180,8 +180,6 @@ mclt_test_06.mclt16x16_bayer3_i.dtt_r_data[24:0]
 @200
 -
 @8022
-mclt_test_06.dtt_rd_ra_r[6:0]
-mclt_test_06.dtt_rd_ra_b[6:0]
 mclt_test_06.dtt_rd_ra_g[7:0]
 @22
 mclt_test_06.dtt_rd_data_r[24:0]
@@ -230,74 +228,164 @@ mclt_test_06.cntr7b[7:0]
 mclt_test_06.n7g
 @22
 mclt_test_06.cntr7g[7:0]
-@200
--
 @800200
--pre_rot_buffers
+-mclt16x16
 @28
-mclt_test_06.mclt16x16_bayer3_i.clk
+mclt_test_06.LATE
+mclt_test_06.mclt16x16_bayer3_i.start
+mclt_test_06.mclt16x16_bayer3_i.page[1:0]
+mclt_test_06.mclt16x16_bayer3_i.run_r
+mclt_test_06.mclt16x16_bayer3_i.pre_busy
+mclt_test_06.mclt16x16_bayer3_i.pre_busy_r
+@c00022
+mclt_test_06.mclt16x16_bayer3_i.phases[6:0]
+@28
+(0)mclt_test_06.mclt16x16_bayer3_i.phases[6:0]
+(1)mclt_test_06.mclt16x16_bayer3_i.phases[6:0]
+(2)mclt_test_06.mclt16x16_bayer3_i.phases[6:0]
+(3)mclt_test_06.mclt16x16_bayer3_i.phases[6:0]
+(4)mclt_test_06.mclt16x16_bayer3_i.phases[6:0]
+(5)mclt_test_06.mclt16x16_bayer3_i.phases[6:0]
+(6)mclt_test_06.mclt16x16_bayer3_i.phases[6:0]
+mclt_test_06.mclt16x16_bayer3_i.pre_last_in
+@1401200
+-group_end
+@28
+mclt_test_06.mclt16x16_bayer3_i.pre_last_in
+mclt_test_06.mclt16x16_bayer3_i.pre_last_in_w
+@c00028
+mclt_test_06.mclt16x16_bayer3_i.start_block_r[1:0]
+@28
+(0)mclt_test_06.mclt16x16_bayer3_i.start_block_r[1:0]
+(1)mclt_test_06.mclt16x16_bayer3_i.start_block_r[1:0]
+@1401200
+-group_end
+@c00022
+mclt_test_06.mclt16x16_bayer3_i.in_cntr[7:0]
+@28
+(0)mclt_test_06.mclt16x16_bayer3_i.in_cntr[7:0]
+(1)mclt_test_06.mclt16x16_bayer3_i.in_cntr[7:0]
+(2)mclt_test_06.mclt16x16_bayer3_i.in_cntr[7:0]
+(3)mclt_test_06.mclt16x16_bayer3_i.in_cntr[7:0]
+(4)mclt_test_06.mclt16x16_bayer3_i.in_cntr[7:0]
+(5)mclt_test_06.mclt16x16_bayer3_i.in_cntr[7:0]
+(6)mclt_test_06.mclt16x16_bayer3_i.in_cntr[7:0]
+(7)mclt_test_06.mclt16x16_bayer3_i.in_cntr[7:0]
+@1401200
+-group_end
 @22
-mclt_test_06.mclt16x16_bayer3_i.dtt_out_ram_wa_rb[8:0]
-mclt_test_06.mclt16x16_bayer3_i.dtt_rd_ra_r[6:0]
-mclt_test_06.mclt16x16_bayer3_i.dtt_rd_ra_b[6:0]
-mclt_test_06.mclt16x16_bayer3_i.dtt_out_ram_wa_g[8:0]
-mclt_test_06.mclt16x16_bayer3_i.dtt_rd_ra_g[7:0]
-mclt_test_06.mclt16x16_bayer3_i.dtt_out_we_r
-mclt_test_06.mclt16x16_bayer3_i.dtt_out_we_b
-@8022
-mclt_test_06.mclt16x16_bayer3_i.dtt_out_ram_wa_rb[8:0]
-@22
-mclt_test_06.mclt16x16_bayer3_i.dtt_out_we_g
-@8022
-mclt_test_06.mclt16x16_bayer3_i.dtt_out_ram_wa_g[8:0]
-mclt_test_06.mclt16x16_bayer3_i.dbg_prerot_bufwr_r[8:0]
-mclt_test_06.mclt16x16_bayer3_i.dbg_prerot_bufwr_b[8:0]
-mclt_test_06.mclt16x16_bayer3_i.dbg_prerot_bufwr_g[8:0]
-@20000
--
--
-@8022
-mclt_test_06.mclt16x16_bayer3_i.dtt_rd_ra_r[6:0]
-mclt_test_06.mclt16x16_bayer3_i.dtt_rd_ra_b[6:0]
-mclt_test_06.mclt16x16_bayer3_i.dtt_rd_ra_g[7:0]
-@20000
--
--
-@8022
-mclt_test_06.mclt16x16_bayer3_i.dbg_prerot_buf_r[8:0]
-@20000
--
--
-@8022
-mclt_test_06.mclt16x16_bayer3_i.dbg_prerot_buf_b[8:0]
-@20000
--
--
-@8022
-mclt_test_06.mclt16x16_bayer3_i.dbg_prerot_buf_g[8:0]
-@20000
--
--
+mclt_test_06.mclt16x16_bayer3_i.dead_cntr[3:0]
 @200
 -
 @1000200
--pre_rot_buffers
-@c00201
--rotators
+-mclt16x16
 @c00200
+-dtt_iv_8x8_ad
+@28
+mclt_test_06.mclt16x16_bayer3_i.dtt_iv_8x8_ad_i.start
+@22
+mclt_test_06.mclt16x16_bayer3_i.dtt_iv_8x8_ad_i.transpose_di[24:0]
+mclt_test_06.mclt16x16_bayer3_i.dtt_iv_8x8_ad_i.xin[24:0]
+@200
+-
+@1401200
+-dtt_iv_8x8_ad
+@800200
+-pre_rot_buffers
+@c08022
+mclt_test_06.mclt16x16_bayer3_i.dtt_out_ram_wa_rb[8:0]
+@28
+(0)mclt_test_06.mclt16x16_bayer3_i.dtt_out_ram_wa_rb[8:0]
+(1)mclt_test_06.mclt16x16_bayer3_i.dtt_out_ram_wa_rb[8:0]
+(2)mclt_test_06.mclt16x16_bayer3_i.dtt_out_ram_wa_rb[8:0]
+(3)mclt_test_06.mclt16x16_bayer3_i.dtt_out_ram_wa_rb[8:0]
+(4)mclt_test_06.mclt16x16_bayer3_i.dtt_out_ram_wa_rb[8:0]
+(5)mclt_test_06.mclt16x16_bayer3_i.dtt_out_ram_wa_rb[8:0]
+(6)mclt_test_06.mclt16x16_bayer3_i.dtt_out_ram_wa_rb[8:0]
+(7)mclt_test_06.mclt16x16_bayer3_i.dtt_out_ram_wa_rb[8:0]
+(8)mclt_test_06.mclt16x16_bayer3_i.dtt_out_ram_wa_rb[8:0]
+@1409200
+-group_end
+@20000
+-
+-
+-
+@c08022
+mclt_test_06.mclt16x16_bayer3_i.dtt_rd_ra_r[7:0]
+@28
+(0)mclt_test_06.mclt16x16_bayer3_i.dtt_rd_ra_r[7:0]
+(1)mclt_test_06.mclt16x16_bayer3_i.dtt_rd_ra_r[7:0]
+(2)mclt_test_06.mclt16x16_bayer3_i.dtt_rd_ra_r[7:0]
+(3)mclt_test_06.mclt16x16_bayer3_i.dtt_rd_ra_r[7:0]
+(4)mclt_test_06.mclt16x16_bayer3_i.dtt_rd_ra_r[7:0]
+(5)mclt_test_06.mclt16x16_bayer3_i.dtt_rd_ra_r[7:0]
+(6)mclt_test_06.mclt16x16_bayer3_i.dtt_rd_ra_r[7:0]
+(7)mclt_test_06.mclt16x16_bayer3_i.dtt_rd_ra_r[7:0]
+@1409200
+-group_end
+@20000
+-
+-
+-
+@8022
+mclt_test_06.mclt16x16_bayer3_i.dtt_out_ram_wa_g[8:0]
+@20000
+-
+-
+-
+@28
+mclt_test_06.mclt16x16_bayer3_i.clk
+@22
+mclt_test_06.mclt16x16_bayer3_i.dtt_out_ram_cntr[5:0]
+@c00022
+mclt_test_06.mclt16x16_bayer3_i.dtt_out_ram_wa_rb[8:0]
+@28
+(0)mclt_test_06.mclt16x16_bayer3_i.dtt_out_ram_wa_rb[8:0]
+(1)mclt_test_06.mclt16x16_bayer3_i.dtt_out_ram_wa_rb[8:0]
+(2)mclt_test_06.mclt16x16_bayer3_i.dtt_out_ram_wa_rb[8:0]
+(3)mclt_test_06.mclt16x16_bayer3_i.dtt_out_ram_wa_rb[8:0]
+(4)mclt_test_06.mclt16x16_bayer3_i.dtt_out_ram_wa_rb[8:0]
+(5)mclt_test_06.mclt16x16_bayer3_i.dtt_out_ram_wa_rb[8:0]
+(6)mclt_test_06.mclt16x16_bayer3_i.dtt_out_ram_wa_rb[8:0]
+(7)mclt_test_06.mclt16x16_bayer3_i.dtt_out_ram_wa_rb[8:0]
+(8)mclt_test_06.mclt16x16_bayer3_i.dtt_out_ram_wa_rb[8:0]
+@1401200
+-group_end
+@c00022
+mclt_test_06.mclt16x16_bayer3_i.dtt_rd_ra_r[7:0]
+@28
+(0)mclt_test_06.mclt16x16_bayer3_i.dtt_rd_ra_r[7:0]
+(1)mclt_test_06.mclt16x16_bayer3_i.dtt_rd_ra_r[7:0]
+(2)mclt_test_06.mclt16x16_bayer3_i.dtt_rd_ra_r[7:0]
+(3)mclt_test_06.mclt16x16_bayer3_i.dtt_rd_ra_r[7:0]
+(4)mclt_test_06.mclt16x16_bayer3_i.dtt_rd_ra_r[7:0]
+(5)mclt_test_06.mclt16x16_bayer3_i.dtt_rd_ra_r[7:0]
+(6)mclt_test_06.mclt16x16_bayer3_i.dtt_rd_ra_r[7:0]
+(7)mclt_test_06.mclt16x16_bayer3_i.dtt_rd_ra_r[7:0]
+@1401200
+-group_end
+@22
+mclt_test_06.mclt16x16_bayer3_i.dtt_rd_ra_b[7:0]
+@200
+-
+@28
+mclt_test_06.mclt16x16_bayer3_i.dtt_out_we_r
+mclt_test_06.mclt16x16_bayer3_i.dtt_out_we_b
+mclt_test_06.mclt16x16_bayer3_i.dtt_out_we_g
+@22
+mclt_test_06.mclt16x16_bayer3_i.dtt_out_wd[24:0]
+mclt_test_06.mclt16x16_bayer3_i.dtt_out_ram_wa_g[8:0]
+mclt_test_06.mclt16x16_bayer3_i.dtt_rd_ra_g[7:0]
+mclt_test_06.dtt_rd_data_g[24:0]
+@1000200
+-pre_rot_buffers
+@c00200
+-rotators
 -rotators_top
 @28
 mclt_test_06.mclt16x16_bayer3_i.dtt_rd_regen_r[1:0]
-@c08022
-mclt_test_06.mclt16x16_bayer3_i.dtt_rd_ra_r[6:0]
-@28
-(0)mclt_test_06.mclt16x16_bayer3_i.dtt_rd_ra_r[6:0]
-(1)mclt_test_06.mclt16x16_bayer3_i.dtt_rd_ra_r[6:0]
-(2)mclt_test_06.mclt16x16_bayer3_i.dtt_rd_ra_r[6:0]
-(3)mclt_test_06.mclt16x16_bayer3_i.dtt_rd_ra_r[6:0]
-(4)mclt_test_06.mclt16x16_bayer3_i.dtt_rd_ra_r[6:0]
-(5)mclt_test_06.mclt16x16_bayer3_i.dtt_rd_ra_r[6:0]
-(6)mclt_test_06.mclt16x16_bayer3_i.dtt_rd_ra_r[6:0]
+@c00200
+-mclt_test_06.mclt16x16_bayer3_i.dtt_rd_ra_r
 @1401200
 -group_end
 @22
@@ -312,9 +400,6 @@ mclt_test_06.mclt16x16_bayer3_i.dtt_start_blue
 mclt_test_06.mclt16x16_bayer3_i.dtt_start_blue_fill
 mclt_test_06.mclt16x16_bayer3_i.dtt_start_green
 mclt_test_06.mclt16x16_bayer3_i.dtt_start_green_fill
-mclt_test_06.mclt16x16_bayer3_i.ram_wpage_r
-mclt_test_06.mclt16x16_bayer3_i.ram_wpage_b
-mclt_test_06.mclt16x16_bayer3_i.ram_wpage_g
 @1401200
 -rotators_top
 @800200
@@ -327,12 +412,9 @@ mclt_test_06.mclt16x16_bayer3_i.phase_rotator_r_i.odd_rows
 [color] 6
 mclt_test_06.mclt16x16_bayer3_i.phase_rotator_r_i.inv[2:0]
 @28
-mclt_test_06.mclt16x16_bayer3_i.phase_rotator_r_i.wpage
-mclt_test_06.mclt16x16_bayer3_i.phase_rotator_r_i.wpage_r
 (1)mclt_test_06.mclt16x16_bayer3_i.phase_rotator_r_i.dtt_start_out[1:0]
 @22
 mclt_test_06.mclt16x16_bayer3_i.phase_rotator_r_i.dtt_rd_cntr_pre[8:0]
-mclt_test_06.mclt16x16_bayer3_i.phase_rotator_r_i.in_addr[6:0]
 @800200
 -rotator
 @28
@@ -414,8 +496,6 @@ mclt_test_06.mclt16x16_bayer3_i.phase_rotator_b_i.odd_rows
 [color] 6
 mclt_test_06.mclt16x16_bayer3_i.phase_rotator_b_i.inv[2:0]
 @28
-mclt_test_06.mclt16x16_bayer3_i.phase_rotator_b_i.wpage
-mclt_test_06.mclt16x16_bayer3_i.phase_rotator_b_i.wpage_r
 (1)mclt_test_06.mclt16x16_bayer3_i.phase_rotator_b_i.dtt_start_out[1:0]
 @22
 mclt_test_06.mclt16x16_bayer3_i.phase_rotator_b_i.dtt_rd_cntr_pre[8:0]
@@ -473,7 +553,6 @@ mclt_test_06.mclt16x16_bayer3_i.phase_rotator_g_i.phase_rotator0_i.start
 -rotator
 @1401200
 -rotator_green
-@1401201
 -rotators
 [pattern_trace] 1
 [pattern_trace] 0

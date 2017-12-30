@@ -78,6 +78,7 @@ module  mclt_test_06 ();
     parameter DEAD_CYCLES =     14;  // start next block immedaitely, or with longer pause
 //    parameter OUTS_AT_ONCE =     0;  // 0: outputs with lowest latency, 1: all at once (with green)
     parameter OUTS_AT_ONCE =     1;  // 0: outputs with lowest latency, 1: all at once (with green)
+    parameter TILE_PAGE_BITS =   2;  // 1 or 2  only: number of bits in tile counter (>=2 for simultaneous rotated readout, limited by red)
     
     reg              RST = 1'b1;
     reg              CLK = 1'b0;
@@ -257,15 +258,19 @@ module  mclt_test_06 ();
     end
 
     reg       START;
-    reg [8:0] in_cntr;
+    
+    reg       PRE_BUSY;
+    
+    reg [7:0] in_cntr;
     reg       in_run;
-    wire      pre_last_count = (in_cntr == 'h17e);
+    wire      pre_last_count = (in_cntr == 'hfe);
     reg       last_count_r;
-    wire      pre_last_128 = (in_cntr[6:0] == 'h7e);
+//    wire      pre_last_128 = (in_cntr[6:0] == 'h7e);
 //    reg       last_128_r;
 //    wire      start = START | (last_128_r  && ! in_cntr[8]);
-    reg         PAGE;   // full page, 192 clocks
-    reg   [2:0] SUB_PAGE; // single color page
+//    reg       PAGE;   // full page, 192 clocks
+    integer       PAGE;   // full page, 192 clocks
+//    reg   [2:0] SUB_PAGE; // single color page
 //    reg         PIX_PAGE;
 //    wire  [9:0] PIX_ADDR10 = {PIX_PAGE,PIX_ADDR9};  // SuppressThisWarning VEditor debug output
           
@@ -281,13 +286,17 @@ module  mclt_test_06 ();
         else         in_cntr <= in_cntr + 1;
         
         if      (RST)            PAGE <= 0;
-        else if (pre_last_count) PAGE <= PAGE + 1;
+//        else if (pre_last_count) PAGE <= PAGE + 1;
+        else if (in_cntr == 'hf0) PAGE <= PAGE + 1;
         
-        if      (RST)            SUB_PAGE <= 0;
-        else if (pre_last_128)   SUB_PAGE <= SUB_PAGE + 1;
+//        if      (RST)            SUB_PAGE <= 0;
+//        else if (pre_last_128)   SUB_PAGE <= SUB_PAGE + 1;
         
 //        if (PIX_COPY_PAGE) PIX_PAGE <= PAGE;
         
+        if      (RST)             PRE_BUSY <= 0;
+        else if (START)           PRE_BUSY <= 1;
+        else if (in_cntr == 'hf0) PRE_BUSY <= 0;
         
         
         
@@ -306,15 +315,19 @@ module  mclt_test_06 ();
         @(posedge CLK)
         #1 START = 0;
         for (n = 0; n < 1; n = n+1) begin
-            if (n >= 0) LATE = 1;
-            while (!in_cntr[8]) begin
+            if (n >= 1) LATE = 1;
+//            if (n >= 0) LATE = 1;
+//            while (!in_cntr[8]) begin
+            while (!in_cntr[7]) begin
                 @(posedge CLK);
                 #1;
             end
-            
+//PRE_BUSY            
 //            while (pre_busy || LATE) begin
-            while (pre_busy3 || LATE) begin
-                if (!pre_busy3) LATE = 0;
+///            while (pre_busy3 || LATE) begin
+///                if (!pre_busy3) LATE = 0;
+            while (PRE_BUSY || LATE) begin
+                if (!PRE_BUSY) LATE = 0;
                 @(posedge CLK);
                 #1;
             end
@@ -472,8 +485,8 @@ module  mclt_test_06 ();
 
 
     integer n6, cntr6, diff6r, diff6b, diff6g; // SuppressThisWarning VEditor : assigned in $readmem() system task
-    wire [6:0] dtt_rd_ra_r =    mclt16x16_bayer3_i.dtt_rd_ra_r;
-    wire [6:0] dtt_rd_ra_b =    mclt16x16_bayer3_i.dtt_rd_ra_b;
+    wire [TILE_PAGE_BITS+5:0] dtt_rd_ra_r =    mclt16x16_bayer3_i.dtt_rd_ra_r;
+    wire [TILE_PAGE_BITS+5:0] dtt_rd_ra_b =    mclt16x16_bayer3_i.dtt_rd_ra_b;
     wire [7:0] dtt_rd_ra_g =    mclt16x16_bayer3_i.dtt_rd_ra_g;
     wire [1:0] dtt_rd_regen_r = mclt16x16_bayer3_i.dtt_rd_regen_r;
     wire [1:0] dtt_rd_regen_b = mclt16x16_bayer3_i.dtt_rd_regen_b;
@@ -620,18 +633,19 @@ module  mclt_test_06 ();
 
     wire                        PIX_RE3;  // SuppressThisWarning VEditor : debug only
     wire                  [8:0] PIX_ADDR93;
-    reg                         PIX_PAGE3;
+    reg    [TILE_PAGE_BITS-1:0] PIX_PAGE3;
     wire                  [9:0] PIX_ADDR103 = {PIX_PAGE3,PIX_ADDR93};  // SuppressThisWarning VEditor debug output
     
     wire                        PIX_COPY_PAGE3; // copy page address // SuppressThisWarning VEditor - not yet used
     wire    [PIXEL_WIDTH-1 : 0] PIX_D3;
     reg                         start3;  
-    reg                         page3; // 1/2-nd bayer tile
+    reg  [TILE_PAGE_BITS-1 : 0] page3; // 1/2-nd bayer tile
     reg                         pre_run;
     reg                   [1:0] pre_run_cntr;
     wire                  [2:0] color_page = pre_run_cntr + 3 * page3; // SuppressThisWarning VEditor - VDT bug (used as index)
+    reg                         pending;
     always @ (posedge CLK) begin
-        if (START)                  page3 <= (SUB_PAGE > 2);
+        if (START)                  page3 <= PAGE[TILE_PAGE_BITS-1:0]; // (SUB_PAGE > 2);
         
         if (RST)                    pre_run <= 0;
         else if (START)             pre_run <= 1;
@@ -642,7 +656,11 @@ module  mclt_test_06 ();
         
         if (PIX_COPY_PAGE3) PIX_PAGE3 <= page3;
         
-        start3 <=                    (pre_run_cntr == 2);
+        if (RST)                    pending <= 0;
+        else if (pre_run_cntr == 1) pending <= 1;
+        else if (!pre_busy3)        pending <= 0;
+        
+        start3 <=                   pending && !pre_busy3; //  (pre_run_cntr == 2);
     
     end 
 
@@ -662,7 +680,8 @@ module  mclt_test_06 ();
         .DSP_A_WIDTH     (DSP_A_WIDTH),
         .DSP_P_WIDTH     (DSP_P_WIDTH),
         .DEAD_CYCLES     (DEAD_CYCLES),
-        .OUTS_AT_ONCE    (OUTS_AT_ONCE)
+        .OUTS_AT_ONCE    (OUTS_AT_ONCE),
+        .TILE_PAGE_BITS  (TILE_PAGE_BITS)
     ) mclt16x16_bayer3_i (
         .clk            (CLK),                        // input
         .rst            (RST),                        // input

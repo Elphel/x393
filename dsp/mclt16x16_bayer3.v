@@ -54,12 +54,13 @@ module  mclt16x16_bayer3#(
     parameter DSP_A_WIDTH =     25,
     parameter DSP_P_WIDTH =     48,
     parameter DEAD_CYCLES =     14,  // start next block immedaitely, or with longer pause
-    parameter OUTS_AT_ONCE =     1  // 0: outputs with lowest latency, 1: all at once (with green)
+    parameter OUTS_AT_ONCE =     1,  // 0: outputs with lowest latency, 1: all at once (with green)
+    parameter TILE_PAGE_BITS =   2   // 1 or 2  only: number of bits in tile counter (>=2 for simultaneous rotated readout, limited by red)
 )(
     input                             clk,          //!< system clock, posedge
     input                             rst,          //!< sync reset
     input                             start,        //!< start convertion of the next 256 samples
-    input                             page,         //!< parameter page number (valid @ start)
+    input        [TILE_PAGE_BITS-1:0] page,         //!< parameter page number (valid @ start)
     input                       [1:0] tile_size,    //!< o: 16x16, 1 - 18x18, 2 - 20x20, 3 - 22x22 (max for 9-bit addr)
     input                       [1:0] color_wa,     //!< color index to apply parameters to (0 - R, 1 - B, 2 - G) 
     input                             inv_checker,  //!< 0 - includes main diagonal (symmetrical DTT), 1 - antisymmetrical DTT
@@ -215,7 +216,7 @@ module  mclt16x16_bayer3#(
         
     wire signed    [WND_WIDTH-1:0] window_w;
     wire                           var_pre2_first; //     
-    wire                           pre_last_in_w;
+    wire                           pre_last_in_w = run_r && (in_cntr[7:0] == 'hfe);
     wire                           green_late;
     wire signed [DTT_IN_WIDTH-1:0] data_dtt_in; // multiplexed DTT input data
     reg                            dtt_we;
@@ -223,7 +224,8 @@ module  mclt16x16_bayer3#(
     reg                      [7:0] dtt_in_precntr; //
     reg                      [8:0] dtt_in_wa;  
     
-    assign pre_busy =     pre_busy_r || start || (!pre_last_in_w && phases[0]);
+//    assign pre_busy =     pre_busy_r || start || (!pre_last_in_w && phases[0]);
+    assign pre_busy =     pre_busy_r || start || (!pre_last_in_w && run_r);
     assign pre_last_in = pre_last_in_w;
   
     mclt_bayer_fold_rgb #(
@@ -251,7 +253,7 @@ module  mclt16x16_bayer3#(
         .phases        (phases),      // output[7:0]
 // make it always 0 or 1 for R/B, then if use only not-in-series, use D -input for twice value         
         .var_pre2_first(var_pre2_first), // output
-        .pre_last_in   (pre_last_in_w),// output reg
+        .pre_last_in   (), // pre_last_in_w),// output reg
         .green_late    (green_late)    // output reg
     );
     
@@ -326,16 +328,19 @@ module  mclt16x16_bayer3#(
     wire                        dtt_start_red =   (dtt_start16 & dtt_r_cntr[7:6] == 1); // after 
     wire                        dtt_start_blue =  (dtt_start16 & dtt_r_cntr[7:6] == 2); // after 
     wire                        dtt_start_green = (dtt_start16 & dtt_r_cntr[7:6] == 3); // after 
-    reg                   [4:0] dtt_out_ram_cntr;
-    reg                   [4:0] dtt_out_ram_wah;
+    reg  [TILE_PAGE_BITS + 3:0] dtt_out_ram_cntr;
+    reg  [TILE_PAGE_BITS + 3:0] dtt_out_ram_wah;
     wire                        dtt_start_fill; // some data available in DTT output buffer, OK to start consecutive readout
     reg                         dtt_start_red_fill;
     reg                         dtt_start_blue_fill;
     reg                         dtt_start_green_fill;
     
-    wire                  [8:0] dtt_out_ram_wa = {dtt_out_ram_wah,dtt_out_wa16};
+    wire [TILE_PAGE_BITS + 7:0] dtt_out_ram_wa = {dtt_out_ram_wah,dtt_out_wa16};
     
-    wire                  [8:0] dtt_out_ram_wa_rb =   {2'b0,dtt_out_ram_wa[8],dtt_out_ram_wa[5:0]};
+    wire                  [8:0] dtt_out_ram_wa_rb =
+          {{3-TILE_PAGE_BITS{1'b0}},dtt_out_ram_wa[8 +:TILE_PAGE_BITS],dtt_out_ram_wa[5:0]};
+          
+          // Green does not need >2 pages in the pre-rotattion buffer 
     wire                  [8:0] dtt_out_ram_wa_g =    {1'b0,dtt_out_ram_wa[8],dtt_out_ram_wa[6:0]};
     
     wire                        dtt_out_we_r = dtt_out_we & ~dtt_out_ram_wa[7] & ~dtt_out_ram_wa[6];
@@ -359,12 +364,12 @@ module  mclt16x16_bayer3#(
     wire                        dtt_blue_quad_out =  dtt_out_ram_cntr[3:2] == 1;
     wire                        dtt_green_quad_out = dtt_out_ram_cntr[3:2] == 2;
     
-    wire                        ram_wpage_r = dtt_out_ram_cntr[4]; // dtt_out_ram_wah[4];
-    reg                         ram_wpage_b;
-    reg                         ram_wpage_g;
+    wire   [TILE_PAGE_BITS-1:0] ram_wpage_r = dtt_out_ram_cntr[4+:TILE_PAGE_BITS]; // dtt_out_ram_wah[4];
+    reg    [TILE_PAGE_BITS-1:0] ram_wpage_b;
+    reg    [TILE_PAGE_BITS-1:0] ram_wpage_g;
     
-    wire                  [6:0] dtt_rd_ra_r;
-    wire                  [6:0] dtt_rd_ra_b;
+    wire   [TILE_PAGE_BITS+5:0] dtt_rd_ra_r; // 6 or 7
+    wire   [TILE_PAGE_BITS+5:0] dtt_rd_ra_b;
     wire                  [7:0] dtt_rd_ra_g;
     
     
@@ -447,7 +452,8 @@ module  mclt16x16_bayer3#(
         .LOG2WIDTH_RD(5)
     ) ram18p_var_w_var_r_dtt_out_r_i (
         .rclk     (clk),                // input
-        .raddr    ({2'b0,dtt_rd_ra_r}), // input[8:0] 
+//        .raddr    ({2'b0,dtt_rd_ra_r}), // input[8:0] 
+        .raddr    ({{3-TILE_PAGE_BITS{1'b0}},dtt_rd_ra_r}), // input[8:0] 
         .ren      (dtt_rd_regen_r[0]),  // input
         .regen    (dtt_rd_regen_r[1]),  // input
         .data_out (dtt_rd_data_r_w),    // output[35:0] 
@@ -464,7 +470,7 @@ module  mclt16x16_bayer3#(
         .LOG2WIDTH_RD(5)
     ) ram18p_var_w_var_r_dtt_out_b_i (
         .rclk     (clk),                // input
-        .raddr    ({2'b0,dtt_rd_ra_b}), // input[8:0] 
+        .raddr    ({{3-TILE_PAGE_BITS{1'b0}},dtt_rd_ra_b}), // input[8:0] 
         .ren      (dtt_rd_regen_b[0]),  // input
         .regen    (dtt_rd_regen_b[1]),  // input
         .data_out (dtt_rd_data_b_w),    // output[35:0] 
@@ -500,7 +506,8 @@ module  mclt16x16_bayer3#(
         .DSP_A_WIDTH   (DSP_A_WIDTH),
         .DSP_P_WIDTH   (DSP_P_WIDTH),
         .GREEN         (0),
-        .START_DELAY   (DTT_OUT_DELAY_R)
+        .START_DELAY   (DTT_OUT_DELAY_R),
+        .TILE_PAGE_BITS(TILE_PAGE_BITS)
     ) phase_rotator_r_i (
         .clk           (clk),                     // input
         .rst           (rst),                     // input
@@ -528,7 +535,8 @@ module  mclt16x16_bayer3#(
         .DSP_A_WIDTH   (DSP_A_WIDTH),
         .DSP_P_WIDTH   (DSP_P_WIDTH),
         .GREEN         (0),
-        .START_DELAY   (DTT_OUT_DELAY_B)
+        .START_DELAY   (DTT_OUT_DELAY_B),
+        .TILE_PAGE_BITS(TILE_PAGE_BITS)
     ) phase_rotator_b_i (
         .clk           (clk),                     // input
         .rst           (rst),                     // input
@@ -554,14 +562,14 @@ module  mclt16x16_bayer3#(
         .DSP_B_WIDTH   (DSP_B_WIDTH),
         .DSP_A_WIDTH   (DSP_A_WIDTH),
         .DSP_P_WIDTH   (DSP_P_WIDTH),
-//        .COEFF_WIDTH(COEFF_WIDTH),
         .GREEN         (1),
-        .START_DELAY   (DTT_OUT_DELAY_G)
+        .START_DELAY   (DTT_OUT_DELAY_G),
+        .TILE_PAGE_BITS(1)
     ) phase_rotator_g_i (
         .clk           (clk),                     // input
         .rst           (rst),                     // input
         .start         (dtt_start_green_fill),    // input
-        .wpage         (ram_wpage_g),             // input
+        .wpage         (ram_wpage_g[0]),          // input
         .shift_h       (x_shft_rot_ram_reg),      // input[6:0] signed 
         .shift_v       (y_shft_rot_ram_reg),      // input[6:0] signed 
         .inv_checker   (inv_checker_rot_ram_reg), // input

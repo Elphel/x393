@@ -46,18 +46,20 @@ module  phase_rotator_rgb#(
     parameter DSP_P_WIDTH =     48,
     parameter COEFF_WIDTH =     17, // = DSP_B_WIDTH - 1 or positive numbers,
     parameter GREEN       =      1, // 0: use 1 DTT block (R,B), 1: use two DTT blocks (G) 
-    parameter START_DELAY =     128 // delay start of input memory readout 
+    parameter START_DELAY =    128, // delay start of input memory readout
+    parameter TILE_PAGE_BITS =   1   // 1 or 2  only: number of bits in tile counter (>=2 for simultaneous rotated readout, limited by red)
 )(
     input                            clk,           //!< system clock, posedge
     input                            rst,           //!< sync reset
     input                            start,         //!< start of delay
-    input                            wpage,         //!< page (64 for R,B, 128 for G) last being written (may need delay?)
+    input       [TILE_PAGE_BITS-1:0] wpage,         //!< page (64 for R,B, 128 for G) last being written (may need delay?)
     input signed   [SHIFT_WIDTH-1:0] shift_h,       //!< subpixel shift horizontal
     input signed   [SHIFT_WIDTH-1:0] shift_v,       //!< subpixel shift vertical
     input                            inv_checker,   //!< negate 2-nd and fourth samples (for handling inverted checkerboard)
     input                            odd_rows,      //!< when not GEEN (R or B) 0: even (first) rows non-zero, 1: odd (second)  
     // input data CC,CS,SC,SS in column scan order (matching DTT)
-    output             [GREEN + 6:0] in_addr,       //!< input buffer address
+//    output             [GREEN + 6:0] in_addr,       //!< input buffer address
+    output [GREEN + TILE_PAGE_BITS + 5:0] in_addr,       //!< input buffer address
     output                     [1:0] in_re,         //!< input buffer re/regen      
     input signed      [FD_WIDTH-1:0] fd_din,        //!< frequency domain data in, LATENCY=3 from start
     output signed     [FD_WIDTH-1:0] fd_out,        //!< frequency domain data in
@@ -69,7 +71,7 @@ module  phase_rotator_rgb#(
 
     reg signed   [SHIFT_WIDTH-1:0] shift_h_r;
     reg signed   [SHIFT_WIDTH-1:0] shift_v_r;
-    reg                            wpage_r;
+    reg       [TILE_PAGE_BITS-1:0] wpage_r;
     reg                      [2:0] inv;
     reg                      [1:0] dtt_start_out;
     reg                      [7:0] dtt_dly_cntr;
@@ -77,7 +79,7 @@ module  phase_rotator_rgb#(
     reg                      [8:0] dtt_rd_cntr_pre; // 1 ahead of the former counter for dtt readout to rotator
     reg                      [7:0] in_addr_r;       //!< input buffer address
     reg                      [8:0] out_addr_r;
-    assign  in_addr = in_addr_r[GREEN + 6:0];
+    assign  in_addr = in_addr_r[GREEN + TILE_PAGE_BITS + 5:0];
     assign  in_re = dtt_rd_regen_dv[2:1];
 //    assign  fd_wa = {out_addr_r[8], out_addr_r[0],out_addr_r[1],out_addr_r[4:2],out_addr_r[7:5]};
     assign  fd_wa = {out_addr_r[8], out_addr_r[1],out_addr_r[0],out_addr_r[4:2],out_addr_r[7:5]};
@@ -119,7 +121,7 @@ module  phase_rotator_rgb#(
                                  (dtt_rd_cntr_pre[0] ? (~dtt_rd_cntr_pre[7:2]) : {~dtt_rd_cntr_pre[7:5],dtt_rd_cntr_pre[4:2]}):
                                  (dtt_rd_cntr_pre[0] ? {dtt_rd_cntr_pre[7:5],~dtt_rd_cntr_pre[4:2]} : dtt_rd_cntr_pre[7:2])};
 
-        if (pre_first_out) out_addr_r <= {wpage_r,8'b0};
+        if (pre_first_out) out_addr_r <= {wpage_r[0],8'b0};
         else if (fd_dv)    out_addr_r <= out_addr_r + 1;
         
         pre_last_out <=  out_addr_r[7:0] == 8'hfe;
