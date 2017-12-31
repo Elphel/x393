@@ -1,42 +1,65 @@
 [*]
 [*] GTKWave Analyzer v3.3.78 (w)1999-2016 BSI
-[*] Sat Dec 30 07:52:57 2017
+[*] Sun Dec 31 05:57:37 2017
 [*]
-[dumpfile] "/home/eyesis/nc393/elphel393/fpga-elphel/x393_branch_dct/simulation/mclt_test_06-20171230003356794.fst"
-[dumpfile_mtime] "Sat Dec 30 07:33:59 2017"
-[dumpfile_size] 938964
+[dumpfile] "/home/eyesis/nc393/elphel393/fpga-elphel/x393_branch_dct/simulation/mclt_test_06-20171230225640461.fst"
+[dumpfile_mtime] "Sun Dec 31 05:56:44 2017"
+[dumpfile_size] 1539177
 [savefile] "/home/eyesis/nc393/elphel393/fpga-elphel/x393_branch_dct/mclt_test_06.sav"
 [timestart] 0
 [size] 1824 1171
 [pos] 0 0
-*-21.184513 5550000 4825000 5405000 6875000 6955000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-21.247999 5735000 4825000 5405000 6875000 6955000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] mclt_test_06.
 [treeopen] mclt_test_06.mclt16x16_bayer3_i.
-[treeopen] mclt_test_06.mclt16x16_bayer3_i.mclt_baeyer_fold_accum_rgb_i.
 [treeopen] mclt_test_06.mclt16x16_bayer3_i.mclt_baeyer_fold_accum_rgb_i.dsp_fold_cs_i.
-[treeopen] mclt_test_06.mclt16x16_bayer3_i.mclt_bayer_fold_rgb_i.
 [treeopen] mclt_test_06.mclt16x16_bayer3_i.phase_rotator_b_i.
 [treeopen] mclt_test_06.mclt16x16_bayer3_i.phase_rotator_g_i.
-[treeopen] mclt_test_06.mclt16x16_bayer3_i.phase_rotator_r_i.
 [treeopen] mclt_test_06.mclt16x16_bayer3_i.phase_rotator_r_i.phase_rotator0_i.
-[sst_width] 366
-[signals_width] 316
+[sst_width] 283
+[signals_width] 321
 [sst_expanded] 1
 [sst_vpaned_height] 343
 @22
 mclt_test_06.PAGE
-@c00200
--mclt_test_06.in_cntr
-@1401200
--group_end
 @28
 mclt_test_06.CLK
-@29
-mclt_test_06.page3[1:0]
+mclt_test_06.START
+@c00201
+-top_details
+@28
+mclt_test_06.LATE
+mclt_test_06.PRE_BUSY
+mclt_test_06.pending
+mclt_test_06.pre_busy3
+mclt_test_06.start3
 @420
-mclt_test_06.n1
-mclt_test_06.p1
-mclt_test_06.cntr1
+mclt_test_06.n
+@28
+mclt_test_06.PIX_COPY_PAGE3
+mclt_test_06.PIX_RE3D
+@c00022
+mclt_test_06.PIX_ADDR103[10:0]
+@28
+(0)mclt_test_06.PIX_ADDR103[10:0]
+(1)mclt_test_06.PIX_ADDR103[10:0]
+(2)mclt_test_06.PIX_ADDR103[10:0]
+(3)mclt_test_06.PIX_ADDR103[10:0]
+(4)mclt_test_06.PIX_ADDR103[10:0]
+(5)mclt_test_06.PIX_ADDR103[10:0]
+(6)mclt_test_06.PIX_ADDR103[10:0]
+(7)mclt_test_06.PIX_ADDR103[10:0]
+(8)mclt_test_06.PIX_ADDR103[10:0]
+(9)mclt_test_06.PIX_ADDR103[10:0]
+(10)mclt_test_06.PIX_ADDR103[10:0]
+@1401200
+-group_end
+@22
+mclt_test_06.PIX_D3[15:0]
+@200
+-
+@1401201
+-top_details
 @c00022
 mclt_test_06.wnd_a_w[7:0]
 @28
@@ -51,8 +74,24 @@ mclt_test_06.wnd_a_w[7:0]
 @1401200
 -group_end
 @22
-mclt_test_06.jav_pix_in_now_a[10:0]
 mclt_test_06.jav_pix_in_now[15:0]
+@c00022
+mclt_test_06.jav_pix_in_now_a[11:0]
+@28
+(0)mclt_test_06.jav_pix_in_now_a[11:0]
+(1)mclt_test_06.jav_pix_in_now_a[11:0]
+(2)mclt_test_06.jav_pix_in_now_a[11:0]
+(3)mclt_test_06.jav_pix_in_now_a[11:0]
+(4)mclt_test_06.jav_pix_in_now_a[11:0]
+(5)mclt_test_06.jav_pix_in_now_a[11:0]
+(6)mclt_test_06.jav_pix_in_now_a[11:0]
+(7)mclt_test_06.jav_pix_in_now_a[11:0]
+(8)mclt_test_06.jav_pix_in_now_a[11:0]
+(9)mclt_test_06.jav_pix_in_now_a[11:0]
+(10)mclt_test_06.jav_pix_in_now_a[11:0]
+(11)mclt_test_06.jav_pix_in_now_a[11:0]
+@1401200
+-group_end
 @c00022
 [color] 3
 mclt_test_06.jav_pix_in_now_d[15:0]
@@ -93,15 +132,43 @@ mclt_test_06.jav_pix_in_now_d[15:0]
 -group_end
 @420
 mclt_test_06.diff1
+@c00200
+-mclt
 @28
-mclt_test_06.START
-mclt_test_06.start3
-mclt_test_06.pre_busy3
+mclt_test_06.mclt16x16_bayer3_i.set_inv_checker
+mclt_test_06.mclt16x16_bayer3_i.set_valid_odd
+mclt_test_06.mclt16x16_bayer3_i.set_top_left
+mclt_test_06.mclt16x16_bayer3_i.set_x_shft
+mclt_test_06.mclt16x16_bayer3_i.set_y_shft
 @22
-mclt_test_06.mclt16x16_bayer3_i.in_cntr[7:0]
-mclt_test_06.pix_page_d[2:0]
+mclt_test_06.mclt16x16_bayer3_i.color_wa[1:0]
+@28
+mclt_test_06.mclt16x16_bayer3_i.inv_checker
+mclt_test_06.mclt16x16_bayer3_i.start
+(1)mclt_test_06.mclt16x16_bayer3_i.copy_regs[1:0]
+(0)mclt_test_06.mclt16x16_bayer3_i.copy_regs[1:0]
+@22
+mclt_test_06.mclt16x16_bayer3_i.regs_wa[1:0]
+@28
+mclt_test_06.mclt16x16_bayer3_i.inv_checker_rf_ram_reg
+mclt_test_06.mclt16x16_bayer3_i.valid_odd_rf_ram_reg
+@22
+mclt_test_06.mclt16x16_bayer3_i.x_shft_rf_ram_reg[6:0]
+mclt_test_06.mclt16x16_bayer3_i.y_shft_rf_ram_reg[6:0]
+@28
+(1)mclt_test_06.mclt16x16_bayer3_i.start_block_r[1:0]
+(0)mclt_test_06.mclt16x16_bayer3_i.in_cntr[7:0]
+(1)mclt_test_06.mclt16x16_bayer3_i.in_cntr[7:0]
+mclt_test_06.mclt16x16_bayer3_i.inv_checker_ram_reg
+mclt_test_06.mclt16x16_bayer3_i.valid_odd_ram_reg
+@22
+mclt_test_06.mclt16x16_bayer3_i.top_left_ram_reg[7:0]
+mclt_test_06.mclt16x16_bayer3_i.x_shft_ram_reg[6:0]
+mclt_test_06.mclt16x16_bayer3_i.y_shft_ram_reg[6:0]
 @200
 -
+@1401200
+-mclt
 @420
 mclt_test_06.n4
 mclt_test_06.p4
@@ -143,8 +210,6 @@ mclt_test_06.cntr4
 @1401200
 -group_end
 @22
-mclt_test_06.page4[2:0]
-mclt_test_06.java_dtt_in_addr[10:0]
 mclt_test_06.data_dtt_in[24:0]
 mclt_test_06.java_data_dtt_in[24:0]
 @8420
@@ -154,6 +219,8 @@ mclt_test_06.diff4
 @420
 mclt_test_06.n5
 mclt_test_06.p5
+@22
+mclt_test_06.page5[3:0]
 @8420
 mclt_test_06.cntr5
 @22
@@ -177,10 +244,58 @@ mclt_test_06.mclt16x16_bayer3_i.dtt_r_cntr[7:0]
 -group_end
 @22
 mclt_test_06.mclt16x16_bayer3_i.dtt_r_data[24:0]
-@200
--
+@c00200
+-tmp
+@28
+mclt_test_06.mclt16x16_bayer3_i.inv_checker_rf_ram_reg
+mclt_test_06.mclt16x16_bayer3_i.inv_checker_ram_reg
+mclt_test_06.mclt16x16_bayer3_i.inv_checker_rot_ram_reg
+@22
+mclt_test_06.mclt16x16_bayer3_i.top_left_rf_ram_reg[7:0]
+mclt_test_06.mclt16x16_bayer3_i.x_shft_rf_ram_reg[6:0]
+mclt_test_06.mclt16x16_bayer3_i.y_shft_rf_ram_reg[6:0]
+mclt_test_06.mclt16x16_bayer3_i.x_shft_rot_ram_reg[6:0]
+mclt_test_06.mclt16x16_bayer3_i.x_shft_ram_reg[6:0]
+mclt_test_06.mclt16x16_bayer3_i.y_shft_ram_reg[6:0]
+mclt_test_06.mclt16x16_bayer3_i.y_shft_rot_ram_reg[6:0]
+mclt_test_06.mclt16x16_bayer3_i.rot_ram_page[3:0]
+mclt_test_06.ROT_RAM_PAGE[3:0]
+@28
+mclt_test_06.dtt_pre_last_out_r
+mclt_test_06.dtt_pre_last_out_g
+@c00022
+mclt_test_06.mclt16x16_bayer3_i.phase_rotator_r_i.dtt_rd_cntr_pre[8:0]
+@28
+(0)mclt_test_06.mclt16x16_bayer3_i.phase_rotator_r_i.dtt_rd_cntr_pre[8:0]
+(1)mclt_test_06.mclt16x16_bayer3_i.phase_rotator_r_i.dtt_rd_cntr_pre[8:0]
+(2)mclt_test_06.mclt16x16_bayer3_i.phase_rotator_r_i.dtt_rd_cntr_pre[8:0]
+(3)mclt_test_06.mclt16x16_bayer3_i.phase_rotator_r_i.dtt_rd_cntr_pre[8:0]
+(4)mclt_test_06.mclt16x16_bayer3_i.phase_rotator_r_i.dtt_rd_cntr_pre[8:0]
+(5)mclt_test_06.mclt16x16_bayer3_i.phase_rotator_r_i.dtt_rd_cntr_pre[8:0]
+(6)mclt_test_06.mclt16x16_bayer3_i.phase_rotator_r_i.dtt_rd_cntr_pre[8:0]
+(7)mclt_test_06.mclt16x16_bayer3_i.phase_rotator_r_i.dtt_rd_cntr_pre[8:0]
+(8)mclt_test_06.mclt16x16_bayer3_i.phase_rotator_r_i.dtt_rd_cntr_pre[8:0]
+@1401200
+-group_end
+@c00022
+mclt_test_06.DTT_OUT_RAM_CNTR[5:0]
+@28
+(0)mclt_test_06.DTT_OUT_RAM_CNTR[5:0]
+(1)mclt_test_06.DTT_OUT_RAM_CNTR[5:0]
+(2)mclt_test_06.DTT_OUT_RAM_CNTR[5:0]
+(3)mclt_test_06.DTT_OUT_RAM_CNTR[5:0]
+(4)mclt_test_06.DTT_OUT_RAM_CNTR[5:0]
+(5)mclt_test_06.DTT_OUT_RAM_CNTR[5:0]
+@1401200
+-group_end
 @8022
 mclt_test_06.dtt_rd_ra_g[7:0]
+@200
+-
+@1401200
+-tmp
+@28
+mclt_test_06.dtt_pre_last_out_g
 @22
 mclt_test_06.dtt_rd_data_r[24:0]
 mclt_test_06.dtt_rd_data_b[24:0]
@@ -228,12 +343,11 @@ mclt_test_06.cntr7b[7:0]
 mclt_test_06.n7g
 @22
 mclt_test_06.cntr7g[7:0]
-@800200
+@c00200
 -mclt16x16
 @28
 mclt_test_06.LATE
 mclt_test_06.mclt16x16_bayer3_i.start
-mclt_test_06.mclt16x16_bayer3_i.page[1:0]
 mclt_test_06.mclt16x16_bayer3_i.run_r
 mclt_test_06.mclt16x16_bayer3_i.pre_busy
 mclt_test_06.mclt16x16_bayer3_i.pre_busy_r
@@ -277,7 +391,7 @@ mclt_test_06.mclt16x16_bayer3_i.in_cntr[7:0]
 mclt_test_06.mclt16x16_bayer3_i.dead_cntr[3:0]
 @200
 -
-@1000200
+@1401200
 -mclt16x16
 @c00200
 -dtt_iv_8x8_ad
@@ -290,8 +404,11 @@ mclt_test_06.mclt16x16_bayer3_i.dtt_iv_8x8_ad_i.xin[24:0]
 -
 @1401200
 -dtt_iv_8x8_ad
-@800200
+@c00200
 -pre_rot_buffers
+@20000
+-
+-
 @c08022
 mclt_test_06.mclt16x16_bayer3_i.dtt_out_ram_wa_rb[8:0]
 @28
@@ -304,24 +421,15 @@ mclt_test_06.mclt16x16_bayer3_i.dtt_out_ram_wa_rb[8:0]
 (6)mclt_test_06.mclt16x16_bayer3_i.dtt_out_ram_wa_rb[8:0]
 (7)mclt_test_06.mclt16x16_bayer3_i.dtt_out_ram_wa_rb[8:0]
 (8)mclt_test_06.mclt16x16_bayer3_i.dtt_out_ram_wa_rb[8:0]
-@1409200
+@1401200
 -group_end
 @20000
 -
 -
 -
-@c08022
-mclt_test_06.mclt16x16_bayer3_i.dtt_rd_ra_r[7:0]
-@28
-(0)mclt_test_06.mclt16x16_bayer3_i.dtt_rd_ra_r[7:0]
-(1)mclt_test_06.mclt16x16_bayer3_i.dtt_rd_ra_r[7:0]
-(2)mclt_test_06.mclt16x16_bayer3_i.dtt_rd_ra_r[7:0]
-(3)mclt_test_06.mclt16x16_bayer3_i.dtt_rd_ra_r[7:0]
-(4)mclt_test_06.mclt16x16_bayer3_i.dtt_rd_ra_r[7:0]
-(5)mclt_test_06.mclt16x16_bayer3_i.dtt_rd_ra_r[7:0]
-(6)mclt_test_06.mclt16x16_bayer3_i.dtt_rd_ra_r[7:0]
-(7)mclt_test_06.mclt16x16_bayer3_i.dtt_rd_ra_r[7:0]
-@1409200
+@c00200
+-mclt_test_06.mclt16x16_bayer3_i.dtt_rd_ra_r
+@1401200
 -group_end
 @20000
 -
@@ -333,10 +441,13 @@ mclt_test_06.mclt16x16_bayer3_i.dtt_out_ram_wa_g[8:0]
 -
 -
 -
+@8022
+mclt_test_06.mclt16x16_bayer3_i.dtt_rd_ra_g[7:0]
+@20000
+-
+-
 @28
 mclt_test_06.mclt16x16_bayer3_i.clk
-@22
-mclt_test_06.mclt16x16_bayer3_i.dtt_out_ram_cntr[5:0]
 @c00022
 mclt_test_06.mclt16x16_bayer3_i.dtt_out_ram_wa_rb[8:0]
 @28
@@ -351,21 +462,10 @@ mclt_test_06.mclt16x16_bayer3_i.dtt_out_ram_wa_rb[8:0]
 (8)mclt_test_06.mclt16x16_bayer3_i.dtt_out_ram_wa_rb[8:0]
 @1401200
 -group_end
-@c00022
-mclt_test_06.mclt16x16_bayer3_i.dtt_rd_ra_r[7:0]
-@28
-(0)mclt_test_06.mclt16x16_bayer3_i.dtt_rd_ra_r[7:0]
-(1)mclt_test_06.mclt16x16_bayer3_i.dtt_rd_ra_r[7:0]
-(2)mclt_test_06.mclt16x16_bayer3_i.dtt_rd_ra_r[7:0]
-(3)mclt_test_06.mclt16x16_bayer3_i.dtt_rd_ra_r[7:0]
-(4)mclt_test_06.mclt16x16_bayer3_i.dtt_rd_ra_r[7:0]
-(5)mclt_test_06.mclt16x16_bayer3_i.dtt_rd_ra_r[7:0]
-(6)mclt_test_06.mclt16x16_bayer3_i.dtt_rd_ra_r[7:0]
-(7)mclt_test_06.mclt16x16_bayer3_i.dtt_rd_ra_r[7:0]
+@c00200
+-mclt_test_06.mclt16x16_bayer3_i.dtt_rd_ra_r
 @1401200
 -group_end
-@22
-mclt_test_06.mclt16x16_bayer3_i.dtt_rd_ra_b[7:0]
 @200
 -
 @28
@@ -377,17 +477,56 @@ mclt_test_06.mclt16x16_bayer3_i.dtt_out_wd[24:0]
 mclt_test_06.mclt16x16_bayer3_i.dtt_out_ram_wa_g[8:0]
 mclt_test_06.mclt16x16_bayer3_i.dtt_rd_ra_g[7:0]
 mclt_test_06.dtt_rd_data_g[24:0]
-@1000200
+@1401200
 -pre_rot_buffers
 @c00200
 -rotators
+@800200
+-top
+@28
+mclt_test_06.mclt16x16_bayer3_i.inv_checker
+mclt_test_06.mclt16x16_bayer3_i.set_inv_checker
+@22
+mclt_test_06.mclt16x16_bayer3_i.in_cntr[7:0]
+@28
+mclt_test_06.mclt16x16_bayer3_i.inv_checker_rf_ram_reg
+mclt_test_06.mclt16x16_bayer3_i.page
+@22
+mclt_test_06.mclt16x16_bayer3_i.regs_wa[1:0]
+@200
+-
+@1000200
+-top
+@800028
+mclt_test_06.mclt16x16_bayer3_i.copy_regs[1:0]
+@28
+(0)mclt_test_06.mclt16x16_bayer3_i.copy_regs[1:0]
+(1)mclt_test_06.mclt16x16_bayer3_i.copy_regs[1:0]
+@1001200
+-group_end
+@c00022
+mclt_test_06.mclt16x16_bayer3_i.rot_ram_page[3:0]
+@28
+(0)mclt_test_06.mclt16x16_bayer3_i.rot_ram_page[3:0]
+(1)mclt_test_06.mclt16x16_bayer3_i.rot_ram_page[3:0]
+(2)mclt_test_06.mclt16x16_bayer3_i.rot_ram_page[3:0]
+(3)mclt_test_06.mclt16x16_bayer3_i.rot_ram_page[3:0]
+@1401200
+-group_end
+@28
+(1)mclt_test_06.mclt16x16_bayer3_i.rot_ram_copy[1:0]
+[color] 3
+mclt_test_06.mclt16x16_bayer3_i.inv_checker_rot_ram_reg
+mclt_test_06.mclt16x16_bayer3_i.valid_odd_rot_ram_reg
+@22
+mclt_test_06.mclt16x16_bayer3_i.y_shft_rot_ram_reg[6:0]
+mclt_test_06.mclt16x16_bayer3_i.x_shft_rot_ram_reg[6:0]
+@200
+-
+@c00200
 -rotators_top
 @28
 mclt_test_06.mclt16x16_bayer3_i.dtt_rd_regen_r[1:0]
-@c00200
--mclt_test_06.mclt16x16_bayer3_i.dtt_rd_ra_r
-@1401200
--group_end
 @22
 mclt_test_06.mclt16x16_bayer3_i.dtt_rd_data_r[24:0]
 @28
@@ -413,9 +552,9 @@ mclt_test_06.mclt16x16_bayer3_i.phase_rotator_r_i.odd_rows
 mclt_test_06.mclt16x16_bayer3_i.phase_rotator_r_i.inv[2:0]
 @28
 (1)mclt_test_06.mclt16x16_bayer3_i.phase_rotator_r_i.dtt_start_out[1:0]
-@22
-mclt_test_06.mclt16x16_bayer3_i.phase_rotator_r_i.dtt_rd_cntr_pre[8:0]
-@800200
+@8022
+mclt_test_06.mclt16x16_bayer3_i.phase_rotator_r_i.in_addr_r[7:0]
+@c00200
 -rotator
 @28
 mclt_test_06.mclt16x16_bayer3_i.phase_rotator_r_i.phase_rotator0_i.start
@@ -483,10 +622,11 @@ mclt_test_06.mclt16x16_bayer3_i.phase_rotator_r_i.phase_rotator0_i.ceb2_2
 -
 @28
 mclt_test_06.mclt16x16_bayer3_i.phase_rotator_r_i.phase_rotator0_i.negm_1
-@1000200
+@1401200
 -rotator
+@1000200
 -rotator_red
-@c00200
+@800200
 -rotator_blue
 @28
 mclt_test_06.mclt16x16_bayer3_i.phase_rotator_b_i.start
@@ -498,11 +638,10 @@ mclt_test_06.mclt16x16_bayer3_i.phase_rotator_b_i.inv[2:0]
 @28
 (1)mclt_test_06.mclt16x16_bayer3_i.phase_rotator_b_i.dtt_start_out[1:0]
 @22
-mclt_test_06.mclt16x16_bayer3_i.phase_rotator_b_i.dtt_rd_cntr_pre[8:0]
 mclt_test_06.mclt16x16_bayer3_i.phase_rotator_b_i.in_addr_r[7:0]
 @200
 -
-@1401200
+@1000200
 -rotator_blue
 @c00200
 -green_upstream
@@ -523,7 +662,7 @@ mclt_test_06.mclt16x16_bayer3_i.dtt_rd_regen_g[1:0]
 mclt_test_06.mclt16x16_bayer3_i.phase_rotator_g_i.fd_din[24:0]
 @1401200
 -green_upstream
-@c00200
+@800200
 -rotator_green
 @28
 mclt_test_06.mclt16x16_bayer3_i.phase_rotator_g_i.start
@@ -551,8 +690,8 @@ mclt_test_06.mclt16x16_bayer3_i.phase_rotator_g_i.phase_rotator0_i.start
 -
 @1000200
 -rotator
-@1401200
 -rotator_green
+@1401200
 -rotators
 [pattern_trace] 1
 [pattern_trace] 0

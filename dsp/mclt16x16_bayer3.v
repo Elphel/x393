@@ -150,7 +150,7 @@ module  mclt16x16_bayer3#(
     reg          [SHIFT_WIDTH-1:0] x_shft_ram_reg; // 
     reg          [SHIFT_WIDTH-1:0] y_shft_ram_reg; //
     reg                      [1:0] rot_ram_copy;
-    reg                      [2:0] rot_ram_page;
+    reg                      [3:0] rot_ram_page;
     reg                            inv_checker_rot_ram_reg; //
     reg                            valid_odd_rot_ram_reg; //
     reg          [SHIFT_WIDTH-1:0] x_shft_rot_ram_reg; // 
@@ -180,10 +180,10 @@ module  mclt16x16_bayer3#(
             x_shft_ram[regs_wa] <=      x_shft_rf_ram_reg;
             y_shft_ram[regs_wa] <=      y_shft_rf_ram_reg;
             
-            inv_checker_rot_ram[{page,regs_wa}] <= inv_checker_rf_ram_reg;
-            valid_odd_rot_ram[{page,regs_wa}] <=   valid_odd_rf_ram_reg;
-            x_shft_rot_ram[{page,regs_wa}] <=      x_shft_rf_ram_reg;
-            y_shft_rot_ram[{page,regs_wa}] <=      y_shft_rf_ram_reg;
+            inv_checker_rot_ram[{page[0],regs_wa}] <= inv_checker_rf_ram_reg;
+            valid_odd_rot_ram[{page[0],regs_wa}] <=   valid_odd_rf_ram_reg;
+            x_shft_rot_ram[{page[0],regs_wa}] <=      x_shft_rf_ram_reg;
+            y_shft_rot_ram[{page[0],regs_wa}] <=      y_shft_rf_ram_reg;
         end
         
         start_block_r <= {start_block_r[0], ((in_cntr[5:0] == 1) && (in_cntr[7:6] != 3))?1'b1:1'b0};         
@@ -196,10 +196,10 @@ module  mclt16x16_bayer3#(
         end
         
         if (rot_ram_copy[1]) begin
-            inv_checker_rot_ram_reg <= inv_checker_rot_ram[rot_ram_page];
-            valid_odd_rot_ram_reg <=   valid_odd_rot_ram[rot_ram_page];
-            x_shft_rot_ram_reg <=      x_shft_rot_ram[rot_ram_page];
-            y_shft_rot_ram_reg <=      y_shft_rot_ram[rot_ram_page];
+            inv_checker_rot_ram_reg <= inv_checker_rot_ram[rot_ram_page[2:0]];
+            valid_odd_rot_ram_reg <=   valid_odd_rot_ram[rot_ram_page[2:0]];
+            x_shft_rot_ram_reg <=      x_shft_rot_ram[rot_ram_page[2:0]];
+            y_shft_rot_ram_reg <=      y_shft_rot_ram[rot_ram_page[2:0]];
         end
         
 //rot_ram_page     rot_ram_copy    
@@ -329,6 +329,7 @@ module  mclt16x16_bayer3#(
     wire                        dtt_start_blue =  (dtt_start16 & dtt_r_cntr[7:6] == 2); // after 
     wire                        dtt_start_green = (dtt_start16 & dtt_r_cntr[7:6] == 3); // after 
     reg  [TILE_PAGE_BITS + 3:0] dtt_out_ram_cntr;
+    wire [TILE_PAGE_BITS + 4:0] dtt_out_ram_cntr_ext={1'b0,dtt_out_ram_cntr};
     reg  [TILE_PAGE_BITS + 3:0] dtt_out_ram_wah;
     wire                        dtt_start_fill; // some data available in DTT output buffer, OK to start consecutive readout
     reg                         dtt_start_red_fill;
@@ -375,7 +376,8 @@ module  mclt16x16_bayer3#(
     
     always @ (posedge clk) begin
         rot_ram_copy <= {rot_ram_copy[0], dtt_start16};
-        if (rot_ram_copy[0]) rot_ram_page <= dtt_out_ram_cntr[4:2];
+//        if (rot_ram_copy[0]) rot_ram_page <= dtt_out_ram_cntr[4:2];
+        if (rot_ram_copy[0]) rot_ram_page <= dtt_out_ram_cntr_ext[5:2];
         
     // reading memory and running DTT
          start_dtt <= dtt_in_precntr == DTT_IN_DELAY;

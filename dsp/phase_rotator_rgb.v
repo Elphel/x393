@@ -45,9 +45,9 @@ module  phase_rotator_rgb#(
     parameter DSP_A_WIDTH =     25,
     parameter DSP_P_WIDTH =     48,
     parameter COEFF_WIDTH =     17, // = DSP_B_WIDTH - 1 or positive numbers,
-    parameter GREEN       =      1, // 0: use 1 DTT block (R,B), 1: use two DTT blocks (G) 
+    parameter GREEN       =      0, // 0: use 1 DTT block (R,B), 1: use two DTT blocks (G) 
     parameter START_DELAY =    128, // delay start of input memory readout
-    parameter TILE_PAGE_BITS =   1   // 1 or 2  only: number of bits in tile counter (>=2 for simultaneous rotated readout, limited by red)
+    parameter TILE_PAGE_BITS =   2   // 1 or 2  only: number of bits in tile counter (>=2 for simultaneous rotated readout, limited by red)
 )(
     input                            clk,           //!< system clock, posedge
     input                            rst,           //!< sync reset
@@ -76,14 +76,16 @@ module  phase_rotator_rgb#(
     reg                      [1:0] dtt_start_out;
     reg                      [7:0] dtt_dly_cntr;
     reg                      [4:0] dtt_rd_regen_dv;
-    reg                      [8:0] dtt_rd_cntr_pre; // 1 ahead of the former counter for dtt readout to rotator
+    reg     [TILE_PAGE_BITS + 7:0] dtt_rd_cntr_pre; // 1 ahead of the former counter for dtt readout to rotator
     reg                      [7:0] in_addr_r;       //!< input buffer address
     reg                      [8:0] out_addr_r;
     assign  in_addr = in_addr_r[GREEN + TILE_PAGE_BITS + 5:0];
     assign  in_re = dtt_rd_regen_dv[2:1];
 //    assign  fd_wa = {out_addr_r[8], out_addr_r[0],out_addr_r[1],out_addr_r[4:2],out_addr_r[7:5]};
     assign  fd_wa = {out_addr_r[8], out_addr_r[1],out_addr_r[0],out_addr_r[4:2],out_addr_r[7:5]};
+
     
+    wire [TILE_PAGE_BITS + 8:0]  dtt_rd_cntr_pre_ext = {1'b0,dtt_rd_cntr_pre}; // to make sure it is 10 bits at least
     always @ (posedge clk) begin
         if (start) begin
             shift_h_r <=     shift_h;
@@ -114,7 +116,7 @@ module  phase_rotator_rgb#(
         if (GREEN) in_addr_r <= {dtt_rd_cntr_pre[8],
                                  dtt_rd_cntr_pre[0] ^ dtt_rd_cntr_pre[1],
                                  dtt_rd_cntr_pre[0] ? (~dtt_rd_cntr_pre[7:2]) : dtt_rd_cntr_pre[7:2]};
-        else       in_addr_r <= {1'b0, 
+        else       in_addr_r <= {dtt_rd_cntr_pre_ext[9], // 1'b0, 
                                  dtt_rd_cntr_pre[8],
 //                               dtt_rd_cntr_pre[0] ^ dtt_rd_cntr_pre[1],
                                  dtt_rd_cntr_pre[1] ?
