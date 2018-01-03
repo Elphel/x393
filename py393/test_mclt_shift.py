@@ -34,10 +34,14 @@ __maintainer__ = "Andrey Filippov"
 __email__ = "andrey@elphel.com"
 __status__ = "Development"
 import math
+import numpy
 import matplotlib.pyplot as plt
+from matplotlib.ticker import AutoMinorLocator
 import dtt_rad2
 #import sys
 def test1():
+    save_dir="/home/eyesis/Documents/wiki_blogs/bayer-mclt/"
+
 #    x=[1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
 #    x=[0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
     x=[1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0]
@@ -60,38 +64,81 @@ def test1():
     print ("dstiv(dstiv(x))=",z)
 
 #    x = create_test1(l = 1.0, k = 4, p = 5, n = 8)
-    x = create_test1(l = 100.0, k = 4, p = 7, n = 8)
+    x = create_test1(l = 10.0, a= 1.0, k = 4, p = 6, n = 8)
 #    pars = setup_test1()
 #    pars = setup_test2()
-    pars = setup_test2()
-#    plt.plot(x)
-    plt.plot(x,"bo")
-    y = test_clt_iclt(plt,dtt, x, pars, flat=0.0)
-    plt.plot(y,"g")
-    plt.ylabel('values')
-    plt.show()
+    pars = setup_test10()
+    y = test_clt_iclt(plt,dtt, x, pars, flat=1.0, path = save_dir+"test_flat1_10.png")
+
+    pars = setup_test1()
+    y = test_clt_iclt(plt,dtt, x, pars, flat=1.0, path = save_dir+"test_flat1_1.png")
+
+    pars = setup_test1i0()
+    y = test_clt_iclt(plt,dtt, x, pars, flat=1.0, path = save_dir+"test_flat1_1i0.png")
+
+    pars = setup_test1i()
+    y = test_clt_iclt(plt,dtt, x, pars, flat=1.0, path = save_dir+"test_flat1_1i.png")
+
+#    plt.plot(y,"g")
+#    plt.ylabel('values')
+#    plt.grid()
+#    plt.show()
     
 
-
-
-def create_test1(l = 1.0, k = 4, p = 5, n=8):
+def create_test1(l = 1.0, a=1.0, k = 4, p = 5, n=8):
     x = [0]*n*(k+1)
     for i in range (len(x)):
         x[i] = l;
         j = i % p
         if j == 0:
-            x[i] += 1
+            x[i] += 1*a
         elif j == 1:
-            x[i] += 2
+            x[i] += 2*a
         elif j == 2:
-            x[i] += 3
+            x[i] += 3*a
     return x
+
+def create_test2(l = 1.0, a=1.0, k = 4, p = 5, n=8):
+    x = [0]*n*(k+1)
+    for i in range (len(x)):
+        x[i] = l;
+        j = i % p
+        if j == 0: #approx Gaussian
+            x[i] += .24 * a
+        elif j == 1:
+            x[i] += .70 * a
+        elif j == 2:
+            x[i] += 1.0 * a
+        elif j == 3:
+            x[i] += .70 * a
+        elif j == 4:
+            x[i] += .24 * a
+    return x
+
+
 
 def setup_test1():
     return [{"poffs":-1, "woffs": 1.0, "roffs":-1.0},
             {"poffs":-1, "woffs": 1.0, "roffs":-1.0},
             {"poffs": 1, "woffs":-1.0, "roffs": 1.0},
             {"poffs": 1, "woffs":-1.0, "roffs": 1.0}]
+def setup_test10():
+    return [{"poffs":-1, "woffs": 0.0, "roffs":-1.0},
+            {"poffs":-1, "woffs": 0.0, "roffs":-1.0},
+            {"poffs": 1, "woffs": 0.0, "roffs": 1.0},
+            {"poffs": 1, "woffs": 0.0, "roffs": 1.0}]
+def setup_test1i():
+    return [{"poffs": 1, "woffs":-1.0, "roffs": 1.0},
+            {"poffs": 1, "woffs":-1.0, "roffs": 1.0},
+            {"poffs":-1, "woffs": 1.0, "roffs":-1.0},
+            {"poffs":-1, "woffs": 1.0, "roffs":-1.0}]
+def setup_test1i0():
+    return [{"poffs": 1, "woffs": 0.0, "roffs": 1.0},
+            {"poffs": 1, "woffs": 0.0, "roffs": 1.0},
+            {"poffs":-1, "woffs": 0.0, "roffs":-1.0},
+            {"poffs":-1, "woffs": 0.0, "roffs":-1.0}]
+
+
 def setup_test2():
     return [{"poffs": 0, "woffs": .5, "roffs":-.5},
             {"poffs": 0, "woffs": .5, "roffs":-.5},
@@ -104,39 +151,135 @@ def setup_test20():
             {"poffs": 1, "woffs": .0, "roffs": .5},
             {"poffs": 1, "woffs": .0, "roffs": .5}]
 
+def setup_test3():
+    return [{"poffs": 1, "woffs":-.5, "roffs": .5},
+            {"poffs": 1, "woffs":-.5, "roffs": .5},
+            {"poffs": 0, "woffs": .5, "roffs":-.5},
+            {"poffs": 0, "woffs": .5, "roffs":-.5}]
 
-def test_clt_iclt(plt, dtt, x, pars,flat=0 ):
+def setup_test30():
+    return [{"poffs": 1, "woffs": .0, "roffs": .5},
+            {"poffs": 1, "woffs": .0, "roffs": .5},
+            {"poffs": 0, "woffs": .0, "roffs":-.5},
+            {"poffs": 0, "woffs": .0, "roffs":-.5}]
+
+def test_clt_iclt(plt, dtt, x, pars,flat=0, wnd_scale = 5.0, path=""):
+#    save_dir="/home/eyesis/Documents/wiki_blogs/bayer-mclt/"
+    fig, (ax1,ax2) = plt.subplots(2,1) #,sharex=True)
+    print ("fig.get_size_inches() =",fig.get_size_inches()) # 8.6
+    fig.set_size_inches(16,12)
+    print ("fig.get_size_inches() =",fig.get_size_inches()) # 8.6
+##    plt.xlabel('sample number')
+##    plt.ylabel('source values')
+    ax1.plot(x,"k",label="source data")
+    ax2.plot(x,"k:",label="source data")
+    
     y = [0.0]*len(x)
     t = len(pars)
     n = len(x)//(t+1)
     n2 =n * 2
-    cmodes=("r--","b--","v--",'y--')
+    cmodes1=     ("r--","r--","b--",'b--')
+    labels1=     ("window*data 1,2","","window*data 3,4","")
+    cmodes1_wnd= ("r:", "r:", "b:", 'b:')
+    labels1_wnd= ("window 1,2","","window 3,4","")
+    cmodes1_bar= ("r-|", "r-|", "b-|", 'b-|')
+    labels1_bar= ("span 1,2","","span 3,4","")
+    cmodes2=     ("r-", "r-", "b-", 'b-')
+    labels2 =    ("shifted 1,2","","shifted 3,4","")
+    cmodes3=     ("r-", "r-", "b-", 'b-')
+    labels3 =    ("double-windowed 1,2","","double-windowed 3,4","")
+    cmodes2_bar= ("r-|", "r-|", "b-|", 'b-|')
+    labels2_bar= ("span 1,2","","span 3,4","")
     for it in range(t):
         x_start = n * it +pars[it]["poffs"]
         mx = [0]*n2
         dbg_x=[]
+        dbg_xi=[]
+
         for i in range(n2):
             j = x_start + i
             if j < 0: j = 0
             if j >= len(x): j = len(x) - 1
             mx[i] = x[j]
             dbg_x.append(j)
-        print("it=",it)    
-        print("dbg_x=",dbg_x)    
-        print("mx=",mx)    
-#        plt.plot(dbg_x,mx, "r")    
-#            plt.plot(y,"g--")  
-
-        cs= dtt.mclt_norot(mx, offset=pars[it]["woffs"], flat = flat)
-##        cs= dtt.test_mclt(plt, dbg_x, cmodes[it], mx, offset=pars[it]["woffs"], flat = flat)
+            dbg_xi.append(n * it + i)
+        cs= dtt.mclt_norot_dbg( ax1,
+                                dbg_x,
+                                cmodes1[it],
+                                labels1[it],
+                                mx,
+                                offset =    pars[it]["woffs"],
+                                flat =      flat,
+                                cmode_wnd = cmodes1_wnd[it],
+                                label_wnd = labels1_wnd[it],
+                                wnd_scale = wnd_scale)
         
         if pars[it]["roffs"] != 0.0:
             cs = dtt.clt_rot(cs,pars[it]["roffs"])
 
-        mix= dtt.imclt(cs, flat = flat)
-##        mix= dtt.test_imclt(cs, flat = flat)
+        mix= dtt.imclt_dbg(ax1, dbg_x, cmodes2[it], cs, flat = flat)
+        
+        if cmodes3[it]:
+            if labels3[it]:
+                ax2.plot(dbg_xi, mix, cmodes3[it],label=labels3[it])
+            else:        
+                ax2.plot(dbg_xi, mix, cmodes3[it])    
+
+        
         for i in range (n2):
             y[n * it + i] += mix[i]
+# show intrerval bars
+        if (cmodes1_bar[it]):
+            if labels1_bar[it]:
+                ax1.plot([dbg_x[0],dbg_x[-1]], [-0.5*(it+2)]*2, cmodes1_bar[it],label=labels1_bar[it])
+            else:
+                ax1.plot([dbg_x[0],dbg_x[-1]], [-0.5*(it+2)]*2, cmodes1_bar[it])
+        if (cmodes2_bar[it]):
+            if labels2_bar[it]:
+                ax2.plot([dbg_xi[0],dbg_xi[-1]], [-0.5*(it+2)]*2, cmodes2_bar[it],label=labels2_bar[it])
+            else:
+                ax2.plot([dbg_xi[0],dbg_xi[-1]], [-0.5*(it+2)]*2, cmodes2_bar[it])
+# For autoscale            
+    if (cmodes1_bar[0]):
+        ax1.plot([0], [-0.5*(t+2)], "r")
+    if (cmodes2_bar[0]):
+        ax2.plot([0], [-0.5*(t+2)], "r")
+            
+    ax2.plot(y,"g",label="restored data")
+
+    ax1.minorticks_on() # no effect
+    ax2.minorticks_on()
+
+    ax1.grid(which='major', linestyle='-', linewidth='0.5', color='grey')
+    ax1.grid(which='minor', axis="x", linestyle=':', linewidth='0.5', color='black')
+    ax2.grid(which='major', linestyle='-', linewidth='0.5', color='grey')
+    ax2.grid(which='minor', axis="x", linestyle=':', linewidth='0.5', color='black')
+    
+    ax1.set_xticks(numpy.arange(0, 40, 8))
+    ax2.set_xticks(numpy.arange(0, 40, 8))
+
+    minorLocator = AutoMinorLocator(8)
+    ax1.xaxis.set_minor_locator(minorLocator)
+    ax2.xaxis.set_minor_locator(minorLocator)
+    
+    ax1.set_title("Source data")
+    ax1.set_xlabel('sample number')
+    ax1.set_ylabel('source value')
+    ax1.legend() #['a','b','c'])
+    ax2.set_title("Restrored data")
+    ax2.set_xlabel('sample number')
+    ax2.set_ylabel('restored value')
+    ax2.legend()
+#    plt.show()
+
+#    F = pylab.gcf()            
+#    DefaultSize = F.get_size_inches()
+#    plt.savefig("/home/eyesis/Documents/wiki_blogs/bayer-mclt/test02.png",dpi=(100))
+    if path:
+        plt.savefig(path,dpi=(50))
+    else:
+        plt.show()
+                
     return y        
 test1()
             

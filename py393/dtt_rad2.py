@@ -208,7 +208,8 @@ class DttRad2(object):
             y[      i] = -sgn * x[n15 - 1 - i]       -x[n15  + i] # -/+ c' - d 
             y[n05 + i] =        x[i]           -sgn * x[n -1 - i] # a    -/+ b' 
         return y
-    
+    #    def test_mclt(self, plt, dbg_x, cmode, x, offset=0.0, flat = 0.0):
+
     def mclt_norot(self, x, offset=0.0, flat = 0.0):
         """
         Perform direct MCLT transform, using offset (and modified) sine window
@@ -227,6 +228,50 @@ class DttRad2(object):
         return (self.dct_iv(self.fold_dtt(xc,False)), # DCT-IV
                 self.dst_iv(self.fold_dtt(xc,True)))  # DST-IV
 
+    def mclt_norot_dbg(self,
+                       ax,
+                       dbg_x,
+                       cmode,
+                       label,
+                       x,
+                       offset=0.0,
+                       flat = 0.0,
+                       cmode_wnd="",
+                       label_wnd="",
+                       wnd_scale=1.0):
+        """
+        Perform direct MCLT transform, using offset (and modified) sine window
+        @param x input data sequence (will not be modified)
+        @param offset - window offset
+        @param flat - extend window zeros on the ends (by this), flat 1.0 in the center (by twice that).
+               Valid Princen-Bradley condition
+        @return array of [[DCT-IV],[DST-IV]], each 1/2 length of the input sequence
+        """
+        n2 = len(x)
+        n = n2 >> 1
+        w = self.mclt_window_sin_mod(n, offset, flat)
+        if cmode_wnd:
+            ws = w[:]
+            for i in range(len(w)):
+                ws[i] *= wnd_scale
+            if label_wnd:
+                ax.plot(dbg_x, ws, cmode_wnd, label=label_wnd)
+            else:        
+                ax.plot(dbg_x, ws, cmode_wnd)    
+                
+        xc = x[:]
+        for i in range(n2):
+            xc[i] *= w[i]
+            
+        if cmode:
+            if label:
+                ax.plot(dbg_x, xc, cmode, label=label)
+            else:
+                ax.plot(dbg_x, xc, cmode)    
+    
+            
+        return (self.dct_iv(self.fold_dtt(xc,False)), # DCT-IV
+                self.dst_iv(self.fold_dtt(xc,True)))  # DST-IV
 
          
         
@@ -267,6 +312,30 @@ class DttRad2(object):
         for i in range(n2):
             xc[i] = 0.5* w[i]*(xc[i]+xs[i])
         return xc
+
+    def imclt_dbg(self, plt, dbg_x, cmode, cs, flat = 0.0):
+        """
+        Perform inverse MCLT transform, using modified sine window
+        @param cs - frequency domain data [[IDCT-IV],[IDST-IV]]
+        @param flat - extend window zeros on the ends (by this), flat 1.0 in the center (by twice that).
+               Valid Princen-Bradley condition
+        @return array of pixel domain lapped data, twice dct size
+        """
+        n = len(cs[0])
+        n2 = n << 1
+        xc = self.unfold_dtt(self.dct_iv(cs[0]), False)
+        xs = self.unfold_dtt(self.dst_iv(cs[1]), True)
+        w = self.mclt_window_sin_mod(n, 0, flat) # may use cached data
+        for i in range(n2):
+            xc[i] = 0.5* (xc[i]+xs[i])
+        if cmode: # before second window
+            plt.plot(dbg_x, xc, cmode)    
+        for i in range(n2):
+            xc[i] *= w[i]
+            
+        return xc
+
+
     
     def clt_rot(self, cs, shft):
         """
