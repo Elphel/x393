@@ -1,13 +1,13 @@
 /*!
- * <b>Module:</b>mclt_test_01
- * @file mclt_test_01.tf
- * @date 2016-12-02  
+ * <b>Module:</b>mclt_test_06
+ * @file mclt_test_06.tf
+ * @date 2017-12-21  
  * @author  Andrey Filippov
  *     
- * @brief testing MCLT 16x16 -> 4*8*8 transform
- * Uses 2 DSP blocks 
+ * @brief testing CLT Bayer mosaic to 3*4*64 transform, verification against
+ * software processing results of the same data sets. 
  *
- * @copyright Copyright (c) 2016 Elphel, Inc.
+ * @copyright Copyright (c) 2017 Elphel, Inc.
  *
  * <b>License:</b>
  *
