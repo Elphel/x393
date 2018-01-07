@@ -4,7 +4,9 @@
  * @date 2017-12-21  
  * @author Andrey Filippov
  *     
- * @brief Generate addresses and windows to fold MCLT Bayer data
+ * @brief CLT for Basyer mosaic color images with fractional pixel shifts
+ * 256 clock cycles per R-B-G rile, outputs 3*4*64 FD coefficients
+ * Shift increment - 1/128 pixel.
  *
  * @copyright Copyright (c) 2017 <set up in Preferences-Verilog/VHDL Editor-Templates> .
  *
