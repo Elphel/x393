@@ -2,7 +2,7 @@
  * <b>Module:</b> mclt_full_shift
  * @file mclt_full_shift.v
  * @date 2017-12-06  
- * @author eyesis
+ * @author Andrey Filippov
  *     
  * @brief 1d index for window with fractional shift
  *

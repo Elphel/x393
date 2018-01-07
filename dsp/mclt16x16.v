@@ -2,7 +2,7 @@
  * <b>Module:</b> mclt16x16
  * @file mclt16x16.v
  * @date 2017-12-07  
- * @author eyesis
+ * @author Andrey Filippov
  *     
  * @brief Direct MCLT of 16x16 tile with subpixel window shift
  *

@@ -2,7 +2,7 @@
  * <b>Module:</b> mclt_baeyer_fold_accum
  * @file mclt_baeyer_fold_accum.v
  * @date 2017-12-23  
- * @author eyesis
+ * @author Andrey Filippov
  *     
  * @brief Alternative implementation of CC and CS folded data accumulators
  *

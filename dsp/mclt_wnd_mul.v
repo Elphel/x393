@@ -2,7 +2,7 @@
  * <b>Module:</b> mclt_wnd_mul
  * @file mclt_wnd_mul.v
  * @date 2017-12-06  
- * @author eyesis
+ * @author Andrey Filippov
  *     
  * @brief MCLT window with MPY (128:1 superresolution)
  *

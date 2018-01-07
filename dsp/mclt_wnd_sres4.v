@@ -2,7 +2,7 @@
  * <b>Module:</b> mclt_wnd_sres4
  * @file mclt_wnd_sres4.v
  * @date 2017-12-06  
- * @author eyesis
+ * @author Andrey Filippov
  *     
  * @brief MCLT window w/o MPY (4:1 superresolution)
  *

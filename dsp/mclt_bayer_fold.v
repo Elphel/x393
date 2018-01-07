@@ -2,7 +2,7 @@
  * <b>Module:</b> mclt_bayer_fold
  * @file mclt_bayer_fold.v
  * @date 2017-12-21  
- * @author eyesis
+ * @author Andrey Filippov
  *     
  * @brief Generate addresses and windows to fold MCLT Bayer data
  *

@@ -2,7 +2,7 @@
  * <b>Module:</b> phase_rotator_rgb
  * @file phase_rotator_rgb.v
  * @date 2017-12-11  
- * @author eyesis
+ * @author Andrey Filippov
  *     
  * @brief 2-d phase rotator in frequency domain (subpixel shift)
  *
