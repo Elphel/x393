@@ -5,7 +5,7 @@
  * @author Andrey Filippov
  *     
  * @brief CLT for Basyer mosaic color images with fractional pixel shifts
- * 256 clock cycles per R-B-G rile, outputs 3*4*64 FD coefficients
+ * 256 clock cycles per R-B-G tile, outputs 3*4*64 FD coefficients
  * Shift increment - 1/128 pixel.
  *
  * @copyright Copyright (c) 2017 <set up in Preferences-Verilog/VHDL Editor-Templates> .
