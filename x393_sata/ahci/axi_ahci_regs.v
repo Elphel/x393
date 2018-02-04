@@ -466,6 +466,7 @@ sata_phy_rst_out will be released after the sata clock is stable
     // in the system memory.
 
     ramt_var_wb_var_r #(
+        .COMMENT("axi_ahci_regs_ahci_regs"),
         .REGISTERS_A (0),
         .REGISTERS_B (1),
         .LOG2WIDTH_A (5),
@@ -492,6 +493,7 @@ sata_phy_rst_out will be released after the sata clock is stable
     );
 
     ram_var_w_var_r #(
+        .COMMENT("axi_ahci_regs_ahci_regs_type"),
         .REGISTERS    (0),
         .LOG2WIDTH_WR (6),
         .LOG2WIDTH_RD (6),
@@ -512,6 +514,7 @@ sata_phy_rst_out will be released after the sata clock is stable
     
 `ifdef USE_DATASCOPE
         ram_var_w_var_r #(
+            .COMMENT("axi_ahci_regsdatascope0_mem"),
             .REGISTERS    (0),
             .LOG2WIDTH_WR (5),
             .LOG2WIDTH_RD (5),
@@ -530,6 +533,7 @@ sata_phy_rst_out will be released after the sata clock is stable
         );
 
         ram_var_w_var_r #(
+            .COMMENT("axi_ahci_regsdatascope1_mem"),
             .REGISTERS    (0),
             .LOG2WIDTH_WR (5),
             .LOG2WIDTH_RD (5),

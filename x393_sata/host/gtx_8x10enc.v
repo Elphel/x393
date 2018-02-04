@@ -101,6 +101,7 @@ always @ (posedge clk)
     outdata_l <= {enc1, enc0};
 
 ramt_var_w_var_r #(
+    .COMMENT("gtx_8x10enc"),
     .REGISTERS_A    (1),
     .REGISTERS_B    (1),
     .LOG2WIDTH_A    (5),

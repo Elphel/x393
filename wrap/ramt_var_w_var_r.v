@@ -98,6 +98,7 @@
 
 module  ramt_var_w_var_r
 #(
+  parameter         COMMENT = "",
   parameter integer REGISTERS_A = 0, // 1 - registered output
   parameter integer REGISTERS_B = 0, // 1 - registered output
   parameter integer LOG2WIDTH_A = 5,  // WIDTH= 9  << (LOG2WIDTH - 3)
@@ -142,6 +143,10 @@ module  ramt_var_w_var_r
 
     wire [WIDTH_B+31:0] data_in_ext_b =  {32'b0,data_in_b[WIDTH_B-1:0]};
     wire         [31:0] data_in32_b =    data_in_ext_b[31:0];
+
+    initial begin
+        if (COMMENT != "") $display(COMMENT);
+    end
 
     RAMB36E1
     #(

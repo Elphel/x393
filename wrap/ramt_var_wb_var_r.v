@@ -98,6 +98,7 @@
 
 module  ramt_var_wb_var_r
 #(
+  parameter         COMMENT = "",
   parameter integer REGISTERS_A = 0, // 1 - registered output
   parameter integer REGISTERS_B = 0, // 1 - registered output
   parameter integer LOG2WIDTH_A = 5,  // WIDTH= 9  << (LOG2WIDTH - 3)
@@ -148,6 +149,9 @@ module  ramt_var_wb_var_r
     
     wire [3:0] we_a4= (LOG2WIDTH_A > 3)? ((LOG2WIDTH_A > 4)? we_a : {2{we_a}} ):{4{we_a}};
     wire [3:0] we_b4= (LOG2WIDTH_B > 3)? ((LOG2WIDTH_B > 4)? we_b : {2{we_b}} ):{4{we_b}};
+    initial begin
+        if (COMMENT != "") $display(COMMENT);
+    end
 
     RAMB36E1
     #(

@@ -108,6 +108,7 @@ module  cmprs_out_fifo(
 // rclk -> wclk
     pulse_cross_clock eof_written_wclk_i (.rst(rrst), .src_clk(rclk), .dst_clk(wclk), .in_pulse(eof_written), .out_pulse(eof_written_wclk),.busy());
     ram_var_w_var_r #(
+        .COMMENT("cmprs_out_fifo"),
         .REGISTERS(1),
         .LOG2WIDTH_WR(4),
         .LOG2WIDTH_RD(6)

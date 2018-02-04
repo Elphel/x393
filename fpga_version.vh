@@ -35,7 +35,31 @@
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
  */
-        parameter FPGA_VERSION =          32'h039300da;      //parallel - sata v.13 - tolerating elidle from device during comreset/cominit -0.014 /1, 81.38%, 
+ 
+        parameter FPGA_VERSION =          32'h039300f0;      //parallel - 17.4 - retry with spells in clean directory
+//      parameter FPGA_VERSION =          32'h039300ef;      //parallel - 17.4 - trying more set_param VivadoSynthesis-20180203230051566.log - OK!
+//      parameter FPGA_VERSION =          32'h039300ee;      //parallel - 17.4 - save after re-running vivado, same dir - bad
+//      parameter FPGA_VERSION =          32'h039300ed;      //parallel - 17.4 - twice synth+par, then bit - good
+//      parameter FPGA_VERSION =          32'h039300edc;      //parallel - 17.4 - twice synth, then bit - bad
+//      parameter FPGA_VERSION =          32'h039300ec;      //parallel - 17.4 - same, no debug, nofresh maxThreads 1- good
+//      parameter FPGA_VERSION =          32'h039300eb;      //parallel - 17.4 - same, no debug, fresh maxThreads 1 - bad (bad numbers)
+//      parameter FPGA_VERSION =          32'h039300ea;      //parallel - 17.4 - same, no debug, nofresh - good
+//      parameter FPGA_VERSION =          32'h039300e9;      //parallel - 17.4 - same, no debug, nofresh - bad, seemed goog log
+//      parameter FPGA_VERSION =          32'h039300e8;      //parallel - 17.4 - same, no debug, fresh - bad
+//      parameter FPGA_VERSION =          32'h039300e7;      //parallel - 17.4 - same, no debug - good
+//      parameter FPGA_VERSION =          32'h039300e6;      //parallel - 17.4 - clean, debug - OK
+//      parameter FPGA_VERSION =          32'h039300e5;      //parallel - 17.4 - clean, debug - OK
+//      parameter FPGA_VERSION =          32'h039300e4;      //parallel - 17.4 - same with clean remote directory - bad
+//      parameter FPGA_VERSION =          32'h039300e3;      //parallel - 17.4 - good
+//      parameter FPGA_VERSION =          32'h039300e2;      //parallel - 17.4 - no error, bad again
+//      parameter FPGA_VERSION =          32'h039300e1;      //parallel - 17.4 - changing attributes to match old -bad!
+//      parameter FPGA_VERSION =          32'h039300e0;      //parallel - 17.4 - disabled all debug - OK 
+//      parameter FPGA_VERSION =          32'h039300df;      //parallel - 17.4 - all debug ==0 - met, OK 
+//      parameter FPGA_VERSION =          32'h039300de;      //parallel - 17.4 - changing clock,met, good (clock - hclk) 
+//      parameter FPGA_VERSION =          32'h039300dd;      //parallel - 17.4 - adding debug to SAXI1GP - OK 
+//      parameter FPGA_VERSION =          32'h039300dc;      //parallel - 15.3 - adding debug to SAXI1GP -  -0.114 
+//      parameter FPGA_VERSION =          32'h039300db;      //parallel - trying to migrate to 17.04 
+//      parameter FPGA_VERSION =          32'h039300da;      //parallel - sata v.13 - tolerating elidle from device during comreset/cominit -0.014 /1, 81.38%, 
 //      parameter FPGA_VERSION =          32'h039300d9;      //parallel - correcting histograms -0.022/1, 79.60%
 //      parameter FPGA_VERSION =          32'h039300d8;      //parallel - SATA is now logging irq on/off -0.054 /16, 80.50%
 //      parameter FPGA_VERSION =          32'h039300d7;      //parallel - updated SATA (v12) all met, 80.32%

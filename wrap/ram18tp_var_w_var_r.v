@@ -98,6 +98,7 @@
 
 module  ram18tp_var_w_var_r
 #(
+  parameter         COMMENT = "",
   parameter integer REGISTERS_A = 0, // 1 - registered output
   parameter integer REGISTERS_B = 0, // 1 - registered output
   parameter integer LOG2WIDTH_A = 4,  // WIDTH= 9  << (LOG2WIDTH - 3)
@@ -150,6 +151,10 @@ module  ram18tp_var_w_var_r
     wire         [15:0] data_in16_b =    data_in_ext_b[15:0];
     wire [WIDTH_BP+1:0] datap_in_ext_b = {2'b0,data_in_b[WIDTH_B+:WIDTH_BP]};
     wire          [1:0] datap_in2_b=     datap_in_ext_b[1:0];
+
+    initial begin
+        if (COMMENT != "") $display(COMMENT);
+    end
 
     RAMB18E1
     #(

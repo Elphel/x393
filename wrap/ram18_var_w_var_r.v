@@ -96,6 +96,7 @@
 */
 module  ram18_var_w_var_r
 #(
+  parameter         COMMENT = "",
   parameter integer REGISTERS    = 0, // 1 - registered output
   parameter integer LOG2WIDTH_WR = 5, // WIDTH= 9  << (LOG2WIDTH - 3)
   parameter integer LOG2WIDTH_RD = 5, // WIDTH= 9  << (LOG2WIDTH - 3)
@@ -120,6 +121,9 @@ module  ram18_var_w_var_r
       input                     [ 3:0] web,      // write byte enable
       input  [(1 << LOG2WIDTH_WR)-1:0] data_in   // data out
     );
+    initial begin
+        if (COMMENT != "") $display(COMMENT);
+    end
     generate
         if (DUMMY)
             ram18_dummy #(

@@ -45,7 +45,7 @@ module  dly01_16(
     input       din,
     output      dout
 );
-    reg [15:0] sr=0;
+(* shreg_extract = "yes" *) reg [15:0] sr=0;
 `ifdef SHREG_SEQUENTIAL_RESET
     always @ (posedge clk) begin
         sr <= {sr[14:0], din & ~rst}; 

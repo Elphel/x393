@@ -336,6 +336,7 @@ module  cmd_frame_sequencer#(
     generate
         if (CMDFRAMESEQ_DEPTH == 32) begin
             ram_var_w_var_r #(
+                .COMMENT("cmd_frame_sequencer_CMDFRAMESEQ_DEPTH_32"),
                 .REGISTERS(1),
                 .LOG2WIDTH_WR(6),
                 .LOG2WIDTH_RD(6),
@@ -425,6 +426,7 @@ module  cmd_frame_sequencer#(
         
         else if (CMDFRAMESEQ_DEPTH == 128)  begin
             ram_var_w_var_r #(
+                .COMMENT("cmd_frame_sequencer_CMDFRAMESEQ_DEPTH_128A"),
                 .REGISTERS(1),
                 .LOG2WIDTH_WR(4),
                 .LOG2WIDTH_RD(4),
@@ -446,6 +448,7 @@ module  cmd_frame_sequencer#(
             );
         
             ram_var_w_var_r #(
+                .COMMENT("cmd_frame_sequencer_CMDFRAMESEQ_DEPTH_128B"),
                 .REGISTERS(1),
                 .LOG2WIDTH_WR(4),
                 .LOG2WIDTH_RD(4),
@@ -466,6 +469,7 @@ module  cmd_frame_sequencer#(
             );
         
             ram_var_w_var_r #(
+                .COMMENT("cmd_frame_sequencer_CMDFRAMESEQ_DEPTH_128C"),
                 .REGISTERS(1),
                 .LOG2WIDTH_WR(4),
                 .LOG2WIDTH_RD(4),

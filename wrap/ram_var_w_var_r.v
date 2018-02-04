@@ -80,6 +80,7 @@
 */
 module  ram_var_w_var_r
 #(
+  parameter         COMMENT = "",
   parameter integer REGISTERS    = 0, // 1 - registered output
   parameter integer LOG2WIDTH_WR = 6,  // WIDTH= 1  << LOG2WIDTH
   parameter integer LOG2WIDTH_RD = 6,  // WIDTH= 1  << LOG2WIDTH
@@ -107,12 +108,14 @@ module  ram_var_w_var_r
     generate
         if (DUMMY)
             ram_dummy #(
+                .COMMENT(COMMENT),
                 .LOG2WIDTH_RD(LOG2WIDTH_RD)
             ) ramp_dummy_i (
                 .data_out(data_out) 
             );
         else if ((LOG2WIDTH_WR == 6) && (LOG2WIDTH_RD == 6))
             ram_64w_64r #(
+                .COMMENT(COMMENT),
                 .REGISTERS    (REGISTERS)
 `ifdef PRELOAD_BRAMS
     `include "includes/ram36_pass_init.vh"
@@ -131,6 +134,7 @@ module  ram_var_w_var_r
             );
         else if ((LOG2WIDTH_WR == 6) && (LOG2WIDTH_RD < 6))
             ram_64w_lt64r #(
+                .COMMENT(COMMENT),
                 .REGISTERS    (REGISTERS),
                 .LOG2WIDTH_RD (LOG2WIDTH_RD)
 `ifdef PRELOAD_BRAMS
@@ -150,6 +154,7 @@ module  ram_var_w_var_r
             );
         else if ((LOG2WIDTH_WR < 6) && (LOG2WIDTH_RD == 6))
             ram_lt64w_64r #(
+                .COMMENT(COMMENT),
                 .REGISTERS    (REGISTERS),
                 .LOG2WIDTH_WR (LOG2WIDTH_WR)
 `ifdef PRELOAD_BRAMS
@@ -169,6 +174,7 @@ module  ram_var_w_var_r
             );
         else if ((LOG2WIDTH_WR < 6) && (LOG2WIDTH_RD < 6))
             ram_lt64w_lt64r #(
+                .COMMENT(COMMENT),
                 .REGISTERS    (REGISTERS),
                 .LOG2WIDTH_WR (LOG2WIDTH_WR),
                 .LOG2WIDTH_RD (LOG2WIDTH_RD)
@@ -193,6 +199,7 @@ endmodule
 // Both ports with 64 bit widths
 module  ram_64w_64r
 #(
+  parameter         COMMENT = "",
   parameter integer REGISTERS    = 0 // 1 - registered output
 `ifdef PRELOAD_BRAMS
     ,
@@ -214,7 +221,9 @@ module  ram_64w_64r
     );
     localparam  PWIDTH_WR=72;
     localparam  PWIDTH_RD=72;
-    
+    initial begin
+        if (COMMENT != "") $display(COMMENT);
+    end
     RAMB36E1
     #(
     .RSTREG_PRIORITY_A         ("RSTREG"),       // Valid: "RSTREG" or "REGCE"
@@ -284,6 +293,7 @@ endmodule
 // Both ports with less than 64 bit widths - TODO: see if it is still possible to use SDP
 module  ram_lt64w_lt64r
 #(
+  parameter         COMMENT = "",
   parameter integer REGISTERS    = 0, // 1 - registered output
   parameter integer LOG2WIDTH_WR = 5,  // WIDTH= 1  << LOG2WIDTH
   parameter integer LOG2WIDTH_RD = 5   // WIDTH= 1  << LOG2WIDTH
@@ -314,6 +324,9 @@ module  ram_lt64w_lt64r
     wire [WIDTH_WR+31:0] data_in_ext = {32'b0,data_in};
     wire          [31:0] data_in32=data_in_ext[31:0];
     assign data_out=data_out32[WIDTH_RD-1:0];
+    initial begin
+        if (COMMENT != "") $display(COMMENT);
+    end
     RAMB36E1
     #(
     .RSTREG_PRIORITY_A         ("RSTREG"),       // Valid: "RSTREG" or "REGCE"
@@ -399,6 +412,7 @@ endmodule
 // Write port less than 64bits, read port 64 bit widths
 module  ram_lt64w_64r
 #(
+  parameter         COMMENT = "",
   parameter integer REGISTERS    = 0, // 1 - registered output
   parameter integer LOG2WIDTH_WR = 5  // WIDTH= 1  << LOG2WIDTH
 `ifdef PRELOAD_BRAMS
@@ -426,6 +440,9 @@ module  ram_lt64w_64r
 //    localparam  WIDTH_RD  = 64;
     wire [WIDTH_WR+31:0] data_in_ext = {32'b0,data_in};
     wire          [31:0] data_in32=data_in_ext[31:0];
+    initial begin
+        if (COMMENT != "") $display(COMMENT);
+    end
     RAMB36E1
     #(
     .RSTREG_PRIORITY_A         ("RSTREG"),       // Valid: "RSTREG" or "REGCE"
@@ -496,6 +513,7 @@ endmodule
 // Write port 64 bita, read port - less than 64 bits
 module  ram_64w_lt64r
 #(
+  parameter         COMMENT = "",
   parameter integer REGISTERS    = 0, // 1 - registered output
 //  parameter integer LOG2WIDTH_WR = 5,  // WIDTH= 1  << LOG2WIDTH
   parameter integer LOG2WIDTH_RD = 5   // WIDTH= 1  << LOG2WIDTH
@@ -523,6 +541,10 @@ module  ram_64w_lt64r
     localparam  WIDTH_RD  = 1 << LOG2WIDTH_RD;
     wire          [31:0] data_out32;
     assign data_out=data_out32[WIDTH_RD-1:0];
+    initial begin
+        if (COMMENT != "") $display(COMMENT);
+    end
+    
     RAMB36E1
     #(
     .RSTREG_PRIORITY_A         ("RSTREG"),       // Valid: "RSTREG" or "REGCE"
@@ -592,11 +614,16 @@ endmodule
 
 module  ram_dummy
 #(
+  parameter         COMMENT = "",
   parameter integer LOG2WIDTH_RD = 5   // WIDTH= 1  << LOG2WIDTH
  )
    (
       output [(1 << LOG2WIDTH_RD)-1:0] data_out // data out
    );
    assign data_out=0;
+    initial begin
+        if (COMMENT != "") $display(COMMENT);
+    end
+   
 endmodule
 

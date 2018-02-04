@@ -162,6 +162,7 @@ module  ahci_dma (
 //    localparam AFI_FIFO_LAT = 2; // >=2
    localparam SAFE_RD_BITS =   3; //2; // 3;
 
+//    (* ram_style = "block" *)
     reg     [31:0] ct_data_ram [0:31];
     reg      [3:0] int_data_addr;    // internal (ct,prd) data address
 //    reg     [31:7] ctba_r;
@@ -262,7 +263,7 @@ module  ahci_dma (
     
     wire           fifo_nempty_mclk;
     reg            en_extra_din_r;
-    reg     [31:0] ct_data_reg;
+    reg     [31:0] ct_data_register;
 //    reg            abort_busy_hclk;
     reg            hrst_r;
     wire           abort_or_reset = cmd_abort_hclk || (hrst_r && !hrst);
@@ -335,7 +336,7 @@ module  ahci_dma (
     assign afi_arqos =         4'h0;
     assign afi_rdissuecap1en = 1'b0;
     assign extra_din = en_extra_din_r && fifo_nempty_mclk;
-//    reg             [31:0] ct_data_reg;
+//    reg             [31:0] ct_data_register;
     always @ (posedge mclk) begin
     
         if (mrst) afi_dirty_mclk <= 0;
@@ -347,8 +348,8 @@ module  ahci_dma (
         if (mrst || abort_done) abort_busy_mclk <= 0;
         else if (cmd_abort)     abort_busy_mclk <= 1;
     
-        if (ct_re[0]) ct_data_reg <=  ct_data_ram[ct_addr];
-        if (ct_re[1]) ct_data <=      ct_data_reg;
+        if (ct_re[0]) ct_data_register <=  ct_data_ram[ct_addr];
+        if (ct_re[1]) ct_data <=           ct_data_register;
         
 //        if (ctba_ld) ctba_r <=        ctba[31:7];
         if (ctba_ld) ctba_r <=        ctba[31:4];

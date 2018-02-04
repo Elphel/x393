@@ -478,6 +478,7 @@ module  sensor_i2c#(
     
     
     ram_var_w_var_r #(
+        .COMMENT("sensor_i2c"),
         .REGISTERS(1), // try to delay i2c_byte_start by one more cycle
         .LOG2WIDTH_WR(5),
         .LOG2WIDTH_RD(3)

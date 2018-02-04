@@ -497,6 +497,7 @@ module  mult_saxi_wr #(
     generate
         if (MULT_SAXI_HALF_BRAM)
             ram18_var_w_var_r #(
+                .COMMENT("mult_saxi_wr_MULT_SAXI_HALF_BRAM"),
                 .REGISTERS(1),
                 .LOG2WIDTH_WR(5),
                 .LOG2WIDTH_RD(5),
@@ -515,6 +516,7 @@ module  mult_saxi_wr #(
             );
         else
             ram_var_w_var_r #(
+                .COMMENT("mult_saxi_wr_not_MULT_SAXI_HALF_BRAM"),
                 .REGISTERS(1),
                 .LOG2WIDTH_WR(5),
                 .LOG2WIDTH_RD(5),

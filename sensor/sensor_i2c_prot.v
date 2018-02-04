@@ -334,6 +334,7 @@ module  sensor_i2c_prot#(
     end
     
     ram18_var_w_var_r #(
+        .COMMENT("sensor_i2c_prot"),
         .REGISTERS    (1),
         .LOG2WIDTH_WR (5),
         .LOG2WIDTH_RD (5),

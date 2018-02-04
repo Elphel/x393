@@ -120,6 +120,7 @@ module  mult_saxi_wr_inbuf#(
     generate
         if (MULT_SAXI_HALF_BRAM_IN)
             ram18_var_w_var_r #(
+                .COMMENT("mult_saxi_wr_inbuf_MULT_SAXI_HALF_BRAM_IN"),
                 .REGISTERS(1),
                 .LOG2WIDTH_WR(MULT_SAXI_WLOG),
                 .LOG2WIDTH_RD(5),
@@ -138,6 +139,7 @@ module  mult_saxi_wr_inbuf#(
             );
         else
             ram_var_w_var_r #(
+                .COMMENT("mult_saxi_wr_inbuf_not_MULT_SAXI_HALF_BRAM_IN"),
                 .REGISTERS(1),
                 .LOG2WIDTH_WR(MULT_SAXI_WLOG),
                 .LOG2WIDTH_RD(5),

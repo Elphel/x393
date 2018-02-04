@@ -503,6 +503,7 @@ module  histogram_saxi#(
     );
 
     ram_var_w_var_r #(
+        .COMMENT("histogram_saxi"),
         .REGISTERS(1),
         .LOG2WIDTH_WR(5),
         .LOG2WIDTH_RD(5),

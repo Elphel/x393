@@ -36,6 +36,7 @@
  * contains all the components and scripts required to completely simulate it
  * with at least one of the Free Software programs.
  */
+//`define DEBUG_SAXI1 1
 `timescale 1ns/1ps
 `include "system_defines.vh" 
 module  x393 #(
@@ -396,7 +397,15 @@ module  x393 #(
     
     wire [DEBUG_RING_LENGTH:0]    debug_ring; // TODO: adjust number of bits
     wire                          debug_sl;   // debug shift/load:  0 - idle, (1,0) - shift, (1,1) - load
-`endif    
+`endif
+
+`ifdef DEBUG_SAXI1
+    wire                  [7:0] status_debug_saxi_ad; // saxi1 - logger data Other status byte-wide address/data
+    wire                        status_debug_saxi_rq; // Other status request   
+    wire                        status_debug_saxi_start;  // S uppressThisWarning VEditor ****** Other status packet transfer start (currently with 0 latency from status_root_rq)
+`endif
+
+    
     // Insert register layer if needed
     reg  [7:0] cmd_mcontr_ad;
     reg        cmd_mcontr_stb;
@@ -435,6 +444,12 @@ module  x393 #(
     reg  [7:0] cmd_debug_ad;
     reg        cmd_debug_stb;
 `endif
+`ifdef DEBUG_SAXI1
+    reg  [7:0] cmd_debug_saxi1_ad;
+    reg        cmd_debug_saxi1_stb;
+`endif
+
+
 // membridge
     wire                        frame_start_chn1; // input
     wire                        next_page_chn1; // input
@@ -725,7 +740,14 @@ module  x393 #(
 `ifdef DEBUG_RING
         cmd_debug_ad <=      cmd_root_ad;
         cmd_debug_stb <=     cmd_root_stb;
-`endif        
+`endif
+
+`ifdef DEBUG_SAXI1
+    cmd_debug_saxi1_ad <=      cmd_root_ad;
+    cmd_debug_saxi1_stb <=     cmd_root_stb;
+`endif
+
+        
     end
 
 // For now - connect status_test01 to status_other, if needed - increase number of multiplexer inputs)
@@ -1121,10 +1143,17 @@ assign axi_grst = axi_rst_pre;
         .db_in11   (8'b0),                    // input[7:0] 
         .rq_in11   (1'b0),                    // input
         .start_in11(),                        // output
-`endif        
+`endif
+
+`ifdef DEBUG_SAXI1
+        .db_in12   (status_debug_saxi_ad),    // input[7:0] 
+        .rq_in12   (status_debug_saxi_rq),    // input
+        .start_in12(status_debug_saxi_start), // output
+`else        
         .db_in12   (8'b0),                    // input[7:0] 
         .rq_in12   (1'b0),                    // input
         .start_in12(),                        // output
+`endif        
         
         .db_in13   (8'b0),                    // input[7:0] 
         .rq_in13   (1'b0),                    // input
@@ -2522,7 +2551,7 @@ assign axi_grst = axi_rst_pre;
         .rst    ({hrst,        arst,     lrst,            crst,            xrst,        prst,        mrst})          // output[6:0] 
     );
 
-// Changed aclk to master (itg is the source of most orthers)
+// Changed aclk to master (it is the source of most orthers)
 /*
     sync_resets #(
         .WIDTH(7),
@@ -3502,4 +3531,84 @@ sata_ahci_top sata_top(
     .PSPORB(),                   // PS PSPORB, inout
     .PSSRSTB()                  // PS PSSRSTB, inout
   );
+  
+`ifdef DEBUG_SAXI1
+/*
+    debug_saxigp #(
+        .DEBUG_STATUS              ('h714),
+        .DEBUG_STATUS_MASK         ('h7ff),
+        .DEBUG_STATUS_REG_ADDR     ('he5),// 1 dword
+        .DEBUG_STATUS_PAYLOAD_ADDR ('he0) // 5 dwords
+    ) debug_saxigp_i (
+        .mclk                      (mclk),       // input
+        .mrst                      (mrst),       // input
+        .cmd_ad       (cmd_debug_saxi1_ad),      // input[7:0] 
+        .cmd_stb      (cmd_debug_saxi1_stb),     // input
+        .status_ad    (status_debug_saxi_ad),    // output[7:0] 
+        .status_rq    (status_debug_saxi_rq),    // output
+        .status_start (status_debug_saxi_start), // input
+        .saxi_aclk    (hclk), // saxi1_aclk),              // input
+        .saxi_awaddr  (32'b0), // saxi1_awaddr),            // input[31:0] 
+        .saxi_awvalid (1'b0), // saxi1_awvalid),           // input
+        .saxi_awready (1'b0), // saxi1_awready),           // input
+        .saxi_awid    (6'b0), // saxi1_awid),              // input[5:0] 
+        .saxi_awlock  (2'b0), // saxi1_awlock),            // input[1:0] 
+        .saxi_awcache (4'b0), // saxi1_awcache),           // input[3:0] 
+        .saxi_awprot  (3'b0), // saxi1_awprot),            // input[2:0] 
+        .saxi_awlen   (4'b0), // saxi1_awlen),             // input[3:0] 
+        .saxi_awsize  (2'b0), // saxi1_awsize),            // input[1:0] 
+        .saxi_awburst (2'b0), // saxi1_awburst),           // input[1:0] 
+        .saxi_awqos   (4'b0), // saxi1_awqos),             // input[3:0] 
+        .saxi_wdata   (32'b0), // saxi1_wdata),             // input[31:0] 
+        .saxi_wvalid  (1'b0), // saxi1_wvalid),            // input
+        .saxi_wready  (1'b0), // saxi1_wready),            // input
+        .saxi_wid     (6'b0), // saxi1_wid),               // input[5:0] 
+        .saxi_wlast   (1'b0), // saxi1_wlast),             // input
+        .saxi_wstrb   (4'b0), // saxi1_wstrb),             // input[3:0] 
+        .saxi_bvalid  (1'b0), // saxi1_bvalid),            // input
+        .saxi_bready  (1'b0), // saxi1_bready),            // input
+        .saxi_bid     (6'b0), // saxi1_bid),               // input[5:0] 
+        .saxi_bresp   (2'b0)  // saxi1_bresp)              // input[1:0] 
+    );
+*/
+    debug_saxigp #(
+        .DEBUG_STATUS              ('h714),
+        .DEBUG_STATUS_MASK         ('h7ff),
+        .DEBUG_STATUS_REG_ADDR     ('he5),// 1 dword
+        .DEBUG_STATUS_PAYLOAD_ADDR ('he0) // 5 dwords
+    ) debug_saxigp_i (
+        .mclk                      (mclk),       // input
+        .mrst                      (mrst),       // input
+        .cmd_ad       (cmd_debug_saxi1_ad),      // input[7:0] 
+        .cmd_stb      (cmd_debug_saxi1_stb),     // input
+        .status_ad    (status_debug_saxi_ad),    // output[7:0] 
+        .status_rq    (status_debug_saxi_rq),    // output
+        .status_start (status_debug_saxi_start), // input
+        .saxi_aclk    (saxi1_aclk), // hclk), // saxi1_aclk),              // input
+        .saxi_awaddr  (saxi1_awaddr),            // input[31:0] 
+        .saxi_awvalid (saxi1_awvalid),           // input
+        .saxi_awready (saxi1_awready),           // input
+        .saxi_awid    (saxi1_awid),              // input[5:0] 
+        .saxi_awlock  (saxi1_awlock),            // input[1:0] 
+        .saxi_awcache (saxi1_awcache),           // input[3:0] 
+        .saxi_awprot  (saxi1_awprot),            // input[2:0] 
+        .saxi_awlen   (saxi1_awlen),             // input[3:0] 
+        .saxi_awsize  (saxi1_awsize),            // input[1:0] 
+        .saxi_awburst (saxi1_awburst),           // input[1:0] 
+        .saxi_awqos   (saxi1_awqos),             // input[3:0] 
+        .saxi_wdata   (saxi1_wdata),             // input[31:0] 
+        .saxi_wvalid  (saxi1_wvalid),            // input
+        .saxi_wready  (saxi1_wready),            // input
+        .saxi_wid     (saxi1_wid),               // input[5:0] 
+        .saxi_wlast   (saxi1_wlast),             // input
+        .saxi_wstrb   (saxi1_wstrb),             // input[3:0] 
+        .saxi_bvalid  (saxi1_bvalid),            // input
+        .saxi_bready  (saxi1_bready),            // input
+        .saxi_bid     (saxi1_bid),               // input[5:0] 
+        .saxi_bresp   (saxi1_bresp)              // input[1:0] 
+    );
+`endif        
+  
+  
+  
 endmodule

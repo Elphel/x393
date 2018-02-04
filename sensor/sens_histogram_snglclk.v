@@ -602,6 +602,7 @@ module sens_hist_ram_snglclk_32(
     end
     
     ramt_var_w_var_r #(
+        .COMMENT("sens_hist_ram_snglclk_32_ramt_var_w_var_r_even_i"),
         .REGISTERS_A(1),
         .REGISTERS_B(1),
         .LOG2WIDTH_A(5),
@@ -626,6 +627,7 @@ module sens_hist_ram_snglclk_32(
     );
 
     ramt_var_w_var_r #(
+        .COMMENT("sens_hist_ram_snglclk_32_ramt_var_w_var_r_odd_i"),
         .REGISTERS_A(1),
         .REGISTERS_B(1),
         .LOG2WIDTH_A(5),
@@ -685,6 +687,7 @@ module sens_hist_ram_snglclk_18(
     end
     
     ram18tp_var_w_var_r #(
+        .COMMENT("sens_hist_ram_snglclk_18_ramt_var_w_var_r_even_i"),
         .REGISTERS_A(1),
         .REGISTERS_B(1),
         .LOG2WIDTH_A(4),
@@ -709,6 +712,7 @@ module sens_hist_ram_snglclk_18(
     );
 
     ram18tp_var_w_var_r #(
+        .COMMENT("sens_hist_ram_snglclk_18_ramt_var_w_var_r_odd_i"),
         .REGISTERS_A(1),
         .REGISTERS_B(1),
         .LOG2WIDTH_A(4),

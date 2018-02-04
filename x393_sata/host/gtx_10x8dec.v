@@ -138,6 +138,7 @@ assign  disperror = ~{table_pos_disp0 & expected_disparity | table_neg_disp0 & ~
 
 // TODO change mem to 18 instead of 36, so the highest address bit could be dropped
 ramt_var_w_var_r #(
+    .COMMENT("gtx_10x8dec"),
     .REGISTERS_A    (1),
     .REGISTERS_B    (1),
     .LOG2WIDTH_A    (4),

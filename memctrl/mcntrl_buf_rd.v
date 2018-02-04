@@ -81,6 +81,7 @@ module  mcntrl_buf_rd #(
     end
 //    ram_512x64w_1kx32r #(
     ram_var_w_var_r #(
+        .COMMENT("mcntrl_buf_rd"),
         .REGISTERS(1),
         .LOG2WIDTH_WR(6),
         .LOG2WIDTH_RD(LOG2WIDTH_RD)
