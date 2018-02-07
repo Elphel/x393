@@ -40,6 +40,7 @@
  * with at least one of the Free Software programs.
  */
 `timescale 1ns/1ps
+`define REPORT_FRAME_NUMBER 1
 `undef DEBUG_MCNTRL_TILED_EXTRA_STATUS 
 module  mcntrl_tiled_rw#(
     parameter ADDRESS_NUMBER=                   15,
@@ -220,7 +221,11 @@ module  mcntrl_tiled_rw#(
 `ifdef DEBUG_MCNTRL_TILED_EXTRA_STATUS    
     wire                   [13:0] status_data;
 `else    
+  `ifdef REPORT_FRAME_NUMBER
+    wire    [LAST_FRAME_BITS+1:0] status_data;
+  `else        
     wire                    [1:0] status_data;
+  `endif                                               
 `endif    
     
     wire                    [3:0] cmd_a; 
@@ -286,6 +291,9 @@ module  mcntrl_tiled_rw#(
                                                    // if total  number of pages in a frame is not multiple of 4
     reg                           frames_in_sync_r;
     wire                          chn_dis_delayed = chn_rst || (!chn_en && !busy_r); // reset if real reset or disabled and frame finished 
+`ifdef REPORT_FRAME_NUMBER
+    reg     [LAST_FRAME_BITS-1:0] done_frame_number;
+`endif                                               
     
     assign frames_in_sync =     frames_in_sync_r;
     assign frame_number =       frame_number_current;
@@ -339,7 +347,10 @@ module  mcntrl_tiled_rw#(
         if (mrst) is_last_frame <= 0;
 //        else     is_last_frame <= frame_number_cntr == last_frame_number;
         else     is_last_frame <= frame_number_cntr >= last_frame_number; // trying to make it safe 
-        
+`ifdef REPORT_FRAME_NUMBER
+        if      (mrst)         done_frame_number <= 0;
+        else if (frame_done_r) done_frame_number <= frame_number_cntr;
+`endif                                               
         if (mrst) frame_start_r <= 0;
         else      frame_start_r <= {frame_start_r[3:0], frame_start_mod & frame_en}; // frame_start
 
@@ -452,7 +463,11 @@ module  mcntrl_tiled_rw#(
 `ifdef DEBUG_MCNTRL_TILED_EXTRA_STATUS    
     assign status_data=      {frames_in_sync, suspend, last_row_w, last_in_row,line_unfinished[7:0], frame_finished_r, busy_r}; 
 `else    
-    assign status_data=      {frame_finished_r, busy_r}; 
+  `ifdef REPORT_FRAME_NUMBER
+    assign status_data=      {done_frame_number, frame_finished_r, busy_r};     // TODO: Add second bit?
+  `else
+    assign status_data=      {frame_finished_r, busy_r};     // TODO: Add second bit?
+  `endif
 `endif    
     
     
@@ -682,7 +697,11 @@ wire    start_not_partial= xfer_start_r[0] && !xfer_limited_by_mem_page_r;
 `ifdef DEBUG_MCNTRL_TILED_EXTRA_STATUS    
         .PAYLOAD_BITS     (14)
 `else    
+      `ifdef REPORT_FRAME_NUMBER
+        .PAYLOAD_BITS     (2 + LAST_FRAME_BITS)
+      `else
         .PAYLOAD_BITS     (2)
+      `endif  
 `endif    
     ) status_generate_i (
         .rst              (1'b0),          // input

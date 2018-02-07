@@ -39,6 +39,7 @@
  */
 `timescale 1ns/1ps
 // TODO: ADD MCNTRL_SCANLINE_FRAME_PAGE_RESET to caller
+`define REPORT_FRAME_NUMBER 1
 `undef DEBUG_MCNTRL_LINEAR_EXTRA_STATUS 
 module  mcntrl_linear_rw #(
     parameter ADDRESS_NUMBER=                   15,
@@ -221,8 +222,13 @@ module  mcntrl_linear_rw #(
     reg                           pre_want_r1;
 `ifdef DEBUG_MCNTRL_LINEAR_EXTRA_STATUS    
     wire                   [11:0] status_data;
-`else    
+`else
+  `ifdef REPORT_FRAME_NUMBER
+    wire    [LAST_FRAME_BITS+1:0] status_data;
+  `else        
     wire                    [1:0] status_data;
+  `endif                                               
+    
 `endif    
     wire                    [3:0] cmd_a; 
     wire                   [31:0] cmd_data; 
@@ -272,7 +278,9 @@ module  mcntrl_linear_rw #(
     reg                           buf_reset_pend;  // reset buffer page at next (late)frame sync (compressor should be disabled
                                                    // if total  number of pages in a frame is not multiple of 4 
     wire                          chn_dis_delayed = chn_rst || (!chn_en && !busy_r); // reset if real reset or disabled and frame finished 
-                                                   
+`ifdef REPORT_FRAME_NUMBER
+    reg     [LAST_FRAME_BITS-1:0] done_frame_number;
+`endif                                               
 //    wire                                                
     
     assign frame_number =       frame_number_current;
@@ -324,7 +332,12 @@ module  mcntrl_linear_rw #(
         
         if (mrst) is_last_frame <= 0;
 //      else      is_last_frame <= frame_number_cntr == last_frame_number;
-        else      is_last_frame <= frame_number_cntr >= last_frame_number; // trying to make it safe 
+        else      is_last_frame <= frame_number_cntr >= last_frame_number; // trying to make it safe
+        
+`ifdef REPORT_FRAME_NUMBER
+        if      (mrst)         done_frame_number <= 0;
+        else if (frame_done_r) done_frame_number <= frame_number_cntr;
+`endif                                               
         
 //        if (mrst) frame_start_r <= 0;
 //        else      frame_start_r <= {frame_start_r[3:0], frame_start_late & frame_en};
@@ -429,7 +442,11 @@ module  mcntrl_linear_rw #(
 `ifdef DEBUG_MCNTRL_LINEAR_EXTRA_STATUS    
     assign status_data=      {last_row_w, last_in_row,line_unfinished[7:0], frame_finished_r, busy_r}; 
 `else
+  `ifdef REPORT_FRAME_NUMBER
+    assign status_data=      {done_frame_number, frame_finished_r, busy_r};     // TODO: Add second bit?
+  `else
     assign status_data=      {frame_finished_r, busy_r};     // TODO: Add second bit?
+  `endif
 `endif    
     assign pgm_param_w=      cmd_we;
     localparam [COLADDR_NUMBER-3-NUM_XFER_BITS-1:0] EXTRA_BITS=0;
@@ -710,8 +727,12 @@ wire    start_not_partial= xfer_start_r[0] && !xfer_limited_by_mem_page_r;
   `else   
     `ifdef DEBUG_MCNTRL_LINEAR_EXTRA_STATUS    
         .PAYLOAD_BITS     (12)
-    `else    
+    `else
+      `ifdef REPORT_FRAME_NUMBER
+        .PAYLOAD_BITS     (2 + LAST_FRAME_BITS)
+      `else
         .PAYLOAD_BITS     (2)
+      `endif  
     `endif    
   `endif   
     ) status_generate_i (

@@ -36,11 +36,14 @@
  * with at least one of the Free Software programs.
  */
  
-        parameter FPGA_VERSION =          32'h039300f0;      //parallel - 17.4 - retry with spells in clean directory
+        parameter FPGA_VERSION =          32'h039300f3;      //parallel - 17.4 - adding buffer frame number to status (no debug)
+//      parameter FPGA_VERSION =          32'h039300f2;      //parallel - 17.4 - inactive debug, OK on fresh
+//      parameter FPGA_VERSION =          32'h039300f1;      //parallel - 17.4 - without power optimize failed, second - OK
+//      parameter FPGA_VERSION =          32'h039300f0;      //parallel - 17.4 - retry with spells in clean directory - failed
 //      parameter FPGA_VERSION =          32'h039300ef;      //parallel - 17.4 - trying more set_param VivadoSynthesis-20180203230051566.log - OK!
 //      parameter FPGA_VERSION =          32'h039300ee;      //parallel - 17.4 - save after re-running vivado, same dir - bad
 //      parameter FPGA_VERSION =          32'h039300ed;      //parallel - 17.4 - twice synth+par, then bit - good
-//      parameter FPGA_VERSION =          32'h039300edc;      //parallel - 17.4 - twice synth, then bit - bad
+//      parameter FPGA_VERSION =          32'h039300edc;     //parallel - 17.4 - twice synth, then bit - bad
 //      parameter FPGA_VERSION =          32'h039300ec;      //parallel - 17.4 - same, no debug, nofresh maxThreads 1- good
 //      parameter FPGA_VERSION =          32'h039300eb;      //parallel - 17.4 - same, no debug, fresh maxThreads 1 - bad (bad numbers)
 //      parameter FPGA_VERSION =          32'h039300ea;      //parallel - 17.4 - same, no debug, nofresh - good

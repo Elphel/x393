@@ -3533,7 +3533,7 @@ sata_ahci_top sata_top(
   );
   
 `ifdef DEBUG_SAXI1
-/*
+/* */
     debug_saxigp #(
         .DEBUG_STATUS              ('h714),
         .DEBUG_STATUS_MASK         ('h7ff),
@@ -3570,7 +3570,7 @@ sata_ahci_top sata_top(
         .saxi_bid     (6'b0), // saxi1_bid),               // input[5:0] 
         .saxi_bresp   (2'b0)  // saxi1_bresp)              // input[1:0] 
     );
-*/
+/**/ /*
     debug_saxigp #(
         .DEBUG_STATUS              ('h714),
         .DEBUG_STATUS_MASK         ('h7ff),
@@ -3606,7 +3606,7 @@ sata_ahci_top sata_top(
         .saxi_bready  (saxi1_bready),            // input
         .saxi_bid     (saxi1_bid),               // input[5:0] 
         .saxi_bresp   (saxi1_bresp)              // input[1:0] 
-    );
+    ); */
 `endif        
   
   

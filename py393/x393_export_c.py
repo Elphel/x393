@@ -800,6 +800,7 @@ class X393ExportC(object):
             (("X393_MCNTRL_CHN3_STATUS",                 c, vrlg.MCNTRL_SCANLINE_STATUS_REG_CHN3_ADDR+ba,0,None, "x393_status_mcntrl_lintile", "ro",         "Status register for MCNTRL CHN3 (scanline)")),
             (("X393_MCNTRL_CHN2_STATUS",                 c, vrlg.MCNTRL_TILED_STATUS_REG_CHN2_ADDR+ba,0,None,    "x393_status_mcntrl_lintile", "ro",         "Status register for MCNTRL CHN2 (tiled)")),
             (("X393_MCNTRL_CHN4_STATUS",                 c, vrlg.MCNTRL_TILED_STATUS_REG_CHN4_ADDR+ba,0,None,    "x393_status_mcntrl_lintile", "ro",         "Status register for MCNTRL CHN4 (tiled)")),
+            
             (("X393_TEST01_CHN2_STATUS",                 c, vrlg.MCNTRL_TEST01_STATUS_REG_CHN2_ADDR+ba,0,None,   "x393_status_mcntrl_testchn", "ro",         "Status register for test channel 2")),
             (("X393_TEST01_CHN3_STATUS",                 c, vrlg.MCNTRL_TEST01_STATUS_REG_CHN3_ADDR+ba,0,None,   "x393_status_mcntrl_testchn", "ro",         "Status register for test channel 3")),
             (("X393_TEST01_CHN4_STATUS",                 c, vrlg.MCNTRL_TEST01_STATUS_REG_CHN4_ADDR+ba,0,None,   "x393_status_mcntrl_testchn", "ro",         "Status register for test channel 4")),
@@ -807,6 +808,22 @@ class X393ExportC(object):
             (("X393_FPGA_VERSION",                       c, fpga_ver + ba, 0, None,                         "u32*", "ro",                                    "FPGA bitstream version")),
             (("X393_SENSOR_INTERFACE",                   c, sens_iface + ba, 0, None,                       "u32*", "ro",                                    "Sensor interface 0-parallel 12, 1 - HiSPI 4 lanes")),
             ]
+        #Sensor memory status (frame number)        
+        ba = vrlg.STATUS_ADDR
+        ia = vrlg.MCONTR_SENS_STATUS_INC
+        c =  "chn"
+        sdefines +=[
+            (('Sensor memory channel status)',)),
+            (("X393_SENS_MEM_STATUS",                    c, vrlg.MCONTR_SENS_STATUS_BASE + ba, ia, z3, "x393_status_mcntrl_lintile", "ro",  "Status register for sensor memory channel"))]
+
+        #Compressor memory status (frame number)        
+        ba = vrlg.STATUS_ADDR
+        ia = vrlg.MCONTR_CMPRS_STATUS_INC
+        c =  "chn"
+        sdefines +=[
+            (('Sensor memory channel status)',)),
+            (("X393_CMPRS_MEM_STATUS",                   c, vrlg.MCONTR_CMPRS_STATUS_BASE + ba, ia, z3, "x393_status_mcntrl_lintile", "ro",  "Status register for compressor memory channel"))]
+
 
         #Registers to control sensor channels        
         ba = vrlg.SENSOR_GROUP_ADDR
@@ -1783,6 +1800,7 @@ class X393ExportC(object):
 
     def _enc_status_lintile(self): #status for memory accesses of the test channels (2,3,4)
         dw=[]
+        dw.append(("frame_number",    0, 16,0,  "Number of the last transferred frame in the buffer"))
         dw.append(("busy",           24,  1,0,  "Channel is busy (started and some memory accesses are pending)"))
         dw.append(("frame_finished", 25,  1,0,  "Channel completed all memory accesses"))
         dw.append(("seq_num",        26,  6,0,  "Sequence number"))
