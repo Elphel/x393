@@ -1,9 +1,9 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 from __future__ import division
 from __future__ import print_function
 '''
 # Copyright (C) 2015, Elphel.inc.
-#   
+#
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
@@ -95,11 +95,11 @@ if ((not acquisition_parameters["bayer"] is None) and
             ibayer ^= 1
     if int (acquisition_parameters["flip_y"]):
         ibayer ^= 2
-    acquisition_parameters["bayer"] = str(ibayer)    
-        
+    acquisition_parameters["bayer"] = str(ibayer)
+
 #restart compressor
 communicate(PORT, "compressor_control all 1 None None None None None")
-        
+
 cmd_str = "jpeg_acquire_write %s %s %s %s %s %s %s %s %s %s %s %s %s"%(
            str(acquisition_parameters["file_path"]),
            str(acquisition_parameters["channel"]),
@@ -117,7 +117,7 @@ cmd_str = "jpeg_acquire_write %s %s %s %s %s %s %s %s %s %s %s %s %s"%(
 gains_exp_changed = False
 geometry_changed = False
 #change gains/exposure if needed
-if ((not acquisition_parameters["gain_r"]  is None) or 
+if ((not acquisition_parameters["gain_r"]  is None) or
     (not acquisition_parameters["gain_gr"] is None) or
     (not acquisition_parameters["gain_gb"] is None) or
     (not acquisition_parameters["gain_b"]  is None) or
@@ -134,7 +134,7 @@ if ((not acquisition_parameters["gain_r"]  is None) or
     communicate(PORT, gstr)
 
 #change flips if needed
-if ((not acquisition_parameters["flip_x"]  is None) or 
+if ((not acquisition_parameters["flip_x"]  is None) or
     (not acquisition_parameters["flip_yr"] is None)):
     geometry_changed = True
     fstr = "set_sensor_flipXY %s %s %s %s"%(
@@ -143,7 +143,7 @@ if ((not acquisition_parameters["flip_x"]  is None) or
             str(acquisition_parameters["flip_y"]),
             str(acquisition_parameters["verbose"]))
     communicate(PORT, fstr)
-#How many bad/non modified frames are to be skipped (just a guess)    
+#How many bad/non modified frames are to be skipped (just a guess)
 skip_frames = 0
 if geometry_changed:
     skip_frames = 2
@@ -153,10 +153,10 @@ if (str(acquisition_parameters["channel"])[0].upper() == 'A'):
     channel_mask = 0x0f
 else:
     channel_mask = 1 << int(acquisition_parameters["channel"])
-skip_str= "skip_frame %d"%(channel_mask)    
+skip_str= "skip_frame %d"%(channel_mask)
 for i in range(skip_frames):
     communicate(PORT, skip_str)
-# Now - get that image                      
+# Now - get that image
 
 reply = communicate(PORT,cmd_str)
 if (acquisition_parameters["cmode"] =="5"):
