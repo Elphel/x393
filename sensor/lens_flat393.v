@@ -58,7 +58,7 @@ AY= q
 AX= p
 BX= -2*p*x0
 */
-
+// Increased latency ny 1 to meet timing
 module lens_flat393 #(
 // Vignetting correction / pixel value scaling - controlled via single data word (same as in 252), some of bits [23:16]
 // are used to select register, bits 25:24 - select sub-frame
@@ -130,7 +130,8 @@ module lens_flat393 #(
     reg     [3:0] sub_frame_late_d;    // add extra stages if needed 
     reg           pre_first_line;
     reg           inc_sub_frame;
-    reg    [13:0] hact_d;              // lens_corr_out; /// lens correction out valid (first clock from column0 )
+//    reg    [13:0] hact_d;              // lens_corr_out; /// lens correction out valid (first clock from column0 )
+    reg    [14:0] hact_d;              // lens_corr_out; /// lens correction out valid (first clock from column0 )
     wire   [15:0] pxd_d;               // pxd_in delayed buy 4 clocks  
     reg    [ 2:0] newline;
     reg           sosf; // start of subframe
@@ -171,6 +172,7 @@ module lens_flat393 #(
 
     // Use sub_frame_late?
     wire  [20:0]  pre_pixdo_with_zero= mult_second_res[35:15] + {{5{fatzero_out_ram[sub_frame][15]}},fatzero_out_ram[sub_frame][15:0]};
+    reg   [17:0]  pre_pixdo_with_zero_r;
 
 
 //    wire          sync_bayer=linerun && ~lens_corr_out[0];
@@ -187,7 +189,8 @@ module lens_flat393 #(
     
     assign subchannel = sub_frame ; 
     assign last_in_sub = inc_sub_frame;
-    assign hact_out = hact_d[13];
+//    assign hact_out = hact_d[13];
+    assign hact_out = hact_d[14];
     
     always @(posedge mclk) begin
         cmd_data_r <= cmd_data;
@@ -216,10 +219,9 @@ module lens_flat393 #(
     end
 
     always @ (posedge pclk) begin
-        hact_d <= {hact_d[12:0],hact_in};
-//        newline <= {newline[1:0], hact_in && !hact_d[0]};
+//        hact_d <= {hact_d[12:0],hact_in};
+        hact_d <= {hact_d[13:0],hact_in};
         newline <= {newline[1:0], hact_d[3] && !hact_d[4]};
-//        line_start <= newline; // make it SR?
     
         if       (sof_in)                  pre_first_line <= 1;
         else if (newline[0])               pre_first_line <= 0;
@@ -265,9 +267,15 @@ module lens_flat393 #(
         3'h7:mult_first_scaled[17:0]<=  (~mult_first_res[35] & |mult_first_res[34:26]) ? 18'h1ffff:mult_first_res[26: 9];
       endcase
 
-      if (hact_d[12]) pxd_out[15:0] <= pre_pixdo_with_zero[20]? 16'h0:   /// negative - use 0
-                                           ((|pre_pixdo_with_zero[19:16])?16'hffff: ///>0xffff - limit by 0xffff
-                                                                       pre_pixdo_with_zero[15:0]);
+      if (hact_d[12])  pre_pixdo_with_zero_r <= {pre_pixdo_with_zero[20], |pre_pixdo_with_zero[19:16], pre_pixdo_with_zero[15:0]};
+
+
+//      if (hact_d[12]) pxd_out[15:0] <= pre_pixdo_with_zero[20]? 16'h0:   /// negative - use 0
+//                                           ((|pre_pixdo_with_zero[19:16])?16'hffff: ///>0xffff - limit by 0xffff
+//                                                                       pre_pixdo_with_zero[15:0]);
+      if (hact_d[13]) pxd_out[15:0] <= pre_pixdo_with_zero_r[17] ? 16'h0:   /// negative - use 0
+                                      (pre_pixdo_with_zero_r[16] ? 16'hffff: ///>0xffff - limit by 0xffff
+                                       pre_pixdo_with_zero_r[15:0]);
     end
 
     // Replacing MULT18X18SIO of x353, registers on both inputs, outputs
@@ -313,7 +321,8 @@ module lens_flat393 #(
     ) dly_16_sof_eof_i (
         .clk         (pclk),              // input
         .rst         (prst),              // input
-        .dly         (4'd12),             // input[3:0] 
+//        .dly         (4'd12),             // input[3:0] 
+        .dly         (4'd13),             // input[3:0] 
         .din         ({sof_in,eof_in}),   // input[0:0] 
         .dout        ({sof_out,eof_out})  // output[0:0] 
     );
