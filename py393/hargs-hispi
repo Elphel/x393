@@ -6,5 +6,5 @@
 -c bitstream_set_path /usr/local/verilog/x393_hispi.bit
 -c setupSensorsPower "HISPI"
 -c measure_all "*DI"
--c setSensorClock 24.0 "2V5_LVDS"
+-c setSensorClock 24.444 "1V8_LVDS"
 -c set_rtc
