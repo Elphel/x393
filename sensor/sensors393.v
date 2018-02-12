@@ -170,8 +170,8 @@ module  sensors393 #(
 `endif        
         parameter SENS_CTRL_LD_DLY =     10,  // 10
 `ifdef HISPI
-        parameter SENS_CTRL_GP0=      12,  // 13:12
-        parameter SENS_CTRL_GP1=      14,  // 15:14
+        parameter SENS_CTRL_GP0=      12,  // 14:12
+        parameter SENS_CTRL_GP1=      15,  // 17:15
 `else        
         parameter SENS_CTRL_QUADRANTS =      12,  // 17:12, enable - 20
         parameter SENS_CTRL_QUADRANTS_WIDTH = 7, // 6,

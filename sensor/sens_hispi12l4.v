@@ -112,7 +112,8 @@ module  sens_hispi12l4#(
     output                   [7:0] ps_out,          // output[7:0] reg 
     output                         locked_pxd_mmcm,
     output                         clkin_pxd_stopped_mmcm, // output
-    output                         clkfb_pxd_stopped_mmcm // output
+    output                         clkfb_pxd_stopped_mmcm, // output
+    output reg [HISPI_NUMLANES-1:0] monitor_pclk    // for monitoring: each bit contains single cycle @pclk line starts    
     
 );
     wire                          ipclk;  // re-generated half HiSPi clock (165 MHz) 
@@ -331,6 +332,9 @@ module  sens_hispi12l4#(
        vact_pclk <= {vact_pclk[0],vact_pclk_strt [0] || hact_r};
        eof <= vact_pclk[1] && !vact_pclk[0]; 
 //       vact_out <= vact_pclk_strt [0] || hact_r;
+
+       monitor_pclk <= rd_run & ~rd_run_d;
+
     end
 
     dly_16 #(

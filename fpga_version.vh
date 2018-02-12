@@ -36,8 +36,9 @@
  * with at least one of the Free Software programs.
  */
  
-//      parameter FPGA_VERSION =          32'h039300fa;      // serial - 15.3 - serial, modifying lens_flat - timing met
-        parameter FPGA_VERSION =          32'h039300f4;      //parallel - 17.4 - , modifying lens_flat - timing met
+        parameter FPGA_VERSION =          32'h039300fb;      // serial - 17.4 - serial, adding trigger control, lanes_alive (violated xclk by 0.004)
+//        parameter FPGA_VERSION =          32'h039300fa;      // serial - 15.3 - serial, modifying lens_flat - timing met
+//      parameter FPGA_VERSION =          32'h039300f4;      //parallel - 17.4 - , modifying lens_flat - timing met
 //      parameter FPGA_VERSION =          32'h039300f9;      // serial - 17.4 - serial, modifying lens_flat - timing met
 //      parameter FPGA_VERSION =          32'h039300f8;      // serial - 17.4 - failed pclk by 0.122
 //      parameter FPGA_VERSION =          32'h039300f3;      //parallel - 17.4 - adding buffer frame number to status (no debug)

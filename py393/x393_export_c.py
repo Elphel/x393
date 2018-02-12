@@ -322,7 +322,7 @@ class X393ExportC(object):
                                  frmt_spcs = frmt_spcs)
         
         stypedefs += self.get_typedef32(comment =   "Sensor/multiplexer I/O pins status",
-                                 data =      self._enc_status_sens_io(),
+                                 data =      [self._enc_status_sens_io(),self._enc_status_sens_io_hispi()],
                                  name =      "x393_status_sens_io",  typ="ro",
                                  frmt_spcs = frmt_spcs)
 
@@ -1835,10 +1835,27 @@ class X393ExportC(object):
         dw.append(("clkfb_pxd_stopped_mmcm",10, 1,0,  "Sensor MMCM feedback clock stopped"))
         dw.append(("clkin_pxd_stopped_mmcm",11, 1,0,  "Sensor MMCM input clock stopped"))
         dw.append(("locked_pxd_mmcm",       12, 1,0,  "Sensor MMCM locked"))
-        dw.append(("hact_alive",            13, 1,0,  "HACT signal from the sensor (or internal) is toggling (N/A for HiSPI"))
+        dw.append(("hact_alive",            13, 1,0,  "HACT signal from the sensor (or internal) is toggling"))
         dw.append(("hact_ext_alive",        14, 1,0,  "HACT signal from the sensor is toggling (N/A for HiSPI)"))
         dw.append(("vact_alive",            15, 1,0,  "VACT signal from the sensor is toggling (N/A for HiSPI)"))
         dw.append(("xfpgatdo_byte",         16, 8,0,  "Multiplexer FPGA TDO output"))
+        dw.append(("senspgmin",             24, 1,0,  "senspgm pin state"))
+        dw.append(("xfpgatdo",              25, 1,0,  "Multiplexer FPGA TDO output"))
+        dw.append(("seq_num",               26, 6,0,  "Sequence number"))
+        return dw
+
+    def _enc_status_sens_io_hispi(self):
+        dw=[]
+        dw.append(("ps_out",                 0, 8,0,  "Sensor MMCM current phase"))
+        dw.append(("ps_rdy",                 8, 1,0,  "Sensor MMCM phase ready"))
+        dw.append(("xfpgadone",              9, 1,0,  "Multiplexer FPGA DONE output"))
+        dw.append(("clkfb_pxd_stopped_mmcm",10, 1,0,  "Sensor MMCM feedback clock stopped"))
+        dw.append(("clkin_pxd_stopped_mmcm",11, 1,0,  "Sensor MMCM input clock stopped"))
+        dw.append(("locked_pxd_mmcm",       12, 1,0,  "Sensor MMCM locked"))
+        dw.append(("hact_alive",            13, 1,0,  "HACT signal from the sensor (or internal) is toggling"))
+        dw.append(("lanes_alive",           14, 4,0,  "Per-line HACT toggling (reset by changing DLL delays)"))
+#        dw.append(("vact_alive",            15, 1,0,  "VACT signal from the sensor is toggling (N/A for HiSPI)"))
+#        dw.append(("xfpgatdo_byte",         16, 8,0,  "Multiplexer FPGA TDO output"))
         dw.append(("senspgmin",             24, 1,0,  "senspgm pin state"))
         dw.append(("xfpgatdo",              25, 1,0,  "Multiplexer FPGA TDO output"))
         dw.append(("seq_num",               26, 6,0,  "Sequence number"))
@@ -2056,10 +2073,10 @@ class X393ExportC(object):
         dw.append(("ign_embed",    vrlg.SENS_CTRL_IGNORE_EMBED, 1,   0,  "Ignore embedded data (non-image pixel lines"))
         dw.append(("ign_embed_set",vrlg.SENS_CTRL_IGNORE_EMBED + 1,1,0,  "Set mode to 'ign_embed' field"))
         dw.append(("set_dly",      vrlg.SENS_CTRL_LD_DLY,       1,   0,  "Set all pre-programmed delays to the sensor port input delays"))
-        dw.append(("gp0",          vrlg.SENS_CTRL_GP0,          1,   0 , "GP0 multipurpose signal to the sensor"))
-        dw.append(("gp0_set",      vrlg.SENS_CTRL_GP0 + 1,      1,   0,  "Set GP0 to 'gp0' value"))
-        dw.append(("gp1",          vrlg.SENS_CTRL_GP1,          1,   0 , "GP1 multipurpose signal to the sensor"))
-        dw.append(("gp1_set",      vrlg.SENS_CTRL_GP1 + 1,      1,   0,  "Set GP1 to 'gp1' value"))
+        dw.append(("gp0",          vrlg.SENS_CTRL_GP0,          2,   0 , "GP0 multi-purpose signal to the sensor: 0 - float, 1 - low, 2 - high, 3 - TRIG"))
+        dw.append(("gp0_set",      vrlg.SENS_CTRL_GP0 + 2,      1,   0,  "Set GP0 to 'gp0' value"))
+        dw.append(("gp1",          vrlg.SENS_CTRL_GP1,          2,   0 , "GP1 multi-purpose signal to the sensor: 0 - float, 1 - low, 2 - high, 3 - TRIG"))
+        dw.append(("gp1_set",      vrlg.SENS_CTRL_GP1 + 2,      1,   0,  "Set GP1 to 'gp1' value"))
         return dw
     
     def _enc_sensio_jtag(self):

@@ -63,8 +63,10 @@ module  sens_10398 #(
     parameter SENS_CTRL_IGNORE_EMBED =   8,  //  9: 8
     parameter SENS_CTRL_LD_DLY=   10,  // 10
 
-    parameter SENS_CTRL_GP0=      12,  // 13:12
-    parameter SENS_CTRL_GP1=      14,  // 15:14
+//    parameter SENS_CTRL_GP0=      12,  // 13:12
+//    parameter SENS_CTRL_GP1=      14,  // 15:14
+    parameter SENS_CTRL_GP0=      12,  // 14:12 00 - float, 01 - low, 10 - high, 11 - trigger
+    parameter SENS_CTRL_GP1=      15,  // 17:15 00 - float, 01 - low, 10 - high, 11 - trigger
 
 //    parameter SENS_CTRL_QUADRANTS =      12,  // 17:12, enable - 20
 //    parameter SENS_CTRL_QUADRANTS_WIDTH = 6,
@@ -190,7 +192,8 @@ module  sens_10398 #(
     reg         ld_idelay=0;
     reg         ignore_embed=0; // do not process sensor data marked as "embedded"
 
-    wire [14:0] status;
+//    wire [14:0] status;
+    wire [19:0] status;
     
     wire        cmd_we;
     wire  [2:0] cmd_a;
@@ -206,17 +209,22 @@ module  sens_10398 #(
     reg            xfpgatms=0;   // TMS to be sent to external FPGA
     reg            xfpgatdi=0;   // TDI to be sent to external FPGA
     
-    reg      [1:0] gp_r;         // sensor GP0, GP1. For now just software control, later use for something else
+///    reg      [1:0] gp_r;         // sensor GP0, GP1. For now just software control, later use for something else
+    reg            [3:0] gp_r;      // sensor GP0, GP1. 2 bits per port : 00 - float, 01 - low, 10 - high , 11 - trigger
     reg [ PXD_CLK_DIV_BITS-1:0] pxd_clk_cntr;
     reg      [1:0] prst_with_sens_mrst = 2'h3; // prst extended to include sensor reset and rst_mmcm
     wire           async_prst_with_sens_mrst =  ~imrst | rst_mmcm; // mclk domain   
     reg            hact_r;
     wire           hact_mclk;
     reg            hact_alive;
-
-    assign status = { locked_pxd_mmcm, 
+    wire  [HISPI_NUMLANES-1:0] monitor_pclk;
+    wire  [HISPI_NUMLANES-1:0] monitor_mclk;
+    reg   [HISPI_NUMLANES-1:0] lanes_alive;
+    assign status = {lanes_alive,
+                     hact_alive, locked_pxd_mmcm, 
                      clkin_pxd_stopped_mmcm, clkfb_pxd_stopped_mmcm, xfpgadone,
-                     ps_rdy, ps_out, xfpgatdo, senspgmin};
+                     ps_rdy, ps_out,
+                     xfpgatdo, senspgmin};
 
     assign iaro = trigger_mode?  ~trig : iaro_soft;
 
@@ -281,15 +289,25 @@ module  sens_10398 #(
         if  (mrst) ld_idelay <= 0;
         else       ld_idelay <= set_ctrl_r && data_r[SENS_CTRL_LD_DLY]; 
 
-        if      (mrst)                                      gp_r[0] <= 0;
-        else if (set_ctrl_r && data_r[SENS_CTRL_GP0 + 1])   gp_r[0] <= data_r[SENS_CTRL_GP0]; 
+///        if      (mrst)                                      gp_r[0] <= 0;
+///        else if (set_ctrl_r && data_r[SENS_CTRL_GP0 + 1])   gp_r[0] <= data_r[SENS_CTRL_GP0]; 
 
-        if      (mrst)                                      gp_r[1] <= 0;
-        else if (set_ctrl_r && data_r[SENS_CTRL_GP1 + 1])   gp_r[1] <= data_r[SENS_CTRL_GP1]; 
+///        if      (mrst)                                      gp_r[1] <= 0;
+///        else if (set_ctrl_r && data_r[SENS_CTRL_GP1 + 1])   gp_r[1] <= data_r[SENS_CTRL_GP1]; 
+
+        if      (mrst)                                      gp_r[1:0] <= 0;
+        else if (set_ctrl_r && data_r[SENS_CTRL_GP0 + 2])   gp_r[1:0] <= data_r[SENS_CTRL_GP0+:2]; 
+
+        if      (mrst)                                      gp_r[3:2] <= 0;
+        else if (set_ctrl_r && data_r[SENS_CTRL_GP1 + 2])   gp_r[3:2] <= data_r[SENS_CTRL_GP1+:2]; 
+
+
         
         if      (mrst || set_iclk_phase || set_idelays)     hact_alive <= 0;
         else if (hact_mclk)                                 hact_alive <= 1;
         
+        if      (mrst || set_iclk_phase || set_idelays)     lanes_alive <= 0;
+        else                                                lanes_alive <= lanes_alive | monitor_mclk;
 
     end
 
@@ -330,7 +348,7 @@ module  sens_10398 #(
 
     status_generate #(
         .STATUS_REG_ADDR(SENSIO_STATUS_REG),
-        .PAYLOAD_BITS(15+1) // +3) // +STATUS_ALIVE_WIDTH) // STATUS_PAYLOAD_BITS)
+        .PAYLOAD_BITS(15+1+HISPI_NUMLANES) // +3) // +STATUS_ALIVE_WIDTH) // STATUS_PAYLOAD_BITS)
     ) status_generate_sens_io_i (
         .rst        (1'b0),                    // rst), // input
         .clk        (mclk),                    // input
@@ -338,7 +356,7 @@ module  sens_10398 #(
         .we         (set_status_r),            // input
         .wd         (data_r[7:0]),             // input[7:0] 
 //        .status     ({status_alive,status}),   // input[25:0] 
-        .status     ({hact_alive,status}),     // input[15:0] 
+        .status     (status),                  // input[19:0] 
         .ad         (status_ad),               // output[7:0] 
         .rq         (status_rq),               // output
         .start      (status_start)             // input
@@ -406,9 +424,23 @@ module  sens_10398 #(
         .ps_out                 (ps_out),                 // output[7:0] 
         .locked_pxd_mmcm        (locked_pxd_mmcm),        // output
         .clkin_pxd_stopped_mmcm (clkin_pxd_stopped_mmcm), // output
-        .clkfb_pxd_stopped_mmcm (clkfb_pxd_stopped_mmcm)  // output
+        .clkfb_pxd_stopped_mmcm (clkfb_pxd_stopped_mmcm),  // output
+        .monitor_pclk           (monitor_pclk)            // output reg[3:0] // for monitoring: each bit contains single cycle @pclk line starts
     );
+    
+    dly_16 #(
+        .WIDTH(HISPI_NUMLANES)
+    ) dly_16_monitor_i (
+        .clk  (pclk),                        // input
+        .rst  (1'b0),                        // input
+        .dly  (4'h0),                        // input[3:0] 
+        .din  (monitor_pclk),                // input[3:0] 
+        .dout (monitor_mclk)                 // output[3:0] 
+    );
+    
 /*
+    output reg [HISPI_NUMLANES-1:0] monitor_pclk    // for monitoring: each bit contains single cycle @pclk line starts    
+
     obufds #(
         .CAPACITANCE("DONT_CARE"),
         .IOSTANDARD(PXD_IOSTANDARD), // not diff, just opposite phase signals
@@ -506,6 +538,7 @@ module  sens_10398 #(
         .  I(imrst)          // input
     );
 
+/*
     // generate GP0/TDI
     obuf #(
         .CAPACITANCE  (PXD_CAPACITANCE),
@@ -527,6 +560,31 @@ module  sens_10398 #(
         .O  (sns_gp1),   // output
         .I  (gp_r[1])    // input
     );
+*/
+    // generate GP0/TDI
+    obuft #(
+        .CAPACITANCE  (PXD_CAPACITANCE),
+        .DRIVE        (PXD_DRIVE),
+        .IOSTANDARD   (PXD_IOSTANDARD),
+        .SLEW         (PXD_SLEW)
+    ) sns_gp0_tdi_i (
+        .O  (sns_gp0_tdi),                                      // output
+        .I  (xpgmen? xfpgatdi : ((&gp_r[3:2])? iaro: gp_r[3])), // input
+        .T  (xpgmen? 1'b0 : ~|gp_r[1:0])
+    );
+
+    // generate GP1
+    obuft #(
+        .CAPACITANCE  (PXD_CAPACITANCE),
+        .DRIVE        (PXD_DRIVE),
+        .IOSTANDARD   (PXD_IOSTANDARD),
+        .SLEW         (PXD_SLEW)
+    ) sns_gp1_i (
+        .O  (sns_gp1),    // output
+        .I  ((&gp_r[3:2])? iaro: gp_r[3]),    // input
+        .T  (~|gp_r[3:2])
+    );
+    
     // READ TDO (and flash)    
     ibuf_ibufg #(
         .CAPACITANCE      (PXD_CAPACITANCE),
