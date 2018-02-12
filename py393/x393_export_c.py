@@ -1853,7 +1853,7 @@ class X393ExportC(object):
         dw.append(("clkin_pxd_stopped_mmcm",11, 1,0,  "Sensor MMCM input clock stopped"))
         dw.append(("locked_pxd_mmcm",       12, 1,0,  "Sensor MMCM locked"))
         dw.append(("hact_alive",            13, 1,0,  "HACT signal from the sensor (or internal) is toggling"))
-        dw.append(("lanes_alive",           14, 4,0,  "Per-line HACT toggling (reset by changing DLL delays)"))
+        dw.append(("lanes_alive",           14, 4,0,  "Per-lane HACT toggling (reset by changing DLL delays)"))
 #        dw.append(("vact_alive",            15, 1,0,  "VACT signal from the sensor is toggling (N/A for HiSPI)"))
 #        dw.append(("xfpgatdo_byte",         16, 8,0,  "Multiplexer FPGA TDO output"))
         dw.append(("senspgmin",             24, 1,0,  "senspgm pin state"))
