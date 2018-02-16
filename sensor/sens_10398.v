@@ -44,11 +44,10 @@ module  sens_10398 #(
     parameter SENSIO_CTRL =        'h0,
     parameter SENSIO_STATUS =      'h1,
     parameter SENSIO_JTAG =        'h2,
-//    parameter SENSIO_WIDTH =       'h3, // set line width (1.. 2^16) if 0 - use HACT
+    parameter SENSIO_WIDTH =       'h3, // HERE - number of lines to skip  
     parameter SENSIO_DELAYS =      'h4, // 'h4..'h7 - each address sets 4 delays through 4 bytes of 32-bit data
 // 5, swap lanes 6 - delays, 7 - phase
     parameter SENSIO_STATUS_REG =  'h21,
-
     parameter SENS_JTAG_PGMEN =    8,
     parameter SENS_JTAG_PROG =     6,
     parameter SENS_JTAG_TCK =      4,
@@ -119,8 +118,9 @@ module  sens_10398 #(
     parameter PXD_SLEW =                 "SLOW",
     parameter PXD_CAPACITANCE =          "DONT_CARE",
     parameter PXD_CLK_DIV =              10, // 220MHz -> 22MHz
-    parameter PXD_CLK_DIV_BITS =          4
+    parameter PXD_CLK_DIV_BITS =          4,
 //    ,parameter STATUS_ALIVE_WIDTH =        4
+    parameter SENSIO_SKIP_BITS =         8 // number  of bits in line skip counter
     
 )(
     input                      pclk,   // global clock input, pixel rate (220MHz for MT9F002)
@@ -166,7 +166,7 @@ module  sens_10398 #(
 
 );
 
-    
+    wire        hact_w;
     reg  [31:0] data_r; 
 //    reg   [3:0] set_idelay;
     reg         set_lanes_map; // set sequence of lanes im the composite pixel line
@@ -176,6 +176,12 @@ module  sens_10398 #(
     reg         set_ctrl_r;
     reg         set_status_r;
     reg         set_jtag_r;
+
+    reg                          set_skip_r;
+    reg   [SENSIO_SKIP_BITS-1:0] lines_skip;
+    reg                          some_skip;
+    reg   [SENSIO_SKIP_BITS-1:0] lines_cntr;
+    reg                          hact_dis;
     
     wire        ps_rdy;
     wire  [7:0] ps_out;      
@@ -193,7 +199,8 @@ module  sens_10398 #(
     reg         ignore_embed=0; // do not process sensor data marked as "embedded"
 
 //    wire [14:0] status;
-    wire [19:0] status;
+//    wire [19:0] status;
+    wire [22:0] status;
     
     wire        cmd_we;
     wire  [2:0] cmd_a;
@@ -218,9 +225,10 @@ module  sens_10398 #(
     wire           hact_mclk;
     reg            hact_alive;
     wire  [HISPI_NUMLANES-1:0] monitor_pclk;
+    wire  [HISPI_NUMLANES-2:0] monitor_diff;    
     wire  [HISPI_NUMLANES-1:0] monitor_mclk;
     reg   [HISPI_NUMLANES-1:0] lanes_alive;
-    assign status = {lanes_alive,
+    assign status = {monitor_diff, lanes_alive,
                      hact_alive, locked_pxd_mmcm, 
                      clkin_pxd_stopped_mmcm, clkfb_pxd_stopped_mmcm, xfpgadone,
                      ps_rdy, ps_out,
@@ -230,6 +238,7 @@ module  sens_10398 #(
 
     assign  prsts = prst_with_sens_mrst[0];  // @pclk - includes sensor reset and sensor PLL reset
     
+    assign hact = hact_w && !hact_dis;
 
     always @(posedge mclk) begin
         if      (mrst)     data_r <= 0;
@@ -255,6 +264,9 @@ module  sens_10398 #(
         
         if (mrst)     set_jtag_r <=0;
         else          set_jtag_r <= cmd_we && (cmd_a== SENSIO_JTAG);
+
+        if (mrst)     set_skip_r <=0;
+        else          set_skip_r <= cmd_we && (cmd_a== SENSIO_WIDTH); // here - number of lines to skip
         
         if      (mrst)                                      xpgmen <= 0;
         else if (set_jtag_r && data_r[SENS_JTAG_PGMEN + 1]) xpgmen <= data_r[SENS_JTAG_PGMEN]; 
@@ -309,6 +321,8 @@ module  sens_10398 #(
         if      (mrst || set_iclk_phase || set_idelays)     lanes_alive <= 0;
         else                                                lanes_alive <= lanes_alive | monitor_mclk;
 
+        if      (mrst)                                      lines_skip <= 0;
+        else if (set_skip_r)                                lines_skip <= data_r[SENSIO_SKIP_BITS-1:0]; 
     end
 
     // generate (slow) clock for the sensor - it will be multiplied by the sensor VCO
@@ -326,8 +340,21 @@ module  sens_10398 #(
         else if (prst)                 prst_with_sens_mrst <=  2'h3;
         else                           prst_with_sens_mrst <= prst_with_sens_mrst >> 1;
         
-        hact_r <= hact;
     end
+    
+    always @(posedge pclk) begin
+        hact_r <= hact_w;
+        some_skip <= |lines_skip;
+        
+        if      (!some_skip)                         lines_cntr <= 0;
+        else if (sof)                                lines_cntr <= lines_skip;
+        else if ((|lines_cntr) && hact_r && !hact_w) lines_cntr <= lines_cntr - 1;
+        
+        if      (!some_skip)                                                   hact_dis <= 0;
+        else if (sof)                                                          hact_dis <= 1;
+        else if ((lines_cntr[SENSIO_SKIP_BITS-1:1] == 0) && hact_r && !hact_w) hact_dis <= 0;
+
+    end    
 
     cmd_deser #(
         .ADDR        (SENSIO_ADDR),
@@ -348,7 +375,7 @@ module  sens_10398 #(
 
     status_generate #(
         .STATUS_REG_ADDR(SENSIO_STATUS_REG),
-        .PAYLOAD_BITS(15+1+HISPI_NUMLANES) // +3) // +STATUS_ALIVE_WIDTH) // STATUS_PAYLOAD_BITS)
+        .PAYLOAD_BITS(3+15+1+HISPI_NUMLANES) // +3) // +STATUS_ALIVE_WIDTH) // STATUS_PAYLOAD_BITS)
     ) status_generate_sens_io_i (
         .rst        (1'b0),                    // rst), // input
         .clk        (mclk),                    // input
@@ -356,7 +383,7 @@ module  sens_10398 #(
         .we         (set_status_r),            // input
         .wd         (data_r[7:0]),             // input[7:0] 
 //        .status     ({status_alive,status}),   // input[25:0] 
-        .status     (status),                  // input[19:0] 
+        .status     (status),                  // input[22:0] 
         .ad         (status_ad),               // output[7:0] 
         .rq         (status_rq),               // output
         .start      (status_start)             // input
@@ -407,7 +434,7 @@ module  sens_10398 #(
         .sns_clkp               (sns_clkp),               // input
         .sns_clkn               (sns_clkn),               // input
         .pxd_out                (pxd),                    // output[11:0] reg 
-        .hact_out               (hact),                   // output
+        .hact_out               (hact_w),                 // output
         .sof                    (sof),                    // output
         .eof                    (eof),                    // output reg 
         .mclk                   (mclk),                   // input
@@ -424,8 +451,9 @@ module  sens_10398 #(
         .ps_out                 (ps_out),                 // output[7:0] 
         .locked_pxd_mmcm        (locked_pxd_mmcm),        // output
         .clkin_pxd_stopped_mmcm (clkin_pxd_stopped_mmcm), // output
-        .clkfb_pxd_stopped_mmcm (clkfb_pxd_stopped_mmcm),  // output
-        .monitor_pclk           (monitor_pclk)            // output reg[3:0] // for monitoring: each bit contains single cycle @pclk line starts
+        .clkfb_pxd_stopped_mmcm (clkfb_pxd_stopped_mmcm), // output
+        .monitor_pclk           (monitor_pclk),           // output reg[3:0] // for monitoring: each bit contains single cycle @pclk line starts
+        .monitor_diff           (monitor_diff)            // when SOL active on the last lane @ipclk, latches all other lanes SOL,
     );
     
     dly_16 #(
@@ -615,7 +643,7 @@ module  sens_10398 #(
         .rst         (1'b0),            // input
         .src_clk     (pclk),            // input
         .dst_clk     (mclk),            // input
-        .in_pulse    (hact && !hact_r), // input
+        .in_pulse    (hact_w && !hact_r), // input
         .out_pulse   (hact_mclk),       // output
         .busy() // output
     );

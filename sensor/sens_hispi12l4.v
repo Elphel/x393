@@ -113,7 +113,8 @@ module  sens_hispi12l4#(
     output                         locked_pxd_mmcm,
     output                         clkin_pxd_stopped_mmcm, // output
     output                         clkfb_pxd_stopped_mmcm, // output
-    output reg [HISPI_NUMLANES-1:0] monitor_pclk    // for monitoring: each bit contains single cycle @pclk line starts    
+    output reg [HISPI_NUMLANES-1:0] monitor_pclk,       // for monitoring: each bit contains single cycle @pclk line starts    
+    output reg [HISPI_NUMLANES-2:0] monitor_diff        // for monitoring: when SOL active on the last lane @ipclk, latches all other lanes SOL,     
     
 );
     wire                          ipclk;  // re-generated half HiSPi clock (165 MHz) 
@@ -126,7 +127,8 @@ module  sens_hispi12l4#(
     reg  [HISPI_NUMLANES * 2-1:0] lanes_map;
     reg  [HISPI_NUMLANES * 4-1:0] logical_lanes4;
     reg    [HISPI_FIFO_DEPTH-1:0] fifo_out_dly_mclk;                  
-    reg    [HISPI_FIFO_DEPTH-1:0] fifo_out_dly;                  
+    reg    [HISPI_FIFO_DEPTH-1:0] fifo_out_dly;
+                      
     always @ (posedge mclk) begin
         if      (mrst)          lanes_map <= DEFAULT_LANE_MAP; //{2'h3,2'h2,2'h1,2'h0}; // 1-to-1 default map
         else if (set_lanes_map) lanes_map <= dly_data[HISPI_NUMLANES * 2-1:0];
@@ -211,22 +213,17 @@ module  sens_hispi12l4#(
         .HISPI_IFD_DELAY_VALUE  (HISPI_IFD_DELAY_VALUE),
         .HISPI_IOSTANDARD       (HISPI_IOSTANDARD)
     ) sens_hispi_din_i (
-        .mclk         (mclk), // input
-        .mrst         (mrst), // input
-        .dly_data     (dly_data), // input[31:0] 
-        .set_idelay   (set_idelay), // input[3:0] 
-        .ld_idelay    (ld_idelay), // input
-        .ipclk        (ipclk), // input
-        .ipclk2x      (ipclk2x), // input
-        .irst         (irst), // input
-//`ifdef REVERSE_LANES
-//        .din_p        ({sns_dp[0],sns_dp[1],sns_dp[2],sns_dp[3]}), // input[3:0] 
-//        .din_n        ({sns_dn[0],sns_dn[1],sns_dn[2],sns_dn[3]}), // input[3:0] 
-//`else
-        .din_p        (sns_dp), // input[3:0] 
-        .din_n        (sns_dn), // input[3:0] 
-//`endif        
-        .dout         (sns_d) // output[15:0] 
+        .mclk         (mclk),        // input
+        .mrst         (mrst),        // input
+        .dly_data     (dly_data),    // input[31:0] 
+        .set_idelay   (set_idelay),  // input[3:0] 
+        .ld_idelay    (ld_idelay),   // input
+        .ipclk        (ipclk),       // input
+        .ipclk2x      (ipclk2x),     // input
+        .irst         (irst),        // input
+        .din_p        (sns_dp),      // input[3:0] 
+        .din_n        (sns_dn),      // input[3:0] 
+        .dout         (sns_d)        // output[15:0] 
     );
     
     
@@ -281,13 +278,19 @@ module  sens_hispi12l4#(
     
     
     always @(posedge ipclk) begin
-//        irst_r <= {irst_r[1:0], prst};
     
         if (irst || (|hispi_eof)) vact_ipclk <= 0; // extend output if hact active
         else if (|hispi_sof)      vact_ipclk <= 1;
     
         ignore_embedded_ipclk <= ignore_embedded;
     end
+    
+    // monitoring relative phases
+    always @(posedge ipclk) if (hispi_sol[HISPI_NUMLANES - 1]) begin
+        monitor_diff[HISPI_NUMLANES-2:0] <= hispi_sol[HISPI_NUMLANES-2:0];
+    end
+    
+    
     
     always @(posedge pclk) begin
         if (prst || !vact_ipclk) vact_pclk_strt <= 0;
