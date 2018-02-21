@@ -200,7 +200,8 @@ module  sens_10398 #(
 
 //    wire [14:0] status;
 //    wire [19:0] status;
-    wire [22:0] status;
+//    wire [22:0] status;
+    wire [23:0] status;
     
     wire        cmd_we;
     wire  [2:0] cmd_a;
@@ -224,11 +225,13 @@ module  sens_10398 #(
     reg            hact_r;
     wire           hact_mclk;
     reg            hact_alive;
-    wire  [HISPI_NUMLANES-1:0] monitor_pclk;
-    wire  [HISPI_NUMLANES-2:0] monitor_diff;    
-    wire  [HISPI_NUMLANES-1:0] monitor_mclk;
-    reg   [HISPI_NUMLANES-1:0] lanes_alive;
-    assign status = {monitor_diff, lanes_alive,
+    wire  [HISPI_NUMLANES*2-1:0] mon_barrel;          // @ipclk per-lane monitor barrel shifter  
+//    wire  [HISPI_NUMLANES-1:0] monitor_pclk;
+//    wire  [HISPI_NUMLANES-1:0] monitor_mclk;
+//    wire  [HISPI_NUMLANES-2:0] monitor_diff;  
+//    reg   [HISPI_NUMLANES-1:0] lanes_alive;
+//    assign status = {monitor_diff, lanes_alive,
+    assign status = {mon_barrel,
                      hact_alive, locked_pxd_mmcm, 
                      clkin_pxd_stopped_mmcm, clkfb_pxd_stopped_mmcm, xfpgadone,
                      ps_rdy, ps_out,
@@ -318,8 +321,8 @@ module  sens_10398 #(
         if      (mrst || set_iclk_phase || set_idelays)     hact_alive <= 0;
         else if (hact_mclk)                                 hact_alive <= 1;
         
-        if      (mrst || set_iclk_phase || set_idelays)     lanes_alive <= 0;
-        else                                                lanes_alive <= lanes_alive | monitor_mclk;
+//        if      (mrst || set_iclk_phase || set_idelays)     lanes_alive <= 0;
+//        else                                                lanes_alive <= lanes_alive | monitor_mclk;
 
         if      (mrst)                                      lines_skip <= 0;
         else if (set_skip_r)                                lines_skip <= data_r[SENSIO_SKIP_BITS-1:0]; 
@@ -375,7 +378,8 @@ module  sens_10398 #(
 
     status_generate #(
         .STATUS_REG_ADDR(SENSIO_STATUS_REG),
-        .PAYLOAD_BITS(3+15+1+HISPI_NUMLANES) // +3) // +STATUS_ALIVE_WIDTH) // STATUS_PAYLOAD_BITS)
+//        .PAYLOAD_BITS(3+15+1+HISPI_NUMLANES) // +3) // +STATUS_ALIVE_WIDTH) // STATUS_PAYLOAD_BITS)
+        .PAYLOAD_BITS(15+1+2*HISPI_NUMLANES) // +3) // +STATUS_ALIVE_WIDTH) // STATUS_PAYLOAD_BITS)
     ) status_generate_sens_io_i (
         .rst        (1'b0),                    // rst), // input
         .clk        (mclk),                    // input
@@ -452,10 +456,12 @@ module  sens_10398 #(
         .locked_pxd_mmcm        (locked_pxd_mmcm),        // output
         .clkin_pxd_stopped_mmcm (clkin_pxd_stopped_mmcm), // output
         .clkfb_pxd_stopped_mmcm (clkfb_pxd_stopped_mmcm), // output
-        .monitor_pclk           (monitor_pclk),           // output reg[3:0] // for monitoring: each bit contains single cycle @pclk line starts
-        .monitor_diff           (monitor_diff)            // when SOL active on the last lane @ipclk, latches all other lanes SOL,
+        .monitor_pclk           (), // monitor_pclk),           // output reg[3:0] // for monitoring: each bit contains single cycle @pclk line starts
+        .monitor_diff           (), // monitor_diff),           // when SOL active on the last lane @ipclk, latches all other lanes SOL,
+        .mon_barrel             (mon_barrel)              // output[7:0] // @ipclk per-lane monitor barrel shifter
+        
     );
-    
+/*    
     dly_16 #(
         .WIDTH(HISPI_NUMLANES)
     ) dly_16_monitor_i (
@@ -465,7 +471,7 @@ module  sens_10398 #(
         .din  (monitor_pclk),                // input[3:0] 
         .dout (monitor_mclk)                 // output[3:0] 
     );
-    
+*/
 /*
     output reg [HISPI_NUMLANES-1:0] monitor_pclk    // for monitoring: each bit contains single cycle @pclk line starts    
 

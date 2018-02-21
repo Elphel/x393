@@ -50,7 +50,8 @@ module  sens_hispi_lane#(
     output reg        sof,     // always before first sol - not instead of
     output reg        eof,     // always after last eol (not instead of)
     output reg        sol,     // start of line - 1 cycle before dv
-    output reg        eol      // end of line - last dv 
+    output reg        eol,      // end of line - last dv
+    output reg [1:0]  mon_barrel // monitor barrel shifter    
 );
     localparam  [3:0] SYNC_SOF = HISPI_MSB_FIRST ? 4'h3 : 4'hc;
     localparam  [3:0] SYNC_SOL = HISPI_MSB_FIRST ? 4'h1 : 4'h8;
@@ -131,6 +132,7 @@ module  sens_hispi_lane#(
         if      (irst)       shift_val <= 0;
 //      else if (got_sync)   shift_val <= num_first_zeros;
         else if (got_sync_w) shift_val <= num_first_zeros;
+        mon_barrel <= shift_val;
         
         case (shift_val)
             2'h0: barrel <= din;

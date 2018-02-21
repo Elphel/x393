@@ -114,7 +114,8 @@ module  sens_hispi12l4#(
     output                         clkin_pxd_stopped_mmcm, // output
     output                         clkfb_pxd_stopped_mmcm, // output
     output reg [HISPI_NUMLANES-1:0] monitor_pclk,       // for monitoring: each bit contains single cycle @pclk line starts    
-    output reg [HISPI_NUMLANES-2:0] monitor_diff        // for monitoring: when SOL active on the last lane @ipclk, latches all other lanes SOL,     
+    output reg [HISPI_NUMLANES-2:0] monitor_diff,       // for monitoring: when SOL active on the last lane @ipclk, latches all other lanes SOL,
+    output   [HISPI_NUMLANES*2-1:0] mon_barrel          // @ipclk per-lane monitor barrel shifter
     
 );
     wire                          ipclk;  // re-generated half HiSPi clock (165 MHz) 
@@ -235,6 +236,7 @@ module  sens_hispi12l4#(
     wire      [HISPI_NUMLANES-1:0] hispi_eof;
     wire      [HISPI_NUMLANES-1:0] hispi_sol;
     wire      [HISPI_NUMLANES-1:0] hispi_eol;
+//    wire    [HISPI_NUMLANES*2-1:0] mon_barrel; // per-lane monitor barrel shifter
    // TODO - try to make that something will be recorded even if some lanes are bad (to simplify phase adjust
    // possibly - extra control bit (wait_all_lanes)
    //    use earliest SOF
@@ -381,9 +383,7 @@ module  sens_hispi12l4#(
     ) dly_16_pxd_out_i (
         .clk  (pclk),                        // input
         .rst  (1'b0),                        // input
-//        .dly  (4'h2),                        // input[3:0] 
         .dly  (4'h0),                        // input[3:0] 
-//        .dly  (4'h1),                        // input[3:0] 
         .din  (pxd_out_pre),                 // input[0:0] 
         .dout (pxd_out)                      // output[0:0] 
     );
@@ -403,7 +403,8 @@ module  sens_hispi12l4#(
                 .sof      (hispi_sof[i]),              // output reg 
                 .eof      (hispi_eof[i]),              // output reg 
                 .sol      (hispi_sol[i]),              // output reg 
-                .eol      (hispi_eol[i])               // output reg 
+                .eol      (hispi_eol[i]),              // output reg
+                .mon_barrel (mon_barrel[2*i +: 2])     // output reg 1:0 
             );
             sens_hispi_fifo #(
 //                .COUNT_START  (HISPI_FIFO_START),
