@@ -2046,7 +2046,7 @@ input               mem                 mtd4                ram1                
         self.x393_axi_tasks.write_control_register(base_addr + vrlg.MCNTRL_SCANLINE_MODE,          mode)
 
 
-    def test_hispi_phases(self,num_sensor):
+    def hispi_phases_adjust(self,num_sensor):
         """
         Try to adjust phases
         @param num_sensor - sensor port number (0..3)
@@ -2070,7 +2070,7 @@ input               mem                 mtd4                ram1                
           value = 0
           count = 0
 
-          for j in range(n):
+          for i in range(n):
 
               # reset bits
               thp_reset_flags(num_sensor)
@@ -2078,7 +2078,14 @@ input               mem                 mtd4                ram1                
               barrel = (status>>14)&0xff
               barrel = (barrel>>(2*shift))&0x3
 
-              print(str(barrel)+" ",end='')
+              for j in range(4):
+                v = (status>>14)&0xff
+                v = (v>>(2*(3-j)))&0x3
+                print(str(v),end='')
+
+              print(".",end='')
+
+              #print(str(barrel)+" ",end='')
 
           return barrel
 
@@ -2088,16 +2095,19 @@ input               mem                 mtd4                ram1                
             shift = shift*3
 
             switched = False
-            start = 0
-            stop  = 0
-            count = 0
             value = 0
+            i1 = 0
+            i2 = 0
+            im = 0
 
             for i in range(16):
 
-                if (i==8):
+                if (i==0):
                   phase0 += 0x4000
-                  print("| ",end='')
+
+                if (i==8):
+                  phase0 -= 0x4000
+                  print("| ",end="")
 
                 # set phase
                 phase = phase0+((i%8)<<shift)
@@ -2109,28 +2119,36 @@ input               mem                 mtd4                ram1                
 
                 barrel = thp_read_flags(num_sensor,bitshift)
 
-                if i==0:
+                if ((i==0)or(i==8)):
                   value = barrel
+                  switched = False
+                else:
+                  if (value!=barrel):
+                    if i<8:
+                      if not switched:
+                        switched = True
+                        value = barrel
+                        i1 = i
+                      else:
+                        print("Unexpected phase shift at "+str(i))
+                    else:
+                      if not switched:
+                        switched = True
+                        value = barrel
+                        i2 = i
+                      else:
+                        print("Unexpected phase shift at "+str(i))
 
-                if i==8:
-                  if not switched:
-                    start = 0
-                    count = 8
+            i1 = i1&0x7
+            i2 = i2&0x7
 
-                if (i<8 and i!=0):
-                  if value!=barrel:
-                    if not switched:
-                      switched = True
-                  else:
-                    if not switched:
-                      count += 1
+            if (abs(i2-i1)<2):
+              print("Error?")
 
-                if i>=8:
-                  if value==barrel:
-                    count += 1
+            target_phase = phase0 + (i1<<shift)
+            thp_set_phase(num_sensor,target_phase)
 
-            print("")
-            return [start,count]
+            return target_phase
 
 
         chn = num_sensor
@@ -2151,22 +2169,48 @@ input               mem                 mtd4                ram1                
         phase0 = 0x8000
 
         for i in range(4):
-          print("")
           print("D"+str(i))
-          res = thp_run(num_sensor,phase0,i,i)
-          phase = ((res[0]+(res[1]>>1))%8)<<(3*i)
-          phase0 += phase
+          phase0 = thp_run(num_sensor,phase0,i,i)
           print("Updated phase = 0x"+"{:04x}".format(phase0))
-          print("i = "+str(res[0])+"  count = "+str(res[1]))
-
-          if (res[1]<2):
-            print("ERROR_D"+str(i))
-
 
         print("Done")
 
 
 
+    def hispi_test_i2c_write(self,num_sensor):
+      """
+      Test i2c writes
+      @param num_sensor - sensor port number (0..3)
+      """
+
+      for i in range(10000000):
+
+        if (i%10000==0):
+          print("iteration: "+str(i))
+
+        fname = "/sys/devices/soc0/elphel393-sensor-i2c@0/i2c"+str(num_sensor)
+
+        val = str(hex(0x8000+(i&0xfff)))
+
+        f = open(fname,'w')
+        f.write("mt9f002 0 0x31c0 "+val)
+        f.close()
+
+        #time.sleep(0.5)
+
+        # initiate read
+        f = open(fname,'w')
+        f.write("mt9f002 0 0x31c0")
+        f.close()
+
+        # read
+        f = open(fname,'r')
+        res = int(f.read())
+        f.close()
+
+        if (res!=int(val,0)):
+          print(res+" vs "+val)
+          break
 
 
 
