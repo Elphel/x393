@@ -43,6 +43,7 @@ module  sens_sync#(
     parameter SENS_SYNC_MASK  =     'h7fc,
     // 2 locations reserved for control/status (if they will be needed)
     parameter SENS_SYNC_MULT  =     'h2,   // relative register address to write number of frames to combine in one (minus 1, '0' - each farme)
+                                           // 'hffff - disable frames generation !
     parameter SENS_SYNC_LATE  =     'h3,    // number of lines to delay late frame sync
     parameter SENS_SYNC_FBITS =     16,    // number of bits in a frame counter for linescan mode
     parameter SENS_SYNC_LBITS =     16,    // number of bits in a line counter for sof_late output (limited by eof) 
@@ -76,7 +77,8 @@ module  sens_sync#(
     reg [SENS_SYNC_LBITS-1:0] line_dly_pclk = SENS_SYNC_LATE_DFLT;  // sub-frame number ("linescan" mode)
     reg [SENS_SYNC_FBITS-1:0] sub_frames_left;  // sub-frame number ("linescan" mode)
     reg [SENS_SYNC_FBITS-1:0] lines_left;  //Number of lines left to generate sof_late
-    reg      [DATA_WIDTH-1:0] cmd_data_r;
+//    reg      [DATA_WIDTH-1:0] cmd_data_r;
+    reg        [DATA_WIDTH:0] cmd_data_r; // 1<<16 - disable SOF
     wire               [31:0] cmd_data;
     wire                [1:0] cmd_a;
     wire                      cmd_we;
@@ -99,16 +101,21 @@ module  sens_sync#(
     reg [SENS_SYNC_MINBITS-1:0] period_cntr;
     reg                       period_dly; // runnning counter to enforce > min period
     reg                       en_pclk;
+    
+    reg                       dis_frame_sync; // @pclk disable frame sync generation (during interface set up to prevent stray fs)
+    
+    wire                      sof_in_masked = !dis_frame_sync && sof_in; 
     assign set_data_mclk = cmd_we && ((cmd_a == SENS_SYNC_MULT) || (cmd_a == SENS_SYNC_LATE));
     assign zero_frames_left = !(|sub_frames_left);
     assign hact_single = hact && !hact_r;
     assign last_line = !(|lines_left);
     assign pre_sof_late = sof_dly && (eof_in || (hact_single && last_line));
     assign trig = trig_r;
-    assign pre_sof_out = sof_in && zero_frames_left && !period_dly && (en_vacts_free || trig_r || overdue);
+    assign pre_sof_out = sof_in_masked && zero_frames_left && !period_dly && (en_vacts_free || trig_r || overdue);
 
     always @ (posedge mclk) begin
-        if (set_data_mclk)  cmd_data_r <= cmd_data[DATA_WIDTH-1:0];
+//        if (set_data_mclk)  cmd_data_r <= cmd_data[DATA_WIDTH-1:0];
+        if (set_data_mclk)  cmd_data_r <= cmd_data[DATA_WIDTH:0];
         if (set_data_mclk)  cmd_a_r <= cmd_a;
     end
     
@@ -116,14 +123,16 @@ module  sens_sync#(
     
         en_pclk <= en;
         
-        if (set_data_pclk && (cmd_a_r == SENS_SYNC_MULT))
+        if (set_data_pclk && (cmd_a_r == SENS_SYNC_MULT)) begin
+//            sub_frames_pclk <= cmd_data_r[SENS_SYNC_FBITS-1:0];
             sub_frames_pclk <= cmd_data_r[SENS_SYNC_FBITS-1:0];
-            
+            dis_frame_sync <=  cmd_data_r[SENS_SYNC_FBITS];   
+        end    
         if (set_data_pclk && (cmd_a_r == SENS_SYNC_LATE))
             line_dly_pclk <=   cmd_data_r[SENS_SYNC_LBITS-1:0];
             
-        if (!en || (sof_in && zero_frames_left)) sub_frames_left <= sub_frames_pclk ;
-        else if (sof_in)                         sub_frames_left <=  sub_frames_left - 1;
+        if (!en || (sof_in_masked && zero_frames_left)) sub_frames_left <= sub_frames_pclk ;
+        else if (sof_in_masked)                         sub_frames_left <=  sub_frames_left - 1;
         
 //        if (!en) hact_r <= hact; 
         hact_r <= hact || !en; 
@@ -138,13 +147,13 @@ module  sens_sync#(
         trigger_mode_pclk <= trigger_mode; 
         
         if (!trigger_mode_pclk || !en) en_vacts_free<= 1'b1;
-        else if (sof_in)               en_vacts_free<= 1'b0;
+        else if (sof_in_masked)        en_vacts_free<= 1'b0;
         
         if (pre_sof_out || !trigger_mode_pclk) overdue <= 1'b0;
         else if (trig_in_pclk)                 overdue <= trig_r;
         
-        if (!en || !trigger_mode_pclk  || sof_in) trig_r <=0;
-        else if (trig_in_pclk)                    trig_r <= ~trig_r;
+        if (!en || !trigger_mode_pclk  || sof_in_masked) trig_r <=0;
+        else if (trig_in_pclk)                           trig_r <= ~trig_r;
 
         // enforce minimal frame period (applies to both normal and delayed pulse (Make it only in free-running mode?)
         if (!en || !(&period_cntr)) period_dly <= 0;

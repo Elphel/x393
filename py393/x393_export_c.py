@@ -1967,6 +1967,7 @@ class X393ExportC(object):
     def _enc_sens_sync_mult(self):
         dw=[]
         dw.append(("mult_frames",      0, vrlg.SENS_SYNC_FBITS,   0,  "Number of frames to combine into one minus 1 (0 - single,1 - two frames...)"))
+        dw.append(("dis_sof",          vrlg.SENS_SYNC_FBITS, 1,   0,  "disable SOF (while setting up sensor interface to prevent stray SOF)"))
         return dw
 
     def _enc_sens_sync_late(self):
