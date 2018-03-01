@@ -3,7 +3,7 @@ from __future__ import print_function
 
 '''
 # Copyright (C) 2015, Elphel.inc.
-# Class to control 10393 sensor-to-memory channel (including histograms)  
+# Class to control 10393 sensor-to-memory channel (including histograms)
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
@@ -42,6 +42,9 @@ import x393_utils
 import time
 import vrlg
 import x393_mcntrl
+
+import subprocess
+
 #import x393_sens_cmprs
 SENSOR_INTERFACE_PARALLEL = "PAR12"
 SENSOR_INTERFACE_HISPI =    "HISPI"
@@ -60,7 +63,7 @@ class X393Sensor(object):
         self.x393_mem=            X393Mem(debug_mode,dry_mode)
         self.x393_axi_tasks=      x393_axi_control_status.X393AxiControlStatus(debug_mode,dry_mode)
         self.x393_utils=          x393_utils.X393Utils(debug_mode,dry_mode, saveFileName) # should not overwrite save file path
-        
+
         try:
             self.verbose=vrlg.VERBOSE
         except:
@@ -73,7 +76,7 @@ class X393Sensor(object):
         if  self.DRY_MODE is True:
             return SENSOR_INTERFACE_PARALLEL
         return (SENSOR_INTERFACE_PARALLEL, SENSOR_INTERFACE_HISPI)[self.x393_axi_tasks.read_status(address=0xfe)] # "PAR12" , "HISPI"
-        
+
     def program_status_sensor_i2c( self,
                                    num_sensor,
                                    mode,     # input [1:0] mode;
@@ -85,7 +88,7 @@ class X393Sensor(object):
                                   0: disable status generation,
                                   1: single status request,
                                   2: auto status, keep specified seq number,
-                                  3: auto, inc sequence number 
+                                  3: auto, inc sequence number
         @param seq_number - 6-bit sequence number of the status message to be sent
         """
         try:
@@ -114,7 +117,7 @@ class X393Sensor(object):
                                   0: disable status generation,
                                   1: single status request,
                                   2: auto status, keep specified seq number,
-                                  3: auto, inc sequence number 
+                                  3: auto, inc sequence number
         @param seq_number - 6-bit sequence number of the status message to be sent
         """
         try:
@@ -132,7 +135,7 @@ class X393Sensor(object):
                              vrlg.SENSIO_STATUS,
                              mode,
                              seq_num)# //MCONTR_PHY_STATUS_REG_ADDR=          'h0,
-        
+
     def get_status_sensor_io ( self,
                               num_sensor="All"):
         """
@@ -149,7 +152,7 @@ class X393Sensor(object):
         except:
             pass
         return self.x393_axi_tasks.read_status(
-                    address=(vrlg.SENSI2C_STATUS_REG_BASE + num_sensor * vrlg.SENSI2C_STATUS_REG_INC + vrlg.SENSIO_STATUS_REG_REL))       
+                    address=(vrlg.SENSI2C_STATUS_REG_BASE + num_sensor * vrlg.SENSI2C_STATUS_REG_INC + vrlg.SENSIO_STATUS_REG_REL))
 
     def print_status_sensor_io (self,
                                 num_sensor="All"):
@@ -168,27 +171,27 @@ class X393Sensor(object):
         status= self.get_status_sensor_io(num_sensor)
         print ("print_status_sensor_io(%d):"%(num_sensor))
 #last_in_line_1cyc_mclk, dout_valid_1cyc_mclk
-        """ 
-        print ("   last_in_line_1cyc_mclk = %d"%((status>>23) & 1))        
-        print ("   dout_valid_1cyc_mclk =   %d"%((status>>22) & 1))        
-        print ("   alive_hist0_gr =         %d"%((status>>21) & 1))        
-        print ("   alive_hist0_rq =         %d"%((status>>20) & 1))        
-        print ("   sof_out_mclk =           %d"%((status>>19) & 1))        
-        print ("   eof_mclk =               %d"%((status>>18) & 1))        
-        print ("   sof_mclk =               %d"%((status>>17) & 1))        
+        """
+        print ("   last_in_line_1cyc_mclk = %d"%((status>>23) & 1))
+        print ("   dout_valid_1cyc_mclk =   %d"%((status>>22) & 1))
+        print ("   alive_hist0_gr =         %d"%((status>>21) & 1))
+        print ("   alive_hist0_rq =         %d"%((status>>20) & 1))
+        print ("   sof_out_mclk =           %d"%((status>>19) & 1))
+        print ("   eof_mclk =               %d"%((status>>18) & 1))
+        print ("   sof_mclk =               %d"%((status>>17) & 1))
         print ("   sol_mclk =               %d"%((status>>16) & 1))
         """
         """
-        #Folowing 5 bits may be just temporarily available        
+        #Folowing 5 bits may be just temporarily available
         print ("   irst =                   %d"%((status>>20) & 1))
         print ("async_prst_with_sens_mrst = %d"%((status>>19) & 1))
         print ("   imrst =                  %d"%((status>>18) & 1))
         print ("   rst_mmcm =               %d"%((status>>17) & 1))
         print ("   pxd_out_pre[1] =         %d"%((status>>16) & 1))
         """
-        
+
         print ("   shifted TDO              %d"%((status>>16) & 0xff))
-        
+
         print ("   vact_alive =             %d"%((status>>15) & 1))
         print ("   hact_ext_alive =         %d"%((status>>14) & 1))
 #        print ("   hact_alive =             %d"%((status>>13) & 1))
@@ -219,7 +222,7 @@ class X393Sensor(object):
         except:
             pass
         return self.x393_axi_tasks.read_status(
-                    address=(vrlg.SENSI2C_STATUS_REG_BASE + num_sensor * vrlg.SENSI2C_STATUS_REG_INC + vrlg.SENSI2C_STATUS_REG_REL))       
+                    address=(vrlg.SENSI2C_STATUS_REG_BASE + num_sensor * vrlg.SENSI2C_STATUS_REG_INC + vrlg.SENSI2C_STATUS_REG_REL))
 
     def print_status_sensor_i2c (self,
                                 num_sensor="All"):
@@ -245,7 +248,7 @@ class X393Sensor(object):
         print ("   i2c_fifo_lsb =           %d"%((status>> 9) & 1))
         print ("   i2c_fifo_nempty =        %d"%((status>> 8) & 1))
         print ("   i2c_fifo_dout =          %d"%((status>> 0) & 0xff))
-        
+
         print ("   sda_in =                 %d"%((status>>25) & 1))
         print ("   scl_in =                 %d"%((status>>24) & 1))
         print ("   seq =                    %d"%((status>>26) & 0x3f))
@@ -253,15 +256,15 @@ class X393Sensor(object):
 # Functions used by sensor-related tasks
     def func_sensor_mode (self,
                           hist_en =   None,
-                          hist_nrst = None, 
-                          chn_en =    None, 
+                          hist_nrst = None,
+                          chn_en =    None,
                           bits16 =    None):
         """
         Combine parameters into sensor mode control word
         @param hist_en -   bit mask to enable histogram sub-modules, when 0 - disable after processing
                            the started frame
-        @param hist_nrst - bit mask to immediately reset histogram sub-module (if 0) 
-        @param chn_en    - enable sensor channel (False - reset) 
+        @param hist_nrst - bit mask to immediately reset histogram sub-module (if 0)
+        @param chn_en    - enable sensor channel (False - reset)
         @param bits16)   - True - 16 bpp mode, false - 8 bpp mode (bypass gamma). Gamma-processed data
                            is still used for histograms
         @return: sensor mode control word
@@ -271,18 +274,18 @@ class X393Sensor(object):
             rslt |= (hist_en & 0xf) <<   vrlg.SENSOR_HIST_EN_BITS
             rslt |= (hist_nrst & 0xf) << vrlg.SENSOR_HIST_NRST_BITS
             rslt |= 1 << vrlg.SENSOR_HIST_BITS_SET;
-        if not chn_en is None:    
+        if not chn_en is None:
             rslt |= ((0,1)[chn_en]) <<   vrlg.SENSOR_CHN_EN_BIT
             rslt |= 1 <<                 vrlg.SENSOR_CHN_EN_BIT_SET
-        if not bits16 is None:    
+        if not bits16 is None:
             rslt |= ((0,1)[bits16]) <<   vrlg.SENSOR_16BIT_BIT
             rslt |= 1 <<                 vrlg.SENSOR_16BIT_BIT_SET
         return rslt
-    
+
     def func_sensor_i2c_command (self,
                                  rst_cmd =   False,
                                  run_cmd =   None,
-                                 active_sda = None, 
+                                 active_sda = None,
                                  early_release_0 = None,
                                  advance_FIFO = None,
                                  sda = None,
@@ -292,7 +295,7 @@ class X393Sensor(object):
         """
         @param rst_cmd - reset all FIFO (takes 16 clock pulses), also - stops i2c until run command
         @param run_cmd - True - run i2c, False - stop i2c (needed before software i2c), None - no change
-        @param active_sda - pull-up SDA line during second half of SCL=0, when needed and possible 
+        @param active_sda - pull-up SDA line during second half of SCL=0, when needed and possible
         @param early_release_0 -  release SDA=0 immediately after the end of SCL=1 (SDA hold will be provided by week pullup)
         @param advance_FIFO - advance i2c read FIFO
         @param sda - control SDA line (stopped mode only): I<nput>, L<ow> or 0, High or 1
@@ -324,11 +327,11 @@ class X393Sensor(object):
                     return 2
                 else:
                     return 3
-  
+
         if verbose>1:
             print ("func_sensor_i2c_command(): rst_cmd= ",rst_cmd,", run_cmd=",run_cmd,", active_sda = ",active_sda,", early_release_0 = ",early_release_0,
                    ", sda=",sda,", scl=",scl)
-            
+
         rslt = 0
         rslt |= (0,1)[rst_cmd] << vrlg.SENSI2C_CMD_RESET
         if not run_cmd is None:
@@ -343,28 +346,28 @@ class X393Sensor(object):
         if not use_eof is None:
             rslt |= 1 <<                (vrlg.SENSI2C_CMD_USE_EOF + 1)
             rslt |= (0,1)[use_eof] <<   (vrlg.SENSI2C_CMD_USE_EOF)
-            
-        rslt |= parse_sda_scl(sda) <<  vrlg.SENSI2C_CMD_SOFT_SDA  
-        rslt |= parse_sda_scl(scl) <<  vrlg.SENSI2C_CMD_SOFT_SCL  
+
+        rslt |= parse_sda_scl(sda) <<  vrlg.SENSI2C_CMD_SOFT_SDA
+        rslt |= parse_sda_scl(scl) <<  vrlg.SENSI2C_CMD_SOFT_SCL
         if verbose>0:
             print (" => 0x%x"%(rslt))
 
-        return rslt        
+        return rslt
 
     def func_sensor_i2c_table_reg_wr (self,
                                  slave_addr,
                                  rah,
-                                 num_bytes, 
+                                 num_bytes,
                                  bit_delay,
                                  verbose = 1):
         """
         @param slave_addr - 7-bit i2c slave address
         @param rah -        register address high byte (bits [15:8]) optionally used for register write commands
-        @param num_bytes -  number of bytes to send (including register address bytes) 1..10 
+        @param num_bytes -  number of bytes to send (including register address bytes) 1..10
         @param bit_delay -  number of mclk clock cycle in 1/4 of the SCL period
         @param verbose -    verbose level
         @return combined table data word.
-        """  
+        """
         if verbose>1:
             print ("func_sensor_i2c_table_reg_wr(): slave_addr= ",slave_addr,", rah=",rah,", num_bytes = ",num_bytes,", bit_delay = ",bit_delay)
         rslt = 0
@@ -372,7 +375,7 @@ class X393Sensor(object):
         rslt |= (rah &        ((1 << vrlg.SENSI2C_TBL_RAH_BITS)  - 1)) << vrlg.SENSI2C_TBL_RAH
         rslt |= (num_bytes &  ((1 << vrlg.SENSI2C_TBL_NBWR_BITS) - 1)) << vrlg.SENSI2C_TBL_NBWR
         rslt |= (bit_delay &  ((1 << vrlg.SENSI2C_TBL_DLY_BITS)  - 1)) << vrlg.SENSI2C_TBL_DLY
-        return rslt        
+        return rslt
 
     def func_sensor_i2c_table_reg_rd (self,
                                  two_byte_addr,
@@ -385,7 +388,7 @@ class X393Sensor(object):
         @param bit_delay -     number of mclk clock cycle in 1/4 of the SCL period
         @param verbose -       verbose level
         @return combined table data word.
-        """  
+        """
         if verbose>0:
             print ("func_sensor_i2c_table_reg_rd(): two_byte_addr= ",two_byte_addr,", num_bytes_rd=",num_bytes_rd,", bit_delay = ",bit_delay)
         rslt = 0
@@ -395,7 +398,7 @@ class X393Sensor(object):
         rslt |= (0,1)[two_byte_addr]                                      << vrlg.SENSI2C_TBL_NABRD
         rslt |= (num_bytes_rd &  ((1 << vrlg.SENSI2C_TBL_NBRD_BITS) - 1)) << vrlg.SENSI2C_TBL_NBRD
         rslt |= (bit_delay &     ((1 << vrlg.SENSI2C_TBL_DLY_BITS)  - 1)) << vrlg.SENSI2C_TBL_DLY
-        return rslt        
+        return rslt
 
     def func_sensor_io_ctl (self,
                             mrst = None,
@@ -406,13 +409,13 @@ class X393Sensor(object):
                             set_delays = False,
                             quadrants = None):
         """
-        Combine sensor I/O control parameters into a control word 
+        Combine sensor I/O control parameters into a control word
         @param mrst -  True - activate MRST signal (low), False - deactivate MRST (high), None - no change
         @param arst -  True - activate ARST signal (low), False - deactivate ARST (high), None - no change
         @param aro -   True - activate ARO signal (low), False - deactivate ARO (high), None - no change
         @param mmcm_rst - True - activate MMCM reset, False - deactivate MMCM reset, None - no change (needed after clock change/interruption)
         @param clk_sel - True - use pixel clock from the sensor, False - use internal clock (provided to the sensor), None - no chnage
-        @param set_delays - (self-clearing) load all pre-programmed delays for the sensor pad inputs 
+        @param set_delays - (self-clearing) load all pre-programmed delays for the sensor pad inputs
         @param quadrants -  90-degree shifts for data [1:0], hact [3:2] and vact [5:4] [6] - extra hact delay by 1 pixel (7'h01), None - no change
         @return sensor i/o control word
         """
@@ -447,7 +450,7 @@ class X393Sensor(object):
         @param tck =   False - set TCK low,  True - set TCK high, None - keep previous value
         @param tms =   False - set TMS low,  True - set TMS high, None - keep previous value
         @param tdi =   False - set TDI low,  True - set TDI high, None - keep previous value
-        @return combined control word       
+        @return combined control word
         """
         rslt = 0
         if not pgmen is None:
@@ -480,7 +483,7 @@ class X393Sensor(object):
         if not bayer is None:
             rslt |= (bayer & 3) <<       vrlg.SENS_GAMMA_MODE_BAYER
             rslt |=          1  <<       vrlg.SENS_GAMMA_MODE_BAYER_SET
-            
+
         if not table_page is None:
             rslt |= (0,1)[table_page] << vrlg.SENS_GAMMA_MODE_PAGE
             rslt |=                1  << vrlg.SENS_GAMMA_MODE_PAGE_SET
@@ -488,11 +491,11 @@ class X393Sensor(object):
         if not en_input is None:
             rslt |= (0,1)[en_input] <<   vrlg.SENS_GAMMA_MODE_EN
             rslt |=              1  <<   vrlg.SENS_GAMMA_MODE_EN_SET
-            
+
         if not repet_mode is None:
             rslt |= (0,1)[repet_mode] << vrlg.SENS_GAMMA_MODE_REPET
             rslt |=                1  << vrlg.SENS_GAMMA_MODE_REPET_SET
-            
+
         rslt |= (0,1)[trig] <<       vrlg.SENS_GAMMA_MODE_TRIG
         return rslt
 
@@ -511,20 +514,20 @@ class X393Sensor(object):
         @return status register address for I/O for selected sensor port
         """
         return (vrlg.SENSI2C_STATUS_REG_BASE + num_sensor * vrlg.SENSI2C_STATUS_REG_INC + vrlg.SENSIO_STATUS_REG_REL);
-    
+
     def set_sensor_mode (self,
                          num_sensor,
                          hist_en =   None,
-                         hist_nrst = None, 
-                         chn_en =    None, 
+                         hist_nrst = None,
+                         chn_en =    None,
                          bits16 =    None):
         """
         Set sensor mode
         @param num_sensor - sensor port number (0..3)
         @param hist_en -   bit mask to enable histogram sub-modules, when 0 - disable after processing
                            the started frame
-        @param hist_nrst - bit mask to immediately reset histogram sub-module (if 0) 
-        @param chn_en    - enable sensor channel (False - reset) 
+        @param hist_nrst - bit mask to immediately reset histogram sub-module (if 0)
+        @param chn_en    - enable sensor channel (False - reset)
         @param bits16)   - True - 16 bpp mode, false - 8 bpp mode (bypass gamma). Gamma-processed data
                            is still used for histograms
         """
@@ -533,29 +536,29 @@ class X393Sensor(object):
                 for num_sensor in range(4):
                     self.set_sensor_mode (num_sensor = num_sensor,
                          hist_en = hist_en,
-                         hist_nrst = hist_nrst, 
-                         chn_en = chn_en, 
+                         hist_nrst = hist_nrst,
+                         chn_en = chn_en,
                          bits16 = bits16)
                 return
         except:
             pass
-        
+
         self.x393_axi_tasks.write_control_register(vrlg.SENSOR_GROUP_ADDR + num_sensor * vrlg.SENSOR_BASE_INC + vrlg.SENSOR_CTRL_RADDR,
                                                   self.func_sensor_mode(
                                                                    hist_en =   hist_en,
                                                                    hist_nrst = hist_nrst,
                                                                    chn_en =    chn_en,
                                                                    bits16 =    bits16))
-        
-        
-        
-        
+
+
+
+
 
     def set_sensor_i2c_command (self,
                                 num_sensor,
                                 rst_cmd =         False,
                                 run_cmd =         None,
-                                active_sda =      None, 
+                                active_sda =      None,
                                 early_release_0 = None,
                                 advance_FIFO =    None,
                                 sda =             None,
@@ -566,7 +569,7 @@ class X393Sensor(object):
         @param num_sensor - sensor port number (0..3) or all
         @param rst_cmd - reset all FIFO (takes 16 clock pulses), also - stops i2c until run command
         @param run_cmd - True - run i2c, False - stop i2c (needed before software i2c), None - no change
-        @param active_sda - pull-up SDA line during second half of SCL=0, when needed and possible 
+        @param active_sda - pull-up SDA line during second half of SCL=0, when needed and possible
         @param early_release_0 -  release SDA=0 immediately after the end of SCL=1 (SDA hold will be provided by week pullup)
         @param advance_FIFO -     advance i2c read FIFO
         @param sda - control SDA line (stopped mode only): I<nput>, L<ow> or 0, High or 1
@@ -582,19 +585,19 @@ class X393Sensor(object):
                     self.set_sensor_i2c_command (num_sensor,
                                 rst_cmd =         rst_cmd,
                                 run_cmd =         run_cmd,
-                                active_sda =      active_sda, 
+                                active_sda =      active_sda,
                                 early_release_0 = early_release_0,
                                 advance_FIFO =    advance_FIFO,
                                 sda =             sda,
                                 scl =             scl,
-                                use_eof =         use_eof,    
+                                use_eof =         use_eof,
                                 verbose =         verbose)
 
                 return
         except:
             pass
-        
-          
+
+
         self.x393_axi_tasks.write_control_register(vrlg.SENSOR_GROUP_ADDR + num_sensor * vrlg.SENSOR_BASE_INC + vrlg.SENSI2C_CTRL_RADDR,
                                                   self.func_sensor_i2c_command(
                                                        rst_cmd =         rst_cmd,
@@ -612,7 +615,7 @@ class X393Sensor(object):
                                      page,
                                      slave_addr,
                                      rah,
-                                     num_bytes, 
+                                     num_bytes,
                                      bit_delay,
                                      verbose = 1):
         """
@@ -621,7 +624,7 @@ class X393Sensor(object):
         @param page -       1 byte table index (later provided as high byte of the 32-bit command)
         @param slave_addr - 7-bit i2c slave address
         @param rah -        register address high byte (bits [15:8]) optionally used for register write commands
-        @param num_bytes -  number of bytes to send (including register address bytes) 1..10 
+        @param num_bytes -  number of bytes to send (including register address bytes) 1..10
         @param bit_delay -  number of mclk clock cycle in 1/4 of the SCL period
         @param verbose -    verbose level
         """
@@ -629,9 +632,9 @@ class X393Sensor(object):
         td = (1 << vrlg.SENSI2C_CMD_TABLE) | self.func_sensor_i2c_table_reg_wr(
                                                slave_addr = slave_addr,
                                                rah =        rah,
-                                               num_bytes =  num_bytes, 
+                                               num_bytes =  num_bytes,
                                                bit_delay =  bit_delay,
-                                               verbose =    verbose) 
+                                               verbose =    verbose)
 
         self.x393_axi_tasks.write_control_register(vrlg.SENSOR_GROUP_ADDR + num_sensor * vrlg.SENSOR_BASE_INC + vrlg.SENSI2C_CTRL_RADDR, ta)
         self.x393_axi_tasks.write_control_register(vrlg.SENSOR_GROUP_ADDR + num_sensor * vrlg.SENSOR_BASE_INC + vrlg.SENSI2C_CTRL_RADDR, td)
@@ -657,7 +660,7 @@ class X393Sensor(object):
                                                two_byte_addr = two_byte_addr,
                                                num_bytes_rd = num_bytes_rd,
                                                bit_delay =  bit_delay,
-                                               verbose =    verbose) 
+                                               verbose =    verbose)
         self.x393_axi_tasks.write_control_register(vrlg.SENSOR_GROUP_ADDR + num_sensor * vrlg.SENSOR_BASE_INC + vrlg.SENSI2C_CTRL_RADDR, ta)
         self.x393_axi_tasks.write_control_register(vrlg.SENSOR_GROUP_ADDR + num_sensor * vrlg.SENSOR_BASE_INC + vrlg.SENSI2C_CTRL_RADDR, td)
         if verbose > 1:
@@ -693,12 +696,12 @@ class X393Sensor(object):
                           after the slave address and optional high address byte other bytes are sent in descending order (LSB- last).
                           If less than 4 bytes are programmed in the table the high bytes (starting with the one from the table) are
                           skipped.
-                          If more than 4 bytes are programmed in the table for the page (high byte), one or two next 32-bit words 
+                          If more than 4 bytes are programmed in the table for the page (high byte), one or two next 32-bit words
                           bypass the index table and all 4 bytes are considered payload ones. If less than 4 extra bytes are to be
                           sent for such extra word, only the lower bytes are sent.
                       2 - register read: index page, slave address (8-bit, with lower bit 0) and one or 2 address bytes (as programmed
                           in the table. Slave address is always in byte 2 (bits 23:16), byte1 (high register address) is skipped if
-                          read address in the table is programmed to be a single-byte one    
+                          read address in the table is programmed to be a single-byte one
         """
         try:
             if (num_sensor == all) or (num_sensor[0].upper() == "A"): #all is a built-in function
@@ -759,7 +762,7 @@ class X393Sensor(object):
             if len(rslt) == num_bytes:
                 break # read all that was requested (num_bytes == None will not get here)
         return  rslt
-            
+
     def print_sensor_i2c (self,
                           num_sensor,
                           reg_addr,
@@ -783,7 +786,7 @@ class X393Sensor(object):
             for b in dl:
                 d = (d << 8) | (b & 0xff)
             fmt="FIFO contained %d bytes i2c data = 0x%%0%dx"%(len(dl),len(dl*2))
-            print (fmt%(d))    
+            print (fmt%(d))
         #create and send i2c command in ASAP mode:
         i2c_cmd = ((indx & 0xff) << 24) | (sa7 <<17) | (reg_addr & 0xffff)
         #write_sensor_i2c  0 1 0 0x91900004
@@ -793,8 +796,8 @@ class X393Sensor(object):
                               data = i2c_cmd)
         time.sleep(0.05) # We do not know how many bytes are expected, so just wait long enough and hope all bytes are in fifo already
 
-        
-        
+
+
         dl = self.read_sensor_i2c (num_sensor = num_sensor,
                                    num_bytes = None,
                                    verbose = verbose)
@@ -802,9 +805,9 @@ class X393Sensor(object):
             d = 0
             for b in dl:
                 d = (d << 8) | (b & 0xff)
-            if verbose > 0:    
+            if verbose > 0:
                 fmt="i2c data[0x%02x:0x%x] = 0x%%0%dx"%(sa7,reg_addr,len(dl)*2)
-                print (fmt%(d))    
+                print (fmt%(d))
         return d
 
     def set_sensor_flipXY(self,
@@ -824,14 +827,14 @@ class X393Sensor(object):
             flip_x = False
         if flip_y is None:
             flip_y = False
-            
+
         if sensorType == "PAR12":
-            data = (0,0x8000)[flip_y] | (0,0x4000)[flip_x]  
+            data = (0,0x8000)[flip_y] | (0,0x4000)[flip_x]
             self.write_sensor_reg16 (num_sensor = num_sensor,
                                      reg_addr16 = 0x9020,
                                      reg_data16 = data)
         elif sensorType == "HISPI":
-            data = (0,0x8000)[flip_y] | (0,0x4000)[flip_x] | 0x41  
+            data = (0,0x8000)[flip_y] | (0,0x4000)[flip_x] | 0x41
             self.write_sensor_reg16 (num_sensor = num_sensor,
                                      reg_addr16 = 0x3040,
                                      reg_data16 = data)
@@ -902,7 +905,7 @@ class X393Sensor(object):
                                          reg_data16 = exposure)
         else:
             raise ("Unknown sensor type: %s"%(sensorType))
-                                     
+
     def set_sensor_io_ctl (self,
                            num_sensor,
                            mrst =       None,
@@ -913,14 +916,14 @@ class X393Sensor(object):
                            set_delays = False,
                            quadrants =  None):
         """
-        Set sensor I/O controls, including I/O signals 
+        Set sensor I/O controls, including I/O signals
         @param num_sensor - sensor port number (0..3)
         @param mrst -  True - activate MRST signal (low), False - deactivate MRST (high), None - no change
         @param arst -  True - activate ARST signal (low), False - deactivate ARST (high), None - no change
         @param aro -   True - activate ARO signal (low), False - deactivate ARO (high), None - no change
         @param mmcm_rst - True - activate MMCM reset, False - deactivate MMCM reset, None - no change (needed after clock change/interruption)
         @param clk_sel - True - use pixel clock from the sensor, False - use internal clock (provided to the sensor), None - no chnage
-        @param set_delays - (self-clearing) load all pre-programmed delays for the sensor pad inputs 
+        @param set_delays - (self-clearing) load all pre-programmed delays for the sensor pad inputs
         @param quadrants -  90-degree shifts for data [1:0], hact [3:2] and vact [5:4] (6'h01), None - no change
         """
         try:
@@ -938,7 +941,7 @@ class X393Sensor(object):
         except:
             pass
 
-        
+
         data = self.func_sensor_io_ctl (
                     mrst =       mrst,
                     arst =       arst,
@@ -947,7 +950,7 @@ class X393Sensor(object):
                     clk_sel =    clk_sel,
                     set_delays = set_delays,
                     quadrants =  quadrants)
-        
+
         reg_addr = (vrlg.SENSOR_GROUP_ADDR + num_sensor * vrlg.SENSOR_BASE_INC) + vrlg.SENSIO_RADDR + vrlg.SENSIO_CTRL;
         self.x393_axi_tasks.write_control_register(reg_addr, data)
 # TODO: Make one for HiSPi (it is different)
@@ -965,12 +968,12 @@ class X393Sensor(object):
         @param iclk_dly - delay in the input clock line (3 LSB are not used)
         @param vact_dly - delay in the VACT line (3 LSB are not used)
         @param hact_dly - delay in the HACT line (3 LSB are not used)
-        @param pxd_dly - list of data line delays (12 elements, 3 LSB are not used)                      
+        @param pxd_dly - list of data line delays (12 elements, 3 LSB are not used)
         """
         dlys=((pxd_dly[0] & 0xff) | ((pxd_dly[1] & 0xff) << 8) | ((pxd_dly[ 2] & 0xff) << 16) | ((pxd_dly[ 3] & 0xff) << 24),
               (pxd_dly[4] & 0xff) | ((pxd_dly[5] & 0xff) << 8) | ((pxd_dly[ 6] & 0xff) << 16) | ((pxd_dly[ 7] & 0xff) << 24),
               (pxd_dly[8] & 0xff) | ((pxd_dly[9] & 0xff) << 8) | ((pxd_dly[10] & 0xff) << 16) | ((pxd_dly[11] & 0xff) << 24),
-              (hact_dly & 0xff) |   ((vact_dly & 0xff) <<   8) | ((iclk_dly & 0xff)    << 16) | ((mmcm_phase & 0xff) <<  24))                       
+              (hact_dly & 0xff) |   ((vact_dly & 0xff) <<   8) | ((iclk_dly & 0xff)    << 16) | ((mmcm_phase & 0xff) <<  24))
         reg_addr = (vrlg.SENSOR_GROUP_ADDR + num_sensor * vrlg.SENSOR_BASE_INC) + vrlg.SENSIO_RADDR + vrlg.SENSIO_DELAYS;
         self.x393_axi_tasks.write_control_register(reg_addr + 0, dlys[0]) # {pxd3,       pxd2,  pxd1, pxd0}
         self.x393_axi_tasks.write_control_register(reg_addr + 1, dlys[1]) # {pxd7,       pxd6,  pxd5, pxd4}
@@ -993,7 +996,7 @@ class X393Sensor(object):
         @param lane0_dly - delay in the lane0 (3 LSB are not used) // All 4 lane delays should be set simultaneously
         @param lane1_dly - delay in the lane1 (3 LSB are not used)
         @param lane2_dly - delay in the lane2 (3 LSB are not used)
-        @param lane3_dly - delay in the lane3 (3 LSB are not used))                      
+        @param lane3_dly - delay in the lane3 (3 LSB are not used))
         """
         try:
             if (num_sensor == all) or (num_sensor[0].upper() == "A"): #all is a built-in function
@@ -1012,10 +1015,10 @@ class X393Sensor(object):
             dlys=(lane0_dly & 0xff) | ((lane1_dly & 0xff) << 8) | ((lane2_dly & 0xff) << 16) | ((lane3_dly & 0xff) << 24)
             self.x393_axi_tasks.write_control_register(reg_addr + 2, dlys)
         except:
-            pass                           
+            pass
         if not mmcm_phase is None:
             self.x393_axi_tasks.write_control_register(reg_addr + 3, mmcm_phase & 0xff)
-        
+
     def set_sensor_hispi_lanes(self,
                                num_sensor,
                                lane0 = 0,
@@ -1076,23 +1079,23 @@ class X393Sensor(object):
 #                                      mode = 1,     # input [1:0] mode;
 #                                      seq_num = seq_num) # input [5:0] seq_num;
 #        return seq_num
-     
+
     def jtag_get_tdo(self, chn):
         seq_num = ((self.get_status_sensor_io(num_sensor = chn) >> 26) + 1) & 0x3f
         self.program_status_sensor_io(num_sensor = chn,
                                       mode = 1,     # input [1:0] mode;
                                       seq_num = seq_num) # input [5:0] seq_num;
-        
+
         for _ in range(10):
             stat = self.get_status_sensor_io(num_sensor = chn)
             if seq_num == ((stat >> 26) & 0x3f):
-                break    
+                break
         else:
             print ("wait_sensio_status(): Failed to get seq_num== 0x%x, current is 0x%x"%(seq_num, (stat >> 26) & 0x3f))
-        return (stat >> 25) & 1    
+        return (stat >> 25) & 1
 
 
-        
+
     def jtag_send(self, chn, tms, ln, d):
         i = ln & 7
         if (i == 0):
@@ -1103,7 +1106,7 @@ class X393Sensor(object):
             self.set_sensor_io_jtag (num_sensor = chn,
                             pgmen = None,
                             prog =  None,
-                            tck =   0, 
+                            tck =   0,
                             tms =   tms,
                             tdi =   ((d << 1) >> 8) & 1)
             d <<= 1
@@ -1111,25 +1114,25 @@ class X393Sensor(object):
             self.set_sensor_io_jtag (num_sensor = chn,
                             pgmen = None,
                             prog =  None,
-                            tck =   1, 
+                            tck =   1,
                             tms =   None,
                             tdi =   None)
             self.set_sensor_io_jtag (num_sensor = chn,
                             pgmen = None,
                             prog =  None,
-                            tck =   0, 
+                            tck =   0,
                             tms =   None,
                             tdi =   None)
             i -= 1
         return r
-        
+
     def jtag_write_bits (self,
                          chn,
                          buf,    # data to write
                          ln,     # number of bits to write
 #                         check,  # compare readback data with previously written, abort on mismatch
                          last):   # output last bit with TMS=1
-#                         prev = None): # if null - don't use 
+#                         prev = None): # if null - don't use
         rbuf = []
         r = 0
         for d0 in buf:
@@ -1139,7 +1142,7 @@ class X393Sensor(object):
                     self.set_sensor_io_jtag (num_sensor = chn,
                                     pgmen = None,
                                     prog =  None,
-                                    tck =   0, 
+                                    tck =   0,
                                     tms =   (0,1)[(ln == 1) and last],
                                     tdi =   ((d << 1) >> 8) & 1)
                     d <<= 1
@@ -1147,27 +1150,27 @@ class X393Sensor(object):
                     self.set_sensor_io_jtag (num_sensor = chn,
                                     pgmen = None,
                                     prog =  None,
-                                    tck =   1, 
+                                    tck =   1,
                                     tms =   None,
                                     tdi =   None)
                     self.set_sensor_io_jtag (num_sensor = chn,
                                     pgmen = None,
                                     prog =  None,
-                                    tck =   0, 
+                                    tck =   0,
                                     tms =   None,
                                     tdi =   None)
                 else:
                     r <<= 1
-                ln -= 1    
+                ln -= 1
             rbuf.append(r & 0xff)
-                
+
         return rbuf
-    
+
     def jtag_set_pgm_mode(self,chn,en):
         self.set_sensor_io_jtag (num_sensor = chn,
                         pgmen = en,
                         prog =  None,
-                        tck =   0, 
+                        tck =   0,
                         tms =   None,
                         tdi =   None)
 
@@ -1175,11 +1178,11 @@ class X393Sensor(object):
         self.set_sensor_io_jtag (num_sensor = chn,
                         pgmen = None,
                         prog =  en,
-                        tck =   0, 
+                        tck =   0,
                         tms =   None,
                         tdi =   None)
-        
-                
+
+
     def JTAG_openChannel (self, chn):
         self.jtag_set_pgm_mode (chn, 1);
         self.jtag_set_pgm      (chn, 1)
@@ -1204,8 +1207,8 @@ class X393Sensor(object):
                                      last = 1)
         self.jtag_send(chn, 1, 1, 0   ) #step 9 - set UPDATE-DR state
         return rbuf
-        
-        
+
+
 
 # /dev/sfpgabscan0
     def readbscan(self, filename):
@@ -1214,8 +1217,8 @@ class X393Sensor(object):
             jtag.write(ffs)
             jtag.seek (0,0)
             boundary= jtag.read(97)
-        return boundary    
-            
+        return boundary
+
     def checkSclSda(self, chn, verbose = 1):
         '''
         Check which board is connected to the sensor board
@@ -1225,20 +1228,20 @@ class X393Sensor(object):
         '''
         def print_i2c(chn):
             self.program_status_sensor_i2c(num_sensor = chn, mode = 1, seq_num = 0)
-            status= self.get_status_sensor_i2c(num_sensor = chn)            
+            status= self.get_status_sensor_i2c(num_sensor = chn)
             sda_in =(status>>25) & 1
             scl_in =(status>>24) & 1
             print ("chn = %d, scl = %d, sda = %d"%(chn,scl_in, sda_in))
-            
-        def print_bv(chn, boundary, value, key):    
+
+        def print_bv(chn, boundary, value, key):
             self.program_status_sensor_i2c(num_sensor = chn, mode = 1, seq_num = 0)
-            status= self.get_status_sensor_i2c(num_sensor = chn)            
+            status= self.get_status_sensor_i2c(num_sensor = chn)
             sda_in =(status>>25) & 1
             scl_in =(status>>24) & 1
             print ("%d: sda = %d, bit number SDA = %d, pin value SDA = %d"%(key, sda_in, value['sda'], (((ord(boundary[value['sda'] >> 3]) >> (7 -(value['sda'] & 7))) &1)) ))
             print ("%d: scl = %d, bit number SCL = %d, pin value SCL = %d"%(key, scl_in, value['scl'], (((ord(boundary[value['scl'] >> 3]) >> (7 -(value['scl'] & 7))) &1)) ))
 
-            
+
         boards = [{'model':'10347', 'scl': 241,'sda': 199},  #// E4, C1
                   {'model':'10359', 'scl': 280,'sda': 296}]  #// H6, J5
         bscan_path=('/dev/sfpgabscan%d'%(chn))
@@ -1248,7 +1251,7 @@ class X393Sensor(object):
         if not senspgmin:
             print ("Some sensor board is connected to port # %d, not FPGA"%(chn))
             return "sensor"
-       
+
         test = [1]*len(boards)
         #Stop hardware i2c controller
         self.set_sensor_i2c_command(num_sensor = chn,    run_cmd = False)
@@ -1292,14 +1295,14 @@ class X393Sensor(object):
                     print ("Detected FPGA-based board :%s"%(value['model']))
                 return value['model']
         return ""
-            
-                
+
+
     """
    def set_sensor_i2c_command (self,
                                 num_sensor,
                                 rst_cmd =         False,
                                 run_cmd =         None,
-                                active_sda =      None, 
+                                active_sda =      None,
                                 early_release_0 = None,
                                 advance_FIFO =    None,
                                 sda =             None,
@@ -1308,7 +1311,7 @@ class X393Sensor(object):
         @param num_sensor - sensor port number (0..3)
         @param rst_cmd - reset all FIFO (takes 16 clock pulses), also - stops i2c until run command
         @param run_cmd - True - run i2c, False - stop i2c (needed before software i2c), None - no change
-        @param active_sda - pull-up SDA line during second half of SCL=0, when needed and possible 
+        @param active_sda - pull-up SDA line during second half of SCL=0, when needed and possible
         @param early_release_0 -  release SDA=0 immediately after the end of SCL=1 (SDA hold will be provided by week pullup)
         @param advance_FIFO -     advance i2c read FIFO
         @param sda - control SDA line (stopped mode only): I<nput>, L<ow> or 0, High or 1
@@ -1337,14 +1340,14 @@ class X393Sensor(object):
         print ("   reset_on =               %d"%((status>> 7) & 1))
         print ("   req_clr =                %d"%((status>> 6) & 1))
         print ("   wr_full =               %d"%((status>> 5) & 1))
-        
+
         print ("   busy =                   %d"%((status>> 4) & 1))
         print ("   frame_num =              %d"%((status>> 0)  & 0xf))
         print ("   sda_in =                 %d"%((status>>25) & 1))
         print ("   scl_in =                 %d"%((status>>24) & 1))
         print ("   seq =                    %d"%((status>>26) & 0x3f))
-    
-    
+
+
 set_sensor_mode 0 0 0 1 0
 set_sensor_mode 1 0 0 1 0
 set_sensor_mode 2 0 0 1 0
@@ -1368,9 +1371,9 @@ def readbscan(filename):
         boundary= jtag.read(97)
         #time.sleep(5)
     return boundary
-    
-b = readbscan('/dev/sfpgabscan1')    
-        
+
+b = readbscan('/dev/sfpgabscan1')
+
 $boards=array (
                 '0' => array ('model' => '10347', 'scl' =>241,'sda' => 199),  // E4, C1
                 '1' => array ('model' => '10359', 'scl' =>280,'sda' => 296)   // H6, J5
@@ -1417,12 +1420,12 @@ set_sensor_io_ctl (self,
 
 
 
-set_sensor_io_jtag 1 None None None None 0        
-program_status_sensor_io all 1 0          
-print_status_sensor_io 1                  
-get_status_sensor_io 1                  
+set_sensor_io_jtag 1 None None None None 0
+program_status_sensor_io all 1 0
+print_status_sensor_io 1
+get_status_sensor_io 1
 
-x393 +0.001s--> set_sensor_io_jtag 1 None None None None 0        
+x393 +0.001s--> set_sensor_io_jtag 1 None None None None 0
 x393 +0.001s--> program_status_sensor_io all 1 0
 x393 +0.002s--> print_status_sensor_io 1 # all
 print_status_sensor_io(1):
@@ -1443,7 +1446,7 @@ async_prst_with_sens_mrst = 0
    xfpgatdo =               0
    senspgmin =              1
    seq =                    0
-x393 +0.001s--> set_sensor_io_jtag 1 None None None None 1        
+x393 +0.001s--> set_sensor_io_jtag 1 None None None None 1
 x393 +0.001s--> program_status_sensor_io all 1 0
 x393 +0.002s--> print_status_sensor_io 1 # all
 print_status_sensor_io(1):
@@ -1477,14 +1480,14 @@ a='ffffffffff7fffffffffffffffffffffffffffffffffffffbfffffffffffffffffffff7fff7ff
 al = []
 for i in range(len(a)/2):
     al.append(int('0x'+a[2*i:2*i+2],0))
-    
+
 bl = []
 for i in b:
     bl.append(ord(i))
 
 for i,x in enumerate(zip(al,bl)):
     print ("%02x %02x %02x"%(i,x[0],x[1]))
-    
+
 
 fwrite returned 97<br/>
 Boundary:
@@ -1554,15 +1557,15 @@ i2c-0               loop5               mtd2ro              ptmx                
 iio:device0         loop6               mtd3                pts                 sfpgaconfjtag2      tty15               tty28               tty40               tty53               tty9                xdevcfg
 initctl             loop7               mtd3ro              ram0                sfpgaconfjtag3      tty16               tty29               tty41               tty54               ttyPS0              zero
 input               mem                 mtd4                ram1                shm                 tty17               tty3                tty42               tty55               ttyS0
-   
-    
+
+
    fseek ($jtag,0);
    $boundary= fread($jtag, 97);
    fclose($jtag);
   return $boundary;
-    
-    
-    
+
+
+
             packedData=struct.pack(self.ENDIAN+"L",data)
             d=struct.unpack(self.ENDIAN+"L",packedData)[0]
             mm[page_offs:page_offs+4]=packedData
@@ -1576,7 +1579,7 @@ input               mem                 mtd4                ram1                
         """
         Set sensor frame width
         @param num_sensor - sensor port number (0..3) or all
-        @param width - sensor 16-bit frame width (0 - use sensor HACT signal) 
+        @param width - sensor 16-bit frame width (0 - use sensor HACT signal)
         """
         try:
             if (num_sensor == all) or (num_sensor[0].upper() == "A"): #all is a built-in function
@@ -1587,10 +1590,10 @@ input               mem                 mtd4                ram1                
                 return
         except:
             pass
-        
+
         reg_addr = (vrlg.SENSOR_GROUP_ADDR + num_sensor * vrlg.SENSOR_BASE_INC) + vrlg.SENSIO_RADDR + vrlg.SENSIO_WIDTH;
         self.x393_axi_tasks.write_control_register(reg_addr, width)
- 
+
     def set_sensor_lens_flat_heights (self,
                                       num_sensor,
                                       height0_m1 = None,
@@ -1634,7 +1637,7 @@ input               mem                 mtd4                ram1                
         @param num_sensor -     sensor port number (0..3)
         @param num_sub_sensor - sub-sensor attached to the same port through multiplexer (0..3)
     TODO: add mode "DIRECT", "ASAP", "RELATIVE", "ABSOLUTE" and frame number for sequencer
-        All the next parameters can be None - will not be set 
+        All the next parameters can be None - will not be set
         @param AX (19 bits)
         @param AY (19 bits)
         @param BX (21 bits)
@@ -1653,7 +1656,7 @@ input               mem                 mtd4                ram1                
                         addr,
                         data,
                         width):
-            
+
             return ((num_sensor & 3) << 24) | ((addr & 0xff) << 16) | (data & ((1 << width) - 1))
         reg_addr = (vrlg.SENSOR_GROUP_ADDR + num_sensor * vrlg.SENSOR_BASE_INC) + vrlg.SENS_LENS_RADDR + vrlg.SENS_LENS_COEFF
         if not AX is None:
@@ -1689,17 +1692,17 @@ input               mem                 mtd4                ram1                
                        black = 0.04,
                        page = 0):
         """
-        Program gamma tables for specified sensor port and subchannel 
+        Program gamma tables for specified sensor port and subchannel
         @param num_sensor -     sensor port number (0..3), all - all sensors
         @param num_sub_sensor - sub-sensor attached to the same port through multiplexer (0..3)
         @param gamma - gamma value (1.0 - linear)
         @param black - black level, 1.0 corresponds to 256 for 8bit values
         @param page - gamma table page number (only used if SENS_GAMMA_BUFFER > 0
-        """  
+        """
         curves_data = self.calc_gamma257(gamma = gamma,
                                          black = black,
                                          rshift = 6) * 4
-                                         
+
         try:
             if (num_sensor == all) or (num_sensor[0].upper() == "A"): #all is a built-in function
                 for num_sensor in range(4):
@@ -1711,7 +1714,7 @@ input               mem                 mtd4                ram1                
                 return
         except:
             pass
-        
+
         self.program_curves(num_sensor = num_sensor,
                         sub_channel = sub_channel,
                         curves_data = curves_data,
@@ -1729,7 +1732,7 @@ input               mem                 mtd4                ram1                
         @param curves_data - either 1028-element list (257 per color component) or a file path
                              with the same data, same as for Verilog $readmemh
         @param page - gamma table page number (only used if SENS_GAMMA_BUFFER > 0
-        """  
+        """
         def set_sensor_gamma_table_addr (
                                          num_sensor,
                                          sub_channel,
@@ -1743,14 +1746,14 @@ input               mem                 mtd4                ram1                
             else:
                 data |= (sub_channel & 3) << 10 # [11:10]
             reg_addr = (vrlg.SENSOR_GROUP_ADDR + num_sensor * vrlg.SENSOR_BASE_INC) + vrlg.SENS_GAMMA_RADDR + vrlg.SENS_GAMMA_ADDR_DATA
-            self.x393_axi_tasks.write_control_register(reg_addr, data)                   
+            self.x393_axi_tasks.write_control_register(reg_addr, data)
         def set_sensor_gamma_table_data ( #; // need 256 for a single color data
                                           num_sensor,
                                           data18): # ; // 18-bit table data
             reg_addr = (vrlg.SENSOR_GROUP_ADDR + num_sensor * vrlg.SENSOR_BASE_INC) + vrlg.SENS_GAMMA_RADDR + vrlg.SENS_GAMMA_ADDR_DATA;
-            self.x393_axi_tasks.write_control_register(reg_addr, data18 & ((1 << 18) - 1))                   
+            self.x393_axi_tasks.write_control_register(reg_addr, data18 & ((1 << 18) - 1))
 
-                  
+
         if isinstance(curves_data, (unicode,str)):
             with open(curves_data) as f:
                 tokens=f.read().split()
@@ -1793,7 +1796,7 @@ input               mem                 mtd4                ram1                
             for i in range (257):
                 ig = min(i*256, 0xffff)
                 gtable.append(ig >> rshift)
-        else:    
+        else:
             black256 =  max(0.0, min(255, black * 256.0))
             k=  1.0 / (256.0 - black256)
             gamma =max(0.13, min(gamma, 10.0))
@@ -1803,10 +1806,10 @@ input               mem                 mtd4                ram1                
                 ig = int (0.5 + 65535.0 * pow(x, gamma))
                 ig = min(ig, 0xffff)
                 gtable.append(ig >> rshift)
-        return gtable    
+        return gtable
 
-        
-    def set_sensor_gamma_heights (self, 
+
+    def set_sensor_gamma_heights (self,
                                   num_sensor,
                                   height0_m1,
                                   height1_m1,
@@ -1820,10 +1823,10 @@ input               mem                 mtd4                ram1                
         (No need for the  4-th, as it will just go until end of the composite frame)
         """
         reg_addr = (vrlg.SENSOR_GROUP_ADDR + num_sensor * vrlg.SENSOR_BASE_INC) + vrlg.SENS_GAMMA_RADDR + vrlg.SENS_GAMMA_HEIGHT01
-        self.x393_axi_tasks.write_control_register(reg_addr, (height0_m1 & 0xffff) | ((height1_m1 & 0xffff) << 16));                   
+        self.x393_axi_tasks.write_control_register(reg_addr, (height0_m1 & 0xffff) | ((height1_m1 & 0xffff) << 16));
 
         reg_addr = (vrlg.SENSOR_GROUP_ADDR + num_sensor * vrlg.SENSOR_BASE_INC) + vrlg.SENS_GAMMA_RADDR + vrlg.SENS_GAMMA_HEIGHT2;
-        self.x393_axi_tasks.write_control_register(reg_addr, height2_m1 & 0xffff);                   
+        self.x393_axi_tasks.write_control_register(reg_addr, height2_m1 & 0xffff);
 
     def set_sensor_gamma_ctl (self,
                               num_sensor,
@@ -1849,7 +1852,7 @@ input               mem                 mtd4                ram1                
                                             trig =       trig)
         reg_addr = (vrlg.SENSOR_GROUP_ADDR + num_sensor * vrlg.SENSOR_BASE_INC) + vrlg.SENS_GAMMA_RADDR + vrlg.SENS_GAMMA_CTRL;
         self.x393_axi_tasks.write_control_register(reg_addr, data);
-        
+
     def set_sensor_histogram_window (self,
                                      num_sensor,
                                      subchannel,
@@ -1876,7 +1879,7 @@ input               mem                 mtd4                ram1                
             print("top =        ", top)
             print("width_m1 =   ", width_m1)
             print("height_m1 =  ", height_m1)
-            
+
         self.x393_axi_tasks.write_control_register(reg_addr + vrlg.HISTOGRAM_LEFT_TOP,     ((top & 0xffff) << 16) | (left & 0xffff))
         self.x393_axi_tasks.write_control_register(reg_addr + vrlg.HISTOGRAM_WIDTH_HEIGHT, ((height_m1 & 0xffff) << 16) | (width_m1 & 0xffff))
     def set_sensor_histogram_saxi (self,
@@ -1890,7 +1893,7 @@ input               mem                 mtd4                ram1                
         @param nrst - negated reset False - immediate reset, True - normal run;
         @param confirm_write -  wait for the write confirmed (over B channel) before switching channels
         @param cache_mode AXI cache mode,  default should be 4'h3
-        """ 
+        """
         if self.DEBUG_MODE:
             print("set_sensor_histogram_saxi():")
             print("en =            ", en)
@@ -1913,7 +1916,7 @@ input               mem                 mtd4                ram1                
         @param num_sensor -     sensor port number (0..3)
         @param num_sub_sensor - sub-sensor attached to the same port through multiplexer (0..3)
         @param page -           system memory page address (in 4KB units)
-        """ 
+        """
         if self.DEBUG_MODE:
             print("set_sensor_histogram_saxi_addr():")
             print("num_sensor = ", num_sensor)
@@ -1942,7 +1945,7 @@ input               mem                 mtd4                ram1                
         @param reset_frame - reset frame number. Needed after changing frame start address (i.e. initial set-up) !
         @param abort_late    abort frame r/w at the next frame sync, if not finished. Wait for pending memory transfers
 
-        @param vebose -      verbose level       
+        @param vebose -      verbose level
         """
         try:
             if (num_sensor == all) or (num_sensor[0].upper() == "A"): #all is a built-in function
@@ -1951,13 +1954,13 @@ input               mem                 mtd4                ram1                
                     self.control_sensor_memory(num_sensor =  num_sensor,
                                                command =     command,
                                                reset_frame = reset_frame,
-                                               abort_late =  abort_late, 
+                                               abort_late =  abort_late,
                                                verbose =     verbose)
                 return
         except:
             pass
-        
-        
+
+
         rpt =    False
         sngl =   False
         en =     False
@@ -1974,11 +1977,11 @@ input               mem                 mtd4                ram1                
             en =   True
         else:
             print ("Unrecognized command %s. Valid commands are RESET, STOP, SINGLE, REPETITIVE"%(command))
-            return    
-                                
+            return
+
         base_addr = vrlg.MCONTR_SENS_BASE + vrlg.MCONTR_SENS_INC * num_sensor;
         mode=   x393_mcntrl.func_encode_mode_scan_tiled(
-                                   skip_too_late = True,                     
+                                   skip_too_late = True,
                                    disable_need = False,
                                    repetitive=    rpt,
                                    single =       sngl,
@@ -1988,7 +1991,7 @@ input               mem                 mtd4                ram1                
                                    enable =       en,
                                    chn_reset =    rst,
                                    abort_late =   abort_late)
-        self.x393_axi_tasks.write_control_register(base_addr + vrlg.MCNTRL_SCANLINE_MODE,  mode) 
+        self.x393_axi_tasks.write_control_register(base_addr + vrlg.MCNTRL_SCANLINE_MODE,  mode)
         if verbose > 0 :
             print ("write_control_register(0x%08x, 0x%08x)"%(base_addr + vrlg.MCNTRL_SCANLINE_MODE,  mode))
 
@@ -2016,7 +2019,7 @@ input               mem                 mtd4                ram1                
         """
         base_addr = vrlg.MCONTR_SENS_BASE + vrlg.MCONTR_SENS_INC * num_sensor;
         mode=   x393_mcntrl.func_encode_mode_scan_tiled(
-                                   skip_too_late = True,                     
+                                   skip_too_late = True,
                                    disable_need = False,
                                    repetitive=    True,
                                    single =       False,
@@ -2026,7 +2029,7 @@ input               mem                 mtd4                ram1                
                                    enable =       True,
                                    chn_reset =    False,
                                    abort_late =   False) # default, change with  control_sensor_memory()
-                    
+
         self.x393_axi_tasks.write_control_register(base_addr + vrlg.MCNTRL_SCANLINE_STARTADDR,
                                                   frame_sa); # RA=80, CA=0, BA=0 22-bit frame start address (3 CA LSBs==0. BA==0)
         self.x393_axi_tasks.write_control_register(base_addr + vrlg.MCNTRL_SCANLINE_FRAME_SIZE,
@@ -2040,6 +2043,161 @@ input               mem                 mtd4                ram1                
         self.x393_axi_tasks.write_control_register(base_addr + vrlg.MCNTRL_SCANLINE_WINDOW_X0Y0,
                                                   ((window_top & 0xffff) << 16) | (window_left & 0xffff)) #WINDOW_X0+ (WINDOW_Y0<<16));
         self.x393_axi_tasks.write_control_register(base_addr + vrlg.MCNTRL_SCANLINE_WINDOW_STARTXY,   0)
-        self.x393_axi_tasks.write_control_register(base_addr + vrlg.MCNTRL_SCANLINE_MODE,          mode) 
+        self.x393_axi_tasks.write_control_register(base_addr + vrlg.MCNTRL_SCANLINE_MODE,          mode)
+
+
+    def test_hispi_phases(self,num_sensor):
+        """
+        Try to adjust phases
+        @param num_sensor - sensor port number (0..3)
+        """
+
+        def thp_set_phase(num_sensor,phase):
+          path = "/sys/devices/soc0/elphel393-sensor-i2c@0/i2c"+str(num_sensor)
+          f = open(path,'w')
+          f.write("mt9f002 0 0x31c0 "+str(phase))
+          f.close()
+
+        def thp_reset_flags(num_sensor):
+          self.x393_axi_tasks.write_control_register(0x40e+0x40*num_sensor,0x0)
+          #self.x393_axi_tasks.write_control_register(0x40f+0x40*num_sensor,0x0)
+
+        def thp_read_flags(num_sensor,shift):
+          # read a few times
+          n = 1
+
+          switched = False
+          value = 0
+          count = 0
+
+          for j in range(n):
+
+              # reset bits
+              thp_reset_flags(num_sensor)
+              status = int(self.x393_axi_tasks.read_status(0x21+2*num_sensor) & 0x01ffffff)
+              barrel = (status>>14)&0xff
+              barrel = (barrel>>(2*shift))&0x3
+
+              print(str(barrel)+" ",end='')
+
+          return barrel
+
+
+        def thp_run(num_sensor,phase0,shift,bitshift):
+
+            shift = shift*3
+
+            switched = False
+            start = 0
+            stop  = 0
+            count = 0
+            value = 0
+
+            for i in range(16):
+
+                if (i==8):
+                  phase0 += 0x4000
+                  print("| ",end='')
+
+                # set phase
+                phase = phase0+((i%8)<<shift)
+                thp_set_phase(num_sensor,phase)
+                phase_read = int(self.print_sensor_i2c(num_sensor,0x31c0,0xff,0x10,0))
+
+                if phase_read!=phase:
+                    print("ERROR: phase_read ("+("{:04x}".format(phase_read))+") != phase ("+("{:04x}".format(phase))+")")
+
+                barrel = thp_read_flags(num_sensor,bitshift)
+
+                if i==0:
+                  value = barrel
+
+                if i==8:
+                  if not switched:
+                    start = 0
+                    count = 8
+
+                if (i<8 and i!=0):
+                  if value!=barrel:
+                    if not switched:
+                      switched = True
+                  else:
+                    if not switched:
+                      count += 1
+
+                if i>=8:
+                  if value==barrel:
+                    count += 1
+
+            print("")
+            return [start,count]
+
+
+        chn = num_sensor
+
+        print("Test HiSPI phases")
+
+        # check status register
+        status_reg = self.x393_axi_tasks.read_control_register(0x409+0x40*chn)
+
+        if (status_reg==0):
+            print("Programming status register")
+            self.x393_axi_tasks.write_control_register(0x409+0x40*chn,0xc0)
+
+        status_reg = self.x393_axi_tasks.read_control_register(0x409+0x40*chn)
+
+        print("Status register: "+hex(self.x393_axi_tasks.read_control_register(0x409+0x40*chn)))
+
+        phase0 = 0x8000
+
+        for i in range(4):
+          print("")
+          print("D"+str(i))
+          res = thp_run(num_sensor,phase0,i,i)
+          phase = ((res[0]+(res[1]>>1))%8)<<(3*i)
+          phase0 += phase
+          print("Updated phase = 0x"+"{:04x}".format(phase0))
+          print("i = "+str(res[0])+"  count = "+str(res[1]))
+
+          if (res[1]<2):
+            print("ERROR_D"+str(i))
+
+
+        print("Done")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
