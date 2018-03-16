@@ -1,7 +1,7 @@
 /*!
  * @file x393_cur_params_target.vh
- * @date 2015-02-07  
- * @author Andrey Filippov     
+ * @date 2015-02-07
+ * @author Andrey Filippov
  *
  * @brief Memory controller parameters that need adjustment during training
  * of the target. This file is individually updated on the target.
@@ -51,4 +51,3 @@ localparam  DLY_LANE1_IDELAY =  72'h186c6c726c746a7173;
 localparam          DLY_CMDA = 256'hd3d3dad2d1cccad2505050505050505050d4d1d1d2d2dbcad2cad3d4d2cacbd1;
 localparam         DLY_PHASE =   8'h34;
 // localparam   DFLT_WBUF_DELAY =   4'h9;
-    
