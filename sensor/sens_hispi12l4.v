@@ -174,8 +174,8 @@ module  sens_hispi12l4#(
         else if (tim_ibusy[0] && tim_f)  tim_ibusy <= 2;
         else if (tim_ibusy[1] && tim_t)  tim_ibusy <= 0;
         
-        if      (tim_ibusy[0] || tim_f)  tim_icntr <= 0; // reset if repeated start (e.g. to measure last sol to eof)
-        else if (tim_ibusy[1])           tim_icntr <= tim_icntr + 1;
+        if      (tim_ibusy[0] || (tim_f && !tim_t))  tim_icntr <= 0; // reset if repeated start (e.g. to measure last sol to eof)
+        else if (tim_ibusy[1])                       tim_icntr <= tim_icntr + 1;
     end
     always @ (posedge mclk) begin
         tim_busy_r <= {tim_busy_r[0], |tim_ibusy};
