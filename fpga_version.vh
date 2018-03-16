@@ -36,7 +36,8 @@
  * with at least one of the Free Software programs.
  */
  
-        parameter FPGA_VERSION =          32'h03930100;      // serial - 17.4 - disabling SOF when setting interface
+        parameter FPGA_VERSION =          32'h03930101;      // serial - 17.4 - disabling SOF when setting interface
+//      parameter FPGA_VERSION =          32'h03930100;      // serial - 17.4 - disabling SOF when setting interface timing OK
 //      parameter FPGA_VERSION =          32'h039300ff;      // serial - 15.3 - same, suspected bitstream problems
 //      parameter FPGA_VERSION =          32'h039300fe;      // serial - 17.4 - same, suspected bitstream problems no timing errors
 //      parameter FPGA_VERSION =          32'h039300fd;      // serial - 17.4 - monitor lanes barrel (0..3)

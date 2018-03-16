@@ -37,7 +37,7 @@
  * with at least one of the Free Software programs.
  */
 `timescale 1ns/1ps
-
+//`define MON_HISPI // moved to system_defines
 module  sens_hispi12l4#(
     parameter IODELAY_GRP =               "IODELAY_SENSOR",
     parameter integer IDELAY_VALUE =       0,
@@ -79,6 +79,9 @@ module  sens_hispi12l4#(
     parameter HISPI_IBUF_LOW_PWR =        "TRUE",
     parameter HISPI_IFD_DELAY_VALUE =     "AUTO",
     parameter HISPI_IOSTANDARD =          "DIFF_SSTL18_I" //"DIFF_SSTL18_II" for high current (13.4mA vs 8mA),
+    `ifdef MON_HISPI
+        , parameter TIM_BITS =              24 // number of bits in HISPI timing counter
+    `endif
 )(
     input             pclk,   // global clock input, pixel rate (220MHz for MT9F002)
     input             prst,   // reset @pclk (add sensor reset here)
@@ -117,7 +120,71 @@ module  sens_hispi12l4#(
     output reg [HISPI_NUMLANES-2:0] monitor_diff,       // for monitoring: when SOL active on the last lane @ipclk, latches all other lanes SOL,
     output   [HISPI_NUMLANES*2-1:0] mon_barrel          // @ipclk per-lane monitor barrel shifter
     
+`ifdef MON_HISPI
+    ,input                          tim_start,
+    input                     [1:0] tim_lane,
+    input                     [1:0] tim_from, // 0 - sof, 1 - eof, 2 - sol, 3 eol
+    input                     [1:0] tim_to,   // 0 - sof, 1 - eof, 2 - sol, 3 eol
+    output                          tim_busy,
+    output reg       [TIM_BITS-1:0] tim_cntr                                       
+`endif    
 );
+
+`ifdef MON_HISPI
+    reg                      [1:0] tim_busy_r;
+    reg             [TIM_BITS-1:0] tim_icntr;
+    wire                           tim_istart;
+    reg                      [1:0] tim_ilane;
+    reg                      [1:0] tim_ifrom; // 0 - sof, 1 - eof, 2 - sol, 3 eol
+    reg                      [1:0] tim_ito;   // 0 - sof, 1 - eof, 2 - sol, 3 eol
+    reg                      [1:0] tim_ibusy;
+    reg                      [3:0] tim_sefl;
+    reg                            tim_f;
+    reg                            tim_t;
+    
+    assign tim_busy = |tim_busy_r; 
+    pulse_cross_clock #(
+        .EXTRA_DLY(0)
+    ) pulse_cross_clock_tim_start_i (
+        .rst       (mrst),                      // input
+        .src_clk   (mclk),                      // input
+        .dst_clk   (ipclk),                     // input
+        .in_pulse  (tim_start),                 // input
+        .out_pulse (tim_istart),                // output
+        .busy() // output
+    );
+    always @(posedge ipclk) begin
+        tim_ifrom <= tim_from;
+        tim_ilane <= tim_lane;
+        tim_ito <=   tim_to;
+        tim_sefl <= tim_ilane[1]?
+                         (tim_ilane[0]?{hispi_eol[3],hispi_sol[3],hispi_eof[3],hispi_sof[3]}:
+                                       {hispi_eol[2],hispi_sol[2],hispi_eof[2],hispi_sof[2]}):
+                         (tim_ilane[0]?{hispi_eol[1],hispi_sol[1],hispi_eof[1],hispi_sof[1]}:
+                                       {hispi_eol[0],hispi_sol[0],hispi_eof[0],hispi_sof[0]});
+        tim_f <= tim_ifrom[1]?
+                         (tim_ifrom[0]?tim_sefl[3]:tim_sefl[2]):
+                         (tim_ifrom[0]?tim_sefl[1]:tim_sefl[0]);
+        
+        tim_t <= tim_ito[1]?
+                         (tim_ito[0]?tim_sefl[3]:tim_sefl[2]):
+                         (tim_ito[0]?tim_sefl[1]:tim_sefl[0]);
+        if      (irst)                   tim_ibusy <= 0;
+        else if (tim_istart)             tim_ibusy <= 1;
+        else if (tim_ibusy[0] && tim_f)  tim_ibusy <= 2;
+        else if (tim_ibusy[1] && tim_t)  tim_ibusy <= 0;
+        
+        if      (tim_ibusy[0] || tim_f)  tim_icntr <= 0; // reset if repeated start (e.g. to measure last sol to eof)
+        else if (tim_ibusy[1])           tim_icntr <= tim_icntr + 1;
+    end
+    always @ (posedge mclk) begin
+        tim_busy_r <= {tim_busy_r[0], |tim_ibusy};
+        if (!tim_busy_r[0]) tim_cntr <= tim_icntr;
+    end
+      
+`endif
+
+
     wire                          ipclk;  // re-generated half HiSPi clock (165 MHz) 
     wire                          ipclk2x;// re-generated HiSPi clock (330 MHz)
     wire [HISPI_NUMLANES * 4-1:0] sns_d;

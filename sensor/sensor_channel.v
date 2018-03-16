@@ -191,6 +191,16 @@ module  sensor_channel#(
       parameter SENSIO_WIDTH =          'h3, // 1.. 2^16, 0 - use HACT
 `endif      
       parameter SENSIO_DELAYS =         'h4, // 'h4..'h7
+`ifdef MON_HISPI
+        parameter SENSOR_TIMING_STATUS_REG_BASE =   'h40,  // 4 locations" x40, x41, x42, x43
+        parameter SENSOR_TIMING_STATUS_REG_INC =      1,   // increment to the next sensor
+        parameter SENSOR_TIMING_BITS =               24,   // increment to the next sensor
+        parameter SENSOR_TIMING_START =              16,   // bit # in JTAB control word to start timing measurement (now f = 660/4 = 165) 
+        parameter SENSOR_TIMING_LANE =               14,   // 15:14 - select lane
+        parameter SENSOR_TIMING_FROM =               12,   // select from 0 - sof, 1 - sol, 2 - eof, 3 eol
+        parameter SENSOR_TIMING_TO =                 10,   // select to   0 - sof, 1 - sol, 2 - eof, 3 eol
+`endif            
+      
         // 4 of 8-bit delays per register
     // sensor_i2c_io command/data write registers s (relative to SENSOR_BASE_ADDR)
     parameter SENSI2C_ABS_RADDR =       'h10, // 'h410..'h41f
@@ -380,6 +390,12 @@ module  sensor_channel#(
     localparam SENSOR_BASE_ADDR =   (SENSOR_GROUP_ADDR + SENSOR_NUMBER * SENSOR_BASE_INC);
     localparam SENSI2C_STATUS_REG = (SENSI2C_STATUS_REG_BASE + SENSOR_NUMBER * SENSI2C_STATUS_REG_INC + SENSI2C_STATUS_REG_REL);
     localparam SENSIO_STATUS_REG =  (SENSI2C_STATUS_REG_BASE + SENSOR_NUMBER * SENSI2C_STATUS_REG_INC + SENSIO_STATUS_REG_REL);
+
+//        parameter SENSOR_TIMING_STATUS_REG_BASE =   'h40,  // 4 locations" x40, x41, x42, x43
+//        parameter SENSOR_TIMING_STATUS_REG_INC =      1,   // increment to the next sensor
+`ifdef MON_HISPI    
+    localparam SENSOR_TIMING_STATUS_REG = (SENSOR_TIMING_STATUS_REG_BASE + SENSOR_NUMBER * SENSOR_TIMING_STATUS_REG_INC);
+`endif    
     localparam SENS_SYNC_ADDR =     SENSOR_BASE_ADDR + SENS_SYNC_RADDR;
 //    parameter SENSOR_BASE_ADDR =    'h300; // sensor registers base address
     localparam SENSOR_CTRL_ADDR =  SENSOR_BASE_ADDR + SENSOR_CTRL_RADDR;
@@ -393,7 +409,6 @@ module  sensor_channel#(
     localparam HISTOGRAM_ADDR1 =   (SENSOR_NUM_HISTOGRAM > 1)?(SENSOR_BASE_ADDR + HISTOGRAM_RADDR1):-1; //
     localparam HISTOGRAM_ADDR2 =   (SENSOR_NUM_HISTOGRAM > 2)?(SENSOR_BASE_ADDR + HISTOGRAM_RADDR2):-1; //
     localparam HISTOGRAM_ADDR3 =   (SENSOR_NUM_HISTOGRAM > 3)?(SENSOR_BASE_ADDR + HISTOGRAM_RADDR3):-1; //
-
 
     reg                 [7:0] cmd_ad;      // byte-serial command address/data (up to 6 bytes: AL-AH-D0-D1-D2-D3 
     reg                       cmd_stb;     // strobe (with first byte) for the command a/d
@@ -787,6 +802,14 @@ module  sensor_channel#(
             .SENSIO_JTAG            (SENSIO_JTAG),
             .SENSIO_DELAYS          (SENSIO_DELAYS),
             .SENSIO_STATUS_REG      (SENSIO_STATUS_REG),
+`ifdef MON_HISPI
+            .SENSOR_TIMING_BITS      (SENSOR_TIMING_BITS),
+            .TIM_START               (SENSOR_TIMING_START),
+            .TIM_LANE                (SENSOR_TIMING_LANE),
+            .TIM_FROM                (SENSOR_TIMING_FROM),
+            .TIM_TO                  (SENSOR_TIMING_TO),
+            .SENSOR_TIMING_STATUS_REG(SENSOR_TIMING_STATUS_REG), // localparam
+`endif            
             .SENS_JTAG_PGMEN        (SENS_JTAG_PGMEN),
             .SENS_JTAG_PROG         (SENS_JTAG_PROG),
             .SENS_JTAG_TCK          (SENS_JTAG_TCK),

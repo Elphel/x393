@@ -37,7 +37,7 @@
  * with at least one of the Free Software programs.
  */
 `timescale 1ns/1ps
-
+//`define MON_HISPI // moved to system_defines
 module  sens_10398 #(
     parameter SENSIO_ADDR =        'h330,
     parameter SENSIO_ADDR_MASK =   'h7f8,
@@ -48,6 +48,15 @@ module  sens_10398 #(
     parameter SENSIO_DELAYS =      'h4, // 'h4..'h7 - each address sets 4 delays through 4 bytes of 32-bit data
 // 5, swap lanes 6 - delays, 7 - phase
     parameter SENSIO_STATUS_REG =  'h21,
+`ifdef MON_HISPI    
+    parameter SENSOR_TIMING_BITS = 24,     // increment to the next sensor
+    parameter TIM_START =         16,
+    parameter TIM_LANE  =         14,
+    parameter TIM_FROM  =         12,
+    parameter TIM_TO  =           10,
+    parameter SENSOR_TIMING_STATUS_REG =  'h40,
+`endif    
+    
     parameter SENS_JTAG_PGMEN =    8,
     parameter SENS_JTAG_PROG =     6,
     parameter SENS_JTAG_TCK =      4,
@@ -226,11 +235,18 @@ module  sens_10398 #(
     wire           hact_mclk;
     reg            hact_alive;
     wire  [HISPI_NUMLANES*2-1:0] mon_barrel;          // @ipclk per-lane monitor barrel shifter  
-//    wire  [HISPI_NUMLANES-1:0] monitor_pclk;
-//    wire  [HISPI_NUMLANES-1:0] monitor_mclk;
-//    wire  [HISPI_NUMLANES-2:0] monitor_diff;  
-//    reg   [HISPI_NUMLANES-1:0] lanes_alive;
-//    assign status = {monitor_diff, lanes_alive,
+
+`ifdef MON_HISPI
+    reg                     [3:0] tim_start;
+    reg                     [1:0] tim_lane;
+    reg                     [1:0] tim_from; // 0 - sof, 1 - sol, 2 - eof, 3 eol
+    reg                     [1:0] tim_to;   // 0 - sof, 1 - sol, 2 - eof, 3 eol
+    wire                          tim_busy;
+    wire                   [31:0] tim_cntr;                                       
+`endif    
+
+
+
     assign status = {mon_barrel,
                      hact_alive, locked_pxd_mmcm, 
                      clkin_pxd_stopped_mmcm, clkfb_pxd_stopped_mmcm, xfpgadone,
@@ -304,12 +320,6 @@ module  sens_10398 #(
         if  (mrst) ld_idelay <= 0;
         else       ld_idelay <= set_ctrl_r && data_r[SENS_CTRL_LD_DLY]; 
 
-///        if      (mrst)                                      gp_r[0] <= 0;
-///        else if (set_ctrl_r && data_r[SENS_CTRL_GP0 + 1])   gp_r[0] <= data_r[SENS_CTRL_GP0]; 
-
-///        if      (mrst)                                      gp_r[1] <= 0;
-///        else if (set_ctrl_r && data_r[SENS_CTRL_GP1 + 1])   gp_r[1] <= data_r[SENS_CTRL_GP1]; 
-
         if      (mrst)                                      gp_r[1:0] <= 0;
         else if (set_ctrl_r && data_r[SENS_CTRL_GP0 + 2])   gp_r[1:0] <= data_r[SENS_CTRL_GP0+:2]; 
 
@@ -321,11 +331,17 @@ module  sens_10398 #(
         if      (mrst || set_iclk_phase || set_idelays)     hact_alive <= 0;
         else if (hact_mclk)                                 hact_alive <= 1;
         
-//        if      (mrst || set_iclk_phase || set_idelays)     lanes_alive <= 0;
-//        else                                                lanes_alive <= lanes_alive | monitor_mclk;
-
         if      (mrst)                                      lines_skip <= 0;
         else if (set_skip_r)                                lines_skip <= data_r[SENSIO_SKIP_BITS-1:0]; 
+        
+`ifdef MON_HISPI
+        tim_start <= {tim_start[2:0], set_jtag_r & data_r[TIM_START]};
+        if (set_jtag_r & data_r[TIM_START]) begin
+            tim_lane <= data_r[TIM_LANE +: 2];
+            tim_from <= data_r[TIM_FROM +: 2];
+            tim_to   <= data_r[TIM_TO   +: 2];
+        end
+`endif            
     end
 
     // generate (slow) clock for the sensor - it will be multiplied by the sensor VCO
@@ -375,10 +391,26 @@ module  sens_10398 #(
         .data        (cmd_data), // output[31:0] 
         .we          (cmd_we)    // output
     );
-
+`ifdef MON_HISPI    
     status_generate #(
         .STATUS_REG_ADDR(SENSIO_STATUS_REG),
-//        .PAYLOAD_BITS(3+15+1+HISPI_NUMLANES) // +3) // +STATUS_ALIVE_WIDTH) // STATUS_PAYLOAD_BITS)
+        .PAYLOAD_BITS(1+15+1+2*HISPI_NUMLANES), // +3) // +STATUS_ALIVE_WIDTH) // STATUS_PAYLOAD_BITS)
+        .EXTRA_WORDS(1),
+        .EXTRA_REG_ADDR(SENSOR_TIMING_STATUS_REG)
+    ) status_generate_sens_io_i (
+        .rst        (1'b0),                      // rst), // input
+        .clk        (mclk),                      // input
+        .srst       (mrst),                      // input
+        .we         (set_status_r),              // input
+        .wd         (data_r[7:0]),               // input[7:0] 
+        .status     ({tim_cntr,tim_busy,status}),// input[22:0] 
+        .ad         (status_ad),                 // output[7:0] 
+        .rq         (status_rq),                 // output
+        .start      (status_start)               // input
+    );
+`else
+    status_generate #(
+        .STATUS_REG_ADDR(SENSIO_STATUS_REG),
         .PAYLOAD_BITS(15+1+2*HISPI_NUMLANES) // +3) // +STATUS_ALIVE_WIDTH) // STATUS_PAYLOAD_BITS)
     ) status_generate_sens_io_i (
         .rst        (1'b0),                    // rst), // input
@@ -386,12 +418,12 @@ module  sens_10398 #(
         .srst       (mrst),                    // input
         .we         (set_status_r),            // input
         .wd         (data_r[7:0]),             // input[7:0] 
-//        .status     ({status_alive,status}),   // input[25:0] 
         .status     (status),                  // input[22:0] 
         .ad         (status_ad),               // output[7:0] 
         .rq         (status_rq),               // output
         .start      (status_start)             // input
     );
+`endif
 
     sens_hispi12l4 #(
         .IODELAY_GRP            (IODELAY_GRP),
@@ -429,6 +461,9 @@ module  sens_10398 #(
         .HISPI_IBUF_LOW_PWR     (HISPI_IBUF_LOW_PWR),
         .HISPI_IFD_DELAY_VALUE  (HISPI_IFD_DELAY_VALUE),
         .HISPI_IOSTANDARD       (HISPI_IOSTANDARD)
+    `ifdef MON_HISPI
+        ,.TIM_BITS       (SENSOR_TIMING_BITS)
+    `endif
         
     ) sens_hispi12l4_i (
         .pclk                   (pclk),                   // input
@@ -459,36 +494,16 @@ module  sens_10398 #(
         .monitor_pclk           (), // monitor_pclk),           // output reg[3:0] // for monitoring: each bit contains single cycle @pclk line starts
         .monitor_diff           (), // monitor_diff),           // when SOL active on the last lane @ipclk, latches all other lanes SOL,
         .mon_barrel             (mon_barrel)              // output[7:0] // @ipclk per-lane monitor barrel shifter
-        
-    );
-/*    
-    dly_16 #(
-        .WIDTH(HISPI_NUMLANES)
-    ) dly_16_monitor_i (
-        .clk  (pclk),                        // input
-        .rst  (1'b0),                        // input
-        .dly  (4'h0),                        // input[3:0] 
-        .din  (monitor_pclk),                // input[3:0] 
-        .dout (monitor_mclk)                 // output[3:0] 
-    );
-*/
-/*
-    output reg [HISPI_NUMLANES-1:0] monitor_pclk    // for monitoring: each bit contains single cycle @pclk line starts    
+`ifdef MON_HISPI
+        ,.tim_start             (tim_start[3]), // input
+        .tim_lane               (tim_lane), // input[1:0] 
+        .tim_from               (tim_from), // input[1:0] 
+        .tim_to                 (tim_to), // input[1:0] 
+        .tim_busy               (tim_busy), // output
+        .tim_cntr               (tim_cntr[SENSOR_TIMING_BITS-1:0]) // output[23:0] reg 
 
-    obufds #(
-        .CAPACITANCE("DONT_CARE"),
-        .IOSTANDARD(PXD_IOSTANDARD), // not diff, just opposite phase signals
-        .SLEW("SLOW")
-    ) obufds_i (
-        .o   (sens_ext_clk_p),                   // output
-        .ob  (sens_ext_clk_n),                  // output
-        .i   (pxd_clk_cntr[PXD_CLK_DIV_BITS-1]) // input
+`endif        
     );
-*/  
-//    reg [1:0] ext_clk_r;
-//    always @(posedge pclk) begin
-//        ext_clk_r <= {pxd_clk_cntr[PXD_CLK_DIV_BITS-1], !pxd_clk_cntr[PXD_CLK_DIV_BITS-1]};
-//    end
 
   
     obuf #(

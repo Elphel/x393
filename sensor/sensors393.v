@@ -190,6 +190,17 @@ module  sensors393 #(
       parameter SENSIO_WIDTH =          'h3, // 1.. 2^16, 0 - use HACT
 `endif      
       parameter SENSIO_DELAYS =         'h4, // 'h4..'h7
+
+`ifdef MON_HISPI
+        parameter SENSOR_TIMING_STATUS_REG_BASE =   'h40,  // 4 locations" x40, x41, x42, x43
+        parameter SENSOR_TIMING_STATUS_REG_INC =      1,   // increment to the next sensor
+        parameter SENSOR_TIMING_BITS =               24,   // increment to the next sensor
+        parameter SENSOR_TIMING_START =              16,   // bit # in JTAB control word to start timing measurement (now f = 660/4 = 165) 
+        parameter SENSOR_TIMING_LANE =               14,   // 15:14 - select lane
+        parameter SENSOR_TIMING_FROM =               12,   // select from 0 - sof, 1 - sol, 2 - eof, 3 eol
+        parameter SENSOR_TIMING_TO =                 10,   // select to   0 - sof, 1 - sol, 2 - eof, 3 eol
+`endif            
+      
         // 4 of 8-bit delays per register
     // sensor_i2c_io command/data write registers s (relative to SENSOR_GROUP_ADDR)
     parameter SENSI2C_ABS_RADDR =       'h10, // 'h410..'h41f
@@ -598,6 +609,16 @@ module  sensors393 #(
                 .SENSIO_WIDTH                  (SENSIO_WIDTH),
 `endif                
                 .SENSIO_DELAYS                 (SENSIO_DELAYS),
+                
+`ifdef MON_HISPI
+                .SENSOR_TIMING_STATUS_REG_BASE (SENSOR_TIMING_STATUS_REG_BASE),
+                .SENSOR_TIMING_STATUS_REG_INC  (SENSOR_TIMING_STATUS_REG_INC),
+                .SENSOR_TIMING_BITS            (SENSOR_TIMING_BITS),
+                .SENSOR_TIMING_START           (SENSOR_TIMING_START),
+                .SENSOR_TIMING_LANE            (SENSOR_TIMING_LANE),
+                .SENSOR_TIMING_FROM            (SENSOR_TIMING_FROM),
+                .SENSOR_TIMING_TO              (SENSOR_TIMING_TO),
+`endif                
                 .SENSI2C_ABS_RADDR             (SENSI2C_ABS_RADDR),
                 .SENSI2C_REL_RADDR             (SENSI2C_REL_RADDR),
                 .SENSI2C_ADDR_MASK             (SENSI2C_ADDR_MASK),

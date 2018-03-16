@@ -331,6 +331,11 @@ class X393ExportC(object):
                                  name =      "x393_status_sens_i2c",  typ="ro",
                                  frmt_spcs = frmt_spcs)
 
+        stypedefs += self.get_typedef32(comment =   "Sensor measured timing between sof/eof/sol/eol",
+                                 data =      self._enc_status_sensor_timing(),
+                                 name =      "x393_status_sensor_timing",  typ="ro",
+                                 frmt_spcs = frmt_spcs)
+
         stypedefs += self.get_typedef32(comment =   "Command bits for test01 module (test frame memory accesses)",
                                  data =      self._enc_test01_mode(),
                                  name =      "x393_test01_mode",  typ="wo",
@@ -940,6 +945,14 @@ class X393ExportC(object):
             (("X393_SENSIO_STATUS",                     c, vrlg.SENSIO_STATUS_REG_REL +       ba, ia, z3, "x393_status_sens_io", "ro",                        "Status of the sensor ports I/O pins")),
             ]
 
+        #sensors time measurements (in 1/4 DDR bitrate, now 165MHz)        
+        ba = vrlg.STATUS_ADDR + vrlg.SENSOR_TIMING_STATUS_REG_BASE
+        ia = vrlg.SENSOR_TIMING_STATUS_REG_INC
+        c =  "sens_num"
+        sdefines +=[
+            (('Read-only addresses for sensors time measurement information',)),
+            (("SENSOR_TIMING_STATUS",                   c, 0 +                                ba, ia, z3, "x393_status_sensor_timing", "ro",                  "Measured duration between selected sof/eof/sol/eol")),
+            ]
         #Compressor control
         sdefines +=[
             (('Compressor bitfields values',)),
@@ -1857,6 +1870,7 @@ class X393ExportC(object):
         dw.append(("barrel_1",              16, 2,0,  "Lane 1 barrel shift"))
         dw.append(("barrel_2",              18, 2,0,  "Lane 2 barrel shift"))
         dw.append(("barrel_3",              20, 2,0,  "Lane 3 barrel shift"))
+        dw.append(("time_busy",             22, 1,0,  "Sensor time measurement in progress"))
 #        dw.append(("lanes_alive",           14, 4,0,  "Per-lane HACT toggling (reset by changing DLL delays)"))
 #        dw.append(("rel_sol",               18, 3,0,  "When SOL active on the last lane @ipclk, latches all other lanes SOL"))
 #        dw.append(("vact_alive",            15, 1,0,  "VACT signal from the sensor is toggling (N/A for HiSPI)"))
@@ -1880,6 +1894,13 @@ class X393ExportC(object):
         dw.append(("sda_in",                25, 1,0,  "SDA pin state"))
         dw.append(("seq_num",               26, 6,0,  "Sequence number"))
         return dw
+
+    def _enc_status_sensor_timing(self):
+        dw=[]
+        dw.append(("quad_cycles",            0, vrlg.SENSOR_TIMING_BITS,0,  "Measured time in quad HISPI cycles (now 165 MHz)"))
+        return dw
+
+
 
 
     def _enc_test01_mode(self): # command for test01 module (test frame memory accesses)
@@ -2097,6 +2118,10 @@ class X393ExportC(object):
         dw.append(("prog_set",     vrlg.SENS_JTAG_PROG + 1,    1,   0,  "Sensor port PROG set to 'prog' field"))
         dw.append(("pgmen",        vrlg.SENS_JTAG_PGMEN,       1,   0 , "Sensor port PGMEN level"))
         dw.append(("pgmen_set",    vrlg.SENS_JTAG_PGMEN + 1,   1,   0,  "Sensor port PGMEN set to 'pgmen' field"))
+        dw.append(("timing_to",    vrlg.SENSOR_TIMING_TO,      2,   0,  "Measuring sensor time to: 0 - sof, 1 - eof, 2 - sol, 3 eol"))
+        dw.append(("timing_from",  vrlg.SENSOR_TIMING_FROM,    2,   0,  "Measuring sensor time from: 0 - sof, 1 - eof, 2 - sol, 3 eol"))
+        dw.append(("timing_from",  vrlg.SENSOR_TIMING_LANE,    2,   0,  "Measuring sensor time on lane 0..3"))
+        dw.append(("timing_start", vrlg.SENSOR_TIMING_START,   1,   0,  "Start sensor timing measurement"))
         return dw
     """    
     def _enc_sensio_dly_par12(self):

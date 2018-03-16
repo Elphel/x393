@@ -356,6 +356,16 @@
     parameter SENSI2C_STATUS_REG_INC =    2,     // increment to the next sensor
     parameter SENSI2C_STATUS_REG_REL =    0,     // 4 locations" 'h20, 'h22, 'h24, 'h26
     parameter SENSIO_STATUS_REG_REL =     1,     // 4 locations" 'h21, 'h23, 'h25, 'h27
+    
+    // parameters to measure sensor timing from (last){sof,eof,sol, eol} to next{sof,eof,sol, eol}
+    parameter SENSOR_TIMING_STATUS_REG_BASE =   'h40,  // 4 locations" x40, x41, x42, x43
+    parameter SENSOR_TIMING_STATUS_REG_INC =      1,   // increment to the next sensor
+    parameter SENSOR_TIMING_BITS =               24,   // increment to the next sensor
+    parameter SENSOR_TIMING_START =              16,   // bit # in JTAB control word to start timing measurement (now f = 660/4 = 165) 
+    parameter SENSOR_TIMING_LANE =               14,   // 15:14 - select lane
+    parameter SENSOR_TIMING_FROM =               12,   // select from 0 - sof, 1 - eof, 2 - sol, 3 eol
+    parameter SENSOR_TIMING_TO =                 10,   // select to   0 - sof, 1 - eof, 2 - sol, 3 eol
+    
     parameter SENSOR_NUM_HISTOGRAM=       1, //was 3  trying just one histogram (see utilization) 3,     // number of histogram channels
     parameter HISTOGRAM_RAM_MODE =        "BUF32", // "NOBUF", // valid: "NOBUF" (32-bits, no buffering), "BUF18", "BUF32"
     parameter SENS_NUM_SUBCHN =           3,     // number of subchannels for his sensor ports (1..4)
@@ -374,10 +384,10 @@
         parameter SENSOR_16BIT_BIT_SET =  12,  // set 8/16 bit mode
 //        parameter SENSOR_MODE_WIDTH =     13,
 
-    parameter SENSI2C_CTRL_RADDR =        2, // 302..'h303
-    parameter SENSI2C_CTRL_MASK =     'h7fe,
+    parameter SENSI2C_CTRL_RADDR =           2, // 302..'h303
+    parameter SENSI2C_CTRL_MASK =        'h7fe,
       // sensor_i2c_io relative control register addresses
-      parameter SENSI2C_CTRL =          'h0,
+        parameter SENSI2C_CTRL =           'h0,
     // Control register bits
         parameter SENSI2C_CMD_TABLE =       29, // [29]: 1 - write to translation table (ignore any other fields), 0 - write other fields
         parameter SENSI2C_CMD_TAND =        28, // [28]: 1 - write table address (8 bits), 0 - write table data (28 bits)
