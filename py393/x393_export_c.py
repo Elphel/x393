@@ -2120,7 +2120,7 @@ class X393ExportC(object):
         dw.append(("pgmen_set",    vrlg.SENS_JTAG_PGMEN + 1,   1,   0,  "Sensor port PGMEN set to 'pgmen' field"))
         dw.append(("timing_to",    vrlg.SENSOR_TIMING_TO,      2,   0,  "Measuring sensor time to: 0 - sof, 1 - eof, 2 - sol, 3 eol"))
         dw.append(("timing_from",  vrlg.SENSOR_TIMING_FROM,    2,   0,  "Measuring sensor time from: 0 - sof, 1 - eof, 2 - sol, 3 eol"))
-        dw.append(("timing_from",  vrlg.SENSOR_TIMING_LANE,    2,   0,  "Measuring sensor time on lane 0..3"))
+        dw.append(("timing_lane",  vrlg.SENSOR_TIMING_LANE,    2,   0,  "Measuring sensor time on lane 0..3"))
         dw.append(("timing_start", vrlg.SENSOR_TIMING_START,   1,   0,  "Start sensor timing measurement"))
         return dw
     """    
