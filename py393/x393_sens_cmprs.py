@@ -119,6 +119,12 @@ BUFFER_LEN_D2H =          None # in bytes
 BUFFER_ADDRESS_BIDIR =    None # in bytes
 BUFFER_LEN_BIDIR =        None # in bytes
 
+# old value was 0x200 (of 128-bit bursts), which equals to
+# 8-bit mode:  8192 px per row
+# 16-bit mode: 4096 px per row (not fit for mt9f002 4384x3288)
+# new value 0x400
+FRAME_FULL_WIDTH        = 0x400
+FRAME_START_ADDRESS_INC = 0x80000
 
 #SENSOR_INTERFACE_PARALLEL = "PAR12"
 #SENSOR_INTERFACE_HISPI =    "HISPI"
@@ -498,6 +504,9 @@ class X393SensCmprs(object):
         @return True if all done, False if exited prematurely through exit_step
         """
 #        @param compressor_left_margin - 0..31 - left margin for compressor (to the nearest 32-byte column)
+
+        global FRAME_FULL_WIDTH, FRAME_START_ADDRESS_INC
+
         sensorType = self.x393Sensor.getSensorInterfaceType()
         if verbose > 0 :
             print ("Sensor port %d interface type: %s"%(num_sensor, sensorType))
@@ -555,7 +564,7 @@ class X393SensCmprs(object):
 
         """
 
-        frame_full_width =  0x200 # Made it fixed width
+        frame_full_width =  FRAME_FULL_WIDTH # Made it fixed width
 
 
 
@@ -565,7 +574,7 @@ class X393SensCmprs(object):
         """
         frame_start_address_inc = num8rows * frame_full_width
         """
-        frame_start_address_inc = 0x80000 #Fixed size
+        frame_start_address_inc = FRAME_START_ADDRESS_INC #Fixed size
 
         """ TODO: Calculate tiles and move to initial print """
         num_macro_cols_m1 = (window_width >> 4) - 1
@@ -1187,6 +1196,9 @@ class X393SensCmprs(object):
         @param colorsat_red -  color saturation for red (10 bits), 0xb6 for 100%
         @param verbose - verbose level
         """
+
+        global FRAME_FULL_WIDTH, FRAME_START_ADDRESS_INC
+
         try:
             if (chn == all) or (chn[0].upper() == "A"): #all is a built-in function
                 for chn in range(4):
@@ -1270,14 +1282,14 @@ class X393SensCmprs(object):
 
         """
 
-        frame_full_width =  0x200 # Made it fixed width
+        frame_full_width =  FRAME_FULL_WIDTH # Made it fixed width
         num8rows=   (window_top + window_height) // 8
         if (window_top + window_height) % 8:
             num8rows += 1
         """
         frame_start_address_inc = num8rows * frame_full_width
         """
-        frame_start_address_inc = 0x80000 #Fixed size
+        frame_start_address_inc = FRAME_START_ADDRESS_INC #Fixed size
 
         num_macro_cols_m1 = (window_width >> 4) - 1
         num_macro_rows_m1 = (window_height >> 4) - 1
@@ -1560,9 +1572,9 @@ class X393SensCmprs(object):
             print ("membridge h2d_start =       0x%x"%(GLBL_MEMBRIDGE_H2D_START))
             print ("membridge h2d end =         0x%x"%(GLBL_MEMBRIDGE_H2D_END))
             print ("membridge h2d size =        %d bytes"%(GLBL_MEMBRIDGE_H2D_END - GLBL_MEMBRIDGE_H2D_START))
-            print ("membridge h2d start =       0x%x"%(GLBL_MEMBRIDGE_D2H_START))
-            print ("membridge h2d end =         0x%x"%(GLBL_MEMBRIDGE_D2H_END))
-            print ("membridge h2d size =        %d bytes"%(GLBL_MEMBRIDGE_D2H_END - GLBL_MEMBRIDGE_D2H_START))
+            print ("membridge d2h start =       0x%x"%(GLBL_MEMBRIDGE_D2H_START))
+            print ("membridge d2h end =         0x%x"%(GLBL_MEMBRIDGE_D2H_END))
+            print ("membridge d2h size =        %d bytes"%(GLBL_MEMBRIDGE_D2H_END - GLBL_MEMBRIDGE_D2H_START))
             print ("memory buffer end =         0x%x"%(GLBL_BUFFER_END))
 
         self.program_status_debug (3,0)
@@ -1912,6 +1924,9 @@ class X393SensCmprs(object):
         @param verbose         verbose level):
         """
         global GLBL_MEMBRIDGE_H2D_START, GLBL_MEMBRIDGE_H2D_END, GLBL_MEMBRIDGE_D2H_START, GLBL_MEMBRIDGE_D2H_END
+
+        global FRAME_FULL_WIDTH, FRAME_START_ADDRESS_INC
+
         if (membridge_start is None) or (membridge_end is None):
             if write_mem:
                 membridge_start = GLBL_MEMBRIDGE_H2D_START
@@ -1934,14 +1949,14 @@ class X393SensCmprs(object):
 
         """
 
-        frame_full_width =  0x200 # Made it fixed width
+        frame_full_width =  FRAME_FULL_WIDTH # Made it fixed width
         num8rows=   (window_top + window_height) // 8
         if (window_top + window_height) % 8:
             num8rows += 1
         """
         frame_start_address_inc = num8rows * frame_full_width
         """
-        frame_start_address_inc = 0x80000 #Fixed size
+        frame_start_address_inc = FRAME_START_ADDRESS_INC #Fixed size
 
         frame_start_address = (last_buf_frame + 1) * frame_start_address_inc * num_sensor
 
@@ -1975,7 +1990,7 @@ class X393SensCmprs(object):
 
         """
 
-        frame_full_width =  0x200 # Made it fixed width
+        frame_full_width =  FRAME_FULL_WIDTH # Made it fixed width
         num8rows=   (window_top + window_height) // 8
         if (window_top + window_height) % 8:
             num8rows += 1

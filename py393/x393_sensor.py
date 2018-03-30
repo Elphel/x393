@@ -2063,27 +2063,36 @@ input               mem                 mtd4                ram1                
           #self.x393_axi_tasks.write_control_register(0x40f+0x40*num_sensor,0x0)
 
         def thp_read_flags(num_sensor,shift):
-          # read a few times
-          n = 1
 
           switched = False
           value = 0
           count = 0
+          timeout = 512
 
-          for i in range(n):
+          # reset bits
+          thp_reset_flags(num_sensor)
 
-              # reset bits
-              thp_reset_flags(num_sensor)
-              status = int(self.x393_axi_tasks.read_status(0x21+2*num_sensor) & 0x01ffffff)
-              barrel = (status>>14)&0xff
-              barrel = (barrel>>(2*shift))&0x3
+          # wait until hact alives with a timeout
+          t = 0
+          hact_alive = 0
 
-              for j in range(4):
-                v = (status>>14)&0xff
-                v = (v>>(2*(3-j)))&0x3
-                print(str(v),end='')
+          while not hact_alive:
+            status = int(self.x393_axi_tasks.read_status(0x21+2*num_sensor) & 0x01ffffff)
+            hact_alive = (status>>13)&0x1
+            t += 1
+            if t==timeout:
+              break
+            time.sleep(0.1)
 
-              print(".",end='')
+          barrel = (status>>14)&0xff
+          barrel = (barrel>>(2*shift))&0x3
+
+          for j in range(4):
+            v = (status>>14)&0xff
+            v = (v>>(2*(3-j)))&0x3
+            print(str(v),end='')
+
+          print(".",end='')
 
               #print(str(barrel)+" ",end='')
 
@@ -2112,7 +2121,7 @@ input               mem                 mtd4                ram1                
                 # set phase
                 phase = phase0+((i%8)<<shift)
                 thp_set_phase(num_sensor,phase)
-                phase_read = int(self.print_sensor_i2c(num_sensor,0x31c0,0xff,0x10,0))
+                phase_read = int(self.print_sensor_i2c(num_sensor,0x31c0,0xff,0x10,0))&0xffff
 
                 if phase_read!=phase:
                     print("ERROR: phase_read ("+("{:04x}".format(phase_read))+") != phase ("+("{:04x}".format(phase))+")")
@@ -2171,7 +2180,7 @@ input               mem                 mtd4                ram1                
         for i in range(4):
           print("D"+str(i))
           phase0 = thp_run(num_sensor,phase0,i,i)
-          print("Updated phase = 0x"+"{:04x}".format(phase0))
+          print(" Updated phase = 0x"+"{:04x}".format(phase0))
 
         print("Done")
 
