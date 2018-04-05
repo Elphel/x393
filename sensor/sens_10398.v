@@ -618,7 +618,7 @@ module  sens_10398 #(
         .SLEW         (PXD_SLEW)
     ) sns_gp0_tdi_i (
         .O  (sns_gp0_tdi),                                      // output
-        .I  (xpgmen? xfpgatdi : ((&gp_r[3:2])? iaro: gp_r[3])), // input
+        .I  (xpgmen? xfpgatdi : ((&gp_r[1:0])? iaro: gp_r[1])), // input
         .T  (xpgmen? 1'b0 : ~|gp_r[1:0])
     );
 
@@ -630,7 +630,7 @@ module  sens_10398 #(
         .SLEW         (PXD_SLEW)
     ) sns_gp1_i (
         .O  (sns_gp1),    // output
-        .I  ((&gp_r[3:2])? iaro: gp_r[3]),    // input
+        .I  ((&gp_r[3:2])? ~iaro: gp_r[3]),    // input
         .T  (~|gp_r[3:2])
     );
     
