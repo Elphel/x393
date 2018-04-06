@@ -40,7 +40,7 @@
 
     jpeg_acquire_write
 
-    #write_sensor_i2c 0 1 0 0x301a0018 # put to stanby
+    #write_sensor_i2c 0 1 0 0x301a0018 # put to standby
 
   ** run this script and copy paste its output
 
