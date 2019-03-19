@@ -66,7 +66,7 @@ module  cmprs_buf_average#(
     input  [ 7:0] caddrw,
     input         cwe,
     input  [ 8:0] signed_c,
-    output [ 9:0] do,         // [9:0] data out (4:2:0) (signed, average=0)
+    output [ 9:0] dout,         // [9:0] data out (4:2:0) (signed, average=0)
     // When is it valid?
     output [ 8:0] avr,        // [8:0]    DC (average value) - RAM output, no register. For Y components 9'h080..9'h07f, for C - 9'h100..9'h0ff!
     output        dv,         // out data valid (will go high for at least 64 cycles)
@@ -170,7 +170,7 @@ module  cmprs_buf_average#(
     
     // assign output signals
     assign avr  = avr_r; // avermem[avr_ra[3:0]];
-    assign do =                do_r;
+    assign dout =                do_r;
     assign tn[2:0] =           raddr[8:6];
 // component_num,component_color,component_first for different converters vs tn (1 bit per tn (0..5)
     assign component_num[2:0]= {component_numsH[0],component_numsM[0],component_numsL[0]};

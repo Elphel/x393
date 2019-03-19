@@ -58,7 +58,7 @@ module quantizer393(
     input             first_in, // first block in (valid @ start)
     output reg        first_out, // valid @ ds
     input      [12:0] di,    // [11:0] pixel data in (signed)
-    output reg [12:0] do,    // [11:0] pixel data out (AC is only 9 bits long?) - changed to 10
+    output reg [12:0] dout,    // [11:0] pixel data out (AC is only 9 bits long?) - changed to 10
     output            dv,    // data out valid
     output            ds,  // data out strobe (one ahead of the start of dv)
     output reg [15:0] dc_tdo, //[15:0], MSB aligned coefficient for the DC component (used in focus module)
@@ -157,13 +157,11 @@ module quantizer393(
     assign        dcc_data[15:0]=sel_satnum?
                     {n255[7:0],n000[7:0]}:
                     {dcc_first || (!dcc_Y && dcc_acc[12]) ,(!dcc_Y && dcc_acc[12]), (!dcc_Y && dcc_acc[12]), dcc_acc[12:0]};
-//    assign         do[12:0]=zigzag_q[12:0];
     assign        qmul[27:0]=tdor[15:0]*d3[11:0];
 
     assign         start_out =   zwe && (zwa[5:0]== 6'h3f);   //adjust?
     assign         copy_dc_tdo = zwe && (zwa[5:0]== 6'h37);   // not critical
 
-//    assign next_dv=en && (ds || (dv && (zra[5:0]!=6'h00)));    
     always @ (posedge clk) begin
         d1[12:0]      <= di[12:0];
 //inv_sign
@@ -218,7 +216,7 @@ module quantizer393(
         if      (!en)                 ren[3:1] <= 0;
         else                          ren[3:1] <= ren [2:0]; 
         
-        if (ren[2])                   do[12:0] <= zigzag_q[12:0];
+        if (ren[2])                   dout[12:0] <= zigzag_q[12:0];
         
         if (start_a)   first_interm <= first_in;
         if (start_out) first_out    <=first_interm;

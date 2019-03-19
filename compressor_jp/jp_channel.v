@@ -944,7 +944,7 @@ module  jp_channel#(
         .caddrw             (caddrw),           // input[7:0] 
         .cwe                (cwe),              // input
         .signed_c           (signed_c),         // input[8:0] 
-        .do                 (yc_nodc),          // output[9:0] 
+        .dout               (yc_nodc),          // output[9:0] 
         .avr                (yc_avr),           // output[8:0] 
 //        .dv                 (yc_nodc_dv),       // output
         .dv                 (),                 // output unused?
@@ -1079,7 +1079,7 @@ module  jp_channel#(
         .first_in           (first_block_dct),        // input - first block in (valid @ start)
         .first_out          (first_block_quant),      // output reg - valid @ ds
         .di                 (dct_out[12:0]),          // input[12:0] -  pixel data in (signed)
-        .do                 (quant_do[12:0]),         // output[12:0] - pixel data out (AC is only 9 bits long?) - changed to 10
+        .dout               (quant_do[12:0]),         // output[12:0] - pixel data out (AC is only 9 bits long?) - changed to 10
         .dv                 (),                       // output reg - data out valid
         .ds                 (quant_ds),               // output reg - data out strobe (one ahead of the start of dv)
         .dc_tdo             (quant_dc_tdo[15:0]),     // output[15:0] reg -  MSB aligned coefficient for the DC component (used in focus module)
@@ -1121,7 +1121,7 @@ module  jp_channel#(
         .quant_ds           (quant_ds),               // input quantizator ds
         .quant_d            (quant_do[12:0]),         // input[12:0] quantizator data output
         .quant_dc_tdo       (quant_dc_tdo),           // input[15:0] MSB aligned coefficient for the DC component (used in focus module)
-        .do                 (focus_do[12:0]),         // output[12:0] reg  pixel data out, make timing ignore (valid 1.5 clk earlier that Quantizer output)
+        .dout               (focus_do[12:0]),         // output[12:0] reg  pixel data out, make timing ignore (valid 1.5 clk earlier that Quantizer output)
         .ds                 (focus_ds),               // output reg data out strobe (one ahead of the start of dv)
         .hifreq             (hifreq[31:0])            // output[31:0] reg accumulated high frequency components in a frame sub-window
     );
@@ -1177,7 +1177,7 @@ module  jp_channel#(
 `else
         .last               (),                       // output reg - not used
 `endif
-        .do                 (enc_do[15:0]),           // output[15:0] reg 
+        .dout               (enc_do[15:0]),           // output[15:0] reg 
         .dv                 (enc_dv)                  // output reg 
 `ifdef DEBUG_RING
         ,.comp_lastinmbo               (dbg_comp_lastinmbo)
