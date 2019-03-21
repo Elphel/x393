@@ -255,7 +255,8 @@ module  mcntrl393 #(
     parameter MCONTR_LINTILE_EXTRAPG =         3, // extra pages (over 1) needed by the client simultaneously
     parameter MCONTR_LINTILE_EXTRAPG_BITS =    2, // number of bits to use for extra pages
     parameter MCONTR_LINTILE_KEEP_OPEN =       5, // keep banks open (will be used only if number of rows <= 8)
-    parameter MCONTR_LINTILE_BYTE32 =          6, // use 32-byte wide columns in each tile (false - 16-byte) 
+    parameter MCONTR_LINTILE_BYTE32 =          6, // use 32-byte wide columns in each tile (false - 16-byte)
+    parameter MCONTR_LINTILE_LINEAR =          7, // Use linear mode instead of tiled
     parameter MCONTR_LINTILE_RST_FRAME =       8, // reset frame number 
     parameter MCONTR_LINTILE_SINGLE =          9, // read/write a single page 
     parameter MCONTR_LINTILE_REPEAT =         10,  // read/write pages until disabled 
@@ -1190,6 +1191,7 @@ module  mcntrl393 #(
                 .MCONTR_LINTILE_EXTRAPG_BITS   (MCONTR_LINTILE_EXTRAPG_BITS),
                 .MCONTR_LINTILE_KEEP_OPEN      (MCONTR_LINTILE_KEEP_OPEN),
                 .MCONTR_LINTILE_BYTE32         (MCONTR_LINTILE_BYTE32),
+                .MCONTR_LINTILE_LINEAR         (MCONTR_LINTILE_LINEAR), // Use linear mode instead of tiled
                 .MCONTR_LINTILE_RST_FRAME      (MCONTR_LINTILE_RST_FRAME),
                 .MCONTR_LINTILE_SINGLE         (MCONTR_LINTILE_SINGLE),
                 .MCONTR_LINTILE_REPEAT         (MCONTR_LINTILE_REPEAT),
@@ -1216,17 +1218,17 @@ module  mcntrl393 #(
                 .frames_in_sync       (cmprs_frames_in_sync[i]),     // output
                 .master_frame         (cmprs_frame_number_src[i * LAST_FRAME_BITS +: LAST_FRAME_BITS]), // input[15:0] 
                 .master_set           (sens_frame_set[i]),           // input
-//                .master_follow        (master_follow[i]),            // input
                 .xfer_want            (cmprs_want[i]),               // output
                 .xfer_need            (cmprs_need[i]),               // output
                 .xfer_grant           (cmprs_channel_pgm_en[i]),     // input
-                .xfer_start_rd        (cmprs_start_rd16[i]),         // output
+                .xfer_start_rd        (cmprs_start_rd16[i]),         // output // TODO: start rd (wr too?) linear
                 .xfer_start_wr        (),                            // output
                 .xfer_start32_rd      (cmprs_start_rd32[i]),         // output
                 .xfer_start32_wr      (),                            // output
                 .xfer_bank            (cmprs_bank[i * 3 +: 3]), // output[2:0] 
                 .xfer_row             (cmprs_row[ADDRESS_NUMBER * i +: ADDRESS_NUMBER]), // output[14:0] 
-                .xfer_col             (cmprs_col[COL_WDTH * i +: COL_WDTH]), // output[6:0] 
+                .xfer_col             (cmprs_col[COL_WDTH * i +: COL_WDTH]), // output[6:0]
+                // 5:0: add xfer_num128[5:0] 
                 .rowcol_inc           (cmprs_rowcol_inc[i * FRAME_WBP1 +: FRAME_WBP1]), // output[13:0] 
                 .num_rows_m1          (cmprs_num_rows_m1[i * MAX_TILE_WIDTH +: MAX_TILE_WIDTH]), // output[5:0] 
                 .num_cols_m1          (cmprs_num_cols_m1[i * MAX_TILE_HEIGHT +: MAX_TILE_HEIGHT]), // output[5:0] 
@@ -1237,7 +1239,26 @@ module  mcntrl393 #(
                 .xfer_page_rst_rd     (cmprs_xfer_reset_page_rd[i])  // output @negedge
             );
 
+/*
+                .xfer_num128      (sens_num128[i * 6 +: 6]),    // output[5:0]
+                .xfer_partial     (sens_partial[i]),            // output
+                .xfer_done        (sens_seq_done[i]),           // input : page sequence over
+                .xfer_page_rst_wr (sens_rpage_set[i]),          // output @ posedge mclk
+                .xfer_page_rst_rd (), // output @ negedge mclk
+                .xfer_skipped     (sens_xfer_skipped[i]),       // output reg
+                .cmd_wrmem        () // output
 
+
+        .xfer_num128      (lin_rw_chn3_num128), // output[5:0]
+        .xfer_partial     (lin_rw_chn3_partial), // output
+        .xfer_done        (seq_done3), // input : sequence over
+        .xfer_page_rst_wr (xfer_reset_page3_wr), // output
+        .xfer_page_rst_rd (xfer_reset_page3_rd), // output
+        .xfer_skipped     (), // output reg
+        .cmd_wrmem        () // output
+//    assign cmd_wrmem =       mode_reg[MCONTR_LINTILE_WRITE];// 0: read from memory, 1:write to memory
+        
+*/
 
 
         
@@ -1423,6 +1444,7 @@ module  mcntrl393 #(
         .MCONTR_LINTILE_EXTRAPG_BITS   (MCONTR_LINTILE_EXTRAPG_BITS),
         .MCONTR_LINTILE_KEEP_OPEN      (MCONTR_LINTILE_KEEP_OPEN),
         .MCONTR_LINTILE_BYTE32         (MCONTR_LINTILE_BYTE32),
+        .MCONTR_LINTILE_LINEAR         (MCONTR_LINTILE_LINEAR), // Use linear mode instead of tiled
         .MCONTR_LINTILE_RST_FRAME      (MCONTR_LINTILE_RST_FRAME),
         .MCONTR_LINTILE_SINGLE         (MCONTR_LINTILE_SINGLE),
         .MCONTR_LINTILE_REPEAT         (MCONTR_LINTILE_REPEAT),
@@ -1441,12 +1463,12 @@ module  mcntrl393 #(
         .next_page            (next_page_chn2),             // input
         .frame_done           (frame_done_chn2),            // output
         .frame_finished       (),                           // output
-        .line_unfinished      (line_unfinished_chn2),       // output[15:0] 
+        .line_unfinished      (line_unfinished_chn2),       // output[15:0]  
         .suspend              (suspend_chn2),               // input
-        .frame_number         (frame_number_chn2),
+        .frame_number         (frame_number_chn2),          // output[15:0]
         .frames_in_sync(), // output
-        .master_frame         (16'b0),                      // input[15:0] 
-        .master_set           (1'b0),                       // input
+        .master_frame         (16'b0),                      // input[15:0]  // Set master frame number value
+        .master_set           (1'b0),                       // input        // set master frame strobe   
 //        .master_follow        (1'b0),                       // input
         .xfer_want            (want_rq2),                   // output
         .xfer_need            (need_rq2),                   // output
@@ -1497,6 +1519,7 @@ module  mcntrl393 #(
         .MCONTR_LINTILE_EXTRAPG_BITS   (MCONTR_LINTILE_EXTRAPG_BITS),
         .MCONTR_LINTILE_KEEP_OPEN      (MCONTR_LINTILE_KEEP_OPEN),
         .MCONTR_LINTILE_BYTE32         (MCONTR_LINTILE_BYTE32),
+        .MCONTR_LINTILE_LINEAR         (MCONTR_LINTILE_LINEAR), // Use linear mode instead of tiled
         .MCONTR_LINTILE_RST_FRAME      (MCONTR_LINTILE_RST_FRAME),
         .MCONTR_LINTILE_SINGLE         (MCONTR_LINTILE_SINGLE),
         .MCONTR_LINTILE_REPEAT         (MCONTR_LINTILE_REPEAT),
