@@ -79,7 +79,8 @@ module  mcntrl_tiled_rw#(
     parameter MCONTR_LINTILE_EXTRAPG =       3, // extra pages (over 1) needed by the client simultaneously
     parameter MCONTR_LINTILE_EXTRAPG_BITS =  2, // number of bits to use for extra pages
     parameter MCONTR_LINTILE_KEEP_OPEN =     5, // keep banks open (will be used only if number of rows <= 8)
-    parameter MCONTR_LINTILE_BYTE32 =        6, // use 32-byte wide columns in each tile (false - 16-byte) 
+    parameter MCONTR_LINTILE_BYTE32 =        6, // use 32-byte wide columns in each tile (false - 16-byte)
+    parameter MCONTR_LINTILE_LINEAR =        7, // Use linear mode instead of tiled
     parameter MCONTR_LINTILE_RST_FRAME =     8, // reset frame number 
     parameter MCONTR_LINTILE_SINGLE =        9, // read/write a single page 
     parameter MCONTR_LINTILE_REPEAT =       10, // read/write pages until disabled
