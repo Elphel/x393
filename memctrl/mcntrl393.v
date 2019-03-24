@@ -1661,7 +1661,7 @@ module  mcntrl393 #(
         .bank14                   (cmprs_bank[2 * 3 +: 3]),                          // input[2:0] 
         .row14                    (cmprs_row[2 * ADDRESS_NUMBER +: ADDRESS_NUMBER]), // input[14:0] 
         .start_col14              (cmprs_col[2 * COL_WDTH +: COL_WDTH]),             // input[6:0] 
-        .num128_10                (cmprs_num128[2 * 6 +: 6]),                        // input[5:0] 
+        .num128_14                (cmprs_num128[2 * 6 +: 6]),                        // input[5:0] 
         .partial14                (cmprs_partial[2]),                                // input
         .start14_rd               (cmprs_start_rdlin[2]),                            // input
         .bank15                   (cmprs_bank[3 * 3 +: 3]),                          // input[2:0] 
