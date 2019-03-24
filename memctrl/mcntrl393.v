@@ -588,6 +588,7 @@ module  mcntrl393 #(
 
     wire                   [3:0] cmprs_channel_pgm_en;
     wire                   [3:0] cmprs_reject = 4'h0; 
+    wire                   [3:0] cmprs_start_rdlin;
     wire                   [3:0] cmprs_start_rd16;
     wire                   [3:0] cmprs_start_rd32;
     wire                  [11:0] cmprs_bank;   // output[2:0] 
@@ -597,6 +598,7 @@ module  mcntrl393 #(
     wire  [4*MAX_TILE_WIDTH-1:0] cmprs_num_rows_m1; // number of 128-bit words to transfer (8*16 bits) - full bursts of 8 ( 0 - maximal length, 64)
     wire [4*MAX_TILE_HEIGHT-1:0] cmprs_num_cols_m1; // number of 128-bit words to transfer (8*16 bits) - full bursts of 8 ( 0 - maximal length, 64)
     wire                   [3:0] cmprs_keep_open;   // start generating commands
+    wire               [4*6-1:0] cmprs_num128; // output[5:0]
     wire                   [3:0] cmprs_partial; // output
     wire                   [3:0] cmprs_seq_done; // input : sequence over
 //    assign cmprs_page_ready = cmprs_seq_done;// mcntrl_tiled_rw does not generate page_ready pulse as it is the same as xfer_done input
@@ -1161,7 +1163,8 @@ module  mcntrl393 #(
 `endif              
             );
             
-               mcntrl_tiled_rw #(
+            
+               mcntrl_tiled_linear_rw #(
                 .ADDRESS_NUMBER                (ADDRESS_NUMBER),
                 .COLADDR_NUMBER                (COLADDR_NUMBER),
                 .FRAME_WIDTH_BITS              (FRAME_WIDTH_BITS),
@@ -1198,7 +1201,6 @@ module  mcntrl393 #(
                 .MCONTR_LINTILE_DIS_NEED       (MCONTR_LINTILE_DIS_NEED),
                 .MCONTR_LINTILE_COPY_FRAME     (MCONTR_LINTILE_COPY_FRAME),
                 .MCONTR_LINTILE_ABORT_LATE     (MCONTR_LINTILE_ABORT_LATE)
-                
             ) mcntrl_tiled_rd_compressor_i ( 
                 .mrst                 (mrst),                         // input
                 .mclk                 (mclk),                        // input
@@ -1221,6 +1223,8 @@ module  mcntrl393 #(
                 .xfer_want            (cmprs_want[i]),               // output
                 .xfer_need            (cmprs_need[i]),               // output
                 .xfer_grant           (cmprs_channel_pgm_en[i]),     // input
+                .xfer_start_lin_rd    (cmprs_start_rdlin[i]), // output
+                .xfer_start_lin_wr    (), // output
                 .xfer_start_rd        (cmprs_start_rd16[i]),         // output // TODO: start rd (wr too?) linear
                 .xfer_start_wr        (),                            // output
                 .xfer_start32_rd      (cmprs_start_rd32[i]),         // output
@@ -1233,34 +1237,12 @@ module  mcntrl393 #(
                 .num_rows_m1          (cmprs_num_rows_m1[i * MAX_TILE_WIDTH +: MAX_TILE_WIDTH]), // output[5:0] 
                 .num_cols_m1          (cmprs_num_cols_m1[i * MAX_TILE_HEIGHT +: MAX_TILE_HEIGHT]), // output[5:0] 
                 .keep_open            (cmprs_keep_open[i]),          // output
+                .xfer_num128          (cmprs_num128[i * 6 +: 6]),    // output[5:0] //** new**
                 .xfer_partial         (cmprs_partial[i]),            // output
                 .xfer_page_done       (cmprs_seq_done[i]),           // input
                 .xfer_page_rst_wr     (),                            // output
                 .xfer_page_rst_rd     (cmprs_xfer_reset_page_rd[i])  // output @negedge
             );
-
-/*
-                .xfer_num128      (sens_num128[i * 6 +: 6]),    // output[5:0]
-                .xfer_partial     (sens_partial[i]),            // output
-                .xfer_done        (sens_seq_done[i]),           // input : page sequence over
-                .xfer_page_rst_wr (sens_rpage_set[i]),          // output @ posedge mclk
-                .xfer_page_rst_rd (), // output @ negedge mclk
-                .xfer_skipped     (sens_xfer_skipped[i]),       // output reg
-                .cmd_wrmem        () // output
-
-
-        .xfer_num128      (lin_rw_chn3_num128), // output[5:0]
-        .xfer_partial     (lin_rw_chn3_partial), // output
-        .xfer_done        (seq_done3), // input : sequence over
-        .xfer_page_rst_wr (xfer_reset_page3_wr), // output
-        .xfer_page_rst_rd (xfer_reset_page3_rd), // output
-        .xfer_skipped     (), // output reg
-        .cmd_wrmem        () // output
-//    assign cmd_wrmem =       mode_reg[MCONTR_LINTILE_WRITE];// 0: read from memory, 1:write to memory
-        
-*/
-
-
         
         end
     endgenerate
@@ -1662,6 +1644,32 @@ module  mcntrl393 #(
         .num128_11                (sens_num128[3 * 6 +: 6]),                        // input[5:0] 
         .partial11                (sens_partial[3]),                                // input
         .start11_wr               (sens_start_wr[3]),                               // input
+        
+        
+        .bank12                   (cmprs_bank[0 * 3 +: 3]),                          // input[2:0] 
+        .row12                    (cmprs_row[0 * ADDRESS_NUMBER +: ADDRESS_NUMBER]), // input[14:0] 
+        .start_col12              (cmprs_col[0 * COL_WDTH +: COL_WDTH]),             // input[6:0] 
+        .num128_12                (cmprs_num128[0 * 6 +: 6]),                        // input[5:0] 
+        .partial12                (cmprs_partial[0]),                                // input
+        .start12_rd               (cmprs_start_rdlin[0]),                            // input
+        .bank13                   (cmprs_bank[1 * 3 +: 3]),                          // input[2:0] 
+        .row13                    (cmprs_row[1 * ADDRESS_NUMBER +: ADDRESS_NUMBER]), // input[14:0] 
+        .start_col13              (cmprs_col[1 * COL_WDTH +: COL_WDTH]),             // input[6:0] 
+        .num128_13                (cmprs_num128[1 * 6 +: 6]),                        // input[5:0] 
+        .partial13                (cmprs_partial[1]),                                // input
+        .start13_rd               (cmprs_start_rdlin[1]),                            // input
+        .bank14                   (cmprs_bank[2 * 3 +: 3]),                          // input[2:0] 
+        .row14                    (cmprs_row[2 * ADDRESS_NUMBER +: ADDRESS_NUMBER]), // input[14:0] 
+        .start_col14              (cmprs_col[2 * COL_WDTH +: COL_WDTH]),             // input[6:0] 
+        .num128_10                (cmprs_num128[2 * 6 +: 6]),                        // input[5:0] 
+        .partial14                (cmprs_partial[2]),                                // input
+        .start14_rd               (cmprs_start_rdlin[2]),                            // input
+        .bank15                   (cmprs_bank[3 * 3 +: 3]),                          // input[2:0] 
+        .row15                    (cmprs_row[3 * ADDRESS_NUMBER +: ADDRESS_NUMBER]), // input[14:0] 
+        .start_col15              (cmprs_col[3 * COL_WDTH +: COL_WDTH]),             // input[6:0] 
+        .num128_15                (cmprs_num128[3 * 6 +: 6]),                        // input[5:0] 
+        .partial15                (cmprs_partial[3]),                                // input
+        .start15_rd               (cmprs_start_rdlin[3]),                            // input
         
         .bank                     (lin_rw_bank),                                    // output[2:0] 
         .row                      (lin_rw_row),                                     // output[14:0] 

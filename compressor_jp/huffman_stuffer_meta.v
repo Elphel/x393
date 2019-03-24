@@ -4,7 +4,7 @@
  * @date 2015-10-26  
  * @author Andrey Filippov     
  *
- * @brief Wrapper fior several JPEG/JP4 compression modules. It includes
+ * @brief Wrapper for several JPEG/JP4 compression modules. It includes
  * - Huffman encoder (huffman_snglclk),
  * - bit stuffer (bit_stuffer_27_32),
  * - escapes 0xff with 0x00 (bit_stuffer_escape)
@@ -66,7 +66,8 @@ module  huffman_stuffer_meta(
 // and before the data is needed for output 
     input              ts_pre_stb,  // @mclk - 1 cycle before receiving 8 bytes of timestamp data
     input        [7:0] ts_data,     // timestamp data (s0,s1,s2,s3,us0,us1,us2,us3==0)
-    input              color_first, // @fradv_clk only used for timestamp
+//TODO: Should be generated fro raw also    
+    input              color_first, // @fradv_clk only used for timestamp 
     // outputs @ negedge clk
     output      [31:0] data_out,      // [31:0] output data
     output             data_out_valid,// output data valid
@@ -154,7 +155,8 @@ module  huffman_stuffer_meta(
         .flush_out    (escape_flush_out)   // output reg 
     );
 
-    bit_stuffer_metadata bit_stuffer_metadata_i (
+// TODO: Insert raw data here, always 4x bytes (actually 16*16*(1..2))
+    bit_stuffer_raw_metadata bit_stuffer_metadata_i (
         .mclk           (mclk),               // input
         .mrst           (mrst),               // input
         .xclk           (xclk),               // input

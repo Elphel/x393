@@ -2043,6 +2043,8 @@ assign axi_grst = axi_rst_pre;
         .CMPRS_CBIT_CMODE_BITS           (CMPRS_CBIT_CMODE_BITS),
         .CMPRS_CBIT_FRAMES               (CMPRS_CBIT_FRAMES),
         .CMPRS_CBIT_FRAMES_BITS          (CMPRS_CBIT_FRAMES_BITS),
+        .CMPRS_CBIT_BE16                 (CMPRS_CBIT_BE16),
+        .CMPRS_CBIT_BE16_BITS            (CMPRS_CBIT_BE16_BITS),        
         .CMPRS_CBIT_BAYER                (CMPRS_CBIT_BAYER),
         .CMPRS_CBIT_BAYER_BITS           (CMPRS_CBIT_BAYER_BITS),
         .CMPRS_CBIT_FOCUS                (CMPRS_CBIT_FOCUS),

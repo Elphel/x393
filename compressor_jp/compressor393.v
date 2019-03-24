@@ -78,6 +78,8 @@ module  compressor393 # (
         parameter CMPRS_CBIT_CMODE_BITS =      4, // number of bits to control compressor color modes
         parameter CMPRS_CBIT_FRAMES =         15, // bit # to control compressor multi/single frame buffer modes
         parameter CMPRS_CBIT_FRAMES_BITS =     1, // number of bits to control compressor multi/single frame buffer modes
+        parameter CMPRS_CBIT_BE16 =           17, // bit # to control compressor multi/single frame buffer modes
+        parameter CMPRS_CBIT_BE16_BITS =       1, // number of bits to control compressor multi/single frame buffer modes
         parameter CMPRS_CBIT_BAYER =          20, // bit # to control compressor Bayer shift mode
         parameter CMPRS_CBIT_BAYER_BITS =      2, // number of bits to control compressor Bayer shift mode
         parameter CMPRS_CBIT_FOCUS =          23, // bit # to control compressor focus display mode
@@ -100,6 +102,7 @@ module  compressor393 # (
         parameter CMPRS_CBIT_CMODE_JP4DIFFHDRDIV2 = 4'ha, // jp4,  4 blocks, differential, hdr,divide by 2
         parameter CMPRS_CBIT_CMODE_MONO1 =     4'hb, // mono JPEG (not yet implemented)
         parameter CMPRS_CBIT_CMODE_MONO4 =     4'he, // mono 4 blocks
+        parameter CMPRS_CBIT_CMODE_RAW =       4'hf, // uncompressed
         parameter CMPRS_CBIT_FRAMES_SINGLE =   0, //1, // use a single-frame buffer for images
 
         parameter CMPRS_COLOR18 =              0, // JPEG 4:2:0 with 18x18 overlapping tiles for de-bayer
@@ -107,7 +110,8 @@ module  compressor393 # (
         parameter CMPRS_MONO16 =               2, // JPEG 4:2:0 with 16x16 non-overlapping tiles, color components zeroed
         parameter CMPRS_JP4 =                  3, // JP4 mode with 16x16 macroblocks
         parameter CMPRS_JP4DIFF =              4, // JP4DIFF mode TODO: see if correct
-        parameter CMPRS_MONO8 =                7,  // Regular JPEG monochrome with 8x8 macroblocks (not yet implemented)
+        parameter CMPRS_RAW =                  6, // Not comressed, raw data
+        parameter CMPRS_MONO8 =                7, // Regular JPEG monochrome with 8x8 macroblocks (not yet implemented)
         
         parameter CMPRS_FRMT_MBCM1 =           0, // bit # of number of macroblock columns minus 1 field in format word
         parameter CMPRS_FRMT_MBCM1_BITS =     13, // number of bits in number of macroblock columns minus 1 field in format word
@@ -372,6 +376,8 @@ module  compressor393 # (
                 .CMPRS_CBIT_CMODE_BITS           (CMPRS_CBIT_CMODE_BITS),
                 .CMPRS_CBIT_FRAMES               (CMPRS_CBIT_FRAMES),
                 .CMPRS_CBIT_FRAMES_BITS          (CMPRS_CBIT_FRAMES_BITS),
+                .CMPRS_CBIT_BE16                 (CMPRS_CBIT_BE16),
+                .CMPRS_CBIT_BE16_BITS            (CMPRS_CBIT_BE16_BITS),        
                 .CMPRS_CBIT_BAYER                (CMPRS_CBIT_BAYER),
                 .CMPRS_CBIT_BAYER_BITS           (CMPRS_CBIT_BAYER_BITS),
                 .CMPRS_CBIT_FOCUS                (CMPRS_CBIT_FOCUS),
@@ -392,12 +398,14 @@ module  compressor393 # (
                 .CMPRS_CBIT_CMODE_JP4DIFFHDRDIV2 (CMPRS_CBIT_CMODE_JP4DIFFHDRDIV2),
                 .CMPRS_CBIT_CMODE_MONO1          (CMPRS_CBIT_CMODE_MONO1),
                 .CMPRS_CBIT_CMODE_MONO4          (CMPRS_CBIT_CMODE_MONO4),
+                .CMPRS_CBIT_CMODE_RAW            (CMPRS_CBIT_CMODE_RAW),
                 .CMPRS_CBIT_FRAMES_SINGLE        (CMPRS_CBIT_FRAMES_SINGLE),
                 .CMPRS_COLOR18                   (CMPRS_COLOR18),
                 .CMPRS_COLOR20                   (CMPRS_COLOR20),
                 .CMPRS_MONO16                    (CMPRS_MONO16),
                 .CMPRS_JP4                       (CMPRS_JP4),
                 .CMPRS_JP4DIFF                   (CMPRS_JP4DIFF),
+                .CMPRS_RAW                       (CMPRS_RAW),
                 .CMPRS_MONO8                     (CMPRS_MONO8),
                 .CMPRS_FRMT_MBCM1                (CMPRS_FRMT_MBCM1),
                 .CMPRS_FRMT_MBCM1_BITS           (CMPRS_FRMT_MBCM1_BITS),

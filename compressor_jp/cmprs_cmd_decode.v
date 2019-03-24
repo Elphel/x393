@@ -73,7 +73,11 @@
 //         3 - combine in window only
 // [20] == 1 - set Bayer shift
 // [19:18] Bayer shift
-// [17:16] - unused
+// WAS: [17:16] - unused
+
+// [17] == 1 - set BE16 mode 
+// [16]    0 - BE16 mode (1 - byte stream is little endian 16-bit, file is big endian 16 bits
+
 // [15] == 1 - set single/multi frame mode
 // [14]    0 - multiframe (compare frame numbers for 'suspend' output)
 //         1 - single frame buffer
@@ -85,7 +89,15 @@
 //          4 - mono, 4 blocks (but still not actual monochrome JPEG as the blocks are scanned in 2x2 macroblocks)
 //          5 - jp4,  4 blocks, dc-improved
 //          6 - jp4,  differential
-//          7 - 15 - reserved
+//          7 - jp4,  4 blocks, differential
+//          8 - jp4,  4 blocks, differential, hdr
+//          9 - jp4,  4 blocks, differential, divide by 2
+//         10 - jp4,  4 blocks, differential, hdr,divide by 2
+//         11 - mono JPEG (not yet implemented)
+//         12-13 - RESERVED
+//         14 - mono 4 blocks
+//         15 - uncompressed
+
 // [8:7] == 0,1 - NOP, 2 -   disable, 3 - enable subtracting of average value (DC component), bypassing DCT
 // [6] == 1 - enable quantization bank select, 0 - disregard bits [5:3]
 // [5:3] = quantization page number (0..7)
@@ -95,7 +107,7 @@
 //         2 - enable compressor, compress single frame from memory (async)
 //         3 - enable compressor, enable synchronous compression mode
 
-
+// TODO WARNING: Switching to/from raw(uncompressed) mode requires stopping/restarting compressor!
 
 module  cmprs_cmd_decode#(
         // Bit-fields in compressor control word
@@ -109,6 +121,10 @@ module  cmprs_cmd_decode#(
         parameter CMPRS_CBIT_CMODE_BITS =     4, // number of bits to control compressor color modes
         parameter CMPRS_CBIT_FRAMES =        15, // bit # to control compressor multi/single frame buffer modes
         parameter CMPRS_CBIT_FRAMES_BITS =    1, // number of bits to control compressor multi/single frame buffer modes
+        
+        parameter CMPRS_CBIT_BE16 =          17, // bit # to control compressor multi/single frame buffer modes
+        parameter CMPRS_CBIT_BE16_BITS =      1, // number of bits to control compressor multi/single frame buffer modes
+        
         parameter CMPRS_CBIT_BAYER =         20, // bit # to control compressor Bayer shift mode
         parameter CMPRS_CBIT_BAYER_BITS =     2, // number of bits to control compressor Bayer shift mode
         parameter CMPRS_CBIT_FOCUS =         23, // bit # to control compressor focus display mode
@@ -118,6 +134,7 @@ module  cmprs_cmd_decode#(
 //      parameter CMPRS_CBIT_RUN_DISABLE =    2'h1, // disable compression of the new frames, finish any already started
         parameter CMPRS_CBIT_RUN_STANDALONE = 2'h2, // enable compressor, compress single frame from memory (async)
         parameter CMPRS_CBIT_RUN_ENABLE =     2'h3, // enable compressor, enable synchronous compression mode
+        
         parameter CMPRS_CBIT_CMODE_JPEG18 =   4'h0, // color 4:2:0
         parameter CMPRS_CBIT_CMODE_MONO6 =    4'h1, // mono 4:2:0 (6 blocks)
         parameter CMPRS_CBIT_CMODE_JP46 =     4'h2, // jp4, 6 blocks, original
@@ -131,6 +148,8 @@ module  cmprs_cmd_decode#(
         parameter CMPRS_CBIT_CMODE_JP4DIFFHDRDIV2 = 4'ha, // jp4,  4 blocks, differential, hdr,divide by 2
         parameter CMPRS_CBIT_CMODE_MONO1 =    4'hb, // mono JPEG (not yet implemented)
         parameter CMPRS_CBIT_CMODE_MONO4 =    4'he, // mono 4 blocks
+        parameter CMPRS_CBIT_CMODE_RAW =      4'hf, // uncompressed
+        
         parameter CMPRS_CBIT_FRAMES_SINGLE =  0, //1, // use a single-frame buffer for images
 
         parameter CMPRS_COLOR18 =             0, // JPEG 4:2:0 with 18x18 overlapping tiles for de-bayer
@@ -138,7 +157,8 @@ module  cmprs_cmd_decode#(
         parameter CMPRS_MONO16 =              2, // JPEG 4:2:0 with 16x16 non-overlapping tiles, color components zeroed
         parameter CMPRS_JP4 =                 3, // JP4 mode with 16x16 macroblocks
         parameter CMPRS_JP4DIFF =             4, // JP4DIFF mode TODO: see if correct
-        parameter CMPRS_MONO8 =               7,  // Regular JPEG monochrome with 8x8 macroblocks (not yet implemented)
+        parameter CMPRS_RAW =                 6, // Not comressed, raw data
+        parameter CMPRS_MONO8 =               7, // Regular JPEG monochrome with 8x8 macroblocks (not yet implemented)
         
         parameter CMPRS_FRMT_MBCM1 =           0, // bit # of number of macroblock columns minus 1 field in format word
         parameter CMPRS_FRMT_MBCM1_BITS =     13, // number of bits in number of macroblock columns minus 1 field in format word
@@ -152,11 +172,8 @@ module  cmprs_cmd_decode#(
         parameter CMPRS_CSAT_CR_BITS =        10, // number of bits in red scale field in color saturation word
         parameter CMPRS_CORING_BITS =          3 // number of bits in coring mode
         
-        //parameter CMPRS_STUFFER_NEG =          1  // stuffer runs @ negedge xclk2x
-
     
 )(
-//    input                         rst,
     input                         xclk,               // global clock input, compressor single clock rate
     input                         mclk,               // global system/memory clock
     input                         mrst,      // @posedge mclk, sync reset
@@ -165,11 +182,7 @@ module  cmprs_cmd_decode#(
     input                         color_sat_we,       // input - @mclk write color saturation values
     input                         coring_we,          // input - @mclk write coring values
     
-//                    rs,      // 0 - bit modes,
-//                           // 1 - write ntiles;
     input                  [31:0] di,     // [15:0] data from CPU (sync to negedge sclk)
-//                    cr_w,   // data written to cr (1 cycle long) - just to reset legacy IRQ
-//                    ntiles,//[17:0] - number of tiles in a frame to process
     input                         frame_start,        // @mclk
     output                        frame_start_xclk,   // frame start, parameters are copied at this pulse
     
@@ -183,14 +196,13 @@ module  cmprs_cmd_decode#(
     output reg                    sigle_frame_buf,    // memory controller uses a single frame buffer (frame_number_* == 0), use other sync
                                   //  outputs sync @ posedge xclk:
     output reg                    cmprs_en_xclk,      // enable compressor, turn off immedaitely
-    output reg                    cmprs_en_late_xclk, // enable stuffer, extends control fields for graceful shutdown
-//                    cmprs_start, // single cycle when single or constant compression is turned on
-//                    cmprs_repeat,// high in repetitive mode
+    output reg                    cmprs_en_xclk_jp,      // enable compressor, turn off immedaitely
+    output reg                    cmprs_en_xclk_raw,      // enable compressor, turn off immedaitely
+
+    output reg                    cmprs_en_late_xclk, // enable stuffer, extends control fields for graceful shutdown (should be for raw also?)
                                   // outputs @posedge xclk, frozen when the new frame is requested
     output reg             [ 2:0] cmprs_qpage, // [2:0] - quantizator page number (0..7)
     output reg                    cmprs_dcsub, // subtract dc level before DCT, restore later
-//    output reg             [ 3:0] cmprs_mode,  // [3:0] - compressor mode
-//                    cmprs_shift, // tile shift from top left corner
     output reg             [ 1:0] cmprs_fmode, //[1:0] - focus mode
     output reg             [ 1:0] bayer_shift, // additional shift to bayer mosaic
                                   
@@ -208,15 +220,10 @@ module  cmprs_cmd_decode#(
     output reg [CMPRS_CSAT_CB_BITS-1:0] color_sat_cb,    // scale for Cb color component (color saturation)
     output reg [CMPRS_CSAT_CR_BITS-1:0] color_sat_cr,    // scale for Cr color component (color saturation)
     
-    output reg [CMPRS_CORING_BITS-1:0]  coring           // scale for Cb color component (color saturation)
-    
+    output reg [CMPRS_CORING_BITS-1:0]  coring,           // scale for Cb color component (color saturation)
+    output reg                    uncompressed,
+    output reg                    be16
     );
-    
-//    input                         is_compressing, // high from start of compressing till EOT (sync to posedge clk)
-//                    abort_compress,
- //   input                         stuffer_done_mclk,
-
-//    output reg                    force_flush); // abort compress - generate flush pulse, force end of image over DMA, update counter
 
     reg   [30:0]  di_r;
     reg           ctrl_we_r;
@@ -252,9 +259,11 @@ module  cmprs_cmd_decode#(
     reg   [30:0] format_xclk; // left margin and macroblock rows/columns
     reg   [23:0] color_sat_xclk; // color saturation values (only 10 LSB in each 12 are used
     reg   [ 2:0] coring_xclk; // color saturation values (only 10 LSB in each 12 are used
-
-//    wire         frame_start_xclk;
+    
+    wire         uncompressed_mclk;
+    
     assign cmprs_en_mclk = cmprs_en_mclk_r;
+    assign uncompressed_mclk = cmprs_mode_mclk[3:0] == CMPRS_CBIT_CMODE_RAW;
     
     always @ (posedge mclk) begin
         if (mrst) ctrl_we_r <= 0;
@@ -279,11 +288,13 @@ module  cmprs_cmd_decode#(
         else if (ctrl_we_r && di_r[CMPRS_CBIT_RUN]) cmprs_run_mclk <= (di_r[CMPRS_CBIT_RUN-1 -:CMPRS_CBIT_RUN_BITS] == CMPRS_CBIT_RUN_ENABLE);
         
         if      (mrst)      cmprs_standalone <= 0;
-//        else if (ctrl_we_r) cmprs_standalone <=  ctrl_we_r && di_r[CMPRS_CBIT_RUN] && (di_r[CMPRS_CBIT_RUN-1 -:CMPRS_CBIT_RUN_BITS] == CMPRS_CBIT_RUN_STANDALONE);
         else cmprs_standalone <=  ctrl_we_r && di_r[CMPRS_CBIT_RUN] && (di_r[CMPRS_CBIT_RUN-1 -:CMPRS_CBIT_RUN_BITS] == CMPRS_CBIT_RUN_STANDALONE);
 
         if      (mrst)                                 sigle_frame_buf <= 0;
         else if (ctrl_we_r && di_r[CMPRS_CBIT_FRAMES]) sigle_frame_buf <= (di_r[CMPRS_CBIT_FRAMES-1 -:CMPRS_CBIT_FRAMES_BITS] == CMPRS_CBIT_FRAMES_SINGLE);
+
+        if      (mrst)                                 be16 <= 0;
+        else if (ctrl_we_r && di_r[CMPRS_CBIT_BE16])   be16 <= (di_r[CMPRS_CBIT_BE16-1 -:CMPRS_CBIT_BE16_BITS] == 1);
 
         if      (mrst)                                 cmprs_qpage_mclk <= 0;
         else if (ctrl_we_r && di_r[CMPRS_CBIT_QBANK])  cmprs_qpage_mclk <= di_r[CMPRS_CBIT_QBANK-1 -:CMPRS_CBIT_QBANK_BITS];
@@ -316,9 +327,14 @@ module  cmprs_cmd_decode#(
     always @ (posedge xclk)  begin
         cmprs_en_xclk   <=      cmprs_en_mclk_r;
         cmprs_en_late_xclk  <=  cmprs_en_mclk_r || cmprs_en_extend;
+        if      (!cmprs_en_mclk_r) cmprs_en_xclk_jp <= 0;
+        else if (ctrl_we_xclk)     cmprs_en_xclk_jp <= cmprs_en_mclk_r && !uncompressed_mclk;
+
+        if      (!cmprs_en_mclk_r) cmprs_en_xclk_raw <= 0;
+        else if (ctrl_we_xclk)     cmprs_en_xclk_raw <= cmprs_en_mclk_r && uncompressed_mclk;
+        
     end    
     always @ (posedge xclk) if (ctrl_we_xclk) begin
-//        cmprs_en_late_xclk  <=  cmprs_en_mclk_r || cmprs_en_extend;
         cmprs_qpage_xclk <=     cmprs_qpage_mclk;
         cmprs_dcsub_xclk <=     cmprs_dcsub_mclk;
         cmprs_mode_xclk <=      cmprs_mode_mclk;
@@ -450,6 +466,11 @@ module  cmprs_cmd_decode#(
                 jp4_dc_improved  <= 0;
                 converter_type[2:0] <= CMPRS_MONO8; // 0 - color18, 1 - color20, 2 - mono, 3 - jp4, 4 - jp4-diff
               end
+
+            CMPRS_CBIT_CMODE_RAW:   begin // uncompressed
+                converter_type[2:0] <= CMPRS_RAW;   // 0 - color18, 1 - color20, 2 - mono, 3 - jp4, 4 - jp4-diff
+              end
+
             default: begin // 
                 ignore_color     <=    'bx;
                 four_blocks      <=    'bx;
@@ -457,6 +478,7 @@ module  cmprs_cmd_decode#(
                 converter_type[2:0] <= 'bx;
               end
        endcase
+       uncompressed <= cmprs_mode_xclk[3:0] == CMPRS_CBIT_CMODE_RAW;
     
     
     end

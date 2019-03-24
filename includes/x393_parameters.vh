@@ -713,6 +713,8 @@
     parameter CMPRS_CBIT_CMODE_BITS =      4, // number of bits to control compressor color modes
     parameter CMPRS_CBIT_FRAMES =         15, // bit # to control compressor multi/single frame buffer modes
     parameter CMPRS_CBIT_FRAMES_BITS =     1, // number of bits to control compressor multi/single frame buffer modes
+    parameter CMPRS_CBIT_BE16 =           17, // bit # to control compressor multi/single frame buffer modes
+    parameter CMPRS_CBIT_BE16_BITS =       1, // number of bits to control compressor multi/single frame buffer modes
     parameter CMPRS_CBIT_BAYER =          20, // bit # to control compressor Bayer shift mode
     parameter CMPRS_CBIT_BAYER_BITS =      2, // number of bits to control compressor Bayer shift mode
     parameter CMPRS_CBIT_FOCUS =          23, // bit # to control compressor focus display mode
@@ -735,6 +737,7 @@
     parameter CMPRS_CBIT_CMODE_JP4DIFFHDRDIV2 = 4'ha, // jp4,  4 blocks, differential, hdr,divide by 2
     parameter CMPRS_CBIT_CMODE_MONO1 =     4'hb, // mono JPEG (not yet implemented)
     parameter CMPRS_CBIT_CMODE_MONO4 =     4'he, // mono, 4 blocks (but still not actual monochrome JPEG as the blocks are scanned in 2x2 macroblocks)
+    parameter CMPRS_CBIT_CMODE_RAW =      4'hf, // uncompressed
 
     parameter CMPRS_CBIT_FRAMES_SINGLE =   0, //1, // use a single-frame buffer for images
 
@@ -743,6 +746,7 @@
     parameter CMPRS_MONO16 =               2, // JPEG 4:2:0 with 16x16 non-overlapping tiles, color components zeroed
     parameter CMPRS_JP4 =                  3, // JP4 mode with 16x16 macroblocks
     parameter CMPRS_JP4DIFF =              4, // JP4DIFF mode TODO: see if correct
+    parameter CMPRS_RAW =                  6, // Not comressed, raw data
     parameter CMPRS_MONO8 =                7,  // Regular JPEG monochrome with 8x8 macroblocks (not yet implemented)
 
     parameter CMPRS_FRMT_MBCM1 =           0, // bit # of number of macroblock columns minus 1 field in format word
