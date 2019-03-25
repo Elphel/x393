@@ -102,7 +102,7 @@ module  sens_sync#(
     reg                       period_dly; // runnning counter to enforce > min period
     reg                       en_pclk;
     
-    reg                       dis_frame_sync; // @pclk disable frame sync generation (during interface set up to prevent stray fs)
+    reg                       dis_frame_sync = 0; // @pclk disable frame sync generation (during interface set up to prevent stray fs)
     
     wire                      sof_in_masked = !dis_frame_sync && sof_in; 
     assign set_data_mclk = cmd_we && ((cmd_a == SENS_SYNC_MULT) || (cmd_a == SENS_SYNC_LATE));
@@ -122,9 +122,10 @@ module  sens_sync#(
     always @ (posedge pclk) begin
     
         en_pclk <= en;
-        
-        if (set_data_pclk && (cmd_a_r == SENS_SYNC_MULT)) begin
-//            sub_frames_pclk <= cmd_data_r[SENS_SYNC_FBITS-1:0];
+        if (prst) begin
+            sub_frames_pclk <= 0;
+            dis_frame_sync <=  0;   
+        end else if (set_data_pclk && (cmd_a_r == SENS_SYNC_MULT)) begin
             sub_frames_pclk <= cmd_data_r[SENS_SYNC_FBITS-1:0];
             dis_frame_sync <=  cmd_data_r[SENS_SYNC_FBITS];   
         end    
