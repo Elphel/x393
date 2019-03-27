@@ -189,6 +189,7 @@ module  cmprs_cmd_decode#(
                                   //  outputs sync @ posedge mclk:
     output                        cmprs_en_mclk,      // @mclk 0 resets immediately
     input                         cmprs_en_extend,    // @mclk keep compressor enabled for graceful shutdown
+    input                         compressor_running,  // @xclk - reading frame or running stuffer/trailer
     
     output reg                    cmprs_run_mclk,     // @mclk enable propagation of vsync_late to frame_start_dst in bonded(sync to src) mode
     output reg                    cmprs_standalone,   // @mclk single-cycle: generate a single frame_start_dst in unbonded (not synchronized) mode.
@@ -221,7 +222,8 @@ module  cmprs_cmd_decode#(
     output reg [CMPRS_CSAT_CR_BITS-1:0] color_sat_cr,    // scale for Cr color component (color saturation)
     
     output reg [CMPRS_CORING_BITS-1:0]  coring,           // scale for Cb color component (color saturation)
-    output reg                    uncompressed,
+    output reg                    compressed,      // late on, early off running compressor chain
+    output reg                    uncompressed,    // late on, early off running raw chain
     output reg                    be16
     );
 
@@ -261,9 +263,11 @@ module  cmprs_cmd_decode#(
     reg   [ 2:0] coring_xclk; // color saturation values (only 10 LSB in each 12 are used
     
     wire         uncompressed_mclk;
+    wire         uncompressed_xclk;
     
     assign cmprs_en_mclk = cmprs_en_mclk_r;
     assign uncompressed_mclk = cmprs_mode_mclk[3:0] == CMPRS_CBIT_CMODE_RAW;
+    assign uncompressed_xclk = cmprs_mode_xclk[3:0] == CMPRS_CBIT_CMODE_RAW;
     
     always @ (posedge mclk) begin
         if (mrst) ctrl_we_r <= 0;
@@ -478,10 +482,17 @@ module  cmprs_cmd_decode#(
                 converter_type[2:0] <= 'bx;
               end
        endcase
-       uncompressed <= cmprs_mode_xclk[3:0] == CMPRS_CBIT_CMODE_RAW;
-    
-    
+//       uncompressed <= cmprs_mode_xclk[3:0] == CMPRS_CBIT_CMODE_RAW;
     end
+    always @ (posedge xclk) begin
+        if (!cmprs_en_mclk_r || (!uncompressed_xclk && !compressor_running)) uncompressed <= 0;
+        else if (frame_start_xclk)                                           uncompressed <= uncompressed_xclk;
+
+        if (!cmprs_en_mclk_r || ( uncompressed_xclk && !compressor_running)) compressed <= 0;
+        else if (frame_start_xclk)                                           compressed <= !uncompressed_xclk;
+    end
+    
+    
 //frame_start_xclk
     pulse_cross_clock ctrl_we_xclk_i       (.rst(mrst), .src_clk(mclk), .dst_clk(xclk), .in_pulse(ctrl_we_r),      .out_pulse(ctrl_we_xclk),.busy());
     pulse_cross_clock format_we_xclk_i     (.rst(mrst), .src_clk(mclk), .dst_clk(xclk), .in_pulse(format_we_r),    .out_pulse(format_we_xclk),.busy());

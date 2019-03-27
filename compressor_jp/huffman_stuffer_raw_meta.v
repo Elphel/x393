@@ -70,6 +70,7 @@ module  huffman_stuffer_raw_meta(
     input              color_first, // @fradv_clk only used for timestamp 
 
     // RAW mode ports, all @ xclk
+    input              compressed_mode,    // operating in raw mode (uncompressed)
     input              raw_mode,    // operating in raw mode (uncompressed)
     input              raw_be16,    // swap byte pairs to outut 16-bit big endian data
     input        [7:0] raw_bytes,   // raw bypass byte data in little endian order 
@@ -180,6 +181,7 @@ module  huffman_stuffer_raw_meta(
         .in_stb         (escape_dv),          // input
         .flush          (escape_flush_out),   // input
         .abort          (abort_stuffer),      // input
+        .compressed_mode(compressed_mode),    // input
         .raw_mode       (raw_mode),           // input
         .raw_be16       (raw_be16),           // input
         .raw_bytes      (raw_bytes),          // input[7:0] 

@@ -382,6 +382,7 @@ module  jp_channel#(
     wire   [15:0] quant_dc_tdo;// MSB aligned coefficient for the DC component (used in focus module)
     wire   [ 2:0] cmprs_qpage;
     wire   [ 2:0] coring_num;
+    wire          compressed;
     wire          uncompressed;
     wire          raw_be16;    // raw bytes in little-endian order need to be converted to big endian 16-bit ones
     wire          raw_start;   // input
@@ -749,6 +750,7 @@ module  jp_channel#(
         .frame_start_xclk   (frame_start_xclk),    // output re-clocked, parameters are copied during this pulse
         .cmprs_en_mclk      (cmprs_en_mclk),       // output
         .cmprs_en_extend    (cmprs_en_extend),     // input
+        .compressor_running (reading_frame || stuffer_running), // input
         .cmprs_run_mclk     (cmprs_run_mclk),      // output reg 
         .cmprs_standalone   (cmprs_standalone),    // output reg 
         .sigle_frame_buf    (sigle_frame_buf),     // output reg 
@@ -772,6 +774,7 @@ module  jp_channel#(
         .color_sat_cb       (m_cb),                // output[9:0] reg 
         .color_sat_cr       (m_cr),                // output[9:0] reg 
         .coring             (coring_num),          // output[2:0] reg 
+        .compressed         (compressed),          // output reg 
         .uncompressed       (uncompressed),        // output reg 
         .be16               (raw_be16) // output reg         
     );
@@ -1238,6 +1241,7 @@ module  jp_channel#(
         .ts_data           (ts_data),          // input[7:0] 
         .color_first       (color_first),      // input valid @xclk - only for sec/usec
 
+        .compressed_mode   (compressed),       // input
         .raw_mode          (uncompressed),     // input
         .raw_be16          (1'b0), // raw_be16),         // input
         .raw_bytes         (buf_pxd),          // input[7:0] 
@@ -1248,8 +1252,8 @@ module  jp_channel#(
         
         .data_out          (stuffer_do),       // output[31:0] 
         .data_out_valid    (stuffer_dv),       // output
-        .done              (stuffer_done),     // output
-        .running           (stuffer_running),  // output
+        .done              (stuffer_done),     // output   // after trailer
+        .running           (stuffer_running),  // output   // DID not include trailer (bug?), now includes (after raw debugging)
         .clk_flush          (hclk),            // input
         .flush_clk          (flush_hclk)       // output
         

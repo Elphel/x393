@@ -62,6 +62,7 @@ module  bit_stuffer_raw_metadata(
     input              abort,       // @ any, extracts 0->1 and flushes (for both modes!)
 
     // RAW mode ports, all @ xclk
+    input              compressed_mode,    // operating in raw mode (uncompressed)
     input              raw_mode,    // operating in raw mode (uncompressed)
     input              raw_be16,    // swap byte pairs to outut 16-bit big endian data
     input        [7:0] raw_bytes,   // raw bypass byte data in little endian order 
@@ -123,12 +124,14 @@ module  bit_stuffer_raw_metadata(
     wire          meta_last = (imgsz4[2:0] == 7) &&    meta_out;
     // re-clock enable to this clock
     
-    wire          ts_rstb= raw_mode ?  raw_ts_copy: (last_block && !last_block_d);  // enough time to have timestamp data; // one cycle before getting timestamp data from FIFO
+//    wire          ts_rstb= raw_mode ?  raw_ts_copy: (last_block && !last_block_d);  // enough time to have timestamp data; // one cycle before getting timestamp data from FIFO
+    wire          ts_rstb= (raw_mode && raw_ts_copy) || ( compressed_mode && last_block && !last_block_d);  // enough time to have timestamp data; // one cycle before getting timestamp data from FIFO
     wire    [7:0] ts_dout; // timestamp data, byte at a time
-    wire          write_size = (in_stb && (bytes_in != 0)) || (flush && last_stb_4); // TODO: never in raw mode?
-    wire          stb_start = raw_mode?  raw_start: (!color_first && color_first_r) ;
-    wire          stb =  in_stb & !trailer && !force_flush;
-    wire          stb1 = raw_stb & !trailer && !force_flush;
+    wire          write_size = (in_stb && (bytes_in != 0)) || (flush && last_stb_4) || raw_flush; // TODO: never in raw mode?
+//    wire          stb_start = raw_mode?  raw_start: (!color_first && color_first_r) ;
+    wire          stb_start = (raw_mode && raw_start) ||  (compressed_mode && !color_first && color_first_r) ;
+    wire          stb =  compressed_mode && in_stb && !trailer && !force_flush;
+    wire          stb1 = raw_mode && raw_stb && !trailer && !force_flush;
     
     always @ (posedge xclk) begin
         if (xrst ||trailer_done) imgsz4 <= 0;
@@ -148,9 +151,10 @@ module  bit_stuffer_raw_metadata(
         if ((!ts_in[3] && (ts_in[1:0] == 2)) || write_size) time_ram2[ts_in[3:2]] <= ts_in[3]? (imgsz4[21:14]):ts_dout;
         if ((!ts_in[3] && (ts_in[1:0] == 3)) || write_size) time_ram3[ts_in[3:2]] <= ts_in[3]? (8'hff):ts_dout;
         
-        if      (xrst)                                          trailer <= 0;
-        else if (force_flush || (raw_mode ? raw_flush : flush)) trailer <= 1;
-        else if (trailer_done)                                  trailer <= 0;
+        if      (xrst)                                                                 trailer <= 0;
+//        else if (force_flush || (raw_mode ? raw_flush : flush)) trailer <= 1;
+        else if (force_flush || (raw_mode && raw_flush) || (compressed_mode && flush)) trailer <= 1;
+        else if (trailer_done)                                                         trailer <= 0;
 
         if      (xrst)                                       meta_out <= 0;
         else if (trailer && (imgsz4[2:0] == 4) &&!zeros_out) meta_out <= 1;
@@ -167,7 +171,9 @@ module  bit_stuffer_raw_metadata(
         data_out_valid <= stb1 || stb || trailer;
         
         
-        if      (xrst || trailer) running <= 0;
+///        if      (xrst || trailer) running <= 0; // FIXME: Was this for quite a while? Was in intentional?
+        if      (xrst || trailer_done) running <= 0;
+        
         else if (stb_start)       running <= 1; // for raw need color_first trailing edge
         
         done <= trailer_done;

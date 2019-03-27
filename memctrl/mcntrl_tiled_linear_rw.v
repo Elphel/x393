@@ -528,11 +528,10 @@ module  mcntrl_tiled_linear_rw#(
     assign cmd_extra_pages = mode_reg[MCONTR_LINTILE_EXTRAPG+:MCONTR_LINTILE_EXTRAPG_BITS]; // external module needs more than 1 page
     assign keep_open=        mode_reg[MCONTR_LINTILE_KEEP_OPEN]; // keep banks open (will be used only if number of rows <= 8
     assign byte32=           mode_reg[MCONTR_LINTILE_BYTE32]; // use 32-byte wide columns in each tile (false - 16-byte)
-    assign linear_mode =     mode_reg[MCONTR_LINTILE_BYTE32 ]; // use linear mode instead of the tiled
+    assign linear_mode =     mode_reg[MCONTR_LINTILE_LINEAR]; // NEW
     assign repeat_frames=    mode_reg[MCONTR_LINTILE_REPEAT];
     assign disable_need =    mode_reg[MCONTR_LINTILE_DIS_NEED];
 //    assign skip_too_late =   mode_reg[MCONTR_LINTILE_SKIP_LATE]; // from LINEAR
-    assign linear_mode =     mode_reg[MCONTR_LINTILE_LINEAR]; // NEW
     assign abort_en =        mode_reg[MCONTR_LINTILE_ABORT_LATE];
 `ifdef DEBUG_MCNTRL_TILED_EXTRA_STATUS    
     assign status_data=      {frames_in_sync, suspend, last_row_w, last_in_row,line_unfinished[7:0], frame_finished_r, busy_r}; 
@@ -637,7 +636,12 @@ module  mcntrl_tiled_linear_rw#(
 wire    start_not_partial= xfer_start_r[0] && !xfer_limited_by_mem_page_r;    
     always @(posedge mclk) begin
         // acceletaring pre_want - copied from LINEAR (faster, equivalent), start matching
-        pre_want_r1 <= !chn_rst &&  !frame_done_r && busy_r && par_mod_r[PAR_MOD_LATENCY-2] && !(|frame_start_r[4:1]);
+        
+        
+        
+//        pre_want_r1 <= !chn_rst &&  !frame_done_r && busy_r && par_mod_r[PAR_MOD_LATENCY-2] && !(|frame_start_r[4:1]);
+// FIXME: Same in LINEAR module?
+        pre_want_r1 <= !chn_rst &&  !frame_done_r && busy_r && par_mod_r[PAR_MOD_LATENCY-2] && !(|frame_start_r[4:1]) &&!xfer_start_r[0];
         if      (mrst)               par_mod_r<=0;
         else if (pgm_param_w ||
                  xfer_start_r[0] ||

@@ -96,7 +96,7 @@ module  cmprs_raw_buf_iface #(
     reg    [14:0] quads_left;  // number of quad bytes left in a row (after this)    
     reg    [16:0] rows_left;   // number of rows left (after this)
     reg     [1:0] rows_last;
-    reg           page_run;
+    reg           page_run; // on after page_start, off after quad_r[2], so during last quad_r[3] shold be off
     reg     [3:0] quad_r;
     reg           quad_last;   // last quad byte in a row should be valid @quad_r[2]
     wire          page_start;
@@ -106,6 +106,9 @@ module  cmprs_raw_buf_iface #(
     wire          frame_finish_w;
     wire          frames_pending;
     reg           starting; // from frame_start_r to first page start
+    reg           mode_valid;//  after parameters are valid, invalid whe mode is reset
+    reg           page_end_r;
+    reg           frame_done;
     
     assign frame_en_w = frame_en && frame_go; // both are inputs
     // one extra at the end of frame is needed (sequence will be short)  ???
@@ -116,21 +119,25 @@ module  cmprs_raw_buf_iface #(
     assign buf_diff = needed_page - next_valid;
     assign buf_ready_w = buf_diff[2];
 
-    assign page_start = !page_run && buf_ready_w && frame_pre_run && (starting && stuffer_running);  // frame_pre_run should deassert  in time with frame end
+//    assign page_start = !page_run && buf_ready_w && ((frame_pre_run && starting && stuffer_running) || !frame_done);  // frame_pre_run should deassert  in time with frame end
+    assign page_start = !page_run && buf_ready_w && frame_pre_run && ((starting && stuffer_running) || !frame_done);  // frame_pre_run should deassert  in time with frame end
    
-    reg page_end_r;
+//    reg page_restart_r;
      
     assign raw_start = frame_pre_start_r; // for JP - leading edge of color_first
-    assign page_end_w = frame_en && quad_r[2] && (&bufa_r[9:2] || quad_last);
+//  assign page_end_w = frame_en && quad_r[2] && (&bufa_r[9:2] || quad_last);
+    assign page_end_w = frame_en && quad_r[1] && (&bufa_r[9:2] || quad_last);
     
-    assign release_buf = page_end_w;
+//    assign release_buf = page_end_w;
+    assign release_buf = page_end_r;
     
     assign frame_finish_w = frame_finish_r[1] && !frame_finish_r[0];
     assign frames_pending = !frame_que_cntr[FRAME_QUEUE_WIDTH] && (|frame_que_cntr[FRAME_QUEUE_WIDTH-1:0]);
     
     assign frame_en_w = frame_en && frame_go;
     
-    assign raw_prefb = buf_rd_r[0]; // delay if memory registered more. TODO Add parameter if it already used    
+//    assign raw_prefb = buf_rd_r[0]; // delay if memory registered more. TODO Add parameter if it already used    
+    assign raw_prefb = quad_r[1]; // delay if memory registered more. TODO Add parameter if it already used    
     
     assign raw_ts_copy = frame_en_r && rows_last[0] && !rows_last[1];
 
@@ -146,6 +153,13 @@ module  cmprs_raw_buf_iface #(
         // pages read from the external memory, previous one is the last in the buffer
         if   (reset_page_rd) next_valid <= 0;
         else if (page_ready) next_valid <=  next_valid + 1;
+    
+        if      (!frame_en)         mode_valid <= 0;
+//        else if (frame_start_xclk) mode_valid <= frame_start_xclk;
+        else if (frame_pre_start_r) mode_valid <= 1; // frame_pre_start_r sets remaining quads, rows
+        
+   
+    
     
         cmprs_run_xclk <=     cmprs_run_mclk;
             
@@ -175,7 +189,8 @@ module  cmprs_raw_buf_iface #(
         // page_run
         if      (!frame_pre_run)          page_run <= 0;
         else if (page_start)              page_run <= 1;
-        else if (quad_r[2] && page_end_r) page_run <= 0;        
+//        else if (quad_r[2] && page_end_r) page_run <= 0;        
+        else if (page_end_r)              page_run <= 0;        
         
         if      (!frame_pre_run)          quad_r <=    0;
         else                              quad_r <= {quad_r[2:0], page_start | (quad_r[3] & page_run)}; 
@@ -189,23 +204,29 @@ module  cmprs_raw_buf_iface #(
         if      (frame_pre_start_r || (quad_r[2] && quad_last)) quads_left <= {n_blocks_in_row_m1, 2'b11};
         else if (quad_r[2])                                     quads_left <= quads_left - 1;
         
-        quad_last <= !(|quads_left); // valid from 2 after frame_pre_start_r or after quad_r[3]
+        quad_last <= mode_valid && !(|quads_left); // valid from 2 after frame_pre_start_r or after quad_r[3]
 
         if      (frame_pre_start_r)                             rows_left <=  {n_block_rows_m1, 4'b1111};
         else if ((quad_r[2] && quad_last))                      rows_left <=  rows_left - 1;
         
-        rows_last <= {rows_last[0], ~(|rows_left)};
+        rows_last <= {rows_last[0], mode_valid & ~(|rows_left)};
         
-        if (frame_pre_start_r) bufa_r[11:10] <= needed_page[1:0];
+//        if (frame_pre_start_r) bufa_r[11:10] <= needed_page[1:0];
+        if (page_start) bufa_r[11:10] <= needed_page[1:0];
         
-        if (frame_pre_start_r) bufa_r[9:1] <= 0;
-        else if (quad_r[3])    bufa_r[9:1] <= bufa_r[9:1] + 1;
+        
+//        if (frame_pre_start_r)           bufa_r[9:1] <= 0;
+        if      (page_start)             bufa_r[9:1] <= 0;
+        else if (quad_r[1] | quad_r[3])  bufa_r[9:1] <= bufa_r[9:1] + 1;
         
         if (frame_pre_start_r) bufa_r[0] <=  raw_be16;
         else if (buf_rd_r[0])  bufa_r[0] <= ~bufa_r[0];
 
         if      (!frame_en || (!frames_pending && frame_finish_w)) frame_pre_run <= 0;
         else if (frame_pre_start_w)                                frame_pre_run <= 1;
+        
+        if      (!frame_en || frame_pre_start_r)      frame_done <= 0;
+        else if (quad_r[2] && quad_last && rows_last) frame_done <= 1; // valid @ quad_r[3], when page_run is already == 0 
         
     end
     
