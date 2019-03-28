@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.3.78 (w)1999-2016 BSI
-[*] Wed Mar 27 16:19:27 2019
+[*] Thu Mar 28 02:06:10 2019
 [*]
-[dumpfile] "/data_ssd/nc393/elphel393/fpga-elphel/x393/simulation/x393_dut-20190326233222169.fst"
-[dumpfile_mtime] "Wed Mar 27 07:01:51 2019"
-[dumpfile_size] 734417120
+[dumpfile] "/data_ssd/nc393/elphel393/fpga-elphel/x393/simulation/x393_dut-20190327185524057.fst"
+[dumpfile_mtime] "Thu Mar 28 02:04:11 2019"
+[dumpfile_size] 520738951
 [savefile] "/data_ssd/nc393/elphel393/fpga-elphel/x393/cocotb/x393_cocotb_03.sav"
-[timestart] 0
+[timestart] 379540790
 [size] 1804 1171
 [pos] -1 -1
-*-26.910084 660545833 212597388 212637388 379925000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-14.159636 379618470 212597388 212637388 379925000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] x393_dut.
 [treeopen] x393_dut.simul_sensor12bits_2_i.
 [treeopen] x393_dut.simul_sensor12bits_3_i.
@@ -71,7 +71,7 @@
 [treeopen] x393_dut.x393_i.timing393_i.camsync393_i.
 [treeopen] x393_dut.x393_i.timing393_i.camsync393_i.i_frsync_pclk0.
 [sst_width] 309
-[signals_width] 379
+[signals_width] 333
 [sst_expanded] 1
 [sst_vpaned_height] 486
 @820
@@ -3687,7 +3687,6 @@ x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_raw_bu
 x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_raw_buf_iface_i.frame_en
 x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_raw_buf_iface_i.frame_en_r
 x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_raw_buf_iface_i.frame_en_w
-x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_raw_buf_iface_i.frame_finish_r[1:0]
 x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_raw_buf_iface_i.frame_finish_w
 x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_raw_buf_iface_i.frame_go
 x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_raw_buf_iface_i.frame_pre_run
@@ -3828,6 +3827,12 @@ x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuf
 -group_end
 @28
 x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.bit_stuffer_metadata_i.stb
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_raw_buf_iface_i.frame_finish_w
+@22
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_raw_buf_iface_i.frame_finish_r[3:0]
+@28
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.bit_stuffer_metadata_i.raw_flush
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.bit_stuffer_metadata_i.raw_stb
 x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.bit_stuffer_metadata_i.stb1
 x393_dut.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_tiled_rd_compressor_i.chn_rst
 x393_dut.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_tiled_rd_compressor_i.chn_en
@@ -3859,8 +3864,10 @@ x393_dut.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_tiled_rd_compressor_i.xfer
 x393_dut.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_tiled_rd_compressor_i.pending_xfers[1:0]
 @28
 x393_dut.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_tiled_rd_compressor_i.frame_done
+@29
 [color] 2
 x393_dut.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_tiled_rd_compressor_i.busy_r
+@28
 x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_en_mclk
 x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_run_mclk
 @22
@@ -3873,7 +3880,6 @@ x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuf
 x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.bit_stuffer_metadata_i.bytes_in[1:0]
 x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.bit_stuffer_metadata_i.flush
 x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.bit_stuffer_metadata_i.last_stb_4
-@29
 x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.bit_stuffer_metadata_i.raw_flush
 @c00022
 x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.bit_stuffer_metadata_i.ts_in[3:0]

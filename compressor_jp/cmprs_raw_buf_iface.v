@@ -86,7 +86,7 @@ module  cmprs_raw_buf_iface #(
     reg           cmprs_run_xclk;
     reg           frame_pre_run;
     reg [FRAME_QUEUE_WIDTH:0] frame_que_cntr; // width+1
-    reg     [1:0] frame_finish_r; // active after last macroblock in a frame
+    reg     [3:0] frame_finish_r; // active after last macroblock in a frame
 
     reg    [ 2:0] next_valid;     // number of next valid page (only 2 LSB are actual page number)
     reg    [ 2:0] needed_page;    // calculate at MB start
@@ -131,7 +131,7 @@ module  cmprs_raw_buf_iface #(
 //    assign release_buf = page_end_w;
     assign release_buf = page_end_r;
     
-    assign frame_finish_w = frame_finish_r[1] && !frame_finish_r[0];
+    assign frame_finish_w = frame_finish_r[1]  && !frame_finish_r[0]; // now just single-cycle, no need for frame_finish_r[0]
     assign frames_pending = !frame_que_cntr[FRAME_QUEUE_WIDTH] && (|frame_que_cntr[FRAME_QUEUE_WIDTH-1:0]);
     
     assign frame_en_w = frame_en && frame_go;
@@ -144,7 +144,7 @@ module  cmprs_raw_buf_iface #(
     reg    [11:0]   bufa_r;             // buffer read address (2 MSB - page number)
     reg     [1:0] buf_rd_r;
 
-    assign raw_flush = frame_finish_w;
+    assign raw_flush = frame_finish_r[3]; // frame_finish_w;
     
     assign buf_ra = bufa_r;
     
@@ -198,7 +198,7 @@ module  cmprs_raw_buf_iface #(
         buf_rd_r <= {buf_rd_r[0], page_start | (|quad_r[2:0] | (quad_r[3] & page_run))}; 
 
         if   (!frame_en) frame_finish_r <= 0;
-        else             frame_finish_r <= {frame_finish_r[0], quad_r[2] & quad_last & rows_last[0]};
+        else             frame_finish_r <= {frame_finish_r[2:0], quad_r[2] & quad_last & rows_last[0]};
 
 //quads_left        
         if      (frame_pre_start_r || (quad_r[2] && quad_last)) quads_left <= {n_blocks_in_row_m1, 2'b11};

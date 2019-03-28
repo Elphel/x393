@@ -94,10 +94,10 @@ module  bit_stuffer_raw_metadata(
                        {raw_bs[2], raw_bs[1], raw_bs[0], raw_prefb};
         if (xrst) raw_stb <= 0;
         else      raw_stb <= raw_be16 ? raw_bs[2] : raw_bs[3];
-        if (raw_bs[0]) raw32[ 7: 0] <= raw_bytes;
-        if (raw_bs[1]) raw32[15: 8] <= raw_bytes;
-        if (raw_bs[2]) raw32[23:16] <= raw_bytes;
-        if (raw_bs[3]) raw32[31:24] <= raw_bytes;
+        if (raw_bs[0]) raw32[31:24] <= raw_bytes;
+        if (raw_bs[1]) raw32[23:16] <= raw_bytes;
+        if (raw_bs[2]) raw32[15: 8] <= raw_bytes;
+        if (raw_bs[3]) raw32[ 7: 0] <= raw_bytes;
     end
 
     reg     [7:0] time_ram0[0:3]; // 0 - seconds, 1 - microseconds MSB in the output 32-bit word, byt LSB of the sec/usec
@@ -119,6 +119,7 @@ module  bit_stuffer_raw_metadata(
     reg           trailer;
     reg           meta_out; 
     reg     [1:0] meta_word;
+    reg           raw_flush_d; // raw_flush delayed by 1 cysle
     reg           zeros_out; // output of 32 bytes (8 words) of zeros 
     wire          trailer_done = (imgsz4[2:0] == 7) && zeros_out;
     wire          meta_last = (imgsz4[2:0] == 7) &&    meta_out;
@@ -127,13 +128,15 @@ module  bit_stuffer_raw_metadata(
 //    wire          ts_rstb= raw_mode ?  raw_ts_copy: (last_block && !last_block_d);  // enough time to have timestamp data; // one cycle before getting timestamp data from FIFO
     wire          ts_rstb= (raw_mode && raw_ts_copy) || ( compressed_mode && last_block && !last_block_d);  // enough time to have timestamp data; // one cycle before getting timestamp data from FIFO
     wire    [7:0] ts_dout; // timestamp data, byte at a time
-    wire          write_size = (in_stb && (bytes_in != 0)) || (flush && last_stb_4) || raw_flush; // TODO: never in raw mode?
+    wire          write_size = (in_stb && (bytes_in != 0)) || (flush && last_stb_4) || raw_flush_d; // raw_flush; // TODO: never in raw mode?
 //    wire          stb_start = raw_mode?  raw_start: (!color_first && color_first_r) ;
     wire          stb_start = (raw_mode && raw_start) ||  (compressed_mode && !color_first && color_first_r) ;
     wire          stb =  compressed_mode && in_stb && !trailer && !force_flush;
     wire          stb1 = raw_mode && raw_stb && !trailer && !force_flush;
     
     always @ (posedge xclk) begin
+        raw_flush_d <= raw_mode && raw_flush;
+        
         if (xrst ||trailer_done) imgsz4 <= 0;
         else if (stb || stb1 || trailer) imgsz4 <= imgsz4 + 1; // raw included
     
