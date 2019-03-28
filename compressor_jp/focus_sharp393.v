@@ -59,7 +59,7 @@ module focus_sharp393(
     input             quant_ds,     // quantizator ds
     input      [12:0] quant_d,      // [11:0]quantizator data output
     input      [15:0] quant_dc_tdo, // [15:0], MSB aligned coefficient for the DC component (used in focus module)
-    output reg [12:0] do,           // [11:0] pixel data out, make timing ignore (valid 1.5 clk earlier that Quantizer output)
+    output reg [12:0] dout,           // [11:0] pixel data out, make timing ignore (valid 1.5 clk earlier that Quantizer output)
     output reg        ds,           // data out strobe (one ahead of the start of dv)
     output reg [31:0] hifreq);      //[31:0])  //  accumulated high frequency components in a frame sub-window
 
@@ -248,7 +248,7 @@ module focus_sharp393(
         ds <= pre_ds;
         pre_do[12:0] <= next_do[12:0];
         need_corr_max <=luma_dc_out && (mode[1:0]!=2'h0);
-        do[12:0] <= (need_corr_max && !pre_do[12] && (pre_do[11] || (pre_do[10:0]>quant_dc_tdo[15:5])) )?
+        dout[12:0] <= (need_corr_max && !pre_do[12] && (pre_do[11] || (pre_do[10:0]>quant_dc_tdo[15:5])) )?
                     {2'b0,quant_dc_tdo[15:5]} :
                     pre_do[12:0];
      end

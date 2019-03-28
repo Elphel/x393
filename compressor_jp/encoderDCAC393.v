@@ -53,7 +53,7 @@ module encoderDCAC393(
     input             first_blockz,   // first block input (@zds)
     input             zds,            // strobe - one ahead of the DC component output
     output reg        last,           //
-    output reg [15:0] do,
+    output reg [15:0] dout,
     output reg        dv,
     // just for debug
     output comp_lastinmbo,
@@ -132,7 +132,7 @@ module encoderDCAC393(
                               (cntr[5:0]==6'h3f),
                               ac_in[11:0]}}; 
         was_nonzero_AC <= en && (ac_in[11:0]!=12'b0) && DCACen;
-        if (pre_dv) do <= rll_out? {3'b0,val_r[12],6'b0,rll_cntr[5:0]}:{1'b1,val_r[14:0]};
+        if (pre_dv) dout <= rll_out? {3'b0,val_r[12],6'b0,rll_cntr[5:0]}:{1'b1,val_r[14:0]};
         dv    <= pre_dv;
         DCACen    <= en && (pre_DCACen || (DCACen && (cntr[5:0]!=6'h3f)));    // adjust
         if (!DCACen) cntr[5:0] <=6'b0;

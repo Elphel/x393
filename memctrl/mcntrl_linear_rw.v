@@ -101,7 +101,6 @@ module  mcntrl_linear_rw #(
     input                          frame_start,   // resets page, x,y, and initiates transfer requests (in write mode will wait for next_page)
     output                         frame_run,     // @mclk - enable pixels from sensor to memory buffer
     input                          next_page,     // page was read/written from/to 4*1kB on-chip buffer
-//    output                         page_ready,    // == xfer_done, connect externally | Single-cycle pulse indicating that a page was read/written from/to DDR3 memory
     output                         frame_done,    // single-cycle pulse when the full frame (window) was transferred to/from DDR3 memory
     output                         frame_finished,// turns on and stays on after frame_done
 // optional I/O for channel synchronization
@@ -154,27 +153,27 @@ module  mcntrl_linear_rw #(
     reg      [FRAME_WIDTH_BITS:0] frame_full_width_r;  // (14 bit) register to be absorbed by MPY
     reg           [MPY_WIDTH-1:0] mul_rslt;
     reg   [NUM_RC_BURST_BITS-1:0] start_addr_r;   // 22 bit - to be absorbed by DSP
-//    reg                     [2:0] bank_reg [2:0];
     reg             [3 * 3 - 1:0] bank_reg;
     wire [FRAME_WIDTH_BITS+FRAME_HEIGHT_BITS-3:0] mul_rslt_w;
     reg      [FRAME_WIDTH_BITS:0] row_left;   // number of 8-bursts left in the current row
     reg                           last_in_row;
     reg      [COLADDR_NUMBER-3:0] mem_page_left; // number of 8-bursts left in the pointed memory page
+
     reg      [COLADDR_NUMBER-4:0] line_start_page_left; // number of 8-burst left in the memory page from the start of the frame line
     reg         [NUM_XFER_BITS:0] lim_by_xfer;   // number of bursts left limited by the longest transfer (currently 64)
 //    reg        [MAX_TILE_WIDTH:0] lim_by_tile_width;     // number of bursts left limited by the longest transfer (currently 64)
     wire     [COLADDR_NUMBER-3:0] remainder_in_xfer ;//remainder_tile_width;  // number of bursts postponed to the next partial tile (because of the page crossing) MSB-sign
     reg                           continued_xfer;   //continued_tile;        // this is a continued tile (caused by page crossing) - only once
     reg       [NUM_XFER_BITS-1:0] leftover; //[MAX_TILE_WIDTH-1:0] leftover_cols;         // valid with continued_tile, number of columns left
-    
-    
-    
     reg         [NUM_XFER_BITS:0] xfer_num128_r;   // number of 128-bit words to transfer (8*16 bits) - full bursts of 8
 //    reg       [NUM_XFER_BITS-1:0] xfer_num128_m1_r;   // number of 128-bit words to transfer minus 1 (8*16 bits) - full bursts of 8
+
+
     wire                          pgm_param_w;  // program one of the parameters, invalidate calculated results for PAR_MOD_LATENCY
     reg                     [2:0] xfer_start_r; // 1 hot started by xfer start only (not by parameter change)
     reg                           xfer_start_rd_r;
     reg                           xfer_start_wr_r;
+    
     reg     [PAR_MOD_LATENCY-1:0] par_mod_r;
     reg     [PAR_MOD_LATENCY-1:0] recalc_r; // 1-hot CE for re-calculating registers
 // SuppressWarnings VEditor unused 
@@ -210,7 +209,6 @@ module  mcntrl_linear_rw #(
     reg                           frame_finished_r;    
     wire                          last_in_row_w;
     wire                          last_row_w;
-//    wire                          last_block_w;
     reg                           last_block;
     reg [MCNTRL_SCANLINE_PENDING_CNTR_BITS-1:0] pending_xfers; // number of requested,. but not finished block transfers      
     reg   [NUM_RC_BURST_BITS-1:0] row_col_r;
@@ -258,7 +256,6 @@ module  mcntrl_linear_rw #(
     reg     [LAST_FRAME_BITS-1:0] frame_number_current;
     
     reg                           is_last_frame;
-//    reg                     [2:0] frame_start_r;
     reg                     [4:0] frame_start_r; // increased length to have time from line_unfinished to suspend (external)
     
     reg      [FRAME_WIDTH_BITS:0] frame_full_width;     // (programmed) increment combined row/col when moving to the next line
@@ -270,6 +267,7 @@ module  mcntrl_linear_rw #(
     reg   [FRAME_HEIGHT_BITS-1:0] window_y0;      // (programmed) window top
     reg    [FRAME_WIDTH_BITS-1:0] start_x;        // (programmed) normally 0, copied to curr_x on frame_start_late  
     reg   [FRAME_HEIGHT_BITS-1:0] start_y;        // (programmed) normally 0, copied to curr_y on frame_start_late 
+    
     reg                           xfer_done_d;    // xfer_done delayed by 1 cycle (also includes xfer_skipped)
     reg [MCNTRL_SCANLINE_DLY_WIDTH-1:0] start_delay; // how much to delay frame start
     reg [MCNTRL_SCANLINE_DLY_WIDTH:0] start_delay_cntr = {MCNTRL_SCANLINE_DLY_WIDTH+1{1'b1}}; // start delay counter
@@ -311,12 +309,7 @@ module  mcntrl_linear_rw #(
         
         if (mrst) rst_frame_num_r <= 0;
         else      rst_frame_num_r <= {rst_frame_num_r[0], rst_frame_num_w }; // now only at specific command
-/*
-        |
-                                     set_start_addr_w |
-                                     set_last_frame_w |
-                                     set_frame_size_w};
-*/ 
+
         if      (mrst)               start_range_addr <= 0;
         else if (set_start_addr_w)   start_range_addr <= cmd_data[NUM_RC_BURST_BITS-1:0];
 
@@ -331,7 +324,6 @@ module  mcntrl_linear_rw #(
         else if (set_frame_width_w) frame_full_width <= {lsw13_zero,cmd_data[FRAME_WIDTH_BITS-1:0]};
         
         if (mrst) is_last_frame <= 0;
-//      else      is_last_frame <= frame_number_cntr == last_frame_number;
         else      is_last_frame <= frame_number_cntr >= last_frame_number; // trying to make it safe
         
 `ifdef REPORT_FRAME_NUMBER
@@ -342,7 +334,6 @@ module  mcntrl_linear_rw #(
 //        if (mrst) frame_start_r <= 0;
 //        else      frame_start_r <= {frame_start_r[3:0], frame_start_late & frame_en};
 
-//        if      (mrst)                            frame_en <= 0;
         if      (!chn_en)                         frame_en <= 0;
         else if (single_frame_r || repeat_frames) frame_en <= 1;
         else if (frame_start_late)                frame_en <= 0;
@@ -407,9 +398,9 @@ module  mcntrl_linear_rw #(
     assign xfer_start_rd=  xfer_start_rd_r;
     assign xfer_start_wr=  xfer_start_wr_r;
     assign calc_valid=  par_mod_r[PAR_MOD_LATENCY-1]; // MSB, longest 0
+
     assign xfer_page_rst_wr=  xfer_page_rst_r;
     assign xfer_page_rst_rd=  xfer_page_rst_neg;
-    
     assign xfer_partial=      xfer_limited_by_mem_page_r;
     
     assign frame_done=  frame_done_r;
@@ -430,7 +421,7 @@ module  mcntrl_linear_rw #(
     assign xfer_row= row_col_r[NUM_RC_BURST_BITS-1:COLADDR_NUMBER-3] ;      // memory row
     assign xfer_col= row_col_r[COLADDR_NUMBER-4:0];    // start memory column in 8-bursts
     assign line_unfinished = line_unfinished_r; // [FRAME_HEIGHT_BITS +: FRAME_HEIGHT_BITS];
-    assign chn_en =         mode_reg[MCONTR_LINTILE_NRESET] & mode_reg[MCONTR_LINTILE_EN];   // enable requests by channel (continue ones in progress)
+    assign chn_en =          mode_reg[MCONTR_LINTILE_NRESET] & mode_reg[MCONTR_LINTILE_EN];   // enable requests by channel (continue ones in progress)
     assign chn_rst =        ~mode_reg[MCONTR_LINTILE_NRESET]; // resets command, including fifo;
     assign cmd_wrmem =       mode_reg[MCONTR_LINTILE_WRITE];// 0: read from memory, 1:write to memory
     assign cmd_extra_pages = mode_reg[MCONTR_LINTILE_EXTRAPG+:MCONTR_LINTILE_EXTRAPG_BITS]; // external module needs more than 1 page
@@ -448,7 +439,8 @@ module  mcntrl_linear_rw #(
     assign status_data=      {frame_finished_r, busy_r};     // TODO: Add second bit?
   `endif
 `endif    
-    assign pgm_param_w=      cmd_we;
+    assign pgm_param_w=      cmd_we;    
+    
     localparam [COLADDR_NUMBER-3-NUM_XFER_BITS-1:0] EXTRA_BITS=0;
     assign remainder_in_xfer = {EXTRA_BITS, lim_by_xfer}-mem_page_left;
     
@@ -575,10 +567,6 @@ wire    start_not_partial= xfer_start_r[0] && !xfer_limited_by_mem_page_r;
 // calculate number to read (min of row_left, maximal xfer and what is left in the DDR3 page    
     always @(posedge mclk) begin
         // acceletaring pre_want
-        
-//        pre_want_r1 <= chn_en &&  !frame_done_r && busy_r && par_mod_r[PAR_MOD_LATENCY-2] && !(|frame_start_r[4:1]) && !last_block;
-        //last_block is too late for pre_want_r1, moving upsteram
-//        pre_want_r1 <= chn_en &&  !frame_done_r && busy_r && par_mod_r[PAR_MOD_LATENCY-2] && !(|frame_start_r[4:1]);
         pre_want_r1 <= !chn_rst &&  !frame_done_r && busy_r && par_mod_r[PAR_MOD_LATENCY-2] && !(|frame_start_r[4:1]);
         if      (mrst)                par_mod_r<=0;
         else if (pgm_param_w ||

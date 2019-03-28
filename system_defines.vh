@@ -46,7 +46,7 @@
 // https://forums.xilinx.com/t5/Embedded-Processor-System-Design/AXI4-Bursts-4KB-Address-Boundary-Limitation/td-p/216413
 // Interconnect does not have 4K limit, and compressed data can only go to interconnect (memory), so it is OK to violate AXI specs here
   `define AXI_4K_LIMIT_DISABLE // Current x393 code (only simulation modules) does not have it implemented, defining it causes mismatch synth/sim    
-  `define DEBUG_COMPRESSOR_SCRAMBLE
+  `define DEBUG_COMPRESSOR_SCRAMBLE // ======== WTF? ======== is undefined in synthesis mode
   `define DEBUG_DCT1D // undefine after debugging is over
 //  `define USE_OLD_DCT
   
@@ -64,7 +64,7 @@
   `define PRELOAD_BRAMS
   `define DISPLAY_COMPRESSED_DATA  
   // if HISPI is not defined, parallel sensor interface is used for all channels
-  `define HISPI /*************** CHANGE here and x393_hispi/x393_parallel in bitstream tool settings ****************/
+//  `define HISPI /*************** CHANGE here and x393_hispi/x393_parallel in bitstream tool settings ****************/
   `define MON_HISPI // Measure HISPI timing  
 //    `define USE_OLD_XDCT393  
 //  `define USE_PCLK2X
@@ -188,32 +188,32 @@
  `define  def_scanline_chn11
  `undef   def_tiled_chn11
 
-  // chn 12 is tiled read (compressor channel 0)
+  // chn 12 is tiled read + scanline read (for Tiff) (compressor channel 0)
  `define  def_enable_mem_chn12
  `define  def_read_mem_chn12
  `undef   def_write_mem_chn12
- `undef   def_scanline_chn12
+ `define  def_scanline_chn12
  `define  def_tiled_chn12
  
-  // chn 12 is tiled read (compressor channel 1)
+  // chn 13 is tiled read + scanline read (for Tiff) (compressor channel 1)
  `define  def_enable_mem_chn13
  `define  def_read_mem_chn13
  `undef   def_write_mem_chn13
- `undef   def_scanline_chn13
+ `define  def_scanline_chn13
  `define  def_tiled_chn13
  
-  // chn 12 is tiled read (compressor channel 2)
+  // chn 14 is tiled read + scanline read (for Tiff) (compressor channel 2)
  `define  def_enable_mem_chn14
  `define  def_read_mem_chn14
  `undef   def_write_mem_chn14
- `undef   def_scanline_chn14
+ `define  def_scanline_chn14
  `define  def_tiled_chn14
  
-  // chn 12 is tiled read (compressor channel 3)
+  // chn 15 is tiled read + scanline read (for Tiff) (compressor channel 3)
  `define  def_enable_mem_chn15
  `define  def_read_mem_chn15
  `undef   def_write_mem_chn15
- `undef   def_scanline_chn15
+ `define  def_scanline_chn15
  `define  def_tiled_chn15
 `endif
  

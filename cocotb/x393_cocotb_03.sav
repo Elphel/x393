@@ -1,23 +1,26 @@
 [*]
 [*] GTKWave Analyzer v3.3.78 (w)1999-2016 BSI
-[*] Mon Mar 25 17:44:19 2019
+[*] Thu Mar 28 02:06:10 2019
 [*]
-[dumpfile] "/data_ssd/nc393/elphel393/fpga-elphel/x393/simulation/x393_dut-20190324201543111.fst"
-[dumpfile_mtime] "Mon Mar 25 17:44:02 2019"
-[dumpfile_size] 396512624
+[dumpfile] "/data_ssd/nc393/elphel393/fpga-elphel/x393/simulation/x393_dut-20190327185524057.fst"
+[dumpfile_mtime] "Thu Mar 28 02:04:11 2019"
+[dumpfile_size] 520738951
 [savefile] "/data_ssd/nc393/elphel393/fpga-elphel/x393/cocotb/x393_cocotb_03.sav"
-[timestart] 0
+[timestart] 379540790
 [size] 1804 1171
 [pos] -1 -1
-*-24.860163 0 212597388 212637388 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-14.159636 379618470 212597388 212637388 379925000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] x393_dut.
 [treeopen] x393_dut.simul_sensor12bits_2_i.
 [treeopen] x393_dut.simul_sensor12bits_3_i.
 [treeopen] x393_dut.simul_sensor12bits_i.
 [treeopen] x393_dut.x393_i.
+[treeopen] x393_dut.x393_i.compressor393_i.
 [treeopen] x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].
 [treeopen] x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.
+[treeopen] x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.chn_rd_buf_i.
 [treeopen] x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_frame_sync_i.
+[treeopen] x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_raw_buf_iface_i.
 [treeopen] x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.
 [treeopen] x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.bit_stuffer_metadata_i.
 [treeopen] x393_dut.x393_i.compressor393_i.cmprs_channel_block[1].
@@ -33,6 +36,7 @@
 [treeopen] x393_dut.x393_i.compressor393_i.cmprs_channel_block[3].jp_channel_i.cmprs_frame_sync_i.
 [treeopen] x393_dut.x393_i.compressor393_i.cmprs_channel_block[3].jp_channel_i.huffman_stuffer_meta_i.
 [treeopen] x393_dut.x393_i.compressor393_i.cmprs_channel_block[3].jp_channel_i.huffman_stuffer_meta_i.bit_stuffer_27_32_i.
+[treeopen] x393_dut.x393_i.compressor393_i.cmprs_channel_block[3].jp_channel_i.huffman_stuffer_meta_i.bit_stuffer_metadata_i.
 [treeopen] x393_dut.x393_i.event_logger_i.i_imu_exttime.
 [treeopen] x393_dut.x393_i.event_logger_i.i_imu_exttime.timestamp_fifo_chn0_i.
 [treeopen] x393_dut.x393_i.event_logger_i.i_imu_spi.
@@ -41,12 +45,11 @@
 [treeopen] x393_dut.x393_i.event_logger_i.i_nmea_decoder.
 [treeopen] x393_dut.x393_i.event_logger_i.i_rs232_rcv.
 [treeopen] x393_dut.x393_i.frame_sequencer_block[0].cmd_frame_sequencer_i.
+[treeopen] x393_dut.x393_i.mcntrl393_i.
 [treeopen] x393_dut.x393_i.mcntrl393_i.sens_comp_block[0].
+[treeopen] x393_dut.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_linear_wr_sensor_i.
 [treeopen] x393_dut.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_tiled_rd_compressor_i.
-[treeopen] x393_dut.x393_i.mcntrl393_i.sens_comp_block[1].
-[treeopen] x393_dut.x393_i.mcntrl393_i.sens_comp_block[2].
 [treeopen] x393_dut.x393_i.mcntrl393_i.sens_comp_block[2].mcntrl_tiled_rd_compressor_i.
-[treeopen] x393_dut.x393_i.mcntrl393_i.sens_comp_block[3].
 [treeopen] x393_dut.x393_i.mcntrl393_i.sens_comp_block[3].mcntrl_tiled_rd_compressor_i.
 [treeopen] x393_dut.x393_i.mult_saxi_wr_i.mult_saxi_wr_pointers_i.
 [treeopen] x393_dut.x393_i.sensors393_i.
@@ -56,6 +59,7 @@
 [treeopen] x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_histogram_mux_i.
 [treeopen] x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_sync_i.
 [treeopen] x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c_io_i.sensor_i2c_i.
+[treeopen] x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_membuf_i.
 [treeopen] x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.
 [treeopen] x393_dut.x393_i.sensors393_i.sensor_channel_block[1].sensor_channel_i.sens_sync_i.
 [treeopen] x393_dut.x393_i.sensors393_i.sensor_channel_block[2].sensor_channel_i.
@@ -66,8 +70,8 @@
 [treeopen] x393_dut.x393_i.sensors393_i.sensor_channel_block[3].sensor_channel_i.sens_sync_i.
 [treeopen] x393_dut.x393_i.timing393_i.camsync393_i.
 [treeopen] x393_dut.x393_i.timing393_i.camsync393_i.i_frsync_pclk0.
-[sst_width] 465
-[signals_width] 254
+[sst_width] 309
+[signals_width] 333
 [sst_expanded] 1
 [sst_vpaned_height] 486
 @820
@@ -2776,9 +2780,8 @@ x393_dut.IMU_TAPS[5:1]
 -IMU_
 @800200
 -debuf_frame_sync_x
-@29
-x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_sync_i.prst
 @28
+x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_sync_i.prst
 x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_sync_i.dis_frame_sync
 @22
 x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_sync_i.line_dly_pclk[15:0]
@@ -2795,24 +2798,58 @@ x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_sync_
 x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sof
 x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.eof
 x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sof_out
-@800022
+@c00022
 x393_dut.x393_i.sof_out_pclk[3:0]
 @28
 (0)x393_dut.x393_i.sof_out_pclk[3:0]
 (1)x393_dut.x393_i.sof_out_pclk[3:0]
 (2)x393_dut.x393_i.sof_out_pclk[3:0]
 (3)x393_dut.x393_i.sof_out_pclk[3:0]
-@1001200
+@1401200
 -group_end
-@800022
+@c00022
 x393_dut.x393_i.sof_out_mclk[3:0]
 @28
 (0)x393_dut.x393_i.sof_out_mclk[3:0]
 (1)x393_dut.x393_i.sof_out_mclk[3:0]
 (2)x393_dut.x393_i.sof_out_mclk[3:0]
 (3)x393_dut.x393_i.sof_out_mclk[3:0]
-@1001200
+@1401200
 -group_end
+@200
+-
+@22
+x393_dut.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_tiled_rd_compressor_i.frame_start_r[4:0]
+@28
+x393_dut.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_tiled_rd_compressor_i.pgm_param_w
+@c00022
+x393_dut.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_tiled_rd_compressor_i.par_mod_r[8:0]
+@28
+(0)x393_dut.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_tiled_rd_compressor_i.par_mod_r[8:0]
+(1)x393_dut.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_tiled_rd_compressor_i.par_mod_r[8:0]
+(2)x393_dut.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_tiled_rd_compressor_i.par_mod_r[8:0]
+(3)x393_dut.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_tiled_rd_compressor_i.par_mod_r[8:0]
+(4)x393_dut.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_tiled_rd_compressor_i.par_mod_r[8:0]
+(5)x393_dut.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_tiled_rd_compressor_i.par_mod_r[8:0]
+(6)x393_dut.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_tiled_rd_compressor_i.par_mod_r[8:0]
+(7)x393_dut.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_tiled_rd_compressor_i.par_mod_r[8:0]
+(8)x393_dut.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_tiled_rd_compressor_i.par_mod_r[8:0]
+@1401200
+-group_end
+@28
+x393_dut.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_tiled_rd_compressor_i.calc_valid
+x393_dut.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_tiled_rd_compressor_i.aborting_r
+x393_dut.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_tiled_rd_compressor_i.suspend
+x393_dut.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_tiled_rd_compressor_i.pre_want_r1
+@22
+x393_dut.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_tiled_rd_compressor_i.cmd_extra_pages[1:0]
+x393_dut.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_tiled_rd_compressor_i.page_cntr[2:0]
+@28
+x393_dut.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_tiled_rd_compressor_i.pre_want
+x393_dut.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_tiled_rd_compressor_i.want_r
+x393_dut.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_tiled_rd_compressor_i.xfer_want
+x393_dut.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_tiled_rd_compressor_i.xfer_grant
+(2)x393_dut.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_tiled_rd_compressor_i.xfer_start_r[2:0]
 @1000200
 -debuf_frame_sync_x
 @c00200
@@ -2991,6 +3028,23 @@ x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sensor_i2c
 -i2c_seq_0
 @800200
 -sensor_channel0
+-buf
+@28
+x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_membuf_i.px_valid
+x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_membuf_i.wpage[1:0]
+@22
+x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_membuf_i.waddr[8:0]
+x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_membuf_i.px_data[15:0]
+@28
+x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_membuf_i.mclk
+@22
+x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_membuf_i.buf_dout[63:0]
+@28
+x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_membuf_i.buf_rd
+@200
+-
+@1000200
+-buf
 @28
 x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sof_out_mclk
 x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.eof_mclk
@@ -3006,12 +3060,15 @@ x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.frame_num_
 x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_sync_i.sof_out
 x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_sync_i.sof_late
 x393_dut.x393_i.sensors393_i.sensor_channel_block[0].sensor_channel_i.sens_sync_i.sof_out_pclk
-@200
--
 @1000200
 -sesns_sync
 -sensor_channel0
 -sequencers_0
+@22
+x393_dut.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_linear_wr_sensor_i.window_height[16:0]
+x393_dut.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_linear_wr_sensor_i.window_width[13:0]
+@200
+-
 @c00200
 -sensor_channel_a
 @28
@@ -3366,8 +3423,417 @@ x393_dut.x393_i.compressor393_i.cmprs_channel_block[2].jp_channel_i.huffman_stuf
 @1401200
 -jpeg1
 @800200
--jpeg0
+-debug_raw_x
+@c00022
+x393_dut.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_tiled_rd_compressor_i.mode_reg[14:0]
 @28
+(0)x393_dut.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_tiled_rd_compressor_i.mode_reg[14:0]
+(1)x393_dut.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_tiled_rd_compressor_i.mode_reg[14:0]
+(2)x393_dut.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_tiled_rd_compressor_i.mode_reg[14:0]
+(3)x393_dut.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_tiled_rd_compressor_i.mode_reg[14:0]
+(4)x393_dut.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_tiled_rd_compressor_i.mode_reg[14:0]
+(5)x393_dut.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_tiled_rd_compressor_i.mode_reg[14:0]
+(6)x393_dut.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_tiled_rd_compressor_i.mode_reg[14:0]
+(7)x393_dut.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_tiled_rd_compressor_i.mode_reg[14:0]
+(8)x393_dut.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_tiled_rd_compressor_i.mode_reg[14:0]
+(9)x393_dut.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_tiled_rd_compressor_i.mode_reg[14:0]
+(10)x393_dut.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_tiled_rd_compressor_i.mode_reg[14:0]
+(11)x393_dut.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_tiled_rd_compressor_i.mode_reg[14:0]
+(12)x393_dut.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_tiled_rd_compressor_i.mode_reg[14:0]
+(13)x393_dut.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_tiled_rd_compressor_i.mode_reg[14:0]
+(14)x393_dut.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_tiled_rd_compressor_i.mode_reg[14:0]
+@1401200
+-group_end
+@28
+[color] 3
+x393_dut.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_tiled_rd_compressor_i.linear_mode
+@22
+x393_dut.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_tiled_rd_compressor_i.window_y0[15:0]
+x393_dut.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_tiled_rd_compressor_i.line_unfinished_relw_r[15:0]
+@28
+x393_dut.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_tiled_rd_compressor_i.chn_dis_delayed
+x393_dut.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_tiled_rd_compressor_i.frame_start_mod
+x393_dut.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_tiled_rd_compressor_i.busy_r
+@c00022
+x393_dut.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_tiled_rd_compressor_i.recalc_r[8:0]
+@28
+(0)x393_dut.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_tiled_rd_compressor_i.recalc_r[8:0]
+(1)x393_dut.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_tiled_rd_compressor_i.recalc_r[8:0]
+(2)x393_dut.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_tiled_rd_compressor_i.recalc_r[8:0]
+(3)x393_dut.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_tiled_rd_compressor_i.recalc_r[8:0]
+(4)x393_dut.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_tiled_rd_compressor_i.recalc_r[8:0]
+(5)x393_dut.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_tiled_rd_compressor_i.recalc_r[8:0]
+(6)x393_dut.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_tiled_rd_compressor_i.recalc_r[8:0]
+(7)x393_dut.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_tiled_rd_compressor_i.recalc_r[8:0]
+(8)x393_dut.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_tiled_rd_compressor_i.recalc_r[8:0]
+@1401200
+-group_end
+@22
+x393_dut.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_tiled_rd_compressor_i.line_unfinished_r[15:0]
+x393_dut.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_tiled_rd_compressor_i.line_unfinished[15:0]
+x393_dut.x393_i.mcntrl393_i.cmprs_line_unfinished_dst[63:0]
+x393_dut.x393_i.cmprs_line_unfinished_dst[63:0]
+@c00022
+x393_dut.x393_i.compressor393_i.line_unfinished_dst[63:0]
+@28
+(0)x393_dut.x393_i.compressor393_i.line_unfinished_dst[63:0]
+(1)x393_dut.x393_i.compressor393_i.line_unfinished_dst[63:0]
+(2)x393_dut.x393_i.compressor393_i.line_unfinished_dst[63:0]
+(3)x393_dut.x393_i.compressor393_i.line_unfinished_dst[63:0]
+(4)x393_dut.x393_i.compressor393_i.line_unfinished_dst[63:0]
+(5)x393_dut.x393_i.compressor393_i.line_unfinished_dst[63:0]
+(6)x393_dut.x393_i.compressor393_i.line_unfinished_dst[63:0]
+(7)x393_dut.x393_i.compressor393_i.line_unfinished_dst[63:0]
+(8)x393_dut.x393_i.compressor393_i.line_unfinished_dst[63:0]
+(9)x393_dut.x393_i.compressor393_i.line_unfinished_dst[63:0]
+(10)x393_dut.x393_i.compressor393_i.line_unfinished_dst[63:0]
+(11)x393_dut.x393_i.compressor393_i.line_unfinished_dst[63:0]
+(12)x393_dut.x393_i.compressor393_i.line_unfinished_dst[63:0]
+(13)x393_dut.x393_i.compressor393_i.line_unfinished_dst[63:0]
+(14)x393_dut.x393_i.compressor393_i.line_unfinished_dst[63:0]
+(15)x393_dut.x393_i.compressor393_i.line_unfinished_dst[63:0]
+(16)x393_dut.x393_i.compressor393_i.line_unfinished_dst[63:0]
+(17)x393_dut.x393_i.compressor393_i.line_unfinished_dst[63:0]
+(18)x393_dut.x393_i.compressor393_i.line_unfinished_dst[63:0]
+(19)x393_dut.x393_i.compressor393_i.line_unfinished_dst[63:0]
+(20)x393_dut.x393_i.compressor393_i.line_unfinished_dst[63:0]
+(21)x393_dut.x393_i.compressor393_i.line_unfinished_dst[63:0]
+(22)x393_dut.x393_i.compressor393_i.line_unfinished_dst[63:0]
+(23)x393_dut.x393_i.compressor393_i.line_unfinished_dst[63:0]
+(24)x393_dut.x393_i.compressor393_i.line_unfinished_dst[63:0]
+(25)x393_dut.x393_i.compressor393_i.line_unfinished_dst[63:0]
+(26)x393_dut.x393_i.compressor393_i.line_unfinished_dst[63:0]
+(27)x393_dut.x393_i.compressor393_i.line_unfinished_dst[63:0]
+(28)x393_dut.x393_i.compressor393_i.line_unfinished_dst[63:0]
+(29)x393_dut.x393_i.compressor393_i.line_unfinished_dst[63:0]
+(30)x393_dut.x393_i.compressor393_i.line_unfinished_dst[63:0]
+(31)x393_dut.x393_i.compressor393_i.line_unfinished_dst[63:0]
+(32)x393_dut.x393_i.compressor393_i.line_unfinished_dst[63:0]
+(33)x393_dut.x393_i.compressor393_i.line_unfinished_dst[63:0]
+(34)x393_dut.x393_i.compressor393_i.line_unfinished_dst[63:0]
+(35)x393_dut.x393_i.compressor393_i.line_unfinished_dst[63:0]
+(36)x393_dut.x393_i.compressor393_i.line_unfinished_dst[63:0]
+(37)x393_dut.x393_i.compressor393_i.line_unfinished_dst[63:0]
+(38)x393_dut.x393_i.compressor393_i.line_unfinished_dst[63:0]
+(39)x393_dut.x393_i.compressor393_i.line_unfinished_dst[63:0]
+(40)x393_dut.x393_i.compressor393_i.line_unfinished_dst[63:0]
+(41)x393_dut.x393_i.compressor393_i.line_unfinished_dst[63:0]
+(42)x393_dut.x393_i.compressor393_i.line_unfinished_dst[63:0]
+(43)x393_dut.x393_i.compressor393_i.line_unfinished_dst[63:0]
+(44)x393_dut.x393_i.compressor393_i.line_unfinished_dst[63:0]
+(45)x393_dut.x393_i.compressor393_i.line_unfinished_dst[63:0]
+(46)x393_dut.x393_i.compressor393_i.line_unfinished_dst[63:0]
+(47)x393_dut.x393_i.compressor393_i.line_unfinished_dst[63:0]
+(48)x393_dut.x393_i.compressor393_i.line_unfinished_dst[63:0]
+(49)x393_dut.x393_i.compressor393_i.line_unfinished_dst[63:0]
+(50)x393_dut.x393_i.compressor393_i.line_unfinished_dst[63:0]
+(51)x393_dut.x393_i.compressor393_i.line_unfinished_dst[63:0]
+(52)x393_dut.x393_i.compressor393_i.line_unfinished_dst[63:0]
+(53)x393_dut.x393_i.compressor393_i.line_unfinished_dst[63:0]
+(54)x393_dut.x393_i.compressor393_i.line_unfinished_dst[63:0]
+(55)x393_dut.x393_i.compressor393_i.line_unfinished_dst[63:0]
+(56)x393_dut.x393_i.compressor393_i.line_unfinished_dst[63:0]
+(57)x393_dut.x393_i.compressor393_i.line_unfinished_dst[63:0]
+(58)x393_dut.x393_i.compressor393_i.line_unfinished_dst[63:0]
+(59)x393_dut.x393_i.compressor393_i.line_unfinished_dst[63:0]
+(60)x393_dut.x393_i.compressor393_i.line_unfinished_dst[63:0]
+(61)x393_dut.x393_i.compressor393_i.line_unfinished_dst[63:0]
+(62)x393_dut.x393_i.compressor393_i.line_unfinished_dst[63:0]
+(63)x393_dut.x393_i.compressor393_i.line_unfinished_dst[63:0]
+@1401200
+-group_end
+@22
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.line_unfinished_dst[15:0]
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_frame_sync_i.line_unfinished[15:0]
+@200
+-
+@28
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.frame_en
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.frame_en_jp
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.frame_en_raw
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.set_ctrl_reg_w
+@22
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmd_data[31:0]
+@28
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_run_mclk
+@1000200
+-debug_raw_x
+@800200
+-raw_0
+@28
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.raw_be16
+@22
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.raw_buf_ra[11:0]
+@28
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.raw_buf_rd[1:0]
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.raw_flush
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.raw_prefb
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.raw_start
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.raw_ts_copy
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.page_ready_chn
+@22
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_raw_buf_iface_i.next_valid[2:0]
+@28
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.next_page_chn_raw
+@c00022
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_raw_buf_iface_i.needed_page[2:0]
+@28
+(0)x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_raw_buf_iface_i.needed_page[2:0]
+(1)x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_raw_buf_iface_i.needed_page[2:0]
+(2)x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_raw_buf_iface_i.needed_page[2:0]
+@1401200
+-group_end
+@28
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_raw_buf_iface_i.frame_pre_start_r
+@200
+-
+@28
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_raw_buf_iface_i.frame_pre_run
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_raw_buf_iface_i.starting
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_raw_buf_iface_i.stuffer_running
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_raw_buf_iface_i.buf_ready_w
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_raw_buf_iface_i.page_start
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_raw_buf_iface_i.quad_last
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_raw_buf_iface_i.page_end_w
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_raw_buf_iface_i.page_end_r
+(1)x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_raw_buf_iface_i.quad_r[3:0]
+(0)x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_raw_buf_iface_i.quad_r[3:0]
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_raw_buf_iface_i.page_run
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.next_page_chn_jp
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_raw_buf_iface_i.rows_last[1:0]
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_raw_buf_iface_i.buf_rd[1:0]
+@22
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_raw_buf_iface_i.buf_ra[11:0]
+@800200
+-buffer
+-dbg
+@28
+x393_dut.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_tiled_rd_compressor_i.set_window_start_w
+x393_dut.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_tiled_rd_compressor_i.set_window_wh_w
+x393_dut.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_tiled_rd_compressor_i.set_window_x0y0_w
+@22
+x393_dut.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_tiled_rd_compressor_i.window_width[13:0]
+x393_dut.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_tiled_rd_compressor_i.window_height[16:0]
+x393_dut.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_tiled_rd_compressor_i.window_x0[12:0]
+x393_dut.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_tiled_rd_compressor_i.window_y0[15:0]
+@1000200
+-dbg
+@28
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.buf_wpage_nxt
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.chn_rd_buf_i.ext_clk
+@22
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.chn_rd_buf_i.page[1:0]
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.chn_rd_buf_i.waddr[6:0]
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.chn_rd_buf_i.data_in[63:0]
+@28
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.chn_rd_buf_i.we
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.chn_rd_buf_i.wpage_in[1:0]
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.chn_rd_buf_i.wpage_set
+@22
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.chn_rd_buf_i.ext_data_out[7:0]
+@c00022
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.chn_rd_buf_i.ext_raddr[11:0]
+@28
+(0)x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.chn_rd_buf_i.ext_raddr[11:0]
+(1)x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.chn_rd_buf_i.ext_raddr[11:0]
+(2)x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.chn_rd_buf_i.ext_raddr[11:0]
+(3)x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.chn_rd_buf_i.ext_raddr[11:0]
+(4)x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.chn_rd_buf_i.ext_raddr[11:0]
+(5)x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.chn_rd_buf_i.ext_raddr[11:0]
+(6)x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.chn_rd_buf_i.ext_raddr[11:0]
+(7)x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.chn_rd_buf_i.ext_raddr[11:0]
+(8)x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.chn_rd_buf_i.ext_raddr[11:0]
+(9)x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.chn_rd_buf_i.ext_raddr[11:0]
+(10)x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.chn_rd_buf_i.ext_raddr[11:0]
+(11)x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.chn_rd_buf_i.ext_raddr[11:0]
+@1401200
+-group_end
+@28
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.chn_rd_buf_i.ext_rd
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.chn_rd_buf_i.ext_regen
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.chn_rd_buf_i.page_next
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.chn_rd_buf_i.wclk
+@1000200
+-buffer
+@800200
+-mcntrl_tiled_linear
+@200
+-
+@1000200
+-mcntrl_tiled_linear
+-raw_0
+@800200
+-cmprs_raw_buf_iface_i
+@200
+-
+@22
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_raw_buf_iface_i.buf_diff[2:0]
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_raw_buf_iface_i.buf_ra[11:0]
+@800028
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_raw_buf_iface_i.buf_rd[1:0]
+@28
+(0)x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_raw_buf_iface_i.buf_rd[1:0]
+(1)x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_raw_buf_iface_i.buf_rd[1:0]
+@1001200
+-group_end
+@28
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_raw_buf_iface_i.buf_rd_r[1:0]
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_raw_buf_iface_i.buf_ready_w
+@22
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_raw_buf_iface_i.bufa_r[11:0]
+@28
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_raw_buf_iface_i.cmprs_run_mclk
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_raw_buf_iface_i.cmprs_run_xclk
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_raw_buf_iface_i.frame_en
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_raw_buf_iface_i.frame_en_r
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_raw_buf_iface_i.frame_en_w
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_raw_buf_iface_i.frame_finish_w
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_raw_buf_iface_i.frame_go
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_raw_buf_iface_i.frame_pre_run
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_raw_buf_iface_i.frame_pre_start_r
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_raw_buf_iface_i.frame_pre_start_w
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_raw_buf_iface_i.frame_que_cntr[2:0]
+[color] 2
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_raw_buf_iface_i.frame_start_xclk
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_raw_buf_iface_i.frame_start_xclk_r
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_raw_buf_iface_i.frames_pending
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_raw_buf_iface_i.mclk
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_raw_buf_iface_i.mode_valid
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_raw_buf_iface_i.mrst
+@22
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_raw_buf_iface_i.n_block_rows_m1[12:0]
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_raw_buf_iface_i.n_blocks_in_row_m1[12:0]
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_raw_buf_iface_i.needed_page[2:0]
+@28
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_raw_buf_iface_i.next_page_chn
+@22
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_raw_buf_iface_i.next_valid[2:0]
+@28
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_raw_buf_iface_i.nmrst
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_raw_buf_iface_i.page_end_r
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_raw_buf_iface_i.page_end_w
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_raw_buf_iface_i.page_ready
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_raw_buf_iface_i.page_ready_chn
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_raw_buf_iface_i.page_run
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_raw_buf_iface_i.page_start
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_raw_buf_iface_i.quad_last
+@22
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_raw_buf_iface_i.quad_r[3:0]
+@c00022
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_raw_buf_iface_i.quads_left[14:0]
+@28
+(0)x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_raw_buf_iface_i.quads_left[14:0]
+(1)x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_raw_buf_iface_i.quads_left[14:0]
+(2)x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_raw_buf_iface_i.quads_left[14:0]
+(3)x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_raw_buf_iface_i.quads_left[14:0]
+(4)x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_raw_buf_iface_i.quads_left[14:0]
+(5)x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_raw_buf_iface_i.quads_left[14:0]
+(6)x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_raw_buf_iface_i.quads_left[14:0]
+(7)x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_raw_buf_iface_i.quads_left[14:0]
+(8)x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_raw_buf_iface_i.quads_left[14:0]
+(9)x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_raw_buf_iface_i.quads_left[14:0]
+(10)x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_raw_buf_iface_i.quads_left[14:0]
+(11)x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_raw_buf_iface_i.quads_left[14:0]
+(12)x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_raw_buf_iface_i.quads_left[14:0]
+(13)x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_raw_buf_iface_i.quads_left[14:0]
+(14)x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_raw_buf_iface_i.quads_left[14:0]
+@1401200
+-group_end
+@28
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_raw_buf_iface_i.raw_be16
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_raw_buf_iface_i.raw_flush
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_raw_buf_iface_i.raw_prefb
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_raw_buf_iface_i.raw_start
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_raw_buf_iface_i.raw_ts_copy
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_raw_buf_iface_i.release_buf
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_raw_buf_iface_i.reset_page_rd
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_raw_buf_iface_i.rows_last[1:0]
+@22
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_raw_buf_iface_i.rows_left[16:0]
+@28
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_raw_buf_iface_i.starting
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_raw_buf_iface_i.stuffer_running
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_raw_buf_iface_i.xclk
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_raw_buf_iface_i.xfer_reset_page_rd
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_raw_buf_iface_i.xrst
+@1000200
+-cmprs_raw_buf_iface_i
+@800200
+-jpeg0
+-raw_dbg
+@28
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.frame_en_raw
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.frame_en_jp
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.uncompressed
+[color] 6
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.bit_stuffer_metadata_i.raw_mode
+[color] 6
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.compressed_mode
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.en_huffman
+@22
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.stuffer_do32[31:0]
+@28
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.reading_frame
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer_running
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer_done
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.stuffer_en
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.bit_stuffer_metadata_i.trailer_done
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.bit_stuffer_metadata_i.trailer
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.bit_stuffer_metadata_i.zeros_out
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.bit_stuffer_metadata_i.done
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.bit_stuffer_metadata_i.running
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.bit_stuffer_metadata_i.trailer_done
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.bit_stuffer_metadata_i.raw_prefb
+@800022
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.bit_stuffer_metadata_i.raw_bs[3:0]
+@28
+(0)x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.bit_stuffer_metadata_i.raw_bs[3:0]
+(1)x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.bit_stuffer_metadata_i.raw_bs[3:0]
+(2)x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.bit_stuffer_metadata_i.raw_bs[3:0]
+(3)x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.bit_stuffer_metadata_i.raw_bs[3:0]
+@1001200
+-group_end
+@22
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.bit_stuffer_metadata_i.raw32[31:0]
+@28
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.bit_stuffer_metadata_i.raw_be16
+@22
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.bit_stuffer_metadata_i.raw_bs[3:0]
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.bit_stuffer_metadata_i.raw_bytes[7:0]
+@28
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.bit_stuffer_metadata_i.raw_flush
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.bit_stuffer_metadata_i.raw_mode
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.bit_stuffer_metadata_i.raw_prefb
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.bit_stuffer_metadata_i.raw_start
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.bit_stuffer_metadata_i.raw_stb
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.bit_stuffer_metadata_i.raw_ts_copy
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.bit_stuffer_metadata_i.data_out_valid
+@22
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.bit_stuffer_metadata_i.data_out[31:0]
+@200
+-
+@1000200
+-raw_dbg
+@28
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.bit_stuffer_metadata_i.raw_prefb
+@800022
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.bit_stuffer_metadata_i.raw_bs[3:0]
+@28
+(0)x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.bit_stuffer_metadata_i.raw_bs[3:0]
+(1)x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.bit_stuffer_metadata_i.raw_bs[3:0]
+(2)x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.bit_stuffer_metadata_i.raw_bs[3:0]
+(3)x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.bit_stuffer_metadata_i.raw_bs[3:0]
+@1001200
+-group_end
+@28
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.bit_stuffer_metadata_i.stb
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_raw_buf_iface_i.frame_finish_w
+@22
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_raw_buf_iface_i.frame_finish_r[3:0]
+@28
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.bit_stuffer_metadata_i.raw_flush
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.bit_stuffer_metadata_i.raw_stb
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.bit_stuffer_metadata_i.stb1
 x393_dut.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_tiled_rd_compressor_i.chn_rst
 x393_dut.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_tiled_rd_compressor_i.chn_en
 x393_dut.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_tiled_rd_compressor_i.frame_en
@@ -3398,8 +3864,10 @@ x393_dut.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_tiled_rd_compressor_i.xfer
 x393_dut.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_tiled_rd_compressor_i.pending_xfers[1:0]
 @28
 x393_dut.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_tiled_rd_compressor_i.frame_done
+@29
 [color] 2
 x393_dut.x393_i.mcntrl393_i.sens_comp_block[0].mcntrl_tiled_rd_compressor_i.busy_r
+@28
 x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_en_mclk
 x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.cmprs_run_mclk
 @22
@@ -3407,7 +3875,30 @@ x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuf
 x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.data_out_valid
 x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.stuffer_do32[31:0]
 x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.stuffer_bytes[1:0]
+@28
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.bit_stuffer_metadata_i.in_stb
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.bit_stuffer_metadata_i.bytes_in[1:0]
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.bit_stuffer_metadata_i.flush
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.bit_stuffer_metadata_i.last_stb_4
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.bit_stuffer_metadata_i.raw_flush
+@c00022
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.bit_stuffer_metadata_i.ts_in[3:0]
+@28
+(0)x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.bit_stuffer_metadata_i.ts_in[3:0]
+(1)x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.bit_stuffer_metadata_i.ts_in[3:0]
+(2)x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.bit_stuffer_metadata_i.ts_in[3:0]
+(3)x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.bit_stuffer_metadata_i.ts_in[3:0]
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.bit_stuffer_metadata_i.in_stb
+@1401200
+-group_end
+@28
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.bit_stuffer_metadata_i.write_size
+@22
 x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.stuffer_dv
+@28
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.bit_stuffer_metadata_i.trailer
+@22
+x393_dut.x393_i.compressor393_i.cmprs_channel_block[0].jp_channel_i.huffman_stuffer_meta_i.bit_stuffer_metadata_i.imgsz4[21:0]
 @c00200
 -bit_stuffer
 @22

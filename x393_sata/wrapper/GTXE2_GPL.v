@@ -258,7 +258,24 @@ end
 endmodule
 `endif
 
-module gtxe2_chnl_clocking(
+module gtxe2_chnl_clocking#(
+    parameter   [23:0]  CPLL_CFG        = 29'h00BC07DC,
+    parameter   integer CPLL_FBDIV      = 4,
+    parameter   integer CPLL_FBDIV_45   = 5,
+    parameter   [23:0]  CPLL_INIT_CFG   = 24'h00001E,
+    parameter   [15:0]  CPLL_LOCK_CFG   = 16'h01E8,
+    parameter   integer CPLL_REFCLK_DIV = 1,
+    parameter           SATA_CPLL_CFG = "VCO_3000MHZ",
+    parameter   [1:0]   PMA_RSV3        = 1,
+    parameter   TXOUT_DIV   = 2,
+    //parameter   TXRATE      = 3'b000;
+    parameter   RXOUT_DIV   = 2,
+    //parameter   RXRATE      = 3'b000;
+    parameter   TX_INT_DATAWIDTH    = 0,
+    parameter   TX_DATA_WIDTH       = 20,
+    parameter   RX_INT_DATAWIDTH    = 0,
+    parameter   RX_DATA_WIDTH       = 20
+)(
 // top-level interfaces
     input   wire    [2:0]   CPLLREFCLKSEL,
     input   wire            GTREFCLK0,
@@ -314,6 +331,7 @@ module gtxe2_chnl_clocking(
     input   [19:0]      TSTIN
 );
 // CPLL
+/*
 parameter   [23:0]  CPLL_CFG        = 29'h00BC07DC;
 parameter   integer CPLL_FBDIV      = 4;
 parameter   integer CPLL_FBDIV_45   = 5;
@@ -332,18 +350,8 @@ parameter   TX_INT_DATAWIDTH    = 0;
 parameter   TX_DATA_WIDTH       = 20;
 parameter   RX_INT_DATAWIDTH    = 0;
 parameter   RX_DATA_WIDTH       = 20;
-/*
-localparam  tx_serial_divider   = TXRATE == 3'b001 ? 1
-                                : TXRATE == 3'b010 ? 2
-                                : TXRATE == 3'b011 ? 4
-                                : TXRATE == 3'b100 ? 8
-                                : TXRATE == 3'b101 ? 16 : TXOUT_DIV ;
-localparam  rx_serial_divider   = RXRATE == 3'b001 ? 1
-                                : RXRATE == 3'b010 ? 2
-                                : RXRATE == 3'b011 ? 4
-                                : RXRATE == 3'b100 ? 8
-                                : RXRATE == 3'b101 ? 16 : RXOUT_DIV ;
 */
+
 localparam  tx_pma_divider1 = TX_INT_DATAWIDTH == 1 ? 4 : 2;
 localparam  tx_pcs_divider1 = tx_pma_divider1;
 localparam  tx_pma_divider2 = TX_DATA_WIDTH == 20 | TX_DATA_WIDTH == 40 | TX_DATA_WIDTH == 80 ? 5 : 4;
@@ -359,6 +367,11 @@ wire    TXPLLREFCLK_DIV1;
 wire    TXPLLREFCLK_DIV2;
 wire    RXPLLREFCLK_DIV1;
 wire    RXPLLREFCLK_DIV2;
+
+    assign            GTREFCLKMONITOR = 'bx; // Was not assigned
+    assign            TXOUTCLKFABRIC = 'bx; // Was not assigned
+    assign            RXOUTCLKFABRIC = 'bx; // Was not assigned
+
 
 assign  tx_phy_clk          = TXSYSCLKSEL[0] ? QPLLCLK : cpll_clk_out;
 assign  TXPLLREFCLK_DIV1    = TXSYSCLKSEL[1] ? QPLLREFCLK : clk_mux_out;
@@ -2358,6 +2371,8 @@ rx(
     .serial_clk         (rx_serial_clk)
 );
 
+wire tx_piso_clk;
+wire rx_sipo_clk;
 gtxe2_chnl_clocking #(
     .CPLL_CFG           (CPLL_CFG),
     .CPLL_FBDIV         (CPLL_FBDIV),
@@ -2374,8 +2389,7 @@ gtxe2_chnl_clocking #(
     .TX_DATA_WIDTH      (TX_DATA_WIDTH),
     .RX_INT_DATAWIDTH   (RX_INT_DATAWIDTH),
     .RX_DATA_WIDTH      (RX_DATA_WIDTH)
-)
-clocking(
+) clocking_i ( // was "clocking" w/o "_i" - is it a keyword?
     .CPLLREFCLKSEL      (CPLLREFCLKSEL),
     .GTREFCLK0          (GTREFCLK0),
     .GTREFCLK1          (GTREFCLK1),
@@ -2410,7 +2424,7 @@ clocking(
     .TXOUTCLK           (TXOUTCLK),
     .TXOUTCLKFABRIC     (TXOUTCLKFABRIC),
     .tx_serial_clk      (tx_serial_clk),
-    .tx_piso_clk        (),
+    .tx_piso_clk        (tx_piso_clk),
 
     .GTRSVD             (GTRSVD),
     .PCSRSVDIN          (PCSRSVDIN),
@@ -2425,8 +2439,9 @@ clocking(
     .RXOUTCLK           (RXOUTCLK),
     .RXOUTCLKFABRIC     (RXOUTCLKFABRIC),
     .rx_serial_clk      (rx_serial_clk),
-    .rx_sipo_clk        ()
+    .rx_sipo_clk        (rx_sipo_clk)
 );
+
 
 endmodule
 

@@ -1317,6 +1317,7 @@ assign axi_grst = axi_rst_pre;
         .MCONTR_LINTILE_EXTRAPG_BITS       (MCONTR_LINTILE_EXTRAPG_BITS),
         .MCONTR_LINTILE_KEEP_OPEN          (MCONTR_LINTILE_KEEP_OPEN),
         .MCONTR_LINTILE_BYTE32             (MCONTR_LINTILE_BYTE32),
+        .MCONTR_LINTILE_LINEAR             (MCONTR_LINTILE_LINEAR), // Use linear mode instead of tiled
         .MCONTR_LINTILE_RST_FRAME          (MCONTR_LINTILE_RST_FRAME),
         .MCONTR_LINTILE_SINGLE             (MCONTR_LINTILE_SINGLE),
         .MCONTR_LINTILE_REPEAT             (MCONTR_LINTILE_REPEAT),
@@ -2042,6 +2043,8 @@ assign axi_grst = axi_rst_pre;
         .CMPRS_CBIT_CMODE_BITS           (CMPRS_CBIT_CMODE_BITS),
         .CMPRS_CBIT_FRAMES               (CMPRS_CBIT_FRAMES),
         .CMPRS_CBIT_FRAMES_BITS          (CMPRS_CBIT_FRAMES_BITS),
+        .CMPRS_CBIT_BE16                 (CMPRS_CBIT_BE16),
+        .CMPRS_CBIT_BE16_BITS            (CMPRS_CBIT_BE16_BITS),        
         .CMPRS_CBIT_BAYER                (CMPRS_CBIT_BAYER),
         .CMPRS_CBIT_BAYER_BITS           (CMPRS_CBIT_BAYER_BITS),
         .CMPRS_CBIT_FOCUS                (CMPRS_CBIT_FOCUS),
