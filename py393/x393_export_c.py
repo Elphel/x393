@@ -974,7 +974,7 @@ class X393ExportC(object):
             (("X393_CMPRS_CBIT_CMODE_JP4DIFFHDRDIV2","",vrlg.CMPRS_CBIT_CMODE_JP4DIFFHDRDIV2,0,None, None, "", "jp4,  4 blocks, differential, hdr,divide by 2")),
             (("X393_CMPRS_CBIT_CMODE_MONO1",        "", vrlg.CMPRS_CBIT_CMODE_MONO1 ,       0, None, None, "", "Mono JPEG (not yet implemented)")),
             (("X393_CMPRS_CBIT_CMODE_MONO4",        "", vrlg.CMPRS_CBIT_CMODE_MONO4 ,       0, None, None, "", "Mono, 4 blocks (2x2 macroblocks)")),
-
+            (("X393_CMPRS_CBIT_CMODE_RAW",          "", vrlg.CMPRS_CBIT_CMODE_RAW ,         0, None, None, "", "Uncompressed (raw), specify width/height in 16x16 byte macroblocks (in 16-bit 8 pixels wide)")),
             (("X393_CMPRS_CBIT_FRAMES_SINGLE",      "", vrlg.CMPRS_CBIT_FRAMES_SINGLE ,     0, None, None, "", "Use single-frame buffer")),
             (("X393_CMPRS_CBIT_FRAMES_MULTI",       "", 1 ,                                 0, None, None, "", "Use multi-frame buffer"))]        
         ba = vrlg.CMPRS_GROUP_ADDR
@@ -1691,6 +1691,7 @@ class X393ExportC(object):
         dw.append(("extra_pages",  vrlg.MCONTR_LINTILE_EXTRAPG, vrlg.MCONTR_LINTILE_EXTRAPG_BITS,0, "2-bit number of extra pages that need to stay (not to be overwritten) in the buffer"))
         dw.append(("keep_open",    vrlg.MCONTR_LINTILE_KEEP_OPEN,1,0, "for 8 or less rows - do not close page between accesses (not used in scanline mode)"))
         dw.append(("byte32",       vrlg.MCONTR_LINTILE_BYTE32,1,1,    "32-byte columns (0 - 16-byte), not used in scanline mode"))
+        dw.append(("linear",       vrlg.MCONTR_LINTILE_LINEAR,1,1,    "Use linear mode instead of tiled (for raw image files): extra_pages=0, keep_open=x, byte32=x"))
         dw.append(("reset_frame",  vrlg.MCONTR_LINTILE_RST_FRAME,1,0, "reset frame number (also resets buffer at next frame start). NEEDED after initial set up to propagate start address!"))
         dw.append(("single",       vrlg.MCONTR_LINTILE_SINGLE,1,0,    "run single frame"))
         dw.append(("repetitive",   vrlg.MCONTR_LINTILE_REPEAT,1,1,    "run repetitive frames"))
@@ -2312,6 +2313,8 @@ class X393ExportC(object):
         dw.append(("cmode_set" ,     vrlg.CMPRS_CBIT_CMODE,                                                         1,  0, "Set 'cmode'"))
         dw.append(("multiframe",     vrlg.CMPRS_CBIT_FRAMES - vrlg.CMPRS_CBIT_FRAMES_BITS, vrlg.CMPRS_CBIT_FRAMES_BITS, 0, "Multi/single frame mode"))
         dw.append(("multiframe_set", vrlg.CMPRS_CBIT_FRAMES,                                                         1, 0, "Set 'multiframe'"))
+        dw.append(("raw_be16",       vrlg.CMPRS_CBIT_BE16 - vrlg.CMPRS_CBIT_BE16_BITS, vrlg.CMPRS_CBIT_BE16_BITS,    0, "Swap bytes in each pair (raw mode only), use with 16-bit data"))
+        dw.append(("raw_be16_set",   vrlg.CMPRS_CBIT_BE16,                                                           1, 0, "Set 'multiframe'"))
         dw.append(("bayer",          vrlg.CMPRS_CBIT_BAYER - vrlg.CMPRS_CBIT_BAYER_BITS,   vrlg.CMPRS_CBIT_BAYER_BITS,  0, "Bayer shift"))
         dw.append(("bayer_set",      vrlg.CMPRS_CBIT_BAYER,                                                          1, 0, "Set 'bayer'"))
         dw.append(("focus",          vrlg.CMPRS_CBIT_FOCUS - vrlg.CMPRS_CBIT_FOCUS_BITS,   vrlg.CMPRS_CBIT_FOCUS_BITS,  0, "Focus mode"))
