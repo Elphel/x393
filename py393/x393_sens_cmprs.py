@@ -456,6 +456,7 @@ class X393SensCmprs(object):
                               histogram_top =             None, # 0,
                               histogram_width_m1 =        None, # 2559, #0,
                               histogram_height_m1 =       None, # 1935, #0,
+                              bits16 =                    False,
                               verbose =                   1
                               ):
         """
@@ -863,7 +864,7 @@ class X393SensCmprs(object):
             hist_en =    1, # bitmask, only first subchannel
             hist_nrst =  1, # bitmask, only first subchannel
             chn_en =     True,
-            bits16 =     False)
+            bits16 =     bits16) #False)
 
         if verbose >0 :
             print ("===================== CMPRS_EN_ARBIT =========================")
@@ -1435,6 +1436,7 @@ class X393SensCmprs(object):
                               histogram_height_m1 =       None, # 799, #0,
                               circbuf_chn_size=           0x4000000, # 64 Mib - all 4 channels?
                               reset_afi =                 False, # reset AFI multiplexer
+                              bits16 =                    False,
                               verbose =                   1):
         """
         Setup one sensor+compressor channel (for one sub-channel only)
@@ -1691,6 +1693,7 @@ class X393SensCmprs(object):
                           histogram_top =           histogram_top,
                           histogram_width_m1 =      histogram_width_m1,
                           histogram_height_m1 =     histogram_height_m1,
+                          bits16 =                  bits16,
                           verbose =                 verbose)
                 if not rslt : return False
                 if exit_step == 20: return False
